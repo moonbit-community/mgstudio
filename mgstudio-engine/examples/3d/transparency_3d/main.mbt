@@ -30,7 +30,7 @@ priv struct TransparencyState {
 let transparency_state : Ref[TransparencyState] = Ref::new({ materials: [] })
 
 ///|
-pub fn game_app() -> Unit {
+fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)

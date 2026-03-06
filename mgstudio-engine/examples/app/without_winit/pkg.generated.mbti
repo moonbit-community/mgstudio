@@ -2,7 +2,7 @@
 package "Milky2018/mgstudio/examples/app/without_winit"
 
 // Values
-pub fn game_app() -> Unit
+pub fn main() -> Unit
 
 // Errors
 

@@ -77,7 +77,9 @@ pub fn A11yState::set_focused_node(
 // -----------------------------------------------------------------------------
 
 ///|
-fn host_a11y_begin_update(root_id : Int) -> Unit = "mgstudio_host" "a11y_begin_update"
+fn host_a11y_begin_update(root_id : Int) -> Unit {
+  @native_a11y.begin_update(root_id)
+}
 
 ///|
 fn host_a11y_push_node(
@@ -88,30 +90,56 @@ fn host_a11y_push_node(
   y~ : Float,
   width~ : Float,
   height~ : Float,
-  name_id~ : Int,
+  name~ : String,
   actions_mask~ : Int,
-) -> Unit = "mgstudio_host" "a11y_push_node"
+) -> Unit {
+  @native_a11y.push_node(
+    node_id~,
+    parent_id~,
+    role_id~,
+    x~,
+    y~,
+    width~,
+    height~,
+    name~,
+    actions_mask~,
+  )
+}
 
 ///|
-fn host_a11y_end_update() -> Unit = "mgstudio_host" "a11y_end_update"
+fn host_a11y_end_update() -> Unit {
+  @native_a11y.end_update()
+}
 
 ///|
-fn host_a11y_actions_len() -> Int = "mgstudio_host" "a11y_actions_len"
+fn host_a11y_actions_len() -> Int {
+  @native_a11y.actions_len()
+}
 
 ///|
-fn host_a11y_action_target(index : Int) -> Int = "mgstudio_host" "a11y_action_target"
+fn host_a11y_action_target(index : Int) -> Int {
+  @native_a11y.action_target(index)
+}
 
 ///|
-fn host_a11y_action_kind(index : Int) -> Int = "mgstudio_host" "a11y_action_kind"
+fn host_a11y_action_kind(index : Int) -> Int {
+  @native_a11y.action_kind(index)
+}
 
 ///|
-fn host_a11y_action_value_len(index : Int) -> Int = "mgstudio_host" "a11y_action_value_len"
+fn host_a11y_action_value_len(index : Int) -> Int {
+  @native_a11y.action_value_len(index)
+}
 
 ///|
-fn host_a11y_action_value_code_unit(index~ : Int, offset~ : Int) -> Int = "mgstudio_host" "a11y_action_value_code_unit"
+fn host_a11y_action_value_code_unit(index~ : Int, offset~ : Int) -> Int {
+  @native_a11y.action_value_code_unit(index~, offset~)
+}
 
 ///|
-fn host_a11y_actions_clear() -> Unit = "mgstudio_host" "a11y_actions_clear"
+fn host_a11y_actions_clear() -> Unit {
+  @native_a11y.actions_clear()
+}
 
 ///|
 /// Role ids shared with runtimes.
@@ -188,6 +216,7 @@ pub fn a11y_host_push_node(
   name_id : Int,
   actions_mask : Int,
 ) -> Unit {
+  let name = if name_id == 0 { "" } else { "#" + name_id.to_string() }
   host_a11y_push_node(
     node_id~,
     parent_id~,
@@ -196,7 +225,7 @@ pub fn a11y_host_push_node(
     y~,
     width~,
     height~,
-    name_id~,
+    name~,
     actions_mask~,
   )
 }
@@ -208,13 +237,13 @@ pub fn a11y_host_end_update() -> Unit {
 }
 
 ///|
-fn host_a11y_apply_update(update_json_id : Int) -> Unit = "mgstudio_host" "a11y_apply_update"
+fn host_a11y_apply_update(update_json : String) -> Unit {
+  @native_a11y.apply_update(update_json~)
+}
 
 ///|
 pub fn a11y_host_apply_update_payload(payload : String) -> Unit {
-  @core.with_host_string_id(payload, fn(payload_id) {
-    host_a11y_apply_update(payload_id)
-  })
+  host_a11y_apply_update(payload)
 }
 
 ///|

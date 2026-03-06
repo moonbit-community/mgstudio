@@ -1,10 +1,8 @@
 # Moon Game Studio Page
 
-`mgstudio-page` is a static website for showcasing engine examples in the browser.
+`mgstudio-page` is a docs-only static website for native example discovery.
 
-This folder is intentionally **not** the web runtime.
-The web runtime lives in `mgstudio-runtime/web` and its only job is producing the
-JavaScript bundle.
+It no longer embeds a web runtime or loads WASM binaries.
 
 ## Build
 

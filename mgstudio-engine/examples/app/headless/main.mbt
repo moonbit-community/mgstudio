@@ -68,7 +68,7 @@ fn run_loop_app() -> Unit {
 }
 
 ///|
-pub fn game_app() -> Unit {
+fn main {
   run_once_app()
   run_loop_app()
 }

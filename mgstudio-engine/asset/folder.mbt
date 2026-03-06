@@ -27,28 +27,31 @@ pub(all) enum AssetEvent[T] {
 
 ///|
 pub fn host_asset_load_folder(path~ : String) -> Int {
-  @core.with_host_string_id(path, fn(path_id) {
-    host_asset_load_folder_id(path_id)
-  })
+  @native_asset.load_folder(path~)
 }
 
 ///|
-fn host_asset_load_folder_id(path_id : Int) -> Int = "mgstudio_host" "asset_load_folder"
+pub fn host_asset_poll_loaded_folder_event_kind() -> Int {
+  @native_asset.poll_loaded_folder_event_kind()
+}
 
 ///|
-pub fn host_asset_poll_loaded_folder_event_kind() -> Int = "mgstudio_host" "asset_poll_loaded_folder_event_kind"
+pub fn host_asset_poll_loaded_folder_event_id() -> Int {
+  @native_asset.poll_loaded_folder_event_id()
+}
 
 ///|
-pub fn host_asset_poll_loaded_folder_event_id() -> Int = "mgstudio_host" "asset_poll_loaded_folder_event_id"
-
-///|
-pub fn host_asset_loaded_folder_handles_len(folder_id : Int) -> Int = "mgstudio_host" "asset_loaded_folder_handles_len"
+pub fn host_asset_loaded_folder_handles_len(folder_id : Int) -> Int {
+  @native_asset.loaded_folder_handles_len(folder_id)
+}
 
 ///|
 pub fn host_asset_loaded_folder_handles_get(
   folder_id~ : Int,
   index~ : Int,
-) -> Int = "mgstudio_host" "asset_loaded_folder_handles_get"
+) -> Int {
+  @native_asset.loaded_folder_handles_get(folder_id~, index~)
+}
 
 ///|
 let loaded_folder_assets : Ref[Assets[LoadedFolder]] = Ref::new(Assets::new())
@@ -61,8 +64,9 @@ pub fn AssetServer::load_folder(
   self : AssetServer,
   path : String,
 ) -> Handle[LoadedFolder] {
-  let host_id = host_asset_load_folder(path~)
-  self.paths.push(path)
+  let canonical_path = asset_canonical_path(path)
+  let host_id = host_asset_load_folder(path=canonical_path)
+  self.paths.push(canonical_path)
   Handle::new(host_id)
 }
 

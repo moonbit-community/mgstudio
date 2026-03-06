@@ -2,7 +2,7 @@
 package "Milky2018/mgstudio/examples/3d/parallax_mapping"
 
 // Values
-pub fn game_app() -> Unit
+pub fn main() -> Unit
 
 // Errors
 

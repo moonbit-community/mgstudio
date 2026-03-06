@@ -24,7 +24,7 @@
 let parent_entity_state : Ref[@core.Entity?] = Ref::new(None)
 
 ///|
-pub fn game_app() -> Unit {
+fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)

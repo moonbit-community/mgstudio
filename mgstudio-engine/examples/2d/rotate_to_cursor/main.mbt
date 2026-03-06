@@ -23,7 +23,7 @@ let rotate_to_cursor_state : Ref[RotateToCursorState] = Ref::new(RotateToCursorS
 })
 
 ///|
-pub fn game_app() -> Unit {
+fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)

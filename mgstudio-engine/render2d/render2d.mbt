@@ -4196,6 +4196,10 @@ struct RenderState {
   meshes : Array[MeshInstance]
   render_targets : Array[RenderTargetInfo]
   bloom2d_auto_targets : Array[Bloom2dAutoTargetInfo]
+  // Prepare stage output: stable camera iteration order for the frame.
+  mut prepared_camera_indices : Array[Int]
+  // Queue stage output: per-camera queued item counts for diagnostics/sanity.
+  mut queued_draw_item_counts : Array[Int]
 }
 
 ///|
@@ -4213,6 +4217,8 @@ fn RenderState::new() -> RenderState {
     meshes: [],
     render_targets: [],
     bloom2d_auto_targets: [],
+    prepared_camera_indices: [],
+    queued_draw_item_counts: [],
   }
 }
 
@@ -6219,13 +6225,53 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn[W] render_prepare_system(_world : W) -> Unit {
-
+pub fn render_prepare_system(world : @ecs.World) -> Unit {
+  render_state_update(world, fn(rs) {
+    if !rs.val.draw_enabled {
+      rs.val.prepared_camera_indices.clear()
+      rs.val.queued_draw_item_counts.clear()
+      return
+    }
+    rs.val.prepared_camera_indices = render2d_sorted_camera_indices(rs.val.cameras)
+    rs.val.queued_draw_item_counts.clear()
+  })
+  |> ignore
 }
 
 ///|
-pub fn[W] render_queue_system(_world : W) -> Unit {
-
+pub fn render_queue_system(world : @ecs.World) -> Unit {
+  render_state_update(world, fn(rs) {
+    if !rs.val.draw_enabled {
+      rs.val.queued_draw_item_counts.clear()
+      return
+    }
+    let cameras = rs.val.cameras
+    let camera_indices = if rs.val.prepared_camera_indices.length() == cameras.length() {
+      rs.val.prepared_camera_indices
+    } else {
+      render2d_sorted_camera_indices(cameras)
+    }
+    let counts : Array[Int] = []
+    for index in camera_indices {
+      if index < 0 || index >= cameras.length() {
+        continue
+      }
+      let camera = cameras[index]
+      let items = draw_items_for_layers(
+        rs.val.sprites,
+        rs.val.extra_sprites,
+        rs.val.extra_sprite_texture_slices,
+        rs.val.extra_ui_rects,
+        rs.val.extra_ui_box_shadows,
+        rs.val.extra_ui_texture_slices,
+        rs.val.meshes,
+        camera.layers,
+      )
+      counts.push(items.length())
+    }
+    rs.val.queued_draw_item_counts = counts
+  })
+  |> ignore
 }
 
 ///|
@@ -6754,6 +6800,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
     let cameras = rs.val.cameras
     if cameras.length() == 0 {
       gizmos_clear()
+      rs.val.prepared_camera_indices.clear()
+      rs.val.queued_draw_item_counts.clear()
       rs.val.extra_sprites.clear()
       rs.val.extra_sprite_texture_slices.clear()
       rs.val.extra_ui_rects.clear()
@@ -6829,7 +6877,12 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       (x, y, w, h)
     }
 
-    for index in render2d_sorted_camera_indices(cameras) {
+    let camera_indices = if rs.val.prepared_camera_indices.length() == cameras.length() {
+      rs.val.prepared_camera_indices
+    } else {
+      render2d_sorted_camera_indices(cameras)
+    }
+    for index in camera_indices {
       let camera = cameras[index]
       let mut target_id = -1
       let target_size = camera.computed.target_size
@@ -7286,6 +7339,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       @window.host_gpu_end_pass()
     }
     gizmos_clear()
+    rs.val.prepared_camera_indices.clear()
+    rs.val.queued_draw_item_counts.clear()
     rs.val.extra_sprites.clear()
     rs.val.extra_sprite_texture_slices.clear()
     rs.val.extra_ui_rects.clear()

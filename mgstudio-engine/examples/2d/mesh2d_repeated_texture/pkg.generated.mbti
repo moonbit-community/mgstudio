@@ -2,7 +2,7 @@
 package "Milky2018/mgstudio/examples/2d/mesh2d_repeated_texture"
 
 // Values
-pub fn game_app() -> Unit
+pub fn main() -> Unit
 
 // Errors
 

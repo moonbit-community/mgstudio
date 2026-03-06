@@ -16,7 +16,7 @@
 /// Port of `bevy/examples/app/thread_pool_resources.rs`.
 
 ///|
-pub fn game_app() -> Unit {
+fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins([
     @app.task_pool_plugin(

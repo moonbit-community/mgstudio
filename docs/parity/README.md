@@ -32,3 +32,15 @@ Optional runtime smoke:
 ```bash
 MGSTUDIO_SMOKE_RUNTIME=1 ./scripts/smoke_bevy_examples.sh
 ```
+
+## P0 Visual Gate (3D Blockers)
+
+Runbook:
+
+- `docs/parity/P0_VISUAL_GATES.md`
+
+Executable gate:
+
+```bash
+./mgstudio-engine/scripts/p0_visual_gate.sh
+```

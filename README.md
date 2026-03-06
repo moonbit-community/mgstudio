@@ -1,68 +1,45 @@
 ## moon-game-studio (mgstudio)
 
-An experimental Bevy-aligned game engine and tooling stack written in MoonBit.
-
-### Install (end users)
-
-Install the mgstudio SDK + CLI from GitHub Releases (darwin-arm64):
-
-```bash
-curl -fsSL https://github.com/moonbit-community/mgstudio/releases/latest/download/mgstudio-install.sh | bash
-```
+A Bevy-aligned game engine in MoonBit, now running in a native-only architecture.
 
 ### Repository layout
 
-- `mgstudio-engine/`: engine core (ECS, math, 2D rendering, text, assets, etc.)
-- `mgstudio-cli/`: `mgstudio` developer CLI (`gen`, `new`, `run`, `serve`)
-- `mgstudio-runtime/`: runtime implementations
-  - `mgstudio-runtime/native-wasmtime/`: native runtime (Rust + wasmtime + wgpu)
-  - `mgstudio-runtime/web/`: web runtime bundle builder (produces `mgstudio-runtime-web.js`)
-  - `mgstudio-runtime/core/`: shared runtime utilities
-- `mgstudio-page/`: web page (examples gallery / future GitHub Pages site)
-- `bevy/`: vendored Bevy source for reference and migration parity checks
+- `mgstudio-engine/`: engine core + native runtime bridge (`runtime_native/*`)
+- `mgstudio-page/`: docs-only static site for example catalog and run instructions
+- `bevy/`: vendored Bevy source for parity reference
+- `scripts/`: project scripts (native smoke, parity tooling)
 
-### Quick start (local development)
+### Quick start (native)
 
-1. Install the SDK (recommended even for repo dev):
-   - `./mgstudio-install.sh`
-2. Create a new game:
-   - `mgstudio new mygame`
-   - For local engine development (path dependency): `./mgstudio-dev new mygame --local-engine`
-3. Build the game cart (Wasm, from the game directory):
-   - `cd mygame && moon build --release --target wasm`
-4. Run:
-   - Native: `mgstudio run -g mygame/moon.game.json`
-   - Web: `mgstudio serve -g mygame/moon.game.json` (plain HTTP)
+1. Install MoonBit and update registry.
+2. Run an example directly:
+
+```bash
+moon -C mgstudio-engine run --target native examples/3d/3d_scene
+```
+
+Representative examples:
+
+- `examples/2d/sprite`
+- `examples/2d/2d_shapes`
+- `examples/3d/pbr`
+- `examples/3d/3d_shapes`
+- `examples/3d/3d_scene`
+- `examples/ui/button`
 
 ### Common commands
 
-- `mgstudio gen` — generate `ecs.g.mbt` files from `#ecs.component` / `#ecs.resource`
-- `mgstudio new <name>` — scaffold a game project
-- `mgstudio run` — run a game in the native runtime
-- `mgstudio serve` — serve the web runtime and run a game in the browser
+- `moon -C mgstudio-engine check --target native`
+- `moon -C mgstudio-engine test --target native`
+- `moon -C mgstudio-engine build --target native <package>`
+- `./scripts/smoke_bevy_examples.sh`
 
-Repo development wrapper:
+### Runtime options
 
-- `./mgstudio-dev ...` builds `mgstudio-cli` (release), syncs SDK web runtime + assets to `$HOME/.local/share/mgstudio/current`, then runs it
-- `./mgstudio-dev run ...` auto-builds local `mgstudio-runtime-native-wasmtime` when needed
-
-Project quality gates (per module):
-
-- `moon check`, `moon test`, `moon fmt`, `moon info`
-- `python3 scripts/check_host_abi.py` (verify `mgstudio_host` function name/arity parity across engine + runtimes)
-
-### SDK and `moon.game.json`
-
-Games are configured via `moon.game.json`. The key field is:
-
-- `sdkroot`: points to the installed SDK root directory (e.g. `$HOME/.local/share/mgstudio/current`)
-
-The CLI uses `sdkroot` to locate:
-
-- `bin/mgstudio-runtime-native-wasmtime` (native runtime for `run`)
-- `share/mgstudio/assets/` (engine default assets, including built-in shaders)
-- `share/mgstudio/web/mgstudio-runtime-web.js` (web runtime bundle for `serve`)
+- `MGSTUDIO_ASSETS_DIR` (default: `./assets`)
+- `MGSTUDIO_DATA_DIR` (default: `./tmp/data`)
 
 ### Notes
 
-- Planning artifacts live under `.private/` and should not be committed.
+- WASM/Web runtime and `mgstudio` CLI were removed in this native-only cutover.
+- Planning artifacts under `.private/` are git-ignored and should not be committed.

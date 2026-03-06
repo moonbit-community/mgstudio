@@ -142,6 +142,165 @@ pub fn ImageLoaderSettings::with_array_layout(
 }
 
 ///|
+pub(all) enum AssetSourceId {
+  Default
+  Named(String)
+}
+
+///|
+pub struct ParsedAssetPath {
+  source : AssetSourceId
+  path : String
+  label : String?
+}
+
+///|
+pub(all) enum AssetLoaderKind {
+  Texture
+  Wgsl
+  Bytes
+  Font
+  Folder
+}
+
+///|
+const NATIVE_LOADER_KIND_TEXTURE : Int = 0
+
+///|
+const NATIVE_LOADER_KIND_WGSL : Int = 1
+
+///|
+const NATIVE_LOADER_KIND_BYTES : Int = 2
+
+///|
+const NATIVE_LOADER_KIND_FONT : Int = 3
+
+///|
+const NATIVE_LOADER_KIND_FOLDER : Int = 4
+
+///|
+fn string_last_index_of_char(input : String, code_unit : Int) -> Int {
+  let mut out = -1
+  for i in 0..<input.length() {
+    if input.code_unit_at(i).to_int() == code_unit {
+      out = i
+    }
+  }
+  out
+}
+
+///|
+fn string_find_substring(input : String, pattern : String) -> Int {
+  let n = input.length()
+  let m = pattern.length()
+  if m <= 0 {
+    return 0
+  }
+  if n < m {
+    return -1
+  }
+  for i in 0..<(n - m + 1) {
+    let mut matched = true
+    for j in 0..<m {
+      if input.code_unit_at(i + j) != pattern.code_unit_at(j) {
+        matched = false
+        break
+      }
+    }
+    if matched {
+      return i
+    }
+  }
+  -1
+}
+
+///|
+pub fn asset_parse_path(path : String) -> ParsedAssetPath {
+  let hash_index = string_last_index_of_char(path, 35)
+  let (without_label, label) = if hash_index >= 0 {
+    let base = if hash_index > 0 {
+      (try! path[0:hash_index]).to_string()
+    } else {
+      ""
+    }
+    let parsed_label = if hash_index + 1 < path.length() {
+      Some((try! path[hash_index + 1:path.length()]).to_string())
+    } else {
+      None
+    }
+    (base, parsed_label)
+  } else {
+    (path, None)
+  }
+  let scheme_index = string_find_substring(without_label, "://")
+  if scheme_index > 0 {
+    let source_name = (try! without_label[0:scheme_index]).to_string()
+    let relative_path = if scheme_index + 3 < without_label.length() {
+      (try! without_label[scheme_index + 3:without_label.length()]).to_string()
+    } else {
+      ""
+    }
+    ParsedAssetPath::{
+      source: AssetSourceId::Named(source_name),
+      path: relative_path,
+      label,
+    }
+  } else {
+    ParsedAssetPath::{ source: AssetSourceId::Default, path: without_label, label, }
+  }
+}
+
+///|
+pub fn asset_format_path(parsed : ParsedAssetPath) -> String {
+  let base = match parsed.source {
+    AssetSourceId::Default => parsed.path
+    AssetSourceId::Named(name) => name + "://" + parsed.path
+  }
+  match parsed.label {
+    Some(label) if label.length() > 0 => base + "#" + label
+    _ => base
+  }
+}
+
+///|
+pub fn asset_strip_label(path : String) -> String {
+  let parsed = asset_parse_path(path)
+  asset_format_path(ParsedAssetPath::{
+    source: parsed.source,
+    path: parsed.path,
+    label: None,
+  })
+}
+
+///|
+fn asset_loader_kind_to_raw(kind : AssetLoaderKind) -> Int {
+  match kind {
+    AssetLoaderKind::Texture => NATIVE_LOADER_KIND_TEXTURE
+    AssetLoaderKind::Wgsl => NATIVE_LOADER_KIND_WGSL
+    AssetLoaderKind::Bytes => NATIVE_LOADER_KIND_BYTES
+    AssetLoaderKind::Font => NATIVE_LOADER_KIND_FONT
+    AssetLoaderKind::Folder => NATIVE_LOADER_KIND_FOLDER
+  }
+}
+
+///|
+fn asset_loader_kind_from_raw(raw : Int) -> AssetLoaderKind {
+  if raw == NATIVE_LOADER_KIND_TEXTURE {
+    return AssetLoaderKind::Texture
+  }
+  if raw == NATIVE_LOADER_KIND_WGSL {
+    return AssetLoaderKind::Wgsl
+  }
+  if raw == NATIVE_LOADER_KIND_FONT {
+    return AssetLoaderKind::Font
+  }
+  if raw == NATIVE_LOADER_KIND_FOLDER {
+    return AssetLoaderKind::Folder
+  }
+  AssetLoaderKind::Bytes
+}
+
+///|
 pub const COMPRESSED_IMAGE_FORMAT_NONE : Int = 0
 
 ///|
@@ -194,6 +353,11 @@ let asset_image_usage_settings : Ref[Array[(Int, Int)]] = Ref::new([])
 ///|
 fn asset_register_image_path(path : String, handle : Handle[Image]) -> Unit {
   asset_image_paths.val.push((path, handle))
+}
+
+///|
+pub fn asset_canonical_path(path : String) -> String {
+  asset_strip_label(path)
 }
 
 ///|
@@ -314,14 +478,36 @@ pub fn AssetServer::get_handle(
   _self : AssetServer,
   path : String,
 ) -> Handle[Image]? {
+  let canonical = asset_canonical_path(path)
   let count = asset_image_paths.val.length()
   for i in 0..<count {
     let entry = asset_image_paths.val[i]
-    if entry.0 == path {
+    if entry.0 == canonical {
       return Some(entry.1)
     }
   }
   None
+}
+
+///|
+pub fn asset_register_loader_extension(
+  extension : String,
+  kind : AssetLoaderKind,
+) -> Unit {
+  host_asset_register_loader_extension(
+    extension~,
+    kind=asset_loader_kind_to_raw(kind),
+  )
+}
+
+///|
+pub fn asset_remove_loader_extension(extension : String) -> Unit {
+  host_asset_remove_loader_extension(extension~)
+}
+
+///|
+pub fn asset_loader_kind_for_path(path : String) -> AssetLoaderKind {
+  asset_loader_kind_from_raw(host_asset_loader_kind_for_path(path~))
 }
 
 ///|
@@ -388,49 +574,68 @@ pub fn asset_white_texture() -> Handle[Image] {
 
 ///|
 pub fn host_asset_load_texture(path~ : String, nearest~ : Bool) -> Int {
-  @core.with_host_string_id(path, fn(path_id) {
-    host_asset_load_texture_id(path_id~, nearest~)
-  })
+  @native_asset.load_texture(path~, nearest~)
 }
 
 ///|
-fn host_asset_load_texture_id(path_id~ : Int, nearest~ : Bool) -> Int = "mgstudio_host" "asset_load_texture"
-
-///|
-pub fn host_asset_load_texture_bytes(bytes_id~ : Int, nearest~ : Bool) -> Int = "mgstudio_host" "asset_load_texture_bytes"
+pub fn host_asset_load_texture_bytes(bytes~ : Bytes, nearest~ : Bool) -> Int {
+  @native_asset.load_texture_bytes(bytes~, nearest~)
+}
 
 ///|
 pub fn host_asset_load_wgsl(path~ : String) -> Int {
-  @core.with_host_string_id(path, fn(path_id) {
-    host_asset_load_wgsl_id(path_id)
-  })
+  @native_asset.load_wgsl(path~)
 }
-
-///|
-fn host_asset_load_wgsl_id(path_id : Int) -> Int = "mgstudio_host" "asset_load_wgsl"
 
 ///|
 pub fn host_asset_load_bytes(path~ : String) -> Int {
-  @core.with_host_string_id(path, fn(path_id) {
-    host_asset_load_bytes_id(path_id)
-  })
+  @native_asset.load_bytes(path~)
 }
 
 ///|
-fn host_asset_load_bytes_id(path_id : Int) -> Int = "mgstudio_host" "asset_load_bytes"
+pub fn host_asset_load_with_registered_loader(
+  path~ : String,
+  nearest~ : Bool,
+) -> Int {
+  @native_asset.load_with_registered_loader(path~, nearest~)
+}
 
 ///|
-pub fn host_asset_bytes_len(blob_id : Int) -> Int = "mgstudio_host" "asset_bytes_len"
+pub fn host_asset_register_loader_extension(
+  extension~ : String,
+  kind~ : Int,
+) -> Unit {
+  @native_asset.register_loader_extension(extension~, kind~)
+}
 
 ///|
-pub fn host_asset_bytes_get_u32(blob_id~ : Int, index~ : Int) -> Int = "mgstudio_host" "asset_bytes_get_u32"
+pub fn host_asset_remove_loader_extension(extension~ : String) -> Unit {
+  @native_asset.remove_loader_extension(extension~)
+}
+
+///|
+pub fn host_asset_loader_kind_for_path(path~ : String) -> Int {
+  @native_asset.loader_kind_for_path(path~)
+}
+
+///|
+pub fn host_asset_bytes_len(blob_id : Int) -> Int {
+  @native_asset.bytes_len(blob_id)
+}
+
+///|
+pub fn host_asset_bytes_get_u32(blob_id~ : Int, index~ : Int) -> Int {
+  @native_asset.bytes_get_u32(blob_id~, index~)
+}
 
 ///|
 pub fn host_asset_create_dynamic_texture(
   width~ : Int,
   height~ : Int,
   nearest~ : Bool,
-) -> Int = "mgstudio_host" "asset_create_dynamic_texture"
+) -> Int {
+  @native_asset.create_dynamic_texture(width~, height~, nearest~)
+}
 
 ///|
 pub fn host_asset_create_dynamic_texture_mipped(
@@ -438,7 +643,14 @@ pub fn host_asset_create_dynamic_texture_mipped(
   height~ : Int,
   mip_level_count~ : Int,
   nearest~ : Bool,
-) -> Int = "mgstudio_host" "asset_create_dynamic_texture_mipped"
+) -> Int {
+  @native_asset.create_dynamic_texture_mipped(
+    width~,
+    height~,
+    mip_level_count~,
+    nearest~,
+  )
+}
 
 ///|
 pub fn host_asset_update_texture_region(
@@ -448,7 +660,16 @@ pub fn host_asset_update_texture_region(
   width~ : Int,
   height~ : Int,
   glyph_id~ : Int,
-) -> Unit = "mgstudio_host" "asset_update_texture_region"
+) -> Unit {
+  @native_asset.update_texture_region(
+    texture_id~,
+    x~,
+    y~,
+    width~,
+    height~,
+    glyph_id~,
+  )
+}
 
 ///|
 pub fn host_asset_update_texture_region_bytes(
@@ -457,8 +678,17 @@ pub fn host_asset_update_texture_region_bytes(
   y~ : Int,
   width~ : Int,
   height~ : Int,
-  bytes_id~ : Int,
-) -> Unit = "mgstudio_host" "asset_update_texture_region_bytes"
+  bytes~ : Bytes,
+) -> Unit {
+  @native_asset.update_texture_region_bytes(
+    texture_id~,
+    x~,
+    y~,
+    width~,
+    height~,
+    bytes~,
+  )
+}
 
 ///|
 pub fn host_asset_update_texture_region_mip_bytes(
@@ -468,26 +698,46 @@ pub fn host_asset_update_texture_region_mip_bytes(
   width~ : Int,
   height~ : Int,
   mip_level~ : Int,
-  bytes_id~ : Int,
-) -> Unit = "mgstudio_host" "asset_update_texture_region_mip_bytes"
+  bytes~ : Bytes,
+) -> Unit {
+  @native_asset.update_texture_region_mip_bytes(
+    texture_id~,
+    x~,
+    y~,
+    width~,
+    height~,
+    mip_level~,
+    bytes~,
+  )
+}
 
 ///|
 pub fn host_asset_create_texture_mip_view(
   texture_id~ : Int,
   mip_level~ : Int,
-) -> Int = "mgstudio_host" "asset_create_texture_mip_view"
+) -> Int {
+  @native_asset.create_texture_mip_view(texture_id~, mip_level~)
+}
 
 ///|
-pub fn host_asset_texture_width(texture_id : Int) -> Int = "mgstudio_host" "asset_texture_width"
+pub fn host_asset_texture_width(texture_id : Int) -> Int {
+  @native_asset.texture_width(texture_id)
+}
 
 ///|
-pub fn host_asset_texture_height(texture_id : Int) -> Int = "mgstudio_host" "asset_texture_height"
+pub fn host_asset_texture_height(texture_id : Int) -> Int {
+  @native_asset.texture_height(texture_id)
+}
 
 ///|
-pub fn host_asset_is_texture_loaded(texture_id : Int) -> Bool = "mgstudio_host" "asset_is_texture_loaded"
+pub fn host_asset_is_texture_loaded(texture_id : Int) -> Bool {
+  @native_asset.is_texture_loaded(texture_id)
+}
 
 ///|
-pub fn host_asset_supported_compressed_image_formats() -> Int = "mgstudio_host" "asset_supported_compressed_image_formats"
+pub fn host_asset_supported_compressed_image_formats() -> Int {
+  @native_asset.supported_compressed_image_formats()
+}
 
 ///|
 pub fn host_asset_copy_texture_to_texture(
@@ -495,17 +745,25 @@ pub fn host_asset_copy_texture_to_texture(
   dst_x~ : Int,
   dst_y~ : Int,
   src_texture_id~ : Int,
-) -> Unit = "mgstudio_host" "asset_copy_texture_to_texture"
-
-///|
-fn host_asset_save_texture_png_id(texture_id~ : Int, path_id~ : Int) -> Unit = "mgstudio_host" "asset_save_texture_png"
+) -> Unit {
+  @native_asset.copy_texture_to_texture(
+    dst_texture_id~,
+    dst_x~,
+    dst_y~,
+    src_texture_id~,
+  )
+}
 
 ///|
 pub fn AssetServer::load(self : AssetServer, path : String) -> Handle[Image] {
-  let id = host_asset_load_texture(path~, nearest=asset_default_nearest.val)
-  self.paths.push(path)
+  let canonical_path = asset_canonical_path(path)
+  let id = host_asset_load_texture(
+    path=canonical_path,
+    nearest=asset_default_nearest.val,
+  )
+  self.paths.push(canonical_path)
   let handle = Handle::new(id)
-  asset_register_image_path(path, handle)
+  asset_register_image_path(canonical_path, handle)
   asset_set_image_array_layout(handle, None)
   asset_set_image_is_srgb(handle, true)
   asset_set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
@@ -517,10 +775,11 @@ pub fn AssetServer::load_nearest(
   self : AssetServer,
   path : String,
 ) -> Handle[Image] {
-  let id = host_asset_load_texture(path~, nearest=true)
-  self.paths.push(path)
+  let canonical_path = asset_canonical_path(path)
+  let id = host_asset_load_texture(path=canonical_path, nearest=true)
+  self.paths.push(canonical_path)
   let handle = Handle::new(id)
-  asset_register_image_path(path, handle)
+  asset_register_image_path(canonical_path, handle)
   asset_set_image_array_layout(handle, None)
   asset_set_image_is_srgb(handle, true)
   asset_set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
@@ -542,13 +801,14 @@ pub fn AssetServer::load_with_settings(
   path : String,
   settings : ImageLoaderSettings,
 ) -> Handle[Image] {
+  let canonical_path = asset_canonical_path(path)
   let id = host_asset_load_texture(
-    path~,
+    path=canonical_path,
     nearest=image_sampler_is_nearest(settings.sampler),
   )
-  self.paths.push(path)
+  self.paths.push(canonical_path)
   let handle = Handle::new(id)
-  asset_register_image_path(path, handle)
+  asset_register_image_path(canonical_path, handle)
   asset_set_texture_sampler(handle, settings.sampler)
   asset_set_image_array_layout(handle, settings.array_layout)
   asset_set_image_is_srgb(handle, settings.is_srgb)
@@ -563,9 +823,7 @@ pub fn AssetServer::load_texture_bytes(
   nearest : Bool,
 ) -> Handle[Image] {
   self |> ignore
-  let id = @core.with_host_bytes_id(bytes, fn(bytes_id) {
-    host_asset_load_texture_bytes(bytes_id~, nearest~)
-  })
+  let id = host_asset_load_texture_bytes(bytes~, nearest~)
   let handle = Handle::new(id)
   asset_set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
   handle
@@ -594,8 +852,9 @@ pub fn AssetServer::load_wgsl(
   self : AssetServer,
   path : String,
 ) -> Handle[Shader] {
-  let id = host_asset_load_wgsl(path~)
-  self.paths.push(path)
+  let canonical_path = asset_canonical_path(path)
+  let id = host_asset_load_wgsl(path=canonical_path)
+  self.paths.push(canonical_path)
   Handle::new(id)
 }
 
@@ -604,10 +863,26 @@ pub fn AssetServer::load_bytes(
   self : AssetServer,
   path : String,
 ) -> Handle[Blob] {
-  let id = host_asset_load_bytes(path~)
-  self.paths.push(path)
+  let canonical_path = asset_canonical_path(path)
+  let id = host_asset_load_bytes(path=canonical_path)
+  self.paths.push(canonical_path)
   Blob::{  } |> ignore
   Handle::new(id)
+}
+
+///|
+pub fn AssetServer::load_with_registered_loader(
+  self : AssetServer,
+  path : String,
+  nearest : Bool,
+) -> Int {
+  let canonical_path = asset_canonical_path(path)
+  let id = host_asset_load_with_registered_loader(
+    path=canonical_path,
+    nearest~,
+  )
+  self.paths.push(canonical_path)
+  id
 }
 
 ///|
@@ -715,18 +990,15 @@ pub fn asset_update_texture_region_rgba8_mip(
 ) -> Unit {
   let size = rect.size()
   let safe_mip_level = if mip_level < 0 { 0 } else { mip_level }
-  @core.with_host_bytes_id(pixels_rgba8, fn(bytes_id) {
-    host_asset_update_texture_region_mip_bytes(
-      texture_id=texture.id(),
-      x=rect.min.x,
-      y=rect.min.y,
-      width=size.x,
-      height=size.y,
-      mip_level=safe_mip_level,
-      bytes_id~,
-    )
-  })
-  |> ignore
+  host_asset_update_texture_region_mip_bytes(
+    texture_id=texture.id(),
+    x=rect.min.x,
+    y=rect.min.y,
+    width=size.x,
+    height=size.y,
+    mip_level=safe_mip_level,
+    bytes=pixels_rgba8,
+  )
 }
 
 ///|
@@ -775,9 +1047,7 @@ pub fn asset_copy_texture_to_texture(
 
 ///|
 pub fn asset_save_texture_png(texture : Handle[Image], path : String) -> Unit {
-  @core.with_host_string_id(path, fn(path_id) {
-    host_asset_save_texture_png_id(texture_id=texture.id(), path_id~)
-  })
+  @native_asset.save_texture_png(texture_id=texture.id(), path~)
 }
 
 ///|

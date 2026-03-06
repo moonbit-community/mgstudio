@@ -195,22 +195,34 @@ pub fn ScheduleRunnerPlugin::run_loop(
 }
 
 ///|
-fn host_app_run_loop(step : FuncRef[() -> Unit], interval_ms~ : Int) -> Unit = "mgstudio_host" "app_run_loop"
+fn host_app_run_loop(step : FuncRef[() -> Unit], interval_ms~ : Int) -> Unit {
+  @native_app.run_loop(step, interval_ms~)
+}
 
 ///|
-fn host_app_request_close() -> Unit = "mgstudio_host" "app_request_close"
+fn host_app_request_close() -> Unit {
+  @native_app.request_close()
+}
 
 ///|
-fn host_app_reset_close() -> Unit = "mgstudio_host" "app_reset_close"
+fn host_app_reset_close() -> Unit {
+  @native_app.reset_close()
+}
 
 ///|
-fn host_app_stdin_read_line_len() -> Int = "mgstudio_host" "app_stdin_read_line_len"
+fn host_app_stdin_read_line_len() -> Int {
+  @native_app.stdin_read_line_len()
+}
 
 ///|
-fn host_app_stdin_read_line_code_unit(offset~ : Int) -> Int = "mgstudio_host" "app_stdin_read_line_code_unit"
+fn host_app_stdin_read_line_code_unit(offset~ : Int) -> Int {
+  @native_app.stdin_read_line_code_unit(offset~)
+}
 
 ///|
-fn host_task_pool_set_num_threads(num_threads~ : Int) -> Unit = "mgstudio_host" "task_pool_set_num_threads"
+fn host_task_pool_set_num_threads(num_threads~ : Int) -> Unit {
+  @native_app.task_pool_set_num_threads(num_threads~)
+}
 
 ///|
 priv struct ScheduleRunnerState {

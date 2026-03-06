@@ -64,6 +64,6 @@ fn no_renderer_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub fn game_app() -> Unit {
+fn main {
   @app.App::new(@ecs.World::new()).add_plugins([no_renderer_plugin]).run()
 }

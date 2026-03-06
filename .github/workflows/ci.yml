@@ -8,9 +8,7 @@ on:
   pull_request:
 
 env:
-  # Needed for dependencies that use `gh` in postadd hooks (e.g. wgpu_mbt).
   GH_TOKEN: ${{ github.token }}
-  # CI should be able to run without relying on postadd side effects.
   MOON_IGNORE_POSTADD: "1"
 
 jobs:
@@ -52,21 +50,8 @@ jobs:
           set -euo pipefail
           ./scripts/check_bevy_wgsl_modules.sh
 
-  host-abi:
-    name: host ABI consistency
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Check mgstudio_host ABI
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 scripts/check_host_abi.py
-
-  engine:
-    name: engine (moon check/test)
+  engine-native:
+    name: engine (native check/test/build)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -88,31 +73,38 @@ jobs:
           export PATH="$HOME/.moon/bin:$PATH"
           moon update
 
-      - name: moon check
+      - name: moon check (native)
         shell: bash
         run: |
           set -euo pipefail
           export PATH="$HOME/.moon/bin:$PATH"
-          moon -C mgstudio-engine check
+          moon -C mgstudio-engine check --target native
 
-      - name: moon test
+      - name: moon test (native build-only)
         shell: bash
         run: |
           set -euo pipefail
           export PATH="$HOME/.moon/bin:$PATH"
-          # Build test artifacts in CI. Host-backed runtime behavior is covered
-          # by the dedicated examples smoke job below.
-          moon -C mgstudio-engine test --build-only
+          moon -C mgstudio-engine test --target native --build-only
+
+      - name: representative native builds
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon -C mgstudio-engine build --target native examples/2d/sprite
+          moon -C mgstudio-engine build --target native examples/2d/2d_shapes
+          moon -C mgstudio-engine build --target native examples/3d/pbr
+          moon -C mgstudio-engine build --target native examples/3d/3d_shapes
+          moon -C mgstudio-engine build --target native examples/3d/3d_scene
+          moon -C mgstudio-engine build --target native examples/ui/button
 
   engine-examples-smoke:
-    name: engine examples (build + smoke)
+    name: engine examples (native smoke)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
 
       - name: Install MoonBit
         shell: bash
@@ -130,85 +122,9 @@ jobs:
           export PATH="$HOME/.moon/bin:$PATH"
           moon update
 
-      - name: Install runtime smoke dependencies
-        shell: bash
-        run: |
-          set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y xvfb libudev-dev pkg-config
-
-      - name: Smoke gate for representative Bevy parity examples
+      - name: Native smoke gate for representative examples
         shell: bash
         run: |
           set -euo pipefail
           export PATH="$HOME/.moon/bin:$PATH"
-          export MGSTUDIO_SMOKE_RUNTIME=1
-          export MGSTUDIO_RUNNER="xvfb-run -a"
           ./scripts/smoke_bevy_examples.sh
-
-  runtime-native-wasmtime:
-    name: runtime/native-wasmtime (cargo check/test)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install native dependencies
-        shell: bash
-        run: |
-          set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y libudev-dev pkg-config
-
-      - name: cargo check
-        shell: bash
-        run: |
-          set -euo pipefail
-          cargo check --manifest-path mgstudio-runtime/native-wasmtime/Cargo.toml
-
-      - name: cargo test
-        shell: bash
-        run: |
-          set -euo pipefail
-          cargo test --manifest-path mgstudio-runtime/native-wasmtime/Cargo.toml
-
-  runtime-web:
-    name: runtime/web (moon check/test)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install MoonBit
-        shell: bash
-        run: |
-          set -euo pipefail
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
-          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
-          export PATH="$HOME/.moon/bin:$PATH"
-          moon version
-
-      - name: Update MoonBit registry
-        shell: bash
-        run: |
-          set -euo pipefail
-          export PATH="$HOME/.moon/bin:$PATH"
-          moon update
-
-      - name: moon check
-        shell: bash
-        run: |
-          set -euo pipefail
-          export PATH="$HOME/.moon/bin:$PATH"
-          moon -C mgstudio-runtime/web clean
-          moon -C mgstudio-runtime/web check
-
-      - name: moon test
-        shell: bash
-        run: |
-          set -euo pipefail
-          export PATH="$HOME/.moon/bin:$PATH"
-          moon -C mgstudio-runtime/web test

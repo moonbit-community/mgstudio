@@ -16,6 +16,6 @@
 /// Port of `bevy/examples/app/empty.rs`.
 
 ///|
-pub fn game_app() -> Unit {
+fn main {
   @app.App::new(@ecs.World::new()).run()
 }

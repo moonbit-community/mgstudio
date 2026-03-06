@@ -570,7 +570,13 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let point_diff = lambert(normal, point_dir);
   let point_back_diff = lambert(-normal, point_dir);
   let point_shadow_enabled = u_mesh.point_shadow_params.x > 0.5;
-  let point_shadow_uv = cubemap_stacked_vertical_uv(in.world_pos - u_mesh.point_pos_range.xyz);
+  // Match Bevy's cubemap shadow sampling convention:
+  // sample direction is transformed to cubemap LH space by flipping Z.
+  let point_shadow_uv = cubemap_stacked_vertical_uv(vec3<f32>(
+    in.world_pos.x - u_mesh.point_pos_range.x,
+    in.world_pos.y - u_mesh.point_pos_range.y,
+    -(in.world_pos.z - u_mesh.point_pos_range.z),
+  ));
   let point_shadow_depth = textureSampleLevel(
     u_point_shadow_texture,
     u_material_sampler,

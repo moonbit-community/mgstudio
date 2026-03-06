@@ -15,7 +15,7 @@
 ///|
 /// Adapted line-by-line from:
 /// https://github.com/dimforge/bevy_rapier/blob/master/bevy_rapier3d/examples/events3.rs
-pub fn game_app() -> Unit {
+fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)

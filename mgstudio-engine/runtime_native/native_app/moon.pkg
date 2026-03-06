@@ -1,0 +1,4 @@
+// Canonical native runtime implementation package.
+import {
+  "moonbitlang/core/ref",
+}

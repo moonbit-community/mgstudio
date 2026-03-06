@@ -28,7 +28,7 @@ pub struct Velocity {
 } derive(Show, Eq, ToJson, FromJson)
 
 ///|
-pub fn game_app() -> Unit {
+fn main {
   let comp_position : @ecs.ComponentKey[Position] = @ecs.register_component(
     debug_name="examples.ecs_json_move.position",
   )

@@ -207,7 +207,9 @@ pub impl @app.Resource for Time with resource() {
 }
 
 ///|
-pub fn host_time_now() -> Float = "mgstudio_host" "time_now"
+pub fn host_time_now() -> Float {
+  @native_time.now()
+}
 
 ///|
 pub fn time_update() -> Unit {

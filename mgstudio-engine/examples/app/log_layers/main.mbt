@@ -47,7 +47,7 @@ fn log_system(_world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn game_app() -> Unit {
+fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   let log_plugin = @app.LogPlugin::default()
     .with_custom_layer(custom_layer)

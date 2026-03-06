@@ -23,6 +23,6 @@ fn setup_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn game_app() -> Unit {
+fn main {
   @app.App::new(@ecs.World::new()).add_system(setup_system).run()
 }

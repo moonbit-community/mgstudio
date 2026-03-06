@@ -410,8 +410,10 @@ fn decode_ivec2(json : Json) -> @math.IVec2 {
 
 ///|
 fn decode_rect(json : Json) -> @math.Rect {
-  let (min_json, max_json) : (Json, Json) = try! @json.from_json(json)
-  @math.Rect::new(decode_vec2(min_json), decode_vec2(max_json))
+  let (min_x, min_y, max_x, max_y) : (Float, Float, Float, Float) = try! @json.from_json(
+    json,
+  )
+  @math.Rect::new(@math.Vec2::new(min_x, min_y), @math.Vec2::new(max_x, max_y))
 }
 
 ///|

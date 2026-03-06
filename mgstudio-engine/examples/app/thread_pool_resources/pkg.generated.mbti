@@ -2,7 +2,7 @@
 package "Milky2018/mgstudio/examples/app/thread_pool_resources"
 
 // Values
-pub fn game_app() -> Unit
+pub fn main() -> Unit
 
 // Errors
 

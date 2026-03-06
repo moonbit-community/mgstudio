@@ -530,106 +530,148 @@ let input_primary_pointer_delta_ref : Ref[@math.Vec2] = Ref::new(
 )
 
 ///|
-fn host_input_is_key_down_id(code_id : Int) -> Bool = "mgstudio_host" "input_is_key_down"
+fn host_input_is_key_down(code : String) -> Bool {
+  @native_input.is_key_down(code)
+}
 
 ///|
-fn host_input_is_key_just_pressed_id(code_id : Int) -> Bool = "mgstudio_host" "input_is_key_just_pressed"
+fn host_input_is_key_just_pressed(code : String) -> Bool {
+  @native_input.is_key_just_pressed(code)
+}
 
 ///|
-fn host_input_is_key_just_released_id(code_id : Int) -> Bool = "mgstudio_host" "input_is_key_just_released"
+fn host_input_is_key_just_released(code : String) -> Bool {
+  @native_input.is_key_just_released(code)
+}
 
 ///|
-fn host_input_is_key_repeated_id(code_id : Int) -> Bool = "mgstudio_host" "input_is_key_repeated"
+fn host_input_is_key_repeated(code : String) -> Bool {
+  @native_input.is_key_repeated(code)
+}
 
 ///|
-pub fn host_input_finish_frame() -> Unit = "mgstudio_host" "input_finish_frame"
+pub fn host_input_finish_frame() -> Unit {
+  @native_input.finish_frame()
+}
 
 ///|
-fn host_input_is_mouse_button_down_id(button_id : Int) -> Bool = "mgstudio_host" "input_is_mouse_button_down"
+fn host_input_is_mouse_button_down(button : String) -> Bool {
+  @native_input.is_mouse_button_down(button)
+}
 
 ///|
-fn host_input_is_mouse_button_just_pressed_id(button_id : Int) -> Bool = "mgstudio_host" "input_is_mouse_button_just_pressed"
+fn host_input_is_mouse_button_just_pressed(button : String) -> Bool {
+  @native_input.is_mouse_button_just_pressed(button)
+}
 
 ///|
-fn host_input_is_mouse_button_just_released_id(button_id : Int) -> Bool = "mgstudio_host" "input_is_mouse_button_just_released"
+fn host_input_is_mouse_button_just_released(button : String) -> Bool {
+  @native_input.is_mouse_button_just_released(button)
+}
 
 ///|
-pub fn host_input_mouse_x() -> Float = "mgstudio_host" "input_mouse_x"
+pub fn host_input_mouse_x() -> Float {
+  @native_input.mouse_x()
+}
 
 ///|
-pub fn host_input_mouse_y() -> Float = "mgstudio_host" "input_mouse_y"
+pub fn host_input_mouse_y() -> Float {
+  @native_input.mouse_y()
+}
 
 ///|
-pub fn host_input_has_cursor() -> Bool = "mgstudio_host" "input_has_cursor"
+pub fn host_input_has_cursor() -> Bool {
+  @native_input.has_cursor()
+}
 
 ///|
-pub fn host_input_wheel_x() -> Float = "mgstudio_host" "input_wheel_x"
+pub fn host_input_wheel_x() -> Float {
+  @native_input.wheel_x()
+}
 
 ///|
-pub fn host_input_wheel_y() -> Float = "mgstudio_host" "input_wheel_y"
+pub fn host_input_wheel_y() -> Float {
+  @native_input.wheel_y()
+}
 
 ///|
-fn host_input_text_event_count() -> Int = "mgstudio_host" "input_text_event_count"
+fn host_input_text_event_count() -> Int {
+  @native_input.text_event_count()
+}
 
 ///|
-fn host_input_text_event_len(index~ : Int) -> Int = "mgstudio_host" "input_text_event_len"
+fn host_input_text_event_len(index~ : Int) -> Int {
+  @native_input.text_event_len(index~)
+}
 
 ///|
-fn host_input_text_event_code_unit(index~ : Int, offset~ : Int) -> Int = "mgstudio_host" "input_text_event_code_unit"
+fn host_input_text_event_code_unit(index~ : Int, offset~ : Int) -> Int {
+  @native_input.text_event_code_unit(index~, offset~)
+}
 
 ///|
-fn host_input_touch_event_count() -> Int = "mgstudio_host" "input_touch_event_count"
+fn host_input_touch_event_count() -> Int {
+  @native_input.touch_event_count()
+}
 
 ///|
-fn host_input_touch_event_id(index~ : Int) -> Int = "mgstudio_host" "input_touch_event_id"
+fn host_input_touch_event_id(index~ : Int) -> Int {
+  @native_input.touch_event_id(index~)
+}
 
 ///|
-fn host_input_touch_event_phase(index~ : Int) -> Int = "mgstudio_host" "input_touch_event_phase"
+fn host_input_touch_event_phase(index~ : Int) -> Int {
+  @native_input.touch_event_phase(index~)
+}
 
 ///|
-fn host_input_touch_event_x(index~ : Int) -> Float = "mgstudio_host" "input_touch_event_x"
+fn host_input_touch_event_x(index~ : Int) -> Float {
+  @native_input.touch_event_x(index~)
+}
 
 ///|
-fn host_input_touch_event_y(index~ : Int) -> Float = "mgstudio_host" "input_touch_event_y"
+fn host_input_touch_event_y(index~ : Int) -> Float {
+  @native_input.touch_event_y(index~)
+}
 
 ///|
-fn host_input_drag_and_drop_event_count() -> Int = "mgstudio_host" "input_drag_and_drop_event_count"
+fn host_input_drag_and_drop_event_count() -> Int {
+  @native_input.drag_and_drop_event_count()
+}
 
 ///|
-fn host_input_drag_and_drop_event_kind(index~ : Int) -> Int = "mgstudio_host" "input_drag_and_drop_event_kind"
+fn host_input_drag_and_drop_event_kind(index~ : Int) -> Int {
+  @native_input.drag_and_drop_event_kind(index~)
+}
 
 ///|
-fn host_input_drag_and_drop_event_len(index~ : Int) -> Int = "mgstudio_host" "input_drag_and_drop_event_len"
+fn host_input_drag_and_drop_event_len(index~ : Int) -> Int {
+  @native_input.drag_and_drop_event_len(index~)
+}
 
 ///|
-fn host_input_drag_and_drop_event_code_unit(index~ : Int, offset~ : Int) -> Int = "mgstudio_host" "input_drag_and_drop_event_code_unit"
+fn host_input_drag_and_drop_event_code_unit(index~ : Int, offset~ : Int) -> Int {
+  @native_input.drag_and_drop_event_code_unit(index~, offset~)
+}
 
 ///|
 pub fn key_pressed(code : @window.KeyCode) -> Bool {
-  @core.with_host_string_id(keycode_to_string(code), fn(code_id) {
-    host_input_is_key_down_id(code_id)
-  })
+  host_input_is_key_down(keycode_to_string(code))
 }
 
 ///|
 pub fn key_just_pressed(code : @window.KeyCode) -> Bool {
-  @core.with_host_string_id(keycode_to_string(code), fn(code_id) {
-    host_input_is_key_just_pressed_id(code_id)
-  })
+  host_input_is_key_just_pressed(keycode_to_string(code))
 }
 
 ///|
 pub fn key_just_released(code : @window.KeyCode) -> Bool {
-  @core.with_host_string_id(keycode_to_string(code), fn(code_id) {
-    host_input_is_key_just_released_id(code_id)
-  })
+  host_input_is_key_just_released(keycode_to_string(code))
 }
 
 ///|
 pub fn key_repeated(code : @window.KeyCode) -> Bool {
-  @core.with_host_string_id(keycode_to_string(code), fn(code_id) {
-    host_input_is_key_repeated_id(code_id)
-  })
+  host_input_is_key_repeated(keycode_to_string(code))
 }
 
 ///|
@@ -731,23 +773,17 @@ let mouse_event_buttons : Array[@window.MouseButton] = [Left, Right, Middle]
 
 ///|
 pub fn mouse_button_pressed(button : @window.MouseButton) -> Bool {
-  @core.with_host_string_id(mouse_button_to_string(button), fn(button_id) {
-    host_input_is_mouse_button_down_id(button_id)
-  })
+  host_input_is_mouse_button_down(mouse_button_to_string(button))
 }
 
 ///|
 pub fn mouse_button_just_pressed(button : @window.MouseButton) -> Bool {
-  @core.with_host_string_id(mouse_button_to_string(button), fn(button_id) {
-    host_input_is_mouse_button_just_pressed_id(button_id)
-  })
+  host_input_is_mouse_button_just_pressed(mouse_button_to_string(button))
 }
 
 ///|
 pub fn mouse_button_just_released(button : @window.MouseButton) -> Bool {
-  @core.with_host_string_id(mouse_button_to_string(button), fn(button_id) {
-    host_input_is_mouse_button_just_released_id(button_id)
-  })
+  host_input_is_mouse_button_just_released(mouse_button_to_string(button))
 }
 
 ///|

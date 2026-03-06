@@ -15,13 +15,10 @@
 
 set -euo pipefail
 
-SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
-REPO_DIR=$(cd "$SCRIPT_DIR/.." && pwd)
-
-ENGINE_DIR="$REPO_DIR/mgstudio-engine"
-RUNTIME_WEB_DIR="$REPO_DIR/mgstudio-runtime/web"
-
-DIST_DIR="$SCRIPT_DIR/dist"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+ENGINE_DIR="${REPO_DIR}/mgstudio-engine"
+DIST_DIR="${SCRIPT_DIR}/dist"
 
 fn_title_case() {
   printf '%s' "$1" | tr '_' ' ' | awk '{
@@ -32,101 +29,52 @@ fn_title_case() {
   }'
 }
 
-generate_examples_menu() {
-  local dist_dir="$1"
-  local menu_html="$2"
-  local version="$3"
-  local current_group=""
-  local found=0
+generate_example_cards() {
+  local engine_dir="$1"
+  local out_file="$2"
 
-  while IFS= read -r wasm_rel; do
-    found=1
-    local path_no_prefix="${wasm_rel#examples/}"
-    local group="${path_no_prefix%%/*}"
-    local example_name
-    example_name="$(basename "$wasm_rel" .wasm)"
-    local group_label
-    group_label="$(fn_title_case "$group")"
-    local example_label
-    example_label="$(fn_title_case "$example_name")"
+  find "${engine_dir}/examples" -mindepth 2 -maxdepth 2 -type d | sort | while read -r dir; do
+    local pkg_rel="${dir#${engine_dir}/}"
+    local group name title group_label parity_note
+    group="$(basename "$(dirname "${pkg_rel}")")"
+    name="$(basename "${pkg_rel}")"
+    title="$(fn_title_case "${name}")"
+    group_label="$(fn_title_case "${group}")"
+    parity_note="${REPO_DIR}/docs/parity/notes/${group}_${name}.md"
 
-    if [[ "$group" != "$current_group" ]]; then
-      if [[ -n "$current_group" ]]; then
-        printf '%s\n' "      </div>" "    </section>" >> "$menu_html"
+    {
+      echo '        <article class="example-card">'
+      echo "          <h3>${title}</h3>"
+      echo "          <p class=\"example-meta\">group: ${group_label}</p>"
+      echo "          <code>moon -C mgstudio-engine run --target native ${pkg_rel}</code>"
+      if [[ -f "${parity_note}" ]]; then
+        echo "          <a href=\"../docs/parity/notes/${group}_${name}.md\">parity note</a>"
       fi
-      printf '%s\n' \
-        "    <section class=\"example-group\">" \
-        "      <h2>${group_label}</h2>" \
-        "      <div class=\"example-buttons\">" >> "$menu_html"
-      current_group="$group"
-    fi
-
-    printf '        <button type="button" data-wasm="./%s?v=%s">%s</button>\n' \
-      "$wasm_rel" \
-      "$version" \
-      "$example_label" >> "$menu_html"
-  done < <(find "$dist_dir/examples" -name '*.wasm' -print | sed "s|$dist_dir/||" | sort)
-
-  if [[ "$found" -eq 0 ]]; then
-    echo "No built wasm examples found under $dist_dir/examples" >&2
-    exit 1
-  fi
-
-  printf '%s\n' "      </div>" "    </section>" >> "$menu_html"
+      echo '        </article>'
+    } >> "${out_file}"
+  done
 }
 
-echo "Building engine examples (single parallel build)..."
-moon -C "$ENGINE_DIR" build --release
+rm -rf "${DIST_DIR}"
+mkdir -p "${DIST_DIR}"
 
-echo "Building web runtime JS bundle..."
-moon -C "$RUNTIME_WEB_DIR" build --release --target js
+CARDS_HTML="$(mktemp)"
+INDEX_OUT="$(mktemp)"
 
-RUNTIME_BUNDLE="$RUNTIME_WEB_DIR/_build/js/release/build/mgstudio-runtime-web.js"
-if [[ ! -f "$RUNTIME_BUNDLE" ]]; then
-  echo "Runtime JS bundle not found at $RUNTIME_BUNDLE" >&2
-  exit 1
-fi
+generate_example_cards "${ENGINE_DIR}" "${CARDS_HTML}"
 
-EXAMPLES_DIR="$ENGINE_DIR/_build/wasm/release/build/examples"
-if [[ ! -d "$EXAMPLES_DIR" ]]; then
-  echo "Examples output directory not found at $EXAMPLES_DIR" >&2
-  exit 1
-fi
-
-ASSETS_DIR="$ENGINE_DIR/assets"
-if [[ ! -d "$ASSETS_DIR" ]]; then
-  echo "Engine assets directory not found at $ASSETS_DIR" >&2
-  exit 1
-fi
-
-rm -rf "$DIST_DIR"
-mkdir -p "$DIST_DIR"
-
-cp "$RUNTIME_BUNDLE" "$DIST_DIR/mgstudio-runtime-web.js"
-
-echo "Copying examples into page dist..."
-rsync -a --delete "$EXAMPLES_DIR/" "$DIST_DIR/examples/"
-
-echo "Copying assets into page dist..."
-rsync -a --delete "$ASSETS_DIR/" "$DIST_DIR/assets/"
-
-echo "Generating examples menu..."
-RUNTIME_VERSION=$(date +%s)
-MENU_HTML=$(mktemp)
-INDEX_OUT=$(mktemp)
-generate_examples_menu "$DIST_DIR" "$MENU_HTML" "$RUNTIME_VERSION"
-awk -v menu_file="$MENU_HTML" '
-  /__EXAMPLE_GROUPS__/ {
-    while ((getline line < menu_file) > 0) {
+awk -v cards_file="${CARDS_HTML}" '
+  /__EXAMPLE_CARDS__/ {
+    while ((getline line < cards_file) > 0) {
       print line
     }
-    close(menu_file)
+    close(cards_file)
     next
   }
   { print }
-' "$SCRIPT_DIR/index.html" > "$INDEX_OUT"
-sed "s/__RUNTIME_VERSION__/$RUNTIME_VERSION/g" "$INDEX_OUT" > "$DIST_DIR/index.html"
-rm -f "$MENU_HTML"
-rm -f "$INDEX_OUT"
+' "${SCRIPT_DIR}/index.html" > "${INDEX_OUT}"
 
-echo "Built: $DIST_DIR"
+cp "${INDEX_OUT}" "${DIST_DIR}/index.html"
+rm -f "${CARDS_HTML}" "${INDEX_OUT}"
+
+echo "Built docs-only page: ${DIST_DIR}"

@@ -398,7 +398,7 @@ fn adjust_focus_and_mode(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn game_app() -> Unit {
+fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)

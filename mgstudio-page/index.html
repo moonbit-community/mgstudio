@@ -18,134 +18,140 @@ limitations under the License.
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Moon Game Studio</title>
+    <title>Moon Game Studio Native Examples</title>
     <style>
       :root {
-        --content-max-width: 1280px;
+        --content-max-width: 1120px;
+        --bg: #f5f6f8;
+        --text: #1f2328;
+        --card: #ffffff;
+        --line: #d0d7de;
+        --accent: #0a7a5d;
       }
-      html,
+      * {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
-        padding: 0;
-        width: 100%;
-        min-height: 100%;
-        background: #0b0f16;
-        color: #ffffff;
+        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        color: var(--text);
+        background: radial-gradient(circle at top right, #e7f9f4, var(--bg) 40%);
       }
-      body {
-        box-sizing: border-box;
-        padding: 24px 16px 28px;
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        overflow: auto;
-        font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      }
-      .page {
+      main {
         width: min(100%, var(--content-max-width));
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 16px;
+        margin: 0 auto;
+        padding: 28px 16px 36px;
+        display: grid;
+        gap: 20px;
       }
-      .page-title {
+      h1 {
         margin: 0;
         font-size: 30px;
-        font-weight: 600;
-        letter-spacing: 0.03em;
+        line-height: 1.2;
       }
-      #mgstudio-canvas {
-        display: block;
-        width: 100%;
-        height: auto;
-        aspect-ratio: 16 / 9;
-        background: #070b12;
-        border: 1px solid rgba(255, 255, 255, 0.16);
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--line);
         border-radius: 12px;
-        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+        padding: 16px;
       }
-      .menu {
-        width: 100%;
-        padding: 12px 16px;
-        background: rgba(8, 12, 20, 0.8);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
+      .panel h2 {
+        margin: 0 0 10px;
+        font-size: 18px;
+      }
+      .panel p {
+        margin: 0;
+        line-height: 1.5;
+      }
+      .quickstart code,
+      .example-card code {
+        display: block;
+        margin-top: 8px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        background: #f6f8fa;
+        border: 1px solid var(--line);
+        font-family: "IBM Plex Mono", Menlo, monospace;
         font-size: 12px;
-        color: #f6f8ff;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
         overflow: auto;
       }
-      .menu h2 {
-        font-size: 14px;
-        margin: 0 0 2px 0;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: rgba(246, 248, 255, 0.7);
-      }
-      .menu-grid {
+      .grid {
         display: grid;
         gap: 12px;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        align-items: start;
       }
-      .example-group {
+      .example-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 12px;
         display: grid;
         gap: 8px;
       }
-      .example-group h2 {
+      .example-card h3 {
         margin: 0;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: rgba(246, 248, 255, 0.65);
+        font-size: 15px;
       }
-      .example-buttons {
-        display: grid;
-        gap: 8px;
-      }
-      .menu button {
-        appearance: none;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 8px;
-        padding: 8px 10px;
-        background: rgba(28, 36, 58, 0.9);
-        color: #f6f8ff;
-        cursor: pointer;
+      .example-meta {
+        margin: 0;
+        color: #57606a;
         font-size: 12px;
-        text-align: left;
       }
-      .menu button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
+      .example-card a {
+        color: var(--accent);
+        font-size: 12px;
+        text-decoration: none;
+      }
+      .links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .links a {
+        color: var(--accent);
+        text-decoration: none;
       }
       @media (max-width: 980px) {
-        .menu-grid {
+        .grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
       }
-      @media (max-width: 680px) {
-        .menu-grid {
-          grid-template-columns: 1fr;
-        }
-        .page-title {
+      @media (max-width: 640px) {
+        h1 {
           font-size: 24px;
+        }
+        .grid {
+          grid-template-columns: 1fr;
         }
       }
     </style>
   </head>
   <body>
-    <main class="page">
-      <h1 class="page-title">Moon Game Studio Examples</h1>
-      <canvas id="mgstudio-canvas" width="1280" height="720" data-mgstudio-size-mode="responsive"></canvas>
-      <div id="mgstudio-menu" class="menu">
-        <h2>Examples</h2>
-        <div class="menu-grid">
-          <!-- __EXAMPLE_GROUPS__ -->
+    <main>
+      <section>
+        <h1>Moon Game Studio Native Examples</h1>
+      </section>
+
+      <section class="panel quickstart">
+        <h2>Quick Start (Native)</h2>
+        <p>This repository is native-only. Web runtime and WASM runner were removed.</p>
+        <code>moon -C mgstudio-engine run --target native examples/3d/3d_scene</code>
+      </section>
+
+      <section class="panel">
+        <h2>Example Catalog</h2>
+        <div class="grid">
+          <!-- __EXAMPLE_CARDS__ -->
         </div>
-      </div>
+      </section>
+
+      <section class="panel">
+        <h2>Parity Resources</h2>
+        <div class="links">
+          <a href="../docs/parity/README.md">Parity Overview</a>
+          <a href="../docs/parity/notes/3d_3d_scene.md">3d_scene Note</a>
+        </div>
+      </section>
     </main>
-    <script type="module" src="./mgstudio-runtime-web.js?v=__RUNTIME_VERSION__"></script>
   </body>
 </html>

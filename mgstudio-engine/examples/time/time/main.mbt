@@ -147,7 +147,7 @@ fn time_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
 }
 
 ///|
-pub fn game_app() -> Unit {
+fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = [
     fn(app : @app.App[@ecs.World]) { @my_time.time_plugin(app) },
   ]

@@ -6,7 +6,7 @@ import {
 }
 
 // Values
-pub fn game_app() -> Unit
+pub fn main() -> Unit
 
 // Errors
 

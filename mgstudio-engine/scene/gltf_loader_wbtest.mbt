@@ -45,6 +45,14 @@ fn sampler_tag(sampler : @asset.ImageSampler) -> Int {
 }
 
 ///|
+fn label_option_text(label : GltfAssetLabel?) -> String {
+  match label {
+    Some(value) => "Some(" + value.to_label() + ")"
+    None => "None"
+  }
+}
+
+///|
 test "scene gltf wb: decode data uri base64" {
   let decoded = data_uri_decode_bytes(
     "data:application/octet-stream;base64,AAEC/w==",
@@ -406,7 +414,7 @@ test "scene gltf wb: parse animation channels and samplers" {
   inspect(doc.animations[0].channels.length(), content="4")
   inspect(doc.animations[0].samplers[1].is_cubic_spline, content="false")
   inspect(doc.animations[0].samplers[2].is_cubic_spline, content="true")
-  inspect(doc.animations[0].channels[3].target_path, content="\"weights\"")
+  inspect(doc.animations[0].channels[3].target_path, content="weights")
 }
 
 ///|
@@ -509,4 +517,34 @@ test "scene gltf wb: build animation clip tracks and fallback node paths" {
   inspect(weights.length(), content="2")
   inspect(weights[0] >= 0.19F && weights[0] <= 0.21F, content="true")
   inspect(weights[1] >= 0.79F && weights[1] <= 0.81F, content="true")
+}
+
+///|
+test "scene gltf wb: split labeled gltf path with extended labels" {
+  let scene_label = scene_split_gltf_asset_path("models/Foo/Foo.gltf#Scene2")
+  inspect(scene_label.0, content="models/Foo/Foo.gltf")
+  inspect(label_option_text(scene_label.1), content="Some(Scene2)")
+
+  let primitive_label = scene_split_gltf_asset_path(
+    "models/Foo/Foo.gltf#Mesh3/Primitive1",
+  )
+  inspect(primitive_label.0, content="models/Foo/Foo.gltf")
+  inspect(
+    label_option_text(primitive_label.1),
+    content="Some(Mesh3/Primitive1)",
+  )
+
+  let inverse_bind_label = scene_split_gltf_asset_path(
+    "models/Foo/Foo.gltf#Skin4/InverseBindMatrices",
+  )
+  inspect(
+    label_option_text(inverse_bind_label.1),
+    content="Some(Skin4/InverseBindMatrices)",
+  )
+
+  let unknown_label = scene_split_gltf_asset_path(
+    "models/Foo/Foo.gltf#NotALabel",
+  )
+  inspect(unknown_label.0, content="models/Foo/Foo.gltf")
+  inspect(label_option_text(unknown_label.1), content="None")
 }

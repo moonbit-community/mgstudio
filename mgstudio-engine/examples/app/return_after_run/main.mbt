@@ -28,7 +28,7 @@ fn system(_world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn game_app() -> Unit {
+fn main {
   println("Running Bevy App")
   let plugins = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())

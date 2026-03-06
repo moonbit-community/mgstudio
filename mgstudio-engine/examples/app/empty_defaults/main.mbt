@@ -16,7 +16,7 @@
 /// Port of `bevy/examples/app/empty_defaults.rs`.
 
 ///|
-pub fn game_app() -> Unit {
+fn main {
   let plugins = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new()).add_plugins(plugins).run()
 }

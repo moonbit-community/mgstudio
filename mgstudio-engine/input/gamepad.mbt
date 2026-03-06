@@ -208,37 +208,59 @@ priv struct GamepadSnapshot {
 }
 
 ///|
-fn host_input_gamepad_poll() -> Unit = "mgstudio_host" "input_gamepad_poll"
+fn host_input_gamepad_poll() -> Unit {
+  @native_input.gamepad_poll()
+}
 
 ///|
-fn host_input_gamepad_count() -> Int = "mgstudio_host" "input_gamepad_count"
+fn host_input_gamepad_count() -> Int {
+  @native_input.gamepad_count()
+}
 
 ///|
-fn host_input_gamepad_id(index : Int) -> Int = "mgstudio_host" "input_gamepad_id"
+fn host_input_gamepad_id(index : Int) -> Int {
+  @native_input.gamepad_id(index)
+}
 
 ///|
-fn host_input_gamepad_connected(gamepad_id : Int) -> Bool = "mgstudio_host" "input_gamepad_connected"
+fn host_input_gamepad_connected(gamepad_id : Int) -> Bool {
+  @native_input.gamepad_connected(gamepad_id)
+}
 
 ///|
-fn host_input_gamepad_name_len(gamepad_id : Int) -> Int = "mgstudio_host" "input_gamepad_name_len"
+fn host_input_gamepad_name_len(gamepad_id : Int) -> Int {
+  @native_input.gamepad_name_len(gamepad_id)
+}
 
 ///|
-fn host_input_gamepad_name_code_unit(gamepad_id~ : Int, offset~ : Int) -> Int = "mgstudio_host" "input_gamepad_name_code_unit"
+fn host_input_gamepad_name_code_unit(gamepad_id~ : Int, offset~ : Int) -> Int {
+  @native_input.gamepad_name_code_unit(gamepad_id~, offset~)
+}
 
 ///|
-fn host_input_gamepad_vendor_id(gamepad_id : Int) -> Int = "mgstudio_host" "input_gamepad_vendor_id"
+fn host_input_gamepad_vendor_id(gamepad_id : Int) -> Int {
+  @native_input.gamepad_vendor_id(gamepad_id)
+}
 
 ///|
-fn host_input_gamepad_product_id(gamepad_id : Int) -> Int = "mgstudio_host" "input_gamepad_product_id"
+fn host_input_gamepad_product_id(gamepad_id : Int) -> Int {
+  @native_input.gamepad_product_id(gamepad_id)
+}
 
 ///|
-fn host_input_gamepad_button_value(gamepad_id~ : Int, button~ : Int) -> Float = "mgstudio_host" "input_gamepad_button_value"
+fn host_input_gamepad_button_value(gamepad_id~ : Int, button~ : Int) -> Float {
+  @native_input.gamepad_button_value(gamepad_id~, button~)
+}
 
 ///|
-fn host_input_gamepad_button_pressed(gamepad_id~ : Int, button~ : Int) -> Bool = "mgstudio_host" "input_gamepad_button_pressed"
+fn host_input_gamepad_button_pressed(gamepad_id~ : Int, button~ : Int) -> Bool {
+  @native_input.gamepad_button_pressed(gamepad_id~, button~)
+}
 
 ///|
-fn host_input_gamepad_axis_value(gamepad_id~ : Int, axis~ : Int) -> Float = "mgstudio_host" "input_gamepad_axis_value"
+fn host_input_gamepad_axis_value(gamepad_id~ : Int, axis~ : Int) -> Float {
+  @native_input.gamepad_axis_value(gamepad_id~, axis~)
+}
 
 ///|
 let current_gamepads_ref : Ref[Array[GamepadSnapshot]] = Ref::new([])

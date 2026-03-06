@@ -66,7 +66,7 @@ fn my_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
 }
 
 ///|
-pub fn game_app() -> Unit {
+fn main {
   @app.App::new(@ecs.World::new())
   .insert_resource(Input::{ value: "" })
   .set_runner(my_runner_builder)

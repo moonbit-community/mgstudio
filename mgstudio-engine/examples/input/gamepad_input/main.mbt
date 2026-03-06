@@ -19,7 +19,7 @@
 /// - South button press/release checks are preserved.
 /// - RightTrigger2 and LeftStickX threshold logging is preserved.
 /// - Bevy ECS `(Entity, &Gamepad)` query is adapted to runtime `input.gamepads()`.
-pub fn game_app() -> Unit {
+fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)

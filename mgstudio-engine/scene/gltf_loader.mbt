@@ -182,20 +182,8 @@ priv enum GltfResolveBuffersState {
 ///|
 fn scene_split_gltf_asset_path(
   asset_path : String,
-  marker : String,
-) -> (String, Int) {
-  if asset_path.rev_find(marker) is Some(index) {
-    let start = index + marker.length()
-    if start <= asset_path.length() {
-      let gltf_path = (try! asset_path[0:index]).to_string()
-      let index_string = (try! asset_path[start:asset_path.length()]).to_string()
-      let parsed_index = @strconv.parse_int(index_string[:], base=10) catch {
-        _ => 0
-      }
-      return (gltf_path, if parsed_index < 0 { 0 } else { parsed_index })
-    }
-  }
-  (asset_path, 0)
+) -> (String, GltfAssetLabel?) {
+  gltf_split_asset_path_with_label(asset_path)
 }
 
 ///|
@@ -229,9 +217,11 @@ fn scene_queue_gltf_request(
   scene_asset_path : String,
 ) -> Unit {
   scene_pending_remove_scene_handle(scene_handle)
-  let (gltf_path, scene_index) = scene_split_gltf_asset_path(
-    scene_asset_path, "#Scene",
-  )
+  let (gltf_path, label) = scene_split_gltf_asset_path(scene_asset_path)
+  let scene_index = match label {
+    Some(Scene(index)) => index
+    _ => 0
+  }
   pending_gltf_scene_requests.val.push({
     scene_handle,
     gltf_path,
@@ -250,9 +240,11 @@ fn scene_queue_gltf_animation_request(
   animation_asset_path : String,
 ) -> Unit {
   scene_pending_remove_animation_handle(clip_handle)
-  let (gltf_path, animation_index) = scene_split_gltf_asset_path(
-    animation_asset_path, "#Animation",
-  )
+  let (gltf_path, label) = scene_split_gltf_asset_path(animation_asset_path)
+  let animation_index = match label {
+    Some(Animation(index)) => index
+    _ => 0
+  }
   pending_gltf_animation_requests.val.push({
     clip_handle,
     gltf_path,

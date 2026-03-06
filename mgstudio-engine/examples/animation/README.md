@@ -48,5 +48,5 @@ This folder tracks parity status for Bevy animation examples.
 
 Implemented examples in this folder are checked with:
 
-- `moon check --target wasm --deny-warn --package-path examples/animation/easing_functions`
-- `moon check --target wasm --deny-warn --package-path examples/animation/color_animation`
+- `moon check --target native --deny-warn --package-path examples/animation/easing_functions`
+- `moon check --target native --deny-warn --package-path examples/animation/color_animation`

@@ -19,7 +19,7 @@ const RES_WIDTH : Int = 160
 const RES_HEIGHT : Int = 90
 
 ///|
-pub fn game_app() -> Unit {
+fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)

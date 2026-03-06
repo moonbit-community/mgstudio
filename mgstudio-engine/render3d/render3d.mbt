@@ -6060,6 +6060,12 @@ priv struct AutoExposureHistoryEntry {
 }
 
 ///|
+priv struct Render3dCameraOrderEntry {
+  entity : @core.Entity
+  order : Int
+}
+
+///|
 let motion_blur_history : Ref[Array[MotionBlurHistoryEntry]] = Ref::new([])
 
 ///|
@@ -6079,6 +6085,12 @@ let point_light_shadow_targets : Ref[Array[PointLightShadowTargetsEntry]] = Ref:
 
 ///|
 let auto_exposure_history : Ref[Array[AutoExposureHistoryEntry]] = Ref::new([])
+
+///|
+let render3d_prepared_camera_order : Ref[Array[@core.Entity]] = Ref::new([])
+
+///|
+let render3d_queued_visible_mesh_count : Ref[Int] = Ref::new(0)
 
 ///|
 priv struct WireframeMeshCacheEntry {
@@ -9000,6 +9012,69 @@ pub fn free_camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
+fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
+  let camera3d_store = world.component(ecs_key_camera3d)
+  let camera_store = world.component(@render2d.ecs_key_camera)
+  let entries : Array[Render3dCameraOrderEntry] = []
+  camera3d_store.for_each(fn(entity, _camera3d) {
+    let order = match camera_store.get(entity) {
+      Some(camera) => camera.order
+      None => @render2d.Camera::default().order
+    }
+    entries.push(Render3dCameraOrderEntry::{ entity, order })
+  })
+  entries.sort_by(fn(a, b) {
+    let order_cmp = cmp_int(a.order, b.order)
+    if order_cmp != 0 {
+      return order_cmp
+    }
+    let id_cmp = cmp_int(a.entity.id, b.entity.id)
+    if id_cmp != 0 {
+      return id_cmp
+    }
+    cmp_int(a.entity.generation, b.entity.generation)
+  })
+  let sorted : Array[@core.Entity] = []
+  for entry in entries {
+    sorted.push(entry.entity)
+  }
+  sorted
+}
+
+///|
+fn render3d_prepared_camera_indices(
+  cameras : Array[Camera3dInstance],
+) -> Array[Int]? {
+  let prepared = render3d_prepared_camera_order.val
+  if prepared.length() != cameras.length() {
+    return None
+  }
+  let indices : Array[Int] = []
+  for entity in prepared {
+    let mut found_index = -1
+    for i in 0..<cameras.length() {
+      let camera = cameras[i]
+      if camera.entity.id == entity.id &&
+        camera.entity.generation == entity.generation {
+        found_index = i
+        break
+      }
+    }
+    if found_index < 0 {
+      return None
+    }
+    indices.push(found_index)
+  }
+  Some(indices)
+}
+
+///|
+pub fn render3d_extract_system(world : @ecs.World) -> Unit {
+  render3d_prepared_camera_order.val = render3d_sorted_camera_entities(world)
+  render3d_queued_visible_mesh_count.val = 0
+}
+
+///|
 pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let mesh_store = world.component(ecs_key_mesh3d)
@@ -9011,6 +9086,30 @@ pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
     let mesh_id = @render2d.render2d_upload_mesh_handle(mesh.mesh)
     gpu_mesh_store.insert(entity, @render2d.GpuMesh2d::new(mesh_id), tick)
   })
+  if render3d_prepared_camera_order.val.length() == 0 {
+    render3d_prepared_camera_order.val = render3d_sorted_camera_entities(world)
+  }
+}
+
+///|
+pub fn render3d_queue_system(world : @ecs.World) -> Unit {
+  if render3d_prepared_camera_order.val.length() == 0 {
+    render3d_queued_visible_mesh_count.val = 0
+    return
+  }
+  let mesh_store = world.component(ecs_key_mesh3d)
+  let view_visibility_store = world.component(
+    @visibility.ecs_key_view_visibility,
+  )
+  let mut visible_mesh_count = 0
+  mesh_store.for_each(fn(entity, _mesh3d) {
+    if view_visibility_store.get(entity) is Some(view_visibility) &&
+      !view_visibility.is_visible() {
+      return
+    }
+    visible_mesh_count = visible_mesh_count + 1
+  })
+  render3d_queued_visible_mesh_count.val = visible_mesh_count
 }
 
 ///|
@@ -9291,6 +9390,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     }
   })
   if cameras.length() == 0 {
+    render3d_prepared_camera_order.val.clear()
+    render3d_queued_visible_mesh_count.val = 0
     return
   }
   let mesh_store = world.component(ecs_key_mesh3d)
@@ -9386,7 +9487,11 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   camera_motion_blur_history_sync(cameras)
   render3d_auto_exposure_history_sync(cameras)
   let lighting = render3d_collect_lighting(world)
-  for camera_index in render3d_sorted_camera_indices(cameras) {
+  let camera_indices = match render3d_prepared_camera_indices(cameras) {
+    Some(indices) => indices
+    None => render3d_sorted_camera_indices(cameras)
+  }
+  for camera_index in camera_indices {
     let camera = cameras[camera_index]
     let target_width = camera.target_size.x
     let target_height = camera.target_size.y
@@ -10588,6 +10693,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       @window.host_gpu_end_pass()
     }
   }
+  render3d_prepared_camera_order.val.clear()
+  render3d_queued_visible_mesh_count.val = 0
 }
 
 ///|
@@ -11158,9 +11265,52 @@ pub fn wireframe_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
+pub let render3d_set_extract : @app.SystemSet = @app.system_set(
+  "bevy.render3d.extract",
+)
+
+///|
+pub let render3d_set_prepare : @app.SystemSet = @app.system_set(
+  "bevy.render3d.prepare",
+)
+
+///|
+pub let render3d_set_queue : @app.SystemSet = @app.system_set(
+  "bevy.render3d.queue",
+)
+
+///|
+pub let render3d_set_render : @app.SystemSet = @app.system_set(
+  "bevy.render3d.render",
+)
+
+///|
+/// Legacy alias kept for source compatibility.
+pub let render3d_set_execute : @app.SystemSet = render3d_set_render
+
+///|
 pub fn render3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .add_startup_system(init_render3d_resources)
-  .add_system(render3d_prepare_system)
-  .add_system(render3d_execute_system)
+  .add_post_update_system_config(
+    @app.system(render3d_extract_system).in_set(render3d_set_extract),
+  )
+  .add_post_update_system_config(
+    @app.system(render3d_prepare_system).in_set(render3d_set_prepare),
+  )
+  .add_post_update_system_config(
+    @app.system(render3d_queue_system).in_set(render3d_set_queue),
+  )
+  .add_post_update_system_config(
+    @app.system(render3d_execute_system).in_set(render3d_set_render),
+  )
+  .configure_set(@app.PostUpdate, render3d_set_extract, before=[
+    render3d_set_prepare,
+  ])
+  .configure_set(@app.PostUpdate, render3d_set_prepare, before=[
+    render3d_set_queue,
+  ])
+  .configure_set(@app.PostUpdate, render3d_set_queue, before=[
+    render3d_set_render,
+  ])
 }

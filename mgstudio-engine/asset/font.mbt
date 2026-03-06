@@ -17,31 +17,33 @@ pub struct Font {}
 
 ///|
 pub fn host_asset_load_font(path~ : String) -> Int {
-  @core.with_host_string_id(path, fn(path_id) {
-    host_asset_load_font_id(path_id)
-  })
+  @native_asset.load_font(path~)
 }
 
 ///|
-fn host_asset_load_font_id(path_id : Int) -> Int = "mgstudio_host" "asset_load_font"
+pub fn host_asset_font_bytes_len(font_id : Int) -> Int {
+  @native_asset.font_bytes_len(font_id)
+}
 
 ///|
-pub fn host_asset_font_bytes_len(font_id : Int) -> Int = "mgstudio_host" "asset_font_bytes_len"
+pub fn host_asset_font_bytes_get(font_id~ : Int, index~ : Int) -> Int {
+  @native_asset.font_bytes_get(font_id~, index~)
+}
 
 ///|
-pub fn host_asset_font_bytes_get(font_id~ : Int, index~ : Int) -> Int = "mgstudio_host" "asset_font_bytes_get"
-
-///|
-pub fn host_asset_font_bytes_get_u32(font_id~ : Int, index~ : Int) -> Int = "mgstudio_host" "asset_font_bytes_get_u32"
+pub fn host_asset_font_bytes_get_u32(font_id~ : Int, index~ : Int) -> Int {
+  @native_asset.font_bytes_get_u32(font_id~, index~)
+}
 
 ///|
 pub fn AssetServer::load_font(
   self : AssetServer,
   path : String,
 ) -> Handle[Font] {
-  let id = host_asset_load_font(path~)
+  let canonical_path = asset_canonical_path(path)
+  let id = host_asset_load_font(path=canonical_path)
   Font::{  } |> ignore
-  self.paths.push(path)
+  self.paths.push(canonical_path)
   Handle::new(id)
 }
 

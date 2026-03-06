@@ -16,7 +16,7 @@
 /// Port of `bevy/examples/window/clear_color.rs`.
 
 ///|
-pub fn game_app() -> Unit {
+fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .insert_resource(

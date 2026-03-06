@@ -2,6 +2,8 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/runtime_native/native_gpu",
+  "Milky2018/mgstudio/runtime_native/native_window",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }

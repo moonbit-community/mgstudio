@@ -8,12 +8,17 @@
     "Milky2018/moon_zeno": "0.1.0",
     "Milky2018/moon_taffy": "0.2.0",
     "Milky2018/moon_accesskit": "0.2.1",
-    "Milky2018/moon_skrifa": "0.1.5"
+    "Milky2018/moon_skrifa": "0.1.5",
+    "Milky2018/gamepad": "0.4.2",
+    "Milky2018/moon_cpal": "0.11.3",
+    "Milky2018/moon_rodio": "0.1.1",
+    "Milky2018/wgpu_mbt": "0.8.1",
+    "moonbitlang/x": "0.4.40"
   },
   "readme": "README.mbt.md",
   "repository": "",
   "license": "Apache-2.0",
   "keywords": [],
   "description": "",
-  "preferred-target": "wasm"
+  "preferred-target": "native"
 }

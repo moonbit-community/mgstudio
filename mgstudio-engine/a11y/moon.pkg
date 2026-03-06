@@ -2,6 +2,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/moon_accesskit",
+  "Milky2018/mgstudio/runtime_native/native_a11y",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
   "Milky2018/mgstudio/ecs",

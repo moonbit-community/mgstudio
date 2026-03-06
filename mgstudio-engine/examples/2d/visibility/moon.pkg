@@ -14,5 +14,5 @@ import {
 }
 
 options(
-  link: { "wasm": { "exports": [ "game_app" ] } },
+  "is-main": true,
 )

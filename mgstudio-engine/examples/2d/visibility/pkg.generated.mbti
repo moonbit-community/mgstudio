@@ -2,7 +2,7 @@
 package "Milky2018/mgstudio/examples/2d/visibility"
 
 // Values
-pub fn game_app() -> Unit
+pub fn main() -> Unit
 
 // Errors
 

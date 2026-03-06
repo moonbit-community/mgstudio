@@ -25,6 +25,8 @@ pub fn get_scene_instance_ready_store(@ecs.World) -> @ecs.ComponentAccess[SceneI
 
 pub fn get_scene_root_store(@ecs.World) -> @ecs.ComponentAccess[SceneRoot]
 
+pub fn gltf_split_asset_path_with_label(String) -> (String, GltfAssetLabel?)
+
 pub fn scene_get(@asset.Handle[Scene]) -> Scene?
 
 pub fn scene_get_gltf_lod_visibility_policy() -> GltfLodVisibilityPolicy
@@ -54,9 +56,20 @@ pub fn scene_spawn_roots_system_ecs(@ecs.World) -> Unit
 // Types and methods
 pub(all) enum GltfAssetLabel {
   Scene(Int)
+  Node(Int)
+  Mesh(Int)
+  Primitive(Int, Int)
+  MorphTarget(Int, Int)
+  Texture(Int)
+  Material(Int, Bool)
+  DefaultMaterial
   Animation(Int)
+  Skin(Int)
+  InverseBindMatrices(Int)
 }
 pub fn GltfAssetLabel::from_asset(Self, String) -> String
+pub fn GltfAssetLabel::parse(String) -> Self?
+pub fn GltfAssetLabel::to_label(Self) -> String
 
 pub struct GltfLodVisibilityPolicy {
   enabled : Bool
