@@ -71,6 +71,18 @@ pub fn Entities::count_spawned(self : Entities) -> Int {
 }
 
 ///|
+pub fn Entities::alive_entities(self : Entities) -> Array[Entity] {
+  let entities : Array[Entity] = []
+  let len = self.generations.length()
+  for id in 0..<len {
+    if self.alive[id] {
+      entities.push(Entity::{ id, generation: self.generations[id] })
+    }
+  }
+  entities
+}
+
+///|
 pub fn Entities::spawn(self : Entities) -> Entity {
   match self.free.pop() {
     Some(id) => {

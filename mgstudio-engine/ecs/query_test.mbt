@@ -171,3 +171,173 @@ test "ecs query: query3 smallest-store driven iteration and for_each" {
   inspect(try! world.get(e2, comp_accel), content="Some({ax: 9, ay: 10})")
   inspect(try! world.get(e1, comp_accel), content="None")
 }
+
+///|
+test "ecs query: filtered query supports with/without tuples and entity counts" {
+  let world = World::new()
+  let comp_position : ComponentKey[Position] = register_component(
+    debug_name="position_filtered_query",
+  )
+  let comp_velocity : ComponentKey[Velocity] = register_component(
+    debug_name="velocity_filtered_query",
+  )
+  let comp_accel : ComponentKey[Acceleration] = register_component(
+    debug_name="accel_filtered_query",
+  )
+
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  let e2 = world.spawn()
+
+  try! world.set(e0, comp_position, Position::{ x: 1, y: 1 })
+  try! world.set(e1, comp_position, Position::{ x: 2, y: 2 })
+  try! world.set(e1, comp_velocity, Velocity::{ dx: 3, dy: 3 })
+  try! world.set(e2, comp_position, Position::{ x: 4, y: 4 })
+  try! world.set(e2, comp_velocity, Velocity::{ dx: 5, dy: 5 })
+  try! world.set(e2, comp_accel, Acceleration::{ ax: 6, ay: 6 })
+
+  let query = world.query1_filtered(
+    comp_position,
+    (With::new(comp_velocity), Without::new(comp_accel)),
+  )
+  inspect(query.count(), content="1")
+  inspect(try! query.get(e0), content="None")
+  inspect(try! query.get(e1), content="Some({x: 2, y: 2})")
+  inspect(try! query.get(e2), content="None")
+
+  let matched_entities : Array[Int] = []
+  world
+  .query_entities_filtered((With::new(comp_position), Without::new(comp_accel)))
+  .view(fn(entity) { matched_entities.push(entity.id) })
+  inspect(matched_entities, content="[0, 1]")
+}
+
+///|
+test "ecs query: component ref reports added and changed state" {
+  let world = World::new()
+  let comp_position : ComponentKey[Position] = register_component(
+    debug_name="position_component_ref",
+  )
+  let entity = world.spawn()
+
+  try! world.set(entity, comp_position, Position::{ x: 1, y: 2 })
+  let ctx1 = @core.SystemContext::new()
+  ctx1.set(@core.SystemTicks::new(0, 1))
+  world.set_system_context(ctx1)
+  let initial_ref = (try! world.get_ref(entity, comp_position)).unwrap()
+  inspect(initial_ref.value(), content="{x: 1, y: 2}")
+  inspect(initial_ref.is_added(), content="true")
+  inspect(initial_ref.is_changed(), content="true")
+
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
+  inspect(
+    try! world.update(entity, comp_position, fn(position) {
+      Position::{ x: position.x + 10, y: position.y + 20 }
+    }),
+    content="true",
+  )
+  let ctx2 = @core.SystemContext::new()
+  ctx2.set(@core.SystemTicks::new(1, 2))
+  world.set_system_context(ctx2)
+  let changed_ref = (try! world.get_ref(entity, comp_position)).unwrap()
+  inspect(changed_ref.value(), content="{x: 11, y: 22}")
+  inspect(changed_ref.is_added(), content="false")
+  inspect(changed_ref.is_changed(), content="true")
+}
+
+///|
+test "ecs query: changed and added filters follow system ticks" {
+  let world = World::new()
+  let comp_position : ComponentKey[Position] = register_component(
+    debug_name="position_query_changed",
+  )
+  let comp_velocity : ComponentKey[Velocity] = register_component(
+    debug_name="velocity_query_changed",
+  )
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+
+  try! world.set(e0, comp_position, Position::{ x: 1, y: 1 })
+  try! world.set(e1, comp_position, Position::{ x: 2, y: 2 })
+  try! world.set(e1, comp_velocity, Velocity::{ dx: 3, dy: 3 })
+
+  let ctx1 = @core.SystemContext::new()
+  ctx1.set(@core.SystemTicks::new(0, 1))
+  world.set_system_context(ctx1)
+  inspect(
+    world.query1_filtered(comp_position, Added::new(comp_position)).count(),
+    content="2",
+  )
+  inspect(
+    world
+    .query1_filtered(
+      comp_position,
+      Or::new((Changed::new(comp_position), Added::new(comp_velocity))),
+    )
+    .count(),
+    content="2",
+  )
+
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
+  inspect(
+    try! world.update(e1, comp_position, fn(position) {
+      Position::{ x: position.x + 1, y: position.y + 1 }
+    }),
+    content="true",
+  )
+
+  let ctx2 = @core.SystemContext::new()
+  ctx2.set(@core.SystemTicks::new(1, 2))
+  world.set_system_context(ctx2)
+  inspect(
+    world.query1_filtered(comp_position, Added::new(comp_position)).count(),
+    content="0",
+  )
+  inspect(
+    world.query1_filtered(comp_position, Changed::new(comp_position)).count(),
+    content="1",
+  )
+  inspect(
+    world
+    .query1_filtered(
+      comp_position,
+      Or::new((Changed::new(comp_position), Added::new(comp_velocity))),
+    )
+    .count(),
+    content="1",
+  )
+}
+
+///|
+test "ecs query: iter_many_ref preserves filter and change state" {
+  let world = World::new()
+  let comp_position : ComponentKey[Position] = register_component(
+    debug_name="position_iter_many_ref",
+  )
+  let comp_velocity : ComponentKey[Velocity] = register_component(
+    debug_name="velocity_iter_many_ref",
+  )
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  let e2 = world.spawn()
+
+  try! world.set(e0, comp_position, Position::{ x: 1, y: 1 })
+  try! world.set(e1, comp_position, Position::{ x: 2, y: 2 })
+  try! world.set(e1, comp_velocity, Velocity::{ dx: 3, dy: 3 })
+  try! world.set(e2, comp_position, Position::{ x: 4, y: 4 })
+  try! world.set(e2, comp_velocity, Velocity::{ dx: 5, dy: 5 })
+
+  let ctx = @core.SystemContext::new()
+  ctx.set(@core.SystemTicks::new(0, 1))
+  world.set_system_context(ctx)
+
+  let seen : Array[(Int, Bool, Bool)] = []
+  try! world
+  .query1_filtered(comp_position, With::new(comp_velocity))
+  .iter_many_ref([e0, e1, e2], fn(entity, component_ref) {
+    seen.push((entity.id, component_ref.is_added(), component_ref.is_changed()))
+  })
+  inspect(seen, content="[(1, true, true), (2, true, true)]")
+}

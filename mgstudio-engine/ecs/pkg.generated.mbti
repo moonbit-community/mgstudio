@@ -47,6 +47,23 @@ pub(all) suberror EcsError {
 }
 
 // Types and methods
+pub struct Added[T] {
+  key : ComponentKey[T]
+}
+pub fn[T] Added::new(ComponentKey[T]) -> Self[T]
+pub impl[T] QueryFilter for Added[T]
+
+pub struct All {
+}
+pub fn All::new() -> Self
+pub impl QueryFilter for All
+
+pub struct Changed[T] {
+  key : ComponentKey[T]
+}
+pub fn[T] Changed::new(ComponentKey[T]) -> Self[T]
+pub impl[T] QueryFilter for Changed[T]
+
 pub struct ComponentAccess[T] {
   world : World
   key : ComponentKey[T]
@@ -73,6 +90,24 @@ pub fn[U, T] ComponentKey::cast(Self[T]) -> Self[U]
 pub fn[T] ComponentKey::debug_name(Self[T]) -> String
 pub fn[T] ComponentKey::id(Self[T]) -> Int
 
+pub struct ComponentRef[T] {
+  value : T
+  ticks : @core.ComponentTicks
+  system : @core.SystemTicks
+}
+pub fn[T] ComponentRef::is_added(Self[T]) -> Bool
+pub fn[T] ComponentRef::is_changed(Self[T]) -> Bool
+pub fn[T] ComponentRef::ticks(Self[T]) -> @core.ComponentTicks
+pub fn[T] ComponentRef::value(Self[T]) -> T
+
+pub struct EntityQuery[F] {
+  world : World
+  filter : F
+  system : @core.SystemTicks
+}
+pub fn[F : QueryFilter] EntityQuery::count(Self[F]) -> Int
+pub fn[F : QueryFilter] EntityQuery::view(Self[F], (@core.Entity) -> Unit) -> Unit
+
 pub struct EventKey[T] {
   id : Int
   debug_name : String
@@ -82,6 +117,12 @@ pub fn[U, T] EventKey::cast(Self[T]) -> Self[U]
 pub fn[T] EventKey::debug_name(Self[T]) -> String
 pub fn[T] EventKey::id(Self[T]) -> Int
 
+pub struct Or[F] {
+  filters : F
+}
+pub fn[F] Or::new(F) -> Self[F]
+pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F]
+
 pub struct Query1[A] {
   world : World
   key_a : ComponentKey[A]
@@ -89,6 +130,21 @@ pub struct Query1[A] {
 pub fn[A : ToJson + @json.FromJson] Query1::for_each(Self[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
 pub fn[A : @json.FromJson] Query1::get(Self[A], @core.Entity) -> A? raise EcsError
 pub fn[A : @json.FromJson] Query1::view(Self[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
+
+pub struct Query1Filtered[A, F] {
+  world : World
+  key_a : ComponentKey[A]
+  filter : F
+  system : @core.SystemTicks
+}
+pub fn[A, F : QueryFilter] Query1Filtered::count(Self[A, F]) -> Int
+pub fn[A : ToJson + @json.FromJson, F : QueryFilter] Query1Filtered::for_each(Self[A, F], (@core.Entity, A) -> Unit) -> Unit raise EcsError
+pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::get(Self[A, F], @core.Entity) -> A? raise EcsError
+pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::get_ref(Self[A, F], @core.Entity) -> ComponentRef[A]? raise EcsError
+pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::iter_many(Self[A, F], Array[@core.Entity], (@core.Entity, A) -> Unit) -> Unit raise EcsError
+pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::iter_many_ref(Self[A, F], Array[@core.Entity], (@core.Entity, ComponentRef[A]) -> Unit) -> Unit raise EcsError
+pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::view(Self[A, F], (@core.Entity, A) -> Unit) -> Unit raise EcsError
+pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::view_ref(Self[A, F], (@core.Entity, ComponentRef[A]) -> Unit) -> Unit raise EcsError
 
 pub struct Query2[A, B] {
   world : World
@@ -99,6 +155,18 @@ pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] Query2::for_eac
 pub fn[A : @json.FromJson, B : @json.FromJson] Query2::get(Self[A, B], @core.Entity) -> (A, B)? raise EcsError
 pub fn[A : @json.FromJson, B : @json.FromJson] Query2::view(Self[A, B], (@core.Entity, A, B) -> Unit) -> Unit raise EcsError
 
+pub struct Query2Filtered[A, B, F] {
+  world : World
+  key_a : ComponentKey[A]
+  key_b : ComponentKey[B]
+  filter : F
+  system : @core.SystemTicks
+}
+pub fn[A, B, F : QueryFilter] Query2Filtered::count(Self[A, B, F]) -> Int
+pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2Filtered::for_each(Self[A, B, F], (@core.Entity, A, B) -> Unit) -> Unit raise EcsError
+pub fn[A : @json.FromJson, B : @json.FromJson, F : QueryFilter] Query2Filtered::get(Self[A, B, F], @core.Entity) -> (A, B)? raise EcsError
+pub fn[A : @json.FromJson, B : @json.FromJson, F : QueryFilter] Query2Filtered::view(Self[A, B, F], (@core.Entity, A, B) -> Unit) -> Unit raise EcsError
+
 pub struct Query3[A, B, C] {
   world : World
   key_a : ComponentKey[A]
@@ -108,6 +176,19 @@ pub struct Query3[A, B, C] {
 pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson, C : ToJson + @json.FromJson] Query3::for_each(Self[A, B, C], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
 pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] Query3::get(Self[A, B, C], @core.Entity) -> (A, B, C)? raise EcsError
 pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] Query3::view(Self[A, B, C], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
+
+pub struct Query3Filtered[A, B, C, F] {
+  world : World
+  key_a : ComponentKey[A]
+  key_b : ComponentKey[B]
+  key_c : ComponentKey[C]
+  filter : F
+  system : @core.SystemTicks
+}
+pub fn[A, B, C, F : QueryFilter] Query3Filtered::count(Self[A, B, C, F]) -> Int
+pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson, C : ToJson + @json.FromJson, F : QueryFilter] Query3Filtered::for_each(Self[A, B, C, F], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
+pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson, F : QueryFilter] Query3Filtered::get(Self[A, B, C, F], @core.Entity) -> (A, B, C)? raise EcsError
+pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson, F : QueryFilter] Query3Filtered::view(Self[A, B, C, F], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
 
 pub struct RemovedComponents[T] {
   reader : @core.MessageReader[@core.Entity]
@@ -139,6 +220,18 @@ pub fn[T] ResourceKey::id(Self[T]) -> Int
 
 type ResourceSlot
 
+pub struct With[T] {
+  key : ComponentKey[T]
+}
+pub fn[T] With::new(ComponentKey[T]) -> Self[T]
+pub impl[T] QueryFilter for With[T]
+
+pub struct Without[T] {
+  key : ComponentKey[T]
+}
+pub fn[T] Without::new(ComponentKey[T]) -> Self[T]
+pub impl[T] QueryFilter for Without[T]
+
 pub struct World {
   world_id : Int
   entities : @core.Entities
@@ -156,6 +249,7 @@ pub fn[T] World::component(Self, ComponentKey[T]) -> ComponentAccess[T]
 pub fn World::despawn(Self, @core.Entity) -> Unit raise EcsError
 pub fn World::entity_count(Self) -> Int
 pub fn[T : @json.FromJson] World::get(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
+pub fn[A : @json.FromJson] World::get_ref(Self, @core.Entity, ComponentKey[A]) -> ComponentRef[A]? raise EcsError
 pub fn[T : @json.FromJson] World::get_resource(Self, ResourceKey[T]) -> T? raise EcsError
 pub fn[T] World::get_resource_ticks(Self, ResourceKey[T]) -> @core.ComponentTicks?
 pub fn World::get_system_context(Self) -> @core.SystemContext
@@ -165,8 +259,12 @@ pub fn[T : ToJson] World::insert_resource_with_change_tick(Self, ResourceKey[T],
 pub fn World::is_alive(Self, @core.Entity) -> Bool
 pub fn World::new() -> Self
 pub fn[A] World::query1(Self, ComponentKey[A]) -> Query1[A]
+pub fn[A, F] World::query1_filtered(Self, ComponentKey[A], F) -> Query1Filtered[A, F]
 pub fn[A, B] World::query2(Self, ComponentKey[A], ComponentKey[B]) -> Query2[A, B]
+pub fn[A, B, F] World::query2_filtered(Self, ComponentKey[A], ComponentKey[B], F) -> Query2Filtered[A, B, F]
 pub fn[A, B, C] World::query3(Self, ComponentKey[A], ComponentKey[B], ComponentKey[C]) -> Query3[A, B, C]
+pub fn[A, B, C, F] World::query3_filtered(Self, ComponentKey[A], ComponentKey[B], ComponentKey[C], F) -> Query3Filtered[A, B, C, F]
+pub fn[F] World::query_entities_filtered(Self, F) -> EntityQuery[F]
 pub fn World::read_change_tick(Self) -> Int
 pub fn[T : @json.FromJson] World::read_events(Self, EventKey[T]) -> Array[T] raise EcsError
 pub fn[T] World::remove(Self, @core.Entity, ComponentKey[T]) -> Bool raise EcsError
@@ -190,6 +288,18 @@ pub(open) trait Component : ToJson + @json.FromJson {
 
 pub(open) trait EventData : ToJson + @json.FromJson {
 }
+
+pub(open) trait QueryFilter {
+  matches(Self, World, @core.Entity, @core.SystemTicks) -> Bool
+}
+pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B)
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (A, B, C)
+
+pub(open) trait QueryFilterDisjunction {
+  matches_any(Self, World, @core.Entity, @core.SystemTicks) -> Bool
+}
+pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B)
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjunction for (A, B, C)
 
 pub(open) trait ResourceData : ToJson + @json.FromJson {
 }

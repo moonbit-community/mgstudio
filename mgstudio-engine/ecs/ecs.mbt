@@ -238,7 +238,7 @@ pub fn World::despawn(
     let (key_id, store_ref) = entry
     if store_ref.val.remove(entity) is Some(_) {
       self.ensure_removed_component_messages(key_id).val.send(
-        self.change_tick,
+        component_write_change_tick(self),
         entity,
       )
     }
@@ -254,7 +254,11 @@ pub fn[T : ToJson] World::set(
 ) -> Unit raise EcsError {
   self.ensure_entity_alive(entity)
   let store_ref = self.ensure_component_store(key.id())
-  store_ref.val.insert(entity, value.to_json(), self.change_tick)
+  store_ref.val.insert(
+    entity,
+    value.to_json(),
+    component_write_change_tick(self),
+  )
 }
 
 ///|
@@ -287,7 +291,12 @@ pub fn[T : ToJson + @json.FromJson] World::update(
   guard store_ref.val.get(entity) is Some(payload) else { return false }
   let old_value : T = self.decode_component_payload(key, entity, payload)
   let new_value = update(old_value)
-  store_ref.val.set(entity, new_value.to_json(), self.change_tick) |> ignore
+  store_ref.val.set(
+    entity,
+    new_value.to_json(),
+    component_write_change_tick(self),
+  )
+  |> ignore
   true
 }
 
@@ -303,7 +312,7 @@ pub fn[T] World::remove(
       match store_ref.val.remove(entity) {
         Some(_) => {
           self.ensure_removed_component_messages(key.id()).val.send(
-            self.change_tick,
+            component_write_change_tick(self),
             entity,
           )
           true
@@ -399,4 +408,14 @@ pub fn World::set_system_context(
   ctx : @core.SystemContext,
 ) -> Unit {
   self.system_context = ctx
+}
+
+///|
+fn component_write_change_tick(world : World) -> @core.Tick {
+  let tick = world.read_change_tick()
+  if tick > 0 {
+    tick
+  } else {
+    1
+  }
 }
