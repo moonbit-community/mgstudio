@@ -59,7 +59,7 @@ struct Mesh3dUniform {
 @group(1) @binding(7) var u_anisotropy_texture : texture_2d<f32>;
 @group(1) @binding(8) var u_specular_tint_texture : texture_2d<f32>;
 @group(1) @binding(9) var u_transmission_source_texture : texture_2d<f32>;
-@group(1) @binding(10) var u_point_shadow_texture : texture_2d<f32>;
+@group(1) @binding(10) var u_point_shadow_texture : texture_cube<f32>;
 
 fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
   let n = max(dot(q, q), 1e-8);
@@ -572,7 +572,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let point_shadow_enabled = u_mesh.point_shadow_params.x > 0.5;
   // Match Bevy's cubemap shadow sampling convention:
   // sample direction is transformed to cubemap LH space by flipping Z.
-  let point_shadow_uv = cubemap_stacked_vertical_uv(vec3<f32>(
+  let point_shadow_dir = safe_normalize(vec3<f32>(
     in.world_pos.x - u_mesh.point_pos_range.x,
     in.world_pos.y - u_mesh.point_pos_range.y,
     -(in.world_pos.z - u_mesh.point_pos_range.z),
@@ -580,7 +580,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let point_shadow_depth = textureSampleLevel(
     u_point_shadow_texture,
     u_material_sampler,
-    point_shadow_uv,
+    point_shadow_dir,
     0.0,
   ).r;
   let point_depth_bias = max(u_mesh.point_shadow_params.y, 0.0);

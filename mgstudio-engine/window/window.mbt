@@ -561,6 +561,7 @@ pub fn host_gpu_begin_pass(
 ///|
 pub fn host_gpu_begin_pass_3d(
   target_id~ : Int,
+  target_layer~ : Int = -1,
   width~ : Int,
   height~ : Int,
   clear_r~ : Float,
@@ -629,6 +630,7 @@ pub fn host_gpu_begin_pass_3d(
 ) -> Unit {
   @native_gpu.begin_pass_3d(
     target_id~,
+    target_layer~,
     width~,
     height~,
     clear_r~,

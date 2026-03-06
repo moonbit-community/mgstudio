@@ -9838,6 +9838,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         )
         @window.host_gpu_begin_pass_3d(
           target_id=shadow_target_id,
+          target_layer=face_index,
           width=shadow_view_size,
           height=shadow_view_size,
           clear_r=1.0F,
@@ -9855,7 +9856,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           camera_near=shadow_camera_near,
           camera_far=pass_lighting.point_range,
           viewport_x=0,
-          viewport_y=face_index * shadow_view_size,
+          viewport_y=0,
           viewport_width=shadow_view_size,
           viewport_height=shadow_view_size,
           ambient_r=pass_lighting.ambient_color.r,
@@ -9902,7 +9903,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           previous_camera_rot_z=shadow_camera_transform.rotation.z,
           previous_camera_rot_w=shadow_camera_transform.rotation.w,
           pass_kind=point_shadow_pass_kind,
-          clear_enabled=if face_index == 0 { 1 } else { 0 },
+          clear_enabled=1,
         )
         for shadow_draw_index in draw_order {
           let shadow_mesh = meshes[shadow_draw_index]

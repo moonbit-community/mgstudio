@@ -35,6 +35,8 @@ pub struct GpuTextureInfo {
   base_mip_level : Int
   texture : @wgpu.Texture
   view : @wgpu.TextureView
+  sample_view : @wgpu.TextureView?
+  layer_views : Array[@wgpu.TextureView]
   sampler : @wgpu.Sampler
   bind_group : @wgpu.BindGroup
 }
@@ -82,6 +84,7 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
 ///|
 pub struct GpuPassState {
   target_id : Int
+  target_layer : Int
   width_logical : Float
   height_logical : Float
   is_3d : Bool
@@ -285,6 +288,7 @@ pub struct GpuBackend {
   mut bloom2d_mip_height : Int
   mesh3d_material_bg_cache : Ref[Array[Mesh3dMaterialBindGroupCacheEntry]]
   next_id : Ref[Int]
+  mut point_shadow_fallback_texture_id : Int
   textures : Ref[Array[GpuTextureInfo]]
   meshes : Ref[Array[GpuMeshInfo]]
 }
@@ -560,6 +564,7 @@ pub fn GpuBackend::new(
     bloom2d_mip_height: 0,
     mesh3d_material_bg_cache: Ref::new([]),
     next_id: Ref::new(1),
+    point_shadow_fallback_texture_id: -1,
     textures: Ref::new([]),
     meshes: Ref::new([]),
   }
@@ -637,6 +642,18 @@ fn bu(raw : UInt64) -> @wgpu.BufferUsage {
 fn tf(raw : UInt) -> @wgpu.TextureFormat {
   @wgpu.TextureFormat::from_u32(raw)
 }
+
+///|
+extern "C" fn wgpu_render_pipeline_desc_builder_set_front_face(
+  builder : @wgpu_c.OpaquePtr,
+  front_face_u32 : UInt,
+) -> UInt = "mbt_wgpu_render_pipeline_desc_builder_set_front_face"
+
+///|
+extern "C" fn wgpu_render_pipeline_desc_builder_set_cull_mode(
+  builder : @wgpu_c.OpaquePtr,
+  cull_mode_u32 : UInt,
+) -> UInt = "mbt_wgpu_render_pipeline_desc_builder_set_cull_mode"
 
 ///|
 priv struct TextureBlockInfo {
@@ -788,24 +805,6 @@ fn normalize_shader_rel_path(rel : String) -> String {
 ///|
 fn is_motion_blur_shader_path(rel : String) -> Bool {
   normalize_shader_rel_path(rel) == "shaders/mgstudio/3d/motion_blur.wgsl"
-}
-
-///|
-fn is_mesh3d_shader_path(rel : String) -> Bool {
-  normalize_shader_rel_path(rel) ==
-  normalize_shader_rel_path(MESH3D_SHADER_PATH)
-}
-
-///|
-fn inject_mesh3d_runtime_cull(source : String) -> String {
-  let fs_main_sig = "@fragment\nfn fs_main(in : VertexOut) -> @location(0) vec4<f32> {"
-  // Runtime note: our current clip-space convention flips front-facing relative to
-  // Bevy's cull semantics. We compensate here so Face3d::Front/Back remain aligned.
-  let fs_main_patch = "@fragment\nfn fs_main(in : VertexOut, @builtin(front_facing) is_front : bool) -> @location(0) vec4<f32> {\n  let cull_mode = i32(max(u_mesh.point_shadow_params.z, 0.0));\n  if cull_mode == 1 && !is_front {\n    discard;\n  }\n  if cull_mode == 2 && is_front {\n    discard;\n  }"
-  let fs_shadow_sig = "@fragment\nfn fs_shadow(in : VertexOut) -> @location(0) vec4<f32> {"
-  let fs_shadow_patch = "@fragment\nfn fs_shadow(in : VertexOut, @builtin(front_facing) is_front : bool) -> @location(0) vec4<f32> {\n  let cull_mode = i32(max(u_mesh.point_shadow_params.z, 0.0));\n  if cull_mode == 1 && !is_front {\n    discard;\n  }\n  if cull_mode == 2 && is_front {\n    discard;\n  }"
-  let with_main = replace_substring_all(source, fs_main_sig, fs_main_patch)
-  replace_substring_all(with_main, fs_shadow_sig, fs_shadow_patch)
 }
 
 ///|
@@ -1112,12 +1111,9 @@ fn load_wgsl_from_assets_base_required(
   let normalized_rel = normalize_shader_rel_path(rel)
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let mut source = load_wgsl_preprocessed(
+  let source = load_wgsl_preprocessed(
     base, normalized_rel, defines, visited,
   )
-  if is_mesh3d_shader_path(normalized_rel) {
-    source = inject_mesh3d_runtime_cull(source)
-  }
   if is_motion_blur_shader_path(normalized_rel) {
     lower_motion_blur_texture_samples_for_runtime(source)
   } else {
@@ -1744,7 +1740,6 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   topology? : UInt = @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
   cull_mode? : UInt = @wgpu.CULL_MODE_NONE,
 ) -> @wgpu_c.WGPURenderPipelineDescriptorPtr raise GpuBackendError {
-  cull_mode |> ignore
   let builder = @wgpu_c.render_pipeline_desc_builder_new(
     layout.raw_handle(),
     shader.raw_handle(),
@@ -1799,9 +1794,18 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   let set_topology_ok = @wgpu_c.render_pipeline_desc_builder_set_topology(
     builder, topology,
   )
-  if set_topology_ok == 0U {
+  // Our runtime clip-space winding is flipped relative to Bevy, so CW must be
+  // treated as front-facing to keep Face3d front/back culling semantics aligned.
+  let set_front_face_ok = wgpu_render_pipeline_desc_builder_set_front_face(
+    builder,
+    @wgpu.FRONT_FACE_CW,
+  )
+  let set_cull_mode_ok = wgpu_render_pipeline_desc_builder_set_cull_mode(
+    builder, cull_mode,
+  )
+  if set_topology_ok == 0U || set_front_face_ok == 0U || set_cull_mode_ok == 0U {
     @wgpu_c.render_pipeline_desc_builder_free(builder)
-    fatal("wgpu: failed to configure mesh pipeline topology")
+    fatal("wgpu: failed to configure mesh pipeline primitive state")
   }
   if with_depth {
     let set_depth_ok = @wgpu_c.render_pipeline_desc_builder_set_depth_stencil(
@@ -2944,6 +2948,7 @@ fn reopen_saved_pass(
   if pass_state.is_3d {
     backend.begin_pass_3d(
       pass_state.target_id,
+      pass_state.target_layer,
       width_logical,
       height_logical,
       0.0F,
@@ -3191,6 +3196,10 @@ fn mesh3d_material_cache_get_or_create(
     Some(v) => v
     None => fatal("wgpu: missing mesh3d material bind group layout")
   }
+  let point_shadow_sample_view = match point_shadow_texture.sample_view {
+    Some(view) => view
+    None => point_shadow_texture.view
+  }
   let builder = @wgpu.BindGroupBuilder::new(max_entries=11UL)
   let ok = builder.add_sampler(0U, base_texture.sampler) &&
     builder.add_texture_view(1U, base_texture.view) &&
@@ -3202,7 +3211,7 @@ fn mesh3d_material_cache_get_or_create(
     builder.add_texture_view(7U, anisotropy_texture.view) &&
     builder.add_texture_view(8U, specular_tint_texture.view) &&
     builder.add_texture_view(9U, transmission_source_texture.view) &&
-    builder.add_texture_view(10U, point_shadow_texture.view)
+    builder.add_texture_view(10U, point_shadow_sample_view)
   if !ok {
     builder.free()
     fatal("wgpu: failed to build mesh3d material bind group")
@@ -3262,6 +3271,8 @@ fn ensure_default_texture(
       base_mip_level: 0,
       texture: tex,
       view,
+      sample_view: None,
+      layer_views: [],
       sampler,
       bind_group: bg,
     }
@@ -3289,6 +3300,23 @@ fn resolve_mesh3d_texture(
   id : Int,
 ) -> GpuTextureInfo? raise GpuBackendError {
   resolve_draw_texture(backend, id)
+}
+
+///|
+fn ensure_point_shadow_fallback_texture(
+  backend : GpuBackend,
+) -> GpuTextureInfo raise GpuBackendError {
+  if backend.point_shadow_fallback_texture_id >= 0 {
+    if find_texture(backend, backend.point_shadow_fallback_texture_id) is Some(texture) {
+      return texture
+    }
+  }
+  let created_id = backend.create_point_light_shadow_target(1)
+  backend.point_shadow_fallback_texture_id = created_id
+  guard find_texture(backend, created_id) is Some(texture) else {
+    fatal("wgpu: failed to initialize point shadow fallback texture")
+  }
+  texture
 }
 
 ///|
@@ -3336,6 +3364,8 @@ pub fn GpuBackend::create_texture_rgba8(
     base_mip_level: 0,
     texture: tex,
     view,
+    sample_view: None,
+    layer_views: [],
     sampler,
     bind_group: bg,
   }
@@ -3477,6 +3507,8 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
     base_mip_level: 0,
     texture: tex,
     view,
+    sample_view: None,
+    layer_views: [],
     sampler,
     bind_group: bg,
   }
@@ -3760,6 +3792,8 @@ pub fn GpuBackend::create_texture_mip_view(
     base_mip_level: absolute_mip,
     texture: source.texture,
     view,
+    sample_view: None,
+    layer_views: [],
     sampler: source.sampler,
     bind_group,
   }
@@ -3829,6 +3863,8 @@ pub fn GpuBackend::set_texture_sampler(
         base_mip_level: info.base_mip_level,
         texture: info.texture,
         view: info.view,
+        sample_view: info.sample_view,
+        layer_views: info.layer_views,
         sampler,
         bind_group: bg,
       }
@@ -3866,6 +3902,83 @@ pub fn GpuBackend::create_render_target_rgba16f(
     nearest,
     @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
   )
+}
+
+///|
+pub fn GpuBackend::create_point_light_shadow_target(
+  self : GpuBackend,
+  size : Int,
+) -> Int raise GpuBackendError {
+  ensure_sprite_resources(self)
+  let id = alloc_id(self)
+  let safe_size = if size <= 0 { 1U } else { size.reinterpret_as_uint() }
+  let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
+    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING
+  let usage = @wgpu.TextureUsage::from_u64(usage_bits)
+  let tex = self.device.create_texture_u32(
+    safe_size,
+    safe_size,
+    6U,
+    usage,
+    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+    tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
+  )
+  // Render passes attach one face at a time as 2D targets.
+  let face0_view = tex.create_view_u32(
+    tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
+    @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    @wgpu.TEXTURE_ASPECT_ALL,
+    0U,
+    1U,
+    0U,
+    1U,
+  )
+  let layer_views : Array[@wgpu.TextureView] = []
+  for face in 0..<6 {
+    layer_views.push(
+      tex.create_view_u32(
+        tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+        @wgpu.TEXTURE_ASPECT_ALL,
+        face.reinterpret_as_uint(),
+        1U,
+        0U,
+        1U,
+      ),
+    )
+  }
+  // Sampling uses cubemap semantics aligned with Bevy face selection order.
+  let cube_view = tex.create_view_u32(
+    tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
+    @wgpu.TEXTURE_VIEW_DIMENSION_CUBE,
+    @wgpu.TEXTURE_ASPECT_ALL,
+    0U,
+    6U,
+    0U,
+    1U,
+  )
+  let sampler = self.device.create_sampler_nearest_clamp()
+  let bg = self.device.create_bind_group_sampler_texture_2d(
+    self.sprite_bgl_tex.unwrap(),
+    sampler,
+    face0_view,
+  )
+  let info = GpuTextureInfo::{
+    id,
+    width: safe_size.reinterpret_as_int(),
+    height: safe_size.reinterpret_as_int(),
+    mip_level_count: 1,
+    base_mip_level: 0,
+    texture: tex,
+    view: face0_view,
+    sample_view: Some(cube_view),
+    layer_views,
+    sampler,
+    bind_group: bg,
+  }
+  self.textures.val.push(info)
+  mesh3d_material_cache_clear(self)
+  id
 }
 
 ///|
@@ -3912,6 +4025,8 @@ fn GpuBackend::create_render_target_with_format(
     base_mip_level: 0,
     texture: tex,
     view,
+    sample_view: None,
+    layer_views: [],
     sampler,
     bind_group: bg,
   }
@@ -3921,14 +4036,27 @@ fn GpuBackend::create_render_target_with_format(
 }
 
 ///|
-fn target_view(backend : GpuBackend, target_id : Int) -> @wgpu.TextureView? {
+fn target_view(
+  backend : GpuBackend,
+  target_id : Int,
+  target_layer : Int,
+) -> @wgpu.TextureView? {
   if target_id == -1 {
     match backend.frame {
       Some(frame) => Some(frame.surface_view)
       None => None
     }
   } else {
-    find_texture(backend, target_id).map(fn(t) { t.view })
+    match find_texture(backend, target_id) {
+      Some(texture) => {
+        if target_layer >= 0 && target_layer < texture.layer_views.length() {
+          Some(texture.layer_views[target_layer])
+        } else {
+          Some(texture.view)
+        }
+      }
+      None => None
+    }
   }
 }
 
@@ -4054,7 +4182,7 @@ pub fn GpuBackend::begin_pass(
     pass.release()
     frame.pass = None
   }
-  guard target_view(self, target_id) is Some(view) else { return }
+  guard target_view(self, target_id, -1) is Some(view) else { return }
   let pass = if clear_enabled == 0 {
     frame.encoder.begin_render_pass_color_load(view)
   } else {
@@ -4081,6 +4209,7 @@ pub fn GpuBackend::begin_pass(
   frame.pass = Some(pass)
   self.pass_state = Some(GpuPassState::{
     target_id,
+    target_layer: -1,
     width_logical: Float::from_double(width_logical.to_double()),
     height_logical: Float::from_double(height_logical.to_double()),
     is_3d: false,
@@ -4186,6 +4315,7 @@ pub fn GpuBackend::begin_pass(
 pub fn GpuBackend::begin_pass_3d(
   self : GpuBackend,
   target_id : Int,
+  target_layer : Int,
   width_logical : Int,
   height_logical : Int,
   clear_r : Float,
@@ -4261,7 +4391,9 @@ pub fn GpuBackend::begin_pass_3d(
     pass.release()
     frame.pass = None
   }
-  guard target_view(self, target_id) is Some(view) else { return }
+  guard target_view(self, target_id, target_layer) is Some(view) else {
+    return
+  }
   guard ensure_depth_view_for_target(self, target_id) is Some(depth_view) else {
     return
   }
@@ -4317,6 +4449,7 @@ pub fn GpuBackend::begin_pass_3d(
   frame.pass = Some(pass)
   self.pass_state = Some(GpuPassState::{
     target_id,
+    target_layer,
     width_logical: Float::from_double(width_logical.to_double()),
     height_logical: Float::from_double(height_logical.to_double()),
     is_3d: true,
@@ -6002,7 +6135,8 @@ pub fn GpuBackend::draw_bloom2d(
   } else {
     scene_texture.view
   }
-  if target_view(self, pass_state.target_id) is Some(dst_view) {
+  if target_view(self, pass_state.target_id, pass_state.target_layer)
+    is Some(dst_view) {
     if create_bloom2d_bind_group(
         self,
         final_bind_layout,
@@ -6271,7 +6405,7 @@ pub fn GpuBackend::draw_mesh3d(
     transmission_source_texture_id
   }
   let resolved_point_shadow_texture_id = if point_shadow_texture_id < 0 {
-    -1
+    ensure_point_shadow_fallback_texture(self).id
   } else {
     point_shadow_texture_id
   }
@@ -6705,6 +6839,7 @@ pub fn begin_pass(
 ///|
 pub fn begin_pass_3d(
   target_id~ : Int,
+  target_layer~ : Int = -1,
   width~ : Int,
   height~ : Int,
   clear_r~ : Float,
@@ -6773,7 +6908,7 @@ pub fn begin_pass_3d(
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.begin_pass_3d(
-      target_id, width, height, clear_r, clear_g, clear_b, clear_a, camera_x, camera_y,
+      target_id, target_layer, width, height, clear_r, clear_g, clear_b, clear_a, camera_x, camera_y,
       camera_z, camera_rot_x, camera_rot_y, camera_rot_z, camera_rot_w, camera_fov_y,
       camera_near, camera_far, viewport_x, viewport_y, viewport_width, viewport_height,
       ambient_r, ambient_g, ambient_b, ambient_brightness, directional_dir_x, directional_dir_y,
@@ -7279,14 +7414,14 @@ pub fn create_render_target_rgba16f(
 
 ///|
 pub fn create_point_light_shadow_target(size~ : Int) -> Int {
-  let safe_size = if size <= 0 { 1 } else { size }
-  // Bevy point shadows render six cubemap faces per light.
-  let stacked_height = safe_size * 6
-  create_render_target_rgba16f(
-    width=safe_size,
-    height=stacked_height,
-    nearest=true,
-  )
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_point_light_shadow_target(size)
+    } catch {
+      _ => ()
+    }
+  }
+  0
 }
 
 ///|
