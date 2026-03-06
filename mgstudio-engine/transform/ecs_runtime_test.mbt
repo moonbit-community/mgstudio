@@ -27,11 +27,34 @@ fn approx_eq_ecs(a : Float, b : Float) -> Bool {
 }
 
 ///|
+fn next_system_ticks_ecs(world : @ecs.World) -> Unit {
+  let this_run = world.increment_change_tick()
+  let last_run = world.get_system_context().ticks().this_run
+  let ticks = @core.SystemTicks::new(last_run, this_run)
+  let ctx = @core.SystemContext::new()
+  ctx.set(ticks)
+  world.set_system_context(ctx)
+}
+
+///|
+fn prepare_transform_world_ecs(world : @ecs.World) -> Unit {
+  try! register_transform_required_components(world)
+  if !world.resource(static_transform_optimizations_resource_key()).is_present() {
+    world.insert_resource(
+      static_transform_optimizations_resource_key(),
+      StaticTransformOptimizations::default(),
+    )
+  }
+}
+
+///|
 test "transform ecs world: child global uses parent and local transforms" {
   let world = @ecs.World::new()
   let parent = world.spawn()
   let child = world.spawn()
 
+  prepare_transform_world_ecs(world)
+  next_system_ticks_ecs(world)
   try! world.set(
     parent,
     @math.ecs_key_transform,
@@ -57,7 +80,9 @@ test "transform ecs world: child global uses parent and local transforms" {
   )
 
   update_children_system_ecs(world)
+  mark_dirty_trees_ecs(world)
   propagate_transforms_system_ecs(world)
+  sync_simple_transforms_world(world)
 
   let children = (try! world.get(parent, @hierarchy.ecs_key_children)).unwrap()
   inspect(children.entities().length(), content="1")

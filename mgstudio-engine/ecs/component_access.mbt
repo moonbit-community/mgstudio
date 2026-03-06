@@ -112,8 +112,12 @@ pub fn[T : ToJson] ComponentAccess::insert(
   value : T,
   change_tick : @core.Tick,
 ) -> Unit {
-  let store_ref = self.world.ensure_component_store(self.key.id())
-  store_ref.val.insert(entity, value.to_json(), change_tick)
+  try! self.world.insert_component_json_with_requirements(
+    entity,
+    self.key.id(),
+    value.to_json(),
+    change_tick,
+  )
 }
 
 ///|

@@ -180,6 +180,8 @@ pub struct World {
   mut change_tick : @core.Tick
   mut system_context : @core.SystemContext
   component_columns : Map[Int, Ref[@core.ComponentStore[Json]]]
+  required_components : Map[Int, Ref[RequiredComponentsState]]
+  used_components : Map[Int, Bool]
   removed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
   resources : Map[Int, ResourceSlot]
   mut previous_events : Map[Int, Array[Json]]
@@ -196,6 +198,8 @@ pub fn World::new() -> World {
     change_tick: 0,
     system_context: @core.SystemContext::new(),
     component_columns: {},
+    required_components: {},
+    used_components: {},
     removed_components: {},
     resources: {},
     previous_events: {},
@@ -254,10 +258,9 @@ pub fn[T : ToJson] World::set(
   key : ComponentKey[T],
   value : T,
 ) -> Unit raise EcsError {
-  self.ensure_entity_alive(entity)
-  let store_ref = self.ensure_component_store(key.id())
-  store_ref.val.insert(
+  self.insert_component_json_with_requirements(
     entity,
+    key.id(),
     value.to_json(),
     component_write_change_tick(self),
   )

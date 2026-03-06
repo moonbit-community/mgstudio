@@ -46,6 +46,12 @@ pub(all) suberror EcsError {
   EventDecodeFailed(Int, String, Int, @json.JsonDecodeError)
 }
 
+pub(all) suberror RequiredComponentsError {
+  ArchetypeExists(Int)
+  DuplicateRegistration(Int, Int)
+  CyclicRequirement(Int, Int)
+}
+
 // Types and methods
 pub struct Added[T] {
   key : ComponentKey[T]
@@ -326,6 +332,16 @@ pub fn[T] RemovedComponents::is_empty(Self[T]) -> Bool
 pub fn[T] RemovedComponents::len(Self[T]) -> Int
 pub fn[T] RemovedComponents::read(Self[T]) -> Array[@core.Entity]
 
+pub struct RequiredComponents {
+  component_ids : Array[Int]
+}
+pub fn RequiredComponents::contains(Self, Int) -> Bool
+pub fn RequiredComponents::is_empty(Self) -> Bool
+pub fn RequiredComponents::iter_ids(Self) -> Array[Int]
+pub fn RequiredComponents::len(Self) -> Int
+
+type RequiredComponentsState
+
 pub struct ResourceAccess[T] {
   world : World
   key : ResourceKey[T]
@@ -368,6 +384,8 @@ pub struct World {
   mut change_tick : Int
   mut system_context : @core.SystemContext
   component_columns : Map[Int, Ref[@core.ComponentStore[Json]]]
+  required_components : Map[Int, Ref[RequiredComponentsState]]
+  used_components : Map[Int, Bool]
   removed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
   resources : Map[Int, ResourceSlot]
   mut previous_events : Map[Int, Array[Json]]
@@ -383,6 +401,8 @@ pub fn[T : @json.FromJson] World::get(Self, @core.Entity, ComponentKey[T]) -> T?
 pub fn[T : Component] World::get_component(Self, @core.Entity) -> T? raise EcsError
 pub fn[T : Component] World::get_component_ref(Self, @core.Entity) -> ComponentRef[T]? raise EcsError
 pub fn[A : @json.FromJson] World::get_ref(Self, @core.Entity, ComponentKey[A]) -> ComponentRef[A]? raise EcsError
+pub fn[T] World::get_required_components(Self, ComponentKey[T]) -> RequiredComponents?
+pub fn World::get_required_components_by_id(Self, Int) -> RequiredComponents?
 pub fn[T : @json.FromJson] World::get_resource(Self, ResourceKey[T]) -> T? raise EcsError
 pub fn[T] World::get_resource_ticks(Self, ResourceKey[T]) -> @core.ComponentTicks?
 pub fn World::get_system_context(Self) -> @core.SystemContext
@@ -406,6 +426,8 @@ pub fn[A, B, C, F] World::query3_value_ref_mut_filtered(Self, ComponentKey[A], C
 pub fn[F] World::query_entities_filtered(Self, F) -> EntityQuery[F]
 pub fn World::read_change_tick(Self) -> Int
 pub fn[T : @json.FromJson] World::read_events(Self, EventKey[T]) -> Array[T] raise EcsError
+pub fn[T, R : Default + ToJson] World::register_required_components(Self, ComponentKey[T], ComponentKey[R]) -> Unit raise RequiredComponentsError
+pub fn[T, R : ToJson] World::register_required_components_with(Self, ComponentKey[T], ComponentKey[R], () -> R) -> Unit raise RequiredComponentsError
 pub fn[T] World::remove(Self, @core.Entity, ComponentKey[T]) -> Bool raise EcsError
 pub fn[T : @json.FromJson] World::remove_resource(Self, ResourceKey[T]) -> T? raise EcsError
 pub fn[T] World::removed_components(Self, ComponentKey[T], @core.SystemTicks) -> RemovedComponents[T]
@@ -416,6 +438,8 @@ pub fn[T : Component + ToJson] World::set_component(Self, @core.Entity, T) -> Un
 pub fn World::set_system_context(Self, @core.SystemContext) -> Unit
 pub fn World::spawn(Self) -> @core.Entity
 pub fn World::spawn_empty(Self) -> @core.Entity
+pub fn[T, R : Default + ToJson] World::try_register_required_components(Self, ComponentKey[T], ComponentKey[R]) -> Result[Unit, RequiredComponentsError]
+pub fn[T, R : ToJson] World::try_register_required_components_with(Self, ComponentKey[T], ComponentKey[R], () -> R) -> Result[Unit, RequiredComponentsError]
 pub fn[T : ToJson + @json.FromJson] World::update(Self, @core.Entity, ComponentKey[T], (T) -> T) -> Bool raise EcsError
 pub fn[T : Component + ToJson + @json.FromJson] World::update_component(Self, @core.Entity, (T) -> T) -> Bool raise EcsError
 pub fn[T : ToJson + @json.FromJson] World::update_resource(Self, ResourceKey[T], (T) -> T) -> Bool raise EcsError
