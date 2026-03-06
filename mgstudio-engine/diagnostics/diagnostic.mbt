@@ -401,12 +401,22 @@ pub struct Diagnostics {
 }
 
 ///|
-pub impl @app.SystemParam for Diagnostics with get() {
+pub impl @app.SystemParam for Diagnostics with init_state(world) {
+  @app.system_param_empty_state(world)
+}
+
+///|
+pub impl @app.SystemParam for Diagnostics with get(_state) {
   let tick = @app.current_system_ticks().this_run
   match DiagnosticsStore::resource().get_ref_mut(tick) {
     Some(store_ref) => Diagnostics::{ store_ref, }
     None => abort("Missing DiagnosticsStore resource")
   }
+}
+
+///|
+pub impl @app.SystemParam for Diagnostics with store(self, state) {
+  @app.system_param_store_no_state(self, state)
 }
 
 ///|

@@ -547,6 +547,7 @@ pub fn Gizmos::cross_2d(Self, Isometry2d, Float, Color) -> Unit
 pub fn Gizmos::curve_2d(Self, Array[@math.Vec2], Color) -> Unit
 pub fn Gizmos::curve_gradient_2d(Self, Array[(@math.Vec2, Color)]) -> Unit
 pub fn Gizmos::ellipse_2d(Self, Isometry2d, @math.Vec2, Color) -> Ellipse2dBuilder
+pub fn Gizmos::get() -> Self
 pub fn Gizmos::grid_2d(Self, Isometry2d, @math.IVec2, @math.Vec2, Color) -> Grid2dBuilder
 pub fn Gizmos::line_2d(Self, @math.Vec2, @math.Vec2, Color) -> Unit
 pub fn Gizmos::line_gradient_2d(Self, @math.Vec2, @math.Vec2, Color, Color) -> Unit

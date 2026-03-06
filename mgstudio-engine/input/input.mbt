@@ -1655,8 +1655,25 @@ pub impl ButtonInputSnapshotProvider for Key with read_button_input() {
 }
 
 ///|
-pub impl[T : ButtonInputSnapshotProvider] @app.SystemParam for ButtonInput[T] with get() {
+pub impl[T : ButtonInputSnapshotProvider] @app.SystemParam for ButtonInput[T] with init_state(
+  world,
+) {
+  @app.system_param_empty_state(world)
+}
+
+///|
+pub impl[T : ButtonInputSnapshotProvider] @app.SystemParam for ButtonInput[T] with get(
+  _state,
+) {
   ButtonInputSnapshotProvider::read_button_input()
+}
+
+///|
+pub impl[T : ButtonInputSnapshotProvider] @app.SystemParam for ButtonInput[T] with store(
+  self,
+  state,
+) {
+  @app.system_param_store_no_state(self, state)
 }
 
 ///|

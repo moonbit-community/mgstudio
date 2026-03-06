@@ -103,7 +103,9 @@ pub(all) enum ScheduleStage {
 
 ///|
 pub(open) trait SystemParam {
-  get() -> Self
+  init_state(@ecs.World) -> Json
+  get(Ref[Json]) -> Self
+  store(Self, Ref[Json]) -> Unit
 }
 
 ///|
@@ -137,10 +139,35 @@ fn[T] system_param_abort_missing_resource() -> T {
 }
 
 ///|
+fn system_param_abort_missing_world() -> @ecs.World {
+  match current_world() {
+    Some(world) => world
+    None => abort("Missing current world for system parameter")
+  }
+}
+
+///|
+pub fn system_param_empty_state(_world : @ecs.World) -> Json {
+  Json::null()
+}
+
+///|
+pub fn[T] system_param_store_no_state(_self : T, _state : Ref[Json]) -> Unit {
+  ()
+}
+
+///|
 pub fn[W, P : SystemParam] system_param(system : (P) -> Unit) -> SystemFn[W] {
+  let state = Ref::new(Json::null())
+  let state_initialized = Ref::new(false)
   fn(_world : W) {
-    let param : P = SystemParam::get()
+    if !state_initialized.val {
+      state.val = P::init_state(system_param_abort_missing_world())
+      state_initialized.val = true
+    }
+    let param : P = P::get(state)
     system(param)
+    P::store(param, state)
   }
 }
 
@@ -148,10 +175,25 @@ pub fn[W, P : SystemParam] system_param(system : (P) -> Unit) -> SystemFn[W] {
 pub fn[W, P1 : SystemParam, P2 : SystemParam] system_param2(
   system : (P1, P2) -> Unit,
 ) -> SystemFn[W] {
+  let state1 = Ref::new(Json::null())
+  let state2 = Ref::new(Json::null())
+  let state1_initialized = Ref::new(false)
+  let state2_initialized = Ref::new(false)
   fn(_world : W) {
-    let p1 : P1 = SystemParam::get()
-    let p2 : P2 = SystemParam::get()
+    let world = system_param_abort_missing_world()
+    if !state1_initialized.val {
+      state1.val = P1::init_state(world)
+      state1_initialized.val = true
+    }
+    if !state2_initialized.val {
+      state2.val = P2::init_state(world)
+      state2_initialized.val = true
+    }
+    let p1 : P1 = P1::get(state1)
+    let p2 : P2 = P2::get(state2)
     system(p1, p2)
+    P1::store(p1, state1)
+    P2::store(p2, state2)
   }
 }
 
@@ -159,11 +201,33 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] system_param2(
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_param3(
   system : (P1, P2, P3) -> Unit,
 ) -> SystemFn[W] {
+  let state1 = Ref::new(Json::null())
+  let state2 = Ref::new(Json::null())
+  let state3 = Ref::new(Json::null())
+  let state1_initialized = Ref::new(false)
+  let state2_initialized = Ref::new(false)
+  let state3_initialized = Ref::new(false)
   fn(_world : W) {
-    let p1 : P1 = SystemParam::get()
-    let p2 : P2 = SystemParam::get()
-    let p3 : P3 = SystemParam::get()
+    let world = system_param_abort_missing_world()
+    if !state1_initialized.val {
+      state1.val = P1::init_state(world)
+      state1_initialized.val = true
+    }
+    if !state2_initialized.val {
+      state2.val = P2::init_state(world)
+      state2_initialized.val = true
+    }
+    if !state3_initialized.val {
+      state3.val = P3::init_state(world)
+      state3_initialized.val = true
+    }
+    let p1 : P1 = P1::get(state1)
+    let p2 : P2 = P2::get(state2)
+    let p3 : P3 = P3::get(state3)
     system(p1, p2, p3)
+    P1::store(p1, state1)
+    P2::store(p2, state2)
+    P3::store(p3, state3)
   }
 }
 
@@ -177,12 +241,41 @@ pub fn[
 ] system_param4(
   system : (P1, P2, P3, P4) -> Unit,
 ) -> SystemFn[W] {
+  let state1 = Ref::new(Json::null())
+  let state2 = Ref::new(Json::null())
+  let state3 = Ref::new(Json::null())
+  let state4 = Ref::new(Json::null())
+  let state1_initialized = Ref::new(false)
+  let state2_initialized = Ref::new(false)
+  let state3_initialized = Ref::new(false)
+  let state4_initialized = Ref::new(false)
   fn(_world : W) {
-    let p1 : P1 = SystemParam::get()
-    let p2 : P2 = SystemParam::get()
-    let p3 : P3 = SystemParam::get()
-    let p4 : P4 = SystemParam::get()
+    let world = system_param_abort_missing_world()
+    if !state1_initialized.val {
+      state1.val = P1::init_state(world)
+      state1_initialized.val = true
+    }
+    if !state2_initialized.val {
+      state2.val = P2::init_state(world)
+      state2_initialized.val = true
+    }
+    if !state3_initialized.val {
+      state3.val = P3::init_state(world)
+      state3_initialized.val = true
+    }
+    if !state4_initialized.val {
+      state4.val = P4::init_state(world)
+      state4_initialized.val = true
+    }
+    let p1 : P1 = P1::get(state1)
+    let p2 : P2 = P2::get(state2)
+    let p3 : P3 = P3::get(state3)
+    let p4 : P4 = P4::get(state4)
     system(p1, p2, p3, p4)
+    P1::store(p1, state1)
+    P2::store(p2, state2)
+    P3::store(p3, state3)
+    P4::store(p4, state4)
   }
 }
 
@@ -250,17 +343,56 @@ pub fn run_current_fixed_update_schedule(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with get() {
+pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with init_state(
+  world,
+) {
+  system_param_empty_state(world)
+}
+
+///|
+pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with get(
+  _state,
+) {
   @core.Message::reader(current_system_ticks())
 }
 
 ///|
-pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T] with get() {
+pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with store(
+  self,
+  state,
+) {
+  system_param_store_no_state(self, state)
+}
+
+///|
+pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T] with init_state(
+  world,
+) {
+  system_param_empty_state(world)
+}
+
+///|
+pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T] with get(
+  _state,
+) {
   @core.Message::writer(current_system_ticks().this_run)
 }
 
 ///|
-pub impl[T : Resource] SystemParam for Res[T] with get() {
+pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T] with store(
+  self,
+  state,
+) {
+  system_param_store_no_state(self, state)
+}
+
+///|
+pub impl[T : Resource] SystemParam for Res[T] with init_state(world) {
+  system_param_empty_state(world)
+}
+
+///|
+pub impl[T : Resource] SystemParam for Res[T] with get(_state) {
   match Resource::resource().get() {
     Some(value) => Res::{ value, }
     None => system_param_abort_missing_resource()
@@ -268,12 +400,27 @@ pub impl[T : Resource] SystemParam for Res[T] with get() {
 }
 
 ///|
-pub impl[T : Resource] SystemParam for ResMut[T] with get() {
+pub impl[T : Resource] SystemParam for Res[T] with store(self, state) {
+  system_param_store_no_state(self, state)
+}
+
+///|
+pub impl[T : Resource] SystemParam for ResMut[T] with init_state(world) {
+  system_param_empty_state(world)
+}
+
+///|
+pub impl[T : Resource] SystemParam for ResMut[T] with get(_state) {
   let tick = current_system_ticks().this_run
   match Resource::resource().get_ref_mut(tick) {
     Some(value) => ResMut::{ value, }
     None => system_param_abort_missing_resource()
   }
+}
+
+///|
+pub impl[T : Resource] SystemParam for ResMut[T] with store(self, state) {
+  system_param_store_no_state(self, state)
 }
 
 ///|

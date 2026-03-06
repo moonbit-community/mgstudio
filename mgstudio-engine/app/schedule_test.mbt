@@ -154,23 +154,63 @@ struct Param4 {
 }
 
 ///|
-impl SystemParam for Param1 with get() {
+impl SystemParam for Param1 with init_state(_world) {
+  Json::null()
+}
+
+///|
+impl SystemParam for Param1 with get(_state) {
   { value: 1 }
 }
 
 ///|
-impl SystemParam for Param2 with get() {
+impl SystemParam for Param1 with store(self, _state) {
+  ignore(self)
+}
+
+///|
+impl SystemParam for Param2 with init_state(_world) {
+  Json::null()
+}
+
+///|
+impl SystemParam for Param2 with get(_state) {
   { value: 2 }
 }
 
 ///|
-impl SystemParam for Param3 with get() {
+impl SystemParam for Param2 with store(self, _state) {
+  ignore(self)
+}
+
+///|
+impl SystemParam for Param3 with init_state(_world) {
+  Json::null()
+}
+
+///|
+impl SystemParam for Param3 with get(_state) {
   { value: 3 }
 }
 
 ///|
-impl SystemParam for Param4 with get() {
+impl SystemParam for Param3 with store(self, _state) {
+  ignore(self)
+}
+
+///|
+impl SystemParam for Param4 with init_state(_world) {
+  Json::null()
+}
+
+///|
+impl SystemParam for Param4 with get(_state) {
   { value: 4 }
+}
+
+///|
+impl SystemParam for Param4 with store(self, _state) {
+  ignore(self)
 }
 
 ///|
@@ -179,8 +219,18 @@ struct TickParam {
 }
 
 ///|
-impl SystemParam for TickParam with get() {
+impl SystemParam for TickParam with init_state(_world) {
+  Json::null()
+}
+
+///|
+impl SystemParam for TickParam with get(_state) {
   { ticks: current_system_ticks() }
+}
+
+///|
+impl SystemParam for TickParam with store(self, _state) {
+  ignore(self)
 }
 
 ///|

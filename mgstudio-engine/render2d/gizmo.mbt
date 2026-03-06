@@ -111,13 +111,28 @@ pub fn Gizmos::new() -> Gizmos {
 }
 
 ///|
+pub fn Gizmos::get() -> Gizmos {
+  Gizmos::new()
+}
+
+///|
 pub fn Gizmos::with_layers(_self : Gizmos, layers : RenderLayers) -> Gizmos {
   Gizmos::{ layers, }
 }
 
 ///|
-pub impl @app.SystemParam for Gizmos with get() {
+pub impl @app.SystemParam for Gizmos with init_state(world) {
+  @app.system_param_empty_state(world)
+}
+
+///|
+pub impl @app.SystemParam for Gizmos with get(_state) {
   Gizmos::new()
+}
+
+///|
+pub impl @app.SystemParam for Gizmos with store(self, state) {
+  @app.system_param_store_no_state(self, state)
 }
 
 ///|

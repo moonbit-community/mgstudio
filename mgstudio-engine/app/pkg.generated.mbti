@@ -125,6 +125,10 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_param3((P
 
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] system_param4((P1, P2, P3, P4) -> Unit) -> (W) -> Unit
 
+pub fn system_param_empty_state(@ecs.World) -> Json
+
+pub fn[T] system_param_store_no_state(T, Ref[Json]) -> Unit
+
 pub fn[A] system_query1_ecs(@ecs.ComponentKey[A], (@ecs.Query1[A], @ecs.World) -> Unit) -> (@ecs.World) -> Unit
 
 pub fn[A, B] system_query2_ecs(@ecs.ComponentKey[A], @ecs.ComponentKey[B], (@ecs.Query2[A, B], @ecs.World) -> Unit) -> (@ecs.World) -> Unit
@@ -316,6 +320,14 @@ pub impl Show for FixedMainScheduleOrder
 pub impl ToJson for FixedMainScheduleOrder
 pub impl @json.FromJson for FixedMainScheduleOrder
 
+pub struct Local[T] {
+  value_ref : Ref[T]
+}
+pub fn[T] Local::get(Self[T]) -> T
+pub fn[T] Local::get_ref(Self[T]) -> Ref[T]
+pub fn[T] Local::set(Self[T], T) -> Unit
+pub impl[T : FromWorld + ToJson + @json.FromJson] SystemParam for Local[T]
+
 pub(all) enum LogLevel {
   Error
   Warn
@@ -401,6 +413,16 @@ pub impl[S : Eq] Eq for OnTransition[S]
 pub impl[S : Show] Show for OnTransition[S]
 pub impl[S : ToJson] ToJson for OnTransition[S]
 pub impl[S : @json.FromJson] @json.FromJson for OnTransition[S]
+
+pub struct ParamSet2[P0, P1] {
+  param0 : P0
+  param1 : P1
+  state0 : Ref[Json]
+  state1 : Ref[Json]
+}
+pub fn[P0, P1] ParamSet2::p0(Self[P0, P1]) -> P0
+pub fn[P0, P1] ParamSet2::p1(Self[P0, P1]) -> P1
+pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1]
 
 pub struct PluginGroupBuilder[W] {
   plugins : Array[(App[W]) -> App[W]]
@@ -624,6 +646,12 @@ pub type SystemSet = String
 pub(open) trait FreelyMutableState : States {
 }
 
+pub(open) trait FromWorld {
+  from_world(@ecs.World) -> Self
+}
+pub impl FromWorld for Bool
+pub impl[T] FromWorld for Array[T]
+
 pub(open) trait Resource {
   resource() -> @core.Resource[Self]
 }
@@ -637,8 +665,11 @@ pub(open) trait SubStates : States + FreelyMutableState {
 }
 
 pub(open) trait SystemParam {
-  get() -> Self
+  init_state(@ecs.World) -> Json
+  get(Ref[Json]) -> Self
+  store(Self, Ref[Json]) -> Unit
 }
 pub impl[T : @core.Message] SystemParam for @core.MessageReader[T]
 pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T]
+pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T]
 
