@@ -35,13 +35,16 @@ fn read_test_state(world : @ecs.World) -> TestState? {
 ///|
 fn current_stage_label() -> String {
   match current_schedule_stage() {
+    Some(PreStartup) => "PreStartup"
     Some(First) => "First"
     Some(StateTransition) => "StateTransition"
     Some(Startup) => "Startup"
+    Some(PostStartup) => "PostStartup"
     Some(PreUpdate) => "PreUpdate"
     Some(RunFixedMainLoop) => "RunFixedMainLoop"
     Some(FixedUpdate) => "FixedUpdate"
     Some(Update) => "Update"
+    Some(SpawnScene) => "SpawnScene"
     Some(PostUpdate) => "PostUpdate"
     Some(Last) => "Last"
     None => "None"
@@ -133,6 +136,40 @@ test "app state: startup enter hook runs in state transition stage" {
     last_transition(app.world, TestState::A),
     content="Some({exited: None, entered: Some(A), allow_same_state_transitions: true})",
   )
+}
+
+///|
+test "app startup: pre startup startup and post startup run in order" {
+  let log : Array[String] = []
+  let app = App::new(@ecs.World::new())
+    .add_pre_startup_system(fn(_world : @ecs.World) {
+      log.push(current_stage_label())
+    })
+    .add_startup_system(fn(_world : @ecs.World) {
+      log.push(current_stage_label())
+    })
+    .add_post_startup_system(fn(_world : @ecs.World) {
+      log.push(current_stage_label())
+    })
+
+  app.run_startup() |> ignore
+  inspect(log.join(","), content="PreStartup,Startup,PostStartup")
+}
+
+///|
+test "app update: spawn scene runs between update and post update" {
+  let log : Array[String] = []
+  let app = App::new(@ecs.World::new())
+    .add_system(fn(_world : @ecs.World) { log.push(current_stage_label()) })
+    .add_spawn_scene_system(fn(_world : @ecs.World) {
+      log.push(current_stage_label())
+    })
+    .add_post_update_system(fn(_world : @ecs.World) {
+      log.push(current_stage_label())
+    })
+
+  app.run_once() |> ignore
+  inspect(log.join(","), content="Update,SpawnScene,PostUpdate")
 }
 
 ///|

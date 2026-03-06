@@ -264,20 +264,22 @@ pub let transform_set_propagate : @app.SystemSet = @app.system_set(
 pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   // Keep `Children` in sync with `Parent`, then compute `GlobalTransform`.
   app
-  .add_pre_update_system_config(
+  .add_post_startup_system_config(
     @app.system(update_children_system).in_set(transform_set_update_children),
   )
-  .add_pre_update_system_config(
+  .add_post_startup_system_config(
     @app.system(propagate_transforms_system).in_set(transform_set_propagate),
   )
-  .configure_set(@app.PreUpdate, transform_set_update_children, before=[
+  .configure_set(@app.PostStartup, transform_set_update_children, before=[
     transform_set_propagate,
   ])
-  // If FixedUpdate ran this frame (e.g. physics moved bodies), refresh
-  // GlobalTransform again before Update systems like render extraction.
-  .add_system_config(
-    @app.system(propagate_transforms_system).run_if(fn(_world : @ecs.World) {
-      @time.time_fixed_did_run_this_frame()
-    }),
+  .add_post_update_system_config(
+    @app.system(update_children_system).in_set(transform_set_update_children),
   )
+  .add_post_update_system_config(
+    @app.system(propagate_transforms_system).in_set(transform_set_propagate),
+  )
+  .configure_set(@app.PostUpdate, transform_set_update_children, before=[
+    transform_set_propagate,
+  ])
 }

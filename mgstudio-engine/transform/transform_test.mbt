@@ -157,3 +157,83 @@ test "transform ecs: propagate updates only when inputs change" {
   let gt = (try! world.get(entity, ecs_key_global_transform)).unwrap()
   inspect(approx_eq(gt.affine.tx, 2.0F), content="true")
 }
+
+///|
+test "transform plugin: post startup populates hierarchy globals" {
+  let world = @ecs.World::new()
+  let parent = world.spawn_empty()
+  let child = world.spawn_empty()
+
+  try! world.set(
+    parent,
+    @math.ecs_key_transform,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(2.0F, 1.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  )
+  try! world.set(
+    child,
+    @math.ecs_key_transform,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(3.0F, 4.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  )
+  try! world.set(
+    child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(parent),
+  )
+
+  let app = @app.App::new(world).add_plugins([transform_plugin])
+  app.run_startup() |> ignore
+
+  let gt = (try! app.world.get(child, ecs_key_global_transform)).unwrap()
+  inspect(
+    approx_eq(gt.affine.tx, 5.0F) && approx_eq(gt.affine.ty, 5.0F),
+    content="true",
+  )
+}
+
+///|
+test "transform plugin: post update reflects update stage transform writes" {
+  let entity_ref = Ref::new(@core.Entity::new(0, 0))
+  let world = @ecs.World::new()
+  let entity = world.spawn_empty()
+  entity_ref.val = entity
+  try! world.set(
+    entity,
+    @math.ecs_key_transform,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(1.0F, 2.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  )
+
+  let app = @app.App::new(world)
+    .add_plugins([transform_plugin])
+    .add_system(fn(world : @ecs.World) {
+      try! world.set(
+        entity_ref.val,
+        @math.ecs_key_transform,
+        @math.Transform::from_xy_rotation_scale(
+          @math.Vec2::new(7.0F, 8.0F),
+          0.0F,
+          @math.Vec2::new(1.0F, 1.0F),
+        ),
+      )
+    })
+
+  app.run_startup() |> ignore
+  app.run_once() |> ignore
+
+  let gt = (try! app.world.get(entity, ecs_key_global_transform)).unwrap()
+  inspect(
+    approx_eq(gt.affine.tx, 7.0F) && approx_eq(gt.affine.ty, 8.0F),
+    content="true",
+  )
+}

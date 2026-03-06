@@ -92,22 +92,26 @@ pub fn propagate_transforms_system_ecs(world : @ecs.World) -> Unit {
 ///|
 pub fn transform_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
-  .add_pre_update_system_config(
+  .add_post_startup_system_config(
     @app.system(update_children_system_ecs).in_set(
       transform_set_update_children,
     ),
   )
-  .add_pre_update_system_config(
+  .add_post_startup_system_config(
     @app.system(propagate_transforms_system_ecs).in_set(transform_set_propagate),
   )
-  .configure_set(@app.PreUpdate, transform_set_update_children, before=[
+  .configure_set(@app.PostStartup, transform_set_update_children, before=[
     transform_set_propagate,
   ])
-  .add_system_config(
-    @app.system(propagate_transforms_system_ecs).run_if(fn(
-      _world : @ecs.World,
-    ) {
-      @time.time_fixed_did_run_this_frame()
-    }),
+  .add_post_update_system_config(
+    @app.system(update_children_system_ecs).in_set(
+      transform_set_update_children,
+    ),
   )
+  .add_post_update_system_config(
+    @app.system(propagate_transforms_system_ecs).in_set(transform_set_propagate),
+  )
+  .configure_set(@app.PostUpdate, transform_set_update_children, before=[
+    transform_set_propagate,
+  ])
 }
