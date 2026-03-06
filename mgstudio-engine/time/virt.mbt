@@ -89,18 +89,24 @@ pub fn time_virtual_max_delta_seconds() -> Float {
 
 ///|
 pub fn time_virtual_set_relative_speed(speed : Float) -> Unit {
-  time_state_ref.val.virtual_relative_speed = if speed < 0.0F {
-    0.0F
-  } else {
-    speed
+  if speed.is_nan() || speed.is_inf() {
+    abort("tried to go infinitely fast")
   }
+  if speed < 0.0F {
+    abort("tried to go back in time")
+  }
+  time_state_ref.val.virtual_relative_speed = speed
 }
 
 ///|
 pub fn time_virtual_set_max_delta_seconds(max_delta_seconds : Float) -> Unit {
-  if max_delta_seconds > 0.0F {
-    time_state_ref.val.virtual_max_delta_seconds = max_delta_seconds
+  if max_delta_seconds.is_nan() || max_delta_seconds.is_inf() {
+    abort("tried to set max delta to a non-finite value")
   }
+  if max_delta_seconds <= 0.0F {
+    abort("tried to set max delta to zero")
+  }
+  time_state_ref.val.virtual_max_delta_seconds = max_delta_seconds
 }
 
 ///|

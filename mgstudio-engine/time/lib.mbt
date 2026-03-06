@@ -25,8 +25,21 @@ pub fn TimePlugin::default() -> TimePlugin {
 }
 
 ///|
+pub(all) enum TimeUpdateStrategy {
+  Automatic
+  ManualInstant(Float)
+  ManualDuration(Float)
+  FixedTimesteps(Int)
+} derive(Eq, Show)
+
+///|
+pub fn TimeUpdateStrategy::default() -> TimeUpdateStrategy {
+  Automatic
+}
+
+///|
 priv struct TimeState {
-  startup_seconds : Float
+  mut startup_seconds : Float
   mut first_update_seconds : Float?
   mut last_update_seconds : Float?
   mut real_delta_seconds : Float
@@ -76,6 +89,11 @@ let fixed_resource : Ref[@core.Resource[Fixed]] = Ref::new(
 )
 
 ///|
+let time_update_strategy_resource : Ref[@core.Resource[TimeUpdateStrategy]] = Ref::new(
+  @core.Resource::new(),
+)
+
+///|
 pub impl @app.Resource for Time with resource() {
   time_resource.val
 }
@@ -96,8 +114,34 @@ pub impl @app.Resource for Fixed with resource() {
 }
 
 ///|
+pub impl @app.Resource for TimeUpdateStrategy with resource() {
+  time_update_strategy_resource.val
+}
+
+///|
 pub fn host_time_now() -> Float {
   @native_time.now()
+}
+
+///|
+fn time_reset_state(startup_seconds : Float) -> Unit {
+  time_state_ref.val.startup_seconds = startup_seconds
+  time_state_ref.val.first_update_seconds = None
+  time_state_ref.val.last_update_seconds = None
+  time_state_ref.val.real_delta_seconds = 0.0F
+  time_state_ref.val.real_elapsed_seconds = 0.0F
+  time_state_ref.val.virtual_delta_seconds = 0.0F
+  time_state_ref.val.virtual_elapsed_seconds = 0.0F
+  time_state_ref.val.virtual_relative_speed = 1.0F
+  time_state_ref.val.virtual_effective_speed = 1.0F
+  time_state_ref.val.virtual_max_delta_seconds = DEFAULT_VIRTUAL_MAX_DELTA_SECONDS
+  time_state_ref.val.virtual_paused = false
+  time_state_ref.val.virtual_was_paused = false
+}
+
+///|
+fn time_reset() -> Unit {
+  time_reset_state(host_time_now())
 }
 
 ///|
@@ -155,20 +199,12 @@ fn[T] sync_resource(
 }
 
 ///|
-pub fn time_update() -> Unit {
-  let now = host_time_now()
+fn time_update_real_with_instant(now : Float) -> Unit {
   match time_state_ref.val.last_update_seconds {
     None => {
       time_state_ref.val.first_update_seconds = Some(now)
       time_state_ref.val.last_update_seconds = Some(now)
       time_state_ref.val.real_delta_seconds = 0.0F
-      time_state_ref.val.virtual_delta_seconds = 0.0F
-      time_state_ref.val.virtual_effective_speed = if time_state_ref.val.virtual_paused {
-        0.0F
-      } else {
-        time_state_ref.val.virtual_relative_speed
-      }
-      time_state_ref.val.virtual_was_paused = time_state_ref.val.virtual_paused
     }
     Some(last_update_seconds) => {
       let real_delta_seconds = if now > last_update_seconds {
@@ -176,29 +212,73 @@ pub fn time_update() -> Unit {
       } else {
         0.0F
       }
-      let clamped_virtual_source_delta = if real_delta_seconds >
-        time_state_ref.val.virtual_max_delta_seconds {
-        time_state_ref.val.virtual_max_delta_seconds
-      } else {
-        real_delta_seconds
-      }
-      let effective_speed = if time_state_ref.val.virtual_paused {
-        0.0F
-      } else {
-        time_state_ref.val.virtual_relative_speed
-      }
-      let virtual_delta_seconds = clamped_virtual_source_delta * effective_speed
       time_state_ref.val.real_delta_seconds = real_delta_seconds
       time_state_ref.val.real_elapsed_seconds = time_state_ref.val.real_elapsed_seconds +
         real_delta_seconds
-      time_state_ref.val.virtual_delta_seconds = virtual_delta_seconds
-      time_state_ref.val.virtual_elapsed_seconds = time_state_ref.val.virtual_elapsed_seconds +
-        virtual_delta_seconds
-      time_state_ref.val.virtual_effective_speed = effective_speed
-      time_state_ref.val.virtual_was_paused = time_state_ref.val.virtual_paused
       time_state_ref.val.last_update_seconds = Some(now)
     }
   }
+}
+
+///|
+fn time_update_real_with_duration(duration_seconds : Float) -> Unit {
+  let delta_seconds = if duration_seconds < 0.0F {
+    0.0F
+  } else {
+    duration_seconds
+  }
+  let last_update_seconds = match time_state_ref.val.last_update_seconds {
+    Some(last) => last
+    None => time_state_ref.val.startup_seconds
+  }
+  time_update_real_with_instant(last_update_seconds + delta_seconds)
+}
+
+///|
+fn time_update_virtual_from_real_delta() -> Unit {
+  let raw_delta_seconds = time_state_ref.val.real_delta_seconds
+  let clamped_virtual_source_delta = if raw_delta_seconds >
+    time_state_ref.val.virtual_max_delta_seconds {
+    time_state_ref.val.virtual_max_delta_seconds
+  } else {
+    raw_delta_seconds
+  }
+  let effective_speed = if time_state_ref.val.virtual_paused {
+    0.0F
+  } else {
+    time_state_ref.val.virtual_relative_speed
+  }
+  let virtual_delta_seconds = clamped_virtual_source_delta * effective_speed
+  time_state_ref.val.virtual_delta_seconds = virtual_delta_seconds
+  time_state_ref.val.virtual_elapsed_seconds = time_state_ref.val.virtual_elapsed_seconds +
+    virtual_delta_seconds
+  time_state_ref.val.virtual_effective_speed = effective_speed
+  time_state_ref.val.virtual_was_paused = time_state_ref.val.virtual_paused
+}
+
+///|
+fn time_update_with_strategy(strategy : TimeUpdateStrategy) -> Unit {
+  match strategy {
+    Automatic => time_update_real_with_instant(host_time_now())
+    ManualInstant(now) => time_update_real_with_instant(now)
+    ManualDuration(duration_seconds) =>
+      time_update_real_with_duration(duration_seconds)
+    FixedTimesteps(factor) => {
+      let steps = if factor < 0 { 0 } else { factor }
+      let timestep_seconds = time_fixed_timestep_seconds()
+      time_update_real_with_duration(timestep_seconds * Float::from_int(steps))
+    }
+  }
+  time_update_virtual_from_real_delta()
+}
+
+///|
+pub fn time_update() -> Unit {
+  let strategy = match time_update_strategy_resource.val.get() {
+    Some(value) => value
+    None => TimeUpdateStrategy::default()
+  }
+  time_update_with_strategy(strategy)
 }
 
 ///|
@@ -207,8 +287,11 @@ pub fn[W] time_system(_world : W) -> Unit {
 }
 
 ///|
-fn time_update_resource_system(time : @app.ResMut[Time]) -> Unit {
-  time_update()
+fn time_update_resource_system(
+  time : @app.ResMut[Time],
+  strategy : @app.Res[TimeUpdateStrategy],
+) -> Unit {
+  time_update_with_strategy(strategy.get())
   let change_tick = @app.current_system_ticks().this_run
   time.get_ref().val = time_snapshot()
   sync_resource(real_resource.val, real_snapshot(), change_tick)
@@ -217,12 +300,21 @@ fn time_update_resource_system(time : @app.ResMut[Time]) -> Unit {
 }
 
 ///|
+fn time_sync_fixed_resource_system(fixed : @app.ResMut[Fixed]) -> Unit {
+  fixed.get_ref().val = fixed_snapshot()
+}
+
+///|
 pub fn[W] time_plugin(app : @app.App[W]) -> @app.App[W] {
+  time_reset()
+  @app.fixed_time_reset()
   @app.set_delta_seconds_provider(fn() { time_virtual_delta_seconds() })
   app
   .insert_resource(time_snapshot())
   .insert_resource(real_snapshot())
   .insert_resource(virtual_snapshot())
   .insert_resource(fixed_snapshot())
-  .add_pre_update_system_param(time_update_resource_system)
+  .insert_resource(TimeUpdateStrategy::default())
+  .add_fixed_update_system_param(time_sync_fixed_resource_system)
+  .add_pre_update_system_param2(time_update_resource_system)
 }

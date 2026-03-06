@@ -125,6 +125,17 @@ pub struct TimePlugin {
 }
 pub fn TimePlugin::default() -> Self
 
+pub(all) enum TimeUpdateStrategy {
+  Automatic
+  ManualInstant(Float)
+  ManualDuration(Float)
+  FixedTimesteps(Int)
+}
+pub fn TimeUpdateStrategy::default() -> Self
+pub impl @app.Resource for TimeUpdateStrategy
+pub impl Eq for TimeUpdateStrategy
+pub impl Show for TimeUpdateStrategy
+
 pub struct Timer {
   stopwatch : Stopwatch
   duration_seconds : Float
