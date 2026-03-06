@@ -148,6 +148,7 @@
     ],
     "bevy_time": [
       "time",
+      "time_core",
       "runtime_native/native_time"
     ],
     "bevy_transform": [

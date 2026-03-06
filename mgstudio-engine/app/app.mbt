@@ -1000,10 +1000,8 @@ pub fn[W] App::configure_set(
 
 ///|
 priv struct FixedTimeState {
-  mut timestep_seconds : Float
+  mut clock : @time_core.Fixed
   mut max_delta_seconds : Float
-  mut overstep_seconds : Float
-  mut elapsed_seconds : Float
   mut did_run_this_frame : Bool
   mut steps_ran_this_frame : Int
 }
@@ -1016,10 +1014,8 @@ const DEFAULT_FIXED_MAX_DELTA_SECONDS : Float = 0.25F
 
 ///|
 let fixed_time_state : Ref[FixedTimeState] = Ref::new(FixedTimeState::{
-  timestep_seconds: DEFAULT_FIXED_TIMESTEP_SECONDS,
+  clock: @time_core.Fixed::from_seconds(DEFAULT_FIXED_TIMESTEP_SECONDS),
   max_delta_seconds: DEFAULT_FIXED_MAX_DELTA_SECONDS,
-  overstep_seconds: 0.0F,
-  elapsed_seconds: 0.0F,
   did_run_this_frame: false,
   steps_ran_this_frame: 0,
 })
@@ -1068,8 +1064,11 @@ pub fn set_fixed_main_loop_runner(runner : FixedMainLoopRunner) -> Unit {
 
 ///|
 pub fn fixed_time_reset() -> Unit {
-  fixed_time_state.val.overstep_seconds = 0.0F
-  fixed_time_state.val.elapsed_seconds = 0.0F
+  fixed_time_state.val.clock = fixed_time_state.val.clock.set_runtime_state(
+    fixed_time_state.val.clock.timestep_seconds(),
+    0.0F,
+    0.0F,
+  )
   fixed_time_state.val.did_run_this_frame = false
   fixed_time_state.val.steps_ran_this_frame = 0
 }
@@ -1078,27 +1077,23 @@ pub fn fixed_time_reset() -> Unit {
 pub fn fixed_time_prepare_frame(delta_raw_seconds : Float) -> Unit {
   fixed_time_state.val.did_run_this_frame = false
   fixed_time_state.val.steps_ran_this_frame = 0
-  fixed_time_state.val.overstep_seconds = fixed_time_state.val.overstep_seconds +
-    fixed_time_non_negative_delta(delta_raw_seconds)
+  fixed_time_state.val.clock = fixed_time_state.val.clock.accumulate_overstep(
+    fixed_time_non_negative_delta(delta_raw_seconds),
+  )
 }
 
 ///|
 pub fn fixed_time_expend_step() -> Bool {
-  let timestep = fixed_time_state.val.timestep_seconds
-  if timestep <= 0.0F {
-    return false
+  match fixed_time_state.val.clock.expend() {
+    Some(next_clock) => {
+      fixed_time_state.val.clock = next_clock
+      fixed_time_state.val.did_run_this_frame = true
+      fixed_time_state.val.steps_ran_this_frame = fixed_time_state.val.steps_ran_this_frame +
+        1
+      true
+    }
+    None => false
   }
-  if fixed_time_state.val.overstep_seconds < timestep {
-    return false
-  }
-  fixed_time_state.val.overstep_seconds = fixed_time_state.val.overstep_seconds -
-    timestep
-  fixed_time_state.val.elapsed_seconds = fixed_time_state.val.elapsed_seconds +
-    timestep
-  fixed_time_state.val.did_run_this_frame = true
-  fixed_time_state.val.steps_ran_this_frame = fixed_time_state.val.steps_ran_this_frame +
-    1
-  true
 }
 
 ///|
@@ -1127,15 +1122,17 @@ pub fn fixed_time_set_runtime_state(
   overstep_seconds : Float,
   elapsed_seconds : Float,
 ) -> Unit {
-  fixed_time_state.val.timestep_seconds = timestep_seconds
-  fixed_time_state.val.overstep_seconds = overstep_seconds
-  fixed_time_state.val.elapsed_seconds = elapsed_seconds
+  fixed_time_state.val.clock = fixed_time_state.val.clock.set_runtime_state(
+    timestep_seconds, overstep_seconds, elapsed_seconds,
+  )
 }
 
 ///|
 pub fn fixed_time_set_timestep_seconds(seconds : Float) -> Unit {
   if seconds > 0.0F {
-    fixed_time_state.val.timestep_seconds = seconds
+    fixed_time_state.val.clock = fixed_time_state.val.clock.set_timestep_seconds(
+      seconds,
+    )
   }
 }
 
@@ -1148,27 +1145,22 @@ pub fn fixed_time_set_max_delta_seconds(seconds : Float) -> Unit {
 
 ///|
 pub fn fixed_time_timestep_seconds() -> Float {
-  fixed_time_state.val.timestep_seconds
+  fixed_time_state.val.clock.timestep_seconds()
 }
 
 ///|
 pub fn fixed_time_overstep_seconds() -> Float {
-  fixed_time_state.val.overstep_seconds
+  fixed_time_state.val.clock.overstep_seconds()
 }
 
 ///|
 pub fn fixed_time_elapsed_seconds() -> Float {
-  fixed_time_state.val.elapsed_seconds
+  fixed_time_state.val.clock.elapsed_seconds()
 }
 
 ///|
 pub fn fixed_time_overstep_fraction() -> Float {
-  let timestep = fixed_time_state.val.timestep_seconds
-  if timestep <= 0.0F {
-    0.0F
-  } else {
-    fixed_time_state.val.overstep_seconds / timestep
-  }
+  fixed_time_state.val.clock.overstep_fraction()
 }
 
 ///|
