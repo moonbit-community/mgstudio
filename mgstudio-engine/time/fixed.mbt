@@ -205,7 +205,7 @@ pub fn time_run_fixed_main_schedule(world : @ecs.World) -> Unit {
         sync_resource(fixed_resource.val, next_fixed, change_tick)
         time_sync_generic_time(change_tick, next_fixed.as_generic())
         time_fixed_mark_step()
-        @app.run_current_fixed_update_schedule(world)
+        @app.run_current_fixed_main_schedule(world)
       }
       None => break
     }

@@ -23,6 +23,30 @@ fn reset_time_test_state() -> Unit {
 }
 
 ///|
+fn current_stage_label() -> String {
+  match @app.current_schedule_stage() {
+    Some(@app.PreStartup) => "PreStartup"
+    Some(@app.Startup) => "Startup"
+    Some(@app.PostStartup) => "PostStartup"
+    Some(@app.First) => "First"
+    Some(@app.PreUpdate) => "PreUpdate"
+    Some(@app.StateTransition) => "StateTransition"
+    Some(@app.RunFixedMainLoop) => "RunFixedMainLoop"
+    Some(@app.FixedFirst) => "FixedFirst"
+    Some(@app.FixedPreUpdate) => "FixedPreUpdate"
+    Some(@app.FixedUpdate) => "FixedUpdate"
+    Some(@app.FixedPostUpdate) => "FixedPostUpdate"
+    Some(@app.FixedLast) => "FixedLast"
+    Some(@app.FixedMain) => "FixedMain"
+    Some(@app.Update) => "Update"
+    Some(@app.SpawnScene) => "SpawnScene"
+    Some(@app.PostUpdate) => "PostUpdate"
+    Some(@app.Last) => "Last"
+    None => "None"
+  }
+}
+
+///|
 test "time: manual instant keeps first update delta at zero" {
   reset_time_test_state()
   let mut app = @app.App::new(@ecs.World::new()).add_plugins([time_plugin])
@@ -177,4 +201,96 @@ test "time: fixed resource timestep changes affect later steps in the same frame
     Time::resource().get().unwrap().elapsed_seconds(),
     content="0.4000000059604645",
   )
+}
+
+///|
+test "time: fixed main schedule runs substages in bevy order" {
+  reset_time_test_state()
+  time_virtual_set_max_delta_seconds(1.0F)
+  let log : Array[String] = []
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins([time_plugin])
+    .insert_resource(Fixed::from_seconds(0.25F))
+    .add_fixed_first_system(fn(_world : @ecs.World) {
+      log.push(current_stage_label())
+    })
+    .add_fixed_pre_update_system(fn(_world : @ecs.World) {
+      log.push(current_stage_label())
+    })
+    .add_fixed_update_system(fn(_world : @ecs.World) {
+      log.push(current_stage_label())
+    })
+    .add_fixed_post_update_system(fn(_world : @ecs.World) {
+      log.push(current_stage_label())
+    })
+    .add_fixed_last_system(fn(_world : @ecs.World) {
+      log.push(current_stage_label())
+    })
+
+  app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
+  inspect(log.length(), content="0")
+
+  app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
+  inspect(
+    log.join(","),
+    content="FixedFirst,FixedPreUpdate,FixedUpdate,FixedPostUpdate,FixedLast",
+  )
+}
+
+///|
+test "time: run fixed main loop system sets order before fixed and after hooks" {
+  reset_time_test_state()
+  time_virtual_set_max_delta_seconds(1.0F)
+  let log : Array[String] = []
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins([time_plugin])
+    .insert_resource(Fixed::from_seconds(0.25F))
+    .add_run_fixed_main_loop_system_config(
+      @app.system(fn(_world : @ecs.World) { log.push("before") }).in_set(
+        @app.run_fixed_main_loop_system_set_name(
+          @app.RunFixedMainLoopSystems::BeforeFixedMainLoop,
+        ),
+      ),
+    )
+    .add_fixed_update_system(fn(_world : @ecs.World) {
+      log.push("fixed_update")
+    })
+    .add_run_fixed_main_loop_system_config(
+      @app.system(fn(_world : @ecs.World) { log.push("after") }).in_set(
+        @app.run_fixed_main_loop_system_set_name(
+          @app.RunFixedMainLoopSystems::AfterFixedMainLoop,
+        ),
+      ),
+    )
+
+  app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
+  inspect(log.join(","), content="before,after")
+
+  app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
+  inspect(log.join(","), content="before,after,before,fixed_update,after")
+}
+
+///|
+test "time: fixed main schedule order resource drives fixed substage order" {
+  reset_time_test_state()
+  time_virtual_set_max_delta_seconds(1.0F)
+  let log : Array[String] = []
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins([time_plugin])
+    .insert_resource(Fixed::from_seconds(0.25F))
+    .insert_resource(
+      @app.FixedMainScheduleOrder::new([@app.FixedLast, @app.FixedUpdate]),
+    )
+    .add_fixed_last_system(fn(_world : @ecs.World) {
+      log.push(current_stage_label())
+    })
+    .add_fixed_update_system(fn(_world : @ecs.World) {
+      log.push(current_stage_label())
+    })
+
+  app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
+  inspect(log.length(), content="0")
+
+  app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
+  inspect(log.join(","), content="FixedLast,FixedUpdate")
 }

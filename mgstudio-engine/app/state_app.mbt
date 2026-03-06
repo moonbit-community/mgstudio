@@ -55,6 +55,13 @@ fn state_insert_change_tick(world : @ecs.World) -> @core.Tick {
 pub fn states_plugin(plugin : StatesPlugin) -> Plugin[@ecs.World] {
   ignore(plugin)
   fn(app : App[@ecs.World]) {
+    let change_tick = state_insert_change_tick(app.world)
+    main_schedule_insert_after_unique(PreUpdate, StateTransition, change_tick)
+    main_schedule_insert_startup_before_unique(
+      PreStartup,
+      StateTransition,
+      change_tick,
+    )
     app.world.insert_resource(states_plugin_marker_key(), StatesPluginMarker::{
 
     })

@@ -42,7 +42,12 @@ fn current_stage_label() -> String {
     Some(PostStartup) => "PostStartup"
     Some(PreUpdate) => "PreUpdate"
     Some(RunFixedMainLoop) => "RunFixedMainLoop"
+    Some(FixedFirst) => "FixedFirst"
+    Some(FixedPreUpdate) => "FixedPreUpdate"
     Some(FixedUpdate) => "FixedUpdate"
+    Some(FixedPostUpdate) => "FixedPostUpdate"
+    Some(FixedLast) => "FixedLast"
+    Some(FixedMain) => "FixedMain"
     Some(Update) => "Update"
     Some(SpawnScene) => "SpawnScene"
     Some(PostUpdate) => "PostUpdate"
@@ -170,6 +175,63 @@ test "app update: spawn scene runs between update and post update" {
 
   app.run_once() |> ignore
   inspect(log.join(","), content="Update,SpawnScene,PostUpdate")
+}
+
+///|
+test "states plugin: inserts state transition into schedule order resources" {
+  let app = App::new(@ecs.World::new()).add_plugins([
+    states_plugin(StatesPlugin::default()),
+  ])
+  ignore(app)
+  let order = MainScheduleOrder::resource().get().unwrap()
+  let startup_labels = order.startup_labels.map(fn(stage : ScheduleStage) {
+    stage.to_string()
+  })
+  let labels = order.labels.map(fn(stage : ScheduleStage) { stage.to_string() })
+  inspect(
+    startup_labels.join(","),
+    content="StateTransition,PreStartup,Startup,PostStartup",
+  )
+  inspect(
+    labels.join(","),
+    content="First,PreUpdate,StateTransition,RunFixedMainLoop,Update,SpawnScene,PostUpdate,Last",
+  )
+}
+
+///|
+test "main schedule order resource drives startup and main stage execution order" {
+  let log : Array[String] = []
+  let app = App::new(@ecs.World::new())
+    .insert_resource(
+      MainScheduleOrder::new([SpawnScene, Update, PostUpdate], [
+        PostStartup,
+        Startup,
+        PreStartup,
+      ]),
+    )
+    .add_pre_startup_system(fn(_world : @ecs.World) {
+      log.push(current_stage_label())
+    })
+    .add_startup_system(fn(_world : @ecs.World) {
+      log.push(current_stage_label())
+    })
+    .add_post_startup_system(fn(_world : @ecs.World) {
+      log.push(current_stage_label())
+    })
+    .add_spawn_scene_system(fn(_world : @ecs.World) {
+      log.push(current_stage_label())
+    })
+    .add_system(fn(_world : @ecs.World) { log.push(current_stage_label()) })
+    .add_post_update_system(fn(_world : @ecs.World) {
+      log.push(current_stage_label())
+    })
+
+  app.run_startup() |> ignore
+  app.run_once() |> ignore
+  inspect(
+    log.join(","),
+    content="PostStartup,Startup,PreStartup,SpawnScene,Update,PostUpdate",
+  )
 }
 
 ///|

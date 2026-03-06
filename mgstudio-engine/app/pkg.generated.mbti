@@ -77,7 +77,11 @@ pub fn report_render_runtime_error(RenderRuntimeError) -> Unit
 
 pub fn reset_render_error_handler() -> Unit
 
+pub fn run_current_fixed_main_schedule(@ecs.World) -> Unit
+
 pub fn run_current_fixed_update_schedule(@ecs.World) -> Unit
+
+pub fn run_fixed_main_loop_system_set_name(RunFixedMainLoopSystems) -> String
 
 pub fn schedule_runner_plugin(ScheduleRunnerPlugin) -> (App[@ecs.World]) -> App[@ecs.World]
 
@@ -145,6 +149,30 @@ pub fn[W, P : SystemParam] App::add_first_system_param(Self[W], (P) -> Unit) -> 
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_first_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_first_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_first_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
+pub fn[W] App::add_fixed_first_system(Self[W], (W) -> Unit) -> Self[W]
+pub fn[W] App::add_fixed_first_system_config(Self[W], SystemConfig[W]) -> Self[W]
+pub fn[W, P : SystemParam] App::add_fixed_first_system_param(Self[W], (P) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_first_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_first_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_fixed_first_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
+pub fn[W] App::add_fixed_last_system(Self[W], (W) -> Unit) -> Self[W]
+pub fn[W] App::add_fixed_last_system_config(Self[W], SystemConfig[W]) -> Self[W]
+pub fn[W, P : SystemParam] App::add_fixed_last_system_param(Self[W], (P) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_last_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_last_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_fixed_last_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
+pub fn[W] App::add_fixed_post_update_system(Self[W], (W) -> Unit) -> Self[W]
+pub fn[W] App::add_fixed_post_update_system_config(Self[W], SystemConfig[W]) -> Self[W]
+pub fn[W, P : SystemParam] App::add_fixed_post_update_system_param(Self[W], (P) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_post_update_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_post_update_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_fixed_post_update_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
+pub fn[W] App::add_fixed_pre_update_system(Self[W], (W) -> Unit) -> Self[W]
+pub fn[W] App::add_fixed_pre_update_system_config(Self[W], SystemConfig[W]) -> Self[W]
+pub fn[W, P : SystemParam] App::add_fixed_pre_update_system_param(Self[W], (P) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_pre_update_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_pre_update_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_fixed_pre_update_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::add_fixed_update_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_fixed_update_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_fixed_update_system_param(Self[W], (P) -> Unit) -> Self[W]
@@ -191,6 +219,10 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_pre_upd
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_pre_update_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::add_run_fixed_main_loop_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_run_fixed_main_loop_system_config(Self[W], SystemConfig[W]) -> Self[W]
+pub fn[W, P : SystemParam] App::add_run_fixed_main_loop_system_param(Self[W], (P) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_run_fixed_main_loop_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_run_fixed_main_loop_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_run_fixed_main_loop_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[W] App::add_spawn_scene_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_spawn_scene_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_spawn_scene_system_param(Self[W], (P) -> Unit) -> Self[W]
@@ -254,6 +286,15 @@ pub(all) enum AppLabel {
 pub impl Eq for AppLabel
 pub impl Show for AppLabel
 
+pub struct FixedMainScheduleOrder {
+  labels : Array[ScheduleStage]
+}
+pub fn FixedMainScheduleOrder::default() -> Self
+pub fn FixedMainScheduleOrder::insert_after(Self, ScheduleStage, ScheduleStage) -> Self
+pub fn FixedMainScheduleOrder::insert_before(Self, ScheduleStage, ScheduleStage) -> Self
+pub fn FixedMainScheduleOrder::new(Array[ScheduleStage]) -> Self
+pub impl Resource for FixedMainScheduleOrder
+
 pub(all) enum LogLevel {
   Error
   Warn
@@ -286,6 +327,18 @@ pub fn LogRecord::level(Self) -> LogLevel
 pub fn LogRecord::message(Self) -> String
 pub fn LogRecord::name(Self) -> String
 pub fn LogRecord::target(Self) -> String
+
+pub struct MainScheduleOrder {
+  labels : Array[ScheduleStage]
+  startup_labels : Array[ScheduleStage]
+}
+pub fn MainScheduleOrder::default() -> Self
+pub fn MainScheduleOrder::insert_after(Self, ScheduleStage, ScheduleStage) -> Self
+pub fn MainScheduleOrder::insert_before(Self, ScheduleStage, ScheduleStage) -> Self
+pub fn MainScheduleOrder::insert_startup_after(Self, ScheduleStage, ScheduleStage) -> Self
+pub fn MainScheduleOrder::insert_startup_before(Self, ScheduleStage, ScheduleStage) -> Self
+pub fn MainScheduleOrder::new(Array[ScheduleStage], Array[ScheduleStage]) -> Self
+pub impl Resource for MainScheduleOrder
 
 pub(all) enum NextState[S] {
   Unchanged
@@ -373,6 +426,14 @@ pub struct ResMut[T] {
 pub fn[T] ResMut::get_ref(Self[T]) -> Ref[T]
 pub impl[T : Resource] SystemParam for ResMut[T]
 
+pub(all) enum RunFixedMainLoopSystems {
+  BeforeFixedMainLoop
+  FixedMainLoop
+  AfterFixedMainLoop
+}
+pub impl Eq for RunFixedMainLoopSystems
+pub impl Show for RunFixedMainLoopSystems
+
 pub struct Schedule[W] {
   pre_startup : Array[SystemConfig[W]]
   startup : Array[SystemConfig[W]]
@@ -380,7 +441,11 @@ pub struct Schedule[W] {
   first : Array[SystemConfig[W]]
   pre_update : Array[SystemConfig[W]]
   run_fixed_main_loop : Array[SystemConfig[W]]
+  fixed_first : Array[SystemConfig[W]]
+  fixed_pre_update : Array[SystemConfig[W]]
   fixed_update : Array[SystemConfig[W]]
+  fixed_post_update : Array[SystemConfig[W]]
+  fixed_last : Array[SystemConfig[W]]
   update : Array[SystemConfig[W]]
   spawn_scene : Array[SystemConfig[W]]
   post_update : Array[SystemConfig[W]]
@@ -391,7 +456,11 @@ pub struct Schedule[W] {
   first_set_edges : Array[(String, String)]
   pre_update_set_edges : Array[(String, String)]
   run_fixed_main_loop_set_edges : Array[(String, String)]
+  fixed_first_set_edges : Array[(String, String)]
+  fixed_pre_update_set_edges : Array[(String, String)]
   fixed_update_set_edges : Array[(String, String)]
+  fixed_post_update_set_edges : Array[(String, String)]
+  fixed_last_set_edges : Array[(String, String)]
   update_set_edges : Array[(String, String)]
   spawn_scene_set_edges : Array[(String, String)]
   post_update_set_edges : Array[(String, String)]
@@ -417,7 +486,12 @@ pub(all) enum ScheduleStage {
   PreUpdate
   StateTransition
   RunFixedMainLoop
+  FixedFirst
+  FixedPreUpdate
   FixedUpdate
+  FixedPostUpdate
+  FixedLast
+  FixedMain
   Update
   SpawnScene
   PostUpdate
