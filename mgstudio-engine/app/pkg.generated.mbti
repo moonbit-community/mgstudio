@@ -87,7 +87,15 @@ pub fn run_current_fixed_update_schedule(@ecs.World) -> Unit
 
 pub fn run_fixed_main_loop_system_set_name(RunFixedMainLoopSystems) -> String
 
+pub fn[W] schedule_push_config(Schedule[W], ScheduleStage, SystemConfig[W]) -> Unit
+
 pub fn schedule_runner_plugin(ScheduleRunnerPlugin) -> (App[@ecs.World]) -> App[@ecs.World]
+
+pub fn[W] schedule_set_edges(Schedule[W], ScheduleStage) -> Array[(String, String)]
+
+pub fn schedule_stage_storage_key(ScheduleStage) -> String
+
+pub fn[W] schedule_systems(Schedule[W], ScheduleStage) -> Array[SystemConfig[W]]
 
 pub fn set_render_error_handler((RenderRuntimeError) -> RenderErrorPolicy) -> Unit
 
@@ -144,7 +152,6 @@ pub fn[S : States] world_state(@ecs.World, S) -> State[S]?
 // Types and methods
 pub struct App[W] {
   mut world : W
-  mut startup_ran : Bool
   update_schedule : ScheduleStage?
   schedule : Schedule[W]
   runner_builder : ((App[W]) -> (() -> Unit))?
@@ -233,6 +240,7 @@ pub fn[W, P : SystemParam] App::add_run_fixed_main_loop_system_param(Self[W], (P
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_run_fixed_main_loop_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_run_fixed_main_loop_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_run_fixed_main_loop_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
+pub fn[W] App::add_schedule(Self[W], ScheduleStage) -> Self[W]
 pub fn[W] App::add_spawn_scene_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_spawn_scene_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_spawn_scene_system_param(Self[W], (P) -> Unit) -> Self[W]
@@ -255,7 +263,9 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 pub fn[A] App::add_system_query1_ecs(Self[@ecs.World], @ecs.ComponentKey[A], (@ecs.Query1[A], @ecs.World) -> Unit) -> Self[@ecs.World]
 pub fn[A, B] App::add_system_query2_ecs(Self[@ecs.World], @ecs.ComponentKey[A], @ecs.ComponentKey[B], (@ecs.Query2[A, B], @ecs.World) -> Unit) -> Self[@ecs.World]
 pub fn[A, B, C] App::add_system_query3_ecs(Self[@ecs.World], @ecs.ComponentKey[A], @ecs.ComponentKey[B], @ecs.ComponentKey[C], (@ecs.Query3[A, B, C], @ecs.World) -> Unit) -> Self[@ecs.World]
+pub fn[W] App::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
 pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
+pub fn[W] App::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W, T] App::contains_resource(Self[W], @core.Resource[T]) -> Bool
 pub fn[W] App::get_sub_app(Self[W], AppLabel) -> Self[W]?
 pub fn[W] App::get_sub_app_mut(Self[W], AppLabel) -> Ref[Self[W]]?
@@ -453,37 +463,15 @@ pub impl Eq for RunFixedMainLoopSystems
 pub impl Show for RunFixedMainLoopSystems
 
 pub struct Schedule[W] {
-  pre_startup : Array[SystemConfig[W]]
-  startup : Array[SystemConfig[W]]
-  post_startup : Array[SystemConfig[W]]
-  first : Array[SystemConfig[W]]
-  pre_update : Array[SystemConfig[W]]
-  run_fixed_main_loop : Array[SystemConfig[W]]
-  fixed_first : Array[SystemConfig[W]]
-  fixed_pre_update : Array[SystemConfig[W]]
-  fixed_update : Array[SystemConfig[W]]
-  fixed_post_update : Array[SystemConfig[W]]
-  fixed_last : Array[SystemConfig[W]]
-  update : Array[SystemConfig[W]]
-  spawn_scene : Array[SystemConfig[W]]
-  post_update : Array[SystemConfig[W]]
-  last : Array[SystemConfig[W]]
-  pre_startup_set_edges : Array[(String, String)]
-  startup_set_edges : Array[(String, String)]
-  post_startup_set_edges : Array[(String, String)]
-  first_set_edges : Array[(String, String)]
-  pre_update_set_edges : Array[(String, String)]
-  run_fixed_main_loop_set_edges : Array[(String, String)]
-  fixed_first_set_edges : Array[(String, String)]
-  fixed_pre_update_set_edges : Array[(String, String)]
-  fixed_update_set_edges : Array[(String, String)]
-  fixed_post_update_set_edges : Array[(String, String)]
-  fixed_last_set_edges : Array[(String, String)]
-  update_set_edges : Array[(String, String)]
-  spawn_scene_set_edges : Array[(String, String)]
-  post_update_set_edges : Array[(String, String)]
-  last_set_edges : Array[(String, String)]
+  entries : @hashmap.HashMap[String, Ref[ScheduleEntry[W]]]
 }
+pub fn[W] Schedule::new() -> Self[W]
+
+pub struct ScheduleEntry[W] {
+  systems : Array[SystemConfig[W]]
+  set_edges : Array[(String, String)]
+}
+pub fn[W] ScheduleEntry::new() -> Self[W]
 
 pub(all) enum ScheduleRunnerMode {
   RunOnce

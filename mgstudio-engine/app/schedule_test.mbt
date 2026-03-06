@@ -45,8 +45,8 @@ test "app: run_if evaluates with condition system ticks" {
 
   inspect(observed.length(), content="2")
   inspect(system_ran.val, content="false")
-  inspect(observed[0].0 == 0 && observed[0].1 == 1, content="true")
-  inspect(observed[1].0 == 1 && observed[1].1 == 2, content="true")
+  inspect(observed[0].0 == 0 && observed[0].1 == 3, content="true")
+  inspect(observed[1].0 == 3 && observed[1].1 == 5, content="true")
 }
 
 ///|
@@ -73,16 +73,19 @@ test "app: schedule sets order and preserve insertion within a set" {
   let set_b = system_set("B")
   let app = App::new(@ecs.World::new())
   app
-  .add_system_config(
+  .add_systems(
+    Update,
     system(fn(_world : @ecs.World) { log.push(1) }).in_set(set_a),
   )
-  .add_system_config(
+  .add_systems(
+    Update,
     system(fn(_world : @ecs.World) { log.push(2) }).in_set(set_a),
   )
-  .add_system_config(
+  .add_systems(
+    Update,
     system(fn(_world : @ecs.World) { log.push(3) }).in_set(set_b),
   )
-  .configure_set(Update, set_a, before=[set_b])
+  .configure_sets(Update, set_a, before=[set_b])
   .run_once()
   |> ignore
   inspect(
@@ -107,12 +110,19 @@ test "app: Last stage runs after PostUpdate" {
 test "app: update runs startup once and update every frame" {
   let log : Array[String] = []
   let mut app = App::new(@ecs.World::new())
-    .add_pre_startup_system(fn(_world : @ecs.World) { log.push("pre_startup") })
-    .add_startup_system(fn(_world : @ecs.World) { log.push("startup") })
-    .add_post_startup_system(fn(_world : @ecs.World) {
-      log.push("post_startup")
-    })
-    .add_system(fn(_world : @ecs.World) { log.push("update") })
+    .add_systems(
+      PreStartup,
+      system(fn(_world : @ecs.World) { log.push("pre_startup") }),
+    )
+    .add_systems(
+      Startup,
+      system(fn(_world : @ecs.World) { log.push("startup") }),
+    )
+    .add_systems(
+      PostStartup,
+      system(fn(_world : @ecs.World) { log.push("post_startup") }),
+    )
+    .add_systems(Update, system(fn(_world : @ecs.World) { log.push("update") }))
 
   app = app.update()
   app = app.update()
@@ -232,8 +242,8 @@ test "app: system param can read current system ticks" {
   .run_once()
   |> ignore
   inspect(log.length(), content="2")
-  inspect(log[0].0 == 0 && log[0].1 == 1, content="true")
-  inspect(log[1].0 == 0 && log[1].1 == 2, content="true")
+  inspect(log[0].0 == 0 && log[0].1 == 3, content="true")
+  inspect(log[1].0 == 0 && log[1].1 == 4, content="true")
 }
 
 ///|

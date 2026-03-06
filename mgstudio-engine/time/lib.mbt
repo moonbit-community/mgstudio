@@ -216,8 +216,12 @@ pub fn time_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .init_resource(fn() { Virtual::new() })
   .init_resource(fn() { Fixed::new() })
   .init_resource(fn() { TimeUpdateStrategy::default() })
-  .add_first_system_param4(time_update_resource_system)
-  .add_run_fixed_main_loop_system_config(
+  .add_systems(
+    @app.First,
+    @app.system(@app.system_param4(time_update_resource_system)),
+  )
+  .add_systems(
+    @app.RunFixedMainLoop,
     @app.system(time_run_fixed_main_schedule).in_set(
       @app.run_fixed_main_loop_system_set_name(
         @app.RunFixedMainLoopSystems::FixedMainLoop,

@@ -61,6 +61,11 @@ pub struct FixedMainScheduleOrder {
 } derive(Eq, Show, ToJson, FromJson)
 
 ///|
+priv struct MainScheduleRuntimeState {
+  startup_ran : Bool
+} derive(Eq, Show, ToJson, FromJson)
+
+///|
 pub fn FixedMainScheduleOrder::new(
   labels : Array[ScheduleStage],
 ) -> FixedMainScheduleOrder {
@@ -88,6 +93,13 @@ pub fn fixed_main_schedule_order_resource_key() -> @ecs.ResourceKey[
   FixedMainScheduleOrder,
 ] {
   @ecs.register_resource(debug_name="bevy_app::FixedMainScheduleOrder")
+}
+
+///|
+fn main_schedule_runtime_state_resource_key() -> @ecs.ResourceKey[
+  MainScheduleRuntimeState,
+] {
+  @ecs.register_resource(debug_name="bevy_app::MainScheduleRuntimeState")
 }
 
 ///|
@@ -227,6 +239,28 @@ pub fn world_fixed_main_schedule_order(
 }
 
 ///|
+fn main_schedule_runtime_state(world : @ecs.World) -> MainScheduleRuntimeState {
+  match
+    world_schedule_resource(world, main_schedule_runtime_state_resource_key()) {
+    Some(state) => state
+    None => MainScheduleRuntimeState::{ startup_ran: false }
+  }
+}
+
+///|
+fn main_schedule_write_runtime_state(
+  world : @ecs.World,
+  state : MainScheduleRuntimeState,
+  change_tick : @core.Tick,
+) -> Unit {
+  world.insert_resource_with_change_tick(
+    main_schedule_runtime_state_resource_key(),
+    state,
+    change_tick,
+  )
+}
+
+///|
 fn main_schedule_write_order(
   world : @ecs.World,
   update : (MainScheduleOrder) -> MainScheduleOrder,
@@ -292,6 +326,11 @@ fn reset_main_schedule_resources(world : @ecs.World) -> Unit {
     FixedMainScheduleOrder::default(),
     1,
   )
+  main_schedule_write_runtime_state(
+    world,
+    MainScheduleRuntimeState::{ startup_ran: false },
+    1,
+  )
 }
 
 ///|
@@ -302,7 +341,6 @@ fn run_main_schedule_stage(
 ) -> Unit {
   match stage {
     StateTransition => run_registered_state_transitions(world)
-    FixedMain => run_fixed_main_schedule(world, schedule)
     _ => run_schedule_stage(world, schedule, stage)
   }
 }
@@ -312,9 +350,17 @@ fn run_main_schedule_startup(
   world : @ecs.World,
   schedule : Schedule[@ecs.World],
 ) -> Unit {
+  if main_schedule_runtime_state(world).startup_ran {
+    return
+  }
   for stage in world_main_schedule_order(world).startup_labels {
     run_main_schedule_stage(world, schedule, stage)
   }
+  main_schedule_write_runtime_state(
+    world,
+    MainScheduleRuntimeState::{ startup_ran: true },
+    world.increment_change_tick(),
+  )
 }
 
 ///|
@@ -322,6 +368,7 @@ fn run_main_schedule_update(
   world : @ecs.World,
   schedule : Schedule[@ecs.World],
 ) -> Unit {
+  run_main_schedule_startup(world, schedule)
   for stage in world_main_schedule_order(world).labels {
     run_main_schedule_stage(world, schedule, stage)
   }
@@ -335,6 +382,18 @@ fn run_fixed_main_schedule(
   for stage in world_fixed_main_schedule_order(world).labels {
     run_schedule_stage(world, schedule, stage)
   }
+}
+
+///|
+fn run_main_schedule_driver_system(world : @ecs.World) -> Unit {
+  guard current_app_schedule_ref.val is Some(schedule) else { return }
+  run_main_schedule_update(world, schedule)
+}
+
+///|
+fn run_fixed_main_schedule_driver_system(world : @ecs.World) -> Unit {
+  guard current_app_schedule_ref.val is Some(schedule) else { return }
+  run_fixed_main_schedule(world, schedule)
 }
 
 ///|

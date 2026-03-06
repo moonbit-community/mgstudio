@@ -154,9 +154,9 @@ fn main {
   ]
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_pre_update_system(print_real_time)
-  .add_fixed_update_system(print_fixed_time)
-  .add_system(print_time)
+  .add_systems(@app.PreUpdate, @app.system(print_real_time))
+  .add_systems(@app.FixedUpdate, @app.system(print_fixed_time))
+  .add_systems(@app.Update, @app.system(print_time))
   .set_runner(time_runner_builder)
   .run()
 }

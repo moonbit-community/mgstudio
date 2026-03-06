@@ -344,43 +344,8 @@ pub type RunnerBuilder[W] = (App[W]) -> RunnerFn
 pub type SubAppExtractFn[W] = (W, W) -> (W, W)
 
 ///|
-pub struct Schedule[W] {
-  pre_startup : Array[SystemConfig[W]]
-  startup : Array[SystemConfig[W]]
-  post_startup : Array[SystemConfig[W]]
-  first : Array[SystemConfig[W]]
-  pre_update : Array[SystemConfig[W]]
-  run_fixed_main_loop : Array[SystemConfig[W]]
-  fixed_first : Array[SystemConfig[W]]
-  fixed_pre_update : Array[SystemConfig[W]]
-  fixed_update : Array[SystemConfig[W]]
-  fixed_post_update : Array[SystemConfig[W]]
-  fixed_last : Array[SystemConfig[W]]
-  update : Array[SystemConfig[W]]
-  spawn_scene : Array[SystemConfig[W]]
-  post_update : Array[SystemConfig[W]]
-  last : Array[SystemConfig[W]]
-  pre_startup_set_edges : Array[(SystemSet, SystemSet)]
-  startup_set_edges : Array[(SystemSet, SystemSet)]
-  post_startup_set_edges : Array[(SystemSet, SystemSet)]
-  first_set_edges : Array[(SystemSet, SystemSet)]
-  pre_update_set_edges : Array[(SystemSet, SystemSet)]
-  run_fixed_main_loop_set_edges : Array[(SystemSet, SystemSet)]
-  fixed_first_set_edges : Array[(SystemSet, SystemSet)]
-  fixed_pre_update_set_edges : Array[(SystemSet, SystemSet)]
-  fixed_update_set_edges : Array[(SystemSet, SystemSet)]
-  fixed_post_update_set_edges : Array[(SystemSet, SystemSet)]
-  fixed_last_set_edges : Array[(SystemSet, SystemSet)]
-  update_set_edges : Array[(SystemSet, SystemSet)]
-  spawn_scene_set_edges : Array[(SystemSet, SystemSet)]
-  post_update_set_edges : Array[(SystemSet, SystemSet)]
-  last_set_edges : Array[(SystemSet, SystemSet)]
-}
-
-///|
 pub struct App[W] {
   mut world : W
-  mut startup_ran : Bool
   update_schedule : ScheduleStage?
   schedule : Schedule[W]
   runner_builder : RunnerBuilder[W]?
@@ -393,51 +358,17 @@ pub struct App[W] {
 pub fn App::new(world : @ecs.World) -> App[@ecs.World] {
   app_runtime_reset()
   reset_main_schedule_resources(world)
+  let schedule = Schedule::new()
+  schedule_push_config(schedule, Main, system(run_main_schedule_driver_system))
+  schedule_push_config(
+    schedule,
+    FixedMain,
+    system(run_fixed_main_schedule_driver_system),
+  )
   App::{
     world,
-    startup_ran: false,
     update_schedule: Some(Main),
-    schedule: Schedule::{
-      pre_startup: [],
-      startup: [],
-      post_startup: [],
-      first: [],
-      pre_update: [],
-      run_fixed_main_loop: [],
-      fixed_first: [],
-      fixed_pre_update: [],
-      fixed_update: [],
-      fixed_post_update: [],
-      fixed_last: [],
-      update: [],
-      spawn_scene: [],
-      post_update: [],
-      last: [],
-      pre_startup_set_edges: [],
-      startup_set_edges: [],
-      post_startup_set_edges: [],
-      first_set_edges: [],
-      pre_update_set_edges: [],
-      run_fixed_main_loop_set_edges: [
-        (
-          run_fixed_main_loop_system_set_name(BeforeFixedMainLoop),
-          run_fixed_main_loop_system_set_name(FixedMainLoop),
-        ),
-        (
-          run_fixed_main_loop_system_set_name(FixedMainLoop),
-          run_fixed_main_loop_system_set_name(AfterFixedMainLoop),
-        ),
-      ],
-      fixed_first_set_edges: [],
-      fixed_pre_update_set_edges: [],
-      fixed_update_set_edges: [],
-      fixed_post_update_set_edges: [],
-      fixed_last_set_edges: [],
-      update_set_edges: [],
-      spawn_scene_set_edges: [],
-      post_update_set_edges: [],
-      last_set_edges: [],
-    },
+    schedule,
     runner_builder: None,
     sub_apps: @hashmap.HashMap::new(),
     sub_app_labels: @hashmap.HashMap::new(),
@@ -633,7 +564,7 @@ pub fn[W] App::add_pre_startup_system_config(
   self : App[W],
   config : SystemConfig[W],
 ) -> App[W] {
-  self.schedule.pre_startup.push(config)
+  schedule_push_config(self.schedule, PreStartup, config)
   self
 }
 
@@ -642,7 +573,7 @@ pub fn[W] App::add_pre_startup_system(
   self : App[W],
   system_fn : SystemFn[W],
 ) -> App[W] {
-  self.schedule.pre_startup.push(system(system_fn))
+  schedule_push_config(self.schedule, PreStartup, system(system_fn))
   self
 }
 
@@ -651,7 +582,11 @@ pub fn[W, P : SystemParam] App::add_pre_startup_system_param(
   self : App[W],
   pre_startup_system : (P) -> Unit,
 ) -> App[W] {
-  self.schedule.pre_startup.push(system(system_param(pre_startup_system)))
+  schedule_push_config(
+    self.schedule,
+    PreStartup,
+    system(system_param(pre_startup_system)),
+  )
   self
 }
 
@@ -660,7 +595,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_pre_startup_system_param2
   self : App[W],
   pre_startup_system : (P1, P2) -> Unit,
 ) -> App[W] {
-  self.schedule.pre_startup.push(system(system_param2(pre_startup_system)))
+  schedule_push_config(
+    self.schedule,
+    PreStartup,
+    system(system_param2(pre_startup_system)),
+  )
   self
 }
 
@@ -669,7 +608,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_pre_sta
   self : App[W],
   pre_startup_system : (P1, P2, P3) -> Unit,
 ) -> App[W] {
-  self.schedule.pre_startup.push(system(system_param3(pre_startup_system)))
+  schedule_push_config(
+    self.schedule,
+    PreStartup,
+    system(system_param3(pre_startup_system)),
+  )
   self
 }
 
@@ -684,7 +627,11 @@ pub fn[
   self : App[W],
   pre_startup_system : (P1, P2, P3, P4) -> Unit,
 ) -> App[W] {
-  self.schedule.pre_startup.push(system(system_param4(pre_startup_system)))
+  schedule_push_config(
+    self.schedule,
+    PreStartup,
+    system(system_param4(pre_startup_system)),
+  )
   self
 }
 
@@ -693,7 +640,7 @@ pub fn[W] App::add_startup_system_config(
   self : App[W],
   config : SystemConfig[W],
 ) -> App[W] {
-  self.schedule.startup.push(config)
+  schedule_push_config(self.schedule, Startup, config)
   self
 }
 
@@ -702,7 +649,7 @@ pub fn[W] App::add_startup_system(
   self : App[W],
   system_fn : SystemFn[W],
 ) -> App[W] {
-  self.schedule.startup.push(system(system_fn))
+  schedule_push_config(self.schedule, Startup, system(system_fn))
   self
 }
 
@@ -711,7 +658,11 @@ pub fn[W, P : SystemParam] App::add_startup_system_param(
   self : App[W],
   startup_system : (P) -> Unit,
 ) -> App[W] {
-  self.schedule.startup.push(system(system_param(startup_system)))
+  schedule_push_config(
+    self.schedule,
+    Startup,
+    system(system_param(startup_system)),
+  )
   self
 }
 
@@ -720,7 +671,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_startup_system_param2(
   self : App[W],
   startup_system : (P1, P2) -> Unit,
 ) -> App[W] {
-  self.schedule.startup.push(system(system_param2(startup_system)))
+  schedule_push_config(
+    self.schedule,
+    Startup,
+    system(system_param2(startup_system)),
+  )
   self
 }
 
@@ -729,7 +684,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_startup
   self : App[W],
   startup_system : (P1, P2, P3) -> Unit,
 ) -> App[W] {
-  self.schedule.startup.push(system(system_param3(startup_system)))
+  schedule_push_config(
+    self.schedule,
+    Startup,
+    system(system_param3(startup_system)),
+  )
   self
 }
 
@@ -744,7 +703,11 @@ pub fn[
   self : App[W],
   startup_system : (P1, P2, P3, P4) -> Unit,
 ) -> App[W] {
-  self.schedule.startup.push(system(system_param4(startup_system)))
+  schedule_push_config(
+    self.schedule,
+    Startup,
+    system(system_param4(startup_system)),
+  )
   self
 }
 
@@ -753,7 +716,7 @@ pub fn[W] App::add_post_startup_system_config(
   self : App[W],
   config : SystemConfig[W],
 ) -> App[W] {
-  self.schedule.post_startup.push(config)
+  schedule_push_config(self.schedule, PostStartup, config)
   self
 }
 
@@ -762,7 +725,7 @@ pub fn[W] App::add_post_startup_system(
   self : App[W],
   system_fn : SystemFn[W],
 ) -> App[W] {
-  self.schedule.post_startup.push(system(system_fn))
+  schedule_push_config(self.schedule, PostStartup, system(system_fn))
   self
 }
 
@@ -771,7 +734,11 @@ pub fn[W, P : SystemParam] App::add_post_startup_system_param(
   self : App[W],
   post_startup_system : (P) -> Unit,
 ) -> App[W] {
-  self.schedule.post_startup.push(system(system_param(post_startup_system)))
+  schedule_push_config(
+    self.schedule,
+    PostStartup,
+    system(system_param(post_startup_system)),
+  )
   self
 }
 
@@ -780,7 +747,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_post_startup_system_param
   self : App[W],
   post_startup_system : (P1, P2) -> Unit,
 ) -> App[W] {
-  self.schedule.post_startup.push(system(system_param2(post_startup_system)))
+  schedule_push_config(
+    self.schedule,
+    PostStartup,
+    system(system_param2(post_startup_system)),
+  )
   self
 }
 
@@ -789,7 +760,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_post_st
   self : App[W],
   post_startup_system : (P1, P2, P3) -> Unit,
 ) -> App[W] {
-  self.schedule.post_startup.push(system(system_param3(post_startup_system)))
+  schedule_push_config(
+    self.schedule,
+    PostStartup,
+    system(system_param3(post_startup_system)),
+  )
   self
 }
 
@@ -804,7 +779,11 @@ pub fn[
   self : App[W],
   post_startup_system : (P1, P2, P3, P4) -> Unit,
 ) -> App[W] {
-  self.schedule.post_startup.push(system(system_param4(post_startup_system)))
+  schedule_push_config(
+    self.schedule,
+    PostStartup,
+    system(system_param4(post_startup_system)),
+  )
   self
 }
 
@@ -813,7 +792,7 @@ pub fn[W] App::add_first_system_config(
   self : App[W],
   config : SystemConfig[W],
 ) -> App[W] {
-  self.schedule.first.push(config)
+  schedule_push_config(self.schedule, First, config)
   self
 }
 
@@ -822,7 +801,7 @@ pub fn[W] App::add_first_system(
   self : App[W],
   system_fn : SystemFn[W],
 ) -> App[W] {
-  self.schedule.first.push(system(system_fn))
+  schedule_push_config(self.schedule, First, system(system_fn))
   self
 }
 
@@ -831,7 +810,7 @@ pub fn[W, P : SystemParam] App::add_first_system_param(
   self : App[W],
   first_system : (P) -> Unit,
 ) -> App[W] {
-  self.schedule.first.push(system(system_param(first_system)))
+  schedule_push_config(self.schedule, First, system(system_param(first_system)))
   self
 }
 
@@ -840,7 +819,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_first_system_param2(
   self : App[W],
   first_system : (P1, P2) -> Unit,
 ) -> App[W] {
-  self.schedule.first.push(system(system_param2(first_system)))
+  schedule_push_config(
+    self.schedule,
+    First,
+    system(system_param2(first_system)),
+  )
   self
 }
 
@@ -849,7 +832,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_first_s
   self : App[W],
   first_system : (P1, P2, P3) -> Unit,
 ) -> App[W] {
-  self.schedule.first.push(system(system_param3(first_system)))
+  schedule_push_config(
+    self.schedule,
+    First,
+    system(system_param3(first_system)),
+  )
   self
 }
 
@@ -864,7 +851,11 @@ pub fn[
   self : App[W],
   first_system : (P1, P2, P3, P4) -> Unit,
 ) -> App[W] {
-  self.schedule.first.push(system(system_param4(first_system)))
+  schedule_push_config(
+    self.schedule,
+    First,
+    system(system_param4(first_system)),
+  )
   self
 }
 
@@ -873,7 +864,7 @@ pub fn[W] App::add_pre_update_system_config(
   self : App[W],
   config : SystemConfig[W],
 ) -> App[W] {
-  self.schedule.pre_update.push(config)
+  schedule_push_config(self.schedule, PreUpdate, config)
   self
 }
 
@@ -882,7 +873,7 @@ pub fn[W] App::add_pre_update_system(
   self : App[W],
   system_fn : SystemFn[W],
 ) -> App[W] {
-  self.schedule.pre_update.push(system(system_fn))
+  schedule_push_config(self.schedule, PreUpdate, system(system_fn))
   self
 }
 
@@ -891,7 +882,11 @@ pub fn[W, P : SystemParam] App::add_pre_update_system_param(
   self : App[W],
   pre_update_system : (P) -> Unit,
 ) -> App[W] {
-  self.schedule.pre_update.push(system(system_param(pre_update_system)))
+  schedule_push_config(
+    self.schedule,
+    PreUpdate,
+    system(system_param(pre_update_system)),
+  )
   self
 }
 
@@ -900,7 +895,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_pre_update_system_param2(
   self : App[W],
   pre_update_system : (P1, P2) -> Unit,
 ) -> App[W] {
-  self.schedule.pre_update.push(system(system_param2(pre_update_system)))
+  schedule_push_config(
+    self.schedule,
+    PreUpdate,
+    system(system_param2(pre_update_system)),
+  )
   self
 }
 
@@ -909,7 +908,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_pre_upd
   self : App[W],
   pre_update_system : (P1, P2, P3) -> Unit,
 ) -> App[W] {
-  self.schedule.pre_update.push(system(system_param3(pre_update_system)))
+  schedule_push_config(
+    self.schedule,
+    PreUpdate,
+    system(system_param3(pre_update_system)),
+  )
   self
 }
 
@@ -924,7 +927,11 @@ pub fn[
   self : App[W],
   pre_update_system : (P1, P2, P3, P4) -> Unit,
 ) -> App[W] {
-  self.schedule.pre_update.push(system(system_param4(pre_update_system)))
+  schedule_push_config(
+    self.schedule,
+    PreUpdate,
+    system(system_param4(pre_update_system)),
+  )
   self
 }
 
@@ -933,7 +940,7 @@ pub fn[W] App::add_run_fixed_main_loop_system_config(
   self : App[W],
   config : SystemConfig[W],
 ) -> App[W] {
-  self.schedule.run_fixed_main_loop.push(config)
+  schedule_push_config(self.schedule, RunFixedMainLoop, config)
   self
 }
 
@@ -942,7 +949,7 @@ pub fn[W] App::add_run_fixed_main_loop_system(
   self : App[W],
   system_fn : SystemFn[W],
 ) -> App[W] {
-  self.schedule.run_fixed_main_loop.push(system(system_fn))
+  schedule_push_config(self.schedule, RunFixedMainLoop, system(system_fn))
   self
 }
 
@@ -951,7 +958,9 @@ pub fn[W, P : SystemParam] App::add_run_fixed_main_loop_system_param(
   self : App[W],
   run_fixed_main_loop_system : (P) -> Unit,
 ) -> App[W] {
-  self.schedule.run_fixed_main_loop.push(
+  schedule_push_config(
+    self.schedule,
+    RunFixedMainLoop,
     system(system_param(run_fixed_main_loop_system)),
   )
   self
@@ -962,7 +971,9 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_run_fixed_main_loop_syste
   self : App[W],
   run_fixed_main_loop_system : (P1, P2) -> Unit,
 ) -> App[W] {
-  self.schedule.run_fixed_main_loop.push(
+  schedule_push_config(
+    self.schedule,
+    RunFixedMainLoop,
     system(system_param2(run_fixed_main_loop_system)),
   )
   self
@@ -973,7 +984,9 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_run_fix
   self : App[W],
   run_fixed_main_loop_system : (P1, P2, P3) -> Unit,
 ) -> App[W] {
-  self.schedule.run_fixed_main_loop.push(
+  schedule_push_config(
+    self.schedule,
+    RunFixedMainLoop,
     system(system_param3(run_fixed_main_loop_system)),
   )
   self
@@ -990,7 +1003,9 @@ pub fn[
   self : App[W],
   run_fixed_main_loop_system : (P1, P2, P3, P4) -> Unit,
 ) -> App[W] {
-  self.schedule.run_fixed_main_loop.push(
+  schedule_push_config(
+    self.schedule,
+    RunFixedMainLoop,
     system(system_param4(run_fixed_main_loop_system)),
   )
   self
@@ -1001,7 +1016,7 @@ pub fn[W] App::add_fixed_first_system_config(
   self : App[W],
   config : SystemConfig[W],
 ) -> App[W] {
-  self.schedule.fixed_first.push(config)
+  schedule_push_config(self.schedule, FixedFirst, config)
   self
 }
 
@@ -1010,7 +1025,7 @@ pub fn[W] App::add_fixed_first_system(
   self : App[W],
   system_fn : SystemFn[W],
 ) -> App[W] {
-  self.schedule.fixed_first.push(system(system_fn))
+  schedule_push_config(self.schedule, FixedFirst, system(system_fn))
   self
 }
 
@@ -1019,7 +1034,11 @@ pub fn[W, P : SystemParam] App::add_fixed_first_system_param(
   self : App[W],
   fixed_first_system : (P) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_first.push(system(system_param(fixed_first_system)))
+  schedule_push_config(
+    self.schedule,
+    FixedFirst,
+    system(system_param(fixed_first_system)),
+  )
   self
 }
 
@@ -1028,7 +1047,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_first_system_param2
   self : App[W],
   fixed_first_system : (P1, P2) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_first.push(system(system_param2(fixed_first_system)))
+  schedule_push_config(
+    self.schedule,
+    FixedFirst,
+    system(system_param2(fixed_first_system)),
+  )
   self
 }
 
@@ -1037,7 +1060,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_f
   self : App[W],
   fixed_first_system : (P1, P2, P3) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_first.push(system(system_param3(fixed_first_system)))
+  schedule_push_config(
+    self.schedule,
+    FixedFirst,
+    system(system_param3(fixed_first_system)),
+  )
   self
 }
 
@@ -1052,7 +1079,11 @@ pub fn[
   self : App[W],
   fixed_first_system : (P1, P2, P3, P4) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_first.push(system(system_param4(fixed_first_system)))
+  schedule_push_config(
+    self.schedule,
+    FixedFirst,
+    system(system_param4(fixed_first_system)),
+  )
   self
 }
 
@@ -1061,7 +1092,7 @@ pub fn[W] App::add_fixed_pre_update_system_config(
   self : App[W],
   config : SystemConfig[W],
 ) -> App[W] {
-  self.schedule.fixed_pre_update.push(config)
+  schedule_push_config(self.schedule, FixedPreUpdate, config)
   self
 }
 
@@ -1070,7 +1101,7 @@ pub fn[W] App::add_fixed_pre_update_system(
   self : App[W],
   system_fn : SystemFn[W],
 ) -> App[W] {
-  self.schedule.fixed_pre_update.push(system(system_fn))
+  schedule_push_config(self.schedule, FixedPreUpdate, system(system_fn))
   self
 }
 
@@ -1079,7 +1110,9 @@ pub fn[W, P : SystemParam] App::add_fixed_pre_update_system_param(
   self : App[W],
   fixed_pre_update_system : (P) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_pre_update.push(
+  schedule_push_config(
+    self.schedule,
+    FixedPreUpdate,
     system(system_param(fixed_pre_update_system)),
   )
   self
@@ -1090,7 +1123,9 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_pre_update_system_p
   self : App[W],
   fixed_pre_update_system : (P1, P2) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_pre_update.push(
+  schedule_push_config(
+    self.schedule,
+    FixedPreUpdate,
     system(system_param2(fixed_pre_update_system)),
   )
   self
@@ -1101,7 +1136,9 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_p
   self : App[W],
   fixed_pre_update_system : (P1, P2, P3) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_pre_update.push(
+  schedule_push_config(
+    self.schedule,
+    FixedPreUpdate,
     system(system_param3(fixed_pre_update_system)),
   )
   self
@@ -1118,7 +1155,9 @@ pub fn[
   self : App[W],
   fixed_pre_update_system : (P1, P2, P3, P4) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_pre_update.push(
+  schedule_push_config(
+    self.schedule,
+    FixedPreUpdate,
     system(system_param4(fixed_pre_update_system)),
   )
   self
@@ -1129,7 +1168,7 @@ pub fn[W] App::add_fixed_update_system_config(
   self : App[W],
   config : SystemConfig[W],
 ) -> App[W] {
-  self.schedule.fixed_update.push(config)
+  schedule_push_config(self.schedule, FixedUpdate, config)
   self
 }
 
@@ -1138,7 +1177,7 @@ pub fn[W] App::add_fixed_update_system(
   self : App[W],
   system_fn : SystemFn[W],
 ) -> App[W] {
-  self.schedule.fixed_update.push(system(system_fn))
+  schedule_push_config(self.schedule, FixedUpdate, system(system_fn))
   self
 }
 
@@ -1147,7 +1186,11 @@ pub fn[W, P : SystemParam] App::add_fixed_update_system_param(
   self : App[W],
   fixed_update_system : (P) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_update.push(system(system_param(fixed_update_system)))
+  schedule_push_config(
+    self.schedule,
+    FixedUpdate,
+    system(system_param(fixed_update_system)),
+  )
   self
 }
 
@@ -1156,7 +1199,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_update_system_param
   self : App[W],
   fixed_update_system : (P1, P2) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_update.push(system(system_param2(fixed_update_system)))
+  schedule_push_config(
+    self.schedule,
+    FixedUpdate,
+    system(system_param2(fixed_update_system)),
+  )
   self
 }
 
@@ -1165,7 +1212,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_u
   self : App[W],
   fixed_update_system : (P1, P2, P3) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_update.push(system(system_param3(fixed_update_system)))
+  schedule_push_config(
+    self.schedule,
+    FixedUpdate,
+    system(system_param3(fixed_update_system)),
+  )
   self
 }
 
@@ -1180,7 +1231,11 @@ pub fn[
   self : App[W],
   fixed_update_system : (P1, P2, P3, P4) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_update.push(system(system_param4(fixed_update_system)))
+  schedule_push_config(
+    self.schedule,
+    FixedUpdate,
+    system(system_param4(fixed_update_system)),
+  )
   self
 }
 
@@ -1189,7 +1244,7 @@ pub fn[W] App::add_fixed_post_update_system_config(
   self : App[W],
   config : SystemConfig[W],
 ) -> App[W] {
-  self.schedule.fixed_post_update.push(config)
+  schedule_push_config(self.schedule, FixedPostUpdate, config)
   self
 }
 
@@ -1198,7 +1253,7 @@ pub fn[W] App::add_fixed_post_update_system(
   self : App[W],
   system_fn : SystemFn[W],
 ) -> App[W] {
-  self.schedule.fixed_post_update.push(system(system_fn))
+  schedule_push_config(self.schedule, FixedPostUpdate, system(system_fn))
   self
 }
 
@@ -1207,7 +1262,9 @@ pub fn[W, P : SystemParam] App::add_fixed_post_update_system_param(
   self : App[W],
   fixed_post_update_system : (P) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_post_update.push(
+  schedule_push_config(
+    self.schedule,
+    FixedPostUpdate,
     system(system_param(fixed_post_update_system)),
   )
   self
@@ -1218,7 +1275,9 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_post_update_system_
   self : App[W],
   fixed_post_update_system : (P1, P2) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_post_update.push(
+  schedule_push_config(
+    self.schedule,
+    FixedPostUpdate,
     system(system_param2(fixed_post_update_system)),
   )
   self
@@ -1229,7 +1288,9 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_p
   self : App[W],
   fixed_post_update_system : (P1, P2, P3) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_post_update.push(
+  schedule_push_config(
+    self.schedule,
+    FixedPostUpdate,
     system(system_param3(fixed_post_update_system)),
   )
   self
@@ -1246,7 +1307,9 @@ pub fn[
   self : App[W],
   fixed_post_update_system : (P1, P2, P3, P4) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_post_update.push(
+  schedule_push_config(
+    self.schedule,
+    FixedPostUpdate,
     system(system_param4(fixed_post_update_system)),
   )
   self
@@ -1257,7 +1320,7 @@ pub fn[W] App::add_fixed_last_system_config(
   self : App[W],
   config : SystemConfig[W],
 ) -> App[W] {
-  self.schedule.fixed_last.push(config)
+  schedule_push_config(self.schedule, FixedLast, config)
   self
 }
 
@@ -1266,7 +1329,7 @@ pub fn[W] App::add_fixed_last_system(
   self : App[W],
   system_fn : SystemFn[W],
 ) -> App[W] {
-  self.schedule.fixed_last.push(system(system_fn))
+  schedule_push_config(self.schedule, FixedLast, system(system_fn))
   self
 }
 
@@ -1275,7 +1338,11 @@ pub fn[W, P : SystemParam] App::add_fixed_last_system_param(
   self : App[W],
   fixed_last_system : (P) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_last.push(system(system_param(fixed_last_system)))
+  schedule_push_config(
+    self.schedule,
+    FixedLast,
+    system(system_param(fixed_last_system)),
+  )
   self
 }
 
@@ -1284,7 +1351,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_fixed_last_system_param2(
   self : App[W],
   fixed_last_system : (P1, P2) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_last.push(system(system_param2(fixed_last_system)))
+  schedule_push_config(
+    self.schedule,
+    FixedLast,
+    system(system_param2(fixed_last_system)),
+  )
   self
 }
 
@@ -1293,7 +1364,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_fixed_l
   self : App[W],
   fixed_last_system : (P1, P2, P3) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_last.push(system(system_param3(fixed_last_system)))
+  schedule_push_config(
+    self.schedule,
+    FixedLast,
+    system(system_param3(fixed_last_system)),
+  )
   self
 }
 
@@ -1308,7 +1383,11 @@ pub fn[
   self : App[W],
   fixed_last_system : (P1, P2, P3, P4) -> Unit,
 ) -> App[W] {
-  self.schedule.fixed_last.push(system(system_param4(fixed_last_system)))
+  schedule_push_config(
+    self.schedule,
+    FixedLast,
+    system(system_param4(fixed_last_system)),
+  )
   self
 }
 
@@ -1317,13 +1396,13 @@ pub fn[W] App::add_system_config(
   self : App[W],
   config : SystemConfig[W],
 ) -> App[W] {
-  self.schedule.update.push(config)
+  schedule_push_config(self.schedule, Update, config)
   self
 }
 
 ///|
 pub fn[W] App::add_system(self : App[W], system_fn : SystemFn[W]) -> App[W] {
-  self.schedule.update.push(system(system_fn))
+  schedule_push_config(self.schedule, Update, system(system_fn))
   self
 }
 
@@ -1333,7 +1412,11 @@ pub fn[A] App::add_system_query1_ecs(
   key_a : @ecs.ComponentKey[A],
   update_system : (@ecs.Query1[A], @ecs.World) -> Unit,
 ) -> App[@ecs.World] {
-  self.schedule.update.push(system(system_query1_ecs(key_a, update_system)))
+  schedule_push_config(
+    self.schedule,
+    Update,
+    system(system_query1_ecs(key_a, update_system)),
+  )
   self
 }
 
@@ -1344,7 +1427,9 @@ pub fn[A, B] App::add_system_query2_ecs(
   key_b : @ecs.ComponentKey[B],
   update_system : (@ecs.Query2[A, B], @ecs.World) -> Unit,
 ) -> App[@ecs.World] {
-  self.schedule.update.push(
+  schedule_push_config(
+    self.schedule,
+    Update,
     system(system_query2_ecs(key_a, key_b, update_system)),
   )
   self
@@ -1358,7 +1443,9 @@ pub fn[A, B, C] App::add_system_query3_ecs(
   key_c : @ecs.ComponentKey[C],
   update_system : (@ecs.Query3[A, B, C], @ecs.World) -> Unit,
 ) -> App[@ecs.World] {
-  self.schedule.update.push(
+  schedule_push_config(
+    self.schedule,
+    Update,
     system(system_query3_ecs(key_a, key_b, key_c, update_system)),
   )
   self
@@ -1369,7 +1456,11 @@ pub fn[W, P : SystemParam] App::add_system_param(
   self : App[W],
   update_system : (P) -> Unit,
 ) -> App[W] {
-  self.schedule.update.push(system(system_param(update_system)))
+  schedule_push_config(
+    self.schedule,
+    Update,
+    system(system_param(update_system)),
+  )
   self
 }
 
@@ -1378,7 +1469,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_system_param2(
   self : App[W],
   update_system : (P1, P2) -> Unit,
 ) -> App[W] {
-  self.schedule.update.push(system(system_param2(update_system)))
+  schedule_push_config(
+    self.schedule,
+    Update,
+    system(system_param2(update_system)),
+  )
   self
 }
 
@@ -1387,7 +1482,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_system_
   self : App[W],
   update_system : (P1, P2, P3) -> Unit,
 ) -> App[W] {
-  self.schedule.update.push(system(system_param3(update_system)))
+  schedule_push_config(
+    self.schedule,
+    Update,
+    system(system_param3(update_system)),
+  )
   self
 }
 
@@ -1402,7 +1501,11 @@ pub fn[
   self : App[W],
   update_system : (P1, P2, P3, P4) -> Unit,
 ) -> App[W] {
-  self.schedule.update.push(system(system_param4(update_system)))
+  schedule_push_config(
+    self.schedule,
+    Update,
+    system(system_param4(update_system)),
+  )
   self
 }
 
@@ -1411,7 +1514,7 @@ pub fn[W] App::add_spawn_scene_system_config(
   self : App[W],
   config : SystemConfig[W],
 ) -> App[W] {
-  self.schedule.spawn_scene.push(config)
+  schedule_push_config(self.schedule, SpawnScene, config)
   self
 }
 
@@ -1420,7 +1523,7 @@ pub fn[W] App::add_spawn_scene_system(
   self : App[W],
   system_fn : SystemFn[W],
 ) -> App[W] {
-  self.schedule.spawn_scene.push(system(system_fn))
+  schedule_push_config(self.schedule, SpawnScene, system(system_fn))
   self
 }
 
@@ -1429,7 +1532,11 @@ pub fn[W, P : SystemParam] App::add_spawn_scene_system_param(
   self : App[W],
   spawn_scene_system : (P) -> Unit,
 ) -> App[W] {
-  self.schedule.spawn_scene.push(system(system_param(spawn_scene_system)))
+  schedule_push_config(
+    self.schedule,
+    SpawnScene,
+    system(system_param(spawn_scene_system)),
+  )
   self
 }
 
@@ -1438,7 +1545,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_spawn_scene_system_param2
   self : App[W],
   spawn_scene_system : (P1, P2) -> Unit,
 ) -> App[W] {
-  self.schedule.spawn_scene.push(system(system_param2(spawn_scene_system)))
+  schedule_push_config(
+    self.schedule,
+    SpawnScene,
+    system(system_param2(spawn_scene_system)),
+  )
   self
 }
 
@@ -1447,7 +1558,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_spawn_s
   self : App[W],
   spawn_scene_system : (P1, P2, P3) -> Unit,
 ) -> App[W] {
-  self.schedule.spawn_scene.push(system(system_param3(spawn_scene_system)))
+  schedule_push_config(
+    self.schedule,
+    SpawnScene,
+    system(system_param3(spawn_scene_system)),
+  )
   self
 }
 
@@ -1462,7 +1577,11 @@ pub fn[
   self : App[W],
   spawn_scene_system : (P1, P2, P3, P4) -> Unit,
 ) -> App[W] {
-  self.schedule.spawn_scene.push(system(system_param4(spawn_scene_system)))
+  schedule_push_config(
+    self.schedule,
+    SpawnScene,
+    system(system_param4(spawn_scene_system)),
+  )
   self
 }
 
@@ -1471,7 +1590,7 @@ pub fn[W] App::add_post_update_system_config(
   self : App[W],
   config : SystemConfig[W],
 ) -> App[W] {
-  self.schedule.post_update.push(config)
+  schedule_push_config(self.schedule, PostUpdate, config)
   self
 }
 
@@ -1480,7 +1599,7 @@ pub fn[W] App::add_post_update_system(
   self : App[W],
   system_fn : SystemFn[W],
 ) -> App[W] {
-  self.schedule.post_update.push(system(system_fn))
+  schedule_push_config(self.schedule, PostUpdate, system(system_fn))
   self
 }
 
@@ -1489,7 +1608,11 @@ pub fn[W, P : SystemParam] App::add_post_update_system_param(
   self : App[W],
   post_update_system : (P) -> Unit,
 ) -> App[W] {
-  self.schedule.post_update.push(system(system_param(post_update_system)))
+  schedule_push_config(
+    self.schedule,
+    PostUpdate,
+    system(system_param(post_update_system)),
+  )
   self
 }
 
@@ -1498,7 +1621,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_post_update_system_param2
   self : App[W],
   post_update_system : (P1, P2) -> Unit,
 ) -> App[W] {
-  self.schedule.post_update.push(system(system_param2(post_update_system)))
+  schedule_push_config(
+    self.schedule,
+    PostUpdate,
+    system(system_param2(post_update_system)),
+  )
   self
 }
 
@@ -1507,7 +1634,11 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_post_up
   self : App[W],
   post_update_system : (P1, P2, P3) -> Unit,
 ) -> App[W] {
-  self.schedule.post_update.push(system(system_param3(post_update_system)))
+  schedule_push_config(
+    self.schedule,
+    PostUpdate,
+    system(system_param3(post_update_system)),
+  )
   self
 }
 
@@ -1522,7 +1653,11 @@ pub fn[
   self : App[W],
   post_update_system : (P1, P2, P3, P4) -> Unit,
 ) -> App[W] {
-  self.schedule.post_update.push(system(system_param4(post_update_system)))
+  schedule_push_config(
+    self.schedule,
+    PostUpdate,
+    system(system_param4(post_update_system)),
+  )
   self
 }
 
@@ -1531,7 +1666,7 @@ pub fn[W] App::add_last_system_config(
   self : App[W],
   config : SystemConfig[W],
 ) -> App[W] {
-  self.schedule.last.push(config)
+  schedule_push_config(self.schedule, Last, config)
   self
 }
 
@@ -1540,7 +1675,7 @@ pub fn[W] App::add_last_system(
   self : App[W],
   system_fn : SystemFn[W],
 ) -> App[W] {
-  self.schedule.last.push(system(system_fn))
+  schedule_push_config(self.schedule, Last, system(system_fn))
   self
 }
 
@@ -1549,7 +1684,7 @@ pub fn[W, P : SystemParam] App::add_last_system_param(
   self : App[W],
   last_system : (P) -> Unit,
 ) -> App[W] {
-  self.schedule.last.push(system(system_param(last_system)))
+  schedule_push_config(self.schedule, Last, system(system_param(last_system)))
   self
 }
 
@@ -1558,7 +1693,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_last_system_param2(
   self : App[W],
   last_system : (P1, P2) -> Unit,
 ) -> App[W] {
-  self.schedule.last.push(system(system_param2(last_system)))
+  schedule_push_config(self.schedule, Last, system(system_param2(last_system)))
   self
 }
 
@@ -1567,7 +1702,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_last_sy
   self : App[W],
   last_system : (P1, P2, P3) -> Unit,
 ) -> App[W] {
-  self.schedule.last.push(system(system_param3(last_system)))
+  schedule_push_config(self.schedule, Last, system(system_param3(last_system)))
   self
 }
 
@@ -1582,79 +1717,7 @@ pub fn[
   self : App[W],
   last_system : (P1, P2, P3, P4) -> Unit,
 ) -> App[W] {
-  self.schedule.last.push(system(system_param4(last_system)))
-  self
-}
-
-///|
-fn[W] schedule_systems(
-  schedule : Schedule[W],
-  stage : ScheduleStage,
-) -> Array[SystemConfig[W]] {
-  match stage {
-    Main => []
-    PreStartup => schedule.pre_startup
-    Startup => schedule.startup
-    PostStartup => schedule.post_startup
-    First => schedule.first
-    PreUpdate => schedule.pre_update
-    StateTransition => []
-    RunFixedMainLoop => schedule.run_fixed_main_loop
-    FixedFirst => schedule.fixed_first
-    FixedPreUpdate => schedule.fixed_pre_update
-    FixedUpdate => schedule.fixed_update
-    FixedPostUpdate => schedule.fixed_post_update
-    FixedLast => schedule.fixed_last
-    FixedMain => []
-    Update => schedule.update
-    SpawnScene => schedule.spawn_scene
-    PostUpdate => schedule.post_update
-    Last => schedule.last
-  }
-}
-
-///|
-fn[W] schedule_set_edges(
-  schedule : Schedule[W],
-  stage : ScheduleStage,
-) -> Array[(SystemSet, SystemSet)] {
-  match stage {
-    Main => []
-    PreStartup => schedule.pre_startup_set_edges
-    Startup => schedule.startup_set_edges
-    PostStartup => schedule.post_startup_set_edges
-    First => schedule.first_set_edges
-    PreUpdate => schedule.pre_update_set_edges
-    StateTransition => []
-    RunFixedMainLoop => schedule.run_fixed_main_loop_set_edges
-    FixedFirst => schedule.fixed_first_set_edges
-    FixedPreUpdate => schedule.fixed_pre_update_set_edges
-    FixedUpdate => schedule.fixed_update_set_edges
-    FixedPostUpdate => schedule.fixed_post_update_set_edges
-    FixedLast => schedule.fixed_last_set_edges
-    FixedMain => []
-    Update => schedule.update_set_edges
-    SpawnScene => schedule.spawn_scene_set_edges
-    PostUpdate => schedule.post_update_set_edges
-    Last => schedule.last_set_edges
-  }
-}
-
-///|
-pub fn[W] App::configure_set(
-  self : App[W],
-  stage : ScheduleStage,
-  set : SystemSet,
-  before? : Array[SystemSet] = [],
-  after? : Array[SystemSet] = [],
-) -> App[W] {
-  let edges = schedule_set_edges(self.schedule, stage)
-  for other in before {
-    edges.push((set, other))
-  }
-  for other in after {
-    edges.push((other, set))
-  }
+  schedule_push_config(self.schedule, Last, system(system_param4(last_system)))
   self
 }
 
@@ -1843,13 +1906,13 @@ fn run_schedule_stage(
 
 ///|
 pub fn App::run_startup(self : App[@ecs.World]) -> App[@ecs.World] {
-  if self.startup_ran {
-    return self
-  }
   current_app_schedule_ref.val = Some(self.schedule)
-  run_main_schedule_startup(self.world, self.schedule)
+  match self.update_schedule {
+    Some(Main) => run_main_schedule_startup(self.world, self.schedule)
+    Some(stage) => run_schedule_stage(self.world, self.schedule, stage)
+    None => ()
+  }
   current_app_schedule_ref.val = None
-  self.startup_ran = true
   for entry in self.sub_apps.iter() {
     let (_key, sub_app_ref) = entry
     sub_app_ref.val = sub_app_ref.val.run_startup()
@@ -1859,12 +1922,8 @@ pub fn App::run_startup(self : App[@ecs.World]) -> App[@ecs.World] {
 
 ///|
 pub fn App::update(self : App[@ecs.World]) -> App[@ecs.World] {
-  if !self.startup_ran {
-    self.run_startup() |> ignore
-  }
   current_app_schedule_ref.val = Some(self.schedule)
   match self.update_schedule {
-    Some(Main) => run_main_schedule_update(self.world, self.schedule)
     Some(stage) => run_schedule_stage(self.world, self.schedule, stage)
     None => ()
   }
