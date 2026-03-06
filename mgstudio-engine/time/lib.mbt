@@ -38,41 +38,6 @@ pub fn TimeUpdateStrategy::default() -> TimeUpdateStrategy {
 }
 
 ///|
-priv struct TimeState {
-  mut startup_seconds : Float
-  mut first_update_seconds : Float?
-  mut last_update_seconds : Float?
-  mut real_delta_seconds : Float
-  mut real_elapsed_seconds : Float
-  mut virtual_delta_seconds : Float
-  mut virtual_elapsed_seconds : Float
-  mut virtual_relative_speed : Float
-  mut virtual_effective_speed : Float
-  mut virtual_max_delta_seconds : Float
-  mut virtual_paused : Bool
-  mut virtual_was_paused : Bool
-}
-
-///|
-const DEFAULT_VIRTUAL_MAX_DELTA_SECONDS : Float = 0.25F
-
-///|
-let time_state_ref : Ref[TimeState] = @ref.new(TimeState::{
-  startup_seconds: 0.0F,
-  first_update_seconds: None,
-  last_update_seconds: None,
-  real_delta_seconds: 0.0F,
-  real_elapsed_seconds: 0.0F,
-  virtual_delta_seconds: 0.0F,
-  virtual_elapsed_seconds: 0.0F,
-  virtual_relative_speed: 1.0F,
-  virtual_effective_speed: 1.0F,
-  virtual_max_delta_seconds: DEFAULT_VIRTUAL_MAX_DELTA_SECONDS,
-  virtual_paused: false,
-  virtual_was_paused: false,
-})
-
-///|
 let time_resource : Ref[@core.Resource[Time]] = Ref::new(@core.Resource::new())
 
 ///|
@@ -124,65 +89,12 @@ pub fn host_time_now() -> Float {
 }
 
 ///|
-fn time_reset_state(startup_seconds : Float) -> Unit {
-  time_state_ref.val.startup_seconds = startup_seconds
-  time_state_ref.val.first_update_seconds = None
-  time_state_ref.val.last_update_seconds = None
-  time_state_ref.val.real_delta_seconds = 0.0F
-  time_state_ref.val.real_elapsed_seconds = 0.0F
-  time_state_ref.val.virtual_delta_seconds = 0.0F
-  time_state_ref.val.virtual_elapsed_seconds = 0.0F
-  time_state_ref.val.virtual_relative_speed = 1.0F
-  time_state_ref.val.virtual_effective_speed = 1.0F
-  time_state_ref.val.virtual_max_delta_seconds = DEFAULT_VIRTUAL_MAX_DELTA_SECONDS
-  time_state_ref.val.virtual_paused = false
-  time_state_ref.val.virtual_was_paused = false
-}
-
-///|
-fn time_reset() -> Unit {
-  time_reset_state(host_time_now())
-}
-
-///|
-fn time_snapshot() -> Time {
-  Time::{
-    delta_seconds: time_delta_seconds(),
-    elapsed_seconds: time_elapsed_seconds(),
-  }
-}
-
-///|
-fn real_snapshot() -> Real {
-  Real::{
-    startup_seconds: time_state_ref.val.startup_seconds,
-    first_update_seconds: time_state_ref.val.first_update_seconds,
-    last_update_seconds: time_state_ref.val.last_update_seconds,
-    delta_seconds: time_state_ref.val.real_delta_seconds,
-    elapsed_seconds: time_state_ref.val.real_elapsed_seconds,
-  }
-}
-
-///|
-fn virtual_snapshot() -> Virtual {
-  Virtual::{
-    delta_seconds: time_state_ref.val.virtual_delta_seconds,
-    elapsed_seconds: time_state_ref.val.virtual_elapsed_seconds,
-    relative_speed: time_state_ref.val.virtual_relative_speed,
-    effective_speed: time_state_ref.val.virtual_effective_speed,
-    max_delta_seconds: time_state_ref.val.virtual_max_delta_seconds,
-    paused: time_state_ref.val.virtual_paused,
-    was_paused: time_state_ref.val.virtual_was_paused,
-  }
-}
-
-///|
-fn fixed_snapshot() -> Fixed {
-  Fixed::{
-    delta_seconds: time_fixed_delta_seconds(),
-    elapsed_seconds: time_fixed_elapsed_seconds(),
-    timestep_seconds: time_fixed_timestep_seconds(),
-    overstep_seconds: time_fixed_overstep_seconds(),
+fn time_resource_change_tick() -> @core.Tick {
+  let tick = @app.current_system_ticks().this_run
+  if tick > 0 {
+    tick
+  } else {
+    1
   }
 }
 
@@ -199,86 +111,63 @@ fn[T] sync_resource(
 }
 
 ///|
-fn time_update_real_with_instant(now : Float) -> Unit {
-  match time_state_ref.val.last_update_seconds {
-    None => {
-      time_state_ref.val.first_update_seconds = Some(now)
-      time_state_ref.val.last_update_seconds = Some(now)
-      time_state_ref.val.real_delta_seconds = 0.0F
-    }
-    Some(last_update_seconds) => {
-      let real_delta_seconds = if now > last_update_seconds {
-        now - last_update_seconds
-      } else {
-        0.0F
-      }
-      time_state_ref.val.real_delta_seconds = real_delta_seconds
-      time_state_ref.val.real_elapsed_seconds = time_state_ref.val.real_elapsed_seconds +
-        real_delta_seconds
-      time_state_ref.val.last_update_seconds = Some(now)
-    }
+fn ensure_time_resources() -> Unit {
+  let tick = time_resource_change_tick()
+  if !time_resource.val.is_present() {
+    time_resource.val.insert(Time::new(), tick)
+  }
+  if !real_resource.val.is_present() {
+    real_resource.val.insert(Real::new(host_time_now()), tick)
+  }
+  if !virtual_resource.val.is_present() {
+    virtual_resource.val.insert(Virtual::new(), tick)
+  }
+  if !fixed_resource.val.is_present() {
+    fixed_resource.val.insert(Fixed::new().sync_from_app_state(), tick)
+  }
+  if !time_update_strategy_resource.val.is_present() {
+    time_update_strategy_resource.val.insert(
+      TimeUpdateStrategy::default(),
+      tick,
+    )
   }
 }
 
 ///|
-fn time_update_real_with_duration(duration_seconds : Float) -> Unit {
-  let delta_seconds = if duration_seconds < 0.0F {
-    0.0F
-  } else {
-    duration_seconds
-  }
-  let last_update_seconds = match time_state_ref.val.last_update_seconds {
-    Some(last) => last
-    None => time_state_ref.val.startup_seconds
-  }
-  time_update_real_with_instant(last_update_seconds + delta_seconds)
-}
-
-///|
-fn time_update_virtual_from_real_delta() -> Unit {
-  let raw_delta_seconds = time_state_ref.val.real_delta_seconds
-  let clamped_virtual_source_delta = if raw_delta_seconds >
-    time_state_ref.val.virtual_max_delta_seconds {
-    time_state_ref.val.virtual_max_delta_seconds
-  } else {
-    raw_delta_seconds
-  }
-  let effective_speed = if time_state_ref.val.virtual_paused {
-    0.0F
-  } else {
-    time_state_ref.val.virtual_relative_speed
-  }
-  let virtual_delta_seconds = clamped_virtual_source_delta * effective_speed
-  time_state_ref.val.virtual_delta_seconds = virtual_delta_seconds
-  time_state_ref.val.virtual_elapsed_seconds = time_state_ref.val.virtual_elapsed_seconds +
-    virtual_delta_seconds
-  time_state_ref.val.virtual_effective_speed = effective_speed
-  time_state_ref.val.virtual_was_paused = time_state_ref.val.virtual_paused
-}
-
-///|
-fn time_update_with_strategy(strategy : TimeUpdateStrategy) -> Unit {
+fn time_update_real_with_strategy(
+  real_time : Real,
+  strategy : TimeUpdateStrategy,
+) -> Real {
   match strategy {
-    Automatic => time_update_real_with_instant(host_time_now())
-    ManualInstant(now) => time_update_real_with_instant(now)
+    Automatic => real_time.update()
+    ManualInstant(now_seconds) => real_time.update_with_instant(now_seconds)
     ManualDuration(duration_seconds) =>
-      time_update_real_with_duration(duration_seconds)
+      real_time.update_with_duration(duration_seconds)
     FixedTimesteps(factor) => {
       let steps = if factor < 0 { 0 } else { factor }
-      let timestep_seconds = time_fixed_timestep_seconds()
-      time_update_real_with_duration(timestep_seconds * Float::from_int(steps))
+      real_time.update_with_duration(
+        time_fixed_timestep_seconds() * Float::from_int(steps),
+      )
     }
   }
-  time_update_virtual_from_real_delta()
 }
 
 ///|
 pub fn time_update() -> Unit {
+  ensure_time_resources()
+  let tick = time_resource_change_tick()
   let strategy = match time_update_strategy_resource.val.get() {
-    Some(value) => value
+    Some(strategy) => strategy
     None => TimeUpdateStrategy::default()
   }
-  time_update_with_strategy(strategy)
+  let real_ref = real_resource.val.get_ref_mut(tick).unwrap()
+  let virtual_ref = virtual_resource.val.get_ref_mut(tick).unwrap()
+  let time_ref = time_resource.val.get_ref_mut(tick).unwrap()
+  let next_real = time_update_real_with_strategy(real_ref.val, strategy)
+  let next_virtual = update_virtual_time(virtual_ref.val, next_real)
+  real_ref.val = next_real
+  virtual_ref.val = next_virtual
+  time_ref.val = next_virtual.as_generic()
 }
 
 ///|
@@ -289,32 +178,36 @@ pub fn[W] time_system(_world : W) -> Unit {
 ///|
 fn time_update_resource_system(
   time : @app.ResMut[Time],
+  real_time : @app.ResMut[Real],
+  virtual_time : @app.ResMut[Virtual],
   strategy : @app.Res[TimeUpdateStrategy],
 ) -> Unit {
-  time_update_with_strategy(strategy.get())
-  let change_tick = @app.current_system_ticks().this_run
-  time.get_ref().val = time_snapshot()
-  sync_resource(real_resource.val, real_snapshot(), change_tick)
-  sync_resource(virtual_resource.val, virtual_snapshot(), change_tick)
-  sync_resource(fixed_resource.val, fixed_snapshot(), change_tick)
+  let next_real = time_update_real_with_strategy(
+    real_time.get_ref().val,
+    strategy.get(),
+  )
+  let next_virtual = update_virtual_time(virtual_time.get_ref().val, next_real)
+  real_time.get_ref().val = next_real
+  virtual_time.get_ref().val = next_virtual
+  time.get_ref().val = next_virtual.as_generic()
 }
 
 ///|
-fn time_sync_fixed_resource_system(fixed : @app.ResMut[Fixed]) -> Unit {
-  fixed.get_ref().val = fixed_snapshot()
+fn time_sync_fixed_resource_system(fixed_time : @app.ResMut[Fixed]) -> Unit {
+  fixed_time.get_ref().val = fixed_time.get_ref().val.sync_from_app_state()
 }
 
 ///|
 pub fn[W] time_plugin(app : @app.App[W]) -> @app.App[W] {
-  time_reset()
+  let startup_seconds = host_time_now()
   @app.fixed_time_reset()
   @app.set_delta_seconds_provider(fn() { time_virtual_delta_seconds() })
   app
-  .insert_resource(time_snapshot())
-  .insert_resource(real_snapshot())
-  .insert_resource(virtual_snapshot())
-  .insert_resource(fixed_snapshot())
+  .insert_resource(Time::new())
+  .insert_resource(Real::new(startup_seconds))
+  .insert_resource(Virtual::new())
+  .insert_resource(Fixed::new().sync_from_app_state())
   .insert_resource(TimeUpdateStrategy::default())
   .add_fixed_update_system_param(time_sync_fixed_resource_system)
-  .add_pre_update_system_param2(time_update_resource_system)
+  .add_pre_update_system_param4(time_update_resource_system)
 }

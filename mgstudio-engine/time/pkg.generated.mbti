@@ -70,34 +70,51 @@ pub fn time_virtual_toggle() -> Unit
 
 pub fn time_virtual_unpause() -> Unit
 
+pub fn update_virtual_time(Virtual, Real) -> Virtual
+
 // Errors
 
 // Types and methods
 pub struct Fixed {
-  delta_seconds : Float
-  elapsed_seconds : Float
+  time : Time
   timestep_seconds : Float
   overstep_seconds : Float
 }
+pub fn Fixed::accumulate_overstep(Self, Float) -> Self
+pub fn Fixed::as_generic(Self) -> Time
+pub fn Fixed::default() -> Self
 pub fn Fixed::delta_seconds(Self) -> Float
+pub fn Fixed::discard_overstep(Self, Float) -> Self
 pub fn Fixed::elapsed_seconds(Self) -> Float
+pub fn Fixed::from_duration_seconds(Float) -> Self
+pub fn Fixed::from_hz(Float) -> Self
+pub fn Fixed::from_seconds(Float) -> Self
+pub fn Fixed::new() -> Self
 pub fn Fixed::overstep_fraction(Self) -> Float
+pub fn Fixed::overstep_fraction_f64(Self) -> Float
 pub fn Fixed::overstep_seconds(Self) -> Float
+pub fn Fixed::set_timestep_hz(Self, Float) -> Self
+pub fn Fixed::set_timestep_seconds(Self, Float) -> Self
 pub fn Fixed::timestep_seconds(Self) -> Float
 pub impl @app.Resource for Fixed
 
 pub struct Real {
+  time : Time
   startup_seconds : Float
   first_update_seconds : Float?
   last_update_seconds : Float?
-  delta_seconds : Float
-  elapsed_seconds : Float
 }
+pub fn Real::as_generic(Self) -> Time
+pub fn Real::default() -> Self
 pub fn Real::delta_seconds(Self) -> Float
 pub fn Real::elapsed_seconds(Self) -> Float
 pub fn Real::first_update_seconds(Self) -> Float?
 pub fn Real::last_update_seconds(Self) -> Float?
+pub fn Real::new(Float) -> Self
 pub fn Real::startup_seconds(Self) -> Float
+pub fn Real::update(Self) -> Self
+pub fn Real::update_with_duration(Self, Float) -> Self
+pub fn Real::update_with_instant(Self, Float) -> Self
 pub impl @app.Resource for Real
 
 pub struct Stopwatch {
@@ -114,11 +131,27 @@ pub fn Stopwatch::tick(Self, Float) -> Self
 pub fn Stopwatch::unpause(Self) -> Self
 
 pub struct Time {
+  wrap_period_seconds : Float
   delta_seconds : Float
   elapsed_seconds : Float
+  elapsed_wrapped_seconds : Float
 }
+pub fn Time::advance_by(Self, Float) -> Self
+pub fn Time::advance_to(Self, Float) -> Self
+pub fn Time::as_generic(Self) -> Self
+pub fn Time::default() -> Self
 pub fn Time::delta_seconds(Self) -> Float
+pub fn Time::delta_secs(Self) -> Float
+pub fn Time::delta_secs_f64(Self) -> Float
 pub fn Time::elapsed_seconds(Self) -> Float
+pub fn Time::elapsed_secs(Self) -> Float
+pub fn Time::elapsed_secs_f64(Self) -> Float
+pub fn Time::elapsed_secs_wrapped(Self) -> Float
+pub fn Time::elapsed_secs_wrapped_f64(Self) -> Float
+pub fn Time::elapsed_wrapped_seconds(Self) -> Float
+pub fn Time::new() -> Self
+pub fn Time::set_wrap_period_seconds(Self, Float) -> Self
+pub fn Time::wrap_period_seconds(Self) -> Float
 pub impl @app.Resource for Time
 
 pub struct TimePlugin {
@@ -166,20 +199,31 @@ pub(all) enum TimerMode {
 }
 
 pub struct Virtual {
-  delta_seconds : Float
-  elapsed_seconds : Float
-  relative_speed : Float
-  effective_speed : Float
+  time : Time
   max_delta_seconds : Float
   paused : Bool
-  was_paused : Bool
+  relative_speed : Float
+  effective_speed : Float
 }
+pub fn Virtual::advance_with_raw_delta(Self, Float) -> Self
+pub fn Virtual::as_generic(Self) -> Time
+pub fn Virtual::default() -> Self
 pub fn Virtual::delta_seconds(Self) -> Float
 pub fn Virtual::effective_speed(Self) -> Float
+pub fn Virtual::effective_speed_f64(Self) -> Float
 pub fn Virtual::elapsed_seconds(Self) -> Float
+pub fn Virtual::from_max_delta_seconds(Float) -> Self
 pub fn Virtual::is_paused(Self) -> Bool
 pub fn Virtual::max_delta_seconds(Self) -> Float
+pub fn Virtual::new() -> Self
+pub fn Virtual::pause(Self) -> Self
 pub fn Virtual::relative_speed(Self) -> Float
+pub fn Virtual::relative_speed_f64(Self) -> Float
+pub fn Virtual::set_max_delta_seconds(Self, Float) -> Self
+pub fn Virtual::set_relative_speed(Self, Float) -> Self
+pub fn Virtual::set_relative_speed_f64(Self, Float) -> Self
+pub fn Virtual::toggle(Self) -> Self
+pub fn Virtual::unpause(Self) -> Self
 pub fn Virtual::was_paused(Self) -> Bool
 pub impl @app.Resource for Virtual
 
