@@ -21,13 +21,13 @@ priv struct CounterState {
 }
 
 ///|
-let counter_state_resource_ref : Ref[@core.Resource[CounterState]] = Ref::new(
-  @core.Resource::new(),
+let counter_state_resource_key : @ecs.ResourceKey[CounterState] = @ecs.register_resource(
+  debug_name="examples.app.headless.CounterState",
 )
 
 ///|
 impl @app.Resource for CounterState with resource() {
-  counter_state_resource_ref.val
+  counter_state_resource_key
 }
 
 ///|

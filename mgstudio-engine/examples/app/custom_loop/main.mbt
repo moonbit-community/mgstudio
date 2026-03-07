@@ -21,13 +21,13 @@ priv struct Input {
 }
 
 ///|
-let input_resource_ref : Ref[@core.Resource[Input]] = Ref::new(
-  @core.Resource::new(),
+let input_resource_key : @ecs.ResourceKey[Input] = @ecs.register_resource(
+  debug_name="examples.app.custom_loop.Input",
 )
 
 ///|
 impl @app.Resource for Input with resource() {
-  input_resource_ref.val
+  input_resource_key
 }
 
 ///|

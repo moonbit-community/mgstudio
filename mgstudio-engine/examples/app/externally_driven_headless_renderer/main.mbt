@@ -22,20 +22,21 @@ priv struct CaptureState {
 }
 
 ///|
-let capture_state_resource_ref : Ref[@core.Resource[CaptureState]] = Ref::new(
-  @core.Resource::new(),
+let capture_state_resource_key : @ecs.ResourceKey[CaptureState] = @ecs.register_resource(
+  debug_name="examples.app.externally_driven_headless_renderer.CaptureState",
 )
 
 ///|
 impl @app.Resource for CaptureState with resource() {
-  capture_state_resource_ref.val
+  capture_state_resource_key
 }
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
   let target = @render2d.render2d_create_render_target_ecs(500, 500, false)
   let tick = world.read_change_tick()
-  if capture_state_resource_ref.val.get_ref_mut(tick) is Some(state) {
+  if (try! world.get_resource_ref_mut(capture_state_resource_key, tick))
+    is Some(state) {
     state.val.target = Some(target)
   }
 

@@ -28,13 +28,13 @@ priv struct PrintMessageState {
 }
 
 ///|
-let print_message_state_resource : Ref[@core.Resource[PrintMessageState]] = Ref::new(
-  @core.Resource::new(),
+let print_message_state_resource_key : @ecs.ResourceKey[PrintMessageState] = @ecs.register_resource(
+  debug_name="examples.app.plugin.PrintMessageState",
 )
 
 ///|
 impl @app.Resource for PrintMessageState with resource() {
-  print_message_state_resource.val
+  print_message_state_resource_key
 }
 
 ///|
