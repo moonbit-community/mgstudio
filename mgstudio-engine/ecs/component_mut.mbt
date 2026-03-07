@@ -13,12 +13,20 @@
 // limitations under the License.
 
 ///|
+struct ComponentMutWriteback[T] {
+  world : World
+  key : ComponentKey[T]
+  entity : @core.Entity
+}
+
+///|
 pub struct ComponentMut[T] {
   value_ref : Ref[T]
   ticks : @core.ComponentTicks
   system : @core.SystemTicks
-  original_payload : Json
+  mut original_payload : Json
   mut force_changed : Bool
+  writeback : ComponentMutWriteback[T]?
 }
 
 ///|
@@ -49,4 +57,29 @@ pub fn[T] ComponentMut::is_changed(self : ComponentMut[T]) -> Bool {
 ///|
 pub fn[T] ComponentMut::set_changed(self : ComponentMut[T]) -> Unit {
   self.force_changed = true
+}
+
+///|
+pub fn[T] ComponentMut::has_writeback(self : ComponentMut[T]) -> Bool {
+  self.writeback is Some(_)
+}
+
+///|
+pub fn[T : ToJson] ComponentMut::has_pending_writeback(
+  self : ComponentMut[T],
+) -> Bool {
+  self.force_changed || self.value_ref.val.to_json() != self.original_payload
+}
+
+///|
+pub fn[T : ToJson] ComponentMut::flush(self : ComponentMut[T]) -> Bool {
+  guard self.has_pending_writeback() else { return false }
+  guard self.writeback is Some(writeback) else { return false }
+  let payload = self.value_ref.val.to_json()
+  let store_ref = writeback.world.ensure_component_store(writeback.key.id())
+  let tick = component_write_change_tick(writeback.world)
+  store_ref.val.set(writeback.entity, payload, tick) |> ignore
+  self.original_payload = payload
+  self.force_changed = false
+  true
 }

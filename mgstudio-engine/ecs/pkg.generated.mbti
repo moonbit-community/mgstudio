@@ -126,15 +126,21 @@ pub struct ComponentMut[T] {
   value_ref : Ref[T]
   ticks : @core.ComponentTicks
   system : @core.SystemTicks
-  original_payload : Json
+  mut original_payload : Json
   mut force_changed : Bool
+  writeback : ComponentMutWriteback[T]?
 }
+pub fn[T : ToJson] ComponentMut::flush(Self[T]) -> Bool
 pub fn[T] ComponentMut::get(Self[T]) -> T
 pub fn[T] ComponentMut::get_ref(Self[T]) -> Ref[T]
+pub fn[T : ToJson] ComponentMut::has_pending_writeback(Self[T]) -> Bool
+pub fn[T] ComponentMut::has_writeback(Self[T]) -> Bool
 pub fn[T] ComponentMut::is_added(Self[T]) -> Bool
 pub fn[T] ComponentMut::is_changed(Self[T]) -> Bool
 pub fn[T] ComponentMut::set_changed(Self[T]) -> Unit
 pub fn[T] ComponentMut::ticks(Self[T]) -> @core.ComponentTicks
+
+type ComponentMutWriteback[T]
 
 pub struct ComponentRef[T] {
   value : T
@@ -236,6 +242,7 @@ pub fn[A] Query1::iter_many_mut(Self[A], Array[@core.Entity]) -> Query1FilteredM
 pub fn[A] Query1::par_iter_mut(Self[A]) -> Query1FilteredParallelMut[A, All]
 pub fn[A : @json.FromJson] Query1::view(Self[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
 pub fn[A : ToJson + @json.FromJson] Query1::view_mut(Self[A], (@core.Entity, ComponentMut[A]) -> Unit) -> Unit raise EcsError
+pub fn[A : ToJson + @json.FromJson] Query1::with_mut(Self[A], @core.Entity, (ComponentMut[A]) -> Unit) -> Bool raise EcsError
 
 pub struct Query1Filtered[A, F] {
   world : World
@@ -255,6 +262,7 @@ pub fn[A, F] Query1Filtered::par_iter_mut(Self[A, F]) -> Query1FilteredParallelM
 pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::view(Self[A, F], (@core.Entity, A) -> Unit) -> Unit raise EcsError
 pub fn[A : ToJson + @json.FromJson, F : QueryFilter] Query1Filtered::view_mut(Self[A, F], (@core.Entity, ComponentMut[A]) -> Unit) -> Unit raise EcsError
 pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::view_ref(Self[A, F], (@core.Entity, ComponentRef[A]) -> Unit) -> Unit raise EcsError
+pub fn[A : ToJson + @json.FromJson, F : QueryFilter] Query1Filtered::with_mut(Self[A, F], @core.Entity, (ComponentMut[A]) -> Unit) -> Bool raise EcsError
 
 pub struct Query1FilteredMany[A, F] {
   query : Query1Filtered[A, F]
@@ -318,6 +326,7 @@ pub fn[A : @json.FromJson, B : @json.FromJson, F : QueryFilter] Query2RefMutFilt
 pub fn[A, B, F] Query2RefMutFiltered::iter_many_mut(Self[A, B, F], Array[@core.Entity]) -> Query2RefMutFilteredMany[A, B, F]
 pub fn[A, B, F] Query2RefMutFiltered::par_iter_mut(Self[A, B, F]) -> Query2RefMutFilteredParallel[A, B, F]
 pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2RefMutFiltered::view_mut(Self[A, B, F], (@core.Entity, ComponentRef[A], ComponentMut[B]) -> Unit) -> Unit raise EcsError
+pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2RefMutFiltered::with_mut(Self[A, B, F], @core.Entity, (ComponentRef[A], ComponentMut[B]) -> Unit) -> Bool raise EcsError
 
 pub struct Query2RefMutFilteredMany[A, B, F] {
   query : Query2RefMutFiltered[A, B, F]
@@ -344,6 +353,7 @@ pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::count(Self[A, B, F]) -> In
 pub fn[A : @json.FromJson, B : @json.FromJson, F : QueryFilter] Query2ValueMutFiltered::get(Self[A, B, F], @core.Entity) -> (A, ComponentMut[B])? raise EcsError
 pub fn[A, B, F] Query2ValueMutFiltered::par_iter_mut(Self[A, B, F]) -> Query2ValueMutFilteredParallel[A, B, F]
 pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2ValueMutFiltered::view_mut(Self[A, B, F], (@core.Entity, A, ComponentMut[B]) -> Unit) -> Unit raise EcsError
+pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2ValueMutFiltered::with_mut(Self[A, B, F], @core.Entity, (A, ComponentMut[B]) -> Unit) -> Bool raise EcsError
 
 pub struct Query2ValueMutFilteredParallel[A, B, F] {
   query : Query2ValueMutFiltered[A, B, F]
@@ -385,6 +395,7 @@ pub struct Query3RefMutOptionalFiltered[A, B, C, F] {
 pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::count(Self[A, B, C, F]) -> Int
 pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson, F : QueryFilter] Query3RefMutOptionalFiltered::get(Self[A, B, C, F], @core.Entity) -> (ComponentRef[A], ComponentMut[B], ComponentRef[C]?)? raise EcsError
 pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, C : @json.FromJson, F : QueryFilter] Query3RefMutOptionalFiltered::view_mut(Self[A, B, C, F], (@core.Entity, ComponentRef[A], ComponentMut[B], ComponentRef[C]?) -> Unit) -> Unit raise EcsError
+pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, C : @json.FromJson, F : QueryFilter] Query3RefMutOptionalFiltered::with_mut(Self[A, B, C, F], @core.Entity, (ComponentRef[A], ComponentMut[B], ComponentRef[C]?) -> Unit) -> Bool raise EcsError
 
 pub struct Query3ValueRefMutFiltered[A, B, C, F] {
   world : World
@@ -398,6 +409,7 @@ pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::count(Self[A, B, C, 
 pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson, F : QueryFilter] Query3ValueRefMutFiltered::get(Self[A, B, C, F], @core.Entity) -> (A, ComponentRef[B], ComponentMut[C])? raise EcsError
 pub fn[A, B, C, F] Query3ValueRefMutFiltered::par_iter_mut(Self[A, B, C, F]) -> Query3ValueRefMutFilteredParallel[A, B, C, F]
 pub fn[A : @json.FromJson, B : @json.FromJson, C : ToJson + @json.FromJson, F : QueryFilter] Query3ValueRefMutFiltered::view_mut(Self[A, B, C, F], (@core.Entity, A, ComponentRef[B], ComponentMut[C]) -> Unit) -> Unit raise EcsError
+pub fn[A : @json.FromJson, B : @json.FromJson, C : ToJson + @json.FromJson, F : QueryFilter] Query3ValueRefMutFiltered::with_mut(Self[A, B, C, F], @core.Entity, (A, ComponentRef[B], ComponentMut[C]) -> Unit) -> Bool raise EcsError
 
 pub struct Query3ValueRefMutFilteredParallel[A, B, C, F] {
   query : Query3ValueRefMutFiltered[A, B, C, F]

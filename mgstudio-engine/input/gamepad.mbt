@@ -1696,7 +1696,6 @@ fn gamepad_event_processing_system(
   raw_events : @ecs.MessageReader[RawGamepadEvent],
   outputs : GamepadProcessedEventWriters,
 ) -> Unit {
-  let world = current_gamepad_world_abort_missing()
   try! gamepads.view_mut(fn(_entity, _settings, gamepad_mut) {
     let gamepad_ref = gamepad_mut.get_ref()
     let gamepad = gamepad_ref.val
@@ -1710,30 +1709,20 @@ fn gamepad_event_processing_system(
       Connection(connection_event) =>
         outputs.gamepad_events.write(GamepadEvent::Connection(connection_event))
         |> ignore
-      Axis(axis_event) => {
-        let settings : GamepadSettings? = try! @ecs.World::get_component(
-          world,
-          axis_event.gamepad,
-        )
-        let gamepad : Gamepad? = try! @ecs.World::get_component(
-          world,
-          axis_event.gamepad,
-        )
-        if settings is Some(settings) && gamepad is Some(gamepad) {
-          let old_value = gamepad.analog.get(
+      Axis(axis_event) =>
+        try! (gamepads.with_mut(axis_event.gamepad, fn(settings, gamepad_mut) {
+          let old_value = gamepad_mut.get_ref().val.analog.get(
             GamepadInput::Axis(axis_event.axis),
           )
           if settings
             .get_axis_settings(axis_event.axis)
             .filter(axis_event.value, old_value)
             is Some(filtered_value) {
-            let analog = gamepad.analog
-            analog.set(GamepadInput::Axis(axis_event.axis), filtered_value.raw)
+            gamepad_mut.get_ref().val.analog.set(
+              GamepadInput::Axis(axis_event.axis),
+              filtered_value.raw,
+            )
             |> ignore
-            try! world.set_component(axis_event.gamepad, Gamepad::{
-              ..gamepad,
-              analog,
-            })
             let event = GamepadAxisChangedEvent::new(
               axis_event.gamepad,
               axis_event.axis,
@@ -1742,19 +1731,15 @@ fn gamepad_event_processing_system(
             outputs.axis_events.write(event) |> ignore
             outputs.gamepad_events.write(GamepadEvent::Axis(event)) |> ignore
           }
-        }
-      }
-      Button(button_event) => {
-        let settings : GamepadSettings? = try! @ecs.World::get_component(
-          world,
-          button_event.gamepad,
-        )
-        let gamepad : Gamepad? = try! @ecs.World::get_component(
-          world,
-          button_event.gamepad,
-        )
-        if settings is Some(settings) && gamepad is Some(gamepad) {
-          let old_value = gamepad.analog.get(
+        })
+        |> ignore)
+      Button(button_event) =>
+        try! (gamepads.with_mut(button_event.gamepad, fn(
+          settings,
+          gamepad_mut,
+        ) {
+          let gamepad_ref = gamepad_mut.get_ref()
+          let old_value = gamepad_ref.val.analog.get(
             GamepadInput::Button(button_event.button),
           )
           if settings
@@ -1764,14 +1749,14 @@ fn gamepad_event_processing_system(
             let button_settings = settings.get_button_settings(
               button_event.button,
             )
-            let analog = gamepad.analog
-            analog.set(
+            gamepad_ref.val.analog.set(
               GamepadInput::Button(button_event.button),
               filtered_value.raw,
             )
             |> ignore
-            let digital = gamepad.digital
-            let was_pressed = gamepad.digital.pressed(button_event.button)
+            let was_pressed = gamepad_ref.val.digital.pressed(
+              button_event.button,
+            )
 
             if button_settings.is_released(filtered_value.raw) {
               if was_pressed {
@@ -1784,7 +1769,7 @@ fn gamepad_event_processing_system(
                 )
                 |> ignore
               }
-              digital.release(button_event.button)
+              gamepad_ref.val.digital.release(button_event.button)
             } else if button_settings.is_pressed(filtered_value.raw) {
               if !was_pressed {
                 outputs.button_state_events.write(
@@ -1796,19 +1781,16 @@ fn gamepad_event_processing_system(
                 )
                 |> ignore
               }
-              digital.press(button_event.button)
+              gamepad_ref.val.digital.press(button_event.button)
             }
 
-            let button_state = if digital.pressed(button_event.button) {
+            let button_state = if gamepad_ref.val.digital.pressed(
+                button_event.button,
+              ) {
               ButtonState::Pressed
             } else {
               ButtonState::Released
             }
-            try! world.set_component(button_event.gamepad, Gamepad::{
-              ..gamepad,
-              digital,
-              analog,
-            })
             let event = GamepadButtonChangedEvent::new(
               button_event.gamepad,
               button_event.button,
@@ -1818,8 +1800,8 @@ fn gamepad_event_processing_system(
             outputs.button_events.write(event) |> ignore
             outputs.gamepad_events.write(GamepadEvent::Button(event)) |> ignore
           }
-        }
-      }
+        })
+        |> ignore)
     }
   }
 }

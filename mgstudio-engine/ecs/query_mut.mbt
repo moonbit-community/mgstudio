@@ -87,30 +87,6 @@ pub struct Query3RefMutOptionalFiltered[A, B, C, F] {
 }
 
 ///|
-fn[A : ToJson] query_component_mut_has_writeback(
-  component_mut : ComponentMut[A],
-) -> Bool {
-  component_mut.force_changed ||
-  component_mut.value_ref.val.to_json() != component_mut.original_payload
-}
-
-///|
-fn[A : ToJson] query_component_mut_writeback(
-  world : World,
-  key : ComponentKey[A],
-  entity : @core.Entity,
-  component_mut : ComponentMut[A],
-) -> Unit {
-  if !query_component_mut_has_writeback(component_mut) {
-    return
-  }
-  let store_ref = world.ensure_component_store(key.id())
-  let tick = component_write_change_tick(world)
-  store_ref.val.set(entity, component_mut.value_ref.val.to_json(), tick)
-  |> ignore
-}
-
-///|
 fn[A : @json.FromJson] query_component_mut(
   world : World,
   key : ComponentKey[A],
@@ -138,6 +114,7 @@ fn[A : @json.FromJson] query_component_mut_from_payload(
     system,
     original_payload: payload,
     force_changed: false,
+    writeback: Some(ComponentMutWriteback::{ world, key, entity }),
   }
 }
 
@@ -147,6 +124,15 @@ pub fn[A : @json.FromJson] Query1::get_mut(
   entity : @core.Entity,
 ) -> ComponentMut[A]? raise EcsError {
   self.world.query1_filtered(self.key_a, All::new()).get_mut(entity)
+}
+
+///|
+pub fn[A : ToJson + @json.FromJson] Query1::with_mut(
+  self : Query1[A],
+  entity : @core.Entity,
+  f : (ComponentMut[A]) -> Unit,
+) -> Bool raise EcsError {
+  self.world.query1_filtered(self.key_a, All::new()).with_mut(entity, f)
 }
 
 ///|
@@ -192,6 +178,20 @@ pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::get_mut(
 }
 
 ///|
+pub fn[A : ToJson + @json.FromJson, F : QueryFilter] Query1Filtered::with_mut(
+  self : Query1Filtered[A, F],
+  entity : @core.Entity,
+  f : (ComponentMut[A]) -> Unit,
+) -> Bool raise EcsError {
+  if (try! self.get_mut(entity)) is Some(component_mut) {
+    f(component_mut)
+    component_mut.flush() |> ignore
+    return true
+  }
+  false
+}
+
+///|
 pub fn[A : ToJson + @json.FromJson, F : QueryFilter] Query1Filtered::view_mut(
   self : Query1Filtered[A, F],
   f : (@core.Entity, ComponentMut[A]) -> Unit,
@@ -211,12 +211,7 @@ pub fn[A : ToJson + @json.FromJson, F : QueryFilter] Query1Filtered::view_mut(
         self.system,
       )
       f(entry.0, component_mut)
-      query_component_mut_writeback(
-        self.world,
-        self.key_a,
-        entry.0,
-        component_mut,
-      )
+      component_mut.flush() |> ignore
     }
   }
 }
@@ -241,12 +236,8 @@ pub fn[A : ToJson, F] Query1FilteredManyMut::flush(
   self : Query1FilteredManyMut[A, F],
 ) -> Unit {
   if self.pending is Some((entity, component_mut)) {
-    query_component_mut_writeback(
-      self.query.world,
-      self.query.key_a,
-      entity,
-      component_mut,
-    )
+    entity |> ignore
+    component_mut.flush() |> ignore
     self.pending = None
   }
 }
@@ -355,6 +346,20 @@ pub fn[A : @json.FromJson, B : @json.FromJson, F : QueryFilter] Query2RefMutFilt
 }
 
 ///|
+pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2RefMutFiltered::with_mut(
+  self : Query2RefMutFiltered[A, B, F],
+  entity : @core.Entity,
+  f : (ComponentRef[A], ComponentMut[B]) -> Unit,
+) -> Bool raise EcsError {
+  if (try! self.get(entity)) is Some((component_ref, component_mut)) {
+    f(component_ref, component_mut)
+    component_mut.flush() |> ignore
+    return true
+  }
+  false
+}
+
+///|
 pub fn[A : @json.FromJson, B : @json.FromJson, F : QueryFilter] Query2ValueMutFiltered::get(
   self : Query2ValueMutFiltered[A, B, F],
   entity : @core.Entity,
@@ -368,6 +373,20 @@ pub fn[A : @json.FromJson, B : @json.FromJson, F : QueryFilter] Query2ValueMutFi
     return None
   }
   Some((value_a, component_mut))
+}
+
+///|
+pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2ValueMutFiltered::with_mut(
+  self : Query2ValueMutFiltered[A, B, F],
+  entity : @core.Entity,
+  f : (A, ComponentMut[B]) -> Unit,
+) -> Bool raise EcsError {
+  if (try! self.get(entity)) is Some((value_a, component_mut)) {
+    f(value_a, component_mut)
+    component_mut.flush() |> ignore
+    return true
+  }
+  false
 }
 
 ///|
@@ -403,12 +422,7 @@ pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2V
           self.system,
         )
         f(entry.0, value_a, component_mut)
-        query_component_mut_writeback(
-          self.world,
-          self.key_b,
-          entry.0,
-          component_mut,
-        )
+        component_mut.flush() |> ignore
       }
     }
     return
@@ -432,12 +446,7 @@ pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2V
         self.system,
       )
       f(entry.0, value_a, component_mut)
-      query_component_mut_writeback(
-        self.world,
-        self.key_b,
-        entry.0,
-        component_mut,
-      )
+      component_mut.flush() |> ignore
     }
   }
 }
@@ -505,12 +514,7 @@ pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2R
           self.system,
         )
         f(entry.0, component_ref, component_mut)
-        query_component_mut_writeback(
-          self.world,
-          self.key_b,
-          entry.0,
-          component_mut,
-        )
+        component_mut.flush() |> ignore
       }
     }
     return
@@ -536,12 +540,7 @@ pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2R
         self.system,
       )
       f(entry.0, component_ref, component_mut)
-      query_component_mut_writeback(
-        self.world,
-        self.key_b,
-        entry.0,
-        component_mut,
-      )
+      component_mut.flush() |> ignore
     }
   }
 }
@@ -569,6 +568,25 @@ pub fn[
     return None
   }
   Some((value_a, component_ref, component_mut))
+}
+
+///|
+pub fn[
+  A : @json.FromJson,
+  B : @json.FromJson,
+  C : ToJson + @json.FromJson,
+  F : QueryFilter,
+] Query3ValueRefMutFiltered::with_mut(
+  self : Query3ValueRefMutFiltered[A, B, C, F],
+  entity : @core.Entity,
+  f : (A, ComponentRef[B], ComponentMut[C]) -> Unit,
+) -> Bool raise EcsError {
+  if (try! self.get(entity)) is Some((value_a, component_ref, component_mut)) {
+    f(value_a, component_ref, component_mut)
+    component_mut.flush() |> ignore
+    return true
+  }
+  false
 }
 
 ///|
@@ -622,12 +640,7 @@ pub fn[
           self.system,
         )
         f(entry.0, value_a, component_ref, component_mut)
-        query_component_mut_writeback(
-          self.world,
-          self.key_c,
-          entry.0,
-          component_mut,
-        )
+        component_mut.flush() |> ignore
       }
     }
     return
@@ -660,12 +673,7 @@ pub fn[
           self.system,
         )
         f(entry.0, value_a, component_ref, component_mut)
-        query_component_mut_writeback(
-          self.world,
-          self.key_c,
-          entry.0,
-          component_mut,
-        )
+        component_mut.flush() |> ignore
       }
     }
     return
@@ -697,12 +705,7 @@ pub fn[
         self.system,
       )
       f(entry.0, value_a, component_ref, component_mut)
-      query_component_mut_writeback(
-        self.world,
-        self.key_c,
-        entry.0,
-        component_mut,
-      )
+      component_mut.flush() |> ignore
     }
   }
 }
@@ -777,6 +780,26 @@ pub fn[
   B : ToJson + @json.FromJson,
   C : @json.FromJson,
   F : QueryFilter,
+] Query3RefMutOptionalFiltered::with_mut(
+  self : Query3RefMutOptionalFiltered[A, B, C, F],
+  entity : @core.Entity,
+  f : (ComponentRef[A], ComponentMut[B], ComponentRef[C]?) -> Unit,
+) -> Bool raise EcsError {
+  if (try! self.get(entity))
+    is Some((component_ref_a, component_mut_b, component_ref_c)) {
+    f(component_ref_a, component_mut_b, component_ref_c)
+    component_mut_b.flush() |> ignore
+    return true
+  }
+  false
+}
+
+///|
+pub fn[
+  A : @json.FromJson,
+  B : ToJson + @json.FromJson,
+  C : @json.FromJson,
+  F : QueryFilter,
 ] Query3RefMutOptionalFiltered::view_mut(
   self : Query3RefMutOptionalFiltered[A, B, C, F],
   f : (@core.Entity, ComponentRef[A], ComponentMut[B], ComponentRef[C]?) -> Unit,
@@ -829,12 +852,7 @@ pub fn[
           None => None
         }
         f(entry.0, component_ref_a, component_mut_b, component_ref_c)
-        query_component_mut_writeback(
-          self.world,
-          self.key_b,
-          entry.0,
-          component_mut_b,
-        )
+        component_mut_b.flush() |> ignore
       }
     }
     return
@@ -877,12 +895,7 @@ pub fn[
         None => None
       }
       f(entry.0, component_ref_a, component_mut_b, component_ref_c)
-      query_component_mut_writeback(
-        self.world,
-        self.key_b,
-        entry.0,
-        component_mut_b,
-      )
+      component_mut_b.flush() |> ignore
     }
   }
 }
@@ -941,12 +954,8 @@ pub fn[A, B : ToJson, F] Query2RefMutFilteredMany::flush(
   self : Query2RefMutFilteredMany[A, B, F],
 ) -> Unit {
   if self.pending is Some((entity, _component_ref, component_mut)) {
-    query_component_mut_writeback(
-      self.query.world,
-      self.query.key_b,
-      entity,
-      component_mut,
-    )
+    entity |> ignore
+    component_mut.flush() |> ignore
     self.pending = None
   }
 }
