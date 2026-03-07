@@ -500,6 +500,61 @@ pub(all) enum GamepadEvent {
 } derive(Eq, ToJson, FromJson)
 
 ///|
+pub(all) struct GamepadRumbleIntensity {
+  strong_motor : Float
+  weak_motor : Float
+} derive(Eq, ToJson, FromJson)
+
+///|
+pub fn GamepadRumbleIntensity::max() -> GamepadRumbleIntensity {
+  GamepadRumbleIntensity::{ strong_motor: 1.0F, weak_motor: 1.0F }
+}
+
+///|
+pub fn GamepadRumbleIntensity::weak_max() -> GamepadRumbleIntensity {
+  GamepadRumbleIntensity::{ strong_motor: 0.0F, weak_motor: 1.0F }
+}
+
+///|
+pub fn GamepadRumbleIntensity::strong_max() -> GamepadRumbleIntensity {
+  GamepadRumbleIntensity::{ strong_motor: 1.0F, weak_motor: 0.0F }
+}
+
+///|
+pub fn GamepadRumbleIntensity::weak_motor(
+  intensity : Float,
+) -> GamepadRumbleIntensity {
+  GamepadRumbleIntensity::{ strong_motor: 0.0F, weak_motor: intensity }
+}
+
+///|
+pub fn GamepadRumbleIntensity::strong_motor(
+  intensity : Float,
+) -> GamepadRumbleIntensity {
+  GamepadRumbleIntensity::{ strong_motor: intensity, weak_motor: 0.0F }
+}
+
+///|
+pub(all) enum GamepadRumbleRequest {
+  Add(
+    duration~ : @core.Duration,
+    intensity~ : GamepadRumbleIntensity,
+    gamepad~ : @core.Entity
+  )
+  Stop(gamepad~ : @core.Entity)
+} derive(Eq, ToJson, FromJson)
+
+///|
+pub fn GamepadRumbleRequest::gamepad(
+  self : GamepadRumbleRequest,
+) -> @core.Entity {
+  match self {
+    Add(gamepad~, ..) => gamepad
+    Stop(gamepad~) => gamepad
+  }
+}
+
+///|
 pub(all) suberror AxisSettingsError {
   LiveZoneLowerBoundOutOfRange(Float)
   DeadZoneLowerBoundOutOfRange(Float)
@@ -1205,6 +1260,46 @@ pub impl @ecs.Component for GamepadSettings with component() {
 }
 
 ///|
+priv struct RunningRumble {
+  deadline_ms : Int64
+  intensity : GamepadRumbleIntensity
+} derive(Eq, ToJson, FromJson)
+
+///|
+priv struct AppliedRumble {
+  strong_motor : Float
+  weak_motor : Float
+  deadline_ms : Int64
+} derive(Eq, ToJson, FromJson)
+
+///|
+priv struct RunningRumbleEntry {
+  entity : @core.Entity
+  mut rumbles : Array[RunningRumble]
+  mut last_applied : AppliedRumble?
+} derive(Eq, ToJson, FromJson)
+
+///|
+struct RunningRumbleEffects {
+  mut entries : Array[RunningRumbleEntry]
+} derive(Eq, ToJson, FromJson)
+
+///|
+impl Default for RunningRumbleEffects with default() {
+  RunningRumbleEffects::{ entries: [] }
+}
+
+///|
+let running_rumble_effects_resource_ref : Ref[
+  @core.Resource[RunningRumbleEffects],
+] = Ref::new(@core.Resource::new())
+
+///|
+pub impl @app.Resource for RunningRumbleEffects with resource() {
+  running_rumble_effects_resource_ref.val
+}
+
+///|
 priv struct GamepadSnapshot {
   host_id : Int
   entity : @core.Entity
@@ -1237,6 +1332,11 @@ fn host_input_gamepad_connected(gamepad_id : Int) -> Bool {
 }
 
 ///|
+fn host_input_gamepad_ff_supported(gamepad_id : Int) -> Bool {
+  @native_input.gamepad_ff_supported(gamepad_id)
+}
+
+///|
 fn host_input_gamepad_name_len(gamepad_id : Int) -> Int {
   @native_input.gamepad_name_len(gamepad_id)
 }
@@ -1264,6 +1364,18 @@ fn host_input_gamepad_button_value(gamepad_id~ : Int, button~ : Int) -> Float {
 ///|
 fn host_input_gamepad_axis_value(gamepad_id~ : Int, axis~ : Int) -> Float {
   @native_input.gamepad_axis_value(gamepad_id~, axis~)
+}
+
+///|
+fn host_input_gamepad_set_rumble(
+  gamepad_id : Int,
+  strong_motor : Float,
+  weak_motor : Float,
+  duration_ms : Int64,
+) -> @native_input.GamepadRumbleResult {
+  @native_input.gamepad_set_rumble(
+    gamepad_id, strong_motor, weak_motor, duration_ms,
+  )
 }
 
 ///|
@@ -1320,6 +1432,11 @@ let gamepad_button_state_changed_event_message_key : @ecs.MessageKey[
 )
 
 ///|
+let gamepad_rumble_request_message_key : @ecs.MessageKey[GamepadRumbleRequest] = @ecs.register_message(
+  debug_name="input.gamepad.GamepadRumbleRequest",
+)
+
+///|
 let input_gamepad_poll_system_set : @app.SystemSet = @app.system_set(
   "input.gamepad.poll",
 )
@@ -1332,6 +1449,11 @@ let input_gamepad_connection_system_set : @app.SystemSet = @app.system_set(
 ///|
 let input_gamepad_event_processing_system_set : @app.SystemSet = @app.system_set(
   "input.gamepad.event_processing",
+)
+
+///|
+let input_gamepad_rumble_system_set : @app.SystemSet = @app.system_set(
+  "input.gamepad.rumble",
 )
 
 ///|
@@ -1396,6 +1518,113 @@ fn ensure_gamepad_entity(world : @ecs.World, host_id : Int) -> @core.Entity {
     remember_gamepad_entity(host_id, entity)
     entity
   }
+}
+
+///|
+fn mapped_host_gamepad_id(entity : @core.Entity) -> Int? {
+  for entry in host_gamepad_entities_ref.val {
+    if entry.1 == entity {
+      return Some(entry.0)
+    }
+  }
+  None
+}
+
+///|
+fn clamp_rumble_motor(value : Float) -> Float {
+  if value <= 0.0F {
+    0.0F
+  } else if value >= 1.0F {
+    1.0F
+  } else {
+    value
+  }
+}
+
+///|
+fn duration_millis(duration : @core.Duration) -> Int64 {
+  duration.as_millis()
+}
+
+///|
+fn deadline_after(now_ms : Int64, duration : @core.Duration) -> Int64 {
+  let duration_ms = duration_millis(duration)
+  if duration_ms <= 0L {
+    now_ms
+  } else if now_ms >= 9_223_372_036_854_775_807L - duration_ms {
+    9_223_372_036_854_775_807L
+  } else {
+    now_ms + duration_ms
+  }
+}
+
+///|
+fn current_real_time_millis(real_time : @app.Res[@time.Real]) -> Int64 {
+  @core.Duration::from_secs_f32(real_time.get().elapsed_seconds()).as_millis()
+}
+
+///|
+fn running_rumble_entry_index(
+  effects : RunningRumbleEffects,
+  entity : @core.Entity,
+) -> Int? {
+  for i in 0..<effects.entries.length() {
+    if effects.entries[i].entity == entity {
+      return Some(i)
+    }
+  }
+  None
+}
+
+///|
+fn ensure_running_rumble_entry_index(
+  effects : RunningRumbleEffects,
+  entity : @core.Entity,
+) -> Int {
+  match running_rumble_entry_index(effects, entity) {
+    Some(index) => index
+    None => {
+      effects.entries.push(RunningRumbleEntry::{
+        entity,
+        rumbles: [],
+        last_applied: None,
+      })
+      effects.entries.length() - 1
+    }
+  }
+}
+
+///|
+fn prune_expired_rumbles(entry : RunningRumbleEntry, now_ms : Int64) -> Unit {
+  let kept : Array[RunningRumble] = []
+  for rumble in entry.rumbles {
+    if rumble.deadline_ms > now_ms {
+      kept.push(rumble)
+    }
+  }
+  entry.rumbles = kept
+}
+
+///|
+fn desired_rumble(entry : RunningRumbleEntry) -> AppliedRumble? {
+  if entry.rumbles.length() == 0 {
+    return None
+  }
+
+  let mut strong_motor = 0.0F
+  let mut weak_motor = 0.0F
+  let mut deadline_ms = 0L
+  for rumble in entry.rumbles {
+    strong_motor = clamp_rumble_motor(
+      strong_motor + rumble.intensity.strong_motor,
+    )
+    weak_motor = clamp_rumble_motor(weak_motor + rumble.intensity.weak_motor)
+    if rumble.deadline_ms > deadline_ms {
+      deadline_ms = rumble.deadline_ms
+    }
+  }
+
+  Some(AppliedRumble::{ strong_motor, weak_motor, deadline_ms })
 }
 
 ///|
@@ -1807,6 +2036,111 @@ fn gamepad_event_processing_system(
 }
 
 ///|
+fn gamepad_rumble_system(
+  requests : @ecs.MessageReader[GamepadRumbleRequest],
+  running_rumbles : @app.ResMut[RunningRumbleEffects],
+  real_time : @app.Res[@time.Real],
+) -> Unit {
+  let now_ms = current_real_time_millis(real_time)
+  let effects_ref = running_rumbles.get_ref()
+
+  for i in 0..<effects_ref.val.entries.length() {
+    let entry = effects_ref.val.entries[i]
+    prune_expired_rumbles(entry, now_ms)
+    effects_ref.val.entries[i] = entry
+  }
+
+  for request in (try! requests.read()) {
+    let entity = request.gamepad()
+    let host_id = match mapped_host_gamepad_id(entity) {
+      Some(host_id) => host_id
+      None => continue
+    }
+    let index = ensure_running_rumble_entry_index(effects_ref.val, entity)
+    let entry = effects_ref.val.entries[index]
+
+    match request {
+      Add(duration~, intensity~, ..) => {
+        if duration.is_zero() ||
+          !host_input_gamepad_connected(host_id) ||
+          !host_input_gamepad_ff_supported(host_id) {
+          continue
+        }
+        entry.rumbles.push(RunningRumble::{
+          deadline_ms: deadline_after(now_ms, duration),
+          intensity: GamepadRumbleIntensity::{
+            strong_motor: clamp_rumble_motor(intensity.strong_motor),
+            weak_motor: clamp_rumble_motor(intensity.weak_motor),
+          },
+        })
+      }
+      Stop(..) => entry.rumbles.clear()
+    }
+    effects_ref.val.entries[index] = entry
+  }
+
+  for i in 0..<effects_ref.val.entries.length() {
+    let entry = effects_ref.val.entries[i]
+    prune_expired_rumbles(entry, now_ms)
+    match desired_rumble(entry) {
+      Some(desired) => {
+        let should_apply = match entry.last_applied {
+          Some(applied) =>
+            applied.strong_motor != desired.strong_motor ||
+            applied.weak_motor != desired.weak_motor ||
+            applied.deadline_ms != desired.deadline_ms
+          None => true
+        }
+        if !should_apply {
+          continue
+        }
+
+        let host_id = match mapped_host_gamepad_id(entry.entity) {
+          Some(host_id) => host_id
+          None => {
+            entry.rumbles.clear()
+            entry.last_applied = None
+            continue
+          }
+        }
+        let duration_ms = desired.deadline_ms - now_ms
+        match
+          host_input_gamepad_set_rumble(
+            host_id,
+            desired.strong_motor,
+            desired.weak_motor,
+            duration_ms,
+          ) {
+          @native_input.GamepadRumbleResult::Applied =>
+            entry.last_applied = Some(desired)
+          @native_input.GamepadRumbleResult::Unsupported
+          | @native_input.GamepadRumbleResult::NotFound => {
+            entry.rumbles.clear()
+            entry.last_applied = None
+          }
+        }
+      }
+      None =>
+        if entry.last_applied is Some(_) {
+          if mapped_host_gamepad_id(entry.entity) is Some(host_id) {
+            ignore(host_input_gamepad_set_rumble(host_id, 0.0F, 0.0F, 0L))
+          }
+          entry.last_applied = None
+        }
+    }
+    effects_ref.val.entries[i] = entry
+  }
+
+  let kept_entries : Array[RunningRumbleEntry] = []
+  for entry in effects_ref.val.entries {
+    if entry.rumbles.length() > 0 || entry.last_applied is Some(_) {
+      kept_entries.push(entry)
+    }
+  }
+  effects_ref.val.entries = kept_entries
+}
+
+///|
 pub impl @ecs.Message for GamepadEvent with message() {
   gamepad_event_message_key
 }
@@ -1847,12 +2181,18 @@ pub impl @ecs.Message for RawGamepadEvent with message() {
 }
 
 ///|
+pub impl @ecs.Message for GamepadRumbleRequest with message() {
+  gamepad_rumble_request_message_key
+}
+
+///|
 pub fn input_gamepad_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   try! app
   .world()
   .register_required_components(ecs_key_gamepad, ecs_key_gamepad_settings)
 
   app
+  .init_resource(fn() { RunningRumbleEffects::default() })
   .add_message(gamepad_event_message_key)
   .add_message(raw_gamepad_event_message_key)
   .add_message(gamepad_connection_event_message_key)
@@ -1861,6 +2201,7 @@ pub fn input_gamepad_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
   .add_message(raw_gamepad_button_changed_event_message_key)
   .add_message(gamepad_button_changed_event_message_key)
   .add_message(gamepad_button_state_changed_event_message_key)
+  .add_message(gamepad_rumble_request_message_key)
   .add_pre_update_system_config(
     @app.system(input_poll_gamepad_system).in_set(input_gamepad_poll_system_set),
   )
@@ -1873,6 +2214,11 @@ pub fn input_gamepad_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
     @app.system(@app.system_param3(gamepad_event_processing_system))
     .in_set(input_gamepad_event_processing_system_set)
     .after(input_gamepad_connection_system_set),
+  )
+  .add_post_update_system_config(
+    @app.system(@app.system_param3(gamepad_rumble_system)).in_set(
+      input_gamepad_rumble_system_set,
+    ),
   )
 }
 

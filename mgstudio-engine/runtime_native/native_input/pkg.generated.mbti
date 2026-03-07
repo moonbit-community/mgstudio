@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/runtime_native/native_input"
 
+import {
+  "Milky2018/gamepad",
+}
+
 // Values
 pub fn drag_and_drop_event_code_unit(index~ : Int, offset~ : Int) -> Int
 
@@ -22,6 +26,8 @@ pub fn gamepad_connected(Int) -> Bool
 
 pub fn gamepad_count() -> Int
 
+pub fn gamepad_ff_supported(Int) -> Bool
+
 pub fn gamepad_id(Int) -> Int
 
 pub fn gamepad_name_code_unit(gamepad_id~ : Int, offset~ : Int) -> Int
@@ -31,6 +37,20 @@ pub fn gamepad_name_len(Int) -> Int
 pub fn gamepad_poll() -> Unit
 
 pub fn gamepad_product_id(Int) -> Int
+
+pub fn gamepad_set_rumble(Int, Float, Float, Int64) -> GamepadRumbleResult
+
+pub fn gamepad_test_record_rumble_commands(Bool) -> Unit
+
+pub fn gamepad_test_reset_state() -> Unit
+
+pub fn gamepad_test_set_mock_ff_supported(Int, Bool) -> Unit
+
+pub fn gamepad_test_take_recorded_rumble_commands() -> Array[GamepadRumbleCommand]
+
+pub fn gamepad_test_use_ff_mock(Int) -> Unit
+
+pub fn gamepad_test_use_mock_gilrs(@gamepad.Gilrs) -> Unit
 
 pub fn gamepad_vendor_id(Int) -> Int
 
@@ -77,6 +97,18 @@ pub fn wheel_y() -> Float
 // Errors
 
 // Types and methods
+pub struct GamepadRumbleCommand {
+  gamepad_id : Int
+  strong_motor : Float
+  weak_motor : Float
+  duration_ms : Int64
+}
+
+pub(all) enum GamepadRumbleResult {
+  Applied
+  Unsupported
+  NotFound
+}
 
 // Type aliases
 

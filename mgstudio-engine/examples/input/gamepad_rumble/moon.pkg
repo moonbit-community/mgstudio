@@ -1,0 +1,12 @@
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/input",
+  "Milky2018/mgstudio/window",
+  "Milky2018/mgstudio",
+}
+
+options(
+  "is-main": true,
+)

@@ -14,7 +14,12 @@
 
 ///|
 fn gamepad_test_app() -> @app.App[@ecs.World] {
-  input_gamepad_plugin(@app.App::new(@ecs.World::new()))
+  current_gamepads_ref.val = []
+  previous_gamepads_ref.val = []
+  host_gamepad_entities_ref.val = []
+  running_rumble_effects_resource_ref.val.remove() |> ignore
+  @native_input.gamepad_test_reset_state()
+  input_gamepad_plugin(@time.time_plugin(@app.App::new(@ecs.World::new())))
 }
 
 ///|
@@ -67,6 +72,7 @@ fn clear_gamepad_messages(world : @ecs.World) -> Unit {
   world.clear_messages(raw_gamepad_button_changed_event_message_key)
   world.clear_messages(gamepad_button_changed_event_message_key)
   world.clear_messages(gamepad_button_state_changed_event_message_key)
+  world.clear_messages(gamepad_rumble_request_message_key)
 }
 
 ///|
@@ -92,6 +98,17 @@ fn world_gamepad_settings(
     world, entity,
   )
   settings
+}
+
+///|
+fn run_with_mock_gamepad(
+  app : @app.App[@ecs.World],
+) -> (@app.App[@ecs.World], @core.Entity) {
+  @native_input.gamepad_test_use_ff_mock(1)
+  @native_input.gamepad_test_record_rumble_commands(true)
+  let app = app.run_once()
+  let entity = mapped_gamepad_entity(0).unwrap()
+  (app, entity)
 }
 
 ///|
@@ -634,5 +651,119 @@ test "input gamepad: button axis filtering matches bevy analog and digital count
   inspect(
     read_messages(world, gamepad_button_changed_event_message_key).length(),
     content="4",
+  )
+}
+
+///|
+test "input gamepad: rumble add requests reach backend output" {
+  let mut app = gamepad_test_app()
+  let world = app.world()
+  let entity = {
+    let (next_app, entity) = run_with_mock_gamepad(app)
+    app = next_app
+    entity
+  }
+  clear_gamepad_messages(world)
+
+  world.send_message(
+    gamepad_rumble_request_message_key,
+    GamepadRumbleRequest::Add(
+      duration=@core.Duration::from_secs_f32(0.5F),
+      intensity=GamepadRumbleIntensity::weak_motor(0.25F),
+      gamepad=entity,
+    ),
+  )
+  |> ignore
+  app = app.run_once()
+
+  let commands = @native_input.gamepad_test_take_recorded_rumble_commands()
+  inspect(commands.length(), content="1")
+  inspect(commands[0].gamepad_id, content="0")
+  inspect(commands[0].strong_motor == 0.0F, content="true")
+  inspect(commands[0].weak_motor == 0.25F, content="true")
+  inspect(commands[0].duration_ms, content="500")
+}
+
+///|
+test "input gamepad: rumble requests saturate and stop clears backend output" {
+  let mut app = gamepad_test_app()
+  let world = app.world()
+  let entity = {
+    let (next_app, entity) = run_with_mock_gamepad(app)
+    app = next_app
+    entity
+  }
+  clear_gamepad_messages(world)
+
+  world.send_message(
+    gamepad_rumble_request_message_key,
+    GamepadRumbleRequest::Add(
+      duration=@core.Duration::from_secs(2L),
+      intensity=GamepadRumbleIntensity::strong_motor(0.6F),
+      gamepad=entity,
+    ),
+  )
+  |> ignore
+  world.send_message(
+    gamepad_rumble_request_message_key,
+    GamepadRumbleRequest::Add(
+      duration=@core.Duration::from_secs(5L),
+      intensity=GamepadRumbleIntensity::{
+        strong_motor: 0.6F,
+        weak_motor: 0.25F,
+      },
+      gamepad=entity,
+    ),
+  )
+  |> ignore
+  app = app.run_once()
+
+  let add_commands = @native_input.gamepad_test_take_recorded_rumble_commands()
+  inspect(add_commands.length(), content="1")
+  inspect(add_commands[0].strong_motor == 1.0F, content="true")
+  inspect(add_commands[0].weak_motor == 0.25F, content="true")
+  inspect(add_commands[0].duration_ms, content="5000")
+
+  world.send_message(
+    gamepad_rumble_request_message_key,
+    GamepadRumbleRequest::Stop(gamepad=entity),
+  )
+  |> ignore
+  app = app.run_once()
+
+  let stop_commands = @native_input.gamepad_test_take_recorded_rumble_commands()
+  inspect(stop_commands.length(), content="1")
+  inspect(stop_commands[0].strong_motor == 0.0F, content="true")
+  inspect(stop_commands[0].weak_motor == 0.0F, content="true")
+  inspect(stop_commands[0].duration_ms, content="0")
+}
+
+///|
+test "input gamepad: unsupported rumble requests are dropped" {
+  let mut app = gamepad_test_app()
+  let world = app.world()
+  @native_input.gamepad_test_use_ff_mock(1)
+  @native_input.gamepad_test_set_mock_ff_supported(0, false)
+  @native_input.gamepad_test_record_rumble_commands(true)
+  app = app.run_once()
+  let entity = mapped_gamepad_entity(0).unwrap()
+  clear_gamepad_messages(world)
+
+  world.send_message(
+    gamepad_rumble_request_message_key,
+    GamepadRumbleRequest::Add(
+      duration=@core.Duration::from_secs(1L),
+      intensity=GamepadRumbleIntensity::max(),
+      gamepad=entity,
+    ),
+  )
+  |> ignore
+  app = app.run_once()
+
+  let commands = @native_input.gamepad_test_take_recorded_rumble_commands()
+  inspect(commands.length(), content="0")
+  inspect(
+    running_rumble_effects_resource_ref.val.get().unwrap().entries.length(),
+    content="0",
   )
 }

@@ -54,6 +54,148 @@ fn connected_gamepad(gamepad_id : Int) -> @gamepad.Gamepad? {
 }
 
 ///|
+pub(all) enum GamepadRumbleResult {
+  Applied
+  Unsupported
+  NotFound
+}
+
+///|
+pub struct GamepadRumbleCommand {
+  gamepad_id : Int
+  strong_motor : Float
+  weak_motor : Float
+  duration_ms : Int64
+}
+
+///|
+let record_gamepad_rumble_commands_ref : Ref[Bool] = Ref::new(false)
+
+///|
+let gamepad_test_ff_supported_override_ref : Ref[Bool?] = Ref::new(None)
+
+///|
+let recorded_gamepad_rumble_commands_ref : Ref[Array[GamepadRumbleCommand]] = Ref::new([],
+)
+
+///|
+fn clamp_rumble_motor(value : Float) -> Double {
+  if value <= 0.0 {
+    0.0
+  } else if value >= 1.0 {
+    1.0
+  } else {
+    value.to_double()
+  }
+}
+
+///|
+fn gamepad_ff_supported_for_rumble(gamepad : @gamepad.Gamepad) -> Bool {
+  match gamepad_test_ff_supported_override_ref.val {
+    Some(supported) => supported
+    None => gamepad.is_ff_supported()
+  }
+}
+
+///|
+pub fn gamepad_set_rumble(
+  gamepad_id : Int,
+  strong_motor : Float,
+  weak_motor : Float,
+  duration_ms : Int64,
+) -> GamepadRumbleResult {
+  let gamepad = match connected_gamepad(gamepad_id) {
+    Some(gamepad) => gamepad
+    None => return GamepadRumbleResult::NotFound
+  }
+  if !gamepad_ff_supported_for_rumble(gamepad) {
+    return GamepadRumbleResult::Unsupported
+  }
+
+  let strong = clamp_rumble_motor(strong_motor)
+  let weak = clamp_rumble_motor(weak_motor)
+  let clamped_duration_ms = if duration_ms <= 0L { 0L } else { duration_ms }
+
+  if record_gamepad_rumble_commands_ref.val {
+    recorded_gamepad_rumble_commands_ref.val.push({
+      gamepad_id,
+      strong_motor: Float::from_double(strong),
+      weak_motor: Float::from_double(weak),
+      duration_ms: clamped_duration_ms,
+    })
+    return GamepadRumbleResult::Applied
+  }
+
+  let effect_result : Result[@gamepad.Effect, @gamepad.FfError] = try? @gamepad.EffectBuilder::new()
+    .add_gamepad(gamepad)
+    .duration(clamped_duration_ms)
+    .rumble(strong, weak)
+    .finish(ensure_gilrs())
+  let effect = match effect_result {
+    Ok(effect) => effect
+    Err(_) => return GamepadRumbleResult::Unsupported
+  }
+
+  let result : Result[Unit, @gamepad.FfError] = if strong == 0.0 && weak == 0.0 {
+    try? effect.stop()
+  } else {
+    try? effect.play()
+  }
+  match result {
+    Ok(_) => GamepadRumbleResult::Applied
+    Err(_) => GamepadRumbleResult::Unsupported
+  }
+}
+
+///|
+pub fn gamepad_test_use_mock_gilrs(gilrs : @gamepad.Gilrs) -> Unit {
+  gilrs_ref.val = Some(gilrs)
+  connected_gamepad_ids_ref.val = []
+}
+
+///|
+pub fn gamepad_test_use_ff_mock(gamepad_count : Int) -> Unit {
+  let gilrs = @gamepad.Gilrs::new_mock(gamepad_count)
+  gamepad_test_use_mock_gilrs(gilrs)
+  gamepad_test_ff_supported_override_ref.val = Some(true)
+}
+
+///|
+pub fn gamepad_test_set_mock_ff_supported(
+  gamepad_id : Int,
+  supported : Bool,
+) -> Unit {
+  ignore(gamepad_id)
+  gamepad_test_ff_supported_override_ref.val = Some(supported)
+}
+
+///|
+pub fn gamepad_test_record_rumble_commands(enabled : Bool) -> Unit {
+  record_gamepad_rumble_commands_ref.val = enabled
+  if !enabled {
+    recorded_gamepad_rumble_commands_ref.val.clear()
+  }
+}
+
+///|
+pub fn gamepad_test_take_recorded_rumble_commands() -> Array[
+  GamepadRumbleCommand,
+] {
+  let commands = recorded_gamepad_rumble_commands_ref.val
+  recorded_gamepad_rumble_commands_ref.val = []
+  commands
+}
+
+///|
+pub fn gamepad_test_reset_state() -> Unit {
+  gilrs_ref.val = None
+  connected_gamepad_ids_ref.val = []
+  record_gamepad_rumble_commands_ref.val = false
+  gamepad_test_ff_supported_override_ref.val = None
+  recorded_gamepad_rumble_commands_ref.val.clear()
+}
+
+///|
 fn gamepad_button_from_index(index : Int) -> @gamepad.Button {
   match index {
     0 => @gamepad.Button::South
@@ -355,6 +497,14 @@ pub fn gamepad_id(index : Int) -> Int {
 ///|
 pub fn gamepad_connected(gamepad_id : Int) -> Bool {
   connected_gamepad(gamepad_id) is Some(_)
+}
+
+///|
+pub fn gamepad_ff_supported(gamepad_id : Int) -> Bool {
+  match connected_gamepad(gamepad_id) {
+    Some(gamepad) => gamepad_ff_supported_for_rumble(gamepad)
+    None => false
+  }
 }
 
 ///|

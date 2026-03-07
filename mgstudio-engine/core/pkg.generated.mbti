@@ -42,6 +42,20 @@ pub fn ComponentTicks::is_changed(Self, SystemTicks) -> Bool
 pub fn ComponentTicks::new(Int) -> Self
 pub fn ComponentTicks::set_changed(Self, Int) -> Unit
 
+pub struct Duration {
+  millis : Int64
+}
+pub fn Duration::as_millis(Self) -> Int64
+pub fn Duration::as_secs_f32(Self) -> Float
+pub fn Duration::from_millis(Int64) -> Self
+pub fn Duration::from_secs(Int64) -> Self
+pub fn Duration::from_secs_f32(Float) -> Self
+pub fn Duration::is_zero(Self) -> Bool
+pub fn Duration::new(Int64, millis? : Int) -> Self
+pub impl Eq for Duration
+pub impl ToJson for Duration
+pub impl @json.FromJson for Duration
+
 type Entities
 pub fn Entities::alive_entities(Self) -> Array[Entity]
 pub fn Entities::count_spawned(Self) -> Int
