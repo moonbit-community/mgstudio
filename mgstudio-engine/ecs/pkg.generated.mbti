@@ -9,6 +9,8 @@ import {
 // Values
 pub fn[T] component_key_from_id(Int, debug_name? : String) -> ComponentKey[T]
 
+pub let ecs_key_name : ComponentKey[Name]
+
 pub fn[T] event_key_from_id(Int, debug_name? : String) -> EventKey[T]
 
 pub fn[A : ToJson + @json.FromJson] query1(World, ComponentKey[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
@@ -204,6 +206,17 @@ pub struct MessageWriter[T] {
 }
 pub fn[T : ToJson] MessageWriter::write(Self[T], T) -> Int
 pub fn[T : ToJson] MessageWriter::write_batch(Self[T], Array[T]) -> Unit
+
+pub struct Name {
+  name : String
+}
+pub fn Name::as_str(Self) -> String
+pub fn Name::new(String) -> Self
+pub impl Component for Name
+pub impl Eq for Name
+pub impl Show for Name
+pub impl ToJson for Name
+pub impl @json.FromJson for Name
 
 pub struct Or[F] {
   filters : F

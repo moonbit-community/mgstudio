@@ -14,47 +14,46 @@
 
 ///|
 /// Port of `bevy/examples/input/gamepad_input.rs`.
-///
-/// Baseline parity:
-/// - South button press/release checks are preserved.
-/// - RightTrigger2 and LeftStickX threshold logging is preserved.
-/// - Bevy ECS `(Entity, &Gamepad)` query is adapted to runtime `input.gamepads()`.
 fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_system(gamepad_system)
+  .add_system_param(gamepad_system)
   .run()
 }
 
 ///|
-fn gamepad_system(world : @ecs.World) -> Unit {
-  world |> ignore
-  for gamepad in @input.gamepads() {
-    let gamepad_id = gamepad.id()
-    if gamepad.just_pressed(South) {
+fn gamepad_system(gamepads : @ecs.Query1[@input.Gamepad]) -> Unit {
+  try! gamepads.view(fn(entity, gamepad) {
+    let gamepad_id = entity_text(entity)
+    if gamepad.just_pressed(@input.GamepadButton::South) {
       log_line("\{gamepad_id} just pressed South")
-    } else if gamepad.just_released(South) {
+    } else if gamepad.just_released(@input.GamepadButton::South) {
       log_line("\{gamepad_id} just released South")
     }
 
-    if gamepad.get(Button(RightTrigger2)) is Some(right_trigger) {
+    if gamepad.get(@input.GamepadButton::RightTrigger2) is Some(right_trigger) {
       if abs_over_threshold(right_trigger, 0.01F) {
         log_line("\{gamepad_id} RightTrigger2 value is \{right_trigger}")
       }
     }
 
-    if gamepad.get(Axis(LeftStickX)) is Some(left_stick_x) {
+    if gamepad.get(@input.GamepadAxis::LeftStickX) is Some(left_stick_x) {
       if abs_over_threshold(left_stick_x, 0.01F) {
         log_line("\{gamepad_id} LeftStickX value is \{left_stick_x}")
       }
     }
-  }
+  })
 }
 
 ///|
 fn abs_over_threshold(value : Float, threshold : Float) -> Bool {
   value > threshold || value < -threshold
+}
+
+///|
+fn entity_text(entity : @core.Entity) -> String {
+  "Entity(" + entity.id.to_string() + ", " + entity.generation.to_string() + ")"
 }
 
 ///|

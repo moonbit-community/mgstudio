@@ -11,7 +11,13 @@ import {
 }
 
 // Values
-pub fn gamepads() -> Array[Gamepad]
+pub const AXIS_MAX : Float = 1.0
+
+pub const AXIS_MIN : Float = -1.
+
+pub let ecs_key_gamepad : @ecs.ComponentKey[Gamepad]
+
+pub let ecs_key_gamepad_settings : @ecs.ComponentKey[GamepadSettings]
 
 pub fn host_input_finish_frame() -> Unit
 
@@ -78,6 +84,21 @@ pub fn primary_pointer_position() -> @math.Vec2?
 pub fn primary_pointer_pressed() -> Bool
 
 // Errors
+pub(all) suberror AxisSettingsError {
+  LiveZoneLowerBoundOutOfRange(Float)
+  DeadZoneLowerBoundOutOfRange(Float)
+  DeadZoneUpperBoundOutOfRange(Float)
+  LiveZoneUpperBoundOutOfRange(Float)
+  LiveZoneLowerBoundGreaterThanDeadZoneLowerBound(Float, Float)
+  DeadZoneUpperBoundGreaterThanLiveZoneUpperBound(Float, Float)
+  Threshold(Float)
+}
+
+pub(all) suberror ButtonSettingsError {
+  ReleaseThresholdOutOfRange(Float)
+  PressThresholdOutOfRange(Float)
+  ReleaseThresholdGreaterThanPressThreshold(Float, Float)
+}
 
 // Types and methods
 pub struct AccumulatedMouseMotion {
@@ -92,18 +113,108 @@ pub struct AccumulatedMouseScroll {
 pub fn AccumulatedMouseScroll::new() -> Self
 pub impl @app.Resource for AccumulatedMouseScroll
 
-pub struct ButtonInput[T] {
-  pressed_ids : Array[String]
-  just_pressed_ids : Array[String]
-  just_released_ids : Array[String]
+pub struct Axis[T] {
+  axis_data : Array[(T, Float)]
   marker : T?
 }
+pub fn[T] Axis::all_axes(Self[T]) -> Array[T]
+pub fn[T] Axis::all_axes_and_values(Self[T]) -> Array[(T, Float)]
+pub fn[T : Eq] Axis::get(Self[T], T) -> Float?
+pub fn[T : Eq] Axis::get_unclamped(Self[T], T) -> Float?
+pub fn[T] Axis::new() -> Self[T]
+pub fn[T : Eq] Axis::remove(Self[T], T) -> Float?
+pub fn[T : Eq] Axis::set(Self[T], T, Float) -> Float?
+pub impl[T] Default for Axis[T]
+pub impl[T : ToJson] ToJson for Axis[T]
+pub impl[T : @json.FromJson] @json.FromJson for Axis[T]
+
+pub struct AxisSettings {
+  mut livezone_upperbound : Float
+  mut deadzone_upperbound : Float
+  mut deadzone_lowerbound : Float
+  mut livezone_lowerbound : Float
+  mut threshold : Float
+}
+pub fn AxisSettings::deadzone_lowerbound(Self) -> Float
+pub fn AxisSettings::deadzone_upperbound(Self) -> Float
+pub fn AxisSettings::livezone_lowerbound(Self) -> Float
+pub fn AxisSettings::livezone_upperbound(Self) -> Float
+pub fn AxisSettings::new(Float, Float, Float, Float, Float) -> Result[Self, AxisSettingsError]
+pub fn AxisSettings::set_deadzone_lowerbound(Self, Float) -> Float
+pub fn AxisSettings::set_deadzone_upperbound(Self, Float) -> Float
+pub fn AxisSettings::set_livezone_lowerbound(Self, Float) -> Float
+pub fn AxisSettings::set_livezone_upperbound(Self, Float) -> Float
+pub fn AxisSettings::set_threshold(Self, Float) -> Float
+pub fn AxisSettings::threshold(Self) -> Float
+pub fn AxisSettings::try_set_deadzone_lowerbound(Self, Float) -> Result[Unit, AxisSettingsError]
+pub fn AxisSettings::try_set_deadzone_upperbound(Self, Float) -> Result[Unit, AxisSettingsError]
+pub fn AxisSettings::try_set_livezone_lowerbound(Self, Float) -> Result[Unit, AxisSettingsError]
+pub fn AxisSettings::try_set_livezone_upperbound(Self, Float) -> Result[Unit, AxisSettingsError]
+pub fn AxisSettings::try_set_threshold(Self, Float) -> Result[Unit, AxisSettingsError]
+pub impl Default for AxisSettings
+pub impl Eq for AxisSettings
+pub impl ToJson for AxisSettings
+pub impl @json.FromJson for AxisSettings
+
+pub struct ButtonAxisSettings {
+  high : Float
+  low : Float
+  threshold : Float
+}
+pub impl Default for ButtonAxisSettings
+pub impl Eq for ButtonAxisSettings
+pub impl ToJson for ButtonAxisSettings
+pub impl @json.FromJson for ButtonAxisSettings
+
+pub struct ButtonInput[T] {
+  pressed : Array[(String, T)]
+  just_pressed : Array[(String, T)]
+  just_released : Array[(String, T)]
+  marker : T?
+}
+pub fn[T : ButtonInputButton] ButtonInput::all_just_pressed(Self[T], Array[T]) -> Bool
+pub fn[T : ButtonInputButton] ButtonInput::all_just_released(Self[T], Array[T]) -> Bool
+pub fn[T : ButtonInputButton] ButtonInput::all_pressed(Self[T], Array[T]) -> Bool
+pub fn[T : ButtonInputButton] ButtonInput::any_just_pressed(Self[T], Array[T]) -> Bool
+pub fn[T : ButtonInputButton] ButtonInput::any_just_released(Self[T], Array[T]) -> Bool
 pub fn[T : ButtonInputButton] ButtonInput::any_pressed(Self[T], Array[T]) -> Bool
+pub fn[T] ButtonInput::clear(Self[T]) -> Unit
+pub fn[T : ButtonInputButton] ButtonInput::clear_just_pressed(Self[T], T) -> Bool
+pub fn[T : ButtonInputButton] ButtonInput::clear_just_released(Self[T], T) -> Bool
+pub fn[T] ButtonInput::get_just_pressed(Self[T]) -> Array[T]
+pub fn[T] ButtonInput::get_just_released(Self[T]) -> Array[T]
+pub fn[T] ButtonInput::get_pressed(Self[T]) -> Array[T]
 pub fn[T : ButtonInputButton] ButtonInput::just_pressed(Self[T], T) -> Bool
 pub fn[T : ButtonInputButton] ButtonInput::just_released(Self[T], T) -> Bool
 pub fn[T] ButtonInput::new() -> Self[T]
+pub fn[T : ButtonInputButton] ButtonInput::press(Self[T], T) -> Unit
 pub fn[T : ButtonInputButton] ButtonInput::pressed(Self[T], T) -> Bool
+pub fn[T : ButtonInputButton] ButtonInput::release(Self[T], T) -> Unit
+pub fn[T : ButtonInputButton] ButtonInput::release_all(Self[T]) -> Unit
+pub fn[T : ButtonInputButton] ButtonInput::reset(Self[T], T) -> Unit
+pub fn[T] ButtonInput::reset_all(Self[T]) -> Unit
 pub impl[T : ButtonInputSnapshotProvider] @app.SystemParam for ButtonInput[T]
+pub impl[T] Default for ButtonInput[T]
+pub impl[T : ToJson] ToJson for ButtonInput[T]
+pub impl[T : @json.FromJson] @json.FromJson for ButtonInput[T]
+
+pub struct ButtonSettings {
+  mut press_threshold : Float
+  mut release_threshold : Float
+}
+pub fn ButtonSettings::is_pressed(Self, Float) -> Bool
+pub fn ButtonSettings::is_released(Self, Float) -> Bool
+pub fn ButtonSettings::new(Float, Float) -> Result[Self, ButtonSettingsError]
+pub fn ButtonSettings::press_threshold(Self) -> Float
+pub fn ButtonSettings::release_threshold(Self) -> Float
+pub fn ButtonSettings::set_press_threshold(Self, Float) -> Float
+pub fn ButtonSettings::set_release_threshold(Self, Float) -> Float
+pub fn ButtonSettings::try_set_press_threshold(Self, Float) -> Result[Unit, ButtonSettingsError]
+pub fn ButtonSettings::try_set_release_threshold(Self, Float) -> Result[Unit, ButtonSettingsError]
+pub impl Default for ButtonSettings
+pub impl Eq for ButtonSettings
+pub impl ToJson for ButtonSettings
+pub impl @json.FromJson for ButtonSettings
 
 pub(all) enum ButtonState {
   Pressed
@@ -140,20 +251,39 @@ pub impl ToJson for FileDragAndDrop
 pub impl @json.FromJson for FileDragAndDrop
 
 pub struct Gamepad {
-  id : Int
+  vendor_id : Int?
+  product_id : Int?
+  digital : ButtonInput[GamepadButton]
+  analog : Axis[GamepadInput]
 }
-pub fn Gamepad::connected(Self) -> Bool
+pub fn Gamepad::all_just_pressed(Self, Array[GamepadButton]) -> Bool
+pub fn Gamepad::all_just_released(Self, Array[GamepadButton]) -> Bool
+pub fn Gamepad::all_pressed(Self, Array[GamepadButton]) -> Bool
+pub fn Gamepad::analog(Self) -> Axis[GamepadInput]
+pub fn Gamepad::analog_mut(Self) -> Axis[GamepadInput]
+pub fn Gamepad::any_just_pressed(Self, Array[GamepadButton]) -> Bool
+pub fn Gamepad::any_just_released(Self, Array[GamepadButton]) -> Bool
+pub fn Gamepad::any_pressed(Self, Array[GamepadButton]) -> Bool
+pub fn Gamepad::digital(Self) -> ButtonInput[GamepadButton]
+pub fn Gamepad::digital_mut(Self) -> ButtonInput[GamepadButton]
 pub fn Gamepad::dpad(Self) -> @math.Vec2
-pub fn Gamepad::get(Self, GamepadInput) -> Float?
-pub fn Gamepad::id(Self) -> Int
+pub fn[T : IntoGamepadInput] Gamepad::get(Self, T) -> Float?
+pub fn Gamepad::get_analog_axes(Self) -> Array[GamepadInput]
+pub fn Gamepad::get_just_pressed(Self) -> Array[GamepadButton]
+pub fn Gamepad::get_just_released(Self) -> Array[GamepadButton]
+pub fn Gamepad::get_pressed(Self) -> Array[GamepadButton]
+pub fn[T : IntoGamepadInput] Gamepad::get_unclamped(Self, T) -> Float?
 pub fn Gamepad::just_pressed(Self, GamepadButton) -> Bool
 pub fn Gamepad::just_released(Self, GamepadButton) -> Bool
 pub fn Gamepad::left_stick(Self) -> @math.Vec2
-pub fn Gamepad::name(Self) -> String
 pub fn Gamepad::pressed(Self, GamepadButton) -> Bool
 pub fn Gamepad::product_id(Self) -> Int?
 pub fn Gamepad::right_stick(Self) -> @math.Vec2
 pub fn Gamepad::vendor_id(Self) -> Int?
+pub impl @ecs.Component for Gamepad
+pub impl Default for Gamepad
+pub impl ToJson for Gamepad
+pub impl @json.FromJson for Gamepad
 
 pub(all) enum GamepadAxis {
   LeftStickX
@@ -162,25 +292,24 @@ pub(all) enum GamepadAxis {
   RightStickX
   RightStickY
   RightZ
-  DPadX
-  DPadY
-  Unknown
+  Other(Int)
 }
+pub fn GamepadAxis::all() -> Array[Self]
 pub fn GamepadAxis::to_index(Self) -> Int
+pub impl IntoGamepadInput for GamepadAxis
 pub impl Eq for GamepadAxis
 pub impl Show for GamepadAxis
 pub impl ToJson for GamepadAxis
 pub impl @json.FromJson for GamepadAxis
 
 pub struct GamepadAxisChangedEvent {
-  gamepad_id : Int
+  entity : @core.Entity
   axis : GamepadAxis
   value : Float
 }
-pub fn GamepadAxisChangedEvent::new(Int, GamepadAxis, Float) -> Self
+pub fn GamepadAxisChangedEvent::new(@core.Entity, GamepadAxis, Float) -> Self
 pub impl @ecs.Message for GamepadAxisChangedEvent
 pub impl Eq for GamepadAxisChangedEvent
-pub impl Show for GamepadAxisChangedEvent
 pub impl ToJson for GamepadAxisChangedEvent
 pub impl @json.FromJson for GamepadAxisChangedEvent
 
@@ -204,36 +333,37 @@ pub(all) enum GamepadButton {
   DPadDown
   DPadLeft
   DPadRight
-  Unknown
+  Other(Int)
 }
+pub fn GamepadButton::all() -> Array[Self]
 pub fn GamepadButton::to_index(Self) -> Int
+pub impl ButtonInputButton for GamepadButton
+pub impl IntoGamepadInput for GamepadButton
 pub impl Eq for GamepadButton
 pub impl Show for GamepadButton
 pub impl ToJson for GamepadButton
 pub impl @json.FromJson for GamepadButton
 
 pub struct GamepadButtonChangedEvent {
-  gamepad_id : Int
+  entity : @core.Entity
   button : GamepadButton
   state : ButtonState
   value : Float
 }
-pub fn GamepadButtonChangedEvent::new(Int, GamepadButton, ButtonState, Float) -> Self
+pub fn GamepadButtonChangedEvent::new(@core.Entity, GamepadButton, ButtonState, Float) -> Self
 pub impl @ecs.Message for GamepadButtonChangedEvent
 pub impl Eq for GamepadButtonChangedEvent
-pub impl Show for GamepadButtonChangedEvent
 pub impl ToJson for GamepadButtonChangedEvent
 pub impl @json.FromJson for GamepadButtonChangedEvent
 
 pub struct GamepadButtonStateChangedEvent {
-  gamepad_id : Int
+  entity : @core.Entity
   button : GamepadButton
   state : ButtonState
 }
-pub fn GamepadButtonStateChangedEvent::new(Int, GamepadButton, ButtonState) -> Self
+pub fn GamepadButtonStateChangedEvent::new(@core.Entity, GamepadButton, ButtonState) -> Self
 pub impl @ecs.Message for GamepadButtonStateChangedEvent
 pub impl Eq for GamepadButtonStateChangedEvent
-pub impl Show for GamepadButtonStateChangedEvent
 pub impl ToJson for GamepadButtonStateChangedEvent
 pub impl @json.FromJson for GamepadButtonStateChangedEvent
 
@@ -242,18 +372,18 @@ pub(all) enum GamepadConnection {
   Disconnected
 }
 pub impl Eq for GamepadConnection
-pub impl Show for GamepadConnection
 pub impl ToJson for GamepadConnection
 pub impl @json.FromJson for GamepadConnection
 
 pub struct GamepadConnectionEvent {
-  gamepad_id : Int
+  gamepad : @core.Entity
   connection : GamepadConnection
 }
-pub fn GamepadConnectionEvent::new(Int, GamepadConnection) -> Self
+pub fn GamepadConnectionEvent::connected(Self) -> Bool
+pub fn GamepadConnectionEvent::disconnected(Self) -> Bool
+pub fn GamepadConnectionEvent::new(@core.Entity, GamepadConnection) -> Self
 pub impl @ecs.Message for GamepadConnectionEvent
 pub impl Eq for GamepadConnectionEvent
-pub impl Show for GamepadConnectionEvent
 pub impl ToJson for GamepadConnectionEvent
 pub impl @json.FromJson for GamepadConnectionEvent
 
@@ -264,7 +394,6 @@ pub struct GamepadConnectionInfo {
 }
 pub fn GamepadConnectionInfo::new(String, Int?, Int?) -> Self
 pub impl Eq for GamepadConnectionInfo
-pub impl Show for GamepadConnectionInfo
 pub impl ToJson for GamepadConnectionInfo
 pub impl @json.FromJson for GamepadConnectionInfo
 
@@ -275,18 +404,34 @@ pub(all) enum GamepadEvent {
 }
 pub impl @ecs.Message for GamepadEvent
 pub impl Eq for GamepadEvent
-pub impl Show for GamepadEvent
 pub impl ToJson for GamepadEvent
 pub impl @json.FromJson for GamepadEvent
 
 pub(all) enum GamepadInput {
-  Button(GamepadButton)
   Axis(GamepadAxis)
+  Button(GamepadButton)
 }
+pub impl IntoGamepadInput for GamepadInput
 pub impl Eq for GamepadInput
 pub impl Show for GamepadInput
 pub impl ToJson for GamepadInput
 pub impl @json.FromJson for GamepadInput
+
+pub struct GamepadSettings {
+  default_button_settings : ButtonSettings
+  default_axis_settings : AxisSettings
+  default_button_axis_settings : ButtonAxisSettings
+  button_settings : Array[(GamepadButton, ButtonSettings)]
+  axis_settings : Array[(GamepadAxis, AxisSettings)]
+  button_axis_settings : Array[(GamepadButton, ButtonAxisSettings)]
+}
+pub fn GamepadSettings::get_axis_settings(Self, GamepadAxis) -> AxisSettings
+pub fn GamepadSettings::get_button_axis_settings(Self, GamepadButton) -> ButtonAxisSettings
+pub fn GamepadSettings::get_button_settings(Self, GamepadButton) -> ButtonSettings
+pub impl @ecs.Component for GamepadSettings
+pub impl Default for GamepadSettings
+pub impl ToJson for GamepadSettings
+pub impl @json.FromJson for GamepadSettings
 
 pub(all) enum Key {
   Character(String)
@@ -306,6 +451,7 @@ pub(all) enum Key {
 }
 pub impl ButtonInputButton for Key
 pub impl ButtonInputSnapshotProvider for Key
+pub impl Eq for Key
 pub impl ToJson for Key
 pub impl @json.FromJson for Key
 
@@ -365,26 +511,24 @@ pub impl ToJson for PinchGesture
 pub impl @json.FromJson for PinchGesture
 
 pub struct RawGamepadAxisChangedEvent {
-  gamepad_id : Int
+  gamepad : @core.Entity
   axis : GamepadAxis
   value : Float
 }
-pub fn RawGamepadAxisChangedEvent::new(Int, GamepadAxis, Float) -> Self
+pub fn RawGamepadAxisChangedEvent::new(@core.Entity, GamepadAxis, Float) -> Self
 pub impl @ecs.Message for RawGamepadAxisChangedEvent
 pub impl Eq for RawGamepadAxisChangedEvent
-pub impl Show for RawGamepadAxisChangedEvent
 pub impl ToJson for RawGamepadAxisChangedEvent
 pub impl @json.FromJson for RawGamepadAxisChangedEvent
 
 pub struct RawGamepadButtonChangedEvent {
-  gamepad_id : Int
+  gamepad : @core.Entity
   button : GamepadButton
   value : Float
 }
-pub fn RawGamepadButtonChangedEvent::new(Int, GamepadButton, Float) -> Self
+pub fn RawGamepadButtonChangedEvent::new(@core.Entity, GamepadButton, Float) -> Self
 pub impl @ecs.Message for RawGamepadButtonChangedEvent
 pub impl Eq for RawGamepadButtonChangedEvent
-pub impl Show for RawGamepadButtonChangedEvent
 pub impl ToJson for RawGamepadButtonChangedEvent
 pub impl @json.FromJson for RawGamepadButtonChangedEvent
 
@@ -395,7 +539,6 @@ pub(all) enum RawGamepadEvent {
 }
 pub impl @ecs.Message for RawGamepadEvent
 pub impl Eq for RawGamepadEvent
-pub impl Show for RawGamepadEvent
 pub impl ToJson for RawGamepadEvent
 pub impl @json.FromJson for RawGamepadEvent
 
@@ -459,4 +602,8 @@ pub(open) trait ButtonInputSnapshotProvider {
 }
 pub impl ButtonInputSnapshotProvider for @window.KeyCode
 pub impl ButtonInputSnapshotProvider for @window.MouseButton
+
+pub(open) trait IntoGamepadInput {
+  into_gamepad_input(Self) -> GamepadInput
+}
 

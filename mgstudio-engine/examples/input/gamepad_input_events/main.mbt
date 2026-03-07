@@ -37,12 +37,12 @@ fn gamepad_events(
   }
   for axis_changed_event in (try! axis_changed_events.read()) {
     log_line(
-      "\{format_axis(axis_changed_event.axis)} of \{axis_changed_event.gamepad_id} is changed to \{axis_changed_event.value}",
+      "\{format_axis(axis_changed_event.axis)} of \{entity_text(axis_changed_event.entity)} is changed to \{axis_changed_event.value}",
     )
   }
   for button_changed_event in (try! button_changed_events.read()) {
     log_line(
-      "\{format_button(button_changed_event.button)} of \{button_changed_event.gamepad_id} is changed to \{button_changed_event.value}",
+      "\{format_button(button_changed_event.button)} of \{entity_text(button_changed_event.entity)} is changed to \{button_changed_event.value}",
     )
   }
   for button_input_event in (try! button_input_events.read()) {
@@ -71,7 +71,7 @@ fn gamepad_ordered_events(
 fn format_button_state_changed_event(
   event : @input.GamepadButtonStateChangedEvent,
 ) -> String {
-  "GamepadButtonStateChangedEvent(gamepad=\{event.gamepad_id}, button=\{format_button(event.button)}, state=\{format_button_state(event.state)})"
+  "GamepadButtonStateChangedEvent(gamepad=\{entity_text(event.entity)}, button=\{format_button(event.button)}, state=\{format_button_state(event.state)})"
 }
 
 ///|
@@ -104,7 +104,7 @@ fn format_button(button : @input.GamepadButton) -> String {
     DPadDown => "DPadDown"
     DPadLeft => "DPadLeft"
     DPadRight => "DPadRight"
-    Unknown => "Unknown"
+    Other(index) => "Other(\{index})"
   }
 }
 
@@ -117,15 +117,13 @@ fn format_axis(axis : @input.GamepadAxis) -> String {
     RightStickX => "RightStickX"
     RightStickY => "RightStickY"
     RightZ => "RightZ"
-    DPadX => "DPadX"
-    DPadY => "DPadY"
-    Unknown => "Unknown"
+    Other(index) => "Other(\{index})"
   }
 }
 
 ///|
 fn format_axis_changed_event(axis : @input.GamepadAxisChangedEvent) -> String {
-  "GamepadAxisChangedEvent(gamepad=\{axis.gamepad_id}, axis=\{format_axis(axis.axis)}, value=\{axis.value})"
+  "GamepadAxisChangedEvent(gamepad=\{entity_text(axis.entity)}, axis=\{format_axis(axis.axis)}, value=\{axis.value})"
 }
 
 ///|
@@ -141,7 +139,7 @@ fn maybe_int_text(value : Int?) -> String {
 fn format_connection_event(
   connection : @input.GamepadConnectionEvent,
 ) -> String {
-  let id = connection.gamepad_id
+  let id = entity_text(connection.gamepad)
   match connection.connection {
     Connected(info) =>
       "GamepadConnectionEvent(gamepad=\{id}, connected=true, name=\{info.name}, vendor=\{maybe_int_text(info.vendor_id)}, product=\{maybe_int_text(info.product_id)})"
@@ -153,7 +151,12 @@ fn format_connection_event(
 fn format_button_changed_event(
   button : @input.GamepadButtonChangedEvent,
 ) -> String {
-  "GamepadButtonChangedEvent(gamepad=\{button.gamepad_id}, button=\{format_button(button.button)}, state=\{format_button_state(button.state)}, value=\{button.value})"
+  "GamepadButtonChangedEvent(gamepad=\{entity_text(button.entity)}, button=\{format_button(button.button)}, state=\{format_button_state(button.state)}, value=\{button.value})"
+}
+
+///|
+fn entity_text(entity : @core.Entity) -> String {
+  "Entity(" + entity.id.to_string() + ", " + entity.generation.to_string() + ")"
 }
 
 ///|

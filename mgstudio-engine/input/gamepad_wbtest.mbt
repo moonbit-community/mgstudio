@@ -13,240 +13,626 @@
 // limitations under the License.
 
 ///|
-fn zero_button_values() -> Array[Float] {
-  let values : Array[Float] = []
-  for _ in 0..<GAMEPAD_BUTTON_COUNT {
-    values.push(0.0F)
-  }
-  values
+fn gamepad_test_app() -> @app.App[@ecs.World] {
+  input_gamepad_plugin(@app.App::new(@ecs.World::new()))
 }
 
 ///|
-fn zero_button_pressed() -> Array[Bool] {
-  let values : Array[Bool] = []
-  for _ in 0..<GAMEPAD_BUTTON_COUNT {
-    values.push(false)
-  }
-  values
+fn connected_test_info() -> GamepadConnectionInfo {
+  GamepadConnectionInfo::new("Test gamepad", None, None)
 }
 
 ///|
-fn zero_axis_values() -> Array[Float] {
-  let values : Array[Float] = []
-  for _ in 0..<GAMEPAD_AXIS_COUNT {
-    values.push(0.0F)
-  }
-  values
-}
-
-///|
-fn snapshot_with_changes(
-  gamepad_id : Int,
-  button : GamepadButton,
-  button_value : Float,
-  button_pressed : Bool,
-  axis : GamepadAxis,
-  axis_value : Float,
-) -> GamepadSnapshot {
-  let button_values = zero_button_values()
-  let button_states = zero_button_pressed()
-  let axis_values = zero_axis_values()
-  button_values[button.to_index()] = button_value
-  button_states[button.to_index()] = button_pressed
-  axis_values[axis.to_index()] = axis_value
-  GamepadSnapshot::{
-    id: gamepad_id,
-    name: "Test Pad",
-    vendor_id: Some(1000),
-    product_id: Some(2000),
-    connected: true,
-    button_values,
-    button_pressed: button_states,
-    axis_values,
-  }
-}
-
-///|
-fn gamepad_processing_test_app() -> @app.App[@ecs.World] {
-  input_gamepad_plugin(@app.App::new(@ecs.World::new())).add_pre_update_system_config(
-    @app.system(@app.system_param2(gamepad_event_processing_system)).in_set(
-      input_gamepad_event_processing_system_set,
-    ),
+fn send_connection(world : @ecs.World, entity : @core.Entity) -> Unit {
+  let event = GamepadConnectionEvent::new(
+    entity,
+    GamepadConnection::Connected(connected_test_info()),
   )
+  world.send_message(gamepad_connection_event_message_key, event) |> ignore
+  world.send_message(
+    raw_gamepad_event_message_key,
+    RawGamepadEvent::Connection(event),
+  )
+  |> ignore
 }
 
 ///|
-fn reset_gamepad_processing_state() -> Unit {
-  current_gamepads_ref.val = []
-  previous_gamepads_ref.val = []
+fn send_disconnection(world : @ecs.World, entity : @core.Entity) -> Unit {
+  let event = GamepadConnectionEvent::new(
+    entity,
+    GamepadConnection::Disconnected,
+  )
+  world.send_message(gamepad_connection_event_message_key, event) |> ignore
+  world.send_message(
+    raw_gamepad_event_message_key,
+    RawGamepadEvent::Connection(event),
+  )
+  |> ignore
 }
 
 ///|
-test "input gamepad: processing raw button and axis events preserves ordered stream" {
-  reset_gamepad_processing_state()
-  let gamepad_id = 7
-  let button = GamepadButton::South
-  let axis = GamepadAxis::LeftStickX
-  previous_gamepads_ref.val = [
-    snapshot_with_changes(gamepad_id, button, 0.0F, false, axis, 0.0F),
-  ]
-  current_gamepads_ref.val = [
-    snapshot_with_changes(gamepad_id, button, 1.0F, true, axis, 0.75F),
-  ]
+fn send_raw_events(world : @ecs.World, events : Array[RawGamepadEvent]) -> Unit {
+  for event in events {
+    world.send_message(raw_gamepad_event_message_key, event) |> ignore
+  }
+}
 
-  let mut app = gamepad_processing_test_app()
+///|
+fn clear_gamepad_messages(world : @ecs.World) -> Unit {
+  world.clear_messages(gamepad_event_message_key)
+  world.clear_messages(raw_gamepad_event_message_key)
+  world.clear_messages(gamepad_connection_event_message_key)
+  world.clear_messages(raw_gamepad_axis_changed_event_message_key)
+  world.clear_messages(gamepad_axis_changed_event_message_key)
+  world.clear_messages(raw_gamepad_button_changed_event_message_key)
+  world.clear_messages(gamepad_button_changed_event_message_key)
+  world.clear_messages(gamepad_button_state_changed_event_message_key)
+}
+
+///|
+fn[T : @json.FromJson] read_messages(
+  world : @ecs.World,
+  key : @ecs.MessageKey[T],
+) -> Array[T] {
+  try! world.message_reader(key, Ref::new(0)).read()
+}
+
+///|
+fn world_gamepad(world : @ecs.World, entity : @core.Entity) -> Gamepad? {
+  let gamepad : Gamepad? = try! @ecs.World::get_component(world, entity)
+  gamepad
+}
+
+///|
+fn world_gamepad_settings(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> GamepadSettings? {
+  let settings : GamepadSettings? = try! @ecs.World::get_component(
+    world, entity,
+  )
+  settings
+}
+
+///|
+test "input gamepad: connection event inserts gamepad and settings" {
+  let mut app = gamepad_test_app()
   let world = app.world()
-  ignore(
-    world.send_message(
-      raw_gamepad_event_message_key,
-      RawGamepadEvent::Button(
-        RawGamepadButtonChangedEvent::new(gamepad_id, button, 1.0F),
-      ),
-    ),
-  )
-  ignore(
-    world.send_message(
-      raw_gamepad_event_message_key,
-      RawGamepadEvent::Axis(
-        RawGamepadAxisChangedEvent::new(gamepad_id, axis, 0.75F),
-      ),
-    ),
-  )
+  let entity = world.spawn_empty()
 
+  inspect(world_gamepad(world, entity) is Some(_), content="false")
+  send_connection(world, entity)
   app = app.run_once()
 
-  let button_events = try! world
-    .message_reader(gamepad_button_changed_event_message_key, Ref::new(0))
-    .read()
-  inspect(button_events.length(), content="1")
-  inspect(button_events[0].gamepad_id, content="7")
-  inspect(button_events[0].button, content="South")
-  inspect(button_events[0].state, content="Pressed")
-  inspect(button_events[0].value, content="1")
-
-  let button_state_events = try! world
-    .message_reader(gamepad_button_state_changed_event_message_key, Ref::new(0))
-    .read()
-  inspect(button_state_events.length(), content="1")
-  inspect(button_state_events[0].state, content="Pressed")
-
-  let axis_events = try! world
-    .message_reader(gamepad_axis_changed_event_message_key, Ref::new(0))
-    .read()
-  inspect(axis_events.length(), content="1")
-  inspect(axis_events[0].gamepad_id, content="7")
-  inspect(axis_events[0].axis, content="LeftStickX")
-  inspect(axis_events[0].value, content="0.75")
-
-  let ordered_events = try! world
-    .message_reader(gamepad_event_message_key, Ref::new(0))
-    .read()
-  inspect(ordered_events.length(), content="2")
-  match ordered_events[0] {
-    Button(event) => {
-      inspect(event.button, content="South")
-      inspect(event.state, content="Pressed")
-    }
-    _ => fail("expected ordered button event")
-  }
-  match ordered_events[1] {
-    Axis(event) => {
-      inspect(event.axis, content="LeftStickX")
-      inspect(event.value, content="0.75")
-    }
-    _ => fail("expected ordered axis event")
-  }
+  inspect(world_gamepad(world, entity) is Some(_), content="true")
+  inspect(world_gamepad_settings(world, entity) is Some(_), content="true")
 }
 
 ///|
-test "input gamepad: processing raw button event only emits digital event on state change" {
-  reset_gamepad_processing_state()
-  let gamepad_id = 11
-  let button = GamepadButton::East
-  previous_gamepads_ref.val = [
-    snapshot_with_changes(
-      gamepad_id,
-      button,
-      0.4F,
-      true,
-      GamepadAxis::LeftStickX,
-      0.0F,
-    ),
-  ]
-  current_gamepads_ref.val = [
-    snapshot_with_changes(
-      gamepad_id,
-      button,
-      0.8F,
-      true,
-      GamepadAxis::LeftStickX,
-      0.0F,
-    ),
-  ]
-
-  let mut app = gamepad_processing_test_app()
+test "input gamepad: disconnection removes gamepad but preserves settings" {
+  let mut app = gamepad_test_app()
   let world = app.world()
-  ignore(
-    world.send_message(
-      raw_gamepad_event_message_key,
-      RawGamepadEvent::Button(
-        RawGamepadButtonChangedEvent::new(gamepad_id, button, 0.8F),
-      ),
-    ),
-  )
+  let entity = world.spawn_empty()
 
+  send_connection(world, entity)
+  app = app.run_once()
+  clear_gamepad_messages(world)
+
+  send_disconnection(world, entity)
   app = app.run_once()
 
-  let button_state_events = try! world
-    .message_reader(gamepad_button_state_changed_event_message_key, Ref::new(0))
-    .read()
-  inspect(button_state_events.length(), content="0")
+  inspect(world_gamepad(world, entity) is Some(_), content="false")
+  inspect(world_gamepad_settings(world, entity) is Some(_), content="true")
 
-  let button_events = try! world
-    .message_reader(gamepad_button_changed_event_message_key, Ref::new(0))
-    .read()
-  inspect(button_events.length(), content="1")
-  inspect(button_events[0].state, content="Pressed")
-  inspect(button_events[0].value == 0.8F, content="true")
+  send_disconnection(world, entity)
+  app = app.run_once()
+
+  inspect(world_gamepad(world, entity) is Some(_), content="false")
+  inspect(world_gamepad_settings(world, entity) is Some(_), content="true")
 }
 
 ///|
-test "input gamepad: processing raw connection event forwards to ordered gamepad stream" {
-  reset_gamepad_processing_state()
-  let mut app = gamepad_processing_test_app()
+test "input gamepad: connection and disconnection in the same frame keeps settings only" {
+  let mut app = gamepad_test_app()
   let world = app.world()
-  ignore(
-    world.send_message(
-      raw_gamepad_event_message_key,
-      RawGamepadEvent::Connection(
-        GamepadConnectionEvent::new(
-          3,
-          GamepadConnection::Connected(
-            GamepadConnectionInfo::new("Connected Pad", Some(12), Some(34)),
-          ),
-        ),
-      ),
-    ),
-  )
+  let entity = world.spawn_empty()
 
+  send_connection(world, entity)
+  send_disconnection(world, entity)
   app = app.run_once()
 
-  let ordered_events = try! world
-    .message_reader(gamepad_event_message_key, Ref::new(0))
-    .read()
-  inspect(ordered_events.length(), content="1")
-  match ordered_events[0] {
-    Connection(event) => {
-      inspect(event.gamepad_id, content="3")
-      match event.connection {
-        Connected(info) => {
-          inspect(info.name, content="Connected Pad")
-          inspect(info.vendor_id, content="Some(12)")
-          inspect(info.product_id, content="Some(34)")
-        }
-        Disconnected => fail("expected connected gamepad")
-      }
-    }
-    _ => fail("expected ordered connection event")
-  }
+  inspect(world_gamepad(world, entity) is Some(_), content="false")
+  inspect(world_gamepad_settings(world, entity) is Some(_), content="true")
+}
+
+///|
+test "input gamepad: reconnection preserves settings component state" {
+  let button_settings = ButtonSettings::new(0.7F, 0.2F).unwrap()
+  let mut app = gamepad_test_app()
+  let world = app.world()
+  let entity = world.spawn_empty()
+
+  send_connection(world, entity)
+  app = app.run_once()
+
+  inspect(
+    try! @ecs.World::update_component(world, entity, fn(
+      settings : GamepadSettings,
+    ) {
+      GamepadSettings::{ ..settings, default_button_settings: button_settings }
+    }),
+    content="true",
+  )
+
+  clear_gamepad_messages(world)
+  send_disconnection(world, entity)
+  app = app.run_once()
+  send_connection(world, entity)
+  app = app.run_once()
+
+  let settings = world_gamepad_settings(world, entity).unwrap()
+  inspect(settings.default_button_settings == button_settings, content="true")
+}
+
+///|
+test "input gamepad: valid axis changes emit processed axis events" {
+  let mut app = gamepad_test_app()
+  let world = app.world()
+  let entity = world.spawn_empty()
+
+  send_connection(world, entity)
+  app = app.run_once()
+  clear_gamepad_messages(world)
+
+  send_raw_events(world, [
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(entity, GamepadAxis::LeftStickY, 0.5F),
+    ),
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(entity, GamepadAxis::RightStickX, 0.6F),
+    ),
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(entity, GamepadAxis::RightZ, -0.4F),
+    ),
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(entity, GamepadAxis::RightStickY, -0.8F),
+    ),
+  ])
+  app = app.run_once()
+
+  inspect(
+    read_messages(world, gamepad_axis_changed_event_message_key).length(),
+    content="4",
+  )
+}
+
+///|
+test "input gamepad: axis threshold filter ignores changes below threshold" {
+  let mut app = gamepad_test_app()
+  let world = app.world()
+  let entity = world.spawn_empty()
+  let settings = GamepadSettings::default().default_axis_settings
+  let base_value = 0.5F
+
+  send_connection(world, entity)
+  app = app.run_once()
+  clear_gamepad_messages(world)
+
+  send_raw_events(world, [
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(
+        entity,
+        GamepadAxis::LeftStickX,
+        base_value,
+      ),
+    ),
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(
+        entity,
+        GamepadAxis::LeftStickX,
+        base_value + settings.threshold - 0.001F,
+      ),
+    ),
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(
+        entity,
+        GamepadAxis::LeftStickX,
+        base_value + settings.threshold + 0.001F,
+      ),
+    ),
+  ])
+  app = app.run_once()
+
+  inspect(
+    read_messages(world, gamepad_axis_changed_event_message_key).length(),
+    content="2",
+  )
+}
+
+///|
+test "input gamepad: axis deadzone filter drops zeroed changes" {
+  let mut app = gamepad_test_app()
+  let world = app.world()
+  let entity = world.spawn_empty()
+  let settings = GamepadSettings::default().default_axis_settings
+
+  send_connection(world, entity)
+  app = app.run_once()
+  clear_gamepad_messages(world)
+
+  send_raw_events(world, [
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(
+        entity,
+        GamepadAxis::LeftStickX,
+        settings.deadzone_upperbound - 0.01F,
+      ),
+    ),
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(
+        entity,
+        GamepadAxis::LeftStickX,
+        settings.deadzone_lowerbound + 0.01F,
+      ),
+    ),
+  ])
+  app = app.run_once()
+
+  inspect(
+    read_messages(world, gamepad_axis_changed_event_message_key).length(),
+    content="0",
+  )
+}
+
+///|
+test "input gamepad: axis deadzone inputs are rounded to zero when crossing from live values" {
+  let mut app = gamepad_test_app()
+  let world = app.world()
+  let entity = world.spawn_empty()
+  let settings = GamepadSettings::default().default_axis_settings
+
+  send_connection(world, entity)
+  app = app.run_once()
+  clear_gamepad_messages(world)
+
+  send_raw_events(world, [
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(entity, GamepadAxis::LeftStickX, 1.0F),
+    ),
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(
+        entity,
+        GamepadAxis::LeftStickX,
+        settings.deadzone_upperbound - 0.01F,
+      ),
+    ),
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(entity, GamepadAxis::LeftStickX, 1.0F),
+    ),
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(
+        entity,
+        GamepadAxis::LeftStickX,
+        settings.deadzone_lowerbound + 0.01F,
+      ),
+    ),
+  ])
+  app = app.run_once()
+
+  let events = read_messages(world, gamepad_axis_changed_event_message_key)
+  inspect(events.length(), content="4")
+  inspect(events[0].value == 1.0F, content="true")
+  inspect(events[1].value == 0.0F, content="true")
+  inspect(events[2].value == 1.0F, content="true")
+  inspect(events[3].value == 0.0F, content="true")
+}
+
+///|
+test "input gamepad: axis livezone filter ignores clamped changes beyond the edges" {
+  let mut app = gamepad_test_app()
+  let world = app.world()
+  let entity = world.spawn_empty()
+  let settings = GamepadSettings::default().default_axis_settings
+
+  send_connection(world, entity)
+  app = app.run_once()
+  clear_gamepad_messages(world)
+
+  send_raw_events(world, [
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(entity, GamepadAxis::LeftStickX, 1.0F),
+    ),
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(
+        entity,
+        GamepadAxis::LeftStickX,
+        settings.livezone_upperbound + 0.01F,
+      ),
+    ),
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(entity, GamepadAxis::LeftStickX, -1.0F),
+    ),
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(
+        entity,
+        GamepadAxis::LeftStickX,
+        settings.livezone_lowerbound - 0.01F,
+      ),
+    ),
+  ])
+  app = app.run_once()
+
+  inspect(
+    read_messages(world, gamepad_axis_changed_event_message_key).length(),
+    content="2",
+  )
+}
+
+///|
+test "input gamepad: axis livezone values are rounded to the extremes" {
+  let mut app = gamepad_test_app()
+  let world = app.world()
+  let entity = world.spawn_empty()
+  let settings = GamepadSettings::default().default_axis_settings
+
+  send_connection(world, entity)
+  app = app.run_once()
+  clear_gamepad_messages(world)
+
+  send_raw_events(world, [
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(
+        entity,
+        GamepadAxis::LeftStickX,
+        settings.livezone_upperbound + 0.01F,
+      ),
+    ),
+    RawGamepadEvent::Axis(
+      RawGamepadAxisChangedEvent::new(
+        entity,
+        GamepadAxis::LeftStickX,
+        settings.livezone_lowerbound - 0.01F,
+      ),
+    ),
+  ])
+  app = app.run_once()
+
+  let events = read_messages(world, gamepad_axis_changed_event_message_key)
+  inspect(events.length(), content="2")
+  inspect(events[0].value == 1.0F, content="true")
+  inspect(events[1].value == -1.0F, content="true")
+}
+
+///|
+test "input gamepad: button press emits state change and updates digital state" {
+  let mut app = gamepad_test_app()
+  let world = app.world()
+  let entity = world.spawn_empty()
+  let digital_settings = GamepadSettings::default().default_button_settings
+
+  send_connection(world, entity)
+  app = app.run_once()
+  clear_gamepad_messages(world)
+
+  send_raw_events(world, [
+    RawGamepadEvent::Button(
+      RawGamepadButtonChangedEvent::new(
+        entity,
+        GamepadButton::DPadDown,
+        digital_settings.press_threshold,
+      ),
+    ),
+  ])
+  app = app.run_once()
+
+  let state_events = read_messages(
+    world, gamepad_button_state_changed_event_message_key,
+  )
+  inspect(state_events.length(), content="1")
+  inspect(state_events[0].button, content="DPadDown")
+  inspect(state_events[0].state, content="Pressed")
+  inspect(
+    world_gamepad(world, entity).unwrap().pressed(GamepadButton::DPadDown),
+    content="true",
+  )
+
+  clear_gamepad_messages(world)
+  app = app.run_once()
+
+  inspect(
+    read_messages(world, gamepad_button_state_changed_event_message_key).length(),
+    content="0",
+  )
+  inspect(
+    world_gamepad(world, entity).unwrap().pressed(GamepadButton::DPadDown),
+    content="true",
+  )
+}
+
+///|
+test "input gamepad: just_pressed lasts for one frame" {
+  let mut app = gamepad_test_app()
+  let world = app.world()
+  let entity = world.spawn_empty()
+  let digital_settings = GamepadSettings::default().default_button_settings
+
+  send_connection(world, entity)
+  app = app.run_once()
+  clear_gamepad_messages(world)
+
+  send_raw_events(world, [
+    RawGamepadEvent::Button(
+      RawGamepadButtonChangedEvent::new(
+        entity,
+        GamepadButton::DPadDown,
+        digital_settings.press_threshold,
+      ),
+    ),
+  ])
+  app = app.run_once()
+
+  inspect(
+    world_gamepad(world, entity).unwrap().just_pressed(GamepadButton::DPadDown),
+    content="true",
+  )
+  clear_gamepad_messages(world)
+  app = app.run_once()
+  inspect(
+    world_gamepad(world, entity).unwrap().just_pressed(GamepadButton::DPadDown),
+    content="false",
+  )
+}
+
+///|
+test "input gamepad: button release emits state change and clears digital state" {
+  let mut app = gamepad_test_app()
+  let world = app.world()
+  let entity = world.spawn_empty()
+  let digital_settings = GamepadSettings::default().default_button_settings
+
+  send_connection(world, entity)
+  app = app.run_once()
+  clear_gamepad_messages(world)
+
+  send_raw_events(world, [
+    RawGamepadEvent::Button(
+      RawGamepadButtonChangedEvent::new(
+        entity,
+        GamepadButton::DPadDown,
+        digital_settings.press_threshold,
+      ),
+    ),
+  ])
+  app = app.run_once()
+  clear_gamepad_messages(world)
+
+  send_raw_events(world, [
+    RawGamepadEvent::Button(
+      RawGamepadButtonChangedEvent::new(
+        entity,
+        GamepadButton::DPadDown,
+        digital_settings.release_threshold - 0.01F,
+      ),
+    ),
+  ])
+  app = app.run_once()
+
+  let state_events = read_messages(
+    world, gamepad_button_state_changed_event_message_key,
+  )
+  inspect(state_events.length(), content="1")
+  inspect(state_events[0].state, content="Released")
+  inspect(
+    world_gamepad(world, entity).unwrap().pressed(GamepadButton::DPadDown),
+    content="false",
+  )
+
+  clear_gamepad_messages(world)
+  app = app.run_once()
+  inspect(
+    read_messages(world, gamepad_button_state_changed_event_message_key).length(),
+    content="0",
+  )
+}
+
+///|
+test "input gamepad: just_released lasts for one frame" {
+  let mut app = gamepad_test_app()
+  let world = app.world()
+  let entity = world.spawn_empty()
+  let digital_settings = GamepadSettings::default().default_button_settings
+
+  send_connection(world, entity)
+  app = app.run_once()
+  clear_gamepad_messages(world)
+
+  send_raw_events(world, [
+    RawGamepadEvent::Button(
+      RawGamepadButtonChangedEvent::new(
+        entity,
+        GamepadButton::DPadDown,
+        digital_settings.press_threshold,
+      ),
+    ),
+    RawGamepadEvent::Button(
+      RawGamepadButtonChangedEvent::new(
+        entity,
+        GamepadButton::DPadDown,
+        digital_settings.release_threshold - 0.01F,
+      ),
+    ),
+  ])
+  app = app.run_once()
+
+  inspect(
+    world_gamepad(world, entity).unwrap().just_released(GamepadButton::DPadDown),
+    content="true",
+  )
+  clear_gamepad_messages(world)
+  app = app.run_once()
+  inspect(
+    world_gamepad(world, entity).unwrap().just_released(GamepadButton::DPadDown),
+    content="false",
+  )
+}
+
+///|
+test "input gamepad: button axis filtering matches bevy analog and digital counts" {
+  let mut app = gamepad_test_app()
+  let world = app.world()
+  let entity = world.spawn_empty()
+  let digital_settings = GamepadSettings::default().default_button_settings
+  let analog_settings = GamepadSettings::default().default_button_axis_settings
+
+  send_connection(world, entity)
+  app = app.run_once()
+  clear_gamepad_messages(world)
+
+  send_raw_events(world, [
+    RawGamepadEvent::Button(
+      RawGamepadButtonChangedEvent::new(
+        entity,
+        GamepadButton::DPadDown,
+        digital_settings.press_threshold,
+      ),
+    ),
+    RawGamepadEvent::Button(
+      RawGamepadButtonChangedEvent::new(
+        entity,
+        GamepadButton::DPadDown,
+        digital_settings.release_threshold,
+      ),
+    ),
+    RawGamepadEvent::Button(
+      RawGamepadButtonChangedEvent::new(
+        entity,
+        GamepadButton::DPadDown,
+        digital_settings.release_threshold - analog_settings.threshold * 1.01F,
+      ),
+    ),
+    RawGamepadEvent::Button(
+      RawGamepadButtonChangedEvent::new(
+        entity,
+        GamepadButton::DPadDown,
+        digital_settings.release_threshold - analog_settings.threshold * 1.5F,
+      ),
+    ),
+    RawGamepadEvent::Button(
+      RawGamepadButtonChangedEvent::new(
+        entity,
+        GamepadButton::DPadDown,
+        digital_settings.release_threshold - analog_settings.threshold * 2.02F,
+      ),
+    ),
+  ])
+  app = app.run_once()
+
+  inspect(
+    read_messages(world, gamepad_button_state_changed_event_message_key).length(),
+    content="2",
+  )
+  inspect(
+    read_messages(world, gamepad_button_changed_event_message_key).length(),
+    content="4",
+  )
 }

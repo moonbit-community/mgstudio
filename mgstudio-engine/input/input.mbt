@@ -168,7 +168,7 @@ pub(all) enum Key {
   PageDown
   Space
   Escape
-} derive(ToJson, FromJson)
+} derive(Eq, ToJson, FromJson)
 
 ///|
 pub(open) trait ButtonInputButton {
@@ -182,21 +182,104 @@ pub(open) trait ButtonInputSnapshotProvider {
 
 ///|
 pub struct ButtonInput[T] {
-  pressed_ids : Array[String]
-  just_pressed_ids : Array[String]
-  just_released_ids : Array[String]
+  pressed : Array[(String, T)]
+  just_pressed : Array[(String, T)]
+  just_released : Array[(String, T)]
   marker : T?
 }
 
 ///|
 pub fn[T] ButtonInput::new() -> ButtonInput[T] {
-  { pressed_ids: [], just_pressed_ids: [], just_released_ids: [], marker: None }
+  { pressed: [], just_pressed: [], just_released: [], marker: None }
 }
 
 ///|
-fn string_array_contains(xs : Array[String], value : String) -> Bool {
-  for x in xs {
-    if x == value {
+pub impl[T] Default for ButtonInput[T] with default() {
+  ButtonInput::new()
+}
+
+///|
+pub impl[T : ToJson] ToJson for ButtonInput[T] with to_json(self) {
+  (self.pressed, self.just_pressed, self.just_released).to_json()
+}
+
+///|
+pub impl[T : @json.FromJson] @json.FromJson for ButtonInput[T] with from_json(
+  json,
+  path,
+) {
+  let (pressed, just_pressed, just_released) : (
+    Array[(String, T)],
+    Array[(String, T)],
+    Array[(String, T)],
+  ) = @json.from_json(json, path~)
+  ButtonInput::{ pressed, just_pressed, just_released, marker: None }
+}
+
+///|
+pub struct Axis[T] {
+  axis_data : Array[(T, Float)]
+  marker : T?
+}
+
+///|
+pub const AXIS_MIN : Float = -1.0F
+
+///|
+pub const AXIS_MAX : Float = 1.0F
+
+///|
+pub fn[T] Axis::new() -> Axis[T] {
+  { axis_data: [], marker: None }
+}
+
+///|
+pub impl[T] Default for Axis[T] with default() {
+  Axis::new()
+}
+
+///|
+pub impl[T : ToJson] ToJson for Axis[T] with to_json(self) {
+  self.axis_data.to_json()
+}
+
+///|
+pub impl[T : @json.FromJson] @json.FromJson for Axis[T] with from_json(
+  json,
+  path,
+) {
+  let axis_data : Array[(T, Float)] = @json.from_json(json, path~)
+  Axis::{ axis_data, marker: None }
+}
+
+///|
+fn clamp_axis_value(value : Float) -> Float {
+  if value < AXIS_MIN {
+    AXIS_MIN
+  } else if value > AXIS_MAX {
+    AXIS_MAX
+  } else {
+    value
+  }
+}
+
+///|
+fn[T : Eq] axis_index_of(
+  axis_data : Array[(T, Float)],
+  input_device : T,
+) -> Int? {
+  for i in 0..<axis_data.length() {
+    if axis_data[i].0 == input_device {
+      return Some(i)
+    }
+  }
+  None
+}
+
+///|
+fn[T] entry_contains(xs : Array[(String, T)], button_id : String) -> Bool {
+  for entry in xs {
+    if entry.0 == button_id {
       return true
     }
   }
@@ -204,10 +287,25 @@ fn string_array_contains(xs : Array[String], value : String) -> Bool {
 }
 
 ///|
-fn string_array_push_unique(xs : Array[String], value : String) -> Unit {
-  if !string_array_contains(xs, value) {
-    xs.push(value)
+fn[T : ButtonInputButton] entry_push_unique(
+  xs : Array[(String, T)],
+  button : T,
+) -> Unit {
+  let id = ButtonInputButton::button_id(button)
+  if !entry_contains(xs, id) {
+    xs.push((id, button))
   }
+}
+
+///|
+fn[T] entry_remove(xs : Array[(String, T)], button_id : String) -> Bool {
+  for i in 0..<xs.length() {
+    if xs[i].0 == button_id {
+      xs.remove(i) |> ignore
+      return true
+    }
+  }
+  false
 }
 
 ///|
@@ -215,10 +313,7 @@ fn[T : ButtonInputButton] button_input_mark_pressed(
   input : ButtonInput[T],
   button : T,
 ) -> Unit {
-  string_array_push_unique(
-    input.pressed_ids,
-    ButtonInputButton::button_id(button),
-  )
+  entry_push_unique(input.pressed, button)
 }
 
 ///|
@@ -226,10 +321,7 @@ fn[T : ButtonInputButton] button_input_mark_just_pressed(
   input : ButtonInput[T],
   button : T,
 ) -> Unit {
-  string_array_push_unique(
-    input.just_pressed_ids,
-    ButtonInputButton::button_id(button),
-  )
+  entry_push_unique(input.just_pressed, button)
 }
 
 ///|
@@ -237,10 +329,18 @@ fn[T : ButtonInputButton] button_input_mark_just_released(
   input : ButtonInput[T],
   button : T,
 ) -> Unit {
-  string_array_push_unique(
-    input.just_released_ids,
-    ButtonInputButton::button_id(button),
-  )
+  entry_push_unique(input.just_released, button)
+}
+
+///|
+pub fn[T : ButtonInputButton] ButtonInput::press(
+  self : ButtonInput[T],
+  input : T,
+) -> Unit {
+  if !entry_contains(self.pressed, ButtonInputButton::button_id(input)) {
+    self.pressed.push((ButtonInputButton::button_id(input), input))
+    entry_push_unique(self.just_pressed, input)
+  }
 }
 
 ///|
@@ -248,29 +348,7 @@ pub fn[T : ButtonInputButton] ButtonInput::pressed(
   self : ButtonInput[T],
   button : T,
 ) -> Bool {
-  string_array_contains(self.pressed_ids, ButtonInputButton::button_id(button))
-}
-
-///|
-pub fn[T : ButtonInputButton] ButtonInput::just_pressed(
-  self : ButtonInput[T],
-  button : T,
-) -> Bool {
-  string_array_contains(
-    self.just_pressed_ids,
-    ButtonInputButton::button_id(button),
-  )
-}
-
-///|
-pub fn[T : ButtonInputButton] ButtonInput::just_released(
-  self : ButtonInput[T],
-  button : T,
-) -> Bool {
-  string_array_contains(
-    self.just_released_ids,
-    ButtonInputButton::button_id(button),
-  )
+  entry_contains(self.pressed, ButtonInputButton::button_id(button))
 }
 
 ///|
@@ -284,6 +362,233 @@ pub fn[T : ButtonInputButton] ButtonInput::any_pressed(
     }
   }
   false
+}
+
+///|
+pub fn[T : ButtonInputButton] ButtonInput::all_pressed(
+  self : ButtonInput[T],
+  buttons : Array[T],
+) -> Bool {
+  for button in buttons {
+    if !self.pressed(button) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+pub fn[T : ButtonInputButton] ButtonInput::release(
+  self : ButtonInput[T],
+  input : T,
+) -> Unit {
+  if entry_remove(self.pressed, ButtonInputButton::button_id(input)) {
+    entry_push_unique(self.just_released, input)
+  }
+}
+
+///|
+pub fn[T : ButtonInputButton] ButtonInput::release_all(
+  self : ButtonInput[T],
+) -> Unit {
+  for input in self.get_pressed() {
+    entry_push_unique(self.just_released, input)
+  }
+  self.pressed.clear()
+}
+
+///|
+pub fn[T : ButtonInputButton] ButtonInput::just_pressed(
+  self : ButtonInput[T],
+  button : T,
+) -> Bool {
+  entry_contains(self.just_pressed, ButtonInputButton::button_id(button))
+}
+
+///|
+pub fn[T : ButtonInputButton] ButtonInput::any_just_pressed(
+  self : ButtonInput[T],
+  buttons : Array[T],
+) -> Bool {
+  for button in buttons {
+    if self.just_pressed(button) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub fn[T : ButtonInputButton] ButtonInput::all_just_pressed(
+  self : ButtonInput[T],
+  buttons : Array[T],
+) -> Bool {
+  for button in buttons {
+    if !self.just_pressed(button) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+pub fn[T : ButtonInputButton] ButtonInput::clear_just_pressed(
+  self : ButtonInput[T],
+  input : T,
+) -> Bool {
+  entry_remove(self.just_pressed, ButtonInputButton::button_id(input))
+}
+
+///|
+pub fn[T : ButtonInputButton] ButtonInput::just_released(
+  self : ButtonInput[T],
+  button : T,
+) -> Bool {
+  entry_contains(self.just_released, ButtonInputButton::button_id(button))
+}
+
+///|
+pub fn[T : ButtonInputButton] ButtonInput::any_just_released(
+  self : ButtonInput[T],
+  buttons : Array[T],
+) -> Bool {
+  for button in buttons {
+    if self.just_released(button) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub fn[T : ButtonInputButton] ButtonInput::all_just_released(
+  self : ButtonInput[T],
+  buttons : Array[T],
+) -> Bool {
+  for button in buttons {
+    if !self.just_released(button) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+pub fn[T : ButtonInputButton] ButtonInput::clear_just_released(
+  self : ButtonInput[T],
+  input : T,
+) -> Bool {
+  entry_remove(self.just_released, ButtonInputButton::button_id(input))
+}
+
+///|
+pub fn[T : ButtonInputButton] ButtonInput::reset(
+  self : ButtonInput[T],
+  input : T,
+) -> Unit {
+  let id = ButtonInputButton::button_id(input)
+  entry_remove(self.pressed, id) |> ignore
+  entry_remove(self.just_pressed, id) |> ignore
+  entry_remove(self.just_released, id) |> ignore
+}
+
+///|
+pub fn[T] ButtonInput::reset_all(self : ButtonInput[T]) -> Unit {
+  self.pressed.clear()
+  self.just_pressed.clear()
+  self.just_released.clear()
+}
+
+///|
+pub fn[T] ButtonInput::clear(self : ButtonInput[T]) -> Unit {
+  self.just_pressed.clear()
+  self.just_released.clear()
+}
+
+///|
+pub fn[T] ButtonInput::get_pressed(self : ButtonInput[T]) -> Array[T] {
+  let out : Array[T] = []
+  for entry in self.pressed {
+    out.push(entry.1)
+  }
+  out
+}
+
+///|
+pub fn[T] ButtonInput::get_just_pressed(self : ButtonInput[T]) -> Array[T] {
+  let out : Array[T] = []
+  for entry in self.just_pressed {
+    out.push(entry.1)
+  }
+  out
+}
+
+///|
+pub fn[T] ButtonInput::get_just_released(self : ButtonInput[T]) -> Array[T] {
+  let out : Array[T] = []
+  for entry in self.just_released {
+    out.push(entry.1)
+  }
+  out
+}
+
+///|
+pub fn[T : Eq] Axis::set(
+  self : Axis[T],
+  input_device : T,
+  position_data : Float,
+) -> Float? {
+  if axis_index_of(self.axis_data, input_device) is Some(index) {
+    let previous = self.axis_data[index].1
+    self.axis_data[index] = (input_device, position_data)
+    Some(previous)
+  } else {
+    self.axis_data.push((input_device, position_data))
+    None
+  }
+}
+
+///|
+pub fn[T : Eq] Axis::get(self : Axis[T], input_device : T) -> Float? {
+  if axis_index_of(self.axis_data, input_device) is Some(index) {
+    Some(clamp_axis_value(self.axis_data[index].1))
+  } else {
+    None
+  }
+}
+
+///|
+pub fn[T : Eq] Axis::get_unclamped(self : Axis[T], input_device : T) -> Float? {
+  if axis_index_of(self.axis_data, input_device) is Some(index) {
+    Some(self.axis_data[index].1)
+  } else {
+    None
+  }
+}
+
+///|
+pub fn[T : Eq] Axis::remove(self : Axis[T], input_device : T) -> Float? {
+  if axis_index_of(self.axis_data, input_device) is Some(index) {
+    let value = self.axis_data[index].1
+    self.axis_data.remove(index) |> ignore
+    Some(value)
+  } else {
+    None
+  }
+}
+
+///|
+pub fn[T] Axis::all_axes(self : Axis[T]) -> Array[T] {
+  let out : Array[T] = []
+  for entry in self.axis_data {
+    out.push(entry.0)
+  }
+  out
+}
+
+///|
+pub fn[T] Axis::all_axes_and_values(self : Axis[T]) -> Array[(T, Float)] {
+  self.axis_data
 }
 
 ///|
@@ -680,26 +985,6 @@ fn mouse_button_to_string(button : @window.MouseButton) -> String {
     Left => "Left"
     Right => "Right"
     Middle => "Middle"
-  }
-}
-
-///|
-fn key_to_string(key : Key) -> String {
-  match key {
-    Character(text) => "Character:" + text
-    Enter => "Enter"
-    Backspace => "Backspace"
-    Tab => "Tab"
-    Shift => "Shift"
-    Control => "Control"
-    ArrowUp => "ArrowUp"
-    ArrowDown => "ArrowDown"
-    ArrowLeft => "ArrowLeft"
-    ArrowRight => "ArrowRight"
-    PageUp => "PageUp"
-    PageDown => "PageDown"
-    Space => "Space"
-    Escape => "Escape"
   }
 }
 
@@ -1311,7 +1596,7 @@ pub impl ButtonInputButton for @window.MouseButton with button_id(self) {
 
 ///|
 pub impl ButtonInputButton for Key with button_id(self) {
-  key_to_string(self)
+  self.to_json().stringify()
 }
 
 ///|
@@ -1435,13 +1720,5 @@ pub fn input_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .add_pre_update_system(input_poll_keyboard_system)
   .add_pre_update_system(input_poll_drag_and_drop_system)
   .add_pre_update_system(input_poll_mouse_system)
-  .add_pre_update_system_config(
-    @app.system(input_poll_gamepad_system).in_set(input_gamepad_poll_system_set),
-  )
-  .add_pre_update_system_config(
-    @app.system(@app.system_param2(gamepad_event_processing_system))
-    .in_set(input_gamepad_event_processing_system_set)
-    .after(input_gamepad_poll_system_set),
-  )
   .add_post_update_system(input_finish_system)
 }
