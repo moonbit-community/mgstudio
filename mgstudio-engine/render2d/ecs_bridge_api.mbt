@@ -16,7 +16,7 @@
 /// ECS component bridge types.
 pub let ecs_components : Array[String] = [
   "Anchor", "Camera", "Mesh2d", "Sprite", "Bloom2d", "Camera2d", "GpuMesh2d", "Projection",
-  "ScissorRect", "Wireframe2d", "RenderLayers", "RenderTarget", "ColorMaterial",
+  "PanCamera", "ScissorRect", "Wireframe2d", "RenderLayers", "RenderTarget", "ColorMaterial",
   "Tonemapping", "DebandDither", "NoWireframe2d", "MeshMaterial2d", "ClearColorConfig",
   "Wireframe2dColor",
 ]
@@ -81,6 +81,13 @@ pub fn get_projection_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[Projection] {
   world.component(ecs_key_projection)
+}
+
+///|
+pub fn get_pan_camera_store(
+  world : @ecs.World,
+) -> @ecs.ComponentAccess[PanCamera] {
+  world.component(ecs_key_pan_camera)
 }
 
 ///|

@@ -9,6 +9,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/visibility",
+  "Milky2018/mgstudio/window",
   "moonbitlang/core/json",
 }
 
@@ -38,6 +39,8 @@ pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d]
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[MeshMaterial2d]
 
 pub let ecs_key_no_wireframe2d : @ecs.ComponentKey[NoWireframe2d]
+
+pub let ecs_key_pan_camera : @ecs.ComponentKey[PanCamera]
 
 pub let ecs_key_projection : @ecs.ComponentKey[Projection]
 
@@ -83,6 +86,8 @@ pub fn get_mesh_material2d_store(@ecs.World) -> @ecs.ComponentAccess[MeshMateria
 
 pub fn get_no_wireframe2d_store(@ecs.World) -> @ecs.ComponentAccess[NoWireframe2d]
 
+pub fn get_pan_camera_store(@ecs.World) -> @ecs.ComponentAccess[PanCamera]
+
 pub fn get_projection_store(@ecs.World) -> @ecs.ComponentAccess[Projection]
 
 pub fn get_render_layers_store(@ecs.World) -> @ecs.ComponentAccess[RenderLayers]
@@ -108,6 +113,8 @@ pub fn gizmo_config() -> GizmoConfig
 pub fn gizmo_set_config(GizmoConfig) -> Unit
 
 pub fn[W, M] material2d_plugin(Material2dPlugin[M]) -> (@app.App[W]) -> @app.App[W]
+
+pub fn pan_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn render2d_camera_system(@ecs.World) -> Unit
 
@@ -192,6 +199,8 @@ pub fn render_mesh_asset_set(@asset.Handle[@mesh.Mesh], @mesh.Mesh) -> Bool
 pub fn render_prepare_system(@ecs.World) -> Unit
 
 pub fn render_queue_system(@ecs.World) -> Unit
+
+pub fn run_pancamera_controller(@ecs.World) -> Unit
 
 pub fn wireframe2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -689,6 +698,29 @@ pub(all) struct OverlaySpriteUvScissor {
   layers : RenderLayers
   scissor : @math.Rect?
 }
+
+pub(all) struct PanCamera {
+  mut enabled : Bool
+  mut zoom_factor : Float
+  mut min_zoom : Float
+  mut max_zoom : Float
+  mut zoom_speed : Float
+  mut key_zoom_in : @window.KeyCode?
+  mut key_zoom_out : @window.KeyCode?
+  mut pan_speed : Float
+  mut key_up : @window.KeyCode?
+  mut key_down : @window.KeyCode?
+  mut key_left : @window.KeyCode?
+  mut key_right : @window.KeyCode?
+  mut rotation_speed : Float
+  mut key_rotate_ccw : @window.KeyCode?
+  mut key_rotate_cw : @window.KeyCode?
+}
+pub fn PanCamera::default() -> Self
+pub impl @ecs.Component for PanCamera
+pub impl Show for PanCamera
+pub impl ToJson for PanCamera
+pub impl @json.FromJson for PanCamera
 
 pub struct Polyline2d {
   points : Array[@math.Vec2]

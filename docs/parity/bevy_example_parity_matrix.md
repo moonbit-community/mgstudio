@@ -24,7 +24,7 @@ Notes:
 | `asset` | 15 | 0 | 15 | 0 |
 | `async_tasks` | 3 | 0 | 3 | 0 |
 | `audio` | 7 | 5 | 2 | 0 |
-| `camera` | 9 | 4 | 5 | 0 |
+| `camera` | 9 | 6 | 3 | 0 |
 | `dev_tools` | 1 | 0 | 1 | 0 |
 | `diagnostics` | 3 | 2 | 1 | 0 |
 | `ecs` | 32 | 0 | 32 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 1 | 11 | 0 |
-| **Total** | **402** | **101** | **298** | **3** |
+| **Total** | **402** | **103** | **296** | **3** |
 
 ## Example Inventory
 
@@ -211,11 +211,11 @@ Notes:
 | `bevy/examples/camera/2d_on_ui.rs` | `camera` | `mgstudio-engine/examples/camera/2d_on_ui` | `Exact` | `team-render` |  |
 | `bevy/examples/camera/2d_screen_shake.rs` | `camera` | `mgstudio-engine/examples/camera/2d_screen_shake` | `Exact` | `team-render` |  |
 | `bevy/examples/camera/2d_top_down_camera.rs` | `camera` | `mgstudio-engine/examples/camera/2d_top_down_camera` | `Exact` | `team-render` |  |
-| `bevy/examples/camera/camera_orbit.rs` | `camera` | `mgstudio-engine/examples/camera/camera_orbit` | `Blocked` | `team-render` | Ported under `mgstudio-engine/examples/camera/camera_orbit`; compile verification is currently blocked by unrelated `render2d` `KeyCode::to_string()` break (`bd-d6w`). |
+| `bevy/examples/camera/camera_orbit.rs` | `camera` | `mgstudio-engine/examples/camera/camera_orbit` | `Exact` | `team-render` |  |
 | `bevy/examples/camera/custom_projection.rs` | `camera` |  | `Blocked` | `team-render` | Blocked by missing custom camera projection surface (`bd-shf`). |
 | `bevy/examples/camera/first_person_view_model.rs` | `camera` |  | `Blocked` | `team-render` | Blocked by missing unified `Projection` surface (`bd-52x`) and Euler rotation conversion API (`bd-ank`). |
 | `bevy/examples/camera/free_camera_controller.rs` | `camera` | `mgstudio-engine/examples/camera/free_camera_controller` | `Exact` | `team-render` |  |
-| `bevy/examples/camera/pan_camera_controller.rs` | `camera` |  | `Blocked` | `team-render` | Blocked by missing 2D pan camera controller API (`bd-cw4`). |
+| `bevy/examples/camera/pan_camera_controller.rs` | `camera` | `mgstudio-engine/examples/camera/pan_camera_controller` | `Exact` | `team-render` |  |
 | `bevy/examples/camera/projection_zoom.rs` | `camera` |  | `Blocked` | `team-render` | Blocked by missing unified `Projection` component surface (`bd-52x`). |
 | `bevy/examples/dev_tools/fps_overlay.rs` | `dev_tools` |  | `Blocked` | `team-ops` |  |
 | `bevy/examples/diagnostics/custom_diagnostic.rs` | `diagnostics` | `mgstudio-engine/examples/diagnostics/custom_diagnostic` | `Exact` | `team-ops` |  |

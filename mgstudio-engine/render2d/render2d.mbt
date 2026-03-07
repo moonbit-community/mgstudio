@@ -1080,6 +1080,129 @@ pub fn Camera2d::default() -> Camera2d {
 }
 
 ///|
+pub(all) struct PanCamera {
+  mut enabled : Bool
+  mut zoom_factor : Float
+  mut min_zoom : Float
+  mut max_zoom : Float
+  mut zoom_speed : Float
+  mut key_zoom_in : @window.KeyCode?
+  mut key_zoom_out : @window.KeyCode?
+  mut pan_speed : Float
+  mut key_up : @window.KeyCode?
+  mut key_down : @window.KeyCode?
+  mut key_left : @window.KeyCode?
+  mut key_right : @window.KeyCode?
+  mut rotation_speed : Float
+  mut key_rotate_ccw : @window.KeyCode?
+  mut key_rotate_cw : @window.KeyCode?
+} derive(ToJson, FromJson)
+
+///|
+pub fn PanCamera::default() -> PanCamera {
+  PanCamera::{
+    enabled: true,
+    zoom_factor: 1.0F,
+    min_zoom: 0.1F,
+    max_zoom: 5.0F,
+    zoom_speed: 0.1F,
+    key_zoom_in: Some(@window.KeyCode::Equal),
+    key_zoom_out: Some(@window.KeyCode::Minus),
+    pan_speed: 500.0F,
+    key_up: Some(@window.KeyCode::KeyW),
+    key_down: Some(@window.KeyCode::KeyS),
+    key_left: Some(@window.KeyCode::KeyA),
+    key_right: Some(@window.KeyCode::KeyD),
+    rotation_speed: 3.141592653589793F,
+    key_rotate_ccw: Some(@window.KeyCode::KeyQ),
+    key_rotate_cw: Some(@window.KeyCode::KeyE),
+  }
+}
+
+///|
+fn pan_camera_keycode_to_string(code : @window.KeyCode) -> String {
+  match code {
+    @window.KeyCode::KeyA => "KeyA"
+    @window.KeyCode::KeyB => "KeyB"
+    @window.KeyCode::KeyC => "KeyC"
+    @window.KeyCode::KeyD => "KeyD"
+    @window.KeyCode::KeyE => "KeyE"
+    @window.KeyCode::KeyF => "KeyF"
+    @window.KeyCode::KeyG => "KeyG"
+    @window.KeyCode::KeyH => "KeyH"
+    @window.KeyCode::KeyI => "KeyI"
+    @window.KeyCode::KeyJ => "KeyJ"
+    @window.KeyCode::KeyK => "KeyK"
+    @window.KeyCode::KeyL => "KeyL"
+    @window.KeyCode::KeyM => "KeyM"
+    @window.KeyCode::KeyN => "KeyN"
+    @window.KeyCode::KeyO => "KeyO"
+    @window.KeyCode::KeyP => "KeyP"
+    @window.KeyCode::KeyQ => "KeyQ"
+    @window.KeyCode::KeyR => "KeyR"
+    @window.KeyCode::KeyS => "KeyS"
+    @window.KeyCode::KeyT => "KeyT"
+    @window.KeyCode::KeyU => "KeyU"
+    @window.KeyCode::KeyV => "KeyV"
+    @window.KeyCode::KeyW => "KeyW"
+    @window.KeyCode::KeyX => "KeyX"
+    @window.KeyCode::KeyY => "KeyY"
+    @window.KeyCode::KeyZ => "KeyZ"
+    @window.KeyCode::Digit1 => "Digit1"
+    @window.KeyCode::Digit2 => "Digit2"
+    @window.KeyCode::Digit3 => "Digit3"
+    @window.KeyCode::Digit4 => "Digit4"
+    @window.KeyCode::Digit5 => "Digit5"
+    @window.KeyCode::Digit6 => "Digit6"
+    @window.KeyCode::Digit7 => "Digit7"
+    @window.KeyCode::Digit8 => "Digit8"
+    @window.KeyCode::Tab => "Tab"
+    @window.KeyCode::Enter => "Enter"
+    @window.KeyCode::Backspace => "Backspace"
+    @window.KeyCode::ShiftLeft => "ShiftLeft"
+    @window.KeyCode::ShiftRight => "ShiftRight"
+    @window.KeyCode::ControlLeft => "ControlLeft"
+    @window.KeyCode::ControlRight => "ControlRight"
+    @window.KeyCode::ArrowUp => "ArrowUp"
+    @window.KeyCode::ArrowDown => "ArrowDown"
+    @window.KeyCode::ArrowLeft => "ArrowLeft"
+    @window.KeyCode::ArrowRight => "ArrowRight"
+    @window.KeyCode::PageUp => "PageUp"
+    @window.KeyCode::PageDown => "PageDown"
+    @window.KeyCode::Space => "Space"
+    @window.KeyCode::Escape => "Escape"
+    @window.KeyCode::Semicolon => "Semicolon"
+    @window.KeyCode::Comma => "Comma"
+    @window.KeyCode::Period => "Period"
+    @window.KeyCode::Slash => "Slash"
+    @window.KeyCode::Minus => "Minus"
+    @window.KeyCode::Equal => "Equal"
+    @window.KeyCode::BracketLeft => "BracketLeft"
+    @window.KeyCode::BracketRight => "BracketRight"
+    @window.KeyCode::Quote => "Quote"
+  }
+}
+
+///|
+fn PanCamera::key_to_string(key : @window.KeyCode?) -> String {
+  match key {
+    Some(value) => pan_camera_keycode_to_string(value)
+    None => "None"
+  }
+}
+
+///|
+pub impl Show for PanCamera with output(self, logger) {
+  logger.write_string(
+    "\nPanCamera Controls:\n" +
+    "  Move Up / Down    - \{PanCamera::key_to_string(self.key_up)} / \{PanCamera::key_to_string(self.key_down)}\n" +
+    "  Move Left / Right - \{PanCamera::key_to_string(self.key_left)} / \{PanCamera::key_to_string(self.key_right)}\n" +
+    "  Rotate CCW / CW   - \{PanCamera::key_to_string(self.key_rotate_ccw)} / \{PanCamera::key_to_string(self.key_rotate_cw)}\n" +
+    "  Zoom              - Mouse Scroll + \{PanCamera::key_to_string(self.key_zoom_in)} / \{PanCamera::key_to_string(self.key_zoom_out)}\n",
+  )
+}
+
+///|
 
 ///|
 pub(all) enum RenderTarget {
@@ -4300,6 +4423,178 @@ pub fn wireframe2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
+const PAN_CAMERA_SCROLL_UNIT_CONVERSION_FACTOR : Float = 16.0F
+
+///|
+fn pan_camera_press_if_pressed(
+  key_input : @input.ButtonInput[@window.KeyCode],
+  key : @window.KeyCode?,
+) -> Unit {
+  if key is Some(value) && @input.key_pressed(value) {
+    key_input.press(value)
+  }
+}
+
+///|
+fn pan_camera_key_input_snapshot(
+  controller : PanCamera,
+) -> @input.ButtonInput[@window.KeyCode] {
+  let key_input : @input.ButtonInput[@window.KeyCode] = @input.ButtonInput::new()
+  pan_camera_press_if_pressed(key_input, controller.key_zoom_in)
+  pan_camera_press_if_pressed(key_input, controller.key_zoom_out)
+  pan_camera_press_if_pressed(key_input, controller.key_up)
+  pan_camera_press_if_pressed(key_input, controller.key_down)
+  pan_camera_press_if_pressed(key_input, controller.key_left)
+  pan_camera_press_if_pressed(key_input, controller.key_right)
+  pan_camera_press_if_pressed(key_input, controller.key_rotate_ccw)
+  pan_camera_press_if_pressed(key_input, controller.key_rotate_cw)
+  key_input
+}
+
+///|
+fn pan_camera_zoom_bounds(controller : PanCamera) -> (Float, Float) {
+  let safe_min = if controller.min_zoom <= 0.0F {
+    0.0001F
+  } else {
+    controller.min_zoom
+  }
+  let safe_max = if controller.max_zoom >= safe_min {
+    controller.max_zoom
+  } else {
+    safe_min
+  }
+  (safe_min, safe_max)
+}
+
+///|
+fn pan_camera_scroll_delta(scroll : @input.AccumulatedMouseScroll) -> Float {
+  match scroll.unit {
+    @input.MouseScrollUnit::Line => scroll.delta.y
+    @input.MouseScrollUnit::Pixel =>
+      scroll.delta.y / PAN_CAMERA_SCROLL_UNIT_CONVERSION_FACTOR
+  }
+}
+
+///|
+fn pan_camera_step(
+  transform : @math.Transform,
+  controller : PanCamera,
+  delta_seconds : Float,
+  key_input : @input.ButtonInput[@window.KeyCode],
+  accumulated_mouse_scroll : @input.AccumulatedMouseScroll,
+) -> (@math.Transform, PanCamera) {
+  let next_transform = transform
+  let next_controller = controller
+  if !next_controller.enabled {
+    return (next_transform, next_controller)
+  }
+
+  let movement = @math.Vec2::zero()
+  if next_controller.key_left is Some(key) && key_input.pressed(key) {
+    movement.x = movement.x - 1.0F
+  }
+  if next_controller.key_right is Some(key) && key_input.pressed(key) {
+    movement.x = movement.x + 1.0F
+  }
+  if next_controller.key_down is Some(key) && key_input.pressed(key) {
+    movement.y = movement.y - 1.0F
+  }
+  if next_controller.key_up is Some(key) && key_input.pressed(key) {
+    movement.y = movement.y + 1.0F
+  }
+
+  if movement.length_squared() > 0.0F {
+    let right = next_transform.right()
+    let up = next_transform.up()
+    let delta = right
+      .mul_scalar(movement.x)
+      .add(up.mul_scalar(movement.y))
+      .normalize_or_zero()
+      .mul_scalar(next_controller.pan_speed * delta_seconds)
+    next_transform.translation = next_transform.translation.add(
+      @math.Vec3::new(delta.x, delta.y, 0.0F),
+    )
+  }
+
+  if next_controller.key_rotate_ccw is Some(key) && key_input.pressed(key) {
+    next_transform.rotate_z(next_controller.rotation_speed * delta_seconds)
+  }
+  if next_controller.key_rotate_cw is Some(key) && key_input.pressed(key) {
+    next_transform.rotate_z(-next_controller.rotation_speed * delta_seconds)
+  }
+
+  let mut zoom_amount = 0.0F
+  if next_controller.key_zoom_in is Some(key) && key_input.pressed(key) {
+    zoom_amount = zoom_amount - next_controller.zoom_speed
+  }
+  if next_controller.key_zoom_out is Some(key) && key_input.pressed(key) {
+    zoom_amount = zoom_amount + next_controller.zoom_speed
+  }
+  zoom_amount = zoom_amount +
+    pan_camera_scroll_delta(accumulated_mouse_scroll) *
+    next_controller.zoom_speed
+
+  let (safe_min_zoom, safe_max_zoom) = pan_camera_zoom_bounds(next_controller)
+  next_controller.zoom_factor = if next_controller.zoom_factor - zoom_amount <
+    safe_min_zoom {
+    safe_min_zoom
+  } else if next_controller.zoom_factor - zoom_amount > safe_max_zoom {
+    safe_max_zoom
+  } else {
+    next_controller.zoom_factor - zoom_amount
+  }
+  next_transform.scale = @math.Vec3::splat(next_controller.zoom_factor)
+  (next_transform, next_controller)
+}
+
+///|
+pub fn run_pancamera_controller(world : @ecs.World) -> Unit {
+  let delta_seconds = @time.time_delta_seconds()
+  let tick = world.read_change_tick()
+  let camera_store = world.component(ecs_key_camera)
+  let transform_store = world.component(@math.ecs_key_transform)
+  let pan_camera_store = world.component(ecs_key_pan_camera)
+  let accumulated_mouse_scroll = match
+    (try! world.get_resource(@input.AccumulatedMouseScroll::resource())) {
+    Some(value) => value
+    None => @input.AccumulatedMouseScroll::new()
+  }
+  let controlled_entities : Array[@core.Entity] = []
+  pan_camera_store.for_each(fn(entity, _controller) {
+    if camera_store.get(entity) is Some(_) &&
+      transform_store.get(entity) is Some(_) {
+      controlled_entities.push(entity)
+    }
+  })
+  for controlled_entity in controlled_entities {
+    guard pan_camera_store.get(controlled_entity) is Some(controller) else {
+      continue
+    }
+    guard transform_store.get(controlled_entity) is Some(transform) else {
+      continue
+    }
+    let key_input = pan_camera_key_input_snapshot(controller)
+    let (next_transform, next_controller) = pan_camera_step(
+      transform, controller, delta_seconds, key_input, accumulated_mouse_scroll,
+    )
+    transform_store.set(controlled_entity, next_transform, tick) |> ignore
+    pan_camera_store.set(controlled_entity, next_controller, tick) |> ignore
+  }
+}
+
+///|
+pub fn pan_camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app.add_systems(
+    @app.RunFixedMainLoop,
+    @app.system(run_pancamera_controller).in_set(
+      @app.run_fixed_main_loop_system_set_name(
+        @app.RunFixedMainLoopSystems::BeforeFixedMainLoop,
+      ),
+    ),
+  )
+}
+
+///|
 fn default_uv_min() -> @math.Vec2 {
   @math.Vec2::new(0.0F, 0.0F)
 }
@@ -5412,6 +5707,32 @@ fn render2d_scale_viewport_axis(value : Int, scale : Float) -> Int {
     return 0
   }
   scaled.to_int()
+}
+
+///|
+fn render2d_camera_transform_scale_axis(value : Float) -> Float {
+  let safe = if value < 0.0F { -value } else { value }
+  if safe == 0.0F {
+    1.0F
+  } else {
+    safe
+  }
+}
+
+///|
+fn render2d_camera_uniform_scale(
+  projection : OrthographicProjection,
+  camera_transform : @math.Transform,
+) -> Float {
+  let projection_scale = if projection.scale == 0.0F {
+    1.0F
+  } else {
+    projection.scale
+  }
+  // The native 2D camera backend currently uses a uniform camera scale, so the
+  // X axis is authoritative. PanCamera always writes a uniform Vec3::splat scale.
+  projection_scale *
+  render2d_camera_transform_scale_axis(camera_transform.scale.x)
 }
 
 ///|
@@ -7317,7 +7638,10 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           camera_x=camera.transform.translation.x,
           camera_y=camera.transform.translation.y,
           camera_rotation=camera.transform.rotation_z(),
-          camera_scale=camera.projection.scale,
+          camera_scale=render2d_camera_uniform_scale(
+            camera.projection,
+            camera.transform,
+          ),
           viewport_x=0,
           viewport_y=0,
           viewport_width~,
@@ -7340,7 +7664,10 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           camera_x=camera.transform.translation.x,
           camera_y=camera.transform.translation.y,
           camera_rotation=camera.transform.rotation_z(),
-          camera_scale=camera.projection.scale,
+          camera_scale=render2d_camera_uniform_scale(
+            camera.projection,
+            camera.transform,
+          ),
           viewport_x~,
           viewport_y~,
           viewport_width~,
@@ -7369,7 +7696,10 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         camera_x=camera.transform.translation.x,
         camera_y=camera.transform.translation.y,
         camera_rotation=camera.transform.rotation_z(),
-        camera_scale=camera.projection.scale,
+        camera_scale=render2d_camera_uniform_scale(
+          camera.projection,
+          camera.transform,
+        ),
         viewport_x~,
         viewport_y~,
         viewport_width~,
@@ -7492,7 +7822,7 @@ pub fn render2d_camera_viewport_to_world_2d(
   }
   let half_width = rect_width_f / 2.0F
   let half_height = rect_height_f / 2.0F
-  let scale = if projection.scale == 0.0F { 1.0F } else { projection.scale }
+  let scale = render2d_camera_uniform_scale(projection, camera_transform)
   let local_x = screen.x - rect_x_f
   let local_y = screen.y - rect_y_f
   let view_x = (local_x - half_width) * scale
@@ -7546,11 +7876,7 @@ pub fn render2d_camera_world_to_viewport_2d(
   let sinv = @math.sin(rot_z)
   let view_x = dx * cosv - dy * sinv
   let view_y = dx * sinv + dy * cosv
-  let safe_scale = if projection.scale == 0.0F {
-    1.0F
-  } else {
-    projection.scale
-  }
+  let safe_scale = render2d_camera_uniform_scale(projection, camera_transform)
   let local_x = view_x / safe_scale + half_width
   let local_y = half_height - view_y / safe_scale
   if local_x < 0.0F ||
@@ -7608,7 +7934,10 @@ pub fn render2d_debug_log_primary_camera(world : @ecs.World) -> Unit {
     if camera.entity.id == id.id && camera.entity.generation == id.generation {
       let target = camera.computed.target_size
       let scale = camera.computed.scale_factor
-      let proj_scale = camera.projection.scale
+      let proj_scale = render2d_camera_uniform_scale(
+        camera.projection,
+        camera.transform,
+      )
       let mut viewport_text = "None"
       if camera.camera.viewport is Some(viewport) {
         let pos = viewport.physical_position

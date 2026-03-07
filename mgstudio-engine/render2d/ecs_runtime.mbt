@@ -43,6 +43,11 @@ pub let ecs_key_projection : @ecs.ComponentKey[Projection] = @ecs.register_compo
 )
 
 ///|
+pub let ecs_key_pan_camera : @ecs.ComponentKey[PanCamera] = @ecs.register_component(
+  debug_name="render2d.pan_camera",
+)
+
+///|
 pub let ecs_key_render_target : @ecs.ComponentKey[RenderTarget] = @ecs.register_component(
   debug_name="render2d.render_target",
 )
@@ -135,6 +140,11 @@ pub impl @ecs.Component for Camera with component() {
 ///|
 pub impl @ecs.Component for Projection with component() {
   ecs_key_projection
+}
+
+///|
+pub impl @ecs.Component for PanCamera with component() {
+  ecs_key_pan_camera
 }
 
 ///|

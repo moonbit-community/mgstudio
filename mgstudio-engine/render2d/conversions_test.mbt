@@ -109,3 +109,34 @@ test "render2d: viewport rect clamps to target size" {
   }
   inspect(ok_center, content="true")
 }
+
+///|
+test "render2d: viewport conversions honor transform-based zoom scale" {
+  let camera = Camera::default()
+  let projection = OrthographicProjection::default_2d()
+  let transform = @math.Transform::identity().with_scale(
+    @math.Vec3::splat(2.0F),
+  )
+  let target = @math.IVec2::new(100, 100)
+
+  let screen = @math.Vec2::new(75.0F, 50.0F)
+  let ok = if render2d_camera_viewport_to_world_2d(
+      screen, camera, projection, transform, target, 1.0F,
+    )
+    is Some(world_pos) {
+    if render2d_camera_world_to_viewport_2d(
+        world_pos, camera, projection, transform, target, 1.0F,
+      )
+      is Some(screen_back) {
+      approx_eq(world_pos.x, 50.0F) &&
+      approx_eq(world_pos.y, 0.0F) &&
+      approx_eq(screen_back.x, screen.x) &&
+      approx_eq(screen_back.y, screen.y)
+    } else {
+      false
+    }
+  } else {
+    false
+  }
+  inspect(ok, content="true")
+}

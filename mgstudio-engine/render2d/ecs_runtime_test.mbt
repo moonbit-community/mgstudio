@@ -18,12 +18,7 @@ fn[T] ecs_has_non_null_payload(
   entity : @core.Entity,
   key : @ecs.ComponentKey[T],
 ) -> Bool {
-  let json_key : @ecs.ComponentKey[Json] = key.cast()
-  let payload = try! world.get(entity, json_key)
-  match payload {
-    Some(payload) => payload != Json::null()
-    None => false
-  }
+  (try! world.get(entity, key)) is Some(_)
 }
 
 ///|
@@ -103,6 +98,10 @@ test "render2d: Camera2dBundle::spawn inserts expected components" {
   inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_projection),
     content="true",
+  )
+  inspect(
+    ecs_has_non_null_payload(world, entity, ecs_key_pan_camera),
+    content="false",
   )
   inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_render_target),
