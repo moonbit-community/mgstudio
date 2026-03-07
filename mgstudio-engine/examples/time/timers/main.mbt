@@ -55,7 +55,7 @@ fn setup(_world : @ecs.World) -> Unit {
 
 ///|
 fn print_when_completed(_world : @ecs.World) -> Unit {
-  let delta = @time.time_delta_seconds()
+  let delta = @time.time_delta()
   timer_example_state.val.entity_timer = timer_example_state.val.entity_timer.tick(
     delta,
   )
@@ -66,7 +66,7 @@ fn print_when_completed(_world : @ecs.World) -> Unit {
 
 ///|
 fn countdown(_world : @ecs.World) -> Unit {
-  let delta = @time.time_delta_seconds()
+  let delta = @time.time_delta()
 
   timer_example_state.val.countdown.main_timer = timer_example_state.val.countdown.main_timer.tick(
     delta,

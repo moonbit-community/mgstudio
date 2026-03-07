@@ -18,18 +18,41 @@
 
 ///|
 pub struct Stopwatch {
-  elapsed_seconds : Float
+  elapsed : @core.Duration
   paused : Bool
-}
+} derive(Eq, Show)
 
 ///|
 pub fn Stopwatch::new() -> Stopwatch {
-  Stopwatch::{ elapsed_seconds: 0.0F, paused: false }
+  Stopwatch::{ elapsed: @core.Duration::zero(), paused: false }
+}
+
+///|
+pub fn Stopwatch::elapsed(self : Stopwatch) -> @core.Duration {
+  self.elapsed
+}
+
+///|
+pub fn Stopwatch::elapsed_secs(self : Stopwatch) -> Float {
+  self.elapsed.as_secs_f32()
+}
+
+///|
+pub fn Stopwatch::elapsed_secs_f64(self : Stopwatch) -> Double {
+  self.elapsed.as_secs_f64()
 }
 
 ///|
 pub fn Stopwatch::elapsed_seconds(self : Stopwatch) -> Float {
-  self.elapsed_seconds
+  self.elapsed_secs()
+}
+
+///|
+pub fn Stopwatch::set_elapsed(
+  self : Stopwatch,
+  elapsed : @core.Duration,
+) -> Stopwatch {
+  Stopwatch::{ ..self, elapsed, }
 }
 
 ///|
@@ -37,22 +60,15 @@ pub fn Stopwatch::set_elapsed_seconds(
   self : Stopwatch,
   elapsed_seconds : Float,
 ) -> Stopwatch {
-  Stopwatch::{
-    ..self,
-    elapsed_seconds: if elapsed_seconds < 0.0F {
-      0.0F
-    } else {
-      elapsed_seconds
-    },
-  }
+  self.set_elapsed(@core.Duration::from_secs_f32(elapsed_seconds))
 }
 
 ///|
-pub fn Stopwatch::tick(self : Stopwatch, delta_seconds : Float) -> Stopwatch {
-  if self.paused || delta_seconds <= 0.0F {
+pub fn Stopwatch::tick(self : Stopwatch, delta : @core.Duration) -> Stopwatch {
+  if self.paused || delta.is_zero() {
     self
   } else {
-    Stopwatch::{ ..self, elapsed_seconds: self.elapsed_seconds + delta_seconds }
+    Stopwatch::{ ..self, elapsed: self.elapsed.saturating_add(delta) }
   }
 }
 
@@ -73,5 +89,5 @@ pub fn Stopwatch::is_paused(self : Stopwatch) -> Bool {
 
 ///|
 pub fn Stopwatch::reset(self : Stopwatch) -> Stopwatch {
-  Stopwatch::{ ..self, elapsed_seconds: 0.0F }
+  Stopwatch::{ ..self, elapsed: @core.Duration::zero() }
 }

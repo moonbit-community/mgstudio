@@ -63,7 +63,7 @@ fn print_message_system(
   time : @app.Res[@time.Time],
 ) -> Unit {
   let state_ref = state.get_ref()
-  let timer = state_ref.val.timer.tick(time.get().delta_seconds())
+  let timer = state_ref.val.timer.tick(time.get().delta())
   state_ref.val.timer = timer
   if timer.is_finished() {
     println(state_ref.val.message)

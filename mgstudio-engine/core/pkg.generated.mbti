@@ -44,16 +44,29 @@ pub fn ComponentTicks::new(Int) -> Self
 pub fn ComponentTicks::set_changed(Self, Int) -> Unit
 
 pub struct Duration {
-  millis : Int64
+  nanos : Int64
 }
+pub fn Duration::as_micros(Self) -> Int64
 pub fn Duration::as_millis(Self) -> Int64
+pub fn Duration::as_nanos(Self) -> Int64
 pub fn Duration::as_secs_f32(Self) -> Float
+pub fn Duration::as_secs_f64(Self) -> Double
+pub fn Duration::checked_sub(Self, Self) -> Self?
+pub fn Duration::from_micros(Int64) -> Self
 pub fn Duration::from_millis(Int64) -> Self
+pub fn Duration::from_nanos(Int64) -> Self
 pub fn Duration::from_secs(Int64) -> Self
 pub fn Duration::from_secs_f32(Float) -> Self
+pub fn Duration::from_secs_f64(Double) -> Self
 pub fn Duration::is_zero(Self) -> Bool
-pub fn Duration::new(Int64, millis? : Int) -> Self
+pub fn Duration::mul_f64(Self, Double) -> Self
+pub fn Duration::mul_int(Self, Int) -> Self
+pub fn Duration::new(Int64, nanos? : Int) -> Self
+pub fn Duration::saturating_add(Self, Self) -> Self
+pub fn Duration::saturating_sub(Self, Self) -> Self
+pub fn Duration::zero() -> Self
 pub impl Eq for Duration
+pub impl Show for Duration
 pub impl ToJson for Duration
 pub impl @json.FromJson for Duration
 
@@ -76,6 +89,32 @@ pub fn Entity::placeholder() -> Self
 pub impl Eq for Entity
 pub impl ToJson for Entity
 pub impl @json.FromJson for Entity
+
+pub struct Instant {
+  nanos_since_start : Int64
+}
+pub fn Instant::as_duration_since_start(Self) -> Duration
+pub fn Instant::as_millis(Self) -> Int64
+pub fn Instant::as_secs_f32(Self) -> Float
+pub fn Instant::as_secs_f64(Self) -> Double
+pub fn Instant::checked_add(Self, Duration) -> Self?
+pub fn Instant::checked_duration_since(Self, Self) -> Duration?
+pub fn Instant::checked_sub(Self, Duration) -> Self?
+pub fn Instant::duration_since(Self, Self) -> Duration
+pub fn Instant::elapsed(Self) -> Duration
+pub fn Instant::from_duration(Duration) -> Self
+pub fn Instant::from_millis(Int64) -> Self
+pub fn Instant::from_nanos(Int64) -> Self
+pub fn Instant::from_secs_f32(Float) -> Self
+pub fn Instant::from_secs_f64(Double) -> Self
+pub fn Instant::now() -> Self
+pub fn Instant::saturating_add(Self, Duration) -> Self
+pub fn Instant::saturating_duration_since(Self, Self) -> Duration
+pub fn Instant::saturating_sub(Self, Duration) -> Self
+pub impl Eq for Instant
+pub impl Show for Instant
+pub impl ToJson for Instant
+pub impl @json.FromJson for Instant
 
 pub struct MessageReader[T] {
   previous_tick : Int?

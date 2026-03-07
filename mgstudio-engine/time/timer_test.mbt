@@ -15,45 +15,61 @@
 ///|
 test "timer once mode: transitions to finished only once" {
   let t0 = Timer::from_seconds(1.0F, TimerMode::Once)
-  let t1 = t0.tick(0.5F)
+  let t1 = t0.tick(@core.Duration::from_millis(500L))
   inspect(t1.just_finished(), content="false")
   inspect(t1.is_finished(), content="false")
   inspect(t1.fraction(), content="0.5")
+  inspect(t1.remaining().as_millis(), content="500")
 
-  let t2 = t1.tick(0.6F)
+  let t2 = t1.tick(@core.Duration::from_millis(600L))
   inspect(t2.just_finished(), content="true")
   inspect(t2.is_finished(), content="true")
   inspect(t2.fraction(), content="1")
+  inspect(t2.elapsed().as_millis(), content="1000")
 
-  let t3 = t2.tick(0.2F)
+  let t3 = t2.tick(@core.Duration::from_millis(200L))
   inspect(t3.just_finished(), content="false")
   inspect(t3.is_finished(), content="true")
+  inspect(t3.remaining().as_millis(), content="0")
 }
 
 ///|
 test "timer repeating mode: wraps and finishes on each crossing" {
   let t0 = Timer::from_seconds(1.0F, TimerMode::Repeating)
-  let t1 = t0.tick(0.25F)
+  let t1 = t0.tick(@core.Duration::from_millis(250L))
   inspect(t1.just_finished(), content="false")
   inspect(t1.is_finished(), content="false")
   inspect(t1.fraction(), content="0.25")
 
-  let t2 = t1.tick(0.80F)
+  let t2 = t1.tick(@core.Duration::from_millis(800L))
   inspect(t2.just_finished(), content="true")
   inspect(t2.is_finished(), content="true")
-  inspect(t2.fraction() > 0.049F && t2.fraction() < 0.051F, content="true")
+  inspect(t2.times_finished_this_tick(), content="1")
+  inspect(t2.elapsed().as_millis(), content="50")
 }
 
 ///|
 test "timer pause/unpause: paused timer does not advance" {
   let t0 = Timer::from_seconds(2.0F, TimerMode::Once).pause()
-  let t1 = t0.tick(1.5F)
+  let t1 = t0.tick(@core.Duration::from_millis(1500L))
   inspect(t1.just_finished(), content="false")
   inspect(t1.is_finished(), content="false")
   inspect(t1.fraction(), content="0")
 
-  let t2 = t1.unpause().tick(1.5F)
+  let t2 = t1.unpause().tick(@core.Duration::from_millis(1500L))
   inspect(t2.just_finished(), content="false")
   inspect(t2.is_finished(), content="false")
   inspect(t2.fraction(), content="0.75")
+}
+
+///|
+test "timer finish helpers match bevy behavior" {
+  let once = Timer::from_seconds(1.5F, TimerMode::Once).almost_finish()
+  inspect(once.is_finished(), content="false")
+  inspect(once.remaining().as_nanos(), content="1")
+
+  let finished = once.finish()
+  inspect(finished.is_finished(), content="true")
+  inspect(finished.just_finished(), content="true")
+  inspect(finished.elapsed().as_millis(), content="1500")
 }

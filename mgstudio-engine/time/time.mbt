@@ -17,80 +17,60 @@
 // Licensed under Apache-2.0 or MIT.
 
 ///|
-const DEFAULT_TIME_WRAP_PERIOD_SECONDS : Float = 3600.0F
+let default_time_wrap_period : @core.Duration = @core.Duration::from_secs(3600L)
 
 ///|
 pub struct Time {
-  wrap_period_seconds : Float
-  delta_seconds : Float
-  elapsed_seconds : Float
-  elapsed_wrapped_seconds : Float
-}
-
-///|
-pub fn Time::new() -> Time {
-  Time::{
-    wrap_period_seconds: DEFAULT_TIME_WRAP_PERIOD_SECONDS,
-    delta_seconds: 0.0F,
-    elapsed_seconds: 0.0F,
-    elapsed_wrapped_seconds: 0.0F,
-  }
-}
-
-///|
-pub fn Time::default() -> Time {
-  Time::new()
-}
-
-///|
-fn time_non_negative_seconds(seconds : Float) -> Float {
-  if seconds < 0.0F {
-    0.0F
-  } else {
-    seconds
-  }
+  wrap_period : @core.Duration
+  delta : @core.Duration
+  delta_secs : Float
+  delta_secs_f64 : Double
+  elapsed : @core.Duration
+  elapsed_secs : Float
+  elapsed_secs_f64 : Double
+  elapsed_wrapped : @core.Duration
+  elapsed_secs_wrapped : Float
+  elapsed_secs_wrapped_f64 : Double
 }
 
 ///|
 fn time_duration_rem(
-  dividend_seconds : Float,
-  divisor_seconds : Float,
-) -> Float {
-  if divisor_seconds <= 0.0F {
-    0.0F
+  dividend : @core.Duration,
+  divisor : @core.Duration,
+) -> @core.Duration {
+  if divisor.is_zero() {
+    @core.Duration::zero()
   } else {
-    let quotient = (dividend_seconds / divisor_seconds).to_int()
-    let remainder = dividend_seconds -
-      Float::from_int(quotient) * divisor_seconds
-    if remainder < 0.0F {
-      0.0F
+    let divisor_nanos = divisor.as_nanos()
+    let positive_divisor_nanos = if divisor_nanos <= 0L {
+      1L
     } else {
-      remainder
+      divisor_nanos
     }
+    let remainder_nanos = dividend.as_nanos() % positive_divisor_nanos
+    @core.Duration::from_nanos(remainder_nanos)
   }
 }
 
 ///|
-fn time_elapsed_wrapped_seconds_for(
-  elapsed_seconds : Float,
-  wrap_period_seconds : Float,
-) -> Float {
-  time_duration_rem(elapsed_seconds, wrap_period_seconds)
+fn time_refresh_cached_seconds(time : Time) -> Time {
+  Time::{
+    ..time,
+    delta_secs: time.delta.as_secs_f32(),
+    delta_secs_f64: time.delta.as_secs_f64(),
+    elapsed_secs: time.elapsed.as_secs_f32(),
+    elapsed_secs_f64: time.elapsed.as_secs_f64(),
+    elapsed_secs_wrapped: time.elapsed_wrapped.as_secs_f32(),
+    elapsed_secs_wrapped_f64: time.elapsed_wrapped.as_secs_f64(),
+  }
 }
 
 ///|
-fn time_delta_seconds_raw(time : Time) -> Float {
-  time.delta_seconds
-}
-
-///|
-fn time_elapsed_seconds_raw(time : Time) -> Float {
-  time.elapsed_seconds
-}
-
-///|
-fn time_wrap_period_seconds_raw(time : Time) -> Float {
-  time.wrap_period_seconds
+fn time_elapsed_wrapped_for(
+  elapsed : @core.Duration,
+  wrap_period : @core.Duration,
+) -> @core.Duration {
+  time_duration_rem(elapsed, wrap_period)
 }
 
 ///|
@@ -103,8 +83,62 @@ fn time_time_or_default() -> Time {
 }
 
 ///|
+fn time_delta_raw(time : Time) -> @core.Duration {
+  time.delta
+}
+
+///|
+fn time_elapsed_raw(time : Time) -> @core.Duration {
+  time.elapsed
+}
+
+///|
+fn time_delta_seconds_raw(time : Time) -> Float {
+  time.delta_secs
+}
+
+///|
+fn time_elapsed_seconds_raw(time : Time) -> Float {
+  time.elapsed_secs
+}
+
+///|
+pub fn Time::new() -> Time {
+  Time::{
+    wrap_period: default_time_wrap_period,
+    delta: @core.Duration::zero(),
+    delta_secs: 0.0F,
+    delta_secs_f64: 0.0,
+    elapsed: @core.Duration::zero(),
+    elapsed_secs: 0.0F,
+    elapsed_secs_f64: 0.0,
+    elapsed_wrapped: @core.Duration::zero(),
+    elapsed_secs_wrapped: 0.0F,
+    elapsed_secs_wrapped_f64: 0.0,
+  }
+}
+
+///|
+pub fn Time::default() -> Time {
+  Time::new()
+}
+
+///|
+pub fn Time::wrap_period(self : Time) -> @core.Duration {
+  self.wrap_period
+}
+
+///|
 pub fn Time::wrap_period_seconds(self : Time) -> Float {
-  self.wrap_period_seconds
+  self.wrap_period.as_secs_f32()
+}
+
+///|
+pub fn Time::set_wrap_period(self : Time, wrap_period : @core.Duration) -> Time {
+  if wrap_period.is_zero() {
+    abort("division by zero")
+  }
+  Time::{ ..self, wrap_period, }
 }
 
 ///|
@@ -112,89 +146,87 @@ pub fn Time::set_wrap_period_seconds(
   self : Time,
   wrap_period_seconds : Float,
 ) -> Time {
-  if wrap_period_seconds.is_nan() || wrap_period_seconds.is_inf() {
-    abort("tried to set wrap period to a non-finite value")
-  }
-  if wrap_period_seconds <= 0.0F {
-    abort("division by zero")
-  }
-  Time::{ ..self, wrap_period_seconds, }
+  self.set_wrap_period(@core.Duration::from_secs_f32(wrap_period_seconds))
 }
 
 ///|
-pub fn Time::advance_by(self : Time, delta_seconds : Float) -> Time {
-  if delta_seconds.is_nan() || delta_seconds.is_inf() {
-    abort("tried to advance time by a non-finite duration")
-  }
-  if delta_seconds < 0.0F {
-    abort("tried to move time backwards to an earlier elapsed moment")
-  }
-  let elapsed_seconds = self.elapsed_seconds + delta_seconds
+pub fn Time::advance_by(self : Time, delta : @core.Duration) -> Time {
+  let elapsed = self.elapsed.saturating_add(delta)
   Time::{
     ..self,
-    delta_seconds,
-    elapsed_seconds,
-    elapsed_wrapped_seconds: time_elapsed_wrapped_seconds_for(
-      elapsed_seconds,
-      self.wrap_period_seconds,
-    ),
+    delta,
+    elapsed,
+    elapsed_wrapped: time_elapsed_wrapped_for(elapsed, self.wrap_period),
   }
+  |> time_refresh_cached_seconds
 }
 
 ///|
-pub fn Time::advance_to(self : Time, elapsed_seconds : Float) -> Time {
-  if elapsed_seconds.is_nan() || elapsed_seconds.is_inf() {
-    abort("tried to advance time to a non-finite elapsed moment")
-  }
-  if elapsed_seconds < self.elapsed_seconds {
+pub fn Time::advance_to(self : Time, elapsed : @core.Duration) -> Time {
+  if elapsed.as_nanos() < self.elapsed.as_nanos() {
     abort("tried to move time backwards to an earlier elapsed moment")
   }
-  self.advance_by(elapsed_seconds - self.elapsed_seconds)
+  self.advance_by(elapsed.saturating_sub(self.elapsed))
+}
+
+///|
+pub fn Time::delta(self : Time) -> @core.Duration {
+  self.delta
 }
 
 ///|
 pub fn Time::delta_seconds(self : Time) -> Float {
-  self.delta_seconds
+  self.delta_secs
 }
 
 ///|
 pub fn Time::delta_secs(self : Time) -> Float {
-  self.delta_seconds()
+  self.delta_secs
 }
 
 ///|
-pub fn Time::delta_secs_f64(self : Time) -> Float {
-  self.delta_seconds()
+pub fn Time::delta_secs_f64(self : Time) -> Double {
+  self.delta_secs_f64
+}
+
+///|
+pub fn Time::elapsed(self : Time) -> @core.Duration {
+  self.elapsed
 }
 
 ///|
 pub fn Time::elapsed_seconds(self : Time) -> Float {
-  self.elapsed_seconds
+  self.elapsed_secs
 }
 
 ///|
 pub fn Time::elapsed_secs(self : Time) -> Float {
-  self.elapsed_seconds()
+  self.elapsed_secs
 }
 
 ///|
-pub fn Time::elapsed_secs_f64(self : Time) -> Float {
-  self.elapsed_seconds()
+pub fn Time::elapsed_secs_f64(self : Time) -> Double {
+  self.elapsed_secs_f64
+}
+
+///|
+pub fn Time::elapsed_wrapped(self : Time) -> @core.Duration {
+  self.elapsed_wrapped
 }
 
 ///|
 pub fn Time::elapsed_wrapped_seconds(self : Time) -> Float {
-  self.elapsed_wrapped_seconds
+  self.elapsed_secs_wrapped
 }
 
 ///|
 pub fn Time::elapsed_secs_wrapped(self : Time) -> Float {
-  self.elapsed_wrapped_seconds()
+  self.elapsed_secs_wrapped
 }
 
 ///|
-pub fn Time::elapsed_secs_wrapped_f64(self : Time) -> Float {
-  self.elapsed_wrapped_seconds()
+pub fn Time::elapsed_secs_wrapped_f64(self : Time) -> Double {
+  self.elapsed_secs_wrapped_f64
 }
 
 ///|
@@ -203,8 +235,18 @@ pub fn Time::as_generic(self : Time) -> Time {
 }
 
 ///|
+pub fn time_delta() -> @core.Duration {
+  time_time_or_default().delta()
+}
+
+///|
 pub fn time_delta_seconds() -> Float {
   time_time_or_default().delta_seconds()
+}
+
+///|
+pub fn time_elapsed() -> @core.Duration {
+  time_time_or_default().elapsed()
 }
 
 ///|

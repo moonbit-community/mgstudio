@@ -103,7 +103,11 @@ test "time: manual instant keeps first update delta at zero" {
   let mut app = @app.App::new(@ecs.World::new()).add_plugins([time_plugin])
   app = set_virtual_max_delta_seconds(app, 10.0F)
 
-  app = app.insert_resource(TimeUpdateStrategy::ManualInstant(10.0F)).run_once()
+  app = app
+    .insert_resource(
+      TimeUpdateStrategy::ManualInstant(@core.Instant::from_secs_f32(10.0F)),
+    )
+    .run_once()
   inspect(
     read_time_test_resource(app, Real::resource()).first_update_seconds(),
     content="Some(10)",
@@ -125,7 +129,11 @@ test "time: manual instant keeps first update delta at zero" {
     content="0",
   )
 
-  app = app.insert_resource(TimeUpdateStrategy::ManualInstant(12.5F)).run_once()
+  app = app
+    .insert_resource(
+      TimeUpdateStrategy::ManualInstant(@core.Instant::from_secs_f32(12.5F)),
+    )
+    .run_once()
   inspect(
     read_time_test_resource(app, Real::resource()).last_update_seconds(),
     content="Some(12.5)",
@@ -152,8 +160,16 @@ test "time: manual instant keeps first update delta at zero" {
 test "time: virtual time clamps large deltas by default" {
   let mut app = @app.App::new(@ecs.World::new()).add_plugins([time_plugin])
 
-  app = app.insert_resource(TimeUpdateStrategy::ManualDuration(1.0F)).run_once()
-  app = app.insert_resource(TimeUpdateStrategy::ManualDuration(1.0F)).run_once()
+  app = app
+    .insert_resource(
+      TimeUpdateStrategy::ManualDuration(@core.Duration::from_secs_f32(1.0F)),
+    )
+    .run_once()
+  app = app
+    .insert_resource(
+      TimeUpdateStrategy::ManualDuration(@core.Duration::from_secs_f32(1.0F)),
+    )
+    .run_once()
   inspect(
     read_time_test_resource(app, Real::resource()).delta_seconds(),
     content="1",
@@ -173,9 +189,17 @@ test "time: pause and relative speed follow bevy virtual semantics" {
   let mut app = @app.App::new(@ecs.World::new()).add_plugins([time_plugin])
   app = set_virtual_max_delta_seconds(app, 10.0F)
 
-  app = app.insert_resource(TimeUpdateStrategy::ManualDuration(1.0F)).run_once()
+  app = app
+    .insert_resource(
+      TimeUpdateStrategy::ManualDuration(@core.Duration::from_secs_f32(1.0F)),
+    )
+    .run_once()
   app = pause_virtual_time(app)
-  app = app.insert_resource(TimeUpdateStrategy::ManualDuration(2.0F)).run_once()
+  app = app
+    .insert_resource(
+      TimeUpdateStrategy::ManualDuration(@core.Duration::from_secs_f32(2.0F)),
+    )
+    .run_once()
   inspect(
     read_time_test_resource(app, Real::resource()).delta_seconds(),
     content="2",
@@ -195,7 +219,11 @@ test "time: pause and relative speed follow bevy virtual semantics" {
 
   app = unpause_virtual_time(app)
   app = set_virtual_relative_speed(app, 0.5F)
-  app = app.insert_resource(TimeUpdateStrategy::ManualDuration(2.0F)).run_once()
+  app = app
+    .insert_resource(
+      TimeUpdateStrategy::ManualDuration(@core.Duration::from_secs_f32(2.0F)),
+    )
+    .run_once()
   inspect(
     read_time_test_resource(app, Real::resource()).delta_seconds(),
     content="2",

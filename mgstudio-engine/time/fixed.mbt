@@ -17,21 +17,23 @@
 // Licensed under Apache-2.0 or MIT.
 
 ///|
-const DEFAULT_FIXED_TIMESTEP_SECONDS : Float = 0.015625F
+let default_fixed_timestep : @core.Duration = @core.Duration::from_micros(
+  15_625L,
+)
 
 ///|
 pub struct Fixed {
   time : Time
-  timestep_seconds : Float
-  overstep_seconds : Float
+  timestep : @core.Duration
+  overstep : @core.Duration
 }
 
 ///|
 pub fn Fixed::new() -> Fixed {
   Fixed::{
     time: Time::new(),
-    timestep_seconds: DEFAULT_FIXED_TIMESTEP_SECONDS,
-    overstep_seconds: 0.0F,
+    timestep: default_fixed_timestep,
+    overstep: @core.Duration::zero(),
   }
 }
 
@@ -41,8 +43,13 @@ pub fn Fixed::default() -> Fixed {
 }
 
 ///|
+pub fn Fixed::from_duration(timestep : @core.Duration) -> Fixed {
+  Fixed::new().set_timestep(timestep)
+}
+
+///|
 pub fn Fixed::from_duration_seconds(timestep_seconds : Float) -> Fixed {
-  Fixed::new().set_timestep_seconds(timestep_seconds)
+  Fixed::from_duration(@core.Duration::from_secs_f32(timestep_seconds))
 }
 
 ///|
@@ -62,8 +69,18 @@ pub fn Fixed::from_hz(hz : Float) -> Fixed {
 }
 
 ///|
+pub fn Fixed::delta(self : Fixed) -> @core.Duration {
+  time_delta_raw(self.time)
+}
+
+///|
 pub fn Fixed::delta_seconds(self : Fixed) -> Float {
   time_delta_seconds_raw(self.time)
+}
+
+///|
+pub fn Fixed::elapsed(self : Fixed) -> @core.Duration {
+  time_elapsed_raw(self.time)
 }
 
 ///|
@@ -72,8 +89,21 @@ pub fn Fixed::elapsed_seconds(self : Fixed) -> Float {
 }
 
 ///|
+pub fn Fixed::timestep(self : Fixed) -> @core.Duration {
+  self.timestep
+}
+
+///|
 pub fn Fixed::timestep_seconds(self : Fixed) -> Float {
-  self.timestep_seconds
+  self.timestep.as_secs_f32()
+}
+
+///|
+pub fn Fixed::set_timestep(self : Fixed, timestep : @core.Duration) -> Fixed {
+  if timestep.is_zero() {
+    abort("attempted to set fixed timestep to zero")
+  }
+  Fixed::{ ..self, timestep, }
 }
 
 ///|
@@ -82,9 +112,9 @@ pub fn Fixed::set_timestep_seconds(self : Fixed, seconds : Float) -> Fixed {
     abort("seconds is infinite")
   }
   if seconds <= 0.0F {
-    abort("attempted to set fixed timestep to zero")
+    abort("seconds less than or equal to zero")
   }
-  Fixed::{ ..self, timestep_seconds: seconds }
+  self.set_timestep(@core.Duration::from_secs_f32(seconds))
 }
 
 ///|
@@ -99,45 +129,36 @@ pub fn Fixed::set_timestep_hz(self : Fixed, hz : Float) -> Fixed {
 }
 
 ///|
+pub fn Fixed::overstep(self : Fixed) -> @core.Duration {
+  self.overstep
+}
+
+///|
 pub fn Fixed::overstep_seconds(self : Fixed) -> Float {
-  self.overstep_seconds
+  self.overstep.as_secs_f32()
 }
 
 ///|
-pub fn Fixed::accumulate_overstep(self : Fixed, delta_seconds : Float) -> Fixed {
-  Fixed::{
-    ..self,
-    overstep_seconds: self.overstep_seconds +
-    time_non_negative_seconds(delta_seconds),
-  }
+pub fn Fixed::accumulate_overstep(
+  self : Fixed,
+  delta : @core.Duration,
+) -> Fixed {
+  Fixed::{ ..self, overstep: self.overstep.saturating_add(delta) }
 }
 
 ///|
-pub fn Fixed::discard_overstep(self : Fixed, discard_seconds : Float) -> Fixed {
-  let overstep_seconds = self.overstep_seconds -
-    time_non_negative_seconds(discard_seconds)
-  Fixed::{
-    ..self,
-    overstep_seconds: if overstep_seconds < 0.0F {
-      0.0F
-    } else {
-      overstep_seconds
-    },
-  }
+pub fn Fixed::discard_overstep(self : Fixed, discard : @core.Duration) -> Fixed {
+  Fixed::{ ..self, overstep: self.overstep.saturating_sub(discard) }
 }
 
 ///|
 pub fn Fixed::overstep_fraction(self : Fixed) -> Float {
-  if self.timestep_seconds <= 0.0F {
-    0.0F
-  } else {
-    self.overstep_seconds / self.timestep_seconds
-  }
+  self.overstep.as_secs_f32() / self.timestep.as_secs_f32()
 }
 
 ///|
-pub fn Fixed::overstep_fraction_f64(self : Fixed) -> Float {
-  self.overstep_fraction()
+pub fn Fixed::overstep_fraction_f64(self : Fixed) -> Double {
+  self.overstep.as_secs_f64() / self.timestep.as_secs_f64()
 }
 
 ///|
@@ -147,15 +168,14 @@ pub fn Fixed::as_generic(self : Fixed) -> Time {
 
 ///|
 pub fn Fixed::expend(self : Fixed) -> Fixed? {
-  let remaining_overstep = self.overstep_seconds - self.timestep_seconds
-  if remaining_overstep < 0.0F {
-    None
-  } else {
-    Some(Fixed::{
-      ..self,
-      time: self.time.advance_by(self.timestep_seconds),
-      overstep_seconds: remaining_overstep,
-    })
+  match self.overstep.checked_sub(self.timestep) {
+    Some(remaining_overstep) =>
+      Some(Fixed::{
+        ..self,
+        time: self.time.advance_by(self.timestep),
+        overstep: remaining_overstep,
+      })
+    None => None
   }
 }
 
@@ -188,9 +208,9 @@ fn time_fixed_mark_step() -> Unit {
 pub fn time_run_fixed_main_schedule(world : @ecs.World) -> Unit {
   ensure_time_resources(world)
   time_fixed_begin_frame()
-  let delta_seconds = world_virtual_or_default(world).delta_seconds()
+  let delta = world_virtual_or_default(world).delta()
   let accumulated_fixed = world_fixed_or_default(world).accumulate_overstep(
-    delta_seconds,
+    delta,
   )
   sync_world_time_resource(
     world,
@@ -232,8 +252,18 @@ fn world_fixed_or_default(world : @ecs.World) -> Fixed {
 }
 
 ///|
+pub fn time_fixed_delta() -> @core.Duration {
+  world_fixed_or_default(current_time_world_abort_missing()).delta()
+}
+
+///|
 pub fn time_fixed_delta_seconds() -> Float {
   world_fixed_or_default(current_time_world_abort_missing()).delta_seconds()
+}
+
+///|
+pub fn time_fixed_elapsed() -> @core.Duration {
+  world_fixed_or_default(current_time_world_abort_missing()).elapsed()
 }
 
 ///|
@@ -242,8 +272,18 @@ pub fn time_fixed_elapsed_seconds() -> Float {
 }
 
 ///|
+pub fn time_fixed_timestep() -> @core.Duration {
+  world_fixed_or_default(current_time_world_abort_missing()).timestep()
+}
+
+///|
 pub fn time_fixed_timestep_seconds() -> Float {
   world_fixed_or_default(current_time_world_abort_missing()).timestep_seconds()
+}
+
+///|
+pub fn time_fixed_overstep() -> @core.Duration {
+  world_fixed_or_default(current_time_world_abort_missing()).overstep()
 }
 
 ///|

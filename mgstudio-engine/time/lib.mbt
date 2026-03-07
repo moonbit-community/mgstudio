@@ -27,8 +27,8 @@ pub fn TimePlugin::default() -> TimePlugin {
 ///|
 pub(all) enum TimeUpdateStrategy {
   Automatic
-  ManualInstant(Float)
-  ManualDuration(Float)
+  ManualInstant(@core.Instant)
+  ManualDuration(@core.Duration)
   FixedTimesteps(Int)
 } derive(Eq, Show)
 
@@ -101,6 +101,11 @@ pub impl @app.Resource for TimeUpdateStrategy with resource() {
 ///|
 pub fn host_time_now() -> Float {
   @native_time.now()
+}
+
+///|
+pub fn host_time_now_instant() -> @core.Instant {
+  @core.Instant::now()
 }
 
 ///|
@@ -186,7 +191,7 @@ fn ensure_time_resources(world : @ecs.World) -> Unit {
   if world_time_resource(world, real_resource_key) is None {
     world.insert_resource_with_change_tick(
       real_resource_key,
-      Real::new(host_time_now()),
+      Real::new(host_time_now_instant()),
       tick,
     )
   }
@@ -221,14 +226,11 @@ fn time_update_real_with_strategy(
 ) -> Real {
   match strategy {
     Automatic => real_time.update()
-    ManualInstant(now_seconds) => real_time.update_with_instant(now_seconds)
-    ManualDuration(duration_seconds) =>
-      real_time.update_with_duration(duration_seconds)
+    ManualInstant(now_instant) => real_time.update_with_instant(now_instant)
+    ManualDuration(duration) => real_time.update_with_duration(duration)
     FixedTimesteps(factor) => {
       let steps = if factor < 0 { 0 } else { factor }
-      real_time.update_with_duration(
-        fixed_time.timestep_seconds() * Float::from_int(steps),
-      )
+      real_time.update_with_duration(fixed_time.timestep().mul_int(steps))
     }
   }
 }
@@ -270,10 +272,10 @@ fn time_update_resource_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn time_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  let startup_seconds = host_time_now()
+  let startup_instant = host_time_now_instant()
   app
   .init_resource(fn() { Time::new() })
-  .init_resource(fn() { Real::new(startup_seconds) })
+  .init_resource(fn() { Real::new(startup_instant) })
   .init_resource(fn() { Virtual::new() })
   .init_resource(fn() { Fixed::new() })
   .init_resource(fn() { TimeUpdateStrategy::default() })

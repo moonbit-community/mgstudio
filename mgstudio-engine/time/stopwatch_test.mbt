@@ -14,17 +14,19 @@
 
 ///|
 test "stopwatch pause and reset semantics" {
-  let sw0 = Stopwatch::new().tick(1.5F)
-  inspect(sw0.elapsed_seconds(), content="1.5")
+  let sw0 = Stopwatch::new().tick(@core.Duration::from_secs_f32(1.5F))
+  inspect(sw0.elapsed().as_millis(), content="1500")
+  inspect(sw0.elapsed_secs(), content="1.5")
 
-  let sw1 = sw0.pause().tick(2.0F)
-  inspect(sw1.elapsed_seconds(), content="1.5")
+  let sw1 = sw0.pause().tick(@core.Duration::from_secs(2L))
+  inspect(sw1.elapsed().as_millis(), content="1500")
   inspect(sw1.is_paused(), content="true")
 
-  let sw2 = sw1.unpause().tick(0.5F)
-  inspect(sw2.elapsed_seconds(), content="2")
+  let sw2 = sw1.unpause().tick(@core.Duration::from_millis(500L))
+  inspect(sw2.elapsed().as_millis(), content="2000")
+  inspect(sw2.elapsed_secs_f64(), content="2")
   inspect(sw2.is_paused(), content="false")
 
   let sw3 = sw2.reset()
-  inspect(sw3.elapsed_seconds(), content="0")
+  inspect(sw3.elapsed().as_nanos(), content="0")
 }

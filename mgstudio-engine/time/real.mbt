@@ -19,89 +19,103 @@
 ///|
 pub struct Real {
   time : Time
-  startup_seconds : Float
-  first_update_seconds : Float?
-  last_update_seconds : Float?
+  startup : @core.Instant
+  first_update : @core.Instant?
+  last_update : @core.Instant?
 }
 
 ///|
-pub fn Real::new(startup_seconds : Float) -> Real {
-  Real::{
-    time: Time::new(),
-    startup_seconds,
-    first_update_seconds: None,
-    last_update_seconds: None,
-  }
+pub fn Real::new(startup : @core.Instant) -> Real {
+  Real::{ time: Time::new(), startup, first_update: None, last_update: None }
 }
 
 ///|
 pub fn Real::default() -> Real {
-  Real::new(0.0F)
+  Real::new(@core.Instant::from_millis(0L))
 }
 
 ///|
 pub fn Real::update(self : Real) -> Real {
-  self.update_with_instant(host_time_now())
+  self.update_with_instant(host_time_now_instant())
 }
 
 ///|
 pub fn Real::update_with_duration(
   self : Real,
-  duration_seconds : Float,
+  duration : @core.Duration,
 ) -> Real {
-  let non_negative_duration = time_non_negative_seconds(duration_seconds)
-  let last_update_seconds = match self.last_update_seconds {
-    Some(last_update_seconds) => last_update_seconds
-    None => self.startup_seconds
+  let last_update = match self.last_update {
+    Some(last_update) => last_update
+    None => self.startup
   }
-  self.update_with_instant(last_update_seconds + non_negative_duration)
+  self.update_with_instant(last_update.saturating_add(duration))
 }
 
 ///|
-pub fn Real::update_with_instant(self : Real, instant_seconds : Float) -> Real {
-  if instant_seconds.is_nan() || instant_seconds.is_inf() {
-    abort("tried to update real time with a non-finite instant")
-  }
-  match self.last_update_seconds {
+pub fn Real::update_with_instant(self : Real, instant : @core.Instant) -> Real {
+  match self.last_update {
     None =>
+      Real::{ ..self, first_update: Some(instant), last_update: Some(instant) }
+    Some(last_update) =>
       Real::{
         ..self,
-        first_update_seconds: Some(instant_seconds),
-        last_update_seconds: Some(instant_seconds),
+        time: self.time.advance_by(
+          instant.saturating_duration_since(last_update),
+        ),
+        last_update: Some(instant),
       }
-    Some(last_update_seconds) => {
-      let delta_seconds = if instant_seconds > last_update_seconds {
-        instant_seconds - last_update_seconds
-      } else {
-        0.0F
-      }
-      Real::{
-        ..self,
-        time: self.time.advance_by(delta_seconds),
-        last_update_seconds: Some(instant_seconds),
-      }
-    }
   }
+}
+
+///|
+pub fn Real::startup(self : Real) -> @core.Instant {
+  self.startup
 }
 
 ///|
 pub fn Real::startup_seconds(self : Real) -> Float {
-  self.startup_seconds
+  self.startup.as_secs_f32()
+}
+
+///|
+pub fn Real::first_update(self : Real) -> @core.Instant? {
+  self.first_update
 }
 
 ///|
 pub fn Real::first_update_seconds(self : Real) -> Float? {
-  self.first_update_seconds
+  match self.first_update {
+    Some(instant) => Some(instant.as_secs_f32())
+    None => None
+  }
+}
+
+///|
+pub fn Real::last_update(self : Real) -> @core.Instant? {
+  self.last_update
 }
 
 ///|
 pub fn Real::last_update_seconds(self : Real) -> Float? {
-  self.last_update_seconds
+  match self.last_update {
+    Some(instant) => Some(instant.as_secs_f32())
+    None => None
+  }
+}
+
+///|
+pub fn Real::delta(self : Real) -> @core.Duration {
+  time_delta_raw(self.time)
 }
 
 ///|
 pub fn Real::delta_seconds(self : Real) -> Float {
   time_delta_seconds_raw(self.time)
+}
+
+///|
+pub fn Real::elapsed(self : Real) -> @core.Duration {
+  time_elapsed_raw(self.time)
 }
 
 ///|
@@ -120,8 +134,18 @@ fn world_real_or_default(world : @ecs.World) -> Real {
 }
 
 ///|
+pub fn time_real_delta() -> @core.Duration {
+  world_real_or_default(current_time_world_abort_missing()).delta()
+}
+
+///|
 pub fn time_real_delta_seconds() -> Float {
   world_real_or_default(current_time_world_abort_missing()).delta_seconds()
+}
+
+///|
+pub fn time_real_elapsed() -> @core.Duration {
+  world_real_or_default(current_time_world_abort_missing()).elapsed()
 }
 
 ///|

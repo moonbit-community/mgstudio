@@ -223,7 +223,7 @@ fn log_diagnostics_system(
   diagnostics : @app.Res[DiagnosticsStore],
 ) -> Unit {
   let state_ref = state.get_ref()
-  state_ref.val.timer = state_ref.val.timer.tick(time.get().delta_seconds())
+  state_ref.val.timer = state_ref.val.timer.tick(time.get().delta())
   if !state_ref.val.timer.is_finished() {
     return
   }
@@ -247,7 +247,7 @@ fn log_diagnostics_debug_system(
   diagnostics : @app.Res[DiagnosticsStore],
 ) -> Unit {
   let state_ref = state.get_ref()
-  state_ref.val.timer = state_ref.val.timer.tick(time.get().delta_seconds())
+  state_ref.val.timer = state_ref.val.timer.tick(time.get().delta())
   if !state_ref.val.timer.is_finished() {
     return
   }

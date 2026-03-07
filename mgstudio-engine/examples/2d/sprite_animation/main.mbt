@@ -199,7 +199,9 @@ fn execute_animation_step(
     return frame_timer
   }
 
-  let next_timer = frame_timer.tick(delta_seconds)
+  let next_timer = frame_timer.tick(
+    @core.Duration::from_secs_f32(delta_seconds),
+  )
   if !next_timer.just_finished() {
     return next_timer
   }

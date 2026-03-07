@@ -299,7 +299,7 @@ fn update_sprite_positions(world : @ecs.World) -> Unit {
 fn update_text_with_real_timer(world : @ecs.World) -> Unit {
   let real_time = read_real_time(world)
   virtual_time_state.val.info_timer = virtual_time_state.val.info_timer.tick(
-    real_time.delta_seconds(),
+    real_time.delta(),
   )
   if virtual_time_state.val.info_timer.just_finished() {
     update_info_text(world)
