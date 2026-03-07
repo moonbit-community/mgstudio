@@ -1,7 +1,7 @@
 # Bevy Example Parity Matrix
 
 Status: Active (SoT)
-Last Verified: 2026-02-28
+Last Verified: 2026-03-08
 Scope: As-Implemented
 Code References:
 - `bevy/examples/`
@@ -23,10 +23,10 @@ Notes:
 | `app` | 17 | 17 | 0 | 0 |
 | `asset` | 15 | 0 | 15 | 0 |
 | `async_tasks` | 3 | 0 | 3 | 0 |
-| `audio` | 7 | 0 | 7 | 0 |
+| `audio` | 7 | 5 | 2 | 0 |
 | `camera` | 9 | 0 | 9 | 0 |
 | `dev_tools` | 1 | 0 | 1 | 0 |
-| `diagnostics` | 3 | 0 | 3 | 0 |
+| `diagnostics` | 3 | 2 | 1 | 0 |
 | `ecs` | 32 | 0 | 32 | 0 |
 | `games` | 7 | 0 | 7 | 0 |
 | `gizmos` | 8 | 0 | 8 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 1 | 11 | 0 |
-| **Total** | **402** | **94** | **305** | **3** |
+| **Total** | **402** | **101** | **298** | **3** |
 
 ## Example Inventory
 
@@ -201,13 +201,13 @@ Notes:
 | `bevy/examples/async_tasks/async_channel_pattern.rs` | `async_tasks` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/async_tasks/async_compute.rs` | `async_tasks` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/async_tasks/external_source_external_thread.rs` | `async_tasks` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/audio/audio.rs` | `audio` |  | `Blocked` | `team-ops` |  |
-| `bevy/examples/audio/audio_control.rs` | `audio` |  | `Blocked` | `team-ops` |  |
-| `bevy/examples/audio/decodable.rs` | `audio` |  | `Blocked` | `team-ops` |  |
-| `bevy/examples/audio/pitch.rs` | `audio` |  | `Blocked` | `team-ops` |  |
-| `bevy/examples/audio/soundtrack.rs` | `audio` |  | `Blocked` | `team-ops` |  |
-| `bevy/examples/audio/spatial_audio_2d.rs` | `audio` |  | `Blocked` | `team-ops` |  |
-| `bevy/examples/audio/spatial_audio_3d.rs` | `audio` |  | `Blocked` | `team-ops` |  |
+| `bevy/examples/audio/audio.rs` | `audio` | `mgstudio-engine/examples/audio/audio` | `Exact` | `team-ops` |  |
+| `bevy/examples/audio/audio_control.rs` | `audio` | `mgstudio-engine/examples/audio/audio_control` | `Exact` | `team-ops` |  |
+| `bevy/examples/audio/decodable.rs` | `audio` |  | `Blocked` | `team-ops` | Blocked by missing Bevy-style custom decodable source registration (`bd-bi5`). |
+| `bevy/examples/audio/pitch.rs` | `audio` |  | `Blocked` | `team-ops` | Blocked by MoonBit generic component impl coherence (`bd-wds`). |
+| `bevy/examples/audio/soundtrack.rs` | `audio` | `mgstudio-engine/examples/audio/soundtrack` | `Exact` | `team-ops` |  |
+| `bevy/examples/audio/spatial_audio_2d.rs` | `audio` | `mgstudio-engine/examples/audio/spatial_audio_2d` | `Exact` | `team-ops` |  |
+| `bevy/examples/audio/spatial_audio_3d.rs` | `audio` | `mgstudio-engine/examples/audio/spatial_audio_3d` | `Exact` | `team-ops` |  |
 | `bevy/examples/camera/2d_on_ui.rs` | `camera` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/camera/2d_screen_shake.rs` | `camera` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/camera/2d_top_down_camera.rs` | `camera` |  | `Blocked` | `team-render` |  |
@@ -218,9 +218,9 @@ Notes:
 | `bevy/examples/camera/pan_camera_controller.rs` | `camera` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/camera/projection_zoom.rs` | `camera` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/dev_tools/fps_overlay.rs` | `dev_tools` |  | `Blocked` | `team-ops` |  |
-| `bevy/examples/diagnostics/custom_diagnostic.rs` | `diagnostics` |  | `Blocked` | `team-ops` |  |
-| `bevy/examples/diagnostics/enabling_disabling_diagnostic.rs` | `diagnostics` |  | `Blocked` | `team-ops` |  |
-| `bevy/examples/diagnostics/log_diagnostics.rs` | `diagnostics` |  | `Blocked` | `team-ops` |  |
+| `bevy/examples/diagnostics/custom_diagnostic.rs` | `diagnostics` | `mgstudio-engine/examples/diagnostics/custom_diagnostic` | `Exact` | `team-ops` |  |
+| `bevy/examples/diagnostics/enabling_disabling_diagnostic.rs` | `diagnostics` | `mgstudio-engine/examples/diagnostics/enabling_disabling_diagnostic` | `Exact` | `team-ops` |  |
+| `bevy/examples/diagnostics/log_diagnostics.rs` | `diagnostics` |  | `Blocked` | `team-ops` | Blocked by `SystemInformationDiagnosticsPlugin` (`bd-2j9.18`), missing render diagnostics forwarding (`bd-zd9`), and missing `resource_exists_and_changed` run condition parity (`bd-nab`). |
 | `bevy/examples/ecs/change_detection.rs` | `ecs` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/ecs/component_hooks.rs` | `ecs` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/ecs/contiguous_query.rs` | `ecs` |  | `Blocked` | `team-core` |  |

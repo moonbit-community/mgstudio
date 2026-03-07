@@ -565,6 +565,11 @@ pub fn[W] App::add_plugins(self : App[W], plugins : Array[Plugin[W]]) -> App[W] 
 }
 
 ///|
+pub fn[W] App::add_plugin(self : App[W], plugin : Plugin[W]) -> App[W] {
+  plugin(self)
+}
+
+///|
 pub fn[W] App::add_plugin_group(
   self : App[W],
   group : PluginGroup[W],

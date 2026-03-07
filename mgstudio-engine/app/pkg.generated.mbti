@@ -222,6 +222,7 @@ pub fn[S : States] App::add_on_exit_system(Self[@ecs.World], S, (@ecs.World) -> 
 pub fn[S : States] App::add_on_exit_system_config(Self[@ecs.World], S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_transition_system(Self[@ecs.World], S, S, (@ecs.World) -> Unit) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_transition_system_config(Self[@ecs.World], S, S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
+pub fn[W] App::add_plugin(Self[W], (Self[W]) -> Self[W]) -> Self[W]
 pub fn[W] App::add_plugin_group(Self[W], () -> PluginGroupBuilder[W]) -> Self[W]
 pub fn[W] App::add_plugins(Self[W], Array[(Self[W]) -> Self[W]]) -> Self[W]
 pub fn[W] App::add_post_startup_system(Self[W], (W) -> Unit) -> Self[W]

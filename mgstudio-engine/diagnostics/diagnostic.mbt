@@ -87,7 +87,7 @@ pub struct Diagnostic {
   mut ema : Float
   ema_smoothing_factor : Float
   max_history_length : Int
-  is_enabled : Bool
+  mut is_enabled : Bool
   mut last_system_tick : Int?
 } derive(Show)
 
@@ -165,6 +165,16 @@ pub fn Diagnostic::with_smoothing_factor(
 ///|
 pub fn Diagnostic::path(self : Diagnostic) -> DiagnosticPath {
   self.path
+}
+
+///|
+pub fn Diagnostic::is_enabled(self : Diagnostic) -> Bool {
+  self.is_enabled
+}
+
+///|
+pub fn Diagnostic::set_enabled(self : Diagnostic, enabled : Bool) -> Unit {
+  self.is_enabled = enabled
 }
 
 ///|
@@ -393,6 +403,13 @@ pub fn DiagnosticsStore::iter_refs(
     diagnostics.push(diagnostic_ref)
   }
   diagnostics
+}
+
+///|
+pub fn DiagnosticsStore::iter_mut(
+  self : DiagnosticsStore,
+) -> Array[Ref[Diagnostic]] {
+  self.iter_refs()
 }
 
 ///|

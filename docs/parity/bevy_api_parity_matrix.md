@@ -1,7 +1,7 @@
 # Bevy API Parity Matrix
 
 Status: Active (SoT)
-Last Verified: 2026-02-14
+Last Verified: 2026-03-08
 Scope: As-Implemented
 Code References:
 - `mgstudio-engine/`
@@ -58,8 +58,8 @@ Notes:
 
 | Surface | Status | Notes |
 | --- | --- | --- |
-| audio | missing | Audio examples not yet migrated. |
-| diagnostics | partial | Diagnostics package exists; diagnostics examples pending. |
+| audio | partial | `audio`, `audio_control`, `soundtrack`, `spatial_audio_2d`, and `spatial_audio_3d` are migrated; `decodable` and `pitch` remain blocked by asset/source registration and compiler limitations. |
+| diagnostics | partial | `custom_diagnostic` and `enabling_disabling_diagnostic` are migrated; `log_diagnostics` remains blocked by system information and render diagnostics parity gaps. |
 | remote/dev tooling parity | missing | Remote/dev_tools categories not yet migrated. |
 
 ## Ownership

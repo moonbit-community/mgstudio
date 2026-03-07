@@ -31,3 +31,22 @@ test "diagnostic: same system tick overwrites the latest measurement" {
   inspect(diagnostic.history_len(), content="1")
   inspect(diagnostic.value().unwrap(), content="12")
 }
+
+///|
+test "diagnostics store iter_mut exposes live diagnostic refs" {
+  let store = DiagnosticsStore::default()
+  let path = DiagnosticPath::new("test")
+  store.add(Diagnostic::new(path))
+  let diagnostics = store.iter_mut()
+  inspect(diagnostics.length(), content="1")
+  diagnostics[0].val.set_enabled(false)
+  inspect(store.get(path).unwrap().is_enabled(), content="false")
+}
+
+///|
+test "diagnostic: enable flag can be toggled through public API" {
+  let diagnostic = Diagnostic::new(DiagnosticPath::new("test"))
+  inspect(diagnostic.is_enabled(), content="true")
+  diagnostic.set_enabled(false)
+  inspect(diagnostic.is_enabled(), content="false")
+}

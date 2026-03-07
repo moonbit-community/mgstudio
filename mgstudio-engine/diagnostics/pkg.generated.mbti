@@ -53,7 +53,7 @@ pub struct Diagnostic {
   mut ema : Float
   ema_smoothing_factor : Float
   max_history_length : Int
-  is_enabled : Bool
+  mut is_enabled : Bool
   mut last_system_tick : Int?
 }
 pub fn Diagnostic::add_measurement(Self, DiagnosticMeasurement, Int) -> Unit
@@ -62,10 +62,12 @@ pub fn Diagnostic::clear_history(Self) -> Unit
 pub fn Diagnostic::duration(Self) -> Float?
 pub fn Diagnostic::get_max_history_length(Self) -> Int
 pub fn Diagnostic::history_len(Self) -> Int
+pub fn Diagnostic::is_enabled(Self) -> Bool
 pub fn Diagnostic::measurement(Self) -> DiagnosticMeasurement?
 pub fn Diagnostic::measurements(Self) -> Array[DiagnosticMeasurement]
 pub fn Diagnostic::new(DiagnosticPath) -> Self
 pub fn Diagnostic::path(Self) -> DiagnosticPath
+pub fn Diagnostic::set_enabled(Self, Bool) -> Unit
 pub fn Diagnostic::smoothed(Self) -> Float?
 pub fn Diagnostic::value(Self) -> Float?
 pub fn Diagnostic::values(Self) -> Array[Float]
@@ -116,6 +118,7 @@ pub fn DiagnosticsStore::get(Self, DiagnosticPath) -> Diagnostic?
 pub fn DiagnosticsStore::get_measurement(Self, DiagnosticPath) -> DiagnosticMeasurement?
 pub fn DiagnosticsStore::get_ref(Self, DiagnosticPath) -> Ref[Diagnostic]?
 pub fn DiagnosticsStore::iter(Self) -> Array[Diagnostic]
+pub fn DiagnosticsStore::iter_mut(Self) -> Array[Ref[Diagnostic]]
 pub fn DiagnosticsStore::iter_refs(Self) -> Array[Ref[Diagnostic]]
 pub impl @app.Resource for DiagnosticsStore
 
