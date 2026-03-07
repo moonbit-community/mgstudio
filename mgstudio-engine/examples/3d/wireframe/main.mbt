@@ -341,7 +341,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@render3d.wireframe_plugin])
-  .add_startup_system(setup_scene)
-  .add_system(update_colors)
+  .add_systems(@app.Startup, @app.system(setup_scene))
+  .add_systems(@app.Update, @app.system(update_colors))
   .run()
 }

@@ -20,9 +20,9 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@physics3d.physics3d_debug_render_plugin])
-  .add_startup_system(setup_graphics)
-  .add_startup_system(setup_physics)
-  .add_post_update_system(display_events)
+  .add_systems(@app.Startup, @app.system(setup_graphics))
+  .add_systems(@app.Startup, @app.system(setup_physics))
+  .add_systems(@app.PostUpdate, @app.system(display_events))
   .run()
 }
 

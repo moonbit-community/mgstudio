@@ -37,11 +37,14 @@ fn main {
   )
 
   @app.App::new(@ecs.World::new())
-  .add_startup_system(fn(world) {
-    let entity = world.spawn()
-    try! world.set(entity, comp_position, Position::{ x: 0.0, y: 0.0 })
-    try! world.set(entity, comp_velocity, Velocity::{ x: 1.0, y: 0.5 })
-  })
+  .add_systems(
+    @app.Startup,
+    @app.system(fn(world) {
+      let entity = world.spawn()
+      try! world.set(entity, comp_position, Position::{ x: 0.0, y: 0.0 })
+      try! world.set(entity, comp_velocity, Velocity::{ x: 1.0, y: 0.5 })
+    }),
+  )
   .add_system_query2_ecs(comp_position, comp_velocity, move_system)
   .update()
   |> ignore

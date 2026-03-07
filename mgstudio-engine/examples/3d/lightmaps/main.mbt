@@ -207,7 +207,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(setup)
-  .add_system(add_lightmaps_to_meshes)
+  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(@app.Update, @app.system(add_lightmaps_to_meshes))
   .run()
 }

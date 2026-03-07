@@ -646,9 +646,9 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(setup)
-  .add_system(keyboard_inputs)
-  .add_system(move_cars)
-  .add_system(move_camera)
+  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(@app.Update, @app.system(keyboard_inputs))
+  .add_systems(@app.Update, @app.system(move_cars))
+  .add_systems(@app.Update, @app.system(move_camera))
   .run()
 }

@@ -156,8 +156,8 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(setup)
-  .add_system(cube_rotator_system)
-  .add_system(rotator_system)
+  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(@app.Update, @app.system(cube_rotator_system))
+  .add_systems(@app.Update, @app.system(rotator_system))
   .run()
 }

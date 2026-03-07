@@ -382,7 +382,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@render3d.free_camera_plugin])
-  .add_startup_system(setup)
-  .add_system(update)
+  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(@app.Update, @app.system(update))
   .run()
 }

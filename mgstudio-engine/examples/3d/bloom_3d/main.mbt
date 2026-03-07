@@ -463,8 +463,8 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(setup_scene)
-  .add_system(update_bloom_settings)
-  .add_system(bounce_spheres)
+  .add_systems(@app.Startup, @app.system(setup_scene))
+  .add_systems(@app.Update, @app.system(update_bloom_settings))
+  .add_systems(@app.Update, @app.system(bounce_spheres))
   .run()
 }

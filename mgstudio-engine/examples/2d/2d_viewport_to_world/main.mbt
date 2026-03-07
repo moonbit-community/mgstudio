@@ -17,9 +17,9 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(viewport_to_world_setup)
-  .add_fixed_update_system(viewport_to_world_controls)
-  .add_post_update_system(viewport_to_world_draw_cursor)
+  .add_systems(@app.Startup, @app.system(viewport_to_world_setup))
+  .add_systems(@app.FixedUpdate, @app.system(viewport_to_world_controls))
+  .add_systems(@app.PostUpdate, @app.system(viewport_to_world_draw_cursor))
   .run()
 }
 

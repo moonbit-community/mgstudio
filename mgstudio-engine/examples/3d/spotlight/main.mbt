@@ -390,9 +390,9 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(setup)
-  .add_system(light_sway)
-  .add_system(movement)
-  .add_system(rotation)
+  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(@app.Update, @app.system(light_sway))
+  .add_systems(@app.Update, @app.system(movement))
+  .add_systems(@app.Update, @app.system(rotation))
   .run()
 }

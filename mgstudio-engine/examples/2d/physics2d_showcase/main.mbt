@@ -28,11 +28,14 @@
 fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_fixed_update_system(physics2d_showcase_player_controls_fixed)
   .add_plugins(plugins)
-  .add_startup_system(physics2d_showcase_setup)
-  .add_system(physics2d_showcase_spawn_ball_on_click)
-  .add_system(physics2d_showcase_print_events)
+  .add_systems(
+    @app.FixedUpdate,
+    @app.system(physics2d_showcase_player_controls_fixed),
+  )
+  .add_systems(@app.Startup, @app.system(physics2d_showcase_setup))
+  .add_systems(@app.Update, @app.system(physics2d_showcase_spawn_ball_on_click))
+  .add_systems(@app.Update, @app.system(physics2d_showcase_print_events))
   .run()
 }
 

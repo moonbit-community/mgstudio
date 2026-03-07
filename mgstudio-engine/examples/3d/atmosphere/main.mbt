@@ -624,8 +624,8 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(setup)
-  .add_system(atmosphere_controls)
-  .add_system(dynamic_scene)
+  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(@app.Update, @app.system(atmosphere_controls))
+  .add_systems(@app.Update, @app.system(dynamic_scene))
   .run()
 }

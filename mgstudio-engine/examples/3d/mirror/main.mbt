@@ -644,11 +644,14 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(setup)
-  .add_system(handle_window_resize_messages)
-  .add_system(handle_drag_action_change)
-  .add_system(move_camera_on_mouse_down)
-  .add_system(move_fox_on_mouse_down)
-  .add_system(update_mirror_camera_on_main_camera_transform_change)
+  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(@app.Update, @app.system(handle_window_resize_messages))
+  .add_systems(@app.Update, @app.system(handle_drag_action_change))
+  .add_systems(@app.Update, @app.system(move_camera_on_mouse_down))
+  .add_systems(@app.Update, @app.system(move_fox_on_mouse_down))
+  .add_systems(
+    @app.Update,
+    @app.system(update_mirror_camera_on_main_camera_transform_change),
+  )
   .run()
 }

@@ -19,10 +19,10 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .insert_resource(@time.Fixed::from_seconds(1.0F / 60.0F))
-  .add_startup_system(rotation_setup)
-  .add_fixed_update_system(player_movement_system)
-  .add_fixed_update_system(snap_to_player_system)
-  .add_fixed_update_system(rotate_to_player_system)
+  .add_systems(@app.Startup, @app.system(rotation_setup))
+  .add_systems(@app.FixedUpdate, @app.system(player_movement_system))
+  .add_systems(@app.FixedUpdate, @app.system(snap_to_player_system))
+  .add_systems(@app.FixedUpdate, @app.system(rotate_to_player_system))
   .run()
 }
 
