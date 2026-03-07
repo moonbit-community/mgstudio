@@ -34,7 +34,7 @@ Notes:
 
 | Surface | Status | Notes |
 | --- | --- | --- |
-| camera/projection conversion APIs | partial | viewport/world conversion implemented, including Transform-scale-aware 2D pan camera zoom; advanced camera effects pending. |
+| camera/projection conversion APIs | partial | viewport/world conversion implemented, including Transform-scale-aware 2D pan camera zoom and 3D projection getter-based FOV mutation surfaces; advanced camera effects pending. |
 | PBR material surface | partial | Core material parameters available; many advanced features pending. |
 | post-process and fog/probe hooks | missing | Needed for many 3D examples in backlog. |
 

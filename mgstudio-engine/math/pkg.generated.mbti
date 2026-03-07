@@ -32,6 +32,25 @@ pub fn sqrt(Float) -> Float
 // Errors
 
 // Types and methods
+pub(all) enum EulerRot {
+  ZYX
+  ZXY
+  YXZ
+  YZX
+  XYZ
+  XZY
+  ZYXEx
+  ZXYEx
+  YXZEx
+  YZXEx
+  XYZEx
+  XZYEx
+}
+pub impl Eq for EulerRot
+pub impl Show for EulerRot
+pub impl ToJson for EulerRot
+pub impl @json.FromJson for EulerRot
+
 pub struct IVec2 {
   x : Int
   y : Int
@@ -52,6 +71,7 @@ pub(all) struct Quat {
   mut w : Float
 }
 pub fn Quat::from_axis_angle(Vec3, Float) -> Self
+pub fn Quat::from_euler(EulerRot, Float, Float, Float) -> Self
 pub fn Quat::from_rotation_x(Float) -> Self
 pub fn Quat::from_rotation_y(Float) -> Self
 pub fn Quat::from_rotation_z(Float) -> Self
@@ -59,6 +79,7 @@ pub fn Quat::identity() -> Self
 pub fn Quat::mul(Self, Self) -> Self
 pub fn Quat::new(Float, Float, Float, Float) -> Self
 pub fn Quat::normalize(Self) -> Self
+pub fn Quat::to_euler(Self, EulerRot) -> (Float, Float, Float)
 pub fn Quat::to_rotation_z_angle(Self) -> Float
 pub impl ToJson for Quat
 pub impl @json.FromJson for Quat

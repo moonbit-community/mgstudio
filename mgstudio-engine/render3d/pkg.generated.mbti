@@ -532,6 +532,7 @@ pub struct CameraProjection3d {
 }
 pub fn CameraProjection3d::default() -> Self
 pub fn CameraProjection3d::new(Projection3d) -> Self
+pub fn CameraProjection3d::projection(Self) -> Projection3d
 pub fn CameraProjection3d::with_projection(Self, Projection3d) -> Self
 pub impl @ecs.Component for CameraProjection3d
 pub impl ToJson for CameraProjection3d
@@ -1226,6 +1227,10 @@ pub struct OrthographicProjection3d {
   scaling_mode : OrthographicScalingMode3d
 }
 pub fn OrthographicProjection3d::default() -> Self
+pub fn OrthographicProjection3d::far(Self) -> Float
+pub fn OrthographicProjection3d::near(Self) -> Float
+pub fn OrthographicProjection3d::scale(Self) -> Float
+pub fn OrthographicProjection3d::scaling_mode(Self) -> OrthographicScalingMode3d
 pub fn OrthographicProjection3d::with_scale(Self, Float) -> Self
 pub fn OrthographicProjection3d::with_scaling_mode(Self, OrthographicScalingMode3d) -> Self
 pub fn OrthographicProjection3d::with_window_size_scaling(Self) -> Self
@@ -1268,7 +1273,11 @@ pub struct PerspectiveProjection3d {
   far : Float
   aspect_ratio : Float
 }
+pub fn PerspectiveProjection3d::aspect_ratio(Self) -> Float
 pub fn PerspectiveProjection3d::default() -> Self
+pub fn PerspectiveProjection3d::far(Self) -> Float
+pub fn PerspectiveProjection3d::fov(Self) -> Float
+pub fn PerspectiveProjection3d::near(Self) -> Float
 pub fn PerspectiveProjection3d::with_aspect_ratio(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_far(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_fov(Self, Float) -> Self

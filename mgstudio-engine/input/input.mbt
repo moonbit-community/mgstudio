@@ -742,12 +742,21 @@ pub fn AccumulatedMouseMotion::new() -> AccumulatedMouseMotion {
 
 ///|
 pub struct AccumulatedMouseScroll {
+  unit : MouseScrollUnit
   delta : @math.Vec2
 }
 
 ///|
 pub fn AccumulatedMouseScroll::new() -> AccumulatedMouseScroll {
-  { delta: @math.Vec2::new(0.0F, 0.0F) }
+  { unit: MouseScrollUnit::Line, delta: @math.Vec2::new(0.0F, 0.0F) }
+}
+
+///|
+pub fn AccumulatedMouseScroll::new_with_unit(
+  unit : MouseScrollUnit,
+  delta : @math.Vec2,
+) -> AccumulatedMouseScroll {
+  { unit, delta }
 }
 
 ///|
@@ -1482,7 +1491,10 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
   }
   if (try! world.get_resource_ref_mut(AccumulatedMouseScroll::resource(), tick))
     is Some(scroll_ref) {
-    scroll_ref.val = AccumulatedMouseScroll::{ delta: wheel_delta }
+    scroll_ref.val = AccumulatedMouseScroll::{
+      unit: MouseScrollUnit::Line,
+      delta: wheel_delta,
+    }
   }
 
   let touches = Touches::new()

@@ -108,9 +108,11 @@ pub fn AccumulatedMouseMotion::new() -> Self
 pub impl @app.Resource for AccumulatedMouseMotion
 
 pub struct AccumulatedMouseScroll {
+  unit : MouseScrollUnit
   delta : @math.Vec2
 }
 pub fn AccumulatedMouseScroll::new() -> Self
+pub fn AccumulatedMouseScroll::new_with_unit(MouseScrollUnit, @math.Vec2) -> Self
 pub impl @app.Resource for AccumulatedMouseScroll
 
 pub struct Axis[T] {

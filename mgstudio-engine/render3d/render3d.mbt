@@ -540,6 +540,28 @@ pub fn PerspectiveProjection3d::with_far(
 }
 
 ///|
+pub fn PerspectiveProjection3d::fov(self : PerspectiveProjection3d) -> Float {
+  self.fov
+}
+
+///|
+pub fn PerspectiveProjection3d::near(self : PerspectiveProjection3d) -> Float {
+  self.near
+}
+
+///|
+pub fn PerspectiveProjection3d::far(self : PerspectiveProjection3d) -> Float {
+  self.far
+}
+
+///|
+pub fn PerspectiveProjection3d::aspect_ratio(
+  self : PerspectiveProjection3d,
+) -> Float {
+  self.aspect_ratio
+}
+
+///|
 pub struct OrthographicProjection3d {
   scale : Float
   near : Float
@@ -623,6 +645,30 @@ pub fn OrthographicProjection3d::with_scaling_mode(
 }
 
 ///|
+pub fn OrthographicProjection3d::scale(
+  self : OrthographicProjection3d,
+) -> Float {
+  self.scale
+}
+
+///|
+pub fn OrthographicProjection3d::near(self : OrthographicProjection3d) -> Float {
+  self.near
+}
+
+///|
+pub fn OrthographicProjection3d::far(self : OrthographicProjection3d) -> Float {
+  self.far
+}
+
+///|
+pub fn OrthographicProjection3d::scaling_mode(
+  self : OrthographicProjection3d,
+) -> OrthographicScalingMode3d {
+  self.scaling_mode
+}
+
+///|
 pub(all) enum Projection3d {
   Perspective(PerspectiveProjection3d)
   Orthographic(OrthographicProjection3d)
@@ -660,6 +706,13 @@ pub fn CameraProjection3d::with_projection(
 ) -> CameraProjection3d {
   self |> ignore
   CameraProjection3d::{ projection, }
+}
+
+///|
+pub fn CameraProjection3d::projection(
+  self : CameraProjection3d,
+) -> Projection3d {
+  self.projection
 }
 
 ///|

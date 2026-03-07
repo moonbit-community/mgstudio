@@ -366,6 +366,22 @@ pub fn pi_half() -> Float {
 }
 
 ///|
+pub(all) enum EulerRot {
+  ZYX
+  ZXY
+  YXZ
+  YZX
+  XYZ
+  XZY
+  ZYXEx
+  ZXYEx
+  YXZEx
+  YZXEx
+  XYZEx
+  XZYEx
+} derive(Eq, Show, ToJson, FromJson)
+
+///|
 /// Quaternion (x, y, z, w).
 pub(all) struct Quat {
   mut x : Float
@@ -496,6 +512,53 @@ pub fn Quat::from_rotation_y(angle : Float) -> Quat {
 }
 
 ///|
+pub fn Quat::from_euler(
+  order : EulerRot,
+  first : Float,
+  second : Float,
+  third : Float,
+) -> Quat {
+  match order {
+    EulerRot::XYZ =>
+      Quat::from_rotation_x(first)
+      .mul(Quat::from_rotation_y(second))
+      .mul(Quat::from_rotation_z(third))
+      .normalize()
+    EulerRot::XZY =>
+      Quat::from_rotation_x(first)
+      .mul(Quat::from_rotation_z(second))
+      .mul(Quat::from_rotation_y(third))
+      .normalize()
+    EulerRot::YXZ =>
+      Quat::from_rotation_y(first)
+      .mul(Quat::from_rotation_x(second))
+      .mul(Quat::from_rotation_z(third))
+      .normalize()
+    EulerRot::YZX =>
+      Quat::from_rotation_y(first)
+      .mul(Quat::from_rotation_z(second))
+      .mul(Quat::from_rotation_x(third))
+      .normalize()
+    EulerRot::ZXY =>
+      Quat::from_rotation_z(first)
+      .mul(Quat::from_rotation_x(second))
+      .mul(Quat::from_rotation_y(third))
+      .normalize()
+    EulerRot::ZYX =>
+      Quat::from_rotation_z(first)
+      .mul(Quat::from_rotation_y(second))
+      .mul(Quat::from_rotation_x(third))
+      .normalize()
+    EulerRot::XYZEx => Quat::from_euler(EulerRot::ZYX, third, second, first)
+    EulerRot::XZYEx => Quat::from_euler(EulerRot::YZX, third, second, first)
+    EulerRot::YXZEx => Quat::from_euler(EulerRot::ZXY, third, second, first)
+    EulerRot::YZXEx => Quat::from_euler(EulerRot::XZY, third, second, first)
+    EulerRot::ZXYEx => Quat::from_euler(EulerRot::YXZ, third, second, first)
+    EulerRot::ZYXEx => Quat::from_euler(EulerRot::XYZ, third, second, first)
+  }
+}
+
+///|
 pub fn Quat::from_axis_angle(axis : Vec3, angle : Float) -> Quat {
   let unit_axis = axis.normalize_or_zero()
   if unit_axis.length_squared() <= 1.0e-12F {
@@ -562,10 +625,188 @@ pub fn Quat::normalize(self : Quat) -> Quat {
 }
 
 ///|
+pub fn Quat::to_euler(self : Quat, order : EulerRot) -> (Float, Float, Float) {
+  match order {
+    EulerRot::XYZ
+    | EulerRot::XZY
+    | EulerRot::YXZ
+    | EulerRot::YZX
+    | EulerRot::ZXY
+    | EulerRot::ZYX => quat_to_euler_intrinsic(self.normalize(), order)
+    EulerRot::XYZEx => {
+      let (third, second, first) = quat_to_euler_intrinsic(
+        self.normalize(),
+        EulerRot::ZYX,
+      )
+      (first, second, third)
+    }
+    EulerRot::XZYEx => {
+      let (third, second, first) = quat_to_euler_intrinsic(
+        self.normalize(),
+        EulerRot::YZX,
+      )
+      (first, second, third)
+    }
+    EulerRot::YXZEx => {
+      let (third, second, first) = quat_to_euler_intrinsic(
+        self.normalize(),
+        EulerRot::ZXY,
+      )
+      (first, second, third)
+    }
+    EulerRot::YZXEx => {
+      let (third, second, first) = quat_to_euler_intrinsic(
+        self.normalize(),
+        EulerRot::XZY,
+      )
+      (first, second, third)
+    }
+    EulerRot::ZXYEx => {
+      let (third, second, first) = quat_to_euler_intrinsic(
+        self.normalize(),
+        EulerRot::YXZ,
+      )
+      (first, second, third)
+    }
+    EulerRot::ZYXEx => {
+      let (third, second, first) = quat_to_euler_intrinsic(
+        self.normalize(),
+        EulerRot::XYZ,
+      )
+      (first, second, third)
+    }
+  }
+}
+
+///|
 fn quat_rotate_vec3(rotation : Quat, value : Vec3) -> Vec3 {
   let qv = Vec3::new(rotation.x, rotation.y, rotation.z)
   let t = qv.cross(value).mul_scalar(2.0F)
   value.add(t.mul_scalar(rotation.w)).add(qv.cross(t))
+}
+
+///|
+fn quat_abs(value : Float) -> Float {
+  if value < 0.0F {
+    -value
+  } else {
+    value
+  }
+}
+
+///|
+fn quat_clamp(value : Float, min_value : Float, max_value : Float) -> Float {
+  if value < min_value {
+    min_value
+  } else if value > max_value {
+    max_value
+  } else {
+    value
+  }
+}
+
+///|
+fn quat_rotation_matrix(
+  rotation : Quat,
+) -> (Float, Float, Float, Float, Float, Float, Float, Float, Float) {
+  let x = rotation.x
+  let y = rotation.y
+  let z = rotation.z
+  let w = rotation.w
+  let xx = x * x
+  let yy = y * y
+  let zz = z * z
+  let xy = x * y
+  let xz = x * z
+  let yz = y * z
+  let wx = w * x
+  let wy = w * y
+  let wz = w * z
+  (
+    1.0F - 2.0F * (yy + zz),
+    2.0F * (xy - wz),
+    2.0F * (xz + wy),
+    2.0F * (xy + wz),
+    1.0F - 2.0F * (xx + zz),
+    2.0F * (yz - wx),
+    2.0F * (xz - wy),
+    2.0F * (yz + wx),
+    1.0F - 2.0F * (xx + yy),
+  )
+}
+
+///|
+fn quat_to_euler_intrinsic(
+  rotation : Quat,
+  order : EulerRot,
+) -> (Float, Float, Float) {
+  let (m00, m01, m02, m10, m11, m12, m20, m21, m22) = quat_rotation_matrix(
+    rotation,
+  )
+  let epsilon = 0.9999999F
+  match order {
+    EulerRot::XYZ => {
+      let second = Float::from_double(
+        @coremath.asin(quat_clamp(m02, -1.0F, 1.0F).to_double()),
+      )
+      if quat_abs(m02) < epsilon {
+        (atan2(-m12, m22), second, atan2(-m01, m00))
+      } else {
+        (atan2(m21, m11), second, 0.0F)
+      }
+    }
+    EulerRot::XZY => {
+      let second = Float::from_double(
+        @coremath.asin(quat_clamp(-m01, -1.0F, 1.0F).to_double()),
+      )
+      if quat_abs(m01) < epsilon {
+        (atan2(m21, m11), second, atan2(m02, m00))
+      } else {
+        (atan2(-m12, m22), second, 0.0F)
+      }
+    }
+    EulerRot::YXZ => {
+      let second = Float::from_double(
+        @coremath.asin(quat_clamp(-m12, -1.0F, 1.0F).to_double()),
+      )
+      if quat_abs(m12) < epsilon {
+        (atan2(m02, m22), second, atan2(m10, m11))
+      } else {
+        (atan2(-m20, m00), second, 0.0F)
+      }
+    }
+    EulerRot::YZX => {
+      let second = Float::from_double(
+        @coremath.asin(quat_clamp(m10, -1.0F, 1.0F).to_double()),
+      )
+      if quat_abs(m10) < epsilon {
+        (atan2(-m20, m00), second, atan2(-m12, m11))
+      } else {
+        (atan2(m02, m22), second, 0.0F)
+      }
+    }
+    EulerRot::ZXY => {
+      let second = Float::from_double(
+        @coremath.asin(quat_clamp(m21, -1.0F, 1.0F).to_double()),
+      )
+      if quat_abs(m21) < epsilon {
+        (atan2(-m01, m11), second, atan2(-m20, m22))
+      } else {
+        (atan2(m10, m00), second, 0.0F)
+      }
+    }
+    EulerRot::ZYX => {
+      let second = Float::from_double(
+        @coremath.asin(quat_clamp(-m20, -1.0F, 1.0F).to_double()),
+      )
+      if quat_abs(m20) < epsilon {
+        (atan2(m10, m00), second, atan2(m21, m22))
+      } else {
+        (atan2(-m01, m11), second, 0.0F)
+      }
+    }
+    _ => (0.0F, 0.0F, 0.0F)
+  }
 }
 
 ///|
