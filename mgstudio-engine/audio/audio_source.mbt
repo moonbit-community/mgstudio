@@ -63,28 +63,29 @@ pub fn AudioSourceAssets::set(
 }
 
 ///|
-let audio_source_assets_resource : Ref[@core.Resource[AudioSourceAssets]] = Ref::new(
-  @core.Resource::new(),
+let audio_source_assets_resource_key : @ecs.ResourceKey[AudioSourceAssets] = @ecs.register_resource(
+  debug_name="bevy_audio::AudioSourceAssets",
 )
 
 ///|
 pub impl @app.Resource for AudioSourceAssets with resource() {
-  audio_source_assets_resource.val
+  audio_source_assets_resource_key
 }
 
 ///|
 pub fn audio_source_add(source : AudioSource) -> @asset.Handle[AudioSource] {
   let tick = @app.current_system_ticks().this_run
-  if !audio_source_assets_resource.val.is_present() {
-    audio_source_assets_resource.val.insert(AudioSourceAssets::new(), tick)
-  }
-  let assets_ref = audio_source_assets_resource.val.get_ref_mut(tick).unwrap()
+  let assets_ref = audio_resource_ensure_ref_mut(
+    AudioSourceAssets::resource(),
+    fn() { AudioSourceAssets::new() },
+    tick,
+  )
   assets_ref.val.add(source)
 }
 
 ///|
 pub fn audio_source_get(handle : @asset.Handle[AudioSource]) -> AudioSource? {
-  match audio_source_assets_resource.val.get() {
+  match audio_resource_get(AudioSourceAssets::resource()) {
     Some(assets) => assets.get(handle)
     None => None
   }
@@ -96,7 +97,8 @@ pub fn audio_source_set(
   source : AudioSource,
 ) -> Bool {
   let tick = @app.current_system_ticks().this_run
-  guard audio_source_assets_resource.val.get_ref_mut(tick) is Some(assets_ref) else {
+  guard audio_resource_ref_mut(AudioSourceAssets::resource(), tick)
+    is Some(assets_ref) else {
     return false
   }
   assets_ref.val.set(handle, source)

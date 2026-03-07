@@ -6,19 +6,14 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/moon_accesskit",
-  "moonbitlang/core/json",
 }
 
 // Values
+pub fn a11y_commit_pending_update_system(@ecs.World) -> Unit
+
 pub fn a11y_host_apply_update(@moon_accesskit.TreeUpdate) -> Unit
 
 pub fn a11y_host_apply_update_payload(String) -> Unit
-
-pub fn a11y_host_begin_update(Int) -> Unit
-
-pub fn a11y_host_end_update() -> Unit
-
-pub fn a11y_host_push_node(Int, Int, Int, Float, Float, Float, Float, Int, Int) -> Unit
 
 pub fn a11y_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -26,33 +21,31 @@ pub fn a11y_poll_actions_system(@ecs.World) -> Unit
 
 pub let a11y_set : String
 
+pub fn accessibility_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub let ecs_components : Array[String]
+
+pub let ecs_key_accessibility_node : @ecs.ComponentKey[AccessibilityNode]
+
+pub let ecs_messages : Array[String]
+
+pub let ecs_msg_key_action_request : @ecs.MessageKey[ActionRequest]
 
 pub let ecs_res_key_a11y_state : @ecs.ResourceKey[A11yState]
 
-pub let ecs_resources : Array[String]
+pub let ecs_res_key_accessibility_requested : @ecs.ResourceKey[AccessibilityRequested]
 
-pub fn ensure_a11y_state(@ecs.World) -> Unit
+pub let ecs_res_key_manage_accessibility_updates : @ecs.ResourceKey[ManageAccessibilityUpdates]
+
+pub let ecs_resources : Array[String]
 
 pub fn get_a11y_state_resource(@ecs.World) -> @ecs.ResourceAccess[A11yState]
 
-pub let host_action_default_bit : Int
+pub fn get_accessibility_node_store(@ecs.World) -> @ecs.ComponentAccess[AccessibilityNode]
 
-pub let host_action_focus_bit : Int
+pub fn get_accessibility_requested_resource(@ecs.World) -> @ecs.ResourceAccess[AccessibilityRequested]
 
-pub let host_action_scroll_bit : Int
-
-pub let host_action_set_value_bit : Int
-
-pub let host_role_button : Int
-
-pub let host_role_container : Int
-
-pub let host_role_image : Int
-
-pub let host_role_label : Int
-
-pub let host_role_window : Int
+pub fn get_manage_accessibility_updates_resource(@ecs.World) -> @ecs.ResourceAccess[ManageAccessibilityUpdates]
 
 pub fn node_id_for_entity(@core.Entity) -> @moon_accesskit.NodeId
 
@@ -60,7 +53,6 @@ pub fn node_id_for_entity(@core.Entity) -> @moon_accesskit.NodeId
 
 // Types and methods
 pub struct A11yState {
-  mut last_update : @moon_accesskit.TreeUpdate?
   mut pending_actions : Array[@moon_accesskit.ActionRequest]
   mut focused_node : @moon_accesskit.NodeId
 }
@@ -69,9 +61,62 @@ pub fn A11yState::drain_actions(Ref[Self]) -> Array[@moon_accesskit.ActionReques
 pub fn A11yState::focused_node(Self) -> @moon_accesskit.NodeId
 pub fn A11yState::push_action(Ref[Self], @moon_accesskit.ActionRequest) -> Unit
 pub fn A11yState::set_focused_node(Ref[Self], @moon_accesskit.NodeId) -> Unit
-pub fn A11yState::set_update(Ref[Self], @moon_accesskit.TreeUpdate) -> Unit
-pub impl ToJson for A11yState
-pub impl @json.FromJson for A11yState
+pub impl @app.Resource for A11yState
+
+pub(all) struct AccessibilityNode {
+  mut node : @moon_accesskit.Node
+}
+pub fn AccessibilityNode::add_action(Self, @moon_accesskit.Action) -> Unit
+pub fn AccessibilityNode::bounds(Self) -> @moon_accesskit.Rect?
+pub fn AccessibilityNode::children(Self) -> Array[@moon_accesskit.NodeId]
+pub fn AccessibilityNode::clear_actions(Self) -> Unit
+pub fn AccessibilityNode::clear_hidden(Self) -> Unit
+pub fn AccessibilityNode::clear_label(Self) -> Unit
+pub fn AccessibilityNode::clear_value(Self) -> Unit
+pub fn AccessibilityNode::is_hidden(Self) -> Bool
+pub fn AccessibilityNode::label(Self) -> String?
+pub fn AccessibilityNode::new(@moon_accesskit.Node) -> Self
+pub fn AccessibilityNode::node(Self) -> @moon_accesskit.Node
+pub fn AccessibilityNode::push_child(Self, @moon_accesskit.NodeId) -> Unit
+pub fn AccessibilityNode::role(Self) -> @moon_accesskit.Role
+pub fn AccessibilityNode::set_bounds(Self, @moon_accesskit.Rect) -> Unit
+pub fn AccessibilityNode::set_children(Self, Array[@moon_accesskit.NodeId]) -> Unit
+pub fn AccessibilityNode::set_hidden(Self) -> Unit
+pub fn AccessibilityNode::set_label(Self, String) -> Unit
+pub fn AccessibilityNode::set_node(Self, @moon_accesskit.Node) -> Unit
+pub fn AccessibilityNode::set_role(Self, @moon_accesskit.Role) -> Unit
+pub fn AccessibilityNode::set_value(Self, String) -> Unit
+pub fn AccessibilityNode::supports_action(Self, @moon_accesskit.Action) -> Bool
+pub fn AccessibilityNode::value(Self) -> String?
+pub impl @ecs.Component for AccessibilityNode
+
+pub struct AccessibilityRequested {
+  requested : Ref[Bool]
+}
+pub fn AccessibilityRequested::default() -> Self
+pub fn AccessibilityRequested::get(Self) -> Bool
+pub fn AccessibilityRequested::handle(Self) -> Ref[Bool]
+pub fn AccessibilityRequested::set(Self, Bool) -> Unit
+pub impl @app.Resource for AccessibilityRequested
+
+pub(all) struct ActionRequest {
+  request : @moon_accesskit.ActionRequest
+}
+pub fn ActionRequest::accesskit_request(Self) -> @moon_accesskit.ActionRequest
+pub fn ActionRequest::action(Self) -> @moon_accesskit.Action
+pub fn ActionRequest::data(Self) -> @moon_accesskit.ActionData?
+pub fn ActionRequest::new(@moon_accesskit.ActionRequest) -> Self
+pub fn ActionRequest::target_node(Self) -> @moon_accesskit.NodeId
+pub fn ActionRequest::target_tree(Self) -> @moon_accesskit.TreeId
+pub impl @ecs.Message for ActionRequest
+
+pub struct ManageAccessibilityUpdates {
+  mut value : Bool
+}
+pub fn ManageAccessibilityUpdates::default() -> Self
+pub fn ManageAccessibilityUpdates::get(Self) -> Bool
+pub fn ManageAccessibilityUpdates::set(Self, Bool) -> Unit
+pub impl @app.Resource for ManageAccessibilityUpdates
 
 // Type aliases
 

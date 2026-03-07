@@ -26,13 +26,13 @@ pub fn AudioOutput::default() -> AudioOutput {
 }
 
 ///|
-let audio_output_resource : Ref[@core.Resource[AudioOutput]] = Ref::new(
-  @core.Resource::new(),
+let audio_output_resource_key : @ecs.ResourceKey[AudioOutput] = @ecs.register_resource(
+  debug_name="bevy_audio::AudioOutput",
 )
 
 ///|
 pub impl @app.Resource for AudioOutput with resource() {
-  audio_output_resource.val
+  audio_output_resource_key
 }
 
 ///|
@@ -113,7 +113,7 @@ pub impl @ecs.Component for PlaybackRemoveMarker with component() {
 
 ///|
 fn audio_output_stream() -> @native_audio.NativeAudioStream? {
-  match audio_output_resource.val.get() {
+  match audio_resource_get(AudioOutput::resource()) {
     Some(output) => output.stream
     None => None
   }
@@ -218,7 +218,7 @@ fn audio_listener_positions(world : @ecs.World) -> (@math.Vec3, @math.Vec3) {
 
 ///|
 fn audio_default_spatial_scale() -> SpatialScale {
-  match default_spatial_scale_resource.val.get() {
+  match audio_resource_get(DefaultSpatialScale::resource()) {
     Some(scale) => scale.scale
     None => SpatialScale::default()
   }
@@ -226,7 +226,7 @@ fn audio_default_spatial_scale() -> SpatialScale {
 
 ///|
 fn audio_global_volume() -> GlobalVolume {
-  match global_volume_resource.val.get() {
+  match audio_resource_get(GlobalVolume::resource()) {
     Some(value) => value
     None => GlobalVolume::default()
   }

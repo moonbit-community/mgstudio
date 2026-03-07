@@ -281,11 +281,45 @@ pub fn[A, F] Query1Filtered::iter_many(
 }
 
 ///|
+pub fn[A, F] Query1Filtered::iter_many_unique(
+  self : Query1Filtered[A, F],
+  entities : Array[@core.Entity],
+) -> Query1FilteredMany[A, F] raise EcsError {
+  query_require_unique_entities(entities)
+  self.iter_many_unique_unsafe(entities)
+}
+
+///|
+pub fn[A, F] Query1Filtered::iter_many_unique_unsafe(
+  self : Query1Filtered[A, F],
+  entities : Array[@core.Entity],
+) -> Query1FilteredMany[A, F] {
+  self.iter_many(entities)
+}
+
+///|
 pub fn[A, F] Query1Filtered::iter_many_ref(
   self : Query1Filtered[A, F],
   entities : Array[@core.Entity],
 ) -> Query1FilteredManyRef[A, F] {
   { query: self, entities, index: 0 }
+}
+
+///|
+pub fn[A, F] Query1Filtered::iter_many_unique_ref(
+  self : Query1Filtered[A, F],
+  entities : Array[@core.Entity],
+) -> Query1FilteredManyRef[A, F] raise EcsError {
+  query_require_unique_entities(entities)
+  self.iter_many_unique_ref_unsafe(entities)
+}
+
+///|
+pub fn[A, F] Query1Filtered::iter_many_unique_ref_unsafe(
+  self : Query1Filtered[A, F],
+  entities : Array[@core.Entity],
+) -> Query1FilteredManyRef[A, F] {
+  self.iter_many_ref(entities)
 }
 
 ///|
@@ -334,6 +368,44 @@ pub fn[A] Query1::view(
   f : (@core.Entity, A) -> Unit,
 ) -> Unit raise EcsError {
   query1_view(self.world, self.key_a, f)
+}
+
+///|
+pub fn[A] Query1::iter_many_unique(
+  self : Query1[A],
+  entities : Array[@core.Entity],
+) -> Query1FilteredMany[A, All] raise EcsError {
+  self.world.query1_filtered(self.key_a, All::new()).iter_many_unique(entities)
+}
+
+///|
+pub fn[A] Query1::iter_many_unique_unsafe(
+  self : Query1[A],
+  entities : Array[@core.Entity],
+) -> Query1FilteredMany[A, All] {
+  self.world
+  .query1_filtered(self.key_a, All::new())
+  .iter_many_unique_unsafe(entities)
+}
+
+///|
+pub fn[A] Query1::iter_many_unique_ref(
+  self : Query1[A],
+  entities : Array[@core.Entity],
+) -> Query1FilteredManyRef[A, All] raise EcsError {
+  self.world
+  .query1_filtered(self.key_a, All::new())
+  .iter_many_unique_ref(entities)
+}
+
+///|
+pub fn[A] Query1::iter_many_unique_ref_unsafe(
+  self : Query1[A],
+  entities : Array[@core.Entity],
+) -> Query1FilteredManyRef[A, All] {
+  self.world
+  .query1_filtered(self.key_a, All::new())
+  .iter_many_unique_ref_unsafe(entities)
 }
 
 ///|
@@ -932,6 +1004,20 @@ fn[A, B, C, F : QueryFilter] query3_count_filtered(
 ///|
 fn query_all_alive_entities(world : World) -> Array[@core.Entity] {
   world.entities.alive_entities()
+}
+
+///|
+fn query_require_unique_entities(
+  entities : Array[@core.Entity],
+) -> Unit raise EcsError {
+  let seen : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
+  for entity in entities {
+    let key = (entity.id, entity.generation)
+    if seen.contains(key) {
+      raise NonUniqueEntityList(entity)
+    }
+    seen.set(key, true)
+  }
 }
 
 ///|

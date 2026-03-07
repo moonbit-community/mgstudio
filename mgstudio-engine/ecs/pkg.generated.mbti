@@ -10,6 +10,12 @@ import {
 // Values
 pub fn[T] component_key_from_id(Int, debug_name? : String) -> ComponentKey[T]
 
+pub fn[C : Component] current_insert_observer() -> On[Insert, C]
+
+pub fn current_observer_world() -> World?
+
+pub fn current_observer_world_abort_missing() -> World
+
 pub let ecs_key_name : ComponentKey[Name]
 
 pub fn[T] event_key_from_id(Int, debug_name? : String) -> EventKey[T]
@@ -36,8 +42,6 @@ pub fn[T] register_component(debug_name? : String) -> ComponentKey[T]
 
 pub fn[T] register_component_hooks(ComponentKey[T], ComponentHooks) -> Unit raise ComponentHooksError
 
-pub fn[T] register_component_insert_observer(ComponentKey[T], String, (World, @core.Entity) -> Unit) -> Bool
-
 pub fn[T] register_event(debug_name? : String) -> EventKey[T]
 
 pub fn[T] register_message(debug_name? : String) -> MessageKey[T]
@@ -54,6 +58,7 @@ pub(all) suberror ComponentHooksError {
 pub(all) suberror EcsError {
   EntityStateError(@core.EntityError)
   EntityNotAlive(@core.Entity)
+  NonUniqueEntityList(@core.Entity)
   ComponentTypeMismatch(Int, String, @core.Entity, String)
   ResourceTypeMismatch(Int, String, String)
   EventTypeMismatch(Int, String, Int, String)
@@ -108,11 +113,6 @@ pub struct ComponentHooks {
   on_despawn : ((World, @core.Entity, @any.Any) -> Unit)?
 }
 pub fn ComponentHooks::new(on_insert? : ((World, @core.Entity, @any.Any) -> Unit)?, on_replace? : ((World, @core.Entity, @any.Any, @any.Any) -> Unit)?, on_remove? : ((World, @core.Entity, @any.Any) -> Unit)?, on_despawn? : ((World, @core.Entity, @any.Any) -> Unit)?) -> Self
-
-pub struct ComponentInsertObserver {
-  debug_name : String
-  run : (World, @core.Entity) -> Unit
-}
 
 pub struct ComponentKey[T] {
   id : Int
@@ -172,6 +172,9 @@ pub fn[U, T] EventKey::cast(Self[T]) -> Self[U]
 pub fn[T] EventKey::debug_name(Self[T]) -> String
 pub fn[T] EventKey::id(Self[T]) -> Int
 
+pub struct Insert {
+}
+
 pub struct MessageKey[T] {
   queue_key : ResourceKey[MessageQueueState]
   marker : T?
@@ -223,6 +226,19 @@ pub impl Show for Name
 pub impl ToJson for Name
 pub impl @json.FromJson for Name
 
+pub struct ObserverHandle {
+  id : Int
+  world_id : Int
+}
+pub fn ObserverHandle::id(Self) -> Int
+pub fn ObserverHandle::world_id(Self) -> Int
+
+pub struct On[E, C] {
+  entity : @core.Entity
+  marker_event : E?
+  marker_component : C?
+}
+
 pub struct Or[F] {
   filters : F
 }
@@ -237,7 +253,14 @@ pub fn[A] Query1::count(Self[A]) -> Int
 pub fn[A] Query1::for_each(Self[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
 pub fn[A] Query1::get(Self[A], @core.Entity) -> A? raise EcsError
 pub fn[A] Query1::get_mut(Self[A], @core.Entity) -> ComponentMut[A]? raise EcsError
+pub fn[A] Query1::get_unchecked(Self[A], @core.Entity) -> ComponentMut[A]? raise EcsError
 pub fn[A] Query1::iter_many_mut(Self[A], Array[@core.Entity]) -> Query1FilteredManyMut[A, All]
+pub fn[A] Query1::iter_many_unique(Self[A], Array[@core.Entity]) -> Query1FilteredMany[A, All] raise EcsError
+pub fn[A] Query1::iter_many_unique_mut(Self[A], Array[@core.Entity]) -> Query1FilteredManyMut[A, All] raise EcsError
+pub fn[A] Query1::iter_many_unique_mut_unsafe(Self[A], Array[@core.Entity]) -> Query1FilteredManyMut[A, All]
+pub fn[A] Query1::iter_many_unique_ref(Self[A], Array[@core.Entity]) -> Query1FilteredManyRef[A, All] raise EcsError
+pub fn[A] Query1::iter_many_unique_ref_unsafe(Self[A], Array[@core.Entity]) -> Query1FilteredManyRef[A, All]
+pub fn[A] Query1::iter_many_unique_unsafe(Self[A], Array[@core.Entity]) -> Query1FilteredMany[A, All]
 pub fn[A] Query1::par_iter_mut(Self[A]) -> Query1FilteredParallelMut[A, All]
 pub fn[A] Query1::view(Self[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
 pub fn[A] Query1::view_mut(Self[A], (@core.Entity, ComponentMut[A]) -> Unit) -> Unit raise EcsError
@@ -254,9 +277,16 @@ pub fn[A, F : QueryFilter] Query1Filtered::for_each(Self[A, F], (@core.Entity, A
 pub fn[A, F : QueryFilter] Query1Filtered::get(Self[A, F], @core.Entity) -> A? raise EcsError
 pub fn[A, F : QueryFilter] Query1Filtered::get_mut(Self[A, F], @core.Entity) -> ComponentMut[A]? raise EcsError
 pub fn[A, F : QueryFilter] Query1Filtered::get_ref(Self[A, F], @core.Entity) -> ComponentRef[A]? raise EcsError
+pub fn[A, F : QueryFilter] Query1Filtered::get_unchecked(Self[A, F], @core.Entity) -> ComponentMut[A]? raise EcsError
 pub fn[A, F] Query1Filtered::iter_many(Self[A, F], Array[@core.Entity]) -> Query1FilteredMany[A, F]
 pub fn[A, F] Query1Filtered::iter_many_mut(Self[A, F], Array[@core.Entity]) -> Query1FilteredManyMut[A, F]
 pub fn[A, F] Query1Filtered::iter_many_ref(Self[A, F], Array[@core.Entity]) -> Query1FilteredManyRef[A, F]
+pub fn[A, F] Query1Filtered::iter_many_unique(Self[A, F], Array[@core.Entity]) -> Query1FilteredMany[A, F] raise EcsError
+pub fn[A, F] Query1Filtered::iter_many_unique_mut(Self[A, F], Array[@core.Entity]) -> Query1FilteredManyMut[A, F] raise EcsError
+pub fn[A, F] Query1Filtered::iter_many_unique_mut_unsafe(Self[A, F], Array[@core.Entity]) -> Query1FilteredManyMut[A, F]
+pub fn[A, F] Query1Filtered::iter_many_unique_ref(Self[A, F], Array[@core.Entity]) -> Query1FilteredManyRef[A, F] raise EcsError
+pub fn[A, F] Query1Filtered::iter_many_unique_ref_unsafe(Self[A, F], Array[@core.Entity]) -> Query1FilteredManyRef[A, F]
+pub fn[A, F] Query1Filtered::iter_many_unique_unsafe(Self[A, F], Array[@core.Entity]) -> Query1FilteredMany[A, F]
 pub fn[A, F] Query1Filtered::par_iter_mut(Self[A, F]) -> Query1FilteredParallelMut[A, F]
 pub fn[A, F : QueryFilter] Query1Filtered::view(Self[A, F], (@core.Entity, A) -> Unit) -> Unit raise EcsError
 pub fn[A, F : QueryFilter] Query1Filtered::view_mut(Self[A, F], (@core.Entity, ComponentMut[A]) -> Unit) -> Unit raise EcsError
@@ -320,7 +350,10 @@ pub struct Query2RefMutFiltered[A, B, F] {
 }
 pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::count(Self[A, B, F]) -> Int
 pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::get(Self[A, B, F], @core.Entity) -> (ComponentRef[A], ComponentMut[B])? raise EcsError
+pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::get_unchecked(Self[A, B, F], @core.Entity) -> (ComponentRef[A], ComponentMut[B])? raise EcsError
 pub fn[A, B, F] Query2RefMutFiltered::iter_many_mut(Self[A, B, F], Array[@core.Entity]) -> Query2RefMutFilteredMany[A, B, F]
+pub fn[A, B, F] Query2RefMutFiltered::iter_many_unique_mut(Self[A, B, F], Array[@core.Entity]) -> Query2RefMutFilteredMany[A, B, F] raise EcsError
+pub fn[A, B, F] Query2RefMutFiltered::iter_many_unique_mut_unsafe(Self[A, B, F], Array[@core.Entity]) -> Query2RefMutFilteredMany[A, B, F]
 pub fn[A, B, F] Query2RefMutFiltered::par_iter_mut(Self[A, B, F]) -> Query2RefMutFilteredParallel[A, B, F]
 pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::view_mut(Self[A, B, F], (@core.Entity, ComponentRef[A], ComponentMut[B]) -> Unit) -> Unit raise EcsError
 pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::with_mut(Self[A, B, F], @core.Entity, (ComponentRef[A], ComponentMut[B]) -> Unit) -> Bool raise EcsError
@@ -346,6 +379,7 @@ pub struct Query2ValueMutFiltered[A, B, F] {
 }
 pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::count(Self[A, B, F]) -> Int
 pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::get(Self[A, B, F], @core.Entity) -> (A, ComponentMut[B])? raise EcsError
+pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::get_unchecked(Self[A, B, F], @core.Entity) -> (A, ComponentMut[B])? raise EcsError
 pub fn[A, B, F] Query2ValueMutFiltered::par_iter_mut(Self[A, B, F]) -> Query2ValueMutFilteredParallel[A, B, F]
 pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::view_mut(Self[A, B, F], (@core.Entity, A, ComponentMut[B]) -> Unit) -> Unit raise EcsError
 pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::with_mut(Self[A, B, F], @core.Entity, (A, ComponentMut[B]) -> Unit) -> Bool raise EcsError
@@ -389,6 +423,7 @@ pub struct Query3RefMutOptionalFiltered[A, B, C, F] {
 }
 pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::count(Self[A, B, C, F]) -> Int
 pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::get(Self[A, B, C, F], @core.Entity) -> (ComponentRef[A], ComponentMut[B], ComponentRef[C]?)? raise EcsError
+pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::get_unchecked(Self[A, B, C, F], @core.Entity) -> (ComponentRef[A], ComponentMut[B], ComponentRef[C]?)? raise EcsError
 pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::view_mut(Self[A, B, C, F], (@core.Entity, ComponentRef[A], ComponentMut[B], ComponentRef[C]?) -> Unit) -> Unit raise EcsError
 pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::with_mut(Self[A, B, C, F], @core.Entity, (ComponentRef[A], ComponentMut[B], ComponentRef[C]?) -> Unit) -> Bool raise EcsError
 
@@ -402,6 +437,7 @@ pub struct Query3ValueRefMutFiltered[A, B, C, F] {
 }
 pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::count(Self[A, B, C, F]) -> Int
 pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::get(Self[A, B, C, F], @core.Entity) -> (A, ComponentRef[B], ComponentMut[C])? raise EcsError
+pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::get_unchecked(Self[A, B, C, F], @core.Entity) -> (A, ComponentRef[B], ComponentMut[C])? raise EcsError
 pub fn[A, B, C, F] Query3ValueRefMutFiltered::par_iter_mut(Self[A, B, C, F]) -> Query3ValueRefMutFilteredParallel[A, B, C, F]
 pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::view_mut(Self[A, B, C, F], (@core.Entity, A, ComponentRef[B], ComponentMut[C]) -> Unit) -> Unit raise EcsError
 pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::with_mut(Self[A, B, C, F], @core.Entity, (A, ComponentRef[B], ComponentMut[C]) -> Unit) -> Bool raise EcsError
@@ -479,6 +515,7 @@ pub struct World {
   mut previous_events : Map[Int, Array[ErasedValue]]
   current_events : Map[Int, Array[ErasedValue]]
 }
+pub fn[C : Component] World::add_observer(Self, (On[Insert, C]) -> Unit) -> ObserverHandle
 pub fn World::advance_event_frame(Self) -> Unit
 pub fn[T] World::clear_events(Self, EventKey[T]) -> Unit
 pub fn[T] World::clear_messages(Self, MessageKey[T]) -> Unit
@@ -494,6 +531,8 @@ pub fn[A] World::get_ref(Self, @core.Entity, ComponentKey[A]) -> ComponentRef[A]
 pub fn[T] World::get_required_components(Self, ComponentKey[T]) -> RequiredComponents?
 pub fn World::get_required_components_by_id(Self, Int) -> RequiredComponents?
 pub fn[T] World::get_resource(Self, ResourceKey[T]) -> T? raise EcsError
+pub fn[T] World::get_resource_ref(Self, ResourceKey[T]) -> Ref[T]? raise EcsError
+pub fn[T] World::get_resource_ref_mut(Self, ResourceKey[T], Int) -> Ref[T]? raise EcsError
 pub fn[T] World::get_resource_ticks(Self, ResourceKey[T]) -> @core.ComponentTicks?
 pub fn World::get_system_context(Self) -> @core.SystemContext
 pub fn World::increment_change_tick(Self) -> Int

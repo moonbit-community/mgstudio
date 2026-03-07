@@ -161,6 +161,7 @@ pub fn[T] event_key_from_id(id : Int, debug_name? : String = "") -> EventKey[T] 
 pub(all) suberror EcsError {
   EntityStateError(@core.EntityError)
   EntityNotAlive(@core.Entity)
+  NonUniqueEntityList(@core.Entity)
   ComponentTypeMismatch(Int, String, @core.Entity, String)
   ResourceTypeMismatch(Int, String, String)
   EventTypeMismatch(Int, String, Int, String)

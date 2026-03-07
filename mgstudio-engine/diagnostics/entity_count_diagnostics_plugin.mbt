@@ -64,7 +64,12 @@ pub fn entity_count_diagnostics_plugin_with(
 ///|
 fn entity_count_diagnostic_system(world : @ecs.World) -> Unit {
   let tick = @app.current_system_ticks().this_run
-  match DiagnosticsStore::resource().get_ref_mut(tick) {
+  match
+    (try world.get_resource_ref_mut(DiagnosticsStore::resource(), tick) catch {
+      _ => None
+    } noraise {
+      value => value
+    }) {
     Some(store_ref) =>
       match store_ref.val.get_ref(entity_count_diagnostic_path) {
         Some(diagnostic_ref) => {

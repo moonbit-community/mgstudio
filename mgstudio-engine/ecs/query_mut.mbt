@@ -124,6 +124,14 @@ pub fn[A] Query1::get_mut(
 }
 
 ///|
+pub fn[A] Query1::get_unchecked(
+  self : Query1[A],
+  entity : @core.Entity,
+) -> ComponentMut[A]? raise EcsError {
+  self.world.query1_filtered(self.key_a, All::new()).get_unchecked(entity)
+}
+
+///|
 pub fn[A] Query1::with_mut(
   self : Query1[A],
   entity : @core.Entity,
@@ -149,6 +157,26 @@ pub fn[A] Query1::iter_many_mut(
 }
 
 ///|
+pub fn[A] Query1::iter_many_unique_mut(
+  self : Query1[A],
+  entities : Array[@core.Entity],
+) -> Query1FilteredManyMut[A, All] raise EcsError {
+  self.world
+  .query1_filtered(self.key_a, All::new())
+  .iter_many_unique_mut(entities)
+}
+
+///|
+pub fn[A] Query1::iter_many_unique_mut_unsafe(
+  self : Query1[A],
+  entities : Array[@core.Entity],
+) -> Query1FilteredManyMut[A, All] {
+  self.world
+  .query1_filtered(self.key_a, All::new())
+  .iter_many_unique_mut_unsafe(entities)
+}
+
+///|
 pub fn[A] Query1::par_iter_mut(
   self : Query1[A],
 ) -> Query1FilteredParallelMut[A, All] {
@@ -164,6 +192,23 @@ pub fn[A, F] Query1Filtered::iter_many_mut(
 }
 
 ///|
+pub fn[A, F] Query1Filtered::iter_many_unique_mut(
+  self : Query1Filtered[A, F],
+  entities : Array[@core.Entity],
+) -> Query1FilteredManyMut[A, F] raise EcsError {
+  query_require_unique_entities(entities)
+  self.iter_many_unique_mut_unsafe(entities)
+}
+
+///|
+pub fn[A, F] Query1Filtered::iter_many_unique_mut_unsafe(
+  self : Query1Filtered[A, F],
+  entities : Array[@core.Entity],
+) -> Query1FilteredManyMut[A, F] {
+  self.iter_many_mut(entities)
+}
+
+///|
 pub fn[A, F : QueryFilter] Query1Filtered::get_mut(
   self : Query1Filtered[A, F],
   entity : @core.Entity,
@@ -172,6 +217,14 @@ pub fn[A, F : QueryFilter] Query1Filtered::get_mut(
     return None
   }
   query_component_mut(self.world, self.key_a, entity, self.system)
+}
+
+///|
+pub fn[A, F : QueryFilter] Query1Filtered::get_unchecked(
+  self : Query1Filtered[A, F],
+  entity : @core.Entity,
+) -> ComponentMut[A]? raise EcsError {
+  self.get_mut(entity)
 }
 
 ///|
@@ -328,6 +381,14 @@ pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::get(
 }
 
 ///|
+pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::get_unchecked(
+  self : Query2RefMutFiltered[A, B, F],
+  entity : @core.Entity,
+) -> (ComponentRef[A], ComponentMut[B])? raise EcsError {
+  self.get(entity)
+}
+
+///|
 pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::with_mut(
   self : Query2RefMutFiltered[A, B, F],
   entity : @core.Entity,
@@ -354,6 +415,14 @@ pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::get(
     return None
   }
   Some((value_a, component_mut))
+}
+
+///|
+pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::get_unchecked(
+  self : Query2ValueMutFiltered[A, B, F],
+  entity : @core.Entity,
+) -> (A, ComponentMut[B])? raise EcsError {
+  self.get(entity)
 }
 
 ///|
@@ -542,6 +611,14 @@ pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::get(
 }
 
 ///|
+pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::get_unchecked(
+  self : Query3ValueRefMutFiltered[A, B, C, F],
+  entity : @core.Entity,
+) -> (A, ComponentRef[B], ComponentMut[C])? raise EcsError {
+  self.get(entity)
+}
+
+///|
 pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::with_mut(
   self : Query3ValueRefMutFiltered[A, B, C, F],
   entity : @core.Entity,
@@ -722,6 +799,14 @@ pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::get(
 }
 
 ///|
+pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::get_unchecked(
+  self : Query3RefMutOptionalFiltered[A, B, C, F],
+  entity : @core.Entity,
+) -> (ComponentRef[A], ComponentMut[B], ComponentRef[C]?)? raise EcsError {
+  self.get(entity)
+}
+
+///|
 pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::with_mut(
   self : Query3RefMutOptionalFiltered[A, B, C, F],
   entity : @core.Entity,
@@ -866,6 +951,23 @@ pub fn[A, B, F] Query2RefMutFiltered::iter_many_mut(
   entities : Array[@core.Entity],
 ) -> Query2RefMutFilteredMany[A, B, F] {
   { query: self, entities, index: 0 }
+}
+
+///|
+pub fn[A, B, F] Query2RefMutFiltered::iter_many_unique_mut(
+  self : Query2RefMutFiltered[A, B, F],
+  entities : Array[@core.Entity],
+) -> Query2RefMutFilteredMany[A, B, F] raise EcsError {
+  query_require_unique_entities(entities)
+  self.iter_many_unique_mut_unsafe(entities)
+}
+
+///|
+pub fn[A, B, F] Query2RefMutFiltered::iter_many_unique_mut_unsafe(
+  self : Query2RefMutFiltered[A, B, F],
+  entities : Array[@core.Entity],
+) -> Query2RefMutFilteredMany[A, B, F] {
+  self.iter_many_mut(entities)
 }
 
 ///|

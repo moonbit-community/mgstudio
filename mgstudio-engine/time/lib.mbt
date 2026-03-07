@@ -38,49 +38,160 @@ pub fn TimeUpdateStrategy::default() -> TimeUpdateStrategy {
 }
 
 ///|
-let time_resource : Ref[@core.Resource[Time]] = Ref::new(@core.Resource::new())
+let active_time_world_ref : Ref[@ecs.World?] = Ref::new(None)
 
 ///|
-let real_resource : Ref[@core.Resource[Real]] = Ref::new(@core.Resource::new())
+let fallback_time_world_ref : Ref[@ecs.World] = Ref::new(@ecs.World::new())
 
 ///|
-let virtual_resource : Ref[@core.Resource[Virtual]] = Ref::new(
-  @core.Resource::new(),
+fn time_resource_world() -> @ecs.World {
+  match @app.current_world() {
+    Some(world) => {
+      active_time_world_ref.val = Some(world)
+      world
+    }
+    None =>
+      match active_time_world_ref.val {
+        Some(world) => world
+        None => fallback_time_world_ref.val
+      }
+  }
+}
+
+///|
+priv struct WorldOwnedResourceProxy[T] {
+  key : @ecs.ResourceKey[T]
+}
+
+///|
+fn[T] WorldOwnedResourceProxy::new(
+  key : @ecs.ResourceKey[T],
+) -> WorldOwnedResourceProxy[T] {
+  WorldOwnedResourceProxy::{ key, }
+}
+
+///|
+fn[T] WorldOwnedResourceProxy::is_present(
+  self : WorldOwnedResourceProxy[T],
+) -> Bool {
+  match
+    (try time_resource_world().get_resource(self.key) catch {
+      _ => None
+    } noraise {
+      value => value
+    }) {
+    Some(_) => true
+    None => false
+  }
+}
+
+///|
+fn[T] WorldOwnedResourceProxy::insert(
+  self : WorldOwnedResourceProxy[T],
+  value : T,
+  change_tick : @core.Tick,
+) -> Unit {
+  time_resource_world().insert_resource_with_change_tick(
+    self.key,
+    value,
+    change_tick,
+  )
+}
+
+///|
+fn[T] WorldOwnedResourceProxy::get(self : WorldOwnedResourceProxy[T]) -> T? {
+  try time_resource_world().get_resource(self.key) catch {
+    _ => None
+  } noraise {
+    value => value
+  }
+}
+
+///|
+fn[T] WorldOwnedResourceProxy::get_ref_mut(
+  self : WorldOwnedResourceProxy[T],
+  change_tick : @core.Tick,
+) -> Ref[T]? {
+  try time_resource_world().get_resource_ref_mut(self.key, change_tick) catch {
+    _ => None
+  } noraise {
+    value => value
+  }
+}
+
+///|
+let time_resource_key : @ecs.ResourceKey[Time] = @ecs.register_resource(
+  debug_name="bevy_time::Time",
 )
 
 ///|
-let fixed_resource : Ref[@core.Resource[Fixed]] = Ref::new(
-  @core.Resource::new(),
+let real_resource_key : @ecs.ResourceKey[Real] = @ecs.register_resource(
+  debug_name="bevy_time::Real",
 )
 
 ///|
-let time_update_strategy_resource : Ref[@core.Resource[TimeUpdateStrategy]] = Ref::new(
-  @core.Resource::new(),
+let virtual_resource_key : @ecs.ResourceKey[Virtual] = @ecs.register_resource(
+  debug_name="bevy_time::Virtual",
 )
+
+///|
+let fixed_resource_key : @ecs.ResourceKey[Fixed] = @ecs.register_resource(
+  debug_name="bevy_time::Fixed",
+)
+
+///|
+let time_update_strategy_resource_key : @ecs.ResourceKey[TimeUpdateStrategy] = @ecs.register_resource(
+  debug_name="bevy_time::TimeUpdateStrategy",
+)
+
+///|
+let time_resource : Ref[WorldOwnedResourceProxy[Time]] = Ref::new(
+  WorldOwnedResourceProxy::new(time_resource_key),
+)
+
+///|
+let real_resource : Ref[WorldOwnedResourceProxy[Real]] = Ref::new(
+  WorldOwnedResourceProxy::new(real_resource_key),
+)
+
+///|
+let virtual_resource : Ref[WorldOwnedResourceProxy[Virtual]] = Ref::new(
+  WorldOwnedResourceProxy::new(virtual_resource_key),
+)
+
+///|
+let fixed_resource : Ref[WorldOwnedResourceProxy[Fixed]] = Ref::new(
+  WorldOwnedResourceProxy::new(fixed_resource_key),
+)
+
+///|
+let time_update_strategy_resource : Ref[
+  WorldOwnedResourceProxy[TimeUpdateStrategy],
+] = Ref::new(WorldOwnedResourceProxy::new(time_update_strategy_resource_key))
 
 ///|
 pub impl @app.Resource for Time with resource() {
-  time_resource.val
+  time_resource_key
 }
 
 ///|
 pub impl @app.Resource for Real with resource() {
-  real_resource.val
+  real_resource_key
 }
 
 ///|
 pub impl @app.Resource for Virtual with resource() {
-  virtual_resource.val
+  virtual_resource_key
 }
 
 ///|
 pub impl @app.Resource for Fixed with resource() {
-  fixed_resource.val
+  fixed_resource_key
 }
 
 ///|
 pub impl @app.Resource for TimeUpdateStrategy with resource() {
-  time_update_strategy_resource.val
+  time_update_strategy_resource_key
 }
 
 ///|
@@ -94,13 +205,18 @@ fn time_resource_change_tick() -> @core.Tick {
   if tick > 0 {
     tick
   } else {
-    1
+    let world_tick = time_resource_world().read_change_tick()
+    if world_tick > 0 {
+      world_tick
+    } else {
+      1
+    }
   }
 }
 
 ///|
 fn[T] sync_resource(
-  resource : @core.Resource[T],
+  resource : WorldOwnedResourceProxy[T],
   value : T,
   change_tick : @core.Tick,
 ) -> Unit {
@@ -210,6 +326,7 @@ fn time_update_resource_system(
 ///|
 pub fn time_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let startup_seconds = host_time_now()
+  active_time_world_ref.val = Some(app.world())
   app
   .init_resource(fn() { Time::new() })
   .init_resource(fn() { Real::new(startup_seconds) })

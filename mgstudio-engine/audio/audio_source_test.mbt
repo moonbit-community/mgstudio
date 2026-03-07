@@ -14,6 +14,8 @@
 
 ///|
 test "audio source asset registry stores bytes" {
+  let app = audio_plugin(@app.App::new(@ecs.World::new()))
+  app |> ignore
   let source = AudioSource::new(b"abc")
   let handle = audio_source_add(source)
   inspect(audio_source_get(handle) is Some(_), content="true")
@@ -21,6 +23,8 @@ test "audio source asset registry stores bytes" {
 
 ///|
 test "pitch asset registry stores pitch data" {
+  let app = audio_plugin(@app.App::new(@ecs.World::new()))
+  app |> ignore
   let handle = pitch_add(Pitch::new(440.0F, 1.0F))
   inspect(pitch_get(handle) is Some(_), content="true")
 }

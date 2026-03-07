@@ -479,3 +479,90 @@ test "ecs query mut: query3 with_mut writes back mixed random access updates" {
   )
   inspect(try! world.get(e1, comp_velocity), content="Some({dx: 30, dy: 48})")
 }
+
+///|
+test "ecs query mut: get_unchecked supports transform-style random access" {
+  let world = World::new()
+  let comp_position : ComponentKey[Position] = register_component(
+    debug_name="position_query3_get_unchecked",
+  )
+  let comp_velocity : ComponentKey[Velocity] = register_component(
+    debug_name="velocity_query3_get_unchecked",
+  )
+  let comp_accel : ComponentKey[Acceleration] = register_component(
+    debug_name="accel_query3_get_unchecked",
+  )
+  let entity = world.spawn()
+
+  try! world.set(entity, comp_position, Position::{ x: 2, y: 4 })
+  try! world.set(entity, comp_velocity, Velocity::{ dx: 10, dy: 20 })
+  try! world.set(entity, comp_accel, Acceleration::{ ax: 1, ay: 2 })
+
+  let ctx = @core.SystemContext::new()
+  ctx.set(@core.SystemTicks::new(0, 1))
+  world.set_system_context(ctx)
+
+  let query = world.query3_ref_mut_optional_filtered(
+    comp_position,
+    comp_velocity,
+    comp_accel,
+    All::new(),
+  )
+  if (try! query.get_unchecked(entity))
+    is Some((position_ref, velocity_mut, accel_ref)) {
+    inspect(position_ref.value(), content="{x: 2, y: 4}")
+    inspect(
+      match accel_ref {
+        Some(value) => value.value()
+        None => Acceleration::{ ax: -1, ay: -1 }
+      },
+      content="{ax: 1, ay: 2}",
+    )
+    velocity_mut.get_ref().val.dx = velocity_mut.get_ref().val.dx +
+      position_ref.value().x
+  } else {
+    fail("expected query item for matching entity")
+  }
+
+  inspect(
+    try! world.get(entity, comp_velocity),
+    content="Some({dx: 12, dy: 20})",
+  )
+}
+
+///|
+test "ecs query mut: iter_many_unique_mut rejects duplicates and preserves order" {
+  let world = World::new()
+  let comp_velocity : ComponentKey[Velocity] = register_component(
+    debug_name="velocity_query1_iter_many_unique_mut",
+  )
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  let e2 = world.spawn()
+
+  try! world.set(e0, comp_velocity, Velocity::{ dx: 1, dy: 10 })
+  try! world.set(e1, comp_velocity, Velocity::{ dx: 2, dy: 20 })
+
+  let ctx = @core.SystemContext::new()
+  ctx.set(@core.SystemTicks::new(0, 1))
+  world.set_system_context(ctx)
+
+  let duplicate_result : Result[Query1FilteredManyMut[Velocity, All], EcsError] = try? world
+    .query1(comp_velocity)
+    .iter_many_unique_mut([e1, e1])
+  guard duplicate_result is Err(NonUniqueEntityList(entity)) else {
+    fail("expected duplicate entity diagnostics")
+  }
+  inspect(entity.id, content="1")
+
+  let seen : Array[(Int, Bool)] = []
+  let iter = try! world.query1(comp_velocity).iter_many_unique_mut([e1, e2, e0])
+  while (try! iter.fetch_next()) is Some((entity, velocity_mut)) {
+    seen.push((entity.id, velocity_mut.is_added()))
+    velocity_mut.get_ref().val.dy = velocity_mut.get_ref().val.dy + entity.id
+  }
+
+  inspect(seen, content="[(1, true), (0, true)]")
+  inspect(try! world.get(e0, comp_velocity), content="Some({dx: 1, dy: 10})")
+  inspect(try! world.get(e1, comp_velocity), content="Some({dx: 2, dy: 21})")
+}

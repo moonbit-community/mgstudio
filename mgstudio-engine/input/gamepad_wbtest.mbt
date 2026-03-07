@@ -17,7 +17,6 @@ fn gamepad_test_app() -> @app.App[@ecs.World] {
   current_gamepads_ref.val = []
   previous_gamepads_ref.val = []
   host_gamepad_entities_ref.val = []
-  running_rumble_effects_resource_ref.val.remove() |> ignore
   @native_input.gamepad_test_reset_state()
   input_gamepad_plugin(@time.time_plugin(@app.App::new(@ecs.World::new())))
 }
@@ -76,10 +75,7 @@ fn clear_gamepad_messages(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn[T] read_messages(
-  world : @ecs.World,
-  key : @ecs.MessageKey[T],
-) -> Array[T] {
+fn[T] read_messages(world : @ecs.World, key : @ecs.MessageKey[T]) -> Array[T] {
   try! world.message_reader(key, Ref::new(0)).read()
 }
 
@@ -762,8 +758,8 @@ test "input gamepad: unsupported rumble requests are dropped" {
 
   let commands = @native_input.gamepad_test_take_recorded_rumble_commands()
   inspect(commands.length(), content="0")
-  inspect(
-    running_rumble_effects_resource_ref.val.get().unwrap().entries.length(),
-    content="0",
-  )
+  let running_rumbles : RunningRumbleEffects = try! world
+    .get_resource(RunningRumbleEffects::resource())
+    .unwrap()
+  inspect(running_rumbles.entries.length(), content="0")
 }

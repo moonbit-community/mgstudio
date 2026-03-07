@@ -18,23 +18,22 @@ struct CounterResource {
 }
 
 ///|
-let counter_resource_storage : Ref[@core.Resource[CounterResource]] = Ref::new(
-  @core.Resource::new(),
+let counter_resource_key : @ecs.ResourceKey[CounterResource] = @ecs.register_resource(
+  debug_name="app::resource_param_test::CounterResource",
 )
 
 ///|
 impl Resource for CounterResource with resource() {
-  counter_resource_storage.val
+  counter_resource_key
 }
 
 ///|
-fn reset_counter_resource() -> Unit {
-  counter_resource_storage.val.remove() |> ignore
+fn read_counter_resource(world : @ecs.World) -> CounterResource? {
+  try! world.get_resource(counter_resource_key)
 }
 
 ///|
 test "app: insert_resource and ResMut parameter updates value" {
-  reset_counter_resource()
   let app = App::new(@ecs.World::new())
     .insert_resource(CounterResource::{ value: 1 })
     .add_system_param(fn(resource : ResMut[CounterResource]) {
@@ -43,7 +42,7 @@ test "app: insert_resource and ResMut parameter updates value" {
     })
   app.run_once() |> ignore
 
-  let value = match counter_resource_storage.val.get() {
+  let value = match read_counter_resource(app.world()) {
     Some(resource) => resource.value
     None => -1
   }
@@ -52,7 +51,6 @@ test "app: insert_resource and ResMut parameter updates value" {
 
 ///|
 test "app: Res parameter reads inserted resource value" {
-  reset_counter_resource()
   let observed : Ref[Int] = Ref::new(-1)
   let app = App::new(@ecs.World::new())
     .insert_resource(CounterResource::{ value: 7 })
@@ -65,12 +63,11 @@ test "app: Res parameter reads inserted resource value" {
 
 ///|
 test "app: init_resource inserts only when missing" {
-  reset_counter_resource()
   let app = App::new(@ecs.World::new()).init_resource(fn() {
     CounterResource::{ value: 11 }
   })
   inspect(app.contains_resource(CounterResource::resource()), content="true")
-  let inserted_value = match counter_resource_storage.val.get() {
+  let inserted_value = match read_counter_resource(app.world()) {
     Some(resource) => resource.value
     None => -1
   }
@@ -81,7 +78,7 @@ test "app: init_resource inserts only when missing" {
   .init_resource(fn() { CounterResource::{ value: 99 } })
   |> ignore
 
-  let kept_value = match counter_resource_storage.val.get() {
+  let kept_value = match read_counter_resource(app.world()) {
     Some(resource) => resource.value
     None => -1
   }
@@ -90,7 +87,6 @@ test "app: init_resource inserts only when missing" {
 
 ///|
 test "app: resource_remove clears custom resource" {
-  reset_counter_resource()
   let app = App::new(@ecs.World::new()).insert_resource(CounterResource::{
     value: 9,
   })

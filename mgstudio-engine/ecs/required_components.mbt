@@ -356,11 +356,12 @@ fn World::insert_component_with_requirements_unchecked(
   match old_payload {
     Some(previous) => {
       self.run_component_replace_hooks(entity, component_id, previous, payload)
+      self.run_insert_observers(entity, component_id)
       return
     }
     None => {
       self.run_component_insert_hooks(entity, component_id, payload)
-      self.run_component_insert_observers(entity, component_id)
+      self.run_insert_observers(entity, component_id)
     }
   }
 

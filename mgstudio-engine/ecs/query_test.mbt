@@ -348,3 +348,53 @@ test "ecs query: iter_many_ref preserves filter and change state" {
   }
   inspect(seen, content="[(1, true, true), (2, true, true)]")
 }
+
+///|
+test "ecs query: iter_many_unique_ref rejects duplicates and preserves order" {
+  let world = World::new()
+  let comp_position : ComponentKey[Position] = register_component(
+    debug_name="position_iter_many_unique_ref",
+  )
+  let comp_velocity : ComponentKey[Velocity] = register_component(
+    debug_name="velocity_iter_many_unique_ref",
+  )
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  let e2 = world.spawn()
+
+  try! world.set(e0, comp_position, Position::{ x: 1, y: 1 })
+  try! world.set(e1, comp_position, Position::{ x: 2, y: 2 })
+  try! world.set(e1, comp_velocity, Velocity::{ dx: 3, dy: 3 })
+  try! world.set(e2, comp_position, Position::{ x: 4, y: 4 })
+  try! world.set(e2, comp_velocity, Velocity::{ dx: 5, dy: 5 })
+
+  let ctx = @core.SystemContext::new()
+  ctx.set(@core.SystemTicks::new(0, 1))
+  world.set_system_context(ctx)
+
+  let duplicate_result : Result[
+    Query1FilteredManyRef[Position, With[Velocity]],
+    EcsError,
+  ] = try? world
+    .query1_filtered(comp_position, With::new(comp_velocity))
+    .iter_many_unique_ref([e1, e1])
+  guard duplicate_result is Err(NonUniqueEntityList(entity)) else {
+    fail("expected duplicate entity diagnostics")
+  }
+  inspect(entity.id, content="1")
+
+  let seen : Array[(Int, Bool, Bool)] = []
+  let iter = try! world
+    .query1_filtered(comp_position, With::new(comp_velocity))
+    .iter_many_unique_ref([e2, e0, e1])
+  while true {
+    if (try! iter.fetch_next()) is Some((entity, component_ref)) {
+      seen.push(
+        (entity.id, component_ref.is_added(), component_ref.is_changed()),
+      )
+    } else {
+      break
+    }
+  }
+  inspect(seen, content="[(2, true, true), (1, true, true)]")
+}

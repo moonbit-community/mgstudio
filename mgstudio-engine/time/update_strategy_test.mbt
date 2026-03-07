@@ -13,13 +13,11 @@
 // limitations under the License.
 
 ///|
-fn reset_time_test_state() -> Unit {
-  let tick : @core.Tick = 1
-  Time::resource().insert(Time::new(), tick)
-  Real::resource().insert(Real::new(0.0F), tick)
-  Virtual::resource().insert(Virtual::new(), tick)
-  Fixed::resource().insert(Fixed::new(), tick)
-  TimeUpdateStrategy::resource().insert(TimeUpdateStrategy::default(), tick)
+fn[T] read_time_test_resource(
+  app : @app.App[@ecs.World],
+  key : @ecs.ResourceKey[T],
+) -> T {
+  try! app.world().get_resource(key).unwrap()
 }
 
 ///|
@@ -49,69 +47,122 @@ fn current_stage_label() -> String {
 
 ///|
 test "time: manual instant keeps first update delta at zero" {
-  reset_time_test_state()
   let mut app = @app.App::new(@ecs.World::new()).add_plugins([time_plugin])
   time_virtual_set_max_delta_seconds(10.0F)
 
   app = app.insert_resource(TimeUpdateStrategy::ManualInstant(10.0F)).run_once()
   inspect(
-    Real::resource().get().unwrap().first_update_seconds(),
+    read_time_test_resource(app, Real::resource()).first_update_seconds(),
     content="Some(10)",
   )
-  inspect(Real::resource().get().unwrap().delta_seconds(), content="0")
-  inspect(Real::resource().get().unwrap().elapsed_seconds(), content="0")
-  inspect(Virtual::resource().get().unwrap().delta_seconds(), content="0")
-  inspect(Time::resource().get().unwrap().elapsed_seconds(), content="0")
+  inspect(
+    read_time_test_resource(app, Real::resource()).delta_seconds(),
+    content="0",
+  )
+  inspect(
+    read_time_test_resource(app, Real::resource()).elapsed_seconds(),
+    content="0",
+  )
+  inspect(
+    read_time_test_resource(app, Virtual::resource()).delta_seconds(),
+    content="0",
+  )
+  inspect(
+    read_time_test_resource(app, Time::resource()).elapsed_seconds(),
+    content="0",
+  )
 
   app = app.insert_resource(TimeUpdateStrategy::ManualInstant(12.5F)).run_once()
   inspect(
-    Real::resource().get().unwrap().last_update_seconds(),
+    read_time_test_resource(app, Real::resource()).last_update_seconds(),
     content="Some(12.5)",
   )
-  inspect(Real::resource().get().unwrap().delta_seconds(), content="2.5")
-  inspect(Real::resource().get().unwrap().elapsed_seconds(), content="2.5")
-  inspect(Virtual::resource().get().unwrap().delta_seconds(), content="2.5")
-  inspect(Time::resource().get().unwrap().elapsed_seconds(), content="2.5")
+  inspect(
+    read_time_test_resource(app, Real::resource()).delta_seconds(),
+    content="2.5",
+  )
+  inspect(
+    read_time_test_resource(app, Real::resource()).elapsed_seconds(),
+    content="2.5",
+  )
+  inspect(
+    read_time_test_resource(app, Virtual::resource()).delta_seconds(),
+    content="2.5",
+  )
+  inspect(
+    read_time_test_resource(app, Time::resource()).elapsed_seconds(),
+    content="2.5",
+  )
 }
 
 ///|
 test "time: virtual time clamps large deltas by default" {
-  reset_time_test_state()
   let mut app = @app.App::new(@ecs.World::new()).add_plugins([time_plugin])
 
   app = app.insert_resource(TimeUpdateStrategy::ManualDuration(1.0F)).run_once()
   app = app.insert_resource(TimeUpdateStrategy::ManualDuration(1.0F)).run_once()
-  inspect(Real::resource().get().unwrap().delta_seconds(), content="1")
-  inspect(Virtual::resource().get().unwrap().delta_seconds(), content="0.25")
-  inspect(Time::resource().get().unwrap().elapsed_seconds(), content="0.25")
+  inspect(
+    read_time_test_resource(app, Real::resource()).delta_seconds(),
+    content="1",
+  )
+  inspect(
+    read_time_test_resource(app, Virtual::resource()).delta_seconds(),
+    content="0.25",
+  )
+  inspect(
+    read_time_test_resource(app, Time::resource()).elapsed_seconds(),
+    content="0.25",
+  )
 }
 
 ///|
 test "time: pause and relative speed follow bevy virtual semantics" {
-  reset_time_test_state()
   let mut app = @app.App::new(@ecs.World::new()).add_plugins([time_plugin])
   time_virtual_set_max_delta_seconds(10.0F)
 
   app = app.insert_resource(TimeUpdateStrategy::ManualDuration(1.0F)).run_once()
   time_virtual_pause()
   app = app.insert_resource(TimeUpdateStrategy::ManualDuration(2.0F)).run_once()
-  inspect(Real::resource().get().unwrap().delta_seconds(), content="2")
-  inspect(Virtual::resource().get().unwrap().delta_seconds(), content="0")
-  inspect(Virtual::resource().get().unwrap().effective_speed(), content="0")
-  inspect(Virtual::resource().get().unwrap().was_paused(), content="true")
+  inspect(
+    read_time_test_resource(app, Real::resource()).delta_seconds(),
+    content="2",
+  )
+  inspect(
+    read_time_test_resource(app, Virtual::resource()).delta_seconds(),
+    content="0",
+  )
+  inspect(
+    read_time_test_resource(app, Virtual::resource()).effective_speed(),
+    content="0",
+  )
+  inspect(
+    read_time_test_resource(app, Virtual::resource()).was_paused(),
+    content="true",
+  )
 
   time_virtual_unpause()
   time_virtual_set_relative_speed(0.5F)
   app = app.insert_resource(TimeUpdateStrategy::ManualDuration(2.0F)).run_once()
-  inspect(Real::resource().get().unwrap().delta_seconds(), content="2")
-  inspect(Virtual::resource().get().unwrap().delta_seconds(), content="1")
-  inspect(Virtual::resource().get().unwrap().effective_speed(), content="0.5")
-  inspect(Virtual::resource().get().unwrap().was_paused(), content="false")
+  inspect(
+    read_time_test_resource(app, Real::resource()).delta_seconds(),
+    content="2",
+  )
+  inspect(
+    read_time_test_resource(app, Virtual::resource()).delta_seconds(),
+    content="1",
+  )
+  inspect(
+    read_time_test_resource(app, Virtual::resource()).effective_speed(),
+    content="0.5",
+  )
+  inspect(
+    read_time_test_resource(app, Virtual::resource()).was_paused(),
+    content="false",
+  )
 }
 
 ///|
 test "time: fixed timesteps strategy drives fixed update loop" {
-  reset_time_test_state()
   time_virtual_set_max_delta_seconds(1.0F)
   let counter : Ref[Int] = Ref::new(0)
   let mut app = @app.App::new(@ecs.World::new())
@@ -127,22 +178,30 @@ test "time: fixed timesteps strategy drives fixed update loop" {
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(2)).run_once()
   inspect(counter.val, content="2")
   inspect(time_fixed_steps_ran_this_frame(), content="2")
-  inspect(Fixed::resource().get().unwrap().delta_seconds(), content="0.125")
-  inspect(Fixed::resource().get().unwrap().elapsed_seconds(), content="0.25")
-  inspect(Time::resource().get().unwrap().elapsed_seconds(), content="0.25")
+  inspect(
+    read_time_test_resource(app, Fixed::resource()).delta_seconds(),
+    content="0.125",
+  )
+  inspect(
+    read_time_test_resource(app, Fixed::resource()).elapsed_seconds(),
+    content="0.25",
+  )
+  inspect(
+    read_time_test_resource(app, Time::resource()).elapsed_seconds(),
+    content="0.25",
+  )
 }
 
 ///|
 test "time: generic time switches to fixed during fixed update and restores after loop" {
-  reset_time_test_state()
   time_virtual_set_max_delta_seconds(1.0F)
   let fixed_log : Array[String] = []
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins([time_plugin])
     .insert_resource(Fixed::from_seconds(0.125F))
-    .add_fixed_update_system(fn(_world : @ecs.World) {
-      let generic_time = Time::resource().get().unwrap()
-      let fixed_time = Fixed::resource().get().unwrap()
+    .add_fixed_update_system(fn(world : @ecs.World) {
+      let generic_time = try! world.get_resource(Time::resource()).unwrap()
+      let fixed_time = try! world.get_resource(Fixed::resource()).unwrap()
       fixed_log.push(
         generic_time.delta_seconds().to_string() +
         "/" +
@@ -162,13 +221,18 @@ test "time: generic time switches to fixed during fixed update and restores afte
     fixed_log.join(","),
     content="0.125/0.125|0.125/0.125,0.125/0.25|0.125/0.25",
   )
-  inspect(Time::resource().get().unwrap().delta_seconds(), content="0.25")
-  inspect(Time::resource().get().unwrap().elapsed_seconds(), content="0.25")
+  inspect(
+    read_time_test_resource(app, Time::resource()).delta_seconds(),
+    content="0.25",
+  )
+  inspect(
+    read_time_test_resource(app, Time::resource()).elapsed_seconds(),
+    content="0.25",
+  )
 }
 
 ///|
 test "time: fixed resource timestep changes affect later steps in the same frame" {
-  reset_time_test_state()
   time_virtual_set_max_delta_seconds(1.0F)
   let steps : Ref[Int] = Ref::new(0)
   let mut app = @app.App::new(@ecs.World::new())
@@ -191,22 +255,21 @@ test "time: fixed resource timestep changes affect later steps in the same frame
   inspect(steps.val, content="3")
   inspect(time_fixed_steps_ran_this_frame(), content="3")
   inspect(
-    Fixed::resource().get().unwrap().timestep_seconds(),
+    read_time_test_resource(app, Fixed::resource()).timestep_seconds(),
     content="0.10000000149011612",
   )
   inspect(
-    Fixed::resource().get().unwrap().elapsed_seconds(),
+    read_time_test_resource(app, Fixed::resource()).elapsed_seconds(),
     content="0.4000000059604645",
   )
   inspect(
-    Time::resource().get().unwrap().elapsed_seconds(),
+    read_time_test_resource(app, Time::resource()).elapsed_seconds(),
     content="0.4000000059604645",
   )
 }
 
 ///|
 test "time: fixed main schedule runs substages in bevy order" {
-  reset_time_test_state()
   time_virtual_set_max_delta_seconds(1.0F)
   let log : Array[String] = []
   let mut app = @app.App::new(@ecs.World::new())
@@ -240,7 +303,6 @@ test "time: fixed main schedule runs substages in bevy order" {
 
 ///|
 test "time: run fixed main loop system sets order before fixed and after hooks" {
-  reset_time_test_state()
   time_virtual_set_max_delta_seconds(1.0F)
   let log : Array[String] = []
   let mut app = @app.App::new(@ecs.World::new())
@@ -273,7 +335,6 @@ test "time: run fixed main loop system sets order before fixed and after hooks" 
 
 ///|
 test "time: fixed main schedule order resource drives fixed substage order" {
-  reset_time_test_state()
   time_virtual_set_max_delta_seconds(1.0F)
   let log : Array[String] = []
   let mut app = @app.App::new(@ecs.World::new())

@@ -79,3 +79,32 @@ test "app hierarchy: validate-parent plugin skips checks when parent already has
   )
   inspect(reader.len(), content="0")
 }
+
+///|
+test "app hierarchy: validate-parent plugin rechecks on component replace" {
+  let plugin : ValidateParentHasComponentPlugin[HierarchyValidationMarker] = ValidateParentHasComponentPlugin::default()
+  let app = App::new(@ecs.World::new()).add_plugins([
+    validate_parent_has_component_plugin(plugin),
+  ])
+  let world = app.world()
+  let parent = world.spawn_empty()
+  let child = world.spawn_empty()
+
+  try! world.set(
+    child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(parent),
+  )
+  try! world.set(child, hierarchy_validation_marker_key, HierarchyValidationMarker::{
+
+  })
+  try! world.set(child, hierarchy_validation_marker_key, HierarchyValidationMarker::{
+
+  })
+
+  let reader = world.message_reader(
+    check_parent_has_component_message_key(hierarchy_validation_marker_key),
+    Ref::new(0),
+  )
+  inspect(reader.len(), content="2")
+}

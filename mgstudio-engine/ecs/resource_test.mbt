@@ -112,3 +112,37 @@ test "ecs resource: change ticks track add and overwrite" {
     content="true",
   )
 }
+
+///|
+test "ecs resource: get_resource_ref observes live world storage" {
+  let world = World::new()
+  let res_config : ResourceKey[RuntimeConfig] = register_resource(
+    debug_name="ref_runtime_config",
+  )
+
+  world.insert_resource(res_config, RuntimeConfig::{ fps: 60 })
+  let config_ref = try! world.get_resource_ref(res_config).unwrap()
+  config_ref.val = RuntimeConfig::{ fps: 75 }
+
+  inspect(try! world.get_resource(res_config), content="Some({fps: 75})")
+}
+
+///|
+test "ecs resource: get_resource_ref_mut updates changed tick" {
+  let world = World::new()
+  let res_config : ResourceKey[RuntimeConfig] = register_resource(
+    debug_name="ref_mut_runtime_config",
+  )
+
+  world.insert_resource(res_config, RuntimeConfig::{ fps: 60 })
+  world.increment_change_tick() |> ignore
+  world.increment_change_tick() |> ignore
+
+  let config_ref = try! world.get_resource_ref_mut(res_config, 0).unwrap()
+  config_ref.val = RuntimeConfig::{ fps: 90 }
+
+  inspect(try! world.get_resource(res_config), content="Some({fps: 90})")
+  let ticks = world.get_resource_ticks(res_config).unwrap()
+  inspect(ticks.is_added(@core.SystemTicks::new(1, 2)), content="false")
+  inspect(ticks.is_changed(@core.SystemTicks::new(1, 2)), content="true")
+}

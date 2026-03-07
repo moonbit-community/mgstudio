@@ -113,7 +113,7 @@ pub(open) trait SystemParam {
 
 ///|
 pub(open) trait Resource {
-  resource() -> @core.Resource[Self]
+  resource() -> @ecs.ResourceKey[Self]
 }
 
 ///|
@@ -139,6 +139,35 @@ pub fn[T] ResMut::get_ref(self : ResMut[T]) -> Ref[T] {
 ///|
 fn[T] system_param_abort_missing_resource() -> T {
   abort("Missing resource for system parameter")
+}
+
+///|
+fn[T : Resource] world_resource_value_or_abort(world : @ecs.World) -> T {
+  match
+    (try world.get_resource(Resource::resource()) catch {
+      _ => None
+    } noraise {
+      value => value
+    }) {
+    Some(value) => value
+    None => system_param_abort_missing_resource()
+  }
+}
+
+///|
+fn[T : Resource] world_resource_ref_mut_or_abort(
+  world : @ecs.World,
+  change_tick : @core.Tick,
+) -> Ref[T] {
+  match
+    (try world.get_resource_ref_mut(Resource::resource(), change_tick) catch {
+      _ => None
+    } noraise {
+      value => value
+    }) {
+    Some(value) => value
+    None => system_param_abort_missing_resource()
+  }
 }
 
 ///|
@@ -396,9 +425,8 @@ pub impl[T : Resource] SystemParam for Res[T] with init_state(world) {
 
 ///|
 pub impl[T : Resource] SystemParam for Res[T] with get(_state) {
-  match Resource::resource().get() {
-    Some(value) => Res::{ value, }
-    None => system_param_abort_missing_resource()
+  Res::{
+    value: world_resource_value_or_abort(system_param_abort_missing_world()),
   }
 }
 
@@ -414,10 +442,12 @@ pub impl[T : Resource] SystemParam for ResMut[T] with init_state(world) {
 
 ///|
 pub impl[T : Resource] SystemParam for ResMut[T] with get(_state) {
-  let tick = current_system_ticks().this_run
-  match Resource::resource().get_ref_mut(tick) {
-    Some(value) => ResMut::{ value, }
-    None => system_param_abort_missing_resource()
+  let world = system_param_abort_missing_world()
+  ResMut::{
+    value: world_resource_ref_mut_or_abort(
+      world,
+      current_system_ticks().this_run,
+    ),
   }
 }
 
@@ -638,11 +668,11 @@ pub fn App::world(self : App[@ecs.World]) -> @ecs.World {
 }
 
 ///|
-pub fn[W, T : Resource] App::insert_resource(
-  self : App[W],
+pub fn[T : Resource] App::insert_resource(
+  self : App[@ecs.World],
   value : T,
-) -> App[W] {
-  Resource::resource().insert(value, current_system_ticks().this_run)
+) -> App[@ecs.World] {
+  self.sub_apps.main.world.insert_resource(Resource::resource(), value)
   self
 }
 
@@ -657,31 +687,52 @@ pub fn[T] App::insert_world_resource(
 }
 
 ///|
-pub fn[W, T : Resource] App::init_resource(
-  self : App[W],
+pub fn[T : Resource] App::init_resource(
+  self : App[@ecs.World],
   init : () -> T,
-) -> App[W] {
-  let resource : @core.Resource[T] = Resource::resource()
-  if !resource.is_present() {
-    resource.insert(init(), current_system_ticks().this_run)
+) -> App[@ecs.World] {
+  let key = Resource::resource()
+  let has_resource = match
+    (try self.sub_apps.main.world.get_resource(key) catch {
+      _ => None
+    } noraise {
+      value => value
+    }) {
+    Some(_) => true
+    None => false
+  }
+  if !has_resource {
+    self.sub_apps.main.world.insert_resource(key, init())
   }
   self
 }
 
 ///|
-pub fn[W, T] App::contains_resource(
-  _self : App[W],
-  resource : @core.Resource[T],
+pub fn[T] App::contains_resource(
+  self : App[@ecs.World],
+  key : @ecs.ResourceKey[T],
 ) -> Bool {
-  resource.is_present()
+  match
+    (try self.sub_apps.main.world.get_resource(key) catch {
+      _ => None
+    } noraise {
+      value => value
+    }) {
+    Some(_) => true
+    None => false
+  }
 }
 
 ///|
-pub fn[W, T] App::remove_resource(
-  _self : App[W],
-  resource : @core.Resource[T],
+pub fn[T] App::remove_resource(
+  self : App[@ecs.World],
+  key : @ecs.ResourceKey[T],
 ) -> T? {
-  resource.remove()
+  try self.sub_apps.main.world.remove_resource(key) catch {
+    _ => None
+  } noraise {
+    value => value
+  }
 }
 
 ///|

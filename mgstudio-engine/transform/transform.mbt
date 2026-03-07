@@ -453,14 +453,28 @@ fn propagate_descendants(
   parent_changed : Bool,
   static_optimizations : StaticTransformOptimizations,
 ) -> Unit raise @ecs.EcsError {
-  let child_entities = children.entities()
-  let children_query = world.query1(@hierarchy.ecs_key_children)
-  let global_access = world.component(ecs_key_global_transform)
-
-  for child in child_entities {
-    guard (try! world.get_ref(child, @hierarchy.ecs_key_parent))
-      is Some(child_of) else {
+  let child_query = world.query1_filtered(
+    @hierarchy.ecs_key_parent,
+    @ecs.With::new(ecs_key_global_transform),
+  )
+  let node_query = world.query3_ref_mut_optional_filtered(
+    @math.ecs_key_transform,
+    ecs_key_global_transform,
+    @hierarchy.ecs_key_children,
+    @ecs.With::new(@hierarchy.ecs_key_parent),
+  )
+  let child_iter = match
+    (try? child_query.iter_many_unique_ref(children.entities())) {
+    Ok(iter) => iter
+    Err(_) => {
       transform_abort_malformed_hierarchy()
+      return
+    }
+  }
+
+  while true {
+    guard (try! child_iter.fetch_next()) is Some((child, child_of)) else {
+      break
     }
     if child_of.value().entity().id != parent.id ||
       child_of.value().entity().generation != parent.generation {
@@ -476,12 +490,8 @@ fn propagate_descendants(
       continue
     }
 
-    guard (try! world.get_ref(child, @math.ecs_key_transform))
-      is Some(local_transform) else {
-      continue
-    }
-    guard (try! world.get_ref(child, ecs_key_global_transform))
-      is Some(global_transform) else {
+    guard (try! node_query.get_unchecked(child))
+      is Some((local_transform, global_transform, grand_children)) else {
       continue
     }
 
@@ -492,20 +502,20 @@ fn propagate_descendants(
     let next_global = parent_global_transform.mul(
       GlobalTransform::from_transform(local_transform.value()),
     )
-    if changed && global_transform.value().to_json() != next_global.to_json() {
-      global_access.set(child, next_global, world.read_change_tick()) |> ignore
+    if changed && global_transform.get().to_json() != next_global.to_json() {
+      global_transform.get_ref().val = next_global
     }
 
-    if (try! children_query.get(child)) is Some(grand_children) {
+    if grand_children is Some(grand_children) {
       propagate_descendants(
         world,
         child,
         if changed {
           next_global
         } else {
-          global_transform.value()
+          global_transform.get()
         },
-        grand_children,
+        grand_children.value(),
         changed,
         static_optimizations,
       )
@@ -524,19 +534,20 @@ pub fn propagate_parent_transforms(
   let orphaned_entities = orphaned.read()
   sort_entities_by_id(orphaned_entities)
 
-  let root_query = world.query1_filtered(
+  let root_query = world.query3_ref_mut_optional_filtered(
+    @math.ecs_key_transform,
+    ecs_key_global_transform,
     @hierarchy.ecs_key_children,
     @ecs.Without::new(@hierarchy.ecs_key_parent),
   )
-  let global_access = world.component(ecs_key_global_transform)
   let static_optimizations = read_static_transform_optimizations(world)
-  let roots : Array[(@core.Entity, @hierarchy.Children)] = []
-  try! root_query.view(fn(entity, children) { roots.push((entity, children)) })
-  for root in roots {
-    let entity = root.0
-    let children = root.1
-    guard (try! world.get_ref(entity, @math.ecs_key_transform))
-      is Some(transform) else {
+  let roots : Array[@core.Entity] = []
+  world
+  .query_entities_filtered(@ecs.Without::new(@hierarchy.ecs_key_parent))
+  .view(fn(entity) { roots.push(entity) })
+  for entity in roots {
+    guard (try! root_query.get_unchecked(entity))
+      is Some((transform, global_transform, children)) else {
       continue
     }
     guard (try! world.get_ref(entity, ecs_key_transform_tree_changed))
@@ -546,30 +557,28 @@ pub fn propagate_parent_transforms(
     if static_optimizations.enabled && !transform_tree.is_changed() {
       continue
     }
-    guard (try! world.get_ref(entity, ecs_key_global_transform))
-      is Some(global_transform) else {
-      continue
-    }
 
     let changed = transform.is_changed() ||
       global_transform.is_added() ||
       entity_array_contains(orphaned_entities, entity)
     let next_global = GlobalTransform::from_transform(transform.value())
-    if changed && global_transform.value().to_json() != next_global.to_json() {
-      global_access.set(entity, next_global, world.read_change_tick()) |> ignore
+    if changed && global_transform.get().to_json() != next_global.to_json() {
+      global_transform.get_ref().val = next_global
     }
-    propagate_descendants(
-      world,
-      entity,
-      if changed {
-        next_global
-      } else {
-        global_transform.value()
-      },
-      children,
-      changed,
-      static_optimizations,
-    )
+    if children is Some(children) {
+      try! propagate_descendants(
+        world,
+        entity,
+        if changed {
+          next_global
+        } else {
+          global_transform.get()
+        },
+        children.value(),
+        changed,
+        static_optimizations,
+      )
+    }
   }
 }
 

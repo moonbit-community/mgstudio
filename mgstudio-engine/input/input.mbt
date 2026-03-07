@@ -806,18 +806,61 @@ let file_drag_and_drop_message_key : @ecs.MessageKey[FileDragAndDrop] = @ecs.reg
 )
 
 ///|
-let accumulated_mouse_motion_resource_ref : Ref[
-  @core.Resource[AccumulatedMouseMotion],
-] = Ref::new(@core.Resource::new())
+let active_input_world_ref : Ref[@ecs.World?] = Ref::new(None)
 
 ///|
-let accumulated_mouse_scroll_resource_ref : Ref[
-  @core.Resource[AccumulatedMouseScroll],
-] = Ref::new(@core.Resource::new())
+fn input_resource_world() -> @ecs.World? {
+  match @app.current_world() {
+    Some(world) => {
+      active_input_world_ref.val = Some(world)
+      Some(world)
+    }
+    None => active_input_world_ref.val
+  }
+}
 
 ///|
-let touches_resource_ref : Ref[@core.Resource[Touches]] = Ref::new(
-  @core.Resource::new(),
+fn[T] input_resource_get(key : @ecs.ResourceKey[T]) -> T? {
+  match input_resource_world() {
+    Some(world) =>
+      try world.get_resource(key) catch {
+        _ => None
+      } noraise {
+        value => value
+      }
+    None => None
+  }
+}
+
+///|
+fn[T] input_resource_ref_mut(
+  key : @ecs.ResourceKey[T],
+  change_tick : @core.Tick,
+) -> Ref[T]? {
+  match input_resource_world() {
+    Some(world) =>
+      try world.get_resource_ref_mut(key, change_tick) catch {
+        _ => None
+      } noraise {
+        value => value
+      }
+    None => None
+  }
+}
+
+///|
+let accumulated_mouse_motion_resource_key : @ecs.ResourceKey[
+  AccumulatedMouseMotion,
+] = @ecs.register_resource(debug_name="bevy_input::AccumulatedMouseMotion")
+
+///|
+let accumulated_mouse_scroll_resource_key : @ecs.ResourceKey[
+  AccumulatedMouseScroll,
+] = @ecs.register_resource(debug_name="bevy_input::AccumulatedMouseScroll")
+
+///|
+let touches_resource_key : @ecs.ResourceKey[Touches] = @ecs.register_resource(
+  debug_name="bevy_input::Touches",
 )
 
 ///|
@@ -1093,10 +1136,9 @@ fn input_primary_pointer_from_touches(touches : Touches) -> @math.Vec2? {
 
 ///|
 pub fn mouse_motion_delta() -> @math.Vec2 {
-  if accumulated_mouse_motion_resource_ref.val.get_ref() is Some(motion_ref) {
-    motion_ref.val.delta
-  } else {
-    @math.Vec2::new(0.0F, 0.0F)
+  match input_resource_get(AccumulatedMouseMotion::resource()) {
+    Some(motion) => motion.delta
+    None => @math.Vec2::new(0.0F, 0.0F)
   }
 }
 
@@ -1115,9 +1157,8 @@ pub fn primary_pointer_position() -> @math.Vec2? {
   match input_primary_pointer_position_ref.val {
     Some(position) => Some(position)
     None =>
-      if touches_resource_ref.val.get_ref() is Some(touches_ref) {
-        if input_primary_pointer_from_touches(touches_ref.val)
-          is Some(touch_position) {
+      if input_resource_get(Touches::resource()) is Some(touches) {
+        if input_primary_pointer_from_touches(touches) is Some(touch_position) {
           Some(touch_position)
         } else {
           mouse_position()
@@ -1133,8 +1174,8 @@ pub fn primary_pointer_pressed() -> Bool {
   if mouse_button_pressed(@window.MouseButton::Left) {
     return true
   }
-  if touches_resource_ref.val.get_ref() is Some(touches_ref) {
-    return touches_ref.val.active.length() > 0
+  if input_resource_get(Touches::resource()) is Some(touches) {
+    return touches.active.length() > 0
   }
   false
 }
@@ -1144,8 +1185,8 @@ pub fn primary_pointer_just_pressed() -> Bool {
   if mouse_button_just_pressed(@window.MouseButton::Left) {
     return true
   }
-  if touches_resource_ref.val.get_ref() is Some(touches_ref) {
-    return touches_ref.val.just_pressed.length() > 0
+  if input_resource_get(Touches::resource()) is Some(touches) {
+    return touches.just_pressed.length() > 0
   }
   false
 }
@@ -1155,9 +1196,9 @@ pub fn primary_pointer_just_released() -> Bool {
   if mouse_button_just_released(@window.MouseButton::Left) {
     return true
   }
-  if touches_resource_ref.val.get_ref() is Some(touches_ref) {
-    return touches_ref.val.just_released.length() > 0 ||
-      touches_ref.val.just_canceled.length() > 0
+  if input_resource_get(Touches::resource()) is Some(touches) {
+    return touches.just_released.length() > 0 ||
+      touches.just_canceled.length() > 0
   }
   false
 }
@@ -1312,18 +1353,42 @@ fn vec2_is_zero(value : @math.Vec2) -> Bool {
 }
 
 ///|
-fn ensure_input_resources(tick : @core.Tick) -> Unit {
-  let motion_resource = accumulated_mouse_motion_resource_ref.val
-  if !motion_resource.is_present() {
-    motion_resource.insert(AccumulatedMouseMotion::new(), tick)
+fn ensure_input_resources(world : @ecs.World, tick : @core.Tick) -> Unit {
+  if (try world.get_resource(AccumulatedMouseMotion::resource()) catch {
+      _ => None
+    } noraise {
+      value => value
+    })
+    is None {
+    world.insert_resource_with_change_tick(
+      AccumulatedMouseMotion::resource(),
+      AccumulatedMouseMotion::new(),
+      tick,
+    )
   }
-  let scroll_resource = accumulated_mouse_scroll_resource_ref.val
-  if !scroll_resource.is_present() {
-    scroll_resource.insert(AccumulatedMouseScroll::new(), tick)
+  if (try world.get_resource(AccumulatedMouseScroll::resource()) catch {
+      _ => None
+    } noraise {
+      value => value
+    })
+    is None {
+    world.insert_resource_with_change_tick(
+      AccumulatedMouseScroll::resource(),
+      AccumulatedMouseScroll::new(),
+      tick,
+    )
   }
-  let touches_resource = touches_resource_ref.val
-  if !touches_resource.is_present() {
-    touches_resource.insert(Touches::new(), tick)
+  if (try world.get_resource(Touches::resource()) catch {
+      _ => None
+    } noraise {
+      value => value
+    })
+    is None {
+    world.insert_resource_with_change_tick(
+      Touches::resource(),
+      Touches::new(),
+      tick,
+    )
   }
 }
 
@@ -1367,7 +1432,7 @@ fn active_touches_remove(active : Array[Touch], id : Int) -> Unit {
 ///|
 pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  ensure_input_resources(tick)
+  ensure_input_resources(world, tick)
   let mouse_button_writer = world.message_writer(mouse_button_input_message_key)
   let mouse_motion_writer = world.message_writer(mouse_motion_message_key)
   let cursor_moved_writer = world.message_writer(cursor_moved_message_key)
@@ -1441,11 +1506,11 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
     )
   }
 
-  if accumulated_mouse_motion_resource_ref.val.get_ref_mut(tick)
+  if (try! world.get_resource_ref_mut(AccumulatedMouseMotion::resource(), tick))
     is Some(motion_ref) {
     motion_ref.val = AccumulatedMouseMotion::{ delta: mouse_delta }
   }
-  if accumulated_mouse_scroll_resource_ref.val.get_ref_mut(tick)
+  if (try! world.get_resource_ref_mut(AccumulatedMouseScroll::resource(), tick))
     is Some(scroll_ref) {
     scroll_ref.val = AccumulatedMouseScroll::{ delta: wheel_delta }
   }
@@ -1501,7 +1566,8 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
   }
   input_active_touches_ref.val = active_touches
 
-  if touches_resource_ref.val.get_ref_mut(tick) is Some(touches_ref) {
+  if (try! world.get_resource_ref_mut(Touches::resource(), tick))
+    is Some(touches_ref) {
     touches_ref.val = touches
   }
 
@@ -1690,21 +1756,22 @@ pub impl[T : ButtonInputSnapshotProvider] @app.SystemParam for ButtonInput[T] wi
 
 ///|
 pub impl @app.Resource for AccumulatedMouseMotion with resource() {
-  accumulated_mouse_motion_resource_ref.val
+  accumulated_mouse_motion_resource_key
 }
 
 ///|
 pub impl @app.Resource for AccumulatedMouseScroll with resource() {
-  accumulated_mouse_scroll_resource_ref.val
+  accumulated_mouse_scroll_resource_key
 }
 
 ///|
 pub impl @app.Resource for Touches with resource() {
-  touches_resource_ref.val
+  touches_resource_key
 }
 
 ///|
 pub fn input_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  active_input_world_ref.val = Some(app.world())
   input_gamepad_plugin(app)
   .add_message(keyboard_input_message_key)
   .add_message(keyboard_character_message_key)

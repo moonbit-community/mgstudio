@@ -1,26 +1,28 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/runtime_native/native_a11y"
 
+import {
+  "Milky2018/moon_accesskit",
+}
+
 // Values
-pub fn action_kind(Int) -> Int
+pub fn accessibility_requested() -> Bool
 
-pub fn action_target(Int) -> Int
+pub fn bind_accessibility_requested(Ref[Bool]) -> Unit
 
-pub fn action_value_code_unit(index~ : Int, offset~ : Int) -> Int
+pub fn commit_pending_update() -> Bool
 
-pub fn action_value_len(Int) -> Int
+pub fn enqueue_action(@moon_accesskit.ActionRequest) -> Unit
 
-pub fn actions_clear() -> Unit
+pub fn last_update_payload() -> String
 
-pub fn actions_len() -> Int
+pub fn queue_update(@moon_accesskit.TreeUpdate) -> Unit
 
-pub fn apply_update(update_json~ : String) -> Unit
+pub fn queue_update_payload(payload~ : String) -> Unit
 
-pub fn begin_update(Int) -> Unit
+pub fn set_accessibility_requested(Bool) -> Unit
 
-pub fn end_update() -> Unit
-
-pub fn push_node(node_id~ : Int, parent_id~ : Int, role_id~ : Int, x~ : Float, y~ : Float, width~ : Float, height~ : Float, name~ : String, actions_mask~ : Int) -> Unit
+pub fn take_actions() -> Array[@moon_accesskit.ActionRequest]
 
 // Errors
 

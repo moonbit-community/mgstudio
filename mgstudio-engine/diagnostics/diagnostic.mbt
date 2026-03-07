@@ -322,13 +322,13 @@ pub fn DiagnosticsStore::default() -> DiagnosticsStore {
 }
 
 ///|
-let diagnostics_store_resource : Ref[@core.Resource[DiagnosticsStore]] = Ref::new(
-  @core.Resource::new(),
+let diagnostics_store_resource_key : @ecs.ResourceKey[DiagnosticsStore] = @ecs.register_resource(
+  debug_name="bevy_diagnostic::DiagnosticsStore",
 )
 
 ///|
 pub impl @app.Resource for DiagnosticsStore with resource() {
-  diagnostics_store_resource.val
+  diagnostics_store_resource_key
 }
 
 ///|
@@ -406,9 +406,24 @@ pub impl @app.SystemParam for Diagnostics with init_state(world) {
 }
 
 ///|
+fn diagnostics_store_ref_mut(
+  world : @ecs.World,
+  change_tick : @core.Tick,
+) -> Ref[DiagnosticsStore]? {
+  try
+    world.get_resource_ref_mut(DiagnosticsStore::resource(), change_tick)
+  catch {
+    _ => None
+  } noraise {
+    value => value
+  }
+}
+
+///|
 pub impl @app.SystemParam for Diagnostics with get(_state) {
   let tick = @app.current_system_ticks().this_run
-  match DiagnosticsStore::resource().get_ref_mut(tick) {
+  let world = @app.current_world().unwrap()
+  match diagnostics_store_ref_mut(world, tick) {
     Some(store_ref) => Diagnostics::{ store_ref, }
     None => abort("Missing DiagnosticsStore resource")
   }
@@ -448,11 +463,21 @@ pub fn register_diagnostic(
   app : @app.App[@ecs.World],
   diagnostic : Diagnostic,
 ) -> @app.App[@ecs.World] {
+  let world = app.world()
   let tick = @app.current_system_ticks().this_run
-  if !DiagnosticsStore::resource().is_present() {
-    DiagnosticsStore::resource().insert(DiagnosticsStore::default(), tick)
+  if (try world.get_resource(DiagnosticsStore::resource()) catch {
+      _ => None
+    } noraise {
+      value => value
+    })
+    is None {
+    world.insert_resource_with_change_tick(
+      DiagnosticsStore::resource(),
+      DiagnosticsStore::default(),
+      tick,
+    )
   }
-  match DiagnosticsStore::resource().get_ref_mut(tick) {
+  match diagnostics_store_ref_mut(world, tick) {
     Some(store_ref) => store_ref.val.add(diagnostic)
     None => abort("Failed to access DiagnosticsStore resource")
   }

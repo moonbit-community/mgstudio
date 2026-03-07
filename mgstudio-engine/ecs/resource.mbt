@@ -62,6 +62,37 @@ pub fn[T] World::get_resource(
 }
 
 ///|
+pub fn[T] World::get_resource_ref(
+  self : World,
+  key : ResourceKey[T],
+) -> Ref[T]? raise EcsError {
+  match self.resources.get(key.id()) {
+    Some(slot) => Some(self.resource_ref(key, slot.payload))
+    None => None
+  }
+}
+
+///|
+pub fn[T] World::get_resource_ref_mut(
+  self : World,
+  key : ResourceKey[T],
+  change_tick : @core.Tick,
+) -> Ref[T]? raise EcsError {
+  let effective_tick = resource_write_change_tick(self, change_tick)
+  match self.resources.get(key.id()) {
+    Some(slot) => {
+      self.resources.set(key.id(), ResourceSlot::{
+        payload: slot.payload,
+        added_tick: slot.added_tick,
+        changed_tick: effective_tick,
+      })
+      Some(self.resource_ref(key, slot.payload))
+    }
+    None => None
+  }
+}
+
+///|
 pub fn[T] World::get_resource_ticks(
   self : World,
   key : ResourceKey[T],

@@ -13,52 +13,174 @@
 // limitations under the License.
 
 ///|
-pub struct ComponentInsertObserver {
-  debug_name : String
-  run : (World, @core.Entity) -> Unit
+pub struct Insert {}
+
+///|
+pub struct On[E, C] {
+  entity : @core.Entity
+  marker_event : E?
+  marker_component : C?
 }
 
 ///|
-let component_insert_observer_registry : @hashmap.HashMap[
+pub struct ObserverHandle {
+  id : Int
+  world_id : Int
+}
+
+///|
+pub fn ObserverHandle::id(self : ObserverHandle) -> Int {
+  self.id
+}
+
+///|
+pub fn ObserverHandle::world_id(self : ObserverHandle) -> Int {
+  self.world_id
+}
+
+///|
+priv struct InsertObserverContext {
+  entity : @core.Entity
+  component_id : Int
+}
+
+///|
+priv struct InsertObserver {
+  run : (World) -> Unit
+}
+
+///|
+priv struct WorldObserverRegistry {
+  mut next_observer_id : Int
+  insert_observers : @hashmap.HashMap[Int, Array[InsertObserver]]
+}
+
+///|
+fn world_observer_registry_new() -> WorldObserverRegistry {
+  { next_observer_id: 1, insert_observers: @hashmap.HashMap::new() }
+}
+
+///|
+let insert_observer_registries : @hashmap.HashMap[
   Int,
-  Array[ComponentInsertObserver],
+  Ref[WorldObserverRegistry],
 ] = @hashmap.HashMap::new()
 
 ///|
-pub fn[T] register_component_insert_observer(
-  key : ComponentKey[T],
-  debug_name : String,
-  observer : (World, @core.Entity) -> Unit,
-) -> Bool {
-  let observers = component_insert_observer_registry.get_or_init(key.id(), fn() {
+let current_insert_observer_context_ref : Ref[InsertObserverContext?] = Ref::new(
+  None,
+)
+
+///|
+let current_insert_observer_world_ref : Ref[World?] = Ref::new(None)
+
+///|
+fn observer_registry_ref(world : World) -> Ref[WorldObserverRegistry] {
+  insert_observer_registries.get_or_init(world.world_id(), fn() {
+    Ref::new(world_observer_registry_new())
+  })
+}
+
+///|
+pub fn current_observer_world() -> World? {
+  current_insert_observer_world_ref.val
+}
+
+///|
+pub fn current_observer_world_abort_missing() -> World {
+  match current_observer_world() {
+    Some(world) => world
+    None => abort("Missing current observer world")
+  }
+}
+
+///|
+fn current_insert_observer_context_abort_missing() -> InsertObserverContext {
+  match current_insert_observer_context_ref.val {
+    Some(context) => context
+    None => abort("Missing current insert observer context")
+  }
+}
+
+///|
+pub fn[C : Component] current_insert_observer() -> On[Insert, C] {
+  let context = current_insert_observer_context_abort_missing()
+  let component_key : ComponentKey[C] = Component::component()
+  if context.component_id != component_key.id() {
+    abort(
+      "Current insert observer context does not match component `" +
+      component_key.debug_name() +
+      "`",
+    )
+  }
+  On::{
+    entity: context.entity,
+    marker_event: Some(Insert::{  }),
+    marker_component: None,
+  }
+}
+
+///|
+fn World::register_insert_observer(
+  self : World,
+  component_id : Int,
+  observer : (World) -> Unit,
+) -> ObserverHandle {
+  let registry_ref = observer_registry_ref(self)
+  let observer_id = registry_ref.val.next_observer_id
+  registry_ref.val.next_observer_id = observer_id + 1
+  let observers = registry_ref.val.insert_observers.get_or_init(component_id, fn() {
     []
   })
-  for existing in observers {
-    if existing.debug_name == debug_name {
-      return false
-    }
-  }
-  observers.push(ComponentInsertObserver::{ debug_name, run: observer })
-  true
+  observers.push(InsertObserver::{ run: observer })
+  { id: observer_id, world_id: self.world_id() }
 }
 
 ///|
-fn component_insert_observers(
+pub fn[C : Component] World::add_observer(
+  self : World,
+  observer : (On[Insert, C]) -> Unit,
+) -> ObserverHandle {
+  let component_key : ComponentKey[C] = Component::component()
+  self.register_insert_observer(component_key.id(), fn(_world) {
+    let event : On[Insert, C] = current_insert_observer()
+    observer(event)
+  })
+}
+
+///|
+fn World::insert_observers_for_component(
+  self : World,
   component_id : Int,
-) -> Array[ComponentInsertObserver]? {
-  component_insert_observer_registry.get(component_id)
+) -> Array[InsertObserver]? {
+  match insert_observer_registries.get(self.world_id()) {
+    Some(registry_ref) => registry_ref.val.insert_observers.get(component_id)
+    None => None
+  }
 }
 
 ///|
-fn World::run_component_insert_observers(
+fn World::run_insert_observers(
   self : World,
   entity : @core.Entity,
   component_id : Int,
 ) -> Unit {
-  guard component_insert_observers(component_id) is Some(observers) else {
+  guard self.insert_observers_for_component(component_id) is Some(observers) else {
     return
   }
+  let pending : Array[InsertObserver] = []
   for observer in observers {
-    (observer.run)(self, entity)
+    pending.push(observer)
   }
+  let previous_context = current_insert_observer_context_ref.val
+  let previous_world = current_insert_observer_world_ref.val
+  current_insert_observer_context_ref.val = Some({ entity, component_id })
+  current_insert_observer_world_ref.val = Some(self)
+  let count = pending.length()
+  for i in 0..<count {
+    let observer = pending[count - 1 - i]
+    (observer.run)(self)
+  }
+  current_insert_observer_world_ref.val = previous_world
+  current_insert_observer_context_ref.val = previous_context
 }

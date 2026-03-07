@@ -59,28 +59,29 @@ pub fn PitchAssets::set(
 }
 
 ///|
-let pitch_assets_resource : Ref[@core.Resource[PitchAssets]] = Ref::new(
-  @core.Resource::new(),
+let pitch_assets_resource_key : @ecs.ResourceKey[PitchAssets] = @ecs.register_resource(
+  debug_name="bevy_audio::PitchAssets",
 )
 
 ///|
 pub impl @app.Resource for PitchAssets with resource() {
-  pitch_assets_resource.val
+  pitch_assets_resource_key
 }
 
 ///|
 pub fn pitch_add(pitch : Pitch) -> @asset.Handle[Pitch] {
   let tick = @app.current_system_ticks().this_run
-  if !pitch_assets_resource.val.is_present() {
-    pitch_assets_resource.val.insert(PitchAssets::new(), tick)
-  }
-  let assets_ref = pitch_assets_resource.val.get_ref_mut(tick).unwrap()
+  let assets_ref = audio_resource_ensure_ref_mut(
+    PitchAssets::resource(),
+    fn() { PitchAssets::new() },
+    tick,
+  )
   assets_ref.val.add(pitch)
 }
 
 ///|
 pub fn pitch_get(handle : @asset.Handle[Pitch]) -> Pitch? {
-  match pitch_assets_resource.val.get() {
+  match audio_resource_get(PitchAssets::resource()) {
     Some(assets) => assets.get(handle)
     None => None
   }
@@ -89,7 +90,8 @@ pub fn pitch_get(handle : @asset.Handle[Pitch]) -> Pitch? {
 ///|
 pub fn pitch_set(handle : @asset.Handle[Pitch], pitch : Pitch) -> Bool {
   let tick = @app.current_system_ticks().this_run
-  guard pitch_assets_resource.val.get_ref_mut(tick) is Some(assets_ref) else {
+  guard audio_resource_ref_mut(PitchAssets::resource(), tick)
+    is Some(assets_ref) else {
     return false
   }
   assets_ref.val.set(handle, pitch)

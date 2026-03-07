@@ -28,13 +28,13 @@ pub fn GlobalVolume::default() -> GlobalVolume {
 }
 
 ///|
-let global_volume_resource : Ref[@core.Resource[GlobalVolume]] = Ref::new(
-  @core.Resource::new(),
+let global_volume_resource_key : @ecs.ResourceKey[GlobalVolume] = @ecs.register_resource(
+  debug_name="bevy_audio::GlobalVolume",
 )
 
 ///|
 pub impl @app.Resource for GlobalVolume with resource() {
-  global_volume_resource.val
+  global_volume_resource_key
 }
 
 ///|

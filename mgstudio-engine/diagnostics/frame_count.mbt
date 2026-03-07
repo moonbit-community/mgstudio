@@ -27,13 +27,13 @@ pub fn FrameCount::default() -> FrameCount {
 }
 
 ///|
-let frame_count_resource : Ref[@core.Resource[FrameCount]] = Ref::new(
-  @core.Resource::new(),
+let frame_count_resource_key : @ecs.ResourceKey[FrameCount] = @ecs.register_resource(
+  debug_name="bevy_diagnostic::FrameCount",
 )
 
 ///|
 pub impl @app.Resource for FrameCount with resource() {
-  frame_count_resource.val
+  frame_count_resource_key
 }
 
 ///|

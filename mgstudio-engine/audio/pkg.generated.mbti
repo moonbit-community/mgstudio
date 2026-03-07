@@ -4,7 +4,6 @@ package "Milky2018/mgstudio/audio"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
-  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "moonbitlang/core/json",

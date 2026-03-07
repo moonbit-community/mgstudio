@@ -1,4 +1,5 @@
 // Canonical native runtime implementation package.
 import {
+  "Milky2018/moon_accesskit",
   "moonbitlang/core/ref",
 }

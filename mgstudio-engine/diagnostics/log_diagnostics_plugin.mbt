@@ -135,13 +135,13 @@ pub fn LogDiagnosticsState::default() -> LogDiagnosticsState {
 }
 
 ///|
-let log_diagnostics_state_resource : Ref[@core.Resource[LogDiagnosticsState]] = Ref::new(
-  @core.Resource::new(),
+let log_diagnostics_state_resource_key : @ecs.ResourceKey[LogDiagnosticsState] = @ecs.register_resource(
+  debug_name="bevy_diagnostic::LogDiagnosticsState",
 )
 
 ///|
 pub impl @app.Resource for LogDiagnosticsState with resource() {
-  log_diagnostics_state_resource.val
+  log_diagnostics_state_resource_key
 }
 
 ///|

@@ -1290,13 +1290,13 @@ impl Default for RunningRumbleEffects with default() {
 }
 
 ///|
-let running_rumble_effects_resource_ref : Ref[
-  @core.Resource[RunningRumbleEffects],
-] = Ref::new(@core.Resource::new())
+let running_rumble_effects_resource_key : @ecs.ResourceKey[RunningRumbleEffects] = @ecs.register_resource(
+  debug_name="bevy_input::RunningRumbleEffects",
+)
 
 ///|
 pub impl @app.Resource for RunningRumbleEffects with resource() {
-  running_rumble_effects_resource_ref.val
+  running_rumble_effects_resource_key
 }
 
 ///|

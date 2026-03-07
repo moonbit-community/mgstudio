@@ -77,20 +77,23 @@ pub impl[C : @ecs.Component] @ecs.Message for CheckParentHasComponent[C] with me
 }
 
 ///|
-fn[C] validate_parent_has_component_insert(
-  world : @ecs.World,
-  component_key : @ecs.ComponentKey[C],
-  message_key : @ecs.MessageKey[CheckParentHasComponent[C]],
-  entity : @core.Entity,
+fn[C : @ecs.Component] validate_parent_has_component(
+  event : @ecs.On[@ecs.Insert, C],
 ) -> Unit {
+  let world = current_world_abort_missing()
+  let component_key : @ecs.ComponentKey[C] = @ecs.Component::component()
+  let message_key = check_parent_has_component_message_key(component_key)
   let child_of_result : Result[@hierarchy.Parent?, @ecs.EcsError] = try? world.get(
-    entity, @hierarchy.ecs_key_parent,
+    event.entity,
+    @hierarchy.ecs_key_parent,
   )
   guard child_of_result is Ok(Some(child_of)) else { return }
   if world.component(component_key).contains(child_of.entity()) {
     return
   }
-  ignore(world.send_message(message_key, CheckParentHasComponent::new(entity)))
+  ignore(
+    world.send_message(message_key, CheckParentHasComponent::new(event.entity)),
+  )
 }
 
 ///|
@@ -153,11 +156,6 @@ fn[C] check_parent_has_component(
 }
 
 ///|
-fn validate_parent_insert_observer_name(component_name : String) -> String {
-  "bevy_app.validate_parent_has_component.insert<" + component_name + ">"
-}
-
-///|
 pub fn[C : @ecs.Component] validate_parent_has_component_plugin(
   plugin : ValidateParentHasComponentPlugin[C],
 ) -> Plugin[@ecs.World] {
@@ -165,19 +163,11 @@ pub fn[C : @ecs.Component] validate_parent_has_component_plugin(
     let component_key : @ecs.ComponentKey[C] = @ecs.Component::component()
     let component_name = component_debug_name(component_key)
     let message_key = check_parent_has_component_message_key(component_key)
-    ignore(
-      @ecs.register_component_insert_observer(
-        component_key,
-        validate_parent_insert_observer_name(component_name),
-        fn(world, entity) {
-          validate_parent_has_component_insert(
-            world, component_key, message_key, entity,
-          )
-        },
-      ),
-    )
     app
     .add_message(message_key)
+    .add_observer(fn(event : @ecs.On[@ecs.Insert, C]) {
+      validate_parent_has_component(event)
+    })
     .add_systems(
       plugin.schedule,
       system(
