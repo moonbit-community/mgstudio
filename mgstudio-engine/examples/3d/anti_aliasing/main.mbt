@@ -866,11 +866,13 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn read_cas_character_shortcuts(world : @ecs.World) -> (Bool, Bool, Bool) {
+fn read_cas_character_shortcuts(
+  keyboard_inputs : @ecs.MessageReader[@input.KeyboardInput],
+) -> (Bool, Bool, Bool) {
   let mut toggle = false
   let mut decrement = false
   let mut increment = false
-  for event in @input.keyboard_input_events(world).read() {
+  for event in (try! keyboard_inputs.read()) {
     if event.state is Released || event.repeat {
       continue
     }
@@ -888,9 +890,12 @@ fn read_cas_character_shortcuts(world : @ecs.World) -> (Bool, Bool, Bool) {
 }
 
 ///|
-fn modify_aa(world : @ecs.World) -> Bool {
+fn modify_aa(
+  world : @ecs.World,
+  keyboard_inputs : @ecs.MessageReader[@input.KeyboardInput],
+) -> Bool {
   let (cas_toggle_char, cas_decrease_char, cas_increase_char) = read_cas_character_shortcuts(
-    world,
+    keyboard_inputs,
   )
   let mut changed = false
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
@@ -1051,8 +1056,9 @@ fn modify_aa(world : @ecs.World) -> Bool {
 }
 
 ///|
-fn update(world : @ecs.World) -> Unit {
-  if modify_aa(world) {
+fn update(keyboard_inputs : @ecs.MessageReader[@input.KeyboardInput]) -> Unit {
+  let world = @app.current_world().unwrap()
+  if modify_aa(world, keyboard_inputs) {
     apply_aa_components(world)
     apply_aa_proxy()
     update_ui()
@@ -1065,6 +1071,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_startup_system(setup)
-  .add_system(update)
+  .add_system_param(update)
   .run()
 }

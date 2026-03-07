@@ -38,10 +38,10 @@ fn print_system(input : @app.Res[Input]) -> Unit {
 ///|
 fn exit_system(
   input : @app.Res[Input],
-  app_exit : @core.MessageWriter[@app.AppExit],
+  app_exit : @ecs.MessageWriter[@app.AppExit],
 ) -> Unit {
   if input.get().value == "exit" {
-    app_exit.write(@app.AppExit::Success)
+    ignore(app_exit.write(@app.AppExit::Success))
   }
 }
 

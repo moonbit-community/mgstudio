@@ -91,6 +91,17 @@ test "ecs: register_resource reuses stable id for repeated debug_name" {
 }
 
 ///|
+test "ecs: register_message reuses stable id for repeated debug_name" {
+  let message_a : MessageKey[TickEvent] = register_message(
+    debug_name="stable_tick_message",
+  )
+  let message_b : MessageKey[TickEvent] = register_message(
+    debug_name="stable_tick_message",
+  )
+  inspect(message_a.id() == message_b.id(), content="true")
+}
+
+///|
 test "ecs: spawn set get update and despawn cleanup" {
   let world = World::new()
   let comp_counter : ComponentKey[Counter] = register_component(

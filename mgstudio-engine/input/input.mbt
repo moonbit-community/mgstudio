@@ -142,7 +142,7 @@ let keyboard_event_keycodes : Array[@window.KeyCode] = [
 pub(all) enum ButtonState {
   Pressed
   Released
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub fn ButtonState::is_pressed(self : ButtonState) -> Bool {
@@ -168,7 +168,7 @@ pub(all) enum Key {
   PageDown
   Space
   Escape
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub(open) trait ButtonInputButton {
@@ -292,57 +292,57 @@ pub struct KeyboardInput {
   logical_key : Key
   state : ButtonState
   repeat : Bool
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub struct KeyboardCharacter {
   character : String
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub struct MouseButtonInput {
   button : @window.MouseButton
   state : ButtonState
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub struct MouseMotion {
   delta : @math.Vec2
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub struct CursorMoved {
   position : @math.Vec2
   delta : @math.Vec2?
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub(all) enum MouseScrollUnit {
   Line
   Pixel
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub struct MouseWheel {
   unit : MouseScrollUnit
   x : Float
   y : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub struct PinchGesture {
   delta : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub struct RotationGesture {
   delta : Float
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub struct DoubleTapGesture {
   position : @math.Vec2
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub(all) enum TouchPhase {
@@ -350,21 +350,21 @@ pub(all) enum TouchPhase {
   Moved
   Ended
   Canceled
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub struct TouchInput {
   id : Int
   phase : TouchPhase
   position : @math.Vec2
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub(all) enum FileDragAndDrop {
   DroppedFile(String)
   HoveredFile(String)
   HoveredFileCanceled
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub struct Touch {
@@ -446,58 +446,58 @@ pub fn AccumulatedMouseScroll::new() -> AccumulatedMouseScroll {
 }
 
 ///|
-let keyboard_input_events_ref : Ref[@core.Messages[KeyboardInput]] = Ref::new(
-  @core.Messages::new(),
+let keyboard_input_message_key : @ecs.MessageKey[KeyboardInput] = @ecs.register_message(
+  debug_name="bevy_input::keyboard::KeyboardInput",
 )
 
 ///|
-let keyboard_character_events_ref : Ref[@core.Messages[KeyboardCharacter]] = Ref::new(
-  @core.Messages::new(),
+let keyboard_character_message_key : @ecs.MessageKey[KeyboardCharacter] = @ecs.register_message(
+  debug_name="bevy_input::keyboard::KeyboardCharacter",
 )
 
 ///|
-let mouse_button_input_events_ref : Ref[@core.Messages[MouseButtonInput]] = Ref::new(
-  @core.Messages::new(),
+let mouse_button_input_message_key : @ecs.MessageKey[MouseButtonInput] = @ecs.register_message(
+  debug_name="bevy_input::mouse::MouseButtonInput",
 )
 
 ///|
-let mouse_motion_events_ref : Ref[@core.Messages[MouseMotion]] = Ref::new(
-  @core.Messages::new(),
+let mouse_motion_message_key : @ecs.MessageKey[MouseMotion] = @ecs.register_message(
+  debug_name="bevy_input::mouse::MouseMotion",
 )
 
 ///|
-let cursor_moved_events_ref : Ref[@core.Messages[CursorMoved]] = Ref::new(
-  @core.Messages::new(),
+let cursor_moved_message_key : @ecs.MessageKey[CursorMoved] = @ecs.register_message(
+  debug_name="bevy_input::mouse::CursorMoved",
 )
 
 ///|
-let mouse_wheel_events_ref : Ref[@core.Messages[MouseWheel]] = Ref::new(
-  @core.Messages::new(),
+let mouse_wheel_message_key : @ecs.MessageKey[MouseWheel] = @ecs.register_message(
+  debug_name="bevy_input::mouse::MouseWheel",
 )
 
 ///|
-let pinch_gesture_events_ref : Ref[@core.Messages[PinchGesture]] = Ref::new(
-  @core.Messages::new(),
+let pinch_gesture_message_key : @ecs.MessageKey[PinchGesture] = @ecs.register_message(
+  debug_name="bevy_input::gestures::PinchGesture",
 )
 
 ///|
-let rotation_gesture_events_ref : Ref[@core.Messages[RotationGesture]] = Ref::new(
-  @core.Messages::new(),
+let rotation_gesture_message_key : @ecs.MessageKey[RotationGesture] = @ecs.register_message(
+  debug_name="bevy_input::gestures::RotationGesture",
 )
 
 ///|
-let double_tap_gesture_events_ref : Ref[@core.Messages[DoubleTapGesture]] = Ref::new(
-  @core.Messages::new(),
+let double_tap_gesture_message_key : @ecs.MessageKey[DoubleTapGesture] = @ecs.register_message(
+  debug_name="bevy_input::gestures::DoubleTapGesture",
 )
 
 ///|
-let touch_input_events_ref : Ref[@core.Messages[TouchInput]] = Ref::new(
-  @core.Messages::new(),
+let touch_input_message_key : @ecs.MessageKey[TouchInput] = @ecs.register_message(
+  debug_name="bevy_input::touch::TouchInput",
 )
 
 ///|
-let file_drag_and_drop_events_ref : Ref[@core.Messages[FileDragAndDrop]] = Ref::new(
-  @core.Messages::new(),
+let file_drag_and_drop_message_key : @ecs.MessageKey[FileDragAndDrop] = @ecs.register_message(
+  debug_name="bevy_input::drag_and_drop::FileDragAndDrop",
 )
 
 ///|
@@ -968,50 +968,55 @@ fn input_drag_and_drop_event_at(index : Int) -> FileDragAndDrop? {
 
 ///|
 pub fn input_poll_keyboard_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let keyboard_writer = world.message_writer(keyboard_input_message_key)
+  let character_writer = world.message_writer(keyboard_character_message_key)
   for code in keyboard_event_keycodes {
     if key_repeated(code) {
-      keyboard_input_events_ref.val.send(tick, KeyboardInput::{
-        key_code: code,
-        logical_key: logical_key_from_keycode(code),
-        state: ButtonState::Pressed,
-        repeat: true,
-      })
+      ignore(
+        keyboard_writer.write(KeyboardInput::{
+          key_code: code,
+          logical_key: logical_key_from_keycode(code),
+          state: ButtonState::Pressed,
+          repeat: true,
+        }),
+      )
     }
     if key_just_pressed(code) {
-      keyboard_input_events_ref.val.send(tick, KeyboardInput::{
-        key_code: code,
-        logical_key: logical_key_from_keycode(code),
-        state: ButtonState::Pressed,
-        repeat: false,
-      })
+      ignore(
+        keyboard_writer.write(KeyboardInput::{
+          key_code: code,
+          logical_key: logical_key_from_keycode(code),
+          state: ButtonState::Pressed,
+          repeat: false,
+        }),
+      )
     }
     if key_just_released(code) {
-      keyboard_input_events_ref.val.send(tick, KeyboardInput::{
-        key_code: code,
-        logical_key: logical_key_from_keycode(code),
-        state: ButtonState::Released,
-        repeat: false,
-      })
+      ignore(
+        keyboard_writer.write(KeyboardInput::{
+          key_code: code,
+          logical_key: logical_key_from_keycode(code),
+          state: ButtonState::Released,
+          repeat: false,
+        }),
+      )
     }
   }
   let text_event_count = host_input_text_event_count()
   for i in 0..<text_event_count {
     if input_text_event_at(i) is Some(text) {
-      keyboard_character_events_ref.val.send(tick, KeyboardCharacter::{
-        character: text,
-      })
+      ignore(character_writer.write(KeyboardCharacter::{ character: text }))
     }
   }
 }
 
 ///|
 pub fn input_poll_drag_and_drop_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let writer = world.message_writer(file_drag_and_drop_message_key)
   let event_count = host_input_drag_and_drop_event_count()
   for i in 0..<event_count {
     if input_drag_and_drop_event_at(i) is Some(event) {
-      file_drag_and_drop_events_ref.val.send(tick, event)
+      ignore(writer.write(event))
     }
   }
 }
@@ -1078,19 +1083,26 @@ fn active_touches_remove(active : Array[Touch], id : Int) -> Unit {
 pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   ensure_input_resources(tick)
+  let mouse_button_writer = world.message_writer(mouse_button_input_message_key)
+  let mouse_motion_writer = world.message_writer(mouse_motion_message_key)
+  let cursor_moved_writer = world.message_writer(cursor_moved_message_key)
+  let mouse_wheel_writer = world.message_writer(mouse_wheel_message_key)
+  let pinch_gesture_writer = world.message_writer(pinch_gesture_message_key)
+  let rotation_gesture_writer = world.message_writer(
+    rotation_gesture_message_key,
+  )
+  let touch_input_writer = world.message_writer(touch_input_message_key)
 
   for button in mouse_event_buttons {
     if mouse_button_just_pressed(button) {
-      mouse_button_input_events_ref.val.send(tick, MouseButtonInput::{
-        button,
-        state: Pressed,
-      })
+      ignore(
+        mouse_button_writer.write(MouseButtonInput::{ button, state: Pressed }),
+      )
     }
     if mouse_button_just_released(button) {
-      mouse_button_input_events_ref.val.send(tick, MouseButtonInput::{
-        button,
-        state: Released,
-      })
+      ignore(
+        mouse_button_writer.write(MouseButtonInput::{ button, state: Released }),
+      )
     }
   }
 
@@ -1108,36 +1120,40 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
       }
       None => None
     }
-    cursor_moved_events_ref.val.send(tick, CursorMoved::{
-      position: current_position,
-      delta: delta_opt,
-    })
+    ignore(
+      cursor_moved_writer.write(CursorMoved::{
+        position: current_position,
+        delta: delta_opt,
+      }),
+    )
     if delta_opt is Some(delta) {
       mouse_delta = delta
-      mouse_motion_events_ref.val.send(tick, MouseMotion::{ delta, })
+      ignore(mouse_motion_writer.write(MouseMotion::{ delta, }))
     }
   }
   input_last_mouse_position_ref.val = current_position_opt
 
   let wheel_delta = mouse_wheel_delta()
   if !vec2_is_zero(wheel_delta) {
-    mouse_wheel_events_ref.val.send(tick, MouseWheel::{
-      unit: MouseScrollUnit::Line,
-      x: wheel_delta.x,
-      y: wheel_delta.y,
-    })
+    ignore(
+      mouse_wheel_writer.write(MouseWheel::{
+        unit: MouseScrollUnit::Line,
+        x: wheel_delta.x,
+        y: wheel_delta.y,
+      }),
+    )
   }
   // Gesture event shapes are kept for Bevy API surface parity.
   // Runtime backends do not provide gesture sources yet, so emission stays dormant.
   let pinch_delta = wheel_delta.x
   if pinch_delta > 1_000_000.0F || pinch_delta < -1_000_000.0F {
-    pinch_gesture_events_ref.val.send(tick, PinchGesture::{ delta: pinch_delta })
+    ignore(pinch_gesture_writer.write(PinchGesture::{ delta: pinch_delta }))
   }
   let rotation_delta = wheel_delta.y
   if rotation_delta > 1_000_000.0F || rotation_delta < -1_000_000.0F {
-    rotation_gesture_events_ref.val.send(tick, RotationGesture::{
-      delta: rotation_delta,
-    })
+    ignore(
+      rotation_gesture_writer.write(RotationGesture::{ delta: rotation_delta }),
+    )
   }
 
   if accumulated_mouse_motion_resource_ref.val.get_ref_mut(tick)
@@ -1187,11 +1203,13 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
         touches.just_canceled.push(touch)
       }
     }
-    touch_input_events_ref.val.send(tick, TouchInput::{
-      id: touch_id,
-      phase: touch_phase,
-      position,
-    })
+    ignore(
+      touch_input_writer.write(TouchInput::{
+        id: touch_id,
+        phase: touch_phase,
+        position,
+      }),
+    )
   }
   for touch in active_touches {
     touches.active.push(touch)
@@ -1221,349 +1239,58 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn input_world_system_ticks(world : @ecs.World) -> @core.SystemTicks {
-  world.get_system_context().ticks()
+pub impl @ecs.Message for KeyboardInput with message() {
+  keyboard_input_message_key
 }
 
 ///|
-fn keyboard_input_events_reader(
-  ticks : @core.SystemTicks,
-) -> @core.MessageReader[KeyboardInput] {
-  keyboard_input_events_ref.val.reader(ticks)
+pub impl @ecs.Message for KeyboardCharacter with message() {
+  keyboard_character_message_key
 }
 
 ///|
-fn keyboard_character_events_reader(
-  ticks : @core.SystemTicks,
-) -> @core.MessageReader[KeyboardCharacter] {
-  keyboard_character_events_ref.val.reader(ticks)
+pub impl @ecs.Message for MouseButtonInput with message() {
+  mouse_button_input_message_key
 }
 
 ///|
-fn keyboard_input_events_writer(
-  tick : @core.Tick,
-) -> @core.MessageWriter[KeyboardInput] {
-  keyboard_input_events_ref.val.writer(tick)
+pub impl @ecs.Message for MouseMotion with message() {
+  mouse_motion_message_key
 }
 
 ///|
-fn keyboard_character_events_writer(
-  tick : @core.Tick,
-) -> @core.MessageWriter[KeyboardCharacter] {
-  keyboard_character_events_ref.val.writer(tick)
+pub impl @ecs.Message for CursorMoved with message() {
+  cursor_moved_message_key
 }
 
 ///|
-fn mouse_button_input_events_reader(
-  ticks : @core.SystemTicks,
-) -> @core.MessageReader[MouseButtonInput] {
-  mouse_button_input_events_ref.val.reader(ticks)
+pub impl @ecs.Message for MouseWheel with message() {
+  mouse_wheel_message_key
 }
 
 ///|
-fn mouse_motion_events_reader(
-  ticks : @core.SystemTicks,
-) -> @core.MessageReader[MouseMotion] {
-  mouse_motion_events_ref.val.reader(ticks)
+pub impl @ecs.Message for PinchGesture with message() {
+  pinch_gesture_message_key
 }
 
 ///|
-fn cursor_moved_events_reader(
-  ticks : @core.SystemTicks,
-) -> @core.MessageReader[CursorMoved] {
-  cursor_moved_events_ref.val.reader(ticks)
+pub impl @ecs.Message for RotationGesture with message() {
+  rotation_gesture_message_key
 }
 
 ///|
-fn mouse_wheel_events_reader(
-  ticks : @core.SystemTicks,
-) -> @core.MessageReader[MouseWheel] {
-  mouse_wheel_events_ref.val.reader(ticks)
+pub impl @ecs.Message for DoubleTapGesture with message() {
+  double_tap_gesture_message_key
 }
 
 ///|
-fn pinch_gesture_events_reader(
-  ticks : @core.SystemTicks,
-) -> @core.MessageReader[PinchGesture] {
-  pinch_gesture_events_ref.val.reader(ticks)
+pub impl @ecs.Message for TouchInput with message() {
+  touch_input_message_key
 }
 
 ///|
-fn rotation_gesture_events_reader(
-  ticks : @core.SystemTicks,
-) -> @core.MessageReader[RotationGesture] {
-  rotation_gesture_events_ref.val.reader(ticks)
-}
-
-///|
-fn double_tap_gesture_events_reader(
-  ticks : @core.SystemTicks,
-) -> @core.MessageReader[DoubleTapGesture] {
-  double_tap_gesture_events_ref.val.reader(ticks)
-}
-
-///|
-fn touch_input_events_reader(
-  ticks : @core.SystemTicks,
-) -> @core.MessageReader[TouchInput] {
-  touch_input_events_ref.val.reader(ticks)
-}
-
-///|
-fn file_drag_and_drop_events_reader(
-  ticks : @core.SystemTicks,
-) -> @core.MessageReader[FileDragAndDrop] {
-  file_drag_and_drop_events_ref.val.reader(ticks)
-}
-
-///|
-fn mouse_button_input_events_writer(
-  tick : @core.Tick,
-) -> @core.MessageWriter[MouseButtonInput] {
-  mouse_button_input_events_ref.val.writer(tick)
-}
-
-///|
-fn mouse_motion_events_writer(
-  tick : @core.Tick,
-) -> @core.MessageWriter[MouseMotion] {
-  mouse_motion_events_ref.val.writer(tick)
-}
-
-///|
-fn cursor_moved_events_writer(
-  tick : @core.Tick,
-) -> @core.MessageWriter[CursorMoved] {
-  cursor_moved_events_ref.val.writer(tick)
-}
-
-///|
-fn mouse_wheel_events_writer(
-  tick : @core.Tick,
-) -> @core.MessageWriter[MouseWheel] {
-  mouse_wheel_events_ref.val.writer(tick)
-}
-
-///|
-fn pinch_gesture_events_writer(
-  tick : @core.Tick,
-) -> @core.MessageWriter[PinchGesture] {
-  pinch_gesture_events_ref.val.writer(tick)
-}
-
-///|
-fn rotation_gesture_events_writer(
-  tick : @core.Tick,
-) -> @core.MessageWriter[RotationGesture] {
-  rotation_gesture_events_ref.val.writer(tick)
-}
-
-///|
-fn double_tap_gesture_events_writer(
-  tick : @core.Tick,
-) -> @core.MessageWriter[DoubleTapGesture] {
-  double_tap_gesture_events_ref.val.writer(tick)
-}
-
-///|
-fn touch_input_events_writer(
-  tick : @core.Tick,
-) -> @core.MessageWriter[TouchInput] {
-  touch_input_events_ref.val.writer(tick)
-}
-
-///|
-fn file_drag_and_drop_events_writer(
-  tick : @core.Tick,
-) -> @core.MessageWriter[FileDragAndDrop] {
-  file_drag_and_drop_events_ref.val.writer(tick)
-}
-
-///|
-pub fn keyboard_input_events(
-  world : @ecs.World,
-) -> @core.MessageReader[KeyboardInput] {
-  keyboard_input_events_reader(input_world_system_ticks(world))
-}
-
-///|
-pub fn keyboard_character_events(
-  world : @ecs.World,
-) -> @core.MessageReader[KeyboardCharacter] {
-  keyboard_character_events_reader(input_world_system_ticks(world))
-}
-
-///|
-pub fn mouse_button_input_events(
-  world : @ecs.World,
-) -> @core.MessageReader[MouseButtonInput] {
-  mouse_button_input_events_reader(input_world_system_ticks(world))
-}
-
-///|
-pub fn mouse_motion_events(
-  world : @ecs.World,
-) -> @core.MessageReader[MouseMotion] {
-  mouse_motion_events_reader(input_world_system_ticks(world))
-}
-
-///|
-pub fn cursor_moved_events(
-  world : @ecs.World,
-) -> @core.MessageReader[CursorMoved] {
-  cursor_moved_events_reader(input_world_system_ticks(world))
-}
-
-///|
-pub fn mouse_wheel_events(
-  world : @ecs.World,
-) -> @core.MessageReader[MouseWheel] {
-  mouse_wheel_events_reader(input_world_system_ticks(world))
-}
-
-///|
-pub fn pinch_gesture_events(
-  world : @ecs.World,
-) -> @core.MessageReader[PinchGesture] {
-  pinch_gesture_events_reader(input_world_system_ticks(world))
-}
-
-///|
-pub fn rotation_gesture_events(
-  world : @ecs.World,
-) -> @core.MessageReader[RotationGesture] {
-  rotation_gesture_events_reader(input_world_system_ticks(world))
-}
-
-///|
-pub fn double_tap_gesture_events(
-  world : @ecs.World,
-) -> @core.MessageReader[DoubleTapGesture] {
-  double_tap_gesture_events_reader(input_world_system_ticks(world))
-}
-
-///|
-pub fn touch_input_events(
-  world : @ecs.World,
-) -> @core.MessageReader[TouchInput] {
-  touch_input_events_reader(input_world_system_ticks(world))
-}
-
-///|
-pub fn file_drag_and_drop_events(
-  world : @ecs.World,
-) -> @core.MessageReader[FileDragAndDrop] {
-  file_drag_and_drop_events_reader(input_world_system_ticks(world))
-}
-
-///|
-pub impl @core.Message for KeyboardInput with reader(ticks) {
-  keyboard_input_events_reader(ticks)
-}
-
-///|
-pub impl @core.Message for KeyboardInput with writer(tick) {
-  keyboard_input_events_writer(tick)
-}
-
-///|
-pub impl @core.Message for KeyboardCharacter with reader(ticks) {
-  keyboard_character_events_reader(ticks)
-}
-
-///|
-pub impl @core.Message for KeyboardCharacter with writer(tick) {
-  keyboard_character_events_writer(tick)
-}
-
-///|
-pub impl @core.Message for MouseButtonInput with reader(ticks) {
-  mouse_button_input_events_reader(ticks)
-}
-
-///|
-pub impl @core.Message for MouseButtonInput with writer(tick) {
-  mouse_button_input_events_writer(tick)
-}
-
-///|
-pub impl @core.Message for MouseMotion with reader(ticks) {
-  mouse_motion_events_reader(ticks)
-}
-
-///|
-pub impl @core.Message for MouseMotion with writer(tick) {
-  mouse_motion_events_writer(tick)
-}
-
-///|
-pub impl @core.Message for CursorMoved with reader(ticks) {
-  cursor_moved_events_reader(ticks)
-}
-
-///|
-pub impl @core.Message for CursorMoved with writer(tick) {
-  cursor_moved_events_writer(tick)
-}
-
-///|
-pub impl @core.Message for MouseWheel with reader(ticks) {
-  mouse_wheel_events_reader(ticks)
-}
-
-///|
-pub impl @core.Message for MouseWheel with writer(tick) {
-  mouse_wheel_events_writer(tick)
-}
-
-///|
-pub impl @core.Message for PinchGesture with reader(ticks) {
-  pinch_gesture_events_reader(ticks)
-}
-
-///|
-pub impl @core.Message for PinchGesture with writer(tick) {
-  pinch_gesture_events_writer(tick)
-}
-
-///|
-pub impl @core.Message for RotationGesture with reader(ticks) {
-  rotation_gesture_events_reader(ticks)
-}
-
-///|
-pub impl @core.Message for RotationGesture with writer(tick) {
-  rotation_gesture_events_writer(tick)
-}
-
-///|
-pub impl @core.Message for DoubleTapGesture with reader(ticks) {
-  double_tap_gesture_events_reader(ticks)
-}
-
-///|
-pub impl @core.Message for DoubleTapGesture with writer(tick) {
-  double_tap_gesture_events_writer(tick)
-}
-
-///|
-pub impl @core.Message for TouchInput with reader(ticks) {
-  touch_input_events_reader(ticks)
-}
-
-///|
-pub impl @core.Message for TouchInput with writer(tick) {
-  touch_input_events_writer(tick)
-}
-
-///|
-pub impl @core.Message for FileDragAndDrop with reader(ticks) {
-  file_drag_and_drop_events_reader(ticks)
-}
-
-///|
-pub impl @core.Message for FileDragAndDrop with writer(tick) {
-  file_drag_and_drop_events_writer(tick)
+pub impl @ecs.Message for FileDragAndDrop with message() {
+  file_drag_and_drop_message_key
 }
 
 ///|
@@ -1694,6 +1421,17 @@ pub impl @app.Resource for Touches with resource() {
 ///|
 pub fn input_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   input_gamepad_plugin(app)
+  .add_message(keyboard_input_message_key)
+  .add_message(keyboard_character_message_key)
+  .add_message(mouse_button_input_message_key)
+  .add_message(mouse_motion_message_key)
+  .add_message(cursor_moved_message_key)
+  .add_message(mouse_wheel_message_key)
+  .add_message(pinch_gesture_message_key)
+  .add_message(rotation_gesture_message_key)
+  .add_message(double_tap_gesture_message_key)
+  .add_message(touch_input_message_key)
+  .add_message(file_drag_and_drop_message_key)
   .add_pre_update_system(input_poll_keyboard_system)
   .add_pre_update_system(input_poll_drag_and_drop_system)
   .add_pre_update_system(input_poll_mouse_system)

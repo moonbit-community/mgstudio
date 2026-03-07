@@ -66,7 +66,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn capture_system(
   state : @app.ResMut[CaptureState],
-  app_exit : @core.MessageWriter[@app.AppExit],
+  app_exit : @ecs.MessageWriter[@app.AppExit],
 ) -> Unit {
   let state_ref = state.get_ref()
   if state_ref.val.target is Some(target) {
@@ -76,7 +76,7 @@ fn capture_system(
     @asset.asset_save_texture_png(target, path)
     state_ref.val.frame = state_ref.val.frame + 1
     if state_ref.val.single_image {
-      app_exit.write(@app.AppExit::Success)
+      ignore(app_exit.write(@app.AppExit::Success))
     }
   }
 }

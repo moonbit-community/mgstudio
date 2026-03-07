@@ -358,7 +358,10 @@ fn World::insert_component_json_with_requirements_unchecked(
       self.run_component_replace_hooks(entity, component_id, previous, payload)
       return
     }
-    None => self.run_component_insert_hooks(entity, component_id, payload)
+    None => {
+      self.run_component_insert_hooks(entity, component_id, payload)
+      self.run_component_insert_observers(entity, component_id)
+    }
   }
 
   guard self.required_components_state(component_id) is Some(state_ref) else {

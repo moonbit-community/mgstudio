@@ -21,6 +21,8 @@ pub fn app_runtime_reset() -> Unit
 
 pub fn app_stdin_read_line() -> String?
 
+pub fn[C] check_parent_has_component_message_key(@ecs.ComponentKey[C]) -> @ecs.MessageKey[CheckParentHasComponent[C]]
+
 pub fn current_schedule_stage() -> ScheduleStage?
 
 pub fn current_system_ticks() -> @core.SystemTicks
@@ -67,7 +69,11 @@ pub fn log_warn_once(String, String) -> Unit
 
 pub fn main_schedule_order_resource_key() -> @ecs.ResourceKey[MainScheduleOrder]
 
+pub let message_update_system_set : String
+
 pub fn[S : States] next_state_resource_key(S) -> @ecs.ResourceKey[NextState[S]]
+
+pub fn[M] on_message(@ecs.World, @ecs.MessageKey[M], Ref[Json]) -> Bool
 
 pub fn[S : States] previous_state_resource_key(S) -> @ecs.ResourceKey[PreviousState[S]]
 
@@ -141,6 +147,10 @@ pub fn task_pool_num_threads() -> Int?
 
 pub fn[W] task_pool_plugin(TaskPoolPlugin) -> (App[W]) -> App[W]
 
+pub fn[C : @ecs.Component] validate_parent_has_component_plugin(ValidateParentHasComponentPlugin[C]) -> (App[@ecs.World]) -> App[@ecs.World]
+
+pub let validate_parent_has_component_system_set : String
+
 pub fn world_fixed_main_schedule_order(@ecs.World) -> FixedMainScheduleOrder
 
 pub fn world_main_schedule_order(@ecs.World) -> MainScheduleOrder
@@ -201,6 +211,7 @@ pub fn[W, P : SystemParam] App::add_last_system_param(Self[W], (P) -> Unit) -> S
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_last_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_last_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_last_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
+pub fn[M] App::add_message(Self[@ecs.World], @ecs.MessageKey[M]) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_enter_system(Self[@ecs.World], S, (@ecs.World) -> Unit) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_enter_system_config(Self[@ecs.World], S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_exit_system(Self[@ecs.World], S, (@ecs.World) -> Unit) -> Self[@ecs.World]
@@ -293,12 +304,17 @@ pub fn App::world(Self[@ecs.World]) -> @ecs.World
 
 pub(all) enum AppExit {
   Success
-  Error
+  Error(Int)
 }
 pub fn AppExit::error() -> Self
-pub impl @core.Message for AppExit
+pub fn AppExit::from_code(Int) -> Self
+pub fn AppExit::is_error(Self) -> Bool
+pub fn AppExit::is_success(Self) -> Bool
+pub impl @ecs.Message for AppExit
 pub impl Eq for AppExit
 pub impl Show for AppExit
+pub impl ToJson for AppExit
+pub impl @json.FromJson for AppExit
 
 pub(all) enum AppLabel {
   MainApp
@@ -307,6 +323,15 @@ pub(all) enum AppLabel {
 }
 pub impl Eq for AppLabel
 pub impl Show for AppLabel
+
+pub struct CheckParentHasComponent[C] {
+  entity : @core.Entity
+  marker : C?
+}
+pub fn[C] CheckParentHasComponent::new(@core.Entity) -> Self[C]
+pub impl[C : @ecs.Component] @ecs.Message for CheckParentHasComponent[C]
+pub impl[C] ToJson for CheckParentHasComponent[C]
+pub impl[C] @json.FromJson for CheckParentHasComponent[C]
 
 pub struct FixedMainScheduleOrder {
   labels : Array[ScheduleStage]
@@ -337,6 +362,8 @@ pub(all) enum LogLevel {
 }
 pub impl Eq for LogLevel
 pub impl Show for LogLevel
+pub impl ToJson for LogLevel
+pub impl @json.FromJson for LogLevel
 
 pub struct LogPlugin {
   level : LogLevel
@@ -566,6 +593,7 @@ pub struct SubApp[W] {
   schedule : Schedule[W]
   extract : ((W, W) -> (W, W))?
 }
+pub fn[M] SubApp::add_message(Self[@ecs.World], @ecs.MessageKey[M]) -> Self[@ecs.World]
 pub fn[W] SubApp::add_schedule(Self[W], ScheduleStage) -> Self[W]
 pub fn[W] SubApp::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
 pub fn[W] SubApp::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
@@ -597,7 +625,8 @@ pub fn SubApps::update_sub_app_by_label(Self[@ecs.World], AppLabel) -> Self[@ecs
 
 pub struct SystemConfig[W] {
   system : (W) -> Unit
-  run_if : ((W) -> Bool)?
+  run_if : ((W, Ref[Json]) -> Bool)?
+  run_if_state : Ref[Json]
   set : String?
   before : Array[String]
   after : Array[String]
@@ -608,6 +637,8 @@ pub fn[W] SystemConfig::after(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::before(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::in_set(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::run_if(Self[W], (W) -> Bool) -> Self[W]
+pub fn[M] SystemConfig::run_if_on_message(Self[@ecs.World], @ecs.MessageKey[M]) -> Self[@ecs.World]
+pub fn[W] SystemConfig::run_if_stateful(Self[W], Json, (W, Ref[Json]) -> Bool) -> Self[W]
 
 pub struct TaskPoolOptions {
   num_threads : Int?
@@ -620,6 +651,13 @@ pub struct TaskPoolPlugin {
 }
 pub fn TaskPoolPlugin::default() -> Self
 pub fn TaskPoolPlugin::new(TaskPoolOptions) -> Self
+
+pub struct ValidateParentHasComponentPlugin[C] {
+  schedule : ScheduleStage
+  marker : C?
+}
+pub fn[C] ValidateParentHasComponentPlugin::default() -> Self[C]
+pub fn[C] ValidateParentHasComponentPlugin::in_schedule(ScheduleStage) -> Self[C]
 
 // Type aliases
 pub type LogLayer = (LogRecord) -> Unit
@@ -635,6 +673,8 @@ pub type RunConditionFn[W] = (W) -> Bool
 pub type RunnerBuilder[W] = (App[W]) -> () -> Unit
 
 pub type RunnerFn = () -> Unit
+
+pub type StatefulRunConditionFn[W] = (W, Ref[Json]) -> Bool
 
 pub type SubAppExtractFn[W] = (W, W) -> (W, W)
 
@@ -680,6 +720,8 @@ pub(open) trait SystemParam {
 pub impl[T : @core.Message] SystemParam for @core.MessageReader[T]
 pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T]
 pub impl[F : FromWorld] SystemParam for @ecs.EntityQuery[F]
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T]
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T]
 pub impl[A : @ecs.Component] SystemParam for @ecs.Query1[A]
 pub impl[A : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query1Filtered[A, F]
 pub impl[A : @ecs.Component, B : @ecs.Component] SystemParam for @ecs.Query2[A, B]

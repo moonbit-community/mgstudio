@@ -2,7 +2,8 @@
 package "Milky2018/mgstudio/examples/app/log_layers_ecs"
 
 import {
-  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
 }
 
 // Values
@@ -11,7 +12,9 @@ import {
 
 // Types and methods
 type LogMessage
-pub impl @core.Message for LogMessage
+pub impl @ecs.Message for LogMessage
+pub impl ToJson for LogMessage
+pub impl @json.FromJson for LogMessage
 
 // Type aliases
 

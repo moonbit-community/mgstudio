@@ -164,7 +164,7 @@ pub fn App::should_exit(self : App[@ecs.World]) -> AppExit? {
   let reader = self.world().message_reader(key, Ref::new(0))
   let exits_result : Result[Array[AppExit], @ecs.EcsError] = try? reader.read()
   match exits_result {
-    Ok(exits) => {
+    Ok(exits) =>
       if exits.length() == 0 {
         None
       } else {
@@ -175,7 +175,6 @@ pub fn App::should_exit(self : App[@ecs.World]) -> AppExit? {
         }
         Some(AppExit::Success)
       }
-    }
     Err(_) => None
   }
 }

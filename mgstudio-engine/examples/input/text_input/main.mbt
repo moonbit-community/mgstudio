@@ -45,9 +45,9 @@ fn toggle_ime_system(mouse : @input.ButtonInput[@window.MouseButton]) -> Unit {
 
 ///|
 fn listen_keyboard_input_events_system(
-  keyboard_inputs : @core.MessageReader[@input.KeyboardInput],
+  keyboard_inputs : @ecs.MessageReader[@input.KeyboardInput],
 ) -> Unit {
-  for keyboard_input in keyboard_inputs.read() {
+  for keyboard_input in (try! keyboard_inputs.read()) {
     if keyboard_input.state is Released {
       continue
     }
@@ -61,9 +61,9 @@ fn listen_keyboard_input_events_system(
 
 ///|
 fn listen_character_input_events_system(
-  keyboard_characters : @core.MessageReader[@input.KeyboardCharacter],
+  keyboard_characters : @ecs.MessageReader[@input.KeyboardCharacter],
 ) -> Unit {
-  for keyboard_character in keyboard_characters.read() {
+  for keyboard_character in (try! keyboard_characters.read()) {
     if is_printable_text(keyboard_character.character) {
       edit_buffer_ref.val.push(keyboard_character.character)
       log_line("Edit text: \{buffer_to_text()}")

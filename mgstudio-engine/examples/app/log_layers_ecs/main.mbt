@@ -19,36 +19,19 @@
 struct LogMessage {
   message : String
   level : @app.LogLevel
-}
+} derive(ToJson, FromJson)
 
 ///|
-let log_message_events_ref : Ref[@core.Messages[LogMessage]] = Ref::new(
-  @core.Messages::new(),
+let log_message_key : @ecs.MessageKey[LogMessage] = @ecs.register_message(
+  debug_name="examples.app.log_layers_ecs.LogMessage",
 )
 
 ///|
 let captured_log_queue_ref : Ref[Array[LogMessage]] = Ref::new([])
 
 ///|
-fn log_message_reader(
-  ticks : @core.SystemTicks,
-) -> @core.MessageReader[LogMessage] {
-  log_message_events_ref.val.reader(ticks)
-}
-
-///|
-fn log_message_writer(tick : @core.Tick) -> @core.MessageWriter[LogMessage] {
-  log_message_events_ref.val.writer(tick)
-}
-
-///|
-pub impl @core.Message for LogMessage with reader(ticks) {
-  log_message_reader(ticks)
-}
-
-///|
-pub impl @core.Message for LogMessage with writer(tick) {
-  log_message_writer(tick)
+pub impl @ecs.Message for LogMessage with message() {
+  log_message_key
 }
 
 ///|
@@ -60,11 +43,11 @@ fn custom_layer(record : @app.LogRecord) -> Unit {
 }
 
 ///|
-fn transfer_log_messages(writer : @core.MessageWriter[LogMessage]) -> Unit {
+fn transfer_log_messages(writer : @ecs.MessageWriter[LogMessage]) -> Unit {
   let tick_messages = captured_log_queue_ref.val
   captured_log_queue_ref.val = []
   for message in tick_messages {
-    writer.write(message)
+    ignore(writer.write(message))
   }
 }
 
@@ -80,8 +63,8 @@ fn log_system(_world : @ecs.World) -> Unit {
 }
 
 ///|
-fn print_logs(reader : @core.MessageReader[LogMessage]) -> Unit {
-  for log_message in reader.read() {
+fn print_logs(reader : @ecs.MessageReader[LogMessage]) -> Unit {
+  for log_message in (try! reader.read()) {
     println(log_message.level.to_string() + " " + log_message.message)
   }
 }
@@ -91,6 +74,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   let log_plugin = @app.LogPlugin::default().with_custom_layer(custom_layer)
   @app.App::new(@ecs.World::new())
+  .add_message(log_message_key)
   .add_plugins(plugins)
   .add_plugins([@app.log_plugin(log_plugin)])
   .add_system(log_system)

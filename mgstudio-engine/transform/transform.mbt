@@ -609,7 +609,13 @@ pub fn register_transform_required_components(
 pub fn transform_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   try! register_transform_required_components(app.world())
   ensure_transform_runtime_resources(app.world())
+  let validate_parent_plugin : @app.ValidateParentHasComponentPlugin[
+    GlobalTransform,
+  ] = @app.ValidateParentHasComponentPlugin::default()
   app
+  .add_plugins([
+    @app.validate_parent_has_component_plugin(validate_parent_plugin),
+  ])
   .add_post_startup_system_config(
     @app.system(fn(world : @ecs.World) { mark_dirty_trees(world) }).in_set(
       transform_set_mark_dirty_trees,

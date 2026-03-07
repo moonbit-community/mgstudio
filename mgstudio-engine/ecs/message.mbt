@@ -36,8 +36,21 @@ fn[T] MessageKey::queue_key(
 }
 
 ///|
+let named_message_queue_registry : @hashmap.HashMap[
+  String,
+  ResourceKey[MessageQueueState],
+] = @hashmap.HashMap::new()
+
+///|
 pub fn[T] register_message(debug_name? : String = "") -> MessageKey[T] {
-  MessageKey::{ queue_key: register_resource(debug_name~), marker: None }
+  let queue_key = if debug_name == "" {
+    register_resource(debug_name~)
+  } else {
+    named_message_queue_registry.get_or_init(debug_name, fn() {
+      register_resource(debug_name~)
+    })
+  }
+  MessageKey::{ queue_key, marker: None }
 }
 
 ///|

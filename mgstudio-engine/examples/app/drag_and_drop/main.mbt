@@ -17,9 +17,9 @@
 
 ///|
 fn file_drag_and_drop_system(
-  reader : @core.MessageReader[@input.FileDragAndDrop],
+  reader : @ecs.MessageReader[@input.FileDragAndDrop],
 ) -> Unit {
-  for event in reader.read() {
+  for event in (try! reader.read()) {
     match event {
       @input.FileDragAndDrop::DroppedFile(path) =>
         println("DroppedFile(\"" + path + "\")")

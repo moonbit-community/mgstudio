@@ -30,9 +30,9 @@ fn main {
 
 ///|
 fn touch_event_system(
-  touch_inputs : @core.MessageReader[@input.TouchInput],
+  touch_inputs : @ecs.MessageReader[@input.TouchInput],
 ) -> Unit {
-  for touch_input in touch_inputs.read() {
+  for touch_input in (try! touch_inputs.read()) {
     log_line(format_touch_input(touch_input))
   }
 }

@@ -28,9 +28,9 @@ fn main {
 
 ///|
 fn print_keyboard_event_system(
-  keyboard_inputs : @core.MessageReader[@input.KeyboardInput],
+  keyboard_inputs : @ecs.MessageReader[@input.KeyboardInput],
 ) -> Unit {
-  for keyboard_input in keyboard_inputs.read() {
+  for keyboard_input in (try! keyboard_inputs.read()) {
     log_line(format_keyboard_input(keyboard_input))
   }
 }

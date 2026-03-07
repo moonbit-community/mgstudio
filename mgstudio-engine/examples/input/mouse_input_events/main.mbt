@@ -31,38 +31,38 @@ fn main {
 
 ///|
 fn print_mouse_events_system(
-  mouse_button_input_reader : @core.MessageReader[@input.MouseButtonInput],
-  mouse_motion_reader : @core.MessageReader[@input.MouseMotion],
-  cursor_moved_reader : @core.MessageReader[@input.CursorMoved],
-  mouse_wheel_reader : @core.MessageReader[@input.MouseWheel],
+  mouse_button_input_reader : @ecs.MessageReader[@input.MouseButtonInput],
+  mouse_motion_reader : @ecs.MessageReader[@input.MouseMotion],
+  cursor_moved_reader : @ecs.MessageReader[@input.CursorMoved],
+  mouse_wheel_reader : @ecs.MessageReader[@input.MouseWheel],
 ) -> Unit {
-  for event in mouse_button_input_reader.read() {
+  for event in (try! mouse_button_input_reader.read()) {
     log_line(format_mouse_button_input(event))
   }
-  for event in mouse_motion_reader.read() {
+  for event in (try! mouse_motion_reader.read()) {
     log_line(format_mouse_motion(event))
   }
-  for event in cursor_moved_reader.read() {
+  for event in (try! cursor_moved_reader.read()) {
     log_line(format_cursor_moved(event))
   }
-  for event in mouse_wheel_reader.read() {
+  for event in (try! mouse_wheel_reader.read()) {
     log_line(format_mouse_wheel(event))
   }
 }
 
 ///|
 fn print_mouse_gesture_events_system(
-  pinch_gesture_reader : @core.MessageReader[@input.PinchGesture],
-  rotation_gesture_reader : @core.MessageReader[@input.RotationGesture],
-  double_tap_gesture_reader : @core.MessageReader[@input.DoubleTapGesture],
+  pinch_gesture_reader : @ecs.MessageReader[@input.PinchGesture],
+  rotation_gesture_reader : @ecs.MessageReader[@input.RotationGesture],
+  double_tap_gesture_reader : @ecs.MessageReader[@input.DoubleTapGesture],
 ) -> Unit {
-  for event in pinch_gesture_reader.read() {
+  for event in (try! pinch_gesture_reader.read()) {
     log_line("PinchGesture { delta: \{event.delta} }")
   }
-  for event in rotation_gesture_reader.read() {
+  for event in (try! rotation_gesture_reader.read()) {
     log_line("RotationGesture { delta: \{event.delta} }")
   }
-  for event in double_tap_gesture_reader.read() {
+  for event in (try! double_tap_gesture_reader.read()) {
     log_line("DoubleTapGesture { position: \{format_vec2(event.position)} }")
   }
 }
