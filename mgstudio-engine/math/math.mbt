@@ -145,6 +145,41 @@ pub fn Vec3::normalize_or_zero(self : Vec3) -> Vec3 {
 }
 
 ///|
+pub fn Vec3::max_element(self : Vec3) -> Float {
+  let max_xy = if self.x > self.y { self.x } else { self.y }
+  if max_xy > self.z {
+    max_xy
+  } else {
+    self.z
+  }
+}
+
+///|
+pub fn Vec3::min_element(self : Vec3) -> Float {
+  let min_xy = if self.x < self.y { self.x } else { self.y }
+  if min_xy < self.z {
+    min_xy
+  } else {
+    self.z
+  }
+}
+
+///|
+pub fn Vec3::floor(self : Vec3) -> Vec3 {
+  Vec3::new(self.x.floor(), self.y.floor(), self.z.floor())
+}
+
+///|
+pub fn Vec3::ceil(self : Vec3) -> Vec3 {
+  Vec3::new(self.x.ceil(), self.y.ceil(), self.z.ceil())
+}
+
+///|
+pub fn Vec3::zxy(self : Vec3) -> Vec3 {
+  Vec3::new(self.z, self.x, self.y)
+}
+
+///|
 /// Smoothly nudge this vector towards `target` at a frame-rate independent decay rate.
 pub fn Vec3::smooth_nudge(
   self : Vec3,
@@ -625,6 +660,26 @@ pub fn Quat::normalize(self : Quat) -> Quat {
 }
 
 ///|
+pub fn Quat::lerp(self : Quat, other : Quat, s : Float) -> Quat {
+  let factor = if s < 0.0F { 0.0F } else if s > 1.0F { 1.0F } else { s }
+  let dot = self.x * other.x +
+    self.y * other.y +
+    self.z * other.z +
+    self.w * other.w
+  let other_adjusted = if dot < 0.0F {
+    Quat::{ x: -other.x, y: -other.y, z: -other.z, w: -other.w }
+  } else {
+    other
+  }
+  Quat::{
+    x: self.x + (other_adjusted.x - self.x) * factor,
+    y: self.y + (other_adjusted.y - self.y) * factor,
+    z: self.z + (other_adjusted.z - self.z) * factor,
+    w: self.w + (other_adjusted.w - self.w) * factor,
+  }.normalize()
+}
+
+///|
 pub fn Quat::to_euler(self : Quat, order : EulerRot) -> (Float, Float, Float) {
   match order {
     EulerRot::XYZ
@@ -925,6 +980,16 @@ pub fn Transform::from_xyz(x : Float, y : Float, z : Float) -> Transform {
 }
 
 ///|
+pub fn Transform::from_translation(translation : Vec3) -> Transform {
+  Transform::new(translation, Quat::identity(), Vec3::splat(1.0F))
+}
+
+///|
+pub fn Transform::from_rotation(rotation : Quat) -> Transform {
+  Transform::new(Vec3::zero(), rotation, Vec3::splat(1.0F))
+}
+
+///|
 pub fn Transform::from_xy(x : Float, y : Float) -> Transform {
   Transform::from_xyz(x, y, 0.0F)
 }
@@ -1065,6 +1130,11 @@ pub fn Transform::looking_to(
 ///|
 pub fn Transform::rotate(self : Transform, rotation : Quat) -> Unit {
   self.rotation = rotation.mul(self.rotation).normalize()
+}
+
+///|
+pub fn Transform::rotate_y(self : Transform, angle : Float) -> Unit {
+  self.rotate(Quat::from_rotation_y(angle))
 }
 
 ///|

@@ -50,6 +50,25 @@ test "math: vec3 smooth_nudge moves towards target" {
 }
 
 ///|
+test "math: vec3 element helpers follow bevy-style scale helpers" {
+  let value = Vec3::new(1.25F, -2.75F, 0.5F)
+  inspect(value.max_element() == 1.25F, content="true")
+  inspect(value.min_element() == -2.75F, content="true")
+  let floored = value.floor()
+  inspect(
+    floored.x == 1.0F && floored.y == -3.0F && floored.z == 0.0F,
+    content="true",
+  )
+  let ceiled = value.ceil()
+  inspect(
+    ceiled.x == 2.0F && ceiled.y == -2.0F && ceiled.z == 1.0F,
+    content="true",
+  )
+  let zxy = value.zxy()
+  inspect(zxy.x == 0.5F && zxy.y == 1.25F && zxy.z == -2.75F, content="true")
+}
+
+///|
 test "math: vec2 normalize_or_zero normalizes nonzero vectors" {
   let value = Vec2::new(3.0F, 4.0F).normalize_or_zero()
   inspect(value.x == 0.6F, content="true")
@@ -79,6 +98,36 @@ test "math: transform rotate_z updates z rotation" {
     transform.rotation_z() > 1.56F && transform.rotation_z() < 1.58F,
     content="true",
   )
+}
+
+///|
+test "math: transform constructors and rotate_y preserve bevy semantics" {
+  let translation = Vec3::new(1.0F, 2.0F, 3.0F)
+  let from_translation = Transform::from_translation(translation)
+  inspect(
+    from_translation.translation.x == 1.0F &&
+    from_translation.translation.y == 2.0F &&
+    from_translation.translation.z == 3.0F,
+    content="true",
+  )
+  inspect(
+    from_translation.scale.x == 1.0F &&
+    from_translation.scale.y == 1.0F &&
+    from_translation.scale.z == 1.0F,
+    content="true",
+  )
+
+  let rotation = Quat::from_rotation_y(pi_half())
+  let from_rotation = Transform::from_rotation(rotation)
+  inspect(quat_same_rotation(from_rotation.rotation, rotation), content="true")
+  let forward = from_rotation.forward()
+  inspect(approx_eq(forward.x, -1.0F), content="true")
+  inspect(approx_eq(forward.y, 0.0F), content="true")
+  inspect(approx_eq(forward.z, 0.0F), content="true")
+
+  let rotated = Transform::identity()
+  rotated.rotate_y(pi_half())
+  inspect(quat_same_rotation(rotated.rotation, rotation), content="true")
 }
 
 ///|
@@ -114,6 +163,27 @@ test "math: quat to_euler supports XYZ and ZYX orders" {
       zyx,
       Quat::from_euler(EulerRot::ZYX, zyx_angles.0, zyx_angles.1, zyx_angles.2),
     ),
+    content="true",
+  )
+}
+
+///|
+test "math: quat lerp normalizes and takes the shortest path" {
+  let start = Quat::identity()
+  let end_90 = Quat::from_rotation_y(pi_half())
+  let halfway = start.lerp(end_90, 0.5F)
+  let expected_half = Quat::from_rotation_y(pi_half() / 2.0F)
+  inspect(quat_same_rotation(halfway, expected_half), content="true")
+
+  let end_180 = Quat::from_rotation_y(pi())
+  let negated = Quat::{
+    x: -end_180.x,
+    y: -end_180.y,
+    z: -end_180.z,
+    w: -end_180.w,
+  }
+  inspect(
+    quat_same_rotation(start.lerp(negated, 1.0F), end_180),
     content="true",
   )
 }

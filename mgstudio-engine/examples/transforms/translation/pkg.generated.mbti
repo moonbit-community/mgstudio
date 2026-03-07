@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/transforms/translation"
+
+import {
+  "Milky2018/mgstudio/math",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct Movable {
+  spawn : @math.Vec3
+  max_distance : Float
+  mut speed : Float
+}
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,28 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/transforms/transform"
+
+import {
+  "Milky2018/mgstudio/math",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct Center {
+  max_size : Float
+  min_size : Float
+  scale_factor : Float
+}
+
+pub struct CubeState {
+  start_pos : @math.Vec3
+  move_speed : Float
+  turn_speed : Float
+}
+
+// Type aliases
+
+// Traits
+

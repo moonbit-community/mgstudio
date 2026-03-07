@@ -50,11 +50,11 @@ Notes:
 | `testbed` | 5 | 0 | 5 | 0 |
 | `time` | 3 | 3 | 0 | 0 |
 | `tools` | 5 | 0 | 5 | 0 |
-| `transforms` | 5 | 0 | 5 | 0 |
+| `transforms` | 5 | 4 | 1 | 0 |
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 3 | 9 | 0 |
-| **Total** | **402** | **113** | **286** | **3** |
+| **Total** | **402** | **117** | **282** | **3** |
 
 ## Example Inventory
 
@@ -391,11 +391,11 @@ Notes:
 | `bevy/examples/tools/scene_viewer/main.rs` | `tools` |  | `Blocked` | `team-ops` |  |
 | `bevy/examples/tools/scene_viewer/morph_viewer_plugin.rs` | `tools` |  | `Blocked` | `team-ops` |  |
 | `bevy/examples/tools/scene_viewer/scene_viewer_plugin.rs` | `tools` |  | `Blocked` | `team-ops` |  |
-| `bevy/examples/transforms/3d_rotation.rs` | `transforms` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/transforms/align.rs` | `transforms` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/transforms/scale.rs` | `transforms` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/transforms/transform.rs` | `transforms` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/transforms/translation.rs` | `transforms` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/transforms/3d_rotation.rs` | `transforms` | `mgstudio-engine/examples/transforms/3d_rotation` | `Exact` | `team-core` |  |
+| `bevy/examples/transforms/align.rs` | `transforms` |  | `Blocked` | `team-core` | Blocked by missing `Transform::align` / `Transform::rotate_around` (`bd-jb1`) and 3D gizmo parity (`bd-2j9.9.3.2`). |
+| `bevy/examples/transforms/scale.rs` | `transforms` | `mgstudio-engine/examples/transforms/scale` | `Exact` | `team-core` |  |
+| `bevy/examples/transforms/transform.rs` | `transforms` | `mgstudio-engine/examples/transforms/transform` | `Exact` | `team-core` |  |
+| `bevy/examples/transforms/translation.rs` | `transforms` | `mgstudio-engine/examples/transforms/translation` | `Exact` | `team-core` |  |
 | `bevy/examples/ui/images/image_node.rs` | `ui` |  | `Blocked` | `team-ui_text` |  |
 | `bevy/examples/ui/images/image_node_resizing.rs` | `ui` |  | `Blocked` | `team-ui_text` |  |
 | `bevy/examples/ui/images/ui_texture_atlas.rs` | `ui` |  | `Blocked` | `team-ui_text` |  |

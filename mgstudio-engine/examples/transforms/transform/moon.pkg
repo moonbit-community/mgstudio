@@ -1,0 +1,14 @@
+import {
+  "Milky2018/mgstudio",
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/render3d",
+  "Milky2018/mgstudio/time",
+  "moonbitlang/core/ref",
+}
+
+options(
+  "is-main": true,
+)

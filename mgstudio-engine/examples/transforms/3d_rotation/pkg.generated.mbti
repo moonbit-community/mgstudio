@@ -1,0 +1,16 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/transforms/3d_rotation"
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct Rotatable {
+  speed : Float
+}
+
+// Type aliases
+
+// Traits
+
