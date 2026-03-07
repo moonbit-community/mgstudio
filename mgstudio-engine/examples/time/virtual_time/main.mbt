@@ -50,14 +50,60 @@ let virtual_time_state : Ref[VirtualTimeState] = Ref::new({
 })
 
 ///|
-fn update_info_text() -> Unit {
+fn read_real_time(world : @ecs.World) -> @time.Real {
+  let real_time = try! world.get_resource(@time.Real::resource())
+  match real_time {
+    Some(real_time) => real_time
+    None => @time.Real::default()
+  }
+}
+
+///|
+fn read_virtual_time(world : @ecs.World) -> @time.Virtual {
+  let virtual_time = try! world.get_resource(@time.Virtual::resource())
+  match virtual_time {
+    Some(virtual_time) => virtual_time
+    None => @time.Virtual::new()
+  }
+}
+
+///|
+fn read_generic_time(world : @ecs.World) -> @time.Time {
+  let time = try! world.get_resource(@time.Time::resource())
+  match time {
+    Some(time) => time
+    None => @time.Time::new()
+  }
+}
+
+///|
+fn update_virtual_time_resource(
+  world : @ecs.World,
+  update : (@time.Virtual) -> @time.Virtual,
+) -> Unit {
+  let change_tick = world.increment_change_tick()
+  let virtual_ref = try! world
+    .get_resource_ref_mut(@time.Virtual::resource(), change_tick)
+    .unwrap()
+  let time_ref = try! world
+    .get_resource_ref_mut(@time.Time::resource(), change_tick)
+    .unwrap()
+  let next_virtual = update(virtual_ref.val)
+  virtual_ref.val = next_virtual
+  time_ref.val = next_virtual.as_generic()
+}
+
+///|
+fn update_info_text(world : @ecs.World) -> Unit {
+  let real_time = read_real_time(world)
+  let virtual_time = read_virtual_time(world)
   if virtual_time_state.val.real_text is Some(real_text) {
     @text.text_set_content(
       real_text,
       "REAL TIME\nElapsed: " +
-      @time.time_real_elapsed_seconds().to_string() +
+      real_time.elapsed_seconds().to_string() +
       "\nDelta: " +
-      @time.time_real_delta_seconds().to_string() +
+      real_time.delta_seconds().to_string() +
       "\n",
     )
   }
@@ -65,11 +111,11 @@ fn update_info_text() -> Unit {
     @text.text_set_content(
       virtual_text,
       "VIRTUAL TIME\nElapsed: " +
-      @time.time_virtual_elapsed_seconds().to_string() +
+      virtual_time.elapsed_seconds().to_string() +
       "\nDelta: " +
-      @time.time_virtual_delta_seconds().to_string() +
+      virtual_time.delta_seconds().to_string() +
       "\nSpeed: " +
-      @time.time_virtual_relative_speed().to_string(),
+      virtual_time.relative_speed().to_string(),
     )
   }
 }
@@ -84,8 +130,9 @@ fn setup(world : @ecs.World) -> Unit {
     info_timer: @time.Timer::from_seconds(0.25F, @time.TimerMode::Repeating),
   }
 
-  @time.time_virtual_set_relative_speed(2.0F)
-  @time.time_virtual_unpause()
+  update_virtual_time_resource(world, fn(virtual_time : @time.Virtual) {
+    virtual_time.set_relative_speed(2.0F).unpause()
+  })
 
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
@@ -180,29 +227,29 @@ fn setup(world : @ecs.World) -> Unit {
     .spawn()
   virtual_time_state.val.virtual_text = Some(virtual_text)
 
-  update_info_text()
+  update_info_text(world)
 }
 
 ///|
-fn handle_time_controls() -> Unit {
+fn handle_time_controls(world : @ecs.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Space) {
-    @time.time_virtual_toggle()
+    update_virtual_time_resource(world, fn(virtual_time : @time.Virtual) {
+      virtual_time.toggle()
+    })
   }
   if @input.key_just_pressed(@window.KeyCode::ArrowUp) {
-    let next_speed = clampf(
-      @time.time_virtual_relative_speed() + 1.0F,
-      0.25F,
-      5.0F,
-    )
-    @time.time_virtual_set_relative_speed(next_speed)
+    let virtual_time = read_virtual_time(world)
+    let next_speed = clampf(virtual_time.relative_speed() + 1.0F, 0.25F, 5.0F)
+    update_virtual_time_resource(world, fn(virtual_time : @time.Virtual) {
+      virtual_time.set_relative_speed(next_speed)
+    })
   }
   if @input.key_just_pressed(@window.KeyCode::ArrowDown) {
-    let next_speed = clampf(
-      @time.time_virtual_relative_speed() - 1.0F,
-      0.25F,
-      5.0F,
-    )
-    @time.time_virtual_set_relative_speed(next_speed)
+    let virtual_time = read_virtual_time(world)
+    let next_speed = clampf(virtual_time.relative_speed() - 1.0F, 0.25F, 5.0F)
+    update_virtual_time_resource(world, fn(virtual_time : @time.Virtual) {
+      virtual_time.set_relative_speed(next_speed)
+    })
   }
 }
 
@@ -210,6 +257,8 @@ fn handle_time_controls() -> Unit {
 fn update_sprite_positions(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let transform_store = world.component(@math.ecs_key_transform)
+  let real_time = read_real_time(world)
+  let time = read_generic_time(world)
 
   if virtual_time_state.val.real_sprite is Some(real_sprite) {
     if transform_store.get(real_sprite) is Some(transform) {
@@ -217,7 +266,7 @@ fn update_sprite_positions(world : @ecs.World) -> Unit {
         real_sprite,
         transform.with_translation(
           @math.Vec3::new(
-            get_sprite_translation_x(@time.time_real_elapsed_seconds()),
+            get_sprite_translation_x(real_time.elapsed_seconds()),
             transform.translation.y,
             transform.translation.z,
           ),
@@ -234,7 +283,7 @@ fn update_sprite_positions(world : @ecs.World) -> Unit {
         virtual_sprite,
         transform.with_translation(
           @math.Vec3::new(
-            get_sprite_translation_x(@time.time_virtual_elapsed_seconds()),
+            get_sprite_translation_x(time.elapsed_seconds()),
             transform.translation.y,
             transform.translation.z,
           ),
@@ -247,18 +296,19 @@ fn update_sprite_positions(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn update_text_with_real_timer(_world : @ecs.World) -> Unit {
+fn update_text_with_real_timer(world : @ecs.World) -> Unit {
+  let real_time = read_real_time(world)
   virtual_time_state.val.info_timer = virtual_time_state.val.info_timer.tick(
-    @time.time_real_delta_seconds(),
+    real_time.delta_seconds(),
   )
   if virtual_time_state.val.info_timer.just_finished() {
-    update_info_text()
+    update_info_text(world)
   }
 }
 
 ///|
 fn update(world : @ecs.World) -> Unit {
-  handle_time_controls()
+  handle_time_controls(world)
   update_sprite_positions(world)
   update_text_with_real_timer(world)
 }

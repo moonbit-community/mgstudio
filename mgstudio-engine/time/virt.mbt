@@ -171,76 +171,36 @@ pub fn update_virtual_time(virtual_time : Virtual, real_time : Real) -> Virtual 
 }
 
 ///|
-fn time_virtual_or_default() -> Virtual {
-  match virtual_resource.val.get() {
-    Some(virtual_time) => virtual_time
-    None => Virtual::default()
-  }
-}
-
-///|
-fn time_write_virtual(update : (Virtual) -> Virtual) -> Unit {
-  let tick = time_resource_change_tick()
-  let next_virtual = update(time_virtual_or_default())
-  sync_resource(virtual_resource.val, next_virtual, tick)
-  sync_resource(time_resource.val, next_virtual.as_generic(), tick)
+fn world_virtual_or_default(world : @ecs.World) -> Virtual {
+  world_time_resource_or_default(world, virtual_resource_key, Virtual::default)
 }
 
 ///|
 pub fn time_virtual_delta_seconds() -> Float {
-  time_virtual_or_default().delta_seconds()
+  world_virtual_or_default(current_time_world_abort_missing()).delta_seconds()
 }
 
 ///|
 pub fn time_virtual_elapsed_seconds() -> Float {
-  time_virtual_or_default().elapsed_seconds()
+  world_virtual_or_default(current_time_world_abort_missing()).elapsed_seconds()
 }
 
 ///|
 pub fn time_virtual_relative_speed() -> Float {
-  time_virtual_or_default().relative_speed()
+  world_virtual_or_default(current_time_world_abort_missing()).relative_speed()
 }
 
 ///|
 pub fn time_virtual_effective_speed() -> Float {
-  time_virtual_or_default().effective_speed()
+  world_virtual_or_default(current_time_world_abort_missing()).effective_speed()
 }
 
 ///|
 pub fn time_virtual_max_delta_seconds() -> Float {
-  time_virtual_or_default().max_delta_seconds()
-}
-
-///|
-pub fn time_virtual_set_relative_speed(speed : Float) -> Unit {
-  time_write_virtual(fn(virtual_time : Virtual) {
-    virtual_time.set_relative_speed(speed)
-  })
-}
-
-///|
-pub fn time_virtual_set_max_delta_seconds(max_delta_seconds : Float) -> Unit {
-  time_write_virtual(fn(virtual_time : Virtual) {
-    virtual_time.set_max_delta_seconds(max_delta_seconds)
-  })
-}
-
-///|
-pub fn time_virtual_pause() -> Unit {
-  time_write_virtual(fn(virtual_time : Virtual) { virtual_time.pause() })
-}
-
-///|
-pub fn time_virtual_unpause() -> Unit {
-  time_write_virtual(fn(virtual_time : Virtual) { virtual_time.unpause() })
-}
-
-///|
-pub fn time_virtual_toggle() -> Unit {
-  time_write_virtual(fn(virtual_time : Virtual) { virtual_time.toggle() })
+  world_virtual_or_default(current_time_world_abort_missing()).max_delta_seconds()
 }
 
 ///|
 pub fn time_virtual_is_paused() -> Bool {
-  time_virtual_or_default().is_paused()
+  world_virtual_or_default(current_time_world_abort_missing()).is_paused()
 }

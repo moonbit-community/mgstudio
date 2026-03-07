@@ -112,16 +112,16 @@ pub impl @ecs.Component for PlaybackRemoveMarker with component() {
 }
 
 ///|
-fn audio_output_stream() -> @native_audio.NativeAudioStream? {
-  match audio_resource_get(AudioOutput::resource()) {
+fn audio_output_stream(world : @ecs.World) -> @native_audio.NativeAudioStream? {
+  match audio_resource_get(world, AudioOutput::resource()) {
     Some(output) => output.stream
     None => None
   }
 }
 
 ///|
-pub fn audio_output_available() -> Bool {
-  audio_output_stream() is Some(_)
+fn audio_output_available(world : @ecs.World) -> Bool {
+  audio_output_stream(world) is Some(_)
 }
 
 ///|
@@ -217,16 +217,16 @@ fn audio_listener_positions(world : @ecs.World) -> (@math.Vec3, @math.Vec3) {
 }
 
 ///|
-fn audio_default_spatial_scale() -> SpatialScale {
-  match audio_resource_get(DefaultSpatialScale::resource()) {
+fn audio_default_spatial_scale(world : @ecs.World) -> SpatialScale {
+  match audio_resource_get(world, DefaultSpatialScale::resource()) {
     Some(scale) => scale.scale
     None => SpatialScale::default()
   }
 }
 
 ///|
-fn audio_global_volume() -> GlobalVolume {
-  match audio_resource_get(GlobalVolume::resource()) {
+fn audio_global_volume(world : @ecs.World) -> GlobalVolume {
+  match audio_resource_get(world, GlobalVolume::resource()) {
     Some(value) => value
     None => GlobalVolume::default()
   }
@@ -268,13 +268,13 @@ fn audio_play_source_entity(
   entity : @core.Entity,
   player : AudioPlayer[AudioSource],
 ) -> Unit {
-  guard audio_output_stream() is Some(output) else { return }
-  guard audio_source_get(player.handle()) is Some(source) else { return }
+  guard audio_output_stream(world) is Some(output) else { return }
+  guard audio_source_get(world, player.handle()) is Some(source) else { return }
   let settings = audio_playback_settings_for_entity(world, entity)
-  let volume = audio_combined_volume(settings, audio_global_volume())
+  let volume = audio_combined_volume(settings, audio_global_volume(world))
   let config = audio_playback_config(settings)
   if settings.spatial {
-    let default_scale = audio_default_spatial_scale().scale
+    let default_scale = audio_default_spatial_scale(world).scale
     let scale = match settings.spatial_scale {
       Some(custom) => custom.scale
       None => default_scale
@@ -329,12 +329,12 @@ fn audio_play_pitch_entity(
   entity : @core.Entity,
   player : AudioPlayer[Pitch],
 ) -> Unit {
-  guard audio_output_stream() is Some(output) else { return }
-  guard pitch_get(player.handle()) is Some(pitch) else { return }
+  guard audio_output_stream(world) is Some(output) else { return }
+  guard pitch_get(world, player.handle()) is Some(pitch) else { return }
   let settings = audio_playback_settings_for_entity(world, entity)
-  let volume = audio_combined_volume(settings, audio_global_volume())
+  let volume = audio_combined_volume(settings, audio_global_volume(world))
   if settings.spatial {
-    let default_scale = audio_default_spatial_scale().scale
+    let default_scale = audio_default_spatial_scale(world).scale
     let scale = match settings.spatial_scale {
       Some(custom) => custom.scale
       None => default_scale
@@ -437,7 +437,7 @@ fn update_spatial_audio_sink_positions_system(world : @ecs.World) -> Unit {
       continue
     }
     let settings = audio_playback_settings_for_entity(world, entity)
-    let default_scale = audio_default_spatial_scale().scale
+    let default_scale = audio_default_spatial_scale(world).scale
     let scale = match settings.spatial_scale {
       Some(custom) => custom.scale
       None => default_scale
@@ -573,7 +573,7 @@ fn cleanup_finished_pitch_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn audio_playback_system(world : @ecs.World) -> Unit {
-  if !audio_output_available() {
+  if !audio_output_available(world) {
     return
   }
   play_queued_audio_source_system(world)

@@ -10,23 +10,21 @@ import {
 }
 
 // Values
-pub fn audio_output_available() -> Bool
-
 pub fn audio_playback_system(@ecs.World) -> Unit
 
 pub fn audio_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn audio_plugin_with(@app.App[@ecs.World], AudioPlugin) -> @app.App[@ecs.World]
 
-pub fn audio_source_add(AudioSource) -> @asset.Handle[AudioSource]
+pub fn audio_source_add(@ecs.World, AudioSource) -> @asset.Handle[AudioSource]
 
 pub fn audio_source_from_blob(@asset.Handle[@asset.Blob]) -> AudioSource?
 
-pub fn audio_source_get(@asset.Handle[AudioSource]) -> AudioSource?
+pub fn audio_source_get(@ecs.World, @asset.Handle[AudioSource]) -> AudioSource?
 
-pub fn audio_source_load(@asset.AssetServer, String) -> @asset.Handle[AudioSource]?
+pub fn audio_source_load(@ecs.World, @asset.AssetServer, String) -> @asset.Handle[AudioSource]?
 
-pub fn audio_source_set(@asset.Handle[AudioSource], AudioSource) -> Bool
+pub fn audio_source_set(@ecs.World, @asset.Handle[AudioSource], AudioSource) -> Bool
 
 pub let ecs_key_audio_sink : @ecs.ComponentKey[AudioSink]
 
@@ -44,11 +42,11 @@ pub let ecs_key_spatial_audio_sink : @ecs.ComponentKey[SpatialAudioSink]
 
 pub let ecs_key_spatial_listener : @ecs.ComponentKey[SpatialListener]
 
-pub fn pitch_add(Pitch) -> @asset.Handle[Pitch]
+pub fn pitch_add(@ecs.World, Pitch) -> @asset.Handle[Pitch]
 
-pub fn pitch_get(@asset.Handle[Pitch]) -> Pitch?
+pub fn pitch_get(@ecs.World, @asset.Handle[Pitch]) -> Pitch?
 
-pub fn pitch_set(@asset.Handle[Pitch], Pitch) -> Bool
+pub fn pitch_set(@ecs.World, @asset.Handle[Pitch], Pitch) -> Bool
 
 // Errors
 

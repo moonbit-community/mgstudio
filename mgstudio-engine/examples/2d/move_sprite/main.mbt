@@ -18,7 +18,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(move_sprite_setup)
+  .add_systems(@app.Startup, @app.system(move_sprite_setup))
   .add_system_query2_ecs(
     @math.ecs_key_transform, @render2d.ecs_key_sprite, move_sprite_movement,
   )

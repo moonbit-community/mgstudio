@@ -51,9 +51,9 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(sprite_scale_setup_sprites)
-  .add_startup_system(sprite_scale_setup_texture_atlas)
-  .add_startup_system(sprite_scale_setup_camera)
+  .add_systems(@app.Startup, @app.system(sprite_scale_setup_sprites))
+  .add_systems(@app.Startup, @app.system(sprite_scale_setup_texture_atlas))
+  .add_systems(@app.Startup, @app.system(sprite_scale_setup_camera))
   .add_system_query2_ecs(
     @render2d.ecs_key_sprite, @math.ecs_key_transform, sprite_scale_update,
   )

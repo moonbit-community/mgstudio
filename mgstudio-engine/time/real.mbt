@@ -115,19 +115,16 @@ pub fn Real::as_generic(self : Real) -> Time {
 }
 
 ///|
-fn time_real_or_default() -> Real {
-  match real_resource.val.get() {
-    Some(real) => real
-    None => Real::default()
-  }
+fn world_real_or_default(world : @ecs.World) -> Real {
+  world_time_resource_or_default(world, real_resource_key, Real::default)
 }
 
 ///|
 pub fn time_real_delta_seconds() -> Float {
-  time_real_or_default().delta_seconds()
+  world_real_or_default(current_time_world_abort_missing()).delta_seconds()
 }
 
 ///|
 pub fn time_real_elapsed_seconds() -> Float {
-  time_real_or_default().elapsed_seconds()
+  world_real_or_default(current_time_world_abort_missing()).elapsed_seconds()
 }

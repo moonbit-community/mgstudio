@@ -27,8 +27,8 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(rotate_to_cursor_setup)
-  .add_fixed_update_system(rotate_to_cursor_update)
+  .add_systems(@app.Startup, @app.system(rotate_to_cursor_setup))
+  .add_systems(@app.FixedUpdate, @app.system(rotate_to_cursor_update))
   .run()
 }
 

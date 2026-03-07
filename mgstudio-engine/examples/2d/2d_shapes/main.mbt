@@ -19,8 +19,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@render2d.wireframe2d_plugin])
-  .add_startup_system(shapes_setup)
-  .add_startup_system(setup_wireframe2d_config)
+  .add_systems(@app.Startup, @app.system(shapes_setup))
+  .add_systems(@app.Startup, @app.system(setup_wireframe2d_config))
   .add_system_query2_ecs(
     @math.ecs_key_transform, @render2d.ecs_key_mesh2d, shapes_rotate,
   )

@@ -25,7 +25,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_system(scale_factor_override_system)
+  .add_systems(@app.Update, @app.system(scale_factor_override_system))
   .run()
 }
 

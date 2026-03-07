@@ -806,40 +806,10 @@ let file_drag_and_drop_message_key : @ecs.MessageKey[FileDragAndDrop] = @ecs.reg
 )
 
 ///|
-let active_input_world_ref : Ref[@ecs.World?] = Ref::new(None)
-
-///|
-fn input_resource_world() -> @ecs.World? {
-  match @app.current_world() {
-    Some(world) => {
-      active_input_world_ref.val = Some(world)
-      Some(world)
-    }
-    None => active_input_world_ref.val
-  }
-}
-
-///|
 fn[T] input_resource_get(key : @ecs.ResourceKey[T]) -> T? {
-  match input_resource_world() {
+  match @app.current_world() {
     Some(world) =>
       try world.get_resource(key) catch {
-        _ => None
-      } noraise {
-        value => value
-      }
-    None => None
-  }
-}
-
-///|
-fn[T] input_resource_ref_mut(
-  key : @ecs.ResourceKey[T],
-  change_tick : @core.Tick,
-) -> Ref[T]? {
-  match input_resource_world() {
-    Some(world) =>
-      try world.get_resource_ref_mut(key, change_tick) catch {
         _ => None
       } noraise {
         value => value
@@ -1771,7 +1741,6 @@ pub impl @app.Resource for Touches with resource() {
 
 ///|
 pub fn input_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  active_input_world_ref.val = Some(app.world())
   input_gamepad_plugin(app)
   .add_message(keyboard_input_message_key)
   .add_message(keyboard_character_message_key)

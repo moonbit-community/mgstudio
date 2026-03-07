@@ -186,24 +186,27 @@ fn time_fixed_mark_step() -> Unit {
 
 ///|
 pub fn time_run_fixed_main_schedule(world : @ecs.World) -> Unit {
-  ensure_time_resources()
+  ensure_time_resources(world)
   time_fixed_begin_frame()
-  let delta_seconds = time_virtual_delta_seconds()
-  let accumulated_fixed = time_fixed_or_default().accumulate_overstep(
+  let delta_seconds = world_virtual_or_default(world).delta_seconds()
+  let accumulated_fixed = world_fixed_or_default(world).accumulate_overstep(
     delta_seconds,
   )
-  sync_resource(
-    fixed_resource.val,
+  sync_world_time_resource(
+    world,
+    fixed_resource_key,
     accumulated_fixed,
     world.increment_change_tick(),
   )
   while true {
-    let current_fixed = time_fixed_or_default()
+    let current_fixed = world_fixed_or_default(world)
     match current_fixed.expend() {
       Some(next_fixed) => {
         let change_tick = world.increment_change_tick()
-        sync_resource(fixed_resource.val, next_fixed, change_tick)
-        time_sync_generic_time(change_tick, next_fixed.as_generic())
+        sync_world_time_resource(
+          world, fixed_resource_key, next_fixed, change_tick,
+        )
+        time_sync_generic_time(world, change_tick, next_fixed.as_generic())
         time_fixed_mark_step()
         @app.run_current_fixed_main_schedule(world)
       }
@@ -211,28 +214,6 @@ pub fn time_run_fixed_main_schedule(world : @ecs.World) -> Unit {
     }
   }
   time_restore_virtual_as_generic(world)
-}
-
-///|
-fn time_write_fixed(update : (Fixed) -> Fixed) -> Unit {
-  let change_tick = time_resource_change_tick()
-  let next_fixed = update(time_fixed_or_default())
-  sync_resource(fixed_resource.val, next_fixed, change_tick)
-}
-
-///|
-pub fn time_fixed_reset() -> Unit {
-  time_write_fixed(fn(fixed_time : Fixed) {
-    Fixed::new().set_timestep_seconds(fixed_time.timestep_seconds())
-  })
-  time_fixed_begin_frame()
-}
-
-///|
-pub fn time_fixed_set_timestep_seconds(seconds : Float) -> Unit {
-  time_write_fixed(fn(fixed_time : Fixed) {
-    fixed_time.set_timestep_seconds(seconds)
-  })
 }
 
 ///|
@@ -246,44 +227,31 @@ pub fn time_fixed_steps_ran_this_frame() -> Int {
 }
 
 ///|
-fn time_fixed_or_default() -> Fixed {
-  match fixed_resource.val.get() {
-    Some(fixed_time) => fixed_time
-    None => Fixed::new()
-  }
-}
-
-///|
-fn time_fixed_delta_seconds_raw() -> Float {
-  time_fixed_or_default().delta_seconds()
-}
-
-///|
-fn time_fixed_elapsed_seconds_raw() -> Float {
-  time_fixed_or_default().elapsed_seconds()
+fn world_fixed_or_default(world : @ecs.World) -> Fixed {
+  world_time_resource_or_default(world, fixed_resource_key, Fixed::new)
 }
 
 ///|
 pub fn time_fixed_delta_seconds() -> Float {
-  time_fixed_delta_seconds_raw()
+  world_fixed_or_default(current_time_world_abort_missing()).delta_seconds()
 }
 
 ///|
 pub fn time_fixed_elapsed_seconds() -> Float {
-  time_fixed_elapsed_seconds_raw()
+  world_fixed_or_default(current_time_world_abort_missing()).elapsed_seconds()
 }
 
 ///|
 pub fn time_fixed_timestep_seconds() -> Float {
-  time_fixed_or_default().timestep_seconds()
+  world_fixed_or_default(current_time_world_abort_missing()).timestep_seconds()
 }
 
 ///|
 pub fn time_fixed_overstep_seconds() -> Float {
-  time_fixed_or_default().overstep_seconds()
+  world_fixed_or_default(current_time_world_abort_missing()).overstep_seconds()
 }
 
 ///|
 pub fn time_fixed_overstep_fraction() -> Float {
-  time_fixed_or_default().overstep_fraction()
+  world_fixed_or_default(current_time_world_abort_missing()).overstep_fraction()
 }

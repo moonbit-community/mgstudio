@@ -19,8 +19,10 @@
 ///|
 pub fn on_timer(duration_seconds : Float) -> @app.RunConditionFn[@ecs.World] {
   let timer_ref = Ref::new(Timer::new(duration_seconds, Repeating))
-  fn(_world : @ecs.World) -> Bool {
-    timer_ref.val = timer_ref.val.tick(time_delta_seconds())
+  fn(world : @ecs.World) -> Bool {
+    timer_ref.val = timer_ref.val.tick(
+      world_time_resource_or_default(world, time_resource_key, Time::new).delta_seconds(),
+    )
     timer_ref.val.just_finished()
   }
 }
@@ -30,8 +32,10 @@ pub fn on_real_timer(
   duration_seconds : Float,
 ) -> @app.RunConditionFn[@ecs.World] {
   let timer_ref = Ref::new(Timer::new(duration_seconds, Repeating))
-  fn(_world : @ecs.World) -> Bool {
-    timer_ref.val = timer_ref.val.tick(time_real_delta_seconds())
+  fn(world : @ecs.World) -> Bool {
+    timer_ref.val = timer_ref.val.tick(
+      world_real_or_default(world).delta_seconds(),
+    )
     timer_ref.val.just_finished()
   }
 }
@@ -41,8 +45,10 @@ pub fn once_after_delay(
   duration_seconds : Float,
 ) -> @app.RunConditionFn[@ecs.World] {
   let timer_ref = Ref::new(Timer::new(duration_seconds, Once))
-  fn(_world : @ecs.World) -> Bool {
-    timer_ref.val = timer_ref.val.tick(time_delta_seconds())
+  fn(world : @ecs.World) -> Bool {
+    timer_ref.val = timer_ref.val.tick(
+      world_time_resource_or_default(world, time_resource_key, Time::new).delta_seconds(),
+    )
     timer_ref.val.just_finished()
   }
 }
@@ -52,8 +58,10 @@ pub fn once_after_real_delay(
   duration_seconds : Float,
 ) -> @app.RunConditionFn[@ecs.World] {
   let timer_ref = Ref::new(Timer::new(duration_seconds, Once))
-  fn(_world : @ecs.World) -> Bool {
-    timer_ref.val = timer_ref.val.tick(time_real_delta_seconds())
+  fn(world : @ecs.World) -> Bool {
+    timer_ref.val = timer_ref.val.tick(
+      world_real_or_default(world).delta_seconds(),
+    )
     timer_ref.val.just_finished()
   }
 }
@@ -63,8 +71,10 @@ pub fn repeating_after_delay(
   duration_seconds : Float,
 ) -> @app.RunConditionFn[@ecs.World] {
   let timer_ref = Ref::new(Timer::new(duration_seconds, Once))
-  fn(_world : @ecs.World) -> Bool {
-    timer_ref.val = timer_ref.val.tick(time_delta_seconds())
+  fn(world : @ecs.World) -> Bool {
+    timer_ref.val = timer_ref.val.tick(
+      world_time_resource_or_default(world, time_resource_key, Time::new).delta_seconds(),
+    )
     timer_ref.val.is_finished()
   }
 }
@@ -74,13 +84,15 @@ pub fn repeating_after_real_delay(
   duration_seconds : Float,
 ) -> @app.RunConditionFn[@ecs.World] {
   let timer_ref = Ref::new(Timer::new(duration_seconds, Once))
-  fn(_world : @ecs.World) -> Bool {
-    timer_ref.val = timer_ref.val.tick(time_real_delta_seconds())
+  fn(world : @ecs.World) -> Bool {
+    timer_ref.val = timer_ref.val.tick(
+      world_real_or_default(world).delta_seconds(),
+    )
     timer_ref.val.is_finished()
   }
 }
 
 ///|
-pub fn paused(_world : @ecs.World) -> Bool {
-  time_virtual_is_paused()
+pub fn paused(world : @ecs.World) -> Bool {
+  world_virtual_or_default(world).is_paused()
 }

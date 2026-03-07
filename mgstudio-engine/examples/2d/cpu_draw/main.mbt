@@ -72,8 +72,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .insert_resource(@time.Fixed::from_seconds(FIXED_TIMESTEP_SECONDS))
-  .add_startup_system(cpu_draw_setup)
-  .add_fixed_update_system(cpu_draw_draw)
+  .add_systems(@app.Startup, @app.system(cpu_draw_setup))
+  .add_systems(@app.FixedUpdate, @app.system(cpu_draw_draw))
   .run()
 }
 

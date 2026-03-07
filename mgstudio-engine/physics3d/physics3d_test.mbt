@@ -13,18 +13,25 @@
 // limitations under the License.
 
 ///|
+fn configure_fixed_time(world : @ecs.World, timestep_seconds : Float) -> Unit {
+  world.insert_resource(
+    @time.Fixed::resource(),
+    @time.Fixed::new().set_timestep_seconds(timestep_seconds),
+  )
+}
+
+///|
 test "physics3d: falling body collides and writes back transform" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics3d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics3d_config_resource(world)
   let cfg_ref = Ref::new(cfg_res.get().unwrap())
   cfg_ref.val = Physics3dConfig::new(@math.Vec3::new(0.0F, -200.0F, 0.0F))
   cfg_res.insert(cfg_ref.val, tick)
-  let floor = @core.Entity::new(0, 1)
-  let ball = @core.Entity::new(1, 1)
+  let floor = world.spawn()
+  let ball = world.spawn()
   @math.get_transform_store(world).insert(
     floor,
     @math.Transform::from_xyz(0.0F, -1.0F, 0.0F),
@@ -65,17 +72,16 @@ test "physics3d: falling body collides and writes back transform" {
 
 ///|
 test "physics3d: sensor collision events are emitted" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics3d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics3d_config_resource(world)
   let cfg_ref = Ref::new(cfg_res.get().unwrap())
   cfg_ref.val = Physics3dConfig::new(@math.Vec3::new(0.0F, -200.0F, 0.0F))
   cfg_res.insert(cfg_ref.val, tick)
-  let floor = @core.Entity::new(0, 1)
-  let ball = @core.Entity::new(1, 1)
+  let floor = world.spawn()
+  let ball = world.spawn()
   @math.get_transform_store(world).insert(
     floor,
     @math.Transform::from_xyz(0.0F, -1.0F, 0.0F),
@@ -120,17 +126,16 @@ test "physics3d: sensor collision events are emitted" {
 
 ///|
 test "physics3d: contact force events are emitted" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics3d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics3d_config_resource(world)
   let cfg_ref = Ref::new(cfg_res.get().unwrap())
   cfg_ref.val = Physics3dConfig::new(@math.Vec3::new(0.0F, -200.0F, 0.0F))
   cfg_res.insert(cfg_ref.val, tick)
-  let floor = @core.Entity::new(0, 1)
-  let ball = @core.Entity::new(1, 1)
+  let floor = world.spawn()
+  let ball = world.spawn()
   @math.get_transform_store(world).insert(
     floor,
     @math.Transform::from_xyz(0.0F, -1.0F, 0.0F),
@@ -174,12 +179,11 @@ test "physics3d: contact force events are emitted" {
 
 ///|
 test "physics3d: active collision type and hook components are accepted" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics3d_init_resources_system(world)
   let tick = world.read_change_tick()
-  let body = @core.Entity::new(0, 1)
+  let body = world.spawn()
   @math.get_transform_store(world).insert(
     body,
     @math.Transform::from_xyz(0.0F, 0.0F, 0.0F),

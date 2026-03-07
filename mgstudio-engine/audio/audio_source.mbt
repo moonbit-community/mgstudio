@@ -73,9 +73,13 @@ pub impl @app.Resource for AudioSourceAssets with resource() {
 }
 
 ///|
-pub fn audio_source_add(source : AudioSource) -> @asset.Handle[AudioSource] {
+pub fn audio_source_add(
+  world : @ecs.World,
+  source : AudioSource,
+) -> @asset.Handle[AudioSource] {
   let tick = @app.current_system_ticks().this_run
   let assets_ref = audio_resource_ensure_ref_mut(
+    world,
     AudioSourceAssets::resource(),
     fn() { AudioSourceAssets::new() },
     tick,
@@ -84,8 +88,11 @@ pub fn audio_source_add(source : AudioSource) -> @asset.Handle[AudioSource] {
 }
 
 ///|
-pub fn audio_source_get(handle : @asset.Handle[AudioSource]) -> AudioSource? {
-  match audio_resource_get(AudioSourceAssets::resource()) {
+pub fn audio_source_get(
+  world : @ecs.World,
+  handle : @asset.Handle[AudioSource],
+) -> AudioSource? {
+  match audio_resource_get(world, AudioSourceAssets::resource()) {
     Some(assets) => assets.get(handle)
     None => None
   }
@@ -93,11 +100,12 @@ pub fn audio_source_get(handle : @asset.Handle[AudioSource]) -> AudioSource? {
 
 ///|
 pub fn audio_source_set(
+  world : @ecs.World,
   handle : @asset.Handle[AudioSource],
   source : AudioSource,
 ) -> Bool {
   let tick = @app.current_system_ticks().this_run
-  guard audio_resource_ref_mut(AudioSourceAssets::resource(), tick)
+  guard audio_resource_ref_mut(world, AudioSourceAssets::resource(), tick)
     is Some(assets_ref) else {
     return false
   }
@@ -116,12 +124,13 @@ pub fn audio_source_from_blob(
 
 ///|
 pub fn audio_source_load(
+  world : @ecs.World,
   asset_server : @asset.AssetServer,
   path : String,
 ) -> @asset.Handle[AudioSource]? {
   let blob = asset_server.load_bytes(path)
   match audio_source_from_blob(blob) {
-    Some(source) => Some(audio_source_add(source))
+    Some(source) => Some(audio_source_add(world, source))
     None => None
   }
 }

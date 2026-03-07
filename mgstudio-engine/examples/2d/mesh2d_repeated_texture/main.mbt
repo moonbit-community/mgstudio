@@ -139,7 +139,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(mesh2d_repeated_texture_setup)
-  .add_system(ensure_labels_system)
+  .add_systems(@app.Startup, @app.system(mesh2d_repeated_texture_setup))
+  .add_systems(@app.Update, @app.system(ensure_labels_system))
   .run()
 }

@@ -92,9 +92,12 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(dynamic_mip_setup)
-  .add_system_param(dynamic_mip_window_resized_system)
-  .add_system(dynamic_mip_update)
+  .add_systems(@app.Startup, @app.system(dynamic_mip_setup))
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param(dynamic_mip_window_resized_system)),
+  )
+  .add_systems(@app.Update, @app.system(dynamic_mip_update))
   .run()
 }
 

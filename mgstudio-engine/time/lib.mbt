@@ -38,84 +38,13 @@ pub fn TimeUpdateStrategy::default() -> TimeUpdateStrategy {
 }
 
 ///|
-let active_time_world_ref : Ref[@ecs.World?] = Ref::new(None)
-
-///|
-let fallback_time_world_ref : Ref[@ecs.World] = Ref::new(@ecs.World::new())
-
-///|
-fn time_resource_world() -> @ecs.World {
+fn current_time_world_abort_missing() -> @ecs.World {
   match @app.current_world() {
-    Some(world) => {
-      active_time_world_ref.val = Some(world)
-      world
-    }
+    Some(world) => world
     None =>
-      match active_time_world_ref.val {
-        Some(world) => world
-        None => fallback_time_world_ref.val
-      }
-  }
-}
-
-///|
-priv struct WorldOwnedResourceProxy[T] {
-  key : @ecs.ResourceKey[T]
-}
-
-///|
-fn[T] WorldOwnedResourceProxy::new(
-  key : @ecs.ResourceKey[T],
-) -> WorldOwnedResourceProxy[T] {
-  WorldOwnedResourceProxy::{ key, }
-}
-
-///|
-fn[T] WorldOwnedResourceProxy::is_present(
-  self : WorldOwnedResourceProxy[T],
-) -> Bool {
-  match
-    (try time_resource_world().get_resource(self.key) catch {
-      _ => None
-    } noraise {
-      value => value
-    }) {
-    Some(_) => true
-    None => false
-  }
-}
-
-///|
-fn[T] WorldOwnedResourceProxy::insert(
-  self : WorldOwnedResourceProxy[T],
-  value : T,
-  change_tick : @core.Tick,
-) -> Unit {
-  time_resource_world().insert_resource_with_change_tick(
-    self.key,
-    value,
-    change_tick,
-  )
-}
-
-///|
-fn[T] WorldOwnedResourceProxy::get(self : WorldOwnedResourceProxy[T]) -> T? {
-  try time_resource_world().get_resource(self.key) catch {
-    _ => None
-  } noraise {
-    value => value
-  }
-}
-
-///|
-fn[T] WorldOwnedResourceProxy::get_ref_mut(
-  self : WorldOwnedResourceProxy[T],
-  change_tick : @core.Tick,
-) -> Ref[T]? {
-  try time_resource_world().get_resource_ref_mut(self.key, change_tick) catch {
-    _ => None
-  } noraise {
-    value => value
+      abort(
+        "bevy_time helper functions require an active app world; use direct world resource access outside scheduled systems",
+      )
   }
 }
 
@@ -143,31 +72,6 @@ let fixed_resource_key : @ecs.ResourceKey[Fixed] = @ecs.register_resource(
 let time_update_strategy_resource_key : @ecs.ResourceKey[TimeUpdateStrategy] = @ecs.register_resource(
   debug_name="bevy_time::TimeUpdateStrategy",
 )
-
-///|
-let time_resource : Ref[WorldOwnedResourceProxy[Time]] = Ref::new(
-  WorldOwnedResourceProxy::new(time_resource_key),
-)
-
-///|
-let real_resource : Ref[WorldOwnedResourceProxy[Real]] = Ref::new(
-  WorldOwnedResourceProxy::new(real_resource_key),
-)
-
-///|
-let virtual_resource : Ref[WorldOwnedResourceProxy[Virtual]] = Ref::new(
-  WorldOwnedResourceProxy::new(virtual_resource_key),
-)
-
-///|
-let fixed_resource : Ref[WorldOwnedResourceProxy[Fixed]] = Ref::new(
-  WorldOwnedResourceProxy::new(fixed_resource_key),
-)
-
-///|
-let time_update_strategy_resource : Ref[
-  WorldOwnedResourceProxy[TimeUpdateStrategy],
-] = Ref::new(WorldOwnedResourceProxy::new(time_update_strategy_resource_key))
 
 ///|
 pub impl @app.Resource for Time with resource() {
@@ -200,12 +104,12 @@ pub fn host_time_now() -> Float {
 }
 
 ///|
-fn time_resource_change_tick() -> @core.Tick {
+fn time_resource_change_tick(world : @ecs.World) -> @core.Tick {
   let tick = @app.current_system_ticks().this_run
   if tick > 0 {
     tick
   } else {
-    let world_tick = time_resource_world().read_change_tick()
+    let world_tick = world.read_change_tick()
     if world_tick > 0 {
       world_tick
     } else {
@@ -215,49 +119,94 @@ fn time_resource_change_tick() -> @core.Tick {
 }
 
 ///|
-fn[T] sync_resource(
-  resource : WorldOwnedResourceProxy[T],
-  value : T,
-  change_tick : @core.Tick,
-) -> Unit {
-  match resource.get_ref_mut(change_tick) {
-    Some(cell) => cell.val = value
-    None => resource.insert(value, change_tick)
+fn[T] world_time_resource(world : @ecs.World, key : @ecs.ResourceKey[T]) -> T? {
+  try world.get_resource(key) catch {
+    _ => None
+  } noraise {
+    value => value
   }
 }
 
 ///|
-fn time_sync_generic_time(change_tick : @core.Tick, value : Time) -> Unit {
-  sync_resource(time_resource.val, value, change_tick)
+fn[T] world_time_resource_or_default(
+  world : @ecs.World,
+  key : @ecs.ResourceKey[T],
+  default_value : () -> T,
+) -> T {
+  match world_time_resource(world, key) {
+    Some(value) => value
+    None => default_value()
+  }
+}
+
+///|
+fn[T] sync_world_time_resource(
+  world : @ecs.World,
+  key : @ecs.ResourceKey[T],
+  value : T,
+  change_tick : @core.Tick,
+) -> Unit {
+  match
+    (try world.get_resource_ref_mut(key, change_tick) catch {
+      _ => None
+    } noraise {
+      value => value
+    }) {
+    Some(cell) => cell.val = value
+    None => world.insert_resource_with_change_tick(key, value, change_tick)
+  }
+}
+
+///|
+fn time_sync_generic_time(
+  world : @ecs.World,
+  change_tick : @core.Tick,
+  value : Time,
+) -> Unit {
+  sync_world_time_resource(world, time_resource_key, value, change_tick)
 }
 
 ///|
 fn time_restore_virtual_as_generic(world : @ecs.World) -> Unit {
   let change_tick = world.increment_change_tick()
-  let virtual_time = match virtual_resource.val.get() {
-    Some(value) => value
-    None => Virtual::new()
-  }
-  time_sync_generic_time(change_tick, virtual_time.as_generic())
+  let virtual_time = world_time_resource_or_default(
+    world,
+    virtual_resource_key,
+    Virtual::new,
+  )
+  time_sync_generic_time(world, change_tick, virtual_time.as_generic())
 }
 
 ///|
-fn ensure_time_resources() -> Unit {
-  let tick = time_resource_change_tick()
-  if !time_resource.val.is_present() {
-    time_resource.val.insert(Time::new(), tick)
+fn ensure_time_resources(world : @ecs.World) -> Unit {
+  let tick = time_resource_change_tick(world)
+  if world_time_resource(world, time_resource_key) is None {
+    world.insert_resource_with_change_tick(time_resource_key, Time::new(), tick)
   }
-  if !real_resource.val.is_present() {
-    real_resource.val.insert(Real::new(host_time_now()), tick)
+  if world_time_resource(world, real_resource_key) is None {
+    world.insert_resource_with_change_tick(
+      real_resource_key,
+      Real::new(host_time_now()),
+      tick,
+    )
   }
-  if !virtual_resource.val.is_present() {
-    virtual_resource.val.insert(Virtual::new(), tick)
+  if world_time_resource(world, virtual_resource_key) is None {
+    world.insert_resource_with_change_tick(
+      virtual_resource_key,
+      Virtual::new(),
+      tick,
+    )
   }
-  if !fixed_resource.val.is_present() {
-    fixed_resource.val.insert(Fixed::new(), tick)
+  if world_time_resource(world, fixed_resource_key) is None {
+    world.insert_resource_with_change_tick(
+      fixed_resource_key,
+      Fixed::new(),
+      tick,
+    )
   }
-  if !time_update_strategy_resource.val.is_present() {
-    time_update_strategy_resource.val.insert(
+  if world_time_resource(world, time_update_strategy_resource_key) is None {
+    world.insert_resource_with_change_tick(
+      time_update_strategy_resource_key,
       TimeUpdateStrategy::default(),
       tick,
     )
@@ -268,6 +217,7 @@ fn ensure_time_resources() -> Unit {
 fn time_update_real_with_strategy(
   real_time : Real,
   strategy : TimeUpdateStrategy,
+  fixed_time : Fixed,
 ) -> Real {
   match strategy {
     Automatic => real_time.update()
@@ -277,24 +227,36 @@ fn time_update_real_with_strategy(
     FixedTimesteps(factor) => {
       let steps = if factor < 0 { 0 } else { factor }
       real_time.update_with_duration(
-        time_fixed_timestep_seconds() * Float::from_int(steps),
+        fixed_time.timestep_seconds() * Float::from_int(steps),
       )
     }
   }
 }
 
 ///|
-pub fn time_update() -> Unit {
-  ensure_time_resources()
-  let tick = time_resource_change_tick()
-  let strategy = match time_update_strategy_resource.val.get() {
-    Some(strategy) => strategy
-    None => TimeUpdateStrategy::default()
-  }
-  let real_ref = real_resource.val.get_ref_mut(tick).unwrap()
-  let virtual_ref = virtual_resource.val.get_ref_mut(tick).unwrap()
-  let time_ref = time_resource.val.get_ref_mut(tick).unwrap()
-  let next_real = time_update_real_with_strategy(real_ref.val, strategy)
+fn time_update(world : @ecs.World) -> Unit {
+  ensure_time_resources(world)
+  let tick = time_resource_change_tick(world)
+  let strategy = world_time_resource_or_default(
+    world,
+    time_update_strategy_resource_key,
+    TimeUpdateStrategy::default,
+  )
+  let fixed_time = world_fixed_or_default(world)
+  let real_ref = try! world
+    .get_resource_ref_mut(real_resource_key, tick)
+    .unwrap()
+  let virtual_ref = try! world
+    .get_resource_ref_mut(virtual_resource_key, tick)
+    .unwrap()
+  let time_ref = try! world
+    .get_resource_ref_mut(time_resource_key, tick)
+    .unwrap()
+  let next_real = time_update_real_with_strategy(
+    real_ref.val,
+    strategy,
+    fixed_time,
+  )
   let next_virtual = update_virtual_time(virtual_ref.val, next_real)
   real_ref.val = next_real
   virtual_ref.val = next_virtual
@@ -302,41 +264,20 @@ pub fn time_update() -> Unit {
 }
 
 ///|
-pub fn[W] time_system(_world : W) -> Unit {
-  time_update()
-}
-
-///|
-fn time_update_resource_system(
-  time : @app.ResMut[Time],
-  real_time : @app.ResMut[Real],
-  virtual_time : @app.ResMut[Virtual],
-  strategy : @app.Res[TimeUpdateStrategy],
-) -> Unit {
-  let next_real = time_update_real_with_strategy(
-    real_time.get_ref().val,
-    strategy.get(),
-  )
-  let next_virtual = update_virtual_time(virtual_time.get_ref().val, next_real)
-  real_time.get_ref().val = next_real
-  virtual_time.get_ref().val = next_virtual
-  time.get_ref().val = next_virtual.as_generic()
+fn time_update_resource_system(world : @ecs.World) -> Unit {
+  time_update(world)
 }
 
 ///|
 pub fn time_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let startup_seconds = host_time_now()
-  active_time_world_ref.val = Some(app.world())
   app
   .init_resource(fn() { Time::new() })
   .init_resource(fn() { Real::new(startup_seconds) })
   .init_resource(fn() { Virtual::new() })
   .init_resource(fn() { Fixed::new() })
   .init_resource(fn() { TimeUpdateStrategy::default() })
-  .add_systems(
-    @app.First,
-    @app.system(@app.system_param4(time_update_resource_system)),
-  )
+  .add_systems(@app.First, @app.system(time_update_resource_system))
   .add_systems(
     @app.RunFixedMainLoop,
     @app.system(time_run_fixed_main_schedule).in_set(

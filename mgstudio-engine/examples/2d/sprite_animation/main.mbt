@@ -60,9 +60,9 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(sprite_animation_setup)
-  .add_system(execute_animations)
-  .add_system(trigger_animations)
+  .add_systems(@app.Startup, @app.system(sprite_animation_setup))
+  .add_systems(@app.Update, @app.system(execute_animations))
+  .add_systems(@app.Update, @app.system(trigger_animations))
   .run()
 }
 

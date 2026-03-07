@@ -69,9 +69,10 @@ pub impl @app.Resource for PitchAssets with resource() {
 }
 
 ///|
-pub fn pitch_add(pitch : Pitch) -> @asset.Handle[Pitch] {
+pub fn pitch_add(world : @ecs.World, pitch : Pitch) -> @asset.Handle[Pitch] {
   let tick = @app.current_system_ticks().this_run
   let assets_ref = audio_resource_ensure_ref_mut(
+    world,
     PitchAssets::resource(),
     fn() { PitchAssets::new() },
     tick,
@@ -80,17 +81,21 @@ pub fn pitch_add(pitch : Pitch) -> @asset.Handle[Pitch] {
 }
 
 ///|
-pub fn pitch_get(handle : @asset.Handle[Pitch]) -> Pitch? {
-  match audio_resource_get(PitchAssets::resource()) {
+pub fn pitch_get(world : @ecs.World, handle : @asset.Handle[Pitch]) -> Pitch? {
+  match audio_resource_get(world, PitchAssets::resource()) {
     Some(assets) => assets.get(handle)
     None => None
   }
 }
 
 ///|
-pub fn pitch_set(handle : @asset.Handle[Pitch], pitch : Pitch) -> Bool {
+pub fn pitch_set(
+  world : @ecs.World,
+  handle : @asset.Handle[Pitch],
+  pitch : Pitch,
+) -> Bool {
   let tick = @app.current_system_ticks().this_run
-  guard audio_resource_ref_mut(PitchAssets::resource(), tick)
+  guard audio_resource_ref_mut(world, PitchAssets::resource(), tick)
     is Some(assets_ref) else {
     return false
   }

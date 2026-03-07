@@ -835,20 +835,6 @@ fn clear_color_default_value() -> Color {
 }
 
 ///|
-let active_render2d_world_ref : Ref[@ecs.World?] = Ref::new(None)
-
-///|
-fn render2d_resource_world() -> @ecs.World? {
-  match @app.current_world() {
-    Some(world) => {
-      active_render2d_world_ref.val = Some(world)
-      Some(world)
-    }
-    None => active_render2d_world_ref.val
-  }
-}
-
-///|
 let clear_color_resource_key : @ecs.ResourceKey[ClearColor] = @ecs.register_resource(
   debug_name="bevy_render::ClearColor",
 )
@@ -860,7 +846,7 @@ pub impl @app.Resource for ClearColor with resource() {
 
 ///|
 fn clear_color_current_value() -> Color {
-  match render2d_resource_world() {
+  match @app.current_world() {
     Some(world) =>
       match (try! world.get_resource(ClearColor::resource())) {
         Some(clear_color) => clear_color.color
@@ -7634,7 +7620,6 @@ pub let render2d_set_execute : @app.SystemSet = render2d_set_render
 
 ///|
 pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  active_render2d_world_ref.val = Some(app.world())
   app
   .init_resource(fn() { ClearColor::default() })
   .add_startup_system(init_render_state_system)
@@ -7669,7 +7654,6 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 
 ///|
 pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  active_render2d_world_ref.val = Some(app.world())
   app
   .init_resource(fn() { ClearColor::default() })
   .add_startup_system(init_render_state_system)

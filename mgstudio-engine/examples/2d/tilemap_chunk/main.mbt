@@ -53,8 +53,8 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(tilemap_chunk_setup)
-  .add_system(tilemap_chunk_update)
+  .add_systems(@app.Startup, @app.system(tilemap_chunk_setup))
+  .add_systems(@app.Update, @app.system(tilemap_chunk_update))
   .run()
 }
 

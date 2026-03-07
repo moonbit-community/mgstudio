@@ -19,10 +19,17 @@ fn approx_eq_f32(a : Float, b : Float) -> Bool {
 }
 
 ///|
+fn configure_fixed_time(world : @ecs.World, timestep_seconds : Float) -> Unit {
+  world.insert_resource(
+    @time.Fixed::resource(),
+    @time.Fixed::new().set_timestep_seconds(timestep_seconds),
+  )
+}
+
+///|
 test "physics2d: falling body collides and writes back transform" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
   // Make the test converge quickly.
@@ -30,8 +37,8 @@ test "physics2d: falling body collides and writes back transform" {
   let cfg = Ref::new(cfg_res.get().unwrap())
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, -200.0F))
   cfg_res.insert(cfg.val, tick)
-  let floor = @core.Entity::new(0, 1)
-  let ball = @core.Entity::new(1, 1)
+  let floor = world.spawn()
+  let ball = world.spawn()
 
   // Floor at y = -1 with half-height 0.5 => top at y = -0.5.
   @math.get_transform_store(world).insert(
@@ -99,17 +106,16 @@ test "physics2d: falling body collides and writes back transform" {
 
 ///|
 test "physics2d: gravity scale 0 disables gravity" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics2d_config_resource(world)
   let cfg = Ref::new(cfg_res.get().unwrap())
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, -100.0F))
   cfg_res.insert(cfg.val, tick)
-  let no_grav = @core.Entity::new(0, 1)
-  let grav = @core.Entity::new(1, 1)
+  let no_grav = world.spawn()
+  let grav = world.spawn()
   @math.get_transform_store(world).insert(
     no_grav,
     @math.Transform::from_xy_rotation_scale(
@@ -170,17 +176,16 @@ test "physics2d: gravity scale 0 disables gravity" {
 
 ///|
 test "physics2d: damping reduces velocity" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics2d_config_resource(world)
   let cfg = Ref::new(cfg_res.get().unwrap())
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
-  let no_damp = @core.Entity::new(0, 1)
-  let damp = @core.Entity::new(1, 1)
+  let no_damp = world.spawn()
+  let damp = world.spawn()
   for e in [no_damp, damp] {
     @math.get_transform_store(world).insert(
       e,
@@ -221,16 +226,15 @@ test "physics2d: damping reduces velocity" {
 
 ///|
 test "physics2d: external impulse applies once and clears" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics2d_config_resource(world)
   let cfg = Ref::new(cfg_res.get().unwrap())
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
-  let e = @core.Entity::new(0, 1)
+  let e = world.spawn()
   @math.get_transform_store(world).insert(
     e,
     @math.Transform::from_xy_rotation_scale(
@@ -265,16 +269,15 @@ test "physics2d: external impulse applies once and clears" {
 
 ///|
 test "physics2d: default collider density yields non-zero mass" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics2d_config_resource(world)
   let cfg = Ref::new(cfg_res.get().unwrap())
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
-  let e = @core.Entity::new(0, 1)
+  let e = world.spawn()
   @math.get_transform_store(world).insert(
     e,
     @math.Transform::from_xy_rotation_scale(
@@ -312,16 +315,15 @@ test "physics2d: default collider density yields non-zero mass" {
 
 ///|
 test "physics2d: external force persists" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics2d_config_resource(world)
   let cfg = Ref::new(cfg_res.get().unwrap())
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
-  let e = @core.Entity::new(0, 1)
+  let e = world.spawn()
   @math.get_transform_store(world).insert(
     e,
     @math.Transform::from_xy_rotation_scale(
@@ -361,17 +363,16 @@ test "physics2d: external force persists" {
 ///|
 test "physics2d: CCD prevents tunneling through thin floor" {
   fn run(ccd_enabled : Bool) -> Float {
-    @time.time_fixed_reset()
-    @time.time_fixed_set_timestep_seconds(1.0F / 10.0F)
     let world = @ecs.World::new()
+    configure_fixed_time(world, 1.0F / 10.0F)
     physics2d_init_resources_system(world)
     let tick = world.read_change_tick()
     let cfg_res = get_physics2d_config_resource(world)
     let cfg = Ref::new(cfg_res.get().unwrap())
     cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
     cfg_res.insert(cfg.val, tick)
-    let floor = @core.Entity::new(0, 1)
-    let ball = @core.Entity::new(1, 1)
+    let floor = world.spawn()
+    let ball = world.spawn()
     @math.get_transform_store(world).insert(
       floor,
       @math.Transform::from_xy_rotation_scale(
@@ -427,17 +428,16 @@ test "physics2d: CCD prevents tunneling through thin floor" {
 
 ///|
 test "physics2d: collision groups filter collision events" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics2d_config_resource(world)
   let cfg = Ref::new(cfg_res.get().unwrap())
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
-  let a = @core.Entity::new(0, 1)
-  let b = @core.Entity::new(1, 1)
+  let a = world.spawn()
+  let b = world.spawn()
   for e in [a, b] {
     @math.get_transform_store(world).insert(
       e,
@@ -489,16 +489,15 @@ test "physics2d: collision groups filter collision events" {
 
 ///|
 test "physics2d: collider material and active event properties sync to rapier" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics2d_config_resource(world)
   let cfg = Ref::new(cfg_res.get().unwrap())
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
-  let e_default = @core.Entity::new(0, 1)
+  let e_default = world.spawn()
   @math.get_transform_store(world).insert(
     e_default,
     @math.Transform::from_xy_rotation_scale(
@@ -532,7 +531,7 @@ test "physics2d: collider material and active event properties sync to rapier" {
     tick,
   )
 
-  let e_override = @core.Entity::new(1, 1)
+  let e_override = world.spawn()
   @math.get_transform_store(world).insert(
     e_override,
     @math.Transform::from_xy_rotation_scale(
@@ -603,16 +602,15 @@ test "physics2d: collider material and active event properties sync to rapier" {
 
 ///|
 test "physics2d: query pipeline sees inserted colliders" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics2d_config_resource(world)
   let cfg = Ref::new(cfg_res.get().unwrap())
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
-  let floor = @core.Entity::new(0, 1)
+  let floor = world.spawn()
   @math.get_transform_store(world).insert(
     floor,
     @math.Transform::from_xy_rotation_scale(
@@ -716,16 +714,15 @@ test "physics2d: query pipeline sees inserted colliders" {
 
 ///|
 test "physics2d: convex polygon and compound colliders can be inserted" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics2d_config_resource(world)
   let cfg = Ref::new(cfg_res.get().unwrap())
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
-  let convex = @core.Entity::new(10, 1)
+  let convex = world.spawn()
   @math.get_transform_store(world).insert(
     convex,
     @math.Transform::from_xy_rotation_scale(
@@ -749,7 +746,7 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
     ),
     tick,
   )
-  let compound = @core.Entity::new(11, 1)
+  let compound = world.spawn()
   @math.get_transform_store(world).insert(
     compound,
     @math.Transform::from_xy_rotation_scale(
@@ -821,17 +818,16 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
     mapped.val = physics2d_hook_entity_from_collider_handle(h1) is Some(_)
     false
   })
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics2d_config_resource(world)
   let cfg = Ref::new(cfg_res.get().unwrap())
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
-  let a = @core.Entity::new(20, 1)
-  let b = @core.Entity::new(21, 1)
+  let a = world.spawn()
+  let b = world.spawn()
   @math.get_transform_store(world).insert(
     a,
     @math.Transform::from_xy_rotation_scale(
@@ -897,17 +893,16 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
 
 ///|
 test "physics2d: impulse joint is inserted and cleaned up" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics2d_config_resource(world)
   let cfg = Ref::new(cfg_res.get().unwrap())
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
-  let a = @core.Entity::new(0, 1)
-  let b = @core.Entity::new(1, 1)
+  let a = world.spawn()
+  let b = world.spawn()
   @math.get_transform_store(world).insert(
     a,
     @math.Transform::from_xy_rotation_scale(
@@ -966,16 +961,15 @@ test "physics2d: impulse joint is inserted and cleaned up" {
 
 ///|
 test "physics2d: child collider attaches to parent body" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics2d_config_resource(world)
   let cfg = Ref::new(cfg_res.get().unwrap())
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
-  let body = @core.Entity::new(0, 1)
+  let body = world.spawn()
   @math.get_transform_store(world).insert(
     body,
     @math.Transform::from_xy_rotation_scale(
@@ -987,7 +981,7 @@ test "physics2d: child collider attaches to parent body" {
     tick,
   )
   get_rigid_body2d_store(world).insert(body, RigidBody2d::dynamic(), tick)
-  let child = @core.Entity::new(1, 1)
+  let child = world.spawn()
   @math.get_transform_store(world).insert(
     child,
     @math.Transform::from_xy_rotation_scale(
@@ -1023,9 +1017,8 @@ test "physics2d: child collider attaches to parent body" {
 
 ///|
 test "physics2d: multiple child colliders aggregate parent mass" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics2d_config_resource(world)
@@ -1033,7 +1026,7 @@ test "physics2d: multiple child colliders aggregate parent mass" {
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
 
-  let body_single = @core.Entity::new(0, 1)
+  let body_single = world.spawn()
   @math.get_transform_store(world).insert(
     body_single,
     @math.Transform::from_xy_rotation_scale(
@@ -1049,7 +1042,7 @@ test "physics2d: multiple child colliders aggregate parent mass" {
     RigidBody2d::dynamic(),
     tick,
   )
-  let child_single = @core.Entity::new(1, 1)
+  let child_single = world.spawn()
   @math.get_transform_store(world).insert(
     child_single,
     @math.Transform::from_xy_rotation_scale(
@@ -1071,7 +1064,7 @@ test "physics2d: multiple child colliders aggregate parent mass" {
     tick,
   )
 
-  let body_double = @core.Entity::new(2, 1)
+  let body_double = world.spawn()
   @math.get_transform_store(world).insert(
     body_double,
     @math.Transform::from_xy_rotation_scale(
@@ -1087,7 +1080,7 @@ test "physics2d: multiple child colliders aggregate parent mass" {
     RigidBody2d::dynamic(),
     tick,
   )
-  let child_double_a = @core.Entity::new(3, 1)
+  let child_double_a = world.spawn()
   @math.get_transform_store(world).insert(
     child_double_a,
     @math.Transform::from_xy_rotation_scale(
@@ -1108,7 +1101,7 @@ test "physics2d: multiple child colliders aggregate parent mass" {
     ColliderParent2d::new(body_double),
     tick,
   )
-  let child_double_b = @core.Entity::new(4, 1)
+  let child_double_b = world.spawn()
   @math.get_transform_store(world).insert(
     child_double_b,
     @math.Transform::from_xy_rotation_scale(
@@ -1147,9 +1140,8 @@ test "physics2d: multiple child colliders aggregate parent mass" {
 
 ///|
 test "physics2d: collision events use child collider entity mapping" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics2d_config_resource(world)
@@ -1157,7 +1149,7 @@ test "physics2d: collision events use child collider entity mapping" {
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, -500.0F))
   cfg_res.insert(cfg.val, tick)
 
-  let floor = @core.Entity::new(10, 1)
+  let floor = world.spawn()
   @math.get_transform_store(world).insert(
     floor,
     @math.Transform::from_xy_rotation_scale(
@@ -1175,7 +1167,7 @@ test "physics2d: collision events use child collider entity mapping" {
     tick,
   )
 
-  let body = @core.Entity::new(11, 1)
+  let body = world.spawn()
   @math.get_transform_store(world).insert(
     body,
     @math.Transform::from_xy_rotation_scale(
@@ -1187,7 +1179,7 @@ test "physics2d: collision events use child collider entity mapping" {
     tick,
   )
   get_rigid_body2d_store(world).insert(body, RigidBody2d::dynamic(), tick)
-  let child = @core.Entity::new(12, 1)
+  let child = world.spawn()
   @math.get_transform_store(world).insert(
     child,
     @math.Transform::from_xy_rotation_scale(
@@ -1237,16 +1229,15 @@ test "physics2d: collision events use child collider entity mapping" {
 
 ///|
 test "physics2d: kinematic character controller moves and outputs" {
-  @time.time_fixed_reset()
-  @time.time_fixed_set_timestep_seconds(1.0F / 60.0F)
   let world = @ecs.World::new()
+  configure_fixed_time(world, 1.0F / 60.0F)
   physics2d_init_resources_system(world)
   let tick = world.read_change_tick()
   let cfg_res = get_physics2d_config_resource(world)
   let cfg = Ref::new(cfg_res.get().unwrap())
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
-  let floor = @core.Entity::new(0, 1)
+  let floor = world.spawn()
   @math.get_transform_store(world).insert(
     floor,
     @math.Transform::from_xy_rotation_scale(
@@ -1263,7 +1254,7 @@ test "physics2d: kinematic character controller moves and outputs" {
     Collider2d::new(ColliderShape2d::cuboid(10.0F, 0.5F)),
     tick,
   )
-  let character = @core.Entity::new(1, 1)
+  let character = world.spawn()
   @math.get_transform_store(world).insert(
     character,
     @math.Transform::from_xy_rotation_scale(

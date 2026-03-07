@@ -21,6 +21,59 @@ fn[T] read_time_test_resource(
 }
 
 ///|
+fn update_virtual_test_resource(
+  app : @app.App[@ecs.World],
+  update : (Virtual) -> Virtual,
+) -> @app.App[@ecs.World] {
+  let world = app.world()
+  let change_tick = world.increment_change_tick()
+  let virtual_ref = try! world
+    .get_resource_ref_mut(Virtual::resource(), change_tick)
+    .unwrap()
+  let time_ref = try! world
+    .get_resource_ref_mut(Time::resource(), change_tick)
+    .unwrap()
+  let next_virtual = update(virtual_ref.val)
+  virtual_ref.val = next_virtual
+  time_ref.val = next_virtual.as_generic()
+  app
+}
+
+///|
+fn set_virtual_max_delta_seconds(
+  app : @app.App[@ecs.World],
+  max_delta_seconds : Float,
+) -> @app.App[@ecs.World] {
+  update_virtual_test_resource(app, fn(virtual_time : Virtual) {
+    virtual_time.set_max_delta_seconds(max_delta_seconds)
+  })
+}
+
+///|
+fn pause_virtual_time(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  update_virtual_test_resource(app, fn(virtual_time : Virtual) {
+    virtual_time.pause()
+  })
+}
+
+///|
+fn unpause_virtual_time(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  update_virtual_test_resource(app, fn(virtual_time : Virtual) {
+    virtual_time.unpause()
+  })
+}
+
+///|
+fn set_virtual_relative_speed(
+  app : @app.App[@ecs.World],
+  speed : Float,
+) -> @app.App[@ecs.World] {
+  update_virtual_test_resource(app, fn(virtual_time : Virtual) {
+    virtual_time.set_relative_speed(speed)
+  })
+}
+
+///|
 fn current_stage_label() -> String {
   match @app.current_schedule_stage() {
     Some(@app.Main) => "Main"
@@ -48,7 +101,7 @@ fn current_stage_label() -> String {
 ///|
 test "time: manual instant keeps first update delta at zero" {
   let mut app = @app.App::new(@ecs.World::new()).add_plugins([time_plugin])
-  time_virtual_set_max_delta_seconds(10.0F)
+  app = set_virtual_max_delta_seconds(app, 10.0F)
 
   app = app.insert_resource(TimeUpdateStrategy::ManualInstant(10.0F)).run_once()
   inspect(
@@ -118,10 +171,10 @@ test "time: virtual time clamps large deltas by default" {
 ///|
 test "time: pause and relative speed follow bevy virtual semantics" {
   let mut app = @app.App::new(@ecs.World::new()).add_plugins([time_plugin])
-  time_virtual_set_max_delta_seconds(10.0F)
+  app = set_virtual_max_delta_seconds(app, 10.0F)
 
   app = app.insert_resource(TimeUpdateStrategy::ManualDuration(1.0F)).run_once()
-  time_virtual_pause()
+  app = pause_virtual_time(app)
   app = app.insert_resource(TimeUpdateStrategy::ManualDuration(2.0F)).run_once()
   inspect(
     read_time_test_resource(app, Real::resource()).delta_seconds(),
@@ -140,8 +193,8 @@ test "time: pause and relative speed follow bevy virtual semantics" {
     content="true",
   )
 
-  time_virtual_unpause()
-  time_virtual_set_relative_speed(0.5F)
+  app = unpause_virtual_time(app)
+  app = set_virtual_relative_speed(app, 0.5F)
   app = app.insert_resource(TimeUpdateStrategy::ManualDuration(2.0F)).run_once()
   inspect(
     read_time_test_resource(app, Real::resource()).delta_seconds(),
@@ -163,7 +216,6 @@ test "time: pause and relative speed follow bevy virtual semantics" {
 
 ///|
 test "time: fixed timesteps strategy drives fixed update loop" {
-  time_virtual_set_max_delta_seconds(1.0F)
   let counter : Ref[Int] = Ref::new(0)
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins([time_plugin])
@@ -171,6 +223,7 @@ test "time: fixed timesteps strategy drives fixed update loop" {
     .add_fixed_update_system(fn(_world : @ecs.World) {
       counter.val = counter.val + 1
     })
+  app = set_virtual_max_delta_seconds(app, 1.0F)
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(2)).run_once()
   inspect(counter.val, content="0")
@@ -194,7 +247,6 @@ test "time: fixed timesteps strategy drives fixed update loop" {
 
 ///|
 test "time: generic time switches to fixed during fixed update and restores after loop" {
-  time_virtual_set_max_delta_seconds(1.0F)
   let fixed_log : Array[String] = []
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins([time_plugin])
@@ -212,6 +264,7 @@ test "time: generic time switches to fixed during fixed update and restores afte
         fixed_time.elapsed_seconds().to_string(),
       )
     })
+  app = set_virtual_max_delta_seconds(app, 1.0F)
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(2)).run_once()
   inspect(fixed_log.length(), content="0")
@@ -233,7 +286,6 @@ test "time: generic time switches to fixed during fixed update and restores afte
 
 ///|
 test "time: fixed resource timestep changes affect later steps in the same frame" {
-  time_virtual_set_max_delta_seconds(1.0F)
   let steps : Ref[Int] = Ref::new(0)
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins([time_plugin])
@@ -246,7 +298,7 @@ test "time: fixed resource timestep changes affect later steps in the same frame
         )
       }
     })
-  time_virtual_set_max_delta_seconds(1.0F)
+  app = set_virtual_max_delta_seconds(app, 1.0F)
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(2)).run_once()
   inspect(steps.val, content="0")
@@ -270,7 +322,6 @@ test "time: fixed resource timestep changes affect later steps in the same frame
 
 ///|
 test "time: fixed main schedule runs substages in bevy order" {
-  time_virtual_set_max_delta_seconds(1.0F)
   let log : Array[String] = []
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins([time_plugin])
@@ -290,6 +341,7 @@ test "time: fixed main schedule runs substages in bevy order" {
     .add_fixed_last_system(fn(_world : @ecs.World) {
       log.push(current_stage_label())
     })
+  app = set_virtual_max_delta_seconds(app, 1.0F)
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
   inspect(log.length(), content="0")
@@ -303,7 +355,6 @@ test "time: fixed main schedule runs substages in bevy order" {
 
 ///|
 test "time: run fixed main loop system sets order before fixed and after hooks" {
-  time_virtual_set_max_delta_seconds(1.0F)
   let log : Array[String] = []
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins([time_plugin])
@@ -325,6 +376,7 @@ test "time: run fixed main loop system sets order before fixed and after hooks" 
         ),
       ),
     )
+  app = set_virtual_max_delta_seconds(app, 1.0F)
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
   inspect(log.join(","), content="before,after")
@@ -335,7 +387,6 @@ test "time: run fixed main loop system sets order before fixed and after hooks" 
 
 ///|
 test "time: fixed main schedule order resource drives fixed substage order" {
-  time_virtual_set_max_delta_seconds(1.0F)
   let log : Array[String] = []
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins([time_plugin])
@@ -350,6 +401,7 @@ test "time: fixed main schedule order resource drives fixed substage order" {
     .add_fixed_update_system(fn(_world : @ecs.World) {
       log.push(current_stage_label())
     })
+  app = set_virtual_max_delta_seconds(app, 1.0F)
 
   app = app.insert_resource(TimeUpdateStrategy::FixedTimesteps(1)).run_once()
   inspect(log.length(), content="0")

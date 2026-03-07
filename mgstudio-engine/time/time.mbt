@@ -79,14 +79,6 @@ fn time_elapsed_wrapped_seconds_for(
 }
 
 ///|
-fn time_time_or_default() -> Time {
-  match time_resource.val.get() {
-    Some(time) => time
-    None => Time::new()
-  }
-}
-
-///|
 fn time_delta_seconds_raw(time : Time) -> Float {
   time.delta_seconds
 }
@@ -99,6 +91,15 @@ fn time_elapsed_seconds_raw(time : Time) -> Float {
 ///|
 fn time_wrap_period_seconds_raw(time : Time) -> Float {
   time.wrap_period_seconds
+}
+
+///|
+fn time_time_or_default() -> Time {
+  world_time_resource_or_default(
+    current_time_world_abort_missing(),
+    time_resource_key,
+    Time::new,
+  )
 }
 
 ///|

@@ -30,9 +30,9 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@render2d.wireframe2d_plugin])
-  .add_startup_system(wireframe_setup)
-  .add_startup_system(setup_wireframe2d_config)
-  .add_system(wireframe_update)
+  .add_systems(@app.Startup, @app.system(wireframe_setup))
+  .add_systems(@app.Startup, @app.system(setup_wireframe2d_config))
+  .add_systems(@app.Update, @app.system(wireframe_update))
   .run()
 }
 

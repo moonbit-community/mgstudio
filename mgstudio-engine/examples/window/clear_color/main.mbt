@@ -23,8 +23,11 @@ fn main {
     @render2d.ClearColor::new(@render2d.Color::new(0.5F, 0.5F, 0.9F, 1.0F)),
   )
   .add_plugins(plugins)
-  .add_startup_system(setup)
-  .add_system(@app.system_param2(change_clear_color_system))
+  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param2(change_clear_color_system)),
+  )
   .run()
 }
 

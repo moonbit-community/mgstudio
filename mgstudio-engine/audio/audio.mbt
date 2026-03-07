@@ -182,30 +182,8 @@ pub fn DefaultSpatialScale::default() -> DefaultSpatialScale {
 }
 
 ///|
-let active_audio_world_ref : Ref[@ecs.World?] = Ref::new(None)
-
-///|
-fn audio_resource_world() -> @ecs.World? {
-  match @app.current_world() {
-    Some(world) => {
-      active_audio_world_ref.val = Some(world)
-      Some(world)
-    }
-    None => active_audio_world_ref.val
-  }
-}
-
-///|
-fn audio_resource_world_abort_missing() -> @ecs.World {
-  match audio_resource_world() {
-    Some(world) => world
-    None => abort("Missing active audio world")
-  }
-}
-
-///|
-fn[T] audio_resource_get(key : @ecs.ResourceKey[T]) -> T? {
-  try audio_resource_world_abort_missing().get_resource(key) catch {
+fn[T] audio_resource_get(world : @ecs.World, key : @ecs.ResourceKey[T]) -> T? {
+  try world.get_resource(key) catch {
     _ => None
   } noraise {
     value => value
@@ -214,12 +192,11 @@ fn[T] audio_resource_get(key : @ecs.ResourceKey[T]) -> T? {
 
 ///|
 fn[T] audio_resource_ref_mut(
+  world : @ecs.World,
   key : @ecs.ResourceKey[T],
   change_tick : @core.Tick,
 ) -> Ref[T]? {
-  try
-    audio_resource_world_abort_missing().get_resource_ref_mut(key, change_tick)
-  catch {
+  try world.get_resource_ref_mut(key, change_tick) catch {
     _ => None
   } noraise {
     value => value
@@ -228,11 +205,11 @@ fn[T] audio_resource_ref_mut(
 
 ///|
 fn[T] audio_resource_ensure_ref_mut(
+  world : @ecs.World,
   key : @ecs.ResourceKey[T],
   init : () -> T,
   change_tick : @core.Tick,
 ) -> Ref[T] {
-  let world = audio_resource_world_abort_missing()
   if (try world.get_resource(key) catch {
       _ => None
     } noraise {
@@ -241,7 +218,7 @@ fn[T] audio_resource_ensure_ref_mut(
     is None {
     world.insert_resource_with_change_tick(key, init(), change_tick)
   }
-  match audio_resource_ref_mut(key, change_tick) {
+  match audio_resource_ref_mut(world, key, change_tick) {
     Some(value) => value
     None => abort("Missing audio resource after initialization")
   }
@@ -313,7 +290,6 @@ pub fn audio_plugin_with(
   app : @app.App[@ecs.World],
   plugin : AudioPlugin,
 ) -> @app.App[@ecs.World] {
-  active_audio_world_ref.val = Some(app.world())
   app
   .insert_resource(plugin.global_volume)
   .insert_resource(DefaultSpatialScale::new(plugin.default_spatial_scale))

@@ -29,9 +29,15 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_system(@app.system_param(toggle_ime_system))
-  .add_system_param(listen_keyboard_input_events_system)
-  .add_system_param(listen_character_input_events_system)
+  .add_systems(@app.Update, @app.system(@app.system_param(toggle_ime_system)))
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param(listen_keyboard_input_events_system)),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param(listen_character_input_events_system)),
+  )
   .run()
 }
 

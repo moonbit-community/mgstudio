@@ -46,32 +46,72 @@ fn help() -> Unit {
 }
 
 ///|
-fn print_real_time(_world : @ecs.World) -> Unit {
+fn read_real_time(world : @ecs.World) -> @my_time.Real {
+  let real_time = try! world.get_resource(@my_time.Real::resource())
+  match real_time {
+    Some(real_time) => real_time
+    None => @my_time.Real::default()
+  }
+}
+
+///|
+fn read_generic_time(world : @ecs.World) -> @my_time.Time {
+  let time = try! world.get_resource(@my_time.Time::resource())
+  match time {
+    Some(time) => time
+    None => @my_time.Time::new()
+  }
+}
+
+///|
+fn update_virtual_time_resource(
+  app : @app.App[@ecs.World],
+  update : (@my_time.Virtual) -> @my_time.Virtual,
+) -> @app.App[@ecs.World] {
+  let world = app.world()
+  let change_tick = world.increment_change_tick()
+  let virtual_ref = try! world
+    .get_resource_ref_mut(@my_time.Virtual::resource(), change_tick)
+    .unwrap()
+  let time_ref = try! world
+    .get_resource_ref_mut(@my_time.Time::resource(), change_tick)
+    .unwrap()
+  let next_virtual = update(virtual_ref.val)
+  virtual_ref.val = next_virtual
+  time_ref.val = next_virtual.as_generic()
+  app
+}
+
+///|
+fn print_real_time(world : @ecs.World) -> Unit {
+  let real_time = read_real_time(world)
   println(
     "PreUpdate: real time, delta=" +
-    @my_time.time_real_delta_seconds().to_string() +
+    real_time.delta_seconds().to_string() +
     ", elapsed=" +
-    @my_time.time_real_elapsed_seconds().to_string(),
+    real_time.elapsed_seconds().to_string(),
   )
 }
 
 ///|
-fn print_fixed_time(_world : @ecs.World) -> Unit {
+fn print_fixed_time(world : @ecs.World) -> Unit {
+  let time = read_generic_time(world)
   println(
     "FixedUpdate: generic time in fixed schedule, delta=" +
-    @my_time.time_delta_seconds().to_string() +
+    time.delta_seconds().to_string() +
     ", elapsed=" +
-    @my_time.time_elapsed_seconds().to_string(),
+    time.elapsed_seconds().to_string(),
   )
 }
 
 ///|
-fn print_time(_world : @ecs.World) -> Unit {
+fn print_time(world : @ecs.World) -> Unit {
+  let time = read_generic_time(world)
   println(
     "Update: generic time clock, delta=" +
-    @my_time.time_delta_seconds().to_string() +
+    time.delta_seconds().to_string() +
     ", elapsed=" +
-    @my_time.time_elapsed_seconds().to_string(),
+    time.elapsed_seconds().to_string(),
   )
 }
 
@@ -84,28 +124,48 @@ fn apply_command(
     "" => (app.update(), false)
     "f" => {
       println("FAST: setting relative speed to 2x")
-      @my_time.time_virtual_set_relative_speed(2.0F)
-      (app, false)
+      (
+        update_virtual_time_resource(app, fn(virtual_time : @my_time.Virtual) {
+          virtual_time.set_relative_speed(2.0F)
+        }),
+        false,
+      )
     }
     "n" => {
       println("NORMAL: setting relative speed to 1x")
-      @my_time.time_virtual_set_relative_speed(1.0F)
-      (app, false)
+      (
+        update_virtual_time_resource(app, fn(virtual_time : @my_time.Virtual) {
+          virtual_time.set_relative_speed(1.0F)
+        }),
+        false,
+      )
     }
     "s" => {
       println("SLOW: setting relative speed to 0.5x")
-      @my_time.time_virtual_set_relative_speed(0.5F)
-      (app, false)
+      (
+        update_virtual_time_resource(app, fn(virtual_time : @my_time.Virtual) {
+          virtual_time.set_relative_speed(0.5F)
+        }),
+        false,
+      )
     }
     "p" => {
       println("PAUSE: pausing virtual clock")
-      @my_time.time_virtual_pause()
-      (app, false)
+      (
+        update_virtual_time_resource(app, fn(virtual_time : @my_time.Virtual) {
+          virtual_time.pause()
+        }),
+        false,
+      )
     }
     "u" => {
       println("UNPAUSE: resuming virtual clock")
-      @my_time.time_virtual_unpause()
-      (app, false)
+      (
+        update_virtual_time_resource(app, fn(virtual_time : @my_time.Virtual) {
+          virtual_time.unpause()
+        }),
+        false,
+      )
     }
     "q" => {
       println("QUITTING!")

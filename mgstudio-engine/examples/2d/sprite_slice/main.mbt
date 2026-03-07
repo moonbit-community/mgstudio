@@ -26,7 +26,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(sprite_slice_setup)
+  .add_systems(@app.Startup, @app.system(sprite_slice_setup))
   .run()
 }
 

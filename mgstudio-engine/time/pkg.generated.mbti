@@ -37,10 +37,6 @@ pub fn time_fixed_overstep_fraction() -> Float
 
 pub fn time_fixed_overstep_seconds() -> Float
 
-pub fn time_fixed_reset() -> Unit
-
-pub fn time_fixed_set_timestep_seconds(Float) -> Unit
-
 pub fn time_fixed_steps_ran_this_frame() -> Int
 
 pub fn time_fixed_timestep_seconds() -> Float
@@ -53,10 +49,6 @@ pub fn time_real_elapsed_seconds() -> Float
 
 pub fn time_run_fixed_main_schedule(@ecs.World) -> Unit
 
-pub fn[W] time_system(W) -> Unit
-
-pub fn time_update() -> Unit
-
 pub fn time_virtual_delta_seconds() -> Float
 
 pub fn time_virtual_effective_speed() -> Float
@@ -67,17 +59,7 @@ pub fn time_virtual_is_paused() -> Bool
 
 pub fn time_virtual_max_delta_seconds() -> Float
 
-pub fn time_virtual_pause() -> Unit
-
 pub fn time_virtual_relative_speed() -> Float
-
-pub fn time_virtual_set_max_delta_seconds(Float) -> Unit
-
-pub fn time_virtual_set_relative_speed(Float) -> Unit
-
-pub fn time_virtual_toggle() -> Unit
-
-pub fn time_virtual_unpause() -> Unit
 
 pub fn update_virtual_time(Virtual, Real) -> Virtual
 
