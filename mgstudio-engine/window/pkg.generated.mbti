@@ -9,6 +9,8 @@ import {
 }
 
 // Values
+pub const WINDOW_PLUGIN_ID : String = "bevy_window::WindowPlugin"
+
 pub fn close_when_requested(@ecs.MessageReader[WindowCloseRequested], @ecs.EntityQuery[@ecs.With[ClosingWindow]]) -> Unit
 
 pub let ecs_key_closing_window : @ecs.ComponentKey[ClosingWindow]
@@ -383,6 +385,7 @@ pub(all) struct WindowPlugin {
   close_when_requested : Bool
 }
 pub fn WindowPlugin::default() -> Self
+pub impl @app.PluginReplacement for WindowPlugin
 
 pub(all) enum WindowPosition {
   Automatic

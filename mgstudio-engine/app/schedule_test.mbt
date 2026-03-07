@@ -67,6 +67,55 @@ test "app: add_plugin_group registers grouped plugins" {
 }
 
 ///|
+test "app: plugin group set_plugin and disable preserve configured plugins" {
+  let log : Array[Int] = []
+  fn plugin_1(app : App[@ecs.World]) -> App[@ecs.World] {
+    app.add_system(fn(_world : @ecs.World) { log.push(1) })
+  }
+  fn plugin_1_override(app : App[@ecs.World]) -> App[@ecs.World] {
+    app.add_system(fn(_world : @ecs.World) { log.push(10) })
+  }
+  fn plugin_2(app : App[@ecs.World]) -> App[@ecs.World] {
+    app.add_system(fn(_world : @ecs.World) { log.push(2) })
+  }
+
+  let group = PluginGroupBuilder::start_named("TestPlugins")
+    .add_named(id="plugin_1", plugin_1)
+    .add_named(id="plugin_2", plugin_2)
+  inspect(group.contains("plugin_1"), content="true")
+  inspect(group.enabled("plugin_2"), content="true")
+
+  let app = App::new(@ecs.World::new()).add_plugin_group(fn() {
+    group.set_plugin(id="plugin_1", plugin_1_override).disable("plugin_2")
+  })
+  app.run_once() |> ignore
+
+  inspect(log.length(), content="1")
+  inspect(log[0], content="10")
+}
+
+///|
+test "app: plugin group try_set_plugin raises when id is missing" {
+  fn plugin_1(app : App[@ecs.World]) -> App[@ecs.World] {
+    app
+  }
+
+  let missing_plugin_id = try {
+    ignore(
+      PluginGroupBuilder::start_named("TestPlugins").try_set_plugin(
+        id="missing",
+        plugin_1,
+      ),
+    )
+    "ok"
+  } catch {
+    MissingPlugin(id) => id
+  }
+
+  inspect(missing_plugin_id, content="missing")
+}
+
+///|
 test "app: schedule sets order and preserve insertion within a set" {
   let log : Array[Int] = []
   let set_a = system_set("A")

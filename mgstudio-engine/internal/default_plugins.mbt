@@ -16,184 +16,310 @@
 pub struct DefaultPlugins {}
 
 ///|
-pub fn DefaultPlugins::build() -> Array[@app.Plugin[@ecs.World]] {
-  default_plugins()
+const DEFAULT_PLUGINS_NAME : String = "DefaultPlugins"
+
+///|
+const MINIMAL_PLUGINS_NAME : String = "MinimalPlugins"
+
+///|
+const DEFAULT_PLUGIN_ID_LOG : String = "bevy_log::LogPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_TASK_POOL : String = "bevy_app::TaskPoolPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_WINDOW : String = @window.WINDOW_PLUGIN_ID
+
+///|
+const DEFAULT_PLUGIN_ID_FRAME_COUNT : String = "bevy_diagnostic::FrameCountPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_STATES : String = "bevy_state::StatesPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_TIME : String = "bevy_time::TimePlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_ASSET : String = "bevy_asset::AssetPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_AUDIO : String = "bevy_audio::AudioPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_SCENE : String = "bevy_scene::ScenePlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_ANIMATION : String = "bevy_animation::AnimationPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_TRANSFORM : String = "bevy_transform::TransformPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_DIAGNOSTICS : String = "bevy_diagnostic::DiagnosticsPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_VISIBILITY : String = "bevy_render::VisibilityPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_INPUT : String = "bevy_input::InputPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_PICKING : String = "bevy_picking::PickingPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_A11Y : String = "bevy_a11y::AccessibilityPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_UI : String = "bevy_ui::UiPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_TEXT : String = "bevy_text::TextPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_RENDER3D : String = "bevy_pbr::PbrPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_RENDER2D : String = "bevy_sprite::SpritePlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_PHYSICS2D : String = "mgstudio::Physics2dPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_PHYSICS3D : String = "mgstudio::Physics3dPlugin"
+
+///|
+const MINIMAL_PLUGIN_ID_TASK_POOL : String = "bevy_app::TaskPoolPlugin"
+
+///|
+const MINIMAL_PLUGIN_ID_FRAME_COUNT : String = "bevy_diagnostic::FrameCountPlugin"
+
+///|
+const MINIMAL_PLUGIN_ID_STATES : String = "bevy_state::StatesPlugin"
+
+///|
+const MINIMAL_PLUGIN_ID_TIME : String = "bevy_time::TimePlugin"
+
+///|
+const MINIMAL_PLUGIN_ID_SCHEDULE_RUNNER : String = "bevy_app::ScheduleRunnerPlugin"
+
+///|
+fn world_plugin(plugin : @app.Plugin[@ecs.World]) -> @app.Plugin[@ecs.World] {
+  plugin
+}
+
+///|
+fn default_plugins_builder(
+  asset_plugin : @app.Plugin[@ecs.World],
+) -> @app.PluginGroupBuilder[@ecs.World] {
+  @app.PluginGroupBuilder::start_named(DEFAULT_PLUGINS_NAME)
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_LOG,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @app.log_plugin_default(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_TASK_POOL,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @app.task_pool_plugin(@app.TaskPoolPlugin::default())(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_WINDOW,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @window.window_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_FRAME_COUNT,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @diagnostics.frame_count_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_STATES,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @app.states_plugin(@app.StatesPlugin::default())(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_TIME,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @time.time_plugin(app)
+    }),
+  )
+  .add_named(id=DEFAULT_PLUGIN_ID_ASSET, asset_plugin)
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_AUDIO,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @audio.audio_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_SCENE,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @scene.scene_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_ANIMATION,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @animation.animation_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_TRANSFORM,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @transform.transform_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_DIAGNOSTICS,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @diagnostics.diagnostics_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_VISIBILITY,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @visibility.visibility_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_INPUT,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @input.input_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_PICKING,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @picking.picking_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_A11Y,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @a11y.a11y_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_UI,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @ui.ui_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_TEXT,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @text.text_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_RENDER3D,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @render3d.render3d_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_RENDER2D,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @render2d.render2d_plugin_ecs(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_PHYSICS2D,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @physics2d.physics2d_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_PHYSICS3D,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @physics3d.physics3d_plugin(app)
+    }),
+  )
+}
+
+///|
+pub fn DefaultPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
+  default_plugins_builder(fn(
+    app : @app.App[@ecs.World],
+  ) -> @app.App[@ecs.World] {
+    @asset.asset_plugin(app)
+  })
+}
+
+///|
+pub fn[P : @app.PluginReplacement] DefaultPlugins::set(
+  replacement : P,
+) -> @app.PluginGroupBuilder[@ecs.World] {
+  DefaultPlugins::build().set(replacement)
 }
 
 ///|
 pub struct MinimalPlugins {}
 
 ///|
-pub fn MinimalPlugins::build() -> Array[@app.Plugin[@ecs.World]] {
-  minimal_plugins()
+fn minimal_plugins_builder() -> @app.PluginGroupBuilder[@ecs.World] {
+  @app.PluginGroupBuilder::start_named(MINIMAL_PLUGINS_NAME)
+  .add_named(
+    id=MINIMAL_PLUGIN_ID_TASK_POOL,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @app.task_pool_plugin(@app.TaskPoolPlugin::default())(app)
+    }),
+  )
+  .add_named(
+    id=MINIMAL_PLUGIN_ID_FRAME_COUNT,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @diagnostics.frame_count_plugin(app)
+    }),
+  )
+  .add_named(
+    id=MINIMAL_PLUGIN_ID_STATES,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @app.states_plugin(@app.StatesPlugin::default())(app)
+    }),
+  )
+  .add_named(
+    id=MINIMAL_PLUGIN_ID_TIME,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @time.time_plugin(app)
+    }),
+  )
+  .add_named(
+    id=MINIMAL_PLUGIN_ID_SCHEDULE_RUNNER,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_loop(0.0F))(
+        app,
+      )
+    }),
+  )
+}
+
+///|
+pub fn MinimalPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
+  minimal_plugins_builder()
 }
 
 ///|
 /// Default plugin bundle, aligned with Bevy's `DefaultPlugins` concept.
 pub fn default_plugins() -> Array[@app.Plugin[@ecs.World]] {
-  [
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @app.log_plugin_default(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @app.task_pool_plugin(@app.TaskPoolPlugin::default())(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @window.window_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @diagnostics.frame_count_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @app.states_plugin(@app.StatesPlugin::default())(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @time.time_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @asset.asset_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @audio.audio_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @scene.scene_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @animation.animation_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @transform.transform_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @diagnostics.diagnostics_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @visibility.visibility_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @input.input_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @picking.picking_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @a11y.a11y_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @ui.ui_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @text.text_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @render3d.render3d_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @render2d.render2d_plugin_ecs(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @physics2d.physics2d_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @physics3d.physics3d_plugin(app)
-    },
-  ]
+  DefaultPlugins::build().build()
 }
 
 ///|
 /// Default plugin bundle with "nearest" sampling for textures (useful for pixel art).
 pub fn default_plugins_nearest() -> Array[@app.Plugin[@ecs.World]] {
-  [
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @app.log_plugin_default(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @app.task_pool_plugin(@app.TaskPoolPlugin::default())(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @window.window_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @diagnostics.frame_count_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @app.states_plugin(@app.StatesPlugin::default())(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @time.time_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @asset.asset_plugin_nearest(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @audio.audio_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @scene.scene_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @animation.animation_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @transform.transform_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @diagnostics.diagnostics_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @visibility.visibility_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @input.input_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @picking.picking_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @a11y.a11y_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @ui.ui_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @text.text_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @render3d.render3d_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @render2d.render2d_plugin_ecs(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @physics2d.physics2d_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @physics3d.physics3d_plugin(app)
-    },
-  ]
+  default_plugins_builder(fn(
+    app : @app.App[@ecs.World],
+  ) -> @app.App[@ecs.World] {
+    @asset.asset_plugin_nearest(app)
+  }).build()
 }
 
 ///|
 /// Minimal plugin bundle, aligned with Bevy's `MinimalPlugins` concept.
 pub fn minimal_plugins() -> Array[@app.Plugin[@ecs.World]] {
-  [
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @app.task_pool_plugin(@app.TaskPoolPlugin::default())(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @diagnostics.frame_count_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @app.states_plugin(@app.StatesPlugin::default())(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @time.time_plugin(app)
-    },
-    fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_loop(0.0F))(
-        app,
-      )
-    },
-  ]
+  MinimalPlugins::build().build()
 }

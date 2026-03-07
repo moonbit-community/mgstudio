@@ -590,6 +590,11 @@ fn window_primary_physical_height(world : @ecs.World) -> Int {
 
 ///|
 fn window_primary_scale_factor(world : @ecs.World) -> Float {
+  if window_primary_window(world) is Some(window) {
+    if window.resolution.scale_factor_override() is Some(_) {
+      return window.scale_factor()
+    }
+  }
   if window_primary_runtime(world) is Some(runtime) {
     return runtime.last_observed_scale_factor
   }
@@ -666,6 +671,18 @@ fn window_spawn_primary_window_entity(
 ///|
 pub fn window_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   window_plugin_with(app, WindowPlugin::default())
+}
+
+///|
+pub impl @app.PluginReplacement for WindowPlugin with replacement_id(_self) {
+  WINDOW_PLUGIN_ID
+}
+
+///|
+pub impl @app.PluginReplacement for WindowPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    window_plugin_with(app, self)
+  }
 }
 
 ///|

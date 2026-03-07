@@ -19,13 +19,74 @@ pub type SystemFn[W] = (W) -> Unit
 pub type Plugin[W] = (App[W]) -> App[W]
 
 ///|
+pub(all) suberror PluginGroupError {
+  MissingPlugin(String)
+}
+
+///|
+pub(open) trait PluginReplacement {
+  replacement_id(Self) -> String
+  world_plugin(Self) -> Plugin[@ecs.World]
+}
+
+///|
+pub struct PluginGroupEntry[W] {
+  id : String
+  mut plugin : Plugin[W]
+  mut enabled : Bool
+}
+
+///|
 pub struct PluginGroupBuilder[W] {
-  plugins : Array[Plugin[W]]
+  group_name : String
+  plugins : Array[PluginGroupEntry[W]]
 }
 
 ///|
 pub fn[W] PluginGroupBuilder::start() -> PluginGroupBuilder[W] {
-  { plugins: [] }
+  PluginGroupBuilder::start_named("")
+}
+
+///|
+pub fn[W] PluginGroupBuilder::start_named(
+  group_name : String,
+) -> PluginGroupBuilder[W] {
+  { group_name, plugins: [] }
+}
+
+///|
+fn plugin_group_anonymous_id(index : Int) -> String {
+  "__plugin_group_anon__:" + index.to_string()
+}
+
+///|
+fn[W] PluginGroupBuilder::plugin_group_find_index(
+  self : PluginGroupBuilder[W],
+  id : String,
+) -> Int? {
+  for i in 0..<self.plugins.length() {
+    if self.plugins[i].id == id {
+      return Some(i)
+    }
+  }
+  None
+}
+
+///|
+pub fn[W] PluginGroupBuilder::contains(
+  self : PluginGroupBuilder[W],
+  id : String,
+) -> Bool {
+  self.plugin_group_find_index(id) is Some(_)
+}
+
+///|
+pub fn[W] PluginGroupBuilder::enabled(
+  self : PluginGroupBuilder[W],
+  id : String,
+) -> Bool {
+  guard self.plugin_group_find_index(id) is Some(index) else { return false }
+  self.plugins[index].enabled
 }
 
 ///|
@@ -33,7 +94,91 @@ pub fn[W] PluginGroupBuilder::add(
   self : PluginGroupBuilder[W],
   plugin : Plugin[W],
 ) -> PluginGroupBuilder[W] {
-  self.plugins.push(plugin)
+  self.add_named(id=plugin_group_anonymous_id(self.plugins.length()), plugin)
+}
+
+///|
+pub fn[W] PluginGroupBuilder::add_named(
+  self : PluginGroupBuilder[W],
+  id~ : String,
+  plugin : Plugin[W],
+) -> PluginGroupBuilder[W] {
+  self.plugins.push({ id, plugin, enabled: true })
+  self
+}
+
+///|
+pub fn[W] PluginGroupBuilder::set_plugin(
+  self : PluginGroupBuilder[W],
+  id~ : String,
+  plugin : Plugin[W],
+) -> PluginGroupBuilder[W] {
+  try! self.try_set_plugin(id~, plugin)
+}
+
+///|
+pub fn[W] PluginGroupBuilder::try_set_plugin(
+  self : PluginGroupBuilder[W],
+  id~ : String,
+  plugin : Plugin[W],
+) -> PluginGroupBuilder[W] raise PluginGroupError {
+  guard self.plugin_group_find_index(id) is Some(index) else {
+    raise MissingPlugin(id)
+  }
+  self.plugins[index].plugin = plugin
+  self.plugins[index].enabled = true
+  self
+}
+
+///|
+pub fn[P : PluginReplacement] PluginGroupBuilder::set(
+  self : PluginGroupBuilder[@ecs.World],
+  replacement : P,
+) -> PluginGroupBuilder[@ecs.World] {
+  self.set_plugin(
+    id=P::replacement_id(replacement),
+    P::world_plugin(replacement),
+  )
+}
+
+///|
+pub fn[P : PluginReplacement] PluginGroupBuilder::try_set(
+  self : PluginGroupBuilder[@ecs.World],
+  replacement : P,
+) -> PluginGroupBuilder[@ecs.World] raise PluginGroupError {
+  self.try_set_plugin(
+    id=P::replacement_id(replacement),
+    P::world_plugin(replacement),
+  )
+}
+
+///|
+pub fn[W] PluginGroupBuilder::disable(
+  self : PluginGroupBuilder[W],
+  id : String,
+) -> PluginGroupBuilder[W] {
+  try! self.try_disable(id)
+}
+
+///|
+pub fn[W] PluginGroupBuilder::try_disable(
+  self : PluginGroupBuilder[W],
+  id : String,
+) -> PluginGroupBuilder[W] raise PluginGroupError {
+  guard self.plugin_group_find_index(id) is Some(index) else {
+    raise MissingPlugin(id)
+  }
+  self.plugins[index].enabled = false
+  self
+}
+
+///|
+pub fn[W] PluginGroupBuilder::enable(
+  self : PluginGroupBuilder[W],
+  id : String,
+) -> PluginGroupBuilder[W] {
+  guard self.plugin_group_find_index(id) is Some(index) else { return self }
+  self.plugins[index].enabled = true
   self
 }
 
@@ -41,7 +186,13 @@ pub fn[W] PluginGroupBuilder::add(
 pub fn[W] PluginGroupBuilder::build(
   self : PluginGroupBuilder[W],
 ) -> Array[Plugin[W]] {
-  self.plugins
+  let plugins : Array[Plugin[W]] = []
+  for entry in self.plugins {
+    if entry.enabled {
+      plugins.push(entry.plugin)
+    }
+  }
+  plugins
 }
 
 ///|

@@ -4,6 +4,7 @@ package "Milky2018/mgstudio"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/window",
 }
 
 // Values
@@ -16,6 +17,15 @@ pub fn minimal_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 // Errors
 
 // Types and methods
+pub struct DefaultPlugins {
+}
+pub fn DefaultPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
+pub fn[P : @app.PluginReplacement] DefaultPlugins::set(P) -> @app.PluginGroupBuilder[@ecs.World]
+pub fn DefaultPlugins::set_window(@window.WindowPlugin) -> @app.PluginGroupBuilder[@ecs.World]
+
+pub struct MinimalPlugins {
+}
+pub fn MinimalPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
 
 // Type aliases
 

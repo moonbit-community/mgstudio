@@ -176,6 +176,9 @@ pub fn[S : States] world_previous_state(@ecs.World, S) -> PreviousState[S]?
 pub fn[S : States] world_state(@ecs.World, S) -> State[S]?
 
 // Errors
+pub(all) suberror PluginGroupError {
+  MissingPlugin(String)
+}
 
 // Types and methods
 pub struct App[W] {
@@ -453,11 +456,29 @@ pub fn[P0, P1] ParamSet2::p1(Self[P0, P1]) -> P1
 pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1]
 
 pub struct PluginGroupBuilder[W] {
-  plugins : Array[(App[W]) -> App[W]]
+  group_name : String
+  plugins : Array[PluginGroupEntry[W]]
 }
 pub fn[W] PluginGroupBuilder::add(Self[W], (App[W]) -> App[W]) -> Self[W]
+pub fn[W] PluginGroupBuilder::add_named(Self[W], id~ : String, (App[W]) -> App[W]) -> Self[W]
 pub fn[W] PluginGroupBuilder::build(Self[W]) -> Array[(App[W]) -> App[W]]
+pub fn[W] PluginGroupBuilder::contains(Self[W], String) -> Bool
+pub fn[W] PluginGroupBuilder::disable(Self[W], String) -> Self[W]
+pub fn[W] PluginGroupBuilder::enable(Self[W], String) -> Self[W]
+pub fn[W] PluginGroupBuilder::enabled(Self[W], String) -> Bool
+pub fn[P : PluginReplacement] PluginGroupBuilder::set(Self[@ecs.World], P) -> Self[@ecs.World]
+pub fn[W] PluginGroupBuilder::set_plugin(Self[W], id~ : String, (App[W]) -> App[W]) -> Self[W]
 pub fn[W] PluginGroupBuilder::start() -> Self[W]
+pub fn[W] PluginGroupBuilder::start_named(String) -> Self[W]
+pub fn[W] PluginGroupBuilder::try_disable(Self[W], String) -> Self[W] raise PluginGroupError
+pub fn[P : PluginReplacement] PluginGroupBuilder::try_set(Self[@ecs.World], P) -> Self[@ecs.World] raise PluginGroupError
+pub fn[W] PluginGroupBuilder::try_set_plugin(Self[W], id~ : String, (App[W]) -> App[W]) -> Self[W] raise PluginGroupError
+
+pub struct PluginGroupEntry[W] {
+  id : String
+  mut plugin : (App[W]) -> App[W]
+  mut enabled : Bool
+}
 
 pub struct PreviousState[S] {
   value : S
@@ -696,6 +717,11 @@ pub impl[T : @ecs.Component] FromWorld for @ecs.Without[T]
 pub impl[T] FromWorld for Array[T]
 pub impl[A : FromWorld, B : FromWorld] FromWorld for (A, B)
 pub impl[A : FromWorld, B : FromWorld, C : FromWorld] FromWorld for (A, B, C)
+
+pub(open) trait PluginReplacement {
+  replacement_id(Self) -> String
+  world_plugin(Self) -> (App[@ecs.World]) -> App[@ecs.World]
+}
 
 pub(open) trait Resource {
   resource() -> @ecs.ResourceKey[Self]

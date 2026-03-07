@@ -18,11 +18,12 @@ pub fn minimal_plugins() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 // Types and methods
 pub struct DefaultPlugins {
 }
-pub fn DefaultPlugins::build() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
+pub fn DefaultPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
+pub fn[P : @app.PluginReplacement] DefaultPlugins::set(P) -> @app.PluginGroupBuilder[@ecs.World]
 
 pub struct MinimalPlugins {
 }
-pub fn MinimalPlugins::build() -> Array[(@app.App[@ecs.World]) -> @app.App[@ecs.World]]
+pub fn MinimalPlugins::build() -> @app.PluginGroupBuilder[@ecs.World]
 
 // Type aliases
 

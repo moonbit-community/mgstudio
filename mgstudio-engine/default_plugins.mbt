@@ -13,6 +13,36 @@
 // limitations under the License.
 
 ///|
+pub struct DefaultPlugins {}
+
+///|
+pub fn DefaultPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
+  @internal.DefaultPlugins::build()
+}
+
+///|
+pub fn[P : @app.PluginReplacement] DefaultPlugins::set(
+  replacement : P,
+) -> @app.PluginGroupBuilder[@ecs.World] {
+  @internal.DefaultPlugins::set(replacement)
+}
+
+///|
+pub fn DefaultPlugins::set_window(
+  plugin : @window.WindowPlugin,
+) -> @app.PluginGroupBuilder[@ecs.World] {
+  DefaultPlugins::set(plugin)
+}
+
+///|
+pub struct MinimalPlugins {}
+
+///|
+pub fn MinimalPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
+  @internal.MinimalPlugins::build()
+}
+
+///|
 /// Default plugin bundle, aligned with Bevy's `DefaultPlugins` concept.
 ///
 /// Implementation lives in `Milky2018/mgstudio/internal` (similar to Bevy's

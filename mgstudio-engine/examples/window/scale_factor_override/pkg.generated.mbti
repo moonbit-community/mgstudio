@@ -6,6 +6,9 @@ package "Milky2018/mgstudio/examples/window/scale_factor_override"
 // Errors
 
 // Types and methods
+type CustomText
+pub impl Eq for CustomText
+pub impl Show for CustomText
 
 // Type aliases
 

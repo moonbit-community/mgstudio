@@ -44,9 +44,8 @@ fn print_world_system(_world : @ecs.World) -> Unit {
 
 ///|
 fn main {
-  let default_plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(default_plugins)
+  .add_plugin_group(fn() { @mgstudio.DefaultPlugins::build() })
   .add_plugin_group(hello_world_plugins)
   .run()
 }

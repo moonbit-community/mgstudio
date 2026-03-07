@@ -6,6 +6,11 @@ package "Milky2018/mgstudio/examples/window/window_resizing"
 // Errors
 
 // Types and methods
+type ResolutionSettings
+
+type ResolutionText
+pub impl Eq for ResolutionText
+pub impl Show for ResolutionText
 
 // Type aliases
 

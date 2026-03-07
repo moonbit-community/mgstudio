@@ -241,6 +241,9 @@ pub(all) struct WindowPlugin {
 }
 
 ///|
+pub const WINDOW_PLUGIN_ID : String = "bevy_window::WindowPlugin"
+
+///|
 pub fn WindowPlugin::default() -> WindowPlugin {
   WindowPlugin::{
     primary_window: Some(Window::default()),

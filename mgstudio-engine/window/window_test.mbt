@@ -180,6 +180,38 @@ test "window: compatibility helpers read and write ECS primary window state" {
 }
 
 ///|
+test "window: scale-factor helper prefers override over observed host scale" {
+  let configured_window = Window::default()
+  configured_window.resolution.set_physical_resolution(500, 300)
+  configured_window.resolution.set_scale_factor_override(Some(1.0F))
+  let seen_scale_factor : Ref[Float] = Ref::new(0.0F)
+
+  let app = window_plugin_with(@app.App::new(@ecs.World::new()), WindowPlugin::{
+    primary_window: Some(configured_window),
+    primary_cursor_options: Some(CursorOptions::default()),
+    exit_condition: ExitCondition::DontExit,
+    close_when_requested: false,
+  }).add_systems(
+    @app.Update,
+    @app.system(fn(_world : @ecs.World) {
+      seen_scale_factor.val = window_scale_factor()
+    }),
+  )
+  let app = app.run_once()
+  let entity = match primary_window_entity(app.world()) {
+    Some(entity) => entity
+    None => abort("missing primary window entity")
+  }
+  let stored_window = match window_component_value(app.world(), entity) {
+    Some(window) => window
+    None => abort("missing updated window")
+  }
+
+  inspect(seen_scale_factor.val, content="1")
+  inspect(stored_window.scale_factor(), content="1")
+}
+
+///|
 test "window: close_when_requested marks then despawns windows across updates" {
   let world = @ecs.World::new()
   let entity = world.spawn()
