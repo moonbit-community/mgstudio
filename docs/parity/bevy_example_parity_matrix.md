@@ -211,7 +211,7 @@ Notes:
 | `bevy/examples/camera/2d_on_ui.rs` | `camera` | `mgstudio-engine/examples/camera/2d_on_ui` | `Exact` | `team-render` |  |
 | `bevy/examples/camera/2d_screen_shake.rs` | `camera` | `mgstudio-engine/examples/camera/2d_screen_shake` | `Exact` | `team-render` |  |
 | `bevy/examples/camera/2d_top_down_camera.rs` | `camera` | `mgstudio-engine/examples/camera/2d_top_down_camera` | `Exact` | `team-render` |  |
-| `bevy/examples/camera/camera_orbit.rs` | `camera` |  | `Blocked` | `team-render` | Blocked by missing Euler rotation conversion API (`bd-ank`). |
+| `bevy/examples/camera/camera_orbit.rs` | `camera` | `mgstudio-engine/examples/camera/camera_orbit` | `Blocked` | `team-render` | Ported under `mgstudio-engine/examples/camera/camera_orbit`; compile verification is currently blocked by unrelated `render2d` `KeyCode::to_string()` break (`bd-d6w`). |
 | `bevy/examples/camera/custom_projection.rs` | `camera` |  | `Blocked` | `team-render` | Blocked by missing custom camera projection surface (`bd-shf`). |
 | `bevy/examples/camera/first_person_view_model.rs` | `camera` |  | `Blocked` | `team-render` | Blocked by missing unified `Projection` surface (`bd-52x`) and Euler rotation conversion API (`bd-ank`). |
 | `bevy/examples/camera/free_camera_controller.rs` | `camera` | `mgstudio-engine/examples/camera/free_camera_controller` | `Exact` | `team-render` |  |
