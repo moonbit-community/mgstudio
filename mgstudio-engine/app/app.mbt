@@ -677,6 +677,7 @@ pub fn[T : Resource] App::insert_resource(
   self : App[@ecs.World],
   value : T,
 ) -> App[@ecs.World] {
+  self.sub_apps.main.world.increment_change_tick() |> ignore
   self.sub_apps.main.world.insert_resource(Resource::resource(), value)
   self
 }
@@ -687,6 +688,7 @@ pub fn[T] App::insert_world_resource(
   key : @ecs.ResourceKey[T],
   value : T,
 ) -> App[@ecs.World] {
+  self.sub_apps.main.world.increment_change_tick() |> ignore
   self.sub_apps.main.world.insert_resource(key, value)
   self
 }
