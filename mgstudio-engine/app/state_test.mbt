@@ -16,7 +16,7 @@
 pub(all) enum TestState {
   A
   B
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 impl States for TestState with debug_name(self) {

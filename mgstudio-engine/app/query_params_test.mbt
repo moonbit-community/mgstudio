@@ -16,16 +16,16 @@
 struct QueryPosition {
   mut x : Int
   y : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 struct QueryVelocity {
   mut dx : Int
   mut dy : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
-struct QueryMarker {} derive(Eq, Show, ToJson, FromJson)
+struct QueryMarker {} derive(Eq, Show)
 
 ///|
 let query_position_key : @ecs.ComponentKey[QueryPosition] = @ecs.register_component(

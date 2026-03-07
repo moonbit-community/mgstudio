@@ -21,7 +21,7 @@ pub fn StatesPlugin::default() -> StatesPlugin {
 }
 
 ///|
-priv struct StatesPluginMarker {} derive(Eq, Show, ToJson, FromJson)
+priv struct StatesPluginMarker {}
 
 ///|
 fn states_plugin_marker_key() -> @ecs.ResourceKey[StatesPluginMarker] {

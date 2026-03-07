@@ -236,7 +236,7 @@ impl SystemParam for TickParam with store(self, _state) {
 ///|
 struct TestMessage {
   value : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 let test_message_key : @ecs.MessageKey[TestMessage] = @ecs.register_message(
@@ -312,12 +312,12 @@ test "app: MessageWriter system param writes messages for MessageReader" {
 ///|
 struct EcsPosition {
   mut x : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 struct EcsVelocity {
   x : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 test "app: add_system_query2_ecs injects key-based query into update system" {

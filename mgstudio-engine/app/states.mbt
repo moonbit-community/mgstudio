@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub(open) trait States: Eq + Show + ToJson + @json.FromJson {
+pub(open) trait States: Eq + Show {
   debug_name(Self) -> String
   dependency_depth(Self) -> Int = _
 }

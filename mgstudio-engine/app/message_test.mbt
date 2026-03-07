@@ -15,7 +15,7 @@
 ///|
 struct TestAppMessage {
   value : Int
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 impl @ecs.Message for TestAppMessage with message() {

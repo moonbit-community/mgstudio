@@ -283,7 +283,7 @@ pub fn[W, T : Resource] App::init_resource(Self[W], () -> T) -> Self[W]
 pub fn[W, T : Resource] App::insert_resource(Self[W], T) -> Self[W]
 pub fn[S : States] App::insert_state(Self[@ecs.World], S) -> Self[@ecs.World]
 pub fn[W] App::insert_sub_app(Self[W], AppLabel, SubApp[W]) -> Self[W]
-pub fn[T : ToJson] App::insert_world_resource(Self[@ecs.World], @ecs.ResourceKey[T], T) -> Self[@ecs.World]
+pub fn[T] App::insert_world_resource(Self[@ecs.World], @ecs.ResourceKey[T], T) -> Self[@ecs.World]
 pub fn App::new(@ecs.World) -> Self[@ecs.World]
 pub fn[W, T] App::remove_resource(Self[W], @core.Resource[T]) -> T?
 pub fn[W] App::remove_sub_app(Self[W], AppLabel) -> SubApp[W]?
@@ -313,8 +313,6 @@ pub fn AppExit::is_success(Self) -> Bool
 pub impl @ecs.Message for AppExit
 pub impl Eq for AppExit
 pub impl Show for AppExit
-pub impl ToJson for AppExit
-pub impl @json.FromJson for AppExit
 
 pub(all) enum AppLabel {
   MainApp
@@ -330,8 +328,6 @@ pub struct CheckParentHasComponent[C] {
 }
 pub fn[C] CheckParentHasComponent::new(@core.Entity) -> Self[C]
 pub impl[C : @ecs.Component] @ecs.Message for CheckParentHasComponent[C]
-pub impl[C] ToJson for CheckParentHasComponent[C]
-pub impl[C] @json.FromJson for CheckParentHasComponent[C]
 
 pub struct FixedMainScheduleOrder {
   labels : Array[ScheduleStage]
@@ -342,8 +338,6 @@ pub fn FixedMainScheduleOrder::insert_before(Self, ScheduleStage, ScheduleStage)
 pub fn FixedMainScheduleOrder::new(Array[ScheduleStage]) -> Self
 pub impl Eq for FixedMainScheduleOrder
 pub impl Show for FixedMainScheduleOrder
-pub impl ToJson for FixedMainScheduleOrder
-pub impl @json.FromJson for FixedMainScheduleOrder
 
 pub struct Local[T] {
   value_ref : Ref[T]
@@ -362,8 +356,6 @@ pub(all) enum LogLevel {
 }
 pub impl Eq for LogLevel
 pub impl Show for LogLevel
-pub impl ToJson for LogLevel
-pub impl @json.FromJson for LogLevel
 
 pub struct LogPlugin {
   level : LogLevel
@@ -400,8 +392,6 @@ pub fn MainScheduleOrder::insert_startup_before(Self, ScheduleStage, ScheduleSta
 pub fn MainScheduleOrder::new(Array[ScheduleStage], Array[ScheduleStage]) -> Self
 pub impl Eq for MainScheduleOrder
 pub impl Show for MainScheduleOrder
-pub impl ToJson for MainScheduleOrder
-pub impl @json.FromJson for MainScheduleOrder
 
 pub(all) enum NextState[S] {
   Unchanged
@@ -413,24 +403,18 @@ pub fn[S] NextState::set(Self[S], S) -> Self[S]
 pub fn[S : Eq] NextState::set_if_neq(Self[S], S) -> Self[S]
 pub impl[S : Eq] Eq for NextState[S]
 pub impl[S : Show] Show for NextState[S]
-pub impl[S : ToJson] ToJson for NextState[S]
-pub impl[S : @json.FromJson] @json.FromJson for NextState[S]
 
 pub struct OnEnter[S] {
   state : S
 }
 pub impl[S : Eq] Eq for OnEnter[S]
 pub impl[S : Show] Show for OnEnter[S]
-pub impl[S : ToJson] ToJson for OnEnter[S]
-pub impl[S : @json.FromJson] @json.FromJson for OnEnter[S]
 
 pub struct OnExit[S] {
   state : S
 }
 pub impl[S : Eq] Eq for OnExit[S]
 pub impl[S : Show] Show for OnExit[S]
-pub impl[S : ToJson] ToJson for OnExit[S]
-pub impl[S : @json.FromJson] @json.FromJson for OnExit[S]
 
 pub struct OnTransition[S] {
   exited : S
@@ -438,8 +422,6 @@ pub struct OnTransition[S] {
 }
 pub impl[S : Eq] Eq for OnTransition[S]
 pub impl[S : Show] Show for OnTransition[S]
-pub impl[S : ToJson] ToJson for OnTransition[S]
-pub impl[S : @json.FromJson] @json.FromJson for OnTransition[S]
 
 pub struct ParamSet2[P0, P1] {
   param0 : P0
@@ -464,8 +446,6 @@ pub struct PreviousState[S] {
 pub fn[S] PreviousState::get(Self[S]) -> S
 pub impl[S : Eq] Eq for PreviousState[S]
 pub impl[S : Show] Show for PreviousState[S]
-pub impl[S : ToJson] ToJson for PreviousState[S]
-pub impl[S : @json.FromJson] @json.FromJson for PreviousState[S]
 
 pub(all) enum RenderErrorPolicy {
   Ignore
@@ -551,8 +531,6 @@ pub(all) enum ScheduleStage {
 }
 pub impl Eq for ScheduleStage
 pub impl Show for ScheduleStage
-pub impl ToJson for ScheduleStage
-pub impl @json.FromJson for ScheduleStage
 
 pub struct State[S] {
   value : S
@@ -561,8 +539,6 @@ pub fn[S] State::get(Self[S]) -> S
 pub fn[S] State::new(S) -> Self[S]
 pub impl[S : Eq] Eq for State[S]
 pub impl[S : Show] Show for State[S]
-pub impl[S : ToJson] ToJson for State[S]
-pub impl[S : @json.FromJson] @json.FromJson for State[S]
 
 pub struct StateTransitionEvent[S] {
   exited : S?
@@ -571,8 +547,6 @@ pub struct StateTransitionEvent[S] {
 }
 pub impl[S : Eq] Eq for StateTransitionEvent[S]
 pub impl[S : Show] Show for StateTransitionEvent[S]
-pub impl[S : ToJson] ToJson for StateTransitionEvent[S]
-pub impl[S : @json.FromJson] @json.FromJson for StateTransitionEvent[S]
 
 pub(all) enum StateTransitionSystems {
   DependentTransitions
@@ -704,7 +678,7 @@ pub(open) trait Resource {
   resource() -> @core.Resource[Self]
 }
 
-pub(open) trait States : Eq + Show + ToJson + @json.FromJson {
+pub(open) trait States : Eq + Show {
   debug_name(Self) -> String
   dependency_depth(Self) -> Int = _
 }

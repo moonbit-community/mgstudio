@@ -23,7 +23,7 @@ impl FromWorld for LocalCounter with from_world(_world) {
 }
 
 ///|
-struct RemovedMarker {} derive(Eq, Show, ToJson, FromJson)
+struct RemovedMarker {} derive(Eq, Show)
 
 ///|
 let removed_marker_key : @ecs.ComponentKey[RemovedMarker] = @ecs.register_component(

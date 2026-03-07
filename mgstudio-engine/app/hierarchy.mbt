@@ -51,20 +51,6 @@ pub fn[C] CheckParentHasComponent::new(
 }
 
 ///|
-pub impl[C] ToJson for CheckParentHasComponent[C] with to_json(self) {
-  (self.entity.id, self.entity.generation).to_json()
-}
-
-///|
-pub impl[C] @json.FromJson for CheckParentHasComponent[C] with from_json(
-  json,
-  path,
-) {
-  let (id, generation) : (Int, Int) = @json.from_json(json, path~)
-  CheckParentHasComponent::new(@core.Entity::new(id, generation))
-}
-
-///|
 fn[T] component_debug_name(key : @ecs.ComponentKey[T]) -> String {
   if key.debug_name() != "" {
     key.debug_name()

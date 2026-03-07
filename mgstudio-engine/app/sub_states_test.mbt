@@ -16,7 +16,7 @@
 pub(all) enum TestSubState {
   Setup
   Battle
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 impl States for TestSubState with debug_name(self) {

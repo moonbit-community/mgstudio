@@ -17,7 +17,7 @@
 pub(all) enum AppExit {
   Success
   Error(Int)
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 pub fn AppExit::error() -> AppExit {
@@ -370,7 +370,7 @@ pub(all) enum LogLevel {
   Info
   Debug
   Trace
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 pub struct LogRecord {

@@ -15,7 +15,7 @@
 ///|
 pub struct State[S] {
   value : S
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 pub fn[S] State::new(state : S) -> State[S] {
@@ -30,7 +30,7 @@ pub fn[S] State::get(self : State[S]) -> S {
 ///|
 pub struct PreviousState[S] {
   value : S
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 pub fn[S] PreviousState::get(self : PreviousState[S]) -> S {
@@ -42,14 +42,14 @@ pub(all) enum NextState[S] {
   Unchanged
   Pending(S)
   PendingIfNeq(S)
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 pub struct StateTransitionEvent[S] {
   exited : S?
   entered : S?
   allow_same_state_transitions : Bool
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 fn[S : States] state_type_debug_name(_state : S) -> String {
@@ -123,10 +123,7 @@ fn[S : States] pending_state_transition_event_resource_key(
 }
 
 ///|
-fn[T : @json.FromJson] read_world_resource(
-  world : @ecs.World,
-  key : @ecs.ResourceKey[T],
-) -> T? {
+fn[T] read_world_resource(world : @ecs.World, key : @ecs.ResourceKey[T]) -> T? {
   try world.get_resource(key) catch {
     _ => None
   } noraise {

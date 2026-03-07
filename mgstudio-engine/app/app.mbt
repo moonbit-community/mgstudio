@@ -102,7 +102,7 @@ pub(all) enum ScheduleStage {
   SpawnScene
   PostUpdate
   Last
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 pub(open) trait SystemParam {
@@ -647,7 +647,7 @@ pub fn[W, T : Resource] App::insert_resource(
 }
 
 ///|
-pub fn[T : ToJson] App::insert_world_resource(
+pub fn[T] App::insert_world_resource(
   self : App[@ecs.World],
   key : @ecs.ResourceKey[T],
   value : T,

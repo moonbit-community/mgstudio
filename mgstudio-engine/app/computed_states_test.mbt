@@ -15,7 +15,7 @@
 ///|
 pub(all) enum DerivedState {
   Active
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 impl States for DerivedState with debug_name(self) {

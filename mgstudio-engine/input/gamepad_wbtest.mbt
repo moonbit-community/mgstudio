@@ -76,7 +76,7 @@ fn clear_gamepad_messages(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn[T : @json.FromJson] read_messages(
+fn[T] read_messages(
   world : @ecs.World,
   key : @ecs.MessageKey[T],
 ) -> Array[T] {

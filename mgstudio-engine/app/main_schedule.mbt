@@ -37,7 +37,7 @@ pub fn run_fixed_main_loop_system_set_name(
 pub struct MainScheduleOrder {
   labels : Array[ScheduleStage]
   startup_labels : Array[ScheduleStage]
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 pub fn MainScheduleOrder::new(
@@ -58,12 +58,12 @@ pub fn MainScheduleOrder::default() -> MainScheduleOrder {
 ///|
 pub struct FixedMainScheduleOrder {
   labels : Array[ScheduleStage]
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 priv struct MainScheduleRuntimeState {
   startup_ran : Bool
-} derive(Eq, Show, ToJson, FromJson)
+}
 
 ///|
 pub fn FixedMainScheduleOrder::new(
@@ -103,7 +103,7 @@ fn main_schedule_runtime_state_resource_key() -> @ecs.ResourceKey[
 }
 
 ///|
-fn[T : @json.FromJson] world_schedule_resource(
+fn[T] world_schedule_resource(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
 ) -> T? {

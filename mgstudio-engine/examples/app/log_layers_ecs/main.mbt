@@ -19,7 +19,7 @@
 struct LogMessage {
   message : String
   level : @app.LogLevel
-} derive(ToJson, FromJson)
+}
 
 ///|
 let log_message_key : @ecs.MessageKey[LogMessage] = @ecs.register_message(

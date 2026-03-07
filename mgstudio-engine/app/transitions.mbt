@@ -32,7 +32,7 @@ let state_transition_registration_indices : @hashmap.HashMap[String, Int] = @has
 priv struct StateTransitionHookRegistration {
   key : String
   config_ref : Ref[SystemConfig[@ecs.World]]
-  matches : (Json) -> Bool
+  matches : (@ecs.World) -> Bool
 }
 
 ///|
@@ -47,18 +47,18 @@ let on_transition_registrations : Array[StateTransitionHookRegistration] = []
 ///|
 pub struct OnEnter[S] {
   state : S
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 pub struct OnExit[S] {
   state : S
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 pub struct OnTransition[S] {
   exited : S
   entered : S
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Show)
 
 ///|
 pub(all) enum StateTransitionSystems {
@@ -169,7 +169,7 @@ fn register_state_transition_hook(
   hooks : Array[StateTransitionHookRegistration],
   key : String,
   config : SystemConfig[@ecs.World],
-  matches : (Json) -> Bool,
+  matches : (@ecs.World) -> Bool,
 ) -> Unit {
   hooks.push({ key, config_ref: Ref::new(config), matches })
 }
@@ -179,11 +179,10 @@ fn run_state_transition_hooks(
   world : @ecs.World,
   hooks : Array[StateTransitionHookRegistration],
   key : String,
-  event_json : Json,
 ) -> Unit {
   let matched_refs : Array[Ref[SystemConfig[@ecs.World]]] = []
   for hook in hooks {
-    if hook.key == key && (hook.matches)(event_json) {
+    if hook.key == key && (hook.matches)(world) {
       matched_refs.push(hook.config_ref)
     }
   }
@@ -214,32 +213,25 @@ fn[S : States] enqueue_transition_event(
 ///|
 fn[S : States] run_pending_exit(world : @ecs.World, state : S) -> Unit {
   guard pending_transition(world, state) is Some(event) else { return }
+  ignore(event)
   let key = state_transition_registration_key(state)
-  run_state_transition_hooks(world, on_exit_registrations, key, event.to_json())
+  run_state_transition_hooks(world, on_exit_registrations, key)
 }
 
 ///|
 fn[S : States] run_pending_transition(world : @ecs.World, state : S) -> Unit {
   guard pending_transition(world, state) is Some(event) else { return }
+  ignore(event)
   let key = state_transition_registration_key(state)
-  run_state_transition_hooks(
-    world,
-    on_transition_registrations,
-    key,
-    event.to_json(),
-  )
+  run_state_transition_hooks(world, on_transition_registrations, key)
 }
 
 ///|
 fn[S : States] run_pending_enter(world : @ecs.World, state : S) -> Unit {
   guard pending_transition(world, state) is Some(event) else { return }
+  ignore(event)
   let key = state_transition_registration_key(state)
-  run_state_transition_hooks(
-    world,
-    on_enter_registrations,
-    key,
-    event.to_json(),
-  )
+  run_state_transition_hooks(world, on_enter_registrations, key)
 }
 
 ///|
@@ -257,13 +249,10 @@ fn[S : States] register_on_enter_system(
 ) -> Unit {
   let key = state_transition_registration_key(state)
   register_state_transition_hook(on_enter_registrations, key, config, fn(
-    event_json : Json,
+    world : @ecs.World,
   ) {
-    let event_result : Result[StateTransitionEvent[S], @json.JsonDecodeError] = try? @json.from_json(
-      event_json,
-    )
-    match event_result {
-      Ok(event) =>
+    match pending_transition(world, state) {
+      Some(event) =>
         if event.entered == event.exited && !event.allow_same_state_transitions {
           false
         } else {
@@ -272,7 +261,7 @@ fn[S : States] register_on_enter_system(
             None => false
           }
         }
-      Err(_) => false
+      None => false
     }
   })
 }
@@ -284,13 +273,10 @@ fn[S : States] register_on_exit_system(
 ) -> Unit {
   let key = state_transition_registration_key(state)
   register_state_transition_hook(on_exit_registrations, key, config, fn(
-    event_json : Json,
+    world : @ecs.World,
   ) {
-    let event_result : Result[StateTransitionEvent[S], @json.JsonDecodeError] = try? @json.from_json(
-      event_json,
-    )
-    match event_result {
-      Ok(event) =>
+    match pending_transition(world, state) {
+      Some(event) =>
         if event.entered == event.exited && !event.allow_same_state_transitions {
           false
         } else {
@@ -299,7 +285,7 @@ fn[S : States] register_on_exit_system(
             None => false
           }
         }
-      Err(_) => false
+      None => false
     }
   })
 }
@@ -312,15 +298,12 @@ fn[S : States] register_on_transition_system(
 ) -> Unit {
   let key = state_transition_registration_key(exited)
   register_state_transition_hook(on_transition_registrations, key, config, fn(
-    event_json : Json,
+    world : @ecs.World,
   ) {
-    let event_result : Result[StateTransitionEvent[S], @json.JsonDecodeError] = try? @json.from_json(
-      event_json,
-    )
-    match event_result {
-      Ok(event) =>
+    match pending_transition(world, exited) {
+      Some(event) =>
         event.exited == Some(exited) && event.entered == Some(entered)
-      Err(_) => false
+      None => false
     }
   })
 }

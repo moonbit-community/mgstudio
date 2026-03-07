@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-priv struct MessageUpdateMarker {} derive(ToJson, FromJson)
+priv struct MessageUpdateMarker {}
 
 ///|
 fn message_update_marker_key() -> @ecs.ResourceKey[MessageUpdateMarker] {

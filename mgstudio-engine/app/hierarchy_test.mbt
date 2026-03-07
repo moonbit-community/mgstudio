@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-struct HierarchyValidationMarker {} derive(Eq, Show, ToJson, FromJson)
+struct HierarchyValidationMarker {} derive(Eq, Show)
 
 ///|
 let hierarchy_validation_marker_key : @ecs.ComponentKey[

@@ -13,19 +13,19 @@
 // limitations under the License.
 
 ///|
-/// Minimal Json-backed ECS end-to-end example with Position/Velocity and a move system.
+/// Minimal ECS end-to-end example with Position/Velocity and a move system.
 
 ///|
 pub struct Position {
   mut x : Float
   mut y : Float
-} derive(Show, Eq, ToJson, FromJson)
+} derive(Show, Eq)
 
 ///|
 pub struct Velocity {
   x : Float
   y : Float
-} derive(Show, Eq, ToJson, FromJson)
+} derive(Show, Eq)
 
 ///|
 fn main {
