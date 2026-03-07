@@ -6673,6 +6673,17 @@ fn render3d_auto_exposure_history_sync(
 }
 
 ///|
+fn render3d_default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => {
+      let time : @time.Time[Unit] = @time.Time::default()
+      time
+    }
+  }
+}
+
+///|
 fn render3d_auto_exposure_target_ev100(
   auto_exposure : AutoExposure,
   lighting : Render3dLightingState,
@@ -6723,6 +6734,7 @@ fn render3d_auto_exposure_target_ev100(
 
 ///|
 fn render3d_camera_effective_exposure(
+  world : @ecs.World,
   camera_entity : @core.Entity,
   exposure : Exposure?,
   auto_exposure : AutoExposure?,
@@ -6740,7 +6752,7 @@ fn render3d_camera_effective_exposure(
     Some(value) => value
     None => default_ev100
   }
-  let delta = @time.time_delta_seconds()
+  let delta = render3d_default_time_or_default(world).delta_seconds()
   let safe_delta = if delta <= 0.0F { 0.0F } else { delta }
   let diff = target_ev100 - current_ev100
   let abs_diff = if diff < 0.0F { -diff } else { diff }
@@ -8968,7 +8980,7 @@ fn free_camera_exp_decay(rate : Float, delta_seconds : Float) -> Float {
 
 ///|
 pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
-  let delta_seconds = @time.time_delta_seconds()
+  let delta_seconds = render3d_default_time_or_default(world).delta_seconds()
   let tick = world.read_change_tick()
   let camera_store = world.component(@render2d.ecs_key_camera)
   let transform_store = world.component(@math.ecs_key_transform)
@@ -9791,6 +9803,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         camera_deferred_enabled
       )
     let effective_exposure = render3d_camera_effective_exposure(
+      world,
       camera.entity,
       camera.exposure,
       camera.camera3d.auto_exposure,

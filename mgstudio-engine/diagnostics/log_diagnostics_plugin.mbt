@@ -219,7 +219,7 @@ fn log_diagnostic_message(diagnostic : Diagnostic) -> String {
 ///|
 fn log_diagnostics_system(
   state : @app.ResMut[LogDiagnosticsState],
-  time : @app.Res[@time.Time],
+  time : @app.Res[@time.Time[Unit]],
   diagnostics : @app.Res[DiagnosticsStore],
 ) -> Unit {
   let state_ref = state.get_ref()
@@ -243,7 +243,7 @@ fn log_diagnostics_system(
 ///|
 fn log_diagnostics_debug_system(
   state : @app.ResMut[LogDiagnosticsState],
-  time : @app.Res[@time.Time],
+  time : @app.Res[@time.Time[Unit]],
   diagnostics : @app.Res[DiagnosticsStore],
 ) -> Unit {
   let state_ref = state.get_ref()

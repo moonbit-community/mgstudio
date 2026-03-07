@@ -18,6 +18,27 @@ pub fn[S : States] state_exists(state : S) -> RunConditionFn[@ecs.World] {
 }
 
 ///|
+pub fn[W] run_condition_and(
+  left : RunConditionFn[W],
+  right : RunConditionFn[W],
+) -> RunConditionFn[W] {
+  fn(world : W) { left(world) && right(world) }
+}
+
+///|
+pub fn[W] run_condition_or(
+  left : RunConditionFn[W],
+  right : RunConditionFn[W],
+) -> RunConditionFn[W] {
+  fn(world : W) { left(world) || right(world) }
+}
+
+///|
+pub fn[W] run_condition_not(cond : RunConditionFn[W]) -> RunConditionFn[W] {
+  fn(world : W) { !cond(world) }
+}
+
+///|
 fn condition_tick_in_range(
   tick : @core.Tick,
   system : @core.SystemTicks,

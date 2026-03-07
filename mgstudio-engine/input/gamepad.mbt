@@ -1559,7 +1559,9 @@ fn deadline_after(now_ms : Int64, duration : @core.Duration) -> Int64 {
 }
 
 ///|
-fn current_real_time_millis(real_time : @app.Res[@time.Real]) -> Int64 {
+fn current_real_time_millis(
+  real_time : @app.Res[@time.Time[@time.Real]],
+) -> Int64 {
   @core.Duration::from_secs_f32(real_time.get().elapsed_seconds()).as_millis()
 }
 
@@ -2039,7 +2041,7 @@ fn gamepad_event_processing_system(
 fn gamepad_rumble_system(
   requests : @ecs.MessageReader[GamepadRumbleRequest],
   running_rumbles : @app.ResMut[RunningRumbleEffects],
-  real_time : @app.Res[@time.Real],
+  real_time : @app.Res[@time.Time[@time.Real]],
 ) -> Unit {
   let now_ms = current_real_time_millis(real_time)
   let effects_ref = running_rumbles.get_ref()

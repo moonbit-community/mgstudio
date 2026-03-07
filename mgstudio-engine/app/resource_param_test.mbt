@@ -189,3 +189,57 @@ test "app: resource_changed tracks changes when the resource exists" {
   inspect(log.length(), content="2")
   inspect(log[1], content="9")
 }
+
+///|
+test "app: run condition combinators short-circuit and compose" {
+  let or_runs = Ref::new(0)
+  let or_rhs_calls = Ref::new(0)
+  let and_runs = Ref::new(0)
+  let and_rhs_calls = Ref::new(0)
+  let not_log : Array[Int] = []
+  let app = App::new(@ecs.World::new())
+    .insert_resource(CounterResource::{ value: 1 })
+    .add_system_config(
+      system(fn(_world : @ecs.World) { or_runs.val = or_runs.val + 1 }).run_if(
+        run_condition_or(resource_exists(CounterResource::resource()), fn(
+          _world : @ecs.World,
+        ) {
+          or_rhs_calls.val = or_rhs_calls.val + 1
+          false
+        }),
+      ),
+    )
+    .add_system_config(
+      system(fn(_world : @ecs.World) { and_runs.val = and_runs.val + 1 }).run_if(
+        run_condition_and(
+          run_condition_not(resource_exists(CounterResource::resource())),
+          fn(_world : @ecs.World) {
+            and_rhs_calls.val = and_rhs_calls.val + 1
+            true
+          },
+        ),
+      ),
+    )
+    .add_system_config(
+      system(fn(_world : @ecs.World) { not_log.push(not_log.length()) }).run_if(
+        run_condition_not(
+          resource_exists_and_changed(CounterResource::resource()),
+        ),
+      ),
+    )
+
+  app.run_once() |> ignore
+  inspect(or_runs.val, content="1")
+  inspect(or_rhs_calls.val, content="0")
+  inspect(and_runs.val, content="0")
+  inspect(and_rhs_calls.val, content="0")
+  inspect(not_log.length(), content="0")
+
+  app.remove_resource(CounterResource::resource()) |> ignore
+  app.run_once() |> ignore
+  inspect(or_runs.val, content="1")
+  inspect(or_rhs_calls.val, content="1")
+  inspect(and_runs.val, content="1")
+  inspect(and_rhs_calls.val, content="1")
+  inspect(not_log.length(), content="1")
+}

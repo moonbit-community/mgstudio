@@ -36,15 +36,13 @@ fn runner_tick() -> Unit {
 ///|
 fn no_renderer_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
   fn() {
-    let window = @window.host_window_create(
-      width=800,
-      height=600,
-      title="Moon Game Studio (No Renderer)",
-    )
-    @window.window_set_handle(window)
-    let app_ref : Ref[@app.App[@ecs.World]] = Ref::new(app)
+    guard @window.window_ensure_primary_host(app.world()) is Some(window) else {
+      app.run_startup().update() |> ignore
+      return
+    }
+    let app_ref : Ref[@app.App[@ecs.World]] = Ref::new(app.run_startup())
     runner_state_ref.val.tick = Some(fn() {
-      @window.host_window_poll_events(window)
+      @window.window_poll_host_events(app_ref.val.world())
       app_ref.val = app_ref.val.update()
       if @window.host_window_should_close(window) {
         @window.host_window_request_close(window)
@@ -58,9 +56,7 @@ fn no_renderer_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
 
 ///|
 fn no_renderer_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
-  .set_runner(no_renderer_runner_builder)
-  .add_pre_update_system(@window.window_poll_resize_system)
+  @window.window_plugin(app).set_runner(no_renderer_runner_builder)
 }
 
 ///|

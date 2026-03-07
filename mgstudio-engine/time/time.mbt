@@ -20,7 +20,8 @@
 let default_time_wrap_period : @core.Duration = @core.Duration::from_secs(3600L)
 
 ///|
-pub struct Time {
+pub struct Time[T] {
+  context : T
   wrap_period : @core.Duration
   delta : @core.Duration
   delta_secs : Float
@@ -53,8 +54,8 @@ fn time_duration_rem(
 }
 
 ///|
-fn time_refresh_cached_seconds(time : Time) -> Time {
-  Time::{
+fn[T] time_refresh_cached_seconds(time : Time[T]) -> Time[T] {
+  {
     ..time,
     delta_secs: time.delta.as_secs_f32(),
     delta_secs_f64: time.delta.as_secs_f64(),
@@ -74,37 +75,18 @@ fn time_elapsed_wrapped_for(
 }
 
 ///|
-fn time_time_or_default() -> Time {
+fn time_time_or_default() -> Time[Unit] {
   world_time_resource_or_default(
     current_time_world_abort_missing(),
-    time_resource_key,
-    Time::new,
+    default_time_resource_key(),
+    fn() { Time::default() },
   )
 }
 
 ///|
-fn time_delta_raw(time : Time) -> @core.Duration {
-  time.delta
-}
-
-///|
-fn time_elapsed_raw(time : Time) -> @core.Duration {
-  time.elapsed
-}
-
-///|
-fn time_delta_seconds_raw(time : Time) -> Float {
-  time.delta_secs
-}
-
-///|
-fn time_elapsed_seconds_raw(time : Time) -> Float {
-  time.elapsed_secs
-}
-
-///|
-pub fn Time::new() -> Time {
-  Time::{
+pub fn[T] Time::new_with(context : T) -> Time[T] {
+  {
+    context,
     wrap_period: default_time_wrap_period,
     delta: @core.Duration::zero(),
     delta_secs: 0.0F,
@@ -119,40 +101,48 @@ pub fn Time::new() -> Time {
 }
 
 ///|
-pub fn Time::default() -> Time {
-  Time::new()
+pub impl[T : Default] Default for Time[T] with default() {
+  Time::new_with(T::default())
 }
 
 ///|
-pub fn Time::wrap_period(self : Time) -> @core.Duration {
+pub fn[T] Time::context(self : Time[T]) -> T {
+  self.context
+}
+
+///|
+pub fn[T] Time::wrap_period(self : Time[T]) -> @core.Duration {
   self.wrap_period
 }
 
 ///|
-pub fn Time::wrap_period_seconds(self : Time) -> Float {
+pub fn[T] Time::wrap_period_seconds(self : Time[T]) -> Float {
   self.wrap_period.as_secs_f32()
 }
 
 ///|
-pub fn Time::set_wrap_period(self : Time, wrap_period : @core.Duration) -> Time {
+pub fn[T] Time::set_wrap_period(
+  self : Time[T],
+  wrap_period : @core.Duration,
+) -> Time[T] {
   if wrap_period.is_zero() {
     abort("division by zero")
   }
-  Time::{ ..self, wrap_period, }
+  { ..self, wrap_period, }
 }
 
 ///|
-pub fn Time::set_wrap_period_seconds(
-  self : Time,
+pub fn[T] Time::set_wrap_period_seconds(
+  self : Time[T],
   wrap_period_seconds : Float,
-) -> Time {
+) -> Time[T] {
   self.set_wrap_period(@core.Duration::from_secs_f32(wrap_period_seconds))
 }
 
 ///|
-pub fn Time::advance_by(self : Time, delta : @core.Duration) -> Time {
+pub fn[T] Time::advance_by(self : Time[T], delta : @core.Duration) -> Time[T] {
   let elapsed = self.elapsed.saturating_add(delta)
-  Time::{
+  {
     ..self,
     delta,
     elapsed,
@@ -162,7 +152,7 @@ pub fn Time::advance_by(self : Time, delta : @core.Duration) -> Time {
 }
 
 ///|
-pub fn Time::advance_to(self : Time, elapsed : @core.Duration) -> Time {
+pub fn[T] Time::advance_to(self : Time[T], elapsed : @core.Duration) -> Time[T] {
   if elapsed.as_nanos() < self.elapsed.as_nanos() {
     abort("tried to move time backwards to an earlier elapsed moment")
   }
@@ -170,68 +160,80 @@ pub fn Time::advance_to(self : Time, elapsed : @core.Duration) -> Time {
 }
 
 ///|
-pub fn Time::delta(self : Time) -> @core.Duration {
+pub fn[T] Time::delta(self : Time[T]) -> @core.Duration {
   self.delta
 }
 
 ///|
-pub fn Time::delta_seconds(self : Time) -> Float {
+pub fn[T] Time::delta_seconds(self : Time[T]) -> Float {
   self.delta_secs
 }
 
 ///|
-pub fn Time::delta_secs(self : Time) -> Float {
+pub fn[T] Time::delta_secs(self : Time[T]) -> Float {
   self.delta_secs
 }
 
 ///|
-pub fn Time::delta_secs_f64(self : Time) -> Double {
+pub fn[T] Time::delta_secs_f64(self : Time[T]) -> Double {
   self.delta_secs_f64
 }
 
 ///|
-pub fn Time::elapsed(self : Time) -> @core.Duration {
+pub fn[T] Time::elapsed(self : Time[T]) -> @core.Duration {
   self.elapsed
 }
 
 ///|
-pub fn Time::elapsed_seconds(self : Time) -> Float {
+pub fn[T] Time::elapsed_seconds(self : Time[T]) -> Float {
   self.elapsed_secs
 }
 
 ///|
-pub fn Time::elapsed_secs(self : Time) -> Float {
+pub fn[T] Time::elapsed_secs(self : Time[T]) -> Float {
   self.elapsed_secs
 }
 
 ///|
-pub fn Time::elapsed_secs_f64(self : Time) -> Double {
+pub fn[T] Time::elapsed_secs_f64(self : Time[T]) -> Double {
   self.elapsed_secs_f64
 }
 
 ///|
-pub fn Time::elapsed_wrapped(self : Time) -> @core.Duration {
+pub fn[T] Time::elapsed_wrapped(self : Time[T]) -> @core.Duration {
   self.elapsed_wrapped
 }
 
 ///|
-pub fn Time::elapsed_wrapped_seconds(self : Time) -> Float {
+pub fn[T] Time::elapsed_wrapped_seconds(self : Time[T]) -> Float {
   self.elapsed_secs_wrapped
 }
 
 ///|
-pub fn Time::elapsed_secs_wrapped(self : Time) -> Float {
+pub fn[T] Time::elapsed_secs_wrapped(self : Time[T]) -> Float {
   self.elapsed_secs_wrapped
 }
 
 ///|
-pub fn Time::elapsed_secs_wrapped_f64(self : Time) -> Double {
+pub fn[T] Time::elapsed_secs_wrapped_f64(self : Time[T]) -> Double {
   self.elapsed_secs_wrapped_f64
 }
 
 ///|
-pub fn Time::as_generic(self : Time) -> Time {
-  self
+pub fn[T] Time::as_generic(self : Time[T]) -> Time[Unit] {
+  {
+    context: (),
+    wrap_period: self.wrap_period,
+    delta: self.delta,
+    delta_secs: self.delta_secs,
+    delta_secs_f64: self.delta_secs_f64,
+    elapsed: self.elapsed,
+    elapsed_secs: self.elapsed_secs,
+    elapsed_secs_f64: self.elapsed_secs_f64,
+    elapsed_wrapped: self.elapsed_wrapped,
+    elapsed_secs_wrapped: self.elapsed_secs_wrapped,
+    elapsed_secs_wrapped_f64: self.elapsed_secs_wrapped_f64,
+  }
 }
 
 ///|

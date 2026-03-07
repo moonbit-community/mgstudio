@@ -16,22 +16,6 @@
 pub type HostWindow = Int
 
 ///|
-priv struct WindowState {
-  mut window : HostWindow?
-  mut last_width : Int
-  mut last_height : Int
-  mut has_last_size : Bool
-}
-
-///|
-let window_state : Ref[WindowState] = @ref.new(WindowState::{
-  window: None,
-  last_width: 0,
-  last_height: 0,
-  has_last_size: false,
-})
-
-///|
 pub(all) enum KeyCode {
   KeyA
   KeyB
@@ -105,20 +89,20 @@ pub(all) enum CursorGrabMode {
   GrabNone
   GrabConfined
   GrabLocked
-}
+} derive(Eq, Show)
 
 ///|
 pub(all) enum CursorIcon {
   Default
   EwResize
-}
+} derive(Eq, Show)
 
 ///|
 pub(all) enum WindowMode {
   Windowed
   BorderlessFullscreen
   Fullscreen
-}
+} derive(Eq, Show)
 
 ///|
 pub(all) enum HostEvent {
@@ -133,10 +117,11 @@ pub(all) enum HostEvent {
 }
 
 ///|
-pub struct WindowResized {
-  width : Int
-  height : Int
-} derive(ToJson, FromJson)
+pub(all) struct WindowResized {
+  window : @core.Entity
+  width : Float
+  height : Float
+} derive(Eq)
 
 ///|
 pub let ecs_key_window_resized : @ecs.MessageKey[WindowResized] = @ecs.register_message(
@@ -310,132 +295,130 @@ pub fn host_window_get_position_y(window : HostWindow) -> Int {
 }
 
 ///|
-pub fn window_set_handle(window : HostWindow) -> Unit {
-  window_state.val.window = Some(window)
-  window_state.val.has_last_size = false
+fn window_current_world() -> @ecs.World? {
+  @app.current_world()
 }
 
 ///|
 pub fn window_width() -> Int {
-  if window_state.val.window is Some(window) {
-    host_window_get_width(window)
-  } else {
-    0
-  }
+  guard window_current_world() is Some(world) else { return 0 }
+  window_primary_physical_width(world)
 }
 
 ///|
 pub fn window_height() -> Int {
-  if window_state.val.window is Some(window) {
-    host_window_get_height(window)
-  } else {
-    0
-  }
+  guard window_current_world() is Some(world) else { return 0 }
+  window_primary_physical_height(world)
 }
 
 ///|
 pub fn window_scale_factor() -> Float {
-  if window_state.val.window is Some(window) {
-    host_window_get_scale_factor(window)
-  } else {
-    1.0F
-  }
+  guard window_current_world() is Some(world) else { return 1.0F }
+  window_primary_scale_factor(world)
 }
 
 ///|
 pub fn window_set_title(title~ : String) -> Unit {
-  if window_state.val.window is Some(window) {
-    host_window_set_title(window, title~)
-  }
+  guard window_current_world() is Some(world) else { return }
+  guard window_preferred_entity(world) is Some(entity) else { return }
+  ignore(
+    window_update_component(world, entity, fn(window) {
+      let next : Window = window
+      next.title = title
+      next
+    }),
+  )
 }
 
 ///|
 pub fn window_set_size(width~ : Int, height~ : Int) -> Unit {
-  if window_state.val.window is Some(window) {
-    host_window_set_size(window, width~, height~)
-  }
+  guard window_current_world() is Some(world) else { return }
+  guard window_preferred_entity(world) is Some(entity) else { return }
+  ignore(
+    window_update_component(world, entity, fn(window) {
+      let next : Window = window
+      let resolution = next.resolution
+      resolution.set_physical_resolution(width, height)
+      next.resolution = resolution
+      next
+    }),
+  )
 }
 
 ///|
 pub fn window_set_resizable(resizable~ : Bool) -> Unit {
-  if window_state.val.window is Some(window) {
-    host_window_set_resizable(window, resizable~)
-  }
+  guard window_current_world() is Some(world) else { return }
+  guard window_preferred_entity(world) is Some(entity) else { return }
+  ignore(
+    window_update_component(world, entity, fn(window) {
+      let next : Window = window
+      next.resizable = resizable
+      next
+    }),
+  )
 }
 
 ///|
 pub fn window_set_cursor_visible(visible~ : Bool) -> Unit {
-  if window_state.val.window is Some(window) {
-    host_window_set_cursor_visible(window, visible~)
-  }
+  guard window_current_world() is Some(world) else { return }
+  guard window_preferred_entity(world) is Some(entity) else { return }
+  let cursor_options = window_current_cursor_options(world, entity)
+  cursor_options.visible = visible
+  window_set_cursor_options_component(world, entity, cursor_options)
 }
 
 ///|
 pub fn window_set_cursor_grab_mode(mode~ : CursorGrabMode) -> Unit {
-  if window_state.val.window is Some(window) {
-    host_window_set_cursor_grab_mode(window, mode~)
-  }
+  guard window_current_world() is Some(world) else { return }
+  guard window_preferred_entity(world) is Some(entity) else { return }
+  let cursor_options = window_current_cursor_options(world, entity)
+  cursor_options.grab_mode = mode
+  window_set_cursor_options_component(world, entity, cursor_options)
 }
 
 ///|
 pub fn window_set_cursor_icon(icon~ : CursorIcon) -> Unit {
-  if window_state.val.window is Some(window) {
-    host_window_set_cursor_icon(window, icon~)
-  }
+  guard window_current_world() is Some(world) else { return }
+  guard window_preferred_entity(world) is Some(entity) else { return }
+  window_set_cursor_icon_component(world, entity, icon)
 }
 
 ///|
 pub fn window_set_mode(mode~ : WindowMode) -> Unit {
-  if window_state.val.window is Some(window) {
-    host_window_set_mode(window, mode~)
-  }
+  guard window_current_world() is Some(world) else { return }
+  guard window_preferred_entity(world) is Some(entity) else { return }
+  ignore(
+    window_update_component(world, entity, fn(window) {
+      let next : Window = window
+      next.mode = mode
+      next
+    }),
+  )
 }
 
 ///|
 pub fn window_set_position(x~ : Int, y~ : Int) -> Unit {
-  if window_state.val.window is Some(window) {
-    host_window_set_position(window, x~, y~)
-  }
-}
-
-///|
-pub fn window_poll_resize_system(world : @ecs.World) -> Unit {
-  guard window_state.val.window is Some(window) else { return }
-  let width = host_window_get_width(window)
-  let height = host_window_get_height(window)
-  if !window_state.val.has_last_size {
-    window_state.val.last_width = width
-    window_state.val.last_height = height
-    window_state.val.has_last_size = true
-    return
-  }
-  if width == window_state.val.last_width &&
-    height == window_state.val.last_height {
-    return
-  }
+  guard window_current_world() is Some(world) else { return }
+  guard window_preferred_entity(world) is Some(entity) else { return }
   ignore(
-    world.send_message(ecs_key_window_resized, WindowResized::{ width, height }),
+    window_update_component(world, entity, fn(window) {
+      let next : Window = window
+      next.position = WindowPosition::new(x, y)
+      next
+    }),
   )
-  window_state.val.last_width = width
-  window_state.val.last_height = height
 }
 
 ///|
 pub fn window_position_x() -> Int {
-  if window_state.val.window is Some(window) {
-    host_window_get_position_x(window)
-  } else {
-    0
-  }
+  guard window_current_world() is Some(world) else { return 0 }
+  window_primary_position_x(world)
 }
 
 ///|
 pub fn window_position_y() -> Int {
-  if window_state.val.window is Some(window) {
-    host_window_get_position_y(window)
-  } else {
-    0
-  }
+  guard window_current_world() is Some(world) else { return 0 }
+  window_primary_position_y(world)
 }
 
 ///|
@@ -1312,20 +1295,37 @@ fn runner_tick() -> Unit {
 ///|
 pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
   fn() {
-    let window = host_window_create(
-      width=800,
-      height=600,
-      title="Moon Game Studio",
-    )
-    window_set_handle(window)
+    guard window_ensure_primary_host(app.world()) is Some(window) else {
+      app.run_startup().update() |> ignore
+      return
+    }
     let device = host_gpu_request_device()
     let surface = host_gpu_create_surface(window)
     let width = host_window_get_width(window)
     let height = host_window_get_height(window)
     host_gpu_configure_surface(device~, surface~, width~, height~)
+    let surface_width_ref : Ref[Int] = Ref::new(width)
+    let surface_height_ref : Ref[Int] = Ref::new(height)
     let app_ref : Ref[@app.App[@ecs.World]] = Ref::new(app.run_startup())
     runner_state.val.tick = Some(fn() {
-      host_window_poll_events(window)
+      window_poll_host_events(app_ref.val.world())
+      let current_width = window_primary_physical_width(app_ref.val.world())
+      let current_height = window_primary_physical_height(app_ref.val.world())
+      if current_width > 0 &&
+        current_height > 0 &&
+        (
+          current_width != surface_width_ref.val ||
+          current_height != surface_height_ref.val
+        ) {
+        host_gpu_configure_surface(
+          device~,
+          surface~,
+          width=current_width,
+          height=current_height,
+        )
+        surface_width_ref.val = current_width
+        surface_height_ref.val = current_height
+      }
       if @app.app_rendering_enabled() {
         let frame = host_gpu_begin_frame(surface)
         app_ref.val = app_ref.val.run_once()
@@ -1348,12 +1348,4 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
     let tick : FuncRef[() -> Unit] = fn() { runner_tick() }
     host_window_run_loop(tick)
   }
-}
-
-///|
-pub fn window_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
-  .add_message(ecs_key_window_resized)
-  .set_runner(window_runner_builder)
-  .add_pre_update_system(window_poll_resize_system)
 }

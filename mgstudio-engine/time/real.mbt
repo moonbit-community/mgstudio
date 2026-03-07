@@ -18,119 +18,103 @@
 
 ///|
 pub struct Real {
-  time : Time
   startup : @core.Instant
   first_update : @core.Instant?
   last_update : @core.Instant?
 }
 
 ///|
-pub fn Real::new(startup : @core.Instant) -> Real {
-  Real::{ time: Time::new(), startup, first_update: None, last_update: None }
+pub impl Default for Real with default() {
+  { startup: @core.Instant::now(), first_update: None, last_update: None }
 }
 
 ///|
-pub fn Real::default() -> Real {
-  Real::new(@core.Instant::from_millis(0L))
+pub fn Time::new(startup : @core.Instant) -> Time[Real] {
+  Time::new_with({ ..Real::default(), startup, })
 }
 
 ///|
-pub fn Real::update(self : Real) -> Real {
+pub fn Time::update(self : Time[Real]) -> Time[Real] {
   self.update_with_instant(host_time_now_instant())
 }
 
 ///|
-pub fn Real::update_with_duration(
-  self : Real,
+pub fn Time::update_with_duration(
+  self : Time[Real],
   duration : @core.Duration,
-) -> Real {
-  let last_update = match self.last_update {
+) -> Time[Real] {
+  let context = self.context()
+  let last_update = match context.last_update {
     Some(last_update) => last_update
-    None => self.startup
+    None => context.startup
   }
   self.update_with_instant(last_update.saturating_add(duration))
 }
 
 ///|
-pub fn Real::update_with_instant(self : Real, instant : @core.Instant) -> Real {
-  match self.last_update {
+pub fn Time::update_with_instant(
+  self : Time[Real],
+  instant : @core.Instant,
+) -> Time[Real] {
+  let context = self.context()
+  match context.last_update {
     None =>
-      Real::{ ..self, first_update: Some(instant), last_update: Some(instant) }
-    Some(last_update) =>
-      Real::{
+      {
         ..self,
-        time: self.time.advance_by(
-          instant.saturating_duration_since(last_update),
-        ),
-        last_update: Some(instant),
+        context: {
+          ..context,
+          first_update: Some(instant),
+          last_update: Some(instant),
+        },
       }
+    Some(last_update) =>
+      { ..self, context: { ..context, last_update: Some(instant) } }.advance_by(
+        instant.saturating_duration_since(last_update),
+      )
   }
 }
 
 ///|
-pub fn Real::startup(self : Real) -> @core.Instant {
-  self.startup
+pub fn Time::startup(self : Time[Real]) -> @core.Instant {
+  self.context().startup
 }
 
 ///|
-pub fn Real::startup_seconds(self : Real) -> Float {
-  self.startup.as_secs_f32()
+pub fn Time::startup_seconds(self : Time[Real]) -> Float {
+  self.startup().as_secs_f32()
 }
 
 ///|
-pub fn Real::first_update(self : Real) -> @core.Instant? {
-  self.first_update
+pub fn Time::first_update(self : Time[Real]) -> @core.Instant? {
+  self.context().first_update
 }
 
 ///|
-pub fn Real::first_update_seconds(self : Real) -> Float? {
-  match self.first_update {
+pub fn Time::first_update_seconds(self : Time[Real]) -> Float? {
+  match self.first_update() {
     Some(instant) => Some(instant.as_secs_f32())
     None => None
   }
 }
 
 ///|
-pub fn Real::last_update(self : Real) -> @core.Instant? {
-  self.last_update
+pub fn Time::last_update(self : Time[Real]) -> @core.Instant? {
+  self.context().last_update
 }
 
 ///|
-pub fn Real::last_update_seconds(self : Real) -> Float? {
-  match self.last_update {
+pub fn Time::last_update_seconds(self : Time[Real]) -> Float? {
+  match self.last_update() {
     Some(instant) => Some(instant.as_secs_f32())
     None => None
   }
 }
 
 ///|
-pub fn Real::delta(self : Real) -> @core.Duration {
-  time_delta_raw(self.time)
-}
-
-///|
-pub fn Real::delta_seconds(self : Real) -> Float {
-  time_delta_seconds_raw(self.time)
-}
-
-///|
-pub fn Real::elapsed(self : Real) -> @core.Duration {
-  time_elapsed_raw(self.time)
-}
-
-///|
-pub fn Real::elapsed_seconds(self : Real) -> Float {
-  time_elapsed_seconds_raw(self.time)
-}
-
-///|
-pub fn Real::as_generic(self : Real) -> Time {
-  self.time.as_generic()
-}
-
-///|
-fn world_real_or_default(world : @ecs.World) -> Real {
-  world_time_resource_or_default(world, real_resource_key, Real::default)
+fn world_real_or_default(world : @ecs.World) -> Time[Real] {
+  world_time_resource_or_default(world, real_time_resource_key(), fn() {
+    Time::default()
+  })
 }
 
 ///|

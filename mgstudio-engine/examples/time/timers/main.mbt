@@ -54,8 +54,8 @@ fn setup(_world : @ecs.World) -> Unit {
 }
 
 ///|
-fn print_when_completed(_world : @ecs.World) -> Unit {
-  let delta = @time.time_delta()
+fn print_when_completed(time : @app.Res[@time.Time[Unit]]) -> Unit {
+  let delta = time.get().delta()
   timer_example_state.val.entity_timer = timer_example_state.val.entity_timer.tick(
     delta,
   )
@@ -65,8 +65,8 @@ fn print_when_completed(_world : @ecs.World) -> Unit {
 }
 
 ///|
-fn countdown(_world : @ecs.World) -> Unit {
-  let delta = @time.time_delta()
+fn countdown(time : @app.Res[@time.Time[Unit]]) -> Unit {
+  let delta = time.get().delta()
 
   timer_example_state.val.countdown.main_timer = timer_example_state.val.countdown.main_timer.tick(
     delta,
@@ -95,7 +95,10 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(countdown))
-  .add_systems(@app.Update, @app.system(print_when_completed))
+  .add_systems(@app.Update, @app.system(@app.system_param(countdown)))
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param(print_when_completed)),
+  )
   .run()
 }

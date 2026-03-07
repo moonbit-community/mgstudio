@@ -208,13 +208,24 @@ fn spawn_mode_sprite(
 }
 
 ///|
+fn default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => {
+      let time : @time.Time[Unit] = @time.Time::default()
+      time
+    }
+  }
+}
+
+///|
 fn color_animation_update(world : @ecs.World) -> Unit {
   if color_animation_state.val.sprites.length() == 0 {
     return
   }
   guard color_animation_state.val.texture is Some(texture) else { return }
 
-  let t = normalized_time(@time.time_elapsed_seconds())
+  let t = normalized_time(default_time_or_default(world).elapsed_seconds())
   let x = HORIZONTAL_TRAVEL * (t - 0.5F)
   let next_sprites : Array[AnimatedSprite] = []
   for animated in color_animation_state.val.sprites {

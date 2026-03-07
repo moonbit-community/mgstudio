@@ -14,7 +14,7 @@
 
 ///|
 test "time core: advance and wrap semantics follow bevy shape" {
-  let t0 = Time::new()
+  let t0 : Time[Unit] = Time::default()
   inspect(t0.wrap_period().as_secs_f32(), content="3600")
   inspect(t0.delta().as_millis(), content="0")
   inspect(t0.elapsed().as_millis(), content="0")
@@ -41,7 +41,7 @@ test "time core: advance and wrap semantics follow bevy shape" {
 
 ///|
 test "time core: real update keeps first delta zero and then advances" {
-  let r0 = Real::new(@core.Instant::from_secs_f32(5.0F))
+  let r0 = Time::new(@core.Instant::from_secs_f32(5.0F))
   inspect(r0.delta().as_millis(), content="0")
   inspect(r0.elapsed().as_millis(), content="0")
   inspect(r0.first_update_seconds(), content="None")
@@ -60,29 +60,30 @@ test "time core: real update keeps first delta zero and then advances" {
 
 ///|
 test "time core: virtual pause speed and max delta semantics" {
-  let v0 = Virtual::new().set_max_delta(@core.Duration::from_millis(500L))
-  let v1 = v0.advance_with_raw_delta(@core.Duration::from_secs(1L))
-  inspect(v1.delta().as_millis(), content="500")
-  inspect(v1.elapsed().as_millis(), content="500")
-  inspect(v1.effective_speed(), content="1")
-  inspect(v1.was_paused(), content="false")
+  let v0 : Time[Virtual] = Time::default()
+  let v1 = v0.set_max_delta(@core.Duration::from_millis(500L))
+  let v2 = v1.advance_with_raw_delta(@core.Duration::from_secs(1L))
+  inspect(v2.delta().as_millis(), content="500")
+  inspect(v2.elapsed().as_millis(), content="500")
+  inspect(v2.effective_speed(), content="1")
+  inspect(v2.was_paused(), content="false")
 
-  let v2 = v1.set_relative_speed(2.0F)
-  let v3 = v2.advance_with_raw_delta(@core.Duration::from_millis(250L))
-  inspect(v3.delta().as_millis(), content="500")
-  inspect(v3.elapsed().as_millis(), content="1000")
-  inspect(v3.effective_speed(), content="2")
-
-  let v4 = v3.pause().advance_with_raw_delta(@core.Duration::from_millis(250L))
-  inspect(v4.delta().as_millis(), content="0")
+  let v3 = v2.set_relative_speed(2.0F)
+  let v4 = v3.advance_with_raw_delta(@core.Duration::from_millis(250L))
+  inspect(v4.delta().as_millis(), content="500")
   inspect(v4.elapsed().as_millis(), content="1000")
-  inspect(v4.effective_speed(), content="0")
-  inspect(v4.was_paused(), content="true")
+  inspect(v4.effective_speed(), content="2")
+
+  let v5 = v4.pause().advance_with_raw_delta(@core.Duration::from_millis(250L))
+  inspect(v5.delta().as_millis(), content="0")
+  inspect(v5.elapsed().as_millis(), content="1000")
+  inspect(v5.effective_speed(), content="0")
+  inspect(v5.was_paused(), content="true")
 }
 
 ///|
 test "time core: fixed constructors and overstep helpers" {
-  let f0 = Fixed::from_hz(2.0F)
+  let f0 = Time::from_hz(2.0F)
   inspect(f0.timestep().as_millis(), content="500")
   inspect(f0.overstep().as_millis(), content="0")
 

@@ -18,7 +18,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .insert_resource(@time.Fixed::from_seconds(1.0F / 60.0F))
+  .insert_resource(@time.Time::from_seconds(1.0F / 60.0F))
   .add_systems(@app.Startup, @app.system(rotation_setup))
   .add_systems(@app.FixedUpdate, @app.system(player_movement_system))
   .add_systems(@app.FixedUpdate, @app.system(snap_to_player_system))

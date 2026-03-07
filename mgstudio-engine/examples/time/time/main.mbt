@@ -46,35 +46,47 @@ fn help() -> Unit {
 }
 
 ///|
-fn read_real_time(world : @ecs.World) -> @my_time.Real {
-  let real_time = try! world.get_resource(@my_time.Real::resource())
+fn read_real_time(world : @ecs.World) -> @my_time.Time[@my_time.Real] {
+  let real_time = try! world.get_resource(@my_time.real_time_resource_key())
   match real_time {
     Some(real_time) => real_time
-    None => @my_time.Real::default()
+    None => {
+      let default_time : @my_time.Time[@my_time.Real] = @my_time.Time::default()
+      default_time
+    }
   }
 }
 
 ///|
-fn read_generic_time(world : @ecs.World) -> @my_time.Time {
-  let time = try! world.get_resource(@my_time.Time::resource())
+fn read_generic_time(world : @ecs.World) -> @my_time.Time[Unit] {
+  let time = try! world.get_resource(@my_time.default_time_resource_key())
   match time {
     Some(time) => time
-    None => @my_time.Time::new()
+    None => {
+      let default_time : @my_time.Time[Unit] = @my_time.Time::default()
+      default_time
+    }
   }
+}
+
+///|
+fn default_virtual_time() -> @my_time.Time[@my_time.Virtual] {
+  let virtual_time : @my_time.Time[@my_time.Virtual] = @my_time.Time::default()
+  virtual_time
 }
 
 ///|
 fn update_virtual_time_resource(
   app : @app.App[@ecs.World],
-  update : (@my_time.Virtual) -> @my_time.Virtual,
+  update : (@my_time.Time[@my_time.Virtual]) -> @my_time.Time[@my_time.Virtual],
 ) -> @app.App[@ecs.World] {
   let world = app.world()
   let change_tick = world.increment_change_tick()
   let virtual_ref = try! world
-    .get_resource_ref_mut(@my_time.Virtual::resource(), change_tick)
+    .get_resource_ref_mut(@my_time.virtual_time_resource_key(), change_tick)
     .unwrap()
   let time_ref = try! world
-    .get_resource_ref_mut(@my_time.Time::resource(), change_tick)
+    .get_resource_ref_mut(@my_time.default_time_resource_key(), change_tick)
     .unwrap()
   let next_virtual = update(virtual_ref.val)
   virtual_ref.val = next_virtual
@@ -125,7 +137,9 @@ fn apply_command(
     "f" => {
       println("FAST: setting relative speed to 2x")
       (
-        update_virtual_time_resource(app, fn(virtual_time : @my_time.Virtual) {
+        update_virtual_time_resource(app, fn(
+          virtual_time : @my_time.Time[@my_time.Virtual],
+        ) {
           virtual_time.set_relative_speed(2.0F)
         }),
         false,
@@ -134,7 +148,9 @@ fn apply_command(
     "n" => {
       println("NORMAL: setting relative speed to 1x")
       (
-        update_virtual_time_resource(app, fn(virtual_time : @my_time.Virtual) {
+        update_virtual_time_resource(app, fn(
+          virtual_time : @my_time.Time[@my_time.Virtual],
+        ) {
           virtual_time.set_relative_speed(1.0F)
         }),
         false,
@@ -143,7 +159,9 @@ fn apply_command(
     "s" => {
       println("SLOW: setting relative speed to 0.5x")
       (
-        update_virtual_time_resource(app, fn(virtual_time : @my_time.Virtual) {
+        update_virtual_time_resource(app, fn(
+          virtual_time : @my_time.Time[@my_time.Virtual],
+        ) {
           virtual_time.set_relative_speed(0.5F)
         }),
         false,
@@ -152,7 +170,9 @@ fn apply_command(
     "p" => {
       println("PAUSE: pausing virtual clock")
       (
-        update_virtual_time_resource(app, fn(virtual_time : @my_time.Virtual) {
+        update_virtual_time_resource(app, fn(
+          virtual_time : @my_time.Time[@my_time.Virtual],
+        ) {
           virtual_time.pause()
         }),
         false,
@@ -161,7 +181,9 @@ fn apply_command(
     "u" => {
       println("UNPAUSE: resuming virtual clock")
       (
-        update_virtual_time_resource(app, fn(virtual_time : @my_time.Virtual) {
+        update_virtual_time_resource(app, fn(
+          virtual_time : @my_time.Time[@my_time.Virtual],
+        ) {
           virtual_time.unpause()
         }),
         false,
@@ -191,9 +213,9 @@ fn time_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
     ]
 
     let mut runtime_app = app
-      .insert_resource(@my_time.Fixed::from_seconds(1.0F))
+      .insert_resource(@my_time.Time::from_seconds(1.0F))
       .insert_resource(
-        @my_time.Virtual::new()
+        default_virtual_time()
         .set_max_delta_seconds(5.0F)
         .set_relative_speed(1.0F),
       )

@@ -3,12 +3,43 @@ package "Milky2018/mgstudio/window"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "moonbitlang/core/json",
 }
 
 // Values
+pub fn close_when_requested(@ecs.MessageReader[WindowCloseRequested], @ecs.EntityQuery[@ecs.With[ClosingWindow]]) -> Unit
+
+pub let ecs_key_closing_window : @ecs.ComponentKey[ClosingWindow]
+
+pub let ecs_key_cursor_icon : @ecs.ComponentKey[CursorIcon]
+
+pub let ecs_key_cursor_options : @ecs.ComponentKey[CursorOptions]
+
+pub let ecs_key_primary_window : @ecs.ComponentKey[PrimaryWindow]
+
+pub let ecs_key_window : @ecs.ComponentKey[Window]
+
+pub let ecs_key_window_backend_scale_factor_changed : @ecs.MessageKey[WindowBackendScaleFactorChanged]
+
+pub let ecs_key_window_close_requested : @ecs.MessageKey[WindowCloseRequested]
+
+pub let ecs_key_window_closed : @ecs.MessageKey[WindowClosed]
+
+pub let ecs_key_window_closing : @ecs.MessageKey[WindowClosing]
+
+pub let ecs_key_window_created : @ecs.MessageKey[WindowCreated]
+
+pub let ecs_key_window_focused : @ecs.MessageKey[WindowFocused]
+
+pub let ecs_key_window_moved : @ecs.MessageKey[WindowMoved]
+
 pub let ecs_key_window_resized : @ecs.MessageKey[WindowResized]
+
+pub fn exit_on_all_closed(@ecs.MessageWriter[@app.AppExit], @ecs.EntityQuery[@ecs.With[Window]]) -> Unit
+
+pub fn exit_on_primary_closed(@ecs.MessageWriter[@app.AppExit], @ecs.EntityQuery[(@ecs.With[Window], @ecs.With[PrimaryWindow])]) -> Unit
 
 pub fn host_debug_string(value~ : String) -> Unit
 
@@ -106,11 +137,15 @@ pub fn host_window_set_title(Int, title~ : String) -> Unit
 
 pub fn host_window_should_close(Int) -> Bool
 
+pub fn window_ensure_primary_host(@ecs.World) -> Int?
+
 pub fn window_height() -> Int
 
 pub fn window_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn window_poll_resize_system(@ecs.World) -> Unit
+pub fn window_plugin_with(@app.App[@ecs.World], WindowPlugin) -> @app.App[@ecs.World]
+
+pub fn window_poll_host_events(@ecs.World) -> Unit
 
 pub fn window_position_x() -> Int
 
@@ -125,8 +160,6 @@ pub fn window_set_cursor_grab_mode(mode~ : CursorGrabMode) -> Unit
 pub fn window_set_cursor_icon(icon~ : CursorIcon) -> Unit
 
 pub fn window_set_cursor_visible(visible~ : Bool) -> Unit
-
-pub fn window_set_handle(Int) -> Unit
 
 pub fn window_set_mode(mode~ : WindowMode) -> Unit
 
@@ -143,16 +176,45 @@ pub fn window_width() -> Int
 // Errors
 
 // Types and methods
+pub(all) struct ClosingWindow {
+}
+pub impl @ecs.Component for ClosingWindow
+pub impl Eq for ClosingWindow
+pub impl Show for ClosingWindow
+
 pub(all) enum CursorGrabMode {
   GrabNone
   GrabConfined
   GrabLocked
 }
+pub impl Eq for CursorGrabMode
+pub impl Show for CursorGrabMode
 
 pub(all) enum CursorIcon {
   Default
   EwResize
 }
+pub impl @ecs.Component for CursorIcon
+pub impl Eq for CursorIcon
+pub impl Show for CursorIcon
+
+pub(all) struct CursorOptions {
+  mut visible : Bool
+  mut grab_mode : CursorGrabMode
+  hit_test : Bool
+}
+pub fn CursorOptions::default() -> Self
+pub impl @ecs.Component for CursorOptions
+pub impl Eq for CursorOptions
+pub impl Show for CursorOptions
+
+pub(all) enum ExitCondition {
+  OnPrimaryClosed
+  OnAllClosed
+  DontExit
+}
+pub impl Eq for ExitCondition
+pub impl Show for ExitCondition
 
 pub(all) enum HostEvent {
   KeyDown(KeyCode)
@@ -236,19 +298,130 @@ pub(all) enum MouseButton {
 pub impl ToJson for MouseButton
 pub impl @json.FromJson for MouseButton
 
+pub(all) struct PrimaryWindow {
+}
+pub impl @ecs.Component for PrimaryWindow
+pub impl Eq for PrimaryWindow
+pub impl Show for PrimaryWindow
+
+pub(all) struct Window {
+  mut title : String
+  mut resolution : WindowResolution
+  mut position : WindowPosition
+  mut mode : WindowMode
+  mut resizable : Bool
+  focused : Bool
+}
+pub fn Window::default() -> Self
+pub fn Window::height(Self) -> Float
+pub fn Window::physical_height(Self) -> Int
+pub fn Window::physical_width(Self) -> Int
+pub fn Window::scale_factor(Self) -> Float
+pub fn Window::width(Self) -> Float
+pub impl @ecs.Component for Window
+pub impl Eq for Window
+pub impl Show for Window
+
+pub(all) struct WindowBackendScaleFactorChanged {
+  window : @core.Entity
+  scale_factor : Float
+}
+pub impl @ecs.Message for WindowBackendScaleFactorChanged
+pub impl Eq for WindowBackendScaleFactorChanged
+
+pub(all) struct WindowCloseRequested {
+  window : @core.Entity
+}
+pub impl @ecs.Message for WindowCloseRequested
+pub impl Eq for WindowCloseRequested
+
+pub(all) struct WindowClosed {
+  window : @core.Entity
+}
+pub impl @ecs.Message for WindowClosed
+pub impl Eq for WindowClosed
+
+pub(all) struct WindowClosing {
+  window : @core.Entity
+}
+pub impl @ecs.Message for WindowClosing
+pub impl Eq for WindowClosing
+
+pub(all) struct WindowCreated {
+  window : @core.Entity
+}
+pub impl @ecs.Message for WindowCreated
+pub impl Eq for WindowCreated
+
+pub(all) struct WindowFocused {
+  window : @core.Entity
+  focused : Bool
+}
+pub impl @ecs.Message for WindowFocused
+pub impl Eq for WindowFocused
+
 pub(all) enum WindowMode {
   Windowed
   BorderlessFullscreen
   Fullscreen
 }
+pub impl Eq for WindowMode
+pub impl Show for WindowMode
 
-pub struct WindowResized {
-  width : Int
-  height : Int
+pub(all) struct WindowMoved {
+  window : @core.Entity
+  x : Int
+  y : Int
+}
+pub impl @ecs.Message for WindowMoved
+pub impl Eq for WindowMoved
+
+pub(all) struct WindowPlugin {
+  primary_window : Window?
+  primary_cursor_options : CursorOptions?
+  exit_condition : ExitCondition
+  close_when_requested : Bool
+}
+pub fn WindowPlugin::default() -> Self
+
+pub(all) enum WindowPosition {
+  Automatic
+  At(Int, Int)
+}
+pub fn WindowPosition::new(Int, Int) -> Self
+pub impl Eq for WindowPosition
+pub impl Show for WindowPosition
+
+pub(all) struct WindowResized {
+  window : @core.Entity
+  width : Float
+  height : Float
 }
 pub impl @ecs.Message for WindowResized
-pub impl ToJson for WindowResized
-pub impl @json.FromJson for WindowResized
+pub impl Eq for WindowResized
+
+pub(all) struct WindowResolution {
+  mut physical_width : Int
+  mut physical_height : Int
+  mut scale_factor_override : Float?
+  mut scale_factor : Float
+}
+pub fn WindowResolution::base_scale_factor(Self) -> Float
+pub fn WindowResolution::default() -> Self
+pub fn WindowResolution::height(Self) -> Float
+pub fn WindowResolution::new(Int, Int) -> Self
+pub fn WindowResolution::physical_height(Self) -> Int
+pub fn WindowResolution::physical_width(Self) -> Int
+pub fn WindowResolution::scale_factor(Self) -> Float
+pub fn WindowResolution::scale_factor_override(Self) -> Float?
+pub fn WindowResolution::set(Self, Float, Float) -> Unit
+pub fn WindowResolution::set_physical_resolution(Self, Int, Int) -> Unit
+pub fn WindowResolution::set_scale_factor(Self, Float) -> Unit
+pub fn WindowResolution::set_scale_factor_override(Self, Float?) -> Unit
+pub fn WindowResolution::width(Self) -> Float
+pub fn WindowResolution::with_scale_factor_override(Self, Float) -> Self
+pub impl Eq for WindowResolution
+pub impl Show for WindowResolution
 
 // Type aliases
 pub type HostGpuDevice = Int

@@ -23,7 +23,6 @@ let default_virtual_max_delta : @core.Duration = @core.Duration::from_millis(
 
 ///|
 pub struct Virtual {
-  time : Time
   max_delta : @core.Duration
   paused : Bool
   relative_speed : Double
@@ -31,9 +30,8 @@ pub struct Virtual {
 }
 
 ///|
-pub fn Virtual::new() -> Virtual {
-  Virtual::{
-    time: Time::new(),
+pub impl Default for Virtual with default() {
+  {
     max_delta: default_virtual_max_delta,
     paused: false,
     relative_speed: 1.0,
@@ -42,165 +40,154 @@ pub fn Virtual::new() -> Virtual {
 }
 
 ///|
-pub fn Virtual::default() -> Virtual {
-  Virtual::new()
+pub fn Time::from_max_delta(max_delta : @core.Duration) -> Time[Virtual] {
+  let virtual_time : Time[Virtual] = Time::default()
+  virtual_time.set_max_delta(max_delta)
 }
 
 ///|
-pub fn Virtual::from_max_delta(max_delta : @core.Duration) -> Virtual {
-  Virtual::new().set_max_delta(max_delta)
+pub fn Time::from_max_delta_seconds(max_delta_seconds : Float) -> Time[Virtual] {
+  Time::from_max_delta(@core.Duration::from_secs_f32(max_delta_seconds))
 }
 
 ///|
-pub fn Virtual::from_max_delta_seconds(max_delta_seconds : Float) -> Virtual {
-  Virtual::from_max_delta(@core.Duration::from_secs_f32(max_delta_seconds))
+pub fn Time::relative_speed(self : Time[Virtual]) -> Float {
+  Float::from_double(self.context().relative_speed)
 }
 
 ///|
-pub fn Virtual::delta(self : Virtual) -> @core.Duration {
-  time_delta_raw(self.time)
+pub fn Time::relative_speed_f64(self : Time[Virtual]) -> Double {
+  self.context().relative_speed
 }
 
 ///|
-pub fn Virtual::delta_seconds(self : Virtual) -> Float {
-  time_delta_seconds_raw(self.time)
+pub fn Time::effective_speed(self : Time[Virtual]) -> Float {
+  Float::from_double(self.context().effective_speed)
 }
 
 ///|
-pub fn Virtual::elapsed(self : Virtual) -> @core.Duration {
-  time_elapsed_raw(self.time)
+pub fn Time::effective_speed_f64(self : Time[Virtual]) -> Double {
+  self.context().effective_speed
 }
 
 ///|
-pub fn Virtual::elapsed_seconds(self : Virtual) -> Float {
-  time_elapsed_seconds_raw(self.time)
+pub fn Time::max_delta(self : Time[Virtual]) -> @core.Duration {
+  self.context().max_delta
 }
 
 ///|
-pub fn Virtual::relative_speed(self : Virtual) -> Float {
-  Float::from_double(self.relative_speed)
+pub fn Time::max_delta_seconds(self : Time[Virtual]) -> Float {
+  self.max_delta().as_secs_f32()
 }
 
 ///|
-pub fn Virtual::relative_speed_f64(self : Virtual) -> Double {
-  self.relative_speed
+pub fn Time::is_paused(self : Time[Virtual]) -> Bool {
+  self.context().paused
 }
 
 ///|
-pub fn Virtual::effective_speed(self : Virtual) -> Float {
-  Float::from_double(self.effective_speed)
+pub fn Time::was_paused(self : Time[Virtual]) -> Bool {
+  self.context().effective_speed == 0.0
 }
 
 ///|
-pub fn Virtual::effective_speed_f64(self : Virtual) -> Double {
-  self.effective_speed
-}
-
-///|
-pub fn Virtual::max_delta(self : Virtual) -> @core.Duration {
-  self.max_delta
-}
-
-///|
-pub fn Virtual::max_delta_seconds(self : Virtual) -> Float {
-  self.max_delta.as_secs_f32()
-}
-
-///|
-pub fn Virtual::is_paused(self : Virtual) -> Bool {
-  self.paused
-}
-
-///|
-pub fn Virtual::was_paused(self : Virtual) -> Bool {
-  self.effective_speed == 0.0
-}
-
-///|
-pub fn Virtual::set_relative_speed(self : Virtual, speed : Float) -> Virtual {
+pub fn Time::set_relative_speed(
+  self : Time[Virtual],
+  speed : Float,
+) -> Time[Virtual] {
   self.set_relative_speed_f64(speed.to_double())
 }
 
 ///|
-pub fn Virtual::set_relative_speed_f64(
-  self : Virtual,
+pub fn Time::set_relative_speed_f64(
+  self : Time[Virtual],
   speed : Double,
-) -> Virtual {
+) -> Time[Virtual] {
   if speed.is_nan() || speed.is_inf() {
     abort("tried to go infinitely fast")
   }
   if speed < 0.0 {
     abort("tried to go back in time")
   }
-  Virtual::{ ..self, relative_speed: speed }
+  let context = self.context()
+  { ..self, context: { ..context, relative_speed: speed } }
 }
 
 ///|
-pub fn Virtual::set_max_delta(
-  self : Virtual,
+pub fn Time::set_max_delta(
+  self : Time[Virtual],
   max_delta : @core.Duration,
-) -> Virtual {
+) -> Time[Virtual] {
   if max_delta.is_zero() {
     abort("tried to set max delta to zero")
   }
-  Virtual::{ ..self, max_delta, }
+  let context = self.context()
+  { ..self, context: { ..context, max_delta, } }
 }
 
 ///|
-pub fn Virtual::set_max_delta_seconds(
-  self : Virtual,
+pub fn Time::set_max_delta_seconds(
+  self : Time[Virtual],
   max_delta_seconds : Float,
-) -> Virtual {
+) -> Time[Virtual] {
   self.set_max_delta(@core.Duration::from_secs_f32(max_delta_seconds))
 }
 
 ///|
-pub fn Virtual::pause(self : Virtual) -> Virtual {
-  Virtual::{ ..self, paused: true }
+pub fn Time::pause(self : Time[Virtual]) -> Time[Virtual] {
+  let context = self.context()
+  { ..self, context: { ..context, paused: true } }
 }
 
 ///|
-pub fn Virtual::unpause(self : Virtual) -> Virtual {
-  Virtual::{ ..self, paused: false }
+pub fn Time::unpause(self : Time[Virtual]) -> Time[Virtual] {
+  let context = self.context()
+  { ..self, context: { ..context, paused: false } }
 }
 
 ///|
-pub fn Virtual::toggle(self : Virtual) -> Virtual {
-  Virtual::{ ..self, paused: !self.paused }
+pub fn Time::toggle(self : Time[Virtual]) -> Time[Virtual] {
+  let context = self.context()
+  { ..self, context: { ..context, paused: !context.paused } }
 }
 
 ///|
-pub fn Virtual::advance_with_raw_delta(
-  self : Virtual,
+pub fn Time::advance_with_raw_delta(
+  self : Time[Virtual],
   raw_delta : @core.Duration,
-) -> Virtual {
-  let clamped_raw_delta = if raw_delta.as_nanos() > self.max_delta.as_nanos() {
-    self.max_delta
+) -> Time[Virtual] {
+  let context = self.context()
+  let clamped_raw_delta = if raw_delta.as_nanos() > context.max_delta.as_nanos() {
+    context.max_delta
   } else {
     raw_delta
   }
-  let effective_speed = if self.paused { 0.0 } else { self.relative_speed }
+  let effective_speed = if context.paused {
+    0.0
+  } else {
+    context.relative_speed
+  }
   let delta = if effective_speed == 1.0 {
     clamped_raw_delta
   } else {
     clamped_raw_delta.mul_f64(effective_speed)
   }
-  Virtual::{ ..self, time: self.time.advance_by(delta), effective_speed }
+  { ..self.advance_by(delta), context: { ..context, effective_speed, } }
 }
 
 ///|
-pub fn Virtual::as_generic(self : Virtual) -> Time {
-  self.time.as_generic()
-}
-
-///|
-pub fn update_virtual_time(virtual_time : Virtual, real_time : Real) -> Virtual {
+pub fn update_virtual_time(
+  virtual_time : Time[Virtual],
+  real_time : Time[Real],
+) -> Time[Virtual] {
   virtual_time.advance_with_raw_delta(real_time.delta())
 }
 
 ///|
-fn world_virtual_or_default(world : @ecs.World) -> Virtual {
-  world_time_resource_or_default(world, virtual_resource_key, Virtual::default)
+fn world_virtual_or_default(world : @ecs.World) -> Time[Virtual] {
+  world_time_resource_or_default(world, virtual_time_resource_key(), fn() {
+    Time::default()
+  })
 }
 
 ///|

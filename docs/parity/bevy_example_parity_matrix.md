@@ -53,8 +53,8 @@ Notes:
 | `transforms` | 5 | 0 | 5 | 0 |
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
-| `window` | 12 | 1 | 11 | 0 |
-| **Total** | **402** | **104** | **295** | **3** |
+| `window` | 12 | 2 | 10 | 0 |
+| **Total** | **402** | **105** | **294** | **3** |
 
 ## Example Inventory
 
@@ -460,5 +460,5 @@ Notes:
 | `bevy/examples/window/screenshot.rs` | `window` | `mgstudio-engine/examples/window/screenshot` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/transparent_window.rs` | `window` | `mgstudio-engine/examples/window/transparent_window` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/window_drag_move.rs` | `window` | `mgstudio-engine/examples/window/window_drag_move` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/window/window_resizing.rs` | `window` | `mgstudio-engine/examples/window/window_resizing` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/window/window_resizing.rs` | `window` | `mgstudio-engine/examples/window/window_resizing` | `Exact` | `team-input_window` |  |
 | `bevy/examples/window/window_settings.rs` | `window` | `mgstudio-engine/examples/window/window_settings` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |

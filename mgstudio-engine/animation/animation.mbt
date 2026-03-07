@@ -2538,8 +2538,19 @@ pub fn thread_animation_graphs(_world : @ecs.World) -> Unit {
 }
 
 ///|
+fn animation_default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => {
+      let time : @time.Time[Unit] = @time.Time::default()
+      time
+    }
+  }
+}
+
+///|
 pub fn advance_transitions(world : @ecs.World) -> Unit {
-  let delta_seconds = @time.time_delta_seconds()
+  let delta_seconds = animation_default_time_or_default(world).delta_seconds()
 
   let updates : Array[(@core.Entity, AnimationTransitions, AnimationPlayer)] = []
   try! world
@@ -2562,7 +2573,7 @@ pub fn advance_transitions(world : @ecs.World) -> Unit {
 
 ///|
 pub fn advance_animations(world : @ecs.World) -> Unit {
-  let delta_seconds = @time.time_delta_seconds()
+  let delta_seconds = animation_default_time_or_default(world).delta_seconds()
 
   let updates : Array[(@core.Entity, AnimationPlayer)] = []
   try! world

@@ -60,7 +60,7 @@ fn print_message_plugin(
 ///|
 fn print_message_system(
   state : @app.ResMut[PrintMessageState],
-  time : @app.Res[@time.Time],
+  time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let state_ref = state.get_ref()
   let timer = state_ref.val.timer.tick(time.get().delta())

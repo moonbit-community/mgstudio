@@ -49,23 +49,8 @@ fn current_time_world_abort_missing() -> @ecs.World {
 }
 
 ///|
-let time_resource_key : @ecs.ResourceKey[Time] = @ecs.register_resource(
-  debug_name="bevy_time::Time",
-)
-
-///|
-let real_resource_key : @ecs.ResourceKey[Real] = @ecs.register_resource(
-  debug_name="bevy_time::Real",
-)
-
-///|
-let virtual_resource_key : @ecs.ResourceKey[Virtual] = @ecs.register_resource(
-  debug_name="bevy_time::Virtual",
-)
-
-///|
-let fixed_resource_key : @ecs.ResourceKey[Fixed] = @ecs.register_resource(
-  debug_name="bevy_time::Fixed",
+let time_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
+  @hashmap.HashMap::new(),
 )
 
 ///|
@@ -74,23 +59,58 @@ let time_update_strategy_resource_key : @ecs.ResourceKey[TimeUpdateStrategy] = @
 )
 
 ///|
-pub impl @app.Resource for Time with resource() {
-  time_resource_key
+fn[T : Default] registered_time_resource_key() -> @ecs.ResourceKey[Time[T]] {
+  let probe : Time[T] = Time::default()
+  let type_name = @any.of(probe).type_name()
+  match time_resource_registry.val.get(type_name) {
+    Some(existing_key) =>
+      match existing_key.try_to() {
+        Some(key) => key
+        None =>
+          abort(
+            "time resource registry contained a mismatched key for " + type_name,
+          )
+      }
+    None => {
+      let key : @ecs.ResourceKey[Time[T]] = @ecs.register_resource(
+        debug_name="bevy_time::" + type_name,
+      )
+      time_resource_registry.val.set(type_name, @any.of(key))
+      key
+    }
+  }
 }
 
 ///|
-pub impl @app.Resource for Real with resource() {
-  real_resource_key
+pub fn default_time_resource_key() -> @ecs.ResourceKey[Time[Unit]] {
+  registered_time_resource_key()
 }
 
 ///|
-pub impl @app.Resource for Virtual with resource() {
-  virtual_resource_key
+pub fn real_time_resource_key() -> @ecs.ResourceKey[Time[Real]] {
+  registered_time_resource_key()
 }
 
 ///|
-pub impl @app.Resource for Fixed with resource() {
-  fixed_resource_key
+pub fn virtual_time_resource_key() -> @ecs.ResourceKey[Time[Virtual]] {
+  registered_time_resource_key()
+}
+
+///|
+pub fn fixed_time_resource_key() -> @ecs.ResourceKey[Time[Fixed]] {
+  registered_time_resource_key()
+}
+
+///|
+pub fn[T : Default] time_resource_key_of(
+  _context : T,
+) -> @ecs.ResourceKey[Time[T]] {
+  registered_time_resource_key()
+}
+
+///|
+pub impl[T : Default] @app.Resource for Time[T] with resource() {
+  registered_time_resource_key()
 }
 
 ///|
@@ -166,9 +186,14 @@ fn[T] sync_world_time_resource(
 fn time_sync_generic_time(
   world : @ecs.World,
   change_tick : @core.Tick,
-  value : Time,
+  value : Time[Unit],
 ) -> Unit {
-  sync_world_time_resource(world, time_resource_key, value, change_tick)
+  sync_world_time_resource(
+    world,
+    default_time_resource_key(),
+    value,
+    change_tick,
+  )
 }
 
 ///|
@@ -176,8 +201,11 @@ fn time_restore_virtual_as_generic(world : @ecs.World) -> Unit {
   let change_tick = world.increment_change_tick()
   let virtual_time = world_time_resource_or_default(
     world,
-    virtual_resource_key,
-    Virtual::new,
+    virtual_time_resource_key(),
+    fn() {
+      let time : Time[Virtual] = Time::default()
+      time
+    },
   )
   time_sync_generic_time(world, change_tick, virtual_time.as_generic())
 }
@@ -185,27 +213,34 @@ fn time_restore_virtual_as_generic(world : @ecs.World) -> Unit {
 ///|
 fn ensure_time_resources(world : @ecs.World) -> Unit {
   let tick = time_resource_change_tick(world)
-  if world_time_resource(world, time_resource_key) is None {
-    world.insert_resource_with_change_tick(time_resource_key, Time::new(), tick)
-  }
-  if world_time_resource(world, real_resource_key) is None {
+  if world_time_resource(world, default_time_resource_key()) is None {
+    let time : Time[Unit] = Time::default()
     world.insert_resource_with_change_tick(
-      real_resource_key,
-      Real::new(host_time_now_instant()),
+      default_time_resource_key(),
+      time,
       tick,
     )
   }
-  if world_time_resource(world, virtual_resource_key) is None {
+  if world_time_resource(world, real_time_resource_key()) is None {
     world.insert_resource_with_change_tick(
-      virtual_resource_key,
-      Virtual::new(),
+      real_time_resource_key(),
+      Time::new(host_time_now_instant()),
       tick,
     )
   }
-  if world_time_resource(world, fixed_resource_key) is None {
+  if world_time_resource(world, virtual_time_resource_key()) is None {
+    let time : Time[Virtual] = Time::default()
     world.insert_resource_with_change_tick(
-      fixed_resource_key,
-      Fixed::new(),
+      virtual_time_resource_key(),
+      time,
+      tick,
+    )
+  }
+  if world_time_resource(world, fixed_time_resource_key()) is None {
+    let time : Time[Fixed] = Time::default()
+    world.insert_resource_with_change_tick(
+      fixed_time_resource_key(),
+      time,
       tick,
     )
   }
@@ -220,10 +255,10 @@ fn ensure_time_resources(world : @ecs.World) -> Unit {
 
 ///|
 fn time_update_real_with_strategy(
-  real_time : Real,
+  real_time : Time[Real],
   strategy : TimeUpdateStrategy,
-  fixed_time : Fixed,
-) -> Real {
+  fixed_time : Time[Fixed],
+) -> Time[Real] {
   match strategy {
     Automatic => real_time.update()
     ManualInstant(now_instant) => real_time.update_with_instant(now_instant)
@@ -246,13 +281,13 @@ fn time_update(world : @ecs.World) -> Unit {
   )
   let fixed_time = world_fixed_or_default(world)
   let real_ref = try! world
-    .get_resource_ref_mut(real_resource_key, tick)
+    .get_resource_ref_mut(real_time_resource_key(), tick)
     .unwrap()
   let virtual_ref = try! world
-    .get_resource_ref_mut(virtual_resource_key, tick)
+    .get_resource_ref_mut(virtual_time_resource_key(), tick)
     .unwrap()
   let time_ref = try! world
-    .get_resource_ref_mut(time_resource_key, tick)
+    .get_resource_ref_mut(default_time_resource_key(), tick)
     .unwrap()
   let next_real = time_update_real_with_strategy(
     real_ref.val,
@@ -274,10 +309,19 @@ fn time_update_resource_system(world : @ecs.World) -> Unit {
 pub fn time_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let startup_instant = host_time_now_instant()
   app
-  .init_resource(fn() { Time::new() })
-  .init_resource(fn() { Real::new(startup_instant) })
-  .init_resource(fn() { Virtual::new() })
-  .init_resource(fn() { Fixed::new() })
+  .init_resource(fn() {
+    let time : Time[Unit] = Time::default()
+    time
+  })
+  .init_resource(fn() { Time::new(startup_instant) })
+  .init_resource(fn() {
+    let time : Time[Virtual] = Time::default()
+    time
+  })
+  .init_resource(fn() {
+    let time : Time[Fixed] = Time::default()
+    time
+  })
   .init_resource(fn() { TimeUpdateStrategy::default() })
   .add_systems(@app.First, @app.system(time_update_resource_system))
   .add_systems(

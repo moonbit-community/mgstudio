@@ -27,7 +27,7 @@ fn main {
   .add_systems(
     @app.Update,
     @app.system(@app.system_param(toggle)).run_if(
-      @time.on_timer(TOGGLE_INTERVAL_SECONDS),
+      @time.on_timer(@core.Duration::from_secs_f32(TOGGLE_INTERVAL_SECONDS)),
     ),
   )
   .run()

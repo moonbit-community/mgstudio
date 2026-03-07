@@ -50,43 +50,52 @@ let virtual_time_state : Ref[VirtualTimeState] = Ref::new({
 })
 
 ///|
-fn read_real_time(world : @ecs.World) -> @time.Real {
-  let real_time = try! world.get_resource(@time.Real::resource())
+fn read_real_time(world : @ecs.World) -> @time.Time[@time.Real] {
+  let real_time = try! world.get_resource(@time.real_time_resource_key())
   match real_time {
     Some(real_time) => real_time
-    None => @time.Real::default()
+    None => {
+      let time : @time.Time[@time.Real] = @time.Time::default()
+      time
+    }
   }
 }
 
 ///|
-fn read_virtual_time(world : @ecs.World) -> @time.Virtual {
-  let virtual_time = try! world.get_resource(@time.Virtual::resource())
+fn read_virtual_time(world : @ecs.World) -> @time.Time[@time.Virtual] {
+  let virtual_time = try! world.get_resource(@time.virtual_time_resource_key())
   match virtual_time {
     Some(virtual_time) => virtual_time
-    None => @time.Virtual::new()
+    None => {
+      let time : @time.Time[@time.Virtual] = @time.Time::default()
+      time
+    }
   }
 }
 
 ///|
-fn read_generic_time(world : @ecs.World) -> @time.Time {
-  let time = try! world.get_resource(@time.Time::resource())
+fn read_generic_time(world : @ecs.World) -> @time.Time[Unit] {
+  let time = try! world.get_resource(@time.default_time_resource_key())
   match time {
     Some(time) => time
-    None => @time.Time::new()
+    None => {
+      let default_time : @time.Time[Unit] = @time.Time::default()
+      default_time
+    }
   }
 }
 
 ///|
 fn update_virtual_time_resource(
   world : @ecs.World,
-  update : (@time.Virtual) -> @time.Virtual,
+  update : (@time.Time[@time.Virtual]) -> @time.Time[@time.Virtual],
 ) -> Unit {
   let change_tick = world.increment_change_tick()
   let virtual_ref = try! world
-    .get_resource_ref_mut(@time.Virtual::resource(), change_tick)
+    .get_resource_ref_mut(@time.virtual_time_resource_key(), change_tick)
     .unwrap()
   let time_ref = try! world
-    .get_resource_ref_mut(@time.Time::resource(), change_tick)
+    .get_resource_ref_mut(@time.default_time_resource_key(), change_tick)
     .unwrap()
   let next_virtual = update(virtual_ref.val)
   virtual_ref.val = next_virtual
@@ -130,7 +139,9 @@ fn setup(world : @ecs.World) -> Unit {
     info_timer: @time.Timer::from_seconds(0.25F, @time.TimerMode::Repeating),
   }
 
-  update_virtual_time_resource(world, fn(virtual_time : @time.Virtual) {
+  update_virtual_time_resource(world, fn(
+    virtual_time : @time.Time[@time.Virtual],
+  ) {
     virtual_time.set_relative_speed(2.0F).unpause()
   })
 
@@ -233,21 +244,27 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn handle_time_controls(world : @ecs.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Space) {
-    update_virtual_time_resource(world, fn(virtual_time : @time.Virtual) {
+    update_virtual_time_resource(world, fn(
+      virtual_time : @time.Time[@time.Virtual],
+    ) {
       virtual_time.toggle()
     })
   }
   if @input.key_just_pressed(@window.KeyCode::ArrowUp) {
     let virtual_time = read_virtual_time(world)
     let next_speed = clampf(virtual_time.relative_speed() + 1.0F, 0.25F, 5.0F)
-    update_virtual_time_resource(world, fn(virtual_time : @time.Virtual) {
+    update_virtual_time_resource(world, fn(
+      virtual_time : @time.Time[@time.Virtual],
+    ) {
       virtual_time.set_relative_speed(next_speed)
     })
   }
   if @input.key_just_pressed(@window.KeyCode::ArrowDown) {
     let virtual_time = read_virtual_time(world)
     let next_speed = clampf(virtual_time.relative_speed() - 1.0F, 0.25F, 5.0F)
-    update_virtual_time_resource(world, fn(virtual_time : @time.Virtual) {
+    update_virtual_time_resource(world, fn(
+      virtual_time : @time.Time[@time.Virtual],
+    ) {
       virtual_time.set_relative_speed(next_speed)
     })
   }

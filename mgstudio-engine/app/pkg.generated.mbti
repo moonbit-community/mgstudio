@@ -95,6 +95,12 @@ pub fn[T] resource_exists(@ecs.ResourceKey[T]) -> (@ecs.World) -> Bool
 
 pub fn[T] resource_exists_and_changed(@ecs.ResourceKey[T]) -> (@ecs.World) -> Bool
 
+pub fn[W] run_condition_and((W) -> Bool, (W) -> Bool) -> (W) -> Bool
+
+pub fn[W] run_condition_not((W) -> Bool) -> (W) -> Bool
+
+pub fn[W] run_condition_or((W) -> Bool, (W) -> Bool) -> (W) -> Bool
+
 pub fn run_current_fixed_main_schedule(@ecs.World) -> Unit
 
 pub fn run_current_fixed_update_schedule(@ecs.World) -> Unit

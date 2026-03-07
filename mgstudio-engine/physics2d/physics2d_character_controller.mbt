@@ -200,9 +200,12 @@ pub fn physics2d_character_controller_system(world : @ecs.World) -> Unit {
 
   // Ensure queries see the latest collider positions (e.g. standalone colliders synced from Transform).
   ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
-  let dt = match (try! world.get_resource(@time.Fixed::resource())) {
+  let dt = match (try! world.get_resource(@time.fixed_time_resource_key())) {
     Some(fixed_time) => fixed_time.timestep_seconds()
-    None => @time.Fixed::new().timestep_seconds()
+    None => {
+      let fixed_time : @time.Time[@time.Fixed] = @time.Time::default()
+      fixed_time.timestep_seconds()
+    }
   }
   let transform_store = @math.get_transform_store(ecs_world)
   let body_handle_store = get_rapier_body_handle2d_store(ecs_world)

@@ -225,13 +225,24 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => {
+      let time : @time.Time[Unit] = @time.Time::default()
+      time
+    }
+  }
+}
+
+///|
 fn display_curves(world : @ecs.World) -> Unit {
   if easing_state.val.plots.length() == 0 {
     return
   }
 
   let cycle_seconds = DURATION_SECONDS + TIME_MARGIN_SECONDS * 2.0F
-  let elapsed = @time.time_elapsed_seconds()
+  let elapsed = default_time_or_default(world).elapsed_seconds()
   let loops = (elapsed / cycle_seconds).to_int()
   let loop_offset = Float::from_double(loops.to_double()) * cycle_seconds
   let cycle_elapsed = elapsed - loop_offset

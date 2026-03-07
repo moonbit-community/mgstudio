@@ -8,23 +8,29 @@ import {
 }
 
 // Values
+pub fn default_time_resource_key() -> @ecs.ResourceKey[Time[Unit]]
+
+pub fn fixed_time_resource_key() -> @ecs.ResourceKey[Time[Fixed]]
+
 pub fn host_time_now() -> Float
 
 pub fn host_time_now_instant() -> @core.Instant
 
-pub fn on_real_timer(Float) -> (@ecs.World) -> Bool
+pub fn on_real_timer(@core.Duration) -> (@ecs.World) -> Bool
 
-pub fn on_timer(Float) -> (@ecs.World) -> Bool
+pub fn on_timer(@core.Duration) -> (@ecs.World) -> Bool
 
-pub fn once_after_delay(Float) -> (@ecs.World) -> Bool
+pub fn once_after_delay(@core.Duration) -> (@ecs.World) -> Bool
 
-pub fn once_after_real_delay(Float) -> (@ecs.World) -> Bool
+pub fn once_after_real_delay(@core.Duration) -> (@ecs.World) -> Bool
 
 pub fn paused(@ecs.World) -> Bool
 
-pub fn repeating_after_delay(Float) -> (@ecs.World) -> Bool
+pub fn real_time_resource_key() -> @ecs.ResourceKey[Time[Real]]
 
-pub fn repeating_after_real_delay(Float) -> (@ecs.World) -> Bool
+pub fn repeating_after_delay(@core.Duration) -> (@ecs.World) -> Bool
+
+pub fn repeating_after_real_delay(@core.Duration) -> (@ecs.World) -> Bool
 
 pub fn time_delta() -> @core.Duration
 
@@ -66,6 +72,8 @@ pub fn time_real_elapsed() -> @core.Duration
 
 pub fn time_real_elapsed_seconds() -> Float
 
+pub fn[T : Default] time_resource_key_of(T) -> @ecs.ResourceKey[Time[T]]
+
 pub fn time_run_fixed_main_schedule(@ecs.World) -> Unit
 
 pub fn time_virtual_delta() -> @core.Duration
@@ -86,64 +94,25 @@ pub fn time_virtual_max_delta_seconds() -> Float
 
 pub fn time_virtual_relative_speed() -> Float
 
-pub fn update_virtual_time(Virtual, Real) -> Virtual
+pub fn update_virtual_time(Time[Virtual], Time[Real]) -> Time[Virtual]
+
+pub fn virtual_time_resource_key() -> @ecs.ResourceKey[Time[Virtual]]
 
 // Errors
 
 // Types and methods
 pub struct Fixed {
-  time : Time
   timestep : @core.Duration
   overstep : @core.Duration
 }
-pub fn Fixed::accumulate_overstep(Self, @core.Duration) -> Self
-pub fn Fixed::as_generic(Self) -> Time
-pub fn Fixed::default() -> Self
-pub fn Fixed::delta(Self) -> @core.Duration
-pub fn Fixed::delta_seconds(Self) -> Float
-pub fn Fixed::discard_overstep(Self, @core.Duration) -> Self
-pub fn Fixed::elapsed(Self) -> @core.Duration
-pub fn Fixed::elapsed_seconds(Self) -> Float
-pub fn Fixed::expend(Self) -> Self?
-pub fn Fixed::from_duration(@core.Duration) -> Self
-pub fn Fixed::from_duration_seconds(Float) -> Self
-pub fn Fixed::from_hz(Float) -> Self
-pub fn Fixed::from_seconds(Float) -> Self
-pub fn Fixed::new() -> Self
-pub fn Fixed::overstep(Self) -> @core.Duration
-pub fn Fixed::overstep_fraction(Self) -> Float
-pub fn Fixed::overstep_fraction_f64(Self) -> Double
-pub fn Fixed::overstep_seconds(Self) -> Float
-pub fn Fixed::set_timestep(Self, @core.Duration) -> Self
-pub fn Fixed::set_timestep_hz(Self, Float) -> Self
-pub fn Fixed::set_timestep_seconds(Self, Float) -> Self
-pub fn Fixed::timestep(Self) -> @core.Duration
-pub fn Fixed::timestep_seconds(Self) -> Float
-pub impl @app.Resource for Fixed
+pub impl Default for Fixed
 
 pub struct Real {
-  time : Time
   startup : @core.Instant
   first_update : @core.Instant?
   last_update : @core.Instant?
 }
-pub fn Real::as_generic(Self) -> Time
-pub fn Real::default() -> Self
-pub fn Real::delta(Self) -> @core.Duration
-pub fn Real::delta_seconds(Self) -> Float
-pub fn Real::elapsed(Self) -> @core.Duration
-pub fn Real::elapsed_seconds(Self) -> Float
-pub fn Real::first_update(Self) -> @core.Instant?
-pub fn Real::first_update_seconds(Self) -> Float?
-pub fn Real::last_update(Self) -> @core.Instant?
-pub fn Real::last_update_seconds(Self) -> Float?
-pub fn Real::new(@core.Instant) -> Self
-pub fn Real::startup(Self) -> @core.Instant
-pub fn Real::startup_seconds(Self) -> Float
-pub fn Real::update(Self) -> Self
-pub fn Real::update_with_duration(Self, @core.Duration) -> Self
-pub fn Real::update_with_instant(Self, @core.Instant) -> Self
-pub impl @app.Resource for Real
+pub impl Default for Real
 
 pub struct Stopwatch {
   elapsed : @core.Duration
@@ -164,7 +133,8 @@ pub fn Stopwatch::unpause(Self) -> Self
 pub impl Eq for Stopwatch
 pub impl Show for Stopwatch
 
-pub struct Time {
+pub struct Time[T] {
+  context : T
   wrap_period : @core.Duration
   delta : @core.Duration
   delta_secs : Float
@@ -176,28 +146,73 @@ pub struct Time {
   elapsed_secs_wrapped : Float
   elapsed_secs_wrapped_f64 : Double
 }
-pub fn Time::advance_by(Self, @core.Duration) -> Self
-pub fn Time::advance_to(Self, @core.Duration) -> Self
-pub fn Time::as_generic(Self) -> Self
-pub fn Time::default() -> Self
-pub fn Time::delta(Self) -> @core.Duration
-pub fn Time::delta_seconds(Self) -> Float
-pub fn Time::delta_secs(Self) -> Float
-pub fn Time::delta_secs_f64(Self) -> Double
-pub fn Time::elapsed(Self) -> @core.Duration
-pub fn Time::elapsed_seconds(Self) -> Float
-pub fn Time::elapsed_secs(Self) -> Float
-pub fn Time::elapsed_secs_f64(Self) -> Double
-pub fn Time::elapsed_secs_wrapped(Self) -> Float
-pub fn Time::elapsed_secs_wrapped_f64(Self) -> Double
-pub fn Time::elapsed_wrapped(Self) -> @core.Duration
-pub fn Time::elapsed_wrapped_seconds(Self) -> Float
-pub fn Time::new() -> Self
-pub fn Time::set_wrap_period(Self, @core.Duration) -> Self
-pub fn Time::set_wrap_period_seconds(Self, Float) -> Self
-pub fn Time::wrap_period(Self) -> @core.Duration
-pub fn Time::wrap_period_seconds(Self) -> Float
-pub impl @app.Resource for Time
+pub fn Time::accumulate_overstep(Self[Fixed], @core.Duration) -> Self[Fixed]
+pub fn[T] Time::advance_by(Self[T], @core.Duration) -> Self[T]
+pub fn[T] Time::advance_to(Self[T], @core.Duration) -> Self[T]
+pub fn Time::advance_with_raw_delta(Self[Virtual], @core.Duration) -> Self[Virtual]
+pub fn[T] Time::as_generic(Self[T]) -> Self[Unit]
+pub fn[T] Time::context(Self[T]) -> T
+pub fn[T] Time::delta(Self[T]) -> @core.Duration
+pub fn[T] Time::delta_seconds(Self[T]) -> Float
+pub fn[T] Time::delta_secs(Self[T]) -> Float
+pub fn[T] Time::delta_secs_f64(Self[T]) -> Double
+pub fn Time::discard_overstep(Self[Fixed], @core.Duration) -> Self[Fixed]
+pub fn Time::effective_speed(Self[Virtual]) -> Float
+pub fn Time::effective_speed_f64(Self[Virtual]) -> Double
+pub fn[T] Time::elapsed(Self[T]) -> @core.Duration
+pub fn[T] Time::elapsed_seconds(Self[T]) -> Float
+pub fn[T] Time::elapsed_secs(Self[T]) -> Float
+pub fn[T] Time::elapsed_secs_f64(Self[T]) -> Double
+pub fn[T] Time::elapsed_secs_wrapped(Self[T]) -> Float
+pub fn[T] Time::elapsed_secs_wrapped_f64(Self[T]) -> Double
+pub fn[T] Time::elapsed_wrapped(Self[T]) -> @core.Duration
+pub fn[T] Time::elapsed_wrapped_seconds(Self[T]) -> Float
+pub fn Time::expend(Self[Fixed]) -> Self[Fixed]?
+pub fn Time::first_update(Self[Real]) -> @core.Instant?
+pub fn Time::first_update_seconds(Self[Real]) -> Float?
+pub fn Time::from_duration(@core.Duration) -> Self[Fixed]
+pub fn Time::from_duration_seconds(Float) -> Self[Fixed]
+pub fn Time::from_hz(Float) -> Self[Fixed]
+pub fn Time::from_max_delta(@core.Duration) -> Self[Virtual]
+pub fn Time::from_max_delta_seconds(Float) -> Self[Virtual]
+pub fn Time::from_seconds(Float) -> Self[Fixed]
+pub fn Time::is_paused(Self[Virtual]) -> Bool
+pub fn Time::last_update(Self[Real]) -> @core.Instant?
+pub fn Time::last_update_seconds(Self[Real]) -> Float?
+pub fn Time::max_delta(Self[Virtual]) -> @core.Duration
+pub fn Time::max_delta_seconds(Self[Virtual]) -> Float
+pub fn Time::new(@core.Instant) -> Self[Real]
+pub fn[T] Time::new_with(T) -> Self[T]
+pub fn Time::overstep(Self[Fixed]) -> @core.Duration
+pub fn Time::overstep_fraction(Self[Fixed]) -> Float
+pub fn Time::overstep_fraction_f64(Self[Fixed]) -> Double
+pub fn Time::overstep_seconds(Self[Fixed]) -> Float
+pub fn Time::pause(Self[Virtual]) -> Self[Virtual]
+pub fn Time::relative_speed(Self[Virtual]) -> Float
+pub fn Time::relative_speed_f64(Self[Virtual]) -> Double
+pub fn Time::set_max_delta(Self[Virtual], @core.Duration) -> Self[Virtual]
+pub fn Time::set_max_delta_seconds(Self[Virtual], Float) -> Self[Virtual]
+pub fn Time::set_relative_speed(Self[Virtual], Float) -> Self[Virtual]
+pub fn Time::set_relative_speed_f64(Self[Virtual], Double) -> Self[Virtual]
+pub fn Time::set_timestep(Self[Fixed], @core.Duration) -> Self[Fixed]
+pub fn Time::set_timestep_hz(Self[Fixed], Float) -> Self[Fixed]
+pub fn Time::set_timestep_seconds(Self[Fixed], Float) -> Self[Fixed]
+pub fn[T] Time::set_wrap_period(Self[T], @core.Duration) -> Self[T]
+pub fn[T] Time::set_wrap_period_seconds(Self[T], Float) -> Self[T]
+pub fn Time::startup(Self[Real]) -> @core.Instant
+pub fn Time::startup_seconds(Self[Real]) -> Float
+pub fn Time::timestep(Self[Fixed]) -> @core.Duration
+pub fn Time::timestep_seconds(Self[Fixed]) -> Float
+pub fn Time::toggle(Self[Virtual]) -> Self[Virtual]
+pub fn Time::unpause(Self[Virtual]) -> Self[Virtual]
+pub fn Time::update(Self[Real]) -> Self[Real]
+pub fn Time::update_with_duration(Self[Real], @core.Duration) -> Self[Real]
+pub fn Time::update_with_instant(Self[Real], @core.Instant) -> Self[Real]
+pub fn Time::was_paused(Self[Virtual]) -> Bool
+pub fn[T] Time::wrap_period(Self[T]) -> @core.Duration
+pub fn[T] Time::wrap_period_seconds(Self[T]) -> Float
+pub impl[T : Default] @app.Resource for Time[T]
+pub impl[T : Default] Default for Time[T]
 
 pub struct TimePlugin {
 }
@@ -261,38 +276,12 @@ pub impl Eq for TimerMode
 pub impl Show for TimerMode
 
 pub struct Virtual {
-  time : Time
   max_delta : @core.Duration
   paused : Bool
   relative_speed : Double
   effective_speed : Double
 }
-pub fn Virtual::advance_with_raw_delta(Self, @core.Duration) -> Self
-pub fn Virtual::as_generic(Self) -> Time
-pub fn Virtual::default() -> Self
-pub fn Virtual::delta(Self) -> @core.Duration
-pub fn Virtual::delta_seconds(Self) -> Float
-pub fn Virtual::effective_speed(Self) -> Float
-pub fn Virtual::effective_speed_f64(Self) -> Double
-pub fn Virtual::elapsed(Self) -> @core.Duration
-pub fn Virtual::elapsed_seconds(Self) -> Float
-pub fn Virtual::from_max_delta(@core.Duration) -> Self
-pub fn Virtual::from_max_delta_seconds(Float) -> Self
-pub fn Virtual::is_paused(Self) -> Bool
-pub fn Virtual::max_delta(Self) -> @core.Duration
-pub fn Virtual::max_delta_seconds(Self) -> Float
-pub fn Virtual::new() -> Self
-pub fn Virtual::pause(Self) -> Self
-pub fn Virtual::relative_speed(Self) -> Float
-pub fn Virtual::relative_speed_f64(Self) -> Double
-pub fn Virtual::set_max_delta(Self, @core.Duration) -> Self
-pub fn Virtual::set_max_delta_seconds(Self, Float) -> Self
-pub fn Virtual::set_relative_speed(Self, Float) -> Self
-pub fn Virtual::set_relative_speed_f64(Self, Double) -> Self
-pub fn Virtual::toggle(Self) -> Self
-pub fn Virtual::unpause(Self) -> Self
-pub fn Virtual::was_paused(Self) -> Bool
-pub impl @app.Resource for Virtual
+pub impl Default for Virtual
 
 // Type aliases
 
