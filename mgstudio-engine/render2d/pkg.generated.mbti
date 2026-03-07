@@ -458,6 +458,7 @@ pub struct Color {
   a : Float
 }
 pub fn Color::black() -> Self
+pub fn Color::darker(Self, Float) -> Self
 pub fn Color::hsl(Float, Float, Float) -> Self
 pub fn Color::hsla(Float, Float, Float, Float) -> Self
 pub fn Color::new(Float, Float, Float, Float) -> Self

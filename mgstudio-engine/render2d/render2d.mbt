@@ -144,6 +144,37 @@ pub fn Color::black() -> Color {
 }
 
 ///|
+pub fn Color::darker(self : Color, amount : Float) -> Color {
+  let luminance = color_luminance(self)
+  let target_luminance = color_clamp_unit(luminance - color_clamp_unit(amount))
+  if target_luminance >= luminance || luminance <= 0.0F {
+    self
+  } else {
+    let adjustment = color_clamp_unit(
+      (luminance - target_luminance) / luminance,
+    )
+    color_mix(self, Color::new(0.0F, 0.0F, 0.0F, self.a), adjustment)
+  }
+}
+
+///|
+fn color_luminance(color : Color) -> Float {
+  color.r * 0.2126F + color.g * 0.7152F + color.b * 0.0722F
+}
+
+///|
+fn color_mix(a : Color, b : Color, factor : Float) -> Color {
+  let t = color_clamp_unit(factor)
+  let inv = 1.0F - t
+  Color::new(
+    a.r * inv + b.r * t,
+    a.g * inv + b.g * t,
+    a.b * inv + b.b * t,
+    a.a * inv + b.a * t,
+  )
+}
+
+///|
 
 ///|
 pub struct RenderLayers {

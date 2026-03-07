@@ -32,6 +32,63 @@ pub fn sqrt(Float) -> Float
 // Errors
 
 // Types and methods
+pub(all) enum EaseFunction {
+  Linear
+  QuadraticIn
+  QuadraticOut
+  QuadraticInOut
+  CubicIn
+  CubicOut
+  CubicInOut
+  QuarticIn
+  QuarticOut
+  QuarticInOut
+  QuinticIn
+  QuinticOut
+  QuinticInOut
+  SmoothStepIn
+  SmoothStepOut
+  SmoothStep
+  SmootherStepIn
+  SmootherStepOut
+  SmootherStep
+  SineIn
+  SineOut
+  SineInOut
+  CircularIn
+  CircularOut
+  CircularInOut
+  ExponentialIn
+  ExponentialOut
+  ExponentialInOut
+  ElasticIn
+  ElasticOut
+  ElasticInOut
+  BackIn
+  BackOut
+  BackInOut
+  BounceIn
+  BounceOut
+  BounceInOut
+  Steps(Int, JumpAt)
+  Elastic(Float)
+}
+pub fn EaseFunction::sample(Self, Float) -> Float?
+pub fn EaseFunction::sample_clamped(Self, Float) -> Float
+pub impl Default for EaseFunction
+pub impl Show for EaseFunction
+pub impl ToJson for EaseFunction
+pub impl @json.FromJson for EaseFunction
+
+pub struct EasingCurve[T] {
+  start : T
+  end : T
+  ease_fn : EaseFunction
+}
+pub fn[T] EasingCurve::new(T, T, EaseFunction) -> Self[T]
+pub fn[T : Ease] EasingCurve::sample(Self[T], Float) -> T?
+pub fn[T : Ease] EasingCurve::sample_clamped(Self[T], Float) -> T
+
 pub(all) enum EulerRot {
   ZYX
   ZXY
@@ -64,6 +121,18 @@ pub fn IVec2::to_vec2(Self) -> Vec2
 pub impl ToJson for IVec2
 pub impl @json.FromJson for IVec2
 
+pub(all) enum JumpAt {
+  Start
+  End
+  None
+  Both
+}
+pub impl Default for JumpAt
+pub impl Eq for JumpAt
+pub impl Show for JumpAt
+pub impl ToJson for JumpAt
+pub impl @json.FromJson for JumpAt
+
 pub(all) struct Quat {
   mut x : Float
   mut y : Float
@@ -82,6 +151,7 @@ pub fn Quat::new(Float, Float, Float, Float) -> Self
 pub fn Quat::normalize(Self) -> Self
 pub fn Quat::to_euler(Self, EulerRot) -> (Float, Float, Float)
 pub fn Quat::to_rotation_z_angle(Self) -> Float
+pub impl Ease for Quat
 pub impl ToJson for Quat
 pub impl @json.FromJson for Quat
 
@@ -127,6 +197,7 @@ pub fn Transform::with_rotation(Self, Quat) -> Self
 pub fn Transform::with_scale(Self, Vec3) -> Self
 pub fn Transform::with_translation(Self, Vec3) -> Self
 pub impl @ecs.Component for Transform
+pub impl Ease for Transform
 pub impl ToJson for Transform
 pub impl @json.FromJson for Transform
 
@@ -167,6 +238,7 @@ pub fn Vec2::normalize_or_zero(Self) -> Self
 pub fn Vec2::sub(Self, Self) -> Self
 pub fn Vec2::to_angle(Self) -> Float
 pub fn Vec2::zero() -> Self
+pub impl Ease for Vec2
 pub impl ToJson for Vec2
 pub impl @json.FromJson for Vec2
 
@@ -194,6 +266,7 @@ pub fn Vec3::splat(Float) -> Self
 pub fn Vec3::sub(Self, Self) -> Self
 pub fn Vec3::zero() -> Self
 pub fn Vec3::zxy(Self) -> Self
+pub impl Ease for Vec3
 pub impl ToJson for Vec3
 pub impl @json.FromJson for Vec3
 
@@ -205,10 +278,15 @@ pub(all) struct Vec4 {
 }
 pub fn Vec4::new(Float, Float, Float, Float) -> Self
 pub fn Vec4::splat(Float) -> Self
+pub impl Ease for Vec4
 pub impl ToJson for Vec4
 pub impl @json.FromJson for Vec4
 
 // Type aliases
 
 // Traits
+pub(open) trait Ease {
+  interpolate(Self, Self, Float) -> Self
+}
+pub impl Ease for Float
 

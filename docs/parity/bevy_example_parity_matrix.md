@@ -19,7 +19,7 @@ Notes:
 | --- | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 |
 | `3d` | 66 | 42 | 24 | 0 |
-| `animation` | 13 | 1 | 12 | 0 |
+| `animation` | 13 | 2 | 11 | 0 |
 | `app` | 17 | 17 | 0 | 0 |
 | `asset` | 15 | 0 | 15 | 0 |
 | `async_tasks` | 3 | 0 | 3 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 3 | 9 | 0 |
-| **Total** | **402** | **117** | **282** | **3** |
+| **Total** | **402** | **118** | **281** | **3** |
 
 ## Example Inventory
 
@@ -164,7 +164,7 @@ Notes:
 | `bevy/examples/animation/color_animation.rs` | `animation` | `mgstudio-engine/examples/animation/color_animation` | `Exact` | `team-asset_scene` |  |
 | `bevy/examples/animation/custom_skinned_mesh.rs` | `animation` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/animation/eased_motion.rs` | `animation` |  | `Blocked` | `team-asset_scene` |  |
-| `bevy/examples/animation/easing_functions.rs` | `animation` | `mgstudio-engine/examples/animation/easing_functions` | `Blocked` | `team-asset_scene` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/animation/easing_functions.rs` | `animation` | `mgstudio-engine/examples/animation/easing_functions` | `Exact` | `team-asset_scene` |  |
 | `bevy/examples/animation/morph_targets.rs` | `animation` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/app/custom_loop.rs` | `app` | `mgstudio-engine/examples/app/custom_loop` | `Exact` | `team-core` |  |
 | `bevy/examples/app/drag_and_drop.rs` | `app` | `mgstudio-engine/examples/app/drag_and_drop` | `Exact` | `team-core` |  |
@@ -298,12 +298,12 @@ Notes:
 | `bevy/examples/large_scenes/mipmap_generator/examples/test_compression.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/large_scenes/mipmap_generator/examples/test_image.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/large_scenes/mipmap_generator/src/lib.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
-| `bevy/examples/math/bounding_2d.rs` | `math` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/math/cubic_splines.rs` | `math` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/math/custom_primitives.rs` | `math` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/math/random_sampling.rs` | `math` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/math/render_primitives.rs` | `math` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/math/sampling_primitives.rs` | `math` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/math/bounding_2d.rs` | `math` |  | `Blocked` | `team-core` | Blocked by missing 2D bounding volume and ray cast helpers (`bd-h4h`). |
+| `bevy/examples/math/cubic_splines.rs` | `math` |  | `Blocked` | `team-core` | Blocked by missing cubic spline math surface (`bd-yh8`). |
+| `bevy/examples/math/custom_primitives.rs` | `math` |  | `Blocked` | `team-core` | Blocked by missing custom primitive trait stack (`bd-jpy`). |
+| `bevy/examples/math/random_sampling.rs` | `math` |  | `Blocked` | `team-core` | Blocked by missing primitive shape sampling distributions and related camera helper integration (`bd-29b`, `bd-jb1`). |
+| `bevy/examples/math/render_primitives.rs` | `math` |  | `Blocked` | `team-core` | Blocked by missing public primitive rendering and gizmo surface (`bd-5te`). |
+| `bevy/examples/math/sampling_primitives.rs` | `math` |  | `Blocked` | `team-core` | Blocked by missing primitive shape sampling distributions (`bd-29b`). |
 | `bevy/examples/mobile/src/lib.rs` | `mobile` |  | `N/A` | `team-platform_na` | WASM-first policy: platform-incompatible category. |
 | `bevy/examples/mobile/src/main.rs` | `mobile` |  | `N/A` | `team-platform_na` | WASM-first policy: platform-incompatible category. |
 | `bevy/examples/movement/physics_in_fixed_timestep.rs` | `movement` |  | `Blocked` | `team-core` |  |
