@@ -1,0 +1,32 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/math/cubic_splines"
+
+// Values
+
+// Errors
+
+// Types and methods
+type ControlPoints
+
+type Curve
+
+type CyclingMode
+pub impl Eq for CyclingMode
+pub impl Show for CyclingMode
+
+type CyclingModeTextHandle
+
+type MouseEditMove
+
+type MousePosition
+
+type SplineMode
+pub impl Eq for SplineMode
+pub impl Show for SplineMode
+
+type SplineModeTextHandle
+
+// Type aliases
+
+// Traits
+

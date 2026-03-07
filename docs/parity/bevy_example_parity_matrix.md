@@ -35,7 +35,7 @@ Notes:
 | `helpers` | 1 | 0 | 1 | 0 |
 | `input` | 13 | 9 | 4 | 0 |
 | `large_scenes` | 6 | 0 | 6 | 0 |
-| `math` | 6 | 0 | 6 | 0 |
+| `math` | 6 | 1 | 5 | 0 |
 | `mobile` | 2 | 0 | 0 | 2 |
 | `movement` | 2 | 0 | 2 | 0 |
 | `no_std` | 1 | 0 | 0 | 1 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 3 | 9 | 0 |
-| **Total** | **402** | **118** | **281** | **3** |
+| **Total** | **402** | **119** | **280** | **3** |
 
 ## Example Inventory
 
@@ -299,7 +299,7 @@ Notes:
 | `bevy/examples/large_scenes/mipmap_generator/examples/test_image.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/large_scenes/mipmap_generator/src/lib.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/math/bounding_2d.rs` | `math` | `mgstudio-engine/examples/math/bounding_2d` | `Blocked` | `team-core` | Example package now exists, but exact parity is still blocked until engine-owned 2D bounding volume and ray cast helpers replace the example-local implementations (`bd-h4h`). |
-| `bevy/examples/math/cubic_splines.rs` | `math` |  | `Blocked` | `team-core` | Blocked by missing cubic spline math surface (`bd-yh8`). |
+| `bevy/examples/math/cubic_splines.rs` | `math` | `mgstudio-engine/examples/math/cubic_splines` | `Exact` | `team-core` | Engine-owned cubic spline math surface now backs the exact port; zero-argument state install blocker remains tracked separately under `bd-byr`. |
 | `bevy/examples/math/custom_primitives.rs` | `math` |  | `Blocked` | `team-core` | Blocked by missing custom primitive trait stack (`bd-jpy`). |
 | `bevy/examples/math/random_sampling.rs` | `math` |  | `Blocked` | `team-core` | Blocked by missing primitive shape sampling distributions and related camera helper integration (`bd-29b`, `bd-jb1`). |
 | `bevy/examples/math/render_primitives.rs` | `math` |  | `Blocked` | `team-core` | Blocked by missing public primitive rendering and gizmo surface (`bd-5te`). |

@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/math/bounding_2d"
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) enum Test {
+  AabbSweep
+  CircleSweep
+  RayCast
+  AabbCast
+  CircleCast
+}
+pub impl Eq for Test
+pub impl Show for Test
+
+// Type aliases
+
+// Traits
+

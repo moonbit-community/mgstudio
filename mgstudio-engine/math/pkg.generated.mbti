@@ -30,8 +30,67 @@ pub fn sin(Float) -> Float
 pub fn sqrt(Float) -> Float
 
 // Errors
+pub(all) suberror CubicBezierError {
+  MissingControlPointSet
+}
+
+pub(all) suberror InsufficientDataError {
+  InsufficientData(Int, Int)
+}
 
 // Types and methods
+pub struct CubicBSpline[P] {
+  control_points : Array[P]
+}
+pub fn[P] CubicBSpline::new(Array[P]) -> Self[P]
+pub fn[P : SplinePoint] CubicBSpline::to_curve(Self[P]) -> Result[CubicCurve[P], InsufficientDataError]
+pub fn[P : SplinePoint] CubicBSpline::to_curve_cyclic(Self[P]) -> Result[CubicCurve[P], InsufficientDataError]
+
+pub struct CubicCardinalSpline[P] {
+  tension : Float
+  control_points : Array[P]
+}
+pub fn[P] CubicCardinalSpline::new(Float, Array[P]) -> Self[P]
+pub fn[P] CubicCardinalSpline::new_catmull_rom(Array[P]) -> Self[P]
+pub fn[P : SplinePoint] CubicCardinalSpline::to_curve(Self[P]) -> Result[CubicCurve[P], InsufficientDataError]
+pub fn[P : SplinePoint] CubicCardinalSpline::to_curve_cyclic(Self[P]) -> Result[CubicCurve[P], InsufficientDataError]
+
+pub struct CubicCurve[P] {
+  segments : Array[CubicSegment[P]]
+}
+pub fn[P : SplinePoint] CubicCurve::acceleration(Self[P], Float) -> P
+pub fn[P] CubicCurve::from_segments(Array[CubicSegment[P]]) -> Self[P]?
+pub fn[P : SplinePoint] CubicCurve::iter_accelerations(Self[P], Int) -> Array[P]
+pub fn[P : SplinePoint] CubicCurve::iter_positions(Self[P], Int) -> Array[P]
+pub fn[P] CubicCurve::iter_samples(Self[P], Int, (Self[P], Float) -> P) -> Array[P]
+pub fn[P : SplinePoint] CubicCurve::iter_velocities(Self[P], Int) -> Array[P]
+pub fn[P : SplinePoint] CubicCurve::position(Self[P], Float) -> P
+pub fn[P] CubicCurve::push_segment(Self[P], CubicSegment[P]) -> Unit
+pub fn[P] CubicCurve::segments(Self[P]) -> Array[CubicSegment[P]]
+pub fn[P : SplinePoint] CubicCurve::velocity(Self[P], Float) -> P
+
+pub struct CubicHermite[P] {
+  control_points : Array[(P, P)]
+}
+pub fn[P] CubicHermite::new(Array[P], Array[P]) -> Self[P]
+pub fn[P : SplinePoint] CubicHermite::to_curve(Self[P]) -> Result[CubicCurve[P], InsufficientDataError]
+pub fn[P : SplinePoint] CubicHermite::to_curve_cyclic(Self[P]) -> Result[CubicCurve[P], InsufficientDataError]
+
+pub struct CubicSegment[P] {
+  coeff0 : P
+  coeff1 : P
+  coeff2 : P
+  coeff3 : P
+}
+pub fn[P : SplinePoint] CubicSegment::acceleration(Self[P], Float) -> P
+pub fn[P : SplinePoint] CubicSegment::iter_accelerations(Self[P], Int) -> Array[P]
+pub fn[P : SplinePoint] CubicSegment::iter_positions(Self[P], Int) -> Array[P]
+pub fn[P] CubicSegment::iter_samples(Self[P], Int, (Self[P], Float) -> P) -> Array[P]
+pub fn[P : SplinePoint] CubicSegment::iter_velocities(Self[P], Int) -> Array[P]
+pub fn[P : SplinePoint] CubicSegment::new_bezier(P, P, P, P) -> Self[P]
+pub fn[P : SplinePoint] CubicSegment::position(Self[P], Float) -> P
+pub fn[P : SplinePoint] CubicSegment::velocity(Self[P], Float) -> P
+
 pub(all) enum EaseFunction {
   Linear
   QuadraticIn
@@ -239,6 +298,7 @@ pub fn Vec2::sub(Self, Self) -> Self
 pub fn Vec2::to_angle(Self) -> Float
 pub fn Vec2::zero() -> Self
 pub impl Ease for Vec2
+pub impl SplinePoint for Vec2
 pub impl ToJson for Vec2
 pub impl @json.FromJson for Vec2
 
@@ -267,6 +327,7 @@ pub fn Vec3::sub(Self, Self) -> Self
 pub fn Vec3::zero() -> Self
 pub fn Vec3::zxy(Self) -> Self
 pub impl Ease for Vec3
+pub impl SplinePoint for Vec3
 pub impl ToJson for Vec3
 pub impl @json.FromJson for Vec3
 
@@ -279,6 +340,7 @@ pub(all) struct Vec4 {
 pub fn Vec4::new(Float, Float, Float, Float) -> Self
 pub fn Vec4::splat(Float) -> Self
 pub impl Ease for Vec4
+pub impl SplinePoint for Vec4
 pub impl ToJson for Vec4
 pub impl @json.FromJson for Vec4
 
@@ -289,4 +351,12 @@ pub(open) trait Ease {
   interpolate(Self, Self, Float) -> Self
 }
 pub impl Ease for Float
+
+pub(open) trait SplinePoint {
+  zero() -> Self
+  add(Self, Self) -> Self
+  sub(Self, Self) -> Self
+  mul_scalar(Self, Float) -> Self
+}
+pub impl SplinePoint for Float
 
