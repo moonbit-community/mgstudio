@@ -78,8 +78,8 @@ pub(open) trait AudioSinkPlayback {
   speed(self : Self) -> Float
   set_speed(self : Self, speed : Float) -> Self
   play(self : Self) -> Unit
-  position_seconds(self : Self) -> Float
-  try_seek_seconds(self : Self, seconds : Float) -> Bool
+  position(self : Self) -> @core.Duration
+  try_seek(self : Self, position : @core.Duration) -> Bool
   pause(self : Self) -> Unit
   is_paused(self : Self) -> Bool
   stop(self : Self) -> Unit
@@ -190,18 +190,18 @@ pub impl AudioSinkPlayback for AudioSink with play(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for AudioSink with position_seconds(self) {
+pub impl AudioSinkPlayback for AudioSink with position(self) {
   match audio_sink_registry_get(self.sink_id) {
-    Some(player) => player.position_seconds()
-    None => 0.0F
+    Some(player) => @core.Duration::from_secs_f32(player.position_seconds())
+    None => @core.Duration::zero()
   }
 }
 
 ///|
-pub impl AudioSinkPlayback for AudioSink with try_seek_seconds(self, seconds) {
+pub impl AudioSinkPlayback for AudioSink with try_seek(self, position) {
   match audio_sink_registry_get(self.sink_id) {
     Some(player) => {
-      player.try_seek_seconds(seconds) catch {
+      player.try_seek_seconds(position.as_secs_f32()) catch {
         _ => return false
       }
       true
@@ -318,21 +318,18 @@ pub impl AudioSinkPlayback for SpatialAudioSink with play(self) {
 }
 
 ///|
-pub impl AudioSinkPlayback for SpatialAudioSink with position_seconds(self) {
+pub impl AudioSinkPlayback for SpatialAudioSink with position(self) {
   match spatial_audio_sink_registry_get(self.sink_id) {
-    Some(player) => player.position_seconds()
-    None => 0.0F
+    Some(player) => @core.Duration::from_secs_f32(player.position_seconds())
+    None => @core.Duration::zero()
   }
 }
 
 ///|
-pub impl AudioSinkPlayback for SpatialAudioSink with try_seek_seconds(
-  self,
-  seconds,
-) {
+pub impl AudioSinkPlayback for SpatialAudioSink with try_seek(self, position) {
   match spatial_audio_sink_registry_get(self.sink_id) {
     Some(player) => {
-      player.try_seek_seconds(seconds) catch {
+      player.try_seek_seconds(position.as_secs_f32()) catch {
         _ => return false
       }
       true
@@ -439,5 +436,90 @@ pub fn SpatialAudioSink::toggle_mute(
     self.unmute()
   } else {
     self.mute()
+  }
+}
+
+///|
+pub fn AudioSink::position_seconds(self : AudioSink) -> Float {
+  self.position().as_secs_f32()
+}
+
+///|
+pub fn AudioSink::try_seek_seconds(self : AudioSink, seconds : Float) -> Bool {
+  self.try_seek(@core.Duration::from_secs_f32(seconds))
+}
+
+///|
+pub fn SpatialAudioSink::position_seconds(self : SpatialAudioSink) -> Float {
+  self.position().as_secs_f32()
+}
+
+///|
+pub fn SpatialAudioSink::try_seek_seconds(
+  self : SpatialAudioSink,
+  seconds : Float,
+) -> Bool {
+  self.try_seek(@core.Duration::from_secs_f32(seconds))
+}
+
+///|
+pub fn SpatialAudioSink::set_ears_position(
+  self : SpatialAudioSink,
+  left_position : @math.Vec3,
+  right_position : @math.Vec3,
+) -> Unit {
+  match spatial_audio_sink_registry_get(self.sink_id) {
+    Some(player) => {
+      player.set_left_ear_position(
+        (
+          left_position.x.to_double(),
+          left_position.y.to_double(),
+          left_position.z.to_double(),
+        ),
+      )
+      player.set_right_ear_position(
+        (
+          right_position.x.to_double(),
+          right_position.y.to_double(),
+          right_position.z.to_double(),
+        ),
+      )
+    }
+    None => ()
+  }
+}
+
+///|
+pub fn SpatialAudioSink::set_listener_position(
+  self : SpatialAudioSink,
+  position : @math.Transform,
+  gap : Float,
+) -> Unit {
+  let half_gap = gap / 2.0F
+  self.set_ears_position(
+    @math.Vec3::new(
+      position.translation.x - half_gap,
+      position.translation.y,
+      position.translation.z,
+    ),
+    @math.Vec3::new(
+      position.translation.x + half_gap,
+      position.translation.y,
+      position.translation.z,
+    ),
+  )
+}
+
+///|
+pub fn SpatialAudioSink::set_emitter_position(
+  self : SpatialAudioSink,
+  position : @math.Vec3,
+) -> Unit {
+  match spatial_audio_sink_registry_get(self.sink_id) {
+    Some(player) =>
+      player.set_emitter_position(
+        (position.x.to_double(), position.y.to_double(), position.z.to_double()),
+      )
+    None => ()
   }
 }

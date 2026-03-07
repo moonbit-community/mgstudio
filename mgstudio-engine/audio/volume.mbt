@@ -108,6 +108,26 @@ pub fn Volume::scale_to_factor(self : Volume, factor : Float) -> Volume {
 }
 
 ///|
+pub fn Volume::fade_towards(
+  self : Volume,
+  target : Volume,
+  factor : Float,
+) -> Volume {
+  let factor_clamped = if factor < 0.0F {
+    0.0F
+  } else if factor > 1.0F {
+    1.0F
+  } else {
+    factor
+  }
+  let current_linear = self.to_linear()
+  let target_linear = target.to_linear()
+  Volume::Linear(
+    current_linear + (target_linear - current_linear) * factor_clamped,
+  )
+}
+
+///|
 pub fn Volume::mul(self : Volume, other : Volume) -> Volume {
   Volume::Linear(self.to_linear() * other.to_linear())
 }

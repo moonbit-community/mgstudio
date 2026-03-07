@@ -29,8 +29,8 @@ pub struct PlaybackSettings {
   muted : Bool
   spatial : Bool
   spatial_scale : SpatialScale?
-  start_position_seconds : Float?
-  duration_seconds : Float?
+  start_position : @core.Duration?
+  duration : @core.Duration?
 } derive(ToJson, FromJson)
 
 ///|
@@ -48,8 +48,8 @@ pub fn PlaybackSettings::once() -> PlaybackSettings {
     muted: false,
     spatial: false,
     spatial_scale: None,
-    start_position_seconds: None,
-    duration_seconds: None,
+    start_position: None,
+    duration: None,
   }
 }
 
@@ -111,19 +111,19 @@ pub fn PlaybackSettings::with_spatial_scale(
 }
 
 ///|
-pub fn PlaybackSettings::with_start_position_seconds(
+pub fn PlaybackSettings::with_start_position(
   self : PlaybackSettings,
-  seconds : Float,
+  start_position : @core.Duration,
 ) -> PlaybackSettings {
-  PlaybackSettings::{ ..self, start_position_seconds: Some(seconds) }
+  PlaybackSettings::{ ..self, start_position: Some(start_position) }
 }
 
 ///|
-pub fn PlaybackSettings::with_duration_seconds(
+pub fn PlaybackSettings::with_duration(
   self : PlaybackSettings,
-  seconds : Float,
+  duration : @core.Duration,
 ) -> PlaybackSettings {
-  PlaybackSettings::{ ..self, duration_seconds: Some(seconds) }
+  PlaybackSettings::{ ..self, duration: Some(duration) }
 }
 
 ///|

@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/audio"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "moonbitlang/core/json",
@@ -62,6 +63,7 @@ pub struct AudioPlayer[Source] {
 }
 pub fn[Source] AudioPlayer::handle(Self[Source]) -> @asset.Handle[Source]
 pub fn[Source] AudioPlayer::new(@asset.Handle[Source]) -> Self[Source]
+pub impl @ecs.Component for AudioPlayer[AudioSource]
 pub impl[Source] ToJson for AudioPlayer[Source]
 pub impl[Source] @json.FromJson for AudioPlayer[Source]
 
@@ -75,8 +77,10 @@ pub struct AudioSink {
   sink_id : Int
   managed_volume : Volume?
 }
+pub fn AudioSink::position_seconds(Self) -> Float
 pub fn AudioSink::toggle_mute(Self) -> Self
 pub fn AudioSink::toggle_playback(Self) -> Unit
+pub fn AudioSink::try_seek_seconds(Self, Float) -> Bool
 pub impl AudioSinkPlayback for AudioSink
 pub impl @ecs.Component for AudioSink
 pub impl ToJson for AudioSink
@@ -165,8 +169,8 @@ pub struct PlaybackSettings {
   muted : Bool
   spatial : Bool
   spatial_scale : SpatialScale?
-  start_position_seconds : Float?
-  duration_seconds : Float?
+  start_position : @core.Duration?
+  duration : @core.Duration?
 }
 pub fn PlaybackSettings::default() -> Self
 pub fn PlaybackSettings::despawn() -> Self
@@ -175,11 +179,11 @@ pub fn PlaybackSettings::muted(Self) -> Self
 pub fn PlaybackSettings::once() -> Self
 pub fn PlaybackSettings::paused(Self) -> Self
 pub fn PlaybackSettings::remove() -> Self
-pub fn PlaybackSettings::with_duration_seconds(Self, Float) -> Self
+pub fn PlaybackSettings::with_duration(Self, @core.Duration) -> Self
 pub fn PlaybackSettings::with_spatial(Self, Bool) -> Self
 pub fn PlaybackSettings::with_spatial_scale(Self, SpatialScale) -> Self
 pub fn PlaybackSettings::with_speed(Self, Float) -> Self
-pub fn PlaybackSettings::with_start_position_seconds(Self, Float) -> Self
+pub fn PlaybackSettings::with_start_position(Self, @core.Duration) -> Self
 pub fn PlaybackSettings::with_volume(Self, Volume) -> Self
 pub impl @ecs.Component for PlaybackSettings
 pub impl ToJson for PlaybackSettings
@@ -189,8 +193,13 @@ pub struct SpatialAudioSink {
   sink_id : Int
   managed_volume : Volume?
 }
+pub fn SpatialAudioSink::position_seconds(Self) -> Float
+pub fn SpatialAudioSink::set_ears_position(Self, @math.Vec3, @math.Vec3) -> Unit
+pub fn SpatialAudioSink::set_emitter_position(Self, @math.Vec3) -> Unit
+pub fn SpatialAudioSink::set_listener_position(Self, @math.Transform, Float) -> Unit
 pub fn SpatialAudioSink::toggle_mute(Self) -> Self
 pub fn SpatialAudioSink::toggle_playback(Self) -> Unit
+pub fn SpatialAudioSink::try_seek_seconds(Self, Float) -> Bool
 pub impl AudioSinkPlayback for SpatialAudioSink
 pub impl @ecs.Component for SpatialAudioSink
 pub impl ToJson for SpatialAudioSink
@@ -221,6 +230,7 @@ pub(all) enum Volume {
 }
 pub fn Volume::decrease_by_percentage(Self, Float) -> Self
 pub fn Volume::default() -> Self
+pub fn Volume::fade_towards(Self, Self, Float) -> Self
 pub fn Volume::increase_by_percentage(Self, Float) -> Self
 pub fn Volume::mul(Self, Self) -> Self
 pub fn Volume::scale_to_factor(Self, Float) -> Self
@@ -239,8 +249,8 @@ pub(open) trait AudioSinkPlayback {
   speed(Self) -> Float
   set_speed(Self, Float) -> Self
   play(Self) -> Unit
-  position_seconds(Self) -> Float
-  try_seek_seconds(Self, Float) -> Bool
+  position(Self) -> @core.Duration
+  try_seek(Self, @core.Duration) -> Bool
   pause(Self) -> Unit
   is_paused(Self) -> Bool
   stop(Self) -> Unit

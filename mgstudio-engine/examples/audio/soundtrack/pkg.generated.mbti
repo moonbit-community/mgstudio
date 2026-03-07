@@ -1,0 +1,17 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/audio/soundtrack"
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) enum GameState {
+  Peaceful
+  Battle
+}
+
+// Type aliases
+
+// Traits
+

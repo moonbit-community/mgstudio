@@ -82,6 +82,11 @@ pub let ecs_key_playback_remove_marker : @ecs.ComponentKey[PlaybackRemoveMarker]
 )
 
 ///|
+pub impl @ecs.Component for AudioPlayer[AudioSource] with component() {
+  ecs_key_audio_source_player
+}
+
+///|
 pub impl @ecs.Component for PlaybackSettings with component() {
   ecs_key_playback_settings
 }
@@ -134,12 +139,14 @@ fn audio_playback_config(
       _ => false
     },
   )
-  match settings.start_position_seconds {
-    Some(seconds) => config = config.with_start_position_seconds(seconds)
+  match settings.start_position {
+    Some(start_position) =>
+      config = config.with_start_position_seconds(start_position.as_secs_f32())
     None => ()
   }
-  match settings.duration_seconds {
-    Some(seconds) => config = config.with_duration_seconds(seconds)
+  match settings.duration {
+    Some(duration) =>
+      config = config.with_duration_seconds(duration.as_secs_f32())
     None => ()
   }
   config
