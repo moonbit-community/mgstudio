@@ -71,7 +71,15 @@ fn gamepad_ordered_events(
 fn format_button_state_changed_event(
   event : @input.GamepadButtonStateChangedEvent,
 ) -> String {
-  "GamepadButtonStateChangedEvent(gamepad=\{event.gamepad_id}, button=\{format_button(event.button)}, pressed=\{event.pressed})"
+  "GamepadButtonStateChangedEvent(gamepad=\{event.gamepad_id}, button=\{format_button(event.button)}, state=\{format_button_state(event.state)})"
+}
+
+///|
+fn format_button_state(state : @input.ButtonState) -> String {
+  match state {
+    Pressed => "Pressed"
+    Released => "Released"
+  }
 }
 
 ///|
@@ -145,7 +153,7 @@ fn format_connection_event(
 fn format_button_changed_event(
   button : @input.GamepadButtonChangedEvent,
 ) -> String {
-  "GamepadButtonChangedEvent(gamepad=\{button.gamepad_id}, button=\{format_button(button.button)}, value=\{button.value})"
+  "GamepadButtonChangedEvent(gamepad=\{button.gamepad_id}, button=\{format_button(button.button)}, state=\{format_button_state(button.state)}, value=\{button.value})"
 }
 
 ///|

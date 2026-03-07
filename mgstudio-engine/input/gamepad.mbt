@@ -168,11 +168,78 @@ pub struct GamepadConnectionEvent {
 } derive(Eq, Show, ToJson, FromJson)
 
 ///|
-pub struct GamepadButtonChangedEvent {
+pub fn GamepadConnectionInfo::new(
+  name : String,
+  vendor_id : Int?,
+  product_id : Int?,
+) -> GamepadConnectionInfo {
+  GamepadConnectionInfo::{ name, vendor_id, product_id }
+}
+
+///|
+pub fn GamepadConnectionEvent::new(
+  gamepad_id : Int,
+  connection : GamepadConnection,
+) -> GamepadConnectionEvent {
+  GamepadConnectionEvent::{ gamepad_id, connection }
+}
+
+///|
+pub struct RawGamepadButtonChangedEvent {
   gamepad_id : Int
   button : GamepadButton
   value : Float
 } derive(Eq, Show, ToJson, FromJson)
+
+///|
+pub fn RawGamepadButtonChangedEvent::new(
+  gamepad_id : Int,
+  button : GamepadButton,
+  value : Float,
+) -> RawGamepadButtonChangedEvent {
+  RawGamepadButtonChangedEvent::{ gamepad_id, button, value }
+}
+
+///|
+pub struct RawGamepadAxisChangedEvent {
+  gamepad_id : Int
+  axis : GamepadAxis
+  value : Float
+} derive(Eq, Show, ToJson, FromJson)
+
+///|
+pub fn RawGamepadAxisChangedEvent::new(
+  gamepad_id : Int,
+  axis : GamepadAxis,
+  value : Float,
+) -> RawGamepadAxisChangedEvent {
+  RawGamepadAxisChangedEvent::{ gamepad_id, axis, value }
+}
+
+///|
+pub(all) enum RawGamepadEvent {
+  Connection(GamepadConnectionEvent)
+  Button(RawGamepadButtonChangedEvent)
+  Axis(RawGamepadAxisChangedEvent)
+} derive(Eq, Show, ToJson, FromJson)
+
+///|
+pub struct GamepadButtonChangedEvent {
+  gamepad_id : Int
+  button : GamepadButton
+  state : ButtonState
+  value : Float
+} derive(Eq, Show, ToJson, FromJson)
+
+///|
+pub fn GamepadButtonChangedEvent::new(
+  gamepad_id : Int,
+  button : GamepadButton,
+  state : ButtonState,
+  value : Float,
+) -> GamepadButtonChangedEvent {
+  GamepadButtonChangedEvent::{ gamepad_id, button, state, value }
+}
 
 ///|
 pub struct GamepadAxisChangedEvent {
@@ -182,11 +249,29 @@ pub struct GamepadAxisChangedEvent {
 } derive(Eq, Show, ToJson, FromJson)
 
 ///|
+pub fn GamepadAxisChangedEvent::new(
+  gamepad_id : Int,
+  axis : GamepadAxis,
+  value : Float,
+) -> GamepadAxisChangedEvent {
+  GamepadAxisChangedEvent::{ gamepad_id, axis, value }
+}
+
+///|
 pub struct GamepadButtonStateChangedEvent {
   gamepad_id : Int
   button : GamepadButton
-  pressed : Bool
+  state : ButtonState
 } derive(Eq, Show, ToJson, FromJson)
+
+///|
+pub fn GamepadButtonStateChangedEvent::new(
+  gamepad_id : Int,
+  button : GamepadButton,
+  state : ButtonState,
+) -> GamepadButtonStateChangedEvent {
+  GamepadButtonStateChangedEvent::{ gamepad_id, button, state }
+}
 
 ///|
 pub(all) enum GamepadEvent {
@@ -274,6 +359,11 @@ let gamepad_event_message_key : @ecs.MessageKey[GamepadEvent] = @ecs.register_me
 )
 
 ///|
+let raw_gamepad_event_message_key : @ecs.MessageKey[RawGamepadEvent] = @ecs.register_message(
+  debug_name="bevy_input::gamepad::RawGamepadEvent",
+)
+
+///|
 let gamepad_connection_event_message_key : @ecs.MessageKey[
   GamepadConnectionEvent,
 ] = @ecs.register_message(
@@ -281,10 +371,24 @@ let gamepad_connection_event_message_key : @ecs.MessageKey[
 )
 
 ///|
+let raw_gamepad_axis_changed_event_message_key : @ecs.MessageKey[
+  RawGamepadAxisChangedEvent,
+] = @ecs.register_message(
+  debug_name="bevy_input::gamepad::RawGamepadAxisChangedEvent",
+)
+
+///|
 let gamepad_axis_changed_event_message_key : @ecs.MessageKey[
   GamepadAxisChangedEvent,
 ] = @ecs.register_message(
   debug_name="bevy_input::gamepad::GamepadAxisChangedEvent",
+)
+
+///|
+let raw_gamepad_button_changed_event_message_key : @ecs.MessageKey[
+  RawGamepadButtonChangedEvent,
+] = @ecs.register_message(
+  debug_name="bevy_input::gamepad::RawGamepadButtonChangedEvent",
 )
 
 ///|
@@ -299,6 +403,16 @@ let gamepad_button_state_changed_event_message_key : @ecs.MessageKey[
   GamepadButtonStateChangedEvent,
 ] = @ecs.register_message(
   debug_name="bevy_input::gamepad::GamepadButtonStateChangedEvent",
+)
+
+///|
+let input_gamepad_poll_system_set : @app.SystemSet = @app.system_set(
+  "bevy_input::gamepad::poll",
+)
+
+///|
+let input_gamepad_event_processing_system_set : @app.SystemSet = @app.system_set(
+  "bevy_input::gamepad::event_processing",
 )
 
 ///|
@@ -415,6 +529,39 @@ fn gamepad_button_pressed(snapshot : GamepadSnapshot?, index : Int) -> Bool {
 }
 
 ///|
+fn button_state_from_pressed(pressed : Bool) -> ButtonState {
+  if pressed {
+    ButtonState::Pressed
+  } else {
+    ButtonState::Released
+  }
+}
+
+///|
+fn button_state_from_value(value : Float) -> ButtonState {
+  if float_is_nan(value) || value == 0.0F {
+    ButtonState::Released
+  } else {
+    ButtonState::Pressed
+  }
+}
+
+///|
+fn snapshot_button_state(
+  snapshot : GamepadSnapshot?,
+  index : Int,
+  fallback_value : Float,
+) -> ButtonState {
+  if snapshot is Some(state) &&
+    index >= 0 &&
+    index < state.button_pressed.length() {
+    button_state_from_pressed(state.button_pressed[index])
+  } else {
+    button_state_from_value(fallback_value)
+  }
+}
+
+///|
 fn should_emit_value_change(previous : Float, current : Float) -> Bool {
   if float_is_nan(current) {
     return false
@@ -426,41 +573,43 @@ fn should_emit_value_change(previous : Float, current : Float) -> Bool {
 }
 
 ///|
-fn emit_connection_event(
+fn emit_raw_connection_event(
   world : @ecs.World,
   event : GamepadConnectionEvent,
 ) -> Unit {
   world.send_message(gamepad_connection_event_message_key, event) |> ignore
-  world.send_message(gamepad_event_message_key, GamepadEvent::Connection(event))
+  world.send_message(
+    raw_gamepad_event_message_key,
+    RawGamepadEvent::Connection(event),
+  )
   |> ignore
 }
 
 ///|
-fn emit_button_changed_event(
+fn emit_raw_button_changed_event(
   world : @ecs.World,
-  event : GamepadButtonChangedEvent,
+  event : RawGamepadButtonChangedEvent,
 ) -> Unit {
-  world.send_message(gamepad_button_changed_event_message_key, event) |> ignore
-  world.send_message(gamepad_event_message_key, GamepadEvent::Button(event))
+  world.send_message(raw_gamepad_button_changed_event_message_key, event)
+  |> ignore
+  world.send_message(
+    raw_gamepad_event_message_key,
+    RawGamepadEvent::Button(event),
+  )
   |> ignore
 }
 
 ///|
-fn emit_axis_changed_event(
+fn emit_raw_axis_changed_event(
   world : @ecs.World,
-  event : GamepadAxisChangedEvent,
+  event : RawGamepadAxisChangedEvent,
 ) -> Unit {
-  world.send_message(gamepad_axis_changed_event_message_key, event) |> ignore
-  world.send_message(gamepad_event_message_key, GamepadEvent::Axis(event))
+  world.send_message(raw_gamepad_axis_changed_event_message_key, event)
   |> ignore
-}
-
-///|
-fn emit_button_state_changed_event(
-  world : @ecs.World,
-  event : GamepadButtonStateChangedEvent,
-) -> Unit {
-  world.send_message(gamepad_button_state_changed_event_message_key, event)
+  world.send_message(
+    raw_gamepad_event_message_key,
+    RawGamepadEvent::Axis(event),
+  )
   |> ignore
 }
 
@@ -475,7 +624,7 @@ fn rebuild_gamepad_events(
       continue
     }
     if find_gamepad_snapshot(previous_gamepads, current.id) is None {
-      emit_connection_event(world, GamepadConnectionEvent::{
+      emit_raw_connection_event(world, GamepadConnectionEvent::{
         gamepad_id: current.id,
         connection: GamepadConnection::Connected(GamepadConnectionInfo::{
           name: current.name,
@@ -489,7 +638,7 @@ fn rebuild_gamepad_events(
   for previous in previous_gamepads {
     if previous.connected &&
       find_gamepad_snapshot(current_gamepads, previous.id) is None {
-      emit_connection_event(world, GamepadConnectionEvent::{
+      emit_raw_connection_event(world, GamepadConnectionEvent::{
         gamepad_id: previous.id,
         connection: GamepadConnection::Disconnected,
       })
@@ -507,19 +656,10 @@ fn rebuild_gamepad_events(
           nan_f32()
         }
         if should_emit_value_change(previous_value, current_value) {
-          emit_button_changed_event(world, GamepadButtonChangedEvent::{
+          emit_raw_button_changed_event(world, RawGamepadButtonChangedEvent::{
             gamepad_id: current.id,
             button: gamepad_button_from_index(i),
             value: current_value,
-          })
-        }
-        let previous_pressed = gamepad_button_pressed(Some(previous), i)
-        let current_pressed = gamepad_button_pressed(Some(current), i)
-        if previous_pressed != current_pressed {
-          emit_button_state_changed_event(world, GamepadButtonStateChangedEvent::{
-            gamepad_id: current.id,
-            button: gamepad_button_from_index(i),
-            pressed: current_pressed,
           })
         }
       }
@@ -531,13 +671,118 @@ fn rebuild_gamepad_events(
           nan_f32()
         }
         if should_emit_value_change(previous_value, current_value) {
-          emit_axis_changed_event(world, GamepadAxisChangedEvent::{
+          emit_raw_axis_changed_event(world, RawGamepadAxisChangedEvent::{
             gamepad_id: current.id,
             axis: gamepad_axis_from_index(i),
             value: current_value,
           })
         }
       }
+    }
+  }
+}
+
+///|
+priv struct GamepadProcessedEventWriters {
+  gamepad_events : @ecs.MessageWriter[GamepadEvent]
+  axis_events : @ecs.MessageWriter[GamepadAxisChangedEvent]
+  button_events : @ecs.MessageWriter[GamepadButtonChangedEvent]
+  button_state_events : @ecs.MessageWriter[GamepadButtonStateChangedEvent]
+}
+
+///|
+fn current_gamepad_processing_world_abort_missing() -> @ecs.World {
+  match @app.current_world() {
+    Some(world) => world
+    None => abort("Missing current world while processing gamepad events")
+  }
+}
+
+///|
+impl @app.SystemParam for GamepadProcessedEventWriters with init_state(world) {
+  @app.system_param_empty_state(world)
+}
+
+///|
+impl @app.SystemParam for GamepadProcessedEventWriters with get(_state) {
+  let world = current_gamepad_processing_world_abort_missing()
+  GamepadProcessedEventWriters::{
+    gamepad_events: world.message_writer(gamepad_event_message_key),
+    axis_events: world.message_writer(gamepad_axis_changed_event_message_key),
+    button_events: world.message_writer(
+      gamepad_button_changed_event_message_key,
+    ),
+    button_state_events: world.message_writer(
+      gamepad_button_state_changed_event_message_key,
+    ),
+  }
+}
+
+///|
+impl @app.SystemParam for GamepadProcessedEventWriters with store(self, state) {
+  @app.system_param_store_no_state(self, state)
+}
+
+///|
+fn process_button_event(
+  raw_event : RawGamepadButtonChangedEvent,
+  outputs : GamepadProcessedEventWriters,
+) -> Unit {
+  let index = raw_event.button.to_index()
+  let current_state = snapshot_button_state(
+    find_gamepad_snapshot(current_gamepads_ref.val, raw_event.gamepad_id),
+    index,
+    raw_event.value,
+  )
+  let previous_state = snapshot_button_state(
+    find_gamepad_snapshot(previous_gamepads_ref.val, raw_event.gamepad_id),
+    index,
+    0.0F,
+  )
+  if previous_state != current_state {
+    ignore(
+      outputs.button_state_events.write(
+        GamepadButtonStateChangedEvent::new(
+          raw_event.gamepad_id,
+          raw_event.button,
+          current_state,
+        ),
+      ),
+    )
+  }
+  let event = GamepadButtonChangedEvent::new(
+    raw_event.gamepad_id,
+    raw_event.button,
+    current_state,
+    raw_event.value,
+  )
+  ignore(outputs.button_events.write(event))
+  ignore(outputs.gamepad_events.write(GamepadEvent::Button(event)))
+}
+
+///|
+fn gamepad_event_processing_system(
+  raw_events : @ecs.MessageReader[RawGamepadEvent],
+  outputs : GamepadProcessedEventWriters,
+) -> Unit {
+  for raw_event in (try! raw_events.read()) {
+    match raw_event {
+      Connection(connection_event) =>
+        ignore(
+          outputs.gamepad_events.write(
+            GamepadEvent::Connection(connection_event),
+          ),
+        )
+      Axis(axis_event) => {
+        let event = GamepadAxisChangedEvent::new(
+          axis_event.gamepad_id,
+          axis_event.axis,
+          axis_event.value,
+        )
+        ignore(outputs.axis_events.write(event))
+        ignore(outputs.gamepad_events.write(GamepadEvent::Axis(event)))
+      }
+      Button(button_event) => process_button_event(button_event, outputs)
     }
   }
 }
@@ -680,8 +925,18 @@ pub impl @ecs.Message for GamepadConnectionEvent with message() {
 }
 
 ///|
+pub impl @ecs.Message for RawGamepadAxisChangedEvent with message() {
+  raw_gamepad_axis_changed_event_message_key
+}
+
+///|
 pub impl @ecs.Message for GamepadAxisChangedEvent with message() {
   gamepad_axis_changed_event_message_key
+}
+
+///|
+pub impl @ecs.Message for RawGamepadButtonChangedEvent with message() {
+  raw_gamepad_button_changed_event_message_key
 }
 
 ///|
@@ -695,11 +950,19 @@ pub impl @ecs.Message for GamepadButtonStateChangedEvent with message() {
 }
 
 ///|
+pub impl @ecs.Message for RawGamepadEvent with message() {
+  raw_gamepad_event_message_key
+}
+
+///|
 pub fn input_gamepad_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .add_message(gamepad_event_message_key)
+  .add_message(raw_gamepad_event_message_key)
   .add_message(gamepad_connection_event_message_key)
+  .add_message(raw_gamepad_axis_changed_event_message_key)
   .add_message(gamepad_axis_changed_event_message_key)
+  .add_message(raw_gamepad_button_changed_event_message_key)
   .add_message(gamepad_button_changed_event_message_key)
   .add_message(gamepad_button_state_changed_event_message_key)
 }

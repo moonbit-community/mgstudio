@@ -142,7 +142,7 @@ let keyboard_event_keycodes : Array[@window.KeyCode] = [
 pub(all) enum ButtonState {
   Pressed
   Released
-} derive(ToJson, FromJson)
+} derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn ButtonState::is_pressed(self : ButtonState) -> Bool {
@@ -1435,6 +1435,13 @@ pub fn input_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .add_pre_update_system(input_poll_keyboard_system)
   .add_pre_update_system(input_poll_drag_and_drop_system)
   .add_pre_update_system(input_poll_mouse_system)
-  .add_pre_update_system(input_poll_gamepad_system)
+  .add_pre_update_system_config(
+    @app.system(input_poll_gamepad_system).in_set(input_gamepad_poll_system_set),
+  )
+  .add_pre_update_system_config(
+    @app.system(@app.system_param2(gamepad_event_processing_system))
+    .in_set(input_gamepad_event_processing_system_set)
+    .after(input_gamepad_poll_system_set),
+  )
   .add_post_update_system(input_finish_system)
 }
