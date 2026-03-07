@@ -40,6 +40,26 @@ pub fn log_diagnostics_plugin_with(@app.App[@ecs.World], LogDiagnosticsPlugin) -
 
 pub fn register_diagnostic(@app.App[@ecs.World], Diagnostic) -> @app.App[@ecs.World]
 
+pub let render_diagnostic_mesh2d_draw_calls : DiagnosticPath
+
+pub let render_diagnostic_mesh2d_executed_draw_calls : DiagnosticPath
+
+pub let render_diagnostic_mesh3d_draw_calls : DiagnosticPath
+
+pub let render_diagnostic_mesh3d_executed_draw_calls : DiagnosticPath
+
+pub let render_diagnostic_prepared_cameras_2d : DiagnosticPath
+
+pub let render_diagnostic_prepared_cameras_3d : DiagnosticPath
+
+pub let render_diagnostic_queued_draw_items_2d : DiagnosticPath
+
+pub let render_diagnostic_visible_meshes_3d : DiagnosticPath
+
+pub fn render_diagnostics_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn render_diagnostics_plugin_with(@app.App[@ecs.World], RenderDiagnosticsPlugin) -> @app.App[@ecs.World]
+
 pub fn update_frame_count(@app.ResMut[FrameCount]) -> Unit
 
 // Errors
@@ -170,6 +190,12 @@ pub fn LogDiagnosticsState::extend_filter(Self, Array[DiagnosticPath]) -> Unit
 pub fn LogDiagnosticsState::remove_filter(Self, DiagnosticPath) -> Bool
 pub fn LogDiagnosticsState::set_timer_duration(Self, Float) -> Unit
 pub impl @app.Resource for LogDiagnosticsState
+
+pub struct RenderDiagnosticsPlugin {
+  max_history_length : Int
+}
+pub fn RenderDiagnosticsPlugin::default() -> Self
+pub fn RenderDiagnosticsPlugin::new(Int) -> Self
 
 // Type aliases
 

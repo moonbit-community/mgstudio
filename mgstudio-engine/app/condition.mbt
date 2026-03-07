@@ -18,6 +18,57 @@ pub fn[S : States] state_exists(state : S) -> RunConditionFn[@ecs.World] {
 }
 
 ///|
+fn condition_tick_in_range(
+  tick : @core.Tick,
+  system : @core.SystemTicks,
+) -> Bool {
+  tick >= system.last_run && tick < system.this_run
+}
+
+///|
+pub fn[T] resource_exists(
+  key : @ecs.ResourceKey[T],
+) -> RunConditionFn[@ecs.World] {
+  fn(world : @ecs.World) { world.get_resource_ticks(key) is Some(_) }
+}
+
+///|
+pub fn[T] resource_added(
+  key : @ecs.ResourceKey[T],
+) -> RunConditionFn[@ecs.World] {
+  fn(world : @ecs.World) {
+    match world.get_resource_ticks(key) {
+      Some(ticks) => condition_tick_in_range(ticks.added, current_system_ticks())
+      None => false
+    }
+  }
+}
+
+///|
+pub fn[T] resource_changed(
+  key : @ecs.ResourceKey[T],
+) -> RunConditionFn[@ecs.World] {
+  fn(world : @ecs.World) {
+    match world.get_resource_ticks(key) {
+      Some(ticks) => condition_tick_in_range(ticks.changed, current_system_ticks())
+      None => abort("Missing resource for run condition")
+    }
+  }
+}
+
+///|
+pub fn[T] resource_exists_and_changed(
+  key : @ecs.ResourceKey[T],
+) -> RunConditionFn[@ecs.World] {
+  fn(world : @ecs.World) {
+    match world.get_resource_ticks(key) {
+      Some(ticks) => condition_tick_in_range(ticks.changed, current_system_ticks())
+      None => false
+    }
+  }
+}
+
+///|
 pub fn[S : States] in_state(state : S) -> RunConditionFn[@ecs.World] {
   fn(world : @ecs.World) {
     match world_state(world, state) {
@@ -32,7 +83,7 @@ pub fn[S : States] state_changed(state : S) -> RunConditionFn[@ecs.World] {
   let key = state_resource_key(state)
   fn(world : @ecs.World) {
     match world.get_resource_ticks(key) {
-      Some(ticks) => ticks.is_changed(current_system_ticks())
+      Some(ticks) => condition_tick_in_range(ticks.changed, current_system_ticks())
       None => false
     }
   }

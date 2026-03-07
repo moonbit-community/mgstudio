@@ -220,7 +220,7 @@ Notes:
 | `bevy/examples/dev_tools/fps_overlay.rs` | `dev_tools` |  | `Blocked` | `team-ops` |  |
 | `bevy/examples/diagnostics/custom_diagnostic.rs` | `diagnostics` | `mgstudio-engine/examples/diagnostics/custom_diagnostic` | `Exact` | `team-ops` |  |
 | `bevy/examples/diagnostics/enabling_disabling_diagnostic.rs` | `diagnostics` | `mgstudio-engine/examples/diagnostics/enabling_disabling_diagnostic` | `Exact` | `team-ops` |  |
-| `bevy/examples/diagnostics/log_diagnostics.rs` | `diagnostics` |  | `Blocked` | `team-ops` | Blocked by `SystemInformationDiagnosticsPlugin` (`bd-2j9.18`), missing render diagnostics forwarding (`bd-zd9`), and missing `resource_exists_and_changed` run condition parity (`bd-nab`). |
+| `bevy/examples/diagnostics/log_diagnostics.rs` | `diagnostics` |  | `Blocked` | `team-ops` | Blocked by `SystemInformationDiagnosticsPlugin` (`bd-2j9.18`). |
 | `bevy/examples/ecs/change_detection.rs` | `ecs` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/ecs/component_hooks.rs` | `ecs` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/ecs/contiguous_query.rs` | `ecs` |  | `Blocked` | `team-core` |  |

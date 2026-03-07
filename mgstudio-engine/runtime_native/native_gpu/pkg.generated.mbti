@@ -80,6 +80,8 @@ pub fn end_pass() -> Unit
 
 pub fn get_queue(Int) -> Int
 
+pub fn render_diagnostics_snapshot() -> RenderDiagnosticsSnapshot
+
 pub fn request_device() -> Int
 
 pub fn set_scissor(x~ : Int, y~ : Int, width~ : Int, height~ : Int) -> Unit
@@ -371,6 +373,15 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
   point_shadow_texture_id : Int
   bind_group : @wgpu_mbt.BindGroup
 }
+
+pub struct RenderDiagnosticsSnapshot {
+  mesh2d_draw_calls : Int
+  mesh2d_executed_draw_calls : Int
+  mesh3d_draw_calls : Int
+  mesh3d_executed_draw_calls : Int
+}
+pub fn RenderDiagnosticsSnapshot::default() -> Self
+pub fn RenderDiagnosticsSnapshot::new(Int, Int, Int, Int) -> Self
 
 pub struct SpriteBatch {
   texture_id : Int

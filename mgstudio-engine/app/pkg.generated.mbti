@@ -87,6 +87,14 @@ pub fn report_render_runtime_error(RenderRuntimeError) -> Unit
 
 pub fn reset_render_error_handler() -> Unit
 
+pub fn[T] resource_added(@ecs.ResourceKey[T]) -> (@ecs.World) -> Bool
+
+pub fn[T] resource_changed(@ecs.ResourceKey[T]) -> (@ecs.World) -> Bool
+
+pub fn[T] resource_exists(@ecs.ResourceKey[T]) -> (@ecs.World) -> Bool
+
+pub fn[T] resource_exists_and_changed(@ecs.ResourceKey[T]) -> (@ecs.World) -> Bool
+
 pub fn run_current_fixed_main_schedule(@ecs.World) -> Unit
 
 pub fn run_current_fixed_update_schedule(@ecs.World) -> Unit

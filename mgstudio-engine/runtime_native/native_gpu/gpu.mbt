@@ -5758,6 +5758,8 @@ pub fn GpuBackend::draw_mesh(
   pass.set_index_buffer_u16(mesh.index_buf, 0UL, index_bytes)
   debug_mesh2d_executed_draw_calls_ref.val = debug_mesh2d_executed_draw_calls_ref.val +
     1
+  current_frame_mesh2d_executed_draw_calls_ref.val = current_frame_mesh2d_executed_draw_calls_ref.val +
+    1
   pass.draw_indexed(mesh.index_count, 1U, 0U, 0, 0U)
 }
 
@@ -6820,6 +6822,8 @@ pub fn GpuBackend::draw_mesh3d(
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
   debug_mesh3d_executed_draw_calls_ref.val = debug_mesh3d_executed_draw_calls_ref.val +
     1
+  current_frame_mesh3d_executed_draw_calls_ref.val = current_frame_mesh3d_executed_draw_calls_ref.val +
+    1
   if mesh.primitive_topology == MESH3D_TOPOLOGY_LINE_STRIP {
     pass.draw(mesh.vertex_count, 1U, 0U, 0U)
   } else {
@@ -6840,6 +6844,39 @@ pub type NativeGpuSurface = Int
 
 ///|
 pub type NativeGpuFrame = Int
+
+///|
+pub struct RenderDiagnosticsSnapshot {
+  mesh2d_draw_calls : Int
+  mesh2d_executed_draw_calls : Int
+  mesh3d_draw_calls : Int
+  mesh3d_executed_draw_calls : Int
+}
+
+///|
+pub fn RenderDiagnosticsSnapshot::default() -> RenderDiagnosticsSnapshot {
+  RenderDiagnosticsSnapshot::{
+    mesh2d_draw_calls: 0,
+    mesh2d_executed_draw_calls: 0,
+    mesh3d_draw_calls: 0,
+    mesh3d_executed_draw_calls: 0,
+  }
+}
+
+///|
+pub fn RenderDiagnosticsSnapshot::new(
+  mesh2d_draw_calls : Int,
+  mesh2d_executed_draw_calls : Int,
+  mesh3d_draw_calls : Int,
+  mesh3d_executed_draw_calls : Int,
+) -> RenderDiagnosticsSnapshot {
+  RenderDiagnosticsSnapshot::{
+    mesh2d_draw_calls,
+    mesh2d_executed_draw_calls,
+    mesh3d_draw_calls,
+    mesh3d_executed_draw_calls,
+  }
+}
 
 ///|
 priv struct SurfaceBinding {
@@ -6891,6 +6928,23 @@ let debug_mesh2d_executed_draw_calls_ref : Ref[Int] = Ref::new(0)
 
 ///|
 let debug_mesh3d_executed_draw_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let current_frame_mesh2d_draw_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let current_frame_mesh2d_executed_draw_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let current_frame_mesh3d_draw_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let current_frame_mesh3d_executed_draw_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let last_frame_render_diagnostics_snapshot_ref : Ref[RenderDiagnosticsSnapshot] = Ref::new(
+  RenderDiagnosticsSnapshot::default(),
+)
 
 ///|
 let debug_mesh2d_drop_no_frame_ref : Ref[Int] = Ref::new(0)
@@ -7026,6 +7080,10 @@ pub fn configure_surface(
 ///|
 pub fn begin_frame(surface : NativeGpuSurface) -> NativeGpuFrame {
   surface |> ignore
+  current_frame_mesh2d_draw_calls_ref.val = 0
+  current_frame_mesh2d_executed_draw_calls_ref.val = 0
+  current_frame_mesh3d_draw_calls_ref.val = 0
+  current_frame_mesh3d_executed_draw_calls_ref.val = 0
   if ensure_backend() is Some(backend) {
     try {
       backend.begin_frame()
@@ -7044,6 +7102,12 @@ pub fn end_frame(frame : NativeGpuFrame) -> Unit {
     backend.end_frame() catch {
       err => debug_runtime_error("end_frame", err)
     }
+  }
+  last_frame_render_diagnostics_snapshot_ref.val = RenderDiagnosticsSnapshot::{
+    mesh2d_draw_calls: current_frame_mesh2d_draw_calls_ref.val,
+    mesh2d_executed_draw_calls: current_frame_mesh2d_executed_draw_calls_ref.val,
+    mesh3d_draw_calls: current_frame_mesh3d_draw_calls_ref.val,
+    mesh3d_executed_draw_calls: current_frame_mesh3d_executed_draw_calls_ref.val,
   }
   debug_frame_counter_ref.val = debug_frame_counter_ref.val + 1
   if debug_frame_counter_ref.val % 60 == 0 {
@@ -7424,6 +7488,8 @@ pub fn draw_mesh(
   uv_scale_y~ : Float,
 ) -> Unit {
   debug_mesh2d_draw_calls_ref.val = debug_mesh2d_draw_calls_ref.val + 1
+  current_frame_mesh2d_draw_calls_ref.val = current_frame_mesh2d_draw_calls_ref.val +
+    1
   if mesh_id <= 0 {
     debug_mesh2d_invalid_id_calls_ref.val = debug_mesh2d_invalid_id_calls_ref.val +
       1
@@ -7505,6 +7571,8 @@ pub fn draw_mesh3d(
   cull_mode~ : Int,
 ) -> Unit {
   debug_mesh3d_draw_calls_ref.val = debug_mesh3d_draw_calls_ref.val + 1
+  current_frame_mesh3d_draw_calls_ref.val = current_frame_mesh3d_draw_calls_ref.val +
+    1
   if mesh_id <= 0 {
     debug_mesh3d_invalid_id_calls_ref.val = debug_mesh3d_invalid_id_calls_ref.val +
       1
@@ -7543,6 +7611,11 @@ pub fn draw_motion_blur(
       err => debug_runtime_error("draw_motion_blur", err)
     }
   }
+}
+
+///|
+pub fn render_diagnostics_snapshot() -> RenderDiagnosticsSnapshot {
+  last_frame_render_diagnostics_snapshot_ref.val
 }
 
 ///|

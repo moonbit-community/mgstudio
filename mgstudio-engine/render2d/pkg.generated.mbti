@@ -133,6 +133,10 @@ pub fn render2d_create_render_target_ecs(Int, Int, Bool) -> @asset.Handle[@asset
 
 pub fn render2d_debug_log_primary_camera(@ecs.World) -> Unit
 
+pub fn render2d_diagnostic_prepared_camera_count() -> Int
+
+pub fn render2d_diagnostic_queued_draw_item_count() -> Int
+
 pub fn render2d_draw_bloom_overlay(@ecs.World, @asset.Handle[@asset.Image], @math.Transform, Bloom2dSettings, RenderLayers) -> Unit
 
 pub fn render2d_draw_tilemap_chunk(@ecs.World, TilemapChunk, TilemapChunkTileData, @math.Transform, RenderLayers) -> Unit
@@ -140,6 +144,8 @@ pub fn render2d_draw_tilemap_chunk(@ecs.World, TilemapChunk, TilemapChunkTileDat
 pub fn render2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn render2d_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn render2d_prepared_camera_count(@ecs.World) -> Int?
 
 pub fn render2d_push_sprite_uv(@ecs.World, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, Color, RenderLayers) -> Unit
 
@@ -152,6 +158,8 @@ pub fn render2d_push_ui_box_shadow_scissor(@ecs.World, @core.Entity, @asset.Hand
 pub fn render2d_push_ui_rect_uv_scissor(@ecs.World, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, @math.Vec2, @math.Vec2, Color, RenderLayers, @math.Rect?, Int, UiCornerRadii, UiBorderRect) -> Unit
 
 pub fn render2d_push_ui_texture_slice_scissor(@ecs.World, @core.Entity, @asset.Handle[@asset.Image], @math.Transform, @math.Vec2, Color, RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
+
+pub fn render2d_queued_draw_item_count(@ecs.World) -> Int?
 
 pub let render2d_set_execute : String
 

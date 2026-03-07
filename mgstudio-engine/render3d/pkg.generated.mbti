@@ -261,6 +261,10 @@ pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @render2d.Camera, Camer
 
 pub fn render3d_camera_world_to_viewport(@math.Vec3, @render2d.Camera, CameraProjection3d, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
 
+pub fn render3d_diagnostic_prepared_camera_count() -> Int
+
+pub fn render3d_diagnostic_queued_visible_mesh_count() -> Int
+
 pub fn render3d_distance_fog() -> DistanceFog
 
 pub fn render3d_execute_system(@ecs.World) -> Unit
@@ -271,7 +275,11 @@ pub fn render3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn render3d_prepare_system(@ecs.World) -> Unit
 
+pub fn render3d_prepared_camera_count() -> Int?
+
 pub fn render3d_queue_system(@ecs.World) -> Unit
+
+pub fn render3d_queued_visible_mesh_count() -> Int?
 
 pub fn render3d_set_distance_fog(DistanceFog) -> Unit
 

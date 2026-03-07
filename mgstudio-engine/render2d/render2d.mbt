@@ -4206,6 +4206,12 @@ struct RenderState {
 }
 
 ///|
+let render2d_diagnostic_queued_draw_item_count_ref : Ref[Int] = Ref::new(0)
+
+///|
+let render2d_diagnostic_prepared_camera_count_ref : Ref[Int] = Ref::new(0)
+
+///|
 fn RenderState::new() -> RenderState {
   RenderState::{
     draw_enabled: false,
@@ -6233,11 +6239,14 @@ pub fn render_prepare_system(world : @ecs.World) -> Unit {
     if !rs.val.draw_enabled {
       rs.val.prepared_camera_indices.clear()
       rs.val.queued_draw_item_counts.clear()
+      render2d_diagnostic_prepared_camera_count_ref.val = 0
+      render2d_diagnostic_queued_draw_item_count_ref.val = 0
       return
     }
     rs.val.prepared_camera_indices = render2d_sorted_camera_indices(
       rs.val.cameras,
     )
+    render2d_diagnostic_prepared_camera_count_ref.val = rs.val.prepared_camera_indices.length()
     rs.val.queued_draw_item_counts.clear()
   })
   |> ignore
@@ -6248,6 +6257,7 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
   render_state_update(world, fn(rs) {
     if !rs.val.draw_enabled {
       rs.val.queued_draw_item_counts.clear()
+      render2d_diagnostic_queued_draw_item_count_ref.val = 0
       return
     }
     let cameras = rs.val.cameras
@@ -6276,8 +6286,39 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
       counts.push(items.length())
     }
     rs.val.queued_draw_item_counts = counts
+    let mut total = 0
+    for count in counts {
+      total = total + count
+    }
+    render2d_diagnostic_queued_draw_item_count_ref.val = total
   })
   |> ignore
+}
+
+///|
+pub fn render2d_diagnostic_queued_draw_item_count() -> Int {
+  render2d_diagnostic_queued_draw_item_count_ref.val
+}
+
+///|
+pub fn render2d_diagnostic_prepared_camera_count() -> Int {
+  render2d_diagnostic_prepared_camera_count_ref.val
+}
+
+///|
+pub fn render2d_prepared_camera_count(world : @ecs.World) -> Int? {
+  guard render_state_ref(world) is Some(rs) else { return Some(0) }
+  Some(rs.prepared_camera_indices.length())
+}
+
+///|
+pub fn render2d_queued_draw_item_count(world : @ecs.World) -> Int? {
+  guard render_state_ref(world) is Some(rs) else { return Some(0) }
+  let mut total = 0
+  for count in rs.queued_draw_item_counts {
+    total = total + count
+  }
+  Some(total)
 }
 
 ///|
@@ -6799,6 +6840,8 @@ test "render2d: camera viewport scales with dpi resize factor" {
 pub fn render_execute_system(world : @ecs.World) -> Unit {
   render_state_update(world, fn(rs) {
     if !rs.val.draw_enabled {
+      render2d_diagnostic_prepared_camera_count_ref.val = 0
+      render2d_diagnostic_queued_draw_item_count_ref.val = 0
       return
     }
     rs.val.draw_enabled = false
@@ -6808,6 +6851,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       gizmos_clear()
       rs.val.prepared_camera_indices.clear()
       rs.val.queued_draw_item_counts.clear()
+      render2d_diagnostic_prepared_camera_count_ref.val = 0
+      render2d_diagnostic_queued_draw_item_count_ref.val = 0
       rs.val.extra_sprites.clear()
       rs.val.extra_sprite_texture_slices.clear()
       rs.val.extra_ui_rects.clear()

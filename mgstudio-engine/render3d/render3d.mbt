@@ -6184,10 +6184,19 @@ let point_light_shadow_targets : Ref[Array[PointLightShadowTargetsEntry]] = Ref:
 let auto_exposure_history : Ref[Array[AutoExposureHistoryEntry]] = Ref::new([])
 
 ///|
-let render3d_prepared_camera_order : Ref[Array[@core.Entity]] = Ref::new([])
+let render3d_runtime_initialized_ref : Ref[Bool] = Ref::new(false)
 
 ///|
-let render3d_queued_visible_mesh_count : Ref[Int] = Ref::new(0)
+let render3d_prepared_camera_order_ref : Ref[Array[@core.Entity]] = Ref::new([])
+
+///|
+let render3d_queued_visible_mesh_count_ref : Ref[Int] = Ref::new(0)
+
+///|
+let render3d_diagnostic_queued_visible_mesh_count_ref : Ref[Int] = Ref::new(0)
+
+///|
+let render3d_diagnostic_prepared_camera_count_ref : Ref[Int] = Ref::new(0)
 
 ///|
 priv struct WireframeMeshCacheEntry {
@@ -9142,7 +9151,7 @@ fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
 fn render3d_prepared_camera_indices(
   cameras : Array[Camera3dInstance],
 ) -> Array[Int]? {
-  let prepared = render3d_prepared_camera_order.val
+  let prepared = render3d_prepared_camera_order_ref.val
   if prepared.length() != cameras.length() {
     return None
   }
@@ -9167,8 +9176,12 @@ fn render3d_prepared_camera_indices(
 
 ///|
 pub fn render3d_extract_system(world : @ecs.World) -> Unit {
-  render3d_prepared_camera_order.val = render3d_sorted_camera_entities(world)
-  render3d_queued_visible_mesh_count.val = 0
+  render3d_prepared_camera_order_ref.val = render3d_sorted_camera_entities(
+    world,
+  )
+  render3d_diagnostic_prepared_camera_count_ref.val = render3d_prepared_camera_order_ref.val.length()
+  render3d_queued_visible_mesh_count_ref.val = 0
+  render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
 }
 
 ///|
@@ -9183,15 +9196,18 @@ pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
     let mesh_id = @render2d.render2d_upload_mesh_handle(mesh.mesh)
     gpu_mesh_store.insert(entity, @render2d.GpuMesh2d::new(mesh_id), tick)
   })
-  if render3d_prepared_camera_order.val.length() == 0 {
-    render3d_prepared_camera_order.val = render3d_sorted_camera_entities(world)
+  if render3d_prepared_camera_order_ref.val.length() == 0 {
+    render3d_prepared_camera_order_ref.val = render3d_sorted_camera_entities(
+      world,
+    )
   }
 }
 
 ///|
 pub fn render3d_queue_system(world : @ecs.World) -> Unit {
-  if render3d_prepared_camera_order.val.length() == 0 {
-    render3d_queued_visible_mesh_count.val = 0
+  if render3d_prepared_camera_order_ref.val.length() == 0 {
+    render3d_queued_visible_mesh_count_ref.val = 0
+    render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
     return
   }
   let mesh_store = world.component(ecs_key_mesh3d)
@@ -9206,7 +9222,34 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
     }
     visible_mesh_count = visible_mesh_count + 1
   })
-  render3d_queued_visible_mesh_count.val = visible_mesh_count
+  render3d_queued_visible_mesh_count_ref.val = visible_mesh_count
+  render3d_diagnostic_queued_visible_mesh_count_ref.val = visible_mesh_count
+}
+
+///|
+pub fn render3d_diagnostic_queued_visible_mesh_count() -> Int {
+  render3d_diagnostic_queued_visible_mesh_count_ref.val
+}
+
+///|
+pub fn render3d_diagnostic_prepared_camera_count() -> Int {
+  render3d_diagnostic_prepared_camera_count_ref.val
+}
+
+///|
+pub fn render3d_prepared_camera_count() -> Int? {
+  if !render3d_runtime_initialized_ref.val {
+    return Some(0)
+  }
+  Some(render3d_prepared_camera_order_ref.val.length())
+}
+
+///|
+pub fn render3d_queued_visible_mesh_count() -> Int? {
+  if !render3d_runtime_initialized_ref.val {
+    return Some(0)
+  }
+  Some(render3d_queued_visible_mesh_count_ref.val)
 }
 
 ///|
@@ -9487,8 +9530,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     }
   })
   if cameras.length() == 0 {
-    render3d_prepared_camera_order.val.clear()
-    render3d_queued_visible_mesh_count.val = 0
+    render3d_prepared_camera_order_ref.val.clear()
+    render3d_queued_visible_mesh_count_ref.val = 0
     return
   }
   let mesh_store = world.component(ecs_key_mesh3d)
@@ -10791,8 +10834,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       @window.host_gpu_end_pass()
     }
   }
-  render3d_prepared_camera_order.val.clear()
-  render3d_queued_visible_mesh_count.val = 0
+  render3d_prepared_camera_order_ref.val.clear()
+  render3d_queued_visible_mesh_count_ref.val = 0
 }
 
 ///|
@@ -11328,6 +11371,7 @@ pub fn render3d_camera_world_to_viewport(
 fn init_render3d_resources(world : @ecs.World) -> Unit {
   let ecs_world = world
   let tick = world.read_change_tick()
+  render3d_runtime_initialized_ref.val = true
   let ambient = get_global_ambient_light_resource(ecs_world)
   if !ambient.is_present() {
     ambient.insert(GlobalAmbientLight::default(), tick)

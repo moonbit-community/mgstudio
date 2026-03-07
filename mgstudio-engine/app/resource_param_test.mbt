@@ -97,3 +97,95 @@ test "app: resource_remove clears custom resource" {
   )
   inspect(app.contains_resource(CounterResource::resource()), content="false")
 }
+
+///|
+test "app: resource_exists gates system execution on resource presence" {
+  let log : Array[Int] = []
+  let app = App::new(@ecs.World::new()).add_system_config(
+    system(fn(_world : @ecs.World) { log.push(1) }).run_if(
+      resource_exists(CounterResource::resource()),
+    ),
+  )
+
+  app.run_once() |> ignore
+  inspect(log.length(), content="0")
+
+  app.insert_resource(CounterResource::{ value: 3 }) |> ignore
+  app.run_once() |> ignore
+  inspect(log.length(), content="1")
+}
+
+///|
+test "app: resource_added only matches the frame a resource is inserted" {
+  let log : Array[Int] = []
+  let app = App::new(@ecs.World::new()).add_system_config(
+    system(fn(_world : @ecs.World) { log.push(log.length()) }).run_if(
+      resource_added(CounterResource::resource()),
+    ),
+  )
+
+  app.run_once() |> ignore
+  inspect(log.length(), content="0")
+
+  app.insert_resource(CounterResource::{ value: 5 }) |> ignore
+  app.run_once() |> ignore
+  inspect(log.length(), content="1")
+  inspect(log[0], content="0")
+
+  app.run_once() |> ignore
+  inspect(log.length(), content="1")
+}
+
+///|
+test "app: resource_exists_and_changed matches bevy change detection" {
+  let log : Array[Int] = []
+  let app = App::new(@ecs.World::new())
+    .insert_resource(CounterResource::{ value: 1 })
+    .add_system_config(
+      system(fn(world : @ecs.World) {
+        match read_counter_resource(world) {
+          Some(resource) => log.push(resource.value)
+          None => log.push(-1)
+        }
+      }).run_if(resource_exists_and_changed(CounterResource::resource())),
+    )
+
+  app.run_once() |> ignore
+  inspect(log.length(), content="1")
+  inspect(log[0], content="1")
+
+  app.run_once() |> ignore
+  inspect(log.length(), content="1")
+
+  app.insert_resource(CounterResource::{ value: 8 }) |> ignore
+  app.run_once() |> ignore
+  inspect(log.length(), content="2")
+  inspect(log[1], content="8")
+}
+
+///|
+test "app: resource_changed tracks changes when the resource exists" {
+  let log : Array[Int] = []
+  let app = App::new(@ecs.World::new())
+    .insert_resource(CounterResource::{ value: 1 })
+    .add_system_config(
+      system(fn(world : @ecs.World) {
+        match read_counter_resource(world) {
+          Some(resource) => log.push(resource.value)
+          None => log.push(-1)
+        }
+      }).run_if(resource_changed(CounterResource::resource())),
+    )
+
+  app.run_once() |> ignore
+  inspect(log.length(), content="1")
+  inspect(log[0], content="1")
+
+  app.run_once() |> ignore
+  inspect(log.length(), content="1")
+
+  app.insert_resource(CounterResource::{ value: 9 }) |> ignore
+  app.run_once() |> ignore
+  inspect(log.length(), content="2")
+  inspect(log[1], content="9")
+}
