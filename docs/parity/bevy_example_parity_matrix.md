@@ -298,7 +298,7 @@ Notes:
 | `bevy/examples/large_scenes/mipmap_generator/examples/test_compression.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/large_scenes/mipmap_generator/examples/test_image.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/large_scenes/mipmap_generator/src/lib.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
-| `bevy/examples/math/bounding_2d.rs` | `math` |  | `Blocked` | `team-core` | Blocked by missing 2D bounding volume and ray cast helpers (`bd-h4h`). |
+| `bevy/examples/math/bounding_2d.rs` | `math` | `mgstudio-engine/examples/math/bounding_2d` | `Blocked` | `team-core` | Example package now exists, but exact parity is still blocked until engine-owned 2D bounding volume and ray cast helpers replace the example-local implementations (`bd-h4h`). |
 | `bevy/examples/math/cubic_splines.rs` | `math` |  | `Blocked` | `team-core` | Blocked by missing cubic spline math surface (`bd-yh8`). |
 | `bevy/examples/math/custom_primitives.rs` | `math` |  | `Blocked` | `team-core` | Blocked by missing custom primitive trait stack (`bd-jpy`). |
 | `bevy/examples/math/random_sampling.rs` | `math` |  | `Blocked` | `team-core` | Blocked by missing primitive shape sampling distributions and related camera helper integration (`bd-29b`, `bd-jb1`). |
