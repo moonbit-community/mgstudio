@@ -17,12 +17,12 @@
 
 ///|
 fn print_hello_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_system(print_hello_system)
+  app.add_systems(@app.Update, @app.system(print_hello_system))
 }
 
 ///|
 fn print_world_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_system(print_world_system)
+  app.add_systems(@app.Update, @app.system(print_world_system))
 }
 
 ///|

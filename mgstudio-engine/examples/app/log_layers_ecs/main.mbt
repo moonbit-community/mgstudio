@@ -77,8 +77,11 @@ fn main {
   .add_message(log_message_key)
   .add_plugins(plugins)
   .add_plugins([@app.log_plugin(log_plugin)])
-  .add_system(log_system)
-  .add_system_param(transfer_log_messages)
-  .add_system_param(print_logs)
+  .add_systems(@app.Update, @app.system(log_system))
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param(transfer_log_messages)),
+  )
+  .add_systems(@app.Update, @app.system(@app.system_param(print_logs)))
   .run()
 }

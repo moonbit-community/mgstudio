@@ -122,8 +122,8 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .insert_resource(CaptureState::{ target: None, frame: 0 })
-  .add_startup_system(setup)
-  .add_system_param2(capture_system)
+  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(@app.Update, @app.system(@app.system_param2(capture_system)))
   .set_runner(externally_driven_runner_builder)
   .run()
 }

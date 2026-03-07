@@ -36,6 +36,9 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_system_param(file_drag_and_drop_system)
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param(file_drag_and_drop_system)),
+  )
   .run()
 }

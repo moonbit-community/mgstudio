@@ -50,7 +50,10 @@ fn print_message_plugin(
         @time.TimerMode::Repeating,
       ),
     })
-    .add_system_param2(print_message_system)
+    .add_systems(
+      @app.Update,
+      @app.system(@app.system_param2(print_message_system)),
+    )
   }
 }
 

@@ -55,6 +55,6 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@app.log_plugin(log_plugin)])
-  .add_system(log_system)
+  .add_systems(@app.Update, @app.system(log_system))
   .run()
 }

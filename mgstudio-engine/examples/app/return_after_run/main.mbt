@@ -33,8 +33,8 @@ fn main {
   let plugins = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(set_title)
-  .add_system(system)
+  .add_systems(@app.Startup, @app.system(set_title))
+  .add_systems(@app.Update, @app.system(system))
   .run()
   println("Bevy App has exited. We are back in our main function.")
 }

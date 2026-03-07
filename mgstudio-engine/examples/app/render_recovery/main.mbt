@@ -106,8 +106,8 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(setup)
-  .add_system(input_system)
-  .add_system(report_status)
+  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(@app.Update, @app.system(input_system))
+  .add_systems(@app.Update, @app.system(report_status))
   .run()
 }

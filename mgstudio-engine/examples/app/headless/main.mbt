@@ -50,7 +50,7 @@ fn run_once_app() -> Unit {
   .add_plugins([
     @app.schedule_runner_plugin(@app.ScheduleRunnerPlugin::run_once()),
   ])
-  .add_system(hello_world_system)
+  .add_systems(@app.Update, @app.system(hello_world_system))
   .run()
 }
 
@@ -63,7 +63,7 @@ fn run_loop_app() -> Unit {
     ),
   ])
   .insert_resource(CounterState::{ count: 0 })
-  .add_system_param(counter_system)
+  .add_systems(@app.Update, @app.system(@app.system_param(counter_system)))
   .run()
 }
 

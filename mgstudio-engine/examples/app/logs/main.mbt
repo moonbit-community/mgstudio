@@ -80,9 +80,9 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@app.log_plugin(@app.LogPlugin::default())])
-  .add_startup_system(setup)
-  .add_system(log_system)
-  .add_system(log_once_system)
-  .add_system(panic_on_p)
+  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(@app.Update, @app.system(log_system))
+  .add_systems(@app.Update, @app.system(log_once_system))
+  .add_systems(@app.Update, @app.system(panic_on_p))
   .run()
 }
