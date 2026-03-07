@@ -19,6 +19,8 @@ pub let ecs_resources : Array[String]
 
 pub fn get_transform_store(@ecs.World) -> @ecs.ComponentAccess[Transform]
 
+pub fn pi() -> Float
+
 pub fn pi_half() -> Float
 
 pub fn pow(Float, Float) -> Float
@@ -77,13 +79,25 @@ pub(all) struct Transform {
   mut rotation : Quat
   mut scale : Vec3
 }
+pub fn Transform::back(Self) -> Vec3
+pub fn Transform::down(Self) -> Vec3
+pub fn Transform::forward(Self) -> Vec3
 pub fn Transform::from_xy(Float, Float) -> Self
 pub fn Transform::from_xy_rotation_scale(Vec2, Float, Vec2, z? : Float) -> Self
 pub fn Transform::from_xyz(Float, Float, Float) -> Self
 pub fn Transform::identity() -> Self
+pub fn Transform::left(Self) -> Vec3
+pub fn Transform::local_x(Self) -> Vec3
+pub fn Transform::local_y(Self) -> Vec3
+pub fn Transform::local_z(Self) -> Vec3
 pub fn Transform::looking_at(Self, Vec3, Vec3) -> Self
+pub fn Transform::looking_to(Self, Vec3, Vec3) -> Self
 pub fn Transform::new(Vec3, Quat, Vec3) -> Self
+pub fn Transform::right(Self) -> Vec3
+pub fn Transform::rotate(Self, Quat) -> Unit
+pub fn Transform::rotate_z(Self, Float) -> Unit
 pub fn Transform::rotation_z(Self) -> Float
+pub fn Transform::up(Self) -> Vec3
 pub fn Transform::with_rotation(Self, Quat) -> Self
 pub fn Transform::with_scale(Self, Vec3) -> Self
 pub fn Transform::with_translation(Self, Vec3) -> Self
@@ -118,9 +132,16 @@ pub(all) struct Vec2 {
   mut x : Float
   mut y : Float
 }
+pub fn Vec2::add(Self, Self) -> Self
+pub fn Vec2::dot(Self, Self) -> Float
+pub fn Vec2::length(Self) -> Float
+pub fn Vec2::length_squared(Self) -> Float
+pub fn Vec2::mul_scalar(Self, Float) -> Self
 pub fn Vec2::new(Float, Float) -> Self
+pub fn Vec2::normalize_or_zero(Self) -> Self
 pub fn Vec2::sub(Self, Self) -> Self
 pub fn Vec2::to_angle(Self) -> Float
+pub fn Vec2::zero() -> Self
 pub impl ToJson for Vec2
 pub impl @json.FromJson for Vec2
 
@@ -139,6 +160,7 @@ pub fn Vec3::mul_scalar(Self, Float) -> Self
 pub fn Vec3::neg(Self) -> Self
 pub fn Vec3::new(Float, Float, Float) -> Self
 pub fn Vec3::normalize_or_zero(Self) -> Self
+pub fn Vec3::smooth_nudge(Self, Self, Float, Float) -> Unit
 pub fn Vec3::splat(Float) -> Self
 pub fn Vec3::sub(Self, Self) -> Self
 pub fn Vec3::zero() -> Self

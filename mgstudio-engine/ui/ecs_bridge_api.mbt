@@ -15,11 +15,11 @@
 ///|
 /// ECS component bridge types.
 pub let ecs_components : Array[String] = [
-  "Node", "Label", "Button", "UiRoot", "UiText", "ZIndex", "Outline", "UiImage",
-  "UiLayout", "BoxShadow", "ImageNode", "BorderColor", "ContentSize", "FocusPolicy",
-  "Interaction", "UiAntiAlias", "BorderRadius", "ButtonColors", "GlobalZIndex", "ImageNodeSize",
-  "CalculatedClip", "ScrollPosition", "BackgroundColor", "AccessibilityLabel", "UiBoxShadowSamples",
-  "RelativeCursorPosition",
+  "Node", "Label", "Button", "UiRoot", "IsDefaultUiCamera", "UiText", "ZIndex", "Outline",
+  "UiImage", "UiLayout", "BoxShadow", "ImageNode", "BorderColor", "ContentSize",
+  "FocusPolicy", "Interaction", "UiAntiAlias", "BorderRadius", "ButtonColors", "GlobalZIndex",
+  "ImageNodeSize", "CalculatedClip", "ScrollPosition", "BackgroundColor", "AccessibilityLabel",
+  "UiBoxShadowSamples", "RelativeCursorPosition",
 ]
 
 ///|
@@ -44,6 +44,13 @@ pub fn get_button_store(world : @ecs.World) -> @ecs.ComponentAccess[Button] {
 ///|
 pub fn get_ui_root_store(world : @ecs.World) -> @ecs.ComponentAccess[UiRoot] {
   world.component(ecs_key_ui_root)
+}
+
+///|
+pub fn get_is_default_ui_camera_store(
+  world : @ecs.World,
+) -> @ecs.ComponentAccess[IsDefaultUiCamera] {
+  world.component(ecs_key_is_default_ui_camera)
 }
 
 ///|

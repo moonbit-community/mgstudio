@@ -44,6 +44,8 @@ pub let ecs_key_image_node_size : @ecs.ComponentKey[ImageNodeSize]
 
 pub let ecs_key_interaction : @ecs.ComponentKey[Interaction]
 
+pub let ecs_key_is_default_ui_camera : @ecs.ComponentKey[IsDefaultUiCamera]
+
 pub let ecs_key_label : @ecs.ComponentKey[Label]
 
 pub let ecs_key_node : @ecs.ComponentKey[Node]
@@ -103,6 +105,8 @@ pub fn get_image_node_size_store(@ecs.World) -> @ecs.ComponentAccess[ImageNodeSi
 pub fn get_image_node_store(@ecs.World) -> @ecs.ComponentAccess[ImageNode]
 
 pub fn get_interaction_store(@ecs.World) -> @ecs.ComponentAccess[Interaction]
+
+pub fn get_is_default_ui_camera_store(@ecs.World) -> @ecs.ComponentAccess[IsDefaultUiCamera]
 
 pub fn get_label_store(@ecs.World) -> @ecs.ComponentAccess[Label]
 
@@ -477,6 +481,13 @@ pub impl Eq for Interaction
 pub impl Show for Interaction
 pub impl ToJson for Interaction
 pub impl @json.FromJson for Interaction
+
+pub struct IsDefaultUiCamera {
+}
+pub fn IsDefaultUiCamera::default() -> Self
+pub impl @ecs.Component for IsDefaultUiCamera
+pub impl ToJson for IsDefaultUiCamera
+pub impl @json.FromJson for IsDefaultUiCamera
 
 pub(all) enum JustifyContent {
   Center

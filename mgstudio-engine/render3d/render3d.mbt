@@ -708,7 +708,7 @@ const FREE_CAMERA_RADIANS_PER_DOT : Float = 0.005555555555555556F
 
 ///|
 /// A freecam-style controller configuration aligned with Bevy's `FreeCamera`.
-pub struct FreeCamera {
+pub(all) struct FreeCamera {
   sensitivity : Float
   key_forward : @window.KeyCode
   key_back : @window.KeyCode
@@ -747,7 +747,7 @@ pub fn FreeCamera::default() -> FreeCamera {
 
 ///|
 /// Runtime state for `FreeCamera`.
-pub struct FreeCameraState {
+pub(all) struct FreeCameraState {
   enabled : Bool
   initialized : Bool
   pitch : Float
@@ -3985,6 +3985,98 @@ fn mesh3d_geometry_tetrahedron(edge : Float) -> @mesh.Mesh3dGeometry {
 }
 
 ///|
+fn mesh3d_append_uv_sphere_triangle(
+  positions : Array[@math.Vec3],
+  uvs : Array[@math.Vec2],
+  a : @math.Vec3,
+  b : @math.Vec3,
+  c : @math.Vec3,
+  uv_a : @math.Vec2,
+  uv_b : @math.Vec2,
+  uv_c : @math.Vec2,
+) -> Unit {
+  positions.push(a)
+  positions.push(b)
+  positions.push(c)
+  uvs.push(uv_a)
+  uvs.push(uv_b)
+  uvs.push(uv_c)
+}
+
+///|
+fn mesh3d_geometry_sphere(radius : Float) -> @mesh.Mesh3dGeometry {
+  let safe_radius = if radius <= 0.0F { 0.5F } else { radius }
+  let latitudes = 16
+  let longitudes = 32
+  let latitude_count = Float::from_int(latitudes)
+  let longitude_count = Float::from_int(longitudes)
+  let positions : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+
+  fn sphere_point(
+    radius : Float,
+    latitude : Int,
+    longitude : Int,
+    latitude_count : Float,
+    longitude_count : Float,
+  ) -> (@math.Vec3, @math.Vec2) {
+    let v = Float::from_int(latitude) / latitude_count
+    let u = Float::from_int(longitude) / longitude_count
+    let theta = v * @math.pi()
+    let phi = u * @math.pi() * 2.0F
+    let sin_theta = @math.sin(theta)
+    let x = radius * sin_theta * @math.cos(phi)
+    let y = radius * @math.cos(theta)
+    let z = radius * sin_theta * @math.sin(phi)
+    (@math.Vec3::new(x, y, z), @math.Vec2::new(u, 1.0F - v))
+  }
+
+  for latitude in 0..<latitudes {
+    for longitude in 0..<longitudes {
+      let next_longitude = longitude + 1
+      let (p00, uv00) = sphere_point(
+        safe_radius, latitude, longitude, latitude_count, longitude_count,
+      )
+      let (p01, uv01) = sphere_point(
+        safe_radius, latitude, next_longitude, latitude_count, longitude_count,
+      )
+      let (p10, uv10) = sphere_point(
+        safe_radius,
+        latitude + 1,
+        longitude,
+        latitude_count,
+        longitude_count,
+      )
+      let (p11, uv11) = sphere_point(
+        safe_radius,
+        latitude + 1,
+        next_longitude,
+        latitude_count,
+        longitude_count,
+      )
+
+      if latitude == 0 {
+        mesh3d_append_uv_sphere_triangle(
+          positions, uvs, p00, p10, p11, uv00, uv10, uv11,
+        )
+      } else if latitude + 1 == latitudes {
+        mesh3d_append_uv_sphere_triangle(
+          positions, uvs, p00, p10, p01, uv00, uv10, uv01,
+        )
+      } else {
+        mesh3d_append_uv_sphere_triangle(
+          positions, uvs, p00, p10, p11, uv00, uv10, uv11,
+        )
+        mesh3d_append_uv_sphere_triangle(
+          positions, uvs, p00, p11, p01, uv00, uv11, uv01,
+        )
+      }
+    }
+  }
+  @mesh.Mesh3dGeometry::new(positions, uvs, None)
+}
+
+///|
 pub fn Mesh3d::from_geometry(geometry : @mesh.Mesh3dGeometry) -> Mesh3d {
   Mesh3d::new(
     @render2d.render_mesh_asset_add(@mesh.Mesh::from_3d_geometry(geometry)),
@@ -4003,6 +4095,11 @@ pub fn Mesh3d::from_cuboid(
 ///|
 pub fn Mesh3d::from_plane(width : Float, depth : Float) -> Mesh3d {
   Mesh3d::from_geometry(mesh3d_geometry_plane(width, depth))
+}
+
+///|
+pub fn Mesh3d::from_sphere(radius : Float) -> Mesh3d {
+  Mesh3d::from_geometry(mesh3d_geometry_sphere(radius))
 }
 
 ///|

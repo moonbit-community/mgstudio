@@ -1,0 +1,344 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+/// Port of `bevy/examples/camera/2d_screen_shake.rs`.
+
+///|
+const TRAUMA_DECAY_PER_SECOND : Float = 0.5F
+
+///|
+const TRAUMA_EXPONENT : Float = 2.0F
+
+///|
+const MAX_ANGLE : Float = 0.17453292519943295F
+
+///|
+const MAX_TRANSLATION : Float = 20.0F
+
+///|
+const NOISE_SPEED : Float = 20.0F
+
+///|
+const TRAUMA_PER_PRESS : Float = 0.4F
+
+///|
+const INSTRUCTIONS : String = "Press space repeatedly to trigger a progressively stronger screen shake"
+
+///|
+let perlin_permutation_table : Array[Int] = [
+  0x97, 0xA0, 0x89, 0x5B, 0x5A, 0x0F, 0x83, 0x0D, 0xC9, 0x5F, 0x60, 0x35, 0xC2, 0xE9,
+  0x07, 0xE1, 0x8C, 0x24, 0x67, 0x1E, 0x45, 0x8E, 0x08, 0x63, 0x25, 0xF0, 0x15, 0x0A,
+  0x17, 0xBE, 0x06, 0x94, 0xF7, 0x78, 0xEA, 0x4B, 0x00, 0x1A, 0xC5, 0x3E, 0x5E, 0xFC,
+  0xDB, 0xCB, 0x75, 0x23, 0x0B, 0x20, 0x39, 0xB1, 0x21, 0x58, 0xED, 0x95, 0x38, 0x57,
+  0xAE, 0x14, 0x7D, 0x88, 0xAB, 0xA8, 0x44, 0xAF, 0x4A, 0xA5, 0x47, 0x86, 0x8B, 0x30,
+  0x1B, 0xA6, 0x4D, 0x92, 0x9E, 0xE7, 0x53, 0x6F, 0xE5, 0x7A, 0x3C, 0xD3, 0x85, 0xE6,
+  0xDC, 0x69, 0x5C, 0x29, 0x37, 0x2E, 0xF5, 0x28, 0xF4, 0x66, 0x8F, 0x36, 0x41, 0x19,
+  0x3F, 0xA1, 0x01, 0xD8, 0x50, 0x49, 0xD1, 0x4C, 0x84, 0xBB, 0xD0, 0x59, 0x12, 0xA9,
+  0xC8, 0xC4, 0x87, 0x82, 0x74, 0xBC, 0x9F, 0x56, 0xA4, 0x64, 0x6D, 0xC6, 0xAD, 0xBA,
+  0x03, 0x40, 0x34, 0xD9, 0xE2, 0xFA, 0x7C, 0x7B, 0x05, 0xCA, 0x26, 0x93, 0x76, 0x7E,
+  0xFF, 0x52, 0x55, 0xD4, 0xCF, 0xCE, 0x3B, 0xE3, 0x2F, 0x10, 0x3A, 0x11, 0xB6, 0xBD,
+  0x1C, 0x2A, 0xDF, 0xB7, 0xAA, 0xD5, 0x77, 0xF8, 0x98, 0x02, 0x2C, 0x9A, 0xA3, 0x46,
+  0xDD, 0x99, 0x65, 0x9B, 0xA7, 0x2B, 0xAC, 0x09, 0x81, 0x16, 0x27, 0xFD, 0x13, 0x62,
+  0x6C, 0x6E, 0x4F, 0x71, 0xE0, 0xE8, 0xB2, 0xB9, 0x70, 0x68, 0xDA, 0xF6, 0x61, 0xE4,
+  0xFB, 0x22, 0xF2, 0xC1, 0xEE, 0xD2, 0x90, 0x0C, 0xBF, 0xB3, 0xA2, 0xF1, 0x51, 0x33,
+  0x91, 0xEB, 0xF9, 0x0E, 0xEF, 0x6B, 0x31, 0xC0, 0xD6, 0x1F, 0xB5, 0xC7, 0x6A, 0x9D,
+  0xB8, 0x54, 0xCC, 0xB0, 0x73, 0x79, 0x32, 0x2D, 0x7F, 0x04, 0x96, 0xFE, 0x8A, 0xEC,
+  0xCD, 0x5D, 0xDE, 0x72, 0x43, 0x1D, 0x18, 0x48, 0xF3, 0x8D, 0x80, 0xC3, 0x4E, 0x42,
+  0xD7, 0x3D, 0x9C, 0xB4,
+]
+
+///|
+priv struct CameraShakeState {
+  trauma : Float
+  original_transform : @math.Transform
+}
+
+///|
+priv struct CameraShakeConfig {
+  trauma_decay_per_second : Float
+  exponent : Float
+  max_angle : Float
+  max_translation : Float
+  noise_speed : Float
+}
+
+///|
+let camera_shake_state_key : @ecs.ComponentKey[CameraShakeState] = @ecs.register_component(
+  debug_name="examples.camera.2d_screen_shake.CameraShakeState",
+)
+
+///|
+let camera_shake_config_key : @ecs.ComponentKey[CameraShakeConfig] = @ecs.register_component(
+  debug_name="examples.camera.2d_screen_shake.CameraShakeConfig",
+)
+
+///|
+impl Default for CameraShakeState with default() {
+  { trauma: 0.0F, original_transform: @math.Transform::identity() }
+}
+
+///|
+fn main {
+  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
+  @app.App::new(@ecs.World::new())
+  .add_plugins(plugins)
+  .add_startup_system(setup_scene)
+  .add_startup_system(setup_instructions)
+  .add_startup_system(setup_camera)
+  .add_pre_update_system(reset_transform)
+  .add_system(increase_trauma)
+  .add_post_update_system_config(
+    @app.system(shake_camera).before(@transform.transform_set_propagate),
+  )
+  .run()
+}
+
+///|
+fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
+  if value < min_value {
+    min_value
+  } else if value > max_value {
+    max_value
+  } else {
+    value
+  }
+}
+
+///|
+fn lerpf(a : Float, b : Float, t : Float) -> Float {
+  a + (b - a) * t
+}
+
+///|
+fn perlin_fade(t : Float) -> Float {
+  t * t * t * (t * (t * 6.0F - 15.0F) + 10.0F)
+}
+
+///|
+fn perlin_dot_grad(hash : Int, xf : Float) -> Float {
+  if (hash & 0x1) != 0 {
+    xf
+  } else {
+    -xf
+  }
+}
+
+///|
+fn perlin_noise_generate(x : Float) -> Float {
+  let x_floor = x.floor().to_int()
+  let xf0 = x - Float::from_int(x_floor)
+  let xf1 = xf0 - 1.0F
+  let xi0 = x_floor & 0xFF
+  let xi1 = (x_floor + 1) & 0xFF
+  let t = clampf(perlin_fade(xf0), 0.0F, 1.0F)
+  let h0 = perlin_permutation_table[xi0]
+  let h1 = perlin_permutation_table[xi1]
+  let a = perlin_dot_grad(h0, xf0)
+  let b = perlin_dot_grad(h1, xf1)
+  lerpf(a, b, t)
+}
+
+///|
+fn spawn_ui_text_handle(
+  content : String,
+  font : @asset.Handle[@asset.Font],
+  font_size : Float,
+  color : @render2d.Color,
+) -> @text.TextHandle {
+  @text.Text2dBundle::new(
+    @text.Text2d::new(content),
+    @text.TextFont::default().with_font(font).with_font_size(font_size),
+    @math.Transform::identity(),
+  )
+  .with_color(@text.TextColor::new(color))
+  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+  .spawn()
+}
+
+///|
+fn setup_camera(world : @ecs.World) -> Unit {
+  try! world.register_required_components(
+    camera_shake_config_key, camera_shake_state_key,
+  )
+  let tick = world.read_change_tick()
+  let camera_entity = @render2d.Camera2dBundle::new(
+    @render2d.Camera::default(),
+    @math.Transform::identity(),
+  ).spawn(world)
+  world
+  .component(camera_shake_config_key)
+  .insert(
+    camera_entity,
+    {
+      trauma_decay_per_second: TRAUMA_DECAY_PER_SECOND,
+      exponent: TRAUMA_EXPONENT,
+      max_angle: MAX_ANGLE,
+      max_translation: MAX_TRANSLATION,
+      noise_speed: NOISE_SPEED,
+    },
+    tick,
+  )
+}
+
+///|
+fn setup_scene(world : @ecs.World) -> Unit {
+  @render2d.Mesh2dBundle::new(
+    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(1000.0F, 700.0F)),
+    @render2d.ColorMaterial::new(@render2d.Color::srgb(0.2F, 0.2F, 0.3F)),
+    @math.Transform::identity(),
+  ).spawn(world)
+  |> ignore
+
+  @render2d.Mesh2dBundle::new(
+    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(50.0F, 100.0F)),
+    @render2d.ColorMaterial::new(@render2d.Color::srgb(0.25F, 0.94F, 0.91F)),
+    @math.Transform::from_xyz(0.0F, 0.0F, 2.0F),
+  ).spawn(world)
+  |> ignore
+
+  @render2d.Mesh2dBundle::new(
+    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(50.0F, 50.0F)),
+    @render2d.ColorMaterial::new(@render2d.Color::srgb(0.85F, 0.0F, 0.2F)),
+    @math.Transform::from_xyz(-450.0F, 200.0F, 2.0F),
+  ).spawn(world)
+  |> ignore
+
+  @render2d.Mesh2dBundle::new(
+    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(70.0F, 50.0F)),
+    @render2d.ColorMaterial::new(@render2d.Color::srgb(0.5F, 0.8F, 0.2F)),
+    @math.Transform::from_xyz(450.0F, -150.0F, 2.0F),
+  ).spawn(world)
+  |> ignore
+}
+
+///|
+fn setup_instructions(world : @ecs.World) -> Unit {
+  let asset_server = @asset.AssetServer::new()
+  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
+  let text_handle = spawn_ui_text_handle(
+    INSTRUCTIONS,
+    font,
+    20.0F,
+    @render2d.Color::white(),
+  )
+  let tick = world.read_change_tick()
+  let root = world.spawn_empty()
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
+    root,
+    @ui.Node::default()
+    .with_width(@ui.Val::Percent(100.0F))
+    .with_height(@ui.Val::Percent(100.0F)),
+    tick,
+  )
+  let text_entity = world.spawn_empty()
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
+    text_entity,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_bottom(@ui.Val::Px(12.0F))
+    .with_left(@ui.Val::Px(12.0F)),
+    tick,
+  )
+  world
+  .component(@ui.ecs_key_ui_text)
+  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+}
+
+///|
+fn reset_transform(world : @ecs.World) -> Unit {
+  let tick = world.read_change_tick()
+  let state_store = world.component(camera_shake_state_key)
+  let transform_store = world.component(@math.ecs_key_transform)
+  state_store.for_each(fn(entity, camera_shake) {
+    if transform_store.contains(entity) {
+      transform_store.set(entity, camera_shake.original_transform, tick)
+      |> ignore
+    }
+  })
+}
+
+///|
+fn increase_trauma(world : @ecs.World) -> Unit {
+  if !@input.key_just_pressed(@window.KeyCode::Space) {
+    return
+  }
+  let tick = world.read_change_tick()
+  let config_store = world.component(camera_shake_config_key)
+  let state_store = world.component(camera_shake_state_key)
+  config_store.for_each(fn(entity, _config) {
+    if state_store.get(entity) is Some(camera_shake) {
+      state_store.set(
+        entity,
+        {
+          trauma: clampf(camera_shake.trauma + TRAUMA_PER_PRESS, 0.0F, 1.0F),
+          original_transform: camera_shake.original_transform,
+        },
+        tick,
+      )
+      |> ignore
+    }
+  })
+}
+
+///|
+fn shake_camera(world : @ecs.World) -> Unit {
+  let tick = world.read_change_tick()
+  let elapsed_seconds = @time.time_elapsed_seconds()
+  let delta_seconds = @time.time_delta_seconds()
+  let config_store = world.component(camera_shake_config_key)
+  let state_store = world.component(camera_shake_state_key)
+  let transform_store = world.component(@math.ecs_key_transform)
+  config_store.for_each(fn(entity, config) {
+    guard state_store.get(entity) is Some(camera_shake) else { return }
+    guard transform_store.get(entity) is Some(transform) else { return }
+
+    let t = elapsed_seconds * config.noise_speed
+    let rotation_noise = perlin_noise_generate(t + 0.0F)
+    let x_noise = perlin_noise_generate(t + 100.0F)
+    let y_noise = perlin_noise_generate(t + 200.0F)
+    let shake = @math.pow(camera_shake.trauma, config.exponent)
+    let roll_offset = rotation_noise * shake * config.max_angle
+    let x_offset = x_noise * shake * config.max_translation
+    let y_offset = y_noise * shake * config.max_translation
+
+    let shaken_transform = transform
+    shaken_transform.translation.x = shaken_transform.translation.x + x_offset
+    shaken_transform.translation.y = shaken_transform.translation.y + y_offset
+    shaken_transform.rotate_z(roll_offset)
+
+    transform_store.set(entity, shaken_transform, tick) |> ignore
+    state_store.set(
+      entity,
+      {
+        trauma: clampf(
+          camera_shake.trauma - config.trauma_decay_per_second * delta_seconds,
+          0.0F,
+          1.0F,
+        ),
+        original_transform: transform,
+      },
+      tick,
+    )
+    |> ignore
+  })
+}

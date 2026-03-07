@@ -823,6 +823,15 @@ pub fn UiRoot::default() -> UiRoot {
 }
 
 ///|
+/// Marker for the screen camera that should render UI by default.
+pub struct IsDefaultUiCamera {} derive(ToJson, FromJson)
+
+///|
+pub fn IsDefaultUiCamera::default() -> IsDefaultUiCamera {
+  IsDefaultUiCamera::{  }
+}
+
+///|
 /// Computed layout rectangle in logical pixels, top-left origin (viewport space).
 pub struct UiLayout {
   rect : @math.Rect
@@ -1620,6 +1629,68 @@ fn clamp_viewport_to_window(
 }
 
 ///|
+fn ui_select_camera2d_entity(world : @ecs.World) -> @core.Entity? {
+  let camera2d_store = @render2d.get_camera2d_store(world)
+  let camera_store = @render2d.get_camera_store(world)
+  let target_store = @render2d.get_render_target_store(world)
+  let default_ui_camera_store = get_is_default_ui_camera_store(world)
+
+  let mut best_default : @core.Entity? = None
+  let mut best_default_order = 0
+  let mut best_fallback : @core.Entity? = None
+  let mut best_fallback_order = 0
+
+  fn update_best(
+    current_best : @core.Entity?,
+    current_order : Int,
+    entity : @core.Entity,
+    order : Int,
+  ) -> (@core.Entity?, Int) {
+    match current_best {
+      None => (Some(entity), order)
+      Some(_) =>
+        if order < current_order {
+          (Some(entity), order)
+        } else {
+          (current_best, current_order)
+        }
+    }
+  }
+
+  camera2d_store.for_each(fn(entity, _marker) {
+    let target = match target_store.get(entity) {
+      Some(value) => value
+      None => @render2d.RenderTarget::Screen
+    }
+    if target is @render2d.Image(_) {
+      return
+    }
+    let order = match camera_store.get(entity) {
+      Some(camera) => camera.order
+      None => @render2d.Camera::default().order
+    }
+    if default_ui_camera_store.contains(entity) {
+      let (entity0, order0) = update_best(
+        best_default, best_default_order, entity, order,
+      )
+      best_default = entity0
+      best_default_order = order0
+    } else {
+      let (entity0, order0) = update_best(
+        best_fallback, best_fallback_order, entity, order,
+      )
+      best_fallback = entity0
+      best_fallback_order = order0
+    }
+  })
+
+  match best_default {
+    Some(_) => best_default
+    None => best_fallback
+  }
+}
+
+///|
 pub fn ui_update_context_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let ctx = Ref::new(ensure_ui_context_resource(world))
@@ -1628,39 +1699,13 @@ pub fn ui_update_context_system(world : @ecs.World) -> Unit {
   let win_h = @window.window_height()
   let sf = safe_scale_factor(@window.window_scale_factor())
 
-  // Select a screen Camera2d with the smallest order (Bevy-like).
-  let camera2d_store = @render2d.get_camera2d_store(world)
+  // Select the default UI camera when marked, otherwise fall back to the
+  // lowest-order screen Camera2d.
   let camera_store = @render2d.get_camera_store(world)
   let projection_store = @render2d.get_projection_store(world)
-  let target_store = @render2d.get_render_target_store(world)
   let transform_store = @math.get_transform_store(world)
   let global_store = @transform.get_global_transform_store(world)
-  let mut best_entity : @core.Entity? = None
-  let mut best_order : Int = 0
-  camera2d_store.for_each(fn(entity, _marker) {
-    let target = match target_store.get(entity) {
-      Some(t) => t
-      None => @render2d.RenderTarget::Screen
-    }
-    if target is @render2d.Image(_) {
-      return
-    }
-    let camera = match camera_store.get(entity) {
-      Some(v) => v
-      None => @render2d.Camera::default()
-    }
-    match best_entity {
-      None => {
-        best_entity = Some(entity)
-        best_order = camera.order
-      }
-      Some(_) =>
-        if camera.order < best_order {
-          best_entity = Some(entity)
-          best_order = camera.order
-        }
-    }
-  })
+  let best_entity = ui_select_camera2d_entity(world)
   let mut viewport_origin = @math.Vec2::new(0.0F, 0.0F)
   let mut viewport_size = @math.Vec2::new(
     int_to_float(win_w) / sf,

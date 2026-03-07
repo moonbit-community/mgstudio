@@ -939,7 +939,7 @@ pub impl @ecs.Component for ForwardDecalMaterialExt
 pub impl ToJson for ForwardDecalMaterialExt
 pub impl @json.FromJson for ForwardDecalMaterialExt
 
-pub struct FreeCamera {
+pub(all) struct FreeCamera {
   sensitivity : Float
   key_forward : @window.KeyCode
   key_back : @window.KeyCode
@@ -960,7 +960,7 @@ pub impl @ecs.Component for FreeCamera
 pub impl ToJson for FreeCamera
 pub impl @json.FromJson for FreeCamera
 
-pub struct FreeCameraState {
+pub(all) struct FreeCameraState {
   enabled : Bool
   initialized : Bool
   pitch : Float
@@ -1062,6 +1062,7 @@ pub struct Mesh3d {
 pub fn Mesh3d::from_cuboid(Float, Float, Float) -> Self
 pub fn Mesh3d::from_geometry(@mesh.Mesh3dGeometry) -> Self
 pub fn Mesh3d::from_plane(Float, Float) -> Self
+pub fn Mesh3d::from_sphere(Float) -> Self
 pub fn Mesh3d::from_tetrahedron(Float) -> Self
 pub fn Mesh3d::new(@asset.Handle[@mesh.Mesh]) -> Self
 pub impl @ecs.Component for Mesh3d

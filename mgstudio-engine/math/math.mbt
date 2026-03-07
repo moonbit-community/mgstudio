@@ -24,6 +24,46 @@ pub fn Vec2::new(x : Float, y : Float) -> Vec2 {
 }
 
 ///|
+pub fn Vec2::zero() -> Vec2 {
+  Vec2::new(0.0F, 0.0F)
+}
+
+///|
+pub fn Vec2::add(self : Vec2, other : Vec2) -> Vec2 {
+  Vec2::new(self.x + other.x, self.y + other.y)
+}
+
+///|
+pub fn Vec2::mul_scalar(self : Vec2, scalar : Float) -> Vec2 {
+  Vec2::new(self.x * scalar, self.y * scalar)
+}
+
+///|
+pub fn Vec2::dot(self : Vec2, other : Vec2) -> Float {
+  self.x * other.x + self.y * other.y
+}
+
+///|
+pub fn Vec2::length_squared(self : Vec2) -> Float {
+  self.dot(self)
+}
+
+///|
+pub fn Vec2::length(self : Vec2) -> Float {
+  sqrt(self.length_squared())
+}
+
+///|
+pub fn Vec2::normalize_or_zero(self : Vec2) -> Vec2 {
+  let len_sq = self.length_squared()
+  if len_sq <= 1.0e-12F {
+    return Vec2::zero()
+  }
+  let inv_len = 1.0F / sqrt(len_sq)
+  self.mul_scalar(inv_len)
+}
+
+///|
 pub(all) struct Vec3 {
   mut x : Float
   mut y : Float
@@ -102,6 +142,28 @@ pub fn Vec3::normalize_or_zero(self : Vec3) -> Vec3 {
   }
   let inv_len = 1.0F / sqrt(len_sq)
   self.mul_scalar(inv_len)
+}
+
+///|
+/// Smoothly nudge this vector towards `target` at a frame-rate independent decay rate.
+pub fn Vec3::smooth_nudge(
+  self : Vec3,
+  target : Vec3,
+  decay_rate : Float,
+  delta : Float,
+) -> Unit {
+  if decay_rate <= 0.0F || delta <= 0.0F {
+    return
+  }
+  let factor = 1.0F - pow(2.718281828459045F, -decay_rate * delta)
+  if factor <= 0.0F {
+    return
+  }
+  let current = Vec3::new(self.x, self.y, self.z)
+  let next = current.add(target.sub(current).mul_scalar(factor))
+  self.x = next.x
+  self.y = next.y
+  self.z = next.z
 }
 
 ///|
@@ -291,6 +353,11 @@ pub fn sqrt(value : Float) -> Float {
 ///|
 pub fn pow(base : Float, exponent : Float) -> Float {
   Float::from_double(@coremath.pow(base.to_double(), exponent.to_double()))
+}
+
+///|
+pub fn pi() -> Float {
+  Float::from_double(@coremath.PI)
 }
 
 ///|
@@ -495,6 +562,13 @@ pub fn Quat::normalize(self : Quat) -> Quat {
 }
 
 ///|
+fn quat_rotate_vec3(rotation : Quat, value : Vec3) -> Vec3 {
+  let qv = Vec3::new(rotation.x, rotation.y, rotation.z)
+  let t = qv.cross(value).mul_scalar(2.0F)
+  value.add(t.mul_scalar(rotation.w)).add(qv.cross(t))
+}
+
+///|
 fn quat_from_basis(x_axis : Vec3, y_axis : Vec3, z_axis : Vec3) -> Quat {
   let m00 = x_axis.x
   let m01 = y_axis.x
@@ -653,6 +727,51 @@ pub fn Transform::with_scale(self : Transform, scale : Vec3) -> Transform {
 }
 
 ///|
+pub fn Transform::local_x(self : Transform) -> Vec3 {
+  quat_rotate_vec3(self.rotation, Vec3::new(1.0F, 0.0F, 0.0F)).normalize_or_zero()
+}
+
+///|
+pub fn Transform::left(self : Transform) -> Vec3 {
+  self.local_x().neg()
+}
+
+///|
+pub fn Transform::right(self : Transform) -> Vec3 {
+  self.local_x()
+}
+
+///|
+pub fn Transform::local_y(self : Transform) -> Vec3 {
+  quat_rotate_vec3(self.rotation, Vec3::new(0.0F, 1.0F, 0.0F)).normalize_or_zero()
+}
+
+///|
+pub fn Transform::up(self : Transform) -> Vec3 {
+  self.local_y()
+}
+
+///|
+pub fn Transform::down(self : Transform) -> Vec3 {
+  self.local_y().neg()
+}
+
+///|
+pub fn Transform::local_z(self : Transform) -> Vec3 {
+  quat_rotate_vec3(self.rotation, Vec3::new(0.0F, 0.0F, 1.0F)).normalize_or_zero()
+}
+
+///|
+pub fn Transform::forward(self : Transform) -> Vec3 {
+  self.local_z().neg()
+}
+
+///|
+pub fn Transform::back(self : Transform) -> Vec3 {
+  self.local_z()
+}
+
+///|
 pub fn Transform::looking_at(
   self : Transform,
   target : Vec3,
@@ -679,4 +798,35 @@ pub fn Transform::looking_at(
   let y_axis = z_axis.cross(x_axis).normalize_or_zero()
   let rotation = quat_from_basis(x_axis, y_axis, z_axis)
   Transform::{ translation: self.translation, rotation, scale: self.scale }
+}
+
+///|
+pub fn Transform::looking_to(
+  self : Transform,
+  direction : Vec3,
+  up : Vec3,
+) -> Transform {
+  let forward = direction.normalize_or_zero()
+  if forward.length_squared() <= 1.0e-12F {
+    return self.looking_at(
+      self.translation.add(Vec3::new(0.0F, 0.0F, -1.0F)),
+      Vec3::new(0.0F, 1.0F, 0.0F),
+    )
+  }
+  let up_hint = if up.length_squared() <= 1.0e-12F {
+    Vec3::new(0.0F, 1.0F, 0.0F)
+  } else {
+    up
+  }
+  self.looking_at(self.translation.add(forward), up_hint)
+}
+
+///|
+pub fn Transform::rotate(self : Transform, rotation : Quat) -> Unit {
+  self.rotation = rotation.mul(self.rotation).normalize()
+}
+
+///|
+pub fn Transform::rotate_z(self : Transform, angle : Float) -> Unit {
+  self.rotate(Quat::from_rotation_z(angle))
 }
