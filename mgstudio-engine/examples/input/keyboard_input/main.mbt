@@ -14,13 +14,9 @@
 
 ///|
 /// Port of `bevy/examples/input/keyboard_input.rs`.
-///
-/// Baseline parity:
-/// - Uses Bevy-style `ButtonInput<KeyCode>` and `ButtonInput<Key>` resources.
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugin_group(fn() { @mgstudio.DefaultPlugins::build() })
   .add_systems(
     @app.Update,
     @app.system(@app.system_param2(keyboard_input_system)),

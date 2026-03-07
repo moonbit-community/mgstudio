@@ -14,16 +14,11 @@
 
 ///|
 /// Port of `bevy/examples/input/mouse_input.rs`.
-///
-/// Baseline parity:
-/// - Left mouse button pressed/just-pressed/just-released semantics are preserved.
-/// - Mouse motion and wheel deltas are read from accumulated per-frame resources.
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugin_group(fn() { @mgstudio.DefaultPlugins::build() })
   .add_systems(@app.Update, @app.system(@app.system_param(mouse_click_system)))
   .add_systems(@app.Update, @app.system(@app.system_param2(mouse_move_system)))
   .run()

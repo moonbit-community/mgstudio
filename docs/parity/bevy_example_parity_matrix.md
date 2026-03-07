@@ -33,7 +33,7 @@ Notes:
 | `gltf` | 9 | 0 | 9 | 0 |
 | `hello_world.rs` | 1 | 0 | 1 | 0 |
 | `helpers` | 1 | 0 | 1 | 0 |
-| `input` | 13 | 2 | 11 | 0 |
+| `input` | 13 | 9 | 4 | 0 |
 | `large_scenes` | 6 | 0 | 6 | 0 |
 | `math` | 6 | 0 | 6 | 0 |
 | `mobile` | 2 | 0 | 0 | 2 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 3 | 9 | 0 |
-| **Total** | **402** | **106** | **293** | **3** |
+| **Total** | **402** | **113** | **286** | **3** |
 
 ## Example Inventory
 
@@ -279,19 +279,19 @@ Notes:
 | `bevy/examples/gltf/update_gltf_scene.rs` | `gltf` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/hello_world.rs` | `hello_world.rs` |  | `Blocked` | `team-parity` |  |
 | `bevy/examples/helpers/widgets.rs` | `helpers` |  | `Blocked` | `team-ops` |  |
-| `bevy/examples/input/char_input_events.rs` | `input` | `mgstudio-engine/examples/input/char_input_events` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/input/gamepad_input.rs` | `input` | `mgstudio-engine/examples/input/gamepad_input` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/input/char_input_events.rs` | `input` | `mgstudio-engine/examples/input/char_input_events` | `Exact` | `team-input_window` |  |
+| `bevy/examples/input/gamepad_input.rs` | `input` | `mgstudio-engine/examples/input/gamepad_input` | `Exact` | `team-input_window` |  |
 | `bevy/examples/input/gamepad_input_events.rs` | `input` | `mgstudio-engine/examples/input/gamepad_input_events` | `Exact` | `team-input_window` |  |
-| `bevy/examples/input/gamepad_rumble.rs` | `input` | `mgstudio-engine/examples/input/gamepad_rumble` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/input/keyboard_input.rs` | `input` | `mgstudio-engine/examples/input/keyboard_input` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/input/keyboard_input_events.rs` | `input` | `mgstudio-engine/examples/input/keyboard_input_events` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/input/gamepad_rumble.rs` | `input` | `mgstudio-engine/examples/input/gamepad_rumble` | `Exact` | `team-input_window` |  |
+| `bevy/examples/input/keyboard_input.rs` | `input` | `mgstudio-engine/examples/input/keyboard_input` | `Exact` | `team-input_window` |  |
+| `bevy/examples/input/keyboard_input_events.rs` | `input` | `mgstudio-engine/examples/input/keyboard_input_events` | `Exact` | `team-input_window` |  |
 | `bevy/examples/input/keyboard_modifiers.rs` | `input` | `mgstudio-engine/examples/input/keyboard_modifiers` | `Exact` | `team-input_window` |  |
-| `bevy/examples/input/mouse_grab.rs` | `input` | `mgstudio-engine/examples/input/mouse_grab` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/input/mouse_input.rs` | `input` | `mgstudio-engine/examples/input/mouse_input` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/input/mouse_input_events.rs` | `input` | `mgstudio-engine/examples/input/mouse_input_events` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/input/text_input.rs` | `input` | `mgstudio-engine/examples/input/text_input` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/input/touch_input.rs` | `input` | `mgstudio-engine/examples/input/touch_input` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/input/touch_input_events.rs` | `input` | `mgstudio-engine/examples/input/touch_input_events` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/input/mouse_grab.rs` | `input` | `mgstudio-engine/examples/input/mouse_grab` | `Blocked` | `team-input_window` | Blocked by missing real cursor visibility/grab backend parity (`bd-0re`). |
+| `bevy/examples/input/mouse_input.rs` | `input` | `mgstudio-engine/examples/input/mouse_input` | `Exact` | `team-input_window` |  |
+| `bevy/examples/input/mouse_input_events.rs` | `input` | `mgstudio-engine/examples/input/mouse_input_events` | `Exact` | `team-input_window` |  |
+| `bevy/examples/input/text_input.rs` | `input` | `mgstudio-engine/examples/input/text_input` | `Blocked` | `team-input_window` | Blocked by missing IME/window/UI editing surface (`bd-zmg`, `bd-mdu`). |
+| `bevy/examples/input/touch_input.rs` | `input` | `mgstudio-engine/examples/input/touch_input` | `Blocked` | `team-input_window` | Blocked by missing native touch event backend (`bd-lek`). |
+| `bevy/examples/input/touch_input_events.rs` | `input` | `mgstudio-engine/examples/input/touch_input_events` | `Blocked` | `team-input_window` | Blocked by missing native touch event backend (`bd-lek`). |
 | `bevy/examples/large_scenes/bistro/src/main.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/large_scenes/caldera_hotel/src/main.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/large_scenes/mipmap_generator/examples/load_gltf.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |

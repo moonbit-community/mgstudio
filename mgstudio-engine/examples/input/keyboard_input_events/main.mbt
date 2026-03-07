@@ -14,14 +14,9 @@
 
 ///|
 /// Port of `bevy/examples/input/keyboard_input_events.rs`.
-///
-/// Baseline parity:
-/// - Keyboard events are synthesized from host input states.
-/// - Repeated keydown events are surfaced as `Pressed` with `repeat=true`.
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugin_group(fn() { @mgstudio.DefaultPlugins::build() })
   .add_systems(
     @app.Update,
     @app.system(@app.system_param(print_keyboard_event_system)),

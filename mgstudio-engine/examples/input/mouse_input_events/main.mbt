@@ -14,16 +14,11 @@
 
 ///|
 /// Port of `bevy/examples/input/mouse_input_events.rs`.
-///
-/// Baseline parity:
-/// - Uses MessageReader-based mouse/gesture event streams.
-/// - Pinch/rotation/double-tap are defined for parity surface; emission depends on runtime support.
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugin_group(fn() { @mgstudio.DefaultPlugins::build() })
   .add_systems(
     @app.Update,
     @app.system(@app.system_param4(print_mouse_events_system)),
