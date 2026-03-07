@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub fn[T : ToJson] World::insert_resource(
+pub fn[T] World::insert_resource(
   self : World,
   key : ResourceKey[T],
   value : T,
@@ -26,13 +26,13 @@ pub fn[T : ToJson] World::insert_resource(
 }
 
 ///|
-pub fn[T : ToJson] World::insert_resource_with_change_tick(
+pub fn[T] World::insert_resource_with_change_tick(
   self : World,
   key : ResourceKey[T],
   value : T,
   change_tick : @core.Tick,
 ) -> Unit {
-  let payload = value.to_json()
+  let payload = erased_value(value)
   let effective_tick = resource_write_change_tick(self, change_tick)
   match self.resources.get(key.id()) {
     Some(slot) =>
@@ -51,12 +51,12 @@ pub fn[T : ToJson] World::insert_resource_with_change_tick(
 }
 
 ///|
-pub fn[T : @json.FromJson] World::get_resource(
+pub fn[T] World::get_resource(
   self : World,
   key : ResourceKey[T],
 ) -> T? raise EcsError {
   match self.resources.get(key.id()) {
-    Some(slot) => Some(self.decode_resource_payload(key, slot.payload))
+    Some(slot) => Some(self.resource_value(key, slot.payload))
     None => None
   }
 }
@@ -73,7 +73,7 @@ pub fn[T] World::get_resource_ticks(
 }
 
 ///|
-pub fn[T : @json.FromJson] World::remove_resource(
+pub fn[T] World::remove_resource(
   self : World,
   key : ResourceKey[T],
 ) -> T? raise EcsError {
@@ -83,7 +83,7 @@ pub fn[T : @json.FromJson] World::remove_resource(
 }
 
 ///|
-pub fn[T : ToJson + @json.FromJson] World::update_resource(
+pub fn[T] World::update_resource(
   self : World,
   key : ResourceKey[T],
   update : (T) -> T,
@@ -122,12 +122,26 @@ fn resource_slot_ticks(slot : ResourceSlot) -> @core.ComponentTicks {
 }
 
 ///|
-fn[T : @json.FromJson] World::decode_resource_payload(
+fn[T] World::resource_ref(
   _self : World,
   key : ResourceKey[T],
-  payload : Json,
-) -> T raise EcsError {
-  @json.from_json(payload) catch {
-    err => raise ResourceDecodeFailed(key.id(), key.debug_name(), err)
+  payload : ErasedValue,
+) -> Ref[T] raise EcsError {
+  payload.to_ref() catch {
+    _ =>
+      raise ResourceTypeMismatch(
+        key.id(),
+        key.debug_name(),
+        payload.type_name(),
+      )
   }
+}
+
+///|
+fn[T] World::resource_value(
+  self : World,
+  key : ResourceKey[T],
+  payload : ErasedValue,
+) -> T raise EcsError {
+  self.resource_ref(key, payload).val
 }

@@ -40,7 +40,7 @@ pub fn[T] ComponentRef::is_changed(self : ComponentRef[T]) -> Bool {
 }
 
 ///|
-pub fn[A : @json.FromJson] World::get_ref(
+pub fn[A] World::get_ref(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[A],

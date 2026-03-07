@@ -24,13 +24,15 @@ fn hierarchy_warn_invalid_parent(
 }
 
 ///|
-fn hierarchy_decode_parent(payload : Json) -> Parent {
-  try! @json.from_json(payload)
+fn hierarchy_decode_parent(payload : @any.Any) -> Parent {
+  let value_ref : Ref[Parent] = try! payload.to()
+  value_ref.val
 }
 
 ///|
-fn hierarchy_decode_children(payload : Json) -> Children {
-  try! @json.from_json(payload)
+fn hierarchy_decode_children(payload : @any.Any) -> Children {
+  let value_ref : Ref[Children] = try! payload.to()
+  value_ref.val
 }
 
 ///|
@@ -130,7 +132,7 @@ fn hierarchy_parent_on_insert(
   parent_key : @ecs.ComponentKey[Parent],
   children_key : @ecs.ComponentKey[Children],
   child : @core.Entity,
-  payload : Json,
+  payload : @any.Any,
 ) -> Unit {
   let parent = hierarchy_decode_parent(payload).entity()
   if !hierarchy_parent_target_valid(world, child, parent) {
@@ -146,8 +148,8 @@ fn hierarchy_parent_on_replace(
   parent_key : @ecs.ComponentKey[Parent],
   children_key : @ecs.ComponentKey[Children],
   child : @core.Entity,
-  old_payload : Json,
-  new_payload : Json,
+  old_payload : @any.Any,
+  new_payload : @any.Any,
 ) -> Unit {
   let old_parent = hierarchy_decode_parent(old_payload).entity()
   let new_parent = hierarchy_decode_parent(new_payload).entity()
@@ -167,7 +169,7 @@ fn hierarchy_parent_on_remove(
   world : @ecs.World,
   children_key : @ecs.ComponentKey[Children],
   child : @core.Entity,
-  payload : Json,
+  payload : @any.Any,
 ) -> Unit {
   let parent = hierarchy_decode_parent(payload).entity()
   hierarchy_remove_child(world, children_key, parent, child)
@@ -177,7 +179,7 @@ fn hierarchy_parent_on_remove(
 fn hierarchy_children_on_despawn(
   world : @ecs.World,
   _parent : @core.Entity,
-  payload : Json,
+  payload : @any.Any,
 ) -> Unit {
   let children = hierarchy_decode_children(payload)
   for child in children.entities() {

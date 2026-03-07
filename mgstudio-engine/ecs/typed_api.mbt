@@ -54,7 +54,7 @@ pub fn[T : Component] World::get_component_ref(
 }
 
 ///|
-pub fn[T : Component + ToJson] World::set_component(
+pub fn[T : Component] World::set_component(
   self : World,
   entity : @core.Entity,
   value : T,
@@ -64,7 +64,7 @@ pub fn[T : Component + ToJson] World::set_component(
 }
 
 ///|
-pub fn[T : Component + ToJson + @json.FromJson] World::update_component(
+pub fn[T : Component] World::update_component(
   self : World,
   entity : @core.Entity,
   update : (T) -> T,

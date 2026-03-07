@@ -54,18 +54,18 @@ pub fn[T] register_message(debug_name? : String = "") -> MessageKey[T] {
 }
 
 ///|
-pub(open) trait Message: ToJson + @json.FromJson {
+pub(open) trait Message {
   message() -> MessageKey[Self]
 }
 
 ///|
 pub struct MessageQueueState {
   mut messages_a_start : Int
-  mut messages_a : Array[Json]
+  mut messages_a : Array[ErasedValue]
   mut messages_b_start : Int
-  mut messages_b : Array[Json]
+  mut messages_b : Array[ErasedValue]
   mut message_count : Int
-} derive(Eq, Show, ToJson, FromJson)
+}
 
 ///|
 pub fn MessageQueueState::new() -> MessageQueueState {
@@ -89,9 +89,9 @@ pub fn MessageQueueState::oldest_message_count(self : MessageQueueState) -> Int 
 }
 
 ///|
-pub fn MessageQueueState::write_json(
+pub fn MessageQueueState::write(
   self : MessageQueueState,
-  payload : Json,
+  payload : ErasedValue,
 ) -> Int {
   let message_id = self.message_count
   self.messages_b.push(payload)
@@ -100,12 +100,12 @@ pub fn MessageQueueState::write_json(
 }
 
 ///|
-pub fn MessageQueueState::write_json_batch(
+pub fn MessageQueueState::write_batch(
   self : MessageQueueState,
-  payloads : Array[Json],
+  payloads : Array[ErasedValue],
 ) -> Unit {
   for payload in payloads {
-    ignore(self.write_json(payload))
+    ignore(self.write(payload))
   }
 }
 
@@ -139,7 +139,7 @@ fn queue_start_offset(start : Int, last_message_count : Int) -> Int {
 ///|
 fn queue_unread_len_for_segment(
   start : Int,
-  values : Array[Json],
+  values : Array[ErasedValue],
   last_message_count : Int,
 ) -> Int {
   if last_message_count >= start + values.length() {
@@ -167,11 +167,11 @@ fn MessageQueueState::unread_len(
 }
 
 ///|
-fn MessageQueueState::unread_json(
+fn MessageQueueState::unread(
   self : MessageQueueState,
   last_message_count : Int,
-) -> Array[(Int, Json)] {
-  let unread : Array[(Int, Json)] = []
+) -> Array[(Int, ErasedValue)] {
+  let unread : Array[(Int, ErasedValue)] = []
   if last_message_count < self.messages_a_start + self.messages_a.length() {
     let offset = queue_start_offset(self.messages_a_start, last_message_count)
     for i in offset..<self.messages_a.length() {
@@ -190,7 +190,7 @@ fn MessageQueueState::unread_json(
 ///|
 priv struct MessageRegistryState {
   ids : Array[Int]
-} derive(ToJson, FromJson)
+}
 
 ///|
 fn message_registry_resource_key() -> ResourceKey[MessageRegistryState] {
@@ -243,7 +243,7 @@ pub fn[T] World::init_message(self : World, key : MessageKey[T]) -> Unit {
 }
 
 ///|
-pub fn[T : ToJson] World::send_message(
+pub fn[T] World::send_message(
   self : World,
   key : MessageKey[T],
   message : T,
@@ -253,13 +253,13 @@ pub fn[T : ToJson] World::send_message(
   }
   let access = self.resource(key.queue_key())
   let queue = access.get().unwrap_or(MessageQueueState::new())
-  let message_id = queue.write_json(message.to_json())
+  let message_id = queue.write(erased_value(message))
   ignore(access.set(queue, self.read_change_tick()))
   message_id
 }
 
 ///|
-pub fn[T : ToJson] World::send_message_batch(
+pub fn[T] World::send_message_batch(
   self : World,
   key : MessageKey[T],
   messages : Array[T],
@@ -269,11 +269,11 @@ pub fn[T : ToJson] World::send_message_batch(
   }
   let access = self.resource(key.queue_key())
   let queue = access.get().unwrap_or(MessageQueueState::new())
-  let payloads : Array[Json] = []
+  let payloads : Array[ErasedValue] = []
   for message in messages {
-    payloads.push(message.to_json())
+    payloads.push(erased_value(message))
   }
-  queue.write_json_batch(payloads)
+  queue.write_batch(payloads)
   ignore(access.set(queue, self.read_change_tick()))
 }
 
@@ -313,13 +313,19 @@ pub struct MessageWriter[T] {
 }
 
 ///|
-fn[T : @json.FromJson] decode_message_payload(
+fn[T] decode_message_payload(
   key : MessageKey[T],
   index : Int,
-  payload : Json,
+  payload : ErasedValue,
 ) -> T raise EcsError {
-  @json.from_json(payload) catch {
-    err => raise MessageDecodeFailed(key.id(), key.debug_name(), index, err)
+  payload.to_value() catch {
+    _ =>
+      raise MessageTypeMismatch(
+        key.id(),
+        key.debug_name(),
+        index,
+        payload.type_name(),
+      )
   }
 }
 
@@ -375,14 +381,14 @@ pub fn[T] MessageReader::cursor(self : MessageReader[T]) -> Int {
 }
 
 ///|
-pub fn[T : @json.FromJson] MessageReader::read(
+pub fn[T] MessageReader::read(
   self : MessageReader[T],
 ) -> Array[T] raise EcsError {
   let queue_access = self.world.resource(self.key.queue_key())
   let queue = queue_access.get().unwrap_or(MessageQueueState::new())
-  let unread_json = queue.unread_json(self.cursor_ref.val)
+  let unread_values = queue.unread(self.cursor_ref.val)
   let unread : Array[T] = []
-  for entry in unread_json {
+  for entry in unread_values {
     unread.push(decode_message_payload(self.key, entry.0, entry.1))
   }
   self.cursor_ref.val = queue.message_count
@@ -390,15 +396,12 @@ pub fn[T : @json.FromJson] MessageReader::read(
 }
 
 ///|
-pub fn[T : ToJson] MessageWriter::write(
-  self : MessageWriter[T],
-  message : T,
-) -> Int {
+pub fn[T] MessageWriter::write(self : MessageWriter[T], message : T) -> Int {
   self.world.send_message(self.key, message)
 }
 
 ///|
-pub fn[T : ToJson] MessageWriter::write_batch(
+pub fn[T] MessageWriter::write_batch(
   self : MessageWriter[T],
   messages : Array[T],
 ) -> Unit {

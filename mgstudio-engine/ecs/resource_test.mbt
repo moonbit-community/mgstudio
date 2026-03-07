@@ -59,7 +59,7 @@ test "ecs resource: update missing returns false" {
 }
 
 ///|
-test "ecs resource: decode diagnostics fail fast" {
+test "ecs resource: type mismatch diagnostics fail fast" {
   let world = World::new()
   let res_config : ResourceKey[RuntimeConfig] = register_resource(
     debug_name="decode_runtime_config",
@@ -71,8 +71,8 @@ test "ecs resource: decode diagnostics fail fast" {
   let result : Result[BrokenConfig?, EcsError] = try? world.get_resource(
     res_broken,
   )
-  guard result is Err(ResourceDecodeFailed(key_id, _debug_name, _)) else {
-    fail("expected resource decode diagnostics")
+  guard result is Err(ResourceTypeMismatch(key_id, _debug_name, _actual)) else {
+    fail("expected resource type mismatch diagnostics")
   }
   inspect(key_id == res_config.id(), content="true")
 }

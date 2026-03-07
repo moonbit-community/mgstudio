@@ -166,7 +166,7 @@ pub fn[A, B, C, F] World::query3_filtered(
 }
 
 ///|
-pub fn[A : ToJson + @json.FromJson] Query1::for_each(
+pub fn[A] Query1::for_each(
   self : Query1[A],
   f : (@core.Entity, A) -> Unit,
 ) -> Unit raise EcsError {
@@ -174,7 +174,7 @@ pub fn[A : ToJson + @json.FromJson] Query1::for_each(
 }
 
 ///|
-pub fn[A : @json.FromJson] Query1::get(
+pub fn[A] Query1::get(
   self : Query1[A],
   entity : @core.Entity,
 ) -> A? raise EcsError {
@@ -209,7 +209,7 @@ pub fn[F : QueryFilter] EntityQuery::view(
 }
 
 ///|
-pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::get(
+pub fn[A, F : QueryFilter] Query1Filtered::get(
   self : Query1Filtered[A, F],
   entity : @core.Entity,
 ) -> A? raise EcsError {
@@ -220,7 +220,7 @@ pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::get(
 }
 
 ///|
-pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::get_ref(
+pub fn[A, F : QueryFilter] Query1Filtered::get_ref(
   self : Query1Filtered[A, F],
   entity : @core.Entity,
 ) -> ComponentRef[A]? raise EcsError {
@@ -231,36 +231,32 @@ pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::get_ref(
 }
 
 ///|
-pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::view(
+pub fn[A, F : QueryFilter] Query1Filtered::view(
   self : Query1Filtered[A, F],
   f : (@core.Entity, A) -> Unit,
 ) -> Unit raise EcsError {
   guard self.world.component_store(self.key_a.id()) is Some(store_ref) else {
     return
   }
-  let entries : Array[(@core.Entity, Json)] = []
+  let entries : Array[(@core.Entity, ErasedValue)] = []
   store_ref.val.for_each(fn(entity, payload) { entries.push((entity, payload)) })
   for entry in entries {
     if QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
-      let value : A = self.world.decode_component_payload(
-        self.key_a,
-        entry.0,
-        entry.1,
-      )
+      let value : A = self.world.component_value(self.key_a, entry.0, entry.1)
       f(entry.0, value)
     }
   }
 }
 
 ///|
-pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::view_ref(
+pub fn[A, F : QueryFilter] Query1Filtered::view_ref(
   self : Query1Filtered[A, F],
   f : (@core.Entity, ComponentRef[A]) -> Unit,
 ) -> Unit raise EcsError {
   guard self.world.component_store(self.key_a.id()) is Some(store_ref) else {
     return
   }
-  let entries : Array[(@core.Entity, Json)] = []
+  let entries : Array[(@core.Entity, ErasedValue)] = []
   store_ref.val.for_each(fn(entity, payload) { entries.push((entity, payload)) })
   for entry in entries {
     if QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
@@ -293,25 +289,21 @@ pub fn[A, F] Query1Filtered::iter_many_ref(
 }
 
 ///|
-pub fn[A : ToJson + @json.FromJson, F : QueryFilter] Query1Filtered::for_each(
+pub fn[A, F : QueryFilter] Query1Filtered::for_each(
   self : Query1Filtered[A, F],
   f : (@core.Entity, A) -> Unit,
 ) -> Unit raise EcsError {
   guard self.world.component_store(self.key_a.id()) is Some(store_ref) else {
     return
   }
-  let entries : Array[(@core.Entity, Json)] = []
+  let entries : Array[(@core.Entity, ErasedValue)] = []
   store_ref.val.for_each(fn(entity, payload) { entries.push((entity, payload)) })
-  let writes : Array[(@core.Entity, Json)] = []
+  let writes : Array[(@core.Entity, ErasedValue)] = []
   for entry in entries {
     if QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
-      let value : A = self.world.decode_component_payload(
-        self.key_a,
-        entry.0,
-        entry.1,
-      )
+      let value : A = self.world.component_value(self.key_a, entry.0, entry.1)
       f(entry.0, value)
-      writes.push((entry.0, value.to_json()))
+      writes.push((entry.0, erased_value(value)))
     }
   }
   let tick = component_write_change_tick(self.world)
@@ -337,7 +329,7 @@ pub fn[A, F : QueryFilter] Query1Filtered::count(
 }
 
 ///|
-pub fn[A : @json.FromJson] Query1::view(
+pub fn[A] Query1::view(
   self : Query1[A],
   f : (@core.Entity, A) -> Unit,
 ) -> Unit raise EcsError {
@@ -345,7 +337,7 @@ pub fn[A : @json.FromJson] Query1::view(
 }
 
 ///|
-pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] Query2::for_each(
+pub fn[A, B] Query2::for_each(
   self : Query2[A, B],
   f : (@core.Entity, A, B) -> Unit,
 ) -> Unit raise EcsError {
@@ -353,7 +345,7 @@ pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] Query2::for_eac
 }
 
 ///|
-pub fn[A : @json.FromJson, B : @json.FromJson] Query2::get(
+pub fn[A, B] Query2::get(
   self : Query2[A, B],
   entity : @core.Entity,
 ) -> (A, B)? raise EcsError {
@@ -363,7 +355,7 @@ pub fn[A : @json.FromJson, B : @json.FromJson] Query2::get(
 }
 
 ///|
-pub fn[A : @json.FromJson, B : @json.FromJson] Query2::view(
+pub fn[A, B] Query2::view(
   self : Query2[A, B],
   f : (@core.Entity, A, B) -> Unit,
 ) -> Unit raise EcsError {
@@ -382,7 +374,7 @@ pub fn[A, B] Query2::count(self : Query2[A, B]) -> Int {
 }
 
 ///|
-pub fn[A : @json.FromJson, B : @json.FromJson, F : QueryFilter] Query2Filtered::get(
+pub fn[A, B, F : QueryFilter] Query2Filtered::get(
   self : Query2Filtered[A, B, F],
   entity : @core.Entity,
 ) -> (A, B)? raise EcsError {
@@ -395,7 +387,7 @@ pub fn[A : @json.FromJson, B : @json.FromJson, F : QueryFilter] Query2Filtered::
 }
 
 ///|
-pub fn[A : @json.FromJson, B : @json.FromJson, F : QueryFilter] Query2Filtered::view(
+pub fn[A, B, F : QueryFilter] Query2Filtered::view(
   self : Query2Filtered[A, B, F],
   f : (@core.Entity, A, B) -> Unit,
 ) -> Unit raise EcsError {
@@ -411,15 +403,11 @@ pub fn[A : @json.FromJson, B : @json.FromJson, F : QueryFilter] Query2Filtered::
 }
 
 ///|
-pub fn[
-  A : ToJson + @json.FromJson,
-  B : ToJson + @json.FromJson,
-  F : QueryFilter,
-] Query2Filtered::for_each(
+pub fn[A, B, F : QueryFilter] Query2Filtered::for_each(
   self : Query2Filtered[A, B, F],
   f : (@core.Entity, A, B) -> Unit,
 ) -> Unit raise EcsError {
-  let writes : Array[(@core.Entity, Json, Json)] = []
+  let writes : Array[(@core.Entity, ErasedValue, ErasedValue)] = []
   query2_for_each_intersection(self.world, self.key_a, self.key_b, fn(
     entity,
     value_a,
@@ -427,7 +415,7 @@ pub fn[
   ) {
     if QueryFilter::matches(self.filter, self.world, entity, self.system) {
       f(entity, value_a, value_b)
-      writes.push((entity, value_a.to_json(), value_b.to_json()))
+      writes.push((entity, erased_value(value_a), erased_value(value_b)))
     }
   })
   let store_a_ref = self.world.ensure_component_store(self.key_a.id())
@@ -453,11 +441,7 @@ pub fn[A, B, F : QueryFilter] Query2Filtered::count(
 }
 
 ///|
-pub fn[
-  A : ToJson + @json.FromJson,
-  B : ToJson + @json.FromJson,
-  C : ToJson + @json.FromJson,
-] Query3::for_each(
+pub fn[A, B, C] Query3::for_each(
   self : Query3[A, B, C],
   f : (@core.Entity, A, B, C) -> Unit,
 ) -> Unit raise EcsError {
@@ -465,7 +449,7 @@ pub fn[
 }
 
 ///|
-pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] Query3::get(
+pub fn[A, B, C] Query3::get(
   self : Query3[A, B, C],
   entity : @core.Entity,
 ) -> (A, B, C)? raise EcsError {
@@ -476,7 +460,7 @@ pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] Query3::get(
 }
 
 ///|
-pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] Query3::view(
+pub fn[A, B, C] Query3::view(
   self : Query3[A, B, C],
   f : (@core.Entity, A, B, C) -> Unit,
 ) -> Unit raise EcsError {
@@ -496,12 +480,7 @@ pub fn[A, B, C] Query3::count(self : Query3[A, B, C]) -> Int {
 }
 
 ///|
-pub fn[
-  A : @json.FromJson,
-  B : @json.FromJson,
-  C : @json.FromJson,
-  F : QueryFilter,
-] Query3Filtered::get(
+pub fn[A, B, C, F : QueryFilter] Query3Filtered::get(
   self : Query3Filtered[A, B, C, F],
   entity : @core.Entity,
 ) -> (A, B, C)? raise EcsError {
@@ -515,12 +494,7 @@ pub fn[
 }
 
 ///|
-pub fn[
-  A : @json.FromJson,
-  B : @json.FromJson,
-  C : @json.FromJson,
-  F : QueryFilter,
-] Query3Filtered::view(
+pub fn[A, B, C, F : QueryFilter] Query3Filtered::view(
   self : Query3Filtered[A, B, C, F],
   f : (@core.Entity, A, B, C) -> Unit,
 ) -> Unit raise EcsError {
@@ -537,16 +511,11 @@ pub fn[
 }
 
 ///|
-pub fn[
-  A : ToJson + @json.FromJson,
-  B : ToJson + @json.FromJson,
-  C : ToJson + @json.FromJson,
-  F : QueryFilter,
-] Query3Filtered::for_each(
+pub fn[A, B, C, F : QueryFilter] Query3Filtered::for_each(
   self : Query3Filtered[A, B, C, F],
   f : (@core.Entity, A, B, C) -> Unit,
 ) -> Unit raise EcsError {
-  let writes : Array[(@core.Entity, Json, Json, Json)] = []
+  let writes : Array[(@core.Entity, ErasedValue, ErasedValue, ErasedValue)] = []
   query3_for_each_intersection(self.world, self.key_a, self.key_b, self.key_c, fn(
     entity,
     value_a,
@@ -556,7 +525,12 @@ pub fn[
     if QueryFilter::matches(self.filter, self.world, entity, self.system) {
       f(entity, value_a, value_b, value_c)
       writes.push(
-        (entity, value_a.to_json(), value_b.to_json(), value_c.to_json()),
+        (
+          entity,
+          erased_value(value_a),
+          erased_value(value_b),
+          erased_value(value_c),
+        ),
       )
     }
   })
@@ -586,7 +560,7 @@ pub fn[A, B, C, F : QueryFilter] Query3Filtered::count(
 }
 
 ///|
-pub fn[A : @json.FromJson, F : QueryFilter] Query1FilteredMany::fetch_next(
+pub fn[A, F : QueryFilter] Query1FilteredMany::fetch_next(
   self : Query1FilteredMany[A, F],
 ) -> (@core.Entity, A)? raise EcsError {
   while self.index < self.entities.length() {
@@ -600,7 +574,7 @@ pub fn[A : @json.FromJson, F : QueryFilter] Query1FilteredMany::fetch_next(
 }
 
 ///|
-pub fn[A : @json.FromJson, F : QueryFilter] Query1FilteredManyRef::fetch_next(
+pub fn[A, F : QueryFilter] Query1FilteredManyRef::fetch_next(
   self : Query1FilteredManyRef[A, F],
 ) -> (@core.Entity, ComponentRef[A])? raise EcsError {
   while self.index < self.entities.length() {
@@ -614,7 +588,7 @@ pub fn[A : @json.FromJson, F : QueryFilter] Query1FilteredManyRef::fetch_next(
 }
 
 ///|
-pub fn[A : ToJson + @json.FromJson] query1(
+pub fn[A] query1(
   world : World,
   key_a : ComponentKey[A],
   f : (@core.Entity, A) -> Unit,
@@ -623,34 +597,34 @@ pub fn[A : ToJson + @json.FromJson] query1(
 }
 
 ///|
-pub fn[A : @json.FromJson] query1_view(
+pub fn[A] query1_view(
   world : World,
   key_a : ComponentKey[A],
   f : (@core.Entity, A) -> Unit,
 ) -> Unit raise EcsError {
   guard world.component_store(key_a.id()) is Some(store_ref) else { return }
-  let entries : Array[(@core.Entity, Json)] = []
+  let entries : Array[(@core.Entity, ErasedValue)] = []
   store_ref.val.for_each(fn(entity, payload) { entries.push((entity, payload)) })
   for entry in entries {
-    let value : A = world.decode_component_payload(key_a, entry.0, entry.1)
+    let value : A = world.component_value(key_a, entry.0, entry.1)
     f(entry.0, value)
   }
 }
 
 ///|
-pub fn[A : ToJson + @json.FromJson] query1_for_each(
+pub fn[A] query1_for_each(
   world : World,
   key_a : ComponentKey[A],
   f : (@core.Entity, A) -> Unit,
 ) -> Unit raise EcsError {
   guard world.component_store(key_a.id()) is Some(store_ref) else { return }
-  let entries : Array[(@core.Entity, Json)] = []
+  let entries : Array[(@core.Entity, ErasedValue)] = []
   store_ref.val.for_each(fn(entity, payload) { entries.push((entity, payload)) })
-  let writes : Array[(@core.Entity, Json)] = []
+  let writes : Array[(@core.Entity, ErasedValue)] = []
   for entry in entries {
-    let value : A = world.decode_component_payload(key_a, entry.0, entry.1)
+    let value : A = world.component_value(key_a, entry.0, entry.1)
     f(entry.0, value)
-    writes.push((entry.0, value.to_json()))
+    writes.push((entry.0, erased_value(value)))
   }
   let tick = world.read_change_tick()
   for write in writes {
@@ -659,7 +633,7 @@ pub fn[A : ToJson + @json.FromJson] query1_for_each(
 }
 
 ///|
-pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] query2(
+pub fn[A, B] query2(
   world : World,
   key_a : ComponentKey[A],
   key_b : ComponentKey[B],
@@ -669,7 +643,7 @@ pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] query2(
 }
 
 ///|
-pub fn[A : @json.FromJson, B : @json.FromJson] query2_view(
+pub fn[A, B] query2_view(
   world : World,
   key_a : ComponentKey[A],
   key_b : ComponentKey[B],
@@ -685,20 +659,20 @@ pub fn[A : @json.FromJson, B : @json.FromJson] query2_view(
 }
 
 ///|
-pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] query2_for_each(
+pub fn[A, B] query2_for_each(
   world : World,
   key_a : ComponentKey[A],
   key_b : ComponentKey[B],
   f : (@core.Entity, A, B) -> Unit,
 ) -> Unit raise EcsError {
-  let writes : Array[(@core.Entity, Json, Json)] = []
+  let writes : Array[(@core.Entity, ErasedValue, ErasedValue)] = []
   query2_for_each_intersection(world, key_a, key_b, fn(
     entity,
     value_a,
     value_b,
   ) {
     f(entity, value_a, value_b)
-    writes.push((entity, value_a.to_json(), value_b.to_json()))
+    writes.push((entity, erased_value(value_a), erased_value(value_b)))
   })
   let store_a_ref = world.ensure_component_store(key_a.id())
   let store_b_ref = world.ensure_component_store(key_b.id())
@@ -710,11 +684,7 @@ pub fn[A : ToJson + @json.FromJson, B : ToJson + @json.FromJson] query2_for_each
 }
 
 ///|
-pub fn[
-  A : ToJson + @json.FromJson,
-  B : ToJson + @json.FromJson,
-  C : ToJson + @json.FromJson,
-] query3(
+pub fn[A, B, C] query3(
   world : World,
   key_a : ComponentKey[A],
   key_b : ComponentKey[B],
@@ -725,7 +695,7 @@ pub fn[
 }
 
 ///|
-pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] query3_view(
+pub fn[A, B, C] query3_view(
   world : World,
   key_a : ComponentKey[A],
   key_b : ComponentKey[B],
@@ -743,18 +713,14 @@ pub fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] query3_view(
 }
 
 ///|
-pub fn[
-  A : ToJson + @json.FromJson,
-  B : ToJson + @json.FromJson,
-  C : ToJson + @json.FromJson,
-] query3_for_each(
+pub fn[A, B, C] query3_for_each(
   world : World,
   key_a : ComponentKey[A],
   key_b : ComponentKey[B],
   key_c : ComponentKey[C],
   f : (@core.Entity, A, B, C) -> Unit,
 ) -> Unit raise EcsError {
-  let writes : Array[(@core.Entity, Json, Json, Json)] = []
+  let writes : Array[(@core.Entity, ErasedValue, ErasedValue, ErasedValue)] = []
   query3_for_each_intersection(world, key_a, key_b, key_c, fn(
     entity,
     value_a,
@@ -763,7 +729,12 @@ pub fn[
   ) {
     f(entity, value_a, value_b, value_c)
     writes.push(
-      (entity, value_a.to_json(), value_b.to_json(), value_c.to_json()),
+      (
+        entity,
+        erased_value(value_a),
+        erased_value(value_b),
+        erased_value(value_c),
+      ),
     )
   })
   let store_a_ref = world.ensure_component_store(key_a.id())
@@ -778,7 +749,7 @@ pub fn[
 }
 
 ///|
-fn[A : @json.FromJson, B : @json.FromJson] query2_for_each_intersection(
+fn[A, B] query2_for_each_intersection(
   world : World,
   key_a : ComponentKey[A],
   key_b : ComponentKey[B],
@@ -790,43 +761,31 @@ fn[A : @json.FromJson, B : @json.FromJson] query2_for_each_intersection(
   let store_b = store_b_ref.val
 
   if store_a.len() <= store_b.len() {
-    let entries : Array[(@core.Entity, Json)] = []
+    let entries : Array[(@core.Entity, ErasedValue)] = []
     store_a.for_each(fn(entity, payload) { entries.push((entity, payload)) })
     for entry in entries {
       if store_b.get(entry.0) is Some(payload_b) {
-        let value_a : A = world.decode_component_payload(
-          key_a,
-          entry.0,
-          entry.1,
-        )
-        let value_b : B = world.decode_component_payload(
-          key_b,
-          entry.0,
-          payload_b,
-        )
+        let value_a : A = world.component_value(key_a, entry.0, entry.1)
+        let value_b : B = world.component_value(key_b, entry.0, payload_b)
         f(entry.0, value_a, value_b)
       }
     }
     return
   }
 
-  let entries : Array[(@core.Entity, Json)] = []
+  let entries : Array[(@core.Entity, ErasedValue)] = []
   store_b.for_each(fn(entity, payload) { entries.push((entity, payload)) })
   for entry in entries {
     if store_a.get(entry.0) is Some(payload_a) {
-      let value_a : A = world.decode_component_payload(
-        key_a,
-        entry.0,
-        payload_a,
-      )
-      let value_b : B = world.decode_component_payload(key_b, entry.0, entry.1)
+      let value_a : A = world.component_value(key_a, entry.0, payload_a)
+      let value_b : B = world.component_value(key_b, entry.0, entry.1)
       f(entry.0, value_a, value_b)
     }
   }
 }
 
 ///|
-fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] query3_for_each_intersection(
+fn[A, B, C] query3_for_each_intersection(
   world : World,
   key_a : ComponentKey[A],
   key_b : ComponentKey[B],
@@ -845,26 +804,14 @@ fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] query3_for_each_i
   let len_c = store_c.len()
 
   if len_a <= len_b && len_a <= len_c {
-    let entries : Array[(@core.Entity, Json)] = []
+    let entries : Array[(@core.Entity, ErasedValue)] = []
     store_a.for_each(fn(entity, payload) { entries.push((entity, payload)) })
     for entry in entries {
       if store_b.get(entry.0) is Some(payload_b) &&
         store_c.get(entry.0) is Some(payload_c) {
-        let value_a : A = world.decode_component_payload(
-          key_a,
-          entry.0,
-          entry.1,
-        )
-        let value_b : B = world.decode_component_payload(
-          key_b,
-          entry.0,
-          payload_b,
-        )
-        let value_c : C = world.decode_component_payload(
-          key_c,
-          entry.0,
-          payload_c,
-        )
+        let value_a : A = world.component_value(key_a, entry.0, entry.1)
+        let value_b : B = world.component_value(key_b, entry.0, payload_b)
+        let value_c : C = world.component_value(key_c, entry.0, payload_c)
         f(entry.0, value_a, value_b, value_c)
       }
     }
@@ -872,48 +819,28 @@ fn[A : @json.FromJson, B : @json.FromJson, C : @json.FromJson] query3_for_each_i
   }
 
   if len_b <= len_a && len_b <= len_c {
-    let entries : Array[(@core.Entity, Json)] = []
+    let entries : Array[(@core.Entity, ErasedValue)] = []
     store_b.for_each(fn(entity, payload) { entries.push((entity, payload)) })
     for entry in entries {
       if store_a.get(entry.0) is Some(payload_a) &&
         store_c.get(entry.0) is Some(payload_c) {
-        let value_a : A = world.decode_component_payload(
-          key_a,
-          entry.0,
-          payload_a,
-        )
-        let value_b : B = world.decode_component_payload(
-          key_b,
-          entry.0,
-          entry.1,
-        )
-        let value_c : C = world.decode_component_payload(
-          key_c,
-          entry.0,
-          payload_c,
-        )
+        let value_a : A = world.component_value(key_a, entry.0, payload_a)
+        let value_b : B = world.component_value(key_b, entry.0, entry.1)
+        let value_c : C = world.component_value(key_c, entry.0, payload_c)
         f(entry.0, value_a, value_b, value_c)
       }
     }
     return
   }
 
-  let entries : Array[(@core.Entity, Json)] = []
+  let entries : Array[(@core.Entity, ErasedValue)] = []
   store_c.for_each(fn(entity, payload) { entries.push((entity, payload)) })
   for entry in entries {
     if store_a.get(entry.0) is Some(payload_a) &&
       store_b.get(entry.0) is Some(payload_b) {
-      let value_a : A = world.decode_component_payload(
-        key_a,
-        entry.0,
-        payload_a,
-      )
-      let value_b : B = world.decode_component_payload(
-        key_b,
-        entry.0,
-        payload_b,
-      )
-      let value_c : C = world.decode_component_payload(key_c, entry.0, entry.1)
+      let value_a : A = world.component_value(key_a, entry.0, payload_a)
+      let value_b : B = world.component_value(key_b, entry.0, payload_b)
+      let value_c : C = world.component_value(key_c, entry.0, entry.1)
       f(entry.0, value_a, value_b, value_c)
     }
   }
@@ -1008,7 +935,7 @@ fn query_all_alive_entities(world : World) -> Array[@core.Entity] {
 }
 
 ///|
-fn[A : @json.FromJson] query_component_ref(
+fn[A] query_component_ref(
   world : World,
   key : ComponentKey[A],
   entity : @core.Entity,
@@ -1020,14 +947,14 @@ fn[A : @json.FromJson] query_component_ref(
 }
 
 ///|
-fn[A : @json.FromJson] query_component_ref_from_payload(
+fn[A] query_component_ref_from_payload(
   world : World,
   key : ComponentKey[A],
   entity : @core.Entity,
-  payload : Json,
+  payload : ErasedValue,
   system : @core.SystemTicks,
 ) -> ComponentRef[A] raise EcsError {
-  let value : A = world.decode_component_payload(key, entity, payload)
+  let value : A = world.component_value(key, entity, payload)
   let ticks = world.component(key).get_ticks(entity).unwrap()
   ComponentRef::{ value, ticks, system }
 }

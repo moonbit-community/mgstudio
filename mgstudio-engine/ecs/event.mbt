@@ -13,17 +13,13 @@
 // limitations under the License.
 
 ///|
-pub fn[T : ToJson] World::send_event(
-  self : World,
-  key : EventKey[T],
-  event : T,
-) -> Unit {
+pub fn[T] World::send_event(self : World, key : EventKey[T], event : T) -> Unit {
   let queue = self.current_events.get_or_init(key.id(), fn() { [] })
-  queue.push(event.to_json())
+  queue.push(erased_value(event))
 }
 
 ///|
-pub fn[T : @json.FromJson] World::read_events(
+pub fn[T] World::read_events(
   self : World,
   key : EventKey[T],
 ) -> Array[T] raise EcsError {
@@ -58,13 +54,19 @@ pub fn World::advance_event_frame(self : World) -> Unit {
 }
 
 ///|
-fn[T : @json.FromJson] World::decode_event_payload(
+fn[T] World::decode_event_payload(
   _self : World,
   key : EventKey[T],
   index : Int,
-  payload : Json,
+  payload : ErasedValue,
 ) -> T raise EcsError {
-  @json.from_json(payload) catch {
-    err => raise EventDecodeFailed(key.id(), key.debug_name(), index, err)
+  payload.to_value() catch {
+    _ =>
+      raise EventTypeMismatch(
+        key.id(),
+        key.debug_name(),
+        index,
+        payload.type_name(),
+      )
   }
 }

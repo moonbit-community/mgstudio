@@ -19,18 +19,18 @@ pub(all) suberror ComponentHooksError {
 
 ///|
 pub struct ComponentHooks {
-  on_insert : ((World, @core.Entity, Json) -> Unit)?
-  on_replace : ((World, @core.Entity, Json, Json) -> Unit)?
-  on_remove : ((World, @core.Entity, Json) -> Unit)?
-  on_despawn : ((World, @core.Entity, Json) -> Unit)?
+  on_insert : ((World, @core.Entity, @any.Any) -> Unit)?
+  on_replace : ((World, @core.Entity, @any.Any, @any.Any) -> Unit)?
+  on_remove : ((World, @core.Entity, @any.Any) -> Unit)?
+  on_despawn : ((World, @core.Entity, @any.Any) -> Unit)?
 }
 
 ///|
 pub fn ComponentHooks::new(
-  on_insert? : ((World, @core.Entity, Json) -> Unit)? = None,
-  on_replace? : ((World, @core.Entity, Json, Json) -> Unit)? = None,
-  on_remove? : ((World, @core.Entity, Json) -> Unit)? = None,
-  on_despawn? : ((World, @core.Entity, Json) -> Unit)? = None,
+  on_insert? : ((World, @core.Entity, @any.Any) -> Unit)? = None,
+  on_replace? : ((World, @core.Entity, @any.Any, @any.Any) -> Unit)? = None,
+  on_remove? : ((World, @core.Entity, @any.Any) -> Unit)? = None,
+  on_despawn? : ((World, @core.Entity, @any.Any) -> Unit)? = None,
 ) -> ComponentHooks {
   { on_insert, on_replace, on_remove, on_despawn }
 }
@@ -59,11 +59,11 @@ fn World::run_component_insert_hooks(
   self : World,
   entity : @core.Entity,
   component_id : Int,
-  payload : Json,
+  payload : ErasedValue,
 ) -> Unit {
   guard component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_insert is Some(on_insert) {
-    on_insert(self, entity, payload)
+    on_insert(self, entity, payload.to_any())
   }
 }
 
@@ -72,12 +72,12 @@ fn World::run_component_replace_hooks(
   self : World,
   entity : @core.Entity,
   component_id : Int,
-  old_payload : Json,
-  new_payload : Json,
+  old_payload : ErasedValue,
+  new_payload : ErasedValue,
 ) -> Unit {
   guard component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_replace is Some(on_replace) {
-    on_replace(self, entity, old_payload, new_payload)
+    on_replace(self, entity, old_payload.to_any(), new_payload.to_any())
   }
 }
 
@@ -86,11 +86,11 @@ fn World::run_component_remove_hooks(
   self : World,
   entity : @core.Entity,
   component_id : Int,
-  payload : Json,
+  payload : ErasedValue,
 ) -> Unit {
   guard component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_remove is Some(on_remove) {
-    on_remove(self, entity, payload)
+    on_remove(self, entity, payload.to_any())
   }
 }
 
@@ -99,10 +99,10 @@ fn World::run_component_despawn_hooks(
   self : World,
   entity : @core.Entity,
   component_id : Int,
-  payload : Json,
+  payload : ErasedValue,
 ) -> Unit {
   guard component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_despawn is Some(on_despawn) {
-    on_despawn(self, entity, payload)
+    on_despawn(self, entity, payload.to_any())
   }
 }

@@ -19,15 +19,6 @@ pub struct ResourceAccess[T] {
 }
 
 ///|
-fn[T : @json.FromJson] resource_access_decode_payload(payload : Json) -> T? {
-  try @json.from_json(payload) catch {
-    _ => None
-  } noraise {
-    value => Some(value)
-  }
-}
-
-///|
 pub fn[T] World::resource(
   self : World,
   key : ResourceKey[T],
@@ -41,11 +32,15 @@ pub fn[T] ResourceAccess::is_present(self : ResourceAccess[T]) -> Bool {
 }
 
 ///|
-pub fn[T : @json.FromJson] ResourceAccess::get(self : ResourceAccess[T]) -> T? {
+pub fn[T] ResourceAccess::get(self : ResourceAccess[T]) -> T? {
   guard self.world.resources.get(self.key.id()) is Some(slot) else {
     return None
   }
-  resource_access_decode_payload(slot.payload)
+  try self.world.resource_value(self.key, slot.payload) catch {
+    _ => None
+  } noraise {
+    value => Some(value)
+  }
 }
 
 ///|
@@ -56,7 +51,7 @@ pub fn[T] ResourceAccess::ticks(
 }
 
 ///|
-pub fn[T : ToJson] ResourceAccess::insert(
+pub fn[T] ResourceAccess::insert(
   self : ResourceAccess[T],
   value : T,
   change_tick : @core.Tick,
@@ -65,7 +60,7 @@ pub fn[T : ToJson] ResourceAccess::insert(
 }
 
 ///|
-pub fn[T : ToJson] ResourceAccess::set(
+pub fn[T] ResourceAccess::set(
   self : ResourceAccess[T],
   value : T,
   change_tick : @core.Tick,
@@ -75,7 +70,7 @@ pub fn[T : ToJson] ResourceAccess::set(
 }
 
 ///|
-pub fn[T : ToJson] ResourceAccess::upsert(
+pub fn[T] ResourceAccess::upsert(
   self : ResourceAccess[T],
   value : T,
   change_tick : @core.Tick,
@@ -84,16 +79,14 @@ pub fn[T : ToJson] ResourceAccess::upsert(
 }
 
 ///|
-pub fn[T : @json.FromJson] ResourceAccess::remove(
-  self : ResourceAccess[T],
-) -> T? {
+pub fn[T] ResourceAccess::remove(self : ResourceAccess[T]) -> T? {
   guard self.get() is Some(value) else { return None }
   self.world.resources.remove(self.key.id())
   Some(value)
 }
 
 ///|
-pub fn[T : ToJson + @json.FromJson] ResourceAccess::update(
+pub fn[T] ResourceAccess::update(
   self : ResourceAccess[T],
   change_tick : @core.Tick,
   update : (T) -> T,

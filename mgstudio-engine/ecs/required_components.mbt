@@ -22,7 +22,7 @@ pub(all) suberror RequiredComponentsError {
 ///|
 priv struct RequiredComponentRegistration {
   component_id : Int
-  init : () -> Json
+  init : () -> ErasedValue
   depth : Int
 }
 
@@ -203,7 +203,7 @@ fn World::register_required_components_by_keys(
   self : World,
   requiree : Int,
   required : Int,
-  init_json : () -> Json,
+  init_value : () -> ErasedValue,
 ) -> Unit raise RequiredComponentsError {
   if self.component_has_been_used(requiree) {
     raise ArchetypeExists(requiree)
@@ -229,14 +229,14 @@ fn World::register_required_components_by_keys(
   state_ref.val.direct_order.push(required)
   state_ref.val.direct.set(required, {
     component_id: required,
-    init: init_json,
+    init: init_value,
     depth: 1,
   })
   self.rebuild_all_required_components()
 }
 
 ///|
-pub fn[T, R : Default + ToJson] World::register_required_components(
+pub fn[T, R : Default] World::register_required_components(
   self : World,
   requiree_key : ComponentKey[T],
   required_key : ComponentKey[R],
@@ -244,12 +244,12 @@ pub fn[T, R : Default + ToJson] World::register_required_components(
   self.register_required_components_by_keys(
     requiree_key.id(),
     required_key.id(),
-    fn() { R::default().to_json() },
+    fn() { erased_value(R::default()) },
   )
 }
 
 ///|
-pub fn[T, R : ToJson] World::register_required_components_with(
+pub fn[T, R] World::register_required_components_with(
   self : World,
   requiree_key : ComponentKey[T],
   required_key : ComponentKey[R],
@@ -258,12 +258,12 @@ pub fn[T, R : ToJson] World::register_required_components_with(
   self.register_required_components_by_keys(
     requiree_key.id(),
     required_key.id(),
-    fn() { init().to_json() },
+    fn() { erased_value(init()) },
   )
 }
 
 ///|
-pub fn[T, R : Default + ToJson] World::try_register_required_components(
+pub fn[T, R : Default] World::try_register_required_components(
   self : World,
   requiree_key : ComponentKey[T],
   required_key : ComponentKey[R],
@@ -272,7 +272,7 @@ pub fn[T, R : Default + ToJson] World::try_register_required_components(
     self.register_required_components_by_keys(
       requiree_key.id(),
       required_key.id(),
-      fn() { R::default().to_json() },
+      fn() { erased_value(R::default()) },
     )
   catch {
     err => Err(err)
@@ -282,7 +282,7 @@ pub fn[T, R : Default + ToJson] World::try_register_required_components(
 }
 
 ///|
-pub fn[T, R : ToJson] World::try_register_required_components_with(
+pub fn[T, R] World::try_register_required_components_with(
   self : World,
   requiree_key : ComponentKey[T],
   required_key : ComponentKey[R],
@@ -292,7 +292,7 @@ pub fn[T, R : ToJson] World::try_register_required_components_with(
     self.register_required_components_by_keys(
       requiree_key.id(),
       required_key.id(),
-      fn() { init().to_json() },
+      fn() { erased_value(init()) },
     )
   catch {
     err => Err(err)
@@ -327,25 +327,25 @@ pub fn World::get_required_components_by_id(
 }
 
 ///|
-fn World::insert_component_json_with_requirements(
+fn World::insert_component_with_requirements(
   self : World,
   entity : @core.Entity,
   component_id : Int,
-  payload : Json,
+  payload : ErasedValue,
   change_tick : @core.Tick,
 ) -> Unit raise EcsError {
   self.ensure_entity_alive(entity)
-  self.insert_component_json_with_requirements_unchecked(
+  self.insert_component_with_requirements_unchecked(
     entity, component_id, payload, change_tick,
   )
 }
 
 ///|
-fn World::insert_component_json_with_requirements_unchecked(
+fn World::insert_component_with_requirements_unchecked(
   self : World,
   entity : @core.Entity,
   component_id : Int,
-  payload : Json,
+  payload : ErasedValue,
   change_tick : @core.Tick,
 ) -> Unit {
   let store_ref = self.ensure_component_store(component_id)
@@ -372,7 +372,7 @@ fn World::insert_component_json_with_requirements_unchecked(
     if required_store_ref.val.contains(entity) {
       continue
     }
-    self.insert_component_json_with_requirements_unchecked(
+    self.insert_component_with_requirements_unchecked(
       entity,
       entry.component_id,
       (entry.init)(),

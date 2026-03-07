@@ -23,15 +23,6 @@ pub struct ComponentAccess[T] {
 }
 
 ///|
-fn[T : @json.FromJson] component_access_decode_payload(payload : Json) -> T? {
-  try @json.from_json(payload) catch {
-    _ => None
-  } noraise {
-    value => Some(value)
-  }
-}
-
-///|
 pub fn[T] World::component(
   self : World,
   key : ComponentKey[T],
@@ -59,7 +50,7 @@ pub fn[T] ComponentAccess::contains(
 }
 
 ///|
-pub fn[T : @json.FromJson] ComponentAccess::get(
+pub fn[T] ComponentAccess::get(
   self : ComponentAccess[T],
   entity : @core.Entity,
 ) -> T? {
@@ -67,7 +58,11 @@ pub fn[T : @json.FromJson] ComponentAccess::get(
     return None
   }
   guard store_ref.val.get(entity) is Some(payload) else { return None }
-  component_access_decode_payload(payload)
+  try self.world.component_value(self.key, entity, payload) catch {
+    _ => None
+  } noraise {
+    value => Some(value)
+  }
 }
 
 ///|
@@ -82,14 +77,14 @@ pub fn[T] ComponentAccess::get_ticks(
 }
 
 ///|
-pub fn[T : ToJson] ComponentAccess::set(
+pub fn[T] ComponentAccess::set(
   self : ComponentAccess[T],
   entity : @core.Entity,
   value : T,
   change_tick : @core.Tick,
 ) -> Bool {
   let store_ref = self.world.ensure_component_store(self.key.id())
-  let payload = value.to_json()
+  let payload = erased_value(value)
   let old_payload = store_ref.val.get(entity)
   let updated = store_ref.val.set(entity, payload, change_tick)
   if updated && old_payload is Some(previous) {
@@ -104,7 +99,7 @@ pub fn[T : ToJson] ComponentAccess::set(
 }
 
 ///|
-pub fn[T : ToJson + @json.FromJson] ComponentAccess::update(
+pub fn[T] ComponentAccess::update(
   self : ComponentAccess[T],
   entity : @core.Entity,
   change_tick : @core.Tick,
@@ -117,22 +112,22 @@ pub fn[T : ToJson + @json.FromJson] ComponentAccess::update(
 }
 
 ///|
-pub fn[T : ToJson] ComponentAccess::insert(
+pub fn[T] ComponentAccess::insert(
   self : ComponentAccess[T],
   entity : @core.Entity,
   value : T,
   change_tick : @core.Tick,
 ) -> Unit {
-  try! self.world.insert_component_json_with_requirements(
+  try! self.world.insert_component_with_requirements(
     entity,
     self.key.id(),
-    value.to_json(),
+    erased_value(value),
     change_tick,
   )
 }
 
 ///|
-pub fn[T : ToJson] ComponentAccess::upsert(
+pub fn[T] ComponentAccess::upsert(
   self : ComponentAccess[T],
   entity : @core.Entity,
   value : T,
@@ -142,7 +137,7 @@ pub fn[T : ToJson] ComponentAccess::upsert(
 }
 
 ///|
-pub fn[T : @json.FromJson] ComponentAccess::remove(
+pub fn[T] ComponentAccess::remove(
   self : ComponentAccess[T],
   entity : @core.Entity,
 ) -> T? {
@@ -155,28 +150,34 @@ pub fn[T : @json.FromJson] ComponentAccess::remove(
     component_write_change_tick(self.world),
     entity,
   )
-  component_access_decode_payload(payload)
+  try self.world.component_value(self.key, entity, payload) catch {
+    _ => None
+  } noraise {
+    value => Some(value)
+  }
 }
 
 ///|
-pub fn[T : @json.FromJson] ComponentAccess::for_each(
+pub fn[T] ComponentAccess::for_each(
   self : ComponentAccess[T],
   f : (@core.Entity, T) -> Unit,
 ) -> Unit {
   guard self.world.component_store(self.key.id()) is Some(store_ref) else {
     return
   }
-  let entries : Array[(@core.Entity, Json)] = []
+  let entries : Array[(@core.Entity, ErasedValue)] = []
   store_ref.val.for_each(fn(entity, payload) { entries.push((entity, payload)) })
   for entry in entries {
-    if component_access_decode_payload(entry.1) is Some(value) {
-      f(entry.0, value)
+    try self.world.component_value(self.key, entry.0, entry.1) catch {
+      _ => ()
+    } noraise {
+      value => f(entry.0, value)
     }
   }
 }
 
 ///|
-pub fn[T : @json.FromJson] ComponentAccess::for_each_changed(
+pub fn[T] ComponentAccess::for_each_changed(
   self : ComponentAccess[T],
   system : @core.SystemTicks,
   f : (@core.Entity, T) -> Unit,
@@ -184,19 +185,21 @@ pub fn[T : @json.FromJson] ComponentAccess::for_each_changed(
   guard self.world.component_store(self.key.id()) is Some(store_ref) else {
     return
   }
-  let entries : Array[(@core.Entity, Json)] = []
+  let entries : Array[(@core.Entity, ErasedValue)] = []
   store_ref.val.for_each_changed(system, fn(entity, payload) {
     entries.push((entity, payload))
   })
   for entry in entries {
-    if component_access_decode_payload(entry.1) is Some(value) {
-      f(entry.0, value)
+    try self.world.component_value(self.key, entry.0, entry.1) catch {
+      _ => ()
+    } noraise {
+      value => f(entry.0, value)
     }
   }
 }
 
 ///|
-pub fn[T : @json.FromJson] ComponentAccess::for_each_added(
+pub fn[T] ComponentAccess::for_each_added(
   self : ComponentAccess[T],
   system : @core.SystemTicks,
   f : (@core.Entity, T) -> Unit,
@@ -204,13 +207,15 @@ pub fn[T : @json.FromJson] ComponentAccess::for_each_added(
   guard self.world.component_store(self.key.id()) is Some(store_ref) else {
     return
   }
-  let entries : Array[(@core.Entity, Json)] = []
+  let entries : Array[(@core.Entity, ErasedValue)] = []
   store_ref.val.for_each_added(system, fn(entity, payload) {
     entries.push((entity, payload))
   })
   for entry in entries {
-    if component_access_decode_payload(entry.1) is Some(value) {
-      f(entry.0, value)
+    try self.world.component_value(self.key, entry.0, entry.1) catch {
+      _ => ()
+    } noraise {
+      value => f(entry.0, value)
     }
   }
 }

@@ -64,7 +64,7 @@ test "ecs event: clear removes both previous and current queues" {
 }
 
 ///|
-test "ecs event: decode diagnostics fail fast" {
+test "ecs event: type mismatch diagnostics fail fast" {
   let world = World::new()
   let event_runtime : EventKey[RuntimeEvent] = register_event(
     debug_name="runtime_event_decode",
@@ -76,8 +76,8 @@ test "ecs event: decode diagnostics fail fast" {
   let result : Result[Array[BrokenEvent], EcsError] = try? world.read_events(
     event_broken,
   )
-  guard result is Err(EventDecodeFailed(key_id, _debug_name, index, _)) else {
-    fail("expected event decode diagnostics")
+  guard result is Err(EventTypeMismatch(key_id, _debug_name, index, _actual)) else {
+    fail("expected event type mismatch diagnostics")
   }
   inspect(key_id == event_runtime.id(), content="true")
   inspect(index == 0, content="true")

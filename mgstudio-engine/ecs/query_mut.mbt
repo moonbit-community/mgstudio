@@ -17,7 +17,6 @@ pub struct Query1FilteredManyMut[A, F] {
   query : Query1Filtered[A, F]
   entities : Array[@core.Entity]
   mut index : Int
-  mut pending : (@core.Entity, ComponentMut[A])?
 }
 
 ///|
@@ -39,7 +38,6 @@ pub struct Query2RefMutFilteredMany[A, B, F] {
   query : Query2RefMutFiltered[A, B, F]
   entities : Array[@core.Entity]
   mut index : Int
-  mut pending : (@core.Entity, ComponentRef[A], ComponentMut[B])?
 }
 
 ///|
@@ -87,7 +85,7 @@ pub struct Query3RefMutOptionalFiltered[A, B, C, F] {
 }
 
 ///|
-fn[A : @json.FromJson] query_component_mut(
+fn[A] query_component_mut(
   world : World,
   key : ComponentKey[A],
   entity : @core.Entity,
@@ -99,27 +97,26 @@ fn[A : @json.FromJson] query_component_mut(
 }
 
 ///|
-fn[A : @json.FromJson] query_component_mut_from_payload(
+fn[A] query_component_mut_from_payload(
   world : World,
   key : ComponentKey[A],
   entity : @core.Entity,
-  payload : Json,
+  payload : ErasedValue,
   system : @core.SystemTicks,
 ) -> ComponentMut[A] raise EcsError {
-  let value : A = world.decode_component_payload(key, entity, payload)
+  let value_ref : Ref[A] = world.component_ref(key, entity, payload)
   let ticks = world.component(key).get_ticks(entity).unwrap()
   ComponentMut::{
-    value_ref: Ref::new(value),
+    value_ref,
     ticks,
     system,
-    original_payload: payload,
-    force_changed: false,
+    changed: false,
     writeback: Some(ComponentMutWriteback::{ world, key, entity }),
   }
 }
 
 ///|
-pub fn[A : @json.FromJson] Query1::get_mut(
+pub fn[A] Query1::get_mut(
   self : Query1[A],
   entity : @core.Entity,
 ) -> ComponentMut[A]? raise EcsError {
@@ -127,7 +124,7 @@ pub fn[A : @json.FromJson] Query1::get_mut(
 }
 
 ///|
-pub fn[A : ToJson + @json.FromJson] Query1::with_mut(
+pub fn[A] Query1::with_mut(
   self : Query1[A],
   entity : @core.Entity,
   f : (ComponentMut[A]) -> Unit,
@@ -136,7 +133,7 @@ pub fn[A : ToJson + @json.FromJson] Query1::with_mut(
 }
 
 ///|
-pub fn[A : ToJson + @json.FromJson] Query1::view_mut(
+pub fn[A] Query1::view_mut(
   self : Query1[A],
   f : (@core.Entity, ComponentMut[A]) -> Unit,
 ) -> Unit raise EcsError {
@@ -163,11 +160,11 @@ pub fn[A, F] Query1Filtered::iter_many_mut(
   self : Query1Filtered[A, F],
   entities : Array[@core.Entity],
 ) -> Query1FilteredManyMut[A, F] {
-  { query: self, entities, index: 0, pending: None }
+  { query: self, entities, index: 0 }
 }
 
 ///|
-pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::get_mut(
+pub fn[A, F : QueryFilter] Query1Filtered::get_mut(
   self : Query1Filtered[A, F],
   entity : @core.Entity,
 ) -> ComponentMut[A]? raise EcsError {
@@ -178,28 +175,27 @@ pub fn[A : @json.FromJson, F : QueryFilter] Query1Filtered::get_mut(
 }
 
 ///|
-pub fn[A : ToJson + @json.FromJson, F : QueryFilter] Query1Filtered::with_mut(
+pub fn[A, F : QueryFilter] Query1Filtered::with_mut(
   self : Query1Filtered[A, F],
   entity : @core.Entity,
   f : (ComponentMut[A]) -> Unit,
 ) -> Bool raise EcsError {
   if (try! self.get_mut(entity)) is Some(component_mut) {
     f(component_mut)
-    component_mut.flush() |> ignore
     return true
   }
   false
 }
 
 ///|
-pub fn[A : ToJson + @json.FromJson, F : QueryFilter] Query1Filtered::view_mut(
+pub fn[A, F : QueryFilter] Query1Filtered::view_mut(
   self : Query1Filtered[A, F],
   f : (@core.Entity, ComponentMut[A]) -> Unit,
 ) -> Unit raise EcsError {
   guard self.world.component_store(self.key_a.id()) is Some(store_ref) else {
     return
   }
-  let entries : Array[(@core.Entity, Json)] = []
+  let entries : Array[(@core.Entity, ErasedValue)] = []
   store_ref.val.for_each(fn(entity, payload) { entries.push((entity, payload)) })
   for entry in entries {
     if QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
@@ -211,7 +207,6 @@ pub fn[A : ToJson + @json.FromJson, F : QueryFilter] Query1Filtered::view_mut(
         self.system,
       )
       f(entry.0, component_mut)
-      component_mut.flush() |> ignore
     }
   }
 }
@@ -224,7 +219,7 @@ pub fn[A, F] Query1Filtered::par_iter_mut(
 }
 
 ///|
-pub fn[A : ToJson + @json.FromJson, F : QueryFilter] Query1FilteredParallelMut::for_each(
+pub fn[A, F : QueryFilter] Query1FilteredParallelMut::for_each(
   self : Query1FilteredParallelMut[A, F],
   f : (@core.Entity, ComponentMut[A]) -> Unit,
 ) -> Unit raise EcsError {
@@ -232,26 +227,13 @@ pub fn[A : ToJson + @json.FromJson, F : QueryFilter] Query1FilteredParallelMut::
 }
 
 ///|
-pub fn[A : ToJson, F] Query1FilteredManyMut::flush(
-  self : Query1FilteredManyMut[A, F],
-) -> Unit {
-  if self.pending is Some((entity, component_mut)) {
-    entity |> ignore
-    component_mut.flush() |> ignore
-    self.pending = None
-  }
-}
-
-///|
-pub fn[A : ToJson + @json.FromJson, F : QueryFilter] Query1FilteredManyMut::fetch_next(
+pub fn[A, F : QueryFilter] Query1FilteredManyMut::fetch_next(
   self : Query1FilteredManyMut[A, F],
 ) -> (@core.Entity, ComponentMut[A])? raise EcsError {
-  self.flush()
   while self.index < self.entities.length() {
     let entity = self.entities[self.index]
     self.index = self.index + 1
     if self.query.get_mut(entity) is Some(component_mut) {
-      self.pending = Some((entity, component_mut))
       return Some((entity, component_mut))
     }
   }
@@ -327,7 +309,7 @@ pub fn[A, B, C, F] World::query3_ref_mut_optional_filtered(
 }
 
 ///|
-pub fn[A : @json.FromJson, B : @json.FromJson, F : QueryFilter] Query2RefMutFiltered::get(
+pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::get(
   self : Query2RefMutFiltered[A, B, F],
   entity : @core.Entity,
 ) -> (ComponentRef[A], ComponentMut[B])? raise EcsError {
@@ -346,21 +328,20 @@ pub fn[A : @json.FromJson, B : @json.FromJson, F : QueryFilter] Query2RefMutFilt
 }
 
 ///|
-pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2RefMutFiltered::with_mut(
+pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::with_mut(
   self : Query2RefMutFiltered[A, B, F],
   entity : @core.Entity,
   f : (ComponentRef[A], ComponentMut[B]) -> Unit,
 ) -> Bool raise EcsError {
   if (try! self.get(entity)) is Some((component_ref, component_mut)) {
     f(component_ref, component_mut)
-    component_mut.flush() |> ignore
     return true
   }
   false
 }
 
 ///|
-pub fn[A : @json.FromJson, B : @json.FromJson, F : QueryFilter] Query2ValueMutFiltered::get(
+pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::get(
   self : Query2ValueMutFiltered[A, B, F],
   entity : @core.Entity,
 ) -> (A, ComponentMut[B])? raise EcsError {
@@ -376,21 +357,20 @@ pub fn[A : @json.FromJson, B : @json.FromJson, F : QueryFilter] Query2ValueMutFi
 }
 
 ///|
-pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2ValueMutFiltered::with_mut(
+pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::with_mut(
   self : Query2ValueMutFiltered[A, B, F],
   entity : @core.Entity,
   f : (A, ComponentMut[B]) -> Unit,
 ) -> Bool raise EcsError {
   if (try! self.get(entity)) is Some((value_a, component_mut)) {
     f(value_a, component_mut)
-    component_mut.flush() |> ignore
     return true
   }
   false
 }
 
 ///|
-pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2ValueMutFiltered::view_mut(
+pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::view_mut(
   self : Query2ValueMutFiltered[A, B, F],
   f : (@core.Entity, A, ComponentMut[B]) -> Unit,
 ) -> Unit raise EcsError {
@@ -404,12 +384,12 @@ pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2V
   let store_b = store_b_ref.val
 
   if store_a.len() <= store_b.len() {
-    let entries : Array[(@core.Entity, Json)] = []
+    let entries : Array[(@core.Entity, ErasedValue)] = []
     store_a.for_each(fn(entity, payload) { entries.push((entity, payload)) })
     for entry in entries {
       if store_b.get(entry.0) is Some(payload_b) &&
         QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
-        let value_a : A = self.world.decode_component_payload(
+        let value_a : A = self.world.component_value(
           self.key_a,
           entry.0,
           entry.1,
@@ -422,18 +402,17 @@ pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2V
           self.system,
         )
         f(entry.0, value_a, component_mut)
-        component_mut.flush() |> ignore
       }
     }
     return
   }
 
-  let entries : Array[(@core.Entity, Json)] = []
+  let entries : Array[(@core.Entity, ErasedValue)] = []
   store_b.for_each(fn(entity, payload) { entries.push((entity, payload)) })
   for entry in entries {
     if store_a.get(entry.0) is Some(payload_a) &&
       QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
-      let value_a : A = self.world.decode_component_payload(
+      let value_a : A = self.world.component_value(
         self.key_a,
         entry.0,
         payload_a,
@@ -446,7 +425,6 @@ pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2V
         self.system,
       )
       f(entry.0, value_a, component_mut)
-      component_mut.flush() |> ignore
     }
   }
 }
@@ -472,7 +450,7 @@ pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::count(
 }
 
 ///|
-pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2ValueMutFilteredParallel::for_each(
+pub fn[A, B, F : QueryFilter] Query2ValueMutFilteredParallel::for_each(
   self : Query2ValueMutFilteredParallel[A, B, F],
   f : (@core.Entity, A, ComponentMut[B]) -> Unit,
 ) -> Unit raise EcsError {
@@ -480,7 +458,7 @@ pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2V
 }
 
 ///|
-pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2RefMutFiltered::view_mut(
+pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::view_mut(
   self : Query2RefMutFiltered[A, B, F],
   f : (@core.Entity, ComponentRef[A], ComponentMut[B]) -> Unit,
 ) -> Unit raise EcsError {
@@ -494,7 +472,7 @@ pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2R
   let store_b = store_b_ref.val
 
   if store_a.len() <= store_b.len() {
-    let entries : Array[(@core.Entity, Json)] = []
+    let entries : Array[(@core.Entity, ErasedValue)] = []
     store_a.for_each(fn(entity, payload) { entries.push((entity, payload)) })
     for entry in entries {
       if store_b.get(entry.0) is Some(payload_b) &&
@@ -514,13 +492,12 @@ pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2R
           self.system,
         )
         f(entry.0, component_ref, component_mut)
-        component_mut.flush() |> ignore
       }
     }
     return
   }
 
-  let entries : Array[(@core.Entity, Json)] = []
+  let entries : Array[(@core.Entity, ErasedValue)] = []
   store_b.for_each(fn(entity, payload) { entries.push((entity, payload)) })
   for entry in entries {
     if store_a.get(entry.0) is Some(payload_a) &&
@@ -540,18 +517,12 @@ pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2R
         self.system,
       )
       f(entry.0, component_ref, component_mut)
-      component_mut.flush() |> ignore
     }
   }
 }
 
 ///|
-pub fn[
-  A : @json.FromJson,
-  B : @json.FromJson,
-  C : @json.FromJson,
-  F : QueryFilter,
-] Query3ValueRefMutFiltered::get(
+pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::get(
   self : Query3ValueRefMutFiltered[A, B, C, F],
   entity : @core.Entity,
 ) -> (A, ComponentRef[B], ComponentMut[C])? raise EcsError {
@@ -571,31 +542,20 @@ pub fn[
 }
 
 ///|
-pub fn[
-  A : @json.FromJson,
-  B : @json.FromJson,
-  C : ToJson + @json.FromJson,
-  F : QueryFilter,
-] Query3ValueRefMutFiltered::with_mut(
+pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::with_mut(
   self : Query3ValueRefMutFiltered[A, B, C, F],
   entity : @core.Entity,
   f : (A, ComponentRef[B], ComponentMut[C]) -> Unit,
 ) -> Bool raise EcsError {
   if (try! self.get(entity)) is Some((value_a, component_ref, component_mut)) {
     f(value_a, component_ref, component_mut)
-    component_mut.flush() |> ignore
     return true
   }
   false
 }
 
 ///|
-pub fn[
-  A : @json.FromJson,
-  B : @json.FromJson,
-  C : ToJson + @json.FromJson,
-  F : QueryFilter,
-] Query3ValueRefMutFiltered::view_mut(
+pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::view_mut(
   self : Query3ValueRefMutFiltered[A, B, C, F],
   f : (@core.Entity, A, ComponentRef[B], ComponentMut[C]) -> Unit,
 ) -> Unit raise EcsError {
@@ -614,13 +574,13 @@ pub fn[
   let store_c = store_c_ref.val
 
   if store_a.len() <= store_b.len() && store_a.len() <= store_c.len() {
-    let entries : Array[(@core.Entity, Json)] = []
+    let entries : Array[(@core.Entity, ErasedValue)] = []
     store_a.for_each(fn(entity, payload) { entries.push((entity, payload)) })
     for entry in entries {
       if store_b.get(entry.0) is Some(payload_b) &&
         store_c.get(entry.0) is Some(payload_c) &&
         QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
-        let value_a : A = self.world.decode_component_payload(
+        let value_a : A = self.world.component_value(
           self.key_a,
           entry.0,
           entry.1,
@@ -640,20 +600,19 @@ pub fn[
           self.system,
         )
         f(entry.0, value_a, component_ref, component_mut)
-        component_mut.flush() |> ignore
       }
     }
     return
   }
 
   if store_b.len() <= store_a.len() && store_b.len() <= store_c.len() {
-    let entries : Array[(@core.Entity, Json)] = []
+    let entries : Array[(@core.Entity, ErasedValue)] = []
     store_b.for_each(fn(entity, payload) { entries.push((entity, payload)) })
     for entry in entries {
       if store_a.get(entry.0) is Some(payload_a) &&
         store_c.get(entry.0) is Some(payload_c) &&
         QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
-        let value_a : A = self.world.decode_component_payload(
+        let value_a : A = self.world.component_value(
           self.key_a,
           entry.0,
           payload_a,
@@ -673,19 +632,18 @@ pub fn[
           self.system,
         )
         f(entry.0, value_a, component_ref, component_mut)
-        component_mut.flush() |> ignore
       }
     }
     return
   }
 
-  let entries : Array[(@core.Entity, Json)] = []
+  let entries : Array[(@core.Entity, ErasedValue)] = []
   store_c.for_each(fn(entity, payload) { entries.push((entity, payload)) })
   for entry in entries {
     if store_a.get(entry.0) is Some(payload_a) &&
       store_b.get(entry.0) is Some(payload_b) &&
       QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
-      let value_a : A = self.world.decode_component_payload(
+      let value_a : A = self.world.component_value(
         self.key_a,
         entry.0,
         payload_a,
@@ -705,7 +663,6 @@ pub fn[
         self.system,
       )
       f(entry.0, value_a, component_ref, component_mut)
-      component_mut.flush() |> ignore
     }
   }
 }
@@ -732,12 +689,7 @@ pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::count(
 }
 
 ///|
-pub fn[
-  A : @json.FromJson,
-  B : @json.FromJson,
-  C : ToJson + @json.FromJson,
-  F : QueryFilter,
-] Query3ValueRefMutFilteredParallel::for_each(
+pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFilteredParallel::for_each(
   self : Query3ValueRefMutFilteredParallel[A, B, C, F],
   f : (@core.Entity, A, ComponentRef[B], ComponentMut[C]) -> Unit,
 ) -> Unit raise EcsError {
@@ -745,12 +697,7 @@ pub fn[
 }
 
 ///|
-pub fn[
-  A : @json.FromJson,
-  B : @json.FromJson,
-  C : @json.FromJson,
-  F : QueryFilter,
-] Query3RefMutOptionalFiltered::get(
+pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::get(
   self : Query3RefMutOptionalFiltered[A, B, C, F],
   entity : @core.Entity,
 ) -> (ComponentRef[A], ComponentMut[B], ComponentRef[C]?)? raise EcsError {
@@ -775,12 +722,7 @@ pub fn[
 }
 
 ///|
-pub fn[
-  A : @json.FromJson,
-  B : ToJson + @json.FromJson,
-  C : @json.FromJson,
-  F : QueryFilter,
-] Query3RefMutOptionalFiltered::with_mut(
+pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::with_mut(
   self : Query3RefMutOptionalFiltered[A, B, C, F],
   entity : @core.Entity,
   f : (ComponentRef[A], ComponentMut[B], ComponentRef[C]?) -> Unit,
@@ -788,19 +730,13 @@ pub fn[
   if (try! self.get(entity))
     is Some((component_ref_a, component_mut_b, component_ref_c)) {
     f(component_ref_a, component_mut_b, component_ref_c)
-    component_mut_b.flush() |> ignore
     return true
   }
   false
 }
 
 ///|
-pub fn[
-  A : @json.FromJson,
-  B : ToJson + @json.FromJson,
-  C : @json.FromJson,
-  F : QueryFilter,
-] Query3RefMutOptionalFiltered::view_mut(
+pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::view_mut(
   self : Query3RefMutOptionalFiltered[A, B, C, F],
   f : (@core.Entity, ComponentRef[A], ComponentMut[B], ComponentRef[C]?) -> Unit,
 ) -> Unit raise EcsError {
@@ -814,7 +750,7 @@ pub fn[
   let store_b = store_b_ref.val
 
   if store_a.len() <= store_b.len() {
-    let entries : Array[(@core.Entity, Json)] = []
+    let entries : Array[(@core.Entity, ErasedValue)] = []
     store_a.for_each(fn(entity, payload) { entries.push((entity, payload)) })
     for entry in entries {
       if store_b.get(entry.0) is Some(payload_b) &&
@@ -852,13 +788,12 @@ pub fn[
           None => None
         }
         f(entry.0, component_ref_a, component_mut_b, component_ref_c)
-        component_mut_b.flush() |> ignore
       }
     }
     return
   }
 
-  let entries : Array[(@core.Entity, Json)] = []
+  let entries : Array[(@core.Entity, ErasedValue)] = []
   store_b.for_each(fn(entity, payload) { entries.push((entity, payload)) })
   for entry in entries {
     if store_a.get(entry.0) is Some(payload_a) &&
@@ -895,7 +830,6 @@ pub fn[
         None => None
       }
       f(entry.0, component_ref_a, component_mut_b, component_ref_c)
-      component_mut_b.flush() |> ignore
     }
   }
 }
@@ -931,7 +865,7 @@ pub fn[A, B, F] Query2RefMutFiltered::iter_many_mut(
   self : Query2RefMutFiltered[A, B, F],
   entities : Array[@core.Entity],
 ) -> Query2RefMutFilteredMany[A, B, F] {
-  { query: self, entities, index: 0, pending: None }
+  { query: self, entities, index: 0 }
 }
 
 ///|
@@ -942,7 +876,7 @@ pub fn[A, B, F] Query2RefMutFiltered::par_iter_mut(
 }
 
 ///|
-pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2RefMutFilteredParallel::for_each(
+pub fn[A, B, F : QueryFilter] Query2RefMutFilteredParallel::for_each(
   self : Query2RefMutFilteredParallel[A, B, F],
   f : (@core.Entity, ComponentRef[A], ComponentMut[B]) -> Unit,
 ) -> Unit raise EcsError {
@@ -950,26 +884,13 @@ pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2R
 }
 
 ///|
-pub fn[A, B : ToJson, F] Query2RefMutFilteredMany::flush(
-  self : Query2RefMutFilteredMany[A, B, F],
-) -> Unit {
-  if self.pending is Some((entity, _component_ref, component_mut)) {
-    entity |> ignore
-    component_mut.flush() |> ignore
-    self.pending = None
-  }
-}
-
-///|
-pub fn[A : @json.FromJson, B : ToJson + @json.FromJson, F : QueryFilter] Query2RefMutFilteredMany::fetch_next(
+pub fn[A, B, F : QueryFilter] Query2RefMutFilteredMany::fetch_next(
   self : Query2RefMutFilteredMany[A, B, F],
 ) -> (@core.Entity, ComponentRef[A], ComponentMut[B])? raise EcsError {
-  self.flush()
   while self.index < self.entities.length() {
     let entity = self.entities[self.index]
     self.index = self.index + 1
     if self.query.get(entity) is Some((component_ref, component_mut)) {
-      self.pending = Some((entity, component_ref, component_mut))
       return Some((entity, component_ref, component_mut))
     }
   }

@@ -324,10 +324,10 @@ test "ecs query mut: query3 ref mut optional preserves optional ref semantics" {
 }
 
 ///|
-test "ecs query mut: get_mut exposes explicit flush writeback" {
+test "ecs query mut: get_mut mutates erased slot directly" {
   let world = World::new()
   let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_query1_get_mut_flush",
+    debug_name="position_query1_get_mut_direct",
   )
   let entity = world.spawn()
 
@@ -338,12 +338,7 @@ test "ecs query mut: get_mut exposes explicit flush writeback" {
   world.set_system_context(ctx)
 
   if (try! world.query1(comp_position).get_mut(entity)) is Some(position_mut) {
-    inspect(position_mut.has_writeback(), content="true")
-    inspect(position_mut.has_pending_writeback(), content="false")
     position_mut.get_ref().val.x = position_mut.get_ref().val.x + 5
-    inspect(position_mut.has_pending_writeback(), content="true")
-    inspect(position_mut.flush(), content="true")
-    inspect(position_mut.has_pending_writeback(), content="false")
   } else {
     inspect(false, content="true")
   }

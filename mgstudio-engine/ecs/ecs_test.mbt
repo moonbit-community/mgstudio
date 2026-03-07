@@ -125,7 +125,7 @@ test "ecs: spawn set get update and despawn cleanup" {
 }
 
 ///|
-test "ecs: decode failure includes context" {
+test "ecs: type mismatch includes context" {
   let world = World::new()
   let comp_counter : ComponentKey[Counter] = register_component(
     debug_name="counter_decode",
@@ -138,8 +138,8 @@ test "ecs: decode failure includes context" {
   let result : Result[BrokenCounter?, EcsError] = try? world.get(
     entity, comp_broken,
   )
-  guard result is Err(ComponentDecodeFailed(key_id, _name, _entity, _)) else {
-    fail("expected decode failure")
+  guard result is Err(ComponentTypeMismatch(key_id, _name, _entity, _actual)) else {
+    fail("expected component type mismatch")
   }
   inspect(key_id == comp_counter.id(), content="true")
 }

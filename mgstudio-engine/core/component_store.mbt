@@ -73,6 +73,21 @@ pub fn[T] ComponentStore::set(
 }
 
 ///|
+pub fn[T] ComponentStore::set_changed(
+  self : ComponentStore[T],
+  entity : Entity,
+  change_tick : Tick,
+) -> Bool {
+  match self.storage.index_of(entity) {
+    None => false
+    Some(i) => {
+      self.ticks[i].set_changed(change_tick)
+      true
+    }
+  }
+}
+
+///|
 pub fn[T] ComponentStore::update(
   self : ComponentStore[T],
   entity : Entity,

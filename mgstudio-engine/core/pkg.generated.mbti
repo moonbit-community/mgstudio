@@ -30,6 +30,7 @@ pub fn[T] ComponentStore::len(Self[T]) -> Int
 pub fn[T] ComponentStore::new() -> Self[T]
 pub fn[T] ComponentStore::remove(Self[T], Entity) -> T?
 pub fn[T] ComponentStore::set(Self[T], Entity, T, Int) -> Bool
+pub fn[T] ComponentStore::set_changed(Self[T], Entity, Int) -> Bool
 pub fn[T] ComponentStore::update(Self[T], Entity, Int, (T) -> T) -> Bool
 pub fn[T] ComponentStore::upsert(Self[T], Entity, T, Int) -> Unit
 

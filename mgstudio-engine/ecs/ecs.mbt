@@ -14,17 +14,17 @@
 
 ///|
 /// ECS component value constraint.
-pub(open) trait Component: ToJson + @json.FromJson {
+pub(open) trait Component {
   component() -> ComponentKey[Self]
 }
 
 ///|
 /// ECS resource value constraint.
-pub(open) trait ResourceData: ToJson + @json.FromJson {}
+pub(open) trait ResourceData {}
 
 ///|
 /// ECS event value constraint.
-pub(open) trait EventData: ToJson + @json.FromJson {}
+pub(open) trait EventData {}
 
 ///|
 pub struct ComponentKey[T] {
@@ -161,15 +161,15 @@ pub fn[T] event_key_from_id(id : Int, debug_name? : String = "") -> EventKey[T] 
 pub(all) suberror EcsError {
   EntityStateError(@core.EntityError)
   EntityNotAlive(@core.Entity)
-  ComponentDecodeFailed(Int, String, @core.Entity, @json.JsonDecodeError)
-  ResourceDecodeFailed(Int, String, @json.JsonDecodeError)
-  EventDecodeFailed(Int, String, Int, @json.JsonDecodeError)
-  MessageDecodeFailed(Int, String, Int, @json.JsonDecodeError)
+  ComponentTypeMismatch(Int, String, @core.Entity, String)
+  ResourceTypeMismatch(Int, String, String)
+  EventTypeMismatch(Int, String, Int, String)
+  MessageTypeMismatch(Int, String, Int, String)
 }
 
 ///|
 struct ResourceSlot {
-  payload : Json
+  payload : ErasedValue
   added_tick : @core.Tick
   changed_tick : @core.Tick
 }
@@ -180,13 +180,13 @@ pub struct World {
   entities : @core.Entities
   mut change_tick : @core.Tick
   mut system_context : @core.SystemContext
-  component_columns : Map[Int, Ref[@core.ComponentStore[Json]]]
+  component_columns : Map[Int, Ref[@core.ComponentStore[ErasedValue]]]
   required_components : Map[Int, Ref[RequiredComponentsState]]
   used_components : Map[Int, Bool]
   removed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
   resources : Map[Int, ResourceSlot]
-  mut previous_events : Map[Int, Array[Json]]
-  current_events : Map[Int, Array[Json]]
+  mut previous_events : Map[Int, Array[ErasedValue]]
+  current_events : Map[Int, Array[ErasedValue]]
 }
 
 ///|
@@ -239,7 +239,7 @@ pub fn World::despawn(
   entity : @core.Entity,
 ) -> Unit raise EcsError {
   self.ensure_entity_alive(entity)
-  let removed_components : Array[(Int, Json)] = []
+  let removed_components : Array[(Int, ErasedValue)] = []
   for entry in self.component_columns.iter() {
     let (key_id, store_ref) = entry
     if store_ref.val.get(entity) is Some(payload) {
@@ -267,22 +267,22 @@ pub fn World::despawn(
 }
 
 ///|
-pub fn[T : ToJson] World::set(
+pub fn[T] World::set(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
   value : T,
 ) -> Unit raise EcsError {
-  self.insert_component_json_with_requirements(
+  self.insert_component_with_requirements(
     entity,
     key.id(),
-    value.to_json(),
+    erased_value(value),
     component_write_change_tick(self),
   )
 }
 
 ///|
-pub fn[T : @json.FromJson] World::get(
+pub fn[T] World::get(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -292,13 +292,13 @@ pub fn[T : @json.FromJson] World::get(
     return None
   }
   match store_ref.val.get(entity) {
-    Some(payload) => Some(self.decode_component_payload(key, entity, payload))
+    Some(payload) => Some(self.component_value(key, entity, payload))
     None => None
   }
 }
 
 ///|
-pub fn[T : ToJson + @json.FromJson] World::update(
+pub fn[T] World::update(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
@@ -309,14 +309,12 @@ pub fn[T : ToJson + @json.FromJson] World::update(
     return false
   }
   guard store_ref.val.get(entity) is Some(payload) else { return false }
-  let old_value : T = self.decode_component_payload(key, entity, payload)
+  let old_value : T = self.component_value(key, entity, payload)
   let new_value = update(old_value)
-  store_ref.val.set(
-    entity,
-    new_value.to_json(),
-    component_write_change_tick(self),
-  )
+  let new_payload = erased_value(new_value)
+  store_ref.val.set(entity, new_payload, component_write_change_tick(self))
   |> ignore
+  self.run_component_replace_hooks(entity, key.id(), payload, new_payload)
   true
 }
 
@@ -358,7 +356,7 @@ fn World::ensure_entity_alive(
 fn World::ensure_component_store(
   self : World,
   key_id : Int,
-) -> Ref[@core.ComponentStore[Json]] {
+) -> Ref[@core.ComponentStore[ErasedValue]] {
   self.component_columns.get_or_init(key_id, fn() {
     Ref::new(@core.ComponentStore::new())
   })
@@ -368,7 +366,7 @@ fn World::ensure_component_store(
 fn World::component_store(
   self : World,
   key_id : Int,
-) -> Ref[@core.ComponentStore[Json]]? {
+) -> Ref[@core.ComponentStore[ErasedValue]]? {
   self.component_columns.get(key_id)
 }
 
@@ -396,15 +394,31 @@ fn World::removed_component_messages(
 }
 
 ///|
-fn[T : @json.FromJson] World::decode_component_payload(
+fn[T] World::component_ref(
   _self : World,
   key : ComponentKey[T],
   entity : @core.Entity,
-  payload : Json,
-) -> T raise EcsError {
-  @json.from_json(payload) catch {
-    err => raise ComponentDecodeFailed(key.id(), key.debug_name(), entity, err)
+  payload : ErasedValue,
+) -> Ref[T] raise EcsError {
+  payload.to_ref() catch {
+    _ =>
+      raise ComponentTypeMismatch(
+        key.id(),
+        key.debug_name(),
+        entity,
+        payload.type_name(),
+      )
   }
+}
+
+///|
+fn[T] World::component_value(
+  self : World,
+  key : ComponentKey[T],
+  entity : @core.Entity,
+  payload : ErasedValue,
+) -> T raise EcsError {
+  self.component_ref(key, entity, payload).val
 }
 
 ///|
