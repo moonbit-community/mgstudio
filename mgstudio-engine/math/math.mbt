@@ -913,6 +913,59 @@ fn quat_from_basis(x_axis : Vec3, y_axis : Vec3, z_axis : Vec3) -> Quat {
 }
 
 ///|
+fn vec3_try_normalize(value : Vec3) -> Vec3? {
+  let len_sq = value.length_squared()
+  if len_sq <= 1.0e-12F {
+    None
+  } else {
+    Some(value.mul_scalar(1.0F / sqrt(len_sq)))
+  }
+}
+
+///|
+fn vec3_reject_from_normalized(value : Vec3, normal : Vec3) -> Vec3 {
+  value.sub(normal.mul_scalar(value.dot(normal)))
+}
+
+///|
+fn vec3_any_orthonormal_vector(normal : Vec3) -> Vec3 {
+  let axis = if quat_abs(normal.x) > quat_abs(normal.z) {
+    Vec3::new(-normal.y, normal.x, 0.0F)
+  } else {
+    Vec3::new(0.0F, -normal.z, normal.y)
+  }
+  match vec3_try_normalize(axis) {
+    Some(value) => value
+    None => Vec3::new(1.0F, 0.0F, 0.0F)
+  }
+}
+
+///|
+fn quat_from_rotation_arc(from : Vec3, to : Vec3) -> Quat {
+  let from = match vec3_try_normalize(from) {
+    Some(value) => value
+    None => Vec3::new(1.0F, 0.0F, 0.0F)
+  }
+  let to = match vec3_try_normalize(to) {
+    Some(value) => value
+    None => Vec3::new(1.0F, 0.0F, 0.0F)
+  }
+  let dot = from.dot(to)
+  if dot >= 1.0F - 1.0e-6F {
+    return Quat::identity()
+  }
+  if dot <= -1.0F + 1.0e-6F {
+    return Quat::from_axis_angle(vec3_any_orthonormal_vector(from), pi())
+  }
+  Quat::{
+    x: from.y * to.z - from.z * to.y,
+    y: from.z * to.x - from.x * to.z,
+    z: from.x * to.y - from.y * to.x,
+    w: 1.0F + dot,
+  }.normalize()
+}
+
+///|
 pub(all) struct Transform {
   mut translation : Vec3
   mut rotation : Quat
@@ -1130,6 +1183,88 @@ pub fn Transform::looking_to(
 ///|
 pub fn Transform::rotate(self : Transform, rotation : Quat) -> Unit {
   self.rotation = rotation.mul(self.rotation).normalize()
+}
+
+///|
+pub fn Transform::translate_around(
+  self : Transform,
+  point : Vec3,
+  rotation : Quat,
+) -> Unit {
+  self.translation = point.add(
+    quat_rotate_vec3(rotation.normalize(), self.translation.sub(point)),
+  )
+}
+
+///|
+pub fn Transform::rotate_around(
+  self : Transform,
+  point : Vec3,
+  rotation : Quat,
+) -> Unit {
+  self.translate_around(point, rotation)
+  self.rotate(rotation)
+}
+
+///|
+pub fn Transform::aligned_by(
+  self : Transform,
+  main_axis : Vec3,
+  main_direction : Vec3,
+  secondary_axis : Vec3,
+  secondary_direction : Vec3,
+) -> Transform {
+  let aligned = Transform::{
+    translation: self.translation,
+    rotation: self.rotation,
+    scale: self.scale,
+  }
+  aligned.align(main_axis, main_direction, secondary_axis, secondary_direction)
+  aligned
+}
+
+///|
+/// Based on Bevy's `Transform::align` algorithm in `bevy_transform`.
+pub fn Transform::align(
+  self : Transform,
+  main_axis : Vec3,
+  main_direction : Vec3,
+  secondary_axis : Vec3,
+  secondary_direction : Vec3,
+) -> Unit {
+  let main_axis = match vec3_try_normalize(main_axis) {
+    Some(value) => value
+    None => Vec3::new(1.0F, 0.0F, 0.0F)
+  }
+  let main_direction = match vec3_try_normalize(main_direction) {
+    Some(value) => value
+    None => Vec3::new(1.0F, 0.0F, 0.0F)
+  }
+  let secondary_axis = match vec3_try_normalize(secondary_axis) {
+    Some(value) => value
+    None => Vec3::new(0.0F, 1.0F, 0.0F)
+  }
+  let secondary_direction = match vec3_try_normalize(secondary_direction) {
+    Some(value) => value
+    None => Vec3::new(0.0F, 1.0F, 0.0F)
+  }
+
+  let first_rotation = quat_from_rotation_arc(main_axis, main_direction)
+  let secondary_image = quat_rotate_vec3(first_rotation, secondary_axis)
+  let secondary_image_ortho = vec3_try_normalize(
+    vec3_reject_from_normalized(secondary_image, main_direction),
+  )
+  let secondary_direction_ortho = vec3_try_normalize(
+    vec3_reject_from_normalized(secondary_direction, main_direction),
+  )
+
+  self.rotation = match (secondary_image_ortho, secondary_direction_ortho) {
+    (Some(secondary_image_ortho), Some(secondary_direction_ortho)) =>
+      quat_from_rotation_arc(secondary_image_ortho, secondary_direction_ortho)
+      .mul(first_rotation)
+      .normalize()
+    _ => first_rotation
+  }
 }
 
 ///|

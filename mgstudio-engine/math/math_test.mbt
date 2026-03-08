@@ -42,6 +42,18 @@ fn quat_same_rotation(a : Quat, b : Quat) -> Bool {
 }
 
 ///|
+fn approx_vec3(a : Vec3, b : Vec3) -> Bool {
+  approx_eq(a.x, b.x) && approx_eq(a.y, b.y) && approx_eq(a.z, b.z)
+}
+
+///|
+fn rotate_vec3(rotation : Quat, value : Vec3) -> Vec3 {
+  let qv = Vec3::new(rotation.x, rotation.y, rotation.z)
+  let t = qv.cross(value).mul_scalar(2.0F)
+  value.add(t.mul_scalar(rotation.w)).add(qv.cross(t))
+}
+
+///|
 test "math: vec3 smooth_nudge moves towards target" {
   let value = Vec3::new(0.0F, 0.0F, 0.0F)
   value.smooth_nudge(Vec3::new(10.0F, 0.0F, 0.0F), 1.0F, 1.0F)
@@ -128,6 +140,102 @@ test "math: transform constructors and rotate_y preserve bevy semantics" {
   let rotated = Transform::identity()
   rotated.rotate_y(pi_half())
   inspect(quat_same_rotation(rotated.rotation, rotation), content="true")
+}
+
+///|
+test "math: transform rotate_around orbits translation and rotation" {
+  let transform = Transform::from_xyz(1.0F, 0.0F, 0.0F)
+  transform.rotate_around(Vec3::zero(), Quat::from_rotation_y(pi_half()))
+  inspect(approx_eq(transform.translation.x, 0.0F), content="true")
+  inspect(approx_eq(transform.translation.y, 0.0F), content="true")
+  inspect(approx_eq(transform.translation.z, -1.0F), content="true")
+  inspect(
+    approx_vec3(transform.forward(), Vec3::new(-1.0F, 0.0F, 0.0F)),
+    content="true",
+  )
+}
+
+///|
+test "math: transform align matches Bevy documented example" {
+  let transform = Transform::identity()
+  transform.align(
+    Vec3::new(1.0F, 0.0F, 0.0F),
+    Vec3::new(0.0F, 1.0F, 0.0F),
+    Vec3::new(1.0F, 1.0F, 0.0F),
+    Vec3::new(0.0F, 0.0F, 1.0F),
+  )
+  let main_axis_image = rotate_vec3(
+    transform.rotation,
+    Vec3::new(1.0F, 0.0F, 0.0F),
+  )
+  let secondary_axis_image = rotate_vec3(
+    transform.rotation,
+    Vec3::new(1.0F, 1.0F, 0.0F),
+  )
+  inspect(
+    approx_vec3(main_axis_image, Vec3::new(0.0F, 1.0F, 0.0F)),
+    content="true",
+  )
+  inspect(
+    approx_vec3(secondary_axis_image, Vec3::new(0.0F, 1.0F, 1.0F)),
+    content="true",
+  )
+}
+
+///|
+test "math: transform align falls back to Bevy default axes" {
+  let lhs = Transform::identity()
+  lhs.align(
+    Vec3::zero(),
+    Vec3::new(0.0F, 0.0F, 1.0F),
+    Vec3::zero(),
+    Vec3::new(1.0F, 0.0F, 0.0F),
+  )
+  let rhs = Transform::identity()
+  rhs.align(
+    Vec3::new(1.0F, 0.0F, 0.0F),
+    Vec3::new(0.0F, 0.0F, 1.0F),
+    Vec3::new(0.0F, 1.0F, 0.0F),
+    Vec3::new(1.0F, 0.0F, 0.0F),
+  )
+  inspect(quat_same_rotation(lhs.rotation, rhs.rotation), content="true")
+}
+
+///|
+test "math: transform align ignores degenerate secondary pair like Bevy" {
+  let transform = Transform::identity()
+  transform.align(
+    Vec3::new(1.0F, 0.0F, 0.0F),
+    Vec3::new(0.0F, 0.0F, 1.0F),
+    Vec3::new(1.0F, 0.0F, 0.0F),
+    Vec3::new(0.0F, 1.0F, 0.0F),
+  )
+  inspect(
+    approx_vec3(transform.right(), Vec3::new(0.0F, 0.0F, 1.0F)),
+    content="true",
+  )
+  inspect(
+    approx_vec3(transform.up(), Vec3::new(0.0F, 1.0F, 0.0F)),
+    content="true",
+  )
+}
+
+///|
+test "math: transform aligned_by preserves translation and returns aligned copy" {
+  let base = Transform::from_xyz(2.0F, 3.0F, 4.0F)
+  let aligned = base.aligned_by(
+    Vec3::new(0.0F, 0.0F, -1.0F),
+    Vec3::new(1.0F, 0.0F, 0.0F),
+    Vec3::new(1.0F, 0.0F, 0.0F),
+    Vec3::new(0.0F, 1.0F, 0.0F),
+  )
+  inspect(quat_same_rotation(base.rotation, Quat::identity()), content="true")
+  inspect(approx_vec3(aligned.translation, base.translation), content="true")
+  inspect(approx_vec3(aligned.scale, base.scale), content="true")
+  inspect(
+    approx_vec3(aligned.forward(), Vec3::new(1.0F, 0.0F, 0.0F)),
+    content="true",
+  )
 }
 
 ///|

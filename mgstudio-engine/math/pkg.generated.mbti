@@ -230,6 +230,8 @@ pub(all) struct Transform {
   mut rotation : Quat
   mut scale : Vec3
 }
+pub fn Transform::align(Self, Vec3, Vec3, Vec3, Vec3) -> Unit
+pub fn Transform::aligned_by(Self, Vec3, Vec3, Vec3, Vec3) -> Self
 pub fn Transform::back(Self) -> Vec3
 pub fn Transform::down(Self) -> Vec3
 pub fn Transform::forward(Self) -> Vec3
@@ -248,9 +250,11 @@ pub fn Transform::looking_to(Self, Vec3, Vec3) -> Self
 pub fn Transform::new(Vec3, Quat, Vec3) -> Self
 pub fn Transform::right(Self) -> Vec3
 pub fn Transform::rotate(Self, Quat) -> Unit
+pub fn Transform::rotate_around(Self, Vec3, Quat) -> Unit
 pub fn Transform::rotate_y(Self, Float) -> Unit
 pub fn Transform::rotate_z(Self, Float) -> Unit
 pub fn Transform::rotation_z(Self) -> Float
+pub fn Transform::translate_around(Self, Vec3, Quat) -> Unit
 pub fn Transform::up(Self) -> Vec3
 pub fn Transform::with_rotation(Self, Quat) -> Self
 pub fn Transform::with_scale(Self, Vec3) -> Self

@@ -392,7 +392,7 @@ Notes:
 | `bevy/examples/tools/scene_viewer/morph_viewer_plugin.rs` | `tools` |  | `Blocked` | `team-ops` |  |
 | `bevy/examples/tools/scene_viewer/scene_viewer_plugin.rs` | `tools` |  | `Blocked` | `team-ops` |  |
 | `bevy/examples/transforms/3d_rotation.rs` | `transforms` | `mgstudio-engine/examples/transforms/3d_rotation` | `Exact` | `team-core` |  |
-| `bevy/examples/transforms/align.rs` | `transforms` |  | `Blocked` | `team-core` | Blocked by missing `Transform::align` / `Transform::rotate_around` (`bd-jb1`) and 3D gizmo parity (`bd-2j9.9.3.2`). |
+| `bevy/examples/transforms/align.rs` | `transforms` |  | `Blocked` | `team-core` | Blocked by missing 3D gizmo parity (`bd-2j9.9.3.2`) and ship GLTF asset staging (`bd-7ff`). |
 | `bevy/examples/transforms/scale.rs` | `transforms` | `mgstudio-engine/examples/transforms/scale` | `Exact` | `team-core` |  |
 | `bevy/examples/transforms/transform.rs` | `transforms` | `mgstudio-engine/examples/transforms/transform` | `Exact` | `team-core` |  |
 | `bevy/examples/transforms/translation.rs` | `transforms` | `mgstudio-engine/examples/transforms/translation` | `Exact` | `team-core` |  |
