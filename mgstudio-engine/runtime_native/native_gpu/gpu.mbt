@@ -25,6 +25,10 @@
 ///|
 /// Use wgpu_mbt's "alpha blend + arbitrary format" render pipeline descriptor
 /// helper (added in wgpu_mbt 0.2.2).
+const MESH2D_UNIFORM_BUFFER_SIZE : UInt64 = 80UL
+
+///|
+const MESH3D_UNIFORM_BUFFER_SIZE : UInt64 = 512UL
 
 ///|
 pub struct GpuTextureInfo {
@@ -64,6 +68,12 @@ pub struct UiBatch {
   texture_id : Int
   first_instance : UInt
   mut instance_count : UInt
+}
+
+///|
+struct GpuUniformSlot {
+  buffer : @wgpu.Buffer
+  bind_group : @wgpu.BindGroup
 }
 
 ///|
@@ -234,8 +244,8 @@ pub struct GpuBackend {
   mut mesh_pipeline : @wgpu.RenderPipeline?
   mut mesh_pipeline_surface : @wgpu.RenderPipeline?
   mut mesh_pipeline_surface_format : @wgpu.TextureFormat?
-  mut mesh_uniform_buf : @wgpu.Buffer?
-  mut mesh_uniform_bg : @wgpu.BindGroup?
+  mesh_uniform_slots : Array[GpuUniformSlot]
+  mut mesh_uniform_slot_used : Int
   mut mesh3d_bgl_uniform : @wgpu.BindGroupLayout?
   mut mesh3d_bgl_material : @wgpu.BindGroupLayout?
   mut mesh3d_pipeline_layout : @wgpu.PipelineLayout?
@@ -255,8 +265,8 @@ pub struct GpuBackend {
   mut mesh3d_pipeline_rgba8_cull_mode : Int
   mut mesh3d_pipeline_surface_cull_mode : Int
   mut mesh3d_point_shadow_compare_sampler : @wgpu.Sampler?
-  mut mesh3d_uniform_buf : @wgpu.Buffer?
-  mut mesh3d_uniform_bg : @wgpu.BindGroup?
+  mesh3d_uniform_slots : Array[GpuUniformSlot]
+  mut mesh3d_uniform_slot_used : Int
   mut mesh3d_motion_vector_bgl_uniform : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh3d_motion_vector_pipeline : @wgpu.RenderPipeline?
@@ -522,8 +532,8 @@ pub fn GpuBackend::new(
     mesh_pipeline: None,
     mesh_pipeline_surface: None,
     mesh_pipeline_surface_format: None,
-    mesh_uniform_buf: None,
-    mesh_uniform_bg: None,
+    mesh_uniform_slots: [],
+    mesh_uniform_slot_used: 0,
     mesh3d_bgl_uniform: None,
     mesh3d_bgl_material: None,
     mesh3d_pipeline_layout: None,
@@ -543,8 +553,8 @@ pub fn GpuBackend::new(
     mesh3d_pipeline_rgba8_cull_mode: -1,
     mesh3d_pipeline_surface_cull_mode: -1,
     mesh3d_point_shadow_compare_sampler: None,
-    mesh3d_uniform_buf: None,
-    mesh3d_uniform_bg: None,
+    mesh3d_uniform_slots: [],
+    mesh3d_uniform_slot_used: 0,
     mesh3d_motion_vector_bgl_uniform: None,
     mesh3d_motion_vector_pipeline_layout: None,
     mesh3d_motion_vector_pipeline: None,
@@ -1262,6 +1272,52 @@ fn create_uniform_bind_group_layout_vertex_fragment(
 }
 
 ///|
+fn ensure_mesh_uniform_slot(
+  backend : GpuBackend,
+  slot_index : Int,
+) -> GpuUniformSlot? {
+  guard backend.mesh_bgl_uniform is Some(bgl) else { return None }
+  let ubo_usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
+  while backend.mesh_uniform_slots.length() <= slot_index {
+    let uniform_buf = backend.device.create_buffer(
+      size=MESH2D_UNIFORM_BUFFER_SIZE,
+      usage=ubo_usage,
+    )
+    let uniform_bg = backend.device.create_bind_group_uniform_buffer(
+      bgl, uniform_buf,
+    )
+    backend.mesh_uniform_slots.push(GpuUniformSlot::{
+      buffer: uniform_buf,
+      bind_group: uniform_bg,
+    })
+  }
+  Some(backend.mesh_uniform_slots[slot_index])
+}
+
+///|
+fn ensure_mesh3d_uniform_slot(
+  backend : GpuBackend,
+  slot_index : Int,
+) -> GpuUniformSlot? {
+  guard backend.mesh3d_bgl_uniform is Some(bgl) else { return None }
+  let ubo_usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
+  while backend.mesh3d_uniform_slots.length() <= slot_index {
+    let uniform_buf = backend.device.create_buffer(
+      size=MESH3D_UNIFORM_BUFFER_SIZE,
+      usage=ubo_usage,
+    )
+    let uniform_bg = backend.device.create_bind_group_uniform_buffer(
+      bgl, uniform_buf,
+    )
+    backend.mesh3d_uniform_slots.push(GpuUniformSlot::{
+      buffer: uniform_buf,
+      bind_group: uniform_bg,
+    })
+  }
+  Some(backend.mesh3d_uniform_slots[slot_index])
+}
+
+///|
 fn ensure_sprite_pipeline_rgba8(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
@@ -1885,21 +1941,6 @@ fn ensure_mesh_pipeline_rgba8(
     backend.mesh_bgl_uniform = Some(bgl)
     backend.mesh_pipeline_layout = Some(pl)
   }
-  if backend.mesh_uniform_buf is None || backend.mesh_uniform_bg is None {
-    guard backend.mesh_bgl_uniform is Some(bgl) else {
-      @debug.debug(
-        "[native_gpu] ensure_mesh_pipeline_rgba8: mesh_bgl_uniform is None",
-      )
-      return
-    }
-    let ubo_usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
-    let uniform_buf = backend.device.create_buffer(size=80UL, usage=ubo_usage)
-    let uniform_bg = backend.device.create_bind_group_uniform_buffer(
-      bgl, uniform_buf,
-    )
-    backend.mesh_uniform_buf = Some(uniform_buf)
-    backend.mesh_uniform_bg = Some(uniform_bg)
-  }
   if backend.mesh_pipeline is Some(_) {
     return
   }
@@ -2250,16 +2291,6 @@ fn ensure_mesh3d_pipeline_rgba8(
     backend.mesh3d_bgl_material = Some(material_bgl)
     backend.mesh3d_pipeline_layout = Some(pl)
     mesh3d_material_cache_clear(backend)
-  }
-  if backend.mesh3d_uniform_buf is None || backend.mesh3d_uniform_bg is None {
-    guard backend.mesh3d_bgl_uniform is Some(bgl) else { return }
-    let ubo_usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
-    let uniform_buf = backend.device.create_buffer(size=512UL, usage=ubo_usage)
-    let uniform_bg = backend.device.create_bind_group_uniform_buffer(
-      bgl, uniform_buf,
-    )
-    backend.mesh3d_uniform_buf = Some(uniform_buf)
-    backend.mesh3d_uniform_bg = Some(uniform_bg)
   }
   if mesh3d_pipeline_get_rgba8(backend, topology, false) is Some(_) &&
     mesh3d_pipeline_get_rgba8(backend, topology, true) is Some(_) {
@@ -3179,6 +3210,8 @@ pub fn GpuBackend::begin_frame(self : GpuBackend) -> Unit {
   } else {
     self.frame_count = self.frame_count + 1U
   }
+  self.mesh_uniform_slot_used = 0
+  self.mesh3d_uniform_slot_used = 0
   let st = surface.get_current_texture()
   let tex = st.take_texture()
   let view = tex.create_view()
@@ -5689,16 +5722,14 @@ pub fn GpuBackend::draw_mesh(
       1
     return
   }
-  guard self.mesh_uniform_buf is Some(uniform_buf) else {
+  let mesh_uniform_slot_index = self.mesh_uniform_slot_used
+  guard ensure_mesh_uniform_slot(self, mesh_uniform_slot_index)
+    is Some(uniform_slot) else {
     debug_mesh2d_drop_no_uniform_buf_ref.val = debug_mesh2d_drop_no_uniform_buf_ref.val +
       1
     return
   }
-  guard self.mesh_uniform_bg is Some(uniform_bg) else {
-    debug_mesh2d_drop_no_uniform_bg_ref.val = debug_mesh2d_drop_no_uniform_bg_ref.val +
-      1
-    return
-  }
+  self.mesh_uniform_slot_used = mesh_uniform_slot_index + 1
   let resolved_texture_id = if texture_id < 0 { -1 } else { texture_id }
   guard resolve_draw_texture(self, resolved_texture_id) is Some(texture) else {
     debug_mesh2d_drop_no_texture_ref.val = debug_mesh2d_drop_no_texture_ref.val +
@@ -5747,9 +5778,9 @@ pub fn GpuBackend::draw_mesh(
     uv_scale_x_value,
     uv_scale_y_value,
   ])
-  self.queue.write_buffer(uniform_buf, 0UL, bytes)
+  self.queue.write_buffer(uniform_slot.buffer, 0UL, bytes)
   pass.set_pipeline(pipeline)
-  pass.set_bind_group(0U, uniform_bg, [])
+  pass.set_bind_group(0U, uniform_slot.bind_group, [])
   pass.set_bind_group(1U, texture.bind_group, [])
   let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
     mesh.vertex_stride_bytes
@@ -6545,8 +6576,12 @@ pub fn GpuBackend::draw_mesh3d(
     is Some(pipeline) else {
     return
   }
-  guard self.mesh3d_uniform_buf is Some(uniform_buf) else { return }
-  guard self.mesh3d_uniform_bg is Some(uniform_bg) else { return }
+  let mesh3d_uniform_slot_index = self.mesh3d_uniform_slot_used
+  guard ensure_mesh3d_uniform_slot(self, mesh3d_uniform_slot_index)
+    is Some(uniform_slot) else {
+    return
+  }
+  self.mesh3d_uniform_slot_used = mesh3d_uniform_slot_index + 1
   let resolved_base_texture_id = if texture_id < 0 { -1 } else { texture_id }
   let resolved_normal_texture_id = if normal_texture_id < 0 {
     -1
@@ -6808,14 +6843,14 @@ pub fn GpuBackend::draw_mesh3d(
     Float::from_int(mesh3d_cull_mode_sanitize(cull_mode)),
     0.0F,
   ])
-  self.queue.write_buffer(uniform_buf, 0UL, bytes)
+  self.queue.write_buffer(uniform_slot.buffer, 0UL, bytes)
   let material_bg = mesh3d_material_cache_get_or_create(
     self, base_texture, normal_texture, emissive_texture, metallic_roughness_texture,
     occlusion_texture, depth_texture, anisotropy_texture, specular_tint_texture,
     transmission_source_texture, point_shadow_texture,
   )
   pass.set_pipeline(pipeline)
-  pass.set_bind_group(0U, uniform_bg, [])
+  pass.set_bind_group(0U, uniform_slot.bind_group, [])
   pass.set_bind_group(1U, material_bg, [])
   let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
     mesh.vertex_stride_bytes

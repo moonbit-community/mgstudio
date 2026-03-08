@@ -50,3 +50,23 @@ test "native_gpu: interleaved 2d mesh csv keeps original vertex count" {
     backend.meshes.val[0].vertex_stride_bytes == 32UL
   inspect(ok, content="true")
 }
+
+///|
+test "native_gpu: mesh2d uniform slot pool grows per draw slot" {
+  let backend = GpuBackend::new(assets_base="assets")
+  ensure_mesh_pipeline_rgba8(backend)
+  let ok = ensure_mesh_uniform_slot(backend, 0) is Some(_) &&
+    ensure_mesh_uniform_slot(backend, 2) is Some(_) &&
+    backend.mesh_uniform_slots.length() == 3
+  inspect(ok, content="true")
+}
+
+///|
+test "native_gpu: mesh3d uniform slot pool grows per draw slot" {
+  let backend = GpuBackend::new(assets_base="assets")
+  ensure_mesh3d_pipeline_rgba8(backend, MESH3D_TOPOLOGY_TRIANGLE_LIST, 0)
+  let ok = ensure_mesh3d_uniform_slot(backend, 0) is Some(_) &&
+    ensure_mesh3d_uniform_slot(backend, 1) is Some(_) &&
+    backend.mesh3d_uniform_slots.length() == 2
+  inspect(ok, content="true")
+}

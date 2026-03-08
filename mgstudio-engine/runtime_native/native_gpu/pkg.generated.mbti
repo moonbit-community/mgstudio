@@ -158,8 +158,8 @@ pub struct GpuBackend {
   mut mesh_pipeline : @wgpu_mbt.RenderPipeline?
   mut mesh_pipeline_surface : @wgpu_mbt.RenderPipeline?
   mut mesh_pipeline_surface_format : @wgpu_mbt.TextureFormat?
-  mut mesh_uniform_buf : @wgpu_mbt.Buffer?
-  mut mesh_uniform_bg : @wgpu_mbt.BindGroup?
+  mesh_uniform_slots : Array[GpuUniformSlot]
+  mut mesh_uniform_slot_used : Int
   mut mesh3d_bgl_uniform : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_bgl_material : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_pipeline_layout : @wgpu_mbt.PipelineLayout?
@@ -179,8 +179,8 @@ pub struct GpuBackend {
   mut mesh3d_pipeline_rgba8_cull_mode : Int
   mut mesh3d_pipeline_surface_cull_mode : Int
   mut mesh3d_point_shadow_compare_sampler : @wgpu_mbt.Sampler?
-  mut mesh3d_uniform_buf : @wgpu_mbt.Buffer?
-  mut mesh3d_uniform_bg : @wgpu_mbt.BindGroup?
+  mesh3d_uniform_slots : Array[GpuUniformSlot]
+  mut mesh3d_uniform_slot_used : Int
   mut mesh3d_motion_vector_bgl_uniform : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh3d_motion_vector_pipeline : @wgpu_mbt.RenderPipeline?
@@ -361,6 +361,8 @@ pub struct GpuTextureInfo {
   sampler : @wgpu_mbt.Sampler
   bind_group : @wgpu_mbt.BindGroup
 }
+
+type GpuUniformSlot
 
 pub struct Mesh3dMaterialBindGroupCacheEntry {
   base_texture_id : Int
