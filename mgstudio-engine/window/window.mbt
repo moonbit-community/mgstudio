@@ -1263,6 +1263,13 @@ pub fn host_gpu_create_mesh_triangles(vertices_xy_csv~ : String) -> Int {
 }
 
 ///|
+pub fn host_gpu_create_mesh_triangles_xyuvrgba(
+  vertices_xyuvrgba_csv~ : String,
+) -> Int {
+  @native_gpu.create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~)
+}
+
+///|
 pub fn host_gpu_create_mesh_triangles3d(
   vertices_xyzuvrgba_csv~ : String,
 ) -> Int {

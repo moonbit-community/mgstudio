@@ -2324,8 +2324,8 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
         @mesh.MeshGeometry::Geometry2d(geometry2d) =>
           match geometry2d.encode_triangle_interleaved_xy_uv_rgba_csv() {
             Some(vertices_csv) =>
-              @window.host_gpu_create_mesh_triangles(
-                vertices_xy_csv=vertices_csv,
+              @window.host_gpu_create_mesh_triangles_xyuvrgba(
+                vertices_xyuvrgba_csv=vertices_csv,
               )
             None => {
               let message = match geometry2d.validate() {

@@ -65,6 +65,8 @@ pub fn host_gpu_create_mesh_triangles(vertices_xy_csv~ : String) -> Int
 
 pub fn host_gpu_create_mesh_triangles3d(vertices_xyzuvrgba_csv~ : String) -> Int
 
+pub fn host_gpu_create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~ : String) -> Int
+
 pub fn host_gpu_create_point_light_shadow_target(size~ : Int) -> Int
 
 pub fn host_gpu_create_render_target(width~ : Int, height~ : Int, nearest~ : Bool) -> Int

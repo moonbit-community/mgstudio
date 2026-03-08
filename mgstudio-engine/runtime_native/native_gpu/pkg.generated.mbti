@@ -44,6 +44,8 @@ pub fn create_mesh_rectangle(width~ : Float, height~ : Float) -> Int
 
 pub fn create_mesh_triangles(vertices_xy_csv~ : String) -> Int
 
+pub fn create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~ : String) -> Int
+
 pub fn create_point_light_shadow_target(size~ : Int) -> Int
 
 pub fn create_render_target(width~ : Int, height~ : Int, nearest~ : Bool) -> Int

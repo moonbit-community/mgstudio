@@ -8015,6 +8015,32 @@ pub fn create_mesh_triangles(vertices_xy_csv~ : String) -> Int {
 }
 
 ///|
+pub fn create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~ : String) -> Int {
+  if parse_f32_csv(vertices_xyuvrgba_csv) is Some(vertices) {
+    if ensure_backend() is Some(backend) {
+      try {
+        let mesh_id = backend.create_mesh_triangles_xyuvrgba(vertices)
+        if mesh_id <= 0 {
+          @debug.debug(
+            "[native_gpu] create_mesh_triangles_xyuvrgba failed: parsed_values=" +
+            vertices.length().to_string(),
+          )
+        }
+        return mesh_id
+      } catch {
+        err => debug_runtime_error("create_mesh_triangles_xyuvrgba", err)
+      }
+    }
+  } else {
+    @debug.debug(
+      "[native_gpu] create_mesh_triangles_xyuvrgba parse failed: csv_len=" +
+      vertices_xyuvrgba_csv.length().to_string(),
+    )
+  }
+  0
+}
+
+///|
 pub fn create_mesh3d(
   vertices_xyzuvrgba_csv~ : String,
   primitive_topology~ : Int,
