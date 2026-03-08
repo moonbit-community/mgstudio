@@ -414,6 +414,7 @@ fn encode_render_target(target : RenderTarget) -> Json {
   match target {
     Screen => (0, Json::null()).to_json()
     Image(image) => (1, encode_image_handle(image)).to_json()
+    Window(window_ref) => (2, window_ref.to_json()).to_json()
   }
 }
 
@@ -730,6 +731,7 @@ fn decode_render_target(json : Json) -> RenderTarget {
   match tag {
     0 => Screen
     1 => Image(decode_image_handle(payload))
+    2 => Window(try! @json.from_json(payload))
     _ => Screen
   }
 }

@@ -454,8 +454,8 @@ Notes:
 | `bevy/examples/window/custom_cursor_image.rs` | `window` | `mgstudio-engine/examples/window/custom_cursor_image` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/low_power.rs` | `window` | `mgstudio-engine/examples/window/low_power` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/monitor_info.rs` | `window` | `mgstudio-engine/examples/window/monitor_info` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/window/multi_window_text.rs` | `window` | `mgstudio-engine/examples/window/multi_window_text` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/window/multiple_windows.rs` | `window` | `mgstudio-engine/examples/window/multiple_windows` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/window/multi_window_text.rs` | `window` |  | `Blocked` | `team-input_window` | Placeholder fallback example was removed; exact parity now tracked under `bd-1gp` for `UiTargetCamera` and per-window UI scale routing. |
+| `bevy/examples/window/multiple_windows.rs` | `window` |  | `Blocked` | `team-input_window` | Placeholder fallback example was removed; camera/window-target foundation is now tracked under `bd-s5d`, but exact parity still needs UI window targeting from `bd-1gp`. |
 | `bevy/examples/window/scale_factor_override.rs` | `window` | `mgstudio-engine/examples/window/scale_factor_override` | `Exact` | `team-input_window` |  |
 | `bevy/examples/window/screenshot.rs` | `window` | `mgstudio-engine/examples/window/screenshot` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/transparent_window.rs` | `window` | `mgstudio-engine/examples/window/transparent_window` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |

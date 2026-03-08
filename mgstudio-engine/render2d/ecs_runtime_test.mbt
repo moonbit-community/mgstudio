@@ -122,6 +122,27 @@ test "render2d: Camera2dBundle::spawn inserts expected components" {
 }
 
 ///|
+test "render2d: Camera2dBundle::new_with_target stores window render target" {
+  let world = @ecs.World::new()
+  let target_window = @core.Entity::new(7, 2)
+  let bundle = Camera2dBundle::new_with_target(
+    Camera::default(),
+    @math.Transform::identity(),
+    RenderTarget::Window(@window.WindowRef::Entity(target_window)),
+  )
+  let entity = bundle.spawn(world)
+
+  let target : RenderTarget? = try! world.get(entity, ecs_key_render_target)
+  inspect(
+    target.map(fn(value) {
+      value.to_json() ==
+      RenderTarget::Window(@window.WindowRef::Entity(target_window)).to_json()
+    }),
+    content="Some(true)",
+  )
+}
+
+///|
 test "render2d: Mesh2dBundle::spawn inserts expected components" {
   let world = @ecs.World::new()
   let mesh = Mesh2d::from_rectangle(Rectangle::new(8.0F, 6.0F))

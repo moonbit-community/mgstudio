@@ -1238,6 +1238,7 @@ pub impl Show for PanCamera with output(self, logger) {
 ///|
 pub(all) enum RenderTarget {
   Screen
+  Window(@window.WindowRef)
   Image(@asset.Handle[@asset.Image])
 }
 
@@ -5512,26 +5513,25 @@ priv struct RenderTargetComputed {
 }
 
 ///|
-fn render2d_target_info(
-  state : RenderState,
-  target : RenderTarget,
-) -> RenderTargetComputed? {
-  let mut width = @window.window_width()
-  let mut height = @window.window_height()
-  let mut scale_factor = @window.window_scale_factor()
-  if target is Image(handle) {
-    let target_id = handle.id()
-    if render2d_find_render_target_size(state, target_id) is Some(info) {
-      width = info.width
-      height = info.height
-      scale_factor = 1.0F
-    } else {
-      return None
-    }
+fn render2d_targets_host_window(target : RenderTarget) -> Bool {
+  match target {
+    Screen => true
+    Window(_) => true
+    Image(_) => false
   }
+}
+
+///|
+fn render2d_window_target_info(
+  world : @ecs.World,
+  window_ref : @window.WindowRef,
+) -> RenderTargetComputed? {
+  let width = @window.window_physical_width_for(world, window_ref)
+  let height = @window.window_physical_height_for(world, window_ref)
   if width <= 0 || height <= 0 {
     return None
   }
+  let mut scale_factor = @window.window_scale_factor_for(world, window_ref)
   if scale_factor <= 0.0F {
     scale_factor = 1.0F
   }
@@ -5539,6 +5539,29 @@ fn render2d_target_info(
     size: @math.IVec2::new(width, height),
     scale_factor,
   })
+}
+
+///|
+fn render2d_target_info(
+  world : @ecs.World,
+  state : RenderState,
+  target : RenderTarget,
+) -> RenderTargetComputed? {
+  match target {
+    Screen => render2d_window_target_info(world, @window.WindowRef::Primary)
+    Window(window_ref) => render2d_window_target_info(world, window_ref)
+    Image(handle) => {
+      let target_id = handle.id()
+      if render2d_find_render_target_size(state, target_id) is Some(info) {
+        Some(RenderTargetComputed::{
+          size: @math.IVec2::new(info.width, info.height),
+          scale_factor: 1.0F,
+        })
+      } else {
+        None
+      }
+    }
+  }
 }
 
 ///|
@@ -5881,7 +5904,7 @@ pub fn render2d_camera_system(world : @ecs.World) -> Unit {
     projection_store.get(entity).unwrap_or(Projection::orthographic_2d())
     |> ignore
 
-    let target_info = render2d_target_info(render_state, target)
+    let target_info = render2d_target_info(world, render_state, target)
     let next_target_info = render2d_camera_target_info_from_render_target(
       target_info,
     )
@@ -5900,7 +5923,7 @@ pub fn render2d_camera_system(world : @ecs.World) -> Unit {
       projection_store, entity, system_ticks,
     )
     let mut scale_factor_changed = false
-    if target is RenderTarget::Screen &&
+    if render2d_targets_host_window(target) &&
       camera.computed.target_info is Some(old_target_info) &&
       next_target_info is Some(new_target_info) &&
       old_target_info.scale_factor > 0.0F &&
@@ -6008,13 +6031,13 @@ pub fn render2d_camera_system_ecs(world : @ecs.World) -> Unit {
       Projection::orthographic_2d(),
     )
     |> ignore
-    let target_info = render2d_target_info(render_state, target)
+    let target_info = render2d_target_info(world, render_state, target)
     let next_target_info = render2d_camera_target_info_from_render_target(
       target_info,
     )
     let mut camera_value = camera
     let mut scale_factor_changed = false
-    if target is RenderTarget::Screen &&
+    if render2d_targets_host_window(target) &&
       camera.computed.target_info is Some(old_target_info) &&
       next_target_info is Some(new_target_info) &&
       old_target_info.scale_factor > 0.0F &&
@@ -6137,7 +6160,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
           target_size: target_info.physical_size,
           scale_factor,
         }
-      } else if render2d_target_info(rs.val, target) is Some(info) {
+      } else if render2d_target_info(world, rs.val, target) is Some(info) {
         let scale_factor = if info.scale_factor <= 0.0F {
           1.0F
         } else {
@@ -6389,7 +6412,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
           target_size: target_info.physical_size,
           scale_factor,
         }
-      } else if render2d_target_info(rs.val, target) is Some(info) {
+      } else if render2d_target_info(world, rs.val, target) is Some(info) {
         let scale_factor = if info.scale_factor <= 0.0F {
           1.0F
         } else {
@@ -7645,7 +7668,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       )
       let mut auto_bloom_source : @asset.Handle[@asset.Image]? = None
       if camera.bloom2d is Some(bloom) {
-        if bloom.source is None && camera.target is Screen {
+        if bloom.source is None && render2d_targets_host_window(camera.target) {
           auto_bloom_source = Some(
             render2d_get_or_create_bloom2d_auto_target(
               rs.val,

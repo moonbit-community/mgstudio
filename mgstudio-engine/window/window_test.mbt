@@ -180,6 +180,43 @@ test "window: compatibility helpers read and write ECS primary window state" {
 }
 
 ///|
+test "window: window refs resolve entity-backed metrics" {
+  let primary_window = Window::default()
+  primary_window.resolution.set_physical_resolution(320, 180)
+  primary_window.resolution.set_scale_factor(1.0F)
+  let secondary_window = Window::default()
+  secondary_window.title = "Secondary"
+  secondary_window.resolution.set_physical_resolution(640, 360)
+  secondary_window.resolution.set_scale_factor_override(Some(2.0F))
+
+  let world = @ecs.World::new()
+  let primary = world.spawn()
+  try! world.set_component(primary, primary_window)
+  try! world.set_component(primary, PrimaryWindow::{  })
+  let secondary = world.spawn()
+  try! world.set_component(secondary, secondary_window)
+
+  inspect(
+    window_entity_for_ref(world, WindowRef::Primary) == Some(primary),
+    content="true",
+  )
+  inspect(
+    window_entity_for_ref(world, WindowRef::Entity(secondary)) ==
+    Some(secondary),
+    content="true",
+  )
+  inspect(window_physical_width_for(world, WindowRef::Primary), content="320")
+  inspect(
+    window_physical_height_for(world, WindowRef::Entity(secondary)),
+    content="360",
+  )
+  inspect(
+    window_scale_factor_for(world, WindowRef::Entity(secondary)),
+    content="2",
+  )
+}
+
+///|
 test "window: scale-factor helper prefers override over observed host scale" {
   let configured_window = Window::default()
   configured_window.resolution.set_physical_resolution(500, 300)

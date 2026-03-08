@@ -6284,16 +6284,42 @@ fn cmp_float(a : Float, b : Float) -> Int {
 
 ///|
 fn render3d_target_info(
+  world : @ecs.World,
   target : @render2d.RenderTarget,
 ) -> RenderTargetComputed3d? {
   match target {
     @render2d.RenderTarget::Screen => {
-      let width = @window.window_width()
-      let height = @window.window_height()
+      let width = @window.window_physical_width_for(
+        world,
+        @window.WindowRef::Primary,
+      )
+      let height = @window.window_physical_height_for(
+        world,
+        @window.WindowRef::Primary,
+      )
       if width <= 0 || height <= 0 {
         return None
       }
-      let mut scale_factor = @window.window_scale_factor()
+      let mut scale_factor = @window.window_scale_factor_for(
+        world,
+        @window.WindowRef::Primary,
+      )
+      if scale_factor <= 0.0F {
+        scale_factor = 1.0F
+      }
+      Some(RenderTargetComputed3d::{
+        target_id: -1,
+        target_size: @math.IVec2::new(width, height),
+        scale_factor,
+      })
+    }
+    @render2d.RenderTarget::Window(window_ref) => {
+      let width = @window.window_physical_width_for(world, window_ref)
+      let height = @window.window_physical_height_for(world, window_ref)
+      if width <= 0 || height <= 0 {
+        return None
+      }
+      let mut scale_factor = @window.window_scale_factor_for(world, window_ref)
       if scale_factor <= 0.0F {
         scale_factor = 1.0F
       }
@@ -9546,7 +9572,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       Some(v) => v
       None => transform
     }
-    match render3d_target_info(target) {
+    match render3d_target_info(world, target) {
       Some(target_info) => {
         let mut camera_clamped = camera
         if camera.viewport is Some(viewport) {

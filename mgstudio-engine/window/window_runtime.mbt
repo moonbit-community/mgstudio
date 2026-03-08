@@ -217,6 +217,102 @@ fn window_preferred_entity(world : @ecs.World) -> @core.Entity? {
 }
 
 ///|
+pub fn window_entity_for_ref(
+  world : @ecs.World,
+  window_ref : WindowRef,
+) -> @core.Entity? {
+  match window_ref {
+    Primary => window_preferred_entity(world)
+    Entity(entity) =>
+      if window_component(world, entity) is Some(_) {
+        Some(entity)
+      } else {
+        None
+      }
+  }
+}
+
+///|
+fn window_physical_width_for_entity(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Int {
+  if window_runtime_component(world, entity) is Some(runtime) {
+    return runtime.last_observed_width
+  }
+  if window_component(world, entity) is Some(window) {
+    return window.physical_width()
+  }
+  0
+}
+
+///|
+fn window_physical_height_for_entity(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Int {
+  if window_runtime_component(world, entity) is Some(runtime) {
+    return runtime.last_observed_height
+  }
+  if window_component(world, entity) is Some(window) {
+    return window.physical_height()
+  }
+  0
+}
+
+///|
+fn window_scale_factor_for_entity(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Float {
+  if window_component(world, entity) is Some(window) {
+    if window.resolution.scale_factor_override() is Some(_) {
+      return window.scale_factor()
+    }
+  }
+  if window_runtime_component(world, entity) is Some(runtime) {
+    return runtime.last_observed_scale_factor
+  }
+  if window_component(world, entity) is Some(window) {
+    return window.scale_factor()
+  }
+  1.0F
+}
+
+///|
+pub fn window_physical_width_for(
+  world : @ecs.World,
+  window_ref : WindowRef,
+) -> Int {
+  guard window_entity_for_ref(world, window_ref) is Some(entity) else {
+    return 0
+  }
+  window_physical_width_for_entity(world, entity)
+}
+
+///|
+pub fn window_physical_height_for(
+  world : @ecs.World,
+  window_ref : WindowRef,
+) -> Int {
+  guard window_entity_for_ref(world, window_ref) is Some(entity) else {
+    return 0
+  }
+  window_physical_height_for_entity(world, entity)
+}
+
+///|
+pub fn window_scale_factor_for(
+  world : @ecs.World,
+  window_ref : WindowRef,
+) -> Float {
+  guard window_entity_for_ref(world, window_ref) is Some(entity) else {
+    return 1.0F
+  }
+  window_scale_factor_for_entity(world, entity)
+}
+
+///|
 fn window_resolution_scale_factor_or_default(
   resolution : WindowResolution,
 ) -> Float {
@@ -568,40 +664,17 @@ pub fn window_poll_host_events(world : @ecs.World) -> Unit {
 
 ///|
 fn window_primary_physical_width(world : @ecs.World) -> Int {
-  if window_primary_runtime(world) is Some(runtime) {
-    return runtime.last_observed_width
-  }
-  if window_primary_window(world) is Some(window) {
-    return window.physical_width()
-  }
-  0
+  window_physical_width_for(world, WindowRef::Primary)
 }
 
 ///|
 fn window_primary_physical_height(world : @ecs.World) -> Int {
-  if window_primary_runtime(world) is Some(runtime) {
-    return runtime.last_observed_height
-  }
-  if window_primary_window(world) is Some(window) {
-    return window.physical_height()
-  }
-  0
+  window_physical_height_for(world, WindowRef::Primary)
 }
 
 ///|
 fn window_primary_scale_factor(world : @ecs.World) -> Float {
-  if window_primary_window(world) is Some(window) {
-    if window.resolution.scale_factor_override() is Some(_) {
-      return window.scale_factor()
-    }
-  }
-  if window_primary_runtime(world) is Some(runtime) {
-    return runtime.last_observed_scale_factor
-  }
-  if window_primary_window(world) is Some(window) {
-    return window.scale_factor()
-  }
-  1.0F
+  window_scale_factor_for(world, WindowRef::Primary)
 }
 
 ///|

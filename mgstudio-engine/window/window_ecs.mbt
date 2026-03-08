@@ -22,6 +22,12 @@ pub(all) struct PrimaryWindow {} derive(Eq, Show)
 pub(all) struct ClosingWindow {} derive(Eq, Show)
 
 ///|
+pub(all) enum WindowRef {
+  Primary
+  Entity(@core.Entity)
+} derive(Eq, ToJson, FromJson)
+
+///|
 pub(all) enum WindowPosition {
   Automatic
   At(Int, Int)

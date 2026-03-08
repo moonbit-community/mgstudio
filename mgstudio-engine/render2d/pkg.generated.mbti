@@ -793,6 +793,7 @@ pub impl @json.FromJson for RenderState
 
 pub(all) enum RenderTarget {
   Screen
+  Window(@window.WindowRef)
   Image(@asset.Handle[@asset.Image])
 }
 pub impl @ecs.Component for RenderTarget

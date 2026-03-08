@@ -141,7 +141,13 @@ pub fn host_window_should_close(Int) -> Bool
 
 pub fn window_ensure_primary_host(@ecs.World) -> Int?
 
+pub fn window_entity_for_ref(@ecs.World, WindowRef) -> @core.Entity?
+
 pub fn window_height() -> Int
+
+pub fn window_physical_height_for(@ecs.World, WindowRef) -> Int
+
+pub fn window_physical_width_for(@ecs.World, WindowRef) -> Int
 
 pub fn window_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -156,6 +162,8 @@ pub fn window_position_y() -> Int
 pub fn window_runner_builder(@app.App[@ecs.World]) -> () -> Unit
 
 pub fn window_scale_factor() -> Float
+
+pub fn window_scale_factor_for(@ecs.World, WindowRef) -> Float
 
 pub fn window_set_cursor_grab_mode(mode~ : CursorGrabMode) -> Unit
 
@@ -394,6 +402,14 @@ pub(all) enum WindowPosition {
 pub fn WindowPosition::new(Int, Int) -> Self
 pub impl Eq for WindowPosition
 pub impl Show for WindowPosition
+
+pub(all) enum WindowRef {
+  Primary
+  Entity(@core.Entity)
+}
+pub impl Eq for WindowRef
+pub impl ToJson for WindowRef
+pub impl @json.FromJson for WindowRef
 
 pub(all) struct WindowResized {
   window : @core.Entity
