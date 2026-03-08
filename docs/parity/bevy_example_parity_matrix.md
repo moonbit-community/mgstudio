@@ -18,7 +18,7 @@ Notes:
 | Category | Total | Exact | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 |
-| `3d` | 66 | 42 | 24 | 0 |
+| `3d` | 66 | 43 | 23 | 0 |
 | `animation` | 13 | 2 | 11 | 0 |
 | `app` | 17 | 17 | 0 | 0 |
 | `asset` | 15 | 1 | 14 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 3 | 9 | 0 |
-| **Total** | **402** | **130** | **269** | **3** |
+| **Total** | **402** | **131** | **268** | **3** |
 
 ## Example Inventory
 
@@ -97,7 +97,7 @@ Notes:
 | `bevy/examples/3d/atmospheric_fog.rs` | `3d` | `mgstudio-engine/examples/3d/atmospheric_fog` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/auto_exposure.rs` | `3d` | `mgstudio-engine/examples/3d/auto_exposure` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/blend_modes.rs` | `3d` | `mgstudio-engine/examples/3d/blend_modes` | `Exact` | `team-render` |  |
-| `bevy/examples/3d/bloom_3d.rs` | `3d` | `mgstudio-engine/examples/3d/bloom_3d` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/bloom_3d.rs` | `3d` | `mgstudio-engine/examples/3d/bloom_3d` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/camera_sub_view.rs` | `3d` | `mgstudio-engine/examples/3d/camera_sub_view` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/clearcoat.rs` | `3d` | `mgstudio-engine/examples/3d/clearcoat` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/clustered_decal_maps.rs` | `3d` | `mgstudio-engine/examples/3d/clustered_decal_maps` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |

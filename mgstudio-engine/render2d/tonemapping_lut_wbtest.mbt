@@ -1,0 +1,51 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+fn render2d_test_world_with_asset_server() -> @ecs.World {
+  let world = @ecs.World::new()
+  world.insert_resource(
+    @asset.asset_server_resource_key(),
+    @asset.AssetServer::new(),
+  )
+  world
+}
+
+///|
+test "render2d: tonemapping LUT cache is stored per world render state" {
+  let world_a = render2d_test_world_with_asset_server()
+  let world_b = render2d_test_world_with_asset_server()
+
+  ensure_render_state_resource(world_a)
+  ensure_render_state_resource(world_b)
+  inspect(
+    render_state_ref(world_a).unwrap().tonemapping_lut_handles is None,
+    content="true",
+  )
+  inspect(
+    render_state_ref(world_b).unwrap().tonemapping_lut_handles is None,
+    content="true",
+  )
+
+  render2d_tonemapping_lut_handles(world_a) |> ignore
+
+  inspect(
+    render_state_ref(world_a).unwrap().tonemapping_lut_handles is Some(_),
+    content="true",
+  )
+  inspect(
+    render_state_ref(world_b).unwrap().tonemapping_lut_handles is None,
+    content="true",
+  )
+}

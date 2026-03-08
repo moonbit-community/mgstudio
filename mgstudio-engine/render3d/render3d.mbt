@@ -4193,15 +4193,60 @@ pub fn Mesh3d::from_tetrahedron(edge : Float) -> Mesh3d {
 }
 
 ///|
-let skybox_proxy_mesh : Ref[@asset.Handle[@mesh.Mesh]?] = Ref::new(None)
+struct Render3dInternalAssetsState {
+  mut skybox_proxy_mesh : @asset.Handle[@mesh.Mesh]?
+  mut tonemapping_luts : Render3dTonemappingLutHandles?
+}
 
 ///|
-fn render3d_skybox_proxy_mesh_id() -> Int {
-  let handle = match skybox_proxy_mesh.val {
+fn Render3dInternalAssetsState::new() -> Render3dInternalAssetsState {
+  Render3dInternalAssetsState::{
+    skybox_proxy_mesh: None,
+    tonemapping_luts: None,
+  }
+}
+
+///|
+fn render3d_internal_assets_ref(
+  world : @ecs.World,
+) -> Ref[Render3dInternalAssetsState]? {
+  try! world.get_resource_ref_mut(ecs_key_internal_assets, 0)
+}
+
+///|
+fn render3d_internal_assets_ref_or_abort(
+  world : @ecs.World,
+) -> Ref[Render3dInternalAssetsState] {
+  match render3d_internal_assets_ref(world) {
+    Some(state) => state
+    None =>
+      abort(
+        "render3d internal assets resource is missing; Render3dPlugin must initialize render3d.internal_assets before use",
+      )
+  }
+}
+
+///|
+fn render3d_asset_server_from_world_or_abort(
+  world : @ecs.World,
+) -> @asset.AssetServer {
+  match (try! world.get_resource(@asset.asset_server_resource_key())) {
+    Some(asset_server) => asset_server
+    None =>
+      abort(
+        "render3d asset server resource is missing; AssetPlugin must initialize AssetServer before render3d internal assets are used",
+      )
+  }
+}
+
+///|
+fn render3d_skybox_proxy_mesh_id(world : @ecs.World) -> Int {
+  let internal_assets = render3d_internal_assets_ref_or_abort(world)
+  let handle = match internal_assets.val.skybox_proxy_mesh {
     Some(handle) => handle
     None => {
       let mesh = Mesh3d::from_cuboid(2.0F, 2.0F, 2.0F)
-      skybox_proxy_mesh.val = Some(mesh.mesh)
+      internal_assets.val.skybox_proxy_mesh = Some(mesh.mesh)
       mesh.mesh
     }
   }
@@ -7395,12 +7440,13 @@ fn render3d_camera_environment_map_light(
 
 ///|
 fn render3d_draw_camera_skybox(
+  world : @ecs.World,
   camera : Camera3dInstance,
   camera_far : Float,
 ) -> Unit {
   guard camera.skybox is Some(skybox) else { return }
   guard skybox.image is Some(image) else { return }
-  let mesh_id = render3d_skybox_proxy_mesh_id()
+  let mesh_id = render3d_skybox_proxy_mesh_id(world)
   if mesh_id <= 0 {
     return
   }
@@ -7717,22 +7763,20 @@ priv struct Render3dTonemappingLutHandles {
 }
 
 ///|
-let render3d_tonemapping_lut_handles_ref : Ref[Render3dTonemappingLutHandles?] = Ref::new(
-  None,
-)
-
-///|
-fn render3d_tonemapping_lut_handles() -> Render3dTonemappingLutHandles {
-  if render3d_tonemapping_lut_handles_ref.val is Some(handles) {
+fn render3d_tonemapping_lut_handles(
+  world : @ecs.World,
+) -> Render3dTonemappingLutHandles {
+  let internal_assets = render3d_internal_assets_ref_or_abort(world)
+  if internal_assets.val.tonemapping_luts is Some(handles) {
     return handles
   }
-  let asset_server = @asset.AssetServer::new()
+  let asset_server = render3d_asset_server_from_world_or_abort(world)
   let handles = Render3dTonemappingLutHandles::{
     agx: asset_server.load(RENDER3D_TONEMAPPING_LUT_AGX_PATH),
     tony: asset_server.load(RENDER3D_TONEMAPPING_LUT_TONY_PATH),
     blender: asset_server.load(RENDER3D_TONEMAPPING_LUT_BLENDER_PATH),
   }
-  render3d_tonemapping_lut_handles_ref.val = Some(handles)
+  internal_assets.val.tonemapping_luts = Some(handles)
   handles
 }
 
@@ -7963,6 +8007,7 @@ fn render3d_vignette_postprocess_values(
 
 ///|
 fn render3d_draw_camera_bloom(
+  world : @ecs.World,
   scene_texture_id : Int,
   bloom : Bloom,
   tonemapping : Tonemapping?,
@@ -7976,7 +8021,7 @@ fn render3d_draw_camera_bloom(
   if scene_texture_id < 0 || view_width_logical <= 0 || view_height_logical <= 0 {
     return
   }
-  let luts = render3d_tonemapping_lut_handles()
+  let luts = render3d_tonemapping_lut_handles(world)
   let settings = render3d_bloom_sanitize(bloom)
   let (fxaa_enabled, fxaa_edge_threshold, fxaa_edge_threshold_min) = render3d_fxaa_postprocess_values(
     fxaa,
@@ -8047,6 +8092,7 @@ fn render3d_draw_camera_bloom(
 
 ///|
 fn render3d_draw_camera_tonemap_only(
+  world : @ecs.World,
   scene_texture_id : Int,
   tonemapping : Tonemapping?,
   deband_dither : DebandDither?,
@@ -8059,7 +8105,7 @@ fn render3d_draw_camera_tonemap_only(
   if scene_texture_id < 0 || view_width_logical <= 0 || view_height_logical <= 0 {
     return
   }
-  let luts = render3d_tonemapping_lut_handles()
+  let luts = render3d_tonemapping_lut_handles(world)
   let bloom_defaults = render3d_bloom_sanitize(Bloom::default())
   let (fxaa_enabled, fxaa_edge_threshold, fxaa_edge_threshold_min) = render3d_fxaa_postprocess_values(
     fxaa,
@@ -10309,7 +10355,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       pass_kind=scene_pass_kind,
       clear_enabled=if clear_enabled { 1 } else { 0 },
     )
-    render3d_draw_camera_skybox(camera, camera_far)
+    render3d_draw_camera_skybox(world, camera, camera_far)
     let transmissive_draws : Array[TransmissionMeshDraw] = []
     for draw_index in draw_order {
       let mesh = meshes[draw_index]
@@ -10875,6 +10921,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           clear_enabled=if clear_enabled { 1 } else { 0 },
         )
         render3d_draw_camera_bloom(
+          world,
           bloom_source_texture_id,
           bloom,
           camera.tonemapping,
@@ -10915,6 +10962,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           clear_enabled=if clear_enabled { 1 } else { 0 },
         )
         render3d_draw_camera_tonemap_only(
+          world,
           tonemap_source_texture_id,
           camera.tonemapping,
           camera.deband_dither,
@@ -11519,6 +11567,12 @@ fn init_render3d_resources(world : @ecs.World) -> Unit {
     default_opaque_renderer_method.insert(
       DefaultOpaqueRendererMethod::forward(),
       tick,
+    )
+  }
+  if (try! world.get_resource(ecs_key_internal_assets)) is None {
+    world.insert_resource(
+      ecs_key_internal_assets,
+      Render3dInternalAssetsState::new(),
     )
   }
 }

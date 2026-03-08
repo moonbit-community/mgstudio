@@ -4178,25 +4178,38 @@ priv struct TonemappingLutHandles {
 }
 
 ///|
-let tonemapping_lut_handles_ref : Ref[TonemappingLutHandles?] = Ref::new(None)
-
-///|
-fn render2d_tonemapping_lut_handles() -> TonemappingLutHandles {
-  if tonemapping_lut_handles_ref.val is Some(handles) {
-    return handles
+fn render2d_tonemapping_lut_handles(
+  world : @ecs.World,
+) -> TonemappingLutHandles {
+  ensure_render_state_resource(world)
+  if render_state_ref(world) is Some(state) {
+    if state.tonemapping_lut_handles is Some(handles) {
+      return handles
+    }
   }
-  let asset_server = @asset.AssetServer::new()
+  let asset_server = match
+    (try! world.get_resource(@asset.asset_server_resource_key())) {
+    Some(asset_server) => asset_server
+    None =>
+      abort(
+        "render2d tonemapping LUT cache requires the world-owned AssetServer resource; add AssetPlugin before Render2dPlugin",
+      )
+  }
   let handles = TonemappingLutHandles::{
     agx: asset_server.load(TONEMAPPING_LUT_AGX_PATH),
     tony: asset_server.load(TONEMAPPING_LUT_TONY_PATH),
     blender: asset_server.load(TONEMAPPING_LUT_BLENDER_PATH),
   }
-  tonemapping_lut_handles_ref.val = Some(handles)
+  render_state_update(world, fn(state) {
+    state.val.tonemapping_lut_handles = Some(handles)
+  })
+  |> ignore
   handles
 }
 
 ///|
 fn render2d_draw_camera_bloom(
+  world : @ecs.World,
   camera : CameraInstance,
   source : @asset.Handle[@asset.Image],
   tonemapping_mode : Int,
@@ -4208,7 +4221,7 @@ fn render2d_draw_camera_bloom(
   if view_width_logical <= 0 || view_height_logical <= 0 {
     return
   }
-  let luts = render2d_tonemapping_lut_handles()
+  let luts = render2d_tonemapping_lut_handles(world)
   let settings = bloom2d_sanitize_settings(bloom.settings)
   @window.host_gpu_draw_bloom2d(
     scene_texture_id=source.id(),
@@ -4393,6 +4406,7 @@ priv struct Bloom2dAutoTargetInfo {
 struct RenderState {
   mut draw_enabled : Bool
   mut primary_camera : @core.Entity
+  mut tonemapping_lut_handles : TonemappingLutHandles?
   sprites : Array[SpriteInstance]
   extra_sprites : Array[SpriteInstance]
   extra_sprite_texture_slices : Array[SpriteTextureSliceInstance]
@@ -4420,6 +4434,7 @@ fn RenderState::new() -> RenderState {
   RenderState::{
     draw_enabled: false,
     primary_camera: @core.Entity::placeholder(),
+    tonemapping_lut_handles: None,
     sprites: [],
     extra_sprites: [],
     extra_sprite_texture_slices: [],
@@ -7780,7 +7795,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           clear_enabled=if clear_enabled { 1 } else { 0 },
         )
         render2d_draw_camera_bloom(
-          camera, source, tonemapping_mode, deband_dither_enabled, viewport_width,
+          world, camera, source, tonemapping_mode, deband_dither_enabled, viewport_width,
           viewport_height,
         )
         gizmos_draw_lines(camera.layers)
@@ -7816,7 +7831,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       )
       if camera.bloom2d is Some(bloom) && bloom.source is Some(source) {
         render2d_draw_camera_bloom(
-          camera, source, tonemapping_mode, deband_dither_enabled, viewport_width,
+          world, camera, source, tonemapping_mode, deband_dither_enabled, viewport_width,
           viewport_height,
         )
       }

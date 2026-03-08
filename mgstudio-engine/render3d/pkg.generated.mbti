@@ -65,6 +65,8 @@ pub let ecs_key_global_ambient_light : @ecs.ResourceKey[GlobalAmbientLight]
 
 pub let ecs_key_hdr : @ecs.ComponentKey[Hdr]
 
+pub let ecs_key_internal_assets : @ecs.ResourceKey[Render3dInternalAssetsState]
+
 pub let ecs_key_irradiance_volume : @ecs.ComponentKey[IrradianceVolume]
 
 pub let ecs_key_light_probe : @ecs.ComponentKey[LightProbe]
@@ -1345,6 +1347,8 @@ pub fn Projection3d::orthographic_default() -> Self
 pub fn Projection3d::perspective_default() -> Self
 pub impl ToJson for Projection3d
 pub impl @json.FromJson for Projection3d
+
+type Render3dInternalAssetsState
 
 pub struct ScatteringMedium {
   density_multiplier : Float

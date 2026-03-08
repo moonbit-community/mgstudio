@@ -562,3 +562,8 @@ pub let ecs_key_directional_light_shadow_map : @ecs.ResourceKey[
 pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[
   DefaultOpaqueRendererMethod,
 ] = @ecs.register_resource(debug_name="render3d.default_opaque_renderer_method")
+
+///|
+pub let ecs_key_internal_assets : @ecs.ResourceKey[Render3dInternalAssetsState] = @ecs.register_resource(
+  debug_name="render3d.internal_assets",
+)

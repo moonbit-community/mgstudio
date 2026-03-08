@@ -14,70 +14,51 @@
 
 ///|
 /// Port of `bevy/examples/3d/bloom_3d.rs`.
-///
-/// Baseline parity:
-/// - Camera `Bloom`, `Hdr`, and `Tonemapping::TonyMcMapface` are wired to
-///   mgstudio camera components.
-/// - Bevy bloom controls in this example now map directly to real bloom
-///   component fields.
 
 ///|
-const PI : Float = 3.141592653589793F
+pub struct Bouncing {}
 
 ///|
-priv struct BouncingSphere {
-  entity : @core.Entity
-  x : Float
-  z : Float
-  scale : Float
+let bouncing_component_key : @ecs.ComponentKey[Bouncing] = @ecs.register_component(
+  debug_name="examples.3d.bloom_3d.Bouncing",
+)
+
+///|
+impl @ecs.Component for Bouncing with component() {
+  bouncing_component_key
 }
 
 ///|
-priv struct BloomState {
-  mut camera : @core.Entity?
-  mut help_text : @text.TextHandle?
-  mut bloom_enabled : Bool
-  mut intensity : Float
-  mut low_frequency_boost : Float
-  mut low_frequency_boost_curvature : Float
-  mut high_pass_frequency : Float
-  mut prefilter_threshold : Float
-  mut prefilter_threshold_softness : Float
-  mut composite_mode : @render3d.BloomCompositeMode
-  mut scale_x : Float
-  spheres : Array[BouncingSphere]
+pub struct BloomCamera {}
+
+///|
+let bloom_camera_component_key : @ecs.ComponentKey[BloomCamera] = @ecs.register_component(
+  debug_name="examples.3d.bloom_3d.BloomCamera",
+)
+
+///|
+impl @ecs.Component for BloomCamera with component() {
+  bloom_camera_component_key
 }
 
 ///|
-let bloom_state : Ref[BloomState] = Ref::new({
-  camera: None,
-  help_text: None,
-  bloom_enabled: true,
-  intensity: 0.15F,
-  low_frequency_boost: 0.7F,
-  low_frequency_boost_curvature: 0.95F,
-  high_pass_frequency: 1.0F,
-  prefilter_threshold: 0.0F,
-  prefilter_threshold_softness: 0.0F,
-  composite_mode: @render3d.BloomCompositeMode::EnergyConserving,
-  scale_x: 1.0F,
-  spheres: [],
-})
+pub struct BloomInstructions {
+  handle : @text.TextHandle
+}
+
+///|
+let bloom_instructions_resource_key : @ecs.ResourceKey[BloomInstructions] = @ecs.register_resource(
+  debug_name="examples.3d.bloom_3d.BloomInstructions",
+)
+
+///|
+impl @app.Resource for BloomInstructions with resource() {
+  bloom_instructions_resource_key
+}
 
 ///|
 fn float_from_int(value : Int) -> Float {
   Float::from_double(value.to_double())
-}
-
-///|
-fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
-  if value < min_value {
-    min_value
-  } else if value > max_value {
-    max_value
-  } else {
-    value
-  }
 }
 
 ///|
@@ -96,148 +77,65 @@ fn mode_label(mode : @render3d.BloomCompositeMode) -> String {
 }
 
 ///|
-fn apply_camera_bloom(world : @ecs.World) -> Unit {
-  guard bloom_state.val.camera is Some(camera_entity) else { return }
-  let tick = world.read_change_tick()
-  let bloom_store = world.component(@render3d.ecs_key_bloom)
-  if bloom_state.val.bloom_enabled {
-    let bloom = @render3d.Bloom::new(bloom_state.val.intensity)
-      .with_low_frequency_boost(bloom_state.val.low_frequency_boost)
-      .with_low_frequency_boost_curvature(
-        bloom_state.val.low_frequency_boost_curvature,
-      )
-      .with_high_pass_frequency(bloom_state.val.high_pass_frequency)
-      .with_prefilter(
-        bloom_state.val.prefilter_threshold,
-        bloom_state.val.prefilter_threshold_softness,
-      )
-      .with_composite_mode(bloom_state.val.composite_mode)
-      .with_scale(@math.Vec2::new(bloom_state.val.scale_x, 1.0F))
-    if bloom_store.contains(camera_entity) {
-      bloom_store.set(camera_entity, bloom, tick) |> ignore
-    } else {
-      bloom_store.insert(camera_entity, bloom, tick)
-    }
-  } else {
-    bloom_store.remove(camera_entity) |> ignore
+fn bloom_text(bloom : @render3d.Bloom?) -> String {
+  match bloom {
+    Some(bloom) =>
+      "Bloom (Toggle: Space)\n" +
+      "(Q/A) Intensity: \{bloom.intensity}\n" +
+      "(W/S) Low-frequency boost: \{bloom.low_frequency_boost}\n" +
+      "(E/D) Low-frequency boost curvature: \{bloom.low_frequency_boost_curvature}\n" +
+      "(R/F) High-pass frequency: \{bloom.high_pass_frequency}\n" +
+      "(T/G) Mode: " +
+      mode_label(bloom.composite_mode) +
+      "\n" +
+      "(Y/H) Threshold: \{bloom.prefilter.threshold}\n" +
+      "(U/J) Threshold softness: \{bloom.prefilter.threshold_softness}\n" +
+      "(I/K) Horizontal Scale: \{bloom.scale.x}"
+    None => "Bloom: Off (Toggle: Space)"
   }
 }
 
 ///|
-fn ui_content() -> String {
-  if !bloom_state.val.bloom_enabled {
-    return "Bloom: Off (Toggle: Space)"
-  }
-
-  "Bloom (Toggle: Space)\n" +
-  "(Q/A) Intensity: \{bloom_state.val.intensity}\n" +
-  "(W/S) Low-frequency boost: \{bloom_state.val.low_frequency_boost}\n" +
-  "(E/D) Low-frequency boost curvature: \{bloom_state.val.low_frequency_boost_curvature}\n" +
-  "(R/F) High-pass frequency: \{bloom_state.val.high_pass_frequency}\n" +
-  "(T/G) Mode: " +
-  mode_label(bloom_state.val.composite_mode) +
-  "\n" +
-  "(Y/H) Threshold: \{bloom_state.val.prefilter_threshold}\n" +
-  "(U/J) Threshold softness: \{bloom_state.val.prefilter_threshold_softness}\n" +
-  "(I/K) Horizontal Scale: \{bloom_state.val.scale_x}"
-}
-
-///|
-fn update_help_text() -> Unit {
-  if bloom_state.val.help_text is Some(handle) {
-    @text.text_set_content(handle, ui_content())
-  }
-}
-
-///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  let indices : Array[Int] = []
-
-  let stacks_f = float_from_int(stacks)
-  let sectors_f = float_from_int(sectors)
-  let stack_step = PI / stacks_f
-  let sector_step = 2.0F * PI / sectors_f
-
-  for i in 0..<(stacks + 1) {
-    let stack_angle = PI / 2.0F - float_from_int(i) * stack_step
-    let ring_radius = radius * @math.cos(stack_angle)
-    let y = radius * @math.sin(stack_angle)
-    for j in 0..<(sectors + 1) {
-      let sector_angle = float_from_int(j) * sector_step
-      let x = ring_radius * @math.cos(sector_angle)
-      let z = ring_radius * @math.sin(sector_angle)
-      positions.push(@math.Vec3::new(x, y, z))
-      uvs.push(
-        @math.Vec2::new(
-          float_from_int(j) / sectors_f,
-          float_from_int(i) / stacks_f,
-        ),
-      )
+fn bloom_camera_entity(
+  camera_query : @ecs.Query1Filtered[BloomCamera, @ecs.All],
+) -> @core.Entity? {
+  let entity_ref = Ref::new(None)
+  try! camera_query.view(fn(entity, _camera) {
+    if entity_ref.val is None {
+      entity_ref.val = Some(entity)
     }
-  }
-
-  let row = sectors + 1
-  for i in 0..<stacks {
-    let k1 = i * row
-    let k2 = k1 + row
-    for j in 0..<sectors {
-      if i != 0 {
-        indices.push(k1 + j)
-        indices.push(k2 + j)
-        indices.push(k1 + j + 1)
-      }
-      if i != stacks - 1 {
-        indices.push(k1 + j + 1)
-        indices.push(k2 + j)
-        indices.push(k2 + j + 1)
-      }
-    }
-  }
-
-  @render3d.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
-  )
+  })
+  entity_ref.val
 }
 
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  bloom_state.val.camera = None
-  bloom_state.val.help_text = None
-  bloom_state.val.bloom_enabled = true
-  bloom_state.val.intensity = 0.15F
-  bloom_state.val.low_frequency_boost = 0.7F
-  bloom_state.val.low_frequency_boost_curvature = 0.95F
-  bloom_state.val.high_pass_frequency = 1.0F
-  bloom_state.val.prefilter_threshold = 0.0F
-  bloom_state.val.prefilter_threshold_softness = 0.0F
-  bloom_state.val.composite_mode = @render3d.BloomCompositeMode::EnergyConserving
-  bloom_state.val.scale_x = 1.0F
-  bloom_state.val.spheres.clear()
+  let asset_server = match
+    (try! world.get_resource(@asset.asset_server_resource_key())) {
+    Some(asset_server) => asset_server
+    None =>
+      abort(
+        "bloom_3d requires the world-owned AssetServer resource; add AssetPlugin before the example startup system runs",
+      )
+  }
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default().with_clear_color(@render2d.Color::black()),
-    @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
+      @render2d.Camera::default().with_clear_color(@render2d.Color::black()),
+      @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
+        @math.Vec3::zero(),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
+    )
+    .with_tonemapping(Some(@render3d.Tonemapping::TonyMcMapface))
+    .with_bloom(Some(@render3d.Bloom::default()))
+    .spawn(world)
   world
   .component(@render3d.ecs_key_hdr)
   .insert(camera, @render3d.Hdr::default(), tick)
   world
-  .component(@render3d.ecs_key_tonemapping)
-  .insert(camera, @render3d.Tonemapping::TonyMcMapface, tick)
-  world
-  .component(@render3d.ecs_key_bloom)
-  .insert(camera, @render3d.Bloom::new(bloom_state.val.intensity), tick)
-  bloom_state.val.camera = Some(camera)
+  .component(BloomCamera::component())
+  .insert(camera, BloomCamera::{  }, tick)
 
   let material_emissive1 = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(@render2d.Color::black()).with_emissive(
@@ -258,7 +156,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @render3d.StandardMaterial::from_color(@render2d.Color::black()),
   )
 
-  let sphere_mesh = uv_sphere_mesh(0.4F, 20, 28)
+  let sphere_mesh = @render3d.Mesh3d::from_sphere(0.4F)
   for xi in 0..<10 {
     let x = xi - 5
     for zi in 0..<10 {
@@ -283,15 +181,17 @@ fn setup_scene(world : @ecs.World) -> Unit {
           @math.Vec3::splat(scale),
         ),
       ).spawn(world)
-      bloom_state.val.spheres.push({ entity, x: x_pos, z: z_pos, scale })
+      world
+      .component(Bouncing::component())
+      .insert(entity, Bouncing::{  }, tick)
     }
   }
 
-  let asset_server = @asset.AssetServer::new()
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let help_text = @text.Text2dBundle::new(
-      @text.Text2d::new(""),
-      @text.TextFont::default().with_font(font).with_font_size(16.0F),
+      @text.Text2d::new(bloom_text(Some(@render3d.Bloom::default()))),
+      @text.TextFont::default()
+      .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
+      .with_font_size(16.0F),
       @math.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, -320.0F),
         0.0F,
@@ -307,155 +207,159 @@ fn setup_scene(world : @ecs.World) -> Unit {
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
-  bloom_state.val.help_text = Some(help_text)
-
-  apply_camera_bloom(world)
-  update_help_text()
+  world.insert_resource(bloom_instructions_resource_key, BloomInstructions::{
+    handle: help_text,
+  })
 }
 
 ///|
-fn update_bloom_settings(world : @ecs.World) -> Unit {
-  let delta = @time.time_delta_seconds()
-  let mut changed = false
-
-  if @input.key_just_pressed(@window.KeyCode::Space) {
-    bloom_state.val.bloom_enabled = !bloom_state.val.bloom_enabled
-    changed = true
-  }
-
-  if bloom_state.val.bloom_enabled {
-    if @input.key_pressed(@window.KeyCode::KeyA) {
-      bloom_state.val.intensity = bloom_state.val.intensity - delta / 10.0F
-      changed = true
-    }
-    if @input.key_pressed(@window.KeyCode::KeyQ) {
-      bloom_state.val.intensity = bloom_state.val.intensity + delta / 10.0F
-      changed = true
-    }
-    bloom_state.val.intensity = clampf(bloom_state.val.intensity, 0.0F, 1.0F)
-
-    if @input.key_pressed(@window.KeyCode::KeyS) {
-      bloom_state.val.low_frequency_boost = bloom_state.val.low_frequency_boost -
-        delta / 10.0F
-      changed = true
-    }
-    if @input.key_pressed(@window.KeyCode::KeyW) {
-      bloom_state.val.low_frequency_boost = bloom_state.val.low_frequency_boost +
-        delta / 10.0F
-      changed = true
-    }
-    bloom_state.val.low_frequency_boost = clampf(
-      bloom_state.val.low_frequency_boost,
-      0.0F,
-      1.0F,
-    )
-
-    if @input.key_pressed(@window.KeyCode::KeyD) {
-      bloom_state.val.low_frequency_boost_curvature = bloom_state.val.low_frequency_boost_curvature -
-        delta / 10.0F
-      changed = true
-    }
-    if @input.key_pressed(@window.KeyCode::KeyE) {
-      bloom_state.val.low_frequency_boost_curvature = bloom_state.val.low_frequency_boost_curvature +
-        delta / 10.0F
-      changed = true
-    }
-    bloom_state.val.low_frequency_boost_curvature = clampf(
-      bloom_state.val.low_frequency_boost_curvature,
-      0.0F,
-      1.0F,
-    )
-
-    if @input.key_pressed(@window.KeyCode::KeyF) {
-      bloom_state.val.high_pass_frequency = bloom_state.val.high_pass_frequency -
-        delta / 10.0F
-      changed = true
-    }
-    if @input.key_pressed(@window.KeyCode::KeyR) {
-      bloom_state.val.high_pass_frequency = bloom_state.val.high_pass_frequency +
-        delta / 10.0F
-      changed = true
-    }
-    bloom_state.val.high_pass_frequency = clampf(
-      bloom_state.val.high_pass_frequency,
-      0.0F,
-      1.0F,
-    )
-
-    if @input.key_pressed(@window.KeyCode::KeyG) {
-      bloom_state.val.composite_mode = @render3d.BloomCompositeMode::Additive
-      changed = true
-    }
-    if @input.key_pressed(@window.KeyCode::KeyT) {
-      bloom_state.val.composite_mode = @render3d.BloomCompositeMode::EnergyConserving
-      changed = true
-    }
-
-    if @input.key_pressed(@window.KeyCode::KeyH) {
-      bloom_state.val.prefilter_threshold = bloom_state.val.prefilter_threshold -
-        delta
-      changed = true
-    }
-    if @input.key_pressed(@window.KeyCode::KeyY) {
-      bloom_state.val.prefilter_threshold = bloom_state.val.prefilter_threshold +
-        delta
-      changed = true
-    }
-    if bloom_state.val.prefilter_threshold < 0.0F {
-      bloom_state.val.prefilter_threshold = 0.0F
-    }
-
-    if @input.key_pressed(@window.KeyCode::KeyJ) {
-      bloom_state.val.prefilter_threshold_softness = bloom_state.val.prefilter_threshold_softness -
-        delta / 10.0F
-      changed = true
-    }
-    if @input.key_pressed(@window.KeyCode::KeyU) {
-      bloom_state.val.prefilter_threshold_softness = bloom_state.val.prefilter_threshold_softness +
-        delta / 10.0F
-      changed = true
-    }
-    bloom_state.val.prefilter_threshold_softness = clampf(
-      bloom_state.val.prefilter_threshold_softness,
-      0.0F,
-      1.0F,
-    )
-
-    if @input.key_pressed(@window.KeyCode::KeyK) {
-      bloom_state.val.scale_x = bloom_state.val.scale_x - delta * 2.0F
-      changed = true
-    }
-    if @input.key_pressed(@window.KeyCode::KeyI) {
-      bloom_state.val.scale_x = bloom_state.val.scale_x + delta * 2.0F
-      changed = true
-    }
-    bloom_state.val.scale_x = clampf(bloom_state.val.scale_x, 0.0F, 8.0F)
-  }
-
-  if changed {
-    apply_camera_bloom(world)
-  }
-  update_help_text()
-}
-
-///|
-fn bounce_spheres(world : @ecs.World) -> Unit {
-  let elapsed = @time.time_elapsed_seconds()
+fn update_bloom_settings(
+  camera_query : @ecs.Query1Filtered[BloomCamera, @ecs.All],
+  instructions : @app.Res[BloomInstructions],
+  keycode : @input.ButtonInput[@window.KeyCode],
+  time : @app.Res[@time.Time[Unit]],
+) -> Unit {
+  guard bloom_camera_entity(camera_query) is Some(camera_entity) else { return }
+  let world = @app.current_world().unwrap()
   let tick = world.read_change_tick()
-  for sphere in bloom_state.val.spheres {
-    world
-    .component(@math.ecs_key_transform)
-    .set(
-      sphere.entity,
-      @math.Transform::from_xyz(
-        sphere.x,
-        @math.sin(sphere.x + sphere.z + elapsed),
-        sphere.z,
-      ).with_scale(@math.Vec3::splat(sphere.scale)),
-      tick,
-    )
-    |> ignore
+  let bloom_store = world.component(@render3d.ecs_key_bloom)
+  let current_bloom = bloom_store.get(camera_entity)
+  @text.text_set_content(instructions.get().handle, bloom_text(current_bloom))
+
+  match current_bloom {
+    None =>
+      if keycode.just_pressed(@window.KeyCode::Space) {
+        bloom_store.insert(camera_entity, @render3d.Bloom::default(), tick)
+      }
+    Some(bloom) => {
+      if keycode.just_pressed(@window.KeyCode::Space) {
+        bloom_store.remove(camera_entity) |> ignore
+        return
+      }
+
+      let delta = time.get().delta_secs()
+      let mut next = bloom
+      let mut changed = false
+
+      if keycode.pressed(@window.KeyCode::KeyA) {
+        next = next.with_intensity(next.intensity - delta / 10.0F)
+        changed = true
+      }
+      if keycode.pressed(@window.KeyCode::KeyQ) {
+        next = next.with_intensity(next.intensity + delta / 10.0F)
+        changed = true
+      }
+
+      if keycode.pressed(@window.KeyCode::KeyS) {
+        next = next.with_low_frequency_boost(
+          next.low_frequency_boost - delta / 10.0F,
+        )
+        changed = true
+      }
+      if keycode.pressed(@window.KeyCode::KeyW) {
+        next = next.with_low_frequency_boost(
+          next.low_frequency_boost + delta / 10.0F,
+        )
+        changed = true
+      }
+
+      if keycode.pressed(@window.KeyCode::KeyD) {
+        next = next.with_low_frequency_boost_curvature(
+          next.low_frequency_boost_curvature - delta / 10.0F,
+        )
+        changed = true
+      }
+      if keycode.pressed(@window.KeyCode::KeyE) {
+        next = next.with_low_frequency_boost_curvature(
+          next.low_frequency_boost_curvature + delta / 10.0F,
+        )
+        changed = true
+      }
+
+      if keycode.pressed(@window.KeyCode::KeyF) {
+        next = next.with_high_pass_frequency(
+          next.high_pass_frequency - delta / 10.0F,
+        )
+        changed = true
+      }
+      if keycode.pressed(@window.KeyCode::KeyR) {
+        next = next.with_high_pass_frequency(
+          next.high_pass_frequency + delta / 10.0F,
+        )
+        changed = true
+      }
+
+      if keycode.pressed(@window.KeyCode::KeyG) {
+        next = next.with_composite_mode(@render3d.BloomCompositeMode::Additive)
+        changed = true
+      }
+      if keycode.pressed(@window.KeyCode::KeyT) {
+        next = next.with_composite_mode(
+          @render3d.BloomCompositeMode::EnergyConserving,
+        )
+        changed = true
+      }
+
+      if keycode.pressed(@window.KeyCode::KeyH) {
+        next = next.with_prefilter(
+          next.prefilter.threshold - delta,
+          next.prefilter.threshold_softness,
+        )
+        changed = true
+      }
+      if keycode.pressed(@window.KeyCode::KeyY) {
+        next = next.with_prefilter(
+          next.prefilter.threshold + delta,
+          next.prefilter.threshold_softness,
+        )
+        changed = true
+      }
+
+      if keycode.pressed(@window.KeyCode::KeyJ) {
+        next = next.with_prefilter(
+          next.prefilter.threshold,
+          next.prefilter.threshold_softness - delta / 10.0F,
+        )
+        changed = true
+      }
+      if keycode.pressed(@window.KeyCode::KeyU) {
+        next = next.with_prefilter(
+          next.prefilter.threshold,
+          next.prefilter.threshold_softness + delta / 10.0F,
+        )
+        changed = true
+      }
+
+      if keycode.pressed(@window.KeyCode::KeyK) {
+        next = next.with_scale_x(next.scale.x - delta * 2.0F)
+        changed = true
+      }
+      if keycode.pressed(@window.KeyCode::KeyI) {
+        next = next.with_scale_x(next.scale.x + delta * 2.0F)
+        changed = true
+      }
+
+      if changed {
+        bloom_store.set(camera_entity, next, tick) |> ignore
+      }
+    }
   }
+}
+
+///|
+fn bounce_spheres(
+  query : @ecs.Query2RefMutFiltered[Bouncing, @math.Transform, @ecs.All],
+  time : @app.Res[@time.Time[Unit]],
+) -> Unit {
+  let elapsed = time.get().elapsed_secs()
+  try! query.view_mut(fn(_entity, _bouncing, transform) {
+    let transform_ref = transform.get_ref()
+    transform_ref.val.translation.y = @math.sin(
+      transform_ref.val.translation.x +
+      transform_ref.val.translation.z +
+      elapsed,
+    )
+  })
 }
 
 ///|
@@ -464,7 +368,10 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_systems(@app.Startup, @app.system(setup_scene))
-  .add_systems(@app.Update, @app.system(update_bloom_settings))
-  .add_systems(@app.Update, @app.system(bounce_spheres))
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param4(update_bloom_settings)),
+  )
+  .add_systems(@app.Update, @app.system(@app.system_param2(bounce_spheres)))
   .run()
 }

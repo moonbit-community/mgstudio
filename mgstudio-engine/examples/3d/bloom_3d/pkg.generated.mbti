@@ -1,11 +1,24 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/3d/bloom_3d"
 
+import {
+  "Milky2018/mgstudio/text",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+pub struct BloomCamera {
+}
+
+pub struct BloomInstructions {
+  handle : @text.TextHandle
+}
+
+pub struct Bouncing {
+}
 
 // Type aliases
 
