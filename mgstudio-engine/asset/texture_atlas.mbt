@@ -462,22 +462,54 @@ pub fn TextureAtlasBuilder::add_texture(
 }
 
 ///|
-let texture_atlas_layouts_state : Ref[Assets[TextureAtlasLayout]] = Ref::new(
-  Assets::new(),
-)
+fn texture_atlas_layout_assets_mut_or_abort() -> Ref[Assets[TextureAtlasLayout]] {
+  match asset_current_world() {
+    Some(world) =>
+      match
+        (try! world.get_resource_ref_mut(registered_assets_resource_key(), 0)) {
+        Some(assets) => assets
+        None =>
+          abort(
+            "TextureAtlasLayout assets resource is missing; AssetPlugin must initialize Assets<TextureAtlasLayout> before atlas APIs run",
+          )
+      }
+    None =>
+      abort(
+        "TextureAtlasLayout asset mutations require an active app world; use the world-owned Assets<TextureAtlasLayout> resource directly outside scheduled systems",
+      )
+  }
+}
+
+///|
+fn texture_atlas_layout_assets_or_abort() -> Assets[TextureAtlasLayout] {
+  match asset_current_world() {
+    Some(world) =>
+      match (try! world.get_resource(registered_assets_resource_key())) {
+        Some(assets) => assets
+        None =>
+          abort(
+            "TextureAtlasLayout assets resource is missing; AssetPlugin must initialize Assets<TextureAtlasLayout> before atlas APIs run",
+          )
+      }
+    None =>
+      abort(
+        "TextureAtlasLayout asset lookups require an active app world; use the world-owned Assets<TextureAtlasLayout> resource directly outside scheduled systems",
+      )
+  }
+}
 
 ///|
 pub fn asset_add_texture_atlas_layout(
   layout : TextureAtlasLayout,
 ) -> Handle[TextureAtlasLayout] {
-  texture_atlas_layouts_state.val.add(layout)
+  texture_atlas_layout_assets_mut_or_abort().val.add(layout)
 }
 
 ///|
 pub fn asset_get_texture_atlas_layout(
   handle : Handle[TextureAtlasLayout],
 ) -> TextureAtlasLayout? {
-  texture_atlas_layouts_state.val.get(handle)
+  texture_atlas_layout_assets_or_abort().get(handle)
 }
 
 ///|
@@ -485,7 +517,7 @@ pub fn asset_set_texture_atlas_layout(
   handle : Handle[TextureAtlasLayout],
   layout : TextureAtlasLayout,
 ) -> Bool {
-  texture_atlas_layouts_state.val.set(handle, layout)
+  texture_atlas_layout_assets_mut_or_abort().val.set(handle, layout)
 }
 
 ///|

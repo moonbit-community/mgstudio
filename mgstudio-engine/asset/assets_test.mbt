@@ -64,3 +64,55 @@ test "assets: insert with explicit handle id grows storage" {
     _ => inspect(false, content="false")
   }
 }
+
+///|
+test "assets: reserve handle stays empty until a later insert" {
+  let assets : Assets[Int] = Assets::new()
+  let reserved = assets.reserve_handle()
+  inspect(assets.get(reserved) is None, content="true")
+  inspect(assets.insert(reserved, 7), content="true")
+  inspect(assets.get(reserved).unwrap(), content="7")
+  let events = assets.drain_events()
+  inspect(events.length(), content="1")
+  match events[0] {
+    AssetEvent::Added(handle) =>
+      inspect(handle.id() == reserved.id(), content="true")
+    _ => inspect(false, content="false")
+  }
+}
+
+///|
+test "asset plugin initializes world-owned asset resources" {
+  let app = asset_plugin(@app.App::new(@ecs.World::new()))
+  let world = app.world()
+  inspect(
+    (try! world.get_resource(asset_server_resource_key())) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! world.get_resource(loaded_folder_assets_resource_key())) is Some(_),
+    content="true",
+  )
+}
+
+///|
+test "asset system stores loaded folders in Assets<LoadedFolder> resource" {
+  let world = @ecs.World::new()
+  world.insert_resource(asset_server_resource_key(), AssetServer::new())
+  world.insert_resource(loaded_folder_assets_resource_key(), Assets::new())
+  let asset_server = match
+    (try! world.get_resource(asset_server_resource_key())) {
+    Some(server) => server
+    None => abort("expected AssetServer resource")
+  }
+  let folder_handle = asset_server.load_folder("textures/rpg")
+
+  asset_system(world)
+
+  let loaded_folders = match
+    (try! world.get_resource(loaded_folder_assets_resource_key())) {
+    Some(assets) => assets
+    None => abort("expected Assets<LoadedFolder> resource")
+  }
+  inspect(loaded_folders.get(folder_handle) is Some(_), content="true")
+}

@@ -38,27 +38,37 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(texture_atlas_setup))
-  .add_systems(@app.Update, @app.system(texture_atlas_update))
+  .add_systems(
+    @app.Startup,
+    @app.system(@app.system_param(texture_atlas_setup)),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param2(texture_atlas_update)),
+  )
   .run()
 }
 
 ///|
-fn texture_atlas_setup(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
+fn texture_atlas_setup(asset_server : @app.Res[@asset.AssetServer]) -> Unit {
   texture_atlas_state.val.folder_handle = Some(
-    asset_server.load_folder("textures/rpg"),
+    asset_server.get().load_folder("textures/rpg"),
   )
   texture_atlas_state.val.vendor_handle = Some(
-    asset_server.load("textures/rpg/chars/vendor/generic-rpg-vendor.png"),
+    asset_server.get().load("textures/rpg/chars/vendor/generic-rpg-vendor.png"),
   )
   texture_atlas_state.val.built = false
-
-  world |> ignore
 }
 
 ///|
-fn texture_atlas_update(world : @ecs.World) -> Unit {
+fn texture_atlas_update(
+  asset_server : @app.Res[@asset.AssetServer],
+  loaded_folders : @app.Res[@asset.Assets[@asset.LoadedFolder]],
+) -> Unit {
+  let world = match @app.current_world() {
+    Some(current_world) => current_world
+    None => abort("texture_atlas update requires an active app world")
+  }
   if texture_atlas_state.val.built {
     return
   }
@@ -71,9 +81,7 @@ fn texture_atlas_update(world : @ecs.World) -> Unit {
   if !@asset.asset_is_texture_loaded(vendor_handle) {
     return
   }
-  guard @asset.asset_get_loaded_folder(folder_handle) is Some(folder) else {
-    return
-  }
+  guard loaded_folders.get().get(folder_handle) is Some(folder) else { return }
   if folder.handles.length() == 0 {
     return
   }
@@ -123,8 +131,7 @@ fn texture_atlas_update(world : @ecs.World) -> Unit {
   spawn_texture_preview(world, linear.texture, -250.0F, -160.0F, 0.5F)
   spawn_texture_preview(world, linear_padded.texture, 250.0F, -160.0F, 0.5F)
 
-  let asset_server = @asset.AssetServer::new()
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
+  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let title_font = @text.TextFont::default()
     .with_font(font)
     .with_font_size(42.0F)

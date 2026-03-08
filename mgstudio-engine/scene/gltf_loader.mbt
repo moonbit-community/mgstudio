@@ -43,6 +43,21 @@ let pending_gltf_animation_requests : Ref[Array[PendingGltfAnimationRequest]] = 
 )
 
 ///|
+priv struct PendingGltfMeshRequest {
+  mesh_handle : @asset.Handle[@mesh.Mesh]
+  gltf_path : String
+  mesh_index : Int
+  primitive_index : Int
+  gltf_blob : @asset.Handle[@asset.Blob]
+  mut doc : ParsedGltfDocument?
+  buffer_blobs : Array[@asset.Handle[@asset.Blob]?]
+  mut buffer_bytes : Array[Bytes?]
+}
+
+///|
+let pending_gltf_mesh_requests : Ref[Array[PendingGltfMeshRequest]] = Ref::new([])
+
+///|
 priv struct GltfBufferDef {
   uri : String?
   byte_length : Int
@@ -211,6 +226,17 @@ fn scene_pending_remove_animation_handle(
 }
 
 ///|
+fn scene_pending_remove_mesh_handle(handle : @asset.Handle[@mesh.Mesh]) -> Unit {
+  let filtered : Array[PendingGltfMeshRequest] = []
+  for req in pending_gltf_mesh_requests.val {
+    if req.mesh_handle.id() != handle.id() {
+      filtered.push(req)
+    }
+  }
+  pending_gltf_mesh_requests.val = filtered
+}
+
+///|
 fn scene_queue_gltf_request(
   asset_server : @asset.AssetServer,
   scene_handle : @asset.Handle[Scene],
@@ -249,6 +275,33 @@ fn scene_queue_gltf_animation_request(
     clip_handle,
     gltf_path,
     animation_index,
+    gltf_blob: asset_server.load_bytes(gltf_path),
+    doc: None,
+    buffer_blobs: [],
+    buffer_bytes: [],
+  })
+}
+
+///|
+fn scene_queue_gltf_mesh_request(
+  asset_server : @asset.AssetServer,
+  mesh_handle : @asset.Handle[@mesh.Mesh],
+  mesh_asset_path : String,
+) -> Unit {
+  scene_pending_remove_mesh_handle(mesh_handle)
+  let (gltf_path, label) = scene_split_gltf_asset_path(mesh_asset_path)
+  let (mesh_index, primitive_index) = match label {
+    Some(Primitive(mesh, primitive)) => (mesh, primitive)
+    _ =>
+      abort(
+        "Mesh asset loading requires a glTF primitive label such as Mesh0/Primitive0",
+      )
+  }
+  pending_gltf_mesh_requests.val.push({
+    mesh_handle,
+    gltf_path,
+    mesh_index,
+    primitive_index,
     gltf_blob: asset_server.load_bytes(gltf_path),
     doc: None,
     buffer_blobs: [],
@@ -2216,6 +2269,51 @@ fn scene_build_animation_clip_from_gltf(
 }
 
 ///|
+fn scene_build_mesh_primitive_from_gltf(
+  doc : ParsedGltfDocument,
+  buffer_bytes : Array[Bytes],
+  mesh_index : Int,
+  primitive_index : Int,
+) -> @mesh.Mesh? {
+  guard mesh_index >= 0 && mesh_index < doc.meshes.length() else { return None }
+  let mesh = doc.meshes[mesh_index]
+  guard primitive_index >= 0 && primitive_index < mesh.primitives.length() else {
+    return None
+  }
+  let primitive = mesh.primitives[primitive_index]
+  guard primitive.position is Some(position_accessor) else { return None }
+  guard gltf_read_accessor_vec3(doc, buffer_bytes, position_accessor)
+    is Some(positions) else {
+    return None
+  }
+  if positions.length() == 0 {
+    return None
+  }
+
+  let mut uvs : Array[@math.Vec2] = []
+  if primitive.uv0 is Some(uv_accessor) {
+    if gltf_read_accessor_vec2(doc, buffer_bytes, uv_accessor) is Some(decoded) {
+      uvs = decoded
+    }
+  }
+  if uvs.length() != positions.length() {
+    uvs.clear()
+    for _ in positions {
+      uvs.push(@math.Vec2::new(0.0F, 0.0F))
+    }
+  }
+
+  let indices = match primitive.indices {
+    Some(index_accessor) =>
+      gltf_read_accessor_indices(doc, buffer_bytes, index_accessor)
+    None => None
+  }
+  let geometry = @mesh.Mesh3dGeometry::new(positions, uvs, indices)
+  guard geometry.validate() is None else { return None }
+  Some(@mesh.Mesh::from_3d_geometry(geometry))
+}
+
+///|
 fn scene_build_from_gltf(
   asset_server : @asset.AssetServer,
   request : PendingGltfSceneRequest,
@@ -2464,10 +2562,60 @@ fn scene_try_resolve_animation_request(
 }
 
 ///|
+fn scene_try_resolve_mesh_request(
+  asset_server : @asset.AssetServer,
+  request : PendingGltfMeshRequest,
+) -> (PendingGltfMeshRequest, @mesh.Mesh?) {
+  let updated = request
+
+  if updated.doc is None {
+    guard @asset.asset_blob_read_bytes(updated.gltf_blob)
+      is Some(gltf_blob_bytes) else {
+      return (updated, None)
+    }
+    guard gltf_parse_source(updated.gltf_path, gltf_blob_bytes) is Some(parsed) else {
+      return (updated, None)
+    }
+    updated.doc = Some(parsed.0)
+    updated.buffer_bytes = parsed.1
+    updated.buffer_blobs.clear()
+    for _ in parsed.0.buffers {
+      updated.buffer_blobs.push(None)
+    }
+  }
+
+  guard updated.doc is Some(doc) else { return (updated, None) }
+  match
+    scene_try_resolve_request_buffers(
+      asset_server,
+      updated.gltf_path,
+      doc,
+      updated.buffer_blobs,
+      updated.buffer_bytes,
+    ) {
+    GltfResolveBuffersState::Pending => (updated, None)
+    GltfResolveBuffersState::Fatal => (updated, None)
+    GltfResolveBuffersState::Ready(resolved_buffers) =>
+      (
+        updated,
+        scene_build_mesh_primitive_from_gltf(
+          doc,
+          resolved_buffers,
+          updated.mesh_index,
+          updated.primitive_index,
+        ),
+      )
+  }
+}
+
+///|
 fn scene_process_pending_scene_requests(
   asset_server : @asset.AssetServer,
 ) -> Unit {
   let remaining : Array[PendingGltfSceneRequest] = []
+  let scene_assets = scene_assets_from_world_mut_or_abort(
+    scene_current_world_or_abort(),
+  )
 
   for request in pending_gltf_scene_requests.val {
     let maybe_current = scene_assets.val.get(request.scene_handle)
@@ -2511,7 +2659,32 @@ fn scene_process_pending_animation_requests(
 }
 
 ///|
+fn scene_process_pending_mesh_requests(
+  asset_server : @asset.AssetServer,
+) -> Unit {
+  let remaining : Array[PendingGltfMeshRequest] = []
+  let mesh_assets = scene_mesh_assets_from_world_mut_or_abort(
+    scene_current_world_or_abort(),
+  )
+
+  for request in pending_gltf_mesh_requests.val {
+    let (updated_request, resolved_mesh) = scene_try_resolve_mesh_request(
+      asset_server, request,
+    )
+
+    if resolved_mesh is Some(mesh) {
+      mesh_assets.val.set(updated_request.mesh_handle, mesh) |> ignore
+    } else {
+      remaining.push(updated_request)
+    }
+  }
+
+  pending_gltf_mesh_requests.val = remaining
+}
+
+///|
 fn scene_process_pending_requests(asset_server : @asset.AssetServer) -> Unit {
   scene_process_pending_scene_requests(asset_server)
   scene_process_pending_animation_requests(asset_server)
+  scene_process_pending_mesh_requests(asset_server)
 }

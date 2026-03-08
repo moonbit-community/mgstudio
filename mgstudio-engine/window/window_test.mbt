@@ -245,7 +245,10 @@ test "window: primary refs do not fall back to secondary windows" {
   let secondary = world.spawn()
   try! world.set_component(secondary, secondary_window)
 
-  inspect(window_entity_for_ref(world, WindowRef::Primary) is None, content="true")
+  inspect(
+    window_entity_for_ref(world, WindowRef::Primary) is None,
+    content="true",
+  )
   inspect(window_physical_width_for(world, WindowRef::Primary), content="0")
   inspect(window_physical_height_for(world, WindowRef::Primary), content="0")
   inspect(window_scale_factor_for(world, WindowRef::Primary), content="1")

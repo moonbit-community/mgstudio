@@ -43,7 +43,7 @@ pub fn AssetServer::load_font(
   let canonical_path = asset_canonical_path(path)
   let id = host_asset_load_font(path=canonical_path)
   Font::{  } |> ignore
-  self.paths.push(canonical_path)
+  self.record_path(canonical_path)
   Handle::new(id)
 }
 

@@ -21,7 +21,7 @@ Notes:
 | `3d` | 66 | 42 | 24 | 0 |
 | `animation` | 13 | 2 | 11 | 0 |
 | `app` | 17 | 17 | 0 | 0 |
-| `asset` | 15 | 0 | 15 | 0 |
+| `asset` | 15 | 1 | 14 | 0 |
 | `async_tasks` | 3 | 0 | 3 | 0 |
 | `audio` | 7 | 5 | 2 | 0 |
 | `camera` | 9 | 7 | 2 | 0 |
@@ -35,7 +35,7 @@ Notes:
 | `helpers` | 1 | 0 | 1 | 0 |
 | `input` | 13 | 9 | 4 | 0 |
 | `large_scenes` | 6 | 0 | 6 | 0 |
-| `math` | 6 | 1 | 5 | 0 |
+| `math` | 6 | 2 | 4 | 0 |
 | `mobile` | 2 | 0 | 0 | 2 |
 | `movement` | 2 | 0 | 2 | 0 |
 | `no_std` | 1 | 0 | 0 | 1 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 3 | 9 | 0 |
-| **Total** | **402** | **124** | **275** | **3** |
+| **Total** | **402** | **130** | **269** | **3** |
 
 ## Example Inventory
 
@@ -186,7 +186,7 @@ Notes:
 | `bevy/examples/asset/alter_mesh.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/asset/alter_sprite.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/asset/asset_decompression.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
-| `bevy/examples/asset/asset_loading.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
+| `bevy/examples/asset/asset_loading.rs` | `asset` | `mgstudio-engine/examples/asset/asset_loading` | `Exact` | `team-asset_scene` |  |
 | `bevy/examples/asset/asset_saving.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/asset/asset_settings.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/asset/custom_asset.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
@@ -203,8 +203,8 @@ Notes:
 | `bevy/examples/async_tasks/external_source_external_thread.rs` | `async_tasks` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/audio/audio.rs` | `audio` | `mgstudio-engine/examples/audio/audio` | `Exact` | `team-ops` |  |
 | `bevy/examples/audio/audio_control.rs` | `audio` | `mgstudio-engine/examples/audio/audio_control` | `Exact` | `team-ops` |  |
-| `bevy/examples/audio/decodable.rs` | `audio` |  | `Blocked` | `team-ops` | Blocked by missing Bevy-style custom decodable source registration (`bd-bi5`). |
-| `bevy/examples/audio/pitch.rs` | `audio` |  | `Blocked` | `team-ops` | Blocked by MoonBit generic component impl coherence (`bd-wds`). |
+| `bevy/examples/audio/decodable.rs` | `audio` |  | `Blocked` | `team-ops` |  |
+| `bevy/examples/audio/pitch.rs` | `audio` |  | `Blocked` | `team-ops` |  |
 | `bevy/examples/audio/soundtrack.rs` | `audio` | `mgstudio-engine/examples/audio/soundtrack` | `Exact` | `team-ops` |  |
 | `bevy/examples/audio/spatial_audio_2d.rs` | `audio` | `mgstudio-engine/examples/audio/spatial_audio_2d` | `Exact` | `team-ops` |  |
 | `bevy/examples/audio/spatial_audio_3d.rs` | `audio` | `mgstudio-engine/examples/audio/spatial_audio_3d` | `Exact` | `team-ops` |  |
@@ -212,15 +212,15 @@ Notes:
 | `bevy/examples/camera/2d_screen_shake.rs` | `camera` | `mgstudio-engine/examples/camera/2d_screen_shake` | `Exact` | `team-render` |  |
 | `bevy/examples/camera/2d_top_down_camera.rs` | `camera` | `mgstudio-engine/examples/camera/2d_top_down_camera` | `Exact` | `team-render` |  |
 | `bevy/examples/camera/camera_orbit.rs` | `camera` | `mgstudio-engine/examples/camera/camera_orbit` | `Exact` | `team-render` |  |
-| `bevy/examples/camera/custom_projection.rs` | `camera` |  | `Blocked` | `team-render` | Blocked by missing custom camera projection surface (`bd-shf`). |
+| `bevy/examples/camera/custom_projection.rs` | `camera` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/camera/first_person_view_model.rs` | `camera` | `mgstudio-engine/examples/camera/first_person_view_model` | `Exact` | `team-render` |  |
 | `bevy/examples/camera/free_camera_controller.rs` | `camera` | `mgstudio-engine/examples/camera/free_camera_controller` | `Exact` | `team-render` |  |
 | `bevy/examples/camera/pan_camera_controller.rs` | `camera` | `mgstudio-engine/examples/camera/pan_camera_controller` | `Exact` | `team-render` |  |
-| `bevy/examples/camera/projection_zoom.rs` | `camera` |  | `Blocked` | `team-render` | Blocked by missing unified `Projection` component surface (`bd-52x`). |
+| `bevy/examples/camera/projection_zoom.rs` | `camera` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/dev_tools/fps_overlay.rs` | `dev_tools` |  | `Blocked` | `team-ops` |  |
 | `bevy/examples/diagnostics/custom_diagnostic.rs` | `diagnostics` | `mgstudio-engine/examples/diagnostics/custom_diagnostic` | `Exact` | `team-ops` |  |
 | `bevy/examples/diagnostics/enabling_disabling_diagnostic.rs` | `diagnostics` | `mgstudio-engine/examples/diagnostics/enabling_disabling_diagnostic` | `Exact` | `team-ops` |  |
-| `bevy/examples/diagnostics/log_diagnostics.rs` | `diagnostics` |  | `Blocked` | `team-ops` | Blocked by `SystemInformationDiagnosticsPlugin` (`bd-2j9.18`). |
+| `bevy/examples/diagnostics/log_diagnostics.rs` | `diagnostics` |  | `Blocked` | `team-ops` |  |
 | `bevy/examples/ecs/change_detection.rs` | `ecs` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/ecs/component_hooks.rs` | `ecs` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/ecs/contiguous_query.rs` | `ecs` |  | `Blocked` | `team-core` |  |
@@ -245,7 +245,7 @@ Notes:
 | `bevy/examples/ecs/parallel_query.rs` | `ecs` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/ecs/relationships.rs` | `ecs` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/ecs/removal_detection.rs` | `ecs` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/ecs/run_conditions.rs` | `ecs` |  | `Blocked` | `team-core` | Blocked by MoonBit reserved keywords preventing exact `.and(...)` / `.or(...)` method combinator callsites (`bd-6nu`). |
+| `bevy/examples/ecs/run_conditions.rs` | `ecs` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/ecs/send_and_receive_messages.rs` | `ecs` | `mgstudio-engine/examples/ecs/send_and_receive_messages` | `Exact` | `team-core` |  |
 | `bevy/examples/ecs/startup_system.rs` | `ecs` | `mgstudio-engine/examples/ecs/startup_system` | `Exact` | `team-core` |  |
 | `bevy/examples/ecs/state_scoped.rs` | `ecs` |  | `Blocked` | `team-core` |  |
@@ -286,24 +286,24 @@ Notes:
 | `bevy/examples/input/keyboard_input.rs` | `input` | `mgstudio-engine/examples/input/keyboard_input` | `Exact` | `team-input_window` |  |
 | `bevy/examples/input/keyboard_input_events.rs` | `input` | `mgstudio-engine/examples/input/keyboard_input_events` | `Exact` | `team-input_window` |  |
 | `bevy/examples/input/keyboard_modifiers.rs` | `input` | `mgstudio-engine/examples/input/keyboard_modifiers` | `Exact` | `team-input_window` |  |
-| `bevy/examples/input/mouse_grab.rs` | `input` | `mgstudio-engine/examples/input/mouse_grab` | `Blocked` | `team-input_window` | Blocked by missing real cursor visibility/grab backend parity (`bd-0re`). |
+| `bevy/examples/input/mouse_grab.rs` | `input` | `mgstudio-engine/examples/input/mouse_grab` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/input/mouse_input.rs` | `input` | `mgstudio-engine/examples/input/mouse_input` | `Exact` | `team-input_window` |  |
 | `bevy/examples/input/mouse_input_events.rs` | `input` | `mgstudio-engine/examples/input/mouse_input_events` | `Exact` | `team-input_window` |  |
-| `bevy/examples/input/text_input.rs` | `input` | `mgstudio-engine/examples/input/text_input` | `Blocked` | `team-input_window` | Blocked by missing IME/window/UI editing surface (`bd-zmg`, `bd-mdu`). |
-| `bevy/examples/input/touch_input.rs` | `input` | `mgstudio-engine/examples/input/touch_input` | `Blocked` | `team-input_window` | Blocked by missing native touch event backend (`bd-lek`). |
-| `bevy/examples/input/touch_input_events.rs` | `input` | `mgstudio-engine/examples/input/touch_input_events` | `Blocked` | `team-input_window` | Blocked by missing native touch event backend (`bd-lek`). |
+| `bevy/examples/input/text_input.rs` | `input` | `mgstudio-engine/examples/input/text_input` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/input/touch_input.rs` | `input` | `mgstudio-engine/examples/input/touch_input` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/input/touch_input_events.rs` | `input` | `mgstudio-engine/examples/input/touch_input_events` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/large_scenes/bistro/src/main.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/large_scenes/caldera_hotel/src/main.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/large_scenes/mipmap_generator/examples/load_gltf.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/large_scenes/mipmap_generator/examples/test_compression.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/large_scenes/mipmap_generator/examples/test_image.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/large_scenes/mipmap_generator/src/lib.rs` | `large_scenes` |  | `Blocked` | `team-render` |  |
-| `bevy/examples/math/bounding_2d.rs` | `math` | `mgstudio-engine/examples/math/bounding_2d` | `Blocked` | `team-core` | Example package now exists, but exact parity is still blocked until engine-owned 2D bounding volume and ray cast helpers replace the example-local implementations (`bd-h4h`). |
-| `bevy/examples/math/cubic_splines.rs` | `math` | `mgstudio-engine/examples/math/cubic_splines` | `Exact` | `team-core` | Engine-owned cubic spline math surface now backs the exact port; zero-argument state install blocker remains tracked separately under `bd-byr`. |
-| `bevy/examples/math/custom_primitives.rs` | `math` |  | `Blocked` | `team-core` | Blocked by missing custom primitive trait stack (`bd-jpy`). |
-| `bevy/examples/math/random_sampling.rs` | `math` |  | `Blocked` | `team-core` | Blocked by missing primitive shape sampling distributions and related camera helper integration (`bd-29b`, `bd-jb1`). |
-| `bevy/examples/math/render_primitives.rs` | `math` |  | `Blocked` | `team-core` | Blocked by missing public primitive rendering and gizmo surface (`bd-5te`). |
-| `bevy/examples/math/sampling_primitives.rs` | `math` |  | `Blocked` | `team-core` | Blocked by missing primitive shape sampling distributions (`bd-29b`). |
+| `bevy/examples/math/bounding_2d.rs` | `math` | `mgstudio-engine/examples/math/bounding_2d` | `Exact` | `team-core` |  |
+| `bevy/examples/math/cubic_splines.rs` | `math` | `mgstudio-engine/examples/math/cubic_splines` | `Exact` | `team-core` |  |
+| `bevy/examples/math/custom_primitives.rs` | `math` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/math/random_sampling.rs` | `math` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/math/render_primitives.rs` | `math` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/math/sampling_primitives.rs` | `math` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/mobile/src/lib.rs` | `mobile` |  | `N/A` | `team-platform_na` | WASM-first policy: platform-incompatible category. |
 | `bevy/examples/mobile/src/main.rs` | `mobile` |  | `N/A` | `team-platform_na` | WASM-first policy: platform-incompatible category. |
 | `bevy/examples/movement/physics_in_fixed_timestep.rs` | `movement` |  | `Blocked` | `team-core` |  |
@@ -392,7 +392,7 @@ Notes:
 | `bevy/examples/tools/scene_viewer/morph_viewer_plugin.rs` | `tools` |  | `Blocked` | `team-ops` |  |
 | `bevy/examples/tools/scene_viewer/scene_viewer_plugin.rs` | `tools` |  | `Blocked` | `team-ops` |  |
 | `bevy/examples/transforms/3d_rotation.rs` | `transforms` | `mgstudio-engine/examples/transforms/3d_rotation` | `Exact` | `team-core` |  |
-| `bevy/examples/transforms/align.rs` | `transforms` |  | `Blocked` | `team-core` | Blocked by missing 3D gizmo parity (`bd-2j9.9.3.2`). Ship GLTF runtime assets are now staged under `mgstudio-engine/assets/models/ship/`. |
+| `bevy/examples/transforms/align.rs` | `transforms` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/transforms/scale.rs` | `transforms` | `mgstudio-engine/examples/transforms/scale` | `Exact` | `team-core` |  |
 | `bevy/examples/transforms/transform.rs` | `transforms` | `mgstudio-engine/examples/transforms/transform` | `Exact` | `team-core` |  |
 | `bevy/examples/transforms/translation.rs` | `transforms` | `mgstudio-engine/examples/transforms/translation` | `Exact` | `team-core` |  |
@@ -454,8 +454,8 @@ Notes:
 | `bevy/examples/window/custom_cursor_image.rs` | `window` | `mgstudio-engine/examples/window/custom_cursor_image` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/low_power.rs` | `window` | `mgstudio-engine/examples/window/low_power` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/monitor_info.rs` | `window` | `mgstudio-engine/examples/window/monitor_info` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/window/multi_window_text.rs` | `window` |  | `Blocked` | `team-input_window` | Placeholder fallback example was removed; exact parity now tracked under `bd-1gp` for `UiTargetCamera` and per-window UI scale routing. |
-| `bevy/examples/window/multiple_windows.rs` | `window` |  | `Blocked` | `team-input_window` | Exact parity still depends on `bd-1gp` / `bd-kca` for `UiTargetCamera` and per-window UI scale routing. Torus GLTF runtime assets are now staged under `mgstudio-engine/assets/models/torus/`, and the partial package remains removed instead of keeping an adapted port. |
+| `bevy/examples/window/multi_window_text.rs` | `window` |  | `Blocked` | `team-input_window` |  |
+| `bevy/examples/window/multiple_windows.rs` | `window` |  | `Blocked` | `team-input_window` |  |
 | `bevy/examples/window/scale_factor_override.rs` | `window` | `mgstudio-engine/examples/window/scale_factor_override` | `Exact` | `team-input_window` |  |
 | `bevy/examples/window/screenshot.rs` | `window` | `mgstudio-engine/examples/window/screenshot` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/transparent_window.rs` | `window` | `mgstudio-engine/examples/window/transparent_window` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |

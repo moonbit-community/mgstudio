@@ -888,6 +888,65 @@ fn clear_color_current_value() -> Color {
 }
 
 ///|
+fn render2d_current_world_or_abort() -> @ecs.World {
+  match @app.current_world() {
+    Some(world) => world
+    None =>
+      abort(
+        "render2d asset helpers require an active app world; use the world-owned Assets<T> resources directly outside scheduled systems",
+      )
+  }
+}
+
+///|
+fn[T] render2d_asset_store_or_abort() -> @asset.Assets[T] {
+  let world = render2d_current_world_or_abort()
+  let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
+  match (try! world.get_resource(key)) {
+    Some(assets) => assets
+    None =>
+      abort(
+        "render2d asset resource is missing; Render2dPlugin must initialize the required Assets<T> resource before use",
+      )
+  }
+}
+
+///|
+fn[T] render2d_asset_store_mut_or_abort() -> Ref[@asset.Assets[T]] {
+  let world = render2d_current_world_or_abort()
+  let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
+  match (try! world.get_resource_ref_mut(key, 0)) {
+    Some(assets) => assets
+    None =>
+      abort(
+        "render2d asset resource is missing; Render2dPlugin must initialize the required Assets<T> resource before use",
+      )
+  }
+}
+
+///|
+fn color_material_assets_or_abort() -> @asset.Assets[ColorMaterialAsset] {
+  render2d_asset_store_or_abort()
+}
+
+///|
+fn color_material_assets_mut_or_abort() -> Ref[
+  @asset.Assets[ColorMaterialAsset],
+] {
+  render2d_asset_store_mut_or_abort()
+}
+
+///|
+fn mesh_assets_or_abort() -> @asset.Assets[@mesh.Mesh] {
+  render2d_asset_store_or_abort()
+}
+
+///|
+fn mesh_assets_mut_or_abort() -> Ref[@asset.Assets[@mesh.Mesh]] {
+  render2d_asset_store_mut_or_abort()
+}
+
+///|
 /// Mirrors Bevy's `ClearColorConfig` for per-camera clear behavior.
 pub(all) enum ClearColorConfig {
   Default
@@ -1270,15 +1329,10 @@ pub fn ColorMaterialAsset::new(
 }
 
 ///|
-let color_material_assets : Ref[@asset.Assets[ColorMaterialAsset]] = Ref::new(
-  @asset.Assets::new(),
-)
-
-///|
 fn color_material_get(
   handle : @asset.Handle[ColorMaterialAsset],
 ) -> ColorMaterialAsset? {
-  color_material_assets.val.get(handle)
+  color_material_assets_or_abort().get(handle)
 }
 
 ///|
@@ -1294,7 +1348,7 @@ fn color_material_add(
   uv_offset : @math.Vec2,
   uv_scale : @math.Vec2,
 ) -> ColorMaterial {
-  let handle = color_material_assets.val.add(
+  let handle = color_material_assets_mut_or_abort().val.add(
     ColorMaterialAsset::new(color, alpha_mode, texture~, uv_offset~, uv_scale~),
   )
   ColorMaterial::{ handle, }
@@ -2204,18 +2258,13 @@ pub struct Mesh2d {
 }
 
 ///|
-let mesh_assets : Ref[@asset.Assets[@mesh.Mesh]] = Ref::new(
-  @asset.Assets::new(),
-)
-
-///|
 let mesh_upload_cache : Ref[@hashmap.HashMap[Int, Int]] = Ref::new(
   @hashmap.HashMap::new(),
 )
 
 ///|
 fn mesh_upload_cache_sync_with_asset_events() -> Unit {
-  for event in mesh_assets.val.drain_events() {
+  for event in mesh_assets_mut_or_abort().val.drain_events() {
     match event {
       @asset.AssetEvent::Modified(handle) =>
         mesh_upload_cache.val.remove(handle.id())
@@ -2228,7 +2277,7 @@ fn mesh_upload_cache_sync_with_asset_events() -> Unit {
 
 ///|
 fn mesh_asset_add(mesh : @mesh.Mesh) -> @asset.Handle[@mesh.Mesh] {
-  mesh_assets.val.add(mesh)
+  mesh_assets_mut_or_abort().val.add(mesh)
 }
 
 ///|
@@ -2238,7 +2287,7 @@ pub fn render_mesh_asset_add(mesh : @mesh.Mesh) -> @asset.Handle[@mesh.Mesh] {
 
 ///|
 fn mesh_asset_get(handle : @asset.Handle[@mesh.Mesh]) -> @mesh.Mesh? {
-  mesh_assets.val.get(handle)
+  mesh_assets_or_abort().get(handle)
 }
 
 ///|
@@ -2251,7 +2300,7 @@ fn mesh_asset_set(
   handle : @asset.Handle[@mesh.Mesh],
   mesh : @mesh.Mesh,
 ) -> Bool {
-  mesh_assets.val.set(handle, mesh)
+  mesh_assets_mut_or_abort().val.set(handle, mesh)
 }
 
 ///|
@@ -8050,6 +8099,14 @@ pub let render2d_set_execute : @app.SystemSet = render2d_set_render
 pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .init_resource(fn() { ClearColor::default() })
+  .init_resource(fn() {
+    let assets : @asset.Assets[ColorMaterialAsset] = @asset.Assets::new()
+    assets
+  })
+  .init_resource(fn() {
+    let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
+    assets
+  })
   .add_startup_system(init_render_state_system)
   .add_post_update_system_config(
     @app.system(render2d_camera_system).in_set(camera_update_systems),
@@ -8084,6 +8141,14 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .init_resource(fn() { ClearColor::default() })
+  .init_resource(fn() {
+    let assets : @asset.Assets[ColorMaterialAsset] = @asset.Assets::new()
+    assets
+  })
+  .init_resource(fn() {
+    let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
+    assets
+  })
   .add_startup_system(init_render_state_system)
   .add_post_update_system_config(
     @app.system(render2d_camera_system_ecs).in_set(camera_update_systems),

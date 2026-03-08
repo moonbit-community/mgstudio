@@ -1366,14 +1366,41 @@ pub fn AnimationGraph::effective_weight(
 }
 
 ///|
-let animation_clip_assets : Ref[@asset.Assets[AnimationClip]] = Ref::new(
-  @asset.Assets::new(),
-)
+fn animation_current_world_or_abort() -> @ecs.World {
+  match @app.current_world() {
+    Some(world) => world
+    None =>
+      abort(
+        "animation asset helpers require an active app world; use the world-owned Assets<T> resources directly outside scheduled systems",
+      )
+  }
+}
 
 ///|
-let animation_graph_assets : Ref[@asset.Assets[AnimationGraph]] = Ref::new(
-  @asset.Assets::new(),
-)
+fn[T] animation_asset_store_or_abort() -> @asset.Assets[T] {
+  let world = animation_current_world_or_abort()
+  let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
+  match (try! world.get_resource(key)) {
+    Some(assets) => assets
+    None =>
+      abort(
+        "animation asset resource is missing; AnimationPlugin must initialize the required Assets<T> resource before use",
+      )
+  }
+}
+
+///|
+fn[T] animation_asset_store_mut_or_abort() -> Ref[@asset.Assets[T]] {
+  let world = animation_current_world_or_abort()
+  let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
+  match (try! world.get_resource_ref_mut(key, 0)) {
+    Some(assets) => assets
+    None =>
+      abort(
+        "animation asset resource is missing; AnimationPlugin must initialize the required Assets<T> resource before use",
+      )
+  }
+}
 
 ///|
 pub type AnimationEventCallback = (@core.Entity, Float, Float) -> Unit
@@ -1415,14 +1442,14 @@ pub impl @core.Message for AnimationTriggeredEvent with writer(
 
 ///|
 pub fn animation_clip_add(clip : AnimationClip) -> @asset.Handle[AnimationClip] {
-  animation_clip_assets.val.add(clip)
+  animation_asset_store_mut_or_abort().val.add(clip)
 }
 
 ///|
 pub fn animation_clip_get(
   handle : @asset.Handle[AnimationClip],
 ) -> AnimationClip? {
-  animation_clip_assets.val.get(handle)
+  animation_asset_store_or_abort().get(handle)
 }
 
 ///|
@@ -1430,21 +1457,21 @@ pub fn animation_clip_set(
   handle : @asset.Handle[AnimationClip],
   clip : AnimationClip,
 ) -> Bool {
-  animation_clip_assets.val.set(handle, clip)
+  animation_asset_store_mut_or_abort().val.set(handle, clip)
 }
 
 ///|
 pub fn animation_graph_add(
   graph : AnimationGraph,
 ) -> @asset.Handle[AnimationGraph] {
-  animation_graph_assets.val.add(graph)
+  animation_asset_store_mut_or_abort().val.add(graph)
 }
 
 ///|
 pub fn animation_graph_get(
   handle : @asset.Handle[AnimationGraph],
 ) -> AnimationGraph? {
-  animation_graph_assets.val.get(handle)
+  animation_asset_store_or_abort().get(handle)
 }
 
 ///|
@@ -1452,7 +1479,7 @@ pub fn animation_graph_set(
   handle : @asset.Handle[AnimationGraph],
   graph : AnimationGraph,
 ) -> Bool {
-  animation_graph_assets.val.set(handle, graph)
+  animation_asset_store_mut_or_abort().val.set(handle, graph)
 }
 
 ///|
@@ -2770,6 +2797,14 @@ pub fn expire_transitions(world : @ecs.World) -> Unit {
 ///|
 pub fn animation_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
+  .init_resource(fn() {
+    let assets : @asset.Assets[AnimationClip] = @asset.Assets::new()
+    assets
+  })
+  .init_resource(fn() {
+    let assets : @asset.Assets[AnimationGraph] = @asset.Assets::new()
+    assets
+  })
   .add_post_update_system_config(
     @app.system(thread_animation_graphs).in_set(animation_set_thread),
   )

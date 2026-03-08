@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/render3d",
   "Milky2018/mgstudio/visibility",
   "moonbitlang/core/json",
@@ -32,6 +33,8 @@ pub fn scene_get(@asset.Handle[Scene]) -> Scene?
 pub fn scene_get_gltf_lod_visibility_policy() -> GltfLodVisibilityPolicy
 
 pub fn scene_load_gltf_animation(@asset.AssetServer, String) -> @asset.Handle[@animation.AnimationClip]
+
+pub fn scene_load_gltf_mesh_primitive(@asset.AssetServer, String) -> @asset.Handle[@mesh.Mesh]
 
 pub fn scene_load_gltf_scene(@asset.AssetServer, String) -> @asset.Handle[Scene]
 

@@ -400,42 +400,131 @@ pub impl @json.FromJson for SceneInstanceReady with from_json(json, path) {
 }
 
 ///|
-let scene_assets : Ref[@asset.Assets[Scene]] = Ref::new(@asset.Assets::new())
+priv struct SceneAssetRegistryState {
+  scene_registry : Array[(String, @asset.Handle[Scene])]
+  animation_registry : Array[(String, @asset.Handle[@animation.AnimationClip])]
+  mesh_registry : Array[(String, @asset.Handle[@mesh.Mesh])]
+  mut lod_visibility_policy : GltfLodVisibilityPolicy
+}
 
 ///|
-let gltf_scene_registry : Ref[Array[(String, @asset.Handle[Scene])]] = Ref::new([],
-)
+fn SceneAssetRegistryState::default() -> SceneAssetRegistryState {
+  SceneAssetRegistryState::{
+    scene_registry: [],
+    animation_registry: [],
+    mesh_registry: [],
+    lod_visibility_policy: GltfLodVisibilityPolicy::default(),
+  }
+}
 
 ///|
-let gltf_animation_registry : Ref[
-  Array[(String, @asset.Handle[@animation.AnimationClip])],
-] = Ref::new([])
+fn scene_asset_registry_resource_key() -> @ecs.ResourceKey[
+  SceneAssetRegistryState,
+] {
+  @ecs.register_resource(debug_name="bevy_scene::SceneAssetRegistryState")
+}
 
 ///|
-let gltf_lod_visibility_policy : Ref[GltfLodVisibilityPolicy] = Ref::new(
-  GltfLodVisibilityPolicy::default(),
-)
+impl @app.Resource for SceneAssetRegistryState with resource() {
+  scene_asset_registry_resource_key()
+}
+
+///|
+fn scene_current_world_or_abort() -> @ecs.World {
+  match @app.current_world() {
+    Some(world) => world
+    None =>
+      abort(
+        "scene asset helpers require an active app world; use the world-owned resources directly outside scheduled systems",
+      )
+  }
+}
+
+///|
+fn scene_assets_from_world_mut_or_abort(
+  world : @ecs.World,
+) -> Ref[@asset.Assets[Scene]] {
+  let key : @ecs.ResourceKey[@asset.Assets[Scene]] = @asset.assets_resource_key()
+  match (try! world.get_resource_ref_mut(key, 0)) {
+    Some(assets) => assets
+    None =>
+      abort(
+        "scene assets resource is missing; ScenePlugin must initialize Assets<Scene> before use",
+      )
+  }
+}
+
+///|
+fn scene_assets_from_world_or_abort(world : @ecs.World) -> @asset.Assets[Scene] {
+  let key : @ecs.ResourceKey[@asset.Assets[Scene]] = @asset.assets_resource_key()
+  match (try! world.get_resource(key)) {
+    Some(assets) => assets
+    None =>
+      abort(
+        "scene assets resource is missing; ScenePlugin must initialize Assets<Scene> before use",
+      )
+  }
+}
+
+///|
+fn scene_mesh_assets_from_world_mut_or_abort(
+  world : @ecs.World,
+) -> Ref[@asset.Assets[@mesh.Mesh]] {
+  let key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
+  match (try! world.get_resource_ref_mut(key, 0)) {
+    Some(assets) => assets
+    None =>
+      abort(
+        "mesh assets resource is missing; Render2dPlugin must initialize Assets<Mesh> before scene glTF primitive loading runs",
+      )
+  }
+}
+
+///|
+fn scene_registry_mut_or_abort() -> Ref[SceneAssetRegistryState] {
+  let world = scene_current_world_or_abort()
+  match
+    (try! world.get_resource_ref_mut(scene_asset_registry_resource_key(), 0)) {
+    Some(state) => state
+    None =>
+      abort(
+        "scene registry resource is missing; ScenePlugin must initialize SceneAssetRegistryState before use",
+      )
+  }
+}
+
+///|
+fn scene_registry_or_abort() -> SceneAssetRegistryState {
+  let world = scene_current_world_or_abort()
+  match (try! world.get_resource(scene_asset_registry_resource_key())) {
+    Some(state) => state
+    None =>
+      abort(
+        "scene registry resource is missing; ScenePlugin must initialize SceneAssetRegistryState before use",
+      )
+  }
+}
 
 ///|
 pub fn scene_set_gltf_lod_visibility_policy(
   policy : GltfLodVisibilityPolicy,
 ) -> Unit {
-  gltf_lod_visibility_policy.val = policy
+  scene_registry_mut_or_abort().val.lod_visibility_policy = policy
 }
 
 ///|
 pub fn scene_get_gltf_lod_visibility_policy() -> GltfLodVisibilityPolicy {
-  gltf_lod_visibility_policy.val
+  scene_registry_or_abort().lod_visibility_policy
 }
 
 ///|
 pub fn scene_reset_gltf_lod_visibility_policy() -> Unit {
-  gltf_lod_visibility_policy.val = GltfLodVisibilityPolicy::default()
+  scene_registry_mut_or_abort().val.lod_visibility_policy = GltfLodVisibilityPolicy::default()
 }
 
 ///|
 fn scene_registry_get(asset_path : String) -> @asset.Handle[Scene]? {
-  for entry in gltf_scene_registry.val {
+  for entry in scene_registry_or_abort().scene_registry {
     if entry.0 == asset_path {
       return Some(entry.1)
     }
@@ -447,7 +536,17 @@ fn scene_registry_get(asset_path : String) -> @asset.Handle[Scene]? {
 fn scene_animation_registry_get(
   asset_path : String,
 ) -> @asset.Handle[@animation.AnimationClip]? {
-  for entry in gltf_animation_registry.val {
+  for entry in scene_registry_or_abort().animation_registry {
+    if entry.0 == asset_path {
+      return Some(entry.1)
+    }
+  }
+  None
+}
+
+///|
+fn scene_mesh_registry_get(asset_path : String) -> @asset.Handle[@mesh.Mesh]? {
+  for entry in scene_registry_or_abort().mesh_registry {
     if entry.0 == asset_path {
       return Some(entry.1)
     }
@@ -460,13 +559,14 @@ pub fn scene_register_gltf_scene(
   asset_path : String,
   scene : Scene,
 ) -> @asset.Handle[Scene] {
+  let world = scene_current_world_or_abort()
   if scene_registry_get(asset_path) is Some(handle) {
     scene_pending_remove_scene_handle(handle)
-    scene_assets.val.set(handle, scene) |> ignore
+    scene_assets_from_world_mut_or_abort(world).val.set(handle, scene) |> ignore
     return handle
   }
-  let handle = scene_assets.val.add(scene)
-  gltf_scene_registry.val.push((asset_path, handle))
+  let handle = scene_assets_from_world_mut_or_abort(world).val.add(scene)
+  scene_registry_mut_or_abort().val.scene_registry.push((asset_path, handle))
   scene_pending_remove_scene_handle(handle)
   handle
 }
@@ -476,11 +576,14 @@ pub fn scene_load_gltf_scene(
   asset_server : @asset.AssetServer,
   asset_path : String,
 ) -> @asset.Handle[Scene] {
+  let world = scene_current_world_or_abort()
   if scene_registry_get(asset_path) is Some(handle) {
     return handle
   }
-  let handle = scene_assets.val.add(scene_pending())
-  gltf_scene_registry.val.push((asset_path, handle))
+  let handle = scene_assets_from_world_mut_or_abort(world).val.add(
+    scene_pending(),
+  )
+  scene_registry_mut_or_abort().val.scene_registry.push((asset_path, handle))
   scene_queue_gltf_request(asset_server, handle, asset_path)
   handle
 }
@@ -494,14 +597,44 @@ pub fn scene_load_gltf_animation(
     return handle
   }
   let handle = @animation.animation_clip_add(@animation.AnimationClip::new())
-  gltf_animation_registry.val.push((asset_path, handle))
+  scene_registry_mut_or_abort().val.animation_registry.push(
+    (asset_path, handle),
+  )
   scene_queue_gltf_animation_request(asset_server, handle, asset_path)
   handle
 }
 
 ///|
+pub fn scene_load_gltf_mesh_primitive(
+  asset_server : @asset.AssetServer,
+  asset_path : String,
+) -> @asset.Handle[@mesh.Mesh] {
+  let world = scene_current_world_or_abort()
+  if scene_mesh_registry_get(asset_path) is Some(handle) {
+    return handle
+  }
+  let handle = scene_mesh_assets_from_world_mut_or_abort(world).val.reserve_handle()
+  scene_registry_mut_or_abort().val.mesh_registry.push((asset_path, handle))
+  scene_queue_gltf_mesh_request(asset_server, handle, asset_path)
+  handle
+}
+
+///|
+fn scene_register_asset_loaders() -> Unit {
+  @asset.asset_register_loader(fn(asset_server, path) {
+    scene_load_gltf_scene(asset_server, path)
+  })
+  @asset.asset_register_loader(fn(asset_server, path) {
+    scene_load_gltf_animation(asset_server, path)
+  })
+  @asset.asset_register_loader(fn(asset_server, path) {
+    scene_load_gltf_mesh_primitive(asset_server, path)
+  })
+}
+
+///|
 pub fn scene_get(handle : @asset.Handle[Scene]) -> Scene? {
-  scene_assets.val.get(handle)
+  scene_assets_from_world_or_abort(scene_current_world_or_abort()).get(handle)
 }
 
 ///|
@@ -523,7 +656,9 @@ pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
   for pending in pending_roots {
     let root_entity = pending.0
     let root = pending.1
-    guard scene_assets.val.get(root.scene) is Some(scene) else { continue }
+    guard scene_assets_from_world_or_abort(world).get(root.scene) is Some(scene) else {
+      continue
+    }
     if !scene.ready {
       continue
     }
@@ -571,7 +706,13 @@ pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn scene_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  scene_register_asset_loaders()
   app
+  .init_resource(fn() {
+    let assets : @asset.Assets[Scene] = @asset.Assets::new()
+    assets
+  })
+  .init_resource(fn() { SceneAssetRegistryState::default() })
   .add_pre_update_system(scene_load_pending_system)
   .add_pre_update_system(scene_spawn_roots_system)
 }

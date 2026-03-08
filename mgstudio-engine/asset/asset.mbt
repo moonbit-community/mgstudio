@@ -92,7 +92,17 @@ pub struct Blob {}
 
 ///|
 pub struct AssetServer {
-  paths : Array[String]
+  paths : Ref[Array[String]]
+  image_paths : Ref[Array[(String, Handle[Image])]]
+  image_array_layouts : Ref[Array[(Int, ImageArrayLayout)]]
+  image_srgb_settings : Ref[Array[(Int, Bool)]]
+  image_usage_settings : Ref[Array[(Int, Int)]]
+  default_sampler_nearest : Ref[Bool]
+}
+
+///|
+priv struct AssetLoaderEntry {
+  load : (AssetServer, String) -> @any.Any
 }
 
 ///|
@@ -139,6 +149,169 @@ pub fn ImageLoaderSettings::with_array_layout(
   array_layout : ImageArrayLayout?,
 ) -> ImageLoaderSettings {
   ImageLoaderSettings::{ ..self, array_layout, }
+}
+
+///|
+fn asset_server_standalone() -> AssetServer {
+  AssetServer::{
+    paths: Ref::new([]),
+    image_paths: Ref::new([]),
+    image_array_layouts: Ref::new([]),
+    image_srgb_settings: Ref::new([]),
+    image_usage_settings: Ref::new([]),
+    default_sampler_nearest: Ref::new(false),
+  }
+}
+
+///|
+let asset_loader_registry : Ref[@hashmap.HashMap[String, AssetLoaderEntry]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
+
+///|
+let asset_builtin_loaders_registered : Ref[Bool] = Ref::new(false)
+
+///|
+fn[T] asset_loader_type_name(probe : Handle[T]) -> String {
+  @any.of(probe).type_name()
+}
+
+///|
+pub fn[T] asset_register_loader(
+  load : (AssetServer, String) -> Handle[T],
+) -> Unit {
+  let probe : Handle[T] = Handle::new(0)
+  let type_name = asset_loader_type_name(probe)
+  asset_loader_registry.val.set(type_name, AssetLoaderEntry::{
+    load: fn(asset_server, path) { @any.of(load(asset_server, path)) },
+  })
+}
+
+///|
+fn asset_register_builtin_loaders() -> Unit {
+  if asset_builtin_loaders_registered.val {
+    return
+  }
+  asset_builtin_loaders_registered.val = true
+  asset_register_loader(fn(asset_server, path) { asset_server.load_image(path) })
+  asset_register_loader(fn(asset_server, path) { asset_server.load_wgsl(path) })
+  asset_register_loader(fn(asset_server, path) { asset_server.load_bytes(path) })
+  asset_register_loader(fn(asset_server, path) { asset_server.load_font(path) })
+  asset_register_loader(fn(asset_server, path) {
+    asset_server.load_folder(path)
+  })
+}
+
+///|
+pub fn asset_server_resource_key() -> @ecs.ResourceKey[AssetServer] {
+  @ecs.register_resource(debug_name="bevy_asset::AssetServer")
+}
+
+///|
+pub impl @app.Resource for AssetServer with resource() {
+  asset_server_resource_key()
+}
+
+///|
+fn asset_current_world() -> @ecs.World? {
+  @app.current_world()
+}
+
+///|
+fn asset_server_from_active_world() -> AssetServer? {
+  match asset_current_world() {
+    Some(world) => try! world.get_resource(asset_server_resource_key())
+    None => None
+  }
+}
+
+///|
+fn asset_server_or_abort() -> AssetServer {
+  match asset_server_from_active_world() {
+    Some(server) => server
+    None =>
+      abort(
+        "asset helper functions require an active app world; use a world-owned AssetServer resource or keep a local AssetServer handle",
+      )
+  }
+}
+
+///|
+fn asset_world_or_abort() -> @ecs.World {
+  match asset_current_world() {
+    Some(world) => world
+    None =>
+      abort(
+        "asset helper functions require an active app world; query world-owned asset resources explicitly outside scheduled systems",
+      )
+  }
+}
+
+///|
+pub fn[T : @app.Resource] asset_resource_or_abort() -> T {
+  let world = asset_world_or_abort()
+  match (try! world.get_resource(T::resource())) {
+    Some(value) => value
+    None =>
+      abort(
+        "Missing asset-related resource " +
+        T::resource().debug_name() +
+        " in the active world",
+      )
+  }
+}
+
+///|
+pub fn[T : @app.Resource] asset_resource_ref_or_abort() -> Ref[T] {
+  let world = asset_world_or_abort()
+  match (try! world.get_resource_ref(T::resource())) {
+    Some(value) => value
+    None =>
+      abort(
+        "Missing asset-related resource " +
+        T::resource().debug_name() +
+        " in the active world",
+      )
+  }
+}
+
+///|
+pub fn[T : @app.Resource] asset_resource_ref_mut_or_abort() -> Ref[T] {
+  let world = asset_world_or_abort()
+  let change_tick = world.increment_change_tick()
+  match (try! world.get_resource_ref_mut(T::resource(), change_tick)) {
+    Some(value) => value
+    None =>
+      abort(
+        "Missing asset-related resource " +
+        T::resource().debug_name() +
+        " in the active world",
+      )
+  }
+}
+
+///|
+pub fn[T] asset_assets_or_abort() -> Assets[T] {
+  asset_resource_or_abort()
+}
+
+///|
+pub fn[T] asset_assets_ref_or_abort() -> Ref[Assets[T]] {
+  asset_resource_ref_or_abort()
+}
+
+///|
+pub fn[T] asset_assets_ref_mut_or_abort() -> Ref[Assets[T]] {
+  asset_resource_ref_mut_or_abort()
+}
+
+///|
+pub fn AssetServer::new() -> AssetServer {
+  asset_register_builtin_loaders()
+  match asset_server_from_active_world() {
+    Some(server) => server
+    None => asset_server_standalone()
+  }
 }
 
 ///|
@@ -338,39 +511,32 @@ const IMAGE_USAGE_DEFAULT_SAMPLED : Int = 3
 const IMAGE_USAGE_DEFAULT_DYNAMIC : Int = 15
 
 ///|
-pub fn AssetServer::new() -> AssetServer {
-  AssetServer::{ paths: [] }
-}
-
-///|
-let asset_image_paths : Ref[Array[(String, Handle[Image])]] = Ref::new([])
-
-///|
-let asset_image_array_layouts : Ref[Array[(Int, ImageArrayLayout)]] = Ref::new([])
-
-///|
-let asset_image_srgb_settings : Ref[Array[(Int, Bool)]] = Ref::new([])
-
-///|
-let asset_image_usage_settings : Ref[Array[(Int, Int)]] = Ref::new([])
-
-///|
-fn asset_register_image_path(path : String, handle : Handle[Image]) -> Unit {
-  asset_image_paths.val.push((path, handle))
-}
-
-///|
 pub fn asset_canonical_path(path : String) -> String {
   asset_strip_label(path)
 }
 
 ///|
-fn asset_set_image_array_layout(
+fn AssetServer::record_path(self : AssetServer, path : String) -> Unit {
+  self.paths.val.push(path)
+}
+
+///|
+fn AssetServer::register_image_path(
+  self : AssetServer,
+  path : String,
+  handle : Handle[Image],
+) -> Unit {
+  self.image_paths.val.push((path, handle))
+}
+
+///|
+fn AssetServer::set_image_array_layout(
+  self : AssetServer,
   image : Handle[Image],
   array_layout : ImageArrayLayout?,
 ) -> Unit {
   let next : Array[(Int, ImageArrayLayout)] = []
-  for pair in asset_image_array_layouts.val {
+  for pair in self.image_array_layouts.val {
     if pair.0 != image.id() {
       next.push(pair)
     }
@@ -378,19 +544,23 @@ fn asset_set_image_array_layout(
   if array_layout is Some(layout) {
     next.push((image.id(), layout))
   }
-  asset_image_array_layouts.val = next
+  self.image_array_layouts.val = next
 }
 
 ///|
-fn asset_set_image_is_srgb(image : Handle[Image], is_srgb : Bool) -> Unit {
+fn AssetServer::set_image_is_srgb(
+  self : AssetServer,
+  image : Handle[Image],
+  is_srgb : Bool,
+) -> Unit {
   let next : Array[(Int, Bool)] = []
-  for pair in asset_image_srgb_settings.val {
+  for pair in self.image_srgb_settings.val {
     if pair.0 != image.id() {
       next.push(pair)
     }
   }
   next.push((image.id(), is_srgb))
-  asset_image_srgb_settings.val = next
+  self.image_srgb_settings.val = next
 }
 
 ///|
@@ -401,21 +571,28 @@ fn asset_image_usage_sanitize(usage_bits : Int) -> Int {
 }
 
 ///|
-fn asset_set_image_usage_bits(image : Handle[Image], usage_bits : Int) -> Unit {
+fn AssetServer::set_image_usage_bits(
+  self : AssetServer,
+  image : Handle[Image],
+  usage_bits : Int,
+) -> Unit {
   let safe_usage_bits = asset_image_usage_sanitize(usage_bits)
   let next : Array[(Int, Int)] = []
-  for pair in asset_image_usage_settings.val {
+  for pair in self.image_usage_settings.val {
     if pair.0 != image.id() {
       next.push(pair)
     }
   }
   next.push((image.id(), safe_usage_bits))
-  asset_image_usage_settings.val = next
+  self.image_usage_settings.val = next
 }
 
 ///|
-pub fn asset_image_array_layout(image : Handle[Image]) -> ImageArrayLayout? {
-  for pair in asset_image_array_layouts.val {
+fn AssetServer::image_array_layout(
+  self : AssetServer,
+  image : Handle[Image],
+) -> ImageArrayLayout? {
+  for pair in self.image_array_layouts.val {
     if pair.0 == image.id() {
       return Some(pair.1)
     }
@@ -424,8 +601,11 @@ pub fn asset_image_array_layout(image : Handle[Image]) -> ImageArrayLayout? {
 }
 
 ///|
-pub fn asset_image_is_srgb(image : Handle[Image]) -> Bool {
-  for pair in asset_image_srgb_settings.val {
+fn AssetServer::image_is_srgb(
+  self : AssetServer,
+  image : Handle[Image],
+) -> Bool {
+  for pair in self.image_srgb_settings.val {
     if pair.0 == image.id() {
       return pair.1
     }
@@ -434,8 +614,11 @@ pub fn asset_image_is_srgb(image : Handle[Image]) -> Bool {
 }
 
 ///|
-pub fn asset_image_usage_bits(image : Handle[Image]) -> Int {
-  for pair in asset_image_usage_settings.val {
+fn AssetServer::image_usage_bits(
+  self : AssetServer,
+  image : Handle[Image],
+) -> Int {
+  for pair in self.image_usage_settings.val {
     if pair.0 == image.id() {
       return pair.1
     }
@@ -444,11 +627,26 @@ pub fn asset_image_usage_bits(image : Handle[Image]) -> Int {
 }
 
 ///|
+pub fn asset_image_array_layout(image : Handle[Image]) -> ImageArrayLayout? {
+  asset_server_or_abort().image_array_layout(image)
+}
+
+///|
+pub fn asset_image_is_srgb(image : Handle[Image]) -> Bool {
+  asset_server_or_abort().image_is_srgb(image)
+}
+
+///|
+pub fn asset_image_usage_bits(image : Handle[Image]) -> Int {
+  asset_server_or_abort().image_usage_bits(image)
+}
+
+///|
 pub fn asset_image_set_usage_bits(
   image : Handle[Image],
   usage_bits : Int,
 ) -> Unit {
-  asset_set_image_usage_bits(image, usage_bits)
+  asset_server_or_abort().set_image_usage_bits(image, usage_bits)
 }
 
 ///|
@@ -456,7 +654,7 @@ pub fn asset_image_add_usage(image : Handle[Image], usage_bits : Int) -> Unit {
   let current = asset_image_usage_bits(image).reinterpret_as_uint()
   let add = asset_image_usage_sanitize(usage_bits).reinterpret_as_uint()
   let next = (current | add).reinterpret_as_int()
-  asset_set_image_usage_bits(image, next)
+  asset_server_or_abort().set_image_usage_bits(image, next)
 }
 
 ///|
@@ -467,7 +665,7 @@ pub fn asset_image_remove_usage(
   let current = asset_image_usage_bits(image).reinterpret_as_uint()
   let remove = asset_image_usage_sanitize(usage_bits).reinterpret_as_uint()
   let next = (current & (IMAGE_USAGE_ALL_MASK.reinterpret_as_uint() ^ remove)).reinterpret_as_int()
-  asset_set_image_usage_bits(image, next)
+  asset_server_or_abort().set_image_usage_bits(image, next)
 }
 
 ///|
@@ -479,13 +677,13 @@ pub fn asset_image_has_usage(image : Handle[Image], usage_bits : Int) -> Bool {
 
 ///|
 pub fn AssetServer::get_handle(
-  _self : AssetServer,
+  self : AssetServer,
   path : String,
 ) -> Handle[Image]? {
   let canonical = asset_canonical_path(path)
-  let count = asset_image_paths.val.length()
+  let count = self.image_paths.val.length()
   for i in 0..<count {
-    let entry = asset_image_paths.val[i]
+    let entry = self.image_paths.val[i]
     if entry.0 == canonical {
       return Some(entry.1)
     }
@@ -515,11 +713,8 @@ pub fn asset_loader_kind_for_path(path : String) -> AssetLoaderKind {
 }
 
 ///|
-let asset_default_nearest : Ref[Bool] = Ref::new(false)
-
-///|
 pub fn asset_set_default_sampler_nearest(enabled : Bool) -> Unit {
-  asset_default_nearest.val = enabled
+  asset_server_or_abort().default_sampler_nearest.val = enabled
 }
 
 ///|
@@ -759,18 +954,21 @@ pub fn host_asset_copy_texture_to_texture(
 }
 
 ///|
-pub fn AssetServer::load(self : AssetServer, path : String) -> Handle[Image] {
+pub fn AssetServer::load_image(
+  self : AssetServer,
+  path : String,
+) -> Handle[Image] {
   let canonical_path = asset_canonical_path(path)
   let id = host_asset_load_texture(
     path=canonical_path,
-    nearest=asset_default_nearest.val,
+    nearest=self.default_sampler_nearest.val,
   )
-  self.paths.push(canonical_path)
+  self.record_path(canonical_path)
   let handle = Handle::new(id)
-  asset_register_image_path(canonical_path, handle)
-  asset_set_image_array_layout(handle, None)
-  asset_set_image_is_srgb(handle, true)
-  asset_set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
+  self.register_image_path(canonical_path, handle)
+  self.set_image_array_layout(handle, None)
+  self.set_image_is_srgb(handle, true)
+  self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
   handle
 }
 
@@ -781,12 +979,12 @@ pub fn AssetServer::load_nearest(
 ) -> Handle[Image] {
   let canonical_path = asset_canonical_path(path)
   let id = host_asset_load_texture(path=canonical_path, nearest=true)
-  self.paths.push(canonical_path)
+  self.record_path(canonical_path)
   let handle = Handle::new(id)
-  asset_register_image_path(canonical_path, handle)
-  asset_set_image_array_layout(handle, None)
-  asset_set_image_is_srgb(handle, true)
-  asset_set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
+  self.register_image_path(canonical_path, handle)
+  self.set_image_array_layout(handle, None)
+  self.set_image_is_srgb(handle, true)
+  self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
   handle
 }
 
@@ -796,6 +994,30 @@ fn image_sampler_is_nearest(sampler : ImageSampler) -> Bool {
     ImageSampler::Nearest => true
     ImageSampler::NearestRepeat => true
     _ => false
+  }
+}
+
+///|
+pub fn[T] AssetServer::load(self : AssetServer, path : String) -> Handle[T] {
+  asset_register_builtin_loaders()
+  let probe : Handle[T] = Handle::new(0)
+  let type_name = asset_loader_type_name(probe)
+  match asset_loader_registry.val.get(type_name) {
+    Some(entry) =>
+      match (entry.load)(self, path).try_to() {
+        Some(handle) => handle
+        None =>
+          abort(
+            "asset loader registry returned a mismatched handle type for " +
+            type_name,
+          )
+      }
+    None =>
+      abort(
+        "No asset loader is registered for " +
+        type_name +
+        "; load the plugin that owns this asset type before calling AssetServer::load",
+      )
   }
 }
 
@@ -810,13 +1032,13 @@ pub fn AssetServer::load_with_settings(
     path=canonical_path,
     nearest=image_sampler_is_nearest(settings.sampler),
   )
-  self.paths.push(canonical_path)
+  self.record_path(canonical_path)
   let handle = Handle::new(id)
-  asset_register_image_path(canonical_path, handle)
+  self.register_image_path(canonical_path, handle)
   asset_set_texture_sampler(handle, settings.sampler)
-  asset_set_image_array_layout(handle, settings.array_layout)
-  asset_set_image_is_srgb(handle, settings.is_srgb)
-  asset_set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
+  self.set_image_array_layout(handle, settings.array_layout)
+  self.set_image_is_srgb(handle, settings.is_srgb)
+  self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
   handle
 }
 
@@ -829,7 +1051,7 @@ pub fn AssetServer::load_texture_bytes(
   self |> ignore
   let id = host_asset_load_texture_bytes(bytes~, nearest~)
   let handle = Handle::new(id)
-  asset_set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
+  AssetServer::new().set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
   handle
 }
 
@@ -858,7 +1080,7 @@ pub fn AssetServer::load_wgsl(
 ) -> Handle[Shader] {
   let canonical_path = asset_canonical_path(path)
   let id = host_asset_load_wgsl(path=canonical_path)
-  self.paths.push(canonical_path)
+  self.record_path(canonical_path)
   Handle::new(id)
 }
 
@@ -869,7 +1091,7 @@ pub fn AssetServer::load_bytes(
 ) -> Handle[Blob] {
   let canonical_path = asset_canonical_path(path)
   let id = host_asset_load_bytes(path=canonical_path)
-  self.paths.push(canonical_path)
+  self.record_path(canonical_path)
   Blob::{  } |> ignore
   Handle::new(id)
 }
@@ -882,7 +1104,7 @@ pub fn AssetServer::load_with_registered_loader(
 ) -> Int {
   let canonical_path = asset_canonical_path(path)
   let id = host_asset_load_with_registered_loader(path=canonical_path, nearest~)
-  self.paths.push(canonical_path)
+  self.record_path(canonical_path)
   id
 }
 
@@ -952,7 +1174,7 @@ pub fn asset_create_dynamic_texture_with_mips(
     nearest~,
   )
   let handle = Handle::new(id)
-  asset_set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_DYNAMIC)
+  AssetServer::new().set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_DYNAMIC)
   handle
 }
 
@@ -1013,7 +1235,10 @@ pub fn asset_create_texture_mip_view(
     mip_level=safe_mip_level,
   )
   let handle = Handle::new(id)
-  asset_set_image_usage_bits(handle, asset_image_usage_bits(texture))
+  AssetServer::new().set_image_usage_bits(
+    handle,
+    asset_image_usage_bits(texture),
+  )
   handle
 }
 
@@ -1052,17 +1277,37 @@ pub fn asset_save_texture_png(texture : Handle[Image], path : String) -> Unit {
 }
 
 ///|
-pub fn[W] asset_system(_world : W) -> Unit {
-  asset_update_loaded_folders()
+pub fn asset_system(world : @ecs.World) -> Unit {
+  asset_update_loaded_folders(world)
 }
 
 ///|
-pub fn[W] asset_plugin(app : @app.App[W]) -> @app.App[W] {
-  app.add_pre_update_system(asset_system)
+fn asset_plugin_with_server(
+  app : @app.App[@ecs.World],
+  asset_server : AssetServer,
+) -> @app.App[@ecs.World] {
+  asset_register_builtin_loaders()
+  app
+  .insert_resource(asset_server)
+  .init_resource(fn() {
+    let assets : Assets[LoadedFolder] = Assets::new()
+    assets
+  })
+  .init_resource(fn() {
+    let assets : Assets[TextureAtlasLayout] = Assets::new()
+    assets
+  })
+  .add_pre_update_system(asset_system)
 }
 
 ///|
-pub fn[W] asset_plugin_nearest(app : @app.App[W]) -> @app.App[W] {
-  asset_set_default_sampler_nearest(true)
-  app.add_pre_update_system(asset_system)
+pub fn asset_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  asset_plugin_with_server(app, asset_server_standalone())
+}
+
+///|
+pub fn asset_plugin_nearest(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  let asset_server = asset_server_standalone()
+  asset_server.default_sampler_nearest.val = true
+  asset_plugin_with_server(app, asset_server)
 }

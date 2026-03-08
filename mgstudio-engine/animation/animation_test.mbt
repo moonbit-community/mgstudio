@@ -42,8 +42,9 @@ test "animation clip: duration tracks added trs/weights curves" {
 
 ///|
 test "animation graph: from_clip/from_clips/add APIs" {
-  let h0 = animation_clip_add(AnimationClip::new())
-  let h1 = animation_clip_add(AnimationClip::new())
+  let clips : @asset.Assets[AnimationClip] = @asset.Assets::new()
+  let h0 = clips.add(AnimationClip::new())
+  let h1 = clips.add(AnimationClip::new())
 
   let (g0, n0) = AnimationGraph::from_clip(h0)
   inspect(g0.get(n0) is Some(_), content="true")
@@ -103,7 +104,8 @@ test "animation transitions: play updates main animation and starts new clip" {
 
 ///|
 test "animation graph: blend/add weights and mask groups" {
-  let clip = animation_clip_add(AnimationClip::new())
+  let clips : @asset.Assets[AnimationClip] = @asset.Assets::new()
+  let clip = clips.add(AnimationClip::new())
   let graph = AnimationGraph::new()
   let blend = graph.add_blend(0.5F, graph.root())
   let idle = graph.add_clip(clip, 1.0F, graph.root())

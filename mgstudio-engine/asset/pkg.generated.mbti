@@ -27,6 +27,12 @@ pub const IMAGE_USAGE_TEXTURE_BINDING : Int = 1
 
 pub fn asset_add_texture_atlas_layout(TextureAtlasLayout) -> Handle[TextureAtlasLayout]
 
+pub fn[T] asset_assets_or_abort() -> Assets[T]
+
+pub fn[T] asset_assets_ref_mut_or_abort() -> Ref[Assets[T]]
+
+pub fn[T] asset_assets_ref_or_abort() -> Ref[Assets[T]]
+
 pub fn asset_blob_read_bytes(Handle[Blob]) -> Bytes?
 
 pub fn asset_blob_read_text(Handle[Blob]) -> String?
@@ -77,15 +83,25 @@ pub fn asset_loader_kind_for_path(String) -> AssetLoaderKind
 
 pub fn asset_parse_path(String) -> ParsedAssetPath
 
-pub fn[W] asset_plugin(@app.App[W]) -> @app.App[W]
+pub fn asset_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn[W] asset_plugin_nearest(@app.App[W]) -> @app.App[W]
+pub fn asset_plugin_nearest(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn[T] asset_register_loader((AssetServer, String) -> Handle[T]) -> Unit
 
 pub fn asset_register_loader_extension(String, AssetLoaderKind) -> Unit
 
 pub fn asset_remove_loader_extension(String) -> Unit
 
+pub fn[T : @app.Resource] asset_resource_or_abort() -> T
+
+pub fn[T : @app.Resource] asset_resource_ref_mut_or_abort() -> Ref[T]
+
+pub fn[T : @app.Resource] asset_resource_ref_or_abort() -> Ref[T]
+
 pub fn asset_save_texture_png(Handle[Image], String) -> Unit
+
+pub fn asset_server_resource_key() -> @ecs.ResourceKey[AssetServer]
 
 pub fn asset_set_default_sampler_nearest(Bool) -> Unit
 
@@ -97,7 +113,7 @@ pub fn asset_strip_label(String) -> String
 
 pub fn asset_supported_compressed_image_formats() -> Int
 
-pub fn[W] asset_system(W) -> Unit
+pub fn asset_system(@ecs.World) -> Unit
 
 pub fn asset_texture_height(Handle[Image]) -> Int
 
@@ -105,7 +121,7 @@ pub fn asset_texture_width(Handle[Image]) -> Int
 
 pub fn asset_transparent_texture() -> Handle[Image]
 
-pub fn asset_update_loaded_folders() -> Unit
+pub fn asset_update_loaded_folders(@ecs.World) -> Unit
 
 pub fn asset_update_texture_region(Handle[Image], @math.URect, Int) -> Unit
 
@@ -114,6 +130,10 @@ pub fn asset_update_texture_region_rgba8(Handle[Image], @math.URect, Bytes) -> U
 pub fn asset_update_texture_region_rgba8_mip(Handle[Image], @math.URect, Int, Bytes) -> Unit
 
 pub fn asset_white_texture() -> Handle[Image]
+
+pub fn[T] assets_resource_key() -> @ecs.ResourceKey[Assets[T]]
+
+pub fn[T] assets_resource_key_of(T) -> @ecs.ResourceKey[Assets[T]]
 
 pub let ecs_components : Array[String]
 
@@ -185,6 +205,8 @@ pub fn host_asset_update_texture_region_bytes(texture_id~ : Int, x~ : Int, y~ : 
 
 pub fn host_asset_update_texture_region_mip_bytes(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, mip_level~ : Int, bytes~ : Bytes) -> Unit
 
+pub fn loaded_folder_assets_resource_key() -> @ecs.ResourceKey[Assets[LoadedFolder]]
+
 // Errors
 
 // Types and methods
@@ -213,19 +235,26 @@ pub(all) enum AssetLoaderKind {
 }
 
 pub struct AssetServer {
-  paths : Array[String]
+  paths : Ref[Array[String]]
+  image_paths : Ref[Array[(String, Handle[Image])]]
+  image_array_layouts : Ref[Array[(Int, ImageArrayLayout)]]
+  image_srgb_settings : Ref[Array[(Int, Bool)]]
+  image_usage_settings : Ref[Array[(Int, Int)]]
+  default_sampler_nearest : Ref[Bool]
 }
 pub fn AssetServer::get_handle(Self, String) -> Handle[Image]?
-pub fn AssetServer::load(Self, String) -> Handle[Image]
+pub fn[T] AssetServer::load(Self, String) -> Handle[T]
 pub fn AssetServer::load_bytes(Self, String) -> Handle[Blob]
 pub fn AssetServer::load_folder(Self, String) -> Handle[LoadedFolder]
 pub fn AssetServer::load_font(Self, String) -> Handle[Font]
+pub fn AssetServer::load_image(Self, String) -> Handle[Image]
 pub fn AssetServer::load_nearest(Self, String) -> Handle[Image]
 pub fn AssetServer::load_texture_bytes(Self, Bytes, Bool) -> Handle[Image]
 pub fn AssetServer::load_wgsl(Self, String) -> Handle[Shader]
 pub fn AssetServer::load_with_registered_loader(Self, String, Bool) -> Int
 pub fn AssetServer::load_with_settings(Self, String, ImageLoaderSettings) -> Handle[Image]
 pub fn AssetServer::new() -> Self
+pub impl @app.Resource for AssetServer
 
 pub(all) enum AssetSourceId {
   Default
@@ -245,8 +274,11 @@ pub fn[T] Assets::insert(Self[T], Handle[T], T) -> Bool
 pub fn[T] Assets::is_empty(Self[T]) -> Bool
 pub fn[T] Assets::len(Self[T]) -> Int
 pub fn[T] Assets::new() -> Self[T]
+pub fn[T] Assets::push_event(Self[T], AssetEvent[T]) -> Unit
 pub fn[T] Assets::remove(Self[T], Handle[T]) -> T?
+pub fn[T] Assets::reserve_handle(Self[T]) -> Handle[T]
 pub fn[T] Assets::set(Self[T], Handle[T], T) -> Bool
+pub impl[T] @app.Resource for Assets[T]
 
 pub struct Blob {
 }

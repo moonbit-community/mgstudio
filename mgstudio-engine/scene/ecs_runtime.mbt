@@ -46,7 +46,9 @@ pub fn scene_spawn_roots_system_ecs(world : @ecs.World) -> Unit {
   for pending in pending_roots {
     let root_entity = pending.0
     let root = pending.1
-    guard scene_assets.val.get(root.scene) is Some(scene) else { continue }
+    guard scene_assets_from_world_or_abort(world).get(root.scene) is Some(scene) else {
+      continue
+    }
     if !scene.ready {
       continue
     }

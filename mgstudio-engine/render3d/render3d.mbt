@@ -3878,22 +3878,54 @@ pub fn StandardMaterial::with_double_sided(
 }
 
 ///|
-let standard_material_assets : Ref[@asset.Assets[StandardMaterial]] = Ref::new(
-  @asset.Assets::new(),
-)
+fn render3d_current_world_or_abort() -> @ecs.World {
+  match @app.current_world() {
+    Some(world) => world
+    None =>
+      abort(
+        "render3d asset helpers require an active app world; use the world-owned Assets<T> resources directly outside scheduled systems",
+      )
+  }
+}
+
+///|
+fn[T] render3d_asset_store_or_abort() -> @asset.Assets[T] {
+  let world = render3d_current_world_or_abort()
+  let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
+  match (try! world.get_resource(key)) {
+    Some(assets) => assets
+    None =>
+      abort(
+        "render3d asset resource is missing; Render3dPlugin must initialize the required Assets<T> resource before use",
+      )
+  }
+}
+
+///|
+fn[T] render3d_asset_store_mut_or_abort() -> Ref[@asset.Assets[T]] {
+  let world = render3d_current_world_or_abort()
+  let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
+  match (try! world.get_resource_ref_mut(key, 0)) {
+    Some(assets) => assets
+    None =>
+      abort(
+        "render3d asset resource is missing; Render3dPlugin must initialize the required Assets<T> resource before use",
+      )
+  }
+}
 
 ///|
 pub fn standard_material_add(
   material : StandardMaterial,
 ) -> @asset.Handle[StandardMaterial] {
-  standard_material_assets.val.add(material)
+  render3d_asset_store_mut_or_abort().val.add(material)
 }
 
 ///|
 pub fn standard_material_get(
   handle : @asset.Handle[StandardMaterial],
 ) -> StandardMaterial? {
-  standard_material_assets.val.get(handle)
+  render3d_asset_store_or_abort().get(handle)
 }
 
 ///|
@@ -3901,7 +3933,7 @@ pub fn standard_material_set(
   handle : @asset.Handle[StandardMaterial],
   material : StandardMaterial,
 ) -> Bool {
-  standard_material_assets.val.set(handle, material)
+  render3d_asset_store_mut_or_abort().val.set(handle, material)
 }
 
 ///|
@@ -11533,6 +11565,10 @@ pub let render3d_set_execute : @app.SystemSet = render3d_set_render
 ///|
 pub fn render3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
+  .init_resource(fn() {
+    let assets : @asset.Assets[StandardMaterial] = @asset.Assets::new()
+    assets
+  })
   .add_startup_system(init_render3d_resources)
   .add_post_update_system_config(
     @app.system(render3d_extract_system).in_set(render3d_set_extract),

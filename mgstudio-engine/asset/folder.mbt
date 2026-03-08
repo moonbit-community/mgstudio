@@ -18,6 +18,13 @@ pub struct LoadedFolder {
 }
 
 ///|
+pub fn loaded_folder_assets_resource_key() -> @ecs.ResourceKey[
+  Assets[LoadedFolder],
+] {
+  registered_assets_resource_key()
+}
+
+///|
 pub(all) enum AssetEvent[T] {
   Added(Handle[T])
   Modified(Handle[T])
@@ -54,10 +61,6 @@ pub fn host_asset_loaded_folder_handles_get(
 }
 
 ///|
-let loaded_folder_assets : Ref[Assets[LoadedFolder]] = Ref::new(Assets::new())
-
-///|
-let loaded_folder_events : Ref[Array[AssetEvent[LoadedFolder]]] = Ref::new([])
 
 ///|
 pub fn AssetServer::load_folder(
@@ -66,29 +69,63 @@ pub fn AssetServer::load_folder(
 ) -> Handle[LoadedFolder] {
   let canonical_path = asset_canonical_path(path)
   let host_id = host_asset_load_folder(path=canonical_path)
-  self.paths.push(canonical_path)
-  Handle::new(host_id)
+  self.record_path(canonical_path)
+  let handle = Handle::new(host_id)
+  handle
+}
+
+///|
+fn loaded_folder_assets_mut_or_abort(
+  world : @ecs.World,
+) -> Ref[Assets[LoadedFolder]] {
+  match
+    (try! world.get_resource_ref_mut(loaded_folder_assets_resource_key(), 0)) {
+    Some(assets) => assets
+    None =>
+      abort(
+        "LoadedFolder assets resource is missing; AssetPlugin must initialize Assets<LoadedFolder> before folder polling runs",
+      )
+  }
+}
+
+///|
+fn loaded_folder_assets_or_abort(world : @ecs.World) -> Assets[LoadedFolder] {
+  match (try! world.get_resource(loaded_folder_assets_resource_key())) {
+    Some(assets) => assets
+    None =>
+      abort(
+        "LoadedFolder assets resource is missing; AssetPlugin must initialize Assets<LoadedFolder> before folder polling runs",
+      )
+  }
 }
 
 ///|
 pub fn asset_get_loaded_folder(handle : Handle[LoadedFolder]) -> LoadedFolder? {
-  loaded_folder_assets.val.get(handle)
+  match asset_current_world() {
+    Some(world) => loaded_folder_assets_or_abort(world).get(handle)
+    None =>
+      abort(
+        "LoadedFolder lookups require an active app world; query the world-owned Assets<LoadedFolder> resource directly outside scheduled systems",
+      )
+  }
 }
 
 ///|
 pub fn asset_loaded_folder_drain_events() -> Array[AssetEvent[LoadedFolder]] {
-  let out : Array[AssetEvent[LoadedFolder]] = []
-  for ev in loaded_folder_events.val {
-    out.push(ev)
+  match asset_current_world() {
+    Some(world) => loaded_folder_assets_mut_or_abort(world).val.drain_events()
+    None =>
+      abort(
+        "LoadedFolder events require an active app world; query the world-owned Assets<LoadedFolder> resource directly outside scheduled systems",
+      )
   }
-  loaded_folder_events.val.clear()
-  out
 }
 
 ///|
-pub fn asset_update_loaded_folders() -> Unit {
+pub fn asset_update_loaded_folders(world : @ecs.World) -> Unit {
+  let assets_ref = loaded_folder_assets_mut_or_abort(world)
   // Ensure any leftover internal asset events don't leak between frames.
-  loaded_folder_assets.val.drain_events() |> ignore
+  assets_ref.val.drain_events() |> ignore
   while true {
     let kind = host_asset_poll_loaded_folder_event_kind()
     if kind < 0 {
@@ -106,18 +143,10 @@ pub fn asset_update_loaded_folders() -> Unit {
           ),
         )
       }
-      loaded_folder_assets.val.insert(handle, LoadedFolder::{ handles, })
-      |> ignore
-      for ev in loaded_folder_assets.val.drain_events() {
-        loaded_folder_events.val.push(ev)
-      }
-      loaded_folder_events.val.push(LoadedWithDependencies(handle))
+      assets_ref.val.insert(handle, LoadedFolder::{ handles, }) |> ignore
+      assets_ref.val.push_event(LoadedWithDependencies(handle))
     } else if kind == 0 {
-      loaded_folder_assets.val.insert(handle, LoadedFolder::{ handles: [] })
-      |> ignore
-      for ev in loaded_folder_assets.val.drain_events() {
-        loaded_folder_events.val.push(ev)
-      }
+      assets_ref.val.insert(handle, LoadedFolder::{ handles: [] }) |> ignore
     } else if kind == 1 {
       let n = host_asset_loaded_folder_handles_len(host_id)
       let handles : Array[Handle[Image]] = []
@@ -128,16 +157,9 @@ pub fn asset_update_loaded_folders() -> Unit {
           ),
         )
       }
-      loaded_folder_assets.val.insert(handle, LoadedFolder::{ handles, })
-      |> ignore
-      for ev in loaded_folder_assets.val.drain_events() {
-        loaded_folder_events.val.push(ev)
-      }
+      assets_ref.val.insert(handle, LoadedFolder::{ handles, }) |> ignore
     } else if kind == 2 {
-      loaded_folder_assets.val.remove(handle) |> ignore
-      for ev in loaded_folder_assets.val.drain_events() {
-        loaded_folder_events.val.push(ev)
-      }
+      assets_ref.val.remove(handle) |> ignore
     }
   }
 }

@@ -20,6 +20,50 @@ pub struct Assets[T] {
 }
 
 ///|
+let assets_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
+
+///|
+fn[T] registered_assets_resource_key() -> @ecs.ResourceKey[Assets[T]] {
+  let probe : Assets[T] = Assets::new()
+  let type_name = @any.of(probe).type_name()
+  match assets_resource_registry.val.get(type_name) {
+    Some(existing_key) =>
+      match existing_key.try_to() {
+        Some(key) => key
+        None =>
+          abort(
+            "asset resource registry contained a mismatched key for " +
+            type_name,
+          )
+      }
+    None => {
+      let key : @ecs.ResourceKey[Assets[T]] = @ecs.register_resource(
+        debug_name="bevy_asset::Assets<" + type_name + ">",
+      )
+      assets_resource_registry.val.set(type_name, @any.of(key))
+      key
+    }
+  }
+}
+
+///|
+pub fn[T] assets_resource_key_of(_probe : T) -> @ecs.ResourceKey[Assets[T]] {
+  registered_assets_resource_key()
+}
+
+///|
+pub fn[T] assets_resource_key() -> @ecs.ResourceKey[Assets[T]] {
+  registered_assets_resource_key()
+}
+
+///|
+pub impl[T] @app.Resource for Assets[T] with resource() {
+  registered_assets_resource_key()
+}
+
+///|
 pub fn[T] Assets::new() -> Assets[T] {
   Assets::{ items: [], alive: 0, events: [] }
 }
@@ -36,6 +80,13 @@ pub fn[T] Assets::add(self : Assets[T], value : T) -> Handle[T] {
   self.alive = self.alive + 1
   let handle = Handle::new(id)
   self.events.push(AssetEvent::Added(handle))
+  handle
+}
+
+///|
+pub fn[T] Assets::reserve_handle(self : Assets[T]) -> Handle[T] {
+  let handle = Handle::new(self.items.length())
+  self.items.push(None)
   handle
 }
 
@@ -130,4 +181,9 @@ pub fn[T] Assets::drain_events(self : Assets[T]) -> Array[AssetEvent[T]] {
   }
   self.events.clear()
   out
+}
+
+///|
+pub fn[T] Assets::push_event(self : Assets[T], event : AssetEvent[T]) -> Unit {
+  self.events.push(event)
 }
