@@ -412,7 +412,9 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     @render3d.StandardMaterial::from_color(@render2d.Color::white())
     .with_perceptual_roughness(1.0F)
     .with_base_color_texture(Some(icon))
-    .with_uv_scale(@math.Vec2::new(250.0F, 250.0F)),
+    .with_uv_transform(
+      @transform.Affine2::from_scale(@math.Vec2::new(250.0F, 250.0F)),
+    ),
   )
   @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_plane(1.0F, 1.0F),

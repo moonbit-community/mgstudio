@@ -12,6 +12,7 @@ import {
   "Milky2018/mgstudio/scene",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/time",
+  "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
 }

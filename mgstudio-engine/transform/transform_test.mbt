@@ -77,6 +77,16 @@ test "transform ecs: root global matches local" {
 }
 
 ///|
+test "transform affine2: translation after scale preserves full affine uv transform semantics" {
+  let transform = Affine2::from_translation(@math.Vec2::new(0.25F, -0.5F)).mul(
+    Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F)),
+  )
+  let point = transform.transform_point2(@math.Vec2::new(0.5F, 0.25F))
+  inspect(approx_eq(point.x, 1.25F), content="true")
+  inspect(approx_eq(point.y, 0.25F), content="true")
+}
+
+///|
 test "transform ecs: parent translation affects child global translation" {
   let world = @ecs.World::new()
   let parent = world.spawn_empty()

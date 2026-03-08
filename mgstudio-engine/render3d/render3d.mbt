@@ -3376,8 +3376,7 @@ pub fn DefaultOpaqueRendererMethod::renderer_method(
 pub struct StandardMaterial {
   base_color : @render2d.Color
   base_color_texture : @asset.Handle[@asset.Image]?
-  uv_offset : @math.Vec2
-  uv_scale : @math.Vec2
+  uv_transform : @transform.Affine2
   normal_map_texture : @asset.Handle[@asset.Image]?
   depth_map : @asset.Handle[@asset.Image]?
   parallax_depth_scale : Float
@@ -3415,8 +3414,7 @@ pub fn StandardMaterial::default() -> StandardMaterial {
   StandardMaterial::{
     base_color: @render2d.Color::white(),
     base_color_texture: None,
-    uv_offset: @math.Vec2::new(0.0F, 0.0F),
-    uv_scale: @math.Vec2::new(1.0F, 1.0F),
+    uv_transform: @transform.Affine2::identity(),
     normal_map_texture: None,
     depth_map: None,
     parallax_depth_scale: 0.1F,
@@ -3463,8 +3461,7 @@ pub fn StandardMaterial::from_color(
   StandardMaterial::{
     base_color: color,
     base_color_texture: default_value.base_color_texture,
-    uv_offset: default_value.uv_offset,
-    uv_scale: default_value.uv_scale,
+    uv_transform: default_value.uv_transform,
     normal_map_texture: default_value.normal_map_texture,
     depth_map: default_value.depth_map,
     parallax_depth_scale: default_value.parallax_depth_scale,
@@ -3531,19 +3528,11 @@ pub fn StandardMaterial::with_base_color_texture(
 }
 
 ///|
-pub fn StandardMaterial::with_uv_offset(
+pub fn StandardMaterial::with_uv_transform(
   self : StandardMaterial,
-  uv_offset : @math.Vec2,
+  uv_transform : @transform.Affine2,
 ) -> StandardMaterial {
-  StandardMaterial::{ ..self, uv_offset, }
-}
-
-///|
-pub fn StandardMaterial::with_uv_scale(
-  self : StandardMaterial,
-  uv_scale : @math.Vec2,
-) -> StandardMaterial {
-  StandardMaterial::{ ..self, uv_scale, }
+  StandardMaterial::{ ..self, uv_transform, }
 }
 
 ///|
@@ -7439,7 +7428,7 @@ fn render3d_draw_camera_skybox(
   }
   let brightness = maxf(0.0F, skybox.brightness)
   let skybox_extent = maxf(5.0F, minf(camera_far * 0.45F, 20_000.0F))
-  // Negative uv_scale_y marks stacked-vertical cubemap sampling in mesh3d.wgsl.
+  // Negative d marks stacked-vertical cubemap sampling in mesh3d.wgsl.
   @window.host_gpu_draw_mesh3d(
     mesh_id~,
     x=camera.transform.translation.x,
@@ -7467,10 +7456,13 @@ fn render3d_draw_camera_skybox(
     color_b=brightness,
     color_a=1.0F,
     texture_id=image.id(),
-    uv_offset_x=0.0F,
-    uv_offset_y=0.0F,
-    uv_scale_x=1.0F,
-    uv_scale_y=-1.0F,
+    uv_transform_a=1.0F,
+    uv_transform_b=0.0F,
+    uv_transform_c=0.0F,
+    uv_transform_d=-1.0F,
+    uv_transform_tx=0.0F,
+    uv_transform_ty=0.0F,
+    uv_transform_mode=-1.0F,
     normal_texture_id=-1,
     emissive_texture_id=-1,
     metallic_roughness_texture_id=-1,
@@ -9486,10 +9478,13 @@ fn render3d_draw_mesh_instance(
     color_b=draw_color_b,
     color_a=draw_alpha,
     texture_id~,
-    uv_offset_x=mesh.material.uv_offset.x,
-    uv_offset_y=mesh.material.uv_offset.y,
-    uv_scale_x=mesh.material.uv_scale.x,
-    uv_scale_y=mesh.material.uv_scale.y,
+    uv_transform_a=mesh.material.uv_transform.a,
+    uv_transform_b=mesh.material.uv_transform.b,
+    uv_transform_c=mesh.material.uv_transform.c,
+    uv_transform_d=mesh.material.uv_transform.d,
+    uv_transform_tx=mesh.material.uv_transform.tx,
+    uv_transform_ty=mesh.material.uv_transform.ty,
+    uv_transform_mode=1.0F,
     normal_texture_id~,
     emissive_texture_id~,
     metallic_roughness_texture_id~,

@@ -252,7 +252,7 @@ pub fn AssetServer::load_nearest(Self, String) -> Handle[Image]
 pub fn AssetServer::load_texture_bytes(Self, Bytes, Bool) -> Handle[Image]
 pub fn AssetServer::load_wgsl(Self, String) -> Handle[Shader]
 pub fn AssetServer::load_with_registered_loader(Self, String, Bool) -> Int
-pub fn AssetServer::load_with_settings(Self, String, ImageLoaderSettings) -> Handle[Image]
+pub fn AssetServer::load_with_settings(Self, String, (ImageLoaderSettings) -> Unit) -> Handle[Image]
 pub fn AssetServer::new() -> Self
 pub impl @app.Resource for AssetServer
 
@@ -316,27 +316,58 @@ pub struct Image {
 }
 pub fn Image::new(Int, Int, Bytes) -> Self
 
+pub(all) enum ImageAddressMode {
+  ClampToEdge
+  Repeat
+  MirrorRepeat
+  ClampToBorder
+}
+pub fn ImageAddressMode::default() -> Self
+pub impl Eq for ImageAddressMode
+pub impl Show for ImageAddressMode
+
 pub(all) enum ImageArrayLayout {
   RowCount(Int)
   RowHeight(Int)
 }
 
-pub struct ImageLoaderSettings {
-  sampler : ImageSampler
-  is_srgb : Bool
-  array_layout : ImageArrayLayout?
+pub(all) enum ImageFilterMode {
+  Nearest
+  Linear
+}
+pub fn ImageFilterMode::default() -> Self
+pub impl Eq for ImageFilterMode
+pub impl Show for ImageFilterMode
+
+pub(all) struct ImageLoaderSettings {
+  mut sampler : ImageSampler
+  mut is_srgb : Bool
+  mut array_layout : ImageArrayLayout?
 }
 pub fn ImageLoaderSettings::default() -> Self
-pub fn ImageLoaderSettings::with_array_layout(Self, ImageArrayLayout?) -> Self
-pub fn ImageLoaderSettings::with_is_srgb(Self, Bool) -> Self
-pub fn ImageLoaderSettings::with_sampler(Self, ImageSampler) -> Self
 
 pub(all) enum ImageSampler {
-  Linear
-  Nearest
-  LinearRepeat
-  NearestRepeat
+  Default
+  Descriptor(ImageSamplerDescriptor)
 }
+pub fn ImageSampler::default() -> Self
+pub fn ImageSampler::linear() -> Self
+pub fn ImageSampler::nearest() -> Self
+
+pub(all) struct ImageSamplerDescriptor {
+  mut label : String?
+  mut address_mode_u : ImageAddressMode
+  mut address_mode_v : ImageAddressMode
+  mut address_mode_w : ImageAddressMode
+  mut mag_filter : ImageFilterMode
+  mut min_filter : ImageFilterMode
+  mut mipmap_filter : ImageFilterMode
+}
+pub fn ImageSamplerDescriptor::default() -> Self
+pub fn ImageSamplerDescriptor::linear() -> Self
+pub fn ImageSamplerDescriptor::nearest() -> Self
+pub fn ImageSamplerDescriptor::set_address_mode(Self, ImageAddressMode) -> Self
+pub fn ImageSamplerDescriptor::set_filter(Self, ImageFilterMode) -> Self
 
 pub struct LoadedFolder {
   handles : Array[Handle[Image]]

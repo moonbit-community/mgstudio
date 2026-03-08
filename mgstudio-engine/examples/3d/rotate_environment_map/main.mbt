@@ -108,10 +108,11 @@ fn setup(world : @ecs.World) -> Unit {
     .with_clearcoat_perceptual_roughness(0.3F)
     .with_clearcoat_normal_texture(
       Some(
-        asset_server.load_with_settings(
-          "textures/ScratchedGold-Normal.png",
-          @asset.ImageLoaderSettings::default().with_is_srgb(false),
-        ),
+        asset_server.load_with_settings("textures/ScratchedGold-Normal.png", fn(
+          settings,
+        ) {
+          settings.is_srgb = false
+        }),
       ),
     )
     .with_metallic(0.9F)

@@ -135,7 +135,7 @@ bevy/examples/asset/extra_source.rs,asset,extra_source,,Blocked,team-asset_scene
 bevy/examples/asset/hot_asset_reloading.rs,asset,hot_asset_reloading,,Blocked,team-asset_scene,
 bevy/examples/asset/multi_asset_sync.rs,asset,multi_asset_sync,,Blocked,team-asset_scene,
 bevy/examples/asset/processing/asset_processing.rs,asset,asset_processing,,Blocked,team-asset_scene,
-bevy/examples/asset/repeated_texture.rs,asset,repeated_texture,,Blocked,team-asset_scene,
+bevy/examples/asset/repeated_texture.rs,asset,repeated_texture,mgstudio-engine/examples/asset/repeated_texture,Exact,team-asset_scene,
 bevy/examples/asset/web_asset.rs,asset,web_asset,,Blocked,team-asset_scene,
 bevy/examples/async_tasks/async_channel_pattern.rs,async_tasks,async_channel_pattern,,Blocked,team-core,
 bevy/examples/async_tasks/async_compute.rs,async_tasks,async_compute,,Blocked,team-core,

@@ -61,6 +61,9 @@ pub struct Affine2 {
   tx : Float
   ty : Float
 }
+pub fn Affine2::from_scale(@math.Vec2) -> Self
+pub fn Affine2::from_scale_translation(@math.Vec2, @math.Vec2) -> Self
+pub fn Affine2::from_translation(@math.Vec2) -> Self
 pub fn Affine2::identity() -> Self
 pub fn Affine2::mul(Self, Self) -> Self
 pub fn Affine2::transform_point2(Self, @math.Vec2) -> @math.Vec2

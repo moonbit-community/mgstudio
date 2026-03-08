@@ -35,6 +35,38 @@ pub fn Affine2::identity() -> Affine2 {
 }
 
 ///|
+pub fn Affine2::from_scale(scale : @math.Vec2) -> Affine2 {
+  Affine2::{ a: scale.x, b: 0.0F, c: 0.0F, d: scale.y, tx: 0.0F, ty: 0.0F }
+}
+
+///|
+pub fn Affine2::from_translation(translation : @math.Vec2) -> Affine2 {
+  Affine2::{
+    a: 1.0F,
+    b: 0.0F,
+    c: 0.0F,
+    d: 1.0F,
+    tx: translation.x,
+    ty: translation.y,
+  }
+}
+
+///|
+pub fn Affine2::from_scale_translation(
+  scale : @math.Vec2,
+  translation : @math.Vec2,
+) -> Affine2 {
+  Affine2::{
+    a: scale.x,
+    b: 0.0F,
+    c: 0.0F,
+    d: scale.y,
+    tx: translation.x,
+    ty: translation.y,
+  }
+}
+
+///|
 pub fn Affine2::mul(self : Affine2, other : Affine2) -> Affine2 {
   // (A, t) * (B, u) = (A*B, A*u + t)
   let a = self.a * other.a + self.c * other.b

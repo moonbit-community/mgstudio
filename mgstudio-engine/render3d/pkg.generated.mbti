@@ -9,6 +9,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
   "moonbitlang/core/json",
@@ -1492,8 +1493,7 @@ pub impl @json.FromJson for SpotLightTexture
 pub struct StandardMaterial {
   base_color : @render2d.Color
   base_color_texture : @asset.Handle[@asset.Image]?
-  uv_offset : @math.Vec2
-  uv_scale : @math.Vec2
+  uv_transform : @transform.Affine2
   normal_map_texture : @asset.Handle[@asset.Image]?
   depth_map : @asset.Handle[@asset.Image]?
   parallax_depth_scale : Float
@@ -1560,8 +1560,7 @@ pub fn StandardMaterial::with_specular_tint_texture(Self, @asset.Handle[@asset.I
 pub fn StandardMaterial::with_specular_transmission(Self, Float) -> Self
 pub fn StandardMaterial::with_thickness(Self, Float) -> Self
 pub fn StandardMaterial::with_unlit(Self, Bool) -> Self
-pub fn StandardMaterial::with_uv_offset(Self, @math.Vec2) -> Self
-pub fn StandardMaterial::with_uv_scale(Self, @math.Vec2) -> Self
+pub fn StandardMaterial::with_uv_transform(Self, @transform.Affine2) -> Self
 
 pub struct SubCameraView3d {
   full_size : @math.IVec2

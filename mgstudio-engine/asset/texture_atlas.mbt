@@ -347,11 +347,108 @@ pub fn DynamicTextureAtlasBuilder::add_texture(
 }
 
 ///|
-pub(all) enum ImageSampler {
-  Linear
+pub(all) enum ImageAddressMode {
+  ClampToEdge
+  Repeat
+  MirrorRepeat
+  ClampToBorder
+} derive(Eq, Show)
+
+///|
+pub fn ImageAddressMode::default() -> ImageAddressMode {
+  ImageAddressMode::ClampToEdge
+}
+
+///|
+pub(all) enum ImageFilterMode {
   Nearest
-  LinearRepeat
-  NearestRepeat
+  Linear
+} derive(Eq, Show)
+
+///|
+pub fn ImageFilterMode::default() -> ImageFilterMode {
+  ImageFilterMode::Nearest
+}
+
+///|
+pub(all) struct ImageSamplerDescriptor {
+  mut label : String?
+  mut address_mode_u : ImageAddressMode
+  mut address_mode_v : ImageAddressMode
+  mut address_mode_w : ImageAddressMode
+  mut mag_filter : ImageFilterMode
+  mut min_filter : ImageFilterMode
+  mut mipmap_filter : ImageFilterMode
+}
+
+///|
+pub fn ImageSamplerDescriptor::default() -> ImageSamplerDescriptor {
+  ImageSamplerDescriptor::{
+    label: None,
+    address_mode_u: ImageAddressMode::default(),
+    address_mode_v: ImageAddressMode::default(),
+    address_mode_w: ImageAddressMode::default(),
+    mag_filter: ImageFilterMode::default(),
+    min_filter: ImageFilterMode::default(),
+    mipmap_filter: ImageFilterMode::default(),
+  }
+}
+
+///|
+pub fn ImageSamplerDescriptor::linear() -> ImageSamplerDescriptor {
+  let descriptor = ImageSamplerDescriptor::default()
+  descriptor.mag_filter = ImageFilterMode::Linear
+  descriptor.min_filter = ImageFilterMode::Linear
+  descriptor.mipmap_filter = ImageFilterMode::Linear
+  descriptor
+}
+
+///|
+pub fn ImageSamplerDescriptor::nearest() -> ImageSamplerDescriptor {
+  ImageSamplerDescriptor::default()
+}
+
+///|
+pub fn ImageSamplerDescriptor::set_filter(
+  self : ImageSamplerDescriptor,
+  filter : ImageFilterMode,
+) -> ImageSamplerDescriptor {
+  self.mag_filter = filter
+  self.min_filter = filter
+  self.mipmap_filter = filter
+  self
+}
+
+///|
+pub fn ImageSamplerDescriptor::set_address_mode(
+  self : ImageSamplerDescriptor,
+  address_mode : ImageAddressMode,
+) -> ImageSamplerDescriptor {
+  self.address_mode_u = address_mode
+  self.address_mode_v = address_mode
+  self.address_mode_w = address_mode
+  self
+}
+
+///|
+pub(all) enum ImageSampler {
+  Default
+  Descriptor(ImageSamplerDescriptor)
+}
+
+///|
+pub fn ImageSampler::default() -> ImageSampler {
+  ImageSampler::Default
+}
+
+///|
+pub fn ImageSampler::linear() -> ImageSampler {
+  ImageSampler::Descriptor(ImageSamplerDescriptor::linear())
+}
+
+///|
+pub fn ImageSampler::nearest() -> ImageSampler {
+  ImageSampler::Descriptor(ImageSamplerDescriptor::nearest())
 }
 
 ///|
@@ -363,16 +460,68 @@ pub fn host_asset_set_texture_sampler(
 }
 
 ///|
+fn image_sampler_descriptor_runtime_kind(
+  descriptor : ImageSamplerDescriptor,
+) -> Int {
+  let address_mode_u = descriptor.address_mode_u
+  let address_mode_v = descriptor.address_mode_v
+  let address_mode_w = descriptor.address_mode_w
+  let repeat_u = address_mode_u == ImageAddressMode::Repeat
+  let repeat_v = address_mode_v == ImageAddressMode::Repeat
+  let repeat_w = address_mode_w == ImageAddressMode::Repeat
+  if address_mode_u != ImageAddressMode::ClampToEdge && !repeat_u {
+    abort("Only ClampToEdge and Repeat samplers are currently supported")
+  }
+  if address_mode_v != ImageAddressMode::ClampToEdge && !repeat_v {
+    abort("Only ClampToEdge and Repeat samplers are currently supported")
+  }
+  if address_mode_w != ImageAddressMode::ClampToEdge && !repeat_w {
+    abort("Only ClampToEdge and Repeat samplers are currently supported")
+  }
+  if !(repeat_u == repeat_v && repeat_v == repeat_w) {
+    abort(
+      "Sampler address modes must match across u/v/w for the current runtime",
+    )
+  }
+  let is_linear = descriptor.mag_filter == ImageFilterMode::Linear &&
+    descriptor.min_filter == ImageFilterMode::Linear &&
+    descriptor.mipmap_filter == ImageFilterMode::Linear
+  let is_nearest = descriptor.mag_filter == ImageFilterMode::Nearest &&
+    descriptor.min_filter == ImageFilterMode::Nearest &&
+    descriptor.mipmap_filter == ImageFilterMode::Nearest
+  if !is_linear && !is_nearest {
+    abort("Only fully linear or fully nearest image samplers are supported")
+  }
+  if repeat_u {
+    if is_nearest {
+      3
+    } else {
+      2
+    }
+  } else if is_nearest {
+    1
+  } else {
+    0
+  }
+}
+
+///|
+fn image_sampler_runtime_kind(
+  sampler : ImageSampler,
+  default_nearest : Bool,
+) -> Int {
+  match sampler {
+    Default => if default_nearest { 1 } else { 0 }
+    Descriptor(descriptor) => image_sampler_descriptor_runtime_kind(descriptor)
+  }
+}
+
+///|
 pub fn asset_set_texture_sampler(
   texture : Handle[Image],
   sampler : ImageSampler,
 ) -> Unit {
-  let sampler_id = match sampler {
-    Linear => 0
-    Nearest => 1
-    LinearRepeat => 2
-    NearestRepeat => 3
-  }
+  let sampler_id = image_sampler_runtime_kind(sampler, false)
   host_asset_set_texture_sampler(texture_id=texture.id(), sampler=sampler_id)
 }
 

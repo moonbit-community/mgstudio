@@ -550,12 +550,16 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     @render3d.StandardMaterial::from_color(@render2d.Color::black())
     .with_normal_map_texture(
       Some(
-        asset_server.load_with_settings(
-          "textures/water_normals.png",
-          @asset.ImageLoaderSettings::default()
-          .with_is_srgb(false)
-          .with_sampler(@asset.ImageSampler::LinearRepeat),
-        ),
+        asset_server.load_with_settings("textures/water_normals.png", fn(
+          settings,
+        ) {
+          settings.is_srgb = false
+          settings.sampler = @asset.ImageSampler::Descriptor(
+            @asset.ImageSamplerDescriptor::linear().set_address_mode(
+              @asset.ImageAddressMode::Repeat,
+            ),
+          )
+        }),
       ),
     )
     .with_perceptual_roughness(0.09F)
@@ -722,7 +726,7 @@ fn animate_water_material(_world : @ecs.World) -> Unit {
       @render3d.standard_material_set(
         handle,
         material
-        .with_uv_offset(offset)
+        .with_uv_transform(@transform.Affine2::from_translation(offset))
         .with_emissive(
           @render2d.Color::new(
             0.01F + @math.sin(t * 0.4F) * 0.005F,

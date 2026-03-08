@@ -28,7 +28,8 @@ struct Mesh3dUniform {
   projection : vec4<f32>, // (fov_y, aspect, near, far)
   subview : vec4<f32>, // (scale_x, scale_y, bias_x, bias_y)
   color : vec4<f32>,
-  uv : vec4<f32>,
+  uv_transform0 : vec4<f32>, // (a, b, c, tx)
+  uv_transform1 : vec4<f32>, // (d, ty, mode, _)
   ambient : vec4<f32>, // (r, g, b, brightness)
   directional_dir_illum : vec4<f32>, // (dir.xyz, illuminance)
   directional_color : vec4<f32>, // (r, g, b, _)
@@ -132,8 +133,10 @@ fn vs_main(
 
   out.position = vec4<f32>(clip_x, clip_y, clip_z, clip_w);
   out.uv = vec2<f32>(
-    u_mesh.uv.x + uv.x * u_mesh.uv.z,
-    u_mesh.uv.y + uv.y * u_mesh.uv.w,
+    u_mesh.uv_transform0.x * uv.x + u_mesh.uv_transform0.z * uv.y +
+      u_mesh.uv_transform0.w,
+    u_mesh.uv_transform0.y * uv.x + u_mesh.uv_transform1.x * uv.y +
+      u_mesh.uv_transform1.y,
   );
   out.color = color * u_mesh.color;
   out.world_pos = world_pos;
@@ -397,8 +400,8 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let has_depth_map = u_mesh.parallax_params.w > 0.5;
   let has_anisotropy_map = u_mesh.anisotropy_params.w > 0.5;
   let has_specular_tint_map = u_mesh.specular_tint.w > 0.5;
-  let use_stacked_cubemap = u_mesh.uv.w < 0.0;
-  let has_uv = u_mesh.uv.z >= 0.0 && u_mesh.uv.w >= 0.0;
+  let use_stacked_cubemap = u_mesh.uv_transform1.z < 0.0;
+  let has_uv = u_mesh.uv_transform1.z > 0.0;
   let dp1 = dpdx(in.world_pos);
   let dp2 = dpdy(in.world_pos);
   let geometric_normal = safe_normalize(cross(dp1, dp2));

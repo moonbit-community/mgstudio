@@ -92,15 +92,17 @@ fn mesh2d_repeated_texture_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let default_texture = asset_server.load_with_settings(
     "textures/fantasy_ui_borders/panel-border-010.png",
-    @asset.ImageLoaderSettings::default().with_sampler(
-      @asset.ImageSampler::Linear,
-    ),
+    fn(_settings) {  },
   )
   let repeated_texture = asset_server.load_with_settings(
     "textures/fantasy_ui_borders/panel-border-010-repeated.png",
-    @asset.ImageLoaderSettings::default().with_sampler(
-      @asset.ImageSampler::LinearRepeat,
-    ),
+    fn(settings) {
+      settings.sampler = @asset.ImageSampler::Descriptor(
+        @asset.ImageSamplerDescriptor::linear().set_address_mode(
+          @asset.ImageAddressMode::Repeat,
+        ),
+      )
+    },
   )
   example_state.val.label_font = Some(
     asset_server.load_font("fonts/FiraSans-Bold.ttf"),

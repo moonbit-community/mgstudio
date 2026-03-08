@@ -63,9 +63,10 @@ fn tilemap_chunk_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let tileset_texture = asset_server.load_with_settings(
     "textures/array_texture.png",
-    @asset.ImageLoaderSettings::default()
-    .with_sampler(@asset.ImageSampler::Nearest)
-    .with_array_layout(Some(@asset.ImageArrayLayout::RowCount(4))),
+    fn(settings) {
+      settings.sampler = @asset.ImageSampler::nearest()
+      settings.array_layout = Some(@asset.ImageArrayLayout::RowCount(4))
+    },
   )
   let chunk = @render2d.TilemapChunk::new(
     @math.UVec2::splat(CHUNK_SIDE),

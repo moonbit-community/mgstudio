@@ -989,10 +989,13 @@ pub fn host_gpu_draw_mesh3d(
   color_b~ : Float,
   color_a~ : Float,
   texture_id~ : Int,
-  uv_offset_x~ : Float,
-  uv_offset_y~ : Float,
-  uv_scale_x~ : Float,
-  uv_scale_y~ : Float,
+  uv_transform_a~ : Float,
+  uv_transform_b~ : Float,
+  uv_transform_c~ : Float,
+  uv_transform_d~ : Float,
+  uv_transform_tx~ : Float,
+  uv_transform_ty~ : Float,
+  uv_transform_mode~ : Float,
   normal_texture_id~ : Int,
   emissive_texture_id~ : Int,
   metallic_roughness_texture_id~ : Int,
@@ -1054,10 +1057,13 @@ pub fn host_gpu_draw_mesh3d(
     color_b~,
     color_a~,
     texture_id~,
-    uv_offset_x~,
-    uv_offset_y~,
-    uv_scale_x~,
-    uv_scale_y~,
+    uv_transform_a~,
+    uv_transform_b~,
+    uv_transform_c~,
+    uv_transform_d~,
+    uv_transform_tx~,
+    uv_transform_ty~,
+    uv_transform_mode~,
     normal_texture_id~,
     emissive_texture_id~,
     metallic_roughness_texture_id~,
@@ -1331,8 +1337,8 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
     let app_ref : Ref[@app.App[@ecs.World]] = Ref::new(app.run_startup())
     runner_state.val.tick = Some(fn() {
       window_poll_host_events(app_ref.val.world())
-      let current_width = window_primary_physical_width(app_ref.val.world())
-      let current_height = window_primary_physical_height(app_ref.val.world())
+      let current_width = host_window_get_width(window)
+      let current_height = host_window_get_height(window)
       if current_width > 0 &&
         current_height > 0 &&
         (

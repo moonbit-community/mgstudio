@@ -1839,7 +1839,7 @@ fn gltf_texture_image_sampler(
   texture_index : Int,
 ) -> @asset.ImageSampler {
   guard texture_index >= 0 && texture_index < doc.textures.length() else {
-    return @asset.ImageSampler::Linear
+    return @asset.ImageSampler::linear()
   }
 
   let mut nearest = false
@@ -1852,17 +1852,20 @@ fn gltf_texture_image_sampler(
     repeat = sampler.repeat
   }
 
-  if nearest {
-    if repeat {
-      @asset.ImageSampler::NearestRepeat
-    } else {
-      @asset.ImageSampler::Nearest
-    }
-  } else if repeat {
-    @asset.ImageSampler::LinearRepeat
+  let descriptor = if nearest {
+    @asset.ImageSamplerDescriptor::nearest()
   } else {
-    @asset.ImageSampler::Linear
+    @asset.ImageSamplerDescriptor::linear()
   }
+  descriptor.set_address_mode(
+    if repeat {
+      @asset.ImageAddressMode::Repeat
+    } else {
+      @asset.ImageAddressMode::ClampToEdge
+    },
+  )
+  |> ignore
+  @asset.ImageSampler::Descriptor(descriptor)
 }
 
 ///|
@@ -1963,8 +1966,11 @@ fn scene_build_material_component(
   let mut material = @render3d.StandardMaterial::default()
   material = material.with_base_color(def.base_color)
   material = material.with_alpha_mode(def.alpha_mode)
-  material = material.with_uv_offset(def.base_color_uv_offset)
-  material = material.with_uv_scale(def.base_color_uv_scale)
+  material = material.with_uv_transform(
+    @transform.Affine2::from_translation(def.base_color_uv_offset).mul(
+      @transform.Affine2::from_scale(def.base_color_uv_scale),
+    ),
+  )
   material = material.with_clearcoat(def.clearcoat)
   material = material.with_clearcoat_perceptual_roughness(
     def.clearcoat_roughness,

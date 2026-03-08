@@ -6313,7 +6313,11 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
       if needs_repeat_sampler {
         @asset.asset_set_texture_sampler(
           sprite.image,
-          @asset.ImageSampler::LinearRepeat,
+          @asset.ImageSampler::Descriptor(
+            @asset.ImageSamplerDescriptor::linear().set_address_mode(
+              @asset.ImageAddressMode::Repeat,
+            ),
+          ),
         )
       }
       if sprite_image_mode_uses_slices(sprite.image_mode) {
@@ -6557,7 +6561,11 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
       if needs_repeat_sampler {
         @asset.asset_set_texture_sampler(
           sprite.image,
-          @asset.ImageSampler::LinearRepeat,
+          @asset.ImageSampler::Descriptor(
+            @asset.ImageSamplerDescriptor::linear().set_address_mode(
+              @asset.ImageAddressMode::Repeat,
+            ),
+          ),
         )
       }
       if sprite_image_mode_uses_slices(sprite.image_mode) {

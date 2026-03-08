@@ -335,7 +335,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let normal_texture = asset_server.load_with_settings(
     "textures/parallax_example/cube_normal.png",
-    @asset.ImageLoaderSettings::default().with_is_srgb(false),
+    fn(settings) { settings.is_srgb = false },
   )
   let parallax_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::default()

@@ -53,3 +53,16 @@ test "render3d: projection preserves configured orthographic values" {
   }
   inspect(ok, content="true")
 }
+
+///|
+test "render3d: standard material stores full affine uv transform" {
+  let uv_transform = @transform.Affine2::from_translation(
+    @math.Vec2::new(0.25F, -0.5F),
+  ).mul(@transform.Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F)))
+  let material = StandardMaterial::default().with_uv_transform(uv_transform)
+  let point = material.uv_transform.transform_point2(
+    @math.Vec2::new(0.5F, 0.25F),
+  )
+  inspect(projection_approx_eq(point.x, 1.25F), content="true")
+  inspect(projection_approx_eq(point.y, 0.25F), content="true")
+}

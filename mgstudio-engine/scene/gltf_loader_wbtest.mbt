@@ -37,10 +37,19 @@ fn push_f32_le(out : Array[Byte], value : Float) -> Unit {
 ///|
 fn sampler_tag(sampler : @asset.ImageSampler) -> Int {
   match sampler {
-    @asset.ImageSampler::Linear => 0
-    @asset.ImageSampler::LinearRepeat => 1
-    @asset.ImageSampler::Nearest => 2
-    @asset.ImageSampler::NearestRepeat => 3
+    @asset.ImageSampler::Default => 0
+    @asset.ImageSampler::Descriptor(descriptor) =>
+      if descriptor.min_filter == @asset.ImageFilterMode::Nearest {
+        if descriptor.address_mode_u == @asset.ImageAddressMode::Repeat {
+          3
+        } else {
+          2
+        }
+      } else if descriptor.address_mode_u == @asset.ImageAddressMode::Repeat {
+        1
+      } else {
+        0
+      }
   }
 }
 

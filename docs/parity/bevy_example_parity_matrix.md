@@ -21,7 +21,7 @@ Notes:
 | `3d` | 66 | 44 | 22 | 0 |
 | `animation` | 13 | 2 | 11 | 0 |
 | `app` | 17 | 17 | 0 | 0 |
-| `asset` | 15 | 1 | 14 | 0 |
+| `asset` | 15 | 2 | 13 | 0 |
 | `async_tasks` | 3 | 0 | 3 | 0 |
 | `audio` | 7 | 5 | 2 | 0 |
 | `camera` | 9 | 8 | 1 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 3 | 9 | 0 |
-| **Total** | **402** | **134** | **265** | **3** |
+| **Total** | **402** | **135** | **264** | **3** |
 
 ## Example Inventory
 
@@ -196,7 +196,7 @@ Notes:
 | `bevy/examples/asset/hot_asset_reloading.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/asset/multi_asset_sync.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/asset/processing/asset_processing.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
-| `bevy/examples/asset/repeated_texture.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
+| `bevy/examples/asset/repeated_texture.rs` | `asset` | `mgstudio-engine/examples/asset/repeated_texture` | `Exact` | `team-asset_scene` |  |
 | `bevy/examples/asset/web_asset.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/async_tasks/async_channel_pattern.rs` | `async_tasks` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/async_tasks/async_compute.rs` | `async_tasks` |  | `Blocked` | `team-core` |  |

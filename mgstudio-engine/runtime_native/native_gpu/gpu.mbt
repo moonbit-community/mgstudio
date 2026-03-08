@@ -6424,10 +6424,13 @@ pub fn GpuBackend::draw_mesh3d(
   color_b : Float,
   color_a : Float,
   texture_id : Int,
-  uv_offset_x : Float,
-  uv_offset_y : Float,
-  uv_scale_x : Float,
-  uv_scale_y : Float,
+  uv_transform_a : Float,
+  uv_transform_b : Float,
+  uv_transform_c : Float,
+  uv_transform_d : Float,
+  uv_transform_tx : Float,
+  uv_transform_ty : Float,
+  uv_transform_mode : Float,
   normal_texture_id : Int,
   emissive_texture_id : Int,
   metallic_roughness_texture_id : Int,
@@ -6685,10 +6688,26 @@ pub fn GpuBackend::draw_mesh3d(
   } else {
     1.0F
   }
-  let uv_offset_x_value = if textured { uv_offset_x } else { 0.0F }
-  let uv_offset_y_value = if textured { uv_offset_y } else { 0.0F }
-  let uv_scale_x_value = if textured { uv_scale_x } else { -1.0F }
-  let uv_scale_y_value = if textured { uv_scale_y } else { -1.0F }
+  let uv_transform_a_value = uv_transform_a
+  let uv_transform_b_value = uv_transform_b
+  let uv_transform_c_value = uv_transform_c
+  let uv_transform_d_value = uv_transform_d
+  let uv_transform_tx_value = uv_transform_tx
+  let uv_transform_ty_value = uv_transform_ty
+  let uv_transform_mode_value = if uv_transform_mode < 0.0F {
+    -1.0F
+  } else if textured ||
+    normal_textured ||
+    emissive_textured ||
+    metallic_roughness_textured ||
+    occlusion_textured ||
+    depth_textured ||
+    anisotropy_textured ||
+    specular_tint_textured {
+    1.0F
+  } else {
+    0.0F
+  }
   let bytes = f32le_pack([
     x,
     y,
@@ -6722,10 +6741,14 @@ pub fn GpuBackend::draw_mesh3d(
     color_g,
     color_b,
     color_a,
-    uv_offset_x_value,
-    uv_offset_y_value,
-    uv_scale_x_value,
-    uv_scale_y_value,
+    uv_transform_a_value,
+    uv_transform_b_value,
+    uv_transform_c_value,
+    uv_transform_tx_value,
+    uv_transform_d_value,
+    uv_transform_ty_value,
+    uv_transform_mode_value,
+    0.0F,
     ps.ambient_r,
     ps.ambient_g,
     ps.ambient_b,
@@ -7567,10 +7590,13 @@ pub fn draw_mesh3d(
   color_b~ : Float,
   color_a~ : Float,
   texture_id~ : Int,
-  uv_offset_x~ : Float,
-  uv_offset_y~ : Float,
-  uv_scale_x~ : Float,
-  uv_scale_y~ : Float,
+  uv_transform_a~ : Float,
+  uv_transform_b~ : Float,
+  uv_transform_c~ : Float,
+  uv_transform_d~ : Float,
+  uv_transform_tx~ : Float,
+  uv_transform_ty~ : Float,
+  uv_transform_mode~ : Float,
   normal_texture_id~ : Int,
   emissive_texture_id~ : Int,
   metallic_roughness_texture_id~ : Int,
@@ -7618,7 +7644,8 @@ pub fn draw_mesh3d(
       scale_y, scale_z, previous_x, previous_y, previous_z, previous_rotation_x,
       previous_rotation_y, previous_rotation_z, previous_rotation_w, previous_scale_x,
       previous_scale_y, previous_scale_z, color_r, color_g, color_b, color_a, texture_id,
-      uv_offset_x, uv_offset_y, uv_scale_x, uv_scale_y, normal_texture_id, emissive_texture_id,
+      uv_transform_a, uv_transform_b, uv_transform_c, uv_transform_d, uv_transform_tx,
+      uv_transform_ty, uv_transform_mode, normal_texture_id, emissive_texture_id,
       metallic_roughness_texture_id, occlusion_texture_id, depth_texture_id, emissive_r,
       emissive_g, emissive_b, unlit, metallic, roughness, reflectance, parallax_depth_scale,
       max_parallax_layer_count, max_relief_mapping_search_steps, anisotropy_texture_id,

@@ -392,7 +392,7 @@ fn setup(world : @ecs.World) -> Unit {
       Some(
         asset_server.load_with_settings(
           "textures/parallax_example/cube_normal.png",
-          @asset.ImageLoaderSettings::default().with_is_srgb(false),
+          fn(settings) { settings.is_srgb = false },
         ),
       ),
     )

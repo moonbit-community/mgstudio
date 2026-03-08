@@ -223,11 +223,11 @@ fn setup(world : @ecs.World) -> Unit {
     decal_base_color_texture: asset_server.load("branding/bevy_bird_dark.png"),
     decal_normal_map_texture: asset_server.load_with_settings(
       "textures/ScratchedGold-Normal.png",
-      @asset.ImageLoaderSettings::default().with_is_srgb(false),
+      fn(settings) { settings.is_srgb = false },
     ),
     decal_metallic_roughness_texture: asset_server.load_with_settings(
       "branding/icon.png",
-      @asset.ImageLoaderSettings::default().with_is_srgb(false),
+      fn(settings) { settings.is_srgb = false },
     ),
     decal_emissive_texture: asset_server.load("branding/icon.png"),
   }

@@ -391,12 +391,15 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
         @render3d.StandardMaterial::default()
         .with_base_color_texture(
           Some(
-            asset_server.load_with_settings(
-              "textures/uv_checker_bw.png",
-              @asset.ImageLoaderSettings::default().with_sampler(
-                @asset.ImageSampler::LinearRepeat,
-              ),
-            ),
+            asset_server.load_with_settings("textures/uv_checker_bw.png", fn(
+              settings,
+            ) {
+              settings.sampler = @asset.ImageSampler::Descriptor(
+                @asset.ImageSamplerDescriptor::linear().set_address_mode(
+                  @asset.ImageAddressMode::Repeat,
+                ),
+              )
+            }),
           ),
         )
         .with_perceptual_roughness(0.0F),

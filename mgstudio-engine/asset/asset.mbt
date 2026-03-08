@@ -112,43 +112,19 @@ pub(all) enum ImageArrayLayout {
 }
 
 ///|
-pub struct ImageLoaderSettings {
-  sampler : ImageSampler
-  is_srgb : Bool
-  array_layout : ImageArrayLayout?
+pub(all) struct ImageLoaderSettings {
+  mut sampler : ImageSampler
+  mut is_srgb : Bool
+  mut array_layout : ImageArrayLayout?
 }
 
 ///|
 pub fn ImageLoaderSettings::default() -> ImageLoaderSettings {
   ImageLoaderSettings::{
-    sampler: ImageSampler::Linear,
+    sampler: ImageSampler::Default,
     is_srgb: true,
     array_layout: None,
   }
-}
-
-///|
-pub fn ImageLoaderSettings::with_sampler(
-  self : ImageLoaderSettings,
-  sampler : ImageSampler,
-) -> ImageLoaderSettings {
-  ImageLoaderSettings::{ ..self, sampler, }
-}
-
-///|
-pub fn ImageLoaderSettings::with_is_srgb(
-  self : ImageLoaderSettings,
-  is_srgb : Bool,
-) -> ImageLoaderSettings {
-  ImageLoaderSettings::{ ..self, is_srgb, }
-}
-
-///|
-pub fn ImageLoaderSettings::with_array_layout(
-  self : ImageLoaderSettings,
-  array_layout : ImageArrayLayout?,
-) -> ImageLoaderSettings {
-  ImageLoaderSettings::{ ..self, array_layout, }
 }
 
 ///|
@@ -991,9 +967,10 @@ pub fn AssetServer::load_nearest(
 ///|
 fn image_sampler_is_nearest(sampler : ImageSampler) -> Bool {
   match sampler {
-    ImageSampler::Nearest => true
-    ImageSampler::NearestRepeat => true
-    _ => false
+    ImageSampler::Default => false
+    ImageSampler::Descriptor(descriptor) =>
+      descriptor.mag_filter == ImageFilterMode::Nearest &&
+      descriptor.min_filter == ImageFilterMode::Nearest
   }
 }
 
@@ -1025,8 +1002,10 @@ pub fn[T] AssetServer::load(self : AssetServer, path : String) -> Handle[T] {
 pub fn AssetServer::load_with_settings(
   self : AssetServer,
   path : String,
-  settings : ImageLoaderSettings,
+  configure : (ImageLoaderSettings) -> Unit,
 ) -> Handle[Image] {
+  let settings = ImageLoaderSettings::default()
+  configure(settings)
   let canonical_path = asset_canonical_path(path)
   let id = host_asset_load_texture(
     path=canonical_path,
