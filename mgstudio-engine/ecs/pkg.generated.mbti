@@ -175,12 +175,27 @@ pub fn[T] EventKey::id(Self[T]) -> Int
 pub struct Insert {
 }
 
+pub struct MessageCursor[T] {
+  mut last_message_count : Int
+  marker : T?
+}
+pub fn[T] MessageCursor::clear(Self[T], Messages[T]) -> Unit
+pub fn[T] MessageCursor::is_empty(Self[T], Messages[T]) -> Bool
+pub fn[T] MessageCursor::len(Self[T], Messages[T]) -> Int
+pub fn[T] MessageCursor::missed_messages(Self[T], Messages[T]) -> Int
+pub fn[T : Message] MessageCursor::read(Self[T], Messages[T]) -> Array[T] raise EcsError
+pub fn[T : Message] MessageCursor::read_mut(Self[T], Messages[T]) -> Array[Ref[T]] raise EcsError
+pub impl[T] Default for MessageCursor[T]
+pub impl[T] ToJson for MessageCursor[T]
+pub impl[T] @json.FromJson for MessageCursor[T]
+
 pub struct MessageKey[T] {
-  queue_key : ResourceKey[MessageQueueState]
+  queue_key : ResourceKey[Messages[T]]
   marker : T?
 }
 pub fn[T] MessageKey::debug_name(Self[T]) -> String
 pub fn[T] MessageKey::id(Self[T]) -> Int
+pub fn[T] MessageKey::messages_resource(Self[T]) -> ResourceKey[Messages[T]]
 
 pub struct MessageMutator[T] {
   world : World
@@ -226,6 +241,24 @@ pub struct MessageWriter[T] {
 pub fn[T] MessageWriter::write(Self[T], T) -> Int
 pub fn[T] MessageWriter::write_batch(Self[T], Array[T]) -> Unit
 pub fn[T : Default] MessageWriter::write_default(Self[T]) -> Int
+
+pub struct Messages[T] {
+  state : MessageQueueState
+  marker : T?
+}
+pub fn[T] Messages::clear(Self[T]) -> Unit
+pub fn[T] Messages::get_cursor(Self[T]) -> MessageCursor[T]
+pub fn[T] Messages::get_cursor_current(Self[T]) -> MessageCursor[T]
+pub fn[T] Messages::len(Self[T]) -> Int
+pub fn[T] Messages::new() -> Self[T]
+pub fn[T] Messages::oldest_message_count(Self[T]) -> Int
+pub fn[T] Messages::update(Self[T]) -> Unit
+pub fn[T] Messages::write(Self[T], T) -> Int
+pub fn[T] Messages::write_batch(Self[T], Array[T]) -> Unit
+pub fn[T : Default] Messages::write_default(Self[T]) -> Int
+pub fn[T] Messages::write_message(Self[T], MessageKey[T], T) -> Int
+pub fn[T] Messages::write_message_batch(Self[T], MessageKey[T], Array[T]) -> Unit
+pub fn[T : Default] Messages::write_message_default(Self[T], MessageKey[T]) -> Int
 
 pub struct Name {
   name : String

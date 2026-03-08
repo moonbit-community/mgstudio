@@ -100,6 +100,66 @@ pub fn[M] SystemConfig::run_if_on_message(
 }
 
 ///|
+pub impl[T : @ecs.Message] Resource for @ecs.Messages[T] with resource() {
+  let key : @ecs.MessageKey[T] = @ecs.Message::message()
+  key.messages_resource()
+}
+
+///|
+pub impl[T] FromWorld for @ecs.MessageCursor[T] with from_world(_world) {
+  @ecs.MessageCursor::default()
+}
+
+///|
+pub fn[T : @ecs.Message] ResMut::write(
+  self : ResMut[@ecs.Messages[T]],
+  message : T,
+) -> Int {
+  let key : @ecs.MessageKey[T] = @ecs.Message::message()
+  self.get_ref().val.write_message(key, message)
+}
+
+///|
+pub fn[T : @ecs.Message] ResMut::write_batch(
+  self : ResMut[@ecs.Messages[T]],
+  messages : Array[T],
+) -> Unit {
+  for message in messages {
+    ignore(self.write(message))
+  }
+}
+
+///|
+pub fn[T : @ecs.Message + Default] ResMut::write_default(
+  self : ResMut[@ecs.Messages[T]],
+) -> Int {
+  let key : @ecs.MessageKey[T] = @ecs.Message::message()
+  self.get_ref().val.write_message_default(key)
+}
+
+///|
+pub fn[T : @ecs.Message] Local::read(
+  self : Local[@ecs.MessageCursor[T]],
+  messages : ResMut[@ecs.Messages[T]],
+) -> Array[T] raise @ecs.EcsError {
+  let cursor = self.get()
+  let unread = try! cursor.read(messages.get_ref().val)
+  self.set(cursor)
+  unread
+}
+
+///|
+pub fn[T : @ecs.Message] Local::read_mut(
+  self : Local[@ecs.MessageCursor[T]],
+  messages : ResMut[@ecs.Messages[T]],
+) -> Array[Ref[T]] raise @ecs.EcsError {
+  let cursor = self.get()
+  let unread = try! cursor.read_mut(messages.get_ref().val)
+  self.set(cursor)
+  unread
+}
+
+///|
 pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T] with init_state(
   world,
 ) {

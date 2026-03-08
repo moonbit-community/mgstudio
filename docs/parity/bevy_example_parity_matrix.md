@@ -27,7 +27,7 @@ Notes:
 | `camera` | 9 | 7 | 2 | 0 |
 | `dev_tools` | 1 | 0 | 1 | 0 |
 | `diagnostics` | 3 | 2 | 1 | 0 |
-| `ecs` | 32 | 3 | 29 | 0 |
+| `ecs` | 32 | 5 | 27 | 0 |
 | `games` | 7 | 0 | 7 | 0 |
 | `gizmos` | 8 | 0 | 8 | 0 |
 | `gltf` | 9 | 0 | 9 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 3 | 9 | 0 |
-| **Total** | **402** | **122** | **277** | **3** |
+| **Total** | **402** | **124** | **275** | **3** |
 
 ## Example Inventory
 
@@ -225,7 +225,7 @@ Notes:
 | `bevy/examples/ecs/component_hooks.rs` | `ecs` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/ecs/contiguous_query.rs` | `ecs` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/ecs/custom_query_param.rs` | `ecs` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/ecs/custom_schedule.rs` | `ecs` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/ecs/custom_schedule.rs` | `ecs` | `mgstudio-engine/examples/ecs/custom_schedule` | `Exact` | `team-core` |  |
 | `bevy/examples/ecs/dynamic.rs` | `ecs` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/ecs/ecs_guide.rs` | `ecs` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/ecs/entity_disabling.rs` | `ecs` |  | `Blocked` | `team-core` |  |
@@ -245,8 +245,8 @@ Notes:
 | `bevy/examples/ecs/parallel_query.rs` | `ecs` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/ecs/relationships.rs` | `ecs` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/ecs/removal_detection.rs` | `ecs` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/ecs/run_conditions.rs` | `ecs` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/ecs/send_and_receive_messages.rs` | `ecs` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/ecs/run_conditions.rs` | `ecs` |  | `Blocked` | `team-core` | Blocked by MoonBit reserved keywords preventing exact `.and(...)` / `.or(...)` method combinator callsites (`bd-6nu`). |
+| `bevy/examples/ecs/send_and_receive_messages.rs` | `ecs` | `mgstudio-engine/examples/ecs/send_and_receive_messages` | `Exact` | `team-core` |  |
 | `bevy/examples/ecs/startup_system.rs` | `ecs` | `mgstudio-engine/examples/ecs/startup_system` | `Exact` | `team-core` |  |
 | `bevy/examples/ecs/state_scoped.rs` | `ecs` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/ecs/system_closure.rs` | `ecs` |  | `Blocked` | `team-core` |  |

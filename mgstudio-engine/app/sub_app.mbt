@@ -16,7 +16,7 @@
 pub struct SubApp[W] {
   mut world : W
   update_schedule : ScheduleStage?
-  schedule : Schedule[W]
+  schedule : ScheduleRegistry[W]
   extract : SubAppExtractFn[W]?
 }
 
@@ -24,7 +24,7 @@ pub struct SubApp[W] {
 pub fn SubApp::new(world : @ecs.World) -> SubApp[@ecs.World] {
   app_runtime_reset()
   reset_main_schedule_resources(world)
-  let schedule = Schedule::new()
+  let schedule = ScheduleRegistry::new()
   schedule_push_config(schedule, Main, system(run_main_schedule_driver_system))
   schedule_push_config(
     schedule,

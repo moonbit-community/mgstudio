@@ -53,6 +53,7 @@ fn current_stage_label() -> String {
     Some(SpawnScene) => "SpawnScene"
     Some(PostUpdate) => "PostUpdate"
     Some(Last) => "Last"
+    Some(Custom(name)) => name
     None => "None"
   }
 }

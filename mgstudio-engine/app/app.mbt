@@ -253,6 +253,18 @@ pub(all) enum ScheduleStage {
   SpawnScene
   PostUpdate
   Last
+  Custom(String)
+} derive(Eq, Show)
+
+///|
+pub fn schedule_label(name : String) -> ScheduleStage {
+  Custom(name)
+}
+
+///|
+pub(all) enum ExecutorKind {
+  SingleThreaded
+  MultiThreaded
 } derive(Eq, Show)
 
 ///|
@@ -275,6 +287,28 @@ pub struct Res[T] {
 ///|
 pub fn[T] Res::get(self : Res[T]) -> T {
   self.value
+}
+
+///|
+pub fn[T : Resource] Res::is_added(self : Res[T]) -> Bool {
+  let value : T = self.value
+  ignore(value)
+  let key : @ecs.ResourceKey[T] = T::resource()
+  match system_param_abort_missing_world().get_resource_ticks(key) {
+    Some(ticks) => ticks.is_added(current_system_ticks())
+    None => abort("Missing resource for system parameter")
+  }
+}
+
+///|
+pub fn[T : Resource] Res::is_changed(self : Res[T]) -> Bool {
+  let value : T = self.value
+  ignore(value)
+  let key : @ecs.ResourceKey[T] = T::resource()
+  match system_param_abort_missing_world().get_resource_ticks(key) {
+    Some(ticks) => ticks.is_changed(current_system_ticks())
+    None => abort("Missing resource for system parameter")
+  }
 }
 
 ///|
@@ -512,7 +546,9 @@ pub fn current_schedule_stage() -> ScheduleStage? {
 let current_world_ref : Ref[@ecs.World?] = Ref::new(None)
 
 ///|
-let current_app_schedule_ref : Ref[Schedule[@ecs.World]?] = Ref::new(None)
+let current_app_schedule_ref : Ref[ScheduleRegistry[@ecs.World]?] = Ref::new(
+  None,
+)
 
 ///|
 pub fn current_world() -> @ecs.World? {
@@ -2290,7 +2326,7 @@ fn run_systems(
 ///|
 fn run_schedule_stage(
   world : @ecs.World,
-  schedule : Schedule[@ecs.World],
+  schedule : ScheduleRegistry[@ecs.World],
   stage : ScheduleStage,
 ) -> Unit {
   current_schedule_stage_ref.val = Some(stage)

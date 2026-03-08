@@ -336,7 +336,7 @@ fn reset_main_schedule_resources(world : @ecs.World) -> Unit {
 ///|
 fn run_main_schedule_stage(
   world : @ecs.World,
-  schedule : Schedule[@ecs.World],
+  schedule : ScheduleRegistry[@ecs.World],
   stage : ScheduleStage,
 ) -> Unit {
   match stage {
@@ -348,7 +348,7 @@ fn run_main_schedule_stage(
 ///|
 fn run_main_schedule_startup(
   world : @ecs.World,
-  schedule : Schedule[@ecs.World],
+  schedule : ScheduleRegistry[@ecs.World],
 ) -> Unit {
   if main_schedule_runtime_state(world).startup_ran {
     return
@@ -366,7 +366,7 @@ fn run_main_schedule_startup(
 ///|
 fn run_main_schedule_update(
   world : @ecs.World,
-  schedule : Schedule[@ecs.World],
+  schedule : ScheduleRegistry[@ecs.World],
 ) -> Unit {
   run_main_schedule_startup(world, schedule)
   for stage in world_main_schedule_order(world).labels {
@@ -377,7 +377,7 @@ fn run_main_schedule_update(
 ///|
 fn run_fixed_main_schedule(
   world : @ecs.World,
-  schedule : Schedule[@ecs.World],
+  schedule : ScheduleRegistry[@ecs.World],
 ) -> Unit {
   for stage in world_fixed_main_schedule_order(world).labels {
     run_schedule_stage(world, schedule, stage)

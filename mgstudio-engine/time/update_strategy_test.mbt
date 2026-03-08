@@ -114,6 +114,7 @@ fn current_stage_label() -> String {
     Some(@app.SpawnScene) => "SpawnScene"
     Some(@app.PostUpdate) => "PostUpdate"
     Some(@app.Last) => "Last"
+    Some(@app.Custom(name)) => name
     None => "None"
   }
 }

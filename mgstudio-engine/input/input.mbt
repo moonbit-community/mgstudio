@@ -731,6 +731,11 @@ pub fn Touches::just_pressed(self : Touches, id : Int) -> Bool {
 }
 
 ///|
+pub fn Touches::any_just_pressed(self : Touches) -> Bool {
+  self.just_pressed.length() > 0
+}
+
+///|
 pub struct AccumulatedMouseMotion {
   delta : @math.Vec2
 }

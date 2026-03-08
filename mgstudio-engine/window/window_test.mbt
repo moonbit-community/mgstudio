@@ -235,6 +235,77 @@ test "window: window refs resolve entity-backed metrics" {
 }
 
 ///|
+test "window: primary refs do not fall back to secondary windows" {
+  let secondary_window = Window::default()
+  secondary_window.title = "Secondary"
+  secondary_window.resolution.set_physical_resolution(640, 360)
+  secondary_window.resolution.set_scale_factor_override(Some(2.0F))
+
+  let world = @ecs.World::new()
+  let secondary = world.spawn()
+  try! world.set_component(secondary, secondary_window)
+
+  inspect(window_entity_for_ref(world, WindowRef::Primary) is None, content="true")
+  inspect(window_physical_width_for(world, WindowRef::Primary), content="0")
+  inspect(window_physical_height_for(world, WindowRef::Primary), content="0")
+  inspect(window_scale_factor_for(world, WindowRef::Primary), content="1")
+  inspect(window_ensure_primary_host(world), content="None")
+}
+
+///|
+test "window: singleton helpers no-op when no primary window exists" {
+  let world = @ecs.World::new()
+  let secondary = world.spawn()
+  let secondary_window = Window::default()
+  secondary_window.title = "Secondary"
+  secondary_window.resolution.set_physical_resolution(640, 360)
+  try! world.set_component(secondary, secondary_window)
+  let width = Ref::new(-1)
+  let height = Ref::new(-1)
+  let scale_factor = Ref::new(-1.0F)
+  let position_x = Ref::new(-1)
+  let position_y = Ref::new(-1)
+
+  let app = @app.App::new(world).add_systems(
+    @app.Update,
+    @app.system(fn(_world : @ecs.World) {
+      width.val = window_width()
+      height.val = window_height()
+      scale_factor.val = window_scale_factor()
+      position_x.val = window_position_x()
+      position_y.val = window_position_y()
+      window_set_title(title="Updated")
+      window_set_size(width=800, height=600)
+      window_set_resizable(resizable=false)
+      window_set_cursor_visible(visible=false)
+      window_set_cursor_grab_mode(mode=CursorGrabMode::GrabConfined)
+      window_set_cursor_icon(icon=CursorIcon::EwResize)
+      window_set_position(x=30, y=40)
+      window_set_mode(mode=WindowMode::Fullscreen)
+    }),
+  )
+  let app = app.run_once()
+  inspect(width.val, content="0")
+  inspect(height.val, content="0")
+  inspect(scale_factor.val, content="1")
+  inspect(position_x.val, content="0")
+  inspect(position_y.val, content="0")
+  let stored_window = match window_component_value(app.world(), secondary) {
+    Some(window) => window
+    None => abort("missing secondary window")
+  }
+
+  inspect(stored_window.title, content="Secondary")
+  inspect(stored_window.physical_width(), content="640")
+  inspect(stored_window.physical_height(), content="360")
+  inspect(stored_window.position, content="Automatic")
+  inspect(stored_window.mode, content="Windowed")
+  inspect(stored_window.resizable, content="true")
+  inspect(cursor_options_value(app.world(), secondary), content="None")
+  inspect(cursor_icon_value(app.world(), secondary), content="None")
+}
+
+///|
 test "window: scale-factor helper prefers override over observed host scale" {
   let configured_window = Window::default()
   configured_window.resolution.set_physical_resolution(500, 300)

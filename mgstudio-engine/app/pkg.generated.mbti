@@ -107,15 +107,9 @@ pub fn run_current_fixed_update_schedule(@ecs.World) -> Unit
 
 pub fn run_fixed_main_loop_system_set_name(RunFixedMainLoopSystems) -> String
 
-pub fn[W] schedule_push_config(Schedule[W], ScheduleStage, SystemConfig[W]) -> Unit
+pub fn schedule_label(String) -> ScheduleStage
 
 pub fn schedule_runner_plugin(ScheduleRunnerPlugin) -> (App[@ecs.World]) -> App[@ecs.World]
-
-pub fn[W] schedule_set_edges(Schedule[W], ScheduleStage) -> Array[(String, String)]
-
-pub fn schedule_stage_storage_key(ScheduleStage) -> String
-
-pub fn[W] schedule_systems(Schedule[W], ScheduleStage) -> Array[SystemConfig[W]]
 
 pub fn set_render_error_handler((RenderRuntimeError) -> RenderErrorPolicy) -> Unit
 
@@ -272,7 +266,7 @@ pub fn[W, P : SystemParam] App::add_run_fixed_main_loop_system_param(Self[W], (P
 pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_run_fixed_main_loop_system_param2(Self[W], (P1, P2) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_run_fixed_main_loop_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_run_fixed_main_loop_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
-pub fn[W] App::add_schedule(Self[W], ScheduleStage) -> Self[W]
+pub fn[W] App::add_schedule(Self[W], Schedule) -> Self[W]
 pub fn[W] App::add_spawn_scene_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_spawn_scene_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_spawn_scene_system_param(Self[W], (P) -> Unit) -> Self[W]
@@ -351,6 +345,13 @@ pub struct CheckParentHasComponent[C] {
 pub fn[C] CheckParentHasComponent::new(@core.Entity) -> Self[C]
 pub impl[C : @ecs.Component] @ecs.Message for CheckParentHasComponent[C]
 
+pub(all) enum ExecutorKind {
+  SingleThreaded
+  MultiThreaded
+}
+pub impl Eq for ExecutorKind
+pub impl Show for ExecutorKind
+
 pub struct FixedMainScheduleOrder {
   labels : Array[ScheduleStage]
 }
@@ -366,6 +367,8 @@ pub struct Local[T] {
 }
 pub fn[T] Local::get(Self[T]) -> T
 pub fn[T] Local::get_ref(Self[T]) -> Ref[T]
+pub fn[T : @ecs.Message] Local::read(Self[@ecs.MessageCursor[T]], ResMut[@ecs.Messages[T]]) -> Array[T] raise @ecs.EcsError
+pub fn[T : @ecs.Message] Local::read_mut(Self[@ecs.MessageCursor[T]], ResMut[@ecs.Messages[T]]) -> Array[Ref[T]] raise @ecs.EcsError
 pub fn[T] Local::set(Self[T], T) -> Unit
 pub impl[T : FromWorld + ToJson + @json.FromJson] SystemParam for Local[T]
 
@@ -511,12 +514,17 @@ pub struct Res[T] {
   value : T
 }
 pub fn[T] Res::get(Self[T]) -> T
+pub fn[T : Resource] Res::is_added(Self[T]) -> Bool
+pub fn[T : Resource] Res::is_changed(Self[T]) -> Bool
 pub impl[T : Resource] SystemParam for Res[T]
 
 pub struct ResMut[T] {
   value : Ref[T]
 }
 pub fn[T] ResMut::get_ref(Self[T]) -> Ref[T]
+pub fn[T : @ecs.Message] ResMut::write(Self[@ecs.Messages[T]], T) -> Int
+pub fn[T : @ecs.Message] ResMut::write_batch(Self[@ecs.Messages[T]], Array[T]) -> Unit
+pub fn[T : @ecs.Message + Default] ResMut::write_default(Self[@ecs.Messages[T]]) -> Int
 pub impl[T : Resource] SystemParam for ResMut[T]
 
 pub(all) enum RunFixedMainLoopSystems {
@@ -527,16 +535,16 @@ pub(all) enum RunFixedMainLoopSystems {
 pub impl Eq for RunFixedMainLoopSystems
 pub impl Show for RunFixedMainLoopSystems
 
-pub struct Schedule[W] {
-  entries : @hashmap.HashMap[String, Ref[ScheduleEntry[W]]]
+pub struct Schedule {
+  label : ScheduleStage
+  mut executor_kind : ExecutorKind
 }
-pub fn[W] Schedule::new() -> Self[W]
+pub fn Schedule::get_executor_kind(Self) -> ExecutorKind
+pub fn Schedule::label(Self) -> ScheduleStage
+pub fn Schedule::new(ScheduleStage) -> Self
+pub fn Schedule::set_executor_kind(Self, ExecutorKind) -> Self
 
-pub struct ScheduleEntry[W] {
-  systems : Array[SystemConfig[W]]
-  set_edges : Array[(String, String)]
-}
-pub fn[W] ScheduleEntry::new() -> Self[W]
+type ScheduleRegistry[W]
 
 pub(all) enum ScheduleRunnerMode {
   RunOnce
@@ -568,6 +576,7 @@ pub(all) enum ScheduleStage {
   SpawnScene
   PostUpdate
   Last
+  Custom(String)
 }
 pub impl Eq for ScheduleStage
 pub impl Show for ScheduleStage
@@ -604,7 +613,7 @@ pub fn StatesPlugin::default() -> Self
 pub struct SubApp[W] {
   mut world : W
   update_schedule : ScheduleStage?
-  schedule : Schedule[W]
+  schedule : ScheduleRegistry[W]
   extract : ((W, W) -> (W, W))?
 }
 pub fn[M] SubApp::add_message(Self[@ecs.World], @ecs.MessageKey[M]) -> Self[@ecs.World]
@@ -612,7 +621,6 @@ pub fn[C : @ecs.Component] SubApp::add_observer(Self[@ecs.World], (@ecs.On[@ecs.
 pub fn[C : @ecs.Component, P2 : SystemParam] SubApp::add_observer2(Self[@ecs.World], (@ecs.On[@ecs.Insert, C], P2) -> Unit) -> Self[@ecs.World]
 pub fn[C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] SubApp::add_observer3(Self[@ecs.World], (@ecs.On[@ecs.Insert, C], P2, P3) -> Unit) -> Self[@ecs.World]
 pub fn[C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_observer4(Self[@ecs.World], (@ecs.On[@ecs.Insert, C], P2, P3, P4) -> Unit) -> Self[@ecs.World]
-pub fn[W] SubApp::add_schedule(Self[W], ScheduleStage) -> Self[W]
 pub fn[W] SubApp::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
 pub fn[W] SubApp::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W] SubApp::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
@@ -714,6 +722,7 @@ pub impl FromWorld for String
 pub impl[T : @ecs.Component] FromWorld for @ecs.Added[T]
 pub impl FromWorld for @ecs.All
 pub impl[T : @ecs.Component] FromWorld for @ecs.Changed[T]
+pub impl[T] FromWorld for @ecs.MessageCursor[T]
 pub impl[F : FromWorld] FromWorld for @ecs.Or[F]
 pub impl[T : @ecs.Component] FromWorld for @ecs.With[T]
 pub impl[T : @ecs.Component] FromWorld for @ecs.Without[T]
@@ -729,6 +738,7 @@ pub(open) trait PluginReplacement {
 pub(open) trait Resource {
   resource() -> @ecs.ResourceKey[Self]
 }
+pub impl[T : @ecs.Message] Resource for @ecs.Messages[T]
 
 pub(open) trait States : Eq + Show {
   debug_name(Self) -> String

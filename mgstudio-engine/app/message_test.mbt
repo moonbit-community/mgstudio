@@ -18,8 +18,21 @@ struct TestAppMessage {
 } derive(Eq, Show)
 
 ///|
+struct TestCursorAppMessage {
+  resend : Bool
+  times_sent : Int
+} derive(Eq, Show)
+
+///|
 impl @ecs.Message for TestAppMessage with message() {
   @ecs.register_message(debug_name="tests.app.message_support.test_app_message")
+}
+
+///|
+impl @ecs.Message for TestCursorAppMessage with message() {
+  @ecs.register_message(
+    debug_name="tests.app.message_support.test_cursor_app_message",
+  )
 }
 
 ///|
@@ -52,6 +65,11 @@ let test_message_mutator_set : SystemSet = system_set(
 ///|
 let test_message_reader_set : SystemSet = system_set(
   "tests.app.message_support.reader",
+)
+
+///|
+let test_message_cursor_set : SystemSet = system_set(
+  "tests.app.message_support.cursor",
 )
 
 ///|
@@ -179,4 +197,69 @@ test "app: MessageMutator mutates unread messages and MessageWriter write_defaul
   app = app.run_once()
 
   inspect(seen, content="[9]")
+}
+
+///|
+test "app: Messages resource and Local MessageCursor resend unread messages in Bevy order" {
+  let frame = Ref::new(0)
+  let seen : Array[Int] = []
+  let key : @ecs.MessageKey[TestCursorAppMessage] = @ecs.Message::message()
+
+  let mut app = App::new(@ecs.World::new())
+    .add_message(key)
+    .add_systems(
+      Update,
+      system(
+        system_param(fn(writer : @ecs.MessageWriter[TestCursorAppMessage]) {
+          frame.val = frame.val + 1
+          ignore(
+            writer.write(TestCursorAppMessage::{
+              resend: frame.val == 1,
+              times_sent: frame.val,
+            }),
+          )
+        }),
+      ).in_set(test_message_writer_set),
+    )
+    .add_systems(
+      Update,
+      system(
+        system_param2(fn(
+          cursor : Local[@ecs.MessageCursor[TestCursorAppMessage]],
+          messages : ResMut[@ecs.Messages[TestCursorAppMessage]],
+        ) {
+          for message in (try! cursor.read(messages)) {
+            if message.resend {
+              ignore(
+                messages.write(TestCursorAppMessage::{
+                  resend: message.resend,
+                  times_sent: message.times_sent + 10,
+                }),
+              )
+            }
+          }
+        }),
+      ).in_set(test_message_cursor_set),
+    )
+    .add_systems(
+      Update,
+      system(
+        system_param(fn(reader : @ecs.MessageReader[TestCursorAppMessage]) {
+          for message in (try! reader.read()) {
+            seen.push(message.times_sent)
+          }
+        }),
+      ).in_set(test_message_reader_set),
+    )
+    .configure_set(Update, test_message_writer_set, before=[
+      test_message_cursor_set,
+    ])
+    .configure_set(Update, test_message_cursor_set, before=[
+      test_message_reader_set,
+    ])
+
+  app = app.run_once()
+  app = app.run_once()
+
+  inspect(seen, content="[1, 11, 2, 21]")
 }

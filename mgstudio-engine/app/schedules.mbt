@@ -13,23 +13,54 @@
 // limitations under the License.
 
 ///|
-pub struct ScheduleEntry[W] {
+pub struct Schedule {
+  label : ScheduleStage
+  mut executor_kind : ExecutorKind
+}
+
+///|
+pub fn Schedule::new(label : ScheduleStage) -> Schedule {
+  { label, executor_kind: MultiThreaded }
+}
+
+///|
+pub fn Schedule::label(self : Schedule) -> ScheduleStage {
+  self.label
+}
+
+///|
+pub fn Schedule::get_executor_kind(self : Schedule) -> ExecutorKind {
+  self.executor_kind
+}
+
+///|
+pub fn Schedule::set_executor_kind(
+  self : Schedule,
+  executor_kind : ExecutorKind,
+) -> Schedule {
+  self.executor_kind = executor_kind
+  self
+}
+
+///|
+priv struct ScheduleEntry[W] {
   systems : Array[SystemConfig[W]]
   set_edges : Array[(SystemSet, SystemSet)]
+  mut executor_kind : ExecutorKind
 }
 
 ///|
-pub fn[W] ScheduleEntry::new() -> ScheduleEntry[W] {
-  { systems: [], set_edges: [] }
+fn[W] ScheduleEntry::new() -> ScheduleEntry[W] {
+  { systems: [], set_edges: [], executor_kind: MultiThreaded }
 }
 
 ///|
-pub struct Schedule[W] {
+struct ScheduleRegistry[W] {
   entries : @hashmap.HashMap[String, Ref[ScheduleEntry[W]]]
 }
 
 ///|
-pub fn schedule_stage_storage_key(stage : ScheduleStage) -> String {
+fn schedule_stage_storage_key(stage : ScheduleStage) -> String {
   match stage {
     Main => "Main"
     PreStartup => "PreStartup"
@@ -49,6 +80,7 @@ pub fn schedule_stage_storage_key(stage : ScheduleStage) -> String {
     SpawnScene => "SpawnScene"
     PostUpdate => "PostUpdate"
     Last => "Last"
+    Custom(name) => "__custom__:" + name
   }
 }
 
@@ -78,23 +110,23 @@ fn default_schedule_labels() -> Array[ScheduleStage] {
 
 ///|
 fn[W] schedule_entry_ref(
-  schedule : Schedule[W],
+  schedule_registry : ScheduleRegistry[W],
   stage : ScheduleStage,
 ) -> Ref[ScheduleEntry[W]] {
   let key = schedule_stage_storage_key(stage)
-  match schedule.entries.get(key) {
+  match schedule_registry.entries.get(key) {
     Some(entry_ref) => entry_ref
     None => {
       let entry_ref = Ref::new(ScheduleEntry::new())
-      schedule.entries.set(key, entry_ref)
+      schedule_registry.entries.set(key, entry_ref)
       entry_ref
     }
   }
 }
 
 ///|
-pub fn[W] Schedule::new() -> Schedule[W] {
-  let schedule = Schedule::{ entries: @hashmap.HashMap::new() }
+fn[W] ScheduleRegistry::new() -> ScheduleRegistry[W] {
+  let schedule = ScheduleRegistry::{ entries: @hashmap.HashMap::new() }
   for stage in default_schedule_labels() {
     ignore(schedule_entry_ref(schedule, stage))
   }
@@ -114,36 +146,46 @@ pub fn[W] Schedule::new() -> Schedule[W] {
 }
 
 ///|
-pub fn[W] schedule_push_config(
-  schedule : Schedule[W],
+fn[W] schedule_push_config(
+  schedule_registry : ScheduleRegistry[W],
   stage : ScheduleStage,
   config : SystemConfig[W],
 ) -> Unit {
-  schedule_entry_ref(schedule, stage).val.systems.push(config)
+  schedule_entry_ref(schedule_registry, stage).val.systems.push(config)
 }
 
 ///|
-pub fn[W] schedule_systems(
-  schedule : Schedule[W],
+fn[W] schedule_systems(
+  schedule_registry : ScheduleRegistry[W],
   stage : ScheduleStage,
 ) -> Array[SystemConfig[W]] {
-  schedule_entry_ref(schedule, stage).val.systems
+  schedule_entry_ref(schedule_registry, stage).val.systems
 }
 
 ///|
-pub fn[W] schedule_set_edges(
-  schedule : Schedule[W],
+fn[W] schedule_set_edges(
+  schedule_registry : ScheduleRegistry[W],
   stage : ScheduleStage,
 ) -> Array[(SystemSet, SystemSet)] {
-  schedule_entry_ref(schedule, stage).val.set_edges
+  schedule_entry_ref(schedule_registry, stage).val.set_edges
 }
 
 ///|
-pub fn[W] SubApp::add_schedule(
-  self : SubApp[W],
+fn[W] schedule_set_executor_kind(
+  schedule_registry : ScheduleRegistry[W],
   stage : ScheduleStage,
-) -> SubApp[W] {
-  ignore(schedule_entry_ref(self.schedule, stage))
+  executor_kind : ExecutorKind,
+) -> Unit {
+  schedule_entry_ref(schedule_registry, stage).val.executor_kind = executor_kind
+}
+
+///|
+fn[W] SubApp::add_schedule(self : SubApp[W], schedule : Schedule) -> SubApp[W] {
+  schedule_set_executor_kind(
+    self.schedule,
+    schedule.label(),
+    schedule.get_executor_kind(),
+  )
   self
 }
 
@@ -187,8 +229,8 @@ pub fn[W] SubApp::configure_sets(
 }
 
 ///|
-pub fn[W] App::add_schedule(self : App[W], stage : ScheduleStage) -> App[W] {
-  self.sub_apps.main = self.sub_apps.main.add_schedule(stage)
+pub fn[W] App::add_schedule(self : App[W], schedule : Schedule) -> App[W] {
+  self.sub_apps.main = self.sub_apps.main.add_schedule(schedule)
   self
 }
 

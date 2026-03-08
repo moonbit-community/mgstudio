@@ -200,29 +200,12 @@ fn window_primary_entity(world : @ecs.World) -> @core.Entity? {
 }
 
 ///|
-fn window_any_entity(world : @ecs.World) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref::new(None)
-  world
-  .query_entities_filtered(@ecs.With::new(ecs_key_window))
-  .view(fn(entity) { if result.val is None { result.val = Some(entity) } })
-  result.val
-}
-
-///|
-fn window_preferred_entity(world : @ecs.World) -> @core.Entity? {
-  match window_primary_entity(world) {
-    Some(entity) => Some(entity)
-    None => window_any_entity(world)
-  }
-}
-
-///|
 pub fn window_entity_for_ref(
   world : @ecs.World,
   window_ref : WindowRef,
 ) -> @core.Entity? {
   match window_ref {
-    Primary => window_preferred_entity(world)
+    Primary => window_primary_entity(world)
     Entity(entity) =>
       if window_component(world, entity) is Some(_) {
         Some(entity)
@@ -649,19 +632,19 @@ fn window_runtime_entities_with_host(world : @ecs.World) -> Array[@core.Entity] 
 
 ///|
 pub fn window_ensure_primary_host(world : @ecs.World) -> HostWindow? {
-  guard window_preferred_entity(world) is Some(entity) else { return None }
+  guard window_primary_entity(world) is Some(entity) else { return None }
   window_create_runtime_for_entity(world, entity)
 }
 
 ///|
 fn window_primary_runtime(world : @ecs.World) -> WindowRuntime? {
-  guard window_preferred_entity(world) is Some(entity) else { return None }
+  guard window_primary_entity(world) is Some(entity) else { return None }
   window_runtime_component(world, entity)
 }
 
 ///|
 fn window_primary_window(world : @ecs.World) -> Window? {
-  guard window_preferred_entity(world) is Some(entity) else { return None }
+  guard window_primary_entity(world) is Some(entity) else { return None }
   window_component(world, entity)
 }
 

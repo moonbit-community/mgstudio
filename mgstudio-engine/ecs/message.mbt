@@ -14,7 +14,7 @@
 
 ///|
 pub struct MessageKey[T] {
-  queue_key : ResourceKey[MessageQueueState]
+  queue_key : ResourceKey[Messages[T]]
   marker : T?
 }
 
@@ -29,26 +29,24 @@ pub fn[T] MessageKey::debug_name(self : MessageKey[T]) -> String {
 }
 
 ///|
-fn[T] MessageKey::queue_key(
-  self : MessageKey[T],
-) -> ResourceKey[MessageQueueState] {
+fn[T] MessageKey::queue_key(self : MessageKey[T]) -> ResourceKey[Messages[T]] {
   self.queue_key
 }
 
 ///|
 let named_message_queue_registry : @hashmap.HashMap[
   String,
-  ResourceKey[MessageQueueState],
+  ResourceKey[Messages[Unit]],
 ] = @hashmap.HashMap::new()
 
 ///|
 pub fn[T] register_message(debug_name? : String = "") -> MessageKey[T] {
-  let queue_key = if debug_name == "" {
+  let queue_key : ResourceKey[Messages[T]] = if debug_name == "" {
     register_resource(debug_name~)
   } else {
-    named_message_queue_registry.get_or_init(debug_name, fn() {
-      register_resource(debug_name~)
-    })
+    named_message_queue_registry
+    .get_or_init(debug_name, fn() { register_resource(debug_name~).cast() })
+    .cast()
   }
   MessageKey::{ queue_key, marker: None }
 }
@@ -59,12 +57,24 @@ pub(open) trait Message {
 }
 
 ///|
+pub struct MessageCursor[T] {
+  mut last_message_count : Int
+  marker : T?
+}
+
+///|
 pub struct MessageQueueState {
   mut messages_a_start : Int
   mut messages_a : Array[ErasedValue]
   mut messages_b_start : Int
   mut messages_b : Array[ErasedValue]
   mut message_count : Int
+}
+
+///|
+pub struct Messages[T] {
+  state : MessageQueueState
+  marker : T?
 }
 
 ///|
@@ -128,6 +138,69 @@ pub fn MessageQueueState::clear(self : MessageQueueState) -> Unit {
 }
 
 ///|
+pub fn[T] Messages::new() -> Messages[T] {
+  { state: MessageQueueState::new(), marker: None }
+}
+
+///|
+pub fn[T] Messages::len(self : Messages[T]) -> Int {
+  self.state.len()
+}
+
+///|
+pub fn[T] Messages::oldest_message_count(self : Messages[T]) -> Int {
+  self.state.oldest_message_count()
+}
+
+///|
+pub fn[T] Messages::write(self : Messages[T], message : T) -> Int {
+  self.state.write(erased_value(message))
+}
+
+///|
+pub fn[T] Messages::write_batch(
+  self : Messages[T],
+  messages : Array[T],
+) -> Unit {
+  let payloads : Array[ErasedValue] = []
+  for message in messages {
+    payloads.push(erased_value(message))
+  }
+  self.state.write_batch(payloads)
+}
+
+///|
+pub fn[T : Default] Messages::write_default(self : Messages[T]) -> Int {
+  self.write(T::default())
+}
+
+///|
+pub fn[T] Messages::update(self : Messages[T]) -> Unit {
+  self.state.update()
+}
+
+///|
+pub fn[T] Messages::clear(self : Messages[T]) -> Unit {
+  self.state.clear()
+}
+
+///|
+pub impl[T] Default for MessageCursor[T] with default() {
+  { last_message_count: 0, marker: None }
+}
+
+///|
+pub impl[T] ToJson for MessageCursor[T] with to_json(self) {
+  self.last_message_count.to_json()
+}
+
+///|
+pub impl[T] @json.FromJson for MessageCursor[T] with from_json(json, path) {
+  let last_message_count : Int = @json.FromJson::from_json(json, path)
+  { last_message_count, marker: None }
+}
+
+///|
 fn queue_start_offset(start : Int, last_message_count : Int) -> Int {
   if last_message_count <= start {
     0
@@ -150,38 +223,43 @@ fn queue_unread_len_for_segment(
 }
 
 ///|
-fn MessageQueueState::unread_len(
-  self : MessageQueueState,
-  last_message_count : Int,
-) -> Int {
+fn[T] Messages::unread_len(self : Messages[T], last_message_count : Int) -> Int {
   queue_unread_len_for_segment(
-    self.messages_a_start,
-    self.messages_a,
+    self.state.messages_a_start,
+    self.state.messages_a,
     last_message_count,
   ) +
   queue_unread_len_for_segment(
-    self.messages_b_start,
-    self.messages_b,
+    self.state.messages_b_start,
+    self.state.messages_b,
     last_message_count,
   )
 }
 
 ///|
-fn MessageQueueState::unread(
-  self : MessageQueueState,
+fn[T] Messages::unread(
+  self : Messages[T],
   last_message_count : Int,
 ) -> Array[(Int, ErasedValue)] {
   let unread : Array[(Int, ErasedValue)] = []
-  if last_message_count < self.messages_a_start + self.messages_a.length() {
-    let offset = queue_start_offset(self.messages_a_start, last_message_count)
-    for i in offset..<self.messages_a.length() {
-      unread.push((self.messages_a_start + i, self.messages_a[i]))
+  if last_message_count <
+    self.state.messages_a_start + self.state.messages_a.length() {
+    let offset = queue_start_offset(
+      self.state.messages_a_start,
+      last_message_count,
+    )
+    for i in offset..<self.state.messages_a.length() {
+      unread.push((self.state.messages_a_start + i, self.state.messages_a[i]))
     }
   }
-  if last_message_count < self.messages_b_start + self.messages_b.length() {
-    let offset = queue_start_offset(self.messages_b_start, last_message_count)
-    for i in offset..<self.messages_b.length() {
-      unread.push((self.messages_b_start + i, self.messages_b[i]))
+  if last_message_count <
+    self.state.messages_b_start + self.state.messages_b.length() {
+    let offset = queue_start_offset(
+      self.state.messages_b_start,
+      last_message_count,
+    )
+    for i in offset..<self.state.messages_b.length() {
+      unread.push((self.state.messages_b_start + i, self.state.messages_b[i]))
     }
   }
   unread
@@ -223,6 +301,13 @@ fn[T] queue_missing_abort(key : MessageKey[T]) -> Unit {
 }
 
 ///|
+pub fn[T] MessageKey::messages_resource(
+  self : MessageKey[T],
+) -> ResourceKey[Messages[T]] {
+  self.queue_key
+}
+
+///|
 pub fn[T] World::contains_message(self : World, key : MessageKey[T]) -> Bool {
   self.resource(key.queue_key()).is_present()
 }
@@ -230,7 +315,7 @@ pub fn[T] World::contains_message(self : World, key : MessageKey[T]) -> Bool {
 ///|
 pub fn[T] World::init_message(self : World, key : MessageKey[T]) -> Unit {
   if !self.contains_message(key) {
-    self.insert_resource(key.queue_key(), MessageQueueState::new())
+    self.insert_resource(key.queue_key(), Messages::new())
   }
   let registry = world_message_registry(self)
   for existing_id in registry.ids {
@@ -252,8 +337,8 @@ pub fn[T] World::send_message(
     queue_missing_abort(key)
   }
   let access = self.resource(key.queue_key())
-  let queue = access.get().unwrap_or(MessageQueueState::new())
-  let message_id = queue.write(erased_value(message))
+  let queue = access.get().unwrap_or(Messages::new())
+  let message_id = queue.write(message)
   ignore(access.set(queue, self.read_change_tick()))
   message_id
 }
@@ -268,12 +353,8 @@ pub fn[T] World::send_message_batch(
     queue_missing_abort(key)
   }
   let access = self.resource(key.queue_key())
-  let queue = access.get().unwrap_or(MessageQueueState::new())
-  let payloads : Array[ErasedValue] = []
-  for message in messages {
-    payloads.push(erased_value(message))
-  }
-  queue.write_batch(payloads)
+  let queue = access.get().unwrap_or(Messages::new())
+  queue.write_batch(messages)
   ignore(access.set(queue, self.read_change_tick()))
 }
 
@@ -288,7 +369,7 @@ pub fn[T] World::clear_messages(self : World, key : MessageKey[T]) -> Unit {
 pub fn World::update_messages(self : World) -> Unit {
   let registry = world_message_registry(self)
   for id in registry.ids {
-    let key : ResourceKey[MessageQueueState] = resource_key_from_id(
+    let key : ResourceKey[Messages[Unit]] = resource_key_from_id(
       id,
       debug_name="bevy_ecs::message::Messages",
     )
@@ -351,6 +432,112 @@ fn[T] decode_message_ref(
         payload.type_name(),
       )
   }
+}
+
+///|
+pub fn[T] Messages::get_cursor(self : Messages[T]) -> MessageCursor[T] {
+  ignore(self)
+  MessageCursor::default()
+}
+
+///|
+pub fn[T] Messages::get_cursor_current(self : Messages[T]) -> MessageCursor[T] {
+  { last_message_count: self.state.message_count, marker: None }
+}
+
+///|
+pub fn[T] Messages::write_message(
+  self : Messages[T],
+  key : MessageKey[T],
+  message : T,
+) -> Int {
+  ignore(key)
+  self.write(message)
+}
+
+///|
+pub fn[T] Messages::write_message_batch(
+  self : Messages[T],
+  key : MessageKey[T],
+  messages : Array[T],
+) -> Unit {
+  ignore(key)
+  self.write_batch(messages)
+}
+
+///|
+pub fn[T : Default] Messages::write_message_default(
+  self : Messages[T],
+  key : MessageKey[T],
+) -> Int {
+  self.write_message(key, T::default())
+}
+
+///|
+pub fn[T] MessageCursor::len(
+  self : MessageCursor[T],
+  messages : Messages[T],
+) -> Int {
+  messages.unread_len(self.last_message_count)
+}
+
+///|
+pub fn[T] MessageCursor::missed_messages(
+  self : MessageCursor[T],
+  messages : Messages[T],
+) -> Int {
+  let oldest = messages.oldest_message_count()
+  if oldest <= self.last_message_count {
+    0
+  } else {
+    oldest - self.last_message_count
+  }
+}
+
+///|
+pub fn[T] MessageCursor::is_empty(
+  self : MessageCursor[T],
+  messages : Messages[T],
+) -> Bool {
+  self.len(messages) == 0
+}
+
+///|
+pub fn[T] MessageCursor::clear(
+  self : MessageCursor[T],
+  messages : Messages[T],
+) -> Unit {
+  self.last_message_count = messages.state.message_count
+}
+
+///|
+pub fn[T : Message] MessageCursor::read(
+  self : MessageCursor[T],
+  messages : Messages[T],
+) -> Array[T] raise EcsError {
+  let key : MessageKey[T] = Message::message()
+  let unread_values = messages.unread(self.last_message_count)
+  let unread : Array[T] = []
+  for entry in unread_values {
+    unread.push(decode_message_payload(key, entry.0, entry.1))
+  }
+  self.last_message_count = messages.state.message_count
+  unread
+}
+
+///|
+pub fn[T : Message] MessageCursor::read_mut(
+  self : MessageCursor[T],
+  messages : Messages[T],
+) -> Array[Ref[T]] raise EcsError {
+  let key : MessageKey[T] = Message::message()
+  let unread_values = messages.unread(self.last_message_count)
+  let unread : Array[Ref[T]] = []
+  for entry in unread_values {
+    unread.push(decode_message_ref(key, entry.0, entry.1))
+  }
+  self.last_message_count = messages.state.message_count
+  unread
 }
 
 ///|
@@ -420,7 +607,7 @@ pub fn[T] MessageMutator::is_empty(self : MessageMutator[T]) -> Bool {
 pub fn[T] MessageReader::clear(self : MessageReader[T]) -> Unit {
   let queue = self.world.resource(self.key.queue_key()).get()
   match queue {
-    Some(queue) => self.cursor_ref.val = queue.message_count
+    Some(queue) => self.cursor_ref.val = queue.state.message_count
     None => self.cursor_ref.val = 0
   }
 }
@@ -429,7 +616,7 @@ pub fn[T] MessageReader::clear(self : MessageReader[T]) -> Unit {
 pub fn[T] MessageMutator::clear(self : MessageMutator[T]) -> Unit {
   let queue = self.world.resource(self.key.queue_key()).get()
   match queue {
-    Some(queue) => self.cursor_ref.val = queue.message_count
+    Some(queue) => self.cursor_ref.val = queue.state.message_count
     None => self.cursor_ref.val = 0
   }
 }
@@ -449,13 +636,13 @@ pub fn[T] MessageReader::read(
   self : MessageReader[T],
 ) -> Array[T] raise EcsError {
   let queue_access = self.world.resource(self.key.queue_key())
-  let queue = queue_access.get().unwrap_or(MessageQueueState::new())
+  let queue = queue_access.get().unwrap_or(Messages::new())
   let unread_values = queue.unread(self.cursor_ref.val)
   let unread : Array[T] = []
   for entry in unread_values {
     unread.push(decode_message_payload(self.key, entry.0, entry.1))
   }
-  self.cursor_ref.val = queue.message_count
+  self.cursor_ref.val = queue.state.message_count
   unread
 }
 
@@ -464,13 +651,13 @@ pub fn[T] MessageMutator::read(
   self : MessageMutator[T],
 ) -> Array[Ref[T]] raise EcsError {
   let queue_access = self.world.resource(self.key.queue_key())
-  let queue = queue_access.get().unwrap_or(MessageQueueState::new())
+  let queue = queue_access.get().unwrap_or(Messages::new())
   let unread_values = queue.unread(self.cursor_ref.val)
   let unread : Array[Ref[T]] = []
   for entry in unread_values {
     unread.push(decode_message_ref(self.key, entry.0, entry.1))
   }
-  self.cursor_ref.val = queue.message_count
+  self.cursor_ref.val = queue.state.message_count
   unread
 }
 

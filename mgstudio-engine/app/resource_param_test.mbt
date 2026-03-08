@@ -191,6 +191,28 @@ test "app: resource_changed tracks changes when the resource exists" {
 }
 
 ///|
+test "app: Res exposes is_added and is_changed like Bevy resource params" {
+  let observed : Array[(Bool, Bool, Int)] = []
+  let app = App::new(@ecs.World::new())
+    .insert_resource(CounterResource::{ value: 2 })
+    .add_system_param(fn(resource : Res[CounterResource]) {
+      observed.push(
+        (resource.is_added(), resource.is_changed(), resource.get().value),
+      )
+    })
+
+  app.run_once() |> ignore
+  app.run_once() |> ignore
+  app.insert_resource(CounterResource::{ value: 6 }) |> ignore
+  app.run_once() |> ignore
+
+  inspect(
+    observed,
+    content="[(true, true, 2), (false, false, 2), (false, true, 6)]",
+  )
+}
+
+///|
 test "app: run condition combinators short-circuit and compose" {
   let or_runs = Ref::new(0)
   let or_rhs_calls = Ref::new(0)

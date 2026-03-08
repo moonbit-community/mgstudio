@@ -325,7 +325,7 @@ pub fn window_scale_factor() -> Float {
 ///|
 pub fn window_set_title(title~ : String) -> Unit {
   guard window_current_world() is Some(world) else { return }
-  guard window_preferred_entity(world) is Some(entity) else { return }
+  guard window_primary_entity(world) is Some(entity) else { return }
   ignore(
     window_update_component(world, entity, fn(window) {
       let next : Window = window
@@ -338,7 +338,7 @@ pub fn window_set_title(title~ : String) -> Unit {
 ///|
 pub fn window_set_size(width~ : Int, height~ : Int) -> Unit {
   guard window_current_world() is Some(world) else { return }
-  guard window_preferred_entity(world) is Some(entity) else { return }
+  guard window_primary_entity(world) is Some(entity) else { return }
   ignore(
     window_update_component(world, entity, fn(window) {
       let next : Window = window
@@ -353,7 +353,7 @@ pub fn window_set_size(width~ : Int, height~ : Int) -> Unit {
 ///|
 pub fn window_set_resizable(resizable~ : Bool) -> Unit {
   guard window_current_world() is Some(world) else { return }
-  guard window_preferred_entity(world) is Some(entity) else { return }
+  guard window_primary_entity(world) is Some(entity) else { return }
   ignore(
     window_update_component(world, entity, fn(window) {
       let next : Window = window
@@ -366,7 +366,7 @@ pub fn window_set_resizable(resizable~ : Bool) -> Unit {
 ///|
 pub fn window_set_cursor_visible(visible~ : Bool) -> Unit {
   guard window_current_world() is Some(world) else { return }
-  guard window_preferred_entity(world) is Some(entity) else { return }
+  guard window_primary_entity(world) is Some(entity) else { return }
   let cursor_options = window_current_cursor_options(world, entity)
   cursor_options.visible = visible
   window_set_cursor_options_component(world, entity, cursor_options)
@@ -375,7 +375,7 @@ pub fn window_set_cursor_visible(visible~ : Bool) -> Unit {
 ///|
 pub fn window_set_cursor_grab_mode(mode~ : CursorGrabMode) -> Unit {
   guard window_current_world() is Some(world) else { return }
-  guard window_preferred_entity(world) is Some(entity) else { return }
+  guard window_primary_entity(world) is Some(entity) else { return }
   let cursor_options = window_current_cursor_options(world, entity)
   cursor_options.grab_mode = mode
   window_set_cursor_options_component(world, entity, cursor_options)
@@ -384,14 +384,14 @@ pub fn window_set_cursor_grab_mode(mode~ : CursorGrabMode) -> Unit {
 ///|
 pub fn window_set_cursor_icon(icon~ : CursorIcon) -> Unit {
   guard window_current_world() is Some(world) else { return }
-  guard window_preferred_entity(world) is Some(entity) else { return }
+  guard window_primary_entity(world) is Some(entity) else { return }
   window_set_cursor_icon_component(world, entity, icon)
 }
 
 ///|
 pub fn window_set_mode(mode~ : WindowMode) -> Unit {
   guard window_current_world() is Some(world) else { return }
-  guard window_preferred_entity(world) is Some(entity) else { return }
+  guard window_primary_entity(world) is Some(entity) else { return }
   ignore(
     window_update_component(world, entity, fn(window) {
       let next : Window = window
@@ -404,7 +404,7 @@ pub fn window_set_mode(mode~ : WindowMode) -> Unit {
 ///|
 pub fn window_set_position(x~ : Int, y~ : Int) -> Unit {
   guard window_current_world() is Some(world) else { return }
-  guard window_preferred_entity(world) is Some(entity) else { return }
+  guard window_primary_entity(world) is Some(entity) else { return }
   ignore(
     window_update_component(world, entity, fn(window) {
       let next : Window = window

@@ -611,6 +611,7 @@ pub struct Touches {
   just_released : Array[Touch]
   just_canceled : Array[Touch]
 }
+pub fn Touches::any_just_pressed(Self) -> Bool
 pub fn Touches::iter(Self) -> Array[Touch]
 pub fn Touches::iter_just_canceled(Self) -> Array[Touch]
 pub fn Touches::iter_just_pressed(Self) -> Array[Touch]

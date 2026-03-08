@@ -1,0 +1,26 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/send_and_receive_messages"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type A
+pub impl @ecs.Message for A
+
+type B
+pub impl @ecs.Message for B
+
+type DebugMessage
+pub impl @ecs.Message for DebugMessage
+pub impl Show for DebugMessage
+
+// Type aliases
+
+// Traits
+
