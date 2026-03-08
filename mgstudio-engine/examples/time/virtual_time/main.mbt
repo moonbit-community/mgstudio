@@ -51,7 +51,9 @@ let virtual_time_state : Ref[VirtualTimeState] = Ref::new({
 
 ///|
 fn read_real_time(world : @ecs.World) -> @time.Time[@time.Real] {
-  let real_time = try! world.get_resource(@time.real_time_resource_key())
+  let real_time = try! world.get_resource(
+    @time.time_resource_key_of(@time.Real::default()),
+  )
   match real_time {
     Some(real_time) => real_time
     None => {
@@ -63,7 +65,9 @@ fn read_real_time(world : @ecs.World) -> @time.Time[@time.Real] {
 
 ///|
 fn read_virtual_time(world : @ecs.World) -> @time.Time[@time.Virtual] {
-  let virtual_time = try! world.get_resource(@time.virtual_time_resource_key())
+  let virtual_time = try! world.get_resource(
+    @time.time_resource_key_of(@time.Virtual::default()),
+  )
   match virtual_time {
     Some(virtual_time) => virtual_time
     None => {
@@ -75,7 +79,7 @@ fn read_virtual_time(world : @ecs.World) -> @time.Time[@time.Virtual] {
 
 ///|
 fn read_generic_time(world : @ecs.World) -> @time.Time[Unit] {
-  let time = try! world.get_resource(@time.default_time_resource_key())
+  let time = try! world.get_resource(@time.time_resource_key_of(()))
   match time {
     Some(time) => time
     None => {
@@ -92,10 +96,13 @@ fn update_virtual_time_resource(
 ) -> Unit {
   let change_tick = world.increment_change_tick()
   let virtual_ref = try! world
-    .get_resource_ref_mut(@time.virtual_time_resource_key(), change_tick)
+    .get_resource_ref_mut(
+      @time.time_resource_key_of(@time.Virtual::default()),
+      change_tick,
+    )
     .unwrap()
   let time_ref = try! world
-    .get_resource_ref_mut(@time.default_time_resource_key(), change_tick)
+    .get_resource_ref_mut(@time.time_resource_key_of(()), change_tick)
     .unwrap()
   let next_virtual = update(virtual_ref.val)
   virtual_ref.val = next_virtual

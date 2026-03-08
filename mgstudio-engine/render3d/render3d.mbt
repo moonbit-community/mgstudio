@@ -6761,7 +6761,7 @@ fn render3d_auto_exposure_history_sync(
 
 ///|
 fn render3d_default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
+  match (try! world.get_resource(@time.time_resource_key_of(()))) {
     Some(time) => time
     None => {
       let time : @time.Time[Unit] = @time.Time::default()
