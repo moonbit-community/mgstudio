@@ -170,11 +170,13 @@ pub fn Cuboid::from_size(size : Vec3) -> Cuboid {
 
 ///|
 pub fn Cuboid::from_corners(point1 : Vec3, point2 : Vec3) -> Cuboid {
-  Cuboid::from_size(Vec3::new(
-    cuboid_abs_float(point2.x - point1.x),
-    cuboid_abs_float(point2.y - point1.y),
-    cuboid_abs_float(point2.z - point1.z),
-  ))
+  Cuboid::from_size(
+    Vec3::new(
+      cuboid_abs_float(point2.x - point1.x),
+      cuboid_abs_float(point2.y - point1.y),
+      cuboid_abs_float(point2.z - point1.z),
+    ),
+  )
 }
 
 ///|

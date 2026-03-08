@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/math"
 import {
   "Milky2018/mgstudio/ecs",
   "moonbitlang/core/json",
+  "moonbitlang/core/random",
 }
 
 // Values
@@ -90,6 +91,19 @@ pub fn[P : SplinePoint] CubicSegment::iter_velocities(Self[P], Int) -> Array[P]
 pub fn[P : SplinePoint] CubicSegment::new_bezier(P, P, P, P) -> Self[P]
 pub fn[P : SplinePoint] CubicSegment::position(Self[P], Float) -> P
 pub fn[P : SplinePoint] CubicSegment::velocity(Self[P], Float) -> P
+
+pub struct Cuboid {
+  half_size : Vec3
+}
+pub fn Cuboid::from_corners(Vec3, Vec3) -> Self
+pub fn Cuboid::from_length(Float) -> Self
+pub fn Cuboid::from_size(Vec3) -> Self
+pub fn Cuboid::new(Float, Float, Float) -> Self
+pub fn Cuboid::sample_interior(Self, @random.Rand) -> Vec3
+pub fn Cuboid::size(Self) -> Vec3
+pub impl Default for Cuboid
+pub impl ToJson for Cuboid
+pub impl @json.FromJson for Cuboid
 
 pub(all) enum EaseFunction {
   Linear
