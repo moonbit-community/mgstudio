@@ -145,6 +145,72 @@ pub fn Vec3::normalize_or_zero(self : Vec3) -> Vec3 {
 }
 
 ///|
+pub struct Cuboid {
+  half_size : Vec3
+}
+
+///|
+pub impl Default for Cuboid with default() {
+  Cuboid::{ half_size: Vec3::splat(0.5F) }
+}
+
+///|
+pub fn Cuboid::new(
+  x_length : Float,
+  y_length : Float,
+  z_length : Float,
+) -> Cuboid {
+  Cuboid::from_size(Vec3::new(x_length, y_length, z_length))
+}
+
+///|
+pub fn Cuboid::from_size(size : Vec3) -> Cuboid {
+  Cuboid::{ half_size: size.mul_scalar(0.5F) }
+}
+
+///|
+pub fn Cuboid::from_corners(point1 : Vec3, point2 : Vec3) -> Cuboid {
+  Cuboid::from_size(Vec3::new(
+    cuboid_abs_float(point2.x - point1.x),
+    cuboid_abs_float(point2.y - point1.y),
+    cuboid_abs_float(point2.z - point1.z),
+  ))
+}
+
+///|
+pub fn Cuboid::from_length(length : Float) -> Cuboid {
+  Cuboid::{ half_size: Vec3::splat(length * 0.5F) }
+}
+
+///|
+pub fn Cuboid::size(self : Cuboid) -> Vec3 {
+  self.half_size.mul_scalar(2.0F)
+}
+
+///|
+pub fn Cuboid::sample_interior(self : Cuboid, rng : @random.Rand) -> Vec3 {
+  Vec3::new(
+    cuboid_sample_axis(rng, self.half_size.x),
+    cuboid_sample_axis(rng, self.half_size.y),
+    cuboid_sample_axis(rng, self.half_size.z),
+  )
+}
+
+///|
+fn cuboid_abs_float(value : Float) -> Float {
+  if value < 0.0F {
+    -value
+  } else {
+    value
+  }
+}
+
+///|
+fn cuboid_sample_axis(rng : @random.Rand, half_extent : Float) -> Float {
+  (rng.float() * 2.0F - 1.0F) * half_extent
+}
+
+///|
 pub fn Vec3::max_element(self : Vec3) -> Float {
   let max_xy = if self.x > self.y { self.x } else { self.y }
   if max_xy > self.z {
@@ -454,6 +520,16 @@ pub impl ToJson for Vec3 with to_json(self) {
 pub impl @json.FromJson for Vec3 with from_json(json, path) {
   let (x, y, z) : (Float, Float, Float) = @json.from_json(json, path~)
   Vec3::new(x, y, z)
+}
+
+///|
+pub impl ToJson for Cuboid with to_json(self) {
+  self.half_size.to_json()
+}
+
+///|
+pub impl @json.FromJson for Cuboid with from_json(json, path) {
+  Cuboid::{ half_size: @json.from_json(json, path~) }
 }
 
 ///|
