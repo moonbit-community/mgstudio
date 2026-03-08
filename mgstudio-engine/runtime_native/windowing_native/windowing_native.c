@@ -213,6 +213,28 @@ static void mgw_msg_void(id obj, const char *sel_name) {
   ((void(*)(id, SEL))objc_msgSend)(obj, mgw_sel(sel_name));
 }
 
+static double mgw_scale_to_points(int physical, float scale_factor) {
+  float safe_scale = scale_factor <= 0.0f ? 1.0f : scale_factor;
+  return (double)physical / (double)safe_scale;
+}
+
+#if defined(__APPLE__)
+static float mgw_main_screen_scale_factor(void) {
+  Class screen_class = objc_getClass("NSScreen");
+  if (!screen_class) {
+    return 1.0f;
+  }
+  id screen = ((id(*)(id, SEL))objc_msgSend)(
+    (id)screen_class, mgw_sel("mainScreen"));
+  if (!screen) {
+    return 1.0f;
+  }
+  float scale_factor = (float)((double(*)(id, SEL))objc_msgSend)(
+    screen, mgw_sel("backingScaleFactor"));
+  return scale_factor <= 0.0f ? 1.0f : scale_factor;
+}
+#endif
+
 static id mgw_make_nsstring(const char *utf8) {
   if (!utf8) {
     utf8 = "";
@@ -281,8 +303,10 @@ static void mgw_update_window_state(mgw_window_t *window) {
     window->content_view = (void *)content_view;
     mgw_rect_t bounds = ((mgw_rect_t(*)(id, SEL))objc_msgSend)(
       content_view, mgw_sel("bounds"));
-    window->width = mgw_clamp_size((int)bounds.size.width);
-    window->height = mgw_clamp_size((int)bounds.size.height);
+    int backing_width = (int)(bounds.size.width * window->scale_factor + 0.5f);
+    int backing_height = (int)(bounds.size.height * window->scale_factor + 0.5f);
+    window->width = mgw_clamp_size(backing_width);
+    window->height = mgw_clamp_size(backing_height);
   }
 
   mgw_rect_t frame = ((mgw_rect_t(*)(id, SEL))objc_msgSend)(
@@ -530,9 +554,13 @@ int mgw_window_create_utf8(
     Class window_class = objc_getClass("NSWindow");
     if (window_class) {
       id allocated = mgw_msg_id((id)window_class, "alloc");
+      float create_scale_factor = mgw_main_screen_scale_factor();
       mgw_rect_t rect = {
         .origin = {0.0, 0.0},
-        .size = {(double)window->width, (double)window->height},
+        .size = {
+          mgw_scale_to_points(window->width, create_scale_factor),
+          mgw_scale_to_points(window->height, create_scale_factor),
+        },
       };
       const mgw_nsuint_t style_mask =
         (1UL << 0) | (1UL << 1) | (1UL << 2) | (1UL << 3);
@@ -567,6 +595,12 @@ int mgw_window_create_utf8(
         window->content_view = (void *)mgw_msg_id(ns_window, "contentView");
         window->scale_factor = (float)((double(*)(id, SEL))objc_msgSend)(
           ns_window, mgw_sel("backingScaleFactor"));
+        mgw_size_t content_size = {
+          .width = mgw_scale_to_points(window->width, window->scale_factor),
+          .height = mgw_scale_to_points(window->height, window->scale_factor),
+        };
+        ((void(*)(id, SEL, mgw_size_t))objc_msgSend)(
+          ns_window, mgw_sel("setContentSize:"), content_size);
       }
     }
   }
@@ -698,8 +732,8 @@ void mgw_window_set_size(int window_id, int width, int height) {
 #if defined(__APPLE__)
   if (window->window) {
     mgw_size_t size = {
-      .width = (double)window->width,
-      .height = (double)window->height,
+      .width = mgw_scale_to_points(window->width, window->scale_factor),
+      .height = mgw_scale_to_points(window->height, window->scale_factor),
     };
     ((void(*)(id, SEL, mgw_size_t))objc_msgSend)(
       (id)window->window, mgw_sel("setContentSize:"), size);
