@@ -320,6 +320,33 @@ fn window_resolution_logical_height(resolution : WindowResolution) -> Float {
 }
 
 ///|
+fn window_requested_logical_width(resolution : WindowResolution) -> Int {
+  let width = window_resolution_logical_width(resolution).to_int()
+  if width <= 0 {
+    1
+  } else {
+    width
+  }
+}
+
+///|
+fn window_requested_logical_height(resolution : WindowResolution) -> Int {
+  let height = window_resolution_logical_height(resolution).to_int()
+  if height <= 0 {
+    1
+  } else {
+    height
+  }
+}
+
+///|
+fn window_uses_physical_request_on_create(
+  resolution : WindowResolution,
+) -> Bool {
+  resolution.scale_factor_override() is Some(_)
+}
+
+///|
 fn window_current_cursor_options(
   world : @ecs.World,
   entity : @core.Entity,
@@ -417,8 +444,13 @@ fn window_create_runtime_for_entity(
   }
   guard window_component(world, entity) is Some(window) else { return None }
   let host_window = host_window_create(
-    width=window.physical_width(),
-    height=window.physical_height(),
+    logical_width=window_requested_logical_width(window.resolution),
+    logical_height=window_requested_logical_height(window.resolution),
+    physical_width=window.physical_width(),
+    physical_height=window.physical_height(),
+    use_physical_size_on_create=window_uses_physical_request_on_create(
+      window.resolution,
+    ),
     title=window.title,
   )
   let cursor_options = window_current_cursor_options(world, entity)

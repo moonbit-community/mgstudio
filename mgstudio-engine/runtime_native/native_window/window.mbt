@@ -16,8 +16,22 @@
 pub type NativeWindow = Int
 
 ///|
-pub fn create(width~ : Int, height~ : Int, title~ : String) -> NativeWindow {
-  @windowing.create(width~, height~, title~)
+pub fn create(
+  logical_width~ : Int,
+  logical_height~ : Int,
+  physical_width~ : Int,
+  physical_height~ : Int,
+  use_physical_size_on_create~ : Bool,
+  title~ : String,
+) -> NativeWindow {
+  @windowing.create(
+    logical_width~,
+    logical_height~,
+    physical_width~,
+    physical_height~,
+    use_physical_size_on_create~,
+    title~,
+  )
 }
 
 ///|

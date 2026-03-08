@@ -15,8 +15,11 @@
 ///|
 #borrow(title)
 pub extern "C" fn create_utf8(
-  width : Int,
-  height : Int,
+  logical_width : Int,
+  logical_height : Int,
+  physical_width : Int,
+  physical_height : Int,
+  use_physical_size_on_create : Bool,
   title : Bytes,
   title_len : UInt64,
 ) -> Int = "mgw_window_create_utf8"

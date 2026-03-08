@@ -2,7 +2,7 @@
 package "Milky2018/mgstudio/runtime_native/native_window"
 
 // Values
-pub fn create(width~ : Int, height~ : Int, title~ : String) -> Int
+pub fn create(logical_width~ : Int, logical_height~ : Int, physical_width~ : Int, physical_height~ : Int, use_physical_size_on_create~ : Bool, title~ : String) -> Int
 
 pub fn focused(Int) -> Bool
 

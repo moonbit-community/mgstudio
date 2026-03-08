@@ -105,7 +105,7 @@ pub fn host_gpu_request_device() -> Int
 
 pub fn host_gpu_set_scissor(x~ : Int, y~ : Int, width~ : Int, height~ : Int) -> Unit
 
-pub fn host_window_create(width~ : Int, height~ : Int, title~ : String) -> Int
+pub fn host_window_create(logical_width~ : Int, logical_height~ : Int, physical_width~ : Int, physical_height~ : Int, use_physical_size_on_create~ : Bool, title~ : String) -> Int
 
 pub fn host_window_get_focused(Int) -> Bool
 

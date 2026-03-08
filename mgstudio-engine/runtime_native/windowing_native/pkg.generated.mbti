@@ -10,7 +10,7 @@ pub fn any_window_open() -> Bool
 
 pub fn attach_metal_layer(Int, @c.OpaquePtr) -> Unit
 
-pub fn create_utf8(Int, Int, Bytes, UInt64) -> Int
+pub fn create_utf8(Int, Int, Int, Int, Bool, Bytes, UInt64) -> Int
 
 pub fn focused(Int) -> Bool
 

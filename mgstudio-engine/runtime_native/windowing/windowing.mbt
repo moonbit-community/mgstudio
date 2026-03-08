@@ -54,14 +54,20 @@ fn encode_utf8_bytes(value : String) -> Bytes {
 
 ///|
 pub fn create(
-  width~ : Int,
-  height~ : Int,
+  logical_width~ : Int,
+  logical_height~ : Int,
+  physical_width~ : Int,
+  physical_height~ : Int,
+  use_physical_size_on_create~ : Bool,
   title~ : String,
 ) -> NativeWindowHandle {
   let title_bytes = encode_utf8_bytes(title)
   @windowing_native.create_utf8(
-    width,
-    height,
+    logical_width,
+    logical_height,
+    physical_width,
+    physical_height,
+    use_physical_size_on_create,
     title_bytes,
     title_bytes.length().to_uint64(),
   )
