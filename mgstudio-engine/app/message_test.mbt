@@ -23,8 +23,30 @@ impl @ecs.Message for TestAppMessage with message() {
 }
 
 ///|
+struct TestDefaultAppMessage {
+  mut value : Int
+} derive(Eq, Show)
+
+///|
+impl @ecs.Message for TestDefaultAppMessage with message() {
+  @ecs.register_message(
+    debug_name="tests.app.message_support.test_default_app_message",
+  )
+}
+
+///|
+pub impl Default for TestDefaultAppMessage with default() {
+  { value: 5 }
+}
+
+///|
 let test_message_writer_set : SystemSet = system_set(
   "tests.app.message_support.writer",
+)
+
+///|
+let test_message_mutator_set : SystemSet = system_set(
+  "tests.app.message_support.mutator",
 )
 
 ///|
@@ -105,4 +127,56 @@ test "app: on_message consumes unread messages once per condition state" {
   app = app.run_once()
 
   inspect(triggered.val, content="1")
+}
+
+///|
+test "app: MessageMutator mutates unread messages and MessageWriter write_default works" {
+  let sent = Ref::new(false)
+  let seen : Array[Int] = []
+  let key : @ecs.MessageKey[TestDefaultAppMessage] = @ecs.Message::message()
+
+  let mut app = App::new(@ecs.World::new())
+    .add_message(key)
+    .add_systems(
+      Update,
+      system(
+        system_param(fn(writer : @ecs.MessageWriter[TestDefaultAppMessage]) {
+          if !sent.val {
+            ignore(writer.write_default())
+            sent.val = true
+          }
+        }),
+      ).in_set(test_message_writer_set),
+    )
+    .add_systems(
+      Update,
+      system(
+        system_param(fn(mutator : @ecs.MessageMutator[TestDefaultAppMessage]) {
+          for message in (try! mutator.read()) {
+            message.val.value = message.val.value + 4
+          }
+        }),
+      ).in_set(test_message_mutator_set),
+    )
+    .add_systems(
+      Update,
+      system(
+        system_param(fn(reader : @ecs.MessageReader[TestDefaultAppMessage]) {
+          for message in (try! reader.read()) {
+            seen.push(message.value)
+          }
+        }),
+      ).in_set(test_message_reader_set),
+    )
+    .configure_set(Update, test_message_writer_set, before=[
+      test_message_mutator_set,
+    ])
+    .configure_set(Update, test_message_mutator_set, before=[
+      test_message_reader_set,
+    ])
+
+  app = app.run_once()
+  app = app.run_once()
+
+  inspect(seen, content="[9]")
 }

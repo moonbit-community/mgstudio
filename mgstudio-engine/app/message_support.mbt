@@ -122,6 +122,30 @@ pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T] with store(
 }
 
 ///|
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T] with init_state(
+  world,
+) {
+  system_param_empty_state(world)
+}
+
+///|
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T] with get(
+  state,
+) {
+  let world = system_param_abort_missing_world()
+  let key : @ecs.MessageKey[T] = @ecs.Message::message()
+  world.message_mutator(key, Ref::new(message_cursor_state(state)))
+}
+
+///|
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T] with store(
+  self,
+  state,
+) {
+  state.val = self.cursor().to_json()
+}
+
+///|
 pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T] with init_state(
   world,
 ) {
