@@ -799,6 +799,11 @@ pub fn Node::with_row_gap(self : Node, row_gap : Val) -> Node {
 }
 
 ///|
+pub fn Node::with_column_gap(self : Node, column_gap : Val) -> Node {
+  Node::{ ..self, column_gap, }
+}
+
+///|
 pub fn Node::with_grid_template_rows(
   self : Node,
   grid_template_rows : Array[RepeatedGridTrack],
@@ -1218,6 +1223,14 @@ pub fn ImageNode::default() -> ImageNode {
 ///|
 pub fn ImageNode::new(image : @asset.Handle[@asset.Image]) -> ImageNode {
   ImageNode::{ ..ImageNode::default(), image, }
+}
+
+///|
+pub fn ImageNode::from_atlas_image(
+  image : @asset.Handle[@asset.Image],
+  texture_atlas : @asset.TextureAtlas,
+) -> ImageNode {
+  ImageNode::new(image).with_texture_atlas(Some(texture_atlas))
 }
 
 ///|

@@ -451,6 +451,7 @@ pub struct ImageNode {
   image_mode : NodeImageMode
 }
 pub fn ImageNode::default() -> Self
+pub fn ImageNode::from_atlas_image(@asset.Handle[@asset.Image], @asset.TextureAtlas) -> Self
 pub fn ImageNode::new(@asset.Handle[@asset.Image]) -> Self
 pub fn ImageNode::with_color(Self, @render2d.Color) -> Self
 pub fn ImageNode::with_flip_x(Self) -> Self
@@ -583,6 +584,7 @@ pub fn Node::default() -> Self
 pub fn Node::with_align_items(Self, AlignItems) -> Self
 pub fn Node::with_border(Self, UiRect) -> Self
 pub fn Node::with_bottom(Self, Val) -> Self
+pub fn Node::with_column_gap(Self, Val) -> Self
 pub fn Node::with_display(Self, Display) -> Self
 pub fn Node::with_flex_direction(Self, FlexDirection) -> Self
 pub fn Node::with_grid_template_columns(Self, Array[RepeatedGridTrack]) -> Self
