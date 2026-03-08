@@ -1076,6 +1076,7 @@ pub fn Mesh3d::from_geometry(@mesh.Mesh3dGeometry) -> Self
 pub fn Mesh3d::from_plane(Float, Float) -> Self
 pub fn Mesh3d::from_sphere(Float) -> Self
 pub fn Mesh3d::from_tetrahedron(Float) -> Self
+pub fn Mesh3d::from_uv_sphere(Float, Int, Int) -> Self
 pub fn Mesh3d::new(@asset.Handle[@mesh.Mesh]) -> Self
 pub impl @ecs.Component for Mesh3d
 pub impl ToJson for Mesh3d

@@ -6,6 +6,11 @@ package "Milky2018/mgstudio/examples/3d/ssao"
 // Errors
 
 // Types and methods
+type SphereMarker
+
+type SsaoCamera
+
+type SsaoInstructions
 
 // Type aliases
 

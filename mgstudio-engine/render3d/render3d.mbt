@@ -4089,24 +4089,28 @@ fn mesh3d_append_uv_sphere_triangle(
 }
 
 ///|
-fn mesh3d_geometry_sphere(radius : Float) -> @mesh.Mesh3dGeometry {
+fn mesh3d_geometry_uv_sphere(
+  radius : Float,
+  sectors : Int,
+  stacks : Int,
+) -> @mesh.Mesh3dGeometry {
   let safe_radius = if radius <= 0.0F { 0.5F } else { radius }
-  let latitudes = 16
-  let longitudes = 32
-  let latitude_count = Float::from_int(latitudes)
-  let longitude_count = Float::from_int(longitudes)
+  let safe_sectors = if sectors < 3 { 3 } else { sectors }
+  let safe_stacks = if stacks < 2 { 2 } else { stacks }
+  let stack_count = Float::from_int(safe_stacks)
+  let sector_count = Float::from_int(safe_sectors)
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
 
   fn sphere_point(
     radius : Float,
-    latitude : Int,
-    longitude : Int,
-    latitude_count : Float,
-    longitude_count : Float,
+    stack : Int,
+    sector : Int,
+    stack_count : Float,
+    sector_count : Float,
   ) -> (@math.Vec3, @math.Vec2) {
-    let v = Float::from_int(latitude) / latitude_count
-    let u = Float::from_int(longitude) / longitude_count
+    let v = Float::from_int(stack) / stack_count
+    let u = Float::from_int(sector) / sector_count
     let theta = v * @math.pi()
     let phi = u * @math.pi() * 2.0F
     let sin_theta = @math.sin(theta)
@@ -4116,35 +4120,35 @@ fn mesh3d_geometry_sphere(radius : Float) -> @mesh.Mesh3dGeometry {
     (@math.Vec3::new(x, y, z), @math.Vec2::new(u, 1.0F - v))
   }
 
-  for latitude in 0..<latitudes {
-    for longitude in 0..<longitudes {
-      let next_longitude = longitude + 1
+  for stack in 0..<safe_stacks {
+    for sector in 0..<safe_sectors {
+      let next_sector = sector + 1
       let (p00, uv00) = sphere_point(
-        safe_radius, latitude, longitude, latitude_count, longitude_count,
+        safe_radius, stack, sector, stack_count, sector_count,
       )
       let (p01, uv01) = sphere_point(
-        safe_radius, latitude, next_longitude, latitude_count, longitude_count,
+        safe_radius, stack, next_sector, stack_count, sector_count,
       )
       let (p10, uv10) = sphere_point(
         safe_radius,
-        latitude + 1,
-        longitude,
-        latitude_count,
-        longitude_count,
+        stack + 1,
+        sector,
+        stack_count,
+        sector_count,
       )
       let (p11, uv11) = sphere_point(
         safe_radius,
-        latitude + 1,
-        next_longitude,
-        latitude_count,
-        longitude_count,
+        stack + 1,
+        next_sector,
+        stack_count,
+        sector_count,
       )
 
-      if latitude == 0 {
+      if stack == 0 {
         mesh3d_append_uv_sphere_triangle(
           positions, uvs, p00, p10, p11, uv00, uv10, uv11,
         )
-      } else if latitude + 1 == latitudes {
+      } else if stack + 1 == safe_stacks {
         mesh3d_append_uv_sphere_triangle(
           positions, uvs, p00, p10, p01, uv00, uv10, uv01,
         )
@@ -4183,8 +4187,17 @@ pub fn Mesh3d::from_plane(width : Float, depth : Float) -> Mesh3d {
 }
 
 ///|
+pub fn Mesh3d::from_uv_sphere(
+  radius : Float,
+  sectors : Int,
+  stacks : Int,
+) -> Mesh3d {
+  Mesh3d::from_geometry(mesh3d_geometry_uv_sphere(radius, sectors, stacks))
+}
+
+///|
 pub fn Mesh3d::from_sphere(radius : Float) -> Mesh3d {
-  Mesh3d::from_geometry(mesh3d_geometry_sphere(radius))
+  Mesh3d::from_uv_sphere(radius, 32, 16)
 }
 
 ///|

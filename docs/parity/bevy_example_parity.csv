@@ -81,7 +81,7 @@ bevy/examples/3d/specular_tint.rs,3d,specular_tint,mgstudio-engine/examples/3d/s
 bevy/examples/3d/spherical_area_lights.rs,3d,spherical_area_lights,mgstudio-engine/examples/3d/spherical_area_lights,Exact,team-render,
 bevy/examples/3d/split_screen.rs,3d,split_screen,mgstudio-engine/examples/3d/split_screen,Exact,team-render,
 bevy/examples/3d/spotlight.rs,3d,spotlight,mgstudio-engine/examples/3d/spotlight,Exact,team-render,
-bevy/examples/3d/ssao.rs,3d,ssao,mgstudio-engine/examples/3d/ssao,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
+bevy/examples/3d/ssao.rs,3d,ssao,mgstudio-engine/examples/3d/ssao,Exact,team-render,
 bevy/examples/3d/ssr.rs,3d,ssr,mgstudio-engine/examples/3d/ssr,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
 bevy/examples/3d/texture.rs,3d,texture,mgstudio-engine/examples/3d/texture,Exact,team-render,
 bevy/examples/3d/tonemapping.rs,3d,tonemapping,mgstudio-engine/examples/3d/tonemapping,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
