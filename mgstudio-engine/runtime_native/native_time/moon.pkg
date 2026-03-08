@@ -1,5 +1,5 @@
 // Canonical native runtime implementation package.
 import {
-  "moonbitlang/core/env",
+  "moonbitlang/core/bench",
   "moonbitlang/core/ref",
 }

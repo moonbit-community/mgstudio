@@ -17,8 +17,14 @@ test "diagnostic: max_history_length zero keeps only latest measurement" {
   let diagnostic = Diagnostic::new(DiagnosticPath::new("test")).with_max_history_length(
     0,
   )
-  diagnostic.add_measurement(DiagnosticMeasurement::new(1.0F, 10.0F), 1)
-  diagnostic.add_measurement(DiagnosticMeasurement::new(2.0F, 20.0F), 2)
+  diagnostic.add_measurement(
+    DiagnosticMeasurement::new(@core.Instant::from_secs_f32(1.0F), 10.0F),
+    1,
+  )
+  diagnostic.add_measurement(
+    DiagnosticMeasurement::new(@core.Instant::from_secs_f32(2.0F), 20.0F),
+    2,
+  )
   inspect(diagnostic.history_len(), content="1")
   inspect(diagnostic.value().unwrap(), content="20")
 }
@@ -26,10 +32,30 @@ test "diagnostic: max_history_length zero keeps only latest measurement" {
 ///|
 test "diagnostic: same system tick overwrites the latest measurement" {
   let diagnostic = Diagnostic::new(DiagnosticPath::new("test"))
-  diagnostic.add_measurement(DiagnosticMeasurement::new(1.0F, 10.0F), 7)
-  diagnostic.add_measurement(DiagnosticMeasurement::new(2.0F, 12.0F), 7)
+  diagnostic.add_measurement(
+    DiagnosticMeasurement::new(@core.Instant::from_secs_f32(1.0F), 10.0F),
+    7,
+  )
+  diagnostic.add_measurement(
+    DiagnosticMeasurement::new(@core.Instant::from_secs_f32(2.0F), 12.0F),
+    7,
+  )
   inspect(diagnostic.history_len(), content="1")
   inspect(diagnostic.value().unwrap(), content="12")
+}
+
+///|
+test "diagnostic: duration tracks instant span" {
+  let diagnostic = Diagnostic::new(DiagnosticPath::new("test"))
+  diagnostic.add_measurement(
+    DiagnosticMeasurement::new(@core.Instant::from_millis(250L), 1.0F),
+    1,
+  )
+  diagnostic.add_measurement(
+    DiagnosticMeasurement::new(@core.Instant::from_millis(750L), 2.0F),
+    2,
+  )
+  inspect(diagnostic.duration().unwrap().as_millis(), content="500")
 }
 
 ///|

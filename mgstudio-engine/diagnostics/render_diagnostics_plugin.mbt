@@ -152,10 +152,7 @@ fn render_diagnostics_record_measurement(
         return
       }
       diagnostic_ref.val.add_measurement(
-        DiagnosticMeasurement::new(
-          @time.host_time_now() / 1000.0F,
-          Float::from_int(value),
-        ),
+        DiagnosticMeasurement::new(@core.Instant::now(), Float::from_int(value)),
         tick,
       )
     }

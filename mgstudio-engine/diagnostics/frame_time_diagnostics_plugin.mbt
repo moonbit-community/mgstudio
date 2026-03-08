@@ -86,7 +86,7 @@ pub fn frame_time_diagnostics_plugin_with(
 ///|
 fn frame_time_diagnostic_system(
   diagnostics : Diagnostics,
-  time : @app.Res[@time.Time[Unit]],
+  time : @app.Res[@time.Time[@time.Real]],
   frame_count : @app.Res[FrameCount],
 ) -> Unit {
   diagnostics.add_measurement(frame_time_diagnostic_frame_count, fn() {

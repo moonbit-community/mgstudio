@@ -78,7 +78,7 @@ fn entity_count_diagnostic_system(world : @ecs.World) -> Unit {
           }
           diagnostic_ref.val.add_measurement(
             DiagnosticMeasurement::{
-              timestamp_seconds: @time.host_time_now() / 1000.0F,
+              time: @core.Instant::now(),
               value: Float::from_int(world.entity_count()),
             },
             tick,

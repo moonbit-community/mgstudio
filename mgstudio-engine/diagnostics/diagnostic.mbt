@@ -66,16 +66,16 @@ pub fn DiagnosticPath::components(self : DiagnosticPath) -> Array[String] {
 
 ///|
 pub struct DiagnosticMeasurement {
-  timestamp_seconds : Float
+  time : @core.Instant
   value : Float
 } derive(Eq, Show, ToJson, FromJson)
 
 ///|
 pub fn DiagnosticMeasurement::new(
-  timestamp_seconds : Float,
+  time : @core.Instant,
   value : Float,
 ) -> DiagnosticMeasurement {
-  DiagnosticMeasurement::{ timestamp_seconds, value }
+  DiagnosticMeasurement::{ time, value }
 }
 
 ///|
@@ -211,13 +211,13 @@ pub fn Diagnostic::history_len(self : Diagnostic) -> Int {
 }
 
 ///|
-pub fn Diagnostic::duration(self : Diagnostic) -> Float? {
+pub fn Diagnostic::duration(self : Diagnostic) -> @core.Duration? {
   if self.history.length() < 2 {
     return None
   }
   let newest = self.history[self.history.length() - 1]
   let oldest = self.history[0]
-  Some(newest.timestamp_seconds - oldest.timestamp_seconds)
+  Some(newest.time.saturating_duration_since(oldest.time))
 }
 
 ///|
@@ -273,7 +273,9 @@ pub fn Diagnostic::add_measurement(
   if measurement.value.is_nan() {
     ()
   } else if effective_previous is Some(previous) {
-    let delta = measurement.timestamp_seconds - previous.timestamp_seconds
+    let delta = measurement.time
+      .saturating_duration_since(previous.time)
+      .as_secs_f32()
     let alpha = if self.ema_smoothing_factor <= 0.0F {
       1.0F
     } else {
@@ -463,7 +465,7 @@ pub fn Diagnostics::add_measurement(
         return
       }
       let measurement = DiagnosticMeasurement::{
-        timestamp_seconds: @time.host_time_now() / 1000.0F,
+        time: @core.Instant::now(),
         value: value(),
       }
       diagnostic_ref.val.add_measurement(

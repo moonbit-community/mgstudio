@@ -190,6 +190,11 @@ typedef struct {
   mgw_size_t size;
 } mgw_rect_t;
 
+typedef struct {
+  mgw_nsuint_t location;
+  mgw_nsuint_t length;
+} mgw_range_t;
+
 #ifndef YES
 #define YES ((mgw_bool_t)1)
 #endif
@@ -200,6 +205,7 @@ typedef struct {
 static bool g_bootstrap_done = false;
 static bool g_bootstrap_ok = false;
 static id g_ns_app = nil;
+static Class g_mgw_view_class = Nil;
 
 static SEL mgw_sel(const char *name) {
   return sel_registerName(name);
@@ -228,6 +234,144 @@ static id mgw_make_nsstring(const char *utf8) {
   }
   return ((id(*)(id, SEL, const char *))objc_msgSend)(
     (id)ns_string_class, mgw_sel("stringWithUTF8String:"), utf8);
+}
+
+static mgw_bool_t mgw_view_accepts_first_responder(id self, SEL _cmd) {
+  (void)self;
+  (void)_cmd;
+  return YES;
+}
+
+static id mgw_view_touch_bar(id self, SEL _cmd) {
+  (void)self;
+  (void)_cmd;
+  return nil;
+}
+
+static void mgw_view_key_down(id self, SEL _cmd, id event) {
+  (void)_cmd;
+  if (!self || !event) {
+    return;
+  }
+  Class ns_array_class = objc_getClass("NSArray");
+  if (!ns_array_class) {
+    return;
+  }
+  id events = ((id(*)(id, SEL, id))objc_msgSend)(
+    (id)ns_array_class, mgw_sel("arrayWithObject:"), event);
+  if (!events) {
+    return;
+  }
+  ((void(*)(id, SEL, id))objc_msgSend)(
+    self, mgw_sel("interpretKeyEvents:"), events);
+}
+
+static void mgw_view_key_up(id self, SEL _cmd, id event) {
+  (void)self;
+  (void)_cmd;
+  (void)event;
+}
+
+static void mgw_view_flags_changed(id self, SEL _cmd, id event) {
+  (void)self;
+  (void)_cmd;
+  (void)event;
+}
+
+static void mgw_view_insert_text(
+  id self,
+  SEL _cmd,
+  id string,
+  mgw_range_t replacement_range
+) {
+  (void)self;
+  (void)_cmd;
+  (void)string;
+  (void)replacement_range;
+}
+
+static void mgw_view_do_command_by_selector(id self, SEL _cmd, SEL command) {
+  (void)self;
+  (void)_cmd;
+  (void)command;
+}
+
+static void mgw_view_cancel_operation(id self, SEL _cmd, id sender) {
+  (void)self;
+  (void)_cmd;
+  (void)sender;
+}
+
+static bool mgw_register_view_class(void) {
+  if (g_mgw_view_class) {
+    return true;
+  }
+  g_mgw_view_class = objc_getClass("MgwContentView");
+  if (g_mgw_view_class) {
+    return true;
+  }
+  Class ns_view_class = objc_getClass("NSView");
+  if (!ns_view_class) {
+    return false;
+  }
+  Class view_class = objc_allocateClassPair(ns_view_class, "MgwContentView", 0);
+  if (!view_class) {
+    g_mgw_view_class = objc_getClass("MgwContentView");
+    return g_mgw_view_class != Nil;
+  }
+  class_addMethod(
+    view_class,
+    mgw_sel("acceptsFirstResponder"),
+    (IMP)mgw_view_accepts_first_responder,
+    "c@:");
+  class_addMethod(
+    view_class,
+    mgw_sel("touchBar"),
+    (IMP)mgw_view_touch_bar,
+    "@@:");
+  class_addMethod(view_class, mgw_sel("keyDown:"), (IMP)mgw_view_key_down, "v@:@");
+  class_addMethod(view_class, mgw_sel("keyUp:"), (IMP)mgw_view_key_up, "v@:@");
+  class_addMethod(
+    view_class,
+    mgw_sel("flagsChanged:"),
+    (IMP)mgw_view_flags_changed,
+    "v@:@");
+  class_addMethod(
+    view_class,
+    mgw_sel("insertText:replacementRange:"),
+    (IMP)mgw_view_insert_text,
+    "v@:@{_NSRange=QQ}");
+  class_addMethod(
+    view_class,
+    mgw_sel("doCommandBySelector:"),
+    (IMP)mgw_view_do_command_by_selector,
+    "v@::");
+  class_addMethod(
+    view_class,
+    mgw_sel("cancelOperation:"),
+    (IMP)mgw_view_cancel_operation,
+    "v@:@");
+  objc_registerClassPair(view_class);
+  g_mgw_view_class = view_class;
+  return true;
+}
+
+static id mgw_make_content_view(mgw_rect_t frame) {
+  if (!mgw_register_view_class() || !g_mgw_view_class) {
+    return nil;
+  }
+  id allocated = mgw_msg_id((id)g_mgw_view_class, "alloc");
+  if (!allocated) {
+    return nil;
+  }
+  id view = ((id(*)(id, SEL, mgw_rect_t))objc_msgSend)(
+    allocated, mgw_sel("initWithFrame:"), frame);
+  if (!view) {
+    return nil;
+  }
+  ((void(*)(id, SEL, mgw_nsuint_t))objc_msgSend)(
+    view, mgw_sel("setAutoresizingMask:"), (mgw_nsuint_t)18UL);
+  return view;
 }
 
 static bool mgw_bootstrap_app(void) {
@@ -573,7 +717,22 @@ int mgw_window_create_utf8(
         }
 
         window->window = (void *)ns_window;
-        window->content_view = (void *)mgw_msg_id(ns_window, "contentView");
+        id content_view = mgw_msg_id(ns_window, "contentView");
+        if (content_view) {
+          mgw_rect_t content_bounds = ((mgw_rect_t(*)(id, SEL))objc_msgSend)(
+            content_view, mgw_sel("bounds"));
+          id mgw_view = mgw_make_content_view(content_bounds);
+          if (mgw_view) {
+            ((void(*)(id, SEL, id))objc_msgSend)(
+              ns_window, mgw_sel("setContentView:"), mgw_view);
+            ((void(*)(id, SEL, id))objc_msgSend)(
+              ns_window, mgw_sel("setInitialFirstResponder:"), mgw_view);
+            ((void(*)(id, SEL, id))objc_msgSend)(
+              ns_window, mgw_sel("makeFirstResponder:"), mgw_view);
+            content_view = mgw_view;
+          }
+        }
+        window->content_view = (void *)content_view;
         window->scale_factor = (float)((double(*)(id, SEL))objc_msgSend)(
           ns_window, mgw_sel("backingScaleFactor"));
         if (use_physical_size_on_create) {

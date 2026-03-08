@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/diagnostics"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/time",
   "moonbitlang/core/hashmap",
@@ -79,7 +80,7 @@ pub struct Diagnostic {
 pub fn Diagnostic::add_measurement(Self, DiagnosticMeasurement, Int) -> Unit
 pub fn Diagnostic::average(Self) -> Float?
 pub fn Diagnostic::clear_history(Self) -> Unit
-pub fn Diagnostic::duration(Self) -> Float?
+pub fn Diagnostic::duration(Self) -> @core.Duration?
 pub fn Diagnostic::get_max_history_length(Self) -> Int
 pub fn Diagnostic::history_len(Self) -> Int
 pub fn Diagnostic::is_enabled(Self) -> Bool
@@ -97,10 +98,10 @@ pub fn Diagnostic::with_suffix(Self, String) -> Self
 pub impl Show for Diagnostic
 
 pub struct DiagnosticMeasurement {
-  timestamp_seconds : Float
+  time : @core.Instant
   value : Float
 }
-pub fn DiagnosticMeasurement::new(Float, Float) -> Self
+pub fn DiagnosticMeasurement::new(@core.Instant, Float) -> Self
 pub impl Eq for DiagnosticMeasurement
 pub impl Show for DiagnosticMeasurement
 pub impl ToJson for DiagnosticMeasurement
