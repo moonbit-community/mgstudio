@@ -392,7 +392,7 @@ Notes:
 | `bevy/examples/tools/scene_viewer/morph_viewer_plugin.rs` | `tools` |  | `Blocked` | `team-ops` |  |
 | `bevy/examples/tools/scene_viewer/scene_viewer_plugin.rs` | `tools` |  | `Blocked` | `team-ops` |  |
 | `bevy/examples/transforms/3d_rotation.rs` | `transforms` | `mgstudio-engine/examples/transforms/3d_rotation` | `Exact` | `team-core` |  |
-| `bevy/examples/transforms/align.rs` | `transforms` |  | `Blocked` | `team-core` | Blocked by missing 3D gizmo parity (`bd-2j9.9.3.2`) and ship GLTF asset staging (`bd-7ff`). |
+| `bevy/examples/transforms/align.rs` | `transforms` |  | `Blocked` | `team-core` | Blocked by missing 3D gizmo parity (`bd-2j9.9.3.2`). Ship GLTF runtime assets are now staged under `mgstudio-engine/assets/models/ship/`. |
 | `bevy/examples/transforms/scale.rs` | `transforms` | `mgstudio-engine/examples/transforms/scale` | `Exact` | `team-core` |  |
 | `bevy/examples/transforms/transform.rs` | `transforms` | `mgstudio-engine/examples/transforms/transform` | `Exact` | `team-core` |  |
 | `bevy/examples/transforms/translation.rs` | `transforms` | `mgstudio-engine/examples/transforms/translation` | `Exact` | `team-core` |  |
@@ -455,7 +455,7 @@ Notes:
 | `bevy/examples/window/low_power.rs` | `window` | `mgstudio-engine/examples/window/low_power` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/monitor_info.rs` | `window` | `mgstudio-engine/examples/window/monitor_info` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/multi_window_text.rs` | `window` |  | `Blocked` | `team-input_window` | Placeholder fallback example was removed; exact parity now tracked under `bd-1gp` for `UiTargetCamera` and per-window UI scale routing. |
-| `bevy/examples/window/multiple_windows.rs` | `window` |  | `Blocked` | `team-input_window` | Exact parity still depends on `bd-1gp` / `bd-kca` for `UiTargetCamera` and per-window UI scale routing, and `bd-az7` for torus GLTF asset staging. The partial package was removed instead of keeping an adapted port. |
+| `bevy/examples/window/multiple_windows.rs` | `window` |  | `Blocked` | `team-input_window` | Exact parity still depends on `bd-1gp` / `bd-kca` for `UiTargetCamera` and per-window UI scale routing. Torus GLTF runtime assets are now staged under `mgstudio-engine/assets/models/torus/`, and the partial package remains removed instead of keeping an adapted port. |
 | `bevy/examples/window/scale_factor_override.rs` | `window` | `mgstudio-engine/examples/window/scale_factor_override` | `Exact` | `team-input_window` |  |
 | `bevy/examples/window/screenshot.rs` | `window` | `mgstudio-engine/examples/window/screenshot` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/transparent_window.rs` | `window` | `mgstudio-engine/examples/window/transparent_window` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
