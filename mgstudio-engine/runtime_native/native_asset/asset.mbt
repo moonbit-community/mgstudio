@@ -1246,8 +1246,34 @@ pub fn save_texture_png(texture_id~ : Int, path~ : String) -> Unit {
 }
 
 ///|
-pub fn set_texture_sampler(texture_id~ : Int, sampler~ : Int) -> Unit {
-  @native_gpu.asset_set_texture_sampler(texture_id~, sampler~)
+pub fn set_texture_sampler(
+  texture_id~ : Int,
+  address_mode_u~ : Int,
+  address_mode_v~ : Int,
+  address_mode_w~ : Int,
+  mag_filter~ : Int,
+  min_filter~ : Int,
+  mipmap_filter~ : Int,
+  lod_min_clamp~ : Float,
+  lod_max_clamp~ : Float,
+  compare~ : Int,
+  anisotropy_clamp~ : Int,
+  border_color~ : Int,
+) -> Unit {
+  @native_gpu.asset_set_texture_sampler(
+    texture_id~,
+    address_mode_u~,
+    address_mode_v~,
+    address_mode_w~,
+    mag_filter~,
+    min_filter~,
+    mipmap_filter~,
+    lod_min_clamp~,
+    lod_max_clamp~,
+    compare~,
+    anisotropy_clamp~,
+    border_color~,
+  )
 }
 
 ///|

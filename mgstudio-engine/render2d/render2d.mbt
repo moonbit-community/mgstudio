@@ -1267,6 +1267,8 @@ fn pan_camera_keycode_to_string(code : @window.KeyCode) -> String {
     @window.KeyCode::Slash => "Slash"
     @window.KeyCode::Minus => "Minus"
     @window.KeyCode::Equal => "Equal"
+    @window.KeyCode::NumpadAdd => "NumpadAdd"
+    @window.KeyCode::NumpadSubtract => "NumpadSubtract"
     @window.KeyCode::BracketLeft => "BracketLeft"
     @window.KeyCode::BracketRight => "BracketRight"
     @window.KeyCode::Quote => "Quote"

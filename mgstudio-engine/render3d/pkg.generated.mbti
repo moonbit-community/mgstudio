@@ -1061,11 +1061,16 @@ pub impl @json.FromJson for LightProbe
 pub struct Mesh3d {
   mesh : @asset.Handle[@mesh.Mesh]
 }
+pub fn Mesh3d::from_capsule(@math.Capsule3d) -> Self
 pub fn Mesh3d::from_cuboid(Float, Float, Float) -> Self
+pub fn Mesh3d::from_cylinder(@math.Cylinder) -> Self
 pub fn Mesh3d::from_geometry(@mesh.Mesh3dGeometry) -> Self
+pub fn Mesh3d::from_icosphere(Float, Int) -> Self
 pub fn Mesh3d::from_plane(Float, Float) -> Self
 pub fn Mesh3d::from_sphere(Float) -> Self
 pub fn Mesh3d::from_tetrahedron(Float) -> Self
+pub fn Mesh3d::from_tetrahedron_shape(@math.Tetrahedron) -> Self
+pub fn Mesh3d::from_triangle(@math.Triangle3d) -> Self
 pub fn Mesh3d::from_uv_sphere(Float, Int, Int) -> Self
 pub fn Mesh3d::new(@asset.Handle[@mesh.Mesh]) -> Self
 pub impl @ecs.Component for Mesh3d

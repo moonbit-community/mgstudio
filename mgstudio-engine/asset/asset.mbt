@@ -1014,7 +1014,9 @@ pub fn AssetServer::load_with_settings(
   self.record_path(canonical_path)
   let handle = Handle::new(id)
   self.register_image_path(canonical_path, handle)
-  asset_set_texture_sampler(handle, settings.sampler)
+  if settings.sampler is Descriptor(_) {
+    asset_set_texture_sampler(handle, settings.sampler)
+  }
   self.set_image_array_layout(handle, settings.array_layout)
   self.set_image_is_srgb(handle, settings.is_srgb)
   self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)

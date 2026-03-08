@@ -191,7 +191,7 @@ pub fn host_asset_register_loader_extension(extension~ : String, kind~ : Int) ->
 
 pub fn host_asset_remove_loader_extension(extension~ : String) -> Unit
 
-pub fn host_asset_set_texture_sampler(texture_id~ : Int, sampler~ : Int) -> Unit
+pub fn host_asset_set_texture_sampler(texture_id~ : Int, address_mode_u~ : Int, address_mode_v~ : Int, address_mode_w~ : Int, mag_filter~ : Int, min_filter~ : Int, mipmap_filter~ : Int, lod_min_clamp~ : Float, lod_max_clamp~ : Float, compare~ : Int, anisotropy_clamp~ : Int, border_color~ : Int) -> Unit
 
 pub fn host_asset_supported_compressed_image_formats() -> Int
 
@@ -331,6 +331,19 @@ pub(all) enum ImageArrayLayout {
   RowHeight(Int)
 }
 
+pub(all) enum ImageCompareFunction {
+  Never
+  Less
+  Equal
+  LessEqual
+  Greater
+  NotEqual
+  GreaterEqual
+  Always
+}
+pub impl Eq for ImageCompareFunction
+pub impl Show for ImageCompareFunction
+
 pub(all) enum ImageFilterMode {
   Nearest
   Linear
@@ -354,6 +367,15 @@ pub fn ImageSampler::default() -> Self
 pub fn ImageSampler::linear() -> Self
 pub fn ImageSampler::nearest() -> Self
 
+pub(all) enum ImageSamplerBorderColor {
+  TransparentBlack
+  OpaqueBlack
+  OpaqueWhite
+  Zero
+}
+pub impl Eq for ImageSamplerBorderColor
+pub impl Show for ImageSamplerBorderColor
+
 pub(all) struct ImageSamplerDescriptor {
   mut label : String?
   mut address_mode_u : ImageAddressMode
@@ -362,11 +384,17 @@ pub(all) struct ImageSamplerDescriptor {
   mut mag_filter : ImageFilterMode
   mut min_filter : ImageFilterMode
   mut mipmap_filter : ImageFilterMode
+  mut lod_min_clamp : Float
+  mut lod_max_clamp : Float
+  mut compare : ImageCompareFunction?
+  mut anisotropy_clamp : Int
+  mut border_color : ImageSamplerBorderColor?
 }
 pub fn ImageSamplerDescriptor::default() -> Self
 pub fn ImageSamplerDescriptor::linear() -> Self
 pub fn ImageSamplerDescriptor::nearest() -> Self
 pub fn ImageSamplerDescriptor::set_address_mode(Self, ImageAddressMode) -> Self
+pub fn ImageSamplerDescriptor::set_anisotropic_filter(Self, Int) -> Self
 pub fn ImageSamplerDescriptor::set_filter(Self, ImageFilterMode) -> Self
 
 pub struct LoadedFolder {

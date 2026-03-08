@@ -145,7 +145,7 @@ pub fn Vec3::normalize_or_zero(self : Vec3) -> Vec3 {
 }
 
 ///|
-pub struct Cuboid {
+pub(all) struct Cuboid {
   half_size : Vec3
 }
 

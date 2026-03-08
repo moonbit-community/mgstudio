@@ -37,6 +37,7 @@ pub struct GpuTextureInfo {
   height : Int
   mip_level_count : Int
   base_mip_level : Int
+  format_raw : UInt
   texture : @wgpu.Texture
   view : @wgpu.TextureView
   sample_view : @wgpu.TextureView?
@@ -278,7 +279,10 @@ pub struct GpuBackend {
   mut motion_blur_pipeline_surface_format : @wgpu.TextureFormat?
   mut motion_blur_settings_buf : @wgpu.Buffer?
   mut motion_blur_globals_buf : @wgpu.Buffer?
-  mut bloom2d_bgl : @wgpu.BindGroupLayout?
+  mut bloom2d_intermediate_bgl : @wgpu.BindGroupLayout?
+  mut bloom2d_intermediate_pipeline_layout : @wgpu.PipelineLayout?
+  mut bloom2d_final_bgl : @wgpu.BindGroupLayout?
+  mut bloom2d_final_pipeline_layout : @wgpu.PipelineLayout?
   mut bloom2d_downsample_first_pipeline : @wgpu.RenderPipeline?
   mut bloom2d_downsample_first_no_threshold_pipeline : @wgpu.RenderPipeline?
   mut bloom2d_downsample_first_uniform_pipeline : @wgpu.RenderPipeline?
@@ -298,6 +302,7 @@ pub struct GpuBackend {
   mut bloom2d_mip_width : Int
   mut bloom2d_mip_height : Int
   mesh3d_material_bg_cache : Ref[Array[Mesh3dMaterialBindGroupCacheEntry]]
+  sampler_cache : Ref[@hashmap.HashMap[String, @wgpu.Sampler]]
   next_id : Ref[Int]
   mut point_shadow_fallback_texture_id : Int
   mut shadow_color_texture : @wgpu.Texture?
@@ -566,7 +571,10 @@ pub fn GpuBackend::new(
     motion_blur_pipeline_surface_format: None,
     motion_blur_settings_buf: None,
     motion_blur_globals_buf: None,
-    bloom2d_bgl: None,
+    bloom2d_intermediate_bgl: None,
+    bloom2d_intermediate_pipeline_layout: None,
+    bloom2d_final_bgl: None,
+    bloom2d_final_pipeline_layout: None,
     bloom2d_downsample_first_pipeline: None,
     bloom2d_downsample_first_no_threshold_pipeline: None,
     bloom2d_downsample_first_uniform_pipeline: None,
@@ -586,6 +594,7 @@ pub fn GpuBackend::new(
     bloom2d_mip_width: 0,
     bloom2d_mip_height: 0,
     mesh3d_material_bg_cache: Ref::new([]),
+    sampler_cache: Ref::new(@hashmap.HashMap::new()),
     next_id: Ref::new(1),
     point_shadow_fallback_texture_id: -1,
     shadow_color_texture: None,
@@ -654,6 +663,66 @@ pub(all) suberror GpuBackendError {
 fn[T] fatal(message : String) -> T raise GpuBackendError {
   raise GpuBackendError::Fatal(message)
 }
+
+///|
+const IMAGE_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : Int = 0
+
+///|
+const IMAGE_SAMPLER_ADDRESS_MODE_REPEAT : Int = 1
+
+///|
+const IMAGE_SAMPLER_ADDRESS_MODE_MIRROR_REPEAT : Int = 2
+
+///|
+const IMAGE_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER : Int = 3
+
+///|
+const IMAGE_SAMPLER_FILTER_MODE_NEAREST : Int = 0
+
+///|
+const IMAGE_SAMPLER_FILTER_MODE_LINEAR : Int = 1
+
+///|
+const IMAGE_SAMPLER_COMPARE_UNDEFINED : Int = -1
+
+///|
+const IMAGE_SAMPLER_COMPARE_NEVER : Int = 0
+
+///|
+const IMAGE_SAMPLER_COMPARE_LESS : Int = 1
+
+///|
+const IMAGE_SAMPLER_COMPARE_EQUAL : Int = 2
+
+///|
+const IMAGE_SAMPLER_COMPARE_LESS_EQUAL : Int = 3
+
+///|
+const IMAGE_SAMPLER_COMPARE_GREATER : Int = 4
+
+///|
+const IMAGE_SAMPLER_COMPARE_NOT_EQUAL : Int = 5
+
+///|
+const IMAGE_SAMPLER_COMPARE_GREATER_EQUAL : Int = 6
+
+///|
+const IMAGE_SAMPLER_COMPARE_ALWAYS : Int = 7
+
+///|
+const IMAGE_SAMPLER_BORDER_COLOR_UNDEFINED : Int = -1
+
+///|
+const IMAGE_SAMPLER_BORDER_COLOR_TRANSPARENT_BLACK : Int = 0
+
+///|
+const IMAGE_SAMPLER_BORDER_COLOR_OPAQUE_BLACK : Int = 1
+
+///|
+const IMAGE_SAMPLER_BORDER_COLOR_OPAQUE_WHITE : Int = 2
+
+///|
+const IMAGE_SAMPLER_BORDER_COLOR_ZERO : Int = 3
 
 ///|
 fn ss(raw : UInt64) -> @wgpu.ShaderStage {
@@ -772,8 +841,185 @@ fn alloc_id(backend : GpuBackend) -> Int {
 }
 
 ///|
+fn texture_view_aspect_for_format(format_raw : UInt) -> UInt {
+  if format_raw == @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT {
+    @wgpu.TEXTURE_ASPECT_DEPTH_ONLY
+  } else {
+    @wgpu.TEXTURE_ASPECT_ALL
+  }
+}
+
+///|
 fn f32_bits(x : Float) -> UInt {
   x.reinterpret_as_uint()
+}
+
+///|
+fn image_sampler_address_mode_wgpu_raw(raw : Int) -> UInt raise GpuBackendError {
+  match raw {
+    IMAGE_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE => @wgpu.ADDRESS_MODE_CLAMP_TO_EDGE
+    IMAGE_SAMPLER_ADDRESS_MODE_REPEAT => @wgpu.ADDRESS_MODE_REPEAT
+    IMAGE_SAMPLER_ADDRESS_MODE_MIRROR_REPEAT => @wgpu.ADDRESS_MODE_MIRROR_REPEAT
+    IMAGE_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER =>
+      fatal(
+        "wgpu: ImageAddressMode::ClampToBorder is blocked because Milky2018/wgpu_mbt does not expose ADDRESS_MODE_CLAMP_TO_BORDER or sampler border-color creation",
+      )
+    _ =>
+      fatal(
+        "wgpu: unsupported image sampler address mode raw=" + raw.to_string(),
+      )
+  }
+}
+
+///|
+fn image_sampler_filter_mode_wgpu_raw(raw : Int) -> UInt raise GpuBackendError {
+  match raw {
+    IMAGE_SAMPLER_FILTER_MODE_NEAREST => @wgpu.FILTER_MODE_NEAREST
+    IMAGE_SAMPLER_FILTER_MODE_LINEAR => @wgpu.FILTER_MODE_LINEAR
+    _ =>
+      fatal(
+        "wgpu: unsupported image sampler filter mode raw=" + raw.to_string(),
+      )
+  }
+}
+
+///|
+fn image_sampler_mipmap_filter_mode_wgpu_raw(
+  raw : Int,
+) -> UInt raise GpuBackendError {
+  match raw {
+    IMAGE_SAMPLER_FILTER_MODE_NEAREST => @wgpu.MIPMAP_FILTER_MODE_NEAREST
+    IMAGE_SAMPLER_FILTER_MODE_LINEAR => @wgpu.MIPMAP_FILTER_MODE_LINEAR
+    _ =>
+      fatal(
+        "wgpu: unsupported image sampler mipmap filter mode raw=" +
+        raw.to_string(),
+      )
+  }
+}
+
+///|
+fn image_sampler_compare_function_wgpu_raw(
+  raw : Int,
+) -> UInt raise GpuBackendError {
+  match raw {
+    IMAGE_SAMPLER_COMPARE_UNDEFINED => @wgpu.COMPARE_FUNCTION_UNDEFINED
+    IMAGE_SAMPLER_COMPARE_NEVER => @wgpu.COMPARE_FUNCTION_NEVER
+    IMAGE_SAMPLER_COMPARE_LESS => @wgpu.COMPARE_FUNCTION_LESS
+    IMAGE_SAMPLER_COMPARE_EQUAL => @wgpu.COMPARE_FUNCTION_EQUAL
+    IMAGE_SAMPLER_COMPARE_LESS_EQUAL => @wgpu.COMPARE_FUNCTION_LESS_EQUAL
+    IMAGE_SAMPLER_COMPARE_GREATER => @wgpu.COMPARE_FUNCTION_GREATER
+    IMAGE_SAMPLER_COMPARE_NOT_EQUAL => @wgpu.COMPARE_FUNCTION_NOT_EQUAL
+    IMAGE_SAMPLER_COMPARE_GREATER_EQUAL => @wgpu.COMPARE_FUNCTION_GREATER_EQUAL
+    IMAGE_SAMPLER_COMPARE_ALWAYS => @wgpu.COMPARE_FUNCTION_ALWAYS
+    _ =>
+      fatal(
+        "wgpu: unsupported image sampler compare function raw=" +
+        raw.to_string(),
+      )
+  }
+}
+
+///|
+fn image_sampler_border_color_validate(raw : Int) -> Unit raise GpuBackendError {
+  match raw {
+    IMAGE_SAMPLER_BORDER_COLOR_UNDEFINED => ()
+    IMAGE_SAMPLER_BORDER_COLOR_TRANSPARENT_BLACK
+    | IMAGE_SAMPLER_BORDER_COLOR_OPAQUE_BLACK
+    | IMAGE_SAMPLER_BORDER_COLOR_OPAQUE_WHITE
+    | IMAGE_SAMPLER_BORDER_COLOR_ZERO =>
+      fatal(
+        "wgpu: ImageSamplerBorderColor is blocked because Milky2018/wgpu_mbt does not expose sampler border-color creation",
+      )
+    _ =>
+      fatal(
+        "wgpu: unsupported image sampler border color raw=" + raw.to_string(),
+      )
+  }
+}
+
+///|
+fn image_sampler_cache_key(
+  address_mode_u : Int,
+  address_mode_v : Int,
+  address_mode_w : Int,
+  mag_filter : Int,
+  min_filter : Int,
+  mipmap_filter : Int,
+  lod_min_clamp : Float,
+  lod_max_clamp : Float,
+  compare : Int,
+  anisotropy_clamp : Int,
+  border_color : Int,
+) -> String {
+  address_mode_u.to_string() +
+  "|" +
+  address_mode_v.to_string() +
+  "|" +
+  address_mode_w.to_string() +
+  "|" +
+  mag_filter.to_string() +
+  "|" +
+  min_filter.to_string() +
+  "|" +
+  mipmap_filter.to_string() +
+  "|" +
+  f32_bits(lod_min_clamp).to_string() +
+  "|" +
+  f32_bits(lod_max_clamp).to_string() +
+  "|" +
+  compare.to_string() +
+  "|" +
+  anisotropy_clamp.to_string() +
+  "|" +
+  border_color.to_string()
+}
+
+///|
+fn gpu_sampler_get_or_create(
+  backend : GpuBackend,
+  address_mode_u : Int,
+  address_mode_v : Int,
+  address_mode_w : Int,
+  mag_filter : Int,
+  min_filter : Int,
+  mipmap_filter : Int,
+  lod_min_clamp : Float,
+  lod_max_clamp : Float,
+  compare : Int,
+  anisotropy_clamp : Int,
+  border_color : Int,
+) -> @wgpu.Sampler raise GpuBackendError {
+  if anisotropy_clamp < 1 {
+    fatal(
+      "wgpu: ImageSamplerDescriptor.anisotropy_clamp must be >= 1, got " +
+      anisotropy_clamp.to_string(),
+    )
+  }
+  image_sampler_border_color_validate(border_color)
+  let key = image_sampler_cache_key(
+    address_mode_u, address_mode_v, address_mode_w, mag_filter, min_filter, mipmap_filter,
+    lod_min_clamp, lod_max_clamp, compare, anisotropy_clamp, border_color,
+  )
+  match backend.sampler_cache.val.get(key) {
+    Some(sampler) => sampler
+    None => {
+      let sampler = backend.device.create_sampler_u32(
+        image_sampler_address_mode_wgpu_raw(address_mode_u),
+        image_sampler_address_mode_wgpu_raw(address_mode_v),
+        image_sampler_address_mode_wgpu_raw(address_mode_w),
+        image_sampler_filter_mode_wgpu_raw(mag_filter),
+        image_sampler_filter_mode_wgpu_raw(min_filter),
+        image_sampler_mipmap_filter_mode_wgpu_raw(mipmap_filter),
+        lod_min_clamp_f32=lod_min_clamp,
+        lod_max_clamp_f32=lod_max_clamp,
+        compare_u32=image_sampler_compare_function_wgpu_raw(compare),
+        max_anisotropy_u32=anisotropy_clamp.reinterpret_as_uint(),
+      )
+      backend.sampler_cache.val.set(key, sampler)
+      sampler
+    }
+  }
 }
 
 ///|
@@ -2771,23 +3017,90 @@ fn load_wgsl_with_defines_required(
 }
 
 ///|
+fn ensure_bloom2d_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
+  let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
+  if backend.bloom2d_intermediate_bgl is None {
+    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=3UL)
+    let ok = builder.add_texture(
+        0U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_sampler(1U, frag, @wgpu.SAMPLER_BINDING_TYPE_FILTERING) &&
+      builder.add_buffer(2U, frag, @wgpu.BUFFER_BINDING_TYPE_UNIFORM)
+    if !ok {
+      builder.free()
+      fatal("wgpu: failed to build bloom intermediate bind group layout")
+    }
+    let bgl = builder.finish(
+      backend.device,
+      label="mgstudio_bloom2d_intermediate_bgl",
+    )
+    let pl = backend.device.create_pipeline_layout_1(bgl)
+    pl.set_label("mgstudio_bloom2d_intermediate_pipeline_layout")
+    backend.bloom2d_intermediate_bgl = Some(bgl)
+    backend.bloom2d_intermediate_pipeline_layout = Some(pl)
+  }
+  if backend.bloom2d_final_bgl is None {
+    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=5UL)
+    let ok = builder.add_texture(
+        0U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_sampler(1U, frag, @wgpu.SAMPLER_BINDING_TYPE_FILTERING) &&
+      builder.add_buffer(2U, frag, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
+      builder.add_texture(
+        3U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_texture(
+        4U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      )
+    if !ok {
+      builder.free()
+      fatal("wgpu: failed to build bloom final bind group layout")
+    }
+    let bgl = builder.finish(backend.device, label="mgstudio_bloom2d_final_bgl")
+    let pl = backend.device.create_pipeline_layout_1(bgl)
+    pl.set_label("mgstudio_bloom2d_final_pipeline_layout")
+    backend.bloom2d_final_bgl = Some(bgl)
+    backend.bloom2d_final_pipeline_layout = Some(pl)
+  }
+}
+
+///|
 fn bloom2d_create_pipeline(
   backend : GpuBackend,
+  layout : @wgpu.PipelineLayout,
   source : String,
   format : @wgpu.TextureFormat,
   fs_entry : String,
   alpha_blend : Bool,
   label : String,
-) -> @wgpu.RenderPipeline {
+) -> @wgpu.RenderPipeline raise GpuBackendError {
   let sm = backend.device.create_shader_module_wgsl(source)
-  let pipeline = backend.device.create_render_pipeline_color_format_entries(
-    sm,
-    format,
-    vs_entry="fullscreen_vertex_shader",
-    fs_entry~,
-    alpha_blend~,
-    depth=false,
-  )
+  let pipeline = try {
+    let builder = @wgpu.RenderPipelineDescBuilder::new(sm, layout~)
+    builder.set_entry_points("fullscreen_vertex_shader", fs_entry)
+    builder.set_color_target_format(format)
+    if alpha_blend {
+      builder.enable_alpha_blend()
+    }
+    builder.create_pipeline(backend.device)
+  } catch {
+    err => {
+      sm.release()
+      fatal("wgpu: failed to build bloom pipeline descriptor: " + err.message())
+    }
+  }
   pipeline.set_label(label)
   sm.release()
   pipeline
@@ -2829,9 +3142,17 @@ fn ensure_bloom2d_mip_texture(
     mip_level_count=safe_mip_count.reinterpret_as_uint(),
   )
   for mip in 0..<safe_mip_count {
-    backend.bloom2d_mip_views.push(
-      texture.create_view_2d(mip.reinterpret_as_uint(), 1U),
+    let view = texture.create_view_u32(
+      tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      @wgpu.TEXTURE_ASPECT_ALL,
+      0U,
+      1U,
+      mip.reinterpret_as_uint(),
+      1U,
     )
+    view.set_label("mgstudio_bloom2d_mip_\{mip}")
+    backend.bloom2d_mip_views.push(view)
   }
   backend.bloom2d_mip_texture = Some(texture)
   backend.bloom2d_mip_count = safe_mip_count
@@ -2840,7 +3161,27 @@ fn ensure_bloom2d_mip_texture(
 }
 
 ///|
-fn create_bloom2d_bind_group(
+fn create_bloom2d_intermediate_bind_group(
+  backend : GpuBackend,
+  bind_layout : @wgpu.BindGroupLayout,
+  input_view : @wgpu.TextureView,
+  sampler : @wgpu.Sampler,
+  settings_buf : @wgpu.Buffer,
+  label : String,
+) -> @wgpu.BindGroup? {
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=3UL)
+  let ok = builder.add_texture_view(0U, input_view) &&
+    builder.add_sampler(1U, sampler) &&
+    builder.add_buffer(2U, settings_buf)
+  if !ok {
+    builder.free()
+    return None
+  }
+  Some(builder.finish(backend.device, bind_layout, label~))
+}
+
+///|
+fn create_bloom2d_final_bind_group(
   backend : GpuBackend,
   bind_layout : @wgpu.BindGroupLayout,
   input_view : @wgpu.TextureView,
@@ -2876,6 +3217,7 @@ fn ensure_bloom2d_pipeline_rgba8(
   if backend.bloom2d_sampler is None {
     backend.bloom2d_sampler = Some(backend.device.create_sampler_linear_clamp())
   }
+  ensure_bloom2d_layouts(backend)
   let mip_format = tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
   if backend.bloom2d_downsample_first_pipeline is None ||
     backend.bloom2d_downsample_first_no_threshold_pipeline is None ||
@@ -2885,6 +3227,10 @@ fn ensure_bloom2d_pipeline_rgba8(
     backend.bloom2d_downsample_uniform_pipeline is None ||
     backend.bloom2d_upsample_pipeline_energy is None ||
     backend.bloom2d_upsample_pipeline_additive is None {
+    guard backend.bloom2d_intermediate_pipeline_layout
+      is Some(intermediate_pipeline_layout) else {
+      return
+    }
     let downsample_first_source = load_wgsl_with_defines_required(
       backend,
       "shaders/mgstudio/2d/bloom.wgsl",
@@ -2921,37 +3267,37 @@ fn ensure_bloom2d_pipeline_rgba8(
       [],
     )
     let downsample_first_pipeline = bloom2d_create_pipeline(
-      backend, downsample_first_source, mip_format, "downsample_first", false, "mgstudio_bloom2d_downsample_first",
+      backend, intermediate_pipeline_layout, downsample_first_source, mip_format,
+      "downsample_first", false, "mgstudio_bloom2d_downsample_first",
     )
     let downsample_first_no_threshold_pipeline = bloom2d_create_pipeline(
-      backend, downsample_first_no_threshold_source, mip_format, "downsample_first",
-      false, "mgstudio_bloom2d_downsample_first_no_threshold",
+      backend, intermediate_pipeline_layout, downsample_first_no_threshold_source,
+      mip_format, "downsample_first", false, "mgstudio_bloom2d_downsample_first_no_threshold",
     )
     let downsample_first_uniform_pipeline = bloom2d_create_pipeline(
-      backend, downsample_first_uniform_source, mip_format, "downsample_first", false,
-      "mgstudio_bloom2d_downsample_first_uniform",
+      backend, intermediate_pipeline_layout, downsample_first_uniform_source, mip_format,
+      "downsample_first", false, "mgstudio_bloom2d_downsample_first_uniform",
     )
     let downsample_first_no_threshold_uniform_pipeline = bloom2d_create_pipeline(
-      backend, downsample_first_no_threshold_uniform_source, mip_format, "downsample_first",
-      false, "mgstudio_bloom2d_downsample_first_no_threshold_uniform",
+      backend, intermediate_pipeline_layout, downsample_first_no_threshold_uniform_source,
+      mip_format, "downsample_first", false, "mgstudio_bloom2d_downsample_first_no_threshold_uniform",
     )
     let downsample_pipeline = bloom2d_create_pipeline(
-      backend, downsample_source, mip_format, "downsample", false, "mgstudio_bloom2d_downsample",
+      backend, intermediate_pipeline_layout, downsample_source, mip_format, "downsample",
+      false, "mgstudio_bloom2d_downsample",
     )
     let downsample_uniform_pipeline = bloom2d_create_pipeline(
-      backend, downsample_uniform_source, mip_format, "downsample", false, "mgstudio_bloom2d_downsample_uniform",
+      backend, intermediate_pipeline_layout, downsample_uniform_source, mip_format,
+      "downsample", false, "mgstudio_bloom2d_downsample_uniform",
     )
     let upsample_pipeline_energy = bloom2d_create_pipeline(
-      backend, upsample_source, mip_format, "upsample", true, "mgstudio_bloom2d_upsample_energy",
+      backend, intermediate_pipeline_layout, upsample_source, mip_format, "upsample",
+      true, "mgstudio_bloom2d_upsample_energy",
     )
     let upsample_pipeline_additive = bloom2d_create_pipeline(
-      backend, upsample_source, mip_format, "upsample", true, "mgstudio_bloom2d_upsample_additive",
+      backend, intermediate_pipeline_layout, upsample_source, mip_format, "upsample",
+      true, "mgstudio_bloom2d_upsample_additive",
     )
-    if backend.bloom2d_bgl is None {
-      backend.bloom2d_bgl = Some(
-        downsample_first_pipeline.get_bind_group_layout(0U),
-      )
-    }
     backend.bloom2d_downsample_first_pipeline = Some(downsample_first_pipeline)
     backend.bloom2d_downsample_first_no_threshold_pipeline = Some(
       downsample_first_no_threshold_pipeline,
@@ -2974,20 +3320,21 @@ fn ensure_bloom2d_pipeline_rgba8(
   if backend.bloom2d_final_pipeline is Some(_) {
     return
   }
+  guard backend.bloom2d_final_pipeline_layout is Some(final_pipeline_layout) else {
+    return
+  }
   let final_source = load_wgsl_from_assets_required(
     backend, "shaders/mgstudio/2d/tonemapping.wgsl",
   )
   let final_pipeline = bloom2d_create_pipeline(
     backend,
+    final_pipeline_layout,
     final_source,
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     "final_fragment",
     false,
     "mgstudio_bloom2d_final_rgba8",
   )
-  if backend.bloom2d_bgl is None {
-    backend.bloom2d_bgl = Some(final_pipeline.get_bind_group_layout(0U))
-  }
   backend.bloom2d_final_pipeline = Some(final_pipeline)
 }
 
@@ -3008,15 +3355,16 @@ fn ensure_bloom2d_pipeline_surface(
   if backend.bloom2d_final_pipeline_surface is Some(old) {
     old.release()
   }
+  guard backend.bloom2d_final_pipeline_layout is Some(final_pipeline_layout) else {
+    return
+  }
   let final_source = load_wgsl_from_assets_required(
     backend, "shaders/mgstudio/2d/tonemapping.wgsl",
   )
   let final_pipeline = bloom2d_create_pipeline(
-    backend, final_source, format, "final_fragment", false, "mgstudio_bloom2d_final_surface",
+    backend, final_pipeline_layout, final_source, format, "final_fragment", false,
+    "mgstudio_bloom2d_final_surface",
   )
-  if backend.bloom2d_bgl is None {
-    backend.bloom2d_bgl = Some(final_pipeline.get_bind_group_layout(0U))
-  }
   backend.bloom2d_final_pipeline_surface = Some(final_pipeline)
   backend.bloom2d_final_pipeline_surface_format = Some(format)
 }
@@ -3215,6 +3563,7 @@ pub fn GpuBackend::begin_frame(self : GpuBackend) -> Unit {
   let st = surface.get_current_texture()
   let tex = st.take_texture()
   let view = tex.create_view()
+  view.set_label("mgstudio_surface_view")
   let encoder = self.device.create_command_encoder()
   self.frame = Some(GpuFrameState::{
     surface_tex: st,
@@ -3405,6 +3754,7 @@ fn ensure_default_texture(
       height: h.reinterpret_as_int(),
       mip_level_count: 1,
       base_mip_level: 0,
+      format_raw: @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
       texture: tex,
       view,
       sample_view: None,
@@ -3499,6 +3849,7 @@ pub fn GpuBackend::create_texture_rgba8(
     height: h.reinterpret_as_int(),
     mip_level_count: 1,
     base_mip_level: 0,
+    format_raw: @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
     texture: tex,
     view,
     sample_view: None,
@@ -3555,6 +3906,7 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
     mip_level_count=levels.length().reinterpret_as_uint(),
   )
   let view = tex.create_view()
+  view.set_label("mgstudio_render_target_\{id}")
   let sampler = if nearest {
     self.device.create_sampler_nearest_clamp()
   } else {
@@ -3642,6 +3994,7 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
     height: total_height,
     mip_level_count: levels.length(),
     base_mip_level: 0,
+    format_raw,
     texture: tex,
     view,
     sample_view: None,
@@ -3912,7 +4265,12 @@ pub fn GpuBackend::create_texture_mip_view(
       shifted
     }
   }
-  let view = source.texture.create_view_2d(
+  let view = source.texture.create_view_u32(
+    tf(source.format_raw),
+    @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    texture_view_aspect_for_format(source.format_raw),
+    0U,
+    1U,
     absolute_mip.reinterpret_as_uint(),
     1U,
   )
@@ -3928,6 +4286,7 @@ pub fn GpuBackend::create_texture_mip_view(
     height,
     mip_level_count: 1,
     base_mip_level: absolute_mip,
+    format_raw: source.format_raw,
     texture: source.texture,
     view,
     sample_view: None,
@@ -3972,7 +4331,17 @@ pub fn GpuBackend::supported_compressed_image_formats_mask(
 pub fn GpuBackend::set_texture_sampler(
   self : GpuBackend,
   texture_id : Int,
-  sampler_kind : Int,
+  address_mode_u : Int,
+  address_mode_v : Int,
+  address_mode_w : Int,
+  mag_filter : Int,
+  min_filter : Int,
+  mipmap_filter : Int,
+  lod_min_clamp : Float,
+  lod_max_clamp : Float,
+  compare : Int,
+  anisotropy_clamp : Int,
+  border_color : Int,
 ) -> Unit raise GpuBackendError {
   if self.sprite_bgl_tex is None {
     ensure_sprite_resources(self)
@@ -3982,12 +4351,10 @@ pub fn GpuBackend::set_texture_sampler(
   for i in 0..<count {
     let info = self.textures.val[i]
     if info.id == texture_id {
-      let sampler = match sampler_kind {
-        1 => self.device.create_sampler_nearest_clamp()
-        2 => self.device.create_sampler_linear_repeat()
-        3 => self.device.create_sampler_nearest_repeat()
-        _ => self.device.create_sampler_linear_clamp()
-      }
+      let sampler = gpu_sampler_get_or_create(
+        self, address_mode_u, address_mode_v, address_mode_w, mag_filter, min_filter,
+        mipmap_filter, lod_min_clamp, lod_max_clamp, compare, anisotropy_clamp, border_color,
+      )
       let bg = self.device.create_bind_group_sampler_texture_2d(
         bgl_tex,
         sampler,
@@ -3999,6 +4366,7 @@ pub fn GpuBackend::set_texture_sampler(
         height: info.height,
         mip_level_count: info.mip_level_count,
         base_mip_level: info.base_mip_level,
+        format_raw: info.format_raw,
         texture: info.texture,
         view: info.view,
         sample_view: info.sample_view,
@@ -4102,6 +4470,7 @@ pub fn GpuBackend::create_point_light_shadow_target(
     height: safe_size.reinterpret_as_int(),
     mip_level_count: 1,
     base_mip_level: 0,
+    format_raw: @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
     texture: tex,
     view: face0_view,
     sample_view: Some(cube_view),
@@ -4156,6 +4525,7 @@ fn GpuBackend::create_render_target_with_format(
     height: h.reinterpret_as_int(),
     mip_level_count: 1,
     base_mip_level: 0,
+    format_raw,
     texture: tex,
     view,
     sample_view: None,
@@ -5907,7 +6277,7 @@ pub fn GpuBackend::draw_bloom2d(
   guard bloom2d_pipeline_for_current_pass(self) is Some(final_pipeline) else {
     return
   }
-  let final_bind_layout = final_pipeline.get_bind_group_layout(0U)
+  guard self.bloom2d_final_bgl is Some(final_bind_layout) else { return }
   guard self.bloom2d_settings_buf is Some(settings_buf) else { return }
   guard self.bloom2d_sampler is Some(bloom_sampler) else { return }
   if scene_texture_id < 0 {
@@ -6076,12 +6446,7 @@ pub fn GpuBackend::draw_bloom2d(
   } else {
     self.bloom2d_upsample_pipeline_additive
   }
-  let downsample_bind_layout : @wgpu.BindGroupLayout? = if downsample_first_pipeline
-    is Some(pipeline) {
-    Some(pipeline.get_bind_group_layout(0U))
-  } else {
-    None
-  }
+  let intermediate_bind_layout = self.bloom2d_intermediate_bgl
 
   active_pass.end()
   active_pass.release()
@@ -6143,15 +6508,13 @@ pub fn GpuBackend::draw_bloom2d(
         vignette_value,
       )
       self.queue.write_buffer(settings_buf, 0UL, bloom_uniform)
-      if downsample_bind_layout is Some(bind_layout) &&
-        create_bloom2d_bind_group(
+      if intermediate_bind_layout is Some(bind_layout) &&
+        create_bloom2d_intermediate_bind_group(
           self,
           bind_layout,
           scene_texture.view,
           bloom_sampler,
           settings_buf,
-          scene_texture.view,
-          selected_lut_view,
           "mgstudio_bloom2d_downsample_first_bg",
         )
         is Some(first_bg) {
@@ -6189,15 +6552,13 @@ pub fn GpuBackend::draw_bloom2d(
           if !bloom_ready {
             break
           }
-          if downsample_bind_layout is Some(bind_layout) &&
-            create_bloom2d_bind_group(
+          if intermediate_bind_layout is Some(bind_layout) &&
+            create_bloom2d_intermediate_bind_group(
               self,
               bind_layout,
               self.bloom2d_mip_views[mip - 1],
               bloom_sampler,
               settings_buf,
-              scene_texture.view,
-              selected_lut_view,
               "mgstudio_bloom2d_downsample_bg",
             )
             is Some(downsample_bg) {
@@ -6269,15 +6630,13 @@ pub fn GpuBackend::draw_bloom2d(
             vignette_value,
           )
           self.queue.write_buffer(settings_buf, 0UL, upsample_uniform)
-          if downsample_bind_layout is Some(bind_layout) &&
-            create_bloom2d_bind_group(
+          if intermediate_bind_layout is Some(bind_layout) &&
+            create_bloom2d_intermediate_bind_group(
               self,
               bind_layout,
               self.bloom2d_mip_views[upsample_mip],
               bloom_sampler,
               settings_buf,
-              scene_texture.view,
-              selected_lut_view,
               "mgstudio_bloom2d_upsample_bg",
             )
             is Some(upsample_bg) {
@@ -6354,7 +6713,7 @@ pub fn GpuBackend::draw_bloom2d(
   }
   if target_view(self, pass_state.target_id, pass_state.target_layer)
     is Some(dst_view) {
-    if create_bloom2d_bind_group(
+    if create_bloom2d_final_bind_group(
         self,
         final_bind_layout,
         hdr_view,
@@ -6388,10 +6747,6 @@ pub fn GpuBackend::draw_bloom2d(
       final_bg.release()
     }
   }
-  if downsample_bind_layout is Some(layout) {
-    layout.release()
-  }
-  final_bind_layout.release()
   reopen_saved_pass(self, pass_state)
 }
 
@@ -8014,10 +8369,36 @@ pub fn asset_copy_texture_to_texture(
 }
 
 ///|
-pub fn asset_set_texture_sampler(texture_id~ : Int, sampler~ : Int) -> Unit {
+pub fn asset_set_texture_sampler(
+  texture_id~ : Int,
+  address_mode_u~ : Int,
+  address_mode_v~ : Int,
+  address_mode_w~ : Int,
+  mag_filter~ : Int,
+  min_filter~ : Int,
+  mipmap_filter~ : Int,
+  lod_min_clamp~ : Float,
+  lod_max_clamp~ : Float,
+  compare~ : Int,
+  anisotropy_clamp~ : Int,
+  border_color~ : Int,
+) -> Unit {
   if ensure_backend() is Some(backend) {
-    backend.set_texture_sampler(texture_id, sampler) catch {
-      _ => ()
+    backend.set_texture_sampler(
+      texture_id, address_mode_u, address_mode_v, address_mode_w, mag_filter, min_filter,
+      mipmap_filter, lod_min_clamp, lod_max_clamp, compare, anisotropy_clamp, border_color,
+    ) catch {
+      err => {
+        let error_message = match err {
+          Fatal(message) => message
+        }
+        abort(
+          "wgpu: failed to set texture sampler for texture " +
+          texture_id.to_string() +
+          ": " +
+          error_message,
+        )
+      }
     }
   }
 }

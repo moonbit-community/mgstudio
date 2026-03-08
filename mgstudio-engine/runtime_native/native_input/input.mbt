@@ -296,6 +296,8 @@ fn key_id_from_code(code : String) -> Int {
     "Slash" => 54
     "Minus" => 55
     "Equal" => 56
+    "NumpadAdd" => 62
+    "NumpadSubtract" => 63
     "BracketLeft" => 57
     "BracketRight" => 58
     "Quote" => 59

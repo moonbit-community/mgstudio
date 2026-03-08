@@ -1,0 +1,65 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/math/sampling_primitives"
+
+// Values
+
+// Errors
+
+// Types and methods
+type CameraRig
+
+type DespawningPoint
+
+type FireflyLights
+
+type InstructionText
+
+type MousePressed
+
+type PointCounter
+
+type PointMaterial
+
+type PointMesh
+
+type RandomSource
+
+type SamplePoint
+
+type SampledShape
+
+type SampledShapes
+
+pub(all) enum SamplingMode {
+  Interior
+  Boundary
+}
+pub impl Eq for SamplingMode
+pub impl Show for SamplingMode
+
+pub(all) enum Shape {
+  Cuboid
+  Sphere
+  Capsule
+  Cylinder
+  Tetrahedron
+  Triangle
+}
+pub impl Eq for Shape
+pub impl Show for Shape
+
+type SpawnQueue
+
+pub(all) enum SpawningMode {
+  Manual
+  Automatic
+}
+pub impl Eq for SpawningMode
+pub impl Show for SpawningMode
+
+type SpawningPoint
+
+// Type aliases
+
+// Traits
+

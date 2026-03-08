@@ -72,6 +72,8 @@ pub(all) enum KeyCode {
   Slash
   Minus
   Equal
+  NumpadAdd
+  NumpadSubtract
   BracketLeft
   BracketRight
   Quote

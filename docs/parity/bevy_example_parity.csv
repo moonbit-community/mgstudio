@@ -1,7 +1,7 @@
 bevy_path,category,example,mgstudio_path,status,owner,notes
 bevy/examples/2d/2d_shapes.rs,2d,2d_shapes,mgstudio-engine/examples/2d/2d_shapes,Exact,team-render,
 bevy/examples/2d/2d_viewport_to_world.rs,2d,2d_viewport_to_world,mgstudio-engine/examples/2d/2d_viewport_to_world,Exact,team-render,
-bevy/examples/2d/bloom_2d.rs,2d,bloom_2d,mgstudio-engine/examples/2d/bloom_2d,Exact,team-render,
+bevy/examples/2d/bloom_2d.rs,2d,bloom_2d,mgstudio-engine/examples/2d/bloom_2d,Blocked,team-render,Runtime HDR pipeline mismatch (bd-854).
 bevy/examples/2d/cpu_draw.rs,2d,cpu_draw,mgstudio-engine/examples/2d/cpu_draw,Exact,team-render,
 bevy/examples/2d/dynamic_mip_generation.rs,2d,dynamic_mip_generation,mgstudio-engine/examples/2d/dynamic_mip_generation,Exact,team-render,
 bevy/examples/2d/mesh2d.rs,2d,mesh2d,mgstudio-engine/examples/2d/mesh2d,Exact,team-render,
@@ -240,9 +240,9 @@ bevy/examples/large_scenes/mipmap_generator/src/lib.rs,large_scenes,lib,,Blocked
 bevy/examples/math/bounding_2d.rs,math,bounding_2d,mgstudio-engine/examples/math/bounding_2d,Exact,team-core,
 bevy/examples/math/cubic_splines.rs,math,cubic_splines,mgstudio-engine/examples/math/cubic_splines,Exact,team-core,
 bevy/examples/math/custom_primitives.rs,math,custom_primitives,,Blocked,team-core,
-bevy/examples/math/random_sampling.rs,math,random_sampling,,Blocked,team-core,
+bevy/examples/math/random_sampling.rs,math,random_sampling,mgstudio-engine/examples/math/random_sampling,Exact,team-core,
 bevy/examples/math/render_primitives.rs,math,render_primitives,,Blocked,team-core,
-bevy/examples/math/sampling_primitives.rs,math,sampling_primitives,,Blocked,team-core,
+bevy/examples/math/sampling_primitives.rs,math,sampling_primitives,mgstudio-engine/examples/math/sampling_primitives,Exact,team-core,
 bevy/examples/mobile/src/lib.rs,mobile,lib,,N/A,team-platform_na,WASM-first policy: platform-incompatible category.
 bevy/examples/mobile/src/main.rs,mobile,main,,N/A,team-platform_na,WASM-first policy: platform-incompatible category.
 bevy/examples/movement/physics_in_fixed_timestep.rs,movement,physics_in_fixed_timestep,,Blocked,team-core,

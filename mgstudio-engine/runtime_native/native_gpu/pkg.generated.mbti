@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/runtime_native/native_gpu"
 
 import {
   "Milky2018/wgpu_mbt",
+  "moonbitlang/core/hashmap",
 }
 
 // Values
@@ -14,7 +15,7 @@ pub fn asset_create_texture_mip_view(texture_id~ : Int, mip_level~ : Int) -> Int
 
 pub fn asset_is_texture_loaded(texture_id~ : Int) -> Bool
 
-pub fn asset_set_texture_sampler(texture_id~ : Int, sampler~ : Int) -> Unit
+pub fn asset_set_texture_sampler(texture_id~ : Int, address_mode_u~ : Int, address_mode_v~ : Int, address_mode_w~ : Int, mag_filter~ : Int, min_filter~ : Int, mipmap_filter~ : Int, lod_min_clamp~ : Float, lod_max_clamp~ : Float, compare~ : Int, anisotropy_clamp~ : Int, border_color~ : Int) -> Unit
 
 pub fn asset_supported_compressed_image_formats() -> Int
 
@@ -192,7 +193,10 @@ pub struct GpuBackend {
   mut motion_blur_pipeline_surface_format : @wgpu_mbt.TextureFormat?
   mut motion_blur_settings_buf : @wgpu_mbt.Buffer?
   mut motion_blur_globals_buf : @wgpu_mbt.Buffer?
-  mut bloom2d_bgl : @wgpu_mbt.BindGroupLayout?
+  mut bloom2d_intermediate_bgl : @wgpu_mbt.BindGroupLayout?
+  mut bloom2d_intermediate_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut bloom2d_final_bgl : @wgpu_mbt.BindGroupLayout?
+  mut bloom2d_final_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut bloom2d_downsample_first_pipeline : @wgpu_mbt.RenderPipeline?
   mut bloom2d_downsample_first_no_threshold_pipeline : @wgpu_mbt.RenderPipeline?
   mut bloom2d_downsample_first_uniform_pipeline : @wgpu_mbt.RenderPipeline?
@@ -212,6 +216,7 @@ pub struct GpuBackend {
   mut bloom2d_mip_width : Int
   mut bloom2d_mip_height : Int
   mesh3d_material_bg_cache : Ref[Array[Mesh3dMaterialBindGroupCacheEntry]]
+  sampler_cache : Ref[@hashmap.HashMap[String, @wgpu_mbt.Sampler]]
   next_id : Ref[Int]
   mut point_shadow_fallback_texture_id : Int
   mut shadow_color_texture : @wgpu_mbt.Texture?
@@ -254,7 +259,7 @@ pub fn GpuBackend::ensure_surface_configured(Self, Int, Int) -> Unit
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
 pub fn GpuBackend::set_scissor(Self, Int, Int, Int, Int) -> Unit raise GpuBackendError
-pub fn GpuBackend::set_texture_sampler(Self, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::set_texture_sampler(Self, Int, Int, Int, Int, Int, Int, Int, Float, Float, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::supported_compressed_image_formats_mask(Self) -> Int
 pub fn GpuBackend::texture_height(Self, Int) -> Int
 pub fn GpuBackend::texture_width(Self, Int) -> Int
@@ -354,6 +359,7 @@ pub struct GpuTextureInfo {
   height : Int
   mip_level_count : Int
   base_mip_level : Int
+  format_raw : UInt
   texture : @wgpu_mbt.Texture
   view : @wgpu_mbt.TextureView
   sample_view : @wgpu_mbt.TextureView?

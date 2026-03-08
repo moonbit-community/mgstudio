@@ -518,6 +518,8 @@ static int mgw_key_id_from_mac(mgw_nsuint_t key_code) {
   case 44: return 54;  // Slash
   case 27: return 55;  // Minus
   case 24: return 56;  // Equal
+  case 69: return 62;  // NumpadAdd
+  case 78: return 63;  // NumpadSubtract
   case 33: return 57;  // BracketLeft
   case 30: return 58;  // BracketRight
   case 39: return 59;  // Quote

@@ -70,3 +70,48 @@ test "native_gpu: mesh3d uniform slot pool grows per draw slot" {
     backend.mesh3d_uniform_slots.length() == 2
   inspect(ok, content="true")
 }
+
+///|
+test "native_gpu: sampler cache key includes compare anisotropy and lod" {
+  let key0 = image_sampler_cache_key(
+    IMAGE_SAMPLER_ADDRESS_MODE_REPEAT,
+    IMAGE_SAMPLER_ADDRESS_MODE_REPEAT,
+    IMAGE_SAMPLER_ADDRESS_MODE_REPEAT,
+    IMAGE_SAMPLER_FILTER_MODE_LINEAR,
+    IMAGE_SAMPLER_FILTER_MODE_LINEAR,
+    IMAGE_SAMPLER_FILTER_MODE_LINEAR,
+    0.0F,
+    32.0F,
+    IMAGE_SAMPLER_COMPARE_UNDEFINED,
+    1,
+    IMAGE_SAMPLER_BORDER_COLOR_UNDEFINED,
+  )
+  let key1 = image_sampler_cache_key(
+    IMAGE_SAMPLER_ADDRESS_MODE_REPEAT,
+    IMAGE_SAMPLER_ADDRESS_MODE_REPEAT,
+    IMAGE_SAMPLER_ADDRESS_MODE_REPEAT,
+    IMAGE_SAMPLER_FILTER_MODE_LINEAR,
+    IMAGE_SAMPLER_FILTER_MODE_LINEAR,
+    IMAGE_SAMPLER_FILTER_MODE_LINEAR,
+    0.0F,
+    32.0F,
+    IMAGE_SAMPLER_COMPARE_ALWAYS,
+    4,
+    IMAGE_SAMPLER_BORDER_COLOR_UNDEFINED,
+  )
+  inspect(key0 == key1, content="false")
+}
+
+///|
+test "native_gpu: unsupported border color validation raises exact blocker" {
+  let result = try {
+    image_sampler_border_color_validate(IMAGE_SAMPLER_BORDER_COLOR_OPAQUE_WHITE)
+    "ok"
+  } catch {
+    err =>
+      match err {
+        Fatal(message) => message
+      }
+  }
+  inspect(result.contains("ImageSamplerBorderColor is blocked"), content="true")
+}

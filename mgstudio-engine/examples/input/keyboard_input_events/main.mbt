@@ -124,6 +124,8 @@ fn format_keycode(code : @window.KeyCode) -> String {
     Slash => "Slash"
     Minus => "Minus"
     Equal => "Equal"
+    NumpadAdd => "NumpadAdd"
+    NumpadSubtract => "NumpadSubtract"
     BracketLeft => "BracketLeft"
     BracketRight => "BracketRight"
     Quote => "Quote"

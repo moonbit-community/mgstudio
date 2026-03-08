@@ -17,7 +17,7 @@ Notes:
 
 | Category | Total | Exact | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: |
-| `2d` | 27 | 27 | 0 | 0 |
+| `2d` | 27 | 26 | 1 | 0 |
 | `3d` | 66 | 44 | 22 | 0 |
 | `animation` | 13 | 2 | 11 | 0 |
 | `app` | 17 | 17 | 0 | 0 |
@@ -35,7 +35,7 @@ Notes:
 | `helpers` | 1 | 0 | 1 | 0 |
 | `input` | 13 | 9 | 4 | 0 |
 | `large_scenes` | 6 | 0 | 6 | 0 |
-| `math` | 6 | 2 | 4 | 0 |
+| `math` | 6 | 4 | 2 | 0 |
 | `mobile` | 2 | 0 | 0 | 2 |
 | `movement` | 2 | 1 | 1 | 0 |
 | `no_std` | 1 | 0 | 0 | 1 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 3 | 9 | 0 |
-| **Total** | **402** | **136** | **263** | **3** |
+| **Total** | **402** | **137** | **262** | **3** |
 
 ## Example Inventory
 
@@ -62,7 +62,7 @@ Notes:
 | --- | --- | --- | --- | --- | --- |
 | `bevy/examples/2d/2d_shapes.rs` | `2d` | `mgstudio-engine/examples/2d/2d_shapes` | `Exact` | `team-render` |  |
 | `bevy/examples/2d/2d_viewport_to_world.rs` | `2d` | `mgstudio-engine/examples/2d/2d_viewport_to_world` | `Exact` | `team-render` |  |
-| `bevy/examples/2d/bloom_2d.rs` | `2d` | `mgstudio-engine/examples/2d/bloom_2d` | `Exact` | `team-render` |  |
+| `bevy/examples/2d/bloom_2d.rs` | `2d` | `mgstudio-engine/examples/2d/bloom_2d` | `Blocked` | `team-render` | Runtime HDR pipeline mismatch (`bd-854`). |
 | `bevy/examples/2d/cpu_draw.rs` | `2d` | `mgstudio-engine/examples/2d/cpu_draw` | `Exact` | `team-render` |  |
 | `bevy/examples/2d/dynamic_mip_generation.rs` | `2d` | `mgstudio-engine/examples/2d/dynamic_mip_generation` | `Exact` | `team-render` |  |
 | `bevy/examples/2d/mesh2d.rs` | `2d` | `mgstudio-engine/examples/2d/mesh2d` | `Exact` | `team-render` |  |
@@ -301,9 +301,9 @@ Notes:
 | `bevy/examples/math/bounding_2d.rs` | `math` | `mgstudio-engine/examples/math/bounding_2d` | `Exact` | `team-core` |  |
 | `bevy/examples/math/cubic_splines.rs` | `math` | `mgstudio-engine/examples/math/cubic_splines` | `Exact` | `team-core` |  |
 | `bevy/examples/math/custom_primitives.rs` | `math` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/math/random_sampling.rs` | `math` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/math/random_sampling.rs` | `math` | `mgstudio-engine/examples/math/random_sampling` | `Exact` | `team-core` |  |
 | `bevy/examples/math/render_primitives.rs` | `math` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/math/sampling_primitives.rs` | `math` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/math/sampling_primitives.rs` | `math` | `mgstudio-engine/examples/math/sampling_primitives` | `Exact` | `team-core` |  |
 | `bevy/examples/mobile/src/lib.rs` | `mobile` |  | `N/A` | `team-platform_na` | WASM-first policy: platform-incompatible category. |
 | `bevy/examples/mobile/src/main.rs` | `mobile` |  | `N/A` | `team-platform_na` | WASM-first policy: platform-incompatible category. |
 | `bevy/examples/movement/physics_in_fixed_timestep.rs` | `movement` |  | `Blocked` | `team-core` |  |

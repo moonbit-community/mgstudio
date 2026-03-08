@@ -371,6 +371,26 @@ pub fn ImageFilterMode::default() -> ImageFilterMode {
 }
 
 ///|
+pub(all) enum ImageCompareFunction {
+  Never
+  Less
+  Equal
+  LessEqual
+  Greater
+  NotEqual
+  GreaterEqual
+  Always
+} derive(Eq, Show)
+
+///|
+pub(all) enum ImageSamplerBorderColor {
+  TransparentBlack
+  OpaqueBlack
+  OpaqueWhite
+  Zero
+} derive(Eq, Show)
+
+///|
 pub(all) struct ImageSamplerDescriptor {
   mut label : String?
   mut address_mode_u : ImageAddressMode
@@ -379,6 +399,11 @@ pub(all) struct ImageSamplerDescriptor {
   mut mag_filter : ImageFilterMode
   mut min_filter : ImageFilterMode
   mut mipmap_filter : ImageFilterMode
+  mut lod_min_clamp : Float
+  mut lod_max_clamp : Float
+  mut compare : ImageCompareFunction?
+  mut anisotropy_clamp : Int
+  mut border_color : ImageSamplerBorderColor?
 }
 
 ///|
@@ -391,6 +416,11 @@ pub fn ImageSamplerDescriptor::default() -> ImageSamplerDescriptor {
     mag_filter: ImageFilterMode::default(),
     min_filter: ImageFilterMode::default(),
     mipmap_filter: ImageFilterMode::default(),
+    lod_min_clamp: 0.0F,
+    lod_max_clamp: 32.0F,
+    compare: None,
+    anisotropy_clamp: 1,
+    border_color: None,
   }
 }
 
@@ -431,6 +461,18 @@ pub fn ImageSamplerDescriptor::set_address_mode(
 }
 
 ///|
+pub fn ImageSamplerDescriptor::set_anisotropic_filter(
+  self : ImageSamplerDescriptor,
+  anisotropy_clamp : Int,
+) -> ImageSamplerDescriptor {
+  self.mag_filter = ImageFilterMode::Linear
+  self.min_filter = ImageFilterMode::Linear
+  self.mipmap_filter = ImageFilterMode::Linear
+  self.anisotropy_clamp = anisotropy_clamp
+  self
+}
+
+///|
 pub(all) enum ImageSampler {
   Default
   Descriptor(ImageSamplerDescriptor)
@@ -454,65 +496,178 @@ pub fn ImageSampler::nearest() -> ImageSampler {
 ///|
 pub fn host_asset_set_texture_sampler(
   texture_id~ : Int,
-  sampler~ : Int,
+  address_mode_u~ : Int,
+  address_mode_v~ : Int,
+  address_mode_w~ : Int,
+  mag_filter~ : Int,
+  min_filter~ : Int,
+  mipmap_filter~ : Int,
+  lod_min_clamp~ : Float,
+  lod_max_clamp~ : Float,
+  compare~ : Int,
+  anisotropy_clamp~ : Int,
+  border_color~ : Int,
 ) -> Unit {
-  @native_asset.set_texture_sampler(texture_id~, sampler~)
+  @native_asset.set_texture_sampler(
+    texture_id~,
+    address_mode_u~,
+    address_mode_v~,
+    address_mode_w~,
+    mag_filter~,
+    min_filter~,
+    mipmap_filter~,
+    lod_min_clamp~,
+    lod_max_clamp~,
+    compare~,
+    anisotropy_clamp~,
+    border_color~,
+  )
 }
 
 ///|
-fn image_sampler_descriptor_runtime_kind(
-  descriptor : ImageSamplerDescriptor,
+const IMAGE_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : Int = 0
+
+///|
+const IMAGE_SAMPLER_ADDRESS_MODE_REPEAT : Int = 1
+
+///|
+const IMAGE_SAMPLER_ADDRESS_MODE_MIRROR_REPEAT : Int = 2
+
+///|
+const IMAGE_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER : Int = 3
+
+///|
+const IMAGE_SAMPLER_FILTER_MODE_NEAREST : Int = 0
+
+///|
+const IMAGE_SAMPLER_FILTER_MODE_LINEAR : Int = 1
+
+///|
+const IMAGE_SAMPLER_COMPARE_UNDEFINED : Int = -1
+
+///|
+const IMAGE_SAMPLER_COMPARE_NEVER : Int = 0
+
+///|
+const IMAGE_SAMPLER_COMPARE_LESS : Int = 1
+
+///|
+const IMAGE_SAMPLER_COMPARE_EQUAL : Int = 2
+
+///|
+const IMAGE_SAMPLER_COMPARE_LESS_EQUAL : Int = 3
+
+///|
+const IMAGE_SAMPLER_COMPARE_GREATER : Int = 4
+
+///|
+const IMAGE_SAMPLER_COMPARE_NOT_EQUAL : Int = 5
+
+///|
+const IMAGE_SAMPLER_COMPARE_GREATER_EQUAL : Int = 6
+
+///|
+const IMAGE_SAMPLER_COMPARE_ALWAYS : Int = 7
+
+///|
+const IMAGE_SAMPLER_BORDER_COLOR_UNDEFINED : Int = -1
+
+///|
+const IMAGE_SAMPLER_BORDER_COLOR_TRANSPARENT_BLACK : Int = 0
+
+///|
+const IMAGE_SAMPLER_BORDER_COLOR_OPAQUE_BLACK : Int = 1
+
+///|
+const IMAGE_SAMPLER_BORDER_COLOR_OPAQUE_WHITE : Int = 2
+
+///|
+const IMAGE_SAMPLER_BORDER_COLOR_ZERO : Int = 3
+
+///|
+fn image_address_mode_runtime_raw(mode : ImageAddressMode) -> Int {
+  match mode {
+    ClampToEdge => IMAGE_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+    Repeat => IMAGE_SAMPLER_ADDRESS_MODE_REPEAT
+    MirrorRepeat => IMAGE_SAMPLER_ADDRESS_MODE_MIRROR_REPEAT
+    ClampToBorder => IMAGE_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER
+  }
+}
+
+///|
+fn image_filter_mode_runtime_raw(mode : ImageFilterMode) -> Int {
+  match mode {
+    Nearest => IMAGE_SAMPLER_FILTER_MODE_NEAREST
+    Linear => IMAGE_SAMPLER_FILTER_MODE_LINEAR
+  }
+}
+
+///|
+fn image_compare_function_runtime_raw(compare : ImageCompareFunction?) -> Int {
+  match compare {
+    None => IMAGE_SAMPLER_COMPARE_UNDEFINED
+    Some(compare) =>
+      match compare {
+        Never => IMAGE_SAMPLER_COMPARE_NEVER
+        Less => IMAGE_SAMPLER_COMPARE_LESS
+        Equal => IMAGE_SAMPLER_COMPARE_EQUAL
+        LessEqual => IMAGE_SAMPLER_COMPARE_LESS_EQUAL
+        Greater => IMAGE_SAMPLER_COMPARE_GREATER
+        NotEqual => IMAGE_SAMPLER_COMPARE_NOT_EQUAL
+        GreaterEqual => IMAGE_SAMPLER_COMPARE_GREATER_EQUAL
+        Always => IMAGE_SAMPLER_COMPARE_ALWAYS
+      }
+  }
+}
+
+///|
+fn image_sampler_border_color_runtime_raw(
+  border_color : ImageSamplerBorderColor?,
 ) -> Int {
-  let address_mode_u = descriptor.address_mode_u
-  let address_mode_v = descriptor.address_mode_v
-  let address_mode_w = descriptor.address_mode_w
-  let repeat_u = address_mode_u == ImageAddressMode::Repeat
-  let repeat_v = address_mode_v == ImageAddressMode::Repeat
-  let repeat_w = address_mode_w == ImageAddressMode::Repeat
-  if address_mode_u != ImageAddressMode::ClampToEdge && !repeat_u {
-    abort("Only ClampToEdge and Repeat samplers are currently supported")
-  }
-  if address_mode_v != ImageAddressMode::ClampToEdge && !repeat_v {
-    abort("Only ClampToEdge and Repeat samplers are currently supported")
-  }
-  if address_mode_w != ImageAddressMode::ClampToEdge && !repeat_w {
-    abort("Only ClampToEdge and Repeat samplers are currently supported")
-  }
-  if !(repeat_u == repeat_v && repeat_v == repeat_w) {
-    abort(
-      "Sampler address modes must match across u/v/w for the current runtime",
-    )
-  }
-  let is_linear = descriptor.mag_filter == ImageFilterMode::Linear &&
-    descriptor.min_filter == ImageFilterMode::Linear &&
-    descriptor.mipmap_filter == ImageFilterMode::Linear
-  let is_nearest = descriptor.mag_filter == ImageFilterMode::Nearest &&
-    descriptor.min_filter == ImageFilterMode::Nearest &&
-    descriptor.mipmap_filter == ImageFilterMode::Nearest
-  if !is_linear && !is_nearest {
-    abort("Only fully linear or fully nearest image samplers are supported")
-  }
-  if repeat_u {
-    if is_nearest {
-      3
-    } else {
-      2
-    }
-  } else if is_nearest {
-    1
-  } else {
-    0
+  match border_color {
+    None => IMAGE_SAMPLER_BORDER_COLOR_UNDEFINED
+    Some(color) =>
+      match color {
+        TransparentBlack => IMAGE_SAMPLER_BORDER_COLOR_TRANSPARENT_BLACK
+        OpaqueBlack => IMAGE_SAMPLER_BORDER_COLOR_OPAQUE_BLACK
+        OpaqueWhite => IMAGE_SAMPLER_BORDER_COLOR_OPAQUE_WHITE
+        Zero => IMAGE_SAMPLER_BORDER_COLOR_ZERO
+      }
   }
 }
 
 ///|
-fn image_sampler_runtime_kind(
+fn image_sampler_descriptor_runtime_args(
+  descriptor : ImageSamplerDescriptor,
+) -> (Int, Int, Int, Int, Int, Int, Float, Float, Int, Int, Int) {
+  (
+    image_address_mode_runtime_raw(descriptor.address_mode_u),
+    image_address_mode_runtime_raw(descriptor.address_mode_v),
+    image_address_mode_runtime_raw(descriptor.address_mode_w),
+    image_filter_mode_runtime_raw(descriptor.mag_filter),
+    image_filter_mode_runtime_raw(descriptor.min_filter),
+    image_filter_mode_runtime_raw(descriptor.mipmap_filter),
+    descriptor.lod_min_clamp,
+    descriptor.lod_max_clamp,
+    image_compare_function_runtime_raw(descriptor.compare),
+    descriptor.anisotropy_clamp,
+    image_sampler_border_color_runtime_raw(descriptor.border_color),
+  )
+}
+
+///|
+fn image_sampler_runtime_args(
   sampler : ImageSampler,
   default_nearest : Bool,
-) -> Int {
+) -> (Int, Int, Int, Int, Int, Int, Float, Float, Int, Int, Int) {
   match sampler {
-    Default => if default_nearest { 1 } else { 0 }
-    Descriptor(descriptor) => image_sampler_descriptor_runtime_kind(descriptor)
+    Default =>
+      if default_nearest {
+        image_sampler_descriptor_runtime_args(ImageSamplerDescriptor::nearest())
+      } else {
+        image_sampler_descriptor_runtime_args(ImageSamplerDescriptor::linear())
+      }
+    Descriptor(descriptor) => image_sampler_descriptor_runtime_args(descriptor)
   }
 }
 
@@ -521,8 +676,33 @@ pub fn asset_set_texture_sampler(
   texture : Handle[Image],
   sampler : ImageSampler,
 ) -> Unit {
-  let sampler_id = image_sampler_runtime_kind(sampler, false)
-  host_asset_set_texture_sampler(texture_id=texture.id(), sampler=sampler_id)
+  let (
+    address_mode_u,
+    address_mode_v,
+    address_mode_w,
+    mag_filter,
+    min_filter,
+    mipmap_filter,
+    lod_min_clamp,
+    lod_max_clamp,
+    compare,
+    anisotropy_clamp,
+    border_color,
+  ) = image_sampler_runtime_args(sampler, false)
+  host_asset_set_texture_sampler(
+    texture_id=texture.id(),
+    address_mode_u~,
+    address_mode_v~,
+    address_mode_w~,
+    mag_filter~,
+    min_filter~,
+    mipmap_filter~,
+    lod_min_clamp~,
+    lod_max_clamp~,
+    compare~,
+    anisotropy_clamp~,
+    border_color~,
+  )
 }
 
 ///|

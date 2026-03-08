@@ -70,6 +70,8 @@ fn keycode_to_string(code : @window.KeyCode) -> String {
     Slash => "Slash"
     Minus => "Minus"
     Equal => "Equal"
+    NumpadAdd => "NumpadAdd"
+    NumpadSubtract => "NumpadSubtract"
     BracketLeft => "BracketLeft"
     BracketRight => "BracketRight"
     Quote => "Quote"
@@ -133,6 +135,8 @@ let keyboard_event_keycodes : Array[@window.KeyCode] = [
   Slash,
   Minus,
   Equal,
+  NumpadAdd,
+  NumpadSubtract,
   BracketLeft,
   BracketRight,
   Quote,
@@ -1074,6 +1078,8 @@ fn logical_key_from_keycode(code : @window.KeyCode) -> Key {
     Slash => if shifted { Character("?") } else { Character("/") }
     Minus => if shifted { Character("_") } else { Character("-") }
     Equal => if shifted { Character("+") } else { Character("=") }
+    NumpadAdd => Character("+")
+    NumpadSubtract => Character("-")
     BracketLeft => if shifted { Character("{") } else { Character("[") }
     BracketRight => if shifted { Character("}") } else { Character("]") }
     Quote => if shifted { Character("\"") } else { Character("'") }
