@@ -56,6 +56,18 @@ fn read_window_closing(world : @ecs.World) -> Array[WindowClosing] {
 }
 
 ///|
+fn read_window_created(world : @ecs.World) -> Array[WindowCreated] {
+  let reader = world.message_reader(ecs_key_window_created, Ref::new(0))
+  try! reader.read()
+}
+
+///|
+fn read_window_focused(world : @ecs.World) -> Array[WindowFocused] {
+  let reader = world.message_reader(ecs_key_window_focused, Ref::new(0))
+  try! reader.read()
+}
+
+///|
 test "window: plugin spawns configured primary window entity and messages" {
   let configured_window = Window::default()
   configured_window.title = "Configured Window"
@@ -64,6 +76,7 @@ test "window: plugin spawns configured primary window entity and messages" {
   configured_window.position = WindowPosition::new(12, 34)
   configured_window.mode = WindowMode::BorderlessFullscreen
   configured_window.resizable = false
+  configured_window.focused = false
   let configured_cursor = CursorOptions::default()
   configured_cursor.visible = false
   configured_cursor.grab_mode = CursorGrabMode::GrabLocked
@@ -73,7 +86,7 @@ test "window: plugin spawns configured primary window entity and messages" {
     primary_cursor_options: Some(configured_cursor),
     exit_condition: ExitCondition::DontExit,
     close_when_requested: false,
-  })
+  }).run_once()
 
   inspect(app.world().contains_message(ecs_key_window_created), content="true")
   inspect(
@@ -106,6 +119,7 @@ test "window: plugin spawns configured primary window entity and messages" {
   inspect(stored_window.position, content="At(12, 34)")
   inspect(stored_window.mode, content="BorderlessFullscreen")
   inspect(stored_window.resizable, content="false")
+  inspect(stored_window.focused, content="true")
 
   let stored_cursor = match cursor_options_value(app.world(), entity) {
     Some(cursor) => cursor
@@ -113,6 +127,10 @@ test "window: plugin spawns configured primary window entity and messages" {
   }
   inspect(stored_cursor.visible, content="false")
   inspect(stored_cursor.grab_mode, content="GrabLocked")
+  let focused_messages = read_window_focused(app.world())
+  inspect(focused_messages.length(), content="1")
+  inspect(focused_messages[0].window == entity, content="true")
+  inspect(focused_messages[0].focused, content="true")
 }
 
 ///|
@@ -246,6 +264,38 @@ test "window: scale-factor helper prefers override over observed host scale" {
 
   inspect(seen_scale_factor.val, content="1")
   inspect(stored_window.scale_factor(), content="1")
+}
+
+///|
+test "window: backend sync creates host runtime for secondary window entities" {
+  let configured_window = Window::default()
+  configured_window.title = "Primary"
+  let world = @ecs.World::new()
+  let secondary = world.spawn()
+  let secondary_window = Window::default()
+  secondary_window.title = "Second window"
+  try! world.set_component(secondary, secondary_window)
+
+  let mut app = window_plugin_with(@app.App::new(world), WindowPlugin::{
+    primary_window: Some(configured_window),
+    primary_cursor_options: Some(CursorOptions::default()),
+    exit_condition: ExitCondition::DontExit,
+    close_when_requested: false,
+  })
+  app = app.run_once()
+  let stored_window = match window_component_value(app.world(), secondary) {
+    Some(window) => window
+    None => abort("missing secondary window")
+  }
+  let created_messages = read_window_created(app.world())
+  let mut secondary_created = false
+  for message in created_messages {
+    if message.window == secondary {
+      secondary_created = true
+    }
+  }
+  inspect(secondary_created, content="true")
+  inspect(stored_window.title, content="Second window")
 }
 
 ///|

@@ -163,6 +163,11 @@ pub fn host_window_get_scale_factor(window : HostWindow) -> Float {
 }
 
 ///|
+pub fn host_window_get_focused(window : HostWindow) -> Bool {
+  @native_window.focused(window)
+}
+
+///|
 pub fn host_window_should_close(window : HostWindow) -> Bool {
   @native_window.should_close(window)
 }

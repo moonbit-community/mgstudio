@@ -5745,6 +5745,14 @@ pub fn Camera3dBundle::with_sub_camera_view(
 }
 
 ///|
+pub fn Camera3dBundle::with_target(
+  self : Camera3dBundle,
+  target : @render2d.RenderTarget,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, target, }
+}
+
+///|
 pub fn Camera3dBundle::with_screen_space_transmission(
   self : Camera3dBundle,
   screen_space_transmission : ScreenSpaceTransmission?,

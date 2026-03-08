@@ -191,7 +191,7 @@ pub(all) struct Window {
   mut position : WindowPosition
   mut mode : WindowMode
   mut resizable : Bool
-  focused : Bool
+  mut focused : Bool
 } derive(Eq, Show)
 
 ///|

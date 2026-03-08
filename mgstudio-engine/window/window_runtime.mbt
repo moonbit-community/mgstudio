@@ -543,6 +543,7 @@ fn window_sync_observed_state(
   let observed_position_x = host_window_get_position_x(host_window)
   let observed_position_y = host_window_get_position_y(host_window)
   let scale_factor0 = host_window_get_scale_factor(host_window)
+  let observed_focused = host_window_get_focused(host_window)
   let observed_scale_factor = if scale_factor0 <= 0.0F {
     1.0F
   } else {
@@ -589,6 +590,16 @@ fn window_sync_observed_state(
     )
     runtime_ref.val.last_observed_scale_factor = observed_scale_factor
   }
+  if window_component(world, entity) is Some(window) {
+    if window.focused != observed_focused {
+      ignore(
+        world.send_message(ecs_key_window_focused, WindowFocused::{
+          window: entity,
+          focused: observed_focused,
+        }),
+      )
+    }
+  }
   if host_window_should_close(host_window) &&
     !runtime_ref.val.close_requested_sent {
     ignore(
@@ -606,6 +617,7 @@ fn window_sync_observed_state(
       next.position = WindowPosition::new(
         observed_position_x, observed_position_y,
       )
+      next.focused = observed_focused
       next
     }),
   )

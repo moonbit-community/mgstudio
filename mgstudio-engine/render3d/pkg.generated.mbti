@@ -490,6 +490,7 @@ pub fn Camera3dBundle::with_motion_blur(Self, MotionBlur?) -> Self
 pub fn Camera3dBundle::with_screen_space_reflections(Self, ScreenSpaceReflections?) -> Self
 pub fn Camera3dBundle::with_screen_space_transmission(Self, ScreenSpaceTransmission?) -> Self
 pub fn Camera3dBundle::with_sub_camera_view(Self, SubCameraView3d?) -> Self
+pub fn Camera3dBundle::with_target(Self, @render2d.RenderTarget) -> Self
 pub fn Camera3dBundle::with_tonemapping(Self, Tonemapping?) -> Self
 pub fn Camera3dBundle::with_vignette(Self, Vignette?) -> Self
 pub fn Camera3dBundle::with_volumetric_fog(Self, VolumetricFog?) -> Self

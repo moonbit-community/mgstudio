@@ -10,6 +10,8 @@ pub fn attach_surface_metal_layer(Int, @wgpu_mbt.Surface) -> Unit
 
 pub fn create(width~ : Int, height~ : Int, title~ : String) -> Int
 
+pub fn focused(Int) -> Bool
+
 pub fn height(Int) -> Int
 
 pub fn input_drag_and_drop_event_code_unit(index~ : Int, offset~ : Int) -> Int

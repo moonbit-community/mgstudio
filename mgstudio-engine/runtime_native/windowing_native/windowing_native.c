@@ -27,6 +27,7 @@ typedef struct mgw_window {
   int width;
   int height;
   float scale_factor;
+  int focused;
   int should_close;
   int x;
   int y;
@@ -265,6 +266,13 @@ static void mgw_update_window_state(mgw_window_t *window) {
 
   window->scale_factor = (float)((double(*)(id, SEL))objc_msgSend)(
     (id)window->window, mgw_sel("backingScaleFactor"));
+  {
+    mgw_bool_t is_key_window = ((mgw_bool_t(*)(id, SEL))objc_msgSend)(
+      (id)window->window, mgw_sel("isKeyWindow"));
+    mgw_bool_t is_main_window = ((mgw_bool_t(*)(id, SEL))objc_msgSend)(
+      (id)window->window, mgw_sel("isMainWindow"));
+    window->focused = (is_key_window || is_main_window) ? 1 : 0;
+  }
 
   id content_view = window->content_view
     ? (id)window->content_view
@@ -512,6 +520,7 @@ int mgw_window_create_utf8(
   window->width = mgw_clamp_size(width);
   window->height = mgw_clamp_size(height);
   window->scale_factor = 1.0f;
+  window->focused = 1;
   window->should_close = 0;
   window->x = 0;
   window->y = 0;
@@ -617,6 +626,11 @@ int mgw_window_height(int window_id) {
 float mgw_window_scale_factor(int window_id) {
   mgw_window_t *window = mgw_find_window(window_id);
   return window ? window->scale_factor : 1.0f;
+}
+
+bool mgw_window_focused(int window_id) {
+  mgw_window_t *window = mgw_find_window(window_id);
+  return window ? window->focused != 0 : false;
 }
 
 bool mgw_window_should_close(int window_id) {

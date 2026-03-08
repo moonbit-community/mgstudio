@@ -88,6 +88,11 @@ pub fn scale_factor(window : NativeWindowHandle) -> Float {
 }
 
 ///|
+pub fn focused(window : NativeWindowHandle) -> Bool {
+  @windowing_native.focused(window)
+}
+
+///|
 pub fn should_close(window : NativeWindowHandle) -> Bool {
   @windowing_native.should_close(window)
 }

@@ -105,6 +105,8 @@ pub fn host_gpu_set_scissor(x~ : Int, y~ : Int, width~ : Int, height~ : Int) -> 
 
 pub fn host_window_create(width~ : Int, height~ : Int, title~ : String) -> Int
 
+pub fn host_window_get_focused(Int) -> Bool
+
 pub fn host_window_get_height(Int) -> Int
 
 pub fn host_window_get_position_x(Int) -> Int
@@ -320,7 +322,7 @@ pub(all) struct Window {
   mut position : WindowPosition
   mut mode : WindowMode
   mut resizable : Bool
-  focused : Bool
+  mut focused : Bool
 }
 pub fn Window::default() -> Self
 pub fn Window::height(Self) -> Float

@@ -4,6 +4,8 @@ package "Milky2018/mgstudio/runtime_native/native_window"
 // Values
 pub fn create(width~ : Int, height~ : Int, title~ : String) -> Int
 
+pub fn focused(Int) -> Bool
+
 pub fn height(Int) -> Int
 
 pub fn poll_events(Int) -> Unit

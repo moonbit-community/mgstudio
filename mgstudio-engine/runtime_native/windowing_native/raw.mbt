@@ -34,6 +34,9 @@ pub extern "C" fn height(window : Int) -> Int = "mgw_window_height"
 pub extern "C" fn scale_factor(window : Int) -> Float = "mgw_window_scale_factor"
 
 ///|
+pub extern "C" fn focused(window : Int) -> Bool = "mgw_window_focused"
+
+///|
 pub extern "C" fn should_close(window : Int) -> Bool = "mgw_window_should_close"
 
 ///|

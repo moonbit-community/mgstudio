@@ -12,6 +12,8 @@ pub fn attach_metal_layer(Int, @c.OpaquePtr) -> Unit
 
 pub fn create_utf8(Int, Int, Bytes, UInt64) -> Int
 
+pub fn focused(Int) -> Bool
+
 pub fn height(Int) -> Int
 
 pub fn input_drag_and_drop_event_code_unit(Int, Int) -> Int
