@@ -120,10 +120,15 @@ pub(all) enum FontSmoothing {
 }
 
 ///|
-pub struct TextFont {
-  font : @asset.Handle[@asset.Font]
-  font_size : Float
-  font_smoothing : FontSmoothing
+pub fn FontSmoothing::default() -> FontSmoothing {
+  FontSmoothing::AntiAliased
+}
+
+///|
+pub(all) struct TextFont {
+  mut font : @asset.Handle[@asset.Font]
+  mut font_size : Float
+  mut font_smoothing : FontSmoothing
 }
 
 ///|
@@ -131,8 +136,13 @@ pub fn TextFont::default() -> TextFont {
   TextFont::{
     font: @asset.Handle::new(-1),
     font_size: 20.0F,
-    font_smoothing: FontSmoothing::AntiAliased,
+    font_smoothing: FontSmoothing::default(),
   }
+}
+
+///|
+pub fn TextFont::from_font_size(font_size : Float) -> TextFont {
+  TextFont::{ ..TextFont::default(), font_size, }
 }
 
 ///|

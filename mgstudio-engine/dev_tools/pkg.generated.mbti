@@ -1,0 +1,52 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/dev_tools"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/text",
+}
+
+// Values
+pub const FPS_OVERLAY_ZINDEX : Int = 2147483615
+
+pub fn fps_overlay_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn fps_overlay_plugin_with(@app.App[@ecs.World], FpsOverlayPlugin) -> @app.App[@ecs.World]
+
+pub let fps_overlay_set_customize : String
+
+pub let fps_overlay_set_update_text : String
+
+// Errors
+
+// Types and methods
+pub(all) struct FpsOverlayConfig {
+  mut text_config : @text.TextFont
+  mut text_color : @render2d.Color
+  mut enabled : Bool
+  mut refresh_interval : @core.Duration
+  mut frame_time_graph_config : FrameTimeGraphConfig
+}
+pub fn FpsOverlayConfig::default() -> Self
+pub impl @app.Resource for FpsOverlayConfig
+
+pub(all) struct FpsOverlayPlugin {
+  config : FpsOverlayConfig
+}
+pub fn FpsOverlayPlugin::default() -> Self
+
+pub(all) struct FrameTimeGraphConfig {
+  mut enabled : Bool
+  mut min_fps : Float
+  mut target_fps : Float
+}
+pub fn FrameTimeGraphConfig::default() -> Self
+pub fn FrameTimeGraphConfig::target_fps(Float) -> Self
+
+// Type aliases
+
+// Traits
+

@@ -65,7 +65,11 @@ pub fn text_render_system(@ecs.World) -> Unit
 
 pub fn text_set_anchor(TextHandle, @render2d.Anchor) -> Unit
 
+pub fn text_set_color(TextHandle, TextColor) -> Unit
+
 pub fn text_set_content(TextHandle, String) -> Unit
+
+pub fn text_set_font(TextHandle, TextFont) -> Unit
 
 pub fn text_set_layers(TextHandle, @render2d.RenderLayers) -> Unit
 
@@ -145,6 +149,7 @@ pub(all) enum FontSmoothing {
   None
   AntiAliased
 }
+pub fn FontSmoothing::default() -> Self
 
 pub struct GlyphAtlasInfo {
   texture : @asset.Handle[@asset.Image]
@@ -307,12 +312,13 @@ pub struct TextEntity {
   font_smoothing : FontSmoothing
 }
 
-pub struct TextFont {
-  font : @asset.Handle[@asset.Font]
-  font_size : Float
-  font_smoothing : FontSmoothing
+pub(all) struct TextFont {
+  mut font : @asset.Handle[@asset.Font]
+  mut font_size : Float
+  mut font_smoothing : FontSmoothing
 }
 pub fn TextFont::default() -> Self
+pub fn TextFont::from_font_size(Float) -> Self
 pub fn TextFont::with_font(Self, @asset.Handle[@asset.Font]) -> Self
 pub fn TextFont::with_font_size(Self, Float) -> Self
 pub fn TextFont::with_font_smoothing(Self, FontSmoothing) -> Self

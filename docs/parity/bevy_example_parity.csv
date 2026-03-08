@@ -156,7 +156,7 @@ bevy/examples/camera/first_person_view_model.rs,camera,first_person_view_model,m
 bevy/examples/camera/free_camera_controller.rs,camera,free_camera_controller,mgstudio-engine/examples/camera/free_camera_controller,Exact,team-render,
 bevy/examples/camera/pan_camera_controller.rs,camera,pan_camera_controller,mgstudio-engine/examples/camera/pan_camera_controller,Exact,team-render,
 bevy/examples/camera/projection_zoom.rs,camera,projection_zoom,mgstudio-engine/examples/camera/projection_zoom,Exact,team-render,
-bevy/examples/dev_tools/fps_overlay.rs,dev_tools,fps_overlay,,Blocked,team-ops,
+bevy/examples/dev_tools/fps_overlay.rs,dev_tools,fps_overlay,mgstudio-engine/examples/dev_tools/fps_overlay,Exact,team-ops,
 bevy/examples/diagnostics/custom_diagnostic.rs,diagnostics,custom_diagnostic,mgstudio-engine/examples/diagnostics/custom_diagnostic,Exact,team-ops,
 bevy/examples/diagnostics/enabling_disabling_diagnostic.rs,diagnostics,enabling_disabling_diagnostic,mgstudio-engine/examples/diagnostics/enabling_disabling_diagnostic,Exact,team-ops,
 bevy/examples/diagnostics/log_diagnostics.rs,diagnostics,log_diagnostics,,Blocked,team-ops,

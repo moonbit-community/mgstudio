@@ -25,7 +25,7 @@ Notes:
 | `async_tasks` | 3 | 0 | 3 | 0 |
 | `audio` | 7 | 5 | 2 | 0 |
 | `camera` | 9 | 8 | 1 | 0 |
-| `dev_tools` | 1 | 0 | 1 | 0 |
+| `dev_tools` | 1 | 1 | 0 | 0 |
 | `diagnostics` | 3 | 2 | 1 | 0 |
 | `ecs` | 32 | 5 | 27 | 0 |
 | `games` | 7 | 0 | 7 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 3 | 9 | 0 |
-| **Total** | **402** | **133** | **266** | **3** |
+| **Total** | **402** | **134** | **265** | **3** |
 
 ## Example Inventory
 
@@ -217,7 +217,7 @@ Notes:
 | `bevy/examples/camera/free_camera_controller.rs` | `camera` | `mgstudio-engine/examples/camera/free_camera_controller` | `Exact` | `team-render` |  |
 | `bevy/examples/camera/pan_camera_controller.rs` | `camera` | `mgstudio-engine/examples/camera/pan_camera_controller` | `Exact` | `team-render` |  |
 | `bevy/examples/camera/projection_zoom.rs` | `camera` | `mgstudio-engine/examples/camera/projection_zoom` | `Exact` | `team-render` |  |
-| `bevy/examples/dev_tools/fps_overlay.rs` | `dev_tools` |  | `Blocked` | `team-ops` |  |
+| `bevy/examples/dev_tools/fps_overlay.rs` | `dev_tools` | `mgstudio-engine/examples/dev_tools/fps_overlay` | `Exact` | `team-ops` |  |
 | `bevy/examples/diagnostics/custom_diagnostic.rs` | `diagnostics` | `mgstudio-engine/examples/diagnostics/custom_diagnostic` | `Exact` | `team-ops` |  |
 | `bevy/examples/diagnostics/enabling_disabling_diagnostic.rs` | `diagnostics` | `mgstudio-engine/examples/diagnostics/enabling_disabling_diagnostic` | `Exact` | `team-ops` |  |
 | `bevy/examples/diagnostics/log_diagnostics.rs` | `diagnostics` |  | `Blocked` | `team-ops` |  |

@@ -643,6 +643,24 @@ pub fn text_set_content(handle : TextHandle, content : String) -> Unit {
 }
 
 ///|
+pub fn text_set_font(handle : TextHandle, font : TextFont) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{
+    ..instance,
+    font,
+    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+  })
+}
+
+///|
+pub fn text_set_color(handle : TextHandle, color : TextColor) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{
+    ..instance,
+    color,
+    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+  })
+}
+
+///|
 /// Update the transform of a text handle without marking it as needing rerender.
 pub fn text_set_transform(
   handle : TextHandle,

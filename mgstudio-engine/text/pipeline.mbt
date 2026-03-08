@@ -307,14 +307,28 @@ fn find_str_pair_value(pairs : Array[(Int, String)], key : Int) -> String? {
 }
 
 ///|
+const DEFAULT_TEXT_FONT_PATH : String = "fonts/FiraMono-Medium.ttf"
+
+///|
+fn text_pipeline_resolve_default_font(
+  font : @asset.Handle[@asset.Font],
+) -> @asset.Handle[@asset.Font] {
+  if font.id() > 0 {
+    return font
+  }
+  @asset.AssetServer::new().load_font(DEFAULT_TEXT_FONT_PATH)
+}
+
+///|
 fn cosmic_get_or_load_font_id(font : @asset.Handle[@asset.Font]) -> Int? {
-  let handle_id = font.id()
+  let resolved_font = text_pipeline_resolve_default_font(font)
+  let handle_id = resolved_font.id()
   let state0 = cosmic_font_system_state.val
   match find_int_pair_value(state0.handle_to_font_id, handle_id) {
     Some(id) => return Some(id)
     None => ()
   }
-  let bytes_opt = @asset.asset_font_read_bytes(font)
+  let bytes_opt = @asset.asset_font_read_bytes(resolved_font)
   if bytes_opt is None {
     return None
   }
@@ -359,13 +373,14 @@ fn cosmic_get_or_load_font_id(font : @asset.Handle[@asset.Font]) -> Int? {
 
 ///|
 fn cosmic_font_family_name(font : @asset.Handle[@asset.Font]) -> String? {
-  let handle_id = font.id()
+  let resolved_font = text_pipeline_resolve_default_font(font)
+  let handle_id = resolved_font.id()
   let state0 = cosmic_font_system_state.val
   match find_str_pair_value(state0.handle_to_family, handle_id) {
     Some(v) => Some(v)
     None => {
       // Best-effort: ensure the font is loaded, then query again.
-      cosmic_get_or_load_font_id(font) |> ignore
+      cosmic_get_or_load_font_id(resolved_font) |> ignore
       find_str_pair_value(
         cosmic_font_system_state.val.handle_to_family,
         handle_id,

@@ -32,6 +32,14 @@ let frame_count_resource_key : @ecs.ResourceKey[FrameCount] = @ecs.register_reso
 )
 
 ///|
+priv struct FrameCountPluginMarker {}
+
+///|
+let frame_count_plugin_marker_key : @ecs.ResourceKey[FrameCountPluginMarker] = @ecs.register_resource(
+  debug_name="bevy_diagnostic::FrameCountPluginMarker",
+)
+
+///|
 pub impl @app.Resource for FrameCount with resource() {
   frame_count_resource_key
 }
@@ -54,7 +62,13 @@ pub fn frame_count_plugin_with(
   app : @app.App[@ecs.World],
   _plugin : FrameCountPlugin,
 ) -> @app.App[@ecs.World] {
+  if app.contains_resource(frame_count_plugin_marker_key) {
+    return app
+  }
   app
+  .insert_world_resource(frame_count_plugin_marker_key, FrameCountPluginMarker::{
+
+  })
   .init_resource(fn() { FrameCount::default() })
   .add_last_system_param(update_frame_count)
 }

@@ -60,7 +60,7 @@ Notes:
 | --- | --- | --- |
 | audio | partial | `audio`, `audio_control`, `soundtrack`, `spatial_audio_2d`, and `spatial_audio_3d` are migrated; `decodable` and `pitch` remain blocked by asset/source registration and compiler limitations. |
 | diagnostics | partial | `custom_diagnostic`, `enabling_disabling_diagnostic`, and render diagnostics forwarding are migrated; `log_diagnostics` remains blocked by system information parity. |
-| remote/dev tooling parity | missing | Remote/dev_tools categories not yet migrated. |
+| remote/dev tooling parity | partial | `bevy/examples/dev_tools/fps_overlay.rs` is exact via `dev_tools/fps_overlay`; remote APIs and `diagnostics_overlay` remain open. |
 
 ## Ownership
 

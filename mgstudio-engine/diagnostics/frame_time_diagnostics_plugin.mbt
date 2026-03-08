@@ -23,6 +23,16 @@ pub struct FrameTimeDiagnosticsPlugin {
 }
 
 ///|
+priv struct FrameTimeDiagnosticsPluginMarker {}
+
+///|
+let frame_time_diagnostics_plugin_marker_key : @ecs.ResourceKey[
+  FrameTimeDiagnosticsPluginMarker,
+] = @ecs.register_resource(
+  debug_name="bevy_diagnostic::FrameTimeDiagnosticsPluginMarker",
+)
+
+///|
 pub fn FrameTimeDiagnosticsPlugin::new(
   max_history_length : Int,
 ) -> FrameTimeDiagnosticsPlugin {
@@ -64,10 +74,19 @@ pub fn frame_time_diagnostics_plugin_with(
   app : @app.App[@ecs.World],
   plugin : FrameTimeDiagnosticsPlugin,
 ) -> @app.App[@ecs.World] {
+  let mut app_ = app
+  if app_.contains_resource(frame_time_diagnostics_plugin_marker_key) {
+    return app_
+  }
+  if !app_.contains_resource(frame_count_plugin_marker_key) {
+    app_ = frame_count_plugin(app_)
+  }
   register_diagnostic(
     register_diagnostic(
       register_diagnostic(
-        app,
+        app_.insert_world_resource(frame_time_diagnostics_plugin_marker_key, FrameTimeDiagnosticsPluginMarker::{
+
+        }),
         Diagnostic::new(frame_time_diagnostic_frame_time)
         .with_suffix("ms")
         .with_max_history_length(plugin.max_history_length)
