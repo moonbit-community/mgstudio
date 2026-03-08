@@ -21,8 +21,6 @@ pub let ecs_key_bloom : @ecs.ComponentKey[Bloom]
 
 pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d]
 
-pub let ecs_key_camera_projection3d : @ecs.ComponentKey[CameraProjection3d]
-
 pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[ChromaticAberration]
 
 pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal]
@@ -101,6 +99,8 @@ pub let ecs_key_point_light_shadow_map : @ecs.ResourceKey[PointLightShadowMap]
 
 pub let ecs_key_point_light_texture : @ecs.ComponentKey[PointLightTexture]
 
+pub let ecs_key_projection : @ecs.ComponentKey[Projection]
+
 pub let ecs_key_screen_space_ambient_occlusion : @ecs.ComponentKey[ScreenSpaceAmbientOcclusion]
 
 pub let ecs_key_screen_space_reflections : @ecs.ComponentKey[ScreenSpaceReflections]
@@ -140,8 +140,6 @@ pub fn free_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 pub fn get_bloom_store(@ecs.World) -> @ecs.ComponentAccess[Bloom]
 
 pub fn get_camera3d_store(@ecs.World) -> @ecs.ComponentAccess[Camera3d]
-
-pub fn get_camera_projection3d_store(@ecs.World) -> @ecs.ComponentAccess[CameraProjection3d]
 
 pub fn get_chromatic_aberration_store(@ecs.World) -> @ecs.ComponentAccess[ChromaticAberration]
 
@@ -219,6 +217,8 @@ pub fn get_point_light_store(@ecs.World) -> @ecs.ComponentAccess[PointLight]
 
 pub fn get_point_light_texture_store(@ecs.World) -> @ecs.ComponentAccess[PointLightTexture]
 
+pub fn get_projection_store(@ecs.World) -> @ecs.ComponentAccess[Projection]
+
 pub fn get_screen_space_ambient_occlusion_store(@ecs.World) -> @ecs.ComponentAccess[ScreenSpaceAmbientOcclusion]
 
 pub fn get_screen_space_reflections_store(@ecs.World) -> @ecs.ComponentAccess[ScreenSpaceReflections]
@@ -255,13 +255,13 @@ pub fn mesh_ray_cast(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettings) ->
 
 pub fn mesh_ray_cast_first(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
 
-pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @render2d.Camera, CameraProjection3d, @math.Transform, @math.IVec2, Float, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
+pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @render2d.Camera, Projection, @math.Transform, @math.IVec2, Float, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
 
-pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @render2d.Camera, CameraProjection3d, @math.Transform, @math.IVec2, Float, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
+pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @render2d.Camera, Projection, @math.Transform, @math.IVec2, Float, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
 
-pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @render2d.Camera, CameraProjection3d, @math.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
+pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @render2d.Camera, Projection, @math.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
 
-pub fn render3d_camera_world_to_viewport(@math.Vec3, @render2d.Camera, CameraProjection3d, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
+pub fn render3d_camera_world_to_viewport(@math.Vec3, @render2d.Camera, Projection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
 
 pub fn render3d_diagnostic_prepared_camera_count() -> Int
 
@@ -455,7 +455,7 @@ pub impl @json.FromJson for Camera3d
 
 pub struct Camera3dBundle {
   camera : @render2d.Camera
-  projection : CameraProjection3d
+  projection : Projection
   sub_camera_view : SubCameraView3d?
   screen_space_transmission : ScreenSpaceTransmission?
   screen_space_reflections : ScreenSpaceReflections?
@@ -473,7 +473,7 @@ pub struct Camera3dBundle {
   layers : @render2d.RenderLayers
 }
 pub fn Camera3dBundle::new(@render2d.Camera, @math.Transform) -> Self
-pub fn Camera3dBundle::new_with_projection(@render2d.Camera, Projection3d, @math.Transform) -> Self
+pub fn Camera3dBundle::new_with_projection(@render2d.Camera, Projection, @math.Transform) -> Self
 pub fn Camera3dBundle::spawn(Self, @ecs.World) -> @core.Entity
 pub fn Camera3dBundle::with_atmosphere(Self, Atmosphere?) -> Self
 pub fn Camera3dBundle::with_atmosphere_settings(Self, AtmosphereSettings?) -> Self
@@ -529,17 +529,6 @@ pub impl Eq for CameraDeferredMode3d
 pub impl Show for CameraDeferredMode3d
 pub impl ToJson for CameraDeferredMode3d
 pub impl @json.FromJson for CameraDeferredMode3d
-
-pub struct CameraProjection3d {
-  projection : Projection3d
-}
-pub fn CameraProjection3d::default() -> Self
-pub fn CameraProjection3d::new(Projection3d) -> Self
-pub fn CameraProjection3d::projection(Self) -> Projection3d
-pub fn CameraProjection3d::with_projection(Self, Projection3d) -> Self
-pub impl @ecs.Component for CameraProjection3d
-pub impl ToJson for CameraProjection3d
-pub impl @json.FromJson for CameraProjection3d
 
 pub struct CascadeShadowConfig {
   bounds : Array[Float]
@@ -1340,14 +1329,16 @@ pub impl @ecs.Component for PointLightTexture
 pub impl ToJson for PointLightTexture
 pub impl @json.FromJson for PointLightTexture
 
-pub(all) enum Projection3d {
+pub(all) enum Projection {
   Perspective(PerspectiveProjection3d)
   Orthographic(OrthographicProjection3d)
 }
-pub fn Projection3d::orthographic_default() -> Self
-pub fn Projection3d::perspective_default() -> Self
-pub impl ToJson for Projection3d
-pub impl @json.FromJson for Projection3d
+pub fn Projection::default() -> Self
+pub fn Projection::orthographic_default() -> Self
+pub fn Projection::perspective_default() -> Self
+pub impl @ecs.Component for Projection
+pub impl ToJson for Projection
+pub impl @json.FromJson for Projection
 
 type Render3dInternalAssetsState
 

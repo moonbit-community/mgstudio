@@ -245,7 +245,7 @@ fn draw_cursor(world : @ecs.World) -> Unit {
 
   let transform_store = world.component(@math.ecs_key_transform)
   let camera_store = world.component(@render2d.ecs_key_camera)
-  let projection_store = world.component(@render3d.ecs_key_camera_projection3d)
+  let projection_store = world.component(@render3d.ecs_key_projection)
   let mut cursor_hit : (@math.Vec3, @math.Vec3)? = None
   if @input.mouse_position() is Some(screen_pos) {
     if transform_store.get(camera_entity) is Some(camera_transform) {

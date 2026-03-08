@@ -36,20 +36,20 @@ test "render3d: perspective projection getters expose configured values" {
 }
 
 ///|
-test "render3d: camera projection getter preserves wrapped projection" {
+test "render3d: projection preserves configured orthographic values" {
   let orthographic = OrthographicProjection3d::default()
     .with_scale(2.5F)
     .with_scaling_mode(FixedVertical(7.5F))
-  let projection = CameraProjection3d::new(Orthographic(orthographic))
-  let ok = match projection.projection() {
-    Orthographic(value) => {
+  let projection = Projection::Orthographic(orthographic)
+  let ok = match projection {
+    Projection::Orthographic(value) => {
       let scaling_mode_ok = match value.scaling_mode() {
         FixedVertical(height) => projection_approx_eq(height, 7.5F)
         _ => false
       }
       projection_approx_eq(value.scale(), 2.5F) && scaling_mode_ok
     }
-    Perspective(_) => false
+    Projection::Perspective(_) => false
   }
   inspect(ok, content="true")
 }

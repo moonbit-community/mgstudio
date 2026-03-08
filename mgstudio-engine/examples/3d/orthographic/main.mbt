@@ -21,7 +21,7 @@ const FIXED_VIEWPORT_HEIGHT : Float = 6.0F
 ///|
 fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let projection = @render3d.Projection3d::Orthographic(
+  let projection = @render3d.Projection::Orthographic(
     @render3d.OrthographicProjection3d::default().with_scaling_mode(
       @render3d.OrthographicScalingMode3d::FixedVertical(FIXED_VIEWPORT_HEIGHT),
     ),

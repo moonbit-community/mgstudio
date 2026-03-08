@@ -273,7 +273,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let camera = @render3d.Camera3dBundle::new_with_projection(
     @render2d.Camera::default(),
-    @render3d.Projection3d::Perspective(
+    @render3d.Projection::Perspective(
       @render3d.PerspectiveProjection3d::default().with_fov(27.0F * PI / 180.0F),
     ),
     @math.Transform::from_xyz(0.0F, 0.0F, 10.0F),

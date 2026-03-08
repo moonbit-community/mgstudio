@@ -202,18 +202,14 @@ fn set_camera_projection(world : @ecs.World) -> Unit {
   guard anti_aliasing_state.val.camera is Some(camera_entity) else { return }
   let tick = world.read_change_tick()
   let projection = if anti_aliasing_state.val.use_orthographic {
-    @render3d.CameraProjection3d::new(
-      @render3d.Projection3d::Orthographic(
-        @render3d.OrthographicProjection3d::default().with_scale(0.002F),
-      ),
+    @render3d.Projection::Orthographic(
+      @render3d.OrthographicProjection3d::default().with_scale(0.002F),
     )
   } else {
-    @render3d.CameraProjection3d::new(
-      @render3d.Projection3d::perspective_default(),
-    )
+    @render3d.Projection::perspective_default()
   }
   world
-  .component(@render3d.ecs_key_camera_projection3d)
+  .component(@render3d.ecs_key_projection)
   .set(camera_entity, projection, tick)
   |> ignore
 }

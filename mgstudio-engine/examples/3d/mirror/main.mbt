@@ -380,7 +380,7 @@ fn setup(world : @ecs.World) -> Unit {
   ).looking_at(camera_target(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
   let main_camera = @render3d.Camera3dBundle::new_with_projection(
     @render2d.Camera::default(),
-    @render3d.Projection3d::Perspective(main_camera_projection),
+    @render3d.Projection::Perspective(main_camera_projection),
     main_camera_transform,
   ).spawn(world)
   mirror_state.val.main_camera = main_camera
@@ -396,7 +396,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let mirror_camera = @render3d.Camera3dBundle::new_with_projection(
     @render2d.Camera::new(@render2d.Color::black()).with_order(-1),
-    @render3d.Projection3d::Perspective(mirror_camera_projection),
+    @render3d.Projection::Perspective(mirror_camera_projection),
     mirror_camera_transform,
   ).spawn(world)
   world
@@ -489,7 +489,7 @@ fn move_fox_on_mouse_down(world : @ecs.World) -> Unit {
   guard @input.mouse_position() is Some(screen_pos) else { return }
   let transform_store = world.component(@math.ecs_key_transform)
   let camera_store = world.component(@render2d.ecs_key_camera)
-  let projection_store = world.component(@render3d.ecs_key_camera_projection3d)
+  let projection_store = world.component(@render3d.ecs_key_projection)
 
   guard transform_store.get(mirror_state.val.main_camera)
     is Some(camera_transform) else {
@@ -608,13 +608,12 @@ fn update_mirror_camera_on_main_camera_transform_change(
     return
   }
 
-  let projection_store = world.component(@render3d.ecs_key_camera_projection3d)
+  let projection_store = world.component(@render3d.ecs_key_projection)
   guard projection_store.get(mirror_state.val.main_camera)
     is Some(main_camera_projection_component) else {
     return
   }
-  guard main_camera_projection_component.projection
-    is Perspective(main_projection) else {
+  guard main_camera_projection_component is Perspective(main_projection) else {
     return
   }
 
@@ -631,9 +630,7 @@ fn update_mirror_camera_on_main_camera_transform_change(
   |> ignore
   projection_store.set(
     mirror_state.val.mirror_camera,
-    @render3d.CameraProjection3d::new(
-      @render3d.Projection3d::Perspective(mirror_camera_projection),
-    ),
+    @render3d.Projection::Perspective(mirror_camera_projection),
     tick,
   )
   |> ignore

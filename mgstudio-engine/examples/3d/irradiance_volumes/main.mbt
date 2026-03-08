@@ -680,9 +680,7 @@ fn handle_mouse_clicks(world : @ecs.World) -> Unit {
     is Some(camera) else {
     return
   }
-  guard world
-    .component(@render3d.ecs_key_camera_projection3d)
-    .get(camera_entity)
+  guard world.component(@render3d.ecs_key_projection).get(camera_entity)
     is Some(projection) else {
     return
   }

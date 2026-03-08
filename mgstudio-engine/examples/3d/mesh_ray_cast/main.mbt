@@ -60,7 +60,7 @@ priv struct BeamPool {
 ///|
 priv struct RaycastState {
   mut camera : @render2d.Camera
-  mut camera_projection : @render3d.CameraProjection3d
+  mut camera_projection : @render3d.Projection
   mut camera_transform : @math.Transform
   collider_entities : Array[@core.Entity]
   mut red_pool : BeamPool?
@@ -71,7 +71,7 @@ priv struct RaycastState {
 ///|
 let raycast_state : Ref[RaycastState] = Ref::new({
   camera: @render2d.Camera::default(),
-  camera_projection: @render3d.CameraProjection3d::default(),
+  camera_projection: @render3d.Projection::default(),
   camera_transform: @math.Transform::identity(),
   collider_entities: [],
   red_pool: None,
@@ -253,7 +253,7 @@ fn setup(world : @ecs.World) -> Unit {
   raycast_state.val.camera = @render2d.Camera::default().with_clear_color(
     @render2d.Color::black(),
   )
-  raycast_state.val.camera_projection = @render3d.CameraProjection3d::default()
+  raycast_state.val.camera_projection = @render3d.Projection::default()
   raycast_state.val.camera_transform = @math.Transform::from_xyz(
     1.5F, 1.5F, 1.5F,
   ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))

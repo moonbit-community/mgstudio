@@ -669,50 +669,24 @@ pub fn OrthographicProjection3d::scaling_mode(
 }
 
 ///|
-pub(all) enum Projection3d {
+pub(all) enum Projection {
   Perspective(PerspectiveProjection3d)
   Orthographic(OrthographicProjection3d)
 } derive(ToJson, FromJson)
 
 ///|
-pub fn Projection3d::perspective_default() -> Projection3d {
+pub fn Projection::default() -> Projection {
+  Projection::perspective_default()
+}
+
+///|
+pub fn Projection::perspective_default() -> Projection {
   Perspective(PerspectiveProjection3d::default())
 }
 
 ///|
-pub fn Projection3d::orthographic_default() -> Projection3d {
+pub fn Projection::orthographic_default() -> Projection {
   Orthographic(OrthographicProjection3d::default())
-}
-
-///|
-pub struct CameraProjection3d {
-  projection : Projection3d
-} derive(ToJson, FromJson)
-
-///|
-pub fn CameraProjection3d::default() -> CameraProjection3d {
-  CameraProjection3d::{ projection: Projection3d::perspective_default() }
-}
-
-///|
-pub fn CameraProjection3d::new(projection : Projection3d) -> CameraProjection3d {
-  CameraProjection3d::{ projection, }
-}
-
-///|
-pub fn CameraProjection3d::with_projection(
-  self : CameraProjection3d,
-  projection : Projection3d,
-) -> CameraProjection3d {
-  self |> ignore
-  CameraProjection3d::{ projection, }
-}
-
-///|
-pub fn CameraProjection3d::projection(
-  self : CameraProjection3d,
-) -> Projection3d {
-  self.projection
 }
 
 ///|
@@ -5755,7 +5729,7 @@ pub fn GlobalAmbientLight::new(
 ///|
 pub struct Camera3dBundle {
   camera : @render2d.Camera
-  projection : CameraProjection3d
+  projection : Projection
   sub_camera_view : SubCameraView3d?
   screen_space_transmission : ScreenSpaceTransmission?
   screen_space_reflections : ScreenSpaceReflections?
@@ -5780,7 +5754,7 @@ pub fn Camera3dBundle::new(
 ) -> Camera3dBundle {
   Camera3dBundle::{
     camera,
-    projection: CameraProjection3d::default(),
+    projection: Projection::default(),
     sub_camera_view: None,
     screen_space_transmission: None,
     screen_space_reflections: None,
@@ -5802,12 +5776,12 @@ pub fn Camera3dBundle::new(
 ///|
 pub fn Camera3dBundle::new_with_projection(
   camera : @render2d.Camera,
-  projection : Projection3d,
+  projection : Projection,
   transform : @math.Transform,
 ) -> Camera3dBundle {
   Camera3dBundle::{
     camera,
-    projection: CameraProjection3d::{ projection, },
+    projection,
     sub_camera_view: None,
     screen_space_transmission: None,
     screen_space_reflections: None,
@@ -6055,7 +6029,7 @@ pub fn Camera3dBundle::spawn(
   let tick = world.read_change_tick()
   let entity = ecs_world.spawn_empty()
   get_camera3d_store(ecs_world).insert(entity, self.camera3d, tick)
-  get_camera_projection3d_store(ecs_world).insert(entity, self.projection, tick)
+  get_projection_store(ecs_world).insert(entity, self.projection, tick)
   if self.sub_camera_view is Some(sub_camera_view) {
     get_sub_camera_view3d_store(ecs_world).insert(entity, sub_camera_view, tick)
   }
@@ -6143,7 +6117,7 @@ priv struct Camera3dInstance {
   entity : @core.Entity
   camera3d : Camera3d
   camera : @render2d.Camera
-  projection : CameraProjection3d
+  projection : Projection
   sub_camera_view : SubCameraView3d?
   screen_space_transmission : ScreenSpaceTransmission?
   screen_space_reflections : ScreenSpaceReflections?
@@ -7644,7 +7618,7 @@ fn render3d_mesh_draw_alpha(alpha_mode : AlphaMode3d, alpha : Float) -> Float? {
 
 ///|
 fn render3d_projection_params(
-  projection : CameraProjection3d,
+  projection : Projection,
   aspect_ratio : Float,
   viewport_height_logical : Float,
 ) -> (Float, Float, Float) {
@@ -7654,7 +7628,7 @@ fn render3d_projection_params(
   } else {
     viewport_height_logical
   }
-  match projection.projection {
+  match projection {
     Perspective(perspective) => {
       let p = perspective.with_aspect_ratio(safe_aspect)
       (p.fov, p.near, p.far)
@@ -9559,7 +9533,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let reflection_probes : Array[ReflectionProbeInstance] = []
   let camera3d_store = world.component(ecs_key_camera3d)
   let camera_store = world.component(@render2d.ecs_key_camera)
-  let projection_store = world.component(ecs_key_camera_projection3d)
+  let projection_store = world.component(ecs_key_projection)
   let sub_camera_view_store = world.component(ecs_key_sub_camera_view3d)
   let screen_space_transmission_store = world.component(
     ecs_key_screen_space_transmission,
@@ -9628,7 +9602,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     }
     let projection = match projection_store.get(entity) {
       Some(v) => v
-      None => CameraProjection3d::default()
+      None => Projection::default()
     }
     let sub_camera_view = sub_camera_view_store.get(entity)
     let screen_space_transmission = screen_space_transmission_store.get(entity)
@@ -11363,7 +11337,7 @@ pub fn mesh_ray_cast_from_camera(
   world : @ecs.World,
   screen : @math.Vec2,
   camera : @render2d.Camera,
-  projection : CameraProjection3d,
+  projection : Projection,
   camera_transform : @math.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,
@@ -11384,7 +11358,7 @@ pub fn mesh_ray_cast_from_camera_first(
   world : @ecs.World,
   screen : @math.Vec2,
   camera : @render2d.Camera,
-  projection : CameraProjection3d,
+  projection : Projection,
   camera_transform : @math.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,
@@ -11411,7 +11385,7 @@ pub fn mesh_ray_cast_from_camera_first(
 pub fn render3d_camera_viewport_to_world_ray(
   screen : @math.Vec2,
   camera : @render2d.Camera,
-  projection : CameraProjection3d,
+  projection : Projection,
   camera_transform : @math.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,
@@ -11431,7 +11405,7 @@ pub fn render3d_camera_viewport_to_world_ray(
   let ndc_x = viewport_local_x * 2.0F - 1.0F
   let ndc_y = 1.0F - viewport_local_y * 2.0F
   let aspect_ratio = viewport_width / viewport_height
-  match projection.projection {
+  match projection {
     Perspective(perspective) => {
       let fov = perspective.with_aspect_ratio(aspect_ratio).fov
       let half_fov = fov * 0.5F
@@ -11486,7 +11460,7 @@ pub fn render3d_camera_viewport_to_world_ray(
 pub fn render3d_camera_world_to_viewport(
   world : @math.Vec3,
   camera : @render2d.Camera,
-  projection : CameraProjection3d,
+  projection : Projection,
   camera_transform : @math.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,
@@ -11499,7 +11473,7 @@ pub fn render3d_camera_world_to_viewport(
   let inv_rotation = render3d_quat_conjugate(camera_transform.rotation).normalize()
   let view_pos = quat_rotate_vec3(inv_rotation, to_world)
   let aspect_ratio = viewport_width / viewport_height
-  let (ndc_x, ndc_y) = match projection.projection {
+  let (ndc_x, ndc_y) = match projection {
     Perspective(perspective) => {
       let view_depth = -view_pos.z
       if view_depth <= 0.0F {

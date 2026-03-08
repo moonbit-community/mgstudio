@@ -345,7 +345,7 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
 
   let camera_store = world.component(@render2d.ecs_key_camera)
   guard camera_store.get(camera_entity) is Some(camera) else { return }
-  let projection_store = world.component(@render3d.ecs_key_camera_projection3d)
+  let projection_store = world.component(@render3d.ecs_key_projection)
   guard projection_store.get(camera_entity) is Some(projection) else { return }
   let transform_store = world.component(@math.ecs_key_transform)
   guard transform_store.get(camera_entity) is Some(camera_transform) else {

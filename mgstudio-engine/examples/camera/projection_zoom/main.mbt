@@ -50,8 +50,8 @@ fn CameraSettings::default() -> CameraSettings {
 }
 
 ///|
-fn orthographic_projection(settings : CameraSettings) -> @render3d.Projection3d {
-  @render3d.Projection3d::Orthographic(
+fn orthographic_projection(settings : CameraSettings) -> @render3d.Projection {
+  @render3d.Projection::Orthographic(
     @render3d.OrthographicProjection3d::default()
     .with_scaling_mode(
       @render3d.OrthographicScalingMode3d::FixedVertical(
@@ -63,8 +63,8 @@ fn orthographic_projection(settings : CameraSettings) -> @render3d.Projection3d 
 }
 
 ///|
-fn perspective_projection(settings : CameraSettings) -> @render3d.Projection3d {
-  @render3d.Projection3d::Perspective(
+fn perspective_projection(settings : CameraSettings) -> @render3d.Projection {
+  @render3d.Projection::Perspective(
     @render3d.PerspectiveProjection3d::default().with_fov(
       settings.perspective_zoom_min,
     ),
@@ -206,7 +206,7 @@ fn instructions(asset_server : @app.Res[@asset.AssetServer]) -> Unit {
 ///|
 fn switch_projection(
   camera_query : @ecs.Query1Filtered[
-    @render3d.CameraProjection3d,
+    @render3d.Projection,
     @ecs.With[@render3d.Camera3d],
   ],
   camera_settings : @app.Res[CameraSettings],
@@ -218,13 +218,11 @@ fn switch_projection(
   let settings = camera_settings.get()
   try! camera_query.view_mut(fn(_entity, camera_projection) {
     let projection_ref = camera_projection.get_ref()
-    let next_projection = match projection_ref.val.projection() {
-      @render3d.Projection3d::Orthographic(_) =>
-        perspective_projection(settings)
-      @render3d.Projection3d::Perspective(_) =>
-        orthographic_projection(settings)
+    let next_projection = match projection_ref.val {
+      @render3d.Projection::Orthographic(_) => perspective_projection(settings)
+      @render3d.Projection::Perspective(_) => orthographic_projection(settings)
     }
-    projection_ref.val = projection_ref.val.with_projection(next_projection)
+    projection_ref.val = next_projection
     camera_projection.set_changed()
   })
 }
@@ -232,7 +230,7 @@ fn switch_projection(
 ///|
 fn zoom(
   camera_query : @ecs.Query1Filtered[
-    @render3d.CameraProjection3d,
+    @render3d.Projection,
     @ecs.With[@render3d.Camera3d],
   ],
   camera_settings : @app.Res[CameraSettings],
@@ -246,8 +244,8 @@ fn zoom(
   let settings = camera_settings.get()
   try! camera_query.view_mut(fn(_entity, camera_projection) {
     let projection_ref = camera_projection.get_ref()
-    let next_projection = match projection_ref.val.projection() {
-      @render3d.Projection3d::Orthographic(orthographic) => {
+    let next_projection = match projection_ref.val {
+      @render3d.Projection::Orthographic(orthographic) => {
         let delta_zoom = -scroll_delta * settings.orthographic_zoom_speed
         let multiplicative_zoom = 1.0F + delta_zoom
         let next_scale = clamp_float(
@@ -255,21 +253,19 @@ fn zoom(
           settings.orthographic_zoom_min,
           settings.orthographic_zoom_max,
         )
-        @render3d.Projection3d::Orthographic(
-          orthographic.with_scale(next_scale),
-        )
+        @render3d.Projection::Orthographic(orthographic.with_scale(next_scale))
       }
-      @render3d.Projection3d::Perspective(perspective) => {
+      @render3d.Projection::Perspective(perspective) => {
         let delta_zoom = -scroll_delta * settings.perspective_zoom_speed
         let next_fov = clamp_float(
           perspective.fov() + delta_zoom,
           settings.perspective_zoom_min,
           settings.perspective_zoom_max,
         )
-        @render3d.Projection3d::Perspective(perspective.with_fov(next_fov))
+        @render3d.Projection::Perspective(perspective.with_fov(next_fov))
       }
     }
-    projection_ref.val = projection_ref.val.with_projection(next_projection)
+    projection_ref.val = next_projection
     camera_projection.set_changed()
   })
 }

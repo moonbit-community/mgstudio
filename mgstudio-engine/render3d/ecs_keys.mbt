@@ -198,8 +198,8 @@ pub let ecs_key_point_light_texture : @ecs.ComponentKey[PointLightTexture] = @ec
 )
 
 ///|
-pub let ecs_key_camera_projection3d : @ecs.ComponentKey[CameraProjection3d] = @ecs.register_component(
-  debug_name="render3d.camera_projection3d",
+pub let ecs_key_projection : @ecs.ComponentKey[Projection] = @ecs.register_component(
+  debug_name="render3d.projection",
 )
 
 ///|
@@ -464,8 +464,8 @@ pub impl @ecs.Component for PointLightTexture with component() {
 }
 
 ///|
-pub impl @ecs.Component for CameraProjection3d with component() {
-  ecs_key_camera_projection3d
+pub impl @ecs.Component for Projection with component() {
+  ecs_key_projection
 }
 
 ///|

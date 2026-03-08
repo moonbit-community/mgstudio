@@ -102,12 +102,10 @@ fn set_camera_projection(world : @ecs.World, fov : Float) -> Unit {
   guard dof_state.val.camera is Some(camera) else { return }
   let perspective = @render3d.PerspectiveProjection3d::default().with_fov(fov)
   world
-  .component(@render3d.ecs_key_camera_projection3d)
+  .component(@render3d.ecs_key_projection)
   .set(
     camera,
-    @render3d.CameraProjection3d::new(
-      @render3d.Projection3d::Perspective(perspective),
-    ),
+    @render3d.Projection::Perspective(perspective),
     world.read_change_tick(),
   )
   |> ignore

@@ -309,7 +309,7 @@ fn move_player(
 fn change_fov(
   input : @input.ButtonInput[@window.KeyCode],
   world_model_projection_query : @ecs.Query1Filtered[
-    @render3d.CameraProjection3d,
+    @render3d.Projection,
     @ecs.With[WorldModelCamera],
   ],
 ) -> Unit {
@@ -328,12 +328,10 @@ fn change_fov(
   let max_fov = degrees_to_radians(160.0F)
   try! world_model_projection_query.view_mut(fn(_entity, projection) {
     let projection_ref = projection.get_ref()
-    match projection_ref.val.projection() {
+    match projection_ref.val {
       Perspective(perspective) => {
         let next_fov = clamp_float(perspective.fov() + delta, min_fov, max_fov)
-        projection_ref.val = @render3d.CameraProjection3d::new(
-          Perspective(perspective.with_fov(next_fov)),
-        )
+        projection_ref.val = Perspective(perspective.with_fov(next_fov))
       }
       Orthographic(_) => ()
     }

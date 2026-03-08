@@ -234,7 +234,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_window_size_scaling()
   let camera = @render3d.Camera3dBundle::new_with_projection(
     @render2d.Camera::default(),
-    @render3d.Projection3d::Orthographic(orthographic),
+    @render3d.Projection::Orthographic(orthographic),
     @math.Transform::from_xyz(0.0F, 0.0F, 8.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

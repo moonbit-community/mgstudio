@@ -21,9 +21,9 @@ pub let ecs_components : Array[String] = [
   "NormalPrepass", "ClusteredDecal", "ContactShadows", "MeshMaterial3d", "TemporalJitter",
   "WireframeColor", "DeferredPrepass", "FreeCameraState", "NotShadowCaster", "SubCameraView3d",
   "DirectionalLight", "IrradianceVolume", "OcclusionCulling", "SpotLightTexture",
-  "NotShadowReceiver", "PointLightTexture", "CameraProjection3d", "ParallaxCorrection",
-  "ChromaticAberration", "EnvironmentMapLight", "MotionVectorPrepass", "TemporalAntiAliasing",
-  "ShadowFilteringMethod", "ScreenSpaceReflections", "DirectionalLightTexture", "ForwardDecalMaterialExt",
+  "NotShadowReceiver", "PointLightTexture", "Projection", "ParallaxCorrection", "ChromaticAberration",
+  "EnvironmentMapLight", "MotionVectorPrepass", "TemporalAntiAliasing", "ShadowFilteringMethod",
+  "ScreenSpaceReflections", "DirectionalLightTexture", "ForwardDecalMaterialExt",
   "ScreenSpaceTransmission", "TransmittedShadowReceiver", "ScreenSpaceAmbientOcclusion",
   "GeneratedEnvironmentMapLight", "OrderIndependentTransparencySettings",
 ]
@@ -277,10 +277,10 @@ pub fn get_point_light_texture_store(
 }
 
 ///|
-pub fn get_camera_projection3d_store(
+pub fn get_projection_store(
   world : @ecs.World,
-) -> @ecs.ComponentAccess[CameraProjection3d] {
-  world.component(ecs_key_camera_projection3d)
+) -> @ecs.ComponentAccess[Projection] {
+  world.component(ecs_key_projection)
 }
 
 ///|
