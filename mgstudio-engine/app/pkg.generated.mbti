@@ -708,6 +708,9 @@ pub(open) trait FromWorld {
   from_world(@ecs.World) -> Self
 }
 pub impl FromWorld for Bool
+pub impl FromWorld for Int
+pub impl FromWorld for Float
+pub impl FromWorld for String
 pub impl[T : @ecs.Component] FromWorld for @ecs.Added[T]
 pub impl FromWorld for @ecs.All
 pub impl[T : @ecs.Component] FromWorld for @ecs.Changed[T]
@@ -743,6 +746,7 @@ pub(open) trait SystemParam {
 pub impl[T : @core.Message] SystemParam for @core.MessageReader[T]
 pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T]
 pub impl[F : FromWorld] SystemParam for @ecs.EntityQuery[F]
+pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T]
 pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T]
 pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T]
 pub impl[C : @ecs.Component] SystemParam for @ecs.On[@ecs.Insert, C]

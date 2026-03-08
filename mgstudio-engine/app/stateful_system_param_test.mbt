@@ -78,6 +78,38 @@ test "app: Local Array FromWorld starts empty and persists" {
 }
 
 ///|
+test "app: Local primitive FromWorld defaults are available" {
+  let seen_counters : Array[Int] = []
+  let seen_elapsed_ok : Array[Bool] = []
+  let seen_labels : Array[String] = []
+
+  let mut app = App::new(@ecs.World::new()).add_system_param3(fn(
+    counter : Local[Int],
+    elapsed : Local[Float],
+    label : Local[String],
+  ) {
+    let counter = counter.get_ref()
+    let elapsed = elapsed.get_ref()
+    let label = label.get_ref()
+    counter.val = counter.val + 1
+    elapsed.val = elapsed.val + 0.5F
+    if label.val == "" {
+      label.val = "tick"
+    }
+    seen_counters.push(counter.val)
+    seen_elapsed_ok.push(elapsed.val == 0.5F || elapsed.val == 1.0F)
+    seen_labels.push(label.val)
+  })
+
+  app = app.run_once()
+  app = app.run_once()
+
+  inspect(seen_counters, content="[1, 2]")
+  inspect(seen_elapsed_ok, content="[true, true]")
+  inspect(seen_labels, content="[\"tick\", \"tick\"]")
+}
+
+///|
 test "app: ParamSet2 keeps each nested SystemParam state independently" {
   let seen : Array[(Int, Int)] = []
 

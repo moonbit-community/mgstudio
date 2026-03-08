@@ -43,6 +43,21 @@ pub impl FromWorld for Bool with from_world(_world) {
 }
 
 ///|
+pub impl FromWorld for Int with from_world(_world) {
+  0
+}
+
+///|
+pub impl FromWorld for Float with from_world(_world) {
+  0.0F
+}
+
+///|
+pub impl FromWorld for String with from_world(_world) {
+  ""
+}
+
+///|
 pub impl[T] FromWorld for Array[T] with from_world(_world) {
   []
 }

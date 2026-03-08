@@ -182,6 +182,17 @@ pub struct MessageKey[T] {
 pub fn[T] MessageKey::debug_name(Self[T]) -> String
 pub fn[T] MessageKey::id(Self[T]) -> Int
 
+pub struct MessageMutator[T] {
+  world : World
+  key : MessageKey[T]
+  cursor_ref : Ref[Int]
+}
+pub fn[T] MessageMutator::clear(Self[T]) -> Unit
+pub fn[T] MessageMutator::cursor(Self[T]) -> Int
+pub fn[T] MessageMutator::is_empty(Self[T]) -> Bool
+pub fn[T] MessageMutator::len(Self[T]) -> Int
+pub fn[T] MessageMutator::read(Self[T]) -> Array[Ref[T]] raise EcsError
+
 pub struct MessageQueueState {
   mut messages_a_start : Int
   mut messages_a : Array[ErasedValue]
@@ -214,6 +225,7 @@ pub struct MessageWriter[T] {
 }
 pub fn[T] MessageWriter::write(Self[T], T) -> Int
 pub fn[T] MessageWriter::write_batch(Self[T], Array[T]) -> Unit
+pub fn[T : Default] MessageWriter::write_default(Self[T]) -> Int
 
 pub struct Name {
   name : String
@@ -540,6 +552,7 @@ pub fn[T] World::init_message(Self, MessageKey[T]) -> Unit
 pub fn[T] World::insert_resource(Self, ResourceKey[T], T) -> Unit
 pub fn[T] World::insert_resource_with_change_tick(Self, ResourceKey[T], T, Int) -> Unit
 pub fn World::is_alive(Self, @core.Entity) -> Bool
+pub fn[T] World::message_mutator(Self, MessageKey[T], Ref[Int]) -> MessageMutator[T]
 pub fn[T] World::message_reader(Self, MessageKey[T], Ref[Int]) -> MessageReader[T]
 pub fn[T] World::message_writer(Self, MessageKey[T]) -> MessageWriter[T]
 pub fn World::new() -> Self

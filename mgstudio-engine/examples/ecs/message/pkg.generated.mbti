@@ -1,0 +1,36 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/message"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type ArmorBlockedDamage
+pub impl @ecs.Message for ArmorBlockedDamage
+pub impl Default for ArmorBlockedDamage
+pub impl Show for ArmorBlockedDamage
+
+type DamageReceived
+pub impl @ecs.Message for DamageReceived
+pub impl Default for DamageReceived
+pub impl Show for DamageReceived
+
+type DamageTimer
+pub impl @app.Resource for DamageTimer
+pub impl Default for DamageTimer
+pub impl Show for DamageTimer
+
+type DealDamage
+pub impl @ecs.Message for DealDamage
+pub impl Show for DealDamage
+
+// Type aliases
+
+// Traits
+
