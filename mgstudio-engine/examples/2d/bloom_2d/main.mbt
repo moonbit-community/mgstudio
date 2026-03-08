@@ -13,22 +13,7 @@
 // limitations under the License.
 
 ///|
-priv struct BloomExampleState {
-  mut camera : @core.Entity
-  mut help_text : @text.TextHandle?
-  mut bloom_enabled : Bool
-  mut bloom : @render2d.Bloom2dSettings
-  mut tonemapping : @render2d.Tonemapping
-}
-
-///|
-let bloom_example_state : Ref[BloomExampleState] = Ref::new(BloomExampleState::{
-  camera: @core.Entity::placeholder(),
-  help_text: None,
-  bloom_enabled: true,
-  bloom: @render2d.Bloom2dSettings::default(),
-  tonemapping: @render2d.Tonemapping::TonyMcMapface,
-})
+/// Port of `bevy/examples/2d/bloom_2d.rs`.
 
 ///|
 fn main {
@@ -103,48 +88,73 @@ fn next_tonemap(mode : @render2d.Tonemapping) -> @render2d.Tonemapping {
 }
 
 ///|
-fn bloom_help_text() -> String {
-  let bloom = bloom_example_state.val.bloom
-  let mut text = if bloom_example_state.val.bloom_enabled {
-    "Bloom (Toggle: Space)\n" +
-    "(Q/A) Intensity: " +
-    float_text_2(bloom.intensity) +
-    "\n" +
-    "(W/S) Low-frequency boost: " +
-    float_text_2(bloom.low_frequency_boost) +
-    "\n" +
-    "(E/D) Low-frequency boost curvature: " +
-    float_text_2(bloom.low_frequency_boost_curvature) +
-    "\n" +
-    "(R/F) High-pass frequency: " +
-    float_text_2(bloom.high_pass_frequency) +
-    "\n" +
-    "(T/G) Mode: " +
-    bloom_mode_text(bloom.composite_mode) +
-    "\n" +
-    "(Y/H) Threshold: " +
-    float_text_2(bloom.prefilter.threshold) +
-    "\n" +
-    "(U/J) Threshold softness: " +
-    float_text_2(bloom.prefilter.threshold_softness) +
-    "\n" +
-    "(I/K) Horizontal Scale: " +
-    float_text_2(bloom.scale.x) +
-    "\n"
-  } else {
-    "Bloom: Off (Toggle: Space)\n"
+fn bloom_help_text(
+  bloom : @render2d.Bloom2d?,
+  tonemapping : @render2d.Tonemapping,
+) -> String {
+  let mut text = match bloom {
+    Some(bloom) => {
+      let settings = bloom.settings
+      "Bloom (Toggle: Space)\n" +
+      "(Q/A) Intensity: " +
+      float_text_2(settings.intensity) +
+      "\n" +
+      "(W/S) Low-frequency boost: " +
+      float_text_2(settings.low_frequency_boost) +
+      "\n" +
+      "(E/D) Low-frequency boost curvature: " +
+      float_text_2(settings.low_frequency_boost_curvature) +
+      "\n" +
+      "(R/F) High-pass frequency: " +
+      float_text_2(settings.high_pass_frequency) +
+      "\n" +
+      "(T/G) Mode: " +
+      bloom_mode_text(settings.composite_mode) +
+      "\n" +
+      "(Y/H) Threshold: " +
+      float_text_2(settings.prefilter.threshold) +
+      "\n" +
+      "(U/J) Threshold softness: " +
+      float_text_2(settings.prefilter.threshold_softness) +
+      "\n" +
+      "(I/K) Horizontal Scale: " +
+      float_text_2(settings.scale.x) +
+      "\n"
+    }
+    None => "Bloom: Off (Toggle: Space)\n"
   }
-  text = text +
-    "(O) Tonemapping: " +
-    tonemapping_text(bloom_example_state.val.tonemapping) +
-    "\n"
+  text = text + "(O) Tonemapping: " + tonemapping_text(tonemapping) + "\n"
   text
 }
 
 ///|
-fn update_help_text() -> Unit {
-  if bloom_example_state.val.help_text is Some(handle) {
-    @text.text_set_content(handle, bloom_help_text())
+fn single_camera_entity(world : @ecs.World) -> @core.Entity? {
+  let entity_ref = Ref::new(None)
+  let query = world.query1_filtered(@render2d.ecs_key_camera2d, @ecs.All::new())
+  try! query.view(fn(entity, _camera2d) {
+    if entity_ref.val is None {
+      entity_ref.val = Some(entity)
+    }
+  })
+  entity_ref.val
+}
+
+///|
+fn single_help_text_handle(world : @ecs.World) -> @text.TextHandle? {
+  let handle_ref = Ref::new(None)
+  let query = world.query1_filtered(@ui.ecs_key_ui_text, @ecs.All::new())
+  try! query.view(fn(_entity, ui_text) {
+    if handle_ref.val is None {
+      handle_ref.val = Some(ui_text.handle)
+    }
+  })
+  handle_ref.val
+}
+
+///|
+fn set_help_text(world : @ecs.World, content : String) -> Unit {
+  if single_help_text_handle(world) is Some(handle) {
+    @text.text_set_content(handle, content)
   }
 }
 
@@ -170,8 +180,10 @@ fn spawn_ui_text_handle(
 }
 
 ///|
-fn spawn_help_overlay(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
+fn spawn_help_overlay(
+  world : @ecs.World,
+  asset_server : @asset.AssetServer,
+) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let text_handle = spawn_ui_text_handle(
     "",
@@ -208,36 +220,32 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
   world
   .component(@ui.ecs_key_ui_text)
   .insert(text_entity, @ui.UiText::new(text_handle), tick)
-  bloom_example_state.val.help_text = Some(text_handle)
-  update_help_text()
 }
 
 ///|
 fn bloom_setup(world : @ecs.World) -> Unit {
-  bloom_example_state.val.camera = @core.Entity::placeholder()
-  bloom_example_state.val.help_text = None
-  bloom_example_state.val.bloom_enabled = true
-  bloom_example_state.val.bloom = @render2d.Bloom2dSettings::default()
-  bloom_example_state.val.tonemapping = @render2d.Tonemapping::TonyMcMapface
-
+  let asset_server = match
+    (try! world.get_resource(@asset.asset_server_resource_key())) {
+    Some(asset_server) => asset_server
+    None =>
+      abort(
+        "bloom_2d requires the world-owned AssetServer resource; add AssetPlugin before the example startup system runs",
+      )
+  }
   let camera = @render2d.Camera2dBundle::new(
       @render2d.Camera::new(@render2d.Color::black()),
       @math.Transform::identity(),
     )
-    .with_bloom2d(
-      @render2d.Bloom2d::new().with_settings(bloom_example_state.val.bloom),
-    )
+    .with_bloom2d(@render2d.Bloom2d::new())
     .spawn(world)
-  bloom_example_state.val.camera = camera
   let tick = world.read_change_tick()
   world
   .component(@render2d.ecs_key_tonemapping)
-  .insert(camera, bloom_example_state.val.tonemapping, tick)
+  .insert(camera, @render2d.Tonemapping::TonyMcMapface, tick)
   world
   .component(@render2d.ecs_key_deband_dither)
   .insert(camera, @render2d.DebandDither::Enabled, tick)
 
-  let asset_server = @asset.AssetServer::new()
   let bird = asset_server.load("branding/bevy_bird_dark.png")
   @render2d.SpriteBundle::new(
     @render2d.Sprite::from_image(bird)
@@ -271,146 +279,131 @@ fn bloom_setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  spawn_help_overlay(world)
+  spawn_help_overlay(world, asset_server)
 }
 
 ///|
 fn bloom_update(world : @ecs.World) -> Unit {
-  if bloom_example_state.val.camera.is_placeholder() {
-    return
-  }
+  guard single_camera_entity(world) is Some(camera_entity) else { return }
 
-  let mut bloom = bloom_example_state.val.bloom
-  let mut bloom_enabled = bloom_example_state.val.bloom_enabled
-  let mut tonemapping = bloom_example_state.val.tonemapping
-  let dt = @time.time_delta_seconds()
+  let bloom_store = world.component(@render2d.ecs_key_bloom2d)
+  let tonemapping_store = world.component(@render2d.ecs_key_tonemapping)
   let tick = world.read_change_tick()
+  let dt = @time.time_delta_seconds()
+  let tonemapping = tonemapping_store
+    .get(camera_entity)
+    .unwrap_or(@render2d.Tonemapping::TonyMcMapface)
+  let current_bloom = bloom_store.get(camera_entity)
 
-  if bloom_enabled {
-    if @input.key_just_pressed(@window.KeyCode::Space) {
-      bloom_enabled = false
-    } else {
-      let mut intensity = bloom.intensity
-      if @input.key_pressed(@window.KeyCode::KeyA) {
-        intensity = intensity - dt / 10.0F
-      }
-      if @input.key_pressed(@window.KeyCode::KeyQ) {
-        intensity = intensity + dt / 10.0F
-      }
-      intensity = clampf(intensity, 0.0F, 1.0F)
+  set_help_text(world, bloom_help_text(current_bloom, tonemapping))
 
-      let mut low_frequency_boost = bloom.low_frequency_boost
-      if @input.key_pressed(@window.KeyCode::KeyS) {
-        low_frequency_boost = low_frequency_boost - dt / 10.0F
-      }
-      if @input.key_pressed(@window.KeyCode::KeyW) {
-        low_frequency_boost = low_frequency_boost + dt / 10.0F
-      }
-      low_frequency_boost = clampf(low_frequency_boost, 0.0F, 1.0F)
+  match current_bloom {
+    Some(current_bloom) =>
+      if @input.key_just_pressed(@window.KeyCode::Space) {
+        bloom_store.remove(camera_entity) |> ignore
+      } else {
+        let mut intensity = current_bloom.settings.intensity
+        if @input.key_pressed(@window.KeyCode::KeyA) {
+          intensity = intensity - dt / 10.0F
+        }
+        if @input.key_pressed(@window.KeyCode::KeyQ) {
+          intensity = intensity + dt / 10.0F
+        }
+        intensity = clampf(intensity, 0.0F, 1.0F)
 
-      let mut low_frequency_boost_curvature = bloom.low_frequency_boost_curvature
-      if @input.key_pressed(@window.KeyCode::KeyD) {
-        low_frequency_boost_curvature = low_frequency_boost_curvature -
-          dt / 10.0F
-      }
-      if @input.key_pressed(@window.KeyCode::KeyE) {
-        low_frequency_boost_curvature = low_frequency_boost_curvature +
-          dt / 10.0F
-      }
-      low_frequency_boost_curvature = clampf(
-        low_frequency_boost_curvature, 0.0F, 1.0F,
-      )
+        let mut low_frequency_boost = current_bloom.settings.low_frequency_boost
+        if @input.key_pressed(@window.KeyCode::KeyS) {
+          low_frequency_boost = low_frequency_boost - dt / 10.0F
+        }
+        if @input.key_pressed(@window.KeyCode::KeyW) {
+          low_frequency_boost = low_frequency_boost + dt / 10.0F
+        }
+        low_frequency_boost = clampf(low_frequency_boost, 0.0F, 1.0F)
 
-      let mut high_pass_frequency = bloom.high_pass_frequency
-      if @input.key_pressed(@window.KeyCode::KeyF) {
-        high_pass_frequency = high_pass_frequency - dt / 10.0F
-      }
-      if @input.key_pressed(@window.KeyCode::KeyR) {
-        high_pass_frequency = high_pass_frequency + dt / 10.0F
-      }
-      high_pass_frequency = clampf(high_pass_frequency, 0.0F, 1.0F)
+        let mut low_frequency_boost_curvature = current_bloom.settings.low_frequency_boost_curvature
+        if @input.key_pressed(@window.KeyCode::KeyD) {
+          low_frequency_boost_curvature = low_frequency_boost_curvature -
+            dt / 10.0F
+        }
+        if @input.key_pressed(@window.KeyCode::KeyE) {
+          low_frequency_boost_curvature = low_frequency_boost_curvature +
+            dt / 10.0F
+        }
+        low_frequency_boost_curvature = clampf(
+          low_frequency_boost_curvature, 0.0F, 1.0F,
+        )
 
-      let mut composite_mode = bloom.composite_mode
-      if @input.key_pressed(@window.KeyCode::KeyG) {
-        composite_mode = Additive
-      }
-      if @input.key_pressed(@window.KeyCode::KeyT) {
-        composite_mode = EnergyConserving
-      }
+        let mut high_pass_frequency = current_bloom.settings.high_pass_frequency
+        if @input.key_pressed(@window.KeyCode::KeyF) {
+          high_pass_frequency = high_pass_frequency - dt / 10.0F
+        }
+        if @input.key_pressed(@window.KeyCode::KeyR) {
+          high_pass_frequency = high_pass_frequency + dt / 10.0F
+        }
+        high_pass_frequency = clampf(high_pass_frequency, 0.0F, 1.0F)
 
-      let mut threshold = bloom.prefilter.threshold
-      if @input.key_pressed(@window.KeyCode::KeyH) {
-        threshold = threshold - dt
-      }
-      if @input.key_pressed(@window.KeyCode::KeyY) {
-        threshold = threshold + dt
-      }
-      if threshold < 0.0F {
-        threshold = 0.0F
-      }
+        let mut composite_mode = current_bloom.settings.composite_mode
+        if @input.key_pressed(@window.KeyCode::KeyG) {
+          composite_mode = Additive
+        }
+        if @input.key_pressed(@window.KeyCode::KeyT) {
+          composite_mode = EnergyConserving
+        }
 
-      let mut threshold_softness = bloom.prefilter.threshold_softness
-      if @input.key_pressed(@window.KeyCode::KeyJ) {
-        threshold_softness = threshold_softness - dt / 10.0F
-      }
-      if @input.key_pressed(@window.KeyCode::KeyU) {
-        threshold_softness = threshold_softness + dt / 10.0F
-      }
-      threshold_softness = clampf(threshold_softness, 0.0F, 1.0F)
+        let mut threshold = current_bloom.settings.prefilter.threshold
+        if @input.key_pressed(@window.KeyCode::KeyH) {
+          threshold = threshold - dt
+        }
+        if @input.key_pressed(@window.KeyCode::KeyY) {
+          threshold = threshold + dt
+        }
+        if threshold < 0.0F {
+          threshold = 0.0F
+        }
 
-      let mut scale_x = bloom.scale.x
-      if @input.key_pressed(@window.KeyCode::KeyK) {
-        scale_x = scale_x - dt * 2.0F
-      }
-      if @input.key_pressed(@window.KeyCode::KeyI) {
-        scale_x = scale_x + dt * 2.0F
-      }
-      scale_x = clampf(scale_x, 0.0F, 16.0F)
+        let mut threshold_softness = current_bloom.settings.prefilter.threshold_softness
+        if @input.key_pressed(@window.KeyCode::KeyJ) {
+          threshold_softness = threshold_softness - dt / 10.0F
+        }
+        if @input.key_pressed(@window.KeyCode::KeyU) {
+          threshold_softness = threshold_softness + dt / 10.0F
+        }
+        threshold_softness = clampf(threshold_softness, 0.0F, 1.0F)
 
-      bloom = @render2d.Bloom2dSettings::{
-        intensity,
-        low_frequency_boost,
-        low_frequency_boost_curvature,
-        high_pass_frequency,
-        prefilter: @render2d.BloomPrefilter::{ threshold, threshold_softness },
-        composite_mode,
-        max_mip_dimension: bloom.max_mip_dimension,
-        scale: @math.Vec2::new(scale_x, bloom.scale.y),
+        let mut scale_x = current_bloom.settings.scale.x
+        if @input.key_pressed(@window.KeyCode::KeyK) {
+          scale_x = scale_x - dt * 2.0F
+        }
+        if @input.key_pressed(@window.KeyCode::KeyI) {
+          scale_x = scale_x + dt * 2.0F
+        }
+        scale_x = clampf(scale_x, 0.0F, 16.0F)
+
+        let next_settings = @render2d.Bloom2dSettings::{
+          intensity,
+          low_frequency_boost,
+          low_frequency_boost_curvature,
+          high_pass_frequency,
+          prefilter: @render2d.BloomPrefilter::{ threshold, threshold_softness },
+          composite_mode,
+          max_mip_dimension: current_bloom.settings.max_mip_dimension,
+          scale: @math.Vec2::new(scale_x, current_bloom.settings.scale.y),
+        }
+        bloom_store.set(
+          camera_entity,
+          current_bloom.with_settings(next_settings).with_enabled(true),
+          tick,
+        )
+        |> ignore
       }
-    }
-  } else if @input.key_just_pressed(@window.KeyCode::Space) {
-    bloom_enabled = true
-    bloom = @render2d.Bloom2dSettings::default()
+    None =>
+      if @input.key_just_pressed(@window.KeyCode::Space) {
+        bloom_store.insert(camera_entity, @render2d.Bloom2d::new(), tick)
+      }
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyO) {
-    tonemapping = next_tonemap(tonemapping)
-    world
-    .component(@render2d.ecs_key_tonemapping)
-    .set(bloom_example_state.val.camera, tonemapping, tick)
+    tonemapping_store.set(camera_entity, next_tonemap(tonemapping), tick)
     |> ignore
   }
-
-  bloom_example_state.val.bloom = bloom
-  bloom_example_state.val.bloom_enabled = bloom_enabled
-  bloom_example_state.val.tonemapping = tonemapping
-
-  let bloom_store = world.component(@render2d.ecs_key_bloom2d)
-  let camera = bloom_example_state.val.camera
-  if bloom_enabled {
-    if bloom_store.get(camera) is Some(current) {
-      let next = current.with_settings(bloom).with_enabled(true)
-      bloom_store.set(camera, next, tick) |> ignore
-    } else {
-      bloom_store.insert(
-        camera,
-        @render2d.Bloom2d::new().with_settings(bloom).with_enabled(true),
-        tick,
-      )
-    }
-  } else {
-    bloom_store.remove(camera) |> ignore
-  }
-
-  update_help_text()
 }

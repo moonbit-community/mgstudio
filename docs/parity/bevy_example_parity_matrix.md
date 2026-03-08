@@ -17,7 +17,7 @@ Notes:
 
 | Category | Total | Exact | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: |
-| `2d` | 27 | 26 | 1 | 0 |
+| `2d` | 27 | 27 | 0 | 0 |
 | `3d` | 66 | 44 | 22 | 0 |
 | `animation` | 13 | 2 | 11 | 0 |
 | `app` | 17 | 17 | 0 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 3 | 9 | 0 |
-| **Total** | **402** | **137** | **262** | **3** |
+| **Total** | **402** | **138** | **261** | **3** |
 
 ## Example Inventory
 
@@ -62,7 +62,7 @@ Notes:
 | --- | --- | --- | --- | --- | --- |
 | `bevy/examples/2d/2d_shapes.rs` | `2d` | `mgstudio-engine/examples/2d/2d_shapes` | `Exact` | `team-render` |  |
 | `bevy/examples/2d/2d_viewport_to_world.rs` | `2d` | `mgstudio-engine/examples/2d/2d_viewport_to_world` | `Exact` | `team-render` |  |
-| `bevy/examples/2d/bloom_2d.rs` | `2d` | `mgstudio-engine/examples/2d/bloom_2d` | `Blocked` | `team-render` | Runtime HDR pipeline mismatch (`bd-854`). |
+| `bevy/examples/2d/bloom_2d.rs` | `2d` | `mgstudio-engine/examples/2d/bloom_2d` | `Exact` | `team-render` |  |
 | `bevy/examples/2d/cpu_draw.rs` | `2d` | `mgstudio-engine/examples/2d/cpu_draw` | `Exact` | `team-render` |  |
 | `bevy/examples/2d/dynamic_mip_generation.rs` | `2d` | `mgstudio-engine/examples/2d/dynamic_mip_generation` | `Exact` | `team-render` |  |
 | `bevy/examples/2d/mesh2d.rs` | `2d` | `mgstudio-engine/examples/2d/mesh2d` | `Exact` | `team-render` |  |

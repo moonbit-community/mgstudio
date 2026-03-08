@@ -72,6 +72,105 @@ test "native_gpu: mesh3d uniform slot pool grows per draw slot" {
 }
 
 ///|
+fn gpu_test_pass_state(target_id : Int) -> GpuPassState {
+  GpuPassState::{
+    target_id,
+    target_layer: -1,
+    width_logical: 128.0F,
+    height_logical: 128.0F,
+    is_3d: false,
+    camera_x: 0.0F,
+    camera_y: 0.0F,
+    camera_rot: 0.0F,
+    camera_scale: 1.0F,
+    camera_z: 0.0F,
+    camera_rot_x: 0.0F,
+    camera_rot_y: 0.0F,
+    camera_rot_z: 0.0F,
+    camera_rot_w: 1.0F,
+    previous_camera_x: 0.0F,
+    previous_camera_y: 0.0F,
+    previous_camera_z: 0.0F,
+    previous_camera_rot_x: 0.0F,
+    previous_camera_rot_y: 0.0F,
+    previous_camera_rot_z: 0.0F,
+    previous_camera_rot_w: 1.0F,
+    camera_fov_y: 0.0F,
+    camera_near: 0.0F,
+    camera_far: 1.0F,
+    pass_kind: 0,
+    viewport_x: 0U,
+    viewport_y: 0U,
+    viewport_w: 128U,
+    viewport_h: 128U,
+    viewport_depth_min: 0.0F,
+    viewport_depth_max: 1.0F,
+    ambient_r: 0.0F,
+    ambient_g: 0.0F,
+    ambient_b: 0.0F,
+    ambient_brightness: 0.0F,
+    directional_dir_x: 0.0F,
+    directional_dir_y: 0.0F,
+    directional_dir_z: 0.0F,
+    directional_color_r: 0.0F,
+    directional_color_g: 0.0F,
+    directional_color_b: 0.0F,
+    directional_illuminance: 0.0F,
+    point_pos_x: 0.0F,
+    point_pos_y: 0.0F,
+    point_pos_z: 0.0F,
+    point_color_r: 0.0F,
+    point_color_g: 0.0F,
+    point_color_b: 0.0F,
+    point_intensity: 0.0F,
+    point_range: 0.0F,
+    spot_pos_x: 0.0F,
+    spot_pos_y: 0.0F,
+    spot_pos_z: 0.0F,
+    spot_dir_x: 0.0F,
+    spot_dir_y: 0.0F,
+    spot_dir_z: 0.0F,
+    spot_color_r: 0.0F,
+    spot_color_g: 0.0F,
+    spot_color_b: 0.0F,
+    spot_intensity: 0.0F,
+    spot_range: 0.0F,
+    spot_inner_angle: 0.0F,
+    spot_outer_angle: 0.0F,
+    sub_camera_view_scale_x: 1.0F,
+    sub_camera_view_scale_y: 1.0F,
+    sub_camera_view_bias_x: 0.0F,
+    sub_camera_view_bias_y: 0.0F,
+  }
+}
+
+///|
+test "native_gpu: sprite pipeline specializes to hdr render target format" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let target_id = backend.create_render_target_rgba16f(128, 128, false)
+  backend.pass_state = Some(gpu_test_pass_state(target_id))
+  sprite_pipeline_for_current_pass(backend) |> ignore
+  let ok = match backend.sprite_pipeline_surface_format {
+    Some(format) => format == tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
+    None => false
+  }
+  inspect(ok, content="true")
+}
+
+///|
+test "native_gpu: mesh pipeline specializes to hdr render target format" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let target_id = backend.create_render_target_rgba16f(128, 128, false)
+  backend.pass_state = Some(gpu_test_pass_state(target_id))
+  mesh_pipeline_for_current_pass(backend) |> ignore
+  let ok = match backend.mesh_pipeline_surface_format {
+    Some(format) => format == tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
+    None => false
+  }
+  inspect(ok, content="true")
+}
+
+///|
 test "native_gpu: sampler cache key includes compare anisotropy and lod" {
   let key0 = image_sampler_cache_key(
     IMAGE_SAMPLER_ADDRESS_MODE_REPEAT,

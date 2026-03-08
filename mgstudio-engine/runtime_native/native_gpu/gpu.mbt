@@ -1591,9 +1591,9 @@ fn ensure_sprite_pipeline_rgba8(
 ///|
 fn ensure_sprite_pipeline_surface(
   backend : GpuBackend,
+  format : @wgpu.TextureFormat,
 ) -> Unit raise GpuBackendError {
   ensure_sprite_resources(backend)
-  guard backend.surface_format is Some(format) else { return }
   if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
     return
   }
@@ -1627,24 +1627,15 @@ fn ensure_sprite_pipeline_surface(
 fn sprite_pipeline_for_current_pass(
   backend : GpuBackend,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
-  let target_is_surface = match backend.pass_state {
-    Some(ps) => ps.target_id == -1
-    None => false
-  }
-  if target_is_surface {
-    match backend.surface_format {
-      Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
-        ensure_sprite_pipeline_surface(backend)
-        backend.sprite_pipeline_surface
-      }
-      _ => {
-        ensure_sprite_pipeline_rgba8(backend)
-        backend.sprite_pipeline
-      }
+  match current_pass_color_format(backend) {
+    Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
+      ensure_sprite_pipeline_surface(backend, format)
+      backend.sprite_pipeline_surface
     }
-  } else {
-    ensure_sprite_pipeline_rgba8(backend)
-    backend.sprite_pipeline
+    _ => {
+      ensure_sprite_pipeline_rgba8(backend)
+      backend.sprite_pipeline
+    }
   }
 }
 
@@ -1717,9 +1708,9 @@ fn ensure_ui_pipeline_rgba8(backend : GpuBackend) -> Unit raise GpuBackendError 
 ///|
 fn ensure_ui_pipeline_surface(
   backend : GpuBackend,
+  format : @wgpu.TextureFormat,
 ) -> Unit raise GpuBackendError {
   ensure_ui_resources(backend)
-  guard backend.surface_format is Some(format) else { return }
   if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
     return
   }
@@ -1753,24 +1744,15 @@ fn ensure_ui_pipeline_surface(
 fn ui_pipeline_for_current_pass(
   backend : GpuBackend,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
-  let target_is_surface = match backend.pass_state {
-    Some(ps) => ps.target_id == -1
-    None => false
-  }
-  if target_is_surface {
-    match backend.surface_format {
-      Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
-        ensure_ui_pipeline_surface(backend)
-        backend.ui_pipeline_surface
-      }
-      _ => {
-        ensure_ui_pipeline_rgba8(backend)
-        backend.ui_pipeline
-      }
+  match current_pass_color_format(backend) {
+    Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
+      ensure_ui_pipeline_surface(backend, format)
+      backend.ui_pipeline_surface
     }
-  } else {
-    ensure_ui_pipeline_rgba8(backend)
-    backend.ui_pipeline
+    _ => {
+      ensure_ui_pipeline_rgba8(backend)
+      backend.ui_pipeline
+    }
   }
 }
 
@@ -1847,9 +1829,9 @@ fn ensure_ui_shadow_pipeline_rgba8(
 ///|
 fn ensure_ui_shadow_pipeline_surface(
   backend : GpuBackend,
+  format : @wgpu.TextureFormat,
 ) -> Unit raise GpuBackendError {
   ensure_ui_shadow_resources(backend)
-  guard backend.surface_format is Some(format) else { return }
   if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
     return
   }
@@ -1883,24 +1865,15 @@ fn ensure_ui_shadow_pipeline_surface(
 fn ui_shadow_pipeline_for_current_pass(
   backend : GpuBackend,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
-  let target_is_surface = match backend.pass_state {
-    Some(ps) => ps.target_id == -1
-    None => false
-  }
-  if target_is_surface {
-    match backend.surface_format {
-      Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
-        ensure_ui_shadow_pipeline_surface(backend)
-        backend.ui_shadow_pipeline_surface
-      }
-      _ => {
-        ensure_ui_shadow_pipeline_rgba8(backend)
-        backend.ui_shadow_pipeline
-      }
+  match current_pass_color_format(backend) {
+    Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
+      ensure_ui_shadow_pipeline_surface(backend, format)
+      backend.ui_shadow_pipeline_surface
     }
-  } else {
-    ensure_ui_shadow_pipeline_rgba8(backend)
-    backend.ui_shadow_pipeline
+    _ => {
+      ensure_ui_shadow_pipeline_rgba8(backend)
+      backend.ui_shadow_pipeline
+    }
   }
 }
 
@@ -1981,9 +1954,9 @@ fn ensure_ui_slice_pipeline_rgba8(
 ///|
 fn ensure_ui_slice_pipeline_surface(
   backend : GpuBackend,
+  format : @wgpu.TextureFormat,
 ) -> Unit raise GpuBackendError {
   ensure_ui_slice_resources(backend)
-  guard backend.surface_format is Some(format) else { return }
   if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
     return
   }
@@ -2017,24 +1990,15 @@ fn ensure_ui_slice_pipeline_surface(
 fn ui_slice_pipeline_for_current_pass(
   backend : GpuBackend,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
-  let target_is_surface = match backend.pass_state {
-    Some(ps) => ps.target_id == -1
-    None => false
-  }
-  if target_is_surface {
-    match backend.surface_format {
-      Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
-        ensure_ui_slice_pipeline_surface(backend)
-        backend.ui_slice_pipeline_surface
-      }
-      _ => {
-        ensure_ui_slice_pipeline_rgba8(backend)
-        backend.ui_slice_pipeline
-      }
+  match current_pass_color_format(backend) {
+    Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
+      ensure_ui_slice_pipeline_surface(backend, format)
+      backend.ui_slice_pipeline_surface
     }
-  } else {
-    ensure_ui_slice_pipeline_rgba8(backend)
-    backend.ui_slice_pipeline
+    _ => {
+      ensure_ui_slice_pipeline_rgba8(backend)
+      backend.ui_slice_pipeline
+    }
   }
 }
 
@@ -2218,12 +2182,12 @@ fn ensure_mesh_pipeline_rgba8(
 ///|
 fn ensure_mesh_pipeline_surface(
   backend : GpuBackend,
+  format : @wgpu.TextureFormat,
 ) -> Unit raise GpuBackendError {
   // Ensure shared mesh pipeline resources/layout exist before creating
   // surface-format specializations.
   ensure_mesh_pipeline_rgba8(backend)
   ensure_sprite_resources(backend)
-  guard backend.surface_format is Some(format) else { return }
   if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
     return
   }
@@ -2259,18 +2223,12 @@ fn ensure_mesh_pipeline_surface(
 fn mesh_pipeline_for_current_pass(
   backend : GpuBackend,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
-  let target_is_surface = match backend.pass_state {
-    Some(ps) => ps.target_id == -1
-    None => false
-  }
-  if target_is_surface {
-    match backend.surface_format {
-      Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
-        ensure_mesh_pipeline_surface(backend)
-        return backend.mesh_pipeline_surface
-      }
-      _ => ()
+  match current_pass_color_format(backend) {
+    Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
+      ensure_mesh_pipeline_surface(backend, format)
+      return backend.mesh_pipeline_surface
     }
+    _ => ()
   }
   ensure_mesh_pipeline_rgba8(backend)
   backend.mesh_pipeline
@@ -4559,6 +4517,22 @@ fn target_view(
         }
       None => None
     }
+  }
+}
+
+///|
+fn current_pass_color_format(backend : GpuBackend) -> @wgpu.TextureFormat? {
+  match backend.pass_state {
+    Some(pass_state) =>
+      if pass_state.target_id == -1 {
+        backend.surface_format
+      } else {
+        match find_texture(backend, pass_state.target_id) {
+          Some(texture) => Some(tf(texture.format_raw))
+          None => None
+        }
+      }
+    None => None
   }
 }
 
