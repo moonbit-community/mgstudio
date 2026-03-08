@@ -6058,12 +6058,8 @@ fn render2d_visibility_from_parent_chain_ecs(
   max_depth : Int,
 ) -> Bool {
   max_depth |> ignore
-  let key : @ecs.ComponentKey[Json] = @visibility.ecs_key_view_visibility.cast()
-  match (try! world.get(entity, key)) {
-    Some(payload) => {
-      let visible : Bool = try! @json.from_json(payload)
-      visible
-    }
+  match (try! world.get(entity, @visibility.ecs_key_view_visibility)) {
+    Some(view_visibility) => view_visibility.is_visible()
     None => true
   }
 }

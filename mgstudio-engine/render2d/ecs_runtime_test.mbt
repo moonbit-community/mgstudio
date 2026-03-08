@@ -145,10 +145,22 @@ test "render2d: Camera2dBundle::new_with_target stores window render target" {
 ///|
 test "render2d: Mesh2dBundle::spawn inserts expected components" {
   let world = @ecs.World::new()
-  let mesh = Mesh2d::from_rectangle(Rectangle::new(8.0F, 6.0F))
-  let material = ColorMaterial::new(Color::white())
-  let bundle = Mesh2dBundle::new(mesh, material, @math.Transform::identity())
-  let entity = bundle.spawn(world)
+  let entity_ref : Ref[@core.Entity?] = Ref::new(None)
+  let expected_transform = @math.Transform::identity()
+
+  @app.App::new(world)
+  .add_plugins([render2d_plugin])
+  .add_system(fn(world : @ecs.World) {
+    let mesh = Mesh2d::from_rectangle(Rectangle::new(8.0F, 6.0F))
+    let material = ColorMaterial::new(Color::white())
+    let bundle = Mesh2dBundle::new(mesh, material, expected_transform)
+    entity_ref.val = Some(bundle.spawn(world))
+  })
+  .run_once()
+  |> ignore
+
+  inspect(entity_ref.val is Some(_), content="true")
+  let entity = entity_ref.val.unwrap_or(@core.Entity::new(0, 0))
 
   inspect(world.is_alive(entity), content="true")
   inspect(
@@ -186,7 +198,7 @@ test "render2d: Mesh2dBundle::spawn inserts expected components" {
     content="true",
   )
   inspect(
-    ecs_transform_matches(world, entity, bundle.transform),
+    ecs_transform_matches(world, entity, expected_transform),
     content="true",
   )
 }
