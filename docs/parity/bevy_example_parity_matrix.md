@@ -1,7 +1,7 @@
 # Bevy Example Parity Matrix
 
 Status: Active (SoT)
-Last Verified: 2026-03-08
+Last Verified: 2026-03-09
 Scope: As-Implemented
 Code References:
 - `bevy/examples/`
@@ -37,7 +37,7 @@ Notes:
 | `large_scenes` | 6 | 0 | 6 | 0 |
 | `math` | 6 | 2 | 4 | 0 |
 | `mobile` | 2 | 0 | 0 | 2 |
-| `movement` | 2 | 0 | 2 | 0 |
+| `movement` | 2 | 1 | 1 | 0 |
 | `no_std` | 1 | 0 | 0 | 1 |
 | `picking` | 5 | 0 | 5 | 0 |
 | `reflection` | 10 | 0 | 10 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 3 | 9 | 0 |
-| **Total** | **402** | **135** | **264** | **3** |
+| **Total** | **402** | **136** | **263** | **3** |
 
 ## Example Inventory
 
@@ -307,7 +307,7 @@ Notes:
 | `bevy/examples/mobile/src/lib.rs` | `mobile` |  | `N/A` | `team-platform_na` | WASM-first policy: platform-incompatible category. |
 | `bevy/examples/mobile/src/main.rs` | `mobile` |  | `N/A` | `team-platform_na` | WASM-first policy: platform-incompatible category. |
 | `bevy/examples/movement/physics_in_fixed_timestep.rs` | `movement` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/movement/smooth_follow.rs` | `movement` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/movement/smooth_follow.rs` | `movement` | `mgstudio-engine/examples/movement/smooth_follow` | `Exact` | `team-core` |  |
 | `bevy/examples/no_std/library/src/lib.rs` | `no_std` |  | `N/A` | `team-platform_na` | WASM-first policy: platform-incompatible category. |
 | `bevy/examples/picking/debug_picking.rs` | `picking` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/picking/dragdrop_picking.rs` | `picking` |  | `Blocked` | `team-render` |  |

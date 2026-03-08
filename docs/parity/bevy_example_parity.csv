@@ -246,7 +246,7 @@ bevy/examples/math/sampling_primitives.rs,math,sampling_primitives,,Blocked,team
 bevy/examples/mobile/src/lib.rs,mobile,lib,,N/A,team-platform_na,WASM-first policy: platform-incompatible category.
 bevy/examples/mobile/src/main.rs,mobile,main,,N/A,team-platform_na,WASM-first policy: platform-incompatible category.
 bevy/examples/movement/physics_in_fixed_timestep.rs,movement,physics_in_fixed_timestep,,Blocked,team-core,
-bevy/examples/movement/smooth_follow.rs,movement,smooth_follow,,Blocked,team-core,
+bevy/examples/movement/smooth_follow.rs,movement,smooth_follow,mgstudio-engine/examples/movement/smooth_follow,Exact,team-core,
 bevy/examples/no_std/library/src/lib.rs,no_std,lib,,N/A,team-platform_na,WASM-first policy: platform-incompatible category.
 bevy/examples/picking/debug_picking.rs,picking,debug_picking,,Blocked,team-render,
 bevy/examples/picking/dragdrop_picking.rs,picking,dragdrop_picking,,Blocked,team-render,
