@@ -89,10 +89,9 @@ impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with get_frus
 
 ///|
 fn setup(
+  commands : @app.Commands,
   materials : @app.ResMut[@asset.Assets[@render3d.StandardMaterial]],
 ) -> Unit {
-  let world = @app.current_world().unwrap()
-  let tick = world.read_change_tick()
   let white_material = materials.get_ref().val.add(
     @render3d.StandardMaterial::from_color(@render2d.Color::white()),
   )
@@ -102,50 +101,52 @@ fn setup(
     ),
   )
 
-  @render3d.Camera3dBundle::new_with_projection(
-    @render2d.Camera::default(),
-    @render3d.Projection::custom(ObliquePerspectiveProjection::{
-      horizontal_obliqueness: 0.2F,
-      vertical_obliqueness: 0.6F,
-      perspective: @render3d.PerspectiveProjection3d::default(),
-    }),
-    @math.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  commands.spawn(
+    (
+      @render3d.Camera3d::default(),
+      @render3d.Projection::custom(ObliquePerspectiveProjection::{
+        horizontal_obliqueness: 0.2F,
+        vertical_obliqueness: 0.6F,
+        perspective: @render3d.PerspectiveProjection3d::default(),
+      }),
+      @math.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
+        @math.Vec3::zero(),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
     ),
-  ).spawn(world)
-  |> ignore
-
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_circle(4.0F),
-    @render3d.MeshMaterial3d::new(white_material),
-    @math.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(cube_material),
-    @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
-  ).spawn(world)
-  |> ignore
-  let light = world.spawn_empty()
-  world
-  .component(@render3d.PointLight::component())
-  .insert(
-    light,
-    @render3d.PointLight::default().with_shadow_maps_enabled(true),
-    tick,
   )
-  world
-  .component(@math.Transform::component())
-  .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  |> ignore
+
+  commands.spawn(
+    (
+      @render3d.Mesh3d::from_circle(4.0F),
+      @render3d.MeshMaterial3d::new(white_material),
+      @math.Transform::identity(),
+    ),
+  )
+  |> ignore
+
+  commands.spawn(
+    (
+      @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+      @render3d.MeshMaterial3d::new(cube_material),
+      @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
+    ),
+  )
+  |> ignore
+  commands.spawn(
+    (
+      @render3d.PointLight::default().with_shadow_maps_enabled(true),
+      @math.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+    ),
+  )
+  |> ignore
 }
 
 ///|
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.default_plugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
+  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .run()
 }

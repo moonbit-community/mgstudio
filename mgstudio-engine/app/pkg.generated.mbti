@@ -345,6 +345,15 @@ pub struct CheckParentHasComponent[C] {
 pub fn[C] CheckParentHasComponent::new(@core.Entity) -> Self[C]
 pub impl[C : @ecs.Component] @ecs.Message for CheckParentHasComponent[C]
 
+pub struct Commands {
+  world : @ecs.World
+  change_tick : Int
+  queue : Array[(@ecs.World, Int) -> Unit]
+}
+pub fn[T : CommandSpawnComponents] Commands::spawn(Self, T) -> @core.Entity
+pub fn Commands::spawn_empty(Self) -> @core.Entity
+pub impl SystemParam for Commands
+
 pub(all) enum ExecutorKind {
   SingleThreaded
   MultiThreaded
@@ -709,6 +718,15 @@ pub type SystemFn[W] = (W) -> Unit
 pub type SystemSet = String
 
 // Traits
+pub(open) trait CommandSpawnComponents {
+  spawn_components(Self, @ecs.World, @core.Entity, Int) -> Unit
+}
+pub impl[A : @ecs.Component, B : @ecs.Component] CommandSpawnComponents for (A, B)
+pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] CommandSpawnComponents for (A, B, C)
+pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component] CommandSpawnComponents for (A, B, C, D)
+pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component, E : @ecs.Component] CommandSpawnComponents for (A, B, C, D, E)
+pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component, E : @ecs.Component, F : @ecs.Component] CommandSpawnComponents for (A, B, C, D, E, F)
+
 pub(open) trait FreelyMutableState : States {
 }
 
