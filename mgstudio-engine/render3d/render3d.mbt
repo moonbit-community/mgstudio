@@ -252,117 +252,35 @@ pub fn DepthOfFieldMode::default() -> DepthOfFieldMode {
 
 ///|
 /// API-parity data model aligned with Bevy's `DepthOfField` camera component.
-pub struct DepthOfField {
-  mode : DepthOfFieldMode
-  focal_distance : Float
-  sensor_height : Float
-  aperture_f_stops : Float
-  max_circle_of_confusion_diameter : Float
-  max_depth : Float
+pub(all) struct DepthOfField {
+  mut mode : DepthOfFieldMode
+  mut focal_distance : Float
+  mut sensor_height : Float
+  mut aperture_f_stops : Float
+  mut max_circle_of_confusion_diameter : Float
+  mut max_depth : Float
 } derive(ToJson, FromJson)
 
 ///|
 pub fn DepthOfField::default() -> DepthOfField {
   DepthOfField::{
-    mode: DepthOfFieldMode::Gaussian,
+    mode: DepthOfFieldMode::default(),
     focal_distance: 10.0F,
-    sensor_height: 0.01866F,
+    sensor_height: PhysicalCameraParameters::default().sensor_height,
     aperture_f_stops: 4.0F,
     max_circle_of_confusion_diameter: 64.0F,
-    max_depth: 1_000_000.0F,
+    max_depth: @float.infinity,
   }
 }
 
 ///|
-pub fn DepthOfField::new(
-  mode : DepthOfFieldMode,
-  focal_distance : Float,
+pub fn DepthOfField::from_physical_camera(
+  camera : PhysicalCameraParameters,
 ) -> DepthOfField {
-  DepthOfField::default().with_mode(mode).with_focal_distance(focal_distance)
-}
-
-///|
-pub fn DepthOfField::with_mode(
-  self : DepthOfField,
-  mode : DepthOfFieldMode,
-) -> DepthOfField {
-  DepthOfField::{ ..self, mode, }
-}
-
-///|
-pub fn DepthOfField::with_focal_distance(
-  self : DepthOfField,
-  focal_distance : Float,
-) -> DepthOfField {
-  DepthOfField::{
-    ..self,
-    focal_distance: if focal_distance <= 0.0F {
-      0.0001F
-    } else {
-      focal_distance
-    },
-  }
-}
-
-///|
-pub fn DepthOfField::with_sensor_height(
-  self : DepthOfField,
-  sensor_height : Float,
-) -> DepthOfField {
-  DepthOfField::{
-    ..self,
-    sensor_height: if sensor_height <= 0.0F {
-      0.0001F
-    } else {
-      sensor_height
-    },
-  }
-}
-
-///|
-pub fn DepthOfField::with_aperture_f_stops(
-  self : DepthOfField,
-  aperture_f_stops : Float,
-) -> DepthOfField {
-  DepthOfField::{
-    ..self,
-    aperture_f_stops: if aperture_f_stops <= 0.0F {
-      0.0001F
-    } else {
-      aperture_f_stops
-    },
-  }
-}
-
-///|
-pub fn DepthOfField::with_max_circle_of_confusion_diameter(
-  self : DepthOfField,
-  max_circle_of_confusion_diameter : Float,
-) -> DepthOfField {
-  DepthOfField::{
-    ..self,
-    max_circle_of_confusion_diameter: if max_circle_of_confusion_diameter <=
-      0.0F {
-      1.0F
-    } else {
-      max_circle_of_confusion_diameter
-    },
-  }
-}
-
-///|
-pub fn DepthOfField::with_max_depth(
-  self : DepthOfField,
-  max_depth : Float,
-) -> DepthOfField {
-  DepthOfField::{
-    ..self,
-    max_depth: if max_depth <= 0.0F {
-      0.0001F
-    } else {
-      max_depth
-    },
-  }
+  let depth_of_field = DepthOfField::default()
+  depth_of_field.sensor_height = camera.sensor_height
+  depth_of_field.aperture_f_stops = camera.aperture_f_stops
+  depth_of_field
 }
 
 ///|
@@ -2035,6 +1953,13 @@ pub fn Exposure::blender() -> Exposure {
 }
 
 ///|
+pub fn Exposure::from_physical_camera(
+  physical_camera_parameters : PhysicalCameraParameters,
+) -> Exposure {
+  Exposure::{ ev100: physical_camera_parameters.ev100() }
+}
+
+///|
 pub fn Exposure::with_ev100(self : Exposure, ev100 : Float) -> Exposure {
   self |> ignore
   Exposure::{ ev100, }
@@ -2046,6 +1971,85 @@ pub fn Exposure::exposure(self : Exposure) -> Float {
 }
 
 ///|
+fn render3d_log2(value : Float) -> Float {
+  if value <= 0.0F {
+    return @float.neg_infinity
+  }
+  let mut normalized = value
+  let mut exponent = 0.0F
+  while normalized < 1.0F {
+    normalized = normalized * 2.0F
+    exponent = exponent - 1.0F
+  }
+  while normalized >= 2.0F {
+    normalized = normalized / 2.0F
+    exponent = exponent + 1.0F
+  }
+  let mut fraction = 0.0F
+  let mut factor = 0.5F
+  let mut current = normalized
+  for _ in 0..<16 {
+    current = current * current
+    if current >= 2.0F {
+      current = current / 2.0F
+      fraction = fraction + factor
+    }
+    factor = factor / 2.0F
+  }
+  exponent + fraction
+}
+
+///|
+/// Physical camera parameters aligned with Bevy's `PhysicalCameraParameters`.
+pub(all) struct PhysicalCameraParameters {
+  mut aperture_f_stops : Float
+  mut shutter_speed_s : Float
+  mut sensitivity_iso : Float
+  mut sensor_height : Float
+} derive(ToJson, FromJson)
+
+///|
+pub fn PhysicalCameraParameters::default() -> PhysicalCameraParameters {
+  PhysicalCameraParameters::{
+    aperture_f_stops: 1.0F,
+    shutter_speed_s: 1.0F / 125.0F,
+    sensitivity_iso: 100.0F,
+    sensor_height: 0.01866F,
+  }
+}
+
+///|
+pub fn PhysicalCameraParameters::ev100(
+  self : PhysicalCameraParameters,
+) -> Float {
+  let numerator = self.aperture_f_stops * self.aperture_f_stops * 100.0F
+  let denominator = self.shutter_speed_s * self.sensitivity_iso
+  render3d_log2(numerator / denominator)
+}
+
+///|
+/// Midtone range controls aligned with Bevy's `Range<f32>`-based surface.
+pub(all) struct ColorGradingRange {
+  mut start : Float
+  mut end_ : Float
+} derive(ToJson, FromJson)
+
+///|
+pub fn ColorGradingRange::default() -> ColorGradingRange {
+  ColorGradingRange::{ start: 0.2F, end_: 0.7F }
+}
+
+///|
+fn render3d_color_grading_range_copy(
+  value : ColorGradingRange,
+) -> ColorGradingRange {
+  let out = ColorGradingRange::default()
+  out.start = value.start
+  out.end_ = value.end_
+  out
+}
+
+///|
 /// Global color-grading controls aligned with Bevy's `ColorGradingGlobal`.
 pub(all) struct ColorGradingGlobal {
   mut exposure : Float
@@ -2053,8 +2057,7 @@ pub(all) struct ColorGradingGlobal {
   mut tint : Float
   mut hue : Float
   mut post_saturation : Float
-  mut midtones_start : Float
-  mut midtones_end : Float
+  mut midtones_range : ColorGradingRange
 } derive(ToJson, FromJson)
 
 ///|
@@ -2065,8 +2068,7 @@ pub fn ColorGradingGlobal::default() -> ColorGradingGlobal {
     tint: 0.0F,
     hue: 0.0F,
     post_saturation: 1.0F,
-    midtones_start: 0.2F,
-    midtones_end: 0.7F,
+    midtones_range: ColorGradingRange::default(),
   }
 }
 
@@ -2080,16 +2082,8 @@ fn render3d_color_grading_global_copy(
   out.tint = value.tint
   out.hue = value.hue
   out.post_saturation = value.post_saturation
-  out.midtones_start = value.midtones_start
-  out.midtones_end = value.midtones_end
+  out.midtones_range = render3d_color_grading_range_copy(value.midtones_range)
   out
-}
-
-///|
-pub fn ColorGradingGlobal::midtones_range(
-  self : ColorGradingGlobal,
-) -> (Float, Float) {
-  (self.midtones_start, self.midtones_end)
 }
 
 ///|
@@ -8491,7 +8485,7 @@ fn render3d_color_grading_host_uniform(
   let balance_z_axis = render3d_color_grading_mat3_mul_vec3(
     lms_to_rgb_x_axis, lms_to_rgb_y_axis, lms_to_rgb_z_axis, scaled_rgb_to_lms_z_axis,
   )
-  let (midtones_start, midtones_end) = grading.global.midtones_range()
+  let midtones_range = grading.global.midtones_range
   @render.HostColorGrading::{
     balance_x_axis_x: balance_x_axis.x,
     balance_x_axis_y: balance_x_axis.y,
@@ -8517,8 +8511,8 @@ fn render3d_color_grading_host_uniform(
     lift_shadows: grading.shadows.lift,
     lift_midtones: grading.midtones.lift,
     lift_highlights: grading.highlights.lift,
-    midtones_start,
-    midtones_end,
+    midtones_start: midtones_range.start,
+    midtones_end: midtones_range.end_,
     exposure: grading.global.exposure,
     hue: grading.global.hue,
     post_saturation: grading.global.post_saturation,

@@ -616,13 +616,19 @@ pub(all) struct ColorGradingGlobal {
   mut tint : Float
   mut hue : Float
   mut post_saturation : Float
-  mut midtones_start : Float
-  mut midtones_end : Float
+  mut midtones_range : ColorGradingRange
 }
 pub fn ColorGradingGlobal::default() -> Self
-pub fn ColorGradingGlobal::midtones_range(Self) -> (Float, Float)
 pub impl ToJson for ColorGradingGlobal
 pub impl @json.FromJson for ColorGradingGlobal
+
+pub(all) struct ColorGradingRange {
+  mut start : Float
+  mut end_ : Float
+}
+pub fn ColorGradingRange::default() -> Self
+pub impl ToJson for ColorGradingRange
+pub impl @json.FromJson for ColorGradingRange
 
 pub(all) struct ColorGradingSection {
   mut saturation : Float
@@ -720,22 +726,16 @@ pub impl @ecs.Component for DeferredPrepass
 pub impl ToJson for DeferredPrepass
 pub impl @json.FromJson for DeferredPrepass
 
-pub struct DepthOfField {
-  mode : DepthOfFieldMode
-  focal_distance : Float
-  sensor_height : Float
-  aperture_f_stops : Float
-  max_circle_of_confusion_diameter : Float
-  max_depth : Float
+pub(all) struct DepthOfField {
+  mut mode : DepthOfFieldMode
+  mut focal_distance : Float
+  mut sensor_height : Float
+  mut aperture_f_stops : Float
+  mut max_circle_of_confusion_diameter : Float
+  mut max_depth : Float
 }
 pub fn DepthOfField::default() -> Self
-pub fn DepthOfField::new(DepthOfFieldMode, Float) -> Self
-pub fn DepthOfField::with_aperture_f_stops(Self, Float) -> Self
-pub fn DepthOfField::with_focal_distance(Self, Float) -> Self
-pub fn DepthOfField::with_max_circle_of_confusion_diameter(Self, Float) -> Self
-pub fn DepthOfField::with_max_depth(Self, Float) -> Self
-pub fn DepthOfField::with_mode(Self, DepthOfFieldMode) -> Self
-pub fn DepthOfField::with_sensor_height(Self, Float) -> Self
+pub fn DepthOfField::from_physical_camera(PhysicalCameraParameters) -> Self
 pub impl ToJson for DepthOfField
 pub impl @json.FromJson for DepthOfField
 
@@ -839,6 +839,7 @@ pub struct Exposure {
 pub fn Exposure::blender() -> Self
 pub fn Exposure::default() -> Self
 pub fn Exposure::exposure(Self) -> Float
+pub fn Exposure::from_physical_camera(PhysicalCameraParameters) -> Self
 pub fn Exposure::indoor() -> Self
 pub fn Exposure::new(Float) -> Self
 pub fn Exposure::overcast() -> Self
@@ -1318,6 +1319,17 @@ pub fn PerspectiveProjection3d::with_near_clip_plane(Self, @math.Vec4) -> Self
 pub impl CameraProjection3d for PerspectiveProjection3d
 pub impl ToJson for PerspectiveProjection3d
 pub impl @json.FromJson for PerspectiveProjection3d
+
+pub(all) struct PhysicalCameraParameters {
+  mut aperture_f_stops : Float
+  mut shutter_speed_s : Float
+  mut sensitivity_iso : Float
+  mut sensor_height : Float
+}
+pub fn PhysicalCameraParameters::default() -> Self
+pub fn PhysicalCameraParameters::ev100(Self) -> Float
+pub impl ToJson for PhysicalCameraParameters
+pub impl @json.FromJson for PhysicalCameraParameters
 
 pub struct PointLight {
   color : @render2d.Color

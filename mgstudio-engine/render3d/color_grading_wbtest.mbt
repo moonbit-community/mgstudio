@@ -65,8 +65,7 @@ test "render3d: custom color grading host uniform preserves Bevy section values"
   global.tint = -0.03F
   global.hue = 0.4F
   global.post_saturation = 1.6F
-  global.midtones_start = 0.15F
-  global.midtones_end = 0.65F
+  global.midtones_range = { start: 0.15F, end_: 0.65F }
   let shadows = ColorGradingSection::default()
   shadows.saturation = 0.8F
   shadows.contrast = 1.1F
@@ -120,11 +119,14 @@ test "render3d: direct color grading field mutation matches Bevy-style usage" {
   let grading = ColorGrading::default()
   grading.global.exposure = 0.75F
   grading.global.post_saturation = 1.4F
+  grading.global.midtones_range = { start: 0.3F, end_: 0.6F }
   grading.midtones.gamma = 1.1F
   grading.highlights.gain = 1.25F
   let uniform = render3d_color_grading_host_uniform(Some(grading))
   let ok = color_grading_approx_eq(uniform.exposure, 0.75F) &&
     color_grading_approx_eq(uniform.post_saturation, 1.4F) &&
+    color_grading_approx_eq(uniform.midtones_start, 0.3F) &&
+    color_grading_approx_eq(uniform.midtones_end, 0.6F) &&
     color_grading_approx_eq(uniform.gamma_midtones, 1.1F) &&
     color_grading_approx_eq(uniform.gain_highlights, 1.25F)
   inspect(ok, content="true")
