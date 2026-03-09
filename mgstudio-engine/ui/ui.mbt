@@ -738,6 +738,11 @@ pub fn Node::with_padding(self : Node, padding : UiRect) -> Node {
 }
 
 ///|
+pub fn Node::with_margin(self : Node, margin : UiRect) -> Node {
+  Node::{ ..self, margin, }
+}
+
+///|
 pub fn Node::with_border(self : Node, border : UiRect) -> Node {
   Node::{ ..self, border, }
 }
@@ -791,6 +796,21 @@ pub fn Node::with_flex_direction(
   flex_direction : FlexDirection,
 ) -> Node {
   Node::{ ..self, flex_direction, }
+}
+
+///|
+pub fn Node::with_flex_grow(self : Node, flex_grow : Float) -> Node {
+  Node::{ ..self, flex_grow, }
+}
+
+///|
+pub fn Node::with_flex_shrink(self : Node, flex_shrink : Float) -> Node {
+  Node::{ ..self, flex_shrink, }
+}
+
+///|
+pub fn Node::with_flex_basis(self : Node, flex_basis : Val) -> Node {
+  Node::{ ..self, flex_basis, }
 }
 
 ///|

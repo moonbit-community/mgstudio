@@ -31,6 +31,9 @@ const MESH2D_UNIFORM_BUFFER_SIZE : UInt64 = 80UL
 const MESH3D_UNIFORM_BUFFER_SIZE : UInt64 = 512UL
 
 ///|
+const BLOOM2D_UNIFORM_BUFFER_SIZE : UInt64 = 240UL
+
+///|
 pub struct GpuTextureInfo {
   id : Int
   width : Int
@@ -53,6 +56,8 @@ pub struct GpuMeshInfo {
   vertex_count : UInt
   primitive_topology : UInt
   vertex_stride_bytes : UInt64
+  index_stride_bytes : UInt64
+  uses_u32_indices : Bool
   vertex_buf : @wgpu.Buffer
   index_buf : @wgpu.Buffer
 }
@@ -1167,77 +1172,209 @@ fn trim_trailing_semicolons(text : String) -> String {
 }
 
 ///|
-fn parse_wgsl_import_module_path(spec : String) -> String {
-  let mut path = spec.trim().to_string()
-  for part in path.split(" as ") {
-    path = part.to_string().trim().to_string()
-    break
-  }
-  for part in path.split("::{") {
-    path = part.to_string().trim().to_string()
-    break
-  }
-  path = trim_trailing_semicolons(path.trim().to_string())
-  if path == "" {
-    return ""
-  }
-  let segments_raw = path.split("::")
-  let segments : Array[String] = []
-  for seg in segments_raw {
-    let text = seg.to_string()
-    if text != "" {
-      segments.push(text)
-    }
-  }
-  if segments.length() == 0 {
-    return ""
-  }
-  let last = segments[segments.length() - 1]
-  if last.length() > 0 {
-    let first = last.code_unit_at(0).to_int()
-    if first >= 65 && first <= 90 {
-      segments.pop() |> ignore
-    }
-  }
-  if segments.length() == 0 {
-    return ""
-  }
-  let mut out = segments[0]
-  for i in 1..<segments.length() {
-    out = out + "::" + segments[i]
-  }
-  out
+priv struct WgslImportTarget {
+  raw_path : String
+  alias_name : String
 }
 
 ///|
-fn parse_wgsl_import_alias(spec : String, module_path : String) -> String {
+fn join_wgsl_import_prefix(prefix : String, path : String) -> String {
+  let lhs = prefix.trim().to_string()
+  let rhs = path.trim().to_string()
+  if lhs == "" {
+    rhs
+  } else if rhs == "" {
+    lhs
+  } else {
+    lhs + "::" + rhs
+  }
+}
+
+///|
+fn wgsl_import_default_alias(module_path : String) -> String {
+  let mut alias_name = ""
+  for seg in module_path.split("::") {
+    let text = seg.to_string().trim().to_string()
+    if text != "" {
+      alias_name = text
+    }
+  }
+  alias_name
+}
+
+///|
+fn split_top_level_wgsl_import_items(text : String) -> Array[String] {
+  let items : Array[String] = []
+  let mut start = 0
+  let mut depth = 0
+  for i in 0..<text.length() {
+    let ch = text.code_unit_at(i).to_int()
+    if ch == 123 { // '{'
+      depth = depth + 1
+      continue
+    }
+    if ch == 125 { // '}'
+      depth = depth - 1
+      continue
+    }
+    if ch == 44 && depth == 0 { // ','
+      let item = try! text[start:i].to_string().trim().to_string()
+      if item != "" {
+        items.push(trim_trailing_semicolons(item))
+      }
+      start = i + 1
+    }
+  }
+  let tail = try! text[start:text.length()].to_string().trim().to_string()
+  if tail != "" {
+    items.push(trim_trailing_semicolons(tail))
+  }
+  items
+}
+
+///|
+fn find_top_level_wgsl_group_separator(text : String) -> Int {
+  let mut depth = 0
+  let mut i = 0
+  while i + 2 < text.length() {
+    let ch = text.code_unit_at(i).to_int()
+    if ch == 123 { // '{'
+      depth = depth + 1
+      i = i + 1
+      continue
+    }
+    if ch == 125 { // '}'
+      depth = depth - 1
+      i = i + 1
+      continue
+    }
+    if depth == 0 &&
+      ch == 58 &&
+      text.code_unit_at(i + 1).to_int() == 58 &&
+      text.code_unit_at(i + 2).to_int() == 123 {
+      return i
+    }
+    i = i + 1
+  }
+  -1
+}
+
+///|
+fn extract_wgsl_group_body(text : String, open_brace_index : Int) -> String {
+  let mut depth = 0
+  let mut body_start = open_brace_index + 1
+  for i in open_brace_index..<text.length() {
+    let ch = text.code_unit_at(i).to_int()
+    if ch == 123 { // '{'
+      depth = depth + 1
+      if depth == 1 {
+        body_start = i + 1
+      }
+      continue
+    }
+    if ch == 125 { // '}'
+      depth = depth - 1
+      if depth == 0 {
+        return try! text[body_start:i].to_string()
+      }
+    }
+  }
+  ""
+}
+
+///|
+fn collect_wgsl_import_targets(
+  spec : String,
+  prefix : String,
+  targets : Array[WgslImportTarget],
+) -> Unit {
   let text = trim_trailing_semicolons(spec.trim().to_string())
   if text == "" {
-    return ""
+    return
   }
-  let mut saw_first = false
+  let group_separator = find_top_level_wgsl_group_separator(text)
+  if group_separator >= 0 {
+    let group_prefix = try! text[:group_separator]
+      .to_string()
+      .trim()
+      .to_string()
+    let body = extract_wgsl_group_body(text, group_separator + 2)
+    let next_prefix = join_wgsl_import_prefix(prefix, group_prefix)
+    for item in split_top_level_wgsl_import_items(body) {
+      collect_wgsl_import_targets(item, next_prefix, targets)
+    }
+    return
+  }
+  let mut raw_path = text
   let mut alias_name = ""
+  let mut saw_first = false
   for part in text.split(" as ") {
     if !saw_first {
+      raw_path = part.to_string().trim().to_string()
       saw_first = true
       continue
     }
     alias_name = trim_trailing_semicolons(part.to_string().trim().to_string())
+    break
   }
-  if alias_name != "" {
-    return alias_name
+  raw_path = trim_trailing_semicolons(raw_path.trim().to_string())
+  if raw_path == "" {
+    return
   }
-  if module_path == "" {
-    return ""
+  targets.push(WgslImportTarget::{
+    raw_path: join_wgsl_import_prefix(prefix, raw_path),
+    alias_name,
+  })
+}
+
+///|
+fn path_is_file(path : String) -> Bool {
+  @fs.is_file(path) catch {
+    _ => false
   }
-  let mut alias_name = ""
-  for seg in module_path.split("::") {
-    let s = seg.to_string().trim().to_string()
-    if s != "" {
-      alias_name = s
+}
+
+///|
+fn resolve_wgsl_import_module_path(
+  assets_base : String,
+  import_path : String,
+) -> String {
+  let segments : Array[String] = []
+  for seg in import_path.split("::") {
+    let text = seg.to_string().trim().to_string()
+    if text != "" {
+      segments.push(text)
     }
   }
-  alias_name
+  while segments.length() > 0 {
+    let mut module_path = segments[0]
+    for i in 1..<segments.length() {
+      module_path = module_path + "::" + segments[i]
+    }
+    let rel = wgsl_module_path_to_rel_path(module_path)
+    let full_path = join_asset_path(assets_base, rel)
+    if path_is_file(full_path) {
+      return module_path
+    }
+    segments.pop() |> ignore
+  }
+  ""
+}
+
+///|
+fn wgsl_import_brace_balance(text : String) -> Int {
+  let mut balance = 0
+  for i in 0..<text.length() {
+    let ch = text.code_unit_at(i).to_int()
+    if ch == 123 { // '{'
+      balance = balance + 1
+      continue
+    }
+    if ch == 125 { // '}'
+      balance = balance - 1
+    }
+  }
+  balance
 }
 
 ///|
@@ -1363,38 +1500,65 @@ fn preprocess_wgsl_source(
 ) -> String raise GpuBackendError {
   let mut merged = ""
   let aliases : Array[String] = []
+  let lines : Array[String] = []
   for line_item in source.split("\n") {
-    let line = line_item.to_string()
+    lines.push(line_item.to_string())
+  }
+  let mut line_index = 0
+  while line_index < lines.length() {
+    let line = lines[line_index]
     let trimmed = line.trim().to_string()
     if starts_with_text(trimmed, "#define_import_path") {
+      line_index = line_index + 1
       continue
     }
     if starts_with_text(trimmed, "#import ") {
-      let spec = try! trimmed[8:trimmed.length()].to_string()
-      let module_path = parse_wgsl_import_module_path(spec)
-      if module_path == "" {
-        continue
+      let mut spec = try! trimmed[8:trimmed.length()].to_string()
+      let mut brace_balance = wgsl_import_brace_balance(spec)
+      while brace_balance > 0 && line_index + 1 < lines.length() {
+        line_index = line_index + 1
+        let next_line = lines[line_index]
+        spec = spec + "\n" + next_line
+        brace_balance = brace_balance + wgsl_import_brace_balance(next_line)
       }
-      let module_alias = parse_wgsl_import_alias(spec, module_path)
-        .trim()
-        .to_string()
-      if module_alias != "" {
-        aliases.push(module_alias)
-      }
-      let module_rel = wgsl_module_path_to_rel_path(module_path)
-      let module_source = load_wgsl_preprocessed(
-        assets_base, module_rel, defines, visited,
-      )
-      if module_source != "" {
-        merged = merged + module_source
-        let merged_len = merged.length()
-        if merged_len == 0 || merged.code_unit_at(merged_len - 1).to_int() != 10 {
-          merged = merged + "\n"
+      let targets : Array[WgslImportTarget] = []
+      collect_wgsl_import_targets(spec, "", targets)
+      for target in targets {
+        let module_path = resolve_wgsl_import_module_path(
+          assets_base,
+          target.raw_path,
+        )
+        if module_path == "" {
+          fatal("wgpu: failed to resolve shader import: " + target.raw_path)
+        }
+        let module_alias = if target.alias_name != "" {
+          target.alias_name
+        } else if module_path == target.raw_path {
+          wgsl_import_default_alias(module_path)
+        } else {
+          ""
+        }
+        if module_alias != "" {
+          aliases.push(module_alias)
+        }
+        let module_rel = wgsl_module_path_to_rel_path(module_path)
+        let module_source = load_wgsl_preprocessed(
+          assets_base, module_rel, defines, visited,
+        )
+        if module_source != "" {
+          merged = merged + module_source
+          let merged_len = merged.length()
+          if merged_len == 0 ||
+            merged.code_unit_at(merged_len - 1).to_int() != 10 {
+            merged = merged + "\n"
+          }
         }
       }
+      line_index = line_index + 1
       continue
     }
     merged = merged + line + "\n"
+    line_index = line_index + 1
   }
   let mut out = apply_wgsl_ifdefs(merged, defines)
   for module_alias in aliases {
@@ -2960,6 +3124,35 @@ fn bloom2d_uniform_bytes(
   upsample_blend : Float,
   chromatic_aberration : Float,
   vignette : Float,
+  color_grading_balance_x_axis_x : Float,
+  color_grading_balance_x_axis_y : Float,
+  color_grading_balance_x_axis_z : Float,
+  color_grading_balance_y_axis_x : Float,
+  color_grading_balance_y_axis_y : Float,
+  color_grading_balance_y_axis_z : Float,
+  color_grading_balance_z_axis_x : Float,
+  color_grading_balance_z_axis_y : Float,
+  color_grading_balance_z_axis_z : Float,
+  color_grading_saturation_shadows : Float,
+  color_grading_saturation_midtones : Float,
+  color_grading_saturation_highlights : Float,
+  color_grading_contrast_shadows : Float,
+  color_grading_contrast_midtones : Float,
+  color_grading_contrast_highlights : Float,
+  color_grading_gamma_shadows : Float,
+  color_grading_gamma_midtones : Float,
+  color_grading_gamma_highlights : Float,
+  color_grading_gain_shadows : Float,
+  color_grading_gain_midtones : Float,
+  color_grading_gain_highlights : Float,
+  color_grading_lift_shadows : Float,
+  color_grading_lift_midtones : Float,
+  color_grading_lift_highlights : Float,
+  color_grading_midtones_start : Float,
+  color_grading_midtones_end : Float,
+  color_grading_exposure : Float,
+  color_grading_hue : Float,
+  color_grading_post_saturation : Float,
 ) -> Bytes {
   let softness = threshold_softness
   let knee = threshold * softness
@@ -3005,6 +3198,46 @@ fn bloom2d_uniform_bytes(
     fxaa_edge_threshold,
     chromatic_aberration,
     vignette,
+    color_grading_balance_x_axis_x,
+    color_grading_balance_x_axis_y,
+    color_grading_balance_x_axis_z,
+    0.0F,
+    color_grading_balance_y_axis_x,
+    color_grading_balance_y_axis_y,
+    color_grading_balance_y_axis_z,
+    0.0F,
+    color_grading_balance_z_axis_x,
+    color_grading_balance_z_axis_y,
+    color_grading_balance_z_axis_z,
+    0.0F,
+    color_grading_saturation_shadows,
+    color_grading_saturation_midtones,
+    color_grading_saturation_highlights,
+    0.0F,
+    color_grading_contrast_shadows,
+    color_grading_contrast_midtones,
+    color_grading_contrast_highlights,
+    0.0F,
+    color_grading_gamma_shadows,
+    color_grading_gamma_midtones,
+    color_grading_gamma_highlights,
+    0.0F,
+    color_grading_gain_shadows,
+    color_grading_gain_midtones,
+    color_grading_gain_highlights,
+    0.0F,
+    color_grading_lift_shadows,
+    color_grading_lift_midtones,
+    color_grading_lift_highlights,
+    0.0F,
+    color_grading_midtones_start,
+    color_grading_midtones_end,
+    color_grading_exposure,
+    color_grading_hue,
+    color_grading_post_saturation,
+    0.0F,
+    0.0F,
+    0.0F,
   ])
 }
 
@@ -3222,7 +3455,7 @@ fn ensure_bloom2d_pipeline_rgba8(
   if backend.bloom2d_settings_buf is None {
     let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
     backend.bloom2d_settings_buf = Some(
-      backend.device.create_buffer(size=80UL, usage~),
+      backend.device.create_buffer(size=BLOOM2D_UNIFORM_BUFFER_SIZE, usage~),
     )
   }
   if backend.bloom2d_sampler is None {
@@ -6058,6 +6291,8 @@ pub fn GpuBackend::create_mesh_rectangle(
     vertex_count: 4U,
     primitive_topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     vertex_stride_bytes: 32UL,
+    index_stride_bytes: 2UL,
+    uses_u32_indices: false,
     vertex_buf: vb,
     index_buf: ib,
   }
@@ -6141,6 +6376,8 @@ pub fn GpuBackend::create_mesh_capsule(
     vertex_count: (verts.length() / 8).reinterpret_as_uint(),
     primitive_topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     vertex_stride_bytes: 32UL,
+    index_stride_bytes: 2UL,
+    uses_u32_indices: false,
     vertex_buf: vb,
     index_buf: ib,
   }
@@ -6246,6 +6483,8 @@ pub fn GpuBackend::create_mesh_triangles_xyuvrgba(
     vertex_count: usable_vcount.reinterpret_as_uint(),
     primitive_topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     vertex_stride_bytes: 32UL,
+    index_stride_bytes: 2UL,
+    uses_u32_indices: false,
     vertex_buf: vb,
     index_buf: ib,
   }
@@ -6273,13 +6512,10 @@ pub fn GpuBackend::create_mesh3d_xyzuvrgba(
   } else {
     vcount
   }
-  if usable_vcount <= 0 || usable_vcount > 65535 {
+  if usable_vcount <= 0 {
     return 0
   }
-  let indices_u16 : Array[Int] = []
-  for i in 0..<usable_vcount {
-    indices_u16.push(i)
-  }
+  let uses_u32_indices = usable_vcount > 65535
   let id = alloc_id(self)
   let trimmed_vertices = if usable_vcount == vcount {
     vertices
@@ -6296,21 +6532,50 @@ pub fn GpuBackend::create_mesh3d_xyzuvrgba(
     f32le_pack(trimmed_vertices),
   )
   let ib_usage = bu(@wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST)
-  let ib = self.device.create_buffer_init(
-    usage=ib_usage,
-    u16le_pack(indices_u16),
-  )
+  let ib = if uses_u32_indices {
+    let indices_u32 : Array[UInt] = []
+    for i in 0..<usable_vcount {
+      indices_u32.push(i.reinterpret_as_uint())
+    }
+    self.device.create_buffer_init(usage=ib_usage, u32le_pack(indices_u32))
+  } else {
+    let indices_u16 : Array[Int] = []
+    for i in 0..<usable_vcount {
+      indices_u16.push(i)
+    }
+    self.device.create_buffer_init(usage=ib_usage, u16le_pack(indices_u16))
+  }
   let info = GpuMeshInfo::{
     id,
-    index_count: indices_u16.length().reinterpret_as_uint(),
+    index_count: usable_vcount.reinterpret_as_uint(),
     vertex_count: usable_vcount.reinterpret_as_uint(),
     primitive_topology,
     vertex_stride_bytes: 36UL,
+    index_stride_bytes: if uses_u32_indices {
+      4UL
+    } else {
+      2UL
+    },
+    uses_u32_indices,
     vertex_buf: vb,
     index_buf: ib,
   }
   self.meshes.val.push(info)
   id
+}
+
+///|
+fn gpu_mesh_bind_index_buffer(
+  pass : @wgpu.RenderPass,
+  mesh : GpuMeshInfo,
+) -> Unit {
+  let index_bytes = mesh.index_count.reinterpret_as_int().to_uint64() *
+    mesh.index_stride_bytes
+  if mesh.uses_u32_indices {
+    pass.set_index_buffer_u32(mesh.index_buf, 0UL, index_bytes)
+  } else {
+    pass.set_index_buffer_u16(mesh.index_buf, 0UL, index_bytes)
+  }
 }
 
 ///|
@@ -6445,8 +6710,7 @@ pub fn GpuBackend::draw_mesh(
   let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
     mesh.vertex_stride_bytes
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
-  let index_bytes = (mesh.index_count.reinterpret_as_int() * 2).to_uint64()
-  pass.set_index_buffer_u16(mesh.index_buf, 0UL, index_bytes)
+  gpu_mesh_bind_index_buffer(pass, mesh)
   debug_mesh2d_executed_draw_calls_ref.val = debug_mesh2d_executed_draw_calls_ref.val +
     1
   current_frame_mesh2d_executed_draw_calls_ref.val = current_frame_mesh2d_executed_draw_calls_ref.val +
@@ -6553,6 +6817,35 @@ pub fn GpuBackend::draw_bloom2d(
   agx_lut_texture_id : Int,
   tony_lut_texture_id : Int,
   blender_lut_texture_id : Int,
+  color_grading_balance_x_axis_x : Float,
+  color_grading_balance_x_axis_y : Float,
+  color_grading_balance_x_axis_z : Float,
+  color_grading_balance_y_axis_x : Float,
+  color_grading_balance_y_axis_y : Float,
+  color_grading_balance_y_axis_z : Float,
+  color_grading_balance_z_axis_x : Float,
+  color_grading_balance_z_axis_y : Float,
+  color_grading_balance_z_axis_z : Float,
+  color_grading_saturation_shadows : Float,
+  color_grading_saturation_midtones : Float,
+  color_grading_saturation_highlights : Float,
+  color_grading_contrast_shadows : Float,
+  color_grading_contrast_midtones : Float,
+  color_grading_contrast_highlights : Float,
+  color_grading_gamma_shadows : Float,
+  color_grading_gamma_midtones : Float,
+  color_grading_gamma_highlights : Float,
+  color_grading_gain_shadows : Float,
+  color_grading_gain_midtones : Float,
+  color_grading_gain_highlights : Float,
+  color_grading_lift_shadows : Float,
+  color_grading_lift_midtones : Float,
+  color_grading_lift_highlights : Float,
+  color_grading_midtones_start : Float,
+  color_grading_midtones_end : Float,
+  color_grading_exposure : Float,
+  color_grading_hue : Float,
+  color_grading_post_saturation : Float,
   fxaa_enabled : Int,
   fxaa_edge_threshold : Float,
   chromatic_aberration : Float,
@@ -6799,6 +7092,35 @@ pub fn GpuBackend::draw_bloom2d(
         0.0F,
         chromatic_aberration_value,
         vignette_value,
+        color_grading_balance_x_axis_x,
+        color_grading_balance_x_axis_y,
+        color_grading_balance_x_axis_z,
+        color_grading_balance_y_axis_x,
+        color_grading_balance_y_axis_y,
+        color_grading_balance_y_axis_z,
+        color_grading_balance_z_axis_x,
+        color_grading_balance_z_axis_y,
+        color_grading_balance_z_axis_z,
+        color_grading_saturation_shadows,
+        color_grading_saturation_midtones,
+        color_grading_saturation_highlights,
+        color_grading_contrast_shadows,
+        color_grading_contrast_midtones,
+        color_grading_contrast_highlights,
+        color_grading_gamma_shadows,
+        color_grading_gamma_midtones,
+        color_grading_gamma_highlights,
+        color_grading_gain_shadows,
+        color_grading_gain_midtones,
+        color_grading_gain_highlights,
+        color_grading_lift_shadows,
+        color_grading_lift_midtones,
+        color_grading_lift_highlights,
+        color_grading_midtones_start,
+        color_grading_midtones_end,
+        color_grading_exposure,
+        color_grading_hue,
+        color_grading_post_saturation,
       )
       self.queue.write_buffer(settings_buf, 0UL, bloom_uniform)
       if intermediate_bind_layout is Some(bind_layout) &&
@@ -6922,6 +7244,35 @@ pub fn GpuBackend::draw_bloom2d(
             blend,
             chromatic_aberration_value,
             vignette_value,
+            color_grading_balance_x_axis_x,
+            color_grading_balance_x_axis_y,
+            color_grading_balance_x_axis_z,
+            color_grading_balance_y_axis_x,
+            color_grading_balance_y_axis_y,
+            color_grading_balance_y_axis_z,
+            color_grading_balance_z_axis_x,
+            color_grading_balance_z_axis_y,
+            color_grading_balance_z_axis_z,
+            color_grading_saturation_shadows,
+            color_grading_saturation_midtones,
+            color_grading_saturation_highlights,
+            color_grading_contrast_shadows,
+            color_grading_contrast_midtones,
+            color_grading_contrast_highlights,
+            color_grading_gamma_shadows,
+            color_grading_gamma_midtones,
+            color_grading_gamma_highlights,
+            color_grading_gain_shadows,
+            color_grading_gain_midtones,
+            color_grading_gain_highlights,
+            color_grading_lift_shadows,
+            color_grading_lift_midtones,
+            color_grading_lift_highlights,
+            color_grading_midtones_start,
+            color_grading_midtones_end,
+            color_grading_exposure,
+            color_grading_hue,
+            color_grading_post_saturation,
           )
           self.queue.write_buffer(settings_buf, 0UL, upsample_uniform)
           if intermediate_bind_layout is Some(bind_layout) &&
@@ -6998,6 +7349,35 @@ pub fn GpuBackend::draw_bloom2d(
     0.0F,
     chromatic_aberration_value,
     vignette_value,
+    color_grading_balance_x_axis_x,
+    color_grading_balance_x_axis_y,
+    color_grading_balance_x_axis_z,
+    color_grading_balance_y_axis_x,
+    color_grading_balance_y_axis_y,
+    color_grading_balance_y_axis_z,
+    color_grading_balance_z_axis_x,
+    color_grading_balance_z_axis_y,
+    color_grading_balance_z_axis_z,
+    color_grading_saturation_shadows,
+    color_grading_saturation_midtones,
+    color_grading_saturation_highlights,
+    color_grading_contrast_shadows,
+    color_grading_contrast_midtones,
+    color_grading_contrast_highlights,
+    color_grading_gamma_shadows,
+    color_grading_gamma_midtones,
+    color_grading_gamma_highlights,
+    color_grading_gain_shadows,
+    color_grading_gain_midtones,
+    color_grading_gain_highlights,
+    color_grading_lift_shadows,
+    color_grading_lift_midtones,
+    color_grading_lift_highlights,
+    color_grading_midtones_start,
+    color_grading_midtones_end,
+    color_grading_exposure,
+    color_grading_hue,
+    color_grading_post_saturation,
   )
   self.queue.write_buffer(settings_buf, 0UL, final_uniform)
 
@@ -7218,8 +7598,7 @@ pub fn GpuBackend::draw_mesh3d(
     let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
       mesh.vertex_stride_bytes
     pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
-    let index_bytes = (mesh.index_count.reinterpret_as_int() * 2).to_uint64()
-    pass.set_index_buffer_u16(mesh.index_buf, 0UL, index_bytes)
+    gpu_mesh_bind_index_buffer(pass, mesh)
     pass.draw_indexed(mesh.index_count, 1U, 0U, 0, 0U)
     return
   }
@@ -7541,8 +7920,7 @@ pub fn GpuBackend::draw_mesh3d(
   if mesh.primitive_topology == MESH3D_TOPOLOGY_LINE_STRIP {
     pass.draw(mesh.vertex_count, 1U, 0U, 0U)
   } else {
-    let index_bytes = (mesh.index_count.reinterpret_as_int() * 2).to_uint64()
-    pass.set_index_buffer_u16(mesh.index_buf, 0UL, index_bytes)
+    gpu_mesh_bind_index_buffer(pass, mesh)
     pass.draw_indexed(mesh.index_count, 1U, 0U, 0, 0U)
   }
 }
@@ -8783,6 +9161,35 @@ pub fn draw_bloom2d(
   agx_lut_texture_id~ : Int,
   tony_lut_texture_id~ : Int,
   blender_lut_texture_id~ : Int,
+  color_grading_balance_x_axis_x~ : Float,
+  color_grading_balance_x_axis_y~ : Float,
+  color_grading_balance_x_axis_z~ : Float,
+  color_grading_balance_y_axis_x~ : Float,
+  color_grading_balance_y_axis_y~ : Float,
+  color_grading_balance_y_axis_z~ : Float,
+  color_grading_balance_z_axis_x~ : Float,
+  color_grading_balance_z_axis_y~ : Float,
+  color_grading_balance_z_axis_z~ : Float,
+  color_grading_saturation_shadows~ : Float,
+  color_grading_saturation_midtones~ : Float,
+  color_grading_saturation_highlights~ : Float,
+  color_grading_contrast_shadows~ : Float,
+  color_grading_contrast_midtones~ : Float,
+  color_grading_contrast_highlights~ : Float,
+  color_grading_gamma_shadows~ : Float,
+  color_grading_gamma_midtones~ : Float,
+  color_grading_gamma_highlights~ : Float,
+  color_grading_gain_shadows~ : Float,
+  color_grading_gain_midtones~ : Float,
+  color_grading_gain_highlights~ : Float,
+  color_grading_lift_shadows~ : Float,
+  color_grading_lift_midtones~ : Float,
+  color_grading_lift_highlights~ : Float,
+  color_grading_midtones_start~ : Float,
+  color_grading_midtones_end~ : Float,
+  color_grading_exposure~ : Float,
+  color_grading_hue~ : Float,
+  color_grading_post_saturation~ : Float,
 ) -> Unit {
   let fxaa_edge_threshold_value = if fxaa_edge_threshold <
     fxaa_edge_threshold_min {
@@ -8809,7 +9216,17 @@ pub fn draw_bloom2d(
       high_pass_frequency, threshold, threshold_softness, composite_mode, max_mip_dimension,
       scale_x, scale_y, exposure, tonemapping_mode, deband_dither_enabled, view_width,
       view_height, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
-      fxaa_enabled, fxaa_edge_threshold_value, chromatic_aberration_value, vignette_value,
+      color_grading_balance_x_axis_x, color_grading_balance_x_axis_y, color_grading_balance_x_axis_z,
+      color_grading_balance_y_axis_x, color_grading_balance_y_axis_y, color_grading_balance_y_axis_z,
+      color_grading_balance_z_axis_x, color_grading_balance_z_axis_y, color_grading_balance_z_axis_z,
+      color_grading_saturation_shadows, color_grading_saturation_midtones, color_grading_saturation_highlights,
+      color_grading_contrast_shadows, color_grading_contrast_midtones, color_grading_contrast_highlights,
+      color_grading_gamma_shadows, color_grading_gamma_midtones, color_grading_gamma_highlights,
+      color_grading_gain_shadows, color_grading_gain_midtones, color_grading_gain_highlights,
+      color_grading_lift_shadows, color_grading_lift_midtones, color_grading_lift_highlights,
+      color_grading_midtones_start, color_grading_midtones_end, color_grading_exposure,
+      color_grading_hue, color_grading_post_saturation, fxaa_enabled, fxaa_edge_threshold_value,
+      chromatic_aberration_value, vignette_value,
     ) catch {
       err => debug_runtime_error("draw_bloom2d", err)
     }

@@ -72,6 +72,88 @@ test "native_gpu: mesh3d uniform slot pool grows per draw slot" {
 }
 
 ///|
+test "native_gpu: large mesh3d upload switches to u32 index buffers" {
+  let backend = GpuBackend::new()
+  backend.meshes.val.clear()
+  let vertices : Array[Float] = []
+  for i in 0..<65538 {
+    let x = Float::from_int(i % 3)
+    let y = Float::from_int(i / 3 % 3)
+    vertices.push(x)
+    vertices.push(y)
+    vertices.push(0.0F)
+    vertices.push(0.0F)
+    vertices.push(0.0F)
+    vertices.push(1.0F)
+    vertices.push(1.0F)
+    vertices.push(1.0F)
+    vertices.push(1.0F)
+  }
+  let mesh_id = backend.create_mesh3d_xyzuvrgba(vertices, 0)
+  let ok = mesh_id > 0 &&
+    backend.meshes.val.length() == 1 &&
+    backend.meshes.val[0].id == mesh_id &&
+    backend.meshes.val[0].vertex_count == 65538U &&
+    backend.meshes.val[0].index_count == 65538U &&
+    backend.meshes.val[0].index_stride_bytes == 4UL &&
+    backend.meshes.val[0].uses_u32_indices
+  inspect(ok, content="true")
+}
+
+///|
+test "native_gpu: grouped wgsl imports resolve Bevy module files" {
+  let assets_base = "assets"
+  let targets : Array[WgslImportTarget] = []
+  collect_wgsl_import_targets(
+    "bevy_render::{\n  color_operations::{hsv_to_rgb, rgb_to_hsv},\n  maths::{PI_2, powsafe},\n}",
+    "", targets,
+  )
+  inspect(targets.length(), content="4")
+  inspect(
+    resolve_wgsl_import_module_path(assets_base, targets[0].raw_path),
+    content="bevy_render::color_operations",
+  )
+  inspect(
+    resolve_wgsl_import_module_path(assets_base, targets[1].raw_path),
+    content="bevy_render::color_operations",
+  )
+  inspect(
+    resolve_wgsl_import_module_path(assets_base, targets[2].raw_path),
+    content="bevy_render::maths",
+  )
+  inspect(
+    resolve_wgsl_import_module_path(assets_base, targets[3].raw_path),
+    content="bevy_render::maths",
+  )
+}
+
+///|
+test "native_gpu: preprocess_wgsl_source supports multiline grouped imports" {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let preprocessed = preprocess_wgsl_source(
+    "assets", "#import bevy_render::{\n  color_operations::{hsv_to_rgb, rgb_to_hsv},\n  maths::{PI_2, powsafe},\n}\nfn demo(color: vec3<f32>) -> vec3<f32> {\n  let h = rgb_to_hsv(color);\n  return hsv_to_rgb(vec3<f32>(h.x + PI_2, h.y, powsafe(h.z, 1.0)));\n}\n",
+    defines, visited,
+  )
+  inspect(preprocessed.contains("fn rgb_to_hsv"), content="true")
+  inspect(preprocessed.contains("fn hsv_to_rgb"), content="true")
+  inspect(preprocessed.contains("const PI_2"), content="true")
+  inspect(preprocessed.contains("bevy_render::"), content="false")
+}
+
+///|
+test "native_gpu: preprocess_wgsl_source strips module aliases" {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let preprocessed = preprocess_wgsl_source(
+    "assets", "#import bevy_render::maths as maths\nfn demo() -> f32 {\n  return maths::PI_2;\n}\n",
+    defines, visited,
+  )
+  inspect(preprocessed.contains("return PI_2;"), content="true")
+  inspect(preprocessed.contains("maths::PI_2"), content="false")
+}
+
+///|
 fn gpu_test_pass_state(target_id : Int) -> GpuPassState {
   GpuPassState::{
     target_id,

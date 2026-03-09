@@ -6,6 +6,18 @@ package "Milky2018/mgstudio/examples/3d/color_grading"
 // Errors
 
 // Types and methods
+type ColorGradingCamera
+
+type ColorGradingOptionWidget
+
+pub(all) enum ColorGradingOptionWidgetType {
+  Button
+  Label
+  Value
+}
+
+type HelpText
+
 pub(all) enum SelectedColorGradingOption {
   Global(SelectedGlobalColorGradingOption)
   Section(SelectedColorGradingSection, SelectedSectionColorGradingOption)

@@ -25,6 +25,74 @@ pub type HostGpuSurface = Int
 pub type HostGpuFrame = Int
 
 ///|
+pub(all) struct HostColorGrading {
+  balance_x_axis_x : Float
+  balance_x_axis_y : Float
+  balance_x_axis_z : Float
+  balance_y_axis_x : Float
+  balance_y_axis_y : Float
+  balance_y_axis_z : Float
+  balance_z_axis_x : Float
+  balance_z_axis_y : Float
+  balance_z_axis_z : Float
+  saturation_shadows : Float
+  saturation_midtones : Float
+  saturation_highlights : Float
+  contrast_shadows : Float
+  contrast_midtones : Float
+  contrast_highlights : Float
+  gamma_shadows : Float
+  gamma_midtones : Float
+  gamma_highlights : Float
+  gain_shadows : Float
+  gain_midtones : Float
+  gain_highlights : Float
+  lift_shadows : Float
+  lift_midtones : Float
+  lift_highlights : Float
+  midtones_start : Float
+  midtones_end : Float
+  exposure : Float
+  hue : Float
+  post_saturation : Float
+}
+
+///|
+pub fn HostColorGrading::default() -> HostColorGrading {
+  HostColorGrading::{
+    balance_x_axis_x: 1.0F,
+    balance_x_axis_y: 0.0F,
+    balance_x_axis_z: 0.0F,
+    balance_y_axis_x: 0.0F,
+    balance_y_axis_y: 1.0F,
+    balance_y_axis_z: 0.0F,
+    balance_z_axis_x: 0.0F,
+    balance_z_axis_y: 0.0F,
+    balance_z_axis_z: 1.0F,
+    saturation_shadows: 1.0F,
+    saturation_midtones: 1.0F,
+    saturation_highlights: 1.0F,
+    contrast_shadows: 1.0F,
+    contrast_midtones: 1.0F,
+    contrast_highlights: 1.0F,
+    gamma_shadows: 1.0F,
+    gamma_midtones: 1.0F,
+    gamma_highlights: 1.0F,
+    gain_shadows: 1.0F,
+    gain_midtones: 1.0F,
+    gain_highlights: 1.0F,
+    lift_shadows: 0.0F,
+    lift_midtones: 0.0F,
+    lift_highlights: 0.0F,
+    midtones_start: 0.2F,
+    midtones_end: 0.7F,
+    exposure: 0.0F,
+    hue: 0.0F,
+    post_saturation: 1.0F,
+  }
+}
+
+///|
 pub fn host_gpu_request_device() -> HostGpuDevice {
   @native_gpu.request_device()
 }
@@ -799,6 +867,7 @@ pub fn host_gpu_draw_bloom2d(
   agx_lut_texture_id~ : Int,
   tony_lut_texture_id~ : Int,
   blender_lut_texture_id~ : Int,
+  color_grading~ : HostColorGrading,
 ) -> Unit {
   @native_gpu.draw_bloom2d(
     scene_texture_id~,
@@ -837,6 +906,35 @@ pub fn host_gpu_draw_bloom2d(
     agx_lut_texture_id~,
     tony_lut_texture_id~,
     blender_lut_texture_id~,
+    color_grading_balance_x_axis_x=color_grading.balance_x_axis_x,
+    color_grading_balance_x_axis_y=color_grading.balance_x_axis_y,
+    color_grading_balance_x_axis_z=color_grading.balance_x_axis_z,
+    color_grading_balance_y_axis_x=color_grading.balance_y_axis_x,
+    color_grading_balance_y_axis_y=color_grading.balance_y_axis_y,
+    color_grading_balance_y_axis_z=color_grading.balance_y_axis_z,
+    color_grading_balance_z_axis_x=color_grading.balance_z_axis_x,
+    color_grading_balance_z_axis_y=color_grading.balance_z_axis_y,
+    color_grading_balance_z_axis_z=color_grading.balance_z_axis_z,
+    color_grading_saturation_shadows=color_grading.saturation_shadows,
+    color_grading_saturation_midtones=color_grading.saturation_midtones,
+    color_grading_saturation_highlights=color_grading.saturation_highlights,
+    color_grading_contrast_shadows=color_grading.contrast_shadows,
+    color_grading_contrast_midtones=color_grading.contrast_midtones,
+    color_grading_contrast_highlights=color_grading.contrast_highlights,
+    color_grading_gamma_shadows=color_grading.gamma_shadows,
+    color_grading_gamma_midtones=color_grading.gamma_midtones,
+    color_grading_gamma_highlights=color_grading.gamma_highlights,
+    color_grading_gain_shadows=color_grading.gain_shadows,
+    color_grading_gain_midtones=color_grading.gain_midtones,
+    color_grading_gain_highlights=color_grading.gain_highlights,
+    color_grading_lift_shadows=color_grading.lift_shadows,
+    color_grading_lift_midtones=color_grading.lift_midtones,
+    color_grading_lift_highlights=color_grading.lift_highlights,
+    color_grading_midtones_start=color_grading.midtones_start,
+    color_grading_midtones_end=color_grading.midtones_end,
+    color_grading_exposure=color_grading.exposure,
+    color_grading_hue=color_grading.hue,
+    color_grading_post_saturation=color_grading.post_saturation,
   )
 }
 

@@ -4265,6 +4265,7 @@ fn render2d_draw_camera_bloom(
     agx_lut_texture_id=luts.agx.id(),
     tony_lut_texture_id=luts.tony.id(),
     blender_lut_texture_id=luts.blender.id(),
+    color_grading=@render.HostColorGrading::default(),
   )
 }
 
