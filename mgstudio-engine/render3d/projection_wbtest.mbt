@@ -46,7 +46,9 @@ fn test_custom_projection_matrix_wb(
 }
 
 ///|
-impl CameraProjection3d for TestCustomProjection3dWb with get_clip_from_view(self) {
+impl CameraProjection3d for TestCustomProjection3dWb with get_clip_from_view(
+  self,
+) {
   test_custom_projection_matrix_wb(self.view_width, self.view_height, 0.0F)
 }
 
@@ -112,7 +114,10 @@ test "render3d: camera pass projection keeps custom clip matrices alive" {
     640,
     320,
   )
-  let ok = projection_approx_eq_wb(pass_projection.clip_from_view.w_axis.x, 12.0F) &&
+  let ok = projection_approx_eq_wb(
+      pass_projection.clip_from_view.w_axis.x,
+      12.0F,
+    ) &&
     projection_approx_eq_wb(pass_projection.clip_from_view.x_axis.x, 0.0125F) &&
     projection_approx_eq_wb(
       pass_projection.unjittered_clip_from_view.w_axis.x,
@@ -156,5 +161,37 @@ test "render3d: camera pass projection applies Bevy temporal jitter" {
       pass_projection.unjittered_clip_from_view.z_axis.y,
       base_clip_from_view.z_axis.y,
     )
+  inspect(ok, content="true")
+}
+
+///|
+test "render3d: projection runtime updates changed orthographic projection at stable viewport" {
+  let (runtime_projection, runtime_update) = render3d_projection_runtime_update(
+    Projection::Orthographic(
+      OrthographicProjection3d::default_3d()
+      .with_scaling_mode(FixedVertical(6.0F))
+      .with_scale(2.0F),
+    ),
+    Some(ProjectionRuntime3d::{
+      last_view_width: 800.0F,
+      last_view_height: 400.0F,
+    }),
+    true,
+    @render2d.Camera::default(),
+    @math.IVec2::new(800, 400),
+    1.0F,
+  )
+  let ok = match runtime_projection {
+    Projection::Orthographic(orthographic) => {
+      let area = orthographic.area()
+      projection_approx_eq_wb(area.min.x, -12.0F) &&
+      projection_approx_eq_wb(area.max.x, 12.0F) &&
+      projection_approx_eq_wb(area.min.y, -6.0F) &&
+      projection_approx_eq_wb(area.max.y, 6.0F) &&
+      runtime_update is Some(_)
+    }
+    Projection::Perspective(_) => false
+    Projection::Custom(_) => false
+  }
   inspect(ok, content="true")
 }

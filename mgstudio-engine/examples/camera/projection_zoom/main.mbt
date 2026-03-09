@@ -50,28 +50,6 @@ fn CameraSettings::default() -> CameraSettings {
 }
 
 ///|
-fn orthographic_projection(settings : CameraSettings) -> @render3d.Projection {
-  @render3d.Projection::Orthographic(
-    @render3d.OrthographicProjection3d::default()
-    .with_scaling_mode(
-      @render3d.OrthographicScalingMode3d::FixedVertical(
-        settings.orthographic_viewport_height,
-      ),
-    )
-    .with_scale(1.0F),
-  )
-}
-
-///|
-fn perspective_projection(settings : CameraSettings) -> @render3d.Projection {
-  @render3d.Projection::Perspective(
-    @render3d.PerspectiveProjection3d::default().with_fov(
-      settings.perspective_zoom_min,
-    ),
-  )
-}
-
-///|
 fn setup(
   asset_server : @app.Res[@asset.AssetServer],
   camera_settings : @app.Res[CameraSettings],
@@ -83,7 +61,15 @@ fn setup(
 
   let camera = @render3d.Camera3dBundle::new_with_projection(
     @render2d.Camera::default(),
-    orthographic_projection(settings),
+    @render3d.Projection::Orthographic(
+      @render3d.OrthographicProjection3d::default_3d()
+      .with_scaling_mode(
+        @render3d.OrthographicScalingMode3d::FixedVertical(
+          settings.orthographic_viewport_height,
+        ),
+      )
+      .with_scale(1.0F),
+    ),
     @math.Transform::from_xyz(5.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -220,9 +206,25 @@ fn switch_projection(
     let projection_ref = camera_projection.get_ref()
     let next_projection = match projection_ref.val {
       @render3d.Projection::Orthographic(_) =>
-        Some(perspective_projection(settings))
+        Some(
+          @render3d.Projection::Perspective(
+            @render3d.PerspectiveProjection3d::default().with_fov(
+              settings.perspective_zoom_min,
+            ),
+          ),
+        )
       @render3d.Projection::Perspective(_) =>
-        Some(orthographic_projection(settings))
+        Some(
+          @render3d.Projection::Orthographic(
+            @render3d.OrthographicProjection3d::default_3d()
+            .with_scaling_mode(
+              @render3d.OrthographicScalingMode3d::FixedVertical(
+                settings.orthographic_viewport_height,
+              ),
+            )
+            .with_scale(1.0F),
+          ),
+        )
       @render3d.Projection::Custom(_) => None
     }
     guard next_projection is Some(next_projection) else { return }

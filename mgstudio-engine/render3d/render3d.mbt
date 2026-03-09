@@ -474,7 +474,7 @@ pub fn PerspectiveProjection3d::default() -> PerspectiveProjection3d {
     fov: @math.pi_half() * 0.5F,
     near: 0.1F,
     far: 1000.0F,
-    aspect_ratio: 16.0F / 9.0F,
+    aspect_ratio: 1.0F,
   }
 }
 
@@ -563,20 +563,22 @@ pub fn PerspectiveProjection3d::aspect_ratio(
 
 ///|
 pub struct OrthographicProjection3d {
-  scale : Float
   near : Float
   far : Float
+  viewport_origin : @math.Vec2
   scaling_mode : OrthographicScalingMode3d
-  view_width : Float
-  view_height : Float
+  scale : Float
+  area : @math.Rect
 } derive(ToJson, FromJson)
 
 ///|
 pub(all) enum OrthographicScalingMode3d {
   WindowSize
-  // Legacy alias kept for backward compatibility with earlier mgstudio APIs.
-  Scale
+  Fixed(Float, Float)
+  AutoMin(Float, Float)
+  AutoMax(Float, Float)
   FixedVertical(Float)
+  FixedHorizontal(Float)
 } derive(Eq, Show, ToJson, FromJson)
 
 ///|
@@ -585,7 +587,45 @@ fn orthographic_scaling_mode_sanitize(
 ) -> OrthographicScalingMode3d {
   match mode {
     WindowSize => WindowSize
-    Scale => Scale
+    Fixed(width, height) =>
+      Fixed(
+        if width <= 0.0F {
+          1.0F
+        } else {
+          width
+        },
+        if height <= 0.0F {
+          1.0F
+        } else {
+          height
+        },
+      )
+    AutoMin(min_width, min_height) =>
+      AutoMin(
+        if min_width <= 0.0F {
+          1.0F
+        } else {
+          min_width
+        },
+        if min_height <= 0.0F {
+          1.0F
+        } else {
+          min_height
+        },
+      )
+    AutoMax(max_width, max_height) =>
+      AutoMax(
+        if max_width <= 0.0F {
+          1.0F
+        } else {
+          max_width
+        },
+        if max_height <= 0.0F {
+          1.0F
+        } else {
+          max_height
+        },
+      )
     FixedVertical(viewport_height) =>
       FixedVertical(
         if viewport_height <= 0.0F {
@@ -594,19 +634,43 @@ fn orthographic_scaling_mode_sanitize(
           viewport_height
         },
       )
+    FixedHorizontal(viewport_width) =>
+      FixedHorizontal(
+        if viewport_width <= 0.0F {
+          1.0F
+        } else {
+          viewport_width
+        },
+      )
+  }
+}
+
+///|
+pub fn OrthographicProjection3d::default_2d() -> OrthographicProjection3d {
+  OrthographicProjection3d::{
+    ..OrthographicProjection3d::default_3d(),
+    near: -1000.0F,
+  }
+}
+
+///|
+pub fn OrthographicProjection3d::default_3d() -> OrthographicProjection3d {
+  OrthographicProjection3d::{
+    near: 0.0F,
+    far: 1000.0F,
+    viewport_origin: @math.Vec2::new(0.5F, 0.5F),
+    scaling_mode: WindowSize,
+    scale: 1.0F,
+    area: @math.Rect::new(
+      @math.Vec2::new(-1.0F, -1.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
   }
 }
 
 ///|
 pub fn OrthographicProjection3d::default() -> OrthographicProjection3d {
-  OrthographicProjection3d::{
-    scale: 1.0F,
-    near: -1000.0F,
-    far: 1000.0F,
-    scaling_mode: WindowSize,
-    view_width: 1.0F,
-    view_height: 1.0F,
-  }
+  OrthographicProjection3d::default_3d()
 }
 
 ///|
@@ -616,26 +680,44 @@ pub fn OrthographicProjection3d::with_scale(
 ) -> OrthographicProjection3d {
   let safe_scale = if scale <= 0.0F { 1.0F } else { scale }
   OrthographicProjection3d::{
-    scale: safe_scale,
     near: self.near,
     far: self.far,
-    scaling_mode: WindowSize,
-    view_width: self.view_width,
-    view_height: self.view_height,
+    viewport_origin: self.viewport_origin,
+    scaling_mode: self.scaling_mode,
+    scale: safe_scale,
+    area: self.area,
   }
 }
 
 ///|
-pub fn OrthographicProjection3d::with_window_size_scaling(
+pub fn OrthographicProjection3d::with_near(
   self : OrthographicProjection3d,
+  near : Float,
 ) -> OrthographicProjection3d {
+  let safe_far = if self.far <= near { near + 0.0001F } else { self.far }
+  OrthographicProjection3d::{
+    scale: self.scale,
+    near,
+    far: safe_far,
+    viewport_origin: self.viewport_origin,
+    scaling_mode: self.scaling_mode,
+    area: self.area,
+  }
+}
+
+///|
+pub fn OrthographicProjection3d::with_far(
+  self : OrthographicProjection3d,
+  far : Float,
+) -> OrthographicProjection3d {
+  let safe_far = if far <= self.near { self.near + 0.0001F } else { far }
   OrthographicProjection3d::{
     scale: self.scale,
     near: self.near,
-    far: self.far,
-    scaling_mode: WindowSize,
-    view_width: self.view_width,
-    view_height: self.view_height,
+    far: safe_far,
+    viewport_origin: self.viewport_origin,
+    scaling_mode: self.scaling_mode,
+    area: self.area,
   }
 }
 
@@ -645,12 +727,42 @@ pub fn OrthographicProjection3d::with_scaling_mode(
   scaling_mode : OrthographicScalingMode3d,
 ) -> OrthographicProjection3d {
   OrthographicProjection3d::{
-    scale: self.scale,
     near: self.near,
     far: self.far,
+    viewport_origin: self.viewport_origin,
     scaling_mode: orthographic_scaling_mode_sanitize(scaling_mode),
-    view_width: self.view_width,
-    view_height: self.view_height,
+    scale: self.scale,
+    area: self.area,
+  }
+}
+
+///|
+pub fn OrthographicProjection3d::with_viewport_origin(
+  self : OrthographicProjection3d,
+  viewport_origin : @math.Vec2,
+) -> OrthographicProjection3d {
+  OrthographicProjection3d::{
+    near: self.near,
+    far: self.far,
+    viewport_origin,
+    scaling_mode: self.scaling_mode,
+    scale: self.scale,
+    area: self.area,
+  }
+}
+
+///|
+pub fn OrthographicProjection3d::with_area(
+  self : OrthographicProjection3d,
+  area : @math.Rect,
+) -> OrthographicProjection3d {
+  OrthographicProjection3d::{
+    near: self.near,
+    far: self.far,
+    viewport_origin: self.viewport_origin,
+    scaling_mode: self.scaling_mode,
+    scale: self.scale,
+    area,
   }
 }
 
@@ -676,6 +788,20 @@ pub fn OrthographicProjection3d::scaling_mode(
   self : OrthographicProjection3d,
 ) -> OrthographicScalingMode3d {
   self.scaling_mode
+}
+
+///|
+pub fn OrthographicProjection3d::viewport_origin(
+  self : OrthographicProjection3d,
+) -> @math.Vec2 {
+  self.viewport_origin
+}
+
+///|
+pub fn OrthographicProjection3d::area(
+  self : OrthographicProjection3d,
+) -> @math.Rect {
+  self.area
 }
 
 ///|
@@ -910,17 +1036,7 @@ pub(all) enum Projection {
 
 ///|
 pub fn Projection::default() -> Projection {
-  Projection::perspective_default()
-}
-
-///|
-pub fn Projection::perspective_default() -> Projection {
   Perspective(PerspectiveProjection3d::default())
-}
-
-///|
-pub fn Projection::orthographic_default() -> Projection {
-  Orthographic(OrthographicProjection3d::default())
 }
 
 ///|
@@ -1040,16 +1156,11 @@ pub impl CameraProjection3d for PerspectiveProjection3d with get_frustum_corners
 pub impl CameraProjection3d for OrthographicProjection3d with get_clip_from_view(
   self,
 ) {
-  let (left, right, bottom, top) = render3d_orthographic_view_bounds(
-    self,
-    self.view_width,
-    self.view_height,
-  )
   render3d_orthographic_projection_matrix(
-    left,
-    right,
-    bottom,
-    top,
+    self.area.min.x,
+    self.area.max.x,
+    self.area.min.y,
+    self.area.max.y,
     self.far,
     self.near,
   )
@@ -1070,20 +1181,12 @@ pub impl CameraProjection3d for OrthographicProjection3d with update(
   height,
 ) {
   OrthographicProjection3d::{
-    scale: self.scale,
     near: self.near,
     far: self.far,
+    viewport_origin: self.viewport_origin,
     scaling_mode: self.scaling_mode,
-    view_width: if width <= 0.0F {
-      1.0F
-    } else {
-      width
-    },
-    view_height: if height <= 0.0F {
-      1.0F
-    } else {
-      height
-    },
+    scale: self.scale,
+    area: render3d_orthographic_area(self, width, height),
   }
 }
 
@@ -1098,20 +1201,15 @@ pub impl CameraProjection3d for OrthographicProjection3d with get_frustum_corner
   z_near,
   z_far,
 ) {
-  let (left, right, bottom, top) = render3d_orthographic_view_bounds(
-    self,
-    self.view_width,
-    self.view_height,
-  )
   [
-    @math.Vec3::new(right, bottom, z_near),
-    @math.Vec3::new(right, top, z_near),
-    @math.Vec3::new(left, top, z_near),
-    @math.Vec3::new(left, bottom, z_near),
-    @math.Vec3::new(right, bottom, z_far),
-    @math.Vec3::new(right, top, z_far),
-    @math.Vec3::new(left, top, z_far),
-    @math.Vec3::new(left, bottom, z_far),
+    @math.Vec3::new(self.area.max.x, self.area.min.y, z_near),
+    @math.Vec3::new(self.area.max.x, self.area.max.y, z_near),
+    @math.Vec3::new(self.area.min.x, self.area.max.y, z_near),
+    @math.Vec3::new(self.area.min.x, self.area.min.y, z_near),
+    @math.Vec3::new(self.area.max.x, self.area.min.y, z_far),
+    @math.Vec3::new(self.area.max.x, self.area.max.y, z_far),
+    @math.Vec3::new(self.area.min.x, self.area.max.y, z_far),
+    @math.Vec3::new(self.area.min.x, self.area.min.y, z_far),
   ]
 }
 
@@ -9950,6 +10048,13 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       Some(v) => v
       None => Projection::default()
     }
+    let projection_changed = match projection_store.get_ticks(entity) {
+      Some(component_ticks) => {
+        let previous_tick = if tick <= 0 { 0 } else { tick - 1 }
+        component_ticks.is_changed(@core.SystemTicks::new(previous_tick, tick))
+      }
+      None => false
+    }
     let sub_camera_view = sub_camera_view_store.get(entity)
     let screen_space_transmission = screen_space_transmission_store.get(entity)
     let screen_space_reflections = screen_space_reflections_store.get(entity)
@@ -10007,6 +10112,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
             let (runtime_projection, runtime_update) = render3d_projection_runtime_update(
               component_projection,
               projection_runtime_store.get(entity),
+              projection_changed,
               camera_clamped,
               target_info.target_size,
               target_info.scale_factor,
@@ -11161,67 +11267,45 @@ fn render3d_camera_viewport_rect_logical(
 }
 
 ///|
-fn render3d_orthographic_half_height(
-  orthographic : OrthographicProjection3d,
-  viewport_height : Float,
-) -> Float {
-  let half_height = match orthographic.scaling_mode {
-    WindowSize => {
-      let safe_scale = if orthographic.scale <= 0.0F {
-        1.0F
-      } else {
-        orthographic.scale
-      }
-      let safe_viewport_height = if viewport_height <= 0.0F {
-        1.0F
-      } else {
-        viewport_height
-      }
-      0.5F * safe_viewport_height * safe_scale
-    }
-    Scale => {
-      let safe_scale = if orthographic.scale <= 0.0F {
-        1.0F
-      } else {
-        orthographic.scale
-      }
-      let safe_viewport_height = if viewport_height <= 0.0F {
-        1.0F
-      } else {
-        viewport_height
-      }
-      0.5F * safe_viewport_height * safe_scale
-    }
-    FixedVertical(viewport_height_world) => {
-      let safe_viewport_height_world = if viewport_height_world <= 0.0F {
-        1.0F
-      } else {
-        viewport_height_world
-      }
-      0.5F * safe_viewport_height_world
-    }
-  }
-  if half_height <= 0.0F {
-    0.5F
-  } else {
-    half_height
-  }
-}
-
-///|
-fn render3d_orthographic_view_bounds(
+fn render3d_orthographic_area(
   orthographic : OrthographicProjection3d,
   view_width : Float,
   view_height : Float,
-) -> (Float, Float, Float, Float) {
+) -> @math.Rect {
   let safe_view_width = if view_width <= 0.0F { 1.0F } else { view_width }
   let safe_view_height = if view_height <= 0.0F { 1.0F } else { view_height }
-  let half_height = render3d_orthographic_half_height(
-    orthographic, safe_view_height,
+  let (projection_width, projection_height) = match orthographic.scaling_mode {
+    WindowSize => (safe_view_width, safe_view_height)
+    AutoMin(min_width, min_height) =>
+      if safe_view_width * min_height > min_width * safe_view_height {
+        (safe_view_width * min_height / safe_view_height, min_height)
+      } else {
+        (min_width, safe_view_height * min_width / safe_view_width)
+      }
+    AutoMax(max_width, max_height) =>
+      if safe_view_width * max_height < max_width * safe_view_height {
+        (safe_view_width * max_height / safe_view_height, max_height)
+      } else {
+        (max_width, safe_view_height * max_width / safe_view_width)
+      }
+    FixedVertical(viewport_height) =>
+      (safe_view_width * viewport_height / safe_view_height, viewport_height)
+    FixedHorizontal(viewport_width) =>
+      (viewport_width, safe_view_height * viewport_width / safe_view_width)
+    Fixed(width, height) => (width, height)
+  }
+  let origin_x = projection_width * orthographic.viewport_origin.x
+  let origin_y = projection_height * orthographic.viewport_origin.y
+  @math.Rect::new(
+    @math.Vec2::new(
+      orthographic.scale * -origin_x,
+      orthographic.scale * -origin_y,
+    ),
+    @math.Vec2::new(
+      orthographic.scale * (projection_width - origin_x),
+      orthographic.scale * (projection_height - origin_y),
+    ),
   )
-  let half_width = half_height *
-    render3d_projection_aspect_ratio(safe_view_width, safe_view_height)
-  (-half_width, half_width, -half_height, half_height)
 }
 
 ///|
@@ -11267,9 +11351,14 @@ fn render3d_orthographic_projection_matrix_for_sub(
     sub_height <= 0.0F {
     return orthographic.get_clip_from_view()
   }
-  let (left, right, bottom, top) = render3d_orthographic_view_bounds(
-    orthographic, full_width, full_height,
-  )
+  let top = orthographic.area.max.y
+  let bottom = orthographic.area.min.y
+  let orthographic_height = top - bottom
+  let orthographic_width = orthographic_height *
+    render3d_projection_aspect_ratio(full_width, full_height)
+  let center_x = (orthographic.area.max.x + orthographic.area.min.x) * 0.5F
+  let left = center_x - orthographic_width * 0.5F
+  let right = center_x + orthographic_width * 0.5F
   let scale_w = (right - left) / full_width
   let scale_h = (top - bottom) / full_height
   let left_prime = left + scale_w * sub_view.offset.x
@@ -11402,6 +11491,7 @@ fn render3d_projection_runtime_projection(
 fn render3d_projection_runtime_update(
   projection : Projection,
   runtime : ProjectionRuntime3d?,
+  force_update : Bool,
   camera : @render2d.Camera,
   target_size : @math.IVec2,
   scale_factor : Float,
@@ -11415,7 +11505,8 @@ fn render3d_projection_runtime_update(
       }
       if runtime is Some(previous_runtime) &&
         previous_runtime.last_view_width == viewport_width &&
-        previous_runtime.last_view_height == viewport_height {
+        previous_runtime.last_view_height == viewport_height &&
+        !force_update {
         (projection, None)
       } else {
         (projection.update(viewport_width, viewport_height), Some(next_runtime))

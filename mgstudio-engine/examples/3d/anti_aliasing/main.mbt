@@ -203,10 +203,12 @@ fn set_camera_projection(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let projection = if anti_aliasing_state.val.use_orthographic {
     @render3d.Projection::Orthographic(
-      @render3d.OrthographicProjection3d::default().with_scale(0.002F),
+      @render3d.OrthographicProjection3d::default_3d().with_scale(0.002F),
     )
   } else {
-    @render3d.Projection::perspective_default()
+    @render3d.Projection::Perspective(
+      @render3d.PerspectiveProjection3d::default(),
+    )
   }
   world
   .component(@render3d.ecs_key_projection)

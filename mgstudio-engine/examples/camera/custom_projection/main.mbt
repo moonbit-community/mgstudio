@@ -70,14 +70,13 @@ impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with update(
   width,
   height,
 ) {
-  {
-    ..self,
-    perspective: self.perspective.update(width, height),
-  }
+  { ..self, perspective: self.perspective.update(width, height) }
 }
 
 ///|
-impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with far(self) {
+impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with far(
+  self,
+) {
   self.perspective.far()
 }
 
@@ -100,11 +99,9 @@ fn setup(
     @render3d.StandardMaterial::from_color(@render2d.Color::white()),
   )
   let cube_material = materials.get_ref().val.add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::srgb(
-      124.0F / 255.0F,
-      144.0F / 255.0F,
-      1.0F,
-    )),
+    @render3d.StandardMaterial::from_color(
+      @render2d.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
+    ),
   )
 
   @render3d.Camera3dBundle::new_with_projection(

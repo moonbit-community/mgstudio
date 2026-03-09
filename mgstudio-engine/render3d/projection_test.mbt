@@ -37,7 +37,7 @@ test "render3d: perspective projection getters expose configured values" {
 
 ///|
 test "render3d: projection preserves configured orthographic values" {
-  let orthographic = OrthographicProjection3d::default()
+  let orthographic = OrthographicProjection3d::default_3d()
     .with_scale(2.5F)
     .with_scaling_mode(FixedVertical(7.5F))
   let projection = Projection::Orthographic(orthographic)
@@ -52,6 +52,33 @@ test "render3d: projection preserves configured orthographic values" {
     Projection::Perspective(_) => false
     Projection::Custom(_) => false
   }
+  inspect(ok, content="true")
+}
+
+///|
+test "render3d: orthographic projection update matches Bevy fixed vertical area" {
+  let orthographic = OrthographicProjection3d::default_3d()
+    .with_scaling_mode(FixedVertical(6.0F))
+    .update(1600.0F, 800.0F)
+  let area = orthographic.area()
+  let ok = projection_approx_eq(orthographic.near(), 0.0F) &&
+    projection_approx_eq(area.min.x, -6.0F) &&
+    projection_approx_eq(area.max.x, 6.0F) &&
+    projection_approx_eq(area.min.y, -3.0F) &&
+    projection_approx_eq(area.max.y, 3.0F)
+  inspect(ok, content="true")
+}
+
+///|
+test "render3d: orthographic projection update matches Bevy auto min area" {
+  let orthographic = OrthographicProjection3d::default_3d()
+    .with_scaling_mode(AutoMin(10.0F, 6.0F))
+    .update(1200.0F, 600.0F)
+  let area = orthographic.area()
+  let ok = projection_approx_eq(area.min.x, -6.0F) &&
+    projection_approx_eq(area.max.x, 6.0F) &&
+    projection_approx_eq(area.min.y, -3.0F) &&
+    projection_approx_eq(area.max.y, 3.0F)
   inspect(ok, content="true")
 }
 

@@ -229,9 +229,9 @@ fn setup(world : @ecs.World) -> Unit {
     .spawn()
   pbr_state.val.loading_label = Some(env_loading_label)
 
-  let orthographic = @render3d.OrthographicProjection3d::default()
-    .with_scale(0.01F)
-    .with_window_size_scaling()
+  let orthographic = @render3d.OrthographicProjection3d::default_3d().with_scale(
+    0.01F,
+  )
   let camera = @render3d.Camera3dBundle::new_with_projection(
     @render2d.Camera::default(),
     @render3d.Projection::Orthographic(orthographic),

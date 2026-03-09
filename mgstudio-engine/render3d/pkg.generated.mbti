@@ -1231,29 +1231,39 @@ pub impl ToJson for OrderIndependentTransparencySettings
 pub impl @json.FromJson for OrderIndependentTransparencySettings
 
 pub struct OrthographicProjection3d {
-  scale : Float
   near : Float
   far : Float
+  viewport_origin : @math.Vec2
   scaling_mode : OrthographicScalingMode3d
-  view_width : Float
-  view_height : Float
+  scale : Float
+  area : @math.Rect
 }
+pub fn OrthographicProjection3d::area(Self) -> @math.Rect
 pub fn OrthographicProjection3d::default() -> Self
+pub fn OrthographicProjection3d::default_2d() -> Self
+pub fn OrthographicProjection3d::default_3d() -> Self
 pub fn OrthographicProjection3d::far(Self) -> Float
 pub fn OrthographicProjection3d::near(Self) -> Float
 pub fn OrthographicProjection3d::scale(Self) -> Float
 pub fn OrthographicProjection3d::scaling_mode(Self) -> OrthographicScalingMode3d
+pub fn OrthographicProjection3d::viewport_origin(Self) -> @math.Vec2
+pub fn OrthographicProjection3d::with_area(Self, @math.Rect) -> Self
+pub fn OrthographicProjection3d::with_far(Self, Float) -> Self
+pub fn OrthographicProjection3d::with_near(Self, Float) -> Self
 pub fn OrthographicProjection3d::with_scale(Self, Float) -> Self
 pub fn OrthographicProjection3d::with_scaling_mode(Self, OrthographicScalingMode3d) -> Self
-pub fn OrthographicProjection3d::with_window_size_scaling(Self) -> Self
+pub fn OrthographicProjection3d::with_viewport_origin(Self, @math.Vec2) -> Self
 pub impl CameraProjection3d for OrthographicProjection3d
 pub impl ToJson for OrthographicProjection3d
 pub impl @json.FromJson for OrthographicProjection3d
 
 pub(all) enum OrthographicScalingMode3d {
   WindowSize
-  Scale
+  Fixed(Float, Float)
+  AutoMin(Float, Float)
+  AutoMax(Float, Float)
   FixedVertical(Float)
+  FixedHorizontal(Float)
 }
 pub impl Eq for OrthographicScalingMode3d
 pub impl Show for OrthographicScalingMode3d
@@ -1362,8 +1372,6 @@ pub fn Projection::get_clip_from_view(Self) -> ProjectionMatrix3d
 pub fn Projection::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
 pub fn Projection::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 pub fn Projection::is_perspective(Self) -> Bool
-pub fn Projection::orthographic_default() -> Self
-pub fn Projection::perspective_default() -> Self
 pub fn Projection::update(Self, Float, Float) -> Self
 pub impl @ecs.Component for Projection
 
