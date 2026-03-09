@@ -39,12 +39,12 @@ pub fn mark_dirty_trees_ecs(world : @ecs.World) -> Unit {
 
 ///|
 pub fn propagate_parent_transforms_ecs(world : @ecs.World) -> Unit {
-  try! propagate_parent_transforms(world)
+  propagate_parent_transforms(world)
 }
 
 ///|
 pub fn propagate_transforms_system_ecs(world : @ecs.World) -> Unit {
-  try! propagate_parent_transforms(world)
+  propagate_parent_transforms(world)
 }
 
 ///|

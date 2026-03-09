@@ -24,7 +24,7 @@ pub fn mark_dirty_trees(@ecs.World) -> Unit
 
 pub fn mark_dirty_trees_ecs(@ecs.World) -> Unit
 
-pub fn propagate_parent_transforms(@ecs.World) -> Unit raise @ecs.EcsError
+pub fn propagate_parent_transforms(@ecs.World) -> Unit
 
 pub fn propagate_parent_transforms_ecs(@ecs.World) -> Unit
 

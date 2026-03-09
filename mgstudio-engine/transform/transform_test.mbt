@@ -239,6 +239,91 @@ test "transform ecs: sync simple transforms updates orphaned entity once parent 
 }
 
 ///|
+test "transform ecs: removing parent updates orphaned parent and child globals" {
+  let world = @ecs.World::new()
+  let root = world.spawn_empty()
+  let parent = world.spawn_empty()
+  let child = world.spawn_empty()
+
+  prepare_transform_world(world)
+  next_system_ticks(world) |> ignore
+  try! world.set(
+    root,
+    @math.ecs_key_transform,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(3.3F, 3.3F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  )
+  try! world.set(
+    parent,
+    @math.ecs_key_transform,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(4.4F, 4.4F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  )
+  try! world.set(
+    child,
+    @math.ecs_key_transform,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(5.5F, 5.5F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  )
+  try! world.set(
+    parent,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set(
+    child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(parent),
+  )
+
+  mark_dirty_trees(world)
+  propagate_transforms_system(world)
+  sync_simple_transforms_world(world)
+
+  let parent_before = (try! world.get(parent, ecs_key_global_transform)).unwrap()
+  inspect(
+    approx_eq(parent_before.affine.tx, 7.7F) &&
+    approx_eq(parent_before.affine.ty, 7.7F),
+    content="true",
+  )
+
+  next_system_ticks(world) |> ignore
+  try! (world.remove(parent, @hierarchy.ecs_key_parent) |> ignore)
+  mark_dirty_trees(world)
+  propagate_transforms_system(world)
+  sync_simple_transforms_world(world)
+
+  let parent_after = (try! world.get(parent, ecs_key_global_transform)).unwrap()
+  inspect(
+    approx_eq(parent_after.affine.tx, 4.4F) &&
+    approx_eq(parent_after.affine.ty, 4.4F),
+    content="true",
+  )
+
+  next_system_ticks(world) |> ignore
+  try! (world.remove(child, @hierarchy.ecs_key_parent) |> ignore)
+  mark_dirty_trees(world)
+  propagate_transforms_system(world)
+  sync_simple_transforms_world(world)
+
+  let child_after = (try! world.get(child, ecs_key_global_transform)).unwrap()
+  inspect(
+    approx_eq(child_after.affine.tx, 5.5F) &&
+    approx_eq(child_after.affine.ty, 5.5F),
+    content="true",
+  )
+}
+
+///|
 test "transform ecs: inserting Transform auto-inserts required components" {
   let world = @ecs.World::new()
   let entity = world.spawn_empty()
@@ -330,7 +415,7 @@ test "transform ecs: mark_dirty_trees marks ancestor chain" {
     @hierarchy.Parent::new(parent),
   )
   mark_dirty_trees(world)
-  try! propagate_parent_transforms(world)
+  propagate_parent_transforms(world)
   sync_simple_transforms_world(world)
 
   next_system_ticks(world) |> ignore
@@ -439,6 +524,35 @@ test "transform plugin: post startup populates hierarchy globals" {
 }
 
 ///|
+test "transform plugin: queues parent validation for missing parent GlobalTransform" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins([transform_plugin])
+  let world = app.world()
+  let parent = world.spawn_empty()
+  let child = world.spawn_empty()
+
+  try! world.set(
+    child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(parent),
+  )
+  try! world.set(
+    child,
+    @math.ecs_key_transform,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(1.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  )
+
+  let reader = world.message_reader(
+    @app.check_parent_has_component_message_key(ecs_key_global_transform),
+    Ref::new(0),
+  )
+  inspect(reader.len(), content="1")
+}
+
+///|
 test "transform plugin: post update reflects update stage transform writes" {
   let entity_ref = Ref::new(@core.Entity::new(0, 0))
   let app = @app.App::new(@ecs.World::new()).add_plugins([transform_plugin])
@@ -475,4 +589,60 @@ test "transform plugin: post update reflects update stage transform writes" {
     approx_eq(gt.affine.tx, 7.0F) && approx_eq(gt.affine.ty, 8.0F),
     content="true",
   )
+}
+
+///|
+test "transform ecs: reparenting in the same frame preserves global transform" {
+  let world = @ecs.World::new()
+  let parent = world.spawn_empty()
+  let child = world.spawn_empty()
+
+  prepare_transform_world(world)
+  next_system_ticks(world) |> ignore
+  try! world.set(
+    parent,
+    @math.ecs_key_transform,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(1.0F, 1.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  )
+  try! world.set(
+    child,
+    @math.ecs_key_transform,
+    @math.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(1.0F, 1.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  )
+  try! world.set(
+    child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(parent),
+  )
+
+  mark_dirty_trees(world)
+  propagate_transforms_system(world)
+  sync_simple_transforms_world(world)
+
+  let parent_before = (try! world.get(parent, ecs_key_global_transform)).unwrap()
+  let child_before = (try! world.get(child, ecs_key_global_transform)).unwrap()
+
+  next_system_ticks(world) |> ignore
+  try! (world.remove(child, @hierarchy.ecs_key_parent) |> ignore)
+  try! world.set(
+    child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(parent),
+  )
+  mark_dirty_trees(world)
+  propagate_parent_transforms(world)
+  sync_simple_transforms_world(world)
+
+  let parent_after = (try! world.get(parent, ecs_key_global_transform)).unwrap()
+  let child_after = (try! world.get(child, ecs_key_global_transform)).unwrap()
+  inspect(parent_after.to_json() == parent_before.to_json(), content="true")
+  inspect(child_after.to_json() == child_before.to_json(), content="true")
 }
