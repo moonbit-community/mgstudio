@@ -21,9 +21,9 @@ pub let ecs_components : Array[String] = [
   "NormalPrepass", "ClusteredDecal", "ContactShadows", "MeshMaterial3d", "TemporalJitter",
   "WireframeColor", "DeferredPrepass", "FreeCameraState", "NotShadowCaster", "SubCameraView3d",
   "DirectionalLight", "IrradianceVolume", "OcclusionCulling", "SpotLightTexture",
-  "NotShadowReceiver", "PointLightTexture", "Projection", "ParallaxCorrection", "ChromaticAberration",
-  "EnvironmentMapLight", "MotionVectorPrepass", "TemporalAntiAliasing", "ShadowFilteringMethod",
-  "ScreenSpaceReflections", "DirectionalLightTexture", "ForwardDecalMaterialExt",
+  "NotShadowReceiver", "PointLightTexture", "Projection", "Frustum", "ParallaxCorrection",
+  "ChromaticAberration", "EnvironmentMapLight", "MotionVectorPrepass", "TemporalAntiAliasing",
+  "ShadowFilteringMethod", "ScreenSpaceReflections", "DirectionalLightTexture", "ForwardDecalMaterialExt",
   "ScreenSpaceTransmission", "TransmittedShadowReceiver", "ScreenSpaceAmbientOcclusion",
   "GeneratedEnvironmentMapLight", "OrderIndependentTransparencySettings",
 ]
@@ -281,6 +281,11 @@ pub fn get_projection_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[Projection] {
   world.component(ecs_key_projection)
+}
+
+///|
+pub fn get_frustum_store(world : @ecs.World) -> @ecs.ComponentAccess[Frustum] {
+  world.component(ecs_key_frustum)
 }
 
 ///|

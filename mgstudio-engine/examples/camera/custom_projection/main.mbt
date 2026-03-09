@@ -90,8 +90,17 @@ impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with get_frus
 ///|
 fn setup(
   commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@render3d.StandardMaterial]],
 ) -> Unit {
+  let ground_mesh = meshes.get_ref().val.add(
+    @mesh.Mesh::from_3d_geometry(@mesh.Mesh3dGeometry::circle(4.0F, 32)),
+  )
+  let cube_mesh = meshes.get_ref().val.add(
+    @mesh.Mesh::from_3d_geometry(
+      @mesh.Mesh3dGeometry::cuboid(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+    ),
+  )
   let white_material = materials.get_ref().val.add(
     @render3d.StandardMaterial::from_color(@render2d.Color::white()),
   )
@@ -119,16 +128,18 @@ fn setup(
 
   commands.spawn(
     (
-      @render3d.Mesh3d::from_circle(4.0F),
+      @render3d.Mesh3d::new(ground_mesh),
       @render3d.MeshMaterial3d::new(white_material),
-      @math.Transform::identity(),
+      @math.Transform::from_rotation(
+        @math.Quat::from_rotation_x(-@math.pi() / 2.0F),
+      ),
     ),
   )
   |> ignore
 
   commands.spawn(
     (
-      @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+      @render3d.Mesh3d::new(cube_mesh),
       @render3d.MeshMaterial3d::new(cube_material),
       @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
     ),
@@ -147,6 +158,6 @@ fn setup(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.default_plugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .run()
 }

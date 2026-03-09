@@ -101,6 +101,11 @@ test "render3d: Camera3dBundle stores window render target" {
     }),
     content="Some(true)",
   )
+  let frustum : Frustum? = try! world.get(entity, ecs_key_frustum)
+  inspect(
+    frustum.map(fn(value) { value.half_spaces.length() == 6 }),
+    content="Some(true)",
+  )
 }
 
 ///|

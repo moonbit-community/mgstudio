@@ -132,6 +132,20 @@ test "render3d: orthographic projection update matches Bevy auto min area" {
 }
 
 ///|
+test "render3d: projection compute_frustum uses camera transform and custom far plane" {
+  let perspective = PerspectiveProjection3d::default().with_far(10.0F)
+  let frustum = Projection::Perspective(perspective).compute_frustum(
+    @math.Transform::from_xyz(1.0F, 2.0F, 3.0F),
+  )
+  let far_plane = frustum.half_spaces[VIEW_FRUSTUM_FAR_PLANE_IDX].normal_d()
+  inspect(frustum.half_spaces.length(), content="6")
+  inspect(projection_approx_eq(far_plane.x, 0.0F), content="true")
+  inspect(projection_approx_eq(far_plane.y, 0.0F), content="true")
+  inspect(projection_approx_eq(far_plane.z, 1.0F), content="true")
+  inspect(projection_approx_eq(far_plane.w, 7.0F), content="true")
+}
+
+///|
 test "render3d: standard material stores full affine uv transform" {
   let uv_transform = @transform.Affine2::from_translation(
     @math.Vec2::new(0.25F, -0.5F),

@@ -203,6 +203,11 @@ pub let ecs_key_projection : @ecs.ComponentKey[Projection] = @ecs.register_compo
 )
 
 ///|
+pub let ecs_key_frustum : @ecs.ComponentKey[Frustum] = @ecs.register_component(
+  debug_name="render3d.frustum",
+)
+
+///|
 pub let ecs_key_parallax_correction : @ecs.ComponentKey[ParallaxCorrection] = @ecs.register_component(
   debug_name="render3d.parallax_correction",
 )
@@ -466,6 +471,11 @@ pub impl @ecs.Component for PointLightTexture with component() {
 ///|
 pub impl @ecs.Component for Projection with component() {
   ecs_key_projection
+}
+
+///|
+pub impl @ecs.Component for Frustum with component() {
+  ecs_key_frustum
 }
 
 ///|

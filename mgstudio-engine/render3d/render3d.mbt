@@ -4578,43 +4578,6 @@ fn mesh3d_append_triangle(
 }
 
 ///|
-fn mesh3d_geometry_cuboid(
-  width : Float,
-  height : Float,
-  depth : Float,
-) -> @mesh.Mesh3dGeometry {
-  let safe_width = if width <= 0.0F { 1.0F } else { width }
-  let safe_height = if height <= 0.0F { 1.0F } else { height }
-  let safe_depth = if depth <= 0.0F { 1.0F } else { depth }
-  let hx = safe_width * 0.5F
-  let hy = safe_height * 0.5F
-  let hz = safe_depth * 0.5F
-  let p000 = @math.Vec3::new(-hx, -hy, -hz)
-  let p100 = @math.Vec3::new(hx, -hy, -hz)
-  let p110 = @math.Vec3::new(hx, hy, -hz)
-  let p010 = @math.Vec3::new(-hx, hy, -hz)
-  let p001 = @math.Vec3::new(-hx, -hy, hz)
-  let p101 = @math.Vec3::new(hx, -hy, hz)
-  let p111 = @math.Vec3::new(hx, hy, hz)
-  let p011 = @math.Vec3::new(-hx, hy, hz)
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  // +Z front
-  mesh3d_append_quad(positions, uvs, p001, p101, p111, p011)
-  // -Z back
-  mesh3d_append_quad(positions, uvs, p100, p000, p010, p110)
-  // +X right
-  mesh3d_append_quad(positions, uvs, p101, p100, p110, p111)
-  // -X left
-  mesh3d_append_quad(positions, uvs, p000, p001, p011, p010)
-  // +Y top
-  mesh3d_append_quad(positions, uvs, p011, p111, p110, p010)
-  // -Y bottom
-  mesh3d_append_quad(positions, uvs, p000, p100, p101, p001)
-  @mesh.Mesh3dGeometry::new(positions, uvs, None)
-}
-
-///|
 fn mesh3d_geometry_plane(width : Float, depth : Float) -> @mesh.Mesh3dGeometry {
   let safe_width = if width <= 0.0F { 1.0F } else { width }
   let safe_depth = if depth <= 0.0F { 1.0F } else { depth }
@@ -4981,7 +4944,9 @@ pub fn Mesh3d::from_cuboid(
   height : Float,
   depth : Float,
 ) -> Mesh3d {
-  Mesh3d::from_geometry(mesh3d_geometry_cuboid(width, height, depth))
+  Mesh3d::from_geometry(
+    @mesh.Mesh3dGeometry::cuboid(@math.Cuboid::new(width, height, depth)),
+  )
 }
 
 ///|
@@ -6933,6 +6898,11 @@ pub fn Camera3dBundle::spawn(
   @render2d.get_camera_store(ecs_world).insert(entity, self.camera, tick)
   @render2d.get_render_target_store(ecs_world).insert(entity, self.target, tick)
   @render2d.get_render_layers_store(ecs_world).insert(entity, self.layers, tick)
+  get_frustum_store(ecs_world).insert(
+    entity,
+    self.projection.compute_frustum(self.transform),
+    tick,
+  )
   @math.get_transform_store(ecs_world).insert(entity, self.transform, tick)
   entity
 }
@@ -12182,6 +12152,11 @@ pub let render3d_set_extract : @app.SystemSet = @app.system_set(
 )
 
 ///|
+pub let render3d_set_update_frusta : @app.SystemSet = @app.system_set(
+  "bevy.render3d.update_frusta",
+)
+
+///|
 pub let render3d_set_prepare : @app.SystemSet = @app.system_set(
   "bevy.render3d.prepare",
 )
@@ -12209,6 +12184,11 @@ pub fn render3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   })
   .add_startup_system(init_render3d_resources)
   .add_post_update_system_config(
+    @app.system(render3d_update_frusta_system).in_set(
+      render3d_set_update_frusta,
+    ),
+  )
+  .add_post_update_system_config(
     @app.system(render3d_extract_system).in_set(render3d_set_extract),
   )
   .add_post_update_system_config(
@@ -12222,6 +12202,9 @@ pub fn render3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   )
   .configure_set(@app.PostUpdate, render3d_set_extract, before=[
     render3d_set_prepare,
+  ])
+  .configure_set(@app.PostUpdate, render3d_set_update_frusta, before=[
+    render3d_set_extract,
   ])
   .configure_set(@app.PostUpdate, render3d_set_prepare, before=[
     render3d_set_queue,

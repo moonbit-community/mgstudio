@@ -16,6 +16,10 @@ import {
 }
 
 // Values
+pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = 5
+
+pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
+
 pub let ecs_components : Array[String]
 
 pub let ecs_key_bloom : @ecs.ComponentKey[Bloom]
@@ -55,6 +59,8 @@ pub let ecs_key_forward_decal_material_ext : @ecs.ComponentKey[ForwardDecalMater
 pub let ecs_key_free_camera : @ecs.ComponentKey[FreeCamera]
 
 pub let ecs_key_free_camera_state : @ecs.ComponentKey[FreeCameraState]
+
+pub let ecs_key_frustum : @ecs.ComponentKey[Frustum]
 
 pub let ecs_key_fxaa : @ecs.ComponentKey[Fxaa]
 
@@ -176,6 +182,8 @@ pub fn get_free_camera_state_store(@ecs.World) -> @ecs.ComponentAccess[FreeCamer
 
 pub fn get_free_camera_store(@ecs.World) -> @ecs.ComponentAccess[FreeCamera]
 
+pub fn get_frustum_store(@ecs.World) -> @ecs.ComponentAccess[Frustum]
+
 pub fn get_fxaa_store(@ecs.World) -> @ecs.ComponentAccess[Fxaa]
 
 pub fn get_generated_environment_map_light_store(@ecs.World) -> @ecs.ComponentAccess[GeneratedEnvironmentMapLight]
@@ -295,6 +303,10 @@ pub let render3d_set_prepare : String
 pub let render3d_set_queue : String
 
 pub let render3d_set_render : String
+
+pub let render3d_set_update_frusta : String
+
+pub fn render3d_update_frusta_system(@ecs.World) -> Unit
 
 pub fn run_freecamera_controller(@ecs.World) -> Unit
 
@@ -685,6 +697,7 @@ pub impl ToJson for CubemapLayout3d
 pub impl @json.FromJson for CubemapLayout3d
 
 type CustomProjection3d
+pub fn CustomProjection3d::compute_frustum(Self, @math.Transform) -> Frustum
 pub fn CustomProjection3d::default() -> Self
 pub fn CustomProjection3d::far(Self) -> Float
 pub fn[T] CustomProjection3d::get(Self) -> T?
@@ -987,6 +1000,17 @@ pub impl @ecs.Component for FreeCameraState
 pub impl ToJson for FreeCameraState
 pub impl @json.FromJson for FreeCameraState
 
+pub struct Frustum {
+  half_spaces : Array[HalfSpace]
+}
+pub fn Frustum::corners(Self) -> Array[@math.Vec3]?
+pub fn Frustum::new(ViewFrustum) -> Self
+pub fn Frustum::view_frustum(Self) -> ViewFrustum
+pub impl @ecs.Component for Frustum
+pub impl Eq for Frustum
+pub impl ToJson for Frustum
+pub impl @json.FromJson for Frustum
+
 pub struct Fxaa {
   enabled : Bool
   edge_threshold : FxaaSensitivity
@@ -1040,6 +1064,18 @@ pub fn GlobalAmbientLight::default() -> Self
 pub fn GlobalAmbientLight::new(@render2d.Color, Float) -> Self
 pub impl ToJson for GlobalAmbientLight
 pub impl @json.FromJson for GlobalAmbientLight
+
+pub struct HalfSpace {
+  normal_d : @math.Vec4
+}
+pub fn HalfSpace::d(Self) -> Float
+pub fn HalfSpace::intersection_point(Self, Self, Self) -> @math.Vec3?
+pub fn HalfSpace::new(@math.Vec4) -> Self
+pub fn HalfSpace::normal(Self) -> @math.Vec3
+pub fn HalfSpace::normal_d(Self) -> @math.Vec4
+pub impl Eq for HalfSpace
+pub impl ToJson for HalfSpace
+pub impl @json.FromJson for HalfSpace
 
 pub struct Hdr {
 }
@@ -1241,6 +1277,7 @@ pub(all) struct OrthographicProjection3d {
   mut area : @math.Rect
 }
 pub fn OrthographicProjection3d::area(Self) -> @math.Rect
+pub fn OrthographicProjection3d::compute_frustum(Self, @math.Transform) -> Frustum
 pub fn OrthographicProjection3d::default() -> Self
 pub fn OrthographicProjection3d::default_2d() -> Self
 pub fn OrthographicProjection3d::default_3d() -> Self
@@ -1300,6 +1337,7 @@ pub(all) struct PerspectiveProjection3d {
   mut near_clip_plane : @math.Vec4
 }
 pub fn PerspectiveProjection3d::aspect_ratio(Self) -> Float
+pub fn PerspectiveProjection3d::compute_frustum(Self, @math.Transform) -> Frustum
 pub fn PerspectiveProjection3d::default() -> Self
 pub fn PerspectiveProjection3d::far(Self) -> Float
 pub fn PerspectiveProjection3d::fov(Self) -> Float
@@ -1370,6 +1408,7 @@ pub(all) enum Projection {
   Orthographic(OrthographicProjection3d)
   Custom(CustomProjection3d)
 }
+pub fn Projection::compute_frustum(Self, @math.Transform) -> Frustum
 pub fn[T : CameraProjection3d] Projection::custom(T) -> Self
 pub fn Projection::default() -> Self
 pub fn Projection::far(Self) -> Float
@@ -1391,6 +1430,7 @@ pub fn ProjectionMatrix3d::from_cols(@math.Vec4, @math.Vec4, @math.Vec4, @math.V
 pub fn ProjectionMatrix3d::mul(Self, Self) -> Self
 pub fn ProjectionMatrix3d::mul_vec4(Self, @math.Vec4) -> @math.Vec4
 pub fn ProjectionMatrix3d::project_point3(Self, @math.Vec3) -> @math.Vec3?
+pub fn ProjectionMatrix3d::row(Self, Int) -> @math.Vec4
 pub fn ProjectionMatrix3d::w_axis_w(Self) -> Float
 
 type Render3dInternalAssetsState
@@ -1668,6 +1708,17 @@ pub fn TransmittedShadowReceiver::default() -> Self
 pub impl @ecs.Component for TransmittedShadowReceiver
 pub impl ToJson for TransmittedShadowReceiver
 pub impl @json.FromJson for TransmittedShadowReceiver
+
+pub struct ViewFrustum {
+  half_spaces : Array[HalfSpace]
+}
+pub fn ViewFrustum::corners(Self) -> Array[@math.Vec3]?
+pub fn ViewFrustum::from_clip_from_world(ProjectionMatrix3d) -> Self
+pub fn ViewFrustum::from_clip_from_world_custom_far(ProjectionMatrix3d, @math.Vec3, @math.Vec3, Float) -> Self
+pub fn ViewFrustum::new(Array[HalfSpace]) -> Self
+pub impl Eq for ViewFrustum
+pub impl ToJson for ViewFrustum
+pub impl @json.FromJson for ViewFrustum
 
 pub struct Vignette {
   intensity : Float
