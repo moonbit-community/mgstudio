@@ -23,7 +23,7 @@ struct BloomUniforms {
     viewport: vec4<f32>,
     scale: vec2<f32>,
     aspect: f32,
-    _padding: f32,
+    exposure: f32,
     // x: tonemapping mode, y: deband dither enabled, z: bloom weight, w: upsample blend factor
     options: vec4<f32>,
     // x: fxaa enabled, y: fxaa edge threshold, z: chromatic aberration strength, w: vignette strength
@@ -279,7 +279,8 @@ fn sample_tonemapped_scene_for_fxaa(uv: vec2<f32>) -> vec3<f32> {
     let clamped_uv = clamp(uv, vec2<f32>(0.0), vec2<f32>(1.0));
     // Use explicit LOD so this call is valid under non-uniform FXAA control flow.
     let scene_color = textureSampleLevel(scene_texture, hdr_sampler, clamped_uv, 0.0).rgb;
-    return tonemap_color(scene_color, uniforms.options.x);
+    let exposure = max(uniforms.exposure, 0.0);
+    return tonemap_color(scene_color * exposure, uniforms.options.x);
 }
 
 fn apply_lightweight_fxaa(uv: vec2<f32>, base_color: vec3<f32>) -> vec3<f32> {
@@ -352,7 +353,11 @@ fn final_fragment(
 ) -> @location(0) vec4<f32> {
     let bloom_color = sample_input_3x3_tent(uv) * uniforms.options.z;
     let scene_color = sample_scene_with_chromatic(uv);
-    var output_rgb = tonemap_color(scene_color + bloom_color, uniforms.options.x);
+    let exposure = max(uniforms.exposure, 0.0);
+    var output_rgb = tonemap_color(
+        (scene_color + bloom_color) * exposure,
+        uniforms.options.x,
+    );
     output_rgb = apply_lightweight_fxaa(uv, output_rgb);
     output_rgb = apply_vignette(output_rgb, uv);
 

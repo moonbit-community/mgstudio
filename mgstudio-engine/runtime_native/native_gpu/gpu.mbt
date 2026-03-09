@@ -2899,6 +2899,7 @@ fn bloom2d_uniform_bytes(
   threshold_softness : Float,
   scale_x : Float,
   scale_y : Float,
+  exposure : Float,
   fxaa_enabled : Float,
   fxaa_edge_threshold : Float,
   tonemapping_mode : Float,
@@ -2943,7 +2944,7 @@ fn bloom2d_uniform_bytes(
     scale_x,
     scale_y,
     aspect,
-    0.0F,
+    exposure,
     tonemapping_mode,
     deband_dither_enabled,
     bloom_weight,
@@ -6229,6 +6230,7 @@ pub fn GpuBackend::draw_bloom2d(
   max_mip_dimension : Int,
   scale_x : Float,
   scale_y : Float,
+  exposure : Float,
   tonemapping_mode : Int,
   deband_dither_enabled : Int,
   view_width : Int,
@@ -6311,6 +6313,7 @@ pub fn GpuBackend::draw_bloom2d(
   }
   let scale_x_value = if scale_x < 0.0F { 0.0F } else { scale_x }
   let scale_y_value = if scale_y < 0.0F { 0.0F } else { scale_y }
+  let exposure_value = if exposure < 0.0F { 0.0F } else { exposure }
   let tonemapping_mode_value = Float::from_int(
     if tonemapping_mode < 0 {
       0
@@ -6472,6 +6475,7 @@ pub fn GpuBackend::draw_bloom2d(
         threshold_softness_value,
         scale_x_value,
         scale_y_value,
+        exposure_value,
         fxaa_enabled_value,
         fxaa_edge_threshold_value,
         tonemapping_mode_value,
@@ -6594,6 +6598,7 @@ pub fn GpuBackend::draw_bloom2d(
             threshold_softness_value,
             scale_x_value,
             scale_y_value,
+            exposure_value,
             fxaa_enabled_value,
             fxaa_edge_threshold_value,
             tonemapping_mode_value,
@@ -6669,6 +6674,7 @@ pub fn GpuBackend::draw_bloom2d(
     0.0F,
     1.0F,
     1.0F,
+    exposure_value,
     fxaa_enabled_value,
     fxaa_edge_threshold_value,
     tonemapping_mode_value,
@@ -8023,6 +8029,7 @@ pub fn draw_bloom2d(
   max_mip_dimension~ : Int,
   scale_x~ : Float,
   scale_y~ : Float,
+  exposure~ : Float,
   tonemapping_mode~ : Int,
   deband_dither_enabled~ : Int,
   fxaa_enabled~ : Int,
@@ -8070,9 +8077,9 @@ pub fn draw_bloom2d(
     backend.draw_bloom2d(
       scene_texture_id, enabled, intensity, low_frequency_boost, low_frequency_boost_curvature,
       high_pass_frequency, threshold, threshold_softness, composite_mode, max_mip_dimension,
-      scale_x, scale_y, tonemapping_mode, deband_dither_enabled, view_width, view_height,
-      agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id, fxaa_enabled,
-      fxaa_edge_threshold_value, chromatic_aberration_value, vignette_value,
+      scale_x, scale_y, exposure, tonemapping_mode, deband_dither_enabled, view_width,
+      view_height, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
+      fxaa_enabled, fxaa_edge_threshold_value, chromatic_aberration_value, vignette_value,
     ) catch {
       err => debug_runtime_error("draw_bloom2d", err)
     }

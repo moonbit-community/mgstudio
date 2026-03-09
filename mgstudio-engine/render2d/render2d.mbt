@@ -4241,6 +4241,7 @@ fn render2d_draw_camera_bloom(
     max_mip_dimension=settings.max_mip_dimension,
     scale_x=settings.scale.x,
     scale_y=settings.scale.y,
+    exposure=1.0F,
     tonemapping_mode~,
     deband_dither_enabled=if deband_dither_enabled { 1 } else { 0 },
     fxaa_enabled=0,

@@ -8751,6 +8751,7 @@ fn render3d_draw_camera_bloom(
   world : @ecs.World,
   scene_texture_id : Int,
   bloom : Bloom,
+  exposure : Exposure?,
   tonemapping : Tonemapping?,
   deband_dither : DebandDither?,
   fxaa : Fxaa?,
@@ -8799,6 +8800,10 @@ fn render3d_draw_camera_bloom(
     max_mip_dimension=settings.max_mip_dimension,
     scale_x=settings.scale.x,
     scale_y=settings.scale.y,
+    exposure=match exposure {
+      Some(value) => value.exposure()
+      None => Exposure::default().exposure()
+    },
     tonemapping_mode=match tonemapping {
       Some(mode) => render3d_tonemapping_mode_to_int(mode)
       None => 0
@@ -8835,6 +8840,7 @@ fn render3d_draw_camera_bloom(
 fn render3d_draw_camera_tonemap_only(
   world : @ecs.World,
   scene_texture_id : Int,
+  exposure : Exposure?,
   tonemapping : Tonemapping?,
   deband_dither : DebandDither?,
   fxaa : Fxaa?,
@@ -8883,6 +8889,10 @@ fn render3d_draw_camera_tonemap_only(
     max_mip_dimension=bloom_defaults.max_mip_dimension,
     scale_x=bloom_defaults.scale.x,
     scale_y=bloom_defaults.scale.y,
+    exposure=match exposure {
+      Some(value) => value.exposure()
+      None => Exposure::default().exposure()
+    },
     tonemapping_mode=match tonemapping {
       Some(mode) => render3d_tonemapping_mode_to_int(mode)
       None => 0
@@ -9108,15 +9118,15 @@ fn render3d_apply_camera_color_controls(
   color_grading : ColorGrading?,
 ) -> (Float, Float, Float) {
   let default_exposure = Exposure::default()
-  let ev100 = match exposure {
-    Some(value) => value.ev100
-    None => default_exposure.ev100
+  let exposure_scale = match exposure {
+    Some(value) => value.exposure()
+    None => default_exposure.exposure()
   }
   let grading = match color_grading {
     Some(value) => value
     None => ColorGrading::default()
   }
-  let exposure_scale = @math.pow(2.0F, default_exposure.ev100 - ev100) *
+  let total_exposure_scale = exposure_scale *
     @math.pow(2.0F, grading.global.exposure)
   let mut cr = maxf(0.0F, r)
   let mut cg = maxf(0.0F, g)
@@ -9159,9 +9169,9 @@ fn render3d_apply_camera_color_controls(
   cr = section_r
   cg = section_g
   cb = section_b
-  cr = maxf(0.0F, cr * exposure_scale)
-  cg = maxf(0.0F, cg * exposure_scale)
-  cb = maxf(0.0F, cb * exposure_scale)
+  cr = maxf(0.0F, cr * total_exposure_scale)
+  cg = maxf(0.0F, cg * total_exposure_scale)
+  cb = maxf(0.0F, cb * total_exposure_scale)
   let (post_r, post_g, post_b) = render3d_color_apply_saturation(
     cr,
     cg,
@@ -11710,6 +11720,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           world,
           bloom_source_texture_id,
           bloom,
+          effective_exposure,
           camera.tonemapping,
           camera.deband_dither,
           camera.fxaa,
@@ -11750,6 +11761,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         render3d_draw_camera_tonemap_only(
           world,
           tonemap_source_texture_id,
+          effective_exposure,
           camera.tonemapping,
           camera.deband_dither,
           camera.fxaa,
