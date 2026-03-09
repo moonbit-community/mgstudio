@@ -38,6 +38,7 @@ OWNER_GROUPS = {
         "app",
         "async_tasks",
         "ecs",
+        "hello_world",
         "math",
         "movement",
         "state",
@@ -163,7 +164,10 @@ def classify_rows(root: pathlib.Path) -> list[ExampleRow]:
 
     for path in bevy_examples:
         bevy_rel = path.relative_to(base).as_posix()
-        category = bevy_rel.split("/", 1)[0]
+        if "/" in bevy_rel:
+            category = bevy_rel.split("/", 1)[0]
+        else:
+            category = path.stem
         example = path.stem
         key = (category, example)
         mgstudio_path = mgstudio_examples.get(key, "")

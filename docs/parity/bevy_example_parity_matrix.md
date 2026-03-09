@@ -31,7 +31,7 @@ Notes:
 | `games` | 7 | 0 | 7 | 0 |
 | `gizmos` | 8 | 0 | 8 | 0 |
 | `gltf` | 9 | 0 | 9 | 0 |
-| `hello_world.rs` | 1 | 0 | 1 | 0 |
+| `hello_world` | 1 | 1 | 0 | 0 |
 | `helpers` | 1 | 0 | 1 | 0 |
 | `input` | 13 | 9 | 4 | 0 |
 | `large_scenes` | 6 | 0 | 6 | 0 |
@@ -54,7 +54,7 @@ Notes:
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
 | `window` | 12 | 3 | 9 | 0 |
-| **Total** | **402** | **138** | **261** | **3** |
+| **Total** | **402** | **139** | **260** | **3** |
 
 ## Example Inventory
 
@@ -277,7 +277,7 @@ Notes:
 | `bevy/examples/gltf/load_gltf_extras.rs` | `gltf` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/gltf/query_gltf_primitives.rs` | `gltf` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/gltf/update_gltf_scene.rs` | `gltf` |  | `Blocked` | `team-asset_scene` |  |
-| `bevy/examples/hello_world.rs` | `hello_world.rs` |  | `Blocked` | `team-parity` |  |
+| `bevy/examples/hello_world.rs` | `hello_world` | `mgstudio-engine/examples/hello_world/hello_world` | `Exact` | `team-core` |  |
 | `bevy/examples/helpers/widgets.rs` | `helpers` |  | `Blocked` | `team-ops` |  |
 | `bevy/examples/input/char_input_events.rs` | `input` | `mgstudio-engine/examples/input/char_input_events` | `Exact` | `team-input_window` |  |
 | `bevy/examples/input/gamepad_input.rs` | `input` | `mgstudio-engine/examples/input/gamepad_input` | `Exact` | `team-input_window` |  |
