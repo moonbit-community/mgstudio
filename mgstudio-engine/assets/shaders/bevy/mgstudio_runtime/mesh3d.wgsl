@@ -24,9 +24,7 @@ struct Mesh3dUniform {
   model_rot : vec4<f32>,
   model_scale : vec4<f32>,
   camera_pos : vec4<f32>,
-  camera_rot : vec4<f32>,
-  projection : vec4<f32>, // (fov_y, aspect, near, far)
-  subview : vec4<f32>, // (scale_x, scale_y, bias_x, bias_y)
+  clip_from_world : mat4x4<f32>,
   color : vec4<f32>,
   uv_transform0 : vec4<f32>, // (a, b, c, tx)
   uv_transform1 : vec4<f32>, // (d, ty, mode, _)
@@ -46,7 +44,7 @@ struct Mesh3dUniform {
   anisotropy_params : vec4<f32>, // (strength, rot_cos, rot_sin, has_anisotropy_map)
   specular_tint : vec4<f32>, // (r, g, b, has_specular_tint_map)
   transmission_params : vec4<f32>, // (diffuse_transmission, specular_transmission, thickness, ior)
-  point_shadow_params : vec4<f32>, // (enabled, depth_bias, _, _)
+  point_shadow_params : vec4<f32>, // (enabled, depth_bias, near_z, _)
 };
 
 @group(0) @binding(0) var<uniform> u_mesh : Mesh3dUniform;
@@ -68,10 +66,6 @@ fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
   return q / sqrt(n);
 }
 
-fn quat_conjugate(q : vec4<f32>) -> vec4<f32> {
-  return vec4<f32>(-q.xyz, q.w);
-}
-
 fn quat_rotate_vec3(q : vec4<f32>, v : vec3<f32>) -> vec3<f32> {
   let t = 2.0 * cross(q.xyz, v);
   return v + q.w * t + cross(q.xyz, t);
@@ -86,52 +80,9 @@ fn vs_main(
   var out : VertexOut;
 
   let model_q = quat_normalize(u_mesh.model_rot);
-  let camera_q = quat_normalize(u_mesh.camera_rot);
-  let inv_camera_q = quat_conjugate(camera_q);
-
   let local_pos = position * u_mesh.model_scale.xyz;
   let world_pos = quat_rotate_vec3(model_q, local_pos) + u_mesh.model_pos.xyz;
-  let camera_space = quat_rotate_vec3(
-    inv_camera_q,
-    world_pos - u_mesh.camera_pos.xyz,
-  );
-
-  let aspect = max(u_mesh.projection.y, 0.001);
-  var clip_x_full = 0.0;
-  var clip_y_full = 0.0;
-  var clip_z = 0.0;
-  var clip_w = 1.0;
-  if (u_mesh.projection.x > 0.0) {
-    // Perspective projection: projection.x = vertical fov radians.
-    let fov_y = max(u_mesh.projection.x, 0.001);
-    let near_z = max(u_mesh.projection.z, 0.0001);
-    let far_z = max(u_mesh.projection.w, near_z + 0.0001);
-    let f = 1.0 / tan(0.5 * fov_y);
-    clip_x_full = camera_space.x * f / aspect;
-    clip_y_full = camera_space.y * f;
-    clip_z = camera_space.z * (far_z / (near_z - far_z)) +
-      (near_z * far_z) / (near_z - far_z);
-    clip_w = -camera_space.z;
-  } else {
-    // Orthographic projection: projection.x = -half_height(world units).
-    let half_height = max(-u_mesh.projection.x, 1e-5);
-    let half_width = max(half_height * aspect, 1e-5);
-    let near_z = u_mesh.projection.z;
-    let far_z = select(
-      near_z + 0.0001,
-      u_mesh.projection.w,
-      u_mesh.projection.w > near_z + 0.0001,
-    );
-    clip_x_full = camera_space.x / half_width;
-    clip_y_full = camera_space.y / half_height;
-    let z01 = (camera_space.z - near_z) / (far_z - near_z);
-    clip_z = z01 * 2.0 - 1.0;
-    clip_w = 1.0;
-  }
-  let clip_x = clip_x_full * u_mesh.subview.x + u_mesh.subview.z * clip_w;
-  let clip_y = clip_y_full * u_mesh.subview.y + u_mesh.subview.w * clip_w;
-
-  out.position = vec4<f32>(clip_x, clip_y, clip_z, clip_w);
+  out.position = u_mesh.clip_from_world * vec4<f32>(world_pos, 1.0);
   out.uv = vec2<f32>(
     u_mesh.uv_transform0.x * uv.x + u_mesh.uv_transform0.z * uv.y +
       u_mesh.uv_transform0.w,
@@ -596,7 +547,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       abs(to_light.x),
       max(abs(to_light.y), abs(to_light.z)),
     );
-    let point_near = max(u_mesh.projection.z, 1.0e-4);
+    let point_near = max(u_mesh.point_shadow_params.z, 1.0e-4);
     let point_far = max(point_range, point_near + 1.0e-4);
     var point_linear_depth = 0.0;
     if major_axis_magnitude <= point_near {

@@ -31,7 +31,7 @@ pub fn begin_frame(Int) -> Int
 
 pub fn begin_pass(target_id~ : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_rotation~ : Float, camera_scale~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, viewport_depth_min~ : Float, viewport_depth_max~ : Float, clear_enabled~ : Int) -> Unit
 
-pub fn begin_pass_3d(target_id~ : Int, target_layer? : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_z~ : Float, camera_rot_x~ : Float, camera_rot_y~ : Float, camera_rot_z~ : Float, camera_rot_w~ : Float, camera_fov_y~ : Float, camera_near~ : Float, camera_far~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, ambient_r~ : Float, ambient_g~ : Float, ambient_b~ : Float, ambient_brightness~ : Float, directional_dir_x~ : Float, directional_dir_y~ : Float, directional_dir_z~ : Float, directional_color_r~ : Float, directional_color_g~ : Float, directional_color_b~ : Float, directional_illuminance~ : Float, point_pos_x~ : Float, point_pos_y~ : Float, point_pos_z~ : Float, point_color_r~ : Float, point_color_g~ : Float, point_color_b~ : Float, point_intensity~ : Float, point_range~ : Float, spot_pos_x~ : Float, spot_pos_y~ : Float, spot_pos_z~ : Float, spot_dir_x~ : Float, spot_dir_y~ : Float, spot_dir_z~ : Float, spot_color_r~ : Float, spot_color_g~ : Float, spot_color_b~ : Float, spot_intensity~ : Float, spot_range~ : Float, spot_inner_angle~ : Float, spot_outer_angle~ : Float, sub_camera_view_scale_x~ : Float, sub_camera_view_scale_y~ : Float, sub_camera_view_bias_x~ : Float, sub_camera_view_bias_y~ : Float, previous_camera_x~ : Float, previous_camera_y~ : Float, previous_camera_z~ : Float, previous_camera_rot_x~ : Float, previous_camera_rot_y~ : Float, previous_camera_rot_z~ : Float, previous_camera_rot_w~ : Float, pass_kind~ : Int, clear_enabled~ : Int) -> Unit
+pub fn begin_pass_3d(target_id~ : Int, target_layer? : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_z~ : Float, camera_rot_x~ : Float, camera_rot_y~ : Float, camera_rot_z~ : Float, camera_rot_w~ : Float, clip_from_world_x_axis_x~ : Float, clip_from_world_x_axis_y~ : Float, clip_from_world_x_axis_z~ : Float, clip_from_world_x_axis_w~ : Float, clip_from_world_y_axis_x~ : Float, clip_from_world_y_axis_y~ : Float, clip_from_world_y_axis_z~ : Float, clip_from_world_y_axis_w~ : Float, clip_from_world_z_axis_x~ : Float, clip_from_world_z_axis_y~ : Float, clip_from_world_z_axis_z~ : Float, clip_from_world_z_axis_w~ : Float, clip_from_world_w_axis_x~ : Float, clip_from_world_w_axis_y~ : Float, clip_from_world_w_axis_z~ : Float, clip_from_world_w_axis_w~ : Float, unjittered_clip_from_world_x_axis_x~ : Float, unjittered_clip_from_world_x_axis_y~ : Float, unjittered_clip_from_world_x_axis_z~ : Float, unjittered_clip_from_world_x_axis_w~ : Float, unjittered_clip_from_world_y_axis_x~ : Float, unjittered_clip_from_world_y_axis_y~ : Float, unjittered_clip_from_world_y_axis_z~ : Float, unjittered_clip_from_world_y_axis_w~ : Float, unjittered_clip_from_world_z_axis_x~ : Float, unjittered_clip_from_world_z_axis_y~ : Float, unjittered_clip_from_world_z_axis_z~ : Float, unjittered_clip_from_world_z_axis_w~ : Float, unjittered_clip_from_world_w_axis_x~ : Float, unjittered_clip_from_world_w_axis_y~ : Float, unjittered_clip_from_world_w_axis_z~ : Float, unjittered_clip_from_world_w_axis_w~ : Float, previous_clip_from_world_x_axis_x~ : Float, previous_clip_from_world_x_axis_y~ : Float, previous_clip_from_world_x_axis_z~ : Float, previous_clip_from_world_x_axis_w~ : Float, previous_clip_from_world_y_axis_x~ : Float, previous_clip_from_world_y_axis_y~ : Float, previous_clip_from_world_y_axis_z~ : Float, previous_clip_from_world_y_axis_w~ : Float, previous_clip_from_world_z_axis_x~ : Float, previous_clip_from_world_z_axis_y~ : Float, previous_clip_from_world_z_axis_z~ : Float, previous_clip_from_world_z_axis_w~ : Float, previous_clip_from_world_w_axis_x~ : Float, previous_clip_from_world_w_axis_y~ : Float, previous_clip_from_world_w_axis_z~ : Float, previous_clip_from_world_w_axis_w~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, ambient_r~ : Float, ambient_g~ : Float, ambient_b~ : Float, ambient_brightness~ : Float, directional_dir_x~ : Float, directional_dir_y~ : Float, directional_dir_z~ : Float, directional_color_r~ : Float, directional_color_g~ : Float, directional_color_b~ : Float, directional_illuminance~ : Float, point_pos_x~ : Float, point_pos_y~ : Float, point_pos_z~ : Float, point_color_r~ : Float, point_color_g~ : Float, point_color_b~ : Float, point_intensity~ : Float, point_range~ : Float, spot_pos_x~ : Float, spot_pos_y~ : Float, spot_pos_z~ : Float, spot_dir_x~ : Float, spot_dir_y~ : Float, spot_dir_z~ : Float, spot_color_r~ : Float, spot_color_g~ : Float, spot_color_b~ : Float, spot_intensity~ : Float, spot_range~ : Float, spot_inner_angle~ : Float, spot_outer_angle~ : Float, point_shadow_near~ : Float, pass_kind~ : Int, clear_enabled~ : Int) -> Unit
 
 pub fn clear_scissor() -> Unit
 
@@ -238,7 +238,7 @@ pub struct GpuBackend {
 }
 pub fn GpuBackend::begin_frame(Self) -> Unit
 pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Int) -> Unit raise GpuBackendError
-pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::clear_scissor(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::configure_surface(Self, Int, Int) -> Unit
 pub fn GpuBackend::copy_texture_to_texture(Self, Int, Int, Int, Int) -> Unit
@@ -276,6 +276,25 @@ pub fn GpuBackend::texture_width(Self, Int) -> Int
 pub fn GpuBackend::write_texture_region_rgba8(Self, Int, Int, Int, Int, Int, Bytes) -> Unit
 pub fn GpuBackend::write_texture_region_rgba8_mip(Self, Int, Int, Int, Int, Int, Int, Bytes) -> Unit
 
+pub struct GpuClipMatrix {
+  x_axis_x : Float
+  x_axis_y : Float
+  x_axis_z : Float
+  x_axis_w : Float
+  y_axis_x : Float
+  y_axis_y : Float
+  y_axis_z : Float
+  y_axis_w : Float
+  z_axis_x : Float
+  z_axis_y : Float
+  z_axis_z : Float
+  z_axis_w : Float
+  w_axis_x : Float
+  w_axis_y : Float
+  w_axis_z : Float
+  w_axis_w : Float
+}
+
 pub struct GpuFrameState {
   surface_tex : @wgpu_mbt.SurfaceTexture
   surface_texture : @wgpu_mbt.Texture
@@ -309,16 +328,9 @@ pub struct GpuPassState {
   camera_rot_y : Float
   camera_rot_z : Float
   camera_rot_w : Float
-  previous_camera_x : Float
-  previous_camera_y : Float
-  previous_camera_z : Float
-  previous_camera_rot_x : Float
-  previous_camera_rot_y : Float
-  previous_camera_rot_z : Float
-  previous_camera_rot_w : Float
-  camera_fov_y : Float
-  camera_near : Float
-  camera_far : Float
+  clip_from_world : GpuClipMatrix
+  unjittered_clip_from_world : GpuClipMatrix
+  previous_clip_from_world : GpuClipMatrix
   pass_kind : Int
   viewport_x : UInt
   viewport_y : UInt
@@ -358,10 +370,7 @@ pub struct GpuPassState {
   spot_range : Float
   spot_inner_angle : Float
   spot_outer_angle : Float
-  sub_camera_view_scale_x : Float
-  sub_camera_view_scale_y : Float
-  sub_camera_view_bias_x : Float
-  sub_camera_view_bias_y : Float
+  point_shadow_near : Float
 }
 
 pub struct GpuTextureInfo {

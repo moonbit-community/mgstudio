@@ -93,6 +93,48 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
 }
 
 ///|
+pub struct GpuClipMatrix {
+  x_axis_x : Float
+  x_axis_y : Float
+  x_axis_z : Float
+  x_axis_w : Float
+  y_axis_x : Float
+  y_axis_y : Float
+  y_axis_z : Float
+  y_axis_w : Float
+  z_axis_x : Float
+  z_axis_y : Float
+  z_axis_z : Float
+  z_axis_w : Float
+  w_axis_x : Float
+  w_axis_y : Float
+  w_axis_z : Float
+  w_axis_w : Float
+}
+
+///|
+fn gpu_clip_matrix_identity() -> GpuClipMatrix {
+  GpuClipMatrix::{
+    x_axis_x: 1.0F,
+    x_axis_y: 0.0F,
+    x_axis_z: 0.0F,
+    x_axis_w: 0.0F,
+    y_axis_x: 0.0F,
+    y_axis_y: 1.0F,
+    y_axis_z: 0.0F,
+    y_axis_w: 0.0F,
+    z_axis_x: 0.0F,
+    z_axis_y: 0.0F,
+    z_axis_z: 1.0F,
+    z_axis_w: 0.0F,
+    w_axis_x: 0.0F,
+    w_axis_y: 0.0F,
+    w_axis_z: 0.0F,
+    w_axis_w: 1.0F,
+  }
+}
+
+///|
 pub struct GpuPassState {
   target_id : Int
   target_layer : Int
@@ -108,16 +150,9 @@ pub struct GpuPassState {
   camera_rot_y : Float
   camera_rot_z : Float
   camera_rot_w : Float
-  previous_camera_x : Float
-  previous_camera_y : Float
-  previous_camera_z : Float
-  previous_camera_rot_x : Float
-  previous_camera_rot_y : Float
-  previous_camera_rot_z : Float
-  previous_camera_rot_w : Float
-  camera_fov_y : Float
-  camera_near : Float
-  camera_far : Float
+  clip_from_world : GpuClipMatrix
+  unjittered_clip_from_world : GpuClipMatrix
+  previous_clip_from_world : GpuClipMatrix
   pass_kind : Int
   viewport_x : UInt
   viewport_y : UInt
@@ -157,10 +192,7 @@ pub struct GpuPassState {
   spot_range : Float
   spot_inner_angle : Float
   spot_outer_angle : Float
-  sub_camera_view_scale_x : Float
-  sub_camera_view_scale_y : Float
-  sub_camera_view_bias_x : Float
-  sub_camera_view_bias_y : Float
+  point_shadow_near : Float
 }
 
 ///|
@@ -3397,9 +3429,54 @@ fn reopen_saved_pass(
       pass_state.camera_rot_y,
       pass_state.camera_rot_z,
       pass_state.camera_rot_w,
-      pass_state.camera_fov_y,
-      pass_state.camera_near,
-      pass_state.camera_far,
+      pass_state.clip_from_world.x_axis_x,
+      pass_state.clip_from_world.x_axis_y,
+      pass_state.clip_from_world.x_axis_z,
+      pass_state.clip_from_world.x_axis_w,
+      pass_state.clip_from_world.y_axis_x,
+      pass_state.clip_from_world.y_axis_y,
+      pass_state.clip_from_world.y_axis_z,
+      pass_state.clip_from_world.y_axis_w,
+      pass_state.clip_from_world.z_axis_x,
+      pass_state.clip_from_world.z_axis_y,
+      pass_state.clip_from_world.z_axis_z,
+      pass_state.clip_from_world.z_axis_w,
+      pass_state.clip_from_world.w_axis_x,
+      pass_state.clip_from_world.w_axis_y,
+      pass_state.clip_from_world.w_axis_z,
+      pass_state.clip_from_world.w_axis_w,
+      pass_state.unjittered_clip_from_world.x_axis_x,
+      pass_state.unjittered_clip_from_world.x_axis_y,
+      pass_state.unjittered_clip_from_world.x_axis_z,
+      pass_state.unjittered_clip_from_world.x_axis_w,
+      pass_state.unjittered_clip_from_world.y_axis_x,
+      pass_state.unjittered_clip_from_world.y_axis_y,
+      pass_state.unjittered_clip_from_world.y_axis_z,
+      pass_state.unjittered_clip_from_world.y_axis_w,
+      pass_state.unjittered_clip_from_world.z_axis_x,
+      pass_state.unjittered_clip_from_world.z_axis_y,
+      pass_state.unjittered_clip_from_world.z_axis_z,
+      pass_state.unjittered_clip_from_world.z_axis_w,
+      pass_state.unjittered_clip_from_world.w_axis_x,
+      pass_state.unjittered_clip_from_world.w_axis_y,
+      pass_state.unjittered_clip_from_world.w_axis_z,
+      pass_state.unjittered_clip_from_world.w_axis_w,
+      pass_state.previous_clip_from_world.x_axis_x,
+      pass_state.previous_clip_from_world.x_axis_y,
+      pass_state.previous_clip_from_world.x_axis_z,
+      pass_state.previous_clip_from_world.x_axis_w,
+      pass_state.previous_clip_from_world.y_axis_x,
+      pass_state.previous_clip_from_world.y_axis_y,
+      pass_state.previous_clip_from_world.y_axis_z,
+      pass_state.previous_clip_from_world.y_axis_w,
+      pass_state.previous_clip_from_world.z_axis_x,
+      pass_state.previous_clip_from_world.z_axis_y,
+      pass_state.previous_clip_from_world.z_axis_z,
+      pass_state.previous_clip_from_world.z_axis_w,
+      pass_state.previous_clip_from_world.w_axis_x,
+      pass_state.previous_clip_from_world.w_axis_y,
+      pass_state.previous_clip_from_world.w_axis_z,
+      pass_state.previous_clip_from_world.w_axis_w,
       viewport_x,
       viewport_y,
       viewport_w,
@@ -3436,17 +3513,7 @@ fn reopen_saved_pass(
       pass_state.spot_range,
       pass_state.spot_inner_angle,
       pass_state.spot_outer_angle,
-      pass_state.sub_camera_view_scale_x,
-      pass_state.sub_camera_view_scale_y,
-      pass_state.sub_camera_view_bias_x,
-      pass_state.sub_camera_view_bias_y,
-      pass_state.previous_camera_x,
-      pass_state.previous_camera_y,
-      pass_state.previous_camera_z,
-      pass_state.previous_camera_rot_x,
-      pass_state.previous_camera_rot_y,
-      pass_state.previous_camera_rot_z,
-      pass_state.previous_camera_rot_w,
+      pass_state.point_shadow_near,
       pass_state.pass_kind,
       0,
     )
@@ -4921,16 +4988,9 @@ pub fn GpuBackend::begin_pass(
     camera_rot_y: 0.0F,
     camera_rot_z: 0.0F,
     camera_rot_w: 1.0F,
-    previous_camera_x: camera_x,
-    previous_camera_y: camera_y,
-    previous_camera_z: 0.0F,
-    previous_camera_rot_x: 0.0F,
-    previous_camera_rot_y: 0.0F,
-    previous_camera_rot_z: 0.0F,
-    previous_camera_rot_w: 1.0F,
-    camera_fov_y: PI * 0.5F,
-    camera_near: 0.1F,
-    camera_far: 1000.0F,
+    clip_from_world: gpu_clip_matrix_identity(),
+    unjittered_clip_from_world: gpu_clip_matrix_identity(),
+    previous_clip_from_world: gpu_clip_matrix_identity(),
     pass_kind: 0,
     viewport_x: vx,
     viewport_y: vy,
@@ -4970,10 +5030,7 @@ pub fn GpuBackend::begin_pass(
     spot_range: 1.0F,
     spot_inner_angle: 0.6F,
     spot_outer_angle: 0.8F,
-    sub_camera_view_scale_x: 1.0F,
-    sub_camera_view_scale_y: 1.0F,
-    sub_camera_view_bias_x: 0.0F,
-    sub_camera_view_bias_y: 0.0F,
+    point_shadow_near: 0.1F,
   })
 
   // Reset sprite batching state and update sprite globals for this pass.
@@ -5024,9 +5081,54 @@ pub fn GpuBackend::begin_pass_3d(
   camera_rot_y : Float,
   camera_rot_z : Float,
   camera_rot_w : Float,
-  camera_fov_y : Float,
-  camera_near : Float,
-  camera_far : Float,
+  clip_from_world_x_axis_x : Float,
+  clip_from_world_x_axis_y : Float,
+  clip_from_world_x_axis_z : Float,
+  clip_from_world_x_axis_w : Float,
+  clip_from_world_y_axis_x : Float,
+  clip_from_world_y_axis_y : Float,
+  clip_from_world_y_axis_z : Float,
+  clip_from_world_y_axis_w : Float,
+  clip_from_world_z_axis_x : Float,
+  clip_from_world_z_axis_y : Float,
+  clip_from_world_z_axis_z : Float,
+  clip_from_world_z_axis_w : Float,
+  clip_from_world_w_axis_x : Float,
+  clip_from_world_w_axis_y : Float,
+  clip_from_world_w_axis_z : Float,
+  clip_from_world_w_axis_w : Float,
+  unjittered_clip_from_world_x_axis_x : Float,
+  unjittered_clip_from_world_x_axis_y : Float,
+  unjittered_clip_from_world_x_axis_z : Float,
+  unjittered_clip_from_world_x_axis_w : Float,
+  unjittered_clip_from_world_y_axis_x : Float,
+  unjittered_clip_from_world_y_axis_y : Float,
+  unjittered_clip_from_world_y_axis_z : Float,
+  unjittered_clip_from_world_y_axis_w : Float,
+  unjittered_clip_from_world_z_axis_x : Float,
+  unjittered_clip_from_world_z_axis_y : Float,
+  unjittered_clip_from_world_z_axis_z : Float,
+  unjittered_clip_from_world_z_axis_w : Float,
+  unjittered_clip_from_world_w_axis_x : Float,
+  unjittered_clip_from_world_w_axis_y : Float,
+  unjittered_clip_from_world_w_axis_z : Float,
+  unjittered_clip_from_world_w_axis_w : Float,
+  previous_clip_from_world_x_axis_x : Float,
+  previous_clip_from_world_x_axis_y : Float,
+  previous_clip_from_world_x_axis_z : Float,
+  previous_clip_from_world_x_axis_w : Float,
+  previous_clip_from_world_y_axis_x : Float,
+  previous_clip_from_world_y_axis_y : Float,
+  previous_clip_from_world_y_axis_z : Float,
+  previous_clip_from_world_y_axis_w : Float,
+  previous_clip_from_world_z_axis_x : Float,
+  previous_clip_from_world_z_axis_y : Float,
+  previous_clip_from_world_z_axis_z : Float,
+  previous_clip_from_world_z_axis_w : Float,
+  previous_clip_from_world_w_axis_x : Float,
+  previous_clip_from_world_w_axis_y : Float,
+  previous_clip_from_world_w_axis_z : Float,
+  previous_clip_from_world_w_axis_w : Float,
   viewport_x : Int,
   viewport_y : Int,
   viewport_w : Int,
@@ -5063,17 +5165,7 @@ pub fn GpuBackend::begin_pass_3d(
   spot_range : Float,
   spot_inner_angle : Float,
   spot_outer_angle : Float,
-  sub_camera_view_scale_x : Float,
-  sub_camera_view_scale_y : Float,
-  sub_camera_view_bias_x : Float,
-  sub_camera_view_bias_y : Float,
-  previous_camera_x : Float,
-  previous_camera_y : Float,
-  previous_camera_z : Float,
-  previous_camera_rot_x : Float,
-  previous_camera_rot_y : Float,
-  previous_camera_rot_z : Float,
-  previous_camera_rot_w : Float,
+  point_shadow_near : Float,
   pass_kind : Int,
   clear_enabled : Int,
 ) -> Unit raise GpuBackendError {
@@ -5174,16 +5266,60 @@ pub fn GpuBackend::begin_pass_3d(
     camera_rot_y,
     camera_rot_z,
     camera_rot_w,
-    previous_camera_x,
-    previous_camera_y,
-    previous_camera_z,
-    previous_camera_rot_x,
-    previous_camera_rot_y,
-    previous_camera_rot_z,
-    previous_camera_rot_w,
-    camera_fov_y,
-    camera_near,
-    camera_far,
+    clip_from_world: GpuClipMatrix::{
+      x_axis_x: clip_from_world_x_axis_x,
+      x_axis_y: clip_from_world_x_axis_y,
+      x_axis_z: clip_from_world_x_axis_z,
+      x_axis_w: clip_from_world_x_axis_w,
+      y_axis_x: clip_from_world_y_axis_x,
+      y_axis_y: clip_from_world_y_axis_y,
+      y_axis_z: clip_from_world_y_axis_z,
+      y_axis_w: clip_from_world_y_axis_w,
+      z_axis_x: clip_from_world_z_axis_x,
+      z_axis_y: clip_from_world_z_axis_y,
+      z_axis_z: clip_from_world_z_axis_z,
+      z_axis_w: clip_from_world_z_axis_w,
+      w_axis_x: clip_from_world_w_axis_x,
+      w_axis_y: clip_from_world_w_axis_y,
+      w_axis_z: clip_from_world_w_axis_z,
+      w_axis_w: clip_from_world_w_axis_w,
+    },
+    unjittered_clip_from_world: GpuClipMatrix::{
+      x_axis_x: unjittered_clip_from_world_x_axis_x,
+      x_axis_y: unjittered_clip_from_world_x_axis_y,
+      x_axis_z: unjittered_clip_from_world_x_axis_z,
+      x_axis_w: unjittered_clip_from_world_x_axis_w,
+      y_axis_x: unjittered_clip_from_world_y_axis_x,
+      y_axis_y: unjittered_clip_from_world_y_axis_y,
+      y_axis_z: unjittered_clip_from_world_y_axis_z,
+      y_axis_w: unjittered_clip_from_world_y_axis_w,
+      z_axis_x: unjittered_clip_from_world_z_axis_x,
+      z_axis_y: unjittered_clip_from_world_z_axis_y,
+      z_axis_z: unjittered_clip_from_world_z_axis_z,
+      z_axis_w: unjittered_clip_from_world_z_axis_w,
+      w_axis_x: unjittered_clip_from_world_w_axis_x,
+      w_axis_y: unjittered_clip_from_world_w_axis_y,
+      w_axis_z: unjittered_clip_from_world_w_axis_z,
+      w_axis_w: unjittered_clip_from_world_w_axis_w,
+    },
+    previous_clip_from_world: GpuClipMatrix::{
+      x_axis_x: previous_clip_from_world_x_axis_x,
+      x_axis_y: previous_clip_from_world_x_axis_y,
+      x_axis_z: previous_clip_from_world_x_axis_z,
+      x_axis_w: previous_clip_from_world_x_axis_w,
+      y_axis_x: previous_clip_from_world_y_axis_x,
+      y_axis_y: previous_clip_from_world_y_axis_y,
+      y_axis_z: previous_clip_from_world_y_axis_z,
+      y_axis_w: previous_clip_from_world_y_axis_w,
+      z_axis_x: previous_clip_from_world_z_axis_x,
+      z_axis_y: previous_clip_from_world_z_axis_y,
+      z_axis_z: previous_clip_from_world_z_axis_z,
+      z_axis_w: previous_clip_from_world_z_axis_w,
+      w_axis_x: previous_clip_from_world_w_axis_x,
+      w_axis_y: previous_clip_from_world_w_axis_y,
+      w_axis_z: previous_clip_from_world_w_axis_z,
+      w_axis_w: previous_clip_from_world_w_axis_w,
+    },
     pass_kind,
     viewport_x: vx,
     viewport_y: vy,
@@ -5223,10 +5359,7 @@ pub fn GpuBackend::begin_pass_3d(
     spot_range,
     spot_inner_angle,
     spot_outer_angle,
-    sub_camera_view_scale_x,
-    sub_camera_view_scale_y,
-    sub_camera_view_bias_x,
-    sub_camera_view_bias_y,
+    point_shadow_near,
   })
   self.sprite_instance_data.clear()
   self.sprite_batches.clear()
@@ -7021,11 +7154,6 @@ pub fn GpuBackend::draw_mesh3d(
     guard self.mesh3d_motion_vector_uniform_bg is Some(uniform_bg) else {
       return
     }
-    let aspect_ratio = if ps.height_logical > 0.0F {
-      ps.width_logical / ps.height_logical
-    } else {
-      1.0F
-    }
     let bytes = f32le_pack([
       x,
       y,
@@ -7051,30 +7179,38 @@ pub fn GpuBackend::draw_mesh3d(
       previous_scale_y,
       previous_scale_z,
       1.0F,
-      ps.camera_x,
-      ps.camera_y,
-      ps.camera_z,
-      1.0F,
-      ps.camera_rot_x,
-      ps.camera_rot_y,
-      ps.camera_rot_z,
-      ps.camera_rot_w,
-      ps.previous_camera_x,
-      ps.previous_camera_y,
-      ps.previous_camera_z,
-      1.0F,
-      ps.previous_camera_rot_x,
-      ps.previous_camera_rot_y,
-      ps.previous_camera_rot_z,
-      ps.previous_camera_rot_w,
-      ps.camera_fov_y,
-      aspect_ratio,
-      ps.camera_near,
-      ps.camera_far,
-      ps.sub_camera_view_scale_x,
-      ps.sub_camera_view_scale_y,
-      ps.sub_camera_view_bias_x,
-      ps.sub_camera_view_bias_y,
+      ps.unjittered_clip_from_world.x_axis_x,
+      ps.unjittered_clip_from_world.x_axis_y,
+      ps.unjittered_clip_from_world.x_axis_z,
+      ps.unjittered_clip_from_world.x_axis_w,
+      ps.unjittered_clip_from_world.y_axis_x,
+      ps.unjittered_clip_from_world.y_axis_y,
+      ps.unjittered_clip_from_world.y_axis_z,
+      ps.unjittered_clip_from_world.y_axis_w,
+      ps.unjittered_clip_from_world.z_axis_x,
+      ps.unjittered_clip_from_world.z_axis_y,
+      ps.unjittered_clip_from_world.z_axis_z,
+      ps.unjittered_clip_from_world.z_axis_w,
+      ps.unjittered_clip_from_world.w_axis_x,
+      ps.unjittered_clip_from_world.w_axis_y,
+      ps.unjittered_clip_from_world.w_axis_z,
+      ps.unjittered_clip_from_world.w_axis_w,
+      ps.previous_clip_from_world.x_axis_x,
+      ps.previous_clip_from_world.x_axis_y,
+      ps.previous_clip_from_world.x_axis_z,
+      ps.previous_clip_from_world.x_axis_w,
+      ps.previous_clip_from_world.y_axis_x,
+      ps.previous_clip_from_world.y_axis_y,
+      ps.previous_clip_from_world.y_axis_z,
+      ps.previous_clip_from_world.y_axis_w,
+      ps.previous_clip_from_world.z_axis_x,
+      ps.previous_clip_from_world.z_axis_y,
+      ps.previous_clip_from_world.z_axis_z,
+      ps.previous_clip_from_world.z_axis_w,
+      ps.previous_clip_from_world.w_axis_x,
+      ps.previous_clip_from_world.w_axis_y,
+      ps.previous_clip_from_world.w_axis_z,
+      ps.previous_clip_from_world.w_axis_w,
     ])
     self.queue.write_buffer(uniform_buf, 0UL, bytes)
     pass.set_pipeline(pipeline)
@@ -7200,11 +7336,6 @@ pub fn GpuBackend::draw_mesh3d(
   let specular_tint_textured = specular_tint_texture_id >= 0
   let transmission_source_textured = transmission_source_texture_id >= 0
   let point_shadow_textured = point_shadow_texture_id >= 0
-  let aspect_ratio = if ps.height_logical > 0.0F {
-    ps.width_logical / ps.height_logical
-  } else {
-    1.0F
-  }
   let uv_transform_a_value = uv_transform_a
   let uv_transform_b_value = uv_transform_b
   let uv_transform_c_value = uv_transform_c
@@ -7242,18 +7373,22 @@ pub fn GpuBackend::draw_mesh3d(
     ps.camera_y,
     ps.camera_z,
     1.0F,
-    ps.camera_rot_x,
-    ps.camera_rot_y,
-    ps.camera_rot_z,
-    ps.camera_rot_w,
-    ps.camera_fov_y,
-    aspect_ratio,
-    ps.camera_near,
-    ps.camera_far,
-    ps.sub_camera_view_scale_x,
-    ps.sub_camera_view_scale_y,
-    ps.sub_camera_view_bias_x,
-    ps.sub_camera_view_bias_y,
+    ps.clip_from_world.x_axis_x,
+    ps.clip_from_world.x_axis_y,
+    ps.clip_from_world.x_axis_z,
+    ps.clip_from_world.x_axis_w,
+    ps.clip_from_world.y_axis_x,
+    ps.clip_from_world.y_axis_y,
+    ps.clip_from_world.y_axis_z,
+    ps.clip_from_world.y_axis_w,
+    ps.clip_from_world.z_axis_x,
+    ps.clip_from_world.z_axis_y,
+    ps.clip_from_world.z_axis_z,
+    ps.clip_from_world.z_axis_w,
+    ps.clip_from_world.w_axis_x,
+    ps.clip_from_world.w_axis_y,
+    ps.clip_from_world.w_axis_z,
+    ps.clip_from_world.w_axis_w,
     color_r,
     color_g,
     color_b,
@@ -7380,7 +7515,11 @@ pub fn GpuBackend::draw_mesh3d(
     } else {
       0.0F
     },
-    Float::from_int(mesh3d_cull_mode_sanitize(cull_mode)),
+    if point_shadow_textured {
+      ps.point_shadow_near
+    } else {
+      0.1F
+    },
     0.0F,
   ])
   self.queue.write_buffer(uniform_slot.buffer, 0UL, bytes)
@@ -8096,9 +8235,54 @@ pub fn begin_pass_3d(
   camera_rot_y~ : Float,
   camera_rot_z~ : Float,
   camera_rot_w~ : Float,
-  camera_fov_y~ : Float,
-  camera_near~ : Float,
-  camera_far~ : Float,
+  clip_from_world_x_axis_x~ : Float,
+  clip_from_world_x_axis_y~ : Float,
+  clip_from_world_x_axis_z~ : Float,
+  clip_from_world_x_axis_w~ : Float,
+  clip_from_world_y_axis_x~ : Float,
+  clip_from_world_y_axis_y~ : Float,
+  clip_from_world_y_axis_z~ : Float,
+  clip_from_world_y_axis_w~ : Float,
+  clip_from_world_z_axis_x~ : Float,
+  clip_from_world_z_axis_y~ : Float,
+  clip_from_world_z_axis_z~ : Float,
+  clip_from_world_z_axis_w~ : Float,
+  clip_from_world_w_axis_x~ : Float,
+  clip_from_world_w_axis_y~ : Float,
+  clip_from_world_w_axis_z~ : Float,
+  clip_from_world_w_axis_w~ : Float,
+  unjittered_clip_from_world_x_axis_x~ : Float,
+  unjittered_clip_from_world_x_axis_y~ : Float,
+  unjittered_clip_from_world_x_axis_z~ : Float,
+  unjittered_clip_from_world_x_axis_w~ : Float,
+  unjittered_clip_from_world_y_axis_x~ : Float,
+  unjittered_clip_from_world_y_axis_y~ : Float,
+  unjittered_clip_from_world_y_axis_z~ : Float,
+  unjittered_clip_from_world_y_axis_w~ : Float,
+  unjittered_clip_from_world_z_axis_x~ : Float,
+  unjittered_clip_from_world_z_axis_y~ : Float,
+  unjittered_clip_from_world_z_axis_z~ : Float,
+  unjittered_clip_from_world_z_axis_w~ : Float,
+  unjittered_clip_from_world_w_axis_x~ : Float,
+  unjittered_clip_from_world_w_axis_y~ : Float,
+  unjittered_clip_from_world_w_axis_z~ : Float,
+  unjittered_clip_from_world_w_axis_w~ : Float,
+  previous_clip_from_world_x_axis_x~ : Float,
+  previous_clip_from_world_x_axis_y~ : Float,
+  previous_clip_from_world_x_axis_z~ : Float,
+  previous_clip_from_world_x_axis_w~ : Float,
+  previous_clip_from_world_y_axis_x~ : Float,
+  previous_clip_from_world_y_axis_y~ : Float,
+  previous_clip_from_world_y_axis_z~ : Float,
+  previous_clip_from_world_y_axis_w~ : Float,
+  previous_clip_from_world_z_axis_x~ : Float,
+  previous_clip_from_world_z_axis_y~ : Float,
+  previous_clip_from_world_z_axis_z~ : Float,
+  previous_clip_from_world_z_axis_w~ : Float,
+  previous_clip_from_world_w_axis_x~ : Float,
+  previous_clip_from_world_w_axis_y~ : Float,
+  previous_clip_from_world_w_axis_z~ : Float,
+  previous_clip_from_world_w_axis_w~ : Float,
   viewport_x~ : Int,
   viewport_y~ : Int,
   viewport_width~ : Int,
@@ -8135,17 +8319,7 @@ pub fn begin_pass_3d(
   spot_range~ : Float,
   spot_inner_angle~ : Float,
   spot_outer_angle~ : Float,
-  sub_camera_view_scale_x~ : Float,
-  sub_camera_view_scale_y~ : Float,
-  sub_camera_view_bias_x~ : Float,
-  sub_camera_view_bias_y~ : Float,
-  previous_camera_x~ : Float,
-  previous_camera_y~ : Float,
-  previous_camera_z~ : Float,
-  previous_camera_rot_x~ : Float,
-  previous_camera_rot_y~ : Float,
-  previous_camera_rot_z~ : Float,
-  previous_camera_rot_w~ : Float,
+  point_shadow_near~ : Float,
   pass_kind~ : Int,
   clear_enabled~ : Int,
 ) -> Unit {
@@ -8153,16 +8327,29 @@ pub fn begin_pass_3d(
     backend.begin_pass_3d(
       target_id, target_layer, width, height, clear_r, clear_g, clear_b, clear_a,
       camera_x, camera_y, camera_z, camera_rot_x, camera_rot_y, camera_rot_z, camera_rot_w,
-      camera_fov_y, camera_near, camera_far, viewport_x, viewport_y, viewport_width,
-      viewport_height, ambient_r, ambient_g, ambient_b, ambient_brightness, directional_dir_x,
-      directional_dir_y, directional_dir_z, directional_color_r, directional_color_g,
-      directional_color_b, directional_illuminance, point_pos_x, point_pos_y, point_pos_z,
-      point_color_r, point_color_g, point_color_b, point_intensity, point_range,
-      spot_pos_x, spot_pos_y, spot_pos_z, spot_dir_x, spot_dir_y, spot_dir_z, spot_color_r,
-      spot_color_g, spot_color_b, spot_intensity, spot_range, spot_inner_angle, spot_outer_angle,
-      sub_camera_view_scale_x, sub_camera_view_scale_y, sub_camera_view_bias_x, sub_camera_view_bias_y,
-      previous_camera_x, previous_camera_y, previous_camera_z, previous_camera_rot_x,
-      previous_camera_rot_y, previous_camera_rot_z, previous_camera_rot_w, pass_kind,
+      clip_from_world_x_axis_x, clip_from_world_x_axis_y, clip_from_world_x_axis_z,
+      clip_from_world_x_axis_w, clip_from_world_y_axis_x, clip_from_world_y_axis_y,
+      clip_from_world_y_axis_z, clip_from_world_y_axis_w, clip_from_world_z_axis_x,
+      clip_from_world_z_axis_y, clip_from_world_z_axis_z, clip_from_world_z_axis_w,
+      clip_from_world_w_axis_x, clip_from_world_w_axis_y, clip_from_world_w_axis_z,
+      clip_from_world_w_axis_w, unjittered_clip_from_world_x_axis_x, unjittered_clip_from_world_x_axis_y,
+      unjittered_clip_from_world_x_axis_z, unjittered_clip_from_world_x_axis_w, unjittered_clip_from_world_y_axis_x,
+      unjittered_clip_from_world_y_axis_y, unjittered_clip_from_world_y_axis_z, unjittered_clip_from_world_y_axis_w,
+      unjittered_clip_from_world_z_axis_x, unjittered_clip_from_world_z_axis_y, unjittered_clip_from_world_z_axis_z,
+      unjittered_clip_from_world_z_axis_w, unjittered_clip_from_world_w_axis_x, unjittered_clip_from_world_w_axis_y,
+      unjittered_clip_from_world_w_axis_z, unjittered_clip_from_world_w_axis_w, previous_clip_from_world_x_axis_x,
+      previous_clip_from_world_x_axis_y, previous_clip_from_world_x_axis_z, previous_clip_from_world_x_axis_w,
+      previous_clip_from_world_y_axis_x, previous_clip_from_world_y_axis_y, previous_clip_from_world_y_axis_z,
+      previous_clip_from_world_y_axis_w, previous_clip_from_world_z_axis_x, previous_clip_from_world_z_axis_y,
+      previous_clip_from_world_z_axis_z, previous_clip_from_world_z_axis_w, previous_clip_from_world_w_axis_x,
+      previous_clip_from_world_w_axis_y, previous_clip_from_world_w_axis_z, previous_clip_from_world_w_axis_w,
+      viewport_x, viewport_y, viewport_width, viewport_height, ambient_r, ambient_g,
+      ambient_b, ambient_brightness, directional_dir_x, directional_dir_y, directional_dir_z,
+      directional_color_r, directional_color_g, directional_color_b, directional_illuminance,
+      point_pos_x, point_pos_y, point_pos_z, point_color_r, point_color_g, point_color_b,
+      point_intensity, point_range, spot_pos_x, spot_pos_y, spot_pos_z, spot_dir_x,
+      spot_dir_y, spot_dir_z, spot_color_r, spot_color_g, spot_color_b, spot_intensity,
+      spot_range, spot_inner_angle, spot_outer_angle, point_shadow_near, pass_kind,
       clear_enabled,
     ) catch {
       err => debug_runtime_error("begin_pass_3d", err)

@@ -763,6 +763,19 @@ pub fn ProjectionMatrix3d::mul_vec4(
 }
 
 ///|
+pub fn ProjectionMatrix3d::mul(
+  self : ProjectionMatrix3d,
+  other : ProjectionMatrix3d,
+) -> ProjectionMatrix3d {
+  ProjectionMatrix3d::from_cols(
+    self.mul_vec4(other.x_axis),
+    self.mul_vec4(other.y_axis),
+    self.mul_vec4(other.z_axis),
+    self.mul_vec4(other.w_axis),
+  )
+}
+
+///|
 pub fn ProjectionMatrix3d::project_point3(
   self : ProjectionMatrix3d,
   value : @math.Vec3,
@@ -4754,6 +4767,11 @@ pub fn Mesh3d::from_triangle(triangle : @math.Triangle3d) -> Mesh3d {
 }
 
 ///|
+pub fn Mesh3d::from_circle(radius : Float) -> Mesh3d {
+  Mesh3d::from_geometry(@mesh.Mesh3dGeometry::circle(radius, 32))
+}
+
+///|
 pub fn Mesh3d::from_plane(width : Float, depth : Float) -> Mesh3d {
   Mesh3d::from_geometry(mesh3d_geometry_plane(width, depth))
 }
@@ -6752,6 +6770,7 @@ priv struct Camera3dInstance {
   msaa : Msaa?
   transform : @math.Transform
   previous_transform : @math.Transform
+  previous_clip_from_world : ProjectionMatrix3d?
   target_id : Int
   target_size : @math.IVec2
   scale_factor : Float
@@ -6862,6 +6881,7 @@ priv struct MotionBlurHistoryEntry {
 priv struct CameraMotionBlurHistoryEntry {
   entity : @core.Entity
   transform : @math.Transform
+  clip_from_world : ProjectionMatrix3d
 }
 
 ///|
@@ -7122,23 +7142,23 @@ fn motion_blur_history_sync(meshes : Array[Mesh3dInstance]) -> Unit {
 }
 
 ///|
-fn camera_motion_blur_history_get(entity : @core.Entity) -> @math.Transform? {
+fn camera_motion_blur_history_get(
+  entity : @core.Entity,
+) -> CameraMotionBlurHistoryEntry? {
   for item in camera_motion_blur_history.val {
     if item.entity.id == entity.id &&
       item.entity.generation == entity.generation {
-      return Some(item.transform)
+      return Some(item)
     }
   }
   None
 }
 
 ///|
-fn camera_motion_blur_history_sync(cameras : Array[Camera3dInstance]) -> Unit {
-  let next : Array[CameraMotionBlurHistoryEntry] = []
-  for camera in cameras {
-    next.push({ entity: camera.entity, transform: camera.transform })
-  }
-  camera_motion_blur_history.val = next
+fn camera_motion_blur_history_sync(
+  history : Array[CameraMotionBlurHistoryEntry],
+) -> Unit {
+  camera_motion_blur_history.val = history
 }
 
 ///|
@@ -8080,77 +8100,161 @@ fn render3d_perspective_frustum_corners(
 }
 
 ///|
-fn render3d_custom_projection_runtime_abort() -> Unit {
-  abort(
-    "custom 3d camera projections require native_gpu clip-matrix camera support; this tranche only adds shared render3d lifecycle APIs",
+priv struct Render3dPassProjection {
+  clip_from_view : ProjectionMatrix3d
+  unjittered_clip_from_view : ProjectionMatrix3d
+  camera_near : Float
+  camera_far : Float
+}
+
+///|
+fn render3d_projection_matrix_apply_temporal_jitter(
+  clip_from_view : ProjectionMatrix3d,
+  temporal_jitter : TemporalJitter,
+  view_width : Int,
+  view_height : Int,
+) -> ProjectionMatrix3d {
+  let width = Float::from_double(view_width.to_double())
+  let height = Float::from_double(view_height.to_double())
+  if width <= 0.0F || height <= 0.0F {
+    return clip_from_view
+  }
+  let mut jitter_x = temporal_jitter.offset.x * 2.0F / width
+  let mut jitter_y = temporal_jitter.offset.y * -2.0F / height
+  if clip_from_view.w_axis.w == 1.0F {
+    jitter_x = jitter_x * clip_from_view.x_axis.x * 0.5F
+    jitter_y = jitter_y * clip_from_view.y_axis.y * 0.5F
+  }
+  let z_axis = clip_from_view.z_axis
+  ProjectionMatrix3d::{
+    ..clip_from_view,
+    z_axis: @math.Vec4::new(
+      z_axis.x + jitter_x,
+      z_axis.y + jitter_y,
+      z_axis.z,
+      z_axis.w,
+    ),
+  }
+}
+
+///|
+fn render3d_projection_near_from_clip_matrix(
+  clip_from_view : ProjectionMatrix3d,
+) -> Float {
+  if clip_from_view.w_axis.w == 0.0F {
+    maxf(0.0001F, clip_from_view.w_axis.z)
+  } else {
+    let safe_z = if clip_from_view.z_axis.z == 0.0F {
+      1.0F
+    } else {
+      clip_from_view.z_axis.z
+    }
+    clip_from_view.w_axis.z / safe_z
+  }
+}
+
+///|
+fn render3d_camera_pass_projection(
+  projection : Projection,
+  sub_camera_view : SubCameraView3d?,
+  temporal_jitter : TemporalJitter?,
+  view_width : Int,
+  view_height : Int,
+) -> Render3dPassProjection {
+  let unjittered_clip_from_view = match sub_camera_view {
+    Some(sub_view) => projection.get_clip_from_view_for_sub(sub_view)
+    None => projection.get_clip_from_view()
+  }
+  let clip_from_view = match temporal_jitter {
+    Some(temporal_jitter) =>
+      render3d_projection_matrix_apply_temporal_jitter(
+        unjittered_clip_from_view, temporal_jitter, view_width, view_height,
+      )
+    None => unjittered_clip_from_view
+  }
+  Render3dPassProjection::{
+    clip_from_view,
+    unjittered_clip_from_view,
+    camera_near: render3d_projection_near_from_clip_matrix(
+      unjittered_clip_from_view,
+    ),
+    camera_far: projection.far(),
+  }
+}
+
+///|
+fn render3d_point_shadow_pass_projection(
+  near : Float,
+  far : Float,
+) -> Render3dPassProjection {
+  let shadow_near = if near > 0.0001F { near } else { 0.0001F }
+  let shadow_far = if far > shadow_near { far } else { shadow_near + 1.0F }
+  let clip_from_view = render3d_perspective_projection_matrix(
+    shadow_near,
+    @math.pi_half(),
+    1.0F,
+  )
+  Render3dPassProjection::{
+    clip_from_view,
+    unjittered_clip_from_view: clip_from_view,
+    camera_near: shadow_near,
+    camera_far: shadow_far,
+  }
+}
+
+///|
+fn render3d_view_from_world_matrix(
+  transform : @math.Transform,
+) -> ProjectionMatrix3d {
+  let inverse_rotation = render3d_quat_conjugate(transform.rotation.normalize())
+  let x_axis = quat_rotate_vec3(
+    inverse_rotation,
+    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+  )
+  let y_axis = quat_rotate_vec3(
+    inverse_rotation,
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  )
+  let z_axis = quat_rotate_vec3(
+    inverse_rotation,
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+  )
+  let translation = transform.translation
+  let offset_x = -(x_axis.x * translation.x +
+    x_axis.y * translation.y +
+    x_axis.z * translation.z)
+  let offset_y = -(y_axis.x * translation.x +
+    y_axis.y * translation.y +
+    y_axis.z * translation.z)
+  let offset_z = -(z_axis.x * translation.x +
+    z_axis.y * translation.y +
+    z_axis.z * translation.z)
+  ProjectionMatrix3d::from_cols(
+    @math.Vec4::new(x_axis.x, x_axis.y, x_axis.z, 0.0F),
+    @math.Vec4::new(y_axis.x, y_axis.y, y_axis.z, 0.0F),
+    @math.Vec4::new(z_axis.x, z_axis.y, z_axis.z, 0.0F),
+    @math.Vec4::new(offset_x, offset_y, offset_z, 1.0F),
   )
 }
 
 ///|
-fn render3d_projection_params(
-  projection : Projection,
-  aspect_ratio : Float,
-  viewport_height_logical : Float,
-) -> (Float, Float, Float) {
-  let safe_aspect = if aspect_ratio <= 0.0F { 1.0F } else { aspect_ratio }
-  let safe_view_height = if viewport_height_logical <= 0.0F {
-    1.0F
-  } else {
-    viewport_height_logical
-  }
-  match projection {
-    Perspective(perspective) => {
-      let p = perspective.with_aspect_ratio(safe_aspect)
-      (p.fov, p.near, p.far)
-    }
-    Orthographic(orthographic) => {
-      // Encode orthographic mode via negative `camera_fov_y` and pass world-space
-      // half-height through its magnitude. Runtime shaders decode this sentinel.
-      let safe_half_height = render3d_orthographic_half_height(
-        orthographic, safe_view_height,
-      )
-      (-safe_half_height, orthographic.near, orthographic.far)
-    }
-    Custom(_) => {
-      render3d_custom_projection_runtime_abort()
-      (0.0F, 0.1F, 1000.0F)
-    }
-  }
+fn render3d_pass_projection_clip_from_world(
+  pass_projection : Render3dPassProjection,
+  camera_transform : @math.Transform,
+) -> ProjectionMatrix3d {
+  pass_projection.clip_from_view.mul(
+    render3d_view_from_world_matrix(camera_transform),
+  )
 }
 
 ///|
-fn render3d_sub_camera_projection_params(
-  sub_camera_view : SubCameraView3d?,
-  view_width : Int,
-  view_height : Int,
-) -> (Float, Float, Float, Float, Float) {
-  let width_f = Float::from_double(view_width.to_double())
-  let height_f = Float::from_double(view_height.to_double())
-  let default_aspect = if width_f > 0.0F && height_f > 0.0F {
-    width_f / height_f
-  } else {
-    1.0F
-  }
-  guard sub_camera_view is Some(sub_view) else {
-    return (default_aspect, 1.0F, 1.0F, 0.0F, 0.0F)
-  }
-  let full_width = Float::from_double(sub_view.full_size.x.to_double())
-  let full_height = Float::from_double(sub_view.full_size.y.to_double())
-  let size_width = Float::from_double(sub_view.size.x.to_double())
-  let size_height = Float::from_double(sub_view.size.y.to_double())
-  if full_width <= 0.0F ||
-    full_height <= 0.0F ||
-    size_width <= 0.0F ||
-    size_height <= 0.0F {
-    return (default_aspect, 1.0F, 1.0F, 0.0F, 0.0F)
-  }
-  let scale_x = full_width / size_width
-  let scale_y = full_height / size_height
-  let bias_x = (full_width - 2.0F * sub_view.offset.x - size_width) / size_width
-  let bias_y = (2.0F * sub_view.offset.y + size_height - full_height) /
-    size_height
-  let aspect_ratio = full_width / full_height
-  (aspect_ratio, scale_x, scale_y, bias_x, bias_y)
+fn render3d_pass_projection_unjittered_clip_from_world(
+  pass_projection : Render3dPassProjection,
+  camera_transform : @math.Transform,
+) -> ProjectionMatrix3d {
+  pass_projection.unjittered_clip_from_view.mul(
+    render3d_view_from_world_matrix(camera_transform),
+  )
 }
 
 ///|
@@ -9513,6 +9617,144 @@ pub fn render3d_queued_visible_mesh_count() -> Int? {
 }
 
 ///|
+fn render3d_begin_pass_3d(
+  target_id~ : Int,
+  target_layer? : Int = -1,
+  width~ : Int,
+  height~ : Int,
+  clear_r~ : Float,
+  clear_g~ : Float,
+  clear_b~ : Float,
+  clear_a~ : Float,
+  camera_transform : @math.Transform,
+  pass_projection : Render3dPassProjection,
+  viewport_x~ : Int,
+  viewport_y~ : Int,
+  viewport_width~ : Int,
+  viewport_height~ : Int,
+  lighting : Render3dLightingState,
+  previous_clip_from_world~ : ProjectionMatrix3d?,
+  point_shadow_near~ : Float,
+  pass_kind~ : Int,
+  clear_enabled~ : Int,
+) -> Unit {
+  let clip_from_world = render3d_pass_projection_clip_from_world(
+    pass_projection, camera_transform,
+  )
+  let unjittered_clip_from_world = render3d_pass_projection_unjittered_clip_from_world(
+    pass_projection, camera_transform,
+  )
+  let resolved_previous_clip_from_world = match previous_clip_from_world {
+    Some(value) => value
+    None => clip_from_world
+  }
+  @render.host_gpu_begin_pass_3d(
+    target_id~,
+    target_layer~,
+    width~,
+    height~,
+    clear_r~,
+    clear_g~,
+    clear_b~,
+    clear_a~,
+    camera_x=camera_transform.translation.x,
+    camera_y=camera_transform.translation.y,
+    camera_z=camera_transform.translation.z,
+    camera_rot_x=camera_transform.rotation.x,
+    camera_rot_y=camera_transform.rotation.y,
+    camera_rot_z=camera_transform.rotation.z,
+    camera_rot_w=camera_transform.rotation.w,
+    clip_from_world_x_axis_x=clip_from_world.x_axis.x,
+    clip_from_world_x_axis_y=clip_from_world.x_axis.y,
+    clip_from_world_x_axis_z=clip_from_world.x_axis.z,
+    clip_from_world_x_axis_w=clip_from_world.x_axis.w,
+    clip_from_world_y_axis_x=clip_from_world.y_axis.x,
+    clip_from_world_y_axis_y=clip_from_world.y_axis.y,
+    clip_from_world_y_axis_z=clip_from_world.y_axis.z,
+    clip_from_world_y_axis_w=clip_from_world.y_axis.w,
+    clip_from_world_z_axis_x=clip_from_world.z_axis.x,
+    clip_from_world_z_axis_y=clip_from_world.z_axis.y,
+    clip_from_world_z_axis_z=clip_from_world.z_axis.z,
+    clip_from_world_z_axis_w=clip_from_world.z_axis.w,
+    clip_from_world_w_axis_x=clip_from_world.w_axis.x,
+    clip_from_world_w_axis_y=clip_from_world.w_axis.y,
+    clip_from_world_w_axis_z=clip_from_world.w_axis.z,
+    clip_from_world_w_axis_w=clip_from_world.w_axis.w,
+    unjittered_clip_from_world_x_axis_x=unjittered_clip_from_world.x_axis.x,
+    unjittered_clip_from_world_x_axis_y=unjittered_clip_from_world.x_axis.y,
+    unjittered_clip_from_world_x_axis_z=unjittered_clip_from_world.x_axis.z,
+    unjittered_clip_from_world_x_axis_w=unjittered_clip_from_world.x_axis.w,
+    unjittered_clip_from_world_y_axis_x=unjittered_clip_from_world.y_axis.x,
+    unjittered_clip_from_world_y_axis_y=unjittered_clip_from_world.y_axis.y,
+    unjittered_clip_from_world_y_axis_z=unjittered_clip_from_world.y_axis.z,
+    unjittered_clip_from_world_y_axis_w=unjittered_clip_from_world.y_axis.w,
+    unjittered_clip_from_world_z_axis_x=unjittered_clip_from_world.z_axis.x,
+    unjittered_clip_from_world_z_axis_y=unjittered_clip_from_world.z_axis.y,
+    unjittered_clip_from_world_z_axis_z=unjittered_clip_from_world.z_axis.z,
+    unjittered_clip_from_world_z_axis_w=unjittered_clip_from_world.z_axis.w,
+    unjittered_clip_from_world_w_axis_x=unjittered_clip_from_world.w_axis.x,
+    unjittered_clip_from_world_w_axis_y=unjittered_clip_from_world.w_axis.y,
+    unjittered_clip_from_world_w_axis_z=unjittered_clip_from_world.w_axis.z,
+    unjittered_clip_from_world_w_axis_w=unjittered_clip_from_world.w_axis.w,
+    previous_clip_from_world_x_axis_x=resolved_previous_clip_from_world.x_axis.x,
+    previous_clip_from_world_x_axis_y=resolved_previous_clip_from_world.x_axis.y,
+    previous_clip_from_world_x_axis_z=resolved_previous_clip_from_world.x_axis.z,
+    previous_clip_from_world_x_axis_w=resolved_previous_clip_from_world.x_axis.w,
+    previous_clip_from_world_y_axis_x=resolved_previous_clip_from_world.y_axis.x,
+    previous_clip_from_world_y_axis_y=resolved_previous_clip_from_world.y_axis.y,
+    previous_clip_from_world_y_axis_z=resolved_previous_clip_from_world.y_axis.z,
+    previous_clip_from_world_y_axis_w=resolved_previous_clip_from_world.y_axis.w,
+    previous_clip_from_world_z_axis_x=resolved_previous_clip_from_world.z_axis.x,
+    previous_clip_from_world_z_axis_y=resolved_previous_clip_from_world.z_axis.y,
+    previous_clip_from_world_z_axis_z=resolved_previous_clip_from_world.z_axis.z,
+    previous_clip_from_world_z_axis_w=resolved_previous_clip_from_world.z_axis.w,
+    previous_clip_from_world_w_axis_x=resolved_previous_clip_from_world.w_axis.x,
+    previous_clip_from_world_w_axis_y=resolved_previous_clip_from_world.w_axis.y,
+    previous_clip_from_world_w_axis_z=resolved_previous_clip_from_world.w_axis.z,
+    previous_clip_from_world_w_axis_w=resolved_previous_clip_from_world.w_axis.w,
+    viewport_x~,
+    viewport_y~,
+    viewport_width~,
+    viewport_height~,
+    ambient_r=lighting.ambient_color.r,
+    ambient_g=lighting.ambient_color.g,
+    ambient_b=lighting.ambient_color.b,
+    ambient_brightness=lighting.ambient_brightness,
+    directional_dir_x=lighting.directional_dir.x,
+    directional_dir_y=lighting.directional_dir.y,
+    directional_dir_z=lighting.directional_dir.z,
+    directional_color_r=lighting.directional_color.r,
+    directional_color_g=lighting.directional_color.g,
+    directional_color_b=lighting.directional_color.b,
+    directional_illuminance=lighting.directional_illuminance,
+    point_pos_x=lighting.point_pos.x,
+    point_pos_y=lighting.point_pos.y,
+    point_pos_z=lighting.point_pos.z,
+    point_color_r=lighting.point_color.r,
+    point_color_g=lighting.point_color.g,
+    point_color_b=lighting.point_color.b,
+    point_intensity=lighting.point_intensity,
+    point_range=lighting.point_range,
+    spot_pos_x=lighting.spot_pos.x,
+    spot_pos_y=lighting.spot_pos.y,
+    spot_pos_z=lighting.spot_pos.z,
+    spot_dir_x=lighting.spot_dir.x,
+    spot_dir_y=lighting.spot_dir.y,
+    spot_dir_z=lighting.spot_dir.z,
+    spot_color_r=lighting.spot_color.r,
+    spot_color_g=lighting.spot_color.g,
+    spot_color_b=lighting.spot_color.b,
+    spot_intensity=lighting.spot_intensity,
+    spot_range=lighting.spot_range,
+    spot_inner_angle=lighting.spot_inner_angle,
+    spot_outer_angle=lighting.spot_outer_angle,
+    point_shadow_near~,
+    pass_kind~,
+    clear_enabled~,
+  )
+}
+
+///|
 fn render3d_draw_mesh_instance(
   mesh : Mesh3dInstance,
   transform : @math.Transform,
@@ -9745,8 +9987,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       Some(v) => v
       None => @math.Transform::identity()
     }
-    let previous_transform = match camera_motion_blur_history_get(entity) {
-      Some(v) => v
+    let previous_camera_history = camera_motion_blur_history_get(entity)
+    let previous_transform = match previous_camera_history {
+      Some(v) => v.transform
       None => transform
     }
     match render3d_target_info(world, target) {
@@ -9812,6 +10055,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           msaa,
           transform,
           previous_transform,
+          previous_clip_from_world: match previous_camera_history {
+            Some(v) => Some(v.clip_from_world)
+            None => None
+          },
           target_id: target_info.target_id,
           target_size: target_info.target_size,
           scale_factor: target_info.scale_factor,
@@ -9913,12 +10160,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     })
   })
   motion_blur_history_sync(meshes)
-  camera_motion_blur_history_sync(cameras)
   let lighting = render3d_collect_lighting(world)
   let camera_indices = match render3d_prepared_camera_indices(cameras) {
     Some(indices) => indices
     None => render3d_sorted_camera_indices(cameras)
   }
+  let next_camera_motion_blur_history : Array[CameraMotionBlurHistoryEntry] = []
   for camera_index in camera_indices {
     let camera = cameras[camera_index]
     let target_width = camera.target_size.x
@@ -9959,34 +10206,25 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     if view_width_logical <= 0 || view_height_logical <= 0 {
       continue
     }
-    let (
-      aspect_ratio,
-      sub_camera_view_scale_x,
-      sub_camera_view_scale_y,
-      sub_camera_view_bias_x,
-      sub_camera_view_bias_y,
-    ) = render3d_sub_camera_projection_params(
+    let temporal_aa_enabled = camera.temporal_anti_aliasing is Some(_)
+    let camera_pass_projection = render3d_camera_pass_projection(
+      camera.projection,
       camera.sub_camera_view,
+      camera.temporal_jitter,
       view_width,
       view_height,
     )
-    let temporal_aa_enabled = camera.temporal_anti_aliasing is Some(_)
-    let (sub_camera_view_bias_with_jitter_x, sub_camera_view_bias_with_jitter_y) = if temporal_aa_enabled &&
-      camera.temporal_jitter is Some(temporal_jitter) {
-      (
-        sub_camera_view_bias_x +
-        temporal_jitter.offset.x / Float::from_double(view_width.to_double()),
-        sub_camera_view_bias_y +
-        temporal_jitter.offset.y / Float::from_double(view_height.to_double()),
-      )
-    } else {
-      (sub_camera_view_bias_x, sub_camera_view_bias_y)
-    }
-    let (camera_fov_y, camera_near, camera_far) = render3d_projection_params(
-      camera.projection,
-      aspect_ratio,
-      Float::from_double(view_height_logical.to_double()),
+    let camera_near = camera_pass_projection.camera_near
+    let camera_far = camera_pass_projection.camera_far
+    let current_clip_from_world = render3d_pass_projection_clip_from_world(
+      camera_pass_projection,
+      camera.transform,
     )
+    next_camera_motion_blur_history.push({
+      entity: camera.entity,
+      transform: camera.transform,
+      clip_from_world: current_clip_from_world,
+    })
     let pass_lighting = lighting
     let camera_deferred_mode = render3d_camera_deferred_mode(
       camera.camera3d.deferred_config,
@@ -10086,6 +10324,11 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     let mut point_shadow_texture_id = -1
     let mut point_shadow_enabled = 0.0F
     let mut point_shadow_depth_bias = 0.0F
+    let point_shadow_near = if pass_lighting.point_shadow_map_near_z > 0.0001F {
+      pass_lighting.point_shadow_map_near_z
+    } else {
+      0.0001F
+    }
     if motion_vector_prepass_enabled {
       let (shared_scene_id, shared_velocity_id) = render3d_motion_blur_targets_get_or_create(
         camera.entity,
@@ -10096,7 +10339,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         scene_target_id = shared_scene_id
       }
       velocity_target_id = shared_velocity_id
-      @render.host_gpu_begin_pass_3d(
+      render3d_begin_pass_3d(
         target_id=velocity_target_id,
         width=view_width_logical,
         height=view_height_logical,
@@ -10104,63 +10347,15 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         clear_g=0.0F,
         clear_b=0.0F,
         clear_a=0.0F,
-        camera_x=camera.transform.translation.x,
-        camera_y=camera.transform.translation.y,
-        camera_z=camera.transform.translation.z,
-        camera_rot_x=camera.transform.rotation.x,
-        camera_rot_y=camera.transform.rotation.y,
-        camera_rot_z=camera.transform.rotation.z,
-        camera_rot_w=camera.transform.rotation.w,
-        camera_fov_y~,
-        camera_near~,
-        camera_far~,
+        camera.transform,
+        camera_pass_projection,
         viewport_x~,
         viewport_y~,
         viewport_width~,
         viewport_height~,
-        ambient_r=pass_lighting.ambient_color.r,
-        ambient_g=pass_lighting.ambient_color.g,
-        ambient_b=pass_lighting.ambient_color.b,
-        ambient_brightness=pass_lighting.ambient_brightness,
-        directional_dir_x=pass_lighting.directional_dir.x,
-        directional_dir_y=pass_lighting.directional_dir.y,
-        directional_dir_z=pass_lighting.directional_dir.z,
-        directional_color_r=pass_lighting.directional_color.r,
-        directional_color_g=pass_lighting.directional_color.g,
-        directional_color_b=pass_lighting.directional_color.b,
-        directional_illuminance=pass_lighting.directional_illuminance,
-        point_pos_x=pass_lighting.point_pos.x,
-        point_pos_y=pass_lighting.point_pos.y,
-        point_pos_z=pass_lighting.point_pos.z,
-        point_color_r=pass_lighting.point_color.r,
-        point_color_g=pass_lighting.point_color.g,
-        point_color_b=pass_lighting.point_color.b,
-        point_intensity=pass_lighting.point_intensity,
-        point_range=pass_lighting.point_range,
-        spot_pos_x=pass_lighting.spot_pos.x,
-        spot_pos_y=pass_lighting.spot_pos.y,
-        spot_pos_z=pass_lighting.spot_pos.z,
-        spot_dir_x=pass_lighting.spot_dir.x,
-        spot_dir_y=pass_lighting.spot_dir.y,
-        spot_dir_z=pass_lighting.spot_dir.z,
-        spot_color_r=pass_lighting.spot_color.r,
-        spot_color_g=pass_lighting.spot_color.g,
-        spot_color_b=pass_lighting.spot_color.b,
-        spot_intensity=pass_lighting.spot_intensity,
-        spot_range=pass_lighting.spot_range,
-        spot_inner_angle=pass_lighting.spot_inner_angle,
-        spot_outer_angle=pass_lighting.spot_outer_angle,
-        sub_camera_view_scale_x~,
-        sub_camera_view_scale_y~,
-        sub_camera_view_bias_x=sub_camera_view_bias_with_jitter_x,
-        sub_camera_view_bias_y=sub_camera_view_bias_with_jitter_y,
-        previous_camera_x=camera.previous_transform.translation.x,
-        previous_camera_y=camera.previous_transform.translation.y,
-        previous_camera_z=camera.previous_transform.translation.z,
-        previous_camera_rot_x=camera.previous_transform.rotation.x,
-        previous_camera_rot_y=camera.previous_transform.rotation.y,
-        previous_camera_rot_z=camera.previous_transform.rotation.z,
-        previous_camera_rot_w=camera.previous_transform.rotation.w,
+        pass_lighting,
+        previous_clip_from_world=camera.previous_clip_from_world,
+        point_shadow_near~,
         pass_kind=motion_vector_pass_kind,
         clear_enabled=1,
       )
@@ -10243,12 +10438,16 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         0.0001F
       }
       let shadow_view_size = point_light_shadow_map_size
+      let point_shadow_pass_projection = render3d_point_shadow_pass_projection(
+        shadow_camera_near,
+        pass_lighting.point_range,
+      )
       for face_index in 0..<6 {
         let shadow_camera_transform = render3d_point_shadow_face_transform(
           pass_lighting.point_pos,
           face_index,
         )
-        @render.host_gpu_begin_pass_3d(
+        render3d_begin_pass_3d(
           target_id=shadow_target_id,
           target_layer=face_index,
           width=shadow_view_size,
@@ -10257,63 +10456,15 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           clear_g=1.0F,
           clear_b=1.0F,
           clear_a=1.0F,
-          camera_x=shadow_camera_transform.translation.x,
-          camera_y=shadow_camera_transform.translation.y,
-          camera_z=shadow_camera_transform.translation.z,
-          camera_rot_x=shadow_camera_transform.rotation.x,
-          camera_rot_y=shadow_camera_transform.rotation.y,
-          camera_rot_z=shadow_camera_transform.rotation.z,
-          camera_rot_w=shadow_camera_transform.rotation.w,
-          camera_fov_y=@math.pi_half(),
-          camera_near=shadow_camera_near,
-          camera_far=pass_lighting.point_range,
+          shadow_camera_transform,
+          point_shadow_pass_projection,
           viewport_x=0,
           viewport_y=0,
           viewport_width=shadow_view_size,
           viewport_height=shadow_view_size,
-          ambient_r=pass_lighting.ambient_color.r,
-          ambient_g=pass_lighting.ambient_color.g,
-          ambient_b=pass_lighting.ambient_color.b,
-          ambient_brightness=pass_lighting.ambient_brightness,
-          directional_dir_x=pass_lighting.directional_dir.x,
-          directional_dir_y=pass_lighting.directional_dir.y,
-          directional_dir_z=pass_lighting.directional_dir.z,
-          directional_color_r=pass_lighting.directional_color.r,
-          directional_color_g=pass_lighting.directional_color.g,
-          directional_color_b=pass_lighting.directional_color.b,
-          directional_illuminance=pass_lighting.directional_illuminance,
-          point_pos_x=pass_lighting.point_pos.x,
-          point_pos_y=pass_lighting.point_pos.y,
-          point_pos_z=pass_lighting.point_pos.z,
-          point_color_r=pass_lighting.point_color.r,
-          point_color_g=pass_lighting.point_color.g,
-          point_color_b=pass_lighting.point_color.b,
-          point_intensity=pass_lighting.point_intensity,
-          point_range=pass_lighting.point_range,
-          spot_pos_x=pass_lighting.spot_pos.x,
-          spot_pos_y=pass_lighting.spot_pos.y,
-          spot_pos_z=pass_lighting.spot_pos.z,
-          spot_dir_x=pass_lighting.spot_dir.x,
-          spot_dir_y=pass_lighting.spot_dir.y,
-          spot_dir_z=pass_lighting.spot_dir.z,
-          spot_color_r=pass_lighting.spot_color.r,
-          spot_color_g=pass_lighting.spot_color.g,
-          spot_color_b=pass_lighting.spot_color.b,
-          spot_intensity=pass_lighting.spot_intensity,
-          spot_range=pass_lighting.spot_range,
-          spot_inner_angle=pass_lighting.spot_inner_angle,
-          spot_outer_angle=pass_lighting.spot_outer_angle,
-          sub_camera_view_scale_x=1.0F,
-          sub_camera_view_scale_y=1.0F,
-          sub_camera_view_bias_x=0.0F,
-          sub_camera_view_bias_y=0.0F,
-          previous_camera_x=shadow_camera_transform.translation.x,
-          previous_camera_y=shadow_camera_transform.translation.y,
-          previous_camera_z=shadow_camera_transform.translation.z,
-          previous_camera_rot_x=shadow_camera_transform.rotation.x,
-          previous_camera_rot_y=shadow_camera_transform.rotation.y,
-          previous_camera_rot_z=shadow_camera_transform.rotation.z,
-          previous_camera_rot_w=shadow_camera_transform.rotation.w,
+          pass_lighting,
+          previous_clip_from_world=None,
+          point_shadow_near=shadow_camera_near,
           pass_kind=point_shadow_pass_kind,
           clear_enabled=1,
         )
@@ -10381,7 +10532,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       scene_target_id = scene_id
     }
     let mut transmission_source_target_id = -1
-    @render.host_gpu_begin_pass_3d(
+    render3d_begin_pass_3d(
       target_id=scene_target_id,
       width=view_width_logical,
       height=view_height_logical,
@@ -10389,63 +10540,15 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       clear_g=clear_color.g,
       clear_b=clear_color.b,
       clear_a=clear_color.a,
-      camera_x=camera.transform.translation.x,
-      camera_y=camera.transform.translation.y,
-      camera_z=camera.transform.translation.z,
-      camera_rot_x=camera.transform.rotation.x,
-      camera_rot_y=camera.transform.rotation.y,
-      camera_rot_z=camera.transform.rotation.z,
-      camera_rot_w=camera.transform.rotation.w,
-      camera_fov_y~,
-      camera_near~,
-      camera_far~,
+      camera.transform,
+      camera_pass_projection,
       viewport_x~,
       viewport_y~,
       viewport_width~,
       viewport_height~,
-      ambient_r=pass_lighting.ambient_color.r,
-      ambient_g=pass_lighting.ambient_color.g,
-      ambient_b=pass_lighting.ambient_color.b,
-      ambient_brightness=pass_lighting.ambient_brightness,
-      directional_dir_x=pass_lighting.directional_dir.x,
-      directional_dir_y=pass_lighting.directional_dir.y,
-      directional_dir_z=pass_lighting.directional_dir.z,
-      directional_color_r=pass_lighting.directional_color.r,
-      directional_color_g=pass_lighting.directional_color.g,
-      directional_color_b=pass_lighting.directional_color.b,
-      directional_illuminance=pass_lighting.directional_illuminance,
-      point_pos_x=pass_lighting.point_pos.x,
-      point_pos_y=pass_lighting.point_pos.y,
-      point_pos_z=pass_lighting.point_pos.z,
-      point_color_r=pass_lighting.point_color.r,
-      point_color_g=pass_lighting.point_color.g,
-      point_color_b=pass_lighting.point_color.b,
-      point_intensity=pass_lighting.point_intensity,
-      point_range=pass_lighting.point_range,
-      spot_pos_x=pass_lighting.spot_pos.x,
-      spot_pos_y=pass_lighting.spot_pos.y,
-      spot_pos_z=pass_lighting.spot_pos.z,
-      spot_dir_x=pass_lighting.spot_dir.x,
-      spot_dir_y=pass_lighting.spot_dir.y,
-      spot_dir_z=pass_lighting.spot_dir.z,
-      spot_color_r=pass_lighting.spot_color.r,
-      spot_color_g=pass_lighting.spot_color.g,
-      spot_color_b=pass_lighting.spot_color.b,
-      spot_intensity=pass_lighting.spot_intensity,
-      spot_range=pass_lighting.spot_range,
-      spot_inner_angle=pass_lighting.spot_inner_angle,
-      spot_outer_angle=pass_lighting.spot_outer_angle,
-      sub_camera_view_scale_x~,
-      sub_camera_view_scale_y~,
-      sub_camera_view_bias_x=sub_camera_view_bias_with_jitter_x,
-      sub_camera_view_bias_y=sub_camera_view_bias_with_jitter_y,
-      previous_camera_x=camera.previous_transform.translation.x,
-      previous_camera_y=camera.previous_transform.translation.y,
-      previous_camera_z=camera.previous_transform.translation.z,
-      previous_camera_rot_x=camera.previous_transform.rotation.x,
-      previous_camera_rot_y=camera.previous_transform.rotation.y,
-      previous_camera_rot_z=camera.previous_transform.rotation.z,
-      previous_camera_rot_w=camera.previous_transform.rotation.w,
+      pass_lighting,
+      previous_clip_from_world=camera.previous_clip_from_world,
+      point_shadow_near~,
       pass_kind=scene_pass_kind,
       clear_enabled=if clear_enabled { 1 } else { 0 },
     )
@@ -10674,7 +10777,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       render3d_blit_texture_to_target(
         scene_target_id, transmission_source_target_id, view_width_logical, view_height_logical,
       )
-      @render.host_gpu_begin_pass_3d(
+      render3d_begin_pass_3d(
         target_id=scene_target_id,
         width=view_width_logical,
         height=view_height_logical,
@@ -10682,63 +10785,15 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         clear_g=clear_color.g,
         clear_b=clear_color.b,
         clear_a=clear_color.a,
-        camera_x=camera.transform.translation.x,
-        camera_y=camera.transform.translation.y,
-        camera_z=camera.transform.translation.z,
-        camera_rot_x=camera.transform.rotation.x,
-        camera_rot_y=camera.transform.rotation.y,
-        camera_rot_z=camera.transform.rotation.z,
-        camera_rot_w=camera.transform.rotation.w,
-        camera_fov_y~,
-        camera_near~,
-        camera_far~,
+        camera.transform,
+        camera_pass_projection,
         viewport_x~,
         viewport_y~,
         viewport_width~,
         viewport_height~,
-        ambient_r=pass_lighting.ambient_color.r,
-        ambient_g=pass_lighting.ambient_color.g,
-        ambient_b=pass_lighting.ambient_color.b,
-        ambient_brightness=pass_lighting.ambient_brightness,
-        directional_dir_x=pass_lighting.directional_dir.x,
-        directional_dir_y=pass_lighting.directional_dir.y,
-        directional_dir_z=pass_lighting.directional_dir.z,
-        directional_color_r=pass_lighting.directional_color.r,
-        directional_color_g=pass_lighting.directional_color.g,
-        directional_color_b=pass_lighting.directional_color.b,
-        directional_illuminance=pass_lighting.directional_illuminance,
-        point_pos_x=pass_lighting.point_pos.x,
-        point_pos_y=pass_lighting.point_pos.y,
-        point_pos_z=pass_lighting.point_pos.z,
-        point_color_r=pass_lighting.point_color.r,
-        point_color_g=pass_lighting.point_color.g,
-        point_color_b=pass_lighting.point_color.b,
-        point_intensity=pass_lighting.point_intensity,
-        point_range=pass_lighting.point_range,
-        spot_pos_x=pass_lighting.spot_pos.x,
-        spot_pos_y=pass_lighting.spot_pos.y,
-        spot_pos_z=pass_lighting.spot_pos.z,
-        spot_dir_x=pass_lighting.spot_dir.x,
-        spot_dir_y=pass_lighting.spot_dir.y,
-        spot_dir_z=pass_lighting.spot_dir.z,
-        spot_color_r=pass_lighting.spot_color.r,
-        spot_color_g=pass_lighting.spot_color.g,
-        spot_color_b=pass_lighting.spot_color.b,
-        spot_intensity=pass_lighting.spot_intensity,
-        spot_range=pass_lighting.spot_range,
-        spot_inner_angle=pass_lighting.spot_inner_angle,
-        spot_outer_angle=pass_lighting.spot_outer_angle,
-        sub_camera_view_scale_x~,
-        sub_camera_view_scale_y~,
-        sub_camera_view_bias_x=sub_camera_view_bias_with_jitter_x,
-        sub_camera_view_bias_y=sub_camera_view_bias_with_jitter_y,
-        previous_camera_x=camera.previous_transform.translation.x,
-        previous_camera_y=camera.previous_transform.translation.y,
-        previous_camera_z=camera.previous_transform.translation.z,
-        previous_camera_rot_x=camera.previous_transform.rotation.x,
-        previous_camera_rot_y=camera.previous_transform.rotation.y,
-        previous_camera_rot_z=camera.previous_transform.rotation.z,
-        previous_camera_rot_w=camera.previous_transform.rotation.w,
+        pass_lighting,
+        previous_clip_from_world=camera.previous_clip_from_world,
+        point_shadow_near~,
         pass_kind=scene_pass_kind,
         clear_enabled=0,
       )
@@ -11033,6 +11088,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       @render.host_gpu_end_pass()
     }
   }
+  camera_motion_blur_history_sync(next_camera_motion_blur_history)
   render3d_prepared_camera_order_ref.val.clear()
   render3d_queued_visible_mesh_count_ref.val = 0
 }

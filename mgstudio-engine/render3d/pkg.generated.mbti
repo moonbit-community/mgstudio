@@ -1072,6 +1072,7 @@ pub struct Mesh3d {
   mesh : @asset.Handle[@mesh.Mesh]
 }
 pub fn Mesh3d::from_capsule(@math.Capsule3d) -> Self
+pub fn Mesh3d::from_circle(Float) -> Self
 pub fn Mesh3d::from_cuboid(Float, Float, Float) -> Self
 pub fn Mesh3d::from_cylinder(@math.Cylinder) -> Self
 pub fn Mesh3d::from_geometry(@mesh.Mesh3dGeometry) -> Self
@@ -1373,6 +1374,7 @@ pub(all) struct ProjectionMatrix3d {
   w_axis : @math.Vec4
 }
 pub fn ProjectionMatrix3d::from_cols(@math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Self
+pub fn ProjectionMatrix3d::mul(Self, Self) -> Self
 pub fn ProjectionMatrix3d::mul_vec4(Self, @math.Vec4) -> @math.Vec4
 pub fn ProjectionMatrix3d::project_point3(Self, @math.Vec3) -> @math.Vec3?
 pub fn ProjectionMatrix3d::w_axis_w(Self) -> Float
