@@ -98,11 +98,10 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
 
   let world_camera = @render3d.Camera3dBundle::new_with_projection(
     @render2d.Camera::default(),
-    Perspective(
-      @render3d.PerspectiveProjection3d::default().with_fov(
-        degrees_to_radians(90.0F),
-      ),
-    ),
+    Perspective(@render3d.PerspectiveProjection3d::{
+      ..@render3d.PerspectiveProjection3d::default(),
+      fov: degrees_to_radians(90.0F),
+    }),
     @math.Transform::identity(),
   ).spawn(world)
   world
@@ -114,11 +113,10 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
 
   let view_model_camera = @render3d.Camera3dBundle::new_with_projection(
     @render2d.Camera::default().with_order(1),
-    Perspective(
-      @render3d.PerspectiveProjection3d::default().with_fov(
-        degrees_to_radians(70.0F),
-      ),
-    ),
+    Perspective(@render3d.PerspectiveProjection3d::{
+      ..@render3d.PerspectiveProjection3d::default(),
+      fov: degrees_to_radians(70.0F),
+    }),
     @math.Transform::identity(),
   ).spawn(world)
   world
@@ -329,13 +327,12 @@ fn change_fov(
   try! world_model_projection_query.view_mut(fn(_entity, projection) {
     let projection_ref = projection.get_ref()
     match projection_ref.val {
-      Perspective(perspective) => {
-        let next_fov = clamp_float(perspective.fov() + delta, min_fov, max_fov)
-        projection_ref.val = Perspective(perspective.with_fov(next_fov))
-      }
+      Perspective(perspective) =>
+        perspective.fov = clamp_float(perspective.fov + delta, min_fov, max_fov)
       Orthographic(_) => ()
       Custom(_) => ()
     }
+    projection.set_changed()
   })
 }
 

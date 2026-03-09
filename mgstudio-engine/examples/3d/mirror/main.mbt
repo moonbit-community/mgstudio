@@ -188,14 +188,15 @@ fn calculate_mirror_camera_transform_and_projection(
     ),
     forward_axis,
   )
-  let mirror_camera_projection = main_camera_projection.with_near_clip_plane(
-    @math.Vec4::new(
+  let mirror_camera_projection = @render3d.PerspectiveProjection3d::{
+    ..main_camera_projection,
+    near_clip_plane: @math.Vec4::new(
       mirror_projection_plane_normal.x,
       mirror_projection_plane_normal.y,
       mirror_projection_plane_normal.z,
       distance_from_camera_to_mirror,
     ),
-  )
+  }
 
   (mirror_camera_transform, mirror_camera_projection)
 }

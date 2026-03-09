@@ -30,20 +30,21 @@ fn[T : CameraProjection3d] generic_projection_far(projection : T) -> Float {
 ///|
 test "render3d: perspective projection getters expose configured values" {
   let projection = PerspectiveProjection3d::default()
-    .with_fov(1.2F)
-    .with_near(0.3F)
-    .with_far(250.0F)
-    .with_aspect_ratio(1.6F)
-  inspect(projection_approx_eq(projection.fov(), 1.2F), content="true")
-  inspect(projection_approx_eq(projection.near(), 0.3F), content="true")
-  inspect(projection_approx_eq(projection.far(), 250.0F), content="true")
-  inspect(projection_approx_eq(projection.aspect_ratio(), 1.6F), content="true")
+  projection.fov = 1.2F
+  projection.near = 0.3F
+  projection.far = 250.0F
+  projection.aspect_ratio = 1.6F
+  projection.near_clip_plane = @math.Vec4::new(0.0F, 0.0F, -1.0F, -0.3F)
+  inspect(projection_approx_eq(projection.fov, 1.2F), content="true")
+  inspect(projection_approx_eq(projection.near, 0.3F), content="true")
+  inspect(projection_approx_eq(projection.far, 250.0F), content="true")
+  inspect(projection_approx_eq(projection.aspect_ratio, 1.6F), content="true")
   inspect(
-    projection_approx_eq(projection.near_clip_plane().z, -1.0F),
+    projection_approx_eq(projection.near_clip_plane.z, -1.0F),
     content="true",
   )
   inspect(
-    projection_approx_eq(projection.near_clip_plane().w, -0.3F),
+    projection_approx_eq(projection.near_clip_plane.w, -0.3F),
     content="true",
   )
 }
@@ -75,9 +76,9 @@ test "render3d: custom projection default stores perspective default payload" {
   let ok = match perspective {
     Some(perspective) =>
       projection_approx_eq(custom.far(), 1000.0F) &&
-      projection_approx_eq(perspective.fov(), @math.pi_half() * 0.5F) &&
-      projection_approx_eq(perspective.near(), 0.1F) &&
-      projection_approx_eq(perspective.aspect_ratio(), 1.0F)
+      projection_approx_eq(perspective.fov, @math.pi_half() * 0.5F) &&
+      projection_approx_eq(perspective.near, 0.1F) &&
+      projection_approx_eq(perspective.aspect_ratio, 1.0F)
     None => false
   }
   inspect(ok, content="true")
@@ -91,11 +92,11 @@ test "render3d: projection preserves configured orthographic values" {
   let projection = Projection::Orthographic(orthographic)
   let ok = match projection {
     Projection::Orthographic(value) => {
-      let scaling_mode_ok = match value.scaling_mode() {
+      let scaling_mode_ok = match value.scaling_mode {
         FixedVertical(height) => projection_approx_eq(height, 7.5F)
         _ => false
       }
-      projection_approx_eq(value.scale(), 2.5F) && scaling_mode_ok
+      projection_approx_eq(value.scale, 2.5F) && scaling_mode_ok
     }
     Projection::Perspective(_) => false
     Projection::Custom(_) => false
@@ -108,8 +109,8 @@ test "render3d: orthographic projection update matches Bevy fixed vertical area"
   let orthographic = OrthographicProjection3d::default_3d()
     .with_scaling_mode(FixedVertical(6.0F))
     .update(1600.0F, 800.0F)
-  let area = orthographic.area()
-  let ok = projection_approx_eq(orthographic.near(), 0.0F) &&
+  let area = orthographic.area
+  let ok = projection_approx_eq(orthographic.near, 0.0F) &&
     projection_approx_eq(area.min.x, -6.0F) &&
     projection_approx_eq(area.max.x, 6.0F) &&
     projection_approx_eq(area.min.y, -3.0F) &&
@@ -122,7 +123,7 @@ test "render3d: orthographic projection update matches Bevy auto min area" {
   let orthographic = OrthographicProjection3d::default_3d()
     .with_scaling_mode(AutoMin(10.0F, 6.0F))
     .update(1200.0F, 600.0F)
-  let area = orthographic.area()
+  let area = orthographic.area
   let ok = projection_approx_eq(area.min.x, -6.0F) &&
     projection_approx_eq(area.max.x, 6.0F) &&
     projection_approx_eq(area.min.y, -3.0F) &&

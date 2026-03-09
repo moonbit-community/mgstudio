@@ -82,13 +82,12 @@ fn spawn_orthographic_camera(
 ) -> Unit {
   let entity = @render3d.Camera3dBundle::new_with_projection(
       @render2d.Camera::default().with_order(order),
-      @render3d.Projection::Orthographic(
-        @render3d.OrthographicProjection3d::default_3d().with_scaling_mode(
-          @render3d.OrthographicScalingMode3d::FixedVertical(
-            ORTHOGRAPHIC_VIEWPORT_HEIGHT,
-          ),
+      @render3d.Projection::Orthographic(@render3d.OrthographicProjection3d::{
+        ..@render3d.OrthographicProjection3d::default_3d(),
+        scaling_mode: @render3d.OrthographicScalingMode3d::FixedVertical(
+          ORTHOGRAPHIC_VIEWPORT_HEIGHT,
         ),
-      ),
+      }),
       camera_sub_view_state.val.base_transform,
     )
     .with_sub_camera_view(sub_camera_view)

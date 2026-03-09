@@ -460,12 +460,12 @@ pub fn Camera3d::with_depth_of_field(
 }
 
 ///|
-pub struct PerspectiveProjection3d {
-  fov : Float
-  near : Float
-  far : Float
-  aspect_ratio : Float
-  near_clip_plane : @math.Vec4
+pub(all) struct PerspectiveProjection3d {
+  mut fov : Float
+  mut near : Float
+  mut far : Float
+  mut aspect_ratio : Float
+  mut near_clip_plane : @math.Vec4
 } derive(ToJson, FromJson)
 
 ///|
@@ -601,13 +601,13 @@ pub fn PerspectiveProjection3d::near_clip_plane(
 }
 
 ///|
-pub struct OrthographicProjection3d {
-  near : Float
-  far : Float
-  viewport_origin : @math.Vec2
-  scaling_mode : OrthographicScalingMode3d
-  scale : Float
-  area : @math.Rect
+pub(all) struct OrthographicProjection3d {
+  mut near : Float
+  mut far : Float
+  mut viewport_origin : @math.Vec2
+  mut scaling_mode : OrthographicScalingMode3d
+  mut scale : Float
+  mut area : @math.Rect
 } derive(ToJson, FromJson)
 
 ///|
@@ -1270,7 +1270,8 @@ pub impl CameraProjection3d for PerspectiveProjection3d with update(
   width,
   height,
 ) {
-  self.with_aspect_ratio(render3d_projection_aspect_ratio(width, height))
+  self.aspect_ratio = render3d_projection_aspect_ratio(width, height)
+  self
 }
 
 ///|
@@ -1320,14 +1321,8 @@ pub impl CameraProjection3d for OrthographicProjection3d with update(
   width,
   height,
 ) {
-  OrthographicProjection3d::{
-    near: self.near,
-    far: self.far,
-    viewport_origin: self.viewport_origin,
-    scaling_mode: self.scaling_mode,
-    scale: self.scale,
-    area: render3d_orthographic_area(self, width, height),
-  }
+  self.area = render3d_orthographic_area(self, width, height)
+  self
 }
 
 ///|

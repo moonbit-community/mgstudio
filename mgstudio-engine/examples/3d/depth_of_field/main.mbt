@@ -100,7 +100,10 @@ fn compute_focal_length_meters(fov : Float) -> Float {
 ///|
 fn set_camera_projection(world : @ecs.World, fov : Float) -> Unit {
   guard dof_state.val.camera is Some(camera) else { return }
-  let perspective = @render3d.PerspectiveProjection3d::default().with_fov(fov)
+  let perspective = @render3d.PerspectiveProjection3d::{
+    ..@render3d.PerspectiveProjection3d::default(),
+    fov,
+  }
   world
   .component(@render3d.ecs_key_projection)
   .set(

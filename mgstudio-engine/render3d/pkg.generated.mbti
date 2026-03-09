@@ -1232,13 +1232,13 @@ pub impl @ecs.Component for OrderIndependentTransparencySettings
 pub impl ToJson for OrderIndependentTransparencySettings
 pub impl @json.FromJson for OrderIndependentTransparencySettings
 
-pub struct OrthographicProjection3d {
-  near : Float
-  far : Float
-  viewport_origin : @math.Vec2
-  scaling_mode : OrthographicScalingMode3d
-  scale : Float
-  area : @math.Rect
+pub(all) struct OrthographicProjection3d {
+  mut near : Float
+  mut far : Float
+  mut viewport_origin : @math.Vec2
+  mut scaling_mode : OrthographicScalingMode3d
+  mut scale : Float
+  mut area : @math.Rect
 }
 pub fn OrthographicProjection3d::area(Self) -> @math.Rect
 pub fn OrthographicProjection3d::default() -> Self
@@ -1292,12 +1292,12 @@ pub fn ParallaxMappingMethod::relief_default() -> Self
 pub impl Eq for ParallaxMappingMethod
 pub impl Show for ParallaxMappingMethod
 
-pub struct PerspectiveProjection3d {
-  fov : Float
-  near : Float
-  far : Float
-  aspect_ratio : Float
-  near_clip_plane : @math.Vec4
+pub(all) struct PerspectiveProjection3d {
+  mut fov : Float
+  mut near : Float
+  mut far : Float
+  mut aspect_ratio : Float
+  mut near_clip_plane : @math.Vec4
 }
 pub fn PerspectiveProjection3d::aspect_ratio(Self) -> Float
 pub fn PerspectiveProjection3d::default() -> Self

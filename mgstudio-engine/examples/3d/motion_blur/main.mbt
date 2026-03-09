@@ -173,7 +173,10 @@ fn set_camera_fov(
   let projection_store = world.component(@render3d.ecs_key_projection)
   guard projection_store.get(camera_entity) is Some(current) else { return }
   let next_projection = match current {
-    Perspective(p) => Some(@render3d.Projection::Perspective(p.with_fov(fov)))
+    Perspective(p) => {
+      p.fov = fov
+      Some(@render3d.Projection::Perspective(p))
+    }
     Orthographic(_) => None
     Custom(_) => None
   }

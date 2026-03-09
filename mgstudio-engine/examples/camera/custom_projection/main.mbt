@@ -75,7 +75,7 @@ impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with update(
 impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with far(
   self,
 ) {
-  self.perspective.far()
+  self.perspective.far
 }
 
 ///|
