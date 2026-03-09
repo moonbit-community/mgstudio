@@ -16,11 +16,15 @@ import {
 // Values
 pub let ecs_components : Array[String]
 
+pub let ecs_key_scene_instance : @ecs.ComponentKey[SceneInstance]
+
 pub let ecs_key_scene_instance_ready : @ecs.ComponentKey[SceneInstanceReady]
 
 pub let ecs_key_scene_root : @ecs.ComponentKey[SceneRoot]
 
 pub let ecs_resources : Array[String]
+
+pub fn get_scene_instance_store(@ecs.World) -> @ecs.ComponentAccess[SceneInstance]
 
 pub fn get_scene_instance_ready_store(@ecs.World) -> @ecs.ComponentAccess[SceneInstanceReady]
 
@@ -93,10 +97,19 @@ pub struct Scene {
 }
 pub fn Scene::new(Array[SceneNode3d]) -> Self
 
+pub struct SceneInstance {
+  instance_id : Int
+}
+pub fn SceneInstance::new(Int) -> Self
+pub impl @ecs.Component for SceneInstance
+pub impl ToJson for SceneInstance
+pub impl @json.FromJson for SceneInstance
+
 pub struct SceneInstanceReady {
+  instance_id : Int
   spawned_entities : Int
 }
-pub fn SceneInstanceReady::new(Int) -> Self
+pub fn SceneInstanceReady::new(Int, Int) -> Self
 pub impl @ecs.Component for SceneInstanceReady
 pub impl ToJson for SceneInstanceReady
 pub impl @json.FromJson for SceneInstanceReady
@@ -121,4 +134,3 @@ pub impl @json.FromJson for SceneRoot
 // Type aliases
 
 // Traits
-

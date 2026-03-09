@@ -16,7 +16,7 @@
 /// Scene asset registry and SceneRoot instantiation pipeline.
 ///
 /// Current scope:
-/// - Bevy-like `SceneRoot` component and spawn-once runtime behavior.
+/// - Bevy-like `SceneRoot` / `SceneInstance` runtime lifecycle behavior.
 /// - glTF scene/animation key paths
 ///   (`GltfAssetLabel::{Scene,Animation}(..).from_asset(..)`).
 /// - Runtime glTF loading path for `.gltf + .bin + textures` (subset used by
@@ -379,24 +379,58 @@ pub impl @json.FromJson for SceneRoot with from_json(json, path) {
 }
 
 ///|
+pub struct SceneInstance {
+  instance_id : Int
+}
+
+///|
+pub fn SceneInstance::new(instance_id : Int) -> SceneInstance {
+  SceneInstance::{ instance_id, }
+}
+
+///|
+pub impl ToJson for SceneInstance with to_json(self) {
+  self.instance_id.to_json()
+}
+
+///|
+pub impl @json.FromJson for SceneInstance with from_json(json, path) {
+  let instance_id : Int = @json.from_json(json, path~)
+  SceneInstance::new(instance_id)
+}
+
+///|
 pub struct SceneInstanceReady {
+  instance_id : Int
   spawned_entities : Int
 }
 
 ///|
-pub fn SceneInstanceReady::new(spawned_entities : Int) -> SceneInstanceReady {
-  SceneInstanceReady::{ spawned_entities, }
+pub fn SceneInstanceReady::new(
+  instance_id : Int,
+  spawned_entities : Int,
+) -> SceneInstanceReady {
+  SceneInstanceReady::{ instance_id, spawned_entities }
 }
 
 ///|
 pub impl ToJson for SceneInstanceReady with to_json(self) {
-  self.spawned_entities.to_json()
+  (self.instance_id, self.spawned_entities).to_json()
 }
 
 ///|
 pub impl @json.FromJson for SceneInstanceReady with from_json(json, path) {
-  let spawned_entities : Int = @json.from_json(json, path~)
-  SceneInstanceReady::new(spawned_entities)
+  let pair : (Int, Int)? = Some(@json.from_json(json, path~)) catch {
+    _ => None
+  }
+  match pair {
+    Some((instance_id, spawned_entities)) =>
+      SceneInstanceReady::new(instance_id, spawned_entities)
+    None => {
+      let spawned_entities : Int = @json.from_json(json, path~)
+      SceneInstanceReady::new(0, spawned_entities)
+    }
+  }
 }
 
 ///|
@@ -415,6 +449,133 @@ fn SceneAssetRegistryState::default() -> SceneAssetRegistryState {
     mesh_registry: [],
     lod_visibility_policy: GltfLodVisibilityPolicy::default(),
   }
+}
+
+///|
+priv struct SceneInstanceState {
+  instance_id : Int
+  scene_id : Int
+  spawned_entities : Array[@core.Entity]
+  ready : Bool
+}
+
+///|
+priv struct SceneRuntimeState {
+  mut next_instance_id : Int
+  instances : Array[SceneInstanceState]
+}
+
+///|
+fn SceneRuntimeState::default() -> SceneRuntimeState {
+  SceneRuntimeState::{ next_instance_id: 1, instances: [] }
+}
+
+///|
+fn scene_runtime_state_resource_key() -> @ecs.ResourceKey[SceneRuntimeState] {
+  @ecs.register_resource(debug_name="bevy_scene::SceneRuntimeState")
+}
+
+///|
+impl @app.Resource for SceneRuntimeState with resource() {
+  scene_runtime_state_resource_key()
+}
+
+///|
+fn scene_runtime_state_mut_or_abort(
+  world : @ecs.World,
+) -> Ref[SceneRuntimeState] {
+  match
+    (try! world.get_resource_ref_mut(scene_runtime_state_resource_key(), 0)) {
+    Some(state) => state
+    None =>
+      abort(
+        "scene runtime state is missing; ScenePlugin must initialize SceneRuntimeState before running SceneRoot lifecycle systems",
+      )
+  }
+}
+
+///|
+fn scene_runtime_state_or_abort(world : @ecs.World) -> SceneRuntimeState {
+  match (try! world.get_resource(scene_runtime_state_resource_key())) {
+    Some(state) => state
+    None =>
+      abort(
+        "scene runtime state is missing; ScenePlugin must initialize SceneRuntimeState before running SceneRoot lifecycle systems",
+      )
+  }
+}
+
+///|
+fn scene_runtime_instance_index(
+  state : SceneRuntimeState,
+  instance_id : Int,
+) -> Int? {
+  for i in 0..<state.instances.length() {
+    if state.instances[i].instance_id == instance_id {
+      return Some(i)
+    }
+  }
+  None
+}
+
+///|
+fn scene_runtime_allocate_instance(
+  world : @ecs.World,
+  scene : @asset.Handle[Scene],
+) -> Int {
+  let state_ref = scene_runtime_state_mut_or_abort(world)
+  let instance_id = state_ref.val.next_instance_id
+  state_ref.val.next_instance_id = instance_id + 1
+  state_ref.val.instances.push(SceneInstanceState::{
+    instance_id,
+    scene_id: scene.id(),
+    spawned_entities: [],
+    ready: false,
+  })
+  instance_id
+}
+
+///|
+fn scene_runtime_get_instance(
+  world : @ecs.World,
+  instance_id : Int,
+) -> SceneInstanceState? {
+  let state = scene_runtime_state_or_abort(world)
+  guard scene_runtime_instance_index(state, instance_id) is Some(index) else {
+    return None
+  }
+  Some(state.instances[index])
+}
+
+///|
+fn scene_runtime_remove_instance(
+  world : @ecs.World,
+  instance_id : Int,
+) -> SceneInstanceState? {
+  let state_ref = scene_runtime_state_mut_or_abort(world)
+  guard scene_runtime_instance_index(state_ref.val, instance_id) is Some(index) else {
+    return None
+  }
+  Some(state_ref.val.instances.remove(index))
+}
+
+///|
+fn scene_runtime_mark_ready(
+  world : @ecs.World,
+  instance_id : Int,
+  spawned_entities : Array[@core.Entity],
+) -> Bool {
+  let state_ref = scene_runtime_state_mut_or_abort(world)
+  guard scene_runtime_instance_index(state_ref.val, instance_id) is Some(index) else {
+    return false
+  }
+  let state = state_ref.val.instances[index]
+  state_ref.val.instances[index] = SceneInstanceState::{
+    ..state,
+    spawned_entities,
+    ready: true,
+  }
+  true
 }
 
 ///|
@@ -643,76 +804,258 @@ pub fn[W] scene_load_pending_system(_world : W) -> Unit {
 }
 
 ///|
-pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
-  let pending_roots : Array[(@core.Entity, SceneRoot)] = []
-  try! world
-  .query1(ecs_key_scene_root)
-  .view(fn(entity, root) {
-    if (try! world.get(entity, ecs_key_scene_instance_ready)) is None {
-      pending_roots.push((entity, root))
-    }
-  })
+fn scene_instance_component(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> SceneInstance? {
+  try world.get(entity, ecs_key_scene_instance) catch {
+    _ => None
+  } noraise {
+    value => value
+  }
+}
 
-  for pending in pending_roots {
-    let root_entity = pending.0
-    let root = pending.1
-    guard scene_assets_from_world_or_abort(world).get(root.scene) is Some(scene) else {
-      continue
-    }
-    if !scene.ready {
-      continue
-    }
+///|
+fn scene_remove_ready_component(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Unit {
+  ignore(
+    try world.remove(entity, ecs_key_scene_instance_ready) catch {
+      _ => false
+    } noraise {
+      value => value
+    },
+  )
+}
 
-    if (try! world.get(root_entity, @animation.ecs_key_animation_player))
-      is None {
+///|
+fn scene_unregister_instance(world : @ecs.World, instance_id : Int) -> Unit {
+  scene_runtime_remove_instance(world, instance_id) |> ignore
+}
+
+///|
+fn scene_despawn_instance(world : @ecs.World, instance_id : Int) -> Unit {
+  guard scene_runtime_remove_instance(world, instance_id) is Some(instance) else {
+    return
+  }
+  for entity in instance.spawned_entities {
+    if world.is_alive(entity) {
+      try! world.despawn(entity)
+    }
+  }
+}
+
+///|
+fn scene_unregister_root_instance(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Unit {
+  guard scene_instance_component(world, entity) is Some(instance) else {
+    return
+  }
+  scene_unregister_instance(world, instance.instance_id)
+}
+
+///|
+fn scene_decode_scene_instance(payload : @any.Any) -> SceneInstance {
+  let value_ref : Ref[SceneInstance] = try! payload.to()
+  value_ref.val
+}
+
+///|
+fn scene_root_on_remove(
+  world : @ecs.World,
+  entity : @core.Entity,
+  _payload : @any.Any,
+) -> Unit {
+  scene_unregister_root_instance(world, entity)
+}
+
+///|
+fn scene_root_on_despawn(
+  world : @ecs.World,
+  entity : @core.Entity,
+  _payload : @any.Any,
+) -> Unit {
+  scene_unregister_root_instance(world, entity)
+}
+
+///|
+fn scene_instance_on_remove(
+  world : @ecs.World,
+  _entity : @core.Entity,
+  payload : @any.Any,
+) -> Unit {
+  let instance = scene_decode_scene_instance(payload)
+  scene_unregister_instance(world, instance.instance_id)
+}
+
+///|
+fn scene_instance_on_despawn(
+  world : @ecs.World,
+  _entity : @core.Entity,
+  payload : @any.Any,
+) -> Unit {
+  let instance = scene_decode_scene_instance(payload)
+  scene_unregister_instance(world, instance.instance_id)
+}
+
+///|
+fn scene_register_component_hooks() -> Bool {
+  try! @ecs.register_component_hooks(
+    ecs_key_scene_root,
+    @ecs.ComponentHooks::new(
+      on_remove=Some(scene_root_on_remove),
+      on_despawn=Some(scene_root_on_despawn),
+    ),
+  )
+  try! @ecs.register_component_hooks(
+    ecs_key_scene_instance,
+    @ecs.ComponentHooks::new(
+      on_remove=Some(scene_instance_on_remove),
+      on_despawn=Some(scene_instance_on_despawn),
+    ),
+  )
+  true
+}
+
+///|
+fn init {
+  scene_register_component_hooks() |> ignore
+}
+
+///|
+fn scene_attach_pending_instance(
+  world : @ecs.World,
+  root_entity : @core.Entity,
+  root : SceneRoot,
+) -> Int {
+  let instance_id = scene_runtime_allocate_instance(world, root.scene)
+  scene_remove_ready_component(world, root_entity)
+  try! world.set(
+    root_entity,
+    ecs_key_scene_instance,
+    SceneInstance::new(instance_id),
+  )
+  instance_id
+}
+
+///|
+fn scene_spawn_instance_when_ready(
+  world : @ecs.World,
+  root_entity : @core.Entity,
+  root : SceneRoot,
+  instance_id : Int,
+) -> Unit {
+  guard scene_runtime_get_instance(world, instance_id) is Some(instance) else {
+    return
+  }
+  if instance.ready {
+    if (try! world.get(root_entity, ecs_key_scene_instance_ready)) is None {
       try! world.set(
         root_entity,
-        @animation.ecs_key_animation_player,
-        @animation.AnimationPlayer::default(),
+        ecs_key_scene_instance_ready,
+        SceneInstanceReady::new(instance_id, instance.spawned_entities.length()),
       )
     }
+    return
+  }
+  guard scene_assets_from_world_or_abort(world).get(root.scene) is Some(scene) else {
+    return
+  }
+  if !scene.ready {
+    return
+  }
 
-    let mut spawned_entities = 0
-    for node in scene.nodes3d {
-      let child = world.spawn_empty()
-      try! world.set(child, @render3d.ecs_key_mesh3d, node.mesh)
-      try! world.set(child, @render3d.ecs_key_mesh_material3d, node.material)
-      try! world.set(child, @math.ecs_key_transform, node.transform)
-      try! world.set(
-        child,
-        @hierarchy.ecs_key_parent,
-        @hierarchy.Parent::new(root_entity),
-      )
-      if node.visibility_range is Some(range) {
-        try! world.set(child, @visibility.ecs_key_visibility_range, range)
-      }
-      if node.animation_target is Some(target_id) {
-        try! world.set(child, @animation.ecs_key_animation_target_id, target_id)
-        try! world.set(
-          child,
-          @animation.ecs_key_animated_by,
-          @animation.AnimatedBy::new(root_entity),
-        )
-      }
-      spawned_entities = spawned_entities + 1
-    }
+  if (try! world.get(root_entity, @animation.ecs_key_animation_player)) is None {
     try! world.set(
       root_entity,
-      ecs_key_scene_instance_ready,
-      SceneInstanceReady::new(spawned_entities),
+      @animation.ecs_key_animation_player,
+      @animation.AnimationPlayer::default(),
     )
   }
+
+  let spawned_entities : Array[@core.Entity] = []
+  for node in scene.nodes3d {
+    let child = world.spawn_empty()
+    try! world.set(child, @render3d.ecs_key_mesh3d, node.mesh)
+    try! world.set(child, @render3d.ecs_key_mesh_material3d, node.material)
+    try! world.set(child, @math.ecs_key_transform, node.transform)
+    try! world.set(
+      child,
+      @hierarchy.ecs_key_parent,
+      @hierarchy.Parent::new(root_entity),
+    )
+    if node.visibility_range is Some(range) {
+      try! world.set(child, @visibility.ecs_key_visibility_range, range)
+    }
+    if node.animation_target is Some(target_id) {
+      try! world.set(child, @animation.ecs_key_animation_target_id, target_id)
+      try! world.set(
+        child,
+        @animation.ecs_key_animated_by,
+        @animation.AnimatedBy::new(root_entity),
+      )
+    }
+    spawned_entities.push(child)
+  }
+
+  scene_runtime_mark_ready(world, instance_id, spawned_entities) |> ignore
+  try! world.set(
+    root_entity,
+    ecs_key_scene_instance_ready,
+    SceneInstanceReady::new(instance_id, spawned_entities.length()),
+  )
+}
+
+///|
+pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
+  let roots : Array[(@core.Entity, SceneRoot)] = []
+  try! world
+  .query1(ecs_key_scene_root)
+  .view(fn(entity, root) { roots.push((entity, root)) })
+
+  for entry in roots {
+    let root_entity = entry.0
+    let root = entry.1
+    let instance_id = match scene_instance_component(world, root_entity) {
+      Some(instance) =>
+        match scene_runtime_get_instance(world, instance.instance_id) {
+          Some(current) =>
+            if current.scene_id == root.scene.id() {
+              instance.instance_id
+            } else {
+              scene_despawn_instance(world, instance.instance_id)
+              scene_attach_pending_instance(world, root_entity, root)
+            }
+          None => scene_attach_pending_instance(world, root_entity, root)
+        }
+      None => scene_attach_pending_instance(world, root_entity, root)
+    }
+    scene_spawn_instance_when_ready(world, root_entity, root, instance_id)
+  }
+}
+
+///|
+fn scene_runtime_plugin_base(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  app
+  .init_resource(fn() { SceneRuntimeState::default() })
+  .add_pre_update_system(scene_load_pending_system)
+  .add_pre_update_system(scene_spawn_roots_system)
 }
 
 ///|
 pub fn scene_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   scene_register_asset_loaders()
-  app
-  .init_resource(fn() {
-    let assets : @asset.Assets[Scene] = @asset.Assets::new()
-    assets
-  })
-  .init_resource(fn() { SceneAssetRegistryState::default() })
-  .add_pre_update_system(scene_load_pending_system)
-  .add_pre_update_system(scene_spawn_roots_system)
+  scene_runtime_plugin_base(
+    app
+    .init_resource(fn() {
+      let assets : @asset.Assets[Scene] = @asset.Assets::new()
+      assets
+    })
+    .init_resource(fn() { SceneAssetRegistryState::default() }),
+  )
 }
