@@ -1,0 +1,4 @@
+// Canonical native app backend owned by the app package.
+import {
+  "moonbitlang/core/ref",
+}

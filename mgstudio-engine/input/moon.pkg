@@ -5,7 +5,7 @@ import {
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/time",
-  "Milky2018/mgstudio/runtime_native/native_input",
+  "Milky2018/mgstudio/input/native_input",
   "Milky2018/mgstudio/window",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",

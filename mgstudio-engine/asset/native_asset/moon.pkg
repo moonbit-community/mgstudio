@@ -1,0 +1,8 @@
+// Canonical native asset backend owned by the asset package.
+import {
+  "Milky2018/mgstudio/render" @render,
+  "moonbitlang/core/ref",
+  "moonbitlang/x/fs",
+  "moonbitlang/x/path",
+  "moonbitlang/x/sys",
+}

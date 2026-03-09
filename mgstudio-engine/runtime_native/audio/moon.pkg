@@ -1,4 +1,0 @@
-import {
-  "Milky2018/moon_cpal" @cpal,
-  "Milky2018/moon_rodio" @rodio,
-}

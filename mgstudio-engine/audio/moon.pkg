@@ -4,7 +4,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/runtime_native/audio" @native_audio,
+  "Milky2018/mgstudio/audio/native_audio" @native_audio,
   "Milky2018/mgstudio/transform",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",

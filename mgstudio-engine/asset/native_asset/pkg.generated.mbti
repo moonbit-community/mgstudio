@@ -1,0 +1,78 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/asset/native_asset"
+
+// Values
+pub fn bytes_get_u32(blob_id~ : Int, index~ : Int) -> Int
+
+pub fn bytes_len(Int) -> Int
+
+pub fn copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
+
+pub fn create_dynamic_texture(width~ : Int, height~ : Int, nearest~ : Bool) -> Int
+
+pub fn create_dynamic_texture_mipped(width~ : Int, height~ : Int, mip_level_count~ : Int, nearest~ : Bool) -> Int
+
+pub fn create_texture_mip_view(texture_id~ : Int, mip_level~ : Int) -> Int
+
+pub fn font_bytes_get(font_id~ : Int, index~ : Int) -> Int
+
+pub fn font_bytes_get_u32(font_id~ : Int, index~ : Int) -> Int
+
+pub fn font_bytes_len(Int) -> Int
+
+pub fn is_texture_loaded(Int) -> Bool
+
+pub fn load_bytes(path~ : String) -> Int
+
+pub fn load_folder(path~ : String) -> Int
+
+pub fn load_font(path~ : String) -> Int
+
+pub fn load_texture(path~ : String, nearest~ : Bool) -> Int
+
+pub fn load_texture_bytes(bytes~ : Bytes, nearest~ : Bool) -> Int
+
+pub fn load_wgsl(path~ : String) -> Int
+
+pub fn load_with_registered_loader(path~ : String, nearest~ : Bool) -> Int
+
+pub fn loaded_folder_handles_get(folder_id~ : Int, index~ : Int) -> Int
+
+pub fn loaded_folder_handles_len(Int) -> Int
+
+pub fn loader_kind_for_path(path~ : String) -> Int
+
+pub fn poll_loaded_folder_event_id() -> Int
+
+pub fn poll_loaded_folder_event_kind() -> Int
+
+pub fn register_loader_extension(extension~ : String, kind~ : Int) -> Unit
+
+pub fn remove_loader_extension(extension~ : String) -> Unit
+
+pub fn save_rgba8_png(width~ : Int, height~ : Int, pixels~ : Bytes, path~ : String) -> Unit
+
+pub fn save_texture_png(texture_id~ : Int, path~ : String) -> Unit
+
+pub fn set_texture_sampler(texture_id~ : Int, address_mode_u~ : Int, address_mode_v~ : Int, address_mode_w~ : Int, mag_filter~ : Int, min_filter~ : Int, mipmap_filter~ : Int, lod_min_clamp~ : Float, lod_max_clamp~ : Float, compare~ : Int, anisotropy_clamp~ : Int, border_color~ : Int) -> Unit
+
+pub fn supported_compressed_image_formats() -> Int
+
+pub fn texture_height(Int) -> Int
+
+pub fn texture_width(Int) -> Int
+
+pub fn update_texture_region(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, glyph_id~ : Int) -> Unit
+
+pub fn update_texture_region_bytes(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, bytes~ : Bytes) -> Unit
+
+pub fn update_texture_region_mip_bytes(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, mip_level~ : Int, bytes~ : Bytes) -> Unit
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,5 @@
+// Canonical native time backend owned by the time package.
+import {
+  "moonbitlang/core/bench",
+  "moonbitlang/core/ref",
+}

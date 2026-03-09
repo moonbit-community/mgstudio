@@ -1,0 +1,5 @@
+// Canonical native accessibility backend owned by the a11y package.
+import {
+  "Milky2018/moon_accesskit",
+  "moonbitlang/core/ref",
+}

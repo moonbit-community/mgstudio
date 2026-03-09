@@ -1,0 +1,6 @@
+// Canonical native input backend owned by the input package.
+import {
+  "Milky2018/gamepad",
+  "Milky2018/mgstudio/window/windowing_native" @windowing_native,
+  "moonbitlang/core/ref",
+}
