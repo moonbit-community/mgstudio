@@ -32,6 +32,10 @@ pub let ecs_key_button_colors : @ecs.ComponentKey[ButtonColors]
 
 pub let ecs_key_calculated_clip : @ecs.ComponentKey[CalculatedClip]
 
+pub let ecs_key_computed_ui_render_target_info : @ecs.ComponentKey[ComputedUiRenderTargetInfo]
+
+pub let ecs_key_computed_ui_target_camera : @ecs.ComponentKey[ComputedUiTargetCamera]
+
 pub let ecs_key_content_size : @ecs.ComponentKey[ContentSize]
 
 pub let ecs_key_focus_policy : @ecs.ComponentKey[FocusPolicy]
@@ -72,6 +76,8 @@ pub let ecs_key_ui_scale : @ecs.ResourceKey[UiScale]
 
 pub let ecs_key_ui_stack : @ecs.ResourceKey[UiStack]
 
+pub let ecs_key_ui_target_camera : @ecs.ComponentKey[UiTargetCamera]
+
 pub let ecs_key_ui_text : @ecs.ComponentKey[UiText]
 
 pub let ecs_key_z_index : @ecs.ComponentKey[ZIndex]
@@ -93,6 +99,10 @@ pub fn get_button_colors_store(@ecs.World) -> @ecs.ComponentAccess[ButtonColors]
 pub fn get_button_store(@ecs.World) -> @ecs.ComponentAccess[Button]
 
 pub fn get_calculated_clip_store(@ecs.World) -> @ecs.ComponentAccess[CalculatedClip]
+
+pub fn get_computed_ui_render_target_info_store(@ecs.World) -> @ecs.ComponentAccess[ComputedUiRenderTargetInfo]
+
+pub fn get_computed_ui_target_camera_store(@ecs.World) -> @ecs.ComponentAccess[ComputedUiTargetCamera]
 
 pub fn get_content_size_store(@ecs.World) -> @ecs.ComponentAccess[ContentSize]
 
@@ -134,6 +144,8 @@ pub fn get_ui_scale_resource(@ecs.World) -> @ecs.ResourceAccess[UiScale]
 
 pub fn get_ui_stack_resource(@ecs.World) -> @ecs.ResourceAccess[UiStack]
 
+pub fn get_ui_target_camera_store(@ecs.World) -> @ecs.ComponentAccess[UiTargetCamera]
+
 pub fn get_ui_text_store(@ecs.World) -> @ecs.ComponentAccess[UiText]
 
 pub fn get_z_index_store(@ecs.World) -> @ecs.ComponentAccess[ZIndex]
@@ -153,6 +165,8 @@ pub fn ui_layout_system(@ecs.World) -> Unit
 pub fn ui_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn ui_pointer_pos_in_viewport(@math.Vec2, @math.Vec2, @math.Vec2) -> @math.Vec2?
+
+pub fn ui_propagate_target_cameras_system(@ecs.World) -> Unit
 
 pub fn ui_render_extract_system(@ecs.World) -> Unit
 
@@ -331,6 +345,29 @@ pub fn CalculatedClip::new(@math.Rect) -> Self
 pub impl @ecs.Component for CalculatedClip
 pub impl ToJson for CalculatedClip
 pub impl @json.FromJson for CalculatedClip
+
+pub struct ComputedUiRenderTargetInfo {
+  scale_factor : Float
+  physical_size : @math.IVec2
+}
+pub fn ComputedUiRenderTargetInfo::default() -> Self
+pub fn ComputedUiRenderTargetInfo::logical_size(Self) -> @math.Vec2
+pub fn ComputedUiRenderTargetInfo::new(Float, @math.IVec2) -> Self
+pub fn ComputedUiRenderTargetInfo::physical_size(Self) -> @math.IVec2
+pub fn ComputedUiRenderTargetInfo::scale_factor(Self) -> Float
+pub impl @ecs.Component for ComputedUiRenderTargetInfo
+pub impl ToJson for ComputedUiRenderTargetInfo
+pub impl @json.FromJson for ComputedUiRenderTargetInfo
+
+pub struct ComputedUiTargetCamera {
+  camera : @core.Entity
+}
+pub fn ComputedUiTargetCamera::default() -> Self
+pub fn ComputedUiTargetCamera::get(Self) -> @core.Entity?
+pub fn ComputedUiTargetCamera::new(@core.Entity) -> Self
+pub impl @ecs.Component for ComputedUiTargetCamera
+pub impl ToJson for ComputedUiTargetCamera
+pub impl @json.FromJson for ComputedUiTargetCamera
 
 pub struct ContentSize {
   size : @math.Vec2
@@ -824,6 +861,15 @@ pub fn UiStack::default() -> Self
 pub fn UiStack::uinodes(Self) -> Array[@core.Entity]
 pub impl ToJson for UiStack
 pub impl @json.FromJson for UiStack
+
+pub struct UiTargetCamera {
+  camera : @core.Entity
+}
+pub fn UiTargetCamera::entity(Self) -> @core.Entity
+pub fn UiTargetCamera::new(@core.Entity) -> Self
+pub impl @ecs.Component for UiTargetCamera
+pub impl ToJson for UiTargetCamera
+pub impl @json.FromJson for UiTargetCamera
 
 pub struct UiText {
   handle : @text.TextHandle

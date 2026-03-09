@@ -38,6 +38,21 @@ pub let ecs_key_is_default_ui_camera : @ecs.ComponentKey[IsDefaultUiCamera] = @e
 )
 
 ///|
+pub let ecs_key_ui_target_camera : @ecs.ComponentKey[UiTargetCamera] = @ecs.register_component(
+  debug_name="ui.ui_target_camera",
+)
+
+///|
+pub let ecs_key_computed_ui_target_camera : @ecs.ComponentKey[
+  ComputedUiTargetCamera,
+] = @ecs.register_component(debug_name="ui.computed_ui_target_camera")
+
+///|
+pub let ecs_key_computed_ui_render_target_info : @ecs.ComponentKey[
+  ComputedUiRenderTargetInfo,
+] = @ecs.register_component(debug_name="ui.computed_ui_render_target_info")
+
+///|
 pub let ecs_key_ui_text : @ecs.ComponentKey[UiText] = @ecs.register_component(
   debug_name="ui.ui_text",
 )
@@ -170,6 +185,21 @@ pub impl @ecs.Component for UiRoot with component() {
 ///|
 pub impl @ecs.Component for IsDefaultUiCamera with component() {
   ecs_key_is_default_ui_camera
+}
+
+///|
+pub impl @ecs.Component for UiTargetCamera with component() {
+  ecs_key_ui_target_camera
+}
+
+///|
+pub impl @ecs.Component for ComputedUiTargetCamera with component() {
+  ecs_key_computed_ui_target_camera
+}
+
+///|
+pub impl @ecs.Component for ComputedUiRenderTargetInfo with component() {
+  ecs_key_computed_ui_render_target_info
 }
 
 ///|

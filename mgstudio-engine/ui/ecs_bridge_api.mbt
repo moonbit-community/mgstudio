@@ -15,11 +15,12 @@
 ///|
 /// ECS component bridge types.
 pub let ecs_components : Array[String] = [
-  "Node", "Label", "Button", "UiRoot", "IsDefaultUiCamera", "UiText", "ZIndex", "Outline",
-  "UiImage", "UiLayout", "BoxShadow", "ImageNode", "BorderColor", "ContentSize",
-  "FocusPolicy", "Interaction", "UiAntiAlias", "BorderRadius", "ButtonColors", "GlobalZIndex",
-  "ImageNodeSize", "CalculatedClip", "ScrollPosition", "BackgroundColor", "AccessibilityLabel",
-  "UiBoxShadowSamples", "RelativeCursorPosition",
+  "Node", "Label", "Button", "UiRoot", "IsDefaultUiCamera", "UiTargetCamera", "ComputedUiTargetCamera",
+  "ComputedUiRenderTargetInfo", "UiText", "ZIndex", "Outline", "UiImage", "UiLayout",
+  "BoxShadow", "ImageNode", "BorderColor", "ContentSize", "FocusPolicy", "Interaction",
+  "UiAntiAlias", "BorderRadius", "ButtonColors", "GlobalZIndex", "ImageNodeSize",
+  "CalculatedClip", "ScrollPosition", "BackgroundColor", "AccessibilityLabel", "UiBoxShadowSamples",
+  "RelativeCursorPosition",
 ]
 
 ///|
@@ -51,6 +52,27 @@ pub fn get_is_default_ui_camera_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[IsDefaultUiCamera] {
   world.component(ecs_key_is_default_ui_camera)
+}
+
+///|
+pub fn get_ui_target_camera_store(
+  world : @ecs.World,
+) -> @ecs.ComponentAccess[UiTargetCamera] {
+  world.component(ecs_key_ui_target_camera)
+}
+
+///|
+pub fn get_computed_ui_target_camera_store(
+  world : @ecs.World,
+) -> @ecs.ComponentAccess[ComputedUiTargetCamera] {
+  world.component(ecs_key_computed_ui_target_camera)
+}
+
+///|
+pub fn get_computed_ui_render_target_info_store(
+  world : @ecs.World,
+) -> @ecs.ComponentAccess[ComputedUiRenderTargetInfo] {
+  world.component(ecs_key_computed_ui_render_target_info)
 }
 
 ///|
