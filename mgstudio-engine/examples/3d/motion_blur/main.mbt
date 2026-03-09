@@ -175,6 +175,7 @@ fn set_camera_fov(
   let next_projection = match current {
     Perspective(p) => Some(@render3d.Projection::Perspective(p.with_fov(fov)))
     Orthographic(_) => None
+    Custom(_) => None
   }
   guard next_projection is Some(projection) else { return }
   projection_store.set(camera_entity, projection, world.read_change_tick())

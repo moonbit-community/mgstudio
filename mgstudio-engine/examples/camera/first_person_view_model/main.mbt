@@ -334,6 +334,7 @@ fn change_fov(
         projection_ref.val = Perspective(perspective.with_fov(next_fov))
       }
       Orthographic(_) => ()
+      Custom(_) => ()
     }
   })
 }

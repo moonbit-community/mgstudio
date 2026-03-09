@@ -219,9 +219,13 @@ fn switch_projection(
   try! camera_query.view_mut(fn(_entity, camera_projection) {
     let projection_ref = camera_projection.get_ref()
     let next_projection = match projection_ref.val {
-      @render3d.Projection::Orthographic(_) => perspective_projection(settings)
-      @render3d.Projection::Perspective(_) => orthographic_projection(settings)
+      @render3d.Projection::Orthographic(_) =>
+        Some(perspective_projection(settings))
+      @render3d.Projection::Perspective(_) =>
+        Some(orthographic_projection(settings))
+      @render3d.Projection::Custom(_) => None
     }
+    guard next_projection is Some(next_projection) else { return }
     projection_ref.val = next_projection
     camera_projection.set_changed()
   })
@@ -264,6 +268,7 @@ fn zoom(
         )
         @render3d.Projection::Perspective(perspective.with_fov(next_fov))
       }
+      @render3d.Projection::Custom(_) => return
     }
     projection_ref.val = next_projection
     camera_projection.set_changed()
