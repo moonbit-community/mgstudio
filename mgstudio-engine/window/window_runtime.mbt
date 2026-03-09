@@ -541,6 +541,8 @@ fn window_sync_requested_state(
   if cursor_icon != runtime_ref.val.last_applied_cursor_icon {
     if cursor_icon is Some(cursor_icon0) {
       host_window_set_cursor_icon(host_window, icon=cursor_icon0)
+    } else {
+      host_window_set_cursor_icon(host_window, icon=CursorIcon::default())
     }
     runtime_ref.val.last_applied_cursor_icon = cursor_icon
   }

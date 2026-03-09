@@ -164,7 +164,7 @@ test "window: compatibility helpers read and write ECS primary window state" {
       window_set_resizable(resizable=false)
       window_set_cursor_visible(visible=false)
       window_set_cursor_grab_mode(mode=CursorGrabMode::GrabConfined)
-      window_set_cursor_icon(icon=CursorIcon::EwResize)
+      window_set_cursor_icon(icon=CursorIcon::from(SystemCursorIcon::EwResize))
       window_set_position(x=30, y=40)
       window_set_mode(mode=WindowMode::Fullscreen)
     }),
@@ -194,7 +194,10 @@ test "window: compatibility helpers read and write ECS primary window state" {
   }
   inspect(stored_cursor.visible, content="false")
   inspect(stored_cursor.grab_mode, content="GrabConfined")
-  inspect(cursor_icon_value(app.world(), entity), content="Some(EwResize)")
+  inspect(
+    cursor_icon_value(app.world(), entity),
+    content="Some(System(EwResize))",
+  )
 }
 
 ///|
@@ -282,7 +285,7 @@ test "window: singleton helpers no-op when no primary window exists" {
       window_set_resizable(resizable=false)
       window_set_cursor_visible(visible=false)
       window_set_cursor_grab_mode(mode=CursorGrabMode::GrabConfined)
-      window_set_cursor_icon(icon=CursorIcon::EwResize)
+      window_set_cursor_icon(icon=CursorIcon::from(SystemCursorIcon::EwResize))
       window_set_position(x=30, y=40)
       window_set_mode(mode=WindowMode::Fullscreen)
     }),

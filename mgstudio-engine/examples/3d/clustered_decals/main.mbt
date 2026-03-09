@@ -757,9 +757,9 @@ fn switch_drag_mode(world : @ecs.World) -> Bool {
   }
   @window.window_set_cursor_icon(
     icon=if hover_resize_cursor {
-      @window.CursorIcon::EwResize
+      @window.CursorIcon::from(@window.SystemCursorIcon::EwResize)
     } else {
-      @window.CursorIcon::Default
+      @window.CursorIcon::from(@window.SystemCursorIcon::Default)
     },
   )
 

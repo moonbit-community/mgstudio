@@ -94,10 +94,56 @@ pub(all) enum CursorGrabMode {
 } derive(Eq, Show)
 
 ///|
-pub(all) enum CursorIcon {
+pub(all) enum SystemCursorIcon {
   Default
+  ContextMenu
+  Help
+  Pointer
+  Progress
+  Wait
+  Cell
+  Crosshair
+  Text
+  VerticalText
+  Alias
+  Copy
+  Move
+  NoDrop
+  NotAllowed
+  Grab
+  Grabbing
+  EResize
+  NResize
+  NeResize
+  NwResize
+  SResize
+  SeResize
+  SwResize
+  WResize
   EwResize
 } derive(Eq, Show)
+
+///|
+pub(all) enum CursorIcon {
+  System(SystemCursorIcon)
+} derive(Eq, Show)
+
+///|
+pub fn CursorIcon::from(icon : SystemCursorIcon) -> CursorIcon {
+  System(icon)
+}
+
+///|
+pub fn CursorIcon::as_system(self : CursorIcon) -> SystemCursorIcon? {
+  match self {
+    System(icon) => Some(icon)
+  }
+}
+
+///|
+pub impl Default for CursorIcon with default() {
+  System(Default)
+}
 
 ///|
 pub(all) enum WindowMode {
@@ -236,8 +282,13 @@ fn cursor_grab_mode_to_int(mode : CursorGrabMode) -> Int {
 ///|
 fn cursor_icon_to_int(icon : CursorIcon) -> Int {
   match icon {
-    Default => 0
-    EwResize => 1
+    System(system_icon) =>
+      match system_icon {
+        Default => 0
+        EwResize => 1
+        Progress => 2
+        _ => 0
+      }
   }
 }
 
@@ -336,7 +387,9 @@ fn env_int_or_default(key : String, default_value : Int) -> Int {
       if token == "" {
         default_value
       } else {
-        @strconv.parse_int(token[:], base=10) catch { _ => default_value }
+        @strconv.parse_int(token[:], base=10) catch {
+          _ => default_value
+        }
       }
     }
     None => default_value
@@ -1366,8 +1419,10 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
     let surface_width_ref : Ref[Int] = Ref::new(width)
     let surface_height_ref : Ref[Int] = Ref::new(height)
     let app_ref : Ref[@app.App[@ecs.World]] = Ref::new(app.run_startup())
-    let debug_screenshot_path = match @sys.get_env_var("MGSTUDIO_SCREENSHOT_PATH") {
-      Some(path) if path.trim().to_string() != "" => Some(path.trim().to_string())
+    let debug_screenshot_path = match
+      @sys.get_env_var("MGSTUDIO_SCREENSHOT_PATH") {
+      Some(path) if path.trim().to_string() != "" =>
+        Some(path.trim().to_string())
       _ => None
     }
     let debug_screenshot_exit_on_save = env_flag_enabled(
@@ -1375,11 +1430,19 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
     )
     let debug_screenshot_texture_id = {
       let value = env_int_or_default("MGSTUDIO_SCREENSHOT_TEXTURE_ID", -1)
-      if value > 0 { value } else { -1 }
+      if value > 0 {
+        value
+      } else {
+        -1
+      }
     }
     let debug_screenshot_frame = if debug_screenshot_path is Some(_) {
       let value = env_int_or_default("MGSTUDIO_SCREENSHOT_FRAME", 1)
-      if value <= 0 { 1 } else { value }
+      if value <= 0 {
+        1
+      } else {
+        value
+      }
     } else {
       1
     }
@@ -1424,7 +1487,8 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
         screenshot_queue_capture_requests(app_ref.val.world())
         host_gpu_end_frame(frame)
         screenshot_finalize_capture_requests(app_ref.val.world())
-        if !debug_screenshot_saved_ref.val && debug_screenshot_path is Some(path) {
+        if !debug_screenshot_saved_ref.val &&
+          debug_screenshot_path is Some(path) {
           let capture = if debug_screenshot_texture_id > 0 &&
             next_render_frame >= debug_screenshot_frame {
             @native_gpu.screenshot_capture_texture_sync(
@@ -1442,7 +1506,7 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
               width=capture.width,
               height=capture.height,
               pixels=capture.pixels,
-              path=path,
+              path~,
             )
             debug_screenshot_saved_ref.val = true
             if debug_screenshot_exit_on_save {

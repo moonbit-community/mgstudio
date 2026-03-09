@@ -42,9 +42,9 @@ priv struct PendingScreenshotEntityCapture {
 }
 
 ///|
-let pending_screenshot_entity_captures : Ref[Array[PendingScreenshotEntityCapture]] = Ref::new(
-  [],
-)
+let pending_screenshot_entity_captures : Ref[
+  Array[PendingScreenshotEntityCapture],
+] = Ref::new([])
 
 ///|
 pub fn Screenshot::window(window : @core.Entity) -> Screenshot {
@@ -102,7 +102,10 @@ pub impl @ecs.Component for ScreenshotCaptured with component() {
 }
 
 ///|
-fn screenshot_component(world : @ecs.World, entity : @core.Entity) -> Screenshot? {
+fn screenshot_component(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Screenshot? {
   try world.get_component(entity) catch {
     _ => None
   } noraise {
@@ -123,6 +126,41 @@ fn screenshot_captured_component(
 }
 
 ///|
+fn screenshot_warn(message : String) -> Unit {
+  host_debug_string(value="[screenshot] " + message)
+}
+
+///|
+fn array_contains(values : Array[String], target : String) -> Bool {
+  for value in values {
+    if value == target {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn screenshot_target_key(
+  world : @ecs.World,
+  screenshot : Screenshot,
+) -> String? {
+  match screenshot.target {
+    Window(window_ref) => {
+      let primary = window_entity_for_ref(world, WindowRef::Primary)
+      guard window_entity_for_ref(world, window_ref) is Some(window_entity) else {
+        return None
+      }
+      if Some(window_entity) != primary {
+        return None
+      }
+      Some("window:" + window_entity.id.to_string())
+    }
+    Image(image) => Some("image:" + image.id().to_string())
+  }
+}
+
+///|
 fn screenshot_request_capture(
   world : @ecs.World,
   screenshot : Screenshot,
@@ -135,28 +173,42 @@ fn screenshot_request_capture(
       }
       @native_gpu.screenshot_capture_surface_request()
     }
-    Image(image) => @native_gpu.screenshot_capture_texture_request(
-      texture_id=image.id(),
-    )
+    Image(image) =>
+      @native_gpu.screenshot_capture_texture_request(texture_id=image.id())
   }
 }
 
 ///|
-pub fn screenshot_queue_capture_requests(
-  world : @ecs.World,
-) -> Unit {
+pub fn screenshot_queue_capture_requests(world : @ecs.World) -> Unit {
   let entities : Array[@core.Entity] = []
-  world.query_entities_filtered(
+  let seen_targets : Array[String] = []
+  world
+  .query_entities_filtered(
     (
       @ecs.With::new(ecs_key_screenshot),
       @ecs.Without::new(ecs_key_capturing),
       @ecs.Without::new(ecs_key_captured),
     ),
-  ).view(fn(entity) { entities.push(entity) })
+  )
+  .view(fn(entity) { entities.push(entity) })
   for entity in entities {
     guard screenshot_component(world, entity) is Some(screenshot) else {
       continue
     }
+    guard screenshot_target_key(world, screenshot) is Some(target_key) else {
+      continue
+    }
+    if array_contains(seen_targets, target_key) {
+      screenshot_warn(
+        "duplicate screenshot target skipped for entity " +
+        entity.id.to_string(),
+      )
+      world.despawn(entity) catch {
+        _ => ()
+      }
+      continue
+    }
+    seen_targets.push(target_key)
     let capture_id = screenshot_request_capture(world, screenshot)
     if capture_id <= 0 {
       continue
@@ -170,27 +222,20 @@ pub fn screenshot_queue_capture_requests(
 }
 
 ///|
-pub fn screenshot_finalize_capture_requests(
-  world : @ecs.World,
-) -> Unit {
+pub fn screenshot_finalize_capture_requests(world : @ecs.World) -> Unit {
   let remaining : Array[PendingScreenshotEntityCapture] = []
   for pending_capture in pending_screenshot_entity_captures.val {
     let capture_id = pending_capture.capture_id
     let entity = pending_capture.entity
-    guard world.is_alive(entity) else {
-      continue
-    }
-    guard @native_gpu.screenshot_take_capture_result(capture_id) is Some(capture) else {
+    guard world.is_alive(entity) else { continue }
+    guard @native_gpu.screenshot_take_capture_result(capture_id)
+      is Some(capture) else {
       remaining.push(pending_capture)
       continue
     }
     try! world.set_component(entity, ScreenshotCaptured::{
       entity,
-      image: @asset.Image::new(
-        capture.width,
-        capture.height,
-        capture.pixels,
-      ),
+      image: @asset.Image::new(capture.width, capture.height, capture.pixels),
     })
     try! world.set_component(entity, Captured::{  })
   }
@@ -225,7 +270,9 @@ fn screenshot_write_capture_to_disk(
 }
 
 ///|
-pub fn save_to_disk(path : String) -> (@ecs.On[@ecs.Insert, ScreenshotCaptured]) -> Unit {
+pub fn save_to_disk(
+  path : String,
+) -> (@ecs.On[@ecs.Insert, ScreenshotCaptured]) -> Unit {
   fn(event : @ecs.On[@ecs.Insert, ScreenshotCaptured]) {
     let world = @ecs.current_observer_world_abort_missing()
     guard screenshot_captured_component(world, event.entity) is Some(capture) else {
@@ -242,7 +289,7 @@ fn screenshot_clear_system(world : @ecs.World) -> Unit {
   .query_entities_filtered(@ecs.With::new(ecs_key_captured))
   .view(fn(entity) { entities.push(entity) })
   for entity in entities {
-    try world.despawn(entity) catch {
+    world.despawn(entity) catch {
       _ => ()
     }
   }

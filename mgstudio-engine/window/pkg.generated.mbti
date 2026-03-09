@@ -228,10 +228,12 @@ pub impl Eq for CursorGrabMode
 pub impl Show for CursorGrabMode
 
 pub(all) enum CursorIcon {
-  Default
-  EwResize
+  System(SystemCursorIcon)
 }
+pub fn CursorIcon::as_system(Self) -> SystemCursorIcon?
+pub fn CursorIcon::from(SystemCursorIcon) -> Self
 pub impl @ecs.Component for CursorIcon
+pub impl Default for CursorIcon
 pub impl Eq for CursorIcon
 pub impl Show for CursorIcon
 
@@ -361,6 +363,37 @@ pub(all) enum ScreenshotTarget {
   Window(WindowRef)
   Image(@asset.Handle[@asset.Image])
 }
+
+pub(all) enum SystemCursorIcon {
+  Default
+  ContextMenu
+  Help
+  Pointer
+  Progress
+  Wait
+  Cell
+  Crosshair
+  Text
+  VerticalText
+  Alias
+  Copy
+  Move
+  NoDrop
+  NotAllowed
+  Grab
+  Grabbing
+  EResize
+  NResize
+  NeResize
+  NwResize
+  SResize
+  SeResize
+  SwResize
+  WResize
+  EwResize
+}
+pub impl Eq for SystemCursorIcon
+pub impl Show for SystemCursorIcon
 
 pub(all) struct Window {
   mut title : String
