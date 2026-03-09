@@ -15,9 +15,13 @@ pub const AXIS_MAX : Float = 1.0
 
 pub const AXIS_MIN : Float = -1.
 
+pub fn[M : @ecs.Message] dispatch_focused_input(@ecs.MessageReader[M], @app.ResMut[InputFocus]) -> Unit
+
 pub let ecs_key_gamepad : @ecs.ComponentKey[Gamepad]
 
 pub let ecs_key_gamepad_settings : @ecs.ComponentKey[GamepadSettings]
+
+pub fn[M : @ecs.Message] focused_input_message_key() -> @ecs.MessageKey[FocusedInput[M]]
 
 pub fn host_input_finish_frame() -> Unit
 
@@ -31,7 +35,11 @@ pub fn host_input_wheel_x() -> Float
 
 pub fn host_input_wheel_y() -> Float
 
+pub fn input_dispatch_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn[W] input_finish_system(W) -> Unit
+
+pub fn input_focus_system_set_name(InputFocusSystems) -> String
 
 pub fn input_gamepad_finish_frame() -> Unit
 
@@ -82,6 +90,8 @@ pub fn primary_pointer_just_released() -> Bool
 pub fn primary_pointer_position() -> @math.Vec2?
 
 pub fn primary_pointer_pressed() -> Bool
+
+pub fn set_initial_focus(@ecs.World) -> Unit
 
 // Errors
 pub(all) suberror AxisSettingsError {
@@ -251,6 +261,14 @@ pub(all) enum FileDragAndDrop {
 pub impl @ecs.Message for FileDragAndDrop
 pub impl ToJson for FileDragAndDrop
 pub impl @json.FromJson for FileDragAndDrop
+
+pub struct FocusedInput[M] {
+  focused_entity : @core.Entity
+  input : M
+  window : @core.Entity
+}
+pub fn[M] FocusedInput::new(@core.Entity, M, @core.Entity) -> Self[M]
+pub impl[M : @ecs.Message] @ecs.Message for FocusedInput[M]
 
 pub struct Gamepad {
   vendor_id : Int?
@@ -458,6 +476,41 @@ pub impl Default for GamepadSettings
 pub impl ToJson for GamepadSettings
 pub impl @json.FromJson for GamepadSettings
 
+pub struct InputDispatchPlugin {
+}
+pub fn InputDispatchPlugin::default() -> Self
+
+pub struct InputFocus {
+  mut focused_entity : @core.Entity?
+}
+pub fn InputFocus::clear(Self) -> Unit
+pub fn InputFocus::default() -> Self
+pub fn InputFocus::from_entity(@core.Entity) -> Self
+pub fn InputFocus::get(Self) -> @core.Entity?
+pub fn InputFocus::set(Self, @core.Entity) -> Unit
+pub impl @app.Resource for InputFocus
+
+pub(all) enum InputFocusSystems {
+  Dispatch
+}
+pub impl Eq for InputFocusSystems
+pub impl Show for InputFocusSystems
+
+pub struct InputFocusVisible {
+  mut visible : Bool
+}
+pub fn InputFocusVisible::default() -> Self
+pub fn InputFocusVisible::new(Bool) -> Self
+pub fn InputFocusVisible::set_visible(Self, Bool) -> Unit
+pub fn InputFocusVisible::visible(Self) -> Bool
+pub impl @app.Resource for InputFocusVisible
+
+pub struct IsFocusedHelper {
+  world : @ecs.World
+}
+pub impl @app.SystemParam for IsFocusedHelper
+pub impl IsFocused for IsFocusedHelper
+
 pub(all) enum Key {
   Character(String)
   Enter
@@ -638,4 +691,12 @@ pub impl ButtonInputSnapshotProvider for @window.MouseButton
 pub(open) trait IntoGamepadInput {
   into_gamepad_input(Self) -> GamepadInput
 }
+
+pub(open) trait IsFocused {
+  is_focused(Self, @core.Entity) -> Bool
+  is_focus_within(Self, @core.Entity) -> Bool
+  is_focus_visible(Self, @core.Entity) -> Bool
+  is_focus_within_visible(Self, @core.Entity) -> Bool
+}
+pub impl IsFocused for @ecs.World
 

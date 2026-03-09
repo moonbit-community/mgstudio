@@ -2,9 +2,12 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/runtime_native/native_input",
   "Milky2018/mgstudio/window",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
+  "tonyfettes/any",
 }
