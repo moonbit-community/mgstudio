@@ -23,6 +23,11 @@ fn projection_approx_eq(a : Float, b : Float) -> Bool {
 }
 
 ///|
+fn[T : CameraProjection3d] generic_projection_far(projection : T) -> Float {
+  projection.far()
+}
+
+///|
 test "render3d: perspective projection getters expose configured values" {
   let projection = PerspectiveProjection3d::default()
     .with_fov(1.2F)
@@ -61,6 +66,21 @@ test "render3d: perspective with_near keeps default clip plane in sync and prese
     projection_approx_eq(preserved.near_clip_plane().w, -2.0F),
     content="true",
   )
+}
+
+///|
+test "render3d: custom projection default stores perspective default payload" {
+  let custom = CustomProjection3d::default()
+  let perspective : PerspectiveProjection3d? = custom.get()
+  let ok = match perspective {
+    Some(perspective) =>
+      projection_approx_eq(custom.far(), 1000.0F) &&
+      projection_approx_eq(perspective.fov(), @math.pi_half() * 0.5F) &&
+      projection_approx_eq(perspective.near(), 0.1F) &&
+      projection_approx_eq(perspective.aspect_ratio(), 1.0F)
+    None => false
+  }
+  inspect(ok, content="true")
 }
 
 ///|
@@ -230,6 +250,26 @@ test "render3d: custom projection stores typed payload and updates lifecycle sta
     Projection::Perspective(_) => false
     Projection::Orthographic(_) => false
   }
+  inspect(ok, content="true")
+}
+
+///|
+test "render3d: projection and custom projection satisfy CameraProjection3d forwarding surface" {
+  let custom = CustomProjection3d::new(TestCustomProjection3d::{
+    view_width: 3.0F,
+    view_height: 2.0F,
+    far_plane: 321.0F,
+  })
+  let projection = Projection::custom(TestCustomProjection3d::{
+    view_width: 4.0F,
+    view_height: 3.0F,
+    far_plane: 654.0F,
+  })
+  let updated_projection = generic_projection_far(
+    projection.update(128.0F, 64.0F),
+  )
+  let ok = projection_approx_eq(generic_projection_far(custom), 321.0F) &&
+    projection_approx_eq(updated_projection, 654.0F)
   inspect(ok, content="true")
 }
 

@@ -1011,6 +1011,11 @@ pub fn[T : CameraProjection3d] CustomProjection3d::new(
 }
 
 ///|
+pub fn CustomProjection3d::default() -> CustomProjection3d {
+  CustomProjection3d::new(PerspectiveProjection3d::default())
+}
+
+///|
 pub fn[T] CustomProjection3d::get(self : CustomProjection3d) -> T? {
   self.payload.try_to()
 }
@@ -1141,6 +1146,102 @@ pub fn Projection::get_frustum_corners(
   z_near : Float,
   z_far : Float,
 ) -> Array[@math.Vec3] {
+  match self {
+    Perspective(projection) => projection.get_frustum_corners(z_near, z_far)
+    Orthographic(projection) => projection.get_frustum_corners(z_near, z_far)
+    Custom(projection) => projection.get_frustum_corners(z_near, z_far)
+  }
+}
+
+///|
+pub impl CameraProjection3d for CustomProjection3d with get_clip_from_view(self) {
+  (self.get_clip_from_view_fn)(self.payload)
+}
+
+///|
+pub impl CameraProjection3d for CustomProjection3d with get_clip_from_view_for_sub(
+  self,
+  sub_view,
+) {
+  (self.get_clip_from_view_for_sub_fn)(self.payload, sub_view)
+}
+
+///|
+pub impl CameraProjection3d for CustomProjection3d with update(
+  self,
+  width,
+  height,
+) {
+  CustomProjection3d::{
+    type_name: self.type_name,
+    payload: (self.update_fn)(self.payload, width, height),
+    get_clip_from_view_fn: self.get_clip_from_view_fn,
+    get_clip_from_view_for_sub_fn: self.get_clip_from_view_for_sub_fn,
+    update_fn: self.update_fn,
+    far_fn: self.far_fn,
+    get_frustum_corners_fn: self.get_frustum_corners_fn,
+  }
+}
+
+///|
+pub impl CameraProjection3d for CustomProjection3d with far(self) {
+  (self.far_fn)(self.payload)
+}
+
+///|
+pub impl CameraProjection3d for CustomProjection3d with get_frustum_corners(
+  self,
+  z_near,
+  z_far,
+) {
+  (self.get_frustum_corners_fn)(self.payload, z_near, z_far)
+}
+
+///|
+pub impl CameraProjection3d for Projection with get_clip_from_view(self) {
+  match self {
+    Perspective(projection) => projection.get_clip_from_view()
+    Orthographic(projection) => projection.get_clip_from_view()
+    Custom(projection) => projection.get_clip_from_view()
+  }
+}
+
+///|
+pub impl CameraProjection3d for Projection with get_clip_from_view_for_sub(
+  self,
+  sub_view,
+) {
+  match self {
+    Perspective(projection) => projection.get_clip_from_view_for_sub(sub_view)
+    Orthographic(projection) => projection.get_clip_from_view_for_sub(sub_view)
+    Custom(projection) => projection.get_clip_from_view_for_sub(sub_view)
+  }
+}
+
+///|
+pub impl CameraProjection3d for Projection with update(self, width, height) {
+  match self {
+    Perspective(projection) => Perspective(projection.update(width, height))
+    Orthographic(projection) => Orthographic(projection.update(width, height))
+    Custom(projection) => Custom(projection.update(width, height))
+  }
+}
+
+///|
+pub impl CameraProjection3d for Projection with far(self) {
+  match self {
+    Perspective(projection) => projection.far()
+    Orthographic(projection) => projection.far()
+    Custom(projection) => projection.far()
+  }
+}
+
+///|
+pub impl CameraProjection3d for Projection with get_frustum_corners(
+  self,
+  z_near,
+  z_far,
+) {
   match self {
     Perspective(projection) => projection.get_frustum_corners(z_near, z_far)
     Orthographic(projection) => projection.get_frustum_corners(z_near, z_far)

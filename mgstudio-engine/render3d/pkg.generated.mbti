@@ -685,6 +685,7 @@ pub impl ToJson for CubemapLayout3d
 pub impl @json.FromJson for CubemapLayout3d
 
 type CustomProjection3d
+pub fn CustomProjection3d::default() -> Self
 pub fn CustomProjection3d::far(Self) -> Float
 pub fn[T] CustomProjection3d::get(Self) -> T?
 pub fn CustomProjection3d::get_clip_from_view(Self) -> ProjectionMatrix3d
@@ -693,6 +694,7 @@ pub fn CustomProjection3d::get_frustum_corners(Self, Float, Float) -> Array[@mat
 pub fn[T : CameraProjection3d] CustomProjection3d::new(T) -> Self
 pub fn CustomProjection3d::type_name(Self) -> String
 pub fn CustomProjection3d::update(Self, Float, Float) -> Self
+pub impl CameraProjection3d for CustomProjection3d
 
 pub(all) enum DebandDither {
   Disabled
@@ -1377,6 +1379,7 @@ pub fn Projection::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 pub fn Projection::is_perspective(Self) -> Bool
 pub fn Projection::update(Self, Float, Float) -> Self
 pub impl @ecs.Component for Projection
+pub impl CameraProjection3d for Projection
 
 pub(all) struct ProjectionMatrix3d {
   x_axis : @math.Vec4
