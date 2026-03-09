@@ -94,6 +94,7 @@ pub struct Blob {}
 pub struct AssetServer {
   paths : Ref[Array[String]]
   image_paths : Ref[Array[(String, Handle[Image])]]
+  image_loaded_states : Ref[@hashmap.HashMap[Int, Bool]]
   image_array_layouts : Ref[Array[(Int, ImageArrayLayout)]]
   image_srgb_settings : Ref[Array[(Int, Bool)]]
   image_usage_settings : Ref[Array[(Int, Int)]]
@@ -132,6 +133,7 @@ fn asset_server_standalone() -> AssetServer {
   AssetServer::{
     paths: Ref::new([]),
     image_paths: Ref::new([]),
+    image_loaded_states: Ref::new(@hashmap.HashMap::new()),
     image_array_layouts: Ref::new([]),
     image_srgb_settings: Ref::new([]),
     image_usage_settings: Ref::new([]),
@@ -503,6 +505,14 @@ fn AssetServer::register_image_path(
   handle : Handle[Image],
 ) -> Unit {
   self.image_paths.val.push((path, handle))
+}
+
+///|
+fn AssetServer::track_image_handle(
+  self : AssetServer,
+  handle : Handle[Image],
+) -> Unit {
+  self.image_loaded_states.val.set(handle.id(), false)
 }
 
 ///|
@@ -942,6 +952,7 @@ pub fn AssetServer::load_image(
   self.record_path(canonical_path)
   let handle = Handle::new(id)
   self.register_image_path(canonical_path, handle)
+  self.track_image_handle(handle)
   self.set_image_array_layout(handle, None)
   self.set_image_is_srgb(handle, true)
   self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
@@ -958,6 +969,7 @@ pub fn AssetServer::load_nearest(
   self.record_path(canonical_path)
   let handle = Handle::new(id)
   self.register_image_path(canonical_path, handle)
+  self.track_image_handle(handle)
   self.set_image_array_layout(handle, None)
   self.set_image_is_srgb(handle, true)
   self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
@@ -1014,6 +1026,7 @@ pub fn AssetServer::load_with_settings(
   self.record_path(canonical_path)
   let handle = Handle::new(id)
   self.register_image_path(canonical_path, handle)
+  self.track_image_handle(handle)
   if settings.sampler is Descriptor(_) {
     asset_set_texture_sampler(handle, settings.sampler)
   }
@@ -1029,10 +1042,10 @@ pub fn AssetServer::load_texture_bytes(
   bytes : Bytes,
   nearest : Bool,
 ) -> Handle[Image] {
-  self |> ignore
   let id = host_asset_load_texture_bytes(bytes~, nearest~)
   let handle = Handle::new(id)
-  AssetServer::new().set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
+  self.track_image_handle(handle)
+  self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
   handle
 }
 
@@ -1155,7 +1168,9 @@ pub fn asset_create_dynamic_texture_with_mips(
     nearest~,
   )
   let handle = Handle::new(id)
-  AssetServer::new().set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_DYNAMIC)
+  let asset_server = AssetServer::new()
+  asset_server.track_image_handle(handle)
+  asset_server.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_DYNAMIC)
   handle
 }
 
@@ -1216,11 +1231,38 @@ pub fn asset_create_texture_mip_view(
     mip_level=safe_mip_level,
   )
   let handle = Handle::new(id)
-  AssetServer::new().set_image_usage_bits(
-    handle,
-    asset_image_usage_bits(texture),
-  )
+  let asset_server = AssetServer::new()
+  asset_server.track_image_handle(handle)
+  asset_server.set_image_usage_bits(handle, asset_image_usage_bits(texture))
   handle
+}
+
+///|
+fn asset_update_image_event_messages(world : @ecs.World) -> Unit {
+  guard (try! world.get_resource(asset_server_resource_key()))
+    is Some(asset_server) else {
+    return
+  }
+
+  let message_key : @ecs.MessageKey[AssetEvent[Image]] = @ecs.Message::message()
+  if !world.contains_message(message_key) {
+    world.init_message(message_key)
+  }
+
+  let became_loaded : Array[Int] = []
+  for entry in asset_server.image_loaded_states.val.iter() {
+    let (image_id, was_loaded) = entry
+    if !was_loaded && host_asset_is_texture_loaded(image_id) {
+      became_loaded.push(image_id)
+    }
+  }
+
+  for image_id in became_loaded {
+    asset_server.image_loaded_states.val.set(image_id, true)
+    ignore(
+      world.send_message(message_key, AssetEvent::Added(Handle::new(image_id))),
+    )
+  }
 }
 
 ///|
@@ -1260,6 +1302,8 @@ pub fn asset_save_texture_png(texture : Handle[Image], path : String) -> Unit {
 ///|
 pub fn asset_system(world : @ecs.World) -> Unit {
   asset_update_loaded_folders(world)
+  asset_update_event_messages(world)
+  asset_update_image_event_messages(world)
 }
 
 ///|

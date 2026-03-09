@@ -348,6 +348,7 @@ pub fn Camera2dBundle::new_with_projection(Camera, Projection, @math.Transform) 
 pub fn Camera2dBundle::new_with_target(Camera, @math.Transform, RenderTarget) -> Self
 pub fn Camera2dBundle::spawn(Self, @ecs.World) -> @core.Entity
 pub fn Camera2dBundle::with_bloom2d(Self, Bloom2d) -> Self
+pub impl @app.CommandSpawnComponents for Camera2dBundle
 
 pub struct CameraComputedValues {
   target_info : CameraTargetInfo?

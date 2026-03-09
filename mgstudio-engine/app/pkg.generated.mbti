@@ -139,6 +139,8 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_param3((P
 
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] system_param4((P1, P2, P3, P4) -> Unit) -> (W) -> Unit
 
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam] system_param5((P1, P2, P3, P4, P5) -> Unit) -> (W) -> Unit
+
 pub fn system_param_empty_state(@ecs.World) -> Json
 
 pub fn[T] system_param_store_no_state(T, Ref[Json]) -> Unit
@@ -350,9 +352,18 @@ pub struct Commands {
   change_tick : Int
   queue : Array[(@ecs.World, Int) -> Unit]
 }
+pub fn Commands::entity(Self, @core.Entity) -> EntityCommands
 pub fn[T : CommandSpawnComponents] Commands::spawn(Self, T) -> @core.Entity
 pub fn Commands::spawn_empty(Self) -> @core.Entity
 pub impl SystemParam for Commands
+
+pub struct EntityCommands {
+  commands : Commands
+  entity : @core.Entity
+}
+pub fn EntityCommands::despawn(Self) -> Unit
+pub fn[T : CommandSpawnComponents] EntityCommands::insert(Self, T) -> Unit
+pub fn[T : @ecs.Component] EntityCommands::insert_component(Self, T) -> Unit
 
 pub(all) enum ExecutorKind {
   SingleThreaded
@@ -726,6 +737,8 @@ pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] CommandSpaw
 pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component] CommandSpawnComponents for (A, B, C, D)
 pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component, E : @ecs.Component] CommandSpawnComponents for (A, B, C, D, E)
 pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component, E : @ecs.Component, F : @ecs.Component] CommandSpawnComponents for (A, B, C, D, E, F)
+pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component, E : @ecs.Component, F : @ecs.Component, G : @ecs.Component] CommandSpawnComponents for (A, B, C, D, E, F, G)
+pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component, D : @ecs.Component, E : @ecs.Component, F : @ecs.Component, G : @ecs.Component, H : @ecs.Component] CommandSpawnComponents for (A, B, C, D, E, F, G, H)
 
 pub(open) trait FreelyMutableState : States {
 }

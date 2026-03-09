@@ -509,6 +509,7 @@ pub fn Camera3dBundle::with_target(Self, @render2d.RenderTarget) -> Self
 pub fn Camera3dBundle::with_tonemapping(Self, Tonemapping?) -> Self
 pub fn Camera3dBundle::with_vignette(Self, Vignette?) -> Self
 pub fn Camera3dBundle::with_volumetric_fog(Self, VolumetricFog?) -> Self
+pub impl @app.CommandSpawnComponents for Camera3dBundle
 
 pub struct CameraDecalConfig3d {
   mode : DecalRenderMode3d
@@ -1084,6 +1085,7 @@ pub fn Mesh3d::from_cylinder(@math.Cylinder) -> Self
 pub fn Mesh3d::from_geometry(@mesh.Mesh3dGeometry) -> Self
 pub fn Mesh3d::from_icosphere(Float, Int) -> Self
 pub fn Mesh3d::from_plane(Float, Float) -> Self
+pub fn Mesh3d::from_rectangle(Float, Float) -> Self
 pub fn Mesh3d::from_sphere(Float) -> Self
 pub fn Mesh3d::from_tetrahedron(Float) -> Self
 pub fn Mesh3d::from_tetrahedron_shape(@math.Tetrahedron) -> Self
@@ -1121,6 +1123,7 @@ pub struct MeshMaterial3dBundle {
 }
 pub fn MeshMaterial3dBundle::new(Mesh3d, MeshMaterial3d, @math.Transform) -> Self
 pub fn MeshMaterial3dBundle::spawn(Self, @ecs.World) -> @core.Entity
+pub impl @app.CommandSpawnComponents for MeshMaterial3dBundle
 
 pub struct MeshRayCastHit {
   point : @math.Vec3
@@ -1677,6 +1680,7 @@ pub(all) enum Tonemapping {
 pub fn Tonemapping::default() -> Self
 pub impl @ecs.Component for Tonemapping
 pub impl Eq for Tonemapping
+pub impl Hash for Tonemapping
 pub impl Show for Tonemapping
 pub impl ToJson for Tonemapping
 pub impl @json.FromJson for Tonemapping

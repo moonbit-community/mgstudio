@@ -84,3 +84,33 @@ test "mesh: Mesh3dGeometry::cuboid matches primitive size" {
     content="(-1, 1, -2, 2, -3, 3)",
   )
 }
+
+///|
+test "mesh: Mesh3dGeometry::rectangle lies on the XY plane" {
+  let geometry = Mesh3dGeometry::rectangle(2.0F, 4.0F)
+  let mut on_xy = true
+  let mut min_x = geometry.positions[0].x
+  let mut max_x = geometry.positions[0].x
+  let mut min_y = geometry.positions[0].y
+  let mut max_y = geometry.positions[0].y
+  for position in geometry.positions {
+    if absf(position.z) > 1.0e-6F {
+      on_xy = false
+    }
+    if position.x < min_x {
+      min_x = position.x
+    }
+    if position.x > max_x {
+      max_x = position.x
+    }
+    if position.y < min_y {
+      min_y = position.y
+    }
+    if position.y > max_y {
+      max_y = position.y
+    }
+  }
+  inspect(geometry.positions.length(), content="6")
+  inspect(on_xy, content="true")
+  inspect((min_x, max_x, min_y, max_y), content="(-1, 1, -2, 2)")
+}

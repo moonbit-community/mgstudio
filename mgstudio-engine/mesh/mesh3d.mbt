@@ -473,6 +473,34 @@ pub fn Mesh3dGeometry::cuboid(cuboid : @math.Cuboid) -> Mesh3dGeometry {
 }
 
 ///|
+pub fn Mesh3dGeometry::rectangle(
+  width : Float,
+  height : Float,
+) -> Mesh3dGeometry {
+  let safe_width = if width <= 0.0F { 1.0F } else { width }
+  let safe_height = if height <= 0.0F { 1.0F } else { height }
+  let half_width = safe_width * 0.5F
+  let half_height = safe_height * 0.5F
+  let positions : Array[@math.Vec3] = [
+    @math.Vec3::new(-half_width, -half_height, 0.0F),
+    @math.Vec3::new(half_width, -half_height, 0.0F),
+    @math.Vec3::new(half_width, half_height, 0.0F),
+    @math.Vec3::new(-half_width, -half_height, 0.0F),
+    @math.Vec3::new(half_width, half_height, 0.0F),
+    @math.Vec3::new(-half_width, half_height, 0.0F),
+  ]
+  let uvs : Array[@math.Vec2] = [
+    @math.Vec2::new(0.0F, 1.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+    @math.Vec2::new(1.0F, 0.0F),
+    @math.Vec2::new(0.0F, 1.0F),
+    @math.Vec2::new(1.0F, 0.0F),
+    @math.Vec2::new(0.0F, 0.0F),
+  ]
+  Mesh3dGeometry::new(positions, uvs, None)
+}
+
+///|
 pub fn Mesh3dGeometry::circle(radius : Float, segments : Int) -> Mesh3dGeometry {
   let safe_radius = if radius <= 0.0F { 1.0F } else { radius }
   let safe_segments = if segments < 3 { 3 } else { segments }

@@ -2163,7 +2163,7 @@ pub(all) enum Tonemapping {
   SomewhatBoringDisplayTransform
   TonyMcMapface
   BlenderFilmic
-} derive(Eq, Show, ToJson, FromJson)
+} derive(Eq, Hash, Show, ToJson, FromJson)
 
 ///|
 pub fn Tonemapping::default() -> Tonemapping {
@@ -4715,6 +4715,11 @@ pub fn Mesh3d::from_circle(radius : Float) -> Mesh3d {
 }
 
 ///|
+pub fn Mesh3d::from_rectangle(width : Float, height : Float) -> Mesh3d {
+  Mesh3d::from_geometry(@mesh.Mesh3dGeometry::rectangle(width, height))
+}
+
+///|
 pub fn Mesh3d::from_plane(width : Float, depth : Float) -> Mesh3d {
   Mesh3d::from_geometry(mesh3d_geometry_plane(width, depth))
 }
@@ -6592,6 +6597,84 @@ pub fn MeshMaterial3dBundle::new(
 }
 
 ///|
+fn camera3d_bundle_insert(
+  bundle : Camera3dBundle,
+  world : @ecs.World,
+  entity : @core.Entity,
+  tick : @core.Tick,
+) -> Unit {
+  let ecs_world = world
+  get_camera3d_store(ecs_world).insert(entity, bundle.camera3d, tick)
+  get_projection_store(ecs_world).insert(entity, bundle.projection, tick)
+  if bundle.sub_camera_view is Some(sub_camera_view) {
+    get_sub_camera_view3d_store(ecs_world).insert(entity, sub_camera_view, tick)
+  }
+  if bundle.screen_space_transmission is Some(screen_space_transmission) {
+    get_screen_space_transmission_store(ecs_world).insert(
+      entity, screen_space_transmission, tick,
+    )
+  }
+  if bundle.screen_space_reflections is Some(screen_space_reflections) {
+    get_screen_space_reflections_store(ecs_world).insert(
+      entity, screen_space_reflections, tick,
+    )
+  }
+  if bundle.bloom is Some(bloom) {
+    get_bloom_store(ecs_world).insert(entity, bloom, tick)
+  }
+  if bundle.tonemapping is Some(tonemapping) {
+    get_tonemapping_store(ecs_world).insert(entity, tonemapping, tick)
+  }
+  if bundle.deband_dither is Some(deband_dither) {
+    get_deband_dither_store(ecs_world).insert(entity, deband_dither, tick)
+  }
+  if bundle.chromatic_aberration is Some(chromatic_aberration) {
+    get_chromatic_aberration_store(ecs_world).insert(
+      entity, chromatic_aberration, tick,
+    )
+  }
+  if bundle.vignette is Some(vignette) {
+    get_vignette_store(ecs_world).insert(entity, vignette, tick)
+  }
+  if bundle.motion_blur is Some(motion_blur) {
+    get_motion_blur_store(ecs_world).insert(entity, motion_blur, tick)
+  }
+  if bundle.exposure is Some(exposure) {
+    get_exposure_store(ecs_world).insert(entity, exposure, tick)
+  }
+  if bundle.color_grading is Some(color_grading) {
+    get_color_grading_store(ecs_world).insert(entity, color_grading, tick)
+  }
+  @render2d.get_camera_store(ecs_world).insert(entity, bundle.camera, tick)
+  @render2d.get_render_target_store(ecs_world).insert(
+    entity,
+    bundle.target,
+    tick,
+  )
+  @render2d.get_render_layers_store(ecs_world).insert(
+    entity,
+    bundle.layers,
+    tick,
+  )
+  get_frustum_store(ecs_world).insert(
+    entity,
+    bundle.projection.compute_frustum(bundle.transform),
+    tick,
+  )
+  @math.get_transform_store(ecs_world).insert(entity, bundle.transform, tick)
+}
+
+///|
+pub impl @app.CommandSpawnComponents for Camera3dBundle with spawn_components(
+  self,
+  world,
+  entity,
+  change_tick,
+) {
+  camera3d_bundle_insert(self, world, entity, change_tick)
+}
+
+///|
 pub fn Camera3dBundle::spawn(
   self : Camera3dBundle,
   world : @ecs.World,
@@ -6599,57 +6682,57 @@ pub fn Camera3dBundle::spawn(
   let ecs_world = world
   let tick = world.read_change_tick()
   let entity = ecs_world.spawn_empty()
-  get_camera3d_store(ecs_world).insert(entity, self.camera3d, tick)
-  get_projection_store(ecs_world).insert(entity, self.projection, tick)
-  if self.sub_camera_view is Some(sub_camera_view) {
-    get_sub_camera_view3d_store(ecs_world).insert(entity, sub_camera_view, tick)
-  }
-  if self.screen_space_transmission is Some(screen_space_transmission) {
-    get_screen_space_transmission_store(ecs_world).insert(
-      entity, screen_space_transmission, tick,
-    )
-  }
-  if self.screen_space_reflections is Some(screen_space_reflections) {
-    get_screen_space_reflections_store(ecs_world).insert(
-      entity, screen_space_reflections, tick,
-    )
-  }
-  if self.bloom is Some(bloom) {
-    get_bloom_store(ecs_world).insert(entity, bloom, tick)
-  }
-  if self.tonemapping is Some(tonemapping) {
-    get_tonemapping_store(ecs_world).insert(entity, tonemapping, tick)
-  }
-  if self.deband_dither is Some(deband_dither) {
-    get_deband_dither_store(ecs_world).insert(entity, deband_dither, tick)
-  }
-  if self.chromatic_aberration is Some(chromatic_aberration) {
-    get_chromatic_aberration_store(ecs_world).insert(
-      entity, chromatic_aberration, tick,
-    )
-  }
-  if self.vignette is Some(vignette) {
-    get_vignette_store(ecs_world).insert(entity, vignette, tick)
-  }
-  if self.motion_blur is Some(motion_blur) {
-    get_motion_blur_store(ecs_world).insert(entity, motion_blur, tick)
-  }
-  if self.exposure is Some(exposure) {
-    get_exposure_store(ecs_world).insert(entity, exposure, tick)
-  }
-  if self.color_grading is Some(color_grading) {
-    get_color_grading_store(ecs_world).insert(entity, color_grading, tick)
-  }
-  @render2d.get_camera_store(ecs_world).insert(entity, self.camera, tick)
-  @render2d.get_render_target_store(ecs_world).insert(entity, self.target, tick)
-  @render2d.get_render_layers_store(ecs_world).insert(entity, self.layers, tick)
-  get_frustum_store(ecs_world).insert(
+  camera3d_bundle_insert(self, ecs_world, entity, tick)
+  entity
+}
+
+///|
+fn mesh_material3d_bundle_insert(
+  bundle : MeshMaterial3dBundle,
+  world : @ecs.World,
+  entity : @core.Entity,
+  tick : @core.Tick,
+) -> Unit {
+  let ecs_world = world
+  get_mesh3d_store(ecs_world).insert(entity, bundle.mesh, tick)
+  get_mesh_material3d_store(ecs_world).insert(entity, bundle.material, tick)
+  @render2d.get_render_layers_store(ecs_world).insert(
     entity,
-    self.projection.compute_frustum(self.transform),
+    bundle.layers,
     tick,
   )
-  @math.get_transform_store(ecs_world).insert(entity, self.transform, tick)
-  entity
+  @visibility.get_visibility_store(ecs_world).insert(
+    entity,
+    bundle.visibility,
+    tick,
+  )
+  @visibility.get_inherited_visibility_store(ecs_world).insert(
+    entity,
+    bundle.inherited_visibility,
+    tick,
+  )
+  @visibility.get_view_visibility_store(ecs_world).insert(
+    entity,
+    bundle.view_visibility,
+    tick,
+  )
+  @math.get_transform_store(ecs_world).insert(entity, bundle.transform, tick)
+  let mesh_id = @render2d.render2d_upload_mesh_handle(bundle.mesh.mesh)
+  @render2d.get_gpu_mesh2d_store(ecs_world).insert(
+    entity,
+    @render2d.GpuMesh2d::new(mesh_id),
+    tick,
+  )
+}
+
+///|
+pub impl @app.CommandSpawnComponents for MeshMaterial3dBundle with spawn_components(
+  self,
+  world,
+  entity,
+  change_tick,
+) {
+  mesh_material3d_bundle_insert(self, world, entity, change_tick)
 }
 
 ///|
@@ -6660,31 +6743,7 @@ pub fn MeshMaterial3dBundle::spawn(
   let ecs_world = world
   let tick = world.read_change_tick()
   let entity = ecs_world.spawn_empty()
-  get_mesh3d_store(ecs_world).insert(entity, self.mesh, tick)
-  get_mesh_material3d_store(ecs_world).insert(entity, self.material, tick)
-  @render2d.get_render_layers_store(ecs_world).insert(entity, self.layers, tick)
-  @visibility.get_visibility_store(ecs_world).insert(
-    entity,
-    self.visibility,
-    tick,
-  )
-  @visibility.get_inherited_visibility_store(ecs_world).insert(
-    entity,
-    self.inherited_visibility,
-    tick,
-  )
-  @visibility.get_view_visibility_store(ecs_world).insert(
-    entity,
-    self.view_visibility,
-    tick,
-  )
-  @math.get_transform_store(ecs_world).insert(entity, self.transform, tick)
-  let mesh_id = @render2d.render2d_upload_mesh_handle(self.mesh.mesh)
-  @render2d.get_gpu_mesh2d_store(ecs_world).insert(
-    entity,
-    @render2d.GpuMesh2d::new(mesh_id),
-    tick,
-  )
+  mesh_material3d_bundle_insert(self, ecs_world, entity, tick)
   entity
 }
 

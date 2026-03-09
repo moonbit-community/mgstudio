@@ -122,6 +122,41 @@ test "render2d: Camera2dBundle::spawn inserts expected components" {
 }
 
 ///|
+test "render2d: Commands::spawn accepts Camera2dBundle" {
+  let world = @ecs.World::new()
+  let spawned : Ref[@core.Entity?] = Ref::new(None)
+
+  let mut app = @app.App::new(world).add_system_param(fn(
+    commands : @app.Commands,
+  ) {
+    spawned.val = Some(
+      commands.spawn(
+        Camera2dBundle::new(Camera::default(), @math.Transform::identity()).with_bloom2d(
+          Bloom2d::new(),
+        ),
+      ),
+    )
+  })
+  app = app.run_once()
+
+  guard spawned.val is Some(entity) else {
+    abort("expected Commands::spawn to return an entity")
+  }
+  inspect(
+    ecs_has_non_null_payload(app.world(), entity, ecs_key_camera2d),
+    content="true",
+  )
+  inspect(
+    ecs_has_non_null_payload(app.world(), entity, ecs_key_camera),
+    content="true",
+  )
+  inspect(
+    ecs_has_non_null_payload(app.world(), entity, ecs_key_bloom2d),
+    content="true",
+  )
+}
+
+///|
 test "render2d: Camera2dBundle::new_with_target stores window render target" {
   let world = @ecs.World::new()
   let target_window = @core.Entity::new(7, 2)

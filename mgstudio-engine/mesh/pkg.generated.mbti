@@ -88,6 +88,7 @@ pub fn Mesh3dGeometry::push_index(Self, Int) -> Bool
 pub fn Mesh3dGeometry::push_triangle_indices(Self, Int, Int, Int) -> Bool
 pub fn Mesh3dGeometry::push_vertex(Self, @math.Vec3, @math.Vec2) -> Int
 pub fn Mesh3dGeometry::push_vertex_with_color(Self, @math.Vec3, @math.Vec2, @math.Vec4) -> Bool
+pub fn Mesh3dGeometry::rectangle(Float, Float) -> Self
 pub fn Mesh3dGeometry::replace_tangents(Self, Array[@math.Vec4]?) -> Bool
 pub fn Mesh3dGeometry::replace_uvs(Self, Array[@math.Vec2]) -> Bool
 pub fn Mesh3dGeometry::set_position(Self, Int, @math.Vec3) -> Bool

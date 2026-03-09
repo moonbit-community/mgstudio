@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
 }
 
@@ -121,6 +122,8 @@ pub fn asset_texture_width(Handle[Image]) -> Int
 
 pub fn asset_transparent_texture() -> Handle[Image]
 
+pub fn asset_update_event_messages(@ecs.World) -> Unit
+
 pub fn asset_update_loaded_folders(@ecs.World) -> Unit
 
 pub fn asset_update_texture_region(Handle[Image], @math.URect, Int) -> Unit
@@ -216,6 +219,7 @@ pub(all) enum AssetEvent[T] {
   Removed(Handle[T])
   LoadedWithDependencies(Handle[T])
 }
+pub impl[T] @ecs.Message for AssetEvent[T]
 
 pub struct AssetId[T] {
   id : Int
@@ -237,6 +241,7 @@ pub(all) enum AssetLoaderKind {
 pub struct AssetServer {
   paths : Ref[Array[String]]
   image_paths : Ref[Array[(String, Handle[Image])]]
+  image_loaded_states : Ref[@hashmap.HashMap[Int, Bool]]
   image_array_layouts : Ref[Array[(Int, ImageArrayLayout)]]
   image_srgb_settings : Ref[Array[(Int, Bool)]]
   image_usage_settings : Ref[Array[(Int, Int)]]

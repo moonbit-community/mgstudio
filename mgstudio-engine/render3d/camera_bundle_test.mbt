@@ -133,3 +133,38 @@ test "render3d: Camera3dBundle stores custom projection payload" {
   }
   inspect(ok, content="true")
 }
+
+///|
+test "render3d: Commands::spawn accepts Camera3dBundle" {
+  let world = @ecs.World::new()
+  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let mut app = @app.App::new(world).add_system_param(fn(
+    commands : @app.Commands,
+  ) {
+    spawned.val = Some(
+      commands.spawn(
+        Camera3dBundle::new(
+          @render2d.Camera::default(),
+          @math.Transform::identity(),
+        ).with_color_grading(Some(ColorGrading::default())),
+      ),
+    )
+  })
+  app = app.run_once()
+
+  guard spawned.val is Some(entity) else {
+    abort("expected Commands::spawn to return an entity")
+  }
+  inspect(
+    (try! app.world().get(entity, ecs_key_camera3d)) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! app.world().get(entity, ecs_key_projection)) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! app.world().get(entity, ecs_key_color_grading)) is Some(_),
+    content="true",
+  )
+}

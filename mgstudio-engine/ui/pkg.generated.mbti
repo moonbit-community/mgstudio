@@ -577,7 +577,7 @@ pub impl @ecs.Component for Label
 pub impl ToJson for Label
 pub impl @json.FromJson for Label
 
-pub struct Node {
+pub(all) struct Node {
   display : Display
   position_type : PositionType
   overflow : Overflow

@@ -25,10 +25,76 @@ let assets_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::ne
 )
 
 ///|
+type AssetEventBridge = (@ecs.World) -> Unit
+
+///|
+let asset_event_message_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
+
+///|
+let asset_event_bridge_registry : Ref[
+  @hashmap.HashMap[String, AssetEventBridge],
+] = Ref::new(@hashmap.HashMap::new())
+
+///|
+fn[T] registered_asset_event_message_key_with_type_name(
+  type_name : String,
+) -> @ecs.MessageKey[AssetEvent[T]] {
+  match asset_event_message_registry.val.get(type_name) {
+    Some(existing_key) =>
+      match existing_key.try_to() {
+        Some(key) => key
+        None =>
+          abort(
+            "asset event message registry contained a mismatched key for " +
+            type_name,
+          )
+      }
+    None => {
+      let key : @ecs.MessageKey[AssetEvent[T]] = @ecs.register_message(
+        debug_name="bevy_asset::AssetEvent<" + type_name + ">",
+      )
+      asset_event_message_registry.val.set(type_name, @any.of(key))
+      key
+    }
+  }
+}
+
+///|
+fn[T] register_asset_event_bridge(
+  type_name : String,
+  key : @ecs.ResourceKey[Assets[T]],
+) -> Unit {
+  if asset_event_bridge_registry.val.contains(type_name) {
+    return
+  }
+
+  let message_key : @ecs.MessageKey[AssetEvent[T]] = registered_asset_event_message_key_with_type_name(
+    type_name,
+  )
+  let bridge : AssetEventBridge = fn(world) {
+    if !world.contains_message(message_key) {
+      world.init_message(message_key)
+    }
+    match (try! world.get_resource_ref_mut(key, world.read_change_tick())) {
+      Some(assets_ref) => {
+        let events = assets_ref.val.drain_events()
+        for event in events {
+          ignore(world.send_message(message_key, event))
+        }
+      }
+      None => ()
+    }
+  }
+  asset_event_bridge_registry.val.set(type_name, bridge)
+}
+
+///|
 fn[T] registered_assets_resource_key() -> @ecs.ResourceKey[Assets[T]] {
   let probe : Assets[T] = Assets::new()
   let type_name = @any.of(probe).type_name()
-  match assets_resource_registry.val.get(type_name) {
+  let key = match assets_resource_registry.val.get(type_name) {
     Some(existing_key) =>
       match existing_key.try_to() {
         Some(key) => key
@@ -46,6 +112,8 @@ fn[T] registered_assets_resource_key() -> @ecs.ResourceKey[Assets[T]] {
       key
     }
   }
+  register_asset_event_bridge(type_name, key)
+  key
 }
 
 ///|
@@ -61,6 +129,13 @@ pub fn[T] assets_resource_key() -> @ecs.ResourceKey[Assets[T]] {
 ///|
 pub impl[T] @app.Resource for Assets[T] with resource() {
   registered_assets_resource_key()
+}
+
+///|
+pub impl[T] @ecs.Message for AssetEvent[T] with message() {
+  let probe : Assets[T] = Assets::new()
+  let type_name = @any.of(probe).type_name()
+  registered_asset_event_message_key_with_type_name(type_name)
 }
 
 ///|
@@ -186,4 +261,12 @@ pub fn[T] Assets::drain_events(self : Assets[T]) -> Array[AssetEvent[T]] {
 ///|
 pub fn[T] Assets::push_event(self : Assets[T], event : AssetEvent[T]) -> Unit {
   self.events.push(event)
+}
+
+///|
+pub fn asset_update_event_messages(world : @ecs.World) -> Unit {
+  for entry in asset_event_bridge_registry.val.iter() {
+    let (_type_name, bridge) = entry
+    bridge(world)
+  }
 }

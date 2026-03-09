@@ -621,7 +621,7 @@ pub fn BorderColor::new(color : @render2d.Color) -> BorderColor {
 
 ///|
 /// The style of a UI node (Bevy v0.15.3-aligned surface).
-pub struct Node {
+pub(all) struct Node {
   display : Display
   position_type : PositionType
   overflow : Overflow

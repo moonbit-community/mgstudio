@@ -5287,20 +5287,39 @@ pub fn SpriteBundle::spawn(
 }
 
 ///|
+fn camera2d_bundle_insert(
+  bundle : Camera2dBundle,
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Unit {
+  try! (world.set(entity, ecs_key_camera2d, bundle.camera2d) |> ignore)
+  try! (world.set(entity, ecs_key_camera, bundle.camera) |> ignore)
+  try! (world.set(entity, ecs_key_projection, bundle.projection) |> ignore)
+  try! (world.set(entity, ecs_key_render_target, bundle.target) |> ignore)
+  try! (world.set(entity, ecs_key_render_layers, bundle.layers) |> ignore)
+  if bundle.bloom2d is Some(bloom2d) {
+    try! (world.set(entity, ecs_key_bloom2d, bloom2d) |> ignore)
+  }
+  try! (world.set(entity, @math.ecs_key_transform, bundle.transform) |> ignore)
+}
+
+///|
+pub impl @app.CommandSpawnComponents for Camera2dBundle with spawn_components(
+  self,
+  world,
+  entity,
+  _change_tick,
+) {
+  camera2d_bundle_insert(self, world, entity)
+}
+
+///|
 pub fn Camera2dBundle::spawn(
   self : Camera2dBundle,
   world : @ecs.World,
 ) -> @core.Entity {
   let e = world.spawn_empty()
-  try! (world.set(e, ecs_key_camera2d, self.camera2d) |> ignore)
-  try! (world.set(e, ecs_key_camera, self.camera) |> ignore)
-  try! (world.set(e, ecs_key_projection, self.projection) |> ignore)
-  try! (world.set(e, ecs_key_render_target, self.target) |> ignore)
-  try! (world.set(e, ecs_key_render_layers, self.layers) |> ignore)
-  if self.bloom2d is Some(bloom2d) {
-    try! (world.set(e, ecs_key_bloom2d, bloom2d) |> ignore)
-  }
-  try! (world.set(e, @math.ecs_key_transform, self.transform) |> ignore)
+  camera2d_bundle_insert(self, world, e)
   e
 }
 
