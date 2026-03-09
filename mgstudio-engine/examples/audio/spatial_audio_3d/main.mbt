@@ -245,12 +245,9 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   let asset_server = @asset.AssetServer::new()
-  guard @audio.audio_source_load(
-      world, asset_server, "sounds/Windless Slopes.ogg",
-    )
-    is Some(track) else {
-    return
-  }
+  let track : @asset.Handle[@audio.AudioSource] = asset_server.load(
+    "sounds/Windless Slopes.ogg",
+  )
   let emitter = spawn_mesh(
     world,
     uv_sphere_mesh(EMITTER_RADIUS, UV_SPHERE_STACKS, UV_SPHERE_SECTORS),

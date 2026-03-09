@@ -172,12 +172,9 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   let asset_server = @asset.AssetServer::new()
-  guard @audio.audio_source_load(
-      world, asset_server, "sounds/Windless Slopes.ogg",
-    )
-    is Some(track) else {
-    return
-  }
+  let track : @asset.Handle[@audio.AudioSource] = asset_server.load(
+    "sounds/Windless Slopes.ogg",
+  )
 
   let emitter = @render2d.Mesh2dBundle::new(
     @render2d.Mesh2d::from_circle(@render2d.Circle::new(EMITTER_RADIUS)),

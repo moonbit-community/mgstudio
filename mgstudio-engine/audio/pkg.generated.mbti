@@ -96,6 +96,7 @@ pub impl @json.FromJson for AudioSource
 
 pub struct AudioSourceAssets {
   assets : @asset.Assets[AudioSource]
+  paths : Array[(String, @asset.Handle[AudioSource])]
 }
 pub fn AudioSourceAssets::add(Self, AudioSource) -> @asset.Handle[AudioSource]
 pub fn AudioSourceAssets::get(Self, @asset.Handle[AudioSource]) -> AudioSource?
