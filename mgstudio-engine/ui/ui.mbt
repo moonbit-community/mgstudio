@@ -4539,6 +4539,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
               @render2d.render2d_push_ui_box_shadow_scissor(
                 world,
                 entity,
+                entity_ctx.camera_entity,
                 ctx0.white_texture,
                 t_shadow,
                 draw_scale_shadow,
@@ -4573,6 +4574,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
           @render2d.render2d_push_ui_rect_uv_scissor(
             world,
             entity,
+            entity_ctx.camera_entity,
             ctx0.white_texture,
             t_bg,
             draw_scale,
@@ -4700,13 +4702,25 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
             uv_max_img.y,
           )
           @render2d.render2d_push_ui_texture_slice_scissor(
-            world, entity, texture, t_content, draw_scale, color, layers, scissor,
-            texture_slices, target_slices, repeat, atlas_rect_uv,
+            world,
+            entity,
+            entity_ctx.camera_entity,
+            texture,
+            t_content,
+            draw_scale,
+            color,
+            layers,
+            scissor,
+            texture_slices,
+            target_slices,
+            repeat,
+            atlas_rect_uv,
           )
         } else if color.a > 0.0F {
           @render2d.render2d_push_ui_rect_uv_scissor(
             world,
             entity,
+            entity_ctx.camera_entity,
             texture,
             t_content,
             draw_scale,
@@ -4736,6 +4750,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
       @render2d.render2d_push_ui_rect_uv_scissor(
         world,
         entity,
+        entity_ctx.camera_entity,
         ctx0.white_texture,
         t_border,
         draw_scale,
@@ -4819,6 +4834,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
               @render2d.render2d_push_ui_rect_uv_scissor(
                 world,
                 entity,
+                entity_ctx.camera_entity,
                 ctx0.white_texture,
                 t_outline,
                 outline_draw_scale,
