@@ -2046,41 +2046,15 @@ pub fn Exposure::exposure(self : Exposure) -> Float {
 }
 
 ///|
-fn color_grading_midtones_range_sanitize(
-  start : Float,
-  end_ : Float,
-) -> (Float, Float) {
-  let safe_start = if start < 0.0F {
-    0.0F
-  } else if start > 1.0F {
-    1.0F
-  } else {
-    start
-  }
-  let safe_end = if end_ < 0.0F {
-    0.0F
-  } else if end_ > 1.0F {
-    1.0F
-  } else {
-    end_
-  }
-  if safe_start <= safe_end {
-    (safe_start, safe_end)
-  } else {
-    (safe_end, safe_start)
-  }
-}
-
-///|
 /// Global color-grading controls aligned with Bevy's `ColorGradingGlobal`.
-pub struct ColorGradingGlobal {
-  exposure : Float
-  temperature : Float
-  tint : Float
-  hue : Float
-  post_saturation : Float
-  midtones_start : Float
-  midtones_end : Float
+pub(all) struct ColorGradingGlobal {
+  mut exposure : Float
+  mut temperature : Float
+  mut tint : Float
+  mut hue : Float
+  mut post_saturation : Float
+  mut midtones_start : Float
+  mut midtones_end : Float
 } derive(ToJson, FromJson)
 
 ///|
@@ -2097,71 +2071,18 @@ pub fn ColorGradingGlobal::default() -> ColorGradingGlobal {
 }
 
 ///|
-pub fn ColorGradingGlobal::new() -> ColorGradingGlobal {
-  ColorGradingGlobal::default()
-}
-
-///|
-pub fn ColorGradingGlobal::with_exposure(
-  self : ColorGradingGlobal,
-  exposure : Float,
+fn render3d_color_grading_global_copy(
+  value : ColorGradingGlobal,
 ) -> ColorGradingGlobal {
-  ColorGradingGlobal::{ ..self, exposure, }
-}
-
-///|
-pub fn ColorGradingGlobal::with_temperature(
-  self : ColorGradingGlobal,
-  temperature : Float,
-) -> ColorGradingGlobal {
-  ColorGradingGlobal::{ ..self, temperature, }
-}
-
-///|
-pub fn ColorGradingGlobal::with_tint(
-  self : ColorGradingGlobal,
-  tint : Float,
-) -> ColorGradingGlobal {
-  ColorGradingGlobal::{ ..self, tint, }
-}
-
-///|
-pub fn ColorGradingGlobal::with_hue(
-  self : ColorGradingGlobal,
-  hue : Float,
-) -> ColorGradingGlobal {
-  ColorGradingGlobal::{ ..self, hue, }
-}
-
-///|
-pub fn ColorGradingGlobal::with_post_saturation(
-  self : ColorGradingGlobal,
-  post_saturation : Float,
-) -> ColorGradingGlobal {
-  ColorGradingGlobal::{
-    ..self,
-    post_saturation: if post_saturation < 0.0F {
-      0.0F
-    } else {
-      post_saturation
-    },
-  }
-}
-
-///|
-pub fn ColorGradingGlobal::with_midtones_range(
-  self : ColorGradingGlobal,
-  start : Float,
-  end_ : Float,
-) -> ColorGradingGlobal {
-  let (safe_start, safe_end) = color_grading_midtones_range_sanitize(
-    start, end_,
-  )
-  ColorGradingGlobal::{
-    ..self,
-    midtones_start: safe_start,
-    midtones_end: safe_end,
-  }
+  let out = ColorGradingGlobal::default()
+  out.exposure = value.exposure
+  out.temperature = value.temperature
+  out.tint = value.tint
+  out.hue = value.hue
+  out.post_saturation = value.post_saturation
+  out.midtones_start = value.midtones_start
+  out.midtones_end = value.midtones_end
+  out
 }
 
 ///|
@@ -2173,12 +2094,12 @@ pub fn ColorGradingGlobal::midtones_range(
 
 ///|
 /// Sectional color-grading controls aligned with Bevy's `ColorGradingSection`.
-pub struct ColorGradingSection {
-  saturation : Float
-  contrast : Float
-  gamma : Float
-  gain : Float
-  lift : Float
+pub(all) struct ColorGradingSection {
+  mut saturation : Float
+  mut contrast : Float
+  mut gamma : Float
+  mut gain : Float
+  mut lift : Float
 } derive(ToJson, FromJson)
 
 ///|
@@ -2193,130 +2114,25 @@ pub fn ColorGradingSection::default() -> ColorGradingSection {
 }
 
 ///|
-pub fn ColorGradingSection::new() -> ColorGradingSection {
-  ColorGradingSection::default()
-}
-
-///|
-pub fn ColorGradingSection::with_saturation(
-  self : ColorGradingSection,
-  saturation : Float,
+fn render3d_color_grading_section_copy(
+  value : ColorGradingSection,
 ) -> ColorGradingSection {
-  ColorGradingSection::{
-    ..self,
-    saturation: if saturation < 0.0F {
-      0.0F
-    } else {
-      saturation
-    },
-  }
-}
-
-///|
-pub fn ColorGradingSection::with_contrast(
-  self : ColorGradingSection,
-  contrast : Float,
-) -> ColorGradingSection {
-  ColorGradingSection::{
-    ..self,
-    contrast: if contrast < 0.0F {
-      0.0F
-    } else {
-      contrast
-    },
-  }
-}
-
-///|
-pub fn ColorGradingSection::with_gamma(
-  self : ColorGradingSection,
-  gamma : Float,
-) -> ColorGradingSection {
-  ColorGradingSection::{
-    ..self,
-    gamma: if gamma <= 0.0001F {
-      0.0001F
-    } else {
-      gamma
-    },
-  }
-}
-
-///|
-pub fn ColorGradingSection::with_gain(
-  self : ColorGradingSection,
-  gain : Float,
-) -> ColorGradingSection {
-  ColorGradingSection::{ ..self, gain: if gain < 0.0F { 0.0F } else { gain } }
-}
-
-///|
-pub fn ColorGradingSection::with_lift(
-  self : ColorGradingSection,
-  lift : Float,
-) -> ColorGradingSection {
-  ColorGradingSection::{ ..self, lift, }
-}
-
-///|
-/// Combined color-grading section settings for shadows / midtones / highlights.
-pub struct ColorGradingSettings {
-  shadows : ColorGradingSection
-  midtones : ColorGradingSection
-  highlights : ColorGradingSection
-} derive(ToJson, FromJson)
-
-///|
-pub fn ColorGradingSettings::default() -> ColorGradingSettings {
-  ColorGradingSettings::{
-    shadows: ColorGradingSection::default(),
-    midtones: ColorGradingSection::default(),
-    highlights: ColorGradingSection::default(),
-  }
-}
-
-///|
-pub fn ColorGradingSettings::with_identical_sections(
-  section : ColorGradingSection,
-) -> ColorGradingSettings {
-  ColorGradingSettings::{
-    shadows: section,
-    midtones: section,
-    highlights: section,
-  }
-}
-
-///|
-pub fn ColorGradingSettings::with_shadows(
-  self : ColorGradingSettings,
-  shadows : ColorGradingSection,
-) -> ColorGradingSettings {
-  ColorGradingSettings::{ ..self, shadows, }
-}
-
-///|
-pub fn ColorGradingSettings::with_midtones(
-  self : ColorGradingSettings,
-  midtones : ColorGradingSection,
-) -> ColorGradingSettings {
-  ColorGradingSettings::{ ..self, midtones, }
-}
-
-///|
-pub fn ColorGradingSettings::with_highlights(
-  self : ColorGradingSettings,
-  highlights : ColorGradingSection,
-) -> ColorGradingSettings {
-  ColorGradingSettings::{ ..self, highlights, }
+  let out = ColorGradingSection::default()
+  out.saturation = value.saturation
+  out.contrast = value.contrast
+  out.gamma = value.gamma
+  out.gain = value.gain
+  out.lift = value.lift
+  out
 }
 
 ///|
 /// Camera color grading settings aligned with Bevy's `ColorGrading`.
-pub struct ColorGrading {
-  global : ColorGradingGlobal
-  shadows : ColorGradingSection
-  midtones : ColorGradingSection
-  highlights : ColorGradingSection
+pub(all) struct ColorGrading {
+  mut global : ColorGradingGlobal
+  mut shadows : ColorGradingSection
+  mut midtones : ColorGradingSection
+  mut highlights : ColorGradingSection
 } derive(ToJson, FromJson)
 
 ///|
@@ -2330,81 +2146,16 @@ pub fn ColorGrading::default() -> ColorGrading {
 }
 
 ///|
-pub fn ColorGrading::new(
-  global : ColorGradingGlobal,
-  settings : ColorGradingSettings,
-) -> ColorGrading {
-  ColorGrading::{
-    global,
-    shadows: settings.shadows,
-    midtones: settings.midtones,
-    highlights: settings.highlights,
-  }
-}
-
-///|
 pub fn ColorGrading::with_identical_sections(
   global : ColorGradingGlobal,
   section : ColorGradingSection,
 ) -> ColorGrading {
-  ColorGrading::new(
-    global,
-    ColorGradingSettings::with_identical_sections(section),
-  )
-}
-
-///|
-pub fn ColorGrading::with_global(
-  self : ColorGrading,
-  global : ColorGradingGlobal,
-) -> ColorGrading {
-  ColorGrading::{ ..self, global, }
-}
-
-///|
-pub fn ColorGrading::with_settings(
-  self : ColorGrading,
-  settings : ColorGradingSettings,
-) -> ColorGrading {
-  ColorGrading::{
-    ..self,
-    shadows: settings.shadows,
-    midtones: settings.midtones,
-    highlights: settings.highlights,
-  }
-}
-
-///|
-pub fn ColorGrading::with_shadows(
-  self : ColorGrading,
-  shadows : ColorGradingSection,
-) -> ColorGrading {
-  ColorGrading::{ ..self, shadows, }
-}
-
-///|
-pub fn ColorGrading::with_midtones(
-  self : ColorGrading,
-  midtones : ColorGradingSection,
-) -> ColorGrading {
-  ColorGrading::{ ..self, midtones, }
-}
-
-///|
-pub fn ColorGrading::with_highlights(
-  self : ColorGrading,
-  highlights : ColorGradingSection,
-) -> ColorGrading {
-  ColorGrading::{ ..self, highlights, }
-}
-
-///|
-pub fn ColorGrading::settings(self : ColorGrading) -> ColorGradingSettings {
-  ColorGradingSettings::{
-    shadows: self.shadows,
-    midtones: self.midtones,
-    highlights: self.highlights,
-  }
+  let color_grading = ColorGrading::default()
+  color_grading.global = render3d_color_grading_global_copy(global)
+  color_grading.shadows = render3d_color_grading_section_copy(section)
+  color_grading.midtones = render3d_color_grading_section_copy(section)
+  color_grading.highlights = render3d_color_grading_section_copy(section)
+  color_grading
 }
 
 ///|

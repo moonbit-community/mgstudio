@@ -686,10 +686,8 @@ fn setup_scene(world : @ecs.World) -> Unit {
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  let color_grading = @render3d.ColorGrading::new(
-    @render3d.ColorGradingGlobal::new().with_post_saturation(1.2F),
-    @render3d.ColorGradingSettings::default(),
-  )
+  let color_grading = @render3d.ColorGrading::default()
+  color_grading.global.post_saturation = 1.2F
   let camera = @render3d.Camera3dBundle::new(
       @render2d.Camera::default().with_clear_color(@render2d.Color::black()),
       @math.Transform::from_xyz(

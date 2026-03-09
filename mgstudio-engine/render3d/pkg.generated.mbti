@@ -598,75 +598,42 @@ pub impl @ecs.Component for ClusteredDecal
 pub impl ToJson for ClusteredDecal
 pub impl @json.FromJson for ClusteredDecal
 
-pub struct ColorGrading {
-  global : ColorGradingGlobal
-  shadows : ColorGradingSection
-  midtones : ColorGradingSection
-  highlights : ColorGradingSection
+pub(all) struct ColorGrading {
+  mut global : ColorGradingGlobal
+  mut shadows : ColorGradingSection
+  mut midtones : ColorGradingSection
+  mut highlights : ColorGradingSection
 }
 pub fn ColorGrading::default() -> Self
-pub fn ColorGrading::new(ColorGradingGlobal, ColorGradingSettings) -> Self
-pub fn ColorGrading::settings(Self) -> ColorGradingSettings
-pub fn ColorGrading::with_global(Self, ColorGradingGlobal) -> Self
-pub fn ColorGrading::with_highlights(Self, ColorGradingSection) -> Self
 pub fn ColorGrading::with_identical_sections(ColorGradingGlobal, ColorGradingSection) -> Self
-pub fn ColorGrading::with_midtones(Self, ColorGradingSection) -> Self
-pub fn ColorGrading::with_settings(Self, ColorGradingSettings) -> Self
-pub fn ColorGrading::with_shadows(Self, ColorGradingSection) -> Self
 pub impl @ecs.Component for ColorGrading
 pub impl ToJson for ColorGrading
 pub impl @json.FromJson for ColorGrading
 
-pub struct ColorGradingGlobal {
-  exposure : Float
-  temperature : Float
-  tint : Float
-  hue : Float
-  post_saturation : Float
-  midtones_start : Float
-  midtones_end : Float
+pub(all) struct ColorGradingGlobal {
+  mut exposure : Float
+  mut temperature : Float
+  mut tint : Float
+  mut hue : Float
+  mut post_saturation : Float
+  mut midtones_start : Float
+  mut midtones_end : Float
 }
 pub fn ColorGradingGlobal::default() -> Self
 pub fn ColorGradingGlobal::midtones_range(Self) -> (Float, Float)
-pub fn ColorGradingGlobal::new() -> Self
-pub fn ColorGradingGlobal::with_exposure(Self, Float) -> Self
-pub fn ColorGradingGlobal::with_hue(Self, Float) -> Self
-pub fn ColorGradingGlobal::with_midtones_range(Self, Float, Float) -> Self
-pub fn ColorGradingGlobal::with_post_saturation(Self, Float) -> Self
-pub fn ColorGradingGlobal::with_temperature(Self, Float) -> Self
-pub fn ColorGradingGlobal::with_tint(Self, Float) -> Self
 pub impl ToJson for ColorGradingGlobal
 pub impl @json.FromJson for ColorGradingGlobal
 
-pub struct ColorGradingSection {
-  saturation : Float
-  contrast : Float
-  gamma : Float
-  gain : Float
-  lift : Float
+pub(all) struct ColorGradingSection {
+  mut saturation : Float
+  mut contrast : Float
+  mut gamma : Float
+  mut gain : Float
+  mut lift : Float
 }
 pub fn ColorGradingSection::default() -> Self
-pub fn ColorGradingSection::new() -> Self
-pub fn ColorGradingSection::with_contrast(Self, Float) -> Self
-pub fn ColorGradingSection::with_gain(Self, Float) -> Self
-pub fn ColorGradingSection::with_gamma(Self, Float) -> Self
-pub fn ColorGradingSection::with_lift(Self, Float) -> Self
-pub fn ColorGradingSection::with_saturation(Self, Float) -> Self
 pub impl ToJson for ColorGradingSection
 pub impl @json.FromJson for ColorGradingSection
-
-pub struct ColorGradingSettings {
-  shadows : ColorGradingSection
-  midtones : ColorGradingSection
-  highlights : ColorGradingSection
-}
-pub fn ColorGradingSettings::default() -> Self
-pub fn ColorGradingSettings::with_highlights(Self, ColorGradingSection) -> Self
-pub fn ColorGradingSettings::with_identical_sections(ColorGradingSection) -> Self
-pub fn ColorGradingSettings::with_midtones(Self, ColorGradingSection) -> Self
-pub fn ColorGradingSettings::with_shadows(Self, ColorGradingSection) -> Self
-pub impl ToJson for ColorGradingSettings
-pub impl @json.FromJson for ColorGradingSettings
 
 pub struct ContactShadows {
   linear_steps : Int

@@ -29,7 +29,7 @@ pub(all) enum SelectedColorGradingSection {
   Highlights
   Midtones
   Shadows
-}
+} derive(Eq)
 
 ///|
 pub(all) enum SelectedGlobalColorGradingOption {
@@ -37,7 +37,7 @@ pub(all) enum SelectedGlobalColorGradingOption {
   Temperature
   Tint
   Hue
-}
+} derive(Eq)
 
 ///|
 pub(all) enum SelectedSectionColorGradingOption {
@@ -46,13 +46,13 @@ pub(all) enum SelectedSectionColorGradingOption {
   Gamma
   Gain
   Lift
-}
+} derive(Eq)
 
 ///|
 pub(all) enum SelectedColorGradingOption {
   Global(SelectedGlobalColorGradingOption)
   Section(SelectedColorGradingSection, SelectedSectionColorGradingOption)
-}
+} derive(Eq)
 
 ///|
 fn SelectedColorGradingOption::default() -> SelectedColorGradingOption {
@@ -64,7 +64,7 @@ pub(all) enum ColorGradingOptionWidgetType {
   Button
   Label
   Value
-}
+} derive(Eq)
 
 ///|
 struct ColorGradingOptionWidget {
@@ -184,104 +184,11 @@ fn selected_option_button_label(option : SelectedColorGradingOption) -> String {
 }
 
 ///|
-fn selected_option_eq(
-  lhs : SelectedColorGradingOption,
-  rhs : SelectedColorGradingOption,
-) -> Bool {
-  match lhs {
-    Global(lhs_global) =>
-      match rhs {
-        Global(rhs_global) =>
-          match lhs_global {
-            Exposure =>
-              match rhs_global {
-                Exposure => true
-                _ => false
-              }
-            Temperature =>
-              match rhs_global {
-                Temperature => true
-                _ => false
-              }
-            Tint =>
-              match rhs_global {
-                Tint => true
-                _ => false
-              }
-            Hue =>
-              match rhs_global {
-                Hue => true
-                _ => false
-              }
-          }
-        _ => false
-      }
-    Section(lhs_section, lhs_option) =>
-      match rhs {
-        Section(rhs_section, rhs_option) =>
-          (match lhs_section {
-            Highlights =>
-              match rhs_section {
-                Highlights => true
-                _ => false
-              }
-            Midtones =>
-              match rhs_section {
-                Midtones => true
-                _ => false
-              }
-            Shadows =>
-              match rhs_section {
-                Shadows => true
-                _ => false
-              }
-          }) &&
-          (match lhs_option {
-            Saturation =>
-              match rhs_option {
-                Saturation => true
-                _ => false
-              }
-            Contrast =>
-              match rhs_option {
-                Contrast => true
-                _ => false
-              }
-            Gamma =>
-              match rhs_option {
-                Gamma => true
-                _ => false
-              }
-            Gain =>
-              match rhs_option {
-                Gain => true
-                _ => false
-              }
-            Lift =>
-              match rhs_option {
-                Lift => true
-                _ => false
-              }
-          })
-        _ => false
-      }
-  }
-}
-
-///|
-fn widget_type_is_button(widget_type : ColorGradingOptionWidgetType) -> Bool {
-  match widget_type {
-    Button => true
-    _ => false
-  }
-}
-
-///|
-fn global_option_get(
-  option : SelectedGlobalColorGradingOption,
+fn SelectedGlobalColorGradingOption::get(
+  self : SelectedGlobalColorGradingOption,
   global : @render3d.ColorGradingGlobal,
 ) -> Float {
-  match option {
+  match self {
     Exposure => global.exposure
     Temperature => global.temperature
     Tint => global.tint
@@ -290,25 +197,26 @@ fn global_option_get(
 }
 
 ///|
-fn global_option_set(
-  option : SelectedGlobalColorGradingOption,
+fn SelectedGlobalColorGradingOption::set(
+  self : SelectedGlobalColorGradingOption,
   global : @render3d.ColorGradingGlobal,
   value : Float,
 ) -> @render3d.ColorGradingGlobal {
-  match option {
-    Exposure => global.with_exposure(value)
-    Temperature => global.with_temperature(value)
-    Tint => global.with_tint(value)
-    Hue => global.with_hue(value)
+  match self {
+    Exposure => global.exposure = value
+    Temperature => global.temperature = value
+    Tint => global.tint = value
+    Hue => global.hue = value
   }
+  global
 }
 
 ///|
-fn section_option_get(
-  option : SelectedSectionColorGradingOption,
+fn SelectedSectionColorGradingOption::get(
+  self : SelectedSectionColorGradingOption,
   section : @render3d.ColorGradingSection,
 ) -> Float {
-  match option {
+  match self {
     Saturation => section.saturation
     Contrast => section.contrast
     Gamma => section.gamma
@@ -318,65 +226,51 @@ fn section_option_get(
 }
 
 ///|
-fn section_option_set(
-  option : SelectedSectionColorGradingOption,
+fn SelectedSectionColorGradingOption::set(
+  self : SelectedSectionColorGradingOption,
   section : @render3d.ColorGradingSection,
   value : Float,
 ) -> @render3d.ColorGradingSection {
-  match option {
-    Saturation => section.with_saturation(value)
-    Contrast => section.with_contrast(value)
-    Gamma => section.with_gamma(value)
-    Gain => section.with_gain(value)
-    Lift => section.with_lift(value)
+  match self {
+    Saturation => section.saturation = value
+    Contrast => section.contrast = value
+    Gamma => section.gamma = value
+    Gain => section.gain = value
+    Lift => section.lift = value
   }
+  section
 }
 
 ///|
-fn selected_option_get(
-  option : SelectedColorGradingOption,
+fn SelectedColorGradingOption::get(
+  self : SelectedColorGradingOption,
   color_grading : @render3d.ColorGrading,
 ) -> Float {
-  match option {
-    Global(global_option) =>
-      global_option_get(global_option, color_grading.global)
-    Section(section, section_option) =>
-      match section {
-        Highlights =>
-          section_option_get(section_option, color_grading.highlights)
-        Midtones => section_option_get(section_option, color_grading.midtones)
-        Shadows => section_option_get(section_option, color_grading.shadows)
-      }
+  match self {
+    Global(option) => option.get(color_grading.global)
+    Section(Highlights, option) => option.get(color_grading.highlights)
+    Section(Midtones, option) => option.get(color_grading.midtones)
+    Section(Shadows, option) => option.get(color_grading.shadows)
   }
 }
 
 ///|
-fn selected_option_set(
-  option : SelectedColorGradingOption,
+fn SelectedColorGradingOption::set(
+  self : SelectedColorGradingOption,
   color_grading : @render3d.ColorGrading,
   value : Float,
 ) -> @render3d.ColorGrading {
-  match option {
-    Global(global_option) =>
-      color_grading.with_global(
-        global_option_set(global_option, color_grading.global, value),
-      )
-    Section(section, section_option) =>
-      match section {
-        Highlights =>
-          color_grading.with_highlights(
-            section_option_set(section_option, color_grading.highlights, value),
-          )
-        Midtones =>
-          color_grading.with_midtones(
-            section_option_set(section_option, color_grading.midtones, value),
-          )
-        Shadows =>
-          color_grading.with_shadows(
-            section_option_set(section_option, color_grading.shadows, value),
-          )
-      }
+  match self {
+    Global(option) =>
+      color_grading.global = option.set(color_grading.global, value)
+    Section(Highlights, option) =>
+      color_grading.highlights = option.set(color_grading.highlights, value)
+    Section(Midtones, option) =>
+      color_grading.midtones = option.set(color_grading.midtones, value)
+    Section(Shadows, option) =>
+      color_grading.shadows = option.set(color_grading.shadows, value)
   }
+  color_grading
 }
 
 ///|
@@ -412,7 +306,7 @@ fn option_value_text(
   option : SelectedColorGradingOption,
   color_grading : @render3d.ColorGrading,
 ) -> String {
-  format_with_three_decimals(selected_option_get(option, color_grading))
+  format_with_three_decimals(option.get(color_grading))
 }
 
 ///|
@@ -897,10 +791,10 @@ fn handle_button_presses(world : @ecs.World) -> Unit {
       return
     }
     guard widget_store.get(entity) is Some(widget) else { return }
-    if !widget_type_is_button(widget.widget_type) {
+    if widget.widget_type != ColorGradingOptionWidgetType::Button {
       return
     }
-    if !selected_option_eq(selected_option.val, widget.option) {
+    if selected_option.val != widget.option {
       selected_option.val = widget.option
     }
   })
@@ -928,10 +822,9 @@ fn adjust_color_grading_option(world : @ecs.World) -> Unit {
     return
   }
 
-  let next_color_grading = selected_option_set(
-    selected_option,
+  let next_color_grading = selected_option.set(
     color_grading,
-    selected_option_get(selected_option, color_grading) + delta,
+    selected_option.get(color_grading) + delta,
   )
   let tick = world.increment_change_tick()
   let color_grading_store = world.component(@render3d.ecs_key_color_grading)
@@ -958,7 +851,7 @@ fn update_ui_state(world : @ecs.World) -> Unit {
   widget_store.for_each(fn(entity, widget) {
     match widget.widget_type {
       Button => {
-        let is_selected = selected_option_eq(widget.option, selected_option)
+        let is_selected = widget.option == selected_option
         let background = @ui.BackgroundColor::new(
           if is_selected {
             selected_button_color()

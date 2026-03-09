@@ -178,16 +178,13 @@ fn tonemapping_mode(mode : Int) -> @render3d.Tonemapping {
 fn color_grading_from_settings(
   settings : ColorGradeSettings,
 ) -> @render3d.ColorGrading {
-  let global = @render3d.ColorGradingGlobal::new()
-    .with_exposure(settings.exposure)
-    .with_post_saturation(settings.post_saturation)
-  let section = @render3d.ColorGradingSection::new()
-    .with_gamma(settings.gamma)
-    .with_saturation(settings.pre_saturation)
-  @render3d.ColorGrading::new(
-    global,
-    @render3d.ColorGradingSettings::with_identical_sections(section),
-  )
+  let global = @render3d.ColorGradingGlobal::default()
+  global.exposure = settings.exposure
+  global.post_saturation = settings.post_saturation
+  let section = @render3d.ColorGradingSection::default()
+  section.gamma = settings.gamma
+  section.saturation = settings.pre_saturation
+  @render3d.ColorGrading::with_identical_sections(global, section)
 }
 
 ///|
