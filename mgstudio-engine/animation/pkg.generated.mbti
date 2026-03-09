@@ -184,6 +184,7 @@ pub fn AnimationGraph::add_blend(Self, Float, AnimationNodeIndex) -> AnimationNo
 pub fn AnimationGraph::add_blend_with_mask(Self, UInt, Float, AnimationNodeIndex) -> AnimationNodeIndex
 pub fn AnimationGraph::add_clip(Self, @asset.Handle[AnimationClip], Float, AnimationNodeIndex) -> AnimationNodeIndex
 pub fn AnimationGraph::add_clip_with_mask(Self, @asset.Handle[AnimationClip], UInt, Float, AnimationNodeIndex) -> AnimationNodeIndex
+pub fn AnimationGraph::add_clips(Self, Array[@asset.Handle[AnimationClip]], Float, AnimationNodeIndex) -> Array[AnimationNodeIndex]
 pub fn AnimationGraph::add_node_mask(Self, AnimationNodeIndex, UInt) -> Bool
 pub fn AnimationGraph::add_node_mask_group(Self, AnimationNodeIndex, Int) -> Bool
 pub fn AnimationGraph::add_target_to_mask_group(Self, AnimationTargetId, Int) -> Self
@@ -193,7 +194,9 @@ pub fn AnimationGraph::effective_weight(Self, AnimationNodeIndex) -> Float
 pub fn AnimationGraph::from_clip(@asset.Handle[AnimationClip]) -> (Self, AnimationNodeIndex)
 pub fn AnimationGraph::from_clips(Array[@asset.Handle[AnimationClip]]) -> (Self, Array[AnimationNodeIndex])
 pub fn AnimationGraph::get(Self, AnimationNodeIndex) -> AnimationGraphNode?
+pub fn AnimationGraph::get_mut(Self, AnimationNodeIndex) -> AnimationGraphNode?
 pub fn AnimationGraph::new() -> Self
+pub fn AnimationGraph::nodes(Self) -> Array[AnimationNodeIndex]
 pub fn AnimationGraph::remove_node_mask(Self, AnimationNodeIndex, UInt) -> Bool
 pub fn AnimationGraph::remove_node_mask_group(Self, AnimationNodeIndex, Int) -> Bool
 pub fn AnimationGraph::root(Self) -> AnimationNodeIndex
@@ -241,25 +244,56 @@ pub(all) enum AnimationNodeType {
   Add
 }
 
-pub struct AnimationPlayer {
-  active_animations : Array[(AnimationNodeIndex, ActiveAnimation)]
-}
+type AnimationPlayer
+pub fn AnimationPlayer::adjust_speeds(Self, Float) -> Self
 pub fn AnimationPlayer::all_finished(Self) -> Bool
+pub fn AnimationPlayer::all_paused(Self) -> Bool
 pub fn AnimationPlayer::animation(Self, AnimationNodeIndex) -> ActiveAnimation?
+pub fn AnimationPlayer::animation_mut(Self, AnimationNodeIndex) -> AnimationPlayerEntry?
 pub fn AnimationPlayer::default() -> Self
 pub fn AnimationPlayer::is_playing_animation(Self, AnimationNodeIndex) -> Bool
-pub fn AnimationPlayer::play(Self, AnimationNodeIndex) -> Self
+pub fn AnimationPlayer::pause_all(Self) -> Self
+pub fn AnimationPlayer::play(Self, AnimationNodeIndex) -> AnimationPlayerEntry
 pub fn AnimationPlayer::playing_animations(Self) -> Array[(AnimationNodeIndex, ActiveAnimation)]
+pub fn AnimationPlayer::playing_animations_mut(Self) -> Array[AnimationPlayerEntry]
+pub fn AnimationPlayer::resume_all(Self) -> Self
+pub fn AnimationPlayer::rewind_all(Self) -> Self
+pub fn AnimationPlayer::seek_all_by(Self, Float) -> Self
 pub fn AnimationPlayer::seek_to(Self, AnimationNodeIndex, Float) -> Self
 pub fn AnimationPlayer::set_animation(Self, AnimationNodeIndex, ActiveAnimation) -> Self
 pub fn AnimationPlayer::set_speed(Self, AnimationNodeIndex, Float) -> Self
 pub fn AnimationPlayer::set_weight(Self, AnimationNodeIndex, Float) -> Self
-pub fn AnimationPlayer::start(Self, AnimationNodeIndex) -> Self
+pub fn AnimationPlayer::start(Self, AnimationNodeIndex) -> AnimationPlayerEntry
 pub fn AnimationPlayer::stop(Self, AnimationNodeIndex) -> Self
 pub fn AnimationPlayer::stop_all(Self) -> Self
 pub impl @ecs.Component for AnimationPlayer
 pub impl ToJson for AnimationPlayer
 pub impl @json.FromJson for AnimationPlayer
+
+type AnimationPlayerEntry
+pub fn AnimationPlayerEntry::completions(Self) -> Int
+pub fn AnimationPlayerEntry::elapsed(Self) -> Float
+pub fn AnimationPlayerEntry::is_finished(Self) -> Bool
+pub fn AnimationPlayerEntry::is_paused(Self) -> Bool
+pub fn AnimationPlayerEntry::is_playback_reversed(Self) -> Bool
+pub fn AnimationPlayerEntry::just_completed(Self) -> Bool
+pub fn AnimationPlayerEntry::node(Self) -> AnimationNodeIndex
+pub fn AnimationPlayerEntry::pause(Self) -> Self
+pub fn AnimationPlayerEntry::repeat(Self) -> Self
+pub fn AnimationPlayerEntry::repeat_forever(Self) -> Self
+pub fn AnimationPlayerEntry::repeat_mode(Self) -> RepeatAnimation
+pub fn AnimationPlayerEntry::replay(Self) -> Self
+pub fn AnimationPlayerEntry::resume_playback(Self) -> Self
+pub fn AnimationPlayerEntry::rewind(Self) -> Self
+pub fn AnimationPlayerEntry::seek_time(Self) -> Float
+pub fn AnimationPlayerEntry::seek_to(Self, Float) -> Self
+pub fn AnimationPlayerEntry::set_repeat(Self, RepeatAnimation) -> Self
+pub fn AnimationPlayerEntry::set_seek_time(Self, Float) -> Self
+pub fn AnimationPlayerEntry::set_speed(Self, Float) -> Self
+pub fn AnimationPlayerEntry::set_weight(Self, Float) -> Self
+pub fn AnimationPlayerEntry::speed(Self) -> Float
+pub fn AnimationPlayerEntry::unpause(Self) -> Self
+pub fn AnimationPlayerEntry::weight(Self) -> Float
 
 type AnimationSample
 pub fn AnimationSample::rotation(Self) -> @math.Quat?
@@ -304,9 +338,10 @@ pub struct AnimationTransitions {
   mut main_animation : AnimationNodeIndex?
   transitions : Array[AnimationTransition]
 }
+pub fn AnimationTransitions::get_main_animation(Self) -> AnimationNodeIndex?
 pub fn AnimationTransitions::main_animation(Self) -> AnimationNodeIndex?
 pub fn AnimationTransitions::new() -> Self
-pub fn AnimationTransitions::play(Self, AnimationPlayer, AnimationNodeIndex, Float) -> (Self, AnimationPlayer)
+pub fn AnimationTransitions::play(Self, AnimationPlayer, AnimationNodeIndex, Float) -> AnimationPlayerEntry
 pub impl @ecs.Component for AnimationTransitions
 pub impl ToJson for AnimationTransitions
 pub impl @json.FromJson for AnimationTransitions

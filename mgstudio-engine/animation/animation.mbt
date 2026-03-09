@@ -1050,11 +1050,22 @@ pub fn AnimationGraph::from_clips(
   clips : Array[@asset.Handle[AnimationClip]],
 ) -> (AnimationGraph, Array[AnimationNodeIndex]) {
   let graph = AnimationGraph::new()
+  let nodes = graph.add_clips(clips, 1.0F, graph.root)
+  (graph, nodes)
+}
+
+///|
+pub fn AnimationGraph::add_clips(
+  self : AnimationGraph,
+  clips : Array[@asset.Handle[AnimationClip]],
+  weight : Float,
+  parent : AnimationNodeIndex,
+) -> Array[AnimationNodeIndex] {
   let nodes : Array[AnimationNodeIndex] = []
   for clip in clips {
-    nodes.push(graph.add_clip(clip, 1.0F, graph.root))
+    nodes.push(self.add_clip(clip, weight, parent))
   }
-  (graph, nodes)
+  nodes
 }
 
 ///|
@@ -1239,6 +1250,25 @@ pub fn AnimationGraph::get(
   node : AnimationNodeIndex,
 ) -> AnimationGraphNode? {
   self.nodes.get(node.index())
+}
+
+///|
+pub fn AnimationGraph::get_mut(
+  self : AnimationGraph,
+  node : AnimationNodeIndex,
+) -> AnimationGraphNode? {
+  self.get(node)
+}
+
+///|
+pub fn AnimationGraph::nodes(
+  self : AnimationGraph,
+) -> Array[AnimationNodeIndex] {
+  let out : Array[AnimationNodeIndex] = []
+  for i in 0..<self.nodes.length() {
+    out.push(AnimationNodeIndex::new(i))
+  }
+  out
 }
 
 ///|
@@ -1788,8 +1818,8 @@ fn animation_player_find(
   node : AnimationNodeIndex,
 ) -> Int? {
   let mut i = 0
-  while i < player.active_animations.length() {
-    if player.active_animations[i].0 == node {
+  while i < player.state.val.active_animations.length() {
+    if player.state.val.active_animations[i].0 == node {
       return Some(i)
     }
     i = i + 1
@@ -1798,13 +1828,45 @@ fn animation_player_find(
 }
 
 ///|
-pub struct AnimationPlayer {
+priv struct AnimationPlayerState {
   active_animations : Array[(AnimationNodeIndex, ActiveAnimation)]
 }
 
 ///|
+struct AnimationPlayer {
+  state : Ref[AnimationPlayerState]
+}
+
+///|
+struct AnimationPlayerEntry {
+  player : AnimationPlayer
+  node : AnimationNodeIndex
+}
+
+///|
+fn animation_player_entry_new(
+  player : AnimationPlayer,
+  node : AnimationNodeIndex,
+) -> AnimationPlayerEntry {
+  AnimationPlayerEntry::{ player, node }
+}
+
+///|
+fn animation_player_entry_active_or_abort(
+  entry : AnimationPlayerEntry,
+) -> ActiveAnimation {
+  match entry.player.animation(entry.node) {
+    Some(active) => active
+    None =>
+      abort(
+        "Missing active animation for node " + entry.node.index().to_string(),
+      )
+  }
+}
+
+///|
 pub impl ToJson for AnimationPlayer with to_json(self) {
-  self.active_animations.to_json()
+  self.state.val.active_animations.to_json()
 }
 
 ///|
@@ -1813,19 +1875,34 @@ pub impl @json.FromJson for AnimationPlayer with from_json(json, path) {
     json,
     path~,
   )
-  AnimationPlayer::{ active_animations, }
+  AnimationPlayer::{
+    state: Ref::new(AnimationPlayerState::{ active_animations, }),
+  }
 }
 
 ///|
 pub fn AnimationPlayer::default() -> AnimationPlayer {
-  AnimationPlayer::{ active_animations: [] }
+  AnimationPlayer::{
+    state: Ref::new(AnimationPlayerState::{ active_animations: [] }),
+  }
 }
 
 ///|
 pub fn AnimationPlayer::playing_animations(
   self : AnimationPlayer,
 ) -> Array[(AnimationNodeIndex, ActiveAnimation)] {
-  self.active_animations
+  self.state.val.active_animations
+}
+
+///|
+pub fn AnimationPlayer::playing_animations_mut(
+  self : AnimationPlayer,
+) -> Array[AnimationPlayerEntry] {
+  let out : Array[AnimationPlayerEntry] = []
+  for pair in self.state.val.active_animations {
+    out.push(animation_player_entry_new(self, pair.0))
+  }
+  out
 }
 
 ///|
@@ -1834,7 +1911,19 @@ pub fn AnimationPlayer::animation(
   node : AnimationNodeIndex,
 ) -> ActiveAnimation? {
   if animation_player_find(self, node) is Some(index) {
-    Some(self.active_animations[index].1)
+    Some(self.state.val.active_animations[index].1)
+  } else {
+    None
+  }
+}
+
+///|
+pub fn AnimationPlayer::animation_mut(
+  self : AnimationPlayer,
+  node : AnimationNodeIndex,
+) -> AnimationPlayerEntry? {
+  if self.animation(node) is Some(_) {
+    Some(animation_player_entry_new(self, node))
   } else {
     None
   }
@@ -1885,9 +1974,74 @@ pub fn AnimationPlayer::set_animation(
   active : ActiveAnimation,
 ) -> AnimationPlayer {
   if animation_player_find(self, node) is Some(index) {
-    self.active_animations[index] = (node, active)
+    self.state.val.active_animations[index] = (node, active)
   } else {
-    self.active_animations.push((node, active))
+    self.state.val.active_animations.push((node, active))
+  }
+  self
+}
+
+///|
+pub fn AnimationPlayer::all_paused(self : AnimationPlayer) -> Bool {
+  for pair in self.state.val.active_animations {
+    if !pair.1.is_paused() {
+      return false
+    }
+  }
+  true
+}
+
+///|
+pub fn AnimationPlayer::pause_all(self : AnimationPlayer) -> AnimationPlayer {
+  for i in 0..<self.state.val.active_animations.length() {
+    let pair = self.state.val.active_animations[i]
+    self.set_animation(pair.0, pair.1.pause()) |> ignore
+  }
+  self
+}
+
+///|
+pub fn AnimationPlayer::resume_all(self : AnimationPlayer) -> AnimationPlayer {
+  for i in 0..<self.state.val.active_animations.length() {
+    let pair = self.state.val.active_animations[i]
+    self.set_animation(pair.0, pair.1.unpause()) |> ignore
+  }
+  self
+}
+
+///|
+pub fn AnimationPlayer::rewind_all(self : AnimationPlayer) -> AnimationPlayer {
+  for i in 0..<self.state.val.active_animations.length() {
+    let pair = self.state.val.active_animations[i]
+    self.set_animation(pair.0, pair.1.rewind()) |> ignore
+  }
+  self
+}
+
+///|
+pub fn AnimationPlayer::adjust_speeds(
+  self : AnimationPlayer,
+  factor : Float,
+) -> AnimationPlayer {
+  for i in 0..<self.state.val.active_animations.length() {
+    let pair = self.state.val.active_animations[i]
+    let active = pair.1
+    self.set_animation(pair.0, active.set_speed(active.speed() * factor))
+    |> ignore
+  }
+  self
+}
+
+///|
+pub fn AnimationPlayer::seek_all_by(
+  self : AnimationPlayer,
+  amount : Float,
+) -> AnimationPlayer {
+  for i in 0..<self.state.val.active_animations.length() {
+    let pair = self.state.val.active_animations[i]
+    let active = pair.1
+    self.set_animation(pair.0, active.seek_to(active.seek_time() + amount))
+    |> ignore
   }
   self
 }
@@ -1896,24 +2050,26 @@ pub fn AnimationPlayer::set_animation(
 pub fn AnimationPlayer::start(
   self : AnimationPlayer,
   node : AnimationNodeIndex,
-) -> AnimationPlayer {
-  let active = match self.animation(node) {
-    Some(existing) => existing.replay()
-    None => ActiveAnimation::default()
+) -> AnimationPlayerEntry {
+  if self.animation_mut(node) is Some(existing) {
+    return existing.replay()
   }
-  self.set_animation(node, active)
+  let active = ActiveAnimation::default()
+  self.state.val.active_animations.push((node, active))
+  animation_player_entry_new(self, node)
 }
 
 ///|
 pub fn AnimationPlayer::play(
   self : AnimationPlayer,
   node : AnimationNodeIndex,
-) -> AnimationPlayer {
-  if self.animation(node) is Some(_) {
-    return self
+) -> AnimationPlayerEntry {
+  if self.animation_mut(node) is Some(existing) {
+    return existing
   }
-  self.active_animations.push((node, ActiveAnimation::default()))
-  self
+  let active = ActiveAnimation::default()
+  self.state.val.active_animations.push((node, active))
+  animation_player_entry_new(self, node)
 }
 
 ///|
@@ -1922,27 +2078,196 @@ pub fn AnimationPlayer::stop(
   node : AnimationNodeIndex,
 ) -> AnimationPlayer {
   if animation_player_find(self, node) is Some(index) {
-    let last = self.active_animations.length() - 1
-    self.active_animations[index] = self.active_animations[last]
-    self.active_animations.pop() |> ignore
+    let last = self.state.val.active_animations.length() - 1
+    self.state.val.active_animations[index] = self.state.val.active_animations[last]
+    self.state.val.active_animations.pop() |> ignore
   }
   self
 }
 
 ///|
 pub fn AnimationPlayer::stop_all(self : AnimationPlayer) -> AnimationPlayer {
-  self.active_animations.clear()
+  self.state.val.active_animations.clear()
   self
 }
 
 ///|
 pub fn AnimationPlayer::all_finished(self : AnimationPlayer) -> Bool {
-  for pair in self.active_animations {
+  for pair in self.state.val.active_animations {
     if !pair.1.is_finished() {
       return false
     }
   }
   true
+}
+
+///|
+pub fn AnimationPlayerEntry::node(
+  self : AnimationPlayerEntry,
+) -> AnimationNodeIndex {
+  self.node
+}
+
+///|
+pub fn AnimationPlayerEntry::is_finished(self : AnimationPlayerEntry) -> Bool {
+  animation_player_entry_active_or_abort(self).is_finished()
+}
+
+///|
+pub fn AnimationPlayerEntry::is_paused(self : AnimationPlayerEntry) -> Bool {
+  animation_player_entry_active_or_abort(self).is_paused()
+}
+
+///|
+pub fn AnimationPlayerEntry::weight(self : AnimationPlayerEntry) -> Float {
+  animation_player_entry_active_or_abort(self).weight()
+}
+
+///|
+pub fn AnimationPlayerEntry::seek_time(self : AnimationPlayerEntry) -> Float {
+  animation_player_entry_active_or_abort(self).seek_time()
+}
+
+///|
+pub fn AnimationPlayerEntry::repeat_mode(
+  self : AnimationPlayerEntry,
+) -> RepeatAnimation {
+  animation_player_entry_active_or_abort(self).repeat_mode()
+}
+
+///|
+pub fn AnimationPlayerEntry::speed(self : AnimationPlayerEntry) -> Float {
+  animation_player_entry_active_or_abort(self).speed()
+}
+
+///|
+pub fn AnimationPlayerEntry::elapsed(self : AnimationPlayerEntry) -> Float {
+  animation_player_entry_active_or_abort(self).elapsed()
+}
+
+///|
+pub fn AnimationPlayerEntry::completions(self : AnimationPlayerEntry) -> Int {
+  animation_player_entry_active_or_abort(self).completions()
+}
+
+///|
+pub fn AnimationPlayerEntry::just_completed(
+  self : AnimationPlayerEntry,
+) -> Bool {
+  animation_player_entry_active_or_abort(self).just_completed()
+}
+
+///|
+pub fn AnimationPlayerEntry::is_playback_reversed(
+  self : AnimationPlayerEntry,
+) -> Bool {
+  animation_player_entry_active_or_abort(self).is_playback_reversed()
+}
+
+///|
+pub fn AnimationPlayerEntry::set_weight(
+  self : AnimationPlayerEntry,
+  weight : Float,
+) -> AnimationPlayerEntry {
+  self.player.set_weight(self.node, weight) |> ignore
+  self
+}
+
+///|
+pub fn AnimationPlayerEntry::set_repeat(
+  self : AnimationPlayerEntry,
+  repeat : RepeatAnimation,
+) -> AnimationPlayerEntry {
+  let active = animation_player_entry_active_or_abort(self).set_repeat(repeat)
+  self.player.set_animation(self.node, active) |> ignore
+  self
+}
+
+///|
+pub fn AnimationPlayerEntry::repeat_forever(
+  self : AnimationPlayerEntry,
+) -> AnimationPlayerEntry {
+  self.set_repeat(RepeatAnimation::Forever)
+}
+
+///|
+pub fn AnimationPlayerEntry::repeat(
+  self : AnimationPlayerEntry,
+) -> AnimationPlayerEntry {
+  self.repeat_forever()
+}
+
+///|
+pub fn AnimationPlayerEntry::set_speed(
+  self : AnimationPlayerEntry,
+  speed : Float,
+) -> AnimationPlayerEntry {
+  self.player.set_speed(self.node, speed) |> ignore
+  self
+}
+
+///|
+pub fn AnimationPlayerEntry::pause(
+  self : AnimationPlayerEntry,
+) -> AnimationPlayerEntry {
+  let active = animation_player_entry_active_or_abort(self).pause()
+  self.player.set_animation(self.node, active) |> ignore
+  self
+}
+
+///|
+pub fn AnimationPlayerEntry::unpause(
+  self : AnimationPlayerEntry,
+) -> AnimationPlayerEntry {
+  let active = animation_player_entry_active_or_abort(self).unpause()
+  self.player.set_animation(self.node, active) |> ignore
+  self
+}
+
+///|
+pub fn AnimationPlayerEntry::resume_playback(
+  self : AnimationPlayerEntry,
+) -> AnimationPlayerEntry {
+  self.unpause()
+}
+
+///|
+pub fn AnimationPlayerEntry::set_seek_time(
+  self : AnimationPlayerEntry,
+  seek_time : Float,
+) -> AnimationPlayerEntry {
+  let active = animation_player_entry_active_or_abort(self).set_seek_time(
+    seek_time,
+  )
+  self.player.set_animation(self.node, active) |> ignore
+  self
+}
+
+///|
+pub fn AnimationPlayerEntry::seek_to(
+  self : AnimationPlayerEntry,
+  seek_time : Float,
+) -> AnimationPlayerEntry {
+  self.player.seek_to(self.node, seek_time) |> ignore
+  self
+}
+
+///|
+pub fn AnimationPlayerEntry::rewind(
+  self : AnimationPlayerEntry,
+) -> AnimationPlayerEntry {
+  let active = animation_player_entry_active_or_abort(self).rewind()
+  self.player.set_animation(self.node, active) |> ignore
+  self
+}
+
+///|
+pub fn AnimationPlayerEntry::replay(
+  self : AnimationPlayerEntry,
+) -> AnimationPlayerEntry {
+  let active = animation_player_entry_active_or_abort(self).replay()
+  self.player.set_animation(self.node, active) |> ignore
+  self
 }
 
 ///|
@@ -1952,8 +2277,8 @@ fn animation_player_tick(
   delta_seconds : Float,
 ) -> AnimationPlayer {
   let mut i = 0
-  while i < player.active_animations.length() {
-    let (node, active) = player.active_animations[i]
+  while i < player.state.val.active_animations.length() {
+    let (node, active) = player.state.val.active_animations[i]
     let mut next_active = active
     if active.is_paused() {
       ()
@@ -1964,7 +2289,7 @@ fn animation_player_tick(
         }
       }
     }
-    player.active_animations[i] = (node, next_active)
+    player.state.val.active_animations[i] = (node, next_active)
     i = i + 1
   }
   player
@@ -2034,6 +2359,13 @@ pub fn AnimationTransitions::main_animation(
 }
 
 ///|
+pub fn AnimationTransitions::get_main_animation(
+  self : AnimationTransitions,
+) -> AnimationNodeIndex? {
+  self.main_animation()
+}
+
+///|
 fn animation_transitions_remove_for_animation(
   transitions : AnimationTransitions,
   node : AnimationNodeIndex,
@@ -2056,14 +2388,13 @@ pub fn AnimationTransitions::play(
   player : AnimationPlayer,
   new_animation : AnimationNodeIndex,
   transition_duration_seconds : Float,
-) -> (AnimationTransitions, AnimationPlayer) {
-  let mut next_player = player
+) -> AnimationPlayerEntry {
   if self.main_animation is Some(old_animation) {
     if old_animation != new_animation {
-      if next_player.animation(old_animation) is Some(old_active) {
+      if player.animation(old_animation) is Some(old_active) {
         if !old_active.is_paused() {
           if transition_duration_seconds <= 0.0F {
-            next_player = next_player.stop(old_animation)
+            player.stop(old_animation) |> ignore
           } else {
             self.transitions.push(
               animation_transition_new(
@@ -2080,8 +2411,7 @@ pub fn AnimationTransitions::play(
 
   self.main_animation = Some(new_animation)
   animation_transitions_remove_for_animation(self, new_animation)
-  next_player = next_player.start(new_animation)
-  (self, next_player)
+  player.start(new_animation)
 }
 
 ///|
