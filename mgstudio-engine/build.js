@@ -14,7 +14,7 @@ if (platform === 'darwin') {
     '-framework AppKit -framework QuartzCore -framework Foundation -lobjc';
 
   linkConfigs.push({
-    package: pkg('runtime_native/windowing_native'),
+    package: pkg('window/windowing_native'),
     link_flags: darwinWindowLinkFlags,
   });
 }

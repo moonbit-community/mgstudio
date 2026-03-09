@@ -5,7 +5,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/runtime_native/native_gpu",
   "Milky2018/mgstudio/runtime_native/native_asset",
-  "Milky2018/mgstudio/runtime_native/native_window",
+  "Milky2018/mgstudio/window/windowing" @windowing,
   "tonyfettes/any",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",

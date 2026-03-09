@@ -190,7 +190,7 @@ pub fn host_window_create(
   use_physical_size_on_create~ : Bool,
   title~ : String,
 ) -> HostWindow {
-  @native_window.create(
+  @windowing.create(
     logical_width~,
     logical_height~,
     physical_width~,
@@ -202,47 +202,47 @@ pub fn host_window_create(
 
 ///|
 pub fn host_window_poll_events(window : HostWindow) -> Unit {
-  @native_window.poll_events(window)
+  @windowing.poll_events(window)
 }
 
 ///|
 pub fn host_window_get_width(window : HostWindow) -> Int {
-  @native_window.width(window)
+  @windowing.width(window)
 }
 
 ///|
 pub fn host_window_get_height(window : HostWindow) -> Int {
-  @native_window.height(window)
+  @windowing.height(window)
 }
 
 ///|
 pub fn host_window_get_scale_factor(window : HostWindow) -> Float {
-  @native_window.scale_factor(window)
+  @windowing.scale_factor(window)
 }
 
 ///|
 pub fn host_window_get_focused(window : HostWindow) -> Bool {
-  @native_window.focused(window)
+  @windowing.focused(window)
 }
 
 ///|
 pub fn host_window_should_close(window : HostWindow) -> Bool {
-  @native_window.should_close(window)
+  @windowing.should_close(window)
 }
 
 ///|
 pub fn host_window_request_close(window : HostWindow) -> Unit {
-  @native_window.request_close(window)
+  @windowing.request_close(window)
 }
 
 ///|
 pub fn host_window_run_loop(step : FuncRef[() -> Unit]) -> Unit {
-  @native_window.run_loop(step)
+  @windowing.run_loop(step)
 }
 
 ///|
 pub fn host_window_set_title(window : HostWindow, title~ : String) -> Unit {
-  @native_window.set_title(window, title~)
+  @windowing.set_title(window, title~)
 }
 
 ///|
@@ -251,7 +251,7 @@ pub fn host_window_set_size(
   width~ : Int,
   height~ : Int,
 ) -> Unit {
-  @native_window.set_size(window, width~, height~)
+  @windowing.set_size(window, width~, height~)
 }
 
 ///|
@@ -259,7 +259,7 @@ pub fn host_window_set_resizable(
   window : HostWindow,
   resizable~ : Bool,
 ) -> Unit {
-  @native_window.set_resizable(window, resizable~)
+  @windowing.set_resizable(window, resizable~)
 }
 
 ///|
@@ -267,7 +267,7 @@ pub fn host_window_set_cursor_visible(
   window : HostWindow,
   visible~ : Bool,
 ) -> Unit {
-  @native_window.set_cursor_visible(window, visible~)
+  @windowing.set_cursor_visible(window, visible~)
 }
 
 ///|
@@ -308,7 +308,7 @@ fn host_window_set_cursor_grab_mode_raw(
   window~ : HostWindow,
   mode~ : Int,
 ) -> Unit {
-  @native_window.set_cursor_grab_mode(window, mode~)
+  @windowing.set_cursor_grab_mode(window, mode~)
 }
 
 ///|
@@ -321,7 +321,7 @@ pub fn host_window_set_cursor_icon(
 
 ///|
 fn host_window_set_cursor_icon_raw(window~ : HostWindow, icon~ : Int) -> Unit {
-  @native_window.set_cursor_icon(window, icon~)
+  @windowing.set_cursor_icon(window, icon~)
 }
 
 ///|
@@ -340,7 +340,7 @@ pub fn host_window_set_mode(window : HostWindow, mode~ : WindowMode) -> Unit {
 
 ///|
 fn host_window_set_mode_raw(window~ : HostWindow, mode~ : Int) -> Unit {
-  @native_window.set_mode(window, mode~)
+  @windowing.set_mode(window, mode~)
 }
 
 ///|
@@ -349,17 +349,17 @@ pub fn host_window_set_position(
   x~ : Int,
   y~ : Int,
 ) -> Unit {
-  @native_window.set_position(window, x~, y~)
+  @windowing.set_position(window, x~, y~)
 }
 
 ///|
 pub fn host_window_get_position_x(window : HostWindow) -> Int {
-  @native_window.position_x(window)
+  @windowing.position_x(window)
 }
 
 ///|
 pub fn host_window_get_position_y(window : HostWindow) -> Int {
-  @native_window.position_y(window)
+  @windowing.position_y(window)
 }
 
 ///|

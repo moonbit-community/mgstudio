@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "Milky2018/mgstudio/runtime_native/windowing_native"
+package "Milky2018/mgstudio/window/windowing_native"
 
 import {
   "Milky2018/wgpu_mbt/c",

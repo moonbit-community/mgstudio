@@ -1,5 +1,5 @@
 import {
-  "Milky2018/mgstudio/runtime_native/windowing_native",
+  "Milky2018/mgstudio/window/windowing_native",
   "Milky2018/wgpu_mbt",
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/x/sys",
