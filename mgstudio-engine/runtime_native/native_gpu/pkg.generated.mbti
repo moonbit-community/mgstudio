@@ -87,6 +87,14 @@ pub fn render_diagnostics_snapshot() -> RenderDiagnosticsSnapshot
 
 pub fn request_device() -> Int
 
+pub fn screenshot_capture_surface_request() -> Int
+
+pub fn screenshot_capture_texture_request(texture_id~ : Int) -> Int
+
+pub fn screenshot_capture_texture_sync(texture_id~ : Int) -> ScreenshotCaptureResult?
+
+pub fn screenshot_take_capture_result(Int) -> ScreenshotCaptureResult?
+
 pub fn set_scissor(x~ : Int, y~ : Int, width~ : Int, height~ : Int) -> Unit
 
 // Errors
@@ -106,6 +114,8 @@ pub struct GpuBackend {
   mut surface_format : @wgpu_mbt.TextureFormat?
   mut configured_width : Int
   mut configured_height : Int
+  mut surface_capture_texture_id : Int
+  mut surface_capture_active : Bool
   mut frame : GpuFrameState?
   mut pass_state : GpuPassState?
   mut frame_count : UInt
@@ -268,6 +278,7 @@ pub fn GpuBackend::write_texture_region_rgba8_mip(Self, Int, Int, Int, Int, Int,
 
 pub struct GpuFrameState {
   surface_tex : @wgpu_mbt.SurfaceTexture
+  surface_texture : @wgpu_mbt.Texture
   surface_view : @wgpu_mbt.TextureView
   encoder : @wgpu_mbt.CommandEncoder
   mut pass : @wgpu_mbt.RenderPass?
@@ -392,6 +403,13 @@ pub struct RenderDiagnosticsSnapshot {
 }
 pub fn RenderDiagnosticsSnapshot::default() -> Self
 pub fn RenderDiagnosticsSnapshot::new(Int, Int, Int, Int) -> Self
+
+pub struct ScreenshotCaptureResult {
+  id : Int
+  width : Int
+  height : Int
+  pixels : Bytes
+}
 
 pub struct SpriteBatch {
   texture_id : Int

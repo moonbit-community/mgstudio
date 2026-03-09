@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/window"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "moonbitlang/core/json",
@@ -13,6 +14,10 @@ pub const WINDOW_PLUGIN_ID : String = "bevy_window::WindowPlugin"
 
 pub fn close_when_requested(@ecs.MessageReader[WindowCloseRequested], @ecs.EntityQuery[@ecs.With[ClosingWindow]]) -> Unit
 
+pub let ecs_key_captured : @ecs.ComponentKey[Captured]
+
+pub let ecs_key_capturing : @ecs.ComponentKey[Capturing]
+
 pub let ecs_key_closing_window : @ecs.ComponentKey[ClosingWindow]
 
 pub let ecs_key_cursor_icon : @ecs.ComponentKey[CursorIcon]
@@ -20,6 +25,10 @@ pub let ecs_key_cursor_icon : @ecs.ComponentKey[CursorIcon]
 pub let ecs_key_cursor_options : @ecs.ComponentKey[CursorOptions]
 
 pub let ecs_key_primary_window : @ecs.ComponentKey[PrimaryWindow]
+
+pub let ecs_key_screenshot : @ecs.ComponentKey[Screenshot]
+
+pub let ecs_key_screenshot_captured : @ecs.ComponentKey[ScreenshotCaptured]
 
 pub let ecs_key_window : @ecs.ComponentKey[Window]
 
@@ -143,6 +152,12 @@ pub fn host_window_set_title(Int, title~ : String) -> Unit
 
 pub fn host_window_should_close(Int) -> Bool
 
+pub fn save_to_disk(String) -> (@ecs.On[@ecs.Insert, ScreenshotCaptured]) -> Unit
+
+pub fn screenshot_finalize_capture_requests(@ecs.World) -> Unit
+
+pub fn screenshot_queue_capture_requests(@ecs.World) -> Unit
+
 pub fn window_ensure_primary_host(@ecs.World) -> Int?
 
 pub fn window_entity_for_ref(@ecs.World, WindowRef) -> @core.Entity?
@@ -190,6 +205,14 @@ pub fn window_width() -> Int
 // Errors
 
 // Types and methods
+pub struct Captured {
+}
+pub impl @ecs.Component for Captured
+
+pub struct Capturing {
+}
+pub impl @ecs.Component for Capturing
+
 pub(all) struct ClosingWindow {
 }
 pub impl @ecs.Component for ClosingWindow
@@ -319,6 +342,25 @@ pub(all) struct PrimaryWindow {
 pub impl @ecs.Component for PrimaryWindow
 pub impl Eq for PrimaryWindow
 pub impl Show for PrimaryWindow
+
+pub struct Screenshot {
+  target : ScreenshotTarget
+}
+pub fn Screenshot::image(@asset.Handle[@asset.Image]) -> Self
+pub fn Screenshot::primary_window() -> Self
+pub fn Screenshot::window(@core.Entity) -> Self
+pub impl @ecs.Component for Screenshot
+
+pub struct ScreenshotCaptured {
+  entity : @core.Entity
+  image : @asset.Image
+}
+pub impl @ecs.Component for ScreenshotCaptured
+
+pub(all) enum ScreenshotTarget {
+  Window(WindowRef)
+  Image(@asset.Handle[@asset.Image])
+}
 
 pub(all) struct Window {
   mut title : String

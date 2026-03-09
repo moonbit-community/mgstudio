@@ -24,9 +24,9 @@ pub let ecs_key_scene_root : @ecs.ComponentKey[SceneRoot]
 
 pub let ecs_resources : Array[String]
 
-pub fn get_scene_instance_store(@ecs.World) -> @ecs.ComponentAccess[SceneInstance]
-
 pub fn get_scene_instance_ready_store(@ecs.World) -> @ecs.ComponentAccess[SceneInstanceReady]
+
+pub fn get_scene_instance_store(@ecs.World) -> @ecs.ComponentAccess[SceneInstance]
 
 pub fn get_scene_root_store(@ecs.World) -> @ecs.ComponentAccess[SceneRoot]
 
@@ -134,3 +134,4 @@ pub impl @json.FromJson for SceneRoot
 // Type aliases
 
 // Traits
+

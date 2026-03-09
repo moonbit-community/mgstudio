@@ -6775,19 +6775,6 @@ impl @ecs.Component for ProjectionRuntime3d with component() {
 }
 
 ///|
-priv struct ReflectionProbeInstance {
-  transform : @math.Transform
-  light_probe : LightProbe
-  environment_map_light : EnvironmentMapLight
-}
-
-///|
-priv struct ResolvedEnvironmentLight {
-  light : EnvironmentMapLight
-  weight : Float
-}
-
-///|
 priv struct Mesh3dInstance {
   entity : @core.Entity
   mesh_handle : @asset.Handle[@mesh.Mesh]
@@ -6902,12 +6889,6 @@ priv struct PointLightShadowTargetsEntry {
 }
 
 ///|
-priv struct AutoExposureHistoryEntry {
-  entity : @core.Entity
-  ev100 : Float
-}
-
-///|
 priv struct Render3dCameraOrderEntry {
   entity : @core.Entity
   order : Int
@@ -6930,9 +6911,6 @@ let transmission_source_targets : Ref[Array[TransmissionSourceTargetsEntry]] = R
 ///|
 let point_light_shadow_targets : Ref[Array[PointLightShadowTargetsEntry]] = Ref::new([],
 )
-
-///|
-let auto_exposure_history : Ref[Array[AutoExposureHistoryEntry]] = Ref::new([])
 
 ///|
 let render3d_runtime_initialized_ref : Ref[Bool] = Ref::new(false)
@@ -7349,54 +7327,6 @@ fn render3d_apply_extended_material_metadata(
 }
 
 ///|
-fn render3d_auto_exposure_history_get(entity : @core.Entity) -> Float? {
-  for item in auto_exposure_history.val {
-    if item.entity.id == entity.id &&
-      item.entity.generation == entity.generation {
-      return Some(item.ev100)
-    }
-  }
-  None
-}
-
-///|
-fn render3d_auto_exposure_history_set(
-  entity : @core.Entity,
-  ev100 : Float,
-) -> Unit {
-  let next : Array[AutoExposureHistoryEntry] = []
-  let mut replaced = false
-  for item in auto_exposure_history.val {
-    if item.entity.id == entity.id &&
-      item.entity.generation == entity.generation {
-      if !replaced {
-        next.push({ entity, ev100 })
-        replaced = true
-      }
-    } else {
-      next.push(item)
-    }
-  }
-  if !replaced {
-    next.push({ entity, ev100 })
-  }
-  auto_exposure_history.val = next
-}
-
-///|
-fn render3d_auto_exposure_history_sync(
-  cameras : Array[Camera3dInstance],
-) -> Unit {
-  let next : Array[AutoExposureHistoryEntry] = []
-  for camera in cameras {
-    if render3d_auto_exposure_history_get(camera.entity) is Some(ev100) {
-      next.push({ entity: camera.entity, ev100 })
-    }
-  }
-  auto_exposure_history.val = next
-}
-
-///|
 fn render3d_default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
   match (try! world.get_resource(@time.time_resource_key_of(()))) {
     Some(time) => time
@@ -7405,142 +7335,6 @@ fn render3d_default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
       time
     }
   }
-}
-
-///|
-fn render3d_auto_exposure_target_ev100(
-  auto_exposure : AutoExposure,
-  lighting : Render3dLightingState,
-) -> Float {
-  // TODO(render3d-backend): replace this CPU approximation with histogram
-  // metering + compensation-curve sampling when compute post-process exists.
-  let ambient = if lighting.ambient_brightness < 0.0F {
-    0.0F
-  } else {
-    lighting.ambient_brightness
-  }
-  let directional = if lighting.directional_illuminance < 0.0F {
-    0.0F
-  } else {
-    lighting.directional_illuminance / 10_000.0F
-  }
-  let point = if lighting.point_intensity < 0.0F {
-    0.0F
-  } else {
-    lighting.point_intensity / 100_000.0F
-  }
-  let spot = if lighting.spot_intensity < 0.0F {
-    0.0F
-  } else {
-    lighting.spot_intensity / 100_000.0F
-  }
-  let metering_mask_weight = if auto_exposure.metering_mask is Some(_) {
-    0.8F
-  } else {
-    1.0F
-  }
-  let filtered = ambient * (1.0F - auto_exposure.low_percent) +
-    directional * auto_exposure.high_percent +
-    (point + spot) * 0.5F
-  let normalized_brightness = render3d_float_clamp(
-    filtered * metering_mask_weight,
-    0.0F,
-    1.0F,
-  )
-  let span = auto_exposure.max_ev100 - auto_exposure.min_ev100
-  let base_target = auto_exposure.max_ev100 - normalized_brightness * span
-  render3d_float_clamp(
-    base_target + auto_exposure.compensation_ev,
-    auto_exposure.min_ev100,
-    auto_exposure.max_ev100,
-  )
-}
-
-///|
-fn render3d_camera_effective_exposure(
-  world : @ecs.World,
-  camera_entity : @core.Entity,
-  exposure : Exposure?,
-  auto_exposure : AutoExposure?,
-  lighting : Render3dLightingState,
-) -> Exposure? {
-  guard auto_exposure is Some(auto_exposure_value) else { return exposure }
-  let target_ev100 = render3d_auto_exposure_target_ev100(
-    auto_exposure_value, lighting,
-  )
-  let default_ev100 = match exposure {
-    Some(value) => value.ev100
-    None => Exposure::default().ev100
-  }
-  let current_ev100 = match render3d_auto_exposure_history_get(camera_entity) {
-    Some(value) => value
-    None => default_ev100
-  }
-  let delta = render3d_default_time_or_default(world).delta_seconds()
-  let safe_delta = if delta <= 0.0F { 0.0F } else { delta }
-  let diff = target_ev100 - current_ev100
-  let abs_diff = if diff < 0.0F { -diff } else { diff }
-  let transition = if auto_exposure_value.exponential_transition_distance <=
-    0.0F {
-    0.0001F
-  } else {
-    auto_exposure_value.exponential_transition_distance
-  }
-  let speed = if diff < 0.0F {
-    auto_exposure_value.speed_brighten
-  } else {
-    auto_exposure_value.speed_darken
-  }
-  let mut step = speed * safe_delta
-  if abs_diff < transition {
-    step = step * abs_diff / transition
-  }
-  let next_ev100 = if diff > 0.0F {
-    if current_ev100 + step > target_ev100 {
-      target_ev100
-    } else {
-      current_ev100 + step
-    }
-  } else if current_ev100 - step < target_ev100 {
-    target_ev100
-  } else {
-    current_ev100 - step
-  }
-  render3d_auto_exposure_history_set(camera_entity, next_ev100)
-  Some(Exposure::new(next_ev100))
-}
-
-///|
-fn render3d_depth_of_field_weight(
-  depth_of_field : DepthOfField?,
-  mesh_distance : Float,
-) -> Float {
-  guard depth_of_field is Some(depth_of_field_value) else { return 0.0F }
-  let distance = if mesh_distance < 0.0F {
-    0.0F
-  } else if mesh_distance > depth_of_field_value.max_depth {
-    depth_of_field_value.max_depth
-  } else {
-    mesh_distance
-  }
-  let focus_delta = if distance > depth_of_field_value.focal_distance {
-    distance - depth_of_field_value.focal_distance
-  } else {
-    depth_of_field_value.focal_distance - distance
-  }
-  let focus_norm = focus_delta / depth_of_field_value.focal_distance
-  let aperture_term = 1.0F / depth_of_field_value.aperture_f_stops
-  let coc_term = depth_of_field_value.max_circle_of_confusion_diameter / 64.0F
-  let mode_term = if depth_of_field_value.mode is DepthOfFieldMode::Bokeh {
-    1.0F
-  } else {
-    0.7F
-  }
-  render3d_float_clamp(
-    focus_norm * aperture_term * coc_term * mode_term,
-    0.0F,
-    1.0F,
-  )
 }
 
 ///|
@@ -7936,6 +7730,7 @@ fn render3d_mesh_wireframe_color(
 ///|
 fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
   let mut lighting = render3d_default_lighting_state()
+  let point_luminous_power_to_intensity = 4.0F * @math.pi()
   if (try! world.get_resource(ecs_key_global_ambient_light)) is Some(ambient) {
     lighting = Render3dLightingState::{
       ..lighting,
@@ -7978,7 +7773,11 @@ fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
       point_entity: entity,
       point_pos: transform.translation,
       point_color: light.color,
-      point_intensity: light.intensity,
+      point_intensity: if point_luminous_power_to_intensity <= 0.0F {
+        light.intensity
+      } else {
+        light.intensity / point_luminous_power_to_intensity
+      },
       point_range: if light.range > 0.0F {
         light.range
       } else {
@@ -8014,7 +7813,11 @@ fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
       spot_pos: transform.translation,
       spot_dir: render3d_transform_forward(transform),
       spot_color: light.color,
-      spot_intensity: light.intensity,
+      spot_intensity: if point_luminous_power_to_intensity <= 0.0F {
+        light.intensity
+      } else {
+        light.intensity / point_luminous_power_to_intensity
+      },
       spot_range: if light.range > 0.0F {
         light.range
       } else {
@@ -8025,30 +7828,6 @@ fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
     }
   })
   lighting
-}
-
-///|
-fn render3d_generated_environment_map_to_light(
-  generated : GeneratedEnvironmentMapLight,
-) -> EnvironmentMapLight {
-  EnvironmentMapLight::default()
-  .with_diffuse_map(generated.environment_map)
-  .with_specular_map(generated.environment_map)
-  .with_intensity(generated.intensity)
-  .with_rotation(generated.rotation)
-  .with_affects_lightmapped_mesh_diffuse(
-    generated.affects_lightmapped_mesh_diffuse,
-  )
-}
-
-///|
-fn render3d_camera_environment_map_light(
-  camera : Camera3dInstance,
-) -> EnvironmentMapLight? {
-  if camera.generated_environment_map_light is Some(generated) {
-    return Some(render3d_generated_environment_map_to_light(generated))
-  }
-  camera.environment_map_light
 }
 
 ///|
@@ -8134,65 +7913,6 @@ fn render3d_draw_camera_skybox(
     point_shadow_depth_bias=0.0F,
     cull_mode=1,
   )
-}
-
-///|
-fn render3d_probe_weight(
-  probe : ReflectionProbeInstance,
-  world_position : @math.Vec3,
-) -> Float {
-  let distance = world_position.sub(probe.transform.translation).length()
-  let fx = absf(probe.light_probe.falloff.x)
-  let fy = absf(probe.light_probe.falloff.y)
-  let fz = absf(probe.light_probe.falloff.z)
-  let radius = maxf(0.001F, maxf(fx, maxf(fy, fz)))
-  clamp01(1.0F - distance / radius)
-}
-
-///|
-fn render3d_probe_environment_map_light(
-  probes : Array[ReflectionProbeInstance],
-  world_position : @math.Vec3,
-) -> ResolvedEnvironmentLight? {
-  let mut best : ResolvedEnvironmentLight? = None
-  for probe in probes {
-    let weight = render3d_probe_weight(probe, world_position)
-    if weight <= 0.0F {
-      continue
-    }
-    let weighted_intensity = probe.environment_map_light.intensity * weight
-    if weighted_intensity <= 0.0F {
-      continue
-    }
-    if best is Some(current) && current.weight >= weight {
-      continue
-    }
-    best = Some(ResolvedEnvironmentLight::{
-      light: probe.environment_map_light,
-      weight,
-    })
-  }
-  best
-}
-
-///|
-fn render3d_environment_strength(
-  environment_map_light : EnvironmentMapLight?,
-  probe_light : ResolvedEnvironmentLight?,
-) -> (Float, Bool) {
-  let mut total_intensity = 0.0F
-  let mut affects_diffuse = false
-  if environment_map_light is Some(light) {
-    total_intensity = total_intensity + maxf(0.0F, light.intensity)
-    affects_diffuse = affects_diffuse || light.affects_lightmapped_mesh_diffuse
-  }
-  if probe_light is Some(resolved) {
-    total_intensity = total_intensity +
-      maxf(0.0F, resolved.light.intensity) * resolved.weight
-    affects_diffuse = affects_diffuse ||
-      resolved.light.affects_lightmapped_mesh_diffuse
-  }
-  (clamp01(total_intensity / 5000.0F), affects_diffuse)
 }
 
 ///|
@@ -8926,253 +8646,6 @@ fn render3d_draw_camera_tonemap_only(
 }
 
 ///|
-const COLOR_GRADING_TWO_PI : Float = 6.283185307179586F
-
-///|
-const COLOR_GRADING_HUE_SEXTANT : Float = 1.0471975511965976F
-
-///|
-fn render3d_wrap_angle(angle : Float) -> Float {
-  let mut wrapped = angle
-  while wrapped < 0.0F {
-    wrapped = wrapped + COLOR_GRADING_TWO_PI
-  }
-  while wrapped >= COLOR_GRADING_TWO_PI {
-    wrapped = wrapped - COLOR_GRADING_TWO_PI
-  }
-  wrapped
-}
-
-///|
-fn render3d_rgb_to_hsv(
-  r : Float,
-  g : Float,
-  b : Float,
-) -> (Float, Float, Float) {
-  let max_component = maxf(r, maxf(g, b))
-  let min_component = minf(r, minf(g, b))
-  let delta = max_component - min_component
-  let mut hue = 0.0F
-  if delta > 0.000001F {
-    if max_component >= g && max_component >= b {
-      hue = (g - b) / delta
-      if hue < 0.0F {
-        hue = hue + 6.0F
-      }
-    } else if max_component >= b {
-      hue = (b - r) / delta + 2.0F
-    } else {
-      hue = (r - g) / delta + 4.0F
-    }
-    hue = hue * COLOR_GRADING_HUE_SEXTANT
-  }
-  let saturation = if max_component <= 0.000001F {
-    0.0F
-  } else {
-    delta / max_component
-  }
-  (render3d_wrap_angle(hue), saturation, max_component)
-}
-
-///|
-fn render3d_hsv_to_rgb(
-  h : Float,
-  s : Float,
-  v : Float,
-) -> (Float, Float, Float) {
-  let hue = render3d_wrap_angle(h)
-  let safe_saturation = clamp01(s)
-  let c = v * safe_saturation
-  let h_prime = hue / COLOR_GRADING_HUE_SEXTANT
-  let mut h_mod = h_prime
-  while h_mod >= 2.0F {
-    h_mod = h_mod - 2.0F
-  }
-  while h_mod < 0.0F {
-    h_mod = h_mod + 2.0F
-  }
-  let x = c * (1.0F - absf(h_mod - 1.0F))
-  let (r1, g1, b1) = if h_prime < 1.0F {
-    (c, x, 0.0F)
-  } else if h_prime < 2.0F {
-    (x, c, 0.0F)
-  } else if h_prime < 3.0F {
-    (0.0F, c, x)
-  } else if h_prime < 4.0F {
-    (0.0F, x, c)
-  } else if h_prime < 5.0F {
-    (x, 0.0F, c)
-  } else {
-    (c, 0.0F, x)
-  }
-  let m = v - c
-  (r1 + m, g1 + m, b1 + m)
-}
-
-///|
-fn render3d_apply_white_balance(
-  r : Float,
-  g : Float,
-  b : Float,
-  temperature : Float,
-  tint : Float,
-) -> (Float, Float, Float) {
-  if absf(temperature) < 0.000001F && absf(tint) < 0.000001F {
-    return (r, g, b)
-  }
-  let white_point_x = 0.31272F - temperature
-  let white_point_y_unclamped = 0.32903F + tint
-  let white_point_y = if white_point_y_unclamped < 0.0001F {
-    0.0001F
-  } else {
-    white_point_y_unclamped
-  }
-  let white_point_lms_x = 0.701634F +
-    (-0.051461F + 0.452749F * white_point_x) / white_point_y
-  let white_point_lms_y = 1.15856F +
-    (0.045854F - 0.296122F * white_point_x) / white_point_y
-  let white_point_lms_z = -0.904175F +
-    (0.953127F - 0.955206F * white_point_x) / white_point_y
-  let adjust_l = 0.975538F / white_point_lms_x
-  let adjust_m = 1.01648F / white_point_lms_y
-  let adjust_s = 1.08475F / white_point_lms_z
-
-  let l = (0.311692F * r + 0.652085F * g + 0.0362225F * b) * adjust_l
-  let m = (0.0905138F * r + 0.901341F * g + 0.00814478F * b) * adjust_m
-  let s = (0.00764433F * r + 0.0486554F * g + 0.943700F * b) * adjust_s
-
-  let balanced_r = 4.06305F * l + -2.93241F * m + -0.130646F * s
-  let balanced_g = -0.40791F * l + 1.40437F * m + 0.00353630F * s
-  let balanced_b = -0.0118812F * l + -0.0486532F * m + 1.0605344F * s
-  (maxf(0.0F, balanced_r), maxf(0.0F, balanced_g), maxf(0.0F, balanced_b))
-}
-
-///|
-fn render3d_color_luminance(r : Float, g : Float, b : Float) -> Float {
-  clamp01(r * 0.2126F + g * 0.7152F + b * 0.0722F)
-}
-
-///|
-fn render3d_color_apply_saturation(
-  r : Float,
-  g : Float,
-  b : Float,
-  saturation : Float,
-) -> (Float, Float, Float) {
-  let safe_saturation = if saturation < 0.0F { 0.0F } else { saturation }
-  let luminance = render3d_color_luminance(r, g, b)
-  let nr = luminance + (r - luminance) * safe_saturation
-  let ng = luminance + (g - luminance) * safe_saturation
-  let nb = luminance + (b - luminance) * safe_saturation
-  (nr, ng, nb)
-}
-
-///|
-fn render3d_apply_color_grading_section(
-  r : Float,
-  g : Float,
-  b : Float,
-  section : ColorGradingSection,
-) -> (Float, Float, Float) {
-  let mut cr = r
-  let mut cg = g
-  let mut cb = b
-  let (sr, sg, sb) = render3d_color_apply_saturation(
-    cr,
-    cg,
-    cb,
-    section.saturation,
-  )
-  cr = sr
-  cg = sg
-  cb = sb
-  let safe_contrast = if section.contrast < 0.0F {
-    0.0F
-  } else {
-    section.contrast
-  }
-  cr = (cr - 0.5F) * safe_contrast + 0.5F
-  cg = (cg - 0.5F) * safe_contrast + 0.5F
-  cb = (cb - 0.5F) * safe_contrast + 0.5F
-  let safe_gain = if section.gain < 0.0F { 0.0F } else { section.gain }
-  cr = cr * safe_gain + section.lift
-  cg = cg * safe_gain + section.lift
-  cb = cb * safe_gain + section.lift
-  let safe_gamma = if section.gamma <= 0.0001F {
-    0.0001F
-  } else {
-    section.gamma
-  }
-  cr = @math.pow(maxf(0.0F, cr), 1.0F / safe_gamma)
-  cg = @math.pow(maxf(0.0F, cg), 1.0F / safe_gamma)
-  cb = @math.pow(maxf(0.0F, cb), 1.0F / safe_gamma)
-  (cr, cg, cb)
-}
-
-///|
-fn render3d_apply_camera_color_controls(
-  r : Float,
-  g : Float,
-  b : Float,
-  exposure : Exposure?,
-  color_grading : ColorGrading?,
-) -> (Float, Float, Float) {
-  exposure |> ignore
-  let grading = match color_grading {
-    Some(value) => value
-    None => ColorGrading::default()
-  }
-  let mut cr = maxf(0.0F, r)
-  let mut cg = maxf(0.0F, g)
-  let mut cb = maxf(0.0F, b)
-
-  if absf(grading.global.hue) > 0.000001F {
-    let (h, s, v) = render3d_rgb_to_hsv(cr, cg, cb)
-    let (rotated_r, rotated_g, rotated_b) = render3d_hsv_to_rgb(
-      h + grading.global.hue,
-      s,
-      v,
-    )
-    cr = rotated_r
-    cg = rotated_g
-    cb = rotated_b
-  }
-
-  let (balanced_r, balanced_g, balanced_b) = render3d_apply_white_balance(
-    cr,
-    cg,
-    cb,
-    grading.global.temperature,
-    grading.global.tint,
-  )
-  cr = balanced_r
-  cg = balanced_g
-  cb = balanced_b
-
-  let luminance = render3d_color_luminance(cr, cg, cb)
-  let section = if luminance < grading.global.midtones_start {
-    grading.shadows
-  } else if luminance > grading.global.midtones_end {
-    grading.highlights
-  } else {
-    grading.midtones
-  }
-  let (section_r, section_g, section_b) = render3d_apply_color_grading_section(
-    cr, cg, cb, section,
-  )
-  cr = section_r
-  cg = section_g
-  cb = section_b
-  let (post_r, post_g, post_b) = render3d_color_apply_saturation(
-    cr,
-    cg,
-    cb,
-    grading.global.post_saturation,
-  )
-  (maxf(0.0F, post_r), maxf(0.0F, post_g), maxf(0.0F, post_b))
-}
-
-///|
 fn render3d_rotate_by_quat(v : @math.Vec3, q : @math.Quat) -> @math.Vec3 {
   let q_vec = @math.Vec3::new(q.x, q.y, q.z)
   let t = q_vec.cross(v).mul_scalar(2.0F)
@@ -9386,138 +8859,6 @@ fn render3d_mesh_local_aabb_center(mesh3d : Mesh3d) -> @math.Vec3? {
   } else {
     None
   }
-}
-
-///|
-fn render3d_ssr_ramp(value : Float, start : Float, end_ : Float) -> Float {
-  let safe_start = minf(start, end_)
-  let safe_end = maxf(start, end_)
-  if safe_end <= safe_start + 0.000001F {
-    if value >= safe_end {
-      1.0F
-    } else {
-      0.0F
-    }
-  } else if value <= safe_start {
-    0.0F
-  } else if value >= safe_end {
-    1.0F
-  } else {
-    (value - safe_start) / (safe_end - safe_start)
-  }
-}
-
-///|
-fn render3d_ssr_roughness_weight(
-  ssr : ScreenSpaceReflections,
-  roughness : Float,
-) -> Float {
-  let min_weight = render3d_ssr_ramp(
-    roughness,
-    ssr.min_perceptual_roughness_start,
-    ssr.min_perceptual_roughness_end,
-  )
-  let max_fade = render3d_ssr_ramp(
-    roughness,
-    ssr.max_perceptual_roughness_start,
-    ssr.max_perceptual_roughness_end,
-  )
-  clamp01(min_weight * (1.0F - max_fade))
-}
-
-///|
-fn render3d_ssr_edge_weight(
-  ssr : ScreenSpaceReflections,
-  camera_transform : @math.Transform,
-  camera_fov_y : Float,
-  aspect_ratio : Float,
-  mesh_translation : @math.Vec3,
-) -> Float {
-  let safe_fov_y = if camera_fov_y <= 0.0001F { 0.0001F } else { camera_fov_y }
-  let safe_aspect_ratio = if aspect_ratio <= 0.0001F {
-    1.0F
-  } else {
-    aspect_ratio
-  }
-  let half_fov = safe_fov_y * 0.5F
-  let sin_half_fov = @math.sin(half_fov)
-  let cos_half_fov = @math.cos(half_fov)
-  if absf(cos_half_fov) <= 0.000001F {
-    return 1.0F
-  }
-  let tan_half_fov = sin_half_fov / cos_half_fov
-  if tan_half_fov <= 0.0001F {
-    return 1.0F
-  }
-
-  let to_mesh = mesh_translation.sub(camera_transform.translation)
-  let forward = render3d_transform_forward(camera_transform)
-  let depth = to_mesh.dot(forward)
-  if depth <= 0.0001F {
-    return 0.0F
-  }
-
-  let right = quat_rotate_vec3(
-    camera_transform.rotation,
-    @math.Vec3::new(1.0F, 0.0F, 0.0F),
-  ).normalize_or_zero()
-  let up = quat_rotate_vec3(
-    camera_transform.rotation,
-    @math.Vec3::new(0.0F, 1.0F, 0.0F),
-  ).normalize_or_zero()
-
-  let view_x = to_mesh.dot(right)
-  let view_y = to_mesh.dot(up)
-  let ndc_x = absf(view_x) / (depth * tan_half_fov * safe_aspect_ratio)
-  let ndc_y = absf(view_y) / (depth * tan_half_fov)
-  let ndc_max = maxf(ndc_x, ndc_y)
-  let edge_distance = clamp01(1.0F - ndc_max)
-
-  let edge_start = minf(ssr.edge_fadeout_start, ssr.edge_fadeout_end)
-  let edge_end = maxf(ssr.edge_fadeout_start, ssr.edge_fadeout_end)
-  if edge_end <= edge_start + 0.000001F {
-    1.0F
-  } else {
-    render3d_ssr_ramp(edge_distance, edge_start, edge_end)
-  }
-}
-
-///|
-fn render3d_ssr_strength(
-  ssr : ScreenSpaceReflections,
-  roughness : Float,
-  camera_transform : @math.Transform,
-  camera_fov_y : Float,
-  aspect_ratio : Float,
-  mesh_translation : @math.Vec3,
-) -> Float {
-  let roughness_weight = render3d_ssr_roughness_weight(ssr, roughness)
-  if roughness_weight <= 0.0F {
-    return 0.0F
-  }
-
-  let edge_weight = render3d_ssr_edge_weight(
-    ssr, camera_transform, camera_fov_y, aspect_ratio, mesh_translation,
-  )
-  if edge_weight <= 0.0F {
-    return 0.0F
-  }
-
-  let steps = Float::from_double(
-    (ssr.linear_steps + ssr.bisection_steps).to_double(),
-  )
-  let steps_factor = clamp01(steps / 20.0F)
-  let thickness_factor = clamp01(ssr.thickness / 1.5F)
-  let march_factor = clamp01(1.0F / ssr.linear_march_exponent)
-  let secant_factor = if ssr.use_secant { 1.0F } else { 0.9F }
-  clamp01(
-    roughness_weight *
-    edge_weight *
-    clamp01(0.35F + steps_factor * 0.65F) *
-    clamp01(0.4F + thickness_factor * 0.6F) *
-    clamp01(0.75F + march_factor * 0.25F) *
-    secant_factor,
-  )
 }
 
 ///|
@@ -10288,7 +9629,6 @@ fn render3d_draw_mesh_instance(
 pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let cameras : Array[Camera3dInstance] = []
   let meshes : Array[Mesh3dInstance] = []
-  let reflection_probes : Array[ReflectionProbeInstance] = []
   let projection_updates : Array[
     (@core.Entity, Projection, ProjectionRuntime3d),
   ] = []
@@ -10319,7 +9659,6 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let generated_environment_map_light_store = world.component(
     ecs_key_generated_environment_map_light,
   )
-  let light_probe_store = world.component(ecs_key_light_probe)
   let hdr_store = world.component(ecs_key_hdr)
   let fxaa_store = world.component(ecs_key_fxaa)
   let temporal_jitter_store = world.component(ecs_key_temporal_jitter)
@@ -10573,23 +9912,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       wireframe_color: wireframe_color_store.get(entity),
     })
   })
-  light_probe_store.for_each(fn(entity, light_probe) {
-    guard environment_map_light_store.get(entity) is Some(environment_map_light) else {
-      return
-    }
-    let transform = match transform_store.get(entity) {
-      Some(value) => value
-      None => @math.Transform::identity()
-    }
-    reflection_probes.push(ReflectionProbeInstance::{
-      transform,
-      light_probe,
-      environment_map_light,
-    })
-  })
   motion_blur_history_sync(meshes)
   camera_motion_blur_history_sync(cameras)
-  render3d_auto_exposure_history_sync(cameras)
   let lighting = render3d_collect_lighting(world)
   let camera_indices = match render3d_prepared_camera_indices(cameras) {
     Some(indices) => indices
@@ -10663,18 +9987,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       aspect_ratio,
       Float::from_double(view_height_logical.to_double()),
     )
-    let camera_environment_map_light = render3d_camera_environment_map_light(
-      camera,
-    )
-    let mut pass_lighting = lighting
-    if camera_environment_map_light is Some(environment_map_light) &&
-      environment_map_light.affects_lightmapped_mesh_diffuse {
-      pass_lighting = Render3dLightingState::{
-        ..pass_lighting,
-        ambient_brightness: pass_lighting.ambient_brightness +
-        maxf(0.0F, environment_map_light.intensity) / 10_000.0F,
-      }
-    }
+    let pass_lighting = lighting
     let camera_deferred_mode = render3d_camera_deferred_mode(
       camera.camera3d.deferred_config,
       default_opaque_renderer_method,
@@ -10701,13 +10014,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         !camera.camera3d.decal_config.clustered_requires_deferred_prepass ||
         camera_deferred_enabled
       )
-    let effective_exposure = render3d_camera_effective_exposure(
-      world,
-      camera.entity,
-      camera.exposure,
-      camera.camera3d.auto_exposure,
-      pass_lighting,
-    )
+    let effective_exposure = camera.exposure
     let camera_base_fog = match camera.camera3d.distance_fog {
       Some(value) => value
       None => render3d_distance_fog()
@@ -11281,88 +10588,11 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         mesh.transform.translation,
         pass_lighting,
       )
-      let mut draw_color_r = fogged_r
-      let mut draw_color_g = fogged_g
-      let mut draw_color_b = fogged_b
-      let mut draw_surface_roughness = draw_roughness
-      let probe_environment_light = render3d_probe_environment_map_light(
-        reflection_probes,
-        mesh.transform.translation,
-      )
-      let (environment_strength, environment_affects_diffuse) = render3d_environment_strength(
-        camera_environment_map_light, probe_environment_light,
-      )
-      if environment_affects_diffuse && environment_strength > 0.0F {
-        let diffuse_boost = environment_strength *
-          (0.18F + (1.0F - draw_surface_roughness) * 0.12F)
-        draw_color_r = clamp01(draw_color_r + diffuse_boost)
-        draw_color_g = clamp01(draw_color_g + diffuse_boost)
-        draw_color_b = clamp01(draw_color_b + diffuse_boost)
-      }
-      let mut draw_reflectance = clearcoat_reflectance
-      if environment_strength > 0.0F {
-        draw_reflectance = maxf(
-          0.0F,
-          draw_reflectance +
-          (1.0F - draw_surface_roughness) * environment_strength * 0.6F,
-        )
-      }
-      if camera.screen_space_reflections is Some(ssr) {
-        let ssr_strength = render3d_ssr_strength(
-          ssr,
-          draw_surface_roughness,
-          camera.transform,
-          camera_fov_y,
-          aspect_ratio,
-          mesh.transform.translation,
-        )
-        if ssr_strength > 0.0F {
-          draw_reflectance = maxf(
-            0.0F,
-            draw_reflectance +
-            (1.0F - draw_surface_roughness) * ssr_strength * 0.45F,
-          )
-          draw_surface_roughness = maxf(
-            0.02F,
-            draw_surface_roughness * (1.0F - ssr_strength * 0.35F),
-          )
-        }
-      }
-      let (graded_color_r, graded_color_g, graded_color_b) = render3d_apply_camera_color_controls(
-        draw_color_r,
-        draw_color_g,
-        draw_color_b,
-        effective_exposure,
-        camera.color_grading,
-      )
-      draw_color_r = graded_color_r
-      draw_color_g = graded_color_g
-      draw_color_b = graded_color_b
-      let depth_of_field_weight = render3d_depth_of_field_weight(
-        camera.camera3d.depth_of_field,
-        mesh_distance,
-      )
-      if depth_of_field_weight > 0.0F {
-        let luminance = render3d_color_luminance(
-          draw_color_r, draw_color_g, draw_color_b,
-        )
-        draw_color_r = clamp01(
-          draw_color_r * (1.0F - depth_of_field_weight) +
-          luminance * depth_of_field_weight,
-        )
-        draw_color_g = clamp01(
-          draw_color_g * (1.0F - depth_of_field_weight) +
-          luminance * depth_of_field_weight,
-        )
-        draw_color_b = clamp01(
-          draw_color_b * (1.0F - depth_of_field_weight) +
-          luminance * depth_of_field_weight,
-        )
-        draw_surface_roughness = maxf(
-          draw_surface_roughness,
-          depth_of_field_weight * 0.9F,
-        )
-      }
+      let draw_color_r = fogged_r
+      let draw_color_g = fogged_g
+      let draw_color_b = fogged_b
+      let draw_surface_roughness = draw_roughness
+      let draw_reflectance = clearcoat_reflectance
       let draw_diffuse_transmission = clamp01(
         mesh.material.diffuse_transmission,
       )

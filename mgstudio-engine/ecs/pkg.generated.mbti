@@ -560,6 +560,7 @@ pub struct World {
   mut previous_events : Map[Int, Array[ErasedValue]]
   current_events : Map[Int, Array[ErasedValue]]
 }
+pub fn[C : Component] World::add_entity_observer(Self, @core.Entity, (On[Insert, C]) -> Unit) -> ObserverHandle
 pub fn[C : Component] World::add_observer(Self, (On[Insert, C]) -> Unit) -> ObserverHandle
 pub fn World::advance_event_frame(Self) -> Unit
 pub fn[T] World::clear_events(Self, EventKey[T]) -> Unit

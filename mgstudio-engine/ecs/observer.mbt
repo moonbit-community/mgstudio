@@ -46,6 +46,7 @@ priv struct InsertObserverContext {
 
 ///|
 priv struct InsertObserver {
+  entity : @core.Entity?
   run : (World) -> Unit
 }
 
@@ -124,6 +125,7 @@ pub fn[C : Component] current_insert_observer() -> On[Insert, C] {
 fn World::register_insert_observer(
   self : World,
   component_id : Int,
+  entity : @core.Entity?,
   observer : (World) -> Unit,
 ) -> ObserverHandle {
   let registry_ref = observer_registry_ref(self)
@@ -132,7 +134,7 @@ fn World::register_insert_observer(
   let observers = registry_ref.val.insert_observers.get_or_init(component_id, fn() {
     []
   })
-  observers.push(InsertObserver::{ run: observer })
+  observers.push(InsertObserver::{ entity, run: observer })
   { id: observer_id, world_id: self.world_id() }
 }
 
@@ -142,7 +144,20 @@ pub fn[C : Component] World::add_observer(
   observer : (On[Insert, C]) -> Unit,
 ) -> ObserverHandle {
   let component_key : ComponentKey[C] = Component::component()
-  self.register_insert_observer(component_key.id(), fn(_world) {
+  self.register_insert_observer(component_key.id(), None, fn(_world) {
+    let event : On[Insert, C] = current_insert_observer()
+    observer(event)
+  })
+}
+
+///|
+pub fn[C : Component] World::add_entity_observer(
+  self : World,
+  entity : @core.Entity,
+  observer : (On[Insert, C]) -> Unit,
+) -> ObserverHandle {
+  let component_key : ComponentKey[C] = Component::component()
+  self.register_insert_observer(component_key.id(), Some(entity), fn(_world) {
     let event : On[Insert, C] = current_insert_observer()
     observer(event)
   })
@@ -170,6 +185,9 @@ fn World::run_insert_observers(
   }
   let pending : Array[InsertObserver] = []
   for observer in observers {
+    if observer.entity is Some(target_entity) && target_entity != entity {
+      continue
+    }
     pending.push(observer)
   }
   let previous_context = current_insert_observer_context_ref.val
