@@ -7439,12 +7439,12 @@ fn render3d_motion_blur_targets_get_or_create(
       return (item.scene_target_id, item.velocity_target_id)
     }
   }
-  let scene_target_id = @window.host_gpu_create_render_target_rgba16f(
+  let scene_target_id = @render.host_gpu_create_render_target_rgba16f(
     width~,
     height~,
     nearest=false,
   )
-  let velocity_target_id = @window.host_gpu_create_render_target_rgba16f(
+  let velocity_target_id = @render.host_gpu_create_render_target_rgba16f(
     width~,
     height~,
     nearest=false,
@@ -7483,7 +7483,7 @@ fn render3d_transmission_source_target_get_or_create(
       return item.source_target_id
     }
   }
-  let source_target_id = @window.host_gpu_create_render_target_rgba16f(
+  let source_target_id = @render.host_gpu_create_render_target_rgba16f(
     width~,
     height~,
     nearest=false,
@@ -7521,7 +7521,7 @@ fn render3d_point_light_shadow_target_get_or_create(
       return item.target_id
     }
   }
-  let target_id = @window.host_gpu_create_point_light_shadow_target(
+  let target_id = @render.host_gpu_create_point_light_shadow_target(
     size=safe_size,
   )
   let next : Array[PointLightShadowTargetsEntry] = []
@@ -7582,7 +7582,7 @@ fn render3d_blit_texture_to_target(
   }
   let sx = Float::from_double(width_logical.to_double()) / 128.0F
   let sy = Float::from_double(height_logical.to_double()) / 128.0F
-  @window.host_gpu_begin_pass(
+  @render.host_gpu_begin_pass(
     target_id~,
     width=width_logical,
     height=height_logical,
@@ -7602,7 +7602,7 @@ fn render3d_blit_texture_to_target(
     viewport_depth_max=1.0F,
     clear_enabled=1,
   )
-  @window.host_gpu_draw_sprite_uv(
+  @render.host_gpu_draw_sprite_uv(
     texture_id=source_texture_id,
     x=0.0F,
     y=0.0F,
@@ -7618,7 +7618,7 @@ fn render3d_blit_texture_to_target(
     uv_max_x=1.0F,
     uv_max_y=1.0F,
   )
-  @window.host_gpu_end_pass()
+  @render.host_gpu_end_pass()
 }
 
 ///|
@@ -7845,7 +7845,7 @@ fn render3d_draw_camera_skybox(
   let brightness = maxf(0.0F, skybox.brightness)
   let skybox_extent = maxf(5.0F, minf(camera_far * 0.45F, 20_000.0F))
   // Negative d marks stacked-vertical cubemap sampling in mesh3d.wgsl.
-  @window.host_gpu_draw_mesh3d(
+  @render.host_gpu_draw_mesh3d(
     mesh_id~,
     x=camera.transform.translation.x,
     y=camera.transform.translation.y,
@@ -8504,7 +8504,7 @@ fn render3d_draw_camera_bloom(
     vignette_color_b,
     vignette_color_a,
   ) = render3d_vignette_postprocess_values(vignette)
-  @window.host_gpu_draw_bloom2d(
+  @render.host_gpu_draw_bloom2d(
     scene_texture_id~,
     enabled=1,
     intensity=settings.intensity,
@@ -8593,7 +8593,7 @@ fn render3d_draw_camera_tonemap_only(
     vignette_color_b,
     vignette_color_a,
   ) = render3d_vignette_postprocess_values(vignette)
-  @window.host_gpu_draw_bloom2d(
+  @render.host_gpu_draw_bloom2d(
     scene_texture_id~,
     enabled=0,
     intensity=0.0F,
@@ -9555,7 +9555,7 @@ fn render3d_draw_mesh_instance(
       }
   }
   let draw_cull_mode = draw_cull_mode_base | draw_flags
-  @window.host_gpu_draw_mesh3d(
+  @render.host_gpu_draw_mesh3d(
     mesh_id=mesh.mesh_id,
     x=transform.translation.x,
     y=transform.translation.y,
@@ -10096,7 +10096,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         scene_target_id = shared_scene_id
       }
       velocity_target_id = shared_velocity_id
-      @window.host_gpu_begin_pass_3d(
+      @render.host_gpu_begin_pass_3d(
         target_id=velocity_target_id,
         width=view_width_logical,
         height=view_height_logical,
@@ -10215,7 +10215,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           render3d_mesh_draw_flags(mesh),
         )
       }
-      @window.host_gpu_end_pass()
+      @render.host_gpu_end_pass()
     }
     let draw_order = render3d_sorted_mesh_indices(
       meshes,
@@ -10248,7 +10248,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           pass_lighting.point_pos,
           face_index,
         )
-        @window.host_gpu_begin_pass_3d(
+        @render.host_gpu_begin_pass_3d(
           target_id=shadow_target_id,
           target_layer=face_index,
           width=shadow_view_size,
@@ -10367,7 +10367,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
             0,
           )
         }
-        @window.host_gpu_end_pass()
+        @render.host_gpu_end_pass()
       }
     }
     if !motion_blur_active &&
@@ -10381,7 +10381,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       scene_target_id = scene_id
     }
     let mut transmission_source_target_id = -1
-    @window.host_gpu_begin_pass_3d(
+    @render.host_gpu_begin_pass_3d(
       target_id=scene_target_id,
       width=view_width_logical,
       height=view_height_logical,
@@ -10665,7 +10665,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       )
     }
     if transmissive_draws.length() > 0 {
-      @window.host_gpu_end_pass()
+      @render.host_gpu_end_pass()
       transmission_source_target_id = render3d_transmission_source_target_get_or_create(
         camera.entity,
         view_width,
@@ -10674,7 +10674,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       render3d_blit_texture_to_target(
         scene_target_id, transmission_source_target_id, view_width_logical, view_height_logical,
       )
-      @window.host_gpu_begin_pass_3d(
+      @render.host_gpu_begin_pass_3d(
         target_id=scene_target_id,
         width=view_width_logical,
         height=view_height_logical,
@@ -10839,7 +10839,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         render3d_mesh_draw_flags(mesh),
       )
     }
-    @window.host_gpu_end_pass()
+    @render.host_gpu_end_pass()
     let mut final_source_texture_id = -1
     if motion_blur_active &&
       camera.motion_blur is Some(motion_blur) &&
@@ -10850,7 +10850,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           view_width,
           view_height,
         )
-        @window.host_gpu_begin_pass(
+        @render.host_gpu_begin_pass(
           target_id=post_motion_blur_target_id,
           width=view_width_logical,
           height=view_height_logical,
@@ -10870,16 +10870,16 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           viewport_depth_max~,
           clear_enabled=if clear_enabled { 1 } else { 0 },
         )
-        @window.host_gpu_draw_motion_blur(
+        @render.host_gpu_draw_motion_blur(
           scene_texture_id=scene_target_id,
           velocity_texture_id=velocity_target_id,
           shutter_angle=motion_blur.shutter_angle,
           samples=motion_blur.samples,
         )
-        @window.host_gpu_end_pass()
+        @render.host_gpu_end_pass()
         final_source_texture_id = post_motion_blur_target_id
       } else {
-        @window.host_gpu_begin_pass(
+        @render.host_gpu_begin_pass(
           target_id=camera.target_id,
           width=view_width_logical,
           height=view_height_logical,
@@ -10899,13 +10899,13 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           viewport_depth_max~,
           clear_enabled=if clear_enabled { 1 } else { 0 },
         )
-        @window.host_gpu_draw_motion_blur(
+        @render.host_gpu_draw_motion_blur(
           scene_texture_id=scene_target_id,
           velocity_texture_id=velocity_target_id,
           shutter_angle=motion_blur.shutter_angle,
           samples=motion_blur.samples,
         )
-        @window.host_gpu_end_pass()
+        @render.host_gpu_end_pass()
       }
     } else if scene_target_id != camera.target_id {
       final_source_texture_id = scene_target_id
@@ -10917,7 +10917,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         scene_target_id
       }
       if bloom_source_texture_id >= 0 {
-        @window.host_gpu_begin_pass(
+        @render.host_gpu_begin_pass(
           target_id=camera.target_id,
           width=view_width_logical,
           height=view_height_logical,
@@ -10950,7 +10950,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           view_width_logical,
           view_height_logical,
         )
-        @window.host_gpu_end_pass()
+        @render.host_gpu_end_pass()
       }
     } else if tonemap_postprocess_enabled {
       let tonemap_source_texture_id = if final_source_texture_id >= 0 {
@@ -10959,7 +10959,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         scene_target_id
       }
       if tonemap_source_texture_id >= 0 {
-        @window.host_gpu_begin_pass(
+        @render.host_gpu_begin_pass(
           target_id=camera.target_id,
           width=view_width_logical,
           height=view_height_logical,
@@ -10991,10 +10991,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           view_width_logical,
           view_height_logical,
         )
-        @window.host_gpu_end_pass()
+        @render.host_gpu_end_pass()
       }
     } else if final_source_texture_id >= 0 {
-      @window.host_gpu_begin_pass(
+      @render.host_gpu_begin_pass(
         target_id=camera.target_id,
         width=view_width_logical,
         height=view_height_logical,
@@ -11014,7 +11014,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         viewport_depth_max~,
         clear_enabled=if clear_enabled { 1 } else { 0 },
       )
-      @window.host_gpu_draw_sprite_uv(
+      @render.host_gpu_draw_sprite_uv(
         texture_id=final_source_texture_id,
         x=0.0F,
         y=0.0F,
@@ -11030,7 +11030,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         uv_max_x=1.0F,
         uv_max_y=1.0F,
       )
-      @window.host_gpu_end_pass()
+      @render.host_gpu_end_pass()
     }
   }
   render3d_prepared_camera_order_ref.val.clear()

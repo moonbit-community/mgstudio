@@ -229,7 +229,7 @@ pub fn render2d_create_render_target_ecs(
   height : Int,
   nearest : Bool,
 ) -> @asset.Handle[@asset.Image] {
-  let id = @window.host_gpu_create_render_target(width~, height~, nearest~)
+  let id = @render.host_gpu_create_render_target(width~, height~, nearest~)
   @asset.Handle::new(id)
 }
 

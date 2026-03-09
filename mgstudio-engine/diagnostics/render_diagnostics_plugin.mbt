@@ -214,7 +214,7 @@ fn render_diagnostics_record_snapshot(
 
 ///|
 fn render_diagnostics_collect_snapshot() -> RenderDiagnosticsMeasurements {
-  let gpu_snapshot = @native_gpu.render_diagnostics_snapshot()
+  let gpu_snapshot = @render.render_diagnostics_snapshot()
   RenderDiagnosticsMeasurements::{
     prepared_cameras_2d: Some(
       @render2d.render2d_diagnostic_prepared_camera_count(),

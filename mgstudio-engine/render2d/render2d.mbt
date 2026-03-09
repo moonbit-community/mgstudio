@@ -2326,7 +2326,7 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
         @mesh.MeshGeometry::Geometry2d(geometry2d) =>
           match geometry2d.encode_triangle_interleaved_xy_uv_rgba_csv() {
             Some(vertices_csv) =>
-              @window.host_gpu_create_mesh_triangles_xyuvrgba(
+              @render.host_gpu_create_mesh_triangles_xyuvrgba(
                 vertices_xyuvrgba_csv=vertices_csv,
               )
             None => {
@@ -2342,7 +2342,7 @@ pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
         @mesh.MeshGeometry::Geometry3d(geometry3d) =>
           match geometry3d.encode_interleaved_xyz_uv_rgba_csv() {
             Some(vertices_csv) =>
-              @window.host_gpu_create_mesh3d(
+              @render.host_gpu_create_mesh3d(
                 vertices_xyzuvrgba_csv=vertices_csv,
                 primitive_topology=geometry3d.primitive_topology().to_int(),
               )
@@ -4225,7 +4225,7 @@ fn render2d_draw_camera_bloom(
   }
   let luts = render2d_tonemapping_lut_handles(world)
   let settings = bloom2d_sanitize_settings(bloom.settings)
-  @window.host_gpu_draw_bloom2d(
+  @render.host_gpu_draw_bloom2d(
     scene_texture_id=source.id(),
     enabled=if bloom.enabled { 1 } else { 0 },
     intensity=settings.intensity,
@@ -5251,7 +5251,7 @@ pub fn render2d_create_render_target(
   height : Int,
   nearest : Bool,
 ) -> @asset.Handle[@asset.Image] {
-  let id = @window.host_gpu_create_render_target(width~, height~, nearest~)
+  let id = @render.host_gpu_create_render_target(width~, height~, nearest~)
   ensure_render_state_resource(world)
   let tick = world.read_change_tick()
   let res = get_render_state_resource(world)
@@ -5699,7 +5699,7 @@ fn render2d_get_or_create_bloom2d_auto_target(
       return entry.target
     }
   }
-  let id = @window.host_gpu_create_render_target_rgba16f(
+  let id = @render.host_gpu_create_render_target_rgba16f(
     width=safe_width,
     height=safe_height,
     nearest=false,
@@ -7674,7 +7674,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           match rect_opt {
             None =>
               if scissor_active {
-                @window.host_gpu_clear_scissor()
+                @render.host_gpu_clear_scissor()
                 scissor_active = false
               }
             Some(rect) => {
@@ -7687,7 +7687,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 sy != scissor_y ||
                 sw != scissor_w ||
                 sh != scissor_h {
-                @window.host_gpu_set_scissor(x=sx, y=sy, width=sw, height=sh)
+                @render.host_gpu_set_scissor(x=sx, y=sy, width=sw, height=sh)
                 scissor_active = true
                 scissor_x = sx
                 scissor_y = sy
@@ -7708,7 +7708,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 transform.translation.x + sprite.anchor_offset.x,
                 transform.translation.y + sprite.anchor_offset.y,
               )
-              @window.host_gpu_draw_sprite_uv(
+              @render.host_gpu_draw_sprite_uv(
                 texture_id=sprite.texture.id(),
                 x=pos.x,
                 y=pos.y,
@@ -7733,7 +7733,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 transform.translation.x + sprite.anchor_offset.x,
                 transform.translation.y + sprite.anchor_offset.y,
               )
-              @window.host_gpu_draw_sprite_uv(
+              @render.host_gpu_draw_sprite_uv(
                 texture_id=sprite.texture.id(),
                 x=pos.x,
                 y=pos.y,
@@ -7758,7 +7758,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 transform.translation.x + slice.anchor_offset.x,
                 transform.translation.y + slice.anchor_offset.y,
               )
-              @window.host_gpu_draw_ui_texture_slice(
+              @render.host_gpu_draw_ui_texture_slice(
                 texture_id=slice.texture.id(),
                 x=pos.x,
                 y=pos.y,
@@ -7799,7 +7799,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 Some(texture) => texture.id()
                 None => -1
               }
-              @window.host_gpu_draw_mesh(
+              @render.host_gpu_draw_mesh(
                 mesh_id=mesh.mesh_id,
                 x=transform.translation.x,
                 y=transform.translation.y,
@@ -7825,7 +7825,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 transform.translation.x + rect.anchor_offset.x,
                 transform.translation.y + rect.anchor_offset.y,
               )
-              @window.host_gpu_draw_ui_rect(
+              @render.host_gpu_draw_ui_rect(
                 texture_id=rect.texture.id(),
                 x=pos.x,
                 y=pos.y,
@@ -7859,7 +7859,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 transform.translation.x + shadow.anchor_offset.x,
                 transform.translation.y + shadow.anchor_offset.y,
               )
-              @window.host_gpu_draw_ui_box_shadow(
+              @render.host_gpu_draw_ui_box_shadow(
                 texture_id=shadow.texture.id(),
                 x=pos.x,
                 y=pos.y,
@@ -7888,7 +7888,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 transform.translation.x + slice.anchor_offset.x,
                 transform.translation.y + slice.anchor_offset.y,
               )
-              @window.host_gpu_draw_ui_texture_slice(
+              @render.host_gpu_draw_ui_texture_slice(
                 texture_id=slice.texture.id(),
                 x=pos.x,
                 y=pos.y,
@@ -7941,7 +7941,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       }
 
       if auto_bloom_source is Some(source) {
-        @window.host_gpu_begin_pass(
+        @render.host_gpu_begin_pass(
           target_id=@asset.Handle::id(source),
           width=view_width_logical,
           height=view_height_logical,
@@ -7965,9 +7965,9 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           clear_enabled=if clear_enabled { 1 } else { 0 },
         )
         draw_camera_items(0, 0, viewport_width, viewport_height, scale_factor)
-        @window.host_gpu_end_pass()
+        @render.host_gpu_end_pass()
 
-        @window.host_gpu_begin_pass(
+        @render.host_gpu_begin_pass(
           target_id~,
           width=view_width_logical,
           height=view_height_logical,
@@ -7995,11 +7995,11 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           viewport_height,
         )
         gizmos_draw_lines(camera.layers)
-        @window.host_gpu_end_pass()
+        @render.host_gpu_end_pass()
         continue
       }
 
-      @window.host_gpu_begin_pass(
+      @render.host_gpu_begin_pass(
         target_id~,
         width=view_width_logical,
         height=view_height_logical,
@@ -8032,7 +8032,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         )
       }
       gizmos_draw_lines(camera.layers)
-      @window.host_gpu_end_pass()
+      @render.host_gpu_end_pass()
     }
     gizmos_clear()
     rs.val.prepared_camera_indices.clear()

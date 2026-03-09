@@ -171,10 +171,10 @@ fn screenshot_request_capture(
       if window_entity_for_ref(world, window_ref) != primary {
         return 0
       }
-      @native_gpu.screenshot_capture_surface_request()
+      @render.screenshot_capture_surface_request()
     }
     Image(image) =>
-      @native_gpu.screenshot_capture_texture_request(texture_id=image.id())
+      @render.screenshot_capture_texture_request(texture_id=image.id())
   }
 }
 
@@ -228,8 +228,7 @@ pub fn screenshot_finalize_capture_requests(world : @ecs.World) -> Unit {
     let capture_id = pending_capture.capture_id
     let entity = pending_capture.entity
     guard world.is_alive(entity) else { continue }
-    guard @native_gpu.screenshot_take_capture_result(capture_id)
-      is Some(capture) else {
+    guard @render.screenshot_take_capture_result(capture_id) is Some(capture) else {
       remaining.push(pending_capture)
       continue
     }

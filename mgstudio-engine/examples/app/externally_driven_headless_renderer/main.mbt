@@ -91,18 +91,18 @@ fn externally_driven_runner_builder(
     guard @window.window_ensure_primary_host(app.world()) is Some(window) else {
       return
     }
-    let device = @window.host_gpu_request_device()
-    let surface = @window.host_gpu_create_surface(window)
+    let device = @render.host_gpu_request_device()
+    let surface = @render.host_gpu_create_surface(window)
     let width = @window.host_window_get_width(window)
     let height = @window.host_window_get_height(window)
-    @window.host_gpu_configure_surface(device~, surface~, width~, height~)
+    @render.host_gpu_configure_surface(device~, surface~, width~, height~)
 
     let mut runtime_app = app.run_startup()
     for _ in 0..<120 {
       @window.window_poll_host_events(runtime_app.world())
-      let frame = @window.host_gpu_begin_frame(surface)
+      let frame = @render.host_gpu_begin_frame(surface)
       runtime_app = runtime_app.update()
-      @window.host_gpu_end_frame(frame)
+      @render.host_gpu_end_frame(frame)
       if runtime_app.should_exit() is Some(_) {
         break
       }

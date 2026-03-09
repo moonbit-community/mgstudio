@@ -1059,7 +1059,7 @@ pub fn load_texture_bytes(bytes~ : Bytes, nearest~ : Bool) -> Int {
   }
   let safe_width = clamp_dim(width)
   let safe_height = clamp_dim(height)
-  let texture_id = @native_gpu.asset_create_texture_empty(
+  let texture_id = @render.asset_create_texture_empty(
     width=safe_width,
     height=safe_height,
     mip_level_count=1,
@@ -1069,7 +1069,7 @@ pub fn load_texture_bytes(bytes~ : Bytes, nearest~ : Bool) -> Int {
     return 0
   }
   let upload_pixels = source_bytes_to_rgba8(bytes, safe_width, safe_height)
-  @native_gpu.asset_write_texture_region_rgba8(
+  @render.asset_write_texture_region_rgba8(
     texture_id~,
     x=0,
     y=0,
@@ -1140,7 +1140,7 @@ pub fn create_dynamic_texture(
 ) -> Int {
   let safe_width = clamp_dim(width)
   let safe_height = clamp_dim(height)
-  let texture_id = @native_gpu.asset_create_texture_empty(
+  let texture_id = @render.asset_create_texture_empty(
     width=safe_width,
     height=safe_height,
     mip_level_count=1,
@@ -1152,7 +1152,7 @@ pub fn create_dynamic_texture(
   let pixels = Bytes::makei(rgba8_len(safe_width, safe_height), _ => {
     (0).to_byte()
   })
-  @native_gpu.asset_write_texture_region_rgba8(
+  @render.asset_write_texture_region_rgba8(
     texture_id~,
     x=0,
     y=0,
@@ -1179,7 +1179,7 @@ pub fn create_dynamic_texture_mipped(
   }
   let safe_width = clamp_dim(width)
   let safe_height = clamp_dim(height)
-  let texture_id = @native_gpu.asset_create_texture_empty(
+  let texture_id = @render.asset_create_texture_empty(
     width=safe_width,
     height=safe_height,
     mip_level_count=safe_mip_level_count,
@@ -1191,7 +1191,7 @@ pub fn create_dynamic_texture_mipped(
   let pixels = Bytes::makei(rgba8_len(safe_width, safe_height), _ => {
     (0).to_byte()
   })
-  @native_gpu.asset_write_texture_region_rgba8(
+  @render.asset_write_texture_region_rgba8(
     texture_id~,
     x=0,
     y=0,
@@ -1242,7 +1242,7 @@ pub fn update_texture_region_bytes(
   let safe_width = clamp_dim(width)
   let safe_height = clamp_dim(height)
   let upload_pixels = source_bytes_to_rgba8(bytes, safe_width, safe_height)
-  @native_gpu.asset_write_texture_region_rgba8(
+  @render.asset_write_texture_region_rgba8(
     texture_id~,
     x~,
     y~,
@@ -1274,7 +1274,7 @@ pub fn update_texture_region_mip_bytes(
   let safe_width = clamp_dim(width)
   let safe_height = clamp_dim(height)
   let upload_pixels = source_bytes_to_rgba8(bytes, safe_width, safe_height)
-  @native_gpu.asset_write_texture_region_rgba8_mip(
+  @render.asset_write_texture_region_rgba8_mip(
     texture_id~,
     x~,
     y~,
@@ -1298,16 +1298,13 @@ pub fn update_texture_region_mip_bytes(
 
 ///|
 pub fn create_texture_mip_view(texture_id~ : Int, mip_level~ : Int) -> Int {
-  let view_id = @native_gpu.asset_create_texture_mip_view(
-    texture_id~,
-    mip_level~,
-  )
+  let view_id = @render.asset_create_texture_mip_view(texture_id~, mip_level~)
   if view_id <= 0 {
     return 0
   }
-  let width = @native_gpu.asset_texture_width(texture_id=view_id)
-  let height = @native_gpu.asset_texture_height(texture_id=view_id)
-  let loaded = @native_gpu.asset_is_texture_loaded(texture_id=view_id)
+  let width = @render.asset_texture_width(texture_id=view_id)
+  let height = @render.asset_texture_height(texture_id=view_id)
+  let loaded = @render.asset_is_texture_loaded(texture_id=view_id)
   sync_texture_record(view_id, width, height, loaded)
   if texture_pixels(texture_id) is Some(cached) {
     set_texture_pixels(
@@ -1320,10 +1317,10 @@ pub fn create_texture_mip_view(texture_id~ : Int, mip_level~ : Int) -> Int {
 
 ///|
 pub fn texture_width(texture_id : Int) -> Int {
-  let width = @native_gpu.asset_texture_width(texture_id~)
+  let width = @render.asset_texture_width(texture_id~)
   if width > 0 {
-    let height = @native_gpu.asset_texture_height(texture_id~)
-    let loaded = @native_gpu.asset_is_texture_loaded(texture_id~)
+    let height = @render.asset_texture_height(texture_id~)
+    let loaded = @render.asset_is_texture_loaded(texture_id~)
     sync_texture_record(texture_id, width, height, loaded)
   }
   width
@@ -1331,10 +1328,10 @@ pub fn texture_width(texture_id : Int) -> Int {
 
 ///|
 pub fn texture_height(texture_id : Int) -> Int {
-  let height = @native_gpu.asset_texture_height(texture_id~)
+  let height = @render.asset_texture_height(texture_id~)
   if height > 0 {
-    let width = @native_gpu.asset_texture_width(texture_id~)
-    let loaded = @native_gpu.asset_is_texture_loaded(texture_id~)
+    let width = @render.asset_texture_width(texture_id~)
+    let loaded = @render.asset_is_texture_loaded(texture_id~)
     sync_texture_record(texture_id, width, height, loaded)
   }
   height
@@ -1342,9 +1339,9 @@ pub fn texture_height(texture_id : Int) -> Int {
 
 ///|
 pub fn is_texture_loaded(texture_id : Int) -> Bool {
-  let loaded = @native_gpu.asset_is_texture_loaded(texture_id~)
-  let width = @native_gpu.asset_texture_width(texture_id~)
-  let height = @native_gpu.asset_texture_height(texture_id~)
+  let loaded = @render.asset_is_texture_loaded(texture_id~)
+  let width = @render.asset_texture_width(texture_id~)
+  let height = @render.asset_texture_height(texture_id~)
   if width > 0 && height > 0 {
     sync_texture_record(texture_id, width, height, loaded)
   }
@@ -1353,7 +1350,7 @@ pub fn is_texture_loaded(texture_id : Int) -> Bool {
 
 ///|
 pub fn supported_compressed_image_formats() -> Int {
-  @native_gpu.asset_supported_compressed_image_formats()
+  @render.asset_supported_compressed_image_formats()
 }
 
 ///|
@@ -1363,7 +1360,7 @@ pub fn copy_texture_to_texture(
   dst_y~ : Int,
   src_texture_id~ : Int,
 ) -> Unit {
-  @native_gpu.asset_copy_texture_to_texture(
+  @render.asset_copy_texture_to_texture(
     dst_texture_id~,
     dst_x~,
     dst_y~,
@@ -1391,7 +1388,7 @@ pub fn save_texture_png(texture_id~ : Int, path~ : String) -> Unit {
   if width <= 0 || height <= 0 {
     return
   }
-  if @native_gpu.screenshot_capture_texture_sync(texture_id~) is Some(capture) {
+  if @render.screenshot_capture_texture_sync(texture_id~) is Some(capture) {
     save_rgba8_png(
       width=capture.width,
       height=capture.height,
@@ -1419,7 +1416,7 @@ pub fn set_texture_sampler(
   anisotropy_clamp~ : Int,
   border_color~ : Int,
 ) -> Unit {
-  @native_gpu.asset_set_texture_sampler(
+  @render.asset_set_texture_sampler(
     texture_id~,
     address_mode_u~,
     address_mode_v~,

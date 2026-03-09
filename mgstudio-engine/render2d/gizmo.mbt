@@ -788,7 +788,7 @@ fn gizmos_draw_lines(layers : RenderLayers) -> Unit {
       let (style_kind, gap_scale, line_scale) = gizmo_line_style_parts(
         line.style,
       )
-      @window.host_gpu_draw_gizmo_line(
+      @render.host_gpu_draw_gizmo_line(
         start_x=line.start.x,
         start_y=line.start.y,
         start_r=line.start_color.r,
