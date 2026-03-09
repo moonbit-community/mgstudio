@@ -651,12 +651,12 @@ pub fn SubApps::update_sub_app_by_label(Self[@ecs.World], AppLabel) -> Self[@ecs
 
 pub struct SystemConfig[W] {
   system : (W) -> Unit
-  run_if : ((W, Ref[Json]) -> Bool)?
-  run_if_state : Ref[Json]
+  run_ifs : Array[(W, Ref[Json]) -> Bool]
+  run_if_states : Array[Ref[Json]]
   set : String?
   before : Array[String]
   after : Array[String]
-  mut run_if_last_run_tick : Int
+  run_if_last_run_ticks : Array[Int]
   mut last_run_tick : Int
 }
 pub fn[W] SystemConfig::after(Self[W], String) -> Self[W]

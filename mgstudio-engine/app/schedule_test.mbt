@@ -50,6 +50,58 @@ test "app: run_if evaluates with condition system ticks" {
 }
 
 ///|
+test "app: repeated run_if composes and short-circuits" {
+  let log : Array[String] = []
+  let app = App::new(@ecs.World::new()).add_system_config(
+    system(fn(_world : @ecs.World) { log.push("system") })
+    .run_if(fn(_world : @ecs.World) {
+      log.push("first")
+      false
+    })
+    .run_if(fn(_world : @ecs.World) {
+      log.push("second")
+      true
+    }),
+  )
+
+  app.run_once() |> ignore
+
+  inspect(log.join(","), content="first")
+}
+
+///|
+test "app: repeated run_if_stateful keeps independent condition state" {
+  let first_seen : Array[Int] = []
+  let second_seen : Array[Int] = []
+  let system_runs = Ref::new(0)
+  let app = App::new(@ecs.World::new()).add_system_config(
+    system(fn(_world : @ecs.World) { system_runs.val = system_runs.val + 1 })
+    .run_if_stateful((0).to_json(), fn(_world : @ecs.World, state : Ref[Json]) {
+      let value : Int = try! @json.from_json(state.val)
+      first_seen.push(value)
+      state.val = (value + 1).to_json()
+      true
+    })
+    .run_if_stateful((100).to_json(), fn(
+      _world : @ecs.World,
+      state : Ref[Json],
+    ) {
+      let value : Int = try! @json.from_json(state.val)
+      second_seen.push(value)
+      state.val = (value + 10).to_json()
+      true
+    }),
+  )
+
+  app.run_once() |> ignore
+  app.run_once() |> ignore
+
+  inspect(system_runs.val, content="2")
+  inspect(first_seen[0] == 0 && first_seen[1] == 1, content="true")
+  inspect(second_seen[0] == 100 && second_seen[1] == 110, content="true")
+}
+
+///|
 test "app: add_plugin_group registers grouped plugins" {
   let log : Array[Int] = []
   fn plugin_1(app : App[@ecs.World]) -> App[@ecs.World] {
