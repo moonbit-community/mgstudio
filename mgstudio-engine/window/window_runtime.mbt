@@ -804,6 +804,7 @@ pub fn window_plugin_with(
       .add_message(ecs_key_window_moved)
       .add_message(ecs_key_window_backend_scale_factor_changed)
       .add_message(ecs_key_window_focused)
+      .add_systems(@app.First, @app.system(screenshot_clear_system))
       .add_systems(@app.PreUpdate, @app.system(window_backend_sync_system))
     if plugin.close_when_requested {
       next = next.add_systems(

@@ -628,9 +628,178 @@ fn ktx2_dimensions(bytes : Bytes) -> (Int, Int)? {
   let width = blob_u32_at(bytes, 20)
   let height = blob_u32_at(bytes, 24)
   if width <= 0 || height <= 0 {
-    None
+    return None
   } else {
-    Some((width, height))
+    return Some((width, height))
+  }
+}
+
+///|
+fn push_u16_le(out : Array[Byte], value : UInt) -> Unit {
+  out.push((value & 0xFFU).to_byte())
+  out.push(((value >> 8) & 0xFFU).to_byte())
+}
+
+///|
+fn push_u32_be(out : Array[Byte], value : UInt) -> Unit {
+  out.push(((value >> 24) & 0xFFU).to_byte())
+  out.push(((value >> 16) & 0xFFU).to_byte())
+  out.push(((value >> 8) & 0xFFU).to_byte())
+  out.push((value & 0xFFU).to_byte())
+}
+
+///|
+fn push_bytes(out : Array[Byte], bytes : Bytes) -> Unit {
+  for i in 0..<bytes.length() {
+    out.push(bytes[i])
+  }
+}
+
+///|
+fn ascii_bytes(text : String) -> Bytes {
+  let out : Array[Byte] = []
+  for i in 0..<text.length() {
+    out.push(text.code_unit_at(i).to_byte())
+  }
+  Bytes::from_array(out)
+}
+
+///|
+fn adler32(bytes : Bytes) -> UInt {
+  let mut a = 1U
+  let mut b = 0U
+  for i in 0..<bytes.length() {
+    a = (a + bytes[i].to_uint()) % 65521U
+    b = (b + a) % 65521U
+  }
+  (b << 16) | a
+}
+
+///|
+fn crc32(bytes : Bytes) -> UInt {
+  let mut crc = 0xFFFFFFFFU
+  for i in 0..<bytes.length() {
+    let mut x = (crc ^ bytes[i].to_uint()) & 0xFFU
+    for _ in 0..<8 {
+      x = if (x & 1U) == 1U {
+        0xEDB88320U ^ (x >> 1)
+      } else {
+        x >> 1
+      }
+    }
+    crc = (crc >> 8) ^ x
+  }
+  crc ^ 0xFFFFFFFFU
+}
+
+///|
+fn zlib_uncompressed(bytes : Bytes) -> Bytes {
+  let out : Array[Byte] = [0x78U.to_byte(), 0x01U.to_byte()]
+  let mut offset = 0
+  while offset < bytes.length() {
+    let remaining = bytes.length() - offset
+    let block_len = if remaining > 65535 { 65535 } else { remaining }
+    let is_last = offset + block_len >= bytes.length()
+    out.push((if is_last { 1 } else { 0 }).to_byte())
+    let len = block_len.reinterpret_as_uint()
+    push_u16_le(out, len)
+    push_u16_le(out, 0xFFFFU - len)
+    let block_end = offset + block_len
+    for i in offset..<block_end {
+      out.push(bytes[i])
+    }
+    offset = offset + block_len
+  }
+  push_u32_be(out, adler32(bytes))
+  Bytes::from_array(out)
+}
+
+///|
+fn png_chunk(chunk_type : String, data : Bytes) -> Bytes {
+  let out : Array[Byte] = []
+  let chunk_type_bytes = ascii_bytes(chunk_type)
+  push_u32_be(out, data.length().reinterpret_as_uint())
+  push_bytes(out, chunk_type_bytes)
+  push_bytes(out, data)
+  let crc_input : Array[Byte] = []
+  push_bytes(crc_input, chunk_type_bytes)
+  push_bytes(crc_input, data)
+  push_u32_be(out, crc32(Bytes::from_array(crc_input)))
+  Bytes::from_array(out)
+}
+
+///|
+fn ensure_parent_dir(path : String) -> Unit {
+  let path_value : @path.Path = path
+  let parent = path_value.dirname().to_string()
+  if parent == "" || parent == "." || parent == path {
+    return
+  }
+  if @fs.path_exists(parent) {
+    return
+  }
+  ensure_parent_dir(parent)
+  @fs.create_dir(parent) catch {
+    _ => ()
+  }
+}
+
+///|
+fn png_encode_rgba8(width : Int, height : Int, pixels : Bytes) -> Bytes? {
+  if width <= 0 || height <= 0 {
+    return None
+  }
+  if pixels.length() != rgba8_len(width, height) {
+    return None
+  }
+  let scanlines : Array[Byte] = []
+  for y in 0..<height {
+    scanlines.push((0).to_byte())
+    let row_start = y * width * 4
+    let row_end = row_start + width * 4
+    for i in row_start..<row_end {
+      scanlines.push(pixels[i])
+    }
+  }
+  let compressed = zlib_uncompressed(Bytes::from_array(scanlines))
+  let ihdr : Array[Byte] = []
+  push_u32_be(ihdr, width.reinterpret_as_uint())
+  push_u32_be(ihdr, height.reinterpret_as_uint())
+  ihdr.push((8).to_byte())
+  ihdr.push((6).to_byte())
+  ihdr.push((0).to_byte())
+  ihdr.push((0).to_byte())
+  ihdr.push((0).to_byte())
+  let png : Array[Byte] = [
+    137U.to_byte(),
+    80U.to_byte(),
+    78U.to_byte(),
+    71U.to_byte(),
+    13U.to_byte(),
+    10U.to_byte(),
+    26U.to_byte(),
+    10U.to_byte(),
+  ]
+  push_bytes(png, png_chunk("IHDR", Bytes::from_array(ihdr)))
+  push_bytes(png, png_chunk("IDAT", compressed))
+  push_bytes(png, png_chunk("IEND", Bytes::new(0)))
+  Some(Bytes::from_array(png))
+}
+
+///|
+pub fn save_rgba8_png(
+  width~ : Int,
+  height~ : Int,
+  pixels~ : Bytes,
+  path~ : String,
+) -> Unit {
+  guard png_encode_rgba8(width, height, pixels) is Some(encoded) else {
+    return
+  }
+  let out_path = resolve_output_path(path)
+  ensure_parent_dir(out_path)
+  @fs.write_bytes_to_file(out_path, encoded) catch {
+    _ => ()
   }
 }
 
@@ -1228,21 +1397,18 @@ pub fn save_texture_png(texture_id~ : Int, path~ : String) -> Unit {
   if width <= 0 || height <= 0 {
     return
   }
-  let out_path = resolve_output_path(path)
+  if @native_gpu.screenshot_capture_texture_sync(texture_id=texture_id)
+    is Some(capture) {
+    save_rgba8_png(
+      width=capture.width,
+      height=capture.height,
+      pixels=capture.pixels,
+      path~,
+    )
+    return
+  }
   let pixels = texture_cached_or_empty(texture_id, width, height)
-  @fs.write_bytes_to_file(out_path, pixels) catch {
-    _ => ()
-  }
-  let meta = "format=raw_rgba8 width=" +
-    width.to_string() +
-    " height=" +
-    height.to_string() +
-    " bytes=" +
-    pixels.length().to_string() +
-    "\n"
-  @fs.write_string_to_file(out_path + ".meta", meta) catch {
-    _ => ()
-  }
+  save_rgba8_png(width~, height~, pixels~, path~)
 }
 
 ///|

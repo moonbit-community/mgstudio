@@ -1,10 +1,14 @@
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/runtime_native/native_gpu",
+  "Milky2018/mgstudio/runtime_native/native_asset",
   "Milky2018/mgstudio/runtime_native/native_window",
   "tonyfettes/any",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
+  "moonbitlang/core/strconv",
+  "moonbitlang/x/sys",
 }

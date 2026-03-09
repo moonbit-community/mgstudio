@@ -214,3 +214,64 @@ test "native_gpu: unsupported border color validation raises exact blocker" {
   }
   inspect(result.contains("ImageSamplerBorderColor is blocked"), content="true")
 }
+
+///|
+test "native_gpu: screenshot capture swizzles bgra8 into rgba8" {
+  let pixels = Bytes::from_array([
+    (3).to_byte(),
+    (2).to_byte(),
+    (1).to_byte(),
+    (255).to_byte(),
+  ])
+  let converted = screenshot_capture_pixels_rgba8(
+    @wgpu.TEXTURE_FORMAT_BGRA8_UNORM,
+    1,
+    1,
+    pixels,
+  )
+  inspect(
+    converted.map(fn(value) {
+      [
+        value[0].to_uint(),
+        value[1].to_uint(),
+        value[2].to_uint(),
+        value[3].to_uint(),
+      ]
+    }),
+    content="Some([1, 2, 3, 255])",
+  )
+}
+
+///|
+test "native_gpu: screenshot capture reads rgba8 texture bytes" {
+  let backend = GpuBackend::new()
+  let previous_backend = backend_ref.val
+  backend_ref.val = Some(backend)
+  let texture_id = backend.create_texture_rgba8(
+    1,
+    1,
+    Bytes::from_array([
+      (9).to_byte(),
+      (8).to_byte(),
+      (7).to_byte(),
+      (255).to_byte(),
+    ]),
+    true,
+  )
+  let capture = screenshot_capture_texture_sync(texture_id=texture_id)
+  inspect(capture is Some(_), content="true")
+  inspect(capture.map(fn(value) { value.width }), content="Some(1)")
+  inspect(capture.map(fn(value) { value.height }), content="Some(1)")
+  inspect(
+    capture.map(fn(value) {
+      [
+        value.pixels[0].to_uint(),
+        value.pixels[1].to_uint(),
+        value.pixels[2].to_uint(),
+        value.pixels[3].to_uint(),
+      ]
+    }),
+    content="Some([9, 8, 7, 255])",
+  )
+  backend_ref.val = previous_backend
+}

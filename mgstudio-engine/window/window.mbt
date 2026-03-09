@@ -317,6 +317,33 @@ fn window_current_world() -> @ecs.World? {
 }
 
 ///|
+fn env_flag_enabled(key : String) -> Bool {
+  match @sys.get_env_var(key) {
+    Some("1") => true
+    Some("true") => true
+    Some("TRUE") => true
+    Some("yes") => true
+    Some("YES") => true
+    _ => false
+  }
+}
+
+///|
+fn env_int_or_default(key : String, default_value : Int) -> Int {
+  match @sys.get_env_var(key) {
+    Some(value) => {
+      let token = value.trim().to_string()
+      if token == "" {
+        default_value
+      } else {
+        @strconv.parse_int(token[:], base=10) catch { _ => default_value }
+      }
+    }
+    None => default_value
+  }
+}
+
+///|
 pub fn window_width() -> Int {
   guard window_current_world() is Some(world) else { return 0 }
   window_primary_physical_width(world)
@@ -1339,6 +1366,27 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
     let surface_width_ref : Ref[Int] = Ref::new(width)
     let surface_height_ref : Ref[Int] = Ref::new(height)
     let app_ref : Ref[@app.App[@ecs.World]] = Ref::new(app.run_startup())
+    let debug_screenshot_path = match @sys.get_env_var("MGSTUDIO_SCREENSHOT_PATH") {
+      Some(path) if path.trim().to_string() != "" => Some(path.trim().to_string())
+      _ => None
+    }
+    let debug_screenshot_exit_on_save = env_flag_enabled(
+      "MGSTUDIO_SCREENSHOT_EXIT_ON_SAVE",
+    )
+    let debug_screenshot_texture_id = {
+      let value = env_int_or_default("MGSTUDIO_SCREENSHOT_TEXTURE_ID", -1)
+      if value > 0 { value } else { -1 }
+    }
+    let debug_screenshot_frame = if debug_screenshot_path is Some(_) {
+      let value = env_int_or_default("MGSTUDIO_SCREENSHOT_FRAME", 1)
+      if value <= 0 { 1 } else { value }
+    } else {
+      1
+    }
+    let debug_screenshot_requested_ref : Ref[Bool] = Ref::new(false)
+    let debug_screenshot_saved_ref : Ref[Bool] = Ref::new(false)
+    let debug_screenshot_capture_id_ref : Ref[Int] = Ref::new(0)
+    let debug_screenshot_render_frame_ref : Ref[Int] = Ref::new(0)
     runner_state.val.tick = Some(fn() {
       window_poll_host_events(app_ref.val.world())
       let current_width = host_window_get_width(window)
@@ -1359,9 +1407,51 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
         surface_height_ref.val = current_height
       }
       if @app.app_rendering_enabled() {
+        let next_render_frame = debug_screenshot_render_frame_ref.val + 1
+        if !debug_screenshot_requested_ref.val &&
+          debug_screenshot_path is Some(_) &&
+          debug_screenshot_texture_id <= 0 &&
+          next_render_frame >= debug_screenshot_frame {
+          let capture_id = @native_gpu.screenshot_capture_surface_request()
+          if capture_id > 0 {
+            debug_screenshot_requested_ref.val = true
+            debug_screenshot_capture_id_ref.val = capture_id
+          }
+        }
         let frame = host_gpu_begin_frame(surface)
         app_ref.val = app_ref.val.run_once()
+        debug_screenshot_render_frame_ref.val = next_render_frame
+        screenshot_queue_capture_requests(app_ref.val.world())
         host_gpu_end_frame(frame)
+        screenshot_finalize_capture_requests(app_ref.val.world())
+        if !debug_screenshot_saved_ref.val && debug_screenshot_path is Some(path) {
+          let capture = if debug_screenshot_texture_id > 0 &&
+            next_render_frame >= debug_screenshot_frame {
+            @native_gpu.screenshot_capture_texture_sync(
+              texture_id=debug_screenshot_texture_id,
+            )
+          } else if debug_screenshot_capture_id_ref.val > 0 {
+            @native_gpu.screenshot_take_capture_result(
+              debug_screenshot_capture_id_ref.val,
+            )
+          } else {
+            None
+          }
+          if capture is Some(capture) {
+            @native_asset.save_rgba8_png(
+              width=capture.width,
+              height=capture.height,
+              pixels=capture.pixels,
+              path=path,
+            )
+            debug_screenshot_saved_ref.val = true
+            if debug_screenshot_exit_on_save {
+              host_window_request_close(window)
+              runner_state.val.tick = None
+              return
+            }
+          }
+        }
       } else {
         app_ref.val = app_ref.val.run_once()
       }

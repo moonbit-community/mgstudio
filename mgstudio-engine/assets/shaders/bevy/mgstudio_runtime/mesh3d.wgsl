@@ -152,6 +152,15 @@ fn lambert(normal : vec3<f32>, light_dir : vec3<f32>) -> f32 {
   return max(dot(normal, light_dir), 0.0);
 }
 
+fn get_distance_attenuation(distance_square : f32, range : f32) -> f32 {
+  let safe_range = max(range, 1.0e-4);
+  let inverse_range_squared = 1.0 / (safe_range * safe_range);
+  let factor = distance_square * inverse_range_squared;
+  let smooth_factor = clamp(1.0 - factor * factor, 0.0, 1.0);
+  let attenuation = smooth_factor * smooth_factor;
+  return attenuation / max(distance_square, 1.0e-4);
+}
+
 fn cotangent_frame(
   normal : vec3<f32>,
   position : vec3<f32>,
@@ -529,20 +538,16 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let f0 = 0.16 * reflectance_rgb * reflectance_rgb * (1.0 - metallic) +
     base_color.xyz * metallic;
 
-  // Match Bevy-style ambient brightness semantics: 80.0 means neutral ambient.
-  let ambient_term = u_mesh.ambient.xyz * (max(u_mesh.ambient.w, 0.0) / 80.0);
+  let ambient_term = u_mesh.ambient.xyz * max(u_mesh.ambient.w, 0.0);
 
   let directional_dir = safe_normalize(u_mesh.directional_dir_illum.xyz);
-  let directional_strength = max(u_mesh.directional_dir_illum.w, 0.0) / 10000.0;
+  let directional_color = u_mesh.directional_color.xyz *
+    max(u_mesh.directional_dir_illum.w, 0.0);
   let directional_light_dir = -directional_dir;
   let directional_diff = lambert(normal, directional_light_dir);
   let directional_back_diff = lambert(-normal, directional_light_dir);
-  let directional_term = u_mesh.directional_color.xyz *
-    directional_strength *
-    directional_diff;
-  let directional_transmitted_term = u_mesh.directional_color.xyz *
-    directional_strength *
-    directional_back_diff;
+  let directional_term = directional_color * directional_diff;
+  let directional_transmitted_term = directional_color * directional_back_diff;
   var directional_specular = vec3<f32>(0.0, 0.0, 0.0);
   if anisotropy_strength > 0.0 {
     directional_specular = specular_anisotropic(
@@ -560,17 +565,18 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       specular_isotropic(normal, directional_light_dir, view_dir, roughness),
     );
   }
-  let directional_spec = u_mesh.directional_color.xyz *
-    directional_strength *
+  let directional_spec = directional_color *
     directional_diff *
     directional_specular;
 
   let to_point = u_mesh.point_pos_range.xyz - in.world_pos;
+  let point_distance_square = max(dot(to_point, to_point), 1.0e-4);
   let point_distance = length(to_point);
   let point_dir = safe_normalize(to_point);
   let point_range = max(u_mesh.point_pos_range.w, 1e-4);
-  let point_atten = clamp(1.0 - point_distance / point_range, 0.0, 1.0);
-  let point_strength = max(u_mesh.point_color_intensity.w, 0.0) / 1000000.0;
+  let point_atten = get_distance_attenuation(point_distance_square, point_range);
+  let point_color = u_mesh.point_color_intensity.xyz *
+    max(u_mesh.point_color_intensity.w, 0.0);
   let point_diff = lambert(normal, point_dir);
   let point_back_diff = lambert(-normal, point_dir);
   let point_shadow_enabled = u_mesh.point_shadow_params.x > 0.5;
@@ -607,15 +613,11 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       clamp(point_linear_depth - point_depth_bias, 0.0, 1.0),
     );
   }
-  let point_term = u_mesh.point_color_intensity.xyz *
-    point_strength *
-    point_atten *
+  let point_term = point_color *
     point_atten *
     point_diff *
     point_shadow_factor;
-  let point_transmitted_term = u_mesh.point_color_intensity.xyz *
-    point_strength *
-    point_atten *
+  let point_transmitted_term = point_color *
     point_atten *
     point_back_diff *
     point_shadow_factor;
@@ -636,9 +638,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       specular_isotropic(normal, point_dir, view_dir, roughness),
     );
   }
-  let point_spec = u_mesh.point_color_intensity.xyz *
-    point_strength *
-    point_atten *
+  let point_spec = point_color *
     point_atten *
     point_diff *
     point_specular *
@@ -648,7 +648,8 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let spot_distance = length(to_spot);
   let spot_dir_to_fragment = safe_normalize(-to_spot);
   let spot_range = max(u_mesh.spot_pos_range.w, 1e-4);
-  let spot_atten_base = clamp(1.0 - spot_distance / spot_range, 0.0, 1.0);
+  let spot_distance_square = max(dot(to_spot, to_spot), 1.0e-4);
+  let spot_atten_base = get_distance_attenuation(spot_distance_square, spot_range);
   let spot_light_dir = safe_normalize(u_mesh.spot_dir_inner.xyz);
   let inner_angle = max(u_mesh.spot_dir_inner.w, 0.0);
   let outer_angle = max(u_mesh.spot_outer.x, inner_angle + 1e-4);
@@ -656,19 +657,16 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let outer_cos = cos(outer_angle);
   let spot_cos_theta = dot(spot_light_dir, spot_dir_to_fragment);
   let spot_cone = smoothstep(outer_cos, inner_cos, spot_cos_theta);
-  let spot_strength = max(u_mesh.spot_color_intensity.w, 0.0) / 1000000.0;
+  let spot_color = u_mesh.spot_color_intensity.xyz *
+    max(u_mesh.spot_color_intensity.w, 0.0);
   let spot_light_to_fragment = safe_normalize(to_spot);
   let spot_diff = lambert(normal, spot_light_to_fragment);
   let spot_back_diff = lambert(-normal, spot_light_to_fragment);
-  let spot_term = u_mesh.spot_color_intensity.xyz *
-    spot_strength *
-    spot_atten_base *
+  let spot_term = spot_color *
     spot_atten_base *
     spot_cone *
     spot_diff;
-  let spot_transmitted_term = u_mesh.spot_color_intensity.xyz *
-    spot_strength *
-    spot_atten_base *
+  let spot_transmitted_term = spot_color *
     spot_atten_base *
     spot_cone *
     spot_back_diff;
@@ -689,9 +687,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       specular_isotropic(normal, spot_light_to_fragment, view_dir, roughness),
     );
   }
-  let spot_spec = u_mesh.spot_color_intensity.xyz *
-    spot_strength *
-    spot_atten_base *
+  let spot_spec = spot_color *
     spot_atten_base *
     spot_cone *
     spot_diff *

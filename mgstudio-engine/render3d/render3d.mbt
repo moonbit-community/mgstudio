@@ -7645,7 +7645,7 @@ fn render3d_motion_blur_targets_get_or_create(
       return (item.scene_target_id, item.velocity_target_id)
     }
   }
-  let scene_target_id = @window.host_gpu_create_render_target(
+  let scene_target_id = @window.host_gpu_create_render_target_rgba16f(
     width~,
     height~,
     nearest=false,
@@ -7689,7 +7689,7 @@ fn render3d_transmission_source_target_get_or_create(
       return item.source_target_id
     }
   }
-  let source_target_id = @window.host_gpu_create_render_target(
+  let source_target_id = @window.host_gpu_create_render_target_rgba16f(
     width~,
     height~,
     nearest=false,
@@ -9117,17 +9117,11 @@ fn render3d_apply_camera_color_controls(
   exposure : Exposure?,
   color_grading : ColorGrading?,
 ) -> (Float, Float, Float) {
-  let default_exposure = Exposure::default()
-  let exposure_scale = match exposure {
-    Some(value) => value.exposure()
-    None => default_exposure.exposure()
-  }
+  exposure |> ignore
   let grading = match color_grading {
     Some(value) => value
     None => ColorGrading::default()
   }
-  let total_exposure_scale = exposure_scale *
-    @math.pow(2.0F, grading.global.exposure)
   let mut cr = maxf(0.0F, r)
   let mut cg = maxf(0.0F, g)
   let mut cb = maxf(0.0F, b)
@@ -9169,16 +9163,13 @@ fn render3d_apply_camera_color_controls(
   cr = section_r
   cg = section_g
   cb = section_b
-  cr = maxf(0.0F, cr * total_exposure_scale)
-  cg = maxf(0.0F, cg * total_exposure_scale)
-  cb = maxf(0.0F, cb * total_exposure_scale)
   let (post_r, post_g, post_b) = render3d_color_apply_saturation(
     cr,
     cg,
     cb,
     grading.global.post_saturation,
   )
-  (clamp01(post_r), clamp01(post_g), clamp01(post_b))
+  (maxf(0.0F, post_r), maxf(0.0F, post_g), maxf(0.0F, post_b))
 }
 
 ///|
