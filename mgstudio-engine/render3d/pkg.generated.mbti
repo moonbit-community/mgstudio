@@ -1295,16 +1295,19 @@ pub struct PerspectiveProjection3d {
   near : Float
   far : Float
   aspect_ratio : Float
+  near_clip_plane : @math.Vec4
 }
 pub fn PerspectiveProjection3d::aspect_ratio(Self) -> Float
 pub fn PerspectiveProjection3d::default() -> Self
 pub fn PerspectiveProjection3d::far(Self) -> Float
 pub fn PerspectiveProjection3d::fov(Self) -> Float
 pub fn PerspectiveProjection3d::near(Self) -> Float
+pub fn PerspectiveProjection3d::near_clip_plane(Self) -> @math.Vec4
 pub fn PerspectiveProjection3d::with_aspect_ratio(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_far(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_fov(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_near(Self, Float) -> Self
+pub fn PerspectiveProjection3d::with_near_clip_plane(Self, @math.Vec4) -> Self
 pub impl CameraProjection3d for PerspectiveProjection3d
 pub impl ToJson for PerspectiveProjection3d
 pub impl @json.FromJson for PerspectiveProjection3d

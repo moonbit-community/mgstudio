@@ -275,7 +275,7 @@ pub(all) struct Vec4 {
   mut y : Float
   mut z : Float
   mut w : Float
-}
+} derive(Eq)
 
 ///|
 pub fn Vec4::new(x : Float, y : Float, z : Float, w : Float) -> Vec4 {

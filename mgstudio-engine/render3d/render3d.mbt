@@ -465,6 +465,7 @@ pub struct PerspectiveProjection3d {
   near : Float
   far : Float
   aspect_ratio : Float
+  near_clip_plane : @math.Vec4
 } derive(ToJson, FromJson)
 
 ///|
@@ -475,6 +476,7 @@ pub fn PerspectiveProjection3d::default() -> PerspectiveProjection3d {
     near: 0.1F,
     far: 1000.0F,
     aspect_ratio: 1.0F,
+    near_clip_plane: @math.Vec4::new(0.0F, 0.0F, -1.0F, -0.1F),
   }
 }
 
@@ -489,6 +491,7 @@ pub fn PerspectiveProjection3d::with_aspect_ratio(
     near: self.near,
     far: self.far,
     aspect_ratio: safe_aspect,
+    near_clip_plane: self.near_clip_plane,
   }
 }
 
@@ -503,6 +506,7 @@ pub fn PerspectiveProjection3d::with_fov(
     near: self.near,
     far: self.far,
     aspect_ratio: self.aspect_ratio,
+    near_clip_plane: self.near_clip_plane,
   }
 }
 
@@ -511,17 +515,30 @@ pub fn PerspectiveProjection3d::with_near(
   self : PerspectiveProjection3d,
   near : Float,
 ) -> PerspectiveProjection3d {
+  let previous_default_near_clip_plane = @math.Vec4::new(
+    0.0F,
+    0.0F,
+    -1.0F,
+    -self.near,
+  )
   let safe_near = if near <= 0.0F { 0.0001F } else { near }
   let safe_far = if self.far <= safe_near {
     safe_near + 0.0001F
   } else {
     self.far
   }
+  let near_clip_plane = if self.near_clip_plane ==
+    previous_default_near_clip_plane {
+    @math.Vec4::new(0.0F, 0.0F, -1.0F, -safe_near)
+  } else {
+    self.near_clip_plane
+  }
   PerspectiveProjection3d::{
     fov: self.fov,
     near: safe_near,
     far: safe_far,
     aspect_ratio: self.aspect_ratio,
+    near_clip_plane,
   }
 }
 
@@ -536,6 +553,21 @@ pub fn PerspectiveProjection3d::with_far(
     near: self.near,
     far: safe_far,
     aspect_ratio: self.aspect_ratio,
+    near_clip_plane: self.near_clip_plane,
+  }
+}
+
+///|
+pub fn PerspectiveProjection3d::with_near_clip_plane(
+  self : PerspectiveProjection3d,
+  near_clip_plane : @math.Vec4,
+) -> PerspectiveProjection3d {
+  PerspectiveProjection3d::{
+    fov: self.fov,
+    near: self.near,
+    far: self.far,
+    aspect_ratio: self.aspect_ratio,
+    near_clip_plane,
   }
 }
 
@@ -559,6 +591,13 @@ pub fn PerspectiveProjection3d::aspect_ratio(
   self : PerspectiveProjection3d,
 ) -> Float {
   self.aspect_ratio
+}
+
+///|
+pub fn PerspectiveProjection3d::near_clip_plane(
+  self : PerspectiveProjection3d,
+) -> @math.Vec4 {
+  self.near_clip_plane
 }
 
 ///|
@@ -1113,7 +1152,7 @@ pub fn Projection::get_frustum_corners(
 pub impl CameraProjection3d for PerspectiveProjection3d with get_clip_from_view(
   self,
 ) {
-  render3d_perspective_projection_matrix(self.near, self.fov, self.aspect_ratio)
+  render3d_perspective_projection_matrix(self)
 }
 
 ///|
@@ -8093,7 +8132,92 @@ fn render3d_projection_aspect_ratio(width : Float, height : Float) -> Float {
 }
 
 ///|
-fn render3d_perspective_projection_matrix(
+fn render3d_signum(value : Float) -> Float {
+  if value < 0.0F {
+    -1.0F
+  } else if value > 0.0F {
+    1.0F
+  } else {
+    0.0F
+  }
+}
+
+///|
+fn render3d_vec4_dot(lhs : @math.Vec4, rhs : @math.Vec4) -> Float {
+  lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z + lhs.w * rhs.w
+}
+
+///|
+fn render3d_default_near_clip_plane(near : Float) -> @math.Vec4 {
+  let safe_near = if near <= 0.0F { 0.0001F } else { near }
+  @math.Vec4::new(0.0F, 0.0F, -1.0F, -safe_near)
+}
+
+///|
+fn render3d_adjust_perspective_matrix_for_clip_plane(
+  projection : PerspectiveProjection3d,
+  matrix : ProjectionMatrix3d,
+) -> ProjectionMatrix3d {
+  let clip_plane = projection.near_clip_plane
+  if clip_plane == render3d_default_near_clip_plane(projection.near) {
+    return matrix
+  }
+  match render3d_projection_matrix_inverse(matrix) {
+    None => matrix
+    Some(inverse) => {
+      let q_prime = @math.Vec4::new(
+        render3d_signum(clip_plane.x),
+        render3d_signum(clip_plane.y),
+        0.0F,
+        1.0F,
+      )
+      let q = inverse.mul_vec4(q_prime)
+      let denominator = render3d_vec4_dot(clip_plane, q)
+      let safe_denominator = if denominator >= -1.0e-12F &&
+        denominator <= 1.0e-12F {
+        1.0F
+      } else {
+        denominator
+      }
+      let a = -q.z / safe_denominator
+      let m3_prime = @math.Vec4::new(
+        -clip_plane.x * a,
+        -clip_plane.y * a,
+        -1.0F - clip_plane.z * a,
+        -clip_plane.w * a,
+      )
+      ProjectionMatrix3d::{
+        x_axis: @math.Vec4::new(
+          matrix.x_axis.x,
+          matrix.x_axis.y,
+          m3_prime.x,
+          matrix.x_axis.w,
+        ),
+        y_axis: @math.Vec4::new(
+          matrix.y_axis.x,
+          matrix.y_axis.y,
+          m3_prime.y,
+          matrix.y_axis.w,
+        ),
+        z_axis: @math.Vec4::new(
+          matrix.z_axis.x,
+          matrix.z_axis.y,
+          m3_prime.z,
+          matrix.z_axis.w,
+        ),
+        w_axis: @math.Vec4::new(
+          matrix.w_axis.x,
+          matrix.w_axis.y,
+          m3_prime.w,
+          matrix.w_axis.w,
+        ),
+      }
+    }
+  }
+}
+
+///|
+fn render3d_perspective_projection_matrix_raw(
   near : Float,
   fov : Float,
   aspect_ratio : Float,
@@ -8114,6 +8238,20 @@ fn render3d_perspective_projection_matrix(
     @math.Vec4::new(0.0F, y, 0.0F, 0.0F),
     @math.Vec4::new(0.0F, 0.0F, 0.0F, -1.0F),
     @math.Vec4::new(0.0F, 0.0F, safe_near, 0.0F),
+  )
+}
+
+///|
+fn render3d_perspective_projection_matrix(
+  projection : PerspectiveProjection3d,
+) -> ProjectionMatrix3d {
+  render3d_adjust_perspective_matrix_for_clip_plane(
+    projection,
+    render3d_perspective_projection_matrix_raw(
+      projection.near,
+      projection.fov,
+      projection.aspect_ratio,
+    ),
   )
 }
 
@@ -8157,11 +8295,14 @@ fn render3d_perspective_projection_matrix_for_sub(
   let y = 2.0F * near / (top_prime - bottom_prime)
   let a = (right_prime + left_prime) / (right_prime - left_prime)
   let b = (top_prime + bottom_prime) / (top_prime - bottom_prime)
-  ProjectionMatrix3d::from_cols(
-    @math.Vec4::new(x, 0.0F, 0.0F, 0.0F),
-    @math.Vec4::new(0.0F, y, 0.0F, 0.0F),
-    @math.Vec4::new(a, b, 0.0F, -1.0F),
-    @math.Vec4::new(0.0F, 0.0F, near, 0.0F),
+  render3d_adjust_perspective_matrix_for_clip_plane(
+    projection,
+    ProjectionMatrix3d::from_cols(
+      @math.Vec4::new(x, 0.0F, 0.0F, 0.0F),
+      @math.Vec4::new(0.0F, y, 0.0F, 0.0F),
+      @math.Vec4::new(a, b, 0.0F, -1.0F),
+      @math.Vec4::new(0.0F, 0.0F, near, 0.0F),
+    ),
   )
 }
 
@@ -8252,6 +8393,18 @@ fn render3d_projection_near_from_clip_matrix(
 }
 
 ///|
+fn render3d_projection_near(
+  projection : Projection,
+  clip_from_view : ProjectionMatrix3d,
+) -> Float {
+  match projection {
+    Perspective(perspective) => maxf(0.0001F, perspective.near)
+    Orthographic(orthographic) => orthographic.near
+    Custom(_) => render3d_projection_near_from_clip_matrix(clip_from_view)
+  }
+}
+
+///|
 fn render3d_camera_pass_projection(
   projection : Projection,
   sub_camera_view : SubCameraView3d?,
@@ -8273,9 +8426,7 @@ fn render3d_camera_pass_projection(
   Render3dPassProjection::{
     clip_from_view,
     unjittered_clip_from_view,
-    camera_near: render3d_projection_near_from_clip_matrix(
-      unjittered_clip_from_view,
-    ),
+    camera_near: render3d_projection_near(projection, unjittered_clip_from_view),
     camera_far: projection.far(),
   }
 }
@@ -8287,7 +8438,7 @@ fn render3d_point_shadow_pass_projection(
 ) -> Render3dPassProjection {
   let shadow_near = if near > 0.0001F { near } else { 0.0001F }
   let shadow_far = if far > shadow_near { far } else { shadow_near + 1.0F }
-  let clip_from_view = render3d_perspective_projection_matrix(
+  let clip_from_view = render3d_perspective_projection_matrix_raw(
     shadow_near,
     @math.pi_half(),
     1.0F,

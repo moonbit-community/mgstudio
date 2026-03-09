@@ -18,9 +18,9 @@
 /// Parity note:
 /// - Mirror camera transform/projection updates, mirror render target resizing,
 ///   drag-to-orbit camera, and drag-to-move-fox controls are mapped.
-/// - Bevy-only features like `ExtendedMaterial`, projection near-plane normal
-///   clipping, and `Camera::invert_culling` are represented by closest runtime
-///   behavior currently available in mgstudio.
+/// - Bevy-only features like `ExtendedMaterial` and `Camera::invert_culling`
+///   are represented by the closest runtime behavior currently available in
+///   mgstudio.
 
 ///|
 const FRAC_PI_2 : Float = 1.5707963267948966F
@@ -114,6 +114,11 @@ fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
 }
 
 ///|
+fn quat_conjugate(q : @math.Quat) -> @math.Quat {
+  @math.Quat::new(-q.x, -q.y, -q.z, q.w)
+}
+
+///|
 fn reflect_vector(value : @math.Vec3, normal : @math.Vec3) -> @math.Vec3 {
   value.sub(normal.mul_scalar(2.0F * value.dot(normal)))
 }
@@ -136,6 +141,7 @@ fn calculate_mirror_camera_transform_and_projection(
 ) -> (@math.Transform, @render3d.PerspectiveProjection3d) {
   let world_up = @math.Vec3::new(0.0F, 1.0F, 0.0F)
   let forward_axis = @math.Vec3::new(0.0F, 0.0F, -1.0F)
+  let negative_world_up = @math.Vec3::new(0.0F, -1.0F, 0.0F)
 
   let mirror_normal = normalize_or(
     quat_rotate_vec3(mirror_transform.rotation, world_up),
@@ -169,16 +175,27 @@ fn calculate_mirror_camera_transform_and_projection(
     reflected_translation.z,
   ).looking_at(reflected_target, reflected_up)
 
-  let signed_distance = mirror_transform.translation
+  let distance_from_camera_to_mirror = mirror_transform.translation
     .sub(main_camera_transform.translation)
     .dot(mirror_normal)
-  let distance_to_mirror = absf(signed_distance)
-  let mirror_near = if distance_to_mirror > main_camera_projection.near {
-    distance_to_mirror
-  } else {
-    main_camera_projection.near
-  }
-  let mirror_camera_projection = main_camera_projection.with_near(mirror_near)
+  let view_from_world_rotation = quat_conjugate(
+    main_camera_transform.rotation.normalize(),
+  )
+  let mirror_projection_plane_normal = normalize_or(
+    quat_rotate_vec3(
+      view_from_world_rotation,
+      quat_rotate_vec3(mirror_transform.rotation, negative_world_up),
+    ),
+    forward_axis,
+  )
+  let mirror_camera_projection = main_camera_projection.with_near_clip_plane(
+    @math.Vec4::new(
+      mirror_projection_plane_normal.x,
+      mirror_projection_plane_normal.y,
+      mirror_projection_plane_normal.z,
+      distance_from_camera_to_mirror,
+    ),
+  )
 
   (mirror_camera_transform, mirror_camera_projection)
 }

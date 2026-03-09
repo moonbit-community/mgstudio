@@ -33,6 +33,34 @@ test "render3d: perspective projection getters expose configured values" {
   inspect(projection_approx_eq(projection.near(), 0.3F), content="true")
   inspect(projection_approx_eq(projection.far(), 250.0F), content="true")
   inspect(projection_approx_eq(projection.aspect_ratio(), 1.6F), content="true")
+  inspect(
+    projection_approx_eq(projection.near_clip_plane().z, -1.0F),
+    content="true",
+  )
+  inspect(
+    projection_approx_eq(projection.near_clip_plane().w, -0.3F),
+    content="true",
+  )
+}
+
+///|
+test "render3d: perspective with_near keeps default clip plane in sync and preserves custom planes" {
+  let synced = PerspectiveProjection3d::default().with_near(0.75F)
+  let preserved = PerspectiveProjection3d::default()
+    .with_near_clip_plane(@math.Vec4::new(0.0F, -1.0F, 0.0F, -2.0F))
+    .with_near(0.75F)
+  inspect(
+    projection_approx_eq(synced.near_clip_plane().w, -0.75F),
+    content="true",
+  )
+  inspect(
+    projection_approx_eq(preserved.near_clip_plane().y, -1.0F),
+    content="true",
+  )
+  inspect(
+    projection_approx_eq(preserved.near_clip_plane().w, -2.0F),
+    content="true",
+  )
 }
 
 ///|

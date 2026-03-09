@@ -28,17 +28,15 @@ fn oblique_clip_from_view(
   horizontal_obliqueness : Float,
   vertical_obliqueness : Float,
 ) -> @render3d.ProjectionMatrix3d {
-  @render3d.ProjectionMatrix3d::from_cols(
-    base.x_axis,
-    base.y_axis,
-    @math.Vec4::new(
+  @render3d.ProjectionMatrix3d::{
+    ..base,
+    z_axis: @math.Vec4::new(
       horizontal_obliqueness,
       vertical_obliqueness,
       base.z_axis.z,
       base.z_axis.w,
     ),
-    base.w_axis,
-  )
+  }
 }
 
 ///|

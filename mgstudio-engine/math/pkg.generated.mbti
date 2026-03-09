@@ -432,6 +432,7 @@ pub fn Vec4::new(Float, Float, Float, Float) -> Self
 pub fn Vec4::splat(Float) -> Self
 pub impl Ease for Vec4
 pub impl SplinePoint for Vec4
+pub impl Eq for Vec4
 pub impl ToJson for Vec4
 pub impl @json.FromJson for Vec4
 
