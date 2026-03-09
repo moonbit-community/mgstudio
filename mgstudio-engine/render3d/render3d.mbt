@@ -567,6 +567,8 @@ pub struct OrthographicProjection3d {
   near : Float
   far : Float
   scaling_mode : OrthographicScalingMode3d
+  view_width : Float
+  view_height : Float
 } derive(ToJson, FromJson)
 
 ///|
@@ -602,6 +604,8 @@ pub fn OrthographicProjection3d::default() -> OrthographicProjection3d {
     near: -1000.0F,
     far: 1000.0F,
     scaling_mode: WindowSize,
+    view_width: 1.0F,
+    view_height: 1.0F,
   }
 }
 
@@ -616,6 +620,8 @@ pub fn OrthographicProjection3d::with_scale(
     near: self.near,
     far: self.far,
     scaling_mode: WindowSize,
+    view_width: self.view_width,
+    view_height: self.view_height,
   }
 }
 
@@ -628,6 +634,8 @@ pub fn OrthographicProjection3d::with_window_size_scaling(
     near: self.near,
     far: self.far,
     scaling_mode: WindowSize,
+    view_width: self.view_width,
+    view_height: self.view_height,
   }
 }
 
@@ -641,6 +649,8 @@ pub fn OrthographicProjection3d::with_scaling_mode(
     near: self.near,
     far: self.far,
     scaling_mode: orthographic_scaling_mode_sanitize(scaling_mode),
+    view_width: self.view_width,
+    view_height: self.view_height,
   }
 }
 
@@ -666,27 +676,6 @@ pub fn OrthographicProjection3d::scaling_mode(
   self : OrthographicProjection3d,
 ) -> OrthographicScalingMode3d {
   self.scaling_mode
-}
-
-///|
-pub(all) enum Projection {
-  Perspective(PerspectiveProjection3d)
-  Orthographic(OrthographicProjection3d)
-} derive(ToJson, FromJson)
-
-///|
-pub fn Projection::default() -> Projection {
-  Projection::perspective_default()
-}
-
-///|
-pub fn Projection::perspective_default() -> Projection {
-  Perspective(PerspectiveProjection3d::default())
-}
-
-///|
-pub fn Projection::orthographic_default() -> Projection {
-  Orthographic(OrthographicProjection3d::default())
 }
 
 ///|
@@ -728,6 +717,389 @@ pub fn SubCameraView3d::with_offset(
   offset : @math.Vec2,
 ) -> SubCameraView3d {
   sub_camera_view3d_sanitize(self.full_size, offset, self.size)
+}
+
+///|
+pub(all) struct ProjectionMatrix3d {
+  x_axis : @math.Vec4
+  y_axis : @math.Vec4
+  z_axis : @math.Vec4
+  w_axis : @math.Vec4
+}
+
+///|
+pub fn ProjectionMatrix3d::from_cols(
+  x_axis : @math.Vec4,
+  y_axis : @math.Vec4,
+  z_axis : @math.Vec4,
+  w_axis : @math.Vec4,
+) -> ProjectionMatrix3d {
+  ProjectionMatrix3d::{ x_axis, y_axis, z_axis, w_axis }
+}
+
+///|
+pub fn ProjectionMatrix3d::mul_vec4(
+  self : ProjectionMatrix3d,
+  value : @math.Vec4,
+) -> @math.Vec4 {
+  @math.Vec4::new(
+    self.x_axis.x * value.x +
+    self.y_axis.x * value.y +
+    self.z_axis.x * value.z +
+    self.w_axis.x * value.w,
+    self.x_axis.y * value.x +
+    self.y_axis.y * value.y +
+    self.z_axis.y * value.z +
+    self.w_axis.y * value.w,
+    self.x_axis.z * value.x +
+    self.y_axis.z * value.y +
+    self.z_axis.z * value.z +
+    self.w_axis.z * value.w,
+    self.x_axis.w * value.x +
+    self.y_axis.w * value.y +
+    self.z_axis.w * value.z +
+    self.w_axis.w * value.w,
+  )
+}
+
+///|
+pub fn ProjectionMatrix3d::project_point3(
+  self : ProjectionMatrix3d,
+  value : @math.Vec3,
+) -> @math.Vec3? {
+  let clip = self.mul_vec4(@math.Vec4::new(value.x, value.y, value.z, 1.0F))
+  if clip.w == 0.0F {
+    return None
+  }
+  Some(@math.Vec3::new(clip.x / clip.w, clip.y / clip.w, clip.z / clip.w))
+}
+
+///|
+pub fn ProjectionMatrix3d::w_axis_w(self : ProjectionMatrix3d) -> Float {
+  self.w_axis.w
+}
+
+///|
+pub(open) trait CameraProjection3d {
+  get_clip_from_view(self : Self) -> ProjectionMatrix3d
+  get_clip_from_view_for_sub(self : Self, sub_view : SubCameraView3d) -> ProjectionMatrix3d
+  update(self : Self, width : Float, height : Float) -> Self
+  far(self : Self) -> Float
+  get_frustum_corners(self : Self, z_near : Float, z_far : Float) -> Array[
+    @math.Vec3,
+  ]
+}
+
+///|
+struct CustomProjection3d {
+  type_name : String
+  payload : @any.Any
+  get_clip_from_view_fn : (@any.Any) -> ProjectionMatrix3d
+  get_clip_from_view_for_sub_fn : (@any.Any, SubCameraView3d) -> ProjectionMatrix3d
+  update_fn : (@any.Any, Float, Float) -> @any.Any
+  far_fn : (@any.Any) -> Float
+  get_frustum_corners_fn : (@any.Any, Float, Float) -> Array[@math.Vec3]
+}
+
+///|
+pub fn[T : CameraProjection3d] CustomProjection3d::new(
+  projection : T,
+) -> CustomProjection3d {
+  let payload = @any.of(projection)
+  CustomProjection3d::{
+    type_name: payload.type_name(),
+    payload,
+    get_clip_from_view_fn: fn(payload) {
+      let projection : T = try! payload.to()
+      projection.get_clip_from_view()
+    },
+    get_clip_from_view_for_sub_fn: fn(payload, sub_view) {
+      let projection : T = try! payload.to()
+      projection.get_clip_from_view_for_sub(sub_view)
+    },
+    update_fn: fn(payload, width, height) {
+      let projection : T = try! payload.to()
+      @any.of(projection.update(width, height))
+    },
+    far_fn: fn(payload) {
+      let projection : T = try! payload.to()
+      projection.far()
+    },
+    get_frustum_corners_fn: fn(payload, z_near, z_far) {
+      let projection : T = try! payload.to()
+      projection.get_frustum_corners(z_near, z_far)
+    },
+  }
+}
+
+///|
+pub fn[T] CustomProjection3d::get(self : CustomProjection3d) -> T? {
+  self.payload.try_to()
+}
+
+///|
+pub fn CustomProjection3d::type_name(self : CustomProjection3d) -> String {
+  self.type_name
+}
+
+///|
+pub fn CustomProjection3d::get_clip_from_view(
+  self : CustomProjection3d,
+) -> ProjectionMatrix3d {
+  (self.get_clip_from_view_fn)(self.payload)
+}
+
+///|
+pub fn CustomProjection3d::get_clip_from_view_for_sub(
+  self : CustomProjection3d,
+  sub_view : SubCameraView3d,
+) -> ProjectionMatrix3d {
+  (self.get_clip_from_view_for_sub_fn)(self.payload, sub_view)
+}
+
+///|
+pub fn CustomProjection3d::update(
+  self : CustomProjection3d,
+  width : Float,
+  height : Float,
+) -> CustomProjection3d {
+  CustomProjection3d::{
+    type_name: self.type_name,
+    payload: (self.update_fn)(self.payload, width, height),
+    get_clip_from_view_fn: self.get_clip_from_view_fn,
+    get_clip_from_view_for_sub_fn: self.get_clip_from_view_for_sub_fn,
+    update_fn: self.update_fn,
+    far_fn: self.far_fn,
+    get_frustum_corners_fn: self.get_frustum_corners_fn,
+  }
+}
+
+///|
+pub fn CustomProjection3d::far(self : CustomProjection3d) -> Float {
+  (self.far_fn)(self.payload)
+}
+
+///|
+pub fn CustomProjection3d::get_frustum_corners(
+  self : CustomProjection3d,
+  z_near : Float,
+  z_far : Float,
+) -> Array[@math.Vec3] {
+  (self.get_frustum_corners_fn)(self.payload, z_near, z_far)
+}
+
+///|
+pub(all) enum Projection {
+  Perspective(PerspectiveProjection3d)
+  Orthographic(OrthographicProjection3d)
+  Custom(CustomProjection3d)
+}
+
+///|
+pub fn Projection::default() -> Projection {
+  Projection::perspective_default()
+}
+
+///|
+pub fn Projection::perspective_default() -> Projection {
+  Perspective(PerspectiveProjection3d::default())
+}
+
+///|
+pub fn Projection::orthographic_default() -> Projection {
+  Orthographic(OrthographicProjection3d::default())
+}
+
+///|
+pub fn[T : CameraProjection3d] Projection::custom(projection : T) -> Projection {
+  Custom(CustomProjection3d::new(projection))
+}
+
+///|
+pub fn Projection::is_perspective(self : Projection) -> Bool {
+  match self {
+    Perspective(_) => true
+    Orthographic(_) => false
+    Custom(projection) => projection.get_clip_from_view().w_axis_w() == 0.0F
+  }
+}
+
+///|
+pub fn Projection::get_clip_from_view(self : Projection) -> ProjectionMatrix3d {
+  match self {
+    Perspective(projection) => projection.get_clip_from_view()
+    Orthographic(projection) => projection.get_clip_from_view()
+    Custom(projection) => projection.get_clip_from_view()
+  }
+}
+
+///|
+pub fn Projection::get_clip_from_view_for_sub(
+  self : Projection,
+  sub_view : SubCameraView3d,
+) -> ProjectionMatrix3d {
+  match self {
+    Perspective(projection) => projection.get_clip_from_view_for_sub(sub_view)
+    Orthographic(projection) => projection.get_clip_from_view_for_sub(sub_view)
+    Custom(projection) => projection.get_clip_from_view_for_sub(sub_view)
+  }
+}
+
+///|
+pub fn Projection::update(
+  self : Projection,
+  width : Float,
+  height : Float,
+) -> Projection {
+  match self {
+    Perspective(projection) => Perspective(projection.update(width, height))
+    Orthographic(projection) => Orthographic(projection.update(width, height))
+    Custom(projection) => Custom(projection.update(width, height))
+  }
+}
+
+///|
+pub fn Projection::far(self : Projection) -> Float {
+  match self {
+    Perspective(projection) => projection.far()
+    Orthographic(projection) => projection.far()
+    Custom(projection) => projection.far()
+  }
+}
+
+///|
+pub fn Projection::get_frustum_corners(
+  self : Projection,
+  z_near : Float,
+  z_far : Float,
+) -> Array[@math.Vec3] {
+  match self {
+    Perspective(projection) => projection.get_frustum_corners(z_near, z_far)
+    Orthographic(projection) => projection.get_frustum_corners(z_near, z_far)
+    Custom(projection) => projection.get_frustum_corners(z_near, z_far)
+  }
+}
+
+///|
+pub impl CameraProjection3d for PerspectiveProjection3d with get_clip_from_view(
+  self,
+) {
+  render3d_perspective_projection_matrix(self.near, self.fov, self.aspect_ratio)
+}
+
+///|
+pub impl CameraProjection3d for PerspectiveProjection3d with get_clip_from_view_for_sub(
+  self,
+  sub_view,
+) {
+  render3d_perspective_projection_matrix_for_sub(self, sub_view)
+}
+
+///|
+pub impl CameraProjection3d for PerspectiveProjection3d with update(
+  self,
+  width,
+  height,
+) {
+  self.with_aspect_ratio(render3d_projection_aspect_ratio(width, height))
+}
+
+///|
+pub impl CameraProjection3d for PerspectiveProjection3d with far(self) {
+  self.far
+}
+
+///|
+pub impl CameraProjection3d for PerspectiveProjection3d with get_frustum_corners(
+  self,
+  z_near,
+  z_far,
+) {
+  render3d_perspective_frustum_corners(
+    self.aspect_ratio,
+    self.fov,
+    z_near,
+    z_far,
+  )
+}
+
+///|
+pub impl CameraProjection3d for OrthographicProjection3d with get_clip_from_view(
+  self,
+) {
+  let (left, right, bottom, top) = render3d_orthographic_view_bounds(
+    self,
+    self.view_width,
+    self.view_height,
+  )
+  render3d_orthographic_projection_matrix(
+    left,
+    right,
+    bottom,
+    top,
+    self.far,
+    self.near,
+  )
+}
+
+///|
+pub impl CameraProjection3d for OrthographicProjection3d with get_clip_from_view_for_sub(
+  self,
+  sub_view,
+) {
+  render3d_orthographic_projection_matrix_for_sub(self, sub_view)
+}
+
+///|
+pub impl CameraProjection3d for OrthographicProjection3d with update(
+  self,
+  width,
+  height,
+) {
+  OrthographicProjection3d::{
+    scale: self.scale,
+    near: self.near,
+    far: self.far,
+    scaling_mode: self.scaling_mode,
+    view_width: if width <= 0.0F {
+      1.0F
+    } else {
+      width
+    },
+    view_height: if height <= 0.0F {
+      1.0F
+    } else {
+      height
+    },
+  }
+}
+
+///|
+pub impl CameraProjection3d for OrthographicProjection3d with far(self) {
+  self.far
+}
+
+///|
+pub impl CameraProjection3d for OrthographicProjection3d with get_frustum_corners(
+  self,
+  z_near,
+  z_far,
+) {
+  let (left, right, bottom, top) = render3d_orthographic_view_bounds(
+    self,
+    self.view_width,
+    self.view_height,
+  )
+  [
+    @math.Vec3::new(right, bottom, z_near),
+    @math.Vec3::new(right, top, z_near),
+    @math.Vec3::new(left, top, z_near),
+    @math.Vec3::new(left, bottom, z_near),
+    @math.Vec3::new(right, bottom, z_far),
+    @math.Vec3::new(right, top, z_far),
+    @math.Vec3::new(left, top, z_far),
+    @math.Vec3::new(left, bottom, z_far),
+  ]
 }
 
 ///|
@@ -6387,6 +6759,22 @@ priv struct Camera3dInstance {
 }
 
 ///|
+priv struct ProjectionRuntime3d {
+  last_view_width : Float
+  last_view_height : Float
+}
+
+///|
+let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d] = @ecs.register_component(
+  debug_name="render3d.projection_runtime3d",
+)
+
+///|
+impl @ecs.Component for ProjectionRuntime3d with component() {
+  ecs_key_projection_runtime3d
+}
+
+///|
 priv struct ReflectionProbeInstance {
   transform : @math.Transform
   light_probe : LightProbe
@@ -7858,6 +8246,127 @@ fn render3d_mesh_draw_alpha(alpha_mode : AlphaMode3d, alpha : Float) -> Float? {
 }
 
 ///|
+fn render3d_projection_aspect_ratio(width : Float, height : Float) -> Float {
+  if width <= 0.0F || height <= 0.0F {
+    1.0F
+  } else {
+    width / height
+  }
+}
+
+///|
+fn render3d_perspective_projection_matrix(
+  near : Float,
+  fov : Float,
+  aspect_ratio : Float,
+) -> ProjectionMatrix3d {
+  let safe_aspect = if aspect_ratio <= 0.0F { 1.0F } else { aspect_ratio }
+  let safe_near = if near <= 0.0F { 0.0001F } else { near }
+  let half_fov = fov * 0.5F
+  let cos_half_fov = @math.cos(half_fov)
+  let tan_half_fov = if cos_half_fov == 0.0F {
+    1.0F
+  } else {
+    @math.sin(half_fov) / cos_half_fov
+  }
+  let y = if tan_half_fov == 0.0F { 1.0F } else { 1.0F / tan_half_fov }
+  let x = y / safe_aspect
+  ProjectionMatrix3d::from_cols(
+    @math.Vec4::new(x, 0.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, y, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 0.0F, -1.0F),
+    @math.Vec4::new(0.0F, 0.0F, safe_near, 0.0F),
+  )
+}
+
+///|
+fn render3d_perspective_projection_matrix_for_sub(
+  projection : PerspectiveProjection3d,
+  sub_view : SubCameraView3d,
+) -> ProjectionMatrix3d {
+  let full_width = Float::from_double(sub_view.full_size.x.to_double())
+  let full_height = Float::from_double(sub_view.full_size.y.to_double())
+  let sub_width = Float::from_double(sub_view.size.x.to_double())
+  let sub_height = Float::from_double(sub_view.size.y.to_double())
+  if full_width <= 0.0F ||
+    full_height <= 0.0F ||
+    sub_width <= 0.0F ||
+    sub_height <= 0.0F {
+    return projection.get_clip_from_view()
+  }
+  let near = if projection.near <= 0.0F { 0.0001F } else { projection.near }
+  let offset_x = sub_view.offset.x
+  let offset_y = full_height - (sub_view.offset.y + sub_height)
+  let full_aspect = full_width / full_height
+  let half_fov = projection.fov * 0.5F
+  let cos_half_fov = @math.cos(half_fov)
+  let tan_half_fov = if cos_half_fov == 0.0F {
+    1.0F
+  } else {
+    @math.sin(half_fov) / cos_half_fov
+  }
+  let top = near * tan_half_fov
+  let bottom = -top
+  let right = top * full_aspect
+  let left = -right
+  let width = right - left
+  let height = top - bottom
+  let left_prime = left + width * offset_x / full_width
+  let right_prime = left + width * (offset_x + sub_width) / full_width
+  let bottom_prime = bottom + height * offset_y / full_height
+  let top_prime = bottom + height * (offset_y + sub_height) / full_height
+  let x = 2.0F * near / (right_prime - left_prime)
+  let y = 2.0F * near / (top_prime - bottom_prime)
+  let a = (right_prime + left_prime) / (right_prime - left_prime)
+  let b = (top_prime + bottom_prime) / (top_prime - bottom_prime)
+  ProjectionMatrix3d::from_cols(
+    @math.Vec4::new(x, 0.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, y, 0.0F, 0.0F),
+    @math.Vec4::new(a, b, 0.0F, -1.0F),
+    @math.Vec4::new(0.0F, 0.0F, near, 0.0F),
+  )
+}
+
+///|
+fn render3d_perspective_frustum_corners(
+  aspect_ratio : Float,
+  fov : Float,
+  z_near : Float,
+  z_far : Float,
+) -> Array[@math.Vec3] {
+  let half_fov = fov * 0.5F
+  let cos_half_fov = @math.cos(half_fov)
+  let tan_half_fov = if cos_half_fov == 0.0F {
+    1.0F
+  } else {
+    @math.sin(half_fov) / cos_half_fov
+  }
+  let near_half_height = tan_half_fov *
+    (if z_near < 0.0F { -z_near } else { z_near })
+  let far_half_height = tan_half_fov *
+    (if z_far < 0.0F { -z_far } else { z_far })
+  let near_half_width = near_half_height * aspect_ratio
+  let far_half_width = far_half_height * aspect_ratio
+  [
+    @math.Vec3::new(near_half_width, -near_half_height, z_near),
+    @math.Vec3::new(near_half_width, near_half_height, z_near),
+    @math.Vec3::new(-near_half_width, near_half_height, z_near),
+    @math.Vec3::new(-near_half_width, -near_half_height, z_near),
+    @math.Vec3::new(far_half_width, -far_half_height, z_far),
+    @math.Vec3::new(far_half_width, far_half_height, z_far),
+    @math.Vec3::new(-far_half_width, far_half_height, z_far),
+    @math.Vec3::new(-far_half_width, -far_half_height, z_far),
+  ]
+}
+
+///|
+fn render3d_custom_projection_runtime_abort() -> Unit {
+  abort(
+    "custom 3d camera projections require native_gpu clip-matrix camera support; this tranche only adds shared render3d lifecycle APIs",
+  )
+}
+
+///|
 fn render3d_projection_params(
   projection : Projection,
   aspect_ratio : Float,
@@ -7881,6 +8390,10 @@ fn render3d_projection_params(
         orthographic, safe_view_height,
       )
       (-safe_half_height, orthographic.near, orthographic.far)
+    }
+    Custom(_) => {
+      render3d_custom_projection_runtime_abort()
+      (0.0F, 0.1F, 1000.0F)
     }
   }
 }
@@ -9775,9 +10288,14 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let cameras : Array[Camera3dInstance] = []
   let meshes : Array[Mesh3dInstance] = []
   let reflection_probes : Array[ReflectionProbeInstance] = []
+  let projection_updates : Array[
+    (@core.Entity, Projection, ProjectionRuntime3d),
+  ] = []
+  let projection_runtime_removals : Array[@core.Entity] = []
   let camera3d_store = world.component(ecs_key_camera3d)
   let camera_store = world.component(@render2d.ecs_key_camera)
   let projection_store = world.component(ecs_key_projection)
+  let projection_runtime_store = world.component(ecs_key_projection_runtime3d)
   let sub_camera_view_store = world.component(ecs_key_sub_camera_view3d)
   let screen_space_transmission_store = world.component(
     ecs_key_screen_space_transmission,
@@ -9819,6 +10337,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let view_visibility_store = world.component(
     @visibility.ecs_key_view_visibility,
   )
+  let tick = world.read_change_tick()
   let default_opaque_renderer_method = if (try! world.get_resource(
       ecs_key_default_opaque_renderer_method,
     ))
@@ -9844,7 +10363,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       Some(v) => v
       None => @render2d.Camera::default()
     }
-    let projection = match projection_store.get(entity) {
+    let projection_component = projection_store.get(entity)
+    let projection = match projection_component {
       Some(v) => v
       None => Projection::default()
     }
@@ -9899,6 +10419,30 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           )
           camera_clamped = camera.with_viewport(clamped)
         }
+        let projection = match projection_component {
+          Some(component_projection) => {
+            let (runtime_projection, runtime_update) = render3d_projection_runtime_update(
+              component_projection,
+              projection_runtime_store.get(entity),
+              camera_clamped,
+              target_info.target_size,
+              target_info.scale_factor,
+            )
+            if runtime_update is Some(runtime_state) {
+              projection_updates.push(
+                (entity, runtime_projection, runtime_state),
+              )
+            }
+            runtime_projection
+          }
+          None =>
+            render3d_projection_runtime_projection(
+              projection,
+              camera_clamped,
+              target_info.target_size,
+              target_info.scale_factor,
+            )
+        }
         cameras.push(Camera3dInstance::{
           entity,
           camera3d,
@@ -9936,7 +10480,18 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       }
       None => ()
     }
+    if projection_component is None &&
+      projection_runtime_store.get(entity) is Some(_) {
+      projection_runtime_removals.push(entity)
+    }
   })
+  for update in projection_updates {
+    projection_store.insert(update.0, update.1, tick)
+    projection_runtime_store.insert(update.0, update.2, tick)
+  }
+  for entity in projection_runtime_removals {
+    projection_runtime_store.remove(entity) |> ignore
+  }
   if cameras.length() == 0 {
     render3d_prepared_camera_order_ref.val.clear()
     render3d_queued_visible_mesh_count_ref.val = 0
@@ -11365,6 +11920,223 @@ fn render3d_orthographic_half_height(
 }
 
 ///|
+fn render3d_orthographic_view_bounds(
+  orthographic : OrthographicProjection3d,
+  view_width : Float,
+  view_height : Float,
+) -> (Float, Float, Float, Float) {
+  let safe_view_width = if view_width <= 0.0F { 1.0F } else { view_width }
+  let safe_view_height = if view_height <= 0.0F { 1.0F } else { view_height }
+  let half_height = render3d_orthographic_half_height(
+    orthographic, safe_view_height,
+  )
+  let half_width = half_height *
+    render3d_projection_aspect_ratio(safe_view_width, safe_view_height)
+  (-half_width, half_width, -half_height, half_height)
+}
+
+///|
+fn render3d_orthographic_projection_matrix(
+  left : Float,
+  right : Float,
+  bottom : Float,
+  top : Float,
+  near : Float,
+  far : Float,
+) -> ProjectionMatrix3d {
+  let width = right - left
+  let height = top - bottom
+  let depth = near - far
+  let safe_width = if width == 0.0F { 1.0F } else { width }
+  let safe_height = if height == 0.0F { 1.0F } else { height }
+  let safe_depth = if depth == 0.0F { 1.0F } else { depth }
+  ProjectionMatrix3d::from_cols(
+    @math.Vec4::new(2.0F / safe_width, 0.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 2.0F / safe_height, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 1.0F / safe_depth, 0.0F),
+    @math.Vec4::new(
+      -(right + left) / safe_width,
+      -(top + bottom) / safe_height,
+      near / safe_depth,
+      1.0F,
+    ),
+  )
+}
+
+///|
+fn render3d_orthographic_projection_matrix_for_sub(
+  orthographic : OrthographicProjection3d,
+  sub_view : SubCameraView3d,
+) -> ProjectionMatrix3d {
+  let full_width = Float::from_double(sub_view.full_size.x.to_double())
+  let full_height = Float::from_double(sub_view.full_size.y.to_double())
+  let sub_width = Float::from_double(sub_view.size.x.to_double())
+  let sub_height = Float::from_double(sub_view.size.y.to_double())
+  if full_width <= 0.0F ||
+    full_height <= 0.0F ||
+    sub_width <= 0.0F ||
+    sub_height <= 0.0F {
+    return orthographic.get_clip_from_view()
+  }
+  let (left, right, bottom, top) = render3d_orthographic_view_bounds(
+    orthographic, full_width, full_height,
+  )
+  let scale_w = (right - left) / full_width
+  let scale_h = (top - bottom) / full_height
+  let left_prime = left + scale_w * sub_view.offset.x
+  let right_prime = left_prime + scale_w * sub_width
+  let top_prime = top - scale_h * sub_view.offset.y
+  let bottom_prime = top_prime - scale_h * sub_height
+  render3d_orthographic_projection_matrix(
+    left_prime,
+    right_prime,
+    bottom_prime,
+    top_prime,
+    orthographic.far,
+    orthographic.near,
+  )
+}
+
+///|
+fn render3d_projection_matrix_inverse(
+  matrix : ProjectionMatrix3d,
+) -> ProjectionMatrix3d? {
+  let augmented : Array[Float] = [
+    matrix.x_axis.x,
+    matrix.y_axis.x,
+    matrix.z_axis.x,
+    matrix.w_axis.x,
+    1.0F,
+    0.0F,
+    0.0F,
+    0.0F,
+    matrix.x_axis.y,
+    matrix.y_axis.y,
+    matrix.z_axis.y,
+    matrix.w_axis.y,
+    0.0F,
+    1.0F,
+    0.0F,
+    0.0F,
+    matrix.x_axis.z,
+    matrix.y_axis.z,
+    matrix.z_axis.z,
+    matrix.w_axis.z,
+    0.0F,
+    0.0F,
+    1.0F,
+    0.0F,
+    matrix.x_axis.w,
+    matrix.y_axis.w,
+    matrix.z_axis.w,
+    matrix.w_axis.w,
+    0.0F,
+    0.0F,
+    0.0F,
+    1.0F,
+  ]
+  for pivot in 0..<4 {
+    let mut pivot_row = pivot
+    let pivot_index = pivot * 8 + pivot
+    let mut pivot_abs = if augmented[pivot_index] < 0.0F {
+      -augmented[pivot_index]
+    } else {
+      augmented[pivot_index]
+    }
+    for row in (pivot + 1)..<4 {
+      let value = augmented[row * 8 + pivot]
+      let value_abs = if value < 0.0F { -value } else { value }
+      if value_abs > pivot_abs {
+        pivot_row = row
+        pivot_abs = value_abs
+      }
+    }
+    if pivot_abs <= 1.0e-12F {
+      return None
+    }
+    if pivot_row != pivot {
+      for col in 0..<8 {
+        let lhs_index = pivot * 8 + col
+        let rhs_index = pivot_row * 8 + col
+        let tmp = augmented[lhs_index]
+        augmented[lhs_index] = augmented[rhs_index]
+        augmented[rhs_index] = tmp
+      }
+    }
+    let pivot_value = augmented[pivot * 8 + pivot]
+    for col in 0..<8 {
+      let index = pivot * 8 + col
+      augmented[index] = augmented[index] / pivot_value
+    }
+    for row in 0..<4 {
+      if row == pivot {
+        continue
+      }
+      let factor = augmented[row * 8 + pivot]
+      if factor == 0.0F {
+        continue
+      }
+      for col in 0..<8 {
+        let row_index = row * 8 + col
+        let pivot_row_index = pivot * 8 + col
+        augmented[row_index] = augmented[row_index] -
+          factor * augmented[pivot_row_index]
+      }
+    }
+  }
+  Some(
+    ProjectionMatrix3d::from_cols(
+      @math.Vec4::new(augmented[4], augmented[12], augmented[20], augmented[28]),
+      @math.Vec4::new(augmented[5], augmented[13], augmented[21], augmented[29]),
+      @math.Vec4::new(augmented[6], augmented[14], augmented[22], augmented[30]),
+      @math.Vec4::new(augmented[7], augmented[15], augmented[23], augmented[31]),
+    ),
+  )
+}
+
+///|
+fn render3d_projection_runtime_projection(
+  projection : Projection,
+  camera : @render2d.Camera,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+) -> Projection {
+  match
+    render3d_camera_viewport_rect_logical(camera, target_size, scale_factor) {
+    Some((_, _, viewport_width, viewport_height)) =>
+      projection.update(viewport_width, viewport_height)
+    None => projection
+  }
+}
+
+///|
+fn render3d_projection_runtime_update(
+  projection : Projection,
+  runtime : ProjectionRuntime3d?,
+  camera : @render2d.Camera,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+) -> (Projection, ProjectionRuntime3d?) {
+  match
+    render3d_camera_viewport_rect_logical(camera, target_size, scale_factor) {
+    Some((_, _, viewport_width, viewport_height)) => {
+      let next_runtime = ProjectionRuntime3d::{
+        last_view_width: viewport_width,
+        last_view_height: viewport_height,
+      }
+      if runtime is Some(previous_runtime) &&
+        previous_runtime.last_view_width == viewport_width &&
+        previous_runtime.last_view_height == viewport_height {
+        (projection, None)
+      } else {
+        (projection.update(viewport_width, viewport_height), Some(next_runtime))
+      }
+    }
+    None => (projection, None)
+  }
+}
+
+///|
 fn render3d_quat_conjugate(value : @math.Quat) -> @math.Quat {
   @math.Quat::new(-value.x, -value.y, -value.z, value.w)
 }
@@ -11648,56 +12420,49 @@ pub fn render3d_camera_viewport_to_world_ray(
   let viewport_local_y = (screen.y - viewport_y) / viewport_height
   let ndc_x = viewport_local_x * 2.0F - 1.0F
   let ndc_y = 1.0F - viewport_local_y * 2.0F
-  let aspect_ratio = viewport_width / viewport_height
-  match projection {
-    Perspective(perspective) => {
-      let fov = perspective.with_aspect_ratio(aspect_ratio).fov
-      let half_fov = fov * 0.5F
-      let cos_half_fov = @math.cos(half_fov)
-      if cos_half_fov == 0.0F {
-        return None
-      }
-      let tan_half_fov = @math.sin(half_fov) / cos_half_fov
-      let ray_camera = @math.Vec3::new(
-        ndc_x * tan_half_fov * aspect_ratio,
-        ndc_y * tan_half_fov,
-        -1.0F,
-      ).normalize_or_zero()
-      if ray_camera.length_squared() <= 1.0e-12F {
-        return None
-      }
-      let ray_world = quat_rotate_vec3(camera_transform.rotation, ray_camera).normalize_or_zero()
-      if ray_world.length_squared() <= 1.0e-12F {
-        return None
-      }
-      Some((camera_transform.translation, ray_world))
-    }
-    Orthographic(orthographic) => {
-      let half_height = render3d_orthographic_half_height(
-        orthographic, viewport_height,
-      )
-      let half_width = half_height * aspect_ratio
-      if half_width == 0.0F {
-        return None
-      }
-      let ray_origin_camera = @math.Vec3::new(
-        ndc_x * half_width,
-        ndc_y * half_height,
-        0.0F,
-      )
-      let ray_origin_world = camera_transform.translation.add(
-        quat_rotate_vec3(camera_transform.rotation, ray_origin_camera),
-      )
-      let ray_world = quat_rotate_vec3(
-        camera_transform.rotation,
-        @math.Vec3::new(0.0F, 0.0F, -1.0F),
-      ).normalize_or_zero()
-      if ray_world.length_squared() <= 1.0e-12F {
-        return None
-      }
-      Some((ray_origin_world, ray_world))
-    }
+  let runtime_projection = render3d_projection_runtime_projection(
+    projection, camera, target_size, scale_factor,
+  )
+  let clip_from_view = runtime_projection.get_clip_from_view()
+  guard render3d_projection_matrix_inverse(clip_from_view)
+    is Some(view_from_clip) else {
+    return None
   }
+  let near_view_h = view_from_clip.mul_vec4(
+    @math.Vec4::new(ndc_x, ndc_y, 1.0F, 1.0F),
+  )
+  let far_view_h = view_from_clip.mul_vec4(
+    @math.Vec4::new(ndc_x, ndc_y, 0.0F, 1.0F),
+  )
+  if near_view_h.w == 0.0F || far_view_h.w == 0.0F {
+    return None
+  }
+  let near_view = @math.Vec3::new(
+    near_view_h.x / near_view_h.w,
+    near_view_h.y / near_view_h.w,
+    near_view_h.z / near_view_h.w,
+  )
+  let far_view = @math.Vec3::new(
+    far_view_h.x / far_view_h.w,
+    far_view_h.y / far_view_h.w,
+    far_view_h.z / far_view_h.w,
+  )
+  let ray_camera = far_view.sub(near_view).normalize_or_zero()
+  if ray_camera.length_squared() <= 1.0e-12F {
+    return None
+  }
+  let ray_world = quat_rotate_vec3(camera_transform.rotation, ray_camera).normalize_or_zero()
+  if ray_world.length_squared() <= 1.0e-12F {
+    return None
+  }
+  Some(
+    (
+      camera_transform.translation.add(
+        quat_rotate_vec3(camera_transform.rotation, near_view),
+      ),
+      ray_world,
+    ),
+  )
 }
 
 ///|
@@ -11716,57 +12481,18 @@ pub fn render3d_camera_world_to_viewport(
   let to_world = world.sub(camera_transform.translation)
   let inv_rotation = render3d_quat_conjugate(camera_transform.rotation).normalize()
   let view_pos = quat_rotate_vec3(inv_rotation, to_world)
-  let aspect_ratio = viewport_width / viewport_height
-  let (ndc_x, ndc_y) = match projection {
-    Perspective(perspective) => {
-      let view_depth = -view_pos.z
-      if view_depth <= 0.0F {
-        return None
-      }
-      let (_, near, far) = render3d_projection_params(
-        projection, aspect_ratio, viewport_height,
-      )
-      if view_depth < near || view_depth > far {
-        return None
-      }
-      let fov = perspective.with_aspect_ratio(aspect_ratio).fov
-      let half_fov = fov * 0.5F
-      let cos_half_fov = @math.cos(half_fov)
-      if cos_half_fov == 0.0F {
-        return None
-      }
-      let tan_half_fov = @math.sin(half_fov) / cos_half_fov
-      let denom_x = view_depth * tan_half_fov * aspect_ratio
-      let denom_y = view_depth * tan_half_fov
-      if denom_x == 0.0F || denom_y == 0.0F {
-        return None
-      }
-      (view_pos.x / denom_x, view_pos.y / denom_y)
-    }
-    Orthographic(orthographic) => {
-      let z_min = if orthographic.near < orthographic.far {
-        orthographic.near
-      } else {
-        orthographic.far
-      }
-      let z_max = if orthographic.near > orthographic.far {
-        orthographic.near
-      } else {
-        orthographic.far
-      }
-      if view_pos.z < z_min || view_pos.z > z_max {
-        return None
-      }
-      let half_height = render3d_orthographic_half_height(
-        orthographic, viewport_height,
-      )
-      let half_width = half_height * aspect_ratio
-      if half_width == 0.0F || half_height == 0.0F {
-        return None
-      }
-      (view_pos.x / half_width, view_pos.y / half_height)
-    }
+  let runtime_projection = render3d_projection_runtime_projection(
+    projection, camera, target_size, scale_factor,
+  )
+  guard runtime_projection.get_clip_from_view().project_point3(view_pos)
+    is Some(ndc_point) else {
+    return None
   }
+  if ndc_point.z < 0.0F || ndc_point.z > 1.0F {
+    return None
+  }
+  let ndc_x = ndc_point.x
+  let ndc_y = ndc_point.y
   let local_x = (ndc_x + 1.0F) * 0.5F * viewport_width
   let local_y = (1.0F - ndc_y) * 0.5F * viewport_height
   if local_x < 0.0F ||

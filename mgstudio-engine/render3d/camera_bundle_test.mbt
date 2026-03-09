@@ -13,6 +13,73 @@
 // limitations under the License.
 
 ///|
+fn camera_bundle_projection_approx_eq(a : Float, b : Float) -> Bool {
+  let delta = a - b
+  if delta < 0.0F {
+    -delta < 0.0001F
+  } else {
+    delta < 0.0001F
+  }
+}
+
+///|
+struct CameraBundleCustomProjection3d {
+  marker : Float
+}
+
+///|
+impl CameraProjection3d for CameraBundleCustomProjection3d with get_clip_from_view(
+  self,
+) {
+  ProjectionMatrix3d::from_cols(
+    @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
+    @math.Vec4::new(self.marker, 0.0F, 0.0F, 1.0F),
+  )
+}
+
+///|
+impl CameraProjection3d for CameraBundleCustomProjection3d with get_clip_from_view_for_sub(
+  self,
+  _sub_view,
+) {
+  self.get_clip_from_view()
+}
+
+///|
+impl CameraProjection3d for CameraBundleCustomProjection3d with update(
+  self,
+  _width,
+  _height,
+) {
+  self
+}
+
+///|
+impl CameraProjection3d for CameraBundleCustomProjection3d with far(_self) {
+  256.0F
+}
+
+///|
+impl CameraProjection3d for CameraBundleCustomProjection3d with get_frustum_corners(
+  self,
+  _z_near,
+  _z_far,
+) {
+  [
+    @math.Vec3::new(self.marker, 0.0F, 0.0F),
+    @math.Vec3::new(self.marker, 0.0F, 0.0F),
+    @math.Vec3::new(self.marker, 0.0F, 0.0F),
+    @math.Vec3::new(self.marker, 0.0F, 0.0F),
+    @math.Vec3::new(self.marker, 0.0F, 0.0F),
+    @math.Vec3::new(self.marker, 0.0F, 0.0F),
+    @math.Vec3::new(self.marker, 0.0F, 0.0F),
+    @math.Vec3::new(self.marker, 0.0F, 0.0F),
+  ]
+}
+
+///|
 test "render3d: Camera3dBundle stores window render target" {
   let world = @ecs.World::new()
   let target_window = @core.Entity::new(11, 3)
@@ -34,4 +101,30 @@ test "render3d: Camera3dBundle stores window render target" {
     }),
     content="Some(true)",
   )
+}
+
+///|
+test "render3d: Camera3dBundle stores custom projection payload" {
+  let world = @ecs.World::new()
+  let bundle = Camera3dBundle::new_with_projection(
+    @render2d.Camera::default(),
+    Projection::custom(CameraBundleCustomProjection3d::{ marker: 42.0F }),
+    @math.Transform::identity(),
+  )
+  let entity = bundle.spawn(world)
+
+  let projection : Projection? = try! world.get(entity, ecs_key_projection)
+  let ok = match projection {
+    Some(Projection::Custom(custom)) => {
+      let payload : CameraBundleCustomProjection3d? = custom.get()
+      match payload {
+        Some(value) => camera_bundle_projection_approx_eq(value.marker, 42.0F)
+        None => false
+      }
+    }
+    Some(Projection::Perspective(_)) => false
+    Some(Projection::Orthographic(_)) => false
+    None => false
+  }
+  inspect(ok, content="true")
 }

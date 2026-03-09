@@ -684,6 +684,16 @@ pub impl Show for CubemapLayout3d
 pub impl ToJson for CubemapLayout3d
 pub impl @json.FromJson for CubemapLayout3d
 
+type CustomProjection3d
+pub fn CustomProjection3d::far(Self) -> Float
+pub fn[T] CustomProjection3d::get(Self) -> T?
+pub fn CustomProjection3d::get_clip_from_view(Self) -> ProjectionMatrix3d
+pub fn CustomProjection3d::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+pub fn CustomProjection3d::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
+pub fn[T : CameraProjection3d] CustomProjection3d::new(T) -> Self
+pub fn CustomProjection3d::type_name(Self) -> String
+pub fn CustomProjection3d::update(Self, Float, Float) -> Self
+
 pub(all) enum DebandDither {
   Disabled
   Enabled
@@ -1224,6 +1234,8 @@ pub struct OrthographicProjection3d {
   near : Float
   far : Float
   scaling_mode : OrthographicScalingMode3d
+  view_width : Float
+  view_height : Float
 }
 pub fn OrthographicProjection3d::default() -> Self
 pub fn OrthographicProjection3d::far(Self) -> Float
@@ -1233,6 +1245,7 @@ pub fn OrthographicProjection3d::scaling_mode(Self) -> OrthographicScalingMode3d
 pub fn OrthographicProjection3d::with_scale(Self, Float) -> Self
 pub fn OrthographicProjection3d::with_scaling_mode(Self, OrthographicScalingMode3d) -> Self
 pub fn OrthographicProjection3d::with_window_size_scaling(Self) -> Self
+pub impl CameraProjection3d for OrthographicProjection3d
 pub impl ToJson for OrthographicProjection3d
 pub impl @json.FromJson for OrthographicProjection3d
 
@@ -1281,6 +1294,7 @@ pub fn PerspectiveProjection3d::with_aspect_ratio(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_far(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_fov(Self, Float) -> Self
 pub fn PerspectiveProjection3d::with_near(Self, Float) -> Self
+pub impl CameraProjection3d for PerspectiveProjection3d
 pub impl ToJson for PerspectiveProjection3d
 pub impl @json.FromJson for PerspectiveProjection3d
 
@@ -1338,13 +1352,30 @@ pub impl @json.FromJson for PointLightTexture
 pub(all) enum Projection {
   Perspective(PerspectiveProjection3d)
   Orthographic(OrthographicProjection3d)
+  Custom(CustomProjection3d)
 }
+pub fn[T : CameraProjection3d] Projection::custom(T) -> Self
 pub fn Projection::default() -> Self
+pub fn Projection::far(Self) -> Float
+pub fn Projection::get_clip_from_view(Self) -> ProjectionMatrix3d
+pub fn Projection::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+pub fn Projection::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
+pub fn Projection::is_perspective(Self) -> Bool
 pub fn Projection::orthographic_default() -> Self
 pub fn Projection::perspective_default() -> Self
+pub fn Projection::update(Self, Float, Float) -> Self
 pub impl @ecs.Component for Projection
-pub impl ToJson for Projection
-pub impl @json.FromJson for Projection
+
+pub(all) struct ProjectionMatrix3d {
+  x_axis : @math.Vec4
+  y_axis : @math.Vec4
+  z_axis : @math.Vec4
+  w_axis : @math.Vec4
+}
+pub fn ProjectionMatrix3d::from_cols(@math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Self
+pub fn ProjectionMatrix3d::mul_vec4(Self, @math.Vec4) -> @math.Vec4
+pub fn ProjectionMatrix3d::project_point3(Self, @math.Vec3) -> @math.Vec3?
+pub fn ProjectionMatrix3d::w_axis_w(Self) -> Float
 
 type Render3dInternalAssetsState
 
@@ -1693,4 +1724,11 @@ pub impl @json.FromJson for WireframeConfig
 // Type aliases
 
 // Traits
+pub(open) trait CameraProjection3d {
+  get_clip_from_view(Self) -> ProjectionMatrix3d
+  get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+  update(Self, Float, Float) -> Self
+  far(Self) -> Float
+  get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
+}
 
