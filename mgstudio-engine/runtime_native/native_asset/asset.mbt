@@ -681,11 +681,7 @@ fn crc32(bytes : Bytes) -> UInt {
   for i in 0..<bytes.length() {
     let mut x = (crc ^ bytes[i].to_uint()) & 0xFFU
     for _ in 0..<8 {
-      x = if (x & 1U) == 1U {
-        0xEDB88320U ^ (x >> 1)
-      } else {
-        x >> 1
-      }
+      x = if (x & 1U) == 1U { 0xEDB88320U ^ (x >> 1) } else { x >> 1 }
     }
     crc = (crc >> 8) ^ x
   }
@@ -793,9 +789,7 @@ pub fn save_rgba8_png(
   pixels~ : Bytes,
   path~ : String,
 ) -> Unit {
-  guard png_encode_rgba8(width, height, pixels) is Some(encoded) else {
-    return
-  }
+  guard png_encode_rgba8(width, height, pixels) is Some(encoded) else { return }
   let out_path = resolve_output_path(path)
   ensure_parent_dir(out_path)
   @fs.write_bytes_to_file(out_path, encoded) catch {
@@ -1397,8 +1391,7 @@ pub fn save_texture_png(texture_id~ : Int, path~ : String) -> Unit {
   if width <= 0 || height <= 0 {
     return
   }
-  if @native_gpu.screenshot_capture_texture_sync(texture_id=texture_id)
-    is Some(capture) {
+  if @native_gpu.screenshot_capture_texture_sync(texture_id~) is Some(capture) {
     save_rgba8_png(
       width=capture.width,
       height=capture.height,

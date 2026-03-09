@@ -258,7 +258,7 @@ test "native_gpu: screenshot capture reads rgba8 texture bytes" {
     ]),
     true,
   )
-  let capture = screenshot_capture_texture_sync(texture_id=texture_id)
+  let capture = screenshot_capture_texture_sync(texture_id~)
   inspect(capture is Some(_), content="true")
   inspect(capture.map(fn(value) { value.width }), content="Some(1)")
   inspect(capture.map(fn(value) { value.height }), content="Some(1)")

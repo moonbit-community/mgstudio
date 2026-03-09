@@ -1,6 +1,6 @@
 // Canonical native runtime implementation package.
 import {
-  "Milky2018/mgstudio/runtime_native/windowing" @windowing,
+  "Milky2018/mgstudio/window/windowing" @windowing,
   "Milky2018/wgpu_mbt" @wgpu,
   "Milky2018/wgpu_mbt/c" @wgpu_c,
   "moonbitlang/core/ref",

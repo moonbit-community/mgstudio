@@ -4612,23 +4612,20 @@ fn ensure_surface_capture_texture(
     sampler,
     view,
   )
-  replace_texture_info(
-    backend,
-    GpuTextureInfo::{
-      id: texture_id,
-      width: safe_width,
-      height: safe_height,
-      mip_level_count: 1,
-      base_mip_level: 0,
-      format_raw,
-      texture,
-      view,
-      sample_view: None,
-      layer_views: [],
-      sampler,
-      bind_group,
-    },
-  )
+  replace_texture_info(backend, GpuTextureInfo::{
+    id: texture_id,
+    width: safe_width,
+    height: safe_height,
+    mip_level_count: 1,
+    base_mip_level: 0,
+    format_raw,
+    texture,
+    view,
+    sample_view: None,
+    layer_views: [],
+    sampler,
+    bind_group,
+  })
   mesh3d_material_cache_clear(backend)
   texture_id
 }
@@ -4643,15 +4640,15 @@ fn surface_capture_texture_info(backend : GpuBackend) -> GpuTextureInfo? {
 }
 
 ///|
-fn prepare_surface_capture_frame(backend : GpuBackend) -> Unit raise GpuBackendError {
+fn prepare_surface_capture_frame(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
   backend.surface_capture_active = false
   active_surface_screenshot_capture_ids_ref.val.clear()
   if pending_surface_screenshot_capture_ids_ref.val.length() == 0 {
     return
   }
-  guard backend.surface_format is Some(surface_format) else {
-    return
-  }
+  guard backend.surface_format is Some(surface_format) else { return }
   let width = if backend.configured_width <= 0 {
     1
   } else {
@@ -4662,17 +4659,11 @@ fn prepare_surface_capture_frame(backend : GpuBackend) -> Unit raise GpuBackendE
   } else {
     backend.configured_height
   }
-  if ensure_surface_capture_texture(
-      backend,
-      width,
-      height,
-      surface_format.raw,
-    ) <=
+  if ensure_surface_capture_texture(backend, width, height, surface_format.raw) <=
     0 {
     return
   }
-  active_surface_screenshot_capture_ids_ref.val = pending_surface_screenshot_capture_ids_ref
-    .val
+  active_surface_screenshot_capture_ids_ref.val = pending_surface_screenshot_capture_ids_ref.val
   pending_surface_screenshot_capture_ids_ref.val = []
   backend.surface_capture_active = true
 }
@@ -4713,7 +4704,8 @@ fn target_view(
 fn current_pass_color_format(backend : GpuBackend) -> @wgpu.TextureFormat? {
   match backend.pass_state {
     Some(pass_state) =>
-      if pass_kind_base_kind(pass_state.pass_kind) == PASS_KIND_BASE_POINT_SHADOW {
+      if pass_kind_base_kind(pass_state.pass_kind) ==
+        PASS_KIND_BASE_POINT_SHADOW {
         Some(tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM))
       } else if pass_state.target_id == -1 {
         backend.surface_format
@@ -7492,8 +7484,7 @@ let next_frame_id_ref : Ref[Int] = Ref::new(1)
 let next_screenshot_capture_id_ref : Ref[Int] = Ref::new(1)
 
 ///|
-let pending_screenshot_captures_ref : Ref[Array[PendingScreenshotCapture]] = Ref::new(
-  [],
+let pending_screenshot_captures_ref : Ref[Array[PendingScreenshotCapture]] = Ref::new([],
 )
 
 ///|
@@ -7503,13 +7494,11 @@ let pending_surface_screenshot_capture_ids_ref : Ref[Array[Int]] = Ref::new([])
 let active_surface_screenshot_capture_ids_ref : Ref[Array[Int]] = Ref::new([])
 
 ///|
-let inflight_screenshot_captures_ref : Ref[Array[InflightScreenshotCapture]] = Ref::new(
-  [],
+let inflight_screenshot_captures_ref : Ref[Array[InflightScreenshotCapture]] = Ref::new([],
 )
 
 ///|
-let completed_screenshot_captures_ref : Ref[Array[ScreenshotCaptureResult]] = Ref::new(
-  [],
+let completed_screenshot_captures_ref : Ref[Array[ScreenshotCaptureResult]] = Ref::new([],
 )
 
 ///|
@@ -7637,8 +7626,10 @@ fn screenshot_capture_pixels_rgba8(
     return None
   }
   if bytes.length() == compact_len &&
-    (format_raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM ||
-      format_raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB) {
+    (
+      format_raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM ||
+      format_raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB
+    ) {
     return Some(bytes)
   }
   if format_raw != @wgpu.TEXTURE_FORMAT_BGRA8_UNORM &&
@@ -7680,9 +7671,7 @@ fn screenshot_enqueue_texture_capture(
   guard screenshot_capture_bytes_per_pixel(format_raw) is Some(_) else {
     return 0
   }
-  guard backend.frame is Some(_) else {
-    return 0
-  }
+  guard backend.frame is Some(_) else { return 0 }
   let capture_id = next_screenshot_capture_id()
   pending_screenshot_captures_ref.val.push(PendingScreenshotCapture::{
     id: capture_id,
@@ -7721,12 +7710,8 @@ fn screenshot_read_texture_sync(
   let cmd = encoder.finish()
   backend.queue.submit_one(cmd)
   let bytes = buffer.readback(backend.instance, 0UL, byte_len)
-  guard screenshot_capture_pixels_rgba8(
-    format_raw,
-    width,
-    height,
-    bytes,
-  ) is Some(pixels) else {
+  guard screenshot_capture_pixels_rgba8(format_raw, width, height, bytes)
+    is Some(pixels) else {
     buffer.release()
     cmd.release()
     encoder.release()
@@ -7735,12 +7720,7 @@ fn screenshot_read_texture_sync(
   buffer.release()
   cmd.release()
   encoder.release()
-  Some(ScreenshotCaptureResult::{
-    id: 0,
-    width,
-    height,
-    pixels,
-  })
+  Some(ScreenshotCaptureResult::{ id: 0, width, height, pixels })
 }
 
 ///|
@@ -7756,10 +7736,7 @@ fn screenshot_enqueue_copy_to_buffer(
   guard screenshot_capture_bytes_per_pixel(format_raw) is Some(bytes_per_pixel) else {
     return
   }
-  let byte_len = (
-    screenshot_capture_row_bytes(width, bytes_per_pixel) *
-    height
-  ).to_uint64()
+  let byte_len = (screenshot_capture_row_bytes(width, bytes_per_pixel) * height).to_uint64()
   let usage = @wgpu.BufferUsage::from_u64(
     @wgpu.BUFFER_USAGE_MAP_READ | @wgpu.BUFFER_USAGE_COPY_DST,
   )
@@ -7828,7 +7805,9 @@ fn screenshot_encode_active_surface_captures(
 }
 
 ///|
-fn screenshot_present_surface_capture(backend : GpuBackend) -> Unit raise GpuBackendError {
+fn screenshot_present_surface_capture(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
   if !backend.surface_capture_active {
     return
   }
@@ -7848,24 +7827,8 @@ fn screenshot_present_surface_capture(backend : GpuBackend) -> Unit raise GpuBac
   }
   backend.surface_capture_active = false
   backend.begin_pass(
-    -1,
-    width,
-    height,
-    0.0F,
-    0.0F,
-    0.0F,
-    1.0F,
-    0.0F,
-    0.0F,
-    0.0F,
-    1.0F,
-    0,
-    0,
-    width,
-    height,
-    0.0F,
-    1.0F,
-    1,
+    -1, width, height, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0, 0, width,
+    height, 0.0F, 1.0F, 1,
   )
   backend.draw_sprite_uv(
     surface_capture_texture.id,
@@ -7894,11 +7857,12 @@ fn screenshot_collect_completed_captures(backend : GpuBackend) -> Unit {
     let bytes = capture.buffer.readback(backend.instance, 0UL, capture.byte_len)
     capture.buffer.release()
     if screenshot_capture_pixels_rgba8(
-      capture.format_raw,
-      capture.width,
-      capture.height,
-      bytes,
-    ) is Some(pixels) {
+        capture.format_raw,
+        capture.width,
+        capture.height,
+        bytes,
+      )
+      is Some(pixels) {
       completed_screenshot_captures_ref.val.push(ScreenshotCaptureResult::{
         id: capture.id,
         width: capture.width,
@@ -8546,9 +8510,7 @@ pub fn render_diagnostics_snapshot() -> RenderDiagnosticsSnapshot {
 
 ///|
 pub fn screenshot_capture_surface_request() -> Int {
-  guard ensure_backend() is Some(_) else {
-    return 0
-  }
+  guard ensure_backend() is Some(_) else { return 0 }
   let capture_id = next_screenshot_capture_id()
   pending_surface_screenshot_capture_ids_ref.val.push(capture_id)
   capture_id
@@ -8556,12 +8518,8 @@ pub fn screenshot_capture_surface_request() -> Int {
 
 ///|
 pub fn screenshot_capture_texture_request(texture_id~ : Int) -> Int {
-  guard ensure_backend() is Some(backend) else {
-    return 0
-  }
-  guard find_texture(backend, texture_id) is Some(texture) else {
-    return 0
-  }
+  guard ensure_backend() is Some(backend) else { return 0 }
+  guard find_texture(backend, texture_id) is Some(texture) else { return 0 }
   screenshot_enqueue_texture_capture(
     backend,
     texture.texture,
@@ -8589,12 +8547,8 @@ pub fn screenshot_take_capture_result(
 pub fn screenshot_capture_texture_sync(
   texture_id~ : Int,
 ) -> ScreenshotCaptureResult? {
-  guard ensure_backend() is Some(backend) else {
-    return None
-  }
-  guard find_texture(backend, texture_id) is Some(texture) else {
-    return None
-  }
+  guard ensure_backend() is Some(backend) else { return None }
+  guard find_texture(backend, texture_id) is Some(texture) else { return None }
   screenshot_read_texture_sync(
     backend,
     texture.texture,

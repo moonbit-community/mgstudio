@@ -26,7 +26,7 @@ test "native_asset: save_rgba8_png writes a valid png file" {
   ])
   let path = "wbtests/native_asset_save_rgba8_png.png"
   let out_path = resolve_output_path(path)
-  save_rgba8_png(width=2, height=1, pixels=pixels, path~)
+  save_rgba8_png(width=2, height=1, pixels~, path~)
   let encoded = @fs.read_file_to_bytes(out_path)
   inspect(png_dimensions(encoded), content="Some((2, 1))")
   inspect(encoded.length() > 16, content="true")
