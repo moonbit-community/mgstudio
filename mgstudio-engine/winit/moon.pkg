@@ -1,5 +1,8 @@
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/a11y",
   "Milky2018/mgstudio/window",
+  "Milky2018/mgstudio/window/windowing" @windowing,
+  "Milky2018/moon_accesskit",
 }

@@ -140,6 +140,12 @@ fn default_plugins_builder(
     }),
   )
   .add_named(
+    id=DEFAULT_PLUGIN_ID_A11Y,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @a11y.a11y_plugin(app)
+    }),
+  )
+  .add_named(
     id=DEFAULT_PLUGIN_ID_WINIT,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @winit.winit_plugin(app)
@@ -210,12 +216,6 @@ fn default_plugins_builder(
     id=DEFAULT_PLUGIN_ID_PICKING,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @picking.picking_plugin(app)
-    }),
-  )
-  .add_named(
-    id=DEFAULT_PLUGIN_ID_A11Y,
-    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @a11y.a11y_plugin(app)
     }),
   )
   .add_named(

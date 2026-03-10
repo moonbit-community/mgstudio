@@ -26,11 +26,11 @@ test "a11y: accessibility plugin initializes bevy-aligned resources" {
   assert_true(!requested.get())
   assert_true(manage_updates.get())
   assert_eq(state.focused_node(), @moon_accesskit.NodeId::root())
-  assert_true(world.contains_message(ecs_msg_key_action_request))
+  assert_true(!world.contains_message(ecs_msg_key_action_request))
 }
 
 ///|
-test "a11y: plugin forwards backend actions to world messages and compatibility state" {
+test "a11y: plugin no longer owns backend action propagation" {
   @windowing.set_accessibility_requested(false)
   ignore(@windowing.take_accessibility_actions())
 
@@ -45,20 +45,17 @@ test "a11y: plugin forwards backend actions to world messages and compatibility 
   app = app.run_once()
 
   @windowing.enqueue_accessibility_action(request)
+  let before_payload = @windowing.last_accessibility_update_payload()
+  a11y_host_apply_update_payload("a11y-plugin-does-not-commit")
   app = app.run_once()
 
   let world = app.world()
-  let cursor = Ref::new(0)
-  let reader = world.message_reader(ecs_msg_key_action_request, cursor)
-  let messages = try! reader.read()
   let state = Ref::new(get_a11y_state_resource(world).get().unwrap())
   let drained = A11yState::drain_actions(state)
 
-  assert_eq(messages.length(), 1)
-  assert_eq(messages[0].action(), @moon_accesskit.Action::Focus)
-  assert_eq(messages[0].target_node(), target)
-  assert_eq(state.val.focused_node(), target)
-  assert_eq(drained.length(), 1)
-  assert_eq(drained[0].target_node(), target)
-  assert_true(get_accessibility_requested_resource(world).get().unwrap().get())
+  assert_true(!world.contains_message(ecs_msg_key_action_request))
+  assert_eq(drained.length(), 0)
+  assert_eq(state.val.focused_node(), @moon_accesskit.NodeId::root())
+  assert_true(!get_accessibility_requested_resource(world).get().unwrap().get())
+  assert_eq(@windowing.last_accessibility_update_payload(), before_payload)
 }
