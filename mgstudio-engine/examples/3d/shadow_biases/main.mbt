@@ -46,7 +46,7 @@ priv struct ShadowBiasesState {
   mut directional_light : @core.Entity?
   mut light_position : @math.Vec3
   mut using_point_light : Bool
-  mut filter_method : @render3d.ShadowFilteringMethod
+  mut filter_method : @pbr.ShadowFilteringMethod
   mut point_depth_bias : Float
   mut point_normal_bias : Float
   mut directional_depth_bias : Float
@@ -61,11 +61,11 @@ let shadow_biases_state : Ref[ShadowBiasesState] = Ref::new({
   directional_light: None,
   light_position: @math.Vec3::new(5.0F, 5.0F, 0.0F),
   using_point_light: false,
-  filter_method: @render3d.ShadowFilteringMethod::Hardware2x2,
-  point_depth_bias: @render3d.PointLight::default().shadow_depth_bias,
-  point_normal_bias: @render3d.PointLight::default().shadow_normal_bias,
-  directional_depth_bias: @render3d.DirectionalLight::default().shadow_depth_bias,
-  directional_normal_bias: @render3d.DirectionalLight::default().shadow_normal_bias,
+  filter_method: @pbr.ShadowFilteringMethod::Hardware2x2,
+  point_depth_bias: @pbr.PointLight::default().shadow_depth_bias,
+  point_normal_bias: @pbr.PointLight::default().shadow_normal_bias,
+  directional_depth_bias: @pbr.DirectionalLight::default().shadow_depth_bias,
+  directional_normal_bias: @pbr.DirectionalLight::default().shadow_normal_bias,
   help_text: None,
 })
 
@@ -75,13 +75,11 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn filter_method_name(
-  filter_method : @render3d.ShadowFilteringMethod,
-) -> String {
+fn filter_method_name(filter_method : @pbr.ShadowFilteringMethod) -> String {
   match filter_method {
-    @render3d.ShadowFilteringMethod::Hardware2x2 => "Hardware2x2"
-    @render3d.ShadowFilteringMethod::Gaussian => "Gaussian"
-    @render3d.ShadowFilteringMethod::Temporal => "Temporal"
+    @pbr.ShadowFilteringMethod::Hardware2x2 => "Hardware2x2"
+    @pbr.ShadowFilteringMethod::Gaussian => "Gaussian"
+    @pbr.ShadowFilteringMethod::Temporal => "Temporal"
   }
 }
 
@@ -154,10 +152,10 @@ fn apply_light_state(world : @ecs.World) -> Unit {
     world.component(@math.ecs_key_transform).set(point_entity, transform, tick)
     |> ignore
     world
-    .component(@render3d.ecs_key_point_light)
+    .component(@pbr.ecs_key_point_light)
     .set(
       point_entity,
-      @render3d.PointLight::new(
+      @pbr.PointLight::new(
         @sprite.Color::white(),
         if state.using_point_light {
           SHADOW_BIASES_POINT_INTENSITY
@@ -180,10 +178,10 @@ fn apply_light_state(world : @ecs.World) -> Unit {
     .set(directional_entity, transform, tick)
     |> ignore
     world
-    .component(@render3d.ecs_key_directional_light)
+    .component(@pbr.ecs_key_directional_light)
     .set(
       directional_entity,
-      @render3d.DirectionalLight::new(
+      @pbr.DirectionalLight::new(
         @sprite.Color::white(),
         if state.using_point_light {
           0.0F
@@ -204,7 +202,7 @@ fn apply_light_state(world : @ecs.World) -> Unit {
 fn apply_shadow_filtering_method(world : @ecs.World) -> Unit {
   guard shadow_biases_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
-  let store = world.component(@render3d.ecs_key_shadow_filtering_method)
+  let store = world.component(@pbr.ecs_key_shadow_filtering_method)
   if store.contains(camera) {
     store.set(camera, shadow_biases_state.val.filter_method, tick) |> ignore
   } else {
@@ -219,41 +217,41 @@ fn setup(world : @ecs.World) -> Unit {
   shadow_biases_state.val.directional_light = None
   shadow_biases_state.val.light_position = @math.Vec3::new(5.0F, 5.0F, 0.0F)
   shadow_biases_state.val.using_point_light = false
-  shadow_biases_state.val.filter_method = @render3d.ShadowFilteringMethod::Hardware2x2
-  shadow_biases_state.val.point_depth_bias = @render3d.PointLight::default().shadow_depth_bias
-  shadow_biases_state.val.point_normal_bias = @render3d.PointLight::default().shadow_normal_bias
-  shadow_biases_state.val.directional_depth_bias = @render3d.DirectionalLight::default().shadow_depth_bias
-  shadow_biases_state.val.directional_normal_bias = @render3d.DirectionalLight::default().shadow_normal_bias
+  shadow_biases_state.val.filter_method = @pbr.ShadowFilteringMethod::Hardware2x2
+  shadow_biases_state.val.point_depth_bias = @pbr.PointLight::default().shadow_depth_bias
+  shadow_biases_state.val.point_normal_bias = @pbr.PointLight::default().shadow_normal_bias
+  shadow_biases_state.val.directional_depth_bias = @pbr.DirectionalLight::default().shadow_depth_bias
+  shadow_biases_state.val.directional_normal_bias = @pbr.DirectionalLight::default().shadow_normal_bias
   shadow_biases_state.val.help_text = None
 
-  let white_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@sprite.Color::white())
+  let white_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white())
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F),
   )
 
-  let sphere_proxy_mesh = @render3d.Mesh3d::from_cuboid(0.5F, 0.5F, 0.5F)
+  let sphere_proxy_mesh = @pbr.Mesh3d::from_cuboid(0.5F, 0.5F, 0.5F)
 
   // Dense row of proxy meshes along the view direction.
   for i in 0..<151 {
     let z_int = -300 + i * 2
     let y = if z_int % 4 == 0 { 2.0F } else { 0.25F }
-    @render3d.MeshMaterial3dBundle::new(
+    @pbr.MeshMaterial3dBundle::new(
       sphere_proxy_mesh,
-      @render3d.MeshMaterial3d::new(white_material),
+      @pbr.MeshMaterial3d::new(white_material),
       @math.Transform::from_xyz(0.0F, y, float_from_int(z_int)),
     ).spawn(world)
     |> ignore
   }
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(600.0F, 600.0F),
-    @render3d.MeshMaterial3d::new(white_material),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(600.0F, 600.0F),
+    @pbr.MeshMaterial3d::new(white_material),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
 
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(-1.0F, 1.0F, 1.0F).looking_at(
       @math.Vec3::new(-1.0F, 1.0F, 0.0F),
@@ -264,18 +262,18 @@ fn setup(world : @ecs.World) -> Unit {
 
   let tick = world.read_change_tick()
   world
-  .component(@render3d.ecs_key_free_camera)
-  .insert(camera, @render3d.FreeCamera::default(), tick)
+  .component(@pbr.ecs_key_free_camera)
+  .insert(camera, @pbr.FreeCamera::default(), tick)
   world
-  .component(@render3d.ecs_key_shadow_filtering_method)
+  .component(@pbr.ecs_key_shadow_filtering_method)
   .insert(camera, shadow_biases_state.val.filter_method, tick)
 
   let point = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     point,
-    @render3d.PointLight::new(
+    @pbr.PointLight::new(
       @sprite.Color::white(),
       0.0F,
       SHADOW_BIASES_POINT_RANGE,
@@ -292,10 +290,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   let directional = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional,
-    @render3d.DirectionalLight::new(
+    @pbr.DirectionalLight::new(
       @sprite.Color::white(),
       SHADOW_BIASES_DIRECTIONAL_ILLUMINANCE,
       true,
@@ -348,12 +346,12 @@ fn update(world : @ecs.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::KeyF) {
     shadow_biases_state.val.filter_method = match
       shadow_biases_state.val.filter_method {
-      @render3d.ShadowFilteringMethod::Hardware2x2 =>
-        @render3d.ShadowFilteringMethod::Gaussian
-      @render3d.ShadowFilteringMethod::Gaussian =>
-        @render3d.ShadowFilteringMethod::Temporal
-      @render3d.ShadowFilteringMethod::Temporal =>
-        @render3d.ShadowFilteringMethod::Hardware2x2
+      @pbr.ShadowFilteringMethod::Hardware2x2 =>
+        @pbr.ShadowFilteringMethod::Gaussian
+      @pbr.ShadowFilteringMethod::Gaussian =>
+        @pbr.ShadowFilteringMethod::Temporal
+      @pbr.ShadowFilteringMethod::Temporal =>
+        @pbr.ShadowFilteringMethod::Hardware2x2
     }
     filter_changed = true
   }
@@ -400,8 +398,8 @@ fn update(world : @ecs.World) -> Unit {
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyR) {
-    let point_default = @render3d.PointLight::default()
-    let directional_default = @render3d.DirectionalLight::default()
+    let point_default = @pbr.PointLight::default()
+    let directional_default = @pbr.DirectionalLight::default()
     shadow_biases_state.val.point_depth_bias = point_default.shadow_depth_bias
     shadow_biases_state.val.point_normal_bias = point_default.shadow_normal_bias
     shadow_biases_state.val.directional_depth_bias = directional_default.shadow_depth_bias
@@ -459,7 +457,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_plugins([@render3d.free_camera_plugin])
+  .add_plugins([@pbr.free_camera_plugin])
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(update))
   .run()

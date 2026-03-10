@@ -53,17 +53,17 @@ fn CameraSettings::default() -> CameraSettings {
 fn setup(
   asset_server : @app.Res[@asset.AssetServer],
   camera_settings : @app.Res[CameraSettings],
-  materials : @app.ResMut[@asset.Assets[@render3d.StandardMaterial]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let world = @app.current_world().unwrap()
   let tick = world.read_change_tick()
   let settings = camera_settings.get()
 
-  let camera = @render3d.Camera3dBundle::new_with_projection(
+  let camera = @camera.Camera3dBundle::new_with_projection(
     @sprite.Camera::default(),
-    @render3d.Projection::Orthographic(@render3d.OrthographicProjection3d::{
-      ..@render3d.OrthographicProjection3d::default_3d(),
-      scaling_mode: @render3d.OrthographicScalingMode3d::FixedVertical(
+    @camera.Projection::Orthographic(@camera.OrthographicProjection3d::{
+      ..@camera.OrthographicProjection3d::default_3d(),
+      scaling_mode: @camera.OrthographicScalingMode3d::FixedVertical(
         settings.orthographic_viewport_height,
       ),
       scale: 1.0F,
@@ -78,13 +78,13 @@ fn setup(
   .insert(camera, @ecs.Name::new("Camera"), tick)
 
   let material_handle = materials.get_ref().val.add(
-    @render3d.StandardMaterial::from_color(
-      @sprite.Color::srgb(0.3F, 0.5F, 0.3F),
-    ).with_cull_mode(None),
+    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)).with_cull_mode(
+      None,
+    ),
   )
-  let plane = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(5.0F, 5.0F),
-    @render3d.MeshMaterial3d::new(material_handle),
+  let plane = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(5.0F, 5.0F),
+    @pbr.MeshMaterial3d::new(material_handle),
     @math.Transform::identity(),
   ).spawn(world)
   world
@@ -121,8 +121,8 @@ fn setup(
   .component(@ecs.Name::component())
   .insert(light, @ecs.Name::new("Light"), tick)
   world
-  .component(@render3d.PointLight::component())
-  .insert(light, @render3d.PointLight::default(), tick)
+  .component(@pbr.PointLight::component())
+  .insert(light, @pbr.PointLight::default(), tick)
   world
   .component(@math.Transform::component())
   .insert(light, @math.Transform::from_xyz(3.0F, 8.0F, 5.0F), tick)
@@ -190,8 +190,8 @@ fn instructions(asset_server : @app.Res[@asset.AssetServer]) -> Unit {
 ///|
 fn switch_projection(
   camera_query : @ecs.Query1Filtered[
-    @render3d.Projection,
-    @ecs.With[@render3d.Camera3d],
+    @camera.Projection,
+    @ecs.With[@camera.Camera3d],
   ],
   camera_settings : @app.Res[CameraSettings],
   keyboard_input : @input.ButtonInput[@window.KeyCode],
@@ -203,24 +203,24 @@ fn switch_projection(
   try! camera_query.view_mut(fn(_entity, camera_projection) {
     let projection_ref = camera_projection.get_ref()
     let next_projection = match projection_ref.val {
-      @render3d.Projection::Orthographic(_) =>
+      @camera.Projection::Orthographic(_) =>
         Some(
-          @render3d.Projection::Perspective(@render3d.PerspectiveProjection3d::{
-            ..@render3d.PerspectiveProjection3d::default(),
+          @camera.Projection::Perspective(@camera.PerspectiveProjection3d::{
+            ..@camera.PerspectiveProjection3d::default(),
             fov: settings.perspective_zoom_min,
           }),
         )
-      @render3d.Projection::Perspective(_) =>
+      @camera.Projection::Perspective(_) =>
         Some(
-          @render3d.Projection::Orthographic(@render3d.OrthographicProjection3d::{
-            ..@render3d.OrthographicProjection3d::default_3d(),
-            scaling_mode: @render3d.OrthographicScalingMode3d::FixedVertical(
+          @camera.Projection::Orthographic(@camera.OrthographicProjection3d::{
+            ..@camera.OrthographicProjection3d::default_3d(),
+            scaling_mode: @camera.OrthographicScalingMode3d::FixedVertical(
               settings.orthographic_viewport_height,
             ),
             scale: 1.0F,
           }),
         )
-      @render3d.Projection::Custom(_) => None
+      @camera.Projection::Custom(_) => None
     }
     guard next_projection is Some(next_projection) else { return }
     projection_ref.val = next_projection
@@ -231,8 +231,8 @@ fn switch_projection(
 ///|
 fn zoom(
   camera_query : @ecs.Query1Filtered[
-    @render3d.Projection,
-    @ecs.With[@render3d.Camera3d],
+    @camera.Projection,
+    @ecs.With[@camera.Camera3d],
   ],
   camera_settings : @app.Res[CameraSettings],
   mouse_scroll : @app.Res[@input.AccumulatedMouseScroll],
@@ -246,7 +246,7 @@ fn zoom(
   try! camera_query.view_mut(fn(_entity, camera_projection) {
     let projection_ref = camera_projection.get_ref()
     match projection_ref.val {
-      @render3d.Projection::Orthographic(orthographic) => {
+      @camera.Projection::Orthographic(orthographic) => {
         let delta_zoom = -scroll_delta * settings.orthographic_zoom_speed
         let multiplicative_zoom = 1.0F + delta_zoom
         orthographic.scale = clamp_float(
@@ -255,7 +255,7 @@ fn zoom(
           settings.orthographic_zoom_max,
         )
       }
-      @render3d.Projection::Perspective(perspective) => {
+      @camera.Projection::Perspective(perspective) => {
         let delta_zoom = -scroll_delta * settings.perspective_zoom_speed
         perspective.fov = clamp_float(
           perspective.fov + delta_zoom,
@@ -263,7 +263,7 @@ fn zoom(
           settings.perspective_zoom_max,
         )
       }
-      @render3d.Projection::Custom(_) => return
+      @camera.Projection::Custom(_) => return
     }
     camera_projection.set_changed()
   })

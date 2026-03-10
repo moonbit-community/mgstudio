@@ -52,14 +52,12 @@ impl @ecs.Component for Center with component() {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let sphere_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @sprite.Color::srgb(1.0F, 1.0F, 0.0F),
-    ),
+  let sphere_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(1.0F, 1.0F, 0.0F)),
   )
-  let center_sphere = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_sphere(3.0F),
-    @render3d.MeshMaterial3d::new(sphere_material),
+  let center_sphere = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_sphere(3.0F),
+    @pbr.MeshMaterial3d::new(sphere_material),
     @math.Transform::from_translation(@math.Vec3::zero()),
   ).spawn(world)
   world
@@ -73,12 +71,12 @@ fn setup(world : @ecs.World) -> Unit {
   let cube_spawn = @math.Transform::from_translation(
     @math.Vec3::new(0.0F, 0.0F, -10.0F),
   ).with_rotation(@math.Quat::from_rotation_y(@math.pi() / 2.0F))
-  let cube_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@sprite.Color::white()),
+  let cube_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white()),
   )
-  let cube = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(cube_material),
+  let cube = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(cube_material),
     cube_spawn,
   ).spawn(world)
   world
@@ -89,7 +87,7 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
 
-  @render3d.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 10.0F, 20.0F).looking_at(
       @math.Vec3::zero(),
@@ -100,8 +98,8 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.DirectionalLight::component())
-  .insert(light, @render3d.DirectionalLight::default(), tick)
+  .component(@pbr.DirectionalLight::component())
+  .insert(light, @pbr.DirectionalLight::default(), tick)
   world
   .component(@math.Transform::component())
   .insert(

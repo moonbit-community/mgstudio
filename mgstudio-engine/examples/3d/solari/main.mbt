@@ -214,18 +214,16 @@ fn despawn_entities(world : @ecs.World, entities : Array[@core.Entity]) -> Unit 
 ///|
 fn spawn_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
     @math.Transform::from_xyz(0.219417F, 2.5764852F, 6.9718704F).with_rotation(
       @math.Quat::new(-0.1466768F, 0.013738206F, 0.002037309F, 0.989087F),
     ),
   ).spawn(world)
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
-  .component(@render3d.ecs_key_msaa)
-  .insert(camera, @render3d.Msaa::Off, tick)
-  world
-  .component(@render3d.ecs_key_free_camera)
-  .insert(camera, @render3d.FreeCamera::default(), tick)
+  .component(@pbr.ecs_key_free_camera)
+  .insert(camera, @pbr.FreeCamera::default(), tick)
   solari_state.val.camera = Some(camera)
 }
 
@@ -235,10 +233,10 @@ fn spawn_lights(world : @ecs.World) -> Unit {
 
   let directional_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(
+    @pbr.DirectionalLight::new(
       @sprite.Color::white(),
       DIRECTIONAL_ILLUMINANCE,
       false,
@@ -258,10 +256,10 @@ fn spawn_lights(world : @ecs.World) -> Unit {
 
   let robot_emissive_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     robot_emissive_light,
-    @render3d.PointLight::new(
+    @pbr.PointLight::new(
       @sprite.Color::new(0.94F, 0.71F, 0.04F, 1.0F),
       ROBOT_EMISSIVE_INTENSITY,
       8.0F,
@@ -384,11 +382,11 @@ fn spawn_pica_scene(
 ///|
 fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  let ground = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(40.0F, 40.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::default()
+  let ground = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(40.0F, 40.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::default()
         .with_base_color_texture(
           Some(
             asset_server.load_with_settings("textures/uv_checker_bw.png", fn(
@@ -423,11 +421,11 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
       rng_next01(rng_seed),
       1.0F,
     )
-    let entity = @render3d.MeshMaterial3dBundle::new(
-      @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-      @render3d.MeshMaterial3d::new(
-        @render3d.standard_material_add(
-          @render3d.StandardMaterial::from_color(color).with_perceptual_roughness(
+    let entity = @pbr.MeshMaterial3dBundle::new(
+      @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+      @pbr.MeshMaterial3d::new(
+        @pbr.standard_material_add(
+          @pbr.StandardMaterial::from_color(color).with_perceptual_roughness(
             rng_next01(rng_seed),
           ),
         ),
@@ -441,11 +439,11 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
 
   for i in 0..<MANY_LIGHTS_EMISSIVE_COUNT {
     i |> ignore
-    let entity = @render3d.MeshMaterial3dBundle::new(
-      @render3d.Mesh3d::from_tetrahedron(0.5F),
-      @render3d.MeshMaterial3d::new(
-        @render3d.standard_material_add(
-          @render3d.StandardMaterial::from_color(@sprite.Color::black()).with_emissive(
+    let entity = @pbr.MeshMaterial3dBundle::new(
+      @pbr.Mesh3d::from_tetrahedron(0.5F),
+      @pbr.MeshMaterial3d::new(
+        @pbr.standard_material_add(
+          @pbr.StandardMaterial::from_color(@sprite.Color::black()).with_emissive(
             @sprite.Color::new(
               rng_next01(rng_seed) * 20_000.0F,
               rng_next01(rng_seed) * 20_000.0F,
@@ -476,10 +474,10 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
     )
     |> ignore
     world
-    .component(@render3d.ecs_key_bloom)
+    .component(@pbr.ecs_key_bloom)
     .insert(
       camera,
-      @render3d.Bloom::default().with_intensity(0.1F),
+      @pbr.Bloom::default().with_intensity(0.1F),
       world.read_change_tick(),
     )
   }
@@ -516,7 +514,7 @@ fn apply_scene_mode(
           tick,
         )
         |> ignore
-        world.component(@render3d.ecs_key_bloom).remove(camera) |> ignore
+        world.component(@pbr.ecs_key_bloom).remove(camera) |> ignore
       }
     }
     SolariSceneMode::ManyLights => spawn_many_lights_scene(world)
@@ -527,7 +525,7 @@ fn apply_scene_mode(
 fn apply_light_switches(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   if solari_state.val.directional_light is Some(light) {
-    if world.component(@render3d.ecs_key_directional_light).get(light)
+    if world.component(@pbr.ecs_key_directional_light).get(light)
       is Some(current) {
       let updated = current.with_illuminance(
         if solari_state.val.directional_enabled {
@@ -536,16 +534,13 @@ fn apply_light_switches(world : @ecs.World) -> Unit {
           0.0F
         },
       )
-      world
-      .component(@render3d.ecs_key_directional_light)
-      .set(light, updated, tick)
+      world.component(@pbr.ecs_key_directional_light).set(light, updated, tick)
       |> ignore
     }
   }
 
   if solari_state.val.robot_emissive_light is Some(light) {
-    if world.component(@render3d.ecs_key_point_light).get(light)
-      is Some(current) {
+    if world.component(@pbr.ecs_key_point_light).get(light) is Some(current) {
       let updated = current.with_intensity(
         if solari_state.val.robot_emissive_enabled {
           ROBOT_EMISSIVE_INTENSITY
@@ -553,7 +548,7 @@ fn apply_light_switches(world : @ecs.World) -> Unit {
           0.0F
         },
       )
-      world.component(@render3d.ecs_key_point_light).set(light, updated, tick)
+      world.component(@pbr.ecs_key_point_light).set(light, updated, tick)
       |> ignore
     }
   }

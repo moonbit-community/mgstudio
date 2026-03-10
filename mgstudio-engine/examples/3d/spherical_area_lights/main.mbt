@@ -70,11 +70,7 @@ fn mapped_point_light_intensity(radius : Float) -> Float {
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -120,7 +116,7 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -131,8 +127,8 @@ fn set_global_ambient_light(
   color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
-  let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
+  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
+  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -140,7 +136,7 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   set_global_ambient_light(world, @sprite.Color::white(), 60.0F)
 
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(0.2F, 1.5F, 2.5F).looking_at(
       @math.Vec3::zero(),
@@ -149,11 +145,11 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   camera |> ignore
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(100.0F, 100.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(100.0F, 100.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(
           @sprite.Color::new(0.2F, 0.2F, 0.2F, 1.0F),
         ).with_perceptual_roughness(0.08F),
       ),
@@ -172,11 +168,11 @@ fn setup(world : @ecs.World) -> Unit {
     let x = POSITION_MIN + percent * position_len
     let position = @math.Vec3::new(x, 0.3F, 0.0F)
 
-    let sphere = @render3d.MeshMaterial3dBundle::new(
+    let sphere = @pbr.MeshMaterial3dBundle::new(
       sphere_mesh,
-      @render3d.MeshMaterial3d::new(
-        @render3d.standard_material_add(
-          @render3d.StandardMaterial::from_color(
+      @pbr.MeshMaterial3d::new(
+        @pbr.standard_material_add(
+          @pbr.StandardMaterial::from_color(
             @sprite.Color::new(0.5F, 0.5F, 1.0F, 1.0F),
           ).with_unlit(true),
         ),
@@ -188,10 +184,10 @@ fn setup(world : @ecs.World) -> Unit {
 
     let point_light = world.spawn_empty()
     world
-    .component(@render3d.ecs_key_point_light)
+    .component(@pbr.ecs_key_point_light)
     .insert(
       point_light,
-      @render3d.PointLight::default()
+      @pbr.PointLight::default()
       .with_color(@sprite.Color::new(0.2F, 0.2F, 1.0F, 1.0F))
       .with_radius(radius)
       .with_range(mapped_point_light_range(radius))

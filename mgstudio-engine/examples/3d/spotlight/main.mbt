@@ -61,11 +61,7 @@ fn lcg_unit(seed : Int) -> Float {
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -111,7 +107,7 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -129,8 +125,8 @@ fn set_global_ambient_light(
   color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
-  let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
+  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
+  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -142,33 +138,33 @@ fn setup(world : @ecs.World) -> Unit {
 
   set_global_ambient_light(world, @sprite.Color::white(), 20.0F)
 
-  let ground_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@sprite.Color::white()),
+  let ground_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white()),
   )
-  let cube_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let cube_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(124.0F / 255.0F, 144.0F / 255.0F, 1.0F, 1.0F),
     ),
   )
-  let red_emissive = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let red_emissive = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
     ).with_emissive(@sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F)),
   )
-  let maroon_emissive = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let maroon_emissive = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.502F, 0.0F, 0.0F, 1.0F),
     ).with_emissive(@sprite.Color::new(0.369F, 0.0F, 0.0F, 1.0F)),
   )
 
-  let ground = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(100.0F, 100.0F),
-    @render3d.MeshMaterial3d::new(ground_material),
+  let ground = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(100.0F, 100.0F),
+    @pbr.MeshMaterial3d::new(ground_material),
     @math.Transform::identity(),
   ).spawn(world)
   spotlight_state.val.movables.push(ground)
 
-  let cube_mesh = @render3d.Mesh3d::from_cuboid(0.5F, 0.5F, 0.5F)
+  let cube_mesh = @pbr.Mesh3d::from_cuboid(0.5F, 0.5F, 0.5F)
   let mut seed = 1987836746 % LCG_MOD
   for _ in 0..<40 {
     seed = lcg_next(seed)
@@ -178,9 +174,9 @@ fn setup(world : @ecs.World) -> Unit {
     seed = lcg_next(seed)
     let z = -5.0F + lcg_unit(seed) * 10.0F
 
-    let cube = @render3d.MeshMaterial3dBundle::new(
+    let cube = @pbr.MeshMaterial3dBundle::new(
       cube_mesh,
-      @render3d.MeshMaterial3d::new(cube_material),
+      @pbr.MeshMaterial3d::new(cube_material),
       @math.Transform::from_xyz(x, y, z),
     ).spawn(world)
     spotlight_state.val.movables.push(cube)
@@ -194,10 +190,10 @@ fn setup(world : @ecs.World) -> Unit {
       let fz = float_from_int(z) - 2.0F
       let spotlight = world.spawn_empty()
       world
-      .component(@render3d.ecs_key_spot_light)
+      .component(@pbr.ecs_key_spot_light)
       .insert(
         spotlight,
-        @render3d.SpotLight::new(
+        @pbr.SpotLight::new(
           @sprite.Color::white(),
           40_000.0F,
           20.0F,
@@ -219,39 +215,37 @@ fn setup(world : @ecs.World) -> Unit {
       )
       spotlight_state.val.spotlights.push(spotlight)
 
-      let marker = @render3d.MeshMaterial3dBundle::new(
+      let marker = @pbr.MeshMaterial3dBundle::new(
         marker_mesh,
-        @render3d.MeshMaterial3d::new(red_emissive),
+        @pbr.MeshMaterial3d::new(red_emissive),
         @math.Transform::identity(),
       ).spawn(world)
       world
       .component(@hierarchy.ecs_key_parent)
       .insert(marker, @hierarchy.Parent::new(spotlight), tick)
 
-      let direction_marker = @render3d.MeshMaterial3dBundle::new(
+      let direction_marker = @pbr.MeshMaterial3dBundle::new(
         direction_marker_mesh,
-        @render3d.MeshMaterial3d::new(maroon_emissive),
+        @pbr.MeshMaterial3d::new(maroon_emissive),
         @math.Transform::from_xyz(0.0F, 0.0F, -0.1F),
       ).spawn(world)
       world
       .component(@hierarchy.ecs_key_parent)
       .insert(direction_marker, @hierarchy.Parent::new(spotlight), tick)
       world
-      .component(@render3d.ecs_key_not_shadow_caster)
-      .insert(direction_marker, @render3d.NotShadowCaster::default(), tick)
+      .component(@pbr.ecs_key_not_shadow_caster)
+      .insert(direction_marker, @pbr.NotShadowCaster::default(), tick)
     }
   }
 
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(-4.0F, 5.0F, 10.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world
-  .component(@render3d.ecs_key_hdr)
-  .insert(camera, @render3d.Hdr::default(), tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   spotlight_state.val.camera = Some(camera)
 
   let asset_server = @asset.AssetServer::new()
@@ -282,7 +276,7 @@ fn light_sway(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let elapsed = @time.time_elapsed_seconds()
   let transform_store = world.component(@math.ecs_key_transform)
-  let spot_light_store = world.component(@render3d.ecs_key_spot_light)
+  let spot_light_store = world.component(@pbr.ecs_key_spot_light)
 
   let rotation_x = -@math.pi_half() + @math.sin(elapsed * 0.67F * 3.0F) * 0.5F
   let rotation_y = @math.sin(elapsed * 3.0F) * 0.5F
@@ -302,7 +296,7 @@ fn light_sway(world : @ecs.World) -> Unit {
     if spot_light_store.get(entity) is Some(light) {
       spot_light_store.set(
         entity,
-        @render3d.SpotLight::new(
+        @pbr.SpotLight::new(
           light.color,
           light.intensity,
           light.range,

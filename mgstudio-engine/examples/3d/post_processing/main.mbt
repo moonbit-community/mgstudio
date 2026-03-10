@@ -57,8 +57,8 @@ priv struct PostProcessingState {
 
 ///|
 fn default_settings() -> AppSettings {
-  let chromatic_aberration = @render3d.ChromaticAberration::default()
-  let vignette = @render3d.Vignette::default()
+  let chromatic_aberration = @pbr.ChromaticAberration::default()
+  let vignette = @pbr.Vignette::default()
   {
     selected: 0,
     chromatic_aberration_intensity: chromatic_aberration.intensity,
@@ -111,11 +111,11 @@ fn apply_post_process_settings(world : @ecs.World) -> Unit {
   let intensity = settings.chromatic_aberration_intensity
   let max_samples_f = ((intensity - 0.02F) / (0.20F - 0.02F) * 56.0F + 8.0F).round()
   let max_samples = clampf(max_samples_f, 8.0F, 64.0F).to_int()
-  let chromatic_aberration = @render3d.ChromaticAberration::default()
+  let chromatic_aberration = @pbr.ChromaticAberration::default()
     .with_intensity(intensity)
     .with_max_samples(max_samples)
 
-  let vignette = @render3d.Vignette::default()
+  let vignette = @pbr.Vignette::default()
     .with_intensity(settings.vignette_intensity)
     .with_radius(settings.vignette_radius)
     .with_smoothness(settings.vignette_smoothness)
@@ -123,7 +123,7 @@ fn apply_post_process_settings(world : @ecs.World) -> Unit {
     .with_edge_compensation(settings.vignette_edge_compensation)
 
   let chromatic_aberration_store = world.component(
-    @render3d.ecs_key_chromatic_aberration,
+    @pbr.ecs_key_chromatic_aberration,
   )
   if chromatic_aberration_store.contains(camera_entity) {
     chromatic_aberration_store.set(camera_entity, chromatic_aberration, tick)
@@ -131,7 +131,7 @@ fn apply_post_process_settings(world : @ecs.World) -> Unit {
   } else {
     chromatic_aberration_store.insert(camera_entity, chromatic_aberration, tick)
   }
-  let vignette_store = world.component(@render3d.ecs_key_vignette)
+  let vignette_store = world.component(@pbr.ecs_key_vignette)
   if vignette_store.contains(camera_entity) {
     vignette_store.set(camera_entity, vignette, tick) |> ignore
   } else {
@@ -174,25 +174,23 @@ fn update_help_text() -> Unit {
 ///|
 fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tick = world.read_change_tick()
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
       @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
         @math.Vec3::new(0.0F, 0.3F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    .with_chromatic_aberration(Some(@render3d.ChromaticAberration::default()))
-    .with_vignette(Some(@render3d.Vignette::default()))
+    .with_chromatic_aberration(Some(@pbr.ChromaticAberration::default()))
+    .with_vignette(Some(@pbr.Vignette::default()))
     .spawn(world)
   post_processing_state.val.camera = Some(camera)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world
-  .component(@render3d.ecs_key_hdr)
-  .insert(camera, @render3d.Hdr::default(), tick)
-  world
-  .component(@render3d.ecs_key_environment_map_light)
+  .component(@pbr.ecs_key_environment_map_light)
   .insert(
     camera,
-    @render3d.EnvironmentMapLight::new(
+    @pbr.EnvironmentMapLight::new(
       Some(asset_server.load(ENV_DIFFUSE_MAP_ASSET)),
       Some(asset_server.load(ENV_SPECULAR_MAP_ASSET)),
       2000.0F,
@@ -200,10 +198,10 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     tick,
   )
 
-  @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::new(
+  @pbr.render3d_set_distance_fog(
+    @pbr.DistanceFog::new(
       @sprite.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
-      @render3d.FogFalloff3d::linear(1.0F, 8.0F),
+      @pbr.FogFalloff3d::linear(1.0F, 8.0F),
     ),
   )
 }
@@ -255,10 +253,10 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let directional_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
     tick,
   )
   world

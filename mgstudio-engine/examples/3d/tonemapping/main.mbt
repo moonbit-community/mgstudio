@@ -43,7 +43,7 @@ struct SelectedParameter {
 
 ///|
 struct PerMethodSettings {
-  settings : @hashmap.HashMap[@render3d.Tonemapping, @render3d.ColorGrading]
+  settings : @hashmap.HashMap[@pbr.Tonemapping, @pbr.ColorGrading]
 }
 
 ///|
@@ -171,7 +171,7 @@ fn SelectedParameter::prev(self : SelectedParameter) -> Unit {
 }
 
 ///|
-fn method_name(tonemapper : @render3d.Tonemapping) -> String {
+fn method_name(tonemapper : @pbr.Tonemapping) -> String {
   match tonemapper {
     None => "Disabled"
     Reinhard => "Reinhard"
@@ -185,59 +185,59 @@ fn method_name(tonemapper : @render3d.Tonemapping) -> String {
 }
 
 ///|
-fn tonemapping_methods() -> Array[@render3d.Tonemapping] {
+fn tonemapping_methods() -> Array[@pbr.Tonemapping] {
   [
-    @render3d.Tonemapping::None,
-    @render3d.Tonemapping::Reinhard,
-    @render3d.Tonemapping::ReinhardLuminance,
-    @render3d.Tonemapping::AcesFitted,
-    @render3d.Tonemapping::AgX,
-    @render3d.Tonemapping::SomewhatBoringDisplayTransform,
-    @render3d.Tonemapping::TonyMcMapface,
-    @render3d.Tonemapping::BlenderFilmic,
+    @pbr.Tonemapping::None,
+    @pbr.Tonemapping::Reinhard,
+    @pbr.Tonemapping::ReinhardLuminance,
+    @pbr.Tonemapping::AcesFitted,
+    @pbr.Tonemapping::AgX,
+    @pbr.Tonemapping::SomewhatBoringDisplayTransform,
+    @pbr.Tonemapping::TonyMcMapface,
+    @pbr.Tonemapping::BlenderFilmic,
   ]
 }
 
 ///|
 fn PerMethodSettings::basic_scene_recommendation(
-  tonemapper : @render3d.Tonemapping,
-) -> @render3d.ColorGrading {
+  tonemapper : @pbr.Tonemapping,
+) -> @pbr.ColorGrading {
   match tonemapper {
     Reinhard | ReinhardLuminance =>
-      @render3d.ColorGrading::{
-        ..@render3d.ColorGrading::default(),
-        global: @render3d.ColorGradingGlobal::{
-          ..@render3d.ColorGradingGlobal::default(),
+      @pbr.ColorGrading::{
+        ..@pbr.ColorGrading::default(),
+        global: @pbr.ColorGradingGlobal::{
+          ..@pbr.ColorGradingGlobal::default(),
           exposure: 0.5F,
         },
       }
     AcesFitted =>
-      @render3d.ColorGrading::{
-        ..@render3d.ColorGrading::default(),
-        global: @render3d.ColorGradingGlobal::{
-          ..@render3d.ColorGradingGlobal::default(),
+      @pbr.ColorGrading::{
+        ..@pbr.ColorGrading::default(),
+        global: @pbr.ColorGradingGlobal::{
+          ..@pbr.ColorGradingGlobal::default(),
           exposure: 0.35F,
         },
       }
     AgX =>
-      @render3d.ColorGrading::with_identical_sections(
-        @render3d.ColorGradingGlobal::{
-          ..@render3d.ColorGradingGlobal::default(),
+      @pbr.ColorGrading::with_identical_sections(
+        @pbr.ColorGradingGlobal::{
+          ..@pbr.ColorGradingGlobal::default(),
           exposure: -0.2F,
           post_saturation: 1.1F,
         },
-        @render3d.ColorGradingSection::{
-          ..@render3d.ColorGradingSection::default(),
+        @pbr.ColorGradingSection::{
+          ..@pbr.ColorGradingSection::default(),
           saturation: 1.1F,
         },
       )
-    _ => @render3d.ColorGrading::default()
+    _ => @pbr.ColorGrading::default()
   }
 }
 
 ///|
 impl Default for PerMethodSettings with default() {
-  let settings : @hashmap.HashMap[@render3d.Tonemapping, @render3d.ColorGrading] = @hashmap.HashMap::new()
+  let settings : @hashmap.HashMap[@pbr.Tonemapping, @pbr.ColorGrading] = @hashmap.HashMap::new()
   for tonemapper in tonemapping_methods() {
     settings.set(
       tonemapper,
@@ -294,8 +294,8 @@ fn selected_marker(selected : Bool) -> String {
 ///|
 fn ui_text_content(
   scene : Int,
-  tonemapping : @render3d.Tonemapping,
-  color_grading : @render3d.ColorGrading,
+  tonemapping : @pbr.Tonemapping,
+  color_grading : @pbr.ColorGrading,
   selected_parameter : Int,
 ) -> String {
   let mut content = "(H) Hide UI\n\n" +
@@ -311,30 +311,30 @@ fn ui_text_content(
     "Image Viewer\n\n" +
     "Tonemapping Method:\n" +
     "(1) " +
-    selected_marker(tonemapping == @render3d.Tonemapping::None) +
+    selected_marker(tonemapping == @pbr.Tonemapping::None) +
     "Disabled\n" +
     "(2) " +
-    selected_marker(tonemapping == @render3d.Tonemapping::Reinhard) +
+    selected_marker(tonemapping == @pbr.Tonemapping::Reinhard) +
     "Reinhard\n" +
     "(3) " +
-    selected_marker(tonemapping == @render3d.Tonemapping::ReinhardLuminance) +
+    selected_marker(tonemapping == @pbr.Tonemapping::ReinhardLuminance) +
     "Reinhard Luminance\n" +
     "(4) " +
-    selected_marker(tonemapping == @render3d.Tonemapping::AcesFitted) +
+    selected_marker(tonemapping == @pbr.Tonemapping::AcesFitted) +
     "ACES Fitted\n" +
     "(5) " +
-    selected_marker(tonemapping == @render3d.Tonemapping::AgX) +
+    selected_marker(tonemapping == @pbr.Tonemapping::AgX) +
     "AgX\n" +
     "(6) " +
     selected_marker(
-      tonemapping == @render3d.Tonemapping::SomewhatBoringDisplayTransform,
+      tonemapping == @pbr.Tonemapping::SomewhatBoringDisplayTransform,
     ) +
     "SomewhatBoringDisplayTransform\n" +
     "(7) " +
-    selected_marker(tonemapping == @render3d.Tonemapping::TonyMcMapface) +
+    selected_marker(tonemapping == @pbr.Tonemapping::TonyMcMapface) +
     "TonyMcMapface\n" +
     "(8) " +
-    selected_marker(tonemapping == @render3d.Tonemapping::BlenderFilmic) +
+    selected_marker(tonemapping == @pbr.Tonemapping::BlenderFilmic) +
     "Blender Filmic\n\n" +
     "Color Grading:\n" +
     "(arrow keys)\n" +
@@ -367,16 +367,16 @@ fn setup(
   camera_transform : @app.Res[CameraTransform],
 ) -> Unit {
   let camera = commands.spawn(
-    @render3d.Camera3dBundle::new(
+    @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
       camera_transform.get().transform,
     )
-    .with_color_grading(Some(@render3d.ColorGrading::default()))
+    .with_color_grading(Some(@pbr.ColorGrading::default()))
     .with_distance_fog(
       Some(
-        @render3d.DistanceFog::new(
+        @pbr.DistanceFog::new(
           @sprite.Color::srgb(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F),
-          @render3d.FogFalloff3d::linear(1.0F, 8.0F),
+          @pbr.FogFalloff3d::linear(1.0F, 8.0F),
         ),
       ),
     ),
@@ -385,8 +385,8 @@ fn setup(
   .entity(camera)
   .insert(
     (
-      @render3d.Hdr::default(),
-      @render3d.EnvironmentMapLight::new(
+      @pbr.Hdr::default(),
+      @pbr.EnvironmentMapLight::new(
         Some(
           asset_server
           .get()
@@ -492,8 +492,8 @@ fn setup_basic_scene(
   ignore(
     commands.spawn(
       (
-        @render3d.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
-          @render3d.CascadeShadowConfigBuilder::default()
+        @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
+          @pbr.CascadeShadowConfigBuilder::default()
           .with_maximum_distance(3.0F)
           .with_first_cascade_far_bound(0.9F),
         ),
@@ -522,7 +522,7 @@ fn setup_image_viewer_scene(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
   mesh_assets : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  material_assets : @app.ResMut[@asset.Assets[@render3d.StandardMaterial]],
+  material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   camera_transform : @app.Res[CameraTransform],
   ui_root_query : @ecs.Query1[TonemappingUiRoot],
 ) -> Unit {
@@ -530,9 +530,7 @@ fn setup_image_viewer_scene(
     @mesh.Mesh::from_3d_geometry(@mesh.Mesh3dGeometry::rectangle(1.0F, 1.0F)),
   )
   let material_handle = material_assets.get_ref().val.add(
-    @render3d.StandardMaterial::from_color(@sprite.Color::white()).with_unlit(
-      true,
-    ),
+    @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_unlit(true),
   )
 
   let transform = camera_transform.get().transform
@@ -541,8 +539,8 @@ fn setup_image_viewer_scene(
   ignore(
     commands.spawn(
       (
-        @render3d.Mesh3d::new(mesh_handle),
-        @render3d.MeshMaterial3d::new(material_handle),
+        @pbr.Mesh3d::new(mesh_handle),
+        @pbr.MeshMaterial3d::new(material_handle),
         transform,
         @visibility.Visibility::Hidden,
         SceneNumber::{ value: 3 },
@@ -614,26 +612,26 @@ fn toggle_scene(
 ///|
 fn toggle_tonemapping_method(
   keys : @input.ButtonInput[@window.KeyCode],
-  tonemapping_query : @ecs.Query1[@render3d.Tonemapping],
-  color_grading_query : @ecs.Query1[@render3d.ColorGrading],
+  tonemapping_query : @ecs.Query1[@pbr.Tonemapping],
+  color_grading_query : @ecs.Query1[@pbr.ColorGrading],
   per_method_settings : @app.Res[PerMethodSettings],
 ) -> Unit {
   let next_method = if keys.just_pressed(Digit1) {
-    Some(@render3d.Tonemapping::None)
+    Some(@pbr.Tonemapping::None)
   } else if keys.just_pressed(Digit2) {
-    Some(@render3d.Tonemapping::Reinhard)
+    Some(@pbr.Tonemapping::Reinhard)
   } else if keys.just_pressed(Digit3) {
-    Some(@render3d.Tonemapping::ReinhardLuminance)
+    Some(@pbr.Tonemapping::ReinhardLuminance)
   } else if keys.just_pressed(Digit4) {
-    Some(@render3d.Tonemapping::AcesFitted)
+    Some(@pbr.Tonemapping::AcesFitted)
   } else if keys.just_pressed(Digit5) {
-    Some(@render3d.Tonemapping::AgX)
+    Some(@pbr.Tonemapping::AgX)
   } else if keys.just_pressed(Digit6) {
-    Some(@render3d.Tonemapping::SomewhatBoringDisplayTransform)
+    Some(@pbr.Tonemapping::SomewhatBoringDisplayTransform)
   } else if keys.just_pressed(Digit7) {
-    Some(@render3d.Tonemapping::TonyMcMapface)
+    Some(@pbr.Tonemapping::TonyMcMapface)
   } else if keys.just_pressed(Digit8) {
-    Some(@render3d.Tonemapping::BlenderFilmic)
+    Some(@pbr.Tonemapping::BlenderFilmic)
   } else {
     None
   }
@@ -666,7 +664,7 @@ fn update_color_grading_settings(
   keys : @input.ButtonInput[@window.KeyCode],
   time : @app.Res[@time.Time[Unit]],
   per_method_settings : @app.ResMut[PerMethodSettings],
-  tonemapping_query : @ecs.Query1[@render3d.Tonemapping],
+  tonemapping_query : @ecs.Query1[@pbr.Tonemapping],
   current_scene : @app.Res[CurrentScene],
   selected_parameter : @app.ResMut[SelectedParameter],
 ) -> Unit {
@@ -692,7 +690,7 @@ fn update_color_grading_settings(
   if delta != 0.0F {
     let next = per_method_settings.get_ref().val.settings
       .get(current_method)
-      .unwrap_or(@render3d.ColorGrading::default())
+      .unwrap_or(@pbr.ColorGrading::default())
     match selected_parameter.get_ref().val.value {
       0 => next.global.exposure = next.global.exposure + delta
       1 =>
@@ -712,7 +710,7 @@ fn update_color_grading_settings(
     for tonemapper in tonemapping_methods() {
       per_method_settings.get_ref().val.settings.set(
         tonemapper,
-        @render3d.ColorGrading::default(),
+        @pbr.ColorGrading::default(),
       )
     }
   }
@@ -729,9 +727,9 @@ fn update_color_grading_settings(
 
 ///|
 fn drag_drop_image(
-  image_material_query : @ecs.Query2[HDRViewer, @render3d.MeshMaterial3d],
+  image_material_query : @ecs.Query2[HDRViewer, @pbr.MeshMaterial3d],
   image_viewer_text_query : @ecs.Query2[@ui.UiText, SceneNumber],
-  material_assets : @app.ResMut[@asset.Assets[@render3d.StandardMaterial]],
+  material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   drag_and_drop_reader : @ecs.MessageReader[@input.FileDragAndDrop],
   asset_server : @app.Res[@asset.AssetServer],
   commands : @app.Commands,
@@ -767,13 +765,9 @@ fn drag_drop_image(
 
 ///|
 fn resize_image(
-  image_mesh_query : @ecs.Query3[
-    HDRViewer,
-    @render3d.MeshMaterial3d,
-    @render3d.Mesh3d,
-  ],
+  image_mesh_query : @ecs.Query3[HDRViewer, @pbr.MeshMaterial3d, @pbr.Mesh3d],
   image_event_reader : @ecs.MessageReader[@asset.AssetEvent[@asset.Image]],
-  material_assets : @app.Res[@asset.Assets[@render3d.StandardMaterial]],
+  material_assets : @app.Res[@asset.Assets[@pbr.StandardMaterial]],
   mesh_assets : @app.ResMut[@asset.Assets[@mesh.Mesh]],
 ) -> Unit {
   let updated_images : Array[@asset.Handle[@asset.Image]] = []
@@ -828,7 +822,7 @@ fn update_ui(
   keys : @input.ButtonInput[@window.KeyCode],
   current_scene : @app.Res[CurrentScene],
   selected_parameter : @app.Res[SelectedParameter],
-  settings_query : @ecs.Query2[@render3d.Tonemapping, @render3d.ColorGrading],
+  settings_query : @ecs.Query2[@pbr.Tonemapping, @pbr.ColorGrading],
   ui_text_query : @ecs.Query2[@ui.UiText, TonemappingUiText],
   hide_ui : @app.Local[Bool],
 ) -> Unit {

@@ -143,8 +143,8 @@ fn set_global_ambient_light(
   color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
-  let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
+  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
+  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -204,10 +204,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   let directional_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@sprite.Color::white(), 32_000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 32_000.0F, true),
     tick,
   )
   world
@@ -231,32 +231,30 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Vec3::zero(),
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     camera_transform,
   ).spawn(world)
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
-  .component(@render3d.ecs_key_msaa)
-  .insert(camera, @render3d.Msaa::Off, tick)
-  world
-  .component(@render3d.ecs_key_screen_space_ambient_occlusion)
-  .insert(camera, @render3d.ScreenSpaceAmbientOcclusion::default(), tick)
+  .component(@pbr.ecs_key_screen_space_ambient_occlusion)
+  .insert(camera, @pbr.ScreenSpaceAmbientOcclusion::default(), tick)
   // Keep the Bevy TAA component surface for parity; web runtimes may treat it
   // as a marker/no-op until full backend parity is available.
   world
-  .component(@render3d.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
+  .component(@pbr.ecs_key_temporal_anti_aliasing)
+  .insert(camera, @pbr.TemporalAntiAliasing::default(), tick)
   world
-  .component(@render3d.ecs_key_free_camera)
-  .insert(camera, @render3d.FreeCamera::default(), tick)
+  .component(@pbr.ecs_key_free_camera)
+  .insert(camera, @pbr.FreeCamera::default(), tick)
   cubemap_state.val.camera = Some(camera)
 
   let asset_server = @asset.AssetServer::new()
   let initial_image = asset_server.load(cubemap_path(0))
   cubemap_state.val.image_handle = Some(initial_image)
   world
-  .component(@render3d.ecs_key_skybox)
-  .insert(camera, @render3d.Skybox::new(initial_image, 1000.0F), tick)
+  .component(@pbr.ecs_key_skybox)
+  .insert(camera, @pbr.Skybox::new(initial_image, 1000.0F), tick)
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let help_text = @text.Text2dBundle::new(
@@ -333,11 +331,10 @@ fn asset_loaded(world : @ecs.World) -> Unit {
   }
   guard cubemap_state.val.camera is Some(camera_entity) else { return }
   let tick = world.read_change_tick()
-  if world.component(@render3d.ecs_key_skybox).get(camera_entity)
-    is Some(skybox) {
+  if world.component(@pbr.ecs_key_skybox).get(camera_entity) is Some(skybox) {
     println("Swapping to \{cubemap_path(cubemap_state.val.index)}")
     world
-    .component(@render3d.ecs_key_skybox)
+    .component(@pbr.ecs_key_skybox)
     .set(camera_entity, skybox.with_image(Some(handle)), tick)
     |> ignore
   }
@@ -376,7 +373,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_plugins([@render3d.free_camera_plugin])
+  .add_plugins([@pbr.free_camera_plugin])
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(update))
   .run()

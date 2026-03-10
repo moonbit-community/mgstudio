@@ -144,12 +144,10 @@ fn spawn_colored_sphere(
   color : @sprite.Color,
   transform : @math.Transform,
 ) -> @core.Entity {
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_sphere(0.3F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(color),
-      ),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_sphere(0.3F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(@pbr.StandardMaterial::from_color(color)),
     ),
     transform,
   ).spawn(world)
@@ -159,11 +157,11 @@ fn spawn_colored_sphere(
 fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(12.0F, 12.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(12.0F, 12.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(
           @sprite.Color::srgb(0.3F, 0.15F, 0.3F),
         ),
       ),
@@ -192,10 +190,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.PointLight::component())
+  .component(@pbr.PointLight::component())
   .insert(
     light,
-    @render3d.PointLight::default()
+    @pbr.PointLight::default()
     .with_intensity(15_000_000.0F)
     .with_shadow_maps_enabled(true),
     tick,
@@ -204,7 +202,7 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@math.Transform::component())
   .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
-  @render3d.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
       @math.Vec3::zero(),

@@ -102,8 +102,8 @@ fn set_global_ambient_light(
   color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
-  let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
+  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
+  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -135,27 +135,25 @@ fn setup(world : @ecs.World) -> Unit {
   )
   lightmaps_state.val.scene_root = Some(scene_root)
 
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(-278.0F, 273.0F, 800.0F),
   ).spawn(world)
   if lightmaps_state.val.args.deferred {
     world.insert_resource(
-      @render3d.ecs_key_default_opaque_renderer_method,
-      @render3d.DefaultOpaqueRendererMethod::deferred(),
+      @pbr.ecs_key_default_opaque_renderer_method,
+      @pbr.DefaultOpaqueRendererMethod::deferred(),
     )
     world
-    .component(@render3d.ecs_key_depth_prepass)
-    .insert(camera, @render3d.DepthPrepass::default(), tick)
+    .component(@pbr.ecs_key_depth_prepass)
+    .insert(camera, @pbr.DepthPrepass::default(), tick)
     world
-    .component(@render3d.ecs_key_motion_vector_prepass)
-    .insert(camera, @render3d.MotionVectorPrepass::default(), tick)
+    .component(@pbr.ecs_key_motion_vector_prepass)
+    .insert(camera, @pbr.MotionVectorPrepass::default(), tick)
     world
-    .component(@render3d.ecs_key_deferred_prepass)
-    .insert(camera, @render3d.DeferredPrepass::default(), tick)
-    world
-    .component(@render3d.ecs_key_msaa)
-    .insert(camera, @render3d.Msaa::Off, tick)
+    .component(@pbr.ecs_key_deferred_prepass)
+    .insert(camera, @pbr.DeferredPrepass::default(), tick)
+    world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   }
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")

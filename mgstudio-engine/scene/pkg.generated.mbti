@@ -6,9 +6,10 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/gltf",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/render3d",
+  "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/visibility",
   "moonbitlang/core/json",
 }
@@ -30,7 +31,7 @@ pub fn get_scene_instance_store(@ecs.World) -> @ecs.ComponentAccess[SceneInstanc
 
 pub fn get_scene_root_store(@ecs.World) -> @ecs.ComponentAccess[SceneRoot]
 
-pub fn gltf_split_asset_path_with_label(String) -> (String, GltfAssetLabel?)
+pub fn gltf_split_asset_path_with_label(String) -> (String, @gltf.GltfAssetLabel?)
 
 pub fn scene_get(@asset.Handle[Scene]) -> Scene?
 
@@ -61,23 +62,6 @@ pub fn scene_spawn_roots_system_ecs(@ecs.World) -> Unit
 // Errors
 
 // Types and methods
-pub(all) enum GltfAssetLabel {
-  Scene(Int)
-  Node(Int)
-  Mesh(Int)
-  Primitive(Int, Int)
-  MorphTarget(Int, Int)
-  Texture(Int)
-  Material(Int, Bool)
-  DefaultMaterial
-  Animation(Int)
-  Skin(Int)
-  InverseBindMatrices(Int)
-}
-pub fn GltfAssetLabel::from_asset(Self, String) -> String
-pub fn GltfAssetLabel::parse(String) -> Self?
-pub fn GltfAssetLabel::to_label(Self) -> String
-
 pub struct GltfLodVisibilityPolicy {
   enabled : Bool
   first_start_margin_min : Float
@@ -115,13 +99,13 @@ pub impl ToJson for SceneInstanceReady
 pub impl @json.FromJson for SceneInstanceReady
 
 pub struct SceneNode3d {
-  mesh : @render3d.Mesh3d
-  material : @render3d.MeshMaterial3d
+  mesh : @pbr.Mesh3d
+  material : @pbr.MeshMaterial3d
   transform : @math.Transform
   visibility_range : @visibility.VisibilityRange?
   animation_target : @animation.AnimationTargetId?
 }
-pub fn SceneNode3d::new(@render3d.Mesh3d, @render3d.MeshMaterial3d, @math.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?) -> Self
+pub fn SceneNode3d::new(@pbr.Mesh3d, @pbr.MeshMaterial3d, @math.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?) -> Self
 
 pub struct SceneRoot {
   scene : @asset.Handle[Scene]
@@ -132,6 +116,7 @@ pub impl ToJson for SceneRoot
 pub impl @json.FromJson for SceneRoot
 
 // Type aliases
+pub using @gltf {type GltfAssetLabel}
 
 // Traits
 

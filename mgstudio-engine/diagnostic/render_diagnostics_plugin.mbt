@@ -113,7 +113,7 @@ pub fn render_diagnostics_plugin_with(
   app_.add_post_update_system_config(
     @app.system(render_diagnostics_system)
     .after(@sprite.render2d_set_render)
-    .after(@render3d.render3d_set_render),
+    .after(@pbr.render3d_set_render),
   )
 }
 
@@ -222,11 +222,9 @@ fn render_diagnostics_collect_snapshot() -> RenderDiagnosticsMeasurements {
     queued_draw_items_2d: Some(
       @sprite.render2d_diagnostic_queued_draw_item_count(),
     ),
-    prepared_cameras_3d: Some(
-      @render3d.render3d_diagnostic_prepared_camera_count(),
-    ),
+    prepared_cameras_3d: Some(@pbr.render3d_diagnostic_prepared_camera_count()),
     visible_meshes_3d: Some(
-      @render3d.render3d_diagnostic_queued_visible_mesh_count(),
+      @pbr.render3d_diagnostic_queued_visible_mesh_count(),
     ),
     mesh2d_draw_calls: gpu_snapshot.mesh2d_draw_calls,
     mesh2d_executed_draw_calls: gpu_snapshot.mesh2d_executed_draw_calls,

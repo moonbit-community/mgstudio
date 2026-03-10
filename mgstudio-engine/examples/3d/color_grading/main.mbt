@@ -186,7 +186,7 @@ fn selected_option_button_label(option : SelectedColorGradingOption) -> String {
 ///|
 fn SelectedGlobalColorGradingOption::get(
   self : SelectedGlobalColorGradingOption,
-  global : @render3d.ColorGradingGlobal,
+  global : @pbr.ColorGradingGlobal,
 ) -> Float {
   match self {
     Exposure => global.exposure
@@ -199,9 +199,9 @@ fn SelectedGlobalColorGradingOption::get(
 ///|
 fn SelectedGlobalColorGradingOption::set(
   self : SelectedGlobalColorGradingOption,
-  global : @render3d.ColorGradingGlobal,
+  global : @pbr.ColorGradingGlobal,
   value : Float,
-) -> @render3d.ColorGradingGlobal {
+) -> @pbr.ColorGradingGlobal {
   match self {
     Exposure => global.exposure = value
     Temperature => global.temperature = value
@@ -214,7 +214,7 @@ fn SelectedGlobalColorGradingOption::set(
 ///|
 fn SelectedSectionColorGradingOption::get(
   self : SelectedSectionColorGradingOption,
-  section : @render3d.ColorGradingSection,
+  section : @pbr.ColorGradingSection,
 ) -> Float {
   match self {
     Saturation => section.saturation
@@ -228,9 +228,9 @@ fn SelectedSectionColorGradingOption::get(
 ///|
 fn SelectedSectionColorGradingOption::set(
   self : SelectedSectionColorGradingOption,
-  section : @render3d.ColorGradingSection,
+  section : @pbr.ColorGradingSection,
   value : Float,
-) -> @render3d.ColorGradingSection {
+) -> @pbr.ColorGradingSection {
   match self {
     Saturation => section.saturation = value
     Contrast => section.contrast = value
@@ -244,7 +244,7 @@ fn SelectedSectionColorGradingOption::set(
 ///|
 fn SelectedColorGradingOption::get(
   self : SelectedColorGradingOption,
-  color_grading : @render3d.ColorGrading,
+  color_grading : @pbr.ColorGrading,
 ) -> Float {
   match self {
     Global(option) => option.get(color_grading.global)
@@ -257,9 +257,9 @@ fn SelectedColorGradingOption::get(
 ///|
 fn SelectedColorGradingOption::set(
   self : SelectedColorGradingOption,
-  color_grading : @render3d.ColorGrading,
+  color_grading : @pbr.ColorGrading,
   value : Float,
-) -> @render3d.ColorGrading {
+) -> @pbr.ColorGrading {
   match self {
     Global(option) =>
       color_grading.global = option.set(color_grading.global, value)
@@ -304,7 +304,7 @@ fn format_with_three_decimals(value : Float) -> String {
 ///|
 fn option_value_text(
   option : SelectedColorGradingOption,
-  color_grading : @render3d.ColorGrading,
+  color_grading : @pbr.ColorGrading,
 ) -> String {
   format_with_three_decimals(option.get(color_grading))
 }
@@ -351,9 +351,9 @@ fn color_grading_camera_entity(world : @ecs.World) -> @core.Entity? {
 ///|
 fn color_grading_camera_value(
   world : @ecs.World,
-) -> (@core.Entity, @render3d.ColorGrading)? {
+) -> (@core.Entity, @pbr.ColorGrading)? {
   guard color_grading_camera_entity(world) is Some(entity) else { return None }
-  guard world.component(@render3d.ecs_key_color_grading).get(entity)
+  guard world.component(@pbr.ecs_key_color_grading).get(entity)
     is Some(color_grading) else {
     return None
   }
@@ -412,7 +412,7 @@ fn spawn_option_button(
   tick : @core.Tick,
   font : @asset.Handle[@asset.Font],
   option : SelectedColorGradingOption,
-  color_grading : @render3d.ColorGrading,
+  color_grading : @pbr.ColorGrading,
 ) -> Unit {
   let button = world.spawn_empty()
   world
@@ -526,7 +526,7 @@ fn spawn_option_button(
 fn add_buttons(
   world : @ecs.World,
   font : @asset.Handle[@asset.Font],
-  color_grading : @render3d.ColorGrading,
+  color_grading : @pbr.ColorGrading,
 ) -> Unit {
   let tick = world.read_change_tick()
 
@@ -641,31 +641,29 @@ fn add_buttons(
 ///|
 fn add_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tick = world.read_change_tick()
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
       @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
         @math.Vec3::new(0.0F, 0.3F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    .with_color_grading(Some(@render3d.ColorGrading::default()))
+    .with_color_grading(Some(@pbr.ColorGrading::default()))
     .with_distance_fog(
       Some(
-        @render3d.DistanceFog::new(
+        @pbr.DistanceFog::new(
           @sprite.Color::srgb(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F),
-          @render3d.FogFalloff3d::linear(1.0F, 8.0F),
+          @pbr.FogFalloff3d::linear(1.0F, 8.0F),
         ),
       ),
     )
     .spawn(world)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world
-  .component(@render3d.ecs_key_hdr)
-  .insert(camera, @render3d.Hdr::default(), tick)
-  world
-  .component(@render3d.ecs_key_environment_map_light)
+  .component(@pbr.ecs_key_environment_map_light)
   .insert(
     camera,
-    @render3d.EnvironmentMapLight::new(
+    @pbr.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       2000.0F,
@@ -727,11 +725,11 @@ fn add_basic_scene(
 
   let directional_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
-      @render3d.CascadeShadowConfigBuilder::default()
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
+      @pbr.CascadeShadowConfigBuilder::default()
       .with_maximum_distance(3.0F)
       .with_first_cascade_far_bound(0.9F),
     ),
@@ -759,7 +757,7 @@ fn setup(world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraMono-Medium.ttf")
 
   add_basic_scene(world, asset_server)
-  add_buttons(world, font, @render3d.ColorGrading::default())
+  add_buttons(world, font, @pbr.ColorGrading::default())
   add_camera(world, asset_server)
 
   let tick = world.read_change_tick()
@@ -827,7 +825,7 @@ fn adjust_color_grading_option(world : @ecs.World) -> Unit {
     selected_option.get(color_grading) + delta,
   )
   let tick = world.increment_change_tick()
-  let color_grading_store = world.component(@render3d.ecs_key_color_grading)
+  let color_grading_store = world.component(@pbr.ecs_key_color_grading)
   color_grading_store.set(camera_entity, next_color_grading, tick) |> ignore
 }
 

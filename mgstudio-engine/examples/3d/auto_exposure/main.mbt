@@ -80,8 +80,8 @@ fn set_global_ambient_light(
   color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
-  let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
+  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
+  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -107,13 +107,13 @@ fn spawn_wall_panel(world : @ecs.World, side : @math.Vec3, level : Int) -> Unit 
     1.0F,
   )
 
-  let material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(base_color),
+  let material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(base_color),
   )
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(4.0F, 1.0F, 0.04F),
-    @render3d.MeshMaterial3d::new(material),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(4.0F, 1.0F, 0.04F),
+    @pbr.MeshMaterial3d::new(material),
     @math.Transform::from_xyz(position.x, position.y, position.z).looking_at(
       target,
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -159,22 +159,22 @@ fn setup(world : @ecs.World) -> Unit {
   let metering_mask = asset_server.load("textures/basic_metering_mask.png")
 
   let tick = world.read_change_tick()
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     camera_transform_for_angle(auto_exposure_state.val.camera_angle),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_exposure)
+  .component(@pbr.ecs_key_exposure)
   .insert(
     camera,
-    @render3d.Exposure::new(auto_exposure_state.val.exposure_ev100),
+    @pbr.Exposure::new(auto_exposure_state.val.exposure_ev100),
     tick,
   )
   world
-  .component(@render3d.ecs_key_skybox)
+  .component(@pbr.ecs_key_skybox)
   .insert(
     camera,
-    @render3d.Skybox::new(
+    @pbr.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       100_000.0F,
     ),
@@ -201,10 +201,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   let point_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     point_light,
-    @render3d.PointLight::new(@sprite.Color::white(), 2_000.0F, 20.0F, true),
+    @pbr.PointLight::new(@sprite.Color::white(), 2_000.0F, 20.0F, true),
     tick,
   )
   world
@@ -380,10 +380,10 @@ fn example_control_system(world : @ecs.World) -> Unit {
     20.0F,
   )
   if auto_exposure_state.val.camera is Some(camera_entity) {
-    if world.component(@render3d.ecs_key_exposure).get(camera_entity)
+    if world.component(@pbr.ecs_key_exposure).get(camera_entity)
       is Some(exposure) {
       world
-      .component(@render3d.ecs_key_exposure)
+      .component(@pbr.ecs_key_exposure)
       .set(
         camera_entity,
         exposure.with_ev100(auto_exposure_state.val.exposure_ev100),
@@ -392,10 +392,10 @@ fn example_control_system(world : @ecs.World) -> Unit {
       |> ignore
     } else {
       world
-      .component(@render3d.ecs_key_exposure)
+      .component(@pbr.ecs_key_exposure)
       .insert(
         camera_entity,
-        @render3d.Exposure::new(auto_exposure_state.val.exposure_ev100),
+        @pbr.Exposure::new(auto_exposure_state.val.exposure_ev100),
         tick,
       )
     }

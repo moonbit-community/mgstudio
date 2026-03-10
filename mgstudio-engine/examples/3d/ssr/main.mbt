@@ -85,7 +85,7 @@ priv struct SsrState {
   mut metallic_base : @core.Entity?
   mut red_plane_base : @core.Entity?
   mut water_base : @core.Entity?
-  mut water_material : @asset.Handle[@render3d.StandardMaterial]?
+  mut water_material : @asset.Handle[@pbr.StandardMaterial]?
   mut help_text : @text.TextHandle?
 }
 
@@ -222,11 +222,7 @@ fn update_help_text() -> Unit {
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -272,7 +268,7 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -394,8 +390,8 @@ fn sanitize_ssr_ranges() -> Unit {
 }
 
 ///|
-fn build_ssr_settings() -> @render3d.ScreenSpaceReflections {
-  @render3d.ScreenSpaceReflections::default()
+fn build_ssr_settings() -> @pbr.ScreenSpaceReflections {
+  @pbr.ScreenSpaceReflections::default()
   .with_min_perceptual_roughness(
     ssr_state.val.min_roughness_start,
     ssr_state.val.min_roughness_end,
@@ -420,7 +416,7 @@ fn apply_ssr_settings(world : @ecs.World) -> Unit {
   sanitize_ssr_ranges()
   if ssr_state.val.camera is Some(camera) {
     let tick = world.read_change_tick()
-    let store = world.component(@render3d.ecs_key_screen_space_reflections)
+    let store = world.component(@pbr.ecs_key_screen_space_reflections)
     if ssr_state.val.ssr_on {
       if !store.set(camera, build_ssr_settings(), tick) {
         store.insert(camera, build_ssr_settings(), tick)
@@ -433,15 +429,15 @@ fn apply_ssr_settings(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_cube(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
-  let material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@sprite.Color::white())
+  let material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white())
     .with_base_color_texture(Some(asset_server.load("branding/icon.png")))
     .with_perceptual_roughness(0.08F)
     .with_metallic(0.0F),
   )
-  let cube = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(material),
+  let cube = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(material),
     @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
   ).spawn(world)
   ssr_state.val.cube_model = Some(cube)
@@ -486,14 +482,14 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
   ssr_state.val.capsule_models.clear()
   for i in 0..<5 {
     let roughness = clampf(float_from_int(i) * 0.25F, 0.08F, 1.0F)
-    let material = @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(@sprite.Color::black())
+    let material = @pbr.standard_material_add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::black())
       .with_perceptual_roughness(roughness)
       .with_metallic(0.0F),
     )
-    let entity = @render3d.MeshMaterial3dBundle::new(
+    let entity = @pbr.MeshMaterial3dBundle::new(
       uv_sphere_mesh(0.4F, 20, 28),
-      @render3d.MeshMaterial3d::new(material),
+      @pbr.MeshMaterial3d::new(material),
       @math.Transform::from_xyz(float_from_int(i) * 1.1F - 2.2F, 0.5F, 0.0F),
     ).spawn(world)
 
@@ -510,16 +506,16 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
 fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tick = world.read_change_tick()
 
-  let metallic_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let metallic_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
     )
     .with_metallic(1.0F)
     .with_perceptual_roughness(0.3F),
   )
-  let metallic = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(100.0F, 100.0F),
-    @render3d.MeshMaterial3d::new(metallic_material),
+  let metallic = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(100.0F, 100.0F),
+    @pbr.MeshMaterial3d::new(metallic_material),
     @math.Transform::identity(),
   ).spawn(world)
   world
@@ -528,16 +524,16 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   |> ignore
   ssr_state.val.metallic_base = Some(metallic)
 
-  let red_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let red_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.85F, 0.12F, 0.12F, 1.0F),
     )
     .with_metallic(0.0F)
     .with_perceptual_roughness(0.2F),
   )
-  let red = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(100.0F, 100.0F),
-    @render3d.MeshMaterial3d::new(red_material),
+  let red = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(100.0F, 100.0F),
+    @pbr.MeshMaterial3d::new(red_material),
     @math.Transform::identity(),
   ).spawn(world)
   world
@@ -546,8 +542,8 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   |> ignore
   ssr_state.val.red_plane_base = Some(red)
 
-  let water_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@sprite.Color::black())
+  let water_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::black())
     .with_normal_map_texture(
       Some(
         asset_server.load_with_settings("textures/water_normals.png", fn(
@@ -566,9 +562,9 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     .with_reflectance(0.6F)
     .with_metallic(0.0F),
   )
-  let water = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(100.0F, 100.0F),
-    @render3d.MeshMaterial3d::new(water_material),
+  let water = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(100.0F, 100.0F),
+    @pbr.MeshMaterial3d::new(water_material),
     @math.Transform::identity(),
   ).spawn(world)
   ssr_state.val.water_base = Some(water)
@@ -578,7 +574,7 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 ///|
 fn setup_camera_and_lights(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
       @math.Transform::from_xyz(-1.25F, CAMERA_HEIGHT, 4.5F).looking_at(
         @math.Vec3::zero(),
@@ -590,23 +586,19 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
   ssr_state.val.camera = Some(camera)
 
   let tick = world.read_change_tick()
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
-  .component(@render3d.ecs_key_hdr)
-  .insert(camera, @render3d.Hdr::default(), tick)
+  .component(@pbr.ecs_key_temporal_anti_aliasing)
+  .insert(camera, @pbr.TemporalAntiAliasing::default(), tick)
   world
-  .component(@render3d.ecs_key_msaa)
-  .insert(camera, @render3d.Msaa::Off, tick)
+  .component(@pbr.ecs_key_screen_space_ambient_occlusion)
+  .insert(camera, @pbr.ScreenSpaceAmbientOcclusion::default(), tick)
   world
-  .component(@render3d.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
-  world
-  .component(@render3d.ecs_key_screen_space_ambient_occlusion)
-  .insert(camera, @render3d.ScreenSpaceAmbientOcclusion::default(), tick)
-  world
-  .component(@render3d.ecs_key_environment_map_light)
+  .component(@pbr.ecs_key_environment_map_light)
   .insert(
     camera,
-    @render3d.EnvironmentMapLight::new(
+    @pbr.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       5000.0F,
@@ -614,10 +606,10 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@render3d.ecs_key_skybox)
+  .component(@pbr.ecs_key_skybox)
   .insert(
     camera,
-    @render3d.Skybox::new(
+    @pbr.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       5000.0F,
     ),
@@ -626,10 +618,10 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
 
   let directional = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional,
-    @render3d.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
     tick,
   )
   world
@@ -645,10 +637,10 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
 
   let point = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     point,
-    @render3d.PointLight::new(
+    @pbr.PointLight::new(
       @sprite.Color::new(1.0F, 0.98F, 0.96F, 1.0F),
       200_000.0F,
       30.0F,
@@ -661,8 +653,8 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
   .insert(point, @math.Transform::from_xyz(-3.0F, 3.5F, 2.0F), tick)
 
   world.insert_resource(
-    @render3d.ecs_key_global_ambient_light,
-    @render3d.GlobalAmbientLight::new(@sprite.Color::white(), 0.03F),
+    @pbr.ecs_key_global_ambient_light,
+    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 0.03F),
   )
 }
 
@@ -717,13 +709,13 @@ fn rotate_models(world : @ecs.World) -> Unit {
 ///|
 fn animate_water_material(_world : @ecs.World) -> Unit {
   if ssr_state.val.water_material is Some(handle) {
-    if @render3d.standard_material_get(handle) is Some(material) {
+    if @pbr.standard_material_get(handle) is Some(material) {
       let t = @time.time_elapsed_seconds()
       let offset = @math.Vec2::new(
         @math.sin(t * 0.31F) * 0.04F,
         @math.cos(t * 0.27F) * 0.04F,
       )
-      @render3d.standard_material_set(
+      @pbr.standard_material_set(
         handle,
         material
         .with_uv_transform(@transform.Affine2::from_translation(offset))
@@ -906,8 +898,8 @@ fn control_system(world : @ecs.World) -> Unit {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   world.insert_resource(
-    @render3d.ecs_key_default_opaque_renderer_method,
-    @render3d.DefaultOpaqueRendererMethod::deferred(),
+    @pbr.ecs_key_default_opaque_renderer_method,
+    @pbr.DefaultOpaqueRendererMethod::deferred(),
   )
 
   ssr_state.val.ssr_on = true

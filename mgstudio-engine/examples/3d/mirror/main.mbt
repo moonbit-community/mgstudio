@@ -52,7 +52,7 @@ priv struct MirrorState {
   mut mirror_camera : @core.Entity
   mut mirror_plane : @core.Entity
   mut fox : @core.Entity
-  mut mirror_material : @asset.Handle[@render3d.StandardMaterial]?
+  mut mirror_material : @asset.Handle[@pbr.StandardMaterial]?
   mut mirror_target_size : @math.IVec2
   mut drag_action : DragAction
   mut orbit_yaw : Float
@@ -136,9 +136,9 @@ fn reflect_point(
 ///|
 fn calculate_mirror_camera_transform_and_projection(
   main_camera_transform : @math.Transform,
-  main_camera_projection : @render3d.PerspectiveProjection3d,
+  main_camera_projection : @pbr.PerspectiveProjection3d,
   mirror_transform : @math.Transform,
-) -> (@math.Transform, @render3d.PerspectiveProjection3d) {
+) -> (@math.Transform, @pbr.PerspectiveProjection3d) {
   let world_up = @math.Vec3::new(0.0F, 1.0F, 0.0F)
   let forward_axis = @math.Vec3::new(0.0F, 0.0F, -1.0F)
   let negative_world_up = @math.Vec3::new(0.0F, -1.0F, 0.0F)
@@ -188,7 +188,7 @@ fn calculate_mirror_camera_transform_and_projection(
     ),
     forward_axis,
   )
-  let mirror_camera_projection = @render3d.PerspectiveProjection3d::{
+  let mirror_camera_projection = @pbr.PerspectiveProjection3d::{
     ..main_camera_projection,
     near_clip_plane: @math.Vec4::new(
       mirror_projection_plane_normal.x,
@@ -312,11 +312,11 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   // Ground (Bevy uses a circle mesh; mgstudio currently uses a large plane).
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(400.0F, 400.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(400.0F, 400.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(
           @sprite.Color::new(0.0F, 0.5F, 0.0F, 1.0F),
         ),
       ),
@@ -351,17 +351,17 @@ fn setup(world : @ecs.World) -> Unit {
   let mirror_transform = @math.Transform::from_xyz(-25.0F, 75.0F, 0.0F).with_rotation(
     @math.Quat::from_rotation_x(-FRAC_PI_2),
   )
-  let mirror_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@sprite.Color::black())
+  let mirror_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::black())
     .with_emissive(@sprite.Color::white())
     .with_emissive_texture(Some(mirror_target))
     .with_perceptual_roughness(0.0F)
     .with_metallic(1.0F),
   )
   mirror_state.val.mirror_material = Some(mirror_material)
-  let mirror_entity = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(300.0F, 150.0F),
-    @render3d.MeshMaterial3d::new(mirror_material),
+  let mirror_entity = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(300.0F, 150.0F),
+    @pbr.MeshMaterial3d::new(mirror_material),
     mirror_transform,
   ).spawn(world)
   mirror_state.val.mirror_plane = mirror_entity
@@ -369,10 +369,10 @@ fn setup(world : @ecs.World) -> Unit {
   // Lighting.
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     light,
-    @render3d.DirectionalLight::new(@sprite.Color::white(), 5000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 5000.0F, true),
     tick,
   )
   world
@@ -387,7 +387,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   // Main camera.
-  let main_camera_projection = @render3d.PerspectiveProjection3d::default()
+  let main_camera_projection = @pbr.PerspectiveProjection3d::default()
   let initial_main_translation = @math.Vec3::new(-2.0F, 1.0F, -2.0F)
     .normalize_or_zero()
     .mul_scalar(CAMERA_ORBIT_DISTANCE)
@@ -396,9 +396,9 @@ fn setup(world : @ecs.World) -> Unit {
     initial_main_translation.y,
     initial_main_translation.z,
   ).looking_at(camera_target(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-  let main_camera = @render3d.Camera3dBundle::new_with_projection(
+  let main_camera = @pbr.Camera3dBundle::new_with_projection(
     @sprite.Camera::default(),
-    @render3d.Projection::Perspective(main_camera_projection),
+    @pbr.Projection::Perspective(main_camera_projection),
     main_camera_transform,
   ).spawn(world)
   mirror_state.val.main_camera = main_camera
@@ -412,9 +412,9 @@ fn setup(world : @ecs.World) -> Unit {
   let (mirror_camera_transform, mirror_camera_projection) = calculate_mirror_camera_transform_and_projection(
     main_camera_transform, main_camera_projection, mirror_transform,
   )
-  let mirror_camera = @render3d.Camera3dBundle::new_with_projection(
+  let mirror_camera = @pbr.Camera3dBundle::new_with_projection(
     @sprite.Camera::new(@sprite.Color::black()).with_order(-1),
-    @render3d.Projection::Perspective(mirror_camera_projection),
+    @pbr.Projection::Perspective(mirror_camera_projection),
     mirror_camera_transform,
   ).spawn(world)
   world
@@ -507,7 +507,7 @@ fn move_fox_on_mouse_down(world : @ecs.World) -> Unit {
   guard @input.mouse_position() is Some(screen_pos) else { return }
   let transform_store = world.component(@math.ecs_key_transform)
   let camera_store = world.component(@sprite.ecs_key_camera)
-  let projection_store = world.component(@render3d.ecs_key_projection)
+  let projection_store = world.component(@pbr.ecs_key_projection)
 
   guard transform_store.get(mirror_state.val.main_camera)
     is Some(camera_transform) else {
@@ -525,7 +525,7 @@ fn move_fox_on_mouse_down(world : @ecs.World) -> Unit {
     @window.window_height(),
   )
   let scale_factor = @window.window_scale_factor()
-  guard @render3d.render3d_camera_viewport_to_world_ray(
+  guard @pbr.render3d_camera_viewport_to_world_ray(
       screen_pos, camera, projection, camera_transform, target_size, scale_factor,
     )
     is Some((ray_origin, ray_dir)) else {
@@ -596,8 +596,8 @@ fn handle_window_resize_messages(world : @ecs.World) -> Unit {
   }
 
   if mirror_state.val.mirror_material is Some(material_handle) {
-    if @render3d.standard_material_get(material_handle) is Some(material) {
-      @render3d.standard_material_set(
+    if @pbr.standard_material_get(material_handle) is Some(material) {
+      @pbr.standard_material_set(
         material_handle,
         material.with_emissive_texture(Some(mirror_target)),
       )
@@ -626,7 +626,7 @@ fn update_mirror_camera_on_main_camera_transform_change(
     return
   }
 
-  let projection_store = world.component(@render3d.ecs_key_projection)
+  let projection_store = world.component(@pbr.ecs_key_projection)
   guard projection_store.get(mirror_state.val.main_camera)
     is Some(main_camera_projection_component) else {
     return
@@ -648,7 +648,7 @@ fn update_mirror_camera_on_main_camera_transform_change(
   |> ignore
   projection_store.set(
     mirror_state.val.mirror_camera,
-    @render3d.Projection::Perspective(mirror_camera_projection),
+    @pbr.Projection::Perspective(mirror_camera_projection),
     tick,
   )
   |> ignore

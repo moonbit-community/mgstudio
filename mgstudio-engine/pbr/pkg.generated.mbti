@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "Milky2018/mgstudio/render3d"
+package "Milky2018/mgstudio/pbr"
 
 import {
   "Milky2018/mgstudio/app",

@@ -38,11 +38,7 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -90,7 +86,7 @@ fn uv_sphere_mesh(
 
   let geometry = @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
   geometry.generate_tangents() |> ignore
-  @render3d.Mesh3d::from_geometry(geometry)
+  @pbr.Mesh3d::from_geometry(geometry)
 }
 
 ///|
@@ -100,8 +96,8 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
 
-  let sphere_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let sphere_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(1.0F, 0.843F, 0.0F, 1.0F),
     )
     .with_clearcoat(1.0F)
@@ -118,51 +114,45 @@ fn setup(world : @ecs.World) -> Unit {
     .with_metallic(0.9F)
     .with_perceptual_roughness(0.1F),
   )
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     uv_sphere_mesh(1.0F, 24, 40),
-    @render3d.MeshMaterial3d::new(sphere_material),
+    @pbr.MeshMaterial3d::new(sphere_material),
     @math.Transform::identity().with_scale(@math.Vec3::splat(1.25F)),
   ).spawn(world)
   |> ignore
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
-  .insert(
-    light,
-    @render3d.PointLight::default().with_intensity(100_000.0F),
-    tick,
-  )
-  let camera = @render3d.Camera3dBundle::new_with_projection(
+  .component(@pbr.ecs_key_point_light)
+  .insert(light, @pbr.PointLight::default().with_intensity(100_000.0F), tick)
+  let camera = @pbr.Camera3dBundle::new_with_projection(
     @sprite.Camera::default(),
-    @render3d.Projection::Perspective(@render3d.PerspectiveProjection3d::{
-      ..@render3d.PerspectiveProjection3d::default(),
+    @pbr.Projection::Perspective(@pbr.PerspectiveProjection3d::{
+      ..@pbr.PerspectiveProjection3d::default(),
       fov: 27.0F * PI / 180.0F,
     }),
     @math.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
   rotate_env_state.val.camera = Some(camera)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world
-  .component(@render3d.ecs_key_hdr)
-  .insert(camera, @render3d.Hdr::default(), tick)
+  .component(@pbr.ecs_key_tonemapping)
+  .insert(camera, @pbr.Tonemapping::AcesFitted, tick)
   world
-  .component(@render3d.ecs_key_tonemapping)
-  .insert(camera, @render3d.Tonemapping::AcesFitted, tick)
-  world
-  .component(@render3d.ecs_key_skybox)
+  .component(@pbr.ecs_key_skybox)
   .insert(
     camera,
-    @render3d.Skybox::new(
+    @pbr.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       5000.0F,
     ),
     tick,
   )
   world
-  .component(@render3d.ecs_key_environment_map_light)
+  .component(@pbr.ecs_key_environment_map_light)
   .insert(
     camera,
-    @render3d.EnvironmentMapLight::new(
+    @pbr.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       2000.0F,
@@ -179,19 +169,16 @@ fn rotate_skybox_and_environment_map(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   if rotate_env_state.val.camera is Some(camera_entity) {
-    if world.component(@render3d.ecs_key_skybox).get(camera_entity)
-      is Some(skybox) {
+    if world.component(@pbr.ecs_key_skybox).get(camera_entity) is Some(skybox) {
       world
-      .component(@render3d.ecs_key_skybox)
+      .component(@pbr.ecs_key_skybox)
       .set(camera_entity, skybox.with_rotation(rotation), tick)
       |> ignore
     }
-    if world
-      .component(@render3d.ecs_key_environment_map_light)
-      .get(camera_entity)
+    if world.component(@pbr.ecs_key_environment_map_light).get(camera_entity)
       is Some(environment_map_light) {
       world
-      .component(@render3d.ecs_key_environment_map_light)
+      .component(@pbr.ecs_key_environment_map_light)
       .set(camera_entity, environment_map_light.with_rotation(rotation), tick)
       |> ignore
     }

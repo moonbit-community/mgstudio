@@ -39,26 +39,22 @@ fn setup(world : @ecs.World) -> Unit {
 fn spawn_scene(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(5.0F, 5.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
-          @sprite.Color::srgb(0.3F, 0.5F, 0.3F),
-        ),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(5.0F, 5.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)),
       ),
     ),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
-          @sprite.Color::srgb(0.8F, 0.7F, 0.6F),
-        ),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.8F, 0.7F, 0.6F)),
       ),
     ),
     @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
@@ -67,17 +63,17 @@ fn spawn_scene(world : @ecs.World) -> Unit {
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     light,
-    @render3d.PointLight::default().with_shadow_maps_enabled(true),
+    @pbr.PointLight::default().with_shadow_maps_enabled(true),
     tick,
   )
   world
   .component(@math.ecs_key_transform)
   .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
-  @render3d.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::zero(),

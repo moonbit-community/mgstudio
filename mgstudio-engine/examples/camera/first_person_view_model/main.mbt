@@ -96,10 +96,10 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   .component(@math.ecs_key_transform)
   .insert(player, @math.Transform::from_xyz(0.0F, 1.0F, 0.0F), tick)
 
-  let world_camera = @render3d.Camera3dBundle::new_with_projection(
+  let world_camera = @camera.Camera3dBundle::new_with_projection(
     @sprite.Camera::default(),
-    Perspective(@render3d.PerspectiveProjection3d::{
-      ..@render3d.PerspectiveProjection3d::default(),
+    Perspective(@camera.PerspectiveProjection3d::{
+      ..@camera.PerspectiveProjection3d::default(),
       fov: degrees_to_radians(90.0F),
     }),
     @math.Transform::identity(),
@@ -111,10 +111,10 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   .component(@hierarchy.ecs_key_parent)
   .insert(world_camera, @hierarchy.Parent::new(player), tick)
 
-  let view_model_camera = @render3d.Camera3dBundle::new_with_projection(
+  let view_model_camera = @camera.Camera3dBundle::new_with_projection(
     @sprite.Camera::default().with_order(1),
-    Perspective(@render3d.PerspectiveProjection3d::{
-      ..@render3d.PerspectiveProjection3d::default(),
+    Perspective(@camera.PerspectiveProjection3d::{
+      ..@camera.PerspectiveProjection3d::default(),
       fov: degrees_to_radians(70.0F),
     }),
     @math.Transform::identity(),
@@ -130,11 +130,11 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   .component(@hierarchy.ecs_key_parent)
   .insert(view_model_camera, @hierarchy.Parent::new(player), tick)
 
-  let arm = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(0.1F, 0.1F, 0.5F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
+  let arm = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(0.1F, 0.1F, 0.5F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(
           @sprite.Color::srgb(0.65F, 0.93F, 0.90F),
         ),
       ),
@@ -145,8 +145,8 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   .component(@sprite.ecs_key_render_layers)
   .insert(arm, @sprite.RenderLayers::layer(VIEW_MODEL_RENDER_LAYER), tick)
   world
-  .component(@render3d.NotShadowCaster::component())
-  .insert(arm, @render3d.NotShadowCaster::default(), tick)
+  .component(@pbr.NotShadowCaster::component())
+  .insert(arm, @pbr.NotShadowCaster::default(), tick)
   world
   .component(@hierarchy.ecs_key_parent)
   .insert(arm, @hierarchy.Parent::new(player), tick)
@@ -154,32 +154,32 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_world_model(world : @ecs.World) -> Unit {
-  let floor_material = @render3d.MeshMaterial3d::new(
-    @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(@sprite.Color::white()),
+  let floor_material = @pbr.MeshMaterial3d::new(
+    @pbr.standard_material_add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::white()),
     ),
   )
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(10.0F, 10.0F),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(10.0F, 10.0F),
     floor_material,
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
 
-  let cube_material = @render3d.MeshMaterial3d::new(
-    @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(@sprite.Color::white()),
+  let cube_material = @pbr.MeshMaterial3d::new(
+    @pbr.standard_material_add(
+      @pbr.StandardMaterial::from_color(@sprite.Color::white()),
     ),
   )
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(2.0F, 0.5F, 1.0F),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(2.0F, 0.5F, 1.0F),
     cube_material,
     @math.Transform::from_xyz(0.0F, 0.25F, -3.0F),
   ).spawn(world)
   |> ignore
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(2.0F, 0.5F, 1.0F),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(2.0F, 0.5F, 1.0F),
     cube_material,
     @math.Transform::from_xyz(0.75F, 1.75F, 0.0F),
   ).spawn(world)
@@ -191,10 +191,10 @@ fn spawn_lights(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     light,
-    @render3d.PointLight::default()
+    @pbr.PointLight::default()
     .with_color(@sprite.Color::srgb(1.0F, 0.76F, 0.84F))
     .with_shadow_maps_enabled(true),
     tick,
@@ -307,7 +307,7 @@ fn move_player(
 fn change_fov(
   input : @input.ButtonInput[@window.KeyCode],
   world_model_projection_query : @ecs.Query1Filtered[
-    @render3d.Projection,
+    @camera.Projection,
     @ecs.With[WorldModelCamera],
   ],
 ) -> Unit {

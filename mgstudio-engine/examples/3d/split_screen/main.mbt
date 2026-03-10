@@ -63,11 +63,11 @@ fn setup(world : @ecs.World) -> Unit {
   split_screen_state.val.last_window_size = @math.IVec2::new(0, 0)
 
   // Plane
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(100.0F, 100.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(100.0F, 100.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(
           @sprite.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
         ),
       ),
@@ -95,10 +95,10 @@ fn setup(world : @ecs.World) -> Unit {
   // Light
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     light,
-    @render3d.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
     tick,
   )
   world
@@ -126,7 +126,7 @@ fn setup(world : @ecs.World) -> Unit {
       camera_positions[index].z,
     ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
 
-    let camera = @render3d.Camera3dBundle::new(
+    let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default().with_order(index),
       camera_transform,
     ).spawn(world)

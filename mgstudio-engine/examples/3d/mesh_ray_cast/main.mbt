@@ -16,7 +16,7 @@
 /// Port of `bevy/examples/3d/mesh_ray_cast.rs`.
 ///
 /// Parity notes:
-/// - Uses `@render3d.MeshRayCastSettings` + `@render3d.mesh_ray_cast_first`
+/// - Uses `@pbr.MeshRayCastSettings` + `@pbr.mesh_ray_cast_first`
 ///   shim APIs for Bevy-like ray hit queries.
 /// - 3D `Gizmos` still use mesh-primitive fallback visualization in this
 ///   runtime (line segments + hit markers).
@@ -48,7 +48,7 @@ const ORIGIN_MARKER_SCALE : Float = 0.08F
 ///|
 priv struct BeamPrimitive {
   entity : @core.Entity
-  material : @asset.Handle[@render3d.StandardMaterial]
+  material : @asset.Handle[@pbr.StandardMaterial]
 }
 
 ///|
@@ -60,7 +60,7 @@ priv struct BeamPool {
 ///|
 priv struct RaycastState {
   mut camera : @sprite.Camera
-  mut camera_projection : @render3d.Projection
+  mut camera_projection : @pbr.Projection
   mut camera_transform : @math.Transform
   collider_entities : Array[@core.Entity]
   mut red_pool : BeamPool?
@@ -71,7 +71,7 @@ priv struct RaycastState {
 ///|
 let raycast_state : Ref[RaycastState] = Ref::new({
   camera: @sprite.Camera::default(),
-  camera_projection: @render3d.Projection::default(),
+  camera_projection: @pbr.Projection::default(),
   camera_transform: @math.Transform::identity(),
   collider_entities: [],
   red_pool: None,
@@ -120,8 +120,8 @@ fn set_primitive_color(
   primitive : BeamPrimitive,
   color : @sprite.Color,
 ) -> Unit {
-  if @render3d.standard_material_get(primitive.material) is Some(material) {
-    @render3d.standard_material_set(
+  if @pbr.standard_material_get(primitive.material) is Some(material) {
+    @pbr.standard_material_set(
       primitive.material,
       material.with_base_color(color).with_emissive(color),
     )
@@ -197,14 +197,14 @@ fn reflect_direction(direction : @math.Vec3, normal : @math.Vec3) -> @math.Vec3 
 ///|
 fn spawn_box_plane(
   world : @ecs.World,
-  plane_mesh : @render3d.Mesh3d,
-  plane_material : @asset.Handle[@render3d.StandardMaterial],
+  plane_mesh : @pbr.Mesh3d,
+  plane_material : @asset.Handle[@pbr.StandardMaterial],
   translation : @math.Vec3,
   rotation : @math.Quat,
 ) -> @core.Entity {
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     plane_mesh,
-    @render3d.MeshMaterial3d::new(plane_material),
+    @pbr.MeshMaterial3d::new(plane_material),
     @math.Transform::from_xyz(translation.x, translation.y, translation.z).with_rotation(
       rotation,
     ),
@@ -214,31 +214,31 @@ fn spawn_box_plane(
 ///|
 fn spawn_beam_pool(
   world : @ecs.World,
-  line_mesh : @render3d.Mesh3d,
-  marker_mesh : @render3d.Mesh3d,
+  line_mesh : @pbr.Mesh3d,
+  marker_mesh : @pbr.Mesh3d,
   base_color : @sprite.Color,
 ) -> BeamPool {
   let segments : Array[BeamPrimitive] = []
   let markers : Array[BeamPrimitive] = []
 
   for _i in 0..<MAX_BOUNCES {
-    let segment_material = @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(base_color).with_unlit(true),
+    let segment_material = @pbr.standard_material_add(
+      @pbr.StandardMaterial::from_color(base_color).with_unlit(true),
     )
-    let segment_entity = @render3d.MeshMaterial3dBundle::new(
+    let segment_entity = @pbr.MeshMaterial3dBundle::new(
       line_mesh,
-      @render3d.MeshMaterial3d::new(segment_material),
+      @pbr.MeshMaterial3d::new(segment_material),
       @math.Transform::identity(),
     ).spawn(world)
     set_visibility(world, segment_entity, false)
     segments.push({ entity: segment_entity, material: segment_material })
 
-    let marker_material = @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(base_color).with_unlit(true),
+    let marker_material = @pbr.standard_material_add(
+      @pbr.StandardMaterial::from_color(base_color).with_unlit(true),
     )
-    let marker_entity = @render3d.MeshMaterial3dBundle::new(
+    let marker_entity = @pbr.MeshMaterial3dBundle::new(
       marker_mesh,
-      @render3d.MeshMaterial3d::new(marker_material),
+      @pbr.MeshMaterial3d::new(marker_material),
       @math.Transform::identity(),
     ).spawn(world)
     set_visibility(world, marker_entity, false)
@@ -253,7 +253,7 @@ fn setup(world : @ecs.World) -> Unit {
   raycast_state.val.camera = @sprite.Camera::default().with_clear_color(
     @sprite.Color::black(),
   )
-  raycast_state.val.camera_projection = @render3d.Projection::default()
+  raycast_state.val.camera_projection = @pbr.Projection::default()
   raycast_state.val.camera_transform = @math.Transform::from_xyz(
     1.5F, 1.5F, 1.5F,
   ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
@@ -262,11 +262,11 @@ fn setup(world : @ecs.World) -> Unit {
   raycast_state.val.green_pool = None
   raycast_state.val.origin_marker = None
 
-  let plane_mesh = @render3d.Mesh3d::from_plane(1.0F, 1.0F)
-  let plane_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let plane_mesh = @pbr.Mesh3d::from_plane(1.0F, 1.0F)
+  let plane_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.5F, 0.5F, 0.5F, 0.05F),
-    ).with_alpha_mode(@render3d.AlphaMode3d::Blend),
+    ).with_alpha_mode(@pbr.AlphaMode3d::Blend),
   )
 
   // Inward-facing box planes (same topology as Bevy example).
@@ -328,10 +328,10 @@ fn setup(world : @ecs.World) -> Unit {
   let directional_light = world.spawn_empty()
   let tick = world.read_change_tick()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@sprite.Color::white(), 12_000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 12_000.0F, true),
     tick,
   )
   world
@@ -345,14 +345,14 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
 
-  @render3d.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     raycast_state.val.camera,
     raycast_state.val.camera_transform,
   ).spawn(world)
   |> ignore
 
-  let line_mesh = @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
-  let marker_mesh = @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
+  let line_mesh = @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
+  let marker_mesh = @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
 
   raycast_state.val.red_pool = Some(
     spawn_beam_pool(
@@ -371,14 +371,12 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
 
-  let origin_marker_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@sprite.Color::white()).with_unlit(
-      true,
-    ),
+  let origin_marker_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_unlit(true),
   )
-  let origin_marker_entity = @render3d.MeshMaterial3dBundle::new(
+  let origin_marker_entity = @pbr.MeshMaterial3dBundle::new(
     marker_mesh,
-    @render3d.MeshMaterial3d::new(origin_marker_material),
+    @pbr.MeshMaterial3d::new(origin_marker_material),
     @math.Transform::identity(),
   ).spawn(world)
   set_visibility(world, origin_marker_entity, true)
@@ -422,7 +420,7 @@ fn bounce_ray(
   ray_direction : @math.Vec3,
   pool : BeamPool,
   base_color : @sprite.Color,
-  ray_cast_settings : @render3d.MeshRayCastSettings,
+  ray_cast_settings : @pbr.MeshRayCastSettings,
 ) -> Unit {
   let mut current_origin = ray_origin
   let mut current_direction = ray_direction.normalize_or_zero()
@@ -430,7 +428,7 @@ fn bounce_ray(
   let mut used = 0
 
   for i in 0..<MAX_BOUNCES {
-    guard @render3d.mesh_ray_cast_first(
+    guard @pbr.mesh_ray_cast_first(
         world, current_origin, current_direction, ray_cast_settings,
       )
       is Some((_entity, hit)) else {
@@ -484,7 +482,7 @@ fn bounce_ray(
 fn bouncing_raycast(world : @ecs.World) -> Unit {
   guard raycast_state.val.red_pool is Some(red_pool) else { return }
   guard raycast_state.val.green_pool is Some(green_pool) else { return }
-  let ray_cast_settings = @render3d.MeshRayCastSettings::default()
+  let ray_cast_settings = @pbr.MeshRayCastSettings::default()
     .with_max_hits(1)
     .with_only_entities(Some(raycast_state.val.collider_entities))
 
@@ -523,7 +521,7 @@ fn bouncing_raycast(world : @ecs.World) -> Unit {
       @window.window_height(),
     )
     let scale_factor = @window.window_scale_factor()
-    if @render3d.render3d_camera_viewport_to_world_ray(
+    if @pbr.render3d_camera_viewport_to_world_ray(
         cursor,
         raycast_state.val.camera,
         raycast_state.val.camera_projection,

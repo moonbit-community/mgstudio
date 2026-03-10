@@ -142,13 +142,13 @@ struct SampledShapes {
 
 ///|
 struct PointMesh {
-  mesh : @render3d.Mesh3d
+  mesh : @pbr.Mesh3d
 }
 
 ///|
 struct PointMaterial {
-  interior : @asset.Handle[@render3d.StandardMaterial]
-  boundary : @asset.Handle[@render3d.StandardMaterial]
+  interior : @asset.Handle[@pbr.StandardMaterial]
+  boundary : @asset.Handle[@pbr.StandardMaterial]
 }
 
 ///|
@@ -405,14 +405,14 @@ fn shape_sample_boundary(shape : Shape, rng : @random.Rand) -> @math.Vec3 {
 }
 
 ///|
-fn shape_mesh(shape : Shape) -> @render3d.Mesh3d {
+fn shape_mesh(shape : Shape) -> @pbr.Mesh3d {
   match shape {
-    Cuboid => @render3d.Mesh3d::from_cuboid(1.0F, 2.0F, 1.0F)
-    Sphere => @render3d.Mesh3d::from_sphere(1.5F * SMALL_3D)
-    Capsule => @render3d.Mesh3d::from_capsule(capsule_shape())
-    Cylinder => @render3d.Mesh3d::from_cylinder(cylinder_shape())
-    Tetrahedron => @render3d.Mesh3d::from_tetrahedron_shape(tetrahedron_shape())
-    Triangle => @render3d.Mesh3d::from_triangle(triangle_shape())
+    Cuboid => @pbr.Mesh3d::from_cuboid(1.0F, 2.0F, 1.0F)
+    Sphere => @pbr.Mesh3d::from_sphere(1.5F * SMALL_3D)
+    Capsule => @pbr.Mesh3d::from_capsule(capsule_shape())
+    Cylinder => @pbr.Mesh3d::from_cylinder(cylinder_shape())
+    Tetrahedron => @pbr.Mesh3d::from_tetrahedron_shape(tetrahedron_shape())
+    Triangle => @pbr.Mesh3d::from_triangle(triangle_shape())
   }
 }
 
@@ -420,7 +420,7 @@ fn shape_mesh(shape : Shape) -> @render3d.Mesh3d {
 fn sample_point_material(
   mode : SamplingMode,
   materials : PointMaterial,
-) -> @asset.Handle[@render3d.StandardMaterial] {
+) -> @asset.Handle[@pbr.StandardMaterial] {
   match mode {
     Interior => materials.interior
     Boundary => materials.boundary
@@ -505,7 +505,7 @@ fn spawn_instructions(
 ///|
 fn setup(
   asset_server : @app.Res[@asset.AssetServer],
-  materials : @app.ResMut[@asset.Assets[@render3d.StandardMaterial]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let world = current_world_or_abort()
   let tick = world.read_change_tick()
@@ -520,13 +520,11 @@ fn setup(
   world.insert_resource(SpawningMode::resource(), SpawningMode::Automatic)
   world.insert_resource(MousePressed::resource(), MousePressed::{ value: false })
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(20.0F, 20.0F),
-    @render3d.MeshMaterial3d::new(
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(20.0F, 20.0F),
+    @pbr.MeshMaterial3d::new(
       materials.get_ref().val.add(
-        @render3d.StandardMaterial::from_color(
-          @sprite.Color::srgb(0.3F, 0.5F, 0.3F),
-        )
+        @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F))
         .with_perceptual_roughness(0.95F)
         .with_metallic(0.0F),
       ),
@@ -536,11 +534,11 @@ fn setup(
   |> ignore
 
   let shape_material = materials.get_ref().val.add(
-    @render3d.StandardMaterial::from_color(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::srgba(0.2F, 0.1F, 0.6F, 0.3F),
     )
     .with_reflectance(0.0F)
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_cull_mode(None),
   )
 
@@ -549,19 +547,19 @@ fn setup(
     return
   }
   for sampled_shape in sampled_shapes.shapes {
-    @render3d.MeshMaterial3dBundle::new(
+    @pbr.MeshMaterial3dBundle::new(
       shape_mesh(sampled_shape.shape),
-      @render3d.MeshMaterial3d::new(shape_material),
+      @pbr.MeshMaterial3d::new(shape_material),
       @math.Transform::from_translation(sampled_shape.translation),
     ).spawn(world)
     |> ignore
 
     let firefly_light = world.spawn_empty()
     world
-    .component(@render3d.PointLight::component())
+    .component(@pbr.PointLight::component())
     .insert(
       firefly_light,
-      @render3d.PointLight::default()
+      @pbr.PointLight::default()
       .with_range(4.0F)
       .with_radius(0.6F)
       .with_intensity(1.0F)
@@ -583,10 +581,10 @@ fn setup(
 
   let global_light = world.spawn_empty()
   world
-  .component(@render3d.PointLight::component())
+  .component(@pbr.PointLight::component())
   .insert(
     global_light,
-    @render3d.PointLight::default()
+    @pbr.PointLight::default()
     .with_color(sky_color())
     .with_intensity(2_000.0F)
     .with_shadow_maps_enabled(false),
@@ -596,15 +594,15 @@ fn setup(
   .component(@math.Transform::component())
   .insert(global_light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
-  let camera_entity = @render3d.Camera3dBundle::new(
+  let camera_entity = @pbr.Camera3dBundle::new(
       @sprite.Camera::default().with_clear_color(sky_color()),
       @math.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    .with_tonemapping(Some(@render3d.Tonemapping::TonyMcMapface))
-    .with_bloom(Some(@render3d.Bloom::default()))
+    .with_tonemapping(Some(@pbr.Tonemapping::TonyMcMapface))
+    .with_bloom(Some(@pbr.Bloom::default()))
     .spawn(world)
   world
   .component(CameraRig::component())
@@ -620,16 +618,16 @@ fn setup(
   )
 
   world.insert_resource(PointMesh::resource(), PointMesh::{
-    mesh: @render3d.Mesh3d::from_icosphere(0.03F, 1),
+    mesh: @pbr.Mesh3d::from_icosphere(0.03F, 1),
   })
   world.insert_resource(PointMaterial::resource(), PointMaterial::{
     interior: materials.get_ref().val.add(
-      @render3d.StandardMaterial::from_color(@sprite.Color::black())
+      @pbr.StandardMaterial::from_color(@sprite.Color::black())
       .with_reflectance(0.05F)
       .with_emissive(@sprite.Color::srgba(2.1375F, 2.75F, 0.025F, 1.0F)),
     ),
     boundary: materials.get_ref().val.add(
-      @render3d.StandardMaterial::from_color(@sprite.Color::black())
+      @pbr.StandardMaterial::from_color(@sprite.Color::black())
       .with_reflectance(0.05F)
       .with_emissive(@sprite.Color::srgba(0.12F, 0.3F, 1.35F, 1.0F)),
     ),
@@ -647,9 +645,9 @@ fn spawn_sample_point(
   sample : @math.Vec3,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let entity = @render3d.MeshMaterial3dBundle::new(
+  let entity = @pbr.MeshMaterial3dBundle::new(
     point_mesh.mesh,
-    @render3d.MeshMaterial3d::new(sample_point_material(mode, point_material)),
+    @pbr.MeshMaterial3d::new(sample_point_material(mode, point_material)),
     @math.Transform::from_translation(sample).with_scale(@math.Vec3::zero()),
   ).spawn(world)
   world
@@ -1076,7 +1074,7 @@ fn update_lights(world : @ecs.World) -> Unit {
   }
   let intensity = 40_000.0F * saturation
   let tick = world.increment_change_tick()
-  let point_light_store = world.component(@render3d.PointLight::component())
+  let point_light_store = world.component(@pbr.PointLight::component())
   let firefly_entities : Array[@core.Entity] = []
   world
   .component(FireflyLights::component())

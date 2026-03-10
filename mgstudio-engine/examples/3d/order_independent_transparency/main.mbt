@@ -58,11 +58,7 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -108,7 +104,7 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -131,10 +127,10 @@ fn update_help_text() -> Unit {
 ///|
 fn create_transparent_material(
   color : @sprite.Color,
-) -> @asset.Handle[@render3d.StandardMaterial] {
-  @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(color).with_alpha_mode(
-      @render3d.AlphaMode3d::Blend,
+) -> @asset.Handle[@pbr.StandardMaterial] {
+  @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(color).with_alpha_mode(
+      @pbr.AlphaMode3d::Blend,
     ),
   )
 }
@@ -142,15 +138,15 @@ fn create_transparent_material(
 ///|
 fn spawn_mesh_with_layer(
   world : @ecs.World,
-  mesh : @render3d.Mesh3d,
-  material : @asset.Handle[@render3d.StandardMaterial],
+  mesh : @pbr.Mesh3d,
+  material : @asset.Handle[@pbr.StandardMaterial],
   transform : @math.Transform,
   layers : @sprite.RenderLayers,
   tick : Int,
 ) -> @core.Entity {
-  let entity = @render3d.MeshMaterial3dBundle::new(
+  let entity = @pbr.MeshMaterial3dBundle::new(
     mesh,
-    @render3d.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
   world.component(@sprite.ecs_key_render_layers).insert(entity, layers, tick)
@@ -215,7 +211,7 @@ fn spawn_scene_quads(
   tick : Int,
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
-  let quad = @render3d.Mesh3d::from_cuboid(3.0F, 3.0F, 0.05F)
+  let quad = @pbr.Mesh3d::from_cuboid(3.0F, 3.0F, 0.05F)
   let rotation = @math.Quat::from_rotation_y(0.5F)
   let mat0 = create_transparent_material(
     @sprite.Color::new(1.0F, 0.0F, 0.0F, 0.5F),
@@ -292,11 +288,11 @@ fn spawn_scene_occlusion(
   tick : Int,
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
-  let cube = @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
+  let cube = @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
   let sphere = uv_sphere_mesh(1.0F, 16, 24)
 
-  let solid_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let solid_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.80F, 0.70F, 0.60F, 1.0F),
     ),
   )
@@ -381,10 +377,10 @@ fn spawn_scene_instancing(
   tick : Int,
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
-  let cube = @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
-  let material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::default()
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+  let cube = @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
+  let material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::default()
+    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_base_color_texture(
       Some(asset_server.load("textures/slice_square.png")),
     ),
@@ -432,20 +428,18 @@ fn apply_scene_visibility(world : @ecs.World) -> Unit {
 fn apply_oit_mode(world : @ecs.World) -> Unit {
   if oit_state.val.camera is Some(camera) {
     let tick = world.read_change_tick()
-    world
-    .component(@render3d.ecs_key_msaa)
-    .insert(camera, @render3d.Msaa::Off, tick)
+    world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
     if oit_state.val.oit_enabled {
       world
-      .component(@render3d.ecs_key_order_independent_transparency_settings)
+      .component(@pbr.ecs_key_order_independent_transparency_settings)
       .insert(
         camera,
-        @render3d.OrderIndependentTransparencySettings::default(),
+        @pbr.OrderIndependentTransparencySettings::default(),
         tick,
       )
     } else {
       world
-      .component(@render3d.ecs_key_order_independent_transparency_settings)
+      .component(@pbr.ecs_key_order_independent_transparency_settings)
       .remove(camera)
       |> ignore
     }
@@ -464,7 +458,7 @@ fn setup(world : @ecs.World) -> Unit {
   oit_state.val.oit_enabled = true
   oit_state.val.scene_entities = []
 
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 0.0F, 10.0F).looking_at(
       @math.Vec3::zero(),
@@ -473,16 +467,16 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   world.component(@sprite.ecs_key_render_layers).insert(camera, layer, tick)
   world
-  .component(@render3d.ecs_key_depth_prepass)
-  .insert(camera, @render3d.DepthPrepass::default(), tick)
+  .component(@pbr.ecs_key_depth_prepass)
+  .insert(camera, @pbr.DepthPrepass::default(), tick)
   oit_state.val.camera = Some(camera)
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     light,
-    @render3d.PointLight::default().with_shadow_maps_enabled(false),
+    @pbr.PointLight::default().with_shadow_maps_enabled(false),
     tick,
   )
   world

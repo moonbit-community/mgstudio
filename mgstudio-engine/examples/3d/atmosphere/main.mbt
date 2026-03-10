@@ -50,13 +50,13 @@ priv struct AtmosphereState {
   mut mode : Int
   mut exposure_ev100 : Float
   mut sun_pitch : Float
-  atmosphere_stub : @render3d.Atmosphere
-  mut atmosphere_settings_stub : @render3d.AtmosphereSettings
-  volumetric_fog_stub : @render3d.VolumetricFog
-  fog_volume_stub : @render3d.FogVolume
+  atmosphere_stub : @pbr.Atmosphere
+  mut atmosphere_settings_stub : @pbr.AtmosphereSettings
+  volumetric_fog_stub : @pbr.VolumetricFog
+  fog_volume_stub : @pbr.FogVolume
   mut camera : @core.Entity?
   mut sun : @core.Entity?
-  mut water_material : @asset.Handle[@render3d.StandardMaterial]?
+  mut water_material : @asset.Handle[@pbr.StandardMaterial]?
   mut help_text : @text.TextHandle?
 }
 
@@ -66,14 +66,14 @@ let atmosphere_state : Ref[AtmosphereState] = Ref::new({
   mode: 0,
   exposure_ev100: BASE_EXPOSURE_EV100,
   sun_pitch: 0.0F,
-  atmosphere_stub: @render3d.Atmosphere::earthlike(
-    @render3d.ScatteringMedium::earthlike().with_density_multiplier(1.0F),
+  atmosphere_stub: @pbr.Atmosphere::earthlike(
+    @pbr.ScatteringMedium::earthlike().with_density_multiplier(1.0F),
   ),
-  atmosphere_settings_stub: @render3d.AtmosphereSettings::default(),
-  volumetric_fog_stub: @render3d.VolumetricFog::default().with_ambient_intensity(
+  atmosphere_settings_stub: @pbr.AtmosphereSettings::default(),
+  volumetric_fog_stub: @pbr.VolumetricFog::default().with_ambient_intensity(
     0.0F,
   ),
-  fog_volume_stub: @render3d.FogVolume::default()
+  fog_volume_stub: @pbr.FogVolume::default()
   .with_density_factor(0.1F)
   .with_scattering(0.3F)
   .with_absorption(0.3F),
@@ -107,7 +107,7 @@ fn float_from_int(value : Int) -> Float {
 ///|
 fn read_camera_exposure_ev100(world : @ecs.World) -> Float {
   if atmosphere_state.val.camera is Some(camera_entity) {
-    if world.component(@render3d.ecs_key_exposure).get(camera_entity)
+    if world.component(@pbr.ecs_key_exposure).get(camera_entity)
       is Some(exposure) {
       return exposure.ev100
     }
@@ -258,8 +258,8 @@ fn apply_atmosphere(world : @ecs.World) -> Unit {
   )
   let directional_alpha = clampf(0.3F + sun_mix * 0.45F, 0.2F, 0.75F)
 
-  @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::default()
+  @pbr.render3d_set_distance_fog(
+    @pbr.DistanceFog::default()
     .with_color(
       @sprite.Color::new(
         clamp01(fog_r + ambient_lift),
@@ -273,7 +273,7 @@ fn apply_atmosphere(world : @ecs.World) -> Unit {
     )
     .with_directional_light_exponent(directional_exponent)
     .with_falloff(
-      @render3d.FogFalloff3d::from_visibility_colors(
+      @pbr.FogFalloff3d::from_visibility_colors(
         visibility,
         @sprite.Color::srgb(extinction_r, extinction_g, extinction_b),
         @sprite.Color::srgb(inscattering_r, inscattering_g, inscattering_b),
@@ -282,8 +282,8 @@ fn apply_atmosphere(world : @ecs.World) -> Unit {
   )
 
   world.insert_resource(
-    @render3d.ecs_key_global_ambient_light,
-    @render3d.GlobalAmbientLight::new(
+    @pbr.ecs_key_global_ambient_light,
+    @pbr.GlobalAmbientLight::new(
       @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
       clampf(0.03F * exposure_scale, 0.01F, 0.06F),
     ),
@@ -293,13 +293,13 @@ fn apply_atmosphere(world : @ecs.World) -> Unit {
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @render3d.Mesh3d,
-  material : @asset.Handle[@render3d.StandardMaterial],
+  mesh : @pbr.Mesh3d,
+  material : @asset.Handle[@pbr.StandardMaterial],
   transform : @math.Transform,
 ) -> Unit {
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     mesh,
-    @render3d.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
   |> ignore
@@ -307,35 +307,31 @@ fn spawn_mesh(
 
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
       @math.Transform::from_xyz(-2.4F, 0.04F, 0.0F).looking_at(
         scene_focus(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    .with_exposure(Some(@render3d.Exposure::new(BASE_EXPOSURE_EV100)))
-    .with_screen_space_reflections(
-      Some(@render3d.ScreenSpaceReflections::default()),
-    )
+    .with_exposure(Some(@pbr.Exposure::new(BASE_EXPOSURE_EV100)))
+    .with_screen_space_reflections(Some(@pbr.ScreenSpaceReflections::default()))
     .spawn(world)
 
   let tick = world.read_change_tick()
   world
-  .component(@render3d.ecs_key_deferred_prepass)
-  .insert(camera, @render3d.DeferredPrepass::default(), tick)
+  .component(@pbr.ecs_key_deferred_prepass)
+  .insert(camera, @pbr.DeferredPrepass::default(), tick)
   world
-  .component(@render3d.ecs_key_tonemapping)
-  .insert(camera, @render3d.Tonemapping::AcesFitted, tick)
+  .component(@pbr.ecs_key_tonemapping)
+  .insert(camera, @pbr.Tonemapping::AcesFitted, tick)
   world
-  .component(@render3d.ecs_key_bloom)
-  .insert(camera, @render3d.Bloom::default(), tick)
+  .component(@pbr.ecs_key_bloom)
+  .insert(camera, @pbr.Bloom::default(), tick)
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
-  .component(@render3d.ecs_key_msaa)
-  .insert(camera, @render3d.Msaa::Off, tick)
-  world
-  .component(@render3d.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
+  .component(@pbr.ecs_key_temporal_anti_aliasing)
+  .insert(camera, @pbr.TemporalAntiAliasing::default(), tick)
 
   atmosphere_state.val.camera = Some(camera)
 }
@@ -343,7 +339,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let cascade_shadow_config = @render3d.CascadeShadowConfigBuilder::default()
+  let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::default()
     .with_first_cascade_far_bound(0.3F)
     .with_maximum_distance(15.0F)
     .build()
@@ -360,10 +356,10 @@ fn setup_scene(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     sun,
-    @render3d.DirectionalLight::new(
+    @pbr.DirectionalLight::new(
       @sprite.Color::new(0.98F, 0.95F, 0.82F, 1.0F),
       100_000.0F,
       true,
@@ -372,8 +368,8 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
   atmosphere_state.val.sun = Some(sun)
 
-  let terrain_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let terrain_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.36F, 0.33F, 0.29F, 1.0F),
     )
     .with_perceptual_roughness(1.0F)
@@ -388,7 +384,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     let x_shift = @math.sin(i_f * 0.35F) * 0.25F
     spawn_mesh(
       world,
-      @render3d.Mesh3d::from_cuboid(width, height, 0.25F),
+      @pbr.Mesh3d::from_cuboid(width, height, 0.25F),
       terrain_material,
       @math.Transform::from_xyz(
         -1.0F + x_shift,
@@ -398,9 +394,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
     )
   }
 
-  let probe_mesh = @render3d.Mesh3d::from_tetrahedron(0.06F)
-  let probe_metal = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@sprite.Color::white())
+  let probe_mesh = @pbr.Mesh3d::from_tetrahedron(0.06F)
+  let probe_metal = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white())
     .with_metallic(1.0F)
     .with_perceptual_roughness(0.0F),
   )
@@ -411,8 +407,8 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @math.Transform::from_xyz(-1.0F, 0.1F, -0.1F),
   )
 
-  let probe_rough = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@sprite.Color::white())
+  let probe_rough = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white())
     .with_metallic(0.0F)
     .with_perceptual_roughness(1.0F),
   )
@@ -423,8 +419,8 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @math.Transform::from_xyz(-1.0F, 0.1F, 0.1F),
   )
 
-  let water_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let water_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
     )
     .with_perceptual_roughness(0.0F)
@@ -434,7 +430,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   atmosphere_state.val.water_material = Some(water_material)
   spawn_mesh(
     world,
-    @render3d.Mesh3d::from_cuboid(100.0F, 0.02F, 100.0F),
+    @pbr.Mesh3d::from_cuboid(100.0F, 0.02F, 100.0F),
     water_material,
     @math.Transform::from_xyz(-1.0F, 0.0F, -0.5F),
   )
@@ -472,7 +468,7 @@ fn atmosphere_controls(world : @ecs.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Digit1) {
     atmosphere_state.val.mode = 0
     atmosphere_state.val.atmosphere_settings_stub = atmosphere_state.val.atmosphere_settings_stub.with_rendering_method(
-      @render3d.AtmosphereMode::LookupTexture,
+      @pbr.AtmosphereMode::LookupTexture,
     )
     changed = true
   }
@@ -480,7 +476,7 @@ fn atmosphere_controls(world : @ecs.World) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Digit2) {
     atmosphere_state.val.mode = 1
     atmosphere_state.val.atmosphere_settings_stub = atmosphere_state.val.atmosphere_settings_stub.with_rendering_method(
-      @render3d.AtmosphereMode::Raymarched,
+      @pbr.AtmosphereMode::Raymarched,
     )
     changed = true
   }
@@ -501,12 +497,12 @@ fn atmosphere_controls(world : @ecs.World) -> Unit {
   }
   if exposure_delta != 0.0F {
     if atmosphere_state.val.camera is Some(camera_entity) {
-      if world.component(@render3d.ecs_key_exposure).get(camera_entity)
+      if world.component(@pbr.ecs_key_exposure).get(camera_entity)
         is Some(exposure) {
         let next = clampf(exposure.ev100 + exposure_delta, 6.0F, 20.0F)
         if next != exposure.ev100 {
           world
-          .component(@render3d.ecs_key_exposure)
+          .component(@pbr.ecs_key_exposure)
           .set(
             camera_entity,
             exposure.with_ev100(next),
@@ -565,14 +561,14 @@ fn dynamic_scene(world : @ecs.World) -> Unit {
   }
 
   if atmosphere_state.val.water_material is Some(material_handle) {
-    if @render3d.standard_material_get(material_handle) is Some(material) {
+    if @pbr.standard_material_get(material_handle) is Some(material) {
       let t = @time.time_elapsed_seconds()
       let wave = (@math.sin(t * 0.8F) + 1.0F) * 0.5F
       let base_blue = 0.10F + wave * 0.10F
       let updated = material
         .with_base_color(@sprite.Color::new(0.0F, 0.0F, base_blue, 1.0F))
         .with_emissive(@sprite.Color::new(0.0F, 0.0F, base_blue * 0.35F, 1.0F))
-      @render3d.standard_material_set(material_handle, updated) |> ignore
+      @pbr.standard_material_set(material_handle, updated) |> ignore
     }
   }
 
@@ -582,8 +578,8 @@ fn dynamic_scene(world : @ecs.World) -> Unit {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   world.insert_resource(
-    @render3d.ecs_key_default_opaque_renderer_method,
-    @render3d.DefaultOpaqueRendererMethod::deferred(),
+    @pbr.ecs_key_default_opaque_renderer_method,
+    @pbr.DefaultOpaqueRendererMethod::deferred(),
   )
 
   atmosphere_state.val = {
@@ -591,16 +587,16 @@ fn setup(world : @ecs.World) -> Unit {
     mode: 0,
     exposure_ev100: BASE_EXPOSURE_EV100,
     sun_pitch: 0.0F,
-    atmosphere_stub: @render3d.Atmosphere::earthlike(
-      @render3d.ScatteringMedium::earthlike().with_density_multiplier(1.0F),
+    atmosphere_stub: @pbr.Atmosphere::earthlike(
+      @pbr.ScatteringMedium::earthlike().with_density_multiplier(1.0F),
     ),
-    atmosphere_settings_stub: @render3d.AtmosphereSettings::default()
+    atmosphere_settings_stub: @pbr.AtmosphereSettings::default()
     .with_scene_units_to_m(1.0F)
-    .with_rendering_method(@render3d.AtmosphereMode::LookupTexture),
-    volumetric_fog_stub: @render3d.VolumetricFog::default().with_ambient_intensity(
+    .with_rendering_method(@pbr.AtmosphereMode::LookupTexture),
+    volumetric_fog_stub: @pbr.VolumetricFog::default().with_ambient_intensity(
       0.0F,
     ),
-    fog_volume_stub: @render3d.FogVolume::default()
+    fog_volume_stub: @pbr.FogVolume::default()
     .with_density_factor(0.1F)
     .with_scattering(0.3F)
     .with_absorption(0.3F),

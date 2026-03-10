@@ -39,11 +39,7 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -89,7 +85,7 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -100,8 +96,8 @@ fn set_global_ambient_light(
   color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
-  let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
+  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
+  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -123,44 +119,42 @@ fn color_for_row(index : Int) -> @sprite.Color {
 fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   world.insert_resource(
-    @render3d.ecs_key_directional_light_shadow_map,
-    @render3d.DirectionalLightShadowMap::new(4096),
+    @pbr.ecs_key_directional_light_shadow_map,
+    @pbr.DirectionalLightShadowMap::new(4096),
   )
 
   set_global_ambient_light(world, @sprite.Color::white(), 0.0F)
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(1.8F, 0.4F, -0.1F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
-  .component(@render3d.ecs_key_msaa)
-  .insert(camera, @render3d.Msaa::Off, tick)
-  world
-  .component(@render3d.ecs_key_environment_map_light)
+  .component(@pbr.ecs_key_environment_map_light)
   .insert(
     camera,
-    @render3d.EnvironmentMapLight::default().with_intensity(
+    @pbr.EnvironmentMapLight::default().with_intensity(
       ENVIRONMENT_LIGHT_INTENSITY,
     ),
     tick,
   )
   world
-  .component(@render3d.ecs_key_free_camera)
-  .insert(camera, @render3d.FreeCamera::default(), tick)
+  .component(@pbr.ecs_key_free_camera)
+  .insert(camera, @pbr.FreeCamera::default(), tick)
 
   let directional = world.spawn_empty()
-  let cascade_shadow_config = @render3d.CascadeShadowConfigBuilder::default()
+  let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::default()
     .with_num_cascades(1)
     .with_maximum_distance(15.0F)
     .build()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional,
-    @render3d.DirectionalLight::new(
+    @pbr.DirectionalLight::new(
       @sprite.Color::white(),
       DIRECTIONAL_LIGHT_ILLUMINANCE,
       true,
@@ -182,14 +176,14 @@ fn setup(world : @ecs.World) -> Unit {
   for i in 0..<5 {
     let x_int = i - 2
     let x = float_from_int(x_int) / 2.0F
-    let material = @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(color_for_row(i)).with_perceptual_roughness(
+    let material = @pbr.standard_material_add(
+      @pbr.StandardMaterial::from_color(color_for_row(i)).with_perceptual_roughness(
         float_from_int(i) / 4.0F,
       ),
     )
-    @render3d.MeshMaterial3dBundle::new(
+    @pbr.MeshMaterial3dBundle::new(
       mesh_proxy,
-      @render3d.MeshMaterial3d::new(material),
+      @pbr.MeshMaterial3d::new(material),
       @math.Transform::from_xyz(x, 0.0F, -0.3F).with_scale(
         @math.Vec3::splat(0.2F),
       ),
@@ -201,8 +195,8 @@ fn setup(world : @ecs.World) -> Unit {
     let x_int = i - 2
     let x = float_from_int(x_int) / 2.0F
     let shade = 0.2F + float_from_int(i) * 0.18F
-    let material = @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(
+    let material = @pbr.standard_material_add(
+      @pbr.StandardMaterial::from_color(
         @sprite.Color::new(shade, shade, shade, 1.0F),
       )
       .with_unlit(true)
@@ -210,9 +204,9 @@ fn setup(world : @ecs.World) -> Unit {
         @sprite.Color::new(shade * 0.2F, shade * 0.2F, shade * 0.2F, 1.0F),
       ),
     )
-    @render3d.MeshMaterial3dBundle::new(
+    @pbr.MeshMaterial3dBundle::new(
       mesh_proxy,
-      @render3d.MeshMaterial3d::new(material),
+      @pbr.MeshMaterial3d::new(material),
       @math.Transform::from_xyz(x, 0.0F, 0.3F)
       .with_scale(@math.Vec3::splat(0.2F))
       .with_rotation(@math.Quat::from_rotation_y(PI)),
@@ -220,11 +214,11 @@ fn setup(world : @ecs.World) -> Unit {
     |> ignore
   }
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(5.0F, 5.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@sprite.Color::white()).with_perceptual_roughness(
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(5.0F, 5.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_perceptual_roughness(
           1.0F,
         ),
       ),

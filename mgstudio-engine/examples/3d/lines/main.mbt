@@ -36,7 +36,7 @@ priv struct LineStrip {
 }
 
 ///|
-fn line_mesh_from_line_list(line_list : LineList) -> @render3d.Mesh3d {
+fn line_mesh_from_line_list(line_list : LineList) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   for i in 0..<line_list.lines.length() {
     let (start, end_) = line_list.lines[i]
@@ -47,7 +47,7 @@ fn line_mesh_from_line_list(line_list : LineList) -> @render3d.Mesh3d {
   for _ in 0..<positions.length() {
     uvs.push(@math.Vec2::new(0.0F, 0.0F))
   }
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new_with_topology(
       positions,
       uvs,
@@ -58,14 +58,14 @@ fn line_mesh_from_line_list(line_list : LineList) -> @render3d.Mesh3d {
 }
 
 ///|
-fn line_mesh_from_line_strip(line_strip : LineStrip) -> @render3d.Mesh3d {
+fn line_mesh_from_line_strip(line_strip : LineStrip) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   for point in line_strip.points {
     positions.push(point)
     uvs.push(@math.Vec2::new(0.0F, 0.0F))
   }
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new_with_topology(
       positions,
       uvs,
@@ -76,29 +76,27 @@ fn line_mesh_from_line_strip(line_strip : LineStrip) -> @render3d.Mesh3d {
 }
 
 ///|
-fn line_material(
-  color : @sprite.Color,
-) -> @asset.Handle[@render3d.StandardMaterial] {
-  @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(color).with_unlit(true),
+fn line_material(color : @sprite.Color) -> @asset.Handle[@pbr.StandardMaterial] {
+  @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(color).with_unlit(true),
   )
 }
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     line_mesh_from_line_list(LineList::{
       lines: [
         (@math.Vec3::zero(), @math.Vec3::new(1.0F, 1.0F, 0.0F)),
         (@math.Vec3::new(1.0F, 1.0F, 0.0F), @math.Vec3::new(1.0F, 0.0F, 0.0F)),
       ],
     }),
-    @render3d.MeshMaterial3d::new(line_material(color_green())),
+    @pbr.MeshMaterial3d::new(line_material(color_green())),
     @math.Transform::from_xyz(-1.5F, 0.0F, 0.0F),
   ).spawn(world)
   |> ignore
 
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     line_mesh_from_line_strip(LineStrip::{
       points: [
         @math.Vec3::zero(),
@@ -106,12 +104,12 @@ fn setup(world : @ecs.World) -> Unit {
         @math.Vec3::new(1.0F, 0.0F, 0.0F),
       ],
     }),
-    @render3d.MeshMaterial3d::new(line_material(color_blue())),
+    @pbr.MeshMaterial3d::new(line_material(color_blue())),
     @math.Transform::from_xyz(0.5F, 0.0F, 0.0F),
   ).spawn(world)
   |> ignore
 
-  @render3d.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::zero(),

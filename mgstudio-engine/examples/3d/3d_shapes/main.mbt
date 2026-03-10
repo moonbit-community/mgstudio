@@ -206,10 +206,8 @@ fn uv_debug_texture() -> @asset.Handle[@asset.Image] {
 fn mesh_from_soup(
   positions : Array[@math.Vec3],
   uvs : Array[@math.Vec2],
-) -> @render3d.Mesh3d {
-  @render3d.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new(positions, uvs, None),
-  )
+) -> @pbr.Mesh3d {
+  @pbr.Mesh3d::from_geometry(@mesh.Mesh3dGeometry::new(positions, uvs, None))
 }
 
 ///|
@@ -249,10 +247,7 @@ fn soup_push_quad(
 }
 
 ///|
-fn revolve_mesh(
-  profile : Array[(Float, Float)],
-  segments : Int,
-) -> @render3d.Mesh3d {
+fn revolve_mesh(profile : Array[(Float, Float)], segments : Int) -> @pbr.Mesh3d {
   let safe_segments = if segments < 3 { 3 } else { segments }
   let segf = float_from_int(safe_segments)
   let count = profile.length()
@@ -291,17 +286,13 @@ fn revolve_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
 
 ///|
-fn sphere_uv_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn sphere_uv_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let safe_stacks = if stacks < 3 { 3 } else { stacks }
   let safe_sectors = if sectors < 3 { 3 } else { sectors }
   let positions : Array[@math.Vec3] = []
@@ -349,13 +340,13 @@ fn sphere_uv_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
 
 ///|
-fn icosphere_mesh(radius : Float, subdivisions : Int) -> @render3d.Mesh3d {
+fn icosphere_mesh(radius : Float, subdivisions : Int) -> @pbr.Mesh3d {
   let t = (1.0F + @math.sqrt(5.0F)) / 2.0F
   let base_vertices = [
     vec3_normalize_or_zero(@math.Vec3::new(-1.0F, t, 0.0F)),
@@ -445,7 +436,7 @@ fn torus_mesh(
   minor_radius : Float,
   major_segments : Int,
   minor_segments : Int,
-) -> @render3d.Mesh3d {
+) -> @pbr.Mesh3d {
   let safe_major = if major_segments < 3 { 3 } else { major_segments }
   let safe_minor = if minor_segments < 3 { 3 } else { minor_segments }
   let major_f = float_from_int(safe_major)
@@ -487,17 +478,13 @@ fn torus_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
 
 ///|
-fn cylinder_mesh(
-  radius : Float,
-  height : Float,
-  segments : Int,
-) -> @render3d.Mesh3d {
+fn cylinder_mesh(radius : Float, height : Float, segments : Int) -> @pbr.Mesh3d {
   let half = height / 2.0F
   revolve_mesh(
     [(half, 0.0F), (half, radius), (-half, radius), (-half, 0.0F)],
@@ -506,11 +493,7 @@ fn cylinder_mesh(
 }
 
 ///|
-fn cone_mesh(
-  radius : Float,
-  height : Float,
-  segments : Int,
-) -> @render3d.Mesh3d {
+fn cone_mesh(radius : Float, height : Float, segments : Int) -> @pbr.Mesh3d {
   let half = height / 2.0F
   revolve_mesh([(-half, 0.0F), (-half, radius), (half, 0.0F)], segments)
 }
@@ -521,7 +504,7 @@ fn frustum_mesh(
   radius_top : Float,
   height : Float,
   segments : Int,
-) -> @render3d.Mesh3d {
+) -> @pbr.Mesh3d {
   let half = height / 2.0F
   revolve_mesh(
     [(-half, 0.0F), (-half, radius_bottom), (half, radius_top), (half, 0.0F)],
@@ -535,7 +518,7 @@ fn capsule_mesh(
   half_length : Float,
   lat_segments : Int,
   long_segments : Int,
-) -> @render3d.Mesh3d {
+) -> @pbr.Mesh3d {
   let safe_lat = if lat_segments < 4 { 4 } else { lat_segments }
   let lat_f = float_from_int(safe_lat)
   let profile : Array[(Float, Float)] = []
@@ -672,14 +655,14 @@ fn capsule_points(
 }
 
 ///|
-fn line_strip_mesh(points : Array[@math.Vec3]) -> @render3d.Mesh3d {
+fn line_strip_mesh(points : Array[@math.Vec3]) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   for point in points {
     positions.push(point)
     uvs.push(@math.Vec2::new(0.0F, 0.0F))
   }
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new_with_topology(
       positions,
       uvs,
@@ -690,7 +673,7 @@ fn line_strip_mesh(points : Array[@math.Vec3]) -> @render3d.Mesh3d {
 }
 
 ///|
-fn segment_mesh() -> @render3d.Mesh3d {
+fn segment_mesh() -> @pbr.Mesh3d {
   line_strip_mesh([
     @math.Vec3::new(-0.5F, 0.0F, 0.0F),
     @math.Vec3::new(0.5F, 0.0F, 0.0F),
@@ -794,7 +777,7 @@ fn append_extruded_polygon(
 fn extruded_polygon_mesh(
   points : Array[@math.Vec2],
   depth : Float,
-) -> @render3d.Mesh3d {
+) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   append_extruded_polygon(positions, uvs, points, depth)
@@ -884,7 +867,7 @@ fn extruded_ring_mesh(
   outer : Array[@math.Vec2],
   inner : Array[@math.Vec2],
   depth : Float,
-) -> @render3d.Mesh3d {
+) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   append_extruded_ring(positions, uvs, outer, inner, depth)
@@ -892,7 +875,7 @@ fn extruded_ring_mesh(
 }
 
 ///|
-fn polyline_mesh() -> @render3d.Mesh3d {
+fn polyline_mesh() -> @pbr.Mesh3d {
   line_strip_mesh([
     @math.Vec3::new(-0.5F, 0.0F, 0.0F),
     @math.Vec3::new(0.5F, 0.0F, 0.0F),
@@ -903,14 +886,14 @@ fn polyline_mesh() -> @render3d.Mesh3d {
 ///|
 fn spawn_shape(
   world : @ecs.World,
-  mesh : @render3d.Mesh3d,
-  material : @asset.Handle[@render3d.StandardMaterial],
+  mesh : @pbr.Mesh3d,
+  material : @asset.Handle[@pbr.StandardMaterial],
   x : Float,
   row : Row,
 ) -> Unit {
-  let entity = @render3d.MeshMaterial3dBundle::new(
+  let entity = @pbr.MeshMaterial3dBundle::new(
     mesh,
-    @render3d.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3d::new(material),
     @math.Transform::from_xyz(x, 2.0F, row_z(row)).with_rotation(
       @math.Quat::from_rotation_x(-PI / 4.0F),
     ),
@@ -923,15 +906,15 @@ fn setup(world : @ecs.World) -> Unit {
   shapes_state.val.entries.clear()
   shapes_state.val.rotating = true
 
-  let debug_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@sprite.Color::white()).with_base_color_texture(
+  let debug_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_base_color_texture(
       Some(uv_debug_texture()),
     ),
   )
 
   let shapes = [
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.Mesh3d::from_tetrahedron(1.0F),
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.Mesh3d::from_tetrahedron(1.0F),
     capsule_mesh(0.5F, 0.5F, 8, 24),
     torus_mesh(0.65F, 0.25F, 36, 20),
     cylinder_mesh(0.5F, 1.0F, 28),
@@ -1016,26 +999,23 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let point_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     point_light,
-    @render3d.PointLight::new(
-      @sprite.Color::white(),
-      10_000_000.0F,
-      100.0F,
-      true,
-    ).with_shadow_depth_bias(0.2F),
+    @pbr.PointLight::new(@sprite.Color::white(), 10_000_000.0F, 100.0F, true).with_shadow_depth_bias(
+      0.2F,
+    ),
     tick,
   )
   world
   .component(@math.ecs_key_transform)
   .insert(point_light, @math.Transform::from_xyz(8.0F, 16.0F, 8.0F), tick)
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(50.0F, 50.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(50.0F, 50.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(
           @sprite.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
         ),
       ),
@@ -1044,7 +1024,7 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  @render3d.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 7.0F, 14.0F).looking_at(
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -1134,15 +1114,13 @@ fn toggle_wireframe(world : @ecs.World) -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Space) {
     return
   }
-  let config = try
-    world.get_resource(@render3d.ecs_key_wireframe_config)
-  catch {
-    _ => @render3d.WireframeConfig::default().with_global(true)
+  let config = try world.get_resource(@pbr.ecs_key_wireframe_config) catch {
+    _ => @pbr.WireframeConfig::default().with_global(true)
   } noraise {
     Some(value) => value.with_global(!value.global)
-    None => @render3d.WireframeConfig::default().with_global(true)
+    None => @pbr.WireframeConfig::default().with_global(true)
   }
-  world.insert_resource(@render3d.ecs_key_wireframe_config, config)
+  world.insert_resource(@pbr.ecs_key_wireframe_config, config)
 }
 
 ///|
@@ -1150,7 +1128,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_plugins([@render3d.wireframe_plugin])
+  .add_plugins([@pbr.wireframe_plugin])
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(toggle_rotation))
   .add_systems(@app.Update, @app.system(rotate))

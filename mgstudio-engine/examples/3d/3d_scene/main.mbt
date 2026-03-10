@@ -24,7 +24,7 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn disk_mesh(radius : Float, segments : Int) -> @render3d.Mesh3d {
+fn disk_mesh(radius : Float, segments : Int) -> @pbr.Mesh3d {
   let count = if segments < 3 { 3 } else { segments }
   let positions : Array[@math.Vec3] = [@math.Vec3::new(0.0F, 0.0F, 0.0F)]
   let uvs : Array[@math.Vec2] = [@math.Vec2::new(0.5F, 0.5F)]
@@ -49,7 +49,7 @@ fn disk_mesh(radius : Float, segments : Int) -> @render3d.Mesh3d {
     indices.push(1 + next)
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -58,11 +58,11 @@ fn disk_mesh(radius : Float, segments : Int) -> @render3d.Mesh3d {
 fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     disk_mesh(4.0F, 32),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@sprite.Color::white()),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
       ),
     ),
     @math.Transform::identity().with_rotation(
@@ -71,11 +71,11 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(
           @sprite.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
         ),
       ),
@@ -86,17 +86,17 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     light,
-    @render3d.PointLight::default().with_shadow_maps_enabled(true),
+    @pbr.PointLight::default().with_shadow_maps_enabled(true),
     tick,
   )
   world
   .component(@math.ecs_key_transform)
   .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
-  @render3d.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
       @math.Vec3::zero(),

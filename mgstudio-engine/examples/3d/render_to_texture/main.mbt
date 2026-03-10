@@ -39,11 +39,11 @@ fn setup(world : @ecs.World) -> Unit {
   let image = @sprite.render2d_create_render_target(world, 512, 512, true)
   let first_pass_layer = @sprite.RenderLayers::layer(1)
 
-  let first_pass_cube = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(4.0F, 4.0F, 4.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
+  let first_pass_cube = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(4.0F, 4.0F, 4.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(
           @sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
         ).with_reflectance(0.02F),
       ),
@@ -57,8 +57,8 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
-  .insert(light, @render3d.PointLight::default(), tick)
+  .component(@pbr.ecs_key_point_light)
+  .insert(light, @pbr.PointLight::default(), tick)
   world
   .component(@math.ecs_key_transform)
   .insert(light, @math.Transform::from_xyz(0.0F, 0.0F, 10.0F), tick)
@@ -66,7 +66,7 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@sprite.ecs_key_render_layers)
   .insert(light, @sprite.RenderLayers::layer(0).with_layer(1), tick)
 
-  let first_pass_camera = @render3d.Camera3dBundle::new(
+  let first_pass_camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::new(@sprite.Color::white()).with_order(-1),
     @math.Transform::from_xyz(0.0F, 0.0F, 15.0F).looking_at(
       @math.Vec3::zero(),
@@ -80,11 +80,11 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@sprite.ecs_key_render_layers)
   .insert(first_pass_camera, first_pass_layer, tick)
 
-  let main_pass_cube = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(4.0F, 4.0F, 4.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@sprite.Color::white())
+  let main_pass_cube = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(4.0F, 4.0F, 4.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::white())
         .with_base_color_texture(Some(image))
         .with_reflectance(0.02F),
       ),
@@ -95,7 +95,7 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   render_to_texture_state.val.main_pass_cube = main_pass_cube
 
-  @render3d.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 0.0F, 15.0F).looking_at(
       @math.Vec3::zero(),

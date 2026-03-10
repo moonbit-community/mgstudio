@@ -100,15 +100,15 @@ fn compute_focal_length_meters(fov : Float) -> Float {
 ///|
 fn set_camera_projection(world : @ecs.World, fov : Float) -> Unit {
   guard dof_state.val.camera is Some(camera) else { return }
-  let perspective = @render3d.PerspectiveProjection3d::{
-    ..@render3d.PerspectiveProjection3d::default(),
+  let perspective = @pbr.PerspectiveProjection3d::{
+    ..@pbr.PerspectiveProjection3d::default(),
     fov,
   }
   world
-  .component(@render3d.ecs_key_projection)
+  .component(@pbr.ecs_key_projection)
   .set(
     camera,
-    @render3d.Projection::Perspective(perspective),
+    @pbr.Projection::Perspective(perspective),
     world.read_change_tick(),
   )
   |> ignore
@@ -120,8 +120,8 @@ fn set_global_ambient_light(
   color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
-  let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
+  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
+  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -133,10 +133,10 @@ fn apply_dof_proxy(world : @ecs.World) -> Unit {
   set_camera_projection(world, fov)
 
   if mode is Off {
-    @render3d.render3d_set_distance_fog(
-      @render3d.DistanceFog::new(
+    @pbr.render3d_set_distance_fog(
+      @pbr.DistanceFog::new(
         @sprite.Color::new(0.12F, 0.13F, 0.14F, 1.0F),
-        @render3d.FogFalloff3d::linear(20.0F, 200.0F),
+        @pbr.FogFalloff3d::linear(20.0F, 200.0F),
       ),
     )
     set_global_ambient_light(world, @sprite.Color::white(), 0.85F)
@@ -150,10 +150,10 @@ fn apply_dof_proxy(world : @ecs.World) -> Unit {
     start + 0.1F,
     500.0F,
   )
-  @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::new(
+  @pbr.render3d_set_distance_fog(
+    @pbr.DistanceFog::new(
       @sprite.Color::new(0.11F, 0.12F, 0.13F, 1.0F),
-      @render3d.FogFalloff3d::linear(start, end),
+      @pbr.FogFalloff3d::linear(start, end),
     ),
   )
   let ambient = if mode is Bokeh { 0.70F } else { 0.77F }
@@ -217,22 +217,20 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
 
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 4.5F, 8.25F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world
-  .component(@render3d.ecs_key_hdr)
-  .insert(camera, @render3d.Hdr::default(), tick)
+  .component(@pbr.ecs_key_tonemapping)
+  .insert(camera, @pbr.Tonemapping::TonyMcMapface, tick)
   world
-  .component(@render3d.ecs_key_tonemapping)
-  .insert(camera, @render3d.Tonemapping::TonyMcMapface, tick)
-  world
-  .component(@render3d.ecs_key_bloom)
-  .insert(camera, @render3d.Bloom::default(), tick)
+  .component(@pbr.ecs_key_bloom)
+  .insert(camera, @pbr.Bloom::default(), tick)
   dof_state.val.camera = Some(camera)
 
   let scene_entity = world.spawn_empty()
@@ -251,14 +249,14 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
 
-  let floor_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let floor_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.24F, 0.24F, 0.26F, 1.0F),
     ).with_perceptual_roughness(0.85F),
   )
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(50.0F, 50.0F),
-    @render3d.MeshMaterial3d::new(floor_material),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(50.0F, 50.0F),
+    @pbr.MeshMaterial3d::new(floor_material),
     @math.Transform::from_xyz(0.0F, -1.0F, -6.0F),
   ).spawn(world)
   |> ignore
@@ -268,8 +266,8 @@ fn setup(world : @ecs.World) -> Unit {
     let z = -2.0F - i_f * 2.0F
     let x = if i % 2 == 0 { -1.8F } else { 1.8F }
     let hue = i_f / 8.0F
-    let material = @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(
+    let material = @pbr.standard_material_add(
+      @pbr.StandardMaterial::from_color(
         @sprite.Color::new(
           0.25F + hue * 0.55F,
           0.2F + (1.0F - hue) * 0.6F,
@@ -280,9 +278,9 @@ fn setup(world : @ecs.World) -> Unit {
       .with_metallic(0.15F + hue * 0.6F)
       .with_perceptual_roughness(0.2F + hue * 0.5F),
     )
-    @render3d.MeshMaterial3dBundle::new(
-      @render3d.Mesh3d::from_cuboid(0.9F, 0.9F, 0.9F),
-      @render3d.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3dBundle::new(
+      @pbr.Mesh3d::from_cuboid(0.9F, 0.9F, 0.9F),
+      @pbr.MeshMaterial3d::new(material),
       @math.Transform::from_xyz(x, 0.0F, z),
     ).spawn(world)
     |> ignore
@@ -290,10 +288,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   let directional = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional,
-    @render3d.DirectionalLight::new(@sprite.Color::white(), 25_000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 25_000.0F, true),
     tick,
   )
   world
@@ -309,10 +307,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   let point = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     point,
-    @render3d.PointLight::new(@sprite.Color::white(), 120_000.0F, 40.0F, false),
+    @pbr.PointLight::new(@sprite.Color::white(), 120_000.0F, 40.0F, false),
     tick,
   )
   world

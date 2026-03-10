@@ -109,8 +109,8 @@ fn create_cube_indices() -> Array[Int] {
 }
 
 ///|
-fn create_cube_mesh(upper_uv : Bool) -> @render3d.Mesh3d {
-  @render3d.Mesh3d::from_geometry(
+fn create_cube_mesh(upper_uv : Bool) -> @pbr.Mesh3d {
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(
       create_cube_positions(),
       create_cube_uvs(upper_uv),
@@ -128,15 +128,15 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
 
   let custom_texture = asset_server.load("textures/array_texture.png")
-  let material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::default().with_base_color_texture(
+  let material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::default().with_base_color_texture(
       Some(custom_texture),
     ),
   )
 
-  let mesh_entity = @render3d.MeshMaterial3dBundle::new(
+  let mesh_entity = @pbr.MeshMaterial3dBundle::new(
     create_cube_mesh(true),
-    @render3d.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3d::new(material),
     @math.Transform::identity(),
   ).spawn(world)
   custom_mesh_state.val.mesh_entity = Some(mesh_entity)
@@ -146,7 +146,7 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
 
-  @render3d.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     camera_and_light_transform,
   ).spawn(world)
@@ -154,8 +154,8 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light_entity = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
-  .insert(light_entity, @render3d.PointLight::default(), tick)
+  .component(@pbr.ecs_key_point_light)
+  .insert(light_entity, @pbr.PointLight::default(), tick)
   world
   .component(@math.ecs_key_transform)
   .insert(light_entity, camera_and_light_transform, tick)
@@ -196,7 +196,7 @@ fn input_handler(world : @ecs.World) -> Unit {
     custom_mesh_state.val.upper_uv = next_upper_uv
     let next_mesh = create_cube_mesh(next_upper_uv)
     let next_mesh_id = @sprite.render2d_upload_mesh_handle(next_mesh.mesh)
-    world.component(@render3d.ecs_key_mesh3d).set(mesh_entity, next_mesh, tick)
+    world.component(@pbr.ecs_key_mesh3d).set(mesh_entity, next_mesh, tick)
     |> ignore
     world
     .component(@sprite.ecs_key_gpu_mesh2d)

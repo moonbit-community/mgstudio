@@ -480,21 +480,21 @@ fn setup(world : @ecs.World) -> Unit {
   clustered_decals_state.val.drag_mode_widgets.clear()
   clustered_decals_state.val.last_mouse = None
 
-  let cube_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let cube_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
     ),
   )
-  let cube = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(3.0F, 3.0F, 3.0F),
-    @render3d.MeshMaterial3d::new(cube_material),
+  let cube = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(3.0F, 3.0F, 3.0F),
+    @pbr.MeshMaterial3d::new(cube_material),
     @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_y(1.0471975512F),
     ),
   ).spawn(world)
   clustered_decals_state.val.rotating_cube = Some(cube)
 
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 2.5F, 9.0F).looking_at(
       @math.Vec3::zero(),
@@ -505,8 +505,8 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
-  .insert(light, @render3d.DirectionalLight::default(), tick)
+  .component(@pbr.ecs_key_directional_light)
+  .insert(light, @pbr.DirectionalLight::default(), tick)
   world
   .component(@math.ecs_key_transform)
   .insert(
@@ -519,26 +519,26 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let decal_texture = asset_server.load("branding/icon.png")
-  let decal_a_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let decal_a_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(1.0F, 0.27F, 0.0F, 0.80F),
     )
     .with_base_color_texture(Some(decal_texture))
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_unlit(true),
   )
-  let decal_b_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let decal_b_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.0F, 1.0F, 0.0F, 0.80F),
     )
     .with_base_color_texture(Some(decal_texture))
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_unlit(true),
   )
 
-  let decal_a = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(decal_a_material),
+  let decal_a = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(decal_a_material),
     calculate_initial_decal_transform(
       @math.Vec3::new(1.0F, 3.0F, 5.0F),
       @math.Vec3::zero(),
@@ -546,19 +546,19 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_clustered_decal)
+  .component(@pbr.ecs_key_clustered_decal)
   .insert(
     decal_a,
-    @render3d.ClusteredDecal::default()
+    @pbr.ClusteredDecal::default()
     .with_base_color_texture(Some(decal_texture))
     .with_tag(1),
     tick,
   )
   clustered_decals_state.val.decal_a = Some(decal_a)
 
-  let decal_b = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(decal_b_material),
+  let decal_b = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(decal_b_material),
     calculate_initial_decal_transform(
       @math.Vec3::new(-2.0F, -1.0F, 4.0F),
       @math.Vec3::zero(),
@@ -566,10 +566,10 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_clustered_decal)
+  .component(@pbr.ecs_key_clustered_decal)
   .insert(
     decal_b,
-    @render3d.ClusteredDecal::default()
+    @pbr.ClusteredDecal::default()
     .with_base_color_texture(Some(decal_texture))
     .with_tag(2),
     tick,

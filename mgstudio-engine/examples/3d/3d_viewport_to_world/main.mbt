@@ -62,7 +62,7 @@ fn absf(value : Float) -> Float {
 }
 
 ///|
-fn circle_line_mesh(radius : Float, segments : Int) -> @render3d.Mesh3d {
+fn circle_line_mesh(radius : Float, segments : Int) -> @pbr.Mesh3d {
   let safe_segments = if segments < 3 { 3 } else { segments }
   let points : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
@@ -77,7 +77,7 @@ fn circle_line_mesh(radius : Float, segments : Int) -> @render3d.Mesh3d {
     )
     uvs.push(@math.Vec2::new(0.0F, 0.0F))
   }
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new_with_topology(
       points,
       uvs,
@@ -174,13 +174,11 @@ fn ray_plane_intersection(
 fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
-  let ground = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(20.0F, 20.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
-          @sprite.Color::srgb(0.3F, 0.5F, 0.3F),
-        ),
+  let ground = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(20.0F, 20.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)),
       ),
     ),
     @math.Transform::identity(),
@@ -189,8 +187,8 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
-  .insert(light, @render3d.DirectionalLight::default(), tick)
+  .component(@pbr.ecs_key_directional_light)
+  .insert(light, @pbr.DirectionalLight::default(), tick)
   world
   .component(@math.ecs_key_transform)
   .insert(
@@ -202,7 +200,7 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
 
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(15.0F, 5.0F, 15.0F).looking_at(
       @math.Vec3::zero(),
@@ -211,11 +209,11 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   viewport_to_world_3d_state.val.camera = Some(camera)
 
-  let cursor_marker = @render3d.MeshMaterial3dBundle::new(
+  let cursor_marker = @pbr.MeshMaterial3dBundle::new(
     circle_line_mesh(CURSOR_RADIUS, CURSOR_SEGMENTS),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@sprite.Color::white()).with_unlit(
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_unlit(
           true,
         ),
       ),
@@ -245,7 +243,7 @@ fn draw_cursor(world : @ecs.World) -> Unit {
 
   let transform_store = world.component(@math.ecs_key_transform)
   let camera_store = world.component(@sprite.ecs_key_camera)
-  let projection_store = world.component(@render3d.ecs_key_projection)
+  let projection_store = world.component(@pbr.ecs_key_projection)
   let mut cursor_hit : (@math.Vec3, @math.Vec3)? = None
   if @input.mouse_position() is Some(screen_pos) {
     if transform_store.get(camera_entity) is Some(camera_transform) {
@@ -257,7 +255,7 @@ fn draw_cursor(world : @ecs.World) -> Unit {
               @window.window_height(),
             )
             let scale_factor = @window.window_scale_factor()
-            if @render3d.render3d_camera_viewport_to_world_ray(
+            if @pbr.render3d_camera_viewport_to_world_ray(
                 screen_pos, camera, projection, camera_transform, target_size, scale_factor,
               )
               is Some((ray_origin, ray_dir)) {

@@ -218,7 +218,7 @@ fn default_plugins_builder(
   .add_named(
     id=DEFAULT_PLUGIN_ID_RENDER3D,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @render3d.render3d_plugin(app)
+      @pbr.render3d_plugin(app)
     }),
   )
   .add_named(

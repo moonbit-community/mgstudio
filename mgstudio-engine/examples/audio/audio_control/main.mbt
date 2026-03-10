@@ -186,7 +186,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   spawn_ui_overlay(world)
 
-  @render3d.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)

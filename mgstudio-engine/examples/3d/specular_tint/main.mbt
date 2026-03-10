@@ -44,7 +44,7 @@ priv struct SpecularTintState {
   mut tint_type : TintType
   mut hue_deg : Float
   mut camera : @core.Entity?
-  mut material : @asset.Handle[@render3d.StandardMaterial]?
+  mut material : @asset.Handle[@pbr.StandardMaterial]?
   mut noise_texture : @asset.Handle[@asset.Image]?
   mut help_text : @text.TextHandle?
 }
@@ -121,11 +121,7 @@ fn spawn_ui_text_handle(
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -171,7 +167,7 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -182,8 +178,8 @@ fn set_global_ambient_light(
   color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
-  let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
+  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
+  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -213,8 +209,8 @@ fn setup(world : @ecs.World) -> Unit {
   )
   state.noise_texture = Some(noise_texture)
 
-  let sphere_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@sprite.Color::black())
+  let sphere_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::black())
     .with_reflectance(1.0F)
     .with_specular_tint(tint_from_hue_deg(state.hue_deg))
     .with_metallic(0.0F)
@@ -222,33 +218,31 @@ fn setup(world : @ecs.World) -> Unit {
   )
   state.material = Some(sphere_material)
 
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     uv_sphere_mesh(1.0F, 18, 32),
-    @render3d.MeshMaterial3d::new(sphere_material),
+    @pbr.MeshMaterial3d::new(sphere_material),
     @math.Transform::identity().with_rotation(
       @math.Quat::from_rotation_x(PI * 0.5F),
     ),
   ).spawn(world)
   |> ignore
 
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 0.0F, 3.5F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world
-  .component(@render3d.ecs_key_hdr)
-  .insert(camera, @render3d.Hdr::default(), tick)
+  .component(@pbr.ecs_key_skybox)
+  .insert(camera, @pbr.Skybox::new(specular_env_map, 3000.0F), tick)
   world
-  .component(@render3d.ecs_key_skybox)
-  .insert(camera, @render3d.Skybox::new(specular_env_map, 3000.0F), tick)
-  world
-  .component(@render3d.ecs_key_environment_map_light)
+  .component(@pbr.ecs_key_environment_map_light)
   .insert(
     camera,
-    @render3d.EnvironmentMapLight::new(
+    @pbr.EnvironmentMapLight::new(
       Some(diffuse_env_map),
       Some(specular_env_map),
       25000.0F,
@@ -341,7 +335,7 @@ fn toggle_specular_map(_world : @ecs.World) -> Unit {
   }
 
   guard state.material is Some(material_handle) else { return }
-  guard @render3d.standard_material_get(material_handle) is Some(material) else {
+  guard @pbr.standard_material_get(material_handle) is Some(material) else {
     return
   }
 
@@ -355,7 +349,7 @@ fn toggle_specular_map(_world : @ecs.World) -> Unit {
       .with_specular_tint_texture(Some(noise_texture))
     }
   }
-  @render3d.standard_material_set(material_handle, next_material) |> ignore
+  @pbr.standard_material_set(material_handle, next_material) |> ignore
 }
 
 ///|
@@ -365,7 +359,7 @@ fn shift_hue(_world : @ecs.World) -> Unit {
     return
   }
   guard state.material is Some(material_handle) else { return }
-  guard @render3d.standard_material_get(material_handle) is Some(material) else {
+  guard @pbr.standard_material_get(material_handle) is Some(material) else {
     return
   }
 
@@ -373,7 +367,7 @@ fn shift_hue(_world : @ecs.World) -> Unit {
   let next_material = material.with_specular_tint(
     tint_from_hue_deg(state.hue_deg),
   )
-  @render3d.standard_material_set(material_handle, next_material) |> ignore
+  @pbr.standard_material_set(material_handle, next_material) |> ignore
 }
 
 ///|

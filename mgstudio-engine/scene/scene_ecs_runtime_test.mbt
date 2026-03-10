@@ -15,8 +15,8 @@
 ///|
 test "scene ecs: SceneRoot spawns children and marks ready" {
   let plugins : Array[@app.Plugin[@ecs.World]] = [
-    @asset.asset_plugin, @sprite.render2d_plugin_ecs, @render3d.render3d_plugin,
-    @animation.animation_plugin, @scene.scene_plugin,
+    @asset.asset_plugin, @sprite.render2d_plugin_ecs, @pbr.render3d_plugin, @animation.animation_plugin,
+    @scene.scene_plugin,
   ]
   let instance_id = Ref::new(0)
   let spawned_entities = Ref::new(0)
@@ -35,14 +35,14 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_system(fn(world : @ecs.World) {
-    let path = @scene.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
-    let material = @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@sprite.Color::white()),
+    let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
+    let material = @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
       ),
     )
     let node = @scene.SceneNode3d::new(
-      @render3d.Mesh3d::from_cuboid(1.0F, 2.0F, 3.0F),
+      @pbr.Mesh3d::from_cuboid(1.0F, 2.0F, 3.0F),
       material,
       @math.Transform::from_xyz(1.0F, 2.0F, 3.0F),
       Some(@visibility.VisibilityRange::new(0.0F, 0.0F, 4.0F, 5.0F, false)),
@@ -78,8 +78,8 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
     child_count.val = children.length()
 
     let child = children[0]
-    has_mesh.val = (try! world.get(child, @render3d.ecs_key_mesh3d)) is Some(_)
-    has_material.val = (try! world.get(child, @render3d.ecs_key_mesh_material3d))
+    has_mesh.val = (try! world.get(child, @pbr.ecs_key_mesh3d)) is Some(_)
+    has_material.val = (try! world.get(child, @pbr.ecs_key_mesh_material3d))
       is Some(_)
     has_transform.val = (try! world.get(child, @math.ecs_key_transform))
       is Some(_)
@@ -130,8 +130,8 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
 ///|
 test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
   let plugins : Array[@app.Plugin[@ecs.World]] = [
-    @asset.asset_plugin, @sprite.render2d_plugin_ecs, @render3d.render3d_plugin,
-    @animation.animation_plugin, @scene.scene_plugin,
+    @asset.asset_plugin, @sprite.render2d_plugin_ecs, @pbr.render3d_plugin, @animation.animation_plugin,
+    @scene.scene_plugin,
   ]
   let old_instance_id = Ref::new(0)
   let new_instance_id = Ref::new(0)
@@ -143,22 +143,22 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_system(fn(world : @ecs.World) {
-    let first_path = @scene.GltfAssetLabel::Scene(1).from_asset(
+    let first_path = @gltf.GltfAssetLabel::Scene(1).from_asset(
       "models/Foo/Foo.gltf",
     )
-    let second_path = @scene.GltfAssetLabel::Scene(2).from_asset(
+    let second_path = @gltf.GltfAssetLabel::Scene(2).from_asset(
       "models/Foo/Foo.gltf",
     )
-    let material = @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@sprite.Color::white()),
+    let material = @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
       ),
     )
     let first_handle = @scene.scene_register_gltf_scene(
       first_path,
       @scene.Scene::new([
         @scene.SceneNode3d::new(
-          @render3d.Mesh3d::from_cuboid(1.0F, 2.0F, 3.0F),
+          @pbr.Mesh3d::from_cuboid(1.0F, 2.0F, 3.0F),
           material,
           @math.Transform::from_xyz(1.0F, 2.0F, 3.0F),
           None,
@@ -170,7 +170,7 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
       second_path,
       @scene.Scene::new([
         @scene.SceneNode3d::new(
-          @render3d.Mesh3d::from_cuboid(4.0F, 5.0F, 6.0F),
+          @pbr.Mesh3d::from_cuboid(4.0F, 5.0F, 6.0F),
           material,
           @math.Transform::from_xyz(9.0F, 8.0F, 7.0F),
           None,

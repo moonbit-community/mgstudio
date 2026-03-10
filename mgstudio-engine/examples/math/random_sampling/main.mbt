@@ -33,12 +33,12 @@ struct RandomSource {
 
 ///|
 struct PointMesh {
-  mesh : @render3d.Mesh3d
+  mesh : @pbr.Mesh3d
 }
 
 ///|
 struct PointMaterial {
-  handle : @asset.Handle[@render3d.StandardMaterial]
+  handle : @asset.Handle[@pbr.StandardMaterial]
 }
 
 ///|
@@ -130,7 +130,7 @@ fn current_world_or_abort() -> @ecs.World {
 ///|
 fn setup(
   asset_server : @app.Res[@asset.AssetServer],
-  materials : @app.ResMut[@asset.Assets[@render3d.StandardMaterial]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let world = current_world_or_abort()
   let tick = world.read_change_tick()
@@ -143,13 +143,11 @@ fn setup(
   world.insert_resource(Mode::resource(), Mode::Interior)
   world.insert_resource(MousePressed::resource(), MousePressed::{ value: false })
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(12.0F, 12.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
-          @sprite.Color::srgb(0.3F, 0.5F, 0.3F),
-        ),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(12.0F, 12.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)),
       ),
     ),
     @math.Transform::from_xyz(0.0F, -2.5F, 0.0F),
@@ -157,32 +155,32 @@ fn setup(
   |> ignore
 
   let shape_material = materials.get_ref().val.add(
-    @render3d.StandardMaterial::from_color(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::srgba(0.2F, 0.1F, 0.6F, 0.3F),
     )
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_cull_mode(None),
   )
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(2.9F, 2.9F, 2.9F),
-    @render3d.MeshMaterial3d::new(shape_material),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(2.9F, 2.9F, 2.9F),
+    @pbr.MeshMaterial3d::new(shape_material),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.PointLight::component())
+  .component(@pbr.PointLight::component())
   .insert(
     light,
-    @render3d.PointLight::default().with_shadow_maps_enabled(true),
+    @pbr.PointLight::default().with_shadow_maps_enabled(true),
     tick,
   )
   world
   .component(@math.Transform::component())
   .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
-  @render3d.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
       @math.Vec3::zero(),
@@ -192,13 +190,13 @@ fn setup(
   |> ignore
 
   world.insert_resource(PointMesh::resource(), PointMesh::{
-    mesh: @render3d.Mesh3d::from_icosphere(0.03F, 3),
+    mesh: @pbr.Mesh3d::from_icosphere(0.03F, 3),
   })
   world.insert_resource(PointMaterial::resource(), PointMaterial::{
     handle: materials.get_ref().val.add(
-      @render3d.StandardMaterial::from_color(
-        @sprite.Color::srgb(1.0F, 0.8F, 0.8F),
-      ).with_metallic(0.8F),
+      @pbr.StandardMaterial::from_color(@sprite.Color::srgb(1.0F, 0.8F, 0.8F)).with_metallic(
+        0.8F,
+      ),
     ),
   })
 
@@ -296,9 +294,9 @@ fn spawn_sample_point(
   sample : @math.Vec3,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let entity = @render3d.MeshMaterial3dBundle::new(
+  let entity = @pbr.MeshMaterial3dBundle::new(
     point_mesh.mesh,
-    @render3d.MeshMaterial3d::new(point_material.handle),
+    @pbr.MeshMaterial3d::new(point_material.handle),
     @math.Transform::from_translation(sample),
   ).spawn(world)
   world
@@ -399,7 +397,7 @@ fn handle_mouse(
 
   let mut camera_entity : @core.Entity? = None
   world
-  .component(@render3d.Camera3d::component())
+  .component(@pbr.Camera3d::component())
   .for_each(fn(entity, _camera) {
     if camera_entity is None {
       camera_entity = Some(entity)

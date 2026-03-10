@@ -69,11 +69,11 @@ fn apply_pccm_status(world : @ecs.World) -> Unit {
   guard pccm_state.val.light_probe is Some(light_probe_entity) else { return }
 
   let correction = match pccm_state.val.pccm_enabled {
-    PccmEnableStatus::Enabled => @render3d.ParallaxCorrection::Auto
-    PccmEnableStatus::Disabled => @render3d.ParallaxCorrection::None
+    PccmEnableStatus::Enabled => @pbr.ParallaxCorrection::Auto
+    PccmEnableStatus::Disabled => @pbr.ParallaxCorrection::None
   }
   let tick = world.read_change_tick()
-  let store = world.component(@render3d.ecs_key_parallax_correction)
+  let store = world.component(@pbr.ecs_key_parallax_correction)
   if store.contains(light_probe_entity) {
     store.set(light_probe_entity, correction, tick) |> ignore
   } else {
@@ -90,7 +90,7 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
 
-  @render3d.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 0.0F, 4.0F).looking_at(
       @math.Vec3::new(0.0F, -2.5F, 0.0F),
@@ -98,42 +98,42 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   |> ignore
-  let room_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let room_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.2F, 0.24F, 0.3F, 1.0F),
     )
     .with_perceptual_roughness(0.95F)
     .with_metallic(0.0F),
   )
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(10.0F, 10.0F, 10.0F),
-    @render3d.MeshMaterial3d::new(room_material),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(10.0F, 10.0F, 10.0F),
+    @pbr.MeshMaterial3d::new(room_material),
     @math.Transform::from_xyz(0.0F, -2.5F, -2.5F),
   ).spawn(world)
   |> ignore
 
-  let inner_cube_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@sprite.Color::white())
+  let inner_cube_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white())
     .with_metallic(1.0F)
     .with_reflectance(1.0F)
     .with_perceptual_roughness(0.0F),
   )
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(10.0F, 2.0F, 4.0F),
-    @render3d.MeshMaterial3d::new(inner_cube_material),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(10.0F, 2.0F, 4.0F),
+    @pbr.MeshMaterial3d::new(inner_cube_material),
     @math.Transform::from_xyz(0.0F, -4.0F, -2.5F),
   ).spawn(world)
   |> ignore
 
   let light_probe = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_light_probe)
-  .insert(light_probe, @render3d.LightProbe::default(), tick)
+  .component(@pbr.ecs_key_light_probe)
+  .insert(light_probe, @pbr.LightProbe::default(), tick)
   world
-  .component(@render3d.ecs_key_environment_map_light)
+  .component(@pbr.ecs_key_environment_map_light)
   .insert(
     light_probe,
-    @render3d.EnvironmentMapLight::new(
+    @pbr.EnvironmentMapLight::new(
       Some(asset_server.load(ENV_DIFFUSE_MAP_ASSET)),
       Some(asset_server.load(ENV_SPECULAR_MAP_ASSET)),
       ENVIRONMENT_MAP_INTENSITY,

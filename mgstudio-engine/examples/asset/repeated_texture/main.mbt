@@ -18,7 +18,7 @@
 ///|
 fn setup(
   asset_server : @app.Res[@asset.AssetServer],
-  materials : @app.ResMut[@asset.Assets[@render3d.StandardMaterial]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let world = @app.current_world().unwrap()
   let tick = world.read_change_tick()
@@ -40,55 +40,55 @@ fn setup(
 
   let uv_transform = @transform.Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F))
   let center_material = materials.get_ref().val.add(
-    @render3d.StandardMaterial::default().with_base_color_texture(
+    @pbr.StandardMaterial::default().with_base_color_texture(
       Some(image_with_default_sampler),
     ),
   )
   let left_material = materials.get_ref().val.add(
-    @render3d.StandardMaterial::default()
+    @pbr.StandardMaterial::default()
     .with_base_color_texture(Some(image_with_repeat_sampler))
     .with_uv_transform(uv_transform),
   )
   let right_material = materials.get_ref().val.add(
-    @render3d.StandardMaterial::default()
+    @pbr.StandardMaterial::default()
     .with_base_color_texture(Some(image_with_default_sampler))
     .with_uv_transform(uv_transform),
   )
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(center_material),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(center_material),
     @math.Transform::from_xyz(0.0F, 0.0F, 0.0F),
   ).spawn(world)
   |> ignore
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(left_material),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(left_material),
     @math.Transform::from_xyz(-1.5F, 0.0F, 0.0F),
   ).spawn(world)
   |> ignore
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(right_material),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(right_material),
     @math.Transform::from_xyz(1.5F, 0.0F, 0.0F),
   ).spawn(world)
   |> ignore
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.PointLight::component())
+  .component(@pbr.PointLight::component())
   .insert(
     light,
-    @render3d.PointLight::default().with_shadow_maps_enabled(true),
+    @pbr.PointLight::default().with_shadow_maps_enabled(true),
     tick,
   )
   world
   .component(@math.Transform::component())
   .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
-  @render3d.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 1.5F, 4.0F).looking_at(
       @math.Vec3::zero(),

@@ -26,7 +26,7 @@ const HUE_SPEED_DEG_PER_SEC : Float = 100.0F
 
 ///|
 priv struct AnimatedMaterialState {
-  materials : Array[@asset.Handle[@render3d.StandardMaterial]]
+  materials : Array[@asset.Handle[@pbr.StandardMaterial]]
   hues_deg : Array[Float]
 }
 
@@ -65,7 +65,7 @@ fn setup(world : @ecs.World) -> Unit {
   animated_material_state.val.hues_deg.clear()
   let asset_server = @asset.AssetServer::new()
 
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(3.0F, 1.0F, 3.0F).looking_at(
       @math.Vec3::new(0.0F, -0.5F, 0.0F),
@@ -73,10 +73,10 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_environment_map_light)
+  .component(@pbr.ecs_key_environment_map_light)
   .insert(
     camera,
-    @render3d.EnvironmentMapLight::new(
+    @pbr.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       2_000.0F,
@@ -84,20 +84,20 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
 
-  let cube = @render3d.Mesh3d::from_cuboid(0.5F, 0.5F, 0.5F)
+  let cube = @pbr.Mesh3d::from_cuboid(0.5F, 0.5F, 0.5F)
 
   let mut hue = 0.0F
   for x in -1..<2 {
     for z in -1..<2 {
-      let material_handle = @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(color_from_hue_deg(hue)),
+      let material_handle = @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(color_from_hue_deg(hue)),
       )
       animated_material_state.val.materials.push(material_handle)
       animated_material_state.val.hues_deg.push(hue)
 
-      @render3d.MeshMaterial3dBundle::new(
+      @pbr.MeshMaterial3dBundle::new(
         cube,
-        @render3d.MeshMaterial3d::new(material_handle),
+        @pbr.MeshMaterial3d::new(material_handle),
         @math.Transform::from_xyz(float_from_int(x), 0.0F, float_from_int(z)),
       ).spawn(world)
       |> ignore
@@ -120,9 +120,9 @@ fn animate_materials(_world : @ecs.World) -> Unit {
       animated_material_state.val.hues_deg[i] + delta * HUE_SPEED_DEG_PER_SEC,
     )
     animated_material_state.val.hues_deg[i] = next_hue
-    if @render3d.standard_material_get(handle) is Some(material) {
+    if @pbr.standard_material_get(handle) is Some(material) {
       let next_material = material.with_base_color(color_from_hue_deg(next_hue))
-      @render3d.standard_material_set(handle, next_material) |> ignore
+      @pbr.standard_material_set(handle, next_material) |> ignore
     }
   }
 }

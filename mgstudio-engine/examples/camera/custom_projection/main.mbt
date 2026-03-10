@@ -19,16 +19,16 @@
 priv struct ObliquePerspectiveProjection {
   horizontal_obliqueness : Float
   vertical_obliqueness : Float
-  perspective : @render3d.PerspectiveProjection3d
+  perspective : @camera.PerspectiveProjection3d
 }
 
 ///|
 fn oblique_clip_from_view(
-  base : @render3d.ProjectionMatrix3d,
+  base : @camera.ProjectionMatrix3d,
   horizontal_obliqueness : Float,
   vertical_obliqueness : Float,
-) -> @render3d.ProjectionMatrix3d {
-  @render3d.ProjectionMatrix3d::{
+) -> @camera.ProjectionMatrix3d {
+  @camera.ProjectionMatrix3d::{
     ..base,
     z_axis: @math.Vec4::new(
       horizontal_obliqueness,
@@ -40,7 +40,7 @@ fn oblique_clip_from_view(
 }
 
 ///|
-impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with get_clip_from_view(
+impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with get_clip_from_view(
   self,
 ) {
   oblique_clip_from_view(
@@ -51,7 +51,7 @@ impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with get_clip
 }
 
 ///|
-impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with get_clip_from_view_for_sub(
+impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with get_clip_from_view_for_sub(
   self,
   sub_view,
 ) {
@@ -63,7 +63,7 @@ impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with get_clip
 }
 
 ///|
-impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with update(
+impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with update(
   self,
   width,
   height,
@@ -72,22 +72,20 @@ impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with update(
 }
 
 ///|
-impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with far(
-  self,
-) {
+impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with far(self) {
   self.perspective.far
 }
 
 ///|
-impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with compute_frustum(
+impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with compute_frustum(
   self,
   camera_transform,
 ) {
-  @render3d.Projection::custom(self).compute_frustum(camera_transform)
+  @camera.Projection::custom(self).compute_frustum(camera_transform)
 }
 
 ///|
-impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with get_frustum_corners(
+impl @pbr.CameraProjection3d for ObliquePerspectiveProjection with get_frustum_corners(
   self : ObliquePerspectiveProjection,
   z_near : Float,
   z_far : Float,
@@ -99,7 +97,7 @@ impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with get_frus
 fn setup(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@render3d.StandardMaterial]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let ground_mesh = meshes.get_ref().val.add(
     @mesh.Mesh::from_3d_geometry(@mesh.Mesh3dGeometry::circle(4.0F, 32)),
@@ -110,21 +108,21 @@ fn setup(
     ),
   )
   let white_material = materials.get_ref().val.add(
-    @render3d.StandardMaterial::from_color(@sprite.Color::white()),
+    @pbr.StandardMaterial::from_color(@sprite.Color::white()),
   )
   let cube_material = materials.get_ref().val.add(
-    @render3d.StandardMaterial::from_color(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
     ),
   )
 
   commands.spawn(
     (
-      @render3d.Camera3d::default(),
-      @render3d.Projection::custom(ObliquePerspectiveProjection::{
+      @camera.Camera3d::default(),
+      @camera.Projection::custom(ObliquePerspectiveProjection::{
         horizontal_obliqueness: 0.2F,
         vertical_obliqueness: 0.6F,
-        perspective: @render3d.PerspectiveProjection3d::default(),
+        perspective: @camera.PerspectiveProjection3d::default(),
       }),
       @math.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
         @math.Vec3::zero(),
@@ -136,8 +134,8 @@ fn setup(
 
   commands.spawn(
     (
-      @render3d.Mesh3d::new(ground_mesh),
-      @render3d.MeshMaterial3d::new(white_material),
+      @pbr.Mesh3d::new(ground_mesh),
+      @pbr.MeshMaterial3d::new(white_material),
       @math.Transform::from_rotation(
         @math.Quat::from_rotation_x(-@math.pi() / 2.0F),
       ),
@@ -147,15 +145,15 @@ fn setup(
 
   commands.spawn(
     (
-      @render3d.Mesh3d::new(cube_mesh),
-      @render3d.MeshMaterial3d::new(cube_material),
+      @pbr.Mesh3d::new(cube_mesh),
+      @pbr.MeshMaterial3d::new(cube_material),
       @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
     ),
   )
   |> ignore
   commands.spawn(
     (
-      @render3d.PointLight::default().with_shadow_maps_enabled(true),
+      @pbr.PointLight::default().with_shadow_maps_enabled(true),
       @math.Transform::from_xyz(4.0F, 8.0F, 4.0F),
     ),
   )

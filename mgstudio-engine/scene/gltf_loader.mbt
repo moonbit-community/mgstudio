@@ -109,7 +109,7 @@ priv struct GltfSceneDef {
 
 ///|
 priv struct GltfMaterialDef {
-  base_color : @sprite.Color
+  base_color : @color.Color
   base_color_texture : Int?
   base_color_uv_offset : @math.Vec2
   base_color_uv_scale : @math.Vec2
@@ -127,8 +127,8 @@ priv struct GltfMaterialDef {
   occlusion_texture : Int?
   metallic : Float
   roughness : Float
-  emissive : @sprite.Color
-  alpha_mode : @render3d.AlphaMode3d
+  emissive : @color.Color
+  alpha_mode : @pbr.AlphaMode3d
   unlit : Bool
 }
 
@@ -198,7 +198,7 @@ priv enum GltfResolveBuffersState {
 fn scene_split_gltf_asset_path(
   asset_path : String,
 ) -> (String, GltfAssetLabel?) {
-  gltf_split_asset_path_with_label(asset_path)
+  @gltf.gltf_split_asset_path_with_label(asset_path)
 }
 
 ///|
@@ -245,7 +245,7 @@ fn scene_queue_gltf_request(
   scene_pending_remove_scene_handle(scene_handle)
   let (gltf_path, label) = scene_split_gltf_asset_path(scene_asset_path)
   let scene_index = match label {
-    Some(Scene(index)) => index
+    Some(@gltf.GltfAssetLabel::Scene(index)) => index
     _ => 0
   }
   pending_gltf_scene_requests.val.push({
@@ -268,7 +268,7 @@ fn scene_queue_gltf_animation_request(
   scene_pending_remove_animation_handle(clip_handle)
   let (gltf_path, label) = scene_split_gltf_asset_path(animation_asset_path)
   let animation_index = match label {
-    Some(Animation(index)) => index
+    Some(@gltf.GltfAssetLabel::Animation(index)) => index
     _ => 0
   }
   pending_gltf_animation_requests.val.push({
@@ -291,7 +291,7 @@ fn scene_queue_gltf_mesh_request(
   scene_pending_remove_mesh_handle(mesh_handle)
   let (gltf_path, label) = scene_split_gltf_asset_path(mesh_asset_path)
   let (mesh_index, primitive_index) = match label {
-    Some(Primitive(mesh, primitive)) => (mesh, primitive)
+    Some(@gltf.GltfAssetLabel::Primitive(mesh, primitive)) => (mesh, primitive)
     _ =>
       abort(
         "Mesh asset loading requires a glTF primitive label such as Mesh0/Primitive0",
@@ -413,10 +413,7 @@ fn gltf_parse_quat(value : Json, default_value : @math.Quat) -> @math.Quat {
 }
 
 ///|
-fn gltf_parse_color(
-  value : Json,
-  default_value : @sprite.Color,
-) -> @sprite.Color {
+fn gltf_parse_color(value : Json, default_value : @color.Color) -> @color.Color {
   guard json_array(value) is Some(values) else { return default_value }
   guard json_array_float(values, 0) is Some(r) else { return default_value }
   guard json_array_float(values, 1) is Some(g) else { return default_value }
@@ -425,19 +422,19 @@ fn gltf_parse_color(
     Some(alpha) => alpha
     None => default_value.a
   }
-  @sprite.Color::new(r, g, b, a)
+  @color.Color::new(r, g, b, a)
 }
 
 ///|
 fn gltf_parse_emissive(
   value : Json,
-  default_value : @sprite.Color,
-) -> @sprite.Color {
+  default_value : @color.Color,
+) -> @color.Color {
   guard json_array(value) is Some(values) else { return default_value }
   guard json_array_float(values, 0) is Some(r) else { return default_value }
   guard json_array_float(values, 1) is Some(g) else { return default_value }
   guard json_array_float(values, 2) is Some(b) else { return default_value }
-  @sprite.Color::new(r, g, b, 1.0F)
+  @color.Color::new(r, g, b, 1.0F)
 }
 
 ///|
@@ -608,22 +605,20 @@ fn gltf_parse_texture_transform(
 }
 
 ///|
-fn gltf_parse_material_alpha_mode(
-  obj : Map[String, Json],
-) -> @render3d.AlphaMode3d {
+fn gltf_parse_material_alpha_mode(obj : Map[String, Json]) -> @pbr.AlphaMode3d {
   guard json_get_string(obj, "alphaMode") is Some(alpha_mode) else {
-    return @render3d.AlphaMode3d::Opaque
+    return @pbr.AlphaMode3d::Opaque
   }
   match alpha_mode {
-    "BLEND" => @render3d.AlphaMode3d::Blend
+    "BLEND" => @pbr.AlphaMode3d::Blend
     "MASK" => {
       let cutoff = match json_get_float(obj, "alphaCutoff") {
         Some(value) => value
         None => 0.5F
       }
-      @render3d.AlphaMode3d::Mask(cutoff)
+      @pbr.AlphaMode3d::Mask(cutoff)
     }
-    _ => @render3d.AlphaMode3d::Opaque
+    _ => @pbr.AlphaMode3d::Opaque
   }
 }
 
@@ -900,7 +895,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
   if json_get_array(root, "materials") is Some(entries) {
     for entry in entries {
       if json_object(entry) is Some(obj) {
-        let mut base_color = @sprite.Color::white()
+        let mut base_color = @color.Color::white()
         let mut metallic = 1.0F
         let mut roughness = 1.0F
         let mut clearcoat = 0.0F
@@ -960,9 +955,9 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         anisotropy_texture = parsed_anisotropy_texture
 
         let emissive = if obj.get("emissiveFactor") is Some(value) {
-          gltf_parse_emissive(value, @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F))
+          gltf_parse_emissive(value, @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F))
         } else {
-          @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F)
+          @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F)
         }
 
         materials.push({
@@ -990,7 +985,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         })
       } else {
         materials.push({
-          base_color: @sprite.Color::white(),
+          base_color: @color.Color::white(),
           base_color_texture: None,
           base_color_uv_offset: @math.Vec2::new(0.0F, 0.0F),
           base_color_uv_scale: @math.Vec2::new(1.0F, 1.0F),
@@ -1008,8 +1003,8 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
           occlusion_texture: None,
           metallic: 1.0F,
           roughness: 1.0F,
-          emissive: @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
-          alpha_mode: @render3d.AlphaMode3d::Opaque,
+          emissive: @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+          alpha_mode: @pbr.AlphaMode3d::Opaque,
           unlit: false,
         })
       }
@@ -1834,9 +1829,9 @@ fn scene_try_resolve_request_buffers(
 fn gltf_texture_image_sampler(
   doc : ParsedGltfDocument,
   texture_index : Int,
-) -> @asset.ImageSampler {
+) -> @image.ImageSampler {
   guard texture_index >= 0 && texture_index < doc.textures.length() else {
-    return @asset.ImageSampler::linear()
+    return @image.ImageSampler::linear()
   }
 
   let mut nearest = false
@@ -1850,19 +1845,19 @@ fn gltf_texture_image_sampler(
   }
 
   let descriptor = if nearest {
-    @asset.ImageSamplerDescriptor::nearest()
+    @image.ImageSamplerDescriptor::nearest()
   } else {
-    @asset.ImageSamplerDescriptor::linear()
+    @image.ImageSamplerDescriptor::linear()
   }
   descriptor.set_address_mode(
     if repeat {
-      @asset.ImageAddressMode::Repeat
+      @image.ImageAddressMode::Repeat
     } else {
-      @asset.ImageAddressMode::ClampToEdge
+      @image.ImageAddressMode::ClampToEdge
     },
   )
   |> ignore
-  @asset.ImageSampler::Descriptor(descriptor)
+  @image.ImageSampler::Descriptor(descriptor)
 }
 
 ///|
@@ -1948,9 +1943,9 @@ fn scene_build_material_component(
   doc : ParsedGltfDocument,
   buffer_bytes : Array[Bytes],
   material_index : Int,
-  material_cache : Array[@render3d.MeshMaterial3d?],
+  material_cache : Array[@pbr.MeshMaterial3d?],
   image_cache : Array[@asset.Handle[@asset.Image]?],
-) -> @render3d.MeshMaterial3d? {
+) -> @pbr.MeshMaterial3d? {
   guard material_index >= 0 && material_index < doc.materials.length() else {
     return None
   }
@@ -1960,7 +1955,7 @@ fn scene_build_material_component(
   }
 
   let def = doc.materials[material_index]
-  let mut material = @render3d.StandardMaterial::default()
+  let mut material = @pbr.StandardMaterial::default()
   material = material.with_base_color(def.base_color)
   material = material.with_alpha_mode(def.alpha_mode)
   material = material.with_uv_transform(
@@ -2043,9 +2038,7 @@ fn scene_build_material_component(
     )
   }
 
-  let component = @render3d.MeshMaterial3d::new(
-    @render3d.standard_material_add(material),
-  )
+  let component = @pbr.MeshMaterial3d::new(@pbr.standard_material_add(material))
   material_cache[material_index] = Some(component)
   Some(component)
 }
@@ -2329,7 +2322,7 @@ fn scene_build_from_gltf(
   for _ in doc.images {
     image_cache.push(None)
   }
-  let material_cache : Array[@render3d.MeshMaterial3d?] = []
+  let material_cache : Array[@pbr.MeshMaterial3d?] = []
   for _ in doc.materials {
     material_cache.push(None)
   }
@@ -2338,8 +2331,8 @@ fn scene_build_from_gltf(
     visited_nodes.push(false)
   }
 
-  let default_material_component = @render3d.MeshMaterial3d::new(
-    @render3d.standard_material_add(@render3d.StandardMaterial::default()),
+  let default_material_component = @pbr.MeshMaterial3d::new(
+    @pbr.standard_material_add(@pbr.StandardMaterial::default()),
   )
 
   fn walk_node(
@@ -2429,7 +2422,7 @@ fn scene_build_from_gltf(
 
           nodes.push(
             SceneNode3d::new(
-              @render3d.Mesh3d::from_geometry(geometry),
+              @pbr.Mesh3d::from_geometry(geometry),
               material_component,
               world_transform,
               visibility_range,

@@ -57,10 +57,10 @@ fn spawn_perspective_camera(
   world : @ecs.World,
   kind : ExampleViewport,
   order : Int,
-  sub_camera_view? : @render3d.SubCameraView3d? = None,
+  sub_camera_view? : @pbr.SubCameraView3d? = None,
   moving? : Bool = false,
 ) -> Unit {
-  let entity = @render3d.Camera3dBundle::new(
+  let entity = @pbr.Camera3dBundle::new(
       @sprite.Camera::default().with_order(order),
       camera_sub_view_state.val.base_transform,
     )
@@ -77,14 +77,14 @@ fn spawn_orthographic_camera(
   world : @ecs.World,
   kind : ExampleViewport,
   order : Int,
-  sub_camera_view? : @render3d.SubCameraView3d? = None,
+  sub_camera_view? : @pbr.SubCameraView3d? = None,
   moving? : Bool = false,
 ) -> Unit {
-  let entity = @render3d.Camera3dBundle::new_with_projection(
+  let entity = @pbr.Camera3dBundle::new_with_projection(
       @sprite.Camera::default().with_order(order),
-      @render3d.Projection::Orthographic(@render3d.OrthographicProjection3d::{
-        ..@render3d.OrthographicProjection3d::default_3d(),
-        scaling_mode: @render3d.OrthographicScalingMode3d::FixedVertical(
+      @pbr.Projection::Orthographic(@pbr.OrthographicProjection3d::{
+        ..@pbr.OrthographicProjection3d::default_3d(),
+        scaling_mode: @pbr.OrthographicScalingMode3d::FixedVertical(
           ORTHOGRAPHIC_VIEWPORT_HEIGHT,
         ),
       }),
@@ -105,11 +105,11 @@ fn setup(world : @ecs.World) -> Unit {
   camera_sub_view_state.val.moving_cameras.clear()
 
   // Plane
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(5.0F, 5.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(5.0F, 5.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(
           @sprite.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
         ),
       ),
@@ -119,11 +119,11 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   // Cube
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(
           @sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
         ),
       ),
@@ -135,42 +135,42 @@ fn setup(world : @ecs.World) -> Unit {
   // Light
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     light,
-    @render3d.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 20.0F, true),
+    @pbr.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 20.0F, true),
     tick,
   )
   world
   .component(@math.ecs_key_transform)
   .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
-  let perspective_stretched_sub_view = @render3d.SubCameraView3d::new(
+  let perspective_stretched_sub_view = @pbr.SubCameraView3d::new(
     @math.IVec2::new(10, 10),
     @math.Vec2::new(5.0F, 0.0F),
     @math.IVec2::new(5, 10),
   )
-  let perspective_moving_sub_view = @render3d.SubCameraView3d::new(
+  let perspective_moving_sub_view = @pbr.SubCameraView3d::new(
     @math.IVec2::new(500, 500),
     @math.Vec2::new(0.0F, 0.0F),
     @math.IVec2::new(100, 100),
   )
-  let perspective_control_sub_view = @render3d.SubCameraView3d::new(
+  let perspective_control_sub_view = @pbr.SubCameraView3d::new(
     @math.IVec2::new(800, 800),
     @math.Vec2::new(0.0F, 0.0F),
     @math.IVec2::new(800, 400),
   )
-  let orthographic_stretched_sub_view = @render3d.SubCameraView3d::new(
+  let orthographic_stretched_sub_view = @pbr.SubCameraView3d::new(
     @math.IVec2::new(2, 2),
     @math.Vec2::new(0.0F, 0.0F),
     @math.IVec2::new(1, 2),
   )
-  let orthographic_moving_sub_view = @render3d.SubCameraView3d::new(
+  let orthographic_moving_sub_view = @pbr.SubCameraView3d::new(
     @math.IVec2::new(500, 500),
     @math.Vec2::new(0.0F, 0.0F),
     @math.IVec2::new(100, 100),
   )
-  let orthographic_control_sub_view = @render3d.SubCameraView3d::new(
+  let orthographic_control_sub_view = @pbr.SubCameraView3d::new(
     @math.IVec2::new(200, 200),
     @math.Vec2::new(0.0F, 0.0F),
     @math.IVec2::new(200, 100),
@@ -230,9 +230,7 @@ fn move_camera_view(world : @ecs.World) -> Unit {
   let offset = wrapped - 50.0F
 
   let tick = world.read_change_tick()
-  let sub_camera_view_store = world.component(
-    @render3d.ecs_key_sub_camera_view3d,
-  )
+  let sub_camera_view_store = world.component(@pbr.ecs_key_sub_camera_view3d)
   for entity in camera_sub_view_state.val.moving_cameras {
     if sub_camera_view_store.get(entity) is Some(sub_camera_view) {
       let next = sub_camera_view.with_offset(@math.Vec2::new(offset, offset))

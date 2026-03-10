@@ -41,19 +41,19 @@ fn Movable::new(spawn : @math.Vec3) -> Movable {
 fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let entity_spawn = @math.Vec3::zero()
-  let material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@sprite.Color::white()),
+  let material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white()),
   )
-  let cube = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(material),
+  let cube = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(material),
     @math.Transform::from_translation(entity_spawn),
   ).spawn(world)
   world
   .component(Movable::component())
   .insert(cube, Movable::new(entity_spawn), tick)
 
-  @render3d.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 10.0F, 20.0F).looking_at(
       entity_spawn,
@@ -64,8 +64,8 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.DirectionalLight::component())
-  .insert(light, @render3d.DirectionalLight::default(), tick)
+  .component(@pbr.DirectionalLight::component())
+  .insert(light, @pbr.DirectionalLight::default(), tick)
   world
   .component(@math.Transform::component())
   .insert(

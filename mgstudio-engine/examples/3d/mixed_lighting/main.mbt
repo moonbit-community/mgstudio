@@ -43,7 +43,7 @@ priv struct AppStatus {
   mut lighting_mode : LightingMode
   mut camera : @core.Entity?
   mut sphere : @core.Entity?
-  mut sphere_material : @asset.Handle[@render3d.StandardMaterial]?
+  mut sphere_material : @asset.Handle[@pbr.StandardMaterial]?
   mut directional_light : @core.Entity?
   mut help_text : @text.TextHandle?
 }
@@ -78,11 +78,7 @@ fn absf(value : Float) -> Float {
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -128,7 +124,7 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -251,10 +247,10 @@ fn apply_lighting_mode(world : @ecs.World) -> Unit {
 
   if app_status.val.directional_light is Some(light_entity) {
     world
-    .component(@render3d.ecs_key_directional_light)
+    .component(@pbr.ecs_key_directional_light)
     .set(
       light_entity,
-      @render3d.DirectionalLight::new(
+      @pbr.DirectionalLight::new(
         @sprite.Color::white(),
         mode_directional_illuminance(mode),
         scenery_is_lit_in_real_time,
@@ -264,15 +260,15 @@ fn apply_lighting_mode(world : @ecs.World) -> Unit {
     |> ignore
   }
 
-  let ambient_light = @render3d.GlobalAmbientLight::new(
+  let ambient_light = @pbr.GlobalAmbientLight::new(
     @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
     mode_ambient_brightness(mode),
   )
-  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient_light)
+  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient_light)
 
   if app_status.val.sphere_material is Some(handle) {
-    if @render3d.standard_material_get(handle) is Some(material) {
-      @render3d.standard_material_set(
+    if @pbr.standard_material_get(handle) is Some(material) {
+      @pbr.standard_material_set(
         handle,
         material.with_base_color(mode_sphere_color(mode)),
       )
@@ -328,7 +324,7 @@ fn move_sphere(world : @ecs.World) -> Unit {
 
   let camera_store = world.component(@sprite.ecs_key_camera)
   guard camera_store.get(camera_entity) is Some(camera) else { return }
-  let projection_store = world.component(@render3d.ecs_key_projection)
+  let projection_store = world.component(@pbr.ecs_key_projection)
   guard projection_store.get(camera_entity) is Some(projection) else { return }
   let transform_store = world.component(@math.ecs_key_transform)
   guard transform_store.get(camera_entity) is Some(camera_transform) else {
@@ -341,7 +337,7 @@ fn move_sphere(world : @ecs.World) -> Unit {
   )
   let scale_factor = @window.window_scale_factor()
 
-  guard @render3d.render3d_camera_viewport_to_world_ray(
+  guard @pbr.render3d_camera_viewport_to_world_ray(
       screen_pos, camera, projection, camera_transform, target_size, scale_factor,
     )
     is Some((origin, direction)) else {
@@ -413,7 +409,7 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
 
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(-0.7F, 0.7F, 1.0F).looking_at(
       @math.Vec3::new(0.0F, 0.3F, 0.0F),
@@ -438,16 +434,16 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
 
-  let sphere_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let sphere_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.92F, 0.92F, 0.92F, 1.0F),
     )
     .with_perceptual_roughness(0.45F)
     .with_metallic(0.0F),
   )
-  let sphere = @render3d.MeshMaterial3dBundle::new(
+  let sphere = @pbr.MeshMaterial3dBundle::new(
     uv_sphere_mesh(0.2F, 22, 42),
-    @render3d.MeshMaterial3d::new(sphere_material),
+    @pbr.MeshMaterial3d::new(sphere_material),
     @math.Transform::from_xyz(
       initial_sphere_position().x,
       initial_sphere_position().y,
@@ -459,10 +455,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   let directional_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@sprite.Color::white(), 12_000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 12_000.0F, true),
     tick,
   )
   world

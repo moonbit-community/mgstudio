@@ -56,24 +56,24 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
 
-  let decal_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@sprite.Color::white()).with_base_color_texture(
+  let decal_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_base_color_texture(
       Some(asset_server.load("textures/uv_checker_bw.png")),
     ),
   )
-  let decal = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(decal_material),
+  let decal = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(decal_material),
     @math.Transform::identity().with_scale(@math.Vec3::splat(4.0F)),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_forward_decal)
-  .insert(decal, @render3d.ForwardDecal::default(), tick)
+  .component(@pbr.ecs_key_forward_decal)
+  .insert(decal, @pbr.ForwardDecal::default(), tick)
   world
-  .component(@render3d.ecs_key_forward_decal_material_ext)
-  .insert(decal, @render3d.ForwardDecalMaterialExt::new(1.0F), tick)
+  .component(@pbr.ecs_key_forward_decal_material_ext)
+  .insert(decal, @pbr.ForwardDecalMaterialExt::new(1.0F), tick)
 
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(2.0F, 9.5F, 2.5F).looking_at(
       @math.Vec3::zero(),
@@ -81,25 +81,21 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_free_camera)
-  .insert(camera, @render3d.FreeCamera::default(), tick)
+  .component(@pbr.ecs_key_free_camera)
+  .insert(camera, @pbr.FreeCamera::default(), tick)
   world
-  .component(@render3d.ecs_key_depth_prepass)
-  .insert(camera, @render3d.DepthPrepass::default(), tick)
-  world
-  .component(@render3d.ecs_key_msaa)
-  .insert(camera, @render3d.Msaa::Off, tick)
-  world
-  .component(@render3d.ecs_key_fxaa)
-  .insert(camera, @render3d.Fxaa::default(), tick)
+  .component(@pbr.ecs_key_depth_prepass)
+  .insert(camera, @pbr.DepthPrepass::default(), tick)
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
+  world.component(@pbr.ecs_key_fxaa).insert(camera, @pbr.Fxaa::default(), tick)
 
-  let white_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@sprite.Color::white()),
+  let white_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white()),
   )
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(10.0F, 10.0F),
-    @render3d.MeshMaterial3d::new(white_material),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(10.0F, 10.0F),
+    @pbr.MeshMaterial3d::new(white_material),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -112,9 +108,9 @@ fn setup(world : @ecs.World) -> Unit {
       let transform = @math.Transform::from_xyz(x, -0.2F, z).with_rotation(
         obstacle_rotation(i, j),
       )
-      @render3d.MeshMaterial3dBundle::new(
-        @render3d.Mesh3d::from_cuboid(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE),
-        @render3d.MeshMaterial3d::new(white_material),
+      @pbr.MeshMaterial3dBundle::new(
+        @pbr.Mesh3d::from_cuboid(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE),
+        @pbr.MeshMaterial3d::new(white_material),
         transform,
       ).spawn(world)
       |> ignore
@@ -123,10 +119,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     light,
-    @render3d.PointLight::default().with_shadow_maps_enabled(true),
+    @pbr.PointLight::default().with_shadow_maps_enabled(true),
     tick,
   )
   world

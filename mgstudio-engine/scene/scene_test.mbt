@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-fn label_option_text(label : @scene.GltfAssetLabel?) -> String {
+fn label_option_text(label : @gltf.GltfAssetLabel?) -> String {
   match label {
     Some(value) => "Some(" + value.to_label() + ")"
     None => "None"
@@ -23,8 +23,8 @@ fn label_option_text(label : @scene.GltfAssetLabel?) -> String {
 ///|
 fn run_scene_test_app(system : (@ecs.World) -> Unit) -> Unit {
   let plugins : Array[@app.Plugin[@ecs.World]] = [
-    @asset.asset_plugin, @sprite.render2d_plugin_ecs, @render3d.render3d_plugin,
-    @animation.animation_plugin, @scene.scene_plugin,
+    @asset.asset_plugin, @sprite.render2d_plugin_ecs, @pbr.render3d_plugin, @animation.animation_plugin,
+    @scene.scene_plugin,
   ]
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
@@ -35,28 +35,28 @@ fn run_scene_test_app(system : (@ecs.World) -> Unit) -> Unit {
 
 ///|
 test "scene: gltf label path encoding" {
-  let scene_path = @scene.GltfAssetLabel::Scene(3).from_asset(
+  let scene_path = @gltf.GltfAssetLabel::Scene(3).from_asset(
     "models/Foo/Foo.gltf",
   )
-  let node_path = @scene.GltfAssetLabel::Node(8).from_asset(
+  let node_path = @gltf.GltfAssetLabel::Node(8).from_asset(
     "models/Foo/Foo.gltf",
   )
-  let primitive_path = @scene.GltfAssetLabel::Primitive(5, 2).from_asset(
+  let primitive_path = @gltf.GltfAssetLabel::Primitive(5, 2).from_asset(
     "models/Foo/Foo.gltf",
   )
-  let morph_target_path = @scene.GltfAssetLabel::MorphTarget(5, 2).from_asset(
+  let morph_target_path = @gltf.GltfAssetLabel::MorphTarget(5, 2).from_asset(
     "models/Foo/Foo.gltf",
   )
-  let inverted_material_path = @scene.GltfAssetLabel::Material(4, true).from_asset(
+  let inverted_material_path = @gltf.GltfAssetLabel::Material(4, true).from_asset(
     "models/Foo/Foo.gltf",
   )
-  let default_material_path = @scene.GltfAssetLabel::DefaultMaterial.from_asset(
+  let default_material_path = @gltf.GltfAssetLabel::DefaultMaterial.from_asset(
     "models/Foo/Foo.gltf",
   )
-  let inverse_bind_matrices_path = @scene.GltfAssetLabel::InverseBindMatrices(1).from_asset(
+  let inverse_bind_matrices_path = @gltf.GltfAssetLabel::InverseBindMatrices(1).from_asset(
     "models/Foo/Foo.gltf",
   )
-  let animation_path = @scene.GltfAssetLabel::Animation(2).from_asset(
+  let animation_path = @gltf.GltfAssetLabel::Animation(2).from_asset(
     "models/Foo/Foo.gltf",
   )
   inspect(scene_path, content="models/Foo/Foo.gltf#Scene3")
@@ -81,39 +81,39 @@ test "scene: gltf label path encoding" {
 ///|
 test "scene: gltf label parsing and path split" {
   inspect(
-    label_option_text(@scene.GltfAssetLabel::parse("Mesh5/Primitive2")),
+    label_option_text(@gltf.GltfAssetLabel::parse("Mesh5/Primitive2")),
     content="Some(Mesh5/Primitive2)",
   )
   inspect(
     label_option_text(
-      @scene.GltfAssetLabel::parse("Mesh5/Primitive2/MorphTargets"),
+      @gltf.GltfAssetLabel::parse("Mesh5/Primitive2/MorphTargets"),
     ),
     content="Some(Mesh5/Primitive2/MorphTargets)",
   )
   inspect(
-    label_option_text(@scene.GltfAssetLabel::parse("Material4 (inverted)")),
+    label_option_text(@gltf.GltfAssetLabel::parse("Material4 (inverted)")),
     content="Some(Material4 (inverted))",
   )
   inspect(
-    label_option_text(@scene.GltfAssetLabel::parse("Skin1/InverseBindMatrices")),
+    label_option_text(@gltf.GltfAssetLabel::parse("Skin1/InverseBindMatrices")),
     content="Some(Skin1/InverseBindMatrices)",
   )
   inspect(
-    label_option_text(@scene.GltfAssetLabel::parse("DefaultMaterial")),
+    label_option_text(@gltf.GltfAssetLabel::parse("DefaultMaterial")),
     content="Some(DefaultMaterial)",
   )
   inspect(
-    label_option_text(@scene.GltfAssetLabel::parse("Unknown12")),
+    label_option_text(@gltf.GltfAssetLabel::parse("Unknown12")),
     content="None",
   )
 
-  let split_scene = @scene.gltf_split_asset_path_with_label(
+  let split_scene = @gltf.gltf_split_asset_path_with_label(
     "models/Foo/Foo.gltf#Scene7",
   )
   inspect(split_scene.0, content="models/Foo/Foo.gltf")
   inspect(label_option_text(split_scene.1), content="Some(Scene7)")
 
-  let split_primitive = @scene.gltf_split_asset_path_with_label(
+  let split_primitive = @gltf.gltf_split_asset_path_with_label(
     "models/Foo/Foo.gltf#Mesh2/Primitive1",
   )
   inspect(split_primitive.0, content="models/Foo/Foo.gltf")
@@ -122,7 +122,7 @@ test "scene: gltf label parsing and path split" {
     content="Some(Mesh2/Primitive1)",
   )
 
-  let split_invalid = @scene.gltf_split_asset_path_with_label(
+  let split_invalid = @gltf.gltf_split_asset_path_with_label(
     "models/Foo/Foo.gltf#SceneX",
   )
   inspect(split_invalid.0, content="models/Foo/Foo.gltf")
@@ -134,7 +134,7 @@ test "scene: load gltf animation keeps stable handle" {
   let same_handle = Ref::new(false)
   run_scene_test_app(fn(_world : @ecs.World) {
     let asset_server = @asset.AssetServer::new()
-    let path = @scene.GltfAssetLabel::Animation(1).from_asset(
+    let path = @gltf.GltfAssetLabel::Animation(1).from_asset(
       "models/Foo/Foo.gltf",
     )
     let first = @scene.scene_load_gltf_animation(asset_server, path)
@@ -149,7 +149,7 @@ test "scene: load gltf primitive mesh keeps stable handle" {
   let same_handle = Ref::new(false)
   run_scene_test_app(fn(_world : @ecs.World) {
     let asset_server = @asset.AssetServer::new()
-    let path = @scene.GltfAssetLabel::Primitive(0, 0).from_asset(
+    let path = @gltf.GltfAssetLabel::Primitive(0, 0).from_asset(
       "models/torus/torus.gltf",
     )
     let first : @asset.Handle[@mesh.Mesh] = asset_server.load(path)
@@ -164,7 +164,7 @@ test "scene: load gltf primitive mesh stays pending in the issuing frame" {
   let asset_missing = Ref::new(false)
   run_scene_test_app(fn(world : @ecs.World) {
     let asset_server = @asset.AssetServer::new()
-    let path = @scene.GltfAssetLabel::Primitive(0, 0).from_asset(
+    let path = @gltf.GltfAssetLabel::Primitive(0, 0).from_asset(
       "models/torus/torus.gltf",
     )
     let handle : @asset.Handle[@mesh.Mesh] = asset_server.load(path)
@@ -180,7 +180,7 @@ test "scene: register keeps stable handle" {
   let same_handle = Ref::new(false)
   let ready_scene = Ref::new(false)
   run_scene_test_app(fn(_world : @ecs.World) {
-    let path = @scene.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
+    let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
     let first_handle = @scene.scene_register_gltf_scene(
       path,
       @scene.Scene::new([]),
@@ -260,14 +260,14 @@ test "scene: SceneRoot spawns children and marks ready" {
   let ready_after_second_tick = Ref::new(0)
   run_scene_test_app(fn(world : @ecs.World) {
     let tick = world.increment_change_tick()
-    let path = @scene.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
-    let material = @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@sprite.Color::white()),
+    let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
+    let material = @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
       ),
     )
     let node = @scene.SceneNode3d::new(
-      @render3d.Mesh3d::from_cuboid(1.0F, 2.0F, 3.0F),
+      @pbr.Mesh3d::from_cuboid(1.0F, 2.0F, 3.0F),
       material,
       @math.Transform::from_xyz(1.0F, 2.0F, 3.0F),
       Some(@visibility.VisibilityRange::new(0.0F, 0.0F, 4.0F, 5.0F, false)),
@@ -302,10 +302,8 @@ test "scene: SceneRoot spawns children and marks ready" {
     child_count.val = children.length()
 
     let child = children[0]
-    has_mesh.val = @render3d.get_mesh3d_store(world).contains(child)
-    has_material.val = @render3d.get_mesh_material3d_store(world).contains(
-      child,
-    )
+    has_mesh.val = @pbr.get_mesh3d_store(world).contains(child)
+    has_material.val = @pbr.get_mesh_material3d_store(world).contains(child)
     has_transform.val = @math.get_transform_store(world).contains(child)
     has_visibility.val = @visibility.get_visibility_range_store(world).contains(
       child,
@@ -359,20 +357,20 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
   let new_child_x = Ref::new(0.0)
   run_scene_test_app(fn(world : @ecs.World) {
     let first_tick = world.increment_change_tick()
-    let first_path = @scene.GltfAssetLabel::Scene(1).from_asset(
+    let first_path = @gltf.GltfAssetLabel::Scene(1).from_asset(
       "models/Foo/Foo.gltf",
     )
-    let second_path = @scene.GltfAssetLabel::Scene(2).from_asset(
+    let second_path = @gltf.GltfAssetLabel::Scene(2).from_asset(
       "models/Foo/Foo.gltf",
     )
-    let material = @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@sprite.Color::white()),
+    let material = @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
       ),
     )
     let first_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
-        @render3d.Mesh3d::from_cuboid(1.0F, 2.0F, 3.0F),
+        @pbr.Mesh3d::from_cuboid(1.0F, 2.0F, 3.0F),
         material,
         @math.Transform::from_xyz(1.0F, 2.0F, 3.0F),
         None,
@@ -381,7 +379,7 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
     ])
     let second_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
-        @render3d.Mesh3d::from_cuboid(4.0F, 5.0F, 6.0F),
+        @pbr.Mesh3d::from_cuboid(4.0F, 5.0F, 6.0F),
         material,
         @math.Transform::from_xyz(9.0F, 8.0F, 7.0F),
         None,

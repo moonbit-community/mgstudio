@@ -1,0 +1,30 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/gltf"
+
+// Values
+pub fn gltf_split_asset_path_with_label(String) -> (String, GltfAssetLabel?)
+
+// Errors
+
+// Types and methods
+pub(all) enum GltfAssetLabel {
+  Scene(Int)
+  Node(Int)
+  Mesh(Int)
+  Primitive(Int, Int)
+  MorphTarget(Int, Int)
+  Texture(Int)
+  Material(Int, Bool)
+  DefaultMaterial
+  Animation(Int)
+  Skin(Int)
+  InverseBindMatrices(Int)
+}
+pub fn GltfAssetLabel::from_asset(Self, String) -> String
+pub fn GltfAssetLabel::parse(String) -> Self?
+pub fn GltfAssetLabel::to_label(Self) -> String
+
+// Type aliases
+
+// Traits
+

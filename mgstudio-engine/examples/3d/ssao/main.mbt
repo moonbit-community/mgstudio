@@ -81,7 +81,7 @@ fn marker(current_quality : Int, index : Int) -> String {
 }
 
 ///|
-fn ssao_quality_index(ssao : @render3d.ScreenSpaceAmbientOcclusion?) -> Int {
+fn ssao_quality_index(ssao : @pbr.ScreenSpaceAmbientOcclusion?) -> Int {
   match ssao {
     None => 0
     Some(ssao) =>
@@ -96,7 +96,7 @@ fn ssao_quality_index(ssao : @render3d.ScreenSpaceAmbientOcclusion?) -> Int {
 
 ///|
 fn ssao_ui_text(
-  ssao : @render3d.ScreenSpaceAmbientOcclusion?,
+  ssao : @pbr.ScreenSpaceAmbientOcclusion?,
   temporal_jitter_enabled : Bool,
 ) -> String {
   let quality = ssao_quality_index(ssao)
@@ -143,11 +143,11 @@ fn ssao_camera_entity(
 
 ///|
 fn current_ssao_value(
-  current : @render3d.ScreenSpaceAmbientOcclusion?,
-) -> @render3d.ScreenSpaceAmbientOcclusion {
+  current : @pbr.ScreenSpaceAmbientOcclusion?,
+) -> @pbr.ScreenSpaceAmbientOcclusion {
   match current {
     Some(ssao) => ssao
-    None => @render3d.ScreenSpaceAmbientOcclusion::default()
+    None => @pbr.ScreenSpaceAmbientOcclusion::default()
   }
 }
 
@@ -155,10 +155,10 @@ fn current_ssao_value(
 fn set_ssao_component(
   world : @ecs.World,
   camera_entity : @core.Entity,
-  ssao : @render3d.ScreenSpaceAmbientOcclusion,
+  ssao : @pbr.ScreenSpaceAmbientOcclusion,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let store = world.component(@render3d.ecs_key_screen_space_ambient_occlusion)
+  let store = world.component(@pbr.ecs_key_screen_space_ambient_occlusion)
   if store.contains(camera_entity) {
     store.set(camera_entity, ssao, tick) |> ignore
   } else {
@@ -169,78 +169,70 @@ fn set_ssao_component(
 ///|
 fn setup(
   asset_server : @app.Res[@asset.AssetServer],
-  materials : @app.ResMut[@asset.Assets[@render3d.StandardMaterial]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let world = @app.current_world().unwrap()
   let tick = world.read_change_tick()
 
   world.insert_resource(
-    @render3d.ecs_key_global_ambient_light,
-    @render3d.GlobalAmbientLight::new(@sprite.Color::white(), 1000.0F),
+    @pbr.ecs_key_global_ambient_light,
+    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 1000.0F),
   )
 
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 2.0F, -2.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
-  .component(@render3d.ecs_key_hdr)
-  .insert(camera, @render3d.Hdr::default(), tick)
+  .component(@pbr.ecs_key_screen_space_ambient_occlusion)
+  .insert(camera, @pbr.ScreenSpaceAmbientOcclusion::default(), tick)
   world
-  .component(@render3d.ecs_key_msaa)
-  .insert(camera, @render3d.Msaa::Off, tick)
+  .component(@pbr.ecs_key_temporal_anti_aliasing)
+  .insert(camera, @pbr.TemporalAntiAliasing::default(), tick)
   world
-  .component(@render3d.ecs_key_screen_space_ambient_occlusion)
-  .insert(camera, @render3d.ScreenSpaceAmbientOcclusion::default(), tick)
-  world
-  .component(@render3d.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
-  world
-  .component(@render3d.ecs_key_temporal_jitter)
-  .insert(camera, @render3d.TemporalJitter::default(), tick)
+  .component(@pbr.ecs_key_temporal_jitter)
+  .insert(camera, @pbr.TemporalJitter::default(), tick)
   world
   .component(SsaoCamera::component())
   .insert(camera, SsaoCamera::{  }, tick)
 
   let base_material = materials.get_ref().val.add(
-    @render3d.StandardMaterial::from_color(
-      @sprite.Color::srgb(0.5F, 0.5F, 0.5F),
-    )
+    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.5F, 0.5F, 0.5F))
     .with_perceptual_roughness(1.0F)
     .with_reflectance(0.0F),
   )
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(base_material),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(base_material),
     @math.Transform::from_xyz(0.0F, 0.0F, 1.0F),
   ).spawn(world)
   |> ignore
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(base_material),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(base_material),
     @math.Transform::from_xyz(0.0F, -1.0F, 0.0F),
   ).spawn(world)
   |> ignore
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(base_material),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(base_material),
     @math.Transform::from_xyz(1.0F, 0.0F, 0.0F),
   ).spawn(world)
   |> ignore
 
-  let sphere = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_uv_sphere(0.4F, 72, 36),
-    @render3d.MeshMaterial3d::new(
+  let sphere = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_uv_sphere(0.4F, 72, 36),
+    @pbr.MeshMaterial3d::new(
       materials.get_ref().val.add(
-        @render3d.StandardMaterial::from_color(
-          @sprite.Color::srgb(0.4F, 0.4F, 0.4F),
-        )
+        @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.4F, 0.4F, 0.4F))
         .with_perceptual_roughness(1.0F)
         .with_reflectance(0.0F),
       ),
@@ -267,19 +259,16 @@ fn setup(
     tick,
   )
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     light,
-    @render3d.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
     tick,
   )
 
   let instructions = @text.Text2dBundle::new(
       @text.Text2d::new(
-        ssao_ui_text(
-          Some(@render3d.ScreenSpaceAmbientOcclusion::default()),
-          true,
-        ),
+        ssao_ui_text(Some(@pbr.ScreenSpaceAmbientOcclusion::default()), true),
       ),
       @text.TextFont::default()
       .with_font(asset_server.get().load_font("fonts/FiraSans-Bold.ttf"))
@@ -320,10 +309,8 @@ fn update(
 
   guard ssao_camera_entity(camera_query) is Some(camera_entity) else { return }
   let world = @app.current_world().unwrap()
-  let ssao_store = world.component(
-    @render3d.ecs_key_screen_space_ambient_occlusion,
-  )
-  let temporal_jitter_store = world.component(@render3d.ecs_key_temporal_jitter)
+  let ssao_store = world.component(@pbr.ecs_key_screen_space_ambient_occlusion)
+  let temporal_jitter_store = world.component(@pbr.ecs_key_temporal_jitter)
   let current_ssao = ssao_store.get(camera_entity)
   let base_ssao = current_ssao_value(current_ssao)
 
@@ -332,7 +319,7 @@ fn update(
       world,
       camera_entity,
       base_ssao.with_quality_level(
-        @render3d.ScreenSpaceAmbientOcclusionQualityLevel::Low,
+        @pbr.ScreenSpaceAmbientOcclusionQualityLevel::Low,
       ),
     )
   }
@@ -342,7 +329,7 @@ fn update(
       world,
       camera_entity,
       base_ssao.with_quality_level(
-        @render3d.ScreenSpaceAmbientOcclusionQualityLevel::Medium,
+        @pbr.ScreenSpaceAmbientOcclusionQualityLevel::Medium,
       ),
     )
   }
@@ -352,7 +339,7 @@ fn update(
       world,
       camera_entity,
       base_ssao.with_quality_level(
-        @render3d.ScreenSpaceAmbientOcclusionQualityLevel::High,
+        @pbr.ScreenSpaceAmbientOcclusionQualityLevel::High,
       ),
     )
   }
@@ -362,7 +349,7 @@ fn update(
       world,
       camera_entity,
       base_ssao.with_quality_level(
-        @render3d.ScreenSpaceAmbientOcclusionQualityLevel::Ultra,
+        @pbr.ScreenSpaceAmbientOcclusionQualityLevel::Ultra,
       ),
     )
   }
@@ -405,7 +392,7 @@ fn update(
     } else {
       temporal_jitter_store.insert(
         camera_entity,
-        @render3d.TemporalJitter::default(),
+        @pbr.TemporalJitter::default(),
         world.read_change_tick(),
       )
     }

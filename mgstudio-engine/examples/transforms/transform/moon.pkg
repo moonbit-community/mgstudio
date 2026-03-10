@@ -4,7 +4,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/sprite",
-  "Milky2018/mgstudio/render3d",
+  "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/time",
   "moonbitlang/core/ref",
 }

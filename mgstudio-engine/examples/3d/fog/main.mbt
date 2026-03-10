@@ -26,14 +26,14 @@ const PI : Float = 3.141592653589793F
 priv struct FogExampleState {
   mut camera : @core.Entity?
   mut help_text : @text.TextHandle?
-  mut fog : @render3d.DistanceFog
+  mut fog : @pbr.DistanceFog
 }
 
 ///|
 let fog_example_state : Ref[FogExampleState] = Ref::new({
   camera: None,
   help_text: None,
-  fog: @render3d.DistanceFog::default(),
+  fog: @pbr.DistanceFog::default(),
 })
 
 ///|
@@ -53,11 +53,7 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -103,7 +99,7 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -111,24 +107,24 @@ fn uv_sphere_mesh(
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @render3d.Mesh3d,
-  material : @asset.Handle[@render3d.StandardMaterial],
+  mesh : @pbr.Mesh3d,
+  material : @asset.Handle[@pbr.StandardMaterial],
   transform : @math.Transform,
 ) -> @core.Entity {
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     mesh,
-    @render3d.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
 }
 
 ///|
 fn setup_camera_fog(world : @ecs.World) -> Unit {
-  let initial_fog = @render3d.DistanceFog::new(
+  let initial_fog = @pbr.DistanceFog::new(
     @sprite.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
-    @render3d.FogFalloff3d::linear(5.0F, 20.0F),
+    @pbr.FogFalloff3d::linear(5.0F, 20.0F),
   )
-  let camera = @render3d.Camera3dBundle::new(
+  let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
       @math.Transform::from_xyz(8.0F, 8.0F, 8.0F).looking_at(
         @math.Vec3::zero(),
@@ -145,12 +141,12 @@ fn setup_camera_fog(world : @ecs.World) -> Unit {
 fn setup_pyramid_scene(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   world.insert_resource(
-    @render3d.ecs_key_global_ambient_light,
-    @render3d.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
+    @pbr.ecs_key_global_ambient_light,
+    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
   )
 
-  let stone_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let stone_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(40.0F / 255.0F, 34.0F / 255.0F, 27.0F / 255.0F, 1.0F),
     ).with_perceptual_roughness(1.0F),
   )
@@ -164,21 +160,21 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
   for position in pillar_positions {
     spawn_mesh(
       world,
-      @render3d.Mesh3d::from_cuboid(1.0F, 3.0F, 1.0F),
+      @pbr.Mesh3d::from_cuboid(1.0F, 3.0F, 1.0F),
       stone_material,
       @math.Transform::from_xyz(position.x, 1.5F, position.y),
     )
     |> ignore
   }
 
-  let orb_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let orb_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.07F, 0.38F, 0.07F, 0.8F),
     )
     .with_reflectance(1.0F)
     .with_perceptual_roughness(0.0F)
     .with_metallic(0.5F)
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend),
+    .with_alpha_mode(@pbr.AlphaMode3d::Blend),
   )
   let orb = spawn_mesh(
     world,
@@ -189,11 +185,11 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
     ),
   )
   world
-  .component(@render3d.ecs_key_not_shadow_caster)
-  .insert(orb, @render3d.NotShadowCaster::default(), tick)
+  .component(@pbr.ecs_key_not_shadow_caster)
+  .insert(orb, @pbr.NotShadowCaster::default(), tick)
   world
-  .component(@render3d.ecs_key_not_shadow_receiver)
-  .insert(orb, @render3d.NotShadowReceiver::default(), tick)
+  .component(@pbr.ecs_key_not_shadow_receiver)
+  .insert(orb, @pbr.NotShadowReceiver::default(), tick)
 
   for i in 0..<50 {
     let i_f = float_from_int(i)
@@ -201,7 +197,7 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
     let y = -i_f / 2.0F
     spawn_mesh(
       world,
-      @render3d.Mesh3d::from_cuboid(2.0F * half_size, 0.5F, 2.0F * half_size),
+      @pbr.Mesh3d::from_cuboid(2.0F * half_size, 0.5F, 2.0F * half_size),
       stone_material,
       @math.Transform::from_xyz(0.0F, y + 0.25F, 0.0F),
     )
@@ -210,9 +206,9 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
 
   spawn_mesh(
     world,
-    @render3d.Mesh3d::from_cuboid(2.0F, 1.0F, 1.0F),
-    @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(
+    @pbr.Mesh3d::from_cuboid(2.0F, 1.0F, 1.0F),
+    @pbr.standard_material_add(
+      @pbr.StandardMaterial::from_color(
         @sprite.Color::new(
           136.0F / 255.0F,
           136.0F / 255.0F,
@@ -229,10 +225,10 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
 
   let point_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     point_light,
-    @render3d.PointLight::default().with_shadow_maps_enabled(true),
+    @pbr.PointLight::default().with_shadow_maps_enabled(true),
     tick,
   )
   world
@@ -241,25 +237,25 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn fog_mode_label(falloff : @render3d.FogFalloff3d) -> String {
+fn fog_mode_label(falloff : @pbr.FogFalloff3d) -> String {
   match falloff {
-    @render3d.FogFalloff3d::Atmospheric(_, _) => "Atmospheric"
-    @render3d.FogFalloff3d::Linear(_, _) => "Linear"
-    @render3d.FogFalloff3d::Exponential(_) => "Exponential"
-    @render3d.FogFalloff3d::ExponentialSquared(_) => "ExponentialSquared"
+    @pbr.FogFalloff3d::Atmospheric(_, _) => "Atmospheric"
+    @pbr.FogFalloff3d::Linear(_, _) => "Linear"
+    @pbr.FogFalloff3d::Exponential(_) => "Exponential"
+    @pbr.FogFalloff3d::ExponentialSquared(_) => "ExponentialSquared"
   }
 }
 
 ///|
-fn fog_help_text(fog : @render3d.DistanceFog) -> String {
+fn fog_help_text(fog : @pbr.DistanceFog) -> String {
   let detail = match fog.falloff {
-    @render3d.FogFalloff3d::Atmospheric(extinction, inscattering) =>
+    @pbr.FogFalloff3d::Atmospheric(extinction, inscattering) =>
       "Atmospheric extinction: (\{extinction.x}, \{extinction.y}, \{extinction.z})\nAtmospheric inscattering: (\{inscattering.x}, \{inscattering.y}, \{inscattering.z})"
-    @render3d.FogFalloff3d::Linear(start, end_) =>
+    @pbr.FogFalloff3d::Linear(start, end_) =>
       "Linear start/end: \{start} / \{end_}\nA/S adjust start, Z/X adjust end"
-    @render3d.FogFalloff3d::Exponential(density) =>
+    @pbr.FogFalloff3d::Exponential(density) =>
       "Exponential density: \{density}\nA/S adjust density"
-    @render3d.FogFalloff3d::ExponentialSquared(density) =>
+    @pbr.FogFalloff3d::ExponentialSquared(density) =>
       "ExpSquared density: \{density}\nA/S adjust density"
   }
   "Fog Falloff: \{fog_mode_label(fog.falloff)}\nFog Color: (\{fog.color.r}, \{fog.color.g}, \{fog.color.b}, \{fog.color.a})\n\n1/2/3 switch falloff mode\nMinus/Equal red -/+\nBracketLeft/BracketRight green -/+\nSemicolon/Quote blue -/+\nPeriod/Slash alpha -/+\n\n\{detail}"
@@ -299,7 +295,7 @@ fn update_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   guard fog_example_state.val.camera is Some(camera) else { return }
-  let camera3d_store = world.component(@render3d.ecs_key_camera3d)
+  let camera3d_store = world.component(@pbr.ecs_key_camera3d)
   let transform_store = world.component(@math.ecs_key_transform)
   let mut fog = fog_example_state.val.fog
 
@@ -312,31 +308,31 @@ fn update_system(world : @ecs.World) -> Unit {
   transform_store.set(camera, camera_transform, tick) |> ignore
 
   if @input.key_pressed(@window.KeyCode::Digit1) {
-    fog = fog.with_falloff(@render3d.FogFalloff3d::linear(5.0F, 20.0F))
+    fog = fog.with_falloff(@pbr.FogFalloff3d::linear(5.0F, 20.0F))
   }
   if @input.key_pressed(@window.KeyCode::Digit2) {
     let density = match fog.falloff {
-      @render3d.FogFalloff3d::Atmospheric(_, _) => 0.07F
-      @render3d.FogFalloff3d::Exponential(d) => d
-      @render3d.FogFalloff3d::ExponentialSquared(d) => d
-      @render3d.FogFalloff3d::Linear(_, _) => 0.07F
+      @pbr.FogFalloff3d::Atmospheric(_, _) => 0.07F
+      @pbr.FogFalloff3d::Exponential(d) => d
+      @pbr.FogFalloff3d::ExponentialSquared(d) => d
+      @pbr.FogFalloff3d::Linear(_, _) => 0.07F
     }
-    fog = fog.with_falloff(@render3d.FogFalloff3d::exponential(density))
+    fog = fog.with_falloff(@pbr.FogFalloff3d::exponential(density))
   }
   if @input.key_pressed(@window.KeyCode::Digit3) {
     let density = match fog.falloff {
-      @render3d.FogFalloff3d::Atmospheric(_, _) => 0.07F
-      @render3d.FogFalloff3d::Exponential(d) => d
-      @render3d.FogFalloff3d::ExponentialSquared(d) => d
-      @render3d.FogFalloff3d::Linear(_, _) => 0.07F
+      @pbr.FogFalloff3d::Atmospheric(_, _) => 0.07F
+      @pbr.FogFalloff3d::Exponential(d) => d
+      @pbr.FogFalloff3d::ExponentialSquared(d) => d
+      @pbr.FogFalloff3d::Linear(_, _) => 0.07F
     }
-    fog = fog.with_falloff(@render3d.FogFalloff3d::exponential_squared(density))
+    fog = fog.with_falloff(@pbr.FogFalloff3d::exponential_squared(density))
   }
 
   let next_falloff = match fog.falloff {
-    @render3d.FogFalloff3d::Atmospheric(extinction, inscattering) =>
-      @render3d.FogFalloff3d::atmospheric(extinction, inscattering)
-    @render3d.FogFalloff3d::Linear(start, end_) => {
+    @pbr.FogFalloff3d::Atmospheric(extinction, inscattering) =>
+      @pbr.FogFalloff3d::atmospheric(extinction, inscattering)
+    @pbr.FogFalloff3d::Linear(start, end_) => {
       let next_start = if @input.key_pressed(@window.KeyCode::KeyA) {
         start - delta * 3.0F
       } else if @input.key_pressed(@window.KeyCode::KeyS) {
@@ -351,9 +347,9 @@ fn update_system(world : @ecs.World) -> Unit {
       } else {
         end_
       }
-      @render3d.FogFalloff3d::linear(next_start, next_end)
+      @pbr.FogFalloff3d::linear(next_start, next_end)
     }
-    @render3d.FogFalloff3d::Exponential(density) => {
+    @pbr.FogFalloff3d::Exponential(density) => {
       let next_density = if @input.key_pressed(@window.KeyCode::KeyA) {
         density - delta * 0.5F * density
       } else if @input.key_pressed(@window.KeyCode::KeyS) {
@@ -361,9 +357,9 @@ fn update_system(world : @ecs.World) -> Unit {
       } else {
         density
       }
-      @render3d.FogFalloff3d::exponential(next_density)
+      @pbr.FogFalloff3d::exponential(next_density)
     }
-    @render3d.FogFalloff3d::ExponentialSquared(density) => {
+    @pbr.FogFalloff3d::ExponentialSquared(density) => {
       let next_density = if @input.key_pressed(@window.KeyCode::KeyA) {
         density - delta * 0.5F * density
       } else if @input.key_pressed(@window.KeyCode::KeyS) {
@@ -371,7 +367,7 @@ fn update_system(world : @ecs.World) -> Unit {
       } else {
         density
       }
-      @render3d.FogFalloff3d::exponential_squared(next_density)
+      @pbr.FogFalloff3d::exponential_squared(next_density)
     }
   }
   fog = fog.with_falloff(next_falloff)
@@ -445,7 +441,7 @@ fn update_system(world : @ecs.World) -> Unit {
 
   let camera3d = match camera3d_store.get(camera) {
     Some(value) => value
-    None => @render3d.Camera3d::default()
+    None => @pbr.Camera3d::default()
   }
   camera3d_store.set(camera, camera3d.with_distance_fog(Some(fog)), tick)
   |> ignore
@@ -460,7 +456,7 @@ fn update_system(world : @ecs.World) -> Unit {
 fn setup(world : @ecs.World) -> Unit {
   fog_example_state.val.camera = None
   fog_example_state.val.help_text = None
-  fog_example_state.val.fog = @render3d.DistanceFog::default()
+  fog_example_state.val.fog = @pbr.DistanceFog::default()
   setup_camera_fog(world)
   setup_pyramid_scene(world)
   setup_instructions(world)

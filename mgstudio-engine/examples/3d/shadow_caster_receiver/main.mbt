@@ -44,11 +44,7 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -94,7 +90,7 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -103,8 +99,8 @@ fn uv_sphere_mesh(
 fn update_light_modes(world : @ecs.World) -> Unit {
   let state = shadow_caster_receiver_state.val
   let tick = world.read_change_tick()
-  let point_store = world.component(@render3d.ecs_key_point_light)
-  let directional_store = world.component(@render3d.ecs_key_directional_light)
+  let point_store = world.component(@pbr.ecs_key_point_light)
+  let directional_store = world.component(@pbr.ecs_key_directional_light)
 
   if state.point_light is Some(point_entity) {
     if point_store.get(point_entity) is Some(point_light) {
@@ -115,7 +111,7 @@ fn update_light_modes(world : @ecs.World) -> Unit {
       }
       point_store.set(
         point_entity,
-        @render3d.PointLight::new(
+        @pbr.PointLight::new(
           point_light.color,
           intensity,
           point_light.range,
@@ -136,7 +132,7 @@ fn update_light_modes(world : @ecs.World) -> Unit {
       }
       directional_store.set(
         directional_entity,
-        @render3d.DirectionalLight::new(
+        @pbr.DirectionalLight::new(
           directional_light.color,
           illuminance,
           directional_light.shadow_maps_enabled,
@@ -151,10 +147,8 @@ fn update_light_modes(world : @ecs.World) -> Unit {
 ///|
 fn toggle_shadow_casters(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let mesh_store = world.component(@render3d.ecs_key_mesh3d)
-  let not_shadow_caster_store = world.component(
-    @render3d.ecs_key_not_shadow_caster,
-  )
+  let mesh_store = world.component(@pbr.ecs_key_mesh3d)
+  let not_shadow_caster_store = world.component(@pbr.ecs_key_not_shadow_caster)
   let make_shadow_caster : Array[@core.Entity] = []
   let make_not_shadow_caster : Array[@core.Entity] = []
 
@@ -172,7 +166,7 @@ fn toggle_shadow_casters(world : @ecs.World) -> Unit {
   for entity in make_not_shadow_caster {
     not_shadow_caster_store.insert(
       entity,
-      @render3d.NotShadowCaster::default(),
+      @pbr.NotShadowCaster::default(),
       tick,
     )
   }
@@ -181,9 +175,9 @@ fn toggle_shadow_casters(world : @ecs.World) -> Unit {
 ///|
 fn toggle_shadow_receivers(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let mesh_store = world.component(@render3d.ecs_key_mesh3d)
+  let mesh_store = world.component(@pbr.ecs_key_mesh3d)
   let not_shadow_receiver_store = world.component(
-    @render3d.ecs_key_not_shadow_receiver,
+    @pbr.ecs_key_not_shadow_receiver,
   )
   let make_shadow_receiver : Array[@core.Entity] = []
   let make_not_shadow_receiver : Array[@core.Entity] = []
@@ -202,7 +196,7 @@ fn toggle_shadow_receivers(world : @ecs.World) -> Unit {
   for entity in make_not_shadow_receiver {
     not_shadow_receiver_store.insert(
       entity,
-      @render3d.NotShadowReceiver::default(),
+      @pbr.NotShadowReceiver::default(),
       tick,
     )
   }
@@ -218,68 +212,68 @@ fn setup(world : @ecs.World) -> Unit {
   let sphere_mesh = uv_sphere_mesh(0.25F, 16, 24)
   let tick = world.read_change_tick()
 
-  let red_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let red_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
     ),
   )
-  let blue_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let blue_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
     ),
   )
-  let lime_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
+  let lime_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
     ),
   )
-  let white_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@sprite.Color::white()).with_perceptual_roughness(
+  let white_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_perceptual_roughness(
       1.0F,
     ),
   )
 
-  let red_sphere = @render3d.MeshMaterial3dBundle::new(
+  let red_sphere = @pbr.MeshMaterial3dBundle::new(
     sphere_mesh,
-    @render3d.MeshMaterial3d::new(red_material),
+    @pbr.MeshMaterial3d::new(red_material),
     @math.Transform::from_xyz(-1.0F, spawn_height, 0.0F),
   ).spawn(world)
   red_sphere |> ignore
 
-  let blue_sphere = @render3d.MeshMaterial3dBundle::new(
+  let blue_sphere = @pbr.MeshMaterial3dBundle::new(
     sphere_mesh,
-    @render3d.MeshMaterial3d::new(blue_material),
+    @pbr.MeshMaterial3d::new(blue_material),
     @math.Transform::from_xyz(1.0F, spawn_height, 0.0F),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_not_shadow_caster)
-  .insert(blue_sphere, @render3d.NotShadowCaster::default(), tick)
+  .component(@pbr.ecs_key_not_shadow_caster)
+  .insert(blue_sphere, @pbr.NotShadowCaster::default(), tick)
 
-  let floating_plane = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(20.0F, 20.0F),
-    @render3d.MeshMaterial3d::new(lime_material),
+  let floating_plane = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(20.0F, 20.0F),
+    @pbr.MeshMaterial3d::new(lime_material),
     @math.Transform::from_xyz(0.0F, 1.0F, -10.0F),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_not_shadow_caster)
-  .insert(floating_plane, @render3d.NotShadowCaster::default(), tick)
+  .component(@pbr.ecs_key_not_shadow_caster)
+  .insert(floating_plane, @pbr.NotShadowCaster::default(), tick)
   world
-  .component(@render3d.ecs_key_not_shadow_receiver)
-  .insert(floating_plane, @render3d.NotShadowReceiver::default(), tick)
+  .component(@pbr.ecs_key_not_shadow_receiver)
+  .insert(floating_plane, @pbr.NotShadowReceiver::default(), tick)
 
-  let ground_plane = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(20.0F, 20.0F),
-    @render3d.MeshMaterial3d::new(white_material),
+  let ground_plane = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(20.0F, 20.0F),
+    @pbr.MeshMaterial3d::new(white_material),
     @math.Transform::identity(),
   ).spawn(world)
   ground_plane |> ignore
 
   let point_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     point_light,
-    @render3d.PointLight::new(@sprite.Color::white(), 0.0F, 500.0F, true),
+    @pbr.PointLight::new(@sprite.Color::white(), 0.0F, 500.0F, true),
     tick,
   )
   world
@@ -288,15 +282,15 @@ fn setup(world : @ecs.World) -> Unit {
   shadow_caster_receiver_state.val.point_light = Some(point_light)
 
   let directional_light = world.spawn_empty()
-  let cascade_shadow_config = @render3d.CascadeShadowConfigBuilder::default()
+  let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::default()
     .with_first_cascade_far_bound(7.0F)
     .with_maximum_distance(25.0F)
     .build()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(
+    @pbr.DirectionalLight::new(
       @sprite.Color::white(),
       SHADOW_CASTER_RECEIVER_LIGHT_DIRECTIONAL_ILLUMINANCE,
       true,
@@ -316,7 +310,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   shadow_caster_receiver_state.val.directional_light = Some(directional_light)
 
-  @render3d.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(-5.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::new(-1.0F, 1.0F, 0.0F),

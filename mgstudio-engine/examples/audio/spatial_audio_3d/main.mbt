@@ -100,11 +100,7 @@ fn toggle_stopwatch(stopwatch : @time.Stopwatch) -> @time.Stopwatch {
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -150,7 +146,7 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -203,16 +199,16 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @render3d.Mesh3d,
+  mesh : @pbr.Mesh3d,
   color : @sprite.Color,
   transform : @math.Transform,
 ) -> @core.Entity {
-  let material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(color),
+  let material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(color),
   )
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     mesh,
-    @render3d.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
 }
@@ -226,7 +222,7 @@ fn spawn_listener_ear(
 ) -> Unit {
   let ear = spawn_mesh(
     world,
-    @render3d.Mesh3d::from_cuboid(EAR_SIZE, EAR_SIZE, EAR_SIZE),
+    @pbr.Mesh3d::from_cuboid(EAR_SIZE, EAR_SIZE, EAR_SIZE),
     color,
     @math.Transform::from_xyz(offset.x, offset.y, offset.z),
   )
@@ -287,8 +283,8 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
-  .insert(light, @render3d.DirectionalLight::default(), tick)
+  .component(@pbr.ecs_key_directional_light)
+  .insert(light, @pbr.DirectionalLight::default(), tick)
   world
   .component(@math.ecs_key_transform)
   .insert(
@@ -304,7 +300,7 @@ fn setup(world : @ecs.World) -> Unit {
     world, "Up/Down/Left/Right: Move Listener\nSpace: Toggle Emitter Movement\nM: Toggle Mute",
   )
 
-  @render3d.Camera3dBundle::new(
+  @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
