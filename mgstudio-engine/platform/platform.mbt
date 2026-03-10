@@ -14,26 +14,116 @@
 
 ///|
 /// Platform-facing host window API boundary aligned with Bevy-style platform responsibilities.
-/// Runtime implementation currently lives in `Milky2018/mgstudio/window`.
+/// Runtime implementation lives in `Milky2018/mgstudio/platform`.
+/// `ensure_primary_host_window` still depends on `Milky2018/mgstudio/window`
+/// runtime ECS ownership.
 
 ///|
-pub type HostWindow = @window.HostWindow
+pub type HostWindow = @windowing.NativeWindowHandle
 
 ///|
 pub type HostEvent = @window.HostEvent
 
 ///|
-pub type CursorGrabMode = @window.CursorGrabMode
+pub(all) enum CursorGrabMode {
+  GrabNone
+  GrabConfined
+  GrabLocked
+} derive(Eq, Show)
 
 ///|
-pub type CursorIcon = @window.CursorIcon
+pub(all) enum SystemCursorIcon {
+  Default
+  ContextMenu
+  Help
+  Pointer
+  Progress
+  Wait
+  Cell
+  Crosshair
+  Text
+  VerticalText
+  Alias
+  Copy
+  Move
+  NoDrop
+  NotAllowed
+  Grab
+  Grabbing
+  EResize
+  NResize
+  NeResize
+  NwResize
+  SResize
+  SeResize
+  SwResize
+  WResize
+  EwResize
+} derive(Eq, Show)
 
 ///|
-pub type WindowMode = @window.WindowMode
+pub(all) enum CursorIcon {
+  System(SystemCursorIcon)
+} derive(Eq, Show)
+
+///|
+pub fn CursorIcon::from(icon : SystemCursorIcon) -> CursorIcon {
+  System(icon)
+}
+
+///|
+pub fn CursorIcon::as_system(self : CursorIcon) -> SystemCursorIcon? {
+  match self {
+    System(icon) => Some(icon)
+  }
+}
+
+///|
+pub impl Default for CursorIcon with default() {
+  System(Default)
+}
+
+///|
+pub(all) enum WindowMode {
+  Windowed
+  BorderlessFullscreen
+  Fullscreen
+} derive(Eq, Show)
+
+///|
+fn cursor_grab_mode_to_int(mode : CursorGrabMode) -> Int {
+  match mode {
+    GrabNone => 0
+    GrabConfined => 1
+    GrabLocked => 2
+  }
+}
+
+///|
+fn cursor_icon_to_int(icon : CursorIcon) -> Int {
+  match icon {
+    System(system_icon) =>
+      match system_icon {
+        Default => 0
+        EwResize => 1
+        Progress => 2
+        _ => 0
+      }
+  }
+}
+
+///|
+fn window_mode_to_int(mode : WindowMode) -> Int {
+  match mode {
+    Windowed => 0
+    BorderlessFullscreen => 1
+    Fullscreen => 2
+  }
+}
 
 ///|
 pub fn debug_log(message~ : String) -> Unit {
-  @window.host_debug_string(value=message)
+  println(message)
 }
 
 ///|
@@ -45,7 +135,7 @@ pub fn create_window(
   use_physical_size_on_create~ : Bool,
   title~ : String,
 ) -> HostWindow {
-  @window.host_window_create(
+  @windowing.create(
     logical_width~,
     logical_height~,
     physical_width~,
@@ -57,87 +147,87 @@ pub fn create_window(
 
 ///|
 pub fn run_loop(callback : FuncRef[() -> Unit]) -> Unit {
-  @window.host_window_run_loop(callback)
+  @windowing.run_loop(callback)
 }
 
 ///|
 pub fn poll_events(window : HostWindow) -> Unit {
-  @window.host_window_poll_events(window)
+  @windowing.poll_events(window)
 }
 
 ///|
 pub fn should_close(window : HostWindow) -> Bool {
-  @window.host_window_should_close(window)
+  @windowing.should_close(window)
 }
 
 ///|
 pub fn request_close(window : HostWindow) -> Unit {
-  @window.host_window_request_close(window)
+  @windowing.request_close(window)
 }
 
 ///|
 pub fn width(window : HostWindow) -> Int {
-  @window.host_window_get_width(window)
+  @windowing.width(window)
 }
 
 ///|
 pub fn height(window : HostWindow) -> Int {
-  @window.host_window_get_height(window)
+  @windowing.height(window)
 }
 
 ///|
 pub fn position_x(window : HostWindow) -> Int {
-  @window.host_window_get_position_x(window)
+  @windowing.position_x(window)
 }
 
 ///|
 pub fn position_y(window : HostWindow) -> Int {
-  @window.host_window_get_position_y(window)
+  @windowing.position_y(window)
 }
 
 ///|
 pub fn scale_factor(window : HostWindow) -> Float {
-  @window.host_window_get_scale_factor(window)
+  @windowing.scale_factor(window)
 }
 
 ///|
 pub fn is_focused(window : HostWindow) -> Bool {
-  @window.host_window_get_focused(window)
+  @windowing.focused(window)
 }
 
 ///|
 pub fn set_title(window : HostWindow, title~ : String) -> Unit {
-  @window.host_window_set_title(window, title~)
+  @windowing.set_title(window, title~)
 }
 
 ///|
 pub fn set_size(window : HostWindow, width~ : Int, height~ : Int) -> Unit {
-  @window.host_window_set_size(window, width~, height~)
+  @windowing.set_size(window, width~, height~)
 }
 
 ///|
 pub fn set_position(window : HostWindow, x~ : Int, y~ : Int) -> Unit {
-  @window.host_window_set_position(window, x~, y~)
+  @windowing.set_position(window, x~, y~)
 }
 
 ///|
 pub fn set_mode(window : HostWindow, mode~ : WindowMode) -> Unit {
-  @window.host_window_set_mode(window, mode~)
+  @windowing.set_mode(window, mode=window_mode_to_int(mode))
 }
 
 ///|
 pub fn set_resizable(window : HostWindow, resizable~ : Bool) -> Unit {
-  @window.host_window_set_resizable(window, resizable~)
+  @windowing.set_resizable(window, resizable~)
 }
 
 ///|
 pub fn set_cursor_icon(window : HostWindow, icon~ : CursorIcon) -> Unit {
-  @window.host_window_set_cursor_icon(window, icon~)
+  @windowing.set_cursor_icon(window, icon=cursor_icon_to_int(icon))
 }
 
 ///|
 pub fn set_cursor_visible(window : HostWindow, visible~ : Bool) -> Unit {
-  @window.host_window_set_cursor_visible(window, visible~)
+  @windowing.set_cursor_visible(window, visible~)
 }
 
 ///|
@@ -145,7 +235,7 @@ pub fn set_cursor_grab_mode(
   window : HostWindow,
   mode~ : CursorGrabMode,
 ) -> Unit {
-  @window.host_window_set_cursor_grab_mode(window, mode~)
+  @windowing.set_cursor_grab_mode(window, mode=cursor_grab_mode_to_int(mode))
 }
 
 ///|

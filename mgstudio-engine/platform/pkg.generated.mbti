@@ -29,13 +29,13 @@ pub fn run_loop(FuncRef[() -> Unit]) -> Unit
 
 pub fn scale_factor(Int) -> Float
 
-pub fn set_cursor_grab_mode(Int, mode~ : @window.CursorGrabMode) -> Unit
+pub fn set_cursor_grab_mode(Int, mode~ : CursorGrabMode) -> Unit
 
-pub fn set_cursor_icon(Int, icon~ : @window.CursorIcon) -> Unit
+pub fn set_cursor_icon(Int, icon~ : CursorIcon) -> Unit
 
 pub fn set_cursor_visible(Int, visible~ : Bool) -> Unit
 
-pub fn set_mode(Int, mode~ : @window.WindowMode) -> Unit
+pub fn set_mode(Int, mode~ : WindowMode) -> Unit
 
 pub fn set_position(Int, x~ : Int, y~ : Int) -> Unit
 
@@ -52,17 +52,66 @@ pub fn width(Int) -> Int
 // Errors
 
 // Types and methods
+pub(all) enum CursorGrabMode {
+  GrabNone
+  GrabConfined
+  GrabLocked
+}
+pub impl Eq for CursorGrabMode
+pub impl Show for CursorGrabMode
+
+pub(all) enum CursorIcon {
+  System(SystemCursorIcon)
+}
+pub fn CursorIcon::as_system(Self) -> SystemCursorIcon?
+pub fn CursorIcon::from(SystemCursorIcon) -> Self
+pub impl Default for CursorIcon
+pub impl Eq for CursorIcon
+pub impl Show for CursorIcon
+
+pub(all) enum SystemCursorIcon {
+  Default
+  ContextMenu
+  Help
+  Pointer
+  Progress
+  Wait
+  Cell
+  Crosshair
+  Text
+  VerticalText
+  Alias
+  Copy
+  Move
+  NoDrop
+  NotAllowed
+  Grab
+  Grabbing
+  EResize
+  NResize
+  NeResize
+  NwResize
+  SResize
+  SeResize
+  SwResize
+  WResize
+  EwResize
+}
+pub impl Eq for SystemCursorIcon
+pub impl Show for SystemCursorIcon
+
+pub(all) enum WindowMode {
+  Windowed
+  BorderlessFullscreen
+  Fullscreen
+}
+pub impl Eq for WindowMode
+pub impl Show for WindowMode
 
 // Type aliases
-pub using @window {type CursorGrabMode}
-
-pub using @window {type CursorIcon}
-
 pub using @window {type HostEvent}
 
 pub type HostWindow = Int
-
-pub using @window {type WindowMode}
 
 // Traits
 
