@@ -3,55 +3,202 @@ package "Milky2018/mgstudio/material"
 
 import {
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/transform",
+  "moonbitlang/core/json",
 }
 
 // Values
-pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[@pbr.DefaultOpaqueRendererMethod]
+pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[DefaultOpaqueRendererMethod]
 
-pub let ecs_key_forward_decal_material_ext : @ecs.ComponentKey[@pbr.ForwardDecalMaterialExt]
+pub let ecs_key_forward_decal_material_ext : @ecs.ComponentKey[ForwardDecalMaterialExt]
 
-pub let ecs_key_mesh_material3d : @ecs.ComponentKey[@pbr.MeshMaterial3d]
+pub let ecs_key_mesh_material3d : @ecs.ComponentKey[MeshMaterial3d]
 
-pub fn get_default_opaque_renderer_method_resource(@ecs.World) -> @ecs.ResourceAccess[@pbr.DefaultOpaqueRendererMethod]
+pub fn get_default_opaque_renderer_method_resource(@ecs.World) -> @ecs.ResourceAccess[DefaultOpaqueRendererMethod]
 
-pub fn get_forward_decal_material_ext_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.ForwardDecalMaterialExt]
+pub fn get_forward_decal_material_ext_store(@ecs.World) -> @ecs.ComponentAccess[ForwardDecalMaterialExt]
 
-pub fn get_mesh_material3d_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.MeshMaterial3d]
+pub fn get_mesh_material3d_store(@ecs.World) -> @ecs.ComponentAccess[MeshMaterial3d]
 
-pub fn standard_material_add(@pbr.StandardMaterial) -> @asset.Handle[@pbr.StandardMaterial]
+pub fn standard_material_add(StandardMaterial) -> @asset.Handle[StandardMaterial]
 
-pub fn standard_material_get(@asset.Handle[@pbr.StandardMaterial]) -> @pbr.StandardMaterial?
+pub fn standard_material_get(@asset.Handle[StandardMaterial]) -> StandardMaterial?
 
-pub fn standard_material_set(@asset.Handle[@pbr.StandardMaterial], @pbr.StandardMaterial) -> Bool
+pub fn standard_material_set(@asset.Handle[StandardMaterial], StandardMaterial) -> Bool
 
 // Errors
 
 // Types and methods
+#alias(AlphaMode)
+pub(all) enum AlphaMode3d {
+  Opaque
+  Mask(Float)
+  Blend
+  Premultiplied
+  Add
+  Multiply
+  AlphaToCoverage
+}
+
+pub struct DefaultOpaqueRendererMethod {
+  renderer_method : OpaqueRendererMethod
+}
+pub fn DefaultOpaqueRendererMethod::default() -> Self
+pub fn DefaultOpaqueRendererMethod::deferred() -> Self
+pub fn DefaultOpaqueRendererMethod::forward() -> Self
+pub fn DefaultOpaqueRendererMethod::new(OpaqueRendererMethod) -> Self
+pub fn DefaultOpaqueRendererMethod::renderer_method(Self) -> OpaqueRendererMethod
+pub fn DefaultOpaqueRendererMethod::set_to_deferred(Self) -> Self
+pub fn DefaultOpaqueRendererMethod::set_to_forward(Self) -> Self
+pub fn DefaultOpaqueRendererMethod::with_method(Self, OpaqueRendererMethod) -> Self
+pub impl ToJson for DefaultOpaqueRendererMethod
+pub impl @json.FromJson for DefaultOpaqueRendererMethod
+
+pub struct ExtendedMaterialMetadata3d {
+  extension_tag : Int
+  alpha_mode_override : AlphaMode3d?
+  opaque_render_method_override : OpaqueRendererMethod?
+  requires_depth_prepass : Bool
+  requires_deferred_prepass : Bool
+  disable_shadows : Bool
+}
+pub fn ExtendedMaterialMetadata3d::default() -> Self
+pub fn ExtendedMaterialMetadata3d::new(Int) -> Self
+pub fn ExtendedMaterialMetadata3d::with_alpha_mode_override(Self, AlphaMode3d?) -> Self
+pub fn ExtendedMaterialMetadata3d::with_disable_shadows(Self, Bool) -> Self
+pub fn ExtendedMaterialMetadata3d::with_extension_tag(Self, Int) -> Self
+pub fn ExtendedMaterialMetadata3d::with_opaque_render_method_override(Self, OpaqueRendererMethod?) -> Self
+pub fn ExtendedMaterialMetadata3d::with_requires_deferred_prepass(Self, Bool) -> Self
+pub fn ExtendedMaterialMetadata3d::with_requires_depth_prepass(Self, Bool) -> Self
+
+pub(all) enum Face3d {
+  Front
+  Back
+}
+
+pub struct ForwardDecalMaterialExt {
+  depth_fade_factor : Float
+}
+pub fn ForwardDecalMaterialExt::default() -> Self
+pub fn ForwardDecalMaterialExt::new(Float) -> Self
+pub fn ForwardDecalMaterialExt::with_depth_fade_factor(Self, Float) -> Self
+pub impl @ecs.Component for ForwardDecalMaterialExt
+pub impl ToJson for ForwardDecalMaterialExt
+pub impl @json.FromJson for ForwardDecalMaterialExt
+
+pub struct MeshMaterial3d {
+  material : @asset.Handle[StandardMaterial]
+  extended_material : ExtendedMaterialMetadata3d?
+}
+pub fn MeshMaterial3d::new(@asset.Handle[StandardMaterial]) -> Self
+pub fn MeshMaterial3d::with_extended_material(Self, ExtendedMaterialMetadata3d?) -> Self
+pub fn MeshMaterial3d::with_extension_alpha_mode(Self, AlphaMode3d?) -> Self
+pub fn MeshMaterial3d::with_extension_disable_shadows(Self, Bool) -> Self
+pub fn MeshMaterial3d::with_extension_opaque_renderer_method(Self, OpaqueRendererMethod?) -> Self
+pub fn MeshMaterial3d::with_extension_requires_deferred_prepass(Self, Bool) -> Self
+pub fn MeshMaterial3d::with_extension_requires_depth_prepass(Self, Bool) -> Self
+pub fn MeshMaterial3d::with_extension_tag(Self, Int) -> Self
+pub impl @ecs.Component for MeshMaterial3d
+pub impl ToJson for MeshMaterial3d
+pub impl @json.FromJson for MeshMaterial3d
+
+pub(all) enum OpaqueRendererMethod {
+  Auto
+  Forward
+  Deferred
+}
+pub fn OpaqueRendererMethod::default() -> Self
+pub impl Eq for OpaqueRendererMethod
+pub impl Show for OpaqueRendererMethod
+pub impl ToJson for OpaqueRendererMethod
+pub impl @json.FromJson for OpaqueRendererMethod
+
+pub(all) enum ParallaxMappingMethod {
+  Occlusion
+  Relief(Int)
+}
+pub fn ParallaxMappingMethod::default() -> Self
+pub fn ParallaxMappingMethod::max_steps(Self) -> Int
+pub fn ParallaxMappingMethod::relief_default() -> Self
+pub impl Eq for ParallaxMappingMethod
+pub impl Show for ParallaxMappingMethod
+
+pub struct StandardMaterial {
+  base_color : @color.Color
+  base_color_texture : @asset.Handle[@image.Image]?
+  uv_transform : @transform.Affine2
+  normal_map_texture : @asset.Handle[@image.Image]?
+  depth_map : @asset.Handle[@image.Image]?
+  parallax_depth_scale : Float
+  max_parallax_layer_count : Float
+  parallax_mapping_method : ParallaxMappingMethod
+  clearcoat : Float
+  clearcoat_perceptual_roughness : Float
+  clearcoat_texture : @asset.Handle[@image.Image]?
+  clearcoat_roughness_texture : @asset.Handle[@image.Image]?
+  clearcoat_normal_texture : @asset.Handle[@image.Image]?
+  anisotropy_strength : Float
+  anisotropy_rotation : Float
+  anisotropy_texture : @asset.Handle[@image.Image]?
+  emissive : @color.Color
+  emissive_texture : @asset.Handle[@image.Image]?
+  metallic : Float
+  metallic_roughness_texture : @asset.Handle[@image.Image]?
+  perceptual_roughness : Float
+  reflectance : Float
+  diffuse_transmission : Float
+  specular_transmission : Float
+  thickness : Float
+  ior : Float
+  specular_tint : @color.Color
+  specular_tint_texture : @asset.Handle[@image.Image]?
+  occlusion_texture : @asset.Handle[@image.Image]?
+  alpha_mode : AlphaMode3d
+  opaque_render_method : OpaqueRendererMethod
+  unlit : Bool
+  cull_mode : Face3d?
+}
+pub fn StandardMaterial::default() -> Self
+pub fn StandardMaterial::from_color(@color.Color) -> Self
+pub fn StandardMaterial::with_alpha_mode(Self, AlphaMode3d) -> Self
+pub fn StandardMaterial::with_anisotropy_rotation(Self, Float) -> Self
+pub fn StandardMaterial::with_anisotropy_strength(Self, Float) -> Self
+pub fn StandardMaterial::with_anisotropy_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn StandardMaterial::with_base_color(Self, @color.Color) -> Self
+pub fn StandardMaterial::with_base_color_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn StandardMaterial::with_clearcoat(Self, Float) -> Self
+pub fn StandardMaterial::with_clearcoat_normal_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn StandardMaterial::with_clearcoat_perceptual_roughness(Self, Float) -> Self
+pub fn StandardMaterial::with_clearcoat_roughness_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn StandardMaterial::with_clearcoat_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn StandardMaterial::with_cull_mode(Self, Face3d?) -> Self
+pub fn StandardMaterial::with_depth_map(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn StandardMaterial::with_diffuse_transmission(Self, Float) -> Self
+pub fn StandardMaterial::with_double_sided(Self, Bool) -> Self
+pub fn StandardMaterial::with_emissive(Self, @color.Color) -> Self
+pub fn StandardMaterial::with_emissive_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn StandardMaterial::with_ior(Self, Float) -> Self
+pub fn StandardMaterial::with_max_parallax_layer_count(Self, Float) -> Self
+pub fn StandardMaterial::with_metallic(Self, Float) -> Self
+pub fn StandardMaterial::with_metallic_roughness_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn StandardMaterial::with_normal_map_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn StandardMaterial::with_occlusion_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn StandardMaterial::with_opaque_render_method(Self, OpaqueRendererMethod) -> Self
+pub fn StandardMaterial::with_parallax_depth_scale(Self, Float) -> Self
+pub fn StandardMaterial::with_parallax_mapping_method(Self, ParallaxMappingMethod) -> Self
+pub fn StandardMaterial::with_perceptual_roughness(Self, Float) -> Self
+pub fn StandardMaterial::with_reflectance(Self, Float) -> Self
+pub fn StandardMaterial::with_specular_tint(Self, @color.Color) -> Self
+pub fn StandardMaterial::with_specular_tint_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn StandardMaterial::with_specular_transmission(Self, Float) -> Self
+pub fn StandardMaterial::with_thickness(Self, Float) -> Self
+pub fn StandardMaterial::with_unlit(Self, Bool) -> Self
+pub fn StandardMaterial::with_uv_transform(Self, @transform.Affine2) -> Self
 
 // Type aliases
-pub using @pbr {type AlphaMode3d as AlphaMode}
-
-pub using @pbr {type AlphaMode3d}
-
-pub using @pbr {type DefaultOpaqueRendererMethod}
-
-pub using @pbr {type ExtendedMaterialMetadata3d}
-
-pub using @pbr {type Face3d}
-
-pub using @pbr {type ForwardDecalMaterialExt}
-
-pub using @pbr {type MeshMaterial3d}
-
-pub using @pbr {type MeshMaterial3dBundle}
-
-pub using @pbr {type OpaqueRendererMethod}
-
-pub using @pbr {type ParallaxMappingMethod}
-
-pub using @pbr {type StandardMaterial}
 
 // Traits
 

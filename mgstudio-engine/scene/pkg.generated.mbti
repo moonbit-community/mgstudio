@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/gltf",
+  "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
@@ -102,12 +103,12 @@ pub impl @json.FromJson for SceneInstanceReady
 
 pub struct SceneNode3d {
   mesh : @pbr.Mesh3d
-  material : @pbr.MeshMaterial3d
+  material : @material.MeshMaterial3d
   transform : @math.Transform
   visibility_range : @visibility.VisibilityRange?
   animation_target : @animation.AnimationTargetId?
 }
-pub fn SceneNode3d::new(@pbr.Mesh3d, @pbr.MeshMaterial3d, @math.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?) -> Self
+pub fn SceneNode3d::new(@pbr.Mesh3d, @material.MeshMaterial3d, @math.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?) -> Self
 
 pub struct SceneRoot {
   scene : @asset.Handle[Scene]

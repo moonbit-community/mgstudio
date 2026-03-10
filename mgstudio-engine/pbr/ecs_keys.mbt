@@ -18,9 +18,7 @@ pub let ecs_key_mesh3d : @ecs.ComponentKey[Mesh3d] = @ecs.register_component(
 )
 
 ///|
-pub let ecs_key_mesh_material3d : @ecs.ComponentKey[MeshMaterial3d] = @ecs.register_component(
-  debug_name="render3d.mesh_material3d",
-)
+pub let ecs_key_mesh_material3d : @ecs.ComponentKey[MeshMaterial3d] = @material.ecs_key_mesh_material3d
 
 ///|
 pub let ecs_key_hdr : @ecs.ComponentKey[Hdr] = @core_pipeline.ecs_key_hdr
@@ -218,7 +216,7 @@ pub let ecs_key_directional_light_texture : @ecs.ComponentKey[
 ///|
 pub let ecs_key_forward_decal_material_ext : @ecs.ComponentKey[
   ForwardDecalMaterialExt,
-] = @ecs.register_component(debug_name="render3d.forward_decal_material_ext")
+] = @material.ecs_key_forward_decal_material_ext
 
 ///|
 pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[
@@ -252,11 +250,6 @@ pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[
 ///|
 pub impl @ecs.Component for Mesh3d with component() {
   ecs_key_mesh3d
-}
-
-///|
-pub impl @ecs.Component for MeshMaterial3d with component() {
-  ecs_key_mesh_material3d
 }
 
 ///|
@@ -400,11 +393,6 @@ pub impl @ecs.Component for DirectionalLightTexture with component() {
 }
 
 ///|
-pub impl @ecs.Component for ForwardDecalMaterialExt with component() {
-  ecs_key_forward_decal_material_ext
-}
-
-///|
 pub impl @ecs.Component for TransmittedShadowReceiver with component() {
   ecs_key_transmitted_shadow_receiver
 }
@@ -442,7 +430,7 @@ pub let ecs_key_directional_light_shadow_map : @ecs.ResourceKey[
 ///|
 pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[
   DefaultOpaqueRendererMethod,
-] = @ecs.register_resource(debug_name="render3d.default_opaque_renderer_method")
+] = @material.ecs_key_default_opaque_renderer_method
 
 ///|
 pub let ecs_key_internal_assets : @ecs.ResourceKey[Render3dInternalAssetsState] = @ecs.register_resource(

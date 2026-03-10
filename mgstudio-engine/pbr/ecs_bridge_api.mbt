@@ -189,7 +189,7 @@ pub fn get_contact_shadows_store(
 pub fn get_mesh_material3d_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[MeshMaterial3d] {
-  world.component(ecs_key_mesh_material3d)
+  @material.get_mesh_material3d_store(world)
 }
 
 ///|
@@ -348,7 +348,7 @@ pub fn get_directional_light_texture_store(
 pub fn get_forward_decal_material_ext_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[ForwardDecalMaterialExt] {
-  world.component(ecs_key_forward_decal_material_ext)
+  @material.get_forward_decal_material_ext_store(world)
 }
 
 ///|
@@ -418,5 +418,5 @@ pub fn get_directional_light_shadow_map_resource(
 pub fn get_default_opaque_renderer_method_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[DefaultOpaqueRendererMethod] {
-  world.resource(ecs_key_default_opaque_renderer_method)
+  @material.get_default_opaque_renderer_method_resource(world)
 }
