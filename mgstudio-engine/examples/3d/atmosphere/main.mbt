@@ -315,7 +315,9 @@ fn setup_camera(world : @ecs.World) -> Unit {
       ),
     )
     .with_exposure(Some(@pbr.Exposure::new(BASE_EXPOSURE_EV100)))
-    .with_screen_space_reflections(Some(@pbr.ScreenSpaceReflections::default()))
+    .with_screen_space_reflections(
+      Some(@post_process.ScreenSpaceReflections::default()),
+    )
     .spawn(world)
 
   let tick = world.read_change_tick()
@@ -323,15 +325,15 @@ fn setup_camera(world : @ecs.World) -> Unit {
   .component(@pbr.ecs_key_deferred_prepass)
   .insert(camera, @pbr.DeferredPrepass::default(), tick)
   world
-  .component(@pbr.ecs_key_tonemapping)
-  .insert(camera, @pbr.Tonemapping::AcesFitted, tick)
+  .component(@post_process.ecs_key_tonemapping)
+  .insert(camera, @post_process.Tonemapping::AcesFitted, tick)
   world
-  .component(@pbr.ecs_key_bloom)
-  .insert(camera, @pbr.Bloom::default(), tick)
+  .component(@post_process.ecs_key_bloom)
+  .insert(camera, @post_process.Bloom::default(), tick)
   world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
-  .component(@pbr.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @pbr.TemporalAntiAliasing::default(), tick)
+  .component(@post_process.ecs_key_temporal_anti_aliasing)
+  .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
 
   atmosphere_state.val.camera = Some(camera)
 }

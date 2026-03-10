@@ -230,11 +230,11 @@ fn setup_camera(world : @ecs.World) -> Unit {
   ).spawn(world)
   world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
-  .component(@pbr.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @pbr.TemporalAntiAliasing::default(), tick)
+  .component(@post_process.ecs_key_temporal_anti_aliasing)
+  .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
   world
-  .component(@pbr.ecs_key_bloom)
-  .insert(camera, @pbr.Bloom::default(), tick)
+  .component(@post_process.ecs_key_bloom)
+  .insert(camera, @post_process.Bloom::default(), tick)
   scrolling_fog_state.val.camera = Some(camera)
 }
 

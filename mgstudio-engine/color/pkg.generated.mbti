@@ -1,0 +1,18 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/color"
+
+import {
+  "Milky2018/mgstudio/sprite",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @sprite {type Color}
+
+// Traits
+

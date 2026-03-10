@@ -136,8 +136,8 @@ fn setup(world : @ecs.World) -> Unit {
   rotate_env_state.val.camera = Some(camera)
   world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world
-  .component(@pbr.ecs_key_tonemapping)
-  .insert(camera, @pbr.Tonemapping::AcesFitted, tick)
+  .component(@post_process.ecs_key_tonemapping)
+  .insert(camera, @post_process.Tonemapping::AcesFitted, tick)
   world
   .component(@pbr.ecs_key_skybox)
   .insert(

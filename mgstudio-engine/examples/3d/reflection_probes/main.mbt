@@ -353,8 +353,8 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@pbr.ecs_key_exposure)
   .insert(camera, @pbr.Exposure::new(11.0F), tick)
   world
-  .component(@pbr.ecs_key_tonemapping)
-  .insert(camera, @pbr.Tonemapping::AcesFitted, tick)
+  .component(@post_process.ecs_key_tonemapping)
+  .insert(camera, @post_process.Tonemapping::AcesFitted, tick)
   if reflection_probes_state.val.specular_environment_map
     is Some(specular_env_map) {
     world

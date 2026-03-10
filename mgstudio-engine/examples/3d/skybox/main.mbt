@@ -237,13 +237,13 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
-  .component(@pbr.ecs_key_screen_space_ambient_occlusion)
-  .insert(camera, @pbr.ScreenSpaceAmbientOcclusion::default(), tick)
+  .component(@post_process.ecs_key_screen_space_ambient_occlusion)
+  .insert(camera, @post_process.ScreenSpaceAmbientOcclusion::default(), tick)
   // Keep the Bevy TAA component surface for parity; web runtimes may treat it
   // as a marker/no-op until full backend parity is available.
   world
-  .component(@pbr.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @pbr.TemporalAntiAliasing::default(), tick)
+  .component(@post_process.ecs_key_temporal_anti_aliasing)
+  .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
   world
   .component(@pbr.ecs_key_free_camera)
   .insert(camera, @pbr.FreeCamera::default(), tick)

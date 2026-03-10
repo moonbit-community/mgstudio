@@ -226,11 +226,11 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world
-  .component(@pbr.ecs_key_tonemapping)
-  .insert(camera, @pbr.Tonemapping::TonyMcMapface, tick)
+  .component(@post_process.ecs_key_tonemapping)
+  .insert(camera, @post_process.Tonemapping::TonyMcMapface, tick)
   world
-  .component(@pbr.ecs_key_bloom)
-  .insert(camera, @pbr.Bloom::default(), tick)
+  .component(@post_process.ecs_key_bloom)
+  .insert(camera, @post_process.Bloom::default(), tick)
   dof_state.val.camera = Some(camera)
 
   let scene_entity = world.spawn_empty()

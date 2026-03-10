@@ -227,11 +227,11 @@ fn setup_camera(world : @ecs.World) -> Unit {
   ).spawn(world)
   let tick = world.read_change_tick()
   world
-  .component(@pbr.ecs_key_tonemapping)
-  .insert(camera, @pbr.Tonemapping::TonyMcMapface, tick)
+  .component(@post_process.ecs_key_tonemapping)
+  .insert(camera, @post_process.Tonemapping::TonyMcMapface, tick)
   world
-  .component(@pbr.ecs_key_bloom)
-  .insert(camera, @pbr.Bloom::default(), tick)
+  .component(@post_process.ecs_key_bloom)
+  .insert(camera, @post_process.Bloom::default(), tick)
   world
   .component(@pbr.ecs_key_skybox)
   .insert(

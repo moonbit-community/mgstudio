@@ -43,7 +43,10 @@ struct SelectedParameter {
 
 ///|
 struct PerMethodSettings {
-  settings : @hashmap.HashMap[@pbr.Tonemapping, @pbr.ColorGrading]
+  settings : @hashmap.HashMap[
+    @post_process.Tonemapping,
+    @post_process.ColorGrading,
+  ]
 }
 
 ///|
@@ -171,7 +174,7 @@ fn SelectedParameter::prev(self : SelectedParameter) -> Unit {
 }
 
 ///|
-fn method_name(tonemapper : @pbr.Tonemapping) -> String {
+fn method_name(tonemapper : @post_process.Tonemapping) -> String {
   match tonemapper {
     None => "Disabled"
     Reinhard => "Reinhard"
@@ -185,59 +188,62 @@ fn method_name(tonemapper : @pbr.Tonemapping) -> String {
 }
 
 ///|
-fn tonemapping_methods() -> Array[@pbr.Tonemapping] {
+fn tonemapping_methods() -> Array[@post_process.Tonemapping] {
   [
-    @pbr.Tonemapping::None,
-    @pbr.Tonemapping::Reinhard,
-    @pbr.Tonemapping::ReinhardLuminance,
-    @pbr.Tonemapping::AcesFitted,
-    @pbr.Tonemapping::AgX,
-    @pbr.Tonemapping::SomewhatBoringDisplayTransform,
-    @pbr.Tonemapping::TonyMcMapface,
-    @pbr.Tonemapping::BlenderFilmic,
+    @post_process.Tonemapping::None,
+    @post_process.Tonemapping::Reinhard,
+    @post_process.Tonemapping::ReinhardLuminance,
+    @post_process.Tonemapping::AcesFitted,
+    @post_process.Tonemapping::AgX,
+    @post_process.Tonemapping::SomewhatBoringDisplayTransform,
+    @post_process.Tonemapping::TonyMcMapface,
+    @post_process.Tonemapping::BlenderFilmic,
   ]
 }
 
 ///|
 fn PerMethodSettings::basic_scene_recommendation(
-  tonemapper : @pbr.Tonemapping,
-) -> @pbr.ColorGrading {
+  tonemapper : @post_process.Tonemapping,
+) -> @post_process.ColorGrading {
   match tonemapper {
     Reinhard | ReinhardLuminance =>
-      @pbr.ColorGrading::{
-        ..@pbr.ColorGrading::default(),
-        global: @pbr.ColorGradingGlobal::{
-          ..@pbr.ColorGradingGlobal::default(),
+      @post_process.ColorGrading::{
+        ..@post_process.ColorGrading::default(),
+        global: @post_process.ColorGradingGlobal::{
+          ..@post_process.ColorGradingGlobal::default(),
           exposure: 0.5F,
         },
       }
     AcesFitted =>
-      @pbr.ColorGrading::{
-        ..@pbr.ColorGrading::default(),
-        global: @pbr.ColorGradingGlobal::{
-          ..@pbr.ColorGradingGlobal::default(),
+      @post_process.ColorGrading::{
+        ..@post_process.ColorGrading::default(),
+        global: @post_process.ColorGradingGlobal::{
+          ..@post_process.ColorGradingGlobal::default(),
           exposure: 0.35F,
         },
       }
     AgX =>
-      @pbr.ColorGrading::with_identical_sections(
-        @pbr.ColorGradingGlobal::{
-          ..@pbr.ColorGradingGlobal::default(),
+      @post_process.ColorGrading::with_identical_sections(
+        @post_process.ColorGradingGlobal::{
+          ..@post_process.ColorGradingGlobal::default(),
           exposure: -0.2F,
           post_saturation: 1.1F,
         },
-        @pbr.ColorGradingSection::{
-          ..@pbr.ColorGradingSection::default(),
+        @post_process.ColorGradingSection::{
+          ..@post_process.ColorGradingSection::default(),
           saturation: 1.1F,
         },
       )
-    _ => @pbr.ColorGrading::default()
+    _ => @post_process.ColorGrading::default()
   }
 }
 
 ///|
 impl Default for PerMethodSettings with default() {
-  let settings : @hashmap.HashMap[@pbr.Tonemapping, @pbr.ColorGrading] = @hashmap.HashMap::new()
+  let settings : @hashmap.HashMap[
+    @post_process.Tonemapping,
+    @post_process.ColorGrading,
+  ] = @hashmap.HashMap::new()
   for tonemapper in tonemapping_methods() {
     settings.set(
       tonemapper,
@@ -294,8 +300,8 @@ fn selected_marker(selected : Bool) -> String {
 ///|
 fn ui_text_content(
   scene : Int,
-  tonemapping : @pbr.Tonemapping,
-  color_grading : @pbr.ColorGrading,
+  tonemapping : @post_process.Tonemapping,
+  color_grading : @post_process.ColorGrading,
   selected_parameter : Int,
 ) -> String {
   let mut content = "(H) Hide UI\n\n" +
@@ -311,30 +317,30 @@ fn ui_text_content(
     "Image Viewer\n\n" +
     "Tonemapping Method:\n" +
     "(1) " +
-    selected_marker(tonemapping == @pbr.Tonemapping::None) +
+    selected_marker(tonemapping == @post_process.Tonemapping::None) +
     "Disabled\n" +
     "(2) " +
-    selected_marker(tonemapping == @pbr.Tonemapping::Reinhard) +
+    selected_marker(tonemapping == @post_process.Tonemapping::Reinhard) +
     "Reinhard\n" +
     "(3) " +
-    selected_marker(tonemapping == @pbr.Tonemapping::ReinhardLuminance) +
+    selected_marker(tonemapping == @post_process.Tonemapping::ReinhardLuminance) +
     "Reinhard Luminance\n" +
     "(4) " +
-    selected_marker(tonemapping == @pbr.Tonemapping::AcesFitted) +
+    selected_marker(tonemapping == @post_process.Tonemapping::AcesFitted) +
     "ACES Fitted\n" +
     "(5) " +
-    selected_marker(tonemapping == @pbr.Tonemapping::AgX) +
+    selected_marker(tonemapping == @post_process.Tonemapping::AgX) +
     "AgX\n" +
     "(6) " +
     selected_marker(
-      tonemapping == @pbr.Tonemapping::SomewhatBoringDisplayTransform,
+      tonemapping == @post_process.Tonemapping::SomewhatBoringDisplayTransform,
     ) +
     "SomewhatBoringDisplayTransform\n" +
     "(7) " +
-    selected_marker(tonemapping == @pbr.Tonemapping::TonyMcMapface) +
+    selected_marker(tonemapping == @post_process.Tonemapping::TonyMcMapface) +
     "TonyMcMapface\n" +
     "(8) " +
-    selected_marker(tonemapping == @pbr.Tonemapping::BlenderFilmic) +
+    selected_marker(tonemapping == @post_process.Tonemapping::BlenderFilmic) +
     "Blender Filmic\n\n" +
     "Color Grading:\n" +
     "(arrow keys)\n" +
@@ -371,7 +377,7 @@ fn setup(
       @sprite.Camera::default(),
       camera_transform.get().transform,
     )
-    .with_color_grading(Some(@pbr.ColorGrading::default()))
+    .with_color_grading(Some(@post_process.ColorGrading::default()))
     .with_distance_fog(
       Some(
         @pbr.DistanceFog::new(
@@ -612,26 +618,26 @@ fn toggle_scene(
 ///|
 fn toggle_tonemapping_method(
   keys : @input.ButtonInput[@window.KeyCode],
-  tonemapping_query : @ecs.Query1[@pbr.Tonemapping],
-  color_grading_query : @ecs.Query1[@pbr.ColorGrading],
+  tonemapping_query : @ecs.Query1[@post_process.Tonemapping],
+  color_grading_query : @ecs.Query1[@post_process.ColorGrading],
   per_method_settings : @app.Res[PerMethodSettings],
 ) -> Unit {
   let next_method = if keys.just_pressed(Digit1) {
-    Some(@pbr.Tonemapping::None)
+    Some(@post_process.Tonemapping::None)
   } else if keys.just_pressed(Digit2) {
-    Some(@pbr.Tonemapping::Reinhard)
+    Some(@post_process.Tonemapping::Reinhard)
   } else if keys.just_pressed(Digit3) {
-    Some(@pbr.Tonemapping::ReinhardLuminance)
+    Some(@post_process.Tonemapping::ReinhardLuminance)
   } else if keys.just_pressed(Digit4) {
-    Some(@pbr.Tonemapping::AcesFitted)
+    Some(@post_process.Tonemapping::AcesFitted)
   } else if keys.just_pressed(Digit5) {
-    Some(@pbr.Tonemapping::AgX)
+    Some(@post_process.Tonemapping::AgX)
   } else if keys.just_pressed(Digit6) {
-    Some(@pbr.Tonemapping::SomewhatBoringDisplayTransform)
+    Some(@post_process.Tonemapping::SomewhatBoringDisplayTransform)
   } else if keys.just_pressed(Digit7) {
-    Some(@pbr.Tonemapping::TonyMcMapface)
+    Some(@post_process.Tonemapping::TonyMcMapface)
   } else if keys.just_pressed(Digit8) {
-    Some(@pbr.Tonemapping::BlenderFilmic)
+    Some(@post_process.Tonemapping::BlenderFilmic)
   } else {
     None
   }
@@ -664,7 +670,7 @@ fn update_color_grading_settings(
   keys : @input.ButtonInput[@window.KeyCode],
   time : @app.Res[@time.Time[Unit]],
   per_method_settings : @app.ResMut[PerMethodSettings],
-  tonemapping_query : @ecs.Query1[@pbr.Tonemapping],
+  tonemapping_query : @ecs.Query1[@post_process.Tonemapping],
   current_scene : @app.Res[CurrentScene],
   selected_parameter : @app.ResMut[SelectedParameter],
 ) -> Unit {
@@ -690,7 +696,7 @@ fn update_color_grading_settings(
   if delta != 0.0F {
     let next = per_method_settings.get_ref().val.settings
       .get(current_method)
-      .unwrap_or(@pbr.ColorGrading::default())
+      .unwrap_or(@post_process.ColorGrading::default())
     match selected_parameter.get_ref().val.value {
       0 => next.global.exposure = next.global.exposure + delta
       1 =>
@@ -710,7 +716,7 @@ fn update_color_grading_settings(
     for tonemapper in tonemapping_methods() {
       per_method_settings.get_ref().val.settings.set(
         tonemapper,
-        @pbr.ColorGrading::default(),
+        @post_process.ColorGrading::default(),
       )
     }
   }
@@ -822,7 +828,10 @@ fn update_ui(
   keys : @input.ButtonInput[@window.KeyCode],
   current_scene : @app.Res[CurrentScene],
   selected_parameter : @app.Res[SelectedParameter],
-  settings_query : @ecs.Query2[@pbr.Tonemapping, @pbr.ColorGrading],
+  settings_query : @ecs.Query2[
+    @post_process.Tonemapping,
+    @post_process.ColorGrading,
+  ],
   ui_text_query : @ecs.Query2[@ui.UiText, TonemappingUiText],
   hide_ui : @app.Local[Bool],
 ) -> Unit {

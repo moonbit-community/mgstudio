@@ -390,8 +390,8 @@ fn sanitize_ssr_ranges() -> Unit {
 }
 
 ///|
-fn build_ssr_settings() -> @pbr.ScreenSpaceReflections {
-  @pbr.ScreenSpaceReflections::default()
+fn build_ssr_settings() -> @post_process.ScreenSpaceReflections {
+  @post_process.ScreenSpaceReflections::default()
   .with_min_perceptual_roughness(
     ssr_state.val.min_roughness_start,
     ssr_state.val.min_roughness_end,
@@ -416,7 +416,7 @@ fn apply_ssr_settings(world : @ecs.World) -> Unit {
   sanitize_ssr_ranges()
   if ssr_state.val.camera is Some(camera) {
     let tick = world.read_change_tick()
-    let store = world.component(@pbr.ecs_key_screen_space_reflections)
+    let store = world.component(@post_process.ecs_key_screen_space_reflections)
     if ssr_state.val.ssr_on {
       if !store.set(camera, build_ssr_settings(), tick) {
         store.insert(camera, build_ssr_settings(), tick)
@@ -589,11 +589,11 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
   world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
-  .component(@pbr.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @pbr.TemporalAntiAliasing::default(), tick)
+  .component(@post_process.ecs_key_temporal_anti_aliasing)
+  .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
   world
-  .component(@pbr.ecs_key_screen_space_ambient_occlusion)
-  .insert(camera, @pbr.ScreenSpaceAmbientOcclusion::default(), tick)
+  .component(@post_process.ecs_key_screen_space_ambient_occlusion)
+  .insert(camera, @post_process.ScreenSpaceAmbientOcclusion::default(), tick)
   world
   .component(@pbr.ecs_key_environment_map_light)
   .insert(

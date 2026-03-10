@@ -185,10 +185,10 @@ fn apply_camera_shadow_filter(world : @ecs.World) -> Unit {
   .insert(camera, filter_mode, tick)
   if pcss_state.val.shadow_filter == ShadowFilter::Temporal {
     world
-    .component(@pbr.ecs_key_temporal_anti_aliasing)
-    .insert(camera, @pbr.TemporalAntiAliasing::default(), tick)
+    .component(@post_process.ecs_key_temporal_anti_aliasing)
+    .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
   } else {
-    world.component(@pbr.ecs_key_temporal_anti_aliasing).remove(camera)
+    world.component(@post_process.ecs_key_temporal_anti_aliasing).remove(camera)
     |> ignore
   }
 }
@@ -245,8 +245,8 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(camera, @pbr.ShadowFilteringMethod::Gaussian, tick)
   world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
-  .component(@pbr.ecs_key_temporal_jitter)
-  .insert(camera, @pbr.TemporalJitter::default(), tick)
+  .component(@post_process.ecs_key_temporal_jitter)
+  .insert(camera, @post_process.TemporalJitter::default(), tick)
   world
   .component(@pbr.ecs_key_depth_prepass)
   .insert(camera, @pbr.DepthPrepass::default(), tick)

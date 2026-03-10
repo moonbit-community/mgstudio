@@ -334,7 +334,9 @@ fn setup(world : @ecs.World) -> Unit {
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    .with_motion_blur(Some(@pbr.MotionBlur::default().with_shutter_angle(2.0F)))
+    .with_motion_blur(
+      Some(@post_process.MotionBlur::default().with_shutter_angle(2.0F)),
+    )
     .spawn(world)
 
   contact_shadows_state.val.camera = Some(camera)
@@ -342,21 +344,21 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@pbr.ecs_key_contact_shadows)
   .insert(camera, @pbr.ContactShadows::default(), tick)
   world
-  .component(@pbr.ecs_key_screen_space_ambient_occlusion)
-  .insert(camera, @pbr.ScreenSpaceAmbientOcclusion::default(), tick)
+  .component(@post_process.ecs_key_screen_space_ambient_occlusion)
+  .insert(camera, @post_process.ScreenSpaceAmbientOcclusion::default(), tick)
   world
-  .component(@pbr.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @pbr.TemporalAntiAliasing::default(), tick)
+  .component(@post_process.ecs_key_temporal_anti_aliasing)
+  .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
   world
   .component(@pbr.ecs_key_depth_prepass)
   .insert(camera, @pbr.DepthPrepass::default(), tick)
   world
-  .component(@pbr.ecs_key_bloom)
-  .insert(camera, @pbr.Bloom::default(), tick)
+  .component(@post_process.ecs_key_bloom)
+  .insert(camera, @post_process.Bloom::default(), tick)
   world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world
-  .component(@pbr.ecs_key_tonemapping)
-  .insert(camera, @pbr.Tonemapping::AcesFitted, tick)
+  .component(@post_process.ecs_key_tonemapping)
+  .insert(camera, @post_process.Tonemapping::AcesFitted, tick)
   world
   .component(@pbr.ecs_key_skybox)
   .insert(

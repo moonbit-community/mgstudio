@@ -69,7 +69,7 @@ fn stable_bucket(x : Int, z : Int) -> Int {
 }
 
 ///|
-fn mode_label(mode : @pbr.BloomCompositeMode) -> String {
+fn mode_label(mode : @post_process.BloomCompositeMode) -> String {
   match mode {
     EnergyConserving => "Energy-conserving"
     Additive => "Additive"
@@ -77,7 +77,7 @@ fn mode_label(mode : @pbr.BloomCompositeMode) -> String {
 }
 
 ///|
-fn bloom_text(bloom : @pbr.Bloom?) -> String {
+fn bloom_text(bloom : @post_process.Bloom?) -> String {
   match bloom {
     Some(bloom) =>
       "Bloom (Toggle: Space)\n" +
@@ -127,8 +127,8 @@ fn setup_scene(world : @ecs.World) -> Unit {
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    .with_tonemapping(Some(@pbr.Tonemapping::TonyMcMapface))
-    .with_bloom(Some(@pbr.Bloom::default()))
+    .with_tonemapping(Some(@post_process.Tonemapping::TonyMcMapface))
+    .with_bloom(Some(@post_process.Bloom::default()))
     .spawn(world)
   world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world
@@ -186,7 +186,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   }
 
   let help_text = @text.Text2dBundle::new(
-      @text.Text2d::new(bloom_text(Some(@pbr.Bloom::default()))),
+      @text.Text2d::new(bloom_text(Some(@post_process.Bloom::default()))),
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
@@ -220,14 +220,14 @@ fn update_bloom_settings(
   guard bloom_camera_entity(camera_query) is Some(camera_entity) else { return }
   let world = @app.current_world().unwrap()
   let tick = world.read_change_tick()
-  let bloom_store = world.component(@pbr.ecs_key_bloom)
+  let bloom_store = world.component(@post_process.ecs_key_bloom)
   let current_bloom = bloom_store.get(camera_entity)
   @text.text_set_content(instructions.get().handle, bloom_text(current_bloom))
 
   match current_bloom {
     None =>
       if keycode.just_pressed(@window.KeyCode::Space) {
-        bloom_store.insert(camera_entity, @pbr.Bloom::default(), tick)
+        bloom_store.insert(camera_entity, @post_process.Bloom::default(), tick)
       }
     Some(bloom) => {
       if keycode.just_pressed(@window.KeyCode::Space) {
@@ -288,12 +288,14 @@ fn update_bloom_settings(
       }
 
       if keycode.pressed(@window.KeyCode::KeyG) {
-        next = next.with_composite_mode(@pbr.BloomCompositeMode::Additive)
+        next = next.with_composite_mode(
+          @post_process.BloomCompositeMode::Additive,
+        )
         changed = true
       }
       if keycode.pressed(@window.KeyCode::KeyT) {
         next = next.with_composite_mode(
-          @pbr.BloomCompositeMode::EnergyConserving,
+          @post_process.BloomCompositeMode::EnergyConserving,
         )
         changed = true
       }

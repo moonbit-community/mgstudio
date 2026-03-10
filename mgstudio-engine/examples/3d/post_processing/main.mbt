@@ -57,8 +57,8 @@ priv struct PostProcessingState {
 
 ///|
 fn default_settings() -> AppSettings {
-  let chromatic_aberration = @pbr.ChromaticAberration::default()
-  let vignette = @pbr.Vignette::default()
+  let chromatic_aberration = @post_process.ChromaticAberration::default()
+  let vignette = @post_process.Vignette::default()
   {
     selected: 0,
     chromatic_aberration_intensity: chromatic_aberration.intensity,
@@ -111,11 +111,11 @@ fn apply_post_process_settings(world : @ecs.World) -> Unit {
   let intensity = settings.chromatic_aberration_intensity
   let max_samples_f = ((intensity - 0.02F) / (0.20F - 0.02F) * 56.0F + 8.0F).round()
   let max_samples = clampf(max_samples_f, 8.0F, 64.0F).to_int()
-  let chromatic_aberration = @pbr.ChromaticAberration::default()
+  let chromatic_aberration = @post_process.ChromaticAberration::default()
     .with_intensity(intensity)
     .with_max_samples(max_samples)
 
-  let vignette = @pbr.Vignette::default()
+  let vignette = @post_process.Vignette::default()
     .with_intensity(settings.vignette_intensity)
     .with_radius(settings.vignette_radius)
     .with_smoothness(settings.vignette_smoothness)
@@ -123,7 +123,7 @@ fn apply_post_process_settings(world : @ecs.World) -> Unit {
     .with_edge_compensation(settings.vignette_edge_compensation)
 
   let chromatic_aberration_store = world.component(
-    @pbr.ecs_key_chromatic_aberration,
+    @post_process.ecs_key_chromatic_aberration,
   )
   if chromatic_aberration_store.contains(camera_entity) {
     chromatic_aberration_store.set(camera_entity, chromatic_aberration, tick)
@@ -131,7 +131,7 @@ fn apply_post_process_settings(world : @ecs.World) -> Unit {
   } else {
     chromatic_aberration_store.insert(camera_entity, chromatic_aberration, tick)
   }
-  let vignette_store = world.component(@pbr.ecs_key_vignette)
+  let vignette_store = world.component(@post_process.ecs_key_vignette)
   if vignette_store.contains(camera_entity) {
     vignette_store.set(camera_entity, vignette, tick) |> ignore
   } else {
@@ -181,8 +181,10 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    .with_chromatic_aberration(Some(@pbr.ChromaticAberration::default()))
-    .with_vignette(Some(@pbr.Vignette::default()))
+    .with_chromatic_aberration(
+      Some(@post_process.ChromaticAberration::default()),
+    )
+    .with_vignette(Some(@post_process.Vignette::default()))
     .spawn(world)
   post_processing_state.val.camera = Some(camera)
   world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)

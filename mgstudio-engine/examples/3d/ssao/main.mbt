@@ -81,7 +81,7 @@ fn marker(current_quality : Int, index : Int) -> String {
 }
 
 ///|
-fn ssao_quality_index(ssao : @pbr.ScreenSpaceAmbientOcclusion?) -> Int {
+fn ssao_quality_index(ssao : @post_process.ScreenSpaceAmbientOcclusion?) -> Int {
   match ssao {
     None => 0
     Some(ssao) =>
@@ -96,7 +96,7 @@ fn ssao_quality_index(ssao : @pbr.ScreenSpaceAmbientOcclusion?) -> Int {
 
 ///|
 fn ssao_ui_text(
-  ssao : @pbr.ScreenSpaceAmbientOcclusion?,
+  ssao : @post_process.ScreenSpaceAmbientOcclusion?,
   temporal_jitter_enabled : Bool,
 ) -> String {
   let quality = ssao_quality_index(ssao)
@@ -143,11 +143,11 @@ fn ssao_camera_entity(
 
 ///|
 fn current_ssao_value(
-  current : @pbr.ScreenSpaceAmbientOcclusion?,
-) -> @pbr.ScreenSpaceAmbientOcclusion {
+  current : @post_process.ScreenSpaceAmbientOcclusion?,
+) -> @post_process.ScreenSpaceAmbientOcclusion {
   match current {
     Some(ssao) => ssao
-    None => @pbr.ScreenSpaceAmbientOcclusion::default()
+    None => @post_process.ScreenSpaceAmbientOcclusion::default()
   }
 }
 
@@ -155,10 +155,12 @@ fn current_ssao_value(
 fn set_ssao_component(
   world : @ecs.World,
   camera_entity : @core.Entity,
-  ssao : @pbr.ScreenSpaceAmbientOcclusion,
+  ssao : @post_process.ScreenSpaceAmbientOcclusion,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let store = world.component(@pbr.ecs_key_screen_space_ambient_occlusion)
+  let store = world.component(
+    @post_process.ecs_key_screen_space_ambient_occlusion,
+  )
   if store.contains(camera_entity) {
     store.set(camera_entity, ssao, tick) |> ignore
   } else {
@@ -189,14 +191,14 @@ fn setup(
   world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
-  .component(@pbr.ecs_key_screen_space_ambient_occlusion)
-  .insert(camera, @pbr.ScreenSpaceAmbientOcclusion::default(), tick)
+  .component(@post_process.ecs_key_screen_space_ambient_occlusion)
+  .insert(camera, @post_process.ScreenSpaceAmbientOcclusion::default(), tick)
   world
-  .component(@pbr.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @pbr.TemporalAntiAliasing::default(), tick)
+  .component(@post_process.ecs_key_temporal_anti_aliasing)
+  .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
   world
-  .component(@pbr.ecs_key_temporal_jitter)
-  .insert(camera, @pbr.TemporalJitter::default(), tick)
+  .component(@post_process.ecs_key_temporal_jitter)
+  .insert(camera, @post_process.TemporalJitter::default(), tick)
   world
   .component(SsaoCamera::component())
   .insert(camera, SsaoCamera::{  }, tick)
@@ -268,7 +270,10 @@ fn setup(
 
   let instructions = @text.Text2dBundle::new(
       @text.Text2d::new(
-        ssao_ui_text(Some(@pbr.ScreenSpaceAmbientOcclusion::default()), true),
+        ssao_ui_text(
+          Some(@post_process.ScreenSpaceAmbientOcclusion::default()),
+          true,
+        ),
       ),
       @text.TextFont::default()
       .with_font(asset_server.get().load_font("fonts/FiraSans-Bold.ttf"))
@@ -309,8 +314,12 @@ fn update(
 
   guard ssao_camera_entity(camera_query) is Some(camera_entity) else { return }
   let world = @app.current_world().unwrap()
-  let ssao_store = world.component(@pbr.ecs_key_screen_space_ambient_occlusion)
-  let temporal_jitter_store = world.component(@pbr.ecs_key_temporal_jitter)
+  let ssao_store = world.component(
+    @post_process.ecs_key_screen_space_ambient_occlusion,
+  )
+  let temporal_jitter_store = world.component(
+    @post_process.ecs_key_temporal_jitter,
+  )
   let current_ssao = ssao_store.get(camera_entity)
   let base_ssao = current_ssao_value(current_ssao)
 
@@ -319,7 +328,7 @@ fn update(
       world,
       camera_entity,
       base_ssao.with_quality_level(
-        @pbr.ScreenSpaceAmbientOcclusionQualityLevel::Low,
+        @post_process.ScreenSpaceAmbientOcclusionQualityLevel::Low,
       ),
     )
   }
@@ -329,7 +338,7 @@ fn update(
       world,
       camera_entity,
       base_ssao.with_quality_level(
-        @pbr.ScreenSpaceAmbientOcclusionQualityLevel::Medium,
+        @post_process.ScreenSpaceAmbientOcclusionQualityLevel::Medium,
       ),
     )
   }
@@ -339,7 +348,7 @@ fn update(
       world,
       camera_entity,
       base_ssao.with_quality_level(
-        @pbr.ScreenSpaceAmbientOcclusionQualityLevel::High,
+        @post_process.ScreenSpaceAmbientOcclusionQualityLevel::High,
       ),
     )
   }
@@ -349,7 +358,7 @@ fn update(
       world,
       camera_entity,
       base_ssao.with_quality_level(
-        @pbr.ScreenSpaceAmbientOcclusionQualityLevel::Ultra,
+        @post_process.ScreenSpaceAmbientOcclusionQualityLevel::Ultra,
       ),
     )
   }
@@ -392,7 +401,7 @@ fn update(
     } else {
       temporal_jitter_store.insert(
         camera_entity,
-        @pbr.TemporalJitter::default(),
+        @post_process.TemporalJitter::default(),
         world.read_change_tick(),
       )
     }

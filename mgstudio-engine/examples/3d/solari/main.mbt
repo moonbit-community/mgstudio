@@ -474,10 +474,10 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
     )
     |> ignore
     world
-    .component(@pbr.ecs_key_bloom)
+    .component(@post_process.ecs_key_bloom)
     .insert(
       camera,
-      @pbr.Bloom::default().with_intensity(0.1F),
+      @post_process.Bloom::default().with_intensity(0.1F),
       world.read_change_tick(),
     )
   }
@@ -514,7 +514,7 @@ fn apply_scene_mode(
           tick,
         )
         |> ignore
-        world.component(@pbr.ecs_key_bloom).remove(camera) |> ignore
+        world.component(@post_process.ecs_key_bloom).remove(camera) |> ignore
       }
     }
     SolariSceneMode::ManyLights => spawn_many_lights_scene(world)

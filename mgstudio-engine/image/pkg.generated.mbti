@@ -1,0 +1,33 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/image"
+
+import {
+  "Milky2018/mgstudio/asset",
+}
+
+// Values
+pub fn set_texture_sampler(@asset.Handle[@asset.Image], @asset.ImageSampler) -> Unit
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @asset {type Image}
+
+pub using @asset {type ImageAddressMode}
+
+pub using @asset {type ImageArrayLayout}
+
+pub using @asset {type ImageCompareFunction}
+
+pub using @asset {type ImageFilterMode}
+
+pub using @asset {type ImageSampler}
+
+pub using @asset {type ImageSamplerBorderColor}
+
+pub using @asset {type ImageSamplerDescriptor}
+
+// Traits
+

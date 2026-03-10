@@ -135,7 +135,9 @@ fn next_random_unit() -> Float {
 }
 
 ///|
-fn quality_label(quality : @pbr.ScreenSpaceTransmissionQuality) -> String {
+fn quality_label(
+  quality : @post_process.ScreenSpaceTransmissionQuality,
+) -> String {
   match quality {
     Low => "Low"
     Medium => "Medium"
@@ -147,26 +149,28 @@ fn quality_label(quality : @pbr.ScreenSpaceTransmissionQuality) -> String {
 ///|
 fn camera_screen_space_transmission(
   world : @ecs.World,
-) -> @pbr.ScreenSpaceTransmission {
+) -> @post_process.ScreenSpaceTransmission {
   if transmission_state.val.camera is Some(camera_entity) {
     match
-      world.component(@pbr.ecs_key_screen_space_transmission).get(camera_entity) {
+      world
+      .component(@post_process.ecs_key_screen_space_transmission)
+      .get(camera_entity) {
       Some(value) => value
-      None => @pbr.ScreenSpaceTransmission::default()
+      None => @post_process.ScreenSpaceTransmission::default()
     }
   } else {
-    @pbr.ScreenSpaceTransmission::default()
+    @post_process.ScreenSpaceTransmission::default()
   }
 }
 
 ///|
 fn camera_set_screen_space_transmission(
   world : @ecs.World,
-  value : @pbr.ScreenSpaceTransmission,
+  value : @post_process.ScreenSpaceTransmission,
 ) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
     let tick = world.read_change_tick()
-    let store = world.component(@pbr.ecs_key_screen_space_transmission)
+    let store = world.component(@post_process.ecs_key_screen_space_transmission)
     if store.contains(camera_entity) {
       store.set(camera_entity, value, tick) |> ignore
     } else {
@@ -196,7 +200,9 @@ fn camera_depth_prepass_enabled(world : @ecs.World) -> Bool {
 ///|
 fn camera_taa_enabled(world : @ecs.World) -> Bool {
   if transmission_state.val.camera is Some(camera_entity) {
-    world.component(@pbr.ecs_key_temporal_jitter).contains(camera_entity)
+    world
+    .component(@post_process.ecs_key_temporal_jitter)
+    .contains(camera_entity)
   } else {
     false
   }
@@ -232,16 +238,22 @@ fn camera_toggle_depth_prepass(world : @ecs.World) -> Unit {
 fn camera_toggle_taa(world : @ecs.World) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
     let tick = world.read_change_tick()
-    let jitter_store = world.component(@pbr.ecs_key_temporal_jitter)
-    let taa_store = world.component(@pbr.ecs_key_temporal_anti_aliasing)
+    let jitter_store = world.component(@post_process.ecs_key_temporal_jitter)
+    let taa_store = world.component(
+      @post_process.ecs_key_temporal_anti_aliasing,
+    )
     if jitter_store.contains(camera_entity) {
       jitter_store.remove(camera_entity) |> ignore
       taa_store.remove(camera_entity) |> ignore
     } else {
-      jitter_store.insert(camera_entity, @pbr.TemporalJitter::default(), tick)
+      jitter_store.insert(
+        camera_entity,
+        @post_process.TemporalJitter::default(),
+        tick,
+      )
       taa_store.insert(
         camera_entity,
-        @pbr.TemporalAntiAliasing::default(),
+        @post_process.TemporalAntiAliasing::default(),
         tick,
       )
     }
@@ -674,7 +686,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  let color_grading = @pbr.ColorGrading::default()
+  let color_grading = @post_process.ColorGrading::default()
   color_grading.global.post_saturation = 1.2F
   let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
@@ -685,30 +697,30 @@ fn setup_camera(world : @ecs.World) -> Unit {
       ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
     )
     .with_screen_space_transmission(
-      Some(@pbr.ScreenSpaceTransmission::default()),
+      Some(@post_process.ScreenSpaceTransmission::default()),
     )
     .spawn(world)
   let tick = world.read_change_tick()
   world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world
-  .component(@pbr.ecs_key_bloom)
-  .insert(camera, @pbr.Bloom::default(), tick)
+  .component(@post_process.ecs_key_bloom)
+  .insert(camera, @post_process.Bloom::default(), tick)
   world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
-  .component(@pbr.ecs_key_temporal_jitter)
-  .insert(camera, @pbr.TemporalJitter::default(), tick)
+  .component(@post_process.ecs_key_temporal_jitter)
+  .insert(camera, @post_process.TemporalJitter::default(), tick)
   world
-  .component(@pbr.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @pbr.TemporalAntiAliasing::default(), tick)
+  .component(@post_process.ecs_key_temporal_anti_aliasing)
+  .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
   world
   .component(@pbr.ecs_key_exposure)
   .insert(camera, @pbr.Exposure::new(6.0F), tick)
   world
-  .component(@pbr.ecs_key_color_grading)
+  .component(@post_process.ecs_key_color_grading)
   .insert(camera, color_grading, tick)
   world
-  .component(@pbr.ecs_key_tonemapping)
-  .insert(camera, @pbr.Tonemapping::TonyMcMapface, tick)
+  .component(@post_process.ecs_key_tonemapping)
+  .insert(camera, @post_process.Tonemapping::TonyMcMapface, tick)
   world
   .component(@pbr.ecs_key_environment_map_light)
   .insert(
@@ -931,28 +943,28 @@ fn example_control_system(world : @ecs.World) -> Unit {
 
   if @input.key_just_pressed(@window.KeyCode::KeyJ) {
     transmission_settings = transmission_settings.with_quality(
-      @pbr.ScreenSpaceTransmissionQuality::Low,
+      @post_process.ScreenSpaceTransmissionQuality::Low,
     )
     transmission_settings_changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyK) {
     transmission_settings = transmission_settings.with_quality(
-      @pbr.ScreenSpaceTransmissionQuality::Medium,
+      @post_process.ScreenSpaceTransmissionQuality::Medium,
     )
     transmission_settings_changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyL) {
     transmission_settings = transmission_settings.with_quality(
-      @pbr.ScreenSpaceTransmissionQuality::High,
+      @post_process.ScreenSpaceTransmissionQuality::High,
     )
     transmission_settings_changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::Semicolon) {
     transmission_settings = transmission_settings.with_quality(
-      @pbr.ScreenSpaceTransmissionQuality::Ultra,
+      @post_process.ScreenSpaceTransmissionQuality::Ultra,
     )
     transmission_settings_changed = true
   }

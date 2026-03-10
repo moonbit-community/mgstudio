@@ -1,0 +1,40 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/core_pipeline"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/pbr",
+}
+
+// Values
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@pbr.DeferredPrepass]
+
+pub let ecs_key_depth_prepass : @ecs.ComponentKey[@pbr.DepthPrepass]
+
+pub let ecs_key_hdr : @ecs.ComponentKey[@pbr.Hdr]
+
+pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@pbr.MotionVectorPrepass]
+
+pub let ecs_key_msaa : @ecs.ComponentKey[@pbr.Msaa]
+
+pub let ecs_key_normal_prepass : @ecs.ComponentKey[@pbr.NormalPrepass]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @pbr {type DeferredPrepass}
+
+pub using @pbr {type DepthPrepass}
+
+pub using @pbr {type Hdr}
+
+pub using @pbr {type MotionVectorPrepass}
+
+pub using @pbr {type Msaa}
+
+pub using @pbr {type NormalPrepass}
+
+// Traits
+

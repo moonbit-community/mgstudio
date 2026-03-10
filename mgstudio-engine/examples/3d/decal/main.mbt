@@ -87,7 +87,9 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@pbr.ecs_key_depth_prepass)
   .insert(camera, @pbr.DepthPrepass::default(), tick)
   world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
-  world.component(@pbr.ecs_key_fxaa).insert(camera, @pbr.Fxaa::default(), tick)
+  world
+  .component(@post_process.ecs_key_fxaa)
+  .insert(camera, @post_process.Fxaa::default(), tick)
 
   let white_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::white()),

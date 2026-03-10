@@ -227,17 +227,17 @@ fn msaa_component_from_selection(samples : MSAASamples) -> @pbr.Msaa {
 ///|
 fn fxaa_sensitivity_component(
   sensitivity : FXAASensitivity,
-) -> @pbr.FxaaSensitivity {
+) -> @post_process.FxaaSensitivity {
   if fxaa_sensitivity_eq(sensitivity, FXAASensitivity::Low) {
-    @pbr.FxaaSensitivity::Low
+    @post_process.FxaaSensitivity::Low
   } else if fxaa_sensitivity_eq(sensitivity, FXAASensitivity::Medium) {
-    @pbr.FxaaSensitivity::Medium
+    @post_process.FxaaSensitivity::Medium
   } else if fxaa_sensitivity_eq(sensitivity, FXAASensitivity::High) {
-    @pbr.FxaaSensitivity::High
+    @post_process.FxaaSensitivity::High
   } else if fxaa_sensitivity_eq(sensitivity, FXAASensitivity::Ultra) {
-    @pbr.FxaaSensitivity::Ultra
+    @post_process.FxaaSensitivity::Ultra
   } else {
-    @pbr.FxaaSensitivity::Extreme
+    @post_process.FxaaSensitivity::Extreme
   }
 }
 
@@ -246,9 +246,12 @@ fn clear_temporal_aa_components(
   world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> Unit {
-  world.component(@pbr.ecs_key_temporal_anti_aliasing).remove(camera_entity)
+  world
+  .component(@post_process.ecs_key_temporal_anti_aliasing)
+  .remove(camera_entity)
   |> ignore
-  world.component(@pbr.ecs_key_temporal_jitter).remove(camera_entity) |> ignore
+  world.component(@post_process.ecs_key_temporal_jitter).remove(camera_entity)
+  |> ignore
   world.component(@pbr.ecs_key_depth_prepass).remove(camera_entity) |> ignore
   world.component(@pbr.ecs_key_motion_vector_prepass).remove(camera_entity)
   |> ignore
@@ -263,7 +266,7 @@ fn apply_aa_components(world : @ecs.World) -> Unit {
     world
     .component(@pbr.ecs_key_msaa)
     .insert(camera_entity, @pbr.Msaa::Off, tick)
-    world.component(@pbr.ecs_key_fxaa).remove(camera_entity) |> ignore
+    world.component(@post_process.ecs_key_fxaa).remove(camera_entity) |> ignore
     clear_temporal_aa_components(world, camera_entity)
     return
   }
@@ -275,7 +278,7 @@ fn apply_aa_components(world : @ecs.World) -> Unit {
       msaa_component_from_selection(anti_aliasing_state.val.msaa_samples),
       tick,
     )
-    world.component(@pbr.ecs_key_fxaa).remove(camera_entity) |> ignore
+    world.component(@post_process.ecs_key_fxaa).remove(camera_entity) |> ignore
     clear_temporal_aa_components(world, camera_entity)
     return
   }
@@ -285,10 +288,10 @@ fn apply_aa_components(world : @ecs.World) -> Unit {
     .insert(camera_entity, @pbr.Msaa::Off, tick)
     clear_temporal_aa_components(world, camera_entity)
     world
-    .component(@pbr.ecs_key_fxaa)
+    .component(@post_process.ecs_key_fxaa)
     .insert(
       camera_entity,
-      @pbr.Fxaa::default().with_sensitivity(
+      @post_process.Fxaa::default().with_sensitivity(
         fxaa_sensitivity_component(anti_aliasing_state.val.fxaa_sensitivity),
       ),
       tick,
@@ -299,13 +302,13 @@ fn apply_aa_components(world : @ecs.World) -> Unit {
     world
     .component(@pbr.ecs_key_msaa)
     .insert(camera_entity, @pbr.Msaa::Off, tick)
-    world.component(@pbr.ecs_key_fxaa).remove(camera_entity) |> ignore
+    world.component(@post_process.ecs_key_fxaa).remove(camera_entity) |> ignore
     world
-    .component(@pbr.ecs_key_temporal_anti_aliasing)
-    .insert(camera_entity, @pbr.TemporalAntiAliasing::default(), tick)
+    .component(@post_process.ecs_key_temporal_anti_aliasing)
+    .insert(camera_entity, @post_process.TemporalAntiAliasing::default(), tick)
     world
-    .component(@pbr.ecs_key_temporal_jitter)
-    .insert(camera_entity, @pbr.TemporalJitter::default(), tick)
+    .component(@post_process.ecs_key_temporal_jitter)
+    .insert(camera_entity, @post_process.TemporalJitter::default(), tick)
     world
     .component(@pbr.ecs_key_depth_prepass)
     .insert(camera_entity, @pbr.DepthPrepass::default(), tick)
@@ -315,7 +318,7 @@ fn apply_aa_components(world : @ecs.World) -> Unit {
     return
   }
   world.component(@pbr.ecs_key_msaa).insert(camera_entity, @pbr.Msaa::Off, tick)
-  world.component(@pbr.ecs_key_fxaa).remove(camera_entity) |> ignore
+  world.component(@post_process.ecs_key_fxaa).remove(camera_entity) |> ignore
   clear_temporal_aa_components(world, camera_entity)
 }
 

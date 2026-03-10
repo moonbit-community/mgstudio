@@ -1,0 +1,84 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/post_process"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/pbr",
+}
+
+// Values
+pub let ecs_key_bloom : @ecs.ComponentKey[@pbr.Bloom]
+
+pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[@pbr.ChromaticAberration]
+
+pub let ecs_key_color_grading : @ecs.ComponentKey[@pbr.ColorGrading]
+
+pub let ecs_key_deband_dither : @ecs.ComponentKey[@pbr.DebandDither]
+
+pub let ecs_key_fxaa : @ecs.ComponentKey[@pbr.Fxaa]
+
+pub let ecs_key_motion_blur : @ecs.ComponentKey[@pbr.MotionBlur]
+
+pub let ecs_key_screen_space_ambient_occlusion : @ecs.ComponentKey[@pbr.ScreenSpaceAmbientOcclusion]
+
+pub let ecs_key_screen_space_reflections : @ecs.ComponentKey[@pbr.ScreenSpaceReflections]
+
+pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[@pbr.ScreenSpaceTransmission]
+
+pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[@pbr.TemporalAntiAliasing]
+
+pub let ecs_key_temporal_jitter : @ecs.ComponentKey[@pbr.TemporalJitter]
+
+pub let ecs_key_tonemapping : @ecs.ComponentKey[@pbr.Tonemapping]
+
+pub let ecs_key_vignette : @ecs.ComponentKey[@pbr.Vignette]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @pbr {type Bloom}
+
+pub using @pbr {type BloomCompositeMode}
+
+pub using @pbr {type BloomPrefilter}
+
+pub using @pbr {type ChromaticAberration}
+
+pub using @pbr {type ColorGrading}
+
+pub using @pbr {type ColorGradingGlobal}
+
+pub using @pbr {type ColorGradingRange}
+
+pub using @pbr {type ColorGradingSection}
+
+pub using @pbr {type DebandDither}
+
+pub using @pbr {type Fxaa}
+
+pub using @pbr {type FxaaSensitivity}
+
+pub using @pbr {type MotionBlur}
+
+pub using @pbr {type ScreenSpaceAmbientOcclusion}
+
+pub using @pbr {type ScreenSpaceAmbientOcclusionQualityLevel}
+
+pub using @pbr {type ScreenSpaceReflections}
+
+pub using @pbr {type ScreenSpaceTransmission}
+
+pub using @pbr {type ScreenSpaceTransmissionQuality}
+
+pub using @pbr {type TemporalAntiAliasing}
+
+pub using @pbr {type TemporalJitter}
+
+pub using @pbr {type Tonemapping}
+
+pub using @pbr {type Vignette}
+
+// Traits
+

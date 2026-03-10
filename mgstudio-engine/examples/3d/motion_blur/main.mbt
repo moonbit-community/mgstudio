@@ -186,11 +186,11 @@ fn set_camera_fov(
 fn apply_motion_blur_settings(world : @ecs.World) -> Unit {
   guard motion_blur_state.val.camera is Some(camera_entity) else { return }
   let tick = world.read_change_tick()
-  let motion_blur = @pbr.MotionBlur::new(
+  let motion_blur = @post_process.MotionBlur::new(
     motion_blur_state.val.shutter_angle,
     motion_blur_state.val.samples,
   )
-  let store = world.component(@pbr.ecs_key_motion_blur)
+  let store = world.component(@post_process.ecs_key_motion_blur)
   if store.contains(camera_entity) {
     store.set(camera_entity, motion_blur, tick) |> ignore
   } else {
@@ -209,7 +209,7 @@ fn spawn_camera(world : @ecs.World) -> Unit {
     )
     .with_motion_blur(
       Some(
-        @pbr.MotionBlur::new(
+        @post_process.MotionBlur::new(
           motion_blur_state.val.shutter_angle,
           motion_blur_state.val.samples,
         ),

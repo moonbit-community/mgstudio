@@ -186,7 +186,7 @@ fn selected_option_button_label(option : SelectedColorGradingOption) -> String {
 ///|
 fn SelectedGlobalColorGradingOption::get(
   self : SelectedGlobalColorGradingOption,
-  global : @pbr.ColorGradingGlobal,
+  global : @post_process.ColorGradingGlobal,
 ) -> Float {
   match self {
     Exposure => global.exposure
@@ -199,9 +199,9 @@ fn SelectedGlobalColorGradingOption::get(
 ///|
 fn SelectedGlobalColorGradingOption::set(
   self : SelectedGlobalColorGradingOption,
-  global : @pbr.ColorGradingGlobal,
+  global : @post_process.ColorGradingGlobal,
   value : Float,
-) -> @pbr.ColorGradingGlobal {
+) -> @post_process.ColorGradingGlobal {
   match self {
     Exposure => global.exposure = value
     Temperature => global.temperature = value
@@ -214,7 +214,7 @@ fn SelectedGlobalColorGradingOption::set(
 ///|
 fn SelectedSectionColorGradingOption::get(
   self : SelectedSectionColorGradingOption,
-  section : @pbr.ColorGradingSection,
+  section : @post_process.ColorGradingSection,
 ) -> Float {
   match self {
     Saturation => section.saturation
@@ -228,9 +228,9 @@ fn SelectedSectionColorGradingOption::get(
 ///|
 fn SelectedSectionColorGradingOption::set(
   self : SelectedSectionColorGradingOption,
-  section : @pbr.ColorGradingSection,
+  section : @post_process.ColorGradingSection,
   value : Float,
-) -> @pbr.ColorGradingSection {
+) -> @post_process.ColorGradingSection {
   match self {
     Saturation => section.saturation = value
     Contrast => section.contrast = value
@@ -244,7 +244,7 @@ fn SelectedSectionColorGradingOption::set(
 ///|
 fn SelectedColorGradingOption::get(
   self : SelectedColorGradingOption,
-  color_grading : @pbr.ColorGrading,
+  color_grading : @post_process.ColorGrading,
 ) -> Float {
   match self {
     Global(option) => option.get(color_grading.global)
@@ -257,9 +257,9 @@ fn SelectedColorGradingOption::get(
 ///|
 fn SelectedColorGradingOption::set(
   self : SelectedColorGradingOption,
-  color_grading : @pbr.ColorGrading,
+  color_grading : @post_process.ColorGrading,
   value : Float,
-) -> @pbr.ColorGrading {
+) -> @post_process.ColorGrading {
   match self {
     Global(option) =>
       color_grading.global = option.set(color_grading.global, value)
@@ -304,7 +304,7 @@ fn format_with_three_decimals(value : Float) -> String {
 ///|
 fn option_value_text(
   option : SelectedColorGradingOption,
-  color_grading : @pbr.ColorGrading,
+  color_grading : @post_process.ColorGrading,
 ) -> String {
   format_with_three_decimals(option.get(color_grading))
 }
@@ -351,9 +351,9 @@ fn color_grading_camera_entity(world : @ecs.World) -> @core.Entity? {
 ///|
 fn color_grading_camera_value(
   world : @ecs.World,
-) -> (@core.Entity, @pbr.ColorGrading)? {
+) -> (@core.Entity, @post_process.ColorGrading)? {
   guard color_grading_camera_entity(world) is Some(entity) else { return None }
-  guard world.component(@pbr.ecs_key_color_grading).get(entity)
+  guard world.component(@post_process.ecs_key_color_grading).get(entity)
     is Some(color_grading) else {
     return None
   }
@@ -412,7 +412,7 @@ fn spawn_option_button(
   tick : @core.Tick,
   font : @asset.Handle[@asset.Font],
   option : SelectedColorGradingOption,
-  color_grading : @pbr.ColorGrading,
+  color_grading : @post_process.ColorGrading,
 ) -> Unit {
   let button = world.spawn_empty()
   world
@@ -526,7 +526,7 @@ fn spawn_option_button(
 fn add_buttons(
   world : @ecs.World,
   font : @asset.Handle[@asset.Font],
-  color_grading : @pbr.ColorGrading,
+  color_grading : @post_process.ColorGrading,
 ) -> Unit {
   let tick = world.read_change_tick()
 
@@ -648,7 +648,7 @@ fn add_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    .with_color_grading(Some(@pbr.ColorGrading::default()))
+    .with_color_grading(Some(@post_process.ColorGrading::default()))
     .with_distance_fog(
       Some(
         @pbr.DistanceFog::new(
@@ -757,7 +757,7 @@ fn setup(world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraMono-Medium.ttf")
 
   add_basic_scene(world, asset_server)
-  add_buttons(world, font, @pbr.ColorGrading::default())
+  add_buttons(world, font, @post_process.ColorGrading::default())
   add_camera(world, asset_server)
 
   let tick = world.read_change_tick()
@@ -825,7 +825,7 @@ fn adjust_color_grading_option(world : @ecs.World) -> Unit {
     selected_option.get(color_grading) + delta,
   )
   let tick = world.increment_change_tick()
-  let color_grading_store = world.component(@pbr.ecs_key_color_grading)
+  let color_grading_store = world.component(@post_process.ecs_key_color_grading)
   color_grading_store.set(camera_entity, next_color_grading, tick) |> ignore
 }
 
