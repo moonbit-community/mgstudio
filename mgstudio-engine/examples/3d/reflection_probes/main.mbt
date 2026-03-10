@@ -383,7 +383,7 @@ fn setup(world : @ecs.World) -> Unit {
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
-        @scene.GltfAssetLabel::Scene(0).from_asset(CUBES_SCENE_ASSET),
+        @gltf.GltfAssetLabel::Scene(0).from_asset(CUBES_SCENE_ASSET),
       ),
     ),
     tick,

@@ -484,7 +484,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
 
   let room_scene = @scene.scene_load_gltf_scene(
     asset_server,
-    @scene.GltfAssetLabel::Scene(0).from_asset(LIGHT_PROBE_SCENE_ASSET),
+    @gltf.GltfAssetLabel::Scene(0).from_asset(LIGHT_PROBE_SCENE_ASSET),
   )
   let room_scene_entity = world.spawn_empty()
   world

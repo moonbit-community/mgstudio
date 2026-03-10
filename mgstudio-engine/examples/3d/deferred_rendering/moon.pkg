@@ -10,6 +10,7 @@ import {
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/scene",
+  "Milky2018/mgstudio/gltf",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/window",

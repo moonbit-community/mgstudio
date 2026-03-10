@@ -457,7 +457,7 @@ fn spawn_flight_helmet(
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
-        @scene.GltfAssetLabel::Scene(0).from_asset(
+        @gltf.GltfAssetLabel::Scene(0).from_asset(
           "models/FlightHelmet/FlightHelmet.gltf",
         ),
       ),

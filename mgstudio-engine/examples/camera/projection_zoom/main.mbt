@@ -103,7 +103,7 @@ fn setup(
       asset_server
       .get()
       .load(
-        @scene.GltfAssetLabel::Scene(0).from_asset("models/animated/Fox.glb"),
+        @gltf.GltfAssetLabel::Scene(0).from_asset("models/animated/Fox.glb"),
       ),
     ),
     tick,

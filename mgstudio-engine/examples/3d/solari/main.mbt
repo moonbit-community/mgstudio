@@ -338,7 +338,7 @@ fn spawn_pica_scene(
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
-        @scene.GltfAssetLabel::Scene(0).from_asset(PICA_SCENE_ASSET),
+        @gltf.GltfAssetLabel::Scene(0).from_asset(PICA_SCENE_ASSET),
       ),
     ),
     tick,
@@ -360,7 +360,7 @@ fn spawn_pica_scene(
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
-        @scene.GltfAssetLabel::Scene(0).from_asset(ROBOT_SCENE_ASSET),
+        @gltf.GltfAssetLabel::Scene(0).from_asset(ROBOT_SCENE_ASSET),
       ),
     ),
     tick,

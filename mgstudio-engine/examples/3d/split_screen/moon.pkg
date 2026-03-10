@@ -9,6 +9,7 @@ import {
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/scene",
+  "Milky2018/mgstudio/gltf",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/window",
 }

@@ -214,10 +214,10 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let asset_server = @asset.AssetServer::new()
-  let high_poly_path = @scene.GltfAssetLabel::Scene(0).from_asset(
+  let high_poly_path = @gltf.GltfAssetLabel::Scene(0).from_asset(
     "models/FlightHelmet/FlightHelmet.gltf",
   )
-  let low_poly_path = @scene.GltfAssetLabel::Scene(0).from_asset(
+  let low_poly_path = @gltf.GltfAssetLabel::Scene(0).from_asset(
     "models/FlightHelmetLowPoly/FlightHelmetLowPoly.gltf",
   )
 

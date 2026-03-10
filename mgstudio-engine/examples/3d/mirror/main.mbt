@@ -337,7 +337,7 @@ fn setup(world : @ecs.World) -> Unit {
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
-        @scene.GltfAssetLabel::Scene(0).from_asset(FOX_ASSET_PATH),
+        @gltf.GltfAssetLabel::Scene(0).from_asset(FOX_ASSET_PATH),
       ),
     ),
     tick,

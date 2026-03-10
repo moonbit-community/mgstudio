@@ -34,12 +34,12 @@ fn setup(
   let cube_handle : @asset.Handle[@mesh.Mesh] = asset_server
     .get()
     .load(
-      @scene.GltfAssetLabel::Primitive(0, 0).from_asset("models/cube/cube.gltf"),
+      @gltf.GltfAssetLabel::Primitive(0, 0).from_asset("models/cube/cube.gltf"),
     )
   let sphere_handle : @asset.Handle[@mesh.Mesh] = asset_server
     .get()
     .load(
-      @scene.GltfAssetLabel::Primitive(0, 0).from_asset(
+      @gltf.GltfAssetLabel::Primitive(0, 0).from_asset(
         "models/sphere/sphere.gltf",
       ),
     )
@@ -61,7 +61,7 @@ fn setup(
   let torus_handle : @asset.Handle[@mesh.Mesh] = asset_server
     .get()
     .load(
-      @scene.GltfAssetLabel::Primitive(0, 0).from_asset(
+      @gltf.GltfAssetLabel::Primitive(0, 0).from_asset(
         "models/torus/torus.gltf",
       ),
     )
