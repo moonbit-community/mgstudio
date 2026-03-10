@@ -680,6 +680,7 @@ pub fn[T] CustomProjection3d::get(Self) -> T?
 pub fn CustomProjection3d::get_clip_from_view(Self) -> ProjectionMatrix3d
 pub fn CustomProjection3d::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
 pub fn CustomProjection3d::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
+pub fn[T] CustomProjection3d::get_mut(Self) -> T?
 pub fn[T : CameraProjection3d] CustomProjection3d::new(T) -> Self
 pub fn CustomProjection3d::type_name(Self) -> String
 pub fn CustomProjection3d::update(Self, Float, Float) -> Self
@@ -1781,6 +1782,7 @@ pub(open) trait CameraProjection3d {
   get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
   update(Self, Float, Float) -> Self
   far(Self) -> Float
+  compute_frustum(Self, @math.Transform) -> Frustum
   get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 }
 

@@ -79,6 +79,14 @@ impl CameraProjection3d for TestCustomProjection3dWb with far(self) {
 }
 
 ///|
+impl CameraProjection3d for TestCustomProjection3dWb with compute_frustum(
+  self,
+  camera_transform,
+) {
+  Projection::custom(self).compute_frustum(camera_transform)
+}
+
+///|
 impl CameraProjection3d for TestCustomProjection3dWb with get_frustum_corners(
   self : TestCustomProjection3dWb,
   z_near : Float,

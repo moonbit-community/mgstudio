@@ -881,6 +881,7 @@ pub(open) trait CameraProjection3d {
   get_clip_from_view_for_sub(self : Self, sub_view : SubCameraView3d) -> ProjectionMatrix3d
   update(self : Self, width : Float, height : Float) -> Self
   far(self : Self) -> Float
+  compute_frustum(self : Self, camera_transform : @math.Transform) -> Frustum
   get_frustum_corners(self : Self, z_near : Float, z_far : Float) -> Array[
     @math.Vec3,
   ]
@@ -935,6 +936,11 @@ pub fn CustomProjection3d::default() -> CustomProjection3d {
 
 ///|
 pub fn[T] CustomProjection3d::get(self : CustomProjection3d) -> T? {
+  self.payload.try_to()
+}
+
+///|
+pub fn[T] CustomProjection3d::get_mut(self : CustomProjection3d) -> T? {
   self.payload.try_to()
 }
 
@@ -1107,6 +1113,14 @@ pub impl CameraProjection3d for CustomProjection3d with far(self) {
 }
 
 ///|
+pub impl CameraProjection3d for CustomProjection3d with compute_frustum(
+  self,
+  camera_transform,
+) {
+  self.compute_frustum(camera_transform)
+}
+
+///|
 pub impl CameraProjection3d for CustomProjection3d with get_frustum_corners(
   self,
   z_near,
@@ -1155,6 +1169,14 @@ pub impl CameraProjection3d for Projection with far(self) {
 }
 
 ///|
+pub impl CameraProjection3d for Projection with compute_frustum(
+  self,
+  camera_transform,
+) {
+  self.compute_frustum(camera_transform)
+}
+
+///|
 pub impl CameraProjection3d for Projection with get_frustum_corners(
   self,
   z_near,
@@ -1195,6 +1217,14 @@ pub impl CameraProjection3d for PerspectiveProjection3d with update(
 ///|
 pub impl CameraProjection3d for PerspectiveProjection3d with far(self) {
   self.far
+}
+
+///|
+pub impl CameraProjection3d for PerspectiveProjection3d with compute_frustum(
+  self,
+  camera_transform,
+) {
+  self.compute_frustum(camera_transform)
 }
 
 ///|
@@ -1246,6 +1276,14 @@ pub impl CameraProjection3d for OrthographicProjection3d with update(
 ///|
 pub impl CameraProjection3d for OrthographicProjection3d with far(self) {
   self.far
+}
+
+///|
+pub impl CameraProjection3d for OrthographicProjection3d with compute_frustum(
+  self,
+  camera_transform,
+) {
+  self.compute_frustum(camera_transform)
 }
 
 ///|

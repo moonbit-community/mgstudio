@@ -28,6 +28,14 @@ fn[T : CameraProjection3d] generic_projection_far(projection : T) -> Float {
 }
 
 ///|
+fn[T : CameraProjection3d] generic_projection_frustum(
+  projection : T,
+  camera_transform : @math.Transform,
+) -> Frustum {
+  projection.compute_frustum(camera_transform)
+}
+
+///|
 test "render3d: perspective projection getters expose configured values" {
   let projection = PerspectiveProjection3d::default()
   projection.fov = 1.2F
@@ -213,6 +221,14 @@ impl CameraProjection3d for TestCustomProjection3d with far(self) {
 }
 
 ///|
+impl CameraProjection3d for TestCustomProjection3d with compute_frustum(
+  self,
+  camera_transform,
+) {
+  Projection::custom(self).compute_frustum(camera_transform)
+}
+
+///|
 impl CameraProjection3d for TestCustomProjection3d with get_frustum_corners(
   self : TestCustomProjection3d,
   z_near : Float,
@@ -269,6 +285,24 @@ test "render3d: custom projection stores typed payload and updates lifecycle sta
 }
 
 ///|
+test "render3d: custom projection get_mut updates the stored payload in place" {
+  let custom = CustomProjection3d::new(PerspectiveProjection3d::default())
+  let payload : PerspectiveProjection3d? = custom.get_mut()
+  if payload is Some(projection) {
+    projection.fov = 1.0F
+    projection.far = 1234.0F
+  }
+  let updated_payload : PerspectiveProjection3d? = custom.get()
+  inspect(
+    updated_payload.map(fn(projection) {
+      projection_approx_eq(projection.fov, 1.0F) &&
+      projection_approx_eq(projection.far, 1234.0F)
+    }),
+    content="Some(true)",
+  )
+}
+
+///|
 test "render3d: projection and custom projection satisfy CameraProjection3d forwarding surface" {
   let custom = CustomProjection3d::new(TestCustomProjection3d::{
     view_width: 3.0F,
@@ -286,6 +320,17 @@ test "render3d: projection and custom projection satisfy CameraProjection3d forw
   let ok = projection_approx_eq(generic_projection_far(custom), 321.0F) &&
     projection_approx_eq(updated_projection, 654.0F)
   inspect(ok, content="true")
+}
+
+///|
+test "render3d: CameraProjection3d trait exposes compute_frustum" {
+  let custom = CustomProjection3d::new(TestCustomProjection3d::{
+    view_width: 12.0F,
+    view_height: 6.0F,
+    far_plane: 321.0F,
+  })
+  let frustum = generic_projection_frustum(custom, @math.Transform::identity())
+  inspect(frustum.half_spaces.length(), content="6")
 }
 
 ///|

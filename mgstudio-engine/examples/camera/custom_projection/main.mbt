@@ -79,6 +79,14 @@ impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with far(
 }
 
 ///|
+impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with compute_frustum(
+  self,
+  camera_transform,
+) {
+  @render3d.Projection::custom(self).compute_frustum(camera_transform)
+}
+
+///|
 impl @render3d.CameraProjection3d for ObliquePerspectiveProjection with get_frustum_corners(
   self : ObliquePerspectiveProjection,
   z_near : Float,

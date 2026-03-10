@@ -62,6 +62,14 @@ impl CameraProjection3d for CameraBundleCustomProjection3d with far(_self) {
 }
 
 ///|
+impl CameraProjection3d for CameraBundleCustomProjection3d with compute_frustum(
+  self,
+  camera_transform,
+) {
+  Projection::custom(self).compute_frustum(camera_transform)
+}
+
+///|
 impl CameraProjection3d for CameraBundleCustomProjection3d with get_frustum_corners(
   self,
   _z_near,
