@@ -5731,28 +5731,31 @@ fn render3d_bloom_safe_scale_axis(value : Float) -> Float {
 
 ///|
 fn render3d_bloom_sanitize(bloom : Bloom) -> Bloom {
-  Bloom::{
-    intensity: render3d_bloom_clamp_non_negative(bloom.intensity),
-    low_frequency_boost: render3d_bloom_clamp_unit(bloom.low_frequency_boost),
-    low_frequency_boost_curvature: render3d_bloom_clamp_unit(
-      bloom.low_frequency_boost_curvature,
-    ),
-    high_pass_frequency: render3d_bloom_clamp_unit(bloom.high_pass_frequency),
-    prefilter: BloomPrefilter::{
-      threshold: render3d_bloom_clamp_non_negative(bloom.prefilter.threshold),
-      threshold_softness: render3d_bloom_clamp_unit(
-        bloom.prefilter.threshold_softness,
-      ),
-    },
-    composite_mode: bloom.composite_mode,
-    max_mip_dimension: render3d_bloom_safe_max_mip_dimension(
-      bloom.max_mip_dimension,
-    ),
-    scale: @math.Vec2::new(
+  let prefilter = BloomPrefilter::new(
+    render3d_bloom_clamp_non_negative(bloom.prefilter.threshold),
+    render3d_bloom_clamp_unit(bloom.prefilter.threshold_softness),
+  )
+  Bloom::new(render3d_bloom_clamp_non_negative(bloom.intensity))
+  .with_low_frequency_boost(
+    render3d_bloom_clamp_unit(bloom.low_frequency_boost),
+  )
+  .with_low_frequency_boost_curvature(
+    render3d_bloom_clamp_unit(bloom.low_frequency_boost_curvature),
+  )
+  .with_high_pass_frequency(
+    render3d_bloom_clamp_unit(bloom.high_pass_frequency),
+  )
+  .with_prefilter_settings(prefilter)
+  .with_composite_mode(bloom.composite_mode)
+  .with_max_mip_dimension(
+    render3d_bloom_safe_max_mip_dimension(bloom.max_mip_dimension),
+  )
+  .with_scale(
+    @math.Vec2::new(
       render3d_bloom_safe_scale_axis(bloom.scale.x),
       render3d_bloom_safe_scale_axis(bloom.scale.y),
     ),
-  }
+  )
 }
 
 ///|

@@ -26,17 +26,13 @@ pub let ecs_key_mesh_material3d : @ecs.ComponentKey[MeshMaterial3d] = @ecs.regis
 pub let ecs_key_hdr : @ecs.ComponentKey[Hdr] = @core_pipeline.ecs_key_hdr
 
 ///|
-pub let ecs_key_fxaa : @ecs.ComponentKey[Fxaa] = @ecs.register_component(
-  debug_name="render3d.fxaa",
-)
+pub let ecs_key_fxaa : @ecs.ComponentKey[Fxaa] = @post_process.ecs_key_fxaa
 
 ///|
 pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @core_pipeline.ecs_key_msaa
 
 ///|
-pub let ecs_key_bloom : @ecs.ComponentKey[Bloom] = @ecs.register_component(
-  debug_name="render3d.bloom",
-)
+pub let ecs_key_bloom : @ecs.ComponentKey[Bloom] = @post_process.ecs_key_bloom
 
 ///|
 pub let ecs_key_skybox : @ecs.ComponentKey[Skybox] = @ecs.register_component(
@@ -54,9 +50,7 @@ pub let ecs_key_exposure : @ecs.ComponentKey[Exposure] = @ecs.register_component
 )
 
 ///|
-pub let ecs_key_vignette : @ecs.ComponentKey[Vignette] = @ecs.register_component(
-  debug_name="render3d.vignette",
-)
+pub let ecs_key_vignette : @ecs.ComponentKey[Vignette] = @post_process.ecs_key_vignette
 
 ///|
 pub let ecs_key_spot_light : @ecs.ComponentKey[SpotLight] = @ecs.register_component(
@@ -79,9 +73,7 @@ pub let ecs_key_light_probe : @ecs.ComponentKey[LightProbe] = @ecs.register_comp
 )
 
 ///|
-pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur] = @ecs.register_component(
-  debug_name="render3d.motion_blur",
-)
+pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur] = @post_process.ecs_key_motion_blur
 
 ///|
 pub let ecs_key_point_light : @ecs.ComponentKey[PointLight] = @ecs.register_component(
@@ -94,19 +86,13 @@ pub let ecs_key_no_wireframe : @ecs.ComponentKey[NoWireframe] = @ecs.register_co
 )
 
 ///|
-pub let ecs_key_tonemapping : @ecs.ComponentKey[Tonemapping] = @ecs.register_component(
-  debug_name="render3d.tonemapping",
-)
+pub let ecs_key_tonemapping : @ecs.ComponentKey[Tonemapping] = @post_process.ecs_key_tonemapping
 
 ///|
-pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading] = @ecs.register_component(
-  debug_name="render3d.color_grading",
-)
+pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading] = @post_process.ecs_key_color_grading
 
 ///|
-pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither] = @ecs.register_component(
-  debug_name="render3d.deband_dither",
-)
+pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither] = @post_process.ecs_key_deband_dither
 
 ///|
 pub let ecs_key_depth_prepass : @ecs.ComponentKey[DepthPrepass] = @core_pipeline.ecs_key_depth_prepass
@@ -130,9 +116,7 @@ pub let ecs_key_contact_shadows : @ecs.ComponentKey[ContactShadows] = @ecs.regis
 )
 
 ///|
-pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter] = @ecs.register_component(
-  debug_name="render3d.temporal_jitter",
-)
+pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter] = @post_process.ecs_key_temporal_jitter
 
 ///|
 pub let ecs_key_wireframe_color : @ecs.ComponentKey[WireframeColor] = @ecs.register_component(
@@ -203,9 +187,7 @@ pub let ecs_key_parallax_correction : @ecs.ComponentKey[ParallaxCorrection] = @e
 )
 
 ///|
-pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[ChromaticAberration] = @ecs.register_component(
-  debug_name="render3d.chromatic_aberration",
-)
+pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[ChromaticAberration] = @post_process.ecs_key_chromatic_aberration
 
 ///|
 pub let ecs_key_environment_map_light : @ecs.ComponentKey[EnvironmentMapLight] = @ecs.register_component(
@@ -216,9 +198,7 @@ pub let ecs_key_environment_map_light : @ecs.ComponentKey[EnvironmentMapLight] =
 pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass] = @core_pipeline.ecs_key_motion_vector_prepass
 
 ///|
-pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing] = @ecs.register_component(
-  debug_name="render3d.temporal_anti_aliasing",
-)
+pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing] = @post_process.ecs_key_temporal_anti_aliasing
 
 ///|
 pub let ecs_key_shadow_filtering_method : @ecs.ComponentKey[
@@ -228,7 +208,7 @@ pub let ecs_key_shadow_filtering_method : @ecs.ComponentKey[
 ///|
 pub let ecs_key_screen_space_reflections : @ecs.ComponentKey[
   ScreenSpaceReflections,
-] = @ecs.register_component(debug_name="render3d.screen_space_reflections")
+] = @post_process.ecs_key_screen_space_reflections
 
 ///|
 pub let ecs_key_directional_light_texture : @ecs.ComponentKey[
@@ -243,7 +223,7 @@ pub let ecs_key_forward_decal_material_ext : @ecs.ComponentKey[
 ///|
 pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[
   ScreenSpaceTransmission,
-] = @ecs.register_component(debug_name="render3d.screen_space_transmission")
+] = @post_process.ecs_key_screen_space_transmission
 
 ///|
 pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[
@@ -253,9 +233,7 @@ pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[
 ///|
 pub let ecs_key_screen_space_ambient_occlusion : @ecs.ComponentKey[
   ScreenSpaceAmbientOcclusion,
-] = @ecs.register_component(
-  debug_name="render3d.screen_space_ambient_occlusion",
-)
+] = @post_process.ecs_key_screen_space_ambient_occlusion
 
 ///|
 pub let ecs_key_generated_environment_map_light : @ecs.ComponentKey[
@@ -282,16 +260,6 @@ pub impl @ecs.Component for MeshMaterial3d with component() {
 }
 
 ///|
-pub impl @ecs.Component for Fxaa with component() {
-  ecs_key_fxaa
-}
-
-///|
-pub impl @ecs.Component for Bloom with component() {
-  ecs_key_bloom
-}
-
-///|
 pub impl @ecs.Component for Skybox with component() {
   ecs_key_skybox
 }
@@ -304,11 +272,6 @@ pub impl @ecs.Component for Camera3d with component() {
 ///|
 pub impl @ecs.Component for Exposure with component() {
   ecs_key_exposure
-}
-
-///|
-pub impl @ecs.Component for Vignette with component() {
-  ecs_key_vignette
 }
 
 ///|
@@ -332,11 +295,6 @@ pub impl @ecs.Component for LightProbe with component() {
 }
 
 ///|
-pub impl @ecs.Component for MotionBlur with component() {
-  ecs_key_motion_blur
-}
-
-///|
 pub impl @ecs.Component for PointLight with component() {
   ecs_key_point_light
 }
@@ -344,21 +302,6 @@ pub impl @ecs.Component for PointLight with component() {
 ///|
 pub impl @ecs.Component for NoWireframe with component() {
   ecs_key_no_wireframe
-}
-
-///|
-pub impl @ecs.Component for Tonemapping with component() {
-  ecs_key_tonemapping
-}
-
-///|
-pub impl @ecs.Component for ColorGrading with component() {
-  ecs_key_color_grading
-}
-
-///|
-pub impl @ecs.Component for DebandDither with component() {
-  ecs_key_deband_dither
 }
 
 ///|
@@ -374,11 +317,6 @@ pub impl @ecs.Component for ClusteredDecal with component() {
 ///|
 pub impl @ecs.Component for ContactShadows with component() {
   ecs_key_contact_shadows
-}
-
-///|
-pub impl @ecs.Component for TemporalJitter with component() {
-  ecs_key_temporal_jitter
 }
 
 ///|
@@ -447,28 +385,13 @@ pub impl @ecs.Component for ParallaxCorrection with component() {
 }
 
 ///|
-pub impl @ecs.Component for ChromaticAberration with component() {
-  ecs_key_chromatic_aberration
-}
-
-///|
 pub impl @ecs.Component for EnvironmentMapLight with component() {
   ecs_key_environment_map_light
 }
 
 ///|
-pub impl @ecs.Component for TemporalAntiAliasing with component() {
-  ecs_key_temporal_anti_aliasing
-}
-
-///|
 pub impl @ecs.Component for ShadowFilteringMethod with component() {
   ecs_key_shadow_filtering_method
-}
-
-///|
-pub impl @ecs.Component for ScreenSpaceReflections with component() {
-  ecs_key_screen_space_reflections
 }
 
 ///|
@@ -482,18 +405,8 @@ pub impl @ecs.Component for ForwardDecalMaterialExt with component() {
 }
 
 ///|
-pub impl @ecs.Component for ScreenSpaceTransmission with component() {
-  ecs_key_screen_space_transmission
-}
-
-///|
 pub impl @ecs.Component for TransmittedShadowReceiver with component() {
   ecs_key_transmitted_shadow_receiver
-}
-
-///|
-pub impl @ecs.Component for ScreenSpaceAmbientOcclusion with component() {
-  ecs_key_screen_space_ambient_occlusion
 }
 
 ///|
