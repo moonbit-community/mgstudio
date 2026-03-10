@@ -1,0 +1,57 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/material"
+
+import {
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/pbr",
+}
+
+// Values
+pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[@pbr.DefaultOpaqueRendererMethod]
+
+pub let ecs_key_forward_decal_material_ext : @ecs.ComponentKey[@pbr.ForwardDecalMaterialExt]
+
+pub let ecs_key_mesh_material3d : @ecs.ComponentKey[@pbr.MeshMaterial3d]
+
+pub fn get_default_opaque_renderer_method_resource(@ecs.World) -> @ecs.ResourceAccess[@pbr.DefaultOpaqueRendererMethod]
+
+pub fn get_forward_decal_material_ext_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.ForwardDecalMaterialExt]
+
+pub fn get_mesh_material3d_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.MeshMaterial3d]
+
+pub fn standard_material_add(@pbr.StandardMaterial) -> @asset.Handle[@pbr.StandardMaterial]
+
+pub fn standard_material_get(@asset.Handle[@pbr.StandardMaterial]) -> @pbr.StandardMaterial?
+
+pub fn standard_material_set(@asset.Handle[@pbr.StandardMaterial], @pbr.StandardMaterial) -> Bool
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @pbr {type AlphaMode3d as AlphaMode}
+
+pub using @pbr {type AlphaMode3d}
+
+pub using @pbr {type DefaultOpaqueRendererMethod}
+
+pub using @pbr {type ExtendedMaterialMetadata3d}
+
+pub using @pbr {type Face3d}
+
+pub using @pbr {type ForwardDecalMaterialExt}
+
+pub using @pbr {type MeshMaterial3d}
+
+pub using @pbr {type MeshMaterial3dBundle}
+
+pub using @pbr {type OpaqueRendererMethod}
+
+pub using @pbr {type ParallaxMappingMethod}
+
+pub using @pbr {type StandardMaterial}
+
+// Traits
+

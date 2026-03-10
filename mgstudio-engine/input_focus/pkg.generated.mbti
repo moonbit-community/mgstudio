@@ -1,0 +1,35 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/input_focus"
+
+import {
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/input",
+}
+
+// Values
+pub fn is_focus_visible(@ecs.World, @core.Entity) -> Bool
+
+pub fn is_focus_within(@ecs.World, @core.Entity) -> Bool
+
+pub fn is_focus_within_visible(@ecs.World, @core.Entity) -> Bool
+
+pub fn is_focused(@ecs.World, @core.Entity) -> Bool
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @input {type FocusedInput}
+
+pub using @input {type InputFocus}
+
+pub using @input {type InputFocusSystems}
+
+pub using @input {type InputFocusVisible}
+
+pub using @input {type IsFocusedHelper}
+
+// Traits
+

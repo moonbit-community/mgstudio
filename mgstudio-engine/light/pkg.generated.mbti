@@ -1,0 +1,156 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/light"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/pbr",
+}
+
+// Values
+pub let ecs_key_contact_shadows : @ecs.ComponentKey[@pbr.ContactShadows]
+
+pub let ecs_key_directional_light : @ecs.ComponentKey[@pbr.DirectionalLight]
+
+pub let ecs_key_directional_light_shadow_map : @ecs.ResourceKey[@pbr.DirectionalLightShadowMap]
+
+pub let ecs_key_directional_light_texture : @ecs.ComponentKey[@pbr.DirectionalLightTexture]
+
+pub let ecs_key_environment_map_light : @ecs.ComponentKey[@pbr.EnvironmentMapLight]
+
+pub let ecs_key_generated_environment_map_light : @ecs.ComponentKey[@pbr.GeneratedEnvironmentMapLight]
+
+pub let ecs_key_global_ambient_light : @ecs.ResourceKey[@pbr.GlobalAmbientLight]
+
+pub let ecs_key_irradiance_volume : @ecs.ComponentKey[@pbr.IrradianceVolume]
+
+pub let ecs_key_light_probe : @ecs.ComponentKey[@pbr.LightProbe]
+
+pub let ecs_key_not_shadow_caster : @ecs.ComponentKey[@pbr.NotShadowCaster]
+
+pub let ecs_key_not_shadow_receiver : @ecs.ComponentKey[@pbr.NotShadowReceiver]
+
+pub let ecs_key_parallax_correction : @ecs.ComponentKey[@pbr.ParallaxCorrection]
+
+pub let ecs_key_point_light : @ecs.ComponentKey[@pbr.PointLight]
+
+pub let ecs_key_point_light_shadow_map : @ecs.ResourceKey[@pbr.PointLightShadowMap]
+
+pub let ecs_key_point_light_texture : @ecs.ComponentKey[@pbr.PointLightTexture]
+
+pub let ecs_key_shadow_filtering_method : @ecs.ComponentKey[@pbr.ShadowFilteringMethod]
+
+pub let ecs_key_skybox : @ecs.ComponentKey[@pbr.Skybox]
+
+pub let ecs_key_spot_light : @ecs.ComponentKey[@pbr.SpotLight]
+
+pub let ecs_key_spot_light_texture : @ecs.ComponentKey[@pbr.SpotLightTexture]
+
+pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[@pbr.TransmittedShadowReceiver]
+
+pub fn get_contact_shadows_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.ContactShadows]
+
+pub fn get_directional_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[@pbr.DirectionalLightShadowMap]
+
+pub fn get_directional_light_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.DirectionalLight]
+
+pub fn get_directional_light_texture_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.DirectionalLightTexture]
+
+pub fn get_environment_map_light_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.EnvironmentMapLight]
+
+pub fn get_generated_environment_map_light_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.GeneratedEnvironmentMapLight]
+
+pub fn get_global_ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[@pbr.GlobalAmbientLight]
+
+pub fn get_irradiance_volume_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.IrradianceVolume]
+
+pub fn get_light_probe_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.LightProbe]
+
+pub fn get_not_shadow_caster_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.NotShadowCaster]
+
+pub fn get_not_shadow_receiver_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.NotShadowReceiver]
+
+pub fn get_parallax_correction_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.ParallaxCorrection]
+
+pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[@pbr.PointLightShadowMap]
+
+pub fn get_point_light_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.PointLight]
+
+pub fn get_point_light_texture_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.PointLightTexture]
+
+pub fn get_shadow_filtering_method_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.ShadowFilteringMethod]
+
+pub fn get_skybox_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.Skybox]
+
+pub fn get_spot_light_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.SpotLight]
+
+pub fn get_spot_light_texture_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.SpotLightTexture]
+
+pub fn get_transmitted_shadow_receiver_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.TransmittedShadowReceiver]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @pbr {type Atmosphere}
+
+pub using @pbr {type AtmosphereEnvironmentMapLight}
+
+pub using @pbr {type AtmosphereMode}
+
+pub using @pbr {type AtmosphereSettings}
+
+pub using @pbr {type CascadeShadowConfig}
+
+pub using @pbr {type CascadeShadowConfigBuilder}
+
+pub using @pbr {type ContactShadows}
+
+pub using @pbr {type DirectionalLight}
+
+pub using @pbr {type DirectionalLightShadowMap}
+
+pub using @pbr {type DirectionalLightTexture}
+
+pub using @pbr {type EnvironmentMapLight}
+
+pub using @pbr {type FogVolume}
+
+pub using @pbr {type GeneratedEnvironmentMapLight}
+
+pub using @pbr {type GlobalAmbientLight}
+
+pub using @pbr {type IrradianceVolume}
+
+pub using @pbr {type LightProbe}
+
+pub using @pbr {type NotShadowCaster}
+
+pub using @pbr {type NotShadowReceiver}
+
+pub using @pbr {type ParallaxCorrection}
+
+pub using @pbr {type PointLight}
+
+pub using @pbr {type PointLightShadowMap}
+
+pub using @pbr {type PointLightTexture}
+
+pub using @pbr {type ScatteringMedium}
+
+pub using @pbr {type ShadowFilteringMethod}
+
+pub using @pbr {type Skybox}
+
+pub using @pbr {type SpotLight}
+
+pub using @pbr {type SpotLightTexture}
+
+pub using @pbr {type TransmittedShadowReceiver}
+
+pub using @pbr {type VolumetricFog}
+
+pub using @pbr {type VolumetricLight}
+
+// Traits
+

@@ -1,0 +1,27 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/winit"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/window",
+}
+
+// Values
+pub fn poll_backend_events(@ecs.World) -> Unit
+
+pub fn window_backend_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn window_backend_plugin_with(@app.App[@ecs.World], @window.WindowPlugin) -> @app.App[@ecs.World]
+
+pub fn window_backend_runner_builder(@app.App[@ecs.World]) -> () -> Unit
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @window {type WindowPlugin}
+
+// Traits
+

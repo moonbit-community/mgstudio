@@ -1,0 +1,68 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/platform"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/window",
+}
+
+// Values
+pub fn create_window(logical_width~ : Int, logical_height~ : Int, physical_width~ : Int, physical_height~ : Int, use_physical_size_on_create~ : Bool, title~ : String) -> Int
+
+pub fn debug_log(message~ : String) -> Unit
+
+pub fn ensure_primary_host_window(@ecs.World) -> Int?
+
+pub fn height(Int) -> Int
+
+pub fn is_focused(Int) -> Bool
+
+pub fn poll_events(Int) -> Unit
+
+pub fn position_x(Int) -> Int
+
+pub fn position_y(Int) -> Int
+
+pub fn request_close(Int) -> Unit
+
+pub fn run_loop(FuncRef[() -> Unit]) -> Unit
+
+pub fn scale_factor(Int) -> Float
+
+pub fn set_cursor_grab_mode(Int, mode~ : @window.CursorGrabMode) -> Unit
+
+pub fn set_cursor_icon(Int, icon~ : @window.CursorIcon) -> Unit
+
+pub fn set_cursor_visible(Int, visible~ : Bool) -> Unit
+
+pub fn set_mode(Int, mode~ : @window.WindowMode) -> Unit
+
+pub fn set_position(Int, x~ : Int, y~ : Int) -> Unit
+
+pub fn set_resizable(Int, resizable~ : Bool) -> Unit
+
+pub fn set_size(Int, width~ : Int, height~ : Int) -> Unit
+
+pub fn set_title(Int, title~ : String) -> Unit
+
+pub fn should_close(Int) -> Bool
+
+pub fn width(Int) -> Int
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @window {type CursorGrabMode}
+
+pub using @window {type CursorIcon}
+
+pub using @window {type HostEvent}
+
+pub type HostWindow = Int
+
+pub using @window {type WindowMode}
+
+// Traits
+

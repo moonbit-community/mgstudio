@@ -1,0 +1,42 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/anti_alias"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/pbr",
+}
+
+// Values
+pub let ecs_key_fxaa : @ecs.ComponentKey[@pbr.Fxaa]
+
+pub let ecs_key_msaa : @ecs.ComponentKey[@pbr.Msaa]
+
+pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[@pbr.TemporalAntiAliasing]
+
+pub let ecs_key_temporal_jitter : @ecs.ComponentKey[@pbr.TemporalJitter]
+
+pub fn get_fxaa_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.Fxaa]
+
+pub fn get_msaa_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.Msaa]
+
+pub fn get_temporal_anti_aliasing_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.TemporalAntiAliasing]
+
+pub fn get_temporal_jitter_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.TemporalJitter]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @pbr {type Fxaa}
+
+pub using @pbr {type FxaaSensitivity}
+
+pub using @pbr {type Msaa}
+
+pub using @pbr {type TemporalAntiAliasing}
+
+pub using @pbr {type TemporalJitter}
+
+// Traits
+
