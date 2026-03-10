@@ -1435,21 +1435,6 @@ let gamepad_rumble_request_message_key : @ecs.MessageKey[GamepadRumbleRequest] =
 )
 
 ///|
-let input_gamepad_poll_system_set : @app.SystemSet = @app.system_set(
-  "input.gamepad.poll",
-)
-
-///|
-let input_gamepad_connection_system_set : @app.SystemSet = @app.system_set(
-  "input.gamepad.connection",
-)
-
-///|
-let input_gamepad_event_processing_system_set : @app.SystemSet = @app.system_set(
-  "input.gamepad.event_processing",
-)
-
-///|
 let input_gamepad_rumble_system_set : @app.SystemSet = @app.system_set(
   "input.gamepad.rumble",
 )
@@ -2203,17 +2188,17 @@ pub fn input_gamepad_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
   .add_message(gamepad_button_state_changed_event_message_key)
   .add_message(gamepad_rumble_request_message_key)
   .add_pre_update_system_config(
-    @app.system(input_poll_gamepad_system).in_set(input_gamepad_poll_system_set),
+    @app.system(input_poll_gamepad_system).in_set(input_systems_set),
   )
   .add_pre_update_system_config(
-    @app.system(@app.system_param(gamepad_connection_system))
-    .in_set(input_gamepad_connection_system_set)
-    .after(input_gamepad_poll_system_set),
+    @app.system(@app.system_param(gamepad_connection_system)).in_set(
+      input_systems_set,
+    ),
   )
   .add_pre_update_system_config(
-    @app.system(@app.system_param3(gamepad_event_processing_system))
-    .in_set(input_gamepad_event_processing_system_set)
-    .after(input_gamepad_connection_system_set),
+    @app.system(@app.system_param3(gamepad_event_processing_system)).in_set(
+      input_systems_set,
+    ),
   )
   .add_post_update_system_config(
     @app.system(@app.system_param3(gamepad_rumble_system)).in_set(

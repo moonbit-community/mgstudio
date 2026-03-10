@@ -49,6 +49,8 @@ pub fn scene_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn scene_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn scene_register_gltf_asset_loaders() -> Unit
+
 pub fn scene_register_gltf_scene(String, Scene) -> @asset.Handle[Scene]
 
 pub fn scene_reset_gltf_lod_visibility_policy() -> Unit

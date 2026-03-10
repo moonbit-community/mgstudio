@@ -824,6 +824,11 @@ let file_drag_and_drop_message_key : @ecs.MessageKey[FileDragAndDrop] = @ecs.reg
 )
 
 ///|
+pub let input_systems_set : @app.SystemSet = @app.system_set(
+  "bevy_input::InputSystems",
+)
+
+///|
 fn[T] input_resource_get(key : @ecs.ResourceKey[T]) -> T? {
   match @app.current_world() {
     Some(world) =>
@@ -1765,6 +1770,9 @@ pub impl @app.Resource for Touches with resource() {
 ///|
 pub fn input_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   input_gamepad_plugin(app)
+  .init_resource(AccumulatedMouseMotion::new)
+  .init_resource(AccumulatedMouseScroll::new)
+  .init_resource(Touches::new)
   .add_message(keyboard_input_message_key)
   .add_message(keyboard_character_message_key)
   .add_message(mouse_button_input_message_key)
@@ -1776,8 +1784,14 @@ pub fn input_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .add_message(double_tap_gesture_message_key)
   .add_message(touch_input_message_key)
   .add_message(file_drag_and_drop_message_key)
-  .add_pre_update_system(input_poll_keyboard_system)
-  .add_pre_update_system(input_poll_drag_and_drop_system)
-  .add_pre_update_system(input_poll_mouse_system)
+  .add_pre_update_system_config(
+    @app.system(input_poll_keyboard_system).in_set(input_systems_set),
+  )
+  .add_pre_update_system_config(
+    @app.system(input_poll_drag_and_drop_system).in_set(input_systems_set),
+  )
+  .add_pre_update_system_config(
+    @app.system(input_poll_mouse_system).in_set(input_systems_set),
+  )
   .add_post_update_system(input_finish_system)
 }

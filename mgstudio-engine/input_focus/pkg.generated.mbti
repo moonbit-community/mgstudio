@@ -2,12 +2,20 @@
 package "Milky2018/mgstudio/input_focus"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/input",
 }
 
 // Values
+pub fn[M : @ecs.Message] dispatch_focused_input(@ecs.MessageReader[M], @app.ResMut[InputFocus]) -> Unit
+
+pub fn[M : @ecs.Message] focused_input_message_key() -> @ecs.MessageKey[FocusedInput[M]]
+
+pub fn input_dispatch_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn input_focus_system_set_name(InputFocusSystems) -> String
+
 pub fn is_focus_visible(@ecs.World, @core.Entity) -> Bool
 
 pub fn is_focus_within(@ecs.World, @core.Entity) -> Bool
@@ -16,20 +24,62 @@ pub fn is_focus_within_visible(@ecs.World, @core.Entity) -> Bool
 
 pub fn is_focused(@ecs.World, @core.Entity) -> Bool
 
+pub fn set_initial_focus(@ecs.World) -> Unit
+
 // Errors
 
 // Types and methods
+pub struct FocusedInput[M] {
+  focused_entity : @core.Entity
+  input : M
+  window : @core.Entity
+}
+pub fn[M] FocusedInput::new(@core.Entity, M, @core.Entity) -> Self[M]
+pub impl[M : @ecs.Message] @ecs.Message for FocusedInput[M]
+
+pub struct InputDispatchPlugin {
+}
+pub fn InputDispatchPlugin::default() -> Self
+
+pub struct InputFocus {
+  mut focused_entity : @core.Entity?
+}
+pub fn InputFocus::clear(Self) -> Unit
+pub fn InputFocus::default() -> Self
+pub fn InputFocus::from_entity(@core.Entity) -> Self
+pub fn InputFocus::get(Self) -> @core.Entity?
+pub fn InputFocus::set(Self, @core.Entity) -> Unit
+pub impl @app.Resource for InputFocus
+
+pub(all) enum InputFocusSystems {
+  Dispatch
+}
+pub impl Eq for InputFocusSystems
+pub impl Show for InputFocusSystems
+
+pub struct InputFocusVisible {
+  mut visible : Bool
+}
+pub fn InputFocusVisible::default() -> Self
+pub fn InputFocusVisible::new(Bool) -> Self
+pub fn InputFocusVisible::set_visible(Self, Bool) -> Unit
+pub fn InputFocusVisible::visible(Self) -> Bool
+pub impl @app.Resource for InputFocusVisible
+
+pub struct IsFocusedHelper {
+  world : @ecs.World
+}
+pub impl @app.SystemParam for IsFocusedHelper
+pub impl IsFocused for IsFocusedHelper
 
 // Type aliases
-pub using @input {type FocusedInput}
-
-pub using @input {type InputFocus}
-
-pub using @input {type InputFocusSystems}
-
-pub using @input {type InputFocusVisible}
-
-pub using @input {type IsFocusedHelper}
 
 // Traits
+pub(open) trait IsFocused {
+  is_focused(Self, @core.Entity) -> Bool
+  is_focus_within(Self, @core.Entity) -> Bool
+  is_focus_visible(Self, @core.Entity) -> Bool
+  is_focus_within_visible(Self, @core.Entity) -> Bool
+}
+pub impl IsFocused for @ecs.World
 
