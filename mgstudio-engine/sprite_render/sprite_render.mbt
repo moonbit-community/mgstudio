@@ -86,22 +86,32 @@ pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[Wireframe2dColor] = @sprit
 pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[Wireframe2dConfig] = @sprite.ecs_key_wireframe2d_config
 
 ///|
-pub let camera_update_systems : @app.SystemSet = @sprite.camera_update_systems
+pub let camera_update_systems : @app.SystemSet = @app.system_set(
+  "bevy.camera.update_systems",
+)
 
 ///|
-pub let render2d_set_extract : @app.SystemSet = @sprite.render2d_set_extract
+pub let render2d_set_extract : @app.SystemSet = @app.system_set(
+  "bevy.render2d.extract",
+)
 
 ///|
-pub let render2d_set_prepare : @app.SystemSet = @sprite.render2d_set_prepare
+pub let render2d_set_prepare : @app.SystemSet = @app.system_set(
+  "bevy.render2d.prepare",
+)
 
 ///|
-pub let render2d_set_queue : @app.SystemSet = @sprite.render2d_set_queue
+pub let render2d_set_queue : @app.SystemSet = @app.system_set(
+  "bevy.render2d.queue",
+)
 
 ///|
-pub let render2d_set_render : @app.SystemSet = @sprite.render2d_set_render
+pub let render2d_set_render : @app.SystemSet = @app.system_set(
+  "bevy.render2d.render",
+)
 
 ///|
-pub let render2d_set_execute : @app.SystemSet = @sprite.render2d_set_execute
+pub let render2d_set_execute : @app.SystemSet = render2d_set_render
 
 ///|
 pub fn[W, M] material2d_plugin(plugin : Material2dPlugin[M]) -> @app.Plugin[W] {
@@ -110,14 +120,88 @@ pub fn[W, M] material2d_plugin(plugin : Material2dPlugin[M]) -> @app.Plugin[W] {
 
 ///|
 pub fn sprite_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @sprite.render2d_plugin(app)
+  app
+  .init_resource(fn() { @sprite.ClearColor::default() })
+  .init_resource(fn() {
+    let assets : @asset.Assets[ColorMaterialAsset] = @asset.Assets::new()
+    assets
+  })
+  .init_resource(fn() {
+    let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
+    assets
+  })
+  .add_startup_system(@sprite.init_render_state_system)
+  .add_post_update_system_config(
+    @app.system(render_camera_system).in_set(camera_update_systems),
+  )
+  .add_post_update_system_config(
+    @app.system(render_extract_system).in_set(render2d_set_extract),
+  )
+  .add_post_update_system_config(
+    @app.system(render_prepare_system).in_set(render2d_set_prepare),
+  )
+  .add_post_update_system_config(
+    @app.system(render_queue_system).in_set(render2d_set_queue),
+  )
+  .add_post_update_system_config(
+    @app.system(render_execute_system).in_set(render2d_set_render),
+  )
+  .configure_set(@app.PostUpdate, camera_update_systems, before=[
+    render2d_set_extract,
+  ])
+  .configure_set(@app.PostUpdate, render2d_set_extract, before=[
+    render2d_set_prepare,
+  ])
+  .configure_set(@app.PostUpdate, render2d_set_prepare, before=[
+    render2d_set_queue,
+  ])
+  .configure_set(@app.PostUpdate, render2d_set_queue, before=[
+    render2d_set_render,
+  ])
 }
 
 ///|
 pub fn sprite_render_plugin_ecs(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  @sprite.render2d_plugin_ecs(app)
+  app
+  .init_resource(fn() { @sprite.ClearColor::default() })
+  .init_resource(fn() {
+    let assets : @asset.Assets[ColorMaterialAsset] = @asset.Assets::new()
+    assets
+  })
+  .init_resource(fn() {
+    let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
+    assets
+  })
+  .add_startup_system(@sprite.init_render_state_system)
+  .add_post_update_system_config(
+    @app.system(render_camera_system_ecs).in_set(camera_update_systems),
+  )
+  .add_post_update_system_config(
+    @app.system(render_extract_system_ecs).in_set(render2d_set_extract),
+  )
+  .add_post_update_system_config(
+    @app.system(render_prepare_system).in_set(render2d_set_prepare),
+  )
+  .add_post_update_system_config(
+    @app.system(render_queue_system).in_set(render2d_set_queue),
+  )
+  .add_post_update_system_config(
+    @app.system(render_execute_system).in_set(render2d_set_render),
+  )
+  .configure_set(@app.PostUpdate, camera_update_systems, before=[
+    render2d_set_extract,
+  ])
+  .configure_set(@app.PostUpdate, render2d_set_extract, before=[
+    render2d_set_prepare,
+  ])
+  .configure_set(@app.PostUpdate, render2d_set_prepare, before=[
+    render2d_set_queue,
+  ])
+  .configure_set(@app.PostUpdate, render2d_set_queue, before=[
+    render2d_set_render,
+  ])
 }
 
 ///|
@@ -126,8 +210,23 @@ pub fn wireframe2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
+pub fn render_camera_system(world : @ecs.World) -> Unit {
+  @sprite.render2d_camera_system(world)
+}
+
+///|
+pub fn render_camera_system_ecs(world : @ecs.World) -> Unit {
+  @sprite.render2d_camera_system_ecs(world)
+}
+
+///|
 pub fn render_extract_system(world : @ecs.World) -> Unit {
   @sprite.render_extract_system(world)
+}
+
+///|
+pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
+  @sprite.render_extract_system_ecs(world)
 }
 
 ///|

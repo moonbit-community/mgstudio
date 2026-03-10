@@ -4413,7 +4413,7 @@ fn ensure_render_state_resource(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn init_render_state_system(world : @ecs.World) -> Unit {
+pub fn init_render_state_system(world : @ecs.World) -> Unit {
   ensure_render_state_resource(world)
 }
 

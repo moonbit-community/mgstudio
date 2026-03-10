@@ -114,6 +114,8 @@ pub fn gizmo_config() -> GizmoConfig
 
 pub fn gizmo_set_config(GizmoConfig) -> Unit
 
+pub fn init_render_state_system(@ecs.World) -> Unit
+
 pub fn[W, M] material2d_plugin(Material2dPlugin[M]) -> (@app.App[W]) -> @app.App[W]
 
 pub fn pan_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]

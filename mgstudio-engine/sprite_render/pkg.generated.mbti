@@ -55,9 +55,15 @@ pub fn render2d_viewport_to_world_2d(@ecs.World, @math.Vec2) -> @math.Vec2?
 
 pub fn render2d_world_to_viewport(@ecs.World, @math.Vec2) -> @math.Vec2?
 
+pub fn render_camera_system(@ecs.World) -> Unit
+
+pub fn render_camera_system_ecs(@ecs.World) -> Unit
+
 pub fn render_execute_system(@ecs.World) -> Unit
 
 pub fn render_extract_system(@ecs.World) -> Unit
+
+pub fn render_extract_system_ecs(@ecs.World) -> Unit
 
 pub fn render_prepare_system(@ecs.World) -> Unit
 
