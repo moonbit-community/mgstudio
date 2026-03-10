@@ -24,7 +24,7 @@ fn label_option_text(label : @gltf.GltfAssetLabel?) -> String {
 fn run_scene_test_app(system : (@ecs.World) -> Unit) -> Unit {
   let plugins : Array[@app.Plugin[@ecs.World]] = [
     @asset.asset_plugin, @sprite.render2d_plugin_ecs, @pbr.render3d_plugin, @animation.animation_plugin,
-    @scene.scene_plugin,
+    @scene.scene_plugin, @gltf.gltf_plugin,
   ]
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)

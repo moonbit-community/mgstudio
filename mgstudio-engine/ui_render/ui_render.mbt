@@ -102,7 +102,14 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn ui_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_post_update_system_config(
+  app
+  .add_post_update_system_config(
     @app.system(ui_render_extract_system).in_set(ui_render_set_extract),
+  )
+  .configure_set(
+    @app.PostUpdate,
+    ui_render_set_extract,
+    after=[@ui.ui_set_stack],
+    before=[@sprite_render.render2d_set_extract],
   )
 }

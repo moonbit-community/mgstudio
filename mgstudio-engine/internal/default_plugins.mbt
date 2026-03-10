@@ -31,6 +31,9 @@ const DEFAULT_PLUGIN_ID_TASK_POOL : String = "bevy_app::TaskPoolPlugin"
 const DEFAULT_PLUGIN_ID_WINDOW : String = @window.WINDOW_PLUGIN_ID
 
 ///|
+const DEFAULT_PLUGIN_ID_WINIT : String = @winit.WINIT_PLUGIN_ID
+
+///|
 const DEFAULT_PLUGIN_ID_FRAME_COUNT : String = "bevy_diagnostic::FrameCountPlugin"
 
 ///|
@@ -71,6 +74,12 @@ const DEFAULT_PLUGIN_ID_A11Y : String = "bevy_a11y::AccessibilityPlugin"
 
 ///|
 const DEFAULT_PLUGIN_ID_UI : String = "bevy_ui::UiPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_UI_RENDER : String = "bevy_ui_render::UiRenderPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_GLTF : String = "bevy_gltf::GltfPlugin"
 
 ///|
 const DEFAULT_PLUGIN_ID_TEXT : String = "bevy_text::TextPlugin"
@@ -128,6 +137,12 @@ fn default_plugins_builder(
     id=DEFAULT_PLUGIN_ID_WINDOW,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @window.window_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_WINIT,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @winit.winit_plugin(app)
     }),
   )
   .add_named(
@@ -207,6 +222,18 @@ fn default_plugins_builder(
     id=DEFAULT_PLUGIN_ID_UI,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @ui.ui_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_UI_RENDER,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @ui_render.ui_render_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_GLTF,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @gltf.gltf_plugin(app)
     }),
   )
   .add_named(

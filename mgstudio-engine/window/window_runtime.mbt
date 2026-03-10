@@ -737,7 +737,7 @@ fn window_primary_position_y(world : @ecs.World) -> Int {
 }
 
 ///|
-fn window_backend_sync_system(world : @ecs.World) -> Unit {
+pub fn window_backend_sync_system(world : @ecs.World) -> Unit {
   for entity in window_runtime_entities_without_host(world) {
     window_create_runtime_for_entity(world, entity) |> ignore
   }
@@ -807,7 +807,6 @@ pub fn window_plugin_with(
       .add_message(ecs_key_window_backend_scale_factor_changed)
       .add_message(ecs_key_window_focused)
       .add_systems(@app.First, @app.system(screenshot_clear_system))
-      .add_systems(@app.PreUpdate, @app.system(window_backend_sync_system))
     if plugin.close_when_requested {
       next = next.add_systems(
         @app.Update,
@@ -835,7 +834,7 @@ pub fn window_plugin_with(
       plugin.primary_cursor_options,
     )
   }
-  next.set_runner(window_runner_builder)
+  next
 }
 
 ///|

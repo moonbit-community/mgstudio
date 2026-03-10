@@ -13,33 +13,60 @@
 // limitations under the License.
 
 ///|
-/// Winit-facing API boundary aligned with Bevy-style window backend responsibilities.
-/// Runtime implementation currently lives in `Milky2018/mgstudio/window`.
+pub(all) struct WinitPlugin {
+  run_on_any_thread : Bool
+}
 
 ///|
-pub type WindowPlugin = @window.WindowPlugin
+pub const WINIT_PLUGIN_ID : String = "bevy_winit::WinitPlugin"
 
 ///|
-pub fn window_backend_plugin(
+pub fn WinitPlugin::default() -> WinitPlugin {
+  WinitPlugin::{ run_on_any_thread: false }
+}
+
+///|
+priv struct WinitPluginMarker {}
+
+///|
+let ecs_key_winit_plugin_marker : @ecs.ResourceKey[WinitPluginMarker] = @ecs.register_resource(
+  debug_name="bevy_winit::WinitPluginMarker",
+)
+
+///|
+pub fn winit_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  winit_plugin_with(app, WinitPlugin::default())
+}
+
+///|
+pub impl @app.PluginReplacement for WinitPlugin with replacement_id(_self) {
+  WINIT_PLUGIN_ID
+}
+
+///|
+pub impl @app.PluginReplacement for WinitPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    winit_plugin_with(app, self)
+  }
+}
+
+///|
+pub fn winit_plugin_with(
   app : @app.App[@ecs.World],
+  plugin : WinitPlugin,
 ) -> @app.App[@ecs.World] {
-  @window.window_plugin(app)
-}
+  plugin.run_on_any_thread |> ignore
+  let mut next = app
+  if !next.contains_resource(ecs_key_winit_plugin_marker) {
+    next = next
+      .insert_world_resource(ecs_key_winit_plugin_marker, WinitPluginMarker::{
 
-///|
-pub fn window_backend_plugin_with(
-  app : @app.App[@ecs.World],
-  plugin : WindowPlugin,
-) -> @app.App[@ecs.World] {
-  @window.window_plugin_with(app, plugin)
-}
-
-///|
-pub fn window_backend_runner_builder(app : @app.App[@ecs.World]) -> () -> Unit {
-  @window.window_runner_builder(app)
-}
-
-///|
-pub fn poll_backend_events(world : @ecs.World) -> Unit {
-  @window.window_poll_host_events(world)
+      })
+      .add_systems(
+        @app.PreUpdate,
+        @app.system(@window.window_backend_sync_system),
+      )
+      .set_runner(@window.window_runner_builder)
+  }
+  next
 }

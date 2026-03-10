@@ -99,6 +99,8 @@ pub fn screenshot_finalize_capture_requests(@ecs.World) -> Unit
 
 pub fn screenshot_queue_capture_requests(@ecs.World) -> Unit
 
+pub fn window_backend_sync_system(@ecs.World) -> Unit
+
 pub fn window_ensure_primary_host(@ecs.World) -> Int?
 
 pub fn window_entity_for_ref(@ecs.World, WindowRef) -> @core.Entity?

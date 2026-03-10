@@ -267,15 +267,9 @@ fn resolve_output_path(path : String) -> String {
 
 ///|
 fn resolve_asset_input_path(path : String) -> String? {
-  let parsed = parse_virtual_asset_path(path)
   let resolved = resolve_asset_path(path)
   if path_is_file(resolved) {
     return Some(resolved)
-  }
-  if parsed.source_name is None &&
-    resolved != parsed.relative_path &&
-    path_is_file(parsed.relative_path) {
-    return Some(parsed.relative_path)
   }
   None
 }

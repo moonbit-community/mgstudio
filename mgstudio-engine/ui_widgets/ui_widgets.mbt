@@ -51,11 +51,4 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
 ///|
 pub fn ui_widgets_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
-  .add_pre_update_system_config(
-    @app.system(@ui.ui_update_context_system).in_set(@ui.ui_set_focus),
-  )
-  .add_pre_update_system_config(
-    @app.system(ui_interaction_system).in_set(ui_widgets_set_interaction),
-  )
-  .configure_set(@app.PreUpdate, ui_widgets_set_interaction)
 }

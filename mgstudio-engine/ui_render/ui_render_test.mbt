@@ -27,4 +27,9 @@ test "ui_render boundary re-exports render extract set" {
     @ui_render.ui_render_set_extract == @ui.ui_set_render_extract,
     content="true",
   )
+  inspect(
+    @ui_render.ui_render_set_extract ==
+    @app.system_set("bevy.ui.render.extract"),
+    content="true",
+  )
 }

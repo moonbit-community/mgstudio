@@ -4,24 +4,25 @@ package "Milky2018/mgstudio/winit"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/window",
 }
 
 // Values
-pub fn poll_backend_events(@ecs.World) -> Unit
+pub const WINIT_PLUGIN_ID : String = "bevy_winit::WinitPlugin"
 
-pub fn window_backend_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+pub fn winit_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn window_backend_plugin_with(@app.App[@ecs.World], @window.WindowPlugin) -> @app.App[@ecs.World]
-
-pub fn window_backend_runner_builder(@app.App[@ecs.World]) -> () -> Unit
+pub fn winit_plugin_with(@app.App[@ecs.World], WinitPlugin) -> @app.App[@ecs.World]
 
 // Errors
 
 // Types and methods
+pub(all) struct WinitPlugin {
+  run_on_any_thread : Bool
+}
+pub fn WinitPlugin::default() -> Self
+pub impl @app.PluginReplacement for WinitPlugin
 
 // Type aliases
-pub using @window {type WindowPlugin}
 
 // Traits
 

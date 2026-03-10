@@ -13,6 +13,16 @@
 // limitations under the License.
 
 ///|
+test "default plugins: include winit plugin after window plugin" {
+  let builder = @internal.DefaultPlugins::build()
+  inspect(builder.contains(@window.WINDOW_PLUGIN_ID), content="true")
+  inspect(builder.contains("bevy_winit::WinitPlugin"), content="true")
+  inspect(builder.enabled("bevy_winit::WinitPlugin"), content="true")
+  inspect(builder.contains("bevy_gltf::GltfPlugin"), content="true")
+  inspect(builder.enabled("bevy_gltf::GltfPlugin"), content="true")
+}
+
+///|
 test "default plugins: set(WindowPlugin) replaces default window plugin config" {
   let configured_window = @window.Window::default()
   configured_window.title = "Scale Override"

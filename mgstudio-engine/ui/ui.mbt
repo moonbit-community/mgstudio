@@ -1588,7 +1588,10 @@ pub let ui_set_a11y : @app.SystemSet = ui_set_post_layout
 pub let ui_set_a11y_apply : @app.SystemSet = ui_set_post_layout
 
 ///|
-pub let ui_set_render_extract : @app.SystemSet = ui_set_stack
+/// Legacy alias kept for source compatibility.
+pub let ui_set_render_extract : @app.SystemSet = @app.system_set(
+  "bevy.ui.render.extract",
+)
 
 ///|
 const UI_DRAW_FLAG_TEXTURED : Int = 1
@@ -4888,7 +4891,7 @@ pub fn ui_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.system(ui_update_context_system).in_set(ui_set_prepare),
   )
   .add_post_update_system_config(
-    @app.system(ui_propagate_target_cameras_system).in_set(ui_set_propagate),
+    @app.system(ui_propagate_target_cameras_system).in_set(ui_set_prepare),
   )
   .add_post_update_system_config(
     @app.system(ui_scroll_system).in_set(ui_set_propagate),
@@ -4907,9 +4910,6 @@ pub fn ui_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   )
   .add_post_update_system_config(
     @app.system(ui_a11y_update_system).in_set(ui_set_post_layout),
-  )
-  .add_post_update_system_config(
-    @app.system(ui_render_extract_system).in_set(ui_set_stack),
   )
   .configure_set(@app.PreUpdate, ui_set_focus)
   .configure_set(
@@ -4930,7 +4930,5 @@ pub fn ui_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .configure_set(@app.PostUpdate, ui_set_post_layout, after=[ui_set_layout], before=[
     ui_set_stack,
   ])
-  .configure_set(@app.PostUpdate, ui_set_stack, after=[ui_set_post_layout], before=[
-    @sprite.render2d_set_extract,
-  ])
+  .configure_set(@app.PostUpdate, ui_set_stack, after=[ui_set_post_layout])
 }

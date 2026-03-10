@@ -576,7 +576,7 @@ pub fn scene_load_gltf_mesh_primitive(
 }
 
 ///|
-fn scene_register_asset_loaders() -> Unit {
+pub fn scene_register_gltf_asset_loaders() -> Unit {
   @asset.asset_register_loader(fn(asset_server, path) {
     scene_load_gltf_scene(asset_server, path)
   })
@@ -717,6 +717,7 @@ fn scene_register_component_hooks() -> Bool {
 
 ///|
 fn init {
+  @gltf.gltf_install_loader_registration(scene_register_gltf_asset_loaders)
   scene_register_component_hooks() |> ignore
 }
 
@@ -844,7 +845,6 @@ fn scene_runtime_plugin_base(
 
 ///|
 pub fn scene_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  scene_register_asset_loaders()
   scene_runtime_plugin_base(
     app
     .init_resource(fn() {

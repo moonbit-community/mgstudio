@@ -1,7 +1,16 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/gltf"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
+pub fn gltf_install_loader_registration(() -> Unit) -> Unit
+
+pub fn gltf_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn gltf_split_asset_path_with_label(String) -> (String, GltfAssetLabel?)
 
 // Errors
@@ -25,6 +34,7 @@ pub fn GltfAssetLabel::parse(String) -> Self?
 pub fn GltfAssetLabel::to_label(Self) -> String
 
 // Type aliases
+pub type GltfLoaderRegistration = () -> Unit
 
 // Traits
 
