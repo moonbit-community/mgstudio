@@ -260,7 +260,7 @@ fn screenshot_write_capture_to_disk(
     }
     Bytes::from_array(out)
   }
-  @native_asset.save_rgba8_png(
+  @asset.host_asset_save_rgba8_png(
     width=capture.image.width,
     height=capture.image.height,
     pixels=opaque_pixels,

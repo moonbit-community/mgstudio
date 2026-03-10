@@ -315,13 +315,13 @@ pub fn node_id_for_entity(entity : @core.Entity) -> @moon_accesskit.NodeId {
 ///|
 /// Queue a host update payload for the native accessibility backend.
 pub fn a11y_host_apply_update_payload(payload : String) -> Unit {
-  @native_a11y.queue_update_payload(payload~)
+  @windowing.queue_accessibility_update_payload(payload~)
 }
 
 ///|
 /// Queue an AccessKit `TreeUpdate` for the native accessibility backend.
 pub fn a11y_host_apply_update(update : @moon_accesskit.TreeUpdate) -> Unit {
-  @native_a11y.queue_update(update)
+  @windowing.queue_accessibility_update(update)
 }
 
 ///|

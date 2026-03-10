@@ -1,10 +1,13 @@
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/asset/native_asset",
+  "Milky2018/mgstudio/render",
   "moonbitlang/core/json",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/ref",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/x/fs",
+  "moonbitlang/x/path",
+  "moonbitlang/x/sys",
   "tonyfettes/any",
 }

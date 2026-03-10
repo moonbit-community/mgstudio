@@ -37,10 +37,8 @@ fn requested_ref() -> Ref[Bool] {
 
 ///|
 pub fn bind_accessibility_requested(requested : Ref[Bool]) -> Unit {
-  let merged_requested = requested.val || requested_ref().val
-  requested.val = merged_requested
-  detached_accessibility_requested_ref.val = merged_requested
   bound_accessibility_requested_ref.val = Some(requested)
+  requested.val = detached_accessibility_requested_ref.val
 }
 
 ///|
@@ -51,42 +49,47 @@ pub fn accessibility_requested() -> Bool {
 ///|
 pub fn set_accessibility_requested(requested : Bool) -> Unit {
   requested_ref().val = requested
+  detached_accessibility_requested_ref.val = requested
 }
 
 ///|
-pub fn queue_update(update : @moon_accesskit.TreeUpdate) -> Unit {
-  queue_update_payload(payload=update.to_json().stringify())
+pub fn queue_accessibility_update(update : @moon_accesskit.TreeUpdate) -> Unit {
+  queue_accessibility_update_payload(payload=update.to_json().stringify())
 }
 
 ///|
-pub fn queue_update_payload(payload~ : String) -> Unit {
+pub fn queue_accessibility_update_payload(payload~ : String) -> Unit {
   pending_update_payload_ref.val = Some(payload)
 }
 
 ///|
-pub fn commit_pending_update() -> Bool {
-  if !accessibility_requested() {
-    return false
+pub fn commit_pending_accessibility_update() -> Bool {
+  guard accessibility_requested() else { return false }
+  match pending_update_payload_ref.val {
+    Some(payload) => {
+      last_update_payload_ref.val = payload
+      pending_update_payload_ref.val = None
+      true
+    }
+    None => false
   }
-  guard pending_update_payload_ref.val is Some(payload) else { return false }
-  last_update_payload_ref.val = payload
-  pending_update_payload_ref.val = None
-  true
 }
 
 ///|
-pub fn last_update_payload() -> String {
+pub fn last_accessibility_update_payload() -> String {
   last_update_payload_ref.val
 }
 
 ///|
-pub fn enqueue_action(action : @moon_accesskit.ActionRequest) -> Unit {
-  set_accessibility_requested(true)
+pub fn enqueue_accessibility_action(
+  action : @moon_accesskit.ActionRequest,
+) -> Unit {
   pending_actions_ref.val.push(action)
+  set_accessibility_requested(true)
 }
 
 ///|
-pub fn take_actions() -> Array[@moon_accesskit.ActionRequest] {
+pub fn take_accessibility_actions() -> Array[@moon_accesskit.ActionRequest] {
   let actions = pending_actions_ref.val
   pending_actions_ref.val = []
   actions

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-fn reset_native_a11y_state() -> Unit {
+fn reset_accessibility_backend_state() -> Unit {
   detached_accessibility_requested_ref.val = false
   bound_accessibility_requested_ref.val = None
   pending_update_payload_ref.val = None
@@ -22,8 +22,8 @@ fn reset_native_a11y_state() -> Unit {
 }
 
 ///|
-test "native a11y: queued tree updates commit only when accessibility is requested" {
-  reset_native_a11y_state()
+test "windowing accessibility: queued tree updates commit only when accessibility is requested" {
+  reset_accessibility_backend_state()
 
   let node_id = @moon_accesskit.NodeId::from_u64(7UL)
   let update = @moon_accesskit.TreeUpdate::new(
@@ -34,18 +34,18 @@ test "native a11y: queued tree updates commit only when accessibility is request
   update.push_node(node_id, node)
   update.set_tree(@moon_accesskit.Tree::new(node_id))
 
-  queue_update(update)
-  assert_true(!commit_pending_update())
-  assert_eq(last_update_payload(), "")
+  queue_accessibility_update(update)
+  assert_true(!commit_pending_accessibility_update())
+  assert_eq(last_accessibility_update_payload(), "")
 
   set_accessibility_requested(true)
-  assert_true(commit_pending_update())
-  assert_eq(last_update_payload(), update.to_json().stringify())
+  assert_true(commit_pending_accessibility_update())
+  assert_eq(last_accessibility_update_payload(), update.to_json().stringify())
 }
 
 ///|
-test "native a11y: binding requested state shares host activation and action queue" {
-  reset_native_a11y_state()
+test "windowing accessibility: binding requested state shares host activation and action queue" {
+  reset_accessibility_backend_state()
 
   let requested = Ref::new(false)
   bind_accessibility_requested(requested)
@@ -61,8 +61,8 @@ test "native a11y: binding requested state shares host activation and action que
     node_id,
   )
   request.set_data(@moon_accesskit.ActionData::Value("hello"))
-  enqueue_action(request)
-  let actions = take_actions()
+  enqueue_accessibility_action(request)
+  let actions = take_accessibility_actions()
 
   assert_eq(actions.length(), 1)
   assert_eq(actions[0].target_node(), node_id)

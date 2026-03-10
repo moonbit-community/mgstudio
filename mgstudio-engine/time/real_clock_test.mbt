@@ -13,18 +13,15 @@
 // limitations under the License.
 
 ///|
-let start_timestamp_ref : Ref[@bench.Timestamp?] = Ref::new(None)
-
-///|
-pub fn now() -> Float {
-  match start_timestamp_ref.val {
-    Some(start_timestamp) =>
-      Float::from_double(
-        @bench.monotonic_clock_end(start_timestamp) / 1_000_000.0,
-      )
-    None => {
-      start_timestamp_ref.val = Some(@bench.monotonic_clock_start())
-      0.0F
+test "host_time_now advances without whole-second quantization" {
+  let start = host_time_now()
+  let mut current = start
+  for _ in 0..<1_000_000 {
+    current = host_time_now()
+    if current > start {
+      break
     }
   }
+  inspect(current > start, content="true")
+  inspect(current - start < 1.0F, content="true")
 }

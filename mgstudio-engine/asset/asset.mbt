@@ -759,22 +759,22 @@ pub fn asset_white_texture() -> Handle[Image] {
 
 ///|
 pub fn host_asset_load_texture(path~ : String, nearest~ : Bool) -> Int {
-  @native_asset.load_texture(path~, nearest~)
+  load_texture(path~, nearest~)
 }
 
 ///|
 pub fn host_asset_load_texture_bytes(bytes~ : Bytes, nearest~ : Bool) -> Int {
-  @native_asset.load_texture_bytes(bytes~, nearest~)
+  load_texture_bytes(bytes~, nearest~)
 }
 
 ///|
 pub fn host_asset_load_wgsl(path~ : String) -> Int {
-  @native_asset.load_wgsl(path~)
+  load_wgsl(path~)
 }
 
 ///|
 pub fn host_asset_load_bytes(path~ : String) -> Int {
-  @native_asset.load_bytes(path~)
+  load_bytes(path~)
 }
 
 ///|
@@ -782,7 +782,7 @@ pub fn host_asset_load_with_registered_loader(
   path~ : String,
   nearest~ : Bool,
 ) -> Int {
-  @native_asset.load_with_registered_loader(path~, nearest~)
+  load_with_registered_loader(path~, nearest~)
 }
 
 ///|
@@ -790,27 +790,27 @@ pub fn host_asset_register_loader_extension(
   extension~ : String,
   kind~ : Int,
 ) -> Unit {
-  @native_asset.register_loader_extension(extension~, kind~)
+  register_loader_extension(extension~, kind~)
 }
 
 ///|
 pub fn host_asset_remove_loader_extension(extension~ : String) -> Unit {
-  @native_asset.remove_loader_extension(extension~)
+  remove_loader_extension(extension~)
 }
 
 ///|
 pub fn host_asset_loader_kind_for_path(path~ : String) -> Int {
-  @native_asset.loader_kind_for_path(path~)
+  loader_kind_for_path(path~)
 }
 
 ///|
 pub fn host_asset_bytes_len(blob_id : Int) -> Int {
-  @native_asset.bytes_len(blob_id)
+  bytes_len(blob_id)
 }
 
 ///|
 pub fn host_asset_bytes_get_u32(blob_id~ : Int, index~ : Int) -> Int {
-  @native_asset.bytes_get_u32(blob_id~, index~)
+  bytes_get_u32(blob_id~, index~)
 }
 
 ///|
@@ -819,7 +819,7 @@ pub fn host_asset_create_dynamic_texture(
   height~ : Int,
   nearest~ : Bool,
 ) -> Int {
-  @native_asset.create_dynamic_texture(width~, height~, nearest~)
+  create_dynamic_texture(width~, height~, nearest~)
 }
 
 ///|
@@ -829,12 +829,7 @@ pub fn host_asset_create_dynamic_texture_mipped(
   mip_level_count~ : Int,
   nearest~ : Bool,
 ) -> Int {
-  @native_asset.create_dynamic_texture_mipped(
-    width~,
-    height~,
-    mip_level_count~,
-    nearest~,
-  )
+  create_dynamic_texture_mipped(width~, height~, mip_level_count~, nearest~)
 }
 
 ///|
@@ -846,14 +841,7 @@ pub fn host_asset_update_texture_region(
   height~ : Int,
   glyph_id~ : Int,
 ) -> Unit {
-  @native_asset.update_texture_region(
-    texture_id~,
-    x~,
-    y~,
-    width~,
-    height~,
-    glyph_id~,
-  )
+  update_texture_region(texture_id~, x~, y~, width~, height~, glyph_id~)
 }
 
 ///|
@@ -865,14 +853,7 @@ pub fn host_asset_update_texture_region_bytes(
   height~ : Int,
   bytes~ : Bytes,
 ) -> Unit {
-  @native_asset.update_texture_region_bytes(
-    texture_id~,
-    x~,
-    y~,
-    width~,
-    height~,
-    bytes~,
-  )
+  update_texture_region_bytes(texture_id~, x~, y~, width~, height~, bytes~)
 }
 
 ///|
@@ -885,7 +866,7 @@ pub fn host_asset_update_texture_region_mip_bytes(
   mip_level~ : Int,
   bytes~ : Bytes,
 ) -> Unit {
-  @native_asset.update_texture_region_mip_bytes(
+  update_texture_region_mip_bytes(
     texture_id~,
     x~,
     y~,
@@ -901,27 +882,27 @@ pub fn host_asset_create_texture_mip_view(
   texture_id~ : Int,
   mip_level~ : Int,
 ) -> Int {
-  @native_asset.create_texture_mip_view(texture_id~, mip_level~)
+  create_texture_mip_view(texture_id~, mip_level~)
 }
 
 ///|
 pub fn host_asset_texture_width(texture_id : Int) -> Int {
-  @native_asset.texture_width(texture_id)
+  texture_width(texture_id)
 }
 
 ///|
 pub fn host_asset_texture_height(texture_id : Int) -> Int {
-  @native_asset.texture_height(texture_id)
+  texture_height(texture_id)
 }
 
 ///|
 pub fn host_asset_is_texture_loaded(texture_id : Int) -> Bool {
-  @native_asset.is_texture_loaded(texture_id)
+  is_texture_loaded(texture_id)
 }
 
 ///|
 pub fn host_asset_supported_compressed_image_formats() -> Int {
-  @native_asset.supported_compressed_image_formats()
+  supported_compressed_image_formats()
 }
 
 ///|
@@ -931,12 +912,17 @@ pub fn host_asset_copy_texture_to_texture(
   dst_y~ : Int,
   src_texture_id~ : Int,
 ) -> Unit {
-  @native_asset.copy_texture_to_texture(
-    dst_texture_id~,
-    dst_x~,
-    dst_y~,
-    src_texture_id~,
-  )
+  copy_texture_to_texture(dst_texture_id~, dst_x~, dst_y~, src_texture_id~)
+}
+
+///|
+pub fn host_asset_save_rgba8_png(
+  width~ : Int,
+  height~ : Int,
+  pixels~ : Bytes,
+  path~ : String,
+) -> Unit {
+  save_rgba8_png(width~, height~, pixels~, path~)
 }
 
 ///|
@@ -1296,7 +1282,7 @@ pub fn asset_copy_texture_to_texture(
 
 ///|
 pub fn asset_save_texture_png(texture : Handle[Image], path : String) -> Unit {
-  @native_asset.save_texture_png(texture_id=texture.id(), path~)
+  save_texture_png(texture_id=texture.id(), path~)
 }
 
 ///|

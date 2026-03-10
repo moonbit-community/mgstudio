@@ -1313,57 +1313,57 @@ priv struct GamepadSnapshot {
 
 ///|
 fn host_input_gamepad_poll() -> Unit {
-  @native_input.gamepad_poll()
+  @gilrs.gamepad_poll()
 }
 
 ///|
 fn host_input_gamepad_count() -> Int {
-  @native_input.gamepad_count()
+  @gilrs.gamepad_count()
 }
 
 ///|
 fn host_input_gamepad_id(index : Int) -> Int {
-  @native_input.gamepad_id(index)
+  @gilrs.gamepad_id(index)
 }
 
 ///|
 fn host_input_gamepad_connected(gamepad_id : Int) -> Bool {
-  @native_input.gamepad_connected(gamepad_id)
+  @gilrs.gamepad_connected(gamepad_id)
 }
 
 ///|
 fn host_input_gamepad_ff_supported(gamepad_id : Int) -> Bool {
-  @native_input.gamepad_ff_supported(gamepad_id)
+  @gilrs.gamepad_ff_supported(gamepad_id)
 }
 
 ///|
 fn host_input_gamepad_name_len(gamepad_id : Int) -> Int {
-  @native_input.gamepad_name_len(gamepad_id)
+  @gilrs.gamepad_name_len(gamepad_id)
 }
 
 ///|
 fn host_input_gamepad_name_code_unit(gamepad_id~ : Int, offset~ : Int) -> Int {
-  @native_input.gamepad_name_code_unit(gamepad_id~, offset~)
+  @gilrs.gamepad_name_code_unit(gamepad_id~, offset~)
 }
 
 ///|
 fn host_input_gamepad_vendor_id(gamepad_id : Int) -> Int {
-  @native_input.gamepad_vendor_id(gamepad_id)
+  @gilrs.gamepad_vendor_id(gamepad_id)
 }
 
 ///|
 fn host_input_gamepad_product_id(gamepad_id : Int) -> Int {
-  @native_input.gamepad_product_id(gamepad_id)
+  @gilrs.gamepad_product_id(gamepad_id)
 }
 
 ///|
 fn host_input_gamepad_button_value(gamepad_id~ : Int, button~ : Int) -> Float {
-  @native_input.gamepad_button_value(gamepad_id~, button~)
+  @gilrs.gamepad_button_value(gamepad_id~, button~)
 }
 
 ///|
 fn host_input_gamepad_axis_value(gamepad_id~ : Int, axis~ : Int) -> Float {
-  @native_input.gamepad_axis_value(gamepad_id~, axis~)
+  @gilrs.gamepad_axis_value(gamepad_id~, axis~)
 }
 
 ///|
@@ -1372,10 +1372,8 @@ fn host_input_gamepad_set_rumble(
   strong_motor : Float,
   weak_motor : Float,
   duration_ms : Int64,
-) -> @native_input.GamepadRumbleResult {
-  @native_input.gamepad_set_rumble(
-    gamepad_id, strong_motor, weak_motor, duration_ms,
-  )
+) -> @gilrs.GamepadRumbleResult {
+  @gilrs.gamepad_set_rumble(gamepad_id, strong_motor, weak_motor, duration_ms)
 }
 
 ///|
@@ -2113,10 +2111,10 @@ fn gamepad_rumble_system(
             desired.weak_motor,
             duration_ms,
           ) {
-          @native_input.GamepadRumbleResult::Applied =>
+          @gilrs.GamepadRumbleResult::Applied =>
             entry.last_applied = Some(desired)
-          @native_input.GamepadRumbleResult::Unsupported
-          | @native_input.GamepadRumbleResult::NotFound => {
+          @gilrs.GamepadRumbleResult::Unsupported
+          | @gilrs.GamepadRumbleResult::NotFound => {
             entry.rumbles.clear()
             entry.last_applied = None
           }

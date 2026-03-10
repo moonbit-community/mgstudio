@@ -43,7 +43,7 @@ fn ensure_mesh_pipeline_rgba8(
   if backend.mesh_pipeline_layout is None {
     guard backend.sprite_bgl_tex is Some(bgl_tex) else {
       @debug.debug(
-        "[native_gpu] ensure_mesh_pipeline_rgba8: sprite_bgl_tex is None",
+        "[renderer] ensure_mesh_pipeline_rgba8: sprite_bgl_tex is None",
       )
       return
     }
@@ -59,7 +59,7 @@ fn ensure_mesh_pipeline_rgba8(
   }
   guard backend.mesh_pipeline_layout is Some(pl) else {
     @debug.debug(
-      "[native_gpu] ensure_mesh_pipeline_rgba8: mesh_pipeline_layout is None",
+      "[renderer] ensure_mesh_pipeline_rgba8: mesh_pipeline_layout is None",
     )
     return
   }
@@ -78,7 +78,7 @@ fn ensure_mesh_pipeline_rgba8(
   @wgpu_c.render_pipeline_descriptor_free(desc)
   pipeline.set_label("mgstudio_mesh_rgba8")
   backend.mesh_pipeline = Some(pipeline)
-  @debug.debug("[native_gpu] ensure_mesh_pipeline_rgba8: pipeline created")
+  @debug.debug("[renderer] ensure_mesh_pipeline_rgba8: pipeline created")
   sm.release()
 }
 

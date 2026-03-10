@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-test "native_asset: save_rgba8_png writes a valid png file" {
+test "asset host io: save_rgba8_png writes a valid png file" {
   let pixels = Bytes::from_array([
     (255).to_byte(),
     (0).to_byte(),
@@ -24,7 +24,7 @@ test "native_asset: save_rgba8_png writes a valid png file" {
     (0).to_byte(),
     (255).to_byte(),
   ])
-  let path = "wbtests/native_asset_save_rgba8_png.png"
+  let path = "wbtests/asset_host_save_rgba8_png.png"
   let out_path = resolve_output_path(path)
   save_rgba8_png(width=2, height=1, pixels~, path~)
   let encoded = @fs.read_file_to_bytes(out_path)

@@ -31,8 +31,8 @@ test "a11y: accessibility plugin initializes bevy-aligned resources" {
 
 ///|
 test "a11y: plugin forwards backend actions to world messages and compatibility state" {
-  @native_a11y.set_accessibility_requested(false)
-  ignore(@native_a11y.take_actions())
+  @windowing.set_accessibility_requested(false)
+  ignore(@windowing.take_accessibility_actions())
 
   let target = @moon_accesskit.NodeId::from_u64(42UL)
   let request = @moon_accesskit.ActionRequest::new(
@@ -44,7 +44,7 @@ test "a11y: plugin forwards backend actions to world messages and compatibility 
   let mut app = accessibility_plugin(@app.App::new(@ecs.World::new()))
   app = app.run_once()
 
-  @native_a11y.enqueue_action(request)
+  @windowing.enqueue_accessibility_action(request)
   app = app.run_once()
 
   let world = app.world()

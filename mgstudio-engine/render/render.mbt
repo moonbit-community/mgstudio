@@ -94,17 +94,17 @@ pub fn HostColorGrading::default() -> HostColorGrading {
 
 ///|
 pub fn host_gpu_request_device() -> HostGpuDevice {
-  @native_gpu.request_device()
+  @renderer.request_device()
 }
 
 ///|
 pub fn host_gpu_get_queue(device : HostGpuDevice) -> HostGpuQueue {
-  @native_gpu.get_queue(device)
+  @renderer.get_queue(device)
 }
 
 ///|
 pub fn host_gpu_create_surface(window : Int) -> HostGpuSurface {
-  @native_gpu.create_surface(window)
+  @renderer.create_surface(window)
 }
 
 ///|
@@ -114,17 +114,17 @@ pub fn host_gpu_configure_surface(
   width~ : Int,
   height~ : Int,
 ) -> Unit {
-  @native_gpu.configure_surface(device~, surface~, width~, height~)
+  @renderer.configure_surface(device~, surface~, width~, height~)
 }
 
 ///|
 pub fn host_gpu_begin_frame(surface : HostGpuSurface) -> HostGpuFrame {
-  @native_gpu.begin_frame(surface)
+  @renderer.begin_frame(surface)
 }
 
 ///|
 pub fn host_gpu_end_frame(frame : HostGpuFrame) -> Unit {
-  @native_gpu.end_frame(frame)
+  @renderer.end_frame(frame)
 }
 
 ///|
@@ -148,7 +148,7 @@ pub fn host_gpu_begin_pass(
   viewport_depth_max~ : Float,
   clear_enabled~ : Int,
 ) -> Unit {
-  @native_gpu.begin_pass(
+  @renderer.begin_pass(
     target_id~,
     width~,
     height~,
@@ -275,7 +275,7 @@ pub fn host_gpu_begin_pass_3d(
   pass_kind~ : Int,
   clear_enabled~ : Int,
 ) -> Unit {
-  @native_gpu.begin_pass_3d(
+  @renderer.begin_pass_3d(
     target_id~,
     target_layer~,
     width~,
@@ -388,12 +388,12 @@ pub fn host_gpu_set_scissor(
   width~ : Int,
   height~ : Int,
 ) -> Unit {
-  @native_gpu.set_scissor(x~, y~, width~, height~)
+  @renderer.set_scissor(x~, y~, width~, height~)
 }
 
 ///|
 pub fn host_gpu_clear_scissor() -> Unit {
-  @native_gpu.clear_scissor()
+  @renderer.clear_scissor()
 }
 
 ///|
@@ -409,7 +409,7 @@ pub fn host_gpu_draw_sprite(
   color_b~ : Float,
   color_a~ : Float,
 ) -> Unit {
-  @native_gpu.draw_sprite(
+  @renderer.draw_sprite(
     texture_id~,
     x~,
     y~,
@@ -440,7 +440,7 @@ pub fn host_gpu_draw_sprite_uv(
   uv_max_x~ : Float,
   uv_max_y~ : Float,
 ) -> Unit {
-  @native_gpu.draw_sprite_uv(
+  @renderer.draw_sprite_uv(
     texture_id~,
     x~,
     y~,
@@ -491,7 +491,7 @@ pub fn host_gpu_draw_ui_rect(
   border_right~ : Float,
   border_bottom~ : Float,
 ) -> Unit {
-  @native_gpu.draw_ui_rect(
+  @renderer.draw_ui_rect(
     texture_id~,
     x~,
     y~,
@@ -548,7 +548,7 @@ pub fn host_gpu_draw_ui_box_shadow(
   blur~ : Float,
   samples~ : Int,
 ) -> Unit {
-  @native_gpu.draw_ui_box_shadow(
+  @renderer.draw_ui_box_shadow(
     texture_id~,
     x~,
     y~,
@@ -608,7 +608,7 @@ pub fn host_gpu_draw_ui_texture_slice(
   atlas_r~ : Float,
   atlas_b~ : Float,
 ) -> Unit {
-  @native_gpu.draw_ui_texture_slice(
+  @renderer.draw_ui_texture_slice(
     texture_id~,
     x~,
     y~,
@@ -656,7 +656,7 @@ pub fn host_gpu_draw_mesh(
   uv_scale_x~ : Float,
   uv_scale_y~ : Float,
 ) -> Unit {
-  @native_gpu.draw_mesh(
+  @renderer.draw_mesh(
     mesh_id~,
     x~,
     y~,
@@ -744,7 +744,7 @@ pub fn host_gpu_draw_mesh3d(
   point_shadow_depth_bias~ : Float,
   cull_mode~ : Int,
 ) -> Unit {
-  @native_gpu.draw_mesh3d(
+  @renderer.draw_mesh3d(
     mesh_id~,
     x~,
     y~,
@@ -821,7 +821,7 @@ pub fn host_gpu_draw_motion_blur(
   shutter_angle~ : Float,
   samples~ : Int,
 ) -> Unit {
-  @native_gpu.draw_motion_blur(
+  @renderer.draw_motion_blur(
     scene_texture_id~,
     velocity_texture_id~,
     shutter_angle~,
@@ -846,7 +846,7 @@ pub fn host_gpu_apply_bloom2d(
   view_width~ : Int,
   view_height~ : Int,
 ) -> Unit {
-  @native_gpu.apply_bloom2d(
+  @renderer.apply_bloom2d(
     scene_texture_id~,
     enabled~,
     intensity~,
@@ -876,7 +876,7 @@ pub fn host_gpu_draw_tonemapping2d(
   tony_lut_texture_id~ : Int,
   blender_lut_texture_id~ : Int,
 ) -> Unit {
-  @native_gpu.draw_tonemapping2d(
+  @renderer.draw_tonemapping2d(
     scene_texture_id~,
     exposure~,
     tonemapping_mode~,
@@ -929,7 +929,7 @@ pub fn host_gpu_draw_bloom2d(
   blender_lut_texture_id~ : Int,
   color_grading~ : HostColorGrading,
 ) -> Unit {
-  @native_gpu.draw_bloom2d(
+  @renderer.draw_bloom2d(
     scene_texture_id~,
     enabled~,
     intensity~,
@@ -1017,7 +1017,7 @@ pub fn host_gpu_draw_gizmo_line(
   gap_scale~ : Float,
   line_scale~ : Float,
 ) -> Unit {
-  @native_gpu.draw_gizmo_line(
+  @renderer.draw_gizmo_line(
     start_x~,
     start_y~,
     start_r~,
@@ -1039,7 +1039,7 @@ pub fn host_gpu_draw_gizmo_line(
 
 ///|
 pub fn host_gpu_end_pass() -> Unit {
-  @native_gpu.end_pass()
+  @renderer.end_pass()
 }
 
 ///|
@@ -1048,7 +1048,7 @@ pub fn host_gpu_create_render_target(
   height~ : Int,
   nearest~ : Bool,
 ) -> Int {
-  @native_gpu.create_render_target(width~, height~, nearest~)
+  @renderer.create_render_target(width~, height~, nearest~)
 }
 
 ///|
@@ -1057,12 +1057,12 @@ pub fn host_gpu_create_render_target_rgba16f(
   height~ : Int,
   nearest~ : Bool,
 ) -> Int {
-  @native_gpu.create_render_target_rgba16f(width~, height~, nearest~)
+  @renderer.create_render_target_rgba16f(width~, height~, nearest~)
 }
 
 ///|
 pub fn host_gpu_create_point_light_shadow_target(size~ : Int) -> Int {
-  @native_gpu.create_point_light_shadow_target(size~)
+  @renderer.create_point_light_shadow_target(size~)
 }
 
 ///|
@@ -1071,24 +1071,24 @@ pub fn host_gpu_create_mesh_capsule(
   half_length~ : Float,
   segments~ : Int,
 ) -> Int {
-  @native_gpu.create_mesh_capsule(radius~, half_length~, segments~)
+  @renderer.create_mesh_capsule(radius~, half_length~, segments~)
 }
 
 ///|
 pub fn host_gpu_create_mesh_rectangle(width~ : Float, height~ : Float) -> Int {
-  @native_gpu.create_mesh_rectangle(width~, height~)
+  @renderer.create_mesh_rectangle(width~, height~)
 }
 
 ///|
 pub fn host_gpu_create_mesh_triangles(vertices_xy_csv~ : String) -> Int {
-  @native_gpu.create_mesh_triangles(vertices_xy_csv~)
+  @renderer.create_mesh_triangles(vertices_xy_csv~)
 }
 
 ///|
 pub fn host_gpu_create_mesh_triangles_xyuvrgba(
   vertices_xyuvrgba_csv~ : String,
 ) -> Int {
-  @native_gpu.create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~)
+  @renderer.create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~)
 }
 
 ///|
@@ -1103,41 +1103,41 @@ pub fn host_gpu_create_mesh3d(
   vertices_xyzuvrgba_csv~ : String,
   primitive_topology~ : Int,
 ) -> Int {
-  @native_gpu.create_mesh3d(vertices_xyzuvrgba_csv~, primitive_topology~)
+  @renderer.create_mesh3d(vertices_xyzuvrgba_csv~, primitive_topology~)
 }
 
 ///|
 pub fn host_debug_string(value~ : String) -> Unit {
-  @native_gpu.debug_string(value~)
+  @renderer.debug_string(value~)
 }
 
 ///|
-pub fn render_diagnostics_snapshot() -> @native_gpu.RenderDiagnosticsSnapshot {
-  @native_gpu.render_diagnostics_snapshot()
+pub fn render_diagnostics_snapshot() -> @renderer.RenderDiagnosticsSnapshot {
+  @renderer.render_diagnostics_snapshot()
 }
 
 ///|
 pub fn screenshot_capture_surface_request() -> Int {
-  @native_gpu.screenshot_capture_surface_request()
+  @renderer.screenshot_capture_surface_request()
 }
 
 ///|
 pub fn screenshot_capture_texture_request(texture_id~ : Int) -> Int {
-  @native_gpu.screenshot_capture_texture_request(texture_id~)
+  @renderer.screenshot_capture_texture_request(texture_id~)
 }
 
 ///|
 pub fn screenshot_take_capture_result(
   capture_id : Int,
-) -> @native_gpu.ScreenshotCaptureResult? {
-  @native_gpu.screenshot_take_capture_result(capture_id)
+) -> @renderer.ScreenshotCaptureResult? {
+  @renderer.screenshot_take_capture_result(capture_id)
 }
 
 ///|
 pub fn screenshot_capture_texture_sync(
   texture_id~ : Int,
-) -> @native_gpu.ScreenshotCaptureResult? {
-  @native_gpu.screenshot_capture_texture_sync(texture_id~)
+) -> @renderer.ScreenshotCaptureResult? {
+  @renderer.screenshot_capture_texture_sync(texture_id~)
 }
 
 ///|
@@ -1147,7 +1147,7 @@ pub fn asset_create_texture_empty(
   mip_level_count~ : Int,
   nearest~ : Bool,
 ) -> Int {
-  @native_gpu.asset_create_texture_empty(
+  @renderer.asset_create_texture_empty(
     width~,
     height~,
     mip_level_count~,
@@ -1164,7 +1164,7 @@ pub fn asset_write_texture_region_rgba8(
   height~ : Int,
   pixels_rgba8~ : Bytes,
 ) -> Unit {
-  @native_gpu.asset_write_texture_region_rgba8(
+  @renderer.asset_write_texture_region_rgba8(
     texture_id~,
     x~,
     y~,
@@ -1184,7 +1184,7 @@ pub fn asset_write_texture_region_rgba8_mip(
   mip_level~ : Int,
   pixels_rgba8~ : Bytes,
 ) -> Unit {
-  @native_gpu.asset_write_texture_region_rgba8_mip(
+  @renderer.asset_write_texture_region_rgba8_mip(
     texture_id~,
     x~,
     y~,
@@ -1200,27 +1200,27 @@ pub fn asset_create_texture_mip_view(
   texture_id~ : Int,
   mip_level~ : Int,
 ) -> Int {
-  @native_gpu.asset_create_texture_mip_view(texture_id~, mip_level~)
+  @renderer.asset_create_texture_mip_view(texture_id~, mip_level~)
 }
 
 ///|
 pub fn asset_texture_width(texture_id~ : Int) -> Int {
-  @native_gpu.asset_texture_width(texture_id~)
+  @renderer.asset_texture_width(texture_id~)
 }
 
 ///|
 pub fn asset_texture_height(texture_id~ : Int) -> Int {
-  @native_gpu.asset_texture_height(texture_id~)
+  @renderer.asset_texture_height(texture_id~)
 }
 
 ///|
 pub fn asset_is_texture_loaded(texture_id~ : Int) -> Bool {
-  @native_gpu.asset_is_texture_loaded(texture_id~)
+  @renderer.asset_is_texture_loaded(texture_id~)
 }
 
 ///|
 pub fn asset_supported_compressed_image_formats() -> Int {
-  @native_gpu.asset_supported_compressed_image_formats()
+  @renderer.asset_supported_compressed_image_formats()
 }
 
 ///|
@@ -1230,7 +1230,7 @@ pub fn asset_copy_texture_to_texture(
   dst_y~ : Int,
   src_texture_id~ : Int,
 ) -> Unit {
-  @native_gpu.asset_copy_texture_to_texture(
+  @renderer.asset_copy_texture_to_texture(
     dst_texture_id~,
     dst_x~,
     dst_y~,
@@ -1253,7 +1253,7 @@ pub fn asset_set_texture_sampler(
   anisotropy_clamp~ : Int,
   border_color~ : Int,
 ) -> Unit {
-  @native_gpu.asset_set_texture_sampler(
+  @renderer.asset_set_texture_sampler(
     texture_id~,
     address_mode_u~,
     address_mode_v~,

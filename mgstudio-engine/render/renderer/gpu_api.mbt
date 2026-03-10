@@ -185,7 +185,7 @@ fn env_or_default(key : String, default_value : String) -> String {
 
 ///|
 fn debug_runtime_error(context : String, err : GpuBackendError) -> Unit {
-  @debug.debug("[native_gpu] " + context + ": " + err.to_string())
+  @debug.debug("[renderer] " + context + ": " + err.to_string())
 }
 
 ///|
@@ -300,7 +300,7 @@ pub fn end_frame(frame : NativeGpuFrame) -> Unit {
   debug_frame_counter_ref.val = debug_frame_counter_ref.val + 1
   if debug_frame_counter_ref.val % 60 == 0 {
     @debug.debug(
-      "[native_gpu] draw stats(60f): mesh2d=" +
+      "[renderer] draw stats(60f): mesh2d=" +
       debug_mesh2d_draw_calls_ref.val.to_string() +
       ", mesh2d_invalid_id=" +
       debug_mesh2d_invalid_id_calls_ref.val.to_string() +
@@ -1194,7 +1194,7 @@ pub fn create_mesh_triangles(vertices_xy_csv~ : String) -> Int {
         let mesh_id = backend.create_mesh_triangles_xy(vertices)
         if mesh_id <= 0 {
           @debug.debug(
-            "[native_gpu] create_mesh_triangles failed: parsed_values=" +
+            "[renderer] create_mesh_triangles failed: parsed_values=" +
             vertices.length().to_string(),
           )
         }
@@ -1205,7 +1205,7 @@ pub fn create_mesh_triangles(vertices_xy_csv~ : String) -> Int {
     }
   } else {
     @debug.debug(
-      "[native_gpu] create_mesh_triangles parse failed: csv_len=" +
+      "[renderer] create_mesh_triangles parse failed: csv_len=" +
       vertices_xy_csv.length().to_string(),
     )
   }
@@ -1220,7 +1220,7 @@ pub fn create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~ : String) -> Int {
         let mesh_id = backend.create_mesh_triangles_xyuvrgba(vertices)
         if mesh_id <= 0 {
           @debug.debug(
-            "[native_gpu] create_mesh_triangles_xyuvrgba failed: parsed_values=" +
+            "[renderer] create_mesh_triangles_xyuvrgba failed: parsed_values=" +
             vertices.length().to_string(),
           )
         }
@@ -1231,7 +1231,7 @@ pub fn create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~ : String) -> Int {
     }
   } else {
     @debug.debug(
-      "[native_gpu] create_mesh_triangles_xyuvrgba parse failed: csv_len=" +
+      "[renderer] create_mesh_triangles_xyuvrgba parse failed: csv_len=" +
       vertices_xyuvrgba_csv.length().to_string(),
     )
   }
@@ -1251,7 +1251,7 @@ pub fn create_mesh3d(
         )
         if mesh_id <= 0 {
           @debug.debug(
-            "[native_gpu] create_mesh3d failed: parsed_values=" +
+            "[renderer] create_mesh3d failed: parsed_values=" +
             vertices.length().to_string() +
             ", topology=" +
             primitive_topology.to_string(),
@@ -1264,7 +1264,7 @@ pub fn create_mesh3d(
     }
   } else {
     @debug.debug(
-      "[native_gpu] create_mesh3d parse failed: csv_len=" +
+      "[renderer] create_mesh3d parse failed: csv_len=" +
       vertices_xyzuvrgba_csv.length().to_string() +
       ", topology=" +
       primitive_topology.to_string(),

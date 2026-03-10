@@ -2,13 +2,22 @@
 package "Milky2018/mgstudio/window/windowing"
 
 import {
+  "Milky2018/moon_accesskit",
   "Milky2018/wgpu_mbt",
 }
 
 // Values
+pub fn accessibility_requested() -> Bool
+
 pub fn attach_surface_metal_layer(Int, @wgpu_mbt.Surface) -> Unit
 
+pub fn bind_accessibility_requested(Ref[Bool]) -> Unit
+
+pub fn commit_pending_accessibility_update() -> Bool
+
 pub fn create(logical_width~ : Int, logical_height~ : Int, physical_width~ : Int, physical_height~ : Int, use_physical_size_on_create~ : Bool, title~ : String) -> Int
+
+pub fn enqueue_accessibility_action(@moon_accesskit.ActionRequest) -> Unit
 
 pub fn focused(Int) -> Bool
 
@@ -64,6 +73,8 @@ pub fn input_wheel_x() -> Float
 
 pub fn input_wheel_y() -> Float
 
+pub fn last_accessibility_update_payload() -> String
+
 pub fn native_backend_available() -> Bool
 
 pub fn poll_events(Int) -> Unit
@@ -72,11 +83,17 @@ pub fn position_x(Int) -> Int
 
 pub fn position_y(Int) -> Int
 
+pub fn queue_accessibility_update(@moon_accesskit.TreeUpdate) -> Unit
+
+pub fn queue_accessibility_update_payload(payload~ : String) -> Unit
+
 pub fn request_close(Int) -> Unit
 
 pub fn run_loop(FuncRef[() -> Unit]) -> Unit
 
 pub fn scale_factor(Int) -> Float
+
+pub fn set_accessibility_requested(Bool) -> Unit
 
 pub fn set_cursor_grab_mode(Int, mode~ : Int) -> Unit
 
@@ -95,6 +112,8 @@ pub fn set_size(Int, width~ : Int, height~ : Int) -> Unit
 pub fn set_title(Int, title~ : String) -> Unit
 
 pub fn should_close(Int) -> Bool
+
+pub fn take_accessibility_actions() -> Array[@moon_accesskit.ActionRequest]
 
 pub fn width(Int) -> Int
 

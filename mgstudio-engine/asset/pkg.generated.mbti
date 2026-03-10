@@ -194,6 +194,8 @@ pub fn host_asset_register_loader_extension(extension~ : String, kind~ : Int) ->
 
 pub fn host_asset_remove_loader_extension(extension~ : String) -> Unit
 
+pub fn host_asset_save_rgba8_png(width~ : Int, height~ : Int, pixels~ : Bytes, path~ : String) -> Unit
+
 pub fn host_asset_set_texture_sampler(texture_id~ : Int, address_mode_u~ : Int, address_mode_v~ : Int, address_mode_w~ : Int, mag_filter~ : Int, min_filter~ : Int, mipmap_filter~ : Int, lod_min_clamp~ : Float, lod_max_clamp~ : Float, compare~ : Int, anisotropy_clamp~ : Int, border_color~ : Int) -> Unit
 
 pub fn host_asset_supported_compressed_image_formats() -> Int

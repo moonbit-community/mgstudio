@@ -162,42 +162,6 @@ priv struct ParsedVirtualAssetPath {
 }
 
 ///|
-fn string_last_index_of_char(input : String, code_unit : Int) -> Int {
-  let mut out = -1
-  for i in 0..<input.length() {
-    if input.code_unit_at(i).to_int() == code_unit {
-      out = i
-    }
-  }
-  out
-}
-
-///|
-fn string_find_substring(input : String, pattern : String) -> Int {
-  let n = input.length()
-  let m = pattern.length()
-  if m <= 0 {
-    return 0
-  }
-  if n < m {
-    return -1
-  }
-  for i in 0..<(n - m + 1) {
-    let mut matched = true
-    for j in 0..<m {
-      if input.code_unit_at(i + j) != pattern.code_unit_at(j) {
-        matched = false
-        break
-      }
-    }
-    if matched {
-      return i
-    }
-  }
-  -1
-}
-
-///|
 fn parse_virtual_asset_path(path : String) -> ParsedVirtualAssetPath {
   let hash_index = string_last_index_of_char(path, 35)
   let (without_label, label) = if hash_index >= 0 {
@@ -783,7 +747,7 @@ fn png_encode_rgba8(width : Int, height : Int, pixels : Bytes) -> Bytes? {
 }
 
 ///|
-pub fn save_rgba8_png(
+fn save_rgba8_png(
   width~ : Int,
   height~ : Int,
   pixels~ : Bytes,
@@ -853,7 +817,7 @@ fn path_extension(path : String) -> String? {
 }
 
 ///|
-pub fn register_loader_extension(extension~ : String, kind~ : Int) -> Unit {
+fn register_loader_extension(extension~ : String, kind~ : Int) -> Unit {
   let normalized = extension_normalize(extension)
   let next : Array[(String, Int)] = []
   let mut replaced = false
@@ -874,7 +838,7 @@ pub fn register_loader_extension(extension~ : String, kind~ : Int) -> Unit {
 }
 
 ///|
-pub fn remove_loader_extension(extension~ : String) -> Unit {
+fn remove_loader_extension(extension~ : String) -> Unit {
   let normalized = extension_normalize(extension)
   let next : Array[(String, Int)] = []
   for item in loader_extensions_ref.val {
@@ -886,7 +850,7 @@ pub fn remove_loader_extension(extension~ : String) -> Unit {
 }
 
 ///|
-pub fn loader_kind_for_path(path~ : String) -> Int {
+fn loader_kind_for_path(path~ : String) -> Int {
   if path_extension(path) is Some(ext) {
     for item in loader_extensions_ref.val {
       if item.0 == ext {
@@ -1044,13 +1008,13 @@ fn texture_cached_or_empty(
 }
 
 ///|
-pub fn load_texture(path~ : String, nearest~ : Bool) -> Int {
+fn load_texture(path~ : String, nearest~ : Bool) -> Int {
   let bytes = load_asset_file_bytes(path)
   load_texture_bytes(bytes~, nearest~)
 }
 
 ///|
-pub fn load_texture_bytes(bytes~ : Bytes, nearest~ : Bool) -> Int {
+fn load_texture_bytes(bytes~ : Bytes, nearest~ : Bool) -> Int {
   let loaded = bytes.length() > 0
   let (width, height) = if texture_dimensions_from_bytes(bytes) is Some(dims) {
     dims
@@ -1083,21 +1047,21 @@ pub fn load_texture_bytes(bytes~ : Bytes, nearest~ : Bool) -> Int {
 }
 
 ///|
-pub fn load_wgsl(path~ : String) -> Int {
+fn load_wgsl(path~ : String) -> Int {
   let id = next_id()
   blobs_ref.val.push(BlobRecord::{ id, bytes: load_asset_file_bytes(path) })
   id
 }
 
 ///|
-pub fn load_bytes(path~ : String) -> Int {
+fn load_bytes(path~ : String) -> Int {
   let id = next_id()
   blobs_ref.val.push(BlobRecord::{ id, bytes: load_asset_file_bytes(path) })
   id
 }
 
 ///|
-pub fn load_with_registered_loader(path~ : String, nearest~ : Bool) -> Int {
+fn load_with_registered_loader(path~ : String, nearest~ : Bool) -> Int {
   let loader_kind = loader_kind_for_path(path~)
   if loader_kind == LOADER_KIND_TEXTURE {
     return load_texture(path~, nearest~)
@@ -1115,7 +1079,7 @@ pub fn load_with_registered_loader(path~ : String, nearest~ : Bool) -> Int {
 }
 
 ///|
-pub fn bytes_len(blob_id : Int) -> Int {
+fn bytes_len(blob_id : Int) -> Int {
   if find_blob(blobs_ref.val, blob_id) is Some(record) {
     record.bytes.length()
   } else {
@@ -1124,7 +1088,7 @@ pub fn bytes_len(blob_id : Int) -> Int {
 }
 
 ///|
-pub fn bytes_get_u32(blob_id~ : Int, index~ : Int) -> Int {
+fn bytes_get_u32(blob_id~ : Int, index~ : Int) -> Int {
   if find_blob(blobs_ref.val, blob_id) is Some(record) {
     blob_u32_at(record.bytes, index)
   } else {
@@ -1133,11 +1097,7 @@ pub fn bytes_get_u32(blob_id~ : Int, index~ : Int) -> Int {
 }
 
 ///|
-pub fn create_dynamic_texture(
-  width~ : Int,
-  height~ : Int,
-  nearest~ : Bool,
-) -> Int {
+fn create_dynamic_texture(width~ : Int, height~ : Int, nearest~ : Bool) -> Int {
   let safe_width = clamp_dim(width)
   let safe_height = clamp_dim(height)
   let texture_id = @render.asset_create_texture_empty(
@@ -1166,7 +1126,7 @@ pub fn create_dynamic_texture(
 }
 
 ///|
-pub fn create_dynamic_texture_mipped(
+fn create_dynamic_texture_mipped(
   width~ : Int,
   height~ : Int,
   mip_level_count~ : Int,
@@ -1205,7 +1165,7 @@ pub fn create_dynamic_texture_mipped(
 }
 
 ///|
-pub fn update_texture_region(
+fn update_texture_region(
   texture_id~ : Int,
   x~ : Int,
   y~ : Int,
@@ -1231,7 +1191,7 @@ pub fn update_texture_region(
 }
 
 ///|
-pub fn update_texture_region_bytes(
+fn update_texture_region_bytes(
   texture_id~ : Int,
   x~ : Int,
   y~ : Int,
@@ -1262,7 +1222,7 @@ pub fn update_texture_region_bytes(
 }
 
 ///|
-pub fn update_texture_region_mip_bytes(
+fn update_texture_region_mip_bytes(
   texture_id~ : Int,
   x~ : Int,
   y~ : Int,
@@ -1297,7 +1257,7 @@ pub fn update_texture_region_mip_bytes(
 }
 
 ///|
-pub fn create_texture_mip_view(texture_id~ : Int, mip_level~ : Int) -> Int {
+fn create_texture_mip_view(texture_id~ : Int, mip_level~ : Int) -> Int {
   let view_id = @render.asset_create_texture_mip_view(texture_id~, mip_level~)
   if view_id <= 0 {
     return 0
@@ -1316,7 +1276,7 @@ pub fn create_texture_mip_view(texture_id~ : Int, mip_level~ : Int) -> Int {
 }
 
 ///|
-pub fn texture_width(texture_id : Int) -> Int {
+fn texture_width(texture_id : Int) -> Int {
   let width = @render.asset_texture_width(texture_id~)
   if width > 0 {
     let height = @render.asset_texture_height(texture_id~)
@@ -1327,7 +1287,7 @@ pub fn texture_width(texture_id : Int) -> Int {
 }
 
 ///|
-pub fn texture_height(texture_id : Int) -> Int {
+fn texture_height(texture_id : Int) -> Int {
   let height = @render.asset_texture_height(texture_id~)
   if height > 0 {
     let width = @render.asset_texture_width(texture_id~)
@@ -1338,7 +1298,7 @@ pub fn texture_height(texture_id : Int) -> Int {
 }
 
 ///|
-pub fn is_texture_loaded(texture_id : Int) -> Bool {
+fn is_texture_loaded(texture_id : Int) -> Bool {
   let loaded = @render.asset_is_texture_loaded(texture_id~)
   let width = @render.asset_texture_width(texture_id~)
   let height = @render.asset_texture_height(texture_id~)
@@ -1349,12 +1309,12 @@ pub fn is_texture_loaded(texture_id : Int) -> Bool {
 }
 
 ///|
-pub fn supported_compressed_image_formats() -> Int {
+fn supported_compressed_image_formats() -> Int {
   @render.asset_supported_compressed_image_formats()
 }
 
 ///|
-pub fn copy_texture_to_texture(
+fn copy_texture_to_texture(
   dst_texture_id~ : Int,
   dst_x~ : Int,
   dst_y~ : Int,
@@ -1382,7 +1342,7 @@ pub fn copy_texture_to_texture(
 }
 
 ///|
-pub fn save_texture_png(texture_id~ : Int, path~ : String) -> Unit {
+fn save_texture_png(texture_id~ : Int, path~ : String) -> Unit {
   let width = texture_width(texture_id)
   let height = texture_height(texture_id)
   if width <= 0 || height <= 0 {
@@ -1402,7 +1362,7 @@ pub fn save_texture_png(texture_id~ : Int, path~ : String) -> Unit {
 }
 
 ///|
-pub fn set_texture_sampler(
+fn set_texture_sampler(
   texture_id~ : Int,
   address_mode_u~ : Int,
   address_mode_v~ : Int,
@@ -1433,14 +1393,14 @@ pub fn set_texture_sampler(
 }
 
 ///|
-pub fn load_font(path~ : String) -> Int {
+fn load_font(path~ : String) -> Int {
   let id = next_id()
   fonts_ref.val.push(BlobRecord::{ id, bytes: load_asset_file_bytes(path) })
   id
 }
 
 ///|
-pub fn font_bytes_len(font_id : Int) -> Int {
+fn font_bytes_len(font_id : Int) -> Int {
   if find_blob(fonts_ref.val, font_id) is Some(record) {
     record.bytes.length()
   } else {
@@ -1449,7 +1409,7 @@ pub fn font_bytes_len(font_id : Int) -> Int {
 }
 
 ///|
-pub fn font_bytes_get(font_id~ : Int, index~ : Int) -> Int {
+fn font_bytes_get(font_id~ : Int, index~ : Int) -> Int {
   if find_blob(fonts_ref.val, font_id) is Some(record) {
     blob_u8_at(record.bytes, index)
   } else {
@@ -1458,7 +1418,7 @@ pub fn font_bytes_get(font_id~ : Int, index~ : Int) -> Int {
 }
 
 ///|
-pub fn font_bytes_get_u32(font_id~ : Int, index~ : Int) -> Int {
+fn font_bytes_get_u32(font_id~ : Int, index~ : Int) -> Int {
   if find_blob(fonts_ref.val, font_id) is Some(record) {
     blob_u32_at(record.bytes, index)
   } else {
@@ -1467,7 +1427,7 @@ pub fn font_bytes_get_u32(font_id~ : Int, index~ : Int) -> Int {
 }
 
 ///|
-pub fn load_folder(path~ : String) -> Int {
+fn load_folder(path~ : String) -> Int {
   let parsed = parse_virtual_asset_path(path)
   let folder_virtual = compose_virtual_asset_path(
     parsed.source_name,
@@ -1506,7 +1466,7 @@ fn pop_next_folder_event() -> FolderEvent? {
 }
 
 ///|
-pub fn poll_loaded_folder_event_kind() -> Int {
+fn poll_loaded_folder_event_kind() -> Int {
   if pending_folder_event_ref.val is Some(event) {
     return event.kind
   }
@@ -1521,7 +1481,7 @@ pub fn poll_loaded_folder_event_kind() -> Int {
 }
 
 ///|
-pub fn poll_loaded_folder_event_id() -> Int {
+fn poll_loaded_folder_event_id() -> Int {
   if pending_folder_event_ref.val is Some(event) {
     pending_folder_event_ref.val = None
     event.folder_id
@@ -1531,7 +1491,7 @@ pub fn poll_loaded_folder_event_id() -> Int {
 }
 
 ///|
-pub fn loaded_folder_handles_len(folder_id : Int) -> Int {
+fn loaded_folder_handles_len(folder_id : Int) -> Int {
   if folder_handles(folder_id) is Some(handles) {
     handles.length()
   } else {
@@ -1540,7 +1500,7 @@ pub fn loaded_folder_handles_len(folder_id : Int) -> Int {
 }
 
 ///|
-pub fn loaded_folder_handles_get(folder_id~ : Int, index~ : Int) -> Int {
+fn loaded_folder_handles_get(folder_id~ : Int, index~ : Int) -> Int {
   if folder_handles(folder_id) is Some(handles) {
     if index < 0 || index >= handles.length() {
       -1

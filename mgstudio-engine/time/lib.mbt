@@ -120,7 +120,7 @@ pub impl @app.Resource for TimeUpdateStrategy with resource() {
 
 ///|
 pub fn host_time_now() -> Float {
-  @native_time.now()
+  @core.Instant::now().as_secs_f32()
 }
 
 ///|

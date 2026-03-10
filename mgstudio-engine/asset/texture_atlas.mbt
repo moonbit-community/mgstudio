@@ -508,7 +508,7 @@ pub fn host_asset_set_texture_sampler(
   anisotropy_clamp~ : Int,
   border_color~ : Int,
 ) -> Unit {
-  @native_asset.set_texture_sampler(
+  set_texture_sampler(
     texture_id~,
     address_mode_u~,
     address_mode_v~,

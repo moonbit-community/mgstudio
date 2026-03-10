@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-test "native_gpu: interleaved 2d mesh csv keeps original vertex count" {
+test "renderer: interleaved 2d mesh csv keeps original vertex count" {
   let backend = GpuBackend::new()
   backend.meshes.clear()
   let vertices = [
@@ -52,7 +52,7 @@ test "native_gpu: interleaved 2d mesh csv keeps original vertex count" {
 }
 
 ///|
-test "native_gpu: mesh2d uniform slot pool grows per draw slot" {
+test "renderer: mesh2d uniform slot pool grows per draw slot" {
   let backend = GpuBackend::new(assets_base="assets")
   ensure_mesh_pipeline_rgba8(backend)
   let ok = ensure_mesh_uniform_slot(backend, 0) is Some(_) &&
@@ -62,7 +62,7 @@ test "native_gpu: mesh2d uniform slot pool grows per draw slot" {
 }
 
 ///|
-test "native_gpu: mesh3d uniform slot pool grows per draw slot" {
+test "renderer: mesh3d uniform slot pool grows per draw slot" {
   let backend = GpuBackend::new(assets_base="assets")
   ensure_mesh3d_pipeline_rgba8(backend, MESH3D_TOPOLOGY_TRIANGLE_LIST, 0)
   let ok = ensure_mesh3d_uniform_slot(backend, 0) is Some(_) &&
@@ -72,7 +72,7 @@ test "native_gpu: mesh3d uniform slot pool grows per draw slot" {
 }
 
 ///|
-test "native_gpu: large mesh3d upload switches to u32 index buffers" {
+test "renderer: large mesh3d upload switches to u32 index buffers" {
   let backend = GpuBackend::new()
   backend.meshes.clear()
   let vertices : Array[Float] = []
@@ -101,7 +101,7 @@ test "native_gpu: large mesh3d upload switches to u32 index buffers" {
 }
 
 ///|
-test "native_gpu: grouped wgsl imports resolve Bevy module files" {
+test "renderer: grouped wgsl imports resolve Bevy module files" {
   let assets_base = "assets"
   let targets : Array[WgslImportTarget] = []
   collect_wgsl_import_targets(
@@ -128,7 +128,7 @@ test "native_gpu: grouped wgsl imports resolve Bevy module files" {
 }
 
 ///|
-test "native_gpu: preprocess_wgsl_source supports multiline grouped imports" {
+test "renderer: preprocess_wgsl_source supports multiline grouped imports" {
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let preprocessed = preprocess_wgsl_source(
@@ -142,7 +142,7 @@ test "native_gpu: preprocess_wgsl_source supports multiline grouped imports" {
 }
 
 ///|
-test "native_gpu: preprocess_wgsl_source strips module aliases" {
+test "renderer: preprocess_wgsl_source strips module aliases" {
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let preprocessed = preprocess_wgsl_source(
@@ -268,7 +268,7 @@ fn gpu_test_pass_state(target_id : Int) -> GpuPassState {
 }
 
 ///|
-test "native_gpu: sprite pipeline specializes to hdr render target format" {
+test "renderer: sprite pipeline specializes to hdr render target format" {
   let backend = GpuBackend::new(assets_base="assets")
   let target_id = backend.create_render_target_rgba16f(128, 128, false)
   backend.pass_state = Some(gpu_test_pass_state(target_id))
@@ -281,7 +281,7 @@ test "native_gpu: sprite pipeline specializes to hdr render target format" {
 }
 
 ///|
-test "native_gpu: mesh pipeline specializes to hdr render target format" {
+test "renderer: mesh pipeline specializes to hdr render target format" {
   let backend = GpuBackend::new(assets_base="assets")
   let target_id = backend.create_render_target_rgba16f(128, 128, false)
   backend.pass_state = Some(gpu_test_pass_state(target_id))
@@ -294,7 +294,7 @@ test "native_gpu: mesh pipeline specializes to hdr render target format" {
 }
 
 ///|
-test "native_gpu: sampler cache key includes compare anisotropy and lod" {
+test "renderer: sampler cache key includes compare anisotropy and lod" {
   let key0 = image_sampler_cache_key(
     IMAGE_SAMPLER_ADDRESS_MODE_REPEAT,
     IMAGE_SAMPLER_ADDRESS_MODE_REPEAT,
@@ -325,7 +325,7 @@ test "native_gpu: sampler cache key includes compare anisotropy and lod" {
 }
 
 ///|
-test "native_gpu: unsupported border color validation raises exact blocker" {
+test "renderer: unsupported border color validation raises exact blocker" {
   let result = try {
     image_sampler_border_color_validate(IMAGE_SAMPLER_BORDER_COLOR_OPAQUE_WHITE)
     "ok"
@@ -339,7 +339,7 @@ test "native_gpu: unsupported border color validation raises exact blocker" {
 }
 
 ///|
-test "native_gpu: screenshot capture swizzles bgra8 into rgba8" {
+test "renderer: screenshot capture swizzles bgra8 into rgba8" {
   let pixels = Bytes::from_array([
     (3).to_byte(),
     (2).to_byte(),
@@ -366,7 +366,7 @@ test "native_gpu: screenshot capture swizzles bgra8 into rgba8" {
 }
 
 ///|
-test "native_gpu: screenshot capture reads rgba8 texture bytes" {
+test "renderer: screenshot capture reads rgba8 texture bytes" {
   let backend = GpuBackend::new()
   let previous_backend = backend_ref.val
   backend_ref.val = Some(backend)

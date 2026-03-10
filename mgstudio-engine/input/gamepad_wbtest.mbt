@@ -17,7 +17,7 @@ fn gamepad_test_app() -> @app.App[@ecs.World] {
   current_gamepads_ref.val = []
   previous_gamepads_ref.val = []
   host_gamepad_entities_ref.val = []
-  @native_input.gamepad_test_reset_state()
+  @gilrs.gamepad_test_reset_state()
   input_gamepad_plugin(@time.time_plugin(@app.App::new(@ecs.World::new())))
 }
 
@@ -100,8 +100,8 @@ fn world_gamepad_settings(
 fn run_with_mock_gamepad(
   app : @app.App[@ecs.World],
 ) -> (@app.App[@ecs.World], @core.Entity) {
-  @native_input.gamepad_test_use_ff_mock(1)
-  @native_input.gamepad_test_record_rumble_commands(true)
+  @gilrs.gamepad_test_use_ff_mock(1)
+  @gilrs.gamepad_test_record_rumble_commands(true)
   let app = app.run_once()
   let entity = mapped_gamepad_entity(0).unwrap()
   (app, entity)
@@ -672,7 +672,7 @@ test "input gamepad: rumble add requests reach backend output" {
   |> ignore
   app = app.run_once()
 
-  let commands = @native_input.gamepad_test_take_recorded_rumble_commands()
+  let commands = @gilrs.gamepad_test_take_recorded_rumble_commands()
   inspect(commands.length(), content="1")
   inspect(commands[0].gamepad_id, content="0")
   inspect(commands[0].strong_motor == 0.0F, content="true")
@@ -714,7 +714,7 @@ test "input gamepad: rumble requests saturate and stop clears backend output" {
   |> ignore
   app = app.run_once()
 
-  let add_commands = @native_input.gamepad_test_take_recorded_rumble_commands()
+  let add_commands = @gilrs.gamepad_test_take_recorded_rumble_commands()
   inspect(add_commands.length(), content="1")
   inspect(add_commands[0].strong_motor == 1.0F, content="true")
   inspect(add_commands[0].weak_motor == 0.25F, content="true")
@@ -727,7 +727,7 @@ test "input gamepad: rumble requests saturate and stop clears backend output" {
   |> ignore
   app = app.run_once()
 
-  let stop_commands = @native_input.gamepad_test_take_recorded_rumble_commands()
+  let stop_commands = @gilrs.gamepad_test_take_recorded_rumble_commands()
   inspect(stop_commands.length(), content="1")
   inspect(stop_commands[0].strong_motor == 0.0F, content="true")
   inspect(stop_commands[0].weak_motor == 0.0F, content="true")
@@ -738,9 +738,9 @@ test "input gamepad: rumble requests saturate and stop clears backend output" {
 test "input gamepad: unsupported rumble requests are dropped" {
   let mut app = gamepad_test_app()
   let world = app.world()
-  @native_input.gamepad_test_use_ff_mock(1)
-  @native_input.gamepad_test_set_mock_ff_supported(0, false)
-  @native_input.gamepad_test_record_rumble_commands(true)
+  @gilrs.gamepad_test_use_ff_mock(1)
+  @gilrs.gamepad_test_set_mock_ff_supported(0, false)
+  @gilrs.gamepad_test_record_rumble_commands(true)
   app = app.run_once()
   let entity = mapped_gamepad_entity(0).unwrap()
   clear_gamepad_messages(world)
@@ -756,7 +756,7 @@ test "input gamepad: unsupported rumble requests are dropped" {
   |> ignore
   app = app.run_once()
 
-  let commands = @native_input.gamepad_test_take_recorded_rumble_commands()
+  let commands = @gilrs.gamepad_test_take_recorded_rumble_commands()
   inspect(commands.length(), content="0")
   let running_rumbles : RunningRumbleEffects = try! world
     .get_resource(RunningRumbleEffects::resource())

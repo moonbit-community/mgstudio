@@ -867,127 +867,127 @@ let input_primary_pointer_delta_ref : Ref[@math.Vec2] = Ref::new(
 
 ///|
 fn host_input_is_key_down(code : String) -> Bool {
-  @native_input.is_key_down(code)
+  @windowing.input_is_key_down(code)
 }
 
 ///|
 fn host_input_is_key_just_pressed(code : String) -> Bool {
-  @native_input.is_key_just_pressed(code)
+  @windowing.input_is_key_just_pressed(code)
 }
 
 ///|
 fn host_input_is_key_just_released(code : String) -> Bool {
-  @native_input.is_key_just_released(code)
+  @windowing.input_is_key_just_released(code)
 }
 
 ///|
 fn host_input_is_key_repeated(code : String) -> Bool {
-  @native_input.is_key_repeated(code)
+  @windowing.input_is_key_repeated(code)
 }
 
 ///|
 pub fn host_input_finish_frame() -> Unit {
-  @native_input.finish_frame()
+  @windowing.input_finish_frame()
 }
 
 ///|
 fn host_input_is_mouse_button_down(button : String) -> Bool {
-  @native_input.is_mouse_button_down(button)
+  @windowing.input_is_mouse_button_down(button)
 }
 
 ///|
 fn host_input_is_mouse_button_just_pressed(button : String) -> Bool {
-  @native_input.is_mouse_button_just_pressed(button)
+  @windowing.input_is_mouse_button_just_pressed(button)
 }
 
 ///|
 fn host_input_is_mouse_button_just_released(button : String) -> Bool {
-  @native_input.is_mouse_button_just_released(button)
+  @windowing.input_is_mouse_button_just_released(button)
 }
 
 ///|
 pub fn host_input_mouse_x() -> Float {
-  @native_input.mouse_x()
+  @windowing.input_mouse_x()
 }
 
 ///|
 pub fn host_input_mouse_y() -> Float {
-  @native_input.mouse_y()
+  @windowing.input_mouse_y()
 }
 
 ///|
 pub fn host_input_has_cursor() -> Bool {
-  @native_input.has_cursor()
+  @windowing.input_has_cursor()
 }
 
 ///|
 pub fn host_input_wheel_x() -> Float {
-  @native_input.wheel_x()
+  @windowing.input_wheel_x()
 }
 
 ///|
 pub fn host_input_wheel_y() -> Float {
-  @native_input.wheel_y()
+  @windowing.input_wheel_y()
 }
 
 ///|
 fn host_input_text_event_count() -> Int {
-  @native_input.text_event_count()
+  @windowing.input_text_event_count()
 }
 
 ///|
 fn host_input_text_event_len(index~ : Int) -> Int {
-  @native_input.text_event_len(index~)
+  @windowing.input_text_event_len(index~)
 }
 
 ///|
 fn host_input_text_event_code_unit(index~ : Int, offset~ : Int) -> Int {
-  @native_input.text_event_code_unit(index~, offset~)
+  @windowing.input_text_event_code_unit(index~, offset~)
 }
 
 ///|
 fn host_input_touch_event_count() -> Int {
-  @native_input.touch_event_count()
+  @windowing.input_touch_event_count()
 }
 
 ///|
 fn host_input_touch_event_id(index~ : Int) -> Int {
-  @native_input.touch_event_id(index~)
+  @windowing.input_touch_event_id(index~)
 }
 
 ///|
 fn host_input_touch_event_phase(index~ : Int) -> Int {
-  @native_input.touch_event_phase(index~)
+  @windowing.input_touch_event_phase(index~)
 }
 
 ///|
 fn host_input_touch_event_x(index~ : Int) -> Float {
-  @native_input.touch_event_x(index~)
+  @windowing.input_touch_event_x(index~)
 }
 
 ///|
 fn host_input_touch_event_y(index~ : Int) -> Float {
-  @native_input.touch_event_y(index~)
+  @windowing.input_touch_event_y(index~)
 }
 
 ///|
 fn host_input_drag_and_drop_event_count() -> Int {
-  @native_input.drag_and_drop_event_count()
+  @windowing.input_drag_and_drop_event_count()
 }
 
 ///|
 fn host_input_drag_and_drop_event_kind(index~ : Int) -> Int {
-  @native_input.drag_and_drop_event_kind(index~)
+  @windowing.input_drag_and_drop_event_kind(index~)
 }
 
 ///|
 fn host_input_drag_and_drop_event_len(index~ : Int) -> Int {
-  @native_input.drag_and_drop_event_len(index~)
+  @windowing.input_drag_and_drop_event_len(index~)
 }
 
 ///|
 fn host_input_drag_and_drop_event_code_unit(index~ : Int, offset~ : Int) -> Int {
-  @native_input.drag_and_drop_event_code_unit(index~, offset~)
+  @windowing.input_drag_and_drop_event_code_unit(index~, offset~)
 }
 
 ///|

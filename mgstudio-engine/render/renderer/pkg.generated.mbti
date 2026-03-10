@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "Milky2018/mgstudio/render/native_gpu"
+package "Milky2018/mgstudio/render/renderer"
 
 import {
   "Milky2018/wgpu_mbt",

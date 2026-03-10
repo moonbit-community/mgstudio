@@ -636,7 +636,7 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
             None
           }
           if capture is Some(capture) {
-            @native_asset.save_rgba8_png(
+            @asset.host_asset_save_rgba8_png(
               width=capture.width,
               height=capture.height,
               pixels=capture.pixels,

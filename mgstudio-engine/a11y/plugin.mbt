@@ -17,14 +17,14 @@ fn ensure_requested_binding_system(world : @ecs.World) -> Unit {
   guard get_accessibility_requested_resource(world).get() is Some(requested) else {
     return
   }
-  @native_a11y.bind_accessibility_requested(
+  @windowing.bind_accessibility_requested(
     AccessibilityRequested::handle(requested),
   )
 }
 
 ///|
 pub fn a11y_poll_actions_system(world : @ecs.World) -> Unit {
-  let actions = @native_a11y.take_actions()
+  let actions = @windowing.take_accessibility_actions()
   if actions.length() == 0 {
     return
   }
@@ -60,7 +60,7 @@ pub fn a11y_commit_pending_update_system(world : @ecs.World) -> Unit {
   if !manage_updates {
     return
   }
-  @native_a11y.commit_pending_update() |> ignore
+  @windowing.commit_pending_accessibility_update() |> ignore
 }
 
 ///|

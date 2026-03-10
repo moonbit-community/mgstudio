@@ -13,40 +13,29 @@
 // limitations under the License.
 
 ///|
-pub struct NativeAudioOutputDevice {
-  name : String
-  is_default : Bool
-}
-
-///|
-pub struct NativeAudioInputDevice {
-  name : String
-}
-
-///|
-pub struct NativeAudioStream {
+priv struct NativeAudioStream {
   stream : @rodio.OutputStream
 }
 
 ///|
-pub struct NativeAudioPlayer {
+priv struct NativeAudioPlayer {
   player : @rodio.Player
 }
 
 ///|
-pub struct NativeSpatialAudioPlayer {
+priv struct NativeSpatialAudioPlayer {
   player : @rodio.SpatialPlayer
 }
 
 ///|
-pub struct NativeAudioPlaybackConfig {
+priv struct NativeAudioPlaybackConfig {
   looped : Bool
   start_position_seconds : Float?
   duration_seconds : Float?
 }
 
 ///|
-pub fn NativeAudioPlaybackConfig::default() -> NativeAudioPlaybackConfig {
+fn NativeAudioPlaybackConfig::default() -> NativeAudioPlaybackConfig {
   NativeAudioPlaybackConfig::{
     looped: false,
     start_position_seconds: None,
@@ -55,7 +44,7 @@ pub fn NativeAudioPlaybackConfig::default() -> NativeAudioPlaybackConfig {
 }
 
 ///|
-pub fn NativeAudioPlaybackConfig::looped(
+fn NativeAudioPlaybackConfig::looped(
   self : NativeAudioPlaybackConfig,
   enabled : Bool,
 ) -> NativeAudioPlaybackConfig {
@@ -63,7 +52,7 @@ pub fn NativeAudioPlaybackConfig::looped(
 }
 
 ///|
-pub fn NativeAudioPlaybackConfig::with_start_position_seconds(
+fn NativeAudioPlaybackConfig::with_start_position_seconds(
   self : NativeAudioPlaybackConfig,
   seconds : Float,
 ) -> NativeAudioPlaybackConfig {
@@ -74,7 +63,7 @@ pub fn NativeAudioPlaybackConfig::with_start_position_seconds(
 }
 
 ///|
-pub fn NativeAudioPlaybackConfig::with_duration_seconds(
+fn NativeAudioPlaybackConfig::with_duration_seconds(
   self : NativeAudioPlaybackConfig,
   seconds : Float,
 ) -> NativeAudioPlaybackConfig {
@@ -94,17 +83,17 @@ fn native_audio_non_negative_seconds(seconds : Float) -> Float {
 }
 
 ///|
-pub fn linear_to_db(linear : Double) -> Double {
+fn linear_to_db(linear : Double) -> Double {
   @rodio.linear_to_db(linear)
 }
 
 ///|
-pub fn db_to_linear(decibels : Double) -> Double {
+fn db_to_linear(decibels : Double) -> Double {
   @rodio.db_to_linear(decibels)
 }
 
 ///|
-pub fn duration_from_seconds(seconds : Float) -> @cpal.Duration {
+fn duration_from_seconds(seconds : Float) -> @cpal.Duration {
   let clamped = native_audio_non_negative_seconds(seconds)
   let secs = clamped.to_int()
   let whole = Float::from_double(secs.to_double())
@@ -120,7 +109,7 @@ pub fn duration_from_seconds(seconds : Float) -> @cpal.Duration {
 }
 
 ///|
-pub fn duration_to_seconds(duration : @cpal.Duration) -> Float {
+fn duration_to_seconds(duration : @cpal.Duration) -> Float {
   Float::from_uint64(duration.secs) +
   Float::from_double(duration.nanos.to_double()) / 1000000000.0F
 }
@@ -215,91 +204,19 @@ fn native_audio_append_sine_to_spatial_player(
 }
 
 ///|
-pub fn available_host_ids() -> Array[@cpal.HostId] {
-  @cpal.available_hosts()
-}
-
-///|
-pub fn available_output_devices() -> Array[NativeAudioOutputDevice] raise @rodio.SpeakersListError {
-  let outputs = @rodio.available_outputs()
-  let devices : Array[NativeAudioOutputDevice] = []
-  for output in outputs {
-    devices.push(NativeAudioOutputDevice::{
-      name: output.name(),
-      is_default: output.is_default(),
-    })
-  }
-  devices
-}
-
-///|
-pub fn available_input_devices() -> Array[NativeAudioInputDevice] raise @rodio.MicrophoneListError {
-  let inputs = @rodio.available_inputs()
-  let devices : Array[NativeAudioInputDevice] = []
-  for input in inputs {
-    devices.push(NativeAudioInputDevice::{ name: input.name() })
-  }
-  devices
-}
-
-///|
-pub fn open_default_output_stream() -> NativeAudioStream raise @rodio.StreamError {
+fn open_default_output_stream() -> NativeAudioStream raise @rodio.StreamError {
   NativeAudioStream::{
     stream: @rodio.OutputStreamBuilder::open_default_stream(),
   }
 }
 
 ///|
-pub fn NativeAudioStream::mixer(self : NativeAudioStream) -> @rodio.Mixer {
-  self.stream.mixer()
-}
-
-///|
-pub fn NativeAudioStream::play_file(
-  self : NativeAudioStream,
-  path : String,
-) -> NativeAudioPlayer raise @rodio.PlayError {
-  NativeAudioPlayer::{ player: @rodio.play_file(self.stream.mixer(), path) }
-}
-
-///|
-pub fn NativeAudioStream::play_bytes(
-  self : NativeAudioStream,
-  bytes : Bytes,
-  config? : NativeAudioPlaybackConfig = NativeAudioPlaybackConfig::default(),
-) -> NativeAudioPlayer raise @rodio.DecoderError {
-  let player = NativeAudioPlayer::{
-    player: @rodio.Player::connect_new(self.stream.mixer()),
-  }
-  native_audio_append_bytes_to_player(player, bytes, config)
-  player
-}
-
-///|
-pub fn NativeAudioStream::play_sine(
-  self : NativeAudioStream,
-  frequency : Float,
-  duration_seconds : Float,
-  looped? : Bool = false,
-) -> NativeAudioPlayer {
-  let player = NativeAudioPlayer::{
-    player: @rodio.Player::connect_new(self.stream.mixer()),
-  }
-  native_audio_append_sine_to_player(
-    player, frequency, duration_seconds, looped,
-  )
-  player
-}
-
-///|
-pub fn NativeAudioStream::new_player(
-  self : NativeAudioStream,
-) -> NativeAudioPlayer {
+fn NativeAudioStream::new_player(self : NativeAudioStream) -> NativeAudioPlayer {
   NativeAudioPlayer::{ player: @rodio.Player::connect_new(self.stream.mixer()) }
 }
 
 ///|
-pub fn NativeAudioStream::new_spatial_player(
+fn NativeAudioStream::new_spatial_player(
   self : NativeAudioStream,
   emitter : (Double, Double, Double),
   left_ear : (Double, Double, Double),
@@ -316,7 +233,7 @@ pub fn NativeAudioStream::new_spatial_player(
 }
 
 ///|
-pub fn NativeAudioPlayer::append_bytes(
+fn NativeAudioPlayer::append_bytes(
   self : NativeAudioPlayer,
   bytes : Bytes,
   config? : NativeAudioPlaybackConfig = NativeAudioPlaybackConfig::default(),
@@ -325,7 +242,7 @@ pub fn NativeAudioPlayer::append_bytes(
 }
 
 ///|
-pub fn NativeAudioPlayer::append_sine(
+fn NativeAudioPlayer::append_sine(
   self : NativeAudioPlayer,
   frequency : Float,
   duration_seconds : Float,
@@ -335,37 +252,32 @@ pub fn NativeAudioPlayer::append_sine(
 }
 
 ///|
-pub fn NativeAudioPlayer::pause(self : NativeAudioPlayer) -> Unit {
+fn NativeAudioPlayer::pause(self : NativeAudioPlayer) -> Unit {
   self.player.pause()
 }
 
 ///|
-pub fn NativeAudioPlayer::play(self : NativeAudioPlayer) -> Unit {
+fn NativeAudioPlayer::play(self : NativeAudioPlayer) -> Unit {
   self.player.play()
 }
 
 ///|
-pub fn NativeAudioPlayer::stop(self : NativeAudioPlayer) -> Unit {
+fn NativeAudioPlayer::stop(self : NativeAudioPlayer) -> Unit {
   self.player.stop()
 }
 
 ///|
-pub fn NativeAudioPlayer::clear(self : NativeAudioPlayer) -> Unit {
-  self.player.clear()
-}
-
-///|
-pub fn NativeAudioPlayer::empty(self : NativeAudioPlayer) -> Bool {
+fn NativeAudioPlayer::empty(self : NativeAudioPlayer) -> Bool {
   self.player.empty()
 }
 
 ///|
-pub fn NativeAudioPlayer::is_paused(self : NativeAudioPlayer) -> Bool {
+fn NativeAudioPlayer::is_paused(self : NativeAudioPlayer) -> Bool {
   self.player.is_paused()
 }
 
 ///|
-pub fn NativeAudioPlayer::set_volume(
+fn NativeAudioPlayer::set_volume(
   self : NativeAudioPlayer,
   volume : Double,
 ) -> Unit {
@@ -373,12 +285,12 @@ pub fn NativeAudioPlayer::set_volume(
 }
 
 ///|
-pub fn NativeAudioPlayer::volume(self : NativeAudioPlayer) -> Double {
+fn NativeAudioPlayer::volume(self : NativeAudioPlayer) -> Double {
   self.player.volume()
 }
 
 ///|
-pub fn NativeAudioPlayer::set_speed(
+fn NativeAudioPlayer::set_speed(
   self : NativeAudioPlayer,
   speed : Double,
 ) -> Unit {
@@ -386,17 +298,17 @@ pub fn NativeAudioPlayer::set_speed(
 }
 
 ///|
-pub fn NativeAudioPlayer::speed(self : NativeAudioPlayer) -> Double {
+fn NativeAudioPlayer::speed(self : NativeAudioPlayer) -> Double {
   self.player.speed()
 }
 
 ///|
-pub fn NativeAudioPlayer::position_seconds(self : NativeAudioPlayer) -> Float {
+fn NativeAudioPlayer::position_seconds(self : NativeAudioPlayer) -> Float {
   duration_to_seconds(self.player.get_pos())
 }
 
 ///|
-pub fn NativeAudioPlayer::try_seek_seconds(
+fn NativeAudioPlayer::try_seek_seconds(
   self : NativeAudioPlayer,
   seconds : Float,
 ) -> Unit raise @rodio.SeekError {
@@ -404,7 +316,7 @@ pub fn NativeAudioPlayer::try_seek_seconds(
 }
 
 ///|
-pub fn NativeSpatialAudioPlayer::append_bytes(
+fn NativeSpatialAudioPlayer::append_bytes(
   self : NativeSpatialAudioPlayer,
   bytes : Bytes,
   config? : NativeAudioPlaybackConfig = NativeAudioPlaybackConfig::default(),
@@ -413,7 +325,7 @@ pub fn NativeSpatialAudioPlayer::append_bytes(
 }
 
 ///|
-pub fn NativeSpatialAudioPlayer::append_sine(
+fn NativeSpatialAudioPlayer::append_sine(
   self : NativeSpatialAudioPlayer,
   frequency : Float,
   duration_seconds : Float,
@@ -425,39 +337,32 @@ pub fn NativeSpatialAudioPlayer::append_sine(
 }
 
 ///|
-pub fn NativeSpatialAudioPlayer::pause(self : NativeSpatialAudioPlayer) -> Unit {
+fn NativeSpatialAudioPlayer::pause(self : NativeSpatialAudioPlayer) -> Unit {
   self.player.pause()
 }
 
 ///|
-pub fn NativeSpatialAudioPlayer::play(self : NativeSpatialAudioPlayer) -> Unit {
+fn NativeSpatialAudioPlayer::play(self : NativeSpatialAudioPlayer) -> Unit {
   self.player.play()
 }
 
 ///|
-pub fn NativeSpatialAudioPlayer::stop(self : NativeSpatialAudioPlayer) -> Unit {
+fn NativeSpatialAudioPlayer::stop(self : NativeSpatialAudioPlayer) -> Unit {
   self.player.stop()
 }
 
 ///|
-pub fn NativeSpatialAudioPlayer::clear(self : NativeSpatialAudioPlayer) -> Unit {
-  self.player.clear()
-}
-
-///|
-pub fn NativeSpatialAudioPlayer::empty(self : NativeSpatialAudioPlayer) -> Bool {
+fn NativeSpatialAudioPlayer::empty(self : NativeSpatialAudioPlayer) -> Bool {
   self.player.empty()
 }
 
 ///|
-pub fn NativeSpatialAudioPlayer::is_paused(
-  self : NativeSpatialAudioPlayer,
-) -> Bool {
+fn NativeSpatialAudioPlayer::is_paused(self : NativeSpatialAudioPlayer) -> Bool {
   self.player.is_paused()
 }
 
 ///|
-pub fn NativeSpatialAudioPlayer::set_volume(
+fn NativeSpatialAudioPlayer::set_volume(
   self : NativeSpatialAudioPlayer,
   volume : Double,
 ) -> Unit {
@@ -465,14 +370,12 @@ pub fn NativeSpatialAudioPlayer::set_volume(
 }
 
 ///|
-pub fn NativeSpatialAudioPlayer::volume(
-  self : NativeSpatialAudioPlayer,
-) -> Double {
+fn NativeSpatialAudioPlayer::volume(self : NativeSpatialAudioPlayer) -> Double {
   self.player.volume()
 }
 
 ///|
-pub fn NativeSpatialAudioPlayer::set_speed(
+fn NativeSpatialAudioPlayer::set_speed(
   self : NativeSpatialAudioPlayer,
   speed : Double,
 ) -> Unit {
@@ -480,21 +383,19 @@ pub fn NativeSpatialAudioPlayer::set_speed(
 }
 
 ///|
-pub fn NativeSpatialAudioPlayer::speed(
-  self : NativeSpatialAudioPlayer,
-) -> Double {
+fn NativeSpatialAudioPlayer::speed(self : NativeSpatialAudioPlayer) -> Double {
   self.player.speed()
 }
 
 ///|
-pub fn NativeSpatialAudioPlayer::position_seconds(
+fn NativeSpatialAudioPlayer::position_seconds(
   self : NativeSpatialAudioPlayer,
 ) -> Float {
   duration_to_seconds(self.player.get_pos())
 }
 
 ///|
-pub fn NativeSpatialAudioPlayer::try_seek_seconds(
+fn NativeSpatialAudioPlayer::try_seek_seconds(
   self : NativeSpatialAudioPlayer,
   seconds : Float,
 ) -> Unit raise @rodio.SeekError {
@@ -502,7 +403,7 @@ pub fn NativeSpatialAudioPlayer::try_seek_seconds(
 }
 
 ///|
-pub fn NativeSpatialAudioPlayer::set_emitter_position(
+fn NativeSpatialAudioPlayer::set_emitter_position(
   self : NativeSpatialAudioPlayer,
   emitter : (Double, Double, Double),
 ) -> Unit {
@@ -510,7 +411,7 @@ pub fn NativeSpatialAudioPlayer::set_emitter_position(
 }
 
 ///|
-pub fn NativeSpatialAudioPlayer::set_left_ear_position(
+fn NativeSpatialAudioPlayer::set_left_ear_position(
   self : NativeSpatialAudioPlayer,
   position : (Double, Double, Double),
 ) -> Unit {
@@ -518,7 +419,7 @@ pub fn NativeSpatialAudioPlayer::set_left_ear_position(
 }
 
 ///|
-pub fn NativeSpatialAudioPlayer::set_right_ear_position(
+fn NativeSpatialAudioPlayer::set_right_ear_position(
   self : NativeSpatialAudioPlayer,
   position : (Double, Double, Double),
 ) -> Unit {

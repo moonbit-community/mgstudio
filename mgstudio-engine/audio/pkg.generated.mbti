@@ -4,7 +4,6 @@ package "Milky2018/mgstudio/audio"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
-  "Milky2018/mgstudio/audio/native_audio",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
@@ -53,9 +52,7 @@ pub fn pitch_set(@ecs.World, @asset.Handle[Pitch], Pitch) -> Bool
 // Errors
 
 // Types and methods
-pub struct AudioOutput {
-  stream : @native_audio.NativeAudioStream?
-}
+type AudioOutput
 pub fn AudioOutput::default() -> Self
 pub impl @app.Resource for AudioOutput
 

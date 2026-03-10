@@ -13,13 +13,13 @@
 // limitations under the License.
 
 ///|
-pub struct AudioOutput {
-  stream : @native_audio.NativeAudioStream?
+struct AudioOutput {
+  stream : NativeAudioStream?
 }
 
 ///|
 pub fn AudioOutput::default() -> AudioOutput {
-  let stream = @native_audio.open_default_output_stream() catch {
+  let stream = open_default_output_stream() catch {
     _ => return AudioOutput::{ stream: None }
   }
   AudioOutput::{ stream: Some(stream) }
@@ -117,7 +117,7 @@ pub impl @ecs.Component for PlaybackRemoveMarker with component() {
 }
 
 ///|
-fn audio_output_stream(world : @ecs.World) -> @native_audio.NativeAudioStream? {
+fn audio_output_stream(world : @ecs.World) -> NativeAudioStream? {
   match audio_resource_get(world, AudioOutput::resource()) {
     Some(output) => output.stream
     None => None
@@ -132,8 +132,8 @@ fn audio_output_available(world : @ecs.World) -> Bool {
 ///|
 fn audio_playback_config(
   settings : PlaybackSettings,
-) -> @native_audio.NativeAudioPlaybackConfig {
-  let mut config = @native_audio.NativeAudioPlaybackConfig::default().looped(
+) -> NativeAudioPlaybackConfig {
+  let mut config = NativeAudioPlaybackConfig::default().looped(
     match settings.mode {
       PlaybackMode::Loop => true
       _ => false

@@ -2,7 +2,7 @@
 package "Milky2018/mgstudio/render"
 
 import {
-  "Milky2018/mgstudio/render/native_gpu",
+  "Milky2018/mgstudio/render/renderer",
 }
 
 // Values
@@ -92,15 +92,15 @@ pub fn host_gpu_request_device() -> Int
 
 pub fn host_gpu_set_scissor(x~ : Int, y~ : Int, width~ : Int, height~ : Int) -> Unit
 
-pub fn render_diagnostics_snapshot() -> @native_gpu.RenderDiagnosticsSnapshot
+pub fn render_diagnostics_snapshot() -> @renderer.RenderDiagnosticsSnapshot
 
 pub fn screenshot_capture_surface_request() -> Int
 
 pub fn screenshot_capture_texture_request(texture_id~ : Int) -> Int
 
-pub fn screenshot_capture_texture_sync(texture_id~ : Int) -> @native_gpu.ScreenshotCaptureResult?
+pub fn screenshot_capture_texture_sync(texture_id~ : Int) -> @renderer.ScreenshotCaptureResult?
 
-pub fn screenshot_take_capture_result(Int) -> @native_gpu.ScreenshotCaptureResult?
+pub fn screenshot_take_capture_result(Int) -> @renderer.ScreenshotCaptureResult?
 
 // Errors
 
