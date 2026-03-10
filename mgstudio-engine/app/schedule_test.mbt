@@ -260,6 +260,11 @@ struct Param5 {
 }
 
 ///|
+struct Param6 {
+  value : Int
+}
+
+///|
 impl SystemParam for Param1 with init_state(_world) {
   Json::null()
 }
@@ -331,6 +336,21 @@ impl SystemParam for Param5 with get(_state) {
 
 ///|
 impl SystemParam for Param5 with store(self, _state) {
+  ignore(self)
+}
+
+///|
+impl SystemParam for Param6 with init_state(_world) {
+  Json::null()
+}
+
+///|
+impl SystemParam for Param6 with get(_state) {
+  { value: 6 }
+}
+
+///|
+impl SystemParam for Param6 with store(self, _state) {
   ignore(self)
 }
 
@@ -420,6 +440,39 @@ test "app: system_param5 injects parameters in order" {
     log[2] == 3 &&
     log[3] == 4 &&
     log[4] == 5,
+    content="true",
+  )
+}
+
+///|
+test "app: system_param6 injects parameters in order" {
+  let log : Array[Int] = []
+  let app = App::new(@ecs.World::new()).add_system(
+    system_param6(fn(
+      p1 : Param1,
+      p2 : Param2,
+      p3 : Param3,
+      p4 : Param4,
+      p5 : Param5,
+      p6 : Param6,
+    ) {
+      log.push(p1.value)
+      log.push(p2.value)
+      log.push(p3.value)
+      log.push(p4.value)
+      log.push(p5.value)
+      log.push(p6.value)
+    }),
+  )
+  app.run_once() |> ignore
+  inspect(
+    log.length() == 6 &&
+    log[0] == 1 &&
+    log[1] == 2 &&
+    log[2] == 3 &&
+    log[3] == 4 &&
+    log[4] == 5 &&
+    log[5] == 6,
     content="true",
   )
 }

@@ -12,8 +12,6 @@ type CurrentScene
 
 type HDRViewer
 
-type ImageViewerText
-
 type PerMethodSettings
 
 type SceneNumber

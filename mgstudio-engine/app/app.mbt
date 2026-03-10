@@ -554,6 +554,72 @@ pub fn[
 }
 
 ///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+] system_param6(
+  system : (P1, P2, P3, P4, P5, P6) -> Unit,
+) -> SystemFn[W] {
+  let state1 = Ref::new(Json::null())
+  let state2 = Ref::new(Json::null())
+  let state3 = Ref::new(Json::null())
+  let state4 = Ref::new(Json::null())
+  let state5 = Ref::new(Json::null())
+  let state6 = Ref::new(Json::null())
+  let state1_initialized = Ref::new(false)
+  let state2_initialized = Ref::new(false)
+  let state3_initialized = Ref::new(false)
+  let state4_initialized = Ref::new(false)
+  let state5_initialized = Ref::new(false)
+  let state6_initialized = Ref::new(false)
+  fn(_world : W) {
+    let world = system_param_abort_missing_world()
+    if !state1_initialized.val {
+      state1.val = P1::init_state(world)
+      state1_initialized.val = true
+    }
+    if !state2_initialized.val {
+      state2.val = P2::init_state(world)
+      state2_initialized.val = true
+    }
+    if !state3_initialized.val {
+      state3.val = P3::init_state(world)
+      state3_initialized.val = true
+    }
+    if !state4_initialized.val {
+      state4.val = P4::init_state(world)
+      state4_initialized.val = true
+    }
+    if !state5_initialized.val {
+      state5.val = P5::init_state(world)
+      state5_initialized.val = true
+    }
+    if !state6_initialized.val {
+      state6.val = P6::init_state(world)
+      state6_initialized.val = true
+    }
+    let p1 : P1 = P1::get(state1)
+    let p2 : P2 = P2::get(state2)
+    let p3 : P3 = P3::get(state3)
+    let p4 : P4 = P4::get(state4)
+    let p5 : P5 = P5::get(state5)
+    let p6 : P6 = P6::get(state6)
+    system(p1, p2, p3, p4, p5, p6)
+    P1::store(p1, state1)
+    P2::store(p2, state2)
+    P3::store(p3, state3)
+    P4::store(p4, state4)
+    P5::store(p5, state5)
+    P6::store(p6, state6)
+  }
+}
+
+///|
 pub fn[A] system_query1_ecs(
   key_a : @ecs.ComponentKey[A],
   system : (@ecs.Query1[A], @ecs.World) -> Unit,

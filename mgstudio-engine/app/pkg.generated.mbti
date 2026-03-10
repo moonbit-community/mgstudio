@@ -141,6 +141,8 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam] system_param5((P1, P2, P3, P4, P5) -> Unit) -> (W) -> Unit
 
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam] system_param6((P1, P2, P3, P4, P5, P6) -> Unit) -> (W) -> Unit
+
 pub fn system_param_empty_state(@ecs.World) -> Json
 
 pub fn[T] system_param_store_no_state(T, Ref[Json]) -> Unit
