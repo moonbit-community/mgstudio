@@ -4210,7 +4210,68 @@ fn render2d_tonemapping_lut_handles(
 }
 
 ///|
-fn render2d_draw_camera_bloom(
+fn render2d_apply_camera_bloom(
+  world : @ecs.World,
+  camera : CameraInstance,
+  source : @asset.Handle[@asset.Image],
+  view_width_logical : Int,
+  view_height_logical : Int,
+) -> Unit {
+  guard camera.bloom2d is Some(bloom) else { return }
+  if view_width_logical <= 0 || view_height_logical <= 0 {
+    return
+  }
+  let settings = bloom2d_sanitize_settings(bloom.settings)
+  world |> ignore
+  @render.host_gpu_apply_bloom2d(
+    scene_texture_id=source.id(),
+    enabled=if bloom.enabled { 1 } else { 0 },
+    intensity=settings.intensity,
+    low_frequency_boost=settings.low_frequency_boost,
+    low_frequency_boost_curvature=settings.low_frequency_boost_curvature,
+    high_pass_frequency=settings.high_pass_frequency,
+    threshold=settings.prefilter.threshold,
+    threshold_softness=settings.prefilter.threshold_softness,
+    composite_mode=match settings.composite_mode {
+      EnergyConserving => 0
+      Additive => 1
+    },
+    max_mip_dimension=settings.max_mip_dimension,
+    scale_x=settings.scale.x,
+    scale_y=settings.scale.y,
+    view_width=view_width_logical,
+    view_height=view_height_logical,
+  )
+}
+
+///|
+fn render2d_draw_camera_tonemapping(
+  world : @ecs.World,
+  source : @asset.Handle[@asset.Image],
+  tonemapping_mode : Int,
+  deband_dither_enabled : Bool,
+  view_width_logical : Int,
+  view_height_logical : Int,
+) -> Unit {
+  if view_width_logical <= 0 || view_height_logical <= 0 {
+    return
+  }
+  let luts = render2d_tonemapping_lut_handles(world)
+  @render.host_gpu_draw_tonemapping2d(
+    scene_texture_id=source.id(),
+    exposure=1.0F,
+    tonemapping_mode~,
+    deband_dither_enabled=if deband_dither_enabled { 1 } else { 0 },
+    view_width=view_width_logical,
+    view_height=view_height_logical,
+    agx_lut_texture_id=luts.agx.id(),
+    tony_lut_texture_id=luts.tony.id(),
+    blender_lut_texture_id=luts.blender.id(),
+  )
+}
+
+///|
+fn render2d_draw_camera_bloom_from_source(
   world : @ecs.World,
   camera : CameraInstance,
   source : @asset.Handle[@asset.Image],
@@ -4219,7 +4280,13 @@ fn render2d_draw_camera_bloom(
   view_width_logical : Int,
   view_height_logical : Int,
 ) -> Unit {
-  guard camera.bloom2d is Some(bloom) else { return }
+  guard camera.bloom2d is Some(bloom) else {
+    render2d_draw_camera_tonemapping(
+      world, source, tonemapping_mode, deband_dither_enabled, view_width_logical,
+      view_height_logical,
+    )
+    return
+  }
   if view_width_logical <= 0 || view_height_logical <= 0 {
     return
   }
@@ -5973,6 +6040,11 @@ fn render2d_tonemapping_mode_to_int(mode : Tonemapping) -> Int {
 }
 
 ///|
+fn render2d_tonemapping_mode_enabled(mode : Int) -> Bool {
+  mode != 0
+}
+
+///|
 fn camera_tonemapping_mode(world : @ecs.World, camera : @core.Entity) -> Int {
   let store = world.component(ecs_key_tonemapping)
   match store.get(camera) {
@@ -6894,6 +6966,65 @@ fn draw_items_for_layers(
   layers : RenderLayers,
 ) -> Array[DrawItem] {
   let items : Array[DrawItem] = []
+  for
+    item in draw_scene_items_for_layers(
+      sprites, extra_sprites, extra_sprite_texture_slices, meshes, layers,
+    ) {
+    items.push(item)
+  }
+  for
+    item in draw_ui_overlay_items_for_layers(
+      extra_ui_rects, extra_ui_box_shadows, extra_ui_texture_slices, camera_entity,
+      layers,
+    ) {
+    items.push(item)
+  }
+  sort_draw_items(items)
+}
+
+///|
+fn sort_draw_items(items : Array[DrawItem]) -> Array[DrawItem] {
+  items.sort_by(fn(a, b) {
+    let cz = cmp_float(a.z, b.z)
+    if cz != 0 {
+      return cz
+    }
+    let cp = cmp_int(a.phase, b.phase)
+    if cp != 0 {
+      return cp
+    }
+    let cpipe = cmp_int(a.pipeline, b.pipeline)
+    if cpipe != 0 {
+      return cpipe
+    }
+    if a.phase == 0 {
+      let cb = cmp_int(a.batch, b.batch)
+      if cb != 0 {
+        return cb
+      }
+    }
+    let ce = cmp_int(a.entity_id, b.entity_id)
+    if ce != 0 {
+      return ce
+    }
+    let cg = cmp_int(a.entity_generation, b.entity_generation)
+    if cg != 0 {
+      return cg
+    }
+    cmp_int(a.tie, b.tie)
+  })
+  items
+}
+
+///|
+fn draw_scene_items_for_layers(
+  sprites : Array[SpriteInstance],
+  extra_sprites : Array[SpriteInstance],
+  extra_sprite_texture_slices : Array[SpriteTextureSliceInstance],
+  meshes : Array[MeshInstance],
+  layers : RenderLayers,
+) -> Array[DrawItem] {
+  let items : Array[DrawItem] = []
   for i in 0..<sprites.length() {
     let sprite = sprites[i]
     if !sprite.layers.matches(layers) {
@@ -6946,6 +7077,37 @@ fn draw_items_for_layers(
       tie: 1_500_000 + i,
     })
   }
+  for i in 0..<meshes.length() {
+    let mesh = meshes[i]
+    if !mesh.layers.matches(layers) {
+      continue
+    }
+    guard mesh_alpha_phase(mesh.alpha_mode, mesh.color.a) is Some(phase) else {
+      continue
+    }
+    items.push(DrawItem::{
+      kind: Mesh(i),
+      z: mesh.transform.translation.z,
+      phase,
+      pipeline: 1,
+      batch: mesh.mesh_id,
+      entity_id: mesh.entity.id,
+      entity_generation: mesh.entity.generation,
+      tie: i,
+    })
+  }
+  sort_draw_items(items)
+}
+
+///|
+fn draw_ui_overlay_items_for_layers(
+  extra_ui_rects : Array[UiRectInstance],
+  extra_ui_box_shadows : Array[UiBoxShadowInstance],
+  extra_ui_texture_slices : Array[UiTextureSliceInstance],
+  camera_entity : @core.Entity,
+  layers : RenderLayers,
+) -> Array[DrawItem] {
+  let items : Array[DrawItem] = []
   for i in 0..<extra_ui_rects.length() {
     let rect = extra_ui_rects[i]
     if !rect.layers.matches(layers) ||
@@ -7000,55 +7162,7 @@ fn draw_items_for_layers(
       tie: 2_000_000 + i,
     })
   }
-  for i in 0..<meshes.length() {
-    let mesh = meshes[i]
-    if !mesh.layers.matches(layers) {
-      continue
-    }
-    guard mesh_alpha_phase(mesh.alpha_mode, mesh.color.a) is Some(phase) else {
-      continue
-    }
-    items.push(DrawItem::{
-      kind: Mesh(i),
-      z: mesh.transform.translation.z,
-      phase,
-      pipeline: 1,
-      batch: mesh.mesh_id,
-      entity_id: mesh.entity.id,
-      entity_generation: mesh.entity.generation,
-      tie: i,
-    })
-  }
-  items.sort_by(fn(a, b) {
-    let cz = cmp_float(a.z, b.z)
-    if cz != 0 {
-      return cz
-    }
-    let cp = cmp_int(a.phase, b.phase)
-    if cp != 0 {
-      return cp
-    }
-    let cpipe = cmp_int(a.pipeline, b.pipeline)
-    if cpipe != 0 {
-      return cpipe
-    }
-    if a.phase == 0 {
-      let cb = cmp_int(a.batch, b.batch)
-      if cb != 0 {
-        return cb
-      }
-    }
-    let ce = cmp_int(a.entity_id, b.entity_id)
-    if ce != 0 {
-      return ce
-    }
-    let cg = cmp_int(a.entity_generation, b.entity_generation)
-    if cg != 0 {
-      return cg
-    }
-    cmp_int(a.tie, b.tie)
-  })
-  items
+  sort_draw_items(items)
 }
 
 ///|
@@ -7163,6 +7277,41 @@ test "render2d: UI overlay draw items route by target camera" {
     camera_a, layers,
   )
   let ok = items.length() == 1 && items[0].kind is UiRectExtra(0)
+  inspect(ok, content="true")
+}
+
+///|
+test "render2d: scene draw items exclude UI overlays" {
+  let layers = RenderLayers::default()
+  let camera = @core.Entity::new(10, 0)
+  let scene_items = draw_scene_items_for_layers([], [], [], [], layers)
+  let ui_items = draw_ui_overlay_items_for_layers(
+    [
+      UiRectInstance::{
+        entity: @core.Entity::new(100, 0),
+        target_camera: camera,
+        transform: @math.Transform::identity(),
+        anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+        draw_scale: @math.Vec2::new(1.0F, 1.0F),
+        color: Color::white(),
+        texture: @asset.Handle::new(1),
+        layers,
+        uv_min: @math.Vec2::new(0.0F, 0.0F),
+        uv_max: @math.Vec2::new(1.0F, 1.0F),
+        scissor: None,
+        flags: 0,
+        radius: UiCornerRadii::zero(),
+        border: UiBorderRect::zero(),
+      },
+    ],
+    [],
+    [],
+    camera,
+    layers,
+  )
+  let ok = scene_items.length() == 0 &&
+    ui_items.length() == 1 &&
+    ui_items[0].kind is UiRectExtra(0)
   inspect(ok, content="true")
 }
 
@@ -7667,6 +7816,20 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         continue
       }
       let (clear_enabled, clear) = camera.camera.clear_color.resolve()
+      let scene_draw_items = draw_scene_items_for_layers(
+        sprites,
+        extra_sprites,
+        extra_sprite_texture_slices,
+        meshes,
+        camera.layers,
+      )
+      let ui_overlay_draw_items = draw_ui_overlay_items_for_layers(
+        extra_ui_rects,
+        extra_ui_box_shadows,
+        extra_ui_texture_slices,
+        camera.entity,
+        camera.layers,
+      )
       let draw_items = draw_items_for_layers(
         sprites,
         extra_sprites,
@@ -7679,6 +7842,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         camera.layers,
       )
       fn draw_camera_items(
+        items : Array[DrawItem],
         draw_viewport_x : Int,
         draw_viewport_y : Int,
         draw_viewport_width : Int,
@@ -7718,7 +7882,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           }
         }
 
-        for item in draw_items {
+        for item in items {
           match item.kind {
             SpriteMain(i) => {
               let sprite = sprites[i]
@@ -7946,10 +8110,15 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         world,
         camera.entity,
       )
-      let mut auto_bloom_source : @asset.Handle[@asset.Image]? = None
-      if camera.bloom2d is Some(bloom) {
-        if bloom.source is None && render2d_targets_host_window(camera.target) {
-          auto_bloom_source = Some(
+      let mut auto_postprocess_source : @asset.Handle[@asset.Image]? = None
+      if render2d_targets_host_window(camera.target) {
+        let needs_auto_postprocess = if camera.bloom2d is Some(bloom) {
+          bloom.source is None
+        } else {
+          render2d_tonemapping_mode_enabled(tonemapping_mode)
+        }
+        if needs_auto_postprocess {
+          auto_postprocess_source = Some(
             render2d_get_or_create_bloom2d_auto_target(
               rs.val,
               camera.entity,
@@ -7960,7 +8129,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         }
       }
 
-      if auto_bloom_source is Some(source) {
+      if auto_postprocess_source is Some(source) {
         @render.host_gpu_begin_pass(
           target_id=@asset.Handle::id(source),
           width=view_width_logical,
@@ -7984,8 +8153,40 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           viewport_depth_max~,
           clear_enabled=if clear_enabled { 1 } else { 0 },
         )
-        draw_camera_items(0, 0, viewport_width, viewport_height, scale_factor)
+        draw_camera_items(
+          scene_draw_items, 0, 0, viewport_width, viewport_height, scale_factor,
+        )
         @render.host_gpu_end_pass()
+
+        if camera.bloom2d is Some(_) {
+          @render.host_gpu_begin_pass(
+            target_id=@asset.Handle::id(source),
+            width=view_width_logical,
+            height=view_height_logical,
+            clear_r=0.0F,
+            clear_g=0.0F,
+            clear_b=0.0F,
+            clear_a=1.0F,
+            camera_x=camera.transform.translation.x,
+            camera_y=camera.transform.translation.y,
+            camera_rotation=camera.transform.rotation_z(),
+            camera_scale=render2d_camera_uniform_scale(
+              camera.projection,
+              camera.transform,
+            ),
+            viewport_x=0,
+            viewport_y=0,
+            viewport_width~,
+            viewport_height~,
+            viewport_depth_min~,
+            viewport_depth_max~,
+            clear_enabled=0,
+          )
+          render2d_apply_camera_bloom(
+            world, camera, source, viewport_width, viewport_height,
+          )
+          @render.host_gpu_end_pass()
+        }
 
         @render.host_gpu_begin_pass(
           target_id~,
@@ -8010,9 +8211,13 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           viewport_depth_max~,
           clear_enabled=if clear_enabled { 1 } else { 0 },
         )
-        render2d_draw_camera_bloom(
-          world, camera, source, tonemapping_mode, deband_dither_enabled, viewport_width,
+        render2d_draw_camera_tonemapping(
+          world, source, tonemapping_mode, deband_dither_enabled, viewport_width,
           viewport_height,
+        )
+        draw_camera_items(
+          ui_overlay_draw_items, viewport_x, viewport_y, viewport_width, viewport_height,
+          scale_factor,
         )
         gizmos_draw_lines(camera.layers)
         @render.host_gpu_end_pass()
@@ -8043,10 +8248,10 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         clear_enabled=if clear_enabled { 1 } else { 0 },
       )
       draw_camera_items(
-        viewport_x, viewport_y, viewport_width, viewport_height, scale_factor,
+        draw_items, viewport_x, viewport_y, viewport_width, viewport_height, scale_factor,
       )
       if camera.bloom2d is Some(bloom) && bloom.source is Some(source) {
-        render2d_draw_camera_bloom(
+        render2d_draw_camera_bloom_from_source(
           world, camera, source, tonemapping_mode, deband_dither_enabled, viewport_width,
           viewport_height,
         )

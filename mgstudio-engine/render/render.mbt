@@ -830,6 +830,66 @@ pub fn host_gpu_draw_motion_blur(
 }
 
 ///|
+pub fn host_gpu_apply_bloom2d(
+  scene_texture_id~ : Int,
+  enabled~ : Int,
+  intensity~ : Float,
+  low_frequency_boost~ : Float,
+  low_frequency_boost_curvature~ : Float,
+  high_pass_frequency~ : Float,
+  threshold~ : Float,
+  threshold_softness~ : Float,
+  composite_mode~ : Int,
+  max_mip_dimension~ : Int,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  view_width~ : Int,
+  view_height~ : Int,
+) -> Unit {
+  @native_gpu.apply_bloom2d(
+    scene_texture_id~,
+    enabled~,
+    intensity~,
+    low_frequency_boost~,
+    low_frequency_boost_curvature~,
+    high_pass_frequency~,
+    threshold~,
+    threshold_softness~,
+    composite_mode~,
+    max_mip_dimension~,
+    scale_x~,
+    scale_y~,
+    view_width~,
+    view_height~,
+  )
+}
+
+///|
+pub fn host_gpu_draw_tonemapping2d(
+  scene_texture_id~ : Int,
+  exposure~ : Float,
+  tonemapping_mode~ : Int,
+  deband_dither_enabled~ : Int,
+  view_width~ : Int,
+  view_height~ : Int,
+  agx_lut_texture_id~ : Int,
+  tony_lut_texture_id~ : Int,
+  blender_lut_texture_id~ : Int,
+) -> Unit {
+  @native_gpu.draw_tonemapping2d(
+    scene_texture_id~,
+    exposure~,
+    tonemapping_mode~,
+    deband_dither_enabled~,
+    view_width~,
+    view_height~,
+    agx_lut_texture_id~,
+    tony_lut_texture_id~,
+    blender_lut_texture_id~,
+  )
+}
+
+///|
 pub fn host_gpu_draw_bloom2d(
   scene_texture_id~ : Int,
   enabled~ : Int,

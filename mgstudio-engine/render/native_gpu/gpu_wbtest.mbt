@@ -15,7 +15,7 @@
 ///|
 test "native_gpu: interleaved 2d mesh csv keeps original vertex count" {
   let backend = GpuBackend::new()
-  backend.meshes.val.clear()
+  backend.meshes.clear()
   let vertices = [
     -1.0F,
     -1.0F,
@@ -44,10 +44,10 @@ test "native_gpu: interleaved 2d mesh csv keeps original vertex count" {
   ]
   let mesh_id = backend.create_mesh_triangles_xyuvrgba(vertices)
   let ok = mesh_id > 0 &&
-    backend.meshes.val.length() == 1 &&
-    backend.meshes.val[0].id == mesh_id &&
-    backend.meshes.val[0].vertex_count.reinterpret_as_int() == 3 &&
-    backend.meshes.val[0].vertex_stride_bytes == 32UL
+    backend.meshes.length() == 1 &&
+    backend.meshes[0].id == mesh_id &&
+    backend.meshes[0].vertex_count.reinterpret_as_int() == 3 &&
+    backend.meshes[0].vertex_stride_bytes == 32UL
   inspect(ok, content="true")
 }
 
@@ -74,7 +74,7 @@ test "native_gpu: mesh3d uniform slot pool grows per draw slot" {
 ///|
 test "native_gpu: large mesh3d upload switches to u32 index buffers" {
   let backend = GpuBackend::new()
-  backend.meshes.val.clear()
+  backend.meshes.clear()
   let vertices : Array[Float] = []
   for i in 0..<65538 {
     let x = Float::from_int(i % 3)
@@ -91,12 +91,12 @@ test "native_gpu: large mesh3d upload switches to u32 index buffers" {
   }
   let mesh_id = backend.create_mesh3d_xyzuvrgba(vertices, 0)
   let ok = mesh_id > 0 &&
-    backend.meshes.val.length() == 1 &&
-    backend.meshes.val[0].id == mesh_id &&
-    backend.meshes.val[0].vertex_count == 65538U &&
-    backend.meshes.val[0].index_count == 65538U &&
-    backend.meshes.val[0].index_stride_bytes == 4UL &&
-    backend.meshes.val[0].uses_u32_indices
+    backend.meshes.length() == 1 &&
+    backend.meshes[0].id == mesh_id &&
+    backend.meshes[0].vertex_count == 65538U &&
+    backend.meshes[0].index_count == 65538U &&
+    backend.meshes[0].index_stride_bytes == 4UL &&
+    backend.meshes[0].uses_u32_indices
   inspect(ok, content="true")
 }
 

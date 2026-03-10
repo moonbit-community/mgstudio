@@ -7,6 +7,8 @@ import {
 }
 
 // Values
+pub fn apply_bloom2d(scene_texture_id~ : Int, enabled~ : Int, intensity~ : Float, low_frequency_boost~ : Float, low_frequency_boost_curvature~ : Float, high_pass_frequency~ : Float, threshold~ : Float, threshold_softness~ : Float, composite_mode~ : Int, max_mip_dimension~ : Int, scale_x~ : Float, scale_y~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
+
 pub fn asset_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
 
 pub fn asset_create_texture_empty(width~ : Int, height~ : Int, mip_level_count~ : Int, nearest~ : Bool) -> Int
@@ -70,6 +72,8 @@ pub fn draw_motion_blur(scene_texture_id~ : Int, velocity_texture_id~ : Int, shu
 pub fn draw_sprite(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float) -> Unit
 
 pub fn draw_sprite_uv(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, uv_min_x~ : Float, uv_min_y~ : Float, uv_max_x~ : Float, uv_max_y~ : Float) -> Unit
+
+pub fn draw_tonemapping2d(scene_texture_id~ : Int, exposure~ : Float, tonemapping_mode~ : Int, deband_dither_enabled~ : Int, view_width~ : Int, view_height~ : Int, agx_lut_texture_id~ : Int, tony_lut_texture_id~ : Int, blender_lut_texture_id~ : Int) -> Unit
 
 pub fn draw_ui_box_shadow(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, size_x~ : Float, size_y~ : Float, radius_tl~ : Float, radius_tr~ : Float, radius_br~ : Float, radius_bl~ : Float, blur~ : Float, samples~ : Int) -> Unit
 
@@ -215,6 +219,9 @@ pub struct GpuBackend {
   mut bloom2d_downsample_uniform_pipeline : @wgpu_mbt.RenderPipeline?
   mut bloom2d_upsample_pipeline_energy : @wgpu_mbt.RenderPipeline?
   mut bloom2d_upsample_pipeline_additive : @wgpu_mbt.RenderPipeline?
+  mut bloom2d_upsample_final_pipeline_energy : @wgpu_mbt.RenderPipeline?
+  mut bloom2d_upsample_final_pipeline_additive : @wgpu_mbt.RenderPipeline?
+  mut bloom2d_upsample_final_pipeline_format : @wgpu_mbt.TextureFormat?
   mut bloom2d_final_pipeline : @wgpu_mbt.RenderPipeline?
   mut bloom2d_final_pipeline_surface : @wgpu_mbt.RenderPipeline?
   mut bloom2d_final_pipeline_surface_format : @wgpu_mbt.TextureFormat?
@@ -225,17 +232,18 @@ pub struct GpuBackend {
   mut bloom2d_mip_count : Int
   mut bloom2d_mip_width : Int
   mut bloom2d_mip_height : Int
-  mesh3d_material_bg_cache : Ref[Array[Mesh3dMaterialBindGroupCacheEntry]]
-  sampler_cache : Ref[@hashmap.HashMap[String, @wgpu_mbt.Sampler]]
-  next_id : Ref[Int]
+  mesh3d_material_bg_cache : Array[Mesh3dMaterialBindGroupCacheEntry]
+  sampler_cache : @hashmap.HashMap[String, @wgpu_mbt.Sampler]
+  mut next_id : Int
   mut point_shadow_fallback_texture_id : Int
   mut shadow_color_texture : @wgpu_mbt.Texture?
   mut shadow_color_view : @wgpu_mbt.TextureView?
   mut shadow_color_width : Int
   mut shadow_color_height : Int
-  textures : Ref[Array[GpuTextureInfo]]
-  meshes : Ref[Array[GpuMeshInfo]]
+  textures : Array[GpuTextureInfo]
+  meshes : Array[GpuMeshInfo]
 }
+pub fn GpuBackend::apply_bloom2d(Self, Int, Int, Float, Float, Float, Float, Float, Float, Int, Int, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::begin_frame(Self) -> Unit
 pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
@@ -260,6 +268,7 @@ pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float
 pub fn GpuBackend::draw_mesh3d(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_motion_blur(Self, Int, Int, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_tonemapping2d(Self, Int, Float, Int, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_box_shadow(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_rect(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_ui_texture_slice(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
