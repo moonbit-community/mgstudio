@@ -95,14 +95,7 @@ pub impl @image.TextureHandle for Handle[Image] with texture_id(self) {
 }
 
 ///|
-pub struct Shader {
-  source : String
-}
-
-///|
-pub fn Shader::new(source : String) -> Shader {
-  Shader::{ source, }
-}
+pub type Shader = @shader.Shader
 
 ///|
 pub struct Blob {}

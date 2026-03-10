@@ -14,12 +14,19 @@
 
 ///|
 /// Shader asset API boundary aligned with Bevy's `bevy_shader` crate.
-/// Runtime implementation currently lives in `Milky2018/mgstudio/asset`.
+/// Runtime ownership lives in `Milky2018/mgstudio/shader`.
 
 ///|
-pub type Shader = @asset.Shader
+pub struct Shader {
+  source : String
+}
+
+///|
+pub fn Shader::new(source : String) -> Shader {
+  Shader::{ source, }
+}
 
 ///|
 pub fn shader_from_source(source : String) -> Shader {
-  @asset.Shader::new(source)
+  Shader::new(source)
 }

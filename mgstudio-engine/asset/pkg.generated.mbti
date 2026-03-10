@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/shader",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
 }
@@ -258,7 +259,7 @@ pub fn AssetServer::load_font(Self, String) -> Handle[Font]
 pub fn AssetServer::load_image(Self, String) -> Handle[@image.Image]
 pub fn AssetServer::load_nearest(Self, String) -> Handle[@image.Image]
 pub fn AssetServer::load_texture_bytes(Self, Bytes, Bool) -> Handle[@image.Image]
-pub fn AssetServer::load_wgsl(Self, String) -> Handle[Shader]
+pub fn AssetServer::load_wgsl(Self, String) -> Handle[@shader.Shader]
 pub fn AssetServer::load_with_registered_loader(Self, String, Bool) -> Int
 pub fn AssetServer::load_with_settings(Self, String, (ImageLoaderSettings) -> Unit) -> Handle[@image.Image]
 pub fn AssetServer::new() -> Self
@@ -335,11 +336,6 @@ pub struct ParsedAssetPath {
   label : String?
 }
 
-pub struct Shader {
-  source : String
-}
-pub fn Shader::new(String) -> Self
-
 pub struct TextureAtlas {
   layout : Handle[TextureAtlasLayout]
   index : Int
@@ -400,6 +396,8 @@ pub using @image {type ImageSampler}
 pub using @image {type ImageSamplerBorderColor}
 
 pub using @image {type ImageSamplerDescriptor}
+
+pub using @shader {type Shader}
 
 // Traits
 

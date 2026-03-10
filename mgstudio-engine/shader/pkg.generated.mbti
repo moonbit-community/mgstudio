@@ -1,19 +1,18 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/shader"
 
-import {
-  "Milky2018/mgstudio/asset",
-}
-
 // Values
-pub fn shader_from_source(String) -> @asset.Shader
+pub fn shader_from_source(String) -> Shader
 
 // Errors
 
 // Types and methods
+pub struct Shader {
+  source : String
+}
+pub fn Shader::new(String) -> Self
 
 // Type aliases
-pub using @asset {type Shader}
 
 // Traits
 
