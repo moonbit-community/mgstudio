@@ -605,6 +605,8 @@ pub(all) struct ColorGrading {
   mut midtones : ColorGradingSection
   mut highlights : ColorGradingSection
 }
+pub fn ColorGrading::all_sections(Self) -> Iter[ColorGradingSection]
+pub fn ColorGrading::all_sections_mut(Self) -> Iter[ColorGradingSection]
 pub fn ColorGrading::default() -> Self
 pub fn ColorGrading::with_identical_sections(ColorGradingGlobal, ColorGradingSection) -> Self
 pub impl @ecs.Component for ColorGrading

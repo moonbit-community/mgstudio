@@ -133,6 +133,39 @@ test "render3d: direct color grading field mutation matches Bevy-style usage" {
 }
 
 ///|
+test "render3d: color grading all_sections iterates in Bevy order" {
+  let grading = ColorGrading::default()
+  grading.shadows.gamma = 1.1F
+  grading.midtones.gamma = 1.2F
+  grading.highlights.gamma = 1.3F
+  let values : Array[Float] = []
+  for section in grading.all_sections() {
+    values.push(section.gamma)
+  }
+  let ok = values.length() == 3 &&
+    color_grading_approx_eq(values[0], 1.1F) &&
+    color_grading_approx_eq(values[1], 1.2F) &&
+    color_grading_approx_eq(values[2], 1.3F)
+  inspect(ok, content="true")
+}
+
+///|
+test "render3d: color grading all_sections_mut updates original sections" {
+  let grading = ColorGrading::default()
+  for section in grading.all_sections_mut() {
+    section.gamma = section.gamma + 0.5F
+    section.saturation = section.saturation + 0.25F
+  }
+  let ok = color_grading_approx_eq(grading.shadows.gamma, 1.5F) &&
+    color_grading_approx_eq(grading.midtones.gamma, 1.5F) &&
+    color_grading_approx_eq(grading.highlights.gamma, 1.5F) &&
+    color_grading_approx_eq(grading.shadows.saturation, 1.25F) &&
+    color_grading_approx_eq(grading.midtones.saturation, 1.25F) &&
+    color_grading_approx_eq(grading.highlights.saturation, 1.25F)
+  inspect(ok, content="true")
+}
+
+///|
 test "render3d: color grading alone enables tonemap postprocess path" {
   let enabled = render3d_tonemap_postprocess_enabled(
     None,

@@ -694,58 +694,20 @@ fn update_color_grading_settings(
   }
 
   if delta != 0.0F {
-    let current = per_method_settings.get_ref().val.settings
+    let next = per_method_settings.get_ref().val.settings
       .get(current_method)
       .unwrap_or(@render3d.ColorGrading::default())
-    let next = match selected_parameter.get_ref().val.value {
-      0 =>
-        @render3d.ColorGrading::{
-          ..current,
-          global: @render3d.ColorGradingGlobal::{
-            ..current.global,
-            exposure: current.global.exposure + delta,
-          },
-        }
+    match selected_parameter.get_ref().val.value {
+      0 => next.global.exposure = next.global.exposure + delta
       1 =>
-        @render3d.ColorGrading::{
-          ..current,
-          shadows: @render3d.ColorGradingSection::{
-            ..current.shadows,
-            gamma: current.shadows.gamma + delta,
-          },
-          midtones: @render3d.ColorGradingSection::{
-            ..current.midtones,
-            gamma: current.midtones.gamma + delta,
-          },
-          highlights: @render3d.ColorGradingSection::{
-            ..current.highlights,
-            gamma: current.highlights.gamma + delta,
-          },
+        for section in next.all_sections_mut() {
+          section.gamma = section.gamma + delta
         }
       2 =>
-        @render3d.ColorGrading::{
-          ..current,
-          shadows: @render3d.ColorGradingSection::{
-            ..current.shadows,
-            saturation: current.shadows.saturation + delta,
-          },
-          midtones: @render3d.ColorGradingSection::{
-            ..current.midtones,
-            saturation: current.midtones.saturation + delta,
-          },
-          highlights: @render3d.ColorGradingSection::{
-            ..current.highlights,
-            saturation: current.highlights.saturation + delta,
-          },
+        for section in next.all_sections_mut() {
+          section.saturation = section.saturation + delta
         }
-      _ =>
-        @render3d.ColorGrading::{
-          ..current,
-          global: @render3d.ColorGradingGlobal::{
-            ..current.global,
-            post_saturation: current.global.post_saturation + delta,
-          },
-        }
+      _ => next.global.post_saturation = next.global.post_saturation + delta
     }
     per_method_settings.get_ref().val.settings.set(current_method, next)
   }

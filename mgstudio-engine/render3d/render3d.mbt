@@ -2153,6 +2153,20 @@ pub fn ColorGrading::with_identical_sections(
 }
 
 ///|
+pub fn ColorGrading::all_sections(
+  self : ColorGrading,
+) -> Iter[ColorGradingSection] {
+  [self.shadows, self.midtones, self.highlights].iter()
+}
+
+///|
+pub fn ColorGrading::all_sections_mut(
+  self : ColorGrading,
+) -> Iter[ColorGradingSection] {
+  [self.shadows, self.midtones, self.highlights].iter()
+}
+
+///|
 /// Camera tonemapping mode aligned with Bevy's `Tonemapping`.
 pub(all) enum Tonemapping {
   None
