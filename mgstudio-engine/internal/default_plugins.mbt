@@ -88,6 +88,9 @@ const DEFAULT_PLUGIN_ID_TEXT : String = "bevy_text::TextPlugin"
 const DEFAULT_PLUGIN_ID_RENDER3D : String = "bevy_pbr::PbrPlugin"
 
 ///|
+const DEFAULT_PLUGIN_ID_ANTI_ALIAS : String = @anti_alias.ANTI_ALIAS_PLUGIN_ID
+
+///|
 const DEFAULT_PLUGIN_ID_RENDER2D : String = "bevy_sprite::SpritePlugin"
 
 ///|
@@ -246,6 +249,12 @@ fn default_plugins_builder(
     id=DEFAULT_PLUGIN_ID_RENDER3D,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @pbr.render3d_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_ANTI_ALIAS,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @anti_alias.anti_alias_plugin(app)
     }),
   )
   .add_named(

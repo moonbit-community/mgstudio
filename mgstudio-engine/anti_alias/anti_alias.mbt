@@ -14,56 +14,72 @@
 
 ///|
 /// Anti-aliasing API boundary aligned with Bevy's `bevy_anti_alias` crate.
-/// Runtime implementation currently lives in `Milky2018/mgstudio/pbr`.
+/// Surface re-exports are sourced from `core_pipeline` and `post_process`.
 /// Current surface maps to available MSAA/FXAA/TAA components.
 
 ///|
-pub type Msaa = @pbr.Msaa
+pub struct AntiAliasPlugin {}
 
 ///|
-pub type Fxaa = @pbr.Fxaa
+pub fn AntiAliasPlugin::default() -> AntiAliasPlugin {
+  AntiAliasPlugin::{  }
+}
 
 ///|
-pub type FxaaSensitivity = @pbr.FxaaSensitivity
+pub const ANTI_ALIAS_PLUGIN_ID : String = "bevy_anti_alias::AntiAliasPlugin"
 
 ///|
-pub type TemporalAntiAliasing = @pbr.TemporalAntiAliasing
+pub fn anti_alias_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
+}
 
 ///|
-pub type TemporalJitter = @pbr.TemporalJitter
+pub type Msaa = @core_pipeline.Msaa
 
 ///|
-pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @pbr.ecs_key_msaa
+pub type Fxaa = @post_process.Fxaa
 
 ///|
-pub let ecs_key_fxaa : @ecs.ComponentKey[Fxaa] = @pbr.ecs_key_fxaa
+pub type FxaaSensitivity = @post_process.FxaaSensitivity
 
 ///|
-pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing] = @pbr.ecs_key_temporal_anti_aliasing
+pub type TemporalAntiAliasing = @post_process.TemporalAntiAliasing
 
 ///|
-pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter] = @pbr.ecs_key_temporal_jitter
+pub type TemporalJitter = @post_process.TemporalJitter
+
+///|
+pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @core_pipeline.ecs_key_msaa
+
+///|
+pub let ecs_key_fxaa : @ecs.ComponentKey[Fxaa] = @post_process.ecs_key_fxaa
+
+///|
+pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing] = @post_process.ecs_key_temporal_anti_aliasing
+
+///|
+pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter] = @post_process.ecs_key_temporal_jitter
 
 ///|
 pub fn get_msaa_store(world : @ecs.World) -> @ecs.ComponentAccess[Msaa] {
-  @pbr.get_msaa_store(world)
+  world.component(ecs_key_msaa)
 }
 
 ///|
 pub fn get_fxaa_store(world : @ecs.World) -> @ecs.ComponentAccess[Fxaa] {
-  @pbr.get_fxaa_store(world)
+  world.component(ecs_key_fxaa)
 }
 
 ///|
 pub fn get_temporal_anti_aliasing_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[TemporalAntiAliasing] {
-  @pbr.get_temporal_anti_aliasing_store(world)
+  world.component(ecs_key_temporal_anti_aliasing)
 }
 
 ///|
 pub fn get_temporal_jitter_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[TemporalJitter] {
-  @pbr.get_temporal_jitter_store(world)
+  world.component(ecs_key_temporal_jitter)
 }

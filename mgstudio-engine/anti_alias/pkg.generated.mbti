@@ -2,12 +2,17 @@
 package "Milky2018/mgstudio/anti_alias"
 
 import {
+  "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core_pipeline",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/post_process",
 }
 
 // Values
+pub const ANTI_ALIAS_PLUGIN_ID : String = "bevy_anti_alias::AntiAliasPlugin"
+
+pub fn anti_alias_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub let ecs_key_fxaa : @ecs.ComponentKey[@post_process.Fxaa]
 
 pub let ecs_key_msaa : @ecs.ComponentKey[@core_pipeline.Msaa]
@@ -27,6 +32,9 @@ pub fn get_temporal_jitter_store(@ecs.World) -> @ecs.ComponentAccess[@post_proce
 // Errors
 
 // Types and methods
+pub struct AntiAliasPlugin {
+}
+pub fn AntiAliasPlugin::default() -> Self
 
 // Type aliases
 pub using @post_process {type Fxaa}

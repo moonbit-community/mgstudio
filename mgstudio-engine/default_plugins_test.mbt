@@ -13,11 +13,41 @@
 // limitations under the License.
 
 ///|
+const DEFAULT_PLUGIN_ID_RENDER3D : String = "bevy_pbr::PbrPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_ANTI_ALIAS : String = "bevy_anti_alias::AntiAliasPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_RENDER2D : String = "bevy_sprite::SpritePlugin"
+
+///|
+fn plugin_index(
+  builder : @app.PluginGroupBuilder[@ecs.World],
+  plugin_id : String,
+) -> Int {
+  let mut index = -1
+  for i, entry in builder.plugins {
+    if index == -1 && entry.id == plugin_id {
+      index = i
+    }
+  }
+  index
+}
+
+///|
 test "default plugins: include winit plugin after window plugin" {
   let builder = @internal.DefaultPlugins::build()
   inspect(builder.contains(@window.WINDOW_PLUGIN_ID), content="true")
   inspect(builder.contains("bevy_winit::WinitPlugin"), content="true")
   inspect(builder.enabled("bevy_winit::WinitPlugin"), content="true")
+  inspect(builder.contains(DEFAULT_PLUGIN_ID_ANTI_ALIAS), content="true")
+  inspect(builder.enabled(DEFAULT_PLUGIN_ID_ANTI_ALIAS), content="true")
+  let render3d_index = plugin_index(builder, DEFAULT_PLUGIN_ID_RENDER3D)
+  let anti_alias_index = plugin_index(builder, DEFAULT_PLUGIN_ID_ANTI_ALIAS)
+  let render2d_index = plugin_index(builder, DEFAULT_PLUGIN_ID_RENDER2D)
+  inspect(render3d_index < anti_alias_index, content="true")
+  inspect(anti_alias_index < render2d_index, content="true")
   inspect(builder.contains("bevy_gltf::GltfPlugin"), content="true")
   inspect(builder.enabled("bevy_gltf::GltfPlugin"), content="true")
 }
