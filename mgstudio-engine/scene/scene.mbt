@@ -135,6 +135,11 @@ pub fn GltfLodVisibilityPolicy::with_step(
 }
 
 ///|
+let scene_gltf_lod_visibility_policy_ref : Ref[GltfLodVisibilityPolicy] = Ref::new(
+  GltfLodVisibilityPolicy::default(),
+)
+
+///|
 fn scene_pending() -> Scene {
   Scene::{ nodes3d: [], ready: false }
 }
@@ -221,16 +226,6 @@ priv struct SceneAssetRegistryState {
   animation_registry : Array[(String, @asset.Handle[@animation.AnimationClip])]
   mesh_registry : Array[(String, @asset.Handle[@mesh.Mesh])]
   mut lod_visibility_policy : GltfLodVisibilityPolicy
-}
-
-///|
-fn SceneAssetRegistryState::default() -> SceneAssetRegistryState {
-  SceneAssetRegistryState::{
-    scene_registry: [],
-    animation_registry: [],
-    mesh_registry: [],
-    lod_visibility_policy: GltfLodVisibilityPolicy::default(),
-  }
 }
 
 ///|
@@ -449,20 +444,38 @@ fn scene_registry_or_abort() -> SceneAssetRegistryState {
 }
 
 ///|
+fn scene_registry_mut_if_present() -> Ref[SceneAssetRegistryState]? {
+  guard @app.current_world() is Some(world) else { return None }
+  try! world.get_resource_ref_mut(scene_asset_registry_resource_key(), 0)
+}
+
+///|
+fn scene_registry_if_present() -> SceneAssetRegistryState? {
+  guard @app.current_world() is Some(world) else { return None }
+  try! world.get_resource(scene_asset_registry_resource_key())
+}
+
+///|
 pub fn scene_set_gltf_lod_visibility_policy(
   policy : GltfLodVisibilityPolicy,
 ) -> Unit {
-  scene_registry_mut_or_abort().val.lod_visibility_policy = policy
+  scene_gltf_lod_visibility_policy_ref.val = policy
+  if scene_registry_mut_if_present() is Some(state_ref) {
+    state_ref.val.lod_visibility_policy = policy
+  }
 }
 
 ///|
 pub fn scene_get_gltf_lod_visibility_policy() -> GltfLodVisibilityPolicy {
-  scene_registry_or_abort().lod_visibility_policy
+  match scene_registry_if_present() {
+    Some(state) => state.lod_visibility_policy
+    None => scene_gltf_lod_visibility_policy_ref.val
+  }
 }
 
 ///|
 pub fn scene_reset_gltf_lod_visibility_policy() -> Unit {
-  scene_registry_mut_or_abort().val.lod_visibility_policy = GltfLodVisibilityPolicy::default()
+  scene_set_gltf_lod_visibility_policy(GltfLodVisibilityPolicy::default())
 }
 
 ///|
@@ -838,6 +851,13 @@ pub fn scene_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       let assets : @asset.Assets[Scene] = @asset.Assets::new()
       assets
     })
-    .init_resource(fn() { SceneAssetRegistryState::default() }),
+    .init_resource(fn() {
+      SceneAssetRegistryState::{
+        scene_registry: [],
+        animation_registry: [],
+        mesh_registry: [],
+        lod_visibility_policy: scene_gltf_lod_visibility_policy_ref.val,
+      }
+    }),
   )
 }

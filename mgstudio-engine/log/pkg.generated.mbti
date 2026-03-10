@@ -1,0 +1,25 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/log"
+
+import {
+  "Milky2018/mgstudio/app",
+}
+
+// Values
+pub fn[W] log_plugin(@app.LogPlugin) -> (@app.App[W]) -> @app.App[W]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub type LogLayer = (@app.LogRecord) -> Unit
+
+pub using @app {type LogLevel}
+
+pub using @app {type LogPlugin}
+
+pub using @app {type LogRecord}
+
+// Traits
+

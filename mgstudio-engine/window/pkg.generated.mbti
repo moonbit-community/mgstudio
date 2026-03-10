@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
   "moonbitlang/core/json",
 }
 
@@ -288,20 +289,20 @@ pub impl Show for PrimaryWindow
 pub struct Screenshot {
   target : ScreenshotTarget
 }
-pub fn Screenshot::image(@asset.Handle[@asset.Image]) -> Self
+pub fn Screenshot::image(@asset.Handle[@image.Image]) -> Self
 pub fn Screenshot::primary_window() -> Self
 pub fn Screenshot::window(@core.Entity) -> Self
 pub impl @ecs.Component for Screenshot
 
 pub struct ScreenshotCaptured {
   entity : @core.Entity
-  image : @asset.Image
+  image : @image.Image
 }
 pub impl @ecs.Component for ScreenshotCaptured
 
 pub(all) enum ScreenshotTarget {
   Window(WindowRef)
-  Image(@asset.Handle[@asset.Image])
+  Image(@asset.Handle[@image.Image])
 }
 
 pub(all) enum SystemCursorIcon {

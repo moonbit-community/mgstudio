@@ -1,0 +1,45 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/gizmos"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/sprite",
+}
+
+// Values
+pub fn gizmo_config() -> @sprite.GizmoConfig
+
+pub fn gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn insert_gizmo_config(@sprite.GizmoConfig) -> Unit
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @sprite {type Arc2dBuilder}
+
+pub using @sprite {type ArrowBuilder}
+
+pub using @sprite {type Ellipse2dBuilder}
+
+pub using @sprite {type GizmoConfig}
+
+pub using @sprite {type GizmoLineConfig}
+
+pub using @sprite {type GizmoLineJoint}
+
+pub using @sprite {type GizmoLineStyle}
+
+pub using @sprite {type Gizmos}
+
+pub using @sprite {type Grid2dBuilder}
+
+pub using @sprite {type Isometry2d}
+
+pub using @sprite {type RoundedRectBuilder}
+
+// Traits
+

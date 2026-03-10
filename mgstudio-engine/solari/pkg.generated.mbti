@@ -1,0 +1,24 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/solari"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+pub fn required_wgpu_features() -> Int
+
+pub fn solari_plugins() -> () -> @app.PluginGroupBuilder[@ecs.World]
+
+// Errors
+
+// Types and methods
+pub struct SolariPlugins {
+}
+pub fn SolariPlugins::default() -> Self
+
+// Type aliases
+
+// Traits
+

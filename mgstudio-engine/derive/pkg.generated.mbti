@@ -1,0 +1,14 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/derive"
+
+// Values
+pub const HAS_PROC_MACRO_RUNTIME : Bool = false
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

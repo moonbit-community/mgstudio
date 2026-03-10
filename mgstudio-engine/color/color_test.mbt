@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-test "color boundary re-exports sprite Color constructors" {
+test "color owns Color constructors" {
   let white = @color.Color::white()
   let black = @color.Color::black()
   inspect(white.r.to_double(), content="1")

@@ -1,0 +1,27 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/gizmos_render"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+pub fn gizmo_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn gizmo_render_system_set(GizmoRenderSystems) -> String
+
+// Errors
+
+// Types and methods
+pub(all) enum GizmoRenderSystems {
+  QueueLineGizmos2d
+  QueueLineGizmos3d
+}
+pub impl Eq for GizmoRenderSystems
+pub impl Show for GizmoRenderSystems
+
+// Type aliases
+
+// Traits
+

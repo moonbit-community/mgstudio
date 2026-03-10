@@ -4,8 +4,10 @@ package "Milky2018/mgstudio/pbr"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/sprite",
@@ -378,14 +380,14 @@ pub struct AutoExposure {
   speed_darken : Float
   exponential_transition_distance : Float
   compensation_ev : Float
-  metering_mask : @asset.Handle[@asset.Image]?
+  metering_mask : @asset.Handle[@image.Image]?
 }
 pub fn AutoExposure::default() -> Self
 pub fn AutoExposure::new(Float, Float) -> Self
 pub fn AutoExposure::with_compensation_ev(Self, Float) -> Self
 pub fn AutoExposure::with_exponential_transition_distance(Self, Float) -> Self
 pub fn AutoExposure::with_filter(Self, Float, Float) -> Self
-pub fn AutoExposure::with_metering_mask(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn AutoExposure::with_metering_mask(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn AutoExposure::with_range(Self, Float, Float) -> Self
 pub fn AutoExposure::with_speed_brighten(Self, Float) -> Self
 pub fn AutoExposure::with_speed_darken(Self, Float) -> Self
@@ -582,18 +584,18 @@ pub impl ToJson for ChromaticAberration
 pub impl @json.FromJson for ChromaticAberration
 
 pub struct ClusteredDecal {
-  base_color_texture : @asset.Handle[@asset.Image]?
-  normal_map_texture : @asset.Handle[@asset.Image]?
-  metallic_roughness_texture : @asset.Handle[@asset.Image]?
-  emissive_texture : @asset.Handle[@asset.Image]?
+  base_color_texture : @asset.Handle[@image.Image]?
+  normal_map_texture : @asset.Handle[@image.Image]?
+  metallic_roughness_texture : @asset.Handle[@image.Image]?
+  emissive_texture : @asset.Handle[@image.Image]?
   tag : Int
 }
 pub fn ClusteredDecal::default() -> Self
 pub fn ClusteredDecal::new() -> Self
-pub fn ClusteredDecal::with_base_color_texture(Self, @asset.Handle[@asset.Image]?) -> Self
-pub fn ClusteredDecal::with_emissive_texture(Self, @asset.Handle[@asset.Image]?) -> Self
-pub fn ClusteredDecal::with_metallic_roughness_texture(Self, @asset.Handle[@asset.Image]?) -> Self
-pub fn ClusteredDecal::with_normal_map_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn ClusteredDecal::with_base_color_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn ClusteredDecal::with_emissive_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn ClusteredDecal::with_metallic_roughness_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn ClusteredDecal::with_normal_map_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn ClusteredDecal::with_tag(Self, Int) -> Self
 pub impl @ecs.Component for ClusteredDecal
 pub impl ToJson for ClusteredDecal
@@ -761,7 +763,7 @@ pub impl ToJson for DepthPrepass
 pub impl @json.FromJson for DepthPrepass
 
 pub struct DirectionalLight {
-  color : @sprite.Color
+  color : @color.Color
   illuminance : Float
   shadow_maps_enabled : Bool
   contact_shadows_enabled : Bool
@@ -771,7 +773,7 @@ pub struct DirectionalLight {
   shadow_normal_bias : Float
 }
 pub fn DirectionalLight::default() -> Self
-pub fn DirectionalLight::new(@sprite.Color, Float, Bool) -> Self
+pub fn DirectionalLight::new(@color.Color, Float, Bool) -> Self
 pub fn DirectionalLight::with_cascade_shadow_config(Self, CascadeShadowConfig?) -> Self
 pub fn DirectionalLight::with_cascade_shadow_config_builder(Self, CascadeShadowConfigBuilder) -> Self
 pub fn DirectionalLight::with_contact_shadows_enabled(Self, Bool) -> Self
@@ -793,46 +795,46 @@ pub impl ToJson for DirectionalLightShadowMap
 pub impl @json.FromJson for DirectionalLightShadowMap
 
 pub struct DirectionalLightTexture {
-  image : @asset.Handle[@asset.Image]?
+  image : @asset.Handle[@image.Image]?
   tiled : Bool
 }
 pub fn DirectionalLightTexture::default() -> Self
-pub fn DirectionalLightTexture::new(@asset.Handle[@asset.Image]?, Bool) -> Self
-pub fn DirectionalLightTexture::with_image(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn DirectionalLightTexture::new(@asset.Handle[@image.Image]?, Bool) -> Self
+pub fn DirectionalLightTexture::with_image(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn DirectionalLightTexture::with_tiled(Self, Bool) -> Self
 pub impl @ecs.Component for DirectionalLightTexture
 pub impl ToJson for DirectionalLightTexture
 pub impl @json.FromJson for DirectionalLightTexture
 
 pub struct DistanceFog {
-  color : @sprite.Color
-  directional_light_color : @sprite.Color
+  color : @color.Color
+  directional_light_color : @color.Color
   directional_light_exponent : Float
   falloff : FogFalloff3d
 }
 pub fn DistanceFog::default() -> Self
-pub fn DistanceFog::new(@sprite.Color, FogFalloff3d) -> Self
-pub fn DistanceFog::with_color(Self, @sprite.Color) -> Self
-pub fn DistanceFog::with_directional_light_color(Self, @sprite.Color) -> Self
+pub fn DistanceFog::new(@color.Color, FogFalloff3d) -> Self
+pub fn DistanceFog::with_color(Self, @color.Color) -> Self
+pub fn DistanceFog::with_directional_light_color(Self, @color.Color) -> Self
 pub fn DistanceFog::with_directional_light_exponent(Self, Float) -> Self
 pub fn DistanceFog::with_falloff(Self, FogFalloff3d) -> Self
 pub impl ToJson for DistanceFog
 pub impl @json.FromJson for DistanceFog
 
 pub struct EnvironmentMapLight {
-  diffuse_map : @asset.Handle[@asset.Image]?
-  specular_map : @asset.Handle[@asset.Image]?
+  diffuse_map : @asset.Handle[@image.Image]?
+  specular_map : @asset.Handle[@image.Image]?
   intensity : Float
   rotation : @math.Quat
   affects_lightmapped_mesh_diffuse : Bool
 }
 pub fn EnvironmentMapLight::default() -> Self
-pub fn EnvironmentMapLight::new(@asset.Handle[@asset.Image]?, @asset.Handle[@asset.Image]?, Float) -> Self
+pub fn EnvironmentMapLight::new(@asset.Handle[@image.Image]?, @asset.Handle[@image.Image]?, Float) -> Self
 pub fn EnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(Self, Bool) -> Self
-pub fn EnvironmentMapLight::with_diffuse_map(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn EnvironmentMapLight::with_diffuse_map(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn EnvironmentMapLight::with_intensity(Self, Float) -> Self
 pub fn EnvironmentMapLight::with_rotation(Self, @math.Quat) -> Self
-pub fn EnvironmentMapLight::with_specular_map(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn EnvironmentMapLight::with_specular_map(Self, @asset.Handle[@image.Image]?) -> Self
 pub impl @ecs.Component for EnvironmentMapLight
 pub impl ToJson for EnvironmentMapLight
 pub impl @json.FromJson for EnvironmentMapLight
@@ -885,11 +887,11 @@ pub fn FogFalloff3d::atmospheric(@math.Vec3, @math.Vec3) -> Self
 pub fn FogFalloff3d::exponential(Float) -> Self
 pub fn FogFalloff3d::exponential_squared(Float) -> Self
 pub fn FogFalloff3d::from_visibility(Float) -> Self
-pub fn FogFalloff3d::from_visibility_color(Float, @sprite.Color) -> Self
-pub fn FogFalloff3d::from_visibility_colors(Float, @sprite.Color, @sprite.Color) -> Self
+pub fn FogFalloff3d::from_visibility_color(Float, @color.Color) -> Self
+pub fn FogFalloff3d::from_visibility_colors(Float, @color.Color, @color.Color) -> Self
 pub fn FogFalloff3d::from_visibility_contrast(Float, Float) -> Self
-pub fn FogFalloff3d::from_visibility_contrast_color(Float, Float, @sprite.Color) -> Self
-pub fn FogFalloff3d::from_visibility_contrast_colors(Float, Float, @sprite.Color, @sprite.Color) -> Self
+pub fn FogFalloff3d::from_visibility_contrast_color(Float, Float, @color.Color) -> Self
+pub fn FogFalloff3d::from_visibility_contrast_colors(Float, Float, @color.Color, @color.Color) -> Self
 pub fn FogFalloff3d::from_visibility_contrast_squared(Float, Float) -> Self
 pub fn FogFalloff3d::from_visibility_squared(Float) -> Self
 pub fn FogFalloff3d::linear(Float, Float) -> Self
@@ -898,24 +900,24 @@ pub impl ToJson for FogFalloff3d
 pub impl @json.FromJson for FogFalloff3d
 
 pub struct FogVolume {
-  fog_color : @sprite.Color
+  fog_color : @color.Color
   density_factor : Float
-  density_texture : @asset.Handle[@asset.Image]?
+  density_texture : @asset.Handle[@image.Image]?
   density_texture_offset : @math.Vec3
   absorption : Float
   scattering : Float
   scattering_asymmetry : Float
-  light_tint : @sprite.Color
+  light_tint : @color.Color
   light_intensity : Float
 }
 pub fn FogVolume::default() -> Self
 pub fn FogVolume::with_absorption(Self, Float) -> Self
 pub fn FogVolume::with_density_factor(Self, Float) -> Self
-pub fn FogVolume::with_density_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn FogVolume::with_density_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn FogVolume::with_density_texture_offset(Self, @math.Vec3) -> Self
-pub fn FogVolume::with_fog_color(Self, @sprite.Color) -> Self
+pub fn FogVolume::with_fog_color(Self, @color.Color) -> Self
 pub fn FogVolume::with_light_intensity(Self, Float) -> Self
-pub fn FogVolume::with_light_tint(Self, @sprite.Color) -> Self
+pub fn FogVolume::with_light_tint(Self, @color.Color) -> Self
 pub fn FogVolume::with_scattering(Self, Float) -> Self
 pub fn FogVolume::with_scattering_asymmetry(Self, Float) -> Self
 pub impl ToJson for FogVolume
@@ -1013,15 +1015,15 @@ pub impl ToJson for FxaaSensitivity
 pub impl @json.FromJson for FxaaSensitivity
 
 pub struct GeneratedEnvironmentMapLight {
-  environment_map : @asset.Handle[@asset.Image]?
+  environment_map : @asset.Handle[@image.Image]?
   intensity : Float
   rotation : @math.Quat
   affects_lightmapped_mesh_diffuse : Bool
 }
 pub fn GeneratedEnvironmentMapLight::default() -> Self
-pub fn GeneratedEnvironmentMapLight::new(@asset.Handle[@asset.Image]?, Float) -> Self
+pub fn GeneratedEnvironmentMapLight::new(@asset.Handle[@image.Image]?, Float) -> Self
 pub fn GeneratedEnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(Self, Bool) -> Self
-pub fn GeneratedEnvironmentMapLight::with_environment_map(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn GeneratedEnvironmentMapLight::with_environment_map(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn GeneratedEnvironmentMapLight::with_intensity(Self, Float) -> Self
 pub fn GeneratedEnvironmentMapLight::with_rotation(Self, @math.Quat) -> Self
 pub impl @ecs.Component for GeneratedEnvironmentMapLight
@@ -1029,11 +1031,11 @@ pub impl ToJson for GeneratedEnvironmentMapLight
 pub impl @json.FromJson for GeneratedEnvironmentMapLight
 
 pub struct GlobalAmbientLight {
-  color : @sprite.Color
+  color : @color.Color
   brightness : Float
 }
 pub fn GlobalAmbientLight::default() -> Self
-pub fn GlobalAmbientLight::new(@sprite.Color, Float) -> Self
+pub fn GlobalAmbientLight::new(@color.Color, Float) -> Self
 pub impl ToJson for GlobalAmbientLight
 pub impl @json.FromJson for GlobalAmbientLight
 
@@ -1057,13 +1059,13 @@ pub impl ToJson for Hdr
 pub impl @json.FromJson for Hdr
 
 pub struct IrradianceVolume {
-  voxels : @asset.Handle[@asset.Image]?
+  voxels : @asset.Handle[@image.Image]?
   intensity : Float
 }
 pub fn IrradianceVolume::default() -> Self
-pub fn IrradianceVolume::new(@asset.Handle[@asset.Image]?, Float) -> Self
+pub fn IrradianceVolume::new(@asset.Handle[@image.Image]?, Float) -> Self
 pub fn IrradianceVolume::with_intensity(Self, Float) -> Self
-pub fn IrradianceVolume::with_voxels(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn IrradianceVolume::with_voxels(Self, @asset.Handle[@image.Image]?) -> Self
 pub impl @ecs.Component for IrradianceVolume
 pub impl ToJson for IrradianceVolume
 pub impl @json.FromJson for IrradianceVolume
@@ -1338,7 +1340,7 @@ pub impl ToJson for PhysicalCameraParameters
 pub impl @json.FromJson for PhysicalCameraParameters
 
 pub struct PointLight {
-  color : @sprite.Color
+  color : @color.Color
   intensity : Float
   range : Float
   radius : Float
@@ -1351,9 +1353,9 @@ pub struct PointLight {
   shadow_map_near_z : Float
 }
 pub fn PointLight::default() -> Self
-pub fn PointLight::new(@sprite.Color, Float, Float, Bool) -> Self
+pub fn PointLight::new(@color.Color, Float, Float, Bool) -> Self
 pub fn PointLight::with_affects_lightmapped_mesh_diffuse(Self, Bool) -> Self
-pub fn PointLight::with_color(Self, @sprite.Color) -> Self
+pub fn PointLight::with_color(Self, @color.Color) -> Self
 pub fn PointLight::with_contact_shadows_enabled(Self, Bool) -> Self
 pub fn PointLight::with_intensity(Self, Float) -> Self
 pub fn PointLight::with_radius(Self, Float) -> Self
@@ -1377,13 +1379,13 @@ pub impl ToJson for PointLightShadowMap
 pub impl @json.FromJson for PointLightShadowMap
 
 pub struct PointLightTexture {
-  image : @asset.Handle[@asset.Image]?
+  image : @asset.Handle[@image.Image]?
   cubemap_layout : CubemapLayout3d
 }
 pub fn PointLightTexture::default() -> Self
-pub fn PointLightTexture::new(@asset.Handle[@asset.Image]?, CubemapLayout3d) -> Self
+pub fn PointLightTexture::new(@asset.Handle[@image.Image]?, CubemapLayout3d) -> Self
 pub fn PointLightTexture::with_cubemap_layout(Self, CubemapLayout3d) -> Self
-pub fn PointLightTexture::with_image(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn PointLightTexture::with_image(Self, @asset.Handle[@image.Image]?) -> Self
 pub impl @ecs.Component for PointLightTexture
 pub impl ToJson for PointLightTexture
 pub impl @json.FromJson for PointLightTexture
@@ -1515,21 +1517,21 @@ pub impl ToJson for ShadowFilteringMethod
 pub impl @json.FromJson for ShadowFilteringMethod
 
 pub struct Skybox {
-  image : @asset.Handle[@asset.Image]?
+  image : @asset.Handle[@image.Image]?
   brightness : Float
   rotation : @math.Quat
 }
 pub fn Skybox::default() -> Self
-pub fn Skybox::new(@asset.Handle[@asset.Image], Float) -> Self
+pub fn Skybox::new(@asset.Handle[@image.Image], Float) -> Self
 pub fn Skybox::with_brightness(Self, Float) -> Self
-pub fn Skybox::with_image(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn Skybox::with_image(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn Skybox::with_rotation(Self, @math.Quat) -> Self
 pub impl @ecs.Component for Skybox
 pub impl ToJson for Skybox
 pub impl @json.FromJson for Skybox
 
 pub struct SpotLight {
-  color : @sprite.Color
+  color : @color.Color
   intensity : Float
   range : Float
   radius : Float
@@ -1543,7 +1545,7 @@ pub struct SpotLight {
   shadow_map_near_z : Float
 }
 pub fn SpotLight::default() -> Self
-pub fn SpotLight::new(@sprite.Color, Float, Float, Float, Float, Bool) -> Self
+pub fn SpotLight::new(@color.Color, Float, Float, Float, Float, Bool) -> Self
 pub fn SpotLight::with_contact_shadows_enabled(Self, Bool) -> Self
 pub fn SpotLight::with_inner_angle(Self, Float) -> Self
 pub fn SpotLight::with_intensity(Self, Float) -> Self
@@ -1558,82 +1560,82 @@ pub impl ToJson for SpotLight
 pub impl @json.FromJson for SpotLight
 
 pub struct SpotLightTexture {
-  image : @asset.Handle[@asset.Image]?
+  image : @asset.Handle[@image.Image]?
 }
 pub fn SpotLightTexture::default() -> Self
-pub fn SpotLightTexture::new(@asset.Handle[@asset.Image]?) -> Self
-pub fn SpotLightTexture::with_image(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn SpotLightTexture::new(@asset.Handle[@image.Image]?) -> Self
+pub fn SpotLightTexture::with_image(Self, @asset.Handle[@image.Image]?) -> Self
 pub impl @ecs.Component for SpotLightTexture
 pub impl ToJson for SpotLightTexture
 pub impl @json.FromJson for SpotLightTexture
 
 pub struct StandardMaterial {
-  base_color : @sprite.Color
-  base_color_texture : @asset.Handle[@asset.Image]?
+  base_color : @color.Color
+  base_color_texture : @asset.Handle[@image.Image]?
   uv_transform : @transform.Affine2
-  normal_map_texture : @asset.Handle[@asset.Image]?
-  depth_map : @asset.Handle[@asset.Image]?
+  normal_map_texture : @asset.Handle[@image.Image]?
+  depth_map : @asset.Handle[@image.Image]?
   parallax_depth_scale : Float
   max_parallax_layer_count : Float
   parallax_mapping_method : ParallaxMappingMethod
   clearcoat : Float
   clearcoat_perceptual_roughness : Float
-  clearcoat_texture : @asset.Handle[@asset.Image]?
-  clearcoat_roughness_texture : @asset.Handle[@asset.Image]?
-  clearcoat_normal_texture : @asset.Handle[@asset.Image]?
+  clearcoat_texture : @asset.Handle[@image.Image]?
+  clearcoat_roughness_texture : @asset.Handle[@image.Image]?
+  clearcoat_normal_texture : @asset.Handle[@image.Image]?
   anisotropy_strength : Float
   anisotropy_rotation : Float
-  anisotropy_texture : @asset.Handle[@asset.Image]?
-  emissive : @sprite.Color
-  emissive_texture : @asset.Handle[@asset.Image]?
+  anisotropy_texture : @asset.Handle[@image.Image]?
+  emissive : @color.Color
+  emissive_texture : @asset.Handle[@image.Image]?
   metallic : Float
-  metallic_roughness_texture : @asset.Handle[@asset.Image]?
+  metallic_roughness_texture : @asset.Handle[@image.Image]?
   perceptual_roughness : Float
   reflectance : Float
   diffuse_transmission : Float
   specular_transmission : Float
   thickness : Float
   ior : Float
-  specular_tint : @sprite.Color
-  specular_tint_texture : @asset.Handle[@asset.Image]?
-  occlusion_texture : @asset.Handle[@asset.Image]?
+  specular_tint : @color.Color
+  specular_tint_texture : @asset.Handle[@image.Image]?
+  occlusion_texture : @asset.Handle[@image.Image]?
   alpha_mode : AlphaMode3d
   opaque_render_method : OpaqueRendererMethod
   unlit : Bool
   cull_mode : Face3d?
 }
 pub fn StandardMaterial::default() -> Self
-pub fn StandardMaterial::from_color(@sprite.Color) -> Self
+pub fn StandardMaterial::from_color(@color.Color) -> Self
 pub fn StandardMaterial::with_alpha_mode(Self, AlphaMode3d) -> Self
 pub fn StandardMaterial::with_anisotropy_rotation(Self, Float) -> Self
 pub fn StandardMaterial::with_anisotropy_strength(Self, Float) -> Self
-pub fn StandardMaterial::with_anisotropy_texture(Self, @asset.Handle[@asset.Image]?) -> Self
-pub fn StandardMaterial::with_base_color(Self, @sprite.Color) -> Self
-pub fn StandardMaterial::with_base_color_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_anisotropy_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn StandardMaterial::with_base_color(Self, @color.Color) -> Self
+pub fn StandardMaterial::with_base_color_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn StandardMaterial::with_clearcoat(Self, Float) -> Self
-pub fn StandardMaterial::with_clearcoat_normal_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_clearcoat_normal_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn StandardMaterial::with_clearcoat_perceptual_roughness(Self, Float) -> Self
-pub fn StandardMaterial::with_clearcoat_roughness_texture(Self, @asset.Handle[@asset.Image]?) -> Self
-pub fn StandardMaterial::with_clearcoat_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_clearcoat_roughness_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn StandardMaterial::with_clearcoat_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn StandardMaterial::with_cull_mode(Self, Face3d?) -> Self
-pub fn StandardMaterial::with_depth_map(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_depth_map(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn StandardMaterial::with_diffuse_transmission(Self, Float) -> Self
 pub fn StandardMaterial::with_double_sided(Self, Bool) -> Self
-pub fn StandardMaterial::with_emissive(Self, @sprite.Color) -> Self
-pub fn StandardMaterial::with_emissive_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_emissive(Self, @color.Color) -> Self
+pub fn StandardMaterial::with_emissive_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn StandardMaterial::with_ior(Self, Float) -> Self
 pub fn StandardMaterial::with_max_parallax_layer_count(Self, Float) -> Self
 pub fn StandardMaterial::with_metallic(Self, Float) -> Self
-pub fn StandardMaterial::with_metallic_roughness_texture(Self, @asset.Handle[@asset.Image]?) -> Self
-pub fn StandardMaterial::with_normal_map_texture(Self, @asset.Handle[@asset.Image]?) -> Self
-pub fn StandardMaterial::with_occlusion_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_metallic_roughness_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn StandardMaterial::with_normal_map_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn StandardMaterial::with_occlusion_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn StandardMaterial::with_opaque_render_method(Self, OpaqueRendererMethod) -> Self
 pub fn StandardMaterial::with_parallax_depth_scale(Self, Float) -> Self
 pub fn StandardMaterial::with_parallax_mapping_method(Self, ParallaxMappingMethod) -> Self
 pub fn StandardMaterial::with_perceptual_roughness(Self, Float) -> Self
 pub fn StandardMaterial::with_reflectance(Self, Float) -> Self
-pub fn StandardMaterial::with_specular_tint(Self, @sprite.Color) -> Self
-pub fn StandardMaterial::with_specular_tint_texture(Self, @asset.Handle[@asset.Image]?) -> Self
+pub fn StandardMaterial::with_specular_tint(Self, @color.Color) -> Self
+pub fn StandardMaterial::with_specular_tint_texture(Self, @asset.Handle[@image.Image]?) -> Self
 pub fn StandardMaterial::with_specular_transmission(Self, Float) -> Self
 pub fn StandardMaterial::with_thickness(Self, Float) -> Self
 pub fn StandardMaterial::with_unlit(Self, Bool) -> Self
@@ -1713,12 +1715,12 @@ pub struct Vignette {
   roundness : Float
   center : @math.Vec2
   edge_compensation : Float
-  color : @sprite.Color
+  color : @color.Color
 }
 pub fn Vignette::default() -> Self
 pub fn Vignette::new(Float, Float, Float, Float) -> Self
 pub fn Vignette::with_center(Self, @math.Vec2) -> Self
-pub fn Vignette::with_color(Self, @sprite.Color) -> Self
+pub fn Vignette::with_color(Self, @color.Color) -> Self
 pub fn Vignette::with_edge_compensation(Self, Float) -> Self
 pub fn Vignette::with_intensity(Self, Float) -> Self
 pub fn Vignette::with_radius(Self, Float) -> Self
@@ -1729,13 +1731,13 @@ pub impl ToJson for Vignette
 pub impl @json.FromJson for Vignette
 
 pub struct VolumetricFog {
-  ambient_color : @sprite.Color
+  ambient_color : @color.Color
   ambient_intensity : Float
   jitter : Float
   step_count : Int
 }
 pub fn VolumetricFog::default() -> Self
-pub fn VolumetricFog::with_ambient_color(Self, @sprite.Color) -> Self
+pub fn VolumetricFog::with_ambient_color(Self, @color.Color) -> Self
 pub fn VolumetricFog::with_ambient_intensity(Self, Float) -> Self
 pub fn VolumetricFog::with_jitter(Self, Float) -> Self
 pub fn VolumetricFog::with_step_count(Self, Int) -> Self
@@ -1754,22 +1756,22 @@ pub impl ToJson for Wireframe
 pub impl @json.FromJson for Wireframe
 
 pub struct WireframeColor {
-  color : @sprite.Color
+  color : @color.Color
 }
 pub fn WireframeColor::default() -> Self
-pub fn WireframeColor::new(@sprite.Color) -> Self
-pub fn WireframeColor::with_color(Self, @sprite.Color) -> Self
+pub fn WireframeColor::new(@color.Color) -> Self
+pub fn WireframeColor::with_color(Self, @color.Color) -> Self
 pub impl @ecs.Component for WireframeColor
 pub impl ToJson for WireframeColor
 pub impl @json.FromJson for WireframeColor
 
 pub struct WireframeConfig {
   global : Bool
-  default_color : @sprite.Color
+  default_color : @color.Color
 }
 pub fn WireframeConfig::default() -> Self
-pub fn WireframeConfig::new(Bool, @sprite.Color) -> Self
-pub fn WireframeConfig::with_default_color(Self, @sprite.Color) -> Self
+pub fn WireframeConfig::new(Bool, @color.Color) -> Self
+pub fn WireframeConfig::with_default_color(Self, @color.Color) -> Self
 pub fn WireframeConfig::with_global(Self, Bool) -> Self
 pub impl ToJson for WireframeConfig
 pub impl @json.FromJson for WireframeConfig

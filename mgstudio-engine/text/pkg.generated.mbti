@@ -4,7 +4,9 @@ package "Milky2018/mgstudio/text"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/sprite",
   "Milky2018/moon_cosmic",
@@ -118,7 +120,7 @@ pub struct FontAtlas {
   dynamic_texture_atlas_builder : @asset.DynamicTextureAtlasBuilder
   glyph_locations : Array[(GlyphCacheKey, GlyphAtlasLocation)]
   texture_atlas : @asset.Handle[@asset.TextureAtlasLayout]
-  texture : @asset.Handle[@asset.Image]
+  texture : @asset.Handle[@image.Image]
 }
 pub fn FontAtlas::add_glyph(Self, GlyphCacheKey, GlyphRaster) -> Bool
 pub fn FontAtlas::get_glyph_index(Self, GlyphCacheKey) -> GlyphAtlasLocation?
@@ -152,7 +154,7 @@ pub(all) enum FontSmoothing {
 pub fn FontSmoothing::default() -> Self
 
 pub struct GlyphAtlasInfo {
-  texture : @asset.Handle[@asset.Image]
+  texture : @asset.Handle[@image.Image]
   texture_atlas : @asset.Handle[@asset.TextureAtlasLayout]
   location : GlyphAtlasLocation
 }
@@ -265,17 +267,17 @@ pub fn Text2dBundle::with_y_axis(Self, YAxisOrientation) -> Self
 
 pub struct Text2dShadow {
   offset : @math.Vec2
-  color : @sprite.Color
+  color : @color.Color
 }
 pub fn Text2dShadow::default() -> Self
-pub fn Text2dShadow::new(@math.Vec2, @sprite.Color) -> Self
-pub fn Text2dShadow::with_color(Self, @sprite.Color) -> Self
+pub fn Text2dShadow::new(@math.Vec2, @color.Color) -> Self
+pub fn Text2dShadow::with_color(Self, @color.Color) -> Self
 pub fn Text2dShadow::with_offset(Self, @math.Vec2) -> Self
 
 pub struct TextBackgroundColor {
-  color : @sprite.Color
+  color : @color.Color
 }
-pub fn TextBackgroundColor::new(@sprite.Color) -> Self
+pub fn TextBackgroundColor::new(@color.Color) -> Self
 
 pub struct TextBounds {
   width : Float?
@@ -287,10 +289,10 @@ pub fn TextBounds::new_horizontal(Float) -> Self
 pub fn TextBounds::new_vertical(Float) -> Self
 
 pub struct TextColor {
-  color : @sprite.Color
+  color : @color.Color
 }
 pub fn TextColor::default() -> Self
-pub fn TextColor::new(@sprite.Color) -> Self
+pub fn TextColor::new(@color.Color) -> Self
 
 pub struct TextDebugGlyphDraw {
   text_id : Int

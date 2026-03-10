@@ -66,15 +66,32 @@ pub fn[T] Handle::from_asset_id(asset_id : AssetId[T]) -> Handle[T] {
 }
 
 ///|
-pub struct Image {
-  width : Int
-  height : Int
-  pixels : Bytes
-}
+pub type Image = @image.Image
 
 ///|
-pub fn Image::new(width : Int, height : Int, pixels : Bytes) -> Image {
-  Image::{ width, height, pixels }
+pub type ImageArrayLayout = @image.ImageArrayLayout
+
+///|
+pub type ImageAddressMode = @image.ImageAddressMode
+
+///|
+pub type ImageCompareFunction = @image.ImageCompareFunction
+
+///|
+pub type ImageFilterMode = @image.ImageFilterMode
+
+///|
+pub type ImageSampler = @image.ImageSampler
+
+///|
+pub type ImageSamplerBorderColor = @image.ImageSamplerBorderColor
+
+///|
+pub type ImageSamplerDescriptor = @image.ImageSamplerDescriptor
+
+///|
+pub impl @image.TextureHandle for Handle[Image] with texture_id(self) {
+  self.id()
 }
 
 ///|
@@ -104,12 +121,6 @@ pub struct AssetServer {
 ///|
 priv struct AssetLoaderEntry {
   load : (AssetServer, String) -> @any.Any
-}
-
-///|
-pub(all) enum ImageArrayLayout {
-  RowCount(Int)
-  RowHeight(Int)
 }
 
 ///|
@@ -916,6 +927,37 @@ pub fn host_asset_copy_texture_to_texture(
 }
 
 ///|
+pub fn host_asset_set_texture_sampler(
+  texture_id~ : Int,
+  address_mode_u~ : Int,
+  address_mode_v~ : Int,
+  address_mode_w~ : Int,
+  mag_filter~ : Int,
+  min_filter~ : Int,
+  mipmap_filter~ : Int,
+  lod_min_clamp~ : Float,
+  lod_max_clamp~ : Float,
+  compare~ : Int,
+  anisotropy_clamp~ : Int,
+  border_color~ : Int,
+) -> Unit {
+  @render.asset_set_texture_sampler(
+    texture_id~,
+    address_mode_u~,
+    address_mode_v~,
+    address_mode_w~,
+    mag_filter~,
+    min_filter~,
+    mipmap_filter~,
+    lod_min_clamp~,
+    lod_max_clamp~,
+    compare~,
+    anisotropy_clamp~,
+    border_color~,
+  )
+}
+
+///|
 pub fn host_asset_save_rgba8_png(
   width~ : Int,
   height~ : Int,
@@ -964,12 +1006,7 @@ pub fn AssetServer::load_nearest(
 
 ///|
 fn image_sampler_is_nearest(sampler : ImageSampler) -> Bool {
-  match sampler {
-    ImageSampler::Default => false
-    ImageSampler::Descriptor(descriptor) =>
-      descriptor.mag_filter == ImageFilterMode::Nearest &&
-      descriptor.min_filter == ImageFilterMode::Nearest
-  }
+  @image.image_sampler_is_nearest(sampler)
 }
 
 ///|

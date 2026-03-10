@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/sprite",
 }
@@ -30,7 +31,7 @@ pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[@sprite.Wireframe2dConfig]
 
 pub fn[W, M] material2d_plugin(@sprite.Material2dPlugin[M]) -> (@app.App[W]) -> @app.App[W]
 
-pub fn render2d_create_render_target(@ecs.World, Int, Int, Bool) -> @asset.Handle[@asset.Image]
+pub fn render2d_create_render_target(@ecs.World, Int, Int, Bool) -> @asset.Handle[@image.Image]
 
 pub fn render2d_diagnostic_prepared_camera_count() -> Int
 

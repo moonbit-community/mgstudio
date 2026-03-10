@@ -1,3 +1,4 @@
 import {
-  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/math",
+  "moonbitlang/core/json",
 }

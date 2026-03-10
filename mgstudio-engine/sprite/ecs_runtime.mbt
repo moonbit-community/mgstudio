@@ -860,16 +860,6 @@ fn decode_wireframe2d_color(json : Json) -> Wireframe2dColor {
 }
 
 ///|
-pub impl ToJson for Color with to_json(self) {
-  encode_color(self)
-}
-
-///|
-pub impl @json.FromJson for Color with from_json(json, _path) {
-  decode_color(json)
-}
-
-///|
 pub impl ToJson for Sprite with to_json(self) {
   encode_sprite(self)
 }

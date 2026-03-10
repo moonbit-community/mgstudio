@@ -2,7 +2,7 @@
 package "Milky2018/mgstudio/color"
 
 import {
-  "Milky2018/mgstudio/sprite",
+  "moonbitlang/core/json",
 }
 
 // Values
@@ -10,9 +10,24 @@ import {
 // Errors
 
 // Types and methods
+pub struct Color {
+  r : Float
+  g : Float
+  b : Float
+  a : Float
+}
+pub fn Color::black() -> Self
+pub fn Color::darker(Self, Float) -> Self
+pub fn Color::hsl(Float, Float, Float) -> Self
+pub fn Color::hsla(Float, Float, Float, Float) -> Self
+pub fn Color::new(Float, Float, Float, Float) -> Self
+pub fn Color::srgb(Float, Float, Float) -> Self
+pub fn Color::srgba(Float, Float, Float, Float) -> Self
+pub fn Color::white() -> Self
+pub impl ToJson for Color
+pub impl @json.FromJson for Color
 
 // Type aliases
-pub using @sprite {type Color}
 
 // Traits
 
