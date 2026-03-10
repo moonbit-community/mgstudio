@@ -30,7 +30,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
+      @sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
     ),
   )
 
@@ -59,7 +59,7 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(light_entity, @math.Transform::from_xyz(4.0F, 5.0F, -4.0F), tick)
 
   @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(5.0F, 10.0F, 10.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

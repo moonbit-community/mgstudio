@@ -215,7 +215,7 @@ fn despawn_entities(world : @ecs.World, entities : Array[@core.Entity]) -> Unit 
 fn spawn_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default().with_clear_color(@render2d.Color::black()),
+    @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
     @math.Transform::from_xyz(0.219417F, 2.5764852F, 6.9718704F).with_rotation(
       @math.Quat::new(-0.1466768F, 0.013738206F, 0.002037309F, 0.989087F),
     ),
@@ -239,7 +239,7 @@ fn spawn_lights(world : @ecs.World) -> Unit {
   .insert(
     directional_light,
     @render3d.DirectionalLight::new(
-      @render2d.Color::white(),
+      @sprite.Color::white(),
       DIRECTIONAL_ILLUMINANCE,
       false,
     ),
@@ -262,7 +262,7 @@ fn spawn_lights(world : @ecs.World) -> Unit {
   .insert(
     robot_emissive_light,
     @render3d.PointLight::new(
-      @render2d.Color::new(0.94F, 0.71F, 0.04F, 1.0F),
+      @sprite.Color::new(0.94F, 0.71F, 0.04F, 1.0F),
       ROBOT_EMISSIVE_INTENSITY,
       8.0F,
       false,
@@ -293,11 +293,11 @@ fn spawn_text(asset_server : @asset.AssetServer) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::bottom_left())
+    .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -315,11 +315,11 @@ fn spawn_text(asset_server : @asset.AssetServer) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_right())
+    .with_anchor(@sprite.Anchor::top_right())
     .with_bounds(@text.TextBounds::new_horizontal(420.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Right))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.88F, 0.88F, 0.88F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.88F, 0.88F, 0.88F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -417,7 +417,7 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
     let sx = rng_range(rng_seed, 0.2F, 2.0F)
     let sy = rng_range(rng_seed, 0.2F, 2.0F)
     let sz = rng_range(rng_seed, 0.2F, 2.0F)
-    let color = @render2d.Color::new(
+    let color = @sprite.Color::new(
       rng_next01(rng_seed),
       rng_next01(rng_seed),
       rng_next01(rng_seed),
@@ -445,8 +445,8 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
       @render3d.Mesh3d::from_tetrahedron(0.5F),
       @render3d.MeshMaterial3d::new(
         @render3d.standard_material_add(
-          @render3d.StandardMaterial::from_color(@render2d.Color::black()).with_emissive(
-            @render2d.Color::new(
+          @render3d.StandardMaterial::from_color(@sprite.Color::black()).with_emissive(
+            @sprite.Color::new(
               rng_next01(rng_seed) * 20_000.0F,
               rng_next01(rng_seed) * 20_000.0F,
               rng_next01(rng_seed) * 20_000.0F,

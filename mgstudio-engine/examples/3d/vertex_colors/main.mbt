@@ -104,7 +104,7 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
+          @sprite.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
         ),
       ),
     ),
@@ -116,7 +116,7 @@ fn setup(world : @ecs.World) -> Unit {
     colorful_cube_mesh(),
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@render2d.Color::white()),
+        @render3d.StandardMaterial::from_color(@sprite.Color::white()),
       ),
     ),
     @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
@@ -128,12 +128,7 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_point_light)
   .insert(
     light_entity,
-    @render3d.PointLight::new(
-      @render2d.Color::white(),
-      1_000_000.0F,
-      20.0F,
-      true,
-    ),
+    @render3d.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 20.0F, true),
     tick,
   )
   world
@@ -148,7 +143,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

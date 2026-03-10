@@ -3,7 +3,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/time",
-  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/render3d",
   "moonbitlang/core/json",
   "Milky2018/moon_rapier/core" @rapier_core,

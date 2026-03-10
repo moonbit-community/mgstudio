@@ -108,7 +108,7 @@ fn spawn_ui_text(
       @text.TextFont::default().with_font(font).with_font_size(20.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 
@@ -187,7 +187,7 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_ui_overlay(world)
 
   @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
   |> ignore

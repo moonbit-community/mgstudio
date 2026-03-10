@@ -158,7 +158,7 @@ fn apply_light_state(world : @ecs.World) -> Unit {
     .set(
       point_entity,
       @render3d.PointLight::new(
-        @render2d.Color::white(),
+        @sprite.Color::white(),
         if state.using_point_light {
           SHADOW_BIASES_POINT_INTENSITY
         } else {
@@ -184,7 +184,7 @@ fn apply_light_state(world : @ecs.World) -> Unit {
     .set(
       directional_entity,
       @render3d.DirectionalLight::new(
-        @render2d.Color::white(),
+        @sprite.Color::white(),
         if state.using_point_light {
           0.0F
         } else {
@@ -227,7 +227,7 @@ fn setup(world : @ecs.World) -> Unit {
   shadow_biases_state.val.help_text = None
 
   let white_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white())
+    @render3d.StandardMaterial::from_color(@sprite.Color::white())
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F),
   )
@@ -254,7 +254,7 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-1.0F, 1.0F, 1.0F).looking_at(
       @math.Vec3::new(-1.0F, 1.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -276,7 +276,7 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     point,
     @render3d.PointLight::new(
-      @render2d.Color::white(),
+      @sprite.Color::white(),
       0.0F,
       SHADOW_BIASES_POINT_RANGE,
       true,
@@ -296,7 +296,7 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     directional,
     @render3d.DirectionalLight::new(
-      @render2d.Color::white(),
+      @sprite.Color::white(),
       SHADOW_BIASES_DIRECTIONAL_ILLUMINANCE,
       true,
     )
@@ -321,11 +321,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()

@@ -27,38 +27,38 @@ priv struct WireframeState {
 let wireframe_state : Ref[WireframeState] = Ref::new({ controls_text: None })
 
 ///|
-fn color_white() -> @render2d.Color {
-  @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F)
+fn color_white() -> @sprite.Color {
+  @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F)
 }
 
 ///|
-fn color_deep_pink() -> @render2d.Color {
-  @render2d.Color::new(1.0F, 0.08F, 0.58F, 1.0F)
+fn color_deep_pink() -> @sprite.Color {
+  @sprite.Color::new(1.0F, 0.08F, 0.58F, 1.0F)
 }
 
 ///|
-fn color_lime() -> @render2d.Color {
-  @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
+fn color_lime() -> @sprite.Color {
+  @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_red() -> @render2d.Color {
-  @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
+fn color_red() -> @sprite.Color {
+  @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_orange() -> @render2d.Color {
-  @render2d.Color::new(1.0F, 0.65F, 0.0F, 1.0F)
+fn color_orange() -> @sprite.Color {
+  @sprite.Color::new(1.0F, 0.65F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_blue() -> @render2d.Color {
-  @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F)
+fn color_blue() -> @sprite.Color {
+  @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F)
 }
 
 ///|
-fn color_black() -> @render2d.Color {
-  @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F)
+fn color_black() -> @sprite.Color {
+  @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F)
 }
 
 ///|
@@ -71,7 +71,7 @@ fn absf(value : Float) -> Float {
 }
 
 ///|
-fn color_approx_eq(a : @render2d.Color, b : @render2d.Color) -> Bool {
+fn color_approx_eq(a : @sprite.Color, b : @sprite.Color) -> Bool {
   absf(a.r - b.r) <= COLOR_EPSILON &&
   absf(a.g - b.g) <= COLOR_EPSILON &&
   absf(a.b - b.b) <= COLOR_EPSILON &&
@@ -79,7 +79,7 @@ fn color_approx_eq(a : @render2d.Color, b : @render2d.Color) -> Bool {
 }
 
 ///|
-fn color_label(color : @render2d.Color) -> String {
+fn color_label(color : @sprite.Color) -> String {
   if color_approx_eq(color, color_white()) {
     "White"
   } else if color_approx_eq(color, color_deep_pink()) {
@@ -102,7 +102,7 @@ fn spawn_ui_text_handle(
   content : String,
   font : @asset.Handle[@asset.Font],
   font_size : Float,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> @text.TextHandle {
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
@@ -127,8 +127,8 @@ fn setup_ui(world : @ecs.World) -> Unit {
     "fonts/FiraSans-Bold.ttf",
   )
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(100).with_clear_color_none(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(100).with_clear_color_none(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -150,7 +150,7 @@ fn setup_ui(world : @ecs.World) -> Unit {
     "",
     font,
     14.0F,
-    @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
+    @sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
   )
   let controls_entity = world.spawn_empty()
   world
@@ -265,7 +265,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   .insert(light, @math.Transform::from_xyz(2.0F, 4.0F, 2.0F), tick)
 
   @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

@@ -26,18 +26,18 @@ fn spawn_logo_sprite(
   world : @ecs.World,
   image : @asset.Handle[@asset.Image],
   position : @math.Vec2,
-  color : @render2d.Color,
+  color : @sprite.Color,
   z : Float,
 ) -> Unit {
-  let sprite = @render2d.Sprite::from_image(image).with_color(color)
+  let sprite = @sprite.Sprite::from_image(image).with_color(color)
   let transform = @math.Transform::from_xyz(position.x, position.y, z)
-  @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
+  @sprite.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
 }
 
 ///|
 fn transparency_2d_setup(world : @ecs.World) -> Unit {
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -49,21 +49,21 @@ fn transparency_2d_setup(world : @ecs.World) -> Unit {
     world,
     icon,
     @math.Vec2::new(-100.0F, 0.0F),
-    @render2d.Color::white(),
+    @sprite.Color::white(),
     0.0F,
   )
   spawn_logo_sprite(
     world,
     icon,
     @math.Vec2::new(0.0F, 0.0F),
-    @render2d.Color::new(0.0F, 0.0F, 1.0F, 0.7F),
+    @sprite.Color::new(0.0F, 0.0F, 1.0F, 0.7F),
     0.1F,
   )
   spawn_logo_sprite(
     world,
     icon,
     @math.Vec2::new(100.0F, 0.0F),
-    @render2d.Color::new(0.0F, 1.0F, 0.0F, 0.3F),
+    @sprite.Color::new(0.0F, 1.0F, 0.0F, 0.3F),
     0.2F,
   )
 }

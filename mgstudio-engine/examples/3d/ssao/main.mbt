@@ -176,11 +176,11 @@ fn setup(
 
   world.insert_resource(
     @render3d.ecs_key_global_ambient_light,
-    @render3d.GlobalAmbientLight::new(@render2d.Color::white(), 1000.0F),
+    @render3d.GlobalAmbientLight::new(@sprite.Color::white(), 1000.0F),
   )
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 2.0F, -2.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -207,7 +207,7 @@ fn setup(
 
   let base_material = materials.get_ref().val.add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::srgb(0.5F, 0.5F, 0.5F),
+      @sprite.Color::srgb(0.5F, 0.5F, 0.5F),
     )
     .with_perceptual_roughness(1.0F)
     .with_reflectance(0.0F),
@@ -239,7 +239,7 @@ fn setup(
     @render3d.MeshMaterial3d::new(
       materials.get_ref().val.add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::srgb(0.4F, 0.4F, 0.4F),
+          @sprite.Color::srgb(0.4F, 0.4F, 0.4F),
         )
         .with_perceptual_roughness(1.0F)
         .with_reflectance(0.0F),
@@ -270,7 +270,7 @@ fn setup(
   .component(@render3d.ecs_key_directional_light)
   .insert(
     light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 10_000.0F, true),
+    @render3d.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
     tick,
   )
 
@@ -291,11 +291,11 @@ fn setup(
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::bottom_left())
+    .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::srgba(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::srgba(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .spawn()
   world.insert_resource(ssao_instructions_resource_key, SsaoInstructions::{

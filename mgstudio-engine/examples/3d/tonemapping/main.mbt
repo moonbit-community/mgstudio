@@ -368,14 +368,14 @@ fn setup(
 ) -> Unit {
   let camera = commands.spawn(
     @render3d.Camera3dBundle::new(
-      @render2d.Camera::default(),
+      @sprite.Camera::default(),
       camera_transform.get().transform,
     )
     .with_color_grading(Some(@render3d.ColorGrading::default()))
     .with_distance_fog(
       Some(
         @render3d.DistanceFog::new(
-          @render2d.Color::srgb(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F),
+          @sprite.Color::srgb(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F),
           @render3d.FogFalloff3d::linear(1.0F, 8.0F),
         ),
       ),
@@ -403,8 +403,8 @@ fn setup(
   )
 
   let overlay_camera = commands.spawn(
-    @render2d.Camera2dBundle::new(
-      @render2d.Camera::default().with_order(100).with_clear_color_none(),
+    @sprite.Camera2dBundle::new(
+      @sprite.Camera::default().with_order(100).with_clear_color_none(),
       @math.Transform::identity(),
     ),
   )
@@ -428,7 +428,7 @@ fn setup(
       @text.TextFont::default().with_font(font).with_font_size(15.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 
@@ -492,11 +492,7 @@ fn setup_basic_scene(
   ignore(
     commands.spawn(
       (
-        @render3d.DirectionalLight::new(
-          @render2d.Color::white(),
-          15_000.0F,
-          true,
-        ).with_cascade_shadow_config_builder(
+        @render3d.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
           @render3d.CascadeShadowConfigBuilder::default()
           .with_maximum_distance(3.0F)
           .with_first_cascade_far_bound(0.9F),
@@ -534,7 +530,7 @@ fn setup_image_viewer_scene(
     @mesh.Mesh::from_3d_geometry(@mesh.Mesh3dGeometry::rectangle(1.0F, 1.0F)),
   )
   let material_handle = material_assets.get_ref().val.add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white()).with_unlit(
+    @render3d.StandardMaterial::from_color(@sprite.Color::white()).with_unlit(
       true,
     ),
   )
@@ -563,7 +559,7 @@ fn setup_image_viewer_scene(
       .with_font_size(36.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::black()))
+    .with_color(@text.TextColor::new(@sprite.Color::black()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
     .spawn()
   ignore(

@@ -302,7 +302,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let cube_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
+      @sprite.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
     ),
   )
   let cube = @render3d.MeshMaterial3dBundle::new(
@@ -315,7 +315,7 @@ fn setup(world : @ecs.World) -> Unit {
   light_textures_state.val.rotating_cube = Some(cube)
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 2.5F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -330,7 +330,7 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     directional,
     @render3d.DirectionalLight::new(
-      @render2d.Color::white(),
+      @sprite.Color::white(),
       MAIN_LIGHT_INTENSITY,
       true,
     ),
@@ -354,7 +354,7 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     spot,
     @render3d.SpotLight::new(
-      @render2d.Color::new(1.0F, 1.0F, 0.8F, 1.0F),
+      @sprite.Color::new(1.0F, 1.0F, 0.8F, 1.0F),
       SPOT_LIGHT_INTENSITY,
       30.0F,
       0.25F,
@@ -390,7 +390,7 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     point,
     @render3d.PointLight::new(
-      @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+      @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
       POINT_LIGHT_INTENSITY,
       20.0F,
       true,
@@ -413,14 +413,14 @@ fn setup(world : @ecs.World) -> Unit {
 
   let spot_proxy_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 0.8F, 0.2F, 0.75F),
+      @sprite.Color::new(1.0F, 0.8F, 0.2F, 0.75F),
     )
     .with_alpha_mode(@render3d.AlphaMode3d::Blend)
     .with_unlit(true),
   )
   let point_proxy_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.2F, 0.2F, 1.0F, 0.75F),
+      @sprite.Color::new(0.2F, 0.2F, 1.0F, 0.75F),
     )
     .with_alpha_mode(@render3d.AlphaMode3d::Blend)
     .with_unlit(true),
@@ -450,11 +450,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()

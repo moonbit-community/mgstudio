@@ -141,7 +141,7 @@ fn[T] first_marked_entity(
 ///|
 fn spawn_colored_sphere(
   world : @ecs.World,
-  color : @render2d.Color,
+  color : @sprite.Color,
   transform : @math.Transform,
 ) -> @core.Entity {
   @render3d.MeshMaterial3dBundle::new(
@@ -164,7 +164,7 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::srgb(0.3F, 0.15F, 0.3F),
+          @sprite.Color::srgb(0.3F, 0.15F, 0.3F),
         ),
       ),
     ),
@@ -174,7 +174,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let target_sphere = spawn_colored_sphere(
     world,
-    @render2d.Color::srgb(0.3F, 0.15F, 0.9F),
+    @sprite.Color::srgb(0.3F, 0.15F, 0.9F),
     @math.Transform::identity(),
   )
   world
@@ -183,7 +183,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let following_sphere = spawn_colored_sphere(
     world,
-    @render2d.Color::srgb(0.9F, 0.3F, 0.3F),
+    @sprite.Color::srgb(0.9F, 0.3F, 0.3F),
     @math.Transform::from_xyz(0.0F, -2.0F, 0.0F),
   )
   world
@@ -205,7 +205,7 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
   @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

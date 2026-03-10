@@ -126,7 +126,7 @@ fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @render2d.Color,
+  color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
@@ -140,25 +140,25 @@ fn setup(world : @ecs.World) -> Unit {
   spotlight_state.val.spotlights.clear()
   spotlight_state.val.camera = None
 
-  set_global_ambient_light(world, @render2d.Color::white(), 20.0F)
+  set_global_ambient_light(world, @sprite.Color::white(), 20.0F)
 
   let ground_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white()),
+    @render3d.StandardMaterial::from_color(@sprite.Color::white()),
   )
   let cube_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(124.0F / 255.0F, 144.0F / 255.0F, 1.0F, 1.0F),
+      @sprite.Color::new(124.0F / 255.0F, 144.0F / 255.0F, 1.0F, 1.0F),
     ),
   )
   let red_emissive = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
-    ).with_emissive(@render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F)),
+      @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+    ).with_emissive(@sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F)),
   )
   let maroon_emissive = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.502F, 0.0F, 0.0F, 1.0F),
-    ).with_emissive(@render2d.Color::new(0.369F, 0.0F, 0.0F, 1.0F)),
+      @sprite.Color::new(0.502F, 0.0F, 0.0F, 1.0F),
+    ).with_emissive(@sprite.Color::new(0.369F, 0.0F, 0.0F, 1.0F)),
   )
 
   let ground = @render3d.MeshMaterial3dBundle::new(
@@ -198,7 +198,7 @@ fn setup(world : @ecs.World) -> Unit {
       .insert(
         spotlight,
         @render3d.SpotLight::new(
-          @render2d.Color::white(),
+          @sprite.Color::white(),
           40_000.0F,
           20.0F,
           PI / 4.0F * 0.85F,
@@ -243,7 +243,7 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-4.0F, 5.0F, 10.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -266,11 +266,11 @@ fn setup(world : @ecs.World) -> Unit {
       z=50.0F,
     ),
   )
-  .with_anchor(@render2d.Anchor::top_left())
+  .with_anchor(@sprite.Anchor::top_left())
   .with_bounds(@text.TextBounds::new_horizontal(780.0F))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
   .with_color(
-    @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
   .with_shadow(Some(@text.Text2dShadow::default()))
   .spawn()

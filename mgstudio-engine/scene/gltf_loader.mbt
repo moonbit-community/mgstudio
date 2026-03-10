@@ -109,7 +109,7 @@ priv struct GltfSceneDef {
 
 ///|
 priv struct GltfMaterialDef {
-  base_color : @render2d.Color
+  base_color : @sprite.Color
   base_color_texture : Int?
   base_color_uv_offset : @math.Vec2
   base_color_uv_scale : @math.Vec2
@@ -127,7 +127,7 @@ priv struct GltfMaterialDef {
   occlusion_texture : Int?
   metallic : Float
   roughness : Float
-  emissive : @render2d.Color
+  emissive : @sprite.Color
   alpha_mode : @render3d.AlphaMode3d
   unlit : Bool
 }
@@ -415,8 +415,8 @@ fn gltf_parse_quat(value : Json, default_value : @math.Quat) -> @math.Quat {
 ///|
 fn gltf_parse_color(
   value : Json,
-  default_value : @render2d.Color,
-) -> @render2d.Color {
+  default_value : @sprite.Color,
+) -> @sprite.Color {
   guard json_array(value) is Some(values) else { return default_value }
   guard json_array_float(values, 0) is Some(r) else { return default_value }
   guard json_array_float(values, 1) is Some(g) else { return default_value }
@@ -425,19 +425,19 @@ fn gltf_parse_color(
     Some(alpha) => alpha
     None => default_value.a
   }
-  @render2d.Color::new(r, g, b, a)
+  @sprite.Color::new(r, g, b, a)
 }
 
 ///|
 fn gltf_parse_emissive(
   value : Json,
-  default_value : @render2d.Color,
-) -> @render2d.Color {
+  default_value : @sprite.Color,
+) -> @sprite.Color {
   guard json_array(value) is Some(values) else { return default_value }
   guard json_array_float(values, 0) is Some(r) else { return default_value }
   guard json_array_float(values, 1) is Some(g) else { return default_value }
   guard json_array_float(values, 2) is Some(b) else { return default_value }
-  @render2d.Color::new(r, g, b, 1.0F)
+  @sprite.Color::new(r, g, b, 1.0F)
 }
 
 ///|
@@ -900,7 +900,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
   if json_get_array(root, "materials") is Some(entries) {
     for entry in entries {
       if json_object(entry) is Some(obj) {
-        let mut base_color = @render2d.Color::white()
+        let mut base_color = @sprite.Color::white()
         let mut metallic = 1.0F
         let mut roughness = 1.0F
         let mut clearcoat = 0.0F
@@ -960,12 +960,9 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         anisotropy_texture = parsed_anisotropy_texture
 
         let emissive = if obj.get("emissiveFactor") is Some(value) {
-          gltf_parse_emissive(
-            value,
-            @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
-          )
+          gltf_parse_emissive(value, @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F))
         } else {
-          @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F)
+          @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F)
         }
 
         materials.push({
@@ -993,7 +990,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         })
       } else {
         materials.push({
-          base_color: @render2d.Color::white(),
+          base_color: @sprite.Color::white(),
           base_color_texture: None,
           base_color_uv_offset: @math.Vec2::new(0.0F, 0.0F),
           base_color_uv_scale: @math.Vec2::new(1.0F, 1.0F),
@@ -1011,7 +1008,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
           occlusion_texture: None,
           metallic: 1.0F,
           roughness: 1.0F,
-          emissive: @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+          emissive: @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
           alpha_mode: @render3d.AlphaMode3d::Opaque,
           unlit: false,
         })

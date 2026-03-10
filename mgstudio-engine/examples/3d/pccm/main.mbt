@@ -91,7 +91,7 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
 
   @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 0.0F, 4.0F).looking_at(
       @math.Vec3::new(0.0F, -2.5F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -100,7 +100,7 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
   let room_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.2F, 0.24F, 0.3F, 1.0F),
+      @sprite.Color::new(0.2F, 0.24F, 0.3F, 1.0F),
     )
     .with_perceptual_roughness(0.95F)
     .with_metallic(0.0F),
@@ -113,7 +113,7 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let inner_cube_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white())
+    @render3d.StandardMaterial::from_color(@sprite.Color::white())
     .with_metallic(1.0F)
     .with_reflectance(1.0F)
     .with_perceptual_roughness(0.0F),
@@ -161,11 +161,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()

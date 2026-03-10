@@ -54,8 +54,8 @@ fn wrap_hue_deg(value : Float) -> Float {
 }
 
 ///|
-fn color_from_hue_deg(hue_deg : Float) -> @render2d.Color {
-  @render2d.Color::hsla(hue_deg, 1.0F, 0.5F, 1.0F)
+fn color_from_hue_deg(hue_deg : Float) -> @sprite.Color {
+  @sprite.Color::hsla(hue_deg, 1.0F, 0.5F, 1.0F)
 }
 
 ///|
@@ -66,7 +66,7 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(3.0F, 1.0F, 3.0F).looking_at(
       @math.Vec3::new(0.0F, -0.5F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

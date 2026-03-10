@@ -179,7 +179,7 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::srgb(0.3F, 0.5F, 0.3F),
+          @sprite.Color::srgb(0.3F, 0.5F, 0.3F),
         ),
       ),
     ),
@@ -203,7 +203,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(15.0F, 5.0F, 15.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -215,7 +215,7 @@ fn setup(world : @ecs.World) -> Unit {
     circle_line_mesh(CURSOR_RADIUS, CURSOR_SEGMENTS),
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@render2d.Color::white()).with_unlit(
+        @render3d.StandardMaterial::from_color(@sprite.Color::white()).with_unlit(
           true,
         ),
       ),
@@ -244,7 +244,7 @@ fn draw_cursor(world : @ecs.World) -> Unit {
   }
 
   let transform_store = world.component(@math.ecs_key_transform)
-  let camera_store = world.component(@render2d.ecs_key_camera)
+  let camera_store = world.component(@sprite.ecs_key_camera)
   let projection_store = world.component(@render3d.ecs_key_projection)
   let mut cursor_hit : (@math.Vec3, @math.Vec3)? = None
   if @input.mouse_position() is Some(screen_pos) {

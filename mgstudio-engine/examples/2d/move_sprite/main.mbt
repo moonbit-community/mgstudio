@@ -20,7 +20,7 @@ fn main {
   .add_plugins(plugins)
   .add_systems(@app.Startup, @app.system(move_sprite_setup))
   .add_system_query2_ecs(
-    @math.ecs_key_transform, @render2d.ecs_key_sprite, move_sprite_movement,
+    @math.ecs_key_transform, @sprite.ecs_key_sprite, move_sprite_movement,
   )
   .run()
 }
@@ -51,20 +51,18 @@ let move_state : Ref[MoveSpriteState] = Ref::new(MoveSpriteState::{
 fn move_sprite_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
-  let sprite = @render2d.Sprite::from_image(texture)
+  let sprite = @sprite.Sprite::from_image(texture)
   let transform = @math.Transform::identity()
-  @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
-  let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
-    world,
-  )
+  @sprite.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
+  let camera = @sprite.Camera::default()
+  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
   |> ignore
   move_state.val.direction = Direction::Right
 }
 
 ///|
 fn move_sprite_movement(
-  query : @ecs.Query2[@math.Transform, @render2d.Sprite],
+  query : @ecs.Query2[@math.Transform, @sprite.Sprite],
   _world : @ecs.World,
 ) -> Unit {
   let delta = SPEED * @time.time_delta_seconds()

@@ -131,7 +131,7 @@ fn spawn_mesh(
 fn setup_scene_geometry(world : @ecs.World) -> Unit {
   let corridor_floor_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.10F, 0.10F, 0.11F, 1.0F),
+      @sprite.Color::new(0.10F, 0.10F, 0.11F, 1.0F),
     )
     .with_perceptual_roughness(0.95F)
     .with_metallic(0.0F),
@@ -139,7 +139,7 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
 
   let wall_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.16F, 0.16F, 0.18F, 1.0F),
+      @sprite.Color::new(0.16F, 0.16F, 0.18F, 1.0F),
     )
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F),
@@ -147,7 +147,7 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
 
   let block_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.42F, 0.45F, 0.48F, 1.0F),
+      @sprite.Color::new(0.42F, 0.45F, 0.48F, 1.0F),
     )
     .with_perceptual_roughness(0.6F)
     .with_metallic(0.0F),
@@ -199,12 +199,12 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
 
   let fog_volume_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.78F, 0.82F, 0.92F, 0.18F),
+      @sprite.Color::new(0.78F, 0.82F, 0.92F, 0.18F),
     )
     .with_alpha_mode(@render3d.AlphaMode3d::Blend)
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F)
-    .with_emissive(@render2d.Color::new(0.08F, 0.08F, 0.10F, 1.0F)),
+    .with_emissive(@sprite.Color::new(0.08F, 0.08F, 0.10F, 1.0F)),
   )
 
   spawn_mesh(
@@ -219,7 +219,7 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
 fn setup_camera(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-1.7F, 1.5F, 4.5F).looking_at(
       scene_focus(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -264,7 +264,7 @@ fn setup_lights(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
+    @render3d.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
     tick,
   )
   volumetric_fog_state.val.directional_light = Some(directional_light)
@@ -278,7 +278,7 @@ fn setup_lights(world : @ecs.World) -> Unit {
   .insert(
     point_light,
     @render3d.PointLight::new(
-      @render2d.Color::new(1.0F, 0.15F, 0.15F, 1.0F),
+      @sprite.Color::new(1.0F, 0.15F, 0.15F, 1.0F),
       10_000.0F,
       150.0F,
       true,
@@ -303,7 +303,7 @@ fn setup_lights(world : @ecs.World) -> Unit {
   .insert(
     spot_light,
     @render3d.SpotLight::new(
-      @render2d.Color::white(),
+      @sprite.Color::white(),
       50_000.0F,
       150.0F,
       0.76F,
@@ -329,11 +329,11 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -432,7 +432,7 @@ fn apply_fog_proxy(world : @ecs.World) -> Unit {
   let density = clampf(0.34F - brightness * 0.22F, 0.10F, 0.32F)
 
   let fog = @render3d.DistanceFog::new(
-    @render2d.Color::new(
+    @sprite.Color::new(
       clamp01(0.06F + brightness * 0.42F),
       clamp01(0.06F + brightness * 0.40F),
       clamp01(0.08F + brightness * 0.50F),
@@ -576,7 +576,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   world.insert_resource(
     @render3d.ecs_key_global_ambient_light,
-    @render3d.GlobalAmbientLight::new(@render2d.Color::white(), 0.0F),
+    @render3d.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
   )
 
   setup_scene_geometry(world)

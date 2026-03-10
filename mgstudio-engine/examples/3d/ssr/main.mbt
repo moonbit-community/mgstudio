@@ -434,7 +434,7 @@ fn apply_ssr_settings(world : @ecs.World) -> Unit {
 ///|
 fn spawn_cube(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white())
+    @render3d.StandardMaterial::from_color(@sprite.Color::white())
     .with_base_color_texture(Some(asset_server.load("branding/icon.png")))
     .with_perceptual_roughness(0.08F)
     .with_metallic(0.0F),
@@ -487,7 +487,7 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
   for i in 0..<5 {
     let roughness = clampf(float_from_int(i) * 0.25F, 0.08F, 1.0F)
     let material = @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(@render2d.Color::black())
+      @render3d.StandardMaterial::from_color(@sprite.Color::black())
       .with_perceptual_roughness(roughness)
       .with_metallic(0.0F),
     )
@@ -512,7 +512,7 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let metallic_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
+      @sprite.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
     )
     .with_metallic(1.0F)
     .with_perceptual_roughness(0.3F),
@@ -530,7 +530,7 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let red_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.85F, 0.12F, 0.12F, 1.0F),
+      @sprite.Color::new(0.85F, 0.12F, 0.12F, 1.0F),
     )
     .with_metallic(0.0F)
     .with_perceptual_roughness(0.2F),
@@ -547,7 +547,7 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   ssr_state.val.red_plane_base = Some(red)
 
   let water_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::black())
+    @render3d.StandardMaterial::from_color(@sprite.Color::black())
     .with_normal_map_texture(
       Some(
         asset_server.load_with_settings("textures/water_normals.png", fn(
@@ -579,7 +579,7 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 fn setup_camera_and_lights(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let camera = @render3d.Camera3dBundle::new(
-      @render2d.Camera::default(),
+      @sprite.Camera::default(),
       @math.Transform::from_xyz(-1.25F, CAMERA_HEIGHT, 4.5F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -629,7 +629,7 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_directional_light)
   .insert(
     directional,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
+    @render3d.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
     tick,
   )
   world
@@ -649,7 +649,7 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
   .insert(
     point,
     @render3d.PointLight::new(
-      @render2d.Color::new(1.0F, 0.98F, 0.96F, 1.0F),
+      @sprite.Color::new(1.0F, 0.98F, 0.96F, 1.0F),
       200_000.0F,
       30.0F,
       true,
@@ -662,7 +662,7 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
 
   world.insert_resource(
     @render3d.ecs_key_global_ambient_light,
-    @render3d.GlobalAmbientLight::new(@render2d.Color::white(), 0.03F),
+    @render3d.GlobalAmbientLight::new(@sprite.Color::white(), 0.03F),
   )
 }
 
@@ -681,10 +681,10 @@ fn setup_text(_world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(790.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .spawn()
 
   ssr_state.val.help_text = Some(handle)
@@ -728,7 +728,7 @@ fn animate_water_material(_world : @ecs.World) -> Unit {
         material
         .with_uv_transform(@transform.Affine2::from_translation(offset))
         .with_emissive(
-          @render2d.Color::new(
+          @sprite.Color::new(
             0.01F + @math.sin(t * 0.4F) * 0.005F,
             0.02F,
             0.025F,

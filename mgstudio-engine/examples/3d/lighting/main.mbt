@@ -200,7 +200,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Ground plane.
   let ground_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white()).with_perceptual_roughness(
+    @render3d.StandardMaterial::from_color(@sprite.Color::white()).with_perceptual_roughness(
       1.0F,
     ),
   )
@@ -215,7 +215,7 @@ fn setup(world : @ecs.World) -> Unit {
   // Left and back walls.
   let wall_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.294F, 0.0F, 0.51F, 1.0F),
+      @sprite.Color::new(0.294F, 0.0F, 0.51F, 1.0F),
     ).with_perceptual_roughness(1.0F),
   )
   spawn_mesh(
@@ -239,7 +239,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Bevy logo alpha-mask quad.
   let logo_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white())
+    @render3d.StandardMaterial::from_color(@sprite.Color::white())
     .with_base_color_texture(Some(logo_texture))
     .with_perceptual_roughness(1.0F)
     .with_alpha_mode(@render3d.AlphaMode3d::Mask(0.5F))
@@ -260,7 +260,7 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     @render3d.standard_material_add(
       @render3d.StandardMaterial::from_color(
-        @render2d.Color::new(1.0F, 0.078F, 0.576F, 1.0F),
+        @sprite.Color::new(1.0F, 0.078F, 0.576F, 1.0F),
       ),
     ),
     @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
@@ -273,7 +273,7 @@ fn setup(world : @ecs.World) -> Unit {
     sphere_mesh,
     @render3d.standard_material_add(
       @render3d.StandardMaterial::from_color(
-        @render2d.Color::new(0.196F, 0.804F, 0.196F, 1.0F),
+        @sprite.Color::new(0.196F, 0.804F, 0.196F, 1.0F),
       ),
     ),
     @math.Transform::from_xyz(1.5F, 1.0F, 1.5F),
@@ -284,7 +284,7 @@ fn setup(world : @ecs.World) -> Unit {
   world.insert_resource(
     @render3d.ecs_key_global_ambient_light,
     @render3d.GlobalAmbientLight::new(
-      @render2d.Color::new(1.0F, 0.27F, 0.0F, 1.0F),
+      @sprite.Color::new(1.0F, 0.27F, 0.0F, 1.0F),
       200.0F,
     ),
   )
@@ -297,7 +297,7 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     red_light,
     @render3d.PointLight::new(
-      @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+      @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
       100_000.0F,
       20.0F,
       true,
@@ -312,8 +312,8 @@ fn setup(world : @ecs.World) -> Unit {
     uv_sphere_mesh(0.1F, 12, 20),
     @render3d.standard_material_add(
       @render3d.StandardMaterial::from_color(
-        @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
-      ).with_emissive(@render2d.Color::new(4.0F, 0.0F, 0.0F, 1.0F)),
+        @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+      ).with_emissive(@sprite.Color::new(4.0F, 0.0F, 0.0F, 1.0F)),
     ),
     @math.Transform::from_xyz(1.0F, 2.0F, 0.0F),
   )
@@ -326,7 +326,7 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     green_light,
     @render3d.SpotLight::new(
-      @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+      @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
       100_000.0F,
       20.0F,
       0.6F,
@@ -350,8 +350,8 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.Mesh3d::from_cuboid(0.1F, 0.125F, 0.1F),
     @render3d.standard_material_add(
       @render3d.StandardMaterial::from_color(
-        @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
-      ).with_emissive(@render2d.Color::new(0.0F, 4.0F, 0.0F, 1.0F)),
+        @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+      ).with_emissive(@sprite.Color::new(0.0F, 4.0F, 0.0F, 1.0F)),
     ),
     @math.Transform::from_xyz(-1.0F, 2.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_x(PI / 2.0F),
@@ -366,7 +366,7 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     blue_light,
     @render3d.PointLight::new(
-      @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+      @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
       100_000.0F,
       20.0F,
       true,
@@ -381,8 +381,8 @@ fn setup(world : @ecs.World) -> Unit {
     uv_sphere_mesh(0.1F, 12, 20),
     @render3d.standard_material_add(
       @render3d.StandardMaterial::from_color(
-        @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
-      ).with_emissive(@render2d.Color::new(0.0F, 0.0F, 713.0F, 1.0F)),
+        @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+      ).with_emissive(@sprite.Color::new(0.0F, 0.0F, 713.0F, 1.0F)),
     ),
     @math.Transform::from_xyz(0.0F, 4.0F, 0.0F),
   )
@@ -394,7 +394,7 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_directional_light)
   .insert(
     directional,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 10_000.0F, true),
+    @render3d.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
     tick,
   )
   world
@@ -419,11 +419,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -431,7 +431,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Camera.
   @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

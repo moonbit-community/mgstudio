@@ -23,7 +23,7 @@ fn label_option_text(label : @scene.GltfAssetLabel?) -> String {
 ///|
 fn run_scene_test_app(system : (@ecs.World) -> Unit) -> Unit {
   let plugins : Array[@app.Plugin[@ecs.World]] = [
-    @asset.asset_plugin, @render2d.render2d_plugin_ecs, @render3d.render3d_plugin,
+    @asset.asset_plugin, @sprite.render2d_plugin_ecs, @render3d.render3d_plugin,
     @animation.animation_plugin, @scene.scene_plugin,
   ]
   @app.App::new(@ecs.World::new())
@@ -263,7 +263,7 @@ test "scene: SceneRoot spawns children and marks ready" {
     let path = @scene.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
     let material = @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@render2d.Color::white()),
+        @render3d.StandardMaterial::from_color(@sprite.Color::white()),
       ),
     )
     let node = @scene.SceneNode3d::new(
@@ -367,7 +367,7 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
     )
     let material = @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@render2d.Color::white()),
+        @render3d.StandardMaterial::from_color(@sprite.Color::white()),
       ),
     )
     let first_scene = @scene.Scene::new([

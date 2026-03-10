@@ -61,7 +61,7 @@ fn spawn_perspective_camera(
   moving? : Bool = false,
 ) -> Unit {
   let entity = @render3d.Camera3dBundle::new(
-      @render2d.Camera::default().with_order(order),
+      @sprite.Camera::default().with_order(order),
       camera_sub_view_state.val.base_transform,
     )
     .with_sub_camera_view(sub_camera_view)
@@ -81,7 +81,7 @@ fn spawn_orthographic_camera(
   moving? : Bool = false,
 ) -> Unit {
   let entity = @render3d.Camera3dBundle::new_with_projection(
-      @render2d.Camera::default().with_order(order),
+      @sprite.Camera::default().with_order(order),
       @render3d.Projection::Orthographic(@render3d.OrthographicProjection3d::{
         ..@render3d.OrthographicProjection3d::default_3d(),
         scaling_mode: @render3d.OrthographicScalingMode3d::FixedVertical(
@@ -110,7 +110,7 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
+          @sprite.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
         ),
       ),
     ),
@@ -124,7 +124,7 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
+          @sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
         ),
       ),
     ),
@@ -138,12 +138,7 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_point_light)
   .insert(
     light,
-    @render3d.PointLight::new(
-      @render2d.Color::white(),
-      1_000_000.0F,
-      20.0F,
-      true,
-    ),
+    @render3d.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 20.0F, true),
     tick,
   )
   world
@@ -270,7 +265,7 @@ fn resize_viewports(world : @ecs.World) -> Unit {
   let small_wide_size = @math.IVec2::new(small_dim * 2, small_dim)
 
   let tick = world.read_change_tick()
-  let camera_store = world.component(@render2d.ecs_key_camera)
+  let camera_store = world.component(@sprite.ecs_key_camera)
 
   for pair in camera_sub_view_state.val.cameras {
     let entity = pair.0
@@ -292,12 +287,12 @@ fn resize_viewports(world : @ecs.World) -> Unit {
     if camera_store.get(entity) is Some(camera) {
       let viewport = match camera.viewport {
         Some(viewport) => viewport
-        None => @render2d.Viewport::default()
+        None => @sprite.Viewport::default()
       }
       camera_store.set(
         entity,
         camera.with_viewport(
-          @render2d.Viewport::new_with_depth(
+          @sprite.Viewport::new_with_depth(
             position,
             size,
             viewport.depth_min,

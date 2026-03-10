@@ -46,22 +46,20 @@ fn main {
 fn sprite_tile_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
-  let sprite = @render2d.Sprite::from_image(texture)
+  let sprite = @sprite.Sprite::from_image(texture)
     .with_image_mode(
-      @render2d.SpriteImageMode::tiled(
+      @sprite.SpriteImageMode::tiled(
         tile_x=true,
         tile_y=true,
         stretch_value=0.5F,
       ),
     )
     .with_custom_size(Some(@math.Vec2::new(128.0F, 128.0F)))
-  let entity = @render2d.SpriteBundle::new(sprite, @math.Transform::identity()).spawn(
+  let entity = @sprite.SpriteBundle::new(sprite, @math.Transform::identity()).spawn(
     world,
   )
-  let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
-    world,
-  )
+  let camera = @sprite.Camera::default()
+  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
   |> ignore
   sprite_tile_animation_state.val.sprite = Some(entity)
   sprite_tile_animation_state.val.texture = Some(texture)
@@ -86,9 +84,9 @@ fn sprite_tile_animate(world : @ecs.World) -> Unit {
   if sprite_tile_animation_state.val.sprite is Some(entity) &&
     sprite_tile_animation_state.val.texture is Some(texture) {
     try! world.despawn(entity)
-    let sprite = @render2d.Sprite::from_image(texture)
+    let sprite = @sprite.Sprite::from_image(texture)
       .with_image_mode(
-        @render2d.SpriteImageMode::tiled(
+        @sprite.SpriteImageMode::tiled(
           tile_x=true,
           tile_y=true,
           stretch_value=0.5F,
@@ -102,7 +100,7 @@ fn sprite_tile_animate(world : @ecs.World) -> Unit {
           ),
         ),
       )
-    let new_entity = @render2d.SpriteBundle::new(
+    let new_entity = @sprite.SpriteBundle::new(
       sprite,
       @math.Transform::identity(),
     ).spawn(world)

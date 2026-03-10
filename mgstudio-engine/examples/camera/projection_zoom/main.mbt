@@ -60,7 +60,7 @@ fn setup(
   let settings = camera_settings.get()
 
   let camera = @render3d.Camera3dBundle::new_with_projection(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @render3d.Projection::Orthographic(@render3d.OrthographicProjection3d::{
       ..@render3d.OrthographicProjection3d::default_3d(),
       scaling_mode: @render3d.OrthographicScalingMode3d::FixedVertical(
@@ -79,7 +79,7 @@ fn setup(
 
   let material_handle = materials.get_ref().val.add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::srgb(0.3F, 0.5F, 0.3F),
+      @sprite.Color::srgb(0.3F, 0.5F, 0.3F),
     ).with_cull_mode(None),
   )
   let plane = @render3d.MeshMaterial3dBundle::new(
@@ -132,8 +132,8 @@ fn setup(
 fn instructions(asset_server : @app.Res[@asset.AssetServer]) -> Unit {
   let world = @app.current_world().unwrap()
   let tick = world.read_change_tick()
-  let overlay_camera = @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(1).with_clear_color_none(),
+  let overlay_camera = @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(1).with_clear_color_none(),
     @math.Transform::identity(),
   ).spawn(world)
   world
@@ -161,7 +161,7 @@ fn instructions(asset_server : @app.Res[@asset.AssetServer]) -> Unit {
       .with_font_size(20.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 

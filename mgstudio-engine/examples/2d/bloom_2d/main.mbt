@@ -52,7 +52,7 @@ fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
 }
 
 ///|
-fn bloom_mode_text(mode : @render2d.BloomCompositeMode) -> String {
+fn bloom_mode_text(mode : @sprite.BloomCompositeMode) -> String {
   match mode {
     EnergyConserving => "Energy-conserving"
     Additive => "Additive"
@@ -60,7 +60,7 @@ fn bloom_mode_text(mode : @render2d.BloomCompositeMode) -> String {
 }
 
 ///|
-fn tonemapping_text(mode : @render2d.Tonemapping) -> String {
+fn tonemapping_text(mode : @sprite.Tonemapping) -> String {
   match mode {
     None => "None"
     AcesFitted => "AcesFitted"
@@ -74,7 +74,7 @@ fn tonemapping_text(mode : @render2d.Tonemapping) -> String {
 }
 
 ///|
-fn next_tonemap(mode : @render2d.Tonemapping) -> @render2d.Tonemapping {
+fn next_tonemap(mode : @sprite.Tonemapping) -> @sprite.Tonemapping {
   match mode {
     None => AcesFitted
     AcesFitted => AgX
@@ -89,8 +89,8 @@ fn next_tonemap(mode : @render2d.Tonemapping) -> @render2d.Tonemapping {
 
 ///|
 fn bloom_help_text(
-  bloom : @render2d.Bloom2d?,
-  tonemapping : @render2d.Tonemapping,
+  bloom : @sprite.Bloom2d?,
+  tonemapping : @sprite.Tonemapping,
 ) -> String {
   let mut text = match bloom {
     Some(bloom) => {
@@ -130,7 +130,7 @@ fn bloom_help_text(
 ///|
 fn single_camera_entity(world : @ecs.World) -> @core.Entity? {
   let entity_ref = Ref::new(None)
-  let query = world.query1_filtered(@render2d.ecs_key_camera2d, @ecs.All::new())
+  let query = world.query1_filtered(@sprite.ecs_key_camera2d, @ecs.All::new())
   try! query.view(fn(entity, _camera2d) {
     if entity_ref.val is None {
       entity_ref.val = Some(entity)
@@ -163,7 +163,7 @@ fn spawn_ui_text_handle(
   content : String,
   font : @asset.Handle[@asset.Font],
   font_size : Float,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> @text.TextHandle {
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
@@ -189,7 +189,7 @@ fn spawn_help_overlay(
     "",
     font,
     20.0F,
-    @render2d.Color::white(),
+    @sprite.Color::white(),
   )
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
@@ -232,32 +232,32 @@ fn bloom_setup(world : @ecs.World) -> Unit {
         "bloom_2d requires the world-owned AssetServer resource; add AssetPlugin before the example startup system runs",
       )
   }
-  let camera = @render2d.Camera2dBundle::new(
-      @render2d.Camera::new(@render2d.Color::black()),
+  let camera = @sprite.Camera2dBundle::new(
+      @sprite.Camera::new(@sprite.Color::black()),
       @math.Transform::identity(),
     )
-    .with_bloom2d(@render2d.Bloom2d::new())
+    .with_bloom2d(@sprite.Bloom2d::new())
     .spawn(world)
   let tick = world.read_change_tick()
   world
-  .component(@render2d.ecs_key_tonemapping)
-  .insert(camera, @render2d.Tonemapping::TonyMcMapface, tick)
+  .component(@sprite.ecs_key_tonemapping)
+  .insert(camera, @sprite.Tonemapping::TonyMcMapface, tick)
   world
-  .component(@render2d.ecs_key_deband_dither)
-  .insert(camera, @render2d.DebandDither::Enabled, tick)
+  .component(@sprite.ecs_key_deband_dither)
+  .insert(camera, @sprite.DebandDither::Enabled, tick)
 
   let bird = asset_server.load("branding/bevy_bird_dark.png")
-  @render2d.SpriteBundle::new(
-    @render2d.Sprite::from_image(bird)
-    .with_color(@render2d.Color::srgb(5.0F, 5.0F, 5.0F))
+  @sprite.SpriteBundle::new(
+    @sprite.Sprite::from_image(bird)
+    .with_color(@sprite.Color::srgb(5.0F, 5.0F, 5.0F))
     .with_custom_size(Some(@math.Vec2::new(160.0F, 160.0F))),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
 
-  @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_circle(@render2d.Circle::new(100.0F)),
-    @render2d.ColorMaterial::new(@render2d.Color::srgb(7.5F, 0.0F, 7.5F)),
+  @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_circle(@sprite.Circle::new(100.0F)),
+    @sprite.ColorMaterial::new(@sprite.Color::srgb(7.5F, 0.0F, 7.5F)),
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-200.0F, 0.0F),
       0.0F,
@@ -266,11 +266,9 @@ fn bloom_setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_regular_polygon(
-      @render2d.RegularPolygon::new(100.0F, 6),
-    ),
-    @render2d.ColorMaterial::new(@render2d.Color::srgb(6.25F, 9.4F, 9.1F)),
+  @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_regular_polygon(@sprite.RegularPolygon::new(100.0F, 6)),
+    @sprite.ColorMaterial::new(@sprite.Color::srgb(6.25F, 9.4F, 9.1F)),
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(200.0F, 0.0F),
       0.0F,
@@ -286,13 +284,13 @@ fn bloom_setup(world : @ecs.World) -> Unit {
 fn bloom_update(world : @ecs.World) -> Unit {
   guard single_camera_entity(world) is Some(camera_entity) else { return }
 
-  let bloom_store = world.component(@render2d.ecs_key_bloom2d)
-  let tonemapping_store = world.component(@render2d.ecs_key_tonemapping)
+  let bloom_store = world.component(@sprite.ecs_key_bloom2d)
+  let tonemapping_store = world.component(@sprite.ecs_key_tonemapping)
   let tick = world.read_change_tick()
   let dt = @time.time_delta_seconds()
   let tonemapping = tonemapping_store
     .get(camera_entity)
-    .unwrap_or(@render2d.Tonemapping::TonyMcMapface)
+    .unwrap_or(@sprite.Tonemapping::TonyMcMapface)
   let current_bloom = bloom_store.get(camera_entity)
 
   set_help_text(world, bloom_help_text(current_bloom, tonemapping))
@@ -379,12 +377,12 @@ fn bloom_update(world : @ecs.World) -> Unit {
         }
         scale_x = clampf(scale_x, 0.0F, 16.0F)
 
-        let next_settings = @render2d.Bloom2dSettings::{
+        let next_settings = @sprite.Bloom2dSettings::{
           intensity,
           low_frequency_boost,
           low_frequency_boost_curvature,
           high_pass_frequency,
-          prefilter: @render2d.BloomPrefilter::{ threshold, threshold_softness },
+          prefilter: @sprite.BloomPrefilter::{ threshold, threshold_softness },
           composite_mode,
           max_mip_dimension: current_bloom.settings.max_mip_dimension,
           scale: @math.Vec2::new(scale_x, current_bloom.settings.scale.y),
@@ -398,7 +396,7 @@ fn bloom_update(world : @ecs.World) -> Unit {
       }
     None =>
       if @input.key_just_pressed(@window.KeyCode::Space) {
-        bloom_store.insert(camera_entity, @render2d.Bloom2d::new(), tick)
+        bloom_store.insert(camera_entity, @sprite.Bloom2d::new(), tick)
       }
   }
 

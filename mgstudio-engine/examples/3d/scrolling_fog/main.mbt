@@ -129,7 +129,7 @@ fn apply_distance_fog_from_stub(
 
   let fog = @render3d.DistanceFog::default()
     .with_color(
-      @render2d.Color::new(
+      @sprite.Color::new(
         clamp01(
           (0.34F + proxy_density_noise * 0.05F) * brightness + ambient_lift,
         ),
@@ -143,7 +143,7 @@ fn apply_distance_fog_from_stub(
       ),
     )
     .with_directional_light_color(
-      @render2d.Color::new(1.0F, 0.95F, 0.85F, directional_alpha),
+      @sprite.Color::new(1.0F, 0.95F, 0.85F, directional_alpha),
     )
     .with_directional_light_exponent(12.0F)
     .with_falloff(@render3d.FogFalloff3d::from_visibility_squared(visibility))
@@ -161,7 +161,7 @@ fn apply_distance_fog_from_stub(
 ///|
 fn spawn_world_geometry(world : @ecs.World) -> Unit {
   let black_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::black())
+    @render3d.StandardMaterial::from_color(@sprite.Color::black())
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F),
   )
@@ -185,22 +185,22 @@ fn spawn_world_geometry(world : @ecs.World) -> Unit {
 fn spawn_fog_proxy(world : @ecs.World) -> Unit {
   let outer_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.74F, 0.79F, 0.87F, 0.15F),
+      @sprite.Color::new(0.74F, 0.79F, 0.87F, 0.15F),
     )
     .with_alpha_mode(@render3d.AlphaMode3d::Blend)
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F)
-    .with_emissive(@render2d.Color::new(0.08F, 0.09F, 0.12F, 1.0F)),
+    .with_emissive(@sprite.Color::new(0.08F, 0.09F, 0.12F, 1.0F)),
   )
 
   let inner_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.72F, 0.78F, 0.86F, 0.12F),
+      @sprite.Color::new(0.72F, 0.78F, 0.86F, 0.12F),
     )
     .with_alpha_mode(@render3d.AlphaMode3d::Blend)
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F)
-    .with_emissive(@render2d.Color::new(0.09F, 0.10F, 0.13F, 1.0F)),
+    .with_emissive(@sprite.Color::new(0.09F, 0.10F, 0.13F, 1.0F)),
   )
 
   let outer = @render3d.MeshMaterial3dBundle::new(
@@ -222,7 +222,7 @@ fn spawn_fog_proxy(world : @ecs.World) -> Unit {
 fn setup_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(CAMERA_X, CAMERA_Y, CAMERA_Z).looking_at(
       focus_point(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -246,7 +246,7 @@ fn setup_lighting(world : @ecs.World) -> Unit {
 
   world.insert_resource(
     @render3d.ecs_key_global_ambient_light,
-    @render3d.GlobalAmbientLight::new(@render2d.Color::white(), 0.0F),
+    @render3d.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
   )
 
   let light = world.spawn_empty()
@@ -264,7 +264,7 @@ fn setup_lighting(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_directional_light)
   .insert(
     light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 12_000.0F, true),
+    @render3d.DirectionalLight::new(@sprite.Color::white(), 12_000.0F, true),
     tick,
   )
 }

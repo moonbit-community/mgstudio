@@ -231,10 +231,10 @@ fn mode_ambient_brightness(mode : LightingMode) -> Float {
 }
 
 ///|
-fn mode_sphere_color(mode : LightingMode) -> @render2d.Color {
+fn mode_sphere_color(mode : LightingMode) -> @sprite.Color {
   match mode {
-    LightingMode::Baked => @render2d.Color::new(0.95F, 0.84F, 0.84F, 1.0F)
-    _ => @render2d.Color::new(0.92F, 0.92F, 0.92F, 1.0F)
+    LightingMode::Baked => @sprite.Color::new(0.95F, 0.84F, 0.84F, 1.0F)
+    _ => @sprite.Color::new(0.92F, 0.92F, 0.92F, 1.0F)
   }
 }
 
@@ -255,7 +255,7 @@ fn apply_lighting_mode(world : @ecs.World) -> Unit {
     .set(
       light_entity,
       @render3d.DirectionalLight::new(
-        @render2d.Color::white(),
+        @sprite.Color::white(),
         mode_directional_illuminance(mode),
         scenery_is_lit_in_real_time,
       ),
@@ -265,7 +265,7 @@ fn apply_lighting_mode(world : @ecs.World) -> Unit {
   }
 
   let ambient_light = @render3d.GlobalAmbientLight::new(
-    @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+    @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
     mode_ambient_brightness(mode),
   )
   world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient_light)
@@ -326,7 +326,7 @@ fn move_sphere(world : @ecs.World) -> Unit {
   guard app_status.val.sphere is Some(sphere_entity) else { return }
   guard @input.mouse_position() is Some(screen_pos) else { return }
 
-  let camera_store = world.component(@render2d.ecs_key_camera)
+  let camera_store = world.component(@sprite.ecs_key_camera)
   guard camera_store.get(camera_entity) is Some(camera) else { return }
   let projection_store = world.component(@render3d.ecs_key_projection)
   guard projection_store.get(camera_entity) is Some(projection) else { return }
@@ -414,7 +414,7 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-0.7F, 0.7F, 1.0F).looking_at(
       @math.Vec3::new(0.0F, 0.3F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -440,7 +440,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let sphere_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.92F, 0.92F, 0.92F, 1.0F),
+      @sprite.Color::new(0.92F, 0.92F, 0.92F, 1.0F),
     )
     .with_perceptual_roughness(0.45F)
     .with_metallic(0.0F),
@@ -462,7 +462,7 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 12_000.0F, true),
+    @render3d.DirectionalLight::new(@sprite.Color::white(), 12_000.0F, true),
     tick,
   )
   world
@@ -488,11 +488,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()

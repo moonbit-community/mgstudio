@@ -67,7 +67,7 @@ fn setup(
     )
   let material_handle = materials.get_ref().val.add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::srgb(0.8F, 0.7F, 0.6F),
+      @sprite.Color::srgb(0.8F, 0.7F, 0.6F),
     ),
   )
   let material = @render3d.MeshMaterial3d::new(material_handle)
@@ -103,7 +103,7 @@ fn setup(
   .insert(light, @math.Transform::from_xyz(4.0F, 5.0F, 4.0F), tick)
 
   @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 3.0F, 10.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

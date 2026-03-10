@@ -104,8 +104,8 @@ fn next_random_unit() -> Float {
 }
 
 ///|
-fn random_color(alpha : Float) -> @render2d.Color {
-  @render2d.Color::new(
+fn random_color(alpha : Float) -> @sprite.Color {
+  @sprite.Color::new(
     next_random_unit(),
     next_random_unit(),
     next_random_unit(),
@@ -118,7 +118,7 @@ fn spawn_ui_text_handle(
   content : String,
   font : @asset.Handle[@asset.Font],
   font_size : Float,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> @text.TextHandle {
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
@@ -151,8 +151,8 @@ fn setup_ui_overlay(
   multiply_entity : @core.Entity,
 ) -> Unit {
   let tick = world.read_change_tick()
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(100).with_clear_color_none(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(100).with_clear_color_none(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -173,7 +173,7 @@ fn setup_ui_overlay(
     CONTROL_TEXT,
     font,
     14.0F,
-    @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
+    @sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
   )
   let controls_entity = world.spawn_empty()
   world
@@ -198,7 +198,7 @@ fn setup_ui_overlay(
     blend_modes_display_text(camera_entity, world),
     font,
     14.0F,
-    @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
+    @sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
   )
   let display_entity = world.spawn_empty()
   world
@@ -219,7 +219,7 @@ fn setup_ui_overlay(
   .insert(display_entity, @ui.UiText::new(display_text), tick)
   blend_modes_state.val.display_text = Some(display_text)
 
-  let label_color = @render2d.Color::new(1.0F, 0.65F, 0.2F, 1.0F)
+  let label_color = @sprite.Color::new(1.0F, 0.65F, 0.2F, 1.0F)
   let labels : Array[(@core.Entity, String)] = [
     (opaque_entity, "┌─ Opaque\n│\n│\n│\n│"),
     (blend_entity, "┌─ Blend\n│\n│\n│"),
@@ -343,7 +343,7 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
     blend_modes_display_text(camera_entity, world),
   )
 
-  let camera_store = world.component(@render2d.ecs_key_camera)
+  let camera_store = world.component(@sprite.ecs_key_camera)
   guard camera_store.get(camera_entity) is Some(camera) else { return }
   let projection_store = world.component(@render3d.ecs_key_projection)
   guard projection_store.get(camera_entity) is Some(projection) else { return }
@@ -398,7 +398,7 @@ fn setup(world : @ecs.World) -> Unit {
   blend_modes_state.val.labels.clear()
   blend_modes_state.val.display_text = None
 
-  let base_color = @render2d.Color::new(
+  let base_color = @sprite.Color::new(
     0.9F,
     0.2F,
     0.3F,
@@ -473,12 +473,12 @@ fn setup(world : @ecs.World) -> Unit {
 
   let black_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+      @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
     ),
   )
   let white_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
     ),
   )
   register_material(black_material, false, true)
@@ -512,7 +512,7 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 2.5F, 10.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -585,7 +585,7 @@ fn example_control_system(world : @ecs.World) -> Unit {
   for controlled in state.materials {
     if @render3d.standard_material_get(controlled.handle) is Some(material) {
       let mut next_material = material.with_base_color(
-        @render2d.Color::new(
+        @sprite.Color::new(
           material.base_color.r,
           material.base_color.g,
           material.base_color.b,

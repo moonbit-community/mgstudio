@@ -206,7 +206,7 @@ test "render3d: projection runtime updates changed orthographic projection at st
       last_view_height: 400.0F,
     }),
     true,
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.IVec2::new(800, 400),
     1.0F,
   )

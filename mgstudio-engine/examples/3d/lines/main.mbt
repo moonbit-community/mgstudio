@@ -16,13 +16,13 @@
 /// Port of `bevy/examples/3d/lines.rs`.
 
 ///|
-fn color_green() -> @render2d.Color {
-  @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
+fn color_green() -> @sprite.Color {
+  @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_blue() -> @render2d.Color {
-  @render2d.Color::new(0.2F, 0.5F, 1.0F, 1.0F)
+fn color_blue() -> @sprite.Color {
+  @sprite.Color::new(0.2F, 0.5F, 1.0F, 1.0F)
 }
 
 ///|
@@ -77,7 +77,7 @@ fn line_mesh_from_line_strip(line_strip : LineStrip) -> @render3d.Mesh3d {
 
 ///|
 fn line_material(
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> @asset.Handle[@render3d.StandardMaterial] {
   @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(color).with_unlit(true),
@@ -112,7 +112,7 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

@@ -175,7 +175,7 @@ fn update_help_text() -> Unit {
 fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tick = world.read_change_tick()
   let camera = @render3d.Camera3dBundle::new(
-      @render2d.Camera::default(),
+      @sprite.Camera::default(),
       @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
         @math.Vec3::new(0.0F, 0.3F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -202,7 +202,7 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   @render3d.render3d_set_distance_fog(
     @render3d.DistanceFog::new(
-      @render2d.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
+      @sprite.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
       @render3d.FogFalloff3d::linear(1.0F, 8.0F),
     ),
   )
@@ -258,7 +258,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   .component(@render3d.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
+    @render3d.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
     tick,
   )
   world
@@ -288,11 +288,11 @@ fn spawn_text(asset_server : @asset.AssetServer) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()

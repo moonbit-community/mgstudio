@@ -36,7 +36,7 @@ fn camera_with_target_info(
   order : Int,
   physical_size : @math.IVec2,
   scale_factor : Float,
-) -> @render2d.Camera {
+) -> @sprite.Camera {
   let target_info_json : Json = (
     (physical_size.x, physical_size.y).to_json(),
     scale_factor,
@@ -49,7 +49,7 @@ fn camera_with_target_info(
   let camera_json : Json = (
     no_viewport_json, order, true, computed_json, clear_color_json,
   ).to_json()
-  let camera : @render2d.Camera = try! @json.from_json(camera_json)
+  let camera : @sprite.Camera = try! @json.from_json(camera_json)
   camera
 }
 
@@ -59,14 +59,14 @@ test "ui: single IsDefaultUiCamera wins over higher-order fallback camera" {
   let tick = seed_ui_context(world)
 
   let fallback = world.spawn_empty()
-  @render2d.get_camera_store(world).insert(
+  @sprite.get_camera_store(world).insert(
     fallback,
     camera_with_target_info(10, @math.IVec2::new(800, 600), 1.0F),
     tick,
   )
 
   let marked = world.spawn_empty()
-  @render2d.get_camera_store(world).insert(
+  @sprite.get_camera_store(world).insert(
     marked,
     camera_with_target_info(-5, @math.IVec2::new(640, 360), 1.0F),
     tick,
@@ -97,7 +97,7 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
   try! world.set_component(primary_window_entity, @window.PrimaryWindow::{  })
 
   let marked_a = world.spawn_empty()
-  @render2d.get_camera_store(world).insert(
+  @sprite.get_camera_store(world).insert(
     marked_a,
     camera_with_target_info(2, @math.IVec2::new(960, 540), 1.0F),
     tick,
@@ -109,14 +109,14 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
   )
 
   let marked_b = world.spawn_empty()
-  @render2d.get_camera_store(world).insert(
+  @sprite.get_camera_store(world).insert(
     marked_b,
     camera_with_target_info(20, @math.IVec2::new(512, 512), 1.0F),
     tick,
   )
-  @render2d.get_render_target_store(world).insert(
+  @sprite.get_render_target_store(world).insert(
     marked_b,
-    @render2d.RenderTarget::Image(@asset.Handle::new(7)),
+    @sprite.RenderTarget::Image(@asset.Handle::new(7)),
     tick,
   )
   get_is_default_ui_camera_store(world).insert(
@@ -126,26 +126,26 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
   )
 
   let primary_ref = world.spawn_empty()
-  @render2d.get_camera_store(world).insert(
+  @sprite.get_camera_store(world).insert(
     primary_ref,
     camera_with_target_info(5, @math.IVec2::new(960, 540), 1.0F),
     tick,
   )
-  @render2d.get_render_target_store(world).insert(
+  @sprite.get_render_target_store(world).insert(
     primary_ref,
-    @render2d.RenderTarget::Window(@window.WindowRef::Primary),
+    @sprite.RenderTarget::Window(@window.WindowRef::Primary),
     tick,
   )
 
   let primary_entity = world.spawn_empty()
-  @render2d.get_camera_store(world).insert(
+  @sprite.get_camera_store(world).insert(
     primary_entity,
     camera_with_target_info(9, @math.IVec2::new(960, 540), 1.0F),
     tick,
   )
-  @render2d.get_render_target_store(world).insert(
+  @sprite.get_render_target_store(world).insert(
     primary_entity,
-    @render2d.RenderTarget::Window(
+    @sprite.RenderTarget::Window(
       @window.WindowRef::Entity(primary_window_entity),
     ),
     tick,
@@ -166,14 +166,14 @@ test "ui: explicit UiTargetCamera propagates from root and drives logical render
   get_ui_scale_resource(world).insert(UiScale::new(2.0F), tick)
 
   let target_camera = world.spawn_empty()
-  @render2d.get_camera_store(world).insert(
+  @sprite.get_camera_store(world).insert(
     target_camera,
     camera_with_target_info(0, @math.IVec2::new(640, 360), 2.0F),
     tick,
   )
 
   let ignored_child_target = world.spawn_empty()
-  @render2d.get_camera_store(world).insert(
+  @sprite.get_camera_store(world).insert(
     ignored_child_target,
     camera_with_target_info(1, @math.IVec2::new(320, 180), 1.0F),
     tick,
@@ -230,13 +230,13 @@ test "ui: layout resolves each root against its propagated target viewport" {
   let tick = world.increment_change_tick()
 
   let camera_a = world.spawn_empty()
-  @render2d.get_camera_store(world).insert(
+  @sprite.get_camera_store(world).insert(
     camera_a,
     camera_with_target_info(0, @math.IVec2::new(200, 100), 1.0F),
     tick,
   )
   let camera_b = world.spawn_empty()
-  @render2d.get_camera_store(world).insert(
+  @sprite.get_camera_store(world).insert(
     camera_b,
     camera_with_target_info(1, @math.IVec2::new(600, 300), 2.0F),
     tick,

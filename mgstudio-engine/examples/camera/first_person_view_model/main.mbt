@@ -97,7 +97,7 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   .insert(player, @math.Transform::from_xyz(0.0F, 1.0F, 0.0F), tick)
 
   let world_camera = @render3d.Camera3dBundle::new_with_projection(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     Perspective(@render3d.PerspectiveProjection3d::{
       ..@render3d.PerspectiveProjection3d::default(),
       fov: degrees_to_radians(90.0F),
@@ -112,7 +112,7 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   .insert(world_camera, @hierarchy.Parent::new(player), tick)
 
   let view_model_camera = @render3d.Camera3dBundle::new_with_projection(
-    @render2d.Camera::default().with_order(1),
+    @sprite.Camera::default().with_order(1),
     Perspective(@render3d.PerspectiveProjection3d::{
       ..@render3d.PerspectiveProjection3d::default(),
       fov: degrees_to_radians(70.0F),
@@ -120,10 +120,10 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
     @math.Transform::identity(),
   ).spawn(world)
   world
-  .component(@render2d.ecs_key_render_layers)
+  .component(@sprite.ecs_key_render_layers)
   .insert(
     view_model_camera,
-    @render2d.RenderLayers::layer(VIEW_MODEL_RENDER_LAYER),
+    @sprite.RenderLayers::layer(VIEW_MODEL_RENDER_LAYER),
     tick,
   )
   world
@@ -135,15 +135,15 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::srgb(0.65F, 0.93F, 0.90F),
+          @sprite.Color::srgb(0.65F, 0.93F, 0.90F),
         ),
       ),
     ),
     @math.Transform::from_xyz(0.2F, -0.1F, -0.25F),
   ).spawn(world)
   world
-  .component(@render2d.ecs_key_render_layers)
-  .insert(arm, @render2d.RenderLayers::layer(VIEW_MODEL_RENDER_LAYER), tick)
+  .component(@sprite.ecs_key_render_layers)
+  .insert(arm, @sprite.RenderLayers::layer(VIEW_MODEL_RENDER_LAYER), tick)
   world
   .component(@render3d.NotShadowCaster::component())
   .insert(arm, @render3d.NotShadowCaster::default(), tick)
@@ -156,7 +156,7 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
 fn spawn_world_model(world : @ecs.World) -> Unit {
   let floor_material = @render3d.MeshMaterial3d::new(
     @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(@render2d.Color::white()),
+      @render3d.StandardMaterial::from_color(@sprite.Color::white()),
     ),
   )
   @render3d.MeshMaterial3dBundle::new(
@@ -168,7 +168,7 @@ fn spawn_world_model(world : @ecs.World) -> Unit {
 
   let cube_material = @render3d.MeshMaterial3d::new(
     @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(@render2d.Color::white()),
+      @render3d.StandardMaterial::from_color(@sprite.Color::white()),
     ),
   )
   @render3d.MeshMaterial3dBundle::new(
@@ -195,7 +195,7 @@ fn spawn_lights(world : @ecs.World) -> Unit {
   .insert(
     light,
     @render3d.PointLight::default()
-    .with_color(@render2d.Color::srgb(1.0F, 0.76F, 0.84F))
+    .with_color(@sprite.Color::srgb(1.0F, 0.76F, 0.84F))
     .with_shadow_maps_enabled(true),
     tick,
   )
@@ -203,10 +203,10 @@ fn spawn_lights(world : @ecs.World) -> Unit {
   .component(@math.ecs_key_transform)
   .insert(light, @math.Transform::from_xyz(-2.0F, 4.0F, -0.75F), tick)
   world
-  .component(@render2d.ecs_key_render_layers)
+  .component(@sprite.ecs_key_render_layers)
   .insert(
     light,
-    @render2d.RenderLayers::from_layers([
+    @sprite.RenderLayers::from_layers([
       DEFAULT_RENDER_LAYER,
       VIEW_MODEL_RENDER_LAYER,
     ]),
@@ -217,8 +217,8 @@ fn spawn_lights(world : @ecs.World) -> Unit {
 ///|
 fn spawn_text(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let overlay_camera = @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(2).with_clear_color_none(),
+  let overlay_camera = @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(2).with_clear_color_none(),
     @math.Transform::identity(),
   ).spawn(world)
   world
@@ -247,7 +247,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
       .with_font_size(20.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 

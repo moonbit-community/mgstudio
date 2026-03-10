@@ -32,19 +32,19 @@ fn mesh2d_vertex_color_texture_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/banner.png")
   let mesh = create_colored_quad_mesh()
-  let left_material = @render2d.ColorMaterial::new(@render2d.Color::white())
-  let right_material = @render2d.ColorMaterial::from_image(texture)
+  let left_material = @sprite.ColorMaterial::new(@sprite.Color::white())
+  let right_material = @sprite.ColorMaterial::from_image(texture)
   spawn_colored_panel(world, mesh, left_material, -PANEL_OFFSET)
   spawn_colored_panel(world, mesh, right_material, PANEL_OFFSET)
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
 }
 
 ///|
-fn create_colored_quad_mesh() -> @render2d.Mesh2d {
+fn create_colored_quad_mesh() -> @sprite.Mesh2d {
   let positions = [
     @math.Vec2::new(-0.5F, -0.5F),
     @math.Vec2::new(0.5F, -0.5F),
@@ -70,14 +70,14 @@ fn create_colored_quad_mesh() -> @render2d.Mesh2d {
     colors,
     Some(indices),
   )
-  @render2d.Mesh2d::from_geometry(geometry)
+  @sprite.Mesh2d::from_geometry(geometry)
 }
 
 ///|
 fn spawn_colored_panel(
   world : @ecs.World,
-  mesh : @render2d.Mesh2d,
-  material : @render2d.ColorMaterial,
+  mesh : @sprite.Mesh2d,
+  material : @sprite.ColorMaterial,
   x : Float,
 ) -> Unit {
   let transform = @math.Transform::from_xy_rotation_scale(
@@ -85,5 +85,5 @@ fn spawn_colored_panel(
     0.0F,
     @math.Vec2::new(PANEL_SCALE, PANEL_SCALE),
   )
-  @render2d.Mesh2dBundle::new(mesh, material, transform).spawn(world) |> ignore
+  @sprite.Mesh2dBundle::new(mesh, material, transform).spawn(world) |> ignore
 }

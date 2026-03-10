@@ -140,7 +140,7 @@ fn supports_any_compressed_cubemap_format(supported_formats : Int) -> Bool {
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @render2d.Color,
+  color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
@@ -207,7 +207,7 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 32_000.0F, true),
+    @render3d.DirectionalLight::new(@sprite.Color::white(), 32_000.0F, true),
     tick,
   )
   world
@@ -223,12 +223,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   set_global_ambient_light(
     world,
-    @render2d.Color::new(
-      210.0F / 255.0F,
-      220.0F / 255.0F,
-      240.0F / 255.0F,
-      1.0F,
-    ),
+    @sprite.Color::new(210.0F / 255.0F, 220.0F / 255.0F, 240.0F / 255.0F, 1.0F),
     1.0F,
   )
 
@@ -237,7 +232,7 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     camera_transform,
   ).spawn(world)
   world
@@ -274,11 +269,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()

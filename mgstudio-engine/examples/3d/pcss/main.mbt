@@ -74,7 +74,7 @@ let pcss_state : Ref[PcssState] = Ref::new({
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @render2d.Color,
+  color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
@@ -131,7 +131,7 @@ fn update_help_text() -> Unit {
 
 ///|
 fn create_directional_light() -> @render3d.DirectionalLight {
-  @render3d.DirectionalLight::new(@render2d.Color::white(), 10_000.0F, true)
+  @render3d.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true)
   .with_shadow_depth_bias(DIRECTIONAL_SHADOW_DEPTH_BIAS)
   .with_soft_shadow_size(
     if pcss_state.val.soft_shadows {
@@ -145,7 +145,7 @@ fn create_directional_light() -> @render3d.DirectionalLight {
 ///|
 fn create_point_light() -> @render3d.PointLight {
   @render3d.PointLight::new(
-    @render2d.Color::white(),
+    @sprite.Color::white(),
     POINT_LIGHT_INTENSITY,
     POINT_LIGHT_RANGE,
     true,
@@ -159,7 +159,7 @@ fn create_point_light() -> @render3d.PointLight {
 ///|
 fn create_spot_light() -> @render3d.SpotLight {
   @render3d.SpotLight::new(
-    @render2d.Color::white(),
+    @sprite.Color::white(),
     POINT_LIGHT_INTENSITY,
     POINT_LIGHT_RANGE,
     0.0F,
@@ -232,7 +232,7 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-12.912F * 0.7F, 4.466F * 0.7F, -10.624F * 0.7F).looking_at(
       @math.Vec3::new(0.0F, 3.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -305,17 +305,17 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
   pcss_state.val.help_text = Some(help_text)
 
-  set_global_ambient_light(world, @render2d.Color::white(), 0.0F)
+  set_global_ambient_light(world, @sprite.Color::white(), 0.0F)
   apply_camera_shadow_filter(world)
   update_help_text()
 }

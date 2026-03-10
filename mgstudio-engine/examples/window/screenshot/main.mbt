@@ -44,7 +44,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::srgb(0.3F, 0.5F, 0.3F),
+          @sprite.Color::srgb(0.3F, 0.5F, 0.3F),
         ),
       ),
     ),
@@ -57,7 +57,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::srgb(0.8F, 0.7F, 0.6F),
+          @sprite.Color::srgb(0.8F, 0.7F, 0.6F),
         ),
       ),
     ),
@@ -78,7 +78,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
   @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -92,8 +92,8 @@ fn spawn_ui(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(100).with_clear_color_none(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(100).with_clear_color_none(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -103,7 +103,7 @@ fn spawn_ui(world : @ecs.World) -> Unit {
       @text.TextFont::default().with_font(font).with_font_size(24.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 

@@ -112,7 +112,7 @@ pub fn render_diagnostics_plugin_with(
   }
   app_.add_post_update_system_config(
     @app.system(render_diagnostics_system)
-    .after(@render2d.render2d_set_render)
+    .after(@sprite.render2d_set_render)
     .after(@render3d.render3d_set_render),
   )
 }
@@ -217,10 +217,10 @@ fn render_diagnostics_collect_snapshot() -> RenderDiagnosticsMeasurements {
   let gpu_snapshot = @render.render_diagnostics_snapshot()
   RenderDiagnosticsMeasurements::{
     prepared_cameras_2d: Some(
-      @render2d.render2d_diagnostic_prepared_camera_count(),
+      @sprite.render2d_diagnostic_prepared_camera_count(),
     ),
     queued_draw_items_2d: Some(
-      @render2d.render2d_diagnostic_queued_draw_item_count(),
+      @sprite.render2d_diagnostic_queued_draw_item_count(),
     ),
     prepared_cameras_3d: Some(
       @render3d.render3d_diagnostic_prepared_camera_count(),

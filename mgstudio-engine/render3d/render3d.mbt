@@ -1438,7 +1438,7 @@ pub struct Vignette {
   roundness : Float
   center : @math.Vec2
   edge_compensation : Float
-  color : @render2d.Color
+  color : @sprite.Color
 } derive(ToJson, FromJson)
 
 ///|
@@ -1450,7 +1450,7 @@ pub fn Vignette::default() -> Vignette {
     roundness: 1.0F,
     center: @math.Vec2::new(0.5F, 0.5F),
     edge_compensation: 1.0F,
-    color: @render2d.Color::black(),
+    color: @sprite.Color::black(),
   }
 }
 
@@ -1539,10 +1539,7 @@ pub fn Vignette::with_edge_compensation(
 }
 
 ///|
-pub fn Vignette::with_color(
-  self : Vignette,
-  color : @render2d.Color,
-) -> Vignette {
+pub fn Vignette::with_color(self : Vignette, color : @sprite.Color) -> Vignette {
   Vignette::{ ..self, color, }
 }
 
@@ -3069,8 +3066,8 @@ fn fog_falloff_koschmieder(
 fn fog_falloff_atmospheric_from_colors(
   visibility : Float,
   contrast_threshold : Float,
-  extinction_color : @render2d.Color,
-  inscattering_color : @render2d.Color,
+  extinction_color : @sprite.Color,
+  inscattering_color : @sprite.Color,
 ) -> FogFalloff3d {
   let beta = fog_falloff_koschmieder(visibility, contrast_threshold)
 
@@ -3194,7 +3191,7 @@ pub fn FogFalloff3d::from_visibility_contrast_squared(
 ///|
 pub fn FogFalloff3d::from_visibility_color(
   visibility : Float,
-  extinction_inscattering_color : @render2d.Color,
+  extinction_inscattering_color : @sprite.Color,
 ) -> FogFalloff3d {
   FogFalloff3d::from_visibility_contrast_colors(
     visibility,
@@ -3207,8 +3204,8 @@ pub fn FogFalloff3d::from_visibility_color(
 ///|
 pub fn FogFalloff3d::from_visibility_colors(
   visibility : Float,
-  extinction_color : @render2d.Color,
-  inscattering_color : @render2d.Color,
+  extinction_color : @sprite.Color,
+  inscattering_color : @sprite.Color,
 ) -> FogFalloff3d {
   FogFalloff3d::from_visibility_contrast_colors(
     visibility,
@@ -3222,7 +3219,7 @@ pub fn FogFalloff3d::from_visibility_colors(
 pub fn FogFalloff3d::from_visibility_contrast_color(
   visibility : Float,
   contrast_threshold : Float,
-  extinction_inscattering_color : @render2d.Color,
+  extinction_inscattering_color : @sprite.Color,
 ) -> FogFalloff3d {
   FogFalloff3d::from_visibility_contrast_colors(
     visibility, contrast_threshold, extinction_inscattering_color, extinction_inscattering_color,
@@ -3233,8 +3230,8 @@ pub fn FogFalloff3d::from_visibility_contrast_color(
 pub fn FogFalloff3d::from_visibility_contrast_colors(
   visibility : Float,
   contrast_threshold : Float,
-  extinction_color : @render2d.Color,
-  inscattering_color : @render2d.Color,
+  extinction_color : @sprite.Color,
+  inscattering_color : @sprite.Color,
 ) -> FogFalloff3d {
   fog_falloff_atmospheric_from_colors(
     visibility, contrast_threshold, extinction_color, inscattering_color,
@@ -3245,8 +3242,8 @@ pub fn FogFalloff3d::from_visibility_contrast_colors(
 // Global fog defaults. Camera3d can apply per-camera volumetric/atmosphere
 // overrides on top during render execution.
 pub struct DistanceFog {
-  color : @render2d.Color
-  directional_light_color : @render2d.Color
+  color : @sprite.Color
+  directional_light_color : @sprite.Color
   directional_light_exponent : Float
   falloff : FogFalloff3d
 } derive(ToJson, FromJson)
@@ -3254,8 +3251,8 @@ pub struct DistanceFog {
 ///|
 pub fn DistanceFog::default() -> DistanceFog {
   DistanceFog::{
-    color: @render2d.Color::white(),
-    directional_light_color: @render2d.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+    color: @sprite.Color::white(),
+    directional_light_color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
     directional_light_exponent: 8.0F,
     falloff: FogFalloff3d::linear(0.0F, 100.0F),
   }
@@ -3263,12 +3260,12 @@ pub fn DistanceFog::default() -> DistanceFog {
 
 ///|
 pub fn DistanceFog::new(
-  color : @render2d.Color,
+  color : @sprite.Color,
   falloff : FogFalloff3d,
 ) -> DistanceFog {
   DistanceFog::{
     color,
-    directional_light_color: @render2d.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+    directional_light_color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
     directional_light_exponent: 8.0F,
     falloff,
   }
@@ -3277,7 +3274,7 @@ pub fn DistanceFog::new(
 ///|
 pub fn DistanceFog::with_color(
   self : DistanceFog,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> DistanceFog {
   DistanceFog::{ ..self, color, }
 }
@@ -3285,7 +3282,7 @@ pub fn DistanceFog::with_color(
 ///|
 pub fn DistanceFog::with_directional_light_color(
   self : DistanceFog,
-  directional_light_color : @render2d.Color,
+  directional_light_color : @sprite.Color,
 ) -> DistanceFog {
   DistanceFog::{ ..self, directional_light_color, }
 }
@@ -3338,7 +3335,7 @@ pub fn VolumetricLight::default() -> VolumetricLight {
 ///|
 /// API-parity data model stub aligned with Bevy's `VolumetricFog`.
 pub struct VolumetricFog {
-  ambient_color : @render2d.Color
+  ambient_color : @sprite.Color
   ambient_intensity : Float
   jitter : Float
   step_count : Int
@@ -3347,7 +3344,7 @@ pub struct VolumetricFog {
 ///|
 pub fn VolumetricFog::default() -> VolumetricFog {
   VolumetricFog::{
-    ambient_color: @render2d.Color::white(),
+    ambient_color: @sprite.Color::white(),
     ambient_intensity: 0.1F,
     jitter: 0.0F,
     step_count: 64,
@@ -3357,7 +3354,7 @@ pub fn VolumetricFog::default() -> VolumetricFog {
 ///|
 pub fn VolumetricFog::with_ambient_color(
   self : VolumetricFog,
-  ambient_color : @render2d.Color,
+  ambient_color : @sprite.Color,
 ) -> VolumetricFog {
   VolumetricFog::{ ..self, ambient_color, }
 }
@@ -3403,28 +3400,28 @@ pub fn VolumetricFog::with_step_count(
 ///|
 /// API-parity data model stub aligned with Bevy's `FogVolume`.
 pub struct FogVolume {
-  fog_color : @render2d.Color
+  fog_color : @sprite.Color
   density_factor : Float
   density_texture : @asset.Handle[@asset.Image]?
   density_texture_offset : @math.Vec3
   absorption : Float
   scattering : Float
   scattering_asymmetry : Float
-  light_tint : @render2d.Color
+  light_tint : @sprite.Color
   light_intensity : Float
 } derive(ToJson, FromJson)
 
 ///|
 pub fn FogVolume::default() -> FogVolume {
   FogVolume::{
-    fog_color: @render2d.Color::white(),
+    fog_color: @sprite.Color::white(),
     density_factor: 0.1F,
     density_texture: None,
     density_texture_offset: @math.Vec3::new(0.0F, 0.0F, 0.0F),
     absorption: 0.3F,
     scattering: 0.3F,
     scattering_asymmetry: 0.5F,
-    light_tint: @render2d.Color::white(),
+    light_tint: @sprite.Color::white(),
     light_intensity: 1.0F,
   }
 }
@@ -3432,7 +3429,7 @@ pub fn FogVolume::default() -> FogVolume {
 ///|
 pub fn FogVolume::with_fog_color(
   self : FogVolume,
-  fog_color : @render2d.Color,
+  fog_color : @sprite.Color,
 ) -> FogVolume {
   FogVolume::{ ..self, fog_color, }
 }
@@ -3498,7 +3495,7 @@ pub fn FogVolume::with_scattering_asymmetry(
 ///|
 pub fn FogVolume::with_light_tint(
   self : FogVolume,
-  light_tint : @render2d.Color,
+  light_tint : @sprite.Color,
 ) -> FogVolume {
   FogVolume::{ ..self, light_tint, }
 }
@@ -3789,7 +3786,7 @@ pub fn DefaultOpaqueRendererMethod::renderer_method(
 
 ///|
 pub struct StandardMaterial {
-  base_color : @render2d.Color
+  base_color : @sprite.Color
   base_color_texture : @asset.Handle[@asset.Image]?
   uv_transform : @transform.Affine2
   normal_map_texture : @asset.Handle[@asset.Image]?
@@ -3805,7 +3802,7 @@ pub struct StandardMaterial {
   anisotropy_strength : Float
   anisotropy_rotation : Float
   anisotropy_texture : @asset.Handle[@asset.Image]?
-  emissive : @render2d.Color
+  emissive : @sprite.Color
   emissive_texture : @asset.Handle[@asset.Image]?
   metallic : Float
   metallic_roughness_texture : @asset.Handle[@asset.Image]?
@@ -3815,7 +3812,7 @@ pub struct StandardMaterial {
   specular_transmission : Float
   thickness : Float
   ior : Float
-  specular_tint : @render2d.Color
+  specular_tint : @sprite.Color
   specular_tint_texture : @asset.Handle[@asset.Image]?
   occlusion_texture : @asset.Handle[@asset.Image]?
   alpha_mode : AlphaMode3d
@@ -3827,7 +3824,7 @@ pub struct StandardMaterial {
 ///|
 pub fn StandardMaterial::default() -> StandardMaterial {
   StandardMaterial::{
-    base_color: @render2d.Color::white(),
+    base_color: @sprite.Color::white(),
     base_color_texture: None,
     uv_transform: @transform.Affine2::identity(),
     normal_map_texture: None,
@@ -3843,7 +3840,7 @@ pub fn StandardMaterial::default() -> StandardMaterial {
     anisotropy_strength: 0.0F,
     anisotropy_rotation: 0.0F,
     anisotropy_texture: None,
-    emissive: @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+    emissive: @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
     emissive_texture: None,
     metallic: 0.0F,
     metallic_roughness_texture: None,
@@ -3853,7 +3850,7 @@ pub fn StandardMaterial::default() -> StandardMaterial {
     specular_transmission: 0.0F,
     thickness: 0.0F,
     ior: 1.5F,
-    specular_tint: @render2d.Color::white(),
+    specular_tint: @sprite.Color::white(),
     specular_tint_texture: None,
     occlusion_texture: None,
     alpha_mode: AlphaMode3d::Opaque,
@@ -3864,9 +3861,7 @@ pub fn StandardMaterial::default() -> StandardMaterial {
 }
 
 ///|
-pub fn StandardMaterial::from_color(
-  color : @render2d.Color,
-) -> StandardMaterial {
+pub fn StandardMaterial::from_color(color : @sprite.Color) -> StandardMaterial {
   let alpha_mode = if color.a < 0.999F {
     AlphaMode3d::Blend
   } else {
@@ -3913,7 +3908,7 @@ pub fn StandardMaterial::from_color(
 ///|
 pub fn StandardMaterial::with_base_color(
   self : StandardMaterial,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> StandardMaterial {
   StandardMaterial::{ ..self, base_color: color }
 }
@@ -4095,7 +4090,7 @@ pub fn StandardMaterial::with_anisotropy_texture(
 ///|
 pub fn StandardMaterial::with_emissive(
   self : StandardMaterial,
-  emissive : @render2d.Color,
+  emissive : @sprite.Color,
 ) -> StandardMaterial {
   StandardMaterial::{ ..self, emissive, }
 }
@@ -4201,7 +4196,7 @@ pub fn StandardMaterial::with_ior(
 ///|
 pub fn StandardMaterial::with_specular_tint(
   self : StandardMaterial,
-  specular_tint : @render2d.Color,
+  specular_tint : @sprite.Color,
 ) -> StandardMaterial {
   StandardMaterial::{ ..self, specular_tint, }
 }
@@ -4731,7 +4726,7 @@ fn mesh3d_geometry_uv_sphere(
 ///|
 pub fn Mesh3d::from_geometry(geometry : @mesh.Mesh3dGeometry) -> Mesh3d {
   Mesh3d::new(
-    @render2d.render_mesh_asset_add(@mesh.Mesh::from_3d_geometry(geometry)),
+    @sprite.render_mesh_asset_add(@mesh.Mesh::from_3d_geometry(geometry)),
   )
 }
 
@@ -4865,7 +4860,7 @@ fn render3d_skybox_proxy_mesh_id(world : @ecs.World) -> Int {
       mesh.mesh
     }
   }
-  @render2d.render2d_upload_mesh_handle(handle)
+  @sprite.render2d_upload_mesh_handle(handle)
 }
 
 ///|
@@ -5246,7 +5241,7 @@ const SPOT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z : Float = 0.1F
 
 ///|
 pub struct PointLight {
-  color : @render2d.Color
+  color : @sprite.Color
   intensity : Float
   range : Float
   radius : Float
@@ -5262,7 +5257,7 @@ pub struct PointLight {
 ///|
 pub fn PointLight::default() -> PointLight {
   PointLight::{
-    color: @render2d.Color::white(),
+    color: @sprite.Color::white(),
     intensity: 1_000_000.0F,
     range: 20.0F,
     radius: 0.0F,
@@ -5278,7 +5273,7 @@ pub fn PointLight::default() -> PointLight {
 
 ///|
 pub fn PointLight::new(
-  color : @render2d.Color,
+  color : @sprite.Color,
   intensity : Float,
   range : Float,
   shadow_maps_enabled : Bool,
@@ -5301,7 +5296,7 @@ pub fn PointLight::new(
 ///|
 pub fn PointLight::with_color(
   self : PointLight,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> PointLight {
   PointLight::{ ..self, color, }
 }
@@ -5658,7 +5653,7 @@ pub fn CascadeShadowConfig::default() -> CascadeShadowConfig {
 
 ///|
 pub struct DirectionalLight {
-  color : @render2d.Color
+  color : @sprite.Color
   illuminance : Float
   shadow_maps_enabled : Bool
   contact_shadows_enabled : Bool
@@ -5671,7 +5666,7 @@ pub struct DirectionalLight {
 ///|
 pub fn DirectionalLight::default() -> DirectionalLight {
   DirectionalLight::{
-    color: @render2d.Color::white(),
+    color: @sprite.Color::white(),
     illuminance: 10000.0F,
     shadow_maps_enabled: false,
     contact_shadows_enabled: false,
@@ -5684,7 +5679,7 @@ pub fn DirectionalLight::default() -> DirectionalLight {
 
 ///|
 pub fn DirectionalLight::new(
-  color : @render2d.Color,
+  color : @sprite.Color,
   illuminance : Float,
   shadow_maps_enabled : Bool,
 ) -> DirectionalLight {
@@ -5786,7 +5781,7 @@ pub fn DirectionalLight::with_shadow_normal_bias(
 
 ///|
 pub struct SpotLight {
-  color : @render2d.Color
+  color : @sprite.Color
   intensity : Float
   range : Float
   radius : Float
@@ -5803,7 +5798,7 @@ pub struct SpotLight {
 ///|
 pub fn SpotLight::default() -> SpotLight {
   SpotLight::{
-    color: @render2d.Color::white(),
+    color: @sprite.Color::white(),
     intensity: 1_000_000.0F,
     range: 20.0F,
     radius: 0.0F,
@@ -5820,7 +5815,7 @@ pub fn SpotLight::default() -> SpotLight {
 
 ///|
 pub fn SpotLight::new(
-  color : @render2d.Color,
+  color : @sprite.Color,
   intensity : Float,
   range : Float,
   inner_angle : Float,
@@ -6337,18 +6332,18 @@ pub fn IrradianceVolume::with_intensity(
 
 ///|
 pub struct GlobalAmbientLight {
-  color : @render2d.Color
+  color : @sprite.Color
   brightness : Float
 } derive(ToJson, FromJson)
 
 ///|
 pub fn GlobalAmbientLight::default() -> GlobalAmbientLight {
-  GlobalAmbientLight::{ color: @render2d.Color::white(), brightness: 80.0F }
+  GlobalAmbientLight::{ color: @sprite.Color::white(), brightness: 80.0F }
 }
 
 ///|
 pub fn GlobalAmbientLight::new(
-  color : @render2d.Color,
+  color : @sprite.Color,
   brightness : Float,
 ) -> GlobalAmbientLight {
   GlobalAmbientLight::{ color, brightness }
@@ -6356,7 +6351,7 @@ pub fn GlobalAmbientLight::new(
 
 ///|
 pub struct Camera3dBundle {
-  camera : @render2d.Camera
+  camera : @sprite.Camera
   projection : Projection
   sub_camera_view : SubCameraView3d?
   screen_space_transmission : ScreenSpaceTransmission?
@@ -6371,13 +6366,13 @@ pub struct Camera3dBundle {
   color_grading : ColorGrading?
   camera3d : Camera3d
   transform : @math.Transform
-  target : @render2d.RenderTarget
-  layers : @render2d.RenderLayers
+  target : @sprite.RenderTarget
+  layers : @sprite.RenderLayers
 }
 
 ///|
 pub fn Camera3dBundle::new(
-  camera : @render2d.Camera,
+  camera : @sprite.Camera,
   transform : @math.Transform,
 ) -> Camera3dBundle {
   Camera3dBundle::{
@@ -6396,14 +6391,14 @@ pub fn Camera3dBundle::new(
     color_grading: None,
     camera3d: Camera3d::default(),
     transform,
-    target: @render2d.RenderTarget::Screen,
-    layers: @render2d.RenderLayers::default(),
+    target: @sprite.RenderTarget::Screen,
+    layers: @sprite.RenderLayers::default(),
   }
 }
 
 ///|
 pub fn Camera3dBundle::new_with_projection(
-  camera : @render2d.Camera,
+  camera : @sprite.Camera,
   projection : Projection,
   transform : @math.Transform,
 ) -> Camera3dBundle {
@@ -6423,8 +6418,8 @@ pub fn Camera3dBundle::new_with_projection(
     color_grading: None,
     camera3d: Camera3d::default(),
     transform,
-    target: @render2d.RenderTarget::Screen,
-    layers: @render2d.RenderLayers::default(),
+    target: @sprite.RenderTarget::Screen,
+    layers: @sprite.RenderLayers::default(),
   }
 }
 
@@ -6439,7 +6434,7 @@ pub fn Camera3dBundle::with_sub_camera_view(
 ///|
 pub fn Camera3dBundle::with_target(
   self : Camera3dBundle,
-  target : @render2d.RenderTarget,
+  target : @sprite.RenderTarget,
 ) -> Camera3dBundle {
   Camera3dBundle::{ ..self, target, }
 }
@@ -6625,7 +6620,7 @@ pub struct MeshMaterial3dBundle {
   mesh : Mesh3d
   material : MeshMaterial3d
   transform : @math.Transform
-  layers : @render2d.RenderLayers
+  layers : @sprite.RenderLayers
   visibility : @visibility.Visibility
   inherited_visibility : @visibility.InheritedVisibility
   view_visibility : @visibility.ViewVisibility
@@ -6641,7 +6636,7 @@ pub fn MeshMaterial3dBundle::new(
     mesh,
     material,
     transform,
-    layers: @render2d.RenderLayers::default(),
+    layers: @sprite.RenderLayers::default(),
     visibility: @visibility.Visibility::Inherited,
     inherited_visibility: @visibility.InheritedVisibility::new(true),
     view_visibility: @visibility.ViewVisibility::new(true),
@@ -6697,17 +6692,9 @@ fn camera3d_bundle_insert(
   if bundle.color_grading is Some(color_grading) {
     get_color_grading_store(ecs_world).insert(entity, color_grading, tick)
   }
-  @render2d.get_camera_store(ecs_world).insert(entity, bundle.camera, tick)
-  @render2d.get_render_target_store(ecs_world).insert(
-    entity,
-    bundle.target,
-    tick,
-  )
-  @render2d.get_render_layers_store(ecs_world).insert(
-    entity,
-    bundle.layers,
-    tick,
-  )
+  @sprite.get_camera_store(ecs_world).insert(entity, bundle.camera, tick)
+  @sprite.get_render_target_store(ecs_world).insert(entity, bundle.target, tick)
+  @sprite.get_render_layers_store(ecs_world).insert(entity, bundle.layers, tick)
   get_frustum_store(ecs_world).insert(
     entity,
     bundle.projection.compute_frustum(bundle.transform),
@@ -6748,11 +6735,7 @@ fn mesh_material3d_bundle_insert(
   let ecs_world = world
   get_mesh3d_store(ecs_world).insert(entity, bundle.mesh, tick)
   get_mesh_material3d_store(ecs_world).insert(entity, bundle.material, tick)
-  @render2d.get_render_layers_store(ecs_world).insert(
-    entity,
-    bundle.layers,
-    tick,
-  )
+  @sprite.get_render_layers_store(ecs_world).insert(entity, bundle.layers, tick)
   @visibility.get_visibility_store(ecs_world).insert(
     entity,
     bundle.visibility,
@@ -6769,10 +6752,10 @@ fn mesh_material3d_bundle_insert(
     tick,
   )
   @math.get_transform_store(ecs_world).insert(entity, bundle.transform, tick)
-  let mesh_id = @render2d.render2d_upload_mesh_handle(bundle.mesh.mesh)
-  @render2d.get_gpu_mesh2d_store(ecs_world).insert(
+  let mesh_id = @sprite.render2d_upload_mesh_handle(bundle.mesh.mesh)
+  @sprite.get_gpu_mesh2d_store(ecs_world).insert(
     entity,
-    @render2d.GpuMesh2d::new(mesh_id),
+    @sprite.GpuMesh2d::new(mesh_id),
     tick,
   )
 }
@@ -6803,7 +6786,7 @@ pub fn MeshMaterial3dBundle::spawn(
 priv struct Camera3dInstance {
   entity : @core.Entity
   camera3d : Camera3d
-  camera : @render2d.Camera
+  camera : @sprite.Camera
   projection : Projection
   sub_camera_view : SubCameraView3d?
   screen_space_transmission : ScreenSpaceTransmission?
@@ -6833,7 +6816,7 @@ priv struct Camera3dInstance {
   target_id : Int
   target_size : @math.IVec2
   scale_factor : Float
-  layers : @render2d.RenderLayers
+  layers : @sprite.RenderLayers
 }
 
 ///|
@@ -6866,7 +6849,7 @@ priv struct Mesh3dInstance {
   is_forward_decal : Bool
   forward_decal_material_ext : ForwardDecalMaterialExt?
   clustered_decal : ClusteredDecal?
-  layers : @render2d.RenderLayers
+  layers : @sprite.RenderLayers
   has_wireframe : Bool
   has_no_wireframe : Bool
   wireframe_color : WireframeColor?
@@ -6894,7 +6877,7 @@ priv struct TransmissionMeshDraw {
   draw_specular_transmission : Float
   draw_thickness : Float
   draw_ior : Float
-  specular_tint : @render2d.Color
+  specular_tint : @sprite.Color
   anisotropy_strength : Float
   max_relief_mapping_search_steps : Float
 }
@@ -6908,14 +6891,14 @@ priv struct RenderTargetComputed3d {
 
 ///|
 priv struct Render3dLightingState {
-  ambient_color : @render2d.Color
+  ambient_color : @sprite.Color
   ambient_brightness : Float
   directional_dir : @math.Vec3
-  directional_color : @render2d.Color
+  directional_color : @sprite.Color
   directional_illuminance : Float
   point_entity : @core.Entity
   point_pos : @math.Vec3
-  point_color : @render2d.Color
+  point_color : @sprite.Color
   point_intensity : Float
   point_range : Float
   point_shadow_maps_enabled : Bool
@@ -6923,7 +6906,7 @@ priv struct Render3dLightingState {
   point_shadow_map_near_z : Float
   spot_pos : @math.Vec3
   spot_dir : @math.Vec3
-  spot_color : @render2d.Color
+  spot_color : @sprite.Color
   spot_intensity : Float
   spot_range : Float
   spot_inner_angle : Float
@@ -7040,10 +7023,10 @@ fn cmp_float(a : Float, b : Float) -> Int {
 ///|
 fn render3d_target_info(
   world : @ecs.World,
-  target : @render2d.RenderTarget,
+  target : @sprite.RenderTarget,
 ) -> RenderTargetComputed3d? {
   match target {
-    @render2d.RenderTarget::Screen => {
+    @sprite.RenderTarget::Screen => {
       let width = @window.window_physical_width_for(
         world,
         @window.WindowRef::Primary,
@@ -7068,7 +7051,7 @@ fn render3d_target_info(
         scale_factor,
       })
     }
-    @render2d.RenderTarget::Window(window_ref) => {
+    @sprite.RenderTarget::Window(window_ref) => {
       let width = @window.window_physical_width_for(world, window_ref)
       let height = @window.window_physical_height_for(world, window_ref)
       if width <= 0 || height <= 0 {
@@ -7084,7 +7067,7 @@ fn render3d_target_info(
         scale_factor,
       })
     }
-    @render2d.RenderTarget::Image(handle) => {
+    @sprite.RenderTarget::Image(handle) => {
       let width = @asset.asset_texture_width(handle)
       let height = @asset.asset_texture_height(handle)
       if width <= 0 || height <= 0 {
@@ -7101,9 +7084,9 @@ fn render3d_target_info(
 
 ///|
 fn render3d_clamp_viewport(
-  viewport : @render2d.Viewport,
+  viewport : @sprite.Viewport,
   target_size : @math.IVec2,
-) -> @render2d.Viewport {
+) -> @sprite.Viewport {
   let mut position_x = viewport.physical_position.x
   let mut position_y = viewport.physical_position.y
   let mut size_x = viewport.physical_size.x
@@ -7136,7 +7119,7 @@ fn render3d_clamp_viewport(
   if size_y > max_height {
     size_y = max_height
   }
-  @render2d.Viewport::new(
+  @sprite.Viewport::new(
     @math.IVec2::new(position_x, position_y),
     @math.IVec2::new(size_x, size_y),
   ).with_depth(viewport.depth_min, viewport.depth_max)
@@ -7157,14 +7140,14 @@ fn render3d_transform_forward(transform : @math.Transform) -> @math.Vec3 {
 ///|
 fn render3d_default_lighting_state() -> Render3dLightingState {
   Render3dLightingState::{
-    ambient_color: @render2d.Color::white(),
+    ambient_color: @sprite.Color::white(),
     ambient_brightness: 80.0F,
     directional_dir: @math.Vec3::new(0.0F, -1.0F, 0.0F),
-    directional_color: @render2d.Color::white(),
+    directional_color: @sprite.Color::white(),
     directional_illuminance: 0.0F,
     point_entity: @core.Entity::placeholder(),
     point_pos: @math.Vec3::new(0.0F, 0.0F, 0.0F),
-    point_color: @render2d.Color::white(),
+    point_color: @sprite.Color::white(),
     point_intensity: 0.0F,
     point_range: 1.0F,
     point_shadow_maps_enabled: false,
@@ -7172,7 +7155,7 @@ fn render3d_default_lighting_state() -> Render3dLightingState {
     point_shadow_map_near_z: POINT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z,
     spot_pos: @math.Vec3::new(0.0F, 0.0F, 0.0F),
     spot_dir: @math.Vec3::new(0.0F, -1.0F, 0.0F),
-    spot_color: @render2d.Color::white(),
+    spot_color: @sprite.Color::white(),
     spot_intensity: 0.0F,
     spot_range: 1.0F,
     spot_inner_angle: 0.6F,
@@ -7420,11 +7403,11 @@ fn render3d_default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
 
 ///|
 fn render3d_color_lerp(
-  from_ : @render2d.Color,
-  to_ : @render2d.Color,
+  from_ : @sprite.Color,
+  to_ : @sprite.Color,
   t : Float,
-) -> @render2d.Color {
-  @render2d.Color::new(
+) -> @sprite.Color {
+  @sprite.Color::new(
     from_.r + (to_.r - from_.r) * t,
     from_.g + (to_.g - from_.g) * t,
     from_.b + (to_.b - from_.b) * t,
@@ -7465,7 +7448,7 @@ fn render3d_camera_distance_fog(
     }
   }
   if atmosphere is Some(atmosphere_value) {
-    let albedo_color = @render2d.Color::new(
+    let albedo_color = @sprite.Color::new(
       render3d_float_clamp(atmosphere_value.ground_albedo.x, 0.0F, 1.0F),
       render3d_float_clamp(atmosphere_value.ground_albedo.y, 0.0F, 1.0F),
       render3d_float_clamp(atmosphere_value.ground_albedo.z, 0.0F, 1.0F),
@@ -7741,7 +7724,7 @@ fn render3d_wireframe_mesh_id(mesh_handle : @asset.Handle[@mesh.Mesh]) -> Int? {
   if render3d_wireframe_mesh_cache_get(source_mesh_handle_id) is Some(mesh_id) {
     return Some(mesh_id)
   }
-  let source_mesh = match @render2d.render_mesh_asset_get(mesh_handle) {
+  let source_mesh = match @sprite.render_mesh_asset_get(mesh_handle) {
     Some(mesh_asset) => mesh_asset
     None => return None
   }
@@ -7751,10 +7734,10 @@ fn render3d_wireframe_mesh_id(mesh_handle : @asset.Handle[@mesh.Mesh]) -> Int? {
         @mesh.Mesh3dPrimitiveTopology::TriangleList =>
           match geometry3d.to_wireframe_line_list() {
             Some(wireframe_geometry) => {
-              let wireframe_handle = @render2d.render_mesh_asset_add(
+              let wireframe_handle = @sprite.render_mesh_asset_add(
                 @mesh.Mesh::from_3d_geometry(wireframe_geometry),
               )
-              let wireframe_mesh_id = @render2d.render2d_upload_mesh_handle(
+              let wireframe_mesh_id = @sprite.render2d_upload_mesh_handle(
                 wireframe_handle,
               )
               render3d_wireframe_mesh_cache_set(
@@ -7765,12 +7748,12 @@ fn render3d_wireframe_mesh_id(mesh_handle : @asset.Handle[@mesh.Mesh]) -> Int? {
             None => return None
           }
         @mesh.Mesh3dPrimitiveTopology::LineList => {
-          let mesh_id = @render2d.render2d_upload_mesh_handle(mesh_handle)
+          let mesh_id = @sprite.render2d_upload_mesh_handle(mesh_handle)
           render3d_wireframe_mesh_cache_set(source_mesh_handle_id, mesh_id)
           Some(mesh_id)
         }
         @mesh.Mesh3dPrimitiveTopology::LineStrip => {
-          let mesh_id = @render2d.render2d_upload_mesh_handle(mesh_handle)
+          let mesh_id = @sprite.render2d_upload_mesh_handle(mesh_handle)
           render3d_wireframe_mesh_cache_set(source_mesh_handle_id, mesh_id)
           Some(mesh_id)
         }
@@ -7798,13 +7781,13 @@ fn render3d_mesh_should_draw_wireframe(
 fn render3d_mesh_wireframe_color(
   mesh : Mesh3dInstance,
   wireframe_config : WireframeConfig?,
-) -> @render2d.Color {
+) -> @sprite.Color {
   if mesh.wireframe_color is Some(color_component) {
     color_component.color
   } else if wireframe_config is Some(config) {
     config.default_color
   } else {
-    @render2d.Color::white()
+    @sprite.Color::white()
   }
 }
 
@@ -9214,7 +9197,7 @@ fn render3d_ray_local_aabb_hit(
 
 ///|
 fn render3d_mesh_local_aabb(mesh3d : Mesh3d) -> (@math.Vec3, @math.Vec3)? {
-  guard @render2d.render_mesh_asset_get(mesh3d.mesh) is Some(mesh_asset) else {
+  guard @sprite.render_mesh_asset_get(mesh3d.mesh) is Some(mesh_asset) else {
     return None
   }
   guard mesh_asset.geometry is @mesh.MeshGeometry::Geometry3d(geometry3d) else {
@@ -9462,7 +9445,7 @@ fn render3d_visibility_range_visible(
 ///|
 fn render3d_sorted_mesh_indices(
   meshes : Array[Mesh3dInstance],
-  layers : @render2d.RenderLayers,
+  layers : @sprite.RenderLayers,
   camera_transform : @math.Transform,
 ) -> Array[Int] {
   let order : Array[Int] = []
@@ -9572,7 +9555,7 @@ fn free_camera_exp_decay(rate : Float, delta_seconds : Float) -> Float {
 pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
   let delta_seconds = render3d_default_time_or_default(world).delta_seconds()
   let tick = world.read_change_tick()
-  let camera_store = world.component(@render2d.ecs_key_camera)
+  let camera_store = world.component(@sprite.ecs_key_camera)
   let transform_store = world.component(@math.ecs_key_transform)
   let free_camera_store = world.component(ecs_key_free_camera)
   let free_camera_state_store = get_free_camera_state_store(world)
@@ -9775,12 +9758,12 @@ pub fn free_camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 ///|
 fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
   let camera3d_store = world.component(ecs_key_camera3d)
-  let camera_store = world.component(@render2d.ecs_key_camera)
+  let camera_store = world.component(@sprite.ecs_key_camera)
   let entries : Array[Render3dCameraOrderEntry] = []
   camera3d_store.for_each(fn(entity, _camera3d) {
     let order = match camera_store.get(entity) {
       Some(camera) => camera.order
-      None => @render2d.Camera::default().order
+      None => @sprite.Camera::default().order
     }
     entries.push(Render3dCameraOrderEntry::{ entity, order })
   })
@@ -9843,13 +9826,13 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
 pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let mesh_store = world.component(ecs_key_mesh3d)
-  let gpu_mesh_store = world.component(@render2d.ecs_key_gpu_mesh2d)
+  let gpu_mesh_store = world.component(@sprite.ecs_key_gpu_mesh2d)
   mesh_store.for_each(fn(entity, mesh) {
     if gpu_mesh_store.get(entity) is Some(_) {
       return
     }
-    let mesh_id = @render2d.render2d_upload_mesh_handle(mesh.mesh)
-    gpu_mesh_store.insert(entity, @render2d.GpuMesh2d::new(mesh_id), tick)
+    let mesh_id = @sprite.render2d_upload_mesh_handle(mesh.mesh)
+    gpu_mesh_store.insert(entity, @sprite.GpuMesh2d::new(mesh_id), tick)
   })
   if render3d_prepared_camera_order_ref.val.length() == 0 {
     render3d_prepared_camera_order_ref.val = render3d_sorted_camera_entities(
@@ -10074,7 +10057,7 @@ fn render3d_draw_mesh_instance(
   point_shadow_texture_id : Int,
   point_shadow_enabled : Float,
   point_shadow_depth_bias : Float,
-  specular_tint : @render2d.Color,
+  specular_tint : @sprite.Color,
   anisotropy_strength : Float,
   max_relief_mapping_search_steps : Float,
   draw_flags : Int,
@@ -10167,7 +10150,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   ] = []
   let projection_runtime_removals : Array[@core.Entity] = []
   let camera3d_store = world.component(ecs_key_camera3d)
-  let camera_store = world.component(@render2d.ecs_key_camera)
+  let camera_store = world.component(@sprite.ecs_key_camera)
   let projection_store = world.component(ecs_key_projection)
   let projection_runtime_store = world.component(ecs_key_projection_runtime3d)
   let sub_camera_view_store = world.component(ecs_key_sub_camera_view3d)
@@ -10201,8 +10184,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let temporal_anti_aliasing_store = world.component(
     ecs_key_temporal_anti_aliasing,
   )
-  let target_store = world.component(@render2d.ecs_key_render_target)
-  let layers_store = world.component(@render2d.ecs_key_render_layers)
+  let target_store = world.component(@sprite.ecs_key_render_target)
+  let layers_store = world.component(@sprite.ecs_key_render_layers)
   let depth_prepass_store = world.component(ecs_key_depth_prepass)
   let deferred_prepass_store = world.component(ecs_key_deferred_prepass)
   let msaa_store = world.component(ecs_key_msaa)
@@ -10234,7 +10217,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   camera3d_store.for_each(fn(entity, camera3d) {
     let camera = match camera_store.get(entity) {
       Some(v) => v
-      None => @render2d.Camera::default()
+      None => @sprite.Camera::default()
     }
     let projection_component = projection_store.get(entity)
     let projection = match projection_component {
@@ -10275,11 +10258,11 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     let msaa = msaa_store.get(entity)
     let target = match target_store.get(entity) {
       Some(v) => v
-      None => @render2d.RenderTarget::Screen
+      None => @sprite.RenderTarget::Screen
     }
     let layers = match layers_store.get(entity) {
       Some(v) => v
-      None => @render2d.RenderLayers::default()
+      None => @sprite.RenderLayers::default()
     }
     let transform = match transform_store.get(entity) {
       Some(v) => v
@@ -10385,7 +10368,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   }
   let mesh_store = world.component(ecs_key_mesh3d)
   let material_store = world.component(ecs_key_mesh_material3d)
-  let gpu_mesh_store = world.component(@render2d.ecs_key_gpu_mesh2d)
+  let gpu_mesh_store = world.component(@sprite.ecs_key_gpu_mesh2d)
   let visibility_range_store = world.component(
     @visibility.ecs_key_visibility_range,
   )
@@ -10419,7 +10402,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     )
     let layers = match layers_store.get(entity) {
       Some(v) => v
-      None => @render2d.RenderLayers::default()
+      None => @sprite.RenderLayers::default()
     }
     let transform = match transform_store.get(entity) {
       Some(v) => v
@@ -10704,7 +10687,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           -1,
           0.0F,
           0.0F,
-          @render2d.Color::white(),
+          @sprite.Color::white(),
           0.0F,
           0.0F,
           render3d_mesh_draw_flags(mesh),
@@ -10812,7 +10795,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
             -1,
             0.0F,
             0.0F,
-            @render2d.Color::white(),
+            @sprite.Color::white(),
             0.0F,
             0.0F,
             0,
@@ -11188,7 +11171,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         -1,
         0.0F,
         0.0F,
-        @render2d.Color::white(),
+        @sprite.Color::white(),
         0.0F,
         0.0F,
         render3d_mesh_draw_flags(mesh),
@@ -11397,7 +11380,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
 
 ///|
 fn render3d_camera_viewport_rect_logical(
-  camera : @render2d.Camera,
+  camera : @sprite.Camera,
   target_size : @math.IVec2,
   scale_factor : Float,
 ) -> (Float, Float, Float, Float)? {
@@ -11671,7 +11654,7 @@ fn render3d_projection_matrix_inverse(
 ///|
 fn render3d_projection_runtime_projection(
   projection : Projection,
-  camera : @render2d.Camera,
+  camera : @sprite.Camera,
   target_size : @math.IVec2,
   scale_factor : Float,
 ) -> Projection {
@@ -11688,7 +11671,7 @@ fn render3d_projection_runtime_update(
   projection : Projection,
   runtime : ProjectionRuntime3d?,
   force_update : Bool,
-  camera : @render2d.Camera,
+  camera : @sprite.Camera,
   target_size : @math.IVec2,
   scale_factor : Float,
 ) -> (Projection, ProjectionRuntime3d?) {
@@ -11928,7 +11911,7 @@ pub fn mesh_ray_cast_first(
 pub fn mesh_ray_cast_from_camera(
   world : @ecs.World,
   screen : @math.Vec2,
-  camera : @render2d.Camera,
+  camera : @sprite.Camera,
   projection : Projection,
   camera_transform : @math.Transform,
   target_size : @math.IVec2,
@@ -11949,7 +11932,7 @@ pub fn mesh_ray_cast_from_camera(
 pub fn mesh_ray_cast_from_camera_first(
   world : @ecs.World,
   screen : @math.Vec2,
-  camera : @render2d.Camera,
+  camera : @sprite.Camera,
   projection : Projection,
   camera_transform : @math.Transform,
   target_size : @math.IVec2,
@@ -11976,7 +11959,7 @@ pub fn mesh_ray_cast_from_camera_first(
 ///|
 pub fn render3d_camera_viewport_to_world_ray(
   screen : @math.Vec2,
-  camera : @render2d.Camera,
+  camera : @sprite.Camera,
   projection : Projection,
   camera_transform : @math.Transform,
   target_size : @math.IVec2,
@@ -12044,7 +12027,7 @@ pub fn render3d_camera_viewport_to_world_ray(
 ///|
 pub fn render3d_camera_world_to_viewport(
   world : @math.Vec3,
-  camera : @render2d.Camera,
+  camera : @sprite.Camera,
   projection : Projection,
   camera_transform : @math.Transform,
   target_size : @math.IVec2,

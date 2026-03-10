@@ -9,7 +9,7 @@ import {
   "moonbitlang/core/hashmap",
   "Milky2018/mgstudio",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/render3d",
   "Milky2018/mgstudio/scene",
   "Milky2018/mgstudio/text",

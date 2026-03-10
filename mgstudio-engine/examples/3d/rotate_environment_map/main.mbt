@@ -102,7 +102,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let sphere_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 0.843F, 0.0F, 1.0F),
+      @sprite.Color::new(1.0F, 0.843F, 0.0F, 1.0F),
     )
     .with_clearcoat(1.0F)
     .with_clearcoat_perceptual_roughness(0.3F)
@@ -134,7 +134,7 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   let camera = @render3d.Camera3dBundle::new_with_projection(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @render3d.Projection::Perspective(@render3d.PerspectiveProjection3d::{
       ..@render3d.PerspectiveProjection3d::default(),
       fov: 27.0F * PI / 180.0F,

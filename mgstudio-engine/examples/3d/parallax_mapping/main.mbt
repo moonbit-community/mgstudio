@@ -275,11 +275,11 @@ fn spawn_help_text(asset_server : @asset.AssetServer) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -295,12 +295,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   .component(@render3d.ecs_key_point_light)
   .insert(
     light,
-    @render3d.PointLight::new(
-      @render2d.Color::white(),
-      1_800_000.0F,
-      40.0F,
-      true,
-    ),
+    @render3d.PointLight::new(@sprite.Color::white(), 1_800_000.0F, 40.0F, true),
     tick,
   )
   world
@@ -311,7 +306,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     @render3d.Mesh3d::from_cuboid(0.08F, 0.08F, 0.08F),
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@render2d.Color::white()),
+        @render3d.StandardMaterial::from_color(@sprite.Color::white()),
       ),
     ),
     @math.Transform::from_xyz(2.0F, 1.0F, -1.1F),
@@ -323,7 +318,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.0F, 80.0F / 255.0F, 0.0F, 1.0F),
+          @sprite.Color::new(0.0F, 80.0F / 255.0F, 0.0F, 1.0F),
         )
         .with_perceptual_roughness(0.45F)
         .with_reflectance(0.18F),
@@ -405,7 +400,7 @@ fn setup(world : @ecs.World) -> Unit {
   parallax_state.val.current_method = @render3d.ParallaxMappingMethod::Relief(4)
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     camera_view_transform(0),
   ).spawn(world)
   parallax_state.val.camera = Some(camera)

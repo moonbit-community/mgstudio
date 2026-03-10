@@ -166,7 +166,7 @@ fn maxf(a : Float, b : Float) -> Float {
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @render2d.Color,
+  color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
@@ -484,7 +484,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
 
-  set_global_ambient_light(world, @render2d.Color::white(), 0.06F)
+  set_global_ambient_light(world, @sprite.Color::white(), 0.06F)
 
   let room_scene = @scene.scene_load_gltf_scene(
     asset_server,
@@ -496,7 +496,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   .insert(room_scene_entity, @scene.SceneRoot::new(room_scene), tick)
 
   let reflective_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white())
+    @render3d.StandardMaterial::from_color(@sprite.Color::white())
     .with_metallic(1.0F)
     .with_reflectance(1.0F)
     .with_perceptual_roughness(0.0F),
@@ -517,7 +517,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   light_probe_blending_state.val.prism = Some(prism)
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   light_probe_blending_state.val.camera = Some(camera)
@@ -527,7 +527,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_directional_light)
   .insert(
     directional,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 10_000.0F, true),
+    @render3d.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
     tick,
   )
   world
@@ -633,7 +633,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
 
   let bounds_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.82F, 0.71F, 0.55F, 0.16F),
+      @sprite.Color::new(0.82F, 0.71F, 0.55F, 0.16F),
     )
     .with_unlit(true)
     .with_alpha_mode(@render3d.AlphaMode3d::Blend)
@@ -642,7 +642,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   )
   let falloff_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.86F, 0.14F, 0.22F, 0.18F),
+      @sprite.Color::new(0.86F, 0.14F, 0.22F, 0.18F),
     )
     .with_unlit(true)
     .with_alpha_mode(@render3d.AlphaMode3d::Blend)
@@ -651,7 +651,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   )
   let parallax_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.39F, 0.58F, 0.93F, 0.18F),
+      @sprite.Color::new(0.39F, 0.58F, 0.93F, 0.18F),
     )
     .with_unlit(true)
     .with_alpha_mode(@render3d.AlphaMode3d::Blend)
@@ -710,11 +710,11 @@ fn spawn_scene(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()

@@ -335,7 +335,7 @@ test "render3d: CameraProjection3d trait exposes compute_frustum" {
 
 ///|
 test "render3d: camera helper projection APIs respect custom runtime updates" {
-  let camera = @render2d.Camera::default()
+  let camera = @sprite.Camera::default()
   let projection = Projection::custom(TestCustomProjection3d::{
     view_width: 1.0F,
     view_height: 1.0F,

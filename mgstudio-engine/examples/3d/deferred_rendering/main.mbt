@@ -197,7 +197,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
       @math.Vec3::new(0.0F, 0.3F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -228,7 +228,7 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
+    @render3d.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
       @render3d.CascadeShadowConfigBuilder::default()
       .with_num_cascades(3)
       .with_maximum_distance(10.0F),
@@ -247,7 +247,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @render3d.render3d_set_distance_fog(
     @render3d.DistanceFog::new(
-      @render2d.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
+      @sprite.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
       @render3d.FogFalloff3d::linear(1.0F, 8.0F),
     ),
   )
@@ -273,7 +273,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let forward_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.1F, 0.2F, 0.1F, 1.0F),
+      @sprite.Color::new(0.1F, 0.2F, 0.1F, 1.0F),
     ).with_opaque_render_method(@render3d.OpaqueRendererMethod::Forward),
   )
   let plane = spawn_mesh(
@@ -300,7 +300,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   |> ignore
 
-  let emissive_color = @render2d.Color::new(1.0F, 0.4F, 0.1F, 1.0F)
+  let emissive_color = @sprite.Color::new(1.0F, 0.4F, 0.1F, 1.0F)
   let emissive_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(emissive_color).with_unlit(true),
   )
@@ -332,11 +332,11 @@ fn setup(world : @ecs.World) -> Unit {
     let j = i % 3
     let s_val = if i < 3 { 0.0F } else { 0.2F }
     let color = if j == 0 {
-      @render2d.Color::new(s_val, s_val, 1.0F, 1.0F)
+      @sprite.Color::new(s_val, s_val, 1.0F, 1.0F)
     } else if j == 1 {
-      @render2d.Color::new(s_val, 1.0F, s_val, 1.0F)
+      @sprite.Color::new(s_val, 1.0F, s_val, 1.0F)
     } else {
-      @render2d.Color::new(1.0F, s_val, s_val, 1.0F)
+      @sprite.Color::new(1.0F, s_val, s_val, 1.0F)
     }
     let material = @render3d.standard_material_add(
       @render3d.StandardMaterial::from_color(color)
@@ -357,7 +357,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let sky_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(
+      @sprite.Color::new(
         136.0F / 255.0F,
         136.0F / 255.0F,
         136.0F / 255.0F,
@@ -423,10 +423,10 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(760.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
   deferred_state.val.help_text = Some(help_text)

@@ -540,14 +540,14 @@ pub fn BorderRadius::percent(
 pub struct Outline {
   width : Val
   offset : Val
-  color : @render2d.Color
+  color : @sprite.Color
 } derive(ToJson, FromJson)
 
 ///|
 pub fn Outline::new(
   width : Val,
   offset : Val,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> Outline {
   Outline::{ width, offset, color }
 }
@@ -557,13 +557,13 @@ pub fn Outline::default() -> Outline {
   Outline::{
     width: Val::Px(0.0F),
     offset: Val::Px(0.0F),
-    color: @render2d.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+    color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
   }
 }
 
 ///|
 pub struct BoxShadow {
-  color : @render2d.Color
+  color : @sprite.Color
   x_offset : Val
   y_offset : Val
   spread_radius : Val
@@ -572,7 +572,7 @@ pub struct BoxShadow {
 
 ///|
 pub fn BoxShadow::new(
-  color : @render2d.Color,
+  color : @sprite.Color,
   x_offset : Val,
   y_offset : Val,
   spread_radius : Val,
@@ -585,7 +585,7 @@ pub fn BoxShadow::new(
 pub fn BoxShadow::default() -> BoxShadow {
   // Match Bevy defaults (v0.15.3).
   BoxShadow::{
-    color: @render2d.Color::black(),
+    color: @sprite.Color::black(),
     x_offset: Val::Percent(20.0F),
     y_offset: Val::Percent(20.0F),
     spread_radius: Val::Px(0.0F),
@@ -611,11 +611,11 @@ pub fn UiBoxShadowSamples::default() -> UiBoxShadowSamples {
 
 ///|
 pub struct BorderColor {
-  color : @render2d.Color
+  color : @sprite.Color
 } derive(ToJson, FromJson)
 
 ///|
-pub fn BorderColor::new(color : @render2d.Color) -> BorderColor {
+pub fn BorderColor::new(color : @sprite.Color) -> BorderColor {
   BorderColor::{ color, }
 }
 
@@ -991,17 +991,17 @@ pub fn ImageNodeSize::size(self : ImageNodeSize) -> @math.UVec2 {
 
 ///|
 pub struct BackgroundColor {
-  color : @render2d.Color
+  color : @sprite.Color
 } derive(ToJson, FromJson)
 
 ///|
-pub fn BackgroundColor::new(color : @render2d.Color) -> BackgroundColor {
+pub fn BackgroundColor::new(color : @sprite.Color) -> BackgroundColor {
   BackgroundColor::{ color, }
 }
 
 ///|
 pub struct UiImage {
-  color : @render2d.Color
+  color : @sprite.Color
   image : @asset.Handle[@asset.Image]
   texture_atlas : @asset.TextureAtlas?
   flip_x : Bool
@@ -1012,7 +1012,7 @@ pub struct UiImage {
 ///|
 pub fn UiImage::new(image : @asset.Handle[@asset.Image]) -> UiImage {
   UiImage::{
-    color: @render2d.Color::white(),
+    color: @sprite.Color::white(),
     image,
     texture_atlas: None,
     flip_x: false,
@@ -1022,7 +1022,7 @@ pub fn UiImage::new(image : @asset.Handle[@asset.Image]) -> UiImage {
 }
 
 ///|
-pub fn UiImage::with_color(self : UiImage, color : @render2d.Color) -> UiImage {
+pub fn UiImage::with_color(self : UiImage, color : @sprite.Color) -> UiImage {
   UiImage::{ ..self, color, }
 }
 
@@ -1311,7 +1311,7 @@ fn compute_texture_slices(
 ///|
 /// A UI node that renders an image (Bevy v0.15.3 `ImageNode`).
 pub struct ImageNode {
-  color : @render2d.Color
+  color : @sprite.Color
   image : @asset.Handle[@asset.Image]
   texture_atlas : @asset.TextureAtlas?
   flip_x : Bool
@@ -1323,7 +1323,7 @@ pub struct ImageNode {
 ///|
 pub fn ImageNode::default() -> ImageNode {
   ImageNode::{
-    color: @render2d.Color::white(),
+    color: @sprite.Color::white(),
     image: @asset.asset_transparent_texture(),
     texture_atlas: None,
     flip_x: false,
@@ -1349,7 +1349,7 @@ pub fn ImageNode::from_atlas_image(
 ///|
 pub fn ImageNode::with_color(
   self : ImageNode,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> ImageNode {
   ImageNode::{ ..self, color, }
 }
@@ -1413,16 +1413,16 @@ pub fn Label::default() -> Label {
 
 ///|
 pub struct ButtonColors {
-  normal : @render2d.Color
-  hovered : @render2d.Color
-  pressed : @render2d.Color
+  normal : @sprite.Color
+  hovered : @sprite.Color
+  pressed : @sprite.Color
 } derive(ToJson, FromJson)
 
 ///|
 pub fn ButtonColors::new(
-  normal : @render2d.Color,
-  hovered : @render2d.Color,
-  pressed : @render2d.Color,
+  normal : @sprite.Color,
+  hovered : @sprite.Color,
+  pressed : @sprite.Color,
 ) -> ButtonColors {
   ButtonColors::{ normal, hovered, pressed }
 }
@@ -1761,10 +1761,10 @@ fn create_white_texture_if_needed(ctx : Ref[UiContext]) -> Unit {
 
 ///|
 fn clamp_viewport_to_window(
-  viewport : @render2d.Viewport,
+  viewport : @sprite.Viewport,
   win_w : Int,
   win_h : Int,
-) -> @render2d.Viewport {
+) -> @sprite.Viewport {
   let mut x = viewport.physical_position.x
   let mut y = viewport.physical_position.y
   let mut w = viewport.physical_size.x
@@ -1789,17 +1789,17 @@ fn clamp_viewport_to_window(
   if h > max_h {
     h = max_h
   }
-  @render2d.Viewport::new(@math.IVec2::new(x, y), @math.IVec2::new(w, h))
+  @sprite.Viewport::new(@math.IVec2::new(x, y), @math.IVec2::new(w, h))
 }
 
 ///|
 fn ui_render_target_targets_primary_window(
   world : @ecs.World,
-  target : @render2d.RenderTarget,
+  target : @sprite.RenderTarget,
 ) -> Bool {
   match target {
-    @render2d.RenderTarget::Screen => true
-    @render2d.RenderTarget::Window(window_ref) =>
+    @sprite.RenderTarget::Screen => true
+    @sprite.RenderTarget::Window(window_ref) =>
       match window_ref {
         @window.WindowRef::Primary => true
         @window.WindowRef::Entity(window_entity) =>
@@ -1809,14 +1809,14 @@ fn ui_render_target_targets_primary_window(
             None => false
           }
       }
-    @render2d.RenderTarget::Image(_) => false
+    @sprite.RenderTarget::Image(_) => false
   }
 }
 
 ///|
 fn ui_select_default_camera_entity(world : @ecs.World) -> @core.Entity? {
-  let camera_store = @render2d.get_camera_store(world)
-  let target_store = @render2d.get_render_target_store(world)
+  let camera_store = @sprite.get_camera_store(world)
+  let target_store = @sprite.get_render_target_store(world)
   let default_ui_camera_store = get_is_default_ui_camera_store(world)
   let marked : Array[@core.Entity] = []
   default_ui_camera_store.for_each(fn(entity, _marker) {
@@ -1833,7 +1833,7 @@ fn ui_select_default_camera_entity(world : @ecs.World) -> @core.Entity? {
   camera_store.for_each(fn(entity, camera) {
     let target = match target_store.get(entity) {
       Some(value) => value
-      None => @render2d.RenderTarget::Screen
+      None => @sprite.RenderTarget::Screen
     }
     if !ui_render_target_targets_primary_window(world, target) {
       return
@@ -1876,16 +1876,16 @@ fn ui_camera_scale_for_entity(
   world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> Float {
-  let projection_store = @render2d.get_projection_store(world)
+  let projection_store = @sprite.get_projection_store(world)
   match projection_store.get(camera_entity) {
-    Some(@render2d.Orthographic(projection)) =>
+    Some(@sprite.Orthographic(projection)) =>
       safe_camera_scale(projection.scale)
     _ => 1.0F
   }
 }
 
 ///|
-fn ui_camera_viewport_origin(camera : @render2d.Camera) -> @math.Vec2 {
+fn ui_camera_viewport_origin(camera : @sprite.Camera) -> @math.Vec2 {
   match camera.viewport {
     Some(viewport) => {
       let scale_factor = safe_scale_factor(
@@ -1905,7 +1905,7 @@ fn ui_compute_render_target_info(
   world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> ComputedUiRenderTargetInfo {
-  let camera_store = @render2d.get_camera_store(world)
+  let camera_store = @sprite.get_camera_store(world)
   let ui_scale = ensure_ui_scale_resource(world)
   let ui_scale_value = if ui_scale.value <= 0.0F {
     1.0F
@@ -1948,7 +1948,7 @@ fn ui_resolved_camera_state_from_computed(
   camera_entity : @core.Entity?,
   render_target_info : ComputedUiRenderTargetInfo,
 ) -> UiResolvedCameraState {
-  let camera_store = @render2d.get_camera_store(world)
+  let camera_store = @sprite.get_camera_store(world)
   let mut viewport_origin = @math.Vec2::new(0.0F, 0.0F)
   let mut camera_transform = @math.Transform::identity()
   let mut camera_scale = 1.0F
@@ -2080,7 +2080,7 @@ pub fn ui_update_context_system(world : @ecs.World) -> Unit {
   // Legacy singleton UI context remains tied to the default UI camera so
   // existing consumers keep working while per-root routing migrates to
   // `UiTargetCamera`.
-  let camera_store = @render2d.get_camera_store(world)
+  let camera_store = @sprite.get_camera_store(world)
   let best_entity = ui_select_default_camera_entity(world)
   let mut viewport_origin = @math.Vec2::new(0.0F, 0.0F)
   let mut viewport_size = @math.Vec2::new(
@@ -2160,13 +2160,13 @@ fn ensure_visibility_defaults(
 fn ensure_layers_default(
   world : @ecs.World,
   entity : @core.Entity,
-) -> @render2d.RenderLayers {
-  let store = @render2d.get_render_layers_store(world)
+) -> @sprite.RenderLayers {
+  let store = @sprite.get_render_layers_store(world)
   match store.get(entity) {
     Some(v) => v
     None => {
       let tick = world.read_change_tick()
-      let layers = @render2d.RenderLayers::default()
+      let layers = @sprite.RenderLayers::default()
       store.insert(entity, layers, tick)
       layers
     }
@@ -2210,7 +2210,7 @@ fn ui_world_transform(
 fn button_color_for_state(
   colors : ButtonColors,
   state : Interaction?,
-) -> @render2d.Color {
+) -> @sprite.Color {
   match state {
     Some(s) =>
       match s {
@@ -2386,7 +2386,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   let scroll_store = get_scroll_position_store(world)
   let layout_store = get_ui_layout_store(world)
   let children_store = @hierarchy.get_children_store(world)
-  let sprite_store = @render2d.get_sprite_store(world)
+  let sprite_store = @sprite.get_sprite_store(world)
   let img_store = get_ui_image_store(world)
   let ui_text_store = get_ui_text_store(world)
   let transform_store = @math.get_transform_store(world)
@@ -3299,7 +3299,7 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-/// Compute `CalculatedClip` and attach `@render2d.ScissorRect` for clipped UI.
+/// Compute `CalculatedClip` and attach `@sprite.ScissorRect` for clipped UI.
 pub fn ui_clip_system(world : @ecs.World) -> Unit {
   let res = get_ui_context_resource(world)
   let legacy_ctx = res.get()
@@ -3308,7 +3308,7 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
   let layout_store = get_ui_layout_store(world)
   let clip_store = get_calculated_clip_store(world)
   let ui_text_store = get_ui_text_store(world)
-  let scissor_store = @render2d.get_scissor_rect_store(world)
+  let scissor_store = @sprite.get_scissor_rect_store(world)
   let children_store = @hierarchy.get_children_store(world)
   let tick = world.read_change_tick()
   fn clamp_nonneg(v : Float) -> Float {
@@ -3409,7 +3409,7 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
       clip_store.insert(entity, calc, tick)
     }
     if clipped_by_parent && !rect_is_full_viewport(self_clip, viewport_rect) {
-      let scissor = @render2d.ScissorRect::new(self_clip)
+      let scissor = @sprite.ScissorRect::new(self_clip)
       if scissor_store.contains(entity) {
         scissor_store.set(entity, scissor, tick) |> ignore
       } else {
@@ -4253,9 +4253,9 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
   let legacy_ctx = Some(ctx0)
   let stack_res = get_ui_stack_resource(world)
   guard stack_res.get() is Some(stack0) else { return }
-  @render2d.render2d_clear_overlay_ui_rects(world)
-  @render2d.render2d_clear_overlay_ui_box_shadows(world)
-  @render2d.render2d_clear_overlay_ui_texture_slices(world)
+  @sprite.render2d_clear_overlay_ui_rects(world)
+  @sprite.render2d_clear_overlay_ui_box_shadows(world)
+  @sprite.render2d_clear_overlay_ui_texture_slices(world)
   let layout_store = get_ui_layout_store(world)
   let node_store = get_node_store(world)
   let bg_store = get_background_color_store(world)
@@ -4269,8 +4269,8 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
   let border_color_store = get_border_color_store(world)
   let radius_store = get_border_radius_store(world)
   let aa_store = get_ui_anti_alias_store(world)
-  let layers_store = @render2d.get_render_layers_store(world)
-  let scissor_store = @render2d.get_scissor_rect_store(world)
+  let layers_store = @sprite.get_render_layers_store(world)
+  let scissor_store = @sprite.get_scissor_rect_store(world)
   let transform_store = @math.get_transform_store(world)
   let vv_store = @visibility.get_view_visibility_store(world)
   fn clamp_nonneg(v : Float) -> Float {
@@ -4412,7 +4412,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
     }
     let layers = match layers_store.get(entity) {
       Some(v) => v
-      None => @render2d.RenderLayers::default()
+      None => @sprite.RenderLayers::default()
     }
     let scissor = match scissor_store.get(entity) {
       Some(v) => Some(v.rect)
@@ -4438,7 +4438,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
         resolve_axis(node.border.bottom, size.y, viewport_size),
       ) *
       scale_y
-    let border = @render2d.UiBorderRect::new(
+    let border = @sprite.UiBorderRect::new(
       border_left, border_top, border_right, border_bottom,
     )
     let radius = match radius_store.get(entity) {
@@ -4451,9 +4451,9 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
           scale_min
         let bl = resolve_radius_single(r.bottom_left, size, viewport_size) *
           scale_min
-        @render2d.UiCornerRadii::new(tl, tr, br, bl)
+        @sprite.UiCornerRadii::new(tl, tr, br, bl)
       }
-      None => @render2d.UiCornerRadii::zero()
+      None => @sprite.UiCornerRadii::zero()
     }
     let mut flags = 0
     let aa_enabled = match aa_store.get(entity) {
@@ -4544,9 +4544,9 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                     ) *
                     spread_ratio *
                     scale_min
-                  @render2d.UiCornerRadii::new(tl, tr, br, bl)
+                  @sprite.UiCornerRadii::new(tl, tr, br, bl)
                 }
-                None => @render2d.UiCornerRadii::zero()
+                None => @sprite.UiCornerRadii::zero()
               }
               let draw_scale_shadow = @math.Vec2::new(
                 scale_x * bounds.x,
@@ -4556,7 +4556,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 scale_x * shadow_size.x,
                 scale_y * shadow_size.y,
               )
-              @render2d.render2d_push_ui_box_shadow_scissor(
+              @sprite.render2d_push_ui_box_shadow_scissor(
                 world,
                 entity,
                 entity_ctx.camera_entity,
@@ -4591,7 +4591,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
       Some(color) =>
         if color.a > 0.0F {
           let t_bg = transform_with_z(t0, z_base + UI_STACK_Z_BACKGROUND)
-          @render2d.render2d_push_ui_rect_uv_scissor(
+          @sprite.render2d_push_ui_rect_uv_scissor(
             world,
             entity,
             entity_ctx.camera_entity,
@@ -4721,7 +4721,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
             uv_max_img.x,
             uv_max_img.y,
           )
-          @render2d.render2d_push_ui_texture_slice_scissor(
+          @sprite.render2d_push_ui_texture_slice_scissor(
             world,
             entity,
             entity_ctx.camera_entity,
@@ -4737,7 +4737,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
             atlas_rect_uv,
           )
         } else if color.a > 0.0F {
-          @render2d.render2d_push_ui_rect_uv_scissor(
+          @sprite.render2d_push_ui_rect_uv_scissor(
             world,
             entity,
             entity_ctx.camera_entity,
@@ -4767,7 +4767,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
       border_color_store.get(entity) is Some(bc) &&
       bc.color.a > 0.0F {
       let t_border = transform_with_z(t0, z_base + UI_STACK_Z_BORDER)
-      @render2d.render2d_push_ui_rect_uv_scissor(
+      @sprite.render2d_push_ui_rect_uv_scissor(
         world,
         entity,
         entity_ctx.camera_entity,
@@ -4809,7 +4809,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 scale_x * outline_size.x,
                 scale_y * outline_size.y,
               )
-              let outline_border = @render2d.UiBorderRect::new(
+              let outline_border = @sprite.UiBorderRect::new(
                 outline_width * scale_x,
                 outline_width * scale_y,
                 outline_width * scale_x,
@@ -4841,17 +4841,17 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                       outline_size,
                     ) *
                     scale_min
-                  @render2d.UiCornerRadii::new(tl, tr, br, bl)
+                  @sprite.UiCornerRadii::new(tl, tr, br, bl)
                 }
                 None =>
-                  @render2d.UiCornerRadii::new(
+                  @sprite.UiCornerRadii::new(
                     clamp_radius_nonneg(outer, outline_size) * scale_min,
                     clamp_radius_nonneg(outer, outline_size) * scale_min,
                     clamp_radius_nonneg(outer, outline_size) * scale_min,
                     clamp_radius_nonneg(outer, outline_size) * scale_min,
                   )
               }
-              @render2d.render2d_push_ui_rect_uv_scissor(
+              @sprite.render2d_push_ui_rect_uv_scissor(
                 world,
                 entity,
                 entity_ctx.camera_entity,
@@ -4915,7 +4915,7 @@ pub fn ui_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .configure_set(
     @app.PostUpdate,
     ui_set_prepare,
-    after=[@render2d.camera_update_systems],
+    after=[@sprite.camera_update_systems],
     before=[ui_set_propagate],
   )
   .configure_set(@app.PostUpdate, ui_set_propagate, after=[ui_set_prepare], before=[
@@ -4931,6 +4931,6 @@ pub fn ui_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     ui_set_stack,
   ])
   .configure_set(@app.PostUpdate, ui_set_stack, after=[ui_set_post_layout], before=[
-    @render2d.render2d_set_extract,
+    @sprite.render2d_set_extract,
   ])
 }

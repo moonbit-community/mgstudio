@@ -304,7 +304,7 @@ fn setup(world : @ecs.World) -> Unit {
   } else {
     1024
   }
-  let mirror_target = @render2d.render2d_create_render_target(
+  let mirror_target = @sprite.render2d_create_render_target(
     world, target_width, target_height, true,
   )
   mirror_state.val.mirror_target_size = @math.IVec2::new(
@@ -317,7 +317,7 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.0F, 0.5F, 0.0F, 1.0F),
+          @sprite.Color::new(0.0F, 0.5F, 0.0F, 1.0F),
         ),
       ),
     ),
@@ -352,8 +352,8 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Quat::from_rotation_x(-FRAC_PI_2),
   )
   let mirror_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::black())
-    .with_emissive(@render2d.Color::white())
+    @render3d.StandardMaterial::from_color(@sprite.Color::black())
+    .with_emissive(@sprite.Color::white())
     .with_emissive_texture(Some(mirror_target))
     .with_perceptual_roughness(0.0F)
     .with_metallic(1.0F),
@@ -372,7 +372,7 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_directional_light)
   .insert(
     light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 5000.0F, true),
+    @render3d.DirectionalLight::new(@sprite.Color::white(), 5000.0F, true),
     tick,
   )
   world
@@ -397,7 +397,7 @@ fn setup(world : @ecs.World) -> Unit {
     initial_main_translation.z,
   ).looking_at(camera_target(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
   let main_camera = @render3d.Camera3dBundle::new_with_projection(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @render3d.Projection::Perspective(main_camera_projection),
     main_camera_transform,
   ).spawn(world)
@@ -413,13 +413,13 @@ fn setup(world : @ecs.World) -> Unit {
     main_camera_transform, main_camera_projection, mirror_transform,
   )
   let mirror_camera = @render3d.Camera3dBundle::new_with_projection(
-    @render2d.Camera::new(@render2d.Color::black()).with_order(-1),
+    @sprite.Camera::new(@sprite.Color::black()).with_order(-1),
     @render3d.Projection::Perspective(mirror_camera_projection),
     mirror_camera_transform,
   ).spawn(world)
   world
-  .component(@render2d.ecs_key_render_target)
-  .insert(mirror_camera, @render2d.RenderTarget::Image(mirror_target), tick)
+  .component(@sprite.ecs_key_render_target)
+  .insert(mirror_camera, @sprite.RenderTarget::Image(mirror_target), tick)
   mirror_state.val.mirror_camera = mirror_camera
 
   // Help text.
@@ -435,11 +435,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -506,7 +506,7 @@ fn move_fox_on_mouse_down(world : @ecs.World) -> Unit {
 
   guard @input.mouse_position() is Some(screen_pos) else { return }
   let transform_store = world.component(@math.ecs_key_transform)
-  let camera_store = world.component(@render2d.ecs_key_camera)
+  let camera_store = world.component(@sprite.ecs_key_camera)
   let projection_store = world.component(@render3d.ecs_key_projection)
 
   guard transform_store.get(mirror_state.val.main_camera)
@@ -573,24 +573,24 @@ fn handle_window_resize_messages(world : @ecs.World) -> Unit {
     return
   }
 
-  let mirror_target = @render2d.render2d_create_render_target(
+  let mirror_target = @sprite.render2d_create_render_target(
     world, width, height, true,
   )
   mirror_state.val.mirror_target_size = size
 
   let tick = world.read_change_tick()
-  let target_store = world.component(@render2d.ecs_key_render_target)
+  let target_store = world.component(@sprite.ecs_key_render_target)
   if target_store.contains(mirror_state.val.mirror_camera) {
     target_store.set(
       mirror_state.val.mirror_camera,
-      @render2d.RenderTarget::Image(mirror_target),
+      @sprite.RenderTarget::Image(mirror_target),
       tick,
     )
     |> ignore
   } else {
     target_store.insert(
       mirror_state.val.mirror_camera,
-      @render2d.RenderTarget::Image(mirror_target),
+      @sprite.RenderTarget::Image(mirror_target),
       tick,
     )
   }

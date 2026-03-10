@@ -209,7 +209,7 @@ fn update_help_text() -> Unit {
 ///|
 fn set_global_ambient_light(world : @ecs.World, brightness : Float) -> Unit {
   let ambient = @render3d.GlobalAmbientLight::new(
-    @render2d.Color::white(),
+    @sprite.Color::white(),
     brightness,
   )
   world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
@@ -309,7 +309,7 @@ fn spawn_main_scene(
 fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tick = world.read_change_tick()
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-10.012F, 4.8605F, 13.281F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -376,12 +376,7 @@ fn spawn_light(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_point_light)
   .insert(
     light,
-    @render3d.PointLight::new(
-      @render2d.Color::white(),
-      250_000.0F,
-      100.0F,
-      true,
-    ),
+    @render3d.PointLight::new(@sprite.Color::white(), 250_000.0F, 100.0F, true),
     tick,
   )
   world
@@ -393,7 +388,7 @@ fn spawn_light(world : @ecs.World) -> Unit {
 fn spawn_sphere(world : @ecs.World) -> Unit {
   let material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
+      @sprite.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
     ),
   )
   let sphere = @render3d.MeshMaterial3dBundle::new(
@@ -440,7 +435,7 @@ fn spawn_voxel_cubes(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let cube_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 0.2F, 0.2F, 0.75F),
+      @sprite.Color::new(1.0F, 0.2F, 0.2F, 0.75F),
     )
     .with_alpha_mode(@render3d.AlphaMode3d::Blend)
     .with_unlit(true),
@@ -497,10 +492,10 @@ fn spawn_text(_world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::bottom_left())
+    .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
   irradiance_volumes_state.val.help_text = Some(text)
@@ -676,7 +671,7 @@ fn handle_mouse_clicks(world : @ecs.World) -> Unit {
   }
   guard @input.mouse_position() is Some(screen_pos) else { return }
 
-  guard world.component(@render2d.ecs_key_camera).get(camera_entity)
+  guard world.component(@sprite.ecs_key_camera).get(camera_entity)
     is Some(camera) else {
     return
   }

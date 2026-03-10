@@ -71,18 +71,18 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn color_blue() -> @render2d.Color {
-  @render2d.Color::srgb(0.0F, 0.0F, 1.0F)
+fn color_blue() -> @sprite.Color {
+  @sprite.Color::srgb(0.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_red() -> @render2d.Color {
-  @render2d.Color::srgb(1.0F, 0.0F, 0.0F)
+fn color_red() -> @sprite.Color {
+  @sprite.Color::srgb(1.0F, 0.0F, 0.0F)
 }
 
 ///|
-fn color_lime() -> @render2d.Color {
-  @render2d.Color::srgb(0.0F, 1.0F, 0.0F)
+fn color_lime() -> @sprite.Color {
+  @sprite.Color::srgb(0.0F, 1.0F, 0.0F)
 }
 
 ///|
@@ -164,7 +164,7 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
       @text.TextFont::default().with_font(font).with_font_size(20.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 
@@ -204,7 +204,7 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
 fn spawn_mesh(
   world : @ecs.World,
   mesh : @render3d.Mesh3d,
-  color : @render2d.Color,
+  color : @sprite.Color,
   transform : @math.Transform,
 ) -> @core.Entity {
   let material = @render3d.standard_material_add(
@@ -222,7 +222,7 @@ fn spawn_listener_ear(
   world : @ecs.World,
   listener : @core.Entity,
   offset : @math.Vec3,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> Unit {
   let ear = spawn_mesh(
     world,
@@ -305,7 +305,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

@@ -32,10 +32,8 @@ fn main {
 
 ///|
 fn sprite_slice_setup(world : @ecs.World) -> Unit {
-  let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
-    world,
-  )
+  let camera = @sprite.Camera::default()
+  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
   |> ignore
 
   let asset_server = @asset.AssetServer::new()
@@ -70,48 +68,44 @@ fn spawn_sprite_row(
   slice_border : Float,
   gap : Float,
 ) -> Unit {
-  let border = @render2d.BorderRect::square(slice_border)
-  let cases : Array[(String, @math.Vec2, @render2d.SpriteImageMode)] = [
-    (
-      "Original",
-      @math.Vec2::new(100.0F, 100.0F),
-      @render2d.SpriteImageMode::Auto,
-    ),
+  let border = @sprite.BorderRect::square(slice_border)
+  let cases : Array[(String, @math.Vec2, @sprite.SpriteImageMode)] = [
+    ("Original", @math.Vec2::new(100.0F, 100.0F), @sprite.SpriteImageMode::Auto),
     (
       "Stretched",
       @math.Vec2::new(100.0F, 200.0F),
-      @render2d.SpriteImageMode::Auto,
+      @sprite.SpriteImageMode::Auto,
     ),
     (
       "With Slicing",
       @math.Vec2::new(100.0F, 200.0F),
-      @render2d.SpriteImageMode::Sliced(@render2d.TextureSlicer::new(border)),
+      @sprite.SpriteImageMode::Sliced(@sprite.TextureSlicer::new(border)),
     ),
     (
       "With Tiling",
       @math.Vec2::new(100.0F, 200.0F),
-      @render2d.SpriteImageMode::Sliced(
-        @render2d.TextureSlicer::new(border)
-        .with_center_scale_mode(@render2d.SliceScaleMode::Tile(0.5F))
-        .with_sides_scale_mode(@render2d.SliceScaleMode::Tile(0.2F)),
+      @sprite.SpriteImageMode::Sliced(
+        @sprite.TextureSlicer::new(border)
+        .with_center_scale_mode(@sprite.SliceScaleMode::Tile(0.5F))
+        .with_sides_scale_mode(@sprite.SliceScaleMode::Tile(0.2F)),
       ),
     ),
     (
       "With Tiling",
       @math.Vec2::new(300.0F, 200.0F),
-      @render2d.SpriteImageMode::Sliced(
-        @render2d.TextureSlicer::new(border)
-        .with_center_scale_mode(@render2d.SliceScaleMode::Tile(0.2F))
-        .with_sides_scale_mode(@render2d.SliceScaleMode::Tile(0.3F)),
+      @sprite.SpriteImageMode::Sliced(
+        @sprite.TextureSlicer::new(border)
+        .with_center_scale_mode(@sprite.SliceScaleMode::Tile(0.2F))
+        .with_sides_scale_mode(@sprite.SliceScaleMode::Tile(0.3F)),
       ),
     ),
     (
       "With Corners Constrained",
       @math.Vec2::new(300.0F, 200.0F),
-      @render2d.SpriteImageMode::Sliced(
-        @render2d.TextureSlicer::new(border)
-        .with_center_scale_mode(@render2d.SliceScaleMode::Tile(0.1F))
-        .with_sides_scale_mode(@render2d.SliceScaleMode::Tile(0.2F))
+      @sprite.SpriteImageMode::Sliced(
+        @sprite.TextureSlicer::new(border)
+        .with_center_scale_mode(@sprite.SliceScaleMode::Tile(0.1F))
+        .with_sides_scale_mode(@sprite.SliceScaleMode::Tile(0.2F))
         .with_max_corner_scale(0.2F),
       ),
     ),
@@ -129,10 +123,10 @@ fn spawn_sprite_row(
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
     )
-    let sprite = @render2d.Sprite::from_image(texture_handle)
+    let sprite = @sprite.Sprite::from_image(texture_handle)
       .with_custom_size(Some(size))
       .with_image_mode(image_mode)
-    @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
+    @sprite.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
     spawn_slice_label(label, font, position, size)
     cursor_x = cursor_x + 0.5F * size.x + gap
   }
@@ -158,9 +152,9 @@ fn spawn_slice_label(
     @text.TextFont::default().with_font(font).with_font_size(LABEL_FONT_SIZE),
     label_transform,
   )
-  .with_color(@text.TextColor::new(@render2d.Color::white()))
+  .with_color(@text.TextColor::new(@sprite.Color::white()))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
-  .with_anchor(@render2d.Anchor::top_center())
+  .with_anchor(@sprite.Anchor::top_center())
   .spawn()
   |> ignore
 }

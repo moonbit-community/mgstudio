@@ -16,7 +16,7 @@
 /// Port of `bevy/examples/diagnostics/custom_diagnostic.rs`.
 
 ///|
-let system_iteration_count : @diagnostics.DiagnosticPath = @diagnostics.DiagnosticPath::const_new(
+let system_iteration_count : @diagnostic.DiagnosticPath = @diagnostic.DiagnosticPath::const_new(
   "system_iteration_count",
 )
 
@@ -24,10 +24,10 @@ let system_iteration_count : @diagnostics.DiagnosticPath = @diagnostics.Diagnost
 fn main {
   let app = @app.App::new(@ecs.World::new())
     .add_plugins(@mgstudio.default_plugins())
-    .add_plugin(@diagnostics.log_diagnostics_plugin)
-  @diagnostics.register_diagnostic(
+    .add_plugin(@diagnostic.log_diagnostics_plugin)
+  @diagnostic.register_diagnostic(
     app,
-    @diagnostics.Diagnostic::new(system_iteration_count).with_suffix(
+    @diagnostic.Diagnostic::new(system_iteration_count).with_suffix(
       " iterations",
     ),
   )
@@ -36,6 +36,6 @@ fn main {
 }
 
 ///|
-fn my_system(diagnostics : @diagnostics.Diagnostics) -> Unit {
+fn my_system(diagnostics : @diagnostic.Diagnostics) -> Unit {
   diagnostics.add_measurement(system_iteration_count, fn() { 10.0F })
 }

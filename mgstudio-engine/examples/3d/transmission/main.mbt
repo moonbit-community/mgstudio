@@ -457,7 +457,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
   world.insert_resource(
     @render3d.ecs_key_global_ambient_light,
-    @render3d.GlobalAmbientLight::new(@render2d.Color::white(), 0.0F),
+    @render3d.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
   )
 
   let cube_mesh = @render3d.Mesh3d::from_cuboid(0.7F, 0.7F, 0.7F)
@@ -499,7 +499,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   let candle_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.9F, 0.2F, 0.3F, 1.0F),
+      @sprite.Color::new(0.9F, 0.2F, 0.3F, 1.0F),
     )
     .with_diffuse_transmission(0.7F)
     .with_perceptual_roughness(0.32F)
@@ -515,9 +515,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   let flame_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
     )
-    .with_emissive(@render2d.Color::new(23.6F, 19.48F, 16.8F, 1.0F))
+    .with_emissive(@sprite.Color::new(23.6F, 19.48F, 16.8F, 1.0F))
     .with_diffuse_transmission(1.0F),
   )
   let flame_mesh_entity = @render3d.MeshMaterial3dBundle::new(
@@ -534,7 +534,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   let white_glass = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
     )
     .with_specular_transmission(0.9F)
     .with_diffuse_transmission(1.0F)
@@ -552,7 +552,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   let red_glass = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+      @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
     )
     .with_specular_transmission(0.9F)
     .with_diffuse_transmission(1.0F)
@@ -572,7 +572,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   let green_glass = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+      @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
     )
     .with_specular_transmission(0.9F)
     .with_diffuse_transmission(1.0F)
@@ -592,7 +592,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   let blue_glass = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+      @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
     )
     .with_specular_transmission(0.9F)
     .with_diffuse_transmission(1.0F)
@@ -611,12 +611,12 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let black_tile = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::black())
+    @render3d.StandardMaterial::from_color(@sprite.Color::black())
     .with_reflectance(0.3F)
     .with_perceptual_roughness(0.8F),
   )
   let white_tile = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white())
+    @render3d.StandardMaterial::from_color(@sprite.Color::white())
     .with_reflectance(0.3F)
     .with_perceptual_roughness(0.8F),
   )
@@ -644,7 +644,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   }
 
   let paper_material_base = @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
     )
     .with_diffuse_transmission(0.6F)
     .with_perceptual_roughness(0.8F)
@@ -673,7 +673,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   .insert(
     flame_light,
     @render3d.PointLight::new(
-      @render2d.Color::new(0.987F, 0.792F, 0.674F, 1.0F),
+      @sprite.Color::new(0.987F, 0.792F, 0.674F, 1.0F),
       4_000.0F,
       5.0F,
       true,
@@ -689,7 +689,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
   let color_grading = @render3d.ColorGrading::default()
   color_grading.global.post_saturation = 1.2F
   let camera = @render3d.Camera3dBundle::new(
-      @render2d.Camera::default().with_clear_color(@render2d.Color::black()),
+      @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
       @math.Transform::from_xyz(
         CAMERA_INITIAL_X,
         CAMERA_INITIAL_Y,
@@ -754,11 +754,11 @@ fn setup_text(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .spawn()
 
@@ -797,7 +797,7 @@ fn apply_material_controls(randomize_colors : Bool) -> Unit {
     for handle in transmission_state.val.color_materials {
       if @render3d.standard_material_get(handle) is Some(material) {
         let alpha = material.base_color.a
-        let random_color = @render2d.Color::new(
+        let random_color = @sprite.Color::new(
           next_random_unit(),
           next_random_unit(),
           next_random_unit(),

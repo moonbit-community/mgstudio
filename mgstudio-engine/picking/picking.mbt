@@ -430,7 +430,7 @@ fn picking_rotate_vec2(v : @math.Vec2, radians : Float) -> @math.Vec2 {
 }
 
 ///|
-fn sprite_region_size(sprite : @render2d.Sprite) -> @math.Vec2 {
+fn sprite_region_size(sprite : @sprite.Sprite) -> @math.Vec2 {
   let texture_id = sprite.image.id()
   let mut image_width = @asset.host_asset_texture_width(texture_id)
   let mut image_height = @asset.host_asset_texture_height(texture_id)
@@ -485,8 +485,8 @@ pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
   let hits = Ref::new(hits_value)
   let ctx_res = @ui.get_ui_context_resource(world)
   guard ctx_res.get() is Some(ctx0) else { return }
-  let sprite_store = @render2d.get_sprite_store(world)
-  let anchor_store = @render2d.get_anchor_store(world)
+  let sprite_store = @sprite.get_sprite_store(world)
+  let anchor_store = @sprite.get_anchor_store(world)
   let transform_store = @math.get_transform_store(world)
   let global_store = @transform.get_global_transform_store(world)
   let vv_store = @visibility.get_view_visibility_store(world)
@@ -560,7 +560,7 @@ pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
         }
         let anchor = match anchor_store.get(entity) {
           Some(a) => a
-          None => @render2d.Anchor::default()
+          None => @sprite.Anchor::default()
         }
         let a = anchor.as_vec()
         let offset_local = @math.Vec2::new(-a.x * scale.x, -a.y * scale.y)

@@ -92,20 +92,20 @@ test "render3d: Camera3dBundle stores window render target" {
   let world = @ecs.World::new()
   let target_window = @core.Entity::new(11, 3)
   let bundle = Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).with_target(
-    @render2d.RenderTarget::Window(@window.WindowRef::Entity(target_window)),
+    @sprite.RenderTarget::Window(@window.WindowRef::Entity(target_window)),
   )
   let entity = bundle.spawn(world)
 
-  let target : @render2d.RenderTarget? = try! world.get(
-    entity, @render2d.ecs_key_render_target,
+  let target : @sprite.RenderTarget? = try! world.get(
+    entity, @sprite.ecs_key_render_target,
   )
   inspect(
     target.map(fn(value) {
       value.to_json() ==
-      @render2d.RenderTarget::Window(@window.WindowRef::Entity(target_window)).to_json()
+      @sprite.RenderTarget::Window(@window.WindowRef::Entity(target_window)).to_json()
     }),
     content="Some(true)",
   )
@@ -120,7 +120,7 @@ test "render3d: Camera3dBundle stores window render target" {
 test "render3d: Camera3dBundle stores custom projection payload" {
   let world = @ecs.World::new()
   let bundle = Camera3dBundle::new_with_projection(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     Projection::custom(CameraBundleCustomProjection3d::{ marker: 42.0F }),
     @math.Transform::identity(),
   )
@@ -152,7 +152,7 @@ test "render3d: Commands::spawn accepts Camera3dBundle" {
     spawned.val = Some(
       commands.spawn(
         Camera3dBundle::new(
-          @render2d.Camera::default(),
+          @sprite.Camera::default(),
           @math.Transform::identity(),
         ).with_color_grading(Some(ColorGrading::default())),
       ),

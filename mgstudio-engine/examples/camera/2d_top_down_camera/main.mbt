@@ -35,16 +35,16 @@ let top_down_camera_state : Ref[TopDownCameraState] = Ref::new(TopDownCameraStat
 
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
-  @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(1000.0F, 700.0F)),
-    @render2d.ColorMaterial::new(@render2d.Color::new(0.2F, 0.2F, 0.3F, 1.0F)),
+  @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(1000.0F, 700.0F)),
+    @sprite.ColorMaterial::new(@sprite.Color::new(0.2F, 0.2F, 0.3F, 1.0F)),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
 
-  let player = @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_circle(@render2d.Circle::new(25.0F)),
-    @render2d.ColorMaterial::new(@render2d.Color::new(6.25F, 9.4F, 9.1F, 1.0F)),
+  let player = @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_circle(@sprite.Circle::new(25.0F)),
+    @sprite.ColorMaterial::new(@sprite.Color::new(6.25F, 9.4F, 9.1F, 1.0F)),
     @math.Transform::from_xyz(0.0F, 0.0F, 2.0F),
   ).spawn(world)
   top_down_camera_state.val.player = player
@@ -62,7 +62,7 @@ fn spawn_instructions(world : @ecs.World) -> Unit {
       @text.TextFont::default().with_font(font).with_font_size(24.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 
@@ -99,11 +99,11 @@ fn spawn_instructions(world : @ecs.World) -> Unit {
 
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
-  let camera = @render2d.Camera2dBundle::new(
-      @render2d.Camera::default(),
+  let camera = @sprite.Camera2dBundle::new(
+      @sprite.Camera::default(),
       @math.Transform::identity(),
     )
-    .with_bloom2d(@render2d.Bloom2d::new())
+    .with_bloom2d(@sprite.Bloom2d::new())
     .spawn(world)
   top_down_camera_state.val.camera = camera
 }

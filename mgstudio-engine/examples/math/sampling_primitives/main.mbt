@@ -40,13 +40,13 @@ fn distance_between_shapes() -> @math.Vec3 {
 }
 
 ///|
-fn inside_point_color() -> @render2d.Color {
-  @render2d.Color::srgba(0.855F, 1.1F, 0.01F, 1.0F)
+fn inside_point_color() -> @sprite.Color {
+  @sprite.Color::srgba(0.855F, 1.1F, 0.01F, 1.0F)
 }
 
 ///|
-fn sky_color() -> @render2d.Color {
-  @render2d.Color::srgb(0.02F, 0.06F, 0.15F)
+fn sky_color() -> @sprite.Color {
+  @sprite.Color::srgb(0.02F, 0.06F, 0.15F)
 }
 
 ///|
@@ -444,8 +444,8 @@ fn spawn_instructions(
   asset_server : @asset.AssetServer,
   tick : Int,
 ) -> Unit {
-  let overlay_camera = @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(1).with_clear_color_none(),
+  let overlay_camera = @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(1).with_clear_color_none(),
     @math.Transform::identity(),
   ).spawn(world)
   world
@@ -473,7 +473,7 @@ fn spawn_instructions(
       .with_font_size(20.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 
@@ -525,7 +525,7 @@ fn setup(
     @render3d.MeshMaterial3d::new(
       materials.get_ref().val.add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::srgb(0.3F, 0.5F, 0.3F),
+          @sprite.Color::srgb(0.3F, 0.5F, 0.3F),
         )
         .with_perceptual_roughness(0.95F)
         .with_metallic(0.0F),
@@ -537,7 +537,7 @@ fn setup(
 
   let shape_material = materials.get_ref().val.add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::srgba(0.2F, 0.1F, 0.6F, 0.3F),
+      @sprite.Color::srgba(0.2F, 0.1F, 0.6F, 0.3F),
     )
     .with_reflectance(0.0F)
     .with_alpha_mode(@render3d.AlphaMode3d::Blend)
@@ -597,7 +597,7 @@ fn setup(
   .insert(global_light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
   let camera_entity = @render3d.Camera3dBundle::new(
-      @render2d.Camera::default().with_clear_color(sky_color()),
+      @sprite.Camera::default().with_clear_color(sky_color()),
       @math.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -624,14 +624,14 @@ fn setup(
   })
   world.insert_resource(PointMaterial::resource(), PointMaterial::{
     interior: materials.get_ref().val.add(
-      @render3d.StandardMaterial::from_color(@render2d.Color::black())
+      @render3d.StandardMaterial::from_color(@sprite.Color::black())
       .with_reflectance(0.05F)
-      .with_emissive(@render2d.Color::srgba(2.1375F, 2.75F, 0.025F, 1.0F)),
+      .with_emissive(@sprite.Color::srgba(2.1375F, 2.75F, 0.025F, 1.0F)),
     ),
     boundary: materials.get_ref().val.add(
-      @render3d.StandardMaterial::from_color(@render2d.Color::black())
+      @render3d.StandardMaterial::from_color(@sprite.Color::black())
       .with_reflectance(0.05F)
-      .with_emissive(@render2d.Color::srgba(0.12F, 0.3F, 1.35F, 1.0F)),
+      .with_emissive(@sprite.Color::srgba(0.12F, 0.3F, 1.35F, 1.0F)),
     ),
   })
 

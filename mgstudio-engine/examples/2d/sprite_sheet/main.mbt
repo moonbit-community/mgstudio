@@ -72,18 +72,16 @@ fn sprite_sheet_setup(world : @ecs.World) -> Unit {
   )
   let layout_handle = @asset.asset_add_texture_atlas_layout(layout)
   let atlas = @asset.TextureAtlas::new(layout_handle, GABE_FIRST_FRAME)
-  let sprite = @render2d.Sprite::from_atlas_image(texture, atlas)
+  let sprite = @sprite.Sprite::from_atlas_image(texture, atlas)
   let transform = @math.Transform::identity().with_scale(
     @math.Vec3::splat(GABE_SCALE),
   )
 
-  let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
-    world,
-  )
+  let camera = @sprite.Camera::default()
+  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
   |> ignore
 
-  let entity = @render2d.SpriteBundle::new(sprite, transform).spawn(world)
+  let entity = @sprite.SpriteBundle::new(sprite, transform).spawn(world)
   sprite_sheet_state.val.timer_seconds = 0.0F
   sprite_sheet_state.val.sprite = Some(entity)
   sprite_sheet_state.val.texture = Some(texture)
@@ -109,11 +107,11 @@ fn sprite_sheet_animate(world : @ecs.World) -> Unit {
         try! world.despawn(entity)
       }
       let atlas = @asset.TextureAtlas::new(layout_handle, next_frame)
-      let sprite = @render2d.Sprite::from_atlas_image(texture, atlas)
+      let sprite = @sprite.Sprite::from_atlas_image(texture, atlas)
       let transform = @math.Transform::identity().with_scale(
         @math.Vec3::splat(GABE_SCALE),
       )
-      let entity = @render2d.SpriteBundle::new(sprite, transform).spawn(world)
+      let entity = @sprite.SpriteBundle::new(sprite, transform).spawn(world)
       sprite_sheet_state.val.sprite = Some(entity)
       sprite_sheet_state.val.frame = next_frame
     }

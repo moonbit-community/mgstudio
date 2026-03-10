@@ -42,7 +42,7 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let entity_spawn = @math.Vec3::zero()
   let material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white()),
+    @render3d.StandardMaterial::from_color(@sprite.Color::white()),
   )
   let cube = @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
@@ -54,7 +54,7 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(cube, Movable::new(entity_spawn), tick)
 
   @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 10.0F, 20.0F).looking_at(
       entity_spawn,
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

@@ -46,7 +46,7 @@ fn text2d_setup(world : @ecs.World) -> Unit {
   let medium_font = @text.TextFont::default()
     .with_font(font)
     .with_font_size(35.0F)
-  let box_color = @render2d.Color::srgb(0.25F, 0.25F, 0.55F)
+  let box_color = @sprite.Color::srgb(0.25F, 0.25F, 0.55F)
   let text_shadow_color = color_darker(box_color, 0.05F)
 
   text2d_state.val.translation_text = Some(
@@ -113,9 +113,9 @@ fn text2d_setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let anchor_origin = @math.Vec2::new(0.0F, 250.0F)
-  @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(10.0F, 10.0F)),
-    @render2d.ColorMaterial::new(@render2d.Color::srgb(0.68F, 0.97F, 0.97F)),
+  @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(10.0F, 10.0F)),
+    @sprite.ColorMaterial::new(@sprite.Color::srgb(0.68F, 0.97F, 0.97F)),
     @math.Transform::from_xy_rotation_scale(
       anchor_origin,
       0.0F,
@@ -126,33 +126,31 @@ fn text2d_setup(world : @ecs.World) -> Unit {
 
   spawn_anchor_label(
     medium_font,
-    @render2d.Anchor::top_left(),
-    @render2d.Color::srgb(1.0F, 0.63F, 0.48F),
+    @sprite.Anchor::top_left(),
+    @sprite.Color::srgb(1.0F, 0.63F, 0.48F),
     anchor_origin,
   )
   spawn_anchor_label(
     medium_font,
-    @render2d.Anchor::top_right(),
-    @render2d.Color::srgb(0.67F, 0.90F, 0.60F),
+    @sprite.Anchor::top_right(),
+    @sprite.Color::srgb(0.67F, 0.90F, 0.60F),
     anchor_origin,
   )
   spawn_anchor_label(
     medium_font,
-    @render2d.Anchor::bottom_right(),
-    @render2d.Color::srgb(0.53F, 0.81F, 0.98F),
+    @sprite.Anchor::bottom_right(),
+    @sprite.Color::srgb(0.53F, 0.81F, 0.98F),
     anchor_origin,
   )
   spawn_anchor_label(
     medium_font,
-    @render2d.Anchor::bottom_left(),
-    @render2d.Color::srgb(1.0F, 0.93F, 0.55F),
+    @sprite.Anchor::bottom_left(),
+    @sprite.Color::srgb(1.0F, 0.93F, 0.55F),
     anchor_origin,
   )
 
-  let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
-    world,
-  )
+  let camera = @sprite.Camera::default()
+  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
   |> ignore
 }
 
@@ -165,9 +163,7 @@ fn spawn_animated_text(
   @text.Text2dBundle::new(@text.Text2d::new(content), font, transform)
   .with_background_color(
     Some(
-      @text.TextBackgroundColor::new(
-        @render2d.Color::new(0.0F, 0.0F, 0.0F, 0.5F),
-      ),
+      @text.TextBackgroundColor::new(@sprite.Color::new(0.0F, 0.0F, 0.0F, 0.5F)),
     ),
   )
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
@@ -183,13 +179,13 @@ fn spawn_wrapped_text_box(
   size : @math.Vec2,
   linebreak : @text.LineBreak,
   content : String,
-  box_color : @render2d.Color,
-  shadow_color : @render2d.Color,
+  box_color : @sprite.Color,
+  shadow_color : @sprite.Color,
   underline : Bool,
 ) -> Unit {
-  @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::from_size(size)),
-    @render2d.ColorMaterial::new(box_color),
+  @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::from_size(size)),
+    @sprite.ColorMaterial::new(box_color),
     @math.Transform::from_xy_rotation_scale(
       center,
       0.0F,
@@ -225,8 +221,8 @@ fn spawn_wrapped_text_box(
 ///|
 fn spawn_anchor_label(
   font : @text.TextFont,
-  anchor : @render2d.Anchor,
-  color : @render2d.Color,
+  anchor : @sprite.Anchor,
+  color : @sprite.Color,
   position : @math.Vec2,
 ) -> Unit {
   let label = anchor_name(anchor)
@@ -244,16 +240,14 @@ fn spawn_anchor_label(
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
     .with_background_color(
       Some(
-        @text.TextBackgroundColor::new(@render2d.Color::srgb(0.2F, 0.2F, 0.2F)),
+        @text.TextBackgroundColor::new(@sprite.Color::srgb(0.2F, 0.2F, 0.2F)),
       ),
     )
     .spawn()
   @text.TextSpanBundle::new(@text.TextSpan::new("::"), font)
-  .with_color(@text.TextColor::new(@render2d.Color::srgb(0.83F, 0.83F, 0.83F)))
+  .with_color(@text.TextColor::new(@sprite.Color::srgb(0.83F, 0.83F, 0.83F)))
   .with_background_color(
-    Some(
-      @text.TextBackgroundColor::new(@render2d.Color::srgb(0.0F, 0.0F, 0.55F)),
-    ),
+    Some(@text.TextBackgroundColor::new(@sprite.Color::srgb(0.0F, 0.0F, 0.55F))),
   )
   .spawn(base_handle)
   |> ignore
@@ -267,7 +261,7 @@ fn spawn_anchor_label(
 }
 
 ///|
-fn color_darker(color : @render2d.Color, factor : Float) -> @render2d.Color {
+fn color_darker(color : @sprite.Color, factor : Float) -> @sprite.Color {
   let safe = if factor < 0.0F {
     0.0F
   } else if factor > 1.0F {
@@ -275,7 +269,7 @@ fn color_darker(color : @render2d.Color, factor : Float) -> @render2d.Color {
   } else {
     factor
   }
-  @render2d.Color::new(
+  @sprite.Color::new(
     color.r * (1.0F - safe),
     color.g * (1.0F - safe),
     color.b * (1.0F - safe),
@@ -284,7 +278,7 @@ fn color_darker(color : @render2d.Color, factor : Float) -> @render2d.Color {
 }
 
 ///|
-fn anchor_name(anchor : @render2d.Anchor) -> String {
+fn anchor_name(anchor : @sprite.Anchor) -> String {
   let v = anchor.as_vec()
   if v.x == -0.5F && v.y == 0.5F {
     "Anchor(Vec2(-0.5, 0.5))"

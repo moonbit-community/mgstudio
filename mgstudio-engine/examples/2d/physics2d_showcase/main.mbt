@@ -81,11 +81,11 @@ fn physics2d_showcase_spawn_controls_overlay() -> Unit {
       z=50.0F,
     ),
   )
-  .with_anchor(@render2d.Anchor::top_left())
+  .with_anchor(@sprite.Anchor::top_left())
   .with_bounds(@text.TextBounds::new_horizontal(780.0F))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
   .with_color(
-    @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
   .with_shadow(Some(@text.Text2dShadow::default()))
   .spawn()
@@ -113,14 +113,12 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   let texture = asset_server.load("branding/icon.png")
 
   // Camera.
-  let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
-    world,
-  )
+  let camera = @sprite.Camera::default()
+  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
   |> ignore
   physics2d_showcase_spawn_controls_overlay()
   let transform_store = world.component(@math.ecs_key_transform)
-  let sprite_store = world.component(@render2d.ecs_key_sprite)
+  let sprite_store = world.component(@sprite.ecs_key_sprite)
   let rb_store = @physics2d.get_rigid_body2d_store(world)
   let col_store = @physics2d.get_collider2d_store(world)
   let vel_store = @physics2d.get_velocity2d_store(world)
@@ -147,8 +145,8 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   )
   sprite_store.insert(
     floor,
-    @render2d.Sprite::from_image(texture)
-    .with_color(@render2d.Color::new(0.25F, 0.25F, 0.25F, 1.0F))
+    @sprite.Sprite::from_image(texture)
+    .with_color(@sprite.Color::new(0.25F, 0.25F, 0.25F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(800.0F, 40.0F))),
     tick,
   )
@@ -214,8 +212,8 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   )
   sprite_store.insert(
     sensor_zone,
-    @render2d.Sprite::from_image(texture)
-    .with_color(@render2d.Color::new(0.0F, 0.8F, 0.9F, 0.35F))
+    @sprite.Sprite::from_image(texture)
+    .with_color(@sprite.Color::new(0.0F, 0.8F, 0.9F, 0.35F))
     .with_custom_size(Some(@math.Vec2::new(260.0F, 120.0F))),
     tick,
   )
@@ -248,8 +246,8 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   )
   sprite_store.insert(
     player,
-    @render2d.Sprite::from_image(texture)
-    .with_color(@render2d.Color::new(1.0F, 1.0F, 1.0F, 0.9F))
+    @sprite.Sprite::from_image(texture)
+    .with_color(@sprite.Color::new(1.0F, 1.0F, 1.0F, 0.9F))
     .with_custom_size(Some(@math.Vec2::new(28.0F, 56.0F))),
     tick,
   )
@@ -296,8 +294,8 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
     )
     sprite_store.insert(
       box,
-      @render2d.Sprite::from_image(texture)
-      .with_color(@render2d.Color::new(0.9F, 0.6F, 0.2F, 1.0F))
+      @sprite.Sprite::from_image(texture)
+      .with_color(@sprite.Color::new(0.9F, 0.6F, 0.2F, 1.0F))
       .with_custom_size(Some(@math.Vec2::new(56.0F, 56.0F))),
       tick,
     )
@@ -345,8 +343,8 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   )
   sprite_store.insert(
     bob,
-    @render2d.Sprite::from_image(texture)
-    .with_color(@render2d.Color::new(0.8F, 0.2F, 0.9F, 1.0F))
+    @sprite.Sprite::from_image(texture)
+    .with_color(@sprite.Color::new(0.8F, 0.2F, 0.9F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(32.0F, 32.0F))),
     tick,
   )
@@ -383,8 +381,8 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   )
   sprite_store.insert(
     ghost_a,
-    @render2d.Sprite::from_image(texture)
-    .with_color(@render2d.Color::new(0.2F, 0.9F, 0.2F, 1.0F))
+    @sprite.Sprite::from_image(texture)
+    .with_color(@sprite.Color::new(0.2F, 0.9F, 0.2F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(28.0F, 28.0F))),
     tick,
   )
@@ -419,8 +417,8 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   )
   sprite_store.insert(
     ghost_b,
-    @render2d.Sprite::from_image(texture)
-    .with_color(@render2d.Color::new(0.2F, 0.3F, 1.0F, 1.0F))
+    @sprite.Sprite::from_image(texture)
+    .with_color(@sprite.Color::new(0.2F, 0.3F, 1.0F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(28.0F, 28.0F))),
     tick,
   )
@@ -541,14 +539,14 @@ fn physics2d_showcase_spawn_ball_on_click(world : @ecs.World) -> Unit {
     return
   }
   guard @input.mouse_position() is Some(screen_pos) else { return }
-  guard @render2d.render2d_viewport_to_world_2d(world, screen_pos) is Some(p) else {
+  guard @sprite.render2d_viewport_to_world_2d(world, screen_pos) is Some(p) else {
     return
   }
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
   let transform_store = world.component(@math.ecs_key_transform)
-  let sprite_store = world.component(@render2d.ecs_key_sprite)
+  let sprite_store = world.component(@sprite.ecs_key_sprite)
   let rb_store = @physics2d.get_rigid_body2d_store(world)
   let col_store = @physics2d.get_collider2d_store(world)
   let vel_store = @physics2d.get_velocity2d_store(world)
@@ -565,8 +563,8 @@ fn physics2d_showcase_spawn_ball_on_click(world : @ecs.World) -> Unit {
   )
   sprite_store.insert(
     ball,
-    @render2d.Sprite::from_image(texture)
-    .with_color(@render2d.Color::new(1.0F, 0.2F, 0.2F, 1.0F))
+    @sprite.Sprite::from_image(texture)
+    .with_color(@sprite.Color::new(1.0F, 0.2F, 0.2F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(24.0F, 24.0F))),
     tick,
   )

@@ -101,7 +101,7 @@ fn apply_distance_fog_from_stub(world : @ecs.World, phase : Float) -> Unit {
 
   let fog = @render3d.DistanceFog::default()
     .with_color(
-      @render2d.Color::new(
+      @sprite.Color::new(
         clamp01(fog_color.r * brightness + ambient_lift),
         clamp01(fog_color.g * brightness + ambient_lift),
         clamp01(fog_color.b * brightness + ambient_lift),
@@ -109,7 +109,7 @@ fn apply_distance_fog_from_stub(world : @ecs.World, phase : Float) -> Unit {
       ),
     )
     .with_directional_light_color(
-      @render2d.Color::new(1.0F, 1.0F, 1.0F, directional_alpha),
+      @sprite.Color::new(1.0F, 1.0F, 1.0F, directional_alpha),
     )
     .with_directional_light_exponent(24.0F)
     .with_falloff(@render3d.FogFalloff3d::from_visibility_squared(visibility))
@@ -189,12 +189,12 @@ fn uv_sphere_mesh(
 fn spawn_volume_proxy(world : @ecs.World) -> Unit {
   let fog_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.88F, 0.92F, 0.97F, 0.25F),
+      @sprite.Color::new(0.88F, 0.92F, 0.97F, 0.25F),
     )
     .with_alpha_mode(@render3d.AlphaMode3d::Blend)
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F)
-    .with_emissive(@render2d.Color::new(0.22F, 0.24F, 0.3F, 1.0F)),
+    .with_emissive(@sprite.Color::new(0.22F, 0.24F, 0.3F, 1.0F)),
   )
 
   let head = @render3d.MeshMaterial3dBundle::new(
@@ -244,13 +244,13 @@ fn setup(world : @ecs.World) -> Unit {
     .with_density_factor(1.0F)
     .with_scattering(1.0F)
     .with_absorption(0.3F)
-    .with_fog_color(@render2d.Color::new(0.45F, 0.5F, 0.56F, 1.0F))
+    .with_fog_color(@sprite.Color::new(0.45F, 0.5F, 0.56F, 1.0F))
 
   let tick = world.read_change_tick()
 
   world.insert_resource(
     @render3d.ecs_key_global_ambient_light,
-    @render3d.GlobalAmbientLight::new(@render2d.Color::white(), 0.0F),
+    @render3d.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
   )
 
   spawn_volume_proxy(world)
@@ -270,13 +270,13 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_directional_light)
   .insert(
     light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 32_000.0F, true),
+    @render3d.DirectionalLight::new(@sprite.Color::white(), 32_000.0F, true),
     tick,
   )
   fog_volumes_state.val.light = Some(light)
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-0.75F, 1.0F, 2.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

@@ -72,7 +72,7 @@ fn ui_spawn_text(
       .with_font_size(font_size),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 
@@ -104,8 +104,8 @@ fn ui_spawn_text(
 ///|
 fn spawn_overlay(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let overlay_camera = @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(1).with_clear_color_none(),
+  let overlay_camera = @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(1).with_clear_color_none(),
     @math.Transform::identity(),
   ).spawn(world)
   world
@@ -150,7 +150,7 @@ fn spawn_overlay(world : @ecs.World) -> Unit {
 fn spawn_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 1.0F, 0.0F).looking_to(
       @math.Vec3::new(1.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -181,7 +181,7 @@ fn spawn_lights(world : @ecs.World) -> Unit {
   .insert(
     light_a,
     @render3d.PointLight::new(
-      @render2d.Color::new(1.0F, 0.71F, 0.49F, 1.0F),
+      @sprite.Color::new(1.0F, 0.71F, 0.49F, 1.0F),
       1500.0F,
       20.0F,
       true,
@@ -206,7 +206,7 @@ fn spawn_lights(world : @ecs.World) -> Unit {
   .insert(
     light_c,
     @render3d.PointLight::new(
-      @render2d.Color::new(1.0F, 0.44F, 0.44F, 1.0F),
+      @sprite.Color::new(1.0F, 0.44F, 0.44F, 1.0F),
       1200.0F,
       20.0F,
       true,
@@ -222,20 +222,20 @@ fn spawn_lights(world : @ecs.World) -> Unit {
 fn spawn_world(world : @ecs.World) -> Unit {
   let white = @render3d.MeshMaterial3d::new(
     @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(@render2d.Color::white()),
+      @render3d.StandardMaterial::from_color(@sprite.Color::white()),
     ),
   )
   let blue = @render3d.MeshMaterial3d::new(
     @render3d.standard_material_add(
       @render3d.StandardMaterial::from_color(
-        @render2d.Color::new(0.11F, 0.31F, 0.66F, 1.0F),
+        @sprite.Color::new(0.11F, 0.31F, 0.66F, 1.0F),
       ),
     ),
   )
   let red = @render3d.MeshMaterial3d::new(
     @render3d.standard_material_add(
       @render3d.StandardMaterial::from_color(
-        @render2d.Color::new(0.25F, 0.03F, 0.05F, 1.0F),
+        @sprite.Color::new(0.25F, 0.03F, 0.05F, 1.0F),
       ),
     ),
   )

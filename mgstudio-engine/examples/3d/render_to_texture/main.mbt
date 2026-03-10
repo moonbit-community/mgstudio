@@ -36,22 +36,22 @@ fn setup(world : @ecs.World) -> Unit {
   render_to_texture_state.val.first_pass_cube = @core.Entity::placeholder()
   render_to_texture_state.val.main_pass_cube = @core.Entity::placeholder()
 
-  let image = @render2d.render2d_create_render_target(world, 512, 512, true)
-  let first_pass_layer = @render2d.RenderLayers::layer(1)
+  let image = @sprite.render2d_create_render_target(world, 512, 512, true)
+  let first_pass_layer = @sprite.RenderLayers::layer(1)
 
   let first_pass_cube = @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_cuboid(4.0F, 4.0F, 4.0F),
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
+          @sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
         ).with_reflectance(0.02F),
       ),
     ),
     @math.Transform::from_xyz(0.0F, 0.0F, 1.0F),
   ).spawn(world)
   world
-  .component(@render2d.ecs_key_render_layers)
+  .component(@sprite.ecs_key_render_layers)
   .insert(first_pass_cube, first_pass_layer, tick)
   render_to_texture_state.val.first_pass_cube = first_pass_cube
 
@@ -63,28 +63,28 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@math.ecs_key_transform)
   .insert(light, @math.Transform::from_xyz(0.0F, 0.0F, 10.0F), tick)
   world
-  .component(@render2d.ecs_key_render_layers)
-  .insert(light, @render2d.RenderLayers::layer(0).with_layer(1), tick)
+  .component(@sprite.ecs_key_render_layers)
+  .insert(light, @sprite.RenderLayers::layer(0).with_layer(1), tick)
 
   let first_pass_camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::new(@render2d.Color::white()).with_order(-1),
+    @sprite.Camera::new(@sprite.Color::white()).with_order(-1),
     @math.Transform::from_xyz(0.0F, 0.0F, 15.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
   world
-  .component(@render2d.ecs_key_render_target)
-  .insert(first_pass_camera, @render2d.RenderTarget::Image(image), tick)
+  .component(@sprite.ecs_key_render_target)
+  .insert(first_pass_camera, @sprite.RenderTarget::Image(image), tick)
   world
-  .component(@render2d.ecs_key_render_layers)
+  .component(@sprite.ecs_key_render_layers)
   .insert(first_pass_camera, first_pass_layer, tick)
 
   let main_pass_cube = @render3d.MeshMaterial3dBundle::new(
     @render3d.Mesh3d::from_cuboid(4.0F, 4.0F, 4.0F),
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@render2d.Color::white())
+        @render3d.StandardMaterial::from_color(@sprite.Color::white())
         .with_base_color_texture(Some(image))
         .with_reflectance(0.02F),
       ),
@@ -96,7 +96,7 @@ fn setup(world : @ecs.World) -> Unit {
   render_to_texture_state.val.main_pass_cube = main_pass_cube
 
   @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 0.0F, 15.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

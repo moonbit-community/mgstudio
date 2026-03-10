@@ -110,11 +110,11 @@ fn setup(
     ),
   )
   let white_material = materials.get_ref().val.add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white()),
+    @render3d.StandardMaterial::from_color(@sprite.Color::white()),
   )
   let cube_material = materials.get_ref().val.add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
+      @sprite.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
     ),
   )
 

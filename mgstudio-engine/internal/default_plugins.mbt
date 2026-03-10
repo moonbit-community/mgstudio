@@ -133,7 +133,7 @@ fn default_plugins_builder(
   .add_named(
     id=DEFAULT_PLUGIN_ID_FRAME_COUNT,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @diagnostics.frame_count_plugin(app)
+      @diagnostic.frame_count_plugin(app)
     }),
   )
   .add_named(
@@ -176,7 +176,7 @@ fn default_plugins_builder(
   .add_named(
     id=DEFAULT_PLUGIN_ID_DIAGNOSTICS,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @diagnostics.diagnostics_plugin(app)
+      @diagnostic.diagnostics_plugin(app)
     }),
   )
   .add_named(
@@ -224,7 +224,7 @@ fn default_plugins_builder(
   .add_named(
     id=DEFAULT_PLUGIN_ID_RENDER2D,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @render2d.render2d_plugin_ecs(app)
+      @sprite.render2d_plugin_ecs(app)
     }),
   )
   .add_named(
@@ -272,7 +272,7 @@ fn minimal_plugins_builder() -> @app.PluginGroupBuilder[@ecs.World] {
   .add_named(
     id=MINIMAL_PLUGIN_ID_FRAME_COUNT,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @diagnostics.frame_count_plugin(app)
+      @diagnostic.frame_count_plugin(app)
     }),
   )
   .add_named(

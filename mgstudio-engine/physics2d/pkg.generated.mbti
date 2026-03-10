@@ -5,7 +5,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/sprite",
   "Milky2018/moon_rapier/collision",
   "Milky2018/moon_rapier/control",
   "Milky2018/moon_rapier/dynamics",
@@ -620,10 +620,10 @@ pub struct Physics2dDebugRenderConfig {
   colliders : Bool
   rigid_bodies : Bool
   impulse_joints : Bool
-  collider_color : @render2d.Color
-  sensor_color : @render2d.Color
-  rigid_body_color : @render2d.Color
-  joint_color : @render2d.Color
+  collider_color : @sprite.Color
+  sensor_color : @sprite.Color
+  rigid_body_color : @sprite.Color
+  joint_color : @sprite.Color
 }
 pub fn Physics2dDebugRenderConfig::default() -> Self
 

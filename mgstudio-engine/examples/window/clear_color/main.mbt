@@ -20,7 +20,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .insert_resource(
-    @render2d.ClearColor::new(@render2d.Color::new(0.5F, 0.5F, 0.9F, 1.0F)),
+    @sprite.ClearColor::new(@sprite.Color::new(0.5F, 0.5F, 0.9F, 1.0F)),
   )
   .add_plugins(plugins)
   .add_systems(@app.Startup, @app.system(setup))
@@ -33,8 +33,8 @@ fn main {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -43,11 +43,11 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn change_clear_color_system(
   input : @input.ButtonInput[@window.KeyCode],
-  clear_color : @app.ResMut[@render2d.ClearColor],
+  clear_color : @app.ResMut[@sprite.ClearColor],
 ) -> Unit {
   if input.just_pressed(Space) {
-    clear_color.get_ref().val = @render2d.ClearColor::new(
-      @render2d.Color::new(0.5F, 0.0F, 0.5F, 1.0F),
+    clear_color.get_ref().val = @sprite.ClearColor::new(
+      @sprite.Color::new(0.5F, 0.0F, 0.5F, 1.0F),
     )
   }
 }

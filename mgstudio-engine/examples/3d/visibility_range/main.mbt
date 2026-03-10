@@ -205,7 +205,7 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.1F, 0.2F, 0.1F, 1.0F),
+          @sprite.Color::new(0.1F, 0.2F, 0.1F, 1.0F),
         ),
       ),
     ),
@@ -250,7 +250,7 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_directional_light)
   .insert(
     directional,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 20_000.0F, true),
+    @render3d.DirectionalLight::new(@sprite.Color::white(), 20_000.0F, true),
     tick,
   )
   let light_angle = -0.15F * PI
@@ -266,7 +266,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
       @math.Vec3::new(CAMERA_FOCAL_X, CAMERA_FOCAL_Y, CAMERA_FOCAL_Z),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -297,11 +297,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::bottom_left())
+    .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()

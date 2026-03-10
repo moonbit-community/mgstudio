@@ -121,7 +121,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   }
 
   let camera = @render3d.Camera3dBundle::new(
-      @render2d.Camera::default().with_clear_color(@render2d.Color::black()),
+      @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
       @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -138,22 +138,22 @@ fn setup_scene(world : @ecs.World) -> Unit {
   .insert(camera, BloomCamera::{  }, tick)
 
   let material_emissive1 = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::black()).with_emissive(
-      @render2d.Color::new(0.0F, 0.0F, 150.0F, 1.0F),
+    @render3d.StandardMaterial::from_color(@sprite.Color::black()).with_emissive(
+      @sprite.Color::new(0.0F, 0.0F, 150.0F, 1.0F),
     ),
   )
   let material_emissive2 = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::black()).with_emissive(
-      @render2d.Color::new(1000.0F, 1000.0F, 1000.0F, 1.0F),
+    @render3d.StandardMaterial::from_color(@sprite.Color::black()).with_emissive(
+      @sprite.Color::new(1000.0F, 1000.0F, 1000.0F, 1.0F),
     ),
   )
   let material_emissive3 = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::black()).with_emissive(
-      @render2d.Color::new(50.0F, 0.0F, 0.0F, 1.0F),
+    @render3d.StandardMaterial::from_color(@sprite.Color::black()).with_emissive(
+      @sprite.Color::new(50.0F, 0.0F, 0.0F, 1.0F),
     ),
   )
   let material_non_emissive = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::black()),
+    @render3d.StandardMaterial::from_color(@sprite.Color::black()),
   )
 
   let sphere_mesh = @render3d.Mesh3d::from_sphere(0.4F)
@@ -199,11 +199,11 @@ fn setup_scene(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::bottom_left())
+    .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()

@@ -65,18 +65,18 @@ fn main {
 }
 
 ///|
-fn color_blue() -> @render2d.Color {
-  @render2d.Color::srgb(0.0F, 0.0F, 1.0F)
+fn color_blue() -> @sprite.Color {
+  @sprite.Color::srgb(0.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_red() -> @render2d.Color {
-  @render2d.Color::srgb(1.0F, 0.0F, 0.0F)
+fn color_red() -> @sprite.Color {
+  @sprite.Color::srgb(1.0F, 0.0F, 0.0F)
 }
 
 ///|
-fn color_lime() -> @render2d.Color {
-  @render2d.Color::srgb(0.0F, 1.0F, 0.0F)
+fn color_lime() -> @sprite.Color {
+  @sprite.Color::srgb(0.0F, 1.0F, 0.0F)
 }
 
 ///|
@@ -102,7 +102,7 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
       @text.TextFont::default().with_font(font).with_font_size(20.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 
@@ -143,13 +143,11 @@ fn spawn_listener_ear(
   world : @ecs.World,
   listener : @core.Entity,
   offset_x : Float,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> Unit {
-  let ear = @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_rectangle(
-      @render2d.Rectangle::new(EAR_SIZE, EAR_SIZE),
-    ),
-    @render2d.ColorMaterial::new(color),
+  let ear = @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(EAR_SIZE, EAR_SIZE)),
+    @sprite.ColorMaterial::new(color),
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(offset_x, 0.0F),
       0.0F,
@@ -176,9 +174,9 @@ fn setup(world : @ecs.World) -> Unit {
     "sounds/Windless Slopes.ogg",
   )
 
-  let emitter = @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_circle(@render2d.Circle::new(EMITTER_RADIUS)),
-    @render2d.ColorMaterial::new(color_blue()),
+  let emitter = @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_circle(@sprite.Circle::new(EMITTER_RADIUS)),
+    @sprite.ColorMaterial::new(color_blue()),
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, EMITTER_Y),
       0.0F,
@@ -209,8 +207,8 @@ fn setup(world : @ecs.World) -> Unit {
     world, "Up/Down/Left/Right: Move Listener\nSpace: Toggle Emitter Movement",
   )
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore

@@ -274,13 +274,13 @@ fn SelectedColorGradingOption::set(
 }
 
 ///|
-fn selected_button_color() -> @render2d.Color {
-  @render2d.Color::white()
+fn selected_button_color() -> @sprite.Color {
+  @sprite.Color::white()
 }
 
 ///|
-fn normal_button_color() -> @render2d.Color {
-  @render2d.Color::black()
+fn normal_button_color() -> @sprite.Color {
+  @sprite.Color::black()
 }
 
 ///|
@@ -319,7 +319,7 @@ fn spawn_ui_text_handle(
   content : String,
   font : @asset.Handle[@asset.Font],
   font_size : Float,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> @text.TextHandle {
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
@@ -387,7 +387,7 @@ fn spawn_row_label(
     label,
     font,
     15.0F,
-    @render2d.Color::white(),
+    @sprite.Color::white(),
   )
   let label_entity = world.spawn_empty()
   world
@@ -453,7 +453,7 @@ fn spawn_option_button(
   .insert(button, @ui.BorderRadius::all(@ui.Val::Percent(100.0F)), tick)
   world
   .component(@ui.ecs_key_border_color)
-  .insert(button, @ui.BorderColor::new(@render2d.Color::white()), tick)
+  .insert(button, @ui.BorderColor::new(@sprite.Color::white()), tick)
   world
   .component(@ui.ecs_key_background_color)
   .insert(button, @ui.BackgroundColor::new(normal_button_color()), tick)
@@ -469,7 +469,7 @@ fn spawn_option_button(
     selected_option_button_label(option),
     font,
     15.0F,
-    @render2d.Color::white(),
+    @sprite.Color::white(),
   )
   let label_entity = world.spawn_empty()
   world
@@ -501,7 +501,7 @@ fn spawn_option_button(
     option_value_text(option, color_grading),
     font,
     15.0F,
-    @render2d.Color::white(),
+    @sprite.Color::white(),
   )
   let value_entity = world.spawn_empty()
   world
@@ -614,7 +614,7 @@ fn add_buttons(
     create_help_text(SelectedColorGradingOption::default()),
     font,
     16.0F,
-    @render2d.Color::white(),
+    @sprite.Color::white(),
   )
   let help_entity = world.spawn_empty()
   world
@@ -642,7 +642,7 @@ fn add_buttons(
 fn add_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tick = world.read_change_tick()
   let camera = @render3d.Camera3dBundle::new(
-      @render2d.Camera::default(),
+      @sprite.Camera::default(),
       @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
         @math.Vec3::new(0.0F, 0.3F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -652,7 +652,7 @@ fn add_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     .with_distance_fog(
       Some(
         @render3d.DistanceFog::new(
-          @render2d.Color::srgb(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F),
+          @sprite.Color::srgb(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F),
           @render3d.FogFalloff3d::linear(1.0F, 8.0F),
         ),
       ),
@@ -730,7 +730,7 @@ fn add_basic_scene(
   .component(@render3d.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
+    @render3d.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
       @render3d.CascadeShadowConfigBuilder::default()
       .with_maximum_distance(3.0F)
       .with_first_cascade_far_bound(0.9F),
@@ -763,8 +763,8 @@ fn setup(world : @ecs.World) -> Unit {
   add_camera(world, asset_server)
 
   let tick = world.read_change_tick()
-  let overlay_camera = @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(100).with_clear_color_none(),
+  let overlay_camera = @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(100).with_clear_color_none(),
     @math.Transform::identity(),
   ).spawn(world)
   world
@@ -861,9 +861,9 @@ fn update_ui_state(world : @ecs.World) -> Unit {
         )
         let border = @ui.BorderColor::new(
           if is_selected {
-            @render2d.Color::black()
+            @sprite.Color::black()
           } else {
-            @render2d.Color::white()
+            @sprite.Color::white()
           },
         )
         if background_store.contains(entity) {

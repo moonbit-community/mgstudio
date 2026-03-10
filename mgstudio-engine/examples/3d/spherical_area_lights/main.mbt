@@ -128,7 +128,7 @@ fn uv_sphere_mesh(
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @render2d.Color,
+  color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
@@ -138,10 +138,10 @@ fn set_global_ambient_light(
 ///|
 fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  set_global_ambient_light(world, @render2d.Color::white(), 60.0F)
+  set_global_ambient_light(world, @sprite.Color::white(), 60.0F)
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.2F, 1.5F, 2.5F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -154,7 +154,7 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.2F, 0.2F, 0.2F, 1.0F),
+          @sprite.Color::new(0.2F, 0.2F, 0.2F, 1.0F),
         ).with_perceptual_roughness(0.08F),
       ),
     ),
@@ -177,7 +177,7 @@ fn setup(world : @ecs.World) -> Unit {
       @render3d.MeshMaterial3d::new(
         @render3d.standard_material_add(
           @render3d.StandardMaterial::from_color(
-            @render2d.Color::new(0.5F, 0.5F, 1.0F, 1.0F),
+            @sprite.Color::new(0.5F, 0.5F, 1.0F, 1.0F),
           ).with_unlit(true),
         ),
       ),
@@ -192,7 +192,7 @@ fn setup(world : @ecs.World) -> Unit {
     .insert(
       point_light,
       @render3d.PointLight::default()
-      .with_color(@render2d.Color::new(0.2F, 0.2F, 1.0F, 1.0F))
+      .with_color(@sprite.Color::new(0.2F, 0.2F, 1.0F, 1.0F))
       .with_radius(radius)
       .with_range(mapped_point_light_range(radius))
       .with_intensity(mapped_point_light_intensity(radius))

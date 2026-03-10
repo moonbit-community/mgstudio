@@ -220,21 +220,21 @@ fn setup(world : @ecs.World) -> Unit {
 
   let red_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+      @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
     ),
   )
   let blue_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+      @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
     ),
   )
   let lime_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+      @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
     ),
   )
   let white_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white()).with_perceptual_roughness(
+    @render3d.StandardMaterial::from_color(@sprite.Color::white()).with_perceptual_roughness(
       1.0F,
     ),
   )
@@ -279,7 +279,7 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_point_light)
   .insert(
     point_light,
-    @render3d.PointLight::new(@render2d.Color::white(), 0.0F, 500.0F, true),
+    @render3d.PointLight::new(@sprite.Color::white(), 0.0F, 500.0F, true),
     tick,
   )
   world
@@ -297,7 +297,7 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     directional_light,
     @render3d.DirectionalLight::new(
-      @render2d.Color::white(),
+      @sprite.Color::white(),
       SHADOW_CASTER_RECEIVER_LIGHT_DIRECTIONAL_ILLUMINANCE,
       true,
     ).with_cascade_shadow_config(Some(cascade_shadow_config)),
@@ -317,7 +317,7 @@ fn setup(world : @ecs.World) -> Unit {
   shadow_caster_receiver_state.val.directional_light = Some(directional_light)
 
   @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-5.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::new(-1.0F, 1.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

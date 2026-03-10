@@ -22,8 +22,8 @@ const TOGGLE_INTERVAL_SECONDS : Float = 10.0F
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.default_plugins())
-  .add_plugin(@diagnostics.frame_time_diagnostics_plugin)
-  .add_plugin(@diagnostics.log_diagnostics_plugin)
+  .add_plugin(@diagnostic.frame_time_diagnostics_plugin)
+  .add_plugin(@diagnostic.log_diagnostics_plugin)
   .add_systems(
     @app.Update,
     @app.system(@app.system_param(toggle)).run_if(
@@ -34,7 +34,7 @@ fn main {
 }
 
 ///|
-fn toggle(store : @app.ResMut[@diagnostics.DiagnosticsStore]) -> Unit {
+fn toggle(store : @app.ResMut[@diagnostic.DiagnosticsStore]) -> Unit {
   for diagnostic in store.get_ref().val.iter_mut() {
     let message = "toggling diagnostic " + diagnostic.val.path().as_str()
     @app.log_record(@app.Info, message~)

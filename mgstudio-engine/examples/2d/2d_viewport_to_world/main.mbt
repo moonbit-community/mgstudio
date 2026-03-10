@@ -28,7 +28,7 @@ priv struct ViewportToWorldState {
   mut camera : @core.Entity
   mut camera_transform : @math.Transform
   mut camera_scale : Float
-  mut viewport : @render2d.Viewport
+  mut viewport : @sprite.Viewport
 }
 
 ///|
@@ -36,21 +36,21 @@ let viewport_state : Ref[ViewportToWorldState] = Ref::new(ViewportToWorldState::
   camera: @core.Entity::placeholder(),
   camera_transform: @math.Transform::identity(),
   camera_scale: 1.0F,
-  viewport: @render2d.Viewport::new(
+  viewport: @sprite.Viewport::new(
     @math.IVec2::new(0, 0),
     @math.IVec2::new(1, 1),
   ),
 })
 
 ///|
-fn viewport_default(width : Int, height : Int) -> @render2d.Viewport {
+fn viewport_default(width : Int, height : Int) -> @sprite.Viewport {
   let safe_width = if width <= 0 { 1 } else { width }
   let safe_height = if height <= 0 { 1 } else { height }
   let size_x = safe_width * 3 / 4
   let size_y = safe_height * 3 / 4
   let pos_x = safe_width / 8
   let pos_y = safe_height / 8
-  @render2d.Viewport::new(
+  @sprite.Viewport::new(
     @math.IVec2::new(pos_x, pos_y),
     @math.IVec2::new(size_x, size_y),
   )
@@ -61,7 +61,7 @@ fn spawn_ui_text_handle(
   content : String,
   font : @asset.Handle[@asset.Font],
   font_size : Float,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> @text.TextHandle {
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
@@ -85,7 +85,7 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
     "Use the IJKL keys to resize the viewport.",
     font,
     18.0F,
-    @render2d.Color::white(),
+    @sprite.Color::white(),
   )
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
@@ -123,9 +123,9 @@ fn viewport_to_world_setup(world : @ecs.World) -> Unit {
   let width = @window.window_width()
   let height = @window.window_height()
   let viewport = viewport_default(width, height)
-  let camera = @render2d.Camera::default().with_viewport(viewport)
+  let camera = @sprite.Camera::default().with_viewport(viewport)
   let camera_transform = @math.Transform::identity()
-  let camera_entity = @render2d.Camera2dBundle::new(camera, camera_transform).spawn(
+  let camera_entity = @sprite.Camera2dBundle::new(camera, camera_transform).spawn(
     world,
   )
   viewport_state.val.camera = camera_entity
@@ -135,22 +135,16 @@ fn viewport_to_world_setup(world : @ecs.World) -> Unit {
 
   spawn_help_overlay(world)
 
-  @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(40.0F, 20.0F)),
-    @render2d.ColorMaterial::new(
-      @render2d.Color::new(0.0F, 0.5019608F, 0.0F, 1.0F),
-    ),
+  @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(40.0F, 20.0F)),
+    @sprite.ColorMaterial::new(@sprite.Color::new(0.0F, 0.5019608F, 0.0F, 1.0F)),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
 
-  @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_rectangle(
-      @render2d.Rectangle::new(50000.0F, 50000.0F),
-    ),
-    @render2d.ColorMaterial::new(
-      @render2d.Color::new(0.01F, 0.01F, 0.01F, 1.0F),
-    ),
+  @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(50000.0F, 50000.0F)),
+    @sprite.ColorMaterial::new(@sprite.Color::new(0.01F, 0.01F, 0.01F, 1.0F)),
     @math.Transform::from_xyz(0.0F, 0.0F, -200.0F),
   ).spawn(world)
   |> ignore
@@ -163,8 +157,8 @@ fn viewport_to_world_draw_cursor(world : @ecs.World) -> Unit {
   }
 
   let camera_entity = viewport_state.val.camera
-  let camera_store = world.component(@render2d.ecs_key_camera)
-  let projection_store = world.component(@render2d.ecs_key_projection)
+  let camera_store = world.component(@sprite.ecs_key_camera)
+  let projection_store = world.component(@sprite.ecs_key_projection)
   let transform_store = world.component(@math.ecs_key_transform)
 
   guard camera_store.get(camera_entity) is Some(camera) else { return }
@@ -182,30 +176,30 @@ fn viewport_to_world_draw_cursor(world : @ecs.World) -> Unit {
 
   let window_size = @math.IVec2::new(width, height)
   let scale_factor = @window.window_scale_factor()
-  let gizmos = @render2d.Gizmos::new()
+  let gizmos = @sprite.Gizmos::new()
 
   if @input.mouse_position() is Some(screen_pos) {
-    if @render2d.render2d_camera_viewport_to_world_2d(
+    if @sprite.render2d_camera_viewport_to_world_2d(
         screen_pos, camera, orthographic_projection, camera_transform, window_size,
         scale_factor,
       )
       is Some(world_pos) {
-      let white = @render2d.Color::white()
-      let red = @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
-      let cursor_iso = @render2d.Isometry2d::new(world_pos, 0.0F)
+      let white = @sprite.Color::white()
+      let red = @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
+      let cursor_iso = @sprite.Isometry2d::new(world_pos, 0.0F)
       gizmos.circle_2d(cursor_iso, 10.0F, white) |> ignore
 
-      if @render2d.render2d_camera_world_to_viewport_2d(
+      if @sprite.render2d_camera_world_to_viewport_2d(
           world_pos, camera, orthographic_projection, camera_transform, window_size,
           scale_factor,
         )
         is Some(viewport_pos) {
-        if @render2d.render2d_camera_viewport_to_world_2d(
+        if @sprite.render2d_camera_viewport_to_world_2d(
             viewport_pos, camera, orthographic_projection, camera_transform, window_size,
             scale_factor,
           )
           is Some(world_check) {
-          let check_iso = @render2d.Isometry2d::new(world_check, 0.0F)
+          let check_iso = @sprite.Isometry2d::new(world_check, 0.0F)
           gizmos.circle_2d(check_iso, 8.0F, red) |> ignore
         }
       }
@@ -277,11 +271,11 @@ fn update_camera_scale(world : @ecs.World, delta : Float) -> Unit {
   if scale != viewport_state.val.camera_scale {
     viewport_state.val.camera_scale = scale
     let tick = world.read_change_tick()
-    let projection_store = world.component(@render2d.ecs_key_projection)
+    let projection_store = world.component(@sprite.ecs_key_projection)
     projection_store.set(
       viewport_state.val.camera,
-      @render2d.Projection::Orthographic(
-        @render2d.OrthographicProjection::new(scale),
+      @sprite.Projection::Orthographic(
+        @sprite.OrthographicProjection::new(scale),
       ),
       tick,
     )
@@ -299,7 +293,7 @@ fn update_camera_viewport(
   let window_size = @math.IVec2::new(width, height)
   let mut viewport = viewport_state.val.viewport
   if viewport.physical_size.x > width || viewport.physical_size.y > height {
-    viewport = @render2d.Viewport::new(
+    viewport = @sprite.Viewport::new(
       viewport.physical_position,
       @math.IVec2::new(width * 3 / 4, height * 3 / 4),
     )
@@ -335,7 +329,7 @@ fn update_camera_viewport(
   let min_size = @math.IVec2::new(20, 20)
   let max_size = window_size.saturating_sub(position)
   size = size.min(max_size).max(min_size)
-  viewport = @render2d.Viewport::new(position, size)
+  viewport = @sprite.Viewport::new(position, size)
   let old_viewport = viewport_state.val.viewport
   let position_changed = viewport.physical_position.x !=
     old_viewport.physical_position.x ||
@@ -348,7 +342,7 @@ fn update_camera_viewport(
   }
   viewport_state.val.viewport = viewport
   let tick = world.read_change_tick()
-  let camera_store = world.component(@render2d.ecs_key_camera)
+  let camera_store = world.component(@sprite.ecs_key_camera)
   if camera_store.get(viewport_state.val.camera) is Some(camera) {
     camera_store.set(
       viewport_state.val.camera,

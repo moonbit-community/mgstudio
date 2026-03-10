@@ -145,8 +145,8 @@ fn setup(world : @ecs.World) -> Unit {
     track_list: [track_1, track_2],
   })
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore

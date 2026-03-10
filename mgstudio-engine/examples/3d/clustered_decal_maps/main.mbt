@@ -156,7 +156,7 @@ fn spawn_plane(
 ) -> Unit {
   let material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.86F, 0.16F, 0.24F, 1.0F),
+      @sprite.Color::new(0.86F, 0.16F, 0.24F, 1.0F),
     )
     .with_base_color_texture(Some(base_color))
     .with_normal_map_texture(Some(normal_map))
@@ -182,7 +182,7 @@ fn spawn_light(world : @ecs.World) -> Unit {
   .insert(
     point,
     @render3d.PointLight::new(
-      @render2d.Color::white(),
+      @sprite.Color::white(),
       10_000_000.0F,
       100.0F,
       false,
@@ -198,7 +198,7 @@ fn spawn_light(world : @ecs.World) -> Unit {
 fn spawn_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(2.0F, 0.0F, -7.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -253,11 +253,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -278,7 +278,7 @@ fn spawn_decal(world : @ecs.World) -> Unit {
   let theta = random_range(0.0F, PI)
 
   let mut material = @render3d.StandardMaterial::from_color(
-      @render2d.Color::white(),
+      @sprite.Color::white(),
     )
     .with_base_color_texture(Some(textures.decal_base_color_texture))
     .with_normal_map_texture(Some(textures.decal_normal_map_texture))
@@ -290,7 +290,7 @@ fn spawn_decal(world : @ecs.World) -> Unit {
   if clustered_decal_maps_state.val.emissive_decals {
     material = material
       .with_emissive_texture(Some(textures.decal_emissive_texture))
-      .with_emissive(@render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F))
+      .with_emissive(@sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F))
   }
   let mut clustered_decal = @render3d.ClusteredDecal::default()
     .with_base_color_texture(Some(textures.decal_base_color_texture))

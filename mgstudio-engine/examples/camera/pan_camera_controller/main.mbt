@@ -28,20 +28,18 @@ let pan_camera_example_state : Ref[PanCameraExampleState] = Ref::new(PanCameraEx
 ///|
 fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let camera = @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  let camera = @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   world
-  .component(@render2d.ecs_key_pan_camera)
-  .insert(camera, @render2d.PanCamera::default(), tick)
+  .component(@sprite.ecs_key_pan_camera)
+  .insert(camera, @sprite.PanCamera::default(), tick)
   pan_camera_example_state.val.camera = camera
 
   let asset_server = @asset.AssetServer::new()
-  @render2d.SpriteBundle::new(
-    @render2d.Sprite::from_image(
-      asset_server.load("branding/bevy_bird_dark.png"),
-    ),
+  @sprite.SpriteBundle::new(
+    @sprite.Sprite::from_image(asset_server.load("branding/bevy_bird_dark.png")),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -54,11 +52,11 @@ fn spawn_text(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let pan_camera_store = @render2d.get_pan_camera_store(world)
+  let pan_camera_store = @sprite.get_pan_camera_store(world)
   guard pan_camera_store.get(camera) is Some(controller) else { return }
 
-  let overlay_camera = @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(1).with_clear_color_none(),
+  let overlay_camera = @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(1).with_clear_color_none(),
     @math.Transform::identity(),
   ).spawn(world)
   world
@@ -85,7 +83,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
       .with_font_size(20.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 
@@ -113,7 +111,7 @@ fn main {
   pan_camera_example_state.val.camera = @core.Entity::placeholder()
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.default_plugins())
-  .add_plugins([@render2d.pan_camera_plugin])
+  .add_plugins([@sprite.pan_camera_plugin])
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Startup, @app.system(spawn_text))
   .run()

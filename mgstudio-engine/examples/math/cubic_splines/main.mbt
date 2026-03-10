@@ -260,8 +260,8 @@ fn setup(world : @ecs.World) -> Unit {
     start: None,
   })
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -328,12 +328,12 @@ fn update_curve(
 }
 
 ///|
-fn draw_curve(curve : @app.Res[Curve], gizmos : @render2d.Gizmos) -> Unit {
+fn draw_curve(curve : @app.Res[Curve], gizmos : @sprite.Gizmos) -> Unit {
   guard curve.get().value is Some(curve_value) else { return }
   let resolution = 100 * curve_value.segments().length()
   gizmos.linestrip_2d(
     curve_value.iter_positions(resolution),
-    @render2d.Color::white(),
+    @sprite.Color::white(),
   )
 }
 
@@ -341,14 +341,14 @@ fn draw_curve(curve : @app.Res[Curve], gizmos : @render2d.Gizmos) -> Unit {
 fn draw_control_points(
   control_points : @app.Res[ControlPoints],
   spline_mode : @app.Res[SplineMode],
-  gizmos : @render2d.Gizmos,
+  gizmos : @sprite.Gizmos,
 ) -> Unit {
-  let green = @render2d.Color::srgb(0.0F, 1.0F, 0.0F)
-  let red = @render2d.Color::srgb(1.0F, 0.0F, 0.0F)
+  let green = @sprite.Color::srgb(0.0F, 1.0F, 0.0F)
+  let red = @sprite.Color::srgb(1.0F, 0.0F, 0.0F)
   for pair in control_points.get().points_and_tangents {
     let point = pair.0
     let tangent = pair.1
-    gizmos.circle_2d(@render2d.Isometry2d::new(point, 0.0F), 10.0F, green)
+    gizmos.circle_2d(@sprite.Isometry2d::new(point, 0.0F), 10.0F, green)
     |> ignore
     if spline_mode.get() == SplineMode::Hermite {
       gizmos.arrow_2d(point, point.add(tangent), red) |> ignore
@@ -484,23 +484,19 @@ fn handle_mouse_press(
 fn draw_edit_move(
   edit_move : @app.Res[MouseEditMove],
   mouse_position : @app.Res[MousePosition],
-  gizmos : @render2d.Gizmos,
+  gizmos : @sprite.Gizmos,
 ) -> Unit {
   guard edit_move.get().start is Some(start) else { return }
   guard mouse_position.get().position is Some(mouse_pos) else { return }
   guard screen_to_world(start) is Some(world_start) else { return }
   guard screen_to_world(mouse_pos) is Some(world_end) else { return }
 
-  let preview = @render2d.Color::srgb(0.0F, 1.0F, 0.7F)
-  gizmos.circle_2d(@render2d.Isometry2d::new(world_start, 0.0F), 10.0F, preview)
+  let preview = @sprite.Color::srgb(0.0F, 1.0F, 0.7F)
+  gizmos.circle_2d(@sprite.Isometry2d::new(world_start, 0.0F), 10.0F, preview)
   |> ignore
-  gizmos.circle_2d(@render2d.Isometry2d::new(world_start, 0.0F), 7.0F, preview)
+  gizmos.circle_2d(@sprite.Isometry2d::new(world_start, 0.0F), 7.0F, preview)
   |> ignore
-  gizmos.arrow_2d(
-    world_start,
-    world_end,
-    @render2d.Color::srgb(1.0F, 0.0F, 0.7F),
-  )
+  gizmos.arrow_2d(world_start, world_end, @sprite.Color::srgb(1.0F, 0.0F, 0.7F))
   |> ignore
 }
 
@@ -586,7 +582,7 @@ fn spawn_ui_text_line(
       font,
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
   let entity = world.spawn_empty()
@@ -616,7 +612,7 @@ fn current_world_abort() -> @ecs.World {
 
 ///|
 fn screen_to_world(position : @math.Vec2) -> @math.Vec2? {
-  @render2d.render2d_viewport_to_world_2d(current_world_abort(), position)
+  @sprite.render2d_viewport_to_world_2d(current_world_abort(), position)
 }
 
 ///|

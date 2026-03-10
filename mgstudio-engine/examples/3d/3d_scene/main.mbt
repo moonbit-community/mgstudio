@@ -62,7 +62,7 @@ fn setup(world : @ecs.World) -> Unit {
     disk_mesh(4.0F, 32),
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@render2d.Color::white()),
+        @render3d.StandardMaterial::from_color(@sprite.Color::white()),
       ),
     ),
     @math.Transform::identity().with_rotation(
@@ -76,7 +76,7 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
+          @sprite.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
         ),
       ),
     ),
@@ -97,7 +97,7 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
   @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

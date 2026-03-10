@@ -158,7 +158,7 @@ fn update_help_text() -> Unit {
 ///|
 fn set_global_ambient_light(world : @ecs.World, brightness : Float) -> Unit {
   let value = @render3d.GlobalAmbientLight::new(
-    @render2d.Color::white(),
+    @sprite.Color::white(),
     brightness,
   )
   world.insert_resource(@render3d.ecs_key_global_ambient_light, value)
@@ -204,7 +204,7 @@ fn apply_motion_blur_settings(world : @ecs.World) -> Unit {
 ///|
 fn spawn_camera(world : @ecs.World) -> Unit {
   let camera = @render3d.Camera3dBundle::new(
-      @render2d.Camera::default(),
+      @sprite.Camera::default(),
       @math.Transform::from_xyz(15.0F, -0.5F, 0.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -239,11 +239,11 @@ fn spawn_help_text(asset_server : @asset.AssetServer) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -382,7 +382,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   .component(@render3d.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 3000.0F, true),
+    @render3d.DirectionalLight::new(@sprite.Color::white(), 3000.0F, true),
     tick,
   )
   world
@@ -399,7 +399,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let cube_mesh = @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
   let sky_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.1F, 0.6F, 1.0F, 1.0F),
+      @sprite.Color::new(0.1F, 0.6F, 1.0F, 1.0F),
     ).with_unlit(true),
   )
   @render3d.MeshMaterial3dBundle::new(
@@ -413,7 +413,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let icon = asset_server.load("branding/icon.png")
   let ground_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white())
+    @render3d.StandardMaterial::from_color(@sprite.Color::white())
     .with_perceptual_roughness(1.0F)
     .with_base_color_texture(Some(icon))
     .with_uv_transform(
@@ -429,15 +429,15 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let car_colors : Array[@render2d.Color] = [
-    @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
-    @render2d.Color::new(1.0F, 1.0F, 0.0F, 1.0F),
-    @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
-    @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
-    @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
-    @render2d.Color::new(1.0F, 0.0F, 1.0F, 1.0F),
-    @render2d.Color::new(0.5F, 0.5F, 0.0F, 1.0F),
-    @render2d.Color::new(1.0F, 0.5F, 0.0F, 1.0F),
+  let car_colors : Array[@sprite.Color] = [
+    @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+    @sprite.Color::new(1.0F, 1.0F, 0.0F, 1.0F),
+    @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+    @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+    @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+    @sprite.Color::new(1.0F, 0.0F, 1.0F, 1.0F),
+    @sprite.Color::new(0.5F, 0.5F, 0.0F, 1.0F),
+    @sprite.Color::new(1.0F, 0.5F, 0.0F, 1.0F),
   ]
   let car_materials : Array[@asset.Handle[@render3d.StandardMaterial]] = []
   for color in car_colors {
@@ -448,7 +448,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     )
   }
   let wheel_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white()).with_base_color_texture(
+    @render3d.StandardMaterial::from_color(@sprite.Color::white()).with_base_color_texture(
       Some(asset_server.load("branding/icon.png")),
     ),
   )
@@ -470,7 +470,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let barrier_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 87.0F / 255.0F, 51.0F / 255.0F, 1.0F),
+      @sprite.Color::new(1.0F, 87.0F / 255.0F, 51.0F / 255.0F, 1.0F),
     ).with_reflectance(1.0F),
   )
   spawn_barriers(
@@ -481,12 +481,12 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let leaves_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+      @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
     ),
   )
   let trunk_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.4F, 0.2F, 0.2F, 1.0F),
+      @sprite.Color::new(0.4F, 0.2F, 0.2F, 1.0F),
     ),
   )
   let tree_mesh = @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)

@@ -51,8 +51,8 @@ fn visibility_setup(world : @ecs.World) -> Unit {
   )
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/bevy_bird_dark.png")
-  let sprite = @render2d.Sprite::from_image(texture)
-  let child = @render2d.SpriteBundle::new(sprite, @math.Transform::identity()).spawn(
+  let sprite = @sprite.Sprite::from_image(texture)
+  let child = @sprite.SpriteBundle::new(sprite, @math.Transform::identity()).spawn(
     world,
   )
   try! world.set(
@@ -60,10 +60,8 @@ fn visibility_setup(world : @ecs.World) -> Unit {
     @hierarchy.ecs_key_parent,
     @hierarchy.Parent::new(parent),
   )
-  let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
-    world,
-  )
+  let camera = @sprite.Camera::default()
+  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
   |> ignore
   @window.host_debug_string(
     value="Press H to toggle parent Visibility (Hidden/Visible).",

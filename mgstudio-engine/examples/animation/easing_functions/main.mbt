@@ -57,7 +57,7 @@ priv struct EaseSpec {
 ///|
 priv struct EaseFunctionPlot {
   function : @math.EaseFunction
-  color : @render2d.Color
+  color : @sprite.Color
   value_bar_entity : @core.Entity
   progress_dot_entity : @core.Entity
 }
@@ -89,10 +89,8 @@ fn main {
 fn setup(world : @ecs.World) -> Unit {
   progress_text_handle.val = None
 
-  let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
-    world,
-  )
+  let camera = @sprite.Camera::default()
+  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
   |> ignore
 
   let asset_server = @asset.AssetServer::new()
@@ -118,7 +116,7 @@ fn setup(world : @ecs.World) -> Unit {
     let functions = rows[row]
     for col in 0..<functions.length() {
       let spec = functions[col]
-      let color = @render2d.Color::hsl(
+      let color = @sprite.Color::hsl(
         float_from_int(col) / float_from_int(COLS) * 360.0F,
         0.8F,
         0.75F,
@@ -193,7 +191,7 @@ fn display_curves(world : @ecs.World) -> Unit {
     @text.text_set_content(handle, format_progress(now))
   }
 
-  let gizmos = @render2d.Gizmos::get()
+  let gizmos = @sprite.Gizmos::get()
   let transform_store = world.component(@math.ecs_key_transform)
   world.increment_change_tick() |> ignore
   let half_size_x = PLOT_SIZE_X / 2.0F
@@ -293,7 +291,7 @@ fn spawn_progress_overlay(
       @text.TextFont::default().with_font(font).with_font_size(20.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 
@@ -408,12 +406,12 @@ fn ease_spec(function : @math.EaseFunction, label : String) -> EaseSpec {
 fn spawn_marker(
   world : @ecs.World,
   size : Float,
-  color : @render2d.Color,
+  color : @sprite.Color,
   position : @math.Vec2,
 ) -> @core.Entity {
-  @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(size, size)),
-    @render2d.ColorMaterial::new(color),
+  @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(size, size)),
+    @sprite.ColorMaterial::new(color),
     transform_from_position(position, MARKER_Z),
   ).spawn(world)
 }
@@ -422,7 +420,7 @@ fn spawn_marker(
 fn spawn_label(
   label : String,
   font : @text.TextFont,
-  color : @render2d.Color,
+  color : @sprite.Color,
   position : @math.Vec2,
 ) -> Unit {
   @text.Text2dBundle::new(

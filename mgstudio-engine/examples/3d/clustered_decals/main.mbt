@@ -140,9 +140,9 @@ fn update_help_text() -> Unit {
 fn button_background(selected : Bool) -> @ui.BackgroundColor {
   @ui.BackgroundColor::new(
     if selected {
-      @render2d.Color::white()
+      @sprite.Color::white()
     } else {
-      @render2d.Color::black()
+      @sprite.Color::black()
     },
   )
 }
@@ -151,9 +151,9 @@ fn button_background(selected : Bool) -> @ui.BackgroundColor {
 fn button_border(selected : Bool) -> @ui.BorderColor {
   @ui.BorderColor::new(
     if selected {
-      @render2d.Color::black()
+      @sprite.Color::black()
     } else {
-      @render2d.Color::white()
+      @sprite.Color::white()
     },
   )
 }
@@ -163,7 +163,7 @@ fn spawn_ui_text_handle(
   content : String,
   font : @asset.Handle[@asset.Font],
   font_size : Float,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> @text.TextHandle {
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
@@ -231,7 +231,7 @@ fn spawn_button(
     label,
     font,
     16.0F,
-    @render2d.Color::white(),
+    @sprite.Color::white(),
   )
   let text_entity = world.spawn_empty()
   world
@@ -255,8 +255,8 @@ fn spawn_button(
 fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   let tick = world.read_change_tick()
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(100).with_clear_color_none(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(100).with_clear_color_none(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -277,7 +277,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
     "",
     font,
     16.0F,
-    @render2d.Color::white(),
+    @sprite.Color::white(),
   )
   let help_entity = world.spawn_empty()
   world
@@ -320,7 +320,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
     "Drag to Move",
     font,
     16.0F,
-    @render2d.Color::white(),
+    @sprite.Color::white(),
   )
   let hint_entity = world.spawn_empty()
   world
@@ -482,7 +482,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let cube_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
+      @sprite.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
     ),
   )
   let cube = @render3d.MeshMaterial3dBundle::new(
@@ -495,7 +495,7 @@ fn setup(world : @ecs.World) -> Unit {
   clustered_decals_state.val.rotating_cube = Some(cube)
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 2.5F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -521,7 +521,7 @@ fn setup(world : @ecs.World) -> Unit {
   let decal_texture = asset_server.load("branding/icon.png")
   let decal_a_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 0.27F, 0.0F, 0.80F),
+      @sprite.Color::new(1.0F, 0.27F, 0.0F, 0.80F),
     )
     .with_base_color_texture(Some(decal_texture))
     .with_alpha_mode(@render3d.AlphaMode3d::Blend)
@@ -529,7 +529,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let decal_b_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.0F, 1.0F, 0.0F, 0.80F),
+      @sprite.Color::new(0.0F, 1.0F, 0.0F, 0.80F),
     )
     .with_base_color_texture(Some(decal_texture))
     .with_alpha_mode(@render3d.AlphaMode3d::Blend)

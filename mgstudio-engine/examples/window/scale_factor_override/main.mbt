@@ -59,8 +59,8 @@ fn main {
 fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -72,7 +72,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.TextFont::default().with_font(font).with_font_size(25.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::black()))
+    .with_color(@text.TextColor::new(@sprite.Color::black()))
     .spawn()
 
   let root = world.spawn_empty()
@@ -107,7 +107,7 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@ui.ecs_key_background_color)
   .insert(
     panel,
-    @ui.BackgroundColor::new(@render2d.Color::new(0.65F, 0.65F, 0.65F, 1.0F)),
+    @ui.BackgroundColor::new(@sprite.Color::new(0.65F, 0.65F, 0.65F, 1.0F)),
     tick,
   )
 

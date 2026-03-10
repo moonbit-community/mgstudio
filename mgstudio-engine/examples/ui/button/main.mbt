@@ -14,18 +14,18 @@
 
 ///|
 /// Port of `bevy/examples/ui/widgets/button.rs`.
-fn normal_button_color() -> @render2d.Color {
-  @render2d.Color::new(0.15F, 0.15F, 0.15F, 1.0F)
+fn normal_button_color() -> @sprite.Color {
+  @sprite.Color::new(0.15F, 0.15F, 0.15F, 1.0F)
 }
 
 ///|
-fn hovered_button_color() -> @render2d.Color {
-  @render2d.Color::new(0.25F, 0.25F, 0.25F, 1.0F)
+fn hovered_button_color() -> @sprite.Color {
+  @sprite.Color::new(0.25F, 0.25F, 0.25F, 1.0F)
 }
 
 ///|
-fn pressed_button_color() -> @render2d.Color {
-  @render2d.Color::new(0.35F, 0.75F, 0.35F, 1.0F)
+fn pressed_button_color() -> @sprite.Color {
+  @sprite.Color::new(0.35F, 0.75F, 0.35F, 1.0F)
 }
 
 ///|
@@ -82,9 +82,9 @@ fn button_system(world : @ecs.World) -> Unit {
       @ui.Interaction::None => normal_button_color()
     }
     let border_color = match interaction {
-      @ui.Interaction::Pressed => @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
-      @ui.Interaction::Hovered => @render2d.Color::white()
-      @ui.Interaction::None => @render2d.Color::black()
+      @ui.Interaction::Pressed => @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
+      @ui.Interaction::Hovered => @sprite.Color::white()
+      @ui.Interaction::None => @sprite.Color::black()
     }
     if interaction != @ui.Interaction::None {
       if button_store.get(entity) is Some(button) {
@@ -122,8 +122,8 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
 
   // UI camera.
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -171,10 +171,10 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(button, @ui.BorderRadius::all(@ui.Val::Percent(100.0F)), tick)
   world
   .component(@ui.ecs_key_border_color)
-  .insert(button, @ui.BorderColor::new(@render2d.Color::white()), tick)
+  .insert(button, @ui.BorderColor::new(@sprite.Color::white()), tick)
   world
   .component(@ui.ecs_key_background_color)
-  .insert(button, @ui.BackgroundColor::new(@render2d.Color::black()), tick)
+  .insert(button, @ui.BackgroundColor::new(@sprite.Color::black()), tick)
 
   // Button label.
   let label_handle = @text.Text2dBundle::new(
@@ -183,7 +183,7 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Transform::identity(),
     )
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.9F, 0.9F, 0.9F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.9F, 0.9F, 0.9F, 1.0F)),
     )
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
     .spawn()

@@ -59,7 +59,7 @@ priv struct BeamPool {
 
 ///|
 priv struct RaycastState {
-  mut camera : @render2d.Camera
+  mut camera : @sprite.Camera
   mut camera_projection : @render3d.Projection
   mut camera_transform : @math.Transform
   collider_entities : Array[@core.Entity]
@@ -70,7 +70,7 @@ priv struct RaycastState {
 
 ///|
 let raycast_state : Ref[RaycastState] = Ref::new({
-  camera: @render2d.Camera::default(),
+  camera: @sprite.Camera::default(),
   camera_projection: @render3d.Projection::default(),
   camera_transform: @math.Transform::identity(),
   collider_entities: [],
@@ -118,7 +118,7 @@ fn set_visibility(
 ///|
 fn set_primitive_color(
   primitive : BeamPrimitive,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> Unit {
   if @render3d.standard_material_get(primitive.material) is Some(material) {
     @render3d.standard_material_set(
@@ -216,7 +216,7 @@ fn spawn_beam_pool(
   world : @ecs.World,
   line_mesh : @render3d.Mesh3d,
   marker_mesh : @render3d.Mesh3d,
-  base_color : @render2d.Color,
+  base_color : @sprite.Color,
 ) -> BeamPool {
   let segments : Array[BeamPrimitive] = []
   let markers : Array[BeamPrimitive] = []
@@ -250,8 +250,8 @@ fn spawn_beam_pool(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  raycast_state.val.camera = @render2d.Camera::default().with_clear_color(
-    @render2d.Color::black(),
+  raycast_state.val.camera = @sprite.Camera::default().with_clear_color(
+    @sprite.Color::black(),
   )
   raycast_state.val.camera_projection = @render3d.Projection::default()
   raycast_state.val.camera_transform = @math.Transform::from_xyz(
@@ -265,7 +265,7 @@ fn setup(world : @ecs.World) -> Unit {
   let plane_mesh = @render3d.Mesh3d::from_plane(1.0F, 1.0F)
   let plane_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.5F, 0.5F, 0.5F, 0.05F),
+      @sprite.Color::new(0.5F, 0.5F, 0.5F, 0.05F),
     ).with_alpha_mode(@render3d.AlphaMode3d::Blend),
   )
 
@@ -331,7 +331,7 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 12_000.0F, true),
+    @render3d.DirectionalLight::new(@sprite.Color::white(), 12_000.0F, true),
     tick,
   )
   world
@@ -359,7 +359,7 @@ fn setup(world : @ecs.World) -> Unit {
       world,
       line_mesh,
       marker_mesh,
-      @render2d.Color::new(1.0F, 0.1F, 0.1F, 1.0F),
+      @sprite.Color::new(1.0F, 0.1F, 0.1F, 1.0F),
     ),
   )
   raycast_state.val.green_pool = Some(
@@ -367,12 +367,12 @@ fn setup(world : @ecs.World) -> Unit {
       world,
       line_mesh,
       marker_mesh,
-      @render2d.Color::new(0.15F, 1.0F, 0.15F, 1.0F),
+      @sprite.Color::new(0.15F, 1.0F, 0.15F, 1.0F),
     ),
   )
 
   let origin_marker_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white()).with_unlit(
+    @render3d.StandardMaterial::from_color(@sprite.Color::white()).with_unlit(
       true,
     ),
   )
@@ -404,11 +404,11 @@ fn setup(world : @ecs.World) -> Unit {
       z=50.0F,
     ),
   )
-  .with_anchor(@render2d.Anchor::top_left())
+  .with_anchor(@sprite.Anchor::top_left())
   .with_bounds(@text.TextBounds::new_horizontal(780.0F))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
   .with_color(
-    @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
   .with_shadow(Some(@text.Text2dShadow::default()))
   .spawn()
@@ -421,7 +421,7 @@ fn bounce_ray(
   ray_origin : @math.Vec3,
   ray_direction : @math.Vec3,
   pool : BeamPool,
-  base_color : @render2d.Color,
+  base_color : @sprite.Color,
   ray_cast_settings : @render3d.MeshRayCastSettings,
 ) -> Unit {
   let mut current_origin = ray_origin
@@ -440,13 +440,13 @@ fn bounce_ray(
     let hit_normal = hit.normal
 
     let brightness = 1.0F + 10.0F * (1.0F - float_from_int(i) / max_bounces_f)
-    let line_color = @render2d.Color::new(
+    let line_color = @sprite.Color::new(
       base_color.r * brightness,
       base_color.g * brightness,
       base_color.b * brightness,
       1.0F,
     )
-    let marker_color = @render2d.Color::new(
+    let marker_color = @sprite.Color::new(
       base_color.r * brightness * 1.4F,
       base_color.g * brightness * 1.4F,
       base_color.b * brightness * 1.4F,
@@ -505,7 +505,7 @@ fn bouncing_raycast(world : @ecs.World) -> Unit {
       origin_marker,
       marker_transform(auto_origin, ORIGIN_MARKER_SCALE),
     )
-    set_primitive_color(origin_marker, @render2d.Color::white())
+    set_primitive_color(origin_marker, @sprite.Color::white())
   }
 
   bounce_ray(
@@ -513,7 +513,7 @@ fn bouncing_raycast(world : @ecs.World) -> Unit {
     auto_origin,
     auto_direction,
     red_pool,
-    @render2d.Color::new(1.0F, 0.1F, 0.1F, 1.0F),
+    @sprite.Color::new(1.0F, 0.1F, 0.1F, 1.0F),
     ray_cast_settings,
   )
 
@@ -537,7 +537,7 @@ fn bouncing_raycast(world : @ecs.World) -> Unit {
         cursor_origin,
         cursor_direction.normalize_or_zero(),
         green_pool,
-        @render2d.Color::new(0.15F, 1.0F, 0.15F, 1.0F),
+        @sprite.Color::new(0.15F, 1.0F, 0.15F, 1.0F),
         ray_cast_settings,
       )
     } else {

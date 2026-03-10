@@ -260,7 +260,7 @@ test "ui: editable status text renders in front of editable background (z-order)
   )
   get_background_color_store(world).insert(
     editable,
-    BackgroundColor::new(@render2d.Color::new(0.12F, 0.12F, 0.16F, 1.0F)),
+    BackgroundColor::new(@sprite.Color::new(0.12F, 0.12F, 0.16F, 1.0F)),
     tick,
   )
   let text_handle = @text.Text2dBundle::new(

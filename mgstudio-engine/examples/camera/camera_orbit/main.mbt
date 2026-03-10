@@ -53,7 +53,7 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(5.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -68,7 +68,7 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::srgb(0.3F, 0.5F, 0.3F),
+          @sprite.Color::srgb(0.3F, 0.5F, 0.3F),
         ).with_cull_mode(None),
       ),
     ),
@@ -83,7 +83,7 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::srgb(0.8F, 0.7F, 0.6F),
+          @sprite.Color::srgb(0.8F, 0.7F, 0.6F),
         ),
       ),
     ),
@@ -108,8 +108,8 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn instructions(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let overlay_camera = @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(1).with_clear_color_none(),
+  let overlay_camera = @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(1).with_clear_color_none(),
     @math.Transform::identity(),
   ).spawn(world)
   world
@@ -138,7 +138,7 @@ fn instructions(world : @ecs.World) -> Unit {
       .with_font_size(20.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 

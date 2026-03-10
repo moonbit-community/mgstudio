@@ -57,7 +57,7 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
 
   let decal_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white()).with_base_color_texture(
+    @render3d.StandardMaterial::from_color(@sprite.Color::white()).with_base_color_texture(
       Some(asset_server.load("textures/uv_checker_bw.png")),
     ),
   )
@@ -74,7 +74,7 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(decal, @render3d.ForwardDecalMaterialExt::new(1.0F), tick)
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(2.0F, 9.5F, 2.5F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -94,7 +94,7 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(camera, @render3d.Fxaa::default(), tick)
 
   let white_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white()),
+    @render3d.StandardMaterial::from_color(@sprite.Color::white()),
   )
 
   @render3d.MeshMaterial3dBundle::new(

@@ -121,34 +121,34 @@ fn setup(world : @ecs.World) -> Unit {
 
   let floor_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
+      @sprite.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
     ),
   )
   let mask_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.2F, 0.7F, 0.1F, 0.0F),
+      @sprite.Color::new(0.2F, 0.7F, 0.1F, 0.0F),
     ).with_alpha_mode(@render3d.AlphaMode3d::Mask(0.5F)),
   )
   let mask_unlit_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.2F, 0.7F, 0.1F, 0.0F),
+      @sprite.Color::new(0.2F, 0.7F, 0.1F, 0.0F),
     )
     .with_alpha_mode(@render3d.AlphaMode3d::Mask(0.5F))
     .with_unlit(true),
   )
   let blend_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.5F, 0.5F, 1.0F, 0.0F),
+      @sprite.Color::new(0.5F, 0.5F, 1.0F, 0.0F),
     ).with_alpha_mode(@render3d.AlphaMode3d::Blend),
   )
   let alpha_to_coverage_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.5F, 1.0F, 0.5F, 0.0F),
+      @sprite.Color::new(0.5F, 1.0F, 0.5F, 0.0F),
     ).with_alpha_mode(@render3d.AlphaMode3d::AlphaToCoverage),
   )
   let opaque_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.7F, 0.2F, 0.1F, 1.0F),
+      @sprite.Color::new(0.7F, 0.2F, 0.1F, 1.0F),
     ),
   )
 
@@ -211,12 +211,7 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_point_light)
   .insert(
     point,
-    @render3d.PointLight::new(
-      @render2d.Color::white(),
-      1_000_000.0F,
-      20.0F,
-      true,
-    ),
+    @render3d.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 20.0F, true),
     tick,
   )
   world
@@ -224,7 +219,7 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(point, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
   @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -238,7 +233,7 @@ fn fade_transparency(_world : @ecs.World) -> Unit {
   let alpha = @math.sin(@time.time_elapsed_seconds()) / 2.0F + 0.5F
   for handle in transparency_state.val.materials {
     if @render3d.standard_material_get(handle) is Some(material) {
-      let next_color = @render2d.Color::new(
+      let next_color = @sprite.Color::new(
         material.base_color.r,
         material.base_color.g,
         material.base_color.b,

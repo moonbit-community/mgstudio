@@ -399,7 +399,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(
       CAMERA_INITIAL_X,
       CAMERA_INITIAL_Y,
@@ -433,7 +433,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let sphere_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(SPHERE_BASE_R, SPHERE_BASE_G, SPHERE_BASE_B, 1.0F),
+      @sprite.Color::new(SPHERE_BASE_R, SPHERE_BASE_G, SPHERE_BASE_B, 1.0F),
     )
     .with_anisotropy_rotation(0.5F)
     .with_anisotropy_strength(1.0F),
@@ -460,11 +460,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::bottom_left())
+    .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -555,7 +555,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
   ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
   let tick = world.read_change_tick()
   world
-  .component(@render2d.ecs_key_camera)
+  .component(@sprite.ecs_key_camera)
   .for_each(fn(entity, _camera) {
     world
     .component(@math.ecs_key_transform)
@@ -594,7 +594,7 @@ fn handle_input(world : @ecs.World) -> Unit {
         anisotropy_state.val.light_mode = LightMode::EnvironmentMap
         despawn_all_lights(world)
         world
-        .component(@render2d.ecs_key_camera)
+        .component(@sprite.ecs_key_camera)
         .for_each(fn(entity, _camera) {
           add_skybox_and_environment_map(world, entity)
         })
@@ -602,7 +602,7 @@ fn handle_input(world : @ecs.World) -> Unit {
       LightMode::EnvironmentMap => {
         anisotropy_state.val.light_mode = LightMode::Directional
         world
-        .component(@render2d.ecs_key_camera)
+        .component(@sprite.ecs_key_camera)
         .for_each(fn(entity, _camera) {
           remove_skybox_and_environment_map(world, entity)
         })

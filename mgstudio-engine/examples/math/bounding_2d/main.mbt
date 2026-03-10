@@ -53,12 +53,12 @@ priv struct Spin {}
 
 ///|
 priv enum Shape {
-  Rectangle(@render2d.Rectangle)
-  Circle(@render2d.Circle)
-  Triangle(@render2d.Triangle2d)
-  Line(@render2d.Segment2d)
-  Capsule(@render2d.Capsule2d)
-  Polygon(@render2d.RegularPolygon)
+  Rectangle(@sprite.Rectangle)
+  Circle(@sprite.Circle)
+  Triangle(@sprite.Triangle2d)
+  Line(@sprite.Segment2d)
+  Capsule(@sprite.Capsule2d)
+  Polygon(@sprite.RegularPolygon)
 }
 
 ///|
@@ -204,8 +204,8 @@ fn main {
 fn setup(world : @ecs.World) -> Unit {
   overlay_text_handle.val = None
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -213,7 +213,7 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_shape_entity(
     world,
     @math.Transform::from_xyz(-OFFSET_X, OFFSET_Y, 0.0F),
-    Shape::Circle(@render2d.Circle::new(45.0F)),
+    Shape::Circle(@sprite.Circle::new(45.0F)),
     DesiredVolume::Aabb,
     false,
   )
@@ -221,7 +221,7 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_shape_entity(
     world,
     @math.Transform::from_xyz(0.0F, OFFSET_Y, 0.0F),
-    Shape::Rectangle(@render2d.Rectangle::new(80.0F, 80.0F)),
+    Shape::Rectangle(@sprite.Rectangle::new(80.0F, 80.0F)),
     DesiredVolume::Circle,
     true,
   )
@@ -230,7 +230,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     @math.Transform::from_xyz(OFFSET_X, OFFSET_Y, 0.0F),
     Shape::Triangle(
-      @render2d.Triangle2d::new(
+      @sprite.Triangle2d::new(
         @math.Vec2::new(-40.0F, -40.0F),
         @math.Vec2::new(-20.0F, 40.0F),
         @math.Vec2::new(40.0F, 50.0F),
@@ -246,7 +246,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     @math.Transform::from_xyz(-OFFSET_X, -OFFSET_Y, 0.0F),
     Shape::Line(
-      @render2d.Segment2d::new(
+      @sprite.Segment2d::new(
         @math.Vec2::new(-half_line.x, -half_line.y),
         @math.Vec2::new(half_line.x, half_line.y),
       ),
@@ -258,7 +258,7 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_shape_entity(
     world,
     @math.Transform::from_xyz(0.0F, -OFFSET_Y, 0.0F),
-    Shape::Capsule(@render2d.Capsule2d::new(25.0F, 50.0F, 16)),
+    Shape::Capsule(@sprite.Capsule2d::new(25.0F, 50.0F, 16)),
     DesiredVolume::Aabb,
     true,
   )
@@ -266,7 +266,7 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_shape_entity(
     world,
     @math.Transform::from_xyz(OFFSET_X, -OFFSET_Y, 0.0F),
-    Shape::Polygon(@render2d.RegularPolygon::new(50.0F, 6)),
+    Shape::Polygon(@sprite.RegularPolygon::new(50.0F, 6)),
     DesiredVolume::Circle,
     true,
   )
@@ -298,7 +298,7 @@ fn spawn_ui_text_handle(
   content : String,
   font : @asset.Handle[@asset.Font],
   font_size : Float,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> @text.TextHandle {
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
@@ -460,7 +460,7 @@ fn update_volumes(world : @ecs.World) -> Unit {
 
 ///|
 fn render_shapes(world : @ecs.World) -> Unit {
-  let gizmos = @render2d.Gizmos::new()
+  let gizmos = @sprite.Gizmos::new()
   let query = world.query2(shape_key, @math.Transform::component())
   try! query.view(fn(_entity, shape, transform) {
     draw_shape_outline(
@@ -474,20 +474,20 @@ fn render_shapes(world : @ecs.World) -> Unit {
 
 ///|
 fn render_volumes(world : @ecs.World) -> Unit {
-  let gizmos = @render2d.Gizmos::new()
+  let gizmos = @sprite.Gizmos::new()
   let query = world.query2(current_volume_key, intersects_key)
   try! query.view(fn(_entity, volume, intersects) {
     let color = if intersects { color_aqua() } else { color_orange_red() }
     match volume {
       CurrentVolume::Aabb(aabb) =>
         gizmos.rect_2d(
-          @render2d.Isometry2d::new(aabb.center, 0.0F),
+          @sprite.Isometry2d::new(aabb.center, 0.0F),
           aabb.half_size.mul_scalar(2.0F),
           color,
         )
       CurrentVolume::Circle(circle) =>
         gizmos.circle_2d(
-          @render2d.Isometry2d::new(circle.center, 0.0F),
+          @sprite.Isometry2d::new(circle.center, 0.0F),
           circle.radius,
           color,
         )
@@ -502,9 +502,9 @@ fn aabb_intersection_system(world : @ecs.World) -> Unit {
 
   let center = get_intersection_position(time)
   let aabb = { center, half_size: @math.Vec2::new(50.0F, 50.0F) }
-  let gizmos = @render2d.Gizmos::new()
+  let gizmos = @sprite.Gizmos::new()
   gizmos.rect_2d(
-    @render2d.Isometry2d::new(center, 0.0F),
+    @sprite.Isometry2d::new(center, 0.0F),
     aabb.half_size.mul_scalar(2.0F),
     color_yellow(),
   )
@@ -529,9 +529,9 @@ fn circle_intersection_system(world : @ecs.World) -> Unit {
 
   let center = get_intersection_position(time)
   let circle = { center, radius: 50.0F }
-  let gizmos = @render2d.Gizmos::new()
+  let gizmos = @sprite.Gizmos::new()
   gizmos.circle_2d(
-    @render2d.Isometry2d::new(center, 0.0F),
+    @sprite.Isometry2d::new(center, 0.0F),
     circle.radius,
     color_yellow(),
   )
@@ -555,7 +555,7 @@ fn circle_intersection_system(world : @ecs.World) -> Unit {
 fn ray_cast_system(world : @ecs.World) -> Unit {
   guard world_time(world) is Some(time) else { return }
 
-  let gizmos = @render2d.Gizmos::new()
+  let gizmos = @sprite.Gizmos::new()
   let ray_cast = get_and_draw_ray(gizmos, time)
   let query = world.query2_value_mut_filtered(
     current_volume_key,
@@ -583,7 +583,7 @@ fn ray_cast_system(world : @ecs.World) -> Unit {
 fn aabb_cast_system(world : @ecs.World) -> Unit {
   guard world_time(world) is Some(time) else { return }
 
-  let gizmos = @render2d.Gizmos::new()
+  let gizmos = @sprite.Gizmos::new()
   let ray_cast = get_and_draw_ray(gizmos, time)
   let cast = AabbCast2dLite::{
     aabb: {
@@ -608,7 +608,7 @@ fn aabb_cast_system(world : @ecs.World) -> Unit {
       let center = ray_point_at(cast.ray.ray, hit_time)
       let hit_aabb = Aabb2dLite::{ center, half_size: cast.aabb.half_size }
       gizmos.rect_2d(
-        @render2d.Isometry2d::new(hit_aabb.center, 0.0F),
+        @sprite.Isometry2d::new(hit_aabb.center, 0.0F),
         hit_aabb.half_size.mul_scalar(2.0F),
         color_lime(),
       )
@@ -620,7 +620,7 @@ fn aabb_cast_system(world : @ecs.World) -> Unit {
 fn bounding_circle_cast_system(world : @ecs.World) -> Unit {
   guard world_time(world) is Some(time) else { return }
 
-  let gizmos = @render2d.Gizmos::new()
+  let gizmos = @sprite.Gizmos::new()
   let ray_cast = get_and_draw_ray(gizmos, time)
   let cast = BoundingCircleCastLite::{
     circle: { center: @math.Vec2::zero(), radius: 15.0F },
@@ -641,7 +641,7 @@ fn bounding_circle_cast_system(world : @ecs.World) -> Unit {
     if toi is Some(hit_time) {
       let center = ray_point_at(cast.ray.ray, hit_time)
       gizmos.circle_2d(
-        @render2d.Isometry2d::new(center, 0.0F),
+        @sprite.Isometry2d::new(center, 0.0F),
         cast.circle.radius,
         color_lime(),
       )
@@ -657,7 +657,7 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit]? {
 
 ///|
 fn get_and_draw_ray(
-  gizmos : @render2d.Gizmos,
+  gizmos : @sprite.Gizmos,
   time : @time.Time[Unit],
 ) -> RayCast2dLite {
   let elapsed = time.elapsed_secs()
@@ -687,8 +687,8 @@ fn get_intersection_position(time : @time.Time[Unit]) -> @math.Vec2 {
 }
 
 ///|
-fn transform_isometry(transform : @math.Transform) -> @render2d.Isometry2d {
-  @render2d.Isometry2d::new(
+fn transform_isometry(transform : @math.Transform) -> @sprite.Isometry2d {
+  @sprite.Isometry2d::new(
     @math.Vec2::new(transform.translation.x, transform.translation.y),
     transform.rotation_z(),
   )
@@ -696,10 +696,10 @@ fn transform_isometry(transform : @math.Transform) -> @render2d.Isometry2d {
 
 ///|
 fn draw_shape_outline(
-  gizmos : @render2d.Gizmos,
+  gizmos : @sprite.Gizmos,
   shape : Shape,
-  isometry : @render2d.Isometry2d,
-  color : @render2d.Color,
+  isometry : @sprite.Isometry2d,
+  color : @sprite.Color,
 ) -> Unit {
   match shape {
     Shape::Rectangle(rectangle) =>
@@ -731,7 +731,7 @@ fn draw_shape_outline(
 }
 
 ///|
-fn shape_aabb(shape : Shape, isometry : @render2d.Isometry2d) -> Aabb2dLite {
+fn shape_aabb(shape : Shape, isometry : @sprite.Isometry2d) -> Aabb2dLite {
   match shape {
     Shape::Circle(circle) =>
       Aabb2dLite::{
@@ -746,7 +746,7 @@ fn shape_aabb(shape : Shape, isometry : @render2d.Isometry2d) -> Aabb2dLite {
 ///|
 fn shape_bounding_circle(
   shape : Shape,
-  isometry : @render2d.Isometry2d,
+  isometry : @sprite.Isometry2d,
 ) -> BoundingCircleLite {
   match shape {
     Shape::Circle(circle) =>
@@ -774,7 +774,7 @@ fn shape_points_local(shape : Shape) -> Array[@math.Vec2] {
 }
 
 ///|
-fn rectangle_points_local(rectangle : @render2d.Rectangle) -> Array[@math.Vec2] {
+fn rectangle_points_local(rectangle : @sprite.Rectangle) -> Array[@math.Vec2] {
   let half = rectangle.half_size
   [
     @math.Vec2::new(-half.x, -half.y),
@@ -798,9 +798,7 @@ fn circle_points_local(radius : Float) -> Array[@math.Vec2] {
 }
 
 ///|
-fn polygon_points_local(
-  polygon : @render2d.RegularPolygon,
-) -> Array[@math.Vec2] {
+fn polygon_points_local(polygon : @sprite.RegularPolygon) -> Array[@math.Vec2] {
   let safe_sides = if polygon.sides < 3 { 3 } else { polygon.sides }
   let points : Array[@math.Vec2] = []
   for i in 0..<safe_sides {
@@ -817,7 +815,7 @@ fn polygon_points_local(
 }
 
 ///|
-fn capsule_points_local(capsule : @render2d.Capsule2d) -> Array[@math.Vec2] {
+fn capsule_points_local(capsule : @sprite.Capsule2d) -> Array[@math.Vec2] {
   let arc_segments = if capsule.segments < 12 { 12 } else { capsule.segments }
   let points : Array[@math.Vec2] = []
   for i in 0..<=arc_segments {
@@ -846,7 +844,7 @@ fn capsule_points_local(capsule : @render2d.Capsule2d) -> Array[@math.Vec2] {
 ///|
 fn transformed_points(
   points : Array[@math.Vec2],
-  isometry : @render2d.Isometry2d,
+  isometry : @sprite.Isometry2d,
 ) -> Array[@math.Vec2] {
   let transformed : Array[@math.Vec2] = []
   for point in points {
@@ -1167,15 +1165,15 @@ fn circle_cast_collision_at(
 
 ///|
 fn draw_filled_circle(
-  gizmos : @render2d.Gizmos,
+  gizmos : @sprite.Gizmos,
   position : @math.Vec2,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> Unit {
-  gizmos.circle_2d(@render2d.Isometry2d::new(position, 0.0F), 1.0F, color)
+  gizmos.circle_2d(@sprite.Isometry2d::new(position, 0.0F), 1.0F, color)
   |> ignore
-  gizmos.circle_2d(@render2d.Isometry2d::new(position, 0.0F), 2.0F, color)
+  gizmos.circle_2d(@sprite.Isometry2d::new(position, 0.0F), 2.0F, color)
   |> ignore
-  gizmos.circle_2d(@render2d.Isometry2d::new(position, 0.0F), 3.0F, color)
+  gizmos.circle_2d(@sprite.Isometry2d::new(position, 0.0F), 3.0F, color)
   |> ignore
 }
 
@@ -1233,36 +1231,36 @@ fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
 }
 
 ///|
-fn color_gray() -> @render2d.Color {
-  @render2d.Color::new(0.5F, 0.5F, 0.5F, 1.0F)
+fn color_gray() -> @sprite.Color {
+  @sprite.Color::new(0.5F, 0.5F, 0.5F, 1.0F)
 }
 
 ///|
-fn color_aqua() -> @render2d.Color {
-  @render2d.Color::new(0.0F, 1.0F, 1.0F, 1.0F)
+fn color_aqua() -> @sprite.Color {
+  @sprite.Color::new(0.0F, 1.0F, 1.0F, 1.0F)
 }
 
 ///|
-fn color_orange_red() -> @render2d.Color {
-  @render2d.Color::new(1.0F, 0.27058825F, 0.0F, 1.0F)
+fn color_orange_red() -> @sprite.Color {
+  @sprite.Color::new(1.0F, 0.27058825F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_yellow() -> @render2d.Color {
-  @render2d.Color::new(1.0F, 1.0F, 0.0F, 1.0F)
+fn color_yellow() -> @sprite.Color {
+  @sprite.Color::new(1.0F, 1.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_white() -> @render2d.Color {
-  @render2d.Color::white()
+fn color_white() -> @sprite.Color {
+  @sprite.Color::white()
 }
 
 ///|
-fn color_fuchsia() -> @render2d.Color {
-  @render2d.Color::new(1.0F, 0.0F, 1.0F, 1.0F)
+fn color_fuchsia() -> @sprite.Color {
+  @sprite.Color::new(1.0F, 0.0F, 1.0F, 1.0F)
 }
 
 ///|
-fn color_lime() -> @render2d.Color {
-  @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
+fn color_lime() -> @sprite.Color {
+  @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
 }

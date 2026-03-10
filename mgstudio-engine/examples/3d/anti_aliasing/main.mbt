@@ -449,7 +449,7 @@ fn apply_aa_proxy() -> Unit {
         .with_perceptual_roughness(aa_proxy_roughness())
         .with_reflectance(0.5F + strength * 0.3F)
         .with_emissive(
-          @render2d.Color::new(
+          @sprite.Color::new(
             emissive_value, emissive_value, emissive_value, 1.0F,
           ),
         )
@@ -460,7 +460,7 @@ fn apply_aa_proxy() -> Unit {
 
   @render3d.render3d_set_distance_fog(
     @render3d.DistanceFog::new(
-      @render2d.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
+      @sprite.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
       @render3d.FogFalloff3d::linear(1.0F, aa_proxy_fog_end()),
     ),
   )
@@ -747,7 +747,7 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.1F, 0.2F, 0.1F, 1.0F),
+          @sprite.Color::new(0.1F, 0.2F, 0.1F, 1.0F),
         ),
       ),
     ),
@@ -756,7 +756,7 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let cube_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white())
+    @render3d.StandardMaterial::from_color(@sprite.Color::white())
     .with_base_color_texture(Some(uv_debug_texture()))
     .with_perceptual_roughness(0.85F)
     .with_metallic(0.0F),
@@ -795,7 +795,7 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_directional_light)
   .insert(
     light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
+    @render3d.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
     tick,
   )
   world
@@ -810,7 +810,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let camera_entity = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
       @math.Vec3::new(0.0F, 0.3F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -831,7 +831,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @render3d.render3d_set_distance_fog(
     @render3d.DistanceFog::new(
-      @render2d.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
+      @sprite.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
       @render3d.FogFalloff3d::linear(1.0F, 4.0F),
     ),
   )
@@ -848,11 +848,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()

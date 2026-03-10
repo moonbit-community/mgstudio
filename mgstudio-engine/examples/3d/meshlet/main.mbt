@@ -97,7 +97,7 @@ fn uv_sphere_mesh(
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @render2d.Color,
+  color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
@@ -105,17 +105,17 @@ fn set_global_ambient_light(
 }
 
 ///|
-fn color_for_row(index : Int) -> @render2d.Color {
+fn color_for_row(index : Int) -> @sprite.Color {
   if index == 0 {
-    @render2d.Color::new(0.8627451F, 0.1490196F, 0.1490196F, 1.0F)
+    @sprite.Color::new(0.8627451F, 0.1490196F, 0.1490196F, 1.0F)
   } else if index == 1 {
-    @render2d.Color::new(0.9176471F, 0.34509805F, 0.047058824F, 1.0F)
+    @sprite.Color::new(0.9176471F, 0.34509805F, 0.047058824F, 1.0F)
   } else if index == 2 {
-    @render2d.Color::new(0.98039216F, 0.8F, 0.08235294F, 1.0F)
+    @sprite.Color::new(0.98039216F, 0.8F, 0.08235294F, 1.0F)
   } else if index == 3 {
-    @render2d.Color::new(0.08627451F, 0.6392157F, 0.2901961F, 1.0F)
+    @sprite.Color::new(0.08627451F, 0.6392157F, 0.2901961F, 1.0F)
   } else {
-    @render2d.Color::new(0.007843138F, 0.5176471F, 0.78039217F, 1.0F)
+    @sprite.Color::new(0.007843138F, 0.5176471F, 0.78039217F, 1.0F)
   }
 }
 
@@ -127,9 +127,9 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.DirectionalLightShadowMap::new(4096),
   )
 
-  set_global_ambient_light(world, @render2d.Color::white(), 0.0F)
+  set_global_ambient_light(world, @sprite.Color::white(), 0.0F)
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(1.8F, 0.4F, -0.1F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -161,7 +161,7 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     directional,
     @render3d.DirectionalLight::new(
-      @render2d.Color::white(),
+      @sprite.Color::white(),
       DIRECTIONAL_LIGHT_ILLUMINANCE,
       true,
     ).with_cascade_shadow_config(Some(cascade_shadow_config)),
@@ -203,11 +203,11 @@ fn setup(world : @ecs.World) -> Unit {
     let shade = 0.2F + float_from_int(i) * 0.18F
     let material = @render3d.standard_material_add(
       @render3d.StandardMaterial::from_color(
-        @render2d.Color::new(shade, shade, shade, 1.0F),
+        @sprite.Color::new(shade, shade, shade, 1.0F),
       )
       .with_unlit(true)
       .with_emissive(
-        @render2d.Color::new(shade * 0.2F, shade * 0.2F, shade * 0.2F, 1.0F),
+        @sprite.Color::new(shade * 0.2F, shade * 0.2F, shade * 0.2F, 1.0F),
       ),
     )
     @render3d.MeshMaterial3dBundle::new(
@@ -224,7 +224,7 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.Mesh3d::from_plane(5.0F, 5.0F),
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@render2d.Color::white()).with_perceptual_roughness(
+        @render3d.StandardMaterial::from_color(@sprite.Color::white()).with_perceptual_roughness(
           1.0F,
         ),
       ),

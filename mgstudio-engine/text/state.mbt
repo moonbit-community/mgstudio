@@ -50,8 +50,8 @@ pub struct Text2dBundle {
   line_height : LineHeight
   shadow : Text2dShadow?
   transform : @math.Transform
-  layers : @render2d.RenderLayers
-  anchor : @render2d.Anchor
+  layers : @sprite.RenderLayers
+  anchor : @sprite.Anchor
   y_axis : YAxisOrientation
 }
 
@@ -73,8 +73,8 @@ pub fn Text2dBundle::new(
     line_height: LineHeight::default(),
     shadow: None,
     transform,
-    layers: @render2d.RenderLayers::default(),
-    anchor: @render2d.Anchor::default(),
+    layers: @sprite.RenderLayers::default(),
+    anchor: @sprite.Anchor::default(),
     y_axis: YAxisOrientation::TopToBottom,
   }
 }
@@ -84,7 +84,7 @@ pub fn Text2dBundle::new_with_layers(
   text : Text2d,
   font : TextFont,
   transform : @math.Transform,
-  layers : @render2d.RenderLayers,
+  layers : @sprite.RenderLayers,
 ) -> Text2dBundle {
   Text2dBundle::{
     text,
@@ -99,7 +99,7 @@ pub fn Text2dBundle::new_with_layers(
     shadow: None,
     transform,
     layers,
-    anchor: @render2d.Anchor::default(),
+    anchor: @sprite.Anchor::default(),
     y_axis: YAxisOrientation::TopToBottom,
   }
 }
@@ -172,7 +172,7 @@ pub fn Text2dBundle::with_shadow(
 /// Set the anchor used for world-space `Text2d` positioning (Bevy-aligned).
 pub fn Text2dBundle::with_anchor(
   self : Text2dBundle,
-  anchor : @render2d.Anchor,
+  anchor : @sprite.Anchor,
 ) -> Text2dBundle {
   Text2dBundle::{ ..self, anchor, }
 }
@@ -281,8 +281,8 @@ priv struct TextInstance {
   line_height : LineHeight
   shadow : Text2dShadow?
   transform : @math.Transform
-  layers : @render2d.RenderLayers
-  anchor : @render2d.Anchor
+  layers : @sprite.RenderLayers
+  anchor : @sprite.Anchor
   y_axis : YAxisOrientation
   /// When set, this text handle is treated as "UI text" and will be positioned
   /// relative to a UI node's top-left corner (Bevy UI extraction semantics).
@@ -688,14 +688,14 @@ pub fn text_get_transform(handle : TextHandle) -> @math.Transform? {
 /// Update the render layers of a text handle without marking it as needing rerender.
 pub fn text_set_layers(
   handle : TextHandle,
-  layers : @render2d.RenderLayers,
+  layers : @sprite.RenderLayers,
 ) -> Unit {
   text_update_instance(handle, instance => TextInstance::{ ..instance, layers, })
 }
 
 ///|
 /// Update the anchor of a text handle without marking it as needing rerender.
-pub fn text_set_anchor(handle : TextHandle, anchor : @render2d.Anchor) -> Unit {
+pub fn text_set_anchor(handle : TextHandle, anchor : @sprite.Anchor) -> Unit {
   text_update_instance(handle, instance => TextInstance::{ ..instance, anchor, })
 }
 

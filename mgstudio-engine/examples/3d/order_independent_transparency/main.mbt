@@ -130,7 +130,7 @@ fn update_help_text() -> Unit {
 
 ///|
 fn create_transparent_material(
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> @asset.Handle[@render3d.StandardMaterial] {
   @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(color).with_alpha_mode(
@@ -145,7 +145,7 @@ fn spawn_mesh_with_layer(
   mesh : @render3d.Mesh3d,
   material : @asset.Handle[@render3d.StandardMaterial],
   transform : @math.Transform,
-  layers : @render2d.RenderLayers,
+  layers : @sprite.RenderLayers,
   tick : Int,
 ) -> @core.Entity {
   let entity = @render3d.MeshMaterial3dBundle::new(
@@ -153,27 +153,27 @@ fn spawn_mesh_with_layer(
     @render3d.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
-  world.component(@render2d.ecs_key_render_layers).insert(entity, layers, tick)
+  world.component(@sprite.ecs_key_render_layers).insert(entity, layers, tick)
   entity
 }
 
 ///|
 fn spawn_scene_spheres(
   world : @ecs.World,
-  layers : @render2d.RenderLayers,
+  layers : @sprite.RenderLayers,
   tick : Int,
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
   let sphere = uv_sphere_mesh(2.0F, 18, 32)
   let alpha = 0.25F
   let mat_a = create_transparent_material(
-    @render2d.Color::new(1.0F, 0.0F, 0.0F, alpha),
+    @sprite.Color::new(1.0F, 0.0F, 0.0F, alpha),
   )
   let mat_b = create_transparent_material(
-    @render2d.Color::new(0.0F, 1.0F, 0.0F, alpha),
+    @sprite.Color::new(0.0F, 1.0F, 0.0F, alpha),
   )
   let mat_c = create_transparent_material(
-    @render2d.Color::new(0.0F, 0.0F, 1.0F, alpha),
+    @sprite.Color::new(0.0F, 0.0F, 1.0F, alpha),
   )
   entities.push(
     spawn_mesh_with_layer(
@@ -211,26 +211,26 @@ fn spawn_scene_spheres(
 ///|
 fn spawn_scene_quads(
   world : @ecs.World,
-  layers : @render2d.RenderLayers,
+  layers : @sprite.RenderLayers,
   tick : Int,
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
   let quad = @render3d.Mesh3d::from_cuboid(3.0F, 3.0F, 0.05F)
   let rotation = @math.Quat::from_rotation_y(0.5F)
   let mat0 = create_transparent_material(
-    @render2d.Color::new(1.0F, 0.0F, 0.0F, 0.5F),
+    @sprite.Color::new(1.0F, 0.0F, 0.0F, 0.5F),
   )
   let mat1 = create_transparent_material(
-    @render2d.Color::new(0.0F, 0.0F, 1.0F, 0.8F),
+    @sprite.Color::new(0.0F, 0.0F, 1.0F, 0.8F),
   )
   let mat2 = create_transparent_material(
-    @render2d.Color::new(0.0F, 1.0F, 0.0F, 0.5F),
+    @sprite.Color::new(0.0F, 1.0F, 0.0F, 0.5F),
   )
   let mat3 = create_transparent_material(
-    @render2d.Color::new(1.0F, 1.0F, 0.0F, 0.3F),
+    @sprite.Color::new(1.0F, 1.0F, 0.0F, 0.3F),
   )
   let mat4 = create_transparent_material(
-    @render2d.Color::new(0.0F, 0.0F, 1.0F, 0.2F),
+    @sprite.Color::new(0.0F, 0.0F, 1.0F, 0.2F),
   )
   entities.push(
     spawn_mesh_with_layer(
@@ -288,7 +288,7 @@ fn spawn_scene_quads(
 ///|
 fn spawn_scene_occlusion(
   world : @ecs.World,
-  layers : @render2d.RenderLayers,
+  layers : @sprite.RenderLayers,
   tick : Int,
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
@@ -297,11 +297,11 @@ fn spawn_scene_occlusion(
 
   let solid_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.80F, 0.70F, 0.60F, 1.0F),
+      @sprite.Color::new(0.80F, 0.70F, 0.60F, 1.0F),
     ),
   )
   let transparent = create_transparent_material(
-    @render2d.Color::new(1.0F, 0.0F, 0.0F, 0.5F),
+    @sprite.Color::new(1.0F, 0.0F, 0.0F, 0.5F),
   )
 
   // Front pair.
@@ -376,7 +376,7 @@ fn spawn_scene_occlusion(
 ///|
 fn spawn_scene_instancing(
   world : @ecs.World,
-  layers : @render2d.RenderLayers,
+  layers : @sprite.RenderLayers,
   asset_server : @asset.AssetServer,
   tick : Int,
 ) -> SpawnedScene {
@@ -455,7 +455,7 @@ fn apply_oit_mode(world : @ecs.World) -> Unit {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let layer = @render2d.RenderLayers::layer(LAYER_INDEX)
+  let layer = @sprite.RenderLayers::layer(LAYER_INDEX)
   let asset_server = @asset.AssetServer::new()
 
   oit_state.val.camera = None
@@ -465,13 +465,13 @@ fn setup(world : @ecs.World) -> Unit {
   oit_state.val.scene_entities = []
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 0.0F, 10.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.component(@render2d.ecs_key_render_layers).insert(camera, layer, tick)
+  world.component(@sprite.ecs_key_render_layers).insert(camera, layer, tick)
   world
   .component(@render3d.ecs_key_depth_prepass)
   .insert(camera, @render3d.DepthPrepass::default(), tick)
@@ -488,7 +488,7 @@ fn setup(world : @ecs.World) -> Unit {
   world
   .component(@math.ecs_key_transform)
   .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
-  world.component(@render2d.ecs_key_render_layers).insert(light, layer, tick)
+  world.component(@sprite.ecs_key_render_layers).insert(light, layer, tick)
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
@@ -502,11 +502,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()

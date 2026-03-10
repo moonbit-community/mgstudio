@@ -155,7 +155,7 @@ fn spawn_ui_text_handle(
   content : String,
   font : @asset.Handle[@asset.Font],
   font_size : Float,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> @text.TextHandle {
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
@@ -173,8 +173,8 @@ fn setup_camera(world : @ecs.World) -> Unit {
     camera_shake_config_key, camera_shake_state_key,
   )
   let tick = world.read_change_tick()
-  let camera_entity = @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  let camera_entity = @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   world
@@ -194,30 +194,30 @@ fn setup_camera(world : @ecs.World) -> Unit {
 
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
-  @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(1000.0F, 700.0F)),
-    @render2d.ColorMaterial::new(@render2d.Color::srgb(0.2F, 0.2F, 0.3F)),
+  @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(1000.0F, 700.0F)),
+    @sprite.ColorMaterial::new(@sprite.Color::srgb(0.2F, 0.2F, 0.3F)),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
 
-  @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(50.0F, 100.0F)),
-    @render2d.ColorMaterial::new(@render2d.Color::srgb(0.25F, 0.94F, 0.91F)),
+  @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(50.0F, 100.0F)),
+    @sprite.ColorMaterial::new(@sprite.Color::srgb(0.25F, 0.94F, 0.91F)),
     @math.Transform::from_xyz(0.0F, 0.0F, 2.0F),
   ).spawn(world)
   |> ignore
 
-  @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(50.0F, 50.0F)),
-    @render2d.ColorMaterial::new(@render2d.Color::srgb(0.85F, 0.0F, 0.2F)),
+  @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(50.0F, 50.0F)),
+    @sprite.ColorMaterial::new(@sprite.Color::srgb(0.85F, 0.0F, 0.2F)),
     @math.Transform::from_xyz(-450.0F, 200.0F, 2.0F),
   ).spawn(world)
   |> ignore
 
-  @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(70.0F, 50.0F)),
-    @render2d.ColorMaterial::new(@render2d.Color::srgb(0.5F, 0.8F, 0.2F)),
+  @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(70.0F, 50.0F)),
+    @sprite.ColorMaterial::new(@sprite.Color::srgb(0.5F, 0.8F, 0.2F)),
     @math.Transform::from_xyz(450.0F, -150.0F, 2.0F),
   ).spawn(world)
   |> ignore
@@ -231,7 +231,7 @@ fn setup_instructions(world : @ecs.World) -> Unit {
     INSTRUCTIONS,
     font,
     20.0F,
-    @render2d.Color::white(),
+    @sprite.Color::white(),
   )
   let tick = world.read_change_tick()
   let root = world.spawn_empty()

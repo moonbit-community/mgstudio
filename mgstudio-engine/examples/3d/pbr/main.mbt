@@ -118,7 +118,7 @@ fn setup(world : @ecs.World) -> Unit {
   pbr_state.val.env_loaded = false
   let tick = world.read_change_tick()
   let sphere_mesh = uv_sphere_mesh(0.45F, 18, 32)
-  let sphere_color = @render2d.Color::new(1.0F, 0.847F, 0.569F, 1.0F)
+  let sphere_color = @sprite.Color::new(1.0F, 0.847F, 0.569F, 1.0F)
 
   for y in -2..<3 {
     for x in -5..<6 {
@@ -155,7 +155,7 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_directional_light)
   .insert(
     directional,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 1_500.0F, false),
+    @render3d.DirectionalLight::new(@sprite.Color::white(), 1_500.0F, false),
     tick,
   )
   world
@@ -188,9 +188,9 @@ fn setup(world : @ecs.World) -> Unit {
       z=50.0F,
     ),
   )
-  .with_anchor(@render2d.Anchor::top_left())
+  .with_anchor(@sprite.Anchor::top_left())
   .with_color(
-    @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
   .spawn()
   |> ignore
@@ -205,9 +205,9 @@ fn setup(world : @ecs.World) -> Unit {
       z=50.0F,
     ),
   )
-  .with_anchor(@render2d.Anchor::top_left())
+  .with_anchor(@sprite.Anchor::top_left())
   .with_color(
-    @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
   .spawn()
   |> ignore
@@ -222,9 +222,9 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::bottom_right())
+    .with_anchor(@sprite.Anchor::bottom_right())
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .spawn()
   pbr_state.val.loading_label = Some(env_loading_label)
@@ -234,7 +234,7 @@ fn setup(world : @ecs.World) -> Unit {
     scale: 0.01F,
   }
   let camera = @render3d.Camera3dBundle::new_with_projection(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @render3d.Projection::Orthographic(orthographic),
     @math.Transform::from_xyz(0.0F, 0.0F, 8.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),

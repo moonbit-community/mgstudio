@@ -91,14 +91,14 @@ fn cpu_draw_setup(world : @ecs.World) -> Unit {
     Bytes::from_array(initial_pixels),
   )
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
 
-  @render2d.SpriteBundle::new(
-    @render2d.Sprite::from_image(texture),
+  @sprite.SpriteBundle::new(
+    @sprite.Sprite::from_image(texture),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore

@@ -102,7 +102,7 @@ fn read_and_write_different_message_types(
 ///|
 fn send_messages(
   debug_messages : @ecs.MessageWriter[DebugMessage],
-  frame_count : @app.Res[@diagnostics.FrameCount],
+  frame_count : @app.Res[@diagnostic.FrameCount],
 ) -> Unit {
   println("Sending messages for frame \{frame_count.get().value}")
 
@@ -149,7 +149,7 @@ fn send_and_receive_param_set(
     @ecs.MessageReader[DebugMessage],
     @ecs.MessageWriter[DebugMessage],
   ],
-  frame_count : @app.Res[@diagnostics.FrameCount],
+  frame_count : @app.Res[@diagnostic.FrameCount],
 ) -> Unit {
   println(
     "Sending and receiving messages for frame \{frame_count.get().value} with a `ParamSet`",
@@ -179,7 +179,7 @@ fn send_and_receive_param_set(
 fn send_and_receive_manual_message_reader(
   local_message_reader : @app.Local[@ecs.MessageCursor[DebugMessage]],
   messages : @app.ResMut[@ecs.Messages[DebugMessage]],
-  frame_count : @app.Res[@diagnostics.FrameCount],
+  frame_count : @app.Res[@diagnostic.FrameCount],
 ) -> Unit {
   println(
     "Sending and receiving messages for frame \{frame_count.get().value} with a `Local<MessageCursor>`",

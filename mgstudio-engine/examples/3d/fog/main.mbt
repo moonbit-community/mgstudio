@@ -125,11 +125,11 @@ fn spawn_mesh(
 ///|
 fn setup_camera_fog(world : @ecs.World) -> Unit {
   let initial_fog = @render3d.DistanceFog::new(
-    @render2d.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
+    @sprite.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
     @render3d.FogFalloff3d::linear(5.0F, 20.0F),
   )
   let camera = @render3d.Camera3dBundle::new(
-      @render2d.Camera::default(),
+      @sprite.Camera::default(),
       @math.Transform::from_xyz(8.0F, 8.0F, 8.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -146,12 +146,12 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   world.insert_resource(
     @render3d.ecs_key_global_ambient_light,
-    @render3d.GlobalAmbientLight::new(@render2d.Color::white(), 0.0F),
+    @render3d.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
   )
 
   let stone_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(40.0F / 255.0F, 34.0F / 255.0F, 27.0F / 255.0F, 1.0F),
+      @sprite.Color::new(40.0F / 255.0F, 34.0F / 255.0F, 27.0F / 255.0F, 1.0F),
     ).with_perceptual_roughness(1.0F),
   )
 
@@ -173,7 +173,7 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
 
   let orb_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.07F, 0.38F, 0.07F, 0.8F),
+      @sprite.Color::new(0.07F, 0.38F, 0.07F, 0.8F),
     )
     .with_reflectance(1.0F)
     .with_perceptual_roughness(0.0F)
@@ -213,7 +213,7 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
     @render3d.Mesh3d::from_cuboid(2.0F, 1.0F, 1.0F),
     @render3d.standard_material_add(
       @render3d.StandardMaterial::from_color(
-        @render2d.Color::new(
+        @sprite.Color::new(
           136.0F / 255.0F,
           136.0F / 255.0F,
           136.0F / 255.0F,
@@ -279,11 +279,11 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -378,7 +378,7 @@ fn update_system(world : @ecs.World) -> Unit {
 
   let mut color = fog.color
   if @input.key_pressed(@window.KeyCode::Minus) {
-    color = @render2d.Color::new(
+    color = @sprite.Color::new(
       clamp01(color.r - 0.1F * delta),
       color.g,
       color.b,
@@ -386,7 +386,7 @@ fn update_system(world : @ecs.World) -> Unit {
     )
   }
   if @input.key_pressed(@window.KeyCode::Equal) {
-    color = @render2d.Color::new(
+    color = @sprite.Color::new(
       clamp01(color.r + 0.1F * delta),
       color.g,
       color.b,
@@ -394,7 +394,7 @@ fn update_system(world : @ecs.World) -> Unit {
     )
   }
   if @input.key_pressed(@window.KeyCode::BracketLeft) {
-    color = @render2d.Color::new(
+    color = @sprite.Color::new(
       color.r,
       clamp01(color.g - 0.1F * delta),
       color.b,
@@ -402,7 +402,7 @@ fn update_system(world : @ecs.World) -> Unit {
     )
   }
   if @input.key_pressed(@window.KeyCode::BracketRight) {
-    color = @render2d.Color::new(
+    color = @sprite.Color::new(
       color.r,
       clamp01(color.g + 0.1F * delta),
       color.b,
@@ -410,7 +410,7 @@ fn update_system(world : @ecs.World) -> Unit {
     )
   }
   if @input.key_pressed(@window.KeyCode::Semicolon) {
-    color = @render2d.Color::new(
+    color = @sprite.Color::new(
       color.r,
       color.g,
       clamp01(color.b - 0.1F * delta),
@@ -418,7 +418,7 @@ fn update_system(world : @ecs.World) -> Unit {
     )
   }
   if @input.key_pressed(@window.KeyCode::Quote) {
-    color = @render2d.Color::new(
+    color = @sprite.Color::new(
       color.r,
       color.g,
       clamp01(color.b + 0.1F * delta),
@@ -426,7 +426,7 @@ fn update_system(world : @ecs.World) -> Unit {
     )
   }
   if @input.key_pressed(@window.KeyCode::Period) {
-    color = @render2d.Color::new(
+    color = @sprite.Color::new(
       color.r,
       color.g,
       color.b,
@@ -434,7 +434,7 @@ fn update_system(world : @ecs.World) -> Unit {
     )
   }
   if @input.key_pressed(@window.KeyCode::Slash) {
-    color = @render2d.Color::new(
+    color = @sprite.Color::new(
       color.r,
       color.g,
       color.b,

@@ -148,7 +148,7 @@ fn setup(
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::srgb(0.3F, 0.5F, 0.3F),
+          @sprite.Color::srgb(0.3F, 0.5F, 0.3F),
         ),
       ),
     ),
@@ -158,7 +158,7 @@ fn setup(
 
   let shape_material = materials.get_ref().val.add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::srgba(0.2F, 0.1F, 0.6F, 0.3F),
+      @sprite.Color::srgba(0.2F, 0.1F, 0.6F, 0.3F),
     )
     .with_alpha_mode(@render3d.AlphaMode3d::Blend)
     .with_cull_mode(None),
@@ -183,7 +183,7 @@ fn setup(
   .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
   @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -197,7 +197,7 @@ fn setup(
   world.insert_resource(PointMaterial::resource(), PointMaterial::{
     handle: materials.get_ref().val.add(
       @render3d.StandardMaterial::from_color(
-        @render2d.Color::srgb(1.0F, 0.8F, 0.8F),
+        @sprite.Color::srgb(1.0F, 0.8F, 0.8F),
       ).with_metallic(0.8F),
     ),
   })
@@ -211,8 +211,8 @@ fn spawn_instructions(
   asset_server : @asset.AssetServer,
   tick : Int,
 ) -> Unit {
-  let overlay_camera = @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(1).with_clear_color_none(),
+  let overlay_camera = @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(1).with_clear_color_none(),
     @math.Transform::identity(),
   ).spawn(world)
   world
@@ -240,7 +240,7 @@ fn spawn_instructions(
       .with_font_size(20.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 

@@ -64,8 +64,8 @@ fn main {
 
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -80,7 +80,7 @@ fn setup_ui(world : @ecs.World) -> Unit {
       @text.TextFont::default().with_font(font).with_font_size(42.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .spawn()
   let tick = world.read_change_tick()
   let root = world.spawn_empty()

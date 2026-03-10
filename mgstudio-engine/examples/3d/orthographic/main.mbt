@@ -29,7 +29,7 @@ fn setup(world : @ecs.World) -> Unit {
   })
 
   @render3d.Camera3dBundle::new_with_projection(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     projection,
     @math.Transform::from_xyz(5.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::zero(),
@@ -43,7 +43,7 @@ fn setup(world : @ecs.World) -> Unit {
     @render3d.MeshMaterial3d::new(
       @render3d.standard_material_add(
         @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
+          @sprite.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
         ),
       ),
     ),
@@ -53,7 +53,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let cube_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
+      @sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
     ),
   )
 

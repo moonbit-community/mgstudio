@@ -77,7 +77,7 @@ fn wrap_hue_deg(value : Float) -> Float {
 }
 
 ///|
-fn tint_from_hue_deg(hue_deg : Float) -> @render2d.Color {
+fn tint_from_hue_deg(hue_deg : Float) -> @sprite.Color {
   let hue = wrap_hue_deg(hue_deg)
   let (r, g, b) = if hue < 60.0F {
     (1.0F, hue / 60.0F, 0.0F)
@@ -92,7 +92,7 @@ fn tint_from_hue_deg(hue_deg : Float) -> @render2d.Color {
   } else {
     (1.0F, 0.0F, 1.0F - (hue - 300.0F) / 60.0F)
   }
-  @render2d.Color::new(r, g, b, 1.0F)
+  @sprite.Color::new(r, g, b, 1.0F)
 }
 
 ///|
@@ -108,7 +108,7 @@ fn spawn_ui_text_handle(
   content : String,
   font : @asset.Handle[@asset.Font],
   font_size : Float,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> @text.TextHandle {
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
@@ -179,7 +179,7 @@ fn uv_sphere_mesh(
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @render2d.Color,
+  color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
   let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
@@ -196,7 +196,7 @@ fn setup(world : @ecs.World) -> Unit {
   state.material = None
   state.noise_texture = None
   state.help_text = None
-  set_global_ambient_light(world, @render2d.Color::black(), 0.0F)
+  set_global_ambient_light(world, @sprite.Color::black(), 0.0F)
 
   let asset_server = @asset.AssetServer::new()
   let diffuse_env_map : @asset.Handle[@asset.Image] = asset_server.load(
@@ -214,7 +214,7 @@ fn setup(world : @ecs.World) -> Unit {
   state.noise_texture = Some(noise_texture)
 
   let sphere_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::black())
+    @render3d.StandardMaterial::from_color(@sprite.Color::black())
     .with_reflectance(1.0F)
     .with_specular_tint(tint_from_hue_deg(state.hue_deg))
     .with_metallic(0.0F)
@@ -232,7 +232,7 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 0.0F, 3.5F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -257,8 +257,8 @@ fn setup(world : @ecs.World) -> Unit {
   )
   state.camera = Some(camera)
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(100).with_clear_color_none(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(100).with_clear_color_none(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -277,7 +277,7 @@ fn setup(world : @ecs.World) -> Unit {
     app_status_help_text(state.tint_type),
     ui_font,
     18.0F,
-    @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
+    @sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
   )
   let help_entity = world.spawn_empty()
   world
@@ -351,7 +351,7 @@ fn toggle_specular_map(_world : @ecs.World) -> Unit {
       guard state.noise_texture is Some(noise_texture) else { return }
       material
       .with_reflectance(2.0F)
-      .with_specular_tint(@render2d.Color::white())
+      .with_specular_tint(@sprite.Color::white())
       .with_specular_tint_texture(Some(noise_texture))
     }
   }

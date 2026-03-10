@@ -261,7 +261,7 @@ fn apply_atmosphere(world : @ecs.World) -> Unit {
   @render3d.render3d_set_distance_fog(
     @render3d.DistanceFog::default()
     .with_color(
-      @render2d.Color::new(
+      @sprite.Color::new(
         clamp01(fog_r + ambient_lift),
         clamp01(fog_g + ambient_lift),
         clamp01(fog_b + ambient_lift),
@@ -269,14 +269,14 @@ fn apply_atmosphere(world : @ecs.World) -> Unit {
       ),
     )
     .with_directional_light_color(
-      @render2d.Color::new(sun_r, sun_g, sun_b, directional_alpha),
+      @sprite.Color::new(sun_r, sun_g, sun_b, directional_alpha),
     )
     .with_directional_light_exponent(directional_exponent)
     .with_falloff(
       @render3d.FogFalloff3d::from_visibility_colors(
         visibility,
-        @render2d.Color::srgb(extinction_r, extinction_g, extinction_b),
-        @render2d.Color::srgb(inscattering_r, inscattering_g, inscattering_b),
+        @sprite.Color::srgb(extinction_r, extinction_g, extinction_b),
+        @sprite.Color::srgb(inscattering_r, inscattering_g, inscattering_b),
       ),
     ),
   )
@@ -284,7 +284,7 @@ fn apply_atmosphere(world : @ecs.World) -> Unit {
   world.insert_resource(
     @render3d.ecs_key_global_ambient_light,
     @render3d.GlobalAmbientLight::new(
-      @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
       clampf(0.03F * exposure_scale, 0.01F, 0.06F),
     ),
   )
@@ -308,7 +308,7 @@ fn spawn_mesh(
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
   let camera = @render3d.Camera3dBundle::new(
-      @render2d.Camera::default().with_clear_color(@render2d.Color::black()),
+      @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
       @math.Transform::from_xyz(-2.4F, 0.04F, 0.0F).looking_at(
         scene_focus(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -364,7 +364,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   .insert(
     sun,
     @render3d.DirectionalLight::new(
-      @render2d.Color::new(0.98F, 0.95F, 0.82F, 1.0F),
+      @sprite.Color::new(0.98F, 0.95F, 0.82F, 1.0F),
       100_000.0F,
       true,
     ).with_cascade_shadow_config(Some(cascade_shadow_config)),
@@ -374,7 +374,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   let terrain_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.36F, 0.33F, 0.29F, 1.0F),
+      @sprite.Color::new(0.36F, 0.33F, 0.29F, 1.0F),
     )
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F),
@@ -400,7 +400,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   let probe_mesh = @render3d.Mesh3d::from_tetrahedron(0.06F)
   let probe_metal = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white())
+    @render3d.StandardMaterial::from_color(@sprite.Color::white())
     .with_metallic(1.0F)
     .with_perceptual_roughness(0.0F),
   )
@@ -412,7 +412,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   )
 
   let probe_rough = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white())
+    @render3d.StandardMaterial::from_color(@sprite.Color::white())
     .with_metallic(0.0F)
     .with_perceptual_roughness(1.0F),
   )
@@ -425,7 +425,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   let water_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+      @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
     )
     .with_perceptual_roughness(0.0F)
     .with_metallic(0.0F)
@@ -454,11 +454,11 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -570,10 +570,8 @@ fn dynamic_scene(world : @ecs.World) -> Unit {
       let wave = (@math.sin(t * 0.8F) + 1.0F) * 0.5F
       let base_blue = 0.10F + wave * 0.10F
       let updated = material
-        .with_base_color(@render2d.Color::new(0.0F, 0.0F, base_blue, 1.0F))
-        .with_emissive(
-          @render2d.Color::new(0.0F, 0.0F, base_blue * 0.35F, 1.0F),
-        )
+        .with_base_color(@sprite.Color::new(0.0F, 0.0F, base_blue, 1.0F))
+        .with_emissive(@sprite.Color::new(0.0F, 0.0F, base_blue * 0.35F, 1.0F))
       @render3d.standard_material_set(material_handle, updated) |> ignore
     }
   }

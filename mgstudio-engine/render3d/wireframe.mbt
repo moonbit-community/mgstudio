@@ -39,23 +39,23 @@ pub fn NoWireframe::default() -> NoWireframe {
 ///|
 /// Per-mesh wireframe color aligned with Bevy's `WireframeColor`.
 pub struct WireframeColor {
-  color : @render2d.Color
+  color : @sprite.Color
 } derive(ToJson, FromJson)
 
 ///|
 pub fn WireframeColor::default() -> WireframeColor {
-  WireframeColor::{ color: @render2d.Color::white() }
+  WireframeColor::{ color: @sprite.Color::white() }
 }
 
 ///|
-pub fn WireframeColor::new(color : @render2d.Color) -> WireframeColor {
+pub fn WireframeColor::new(color : @sprite.Color) -> WireframeColor {
   WireframeColor::{ color, }
 }
 
 ///|
 pub fn WireframeColor::with_color(
   self : WireframeColor,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> WireframeColor {
   self |> ignore
   WireframeColor::{ color, }
@@ -64,18 +64,18 @@ pub fn WireframeColor::with_color(
 ///|
 pub struct WireframeConfig {
   global : Bool
-  default_color : @render2d.Color
+  default_color : @sprite.Color
 } derive(ToJson, FromJson)
 
 ///|
 pub fn WireframeConfig::default() -> WireframeConfig {
-  WireframeConfig::{ global: false, default_color: @render2d.Color::white() }
+  WireframeConfig::{ global: false, default_color: @sprite.Color::white() }
 }
 
 ///|
 pub fn WireframeConfig::new(
   global : Bool,
-  default_color : @render2d.Color,
+  default_color : @sprite.Color,
 ) -> WireframeConfig {
   WireframeConfig::{ global, default_color }
 }
@@ -91,7 +91,7 @@ pub fn WireframeConfig::with_global(
 ///|
 pub fn WireframeConfig::with_default_color(
   self : WireframeConfig,
-  default_color : @render2d.Color,
+  default_color : @sprite.Color,
 ) -> WireframeConfig {
   WireframeConfig::{ ..self, default_color, }
 }

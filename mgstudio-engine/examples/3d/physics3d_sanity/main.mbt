@@ -46,7 +46,7 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
   }
   let floor_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.28F, 0.32F, 0.36F, 1.0F),
+      @sprite.Color::new(0.28F, 0.32F, 0.36F, 1.0F),
     ),
   )
   let floor_bundle = @render3d.MeshMaterial3dBundle::new(
@@ -68,7 +68,7 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
 
   let ball_material = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.9F, 0.2F, 0.2F, 1.0F),
+      @sprite.Color::new(0.9F, 0.2F, 0.2F, 1.0F),
     ),
   )
   let ball_bundle = @render3d.MeshMaterial3dBundle::new(
@@ -88,7 +88,7 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
   world.insert_resource(
     @render3d.ecs_key_global_ambient_light,
     @render3d.GlobalAmbientLight::new(
-      @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
       0.45F,
     ),
   )
@@ -97,19 +97,14 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
   .component(@render3d.ecs_key_point_light)
   .insert(
     light,
-    @render3d.PointLight::new(
-      @render2d.Color::white(),
-      100000.0F,
-      2000.0F,
-      false,
-    ),
+    @render3d.PointLight::new(@sprite.Color::white(), 100000.0F, 2000.0F, false),
     tick,
   )
   world
   .component(@math.ecs_key_transform)
   .insert(light, @math.Transform::from_xyz(220.0F, 360.0F, 220.0F), tick)
 
-  let camera = @render2d.Camera::default()
+  let camera = @sprite.Camera::default()
   @render3d.Camera3dBundle::new(
     camera,
     @math.Transform::from_xyz(0.0F, 120.0F, 420.0F).looking_at(

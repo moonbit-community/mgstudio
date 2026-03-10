@@ -111,12 +111,12 @@ fn uv_sphere_mesh(
 
 ///|
 fn create_point_light() -> @render3d.PointLight {
-  @render3d.PointLight::new(@render2d.Color::white(), 100_000.0F, 20.0F, false)
+  @render3d.PointLight::new(@sprite.Color::white(), 100_000.0F, 20.0F, false)
 }
 
 ///|
 fn create_directional_light() -> @render3d.DirectionalLight {
-  @render3d.DirectionalLight::new(@render2d.Color::white(), 1000.0F, false)
+  @render3d.DirectionalLight::new(@sprite.Color::white(), 1000.0F, false)
 }
 
 ///|
@@ -190,7 +190,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let car_paint = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+      @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
     )
     .with_clearcoat(1.0F)
     .with_clearcoat_perceptual_roughness(0.1F)
@@ -202,7 +202,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let coated_glass = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.9F, 0.9F, 0.9F, 0.3F),
+      @sprite.Color::new(0.9F, 0.9F, 0.9F, 0.3F),
     )
     .with_alpha_mode(@render3d.AlphaMode3d::Blend)
     .with_clearcoat(1.0F)
@@ -214,7 +214,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let scratched_gold_ball = @render3d.standard_material_add(
     @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 0.843F, 0.0F, 1.0F),
+      @sprite.Color::new(1.0F, 0.843F, 0.0F, 1.0F),
     )
     .with_clearcoat(1.0F)
     .with_clearcoat_perceptual_roughness(0.3F)
@@ -272,7 +272,7 @@ fn setup(world : @ecs.World) -> Unit {
   apply_light_mode(world)
 
   let camera = @render3d.Camera3dBundle::new_with_projection(
-    @render2d.Camera::default(),
+    @sprite.Camera::default(),
     @render3d.Projection::Perspective(@render3d.PerspectiveProjection3d::{
       ..@render3d.PerspectiveProjection3d::default(),
       fov: 27.0F * PI / 180.0F,
@@ -319,11 +319,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::bottom_left())
+    .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
