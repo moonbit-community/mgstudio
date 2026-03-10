@@ -1580,44 +1580,7 @@ pub fn MotionBlur::with_samples(self : MotionBlur, samples : Int) -> MotionBlur 
 }
 
 ///|
-/// Camera MSAA mode aligned with Bevy's `Msaa`.
-///
-/// Current runtime note: this component is API-compatible but acts as a
-/// render-path hint on top of the existing antialiasing pipeline.
-pub(all) enum Msaa {
-  Off
-  Sample2
-  Sample4
-  Sample8
-} derive(Eq, Show, ToJson, FromJson)
-
-///|
-pub fn Msaa::default() -> Msaa {
-  Msaa::Sample4
-}
-
-///|
-pub fn Msaa::samples(self : Msaa) -> Int {
-  match self {
-    Off => 1
-    Sample2 => 2
-    Sample4 => 4
-    Sample8 => 8
-  }
-}
-
-///|
-pub fn Msaa::from_samples(samples : Int) -> Msaa {
-  if samples <= 1 {
-    Msaa::Off
-  } else if samples <= 2 {
-    Msaa::Sample2
-  } else if samples <= 4 {
-    Msaa::Sample4
-  } else {
-    Msaa::Sample8
-  }
-}
+pub type Msaa = @core_pipeline.Msaa
 
 ///|
 pub(all) enum FxaaSensitivity {
@@ -1696,40 +1659,16 @@ pub fn Fxaa::with_sensitivity(
 }
 
 ///|
-/// Marker component aligned with Bevy's `DepthPrepass`.
-pub struct DepthPrepass {} derive(ToJson, FromJson)
+pub type DepthPrepass = @core_pipeline.DepthPrepass
 
 ///|
-pub fn DepthPrepass::default() -> DepthPrepass {
-  DepthPrepass::{  }
-}
+pub type NormalPrepass = @core_pipeline.NormalPrepass
 
 ///|
-/// Marker component aligned with Bevy's `NormalPrepass`.
-pub struct NormalPrepass {} derive(ToJson, FromJson)
+pub type MotionVectorPrepass = @core_pipeline.MotionVectorPrepass
 
 ///|
-pub fn NormalPrepass::default() -> NormalPrepass {
-  NormalPrepass::{  }
-}
-
-///|
-/// Marker component aligned with Bevy's `MotionVectorPrepass`.
-pub struct MotionVectorPrepass {} derive(ToJson, FromJson)
-
-///|
-pub fn MotionVectorPrepass::default() -> MotionVectorPrepass {
-  MotionVectorPrepass::{  }
-}
-
-///|
-/// Marker component aligned with Bevy's `DeferredPrepass`.
-pub struct DeferredPrepass {} derive(ToJson, FromJson)
-
-///|
-pub fn DeferredPrepass::default() -> DeferredPrepass {
-  DeferredPrepass::{  }
-}
+pub type DeferredPrepass = @core_pipeline.DeferredPrepass
 
 ///|
 /// Marker component aligned with Bevy's `OcclusionCulling`.
@@ -1931,13 +1870,7 @@ pub fn TemporalJitter::with_offset(
 }
 
 ///|
-/// Marker component aligned with Bevy's `Hdr`.
-pub struct Hdr {} derive(ToJson, FromJson)
-
-///|
-pub fn Hdr::default() -> Hdr {
-  Hdr::{  }
-}
+pub type Hdr = @core_pipeline.Hdr
 
 ///|
 const EXPOSURE_EV100_SUNLIGHT : Float = 15.0F

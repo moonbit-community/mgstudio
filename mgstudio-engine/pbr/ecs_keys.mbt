@@ -23,9 +23,7 @@ pub let ecs_key_mesh_material3d : @ecs.ComponentKey[MeshMaterial3d] = @ecs.regis
 )
 
 ///|
-pub let ecs_key_hdr : @ecs.ComponentKey[Hdr] = @ecs.register_component(
-  debug_name="render3d.hdr",
-)
+pub let ecs_key_hdr : @ecs.ComponentKey[Hdr] = @core_pipeline.ecs_key_hdr
 
 ///|
 pub let ecs_key_fxaa : @ecs.ComponentKey[Fxaa] = @ecs.register_component(
@@ -33,9 +31,7 @@ pub let ecs_key_fxaa : @ecs.ComponentKey[Fxaa] = @ecs.register_component(
 )
 
 ///|
-pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @ecs.register_component(
-  debug_name="render3d.msaa",
-)
+pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @core_pipeline.ecs_key_msaa
 
 ///|
 pub let ecs_key_bloom : @ecs.ComponentKey[Bloom] = @ecs.register_component(
@@ -113,9 +109,7 @@ pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither] = @ecs.register_
 )
 
 ///|
-pub let ecs_key_depth_prepass : @ecs.ComponentKey[DepthPrepass] = @ecs.register_component(
-  debug_name="render3d.depth_prepass",
-)
+pub let ecs_key_depth_prepass : @ecs.ComponentKey[DepthPrepass] = @core_pipeline.ecs_key_depth_prepass
 
 ///|
 pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal] = @ecs.register_component(
@@ -123,9 +117,7 @@ pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal] = @ecs.register_
 )
 
 ///|
-pub let ecs_key_normal_prepass : @ecs.ComponentKey[NormalPrepass] = @ecs.register_component(
-  debug_name="render3d.normal_prepass",
-)
+pub let ecs_key_normal_prepass : @ecs.ComponentKey[NormalPrepass] = @core_pipeline.ecs_key_normal_prepass
 
 ///|
 pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal] = @ecs.register_component(
@@ -148,9 +140,7 @@ pub let ecs_key_wireframe_color : @ecs.ComponentKey[WireframeColor] = @ecs.regis
 )
 
 ///|
-pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass] = @ecs.register_component(
-  debug_name="render3d.deferred_prepass",
-)
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass] = @core_pipeline.ecs_key_deferred_prepass
 
 ///|
 pub let ecs_key_free_camera_state : @ecs.ComponentKey[FreeCameraState] = @ecs.register_component(
@@ -223,9 +213,7 @@ pub let ecs_key_environment_map_light : @ecs.ComponentKey[EnvironmentMapLight] =
 )
 
 ///|
-pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass] = @ecs.register_component(
-  debug_name="render3d.motion_vector_prepass",
-)
+pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass] = @core_pipeline.ecs_key_motion_vector_prepass
 
 ///|
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing] = @ecs.register_component(
@@ -294,18 +282,8 @@ pub impl @ecs.Component for MeshMaterial3d with component() {
 }
 
 ///|
-pub impl @ecs.Component for Hdr with component() {
-  ecs_key_hdr
-}
-
-///|
 pub impl @ecs.Component for Fxaa with component() {
   ecs_key_fxaa
-}
-
-///|
-pub impl @ecs.Component for Msaa with component() {
-  ecs_key_msaa
 }
 
 ///|
@@ -384,18 +362,8 @@ pub impl @ecs.Component for DebandDither with component() {
 }
 
 ///|
-pub impl @ecs.Component for DepthPrepass with component() {
-  ecs_key_depth_prepass
-}
-
-///|
 pub impl @ecs.Component for ForwardDecal with component() {
   ecs_key_forward_decal
-}
-
-///|
-pub impl @ecs.Component for NormalPrepass with component() {
-  ecs_key_normal_prepass
 }
 
 ///|
@@ -416,11 +384,6 @@ pub impl @ecs.Component for TemporalJitter with component() {
 ///|
 pub impl @ecs.Component for WireframeColor with component() {
   ecs_key_wireframe_color
-}
-
-///|
-pub impl @ecs.Component for DeferredPrepass with component() {
-  ecs_key_deferred_prepass
 }
 
 ///|
@@ -491,11 +454,6 @@ pub impl @ecs.Component for ChromaticAberration with component() {
 ///|
 pub impl @ecs.Component for EnvironmentMapLight with component() {
   ecs_key_environment_map_light
-}
-
-///|
-pub impl @ecs.Component for MotionVectorPrepass with component() {
-  ecs_key_motion_vector_prepass
 }
 
 ///|
