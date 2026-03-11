@@ -1,6 +1,6 @@
 // Canonical native GPU backend owned by the render package.
 import {
-  "Milky2018/mgstudio/window/windowing" @windowing,
+  "Milky2018/mgstudio/window/windowing_native" @windowing,
   "Milky2018/wgpu_mbt" @wgpu,
   "Milky2018/wgpu_mbt/c" @wgpu_c,
   "moonbitlang/core/ref",
@@ -12,3 +12,7 @@ import {
   "moonbitlang/x/path",
   "moonbitlang/x/sys",
 }
+
+options(
+  "supported-targets": "native",
+)

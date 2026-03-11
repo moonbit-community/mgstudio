@@ -6,7 +6,11 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/window",
-  "Milky2018/mgstudio/window/windowing" @windowing,
+  "Milky2018/mgstudio/window/windowing_native" @windowing,
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
 }
+
+options(
+  "supported-targets": "native",
+)

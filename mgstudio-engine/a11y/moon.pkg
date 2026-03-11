@@ -4,5 +4,9 @@ import {
   "Milky2018/moon_accesskit",
   "moonbitlang/core/ref",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/window/windowing" @windowing,
+  "Milky2018/mgstudio/window/windowing_native" @windowing,
 }
+
+options(
+  "supported-targets": "native",
+)

@@ -23,3 +23,7 @@ import {
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/sprite_render",
 } for "test"
+
+options(
+  "supported-targets": "native",
+)

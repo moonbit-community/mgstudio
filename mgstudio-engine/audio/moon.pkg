@@ -12,3 +12,7 @@ import {
   "moonbitlang/core/ref",
   "tonyfettes/any",
 }
+
+options(
+  "supported-targets": "native",
+)

@@ -8,3 +8,7 @@ import {
   "moonbitlang/core/hashmap",
   "tonyfettes/any",
 }
+
+options(
+  "supported-targets": "native",
+)

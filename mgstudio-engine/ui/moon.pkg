@@ -18,3 +18,7 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
+
+options(
+  "supported-targets": "native",
+)

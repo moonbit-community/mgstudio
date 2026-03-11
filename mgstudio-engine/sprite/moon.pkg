@@ -16,3 +16,7 @@ import {
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/transform",
 }
+
+options(
+  "supported-targets": "native",
+)

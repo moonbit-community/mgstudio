@@ -10,3 +10,7 @@ import {
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/ui",
 }
+
+options(
+  "supported-targets": "native",
+)

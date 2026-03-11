@@ -11,3 +11,7 @@ import {
   "Milky2018/mgstudio/window",
   "moonbitlang/core/json",
 }
+
+options(
+  "supported-targets": "native",
+)

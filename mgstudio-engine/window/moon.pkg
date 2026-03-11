@@ -4,10 +4,14 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/render",
-  "Milky2018/mgstudio/window/windowing" @windowing,
+  "Milky2018/mgstudio/window/windowing_native" @windowing,
   "tonyfettes/any",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
   "moonbitlang/core/strconv",
   "moonbitlang/x/sys",
 }
+
+options(
+  "supported-targets": "native",
+)

@@ -19,4 +19,5 @@ import {
 
 options(
   "is-main": true,
+  "supported-targets": "native",
 )
