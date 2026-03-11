@@ -61,7 +61,7 @@ pub struct AudioPlayer[Source] {
 }
 pub fn[Source] AudioPlayer::handle(Self[Source]) -> @asset.Handle[Source]
 pub fn[Source] AudioPlayer::new(@asset.Handle[Source]) -> Self[Source]
-pub impl @ecs.Component for AudioPlayer[AudioSource]
+pub impl[Source] @ecs.Component for AudioPlayer[Source]
 pub impl[Source] ToJson for AudioPlayer[Source]
 pub impl[Source] @json.FromJson for AudioPlayer[Source]
 

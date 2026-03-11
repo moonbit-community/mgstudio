@@ -42,14 +42,43 @@ pub struct PlaybackDespawnMarker {} derive(ToJson, FromJson)
 pub struct PlaybackRemoveMarker {} derive(ToJson, FromJson)
 
 ///|
-pub let ecs_key_audio_source_player : @ecs.ComponentKey[
-  AudioPlayer[AudioSource],
-] = @ecs.register_component(debug_name="audio.audio_source_player")
+let audio_player_component_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
 
 ///|
-pub let ecs_key_pitch_player : @ecs.ComponentKey[AudioPlayer[Pitch]] = @ecs.register_component(
-  debug_name="audio.pitch_player",
-)
+fn[Source] registered_audio_player_component_key() -> @ecs.ComponentKey[
+  AudioPlayer[Source],
+] {
+  let probe : AudioPlayer[Source] = AudioPlayer::new(@asset.Handle::new(0))
+  let type_name = @any.of(probe).type_name()
+  match audio_player_component_registry.val.get(type_name) {
+    Some(existing_key) =>
+      match existing_key.try_to() {
+        Some(key) => key
+        None =>
+          abort(
+            "audio player component registry contained a mismatched key for " +
+            type_name,
+          )
+      }
+    None => {
+      let key : @ecs.ComponentKey[AudioPlayer[Source]] = @ecs.register_component(
+        debug_name="bevy_audio::" + type_name,
+      )
+      audio_player_component_registry.val.set(type_name, @any.of(key))
+      key
+    }
+  }
+}
+
+///|
+pub let ecs_key_audio_source_player : @ecs.ComponentKey[
+  AudioPlayer[AudioSource],
+] = registered_audio_player_component_key()
+
+///|
+pub let ecs_key_pitch_player : @ecs.ComponentKey[AudioPlayer[Pitch]] = registered_audio_player_component_key()
 
 ///|
 pub let ecs_key_playback_settings : @ecs.ComponentKey[PlaybackSettings] = @ecs.register_component(
@@ -82,8 +111,8 @@ pub let ecs_key_playback_remove_marker : @ecs.ComponentKey[PlaybackRemoveMarker]
 )
 
 ///|
-pub impl @ecs.Component for AudioPlayer[AudioSource] with component() {
-  ecs_key_audio_source_player
+pub impl[Source] @ecs.Component for AudioPlayer[Source] with component() {
+  registered_audio_player_component_key()
 }
 
 ///|

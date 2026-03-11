@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/run_conditions"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type InputCounter
+pub impl @app.Resource for InputCounter
+
+type Unused
+pub impl @app.Resource for Unused
+
+// Type aliases
+
+// Traits
+
