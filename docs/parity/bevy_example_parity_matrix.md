@@ -53,8 +53,8 @@ Notes:
 | `transforms` | 5 | 4 | 1 | 0 |
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
-| `window` | 12 | 5 | 7 | 0 |
-| **Total** | **402** | **146** | **253** | **3** |
+| `window` | 12 | 6 | 6 | 0 |
+| **Total** | **402** | **147** | **252** | **3** |
 
 ## Example Inventory
 
@@ -455,7 +455,7 @@ Notes:
 | `bevy/examples/window/low_power.rs` | `window` | `mgstudio-engine/examples/window/low_power` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/monitor_info.rs` | `window` | `mgstudio-engine/examples/window/monitor_info` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/multi_window_text.rs` | `window` | `mgstudio-engine/examples/window/multi_window_text` | `Exact` | `team-input_window` |  |
-| `bevy/examples/window/multiple_windows.rs` | `window` |  | `Blocked` | `team-input_window` |  |
+| `bevy/examples/window/multiple_windows.rs` | `window` | `mgstudio-engine/examples/window/multiple_windows` | `Exact` | `team-input_window` |  |
 | `bevy/examples/window/scale_factor_override.rs` | `window` | `mgstudio-engine/examples/window/scale_factor_override` | `Exact` | `team-input_window` |  |
 | `bevy/examples/window/screenshot.rs` | `window` | `mgstudio-engine/examples/window/screenshot` | `Exact` | `team-input_window` |  |
 | `bevy/examples/window/transparent_window.rs` | `window` | `mgstudio-engine/examples/window/transparent_window` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
