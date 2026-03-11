@@ -3,12 +3,6 @@ import {
 }
 
 options(
-  link: {
-    "native": {
-      "cc-link-flags": "-framework AppKit -framework QuartzCore -framework Foundation -lobjc",
-      "stub-cc-link-flags": "-framework AppKit -framework QuartzCore -framework Foundation -lobjc",
-    },
-  },
   "native-stub": [ "windowing_native.c" ],
   targets: { "raw.mbt": [ "native" ] },
 )

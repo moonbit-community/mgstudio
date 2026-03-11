@@ -17,6 +17,11 @@ if (platform === 'darwin') {
     package: pkg('window/windowing_native'),
     link_flags: darwinWindowLinkFlags,
   });
+
+  linkConfigs.push({
+    package: pkg('window/windowing'),
+    link_flags: darwinWindowLinkFlags,
+  });
 }
 
 console.log(

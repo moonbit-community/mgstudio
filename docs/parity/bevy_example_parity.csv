@@ -41,7 +41,7 @@ bevy/examples/3d/camera_sub_view.rs,3d,camera_sub_view,mgstudio-engine/examples/
 bevy/examples/3d/clearcoat.rs,3d,clearcoat,mgstudio-engine/examples/3d/clearcoat,Exact,team-render,
 bevy/examples/3d/clustered_decal_maps.rs,3d,clustered_decal_maps,mgstudio-engine/examples/3d/clustered_decal_maps,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
 bevy/examples/3d/clustered_decals.rs,3d,clustered_decals,mgstudio-engine/examples/3d/clustered_decals,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
-bevy/examples/3d/color_grading.rs,3d,color_grading,mgstudio-engine/examples/3d/color_grading,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
+bevy/examples/3d/color_grading.rs,3d,color_grading,mgstudio-engine/examples/3d/color_grading,Exact,team-render,
 bevy/examples/3d/contact_shadows.rs,3d,contact_shadows,mgstudio-engine/examples/3d/contact_shadows,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
 bevy/examples/3d/decal.rs,3d,decal,mgstudio-engine/examples/3d/decal,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
 bevy/examples/3d/deferred_rendering.rs,3d,deferred_rendering,mgstudio-engine/examples/3d/deferred_rendering,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
@@ -84,7 +84,7 @@ bevy/examples/3d/spotlight.rs,3d,spotlight,mgstudio-engine/examples/3d/spotlight
 bevy/examples/3d/ssao.rs,3d,ssao,mgstudio-engine/examples/3d/ssao,Exact,team-render,
 bevy/examples/3d/ssr.rs,3d,ssr,mgstudio-engine/examples/3d/ssr,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
 bevy/examples/3d/texture.rs,3d,texture,mgstudio-engine/examples/3d/texture,Exact,team-render,
-bevy/examples/3d/tonemapping.rs,3d,tonemapping,mgstudio-engine/examples/3d/tonemapping,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
+bevy/examples/3d/tonemapping.rs,3d,tonemapping,mgstudio-engine/examples/3d/tonemapping,Exact,team-render,
 bevy/examples/3d/transmission.rs,3d,transmission,mgstudio-engine/examples/3d/transmission,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
 bevy/examples/3d/transparency_3d.rs,3d,transparency_3d,mgstudio-engine/examples/3d/transparency_3d,Exact,team-render,
 bevy/examples/3d/two_passes.rs,3d,two_passes,mgstudio-engine/examples/3d/two_passes,Exact,team-render,
@@ -396,7 +396,7 @@ bevy/examples/window/monitor_info.rs,window,monitor_info,mgstudio-engine/example
 bevy/examples/window/multi_window_text.rs,window,multi_window_text,,Blocked,team-input_window,
 bevy/examples/window/multiple_windows.rs,window,multiple_windows,,Blocked,team-input_window,
 bevy/examples/window/scale_factor_override.rs,window,scale_factor_override,mgstudio-engine/examples/window/scale_factor_override,Exact,team-input_window,
-bevy/examples/window/screenshot.rs,window,screenshot,mgstudio-engine/examples/window/screenshot,Blocked,team-input_window,Fallback implementation exists; blocked until exact parity.
+bevy/examples/window/screenshot.rs,window,screenshot,mgstudio-engine/examples/window/screenshot,Exact,team-input_window,
 bevy/examples/window/transparent_window.rs,window,transparent_window,mgstudio-engine/examples/window/transparent_window,Blocked,team-input_window,Fallback implementation exists; blocked until exact parity.
 bevy/examples/window/window_drag_move.rs,window,window_drag_move,mgstudio-engine/examples/window/window_drag_move,Blocked,team-input_window,Fallback implementation exists; blocked until exact parity.
 bevy/examples/window/window_resizing.rs,window,window_resizing,mgstudio-engine/examples/window/window_resizing,Exact,team-input_window,

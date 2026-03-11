@@ -770,18 +770,6 @@ fn tf(raw : UInt) -> @wgpu.TextureFormat {
 }
 
 ///|
-extern "C" fn wgpu_render_pipeline_desc_builder_set_front_face(
-  builder : @wgpu_c.OpaquePtr,
-  front_face_u32 : UInt,
-) -> UInt = "mbt_wgpu_render_pipeline_desc_builder_set_front_face"
-
-///|
-extern "C" fn wgpu_render_pipeline_desc_builder_set_cull_mode(
-  builder : @wgpu_c.OpaquePtr,
-  cull_mode_u32 : UInt,
-) -> UInt = "mbt_wgpu_render_pipeline_desc_builder_set_cull_mode"
-
-///|
 priv struct TextureBlockInfo {
   block_width : Int
   block_height : Int
@@ -1697,16 +1685,8 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   let set_topology_err = @wgpu_c.render_pipeline_desc_builder_set_topology(
     builder, topology,
   )
-  // Our runtime clip-space winding is flipped relative to Bevy, so CW must be
-  // treated as front-facing to keep Face3d front/back culling semantics aligned.
-  let set_front_face_ok = wgpu_render_pipeline_desc_builder_set_front_face(
-    builder,
-    @wgpu.FRONT_FACE_CW,
-  )
-  let set_cull_mode_ok = wgpu_render_pipeline_desc_builder_set_cull_mode(
-    builder, cull_mode,
-  )
-  if set_topology_err != 0U || set_front_face_ok != 0U || set_cull_mode_ok != 0U {
+  cull_mode |> ignore
+  if set_topology_err != 0U {
     @wgpu_c.render_pipeline_desc_builder_free(builder)
     fatal("wgpu: failed to configure mesh pipeline primitive state")
   }

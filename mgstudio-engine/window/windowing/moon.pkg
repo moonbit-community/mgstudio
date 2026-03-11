@@ -6,11 +6,3 @@ import {
   "moonbitlang/core/ref",
   "moonbitlang/x/sys",
 }
-
-options(
-  link: {
-    "native": {
-      "cc-link-flags": "-framework AppKit -framework QuartzCore -framework Foundation -lobjc",
-    },
-  },
-)
