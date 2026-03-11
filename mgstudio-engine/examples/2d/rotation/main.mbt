@@ -136,7 +136,7 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
       @text.TextFont::default().with_font(font).with_font_size(20.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 
@@ -177,8 +177,8 @@ fn spawn_ship(
   texture : @asset.Handle[@asset.Image],
   translation : @math.Vec2,
 ) -> @core.Entity {
-  @render2d.SpriteBundle::new(
-    @render2d.Sprite::from_image(texture),
+  @sprite.SpriteBundle::new(
+    @sprite.Sprite::from_image(texture),
     @math.Transform::from_xy_rotation_scale(
       translation,
       0.0F,
@@ -193,8 +193,8 @@ fn rotation_setup(world : @ecs.World) -> Unit {
   rotation_state.val.snap_targets = []
   rotation_state.val.rotate_targets = []
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore

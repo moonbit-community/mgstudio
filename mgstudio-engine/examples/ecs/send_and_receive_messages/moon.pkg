@@ -1,10 +1,11 @@
 import {
   "Milky2018/mgstudio",
   "Milky2018/mgstudio/app",
-  "Milky2018/mgstudio/diagnostics",
+  "Milky2018/mgstudio/diagnostic",
   "Milky2018/mgstudio/ecs",
 }
 
 options(
   "is-main": true,
+  "supported-targets": "native",
 )

@@ -14,7 +14,9 @@
 
 ///|
 /// ECS component bridge types.
-pub let ecs_components : Array[String] = ["SceneRoot", "SceneInstanceReady"]
+pub let ecs_components : Array[String] = [
+  "SceneRoot", "SceneInstance", "SceneInstanceReady",
+]
 
 ///|
 /// ECS resource bridge types.
@@ -32,4 +34,11 @@ pub fn get_scene_instance_ready_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[SceneInstanceReady] {
   world.component(ecs_key_scene_instance_ready)
+}
+
+///|
+pub fn get_scene_instance_store(
+  world : @ecs.World,
+) -> @ecs.ComponentAccess[SceneInstance] {
+  world.component(ecs_key_scene_instance)
 }

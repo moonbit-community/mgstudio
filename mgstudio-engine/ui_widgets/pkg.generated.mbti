@@ -1,0 +1,39 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/ui_widgets"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/ui",
+}
+
+// Values
+pub let ecs_key_button : @ecs.ComponentKey[@ui.Button]
+
+pub let ecs_key_button_colors : @ecs.ComponentKey[@ui.ButtonColors]
+
+pub let ecs_key_interaction : @ecs.ComponentKey[@ui.Interaction]
+
+pub let ecs_key_label : @ecs.ComponentKey[@ui.Label]
+
+pub fn ui_interaction_system(@ecs.World) -> Unit
+
+pub fn ui_widgets_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub let ui_widgets_set_interaction : String
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @ui {type Button}
+
+pub using @ui {type ButtonColors}
+
+pub using @ui {type Interaction}
+
+pub using @ui {type Label}
+
+// Traits
+

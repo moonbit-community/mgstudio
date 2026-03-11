@@ -148,9 +148,9 @@ fn recompute_counts() -> Unit {
 ///|
 fn spawn_small_cubes(
   world : @ecs.World,
-  material : @asset.Handle[@render3d.StandardMaterial],
+  material : @asset.Handle[@pbr.StandardMaterial],
 ) -> Unit {
-  let mesh = @render3d.Mesh3d::from_cuboid(
+  let mesh = @pbr.Mesh3d::from_cuboid(
     SMALL_CUBE_SIZE,
     SMALL_CUBE_SIZE,
     SMALL_CUBE_SIZE,
@@ -173,9 +173,9 @@ fn spawn_small_cubes(
         y,
         ring * @math.sin(theta),
       )
-      let entity = @render3d.MeshMaterial3dBundle::new(
+      let entity = @pbr.MeshMaterial3dBundle::new(
         mesh,
-        @render3d.MeshMaterial3d::new(material),
+        @pbr.MeshMaterial3d::new(material),
         @math.Transform::from_xyz(
           local_position.x,
           local_position.y,
@@ -193,33 +193,29 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
 
-  let small_cube_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
+  let small_cube_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
     ),
   )
   spawn_small_cubes(world, small_cube_material)
 
-  let large_cube_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::default().with_base_color_texture(
+  let large_cube_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::default().with_base_color_texture(
       Some(asset_server.load("branding/icon.png")),
     ),
   )
-  let large_cube = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(
-      LARGE_CUBE_SIZE,
-      LARGE_CUBE_SIZE,
-      LARGE_CUBE_SIZE,
-    ),
-    @render3d.MeshMaterial3d::new(large_cube_material),
+  let large_cube = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(LARGE_CUBE_SIZE, LARGE_CUBE_SIZE, LARGE_CUBE_SIZE),
+    @pbr.MeshMaterial3d::new(large_cube_material),
     @math.Transform::identity(),
   ).spawn(world)
   occlusion_state.val.large_cube = Some(large_cube)
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
-  .insert(light, @render3d.DirectionalLight::default(), tick)
+  .component(@pbr.ecs_key_directional_light)
+  .insert(light, @pbr.DirectionalLight::default(), tick)
   let light_rot = @math.Quat::from_rotation_y(-0.15F * PI).mul(
     @math.Quat::from_rotation_x(-0.15F * PI),
   )
@@ -227,8 +223,8 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@math.ecs_key_transform)
   .insert(light, @math.Transform::identity().with_rotation(light_rot), tick)
 
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 0.0F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -236,11 +232,11 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   occlusion_state.val.camera = Some(camera)
   world
-  .component(@render3d.ecs_key_depth_prepass)
-  .insert(camera, @render3d.DepthPrepass::default(), tick)
+  .component(@pbr.ecs_key_depth_prepass)
+  .insert(camera, @pbr.DepthPrepass::default(), tick)
   world
-  .component(@render3d.ecs_key_occlusion_culling)
-  .insert(camera, @render3d.OcclusionCulling::default(), tick)
+  .component(@pbr.ecs_key_occlusion_culling)
+  .insert(camera, @pbr.OcclusionCulling::default(), tick)
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
@@ -254,10 +250,10 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
   occlusion_state.val.help_text = Some(help_text)
@@ -318,11 +314,10 @@ fn toggle_occlusion_culling_on_request(world : @ecs.World) -> Unit {
     let tick = world.read_change_tick()
     if occlusion_state.val.occlusion_enabled {
       world
-      .component(@render3d.ecs_key_occlusion_culling)
-      .insert(camera, @render3d.OcclusionCulling::default(), tick)
+      .component(@pbr.ecs_key_occlusion_culling)
+      .insert(camera, @pbr.OcclusionCulling::default(), tick)
     } else {
-      world.component(@render3d.ecs_key_occlusion_culling).remove(camera)
-      |> ignore
+      world.component(@pbr.ecs_key_occlusion_culling).remove(camera) |> ignore
     }
   }
   recompute_counts()

@@ -1,0 +1,28 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/winit"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+pub const WINIT_PLUGIN_ID : String = "bevy_winit::WinitPlugin"
+
+pub fn winit_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn winit_plugin_with(@app.App[@ecs.World], WinitPlugin) -> @app.App[@ecs.World]
+
+// Errors
+
+// Types and methods
+pub(all) struct WinitPlugin {
+  run_on_any_thread : Bool
+}
+pub fn WinitPlugin::default() -> Self
+pub impl @app.PluginReplacement for WinitPlugin
+
+// Type aliases
+
+// Traits
+

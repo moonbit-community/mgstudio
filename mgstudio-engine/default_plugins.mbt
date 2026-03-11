@@ -16,7 +16,13 @@
 pub struct DefaultPlugins {}
 
 ///|
+fn default_plugins_marker() -> DefaultPlugins {
+  DefaultPlugins::{  }
+}
+
+///|
 pub fn DefaultPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
+  default_plugins_marker() |> ignore
   @internal.DefaultPlugins::build()
 }
 
@@ -24,6 +30,7 @@ pub fn DefaultPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
 pub fn[P : @app.PluginReplacement] DefaultPlugins::set(
   replacement : P,
 ) -> @app.PluginGroupBuilder[@ecs.World] {
+  default_plugins_marker() |> ignore
   @internal.DefaultPlugins::set(replacement)
 }
 
@@ -38,7 +45,13 @@ pub fn DefaultPlugins::set_window(
 pub struct MinimalPlugins {}
 
 ///|
+fn minimal_plugins_marker() -> MinimalPlugins {
+  MinimalPlugins::{  }
+}
+
+///|
 pub fn MinimalPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
+  minimal_plugins_marker() |> ignore
   @internal.MinimalPlugins::build()
 }
 

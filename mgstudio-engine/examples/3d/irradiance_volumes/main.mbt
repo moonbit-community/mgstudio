@@ -208,19 +208,12 @@ fn update_help_text() -> Unit {
 
 ///|
 fn set_global_ambient_light(world : @ecs.World, brightness : Float) -> Unit {
-  let ambient = @render3d.GlobalAmbientLight::new(
-    @render2d.Color::white(),
-    brightness,
-  )
-  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
+  let ambient = @pbr.GlobalAmbientLight::new(@sprite.Color::white(), brightness)
+  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -266,7 +259,7 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -295,7 +288,7 @@ fn spawn_main_scene(
   let tick = world.read_change_tick()
   let scene = @scene.scene_load_gltf_scene(
     asset_server,
-    @scene.GltfAssetLabel::Scene(0).from_asset(
+    @gltf.GltfAssetLabel::Scene(0).from_asset(
       "models/IrradianceVolumeExample/IrradianceVolumeExample.glb",
     ),
   )
@@ -308,8 +301,8 @@ fn spawn_main_scene(
 ///|
 fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tick = world.read_change_tick()
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-10.012F, 4.8605F, 13.281F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -317,10 +310,10 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   ).spawn(world)
   irradiance_volumes_state.val.camera = Some(camera)
   world
-  .component(@render3d.ecs_key_skybox)
+  .component(@pbr.ecs_key_skybox)
   .insert(
     camera,
-    @render3d.Skybox::new(
+    @pbr.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       150.0F,
     ),
@@ -337,13 +330,13 @@ fn spawn_irradiance_volume(
   let entity = world.spawn_empty()
   irradiance_volumes_state.val.light_probe = Some(entity)
   world
-  .component(@render3d.ecs_key_light_probe)
-  .insert(entity, @render3d.LightProbe::default(), tick)
+  .component(@pbr.ecs_key_light_probe)
+  .insert(entity, @pbr.LightProbe::default(), tick)
   world
-  .component(@render3d.ecs_key_irradiance_volume)
+  .component(@pbr.ecs_key_irradiance_volume)
   .insert(
     entity,
-    @render3d.IrradianceVolume::new(
+    @pbr.IrradianceVolume::new(
       Some(irradiance_texture),
       IRRADIANCE_VOLUME_INTENSITY,
     ),
@@ -373,15 +366,10 @@ fn spawn_light(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     light,
-    @render3d.PointLight::new(
-      @render2d.Color::white(),
-      250_000.0F,
-      100.0F,
-      true,
-    ),
+    @pbr.PointLight::new(@sprite.Color::white(), 250_000.0F, 100.0F, true),
     tick,
   )
   world
@@ -391,14 +379,14 @@ fn spawn_light(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_sphere(world : @ecs.World) -> Unit {
-  let material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
+  let material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
     ),
   )
-  let sphere = @render3d.MeshMaterial3dBundle::new(
+  let sphere = @pbr.MeshMaterial3dBundle::new(
     uv_sphere_mesh(1.0F, 24, 36),
-    @render3d.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3d::new(material),
     @math.Transform::from_xyz(0.0F, SPHERE_SCALE, 0.0F).with_scale(
       @math.Vec3::splat(SPHERE_SCALE),
     ),
@@ -418,7 +406,7 @@ fn spawn_fox(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
-        @scene.GltfAssetLabel::Scene(0).from_asset("models/animated/Fox.glb"),
+        @gltf.GltfAssetLabel::Scene(0).from_asset("models/animated/Fox.glb"),
       ),
     ),
     tick,
@@ -438,14 +426,14 @@ fn spawn_fox(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 ///|
 fn spawn_voxel_cubes(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let cube_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 0.2F, 0.2F, 0.75F),
+  let cube_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(1.0F, 0.2F, 0.2F, 0.75F),
     )
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_unlit(true),
   )
-  let mesh = @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
+  let mesh = @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
   for z in 0..<VOXEL_COUNT_Z {
     for y in 0..<VOXEL_COUNT_Y {
       for x in 0..<VOXEL_COUNT_X {
@@ -460,16 +448,16 @@ fn spawn_voxel_cubes(world : @ecs.World) -> Unit {
           VOXEL_VOLUME_CENTER_Y + fy * VOXEL_VOLUME_SIZE_Y,
           VOXEL_VOLUME_CENTER_Z + fz * VOXEL_VOLUME_SIZE_Z,
         )
-        let entity = @render3d.MeshMaterial3dBundle::new(
+        let entity = @pbr.MeshMaterial3dBundle::new(
           mesh,
-          @render3d.MeshMaterial3d::new(cube_material),
+          @pbr.MeshMaterial3d::new(cube_material),
           @math.Transform::from_xyz(position.x, position.y, position.z).with_scale(
             @math.Vec3::splat(VOXEL_CUBE_SCALE),
           ),
         ).spawn(world)
         world
-        .component(@render3d.ecs_key_not_shadow_caster)
-        .insert(entity, @render3d.NotShadowCaster::default(), tick)
+        .component(@pbr.ecs_key_not_shadow_caster)
+        .insert(entity, @pbr.NotShadowCaster::default(), tick)
         irradiance_volumes_state.val.voxel_cubes.push(entity)
       }
     }
@@ -497,10 +485,10 @@ fn spawn_text(_world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::bottom_left())
+    .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
   irradiance_volumes_state.val.help_text = Some(text)
@@ -577,7 +565,7 @@ fn toggle_irradiance_volumes(world : @ecs.World) -> Unit {
   }
   let tick = world.read_change_tick()
   if irradiance_volumes_state.val.irradiance_volume_present {
-    world.component(@render3d.ecs_key_irradiance_volume).remove(light_probe)
+    world.component(@pbr.ecs_key_irradiance_volume).remove(light_probe)
     |> ignore
     set_global_ambient_light(
       world,
@@ -589,13 +577,10 @@ fn toggle_irradiance_volumes(world : @ecs.World) -> Unit {
       return
     }
     world
-    .component(@render3d.ecs_key_irradiance_volume)
+    .component(@pbr.ecs_key_irradiance_volume)
     .insert(
       light_probe,
-      @render3d.IrradianceVolume::new(
-        Some(texture),
-        IRRADIANCE_VOLUME_INTENSITY,
-      ),
+      @pbr.IrradianceVolume::new(Some(texture), IRRADIANCE_VOLUME_INTENSITY),
       tick,
     )
     set_global_ambient_light(world, 0.0F)
@@ -676,13 +661,11 @@ fn handle_mouse_clicks(world : @ecs.World) -> Unit {
   }
   guard @input.mouse_position() is Some(screen_pos) else { return }
 
-  guard world.component(@render2d.ecs_key_camera).get(camera_entity)
+  guard world.component(@sprite.ecs_key_camera).get(camera_entity)
     is Some(camera) else {
     return
   }
-  guard world
-    .component(@render3d.ecs_key_camera_projection3d)
-    .get(camera_entity)
+  guard world.component(@pbr.ecs_key_projection).get(camera_entity)
     is Some(projection) else {
     return
   }
@@ -697,7 +680,7 @@ fn handle_mouse_clicks(world : @ecs.World) -> Unit {
   )
   let scale_factor = @window.window_scale_factor()
 
-  guard @render3d.render3d_camera_viewport_to_world_ray(
+  guard @pbr.render3d_camera_viewport_to_world_ray(
       screen_pos, camera, projection, camera_transform, target_size, scale_factor,
     )
     is Some((origin, direction)) else {

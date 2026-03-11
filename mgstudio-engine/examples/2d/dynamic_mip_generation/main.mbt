@@ -118,8 +118,8 @@ fn dynamic_mip_setup(world : @ecs.World) -> Unit {
   dynamic_mip_state.val.current_level = 0
   dynamic_mip_state.val.regenerate_requested = false
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -269,8 +269,8 @@ fn spawn_animated_mesh(world : @ecs.World, window_size : @math.Vec2) -> Unit {
 
   let area_size = animated_mesh_area_size(window_size)
   let image_size = animated_mesh_size(window_size)
-  let entity = @render2d.SpriteBundle::new(
-    @render2d.Sprite::from_image(source_texture).with_custom_size(
+  let entity = @sprite.SpriteBundle::new(
+    @sprite.Sprite::from_image(source_texture).with_custom_size(
       Some(@math.Vec2::new(1.0F, 1.0F)),
     ),
     @math.Transform::from_xy_rotation_scale(
@@ -311,8 +311,8 @@ fn spawn_mip_level_views(world : @ecs.World, window_size : @math.Vec2) -> Unit {
     let final_size = vec2_scale(mip_size_f32, slice_scale)
     let y_center = y_origin - y_spacing * int_to_float(i)
 
-    let entity = @render2d.SpriteBundle::new(
-      @render2d.Sprite::from_image(textures[i]).with_custom_size(
+    let entity = @sprite.SpriteBundle::new(
+      @sprite.Sprite::from_image(textures[i]).with_custom_size(
         Some(@math.Vec2::new(1.0F, 1.0F)),
       ),
       @math.Transform::from_xy_rotation_scale(
@@ -491,7 +491,7 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
       @text.TextFont::default().with_font(font).with_font_size(18.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 
@@ -545,7 +545,7 @@ fn spawn_mip_level_labels() -> Unit {
           @math.Vec2::new(1.0F, 1.0F),
         ),
       )
-      .with_color(@text.TextColor::new(@render2d.Color::white()))
+      .with_color(@text.TextColor::new(@sprite.Color::white()))
       .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
       .spawn()
 

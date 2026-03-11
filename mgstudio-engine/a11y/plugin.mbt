@@ -13,72 +13,44 @@
 // limitations under the License.
 
 ///|
-fn ensure_requested_binding_system(world : @ecs.World) -> Unit {
-  guard get_accessibility_requested_resource(world).get() is Some(requested) else {
-    return
-  }
-  @native_a11y.bind_accessibility_requested(
-    AccessibilityRequested::handle(requested),
-  )
+pub(all) struct AccessibilityPlugin {}
+
+///|
+pub const ACCESSIBILITY_PLUGIN_ID : String = "bevy_a11y::AccessibilityPlugin"
+
+///|
+pub fn AccessibilityPlugin::default() -> AccessibilityPlugin {
+  AccessibilityPlugin::{  }
 }
 
 ///|
-pub fn a11y_poll_actions_system(world : @ecs.World) -> Unit {
-  let actions = @native_a11y.take_actions()
-  if actions.length() == 0 {
-    return
-  }
-
-  let tick = world.read_change_tick()
-  let writer = world.message_writer(ecs_msg_key_action_request)
-  let state = Ref::new(
-    match get_a11y_state_resource(world).get() {
-      Some(existing) => existing
-      None => A11yState::default()
-    },
-  )
-
-  for action in actions {
-    ignore(writer.write(ActionRequest::new(action)))
-    if action.action() == @moon_accesskit.Action::Focus ||
-      action.action() == @moon_accesskit.Action::SetValue {
-      A11yState::set_focused_node(state, action.target_node())
-    }
-    A11yState::push_action(state, action)
-  }
-
-  get_a11y_state_resource(world).insert(state.val, tick)
+pub impl @app.PluginReplacement for AccessibilityPlugin with replacement_id(
+  _self,
+) {
+  ACCESSIBILITY_PLUGIN_ID
 }
 
 ///|
-pub fn a11y_commit_pending_update_system(world : @ecs.World) -> Unit {
-  let manage_updates = match
-    get_manage_accessibility_updates_resource(world).get() {
-    Some(manage_updates) => manage_updates.get()
-    None => false
+pub impl @app.PluginReplacement for AccessibilityPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    accessibility_plugin_with(app, self)
   }
-  if !manage_updates {
-    return
-  }
-  @native_a11y.commit_pending_update() |> ignore
 }
 
 ///|
 pub fn accessibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  accessibility_plugin_with(app, AccessibilityPlugin::default())
+}
+
+///|
+pub fn accessibility_plugin_with(
+  app : @app.App[@ecs.World],
+  _plugin : AccessibilityPlugin,
+) -> @app.App[@ecs.World] {
   app
   .init_resource(AccessibilityRequested::default)
   .init_resource(ManageAccessibilityUpdates::default)
   .init_resource(A11yState::default)
-  .add_message(ecs_msg_key_action_request)
-  .add_pre_update_system_config(
-    @app.system(ensure_requested_binding_system).in_set(a11y_set),
-  )
-  .add_pre_update_system_config(
-    @app.system(a11y_poll_actions_system).in_set(a11y_set),
-  )
-  .add_last_system_config(
-    @app.system(a11y_commit_pending_update_system).in_set(a11y_set),
-  )
 }
 
 ///|

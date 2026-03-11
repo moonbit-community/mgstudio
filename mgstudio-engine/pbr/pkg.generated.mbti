@@ -1,0 +1,1069 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/pbr"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/core_pipeline",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/light",
+  "Milky2018/mgstudio/material",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/visibility",
+  "Milky2018/mgstudio/window",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = 5
+
+pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
+
+pub let ecs_components : Array[String]
+
+pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
+
+pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d]
+
+pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[@post_process.ChromaticAberration]
+
+pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal]
+
+pub let ecs_key_color_grading : @ecs.ComponentKey[@post_process.ColorGrading]
+
+pub let ecs_key_contact_shadows : @ecs.ComponentKey[ContactShadows]
+
+pub let ecs_key_deband_dither : @ecs.ComponentKey[@post_process.DebandDither]
+
+pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[@material.DefaultOpaqueRendererMethod]
+
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@core_pipeline.DeferredPrepass]
+
+pub let ecs_key_depth_prepass : @ecs.ComponentKey[@core_pipeline.DepthPrepass]
+
+pub let ecs_key_directional_light : @ecs.ComponentKey[@light.DirectionalLight]
+
+pub let ecs_key_directional_light_shadow_map : @ecs.ResourceKey[@light.DirectionalLightShadowMap]
+
+pub let ecs_key_directional_light_texture : @ecs.ComponentKey[@light.DirectionalLightTexture]
+
+pub let ecs_key_environment_map_light : @ecs.ComponentKey[@light.EnvironmentMapLight]
+
+pub let ecs_key_exposure : @ecs.ComponentKey[Exposure]
+
+pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal]
+
+pub let ecs_key_forward_decal_material_ext : @ecs.ComponentKey[@material.ForwardDecalMaterialExt]
+
+pub let ecs_key_free_camera : @ecs.ComponentKey[FreeCamera]
+
+pub let ecs_key_free_camera_state : @ecs.ComponentKey[FreeCameraState]
+
+pub let ecs_key_frustum : @ecs.ComponentKey[Frustum]
+
+pub let ecs_key_fxaa : @ecs.ComponentKey[@post_process.Fxaa]
+
+pub let ecs_key_generated_environment_map_light : @ecs.ComponentKey[@light.GeneratedEnvironmentMapLight]
+
+pub let ecs_key_global_ambient_light : @ecs.ResourceKey[@light.GlobalAmbientLight]
+
+pub let ecs_key_hdr : @ecs.ComponentKey[@core_pipeline.Hdr]
+
+pub let ecs_key_internal_assets : @ecs.ResourceKey[Render3dInternalAssetsState]
+
+pub let ecs_key_irradiance_volume : @ecs.ComponentKey[@light.IrradianceVolume]
+
+pub let ecs_key_light_probe : @ecs.ComponentKey[@light.LightProbe]
+
+pub let ecs_key_mesh3d : @ecs.ComponentKey[Mesh3d]
+
+pub let ecs_key_mesh_material3d : @ecs.ComponentKey[@material.MeshMaterial3d]
+
+pub let ecs_key_motion_blur : @ecs.ComponentKey[@post_process.MotionBlur]
+
+pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[@core_pipeline.MotionVectorPrepass]
+
+pub let ecs_key_msaa : @ecs.ComponentKey[@core_pipeline.Msaa]
+
+pub let ecs_key_no_wireframe : @ecs.ComponentKey[NoWireframe]
+
+pub let ecs_key_normal_prepass : @ecs.ComponentKey[@core_pipeline.NormalPrepass]
+
+pub let ecs_key_not_shadow_caster : @ecs.ComponentKey[NotShadowCaster]
+
+pub let ecs_key_not_shadow_receiver : @ecs.ComponentKey[NotShadowReceiver]
+
+pub let ecs_key_occlusion_culling : @ecs.ComponentKey[OcclusionCulling]
+
+pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[OrderIndependentTransparencySettings]
+
+pub let ecs_key_parallax_correction : @ecs.ComponentKey[@light.ParallaxCorrection]
+
+pub let ecs_key_point_light : @ecs.ComponentKey[@light.PointLight]
+
+pub let ecs_key_point_light_shadow_map : @ecs.ResourceKey[@light.PointLightShadowMap]
+
+pub let ecs_key_point_light_texture : @ecs.ComponentKey[@light.PointLightTexture]
+
+pub let ecs_key_projection : @ecs.ComponentKey[Projection]
+
+pub let ecs_key_screen_space_ambient_occlusion : @ecs.ComponentKey[@post_process.ScreenSpaceAmbientOcclusion]
+
+pub let ecs_key_screen_space_reflections : @ecs.ComponentKey[@post_process.ScreenSpaceReflections]
+
+pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[@post_process.ScreenSpaceTransmission]
+
+pub let ecs_key_shadow_filtering_method : @ecs.ComponentKey[ShadowFilteringMethod]
+
+pub let ecs_key_skybox : @ecs.ComponentKey[Skybox]
+
+pub let ecs_key_spot_light : @ecs.ComponentKey[@light.SpotLight]
+
+pub let ecs_key_spot_light_texture : @ecs.ComponentKey[@light.SpotLightTexture]
+
+pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d]
+
+pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[@post_process.TemporalAntiAliasing]
+
+pub let ecs_key_temporal_jitter : @ecs.ComponentKey[@post_process.TemporalJitter]
+
+pub let ecs_key_tonemapping : @ecs.ComponentKey[@post_process.Tonemapping]
+
+pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[TransmittedShadowReceiver]
+
+pub let ecs_key_vignette : @ecs.ComponentKey[@post_process.Vignette]
+
+pub let ecs_key_wireframe : @ecs.ComponentKey[Wireframe]
+
+pub let ecs_key_wireframe_color : @ecs.ComponentKey[WireframeColor]
+
+pub let ecs_key_wireframe_config : @ecs.ResourceKey[WireframeConfig]
+
+pub let ecs_resources : Array[String]
+
+pub fn free_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn get_bloom_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.Bloom]
+
+pub fn get_camera3d_store(@ecs.World) -> @ecs.ComponentAccess[Camera3d]
+
+pub fn get_chromatic_aberration_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.ChromaticAberration]
+
+pub fn get_clustered_decal_store(@ecs.World) -> @ecs.ComponentAccess[ClusteredDecal]
+
+pub fn get_color_grading_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.ColorGrading]
+
+pub fn get_contact_shadows_store(@ecs.World) -> @ecs.ComponentAccess[ContactShadows]
+
+pub fn get_deband_dither_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.DebandDither]
+
+pub fn get_default_opaque_renderer_method_resource(@ecs.World) -> @ecs.ResourceAccess[@material.DefaultOpaqueRendererMethod]
+
+pub fn get_deferred_prepass_store(@ecs.World) -> @ecs.ComponentAccess[@core_pipeline.DeferredPrepass]
+
+pub fn get_depth_prepass_store(@ecs.World) -> @ecs.ComponentAccess[@core_pipeline.DepthPrepass]
+
+pub fn get_directional_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[@light.DirectionalLightShadowMap]
+
+pub fn get_directional_light_store(@ecs.World) -> @ecs.ComponentAccess[@light.DirectionalLight]
+
+pub fn get_directional_light_texture_store(@ecs.World) -> @ecs.ComponentAccess[@light.DirectionalLightTexture]
+
+pub fn get_environment_map_light_store(@ecs.World) -> @ecs.ComponentAccess[@light.EnvironmentMapLight]
+
+pub fn get_exposure_store(@ecs.World) -> @ecs.ComponentAccess[Exposure]
+
+pub fn get_forward_decal_material_ext_store(@ecs.World) -> @ecs.ComponentAccess[@material.ForwardDecalMaterialExt]
+
+pub fn get_forward_decal_store(@ecs.World) -> @ecs.ComponentAccess[ForwardDecal]
+
+pub fn get_free_camera_state_store(@ecs.World) -> @ecs.ComponentAccess[FreeCameraState]
+
+pub fn get_free_camera_store(@ecs.World) -> @ecs.ComponentAccess[FreeCamera]
+
+pub fn get_frustum_store(@ecs.World) -> @ecs.ComponentAccess[Frustum]
+
+pub fn get_fxaa_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.Fxaa]
+
+pub fn get_generated_environment_map_light_store(@ecs.World) -> @ecs.ComponentAccess[@light.GeneratedEnvironmentMapLight]
+
+pub fn get_global_ambient_light_resource(@ecs.World) -> @ecs.ResourceAccess[@light.GlobalAmbientLight]
+
+pub fn get_hdr_store(@ecs.World) -> @ecs.ComponentAccess[@core_pipeline.Hdr]
+
+pub fn get_irradiance_volume_store(@ecs.World) -> @ecs.ComponentAccess[@light.IrradianceVolume]
+
+pub fn get_light_probe_store(@ecs.World) -> @ecs.ComponentAccess[@light.LightProbe]
+
+pub fn get_mesh3d_store(@ecs.World) -> @ecs.ComponentAccess[Mesh3d]
+
+pub fn get_mesh_material3d_store(@ecs.World) -> @ecs.ComponentAccess[@material.MeshMaterial3d]
+
+pub fn get_motion_blur_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.MotionBlur]
+
+pub fn get_motion_vector_prepass_store(@ecs.World) -> @ecs.ComponentAccess[@core_pipeline.MotionVectorPrepass]
+
+pub fn get_msaa_store(@ecs.World) -> @ecs.ComponentAccess[@core_pipeline.Msaa]
+
+pub fn get_no_wireframe_store(@ecs.World) -> @ecs.ComponentAccess[NoWireframe]
+
+pub fn get_normal_prepass_store(@ecs.World) -> @ecs.ComponentAccess[@core_pipeline.NormalPrepass]
+
+pub fn get_not_shadow_caster_store(@ecs.World) -> @ecs.ComponentAccess[NotShadowCaster]
+
+pub fn get_not_shadow_receiver_store(@ecs.World) -> @ecs.ComponentAccess[NotShadowReceiver]
+
+pub fn get_occlusion_culling_store(@ecs.World) -> @ecs.ComponentAccess[OcclusionCulling]
+
+pub fn get_order_independent_transparency_settings_store(@ecs.World) -> @ecs.ComponentAccess[OrderIndependentTransparencySettings]
+
+pub fn get_parallax_correction_store(@ecs.World) -> @ecs.ComponentAccess[@light.ParallaxCorrection]
+
+pub fn get_point_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[@light.PointLightShadowMap]
+
+pub fn get_point_light_store(@ecs.World) -> @ecs.ComponentAccess[@light.PointLight]
+
+pub fn get_point_light_texture_store(@ecs.World) -> @ecs.ComponentAccess[@light.PointLightTexture]
+
+pub fn get_projection_store(@ecs.World) -> @ecs.ComponentAccess[Projection]
+
+pub fn get_screen_space_ambient_occlusion_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.ScreenSpaceAmbientOcclusion]
+
+pub fn get_screen_space_reflections_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.ScreenSpaceReflections]
+
+pub fn get_screen_space_transmission_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.ScreenSpaceTransmission]
+
+pub fn get_shadow_filtering_method_store(@ecs.World) -> @ecs.ComponentAccess[ShadowFilteringMethod]
+
+pub fn get_skybox_store(@ecs.World) -> @ecs.ComponentAccess[Skybox]
+
+pub fn get_spot_light_store(@ecs.World) -> @ecs.ComponentAccess[@light.SpotLight]
+
+pub fn get_spot_light_texture_store(@ecs.World) -> @ecs.ComponentAccess[@light.SpotLightTexture]
+
+pub fn get_sub_camera_view3d_store(@ecs.World) -> @ecs.ComponentAccess[SubCameraView3d]
+
+pub fn get_temporal_anti_aliasing_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.TemporalAntiAliasing]
+
+pub fn get_temporal_jitter_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.TemporalJitter]
+
+pub fn get_tonemapping_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.Tonemapping]
+
+pub fn get_transmitted_shadow_receiver_store(@ecs.World) -> @ecs.ComponentAccess[TransmittedShadowReceiver]
+
+pub fn get_vignette_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.Vignette]
+
+pub fn get_wireframe_color_store(@ecs.World) -> @ecs.ComponentAccess[WireframeColor]
+
+pub fn get_wireframe_config_resource(@ecs.World) -> @ecs.ResourceAccess[WireframeConfig]
+
+pub fn get_wireframe_store(@ecs.World) -> @ecs.ComponentAccess[Wireframe]
+
+pub fn mesh_ray_cast(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
+
+pub fn mesh_ray_cast_first(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
+
+pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @sprite.Camera, Projection, @math.Transform, @math.IVec2, Float, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
+
+pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @sprite.Camera, Projection, @math.Transform, @math.IVec2, Float, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
+
+pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @sprite.Camera, Projection, @math.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
+
+pub fn render3d_camera_world_to_viewport(@math.Vec3, @sprite.Camera, Projection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
+
+pub fn render3d_diagnostic_prepared_camera_count() -> Int
+
+pub fn render3d_diagnostic_queued_visible_mesh_count() -> Int
+
+pub fn render3d_distance_fog() -> DistanceFog
+
+pub fn render3d_execute_system(@ecs.World) -> Unit
+
+pub fn render3d_extract_system(@ecs.World) -> Unit
+
+pub fn render3d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn render3d_prepare_system(@ecs.World) -> Unit
+
+pub fn render3d_prepared_camera_count() -> Int?
+
+pub fn render3d_queue_system(@ecs.World) -> Unit
+
+pub fn render3d_queued_visible_mesh_count() -> Int?
+
+pub fn render3d_set_distance_fog(DistanceFog) -> Unit
+
+pub let render3d_set_execute : String
+
+pub let render3d_set_extract : String
+
+pub let render3d_set_prepare : String
+
+pub let render3d_set_queue : String
+
+pub let render3d_set_render : String
+
+pub let render3d_set_update_frusta : String
+
+pub fn render3d_update_frusta_system(@ecs.World) -> Unit
+
+pub fn run_freecamera_controller(@ecs.World) -> Unit
+
+pub fn standard_material_add(@material.StandardMaterial) -> @asset.Handle[@material.StandardMaterial]
+
+pub fn standard_material_get(@asset.Handle[@material.StandardMaterial]) -> @material.StandardMaterial?
+
+pub fn standard_material_set(@asset.Handle[@material.StandardMaterial], @material.StandardMaterial) -> Bool
+
+pub fn wireframe_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+// Errors
+
+// Types and methods
+pub struct AutoExposure {
+  min_ev100 : Float
+  max_ev100 : Float
+  low_percent : Float
+  high_percent : Float
+  speed_brighten : Float
+  speed_darken : Float
+  exponential_transition_distance : Float
+  compensation_ev : Float
+  metering_mask : @asset.Handle[@image.Image]?
+}
+pub fn AutoExposure::default() -> Self
+pub fn AutoExposure::new(Float, Float) -> Self
+pub fn AutoExposure::with_compensation_ev(Self, Float) -> Self
+pub fn AutoExposure::with_exponential_transition_distance(Self, Float) -> Self
+pub fn AutoExposure::with_filter(Self, Float, Float) -> Self
+pub fn AutoExposure::with_metering_mask(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn AutoExposure::with_range(Self, Float, Float) -> Self
+pub fn AutoExposure::with_speed_brighten(Self, Float) -> Self
+pub fn AutoExposure::with_speed_darken(Self, Float) -> Self
+pub impl ToJson for AutoExposure
+pub impl @json.FromJson for AutoExposure
+
+pub struct Camera3d {
+  decal_config : CameraDecalConfig3d
+  deferred_config : CameraDeferredConfig3d
+  distance_fog : DistanceFog?
+  volumetric_fog : @light.VolumetricFog?
+  atmosphere : @light.Atmosphere?
+  atmosphere_settings : @light.AtmosphereSettings?
+  auto_exposure : AutoExposure?
+  depth_of_field : DepthOfField?
+}
+pub fn Camera3d::default() -> Self
+pub fn Camera3d::with_atmosphere(Self, @light.Atmosphere?) -> Self
+pub fn Camera3d::with_atmosphere_settings(Self, @light.AtmosphereSettings?) -> Self
+pub fn Camera3d::with_auto_exposure(Self, AutoExposure?) -> Self
+pub fn Camera3d::with_decal_config(Self, CameraDecalConfig3d) -> Self
+pub fn Camera3d::with_deferred_config(Self, CameraDeferredConfig3d) -> Self
+pub fn Camera3d::with_depth_of_field(Self, DepthOfField?) -> Self
+pub fn Camera3d::with_distance_fog(Self, DistanceFog?) -> Self
+pub fn Camera3d::with_volumetric_fog(Self, @light.VolumetricFog?) -> Self
+pub impl @ecs.Component for Camera3d
+pub impl ToJson for Camera3d
+pub impl @json.FromJson for Camera3d
+
+pub struct Camera3dBundle {
+  camera : @sprite.Camera
+  projection : Projection
+  sub_camera_view : SubCameraView3d?
+  screen_space_transmission : @post_process.ScreenSpaceTransmission?
+  screen_space_reflections : @post_process.ScreenSpaceReflections?
+  bloom : @post_process.Bloom?
+  tonemapping : @post_process.Tonemapping?
+  deband_dither : @post_process.DebandDither?
+  chromatic_aberration : @post_process.ChromaticAberration?
+  vignette : @post_process.Vignette?
+  motion_blur : @post_process.MotionBlur?
+  exposure : Exposure?
+  color_grading : @post_process.ColorGrading?
+  camera3d : Camera3d
+  transform : @math.Transform
+  target : @sprite.RenderTarget
+  layers : @sprite.RenderLayers
+}
+pub fn Camera3dBundle::new(@sprite.Camera, @math.Transform) -> Self
+pub fn Camera3dBundle::new_with_projection(@sprite.Camera, Projection, @math.Transform) -> Self
+pub fn Camera3dBundle::spawn(Self, @ecs.World) -> @core.Entity
+pub fn Camera3dBundle::with_atmosphere(Self, @light.Atmosphere?) -> Self
+pub fn Camera3dBundle::with_atmosphere_settings(Self, @light.AtmosphereSettings?) -> Self
+pub fn Camera3dBundle::with_auto_exposure(Self, AutoExposure?) -> Self
+pub fn Camera3dBundle::with_bloom(Self, @post_process.Bloom?) -> Self
+pub fn Camera3dBundle::with_camera3d(Self, Camera3d) -> Self
+pub fn Camera3dBundle::with_chromatic_aberration(Self, @post_process.ChromaticAberration?) -> Self
+pub fn Camera3dBundle::with_color_grading(Self, @post_process.ColorGrading?) -> Self
+pub fn Camera3dBundle::with_deband_dither(Self, @post_process.DebandDither?) -> Self
+pub fn Camera3dBundle::with_decal_config(Self, CameraDecalConfig3d) -> Self
+pub fn Camera3dBundle::with_deferred_config(Self, CameraDeferredConfig3d) -> Self
+pub fn Camera3dBundle::with_depth_of_field(Self, DepthOfField?) -> Self
+pub fn Camera3dBundle::with_distance_fog(Self, DistanceFog?) -> Self
+pub fn Camera3dBundle::with_exposure(Self, Exposure?) -> Self
+pub fn Camera3dBundle::with_motion_blur(Self, @post_process.MotionBlur?) -> Self
+pub fn Camera3dBundle::with_screen_space_reflections(Self, @post_process.ScreenSpaceReflections?) -> Self
+pub fn Camera3dBundle::with_screen_space_transmission(Self, @post_process.ScreenSpaceTransmission?) -> Self
+pub fn Camera3dBundle::with_sub_camera_view(Self, SubCameraView3d?) -> Self
+pub fn Camera3dBundle::with_target(Self, @sprite.RenderTarget) -> Self
+pub fn Camera3dBundle::with_tonemapping(Self, @post_process.Tonemapping?) -> Self
+pub fn Camera3dBundle::with_vignette(Self, @post_process.Vignette?) -> Self
+pub fn Camera3dBundle::with_volumetric_fog(Self, @light.VolumetricFog?) -> Self
+pub impl @app.CommandSpawnComponents for Camera3dBundle
+
+pub struct CameraDecalConfig3d {
+  mode : DecalRenderMode3d
+  requires_depth_prepass : Bool
+  clustered_requires_deferred_prepass : Bool
+}
+pub fn CameraDecalConfig3d::default() -> Self
+pub fn CameraDecalConfig3d::with_clustered_requires_deferred_prepass(Self, Bool) -> Self
+pub fn CameraDecalConfig3d::with_mode(Self, DecalRenderMode3d) -> Self
+pub fn CameraDecalConfig3d::with_requires_depth_prepass(Self, Bool) -> Self
+pub impl ToJson for CameraDecalConfig3d
+pub impl @json.FromJson for CameraDecalConfig3d
+
+pub struct CameraDeferredConfig3d {
+  mode : CameraDeferredMode3d
+  requires_deferred_prepass : Bool
+}
+pub fn CameraDeferredConfig3d::default() -> Self
+pub fn CameraDeferredConfig3d::with_mode(Self, CameraDeferredMode3d) -> Self
+pub fn CameraDeferredConfig3d::with_requires_deferred_prepass(Self, Bool) -> Self
+pub impl ToJson for CameraDeferredConfig3d
+pub impl @json.FromJson for CameraDeferredConfig3d
+
+pub(all) enum CameraDeferredMode3d {
+  Auto
+  Forward
+  Deferred
+}
+pub fn CameraDeferredMode3d::default() -> Self
+pub impl Eq for CameraDeferredMode3d
+pub impl Show for CameraDeferredMode3d
+pub impl ToJson for CameraDeferredMode3d
+pub impl @json.FromJson for CameraDeferredMode3d
+
+pub struct ClusteredDecal {
+  base_color_texture : @asset.Handle[@image.Image]?
+  normal_map_texture : @asset.Handle[@image.Image]?
+  metallic_roughness_texture : @asset.Handle[@image.Image]?
+  emissive_texture : @asset.Handle[@image.Image]?
+  tag : Int
+}
+pub fn ClusteredDecal::default() -> Self
+pub fn ClusteredDecal::new() -> Self
+pub fn ClusteredDecal::with_base_color_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn ClusteredDecal::with_emissive_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn ClusteredDecal::with_metallic_roughness_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn ClusteredDecal::with_normal_map_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn ClusteredDecal::with_tag(Self, Int) -> Self
+pub impl @ecs.Component for ClusteredDecal
+pub impl ToJson for ClusteredDecal
+pub impl @json.FromJson for ClusteredDecal
+
+pub struct ContactShadows {
+  linear_steps : Int
+  thickness : Float
+  length : Float
+}
+pub fn ContactShadows::default() -> Self
+pub fn ContactShadows::new(Int, Float, Float) -> Self
+pub fn ContactShadows::with_length(Self, Float) -> Self
+pub fn ContactShadows::with_linear_steps(Self, Int) -> Self
+pub fn ContactShadows::with_thickness(Self, Float) -> Self
+pub impl @ecs.Component for ContactShadows
+pub impl ToJson for ContactShadows
+pub impl @json.FromJson for ContactShadows
+
+type CustomProjection3d
+pub fn CustomProjection3d::compute_frustum(Self, @math.Transform) -> Frustum
+pub fn CustomProjection3d::default() -> Self
+pub fn CustomProjection3d::far(Self) -> Float
+pub fn[T] CustomProjection3d::get(Self) -> T?
+pub fn CustomProjection3d::get_clip_from_view(Self) -> ProjectionMatrix3d
+pub fn CustomProjection3d::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+pub fn CustomProjection3d::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
+pub fn[T] CustomProjection3d::get_mut(Self) -> T?
+pub fn[T : CameraProjection3d] CustomProjection3d::new(T) -> Self
+pub fn CustomProjection3d::type_name(Self) -> String
+pub fn CustomProjection3d::update(Self, Float, Float) -> Self
+pub impl CameraProjection3d for CustomProjection3d
+
+pub(all) enum DecalRenderMode3d {
+  Disabled
+  ForwardOnly
+  ClusteredOnly
+  ForwardAndClustered
+}
+pub fn DecalRenderMode3d::default() -> Self
+pub impl Eq for DecalRenderMode3d
+pub impl Show for DecalRenderMode3d
+pub impl ToJson for DecalRenderMode3d
+pub impl @json.FromJson for DecalRenderMode3d
+
+pub(all) struct DepthOfField {
+  mut mode : DepthOfFieldMode
+  mut focal_distance : Float
+  mut sensor_height : Float
+  mut aperture_f_stops : Float
+  mut max_circle_of_confusion_diameter : Float
+  mut max_depth : Float
+}
+pub fn DepthOfField::default() -> Self
+pub fn DepthOfField::from_physical_camera(PhysicalCameraParameters) -> Self
+pub impl ToJson for DepthOfField
+pub impl @json.FromJson for DepthOfField
+
+pub(all) enum DepthOfFieldMode {
+  Bokeh
+  Gaussian
+}
+pub fn DepthOfFieldMode::default() -> Self
+pub impl Eq for DepthOfFieldMode
+pub impl Show for DepthOfFieldMode
+pub impl ToJson for DepthOfFieldMode
+pub impl @json.FromJson for DepthOfFieldMode
+
+pub struct DistanceFog {
+  color : @color.Color
+  directional_light_color : @color.Color
+  directional_light_exponent : Float
+  falloff : FogFalloff3d
+}
+pub fn DistanceFog::default() -> Self
+pub fn DistanceFog::new(@color.Color, FogFalloff3d) -> Self
+pub fn DistanceFog::with_color(Self, @color.Color) -> Self
+pub fn DistanceFog::with_directional_light_color(Self, @color.Color) -> Self
+pub fn DistanceFog::with_directional_light_exponent(Self, Float) -> Self
+pub fn DistanceFog::with_falloff(Self, FogFalloff3d) -> Self
+pub impl ToJson for DistanceFog
+pub impl @json.FromJson for DistanceFog
+
+pub struct Exposure {
+  ev100 : Float
+}
+pub fn Exposure::blender() -> Self
+pub fn Exposure::default() -> Self
+pub fn Exposure::exposure(Self) -> Float
+pub fn Exposure::from_physical_camera(PhysicalCameraParameters) -> Self
+pub fn Exposure::indoor() -> Self
+pub fn Exposure::new(Float) -> Self
+pub fn Exposure::overcast() -> Self
+pub fn Exposure::sunlight() -> Self
+pub fn Exposure::with_ev100(Self, Float) -> Self
+pub impl @ecs.Component for Exposure
+pub impl ToJson for Exposure
+pub impl @json.FromJson for Exposure
+
+pub(all) enum FogFalloff3d {
+  Linear(Float, Float)
+  Exponential(Float)
+  ExponentialSquared(Float)
+  Atmospheric(@math.Vec3, @math.Vec3)
+}
+pub fn FogFalloff3d::atmospheric(@math.Vec3, @math.Vec3) -> Self
+pub fn FogFalloff3d::exponential(Float) -> Self
+pub fn FogFalloff3d::exponential_squared(Float) -> Self
+pub fn FogFalloff3d::from_visibility(Float) -> Self
+pub fn FogFalloff3d::from_visibility_color(Float, @color.Color) -> Self
+pub fn FogFalloff3d::from_visibility_colors(Float, @color.Color, @color.Color) -> Self
+pub fn FogFalloff3d::from_visibility_contrast(Float, Float) -> Self
+pub fn FogFalloff3d::from_visibility_contrast_color(Float, Float, @color.Color) -> Self
+pub fn FogFalloff3d::from_visibility_contrast_colors(Float, Float, @color.Color, @color.Color) -> Self
+pub fn FogFalloff3d::from_visibility_contrast_squared(Float, Float) -> Self
+pub fn FogFalloff3d::from_visibility_squared(Float) -> Self
+pub fn FogFalloff3d::linear(Float, Float) -> Self
+pub fn FogFalloff3d::revised_koschmieder_contrast_threshold() -> Float
+pub impl ToJson for FogFalloff3d
+pub impl @json.FromJson for FogFalloff3d
+
+pub struct ForwardDecal {
+}
+pub fn ForwardDecal::default() -> Self
+pub impl @ecs.Component for ForwardDecal
+pub impl ToJson for ForwardDecal
+pub impl @json.FromJson for ForwardDecal
+
+pub(all) struct FreeCamera {
+  sensitivity : Float
+  key_forward : @window.KeyCode
+  key_back : @window.KeyCode
+  key_left : @window.KeyCode
+  key_right : @window.KeyCode
+  key_up : @window.KeyCode
+  key_down : @window.KeyCode
+  key_run : @window.KeyCode
+  mouse_key_cursor_grab : @window.MouseButton
+  keyboard_key_toggle_cursor_grab : @window.KeyCode
+  walk_speed : Float
+  run_speed : Float
+  scroll_factor : Float
+  friction : Float
+}
+pub fn FreeCamera::default() -> Self
+pub impl @ecs.Component for FreeCamera
+pub impl ToJson for FreeCamera
+pub impl @json.FromJson for FreeCamera
+
+pub(all) struct FreeCameraState {
+  enabled : Bool
+  initialized : Bool
+  pitch : Float
+  yaw : Float
+  speed_multiplier : Float
+  velocity : @math.Vec3
+}
+pub fn FreeCameraState::default() -> Self
+pub impl @ecs.Component for FreeCameraState
+pub impl ToJson for FreeCameraState
+pub impl @json.FromJson for FreeCameraState
+
+pub struct Frustum {
+  half_spaces : Array[HalfSpace]
+}
+pub fn Frustum::corners(Self) -> Array[@math.Vec3]?
+pub fn Frustum::new(ViewFrustum) -> Self
+pub fn Frustum::view_frustum(Self) -> ViewFrustum
+pub impl @ecs.Component for Frustum
+pub impl Eq for Frustum
+pub impl ToJson for Frustum
+pub impl @json.FromJson for Frustum
+
+pub struct HalfSpace {
+  normal_d : @math.Vec4
+}
+pub fn HalfSpace::d(Self) -> Float
+pub fn HalfSpace::intersection_point(Self, Self, Self) -> @math.Vec3?
+pub fn HalfSpace::new(@math.Vec4) -> Self
+pub fn HalfSpace::normal(Self) -> @math.Vec3
+pub fn HalfSpace::normal_d(Self) -> @math.Vec4
+pub impl Eq for HalfSpace
+pub impl ToJson for HalfSpace
+pub impl @json.FromJson for HalfSpace
+
+pub struct Mesh3d {
+  mesh : @asset.Handle[@mesh.Mesh]
+}
+pub fn Mesh3d::from_capsule(@math.Capsule3d) -> Self
+pub fn Mesh3d::from_circle(Float) -> Self
+pub fn Mesh3d::from_cuboid(Float, Float, Float) -> Self
+pub fn Mesh3d::from_cylinder(@math.Cylinder) -> Self
+pub fn Mesh3d::from_geometry(@mesh.Mesh3dGeometry) -> Self
+pub fn Mesh3d::from_icosphere(Float, Int) -> Self
+pub fn Mesh3d::from_plane(Float, Float) -> Self
+pub fn Mesh3d::from_rectangle(Float, Float) -> Self
+pub fn Mesh3d::from_sphere(Float) -> Self
+pub fn Mesh3d::from_tetrahedron(Float) -> Self
+pub fn Mesh3d::from_tetrahedron_shape(@math.Tetrahedron) -> Self
+pub fn Mesh3d::from_triangle(@math.Triangle3d) -> Self
+pub fn Mesh3d::from_uv_sphere(Float, Int, Int) -> Self
+pub fn Mesh3d::new(@asset.Handle[@mesh.Mesh]) -> Self
+pub impl @ecs.Component for Mesh3d
+pub impl ToJson for Mesh3d
+pub impl @json.FromJson for Mesh3d
+
+pub struct MeshMaterial3dBundle {
+  mesh : Mesh3d
+  material : @material.MeshMaterial3d
+  transform : @math.Transform
+  layers : @sprite.RenderLayers
+  visibility : @visibility.Visibility
+  inherited_visibility : @visibility.InheritedVisibility
+  view_visibility : @visibility.ViewVisibility
+}
+pub fn MeshMaterial3dBundle::new(Mesh3d, @material.MeshMaterial3d, @math.Transform) -> Self
+pub fn MeshMaterial3dBundle::spawn(Self, @ecs.World) -> @core.Entity
+pub impl @app.CommandSpawnComponents for MeshMaterial3dBundle
+
+pub struct MeshRayCastHit {
+  point : @math.Vec3
+  normal : @math.Vec3
+  distance : Float
+}
+
+pub struct MeshRayCastSettings {
+  max_distance : Float
+  ray_epsilon : Float
+  max_hits : Int
+  include_invisible : Bool
+  only_entities : Array[@core.Entity]?
+}
+pub fn MeshRayCastSettings::default() -> Self
+pub fn MeshRayCastSettings::with_include_invisible(Self, Bool) -> Self
+pub fn MeshRayCastSettings::with_max_distance(Self, Float) -> Self
+pub fn MeshRayCastSettings::with_max_hits(Self, Int) -> Self
+pub fn MeshRayCastSettings::with_only_entities(Self, Array[@core.Entity]?) -> Self
+pub fn MeshRayCastSettings::with_ray_epsilon(Self, Float) -> Self
+
+pub struct NoWireframe {
+}
+pub fn NoWireframe::default() -> Self
+pub impl @ecs.Component for NoWireframe
+pub impl ToJson for NoWireframe
+pub impl @json.FromJson for NoWireframe
+
+pub struct NotShadowCaster {
+}
+pub fn NotShadowCaster::default() -> Self
+pub impl @ecs.Component for NotShadowCaster
+pub impl ToJson for NotShadowCaster
+pub impl @json.FromJson for NotShadowCaster
+
+pub struct NotShadowReceiver {
+}
+pub fn NotShadowReceiver::default() -> Self
+pub impl @ecs.Component for NotShadowReceiver
+pub impl ToJson for NotShadowReceiver
+pub impl @json.FromJson for NotShadowReceiver
+
+pub struct OcclusionCulling {
+}
+pub fn OcclusionCulling::default() -> Self
+pub impl @ecs.Component for OcclusionCulling
+pub impl ToJson for OcclusionCulling
+pub impl @json.FromJson for OcclusionCulling
+
+pub struct OrderIndependentTransparencySettings {
+  sorted_fragment_max_count : Int
+  fragments_per_pixel_average : Float
+  alpha_threshold : Float
+}
+pub fn OrderIndependentTransparencySettings::default() -> Self
+pub fn OrderIndependentTransparencySettings::new(Int, Float, Float) -> Self
+pub fn OrderIndependentTransparencySettings::with_alpha_threshold(Self, Float) -> Self
+pub fn OrderIndependentTransparencySettings::with_fragments_per_pixel_average(Self, Float) -> Self
+pub fn OrderIndependentTransparencySettings::with_sorted_fragment_max_count(Self, Int) -> Self
+pub impl @ecs.Component for OrderIndependentTransparencySettings
+pub impl ToJson for OrderIndependentTransparencySettings
+pub impl @json.FromJson for OrderIndependentTransparencySettings
+
+pub(all) struct OrthographicProjection3d {
+  mut near : Float
+  mut far : Float
+  mut viewport_origin : @math.Vec2
+  mut scaling_mode : OrthographicScalingMode3d
+  mut scale : Float
+  mut area : @math.Rect
+}
+pub fn OrthographicProjection3d::area(Self) -> @math.Rect
+pub fn OrthographicProjection3d::compute_frustum(Self, @math.Transform) -> Frustum
+pub fn OrthographicProjection3d::default() -> Self
+pub fn OrthographicProjection3d::default_2d() -> Self
+pub fn OrthographicProjection3d::default_3d() -> Self
+pub fn OrthographicProjection3d::far(Self) -> Float
+pub fn OrthographicProjection3d::near(Self) -> Float
+pub fn OrthographicProjection3d::scale(Self) -> Float
+pub fn OrthographicProjection3d::scaling_mode(Self) -> OrthographicScalingMode3d
+pub fn OrthographicProjection3d::viewport_origin(Self) -> @math.Vec2
+pub fn OrthographicProjection3d::with_area(Self, @math.Rect) -> Self
+pub fn OrthographicProjection3d::with_far(Self, Float) -> Self
+pub fn OrthographicProjection3d::with_near(Self, Float) -> Self
+pub fn OrthographicProjection3d::with_scale(Self, Float) -> Self
+pub fn OrthographicProjection3d::with_scaling_mode(Self, OrthographicScalingMode3d) -> Self
+pub fn OrthographicProjection3d::with_viewport_origin(Self, @math.Vec2) -> Self
+pub impl CameraProjection3d for OrthographicProjection3d
+pub impl ToJson for OrthographicProjection3d
+pub impl @json.FromJson for OrthographicProjection3d
+
+pub(all) enum OrthographicScalingMode3d {
+  WindowSize
+  Fixed(Float, Float)
+  AutoMin(Float, Float)
+  AutoMax(Float, Float)
+  FixedVertical(Float)
+  FixedHorizontal(Float)
+}
+pub impl Eq for OrthographicScalingMode3d
+pub impl Show for OrthographicScalingMode3d
+pub impl ToJson for OrthographicScalingMode3d
+pub impl @json.FromJson for OrthographicScalingMode3d
+
+pub(all) struct PerspectiveProjection3d {
+  mut fov : Float
+  mut near : Float
+  mut far : Float
+  mut aspect_ratio : Float
+  mut near_clip_plane : @math.Vec4
+}
+pub fn PerspectiveProjection3d::aspect_ratio(Self) -> Float
+pub fn PerspectiveProjection3d::compute_frustum(Self, @math.Transform) -> Frustum
+pub fn PerspectiveProjection3d::default() -> Self
+pub fn PerspectiveProjection3d::far(Self) -> Float
+pub fn PerspectiveProjection3d::fov(Self) -> Float
+pub fn PerspectiveProjection3d::near(Self) -> Float
+pub fn PerspectiveProjection3d::near_clip_plane(Self) -> @math.Vec4
+pub fn PerspectiveProjection3d::with_aspect_ratio(Self, Float) -> Self
+pub fn PerspectiveProjection3d::with_far(Self, Float) -> Self
+pub fn PerspectiveProjection3d::with_fov(Self, Float) -> Self
+pub fn PerspectiveProjection3d::with_near(Self, Float) -> Self
+pub fn PerspectiveProjection3d::with_near_clip_plane(Self, @math.Vec4) -> Self
+pub impl CameraProjection3d for PerspectiveProjection3d
+pub impl ToJson for PerspectiveProjection3d
+pub impl @json.FromJson for PerspectiveProjection3d
+
+pub(all) struct PhysicalCameraParameters {
+  mut aperture_f_stops : Float
+  mut shutter_speed_s : Float
+  mut sensitivity_iso : Float
+  mut sensor_height : Float
+}
+pub fn PhysicalCameraParameters::default() -> Self
+pub fn PhysicalCameraParameters::ev100(Self) -> Float
+pub impl ToJson for PhysicalCameraParameters
+pub impl @json.FromJson for PhysicalCameraParameters
+
+pub(all) enum Projection {
+  Perspective(PerspectiveProjection3d)
+  Orthographic(OrthographicProjection3d)
+  Custom(CustomProjection3d)
+}
+pub fn Projection::compute_frustum(Self, @math.Transform) -> Frustum
+pub fn[T : CameraProjection3d] Projection::custom(T) -> Self
+pub fn Projection::default() -> Self
+pub fn Projection::far(Self) -> Float
+pub fn Projection::get_clip_from_view(Self) -> ProjectionMatrix3d
+pub fn Projection::get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+pub fn Projection::get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
+pub fn Projection::is_perspective(Self) -> Bool
+pub fn Projection::update(Self, Float, Float) -> Self
+pub impl @ecs.Component for Projection
+pub impl CameraProjection3d for Projection
+
+pub(all) struct ProjectionMatrix3d {
+  x_axis : @math.Vec4
+  y_axis : @math.Vec4
+  z_axis : @math.Vec4
+  w_axis : @math.Vec4
+}
+pub fn ProjectionMatrix3d::from_cols(@math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Self
+pub fn ProjectionMatrix3d::mul(Self, Self) -> Self
+pub fn ProjectionMatrix3d::mul_vec4(Self, @math.Vec4) -> @math.Vec4
+pub fn ProjectionMatrix3d::project_point3(Self, @math.Vec3) -> @math.Vec3?
+pub fn ProjectionMatrix3d::row(Self, Int) -> @math.Vec4
+pub fn ProjectionMatrix3d::w_axis_w(Self) -> Float
+
+type Render3dInternalAssetsState
+
+pub(all) enum ShadowFilteringMethod {
+  Hardware2x2
+  Gaussian
+  Temporal
+}
+pub fn ShadowFilteringMethod::default() -> Self
+pub impl @ecs.Component for ShadowFilteringMethod
+pub impl Eq for ShadowFilteringMethod
+pub impl Show for ShadowFilteringMethod
+pub impl ToJson for ShadowFilteringMethod
+pub impl @json.FromJson for ShadowFilteringMethod
+
+pub struct Skybox {
+  image : @asset.Handle[@image.Image]?
+  brightness : Float
+  rotation : @math.Quat
+}
+pub fn Skybox::default() -> Self
+pub fn Skybox::new(@asset.Handle[@image.Image], Float) -> Self
+pub fn Skybox::with_brightness(Self, Float) -> Self
+pub fn Skybox::with_image(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn Skybox::with_rotation(Self, @math.Quat) -> Self
+pub impl @ecs.Component for Skybox
+pub impl ToJson for Skybox
+pub impl @json.FromJson for Skybox
+
+pub struct SubCameraView3d {
+  full_size : @math.IVec2
+  offset : @math.Vec2
+  size : @math.IVec2
+}
+pub fn SubCameraView3d::new(@math.IVec2, @math.Vec2, @math.IVec2) -> Self
+pub fn SubCameraView3d::with_offset(Self, @math.Vec2) -> Self
+pub impl @ecs.Component for SubCameraView3d
+pub impl ToJson for SubCameraView3d
+pub impl @json.FromJson for SubCameraView3d
+
+pub struct TransmittedShadowReceiver {
+}
+pub fn TransmittedShadowReceiver::default() -> Self
+pub impl @ecs.Component for TransmittedShadowReceiver
+pub impl ToJson for TransmittedShadowReceiver
+pub impl @json.FromJson for TransmittedShadowReceiver
+
+pub struct ViewFrustum {
+  half_spaces : Array[HalfSpace]
+}
+pub fn ViewFrustum::corners(Self) -> Array[@math.Vec3]?
+pub fn ViewFrustum::from_clip_from_world(ProjectionMatrix3d) -> Self
+pub fn ViewFrustum::from_clip_from_world_custom_far(ProjectionMatrix3d, @math.Vec3, @math.Vec3, Float) -> Self
+pub fn ViewFrustum::new(Array[HalfSpace]) -> Self
+pub impl Eq for ViewFrustum
+pub impl ToJson for ViewFrustum
+pub impl @json.FromJson for ViewFrustum
+
+pub struct Wireframe {
+}
+pub fn Wireframe::default() -> Self
+pub impl @ecs.Component for Wireframe
+pub impl ToJson for Wireframe
+pub impl @json.FromJson for Wireframe
+
+pub struct WireframeColor {
+  color : @color.Color
+}
+pub fn WireframeColor::default() -> Self
+pub fn WireframeColor::new(@color.Color) -> Self
+pub fn WireframeColor::with_color(Self, @color.Color) -> Self
+pub impl @ecs.Component for WireframeColor
+pub impl ToJson for WireframeColor
+pub impl @json.FromJson for WireframeColor
+
+pub struct WireframeConfig {
+  global : Bool
+  default_color : @color.Color
+}
+pub fn WireframeConfig::default() -> Self
+pub fn WireframeConfig::new(Bool, @color.Color) -> Self
+pub fn WireframeConfig::with_default_color(Self, @color.Color) -> Self
+pub fn WireframeConfig::with_global(Self, Bool) -> Self
+pub impl ToJson for WireframeConfig
+pub impl @json.FromJson for WireframeConfig
+
+// Type aliases
+pub using @material {type AlphaMode3d}
+
+pub using @light {type Atmosphere}
+
+pub using @light {type AtmosphereEnvironmentMapLight}
+
+pub using @light {type AtmosphereMode}
+
+pub using @light {type AtmosphereSettings}
+
+pub using @post_process {type Bloom}
+
+pub using @post_process {type BloomCompositeMode}
+
+pub using @post_process {type BloomPrefilter}
+
+pub using @light {type CascadeShadowConfig}
+
+pub using @light {type CascadeShadowConfigBuilder}
+
+pub using @post_process {type ChromaticAberration}
+
+pub using @post_process {type ColorGrading}
+
+pub using @post_process {type ColorGradingGlobal}
+
+pub using @post_process {type ColorGradingRange}
+
+pub using @post_process {type ColorGradingSection}
+
+pub using @light {type CubemapLayout3d}
+
+pub using @post_process {type DebandDither}
+
+pub using @material {type DefaultOpaqueRendererMethod}
+
+pub using @core_pipeline {type DeferredPrepass}
+
+pub using @core_pipeline {type DepthPrepass}
+
+pub using @light {type DirectionalLight}
+
+pub using @light {type DirectionalLightShadowMap}
+
+pub using @light {type DirectionalLightTexture}
+
+pub using @light {type EnvironmentMapLight}
+
+pub using @material {type ExtendedMaterialMetadata3d}
+
+pub using @material {type Face3d}
+
+pub using @light {type FogVolume}
+
+pub using @material {type ForwardDecalMaterialExt}
+
+pub using @post_process {type Fxaa}
+
+pub using @post_process {type FxaaSensitivity}
+
+pub using @light {type GeneratedEnvironmentMapLight}
+
+pub using @light {type GlobalAmbientLight}
+
+pub using @core_pipeline {type Hdr}
+
+pub using @light {type IrradianceVolume}
+
+pub using @light {type LightProbe}
+
+pub using @material {type MeshMaterial3d}
+
+pub using @post_process {type MotionBlur}
+
+pub using @core_pipeline {type MotionVectorPrepass}
+
+pub using @core_pipeline {type Msaa}
+
+pub using @core_pipeline {type NormalPrepass}
+
+pub using @material {type OpaqueRendererMethod}
+
+pub using @light {type ParallaxCorrection}
+
+pub using @material {type ParallaxMappingMethod}
+
+pub using @light {type PointLight}
+
+pub using @light {type PointLightShadowMap}
+
+pub using @light {type PointLightTexture}
+
+pub using @light {type ScatteringMedium}
+
+pub using @post_process {type ScreenSpaceAmbientOcclusion}
+
+pub using @post_process {type ScreenSpaceAmbientOcclusionQualityLevel}
+
+pub using @post_process {type ScreenSpaceReflections}
+
+pub using @post_process {type ScreenSpaceTransmission}
+
+pub using @post_process {type ScreenSpaceTransmissionQuality}
+
+pub using @light {type SpotLight}
+
+pub using @light {type SpotLightTexture}
+
+pub using @material {type StandardMaterial}
+
+pub using @post_process {type TemporalAntiAliasing}
+
+pub using @post_process {type TemporalJitter}
+
+pub using @post_process {type Tonemapping}
+
+pub using @post_process {type Vignette}
+
+pub using @light {type VolumetricFog}
+
+pub using @light {type VolumetricLight}
+
+// Traits
+pub(open) trait CameraProjection3d {
+  get_clip_from_view(Self) -> ProjectionMatrix3d
+  get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
+  update(Self, Float, Float) -> Self
+  far(Self) -> Float
+  compute_frustum(Self, @math.Transform) -> Frustum
+  get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
+}
+

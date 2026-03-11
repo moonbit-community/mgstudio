@@ -25,3 +25,5 @@ mgstudio-owned paths instead of vendor paths.
 
 - License: Apache-2.0 OR MIT (dual-licensed)
 - License texts: `bevy/LICENSE-APACHE`, `bevy/LICENSE-MIT`
+- Additional asset-specific attribution for staged Bevy sound files lives in
+  `mgstudio-engine/assets/sounds/README.md`

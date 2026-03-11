@@ -54,7 +54,7 @@ pub fn FpsOverlayPlugin::default() -> FpsOverlayPlugin {
 ///|
 pub(all) struct FpsOverlayConfig {
   mut text_config : @text.TextFont
-  mut text_color : @render2d.Color
+  mut text_color : @sprite.Color
   mut enabled : Bool
   mut refresh_interval : @core.Duration
   mut frame_time_graph_config : FrameTimeGraphConfig
@@ -73,7 +73,7 @@ fn fps_overlay_touch_config_mutability(config : FpsOverlayConfig) -> Unit {
 pub fn FpsOverlayConfig::default() -> FpsOverlayConfig {
   let config = FpsOverlayConfig::{
     text_config: @text.TextFont::from_font_size(32.0F),
-    text_color: @render2d.Color::white(),
+    text_color: @sprite.Color::white(),
     enabled: true,
     refresh_interval: @core.Duration::from_millis(100L),
     frame_time_graph_config: FrameTimeGraphConfig::target_fps(60.0F),
@@ -198,10 +198,10 @@ fn fps_overlay_warn_on_low_interval(config : FpsOverlayConfig) -> Unit {
 ///|
 fn fps_overlay_has_frame_time_diagnostics(app : @app.App[@ecs.World]) -> Bool {
   match
-    (try! app.world().get_resource(@diagnostics.DiagnosticsStore::resource())) {
+    (try! app.world().get_resource(@diagnostic.DiagnosticsStore::resource())) {
     Some(store) =>
-      store.get(@diagnostics.frame_time_diagnostic_fps) is Some(_) &&
-      store.get(@diagnostics.frame_time_diagnostic_frame_time) is Some(_)
+      store.get(@diagnostic.frame_time_diagnostic_fps) is Some(_) &&
+      store.get(@diagnostic.frame_time_diagnostic_frame_time) is Some(_)
     None => false
   }
 }
@@ -221,7 +221,7 @@ pub fn fps_overlay_plugin_with(
   }
   let mut next = app
   if !fps_overlay_has_frame_time_diagnostics(next) {
-    next = next.add_plugin(@diagnostics.frame_time_diagnostics_plugin)
+    next = next.add_plugin(@diagnostic.frame_time_diagnostics_plugin)
   }
   fps_overlay_warn_on_low_interval(plugin.config)
   next
@@ -312,12 +312,12 @@ fn fps_overlay_format_with_two_decimals(value : Float) -> String {
 
 ///|
 fn fps_overlay_color_lerp(
-  start : @render2d.Color,
-  ending : @render2d.Color,
+  start : @sprite.Color,
+  ending : @sprite.Color,
   t : Float,
-) -> @render2d.Color {
+) -> @sprite.Color {
   let weight = if t < 0.0F { 0.0F } else if t > 1.0F { 1.0F } else { t }
-  @render2d.Color::new(
+  @sprite.Color::new(
     start.r + (ending.r - start.r) * weight,
     start.g + (ending.g - start.g) * weight,
     start.b + (ending.b - start.b) * weight,
@@ -381,12 +381,12 @@ fn fps_overlay_graph_ratio(
 fn fps_overlay_graph_color(
   frame_time_ms : Float,
   config : FrameTimeGraphConfig,
-) -> @render2d.Color {
+) -> @sprite.Color {
   let dt = frame_time_ms / 1000.0F
   let dt_max = 1.0F / config.min_fps
   fps_overlay_color_lerp(
-    @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
-    @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+    @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+    @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
     dt / dt_max,
   )
 }
@@ -407,7 +407,7 @@ fn fps_overlay_graph_bar_width(
 fn fps_overlay_spawn_text_handle(
   content : String,
   text_config : @text.TextFont,
-  text_color : @render2d.Color,
+  text_color : @sprite.Color,
 ) -> @text.TextHandle {
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
@@ -462,7 +462,7 @@ fn fps_overlay_setup(world : @ecs.World) -> Unit {
   )
   try! world.set_component(
     graph_entity,
-    @ui.BackgroundColor::new(@render2d.Color::new(0.0F, 0.0F, 0.0F, 0.5F)),
+    @ui.BackgroundColor::new(@sprite.Color::new(0.0F, 0.0F, 0.0F, 0.5F)),
   )
 
   state_ref.val.root_entity = Some(root)
@@ -526,7 +526,7 @@ fn fps_overlay_resize_bars(
     try! world.set_component(bar, @ui.Node::default())
     try! world.set_component(
       bar,
-      @ui.BackgroundColor::new(@render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F)),
+      @ui.BackgroundColor::new(@sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F)),
     )
     state_ref.val.bar_entities.push(bar)
   }
@@ -540,12 +540,12 @@ fn fps_overlay_resize_bars(
 fn fps_overlay_update_system(world : @ecs.World) -> Unit {
   let config = fps_overlay_config(world)
   let state_ref = fps_overlay_state_ref(world)
-  guard (try! world.get_resource(@diagnostics.DiagnosticsStore::resource()))
+  guard (try! world.get_resource(@diagnostic.DiagnosticsStore::resource()))
     is Some(store) else {
     return
   }
 
-  let fps_value = match store.get(@diagnostics.frame_time_diagnostic_fps) {
+  let fps_value = match store.get(@diagnostic.frame_time_diagnostic_fps) {
     Some(diagnostic) => diagnostic.smoothed()
     None => None
   }
@@ -555,7 +555,7 @@ fn fps_overlay_update_system(world : @ecs.World) -> Unit {
   }
 
   guard state_ref.val.graph_entity is Some(graph_entity) else { return }
-  guard store.get(@diagnostics.frame_time_diagnostic_frame_time)
+  guard store.get(@diagnostic.frame_time_diagnostic_frame_time)
     is Some(frame_time) else {
     fps_overlay_resize_bars(world, state_ref, graph_entity, 0)
     return

@@ -66,26 +66,36 @@ pub fn[T] Handle::from_asset_id(asset_id : AssetId[T]) -> Handle[T] {
 }
 
 ///|
-pub struct Image {
-  width : Int
-  height : Int
-  pixels : Bytes
+pub type Image = @image.Image
+
+///|
+pub type ImageArrayLayout = @image.ImageArrayLayout
+
+///|
+pub type ImageAddressMode = @image.ImageAddressMode
+
+///|
+pub type ImageCompareFunction = @image.ImageCompareFunction
+
+///|
+pub type ImageFilterMode = @image.ImageFilterMode
+
+///|
+pub type ImageSampler = @image.ImageSampler
+
+///|
+pub type ImageSamplerBorderColor = @image.ImageSamplerBorderColor
+
+///|
+pub type ImageSamplerDescriptor = @image.ImageSamplerDescriptor
+
+///|
+pub impl @image.TextureHandle for Handle[Image] with texture_id(self) {
+  self.id()
 }
 
 ///|
-pub fn Image::new(width : Int, height : Int, pixels : Bytes) -> Image {
-  Image::{ width, height, pixels }
-}
-
-///|
-pub struct Shader {
-  source : String
-}
-
-///|
-pub fn Shader::new(source : String) -> Shader {
-  Shader::{ source, }
-}
+pub type Shader = @shader.Shader
 
 ///|
 pub struct Blob {}
@@ -94,6 +104,7 @@ pub struct Blob {}
 pub struct AssetServer {
   paths : Ref[Array[String]]
   image_paths : Ref[Array[(String, Handle[Image])]]
+  image_loaded_states : Ref[@hashmap.HashMap[Int, Bool]]
   image_array_layouts : Ref[Array[(Int, ImageArrayLayout)]]
   image_srgb_settings : Ref[Array[(Int, Bool)]]
   image_usage_settings : Ref[Array[(Int, Int)]]
@@ -106,49 +117,19 @@ priv struct AssetLoaderEntry {
 }
 
 ///|
-pub(all) enum ImageArrayLayout {
-  RowCount(Int)
-  RowHeight(Int)
-}
-
-///|
-pub struct ImageLoaderSettings {
-  sampler : ImageSampler
-  is_srgb : Bool
-  array_layout : ImageArrayLayout?
+pub(all) struct ImageLoaderSettings {
+  mut sampler : ImageSampler
+  mut is_srgb : Bool
+  mut array_layout : ImageArrayLayout?
 }
 
 ///|
 pub fn ImageLoaderSettings::default() -> ImageLoaderSettings {
   ImageLoaderSettings::{
-    sampler: ImageSampler::Linear,
+    sampler: ImageSampler::Default,
     is_srgb: true,
     array_layout: None,
   }
-}
-
-///|
-pub fn ImageLoaderSettings::with_sampler(
-  self : ImageLoaderSettings,
-  sampler : ImageSampler,
-) -> ImageLoaderSettings {
-  ImageLoaderSettings::{ ..self, sampler, }
-}
-
-///|
-pub fn ImageLoaderSettings::with_is_srgb(
-  self : ImageLoaderSettings,
-  is_srgb : Bool,
-) -> ImageLoaderSettings {
-  ImageLoaderSettings::{ ..self, is_srgb, }
-}
-
-///|
-pub fn ImageLoaderSettings::with_array_layout(
-  self : ImageLoaderSettings,
-  array_layout : ImageArrayLayout?,
-) -> ImageLoaderSettings {
-  ImageLoaderSettings::{ ..self, array_layout, }
 }
 
 ///|
@@ -156,6 +137,7 @@ fn asset_server_standalone() -> AssetServer {
   AssetServer::{
     paths: Ref::new([]),
     image_paths: Ref::new([]),
+    image_loaded_states: Ref::new(@hashmap.HashMap::new()),
     image_array_layouts: Ref::new([]),
     image_srgb_settings: Ref::new([]),
     image_usage_settings: Ref::new([]),
@@ -321,6 +303,14 @@ pub(all) enum AssetSourceId {
 }
 
 ///|
+pub(all) enum ParseAssetPathError {
+  InvalidSourceSyntax
+  InvalidLabelSyntax
+  MissingSource
+  MissingLabel
+}
+
+///|
 pub struct ParsedAssetPath {
   source : AssetSourceId
   path : String
@@ -388,42 +378,84 @@ fn string_find_substring(input : String, pattern : String) -> Int {
 }
 
 ///|
-pub fn asset_parse_path(path : String) -> ParsedAssetPath {
+fn asset_parse_path_error_message(error : ParseAssetPathError) -> String {
+  match error {
+    ParseAssetPathError::InvalidSourceSyntax =>
+      "asset source must not contain `#`"
+    ParseAssetPathError::InvalidLabelSyntax =>
+      "asset label must not contain `://`"
+    ParseAssetPathError::MissingSource =>
+      "asset source must contain at least one character before `://`"
+    ParseAssetPathError::MissingLabel =>
+      "asset label must contain at least one character after `#`"
+  }
+}
+
+///|
+pub fn asset_try_parse_path(
+  path : String,
+) -> Result[ParsedAssetPath, ParseAssetPathError] {
   let hash_index = string_last_index_of_char(path, 35)
+  let scheme_index = string_find_substring(path, "://")
+  if hash_index >= 0 && scheme_index > hash_index {
+    return Err(ParseAssetPathError::InvalidSourceSyntax)
+  }
   let (without_label, label) = if hash_index >= 0 {
-    let base = if hash_index > 0 {
-      (try! path[0:hash_index]).to_string()
-    } else {
-      ""
+    if hash_index + 1 >= path.length() {
+      return Err(ParseAssetPathError::MissingLabel)
     }
-    let parsed_label = if hash_index + 1 < path.length() {
-      Some((try! path[hash_index + 1:path.length()]).to_string())
-    } else {
-      None
+    let base = if hash_index > 0 { path[0:hash_index].to_string() } else { "" }
+    let parsed_label = path[hash_index + 1:path.length()].to_string()
+    if string_find_substring(parsed_label, "://") >= 0 {
+      return Err(ParseAssetPathError::InvalidLabelSyntax)
     }
-    (base, parsed_label)
+    (base, Some(parsed_label))
   } else {
     (path, None)
   }
-  let scheme_index = string_find_substring(without_label, "://")
-  if scheme_index > 0 {
-    let source_name = (try! without_label[0:scheme_index]).to_string()
-    let relative_path = if scheme_index + 3 < without_label.length() {
-      (try! without_label[scheme_index + 3:without_label.length()]).to_string()
+
+  if scheme_index == 0 {
+    return Err(ParseAssetPathError::MissingSource)
+  }
+
+  let source_scheme_index = string_find_substring(without_label, "://")
+  if source_scheme_index == 0 {
+    return Err(ParseAssetPathError::MissingSource)
+  }
+
+  if string_last_index_of_char(without_label, 35) >= 0 {
+    return Err(ParseAssetPathError::InvalidSourceSyntax)
+  }
+
+  if source_scheme_index > 0 {
+    let source_name = without_label[0:source_scheme_index].to_string()
+    let relative_path = if source_scheme_index + 3 < without_label.length() {
+      without_label[source_scheme_index + 3:without_label.length()].to_string()
     } else {
       ""
     }
-    ParsedAssetPath::{
+    Ok(ParsedAssetPath::{
       source: AssetSourceId::Named(source_name),
       path: relative_path,
       label,
-    }
+    })
   } else {
-    ParsedAssetPath::{
+    Ok(ParsedAssetPath::{
       source: AssetSourceId::Default,
       path: without_label,
       label,
-    }
+    })
+  }
+}
+
+///|
+pub fn asset_parse_path(path : String) -> ParsedAssetPath {
+  match asset_try_parse_path(path) {
+    Ok(parsed) => parsed
+    Err(error) =>
+      abort(
+        "invalid asset path syntax: " + asset_parse_path_error_message(error),
+      )
   }
 }
 
@@ -527,6 +559,14 @@ fn AssetServer::register_image_path(
   handle : Handle[Image],
 ) -> Unit {
   self.image_paths.val.push((path, handle))
+}
+
+///|
+fn AssetServer::track_image_handle(
+  self : AssetServer,
+  handle : Handle[Image],
+) -> Unit {
+  self.image_loaded_states.val.set(handle.id(), false)
 }
 
 ///|
@@ -773,22 +813,22 @@ pub fn asset_white_texture() -> Handle[Image] {
 
 ///|
 pub fn host_asset_load_texture(path~ : String, nearest~ : Bool) -> Int {
-  @native_asset.load_texture(path~, nearest~)
+  load_texture(path~, nearest~)
 }
 
 ///|
 pub fn host_asset_load_texture_bytes(bytes~ : Bytes, nearest~ : Bool) -> Int {
-  @native_asset.load_texture_bytes(bytes~, nearest~)
+  load_texture_bytes(bytes~, nearest~)
 }
 
 ///|
 pub fn host_asset_load_wgsl(path~ : String) -> Int {
-  @native_asset.load_wgsl(path~)
+  load_wgsl(path~)
 }
 
 ///|
 pub fn host_asset_load_bytes(path~ : String) -> Int {
-  @native_asset.load_bytes(path~)
+  load_bytes(path~)
 }
 
 ///|
@@ -796,7 +836,7 @@ pub fn host_asset_load_with_registered_loader(
   path~ : String,
   nearest~ : Bool,
 ) -> Int {
-  @native_asset.load_with_registered_loader(path~, nearest~)
+  load_with_registered_loader(path~, nearest~)
 }
 
 ///|
@@ -804,27 +844,27 @@ pub fn host_asset_register_loader_extension(
   extension~ : String,
   kind~ : Int,
 ) -> Unit {
-  @native_asset.register_loader_extension(extension~, kind~)
+  register_loader_extension(extension~, kind~)
 }
 
 ///|
 pub fn host_asset_remove_loader_extension(extension~ : String) -> Unit {
-  @native_asset.remove_loader_extension(extension~)
+  remove_loader_extension(extension~)
 }
 
 ///|
 pub fn host_asset_loader_kind_for_path(path~ : String) -> Int {
-  @native_asset.loader_kind_for_path(path~)
+  loader_kind_for_path(path~)
 }
 
 ///|
 pub fn host_asset_bytes_len(blob_id : Int) -> Int {
-  @native_asset.bytes_len(blob_id)
+  bytes_len(blob_id)
 }
 
 ///|
 pub fn host_asset_bytes_get_u32(blob_id~ : Int, index~ : Int) -> Int {
-  @native_asset.bytes_get_u32(blob_id~, index~)
+  bytes_get_u32(blob_id~, index~)
 }
 
 ///|
@@ -833,7 +873,7 @@ pub fn host_asset_create_dynamic_texture(
   height~ : Int,
   nearest~ : Bool,
 ) -> Int {
-  @native_asset.create_dynamic_texture(width~, height~, nearest~)
+  create_dynamic_texture(width~, height~, nearest~)
 }
 
 ///|
@@ -843,12 +883,7 @@ pub fn host_asset_create_dynamic_texture_mipped(
   mip_level_count~ : Int,
   nearest~ : Bool,
 ) -> Int {
-  @native_asset.create_dynamic_texture_mipped(
-    width~,
-    height~,
-    mip_level_count~,
-    nearest~,
-  )
+  create_dynamic_texture_mipped(width~, height~, mip_level_count~, nearest~)
 }
 
 ///|
@@ -860,14 +895,7 @@ pub fn host_asset_update_texture_region(
   height~ : Int,
   glyph_id~ : Int,
 ) -> Unit {
-  @native_asset.update_texture_region(
-    texture_id~,
-    x~,
-    y~,
-    width~,
-    height~,
-    glyph_id~,
-  )
+  update_texture_region(texture_id~, x~, y~, width~, height~, glyph_id~)
 }
 
 ///|
@@ -879,14 +907,7 @@ pub fn host_asset_update_texture_region_bytes(
   height~ : Int,
   bytes~ : Bytes,
 ) -> Unit {
-  @native_asset.update_texture_region_bytes(
-    texture_id~,
-    x~,
-    y~,
-    width~,
-    height~,
-    bytes~,
-  )
+  update_texture_region_bytes(texture_id~, x~, y~, width~, height~, bytes~)
 }
 
 ///|
@@ -899,7 +920,7 @@ pub fn host_asset_update_texture_region_mip_bytes(
   mip_level~ : Int,
   bytes~ : Bytes,
 ) -> Unit {
-  @native_asset.update_texture_region_mip_bytes(
+  update_texture_region_mip_bytes(
     texture_id~,
     x~,
     y~,
@@ -915,27 +936,27 @@ pub fn host_asset_create_texture_mip_view(
   texture_id~ : Int,
   mip_level~ : Int,
 ) -> Int {
-  @native_asset.create_texture_mip_view(texture_id~, mip_level~)
+  create_texture_mip_view(texture_id~, mip_level~)
 }
 
 ///|
 pub fn host_asset_texture_width(texture_id : Int) -> Int {
-  @native_asset.texture_width(texture_id)
+  texture_width(texture_id)
 }
 
 ///|
 pub fn host_asset_texture_height(texture_id : Int) -> Int {
-  @native_asset.texture_height(texture_id)
+  texture_height(texture_id)
 }
 
 ///|
 pub fn host_asset_is_texture_loaded(texture_id : Int) -> Bool {
-  @native_asset.is_texture_loaded(texture_id)
+  is_texture_loaded(texture_id)
 }
 
 ///|
 pub fn host_asset_supported_compressed_image_formats() -> Int {
-  @native_asset.supported_compressed_image_formats()
+  supported_compressed_image_formats()
 }
 
 ///|
@@ -945,12 +966,48 @@ pub fn host_asset_copy_texture_to_texture(
   dst_y~ : Int,
   src_texture_id~ : Int,
 ) -> Unit {
-  @native_asset.copy_texture_to_texture(
-    dst_texture_id~,
-    dst_x~,
-    dst_y~,
-    src_texture_id~,
+  copy_texture_to_texture(dst_texture_id~, dst_x~, dst_y~, src_texture_id~)
+}
+
+///|
+pub fn host_asset_set_texture_sampler(
+  texture_id~ : Int,
+  address_mode_u~ : Int,
+  address_mode_v~ : Int,
+  address_mode_w~ : Int,
+  mag_filter~ : Int,
+  min_filter~ : Int,
+  mipmap_filter~ : Int,
+  lod_min_clamp~ : Float,
+  lod_max_clamp~ : Float,
+  compare~ : Int,
+  anisotropy_clamp~ : Int,
+  border_color~ : Int,
+) -> Unit {
+  @render.asset_set_texture_sampler(
+    texture_id~,
+    address_mode_u~,
+    address_mode_v~,
+    address_mode_w~,
+    mag_filter~,
+    min_filter~,
+    mipmap_filter~,
+    lod_min_clamp~,
+    lod_max_clamp~,
+    compare~,
+    anisotropy_clamp~,
+    border_color~,
   )
+}
+
+///|
+pub fn host_asset_save_rgba8_png(
+  width~ : Int,
+  height~ : Int,
+  pixels~ : Bytes,
+  path~ : String,
+) -> Unit {
+  save_rgba8_png(width~, height~, pixels~, path~)
 }
 
 ///|
@@ -966,6 +1023,7 @@ pub fn AssetServer::load_image(
   self.record_path(canonical_path)
   let handle = Handle::new(id)
   self.register_image_path(canonical_path, handle)
+  self.track_image_handle(handle)
   self.set_image_array_layout(handle, None)
   self.set_image_is_srgb(handle, true)
   self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
@@ -982,6 +1040,7 @@ pub fn AssetServer::load_nearest(
   self.record_path(canonical_path)
   let handle = Handle::new(id)
   self.register_image_path(canonical_path, handle)
+  self.track_image_handle(handle)
   self.set_image_array_layout(handle, None)
   self.set_image_is_srgb(handle, true)
   self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
@@ -990,11 +1049,7 @@ pub fn AssetServer::load_nearest(
 
 ///|
 fn image_sampler_is_nearest(sampler : ImageSampler) -> Bool {
-  match sampler {
-    ImageSampler::Nearest => true
-    ImageSampler::NearestRepeat => true
-    _ => false
-  }
+  @image.image_sampler_is_nearest(sampler)
 }
 
 ///|
@@ -1025,8 +1080,10 @@ pub fn[T] AssetServer::load(self : AssetServer, path : String) -> Handle[T] {
 pub fn AssetServer::load_with_settings(
   self : AssetServer,
   path : String,
-  settings : ImageLoaderSettings,
+  configure : (ImageLoaderSettings) -> Unit,
 ) -> Handle[Image] {
+  let settings = ImageLoaderSettings::default()
+  configure(settings)
   let canonical_path = asset_canonical_path(path)
   let id = host_asset_load_texture(
     path=canonical_path,
@@ -1035,7 +1092,10 @@ pub fn AssetServer::load_with_settings(
   self.record_path(canonical_path)
   let handle = Handle::new(id)
   self.register_image_path(canonical_path, handle)
-  asset_set_texture_sampler(handle, settings.sampler)
+  self.track_image_handle(handle)
+  if settings.sampler is Descriptor(_) {
+    asset_set_texture_sampler(handle, settings.sampler)
+  }
   self.set_image_array_layout(handle, settings.array_layout)
   self.set_image_is_srgb(handle, settings.is_srgb)
   self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
@@ -1048,10 +1108,10 @@ pub fn AssetServer::load_texture_bytes(
   bytes : Bytes,
   nearest : Bool,
 ) -> Handle[Image] {
-  self |> ignore
   let id = host_asset_load_texture_bytes(bytes~, nearest~)
   let handle = Handle::new(id)
-  AssetServer::new().set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
+  self.track_image_handle(handle)
+  self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
   handle
 }
 
@@ -1174,7 +1234,9 @@ pub fn asset_create_dynamic_texture_with_mips(
     nearest~,
   )
   let handle = Handle::new(id)
-  AssetServer::new().set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_DYNAMIC)
+  let asset_server = AssetServer::new()
+  asset_server.track_image_handle(handle)
+  asset_server.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_DYNAMIC)
   handle
 }
 
@@ -1235,11 +1297,38 @@ pub fn asset_create_texture_mip_view(
     mip_level=safe_mip_level,
   )
   let handle = Handle::new(id)
-  AssetServer::new().set_image_usage_bits(
-    handle,
-    asset_image_usage_bits(texture),
-  )
+  let asset_server = AssetServer::new()
+  asset_server.track_image_handle(handle)
+  asset_server.set_image_usage_bits(handle, asset_image_usage_bits(texture))
   handle
+}
+
+///|
+fn asset_update_image_event_messages(world : @ecs.World) -> Unit {
+  guard (try! world.get_resource(asset_server_resource_key()))
+    is Some(asset_server) else {
+    return
+  }
+
+  let message_key : @ecs.MessageKey[AssetEvent[Image]] = @ecs.Message::message()
+  if !world.contains_message(message_key) {
+    world.init_message(message_key)
+  }
+
+  let became_loaded : Array[Int] = []
+  for entry in asset_server.image_loaded_states.val.iter() {
+    let (image_id, was_loaded) = entry
+    if !was_loaded && host_asset_is_texture_loaded(image_id) {
+      became_loaded.push(image_id)
+    }
+  }
+
+  for image_id in became_loaded {
+    asset_server.image_loaded_states.val.set(image_id, true)
+    ignore(
+      world.send_message(message_key, AssetEvent::Added(Handle::new(image_id))),
+    )
+  }
 }
 
 ///|
@@ -1273,12 +1362,14 @@ pub fn asset_copy_texture_to_texture(
 
 ///|
 pub fn asset_save_texture_png(texture : Handle[Image], path : String) -> Unit {
-  @native_asset.save_texture_png(texture_id=texture.id(), path~)
+  save_texture_png(texture_id=texture.id(), path~)
 }
 
 ///|
 pub fn asset_system(world : @ecs.World) -> Unit {
   asset_update_loaded_folders(world)
+  asset_update_event_messages(world)
+  asset_update_image_event_messages(world)
 }
 
 ///|

@@ -2,7 +2,11 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/moon_accesskit",
-  "Milky2018/mgstudio/runtime_native/native_a11y",
   "moonbitlang/core/ref",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/window/windowing_native" @windowing,
 }
+
+options(
+  "supported-targets": "native",
+)

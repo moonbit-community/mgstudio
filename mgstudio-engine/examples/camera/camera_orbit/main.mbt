@@ -52,8 +52,8 @@ fn CameraSettings::default() -> CameraSettings {
 fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  let camera = @camera.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(5.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -63,13 +63,13 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@ecs.Name::component())
   .insert(camera, @ecs.Name::new("Camera"), tick)
 
-  let plane = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(5.0F, 5.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
-          @render2d.Color::srgb(0.3F, 0.5F, 0.3F),
-        ).with_cull_mode(None),
+  let plane = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(5.0F, 5.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)).with_cull_mode(
+          None,
+        ),
       ),
     ),
     @math.Transform::identity(),
@@ -78,13 +78,11 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@ecs.Name::component())
   .insert(plane, @ecs.Name::new("Plane"), tick)
 
-  let cube = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
-          @render2d.Color::srgb(0.8F, 0.7F, 0.6F),
-        ),
+  let cube = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.8F, 0.7F, 0.6F)),
       ),
     ),
     @math.Transform::from_xyz(1.5F, 0.51F, 1.5F),
@@ -98,8 +96,8 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@ecs.Name::component())
   .insert(light, @ecs.Name::new("Light"), tick)
   world
-  .component(@render3d.PointLight::component())
-  .insert(light, @render3d.PointLight::default(), tick)
+  .component(@pbr.PointLight::component())
+  .insert(light, @pbr.PointLight::default(), tick)
   world
   .component(@math.Transform::component())
   .insert(light, @math.Transform::from_xyz(3.0F, 8.0F, 5.0F), tick)
@@ -108,8 +106,8 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn instructions(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let overlay_camera = @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(1).with_clear_color_none(),
+  let overlay_camera = @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(1).with_clear_color_none(),
     @math.Transform::identity(),
   ).spawn(world)
   world
@@ -138,7 +136,7 @@ fn instructions(world : @ecs.World) -> Unit {
       .with_font_size(20.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 
@@ -168,7 +166,7 @@ fn instructions(world : @ecs.World) -> Unit {
 fn orbit(
   camera_query : @ecs.Query1Filtered[
     @math.Transform,
-    @ecs.With[@render3d.Camera3d],
+    @ecs.With[@camera.Camera3d],
   ],
   camera_settings_res : @app.Res[CameraSettings],
   mouse_buttons : @input.ButtonInput[@window.MouseButton],

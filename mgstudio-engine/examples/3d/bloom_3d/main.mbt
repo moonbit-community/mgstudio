@@ -69,7 +69,7 @@ fn stable_bucket(x : Int, z : Int) -> Int {
 }
 
 ///|
-fn mode_label(mode : @render3d.BloomCompositeMode) -> String {
+fn mode_label(mode : @post_process.BloomCompositeMode) -> String {
   match mode {
     EnergyConserving => "Energy-conserving"
     Additive => "Additive"
@@ -77,7 +77,7 @@ fn mode_label(mode : @render3d.BloomCompositeMode) -> String {
 }
 
 ///|
-fn bloom_text(bloom : @render3d.Bloom?) -> String {
+fn bloom_text(bloom : @post_process.Bloom?) -> String {
   match bloom {
     Some(bloom) =>
       "Bloom (Toggle: Space)\n" +
@@ -120,43 +120,41 @@ fn setup_scene(world : @ecs.World) -> Unit {
       )
   }
 
-  let camera = @render3d.Camera3dBundle::new(
-      @render2d.Camera::default().with_clear_color(@render2d.Color::black()),
+  let camera = @pbr.Camera3dBundle::new(
+      @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
       @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
-    .with_tonemapping(Some(@render3d.Tonemapping::TonyMcMapface))
-    .with_bloom(Some(@render3d.Bloom::default()))
+    .with_tonemapping(Some(@post_process.Tonemapping::TonyMcMapface))
+    .with_bloom(Some(@post_process.Bloom::default()))
     .spawn(world)
-  world
-  .component(@render3d.ecs_key_hdr)
-  .insert(camera, @render3d.Hdr::default(), tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world
   .component(BloomCamera::component())
   .insert(camera, BloomCamera::{  }, tick)
 
-  let material_emissive1 = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::black()).with_emissive(
-      @render2d.Color::new(0.0F, 0.0F, 150.0F, 1.0F),
+  let material_emissive1 = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::black()).with_emissive(
+      @sprite.Color::new(0.0F, 0.0F, 150.0F, 1.0F),
     ),
   )
-  let material_emissive2 = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::black()).with_emissive(
-      @render2d.Color::new(1000.0F, 1000.0F, 1000.0F, 1.0F),
+  let material_emissive2 = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::black()).with_emissive(
+      @sprite.Color::new(1000.0F, 1000.0F, 1000.0F, 1.0F),
     ),
   )
-  let material_emissive3 = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::black()).with_emissive(
-      @render2d.Color::new(50.0F, 0.0F, 0.0F, 1.0F),
+  let material_emissive3 = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::black()).with_emissive(
+      @sprite.Color::new(50.0F, 0.0F, 0.0F, 1.0F),
     ),
   )
-  let material_non_emissive = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::black()),
+  let material_non_emissive = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::black()),
   )
 
-  let sphere_mesh = @render3d.Mesh3d::from_sphere(0.4F)
+  let sphere_mesh = @pbr.Mesh3d::from_sphere(0.4F)
   for xi in 0..<10 {
     let x = xi - 5
     for zi in 0..<10 {
@@ -174,9 +172,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
       let x_pos = float_from_int(x) * 2.0F
       let z_pos = float_from_int(z) * 2.0F
-      let entity = @render3d.MeshMaterial3dBundle::new(
+      let entity = @pbr.MeshMaterial3dBundle::new(
         sphere_mesh,
-        @render3d.MeshMaterial3d::new(material),
+        @pbr.MeshMaterial3d::new(material),
         @math.Transform::from_xyz(x_pos, 0.0F, z_pos).with_scale(
           @math.Vec3::splat(scale),
         ),
@@ -188,7 +186,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   }
 
   let help_text = @text.Text2dBundle::new(
-      @text.Text2d::new(bloom_text(Some(@render3d.Bloom::default()))),
+      @text.Text2d::new(bloom_text(Some(@post_process.Bloom::default()))),
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
@@ -199,11 +197,11 @@ fn setup_scene(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::bottom_left())
+    .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -222,14 +220,14 @@ fn update_bloom_settings(
   guard bloom_camera_entity(camera_query) is Some(camera_entity) else { return }
   let world = @app.current_world().unwrap()
   let tick = world.read_change_tick()
-  let bloom_store = world.component(@render3d.ecs_key_bloom)
+  let bloom_store = world.component(@post_process.ecs_key_bloom)
   let current_bloom = bloom_store.get(camera_entity)
   @text.text_set_content(instructions.get().handle, bloom_text(current_bloom))
 
   match current_bloom {
     None =>
       if keycode.just_pressed(@window.KeyCode::Space) {
-        bloom_store.insert(camera_entity, @render3d.Bloom::default(), tick)
+        bloom_store.insert(camera_entity, @post_process.Bloom::default(), tick)
       }
     Some(bloom) => {
       if keycode.just_pressed(@window.KeyCode::Space) {
@@ -290,12 +288,14 @@ fn update_bloom_settings(
       }
 
       if keycode.pressed(@window.KeyCode::KeyG) {
-        next = next.with_composite_mode(@render3d.BloomCompositeMode::Additive)
+        next = next.with_composite_mode(
+          @post_process.BloomCompositeMode::Additive,
+        )
         changed = true
       }
       if keycode.pressed(@window.KeyCode::KeyT) {
         next = next.with_composite_mode(
-          @render3d.BloomCompositeMode::EnergyConserving,
+          @post_process.BloomCompositeMode::EnergyConserving,
         )
         changed = true
       }

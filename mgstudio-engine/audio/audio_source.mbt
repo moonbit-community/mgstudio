@@ -30,11 +30,12 @@ pub fn AudioSource::bytes(self : AudioSource) -> Bytes {
 ///|
 pub struct AudioSourceAssets {
   assets : @asset.Assets[AudioSource]
+  paths : Array[(String, @asset.Handle[AudioSource])]
 }
 
 ///|
 pub fn AudioSourceAssets::new() -> AudioSourceAssets {
-  AudioSourceAssets::{ assets: @asset.Assets::new() }
+  AudioSourceAssets::{ assets: @asset.Assets::new(), paths: [] }
 }
 
 ///|
@@ -60,6 +61,35 @@ pub fn AudioSourceAssets::set(
   source : AudioSource,
 ) -> Bool {
   self.assets.set(handle, source)
+}
+
+///|
+fn AudioSourceAssets::find_path_handle(
+  self : AudioSourceAssets,
+  canonical_path : String,
+) -> @asset.Handle[AudioSource]? {
+  for i in 0..<self.paths.length() {
+    let entry = self.paths[i]
+    if entry.0 == canonical_path {
+      return Some(entry.1)
+    }
+  }
+  None
+}
+
+///|
+fn AudioSourceAssets::register_path(
+  self : AudioSourceAssets,
+  canonical_path : String,
+  handle : @asset.Handle[AudioSource],
+) -> Unit {
+  for i in 0..<self.paths.length() {
+    if self.paths[i].0 == canonical_path {
+      self.paths[i] = (canonical_path, handle)
+      return
+    }
+  }
+  self.paths.push((canonical_path, handle))
 }
 
 ///|
@@ -128,9 +158,44 @@ pub fn audio_source_load(
   asset_server : @asset.AssetServer,
   path : String,
 ) -> @asset.Handle[AudioSource]? {
-  let blob = asset_server.load_bytes(path)
-  match audio_source_from_blob(blob) {
-    Some(source) => Some(audio_source_add(world, source))
-    None => None
+  let canonical_path = @asset.asset_canonical_path(path)
+  let tick = @app.current_system_ticks().this_run
+  let assets_ref = audio_resource_ensure_ref_mut(
+    world,
+    AudioSourceAssets::resource(),
+    fn() { AudioSourceAssets::new() },
+    tick,
+  )
+  match assets_ref.val.find_path_handle(canonical_path) {
+    Some(handle) => Some(handle)
+    None => {
+      let blob = asset_server.load_bytes(canonical_path)
+      match audio_source_from_blob(blob) {
+        Some(source) => {
+          let handle = assets_ref.val.add(source)
+          assets_ref.val.register_path(canonical_path, handle)
+          Some(handle)
+        }
+        None => None
+      }
+    }
+  }
+}
+
+///|
+fn audio_source_load_registered(
+  asset_server : @asset.AssetServer,
+  path : String,
+) -> @asset.Handle[AudioSource] {
+  let world = match @app.current_world() {
+    Some(world) => world
+    None =>
+      abort(
+        "AssetServer::load[AudioSource] requires an active app world; load the audio plugin and call it from a scheduled system",
+      )
+  }
+  match audio_source_load(world, asset_server, path) {
+    Some(handle) => handle
+    None => abort("Failed to decode AudioSource bytes for asset path " + path)
   }
 }

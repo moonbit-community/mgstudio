@@ -29,7 +29,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_plugins([@render2d.wireframe2d_plugin])
+  .add_plugins([@sprite.wireframe2d_plugin])
   .add_systems(@app.Startup, @app.system(wireframe_setup))
   .add_systems(@app.Startup, @app.system(setup_wireframe2d_config))
   .add_systems(@app.Update, @app.system(wireframe_update))
@@ -46,7 +46,7 @@ fn absf(value : Float) -> Float {
 }
 
 ///|
-fn color_close(a : @render2d.Color, b : @render2d.Color) -> Bool {
+fn color_close(a : @sprite.Color, b : @sprite.Color) -> Bool {
   absf(a.r - b.r) < 0.0001F &&
   absf(a.g - b.g) < 0.0001F &&
   absf(a.b - b.b) < 0.0001F &&
@@ -54,22 +54,22 @@ fn color_close(a : @render2d.Color, b : @render2d.Color) -> Bool {
 }
 
 ///|
-fn color_red() -> @render2d.Color {
-  @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
+fn color_red() -> @sprite.Color {
+  @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_green() -> @render2d.Color {
-  @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
+fn color_green() -> @sprite.Color {
+  @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_default_white() -> @render2d.Color {
-  @render2d.Color::white()
+fn color_default_white() -> @sprite.Color {
+  @sprite.Color::white()
 }
 
 ///|
-fn wireframe_color_text(color : @render2d.Color) -> String {
+fn wireframe_color_text(color : @sprite.Color) -> String {
   if color_close(color, color_red()) {
     "Srgba { red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0 }"
   } else {
@@ -78,7 +78,7 @@ fn wireframe_color_text(color : @render2d.Color) -> String {
 }
 
 ///|
-fn wireframe_overlay_text(config : @render2d.Wireframe2dConfig) -> String {
+fn wireframe_overlay_text(config : @sprite.Wireframe2dConfig) -> String {
   let global_value = if config.global { "true" } else { "false" }
   "Controls\n---------------\nZ - Toggle global\nX - Change global color\nC - Change color of the circle wireframe\n\nWireframe2dConfig\n-------------\nGlobal: " +
   global_value +
@@ -91,7 +91,7 @@ fn spawn_ui_text_handle(
   content : String,
   font : @asset.Handle[@asset.Font],
   font_size : Float,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> @text.TextHandle {
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
@@ -106,7 +106,7 @@ fn spawn_ui_text_handle(
 ///|
 fn spawn_wireframe_overlay(
   world : @ecs.World,
-  config : @render2d.Wireframe2dConfig,
+  config : @sprite.Wireframe2dConfig,
 ) -> @text.TextHandle {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
@@ -114,7 +114,7 @@ fn spawn_wireframe_overlay(
     wireframe_overlay_text(config),
     font,
     20.0F,
-    @render2d.Color::white(),
+    @sprite.Color::white(),
   )
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
@@ -150,25 +150,25 @@ fn spawn_wireframe_overlay(
 
 ///|
 fn setup_wireframe2d_config(world : @ecs.World) -> Unit {
-  let config = @render2d.Wireframe2dConfig::new(true, color_default_white())
-  world.insert_resource(@render2d.ecs_key_wireframe2d_config, config)
+  let config = @sprite.Wireframe2dConfig::new(true, color_default_white())
+  world.insert_resource(@sprite.ecs_key_wireframe2d_config, config)
 }
 
 ///|
 fn wireframe_setup(world : @ecs.World) -> Unit {
-  let black = @render2d.Color::black()
+  let black = @sprite.Color::black()
 
   let tick = world.read_change_tick()
 
-  let triangle_entity = @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_triangle(
-      @render2d.Triangle2d::new(
+  let triangle_entity = @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_triangle(
+      @sprite.Triangle2d::new(
         @math.Vec2::new(0.0F, 50.0F),
         @math.Vec2::new(-50.0F, -50.0F),
         @math.Vec2::new(50.0F, -50.0F),
       ),
     ),
-    @render2d.ColorMaterial::new(black),
+    @sprite.ColorMaterial::new(black),
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-150.0F, 0.0F),
       0.0F,
@@ -176,12 +176,12 @@ fn wireframe_setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   world
-  .component(@render2d.ecs_key_no_wireframe2d)
-  .insert(triangle_entity, @render2d.NoWireframe2d::default(), tick)
+  .component(@sprite.ecs_key_no_wireframe2d)
+  .insert(triangle_entity, @sprite.NoWireframe2d::default(), tick)
 
-  @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(100.0F, 100.0F)),
-    @render2d.ColorMaterial::new(black),
+  @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(100.0F, 100.0F)),
+    @sprite.ColorMaterial::new(black),
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
@@ -190,9 +190,9 @@ fn wireframe_setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let circle_entity = @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_circle(@render2d.Circle::new(50.0F)),
-    @render2d.ColorMaterial::new(black),
+  let circle_entity = @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_circle(@sprite.Circle::new(50.0F)),
+    @sprite.ColorMaterial::new(black),
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(150.0F, 0.0F),
       0.0F,
@@ -200,14 +200,14 @@ fn wireframe_setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   world
-  .component(@render2d.ecs_key_wireframe2d)
-  .insert(circle_entity, @render2d.Wireframe2d::default(), tick)
+  .component(@sprite.ecs_key_wireframe2d)
+  .insert(circle_entity, @sprite.Wireframe2d::default(), tick)
   world
-  .component(@render2d.ecs_key_wireframe2d_color)
-  .insert(circle_entity, @render2d.Wireframe2dColor::new(color_green()), tick)
+  .component(@sprite.ecs_key_wireframe2d_color)
+  .insert(circle_entity, @sprite.Wireframe2dColor::new(color_green()), tick)
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -215,12 +215,12 @@ fn wireframe_setup(world : @ecs.World) -> Unit {
   wireframe_scene_state.val.circle_entity = circle_entity
 
   let config = try
-    world.get_resource(@render2d.ecs_key_wireframe2d_config)
+    world.get_resource(@sprite.ecs_key_wireframe2d_config)
   catch {
-    _ => @render2d.Wireframe2dConfig::default()
+    _ => @sprite.Wireframe2dConfig::default()
   } noraise {
     Some(value) => value
-    None => @render2d.Wireframe2dConfig::default()
+    None => @sprite.Wireframe2dConfig::default()
   }
   wireframe_scene_state.val.overlay_text_handle = Some(
     spawn_wireframe_overlay(world, config),
@@ -232,12 +232,12 @@ fn wireframe_update(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   let mut config = try
-    world.get_resource(@render2d.ecs_key_wireframe2d_config)
+    world.get_resource(@sprite.ecs_key_wireframe2d_config)
   catch {
-    _ => @render2d.Wireframe2dConfig::default()
+    _ => @sprite.Wireframe2dConfig::default()
   } noraise {
     Some(value) => value
-    None => @render2d.Wireframe2dConfig::default()
+    None => @sprite.Wireframe2dConfig::default()
   }
   let mut config_changed = false
   if @input.key_just_pressed(@window.KeyCode::KeyZ) {
@@ -254,11 +254,11 @@ fn wireframe_update(world : @ecs.World) -> Unit {
     config_changed = true
   }
   if config_changed {
-    world.insert_resource(@render2d.ecs_key_wireframe2d_config, config)
+    world.insert_resource(@sprite.ecs_key_wireframe2d_config, config)
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyC) {
-    let store = world.component(@render2d.ecs_key_wireframe2d_color)
+    let store = world.component(@sprite.ecs_key_wireframe2d_color)
     if store.get(wireframe_scene_state.val.circle_entity)
       is Some(color_component) {
       let next = if color_close(color_component.color, color_green()) {
@@ -268,7 +268,7 @@ fn wireframe_update(world : @ecs.World) -> Unit {
       }
       store.set(
         wireframe_scene_state.val.circle_entity,
-        @render2d.Wireframe2dColor::new(next),
+        @sprite.Wireframe2dColor::new(next),
         tick,
       )
       |> ignore
@@ -277,12 +277,12 @@ fn wireframe_update(world : @ecs.World) -> Unit {
 
   if wireframe_scene_state.val.overlay_text_handle is Some(text_handle) {
     let config = try
-      world.get_resource(@render2d.ecs_key_wireframe2d_config)
+      world.get_resource(@sprite.ecs_key_wireframe2d_config)
     catch {
-      _ => @render2d.Wireframe2dConfig::default()
+      _ => @sprite.Wireframe2dConfig::default()
     } noraise {
       Some(value) => value
-      None => @render2d.Wireframe2dConfig::default()
+      None => @sprite.Wireframe2dConfig::default()
     }
     @text.text_set_content(text_handle, wireframe_overlay_text(config))
   }

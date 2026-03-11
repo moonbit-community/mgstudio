@@ -34,22 +34,22 @@ pub(all) enum AssetEvent[T] {
 
 ///|
 pub fn host_asset_load_folder(path~ : String) -> Int {
-  @native_asset.load_folder(path~)
+  load_folder(path~)
 }
 
 ///|
 pub fn host_asset_poll_loaded_folder_event_kind() -> Int {
-  @native_asset.poll_loaded_folder_event_kind()
+  poll_loaded_folder_event_kind()
 }
 
 ///|
 pub fn host_asset_poll_loaded_folder_event_id() -> Int {
-  @native_asset.poll_loaded_folder_event_id()
+  poll_loaded_folder_event_id()
 }
 
 ///|
 pub fn host_asset_loaded_folder_handles_len(folder_id : Int) -> Int {
-  @native_asset.loaded_folder_handles_len(folder_id)
+  loaded_folder_handles_len(folder_id)
 }
 
 ///|
@@ -57,7 +57,7 @@ pub fn host_asset_loaded_folder_handles_get(
   folder_id~ : Int,
   index~ : Int,
 ) -> Int {
-  @native_asset.loaded_folder_handles_get(folder_id~, index~)
+  loaded_folder_handles_get(folder_id~, index~)
 }
 
 ///|

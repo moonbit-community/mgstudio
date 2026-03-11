@@ -157,11 +157,8 @@ fn update_help_text() -> Unit {
 
 ///|
 fn set_global_ambient_light(world : @ecs.World, brightness : Float) -> Unit {
-  let value = @render3d.GlobalAmbientLight::new(
-    @render2d.Color::white(),
-    brightness,
-  )
-  world.insert_resource(@render3d.ecs_key_global_ambient_light, value)
+  let value = @pbr.GlobalAmbientLight::new(@sprite.Color::white(), brightness)
+  world.insert_resource(@pbr.ecs_key_global_ambient_light, value)
 }
 
 ///|
@@ -170,18 +167,18 @@ fn set_camera_fov(
   camera_entity : @core.Entity,
   fov : Float,
 ) -> Unit {
-  let projection_store = world.component(@render3d.ecs_key_camera_projection3d)
+  let projection_store = world.component(@pbr.ecs_key_projection)
   guard projection_store.get(camera_entity) is Some(current) else { return }
-  let next_projection = match current.projection {
-    Perspective(p) => Some(@render3d.Projection3d::Perspective(p.with_fov(fov)))
+  let next_projection = match current {
+    Perspective(p) => {
+      p.fov = fov
+      Some(@pbr.Projection::Perspective(p))
+    }
     Orthographic(_) => None
+    Custom(_) => None
   }
   guard next_projection is Some(projection) else { return }
-  projection_store.set(
-    camera_entity,
-    current.with_projection(projection),
-    world.read_change_tick(),
-  )
+  projection_store.set(camera_entity, projection, world.read_change_tick())
   |> ignore
 }
 
@@ -189,11 +186,11 @@ fn set_camera_fov(
 fn apply_motion_blur_settings(world : @ecs.World) -> Unit {
   guard motion_blur_state.val.camera is Some(camera_entity) else { return }
   let tick = world.read_change_tick()
-  let motion_blur = @render3d.MotionBlur::new(
+  let motion_blur = @post_process.MotionBlur::new(
     motion_blur_state.val.shutter_angle,
     motion_blur_state.val.samples,
   )
-  let store = world.component(@render3d.ecs_key_motion_blur)
+  let store = world.component(@post_process.ecs_key_motion_blur)
   if store.contains(camera_entity) {
     store.set(camera_entity, motion_blur, tick) |> ignore
   } else {
@@ -203,8 +200,8 @@ fn apply_motion_blur_settings(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_camera(world : @ecs.World) -> Unit {
-  let camera = @render3d.Camera3dBundle::new(
-      @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+      @sprite.Camera::default(),
       @math.Transform::from_xyz(15.0F, -0.5F, 0.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -212,7 +209,7 @@ fn spawn_camera(world : @ecs.World) -> Unit {
     )
     .with_motion_blur(
       Some(
-        @render3d.MotionBlur::new(
+        @post_process.MotionBlur::new(
           motion_blur_state.val.shutter_angle,
           motion_blur_state.val.samples,
         ),
@@ -220,8 +217,8 @@ fn spawn_camera(world : @ecs.World) -> Unit {
     )
     .spawn(world)
   world
-  .component(@render3d.ecs_key_msaa)
-  .insert(camera, @render3d.Msaa::Off, world.read_change_tick())
+  .component(@pbr.ecs_key_msaa)
+  .insert(camera, @pbr.Msaa::Off, world.read_change_tick())
   motion_blur_state.val.camera = Some(camera)
 }
 
@@ -239,11 +236,11 @@ fn spawn_help_text(asset_server : @asset.AssetServer) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -253,25 +250,25 @@ fn spawn_help_text(asset_server : @asset.AssetServer) -> Unit {
 ///|
 fn spawn_car(
   world : @ecs.World,
-  body_mesh : @render3d.Mesh3d,
-  wheel_mesh : @render3d.Mesh3d,
-  car_material : @asset.Handle[@render3d.StandardMaterial],
-  wheel_material : @asset.Handle[@render3d.StandardMaterial],
+  body_mesh : @pbr.Mesh3d,
+  wheel_mesh : @pbr.Mesh3d,
+  car_material : @asset.Handle[@pbr.StandardMaterial],
+  wheel_material : @asset.Handle[@pbr.StandardMaterial],
   phase : Float,
   tracked : Bool,
 ) -> Unit {
   let tick = world.read_change_tick()
-  let body = @render3d.MeshMaterial3dBundle::new(
+  let body = @pbr.MeshMaterial3dBundle::new(
     body_mesh,
-    @render3d.MeshMaterial3d::new(car_material),
+    @pbr.MeshMaterial3d::new(car_material),
     @math.Transform::from_xyz(0.0F, -0.59F, 0.0F).with_scale(
       @math.Vec3::new(0.5F, 0.5F, 0.5F),
     ),
   ).spawn(world)
 
-  let cabin = @render3d.MeshMaterial3dBundle::new(
+  let cabin = @pbr.MeshMaterial3dBundle::new(
     body_mesh,
-    @render3d.MeshMaterial3d::new(car_material),
+    @pbr.MeshMaterial3d::new(car_material),
     @math.Transform::from_xyz(0.0F, 0.08F, 0.03F).with_scale(
       @math.Vec3::new(1.0F, 1.0F, 0.5F),
     ),
@@ -288,9 +285,9 @@ fn spawn_car(
     @math.Vec3::new(-0.14F, -0.045F, -0.15F),
   ]
   for offset in wheel_offsets {
-    let wheel = @render3d.MeshMaterial3dBundle::new(
+    let wheel = @pbr.MeshMaterial3dBundle::new(
       wheel_mesh,
-      @render3d.MeshMaterial3d::new(wheel_material),
+      @pbr.MeshMaterial3d::new(wheel_material),
       @math.Transform::from_xyz(offset.x, offset.y, offset.z)
       .with_scale(@math.Vec3::new(0.15F, 0.04F, 0.15F))
       .with_rotation(@math.Quat::from_rotation_z(@math.pi_half())),
@@ -315,8 +312,8 @@ fn spawn_car(
 ///|
 fn spawn_barriers(
   world : @ecs.World,
-  mesh : @render3d.Mesh3d,
-  material : @asset.Handle[@render3d.StandardMaterial],
+  mesh : @pbr.Mesh3d,
+  material : @asset.Handle[@pbr.StandardMaterial],
 ) -> Unit {
   for side in [0, 1] {
     let offset = if side == 0 { 0.04F } else { -0.04F }
@@ -325,9 +322,9 @@ fn spawn_barriers(
         Float::from_double(N_CONES.to_double()) *
         TWO_PI
       let pos = race_track_pos(offset, t)
-      @render3d.MeshMaterial3dBundle::new(
+      @pbr.MeshMaterial3dBundle::new(
         mesh,
-        @render3d.MeshMaterial3d::new(material),
+        @pbr.MeshMaterial3d::new(material),
         @math.Transform::from_xyz(pos.x, -0.65F, pos.y).with_scale(
           @math.Vec3::splat(0.07F),
         ),
@@ -340,10 +337,10 @@ fn spawn_barriers(
 ///|
 fn spawn_trees(
   world : @ecs.World,
-  leaves_mesh : @render3d.Mesh3d,
-  trunk_mesh : @render3d.Mesh3d,
-  leaves_material : @asset.Handle[@render3d.StandardMaterial],
-  trunk_material : @asset.Handle[@render3d.StandardMaterial],
+  leaves_mesh : @pbr.Mesh3d,
+  trunk_mesh : @pbr.Mesh3d,
+  leaves_material : @asset.Handle[@pbr.StandardMaterial],
+  trunk_material : @asset.Handle[@pbr.StandardMaterial],
 ) -> Unit {
   for side in [0, 1] {
     let offset = if side == 0 { 0.07F } else { -0.07F }
@@ -352,17 +349,17 @@ fn spawn_trees(
         Float::from_double(N_TREES.to_double()) *
         TWO_PI
       let pos = race_track_pos(offset, t)
-      @render3d.MeshMaterial3dBundle::new(
+      @pbr.MeshMaterial3dBundle::new(
         leaves_mesh,
-        @render3d.MeshMaterial3d::new(leaves_material),
+        @pbr.MeshMaterial3d::new(leaves_material),
         @math.Transform::from_xyz(pos.x, -0.3F, pos.y).with_scale(
           @math.Vec3::splat(0.3F),
         ),
       ).spawn(world)
       |> ignore
-      @render3d.MeshMaterial3dBundle::new(
+      @pbr.MeshMaterial3dBundle::new(
         trunk_mesh,
-        @render3d.MeshMaterial3d::new(trunk_material),
+        @pbr.MeshMaterial3d::new(trunk_material),
         @math.Transform::from_xyz(pos.x, -0.5F, pos.y).with_scale(
           @math.Vec3::new(0.05F, 0.3F, 0.05F),
         ),
@@ -379,10 +376,10 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let directional_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 3000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 3000.0F, true),
     tick,
   )
   world
@@ -396,15 +393,15 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     tick,
   )
 
-  let cube_mesh = @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
-  let sky_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.1F, 0.6F, 1.0F, 1.0F),
+  let cube_mesh = @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
+  let sky_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.1F, 0.6F, 1.0F, 1.0F),
     ).with_unlit(true),
   )
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     cube_mesh,
-    @render3d.MeshMaterial3d::new(sky_material),
+    @pbr.MeshMaterial3d::new(sky_material),
     @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_scale(
       @math.Vec3::splat(-4000.0F),
     ),
@@ -412,47 +409,47 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   |> ignore
 
   let icon = asset_server.load("branding/icon.png")
-  let ground_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white())
+  let ground_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white())
     .with_perceptual_roughness(1.0F)
     .with_base_color_texture(Some(icon))
-    .with_uv_scale(@math.Vec2::new(250.0F, 250.0F)),
+    .with_uv_transform(
+      @transform.Affine2::from_scale(@math.Vec2::new(250.0F, 250.0F)),
+    ),
   )
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(ground_material),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(ground_material),
     @math.Transform::from_xyz(0.0F, -0.65F, 0.0F).with_scale(
       @math.Vec3::splat(80.0F),
     ),
   ).spawn(world)
   |> ignore
 
-  let car_colors : Array[@render2d.Color] = [
-    @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
-    @render2d.Color::new(1.0F, 1.0F, 0.0F, 1.0F),
-    @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
-    @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
-    @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
-    @render2d.Color::new(1.0F, 0.0F, 1.0F, 1.0F),
-    @render2d.Color::new(0.5F, 0.5F, 0.0F, 1.0F),
-    @render2d.Color::new(1.0F, 0.5F, 0.0F, 1.0F),
+  let car_colors : Array[@sprite.Color] = [
+    @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+    @sprite.Color::new(1.0F, 1.0F, 0.0F, 1.0F),
+    @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+    @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+    @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+    @sprite.Color::new(1.0F, 0.0F, 1.0F, 1.0F),
+    @sprite.Color::new(0.5F, 0.5F, 0.0F, 1.0F),
+    @sprite.Color::new(1.0F, 0.5F, 0.0F, 1.0F),
   ]
-  let car_materials : Array[@asset.Handle[@render3d.StandardMaterial]] = []
+  let car_materials : Array[@asset.Handle[@pbr.StandardMaterial]] = []
   for color in car_colors {
     car_materials.push(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(color),
-      ),
+      @pbr.standard_material_add(@pbr.StandardMaterial::from_color(color)),
     )
   }
-  let wheel_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white()).with_base_color_texture(
+  let wheel_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_base_color_texture(
       Some(asset_server.load("branding/icon.png")),
     ),
   )
 
-  let car_body_mesh = @render3d.Mesh3d::from_cuboid(0.3F, 0.15F, 0.55F)
-  let wheel_mesh = @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
+  let car_body_mesh = @pbr.Mesh3d::from_cuboid(0.3F, 0.15F, 0.55F)
+  let wheel_mesh = @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
   for i in 0..<N_CARS {
     let material = car_materials[i % car_materials.length()]
     spawn_car(
@@ -466,28 +463,28 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     )
   }
 
-  let barrier_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 87.0F / 255.0F, 51.0F / 255.0F, 1.0F),
+  let barrier_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(1.0F, 87.0F / 255.0F, 51.0F / 255.0F, 1.0F),
     ).with_reflectance(1.0F),
   )
   spawn_barriers(
     world,
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     barrier_material,
   )
 
-  let leaves_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+  let leaves_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
     ),
   )
-  let trunk_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.4F, 0.2F, 0.2F, 1.0F),
+  let trunk_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.4F, 0.2F, 0.2F, 1.0F),
     ),
   )
-  let tree_mesh = @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
+  let tree_mesh = @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
   spawn_trees(world, tree_mesh, tree_mesh, leaves_material, trunk_material)
 }
 

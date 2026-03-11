@@ -16,7 +16,7 @@
 /// Port of `bevy/examples/3d/vertex_colors.rs`.
 
 ///|
-fn colorful_cube_mesh() -> @render3d.Mesh3d {
+fn colorful_cube_mesh() -> @pbr.Mesh3d {
   let positions = [
     // Top (+y)
     @math.Vec3::new(-0.5F, 0.5F, -0.5F),
@@ -90,7 +90,7 @@ fn colorful_cube_mesh() -> @render3d.Mesh3d {
       ),
     )
   }
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new_with_colors(positions, uvs, colors, Some(indices)),
   )
 }
@@ -99,12 +99,12 @@ fn colorful_cube_mesh() -> @render3d.Mesh3d {
 fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(5.0F, 5.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(5.0F, 5.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(
+          @sprite.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
         ),
       ),
     ),
@@ -112,11 +112,11 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     colorful_cube_mesh(),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@render2d.Color::white()),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
       ),
     ),
     @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
@@ -125,15 +125,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light_entity = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     light_entity,
-    @render3d.PointLight::new(
-      @render2d.Color::white(),
-      1_000_000.0F,
-      20.0F,
-      true,
-    ),
+    @pbr.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 20.0F, true),
     tick,
   )
   world
@@ -147,8 +142,8 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
 
-  @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

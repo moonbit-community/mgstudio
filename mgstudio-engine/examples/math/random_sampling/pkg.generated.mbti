@@ -1,0 +1,31 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/math/random_sampling"
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) enum Mode {
+  Interior
+  Boundary
+}
+pub impl Eq for Mode
+pub impl Show for Mode
+
+type MousePressed
+
+type PointMaterial
+
+type PointMesh
+
+type RandomSource
+
+type SamplePoint
+
+type SampledShape
+
+// Type aliases
+
+// Traits
+

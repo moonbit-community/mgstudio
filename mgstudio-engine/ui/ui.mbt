@@ -459,16 +459,6 @@ pub fn FocusPolicy::default() -> FocusPolicy {
 }
 
 ///|
-/// Controls whether UI should render with antialiasing.
-///
-/// This is Bevy-aligned (`UiAntiAlias`) and is currently consumed by the UI
-/// render pipeline (tracked separately).
-pub(all) enum UiAntiAlias {
-  Off
-  On
-} derive(Eq, Show, ToJson, FromJson)
-
-///|
 pub struct BorderRadius {
   top_left : Val
   top_right : Val
@@ -540,14 +530,14 @@ pub fn BorderRadius::percent(
 pub struct Outline {
   width : Val
   offset : Val
-  color : @render2d.Color
+  color : @sprite.Color
 } derive(ToJson, FromJson)
 
 ///|
 pub fn Outline::new(
   width : Val,
   offset : Val,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> Outline {
   Outline::{ width, offset, color }
 }
@@ -557,13 +547,13 @@ pub fn Outline::default() -> Outline {
   Outline::{
     width: Val::Px(0.0F),
     offset: Val::Px(0.0F),
-    color: @render2d.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+    color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
   }
 }
 
 ///|
 pub struct BoxShadow {
-  color : @render2d.Color
+  color : @sprite.Color
   x_offset : Val
   y_offset : Val
   spread_radius : Val
@@ -572,7 +562,7 @@ pub struct BoxShadow {
 
 ///|
 pub fn BoxShadow::new(
-  color : @render2d.Color,
+  color : @sprite.Color,
   x_offset : Val,
   y_offset : Val,
   spread_radius : Val,
@@ -585,7 +575,7 @@ pub fn BoxShadow::new(
 pub fn BoxShadow::default() -> BoxShadow {
   // Match Bevy defaults (v0.15.3).
   BoxShadow::{
-    color: @render2d.Color::black(),
+    color: @sprite.Color::black(),
     x_offset: Val::Percent(20.0F),
     y_offset: Val::Percent(20.0F),
     spread_radius: Val::Px(0.0F),
@@ -594,34 +584,18 @@ pub fn BoxShadow::default() -> BoxShadow {
 }
 
 ///|
-pub struct UiBoxShadowSamples {
-  samples : Int
-} derive(ToJson, FromJson)
-
-///|
-pub fn UiBoxShadowSamples::new(samples : Int) -> UiBoxShadowSamples {
-  let safe = if samples < 0 { 0 } else { samples }
-  UiBoxShadowSamples::{ samples: safe }
-}
-
-///|
-pub fn UiBoxShadowSamples::default() -> UiBoxShadowSamples {
-  UiBoxShadowSamples::new(4)
-}
-
-///|
 pub struct BorderColor {
-  color : @render2d.Color
+  color : @sprite.Color
 } derive(ToJson, FromJson)
 
 ///|
-pub fn BorderColor::new(color : @render2d.Color) -> BorderColor {
+pub fn BorderColor::new(color : @sprite.Color) -> BorderColor {
   BorderColor::{ color, }
 }
 
 ///|
 /// The style of a UI node (Bevy v0.15.3-aligned surface).
-pub struct Node {
+pub(all) struct Node {
   display : Display
   position_type : PositionType
   overflow : Overflow
@@ -738,6 +712,11 @@ pub fn Node::with_padding(self : Node, padding : UiRect) -> Node {
 }
 
 ///|
+pub fn Node::with_margin(self : Node, margin : UiRect) -> Node {
+  Node::{ ..self, margin, }
+}
+
+///|
 pub fn Node::with_border(self : Node, border : UiRect) -> Node {
   Node::{ ..self, border, }
 }
@@ -794,8 +773,28 @@ pub fn Node::with_flex_direction(
 }
 
 ///|
+pub fn Node::with_flex_grow(self : Node, flex_grow : Float) -> Node {
+  Node::{ ..self, flex_grow, }
+}
+
+///|
+pub fn Node::with_flex_shrink(self : Node, flex_shrink : Float) -> Node {
+  Node::{ ..self, flex_shrink, }
+}
+
+///|
+pub fn Node::with_flex_basis(self : Node, flex_basis : Val) -> Node {
+  Node::{ ..self, flex_basis, }
+}
+
+///|
 pub fn Node::with_row_gap(self : Node, row_gap : Val) -> Node {
   Node::{ ..self, row_gap, }
+}
+
+///|
+pub fn Node::with_column_gap(self : Node, column_gap : Val) -> Node {
+  Node::{ ..self, column_gap, }
 }
 
 ///|
@@ -829,6 +828,99 @@ pub struct IsDefaultUiCamera {} derive(ToJson, FromJson)
 ///|
 pub fn IsDefaultUiCamera::default() -> IsDefaultUiCamera {
   IsDefaultUiCamera::{  }
+}
+
+///|
+/// Bevy-aligned explicit UI camera routing for a root UI node.
+pub struct UiTargetCamera {
+  camera : @core.Entity
+} derive(ToJson, FromJson)
+
+///|
+pub fn UiTargetCamera::new(camera : @core.Entity) -> UiTargetCamera {
+  UiTargetCamera::{ camera, }
+}
+
+///|
+pub fn UiTargetCamera::entity(self : UiTargetCamera) -> @core.Entity {
+  self.camera
+}
+
+///|
+/// Derived UI target camera propagated from the root UI node.
+pub struct ComputedUiTargetCamera {
+  camera : @core.Entity
+} derive(ToJson, FromJson)
+
+///|
+pub fn ComputedUiTargetCamera::new(
+  camera : @core.Entity,
+) -> ComputedUiTargetCamera {
+  ComputedUiTargetCamera::{ camera, }
+}
+
+///|
+pub fn ComputedUiTargetCamera::default() -> ComputedUiTargetCamera {
+  ComputedUiTargetCamera::{ camera: @core.Entity::placeholder() }
+}
+
+///|
+pub fn ComputedUiTargetCamera::get(
+  self : ComputedUiTargetCamera,
+) -> @core.Entity? {
+  if self.camera.is_placeholder() {
+    None
+  } else {
+    Some(self.camera)
+  }
+}
+
+///|
+/// Derived render target information propagated from the root UI node.
+pub struct ComputedUiRenderTargetInfo {
+  scale_factor : Float
+  physical_size : @math.IVec2
+} derive(ToJson, FromJson)
+
+///|
+pub fn ComputedUiRenderTargetInfo::new(
+  scale_factor : Float,
+  physical_size : @math.IVec2,
+) -> ComputedUiRenderTargetInfo {
+  ComputedUiRenderTargetInfo::{ scale_factor, physical_size }
+}
+
+///|
+pub fn ComputedUiRenderTargetInfo::default() -> ComputedUiRenderTargetInfo {
+  ComputedUiRenderTargetInfo::{
+    scale_factor: 1.0F,
+    physical_size: @math.IVec2::new(0, 0),
+  }
+}
+
+///|
+pub fn ComputedUiRenderTargetInfo::scale_factor(
+  self : ComputedUiRenderTargetInfo,
+) -> Float {
+  safe_scale_factor(self.scale_factor)
+}
+
+///|
+pub fn ComputedUiRenderTargetInfo::physical_size(
+  self : ComputedUiRenderTargetInfo,
+) -> @math.IVec2 {
+  self.physical_size
+}
+
+///|
+pub fn ComputedUiRenderTargetInfo::logical_size(
+  self : ComputedUiRenderTargetInfo,
+) -> @math.Vec2 {
+  let scale = self.scale_factor()
+  @math.Vec2::new(
+    int_to_float(self.physical_size.x) / scale,
+    int_to_float(self.physical_size.y) / scale,
+  )
 }
 
 ///|
@@ -873,17 +965,17 @@ pub fn ImageNodeSize::size(self : ImageNodeSize) -> @math.UVec2 {
 
 ///|
 pub struct BackgroundColor {
-  color : @render2d.Color
+  color : @sprite.Color
 } derive(ToJson, FromJson)
 
 ///|
-pub fn BackgroundColor::new(color : @render2d.Color) -> BackgroundColor {
+pub fn BackgroundColor::new(color : @sprite.Color) -> BackgroundColor {
   BackgroundColor::{ color, }
 }
 
 ///|
 pub struct UiImage {
-  color : @render2d.Color
+  color : @sprite.Color
   image : @asset.Handle[@asset.Image]
   texture_atlas : @asset.TextureAtlas?
   flip_x : Bool
@@ -894,7 +986,7 @@ pub struct UiImage {
 ///|
 pub fn UiImage::new(image : @asset.Handle[@asset.Image]) -> UiImage {
   UiImage::{
-    color: @render2d.Color::white(),
+    color: @sprite.Color::white(),
     image,
     texture_atlas: None,
     flip_x: false,
@@ -904,7 +996,7 @@ pub fn UiImage::new(image : @asset.Handle[@asset.Image]) -> UiImage {
 }
 
 ///|
-pub fn UiImage::with_color(self : UiImage, color : @render2d.Color) -> UiImage {
+pub fn UiImage::with_color(self : UiImage, color : @sprite.Color) -> UiImage {
   UiImage::{ ..self, color, }
 }
 
@@ -1045,155 +1137,9 @@ pub fn NodeImageMode::uses_slices(self : NodeImageMode) -> Bool {
 }
 
 ///|
-fn clamp_stretch_value(v : Float) -> Float {
-  if v < 0.001F {
-    0.001F
-  } else {
-    v
-  }
-}
-
-///|
-fn min3(a : Float, b : Float, c : Float) -> Float {
-  let ab = if a < b { a } else { b }
-  if ab < c {
-    ab
-  } else {
-    c
-  }
-}
-
-///|
-fn compute_tiled_axis(
-  tile : Bool,
-  image_extent : Float,
-  target_extent : Float,
-  stretch_value : Float,
-) -> Float {
-  if tile {
-    let denom = image_extent * clamp_stretch_value(stretch_value)
-    if denom == 0.0F {
-      1.0F
-    } else {
-      target_extent / denom
-    }
-  } else {
-    1.0F
-  }
-}
-
-///|
-fn compute_tiled_subaxis(
-  image_extent : Float,
-  target_extent : Float,
-  mode : SliceScaleMode,
-) -> Float {
-  match mode {
-    SliceScaleMode::Stretch => 1.0F
-    SliceScaleMode::Tile(stretch_value) => {
-      let denom = image_extent * clamp_stretch_value(stretch_value)
-      if denom == 0.0F {
-        1.0F
-      } else {
-        target_extent / denom
-      }
-    }
-  }
-}
-
-///|
-fn compute_texture_slices(
-  image_size : @math.Vec2,
-  target_size : @math.Vec2,
-  mode : NodeImageMode,
-) -> (@math.Vec4, @math.Vec4, @math.Vec4) {
-  match mode {
-    NodeImageMode::Sliced(slicer) => {
-      let denom_x = if image_size.x == 0.0F { 1.0F } else { image_size.x }
-      let denom_y = if image_size.y == 0.0F { 1.0F } else { image_size.y }
-      let tdenom_x = if target_size.x == 0.0F { 1.0F } else { target_size.x }
-      let tdenom_y = if target_size.y == 0.0F { 1.0F } else { target_size.y }
-      let min_coeff = min3(
-        target_size.x / denom_x,
-        target_size.y / denom_y,
-        slicer.max_corner_scale,
-      )
-      let slices = @math.Vec4::new(
-        slicer.border.left / denom_x,
-        slicer.border.top / denom_y,
-        1.0F - slicer.border.right / denom_x,
-        1.0F - slicer.border.bottom / denom_y,
-      )
-      let border = @math.Vec4::new(
-        slicer.border.left / tdenom_x * min_coeff,
-        slicer.border.top / tdenom_y * min_coeff,
-        1.0F - slicer.border.right / tdenom_x * min_coeff,
-        1.0F - slicer.border.bottom / tdenom_y * min_coeff,
-      )
-      let image_side_width = denom_x * (slices.z - slices.x)
-      let image_side_height = denom_y * (slices.w - slices.y)
-      let target_side_width = tdenom_x * (border.z - border.x)
-      let target_side_height = tdenom_y * (border.w - border.y)
-      let repeat_side_x = compute_tiled_subaxis(
-        image_side_width,
-        target_side_width,
-        slicer.sides_scale_mode,
-      )
-      let repeat_side_y = compute_tiled_subaxis(
-        image_side_height,
-        target_side_height,
-        slicer.sides_scale_mode,
-      )
-      let repeat_center_x = compute_tiled_subaxis(
-        image_side_width,
-        target_side_width,
-        slicer.center_scale_mode,
-      )
-      let repeat_center_y = compute_tiled_subaxis(
-        image_side_height,
-        target_side_height,
-        slicer.center_scale_mode,
-      )
-      (
-        slices,
-        border,
-        @math.Vec4::new(
-          repeat_side_x, repeat_side_y, repeat_center_x, repeat_center_y,
-        ),
-      )
-    }
-    NodeImageMode::Tiled(tile_x, tile_y, stretch_value) => {
-      let rx = compute_tiled_axis(
-        tile_x,
-        image_size.x,
-        target_size.x,
-        stretch_value,
-      )
-      let ry = compute_tiled_axis(
-        tile_y,
-        image_size.y,
-        target_size.y,
-        stretch_value,
-      )
-      (
-        @math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F),
-        @math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F),
-        @math.Vec4::new(1.0F, 1.0F, rx, ry),
-      )
-    }
-    _ =>
-      (
-        @math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F),
-        @math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F),
-        @math.Vec4::new(1.0F, 1.0F, 1.0F, 1.0F),
-      )
-  }
-}
-
-///|
 /// A UI node that renders an image (Bevy v0.15.3 `ImageNode`).
 pub struct ImageNode {
-  color : @render2d.Color
+  color : @sprite.Color
   image : @asset.Handle[@asset.Image]
   texture_atlas : @asset.TextureAtlas?
   flip_x : Bool
@@ -1205,7 +1151,7 @@ pub struct ImageNode {
 ///|
 pub fn ImageNode::default() -> ImageNode {
   ImageNode::{
-    color: @render2d.Color::white(),
+    color: @sprite.Color::white(),
     image: @asset.asset_transparent_texture(),
     texture_atlas: None,
     flip_x: false,
@@ -1221,9 +1167,17 @@ pub fn ImageNode::new(image : @asset.Handle[@asset.Image]) -> ImageNode {
 }
 
 ///|
+pub fn ImageNode::from_atlas_image(
+  image : @asset.Handle[@asset.Image],
+  texture_atlas : @asset.TextureAtlas,
+) -> ImageNode {
+  ImageNode::new(image).with_texture_atlas(Some(texture_atlas))
+}
+
+///|
 pub fn ImageNode::with_color(
   self : ImageNode,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> ImageNode {
   ImageNode::{ ..self, color, }
 }
@@ -1287,16 +1241,16 @@ pub fn Label::default() -> Label {
 
 ///|
 pub struct ButtonColors {
-  normal : @render2d.Color
-  hovered : @render2d.Color
-  pressed : @render2d.Color
+  normal : @sprite.Color
+  hovered : @sprite.Color
+  pressed : @sprite.Color
 } derive(ToJson, FromJson)
 
 ///|
 pub fn ButtonColors::new(
-  normal : @render2d.Color,
-  hovered : @render2d.Color,
-  pressed : @render2d.Color,
+  normal : @sprite.Color,
+  hovered : @sprite.Color,
+  pressed : @sprite.Color,
 ) -> ButtonColors {
   ButtonColors::{ normal, hovered, pressed }
 }
@@ -1462,40 +1416,16 @@ pub let ui_set_a11y : @app.SystemSet = ui_set_post_layout
 pub let ui_set_a11y_apply : @app.SystemSet = ui_set_post_layout
 
 ///|
-pub let ui_set_render_extract : @app.SystemSet = ui_set_stack
-
-///|
-const UI_DRAW_FLAG_TEXTURED : Int = 1
-
-///|
-const UI_DRAW_FLAG_BORDER : Int = 2
-
-///|
-const UI_DRAW_FLAG_ANTIALIAS : Int = 4
-
-///|
 const UI_STACK_Z_BASE : Float = 10000.0F
 
 ///|
 const UI_STACK_Z_STEP : Float = 10.0F
 
 ///|
-const UI_STACK_Z_BACKGROUND : Float = 0.0F
-
-///|
-const UI_STACK_Z_SHADOW : Float = -1.0F
-
-///|
 const UI_STACK_Z_CONTENT : Float = 1.0F
 
 ///|
-const UI_STACK_Z_BORDER : Float = 2.0F
-
-///|
 const UI_STACK_Z_TEXT : Float = 3.0F
-
-///|
-const UI_STACK_Z_OUTLINE : Float = 4.0F
 
 ///|
 fn int_to_float(value : Int) -> Float {
@@ -1517,6 +1447,40 @@ fn safe_camera_scale(scale : Float) -> Float {
     1.0F
   } else {
     scale
+  }
+}
+
+///|
+priv struct UiResolvedCameraState {
+  viewport_origin : @math.Vec2
+  viewport_size : @math.Vec2
+  camera_transform : @math.Transform
+  camera_scale : Float
+}
+
+///|
+fn ui_resolved_camera_state_default() -> UiResolvedCameraState {
+  UiResolvedCameraState::{
+    viewport_origin: @math.Vec2::new(0.0F, 0.0F),
+    viewport_size: @math.Vec2::new(0.0F, 0.0F),
+    camera_transform: @math.Transform::identity(),
+    camera_scale: 1.0F,
+  }
+}
+
+///|
+fn ui_entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
+  a.id == b.id && a.generation == b.generation
+}
+
+///|
+fn ui_entity_gt(a : @core.Entity, b : @core.Entity) -> Bool {
+  if a.id > b.id {
+    true
+  } else if a.id < b.id {
+    false
+  } else {
+    a.generation > b.generation
   }
 }
 
@@ -1597,10 +1561,10 @@ fn create_white_texture_if_needed(ctx : Ref[UiContext]) -> Unit {
 
 ///|
 fn clamp_viewport_to_window(
-  viewport : @render2d.Viewport,
+  viewport : @sprite.Viewport,
   win_w : Int,
   win_h : Int,
-) -> @render2d.Viewport {
+) -> @sprite.Viewport {
   let mut x = viewport.physical_position.x
   let mut y = viewport.physical_position.y
   let mut w = viewport.physical_size.x
@@ -1625,69 +1589,279 @@ fn clamp_viewport_to_window(
   if h > max_h {
     h = max_h
   }
-  @render2d.Viewport::new(@math.IVec2::new(x, y), @math.IVec2::new(w, h))
+  @sprite.Viewport::new(@math.IVec2::new(x, y), @math.IVec2::new(w, h))
 }
 
 ///|
-fn ui_select_camera2d_entity(world : @ecs.World) -> @core.Entity? {
-  let camera2d_store = @render2d.get_camera2d_store(world)
-  let camera_store = @render2d.get_camera_store(world)
-  let target_store = @render2d.get_render_target_store(world)
-  let default_ui_camera_store = get_is_default_ui_camera_store(world)
-
-  let mut best_default : @core.Entity? = None
-  let mut best_default_order = 0
-  let mut best_fallback : @core.Entity? = None
-  let mut best_fallback_order = 0
-
-  fn update_best(
-    current_best : @core.Entity?,
-    current_order : Int,
-    entity : @core.Entity,
-    order : Int,
-  ) -> (@core.Entity?, Int) {
-    match current_best {
-      None => (Some(entity), order)
-      Some(_) =>
-        if order < current_order {
-          (Some(entity), order)
-        } else {
-          (current_best, current_order)
-        }
-    }
+fn ui_render_target_targets_primary_window(
+  world : @ecs.World,
+  target : @sprite.RenderTarget,
+) -> Bool {
+  match target {
+    @sprite.RenderTarget::Screen => true
+    @sprite.RenderTarget::Window(window_ref) =>
+      match window_ref {
+        @window.WindowRef::Primary => true
+        @window.WindowRef::Entity(window_entity) =>
+          match
+            @window.window_entity_for_ref(world, @window.WindowRef::Primary) {
+            Some(primary_window) => ui_entity_eq(window_entity, primary_window)
+            None => false
+          }
+      }
+    @sprite.RenderTarget::Image(_) => false
   }
+}
 
-  camera2d_store.for_each(fn(entity, _marker) {
-    let target = match target_store.get(entity) {
-      Some(value) => value
-      None => @render2d.RenderTarget::Screen
-    }
-    if target is @render2d.Image(_) {
-      return
-    }
-    let order = match camera_store.get(entity) {
-      Some(camera) => camera.order
-      None => @render2d.Camera::default().order
-    }
-    if default_ui_camera_store.contains(entity) {
-      let (entity0, order0) = update_best(
-        best_default, best_default_order, entity, order,
-      )
-      best_default = entity0
-      best_default_order = order0
-    } else {
-      let (entity0, order0) = update_best(
-        best_fallback, best_fallback_order, entity, order,
-      )
-      best_fallback = entity0
-      best_fallback_order = order0
+///|
+fn ui_select_default_camera_entity(world : @ecs.World) -> @core.Entity? {
+  let camera_store = @sprite.get_camera_store(world)
+  let target_store = @sprite.get_render_target_store(world)
+  let default_ui_camera_store = get_is_default_ui_camera_store(world)
+  let marked : Array[@core.Entity] = []
+  default_ui_camera_store.for_each(fn(entity, _marker) {
+    if camera_store.contains(entity) {
+      marked.push(entity)
     }
   })
-
-  match best_default {
-    Some(_) => best_default
-    None => best_fallback
+  if marked.length() == 1 {
+    return Some(marked[0])
   }
+
+  let mut best_entity : @core.Entity? = None
+  let mut best_order = 0
+  camera_store.for_each(fn(entity, camera) {
+    let target = match target_store.get(entity) {
+      Some(value) => value
+      None => @sprite.RenderTarget::Screen
+    }
+    if !ui_render_target_targets_primary_window(world, target) {
+      return
+    }
+    match best_entity {
+      None => {
+        best_entity = Some(entity)
+        best_order = camera.order
+      }
+      Some(current_best) =>
+        if camera.order > best_order ||
+          (camera.order == best_order && ui_entity_gt(entity, current_best)) {
+          best_entity = Some(entity)
+          best_order = camera.order
+        }
+    }
+  })
+  best_entity
+}
+
+///|
+fn ui_camera_transform_for_entity(
+  world : @ecs.World,
+  camera_entity : @core.Entity,
+) -> @math.Transform {
+  let transform_store = @math.get_transform_store(world)
+  let global_store = @transform.get_global_transform_store(world)
+  match global_store.get(camera_entity) {
+    Some(global_transform) => global_transform.to_transform_approx()
+    None =>
+      match transform_store.get(camera_entity) {
+        Some(transform) => transform
+        None => @math.Transform::identity()
+      }
+  }
+}
+
+///|
+fn ui_camera_scale_for_entity(
+  world : @ecs.World,
+  camera_entity : @core.Entity,
+) -> Float {
+  let projection_store = @sprite.get_projection_store(world)
+  match projection_store.get(camera_entity) {
+    Some(@sprite.Orthographic(projection)) =>
+      safe_camera_scale(projection.scale)
+    _ => 1.0F
+  }
+}
+
+///|
+fn ui_camera_viewport_origin(camera : @sprite.Camera) -> @math.Vec2 {
+  match camera.viewport {
+    Some(viewport) => {
+      let scale_factor = safe_scale_factor(
+        camera.target_scaling_factor().unwrap_or(1.0F),
+      )
+      @math.Vec2::new(
+        int_to_float(viewport.physical_position.x) / scale_factor,
+        int_to_float(viewport.physical_position.y) / scale_factor,
+      )
+    }
+    None => @math.Vec2::new(0.0F, 0.0F)
+  }
+}
+
+///|
+fn ui_compute_render_target_info(
+  world : @ecs.World,
+  camera_entity : @core.Entity,
+) -> ComputedUiRenderTargetInfo {
+  let camera_store = @sprite.get_camera_store(world)
+  let ui_scale = ensure_ui_scale_resource(world)
+  let ui_scale_value = if ui_scale.value <= 0.0F {
+    1.0F
+  } else {
+    ui_scale.value
+  }
+  match camera_store.get(camera_entity) {
+    Some(camera) => {
+      let scale_factor = safe_scale_factor(
+          camera.target_scaling_factor().unwrap_or(1.0F),
+        ) *
+        ui_scale_value
+      let physical_size = match camera.physical_viewport_size() {
+        Some(size) => size
+        None => @math.IVec2::new(0, 0)
+      }
+      ComputedUiRenderTargetInfo::new(scale_factor, physical_size)
+    }
+    None => ComputedUiRenderTargetInfo::default()
+  }
+}
+
+///|
+fn ui_resolved_camera_state_from_legacy(
+  ctx : UiContext,
+) -> UiResolvedCameraState {
+  UiResolvedCameraState::{
+    viewport_origin: ctx.viewport_origin,
+    viewport_size: ctx.viewport_size,
+    camera_transform: ctx.camera_transform,
+    camera_scale: ctx.camera_scale,
+  }
+}
+
+///|
+fn ui_resolved_camera_state_from_computed(
+  world : @ecs.World,
+  camera_entity : @core.Entity?,
+  render_target_info : ComputedUiRenderTargetInfo,
+) -> UiResolvedCameraState {
+  let camera_store = @sprite.get_camera_store(world)
+  let mut viewport_origin = @math.Vec2::new(0.0F, 0.0F)
+  let mut camera_transform = @math.Transform::identity()
+  let mut camera_scale = 1.0F
+  if camera_entity is Some(entity) {
+    if camera_store.get(entity) is Some(camera) {
+      viewport_origin = ui_camera_viewport_origin(camera)
+    }
+    camera_transform = ui_camera_transform_for_entity(world, entity)
+    camera_scale = ui_camera_scale_for_entity(world, entity)
+  }
+  UiResolvedCameraState::{
+    viewport_origin,
+    viewport_size: render_target_info.logical_size(),
+    camera_transform,
+    camera_scale,
+  }
+}
+
+///|
+fn ui_root_resolved_camera_state(
+  world : @ecs.World,
+  root : @core.Entity,
+  legacy_ctx : UiContext?,
+) -> UiResolvedCameraState {
+  let computed_camera_store = get_computed_ui_target_camera_store(world)
+  let render_target_info_store = get_computed_ui_render_target_info_store(world)
+  match render_target_info_store.get(root) {
+    Some(render_target_info) =>
+      ui_resolved_camera_state_from_computed(
+        world,
+        computed_camera_store
+        .get(root)
+        .map(fn(value) { value.get() })
+        .unwrap_or(None),
+        render_target_info,
+      )
+    None =>
+      match legacy_ctx {
+        Some(ctx) => ui_resolved_camera_state_from_legacy(ctx)
+        None => ui_resolved_camera_state_default()
+      }
+  }
+}
+
+///|
+fn ui_entity_resolved_camera_state(
+  world : @ecs.World,
+  entity : @core.Entity,
+  legacy_ctx : UiContext?,
+) -> UiResolvedCameraState {
+  let computed_camera_store = get_computed_ui_target_camera_store(world)
+  let render_target_info_store = get_computed_ui_render_target_info_store(world)
+  match render_target_info_store.get(entity) {
+    Some(render_target_info) =>
+      ui_resolved_camera_state_from_computed(
+        world,
+        computed_camera_store
+        .get(entity)
+        .map(fn(value) { value.get() })
+        .unwrap_or(None),
+        render_target_info,
+      )
+    None =>
+      match legacy_ctx {
+        Some(ctx) => ui_resolved_camera_state_from_legacy(ctx)
+        None => ui_resolved_camera_state_default()
+      }
+  }
+}
+
+///|
+fn ui_propagate_target_camera_subtree(
+  world : @ecs.World,
+  entity : @core.Entity,
+  computed_camera : ComputedUiTargetCamera,
+  render_target_info : ComputedUiRenderTargetInfo,
+  tick : Int,
+) -> Unit {
+  let computed_camera_store = get_computed_ui_target_camera_store(world)
+  let render_target_info_store = get_computed_ui_render_target_info_store(world)
+  let children_store = @hierarchy.get_children_store(world)
+  computed_camera_store.upsert(entity, computed_camera, tick)
+  render_target_info_store.upsert(entity, render_target_info, tick)
+  if children_store.get(entity) is Some(children) {
+    for child in children.entities {
+      ui_propagate_target_camera_subtree(
+        world, child, computed_camera, render_target_info, tick,
+      )
+    }
+  }
+}
+
+///|
+pub fn ui_propagate_target_cameras_system(world : @ecs.World) -> Unit {
+  let tick = world.read_change_tick()
+  let root_store = get_ui_root_store(world)
+  let target_camera_store = get_ui_target_camera_store(world)
+  let default_camera_entity = ui_select_default_camera_entity(world)
+  root_store.for_each(fn(root, _marker) {
+    let camera_entity = match target_camera_store.get(root) {
+      Some(target_camera) => Some(target_camera.entity())
+      None => default_camera_entity
+    }
+    let computed_camera = match camera_entity {
+      Some(entity) => ComputedUiTargetCamera::new(entity)
+      None => ComputedUiTargetCamera::default()
+    }
+    let render_target_info = match camera_entity {
+      Some(entity) => ui_compute_render_target_info(world, entity)
+      None => ComputedUiRenderTargetInfo::default()
+    }
+    ui_propagate_target_camera_subtree(
+      world, root, computed_camera, render_target_info, tick,
+    )
+  })
 }
 
 ///|
@@ -1699,13 +1873,11 @@ pub fn ui_update_context_system(world : @ecs.World) -> Unit {
   let win_h = @window.window_height()
   let sf = safe_scale_factor(@window.window_scale_factor())
 
-  // Select the default UI camera when marked, otherwise fall back to the
-  // lowest-order screen Camera2d.
-  let camera_store = @render2d.get_camera_store(world)
-  let projection_store = @render2d.get_projection_store(world)
-  let transform_store = @math.get_transform_store(world)
-  let global_store = @transform.get_global_transform_store(world)
-  let best_entity = ui_select_camera2d_entity(world)
+  // Legacy singleton UI context remains tied to the default UI camera so
+  // existing consumers keep working while per-root routing migrates to
+  // `UiTargetCamera`.
+  let camera_store = @sprite.get_camera_store(world)
+  let best_entity = ui_select_default_camera_entity(world)
   let mut viewport_origin = @math.Vec2::new(0.0F, 0.0F)
   let mut viewport_size = @math.Vec2::new(
     int_to_float(win_w) / sf,
@@ -1714,33 +1886,19 @@ pub fn ui_update_context_system(world : @ecs.World) -> Unit {
   let mut camera_transform = @math.Transform::identity()
   let mut camera_scale = 1.0F
   if best_entity is Some(cam_entity) {
-    let camera = match camera_store.get(cam_entity) {
-      Some(v) => v
-      None => @render2d.Camera::default()
-    }
-    let projection = match projection_store.get(cam_entity) {
-      Some(@render2d.Orthographic(p)) => p
-      _ => @render2d.OrthographicProjection::default_2d()
-    }
-    camera_scale = safe_camera_scale(projection.scale)
-    camera_transform = match global_store.get(cam_entity) {
-      Some(gt) => gt.to_transform_approx()
-      None =>
-        match transform_store.get(cam_entity) {
-          Some(t) => t
-          None => @math.Transform::identity()
-        }
-    }
-    if camera.viewport is Some(vp0) {
-      let vp = clamp_viewport_to_window(vp0, win_w, win_h)
-      viewport_origin = @math.Vec2::new(
-        int_to_float(vp.physical_position.x) / sf,
-        int_to_float(vp.physical_position.y) / sf,
-      )
-      viewport_size = @math.Vec2::new(
-        int_to_float(vp.physical_size.x) / sf,
-        int_to_float(vp.physical_size.y) / sf,
-      )
+    camera_transform = ui_camera_transform_for_entity(world, cam_entity)
+    camera_scale = ui_camera_scale_for_entity(world, cam_entity)
+    if camera_store.get(cam_entity) is Some(camera) {
+      viewport_origin = ui_camera_viewport_origin(camera)
+      if camera.logical_viewport_size() is Some(size) {
+        viewport_size = size
+      } else if camera.viewport is Some(vp0) {
+        let vp = clamp_viewport_to_window(vp0, win_w, win_h)
+        viewport_size = @math.Vec2::new(
+          int_to_float(vp.physical_size.x) / sf,
+          int_to_float(vp.physical_size.y) / sf,
+        )
+      }
     }
   }
 
@@ -1798,13 +1956,13 @@ fn ensure_visibility_defaults(
 fn ensure_layers_default(
   world : @ecs.World,
   entity : @core.Entity,
-) -> @render2d.RenderLayers {
-  let store = @render2d.get_render_layers_store(world)
+) -> @sprite.RenderLayers {
+  let store = @sprite.get_render_layers_store(world)
   match store.get(entity) {
     Some(v) => v
     None => {
       let tick = world.read_change_tick()
-      let layers = @render2d.RenderLayers::default()
+      let layers = @sprite.RenderLayers::default()
       store.insert(entity, layers, tick)
       layers
     }
@@ -1813,7 +1971,7 @@ fn ensure_layers_default(
 
 ///|
 fn ui_world_transform(
-  ctx : UiContext,
+  ctx : UiResolvedCameraState,
   rect : @math.Rect,
   z : Float,
 ) -> @math.Transform {
@@ -1845,22 +2003,6 @@ fn ui_world_transform(
 }
 
 ///|
-fn button_color_for_state(
-  colors : ButtonColors,
-  state : Interaction?,
-) -> @render2d.Color {
-  match state {
-    Some(s) =>
-      match s {
-        Interaction::Pressed => colors.pressed
-        Interaction::Hovered => colors.hovered
-        Interaction::None => colors.normal
-      }
-    None => colors.normal
-  }
-}
-
-///|
 fn image_measure_size_px(
   rect : @math.Rect?,
   atlas_rect : @math.Rect?,
@@ -1884,6 +2026,7 @@ fn image_measure_size_px(
 pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
   let res = get_ui_context_resource(world)
   guard res.get() is Some(_) else { return }
+  let render_target_info_store = get_computed_ui_render_target_info_store(world)
   let ui_scale = ensure_ui_scale_resource(world)
   let node_store = get_node_store(world)
   let ui_text_store = get_ui_text_store(world)
@@ -1898,7 +2041,7 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
   } else {
     ui_scale.value
   }
-  let inv_px_scale = ui_scale_value / sf
+  let legacy_inv_px_scale = ui_scale_value / sf
   let transparent_id = @asset.asset_transparent_texture().id()
   fn texture_size(handle : @asset.Handle[@asset.Image]) -> @math.Vec2 {
     let w = @asset.asset_texture_width(handle)
@@ -1927,6 +2070,10 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
   fn update_content_size(entity : @core.Entity, size_px : @math.Vec2) -> Unit {
     if size_px.x <= 0.0F || size_px.y <= 0.0F {
       return
+    }
+    let inv_px_scale = match render_target_info_store.get(entity) {
+      Some(render_target_info) => 1.0F / render_target_info.scale_factor()
+      None => legacy_inv_px_scale
     }
     let next = ContentSize::new(
       @math.Vec2::new(size_px.x * inv_px_scale, size_px.y * inv_px_scale),
@@ -2012,23 +2159,18 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
 ///|
 pub fn ui_layout_system(world : @ecs.World) -> Unit {
   let res = get_ui_context_resource(world)
-  guard res.get() is Some(ctx0) else { return }
-  guard ctx0.camera_entity is Some(_) else { return }
+  let legacy_ctx = res.get()
   let root_store = get_ui_root_store(world)
   let node_store = get_node_store(world)
   let content_size_store = get_content_size_store(world)
   let scroll_store = get_scroll_position_store(world)
   let layout_store = get_ui_layout_store(world)
   let children_store = @hierarchy.get_children_store(world)
-  let sprite_store = @render2d.get_sprite_store(world)
+  let sprite_store = @sprite.get_sprite_store(world)
   let img_store = get_ui_image_store(world)
   let ui_text_store = get_ui_text_store(world)
   let transform_store = @math.get_transform_store(world)
   let tick = world.read_change_tick()
-  let root_rect = @math.Rect::new(
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(ctx0.viewport_size.x, ctx0.viewport_size.y),
-  )
   fn auto_size_for_entity(entity : @core.Entity) -> @math.Vec2 {
     match content_size_store.get(entity) {
       Some(v) => v.size
@@ -2052,26 +2194,28 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     Float::from_double(v)
   }
 
+  let root_viewport_size = Ref::new(@math.Vec2::new(0.0F, 0.0F))
+
   fn dim_for_val(val : Val) -> @moon_taffy.Dimension {
     match val {
       Auto => @moon_taffy.auto()
       Px(px) => @moon_taffy.length(f2d(px))
       Percent(p) => @moon_taffy.percent(f2d(p / 100.0F))
-      Vw(p) => @moon_taffy.length(f2d(ctx0.viewport_size.x * (p / 100.0F)))
-      Vh(p) => @moon_taffy.length(f2d(ctx0.viewport_size.y * (p / 100.0F)))
+      Vw(p) => @moon_taffy.length(f2d(root_viewport_size.val.x * (p / 100.0F)))
+      Vh(p) => @moon_taffy.length(f2d(root_viewport_size.val.y * (p / 100.0F)))
       VMin(p) => {
-        let m = if ctx0.viewport_size.x < ctx0.viewport_size.y {
-          ctx0.viewport_size.x
+        let m = if root_viewport_size.val.x < root_viewport_size.val.y {
+          root_viewport_size.val.x
         } else {
-          ctx0.viewport_size.y
+          root_viewport_size.val.y
         }
         @moon_taffy.length(f2d(m * (p / 100.0F)))
       }
       VMax(p) => {
-        let m = if ctx0.viewport_size.x > ctx0.viewport_size.y {
-          ctx0.viewport_size.x
+        let m = if root_viewport_size.val.x > root_viewport_size.val.y {
+          root_viewport_size.val.x
         } else {
-          ctx0.viewport_size.y
+          root_viewport_size.val.y
         }
         @moon_taffy.length(f2d(m * (p / 100.0F)))
       }
@@ -2463,8 +2607,8 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
         .with_position(@moon_taffy.position_relative())
         .with_size(
           @moon_taffy.Size::new(
-            width=@moon_taffy.length(f2d(ctx0.viewport_size.x)),
-            height=@moon_taffy.length(f2d(ctx0.viewport_size.y)),
+            width=@moon_taffy.length(f2d(root_viewport_size.val.x)),
+            height=@moon_taffy.length(f2d(root_viewport_size.val.y)),
           ),
         )
     }
@@ -2472,6 +2616,12 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   }
 
   fn layout_root(root : @core.Entity) -> Unit {
+    let root_ctx = ui_root_resolved_camera_state(world, root, legacy_ctx)
+    root_viewport_size.val = root_ctx.viewport_size
+    let root_rect = @math.Rect::new(
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(root_ctx.viewport_size.x, root_ctx.viewport_size.y),
+    )
     let taffy = @moon_taffy.TaffyTree::new()
     let entity_to_node : @hashmap.HashMap[(Int, Int), Int] = @hashmap.HashMap::new()
     fn build(entity : @core.Entity, is_root : Bool) -> Int {
@@ -2496,8 +2646,8 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
 
     let root_node_id = build(root, true)
     let avail = @moon_taffy.Size::new(
-      width=@moon_taffy.available_space_definite(f2d(ctx0.viewport_size.x)),
-      height=@moon_taffy.available_space_definite(f2d(ctx0.viewport_size.y)),
+      width=@moon_taffy.available_space_definite(f2d(root_ctx.viewport_size.x)),
+      height=@moon_taffy.available_space_definite(f2d(root_ctx.viewport_size.y)),
     )
     fn available_to_option(v : @moon_taffy.AvailableSpace) -> Double? {
       match v {
@@ -2640,7 +2790,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
 
       // Update render2d / transform for UI nodes (Node component required).
       if node_store.contains(entity) {
-        let transform = ui_world_transform(ctx0, rect, 0.0F)
+        let transform = ui_world_transform(root_ctx, rect, 0.0F)
         if transform_store.contains(entity) {
           transform_store.set(entity, transform, tick) |> ignore
         } else {
@@ -2660,28 +2810,28 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
             None => Node::default()
           }
           let border_l = clamp_nonneg(
-            resolve_axis(node.border.left, size.x, ctx0.viewport_size),
+            resolve_axis(node.border.left, size.x, root_ctx.viewport_size),
           )
           let border_r = clamp_nonneg(
-            resolve_axis(node.border.right, size.x, ctx0.viewport_size),
+            resolve_axis(node.border.right, size.x, root_ctx.viewport_size),
           )
           let border_t = clamp_nonneg(
-            resolve_axis(node.border.top, size.y, ctx0.viewport_size),
+            resolve_axis(node.border.top, size.y, root_ctx.viewport_size),
           )
           let border_b = clamp_nonneg(
-            resolve_axis(node.border.bottom, size.y, ctx0.viewport_size),
+            resolve_axis(node.border.bottom, size.y, root_ctx.viewport_size),
           )
           let pad_l = clamp_nonneg(
-            resolve_axis(node.padding.left, size.x, ctx0.viewport_size),
+            resolve_axis(node.padding.left, size.x, root_ctx.viewport_size),
           )
           let pad_r = clamp_nonneg(
-            resolve_axis(node.padding.right, size.x, ctx0.viewport_size),
+            resolve_axis(node.padding.right, size.x, root_ctx.viewport_size),
           )
           let pad_t = clamp_nonneg(
-            resolve_axis(node.padding.top, size.y, ctx0.viewport_size),
+            resolve_axis(node.padding.top, size.y, root_ctx.viewport_size),
           )
           let pad_b = clamp_nonneg(
-            resolve_axis(node.padding.bottom, size.y, ctx0.viewport_size),
+            resolve_axis(node.padding.bottom, size.y, root_ctx.viewport_size),
           )
           let inset_l = border_l + pad_l
           let inset_r = border_r + pad_r
@@ -2702,7 +2852,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
               content_min.y + content_size.y,
             ),
           )
-          let text_transform = ui_world_transform(ctx0, content_rect, 0.0F)
+          let text_transform = ui_world_transform(root_ctx, content_rect, 0.0F)
           @text.text_set_y_axis(
             text_node.handle,
             @text.YAxisOrientation::TopToBottom,
@@ -2929,23 +3079,18 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-/// Compute `CalculatedClip` and attach `@render2d.ScissorRect` for clipped UI.
+/// Compute `CalculatedClip` and attach `@sprite.ScissorRect` for clipped UI.
 pub fn ui_clip_system(world : @ecs.World) -> Unit {
   let res = get_ui_context_resource(world)
-  guard res.get() is Some(ctx0) else { return }
-  guard ctx0.camera_entity is Some(_) else { return }
+  let legacy_ctx = res.get()
   let root_store = get_ui_root_store(world)
   let node_store = get_node_store(world)
   let layout_store = get_ui_layout_store(world)
   let clip_store = get_calculated_clip_store(world)
   let ui_text_store = get_ui_text_store(world)
-  let scissor_store = @render2d.get_scissor_rect_store(world)
+  let scissor_store = @sprite.get_scissor_rect_store(world)
   let children_store = @hierarchy.get_children_store(world)
   let tick = world.read_change_tick()
-  let viewport_rect = @math.Rect::new(
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(ctx0.viewport_size.x, ctx0.viewport_size.y),
-  )
   fn clamp_nonneg(v : Float) -> Float {
     if v < 0.0F {
       0.0F
@@ -3021,7 +3166,7 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
     @math.Rect::new(min, max)
   }
 
-  fn rect_is_full_viewport(r : @math.Rect) -> Bool {
+  fn rect_is_full_viewport(r : @math.Rect, viewport_rect : @math.Rect) -> Bool {
     r.min.x <= 0.0F &&
     r.min.y <= 0.0F &&
     r.max.x >= viewport_rect.max.x &&
@@ -3032,6 +3177,8 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
     entity : @core.Entity,
     inherited_clip : @math.Rect,
     clipped_by_parent : Bool,
+    viewport_rect : @math.Rect,
+    viewport_size : @math.Vec2,
   ) -> Unit {
     // Default to viewport clip if this node does not have layout yet.
     let self_clip = inherited_clip
@@ -3041,8 +3188,8 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
     } else {
       clip_store.insert(entity, calc, tick)
     }
-    if clipped_by_parent && !rect_is_full_viewport(self_clip) {
-      let scissor = @render2d.ScissorRect::new(self_clip)
+    if clipped_by_parent && !rect_is_full_viewport(self_clip, viewport_rect) {
+      let scissor = @sprite.ScissorRect::new(self_clip)
       if scissor_store.contains(entity) {
         scissor_store.set(entity, scissor, tick) |> ignore
       } else {
@@ -3053,7 +3200,7 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
     }
     if ui_text_store.get(entity) is Some(text_node) {
       let text_scissor = if clipped_by_parent &&
-        !rect_is_full_viewport(self_clip) {
+        !rect_is_full_viewport(self_clip, viewport_rect) {
         Some(self_clip)
       } else {
         None
@@ -3074,12 +3221,12 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
         let (border_l, border_t, border_r, border_b) = resolve_uirect_px(
           node.border,
           size,
-          ctx0.viewport_size,
+          viewport_size,
         )
         let (padding_l, padding_t, padding_r, padding_b) = resolve_uirect_px(
           node.padding,
           size,
-          ctx0.viewport_size,
+          viewport_size,
         )
         let (inset_l, inset_t, inset_r, inset_b) = match
           node.overflow_clip_margin.visual_box {
@@ -3122,12 +3269,19 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
     }
     if children_store.get(entity) is Some(children) {
       for child in children.entities {
-        walk(child, child_clip, child_clipped)
+        walk(child, child_clip, child_clipped, viewport_rect, viewport_size)
       }
     }
   }
 
-  root_store.for_each(fn(root, _marker) { walk(root, viewport_rect, false) })
+  root_store.for_each(fn(root, _marker) {
+    let root_ctx = ui_root_resolved_camera_state(world, root, legacy_ctx)
+    let viewport_rect = @math.Rect::new(
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(root_ctx.viewport_size.x, root_ctx.viewport_size.y),
+    )
+    walk(root, viewport_rect, false, viewport_rect, root_ctx.viewport_size)
+  })
 }
 
 ///|
@@ -3338,24 +3492,7 @@ pub fn ui_build_a11y_tree_update(
   world : @ecs.World,
 ) -> @moon_accesskit.TreeUpdate {
   let res = get_ui_context_resource(world)
-  guard res.get() is Some(ctx0) else {
-    let root = @moon_accesskit.NodeId::root()
-    let update = @moon_accesskit.TreeUpdate::new(
-      @moon_accesskit.TreeId::root(),
-      root,
-    )
-    update.set_tree(@moon_accesskit.Tree::new(root))
-    update
-  }
-  guard ctx0.camera_entity is Some(_) else {
-    let root = @moon_accesskit.NodeId::root()
-    let update = @moon_accesskit.TreeUpdate::new(
-      @moon_accesskit.TreeId::root(),
-      root,
-    )
-    update.set_tree(@moon_accesskit.Tree::new(root))
-    update
-  }
+  let legacy_ctx = res.get()
   let stack_res = get_ui_stack_resource(world)
   guard stack_res.get() is Some(stack0) else {
     let root = @moon_accesskit.NodeId::root()
@@ -3516,13 +3653,45 @@ pub fn ui_build_a11y_tree_update(
   let update = @moon_accesskit.TreeUpdate::new(tree_id, focus_id)
   update.set_tree(@moon_accesskit.Tree::new(root_id))
   let root_node = @moon_accesskit.Node::new(@moon_accesskit.Role::Window)
+  let mut root_min_x = 0.0
+  let mut root_min_y = 0.0
+  let mut root_max_x = 0.0
+  let mut root_max_y = 0.0
+  let mut has_root_bounds = false
+  for entity in stack0.uinodes {
+    if !required.contains(key(entity)) {
+      continue
+    }
+    guard layout_store.get(entity) is Some(layout) else { continue }
+    let entity_ctx = ui_entity_resolved_camera_state(world, entity, legacy_ctx)
+    let size = layout.rect.size()
+    let x0 = (entity_ctx.viewport_origin.x + layout.rect.min.x).to_double()
+    let y0 = (entity_ctx.viewport_origin.y + layout.rect.min.y).to_double()
+    let x1 = (entity_ctx.viewport_origin.x + layout.rect.min.x + size.x).to_double()
+    let y1 = (entity_ctx.viewport_origin.y + layout.rect.min.y + size.y).to_double()
+    if !has_root_bounds {
+      root_min_x = x0
+      root_min_y = y0
+      root_max_x = x1
+      root_max_y = y1
+      has_root_bounds = true
+    } else {
+      if x0 < root_min_x {
+        root_min_x = x0
+      }
+      if y0 < root_min_y {
+        root_min_y = y0
+      }
+      if x1 > root_max_x {
+        root_max_x = x1
+      }
+      if y1 > root_max_y {
+        root_max_y = y1
+      }
+    }
+  }
   root_node.set_bounds(
-    @moon_accesskit.Rect::new(
-      ctx0.viewport_origin.x.to_double(),
-      ctx0.viewport_origin.y.to_double(),
-      (ctx0.viewport_origin.x + ctx0.viewport_size.x).to_double(),
-      (ctx0.viewport_origin.y + ctx0.viewport_size.y).to_double(),
-    ),
+    @moon_accesskit.Rect::new(root_min_x, root_min_y, root_max_x, root_max_y),
   )
 
   // Attach top-level required nodes under the root.
@@ -3576,11 +3745,12 @@ pub fn ui_build_a11y_tree_update(
       }
     }
     let rect = layout.rect
-    let x0 = (ctx0.viewport_origin.x + rect.min.x).to_double()
-    let y0 = (ctx0.viewport_origin.y + rect.min.y).to_double()
+    let entity_ctx = ui_entity_resolved_camera_state(world, entity, legacy_ctx)
+    let x0 = (entity_ctx.viewport_origin.x + rect.min.x).to_double()
+    let y0 = (entity_ctx.viewport_origin.y + rect.min.y).to_double()
     let size = rect.size()
-    let x1 = (ctx0.viewport_origin.x + rect.min.x + size.x).to_double()
-    let y1 = (ctx0.viewport_origin.y + rect.min.y + size.y).to_double()
+    let x1 = (entity_ctx.viewport_origin.x + rect.min.x + size.x).to_double()
+    let y1 = (entity_ctx.viewport_origin.y + rect.min.y + size.y).to_double()
     node.set_bounds(@moon_accesskit.Rect::new(x0, y0, x1, y1))
     if clip_store.contains(entity) {
       node.set_clips_children()
@@ -3804,681 +3974,6 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn vec2_add(a : @math.Vec2, b : @math.Vec2) -> @math.Vec2 {
-  @math.Vec2::new(a.x + b.x, a.y + b.y)
-}
-
-///|
-fn ui_uv_from_image_rects(
-  image_size : @math.Vec2,
-  atlas_rect : @math.Rect?,
-  rect : @math.Rect?,
-  flip_x : Bool,
-  flip_y : Bool,
-) -> (@math.Vec2, @math.Vec2) {
-  let denom_x = image_size.x
-  let denom_y = image_size.y
-  if denom_x <= 0.0F || denom_y <= 0.0F {
-    return (@math.Vec2::new(0.0F, 0.0F), @math.Vec2::new(1.0F, 1.0F))
-  }
-  let image_rect = @math.Rect::new(
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(denom_x, denom_y),
-  )
-  let texture_rect = match (atlas_rect, rect) {
-    (None, None) => image_rect
-    (None, Some(r)) => r
-    (Some(ar), None) => ar
-    (Some(ar), Some(r)) => {
-      let min = vec2_add(r.min, ar.min)
-      let max = vec2_add(r.max, ar.min)
-      @math.Rect::new(min, max)
-    }
-  }
-  let mut uv_min = @math.Vec2::new(
-    texture_rect.min.x / denom_x,
-    texture_rect.min.y / denom_y,
-  )
-  let mut uv_max = @math.Vec2::new(
-    texture_rect.max.x / denom_x,
-    texture_rect.max.y / denom_y,
-  )
-  if flip_x {
-    let tmp = uv_min.x
-    uv_min = @math.Vec2::new(uv_max.x, uv_min.y)
-    uv_max = @math.Vec2::new(tmp, uv_max.y)
-  }
-  if flip_y {
-    let tmp = uv_min.y
-    uv_min = @math.Vec2::new(uv_min.x, uv_max.y)
-    uv_max = @math.Vec2::new(uv_max.x, tmp)
-  }
-  (uv_min, uv_max)
-}
-
-///|
-pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
-  let res = get_ui_context_resource(world)
-  guard res.get() is Some(ctx0) else { return }
-  let stack_res = get_ui_stack_resource(world)
-  guard stack_res.get() is Some(stack0) else { return }
-  @render2d.render2d_clear_overlay_ui_rects(world)
-  @render2d.render2d_clear_overlay_ui_box_shadows(world)
-  @render2d.render2d_clear_overlay_ui_texture_slices(world)
-  let layout_store = get_ui_layout_store(world)
-  let node_store = get_node_store(world)
-  let bg_store = get_background_color_store(world)
-  let img_store = get_ui_image_store(world)
-  let image_node_store = get_image_node_store(world)
-  let button_store = get_button_colors_store(world)
-  let interaction_store = get_interaction_store(world)
-  let outline_store = get_outline_store(world)
-  let shadow_store = get_box_shadow_store(world)
-  let shadow_samples_store = get_ui_box_shadow_samples_store(world)
-  let border_color_store = get_border_color_store(world)
-  let radius_store = get_border_radius_store(world)
-  let aa_store = get_ui_anti_alias_store(world)
-  let layers_store = @render2d.get_render_layers_store(world)
-  let scissor_store = @render2d.get_scissor_rect_store(world)
-  let transform_store = @math.get_transform_store(world)
-  let vv_store = @visibility.get_view_visibility_store(world)
-  fn clamp_nonneg(v : Float) -> Float {
-    if v < 0.0F {
-      0.0F
-    } else {
-      v
-    }
-  }
-
-  fn resolve_axis(
-    val : Val,
-    node_axis : Float,
-    viewport_size : @math.Vec2,
-  ) -> Float {
-    match val {
-      Val::Auto => 0.0F
-      Val::Px(px) => px
-      Val::Percent(p) => node_axis * (p / 100.0F)
-      Val::Vw(p) => viewport_size.x * (p / 100.0F)
-      Val::Vh(p) => viewport_size.y * (p / 100.0F)
-      Val::VMin(p) => {
-        let m = if viewport_size.x < viewport_size.y {
-          viewport_size.x
-        } else {
-          viewport_size.y
-        }
-        m * (p / 100.0F)
-      }
-      Val::VMax(p) => {
-        let m = if viewport_size.x > viewport_size.y {
-          viewport_size.x
-        } else {
-          viewport_size.y
-        }
-        m * (p / 100.0F)
-      }
-    }
-  }
-
-  fn resolve_radius_single(
-    val : Val,
-    node_size : @math.Vec2,
-    viewport_size : @math.Vec2,
-  ) -> Float {
-    let min_elem = if node_size.x < node_size.y {
-      node_size.x
-    } else {
-      node_size.y
-    }
-    let raw = match val {
-      Val::Auto => 0.0F
-      Val::Px(px) => px
-      Val::Percent(p) => min_elem * (p / 100.0F)
-      Val::Vw(p) => viewport_size.x * (p / 100.0F)
-      Val::Vh(p) => viewport_size.y * (p / 100.0F)
-      Val::VMin(p) => {
-        let m = if viewport_size.x < viewport_size.y {
-          viewport_size.x
-        } else {
-          viewport_size.y
-        }
-        m * (p / 100.0F)
-      }
-      Val::VMax(p) => {
-        let m = if viewport_size.x > viewport_size.y {
-          viewport_size.x
-        } else {
-          viewport_size.y
-        }
-        m * (p / 100.0F)
-      }
-    }
-    let clamped = clamp_nonneg(raw)
-    let max_r = 0.5F * min_elem
-    if clamped > max_r {
-      max_r
-    } else {
-      clamped
-    }
-  }
-
-  fn clamp_radius_nonneg(radius : Float, node_size : @math.Vec2) -> Float {
-    let clamped = clamp_nonneg(radius)
-    let min_elem = if node_size.x < node_size.y {
-      node_size.x
-    } else {
-      node_size.y
-    }
-    let max_r = 0.5F * min_elem
-    if clamped > max_r {
-      max_r
-    } else {
-      clamped
-    }
-  }
-
-  fn transform_with_z(t : @math.Transform, z : Float) -> @math.Transform {
-    @math.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(t.translation.x, t.translation.y),
-      t.rotation_z(),
-      @math.Vec2::new(t.scale.x, t.scale.y),
-      z~,
-    )
-  }
-
-  let shadow_samples = match ctx0.camera_entity {
-    Some(cam) =>
-      match shadow_samples_store.get(cam) {
-        Some(v) => v.samples
-        None => UiBoxShadowSamples::default().samples
-      }
-    None => UiBoxShadowSamples::default().samples
-  }
-  let uv_min = @math.Vec2::new(0.0F, 0.0F)
-  let uv_max = @math.Vec2::new(1.0F, 1.0F)
-  for i in 0..<stack0.uinodes.length() {
-    let entity = stack0.uinodes[i]
-    if vv_store.get(entity) is Some(vv) && !vv.is_visible() {
-      continue
-    }
-    guard layout_store.get(entity) is Some(layout) else { continue }
-    guard node_store.get(entity) is Some(node) else { continue }
-    guard transform_store.get(entity) is Some(t0) else { continue }
-    let rect = layout.rect
-    let size = rect.size()
-    if size.x <= 0.0F || size.y <= 0.0F {
-      continue
-    }
-    let layers = match layers_store.get(entity) {
-      Some(v) => v
-      None => @render2d.RenderLayers::default()
-    }
-    let scissor = match scissor_store.get(entity) {
-      Some(v) => Some(v.rect)
-      None => None
-    }
-    let scale_x = t0.scale.x
-    let scale_y = t0.scale.y
-    let draw_scale = @math.Vec2::new(scale_x * size.x, scale_y * size.y)
-    let scale_min = if scale_x < scale_y { scale_x } else { scale_y }
-    let border_left = clamp_nonneg(
-        resolve_axis(node.border.left, size.x, ctx0.viewport_size),
-      ) *
-      scale_x
-    let border_right = clamp_nonneg(
-        resolve_axis(node.border.right, size.x, ctx0.viewport_size),
-      ) *
-      scale_x
-    let border_top = clamp_nonneg(
-        resolve_axis(node.border.top, size.y, ctx0.viewport_size),
-      ) *
-      scale_y
-    let border_bottom = clamp_nonneg(
-        resolve_axis(node.border.bottom, size.y, ctx0.viewport_size),
-      ) *
-      scale_y
-    let border = @render2d.UiBorderRect::new(
-      border_left, border_top, border_right, border_bottom,
-    )
-    let radius = match radius_store.get(entity) {
-      Some(r) => {
-        let tl = resolve_radius_single(r.top_left, size, ctx0.viewport_size) *
-          scale_min
-        let tr = resolve_radius_single(r.top_right, size, ctx0.viewport_size) *
-          scale_min
-        let br = resolve_radius_single(r.bottom_right, size, ctx0.viewport_size) *
-          scale_min
-        let bl = resolve_radius_single(r.bottom_left, size, ctx0.viewport_size) *
-          scale_min
-        @render2d.UiCornerRadii::new(tl, tr, br, bl)
-      }
-      None => @render2d.UiCornerRadii::zero()
-    }
-    let mut flags = 0
-    let aa_enabled = match aa_store.get(entity) {
-      Some(UiAntiAlias::Off) => false
-      _ => true
-    }
-    if aa_enabled {
-      flags = flags | UI_DRAW_FLAG_ANTIALIAS
-    }
-    let z_base = UI_STACK_Z_BASE + int_to_float(i) * UI_STACK_Z_STEP
-
-    // BoxShadow (behind background/content/border/text).
-    match shadow_store.get(entity) {
-      Some(shadow) =>
-        if shadow.color.a > 0.0F {
-          let spread_x = resolve_axis(
-            shadow.spread_radius,
-            size.x,
-            ctx0.viewport_size,
-          )
-          let spread_ratio = (spread_x + size.x) / size.x
-          let spread_y = size.y * spread_ratio - size.y
-          let shadow_size = @math.Vec2::new(
-            size.x + spread_x,
-            size.y + spread_y,
-          )
-          if shadow_size.x > 0.0F && shadow_size.y > 0.0F {
-            let blur = clamp_nonneg(
-              resolve_axis(shadow.blur_radius, size.x, ctx0.viewport_size),
-            )
-            let bounds = @math.Vec2::new(
-              shadow_size.x + 6.0F * blur,
-              shadow_size.y + 6.0F * blur,
-            )
-            if bounds.x > 0.0F && bounds.y > 0.0F {
-              let offset_x = resolve_axis(
-                shadow.x_offset,
-                size.x,
-                ctx0.viewport_size,
-              )
-              let offset_y = resolve_axis(
-                shadow.y_offset,
-                size.y,
-                ctx0.viewport_size,
-              )
-              // UI uses +Y down; world uses +Y up.
-              let offset_local = @math.Vec2::new(
-                offset_x * scale_x,
-                -offset_y * scale_y,
-              )
-              let offset_world = rotate_vec2(offset_local, t0.rotation_z())
-              let t_shadow = @math.Transform::from_xy_rotation_scale(
-                @math.Vec2::new(
-                  t0.translation.x + offset_world.x,
-                  t0.translation.y + offset_world.y,
-                ),
-                t0.rotation_z(),
-                @math.Vec2::new(t0.scale.x, t0.scale.y),
-                z=z_base + UI_STACK_Z_SHADOW,
-              )
-              let radius_shadow = match radius_store.get(entity) {
-                Some(r) => {
-                  let tl = resolve_radius_single(
-                      r.top_left,
-                      size,
-                      ctx0.viewport_size,
-                    ) *
-                    spread_ratio *
-                    scale_min
-                  let tr = resolve_radius_single(
-                      r.top_right,
-                      size,
-                      ctx0.viewport_size,
-                    ) *
-                    spread_ratio *
-                    scale_min
-                  let br = resolve_radius_single(
-                      r.bottom_right,
-                      size,
-                      ctx0.viewport_size,
-                    ) *
-                    spread_ratio *
-                    scale_min
-                  let bl = resolve_radius_single(
-                      r.bottom_left,
-                      size,
-                      ctx0.viewport_size,
-                    ) *
-                    spread_ratio *
-                    scale_min
-                  @render2d.UiCornerRadii::new(tl, tr, br, bl)
-                }
-                None => @render2d.UiCornerRadii::zero()
-              }
-              let draw_scale_shadow = @math.Vec2::new(
-                scale_x * bounds.x,
-                scale_y * bounds.y,
-              )
-              let size_shadow_world = @math.Vec2::new(
-                scale_x * shadow_size.x,
-                scale_y * shadow_size.y,
-              )
-              @render2d.render2d_push_ui_box_shadow_scissor(
-                world,
-                entity,
-                ctx0.white_texture,
-                t_shadow,
-                draw_scale_shadow,
-                shadow.color,
-                layers,
-                scissor,
-                size_shadow_world,
-                radius_shadow,
-                blur * scale_min,
-                shadow_samples,
-              )
-            }
-          }
-        }
-      None => ()
-    }
-
-    // Background color.
-    let bg_color_opt = match button_store.get(entity) {
-      Some(colors) =>
-        Some(button_color_for_state(colors, interaction_store.get(entity)))
-      None =>
-        match bg_store.get(entity) {
-          Some(v) => Some(v.color)
-          None => None
-        }
-    }
-    match bg_color_opt {
-      Some(color) =>
-        if color.a > 0.0F {
-          let t_bg = transform_with_z(t0, z_base + UI_STACK_Z_BACKGROUND)
-          @render2d.render2d_push_ui_rect_uv_scissor(
-            world,
-            entity,
-            ctx0.white_texture,
-            t_bg,
-            draw_scale,
-            uv_min,
-            uv_max,
-            color,
-            layers,
-            scissor,
-            flags,
-            radius,
-            border,
-          )
-        }
-      None => ()
-    }
-
-    // Image content (Bevy `ImageNode`, with `UiImage` compatibility).
-    let image_info = match image_node_store.get(entity) {
-      Some(img) =>
-        Some(
-          (
-            img.image,
-            img.color,
-            img.texture_atlas,
-            img.rect,
-            img.flip_x,
-            img.flip_y,
-            Some(img.image_mode),
-          ),
-        )
-      None =>
-        match img_store.get(entity) {
-          Some(img) =>
-            Some(
-              (
-                img.image,
-                img.color,
-                img.texture_atlas,
-                img.rect,
-                img.flip_x,
-                img.flip_y,
-                None,
-              ),
-            )
-          None => None
-        }
-    }
-    match image_info {
-      Some(info) => {
-        let texture = info.0
-        let color = info.1
-        let texture_atlas = info.2
-        let rect = info.3
-        let flip_x = info.4
-        let flip_y = info.5
-        let mode = match info.6 {
-          Some(m) => m
-          None => NodeImageMode::Stretch
-        }
-        let mut image_width = @asset.asset_texture_width(texture)
-        let mut image_height = @asset.asset_texture_height(texture)
-        if image_width <= 0 || image_height <= 0 {
-          // Avoid division by zero for not-yet-loaded textures.
-          image_width = 1
-          image_height = 1
-        }
-        let image_size = @math.Vec2::new(
-          Float::from_double(image_width.to_double()),
-          Float::from_double(image_height.to_double()),
-        )
-        let atlas_rect = match texture_atlas {
-          Some(atlas) =>
-            match @asset.asset_get_texture_atlas_layout(atlas.layout) {
-              Some(layout_value) =>
-                if atlas.index >= 0 &&
-                  atlas.index < layout_value.textures.length() {
-                  Some(layout_value.textures[atlas.index].as_rect())
-                } else {
-                  None
-                }
-              None => None
-            }
-          None => None
-        }
-        let pair = ui_uv_from_image_rects(
-          image_size, atlas_rect, rect, flip_x, flip_y,
-        )
-        let uv_min_img = pair.0
-        let uv_max_img = pair.1
-        let t_content = transform_with_z(t0, z_base + UI_STACK_Z_CONTENT)
-        if color.a > 0.0F && NodeImageMode::uses_slices(mode) {
-          let sf = safe_scale_factor(@window.window_scale_factor())
-          let ui_scale = ensure_ui_scale_resource(world)
-          let ui_scale_value = if ui_scale.value <= 0.0F {
-            1.0F
-          } else {
-            ui_scale.value
-          }
-          // `size` is in logical UI units. Convert to physical pixels before
-          // computing slice/tiling parameters to match Bevy.
-          let px_per_ui = sf / ui_scale_value
-          let target_size = @math.Vec2::new(
-            size.x * px_per_ui,
-            size.y * px_per_ui,
-          )
-          // Image slicing uses the size of the selected texture region (atlas/rect).
-          let image_rect = @math.Rect::new(
-            @math.Vec2::new(0.0F, 0.0F),
-            @math.Vec2::new(image_size.x, image_size.y),
-          )
-          let texture_rect = match (atlas_rect, rect) {
-            (None, None) => image_rect
-            (None, Some(r)) => r
-            (Some(ar), None) => ar
-            (Some(ar), Some(r)) => {
-              let min = vec2_add(r.min, ar.min)
-              let max = vec2_add(r.max, ar.min)
-              @math.Rect::new(min, max)
-            }
-          }
-          let region_size = texture_rect.size()
-          let (texture_slices, target_slices, repeat) = compute_texture_slices(
-            region_size, target_size, mode,
-          )
-          let atlas_rect_uv = @math.Vec4::new(
-            uv_min_img.x,
-            uv_min_img.y,
-            uv_max_img.x,
-            uv_max_img.y,
-          )
-          @render2d.render2d_push_ui_texture_slice_scissor(
-            world, entity, texture, t_content, draw_scale, color, layers, scissor,
-            texture_slices, target_slices, repeat, atlas_rect_uv,
-          )
-        } else if color.a > 0.0F {
-          @render2d.render2d_push_ui_rect_uv_scissor(
-            world,
-            entity,
-            texture,
-            t_content,
-            draw_scale,
-            uv_min_img,
-            uv_max_img,
-            color,
-            layers,
-            scissor,
-            flags | UI_DRAW_FLAG_TEXTURED,
-            radius,
-            border,
-          )
-        }
-      }
-      None => ()
-    }
-
-    // Border.
-    let has_border = border_left > 0.0F ||
-      border_right > 0.0F ||
-      border_top > 0.0F ||
-      border_bottom > 0.0F
-    if has_border &&
-      border_color_store.get(entity) is Some(bc) &&
-      bc.color.a > 0.0F {
-      let t_border = transform_with_z(t0, z_base + UI_STACK_Z_BORDER)
-      @render2d.render2d_push_ui_rect_uv_scissor(
-        world,
-        entity,
-        ctx0.white_texture,
-        t_border,
-        draw_scale,
-        uv_min,
-        uv_max,
-        bc.color,
-        layers,
-        scissor,
-        flags | UI_DRAW_FLAG_BORDER,
-        radius,
-        border,
-      )
-    }
-
-    // Outline.
-    match outline_store.get(entity) {
-      Some(outline) =>
-        if outline.color.a > 0.0F {
-          let outline_width = clamp_nonneg(
-            resolve_axis(outline.width, size.x, ctx0.viewport_size),
-          )
-          if outline_width > 0.0F {
-            let outline_offset = resolve_axis(
-              outline.offset,
-              size.x,
-              ctx0.viewport_size,
-            )
-            let outer = outline_offset + outline_width
-            let outline_size = @math.Vec2::new(
-              size.x + 2.0F * outer,
-              size.y + 2.0F * outer,
-            )
-            if outline_size.x > 0.0F && outline_size.y > 0.0F {
-              let t_outline = transform_with_z(t0, z_base + UI_STACK_Z_OUTLINE)
-              let outline_draw_scale = @math.Vec2::new(
-                scale_x * outline_size.x,
-                scale_y * outline_size.y,
-              )
-              let outline_border = @render2d.UiBorderRect::new(
-                outline_width * scale_x,
-                outline_width * scale_y,
-                outline_width * scale_x,
-                outline_width * scale_y,
-              )
-              let outline_radius = match radius_store.get(entity) {
-                Some(r) => {
-                  let tl = clamp_radius_nonneg(
-                      resolve_radius_single(
-                        r.top_left,
-                        size,
-                        ctx0.viewport_size,
-                      ) +
-                      outer,
-                      outline_size,
-                    ) *
-                    scale_min
-                  let tr = clamp_radius_nonneg(
-                      resolve_radius_single(
-                        r.top_right,
-                        size,
-                        ctx0.viewport_size,
-                      ) +
-                      outer,
-                      outline_size,
-                    ) *
-                    scale_min
-                  let br = clamp_radius_nonneg(
-                      resolve_radius_single(
-                        r.bottom_right,
-                        size,
-                        ctx0.viewport_size,
-                      ) +
-                      outer,
-                      outline_size,
-                    ) *
-                    scale_min
-                  let bl = clamp_radius_nonneg(
-                      resolve_radius_single(
-                        r.bottom_left,
-                        size,
-                        ctx0.viewport_size,
-                      ) +
-                      outer,
-                      outline_size,
-                    ) *
-                    scale_min
-                  @render2d.UiCornerRadii::new(tl, tr, br, bl)
-                }
-                None =>
-                  @render2d.UiCornerRadii::new(
-                    clamp_radius_nonneg(outer, outline_size) * scale_min,
-                    clamp_radius_nonneg(outer, outline_size) * scale_min,
-                    clamp_radius_nonneg(outer, outline_size) * scale_min,
-                    clamp_radius_nonneg(outer, outline_size) * scale_min,
-                  )
-              }
-              @render2d.render2d_push_ui_rect_uv_scissor(
-                world,
-                entity,
-                ctx0.white_texture,
-                t_outline,
-                outline_draw_scale,
-                uv_min,
-                uv_max,
-                outline.color,
-                layers,
-                scissor,
-                flags | UI_DRAW_FLAG_BORDER,
-                outline_radius,
-                outline_border,
-              )
-            }
-          }
-        }
-      None => ()
-    }
-  }
-}
-
-///|
 pub fn ui_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .add_pre_update_system_config(
@@ -4489,6 +3984,9 @@ pub fn ui_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   )
   .add_post_update_system_config(
     @app.system(ui_update_context_system).in_set(ui_set_prepare),
+  )
+  .add_post_update_system_config(
+    @app.system(ui_propagate_target_cameras_system).in_set(ui_set_prepare),
   )
   .add_post_update_system_config(
     @app.system(ui_scroll_system).in_set(ui_set_propagate),
@@ -4508,14 +4006,11 @@ pub fn ui_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .add_post_update_system_config(
     @app.system(ui_a11y_update_system).in_set(ui_set_post_layout),
   )
-  .add_post_update_system_config(
-    @app.system(ui_render_extract_system).in_set(ui_set_stack),
-  )
   .configure_set(@app.PreUpdate, ui_set_focus)
   .configure_set(
     @app.PostUpdate,
     ui_set_prepare,
-    after=[@render2d.camera_update_systems],
+    after=[@sprite.camera_update_systems],
     before=[ui_set_propagate],
   )
   .configure_set(@app.PostUpdate, ui_set_propagate, after=[ui_set_prepare], before=[
@@ -4530,7 +4025,5 @@ pub fn ui_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .configure_set(@app.PostUpdate, ui_set_post_layout, after=[ui_set_layout], before=[
     ui_set_stack,
   ])
-  .configure_set(@app.PostUpdate, ui_set_stack, after=[ui_set_post_layout], before=[
-    @render2d.render2d_set_extract,
-  ])
+  .configure_set(@app.PostUpdate, ui_set_stack, after=[ui_set_post_layout])
 }

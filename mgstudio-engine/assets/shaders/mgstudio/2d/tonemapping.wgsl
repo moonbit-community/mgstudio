@@ -17,17 +17,29 @@
 // - bevy/crates/bevy_core_pipeline/src/tonemapping/tonemapping_shared.wgsl
 
 #import bevy_core_pipeline::fullscreen_vertex_shader::FullscreenVertexOutput
+#import bevy_render::{
+    color_operations::{hsv_to_rgb, rgb_to_hsv},
+    maths::{PI_2, powsafe},
+}
 
 struct BloomUniforms {
     threshold_precomputations: vec4<f32>,
     viewport: vec4<f32>,
-    scale: vec2<f32>,
-    aspect: f32,
-    _padding: f32,
+    scale_exposure: vec4<f32>,
     // x: tonemapping mode, y: deband dither enabled, z: bloom weight, w: upsample blend factor
     options: vec4<f32>,
     // x: fxaa enabled, y: fxaa edge threshold, z: chromatic aberration strength, w: vignette strength
     postprocess: vec4<f32>,
+    color_grading_balance_x_axis: vec4<f32>,
+    color_grading_balance_y_axis: vec4<f32>,
+    color_grading_balance_z_axis: vec4<f32>,
+    color_grading_saturation: vec4<f32>,
+    color_grading_contrast: vec4<f32>,
+    color_grading_gamma: vec4<f32>,
+    color_grading_gain: vec4<f32>,
+    color_grading_lift: vec4<f32>,
+    color_grading_misc: vec4<f32>,
+    color_grading_post: vec4<f32>,
 };
 
 @group(0) @binding(0) var hdr_texture: texture_2d<f32>;
@@ -36,6 +48,22 @@ struct BloomUniforms {
 @group(0) @binding(3) var scene_texture: texture_2d<f32>;
 // KTX2 LUTs are uploaded as vertically stacked 2D slices.
 @group(0) @binding(4) var dt_lut_texture: texture_2d<f32>;
+
+struct ColorGrading {
+    balance: mat3x3<f32>,
+    saturation: vec3<f32>,
+    contrast: vec3<f32>,
+    gamma: vec3<f32>,
+    gain: vec3<f32>,
+    lift: vec3<f32>,
+    midtone_range: vec2<f32>,
+    exposure: f32,
+    hue: f32,
+    post_saturation: f32,
+};
+
+const LEVEL_MARGIN: f32 = 0.1;
+const LEVEL_MARGIN_DIV: f32 = 0.5 / LEVEL_MARGIN;
 
 fn tonemapping_luminance(v: vec3<f32>) -> f32 {
     return dot(v, vec3<f32>(0.2126, 0.7152, 0.0722));
@@ -191,13 +219,72 @@ fn sample_blender_filmic_lut(stimulus: vec3<f32>) -> vec3<f32> {
     return apply_lut3d(normalized, 64.0);
 }
 
+fn bloom_uniform_color_grading() -> ColorGrading {
+    return ColorGrading(
+        mat3x3<f32>(
+            uniforms.color_grading_balance_x_axis.xyz,
+            uniforms.color_grading_balance_y_axis.xyz,
+            uniforms.color_grading_balance_z_axis.xyz,
+        ),
+        uniforms.color_grading_saturation.xyz,
+        uniforms.color_grading_contrast.xyz,
+        uniforms.color_grading_gamma.xyz,
+        uniforms.color_grading_gain.xyz,
+        uniforms.color_grading_lift.xyz,
+        uniforms.color_grading_misc.xy,
+        uniforms.color_grading_misc.z,
+        uniforms.color_grading_misc.w,
+        uniforms.color_grading_post.x,
+    );
+}
+
+fn saturation(color: vec3<f32>, saturation_amount: f32) -> vec3<f32> {
+    let luma = tonemapping_luminance(color);
+    return mix(vec3<f32>(luma), color, vec3<f32>(saturation_amount));
+}
+
+fn sectional_color_grading(
+    in_color: vec3<f32>,
+    color_grading: ptr<function, ColorGrading>,
+) -> vec3<f32> {
+    var color = in_color;
+    let level = (color.r + color.g + color.b) / 3.0;
+    var levels = vec3<f32>(0.0);
+    let midtone_range = (*color_grading).midtone_range;
+    if level < midtone_range.x - LEVEL_MARGIN {
+        levels.x = 1.0;
+    } else if level < midtone_range.x + LEVEL_MARGIN {
+        levels.y = ((level - midtone_range.x) * LEVEL_MARGIN_DIV) + 0.5;
+        levels.z = 1.0 - levels.y;
+    } else if level < midtone_range.y - LEVEL_MARGIN {
+        levels.y = 1.0;
+    } else if level < midtone_range.y + LEVEL_MARGIN {
+        levels.z = ((level - midtone_range.y) * LEVEL_MARGIN_DIV) + 0.5;
+        levels.y = 1.0 - levels.z;
+    } else {
+        levels.z = 1.0;
+    }
+
+    let contrast = dot(levels, (*color_grading).contrast);
+    let saturation_amount = dot(levels, (*color_grading).saturation);
+    let gamma = dot(levels, (*color_grading).gamma);
+    let gain = dot(levels, (*color_grading).gain);
+    let lift = dot(levels, (*color_grading).lift);
+    let luma = tonemapping_luminance(color);
+    color = vec3<f32>(luma) + saturation_amount * (color - vec3<f32>(luma));
+    color = vec3<f32>(0.5) + (color - vec3<f32>(0.5)) * contrast;
+    color = powsafe(color * gain + lift, 1.0 / gamma);
+    color = color * powsafe(vec3<f32>(2.0), (*color_grading).exposure);
+    return max(color, vec3<f32>(0.0));
+}
+
 fn screen_space_dither(frag_coord: vec2<f32>) -> vec3<f32> {
     var dither = vec3<f32>(dot(vec2<f32>(171.0, 231.0), frag_coord)).xxx;
     dither = fract(dither.rgb / vec3<f32>(103.0, 71.0, 97.0));
     return (dither - 0.5) / 255.0;
 }
 
-fn tonemap_color(color: vec3<f32>, mode: f32) -> vec3<f32> {
+fn tonemap_method(color: vec3<f32>, mode: f32) -> vec3<f32> {
     let hdr = max(color, vec3<f32>(0.0));
     if mode < 0.5 {
         return hdr;
@@ -232,8 +319,21 @@ fn tonemap_color(color: vec3<f32>, mode: f32) -> vec3<f32> {
     return sample_blender_filmic_lut(hdr);
 }
 
+fn tone_mapping(in_color: vec4<f32>, in_color_grading: ColorGrading, mode: f32) -> vec4<f32> {
+    var color = max(in_color.rgb, vec3<f32>(0.0));
+    var color_grading = in_color_grading;
+    var hsv = rgb_to_hsv(color);
+    hsv.r = (hsv.r + color_grading.hue) % PI_2;
+    color = hsv_to_rgb(hsv);
+    color = max(color_grading.balance * color, vec3<f32>(0.0));
+    color = sectional_color_grading(color, &color_grading);
+    color = tonemap_method(color, mode);
+    color = saturation(color, color_grading.post_saturation);
+    return vec4<f32>(color, in_color.a);
+}
+
 fn sample_input_3x3_tent(uv: vec2<f32>) -> vec3<f32> {
-    let frag_size = uniforms.scale / vec2<f32>(textureDimensions(hdr_texture));
+    let frag_size = uniforms.scale_exposure.xy / vec2<f32>(textureDimensions(hdr_texture));
     let x = frag_size.x;
     let y = frag_size.y;
 
@@ -279,7 +379,12 @@ fn sample_tonemapped_scene_for_fxaa(uv: vec2<f32>) -> vec3<f32> {
     let clamped_uv = clamp(uv, vec2<f32>(0.0), vec2<f32>(1.0));
     // Use explicit LOD so this call is valid under non-uniform FXAA control flow.
     let scene_color = textureSampleLevel(scene_texture, hdr_sampler, clamped_uv, 0.0).rgb;
-    return tonemap_color(scene_color, uniforms.options.x);
+    let exposure = max(uniforms.scale_exposure.w, 0.0);
+    return tone_mapping(
+        vec4<f32>(scene_color * exposure, 1.0),
+        bloom_uniform_color_grading(),
+        uniforms.options.x,
+    ).rgb;
 }
 
 fn apply_lightweight_fxaa(uv: vec2<f32>, base_color: vec3<f32>) -> vec3<f32> {
@@ -337,7 +442,7 @@ fn apply_vignette(color: vec3<f32>, uv: vec2<f32>) -> vec3<f32> {
     }
 
     let centered = vec2<f32>(
-        (uv.x - 0.5) * 2.0 * max(uniforms.aspect, 0.00001),
+        (uv.x - 0.5) * 2.0 * max(uniforms.scale_exposure.z, 0.00001),
         (uv.y - 0.5) * 2.0,
     );
     let dist = dot(centered, centered);
@@ -352,7 +457,12 @@ fn final_fragment(
 ) -> @location(0) vec4<f32> {
     let bloom_color = sample_input_3x3_tent(uv) * uniforms.options.z;
     let scene_color = sample_scene_with_chromatic(uv);
-    var output_rgb = tonemap_color(scene_color + bloom_color, uniforms.options.x);
+    let exposure = max(uniforms.scale_exposure.w, 0.0);
+    var output_rgb = tone_mapping(
+        vec4<f32>((scene_color + bloom_color) * exposure, 1.0),
+        bloom_uniform_color_grading(),
+        uniforms.options.x,
+    ).rgb;
     output_rgb = apply_lightweight_fxaa(uv, output_rgb);
     output_rgb = apply_vignette(output_rgb, uv);
 

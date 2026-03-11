@@ -54,9 +54,9 @@ priv struct TransmissionState {
   mut flame_mesh : @core.Entity?
   mut flame_light : @core.Entity?
   mut display_text : @text.TextHandle?
-  specular_materials : Array[@asset.Handle[@render3d.StandardMaterial]]
-  diffuse_materials : Array[@asset.Handle[@render3d.StandardMaterial]]
-  color_materials : Array[@asset.Handle[@render3d.StandardMaterial]]
+  specular_materials : Array[@asset.Handle[@pbr.StandardMaterial]]
+  diffuse_materials : Array[@asset.Handle[@pbr.StandardMaterial]]
+  color_materials : Array[@asset.Handle[@pbr.StandardMaterial]]
   mut random_seed : Int
 }
 
@@ -135,7 +135,9 @@ fn next_random_unit() -> Float {
 }
 
 ///|
-fn quality_label(quality : @render3d.ScreenSpaceTransmissionQuality) -> String {
+fn quality_label(
+  quality : @post_process.ScreenSpaceTransmissionQuality,
+) -> String {
   match quality {
     Low => "Low"
     Medium => "Medium"
@@ -147,28 +149,28 @@ fn quality_label(quality : @render3d.ScreenSpaceTransmissionQuality) -> String {
 ///|
 fn camera_screen_space_transmission(
   world : @ecs.World,
-) -> @render3d.ScreenSpaceTransmission {
+) -> @post_process.ScreenSpaceTransmission {
   if transmission_state.val.camera is Some(camera_entity) {
     match
       world
-      .component(@render3d.ecs_key_screen_space_transmission)
+      .component(@post_process.ecs_key_screen_space_transmission)
       .get(camera_entity) {
       Some(value) => value
-      None => @render3d.ScreenSpaceTransmission::default()
+      None => @post_process.ScreenSpaceTransmission::default()
     }
   } else {
-    @render3d.ScreenSpaceTransmission::default()
+    @post_process.ScreenSpaceTransmission::default()
   }
 }
 
 ///|
 fn camera_set_screen_space_transmission(
   world : @ecs.World,
-  value : @render3d.ScreenSpaceTransmission,
+  value : @post_process.ScreenSpaceTransmission,
 ) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
     let tick = world.read_change_tick()
-    let store = world.component(@render3d.ecs_key_screen_space_transmission)
+    let store = world.component(@post_process.ecs_key_screen_space_transmission)
     if store.contains(camera_entity) {
       store.set(camera_entity, value, tick) |> ignore
     } else {
@@ -180,7 +182,7 @@ fn camera_set_screen_space_transmission(
 ///|
 fn camera_hdr_enabled(world : @ecs.World) -> Bool {
   if transmission_state.val.camera is Some(camera_entity) {
-    world.component(@render3d.ecs_key_hdr).contains(camera_entity)
+    world.component(@pbr.ecs_key_hdr).contains(camera_entity)
   } else {
     false
   }
@@ -189,7 +191,7 @@ fn camera_hdr_enabled(world : @ecs.World) -> Bool {
 ///|
 fn camera_depth_prepass_enabled(world : @ecs.World) -> Bool {
   if transmission_state.val.camera is Some(camera_entity) {
-    world.component(@render3d.ecs_key_depth_prepass).contains(camera_entity)
+    world.component(@pbr.ecs_key_depth_prepass).contains(camera_entity)
   } else {
     false
   }
@@ -198,7 +200,9 @@ fn camera_depth_prepass_enabled(world : @ecs.World) -> Bool {
 ///|
 fn camera_taa_enabled(world : @ecs.World) -> Bool {
   if transmission_state.val.camera is Some(camera_entity) {
-    world.component(@render3d.ecs_key_temporal_jitter).contains(camera_entity)
+    world
+    .component(@post_process.ecs_key_temporal_jitter)
+    .contains(camera_entity)
   } else {
     false
   }
@@ -208,11 +212,11 @@ fn camera_taa_enabled(world : @ecs.World) -> Bool {
 fn camera_toggle_hdr(world : @ecs.World) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
     let tick = world.read_change_tick()
-    let store = world.component(@render3d.ecs_key_hdr)
+    let store = world.component(@pbr.ecs_key_hdr)
     if store.contains(camera_entity) {
       store.remove(camera_entity) |> ignore
     } else {
-      store.insert(camera_entity, @render3d.Hdr::default(), tick)
+      store.insert(camera_entity, @pbr.Hdr::default(), tick)
     }
   }
 }
@@ -221,11 +225,11 @@ fn camera_toggle_hdr(world : @ecs.World) -> Unit {
 fn camera_toggle_depth_prepass(world : @ecs.World) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
     let tick = world.read_change_tick()
-    let store = world.component(@render3d.ecs_key_depth_prepass)
+    let store = world.component(@pbr.ecs_key_depth_prepass)
     if store.contains(camera_entity) {
       store.remove(camera_entity) |> ignore
     } else {
-      store.insert(camera_entity, @render3d.DepthPrepass::default(), tick)
+      store.insert(camera_entity, @pbr.DepthPrepass::default(), tick)
     }
   }
 }
@@ -234,20 +238,22 @@ fn camera_toggle_depth_prepass(world : @ecs.World) -> Unit {
 fn camera_toggle_taa(world : @ecs.World) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
     let tick = world.read_change_tick()
-    let jitter_store = world.component(@render3d.ecs_key_temporal_jitter)
-    let taa_store = world.component(@render3d.ecs_key_temporal_anti_aliasing)
+    let jitter_store = world.component(@post_process.ecs_key_temporal_jitter)
+    let taa_store = world.component(
+      @post_process.ecs_key_temporal_anti_aliasing,
+    )
     if jitter_store.contains(camera_entity) {
       jitter_store.remove(camera_entity) |> ignore
       taa_store.remove(camera_entity) |> ignore
     } else {
       jitter_store.insert(
         camera_entity,
-        @render3d.TemporalJitter::default(),
+        @post_process.TemporalJitter::default(),
         tick,
       )
       taa_store.insert(
         camera_entity,
-        @render3d.TemporalAntiAliasing::default(),
+        @post_process.TemporalAntiAliasing::default(),
         tick,
       )
     }
@@ -290,7 +296,7 @@ fn transmission_hud_text(world : @ecs.World) -> String {
 
 ///|
 fn register_material(
-  material : @asset.Handle[@render3d.StandardMaterial],
+  material : @asset.Handle[@pbr.StandardMaterial],
   color : Bool,
   specular : Bool,
   diffuse : Bool,
@@ -307,11 +313,7 @@ fn register_material(
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -357,7 +359,7 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -367,7 +369,7 @@ fn cylinder_mesh(
   radius : Float,
   height : Float,
   resolution : Int,
-) -> @render3d.Mesh3d {
+) -> @pbr.Mesh3d {
   let safe_radius = if radius <= 0.0F { 0.5F } else { radius }
   let safe_height = if height <= 0.0F { 1.0F } else { height }
   let safe_resolution = if resolution < 3 { 3 } else { resolution }
@@ -427,21 +429,19 @@ fn cylinder_mesh(
     )
   }
 
-  @render3d.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new(positions, uvs, None),
-  )
+  @pbr.Mesh3d::from_geometry(@mesh.Mesh3dGeometry::new(positions, uvs, None))
 }
 
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @render3d.Mesh3d,
-  material : @asset.Handle[@render3d.StandardMaterial],
+  mesh : @pbr.Mesh3d,
+  material : @asset.Handle[@pbr.StandardMaterial],
   transform : @math.Transform,
 ) -> Unit {
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     mesh,
-    @render3d.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
   |> ignore
@@ -452,21 +452,21 @@ fn setup_scene(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   world.insert_resource(
-    @render3d.ecs_key_point_light_shadow_map,
-    @render3d.PointLightShadowMap::new(2048),
+    @pbr.ecs_key_point_light_shadow_map,
+    @pbr.PointLightShadowMap::new(2048),
   )
   world.insert_resource(
-    @render3d.ecs_key_global_ambient_light,
-    @render3d.GlobalAmbientLight::new(@render2d.Color::white(), 0.0F),
+    @pbr.ecs_key_global_ambient_light,
+    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
   )
 
-  let cube_mesh = @render3d.Mesh3d::from_cuboid(0.7F, 0.7F, 0.7F)
+  let cube_mesh = @pbr.Mesh3d::from_cuboid(0.7F, 0.7F, 0.7F)
   let sphere_mesh = uv_sphere_mesh(0.9F, 24, 40)
-  let plane_mesh = @render3d.Mesh3d::from_plane(2.0F, 2.0F)
+  let plane_mesh = @pbr.Mesh3d::from_plane(2.0F, 2.0F)
   let candle_mesh = cylinder_mesh(0.5F, 2.0F, 50)
 
-  let cube_1_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::default(),
+  let cube_1_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::default(),
   )
   register_material(cube_1_material, true, false, false)
   spawn_mesh(
@@ -481,8 +481,8 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ),
   )
 
-  let cube_2_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::default(),
+  let cube_2_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::default(),
   )
   register_material(cube_2_material, true, false, false)
   spawn_mesh(
@@ -497,9 +497,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ),
   )
 
-  let candle_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.9F, 0.2F, 0.3F, 1.0F),
+  let candle_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.9F, 0.2F, 0.3F, 1.0F),
     )
     .with_diffuse_transmission(0.7F)
     .with_perceptual_roughness(0.32F)
@@ -513,28 +513,28 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @math.Transform::from_xyz(-1.0F, 0.0F, 0.0F),
   )
 
-  let flame_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+  let flame_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
     )
-    .with_emissive(@render2d.Color::new(23.6F, 19.48F, 16.8F, 1.0F))
+    .with_emissive(@sprite.Color::new(23.6F, 19.48F, 16.8F, 1.0F))
     .with_diffuse_transmission(1.0F),
   )
-  let flame_mesh_entity = @render3d.MeshMaterial3dBundle::new(
+  let flame_mesh_entity = @pbr.MeshMaterial3dBundle::new(
     sphere_mesh,
-    @render3d.MeshMaterial3d::new(flame_material),
+    @pbr.MeshMaterial3d::new(flame_material),
     @math.Transform::from_xyz(-1.0F, 1.15F, 0.0F).with_scale(
       @math.Vec3::new(0.1F, 0.2F, 0.1F),
     ),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_not_shadow_caster)
-  .insert(flame_mesh_entity, @render3d.NotShadowCaster::default(), tick)
+  .component(@pbr.ecs_key_not_shadow_caster)
+  .insert(flame_mesh_entity, @pbr.NotShadowCaster::default(), tick)
   transmission_state.val.flame_mesh = Some(flame_mesh_entity)
 
-  let white_glass = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+  let white_glass = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
     )
     .with_specular_transmission(0.9F)
     .with_diffuse_transmission(1.0F)
@@ -550,9 +550,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @math.Transform::from_xyz(1.0F, 0.0F, 0.0F),
   )
 
-  let red_glass = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+  let red_glass = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
     )
     .with_specular_transmission(0.9F)
     .with_diffuse_transmission(1.0F)
@@ -570,9 +570,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ),
   )
 
-  let green_glass = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+  let green_glass = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
     )
     .with_specular_transmission(0.9F)
     .with_diffuse_transmission(1.0F)
@@ -590,9 +590,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ),
   )
 
-  let blue_glass = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+  let blue_glass = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
     )
     .with_specular_transmission(0.9F)
     .with_diffuse_transmission(1.0F)
@@ -610,13 +610,13 @@ fn setup_scene(world : @ecs.World) -> Unit {
     ),
   )
 
-  let black_tile = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::black())
+  let black_tile = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::black())
     .with_reflectance(0.3F)
     .with_perceptual_roughness(0.8F),
   )
-  let white_tile = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white())
+  let white_tile = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white())
     .with_reflectance(0.3F)
     .with_perceptual_roughness(0.8F),
   )
@@ -643,37 +643,37 @@ fn setup_scene(world : @ecs.World) -> Unit {
     }
   }
 
-  let paper_material_base = @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+  let paper_material_base = @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
     )
     .with_diffuse_transmission(0.6F)
     .with_perceptual_roughness(0.8F)
     .with_reflectance(1.0F)
     .with_double_sided(true)
     .with_cull_mode(None)
-  let paper_material = @render3d.standard_material_add(paper_material_base)
+  let paper_material = @pbr.standard_material_add(paper_material_base)
   register_material(paper_material, false, false, true)
-  let paper_entity = @render3d.MeshMaterial3dBundle::new(
+  let paper_entity = @pbr.MeshMaterial3dBundle::new(
     plane_mesh,
-    @render3d.MeshMaterial3d::new(paper_material),
+    @pbr.MeshMaterial3d::new(paper_material),
     @math.Transform::from_xyz(0.0F, 0.5F, -3.0F)
     .with_scale(@math.Vec3::new(2.0F, 1.0F, 1.0F))
     .with_rotation(@math.Quat::from_rotation_x(PI / 2.0F)),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_transmitted_shadow_receiver)
-  .insert(paper_entity, @render3d.TransmittedShadowReceiver::default(), tick)
+  .component(@pbr.ecs_key_transmitted_shadow_receiver)
+  .insert(paper_entity, @pbr.TransmittedShadowReceiver::default(), tick)
 
   let flame_light = world.spawn_empty()
   world
   .component(@math.ecs_key_transform)
   .insert(flame_light, @math.Transform::from_xyz(-1.0F, 1.7F, 0.0F), tick)
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     flame_light,
-    @render3d.PointLight::new(
-      @render2d.Color::new(0.987F, 0.792F, 0.674F, 1.0F),
+    @pbr.PointLight::new(
+      @sprite.Color::new(0.987F, 0.792F, 0.674F, 1.0F),
       4_000.0F,
       5.0F,
       true,
@@ -686,12 +686,10 @@ fn setup_scene(world : @ecs.World) -> Unit {
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  let color_grading = @render3d.ColorGrading::new(
-    @render3d.ColorGradingGlobal::new().with_post_saturation(1.2F),
-    @render3d.ColorGradingSettings::default(),
-  )
-  let camera = @render3d.Camera3dBundle::new(
-      @render2d.Camera::default().with_clear_color(@render2d.Color::black()),
+  let color_grading = @post_process.ColorGrading::default()
+  color_grading.global.post_saturation = 1.2F
+  let camera = @pbr.Camera3dBundle::new(
+      @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
       @math.Transform::from_xyz(
         CAMERA_INITIAL_X,
         CAMERA_INITIAL_Y,
@@ -699,39 +697,35 @@ fn setup_camera(world : @ecs.World) -> Unit {
       ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
     )
     .with_screen_space_transmission(
-      Some(@render3d.ScreenSpaceTransmission::default()),
+      Some(@post_process.ScreenSpaceTransmission::default()),
     )
     .spawn(world)
   let tick = world.read_change_tick()
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world
-  .component(@render3d.ecs_key_hdr)
-  .insert(camera, @render3d.Hdr::default(), tick)
+  .component(@post_process.ecs_key_bloom)
+  .insert(camera, @post_process.Bloom::default(), tick)
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
-  .component(@render3d.ecs_key_bloom)
-  .insert(camera, @render3d.Bloom::default(), tick)
+  .component(@post_process.ecs_key_temporal_jitter)
+  .insert(camera, @post_process.TemporalJitter::default(), tick)
   world
-  .component(@render3d.ecs_key_msaa)
-  .insert(camera, @render3d.Msaa::Off, tick)
+  .component(@post_process.ecs_key_temporal_anti_aliasing)
+  .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
   world
-  .component(@render3d.ecs_key_temporal_jitter)
-  .insert(camera, @render3d.TemporalJitter::default(), tick)
+  .component(@pbr.ecs_key_exposure)
+  .insert(camera, @pbr.Exposure::new(6.0F), tick)
   world
-  .component(@render3d.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
-  world
-  .component(@render3d.ecs_key_exposure)
-  .insert(camera, @render3d.Exposure::new(6.0F), tick)
-  world
-  .component(@render3d.ecs_key_color_grading)
+  .component(@post_process.ecs_key_color_grading)
   .insert(camera, color_grading, tick)
   world
-  .component(@render3d.ecs_key_tonemapping)
-  .insert(camera, @render3d.Tonemapping::TonyMcMapface, tick)
+  .component(@post_process.ecs_key_tonemapping)
+  .insert(camera, @post_process.Tonemapping::TonyMcMapface, tick)
   world
-  .component(@render3d.ecs_key_environment_map_light)
+  .component(@pbr.ecs_key_environment_map_light)
   .insert(
     camera,
-    @render3d.EnvironmentMapLight::new(
+    @pbr.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       25.0F,
@@ -756,11 +750,11 @@ fn setup_text(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .spawn()
 
@@ -797,15 +791,15 @@ fn apply_camera_transform(world : @ecs.World) -> Unit {
 fn apply_material_controls(randomize_colors : Bool) -> Unit {
   if randomize_colors {
     for handle in transmission_state.val.color_materials {
-      if @render3d.standard_material_get(handle) is Some(material) {
+      if @pbr.standard_material_get(handle) is Some(material) {
         let alpha = material.base_color.a
-        let random_color = @render2d.Color::new(
+        let random_color = @sprite.Color::new(
           next_random_unit(),
           next_random_unit(),
           next_random_unit(),
           alpha,
         )
-        @render3d.standard_material_set(
+        @pbr.standard_material_set(
           handle,
           material.with_base_color(random_color),
         )
@@ -815,7 +809,7 @@ fn apply_material_controls(randomize_colors : Bool) -> Unit {
   }
 
   for handle in transmission_state.val.specular_materials {
-    if @render3d.standard_material_get(handle) is Some(material) {
+    if @pbr.standard_material_get(handle) is Some(material) {
       let updated = material
         .with_specular_transmission(
           transmission_state.val.specular_transmission,
@@ -825,17 +819,17 @@ fn apply_material_controls(randomize_colors : Bool) -> Unit {
         .with_perceptual_roughness(transmission_state.val.perceptual_roughness)
         .with_reflectance(transmission_state.val.reflectance)
 
-      @render3d.standard_material_set(handle, updated) |> ignore
+      @pbr.standard_material_set(handle, updated) |> ignore
     }
   }
 
   for handle in transmission_state.val.diffuse_materials {
-    if @render3d.standard_material_get(handle) is Some(material) {
+    if @pbr.standard_material_get(handle) is Some(material) {
       let updated = material.with_diffuse_transmission(
         transmission_state.val.diffuse_transmission,
       )
 
-      @render3d.standard_material_set(handle, updated) |> ignore
+      @pbr.standard_material_set(handle, updated) |> ignore
     }
   }
 }
@@ -949,28 +943,28 @@ fn example_control_system(world : @ecs.World) -> Unit {
 
   if @input.key_just_pressed(@window.KeyCode::KeyJ) {
     transmission_settings = transmission_settings.with_quality(
-      @render3d.ScreenSpaceTransmissionQuality::Low,
+      @post_process.ScreenSpaceTransmissionQuality::Low,
     )
     transmission_settings_changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyK) {
     transmission_settings = transmission_settings.with_quality(
-      @render3d.ScreenSpaceTransmissionQuality::Medium,
+      @post_process.ScreenSpaceTransmissionQuality::Medium,
     )
     transmission_settings_changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyL) {
     transmission_settings = transmission_settings.with_quality(
-      @render3d.ScreenSpaceTransmissionQuality::High,
+      @post_process.ScreenSpaceTransmissionQuality::High,
     )
     transmission_settings_changed = true
   }
 
   if @input.key_just_pressed(@window.KeyCode::Semicolon) {
     transmission_settings = transmission_settings.with_quality(
-      @render3d.ScreenSpaceTransmissionQuality::Ultra,
+      @post_process.ScreenSpaceTransmissionQuality::Ultra,
     )
     transmission_settings_changed = true
   }
@@ -1056,10 +1050,10 @@ fn flicker_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   if transmission_state.val.flame_light is Some(light_entity) {
-    if world.component(@render3d.ecs_key_point_light).get(light_entity)
+    if world.component(@pbr.ecs_key_point_light).get(light_entity)
       is Some(point_light) {
       world
-      .component(@render3d.ecs_key_point_light)
+      .component(@pbr.ecs_key_point_light)
       .set(
         light_entity,
         point_light.with_intensity(4_000.0F + 3_000.0F * (a + b + c)),

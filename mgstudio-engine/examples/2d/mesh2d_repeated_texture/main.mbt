@@ -40,13 +40,13 @@ fn spawn_panel(
   texture : @asset.Handle[@asset.Image],
   uv_scale : @math.Vec2,
 ) -> Unit {
-  let mesh = @render2d.Mesh2d::from_rectangle(
-    @render2d.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
+  let mesh = @sprite.Mesh2d::from_rectangle(
+    @sprite.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
   )
-  let material = @render2d.ColorMaterial::from_image(texture).with_uv_scale(
+  let material = @sprite.ColorMaterial::from_image(texture).with_uv_scale(
     uv_scale,
   )
-  @render2d.Mesh2dBundle::new(
+  @sprite.Mesh2dBundle::new(
     mesh,
     material,
     @math.Transform::from_xyz(x, 0.0F, 0.0F),
@@ -92,15 +92,17 @@ fn mesh2d_repeated_texture_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let default_texture = asset_server.load_with_settings(
     "textures/fantasy_ui_borders/panel-border-010.png",
-    @asset.ImageLoaderSettings::default().with_sampler(
-      @asset.ImageSampler::Linear,
-    ),
+    fn(_settings) {  },
   )
   let repeated_texture = asset_server.load_with_settings(
     "textures/fantasy_ui_borders/panel-border-010-repeated.png",
-    @asset.ImageLoaderSettings::default().with_sampler(
-      @asset.ImageSampler::LinearRepeat,
-    ),
+    fn(settings) {
+      settings.sampler = @asset.ImageSampler::Descriptor(
+        @asset.ImageSamplerDescriptor::linear().set_address_mode(
+          @asset.ImageAddressMode::Repeat,
+        ),
+      )
+    },
   )
   example_state.val.label_font = Some(
     asset_server.load_font("fonts/FiraSans-Bold.ttf"),
@@ -128,7 +130,7 @@ fn mesh2d_repeated_texture_setup(world : @ecs.World) -> Unit {
     @math.Vec3::zero(),
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
-  @render2d.Camera2dBundle::new(@render2d.Camera::default(), camera_transform).spawn(
+  @sprite.Camera2dBundle::new(@sprite.Camera::default(), camera_transform).spawn(
     world,
   )
   |> ignore

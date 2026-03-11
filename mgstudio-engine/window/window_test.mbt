@@ -62,8 +62,8 @@ fn read_window_created(world : @ecs.World) -> Array[WindowCreated] {
 }
 
 ///|
-fn read_window_focused(world : @ecs.World) -> Array[WindowFocused] {
-  let reader = world.message_reader(ecs_key_window_focused, Ref::new(0))
+fn read_window_destroyed(world : @ecs.World) -> Array[WindowDestroyed] {
+  let reader = world.message_reader(ecs_key_window_destroyed, Ref::new(0))
   try! reader.read()
 }
 
@@ -89,13 +89,22 @@ test "window: plugin spawns configured primary window entity and messages" {
   }).run_once()
 
   inspect(app.world().contains_message(ecs_key_window_created), content="true")
+  inspect(app.world().contains_message(ecs_key_request_redraw), content="true")
   inspect(
     app.world().contains_message(ecs_key_window_close_requested),
     content="true",
   )
   inspect(app.world().contains_message(ecs_key_window_closing), content="true")
   inspect(app.world().contains_message(ecs_key_window_closed), content="true")
+  inspect(
+    app.world().contains_message(ecs_key_window_destroyed),
+    content="true",
+  )
   inspect(app.world().contains_message(ecs_key_window_moved), content="true")
+  inspect(
+    app.world().contains_message(ecs_key_window_scale_factor_changed),
+    content="true",
+  )
   inspect(
     app.world().contains_message(ecs_key_window_backend_scale_factor_changed),
     content="true",
@@ -119,7 +128,7 @@ test "window: plugin spawns configured primary window entity and messages" {
   inspect(stored_window.position, content="At(12, 34)")
   inspect(stored_window.mode, content="BorderlessFullscreen")
   inspect(stored_window.resizable, content="false")
-  inspect(stored_window.focused, content="true")
+  inspect(stored_window.focused, content="false")
 
   let stored_cursor = match cursor_options_value(app.world(), entity) {
     Some(cursor) => cursor
@@ -127,10 +136,6 @@ test "window: plugin spawns configured primary window entity and messages" {
   }
   inspect(stored_cursor.visible, content="false")
   inspect(stored_cursor.grab_mode, content="GrabLocked")
-  let focused_messages = read_window_focused(app.world())
-  inspect(focused_messages.length(), content="1")
-  inspect(focused_messages[0].window == entity, content="true")
-  inspect(focused_messages[0].focused, content="true")
 }
 
 ///|
@@ -164,7 +169,7 @@ test "window: compatibility helpers read and write ECS primary window state" {
       window_set_resizable(resizable=false)
       window_set_cursor_visible(visible=false)
       window_set_cursor_grab_mode(mode=CursorGrabMode::GrabConfined)
-      window_set_cursor_icon(icon=CursorIcon::EwResize)
+      window_set_cursor_icon(icon=CursorIcon::from(SystemCursorIcon::EwResize))
       window_set_position(x=30, y=40)
       window_set_mode(mode=WindowMode::Fullscreen)
     }),
@@ -194,7 +199,10 @@ test "window: compatibility helpers read and write ECS primary window state" {
   }
   inspect(stored_cursor.visible, content="false")
   inspect(stored_cursor.grab_mode, content="GrabConfined")
-  inspect(cursor_icon_value(app.world(), entity), content="Some(EwResize)")
+  inspect(
+    cursor_icon_value(app.world(), entity),
+    content="Some(System(EwResize))",
+  )
 }
 
 ///|
@@ -282,7 +290,7 @@ test "window: singleton helpers no-op when no primary window exists" {
       window_set_resizable(resizable=false)
       window_set_cursor_visible(visible=false)
       window_set_cursor_grab_mode(mode=CursorGrabMode::GrabConfined)
-      window_set_cursor_icon(icon=CursorIcon::EwResize)
+      window_set_cursor_icon(icon=CursorIcon::from(SystemCursorIcon::EwResize))
       window_set_position(x=30, y=40)
       window_set_mode(mode=WindowMode::Fullscreen)
     }),
@@ -341,35 +349,9 @@ test "window: scale-factor helper prefers override over observed host scale" {
 }
 
 ///|
-test "window: backend sync creates host runtime for secondary window entities" {
-  let configured_window = Window::default()
-  configured_window.title = "Primary"
-  let world = @ecs.World::new()
-  let secondary = world.spawn()
-  let secondary_window = Window::default()
-  secondary_window.title = "Second window"
-  try! world.set_component(secondary, secondary_window)
-
-  let mut app = window_plugin_with(@app.App::new(world), WindowPlugin::{
-    primary_window: Some(configured_window),
-    primary_cursor_options: Some(CursorOptions::default()),
-    exit_condition: ExitCondition::DontExit,
-    close_when_requested: false,
-  })
-  app = app.run_once()
-  let stored_window = match window_component_value(app.world(), secondary) {
-    Some(window) => window
-    None => abort("missing secondary window")
-  }
-  let created_messages = read_window_created(app.world())
-  let mut secondary_created = false
-  for message in created_messages {
-    if message.window == secondary {
-      secondary_created = true
-    }
-  }
-  inspect(secondary_created, content="true")
-  inspect(stored_window.title, content="Second window")
+test "window: plugin does not own backend window synchronization" {
+  let app = window_plugin(@app.App::new(@ecs.World::new())).run_once()
+  inspect(read_window_created(app.world()).length(), content="0")
 }
 
 ///|
@@ -381,6 +363,7 @@ test "window: close_when_requested marks then despawns windows across updates" {
     .add_message(ecs_key_window_close_requested)
     .add_message(ecs_key_window_closing)
     .add_message(ecs_key_window_closed)
+    .add_message(ecs_key_window_destroyed)
     .add_systems(
       @app.Update,
       @app.system(@app.system_param2(close_when_requested)),
@@ -400,6 +383,7 @@ test "window: close_when_requested marks then despawns windows across updates" {
 
   app = app.run_once()
   inspect(app.world().is_alive(entity), content="false")
+  inspect(read_window_destroyed(app.world()).length(), content="1")
 }
 
 ///|

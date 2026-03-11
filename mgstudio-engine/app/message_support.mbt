@@ -143,7 +143,7 @@ pub fn[T : @ecs.Message] Local::read(
   messages : ResMut[@ecs.Messages[T]],
 ) -> Array[T] raise @ecs.EcsError {
   let cursor = self.get()
-  let unread = try! cursor.read(messages.get_ref().val)
+  let unread = cursor.read(messages.get_ref().val)
   self.set(cursor)
   unread
 }
@@ -154,7 +154,7 @@ pub fn[T : @ecs.Message] Local::read_mut(
   messages : ResMut[@ecs.Messages[T]],
 ) -> Array[Ref[T]] raise @ecs.EcsError {
   let cursor = self.get()
-  let unread = try! cursor.read_mut(messages.get_ref().val)
+  let unread = cursor.read_mut(messages.get_ref().val)
   self.set(cursor)
   unread
 }

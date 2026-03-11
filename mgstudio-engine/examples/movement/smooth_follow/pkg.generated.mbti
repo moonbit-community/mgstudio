@@ -1,0 +1,24 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/movement/smooth_follow"
+
+// Values
+
+// Errors
+
+// Types and methods
+type DecayRate
+
+type FollowingSphere
+
+type RandomSource
+
+type TargetPosition
+
+type TargetSphere
+
+type TargetSphereSpeed
+
+// Type aliases
+
+// Traits
+

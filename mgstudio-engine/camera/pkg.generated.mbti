@@ -1,0 +1,77 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/camera"
+
+import {
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/sprite",
+}
+
+// Values
+pub fn camera_viewport_to_world_ray(@math.Vec2, @sprite.Camera, @pbr.Projection, @math.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
+
+pub fn camera_world_to_viewport(@math.Vec3, @sprite.Camera, @pbr.Projection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
+
+pub let ecs_key_camera3d : @ecs.ComponentKey[@pbr.Camera3d]
+
+pub let ecs_key_projection : @ecs.ComponentKey[@pbr.Projection]
+
+pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[@pbr.SubCameraView3d]
+
+pub fn get_camera3d_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.Camera3d]
+
+pub fn get_projection_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.Projection]
+
+pub fn get_sub_camera_view3d_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.SubCameraView3d]
+
+pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @sprite.Camera, @pbr.Projection, @math.Transform, @math.IVec2, Float, @pbr.MeshRayCastSettings) -> Array[(@core.Entity, @pbr.MeshRayCastHit)]
+
+pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @sprite.Camera, @pbr.Projection, @math.Transform, @math.IVec2, Float, @pbr.MeshRayCastSettings) -> (@core.Entity, @pbr.MeshRayCastHit)?
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @pbr {type AutoExposure}
+
+pub using @pbr {type Camera3d}
+
+pub using @pbr {type Camera3dBundle}
+
+pub using @pbr {type CameraDecalConfig3d}
+
+pub using @pbr {type DecalRenderMode3d as CameraDecalRenderMode3d}
+
+pub using @pbr {type CameraDeferredConfig3d}
+
+pub using @pbr {type CameraDeferredMode3d}
+
+pub using @pbr {type DepthOfField}
+
+pub using @pbr {type DepthOfFieldMode}
+
+pub using @pbr {type Exposure}
+
+pub using @pbr {type MeshRayCastHit}
+
+pub using @pbr {type MeshRayCastSettings}
+
+pub using @pbr {type OrthographicProjection3d}
+
+pub using @pbr {type OrthographicScalingMode3d}
+
+pub using @pbr {type PerspectiveProjection3d}
+
+pub using @pbr {type PhysicalCameraParameters}
+
+pub using @pbr {type Projection}
+
+pub using @pbr {type ProjectionMatrix3d}
+
+pub using @pbr {type SubCameraView3d}
+
+// Traits
+

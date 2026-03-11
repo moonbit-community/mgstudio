@@ -1,10 +1,19 @@
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/runtime_native/native_asset",
+  "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/shader",
   "moonbitlang/core/json",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/ref",
   "Milky2018/mgstudio/ecs",
+  "moonbitlang/x/fs",
+  "moonbitlang/x/path",
+  "moonbitlang/x/sys",
   "tonyfettes/any",
 }
+
+options(
+  "supported-targets": "native",
+)

@@ -1,0 +1,101 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/image"
+
+// Values
+pub fn image_sampler_is_nearest(ImageSampler) -> Bool
+
+pub fn[T : TextureHandle] set_texture_sampler(T, ImageSampler, default_nearest? : Bool) -> Unit
+
+pub fn set_texture_sampler_with_id(Int, ImageSampler, default_nearest? : Bool) -> Unit
+
+// Errors
+
+// Types and methods
+pub struct Image {
+  width : Int
+  height : Int
+  pixels : Bytes
+}
+pub fn Image::new(Int, Int, Bytes) -> Self
+
+pub(all) enum ImageAddressMode {
+  ClampToEdge
+  Repeat
+  MirrorRepeat
+  ClampToBorder
+}
+pub fn ImageAddressMode::default() -> Self
+pub impl Eq for ImageAddressMode
+pub impl Show for ImageAddressMode
+
+pub(all) enum ImageArrayLayout {
+  RowCount(Int)
+  RowHeight(Int)
+}
+
+pub(all) enum ImageCompareFunction {
+  Never
+  Less
+  Equal
+  LessEqual
+  Greater
+  NotEqual
+  GreaterEqual
+  Always
+}
+pub impl Eq for ImageCompareFunction
+pub impl Show for ImageCompareFunction
+
+pub(all) enum ImageFilterMode {
+  Nearest
+  Linear
+}
+pub fn ImageFilterMode::default() -> Self
+pub impl Eq for ImageFilterMode
+pub impl Show for ImageFilterMode
+
+pub(all) enum ImageSampler {
+  Default
+  Descriptor(ImageSamplerDescriptor)
+}
+pub fn ImageSampler::default() -> Self
+pub fn ImageSampler::linear() -> Self
+pub fn ImageSampler::nearest() -> Self
+
+pub(all) enum ImageSamplerBorderColor {
+  TransparentBlack
+  OpaqueBlack
+  OpaqueWhite
+  Zero
+}
+pub impl Eq for ImageSamplerBorderColor
+pub impl Show for ImageSamplerBorderColor
+
+pub(all) struct ImageSamplerDescriptor {
+  mut label : String?
+  mut address_mode_u : ImageAddressMode
+  mut address_mode_v : ImageAddressMode
+  mut address_mode_w : ImageAddressMode
+  mut mag_filter : ImageFilterMode
+  mut min_filter : ImageFilterMode
+  mut mipmap_filter : ImageFilterMode
+  mut lod_min_clamp : Float
+  mut lod_max_clamp : Float
+  mut compare : ImageCompareFunction?
+  mut anisotropy_clamp : Int
+  mut border_color : ImageSamplerBorderColor?
+}
+pub fn ImageSamplerDescriptor::default() -> Self
+pub fn ImageSamplerDescriptor::linear() -> Self
+pub fn ImageSamplerDescriptor::nearest() -> Self
+pub fn ImageSamplerDescriptor::set_address_mode(Self, ImageAddressMode) -> Self
+pub fn ImageSamplerDescriptor::set_anisotropic_filter(Self, Int) -> Self
+pub fn ImageSamplerDescriptor::set_filter(Self, ImageFilterMode) -> Self
+
+// Type aliases
+
+// Traits
+pub(open) trait TextureHandle {
+  texture_id(Self) -> Int
+}
+

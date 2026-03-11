@@ -14,12 +14,6 @@
 
 ///|
 /// Port of `bevy/examples/3d/color_grading.rs`.
-///
-/// Baseline parity:
-/// - Camera-attached `ColorGrading` + `Hdr` are now wired to real mgstudio
-///   camera components.
-/// - Existing proxy adjustments (light/fog shaping) are retained to keep the
-///   current visual response close to prior example behavior.
 
 ///|
 const PI : Float = 3.141592653589793F
@@ -31,14 +25,11 @@ const OPTION_ADJUSTMENT_SPEED : Float = 0.003F
 const BUTTON_WIDTH : Float = 200.0F
 
 ///|
-const BUTTON_HEIGHT : Float = 36.0F
-
-///|
 pub(all) enum SelectedColorGradingSection {
   Highlights
   Midtones
   Shadows
-}
+} derive(Eq)
 
 ///|
 pub(all) enum SelectedGlobalColorGradingOption {
@@ -46,7 +37,7 @@ pub(all) enum SelectedGlobalColorGradingOption {
   Temperature
   Tint
   Hue
-}
+} derive(Eq)
 
 ///|
 pub(all) enum SelectedSectionColorGradingOption {
@@ -55,139 +46,90 @@ pub(all) enum SelectedSectionColorGradingOption {
   Gamma
   Gain
   Lift
-}
+} derive(Eq)
 
 ///|
 pub(all) enum SelectedColorGradingOption {
   Global(SelectedGlobalColorGradingOption)
   Section(SelectedColorGradingSection, SelectedSectionColorGradingOption)
+} derive(Eq)
+
+///|
+fn SelectedColorGradingOption::default() -> SelectedColorGradingOption {
+  SelectedColorGradingOption::Global(SelectedGlobalColorGradingOption::Exposure)
 }
 
 ///|
-priv struct ColorGradingGlobal {
-  exposure : Float
-  temperature : Float
-  tint : Float
-  hue : Float
-}
+pub(all) enum ColorGradingOptionWidgetType {
+  Button
+  Label
+  Value
+} derive(Eq)
 
 ///|
-priv struct ColorGradingSection {
-  saturation : Float
-  contrast : Float
-  gamma : Float
-  gain : Float
-  lift : Float
-}
-
-///|
-priv struct ColorGradingValues {
-  global : ColorGradingGlobal
-  shadows : ColorGradingSection
-  midtones : ColorGradingSection
-  highlights : ColorGradingSection
-}
-
-///|
-priv struct ColorGradingOptionWidget {
-  button : @core.Entity
-  text : @text.TextHandle
+struct ColorGradingOptionWidget {
+  widget_type : ColorGradingOptionWidgetType
   option : SelectedColorGradingOption
 }
 
 ///|
-priv struct ColorGradingState {
-  mut selected_option : SelectedColorGradingOption
-  mut color_grading : ColorGradingValues
-  mut camera : @core.Entity?
-  mut directional_light : @core.Entity?
-  mut help_text : @text.TextHandle?
-  widgets : Array[ColorGradingOptionWidget]
-  mut ui_dirty : Bool
+struct HelpText {}
+
+///|
+struct ColorGradingCamera {}
+
+///|
+let selected_color_grading_option_resource_key : @ecs.ResourceKey[
+  SelectedColorGradingOption,
+] = @ecs.register_resource(
+  debug_name="examples.3d.color_grading.SelectedColorGradingOption",
+)
+
+///|
+let color_grading_option_widget_component_key : @ecs.ComponentKey[
+  ColorGradingOptionWidget,
+] = @ecs.register_component(
+  debug_name="examples.3d.color_grading.ColorGradingOptionWidget",
+)
+
+///|
+let help_text_component_key : @ecs.ComponentKey[HelpText] = @ecs.register_component(
+  debug_name="examples.3d.color_grading.HelpText",
+)
+
+///|
+let color_grading_camera_component_key : @ecs.ComponentKey[ColorGradingCamera] = @ecs.register_component(
+  debug_name="examples.3d.color_grading.ColorGradingCamera",
+)
+
+///|
+let color_grading_button_press_set : @app.SystemSet = @app.system_set(
+  "examples.3d.color_grading.handle_button_presses",
+)
+
+///|
+let color_grading_adjust_set : @app.SystemSet = @app.system_set(
+  "examples.3d.color_grading.adjust_color_grading_option",
+)
+
+///|
+impl @app.Resource for SelectedColorGradingOption with resource() {
+  selected_color_grading_option_resource_key
 }
 
 ///|
-let color_grading_state : Ref[ColorGradingState] = Ref::new({
-  selected_option: SelectedColorGradingOption::Global(
-    SelectedGlobalColorGradingOption::Exposure,
-  ),
-  color_grading: {
-    global: { exposure: 0.0F, temperature: 0.0F, tint: 0.0F, hue: 0.0F },
-    shadows: {
-      saturation: 1.0F,
-      contrast: 1.0F,
-      gamma: 1.0F,
-      gain: 1.0F,
-      lift: 0.0F,
-    },
-    midtones: {
-      saturation: 1.0F,
-      contrast: 1.0F,
-      gamma: 1.0F,
-      gain: 1.0F,
-      lift: 0.0F,
-    },
-    highlights: {
-      saturation: 1.0F,
-      contrast: 1.0F,
-      gamma: 1.0F,
-      gain: 1.0F,
-      lift: 0.0F,
-    },
-  },
-  camera: None,
-  directional_light: None,
-  help_text: None,
-  widgets: [],
-  ui_dirty: true,
-})
-
-///|
-fn default_color_grading_values() -> ColorGradingValues {
-  {
-    global: { exposure: 0.0F, temperature: 0.0F, tint: 0.0F, hue: 0.0F },
-    shadows: {
-      saturation: 1.0F,
-      contrast: 1.0F,
-      gamma: 1.0F,
-      gain: 1.0F,
-      lift: 0.0F,
-    },
-    midtones: {
-      saturation: 1.0F,
-      contrast: 1.0F,
-      gamma: 1.0F,
-      gain: 1.0F,
-      lift: 0.0F,
-    },
-    highlights: {
-      saturation: 1.0F,
-      contrast: 1.0F,
-      gamma: 1.0F,
-      gain: 1.0F,
-      lift: 0.0F,
-    },
-  }
+impl @ecs.Component for ColorGradingOptionWidget with component() {
+  color_grading_option_widget_component_key
 }
 
 ///|
-fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
-  if value < min_value {
-    min_value
-  } else if value > max_value {
-    max_value
-  } else {
-    value
-  }
+impl @ecs.Component for HelpText with component() {
+  help_text_component_key
 }
 
 ///|
-fn absf(value : Float) -> Float {
-  if value < 0.0F {
-    -value
-  } else {
-    value
-  }
+impl @ecs.Component for ColorGradingCamera with component() {
+  color_grading_camera_component_key
 }
 
 ///|
@@ -221,125 +163,32 @@ fn section_option_name(option : SelectedSectionColorGradingOption) -> String {
 }
 
 ///|
-fn selected_option_name(option : SelectedColorGradingOption) -> String {
+fn selected_option_display(option : SelectedColorGradingOption) -> String {
+  match option {
+    Global(global_option) => "\"" + global_option_name(global_option) + "\""
+    Section(section, section_option) =>
+      "\"" +
+      section_option_name(section_option) +
+      "\" for \"" +
+      section_name(section) +
+      "\""
+  }
+}
+
+///|
+fn selected_option_button_label(option : SelectedColorGradingOption) -> String {
   match option {
     Global(global_option) => global_option_name(global_option)
-    Section(section, section_option) =>
-      section_name(section) + " / " + section_option_name(section_option)
+    Section(_, section_option) => section_option_name(section_option)
   }
 }
 
 ///|
-fn selected_option_eq(
-  lhs : SelectedColorGradingOption,
-  rhs : SelectedColorGradingOption,
-) -> Bool {
-  let global_option_eq = fn(
-    lhs : SelectedGlobalColorGradingOption,
-    rhs : SelectedGlobalColorGradingOption,
-  ) -> Bool {
-    match lhs {
-      Exposure =>
-        match rhs {
-          Exposure => true
-          _ => false
-        }
-      Temperature =>
-        match rhs {
-          Temperature => true
-          _ => false
-        }
-      Tint =>
-        match rhs {
-          Tint => true
-          _ => false
-        }
-      Hue =>
-        match rhs {
-          Hue => true
-          _ => false
-        }
-    }
-  }
-
-  let section_eq = fn(
-    lhs : SelectedColorGradingSection,
-    rhs : SelectedColorGradingSection,
-  ) -> Bool {
-    match lhs {
-      Highlights =>
-        match rhs {
-          Highlights => true
-          _ => false
-        }
-      Midtones =>
-        match rhs {
-          Midtones => true
-          _ => false
-        }
-      Shadows =>
-        match rhs {
-          Shadows => true
-          _ => false
-        }
-    }
-  }
-
-  let section_option_eq = fn(
-    lhs : SelectedSectionColorGradingOption,
-    rhs : SelectedSectionColorGradingOption,
-  ) -> Bool {
-    match lhs {
-      Saturation =>
-        match rhs {
-          Saturation => true
-          _ => false
-        }
-      Contrast =>
-        match rhs {
-          Contrast => true
-          _ => false
-        }
-      Gamma =>
-        match rhs {
-          Gamma => true
-          _ => false
-        }
-      Gain =>
-        match rhs {
-          Gain => true
-          _ => false
-        }
-      Lift =>
-        match rhs {
-          Lift => true
-          _ => false
-        }
-    }
-  }
-
-  match lhs {
-    Global(lhs_global) =>
-      match rhs {
-        Global(rhs_global) => global_option_eq(lhs_global, rhs_global)
-        _ => false
-      }
-    Section(lhs_section, lhs_section_option) =>
-      match rhs {
-        Section(rhs_section, rhs_section_option) =>
-          section_eq(lhs_section, rhs_section) &&
-          section_option_eq(lhs_section_option, rhs_section_option)
-        _ => false
-      }
-  }
-}
-
-///|
-fn global_option_get(
-  option : SelectedGlobalColorGradingOption,
-  global : ColorGradingGlobal,
+fn SelectedGlobalColorGradingOption::get(
+  self : SelectedGlobalColorGradingOption,
+  global : @post_process.ColorGradingGlobal,
 ) -> Float {
-  match option {
+  match self {
     Exposure => global.exposure
     Temperature => global.temperature
     Tint => global.tint
@@ -348,25 +197,26 @@ fn global_option_get(
 }
 
 ///|
-fn global_option_set(
-  option : SelectedGlobalColorGradingOption,
-  global : ColorGradingGlobal,
+fn SelectedGlobalColorGradingOption::set(
+  self : SelectedGlobalColorGradingOption,
+  global : @post_process.ColorGradingGlobal,
   value : Float,
-) -> ColorGradingGlobal {
-  match option {
-    Exposure => { ..global, exposure: value }
-    Temperature => { ..global, temperature: value }
-    Tint => { ..global, tint: value }
-    Hue => { ..global, hue: value }
+) -> @post_process.ColorGradingGlobal {
+  match self {
+    Exposure => global.exposure = value
+    Temperature => global.temperature = value
+    Tint => global.tint = value
+    Hue => global.hue = value
   }
+  global
 }
 
 ///|
-fn section_option_get(
-  option : SelectedSectionColorGradingOption,
-  section : ColorGradingSection,
+fn SelectedSectionColorGradingOption::get(
+  self : SelectedSectionColorGradingOption,
+  section : @post_process.ColorGradingSection,
 ) -> Float {
-  match option {
+  match self {
     Saturation => section.saturation
     Contrast => section.contrast
     Gamma => section.gamma
@@ -376,275 +226,92 @@ fn section_option_get(
 }
 
 ///|
-fn section_option_set(
-  option : SelectedSectionColorGradingOption,
-  section : ColorGradingSection,
+fn SelectedSectionColorGradingOption::set(
+  self : SelectedSectionColorGradingOption,
+  section : @post_process.ColorGradingSection,
   value : Float,
-) -> ColorGradingSection {
-  match option {
-    Saturation => { ..section, saturation: value }
-    Contrast => { ..section, contrast: value }
-    Gamma => { ..section, gamma: value }
-    Gain => { ..section, gain: value }
-    Lift => { ..section, lift: value }
+) -> @post_process.ColorGradingSection {
+  match self {
+    Saturation => section.saturation = value
+    Contrast => section.contrast = value
+    Gamma => section.gamma = value
+    Gain => section.gain = value
+    Lift => section.lift = value
   }
+  section
 }
 
 ///|
-fn selected_option_get(
-  option : SelectedColorGradingOption,
-  color_grading : ColorGradingValues,
+fn SelectedColorGradingOption::get(
+  self : SelectedColorGradingOption,
+  color_grading : @post_process.ColorGrading,
 ) -> Float {
-  match option {
-    Global(global_option) =>
-      global_option_get(global_option, color_grading.global)
-    Section(section, section_option) =>
-      match section {
-        Highlights =>
-          section_option_get(section_option, color_grading.highlights)
-        Midtones => section_option_get(section_option, color_grading.midtones)
-        Shadows => section_option_get(section_option, color_grading.shadows)
-      }
+  match self {
+    Global(option) => option.get(color_grading.global)
+    Section(Highlights, option) => option.get(color_grading.highlights)
+    Section(Midtones, option) => option.get(color_grading.midtones)
+    Section(Shadows, option) => option.get(color_grading.shadows)
   }
 }
 
 ///|
-fn selected_option_set(
-  option : SelectedColorGradingOption,
-  color_grading : ColorGradingValues,
+fn SelectedColorGradingOption::set(
+  self : SelectedColorGradingOption,
+  color_grading : @post_process.ColorGrading,
   value : Float,
-) -> ColorGradingValues {
-  match option {
-    Global(global_option) =>
-      {
-        ..color_grading,
-        global: global_option_set(global_option, color_grading.global, value),
-      }
-    Section(section, section_option) =>
-      match section {
-        Highlights =>
-          {
-            ..color_grading,
-            highlights: section_option_set(
-              section_option,
-              color_grading.highlights,
-              value,
-            ),
-          }
-        Midtones =>
-          {
-            ..color_grading,
-            midtones: section_option_set(
-              section_option,
-              color_grading.midtones,
-              value,
-            ),
-          }
-        Shadows =>
-          {
-            ..color_grading,
-            shadows: section_option_set(
-              section_option,
-              color_grading.shadows,
-              value,
-            ),
-          }
-      }
+) -> @post_process.ColorGrading {
+  match self {
+    Global(option) =>
+      color_grading.global = option.set(color_grading.global, value)
+    Section(Highlights, option) =>
+      color_grading.highlights = option.set(color_grading.highlights, value)
+    Section(Midtones, option) =>
+      color_grading.midtones = option.set(color_grading.midtones, value)
+    Section(Shadows, option) =>
+      color_grading.shadows = option.set(color_grading.shadows, value)
   }
+  color_grading
 }
 
 ///|
-fn to_render3d_section(
-  section : ColorGradingSection,
-) -> @render3d.ColorGradingSection {
-  @render3d.ColorGradingSection::default()
-  .with_saturation(section.saturation)
-  .with_contrast(section.contrast)
-  .with_gamma(section.gamma)
-  .with_gain(section.gain)
-  .with_lift(section.lift)
+fn selected_button_color() -> @sprite.Color {
+  @sprite.Color::white()
 }
 
 ///|
-fn to_render3d_color_grading(
-  values : ColorGradingValues,
-) -> @render3d.ColorGrading {
-  let global = @render3d.ColorGradingGlobal::default()
-    .with_exposure(values.global.exposure)
-    .with_temperature(values.global.temperature)
-    .with_tint(values.global.tint)
-    .with_hue(values.global.hue)
-  @render3d.ColorGrading::new(
-    global,
-    @render3d.ColorGradingSettings::default()
-    .with_shadows(to_render3d_section(values.shadows))
-    .with_midtones(to_render3d_section(values.midtones))
-    .with_highlights(to_render3d_section(values.highlights)),
-  )
+fn normal_button_color() -> @sprite.Color {
+  @sprite.Color::black()
 }
 
 ///|
-fn selected_button_color() -> @render2d.Color {
-  @render2d.Color::white()
-}
-
-///|
-fn normal_button_color() -> @render2d.Color {
-  @render2d.Color::black()
-}
-
-///|
-fn create_help_text() -> String {
-  "Press Left/Right to adjust " +
-  selected_option_name(color_grading_state.val.selected_option)
-}
-
-///|
-fn set_global_ambient_light(
-  world : @ecs.World,
-  color : @render2d.Color,
-  brightness : Float,
-) -> Unit {
-  let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
-}
-
-///|
-fn global_white_balance(global : ColorGradingGlobal) -> (Float, Float, Float) {
-  let temp = global.temperature
-  let tint = global.tint
-  let hue = global.hue
-  let hue_r = 1.0F + 0.25F * @math.sin(hue)
-  let hue_g = 1.0F + 0.25F * @math.sin(hue + 2.0F * PI / 3.0F)
-  let hue_b = 1.0F + 0.25F * @math.sin(hue + 4.0F * PI / 3.0F)
-  let r = clampf((1.0F + temp * 0.4F + tint * 0.2F) * hue_r, 0.2F, 2.0F)
-  let g = clampf(
-    (1.0F - absf(temp) * 0.2F - absf(tint) * 0.1F) * hue_g,
-    0.2F,
-    2.0F,
-  )
-  let b = clampf((1.0F - temp * 0.4F - tint * 0.2F) * hue_b, 0.2F, 2.0F)
-  (r, g, b)
-}
-
-///|
-fn apply_color_grading_proxy(world : @ecs.World) -> Unit {
-  let values = color_grading_state.val.color_grading
-  if color_grading_state.val.camera is Some(camera_entity) {
-    let tick = world.increment_change_tick()
-    let grading = to_render3d_color_grading(values)
-    let store = world.component(@render3d.ecs_key_color_grading)
-    if store.contains(camera_entity) {
-      store.set(camera_entity, grading, tick) |> ignore
-    } else {
-      store.insert(camera_entity, grading, tick)
-    }
+fn format_with_three_decimals(value : Float) -> String {
+  let scaled = Float::round(value * 1000.0F).to_int()
+  let negative = scaled < 0
+  let magnitude = if negative { -scaled } else { scaled }
+  let whole = magnitude / 1000
+  let fractional = magnitude % 1000
+  let fractional_string = if fractional < 10 {
+    "00" + fractional.to_string()
+  } else if fractional < 100 {
+    "0" + fractional.to_string()
+  } else {
+    fractional.to_string()
   }
-
-  let (white_r, white_g, white_b) = global_white_balance(values.global)
-  let exposure_scale = @math.pow(2.0F, values.global.exposure)
-
-  let highlights = values.highlights
-  let highlight_intensity = clampf(
-    highlights.gain * highlights.contrast,
-    0.05F,
-    4.0F,
-  )
-  let highlight_saturation = clampf(highlights.saturation, 0.0F, 2.0F)
-  let highlight_lift = highlights.lift
-
-  if color_grading_state.val.directional_light is Some(light_entity) {
-    let tick = world.increment_change_tick()
-    let light_color = @render2d.Color::new(
-      clampf(
-        white_r * (0.7F + 0.3F * highlight_saturation) + highlight_lift,
-        0.0F,
-        2.0F,
-      ),
-      clampf(
-        white_g * (0.7F + 0.3F * highlight_saturation) + highlight_lift,
-        0.0F,
-        2.0F,
-      ),
-      clampf(
-        white_b * (0.7F + 0.3F * highlight_saturation) + highlight_lift,
-        0.0F,
-        2.0F,
-      ),
-      1.0F,
-    )
-    let illuminance = clampf(
-      15_000.0F * exposure_scale * highlight_intensity,
-      0.0F,
-      80_000.0F,
-    )
-    world
-    .component(@render3d.ecs_key_directional_light)
-    .set(
-      light_entity,
-      @render3d.DirectionalLight::new(light_color, illuminance, true),
-      tick,
-    )
-    |> ignore
-  }
-
-  let midtones = values.midtones
-  let midtone_gain = clampf(midtones.gain * midtones.contrast, 0.0F, 4.0F)
-  let midtone_saturation = clampf(midtones.saturation, 0.0F, 2.0F)
-  let ambient_color = @render2d.Color::new(
-    clampf(white_r * (0.5F + 0.5F * midtone_saturation), 0.0F, 2.0F),
-    clampf(white_g * (0.5F + 0.5F * midtone_saturation), 0.0F, 2.0F),
-    clampf(white_b * (0.5F + 0.5F * midtone_saturation), 0.0F, 2.0F),
-    1.0F,
-  )
-  let ambient_brightness = clampf(
-    0.008F * exposure_scale * midtone_gain + midtones.lift * 0.04F,
-    0.0F,
-    0.25F,
-  )
-  set_global_ambient_light(world, ambient_color, ambient_brightness)
-
-  let shadows = values.shadows
-  let shadow_gamma = if shadows.gamma < 0.1F { 0.1F } else { shadows.gamma }
-  let shadow_gain = if shadows.gain < 0.05F { 0.05F } else { shadows.gain }
-  let fog_start = clampf(1.0F * shadow_gamma, 0.2F, 4.0F)
-  let fog_end = clampf(
-    8.0F * shadow_gain + shadows.contrast * 1.5F,
-    2.0F,
-    20.0F,
-  )
-  let shadow_saturation = clampf(shadows.saturation, 0.0F, 2.0F)
-  let fog_color = @render2d.Color::new(
-    clampf(
-      0.16F * white_r * (0.5F + 0.5F * shadow_saturation) + shadows.lift * 0.2F,
-      0.0F,
-      1.0F,
-    ),
-    clampf(
-      0.17F * white_g * (0.5F + 0.5F * shadow_saturation) + shadows.lift * 0.2F,
-      0.0F,
-      1.0F,
-    ),
-    clampf(
-      0.18F * white_b * (0.5F + 0.5F * shadow_saturation) + shadows.lift * 0.2F,
-      0.0F,
-      1.0F,
-    ),
-    1.0F,
-  )
-  @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::new(
-      fog_color,
-      @render3d.FogFalloff3d::linear(fog_start, fog_end),
-    ),
-  )
+  let prefix = if negative { "-" } else { "" }
+  prefix + whole.to_string() + "." + fractional_string
 }
 
 ///|
-fn option_value_text(option : SelectedColorGradingOption) -> String {
-  selected_option_name(option) +
-  "\n" +
-  selected_option_get(option, color_grading_state.val.color_grading).to_string()
+fn option_value_text(
+  option : SelectedColorGradingOption,
+  color_grading : @post_process.ColorGrading,
+) -> String {
+  format_with_three_decimals(option.get(color_grading))
+}
+
+///|
+fn create_help_text(option : SelectedColorGradingOption) -> String {
+  "Press Left/Right to adjust " + selected_option_display(option)
 }
 
 ///|
@@ -652,7 +319,7 @@ fn spawn_ui_text_handle(
   content : String,
   font : @asset.Handle[@asset.Font],
   font_size : Float,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> @text.TextHandle {
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
@@ -665,22 +332,46 @@ fn spawn_ui_text_handle(
 }
 
 ///|
+fn[T] first_marked_entity(
+  world : @ecs.World,
+  component_key : @ecs.ComponentKey[T],
+) -> @core.Entity? {
+  let result : Ref[@core.Entity?] = Ref::new(None)
+  world
+  .query_entities_filtered(@ecs.With::new(component_key))
+  .view(fn(entity) { if result.val is None { result.val = Some(entity) } })
+  result.val
+}
+
+///|
+fn color_grading_camera_entity(world : @ecs.World) -> @core.Entity? {
+  first_marked_entity(world, ColorGradingCamera::component())
+}
+
+///|
+fn color_grading_camera_value(
+  world : @ecs.World,
+) -> (@core.Entity, @post_process.ColorGrading)? {
+  guard color_grading_camera_entity(world) is Some(entity) else { return None }
+  guard world.component(@post_process.ecs_key_color_grading).get(entity)
+    is Some(color_grading) else {
+    return None
+  }
+  Some((entity, color_grading))
+}
+
+///|
 fn spawn_row(
   world : @ecs.World,
   parent : @core.Entity,
   tick : @core.Tick,
+  node : @ui.Node,
 ) -> @core.Entity {
   let row = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
   .insert(row, @hierarchy.Parent::new(parent), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    row,
-    @ui.Node::default().with_align_items(@ui.AlignItems::Center),
-    tick,
-  )
+  world.component(@ui.ecs_key_node).insert(row, node, tick)
   row
 }
 
@@ -696,7 +387,7 @@ fn spawn_row_label(
     label,
     font,
     15.0F,
-    @render2d.Color::white(),
+    @sprite.Color::white(),
   )
   let label_entity = world.spawn_empty()
   world
@@ -706,9 +397,7 @@ fn spawn_row_label(
   .component(@ui.ecs_key_node)
   .insert(
     label_entity,
-    @ui.Node::default()
-    .with_width(@ui.Val::Px(125.0F))
-    .with_height(@ui.Val::Auto),
+    @ui.Node::default().with_width(@ui.Val::Px(125.0F)),
     tick,
   )
   world
@@ -723,6 +412,7 @@ fn spawn_option_button(
   tick : @core.Tick,
   font : @asset.Handle[@asset.Font],
   option : SelectedColorGradingOption,
+  color_grading : @post_process.ColorGrading,
 ) -> Unit {
   let button = world.spawn_empty()
   world
@@ -736,59 +426,109 @@ fn spawn_option_button(
   .insert(
     button,
     @ui.Node::default()
-    .with_width(@ui.Val::Px(BUTTON_WIDTH))
-    .with_height(@ui.Val::Px(BUTTON_HEIGHT))
     .with_border(@ui.UiRect::all(@ui.Val::Px(1.0F)))
-    .with_padding(@ui.UiRect::all(@ui.Val::Px(4.0F)))
+    .with_width(@ui.Val::Px(BUTTON_WIDTH))
     .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center),
+    .with_align_items(@ui.AlignItems::Center)
+    .with_padding(
+      @ui.UiRect::new(
+        @ui.Val::Px(12.0F),
+        @ui.Val::Px(6.0F),
+        @ui.Val::Px(12.0F),
+        @ui.Val::Px(6.0F),
+      ),
+    )
+    .with_margin(
+      @ui.UiRect::new(
+        @ui.Val::Px(0.0F),
+        @ui.Val::Px(0.0F),
+        @ui.Val::Px(12.0F),
+        @ui.Val::Px(0.0F),
+      ),
+    ),
     tick,
   )
   world
   .component(@ui.ecs_key_border_radius)
-  .insert(button, @ui.BorderRadius::all(@ui.Val::Px(12.0F)), tick)
+  .insert(button, @ui.BorderRadius::all(@ui.Val::Percent(100.0F)), tick)
+  world
+  .component(@ui.ecs_key_border_color)
+  .insert(button, @ui.BorderColor::new(@sprite.Color::white()), tick)
   world
   .component(@ui.ecs_key_background_color)
   .insert(button, @ui.BackgroundColor::new(normal_button_color()), tick)
   world
-  .component(@ui.ecs_key_border_color)
-  .insert(button, @ui.BorderColor::new(@render2d.Color::white()), tick)
-
-  let option_text = spawn_ui_text_handle(
-    option_value_text(option),
-    font,
-    12.0F,
-    @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
-  )
-
-  let text_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(button), tick)
-  world
-  .component(@ui.ecs_key_node)
+  .component(ColorGradingOptionWidget::component())
   .insert(
-    text_entity,
-    @ui.Node::default().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
+    button,
+    { widget_type: ColorGradingOptionWidgetType::Button, option },
     tick,
   )
+
+  let label_handle = spawn_ui_text_handle(
+    selected_option_button_label(option),
+    font,
+    15.0F,
+    @sprite.Color::white(),
+  )
+  let label_entity = world.spawn_empty()
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(label_entity, @hierarchy.Parent::new(button), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(label_entity, @ui.Node::default(), tick)
   world
   .component(@ui.ecs_key_ui_text)
-  .insert(text_entity, @ui.UiText::new(option_text), tick)
+  .insert(label_entity, @ui.UiText::new(label_handle), tick)
+  world
+  .component(ColorGradingOptionWidget::component())
+  .insert(
+    label_entity,
+    { widget_type: ColorGradingOptionWidgetType::Label, option },
+    tick,
+  )
 
-  color_grading_state.val.widgets.push({ button, text: option_text, option })
+  let spacer = world.spawn_empty()
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(spacer, @hierarchy.Parent::new(button), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(spacer, @ui.Node::default().with_flex_grow(1.0F), tick)
+
+  let value_handle = spawn_ui_text_handle(
+    option_value_text(option, color_grading),
+    font,
+    15.0F,
+    @sprite.Color::white(),
+  )
+  let value_entity = world.spawn_empty()
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(value_entity, @hierarchy.Parent::new(button), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(value_entity, @ui.Node::default(), tick)
+  world
+  .component(@ui.ecs_key_ui_text)
+  .insert(value_entity, @ui.UiText::new(value_handle), tick)
+  world
+  .component(ColorGradingOptionWidget::component())
+  .insert(
+    value_entity,
+    { widget_type: ColorGradingOptionWidgetType::Value, option },
+    tick,
+  )
 }
 
 ///|
-fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
+fn add_buttons(
+  world : @ecs.World,
+  font : @asset.Handle[@asset.Font],
+  color_grading : @post_process.ColorGrading,
+) -> Unit {
   let tick = world.read_change_tick()
-
-  // 2D overlay camera for UI.
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(100).with_clear_color_none(),
-    @math.Transform::identity(),
-  ).spawn(world)
-  |> ignore
 
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
@@ -801,33 +541,6 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
     .with_height(@ui.Val::Percent(100.0F)),
     tick,
   )
-
-  let help_handle = spawn_ui_text_handle(
-    "",
-    font,
-    16.0F,
-    @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
-  )
-  let help_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(help_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    help_entity,
-    @ui.Node::default()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_top(@ui.Val::Px(12.0F))
-    .with_width(@ui.Val::Auto)
-    .with_height(@ui.Val::Auto),
-    tick,
-  )
-  world
-  .component(@ui.ecs_key_ui_text)
-  .insert(help_entity, @ui.UiText::new(help_handle), tick)
-  color_grading_state.val.help_text = Some(help_handle)
 
   let panel = world.spawn_empty()
   world
@@ -846,8 +559,8 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
     tick,
   )
 
-  let global_row = spawn_row(world, panel, tick)
-  spawn_row_label(world, global_row, tick, font, "".to_string())
+  let global_row = spawn_row(world, panel, tick, @ui.Node::default())
+  spawn_row_label(world, global_row, tick, font, "")
   for
     option in [
       SelectedGlobalColorGradingOption::Exposure,
@@ -861,6 +574,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
       tick,
       font,
       SelectedColorGradingOption::Global(option),
+      color_grading,
     )
   }
 
@@ -870,7 +584,12 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
       SelectedColorGradingSection::Midtones,
       SelectedColorGradingSection::Shadows,
     ] {
-    let row = spawn_row(world, panel, tick)
+    let row = spawn_row(
+      world,
+      panel,
+      tick,
+      @ui.Node::default().with_align_items(@ui.AlignItems::Center),
+    )
     spawn_row_label(world, row, tick, font, section_name(section))
     for
       option in [
@@ -886,9 +605,74 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
         tick,
         font,
         SelectedColorGradingOption::Section(section, option),
+        color_grading,
       )
     }
   }
+
+  let help_handle = spawn_ui_text_handle(
+    create_help_text(SelectedColorGradingOption::default()),
+    font,
+    16.0F,
+    @sprite.Color::white(),
+  )
+  let help_entity = world.spawn_empty()
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(help_entity, @hierarchy.Parent::new(root), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
+    help_entity,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_left(@ui.Val::Px(12.0F))
+    .with_top(@ui.Val::Px(12.0F)),
+    tick,
+  )
+  world
+  .component(@ui.ecs_key_ui_text)
+  .insert(help_entity, @ui.UiText::new(help_handle), tick)
+  world
+  .component(HelpText::component())
+  .insert(help_entity, HelpText::{  }, tick)
+}
+
+///|
+fn add_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
+  let tick = world.read_change_tick()
+  let camera = @pbr.Camera3dBundle::new(
+      @sprite.Camera::default(),
+      @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
+        @math.Vec3::new(0.0F, 0.3F, 0.0F),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
+    )
+    .with_color_grading(Some(@post_process.ColorGrading::default()))
+    .with_distance_fog(
+      Some(
+        @pbr.DistanceFog::new(
+          @sprite.Color::srgb(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F),
+          @pbr.FogFalloff3d::linear(1.0F, 8.0F),
+        ),
+      ),
+    )
+    .spawn(world)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
+  world
+  .component(@pbr.ecs_key_environment_map_light)
+  .insert(
+    camera,
+    @pbr.EnvironmentMapLight::new(
+      Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
+      Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
+      2000.0F,
+    ),
+    tick,
+  )
+  world
+  .component(ColorGradingCamera::component())
+  .insert(camera, ColorGradingCamera::{  }, tick)
 }
 
 ///|
@@ -906,7 +690,7 @@ fn add_basic_scene(
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
-        @scene.GltfAssetLabel::Scene(0).from_asset(
+        @gltf.GltfAssetLabel::Scene(0).from_asset(
           "models/TonemappingTest/TonemappingTest.gltf",
         ),
       ),
@@ -922,7 +706,7 @@ fn add_basic_scene(
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
-        @scene.GltfAssetLabel::Scene(0).from_asset(
+        @gltf.GltfAssetLabel::Scene(0).from_asset(
           "models/FlightHelmet/FlightHelmet.gltf",
         ),
       ),
@@ -941,146 +725,81 @@ fn add_basic_scene(
 
   let directional_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
+      @pbr.CascadeShadowConfigBuilder::default()
+      .with_maximum_distance(3.0F)
+      .with_first_cascade_far_bound(0.9F),
+    ),
     tick,
   )
   world
   .component(@math.ecs_key_transform)
   .insert(
     directional_light,
-    @math.Transform::from_xyz(0.0F, 4.0F, 4.0F).looking_at(
-      @math.Vec3::new(0.0F, 0.3F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    @math.Transform::from_rotation(
+      @math.Quat::from_euler(
+        @math.EulerRot::ZYX,
+        0.0F,
+        PI * -0.15F,
+        PI * -0.15F,
+      ),
     ),
     tick,
   )
-  color_grading_state.val.directional_light = Some(directional_light)
 }
 
 ///|
-fn add_camera(world : @ecs.World) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
+  let asset_server = @asset.AssetServer::new()
+  let font = asset_server.load_font("fonts/FiraMono-Medium.ttf")
+
+  add_basic_scene(world, asset_server)
+  add_buttons(world, font, @post_process.ColorGrading::default())
+  add_camera(world, asset_server)
+
   let tick = world.read_change_tick()
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
-    @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
-      @math.Vec3::new(0.0F, 0.3F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
+  let overlay_camera = @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(100).with_clear_color_none(),
+    @math.Transform::identity(),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_hdr)
-  .insert(camera, @render3d.Hdr::default(), tick)
-  world
-  .component(@render3d.ecs_key_color_grading)
-  .insert(
-    camera,
-    to_render3d_color_grading(color_grading_state.val.color_grading),
-    tick,
-  )
-  color_grading_state.val.camera = Some(camera)
+  .component(@ui.IsDefaultUiCamera::component())
+  .insert(overlay_camera, @ui.IsDefaultUiCamera::default(), tick)
 }
 
 ///|
-fn update_ui_state(world : @ecs.World) -> Unit {
+fn handle_button_presses(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
-  let selected_option = color_grading_state.val.selected_option
-  let background_store = world.component(@ui.ecs_key_background_color)
-  let border_store = world.component(@ui.ecs_key_border_color)
-
-  for widget in color_grading_state.val.widgets {
-    let is_selected = selected_option_eq(widget.option, selected_option)
-    if background_store.contains(widget.button) {
-      background_store.set(
-        widget.button,
-        @ui.BackgroundColor::new(
-          if is_selected {
-            selected_button_color()
-          } else {
-            normal_button_color()
-          },
-        ),
-        tick,
-      )
-      |> ignore
-    } else {
-      background_store.insert(
-        widget.button,
-        @ui.BackgroundColor::new(
-          if is_selected {
-            selected_button_color()
-          } else {
-            normal_button_color()
-          },
-        ),
-        tick,
-      )
-    }
-
-    if border_store.contains(widget.button) {
-      border_store.set(
-        widget.button,
-        @ui.BorderColor::new(
-          if is_selected {
-            @render2d.Color::black()
-          } else {
-            @render2d.Color::white()
-          },
-        ),
-        tick,
-      )
-      |> ignore
-    } else {
-      border_store.insert(
-        widget.button,
-        @ui.BorderColor::new(
-          if is_selected {
-            @render2d.Color::black()
-          } else {
-            @render2d.Color::white()
-          },
-        ),
-        tick,
-      )
-    }
-
-    @text.text_set_content(widget.text, option_value_text(widget.option))
+  guard (try! world.get_resource_ref_mut(
+      SelectedColorGradingOption::resource(),
+      tick,
+    ))
+    is Some(selected_option) else {
+    return
   }
 
-  if color_grading_state.val.help_text is Some(handle) {
-    @text.text_set_content(handle, create_help_text())
-  }
-}
-
-///|
-fn handle_button_presses(world : @ecs.World) -> Bool {
-  let mut changed = false
-  let system_ticks = world.get_system_context().ticks()
+  let widget_store = world.component(ColorGradingOptionWidget::component())
   let interaction_store = world.component(@ui.ecs_key_interaction)
+  let system_ticks = world.get_system_context().ticks()
   interaction_store.for_each_changed(system_ticks, fn(entity, interaction) {
     if interaction != @ui.Interaction::Pressed {
       return
     }
-    for widget in color_grading_state.val.widgets {
-      if widget.button.id == entity.id &&
-        widget.button.generation == entity.generation &&
-        !selected_option_eq(
-          color_grading_state.val.selected_option,
-          widget.option,
-        ) {
-        color_grading_state.val.selected_option = widget.option
-        changed = true
-        break
-      }
+    guard widget_store.get(entity) is Some(widget) else { return }
+    if widget.widget_type != ColorGradingOptionWidgetType::Button {
+      return
+    }
+    if selected_option.val != widget.option {
+      selected_option.val = widget.option
     }
   })
-  changed
 }
 
 ///|
-fn adjust_color_grading_option(world : @ecs.World) -> Bool {
+fn adjust_color_grading_option(world : @ecs.World) -> Unit {
   let mut delta = 0.0F
   if @input.key_pressed(@window.KeyCode::ArrowLeft) {
     delta = delta - OPTION_ADJUSTMENT_SPEED
@@ -1089,62 +808,119 @@ fn adjust_color_grading_option(world : @ecs.World) -> Bool {
     delta = delta + OPTION_ADJUSTMENT_SPEED
   }
   if delta == 0.0F {
-    return false
+    return
   }
 
-  let option = color_grading_state.val.selected_option
-  let old_value = selected_option_get(
-    option,
-    color_grading_state.val.color_grading,
+  guard (try! world.get_resource(SelectedColorGradingOption::resource()))
+    is Some(selected_option) else {
+    return
+  }
+  guard color_grading_camera_value(world)
+    is Some((camera_entity, color_grading)) else {
+    return
+  }
+
+  let next_color_grading = selected_option.set(
+    color_grading,
+    selected_option.get(color_grading) + delta,
   )
-  color_grading_state.val.color_grading = selected_option_set(
-    option,
-    color_grading_state.val.color_grading,
-    old_value + delta,
-  )
-  apply_color_grading_proxy(world)
-  true
+  let tick = world.increment_change_tick()
+  let color_grading_store = world.component(@post_process.ecs_key_color_grading)
+  color_grading_store.set(camera_entity, next_color_grading, tick) |> ignore
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  color_grading_state.val.selected_option = SelectedColorGradingOption::Global(
-    SelectedGlobalColorGradingOption::Exposure,
-  )
-  color_grading_state.val.color_grading = default_color_grading_values()
-  color_grading_state.val.camera = None
-  color_grading_state.val.directional_light = None
-  color_grading_state.val.help_text = None
-  color_grading_state.val.widgets.clear()
-  color_grading_state.val.ui_dirty = true
-
-  let asset_server = @asset.AssetServer::new()
-  let font = asset_server.load_font("fonts/FiraMono-Medium.ttf")
-
-  add_basic_scene(world, asset_server)
-  add_camera(world)
-  setup_ui(world, font)
-  apply_color_grading_proxy(world)
-  update_ui_state(world)
-  color_grading_state.val.ui_dirty = false
-}
-
-///|
-fn update_system(world : @ecs.World) -> Unit {
-  let selection_changed = handle_button_presses(world)
-  let value_changed = adjust_color_grading_option(world)
-  if selection_changed || value_changed || color_grading_state.val.ui_dirty {
-    update_ui_state(world)
-    color_grading_state.val.ui_dirty = false
+fn update_ui_state(world : @ecs.World) -> Unit {
+  guard (try! world.get_resource(SelectedColorGradingOption::resource()))
+    is Some(selected_option) else {
+    return
   }
+  guard color_grading_camera_value(world)
+    is Some((_camera_entity, color_grading)) else {
+    return
+  }
+
+  let tick = world.increment_change_tick()
+  let widget_store = world.component(ColorGradingOptionWidget::component())
+  let background_store = world.component(@ui.ecs_key_background_color)
+  let border_store = world.component(@ui.ecs_key_border_color)
+  let ui_text_store = world.component(@ui.ecs_key_ui_text)
+
+  widget_store.for_each(fn(entity, widget) {
+    match widget.widget_type {
+      Button => {
+        let is_selected = widget.option == selected_option
+        let background = @ui.BackgroundColor::new(
+          if is_selected {
+            selected_button_color()
+          } else {
+            normal_button_color()
+          },
+        )
+        let border = @ui.BorderColor::new(
+          if is_selected {
+            @sprite.Color::black()
+          } else {
+            @sprite.Color::white()
+          },
+        )
+        if background_store.contains(entity) {
+          background_store.set(entity, background, tick) |> ignore
+        } else {
+          background_store.insert(entity, background, tick)
+        }
+        if border_store.contains(entity) {
+          border_store.set(entity, border, tick) |> ignore
+        } else {
+          border_store.insert(entity, border, tick)
+        }
+      }
+      Label => {
+        guard ui_text_store.get(entity) is Some(ui_text) else { return }
+        @text.text_set_content(
+          ui_text.handle,
+          selected_option_button_label(widget.option),
+        )
+      }
+      Value => {
+        guard ui_text_store.get(entity) is Some(ui_text) else { return }
+        @text.text_set_content(
+          ui_text.handle,
+          option_value_text(widget.option, color_grading),
+        )
+      }
+    }
+  })
+
+  guard first_marked_entity(world, HelpText::component()) is Some(help_entity) else {
+    return
+  }
+  guard ui_text_store.get(help_entity) is Some(help_text) else { return }
+  @text.text_set_content(help_text.handle, create_help_text(selected_option))
 }
 
 ///|
 fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
+  .insert_resource(SelectedColorGradingOption::default())
   .add_plugins(plugins)
   .add_systems(@app.Startup, @app.system(setup))
-  .add_system_config(@app.system(update_system).after(@ui.ui_set_focus))
+  .add_systems(
+    @app.Update,
+    @app.system(handle_button_presses)
+    .after(@ui.ui_set_focus)
+    .in_set(color_grading_button_press_set),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system(adjust_color_grading_option)
+    .in_set(color_grading_adjust_set)
+    .after(color_grading_button_press_set),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system(update_ui_state).after(color_grading_adjust_set),
+  )
   .run()
 }

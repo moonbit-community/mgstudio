@@ -55,8 +55,8 @@ priv struct ScrollingFogState {
   mut camera : @core.Entity?
   mut fog_volume_outer : @core.Entity?
   mut fog_volume_inner : @core.Entity?
-  mut volumetric_fog_stub : @render3d.VolumetricFog
-  mut fog_volume_stub : @render3d.FogVolume
+  mut volumetric_fog_stub : @pbr.VolumetricFog
+  mut fog_volume_stub : @pbr.FogVolume
 }
 
 ///|
@@ -64,8 +64,8 @@ let scrolling_fog_state : Ref[ScrollingFogState] = Ref::new({
   camera: None,
   fog_volume_outer: None,
   fog_volume_inner: None,
-  volumetric_fog_stub: @render3d.VolumetricFog::default(),
-  fog_volume_stub: @render3d.FogVolume::default(),
+  volumetric_fog_stub: @pbr.VolumetricFog::default(),
+  fog_volume_stub: @pbr.FogVolume::default(),
 })
 
 ///|
@@ -127,9 +127,9 @@ fn apply_distance_fog_from_stub(
   )
   let directional_alpha = clampf(0.25F + sunlight_phase * 0.45F, 0.2F, 0.75F)
 
-  let fog = @render3d.DistanceFog::default()
+  let fog = @pbr.DistanceFog::default()
     .with_color(
-      @render2d.Color::new(
+      @sprite.Color::new(
         clamp01(
           (0.34F + proxy_density_noise * 0.05F) * brightness + ambient_lift,
         ),
@@ -143,16 +143,16 @@ fn apply_distance_fog_from_stub(
       ),
     )
     .with_directional_light_color(
-      @render2d.Color::new(1.0F, 0.95F, 0.85F, directional_alpha),
+      @sprite.Color::new(1.0F, 0.95F, 0.85F, directional_alpha),
     )
     .with_directional_light_exponent(12.0F)
-    .with_falloff(@render3d.FogFalloff3d::from_visibility_squared(visibility))
+    .with_falloff(@pbr.FogFalloff3d::from_visibility_squared(visibility))
   guard scrolling_fog_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
-  let camera3d_store = world.component(@render3d.ecs_key_camera3d)
+  let camera3d_store = world.component(@pbr.ecs_key_camera3d)
   let camera3d = match camera3d_store.get(camera) {
     Some(value) => value
-    None => @render3d.Camera3d::default()
+    None => @pbr.Camera3d::default()
   }
   camera3d_store.set(camera, camera3d.with_distance_fog(Some(fog)), tick)
   |> ignore
@@ -160,22 +160,22 @@ fn apply_distance_fog_from_stub(
 
 ///|
 fn spawn_world_geometry(world : @ecs.World) -> Unit {
-  let black_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::black())
+  let black_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::black())
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F),
   )
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(64.0F, 1.0F, 64.0F),
-    @render3d.MeshMaterial3d::new(black_material),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(64.0F, 1.0F, 64.0F),
+    @pbr.MeshMaterial3d::new(black_material),
     @math.Transform::from_xyz(0.0F, -0.5F, 0.0F),
   ).spawn(world)
   |> ignore
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(2.0F, 9.0F, 2.0F),
-    @render3d.MeshMaterial3d::new(black_material),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(2.0F, 9.0F, 2.0F),
+    @pbr.MeshMaterial3d::new(black_material),
     @math.Transform::from_xyz(-10.0F, 4.5F, -11.0F),
   ).spawn(world)
   |> ignore
@@ -183,36 +183,36 @@ fn spawn_world_geometry(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_fog_proxy(world : @ecs.World) -> Unit {
-  let outer_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.74F, 0.79F, 0.87F, 0.15F),
+  let outer_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.74F, 0.79F, 0.87F, 0.15F),
     )
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F)
-    .with_emissive(@render2d.Color::new(0.08F, 0.09F, 0.12F, 1.0F)),
+    .with_emissive(@sprite.Color::new(0.08F, 0.09F, 0.12F, 1.0F)),
   )
 
-  let inner_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.72F, 0.78F, 0.86F, 0.12F),
+  let inner_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.72F, 0.78F, 0.86F, 0.12F),
     )
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F)
-    .with_emissive(@render2d.Color::new(0.09F, 0.10F, 0.13F, 1.0F)),
+    .with_emissive(@sprite.Color::new(0.09F, 0.10F, 0.13F, 1.0F)),
   )
 
-  let outer = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(64.0F, 24.0F, 64.0F),
-    @render3d.MeshMaterial3d::new(outer_material),
+  let outer = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(64.0F, 24.0F, 64.0F),
+    @pbr.MeshMaterial3d::new(outer_material),
     @math.Transform::from_xyz(0.0F, FOG_CENTER_Y, 0.0F),
   ).spawn(world)
   scrolling_fog_state.val.fog_volume_outer = Some(outer)
 
-  let inner = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(48.0F, 16.0F, 48.0F),
-    @render3d.MeshMaterial3d::new(inner_material),
+  let inner = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(48.0F, 16.0F, 48.0F),
+    @pbr.MeshMaterial3d::new(inner_material),
     @math.Transform::from_xyz(0.0F, FOG_CENTER_Y - 1.0F, 0.0F),
   ).spawn(world)
   scrolling_fog_state.val.fog_volume_inner = Some(inner)
@@ -221,22 +221,20 @@ fn spawn_fog_proxy(world : @ecs.World) -> Unit {
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(CAMERA_X, CAMERA_Y, CAMERA_Z).looking_at(
       focus_point(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
-  .component(@render3d.ecs_key_msaa)
-  .insert(camera, @render3d.Msaa::Off, tick)
+  .component(@post_process.ecs_key_temporal_anti_aliasing)
+  .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
   world
-  .component(@render3d.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
-  world
-  .component(@render3d.ecs_key_bloom)
-  .insert(camera, @render3d.Bloom::default(), tick)
+  .component(@post_process.ecs_key_bloom)
+  .insert(camera, @post_process.Bloom::default(), tick)
   scrolling_fog_state.val.camera = Some(camera)
 }
 
@@ -245,8 +243,8 @@ fn setup_lighting(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   world.insert_resource(
-    @render3d.ecs_key_global_ambient_light,
-    @render3d.GlobalAmbientLight::new(@render2d.Color::white(), 0.0F),
+    @pbr.ecs_key_global_ambient_light,
+    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
   )
 
   let light = world.spawn_empty()
@@ -261,10 +259,10 @@ fn setup_lighting(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 12_000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 12_000.0F, true),
     tick,
   )
 }
@@ -272,17 +270,17 @@ fn setup_lighting(world : @ecs.World) -> Unit {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   world.insert_resource(
-    @render3d.ecs_key_directional_light_shadow_map,
-    @render3d.DirectionalLightShadowMap::new(4096),
+    @pbr.ecs_key_directional_light_shadow_map,
+    @pbr.DirectionalLightShadowMap::new(4096),
   )
 
   scrolling_fog_state.val.fog_volume_outer = None
   scrolling_fog_state.val.fog_volume_inner = None
   scrolling_fog_state.val.camera = None
-  scrolling_fog_state.val.volumetric_fog_stub = @render3d.VolumetricFog::default()
+  scrolling_fog_state.val.volumetric_fog_stub = @pbr.VolumetricFog::default()
     .with_ambient_intensity(0.0F)
     .with_jitter(0.5F)
-  scrolling_fog_state.val.fog_volume_stub = @render3d.FogVolume::default()
+  scrolling_fog_state.val.fog_volume_stub = @pbr.FogVolume::default()
     .with_density_factor(FOG_BASE_DENSITY)
     .with_scattering(0.3F)
     .with_absorption(0.3F)

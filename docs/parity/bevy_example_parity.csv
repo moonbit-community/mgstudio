@@ -41,7 +41,7 @@ bevy/examples/3d/camera_sub_view.rs,3d,camera_sub_view,mgstudio-engine/examples/
 bevy/examples/3d/clearcoat.rs,3d,clearcoat,mgstudio-engine/examples/3d/clearcoat,Exact,team-render,
 bevy/examples/3d/clustered_decal_maps.rs,3d,clustered_decal_maps,mgstudio-engine/examples/3d/clustered_decal_maps,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
 bevy/examples/3d/clustered_decals.rs,3d,clustered_decals,mgstudio-engine/examples/3d/clustered_decals,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
-bevy/examples/3d/color_grading.rs,3d,color_grading,mgstudio-engine/examples/3d/color_grading,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
+bevy/examples/3d/color_grading.rs,3d,color_grading,mgstudio-engine/examples/3d/color_grading,Exact,team-render,
 bevy/examples/3d/contact_shadows.rs,3d,contact_shadows,mgstudio-engine/examples/3d/contact_shadows,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
 bevy/examples/3d/decal.rs,3d,decal,mgstudio-engine/examples/3d/decal,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
 bevy/examples/3d/deferred_rendering.rs,3d,deferred_rendering,mgstudio-engine/examples/3d/deferred_rendering,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
@@ -84,7 +84,7 @@ bevy/examples/3d/spotlight.rs,3d,spotlight,mgstudio-engine/examples/3d/spotlight
 bevy/examples/3d/ssao.rs,3d,ssao,mgstudio-engine/examples/3d/ssao,Exact,team-render,
 bevy/examples/3d/ssr.rs,3d,ssr,mgstudio-engine/examples/3d/ssr,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
 bevy/examples/3d/texture.rs,3d,texture,mgstudio-engine/examples/3d/texture,Exact,team-render,
-bevy/examples/3d/tonemapping.rs,3d,tonemapping,mgstudio-engine/examples/3d/tonemapping,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
+bevy/examples/3d/tonemapping.rs,3d,tonemapping,mgstudio-engine/examples/3d/tonemapping,Exact,team-render,
 bevy/examples/3d/transmission.rs,3d,transmission,mgstudio-engine/examples/3d/transmission,Blocked,team-render,Fallback implementation exists; blocked until exact parity.
 bevy/examples/3d/transparency_3d.rs,3d,transparency_3d,mgstudio-engine/examples/3d/transparency_3d,Exact,team-render,
 bevy/examples/3d/two_passes.rs,3d,two_passes,mgstudio-engine/examples/3d/two_passes,Exact,team-render,
@@ -135,7 +135,7 @@ bevy/examples/asset/extra_source.rs,asset,extra_source,,Blocked,team-asset_scene
 bevy/examples/asset/hot_asset_reloading.rs,asset,hot_asset_reloading,,Blocked,team-asset_scene,
 bevy/examples/asset/multi_asset_sync.rs,asset,multi_asset_sync,,Blocked,team-asset_scene,
 bevy/examples/asset/processing/asset_processing.rs,asset,asset_processing,,Blocked,team-asset_scene,
-bevy/examples/asset/repeated_texture.rs,asset,repeated_texture,,Blocked,team-asset_scene,
+bevy/examples/asset/repeated_texture.rs,asset,repeated_texture,mgstudio-engine/examples/asset/repeated_texture,Exact,team-asset_scene,
 bevy/examples/asset/web_asset.rs,asset,web_asset,,Blocked,team-asset_scene,
 bevy/examples/async_tasks/async_channel_pattern.rs,async_tasks,async_channel_pattern,,Blocked,team-core,
 bevy/examples/async_tasks/async_compute.rs,async_tasks,async_compute,,Blocked,team-core,
@@ -143,7 +143,7 @@ bevy/examples/async_tasks/external_source_external_thread.rs,async_tasks,externa
 bevy/examples/audio/audio.rs,audio,audio,mgstudio-engine/examples/audio/audio,Exact,team-ops,
 bevy/examples/audio/audio_control.rs,audio,audio_control,mgstudio-engine/examples/audio/audio_control,Exact,team-ops,
 bevy/examples/audio/decodable.rs,audio,decodable,,Blocked,team-ops,
-bevy/examples/audio/pitch.rs,audio,pitch,,Blocked,team-ops,
+bevy/examples/audio/pitch.rs,audio,pitch,mgstudio-engine/examples/audio/pitch,Exact,team-ops,
 bevy/examples/audio/soundtrack.rs,audio,soundtrack,mgstudio-engine/examples/audio/soundtrack,Exact,team-ops,
 bevy/examples/audio/spatial_audio_2d.rs,audio,spatial_audio_2d,mgstudio-engine/examples/audio/spatial_audio_2d,Exact,team-ops,
 bevy/examples/audio/spatial_audio_3d.rs,audio,spatial_audio_3d,mgstudio-engine/examples/audio/spatial_audio_3d,Exact,team-ops,
@@ -151,7 +151,7 @@ bevy/examples/camera/2d_on_ui.rs,camera,2d_on_ui,mgstudio-engine/examples/camera
 bevy/examples/camera/2d_screen_shake.rs,camera,2d_screen_shake,mgstudio-engine/examples/camera/2d_screen_shake,Exact,team-render,
 bevy/examples/camera/2d_top_down_camera.rs,camera,2d_top_down_camera,mgstudio-engine/examples/camera/2d_top_down_camera,Exact,team-render,
 bevy/examples/camera/camera_orbit.rs,camera,camera_orbit,mgstudio-engine/examples/camera/camera_orbit,Exact,team-render,
-bevy/examples/camera/custom_projection.rs,camera,custom_projection,,Blocked,team-render,
+bevy/examples/camera/custom_projection.rs,camera,custom_projection,mgstudio-engine/examples/camera/custom_projection,Exact,team-render,
 bevy/examples/camera/first_person_view_model.rs,camera,first_person_view_model,mgstudio-engine/examples/camera/first_person_view_model,Exact,team-render,
 bevy/examples/camera/free_camera_controller.rs,camera,free_camera_controller,mgstudio-engine/examples/camera/free_camera_controller,Exact,team-render,
 bevy/examples/camera/pan_camera_controller.rs,camera,pan_camera_controller,mgstudio-engine/examples/camera/pan_camera_controller,Exact,team-render,
@@ -184,7 +184,7 @@ bevy/examples/ecs/one_shot_systems.rs,ecs,one_shot_systems,,Blocked,team-core,
 bevy/examples/ecs/parallel_query.rs,ecs,parallel_query,,Blocked,team-core,
 bevy/examples/ecs/relationships.rs,ecs,relationships,,Blocked,team-core,
 bevy/examples/ecs/removal_detection.rs,ecs,removal_detection,,Blocked,team-core,
-bevy/examples/ecs/run_conditions.rs,ecs,run_conditions,,Blocked,team-core,
+bevy/examples/ecs/run_conditions.rs,ecs,run_conditions,mgstudio-engine/examples/ecs/run_conditions,Exact,team-core,
 bevy/examples/ecs/send_and_receive_messages.rs,ecs,send_and_receive_messages,mgstudio-engine/examples/ecs/send_and_receive_messages,Exact,team-core,
 bevy/examples/ecs/startup_system.rs,ecs,startup_system,mgstudio-engine/examples/ecs/startup_system,Exact,team-core,
 bevy/examples/ecs/state_scoped.rs,ecs,state_scoped,,Blocked,team-core,
@@ -216,7 +216,7 @@ bevy/examples/gltf/load_gltf.rs,gltf,load_gltf,,Blocked,team-asset_scene,
 bevy/examples/gltf/load_gltf_extras.rs,gltf,load_gltf_extras,,Blocked,team-asset_scene,
 bevy/examples/gltf/query_gltf_primitives.rs,gltf,query_gltf_primitives,,Blocked,team-asset_scene,
 bevy/examples/gltf/update_gltf_scene.rs,gltf,update_gltf_scene,,Blocked,team-asset_scene,
-bevy/examples/hello_world.rs,hello_world.rs,hello_world,,Blocked,team-parity,
+bevy/examples/hello_world.rs,hello_world,hello_world,mgstudio-engine/examples/hello_world/hello_world,Exact,team-core,
 bevy/examples/helpers/widgets.rs,helpers,widgets,,Blocked,team-ops,
 bevy/examples/input/char_input_events.rs,input,char_input_events,mgstudio-engine/examples/input/char_input_events,Exact,team-input_window,
 bevy/examples/input/gamepad_input.rs,input,gamepad_input,mgstudio-engine/examples/input/gamepad_input,Exact,team-input_window,
@@ -240,13 +240,13 @@ bevy/examples/large_scenes/mipmap_generator/src/lib.rs,large_scenes,lib,,Blocked
 bevy/examples/math/bounding_2d.rs,math,bounding_2d,mgstudio-engine/examples/math/bounding_2d,Exact,team-core,
 bevy/examples/math/cubic_splines.rs,math,cubic_splines,mgstudio-engine/examples/math/cubic_splines,Exact,team-core,
 bevy/examples/math/custom_primitives.rs,math,custom_primitives,,Blocked,team-core,
-bevy/examples/math/random_sampling.rs,math,random_sampling,,Blocked,team-core,
+bevy/examples/math/random_sampling.rs,math,random_sampling,mgstudio-engine/examples/math/random_sampling,Exact,team-core,
 bevy/examples/math/render_primitives.rs,math,render_primitives,,Blocked,team-core,
-bevy/examples/math/sampling_primitives.rs,math,sampling_primitives,,Blocked,team-core,
+bevy/examples/math/sampling_primitives.rs,math,sampling_primitives,mgstudio-engine/examples/math/sampling_primitives,Exact,team-core,
 bevy/examples/mobile/src/lib.rs,mobile,lib,,N/A,team-platform_na,WASM-first policy: platform-incompatible category.
 bevy/examples/mobile/src/main.rs,mobile,main,,N/A,team-platform_na,WASM-first policy: platform-incompatible category.
 bevy/examples/movement/physics_in_fixed_timestep.rs,movement,physics_in_fixed_timestep,,Blocked,team-core,
-bevy/examples/movement/smooth_follow.rs,movement,smooth_follow,,Blocked,team-core,
+bevy/examples/movement/smooth_follow.rs,movement,smooth_follow,mgstudio-engine/examples/movement/smooth_follow,Exact,team-core,
 bevy/examples/no_std/library/src/lib.rs,no_std,lib,,N/A,team-platform_na,WASM-first policy: platform-incompatible category.
 bevy/examples/picking/debug_picking.rs,picking,debug_picking,,Blocked,team-render,
 bevy/examples/picking/dragdrop_picking.rs,picking,dragdrop_picking,,Blocked,team-render,
@@ -396,7 +396,7 @@ bevy/examples/window/monitor_info.rs,window,monitor_info,mgstudio-engine/example
 bevy/examples/window/multi_window_text.rs,window,multi_window_text,,Blocked,team-input_window,
 bevy/examples/window/multiple_windows.rs,window,multiple_windows,,Blocked,team-input_window,
 bevy/examples/window/scale_factor_override.rs,window,scale_factor_override,mgstudio-engine/examples/window/scale_factor_override,Exact,team-input_window,
-bevy/examples/window/screenshot.rs,window,screenshot,mgstudio-engine/examples/window/screenshot,Blocked,team-input_window,Fallback implementation exists; blocked until exact parity.
+bevy/examples/window/screenshot.rs,window,screenshot,mgstudio-engine/examples/window/screenshot,Exact,team-input_window,
 bevy/examples/window/transparent_window.rs,window,transparent_window,mgstudio-engine/examples/window/transparent_window,Blocked,team-input_window,Fallback implementation exists; blocked until exact parity.
 bevy/examples/window/window_drag_move.rs,window,window_drag_move,mgstudio-engine/examples/window/window_drag_move,Blocked,team-input_window,Fallback implementation exists; blocked until exact parity.
 bevy/examples/window/window_resizing.rs,window,window_resizing,mgstudio-engine/examples/window/window_resizing,Exact,team-input_window,

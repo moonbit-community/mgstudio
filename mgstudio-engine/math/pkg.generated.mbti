@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/math"
 import {
   "Milky2018/mgstudio/ecs",
   "moonbitlang/core/json",
+  "moonbitlang/core/random",
 }
 
 // Values
@@ -39,6 +40,19 @@ pub(all) suberror InsufficientDataError {
 }
 
 // Types and methods
+pub(all) struct Capsule3d {
+  radius : Float
+  half_length : Float
+}
+pub fn Capsule3d::boundary_dist(Self) -> SamplingDistribution[Vec3]
+pub fn Capsule3d::interior_dist(Self) -> SamplingDistribution[Vec3]
+pub fn Capsule3d::new(Float, Float) -> Self
+pub fn Capsule3d::sample_boundary(Self, @random.Rand) -> Vec3
+pub fn Capsule3d::sample_interior(Self, @random.Rand) -> Vec3
+pub impl Default for Capsule3d
+pub impl ToJson for Capsule3d
+pub impl @json.FromJson for Capsule3d
+
 pub struct CubicBSpline[P] {
   control_points : Array[P]
 }
@@ -90,6 +104,35 @@ pub fn[P : SplinePoint] CubicSegment::iter_velocities(Self[P], Int) -> Array[P]
 pub fn[P : SplinePoint] CubicSegment::new_bezier(P, P, P, P) -> Self[P]
 pub fn[P : SplinePoint] CubicSegment::position(Self[P], Float) -> P
 pub fn[P : SplinePoint] CubicSegment::velocity(Self[P], Float) -> P
+
+pub(all) struct Cuboid {
+  half_size : Vec3
+}
+pub fn Cuboid::boundary_dist(Self) -> SamplingDistribution[Vec3]
+pub fn Cuboid::from_corners(Vec3, Vec3) -> Self
+pub fn Cuboid::from_length(Float) -> Self
+pub fn Cuboid::from_size(Vec3) -> Self
+pub fn Cuboid::interior_dist(Self) -> SamplingDistribution[Vec3]
+pub fn Cuboid::new(Float, Float, Float) -> Self
+pub fn Cuboid::sample_boundary(Self, @random.Rand) -> Vec3
+pub fn Cuboid::sample_interior(Self, @random.Rand) -> Vec3
+pub fn Cuboid::size(Self) -> Vec3
+pub impl Default for Cuboid
+pub impl ToJson for Cuboid
+pub impl @json.FromJson for Cuboid
+
+pub(all) struct Cylinder {
+  radius : Float
+  half_height : Float
+}
+pub fn Cylinder::boundary_dist(Self) -> SamplingDistribution[Vec3]
+pub fn Cylinder::interior_dist(Self) -> SamplingDistribution[Vec3]
+pub fn Cylinder::new(Float, Float) -> Self
+pub fn Cylinder::sample_boundary(Self, @random.Rand) -> Vec3
+pub fn Cylinder::sample_interior(Self, @random.Rand) -> Vec3
+pub impl Default for Cylinder
+pub impl ToJson for Cylinder
+pub impl @json.FromJson for Cylinder
 
 pub(all) enum EaseFunction {
   Linear
@@ -225,6 +268,38 @@ pub fn Rect::size(Self) -> Vec2
 pub impl ToJson for Rect
 pub impl @json.FromJson for Rect
 
+pub struct SamplingDistribution[T] {
+  sample_one : (@random.Rand) -> T
+}
+pub fn[T] SamplingDistribution::new((@random.Rand) -> T) -> Self[T]
+pub fn[T] SamplingDistribution::sample(Self[T], @random.Rand) -> T
+pub fn[T] SamplingDistribution::sample_iter(Self[T], @random.Rand) -> Iter[T]
+
+pub(all) struct Sphere {
+  radius : Float
+}
+pub fn Sphere::boundary_dist(Self) -> SamplingDistribution[Vec3]
+pub fn Sphere::interior_dist(Self) -> SamplingDistribution[Vec3]
+pub fn Sphere::new(Float) -> Self
+pub fn Sphere::sample_boundary(Self, @random.Rand) -> Vec3
+pub fn Sphere::sample_interior(Self, @random.Rand) -> Vec3
+pub impl Default for Sphere
+pub impl ToJson for Sphere
+pub impl @json.FromJson for Sphere
+
+pub(all) struct Tetrahedron {
+  vertices : Array[Vec3]
+}
+pub fn Tetrahedron::boundary_dist(Self) -> SamplingDistribution[Vec3]
+pub fn Tetrahedron::faces(Self) -> Array[Triangle3d]
+pub fn Tetrahedron::interior_dist(Self) -> SamplingDistribution[Vec3]
+pub fn Tetrahedron::new(Vec3, Vec3, Vec3, Vec3) -> Self
+pub fn Tetrahedron::sample_boundary(Self, @random.Rand) -> Vec3
+pub fn Tetrahedron::sample_interior(Self, @random.Rand) -> Vec3
+pub impl Default for Tetrahedron
+pub impl ToJson for Tetrahedron
+pub impl @json.FromJson for Tetrahedron
+
 pub(all) struct Transform {
   mut translation : Vec3
   mut rotation : Quat
@@ -263,6 +338,18 @@ pub impl @ecs.Component for Transform
 pub impl Ease for Transform
 pub impl ToJson for Transform
 pub impl @json.FromJson for Transform
+
+pub(all) struct Triangle3d {
+  vertices : Array[Vec3]
+}
+pub fn Triangle3d::boundary_dist(Self) -> SamplingDistribution[Vec3]
+pub fn Triangle3d::interior_dist(Self) -> SamplingDistribution[Vec3]
+pub fn Triangle3d::new(Vec3, Vec3, Vec3) -> Self
+pub fn Triangle3d::sample_boundary(Self, @random.Rand) -> Vec3
+pub fn Triangle3d::sample_interior(Self, @random.Rand) -> Vec3
+pub impl Default for Triangle3d
+pub impl ToJson for Triangle3d
+pub impl @json.FromJson for Triangle3d
 
 pub struct URect {
   min : UVec2
@@ -345,6 +432,7 @@ pub fn Vec4::new(Float, Float, Float, Float) -> Self
 pub fn Vec4::splat(Float) -> Self
 pub impl Ease for Vec4
 pub impl SplinePoint for Vec4
+pub impl Eq for Vec4
 pub impl ToJson for Vec4
 pub impl @json.FromJson for Vec4
 

@@ -18,11 +18,11 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_plugins([@render2d.wireframe2d_plugin])
+  .add_plugins([@sprite.wireframe2d_plugin])
   .add_systems(@app.Startup, @app.system(shapes_setup))
   .add_systems(@app.Startup, @app.system(setup_wireframe2d_config))
   .add_system_query2_ecs(
-    @math.ecs_key_transform, @render2d.ecs_key_mesh2d, shapes_rotate,
+    @math.ecs_key_transform, @sprite.ecs_key_mesh2d, shapes_rotate,
   )
   .run()
 }
@@ -53,7 +53,7 @@ fn hsl_to_color(
   hue_degrees : Float,
   saturation : Float,
   lightness : Float,
-) -> @render2d.Color {
+) -> @sprite.Color {
   let chroma = (1.0F - absf(2.0F * lightness - 1.0F)) * saturation
   let hue_section = hue_degrees / 60.0F
   let x = if hue_section < 1.0F {
@@ -94,11 +94,11 @@ fn hsl_to_color(
   }
 
   let m = lightness - chroma / 2.0F
-  @render2d.Color::new(r1 + m, g1 + m, b1 + m, 1.0F)
+  @sprite.Color::new(r1 + m, g1 + m, b1 + m, 1.0F)
 }
 
 ///|
-fn shape_palette_color(index : Int, count : Int) -> @render2d.Color {
+fn shape_palette_color(index : Int, count : Int) -> @sprite.Color {
   let safe_count = if count <= 0 { 1 } else { count }
   let hue = 360.0F *
     Float::from_double(index.to_double()) /
@@ -119,17 +119,17 @@ fn lane_x(index : Int, total : Int, extent : Float) -> Float {
 ///|
 fn spawn_shape(
   world : @ecs.World,
-  mesh : @render2d.Mesh2d,
+  mesh : @sprite.Mesh2d,
   position : @math.Vec2,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> Unit {
-  let material = @render2d.ColorMaterial::new(color)
+  let material = @sprite.ColorMaterial::new(color)
   let transform = @math.Transform::from_xy_rotation_scale(
     position,
     0.0F,
     @math.Vec2::new(1.0F, 1.0F),
   )
-  @render2d.Mesh2dBundle::new(mesh, material, transform).spawn(world) |> ignore
+  @sprite.Mesh2dBundle::new(mesh, material, transform).spawn(world) |> ignore
 }
 
 ///|
@@ -137,7 +137,7 @@ fn spawn_ui_text_handle(
   content : String,
   font : @asset.Handle[@asset.Font],
   font_size : Float,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> @text.TextHandle {
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
@@ -157,7 +157,7 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
     "Press 'R' to pause/resume rotation\nPress 'Space' to toggle wireframes",
     font,
     20.0F,
-    @render2d.Color::white(),
+    @sprite.Color::white(),
   )
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
@@ -194,75 +194,73 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
 fn shapes_setup(world : @ecs.World) -> Unit {
   rotation_enabled.val = false
 
-  let top_shapes : Array[@render2d.Mesh2d] = [
-    @render2d.Mesh2d::from_circle(@render2d.Circle::new(50.0F)),
-    @render2d.Mesh2d::from_circular_sector(
-      @render2d.CircularSector::new(50.0F, 1.0F),
+  let top_shapes : Array[@sprite.Mesh2d] = [
+    @sprite.Mesh2d::from_circle(@sprite.Circle::new(50.0F)),
+    @sprite.Mesh2d::from_circular_sector(
+      @sprite.CircularSector::new(50.0F, 1.0F),
     ),
-    @render2d.Mesh2d::from_circular_segment(
-      @render2d.CircularSegment::new(50.0F, 1.25F),
+    @sprite.Mesh2d::from_circular_segment(
+      @sprite.CircularSegment::new(50.0F, 1.25F),
     ),
-    @render2d.Mesh2d::from_ellipse(@render2d.Ellipse::new(25.0F, 50.0F)),
-    @render2d.Mesh2d::from_annulus(@render2d.Annulus::new(25.0F, 50.0F)),
-    @render2d.Mesh2d::from_capsule(@render2d.Capsule2d::new(25.0F, 25.0F, 16)),
-    @render2d.Mesh2d::from_rhombus(@render2d.Rhombus::new(75.0F, 100.0F)),
-    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(50.0F, 100.0F)),
-    @render2d.Mesh2d::from_regular_polygon(
-      @render2d.RegularPolygon::new(50.0F, 6),
-    ),
-    @render2d.Mesh2d::from_triangle(
-      @render2d.Triangle2d::new(
+    @sprite.Mesh2d::from_ellipse(@sprite.Ellipse::new(25.0F, 50.0F)),
+    @sprite.Mesh2d::from_annulus(@sprite.Annulus::new(25.0F, 50.0F)),
+    @sprite.Mesh2d::from_capsule(@sprite.Capsule2d::new(25.0F, 25.0F, 16)),
+    @sprite.Mesh2d::from_rhombus(@sprite.Rhombus::new(75.0F, 100.0F)),
+    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(50.0F, 100.0F)),
+    @sprite.Mesh2d::from_regular_polygon(@sprite.RegularPolygon::new(50.0F, 6)),
+    @sprite.Mesh2d::from_triangle(
+      @sprite.Triangle2d::new(
         @math.Vec2::new(0.0F, 50.0F),
         @math.Vec2::new(-50.0F, -50.0F),
         @math.Vec2::new(50.0F, -50.0F),
       ),
     ),
-    @render2d.Mesh2d::from_segment(
-      @render2d.Segment2d::new(
+    @sprite.Mesh2d::from_segment(
+      @sprite.Segment2d::new(
         @math.Vec2::new(-50.0F, 50.0F),
         @math.Vec2::new(50.0F, -50.0F),
       ),
     ),
-    @render2d.Mesh2d::from_polyline(
-      @render2d.Polyline2d::new([
+    @sprite.Mesh2d::from_polyline(
+      @sprite.Polyline2d::new([
         @math.Vec2::new(-50.0F, 50.0F),
         @math.Vec2::new(0.0F, -50.0F),
         @math.Vec2::new(50.0F, 50.0F),
       ]),
     ),
   ]
-  let rings : Array[@render2d.Mesh2d] = [
-    @render2d.Mesh2d::from_ring(@render2d.Circle::new(50.0F).to_ring(THICKNESS)),
-    @render2d.Mesh2d::from_circular_sector_ring(
-      @render2d.CircularSectorRing::new(
-        @render2d.CircularSector::new(50.0F, 1.0F),
-        @render2d.CircularSector::new(45.0F, 1.0F),
+  let rings : Array[@sprite.Mesh2d] = [
+    @sprite.Mesh2d::from_ring(@sprite.Circle::new(50.0F).to_ring(THICKNESS)),
+    @sprite.Mesh2d::from_circular_sector_ring(
+      @sprite.CircularSectorRing::new(
+        @sprite.CircularSector::new(50.0F, 1.0F),
+        @sprite.CircularSector::new(45.0F, 1.0F),
       ),
     ),
-    @render2d.Mesh2d::from_circular_segment_ring(
-      @render2d.CircularSegment::new(50.0F, 1.25F).to_ring(THICKNESS),
+    @sprite.Mesh2d::from_circular_segment_ring(
+      @sprite.CircularSegment::new(50.0F, 1.25F).to_ring(THICKNESS),
     ),
-    @render2d.Mesh2d::from_ellipse_ring(
-      @render2d.EllipseRing::new(
-        @render2d.Ellipse::new(25.0F, 50.0F),
-        @render2d.Ellipse::new(25.0F - THICKNESS, 50.0F - THICKNESS),
+    @sprite.Mesh2d::from_ellipse_ring(
+      @sprite.EllipseRing::new(
+        @sprite.Ellipse::new(25.0F, 50.0F),
+        @sprite.Ellipse::new(25.0F - THICKNESS, 50.0F - THICKNESS),
       ),
     ),
-    @render2d.Mesh2d::from_ring(@render2d.Ring2d::new(50.0F, 25.0F)),
-    @render2d.Mesh2d::from_capsule_ring(
-      @render2d.Capsule2d::new(25.0F, 25.0F, 16).to_ring(THICKNESS),
+    @sprite.Mesh2d::from_ring(@sprite.Ring2d::new(50.0F, 25.0F)),
+    @sprite.Mesh2d::from_capsule_ring(
+      @sprite.Capsule2d::new(25.0F, 25.0F, 16).to_ring(THICKNESS),
     ),
-    @render2d.Mesh2d::from_rhombus_ring(
-      @render2d.Rhombus::new(75.0F, 100.0F).to_ring(THICKNESS),
+    @sprite.Mesh2d::from_rhombus_ring(
+      @sprite.Rhombus::new(75.0F, 100.0F).to_ring(THICKNESS),
     ),
-    @render2d.Mesh2d::from_rectangle_ring(
-      @render2d.Rectangle::new(50.0F, 100.0F).to_ring(THICKNESS),
+    @sprite.Mesh2d::from_rectangle_ring(
+      @sprite.Rectangle::new(50.0F, 100.0F).to_ring(THICKNESS),
     ),
-    @render2d.Mesh2d::from_regular_polygon_ring(
-      @render2d.RegularPolygon::new(50.0F, 6).to_ring(THICKNESS),
+    @sprite.Mesh2d::from_regular_polygon_ring(
+      @sprite.RegularPolygon::new(50.0F, 6).to_ring(THICKNESS),
     ),
-    @render2d.Mesh2d::from_triangle_ring(
-      @render2d.Triangle2d::new(
+    @sprite.Mesh2d::from_triangle_ring(
+      @sprite.Triangle2d::new(
         @math.Vec2::new(0.0F, 50.0F),
         @math.Vec2::new(-50.0F, -50.0F),
         @math.Vec2::new(50.0F, -50.0F),
@@ -288,10 +286,8 @@ fn shapes_setup(world : @ecs.World) -> Unit {
       shape_palette_color(i, num_rings),
     )
   }
-  let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
-    world,
-  )
+  let camera = @sprite.Camera::default()
+  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
   |> ignore
 
   spawn_help_overlay(world)
@@ -299,20 +295,20 @@ fn shapes_setup(world : @ecs.World) -> Unit {
 
 ///|
 fn setup_wireframe2d_config(world : @ecs.World) -> Unit {
-  let config = @render2d.Wireframe2dConfig::new(false, @render2d.Color::white())
-  world.insert_resource(@render2d.ecs_key_wireframe2d_config, config)
+  let config = @sprite.Wireframe2dConfig::new(false, @sprite.Color::white())
+  world.insert_resource(@sprite.ecs_key_wireframe2d_config, config)
 }
 
 ///|
 fn shapes_rotate(
-  query : @ecs.Query2[@math.Transform, @render2d.Mesh2d],
+  query : @ecs.Query2[@math.Transform, @sprite.Mesh2d],
   world : @ecs.World,
 ) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Space) {
-    if (try? world.get_resource(@render2d.ecs_key_wireframe2d_config))
+    if (try? world.get_resource(@sprite.ecs_key_wireframe2d_config))
       is Ok(Some(config)) {
       world.insert_resource(
-        @render2d.ecs_key_wireframe2d_config,
+        @sprite.ecs_key_wireframe2d_config,
         config.with_global(!config.global),
       )
     }

@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/tasks"
+
+import {
+  "Milky2018/mgstudio/app",
+}
+
+// Values
+pub fn task_pool_num_threads() -> Int?
+
+pub fn[W] task_pool_plugin(@app.TaskPoolPlugin) -> (@app.App[W]) -> @app.App[W]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @app {type TaskPoolOptions}
+
+pub using @app {type TaskPoolPlugin}
+
+// Traits
+

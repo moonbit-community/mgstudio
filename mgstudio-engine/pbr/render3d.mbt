@@ -1,0 +1,6960 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Core pipeline and camera settings live in `core_pipeline.mbt`.
+
+///|
+pub type AlphaMode3d = @material.AlphaMode3d
+
+///|
+pub type Face3d = @material.Face3d
+
+///|
+pub type ParallaxMappingMethod = @material.ParallaxMappingMethod
+
+///|
+pub type OpaqueRendererMethod = @material.OpaqueRendererMethod
+
+///|
+pub type DefaultOpaqueRendererMethod = @material.DefaultOpaqueRendererMethod
+
+///|
+pub type StandardMaterial = @material.StandardMaterial
+
+///|
+pub type ExtendedMaterialMetadata3d = @material.ExtendedMaterialMetadata3d
+
+///|
+pub type MeshMaterial3d = @material.MeshMaterial3d
+
+///|
+pub type ForwardDecalMaterialExt = @material.ForwardDecalMaterialExt
+
+///|
+pub(all) enum FogFalloff3d {
+  Linear(Float, Float)
+  Exponential(Float)
+  ExponentialSquared(Float)
+  Atmospheric(@math.Vec3, @math.Vec3)
+} derive(ToJson, FromJson)
+
+///|
+const FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD : Float = 0.05F
+
+///|
+const FOG_FALLOFF_E : Float = 2.718281828459045F
+
+///|
+const FOG_FALLOFF_LN2 : Float = 0.6931471805599453F
+
+///|
+const FOG_FALLOFF_MIN_VISIBILITY : Float = 0.0001F
+
+///|
+const FOG_FALLOFF_MIN_CONTRAST : Float = 0.000001F
+
+///|
+const FOG_FALLOFF_MAX_CONTRAST : Float = 0.999999F
+
+///|
+fn fog_falloff_clamp01(value : Float) -> Float {
+  if value <= 0.0F {
+    0.0F
+  } else if value >= 1.0F {
+    1.0F
+  } else {
+    value
+  }
+}
+
+///|
+fn fog_falloff_sanitize_density(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F
+  } else {
+    value
+  }
+}
+
+///|
+fn fog_falloff_sanitize_visibility(visibility : Float) -> Float {
+  if visibility <= FOG_FALLOFF_MIN_VISIBILITY {
+    FOG_FALLOFF_MIN_VISIBILITY
+  } else {
+    visibility
+  }
+}
+
+///|
+fn fog_falloff_sanitize_contrast(contrast_threshold : Float) -> Float {
+  if contrast_threshold <= FOG_FALLOFF_MIN_CONTRAST {
+    FOG_FALLOFF_MIN_CONTRAST
+  } else if contrast_threshold >= FOG_FALLOFF_MAX_CONTRAST {
+    FOG_FALLOFF_MAX_CONTRAST
+  } else {
+    contrast_threshold
+  }
+}
+
+///|
+fn fog_falloff_ln(value : Float) -> Float {
+  if value <= 0.0F {
+    return -87.3365447505531F
+  }
+  let mut x = value
+  let mut exponent_shift = 0.0F
+  while x > 2.0F {
+    x = x * 0.5F
+    exponent_shift = exponent_shift + FOG_FALLOFF_LN2
+  }
+  while x < 0.5F {
+    x = x * 2.0F
+    exponent_shift = exponent_shift - FOG_FALLOFF_LN2
+  }
+  let y = (x - 1.0F) / (x + 1.0F)
+  let y_squared = y * y
+  let mut series = 0.0F
+  let mut numerator = y
+  let mut denominator = 1.0F
+  for _ in 0..<8 {
+    series = series + numerator / denominator
+    numerator = numerator * y_squared
+    denominator = denominator + 2.0F
+  }
+  exponent_shift + 2.0F * series
+}
+
+///|
+fn fog_falloff_pow_e(value : Float) -> Float {
+  @math.pow(FOG_FALLOFF_E, value)
+}
+
+///|
+fn fog_falloff_koschmieder(
+  visibility : Float,
+  contrast_threshold : Float,
+) -> Float {
+  let safe_visibility = fog_falloff_sanitize_visibility(visibility)
+  let safe_contrast = fog_falloff_sanitize_contrast(contrast_threshold)
+  -fog_falloff_ln(safe_contrast) / safe_visibility
+}
+
+///|
+fn fog_falloff_atmospheric_from_colors(
+  visibility : Float,
+  contrast_threshold : Float,
+  extinction_color : @sprite.Color,
+  inscattering_color : @sprite.Color,
+) -> FogFalloff3d {
+  let beta = fog_falloff_koschmieder(visibility, contrast_threshold)
+
+  let extinction_alpha = fog_falloff_pow_e(
+    fog_falloff_clamp01(extinction_color.a),
+  )
+  let inscattering_alpha = fog_falloff_pow_e(
+    fog_falloff_clamp01(inscattering_color.a),
+  )
+
+  let extinction = @math.Vec3::new(
+    fog_falloff_pow_e(1.0F - fog_falloff_clamp01(extinction_color.r)) *
+    beta *
+    extinction_alpha,
+    fog_falloff_pow_e(1.0F - fog_falloff_clamp01(extinction_color.g)) *
+    beta *
+    extinction_alpha,
+    fog_falloff_pow_e(1.0F - fog_falloff_clamp01(extinction_color.b)) *
+    beta *
+    extinction_alpha,
+  )
+
+  let inscattering = @math.Vec3::new(
+    fog_falloff_pow_e(fog_falloff_clamp01(inscattering_color.r)) *
+    beta *
+    inscattering_alpha,
+    fog_falloff_pow_e(fog_falloff_clamp01(inscattering_color.g)) *
+    beta *
+    inscattering_alpha,
+    fog_falloff_pow_e(fog_falloff_clamp01(inscattering_color.b)) *
+    beta *
+    inscattering_alpha,
+  )
+
+  FogFalloff3d::Atmospheric(extinction, inscattering)
+}
+
+///|
+pub fn FogFalloff3d::revised_koschmieder_contrast_threshold() -> Float {
+  FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD
+}
+
+///|
+pub fn FogFalloff3d::linear(start : Float, end_ : Float) -> FogFalloff3d {
+  let safe_start = if start < 0.0F { 0.0F } else { start }
+  let safe_end = if end_ < safe_start { safe_start } else { end_ }
+  FogFalloff3d::Linear(safe_start, safe_end)
+}
+
+///|
+pub fn FogFalloff3d::exponential(density : Float) -> FogFalloff3d {
+  let safe_density = fog_falloff_sanitize_density(density)
+  FogFalloff3d::Exponential(safe_density)
+}
+
+///|
+pub fn FogFalloff3d::exponential_squared(density : Float) -> FogFalloff3d {
+  let safe_density = fog_falloff_sanitize_density(density)
+  FogFalloff3d::ExponentialSquared(safe_density)
+}
+
+///|
+pub fn FogFalloff3d::atmospheric(
+  extinction : @math.Vec3,
+  inscattering : @math.Vec3,
+) -> FogFalloff3d {
+  let safe_extinction = @math.Vec3::new(
+    fog_falloff_sanitize_density(extinction.x),
+    fog_falloff_sanitize_density(extinction.y),
+    fog_falloff_sanitize_density(extinction.z),
+  )
+  let safe_inscattering = @math.Vec3::new(
+    fog_falloff_sanitize_density(inscattering.x),
+    fog_falloff_sanitize_density(inscattering.y),
+    fog_falloff_sanitize_density(inscattering.z),
+  )
+  FogFalloff3d::Atmospheric(safe_extinction, safe_inscattering)
+}
+
+///|
+pub fn FogFalloff3d::from_visibility(visibility : Float) -> FogFalloff3d {
+  FogFalloff3d::from_visibility_contrast(
+    visibility,
+    FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD,
+  )
+}
+
+///|
+pub fn FogFalloff3d::from_visibility_contrast(
+  visibility : Float,
+  contrast_threshold : Float,
+) -> FogFalloff3d {
+  FogFalloff3d::Exponential(
+    fog_falloff_koschmieder(visibility, contrast_threshold),
+  )
+}
+
+///|
+pub fn FogFalloff3d::from_visibility_squared(
+  visibility : Float,
+) -> FogFalloff3d {
+  FogFalloff3d::from_visibility_contrast_squared(
+    visibility,
+    FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD,
+  )
+}
+
+///|
+pub fn FogFalloff3d::from_visibility_contrast_squared(
+  visibility : Float,
+  contrast_threshold : Float,
+) -> FogFalloff3d {
+  let safe_visibility = fog_falloff_sanitize_visibility(visibility)
+  let density = @math.sqrt(
+    fog_falloff_koschmieder(safe_visibility, contrast_threshold) /
+    safe_visibility,
+  )
+  FogFalloff3d::ExponentialSquared(fog_falloff_sanitize_density(density))
+}
+
+///|
+pub fn FogFalloff3d::from_visibility_color(
+  visibility : Float,
+  extinction_inscattering_color : @sprite.Color,
+) -> FogFalloff3d {
+  FogFalloff3d::from_visibility_contrast_colors(
+    visibility,
+    FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD,
+    extinction_inscattering_color,
+    extinction_inscattering_color,
+  )
+}
+
+///|
+pub fn FogFalloff3d::from_visibility_colors(
+  visibility : Float,
+  extinction_color : @sprite.Color,
+  inscattering_color : @sprite.Color,
+) -> FogFalloff3d {
+  FogFalloff3d::from_visibility_contrast_colors(
+    visibility,
+    FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD,
+    extinction_color,
+    inscattering_color,
+  )
+}
+
+///|
+pub fn FogFalloff3d::from_visibility_contrast_color(
+  visibility : Float,
+  contrast_threshold : Float,
+  extinction_inscattering_color : @sprite.Color,
+) -> FogFalloff3d {
+  FogFalloff3d::from_visibility_contrast_colors(
+    visibility, contrast_threshold, extinction_inscattering_color, extinction_inscattering_color,
+  )
+}
+
+///|
+pub fn FogFalloff3d::from_visibility_contrast_colors(
+  visibility : Float,
+  contrast_threshold : Float,
+  extinction_color : @sprite.Color,
+  inscattering_color : @sprite.Color,
+) -> FogFalloff3d {
+  fog_falloff_atmospheric_from_colors(
+    visibility, contrast_threshold, extinction_color, inscattering_color,
+  )
+}
+
+///|
+// Global fog defaults. Camera3d can apply per-camera volumetric/atmosphere
+// overrides on top during render execution.
+pub struct DistanceFog {
+  color : @sprite.Color
+  directional_light_color : @sprite.Color
+  directional_light_exponent : Float
+  falloff : FogFalloff3d
+} derive(ToJson, FromJson)
+
+///|
+pub fn DistanceFog::default() -> DistanceFog {
+  DistanceFog::{
+    color: @sprite.Color::white(),
+    directional_light_color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+    directional_light_exponent: 8.0F,
+    falloff: FogFalloff3d::linear(0.0F, 100.0F),
+  }
+}
+
+///|
+pub fn DistanceFog::new(
+  color : @sprite.Color,
+  falloff : FogFalloff3d,
+) -> DistanceFog {
+  DistanceFog::{
+    color,
+    directional_light_color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
+    directional_light_exponent: 8.0F,
+    falloff,
+  }
+}
+
+///|
+pub fn DistanceFog::with_color(
+  self : DistanceFog,
+  color : @sprite.Color,
+) -> DistanceFog {
+  DistanceFog::{ ..self, color, }
+}
+
+///|
+pub fn DistanceFog::with_directional_light_color(
+  self : DistanceFog,
+  directional_light_color : @sprite.Color,
+) -> DistanceFog {
+  DistanceFog::{ ..self, directional_light_color, }
+}
+
+///|
+pub fn DistanceFog::with_directional_light_exponent(
+  self : DistanceFog,
+  directional_light_exponent : Float,
+) -> DistanceFog {
+  DistanceFog::{
+    ..self,
+    directional_light_exponent: if directional_light_exponent < 0.0F {
+      0.0F
+    } else {
+      directional_light_exponent
+    },
+  }
+}
+
+///|
+pub fn DistanceFog::with_falloff(
+  self : DistanceFog,
+  falloff : FogFalloff3d,
+) -> DistanceFog {
+  DistanceFog::{ ..self, falloff, }
+}
+
+///|
+let distance_fog_state : Ref[DistanceFog] = Ref::new(DistanceFog::default())
+
+///|
+pub fn render3d_set_distance_fog(fog : DistanceFog) -> Unit {
+  distance_fog_state.val = fog
+}
+
+///|
+pub fn render3d_distance_fog() -> DistanceFog {
+  distance_fog_state.val
+}
+
+///|
+/// Light-facing ownership lives in `Milky2018/mgstudio/light`.
+pub type VolumetricLight = @light.VolumetricLight
+
+///|
+pub type VolumetricFog = @light.VolumetricFog
+
+///|
+pub type FogVolume = @light.FogVolume
+
+///|
+pub type AtmosphereMode = @light.AtmosphereMode
+
+///|
+pub type AtmosphereSettings = @light.AtmosphereSettings
+
+///|
+pub type ScatteringMedium = @light.ScatteringMedium
+
+///|
+pub type Atmosphere = @light.Atmosphere
+
+///|
+pub type AtmosphereEnvironmentMapLight = @light.AtmosphereEnvironmentMapLight
+
+///|
+pub fn standard_material_add(
+  material : StandardMaterial,
+) -> @asset.Handle[StandardMaterial] {
+  @material.standard_material_add(material)
+}
+
+///|
+pub fn standard_material_get(
+  handle : @asset.Handle[StandardMaterial],
+) -> StandardMaterial? {
+  @material.standard_material_get(handle)
+}
+
+///|
+pub fn standard_material_set(
+  handle : @asset.Handle[StandardMaterial],
+  material : StandardMaterial,
+) -> Bool {
+  @material.standard_material_set(handle, material)
+}
+
+///|
+pub struct Mesh3d {
+  mesh : @asset.Handle[@mesh.Mesh]
+}
+
+///|
+pub fn Mesh3d::new(mesh : @asset.Handle[@mesh.Mesh]) -> Mesh3d {
+  Mesh3d::{ mesh, }
+}
+
+///|
+pub impl ToJson for Mesh3d with to_json(self) {
+  self.mesh.id().to_json()
+}
+
+///|
+pub impl @json.FromJson for Mesh3d with from_json(json, path) {
+  let mesh_id : Int = @json.from_json(json, path~)
+  Mesh3d::new(@asset.Handle::new(mesh_id))
+}
+
+///|
+fn mesh3d_append_quad(
+  positions : Array[@math.Vec3],
+  uvs : Array[@math.Vec2],
+  a : @math.Vec3,
+  b : @math.Vec3,
+  c : @math.Vec3,
+  d : @math.Vec3,
+) -> Unit {
+  positions.push(a)
+  positions.push(b)
+  positions.push(c)
+  positions.push(a)
+  positions.push(c)
+  positions.push(d)
+  uvs.push(@math.Vec2::new(0.0F, 0.0F))
+  uvs.push(@math.Vec2::new(1.0F, 0.0F))
+  uvs.push(@math.Vec2::new(1.0F, 1.0F))
+  uvs.push(@math.Vec2::new(0.0F, 0.0F))
+  uvs.push(@math.Vec2::new(1.0F, 1.0F))
+  uvs.push(@math.Vec2::new(0.0F, 1.0F))
+}
+
+///|
+fn mesh3d_append_triangle(
+  positions : Array[@math.Vec3],
+  uvs : Array[@math.Vec2],
+  a : @math.Vec3,
+  b : @math.Vec3,
+  c : @math.Vec3,
+) -> Unit {
+  positions.push(a)
+  positions.push(b)
+  positions.push(c)
+  uvs.push(@math.Vec2::new(0.5F, 0.0F))
+  uvs.push(@math.Vec2::new(0.0F, 1.0F))
+  uvs.push(@math.Vec2::new(1.0F, 1.0F))
+}
+
+///|
+fn mesh3d_geometry_plane(width : Float, depth : Float) -> @mesh.Mesh3dGeometry {
+  let safe_width = if width <= 0.0F { 1.0F } else { width }
+  let safe_depth = if depth <= 0.0F { 1.0F } else { depth }
+  let hx = safe_width * 0.5F
+  let hz = safe_depth * 0.5F
+  let positions : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+  mesh3d_append_quad(
+    positions,
+    uvs,
+    @math.Vec3::new(-hx, 0.0F, -hz),
+    @math.Vec3::new(hx, 0.0F, -hz),
+    @math.Vec3::new(hx, 0.0F, hz),
+    @math.Vec3::new(-hx, 0.0F, hz),
+  )
+  @mesh.Mesh3dGeometry::new(positions, uvs, None)
+}
+
+///|
+fn mesh3d_geometry_tetrahedron(edge : Float) -> @mesh.Mesh3dGeometry {
+  let safe_edge = if edge <= 0.0F { 1.0F } else { edge }
+  let h = safe_edge * 0.5F
+  let v0 = @math.Vec3::new(0.0F, h, 0.0F)
+  let v1 = @math.Vec3::new(-h, -h, h)
+  let v2 = @math.Vec3::new(h, -h, h)
+  let v3 = @math.Vec3::new(0.0F, -h, -h)
+  let positions : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+  mesh3d_append_triangle(positions, uvs, v0, v1, v2)
+  mesh3d_append_triangle(positions, uvs, v0, v2, v3)
+  mesh3d_append_triangle(positions, uvs, v0, v3, v1)
+  mesh3d_append_triangle(positions, uvs, v1, v3, v2)
+  @mesh.Mesh3dGeometry::new(positions, uvs, None)
+}
+
+///|
+fn mesh3d_revolve_geometry(
+  profile : Array[(Float, Float)],
+  segments : Int,
+) -> @mesh.Mesh3dGeometry {
+  let safe_segments = if segments < 3 { 3 } else { segments }
+  let segment_count = Float::from_int(safe_segments)
+  let count = profile.length()
+  let profile_denominator = if count > 1 {
+    Float::from_int(count - 1)
+  } else {
+    1.0F
+  }
+  let positions : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+
+  for i in 0..<count {
+    let p = profile[i]
+    let y = p.0
+    let r = if p.1 < 0.0F { 0.0F } else { p.1 }
+    let v = Float::from_int(i) / profile_denominator
+    for s in 0..<(safe_segments + 1) {
+      let u = Float::from_int(s) / segment_count
+      let angle = 2.0F * @math.pi() * u
+      positions.push(
+        @math.Vec3::new(r * @math.cos(angle), y, r * @math.sin(angle)),
+      )
+      uvs.push(@math.Vec2::new(u, 1.0F - v))
+    }
+  }
+
+  let indices : Array[Int] = []
+  let row = safe_segments + 1
+  for i in 0..<(count - 1) {
+    let k1 = i * row
+    let k2 = k1 + row
+    for j in 0..<safe_segments {
+      indices.push(k1 + j)
+      indices.push(k2 + j)
+      indices.push(k1 + j + 1)
+
+      indices.push(k1 + j + 1)
+      indices.push(k2 + j)
+      indices.push(k2 + j + 1)
+    }
+  }
+
+  @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
+}
+
+///|
+fn mesh3d_triangle_uvs(
+  triangle : @math.Triangle3d,
+) -> (@math.Vec2, @math.Vec2, @math.Vec2) {
+  if triangle.vertices.length() < 3 {
+    return (
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 0.0F),
+      @math.Vec2::new(0.0F, 1.0F),
+    )
+  }
+  let a = triangle.vertices[0]
+  let b = triangle.vertices[1]
+  let c = triangle.vertices[2]
+  let ab = @math.Vec3::new(b.x - a.x, b.y - a.y, b.z - a.z)
+  let main_length = @math.sqrt(ab.x * ab.x + ab.y * ab.y + ab.z * ab.z)
+  if main_length <= 0.000001F {
+    return (
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 0.0F),
+      @math.Vec2::new(0.0F, 1.0F),
+    )
+  }
+  let x_dir = ab.normalize_or_zero()
+  let y_vec = @math.Vec3::new(c.x - a.x, c.y - a.y, c.z - a.z)
+  let offset = (y_vec.x * x_dir.x + y_vec.y * x_dir.y + y_vec.z * x_dir.z) /
+    main_length
+  if offset < 0.0F {
+    let total_length = 1.0F - offset
+    return (
+      @math.Vec2::new(offset.abs() / total_length, 0.0F),
+      @math.Vec2::new(1.0F, 0.0F),
+      @math.Vec2::new(0.0F, 1.0F),
+    )
+  }
+  if offset > 1.0F {
+    return (
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F / offset, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+    )
+  }
+  (
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.Vec2::new(1.0F, 0.0F),
+    @math.Vec2::new(offset, 1.0F),
+  )
+}
+
+///|
+fn mesh3d_geometry_triangle(
+  triangle : @math.Triangle3d,
+) -> @mesh.Mesh3dGeometry {
+  if triangle.vertices.length() < 3 {
+    return @mesh.Mesh3dGeometry::new([], [], None)
+  }
+  let a = triangle.vertices[0]
+  let b = triangle.vertices[1]
+  let c = triangle.vertices[2]
+  let (uv_a, uv_b, uv_c) = mesh3d_triangle_uvs(triangle)
+  let positions : Array[@math.Vec3] = [a, b, c]
+  let uvs : Array[@math.Vec2] = [uv_a, uv_b, uv_c]
+  @mesh.Mesh3dGeometry::new(positions, uvs, Some([0, 1, 2]))
+}
+
+///|
+fn mesh3d_tetrahedron_signed_volume(tetrahedron : @math.Tetrahedron) -> Float {
+  if tetrahedron.vertices.length() < 4 {
+    return 0.0F
+  }
+  let a = tetrahedron.vertices[0]
+  let b = tetrahedron.vertices[1]
+  let c = tetrahedron.vertices[2]
+  let d = tetrahedron.vertices[3]
+  let ab = @math.Vec3::new(b.x - a.x, b.y - a.y, b.z - a.z)
+  let ac = @math.Vec3::new(c.x - a.x, c.y - a.y, c.z - a.z)
+  let ad = @math.Vec3::new(d.x - a.x, d.y - a.y, d.z - a.z)
+  let cross = ab.cross(ac)
+  (cross.x * ad.x + cross.y * ad.y + cross.z * ad.z) / 6.0F
+}
+
+///|
+fn mesh3d_geometry_tetrahedron_shape(
+  tetrahedron : @math.Tetrahedron,
+) -> @mesh.Mesh3dGeometry {
+  let reverse_faces = mesh3d_tetrahedron_signed_volume(tetrahedron) < 0.0F
+  let positions : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+  for face in tetrahedron.faces() {
+    if face.vertices.length() < 3 {
+      continue
+    }
+    let face_vertices = if reverse_faces {
+      [face.vertices[0], face.vertices[2], face.vertices[1]]
+    } else {
+      [face.vertices[0], face.vertices[1], face.vertices[2]]
+    }
+    let oriented_face = @math.Triangle3d::new(
+      face_vertices[0],
+      face_vertices[1],
+      face_vertices[2],
+    )
+    let (uv_a, uv_b, uv_c) = mesh3d_triangle_uvs(oriented_face)
+    positions.push(face_vertices[0])
+    positions.push(face_vertices[1])
+    positions.push(face_vertices[2])
+    uvs.push(uv_a)
+    uvs.push(uv_b)
+    uvs.push(uv_c)
+  }
+  @mesh.Mesh3dGeometry::new(positions, uvs, None)
+}
+
+///|
+fn mesh3d_geometry_cylinder_shape(
+  cylinder : @math.Cylinder,
+) -> @mesh.Mesh3dGeometry {
+  let safe_radius = if cylinder.radius <= 0.0F { 0.5F } else { cylinder.radius }
+  let safe_half_height = if cylinder.half_height <= 0.0F {
+    0.5F
+  } else {
+    cylinder.half_height
+  }
+  mesh3d_revolve_geometry(
+    [
+      (safe_half_height, 0.0F),
+      (safe_half_height, safe_radius),
+      (-safe_half_height, safe_radius),
+      (-safe_half_height, 0.0F),
+    ],
+    32,
+  )
+}
+
+///|
+fn mesh3d_geometry_capsule_shape(
+  capsule : @math.Capsule3d,
+) -> @mesh.Mesh3dGeometry {
+  let safe_radius = if capsule.radius <= 0.0F { 0.5F } else { capsule.radius }
+  let safe_half_length = if capsule.half_length < 0.0F {
+    0.0F
+  } else {
+    capsule.half_length
+  }
+  let lat_segments = 16
+  let lat_f = Float::from_int(lat_segments)
+  let profile : Array[(Float, Float)] = []
+  profile.push((safe_half_length + safe_radius, 0.0F))
+  for i in 1..<(lat_segments + 1) {
+    let t = Float::from_int(i) / lat_f
+    let angle = @math.pi() / 2.0F - t * (@math.pi() / 2.0F)
+    profile.push(
+      (
+        safe_half_length + safe_radius * @math.sin(angle),
+        safe_radius * @math.cos(angle),
+      ),
+    )
+  }
+  profile.push((-safe_half_length, safe_radius))
+  for i in 1..<(lat_segments + 1) {
+    let t = Float::from_int(i) / lat_f
+    let angle = -t * (@math.pi() / 2.0F)
+    profile.push(
+      (
+        -safe_half_length + safe_radius * @math.sin(angle),
+        safe_radius * @math.cos(angle),
+      ),
+    )
+  }
+  mesh3d_revolve_geometry(profile, 32)
+}
+
+///|
+fn mesh3d_append_uv_sphere_triangle(
+  positions : Array[@math.Vec3],
+  uvs : Array[@math.Vec2],
+  a : @math.Vec3,
+  b : @math.Vec3,
+  c : @math.Vec3,
+  uv_a : @math.Vec2,
+  uv_b : @math.Vec2,
+  uv_c : @math.Vec2,
+) -> Unit {
+  positions.push(a)
+  positions.push(b)
+  positions.push(c)
+  uvs.push(uv_a)
+  uvs.push(uv_b)
+  uvs.push(uv_c)
+}
+
+///|
+fn mesh3d_geometry_uv_sphere(
+  radius : Float,
+  sectors : Int,
+  stacks : Int,
+) -> @mesh.Mesh3dGeometry {
+  let safe_radius = if radius <= 0.0F { 0.5F } else { radius }
+  let safe_sectors = if sectors < 3 { 3 } else { sectors }
+  let safe_stacks = if stacks < 2 { 2 } else { stacks }
+  let stack_count = Float::from_int(safe_stacks)
+  let sector_count = Float::from_int(safe_sectors)
+  let positions : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+
+  fn sphere_point(
+    radius : Float,
+    stack : Int,
+    sector : Int,
+    stack_count : Float,
+    sector_count : Float,
+  ) -> (@math.Vec3, @math.Vec2) {
+    let v = Float::from_int(stack) / stack_count
+    let u = Float::from_int(sector) / sector_count
+    let theta = v * @math.pi()
+    let phi = u * @math.pi() * 2.0F
+    let sin_theta = @math.sin(theta)
+    let x = radius * sin_theta * @math.cos(phi)
+    let y = radius * @math.cos(theta)
+    let z = radius * sin_theta * @math.sin(phi)
+    (@math.Vec3::new(x, y, z), @math.Vec2::new(u, 1.0F - v))
+  }
+
+  for stack in 0..<safe_stacks {
+    for sector in 0..<safe_sectors {
+      let next_sector = sector + 1
+      let (p00, uv00) = sphere_point(
+        safe_radius, stack, sector, stack_count, sector_count,
+      )
+      let (p01, uv01) = sphere_point(
+        safe_radius, stack, next_sector, stack_count, sector_count,
+      )
+      let (p10, uv10) = sphere_point(
+        safe_radius,
+        stack + 1,
+        sector,
+        stack_count,
+        sector_count,
+      )
+      let (p11, uv11) = sphere_point(
+        safe_radius,
+        stack + 1,
+        next_sector,
+        stack_count,
+        sector_count,
+      )
+
+      if stack == 0 {
+        mesh3d_append_uv_sphere_triangle(
+          positions, uvs, p00, p10, p11, uv00, uv10, uv11,
+        )
+      } else if stack + 1 == safe_stacks {
+        mesh3d_append_uv_sphere_triangle(
+          positions, uvs, p00, p10, p01, uv00, uv10, uv01,
+        )
+      } else {
+        mesh3d_append_uv_sphere_triangle(
+          positions, uvs, p00, p10, p11, uv00, uv10, uv11,
+        )
+        mesh3d_append_uv_sphere_triangle(
+          positions, uvs, p00, p11, p01, uv00, uv11, uv01,
+        )
+      }
+    }
+  }
+  @mesh.Mesh3dGeometry::new(positions, uvs, None)
+}
+
+///|
+pub fn Mesh3d::from_geometry(geometry : @mesh.Mesh3dGeometry) -> Mesh3d {
+  Mesh3d::new(
+    @sprite.render_mesh_asset_add(@mesh.Mesh::from_3d_geometry(geometry)),
+  )
+}
+
+///|
+pub fn Mesh3d::from_cuboid(
+  width : Float,
+  height : Float,
+  depth : Float,
+) -> Mesh3d {
+  Mesh3d::from_geometry(
+    @mesh.Mesh3dGeometry::cuboid(@math.Cuboid::new(width, height, depth)),
+  )
+}
+
+///|
+pub fn Mesh3d::from_cylinder(cylinder : @math.Cylinder) -> Mesh3d {
+  Mesh3d::from_geometry(mesh3d_geometry_cylinder_shape(cylinder))
+}
+
+///|
+pub fn Mesh3d::from_capsule(capsule : @math.Capsule3d) -> Mesh3d {
+  Mesh3d::from_geometry(mesh3d_geometry_capsule_shape(capsule))
+}
+
+///|
+pub fn Mesh3d::from_triangle(triangle : @math.Triangle3d) -> Mesh3d {
+  Mesh3d::from_geometry(mesh3d_geometry_triangle(triangle))
+}
+
+///|
+pub fn Mesh3d::from_circle(radius : Float) -> Mesh3d {
+  Mesh3d::from_geometry(@mesh.Mesh3dGeometry::circle(radius, 32))
+}
+
+///|
+pub fn Mesh3d::from_rectangle(width : Float, height : Float) -> Mesh3d {
+  Mesh3d::from_geometry(@mesh.Mesh3dGeometry::rectangle(width, height))
+}
+
+///|
+pub fn Mesh3d::from_plane(width : Float, depth : Float) -> Mesh3d {
+  Mesh3d::from_geometry(mesh3d_geometry_plane(width, depth))
+}
+
+///|
+pub fn Mesh3d::from_uv_sphere(
+  radius : Float,
+  sectors : Int,
+  stacks : Int,
+) -> Mesh3d {
+  Mesh3d::from_geometry(mesh3d_geometry_uv_sphere(radius, sectors, stacks))
+}
+
+///|
+pub fn Mesh3d::from_icosphere(radius : Float, subdivisions : Int) -> Mesh3d {
+  Mesh3d::from_geometry(@mesh.Mesh3dGeometry::icosphere(radius, subdivisions))
+}
+
+///|
+pub fn Mesh3d::from_sphere(radius : Float) -> Mesh3d {
+  Mesh3d::from_uv_sphere(radius, 32, 16)
+}
+
+///|
+pub fn Mesh3d::from_tetrahedron(edge : Float) -> Mesh3d {
+  Mesh3d::from_geometry(mesh3d_geometry_tetrahedron(edge))
+}
+
+///|
+pub fn Mesh3d::from_tetrahedron_shape(
+  tetrahedron : @math.Tetrahedron,
+) -> Mesh3d {
+  Mesh3d::from_geometry(mesh3d_geometry_tetrahedron_shape(tetrahedron))
+}
+
+///|
+struct Render3dInternalAssetsState {
+  mut skybox_proxy_mesh : @asset.Handle[@mesh.Mesh]?
+  mut tonemapping_luts : Render3dTonemappingLutHandles?
+}
+
+///|
+fn Render3dInternalAssetsState::new() -> Render3dInternalAssetsState {
+  Render3dInternalAssetsState::{
+    skybox_proxy_mesh: None,
+    tonemapping_luts: None,
+  }
+}
+
+///|
+fn render3d_internal_assets_ref(
+  world : @ecs.World,
+) -> Ref[Render3dInternalAssetsState]? {
+  try! world.get_resource_ref_mut(ecs_key_internal_assets, 0)
+}
+
+///|
+fn render3d_internal_assets_ref_or_abort(
+  world : @ecs.World,
+) -> Ref[Render3dInternalAssetsState] {
+  match render3d_internal_assets_ref(world) {
+    Some(state) => state
+    None =>
+      abort(
+        "render3d internal assets resource is missing; Render3dPlugin must initialize render3d.internal_assets before use",
+      )
+  }
+}
+
+///|
+fn render3d_asset_server_from_world_or_abort(
+  world : @ecs.World,
+) -> @asset.AssetServer {
+  match (try! world.get_resource(@asset.asset_server_resource_key())) {
+    Some(asset_server) => asset_server
+    None =>
+      abort(
+        "render3d asset server resource is missing; AssetPlugin must initialize AssetServer before render3d internal assets are used",
+      )
+  }
+}
+
+///|
+fn render3d_skybox_proxy_mesh_id(world : @ecs.World) -> Int {
+  let internal_assets = render3d_internal_assets_ref_or_abort(world)
+  let handle = match internal_assets.val.skybox_proxy_mesh {
+    Some(handle) => handle
+    None => {
+      let mesh = Mesh3d::from_cuboid(2.0F, 2.0F, 2.0F)
+      internal_assets.val.skybox_proxy_mesh = Some(mesh.mesh)
+      mesh.mesh
+    }
+  }
+  @sprite_render.render2d_upload_mesh_handle(handle)
+}
+
+///|
+/// Marker component aligned with Bevy's `ForwardDecal`.
+///
+/// Current runtime note: projected forward-decal shading is not wired in this
+/// backend yet. This component preserves scene/API parity for example
+/// migration and future renderer integration.
+pub struct ForwardDecal {} derive(ToJson, FromJson)
+
+///|
+pub fn ForwardDecal::default() -> ForwardDecal {
+  ForwardDecal::{  }
+}
+
+///|
+fn clustered_decal_tag_safe(tag : Int) -> Int {
+  if tag < 0 {
+    0
+  } else {
+    tag
+  }
+}
+
+///|
+/// Clustered decal parameters aligned with Bevy's `ClusteredDecal`.
+///
+/// The decal volume follows Bevy semantics: a transformed unit cube that
+/// projects textures along local `-Z`.
+///
+/// Current runtime note: clustered projection is not yet active in this
+/// backend; this component currently carries scene intent metadata.
+pub struct ClusteredDecal {
+  base_color_texture : @asset.Handle[@asset.Image]?
+  normal_map_texture : @asset.Handle[@asset.Image]?
+  metallic_roughness_texture : @asset.Handle[@asset.Image]?
+  emissive_texture : @asset.Handle[@asset.Image]?
+  tag : Int
+} derive(ToJson, FromJson)
+
+///|
+pub fn ClusteredDecal::default() -> ClusteredDecal {
+  ClusteredDecal::{
+    base_color_texture: None,
+    normal_map_texture: None,
+    metallic_roughness_texture: None,
+    emissive_texture: None,
+    tag: 0,
+  }
+}
+
+///|
+pub fn ClusteredDecal::new() -> ClusteredDecal {
+  ClusteredDecal::default()
+}
+
+///|
+pub fn ClusteredDecal::with_base_color_texture(
+  self : ClusteredDecal,
+  base_color_texture : @asset.Handle[@asset.Image]?,
+) -> ClusteredDecal {
+  ClusteredDecal::{ ..self, base_color_texture, }
+}
+
+///|
+pub fn ClusteredDecal::with_normal_map_texture(
+  self : ClusteredDecal,
+  normal_map_texture : @asset.Handle[@asset.Image]?,
+) -> ClusteredDecal {
+  ClusteredDecal::{ ..self, normal_map_texture, }
+}
+
+///|
+pub fn ClusteredDecal::with_metallic_roughness_texture(
+  self : ClusteredDecal,
+  metallic_roughness_texture : @asset.Handle[@asset.Image]?,
+) -> ClusteredDecal {
+  ClusteredDecal::{ ..self, metallic_roughness_texture, }
+}
+
+///|
+pub fn ClusteredDecal::with_emissive_texture(
+  self : ClusteredDecal,
+  emissive_texture : @asset.Handle[@asset.Image]?,
+) -> ClusteredDecal {
+  ClusteredDecal::{ ..self, emissive_texture, }
+}
+
+///|
+pub fn ClusteredDecal::with_tag(
+  self : ClusteredDecal,
+  tag : Int,
+) -> ClusteredDecal {
+  ClusteredDecal::{ ..self, tag: clustered_decal_tag_safe(tag) }
+}
+
+///|
+/// Light-facing ownership lives in `Milky2018/mgstudio/light`.
+pub type PointLight = @light.PointLight
+
+///|
+pub type PointLightShadowMap = @light.PointLightShadowMap
+
+///|
+pub type DirectionalLightShadowMap = @light.DirectionalLightShadowMap
+
+///|
+pub type CascadeShadowConfig = @light.CascadeShadowConfig
+
+///|
+pub type CascadeShadowConfigBuilder = @light.CascadeShadowConfigBuilder
+
+///|
+pub type DirectionalLight = @light.DirectionalLight
+
+///|
+pub type SpotLight = @light.SpotLight
+
+///|
+pub type CubemapLayout3d = @light.CubemapLayout3d
+
+///|
+pub type DirectionalLightTexture = @light.DirectionalLightTexture
+
+///|
+pub type SpotLightTexture = @light.SpotLightTexture
+
+///|
+pub type PointLightTexture = @light.PointLightTexture
+
+///|
+pub type LightProbe = @light.LightProbe
+
+///|
+pub type EnvironmentMapLight = @light.EnvironmentMapLight
+
+///|
+pub type GeneratedEnvironmentMapLight = @light.GeneratedEnvironmentMapLight
+
+///|
+pub type ParallaxCorrection = @light.ParallaxCorrection
+
+///|
+pub type IrradianceVolume = @light.IrradianceVolume
+
+///|
+pub type GlobalAmbientLight = @light.GlobalAmbientLight
+
+///|
+pub struct Camera3dBundle {
+  camera : @sprite.Camera
+  projection : Projection
+  sub_camera_view : SubCameraView3d?
+  screen_space_transmission : ScreenSpaceTransmission?
+  screen_space_reflections : ScreenSpaceReflections?
+  bloom : Bloom?
+  tonemapping : Tonemapping?
+  deband_dither : DebandDither?
+  chromatic_aberration : ChromaticAberration?
+  vignette : Vignette?
+  motion_blur : MotionBlur?
+  exposure : Exposure?
+  color_grading : ColorGrading?
+  camera3d : Camera3d
+  transform : @math.Transform
+  target : @sprite.RenderTarget
+  layers : @sprite.RenderLayers
+}
+
+///|
+pub fn Camera3dBundle::new(
+  camera : @sprite.Camera,
+  transform : @math.Transform,
+) -> Camera3dBundle {
+  Camera3dBundle::{
+    camera,
+    projection: Projection::default(),
+    sub_camera_view: None,
+    screen_space_transmission: None,
+    screen_space_reflections: None,
+    bloom: None,
+    tonemapping: Some(Tonemapping::default()),
+    deband_dither: Some(DebandDither::default()),
+    chromatic_aberration: None,
+    vignette: None,
+    motion_blur: None,
+    exposure: Some(Exposure::default()),
+    color_grading: None,
+    camera3d: Camera3d::default(),
+    transform,
+    target: @sprite.RenderTarget::Screen,
+    layers: @sprite.RenderLayers::default(),
+  }
+}
+
+///|
+pub fn Camera3dBundle::new_with_projection(
+  camera : @sprite.Camera,
+  projection : Projection,
+  transform : @math.Transform,
+) -> Camera3dBundle {
+  Camera3dBundle::{
+    camera,
+    projection,
+    sub_camera_view: None,
+    screen_space_transmission: None,
+    screen_space_reflections: None,
+    bloom: None,
+    tonemapping: Some(Tonemapping::default()),
+    deband_dither: Some(DebandDither::default()),
+    chromatic_aberration: None,
+    vignette: None,
+    motion_blur: None,
+    exposure: Some(Exposure::default()),
+    color_grading: None,
+    camera3d: Camera3d::default(),
+    transform,
+    target: @sprite.RenderTarget::Screen,
+    layers: @sprite.RenderLayers::default(),
+  }
+}
+
+///|
+pub fn Camera3dBundle::with_sub_camera_view(
+  self : Camera3dBundle,
+  sub_camera_view : SubCameraView3d?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, sub_camera_view, }
+}
+
+///|
+pub fn Camera3dBundle::with_target(
+  self : Camera3dBundle,
+  target : @sprite.RenderTarget,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, target, }
+}
+
+///|
+pub fn Camera3dBundle::with_screen_space_transmission(
+  self : Camera3dBundle,
+  screen_space_transmission : ScreenSpaceTransmission?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, screen_space_transmission, }
+}
+
+///|
+pub fn Camera3dBundle::with_screen_space_reflections(
+  self : Camera3dBundle,
+  screen_space_reflections : ScreenSpaceReflections?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, screen_space_reflections, }
+}
+
+///|
+pub fn Camera3dBundle::with_bloom(
+  self : Camera3dBundle,
+  bloom : Bloom?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, bloom, }
+}
+
+///|
+pub fn Camera3dBundle::with_tonemapping(
+  self : Camera3dBundle,
+  tonemapping : Tonemapping?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, tonemapping, }
+}
+
+///|
+pub fn Camera3dBundle::with_deband_dither(
+  self : Camera3dBundle,
+  deband_dither : DebandDither?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, deband_dither, }
+}
+
+///|
+pub fn Camera3dBundle::with_chromatic_aberration(
+  self : Camera3dBundle,
+  chromatic_aberration : ChromaticAberration?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, chromatic_aberration, }
+}
+
+///|
+pub fn Camera3dBundle::with_vignette(
+  self : Camera3dBundle,
+  vignette : Vignette?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, vignette, }
+}
+
+///|
+pub fn Camera3dBundle::with_motion_blur(
+  self : Camera3dBundle,
+  motion_blur : MotionBlur?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, motion_blur, }
+}
+
+///|
+pub fn Camera3dBundle::with_exposure(
+  self : Camera3dBundle,
+  exposure : Exposure?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, exposure, }
+}
+
+///|
+pub fn Camera3dBundle::with_color_grading(
+  self : Camera3dBundle,
+  color_grading : ColorGrading?,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, color_grading, }
+}
+
+///|
+pub fn Camera3dBundle::with_camera3d(
+  self : Camera3dBundle,
+  camera3d : Camera3d,
+) -> Camera3dBundle {
+  Camera3dBundle::{ ..self, camera3d, }
+}
+
+///|
+pub fn Camera3dBundle::with_decal_config(
+  self : Camera3dBundle,
+  decal_config : CameraDecalConfig3d,
+) -> Camera3dBundle {
+  Camera3dBundle::{
+    ..self,
+    camera3d: self.camera3d.with_decal_config(decal_config),
+  }
+}
+
+///|
+pub fn Camera3dBundle::with_deferred_config(
+  self : Camera3dBundle,
+  deferred_config : CameraDeferredConfig3d,
+) -> Camera3dBundle {
+  Camera3dBundle::{
+    ..self,
+    camera3d: self.camera3d.with_deferred_config(deferred_config),
+  }
+}
+
+///|
+pub fn Camera3dBundle::with_distance_fog(
+  self : Camera3dBundle,
+  distance_fog : DistanceFog?,
+) -> Camera3dBundle {
+  Camera3dBundle::{
+    ..self,
+    camera3d: self.camera3d.with_distance_fog(distance_fog),
+  }
+}
+
+///|
+pub fn Camera3dBundle::with_volumetric_fog(
+  self : Camera3dBundle,
+  volumetric_fog : VolumetricFog?,
+) -> Camera3dBundle {
+  Camera3dBundle::{
+    ..self,
+    camera3d: self.camera3d.with_volumetric_fog(volumetric_fog),
+  }
+}
+
+///|
+pub fn Camera3dBundle::with_atmosphere(
+  self : Camera3dBundle,
+  atmosphere : Atmosphere?,
+) -> Camera3dBundle {
+  Camera3dBundle::{
+    ..self,
+    camera3d: self.camera3d.with_atmosphere(atmosphere),
+  }
+}
+
+///|
+pub fn Camera3dBundle::with_atmosphere_settings(
+  self : Camera3dBundle,
+  atmosphere_settings : AtmosphereSettings?,
+) -> Camera3dBundle {
+  Camera3dBundle::{
+    ..self,
+    camera3d: self.camera3d.with_atmosphere_settings(atmosphere_settings),
+  }
+}
+
+///|
+pub fn Camera3dBundle::with_auto_exposure(
+  self : Camera3dBundle,
+  auto_exposure : AutoExposure?,
+) -> Camera3dBundle {
+  Camera3dBundle::{
+    ..self,
+    camera3d: self.camera3d.with_auto_exposure(auto_exposure),
+  }
+}
+
+///|
+pub fn Camera3dBundle::with_depth_of_field(
+  self : Camera3dBundle,
+  depth_of_field : DepthOfField?,
+) -> Camera3dBundle {
+  Camera3dBundle::{
+    ..self,
+    camera3d: self.camera3d.with_depth_of_field(depth_of_field),
+  }
+}
+
+///|
+pub struct MeshMaterial3dBundle {
+  mesh : Mesh3d
+  material : MeshMaterial3d
+  transform : @math.Transform
+  layers : @sprite.RenderLayers
+  visibility : @visibility.Visibility
+  inherited_visibility : @visibility.InheritedVisibility
+  view_visibility : @visibility.ViewVisibility
+}
+
+///|
+pub fn MeshMaterial3dBundle::new(
+  mesh : Mesh3d,
+  material : MeshMaterial3d,
+  transform : @math.Transform,
+) -> MeshMaterial3dBundle {
+  MeshMaterial3dBundle::{
+    mesh,
+    material,
+    transform,
+    layers: @sprite.RenderLayers::default(),
+    visibility: @visibility.Visibility::Inherited,
+    inherited_visibility: @visibility.InheritedVisibility::new(true),
+    view_visibility: @visibility.ViewVisibility::new(true),
+  }
+}
+
+///|
+fn camera3d_bundle_insert(
+  bundle : Camera3dBundle,
+  world : @ecs.World,
+  entity : @core.Entity,
+  tick : @core.Tick,
+) -> Unit {
+  let ecs_world = world
+  get_camera3d_store(ecs_world).insert(entity, bundle.camera3d, tick)
+  get_projection_store(ecs_world).insert(entity, bundle.projection, tick)
+  if bundle.sub_camera_view is Some(sub_camera_view) {
+    get_sub_camera_view3d_store(ecs_world).insert(entity, sub_camera_view, tick)
+  }
+  if bundle.screen_space_transmission is Some(screen_space_transmission) {
+    get_screen_space_transmission_store(ecs_world).insert(
+      entity, screen_space_transmission, tick,
+    )
+  }
+  if bundle.screen_space_reflections is Some(screen_space_reflections) {
+    get_screen_space_reflections_store(ecs_world).insert(
+      entity, screen_space_reflections, tick,
+    )
+  }
+  if bundle.bloom is Some(bloom) {
+    get_bloom_store(ecs_world).insert(entity, bloom, tick)
+  }
+  if bundle.tonemapping is Some(tonemapping) {
+    get_tonemapping_store(ecs_world).insert(entity, tonemapping, tick)
+  }
+  if bundle.deband_dither is Some(deband_dither) {
+    get_deband_dither_store(ecs_world).insert(entity, deband_dither, tick)
+  }
+  if bundle.chromatic_aberration is Some(chromatic_aberration) {
+    get_chromatic_aberration_store(ecs_world).insert(
+      entity, chromatic_aberration, tick,
+    )
+  }
+  if bundle.vignette is Some(vignette) {
+    get_vignette_store(ecs_world).insert(entity, vignette, tick)
+  }
+  if bundle.motion_blur is Some(motion_blur) {
+    get_motion_blur_store(ecs_world).insert(entity, motion_blur, tick)
+  }
+  if bundle.exposure is Some(exposure) {
+    get_exposure_store(ecs_world).insert(entity, exposure, tick)
+  }
+  if bundle.color_grading is Some(color_grading) {
+    get_color_grading_store(ecs_world).insert(entity, color_grading, tick)
+  }
+  @sprite.get_camera_store(ecs_world).insert(entity, bundle.camera, tick)
+  @sprite.get_render_target_store(ecs_world).insert(entity, bundle.target, tick)
+  @sprite.get_render_layers_store(ecs_world).insert(entity, bundle.layers, tick)
+  get_frustum_store(ecs_world).insert(
+    entity,
+    bundle.projection.compute_frustum(bundle.transform),
+    tick,
+  )
+  @math.get_transform_store(ecs_world).insert(entity, bundle.transform, tick)
+}
+
+///|
+pub impl @app.CommandSpawnComponents for Camera3dBundle with spawn_components(
+  self,
+  world,
+  entity,
+  change_tick,
+) {
+  camera3d_bundle_insert(self, world, entity, change_tick)
+}
+
+///|
+pub fn Camera3dBundle::spawn(
+  self : Camera3dBundle,
+  world : @ecs.World,
+) -> @core.Entity {
+  let ecs_world = world
+  let tick = world.read_change_tick()
+  let entity = ecs_world.spawn_empty()
+  camera3d_bundle_insert(self, ecs_world, entity, tick)
+  entity
+}
+
+///|
+fn mesh_material3d_bundle_insert(
+  bundle : MeshMaterial3dBundle,
+  world : @ecs.World,
+  entity : @core.Entity,
+  tick : @core.Tick,
+) -> Unit {
+  let ecs_world = world
+  get_mesh3d_store(ecs_world).insert(entity, bundle.mesh, tick)
+  get_mesh_material3d_store(ecs_world).insert(entity, bundle.material, tick)
+  @sprite.get_render_layers_store(ecs_world).insert(entity, bundle.layers, tick)
+  @visibility.get_visibility_store(ecs_world).insert(
+    entity,
+    bundle.visibility,
+    tick,
+  )
+  @visibility.get_inherited_visibility_store(ecs_world).insert(
+    entity,
+    bundle.inherited_visibility,
+    tick,
+  )
+  @visibility.get_view_visibility_store(ecs_world).insert(
+    entity,
+    bundle.view_visibility,
+    tick,
+  )
+  @math.get_transform_store(ecs_world).insert(entity, bundle.transform, tick)
+  let mesh_id = @sprite_render.render2d_upload_mesh_handle(bundle.mesh.mesh)
+  @sprite.get_gpu_mesh2d_store(ecs_world).insert(
+    entity,
+    @sprite.GpuMesh2d::new(mesh_id),
+    tick,
+  )
+}
+
+///|
+pub impl @app.CommandSpawnComponents for MeshMaterial3dBundle with spawn_components(
+  self,
+  world,
+  entity,
+  change_tick,
+) {
+  mesh_material3d_bundle_insert(self, world, entity, change_tick)
+}
+
+///|
+pub fn MeshMaterial3dBundle::spawn(
+  self : MeshMaterial3dBundle,
+  world : @ecs.World,
+) -> @core.Entity {
+  let ecs_world = world
+  let tick = world.read_change_tick()
+  let entity = ecs_world.spawn_empty()
+  mesh_material3d_bundle_insert(self, ecs_world, entity, tick)
+  entity
+}
+
+///|
+priv struct Camera3dInstance {
+  entity : @core.Entity
+  camera3d : Camera3d
+  camera : @sprite.Camera
+  projection : Projection
+  sub_camera_view : SubCameraView3d?
+  screen_space_transmission : ScreenSpaceTransmission?
+  bloom : Bloom?
+  tonemapping : Tonemapping?
+  deband_dither : DebandDither?
+  chromatic_aberration : ChromaticAberration?
+  vignette : Vignette?
+  motion_blur : MotionBlur?
+  exposure : Exposure?
+  color_grading : ColorGrading?
+  skybox : Skybox?
+  depth_prepass_enabled : Bool
+  deferred_prepass_enabled : Bool
+  hdr_enabled : Bool
+  fxaa : Fxaa?
+  temporal_jitter : TemporalJitter?
+  temporal_anti_aliasing : TemporalAntiAliasing?
+  motion_vector_prepass_enabled : Bool
+  msaa : Msaa?
+  transform : @math.Transform
+  previous_transform : @math.Transform
+  previous_clip_from_world : ProjectionMatrix3d?
+  target_id : Int
+  target_size : @math.IVec2
+  scale_factor : Float
+  layers : @sprite.RenderLayers
+}
+
+///|
+priv struct ProjectionRuntime3d {
+  last_view_width : Float
+  last_view_height : Float
+}
+
+///|
+let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d] = @ecs.register_component(
+  debug_name="render3d.projection_runtime3d",
+)
+
+///|
+priv struct Mesh3dInstance {
+  entity : @core.Entity
+  mesh_handle : @asset.Handle[@mesh.Mesh]
+  mesh_id : Int
+  transform : @math.Transform
+  previous_transform : @math.Transform
+  visibility_range : @visibility.VisibilityRange?
+  aabb_center_world : @math.Vec3?
+  material : StandardMaterial
+  material_extension : ExtendedMaterialMetadata3d?
+  is_forward_decal : Bool
+  forward_decal_material_ext : ForwardDecalMaterialExt?
+  clustered_decal : ClusteredDecal?
+  layers : @sprite.RenderLayers
+  has_wireframe : Bool
+  has_no_wireframe : Bool
+  wireframe_color : WireframeColor?
+}
+
+///|
+priv struct TransmissionMeshDraw {
+  mesh : Mesh3dInstance
+  draw_flags : Int
+  draw_color_r : Float
+  draw_color_g : Float
+  draw_color_b : Float
+  draw_alpha : Float
+  texture_id : Int
+  normal_texture_id : Int
+  emissive_texture_id : Int
+  metallic_roughness_texture_id : Int
+  occlusion_texture_id : Int
+  depth_texture_id : Int
+  anisotropy_texture_id : Int
+  specular_tint_texture_id : Int
+  draw_surface_roughness : Float
+  draw_reflectance : Float
+  draw_diffuse_transmission : Float
+  draw_specular_transmission : Float
+  draw_thickness : Float
+  draw_ior : Float
+  specular_tint : @sprite.Color
+  anisotropy_strength : Float
+  max_relief_mapping_search_steps : Float
+}
+
+///|
+priv struct RenderTargetComputed3d {
+  target_id : Int
+  target_size : @math.IVec2
+  scale_factor : Float
+}
+
+///|
+priv struct Render3dLightingState {
+  ambient_color : @sprite.Color
+  ambient_brightness : Float
+  directional_dir : @math.Vec3
+  directional_color : @sprite.Color
+  directional_illuminance : Float
+  point_entity : @core.Entity
+  point_pos : @math.Vec3
+  point_color : @sprite.Color
+  point_intensity : Float
+  point_range : Float
+  point_shadow_maps_enabled : Bool
+  point_shadow_depth_bias : Float
+  point_shadow_map_near_z : Float
+  spot_pos : @math.Vec3
+  spot_dir : @math.Vec3
+  spot_color : @sprite.Color
+  spot_intensity : Float
+  spot_range : Float
+  spot_inner_angle : Float
+  spot_outer_angle : Float
+}
+
+///|
+priv struct MotionBlurHistoryEntry {
+  entity : @core.Entity
+  transform : @math.Transform
+}
+
+///|
+priv struct CameraMotionBlurHistoryEntry {
+  entity : @core.Entity
+  transform : @math.Transform
+  clip_from_world : ProjectionMatrix3d
+}
+
+///|
+priv struct MotionBlurTargetsEntry {
+  entity : @core.Entity
+  width : Int
+  height : Int
+  scene_target_id : Int
+  velocity_target_id : Int
+}
+
+///|
+priv struct TransmissionSourceTargetsEntry {
+  entity : @core.Entity
+  width : Int
+  height : Int
+  source_target_id : Int
+}
+
+///|
+priv struct PointLightShadowTargetsEntry {
+  entity : @core.Entity
+  size : Int
+  target_id : Int
+}
+
+///|
+priv struct Render3dCameraOrderEntry {
+  entity : @core.Entity
+  order : Int
+}
+
+///|
+let motion_blur_history : Ref[Array[MotionBlurHistoryEntry]] = Ref::new([])
+
+///|
+let camera_motion_blur_history : Ref[Array[CameraMotionBlurHistoryEntry]] = Ref::new([],
+)
+
+///|
+let motion_blur_targets : Ref[Array[MotionBlurTargetsEntry]] = Ref::new([])
+
+///|
+let transmission_source_targets : Ref[Array[TransmissionSourceTargetsEntry]] = Ref::new([],
+)
+
+///|
+let point_light_shadow_targets : Ref[Array[PointLightShadowTargetsEntry]] = Ref::new([],
+)
+
+///|
+let render3d_runtime_initialized_ref : Ref[Bool] = Ref::new(false)
+
+///|
+let render3d_prepared_camera_order_ref : Ref[Array[@core.Entity]] = Ref::new([])
+
+///|
+let render3d_queued_visible_mesh_count_ref : Ref[Int] = Ref::new(0)
+
+///|
+let render3d_diagnostic_queued_visible_mesh_count_ref : Ref[Int] = Ref::new(0)
+
+///|
+let render3d_diagnostic_prepared_camera_count_ref : Ref[Int] = Ref::new(0)
+
+///|
+priv struct WireframeMeshCacheEntry {
+  source_mesh_handle_id : Int
+  wireframe_mesh_id : Int
+}
+
+///|
+let wireframe_mesh_cache : Ref[Array[WireframeMeshCacheEntry]] = Ref::new([])
+
+///|
+fn cmp_int(a : Int, b : Int) -> Int {
+  if a < b {
+    -1
+  } else if a > b {
+    1
+  } else {
+    0
+  }
+}
+
+///|
+fn cmp_float(a : Float, b : Float) -> Int {
+  if a < b {
+    -1
+  } else if a > b {
+    1
+  } else {
+    0
+  }
+}
+
+///|
+fn render3d_target_info(
+  world : @ecs.World,
+  target : @sprite.RenderTarget,
+) -> RenderTargetComputed3d? {
+  match target {
+    @sprite.RenderTarget::Screen => {
+      let width = @window.window_physical_width_for(
+        world,
+        @window.WindowRef::Primary,
+      )
+      let height = @window.window_physical_height_for(
+        world,
+        @window.WindowRef::Primary,
+      )
+      if width <= 0 || height <= 0 {
+        return None
+      }
+      let mut scale_factor = @window.window_scale_factor_for(
+        world,
+        @window.WindowRef::Primary,
+      )
+      if scale_factor <= 0.0F {
+        scale_factor = 1.0F
+      }
+      Some(RenderTargetComputed3d::{
+        target_id: -1,
+        target_size: @math.IVec2::new(width, height),
+        scale_factor,
+      })
+    }
+    @sprite.RenderTarget::Window(window_ref) => {
+      let width = @window.window_physical_width_for(world, window_ref)
+      let height = @window.window_physical_height_for(world, window_ref)
+      if width <= 0 || height <= 0 {
+        return None
+      }
+      let mut scale_factor = @window.window_scale_factor_for(world, window_ref)
+      if scale_factor <= 0.0F {
+        scale_factor = 1.0F
+      }
+      Some(RenderTargetComputed3d::{
+        target_id: -1,
+        target_size: @math.IVec2::new(width, height),
+        scale_factor,
+      })
+    }
+    @sprite.RenderTarget::Image(handle) => {
+      let width = @asset.asset_texture_width(handle)
+      let height = @asset.asset_texture_height(handle)
+      if width <= 0 || height <= 0 {
+        return None
+      }
+      Some(RenderTargetComputed3d::{
+        target_id: handle.id(),
+        target_size: @math.IVec2::new(width, height),
+        scale_factor: 1.0F,
+      })
+    }
+  }
+}
+
+///|
+fn render3d_clamp_viewport(
+  viewport : @sprite.Viewport,
+  target_size : @math.IVec2,
+) -> @sprite.Viewport {
+  let mut position_x = viewport.physical_position.x
+  let mut position_y = viewport.physical_position.y
+  let mut size_x = viewport.physical_size.x
+  let mut size_y = viewport.physical_size.y
+  if position_x < 0 {
+    position_x = 0
+  }
+  if position_y < 0 {
+    position_y = 0
+  }
+  if size_x < 0 {
+    size_x = 0
+  }
+  if size_y < 0 {
+    size_y = 0
+  }
+  let max_width = if target_size.x - position_x < 0 {
+    0
+  } else {
+    target_size.x - position_x
+  }
+  let max_height = if target_size.y - position_y < 0 {
+    0
+  } else {
+    target_size.y - position_y
+  }
+  if size_x > max_width {
+    size_x = max_width
+  }
+  if size_y > max_height {
+    size_y = max_height
+  }
+  @sprite.Viewport::new(
+    @math.IVec2::new(position_x, position_y),
+    @math.IVec2::new(size_x, size_y),
+  ).with_depth(viewport.depth_min, viewport.depth_max)
+}
+
+///|
+fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
+  let qv = @math.Vec3::new(q.x, q.y, q.z)
+  let t = qv.cross(v).mul_scalar(2.0F)
+  v.add(t.mul_scalar(q.w)).add(qv.cross(t))
+}
+
+///|
+fn render3d_transform_forward(transform : @math.Transform) -> @math.Vec3 {
+  quat_rotate_vec3(transform.rotation, @math.Vec3::new(0.0F, 0.0F, -1.0F)).normalize_or_zero()
+}
+
+///|
+fn render3d_default_lighting_state() -> Render3dLightingState {
+  Render3dLightingState::{
+    ambient_color: @sprite.Color::white(),
+    ambient_brightness: 80.0F,
+    directional_dir: @math.Vec3::new(0.0F, -1.0F, 0.0F),
+    directional_color: @sprite.Color::white(),
+    directional_illuminance: 0.0F,
+    point_entity: @core.Entity::placeholder(),
+    point_pos: @math.Vec3::new(0.0F, 0.0F, 0.0F),
+    point_color: @sprite.Color::white(),
+    point_intensity: 0.0F,
+    point_range: 1.0F,
+    point_shadow_maps_enabled: false,
+    point_shadow_depth_bias: 0.08F,
+    point_shadow_map_near_z: 0.1F,
+    spot_pos: @math.Vec3::new(0.0F, 0.0F, 0.0F),
+    spot_dir: @math.Vec3::new(0.0F, -1.0F, 0.0F),
+    spot_color: @sprite.Color::white(),
+    spot_intensity: 0.0F,
+    spot_range: 1.0F,
+    spot_inner_angle: 0.6F,
+    spot_outer_angle: 0.8F,
+  }
+}
+
+///|
+fn motion_blur_history_get(entity : @core.Entity) -> @math.Transform? {
+  for item in motion_blur_history.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation {
+      return Some(item.transform)
+    }
+  }
+  None
+}
+
+///|
+fn motion_blur_history_sync(meshes : Array[Mesh3dInstance]) -> Unit {
+  let next : Array[MotionBlurHistoryEntry] = []
+  for mesh in meshes {
+    next.push({ entity: mesh.entity, transform: mesh.transform })
+  }
+  motion_blur_history.val = next
+}
+
+///|
+fn camera_motion_blur_history_get(
+  entity : @core.Entity,
+) -> CameraMotionBlurHistoryEntry? {
+  for item in camera_motion_blur_history.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation {
+      return Some(item)
+    }
+  }
+  None
+}
+
+///|
+fn camera_motion_blur_history_sync(
+  history : Array[CameraMotionBlurHistoryEntry],
+) -> Unit {
+  camera_motion_blur_history.val = history
+}
+
+///|
+fn render3d_float_clamp(
+  value : Float,
+  min_value : Float,
+  max_value : Float,
+) -> Float {
+  if value < min_value {
+    min_value
+  } else if value > max_value {
+    max_value
+  } else {
+    value
+  }
+}
+
+///|
+fn render3d_fxaa_enabled(fxaa : Fxaa?) -> Bool {
+  match fxaa {
+    Some(value) => value.enabled
+    None => false
+  }
+}
+
+///|
+fn render3d_tonemap_postprocess_enabled(
+  tonemapping : Tonemapping?,
+  deband_dither : DebandDither?,
+  hdr_enabled : Bool,
+  color_grading : ColorGrading?,
+  fxaa : Fxaa?,
+  chromatic_aberration : ChromaticAberration?,
+  vignette : Vignette?,
+) -> Bool {
+  hdr_enabled ||
+  tonemapping is Some(_) ||
+  deband_dither is Some(Enabled) ||
+  color_grading is Some(_) ||
+  render3d_fxaa_enabled(fxaa) ||
+  render3d_chromatic_aberration_enabled(chromatic_aberration) ||
+  render3d_vignette_enabled(vignette)
+}
+
+///|
+fn render3d_chromatic_aberration_enabled(
+  chromatic_aberration : ChromaticAberration?,
+) -> Bool {
+  match chromatic_aberration {
+    Some(value) => value.intensity > 0.0F && value.max_samples > 0
+    None => false
+  }
+}
+
+///|
+fn render3d_vignette_enabled(vignette : Vignette?) -> Bool {
+  match vignette {
+    Some(value) => value.intensity > 0.0F
+    None => false
+  }
+}
+
+///|
+const RENDER3D_PASS_KIND_BASE_SCENE : Int = 0
+
+///|
+const RENDER3D_PASS_KIND_BASE_MOTION_VECTOR : Int = 1
+
+///|
+const RENDER3D_PASS_KIND_BASE_POINT_SHADOW : Int = 2
+
+///|
+const RENDER3D_PASS_KIND_DISABLE_POSTPROCESS_FLAG : Int = 1 << 8
+
+///|
+const RENDER3D_PASS_KIND_DISABLE_FOG_FLAG : Int = 1 << 9
+
+///|
+const RENDER3D_PASS_KIND_DISABLE_DECAL_FLAG : Int = 1 << 10
+
+///|
+const RENDER3D_MESH3D_DRAW_FLAG_DECAL : Int = 1 << 8
+
+///|
+fn render3d_pass_kind_encode(
+  base_kind : Int,
+  postprocess_enabled : Bool,
+  fog_enabled : Bool,
+  decal_enabled : Bool,
+) -> Int {
+  let mut value = base_kind
+  if !postprocess_enabled {
+    value = value | RENDER3D_PASS_KIND_DISABLE_POSTPROCESS_FLAG
+  }
+  if !fog_enabled {
+    value = value | RENDER3D_PASS_KIND_DISABLE_FOG_FLAG
+  }
+  if !decal_enabled {
+    value = value | RENDER3D_PASS_KIND_DISABLE_DECAL_FLAG
+  }
+  value
+}
+
+///|
+fn render3d_mesh_draw_flags(mesh : Mesh3dInstance) -> Int {
+  let mut flags = 0
+  if mesh.is_forward_decal || mesh.clustered_decal is Some(_) {
+    flags = flags | RENDER3D_MESH3D_DRAW_FLAG_DECAL
+  }
+  flags
+}
+
+///|
+fn render3d_distance_fog_enabled(fog : DistanceFog) -> Bool {
+  if fog.color.a <= 0.0F {
+    return false
+  }
+  match fog.falloff {
+    FogFalloff3d::Linear(start, end_) => end_ > start
+    FogFalloff3d::Exponential(density) => density > 0.0F
+    FogFalloff3d::ExponentialSquared(density) => density > 0.0F
+    FogFalloff3d::Atmospheric(extinction, inscattering) =>
+      extinction.x +
+      extinction.y +
+      extinction.z +
+      inscattering.x +
+      inscattering.y +
+      inscattering.z >
+      0.0001F
+  }
+}
+
+///|
+fn render3d_decal_mode_allows_forward(mode : DecalRenderMode3d) -> Bool {
+  match mode {
+    Disabled => false
+    ForwardOnly => true
+    ClusteredOnly => false
+    ForwardAndClustered => true
+  }
+}
+
+///|
+fn render3d_decal_mode_allows_clustered(mode : DecalRenderMode3d) -> Bool {
+  match mode {
+    Disabled => false
+    ForwardOnly => false
+    ClusteredOnly => true
+    ForwardAndClustered => true
+  }
+}
+
+///|
+fn render3d_camera_deferred_mode(
+  config : CameraDeferredConfig3d,
+  default_method : OpaqueRendererMethod,
+) -> OpaqueRendererMethod {
+  match config.mode {
+    CameraDeferredMode3d::Forward => OpaqueRendererMethod::Forward
+    CameraDeferredMode3d::Deferred => OpaqueRendererMethod::Deferred
+    CameraDeferredMode3d::Auto =>
+      match default_method {
+        OpaqueRendererMethod::Forward => OpaqueRendererMethod::Forward
+        OpaqueRendererMethod::Deferred => OpaqueRendererMethod::Deferred
+        OpaqueRendererMethod::Auto => OpaqueRendererMethod::Forward
+      }
+  }
+}
+
+///|
+fn render3d_apply_extended_material_metadata(
+  material : StandardMaterial,
+  extension : ExtendedMaterialMetadata3d?,
+) -> StandardMaterial {
+  guard extension is Some(extension_value) else { return material }
+  let mut out = material
+  if extension_value.alpha_mode_override is Some(alpha_mode_override) {
+    out = out.with_alpha_mode(alpha_mode_override)
+  }
+  if extension_value.opaque_render_method_override
+    is Some(opaque_render_method_override) {
+    out = out.with_opaque_render_method(opaque_render_method_override)
+  }
+  out
+}
+
+///|
+fn render3d_default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.time_resource_key_of(()))) {
+    Some(time) => time
+    None => {
+      let time : @time.Time[Unit] = @time.Time::default()
+      time
+    }
+  }
+}
+
+///|
+fn render3d_color_lerp(
+  from_ : @sprite.Color,
+  to_ : @sprite.Color,
+  t : Float,
+) -> @sprite.Color {
+  @sprite.Color::new(
+    from_.r + (to_.r - from_.r) * t,
+    from_.g + (to_.g - from_.g) * t,
+    from_.b + (to_.b - from_.b) * t,
+    from_.a + (to_.a - from_.a) * t,
+  )
+}
+
+///|
+fn render3d_camera_distance_fog(
+  base_fog : DistanceFog,
+  volumetric_fog : VolumetricFog?,
+  atmosphere : Atmosphere?,
+  atmosphere_settings : AtmosphereSettings?,
+) -> DistanceFog {
+  let mut fog = base_fog
+  if volumetric_fog is Some(volumetric_fog_value) {
+    let ambient_mix = render3d_float_clamp(
+      volumetric_fog_value.ambient_intensity,
+      0.0F,
+      1.0F,
+    )
+    fog = DistanceFog::{
+      ..fog,
+      color: render3d_color_lerp(
+        fog.color,
+        volumetric_fog_value.ambient_color,
+        ambient_mix,
+      ),
+      directional_light_color: render3d_color_lerp(
+        fog.directional_light_color,
+        volumetric_fog_value.ambient_color,
+        ambient_mix * 0.6F,
+      ),
+      directional_light_exponent: fog.directional_light_exponent +
+      Float::from_double(volumetric_fog_value.step_count.to_double()) /
+      64.0F *
+      0.5F,
+    }
+  }
+  if atmosphere is Some(atmosphere_value) {
+    let albedo_color = @sprite.Color::new(
+      render3d_float_clamp(atmosphere_value.ground_albedo.x, 0.0F, 1.0F),
+      render3d_float_clamp(atmosphere_value.ground_albedo.y, 0.0F, 1.0F),
+      render3d_float_clamp(atmosphere_value.ground_albedo.z, 0.0F, 1.0F),
+      1.0F,
+    )
+    fog = DistanceFog::{
+      ..fog,
+      color: render3d_color_lerp(fog.color, albedo_color, 0.15F),
+    }
+  }
+  if atmosphere_settings is Some(atmosphere_settings_value) {
+    let unit_scale = if atmosphere_settings_value.scene_units_to_m <= 0.0F {
+      0.0001F
+    } else {
+      atmosphere_settings_value.scene_units_to_m
+    }
+    let falloff = match fog.falloff {
+      FogFalloff3d::Linear(start, end_) =>
+        FogFalloff3d::linear(start * unit_scale, end_ * unit_scale)
+      FogFalloff3d::Exponential(density) =>
+        FogFalloff3d::exponential(density / unit_scale)
+      FogFalloff3d::ExponentialSquared(density) =>
+        FogFalloff3d::exponential_squared(density / @math.sqrt(unit_scale))
+      FogFalloff3d::Atmospheric(extinction, inscattering) =>
+        FogFalloff3d::atmospheric(
+          extinction.mul_scalar(1.0F / unit_scale),
+          inscattering.mul_scalar(1.0F / unit_scale),
+        )
+    }
+    fog = DistanceFog::{ ..fog, falloff, }
+    if atmosphere_settings_value.rendering_method is AtmosphereMode::Raymarched {
+      fog = DistanceFog::{
+        ..fog,
+        directional_light_exponent: fog.directional_light_exponent + 1.0F,
+      }
+    }
+  }
+  fog
+}
+
+///|
+fn render3d_motion_blur_targets_get_or_create(
+  entity : @core.Entity,
+  width : Int,
+  height : Int,
+) -> (Int, Int) {
+  for item in motion_blur_targets.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation &&
+      item.width == width &&
+      item.height == height {
+      return (item.scene_target_id, item.velocity_target_id)
+    }
+  }
+  let scene_target_id = @render.host_gpu_create_render_target_rgba16f(
+    width~,
+    height~,
+    nearest=false,
+  )
+  let velocity_target_id = @render.host_gpu_create_render_target_rgba16f(
+    width~,
+    height~,
+    nearest=false,
+  )
+  let next : Array[MotionBlurTargetsEntry] = []
+  let mut replaced = false
+  for item in motion_blur_targets.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation {
+      if !replaced {
+        next.push({ entity, width, height, scene_target_id, velocity_target_id })
+        replaced = true
+      }
+    } else {
+      next.push(item)
+    }
+  }
+  if !replaced {
+    next.push({ entity, width, height, scene_target_id, velocity_target_id })
+  }
+  motion_blur_targets.val = next
+  (scene_target_id, velocity_target_id)
+}
+
+///|
+fn render3d_transmission_source_target_get_or_create(
+  entity : @core.Entity,
+  width : Int,
+  height : Int,
+) -> Int {
+  for item in transmission_source_targets.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation &&
+      item.width == width &&
+      item.height == height {
+      return item.source_target_id
+    }
+  }
+  let source_target_id = @render.host_gpu_create_render_target_rgba16f(
+    width~,
+    height~,
+    nearest=false,
+  )
+  let next : Array[TransmissionSourceTargetsEntry] = []
+  let mut replaced = false
+  for item in transmission_source_targets.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation {
+      if !replaced {
+        next.push({ entity, width, height, source_target_id })
+        replaced = true
+      }
+    } else {
+      next.push(item)
+    }
+  }
+  if !replaced {
+    next.push({ entity, width, height, source_target_id })
+  }
+  transmission_source_targets.val = next
+  source_target_id
+}
+
+///|
+fn render3d_point_light_shadow_target_get_or_create(
+  entity : @core.Entity,
+  size : Int,
+) -> Int {
+  let safe_size = if size <= 0 { 1 } else { size }
+  for item in point_light_shadow_targets.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation &&
+      item.size == safe_size {
+      return item.target_id
+    }
+  }
+  let target_id = @render.host_gpu_create_point_light_shadow_target(
+    size=safe_size,
+  )
+  let next : Array[PointLightShadowTargetsEntry] = []
+  let mut replaced = false
+  for item in point_light_shadow_targets.val {
+    if item.entity.id == entity.id &&
+      item.entity.generation == entity.generation {
+      if !replaced {
+        next.push({ entity, size: safe_size, target_id })
+        replaced = true
+      }
+    } else {
+      next.push(item)
+    }
+  }
+  if !replaced {
+    next.push({ entity, size: safe_size, target_id })
+  }
+  point_light_shadow_targets.val = next
+  target_id
+}
+
+///|
+fn render3d_point_shadow_face_transform(
+  light_position : @math.Vec3,
+  face_index : Int,
+) -> @math.Transform {
+  let (forward, up) = match face_index {
+    // Match Bevy's `CUBE_MAP_FACES` exactly:
+    // [+X, -X, +Y, -Y, +Z, -Z] face order with left-handed cubemap conventions.
+    0 => (@math.Vec3::new(1.0F, 0.0F, 0.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F))
+    1 => (@math.Vec3::new(-1.0F, 0.0F, 0.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F))
+    2 => (@math.Vec3::new(0.0F, 1.0F, 0.0F), @math.Vec3::new(0.0F, 0.0F, 1.0F))
+    3 =>
+      (@math.Vec3::new(0.0F, -1.0F, 0.0F), @math.Vec3::new(0.0F, 0.0F, -1.0F))
+    4 => (@math.Vec3::new(0.0F, 0.0F, -1.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F))
+    _ => (@math.Vec3::new(0.0F, 0.0F, 1.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F))
+  }
+  @math.Transform::from_xyz(
+    light_position.x,
+    light_position.y,
+    light_position.z,
+  ).looking_at(light_position.add(forward), up)
+}
+
+///|
+fn render3d_blit_texture_to_target(
+  source_texture_id : Int,
+  target_id : Int,
+  width_logical : Int,
+  height_logical : Int,
+) -> Unit {
+  if source_texture_id < 0 ||
+    target_id < 0 ||
+    width_logical <= 0 ||
+    height_logical <= 0 {
+    return
+  }
+  let sx = Float::from_double(width_logical.to_double()) / 128.0F
+  let sy = Float::from_double(height_logical.to_double()) / 128.0F
+  @render.host_gpu_begin_pass(
+    target_id~,
+    width=width_logical,
+    height=height_logical,
+    clear_r=0.0F,
+    clear_g=0.0F,
+    clear_b=0.0F,
+    clear_a=0.0F,
+    camera_x=0.0F,
+    camera_y=0.0F,
+    camera_rotation=0.0F,
+    camera_scale=1.0F,
+    viewport_x=0,
+    viewport_y=0,
+    viewport_width=width_logical,
+    viewport_height=height_logical,
+    viewport_depth_min=0.0F,
+    viewport_depth_max=1.0F,
+    clear_enabled=1,
+  )
+  @render.host_gpu_draw_sprite_uv(
+    texture_id=source_texture_id,
+    x=0.0F,
+    y=0.0F,
+    rotation=0.0F,
+    scale_x=sx,
+    scale_y=sy,
+    color_r=1.0F,
+    color_g=1.0F,
+    color_b=1.0F,
+    color_a=1.0F,
+    uv_min_x=0.0F,
+    uv_min_y=0.0F,
+    uv_max_x=1.0F,
+    uv_max_y=1.0F,
+  )
+  @render.host_gpu_end_pass()
+}
+
+///|
+fn render3d_wireframe_mesh_cache_get(source_mesh_handle_id : Int) -> Int? {
+  for item in wireframe_mesh_cache.val {
+    if item.source_mesh_handle_id == source_mesh_handle_id {
+      return Some(item.wireframe_mesh_id)
+    }
+  }
+  None
+}
+
+///|
+fn render3d_wireframe_mesh_cache_set(
+  source_mesh_handle_id : Int,
+  wireframe_mesh_id : Int,
+) -> Unit {
+  let next : Array[WireframeMeshCacheEntry] = []
+  let mut replaced = false
+  for item in wireframe_mesh_cache.val {
+    if item.source_mesh_handle_id == source_mesh_handle_id {
+      if !replaced {
+        next.push({ source_mesh_handle_id, wireframe_mesh_id })
+        replaced = true
+      }
+    } else {
+      next.push(item)
+    }
+  }
+  if !replaced {
+    next.push({ source_mesh_handle_id, wireframe_mesh_id })
+  }
+  wireframe_mesh_cache.val = next
+}
+
+///|
+fn render3d_wireframe_mesh_id(mesh_handle : @asset.Handle[@mesh.Mesh]) -> Int? {
+  let source_mesh_handle_id = mesh_handle.id()
+  if render3d_wireframe_mesh_cache_get(source_mesh_handle_id) is Some(mesh_id) {
+    return Some(mesh_id)
+  }
+  let source_mesh = match @sprite.render_mesh_asset_get(mesh_handle) {
+    Some(mesh_asset) => mesh_asset
+    None => return None
+  }
+  match source_mesh.geometry {
+    @mesh.MeshGeometry::Geometry3d(geometry3d) =>
+      match geometry3d.primitive_topology() {
+        @mesh.Mesh3dPrimitiveTopology::TriangleList =>
+          match geometry3d.to_wireframe_line_list() {
+            Some(wireframe_geometry) => {
+              let wireframe_handle = @sprite.render_mesh_asset_add(
+                @mesh.Mesh::from_3d_geometry(wireframe_geometry),
+              )
+              let wireframe_mesh_id = @sprite_render.render2d_upload_mesh_handle(
+                wireframe_handle,
+              )
+              render3d_wireframe_mesh_cache_set(
+                source_mesh_handle_id, wireframe_mesh_id,
+              )
+              Some(wireframe_mesh_id)
+            }
+            None => return None
+          }
+        @mesh.Mesh3dPrimitiveTopology::LineList => {
+          let mesh_id = @sprite_render.render2d_upload_mesh_handle(mesh_handle)
+          render3d_wireframe_mesh_cache_set(source_mesh_handle_id, mesh_id)
+          Some(mesh_id)
+        }
+        @mesh.Mesh3dPrimitiveTopology::LineStrip => {
+          let mesh_id = @sprite_render.render2d_upload_mesh_handle(mesh_handle)
+          render3d_wireframe_mesh_cache_set(source_mesh_handle_id, mesh_id)
+          Some(mesh_id)
+        }
+      }
+    _ => return None
+  }
+}
+
+///|
+fn render3d_mesh_should_draw_wireframe(
+  mesh : Mesh3dInstance,
+  wireframe_config : WireframeConfig?,
+) -> Bool {
+  guard wireframe_config is Some(config) else { return false }
+  if mesh.has_no_wireframe {
+    false
+  } else if mesh.has_wireframe {
+    true
+  } else {
+    config.global
+  }
+}
+
+///|
+fn render3d_mesh_wireframe_color(
+  mesh : Mesh3dInstance,
+  wireframe_config : WireframeConfig?,
+) -> @sprite.Color {
+  if mesh.wireframe_color is Some(color_component) {
+    color_component.color
+  } else if wireframe_config is Some(config) {
+    config.default_color
+  } else {
+    @sprite.Color::white()
+  }
+}
+
+///|
+fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
+  let mut lighting = render3d_default_lighting_state()
+  let point_luminous_power_to_intensity = 4.0F * @math.pi()
+  if (try! world.get_resource(ecs_key_global_ambient_light)) is Some(ambient) {
+    lighting = Render3dLightingState::{
+      ..lighting,
+      ambient_color: ambient.color,
+      ambient_brightness: ambient.brightness,
+    }
+  }
+  let transform_store = world.component(@math.ecs_key_transform)
+  let directional_light_store = world.component(ecs_key_directional_light)
+  let mut directional_found = false
+  directional_light_store.for_each(fn(entity, light) {
+    if directional_found {
+      return
+    }
+    let transform = match transform_store.get(entity) {
+      Some(value) => value
+      None => @math.Transform::identity()
+    }
+    directional_found = true
+    lighting = Render3dLightingState::{
+      ..lighting,
+      directional_dir: render3d_transform_forward(transform),
+      directional_color: light.color,
+      directional_illuminance: light.illuminance,
+    }
+  })
+  let point_light_store = world.component(ecs_key_point_light)
+  let mut point_found = false
+  point_light_store.for_each(fn(entity, light) {
+    if point_found {
+      return
+    }
+    let transform = match transform_store.get(entity) {
+      Some(value) => value
+      None => @math.Transform::identity()
+    }
+    point_found = true
+    lighting = Render3dLightingState::{
+      ..lighting,
+      point_entity: entity,
+      point_pos: transform.translation,
+      point_color: light.color,
+      point_intensity: if point_luminous_power_to_intensity <= 0.0F {
+        light.intensity
+      } else {
+        light.intensity / point_luminous_power_to_intensity
+      },
+      point_range: if light.range > 0.0F {
+        light.range
+      } else {
+        1.0F
+      },
+      point_shadow_maps_enabled: light.shadow_maps_enabled,
+      point_shadow_depth_bias: light.shadow_depth_bias,
+      point_shadow_map_near_z: if light.shadow_map_near_z > 0.0001F {
+        light.shadow_map_near_z
+      } else {
+        0.0001F
+      },
+    }
+  })
+  let spot_light_store = world.component(ecs_key_spot_light)
+  let mut spot_found = false
+  spot_light_store.for_each(fn(entity, light) {
+    if spot_found {
+      return
+    }
+    let transform = match transform_store.get(entity) {
+      Some(value) => value
+      None => @math.Transform::identity()
+    }
+    let inner = light.inner_angle
+    let mut outer = light.outer_angle
+    if outer < inner {
+      outer = inner
+    }
+    spot_found = true
+    lighting = Render3dLightingState::{
+      ..lighting,
+      spot_pos: transform.translation,
+      spot_dir: render3d_transform_forward(transform),
+      spot_color: light.color,
+      spot_intensity: if point_luminous_power_to_intensity <= 0.0F {
+        light.intensity
+      } else {
+        light.intensity / point_luminous_power_to_intensity
+      },
+      spot_range: if light.range > 0.0F {
+        light.range
+      } else {
+        1.0F
+      },
+      spot_inner_angle: inner,
+      spot_outer_angle: outer,
+    }
+  })
+  lighting
+}
+
+///|
+fn render3d_draw_camera_skybox(
+  world : @ecs.World,
+  camera : Camera3dInstance,
+  camera_far : Float,
+) -> Unit {
+  guard camera.skybox is Some(skybox) else { return }
+  guard skybox.image is Some(image) else { return }
+  let mesh_id = render3d_skybox_proxy_mesh_id(world)
+  if mesh_id <= 0 {
+    return
+  }
+  let brightness = maxf(0.0F, skybox.brightness)
+  let skybox_extent = maxf(5.0F, minf(camera_far * 0.45F, 20_000.0F))
+  // Negative d marks stacked-vertical cubemap sampling in mesh3d.wgsl.
+  @render.host_gpu_draw_mesh3d(
+    mesh_id~,
+    x=camera.transform.translation.x,
+    y=camera.transform.translation.y,
+    z=camera.transform.translation.z,
+    rotation_x=skybox.rotation.x,
+    rotation_y=skybox.rotation.y,
+    rotation_z=skybox.rotation.z,
+    rotation_w=skybox.rotation.w,
+    scale_x=skybox_extent,
+    scale_y=skybox_extent,
+    scale_z=skybox_extent,
+    previous_x=camera.previous_transform.translation.x,
+    previous_y=camera.previous_transform.translation.y,
+    previous_z=camera.previous_transform.translation.z,
+    previous_rotation_x=camera.previous_transform.rotation.x,
+    previous_rotation_y=camera.previous_transform.rotation.y,
+    previous_rotation_z=camera.previous_transform.rotation.z,
+    previous_rotation_w=camera.previous_transform.rotation.w,
+    previous_scale_x=camera.previous_transform.scale.x,
+    previous_scale_y=camera.previous_transform.scale.y,
+    previous_scale_z=camera.previous_transform.scale.z,
+    color_r=brightness,
+    color_g=brightness,
+    color_b=brightness,
+    color_a=1.0F,
+    texture_id=image.id(),
+    uv_transform_a=1.0F,
+    uv_transform_b=0.0F,
+    uv_transform_c=0.0F,
+    uv_transform_d=-1.0F,
+    uv_transform_tx=0.0F,
+    uv_transform_ty=0.0F,
+    uv_transform_mode=-1.0F,
+    normal_texture_id=-1,
+    emissive_texture_id=-1,
+    metallic_roughness_texture_id=-1,
+    occlusion_texture_id=-1,
+    depth_texture_id=-1,
+    emissive_r=0.0F,
+    emissive_g=0.0F,
+    emissive_b=0.0F,
+    unlit=1.0F,
+    metallic=0.0F,
+    roughness=1.0F,
+    reflectance=0.0F,
+    parallax_depth_scale=0.0F,
+    max_parallax_layer_count=0.0F,
+    max_relief_mapping_search_steps=0.0F,
+    anisotropy_texture_id=-1,
+    anisotropy_strength=0.0F,
+    anisotropy_rotation=0.0F,
+    specular_tint_texture_id=-1,
+    specular_tint_r=1.0F,
+    specular_tint_g=1.0F,
+    specular_tint_b=1.0F,
+    diffuse_transmission=0.0F,
+    specular_transmission=0.0F,
+    thickness=0.0F,
+    ior=1.5F,
+    transmission_source_texture_id=-1,
+    transmission_blur_taps=0.0F,
+    transmission_steps=0.0F,
+    point_shadow_texture_id=-1,
+    point_shadow_enabled=0.0F,
+    point_shadow_depth_bias=0.0F,
+    cull_mode=1,
+  )
+}
+
+///|
+fn render3d_sorted_camera_indices(
+  cameras : Array[Camera3dInstance],
+) -> Array[Int] {
+  let order : Array[Int] = []
+  for i in 0..<cameras.length() {
+    order.push(i)
+  }
+  order.sort_by(fn(a, b) {
+    let ca = cameras[a]
+    let cb = cameras[b]
+    let order_cmp = cmp_int(ca.camera.order, cb.camera.order)
+    if order_cmp != 0 {
+      return order_cmp
+    }
+    let id_cmp = cmp_int(ca.entity.id, cb.entity.id)
+    if id_cmp != 0 {
+      return id_cmp
+    }
+    cmp_int(ca.entity.generation, cb.entity.generation)
+  })
+  order
+}
+
+///|
+fn render3d_mesh_alpha_phase(alpha_mode : AlphaMode3d, alpha : Float) -> Int? {
+  match alpha_mode {
+    Opaque => Some(0)
+    Blend => Some(if alpha >= 1.0F { 0 } else { 1 })
+    Premultiplied => Some(if alpha >= 1.0F { 0 } else { 1 })
+    Add => Some(1)
+    Multiply => Some(if alpha >= 1.0F { 0 } else { 1 })
+    AlphaToCoverage => Some(if alpha >= 1.0F { 0 } else { 1 })
+    Mask(cutoff) => if alpha >= cutoff { Some(0) } else { None }
+  }
+}
+
+///|
+fn render3d_mesh_draw_alpha(alpha_mode : AlphaMode3d, alpha : Float) -> Float? {
+  match alpha_mode {
+    Opaque => Some(1.0F)
+    Blend => Some(alpha)
+    Premultiplied => Some(alpha)
+    Add => Some(alpha)
+    Multiply => Some(alpha)
+    AlphaToCoverage => Some(alpha)
+    Mask(cutoff) => if alpha >= cutoff { Some(1.0F) } else { None }
+  }
+}
+
+///|
+fn render3d_projection_aspect_ratio(width : Float, height : Float) -> Float {
+  if width <= 0.0F || height <= 0.0F {
+    1.0F
+  } else {
+    width / height
+  }
+}
+
+///|
+fn render3d_signum(value : Float) -> Float {
+  if value < 0.0F {
+    -1.0F
+  } else if value > 0.0F {
+    1.0F
+  } else {
+    0.0F
+  }
+}
+
+///|
+fn render3d_vec4_dot(lhs : @math.Vec4, rhs : @math.Vec4) -> Float {
+  lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z + lhs.w * rhs.w
+}
+
+///|
+fn render3d_default_near_clip_plane(near : Float) -> @math.Vec4 {
+  let safe_near = if near <= 0.0F { 0.0001F } else { near }
+  @math.Vec4::new(0.0F, 0.0F, -1.0F, -safe_near)
+}
+
+///|
+fn render3d_adjust_perspective_matrix_for_clip_plane(
+  projection : PerspectiveProjection3d,
+  matrix : ProjectionMatrix3d,
+) -> ProjectionMatrix3d {
+  let clip_plane = projection.near_clip_plane
+  if clip_plane == render3d_default_near_clip_plane(projection.near) {
+    return matrix
+  }
+  match render3d_projection_matrix_inverse(matrix) {
+    None => matrix
+    Some(inverse) => {
+      let q_prime = @math.Vec4::new(
+        render3d_signum(clip_plane.x),
+        render3d_signum(clip_plane.y),
+        0.0F,
+        1.0F,
+      )
+      let q = inverse.mul_vec4(q_prime)
+      let denominator = render3d_vec4_dot(clip_plane, q)
+      let safe_denominator = if denominator >= -1.0e-12F &&
+        denominator <= 1.0e-12F {
+        1.0F
+      } else {
+        denominator
+      }
+      let a = -q.z / safe_denominator
+      let m3_prime = @math.Vec4::new(
+        -clip_plane.x * a,
+        -clip_plane.y * a,
+        -1.0F - clip_plane.z * a,
+        -clip_plane.w * a,
+      )
+      ProjectionMatrix3d::{
+        x_axis: @math.Vec4::new(
+          matrix.x_axis.x,
+          matrix.x_axis.y,
+          m3_prime.x,
+          matrix.x_axis.w,
+        ),
+        y_axis: @math.Vec4::new(
+          matrix.y_axis.x,
+          matrix.y_axis.y,
+          m3_prime.y,
+          matrix.y_axis.w,
+        ),
+        z_axis: @math.Vec4::new(
+          matrix.z_axis.x,
+          matrix.z_axis.y,
+          m3_prime.z,
+          matrix.z_axis.w,
+        ),
+        w_axis: @math.Vec4::new(
+          matrix.w_axis.x,
+          matrix.w_axis.y,
+          m3_prime.w,
+          matrix.w_axis.w,
+        ),
+      }
+    }
+  }
+}
+
+///|
+fn render3d_perspective_projection_matrix_raw(
+  near : Float,
+  fov : Float,
+  aspect_ratio : Float,
+) -> ProjectionMatrix3d {
+  let safe_aspect = if aspect_ratio <= 0.0F { 1.0F } else { aspect_ratio }
+  let safe_near = if near <= 0.0F { 0.0001F } else { near }
+  let half_fov = fov * 0.5F
+  let cos_half_fov = @math.cos(half_fov)
+  let tan_half_fov = if cos_half_fov == 0.0F {
+    1.0F
+  } else {
+    @math.sin(half_fov) / cos_half_fov
+  }
+  let y = if tan_half_fov == 0.0F { 1.0F } else { 1.0F / tan_half_fov }
+  let x = y / safe_aspect
+  ProjectionMatrix3d::from_cols(
+    @math.Vec4::new(x, 0.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, y, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 0.0F, -1.0F),
+    @math.Vec4::new(0.0F, 0.0F, safe_near, 0.0F),
+  )
+}
+
+///|
+fn render3d_perspective_projection_matrix(
+  projection : PerspectiveProjection3d,
+) -> ProjectionMatrix3d {
+  render3d_adjust_perspective_matrix_for_clip_plane(
+    projection,
+    render3d_perspective_projection_matrix_raw(
+      projection.near,
+      projection.fov,
+      projection.aspect_ratio,
+    ),
+  )
+}
+
+///|
+fn render3d_perspective_projection_matrix_for_sub(
+  projection : PerspectiveProjection3d,
+  sub_view : SubCameraView3d,
+) -> ProjectionMatrix3d {
+  let full_width = Float::from_double(sub_view.full_size.x.to_double())
+  let full_height = Float::from_double(sub_view.full_size.y.to_double())
+  let sub_width = Float::from_double(sub_view.size.x.to_double())
+  let sub_height = Float::from_double(sub_view.size.y.to_double())
+  if full_width <= 0.0F ||
+    full_height <= 0.0F ||
+    sub_width <= 0.0F ||
+    sub_height <= 0.0F {
+    return projection.get_clip_from_view()
+  }
+  let near = if projection.near <= 0.0F { 0.0001F } else { projection.near }
+  let offset_x = sub_view.offset.x
+  let offset_y = full_height - (sub_view.offset.y + sub_height)
+  let full_aspect = full_width / full_height
+  let half_fov = projection.fov * 0.5F
+  let cos_half_fov = @math.cos(half_fov)
+  let tan_half_fov = if cos_half_fov == 0.0F {
+    1.0F
+  } else {
+    @math.sin(half_fov) / cos_half_fov
+  }
+  let top = near * tan_half_fov
+  let bottom = -top
+  let right = top * full_aspect
+  let left = -right
+  let width = right - left
+  let height = top - bottom
+  let left_prime = left + width * offset_x / full_width
+  let right_prime = left + width * (offset_x + sub_width) / full_width
+  let bottom_prime = bottom + height * offset_y / full_height
+  let top_prime = bottom + height * (offset_y + sub_height) / full_height
+  let x = 2.0F * near / (right_prime - left_prime)
+  let y = 2.0F * near / (top_prime - bottom_prime)
+  let a = (right_prime + left_prime) / (right_prime - left_prime)
+  let b = (top_prime + bottom_prime) / (top_prime - bottom_prime)
+  render3d_adjust_perspective_matrix_for_clip_plane(
+    projection,
+    ProjectionMatrix3d::from_cols(
+      @math.Vec4::new(x, 0.0F, 0.0F, 0.0F),
+      @math.Vec4::new(0.0F, y, 0.0F, 0.0F),
+      @math.Vec4::new(a, b, 0.0F, -1.0F),
+      @math.Vec4::new(0.0F, 0.0F, near, 0.0F),
+    ),
+  )
+}
+
+///|
+fn render3d_perspective_frustum_corners(
+  aspect_ratio : Float,
+  fov : Float,
+  z_near : Float,
+  z_far : Float,
+) -> Array[@math.Vec3] {
+  let half_fov = fov * 0.5F
+  let cos_half_fov = @math.cos(half_fov)
+  let tan_half_fov = if cos_half_fov == 0.0F {
+    1.0F
+  } else {
+    @math.sin(half_fov) / cos_half_fov
+  }
+  let near_half_height = tan_half_fov *
+    (if z_near < 0.0F { -z_near } else { z_near })
+  let far_half_height = tan_half_fov *
+    (if z_far < 0.0F { -z_far } else { z_far })
+  let near_half_width = near_half_height * aspect_ratio
+  let far_half_width = far_half_height * aspect_ratio
+  [
+    @math.Vec3::new(near_half_width, -near_half_height, z_near),
+    @math.Vec3::new(near_half_width, near_half_height, z_near),
+    @math.Vec3::new(-near_half_width, near_half_height, z_near),
+    @math.Vec3::new(-near_half_width, -near_half_height, z_near),
+    @math.Vec3::new(far_half_width, -far_half_height, z_far),
+    @math.Vec3::new(far_half_width, far_half_height, z_far),
+    @math.Vec3::new(-far_half_width, far_half_height, z_far),
+    @math.Vec3::new(-far_half_width, -far_half_height, z_far),
+  ]
+}
+
+///|
+priv struct Render3dPassProjection {
+  clip_from_view : ProjectionMatrix3d
+  unjittered_clip_from_view : ProjectionMatrix3d
+  camera_near : Float
+  camera_far : Float
+}
+
+///|
+fn render3d_projection_matrix_apply_temporal_jitter(
+  clip_from_view : ProjectionMatrix3d,
+  temporal_jitter : TemporalJitter,
+  view_width : Int,
+  view_height : Int,
+) -> ProjectionMatrix3d {
+  let width = Float::from_double(view_width.to_double())
+  let height = Float::from_double(view_height.to_double())
+  if width <= 0.0F || height <= 0.0F {
+    return clip_from_view
+  }
+  let mut jitter_x = temporal_jitter.offset.x * 2.0F / width
+  let mut jitter_y = temporal_jitter.offset.y * -2.0F / height
+  if clip_from_view.w_axis.w == 1.0F {
+    jitter_x = jitter_x * clip_from_view.x_axis.x * 0.5F
+    jitter_y = jitter_y * clip_from_view.y_axis.y * 0.5F
+  }
+  let z_axis = clip_from_view.z_axis
+  ProjectionMatrix3d::{
+    ..clip_from_view,
+    z_axis: @math.Vec4::new(
+      z_axis.x + jitter_x,
+      z_axis.y + jitter_y,
+      z_axis.z,
+      z_axis.w,
+    ),
+  }
+}
+
+///|
+fn render3d_projection_near_from_clip_matrix(
+  clip_from_view : ProjectionMatrix3d,
+) -> Float {
+  if clip_from_view.w_axis.w == 0.0F {
+    maxf(0.0001F, clip_from_view.w_axis.z)
+  } else {
+    let safe_z = if clip_from_view.z_axis.z == 0.0F {
+      1.0F
+    } else {
+      clip_from_view.z_axis.z
+    }
+    clip_from_view.w_axis.z / safe_z
+  }
+}
+
+///|
+fn render3d_projection_near(
+  projection : Projection,
+  clip_from_view : ProjectionMatrix3d,
+) -> Float {
+  match projection {
+    Perspective(perspective) => maxf(0.0001F, perspective.near)
+    Orthographic(orthographic) => orthographic.near
+    Custom(_) => render3d_projection_near_from_clip_matrix(clip_from_view)
+  }
+}
+
+///|
+fn render3d_camera_pass_projection(
+  projection : Projection,
+  sub_camera_view : SubCameraView3d?,
+  temporal_jitter : TemporalJitter?,
+  view_width : Int,
+  view_height : Int,
+) -> Render3dPassProjection {
+  let unjittered_clip_from_view = match sub_camera_view {
+    Some(sub_view) => projection.get_clip_from_view_for_sub(sub_view)
+    None => projection.get_clip_from_view()
+  }
+  let clip_from_view = match temporal_jitter {
+    Some(temporal_jitter) =>
+      render3d_projection_matrix_apply_temporal_jitter(
+        unjittered_clip_from_view, temporal_jitter, view_width, view_height,
+      )
+    None => unjittered_clip_from_view
+  }
+  Render3dPassProjection::{
+    clip_from_view,
+    unjittered_clip_from_view,
+    camera_near: render3d_projection_near(projection, unjittered_clip_from_view),
+    camera_far: projection.far(),
+  }
+}
+
+///|
+fn render3d_point_shadow_pass_projection(
+  near : Float,
+  far : Float,
+) -> Render3dPassProjection {
+  let shadow_near = if near > 0.0001F { near } else { 0.0001F }
+  let shadow_far = if far > shadow_near { far } else { shadow_near + 1.0F }
+  let clip_from_view = render3d_perspective_projection_matrix_raw(
+    shadow_near,
+    @math.pi_half(),
+    1.0F,
+  )
+  Render3dPassProjection::{
+    clip_from_view,
+    unjittered_clip_from_view: clip_from_view,
+    camera_near: shadow_near,
+    camera_far: shadow_far,
+  }
+}
+
+///|
+fn render3d_view_from_world_matrix(
+  transform : @math.Transform,
+) -> ProjectionMatrix3d {
+  let inverse_rotation = render3d_quat_conjugate(transform.rotation.normalize())
+  let x_axis = quat_rotate_vec3(
+    inverse_rotation,
+    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+  )
+  let y_axis = quat_rotate_vec3(
+    inverse_rotation,
+    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  )
+  let z_axis = quat_rotate_vec3(
+    inverse_rotation,
+    @math.Vec3::new(0.0F, 0.0F, 1.0F),
+  )
+  let translation = transform.translation
+  let offset_x = -(x_axis.x * translation.x +
+    x_axis.y * translation.y +
+    x_axis.z * translation.z)
+  let offset_y = -(y_axis.x * translation.x +
+    y_axis.y * translation.y +
+    y_axis.z * translation.z)
+  let offset_z = -(z_axis.x * translation.x +
+    z_axis.y * translation.y +
+    z_axis.z * translation.z)
+  ProjectionMatrix3d::from_cols(
+    @math.Vec4::new(x_axis.x, x_axis.y, x_axis.z, 0.0F),
+    @math.Vec4::new(y_axis.x, y_axis.y, y_axis.z, 0.0F),
+    @math.Vec4::new(z_axis.x, z_axis.y, z_axis.z, 0.0F),
+    @math.Vec4::new(offset_x, offset_y, offset_z, 1.0F),
+  )
+}
+
+///|
+fn render3d_pass_projection_clip_from_world(
+  pass_projection : Render3dPassProjection,
+  camera_transform : @math.Transform,
+) -> ProjectionMatrix3d {
+  pass_projection.clip_from_view.mul(
+    render3d_view_from_world_matrix(camera_transform),
+  )
+}
+
+///|
+fn render3d_pass_projection_unjittered_clip_from_world(
+  pass_projection : Render3dPassProjection,
+  camera_transform : @math.Transform,
+) -> ProjectionMatrix3d {
+  pass_projection.unjittered_clip_from_view.mul(
+    render3d_view_from_world_matrix(camera_transform),
+  )
+}
+
+///|
+fn render3d_mesh_view_depth(
+  mesh_transform : @math.Transform,
+  camera_transform : @math.Transform,
+) -> Float {
+  let to_mesh = @math.Vec3::new(
+    mesh_transform.translation.x - camera_transform.translation.x,
+    mesh_transform.translation.y - camera_transform.translation.y,
+    mesh_transform.translation.z - camera_transform.translation.z,
+  )
+  let camera_forward = render3d_transform_forward(camera_transform)
+  to_mesh.x * camera_forward.x +
+  to_mesh.y * camera_forward.y +
+  to_mesh.z * camera_forward.z
+}
+
+///|
+fn minf(a : Float, b : Float) -> Float {
+  if a < b {
+    a
+  } else {
+    b
+  }
+}
+
+///|
+fn maxf(a : Float, b : Float) -> Float {
+  if a > b {
+    a
+  } else {
+    b
+  }
+}
+
+///|
+fn clamp01(value : Float) -> Float {
+  if value <= 0.0F {
+    0.0F
+  } else if value >= 1.0F {
+    1.0F
+  } else {
+    value
+  }
+}
+
+///|
+fn absf(value : Float) -> Float {
+  if value < 0.0F {
+    -value
+  } else {
+    value
+  }
+}
+
+///|
+const RENDER3D_TONEMAPPING_LUT_AGX_PATH : String = "textures/tonemapping/AgX-default_contrast.ktx2"
+
+///|
+const RENDER3D_TONEMAPPING_LUT_TONY_PATH : String = "textures/tonemapping/tony_mc_mapface.ktx2"
+
+///|
+const RENDER3D_TONEMAPPING_LUT_BLENDER_PATH : String = "textures/tonemapping/Blender_-11_12.ktx2"
+
+///|
+priv struct Render3dTonemappingLutHandles {
+  agx : @asset.Handle[@asset.Image]
+  tony : @asset.Handle[@asset.Image]
+  blender : @asset.Handle[@asset.Image]
+}
+
+///|
+fn render3d_tonemapping_lut_handles(
+  world : @ecs.World,
+) -> Render3dTonemappingLutHandles {
+  let internal_assets = render3d_internal_assets_ref_or_abort(world)
+  if internal_assets.val.tonemapping_luts is Some(handles) {
+    return handles
+  }
+  let asset_server = render3d_asset_server_from_world_or_abort(world)
+  let handles = Render3dTonemappingLutHandles::{
+    agx: asset_server.load(RENDER3D_TONEMAPPING_LUT_AGX_PATH),
+    tony: asset_server.load(RENDER3D_TONEMAPPING_LUT_TONY_PATH),
+    blender: asset_server.load(RENDER3D_TONEMAPPING_LUT_BLENDER_PATH),
+  }
+  internal_assets.val.tonemapping_luts = Some(handles)
+  handles
+}
+
+///|
+const RENDER3D_COLOR_GRADING_D65_X : Float = 0.31272F
+
+///|
+const RENDER3D_COLOR_GRADING_D65_Y : Float = 0.32903F
+
+///|
+const RENDER3D_COLOR_GRADING_D65_LMS_X : Float = 0.975538F
+
+///|
+const RENDER3D_COLOR_GRADING_D65_LMS_Y : Float = 1.01648F
+
+///|
+const RENDER3D_COLOR_GRADING_D65_LMS_Z : Float = 1.08475F
+
+///|
+fn render3d_color_grading_mat3_mul_vec3(
+  x_axis : @math.Vec3,
+  y_axis : @math.Vec3,
+  z_axis : @math.Vec3,
+  value : @math.Vec3,
+) -> @math.Vec3 {
+  x_axis
+  .mul_scalar(value.x)
+  .add(y_axis.mul_scalar(value.y))
+  .add(z_axis.mul_scalar(value.z))
+}
+
+///|
+fn render3d_color_grading_host_uniform(
+  color_grading : ColorGrading?,
+) -> @render.HostColorGrading {
+  let grading = match color_grading {
+    Some(value) => value
+    None => ColorGrading::default()
+  }
+  let white_point_x = RENDER3D_COLOR_GRADING_D65_X - grading.global.temperature
+  let white_point_y = RENDER3D_COLOR_GRADING_D65_Y + grading.global.tint
+  let white_point_lms = @math.Vec3::new(
+    0.701634F + (-0.051461F + 0.452749F * white_point_x) / white_point_y,
+    1.15856F + (0.045854F - 0.296122F * white_point_x) / white_point_y,
+    -0.904175F + (0.953127F - 0.955206F * white_point_x) / white_point_y,
+  )
+  let white_point_adjustment = @math.Vec3::new(
+    RENDER3D_COLOR_GRADING_D65_LMS_X / white_point_lms.x,
+    RENDER3D_COLOR_GRADING_D65_LMS_Y / white_point_lms.y,
+    RENDER3D_COLOR_GRADING_D65_LMS_Z / white_point_lms.z,
+  )
+  let rgb_to_lms_x_axis = @math.Vec3::new(0.311692F, 0.0905138F, 0.00764433F)
+  let rgb_to_lms_y_axis = @math.Vec3::new(0.652085F, 0.901341F, 0.0486554F)
+  let rgb_to_lms_z_axis = @math.Vec3::new(0.0362225F, 0.00814478F, 0.943700F)
+  let lms_to_rgb_x_axis = @math.Vec3::new(4.06305F, -0.40791F, -0.0118812F)
+  let lms_to_rgb_y_axis = @math.Vec3::new(-2.93241F, 1.40437F, -0.0486532F)
+  let lms_to_rgb_z_axis = @math.Vec3::new(-0.130646F, 0.00353630F, 1.0605344F)
+  let scaled_rgb_to_lms_x_axis = @math.Vec3::new(
+    rgb_to_lms_x_axis.x * white_point_adjustment.x,
+    rgb_to_lms_x_axis.y * white_point_adjustment.y,
+    rgb_to_lms_x_axis.z * white_point_adjustment.z,
+  )
+  let scaled_rgb_to_lms_y_axis = @math.Vec3::new(
+    rgb_to_lms_y_axis.x * white_point_adjustment.x,
+    rgb_to_lms_y_axis.y * white_point_adjustment.y,
+    rgb_to_lms_y_axis.z * white_point_adjustment.z,
+  )
+  let scaled_rgb_to_lms_z_axis = @math.Vec3::new(
+    rgb_to_lms_z_axis.x * white_point_adjustment.x,
+    rgb_to_lms_z_axis.y * white_point_adjustment.y,
+    rgb_to_lms_z_axis.z * white_point_adjustment.z,
+  )
+  let balance_x_axis = render3d_color_grading_mat3_mul_vec3(
+    lms_to_rgb_x_axis, lms_to_rgb_y_axis, lms_to_rgb_z_axis, scaled_rgb_to_lms_x_axis,
+  )
+  let balance_y_axis = render3d_color_grading_mat3_mul_vec3(
+    lms_to_rgb_x_axis, lms_to_rgb_y_axis, lms_to_rgb_z_axis, scaled_rgb_to_lms_y_axis,
+  )
+  let balance_z_axis = render3d_color_grading_mat3_mul_vec3(
+    lms_to_rgb_x_axis, lms_to_rgb_y_axis, lms_to_rgb_z_axis, scaled_rgb_to_lms_z_axis,
+  )
+  let midtones_range = grading.global.midtones_range
+  @render.HostColorGrading::{
+    balance_x_axis_x: balance_x_axis.x,
+    balance_x_axis_y: balance_x_axis.y,
+    balance_x_axis_z: balance_x_axis.z,
+    balance_y_axis_x: balance_y_axis.x,
+    balance_y_axis_y: balance_y_axis.y,
+    balance_y_axis_z: balance_y_axis.z,
+    balance_z_axis_x: balance_z_axis.x,
+    balance_z_axis_y: balance_z_axis.y,
+    balance_z_axis_z: balance_z_axis.z,
+    saturation_shadows: grading.shadows.saturation,
+    saturation_midtones: grading.midtones.saturation,
+    saturation_highlights: grading.highlights.saturation,
+    contrast_shadows: grading.shadows.contrast,
+    contrast_midtones: grading.midtones.contrast,
+    contrast_highlights: grading.highlights.contrast,
+    gamma_shadows: grading.shadows.gamma,
+    gamma_midtones: grading.midtones.gamma,
+    gamma_highlights: grading.highlights.gamma,
+    gain_shadows: grading.shadows.gain,
+    gain_midtones: grading.midtones.gain,
+    gain_highlights: grading.highlights.gain,
+    lift_shadows: grading.shadows.lift,
+    lift_midtones: grading.midtones.lift,
+    lift_highlights: grading.highlights.lift,
+    midtones_start: midtones_range.start,
+    midtones_end: midtones_range.end_,
+    exposure: grading.global.exposure,
+    hue: grading.global.hue,
+    post_saturation: grading.global.post_saturation,
+  }
+}
+
+///|
+fn render3d_bloom_clamp_unit(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F
+  } else if value > 1.0F {
+    1.0F
+  } else {
+    value
+  }
+}
+
+///|
+fn render3d_bloom_clamp_non_negative(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F
+  } else {
+    value
+  }
+}
+
+///|
+fn render3d_bloom_safe_max_mip_dimension(value : Int) -> Int {
+  if value < 4 {
+    4
+  } else {
+    value
+  }
+}
+
+///|
+fn render3d_bloom_safe_scale_axis(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F
+  } else {
+    value
+  }
+}
+
+///|
+fn render3d_bloom_sanitize(bloom : Bloom) -> Bloom {
+  let prefilter = BloomPrefilter::new(
+    render3d_bloom_clamp_non_negative(bloom.prefilter.threshold),
+    render3d_bloom_clamp_unit(bloom.prefilter.threshold_softness),
+  )
+  Bloom::new(render3d_bloom_clamp_non_negative(bloom.intensity))
+  .with_low_frequency_boost(
+    render3d_bloom_clamp_unit(bloom.low_frequency_boost),
+  )
+  .with_low_frequency_boost_curvature(
+    render3d_bloom_clamp_unit(bloom.low_frequency_boost_curvature),
+  )
+  .with_high_pass_frequency(
+    render3d_bloom_clamp_unit(bloom.high_pass_frequency),
+  )
+  .with_prefilter_settings(prefilter)
+  .with_composite_mode(bloom.composite_mode)
+  .with_max_mip_dimension(
+    render3d_bloom_safe_max_mip_dimension(bloom.max_mip_dimension),
+  )
+  .with_scale(
+    @math.Vec2::new(
+      render3d_bloom_safe_scale_axis(bloom.scale.x),
+      render3d_bloom_safe_scale_axis(bloom.scale.y),
+    ),
+  )
+}
+
+///|
+fn render3d_tonemapping_mode_to_int(mode : Tonemapping) -> Int {
+  match mode {
+    None => 0
+    Reinhard => 1
+    ReinhardLuminance => 2
+    AcesFitted => 3
+    AgX => 4
+    SomewhatBoringDisplayTransform => 5
+    TonyMcMapface => 6
+    BlenderFilmic => 7
+  }
+}
+
+///|
+fn render3d_fxaa_sensitivity_edge_threshold(
+  sensitivity : FxaaSensitivity,
+) -> Float {
+  match sensitivity {
+    Low => 0.250F
+    Medium => 0.166F
+    High => 0.125F
+    Ultra => 0.063F
+    Extreme => 0.031F
+  }
+}
+
+///|
+fn render3d_fxaa_sensitivity_edge_threshold_min(
+  sensitivity : FxaaSensitivity,
+) -> Float {
+  match sensitivity {
+    Low => 0.0833F
+    Medium => 0.0625F
+    High => 0.0312F
+    Ultra => 0.0156F
+    Extreme => 0.0078F
+  }
+}
+
+///|
+fn render3d_fxaa_postprocess_values(fxaa : Fxaa?) -> (Int, Float, Float) {
+  match fxaa {
+    Some(value) =>
+      (
+        if value.enabled {
+          1
+        } else {
+          0
+        },
+        render3d_fxaa_sensitivity_edge_threshold(value.edge_threshold),
+        render3d_fxaa_sensitivity_edge_threshold_min(value.edge_threshold_min),
+      )
+    None =>
+      (
+        0,
+        render3d_fxaa_sensitivity_edge_threshold(FxaaSensitivity::default()),
+        render3d_fxaa_sensitivity_edge_threshold_min(FxaaSensitivity::default()),
+      )
+  }
+}
+
+///|
+fn render3d_chromatic_aberration_postprocess_values(
+  chromatic_aberration : ChromaticAberration?,
+) -> (Float, Int) {
+  match chromatic_aberration {
+    Some(value) =>
+      (
+        if value.intensity < 0.0F {
+          0.0F
+        } else {
+          value.intensity
+        },
+        if value.max_samples <= 0 {
+          1
+        } else {
+          value.max_samples
+        },
+      )
+    None => {
+      let defaults = ChromaticAberration::default()
+      (0.0F, defaults.max_samples)
+    }
+  }
+}
+
+///|
+fn render3d_vignette_postprocess_values(
+  vignette : Vignette?,
+) -> (
+  Float,
+  Float,
+  Float,
+  Float,
+  Float,
+  Float,
+  Float,
+  Float,
+  Float,
+  Float,
+  Float,
+) {
+  match vignette {
+    Some(value) => {
+      let safe_edge_compensation = if value.edge_compensation < 0.0F {
+        0.0F
+      } else if value.edge_compensation > 1.0F {
+        1.0F
+      } else {
+        value.edge_compensation
+      }
+      (
+        if value.intensity < 0.0F {
+          0.0F
+        } else {
+          value.intensity
+        },
+        if value.radius < 0.0F {
+          0.0F
+        } else {
+          value.radius
+        },
+        if value.smoothness <= 0.01F {
+          0.01F
+        } else {
+          value.smoothness
+        },
+        if value.roundness <= 0.01F {
+          0.01F
+        } else {
+          value.roundness
+        },
+        value.center.x,
+        value.center.y,
+        safe_edge_compensation,
+        value.color.r,
+        value.color.g,
+        value.color.b,
+        value.color.a,
+      )
+    }
+    None => {
+      let defaults = Vignette::default()
+      (
+        0.0F,
+        defaults.radius,
+        defaults.smoothness,
+        defaults.roundness,
+        defaults.center.x,
+        defaults.center.y,
+        defaults.edge_compensation,
+        defaults.color.r,
+        defaults.color.g,
+        defaults.color.b,
+        defaults.color.a,
+      )
+    }
+  }
+}
+
+///|
+fn render3d_draw_camera_bloom(
+  world : @ecs.World,
+  scene_texture_id : Int,
+  bloom : Bloom,
+  exposure : Exposure?,
+  tonemapping : Tonemapping?,
+  deband_dither : DebandDither?,
+  color_grading : ColorGrading?,
+  fxaa : Fxaa?,
+  chromatic_aberration : ChromaticAberration?,
+  vignette : Vignette?,
+  view_width_logical : Int,
+  view_height_logical : Int,
+) -> Unit {
+  if scene_texture_id < 0 || view_width_logical <= 0 || view_height_logical <= 0 {
+    return
+  }
+  let luts = render3d_tonemapping_lut_handles(world)
+  let color_grading_uniform = render3d_color_grading_host_uniform(color_grading)
+  let settings = render3d_bloom_sanitize(bloom)
+  let (fxaa_enabled, fxaa_edge_threshold, fxaa_edge_threshold_min) = render3d_fxaa_postprocess_values(
+    fxaa,
+  )
+  let (chromatic_aberration_intensity, chromatic_aberration_max_samples) = render3d_chromatic_aberration_postprocess_values(
+    chromatic_aberration,
+  )
+  let (
+    vignette_intensity,
+    vignette_radius,
+    vignette_smoothness,
+    vignette_roundness,
+    vignette_center_x,
+    vignette_center_y,
+    vignette_edge_compensation,
+    vignette_color_r,
+    vignette_color_g,
+    vignette_color_b,
+    vignette_color_a,
+  ) = render3d_vignette_postprocess_values(vignette)
+  @render.host_gpu_draw_bloom2d(
+    scene_texture_id~,
+    enabled=1,
+    intensity=settings.intensity,
+    low_frequency_boost=settings.low_frequency_boost,
+    low_frequency_boost_curvature=settings.low_frequency_boost_curvature,
+    high_pass_frequency=settings.high_pass_frequency,
+    threshold=settings.prefilter.threshold,
+    threshold_softness=settings.prefilter.threshold_softness,
+    composite_mode=match settings.composite_mode {
+      EnergyConserving => 0
+      Additive => 1
+    },
+    max_mip_dimension=settings.max_mip_dimension,
+    scale_x=settings.scale.x,
+    scale_y=settings.scale.y,
+    exposure=match exposure {
+      Some(value) => value.exposure()
+      None => Exposure::default().exposure()
+    },
+    tonemapping_mode=match tonemapping {
+      Some(mode) => render3d_tonemapping_mode_to_int(mode)
+      None => 0
+    },
+    deband_dither_enabled=match deband_dither {
+      Some(Enabled) => 1
+      _ => 0
+    },
+    fxaa_enabled~,
+    fxaa_edge_threshold~,
+    fxaa_edge_threshold_min~,
+    chromatic_aberration_intensity~,
+    chromatic_aberration_max_samples~,
+    vignette_intensity~,
+    vignette_radius~,
+    vignette_smoothness~,
+    vignette_roundness~,
+    vignette_center_x~,
+    vignette_center_y~,
+    vignette_edge_compensation~,
+    vignette_color_r~,
+    vignette_color_g~,
+    vignette_color_b~,
+    vignette_color_a~,
+    view_width=view_width_logical,
+    view_height=view_height_logical,
+    agx_lut_texture_id=luts.agx.id(),
+    tony_lut_texture_id=luts.tony.id(),
+    blender_lut_texture_id=luts.blender.id(),
+    color_grading=color_grading_uniform,
+  )
+}
+
+///|
+fn render3d_draw_camera_tonemap_only(
+  world : @ecs.World,
+  scene_texture_id : Int,
+  exposure : Exposure?,
+  tonemapping : Tonemapping?,
+  deband_dither : DebandDither?,
+  color_grading : ColorGrading?,
+  fxaa : Fxaa?,
+  chromatic_aberration : ChromaticAberration?,
+  vignette : Vignette?,
+  view_width_logical : Int,
+  view_height_logical : Int,
+) -> Unit {
+  if scene_texture_id < 0 || view_width_logical <= 0 || view_height_logical <= 0 {
+    return
+  }
+  let luts = render3d_tonemapping_lut_handles(world)
+  let color_grading_uniform = render3d_color_grading_host_uniform(color_grading)
+  let bloom_defaults = render3d_bloom_sanitize(Bloom::default())
+  let (fxaa_enabled, fxaa_edge_threshold, fxaa_edge_threshold_min) = render3d_fxaa_postprocess_values(
+    fxaa,
+  )
+  let (chromatic_aberration_intensity, chromatic_aberration_max_samples) = render3d_chromatic_aberration_postprocess_values(
+    chromatic_aberration,
+  )
+  let (
+    vignette_intensity,
+    vignette_radius,
+    vignette_smoothness,
+    vignette_roundness,
+    vignette_center_x,
+    vignette_center_y,
+    vignette_edge_compensation,
+    vignette_color_r,
+    vignette_color_g,
+    vignette_color_b,
+    vignette_color_a,
+  ) = render3d_vignette_postprocess_values(vignette)
+  @render.host_gpu_draw_bloom2d(
+    scene_texture_id~,
+    enabled=0,
+    intensity=0.0F,
+    low_frequency_boost=bloom_defaults.low_frequency_boost,
+    low_frequency_boost_curvature=bloom_defaults.low_frequency_boost_curvature,
+    high_pass_frequency=bloom_defaults.high_pass_frequency,
+    threshold=bloom_defaults.prefilter.threshold,
+    threshold_softness=bloom_defaults.prefilter.threshold_softness,
+    composite_mode=match bloom_defaults.composite_mode {
+      EnergyConserving => 0
+      Additive => 1
+    },
+    max_mip_dimension=bloom_defaults.max_mip_dimension,
+    scale_x=bloom_defaults.scale.x,
+    scale_y=bloom_defaults.scale.y,
+    exposure=match exposure {
+      Some(value) => value.exposure()
+      None => Exposure::default().exposure()
+    },
+    tonemapping_mode=match tonemapping {
+      Some(mode) => render3d_tonemapping_mode_to_int(mode)
+      None => 0
+    },
+    deband_dither_enabled=match deband_dither {
+      Some(Enabled) => 1
+      _ => 0
+    },
+    fxaa_enabled~,
+    fxaa_edge_threshold~,
+    fxaa_edge_threshold_min~,
+    chromatic_aberration_intensity~,
+    chromatic_aberration_max_samples~,
+    vignette_intensity~,
+    vignette_radius~,
+    vignette_smoothness~,
+    vignette_roundness~,
+    vignette_center_x~,
+    vignette_center_y~,
+    vignette_edge_compensation~,
+    vignette_color_r~,
+    vignette_color_g~,
+    vignette_color_b~,
+    vignette_color_a~,
+    view_width=view_width_logical,
+    view_height=view_height_logical,
+    agx_lut_texture_id=luts.agx.id(),
+    tony_lut_texture_id=luts.tony.id(),
+    blender_lut_texture_id=luts.blender.id(),
+    color_grading=color_grading_uniform,
+  )
+}
+
+///|
+fn render3d_rotate_by_quat(v : @math.Vec3, q : @math.Quat) -> @math.Vec3 {
+  let q_vec = @math.Vec3::new(q.x, q.y, q.z)
+  let t = q_vec.cross(v).mul_scalar(2.0F)
+  v.add(t.mul_scalar(q.w)).add(q_vec.cross(t))
+}
+
+///|
+fn render3d_transform_point(
+  transform : @math.Transform,
+  local_point : @math.Vec3,
+) -> @math.Vec3 {
+  let scaled = local_point.mul(transform.scale)
+  transform.translation.add(render3d_rotate_by_quat(scaled, transform.rotation))
+}
+
+///|
+fn render3d_inverse_transform_point(
+  transform : @math.Transform,
+  world_point : @math.Vec3,
+) -> @math.Vec3? {
+  if absf(transform.scale.x) <= 1.0e-9F ||
+    absf(transform.scale.y) <= 1.0e-9F ||
+    absf(transform.scale.z) <= 1.0e-9F {
+    return None
+  }
+  let translated = world_point.sub(transform.translation)
+  let rotated = render3d_rotate_by_quat(
+    translated,
+    render3d_quat_conjugate(transform.rotation),
+  )
+  Some(
+    @math.Vec3::new(
+      rotated.x / transform.scale.x,
+      rotated.y / transform.scale.y,
+      rotated.z / transform.scale.z,
+    ),
+  )
+}
+
+///|
+fn render3d_inverse_transform_direction(
+  transform : @math.Transform,
+  world_direction : @math.Vec3,
+) -> @math.Vec3? {
+  if absf(transform.scale.x) <= 1.0e-9F ||
+    absf(transform.scale.y) <= 1.0e-9F ||
+    absf(transform.scale.z) <= 1.0e-9F {
+    return None
+  }
+  let rotated = render3d_rotate_by_quat(
+    world_direction,
+    render3d_quat_conjugate(transform.rotation),
+  )
+  Some(
+    @math.Vec3::new(
+      rotated.x / transform.scale.x,
+      rotated.y / transform.scale.y,
+      rotated.z / transform.scale.z,
+    ),
+  )
+}
+
+///|
+fn render3d_transform_local_normal(
+  transform : @math.Transform,
+  local_normal : @math.Vec3,
+) -> @math.Vec3 {
+  if absf(transform.scale.x) <= 1.0e-9F ||
+    absf(transform.scale.y) <= 1.0e-9F ||
+    absf(transform.scale.z) <= 1.0e-9F {
+    return render3d_rotate_by_quat(local_normal, transform.rotation).normalize_or_zero()
+  }
+  let scaled = @math.Vec3::new(
+    local_normal.x / transform.scale.x,
+    local_normal.y / transform.scale.y,
+    local_normal.z / transform.scale.z,
+  )
+  render3d_rotate_by_quat(scaled, transform.rotation).normalize_or_zero()
+}
+
+///|
+fn render3d_ray_local_aabb_hit(
+  origin : @math.Vec3,
+  direction : @math.Vec3,
+  min_corner : @math.Vec3,
+  max_corner : @math.Vec3,
+  ray_epsilon : Float,
+  max_distance : Float,
+) -> (Float, @math.Vec3)? {
+  let mut t_min = -max_distance
+  let mut t_max = max_distance
+  let mut enter_normal = @math.Vec3::new(1.0F, 0.0F, 0.0F)
+  let mut exit_normal = @math.Vec3::new(-1.0F, 0.0F, 0.0F)
+
+  let axes : Array[(@math.Vec3, Float, Float, Float, Float)] = [
+    (
+      @math.Vec3::new(1.0F, 0.0F, 0.0F),
+      origin.x,
+      direction.x,
+      min_corner.x,
+      max_corner.x,
+    ),
+    (
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      origin.y,
+      direction.y,
+      min_corner.y,
+      max_corner.y,
+    ),
+    (
+      @math.Vec3::new(0.0F, 0.0F, 1.0F),
+      origin.z,
+      direction.z,
+      min_corner.z,
+      max_corner.z,
+    ),
+  ]
+
+  for axis_data in axes {
+    let axis = axis_data.0
+    let o = axis_data.1
+    let d = axis_data.2
+    let slab_min = axis_data.3
+    let slab_max = axis_data.4
+    if absf(d) <= 1.0e-9F {
+      if o < slab_min || o > slab_max {
+        return None
+      }
+      continue
+    }
+
+    let inv_d = 1.0F / d
+    let mut t1 = (slab_min - o) * inv_d
+    let mut t2 = (slab_max - o) * inv_d
+    let mut near_normal = axis.neg()
+    let mut far_normal = axis
+    if t1 > t2 {
+      let t_swap = t1
+      t1 = t2
+      t2 = t_swap
+      let normal_swap = near_normal
+      near_normal = far_normal
+      far_normal = normal_swap
+    }
+    if t1 > t_min {
+      t_min = t1
+      enter_normal = near_normal
+    }
+    if t2 < t_max {
+      t_max = t2
+      exit_normal = far_normal
+    }
+    if t_min > t_max {
+      return None
+    }
+  }
+
+  if t_max < ray_epsilon {
+    return None
+  }
+  let (distance, normal) = if t_min >= ray_epsilon {
+    (t_min, enter_normal)
+  } else {
+    (t_max, exit_normal)
+  }
+  if distance < ray_epsilon || distance > max_distance {
+    return None
+  }
+  Some((distance, normal))
+}
+
+///|
+fn render3d_mesh_local_aabb(mesh3d : Mesh3d) -> (@math.Vec3, @math.Vec3)? {
+  guard @sprite.render_mesh_asset_get(mesh3d.mesh) is Some(mesh_asset) else {
+    return None
+  }
+  guard mesh_asset.geometry is @mesh.MeshGeometry::Geometry3d(geometry3d) else {
+    return None
+  }
+  guard geometry3d.positions.length() > 0 else { return None }
+  let mut min_x = geometry3d.positions[0].x
+  let mut min_y = geometry3d.positions[0].y
+  let mut min_z = geometry3d.positions[0].z
+  let mut max_x = geometry3d.positions[0].x
+  let mut max_y = geometry3d.positions[0].y
+  let mut max_z = geometry3d.positions[0].z
+  for i in 1..<geometry3d.positions.length() {
+    let p = geometry3d.positions[i]
+    min_x = minf(min_x, p.x)
+    min_y = minf(min_y, p.y)
+    min_z = minf(min_z, p.z)
+    max_x = maxf(max_x, p.x)
+    max_y = maxf(max_y, p.y)
+    max_z = maxf(max_z, p.z)
+  }
+  Some(
+    (@math.Vec3::new(min_x, min_y, min_z), @math.Vec3::new(max_x, max_y, max_z)),
+  )
+}
+
+///|
+fn render3d_mesh_local_aabb_center(mesh3d : Mesh3d) -> @math.Vec3? {
+  if render3d_mesh_local_aabb(mesh3d) is Some((min_corner, max_corner)) {
+    Some(
+      @math.Vec3::new(
+        (min_corner.x + max_corner.x) * 0.5F,
+        (min_corner.y + max_corner.y) * 0.5F,
+        (min_corner.z + max_corner.z) * 0.5F,
+      ),
+    )
+  } else {
+    None
+  }
+}
+
+///|
+fn render3d_pow_e(value : Float) -> Float {
+  @math.pow(FOG_FALLOFF_E, value)
+}
+
+///|
+fn render3d_fog_channel_factor(density : Float, distance : Float) -> Float {
+  let safe_density = if density < 0.0F { 0.0F } else { density }
+  1.0F - render3d_pow_e(-(safe_density * distance))
+}
+
+///|
+fn render3d_fog_falloff_factor(
+  falloff : FogFalloff3d,
+  distance : Float,
+) -> Float {
+  let safe_distance = if distance < 0.0F { 0.0F } else { distance }
+  match falloff {
+    Linear(start, end_) => {
+      let safe_start = if start < 0.0F { 0.0F } else { start }
+      let safe_end = if end_ < safe_start { safe_start } else { end_ }
+      if safe_end <= safe_start {
+        if safe_distance >= safe_end {
+          1.0F
+        } else {
+          0.0F
+        }
+      } else if safe_distance <= safe_start {
+        0.0F
+      } else if safe_distance >= safe_end {
+        1.0F
+      } else {
+        (safe_distance - safe_start) / (safe_end - safe_start)
+      }
+    }
+    Exponential(density) => {
+      let safe_density = if density < 0.0F { 0.0F } else { density }
+      1.0F - render3d_pow_e(-safe_density * safe_distance)
+    }
+    ExponentialSquared(density) => {
+      let safe_density = if density < 0.0F { 0.0F } else { density }
+      let d = safe_density * safe_distance
+      1.0F - render3d_pow_e(-(d * d))
+    }
+    Atmospheric(extinction, inscattering) => {
+      let extinction_max = maxf(maxf(extinction.x, extinction.y), extinction.z)
+      let inscattering_max = maxf(
+        maxf(inscattering.x, inscattering.y),
+        inscattering.z,
+      )
+      let extinction_factor = render3d_fog_channel_factor(
+        extinction_max, safe_distance,
+      )
+      let inscattering_factor = render3d_fog_channel_factor(
+        inscattering_max, safe_distance,
+      )
+      clamp01((extinction_factor + inscattering_factor) * 0.5F)
+    }
+  }
+}
+
+///|
+fn render3d_distance_fog_mix_factor(
+  fog : DistanceFog,
+  distance : Float,
+) -> Float {
+  let falloff_factor = render3d_fog_falloff_factor(fog.falloff, distance)
+  clamp01(falloff_factor * clamp01(fog.color.a))
+}
+
+///|
+fn render3d_distance_fog_directional_mix(
+  fog : DistanceFog,
+  fog_presence : Float,
+  camera_position : @math.Vec3,
+  mesh_position : @math.Vec3,
+  lighting : Render3dLightingState,
+) -> Float {
+  let directional_alpha = clamp01(fog.directional_light_color.a)
+  if directional_alpha <= 0.0F {
+    return 0.0F
+  }
+  if fog.directional_light_exponent <= 0.0F {
+    return 0.0F
+  }
+  if lighting.directional_illuminance <= 0.0F {
+    return 0.0F
+  }
+  let view_direction = mesh_position.sub(camera_position).normalize_or_zero()
+  let light_direction = lighting.directional_dir.neg().normalize_or_zero()
+  let alignment = clamp01(light_direction.dot(view_direction) * 0.5F + 0.5F)
+  let phase = @math.pow(alignment, fog.directional_light_exponent)
+  let illuminance_mix = clamp01(lighting.directional_illuminance / 50_000.0F)
+  clamp01(phase * directional_alpha * illuminance_mix * fog_presence)
+}
+
+///|
+fn render3d_apply_distance_fog(
+  fog : DistanceFog,
+  distance : Float,
+  base_r : Float,
+  base_g : Float,
+  base_b : Float,
+  camera_position : @math.Vec3,
+  mesh_position : @math.Vec3,
+  lighting : Render3dLightingState,
+) -> (Float, Float, Float) {
+  let fog_alpha = clamp01(fog.color.a)
+  let mut fogged_r = base_r
+  let mut fogged_g = base_g
+  let mut fogged_b = base_b
+  let mut fog_presence = 0.0F
+
+  match fog.falloff {
+    Atmospheric(extinction, inscattering) => {
+      let extinction_r = clamp01(
+        render3d_fog_channel_factor(extinction.x, distance) * fog_alpha,
+      )
+      let extinction_g = clamp01(
+        render3d_fog_channel_factor(extinction.y, distance) * fog_alpha,
+      )
+      let extinction_b = clamp01(
+        render3d_fog_channel_factor(extinction.z, distance) * fog_alpha,
+      )
+      let inscattering_r = clamp01(
+        render3d_fog_channel_factor(inscattering.x, distance) * fog_alpha,
+      )
+      let inscattering_g = clamp01(
+        render3d_fog_channel_factor(inscattering.y, distance) * fog_alpha,
+      )
+      let inscattering_b = clamp01(
+        render3d_fog_channel_factor(inscattering.z, distance) * fog_alpha,
+      )
+
+      fogged_r = base_r * (1.0F - extinction_r) + fog.color.r * inscattering_r
+      fogged_g = base_g * (1.0F - extinction_g) + fog.color.g * inscattering_g
+      fogged_b = base_b * (1.0F - extinction_b) + fog.color.b * inscattering_b
+
+      let extinction_peak = maxf(maxf(extinction_r, extinction_g), extinction_b)
+      let inscattering_peak = maxf(
+        maxf(inscattering_r, inscattering_g),
+        inscattering_b,
+      )
+      fog_presence = clamp01((extinction_peak + inscattering_peak) * 0.5F)
+    }
+    _ => {
+      let fog_mix = render3d_distance_fog_mix_factor(fog, distance)
+      fogged_r = base_r * (1.0F - fog_mix) + fog.color.r * fog_mix
+      fogged_g = base_g * (1.0F - fog_mix) + fog.color.g * fog_mix
+      fogged_b = base_b * (1.0F - fog_mix) + fog.color.b * fog_mix
+      fog_presence = fog_mix
+    }
+  }
+
+  let directional_mix = render3d_distance_fog_directional_mix(
+    fog, fog_presence, camera_position, mesh_position, lighting,
+  )
+  if directional_mix > 0.0F {
+    let directional_tint_r = clamp01(
+      fog.directional_light_color.r * lighting.directional_color.r,
+    )
+    let directional_tint_g = clamp01(
+      fog.directional_light_color.g * lighting.directional_color.g,
+    )
+    let directional_tint_b = clamp01(
+      fog.directional_light_color.b * lighting.directional_color.b,
+    )
+    fogged_r = fogged_r * (1.0F - directional_mix) +
+      directional_tint_r * directional_mix
+    fogged_g = fogged_g * (1.0F - directional_mix) +
+      directional_tint_g * directional_mix
+    fogged_b = fogged_b * (1.0F - directional_mix) +
+      directional_tint_b * directional_mix
+  }
+
+  (clamp01(fogged_r), clamp01(fogged_g), clamp01(fogged_b))
+}
+
+///|
+fn render3d_visibility_range_visible(
+  visibility_range : @visibility.VisibilityRange,
+  camera_transform : @math.Transform,
+  mesh_transform : @math.Transform,
+  mesh_aabb_center_world : @math.Vec3?,
+) -> Bool {
+  let mesh_position = if visibility_range.use_aabb {
+    match mesh_aabb_center_world {
+      Some(center) => center
+      None => mesh_transform.translation
+    }
+  } else {
+    mesh_transform.translation
+  }
+  let to_mesh = mesh_position.sub(camera_transform.translation)
+  let distance = to_mesh.length()
+  let near_bound = visibility_range.start_margin_min
+  let far_bound = visibility_range.end_margin_max
+  if far_bound < near_bound {
+    return false
+  }
+  distance >= near_bound && distance < far_bound
+}
+
+///|
+fn render3d_sorted_mesh_indices(
+  meshes : Array[Mesh3dInstance],
+  layers : @sprite.RenderLayers,
+  camera_transform : @math.Transform,
+) -> Array[Int] {
+  let order : Array[Int] = []
+  for i in 0..<meshes.length() {
+    let mesh = meshes[i]
+    if mesh.mesh_id <= 0 {
+      continue
+    }
+    if !mesh.layers.matches(layers) {
+      continue
+    }
+    if mesh.visibility_range is Some(visibility_range) &&
+      !render3d_visibility_range_visible(
+        visibility_range,
+        camera_transform,
+        mesh.transform,
+        mesh.aabb_center_world,
+      ) {
+      continue
+    }
+    if render3d_mesh_alpha_phase(
+        mesh.material.alpha_mode,
+        mesh.material.base_color.a,
+      )
+      is None {
+      continue
+    }
+    order.push(i)
+  }
+  order.sort_by(fn(a, b) {
+    let ma = meshes[a]
+    let mb = meshes[b]
+    let alpha_a = ma.material.base_color.a
+    let alpha_b = mb.material.base_color.a
+    let phase_a = render3d_mesh_alpha_phase(ma.material.alpha_mode, alpha_a).unwrap()
+    let phase_b = render3d_mesh_alpha_phase(mb.material.alpha_mode, alpha_b).unwrap()
+    let phase_cmp = cmp_int(phase_a, phase_b)
+    if phase_cmp != 0 {
+      return phase_cmp
+    }
+    let depth_a = render3d_mesh_view_depth(ma.transform, camera_transform)
+    let depth_b = render3d_mesh_view_depth(mb.transform, camera_transform)
+    if phase_a == 0 {
+      let texture_a = match ma.material.base_color_texture {
+        Some(texture) => texture.id()
+        None => -1
+      }
+      let texture_b = match mb.material.base_color_texture {
+        Some(texture) => texture.id()
+        None => -1
+      }
+      let texture_cmp = cmp_int(texture_a, texture_b)
+      if texture_cmp != 0 {
+        return texture_cmp
+      }
+      let depth_cmp = cmp_float(depth_a, depth_b)
+      if depth_cmp != 0 {
+        return depth_cmp
+      }
+    } else {
+      let depth_cmp = cmp_float(depth_b, depth_a)
+      if depth_cmp != 0 {
+        return depth_cmp
+      }
+    }
+    let id_cmp = cmp_int(ma.entity.id, mb.entity.id)
+    if id_cmp != 0 {
+      return id_cmp
+    }
+    cmp_int(ma.entity.generation, mb.entity.generation)
+  })
+  order
+}
+
+///|
+fn free_camera_angles_from_transform(
+  transform : @math.Transform,
+) -> (Float, Float) {
+  let forward = render3d_transform_forward(transform)
+  let horizontal = @math.sqrt(forward.x * forward.x + forward.z * forward.z)
+  let pitch = @math.atan2(forward.y, horizontal)
+  let yaw = @math.atan2(-forward.x, -forward.z)
+  (yaw, pitch)
+}
+
+///|
+fn free_camera_clamp_pitch(pitch : Float) -> Float {
+  let half_pi = @math.pi_half()
+  if pitch < -half_pi {
+    -half_pi
+  } else if pitch > half_pi {
+    half_pi
+  } else {
+    pitch
+  }
+}
+
+///|
+fn free_camera_exp_decay(rate : Float, delta_seconds : Float) -> Float {
+  if rate <= 0.0F || delta_seconds <= 0.0F {
+    return 1.0F
+  }
+  @math.pow(2.718281828459045F, -rate * delta_seconds)
+}
+
+///|
+pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
+  let delta_seconds = render3d_default_time_or_default(world).delta_seconds()
+  let tick = world.read_change_tick()
+  let camera_store = world.component(@sprite.ecs_key_camera)
+  let transform_store = world.component(@math.ecs_key_transform)
+  let free_camera_store = world.component(ecs_key_free_camera)
+  let free_camera_state_store = get_free_camera_state_store(world)
+  let mut system_state = free_camera_system_state.val
+
+  let controlled_entities : Array[@core.Entity] = []
+  free_camera_store.for_each(fn(entity, _config) {
+    if camera_store.get(entity) is None || transform_store.get(entity) is None {
+      return
+    }
+    controlled_entities.push(entity)
+  })
+  if controlled_entities.length() != 1 {
+    return
+  }
+  let controlled_entity = controlled_entities[0]
+
+  guard free_camera_store.get(controlled_entity) is Some(config) else { return }
+  guard transform_store.get(controlled_entity) is Some(initial_transform) else {
+    return
+  }
+  let mut transform = initial_transform
+  let mut state = match free_camera_state_store.get(controlled_entity) {
+    Some(existing) => existing
+    None => {
+      let default_state = FreeCameraState::default()
+      free_camera_state_store.insert(controlled_entity, default_state, tick)
+      default_state
+    }
+  }
+
+  if !state.initialized {
+    let (yaw, pitch) = free_camera_angles_from_transform(transform)
+    state = FreeCameraState::{ ..state, initialized: true, pitch, yaw }
+  }
+
+  if !state.enabled {
+    if system_state.toggle_cursor_grab || system_state.mouse_cursor_grab {
+      system_state = FreeCameraSystemState::{
+        toggle_cursor_grab: false,
+        mouse_cursor_grab: false,
+        last_mouse_position: None,
+      }
+      @window.window_set_cursor_grab_mode(mode=@window.CursorGrabMode::GrabNone)
+      @window.window_set_cursor_visible(visible=true)
+    }
+    free_camera_system_state.val = system_state
+    free_camera_state_store.set(controlled_entity, state, tick) |> ignore
+    return
+  }
+
+  let wheel = @input.mouse_wheel_delta()
+  let mut speed_multiplier = state.speed_multiplier +
+    wheel.y * config.scroll_factor
+  if speed_multiplier < 0.0F {
+    speed_multiplier = 0.0F
+  }
+  state = FreeCameraState::{ ..state, speed_multiplier, }
+
+  let mut axis_input = @math.Vec3::zero()
+  if @input.key_pressed(config.key_forward) {
+    axis_input = axis_input.add(@math.Vec3::new(0.0F, 0.0F, 1.0F))
+  }
+  if @input.key_pressed(config.key_back) {
+    axis_input = axis_input.add(@math.Vec3::new(0.0F, 0.0F, -1.0F))
+  }
+  if @input.key_pressed(config.key_right) {
+    axis_input = axis_input.add(@math.Vec3::new(1.0F, 0.0F, 0.0F))
+  }
+  if @input.key_pressed(config.key_left) {
+    axis_input = axis_input.add(@math.Vec3::new(-1.0F, 0.0F, 0.0F))
+  }
+  if @input.key_pressed(config.key_up) {
+    axis_input = axis_input.add(@math.Vec3::new(0.0F, 1.0F, 0.0F))
+  }
+  if @input.key_pressed(config.key_down) {
+    axis_input = axis_input.add(@math.Vec3::new(0.0F, -1.0F, 0.0F))
+  }
+
+  let mut cursor_grab_change = false
+  if @input.key_just_pressed(config.keyboard_key_toggle_cursor_grab) {
+    system_state = FreeCameraSystemState::{
+      ..system_state,
+      toggle_cursor_grab: !system_state.toggle_cursor_grab,
+    }
+    cursor_grab_change = true
+  }
+  if @input.mouse_button_just_pressed(config.mouse_key_cursor_grab) {
+    system_state = FreeCameraSystemState::{
+      ..system_state,
+      mouse_cursor_grab: true,
+    }
+    cursor_grab_change = true
+  }
+  if @input.mouse_button_just_released(config.mouse_key_cursor_grab) {
+    system_state = FreeCameraSystemState::{
+      ..system_state,
+      mouse_cursor_grab: false,
+    }
+    cursor_grab_change = true
+  }
+  let cursor_grab = system_state.toggle_cursor_grab ||
+    system_state.mouse_cursor_grab
+
+  let mut velocity = state.velocity
+  if axis_input.length_squared() > 0.0F {
+    let base_speed = if @input.key_pressed(config.key_run) {
+      config.run_speed
+    } else {
+      config.walk_speed
+    }
+    velocity = axis_input
+      .normalize_or_zero()
+      .mul_scalar(base_speed * state.speed_multiplier)
+  } else {
+    let friction = if config.friction < 0.0F { 0.0F } else { config.friction }
+    let decay = free_camera_exp_decay(friction, delta_seconds)
+    velocity = velocity.mul_scalar(decay)
+    if velocity.length_squared() < 1.0e-6F {
+      velocity = @math.Vec3::zero()
+    }
+  }
+  state = FreeCameraState::{ ..state, velocity, }
+
+  if velocity.length_squared() > 0.0F {
+    let forward = render3d_transform_forward(transform)
+    let right = quat_rotate_vec3(
+      transform.rotation,
+      @math.Vec3::new(1.0F, 0.0F, 0.0F),
+    ).normalize_or_zero()
+    let movement = right
+      .mul_scalar(velocity.x * delta_seconds)
+      .add(
+        @math.Vec3::new(0.0F, 1.0F, 0.0F).mul_scalar(velocity.y * delta_seconds),
+      )
+      .add(forward.mul_scalar(velocity.z * delta_seconds))
+    transform = transform.with_translation(transform.translation.add(movement))
+  }
+
+  if cursor_grab_change {
+    if cursor_grab {
+      @window.window_set_cursor_grab_mode(
+        mode=@window.CursorGrabMode::GrabLocked,
+      )
+      @window.window_set_cursor_visible(visible=false)
+    } else {
+      @window.window_set_cursor_grab_mode(mode=@window.CursorGrabMode::GrabNone)
+      @window.window_set_cursor_visible(visible=true)
+    }
+  }
+
+  if cursor_grab {
+    match @input.mouse_position() {
+      Some(mouse_position) => {
+        let mouse_delta = match system_state.last_mouse_position {
+          Some(last_position) => mouse_position.sub(last_position)
+          None => @math.Vec2::new(0.0F, 0.0F)
+        }
+        system_state = FreeCameraSystemState::{
+          ..system_state,
+          last_mouse_position: Some(mouse_position),
+        }
+        if mouse_delta.x != 0.0F || mouse_delta.y != 0.0F {
+          let pitch = free_camera_clamp_pitch(
+            state.pitch -
+            mouse_delta.y * FREE_CAMERA_RADIANS_PER_DOT * config.sensitivity,
+          )
+          let yaw = state.yaw -
+            mouse_delta.x * FREE_CAMERA_RADIANS_PER_DOT * config.sensitivity
+          let rotation = @math.Quat::from_rotation_y(yaw)
+            .mul(@math.Quat::from_rotation_x(pitch))
+            .normalize()
+          transform = transform.with_rotation(rotation)
+          state = FreeCameraState::{ ..state, pitch, yaw }
+        }
+      }
+      None =>
+        system_state = FreeCameraSystemState::{
+          ..system_state,
+          last_mouse_position: None,
+        }
+    }
+  } else {
+    system_state = FreeCameraSystemState::{
+      ..system_state,
+      last_mouse_position: None,
+    }
+  }
+
+  free_camera_system_state.val = system_state
+  transform_store.set(controlled_entity, transform, tick) |> ignore
+  free_camera_state_store.set(controlled_entity, state, tick) |> ignore
+}
+
+///|
+pub fn free_camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app.add_pre_update_system(run_freecamera_controller)
+}
+
+///|
+fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
+  let camera3d_store = world.component(ecs_key_camera3d)
+  let camera_store = world.component(@sprite.ecs_key_camera)
+  let entries : Array[Render3dCameraOrderEntry] = []
+  camera3d_store.for_each(fn(entity, _camera3d) {
+    let order = match camera_store.get(entity) {
+      Some(camera) => camera.order
+      None => @sprite.Camera::default().order
+    }
+    entries.push(Render3dCameraOrderEntry::{ entity, order })
+  })
+  entries.sort_by(fn(a, b) {
+    let order_cmp = cmp_int(a.order, b.order)
+    if order_cmp != 0 {
+      return order_cmp
+    }
+    let id_cmp = cmp_int(a.entity.id, b.entity.id)
+    if id_cmp != 0 {
+      return id_cmp
+    }
+    cmp_int(a.entity.generation, b.entity.generation)
+  })
+  let sorted : Array[@core.Entity] = []
+  for entry in entries {
+    sorted.push(entry.entity)
+  }
+  sorted
+}
+
+///|
+fn render3d_prepared_camera_indices(
+  cameras : Array[Camera3dInstance],
+) -> Array[Int]? {
+  let prepared = render3d_prepared_camera_order_ref.val
+  if prepared.length() != cameras.length() {
+    return None
+  }
+  let indices : Array[Int] = []
+  for entity in prepared {
+    let mut found_index = -1
+    for i in 0..<cameras.length() {
+      let camera = cameras[i]
+      if camera.entity.id == entity.id &&
+        camera.entity.generation == entity.generation {
+        found_index = i
+        break
+      }
+    }
+    if found_index < 0 {
+      return None
+    }
+    indices.push(found_index)
+  }
+  Some(indices)
+}
+
+///|
+pub fn render3d_extract_system(world : @ecs.World) -> Unit {
+  render3d_prepared_camera_order_ref.val = render3d_sorted_camera_entities(
+    world,
+  )
+  render3d_diagnostic_prepared_camera_count_ref.val = render3d_prepared_camera_order_ref.val.length()
+  render3d_queued_visible_mesh_count_ref.val = 0
+  render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
+}
+
+///|
+pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
+  let tick = world.read_change_tick()
+  let mesh_store = world.component(ecs_key_mesh3d)
+  let gpu_mesh_store = world.component(@sprite.ecs_key_gpu_mesh2d)
+  mesh_store.for_each(fn(entity, mesh) {
+    if gpu_mesh_store.get(entity) is Some(_) {
+      return
+    }
+    let mesh_id = @sprite_render.render2d_upload_mesh_handle(mesh.mesh)
+    gpu_mesh_store.insert(entity, @sprite.GpuMesh2d::new(mesh_id), tick)
+  })
+  if render3d_prepared_camera_order_ref.val.length() == 0 {
+    render3d_prepared_camera_order_ref.val = render3d_sorted_camera_entities(
+      world,
+    )
+  }
+}
+
+///|
+pub fn render3d_queue_system(world : @ecs.World) -> Unit {
+  if render3d_prepared_camera_order_ref.val.length() == 0 {
+    render3d_queued_visible_mesh_count_ref.val = 0
+    render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
+    return
+  }
+  let mesh_store = world.component(ecs_key_mesh3d)
+  let view_visibility_store = world.component(
+    @visibility.ecs_key_view_visibility,
+  )
+  let mut visible_mesh_count = 0
+  mesh_store.for_each(fn(entity, _mesh3d) {
+    if view_visibility_store.get(entity) is Some(view_visibility) &&
+      !view_visibility.is_visible() {
+      return
+    }
+    visible_mesh_count = visible_mesh_count + 1
+  })
+  render3d_queued_visible_mesh_count_ref.val = visible_mesh_count
+  render3d_diagnostic_queued_visible_mesh_count_ref.val = visible_mesh_count
+}
+
+///|
+pub fn render3d_diagnostic_queued_visible_mesh_count() -> Int {
+  render3d_diagnostic_queued_visible_mesh_count_ref.val
+}
+
+///|
+pub fn render3d_diagnostic_prepared_camera_count() -> Int {
+  render3d_diagnostic_prepared_camera_count_ref.val
+}
+
+///|
+pub fn render3d_prepared_camera_count() -> Int? {
+  if !render3d_runtime_initialized_ref.val {
+    return Some(0)
+  }
+  Some(render3d_prepared_camera_order_ref.val.length())
+}
+
+///|
+pub fn render3d_queued_visible_mesh_count() -> Int? {
+  if !render3d_runtime_initialized_ref.val {
+    return Some(0)
+  }
+  Some(render3d_queued_visible_mesh_count_ref.val)
+}
+
+///|
+fn render3d_begin_pass_3d(
+  target_id~ : Int,
+  target_layer? : Int = -1,
+  width~ : Int,
+  height~ : Int,
+  clear_r~ : Float,
+  clear_g~ : Float,
+  clear_b~ : Float,
+  clear_a~ : Float,
+  camera_transform : @math.Transform,
+  pass_projection : Render3dPassProjection,
+  viewport_x~ : Int,
+  viewport_y~ : Int,
+  viewport_width~ : Int,
+  viewport_height~ : Int,
+  lighting : Render3dLightingState,
+  previous_clip_from_world~ : ProjectionMatrix3d?,
+  point_shadow_near~ : Float,
+  pass_kind~ : Int,
+  clear_enabled~ : Int,
+) -> Unit {
+  let clip_from_world = render3d_pass_projection_clip_from_world(
+    pass_projection, camera_transform,
+  )
+  let unjittered_clip_from_world = render3d_pass_projection_unjittered_clip_from_world(
+    pass_projection, camera_transform,
+  )
+  let resolved_previous_clip_from_world = match previous_clip_from_world {
+    Some(value) => value
+    None => clip_from_world
+  }
+  @render.host_gpu_begin_pass_3d(
+    target_id~,
+    target_layer~,
+    width~,
+    height~,
+    clear_r~,
+    clear_g~,
+    clear_b~,
+    clear_a~,
+    camera_x=camera_transform.translation.x,
+    camera_y=camera_transform.translation.y,
+    camera_z=camera_transform.translation.z,
+    camera_rot_x=camera_transform.rotation.x,
+    camera_rot_y=camera_transform.rotation.y,
+    camera_rot_z=camera_transform.rotation.z,
+    camera_rot_w=camera_transform.rotation.w,
+    clip_from_world_x_axis_x=clip_from_world.x_axis.x,
+    clip_from_world_x_axis_y=clip_from_world.x_axis.y,
+    clip_from_world_x_axis_z=clip_from_world.x_axis.z,
+    clip_from_world_x_axis_w=clip_from_world.x_axis.w,
+    clip_from_world_y_axis_x=clip_from_world.y_axis.x,
+    clip_from_world_y_axis_y=clip_from_world.y_axis.y,
+    clip_from_world_y_axis_z=clip_from_world.y_axis.z,
+    clip_from_world_y_axis_w=clip_from_world.y_axis.w,
+    clip_from_world_z_axis_x=clip_from_world.z_axis.x,
+    clip_from_world_z_axis_y=clip_from_world.z_axis.y,
+    clip_from_world_z_axis_z=clip_from_world.z_axis.z,
+    clip_from_world_z_axis_w=clip_from_world.z_axis.w,
+    clip_from_world_w_axis_x=clip_from_world.w_axis.x,
+    clip_from_world_w_axis_y=clip_from_world.w_axis.y,
+    clip_from_world_w_axis_z=clip_from_world.w_axis.z,
+    clip_from_world_w_axis_w=clip_from_world.w_axis.w,
+    unjittered_clip_from_world_x_axis_x=unjittered_clip_from_world.x_axis.x,
+    unjittered_clip_from_world_x_axis_y=unjittered_clip_from_world.x_axis.y,
+    unjittered_clip_from_world_x_axis_z=unjittered_clip_from_world.x_axis.z,
+    unjittered_clip_from_world_x_axis_w=unjittered_clip_from_world.x_axis.w,
+    unjittered_clip_from_world_y_axis_x=unjittered_clip_from_world.y_axis.x,
+    unjittered_clip_from_world_y_axis_y=unjittered_clip_from_world.y_axis.y,
+    unjittered_clip_from_world_y_axis_z=unjittered_clip_from_world.y_axis.z,
+    unjittered_clip_from_world_y_axis_w=unjittered_clip_from_world.y_axis.w,
+    unjittered_clip_from_world_z_axis_x=unjittered_clip_from_world.z_axis.x,
+    unjittered_clip_from_world_z_axis_y=unjittered_clip_from_world.z_axis.y,
+    unjittered_clip_from_world_z_axis_z=unjittered_clip_from_world.z_axis.z,
+    unjittered_clip_from_world_z_axis_w=unjittered_clip_from_world.z_axis.w,
+    unjittered_clip_from_world_w_axis_x=unjittered_clip_from_world.w_axis.x,
+    unjittered_clip_from_world_w_axis_y=unjittered_clip_from_world.w_axis.y,
+    unjittered_clip_from_world_w_axis_z=unjittered_clip_from_world.w_axis.z,
+    unjittered_clip_from_world_w_axis_w=unjittered_clip_from_world.w_axis.w,
+    previous_clip_from_world_x_axis_x=resolved_previous_clip_from_world.x_axis.x,
+    previous_clip_from_world_x_axis_y=resolved_previous_clip_from_world.x_axis.y,
+    previous_clip_from_world_x_axis_z=resolved_previous_clip_from_world.x_axis.z,
+    previous_clip_from_world_x_axis_w=resolved_previous_clip_from_world.x_axis.w,
+    previous_clip_from_world_y_axis_x=resolved_previous_clip_from_world.y_axis.x,
+    previous_clip_from_world_y_axis_y=resolved_previous_clip_from_world.y_axis.y,
+    previous_clip_from_world_y_axis_z=resolved_previous_clip_from_world.y_axis.z,
+    previous_clip_from_world_y_axis_w=resolved_previous_clip_from_world.y_axis.w,
+    previous_clip_from_world_z_axis_x=resolved_previous_clip_from_world.z_axis.x,
+    previous_clip_from_world_z_axis_y=resolved_previous_clip_from_world.z_axis.y,
+    previous_clip_from_world_z_axis_z=resolved_previous_clip_from_world.z_axis.z,
+    previous_clip_from_world_z_axis_w=resolved_previous_clip_from_world.z_axis.w,
+    previous_clip_from_world_w_axis_x=resolved_previous_clip_from_world.w_axis.x,
+    previous_clip_from_world_w_axis_y=resolved_previous_clip_from_world.w_axis.y,
+    previous_clip_from_world_w_axis_z=resolved_previous_clip_from_world.w_axis.z,
+    previous_clip_from_world_w_axis_w=resolved_previous_clip_from_world.w_axis.w,
+    viewport_x~,
+    viewport_y~,
+    viewport_width~,
+    viewport_height~,
+    ambient_r=lighting.ambient_color.r,
+    ambient_g=lighting.ambient_color.g,
+    ambient_b=lighting.ambient_color.b,
+    ambient_brightness=lighting.ambient_brightness,
+    directional_dir_x=lighting.directional_dir.x,
+    directional_dir_y=lighting.directional_dir.y,
+    directional_dir_z=lighting.directional_dir.z,
+    directional_color_r=lighting.directional_color.r,
+    directional_color_g=lighting.directional_color.g,
+    directional_color_b=lighting.directional_color.b,
+    directional_illuminance=lighting.directional_illuminance,
+    point_pos_x=lighting.point_pos.x,
+    point_pos_y=lighting.point_pos.y,
+    point_pos_z=lighting.point_pos.z,
+    point_color_r=lighting.point_color.r,
+    point_color_g=lighting.point_color.g,
+    point_color_b=lighting.point_color.b,
+    point_intensity=lighting.point_intensity,
+    point_range=lighting.point_range,
+    spot_pos_x=lighting.spot_pos.x,
+    spot_pos_y=lighting.spot_pos.y,
+    spot_pos_z=lighting.spot_pos.z,
+    spot_dir_x=lighting.spot_dir.x,
+    spot_dir_y=lighting.spot_dir.y,
+    spot_dir_z=lighting.spot_dir.z,
+    spot_color_r=lighting.spot_color.r,
+    spot_color_g=lighting.spot_color.g,
+    spot_color_b=lighting.spot_color.b,
+    spot_intensity=lighting.spot_intensity,
+    spot_range=lighting.spot_range,
+    spot_inner_angle=lighting.spot_inner_angle,
+    spot_outer_angle=lighting.spot_outer_angle,
+    point_shadow_near~,
+    pass_kind~,
+    clear_enabled~,
+  )
+}
+
+///|
+fn render3d_draw_mesh_instance(
+  mesh : Mesh3dInstance,
+  transform : @math.Transform,
+  previous_transform : @math.Transform,
+  draw_color_r : Float,
+  draw_color_g : Float,
+  draw_color_b : Float,
+  draw_alpha : Float,
+  texture_id : Int,
+  normal_texture_id : Int,
+  emissive_texture_id : Int,
+  metallic_roughness_texture_id : Int,
+  occlusion_texture_id : Int,
+  depth_texture_id : Int,
+  anisotropy_texture_id : Int,
+  specular_tint_texture_id : Int,
+  draw_surface_roughness : Float,
+  draw_reflectance : Float,
+  draw_diffuse_transmission : Float,
+  draw_specular_transmission : Float,
+  draw_thickness : Float,
+  draw_ior : Float,
+  transmission_source_texture_id : Int,
+  transmission_blur_taps : Float,
+  transmission_steps : Float,
+  point_shadow_texture_id : Int,
+  point_shadow_enabled : Float,
+  point_shadow_depth_bias : Float,
+  specular_tint : @sprite.Color,
+  anisotropy_strength : Float,
+  max_relief_mapping_search_steps : Float,
+  draw_flags : Int,
+) -> Unit {
+  let draw_cull_mode_base = match mesh.material.cull_mode {
+    None => 0
+    Some(face) =>
+      match face {
+        Face3d::Front => 1
+        Face3d::Back => 2
+      }
+  }
+  let draw_cull_mode = draw_cull_mode_base | draw_flags
+  @render.host_gpu_draw_mesh3d(
+    mesh_id=mesh.mesh_id,
+    x=transform.translation.x,
+    y=transform.translation.y,
+    z=transform.translation.z,
+    rotation_x=transform.rotation.x,
+    rotation_y=transform.rotation.y,
+    rotation_z=transform.rotation.z,
+    rotation_w=transform.rotation.w,
+    scale_x=transform.scale.x,
+    scale_y=transform.scale.y,
+    scale_z=transform.scale.z,
+    previous_x=previous_transform.translation.x,
+    previous_y=previous_transform.translation.y,
+    previous_z=previous_transform.translation.z,
+    previous_rotation_x=previous_transform.rotation.x,
+    previous_rotation_y=previous_transform.rotation.y,
+    previous_rotation_z=previous_transform.rotation.z,
+    previous_rotation_w=previous_transform.rotation.w,
+    previous_scale_x=previous_transform.scale.x,
+    previous_scale_y=previous_transform.scale.y,
+    previous_scale_z=previous_transform.scale.z,
+    color_r=draw_color_r,
+    color_g=draw_color_g,
+    color_b=draw_color_b,
+    color_a=draw_alpha,
+    texture_id~,
+    uv_transform_a=mesh.material.uv_transform.a,
+    uv_transform_b=mesh.material.uv_transform.b,
+    uv_transform_c=mesh.material.uv_transform.c,
+    uv_transform_d=mesh.material.uv_transform.d,
+    uv_transform_tx=mesh.material.uv_transform.tx,
+    uv_transform_ty=mesh.material.uv_transform.ty,
+    uv_transform_mode=1.0F,
+    normal_texture_id~,
+    emissive_texture_id~,
+    metallic_roughness_texture_id~,
+    occlusion_texture_id~,
+    depth_texture_id~,
+    emissive_r=mesh.material.emissive.r,
+    emissive_g=mesh.material.emissive.g,
+    emissive_b=mesh.material.emissive.b,
+    unlit=if mesh.material.unlit { 1.0F } else { 0.0F },
+    metallic=mesh.material.metallic,
+    roughness=draw_surface_roughness,
+    reflectance=draw_reflectance,
+    parallax_depth_scale=mesh.material.parallax_depth_scale,
+    max_parallax_layer_count=mesh.material.max_parallax_layer_count,
+    max_relief_mapping_search_steps~,
+    anisotropy_texture_id~,
+    anisotropy_strength~,
+    anisotropy_rotation=mesh.material.anisotropy_rotation,
+    specular_tint_texture_id~,
+    specular_tint_r=specular_tint.r,
+    specular_tint_g=specular_tint.g,
+    specular_tint_b=specular_tint.b,
+    diffuse_transmission=draw_diffuse_transmission,
+    specular_transmission=draw_specular_transmission,
+    thickness=draw_thickness,
+    ior=draw_ior,
+    transmission_source_texture_id~,
+    transmission_blur_taps~,
+    transmission_steps~,
+    point_shadow_texture_id~,
+    point_shadow_enabled~,
+    point_shadow_depth_bias~,
+    cull_mode=draw_cull_mode,
+  )
+}
+
+///|
+pub fn render3d_execute_system(world : @ecs.World) -> Unit {
+  let cameras : Array[Camera3dInstance] = []
+  let meshes : Array[Mesh3dInstance] = []
+  let projection_updates : Array[
+    (@core.Entity, Projection, ProjectionRuntime3d),
+  ] = []
+  let projection_runtime_removals : Array[@core.Entity] = []
+  let camera3d_store = world.component(ecs_key_camera3d)
+  let camera_store = world.component(@sprite.ecs_key_camera)
+  let projection_store = world.component(ecs_key_projection)
+  let projection_runtime_store = world.component(ecs_key_projection_runtime3d)
+  let sub_camera_view_store = world.component(ecs_key_sub_camera_view3d)
+  let screen_space_transmission_store = world.component(
+    ecs_key_screen_space_transmission,
+  )
+  let bloom_store = world.component(ecs_key_bloom)
+  let tonemapping_store = world.component(ecs_key_tonemapping)
+  let deband_dither_store = world.component(ecs_key_deband_dither)
+  let chromatic_aberration_store = world.component(ecs_key_chromatic_aberration)
+  let vignette_store = world.component(ecs_key_vignette)
+  let motion_blur_store = world.component(ecs_key_motion_blur)
+  let exposure_store = world.component(ecs_key_exposure)
+  let color_grading_store = world.component(ecs_key_color_grading)
+  let skybox_store = world.component(ecs_key_skybox)
+  let hdr_store = world.component(ecs_key_hdr)
+  let fxaa_store = world.component(ecs_key_fxaa)
+  let temporal_jitter_store = world.component(ecs_key_temporal_jitter)
+  let motion_vector_prepass_store = world.component(
+    ecs_key_motion_vector_prepass,
+  )
+  let temporal_anti_aliasing_store = world.component(
+    ecs_key_temporal_anti_aliasing,
+  )
+  let target_store = world.component(@sprite.ecs_key_render_target)
+  let layers_store = world.component(@sprite.ecs_key_render_layers)
+  let depth_prepass_store = world.component(ecs_key_depth_prepass)
+  let deferred_prepass_store = world.component(ecs_key_deferred_prepass)
+  let msaa_store = world.component(ecs_key_msaa)
+  let transform_store = world.component(@math.ecs_key_transform)
+  let view_visibility_store = world.component(
+    @visibility.ecs_key_view_visibility,
+  )
+  let tick = world.read_change_tick()
+  let default_opaque_renderer_method = if (try! world.get_resource(
+      ecs_key_default_opaque_renderer_method,
+    ))
+    is Some(default_method) {
+    default_method.renderer_method()
+  } else {
+    OpaqueRendererMethod::Forward
+  }
+  let point_light_shadow_map_size = if (try! world.get_resource(
+      ecs_key_point_light_shadow_map,
+    ))
+    is Some(shadow_map) {
+    if shadow_map.size <= 0 {
+      1
+    } else {
+      shadow_map.size
+    }
+  } else {
+    PointLightShadowMap::default().size
+  }
+  camera3d_store.for_each(fn(entity, camera3d) {
+    let camera = match camera_store.get(entity) {
+      Some(v) => v
+      None => @sprite.Camera::default()
+    }
+    let projection_component = projection_store.get(entity)
+    let projection = match projection_component {
+      Some(v) => v
+      None => Projection::default()
+    }
+    let projection_changed = match projection_store.get_ticks(entity) {
+      Some(component_ticks) => {
+        let previous_tick = if tick <= 0 { 0 } else { tick - 1 }
+        component_ticks.is_changed(@core.SystemTicks::new(previous_tick, tick))
+      }
+      None => false
+    }
+    let sub_camera_view = sub_camera_view_store.get(entity)
+    let screen_space_transmission = screen_space_transmission_store.get(entity)
+    let bloom = bloom_store.get(entity)
+    let tonemapping = tonemapping_store.get(entity)
+    let deband_dither = deband_dither_store.get(entity)
+    let chromatic_aberration = chromatic_aberration_store.get(entity)
+    let vignette = vignette_store.get(entity)
+    let motion_blur = motion_blur_store.get(entity)
+    let exposure = exposure_store.get(entity)
+    let color_grading = color_grading_store.get(entity)
+    let skybox = skybox_store.get(entity)
+    let hdr_enabled = hdr_store.get(entity) is Some(_)
+    let fxaa = fxaa_store.get(entity)
+    let temporal_jitter = temporal_jitter_store.get(entity)
+    let motion_vector_prepass_enabled = motion_vector_prepass_store.get(entity)
+      is Some(_)
+    let temporal_anti_aliasing = temporal_anti_aliasing_store.get(entity)
+    let depth_prepass_enabled = depth_prepass_store.get(entity) is Some(_)
+    let deferred_prepass_enabled = deferred_prepass_store.get(entity) is Some(_)
+    let msaa = msaa_store.get(entity)
+    let target = match target_store.get(entity) {
+      Some(v) => v
+      None => @sprite.RenderTarget::Screen
+    }
+    let layers = match layers_store.get(entity) {
+      Some(v) => v
+      None => @sprite.RenderLayers::default()
+    }
+    let transform = match transform_store.get(entity) {
+      Some(v) => v
+      None => @math.Transform::identity()
+    }
+    let previous_camera_history = camera_motion_blur_history_get(entity)
+    let previous_transform = match previous_camera_history {
+      Some(v) => v.transform
+      None => transform
+    }
+    match render3d_target_info(world, target) {
+      Some(target_info) => {
+        let mut camera_clamped = camera
+        if camera.viewport is Some(viewport) {
+          let clamped = render3d_clamp_viewport(
+            viewport,
+            target_info.target_size,
+          )
+          camera_clamped = camera.with_viewport(clamped)
+        }
+        let projection = match projection_component {
+          Some(component_projection) => {
+            let (runtime_projection, runtime_update) = render3d_projection_runtime_update(
+              component_projection,
+              projection_runtime_store.get(entity),
+              projection_changed,
+              camera_clamped,
+              target_info.target_size,
+              target_info.scale_factor,
+            )
+            if runtime_update is Some(runtime_state) {
+              projection_updates.push(
+                (entity, runtime_projection, runtime_state),
+              )
+            }
+            runtime_projection
+          }
+          None =>
+            render3d_projection_runtime_projection(
+              projection,
+              camera_clamped,
+              target_info.target_size,
+              target_info.scale_factor,
+            )
+        }
+        cameras.push(Camera3dInstance::{
+          entity,
+          camera3d,
+          camera: camera_clamped,
+          projection,
+          sub_camera_view,
+          screen_space_transmission,
+          bloom,
+          tonemapping,
+          deband_dither,
+          chromatic_aberration,
+          vignette,
+          motion_blur,
+          exposure,
+          color_grading,
+          skybox,
+          depth_prepass_enabled,
+          deferred_prepass_enabled,
+          hdr_enabled,
+          fxaa,
+          temporal_jitter,
+          temporal_anti_aliasing,
+          motion_vector_prepass_enabled,
+          msaa,
+          transform,
+          previous_transform,
+          previous_clip_from_world: match previous_camera_history {
+            Some(v) => Some(v.clip_from_world)
+            None => None
+          },
+          target_id: target_info.target_id,
+          target_size: target_info.target_size,
+          scale_factor: target_info.scale_factor,
+          layers,
+        })
+      }
+      None => ()
+    }
+    if projection_component is None &&
+      projection_runtime_store.get(entity) is Some(_) {
+      projection_runtime_removals.push(entity)
+    }
+  })
+  for update in projection_updates {
+    projection_store.insert(update.0, update.1, tick)
+    projection_runtime_store.insert(update.0, update.2, tick)
+  }
+  for entity in projection_runtime_removals {
+    projection_runtime_store.remove(entity) |> ignore
+  }
+  if cameras.length() == 0 {
+    render3d_prepared_camera_order_ref.val.clear()
+    render3d_queued_visible_mesh_count_ref.val = 0
+    return
+  }
+  let mesh_store = world.component(ecs_key_mesh3d)
+  let material_store = world.component(ecs_key_mesh_material3d)
+  let gpu_mesh_store = world.component(@sprite.ecs_key_gpu_mesh2d)
+  let visibility_range_store = world.component(
+    @visibility.ecs_key_visibility_range,
+  )
+  let wireframe_store = world.component(ecs_key_wireframe)
+  let no_wireframe_store = world.component(ecs_key_no_wireframe)
+  let wireframe_color_store = world.component(ecs_key_wireframe_color)
+  let forward_decal_store = world.component(ecs_key_forward_decal)
+  let forward_decal_material_ext_store = world.component(
+    ecs_key_forward_decal_material_ext,
+  )
+  let clustered_decal_store = world.component(ecs_key_clustered_decal)
+  let wireframe_config = if (try! world.get_resource(ecs_key_wireframe_config))
+    is Some(config) {
+    Some(config)
+  } else {
+    None
+  }
+  mesh_store.for_each(fn(entity, mesh3d) {
+    if view_visibility_store.get(entity) is Some(view_visibility) &&
+      !view_visibility.is_visible() {
+      return
+    }
+    guard gpu_mesh_store.get(entity) is Some(gpu_mesh) else { return }
+    guard material_store.get(entity) is Some(material_handle) else { return }
+    guard standard_material_get(material_handle.material) is Some(base_material) else {
+      return
+    }
+    let material = render3d_apply_extended_material_metadata(
+      base_material,
+      material_handle.extended_material,
+    )
+    let layers = match layers_store.get(entity) {
+      Some(v) => v
+      None => @sprite.RenderLayers::default()
+    }
+    let transform = match transform_store.get(entity) {
+      Some(v) => v
+      None => @math.Transform::identity()
+    }
+    let previous_transform = match motion_blur_history_get(entity) {
+      Some(v) => v
+      None => transform
+    }
+    let visibility_range = visibility_range_store.get(entity)
+    let aabb_center_world = if visibility_range is Some(range) && range.use_aabb {
+      match render3d_mesh_local_aabb_center(mesh3d) {
+        Some(local_center) =>
+          Some(render3d_transform_point(transform, local_center))
+        None => None
+      }
+    } else {
+      None
+    }
+    meshes.push(Mesh3dInstance::{
+      entity,
+      mesh_handle: mesh3d.mesh,
+      mesh_id: gpu_mesh.mesh_id,
+      transform,
+      previous_transform,
+      visibility_range,
+      aabb_center_world,
+      material,
+      material_extension: material_handle.extended_material,
+      is_forward_decal: forward_decal_store.get(entity) is Some(_),
+      forward_decal_material_ext: forward_decal_material_ext_store.get(entity),
+      clustered_decal: clustered_decal_store.get(entity),
+      layers,
+      has_wireframe: wireframe_store.get(entity) is Some(_),
+      has_no_wireframe: no_wireframe_store.get(entity) is Some(_),
+      wireframe_color: wireframe_color_store.get(entity),
+    })
+  })
+  motion_blur_history_sync(meshes)
+  let lighting = render3d_collect_lighting(world)
+  let camera_indices = match render3d_prepared_camera_indices(cameras) {
+    Some(indices) => indices
+    None => render3d_sorted_camera_indices(cameras)
+  }
+  let next_camera_motion_blur_history : Array[CameraMotionBlurHistoryEntry] = []
+  for camera_index in camera_indices {
+    let camera = cameras[camera_index]
+    let target_width = camera.target_size.x
+    let target_height = camera.target_size.y
+    if target_width <= 0 || target_height <= 0 {
+      continue
+    }
+    let mut viewport_x = 0
+    let mut viewport_y = 0
+    let mut viewport_width = target_width
+    let mut viewport_height = target_height
+    let mut viewport_depth_min = 0.0F
+    let mut viewport_depth_max = 1.0F
+    let mut view_width = target_width
+    let mut view_height = target_height
+    if camera.camera.viewport is Some(viewport) {
+      viewport_x = viewport.physical_position.x
+      viewport_y = viewport.physical_position.y
+      viewport_width = viewport.physical_size.x
+      viewport_height = viewport.physical_size.y
+      if viewport_width <= 0 || viewport_height <= 0 {
+        continue
+      }
+      viewport_depth_min = viewport.depth_min
+      viewport_depth_max = viewport.depth_max
+      view_width = viewport_width
+      view_height = viewport_height
+    }
+    let mut scale_factor = camera.scale_factor
+    if scale_factor <= 0.0F {
+      scale_factor = 1.0F
+    }
+    let view_width_f = Float::from_double(view_width.to_double()) / scale_factor
+    let view_height_f = Float::from_double(view_height.to_double()) /
+      scale_factor
+    let view_width_logical = view_width_f.to_int()
+    let view_height_logical = view_height_f.to_int()
+    if view_width_logical <= 0 || view_height_logical <= 0 {
+      continue
+    }
+    let temporal_aa_enabled = camera.temporal_anti_aliasing is Some(_)
+    let camera_pass_projection = render3d_camera_pass_projection(
+      camera.projection,
+      camera.sub_camera_view,
+      camera.temporal_jitter,
+      view_width,
+      view_height,
+    )
+    let camera_near = camera_pass_projection.camera_near
+    let camera_far = camera_pass_projection.camera_far
+    let current_clip_from_world = render3d_pass_projection_clip_from_world(
+      camera_pass_projection,
+      camera.transform,
+    )
+    next_camera_motion_blur_history.push({
+      entity: camera.entity,
+      transform: camera.transform,
+      clip_from_world: current_clip_from_world,
+    })
+    let pass_lighting = lighting
+    let camera_deferred_mode = render3d_camera_deferred_mode(
+      camera.camera3d.deferred_config,
+      default_opaque_renderer_method,
+    )
+    let camera_deferred_enabled = camera.deferred_prepass_enabled ||
+      camera.camera3d.deferred_config.requires_deferred_prepass ||
+      camera_deferred_mode is OpaqueRendererMethod::Deferred
+    let camera_msaa_allows_forward_decals = match camera.msaa {
+      Some(msaa) => msaa is Msaa::Off
+      None => true
+    }
+    let camera_forward_decal_enabled = render3d_decal_mode_allows_forward(
+        camera.camera3d.decal_config.mode,
+      ) &&
+      camera_msaa_allows_forward_decals &&
+      (
+        !camera.camera3d.decal_config.requires_depth_prepass ||
+        camera.depth_prepass_enabled
+      )
+    let camera_clustered_decal_enabled = render3d_decal_mode_allows_clustered(
+        camera.camera3d.decal_config.mode,
+      ) &&
+      (
+        !camera.camera3d.decal_config.clustered_requires_deferred_prepass ||
+        camera_deferred_enabled
+      )
+    let effective_exposure = camera.exposure
+    let camera_base_fog = match camera.camera3d.distance_fog {
+      Some(value) => value
+      None => render3d_distance_fog()
+    }
+    let distance_fog = render3d_camera_distance_fog(
+      camera_base_fog,
+      camera.camera3d.volumetric_fog,
+      camera.camera3d.atmosphere,
+      camera.camera3d.atmosphere_settings,
+    )
+    let (clear_enabled, clear_color) = camera.camera.clear_color.resolve()
+    let motion_blur_active = if camera.motion_blur is Some(motion_blur) {
+      motion_blur.samples > 0 && motion_blur.shutter_angle > 0.0F
+    } else {
+      false
+    }
+    let transmission_blur_taps = if camera.screen_space_transmission
+      is Some(transmission) &&
+      transmission.steps > 0 {
+      screen_space_transmission_blur_taps(transmission.quality)
+    } else {
+      0
+    }
+    let transmission_steps = if camera.screen_space_transmission
+      is Some(transmission) {
+      transmission.steps
+    } else {
+      0
+    }
+    let transmission_enabled = transmission_blur_taps > 0
+    let bloom_enabled = camera.bloom is Some(_)
+    let tonemap_postprocess_enabled = render3d_tonemap_postprocess_enabled(
+      camera.tonemapping,
+      camera.deband_dither,
+      camera.hdr_enabled,
+      camera.color_grading,
+      camera.fxaa,
+      camera.chromatic_aberration,
+      camera.vignette,
+    )
+    let motion_vector_prepass_enabled = motion_blur_active ||
+      camera.motion_vector_prepass_enabled ||
+      temporal_aa_enabled
+    let fog_enabled = render3d_distance_fog_enabled(distance_fog)
+    let decal_enabled = camera_forward_decal_enabled ||
+      camera_clustered_decal_enabled
+    let postprocess_enabled = motion_blur_active ||
+      bloom_enabled ||
+      tonemap_postprocess_enabled
+    let scene_pass_kind = render3d_pass_kind_encode(
+      RENDER3D_PASS_KIND_BASE_SCENE,
+      postprocess_enabled,
+      fog_enabled,
+      decal_enabled,
+    )
+    let motion_vector_pass_kind = render3d_pass_kind_encode(
+      RENDER3D_PASS_KIND_BASE_MOTION_VECTOR,
+      false,
+      false,
+      false,
+    )
+    let point_shadow_pass_kind = render3d_pass_kind_encode(
+      RENDER3D_PASS_KIND_BASE_POINT_SHADOW,
+      false,
+      false,
+      false,
+    )
+    let mut scene_target_id = camera.target_id
+    let mut velocity_target_id = -1
+    let mut point_shadow_texture_id = -1
+    let mut point_shadow_enabled = 0.0F
+    let mut point_shadow_depth_bias = 0.0F
+    let point_shadow_near = if pass_lighting.point_shadow_map_near_z > 0.0001F {
+      pass_lighting.point_shadow_map_near_z
+    } else {
+      0.0001F
+    }
+    if motion_vector_prepass_enabled {
+      let (shared_scene_id, shared_velocity_id) = render3d_motion_blur_targets_get_or_create(
+        camera.entity,
+        view_width,
+        view_height,
+      )
+      if motion_blur_active {
+        scene_target_id = shared_scene_id
+      }
+      velocity_target_id = shared_velocity_id
+      render3d_begin_pass_3d(
+        target_id=velocity_target_id,
+        width=view_width_logical,
+        height=view_height_logical,
+        clear_r=0.0F,
+        clear_g=0.0F,
+        clear_b=0.0F,
+        clear_a=0.0F,
+        camera.transform,
+        camera_pass_projection,
+        viewport_x~,
+        viewport_y~,
+        viewport_width~,
+        viewport_height~,
+        pass_lighting,
+        previous_clip_from_world=camera.previous_clip_from_world,
+        point_shadow_near~,
+        pass_kind=motion_vector_pass_kind,
+        clear_enabled=1,
+      )
+      let velocity_draw_order = render3d_sorted_mesh_indices(
+        meshes,
+        camera.layers,
+        camera.transform,
+      )
+      for draw_index in velocity_draw_order {
+        let mesh = meshes[draw_index]
+        guard render3d_mesh_draw_alpha(
+            mesh.material.alpha_mode,
+            mesh.material.base_color.a,
+          )
+          is Some(draw_alpha) else {
+          continue
+        }
+        if draw_alpha < 0.999F {
+          continue
+        }
+        render3d_draw_mesh_instance(
+          mesh,
+          mesh.transform,
+          mesh.previous_transform,
+          1.0F,
+          1.0F,
+          1.0F,
+          1.0F,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          0.5F,
+          0.5F,
+          0.0F,
+          0.0F,
+          0.0F,
+          1.5F,
+          -1,
+          0.0F,
+          0.0F,
+          -1,
+          0.0F,
+          0.0F,
+          @sprite.Color::white(),
+          0.0F,
+          0.0F,
+          render3d_mesh_draw_flags(mesh),
+        )
+      }
+      @render.host_gpu_end_pass()
+    }
+    let draw_order = render3d_sorted_mesh_indices(
+      meshes,
+      camera.layers,
+      camera.transform,
+    )
+    if pass_lighting.point_shadow_maps_enabled &&
+      !pass_lighting.point_entity.is_placeholder() &&
+      pass_lighting.point_range > 0.0F &&
+      point_light_shadow_map_size > 0 {
+      let shadow_target_id = render3d_point_light_shadow_target_get_or_create(
+        pass_lighting.point_entity,
+        point_light_shadow_map_size,
+      )
+      point_shadow_texture_id = shadow_target_id
+      point_shadow_enabled = 1.0F
+      point_shadow_depth_bias = maxf(
+        0.0F,
+        pass_lighting.point_shadow_depth_bias,
+      )
+      let shadow_camera_near = if pass_lighting.point_shadow_map_near_z >
+        0.0001F {
+        pass_lighting.point_shadow_map_near_z
+      } else {
+        0.0001F
+      }
+      let shadow_view_size = point_light_shadow_map_size
+      let point_shadow_pass_projection = render3d_point_shadow_pass_projection(
+        shadow_camera_near,
+        pass_lighting.point_range,
+      )
+      for face_index in 0..<6 {
+        let shadow_camera_transform = render3d_point_shadow_face_transform(
+          pass_lighting.point_pos,
+          face_index,
+        )
+        render3d_begin_pass_3d(
+          target_id=shadow_target_id,
+          target_layer=face_index,
+          width=shadow_view_size,
+          height=shadow_view_size,
+          clear_r=1.0F,
+          clear_g=1.0F,
+          clear_b=1.0F,
+          clear_a=1.0F,
+          shadow_camera_transform,
+          point_shadow_pass_projection,
+          viewport_x=0,
+          viewport_y=0,
+          viewport_width=shadow_view_size,
+          viewport_height=shadow_view_size,
+          pass_lighting,
+          previous_clip_from_world=None,
+          point_shadow_near=shadow_camera_near,
+          pass_kind=point_shadow_pass_kind,
+          clear_enabled=1,
+        )
+        for shadow_draw_index in draw_order {
+          let shadow_mesh = meshes[shadow_draw_index]
+          if shadow_mesh.is_forward_decal ||
+            shadow_mesh.clustered_decal is Some(_) {
+            continue
+          }
+          guard render3d_mesh_draw_alpha(
+              shadow_mesh.material.alpha_mode,
+              shadow_mesh.material.base_color.a,
+            )
+            is Some(shadow_alpha) else {
+            continue
+          }
+          if shadow_alpha < 0.999F {
+            continue
+          }
+          render3d_draw_mesh_instance(
+            shadow_mesh,
+            shadow_mesh.transform,
+            shadow_mesh.transform,
+            1.0F,
+            1.0F,
+            1.0F,
+            1.0F,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            0.5F,
+            0.5F,
+            0.0F,
+            0.0F,
+            0.0F,
+            1.5F,
+            -1,
+            0.0F,
+            0.0F,
+            -1,
+            0.0F,
+            0.0F,
+            @sprite.Color::white(),
+            0.0F,
+            0.0F,
+            0,
+          )
+        }
+        @render.host_gpu_end_pass()
+      }
+    }
+    if !motion_blur_active &&
+      (transmission_enabled || bloom_enabled || tonemap_postprocess_enabled) &&
+      (camera.target_id < 0 || bloom_enabled || tonemap_postprocess_enabled) {
+      let (scene_id, _velocity_id) = render3d_motion_blur_targets_get_or_create(
+        camera.entity,
+        view_width,
+        view_height,
+      )
+      scene_target_id = scene_id
+    }
+    let mut transmission_source_target_id = -1
+    render3d_begin_pass_3d(
+      target_id=scene_target_id,
+      width=view_width_logical,
+      height=view_height_logical,
+      clear_r=clear_color.r,
+      clear_g=clear_color.g,
+      clear_b=clear_color.b,
+      clear_a=clear_color.a,
+      camera.transform,
+      camera_pass_projection,
+      viewport_x~,
+      viewport_y~,
+      viewport_width~,
+      viewport_height~,
+      pass_lighting,
+      previous_clip_from_world=camera.previous_clip_from_world,
+      point_shadow_near~,
+      pass_kind=scene_pass_kind,
+      clear_enabled=if clear_enabled { 1 } else { 0 },
+    )
+    render3d_draw_camera_skybox(world, camera, camera_far)
+    let transmissive_draws : Array[TransmissionMeshDraw] = []
+    for draw_index in draw_order {
+      let mesh = meshes[draw_index]
+      if mesh.is_forward_decal && !camera_forward_decal_enabled {
+        continue
+      }
+      if mesh.clustered_decal is Some(_) && !camera_clustered_decal_enabled {
+        continue
+      }
+      if mesh.material_extension is Some(extension) {
+        if extension.requires_depth_prepass && !camera.depth_prepass_enabled {
+          continue
+        }
+        if extension.requires_deferred_prepass && !camera_deferred_enabled {
+          continue
+        }
+      }
+      let mesh_opaque_mode = if mesh.material.opaque_render_method
+        is OpaqueRendererMethod::Auto {
+        camera_deferred_mode
+      } else {
+        mesh.material.opaque_render_method
+      }
+      if mesh_opaque_mode is OpaqueRendererMethod::Deferred &&
+        !camera_deferred_enabled {
+        continue
+      }
+      guard render3d_mesh_draw_alpha(
+          mesh.material.alpha_mode,
+          mesh.material.base_color.a,
+        )
+        is Some(base_draw_alpha) else {
+        continue
+      }
+      let mut draw_alpha = base_draw_alpha
+      let mut texture_id = match mesh.material.base_color_texture {
+        Some(texture) => texture.id()
+        None => -1
+      }
+      let mut normal_texture_id = match
+        (
+          mesh.material.normal_map_texture,
+          mesh.material.clearcoat_normal_texture,
+        ) {
+        (Some(texture), _) => texture.id()
+        (None, Some(texture)) => texture.id()
+        (None, None) => -1
+      }
+      let mut emissive_texture_id = match mesh.material.emissive_texture {
+        Some(texture) => texture.id()
+        None => -1
+      }
+      let mut metallic_roughness_texture_id = match
+        mesh.material.metallic_roughness_texture {
+        Some(texture) => texture.id()
+        None => -1
+      }
+      let occlusion_texture_id = match mesh.material.occlusion_texture {
+        Some(texture) => texture.id()
+        None => -1
+      }
+      let depth_texture_id = match mesh.material.depth_map {
+        Some(texture) => texture.id()
+        None => -1
+      }
+      let anisotropy_texture_id = match mesh.material.anisotropy_texture {
+        Some(texture) => texture.id()
+        None => -1
+      }
+      let specular_tint_texture_id = match mesh.material.specular_tint_texture {
+        Some(texture) => texture.id()
+        None => -1
+      }
+      if mesh.clustered_decal is Some(clustered_decal) {
+        if clustered_decal.base_color_texture is Some(texture) {
+          texture_id = texture.id()
+        }
+        if clustered_decal.normal_map_texture is Some(texture) {
+          normal_texture_id = texture.id()
+        }
+        if clustered_decal.metallic_roughness_texture is Some(texture) {
+          metallic_roughness_texture_id = texture.id()
+        }
+        if clustered_decal.emissive_texture is Some(texture) {
+          emissive_texture_id = texture.id()
+        }
+      }
+      let anisotropy_strength = maxf(
+        0.0F,
+        minf(1.0F, mesh.material.anisotropy_strength),
+      )
+      let max_relief_mapping_search_steps = Float::from_double(
+        mesh.material.parallax_mapping_method.max_steps().to_double(),
+      )
+      let mut clearcoat_reflectance = maxf(
+        0.0F,
+        mesh.material.reflectance + mesh.material.clearcoat * 0.5F,
+      )
+      let clearcoat_roughness = minf(
+        mesh.material.perceptual_roughness,
+        mesh.material.clearcoat_perceptual_roughness,
+      )
+      let mut draw_roughness = if mesh.material.clearcoat > 0.0F {
+        clearcoat_roughness
+      } else {
+        mesh.material.perceptual_roughness
+      }
+      let mesh_distance = mesh.transform.translation
+        .sub(camera.transform.translation)
+        .length()
+      if mesh.is_forward_decal {
+        let depth_fade_factor = if mesh.forward_decal_material_ext
+          is Some(extension) {
+          extension.depth_fade_factor
+        } else {
+          8.0F
+        }
+        let safe_depth_fade_factor = if depth_fade_factor < 0.001F {
+          0.001F
+        } else {
+          depth_fade_factor
+        }
+        let decal_alpha = safe_depth_fade_factor /
+          (safe_depth_fade_factor + maxf(0.0F, mesh_distance - camera_near))
+        draw_alpha = draw_alpha * render3d_float_clamp(decal_alpha, 0.0F, 1.0F)
+        clearcoat_reflectance = 0.0F
+        draw_roughness = maxf(draw_roughness, 0.85F)
+      }
+      let (fogged_r, fogged_g, fogged_b) = render3d_apply_distance_fog(
+        distance_fog,
+        mesh_distance,
+        mesh.material.base_color.r,
+        mesh.material.base_color.g,
+        mesh.material.base_color.b,
+        camera.transform.translation,
+        mesh.transform.translation,
+        pass_lighting,
+      )
+      let draw_color_r = fogged_r
+      let draw_color_g = fogged_g
+      let draw_color_b = fogged_b
+      let draw_surface_roughness = draw_roughness
+      let draw_reflectance = clearcoat_reflectance
+      let draw_diffuse_transmission = clamp01(
+        mesh.material.diffuse_transmission,
+      )
+      let draw_specular_transmission = clamp01(
+        mesh.material.specular_transmission,
+      )
+      let draw_thickness = maxf(0.0F, mesh.material.thickness)
+      let draw_ior = maxf(1.0F, mesh.material.ior)
+      let draw_flags = render3d_mesh_draw_flags(mesh)
+      if transmission_enabled && draw_specular_transmission > 0.0F {
+        transmissive_draws.push(TransmissionMeshDraw::{
+          mesh,
+          draw_flags,
+          draw_color_r,
+          draw_color_g,
+          draw_color_b,
+          draw_alpha,
+          texture_id,
+          normal_texture_id,
+          emissive_texture_id,
+          metallic_roughness_texture_id,
+          occlusion_texture_id,
+          depth_texture_id,
+          anisotropy_texture_id,
+          specular_tint_texture_id,
+          draw_surface_roughness,
+          draw_reflectance,
+          draw_diffuse_transmission,
+          draw_specular_transmission,
+          draw_thickness,
+          draw_ior,
+          specular_tint: mesh.material.specular_tint,
+          anisotropy_strength,
+          max_relief_mapping_search_steps,
+        })
+        continue
+      }
+      render3d_draw_mesh_instance(
+        mesh,
+        mesh.transform,
+        mesh.previous_transform,
+        draw_color_r,
+        draw_color_g,
+        draw_color_b,
+        draw_alpha,
+        texture_id,
+        normal_texture_id,
+        emissive_texture_id,
+        metallic_roughness_texture_id,
+        occlusion_texture_id,
+        depth_texture_id,
+        anisotropy_texture_id,
+        specular_tint_texture_id,
+        draw_surface_roughness,
+        draw_reflectance,
+        draw_diffuse_transmission,
+        draw_specular_transmission,
+        draw_thickness,
+        draw_ior,
+        -1,
+        0.0F,
+        0.0F,
+        point_shadow_texture_id,
+        point_shadow_enabled,
+        point_shadow_depth_bias,
+        mesh.material.specular_tint,
+        anisotropy_strength,
+        max_relief_mapping_search_steps,
+        draw_flags,
+      )
+    }
+    if transmissive_draws.length() > 0 {
+      @render.host_gpu_end_pass()
+      transmission_source_target_id = render3d_transmission_source_target_get_or_create(
+        camera.entity,
+        view_width,
+        view_height,
+      )
+      render3d_blit_texture_to_target(
+        scene_target_id, transmission_source_target_id, view_width_logical, view_height_logical,
+      )
+      render3d_begin_pass_3d(
+        target_id=scene_target_id,
+        width=view_width_logical,
+        height=view_height_logical,
+        clear_r=clear_color.r,
+        clear_g=clear_color.g,
+        clear_b=clear_color.b,
+        clear_a=clear_color.a,
+        camera.transform,
+        camera_pass_projection,
+        viewport_x~,
+        viewport_y~,
+        viewport_width~,
+        viewport_height~,
+        pass_lighting,
+        previous_clip_from_world=camera.previous_clip_from_world,
+        point_shadow_near~,
+        pass_kind=scene_pass_kind,
+        clear_enabled=0,
+      )
+      for transmissive_draw in transmissive_draws {
+        render3d_draw_mesh_instance(
+          transmissive_draw.mesh,
+          transmissive_draw.mesh.transform,
+          transmissive_draw.mesh.previous_transform,
+          transmissive_draw.draw_color_r,
+          transmissive_draw.draw_color_g,
+          transmissive_draw.draw_color_b,
+          transmissive_draw.draw_alpha,
+          transmissive_draw.texture_id,
+          transmissive_draw.normal_texture_id,
+          transmissive_draw.emissive_texture_id,
+          transmissive_draw.metallic_roughness_texture_id,
+          transmissive_draw.occlusion_texture_id,
+          transmissive_draw.depth_texture_id,
+          transmissive_draw.anisotropy_texture_id,
+          transmissive_draw.specular_tint_texture_id,
+          transmissive_draw.draw_surface_roughness,
+          transmissive_draw.draw_reflectance,
+          transmissive_draw.draw_diffuse_transmission,
+          transmissive_draw.draw_specular_transmission,
+          transmissive_draw.draw_thickness,
+          transmissive_draw.draw_ior,
+          transmission_source_target_id,
+          Float::from_double(transmission_blur_taps.to_double()),
+          Float::from_double(transmission_steps.to_double()),
+          point_shadow_texture_id,
+          point_shadow_enabled,
+          point_shadow_depth_bias,
+          transmissive_draw.specular_tint,
+          transmissive_draw.anisotropy_strength,
+          transmissive_draw.max_relief_mapping_search_steps,
+          transmissive_draw.draw_flags,
+        )
+      }
+    }
+    for draw_index in draw_order {
+      let mesh = meshes[draw_index]
+      if !render3d_mesh_should_draw_wireframe(mesh, wireframe_config) {
+        continue
+      }
+      guard render3d_wireframe_mesh_id(mesh.mesh_handle)
+        is Some(wireframe_mesh_id) else {
+        continue
+      }
+      let wireframe_color = render3d_mesh_wireframe_color(
+        mesh, wireframe_config,
+      )
+      let wireframe_material = StandardMaterial::from_color(wireframe_color)
+        .with_unlit(true)
+        .with_cull_mode(mesh.material.cull_mode)
+      guard render3d_mesh_draw_alpha(
+          wireframe_material.alpha_mode,
+          wireframe_material.base_color.a,
+        )
+        is Some(wireframe_draw_alpha) else {
+        continue
+      }
+      render3d_draw_mesh_instance(
+        Mesh3dInstance::{
+          ..mesh,
+          mesh_id: wireframe_mesh_id,
+          material: wireframe_material,
+        },
+        mesh.transform,
+        mesh.previous_transform,
+        wireframe_material.base_color.r,
+        wireframe_material.base_color.g,
+        wireframe_material.base_color.b,
+        wireframe_draw_alpha,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0.5F,
+        0.5F,
+        0.0F,
+        0.0F,
+        0.0F,
+        1.5F,
+        -1,
+        0.0F,
+        0.0F,
+        -1,
+        0.0F,
+        0.0F,
+        @sprite.Color::white(),
+        0.0F,
+        0.0F,
+        render3d_mesh_draw_flags(mesh),
+      )
+    }
+    @render.host_gpu_end_pass()
+    let mut final_source_texture_id = -1
+    if motion_blur_active &&
+      camera.motion_blur is Some(motion_blur) &&
+      velocity_target_id >= 0 {
+      if bloom_enabled || tonemap_postprocess_enabled {
+        let post_motion_blur_target_id = render3d_transmission_source_target_get_or_create(
+          camera.entity,
+          view_width,
+          view_height,
+        )
+        @render.host_gpu_begin_pass(
+          target_id=post_motion_blur_target_id,
+          width=view_width_logical,
+          height=view_height_logical,
+          clear_r=clear_color.r,
+          clear_g=clear_color.g,
+          clear_b=clear_color.b,
+          clear_a=clear_color.a,
+          camera_x=0.0F,
+          camera_y=0.0F,
+          camera_rotation=0.0F,
+          camera_scale=1.0F,
+          viewport_x~,
+          viewport_y~,
+          viewport_width~,
+          viewport_height~,
+          viewport_depth_min~,
+          viewport_depth_max~,
+          clear_enabled=if clear_enabled { 1 } else { 0 },
+        )
+        @render.host_gpu_draw_motion_blur(
+          scene_texture_id=scene_target_id,
+          velocity_texture_id=velocity_target_id,
+          shutter_angle=motion_blur.shutter_angle,
+          samples=motion_blur.samples,
+        )
+        @render.host_gpu_end_pass()
+        final_source_texture_id = post_motion_blur_target_id
+      } else {
+        @render.host_gpu_begin_pass(
+          target_id=camera.target_id,
+          width=view_width_logical,
+          height=view_height_logical,
+          clear_r=clear_color.r,
+          clear_g=clear_color.g,
+          clear_b=clear_color.b,
+          clear_a=clear_color.a,
+          camera_x=0.0F,
+          camera_y=0.0F,
+          camera_rotation=0.0F,
+          camera_scale=1.0F,
+          viewport_x~,
+          viewport_y~,
+          viewport_width~,
+          viewport_height~,
+          viewport_depth_min~,
+          viewport_depth_max~,
+          clear_enabled=if clear_enabled { 1 } else { 0 },
+        )
+        @render.host_gpu_draw_motion_blur(
+          scene_texture_id=scene_target_id,
+          velocity_texture_id=velocity_target_id,
+          shutter_angle=motion_blur.shutter_angle,
+          samples=motion_blur.samples,
+        )
+        @render.host_gpu_end_pass()
+      }
+    } else if scene_target_id != camera.target_id {
+      final_source_texture_id = scene_target_id
+    }
+    if bloom_enabled && camera.bloom is Some(bloom) {
+      let bloom_source_texture_id = if final_source_texture_id >= 0 {
+        final_source_texture_id
+      } else {
+        scene_target_id
+      }
+      if bloom_source_texture_id >= 0 {
+        @render.host_gpu_begin_pass(
+          target_id=camera.target_id,
+          width=view_width_logical,
+          height=view_height_logical,
+          clear_r=clear_color.r,
+          clear_g=clear_color.g,
+          clear_b=clear_color.b,
+          clear_a=clear_color.a,
+          camera_x=0.0F,
+          camera_y=0.0F,
+          camera_rotation=0.0F,
+          camera_scale=1.0F,
+          viewport_x~,
+          viewport_y~,
+          viewport_width~,
+          viewport_height~,
+          viewport_depth_min~,
+          viewport_depth_max~,
+          clear_enabled=if clear_enabled { 1 } else { 0 },
+        )
+        render3d_draw_camera_bloom(
+          world,
+          bloom_source_texture_id,
+          bloom,
+          effective_exposure,
+          camera.tonemapping,
+          camera.deband_dither,
+          camera.color_grading,
+          camera.fxaa,
+          camera.chromatic_aberration,
+          camera.vignette,
+          view_width_logical,
+          view_height_logical,
+        )
+        @render.host_gpu_end_pass()
+      }
+    } else if tonemap_postprocess_enabled {
+      let tonemap_source_texture_id = if final_source_texture_id >= 0 {
+        final_source_texture_id
+      } else {
+        scene_target_id
+      }
+      if tonemap_source_texture_id >= 0 {
+        @render.host_gpu_begin_pass(
+          target_id=camera.target_id,
+          width=view_width_logical,
+          height=view_height_logical,
+          clear_r=clear_color.r,
+          clear_g=clear_color.g,
+          clear_b=clear_color.b,
+          clear_a=clear_color.a,
+          camera_x=0.0F,
+          camera_y=0.0F,
+          camera_rotation=0.0F,
+          camera_scale=1.0F,
+          viewport_x~,
+          viewport_y~,
+          viewport_width~,
+          viewport_height~,
+          viewport_depth_min~,
+          viewport_depth_max~,
+          clear_enabled=if clear_enabled { 1 } else { 0 },
+        )
+        render3d_draw_camera_tonemap_only(
+          world,
+          tonemap_source_texture_id,
+          effective_exposure,
+          camera.tonemapping,
+          camera.deband_dither,
+          camera.color_grading,
+          camera.fxaa,
+          camera.chromatic_aberration,
+          camera.vignette,
+          view_width_logical,
+          view_height_logical,
+        )
+        @render.host_gpu_end_pass()
+      }
+    } else if final_source_texture_id >= 0 {
+      @render.host_gpu_begin_pass(
+        target_id=camera.target_id,
+        width=view_width_logical,
+        height=view_height_logical,
+        clear_r=clear_color.r,
+        clear_g=clear_color.g,
+        clear_b=clear_color.b,
+        clear_a=clear_color.a,
+        camera_x=0.0F,
+        camera_y=0.0F,
+        camera_rotation=0.0F,
+        camera_scale=1.0F,
+        viewport_x~,
+        viewport_y~,
+        viewport_width~,
+        viewport_height~,
+        viewport_depth_min~,
+        viewport_depth_max~,
+        clear_enabled=if clear_enabled { 1 } else { 0 },
+      )
+      @render.host_gpu_draw_sprite_uv(
+        texture_id=final_source_texture_id,
+        x=0.0F,
+        y=0.0F,
+        rotation=0.0F,
+        scale_x=Float::from_double(view_width_logical.to_double()) / 128.0F,
+        scale_y=Float::from_double(view_height_logical.to_double()) / 128.0F,
+        color_r=1.0F,
+        color_g=1.0F,
+        color_b=1.0F,
+        color_a=1.0F,
+        uv_min_x=0.0F,
+        uv_min_y=0.0F,
+        uv_max_x=1.0F,
+        uv_max_y=1.0F,
+      )
+      @render.host_gpu_end_pass()
+    }
+  }
+  camera_motion_blur_history_sync(next_camera_motion_blur_history)
+  render3d_prepared_camera_order_ref.val.clear()
+  render3d_queued_visible_mesh_count_ref.val = 0
+}
+
+///|
+fn render3d_camera_viewport_rect_logical(
+  camera : @sprite.Camera,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+) -> (Float, Float, Float, Float)? {
+  let target_width = target_size.x
+  let target_height = target_size.y
+  if target_width <= 0 || target_height <= 0 {
+    return None
+  }
+  let mut viewport_x = 0
+  let mut viewport_y = 0
+  let mut viewport_width = target_width
+  let mut viewport_height = target_height
+  if camera.viewport is Some(viewport) {
+    viewport_x = if viewport.physical_position.x < 0 {
+      0
+    } else {
+      viewport.physical_position.x
+    }
+    viewport_y = if viewport.physical_position.y < 0 {
+      0
+    } else {
+      viewport.physical_position.y
+    }
+    viewport_width = if viewport.physical_size.x < 0 {
+      0
+    } else {
+      viewport.physical_size.x
+    }
+    viewport_height = if viewport.physical_size.y < 0 {
+      0
+    } else {
+      viewport.physical_size.y
+    }
+    let max_width = if target_width - viewport_x < 0 {
+      0
+    } else {
+      target_width - viewport_x
+    }
+    let max_height = if target_height - viewport_y < 0 {
+      0
+    } else {
+      target_height - viewport_y
+    }
+    if viewport_width > max_width {
+      viewport_width = max_width
+    }
+    if viewport_height > max_height {
+      viewport_height = max_height
+    }
+  }
+  if viewport_width <= 0 || viewport_height <= 0 {
+    return None
+  }
+  let sf = if scale_factor <= 0.0F { 1.0F } else { scale_factor }
+  let logical_x = Float::from_double(viewport_x.to_double()) / sf
+  let logical_y = Float::from_double(viewport_y.to_double()) / sf
+  let logical_width = Float::from_double(viewport_width.to_double()) / sf
+  let logical_height = Float::from_double(viewport_height.to_double()) / sf
+  if logical_width <= 0.0F || logical_height <= 0.0F {
+    return None
+  }
+  Some((logical_x, logical_y, logical_width, logical_height))
+}
+
+///|
+fn render3d_orthographic_area(
+  orthographic : OrthographicProjection3d,
+  view_width : Float,
+  view_height : Float,
+) -> @math.Rect {
+  let safe_view_width = if view_width <= 0.0F { 1.0F } else { view_width }
+  let safe_view_height = if view_height <= 0.0F { 1.0F } else { view_height }
+  let (projection_width, projection_height) = match orthographic.scaling_mode {
+    WindowSize => (safe_view_width, safe_view_height)
+    AutoMin(min_width, min_height) =>
+      if safe_view_width * min_height > min_width * safe_view_height {
+        (safe_view_width * min_height / safe_view_height, min_height)
+      } else {
+        (min_width, safe_view_height * min_width / safe_view_width)
+      }
+    AutoMax(max_width, max_height) =>
+      if safe_view_width * max_height < max_width * safe_view_height {
+        (safe_view_width * max_height / safe_view_height, max_height)
+      } else {
+        (max_width, safe_view_height * max_width / safe_view_width)
+      }
+    FixedVertical(viewport_height) =>
+      (safe_view_width * viewport_height / safe_view_height, viewport_height)
+    FixedHorizontal(viewport_width) =>
+      (viewport_width, safe_view_height * viewport_width / safe_view_width)
+    Fixed(width, height) => (width, height)
+  }
+  let origin_x = projection_width * orthographic.viewport_origin.x
+  let origin_y = projection_height * orthographic.viewport_origin.y
+  @math.Rect::new(
+    @math.Vec2::new(
+      orthographic.scale * -origin_x,
+      orthographic.scale * -origin_y,
+    ),
+    @math.Vec2::new(
+      orthographic.scale * (projection_width - origin_x),
+      orthographic.scale * (projection_height - origin_y),
+    ),
+  )
+}
+
+///|
+fn render3d_orthographic_projection_matrix(
+  left : Float,
+  right : Float,
+  bottom : Float,
+  top : Float,
+  near : Float,
+  far : Float,
+) -> ProjectionMatrix3d {
+  let width = right - left
+  let height = top - bottom
+  let depth = near - far
+  let safe_width = if width == 0.0F { 1.0F } else { width }
+  let safe_height = if height == 0.0F { 1.0F } else { height }
+  let safe_depth = if depth == 0.0F { 1.0F } else { depth }
+  ProjectionMatrix3d::from_cols(
+    @math.Vec4::new(2.0F / safe_width, 0.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 2.0F / safe_height, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 1.0F / safe_depth, 0.0F),
+    @math.Vec4::new(
+      -(right + left) / safe_width,
+      -(top + bottom) / safe_height,
+      near / safe_depth,
+      1.0F,
+    ),
+  )
+}
+
+///|
+fn render3d_orthographic_projection_matrix_for_sub(
+  orthographic : OrthographicProjection3d,
+  sub_view : SubCameraView3d,
+) -> ProjectionMatrix3d {
+  let full_width = Float::from_double(sub_view.full_size.x.to_double())
+  let full_height = Float::from_double(sub_view.full_size.y.to_double())
+  let sub_width = Float::from_double(sub_view.size.x.to_double())
+  let sub_height = Float::from_double(sub_view.size.y.to_double())
+  if full_width <= 0.0F ||
+    full_height <= 0.0F ||
+    sub_width <= 0.0F ||
+    sub_height <= 0.0F {
+    return orthographic.get_clip_from_view()
+  }
+  let top = orthographic.area.max.y
+  let bottom = orthographic.area.min.y
+  let orthographic_height = top - bottom
+  let orthographic_width = orthographic_height *
+    render3d_projection_aspect_ratio(full_width, full_height)
+  let center_x = (orthographic.area.max.x + orthographic.area.min.x) * 0.5F
+  let left = center_x - orthographic_width * 0.5F
+  let right = center_x + orthographic_width * 0.5F
+  let scale_w = (right - left) / full_width
+  let scale_h = (top - bottom) / full_height
+  let left_prime = left + scale_w * sub_view.offset.x
+  let right_prime = left_prime + scale_w * sub_width
+  let top_prime = top - scale_h * sub_view.offset.y
+  let bottom_prime = top_prime - scale_h * sub_height
+  render3d_orthographic_projection_matrix(
+    left_prime,
+    right_prime,
+    bottom_prime,
+    top_prime,
+    orthographic.far,
+    orthographic.near,
+  )
+}
+
+///|
+fn render3d_projection_matrix_inverse(
+  matrix : ProjectionMatrix3d,
+) -> ProjectionMatrix3d? {
+  let augmented : Array[Float] = [
+    matrix.x_axis.x,
+    matrix.y_axis.x,
+    matrix.z_axis.x,
+    matrix.w_axis.x,
+    1.0F,
+    0.0F,
+    0.0F,
+    0.0F,
+    matrix.x_axis.y,
+    matrix.y_axis.y,
+    matrix.z_axis.y,
+    matrix.w_axis.y,
+    0.0F,
+    1.0F,
+    0.0F,
+    0.0F,
+    matrix.x_axis.z,
+    matrix.y_axis.z,
+    matrix.z_axis.z,
+    matrix.w_axis.z,
+    0.0F,
+    0.0F,
+    1.0F,
+    0.0F,
+    matrix.x_axis.w,
+    matrix.y_axis.w,
+    matrix.z_axis.w,
+    matrix.w_axis.w,
+    0.0F,
+    0.0F,
+    0.0F,
+    1.0F,
+  ]
+  for pivot in 0..<4 {
+    let mut pivot_row = pivot
+    let pivot_index = pivot * 8 + pivot
+    let mut pivot_abs = if augmented[pivot_index] < 0.0F {
+      -augmented[pivot_index]
+    } else {
+      augmented[pivot_index]
+    }
+    for row in (pivot + 1)..<4 {
+      let value = augmented[row * 8 + pivot]
+      let value_abs = if value < 0.0F { -value } else { value }
+      if value_abs > pivot_abs {
+        pivot_row = row
+        pivot_abs = value_abs
+      }
+    }
+    if pivot_abs <= 1.0e-12F {
+      return None
+    }
+    if pivot_row != pivot {
+      for col in 0..<8 {
+        let lhs_index = pivot * 8 + col
+        let rhs_index = pivot_row * 8 + col
+        let tmp = augmented[lhs_index]
+        augmented[lhs_index] = augmented[rhs_index]
+        augmented[rhs_index] = tmp
+      }
+    }
+    let pivot_value = augmented[pivot * 8 + pivot]
+    for col in 0..<8 {
+      let index = pivot * 8 + col
+      augmented[index] = augmented[index] / pivot_value
+    }
+    for row in 0..<4 {
+      if row == pivot {
+        continue
+      }
+      let factor = augmented[row * 8 + pivot]
+      if factor == 0.0F {
+        continue
+      }
+      for col in 0..<8 {
+        let row_index = row * 8 + col
+        let pivot_row_index = pivot * 8 + col
+        augmented[row_index] = augmented[row_index] -
+          factor * augmented[pivot_row_index]
+      }
+    }
+  }
+  Some(
+    ProjectionMatrix3d::from_cols(
+      @math.Vec4::new(augmented[4], augmented[12], augmented[20], augmented[28]),
+      @math.Vec4::new(augmented[5], augmented[13], augmented[21], augmented[29]),
+      @math.Vec4::new(augmented[6], augmented[14], augmented[22], augmented[30]),
+      @math.Vec4::new(augmented[7], augmented[15], augmented[23], augmented[31]),
+    ),
+  )
+}
+
+///|
+fn render3d_projection_runtime_projection(
+  projection : Projection,
+  camera : @sprite.Camera,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+) -> Projection {
+  match
+    render3d_camera_viewport_rect_logical(camera, target_size, scale_factor) {
+    Some((_, _, viewport_width, viewport_height)) =>
+      projection.update(viewport_width, viewport_height)
+    None => projection
+  }
+}
+
+///|
+fn render3d_projection_runtime_update(
+  projection : Projection,
+  runtime : ProjectionRuntime3d?,
+  force_update : Bool,
+  camera : @sprite.Camera,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+) -> (Projection, ProjectionRuntime3d?) {
+  match
+    render3d_camera_viewport_rect_logical(camera, target_size, scale_factor) {
+    Some((_, _, viewport_width, viewport_height)) => {
+      let next_runtime = ProjectionRuntime3d::{
+        last_view_width: viewport_width,
+        last_view_height: viewport_height,
+      }
+      if runtime is Some(previous_runtime) &&
+        previous_runtime.last_view_width == viewport_width &&
+        previous_runtime.last_view_height == viewport_height &&
+        !force_update {
+        (projection, None)
+      } else {
+        (projection.update(viewport_width, viewport_height), Some(next_runtime))
+      }
+    }
+    None => (projection, None)
+  }
+}
+
+///|
+fn render3d_quat_conjugate(value : @math.Quat) -> @math.Quat {
+  @math.Quat::new(-value.x, -value.y, -value.z, value.w)
+}
+
+///|
+const MESH_RAY_CAST_DEFAULT_MAX_DISTANCE : Float = 1_000_000.0F
+
+///|
+const MESH_RAY_CAST_DEFAULT_RAY_EPSILON : Float = 0.000001F
+
+///|
+const MESH_RAY_CAST_DEFAULT_MAX_HITS : Int = 64
+
+///|
+pub struct MeshRayCastSettings {
+  max_distance : Float
+  ray_epsilon : Float
+  max_hits : Int
+  include_invisible : Bool
+  only_entities : Array[@core.Entity]?
+}
+
+///|
+pub fn MeshRayCastSettings::default() -> MeshRayCastSettings {
+  {
+    max_distance: MESH_RAY_CAST_DEFAULT_MAX_DISTANCE,
+    ray_epsilon: MESH_RAY_CAST_DEFAULT_RAY_EPSILON,
+    max_hits: MESH_RAY_CAST_DEFAULT_MAX_HITS,
+    include_invisible: false,
+    only_entities: None,
+  }
+}
+
+///|
+pub fn MeshRayCastSettings::with_max_distance(
+  self : MeshRayCastSettings,
+  max_distance : Float,
+) -> MeshRayCastSettings {
+  MeshRayCastSettings::{ ..self, max_distance, }
+}
+
+///|
+pub fn MeshRayCastSettings::with_ray_epsilon(
+  self : MeshRayCastSettings,
+  ray_epsilon : Float,
+) -> MeshRayCastSettings {
+  MeshRayCastSettings::{ ..self, ray_epsilon, }
+}
+
+///|
+pub fn MeshRayCastSettings::with_max_hits(
+  self : MeshRayCastSettings,
+  max_hits : Int,
+) -> MeshRayCastSettings {
+  MeshRayCastSettings::{ ..self, max_hits, }
+}
+
+///|
+pub fn MeshRayCastSettings::with_include_invisible(
+  self : MeshRayCastSettings,
+  include_invisible : Bool,
+) -> MeshRayCastSettings {
+  MeshRayCastSettings::{ ..self, include_invisible, }
+}
+
+///|
+pub fn MeshRayCastSettings::with_only_entities(
+  self : MeshRayCastSettings,
+  only_entities : Array[@core.Entity]?,
+) -> MeshRayCastSettings {
+  MeshRayCastSettings::{ ..self, only_entities, }
+}
+
+///|
+pub struct MeshRayCastHit {
+  point : @math.Vec3
+  normal : @math.Vec3
+  distance : Float
+}
+
+///|
+fn render3d_entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
+  a.id == b.id && a.generation == b.generation
+}
+
+///|
+fn render3d_entity_in_list(
+  entity : @core.Entity,
+  entities : Array[@core.Entity],
+) -> Bool {
+  for candidate in entities {
+    if render3d_entity_eq(entity, candidate) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub fn mesh_ray_cast(
+  world : @ecs.World,
+  origin : @math.Vec3,
+  direction : @math.Vec3,
+  settings : MeshRayCastSettings,
+) -> Array[(@core.Entity, MeshRayCastHit)] {
+  let ray_direction = direction.normalize_or_zero()
+  if ray_direction.length_squared() <= 1.0e-12F {
+    return []
+  }
+  let max_distance = if settings.max_distance <= 0.0F {
+    MESH_RAY_CAST_DEFAULT_MAX_DISTANCE
+  } else {
+    settings.max_distance
+  }
+  let ray_epsilon = if settings.ray_epsilon <= 0.0F {
+    MESH_RAY_CAST_DEFAULT_RAY_EPSILON
+  } else {
+    settings.ray_epsilon
+  }
+  let max_hits = if settings.max_hits <= 0 { 1 } else { settings.max_hits }
+  let hits : Array[(@core.Entity, MeshRayCastHit)] = []
+  let mesh_store = world.component(ecs_key_mesh3d)
+  let transform_store = world.component(@math.ecs_key_transform)
+  let view_visibility_store = world.component(
+    @visibility.ecs_key_view_visibility,
+  )
+
+  mesh_store.for_each(fn(entity, mesh3d) {
+    if settings.only_entities is Some(only_entities) &&
+      !render3d_entity_in_list(entity, only_entities) {
+      return
+    }
+    if !settings.include_invisible &&
+      view_visibility_store.get(entity) is Some(view_visibility) &&
+      !view_visibility.is_visible() {
+      return
+    }
+    guard render3d_mesh_local_aabb(mesh3d) is Some((min_corner, max_corner)) else {
+      return
+    }
+    let transform = match transform_store.get(entity) {
+      Some(value) => value
+      None => @math.Transform::identity()
+    }
+    guard render3d_inverse_transform_point(transform, origin)
+      is Some(local_origin) else {
+      return
+    }
+    guard render3d_inverse_transform_direction(transform, ray_direction)
+      is Some(local_direction) else {
+      return
+    }
+    guard render3d_ray_local_aabb_hit(
+        local_origin, local_direction, min_corner, max_corner, ray_epsilon, max_distance,
+      )
+      is Some((distance, local_normal)) else {
+      return
+    }
+    let normal = render3d_transform_local_normal(transform, local_normal)
+    if normal.length_squared() <= 1.0e-12F {
+      return
+    }
+    hits.push(
+      (
+        entity,
+        {
+          point: origin.add(ray_direction.mul_scalar(distance)),
+          normal,
+          distance,
+        },
+      ),
+    )
+  })
+
+  hits.sort_by(fn(a, b) {
+    let distance_cmp = cmp_float(a.1.distance, b.1.distance)
+    if distance_cmp != 0 {
+      return distance_cmp
+    }
+    let id_cmp = cmp_int(a.0.id, b.0.id)
+    if id_cmp != 0 {
+      return id_cmp
+    }
+    cmp_int(a.0.generation, b.0.generation)
+  })
+
+  let capped_hits : Array[(@core.Entity, MeshRayCastHit)] = []
+  for i in 0..<hits.length() {
+    if i >= max_hits {
+      break
+    }
+    capped_hits.push(hits[i])
+  }
+  capped_hits
+}
+
+///|
+pub fn mesh_ray_cast_first(
+  world : @ecs.World,
+  origin : @math.Vec3,
+  direction : @math.Vec3,
+  settings : MeshRayCastSettings,
+) -> (@core.Entity, MeshRayCastHit)? {
+  let hits = mesh_ray_cast(world, origin, direction, settings.with_max_hits(1))
+  if hits.length() > 0 {
+    Some(hits[0])
+  } else {
+    None
+  }
+}
+
+///|
+pub fn mesh_ray_cast_from_camera(
+  world : @ecs.World,
+  screen : @math.Vec2,
+  camera : @sprite.Camera,
+  projection : Projection,
+  camera_transform : @math.Transform,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+  settings : MeshRayCastSettings,
+) -> Array[(@core.Entity, MeshRayCastHit)] {
+  if render3d_camera_viewport_to_world_ray(
+      screen, camera, projection, camera_transform, target_size, scale_factor,
+    )
+    is Some((origin, direction)) {
+    mesh_ray_cast(world, origin, direction, settings)
+  } else {
+    []
+  }
+}
+
+///|
+pub fn mesh_ray_cast_from_camera_first(
+  world : @ecs.World,
+  screen : @math.Vec2,
+  camera : @sprite.Camera,
+  projection : Projection,
+  camera_transform : @math.Transform,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+  settings : MeshRayCastSettings,
+) -> (@core.Entity, MeshRayCastHit)? {
+  let hits = mesh_ray_cast_from_camera(
+    world,
+    screen,
+    camera,
+    projection,
+    camera_transform,
+    target_size,
+    scale_factor,
+    settings.with_max_hits(1),
+  )
+  if hits.length() > 0 {
+    Some(hits[0])
+  } else {
+    None
+  }
+}
+
+///|
+pub fn render3d_camera_viewport_to_world_ray(
+  screen : @math.Vec2,
+  camera : @sprite.Camera,
+  projection : Projection,
+  camera_transform : @math.Transform,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+) -> (@math.Vec3, @math.Vec3)? {
+  guard render3d_camera_viewport_rect_logical(camera, target_size, scale_factor)
+    is Some((viewport_x, viewport_y, viewport_width, viewport_height)) else {
+    return None
+  }
+  if screen.x < viewport_x ||
+    screen.y < viewport_y ||
+    screen.x > viewport_x + viewport_width ||
+    screen.y > viewport_y + viewport_height {
+    return None
+  }
+  let viewport_local_x = (screen.x - viewport_x) / viewport_width
+  let viewport_local_y = (screen.y - viewport_y) / viewport_height
+  let ndc_x = viewport_local_x * 2.0F - 1.0F
+  let ndc_y = 1.0F - viewport_local_y * 2.0F
+  let runtime_projection = render3d_projection_runtime_projection(
+    projection, camera, target_size, scale_factor,
+  )
+  let clip_from_view = runtime_projection.get_clip_from_view()
+  guard render3d_projection_matrix_inverse(clip_from_view)
+    is Some(view_from_clip) else {
+    return None
+  }
+  let near_view_h = view_from_clip.mul_vec4(
+    @math.Vec4::new(ndc_x, ndc_y, 1.0F, 1.0F),
+  )
+  let far_view_h = view_from_clip.mul_vec4(
+    @math.Vec4::new(ndc_x, ndc_y, 0.0F, 1.0F),
+  )
+  if near_view_h.w == 0.0F || far_view_h.w == 0.0F {
+    return None
+  }
+  let near_view = @math.Vec3::new(
+    near_view_h.x / near_view_h.w,
+    near_view_h.y / near_view_h.w,
+    near_view_h.z / near_view_h.w,
+  )
+  let far_view = @math.Vec3::new(
+    far_view_h.x / far_view_h.w,
+    far_view_h.y / far_view_h.w,
+    far_view_h.z / far_view_h.w,
+  )
+  let ray_camera = far_view.sub(near_view).normalize_or_zero()
+  if ray_camera.length_squared() <= 1.0e-12F {
+    return None
+  }
+  let ray_world = quat_rotate_vec3(camera_transform.rotation, ray_camera).normalize_or_zero()
+  if ray_world.length_squared() <= 1.0e-12F {
+    return None
+  }
+  Some(
+    (
+      camera_transform.translation.add(
+        quat_rotate_vec3(camera_transform.rotation, near_view),
+      ),
+      ray_world,
+    ),
+  )
+}
+
+///|
+pub fn render3d_camera_world_to_viewport(
+  world : @math.Vec3,
+  camera : @sprite.Camera,
+  projection : Projection,
+  camera_transform : @math.Transform,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+) -> @math.Vec2? {
+  guard render3d_camera_viewport_rect_logical(camera, target_size, scale_factor)
+    is Some((viewport_x, viewport_y, viewport_width, viewport_height)) else {
+    return None
+  }
+  let to_world = world.sub(camera_transform.translation)
+  let inv_rotation = render3d_quat_conjugate(camera_transform.rotation).normalize()
+  let view_pos = quat_rotate_vec3(inv_rotation, to_world)
+  let runtime_projection = render3d_projection_runtime_projection(
+    projection, camera, target_size, scale_factor,
+  )
+  guard runtime_projection.get_clip_from_view().project_point3(view_pos)
+    is Some(ndc_point) else {
+    return None
+  }
+  if ndc_point.z < 0.0F || ndc_point.z > 1.0F {
+    return None
+  }
+  let ndc_x = ndc_point.x
+  let ndc_y = ndc_point.y
+  let local_x = (ndc_x + 1.0F) * 0.5F * viewport_width
+  let local_y = (1.0F - ndc_y) * 0.5F * viewport_height
+  if local_x < 0.0F ||
+    local_y < 0.0F ||
+    local_x > viewport_width ||
+    local_y > viewport_height {
+    return None
+  }
+  Some(@math.Vec2::new(local_x + viewport_x, local_y + viewport_y))
+}
+
+///|
+fn init_render3d_resources(world : @ecs.World) -> Unit {
+  let ecs_world = world
+  let tick = world.read_change_tick()
+  render3d_runtime_initialized_ref.val = true
+  let ambient = get_global_ambient_light_resource(ecs_world)
+  if !ambient.is_present() {
+    ambient.insert(GlobalAmbientLight::default(), tick)
+  }
+  let point_light_shadow_map = get_point_light_shadow_map_resource(ecs_world)
+  if !point_light_shadow_map.is_present() {
+    point_light_shadow_map.insert(PointLightShadowMap::default(), tick)
+  }
+  let default_opaque_renderer_method = get_default_opaque_renderer_method_resource(
+    ecs_world,
+  )
+  if !default_opaque_renderer_method.is_present() {
+    default_opaque_renderer_method.insert(
+      DefaultOpaqueRendererMethod::forward(),
+      tick,
+    )
+  }
+  if (try! world.get_resource(ecs_key_internal_assets)) is None {
+    world.insert_resource(
+      ecs_key_internal_assets,
+      Render3dInternalAssetsState::new(),
+    )
+  }
+}
+
+///|
+fn init_wireframe_resources(world : @ecs.World) -> Unit {
+  let ecs_world = world
+  let tick = world.read_change_tick()
+  let wireframe_config = get_wireframe_config_resource(ecs_world)
+  if !wireframe_config.is_present() {
+    wireframe_config.insert(WireframeConfig::default(), tick)
+  }
+}
+
+///|
+pub fn wireframe_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app.add_startup_system(init_wireframe_resources)
+}
+
+///|
+pub let render3d_set_extract : @app.SystemSet = @app.system_set(
+  "bevy.render3d.extract",
+)
+
+///|
+pub let render3d_set_update_frusta : @app.SystemSet = @app.system_set(
+  "bevy.render3d.update_frusta",
+)
+
+///|
+pub let render3d_set_prepare : @app.SystemSet = @app.system_set(
+  "bevy.render3d.prepare",
+)
+
+///|
+pub let render3d_set_queue : @app.SystemSet = @app.system_set(
+  "bevy.render3d.queue",
+)
+
+///|
+pub let render3d_set_render : @app.SystemSet = @app.system_set(
+  "bevy.render3d.render",
+)
+
+///|
+/// Legacy alias kept for source compatibility.
+pub let render3d_set_execute : @app.SystemSet = render3d_set_render
+
+///|
+pub fn render3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
+  .init_resource(fn() {
+    let assets : @asset.Assets[StandardMaterial] = @asset.Assets::new()
+    assets
+  })
+  .add_startup_system(init_render3d_resources)
+  .add_post_update_system_config(
+    @app.system(render3d_update_frusta_system).in_set(
+      render3d_set_update_frusta,
+    ),
+  )
+  .add_post_update_system_config(
+    @app.system(render3d_extract_system).in_set(render3d_set_extract),
+  )
+  .add_post_update_system_config(
+    @app.system(render3d_prepare_system).in_set(render3d_set_prepare),
+  )
+  .add_post_update_system_config(
+    @app.system(render3d_queue_system).in_set(render3d_set_queue),
+  )
+  .add_post_update_system_config(
+    @app.system(render3d_execute_system).in_set(render3d_set_render),
+  )
+  .configure_set(@app.PostUpdate, render3d_set_extract, before=[
+    render3d_set_prepare,
+  ])
+  .configure_set(@app.PostUpdate, render3d_set_update_frusta, before=[
+    render3d_set_extract,
+  ])
+  .configure_set(@app.PostUpdate, render3d_set_prepare, before=[
+    render3d_set_queue,
+  ])
+  .configure_set(@app.PostUpdate, render3d_set_queue, before=[
+    render3d_set_render,
+  ])
+}

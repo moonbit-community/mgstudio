@@ -13,18 +13,10 @@
 // limitations under the License.
 
 ///|
-fn label_option_text(label : @scene.GltfAssetLabel?) -> String {
-  match label {
-    Some(value) => "Some(" + value.to_label() + ")"
-    None => "None"
-  }
-}
-
-///|
 fn run_scene_test_app(system : (@ecs.World) -> Unit) -> Unit {
   let plugins : Array[@app.Plugin[@ecs.World]] = [
-    @asset.asset_plugin, @render2d.render2d_plugin_ecs, @render3d.render3d_plugin,
-    @animation.animation_plugin, @scene.scene_plugin,
+    @asset.asset_plugin, @sprite_render.render2d_plugin_ecs, @pbr.render3d_plugin,
+    @animation.animation_plugin, @scene.scene_plugin, @gltf.gltf_plugin,
   ]
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
@@ -34,107 +26,11 @@ fn run_scene_test_app(system : (@ecs.World) -> Unit) -> Unit {
 }
 
 ///|
-test "scene: gltf label path encoding" {
-  let scene_path = @scene.GltfAssetLabel::Scene(3).from_asset(
-    "models/Foo/Foo.gltf",
-  )
-  let node_path = @scene.GltfAssetLabel::Node(8).from_asset(
-    "models/Foo/Foo.gltf",
-  )
-  let primitive_path = @scene.GltfAssetLabel::Primitive(5, 2).from_asset(
-    "models/Foo/Foo.gltf",
-  )
-  let morph_target_path = @scene.GltfAssetLabel::MorphTarget(5, 2).from_asset(
-    "models/Foo/Foo.gltf",
-  )
-  let inverted_material_path = @scene.GltfAssetLabel::Material(4, true).from_asset(
-    "models/Foo/Foo.gltf",
-  )
-  let default_material_path = @scene.GltfAssetLabel::DefaultMaterial.from_asset(
-    "models/Foo/Foo.gltf",
-  )
-  let inverse_bind_matrices_path = @scene.GltfAssetLabel::InverseBindMatrices(1).from_asset(
-    "models/Foo/Foo.gltf",
-  )
-  let animation_path = @scene.GltfAssetLabel::Animation(2).from_asset(
-    "models/Foo/Foo.gltf",
-  )
-  inspect(scene_path, content="models/Foo/Foo.gltf#Scene3")
-  inspect(node_path, content="models/Foo/Foo.gltf#Node8")
-  inspect(primitive_path, content="models/Foo/Foo.gltf#Mesh5/Primitive2")
-  inspect(
-    morph_target_path,
-    content="models/Foo/Foo.gltf#Mesh5/Primitive2/MorphTargets",
-  )
-  inspect(
-    inverted_material_path,
-    content="models/Foo/Foo.gltf#Material4 (inverted)",
-  )
-  inspect(default_material_path, content="models/Foo/Foo.gltf#DefaultMaterial")
-  inspect(
-    inverse_bind_matrices_path,
-    content="models/Foo/Foo.gltf#Skin1/InverseBindMatrices",
-  )
-  inspect(animation_path, content="models/Foo/Foo.gltf#Animation2")
-}
-
-///|
-test "scene: gltf label parsing and path split" {
-  inspect(
-    label_option_text(@scene.GltfAssetLabel::parse("Mesh5/Primitive2")),
-    content="Some(Mesh5/Primitive2)",
-  )
-  inspect(
-    label_option_text(
-      @scene.GltfAssetLabel::parse("Mesh5/Primitive2/MorphTargets"),
-    ),
-    content="Some(Mesh5/Primitive2/MorphTargets)",
-  )
-  inspect(
-    label_option_text(@scene.GltfAssetLabel::parse("Material4 (inverted)")),
-    content="Some(Material4 (inverted))",
-  )
-  inspect(
-    label_option_text(@scene.GltfAssetLabel::parse("Skin1/InverseBindMatrices")),
-    content="Some(Skin1/InverseBindMatrices)",
-  )
-  inspect(
-    label_option_text(@scene.GltfAssetLabel::parse("DefaultMaterial")),
-    content="Some(DefaultMaterial)",
-  )
-  inspect(
-    label_option_text(@scene.GltfAssetLabel::parse("Unknown12")),
-    content="None",
-  )
-
-  let split_scene = @scene.gltf_split_asset_path_with_label(
-    "models/Foo/Foo.gltf#Scene7",
-  )
-  inspect(split_scene.0, content="models/Foo/Foo.gltf")
-  inspect(label_option_text(split_scene.1), content="Some(Scene7)")
-
-  let split_primitive = @scene.gltf_split_asset_path_with_label(
-    "models/Foo/Foo.gltf#Mesh2/Primitive1",
-  )
-  inspect(split_primitive.0, content="models/Foo/Foo.gltf")
-  inspect(
-    label_option_text(split_primitive.1),
-    content="Some(Mesh2/Primitive1)",
-  )
-
-  let split_invalid = @scene.gltf_split_asset_path_with_label(
-    "models/Foo/Foo.gltf#SceneX",
-  )
-  inspect(split_invalid.0, content="models/Foo/Foo.gltf")
-  inspect(label_option_text(split_invalid.1), content="None")
-}
-
-///|
 test "scene: load gltf animation keeps stable handle" {
   let same_handle = Ref::new(false)
   run_scene_test_app(fn(_world : @ecs.World) {
     let asset_server = @asset.AssetServer::new()
-    let path = @scene.GltfAssetLabel::Animation(1).from_asset(
+    let path = @gltf.GltfAssetLabel::Animation(1).from_asset(
       "models/Foo/Foo.gltf",
     )
     let first = @scene.scene_load_gltf_animation(asset_server, path)
@@ -149,7 +45,7 @@ test "scene: load gltf primitive mesh keeps stable handle" {
   let same_handle = Ref::new(false)
   run_scene_test_app(fn(_world : @ecs.World) {
     let asset_server = @asset.AssetServer::new()
-    let path = @scene.GltfAssetLabel::Primitive(0, 0).from_asset(
+    let path = @gltf.GltfAssetLabel::Primitive(0, 0).from_asset(
       "models/torus/torus.gltf",
     )
     let first : @asset.Handle[@mesh.Mesh] = asset_server.load(path)
@@ -164,7 +60,7 @@ test "scene: load gltf primitive mesh stays pending in the issuing frame" {
   let asset_missing = Ref::new(false)
   run_scene_test_app(fn(world : @ecs.World) {
     let asset_server = @asset.AssetServer::new()
-    let path = @scene.GltfAssetLabel::Primitive(0, 0).from_asset(
+    let path = @gltf.GltfAssetLabel::Primitive(0, 0).from_asset(
       "models/torus/torus.gltf",
     )
     let handle : @asset.Handle[@mesh.Mesh] = asset_server.load(path)
@@ -180,7 +76,7 @@ test "scene: register keeps stable handle" {
   let same_handle = Ref::new(false)
   let ready_scene = Ref::new(false)
   run_scene_test_app(fn(_world : @ecs.World) {
-    let path = @scene.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
+    let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
     let first_handle = @scene.scene_register_gltf_scene(
       path,
       @scene.Scene::new([]),
@@ -244,8 +140,11 @@ test "scene: gltf lod visibility policy set/get/reset" {
 
 ///|
 test "scene: SceneRoot spawns children and marks ready" {
+  let instance_id = Ref::new(0)
+  let ready_instance_id = Ref::new(0)
   let spawned_entities = Ref::new(0)
   let child_count = Ref::new(0)
+  let child_count_after_second_tick = Ref::new(0)
   let has_mesh = Ref::new(false)
   let has_material = Ref::new(false)
   let has_transform = Ref::new(false)
@@ -253,16 +152,18 @@ test "scene: SceneRoot spawns children and marks ready" {
   let has_player = Ref::new(false)
   let has_target = Ref::new(false)
   let has_animated_by = Ref::new(false)
+  let instance_after_second_tick = Ref::new(0)
+  let ready_after_second_tick = Ref::new(0)
   run_scene_test_app(fn(world : @ecs.World) {
     let tick = world.increment_change_tick()
-    let path = @scene.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
-    let material = @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@render2d.Color::white()),
+    let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
+    let material = @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
       ),
     )
     let node = @scene.SceneNode3d::new(
-      @render3d.Mesh3d::from_cuboid(1.0F, 2.0F, 3.0F),
+      @pbr.Mesh3d::from_cuboid(1.0F, 2.0F, 3.0F),
       material,
       @math.Transform::from_xyz(1.0F, 2.0F, 3.0F),
       Some(@visibility.VisibilityRange::new(0.0F, 0.0F, 4.0F, 5.0F, false)),
@@ -282,7 +183,10 @@ test "scene: SceneRoot spawns children and marks ready" {
 
     @scene.scene_spawn_roots_system(world)
 
+    let instance = get_scene_instance_store(world).get(root).unwrap()
     let ready = get_scene_instance_ready_store(world).get(root).unwrap()
+    instance_id.val = instance.instance_id
+    ready_instance_id.val = ready.instance_id
     spawned_entities.val = ready.spawned_entities
 
     let children : Array[@core.Entity] = []
@@ -294,10 +198,8 @@ test "scene: SceneRoot spawns children and marks ready" {
     child_count.val = children.length()
 
     let child = children[0]
-    has_mesh.val = @render3d.get_mesh3d_store(world).contains(child)
-    has_material.val = @render3d.get_mesh_material3d_store(world).contains(
-      child,
-    )
+    has_mesh.val = @pbr.get_mesh3d_store(world).contains(child)
+    has_material.val = @pbr.get_mesh_material3d_store(world).contains(child)
     has_transform.val = @math.get_transform_store(world).contains(child)
     has_visibility.val = @visibility.get_visibility_range_store(world).contains(
       child,
@@ -309,9 +211,26 @@ test "scene: SceneRoot spawns children and marks ready" {
     has_animated_by.val = @animation.get_animated_by_store(world).contains(
       child,
     )
+
+    @scene.scene_spawn_roots_system(world)
+    let instance_second = get_scene_instance_store(world).get(root).unwrap()
+    let ready_second = get_scene_instance_ready_store(world).get(root).unwrap()
+    instance_after_second_tick.val = instance_second.instance_id
+    ready_after_second_tick.val = ready_second.spawned_entities
+
+    let children_second : Array[@core.Entity] = []
+    @hierarchy.get_parent_store(world).for_each(fn(entity, parent) {
+      if parent.entity().id == root.id {
+        children_second.push(entity)
+      }
+    })
+    child_count_after_second_tick.val = children_second.length()
   })
+  inspect(instance_id.val, content="1")
+  inspect(ready_instance_id.val, content="1")
   inspect(spawned_entities.val, content="1")
   inspect(child_count.val, content="1")
+  inspect(child_count_after_second_tick.val, content="1")
   inspect(has_mesh.val, content="true")
   inspect(has_material.val, content="true")
   inspect(has_transform.val, content="true")
@@ -319,4 +238,105 @@ test "scene: SceneRoot spawns children and marks ready" {
   inspect(has_player.val, content="true")
   inspect(has_target.val, content="true")
   inspect(has_animated_by.val, content="true")
+  inspect(instance_after_second_tick.val, content="1")
+  inspect(ready_after_second_tick.val, content="1")
+}
+
+///|
+test "scene: SceneRoot change respawns children and updates SceneInstance" {
+  let old_instance_id = Ref::new(0)
+  let new_instance_id = Ref::new(0)
+  let ready_instance_id = Ref::new(0)
+  let spawned_entities = Ref::new(0)
+  let old_child_alive = Ref::new(true)
+  let new_child_count = Ref::new(0)
+  let new_child_x = Ref::new(0.0)
+  run_scene_test_app(fn(world : @ecs.World) {
+    let first_tick = world.increment_change_tick()
+    let first_path = @gltf.GltfAssetLabel::Scene(1).from_asset(
+      "models/Foo/Foo.gltf",
+    )
+    let second_path = @gltf.GltfAssetLabel::Scene(2).from_asset(
+      "models/Foo/Foo.gltf",
+    )
+    let material = @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+      ),
+    )
+    let first_scene = @scene.Scene::new([
+      @scene.SceneNode3d::new(
+        @pbr.Mesh3d::from_cuboid(1.0F, 2.0F, 3.0F),
+        material,
+        @math.Transform::from_xyz(1.0F, 2.0F, 3.0F),
+        None,
+        None,
+      ),
+    ])
+    let second_scene = @scene.Scene::new([
+      @scene.SceneNode3d::new(
+        @pbr.Mesh3d::from_cuboid(4.0F, 5.0F, 6.0F),
+        material,
+        @math.Transform::from_xyz(9.0F, 8.0F, 7.0F),
+        None,
+        None,
+      ),
+    ])
+    let first_handle = @scene.scene_register_gltf_scene(first_path, first_scene)
+    let second_handle = @scene.scene_register_gltf_scene(
+      second_path, second_scene,
+    )
+
+    let root = world.spawn_empty()
+    get_scene_root_store(world).insert(
+      root,
+      @scene.SceneRoot::new(first_handle),
+      first_tick,
+    )
+
+    @scene.scene_spawn_roots_system(world)
+    let first_instance = get_scene_instance_store(world).get(root).unwrap()
+    old_instance_id.val = first_instance.instance_id
+
+    let first_children : Array[@core.Entity] = []
+    @hierarchy.get_parent_store(world).for_each(fn(entity, parent) {
+      if parent.entity().id == root.id {
+        first_children.push(entity)
+      }
+    })
+    let first_child = first_children[0]
+
+    get_scene_root_store(world).set(
+      root,
+      @scene.SceneRoot::new(second_handle),
+      world.increment_change_tick(),
+    )
+    |> ignore
+
+    @scene.scene_spawn_roots_system(world)
+
+    let second_instance = get_scene_instance_store(world).get(root).unwrap()
+    let ready = get_scene_instance_ready_store(world).get(root).unwrap()
+    new_instance_id.val = second_instance.instance_id
+    ready_instance_id.val = ready.instance_id
+    spawned_entities.val = ready.spawned_entities
+    old_child_alive.val = world.is_alive(first_child)
+
+    let second_children : Array[@core.Entity] = []
+    @hierarchy.get_parent_store(world).for_each(fn(entity, parent) {
+      if parent.entity().id == root.id {
+        second_children.push(entity)
+      }
+    })
+    new_child_count.val = second_children.length()
+    let new_child = second_children[0]
+    let transform = @math.get_transform_store(world).get(new_child).unwrap()
+    new_child_x.val = transform.translation.x.to_double()
+  })
+  inspect(old_instance_id.val == new_instance_id.val, content="false")
+  inspect(ready_instance_id.val == new_instance_id.val, content="true")
+  inspect(spawned_entities.val, content="1")
+  inspect(old_child_alive.val, content="false")
+  inspect(new_child_count.val, content="1")
+  inspect(new_child_x.val, content="9")
 }

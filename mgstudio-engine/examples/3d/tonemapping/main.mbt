@@ -15,184 +15,282 @@
 ///|
 /// Port of `bevy/examples/3d/tonemapping.rs`.
 ///
-/// Baseline parity: Bevy's native tonemapping/color-grading pipeline
-/// (`Tonemapping`, `ColorGrading`, HDR camera setup) is mapped directly to
-/// mgstudio camera components; drag-drop HDR/EXR loading and custom
-/// shader-material gradient remain adapted.
+/// The Bevy resource/component/system structure is preserved here.
+/// The scene-2 custom material path remains blocked by `bd-iqd` because
+/// mgstudio still lacks Bevy-equivalent custom 3D material APIs.
 
 ///|
 const PI : Float = 3.141592653589793F
 
 ///|
-const METHOD_COUNT : Int = 8
-
-///|
 const PARAMETER_COUNT : Int = 4
 
 ///|
-const CAMERA_HEIGHT : Float = 0.7F
-
-///|
-priv struct ColorGradeSettings {
-  exposure : Float
-  gamma : Float
-  pre_saturation : Float
-  post_saturation : Float
+struct CameraTransform {
+  transform : @math.Transform
 }
 
 ///|
-priv struct SceneEntity {
-  entity : @core.Entity
-  scene : Int
+struct CurrentScene {
+  mut value : Int
 }
 
 ///|
-priv struct TonemappingState {
-  mut current_scene : Int
-  mut tonemap_mode : Int
-  mut selected_parameter : Int
-  mut hide_ui : Bool
-  mut ui_text : @text.TextHandle?
-  mut camera : @core.Entity?
-  mut directional_light : @core.Entity?
-  mut point_light : @core.Entity?
-  scene_entities : Array[SceneEntity]
-  settings : Array[ColorGradeSettings]
+struct SelectedParameter {
+  mut value : Int
+  max : Int
 }
 
 ///|
-let tonemapping_state : Ref[TonemappingState] = Ref::new({
-  current_scene: 1,
-  tonemap_mode: 6,
-  selected_parameter: 0,
-  hide_ui: false,
-  ui_text: None,
-  camera: None,
-  directional_light: None,
-  point_light: None,
-  scene_entities: [],
-  settings: [],
-})
+struct PerMethodSettings {
+  settings : @hashmap.HashMap[
+    @post_process.Tonemapping,
+    @post_process.ColorGrading,
+  ]
+}
 
 ///|
-fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
-  if value < min_value {
-    min_value
-  } else if value > max_value {
-    max_value
-  } else {
-    value
+struct SceneNumber {
+  value : Int
+}
+
+///|
+struct HDRViewer {}
+
+///|
+struct TonemappingUiRoot {}
+
+///|
+struct TonemappingUiText {}
+
+///|
+let camera_transform_resource_key : @ecs.ResourceKey[CameraTransform] = @ecs.register_resource(
+  debug_name="examples.3d.tonemapping.CameraTransform",
+)
+
+///|
+let current_scene_resource_key : @ecs.ResourceKey[CurrentScene] = @ecs.register_resource(
+  debug_name="examples.3d.tonemapping.CurrentScene",
+)
+
+///|
+let selected_parameter_resource_key : @ecs.ResourceKey[SelectedParameter] = @ecs.register_resource(
+  debug_name="examples.3d.tonemapping.SelectedParameter",
+)
+
+///|
+let per_method_settings_resource_key : @ecs.ResourceKey[PerMethodSettings] = @ecs.register_resource(
+  debug_name="examples.3d.tonemapping.PerMethodSettings",
+)
+
+///|
+let scene_number_component_key : @ecs.ComponentKey[SceneNumber] = @ecs.register_component(
+  debug_name="examples.3d.tonemapping.SceneNumber",
+)
+
+///|
+let hdr_viewer_component_key : @ecs.ComponentKey[HDRViewer] = @ecs.register_component(
+  debug_name="examples.3d.tonemapping.HDRViewer",
+)
+
+///|
+let tonemapping_ui_root_component_key : @ecs.ComponentKey[TonemappingUiRoot] = @ecs.register_component(
+  debug_name="examples.3d.tonemapping.TonemappingUiRoot",
+)
+
+///|
+let tonemapping_ui_text_component_key : @ecs.ComponentKey[TonemappingUiText] = @ecs.register_component(
+  debug_name="examples.3d.tonemapping.TonemappingUiText",
+)
+
+///|
+impl @app.Resource for CameraTransform with resource() {
+  camera_transform_resource_key
+}
+
+///|
+impl @app.Resource for CurrentScene with resource() {
+  current_scene_resource_key
+}
+
+///|
+impl @app.Resource for SelectedParameter with resource() {
+  selected_parameter_resource_key
+}
+
+///|
+impl @app.Resource for PerMethodSettings with resource() {
+  per_method_settings_resource_key
+}
+
+///|
+impl @ecs.Component for SceneNumber with component() {
+  scene_number_component_key
+}
+
+///|
+impl @ecs.Component for HDRViewer with component() {
+  hdr_viewer_component_key
+}
+
+///|
+impl @ecs.Component for TonemappingUiRoot with component() {
+  tonemapping_ui_root_component_key
+}
+
+///|
+impl @ecs.Component for TonemappingUiText with component() {
+  tonemapping_ui_text_component_key
+}
+
+///|
+impl Default for CameraTransform with default() {
+  {
+    transform: @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
+      @math.Vec3::new(0.0F, 0.3F, 0.0F),
+      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+    ),
   }
 }
 
 ///|
-fn clamp01(value : Float) -> Float {
-  clampf(value, 0.0F, 1.0F)
+impl Default for CurrentScene with default() {
+  { value: 1 }
 }
 
 ///|
-fn float_from_int(value : Int) -> Float {
-  Float::from_double(value.to_double())
+impl Default for SelectedParameter with default() {
+  { value: 0, max: PARAMETER_COUNT }
 }
 
 ///|
-fn default_color_grading() -> ColorGradeSettings {
-  { exposure: 0.0F, gamma: 1.0F, pre_saturation: 1.0F, post_saturation: 1.0F }
+fn SelectedParameter::next(self : SelectedParameter) -> Unit {
+  self.value = (self.value + 1) % self.max
 }
 
 ///|
-fn basic_scene_recommendation(mode : Int) -> ColorGradeSettings {
-  if mode == 1 || mode == 2 {
-    { exposure: 0.5F, gamma: 1.0F, pre_saturation: 1.0F, post_saturation: 1.0F }
-  } else if mode == 3 {
-    {
-      exposure: 0.35F,
-      gamma: 1.0F,
-      pre_saturation: 1.0F,
-      post_saturation: 1.0F,
+fn SelectedParameter::prev(self : SelectedParameter) -> Unit {
+  self.value = (self.value + self.max - 1) % self.max
+}
+
+///|
+fn method_name(tonemapper : @post_process.Tonemapping) -> String {
+  match tonemapper {
+    None => "Disabled"
+    Reinhard => "Reinhard"
+    ReinhardLuminance => "Reinhard Luminance"
+    AcesFitted => "ACES Fitted"
+    AgX => "AgX"
+    SomewhatBoringDisplayTransform => "SomewhatBoringDisplayTransform"
+    TonyMcMapface => "TonyMcMapface"
+    BlenderFilmic => "Blender Filmic"
+  }
+}
+
+///|
+fn tonemapping_methods() -> Array[@post_process.Tonemapping] {
+  [
+    @post_process.Tonemapping::None,
+    @post_process.Tonemapping::Reinhard,
+    @post_process.Tonemapping::ReinhardLuminance,
+    @post_process.Tonemapping::AcesFitted,
+    @post_process.Tonemapping::AgX,
+    @post_process.Tonemapping::SomewhatBoringDisplayTransform,
+    @post_process.Tonemapping::TonyMcMapface,
+    @post_process.Tonemapping::BlenderFilmic,
+  ]
+}
+
+///|
+fn PerMethodSettings::basic_scene_recommendation(
+  tonemapper : @post_process.Tonemapping,
+) -> @post_process.ColorGrading {
+  match tonemapper {
+    Reinhard | ReinhardLuminance =>
+      @post_process.ColorGrading::{
+        ..@post_process.ColorGrading::default(),
+        global: @post_process.ColorGradingGlobal::{
+          ..@post_process.ColorGradingGlobal::default(),
+          exposure: 0.5F,
+        },
+      }
+    AcesFitted =>
+      @post_process.ColorGrading::{
+        ..@post_process.ColorGrading::default(),
+        global: @post_process.ColorGradingGlobal::{
+          ..@post_process.ColorGradingGlobal::default(),
+          exposure: 0.35F,
+        },
+      }
+    AgX =>
+      @post_process.ColorGrading::with_identical_sections(
+        @post_process.ColorGradingGlobal::{
+          ..@post_process.ColorGradingGlobal::default(),
+          exposure: -0.2F,
+          post_saturation: 1.1F,
+        },
+        @post_process.ColorGradingSection::{
+          ..@post_process.ColorGradingSection::default(),
+          saturation: 1.1F,
+        },
+      )
+    _ => @post_process.ColorGrading::default()
+  }
+}
+
+///|
+impl Default for PerMethodSettings with default() {
+  let settings : @hashmap.HashMap[
+    @post_process.Tonemapping,
+    @post_process.ColorGrading,
+  ] = @hashmap.HashMap::new()
+  for tonemapper in tonemapping_methods() {
+    settings.set(
+      tonemapper,
+      PerMethodSettings::basic_scene_recommendation(tonemapper),
+    )
+  }
+  { settings, }
+}
+
+///|
+fn[T] @ecs.Query1::first_entity(self : @ecs.Query1[T]) -> @core.Entity? {
+  let result : Ref[@core.Entity?] = Ref::new(None)
+  try! self.view(fn(entity, _component) {
+    if result.val is None {
+      result.val = Some(entity)
     }
-  } else if mode == 4 {
-    {
-      exposure: -0.2F,
-      gamma: 1.0F,
-      pre_saturation: 1.1F,
-      post_saturation: 1.1F,
+  })
+  result.val
+}
+
+///|
+fn[A, B] @ecs.Query2::first(self : @ecs.Query2[A, B]) -> (@core.Entity, A, B)? {
+  let result : Ref[(@core.Entity, A, B)?] = Ref::new(None)
+  try! self.view(fn(entity, first, second) {
+    if result.val is None {
+      result.val = Some((entity, first, second))
     }
-  } else {
-    default_color_grading()
-  }
+  })
+  result.val
 }
 
 ///|
-fn build_recommended_settings() -> Array[ColorGradeSettings] {
-  let settings : Array[ColorGradeSettings] = []
-  for i in 0..<METHOD_COUNT {
-    settings.push(basic_scene_recommendation(i))
-  }
-  settings
+fn[A, B, C] @ecs.Query3::first(
+  self : @ecs.Query3[A, B, C],
+) -> (@core.Entity, A, B, C)? {
+  let result : Ref[(@core.Entity, A, B, C)?] = Ref::new(None)
+  try! self.view(fn(entity, first, second, third) {
+    if result.val is None {
+      result.val = Some((entity, first, second, third))
+    }
+  })
+  result.val
 }
 
 ///|
-fn method_name(mode : Int) -> String {
-  if mode == 0 {
-    "Disabled"
-  } else if mode == 1 {
-    "Reinhard"
-  } else if mode == 2 {
-    "Reinhard Luminance"
-  } else if mode == 3 {
-    "ACES Fitted"
-  } else if mode == 4 {
-    "AgX"
-  } else if mode == 5 {
-    "SomewhatBoringDisplayTransform"
-  } else if mode == 6 {
-    "TonyMcMapface"
-  } else {
-    "Blender Filmic"
-  }
-}
-
-///|
-fn tonemapping_mode(mode : Int) -> @render3d.Tonemapping {
-  if mode == 0 {
-    @render3d.Tonemapping::None
-  } else if mode == 1 {
-    @render3d.Tonemapping::Reinhard
-  } else if mode == 2 {
-    @render3d.Tonemapping::ReinhardLuminance
-  } else if mode == 3 {
-    @render3d.Tonemapping::AcesFitted
-  } else if mode == 4 {
-    @render3d.Tonemapping::AgX
-  } else if mode == 5 {
-    @render3d.Tonemapping::SomewhatBoringDisplayTransform
-  } else if mode == 6 {
-    @render3d.Tonemapping::TonyMcMapface
-  } else {
-    @render3d.Tonemapping::BlenderFilmic
-  }
-}
-
-///|
-fn color_grading_from_settings(
-  settings : ColorGradeSettings,
-) -> @render3d.ColorGrading {
-  let global = @render3d.ColorGradingGlobal::new()
-    .with_exposure(settings.exposure)
-    .with_post_saturation(settings.post_saturation)
-  let section = @render3d.ColorGradingSection::new()
-    .with_gamma(settings.gamma)
-    .with_saturation(settings.pre_saturation)
-  @render3d.ColorGrading::new(
-    global,
-    @render3d.ColorGradingSettings::with_identical_sections(section),
-  )
-}
-
-///|
-fn selected_marker(value : Int, selected : Int) -> String {
-  if value == selected {
+fn selected_marker(selected : Bool) -> String {
+  if selected {
     "> "
   } else {
     ""
@@ -200,690 +298,593 @@ fn selected_marker(value : Int, selected : Int) -> String {
 }
 
 ///|
-fn register_scene_entity(
-  world : @ecs.World,
-  entity : @core.Entity,
+fn ui_text_content(
   scene : Int,
-) -> Unit {
-  let tick = world.read_change_tick()
-  world
-  .component(@visibility.ecs_key_visibility)
-  .insert(
-    entity,
-    if scene == tonemapping_state.val.current_scene {
-      @visibility.Visibility::Inherited
-    } else {
-      @visibility.Visibility::Hidden
-    },
-    tick,
-  )
-  tonemapping_state.val.scene_entities.push({ entity, scene })
-}
-
-///|
-fn spawn_scene_mesh(
-  world : @ecs.World,
-  scene : Int,
-  mesh : @render3d.Mesh3d,
-  material : @asset.Handle[@render3d.StandardMaterial],
-  transform : @math.Transform,
-) -> Unit {
-  let entity = @render3d.MeshMaterial3dBundle::new(
-    mesh,
-    @render3d.MeshMaterial3d::new(material),
-    transform,
-  ).spawn(world)
-  register_scene_entity(world, entity, scene)
-}
-
-///|
-fn setup_scene_basic(world : @ecs.World) -> Unit {
-  let scene = 1
-
-  let floor_color = @render2d.Color::new(0.16F, 0.16F, 0.18F, 1.0F)
-  let floor_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(floor_color)
-    .with_perceptual_roughness(0.85F)
-    .with_reflectance(0.3F),
-  )
-  spawn_scene_mesh(
-    world,
-    scene,
-    @render3d.Mesh3d::from_plane(2.8F, 2.8F),
-    floor_material,
-    @math.Transform::from_xyz(0.0F, -0.12F, 0.0F),
-  )
-
-  for i in 0..<8 {
-    let i_f = float_from_int(i)
-    let x = -0.98F + i_f * 0.28F
-    let emission = 0.8F + i_f * i_f * 0.25F
-    let r = clamp01(0.12F + i_f * 0.12F)
-    let g = clamp01(0.95F - i_f * 0.09F)
-    let b = clamp01(0.25F + i_f * 0.07F)
-    let bar_color = @render2d.Color::new(r, g, b, 1.0F)
-
-    let bar_material = @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(bar_color)
-      .with_unlit(true)
-      .with_emissive(
-        @render2d.Color::new(
-          bar_color.r * emission,
-          bar_color.g * emission,
-          bar_color.b * emission,
-          1.0F,
-        ),
-      )
-      .with_perceptual_roughness(0.2F),
-    )
-    spawn_scene_mesh(
-      world,
-      scene,
-      @render3d.Mesh3d::from_cuboid(0.2F, 0.75F, 0.22F),
-      bar_material,
-      @math.Transform::from_xyz(x, 0.28F, -0.28F),
-    )
-  }
-
-  let sphere_color = @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)
-  let sphere_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(sphere_color)
-    .with_metallic(1.0F)
-    .with_perceptual_roughness(0.15F)
-    .with_reflectance(0.7F),
-  )
-  spawn_scene_mesh(
-    world,
-    scene,
-    @render3d.Mesh3d::from_tetrahedron(0.18F),
-    sphere_material,
-    @math.Transform::from_xyz(-0.45F, 0.22F, 0.38F).with_rotation(
-      @math.Quat::from_rotation_y(PI / 4.0F),
-    ),
-  )
-
-  let sphere_2_color = @render2d.Color::new(0.22F, 0.82F, 0.58F, 1.0F)
-  let sphere_2_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(sphere_2_color)
-    .with_metallic(0.0F)
-    .with_perceptual_roughness(0.35F)
-    .with_reflectance(0.5F),
-  )
-  spawn_scene_mesh(
-    world,
-    scene,
-    @render3d.Mesh3d::from_tetrahedron(0.17F),
-    sphere_2_material,
-    @math.Transform::from_xyz(0.44F, 0.2F, 0.38F).with_rotation(
-      @math.Quat::from_rotation_x(PI / 5.0F),
-    ),
-  )
-}
-
-///|
-fn setup_scene_color_sweep(world : @ecs.World) -> Unit {
-  let scene = 2
-  let rows = 6
-  let cols = 10
-
-  for row in 0..<rows {
-    for col in 0..<cols {
-      let u = float_from_int(col) / float_from_int(cols - 1)
-      let v = float_from_int(row) / float_from_int(rows - 1)
-      let r = clamp01(u)
-      let g = clamp01(v)
-      let b = clamp01(1.0F - u * 0.85F + v * 0.15F)
-      let color = @render2d.Color::new(r, g, b, 1.0F)
-
-      let mat = @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(color)
-        .with_unlit(true)
-        .with_perceptual_roughness(0.4F),
-      )
-
-      let x = -0.9F + float_from_int(col) * 0.2F
-      let y = -0.04F + float_from_int(row) * 0.12F
-      spawn_scene_mesh(
-        world,
-        scene,
-        @render3d.Mesh3d::from_cuboid(0.18F, 0.11F, 0.14F),
-        mat,
-        @math.Transform::from_xyz(x, y, 0.0F),
-      )
-    }
-  }
-
-  let panel_color = @render2d.Color::new(0.05F, 0.05F, 0.06F, 1.0F)
-  let panel = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(panel_color)
-    .with_perceptual_roughness(1.0F)
-    .with_reflectance(0.2F),
-  )
-  spawn_scene_mesh(
-    world,
-    scene,
-    @render3d.Mesh3d::from_cuboid(2.2F, 1.15F, 0.06F),
-    panel,
-    @math.Transform::from_xyz(0.0F, 0.3F, -0.1F),
-  )
-}
-
-///|
-fn setup_scene_image_viewer(world : @ecs.World) -> Unit {
-  let scene = 3
-  let asset_server = @asset.AssetServer::new()
-  let logo_texture = asset_server.load("branding/bevy_logo_dark_big.png")
-
-  let image_color = @render2d.Color::white()
-  let image_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(image_color)
-    .with_base_color_texture(Some(logo_texture))
-    .with_unlit(true)
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend),
-  )
-  spawn_scene_mesh(
-    world,
-    scene,
-    @render3d.Mesh3d::from_cuboid(1.45F, 0.75F, 0.02F),
-    image_material,
-    @math.Transform::from_xyz(0.0F, 0.34F, 0.04F),
-  )
-
-  let frame_color = @render2d.Color::new(0.08F, 0.08F, 0.08F, 1.0F)
-  let frame_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(frame_color)
-    .with_perceptual_roughness(0.8F)
-    .with_reflectance(0.2F),
-  )
-  spawn_scene_mesh(
-    world,
-    scene,
-    @render3d.Mesh3d::from_cuboid(1.55F, 0.85F, 0.05F),
-    frame_material,
-    @math.Transform::from_xyz(0.0F, 0.34F, -0.02F),
-  )
-
-  let floor_color = @render2d.Color::new(0.14F, 0.14F, 0.16F, 1.0F)
-  let floor_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(floor_color)
-    .with_perceptual_roughness(0.9F)
-    .with_reflectance(0.25F),
-  )
-  spawn_scene_mesh(
-    world,
-    scene,
-    @render3d.Mesh3d::from_plane(2.4F, 2.4F),
-    floor_material,
-    @math.Transform::from_xyz(0.0F, -0.13F, 0.0F),
-  )
-}
-
-///|
-fn setup_lights(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-
-  let directional = world.spawn_empty()
-  world
-  .component(@math.ecs_key_transform)
-  .insert(
-    directional,
-    @math.Transform::from_xyz(2.5F, 4.0F, 2.5F).looking_at(
-      @math.Vec3::new(0.0F, 0.2F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-    tick,
-  )
-  world
-  .component(@render3d.ecs_key_directional_light)
-  .insert(
-    directional,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
-    tick,
-  )
-  tonemapping_state.val.directional_light = Some(directional)
-
-  let point = world.spawn_empty()
-  world
-  .component(@math.ecs_key_transform)
-  .insert(point, @math.Transform::from_xyz(-0.6F, 1.3F, 1.2F), tick)
-  world
-  .component(@render3d.ecs_key_point_light)
-  .insert(
-    point,
-    @render3d.PointLight::new(
-      @render2d.Color::new(1.0F, 0.9F, 0.8F, 1.0F),
-      2_000.0F,
-      8.0F,
-      true,
-    ),
-    tick,
-  )
-  tonemapping_state.val.point_light = Some(point)
-}
-
-///|
-fn setup_camera(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
-    @math.Transform::from_xyz(0.7F, CAMERA_HEIGHT, 1.0F).looking_at(
-      @math.Vec3::new(0.0F, 0.3F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-
-  let tick = world.read_change_tick()
-  world
-  .component(@render3d.ecs_key_hdr)
-  .insert(camera, @render3d.Hdr::default(), tick)
-  world
-  .component(@render3d.ecs_key_environment_map_light)
-  .insert(
-    camera,
-    @render3d.EnvironmentMapLight::new(
-      Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
-      Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
-      2000.0F,
-    ),
-    tick,
-  )
-  tonemapping_state.val.camera = Some(camera)
-
-  @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::new(
-      @render2d.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
-      @render3d.FogFalloff3d::linear(1.0F, 8.0F),
-    ),
-  )
-}
-
-///|
-fn ui_text_content() -> String {
-  let state = tonemapping_state.val
-  let settings = state.settings[state.tonemap_mode]
-
+  tonemapping : @post_process.Tonemapping,
+  color_grading : @post_process.ColorGrading,
+  selected_parameter : Int,
+) -> String {
   let mut content = "(H) Hide UI\n\n" +
     "Test Scene:\n" +
     "(Q) " +
-    selected_marker(1, state.current_scene) +
+    selected_marker(scene == 1) +
     "Basic Scene\n" +
     "(W) " +
-    selected_marker(2, state.current_scene) +
+    selected_marker(scene == 2) +
     "Color Sweep\n" +
     "(E) " +
-    selected_marker(3, state.current_scene) +
+    selected_marker(scene == 3) +
     "Image Viewer\n\n" +
     "Tonemapping Method:\n" +
     "(1) " +
-    selected_marker(0, state.tonemap_mode) +
+    selected_marker(tonemapping == @post_process.Tonemapping::None) +
     "Disabled\n" +
     "(2) " +
-    selected_marker(1, state.tonemap_mode) +
+    selected_marker(tonemapping == @post_process.Tonemapping::Reinhard) +
     "Reinhard\n" +
     "(3) " +
-    selected_marker(2, state.tonemap_mode) +
+    selected_marker(tonemapping == @post_process.Tonemapping::ReinhardLuminance) +
     "Reinhard Luminance\n" +
     "(4) " +
-    selected_marker(3, state.tonemap_mode) +
+    selected_marker(tonemapping == @post_process.Tonemapping::AcesFitted) +
     "ACES Fitted\n" +
     "(5) " +
-    selected_marker(4, state.tonemap_mode) +
+    selected_marker(tonemapping == @post_process.Tonemapping::AgX) +
     "AgX\n" +
     "(6) " +
-    selected_marker(5, state.tonemap_mode) +
+    selected_marker(
+      tonemapping == @post_process.Tonemapping::SomewhatBoringDisplayTransform,
+    ) +
     "SomewhatBoringDisplayTransform\n" +
     "(7) " +
-    selected_marker(6, state.tonemap_mode) +
+    selected_marker(tonemapping == @post_process.Tonemapping::TonyMcMapface) +
     "TonyMcMapface\n" +
     "(8) " +
-    selected_marker(7, state.tonemap_mode) +
+    selected_marker(tonemapping == @post_process.Tonemapping::BlenderFilmic) +
     "Blender Filmic\n\n" +
-    "Color Grading (Arrow Up/Down select, Left/Right adjust):\n" +
-    selected_marker(0, state.selected_parameter) +
-    "Exposure: \{settings.exposure}\n" +
-    selected_marker(1, state.selected_parameter) +
-    "Gamma: \{settings.gamma}\n" +
-    selected_marker(2, state.selected_parameter) +
-    "PreSaturation: \{settings.pre_saturation}\n" +
-    selected_marker(3, state.selected_parameter) +
-    "PostSaturation: \{settings.post_saturation}\n" +
-    "(Space) Reset all methods to default\n"
+    "Color Grading:\n" +
+    "(arrow keys)\n" +
+    selected_marker(selected_parameter == 0) +
+    "Exposure: \{color_grading.global.exposure}\n" +
+    selected_marker(selected_parameter == 1) +
+    "Gamma: \{color_grading.shadows.gamma}\n" +
+    selected_marker(selected_parameter == 2) +
+    "PreSaturation: \{color_grading.shadows.saturation}\n" +
+    selected_marker(selected_parameter == 3) +
+    "PostSaturation: \{color_grading.global.post_saturation}\n" +
+    "(Space) Reset all to default\n"
 
-  if state.current_scene == 1 {
-    content = content + "(Enter) Reset all methods to scene recommendation\n"
+  if scene == 1 {
+    content = content + "(Enter) Reset all to scene recommendation\n"
   }
 
-  if state.current_scene == 3 {
-    content = content +
-      "Image viewer note: HDR/EXR drag-drop is not available in current mgstudio runtime.\n"
-  }
-
-  content = content + "\nActive Method: " + method_name(state.tonemap_mode)
-  content
+  content + "\nActive Method: " + method_name(tonemapping)
 }
 
 ///|
-fn setup_ui(_world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let handle = @text.Text2dBundle::new(
-      @text.Text2d::new(ui_text_content()),
+fn set_ui_text(handle : @text.TextHandle, content : String) -> Unit {
+  @text.text_set_content(handle, content)
+}
+
+///|
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  camera_transform : @app.Res[CameraTransform],
+) -> Unit {
+  let camera = commands.spawn(
+    @pbr.Camera3dBundle::new(
+      @sprite.Camera::default(),
+      camera_transform.get().transform,
+    )
+    .with_color_grading(Some(@post_process.ColorGrading::default()))
+    .with_distance_fog(
+      Some(
+        @pbr.DistanceFog::new(
+          @sprite.Color::srgb(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F),
+          @pbr.FogFalloff3d::linear(1.0F, 8.0F),
+        ),
+      ),
+    ),
+  )
+  commands
+  .entity(camera)
+  .insert(
+    (
+      @pbr.Hdr::default(),
+      @pbr.EnvironmentMapLight::new(
+        Some(
+          asset_server
+          .get()
+          .load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"),
+        ),
+        Some(
+          asset_server
+          .get()
+          .load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
+        ),
+        2000.0F,
+      ),
+    ),
+  )
+
+  let overlay_camera = commands.spawn(
+    @sprite.Camera2dBundle::new(
+      @sprite.Camera::default().with_order(100).with_clear_color_none(),
+      @math.Transform::identity(),
+    ),
+  )
+  commands
+  .entity(overlay_camera)
+  .insert_component(@ui.IsDefaultUiCamera::default())
+
+  let root = commands.spawn(
+    (
+      @ui.UiRoot::default(),
+      @ui.Node::default()
+      .with_width(@ui.Val::Percent(100.0F))
+      .with_height(@ui.Val::Percent(100.0F)),
+      TonemappingUiRoot::{  },
+    ),
+  )
+
+  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
+  let text_handle = @text.Text2dBundle::new(
+      @text.Text2d::new(""),
       @text.TextFont::default().with_font(font).with_font_size(15.0F),
-      @math.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-390.0F, 320.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-        z=50.0F,
-      ),
+      @math.Transform::identity(),
     )
-    .with_anchor(@render2d.Anchor::top_left())
-    .with_bounds(@text.TextBounds::new_horizontal(780.0F))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    )
     .spawn()
-  tonemapping_state.val.ui_text = Some(handle)
-}
 
-///|
-fn update_ui() -> Unit {
-  if tonemapping_state.val.ui_text is Some(handle) {
-    if tonemapping_state.val.hide_ui {
-      @text.text_set_content(handle, "")
-    } else {
-      @text.text_set_content(handle, ui_text_content())
-    }
-  }
-}
-
-///|
-fn apply_scene_visibility(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-  for entry in tonemapping_state.val.scene_entities {
-    world
-    .component(@visibility.ecs_key_visibility)
-    .set(
-      entry.entity,
-      if entry.scene == tonemapping_state.val.current_scene {
-        @visibility.Visibility::Inherited
-      } else {
-        @visibility.Visibility::Hidden
-      },
-      tick,
-    )
-    |> ignore
-  }
-}
-
-///|
-fn apply_scene_lighting(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-  let scene = tonemapping_state.val.current_scene
-
-  if tonemapping_state.val.directional_light is Some(light) {
-    let illuminance = if scene == 1 {
-      15_000.0F
-    } else if scene == 2 {
-      4_000.0F
-    } else {
-      0.0F
-    }
-    world
-    .component(@render3d.ecs_key_directional_light)
-    .set(
-      light,
-      @render3d.DirectionalLight::new(
-        @render2d.Color::white(),
-        illuminance,
-        true,
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(root),
+        @ui.Node::default()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_top(@ui.Val::Px(12.0F))
+        .with_left(@ui.Val::Px(12.0F)),
+        @ui.UiText::new(text_handle),
+        TonemappingUiText::{  },
       ),
-      tick,
-    )
-    |> ignore
-  }
+    ),
+  )
+}
 
-  if tonemapping_state.val.point_light is Some(light) {
-    let intensity = if scene == 1 {
-      2_000.0F
-    } else if scene == 2 {
-      12_000.0F
-    } else {
-      0.0F
-    }
-    world
-    .component(@render3d.ecs_key_point_light)
-    .set(
-      light,
-      @render3d.PointLight::new(
-        @render2d.Color::new(1.0F, 0.9F, 0.8F, 1.0F),
-        intensity,
-        8.0F,
-        true,
+///|
+fn setup_basic_scene(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @scene.SceneRoot::new(
+          @scene.scene_load_gltf_scene(
+            asset_server.get(),
+            @gltf.GltfAssetLabel::Scene(0).from_asset(
+              "models/TonemappingTest/TonemappingTest.gltf",
+            ),
+          ),
+        ),
+        SceneNumber::{ value: 1 },
+        @visibility.Visibility::Inherited,
       ),
-      tick,
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @scene.SceneRoot::new(
+          @scene.scene_load_gltf_scene(
+            asset_server.get(),
+            @gltf.GltfAssetLabel::Scene(0).from_asset(
+              "models/FlightHelmet/FlightHelmet.gltf",
+            ),
+          ),
+        ),
+        @math.Transform::from_xyz(0.5F, 0.0F, -0.5F).with_rotation(
+          @math.Quat::from_rotation_y(-0.15F * PI),
+        ),
+        SceneNumber::{ value: 1 },
+        @visibility.Visibility::Inherited,
+      ),
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
+          @pbr.CascadeShadowConfigBuilder::default()
+          .with_maximum_distance(3.0F)
+          .with_first_cascade_far_bound(0.9F),
+        ),
+        @math.Transform::from_rotation(
+          @math.Quat::from_euler(
+            @math.EulerRot::ZYX,
+            0.0F,
+            PI * -0.15F,
+            PI * -0.15F,
+          ),
+        ),
+        SceneNumber::{ value: 1 },
+        @visibility.Visibility::Inherited,
+      ),
+    ),
+  )
+}
+
+///|
+fn setup_color_gradient_scene(_world : @ecs.World) -> Unit {
+  ()
+}
+
+///|
+fn setup_image_viewer_scene(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  mesh_assets : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  camera_transform : @app.Res[CameraTransform],
+  ui_root_query : @ecs.Query1[TonemappingUiRoot],
+) -> Unit {
+  let mesh_handle = mesh_assets.get_ref().val.add(
+    @mesh.Mesh::from_3d_geometry(@mesh.Mesh3dGeometry::rectangle(1.0F, 1.0F)),
+  )
+  let material_handle = material_assets.get_ref().val.add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_unlit(true),
+  )
+
+  let transform = camera_transform.get().transform
+  transform.translation = transform.translation.add(transform.forward())
+
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(mesh_handle),
+        @pbr.MeshMaterial3d::new(material_handle),
+        transform,
+        @visibility.Visibility::Hidden,
+        SceneNumber::{ value: 3 },
+        HDRViewer::{  },
+      ),
+    ),
+  )
+
+  guard ui_root_query.first_entity() is Some(root) else { return }
+  let prompt_handle = @text.Text2dBundle::new(
+      @text.Text2d::new("Drag and drop an HDR or EXR file"),
+      @text.TextFont::default()
+      .with_font(asset_server.get().load_font("fonts/FiraSans-Bold.ttf"))
+      .with_font_size(36.0F),
+      @math.Transform::identity(),
     )
-    |> ignore
-  }
+    .with_color(@text.TextColor::new(@sprite.Color::black()))
+    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
+    .spawn()
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(root),
+        @ui.Node::{
+          ..@ui.Node::default(),
+          align_self: @ui.AlignSelf::Center,
+          margin: @ui.UiRect::all(@ui.Val::Auto),
+        },
+        @ui.UiText::new(prompt_handle),
+        SceneNumber::{ value: 3 },
+        @visibility.Visibility::Hidden,
+      ),
+    ),
+  )
 }
 
 ///|
-fn apply_color_grading(world : @ecs.World) -> Unit {
-  let state = tonemapping_state.val
-  guard state.camera is Some(camera_entity) else { return }
-  let settings = state.settings[state.tonemap_mode]
-  let tonemapping = tonemapping_mode(state.tonemap_mode)
-  let color_grading = color_grading_from_settings(settings)
-  let tick = world.read_change_tick()
-
-  let tonemapping_store = world.component(@render3d.ecs_key_tonemapping)
-  if tonemapping_store.contains(camera_entity) {
-    tonemapping_store.set(camera_entity, tonemapping, tick) |> ignore
+fn toggle_scene(
+  keys : @input.ButtonInput[@window.KeyCode],
+  visibility_query : @ecs.Query1[@visibility.Visibility],
+  current_scene : @app.ResMut[CurrentScene],
+  scene_query : @ecs.Query1[SceneNumber],
+) -> Unit {
+  let next_scene = if keys.just_pressed(KeyQ) {
+    Some(1)
+  } else if keys.just_pressed(KeyW) {
+    Some(2)
+  } else if keys.just_pressed(KeyE) {
+    Some(3)
   } else {
-    tonemapping_store.insert(camera_entity, tonemapping, tick)
+    None
   }
+  guard next_scene is Some(scene) else { return }
+  current_scene.get_ref().val.value = scene
 
-  let color_grading_store = world.component(@render3d.ecs_key_color_grading)
-  if color_grading_store.contains(camera_entity) {
-    color_grading_store.set(camera_entity, color_grading, tick) |> ignore
+  try! scene_query.view(fn(entity, scene_number) {
+    let visibility = if scene_number.value == scene {
+      @visibility.Visibility::Inherited
+    } else {
+      @visibility.Visibility::Hidden
+    }
+    if (try! visibility_query.get_mut(entity)) is Some(component) {
+      component.get_ref().val = visibility
+      component.set_changed()
+    }
+  })
+}
+
+///|
+fn toggle_tonemapping_method(
+  keys : @input.ButtonInput[@window.KeyCode],
+  tonemapping_query : @ecs.Query1[@post_process.Tonemapping],
+  color_grading_query : @ecs.Query1[@post_process.ColorGrading],
+  per_method_settings : @app.Res[PerMethodSettings],
+) -> Unit {
+  let next_method = if keys.just_pressed(Digit1) {
+    Some(@post_process.Tonemapping::None)
+  } else if keys.just_pressed(Digit2) {
+    Some(@post_process.Tonemapping::Reinhard)
+  } else if keys.just_pressed(Digit3) {
+    Some(@post_process.Tonemapping::ReinhardLuminance)
+  } else if keys.just_pressed(Digit4) {
+    Some(@post_process.Tonemapping::AcesFitted)
+  } else if keys.just_pressed(Digit5) {
+    Some(@post_process.Tonemapping::AgX)
+  } else if keys.just_pressed(Digit6) {
+    Some(@post_process.Tonemapping::SomewhatBoringDisplayTransform)
+  } else if keys.just_pressed(Digit7) {
+    Some(@post_process.Tonemapping::TonyMcMapface)
+  } else if keys.just_pressed(Digit8) {
+    Some(@post_process.Tonemapping::BlenderFilmic)
   } else {
-    color_grading_store.insert(camera_entity, color_grading, tick)
+    None
   }
-}
-
-///|
-fn set_scene(scene : Int, world : @ecs.World) -> Unit {
-  tonemapping_state.val.current_scene = scene
-  apply_scene_visibility(world)
-  apply_scene_lighting(world)
-  apply_color_grading(world)
-}
-
-///|
-fn set_tonemap_mode(mode : Int, world : @ecs.World) -> Unit {
-  tonemapping_state.val.tonemap_mode = mode
-  apply_color_grading(world)
-}
-
-///|
-fn reset_all_methods_to_default(world : @ecs.World) -> Unit {
-  for i in 0..<METHOD_COUNT {
-    tonemapping_state.val.settings[i] = default_color_grading()
-  }
-  apply_color_grading(world)
-}
-
-///|
-fn reset_all_methods_to_recommendation(world : @ecs.World) -> Unit {
-  for i in 0..<METHOD_COUNT {
-    tonemapping_state.val.settings[i] = basic_scene_recommendation(i)
-  }
-  apply_color_grading(world)
-}
-
-///|
-fn update_color_grading_settings(world : @ecs.World) -> Unit {
-  let delta = @time.time_delta_seconds() * 0.25F
-  let signed_delta = if @input.key_pressed(@window.KeyCode::ArrowLeft) {
-    -delta
-  } else if @input.key_pressed(@window.KeyCode::ArrowRight) {
-    delta
-  } else {
-    0.0F
-  }
-
-  if signed_delta == 0.0F {
+  guard tonemapping_query.first_entity() is Some(camera) else { return }
+  guard (try! tonemapping_query.get(camera)) is Some(initial_tonemapping) else {
     return
   }
 
-  let mode = tonemapping_state.val.tonemap_mode
-  let current = tonemapping_state.val.settings[mode]
-  let updated = if tonemapping_state.val.selected_parameter == 0 {
-    {
-      ..current,
-      exposure: clampf(current.exposure + signed_delta, -2.5F, 2.5F),
+  let mut current_tonemapping = initial_tonemapping
+  if next_method is Some(tonemapper) {
+    if (try! tonemapping_query.get_mut(camera)) is Some(component) {
+      component.get_ref().val = tonemapper
+      component.set_changed()
+      current_tonemapping = tonemapper
     }
-  } else if tonemapping_state.val.selected_parameter == 1 {
-    { ..current, gamma: clampf(current.gamma + signed_delta, 0.2F, 3.0F) }
-  } else if tonemapping_state.val.selected_parameter == 2 {
-    {
-      ..current,
-      pre_saturation: clampf(current.pre_saturation + signed_delta, 0.0F, 2.0F),
+  }
+
+  guard per_method_settings.get().settings.get(current_tonemapping)
+    is Some(color_grading) else {
+    return
+  }
+  if (try! color_grading_query.get_mut(camera)) is Some(component) {
+    component.get_ref().val = color_grading
+    component.set_changed()
+  }
+}
+
+///|
+fn update_color_grading_settings(
+  keys : @input.ButtonInput[@window.KeyCode],
+  time : @app.Res[@time.Time[Unit]],
+  per_method_settings : @app.ResMut[PerMethodSettings],
+  tonemapping_query : @ecs.Query1[@post_process.Tonemapping],
+  current_scene : @app.Res[CurrentScene],
+  selected_parameter : @app.ResMut[SelectedParameter],
+) -> Unit {
+  guard tonemapping_query.first_entity() is Some(camera) else { return }
+  guard (try! tonemapping_query.get(camera)) is Some(current_method) else {
+    return
+  }
+
+  if keys.just_pressed(ArrowDown) {
+    selected_parameter.get_ref().val.next()
+  }
+  if keys.just_pressed(ArrowUp) {
+    selected_parameter.get_ref().val.prev()
+  }
+
+  let mut delta = time.get().delta_seconds() * 0.25F
+  if keys.pressed(ArrowLeft) {
+    delta = -delta
+  } else if !keys.pressed(ArrowRight) {
+    delta = 0.0F
+  }
+
+  if delta != 0.0F {
+    let next = per_method_settings.get_ref().val.settings
+      .get(current_method)
+      .unwrap_or(@post_process.ColorGrading::default())
+    match selected_parameter.get_ref().val.value {
+      0 => next.global.exposure = next.global.exposure + delta
+      1 =>
+        for section in next.all_sections_mut() {
+          section.gamma = section.gamma + delta
+        }
+      2 =>
+        for section in next.all_sections_mut() {
+          section.saturation = section.saturation + delta
+        }
+      _ => next.global.post_saturation = next.global.post_saturation + delta
     }
-  } else {
-    {
-      ..current,
-      post_saturation: clampf(
-        current.post_saturation + signed_delta,
-        0.0F,
-        2.0F,
+    per_method_settings.get_ref().val.settings.set(current_method, next)
+  }
+
+  if keys.just_pressed(Space) {
+    for tonemapper in tonemapping_methods() {
+      per_method_settings.get_ref().val.settings.set(
+        tonemapper,
+        @post_process.ColorGrading::default(),
+      )
+    }
+  }
+
+  if keys.just_pressed(Enter) && current_scene.get().value == 1 {
+    for tonemapper in tonemapping_methods() {
+      per_method_settings.get_ref().val.settings.set(
+        tonemapper,
+        PerMethodSettings::basic_scene_recommendation(tonemapper),
+      )
+    }
+  }
+}
+
+///|
+fn drag_drop_image(
+  image_material_query : @ecs.Query2[HDRViewer, @pbr.MeshMaterial3d],
+  image_viewer_text_query : @ecs.Query2[@ui.UiText, SceneNumber],
+  material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  drag_and_drop_reader : @ecs.MessageReader[@input.FileDragAndDrop],
+  asset_server : @app.Res[@asset.AssetServer],
+  commands : @app.Commands,
+) -> Unit {
+  let mut new_image : @asset.Handle[@asset.Image]? = None
+  for event in (try! drag_and_drop_reader.read()) {
+    match event {
+      DroppedFile(path) => new_image = Some(asset_server.get().load(path))
+      _ => ()
+    }
+  }
+  guard new_image is Some(image) else { return }
+  guard image_material_query.first()
+    is Some((_viewer_entity, _viewer, viewer_material)) else {
+    return
+  }
+  guard material_assets.get_ref().val.get(viewer_material.material)
+    is Some(material) else {
+    return
+  }
+  ignore(
+    material_assets.get_ref().val.set(
+      viewer_material.material,
+      material.with_base_color_texture(Some(image)),
+    ),
+  )
+
+  if image_viewer_text_query.first()
+    is Some((text_entity, _ui_text, _scene_number)) {
+    commands.entity(text_entity).despawn()
+  }
+}
+
+///|
+fn resize_image(
+  image_mesh_query : @ecs.Query3[HDRViewer, @pbr.MeshMaterial3d, @pbr.Mesh3d],
+  image_event_reader : @ecs.MessageReader[@asset.AssetEvent[@asset.Image]],
+  material_assets : @app.Res[@asset.Assets[@pbr.StandardMaterial]],
+  mesh_assets : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+) -> Unit {
+  let updated_images : Array[@asset.Handle[@asset.Image]] = []
+  for event in (try! image_event_reader.read()) {
+    match event {
+      Added(handle) => updated_images.push(handle)
+      Modified(handle) => updated_images.push(handle)
+      _ => ()
+    }
+  }
+  if updated_images.length() == 0 {
+    return
+  }
+  guard image_mesh_query.first()
+    is Some((_viewer_entity, _viewer, viewer_material, viewer_mesh)) else {
+    return
+  }
+  guard material_assets.get().get(viewer_material.material) is Some(material) else {
+    return
+  }
+  guard material.base_color_texture is Some(texture) else { return }
+
+  let mut image_changed = false
+  for handle in updated_images {
+    if handle.id() == texture.id() {
+      image_changed = true
+    }
+  }
+  if !image_changed {
+    return
+  }
+
+  let size = @math.Vec2::new(
+      Float::from_int(@asset.asset_texture_width(texture)),
+      Float::from_int(@asset.asset_texture_height(texture)),
+    )
+    .normalize_or_zero()
+    .mul_scalar(1.4F)
+
+  ignore(
+    mesh_assets.get_ref().val.insert(
+      viewer_mesh.mesh,
+      @mesh.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::rectangle(size.x, size.y),
       ),
-    }
-  }
-
-  tonemapping_state.val.settings[mode] = updated
-  apply_color_grading(world)
-  update_ui()
+    ),
+  )
 }
 
 ///|
-fn update_system(world : @ecs.World) -> Unit {
-  let mut ui_changed = false
-
-  if @input.key_just_pressed(@window.KeyCode::KeyQ) {
-    set_scene(1, world)
-    ui_changed = true
-  } else if @input.key_just_pressed(@window.KeyCode::KeyW) {
-    set_scene(2, world)
-    ui_changed = true
-  } else if @input.key_just_pressed(@window.KeyCode::KeyE) {
-    set_scene(3, world)
-    ui_changed = true
+fn update_ui(
+  keys : @input.ButtonInput[@window.KeyCode],
+  current_scene : @app.Res[CurrentScene],
+  selected_parameter : @app.Res[SelectedParameter],
+  settings_query : @ecs.Query2[
+    @post_process.Tonemapping,
+    @post_process.ColorGrading,
+  ],
+  ui_text_query : @ecs.Query2[@ui.UiText, TonemappingUiText],
+  hide_ui : @app.Local[Bool],
+) -> Unit {
+  if keys.just_pressed(KeyH) {
+    hide_ui.get_ref().val = !hide_ui.get()
   }
-
-  if @input.key_just_pressed(@window.KeyCode::Digit1) {
-    set_tonemap_mode(0, world)
-    ui_changed = true
-  } else if @input.key_just_pressed(@window.KeyCode::Digit2) {
-    set_tonemap_mode(1, world)
-    ui_changed = true
-  } else if @input.key_just_pressed(@window.KeyCode::Digit3) {
-    set_tonemap_mode(2, world)
-    ui_changed = true
-  } else if @input.key_just_pressed(@window.KeyCode::Digit4) {
-    set_tonemap_mode(3, world)
-    ui_changed = true
-  } else if @input.key_just_pressed(@window.KeyCode::Digit5) {
-    set_tonemap_mode(4, world)
-    ui_changed = true
-  } else if @input.key_just_pressed(@window.KeyCode::Digit6) {
-    set_tonemap_mode(5, world)
-    ui_changed = true
-  } else if @input.key_just_pressed(@window.KeyCode::Digit7) {
-    set_tonemap_mode(6, world)
-    ui_changed = true
-  } else if @input.key_just_pressed(@window.KeyCode::Digit8) {
-    set_tonemap_mode(7, world)
-    ui_changed = true
+  guard ui_text_query.first() is Some((_entity, ui_text, _marker)) else {
+    return
   }
-
-  if @input.key_just_pressed(@window.KeyCode::ArrowDown) {
-    tonemapping_state.val.selected_parameter = (
-        tonemapping_state.val.selected_parameter + 1
-      ) %
-      PARAMETER_COUNT
-    ui_changed = true
+  if hide_ui.get() {
+    set_ui_text(ui_text.handle, "")
+    return
   }
-
-  if @input.key_just_pressed(@window.KeyCode::ArrowUp) {
-    tonemapping_state.val.selected_parameter = (
-        tonemapping_state.val.selected_parameter + PARAMETER_COUNT - 1
-      ) %
-      PARAMETER_COUNT
-    ui_changed = true
+  guard settings_query.first() is Some((_camera, tonemapping, color_grading)) else {
+    return
   }
-
-  if @input.key_pressed(@window.KeyCode::ArrowLeft) ||
-    @input.key_pressed(@window.KeyCode::ArrowRight) {
-    update_color_grading_settings(world)
-    ui_changed = false
-  }
-
-  if @input.key_just_pressed(@window.KeyCode::Space) {
-    reset_all_methods_to_default(world)
-    ui_changed = true
-  }
-
-  if @input.key_just_pressed(@window.KeyCode::Enter) &&
-    tonemapping_state.val.current_scene == 1 {
-    reset_all_methods_to_recommendation(world)
-    ui_changed = true
-  }
-
-  if @input.key_just_pressed(@window.KeyCode::KeyH) {
-    tonemapping_state.val.hide_ui = !tonemapping_state.val.hide_ui
-    ui_changed = true
-  }
-
-  if ui_changed {
-    update_ui()
-  }
-}
-
-///|
-fn setup(world : @ecs.World) -> Unit {
-  tonemapping_state.val = {
-    current_scene: 1,
-    tonemap_mode: 6,
-    selected_parameter: 0,
-    hide_ui: false,
-    ui_text: None,
-    camera: None,
-    directional_light: None,
-    point_light: None,
-    scene_entities: [],
-    settings: build_recommended_settings(),
-  }
-
-  setup_scene_basic(world)
-  setup_scene_color_sweep(world)
-  setup_scene_image_viewer(world)
-  setup_lights(world)
-  setup_camera(world)
-  setup_ui(world)
-
-  apply_scene_visibility(world)
-  apply_scene_lighting(world)
-  apply_color_grading(world)
-  update_ui()
+  set_ui_text(
+    ui_text.handle,
+    ui_text_content(
+      current_scene.get().value,
+      tonemapping,
+      color_grading,
+      selected_parameter.get().value,
+    ),
+  )
 }
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(update_system))
+  .add_plugins(@mgstudio.default_plugins())
+  .insert_resource(CameraTransform::default())
+  .insert_resource(PerMethodSettings::default())
+  .insert_resource(CurrentScene::default())
+  .insert_resource(SelectedParameter::default())
+  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
+  .add_systems(@app.Startup, @app.system(@app.system_param2(setup_basic_scene)))
+  .add_systems(@app.Startup, @app.system(setup_color_gradient_scene))
+  .add_systems(
+    @app.Startup,
+    @app.system(@app.system_param6(setup_image_viewer_scene)),
+  )
+  .add_systems(@app.Update, @app.system(@app.system_param6(drag_drop_image)))
+  .add_systems(@app.Update, @app.system(@app.system_param4(resize_image)))
+  .add_systems(@app.Update, @app.system(@app.system_param4(toggle_scene)))
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param4(toggle_tonemapping_method)),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param6(update_color_grading_settings)),
+  )
+  .add_systems(@app.Update, @app.system(@app.system_param6(update_ui)))
   .run()
 }

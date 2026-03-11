@@ -82,7 +82,7 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
       @text.TextFont::default().with_font(font).with_font_size(20.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 
@@ -125,14 +125,14 @@ fn spawn_animated_sprite(
   layout : @asset.Handle[@asset.TextureAtlasLayout],
   x : Float,
 ) -> @core.Entity {
-  let sprite = @render2d.Sprite::from_atlas_image(
+  let sprite = @sprite.Sprite::from_atlas_image(
     texture,
     @asset.TextureAtlas::new(layout, FIRST_SPRITE_INDEX),
   )
   let transform = @math.Transform::identity()
     .with_scale(@math.Vec3::new(SPRITE_SCALE, SPRITE_SCALE, SPRITE_SCALE))
     .with_translation(@math.Vec3::new(x, 0.0F, 0.0F))
-  @render2d.SpriteBundle::new(sprite, transform).spawn(world)
+  @sprite.SpriteBundle::new(sprite, transform).spawn(world)
 }
 
 ///|
@@ -142,10 +142,8 @@ fn sprite_animation_setup(world : @ecs.World) -> Unit {
   animation_state.val.left_frame_timer = timer_from_fps(LEFT_FPS)
   animation_state.val.right_frame_timer = timer_from_fps(RIGHT_FPS)
 
-  let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
-    world,
-  )
+  let camera = @sprite.Camera::default()
+  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
   |> ignore
 
   spawn_help_overlay(world)
@@ -206,7 +204,7 @@ fn execute_animation_step(
     return next_timer
   }
 
-  let sprite_store = world.component(@render2d.ecs_key_sprite)
+  let sprite_store = world.component(@sprite.ecs_key_sprite)
   guard sprite_store.get(entity) is Some(sprite) else { return next_timer }
   guard sprite.texture_atlas is Some(atlas) else { return next_timer }
 

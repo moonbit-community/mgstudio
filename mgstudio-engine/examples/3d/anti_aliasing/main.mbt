@@ -84,7 +84,7 @@ priv struct AntiAliasingState {
   mut cas : CASState
   mut use_orthographic : Bool
   mut camera : @core.Entity?
-  mut cube_material : @asset.Handle[@render3d.StandardMaterial]?
+  mut cube_material : @asset.Handle[@pbr.StandardMaterial]?
   mut help_text : @text.TextHandle?
 }
 
@@ -202,47 +202,42 @@ fn set_camera_projection(world : @ecs.World) -> Unit {
   guard anti_aliasing_state.val.camera is Some(camera_entity) else { return }
   let tick = world.read_change_tick()
   let projection = if anti_aliasing_state.val.use_orthographic {
-    @render3d.CameraProjection3d::new(
-      @render3d.Projection3d::Orthographic(
-        @render3d.OrthographicProjection3d::default().with_scale(0.002F),
-      ),
-    )
+    @pbr.Projection::Orthographic(@pbr.OrthographicProjection3d::{
+      ..@pbr.OrthographicProjection3d::default_3d(),
+      scale: 0.002F,
+    })
   } else {
-    @render3d.CameraProjection3d::new(
-      @render3d.Projection3d::perspective_default(),
-    )
+    @pbr.Projection::Perspective(@pbr.PerspectiveProjection3d::default())
   }
-  world
-  .component(@render3d.ecs_key_camera_projection3d)
-  .set(camera_entity, projection, tick)
+  world.component(@pbr.ecs_key_projection).set(camera_entity, projection, tick)
   |> ignore
 }
 
 ///|
-fn msaa_component_from_selection(samples : MSAASamples) -> @render3d.Msaa {
+fn msaa_component_from_selection(samples : MSAASamples) -> @pbr.Msaa {
   if msaa_samples_eq(samples, MSAASamples::Sample2) {
-    @render3d.Msaa::Sample2
+    @pbr.Msaa::Sample2
   } else if msaa_samples_eq(samples, MSAASamples::Sample4) {
-    @render3d.Msaa::Sample4
+    @pbr.Msaa::Sample4
   } else {
-    @render3d.Msaa::Sample8
+    @pbr.Msaa::Sample8
   }
 }
 
 ///|
 fn fxaa_sensitivity_component(
   sensitivity : FXAASensitivity,
-) -> @render3d.FxaaSensitivity {
+) -> @post_process.FxaaSensitivity {
   if fxaa_sensitivity_eq(sensitivity, FXAASensitivity::Low) {
-    @render3d.FxaaSensitivity::Low
+    @post_process.FxaaSensitivity::Low
   } else if fxaa_sensitivity_eq(sensitivity, FXAASensitivity::Medium) {
-    @render3d.FxaaSensitivity::Medium
+    @post_process.FxaaSensitivity::Medium
   } else if fxaa_sensitivity_eq(sensitivity, FXAASensitivity::High) {
-    @render3d.FxaaSensitivity::High
+    @post_process.FxaaSensitivity::High
   } else if fxaa_sensitivity_eq(sensitivity, FXAASensitivity::Ultra) {
-    @render3d.FxaaSensitivity::Ultra
+    @post_process.FxaaSensitivity::Ultra
   } else {
-    @render3d.FxaaSensitivity::Extreme
+    @post_process.FxaaSensitivity::Extreme
   }
 }
 
@@ -252,14 +247,13 @@ fn clear_temporal_aa_components(
   camera_entity : @core.Entity,
 ) -> Unit {
   world
-  .component(@render3d.ecs_key_temporal_anti_aliasing)
+  .component(@post_process.ecs_key_temporal_anti_aliasing)
   .remove(camera_entity)
   |> ignore
-  world.component(@render3d.ecs_key_temporal_jitter).remove(camera_entity)
+  world.component(@post_process.ecs_key_temporal_jitter).remove(camera_entity)
   |> ignore
-  world.component(@render3d.ecs_key_depth_prepass).remove(camera_entity)
-  |> ignore
-  world.component(@render3d.ecs_key_motion_vector_prepass).remove(camera_entity)
+  world.component(@pbr.ecs_key_depth_prepass).remove(camera_entity) |> ignore
+  world.component(@pbr.ecs_key_motion_vector_prepass).remove(camera_entity)
   |> ignore
 }
 
@@ -270,34 +264,34 @@ fn apply_aa_components(world : @ecs.World) -> Unit {
   let aa_method = anti_aliasing_state.val.aa_method
   if aa_method_eq(aa_method, AAMethod::NoAA) {
     world
-    .component(@render3d.ecs_key_msaa)
-    .insert(camera_entity, @render3d.Msaa::Off, tick)
-    world.component(@render3d.ecs_key_fxaa).remove(camera_entity) |> ignore
+    .component(@pbr.ecs_key_msaa)
+    .insert(camera_entity, @pbr.Msaa::Off, tick)
+    world.component(@post_process.ecs_key_fxaa).remove(camera_entity) |> ignore
     clear_temporal_aa_components(world, camera_entity)
     return
   }
   if aa_method_eq(aa_method, AAMethod::MSAA) {
     world
-    .component(@render3d.ecs_key_msaa)
+    .component(@pbr.ecs_key_msaa)
     .insert(
       camera_entity,
       msaa_component_from_selection(anti_aliasing_state.val.msaa_samples),
       tick,
     )
-    world.component(@render3d.ecs_key_fxaa).remove(camera_entity) |> ignore
+    world.component(@post_process.ecs_key_fxaa).remove(camera_entity) |> ignore
     clear_temporal_aa_components(world, camera_entity)
     return
   }
   if aa_method_eq(aa_method, AAMethod::FXAA) {
     world
-    .component(@render3d.ecs_key_msaa)
-    .insert(camera_entity, @render3d.Msaa::Off, tick)
+    .component(@pbr.ecs_key_msaa)
+    .insert(camera_entity, @pbr.Msaa::Off, tick)
     clear_temporal_aa_components(world, camera_entity)
     world
-    .component(@render3d.ecs_key_fxaa)
+    .component(@post_process.ecs_key_fxaa)
     .insert(
       camera_entity,
-      @render3d.Fxaa::default().with_sensitivity(
+      @post_process.Fxaa::default().with_sensitivity(
         fxaa_sensitivity_component(anti_aliasing_state.val.fxaa_sensitivity),
       ),
       tick,
@@ -306,27 +300,25 @@ fn apply_aa_components(world : @ecs.World) -> Unit {
   }
   if aa_method_eq(aa_method, AAMethod::TAA) {
     world
-    .component(@render3d.ecs_key_msaa)
-    .insert(camera_entity, @render3d.Msaa::Off, tick)
-    world.component(@render3d.ecs_key_fxaa).remove(camera_entity) |> ignore
+    .component(@pbr.ecs_key_msaa)
+    .insert(camera_entity, @pbr.Msaa::Off, tick)
+    world.component(@post_process.ecs_key_fxaa).remove(camera_entity) |> ignore
     world
-    .component(@render3d.ecs_key_temporal_anti_aliasing)
-    .insert(camera_entity, @render3d.TemporalAntiAliasing::default(), tick)
+    .component(@post_process.ecs_key_temporal_anti_aliasing)
+    .insert(camera_entity, @post_process.TemporalAntiAliasing::default(), tick)
     world
-    .component(@render3d.ecs_key_temporal_jitter)
-    .insert(camera_entity, @render3d.TemporalJitter::default(), tick)
+    .component(@post_process.ecs_key_temporal_jitter)
+    .insert(camera_entity, @post_process.TemporalJitter::default(), tick)
     world
-    .component(@render3d.ecs_key_depth_prepass)
-    .insert(camera_entity, @render3d.DepthPrepass::default(), tick)
+    .component(@pbr.ecs_key_depth_prepass)
+    .insert(camera_entity, @pbr.DepthPrepass::default(), tick)
     world
-    .component(@render3d.ecs_key_motion_vector_prepass)
-    .insert(camera_entity, @render3d.MotionVectorPrepass::default(), tick)
+    .component(@pbr.ecs_key_motion_vector_prepass)
+    .insert(camera_entity, @pbr.MotionVectorPrepass::default(), tick)
     return
   }
-  world
-  .component(@render3d.ecs_key_msaa)
-  .insert(camera_entity, @render3d.Msaa::Off, tick)
-  world.component(@render3d.ecs_key_fxaa).remove(camera_entity) |> ignore
+  world.component(@pbr.ecs_key_msaa).insert(camera_entity, @pbr.Msaa::Off, tick)
+  world.component(@post_process.ecs_key_fxaa).remove(camera_entity) |> ignore
   clear_temporal_aa_components(world, camera_entity)
 }
 
@@ -442,7 +434,7 @@ fn aa_proxy_fog_end() -> Float {
 ///|
 fn apply_aa_proxy() -> Unit {
   if anti_aliasing_state.val.cube_material is Some(material_handle) {
-    if @render3d.standard_material_get(material_handle) is Some(material) {
+    if @pbr.standard_material_get(material_handle) is Some(material) {
       let cas = anti_aliasing_state.val.cas
       let strength = if cas.enabled { cas.strength } else { 0.0F }
       let emissive_value = 0.15F * strength
@@ -450,19 +442,19 @@ fn apply_aa_proxy() -> Unit {
         .with_perceptual_roughness(aa_proxy_roughness())
         .with_reflectance(0.5F + strength * 0.3F)
         .with_emissive(
-          @render2d.Color::new(
+          @sprite.Color::new(
             emissive_value, emissive_value, emissive_value, 1.0F,
           ),
         )
         .with_metallic(if cas.denoise { 0.0F } else { 0.1F + strength * 0.2F })
-      @render3d.standard_material_set(material_handle, updated) |> ignore
+      @pbr.standard_material_set(material_handle, updated) |> ignore
     }
   }
 
-  @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::new(
-      @render2d.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
-      @render3d.FogFalloff3d::linear(1.0F, aa_proxy_fog_end()),
+  @pbr.render3d_set_distance_fog(
+    @pbr.DistanceFog::new(
+      @sprite.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
+      @pbr.FogFalloff3d::linear(1.0F, aa_proxy_fog_end()),
     ),
   )
 }
@@ -743,12 +735,12 @@ fn setup(world : @ecs.World) -> Unit {
 
   let tick = world.read_change_tick()
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(20.0F, 20.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.1F, 0.2F, 0.1F, 1.0F),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(20.0F, 20.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(
+          @sprite.Color::new(0.1F, 0.2F, 0.1F, 1.0F),
         ),
       ),
     ),
@@ -756,8 +748,8 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let cube_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white())
+  let cube_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white())
     .with_base_color_texture(Some(uv_debug_texture()))
     .with_perceptual_roughness(0.85F)
     .with_metallic(0.0F),
@@ -766,9 +758,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   for i in 0..<5 {
     let i_f = Float::from_double(i.to_double())
-    @render3d.MeshMaterial3dBundle::new(
-      @render3d.Mesh3d::from_cuboid(0.25F, 0.25F, 0.25F),
-      @render3d.MeshMaterial3d::new(cube_material),
+    @pbr.MeshMaterial3dBundle::new(
+      @pbr.Mesh3d::from_cuboid(0.25F, 0.25F, 0.25F),
+      @pbr.MeshMaterial3d::new(cube_material),
       @math.Transform::from_xyz(i_f * 0.25F - 1.0F, 0.125F, -i_f * 0.5F),
     ).spawn(world)
     |> ignore
@@ -783,7 +775,7 @@ fn setup(world : @ecs.World) -> Unit {
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
-        @scene.GltfAssetLabel::Scene(0).from_asset(
+        @gltf.GltfAssetLabel::Scene(0).from_asset(
           "models/FlightHelmet/FlightHelmet.gltf",
         ),
       ),
@@ -793,10 +785,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
     tick,
   )
   world
@@ -810,8 +802,8 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
 
-  let camera_entity = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  let camera_entity = @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
       @math.Vec3::new(0.0F, 0.3F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -819,10 +811,10 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   anti_aliasing_state.val.camera = Some(camera_entity)
   world
-  .component(@render3d.ecs_key_environment_map_light)
+  .component(@pbr.ecs_key_environment_map_light)
   .insert(
     camera_entity,
-    @render3d.EnvironmentMapLight::new(
+    @pbr.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       150.0F,
@@ -830,10 +822,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
 
-  @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::new(
-      @render2d.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
-      @render3d.FogFalloff3d::linear(1.0F, 4.0F),
+  @pbr.render3d_set_distance_fog(
+    @pbr.DistanceFog::new(
+      @sprite.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
+      @pbr.FogFalloff3d::linear(1.0F, 4.0F),
     ),
   )
 
@@ -849,11 +841,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()

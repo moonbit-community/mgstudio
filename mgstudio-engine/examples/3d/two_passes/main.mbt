@@ -19,12 +19,12 @@
 fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(5.0F, 5.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(5.0F, 5.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(
+          @sprite.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
         ),
       ),
     ),
@@ -32,12 +32,12 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(
+          @sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
         ),
       ),
     ),
@@ -47,23 +47,18 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     light,
-    @render3d.PointLight::new(
-      @render2d.Color::white(),
-      1_000_000.0F,
-      20.0F,
-      true,
-    ),
+    @pbr.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 20.0F, true),
     tick,
   )
   world
   .component(@math.ecs_key_transform)
   .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
-  @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -71,10 +66,10 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  @render3d.Camera3dBundle::new(
-    @render2d.Camera::default()
+  @pbr.Camera3dBundle::new(
+    @sprite.Camera::default()
     .with_order(1)
-    .with_clear_color_config(@render2d.ClearColorConfig::None),
+    .with_clear_color_config(@sprite.ClearColorConfig::None),
     @math.Transform::from_xyz(10.0F, 10.0F, -5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

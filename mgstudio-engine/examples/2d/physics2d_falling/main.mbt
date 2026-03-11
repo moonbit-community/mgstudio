@@ -39,14 +39,14 @@ fn physics2d_falling_setup(world : @ecs.World) -> Unit {
   let texture = asset_server.load("branding/icon.png")
 
   // Floor.
-  let floor_sprite = @render2d.Sprite::from_image(texture)
+  let floor_sprite = @sprite.Sprite::from_image(texture)
   let floor_transform = @math.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, -200.0F),
     0.0F,
     @math.Vec2::new(8.0F, 0.5F),
     z=0.0F,
   )
-  let floor = @render2d.SpriteBundle::new(floor_sprite, floor_transform).spawn(
+  let floor = @sprite.SpriteBundle::new(floor_sprite, floor_transform).spawn(
     world,
   )
   let rb_store = @physics2d.get_rigid_body2d_store(world)
@@ -68,16 +68,14 @@ fn physics2d_falling_setup(world : @ecs.World) -> Unit {
   )
 
   // Ball.
-  let ball_sprite = @render2d.Sprite::from_image(texture)
+  let ball_sprite = @sprite.Sprite::from_image(texture)
   let ball_transform = @math.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, 200.0F),
     0.0F,
     @math.Vec2::new(0.3F, 0.3F),
     z=1.0F,
   )
-  let ball = @render2d.SpriteBundle::new(ball_sprite, ball_transform).spawn(
-    world,
-  )
+  let ball = @sprite.SpriteBundle::new(ball_sprite, ball_transform).spawn(world)
   let vel_store = @physics2d.get_velocity2d_store(world)
   rb_store.insert(ball, @physics2d.RigidBody2d::dynamic(), tick)
   col_store.insert(
@@ -93,10 +91,8 @@ fn physics2d_falling_setup(world : @ecs.World) -> Unit {
   vel_store.insert(ball, @physics2d.Velocity2d::zero(), tick)
 
   // Camera.
-  let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
-    world,
-  )
+  let camera = @sprite.Camera::default()
+  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
   |> ignore
 }
 

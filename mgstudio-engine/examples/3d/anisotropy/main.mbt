@@ -58,8 +58,8 @@ priv enum SceneKind {
 ///|
 priv struct MaterialVariants {
   entity : @core.Entity
-  anisotropic : @asset.Handle[@render3d.StandardMaterial]
-  isotropic : @asset.Handle[@render3d.StandardMaterial]
+  anisotropic : @asset.Handle[@pbr.StandardMaterial]
+  isotropic : @asset.Handle[@pbr.StandardMaterial]
   scene : SceneKind?
 }
 
@@ -244,10 +244,10 @@ fn apply_scene_visibility(world : @ecs.World) -> Unit {
 fn spawn_directional_light(world : @ecs.World) -> Unit {
   let entity = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     entity,
-    @render3d.DirectionalLight::default().with_illuminance(3000.0F),
+    @pbr.DirectionalLight::default().with_illuminance(3000.0F),
     world.read_change_tick(),
   )
 }
@@ -256,10 +256,10 @@ fn spawn_directional_light(world : @ecs.World) -> Unit {
 fn spawn_point_light(world : @ecs.World) -> Unit {
   let entity = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     entity,
-    @render3d.PointLight::default().with_intensity(200_000.0F),
+    @pbr.PointLight::default().with_intensity(200_000.0F),
     world.read_change_tick(),
   )
 }
@@ -272,20 +272,20 @@ fn add_skybox_and_environment_map(
   let tick = world.read_change_tick()
   if anisotropy_state.val.environment_specular_map is Some(specular_map) {
     world
-    .component(@render3d.ecs_key_skybox)
+    .component(@pbr.ecs_key_skybox)
     .insert(
       camera_entity,
-      @render3d.Skybox::new(specular_map, SKYBOX_BRIGHTNESS),
+      @pbr.Skybox::new(specular_map, SKYBOX_BRIGHTNESS),
       tick,
     )
   }
   if anisotropy_state.val.environment_diffuse_map is Some(diffuse_map) &&
     anisotropy_state.val.environment_specular_map is Some(specular_map) {
     world
-    .component(@render3d.ecs_key_environment_map_light)
+    .component(@pbr.ecs_key_environment_map_light)
     .insert(
       camera_entity,
-      @render3d.EnvironmentMapLight::new(
+      @pbr.EnvironmentMapLight::new(
         Some(diffuse_map),
         Some(specular_map),
         ENVIRONMENT_MAP_INTENSITY,
@@ -300,8 +300,8 @@ fn remove_skybox_and_environment_map(
   world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> Unit {
-  world.component(@render3d.ecs_key_skybox).remove(camera_entity) |> ignore
-  world.component(@render3d.ecs_key_environment_map_light).remove(camera_entity)
+  world.component(@pbr.ecs_key_skybox).remove(camera_entity) |> ignore
+  world.component(@pbr.ecs_key_environment_map_light).remove(camera_entity)
   |> ignore
 }
 
@@ -309,10 +309,10 @@ fn remove_skybox_and_environment_map(
 fn despawn_all_lights(world : @ecs.World) -> Unit {
   let lights : Array[@core.Entity] = []
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .for_each(fn(entity, _light) { lights.push(entity) })
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .for_each(fn(entity, _light) { lights.push(entity) })
   for light in lights {
     try! (world.despawn(light) |> ignore)
@@ -320,11 +320,7 @@ fn despawn_all_lights(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -370,7 +366,7 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -398,8 +394,8 @@ fn setup(world : @ecs.World) -> Unit {
     asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
   )
 
-  @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(
       CAMERA_INITIAL_X,
       CAMERA_INITIAL_Y,
@@ -419,7 +415,7 @@ fn setup(world : @ecs.World) -> Unit {
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
-        @scene.GltfAssetLabel::Scene(0).from_asset(
+        @gltf.GltfAssetLabel::Scene(0).from_asset(
           "models/AnisotropyBarnLamp/AnisotropyBarnLamp.gltf",
         ),
       ),
@@ -431,17 +427,17 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(barn_lamp, @math.Transform::from_xyz(0.0F, 0.07F, -0.13F), tick)
   anisotropy_state.val.barn_lamp_scene = Some(barn_lamp)
 
-  let sphere_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(SPHERE_BASE_R, SPHERE_BASE_G, SPHERE_BASE_B, 1.0F),
+  let sphere_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(SPHERE_BASE_R, SPHERE_BASE_G, SPHERE_BASE_B, 1.0F),
     )
     .with_anisotropy_rotation(0.5F)
     .with_anisotropy_strength(1.0F),
   )
 
-  let sphere = @render3d.MeshMaterial3dBundle::new(
+  let sphere = @pbr.MeshMaterial3dBundle::new(
     uv_sphere_mesh(0.1F, 20, 36),
-    @render3d.MeshMaterial3d::new(sphere_material),
+    @pbr.MeshMaterial3d::new(sphere_material),
     @math.Transform::identity(),
   ).spawn(world)
   anisotropy_state.val.sphere_scene = Some(sphere)
@@ -460,11 +456,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::bottom_left())
+    .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -474,7 +470,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn create_material_variants(world : @ecs.World) -> Unit {
-  let mesh_material_store = world.component(@render3d.ecs_key_mesh_material3d)
+  let mesh_material_store = world.component(@pbr.ecs_key_mesh_material3d)
   let pending_entities : Array[@core.Entity] = []
   mesh_material_store.for_each(fn(entity, _material) {
     if !has_material_variant(entity) {
@@ -487,10 +483,10 @@ fn create_material_variants(world : @ecs.World) -> Unit {
       continue
     }
     let anisotropic = anisotropic_component.material
-    guard @render3d.standard_material_get(anisotropic) is Some(anisotropic_mat) else {
+    guard @pbr.standard_material_get(anisotropic) is Some(anisotropic_mat) else {
       continue
     }
-    let isotropic = @render3d.standard_material_add(
+    let isotropic = @pbr.standard_material_add(
       anisotropic_mat
       .with_anisotropy_texture(None)
       .with_anisotropy_strength(0.0F)
@@ -520,14 +516,14 @@ fn animate_light(world : @ecs.World) -> Unit {
 
   let tick = world.read_change_tick()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .for_each(fn(entity, _light) {
     world
     .component(@math.ecs_key_transform)
     .insert(entity, next_transform, tick)
   })
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .for_each(fn(entity, _light) {
     world
     .component(@math.ecs_key_transform)
@@ -555,7 +551,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
   ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
   let tick = world.read_change_tick()
   world
-  .component(@render2d.ecs_key_camera)
+  .component(@sprite.ecs_key_camera)
   .for_each(fn(entity, _camera) {
     world
     .component(@math.ecs_key_transform)
@@ -574,8 +570,8 @@ fn toggle_anisotropy(world : @ecs.World) -> Unit {
       variants.isotropic
     }
     world
-    .component(@render3d.ecs_key_mesh_material3d)
-    .set(variants.entity, @render3d.MeshMaterial3d::new(next_material), tick)
+    .component(@pbr.ecs_key_mesh_material3d)
+    .set(variants.entity, @pbr.MeshMaterial3d::new(next_material), tick)
     |> ignore
   }
 }
@@ -594,7 +590,7 @@ fn handle_input(world : @ecs.World) -> Unit {
         anisotropy_state.val.light_mode = LightMode::EnvironmentMap
         despawn_all_lights(world)
         world
-        .component(@render2d.ecs_key_camera)
+        .component(@sprite.ecs_key_camera)
         .for_each(fn(entity, _camera) {
           add_skybox_and_environment_map(world, entity)
         })
@@ -602,7 +598,7 @@ fn handle_input(world : @ecs.World) -> Unit {
       LightMode::EnvironmentMap => {
         anisotropy_state.val.light_mode = LightMode::Directional
         world
-        .component(@render2d.ecs_key_camera)
+        .component(@sprite.ecs_key_camera)
         .for_each(fn(entity, _camera) {
           remove_skybox_and_environment_map(world, entity)
         })

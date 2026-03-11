@@ -175,7 +175,7 @@ fn apply_visibility_range_for_scene_root(
 ) -> Unit {
   let tick = world.read_change_tick()
   let parent_store = world.component(@hierarchy.ecs_key_parent)
-  let mesh_store = world.component(@render3d.ecs_key_mesh3d)
+  let mesh_store = world.component(@pbr.ecs_key_mesh3d)
   let visibility_range_store = world.component(
     @visibility.ecs_key_visibility_range,
   )
@@ -200,12 +200,12 @@ fn setup(world : @ecs.World) -> Unit {
   visibility_range_state.val.prepass_enabled = false
   visibility_range_state.val.help_text = None
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(50.0F, 50.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.1F, 0.2F, 0.1F, 1.0F),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(50.0F, 50.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(
+          @sprite.Color::new(0.1F, 0.2F, 0.1F, 1.0F),
         ),
       ),
     ),
@@ -214,10 +214,10 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let asset_server = @asset.AssetServer::new()
-  let high_poly_path = @scene.GltfAssetLabel::Scene(0).from_asset(
+  let high_poly_path = @gltf.GltfAssetLabel::Scene(0).from_asset(
     "models/FlightHelmet/FlightHelmet.gltf",
   )
-  let low_poly_path = @scene.GltfAssetLabel::Scene(0).from_asset(
+  let low_poly_path = @gltf.GltfAssetLabel::Scene(0).from_asset(
     "models/FlightHelmetLowPoly/FlightHelmetLowPoly.gltf",
   )
 
@@ -247,10 +247,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   let directional = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 20_000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 20_000.0F, true),
     tick,
   )
   let light_angle = -0.15F * PI
@@ -265,8 +265,8 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
 
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
       @math.Vec3::new(CAMERA_FOCAL_X, CAMERA_FOCAL_Y, CAMERA_FOCAL_Z),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -274,10 +274,10 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   visibility_range_state.val.camera = Some(camera)
   world
-  .component(@render3d.ecs_key_environment_map_light)
+  .component(@pbr.ecs_key_environment_map_light)
   .insert(
     camera,
-    @render3d.EnvironmentMapLight::new(
+    @pbr.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       150.0F,
@@ -297,11 +297,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::bottom_left())
+    .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -388,14 +388,14 @@ fn toggle_prepass(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   if visibility_range_state.val.prepass_enabled {
     world
-    .component(@render3d.ecs_key_depth_prepass)
-    .insert(camera, @render3d.DepthPrepass::default(), tick)
+    .component(@pbr.ecs_key_depth_prepass)
+    .insert(camera, @pbr.DepthPrepass::default(), tick)
     world
-    .component(@render3d.ecs_key_normal_prepass)
-    .insert(camera, @render3d.NormalPrepass::default(), tick)
+    .component(@pbr.ecs_key_normal_prepass)
+    .insert(camera, @pbr.NormalPrepass::default(), tick)
   } else {
-    world.component(@render3d.ecs_key_depth_prepass).remove(camera) |> ignore
-    world.component(@render3d.ecs_key_normal_prepass).remove(camera) |> ignore
+    world.component(@pbr.ecs_key_depth_prepass).remove(camera) |> ignore
+    world.component(@pbr.ecs_key_normal_prepass).remove(camera) |> ignore
   }
   update_help_text()
 }

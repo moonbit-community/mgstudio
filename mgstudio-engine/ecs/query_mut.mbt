@@ -233,7 +233,7 @@ pub fn[A, F : QueryFilter] Query1Filtered::with_mut(
   entity : @core.Entity,
   f : (ComponentMut[A]) -> Unit,
 ) -> Bool raise EcsError {
-  if (try! self.get_mut(entity)) is Some(component_mut) {
+  if self.get_mut(entity) is Some(component_mut) {
     f(component_mut)
     return true
   }
@@ -394,7 +394,7 @@ pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::with_mut(
   entity : @core.Entity,
   f : (ComponentRef[A], ComponentMut[B]) -> Unit,
 ) -> Bool raise EcsError {
-  if (try! self.get(entity)) is Some((component_ref, component_mut)) {
+  if self.get(entity) is Some((component_ref, component_mut)) {
     f(component_ref, component_mut)
     return true
   }
@@ -431,7 +431,7 @@ pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::with_mut(
   entity : @core.Entity,
   f : (A, ComponentMut[B]) -> Unit,
 ) -> Bool raise EcsError {
-  if (try! self.get(entity)) is Some((value_a, component_mut)) {
+  if self.get(entity) is Some((value_a, component_mut)) {
     f(value_a, component_mut)
     return true
   }
@@ -624,7 +624,7 @@ pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::with_mut(
   entity : @core.Entity,
   f : (A, ComponentRef[B], ComponentMut[C]) -> Unit,
 ) -> Bool raise EcsError {
-  if (try! self.get(entity)) is Some((value_a, component_ref, component_mut)) {
+  if self.get(entity) is Some((value_a, component_ref, component_mut)) {
     f(value_a, component_ref, component_mut)
     return true
   }
@@ -812,7 +812,7 @@ pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::with_mut(
   entity : @core.Entity,
   f : (ComponentRef[A], ComponentMut[B], ComponentRef[C]?) -> Unit,
 ) -> Bool raise EcsError {
-  if (try! self.get(entity))
+  if self.get(entity)
     is Some((component_ref_a, component_mut_b, component_ref_c)) {
     f(component_ref_a, component_mut_b, component_ref_c)
     return true

@@ -85,7 +85,7 @@ test "ui: clip respects overflow_clip_margin visual_box and margin" {
     tick,
   )
   ui_clip_system(world)
-  let scissor_store = @render2d.get_scissor_rect_store(world)
+  let scissor_store = @sprite.get_scissor_rect_store(world)
   let scissor = scissor_store.get(child).unwrap().rect
   // BorderBox: (10,20)-(110,120)
   // ContentBox inset: border(5)+padding(10)=15 => (25,35)-(95,105)
@@ -152,7 +152,7 @@ test "ui: overflow Visible disables clipping per-axis" {
     tick,
   )
   ui_clip_system(world)
-  let scissor_store = @render2d.get_scissor_rect_store(world)
+  let scissor_store = @sprite.get_scissor_rect_store(world)
   let scissor = scissor_store.get(child).unwrap().rect
   // X should not be clipped by container; Y should be.
   let ok_x = scissor.min.x == 0.0F && scissor.max.x == 800.0F

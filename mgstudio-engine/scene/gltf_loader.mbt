@@ -109,7 +109,7 @@ priv struct GltfSceneDef {
 
 ///|
 priv struct GltfMaterialDef {
-  base_color : @render2d.Color
+  base_color : @color.Color
   base_color_texture : Int?
   base_color_uv_offset : @math.Vec2
   base_color_uv_scale : @math.Vec2
@@ -127,8 +127,8 @@ priv struct GltfMaterialDef {
   occlusion_texture : Int?
   metallic : Float
   roughness : Float
-  emissive : @render2d.Color
-  alpha_mode : @render3d.AlphaMode3d
+  emissive : @color.Color
+  alpha_mode : @pbr.AlphaMode3d
   unlit : Bool
 }
 
@@ -195,10 +195,175 @@ priv enum GltfResolveBuffersState {
 }
 
 ///|
+const SCENE_GLTF_ASSET_LABEL_MESH_PREFIX : String = "Mesh"
+
+///|
+const SCENE_GLTF_ASSET_LABEL_PRIMITIVE_SEGMENT : String = "/Primitive"
+
+///|
+const SCENE_GLTF_ASSET_LABEL_MORPH_TARGET_SUFFIX : String = "/MorphTargets"
+
+///|
+const SCENE_GLTF_ASSET_LABEL_MATERIAL_PREFIX : String = "Material"
+
+///|
+const SCENE_GLTF_ASSET_LABEL_MATERIAL_INVERTED_SUFFIX : String = " (inverted)"
+
+///|
+const SCENE_GLTF_ASSET_LABEL_SKIN_PREFIX : String = "Skin"
+
+///|
+const SCENE_GLTF_ASSET_LABEL_INVERSE_BIND_MATRICES_SUFFIX : String = "/InverseBindMatrices"
+
+///|
+fn scene_gltf_parse_non_negative_int(payload : String) -> Int? {
+  let parsed = @strconv.parse_int(payload[:], base=10) catch { _ => -1 }
+  if parsed < 0 {
+    None
+  } else {
+    Some(parsed)
+  }
+}
+
+///|
+fn scene_gltf_parse_prefixed_index(label : String, prefix : String) -> Int? {
+  if !label.has_prefix(prefix) {
+    return None
+  }
+  let suffix = label[prefix.length():label.length()].to_string()
+  if suffix.length() == 0 {
+    None
+  } else {
+    scene_gltf_parse_non_negative_int(suffix)
+  }
+}
+
+///|
+fn scene_gltf_parse_mesh_primitive_label(label : String) -> (Int, Int)? {
+  if !label.has_prefix(SCENE_GLTF_ASSET_LABEL_MESH_PREFIX) {
+    return None
+  }
+  guard label.find(SCENE_GLTF_ASSET_LABEL_PRIMITIVE_SEGMENT)
+    is Some(split_index) else {
+    return None
+  }
+  let mesh_start = SCENE_GLTF_ASSET_LABEL_MESH_PREFIX.length()
+  let primitive_start = split_index +
+    SCENE_GLTF_ASSET_LABEL_PRIMITIVE_SEGMENT.length()
+  let mesh_text = label[mesh_start:split_index].to_string()
+  let primitive_text = label[primitive_start:label.length()].to_string()
+  if mesh_text.length() == 0 || primitive_text.length() == 0 {
+    return None
+  }
+  guard scene_gltf_parse_non_negative_int(mesh_text) is Some(mesh_index) else {
+    return None
+  }
+  guard scene_gltf_parse_non_negative_int(primitive_text)
+    is Some(primitive_index) else {
+    return None
+  }
+  Some((mesh_index, primitive_index))
+}
+
+///|
+fn scene_gltf_parse_material_label(label : String) -> (Int, Bool)? {
+  if !label.has_prefix(SCENE_GLTF_ASSET_LABEL_MATERIAL_PREFIX) {
+    return None
+  }
+  let payload = label[SCENE_GLTF_ASSET_LABEL_MATERIAL_PREFIX.length():label.length()].to_string()
+  if payload.length() == 0 {
+    return None
+  }
+  let mut is_scale_inverted = false
+  let mut index_payload = payload
+  if payload.has_suffix(SCENE_GLTF_ASSET_LABEL_MATERIAL_INVERTED_SUFFIX) {
+    let end = payload.length() -
+      SCENE_GLTF_ASSET_LABEL_MATERIAL_INVERTED_SUFFIX.length()
+    if end <= 0 {
+      return None
+    }
+    index_payload = payload[0:end].to_string()
+    is_scale_inverted = true
+  }
+  guard scene_gltf_parse_non_negative_int(index_payload) is Some(index) else {
+    return None
+  }
+  Some((index, is_scale_inverted))
+}
+
+///|
+fn scene_parse_gltf_asset_label(label : String) -> @gltf.GltfAssetLabel? {
+  if label == "DefaultMaterial" {
+    return Some(@gltf.GltfAssetLabel::DefaultMaterial)
+  }
+  if label.has_suffix(SCENE_GLTF_ASSET_LABEL_MORPH_TARGET_SUFFIX) {
+    let end = label.length() -
+      SCENE_GLTF_ASSET_LABEL_MORPH_TARGET_SUFFIX.length()
+    if end <= 0 {
+      return None
+    }
+    let primitive_label = label[0:end].to_string()
+    if scene_gltf_parse_mesh_primitive_label(primitive_label)
+      is Some((mesh, primitive)) {
+      return Some(@gltf.GltfAssetLabel::MorphTarget(mesh, primitive))
+    }
+    return None
+  }
+  if scene_gltf_parse_mesh_primitive_label(label) is Some((mesh, primitive)) {
+    return Some(@gltf.GltfAssetLabel::Primitive(mesh, primitive))
+  }
+  if label.has_suffix(SCENE_GLTF_ASSET_LABEL_INVERSE_BIND_MATRICES_SUFFIX) &&
+    label.has_prefix(SCENE_GLTF_ASSET_LABEL_SKIN_PREFIX) {
+    let end = label.length() -
+      SCENE_GLTF_ASSET_LABEL_INVERSE_BIND_MATRICES_SUFFIX.length()
+    if end <= SCENE_GLTF_ASSET_LABEL_SKIN_PREFIX.length() {
+      return None
+    }
+    let index_payload = label[SCENE_GLTF_ASSET_LABEL_SKIN_PREFIX.length():end].to_string()
+    if scene_gltf_parse_non_negative_int(index_payload) is Some(index) {
+      return Some(@gltf.GltfAssetLabel::InverseBindMatrices(index))
+    }
+    return None
+  }
+  if scene_gltf_parse_material_label(label) is Some((index, is_scale_inverted)) {
+    return Some(@gltf.GltfAssetLabel::Material(index, is_scale_inverted))
+  }
+  if scene_gltf_parse_prefixed_index(label, "Scene") is Some(index) {
+    return Some(@gltf.GltfAssetLabel::Scene(index))
+  }
+  if scene_gltf_parse_prefixed_index(label, "Node") is Some(index) {
+    return Some(@gltf.GltfAssetLabel::Node(index))
+  }
+  if scene_gltf_parse_prefixed_index(label, "Mesh") is Some(index) {
+    return Some(@gltf.GltfAssetLabel::Mesh(index))
+  }
+  if scene_gltf_parse_prefixed_index(label, "Texture") is Some(index) {
+    return Some(@gltf.GltfAssetLabel::Texture(index))
+  }
+  if scene_gltf_parse_prefixed_index(label, "Animation") is Some(index) {
+    return Some(@gltf.GltfAssetLabel::Animation(index))
+  }
+  if scene_gltf_parse_prefixed_index(label, "Skin") is Some(index) {
+    return Some(@gltf.GltfAssetLabel::Skin(index))
+  }
+  None
+}
+
+///|
 fn scene_split_gltf_asset_path(
   asset_path : String,
-) -> (String, GltfAssetLabel?) {
-  gltf_split_asset_path_with_label(asset_path)
+) -> (String, @gltf.GltfAssetLabel?) {
+  if asset_path.rev_find("#") is Some(index) {
+    let base_path = asset_path[0:index].to_string()
+    let label_start = index + 1
+    if label_start >= asset_path.length() {
+      return (base_path, None)
+    }
+    let label = asset_path[label_start:asset_path.length()].to_string()
+    (base_path, scene_parse_gltf_asset_label(label))
+  } else {
+    (asset_path, None)
+  }
 }
 
 ///|
@@ -245,7 +410,7 @@ fn scene_queue_gltf_request(
   scene_pending_remove_scene_handle(scene_handle)
   let (gltf_path, label) = scene_split_gltf_asset_path(scene_asset_path)
   let scene_index = match label {
-    Some(Scene(index)) => index
+    Some(@gltf.GltfAssetLabel::Scene(index)) => index
     _ => 0
   }
   pending_gltf_scene_requests.val.push({
@@ -268,7 +433,7 @@ fn scene_queue_gltf_animation_request(
   scene_pending_remove_animation_handle(clip_handle)
   let (gltf_path, label) = scene_split_gltf_asset_path(animation_asset_path)
   let animation_index = match label {
-    Some(Animation(index)) => index
+    Some(@gltf.GltfAssetLabel::Animation(index)) => index
     _ => 0
   }
   pending_gltf_animation_requests.val.push({
@@ -291,7 +456,7 @@ fn scene_queue_gltf_mesh_request(
   scene_pending_remove_mesh_handle(mesh_handle)
   let (gltf_path, label) = scene_split_gltf_asset_path(mesh_asset_path)
   let (mesh_index, primitive_index) = match label {
-    Some(Primitive(mesh, primitive)) => (mesh, primitive)
+    Some(@gltf.GltfAssetLabel::Primitive(mesh, primitive)) => (mesh, primitive)
     _ =>
       abort(
         "Mesh asset loading requires a glTF primitive label such as Mesh0/Primitive0",
@@ -413,10 +578,7 @@ fn gltf_parse_quat(value : Json, default_value : @math.Quat) -> @math.Quat {
 }
 
 ///|
-fn gltf_parse_color(
-  value : Json,
-  default_value : @render2d.Color,
-) -> @render2d.Color {
+fn gltf_parse_color(value : Json, default_value : @color.Color) -> @color.Color {
   guard json_array(value) is Some(values) else { return default_value }
   guard json_array_float(values, 0) is Some(r) else { return default_value }
   guard json_array_float(values, 1) is Some(g) else { return default_value }
@@ -425,19 +587,19 @@ fn gltf_parse_color(
     Some(alpha) => alpha
     None => default_value.a
   }
-  @render2d.Color::new(r, g, b, a)
+  @color.Color::new(r, g, b, a)
 }
 
 ///|
 fn gltf_parse_emissive(
   value : Json,
-  default_value : @render2d.Color,
-) -> @render2d.Color {
+  default_value : @color.Color,
+) -> @color.Color {
   guard json_array(value) is Some(values) else { return default_value }
   guard json_array_float(values, 0) is Some(r) else { return default_value }
   guard json_array_float(values, 1) is Some(g) else { return default_value }
   guard json_array_float(values, 2) is Some(b) else { return default_value }
-  @render2d.Color::new(r, g, b, 1.0F)
+  @color.Color::new(r, g, b, 1.0F)
 }
 
 ///|
@@ -608,22 +770,20 @@ fn gltf_parse_texture_transform(
 }
 
 ///|
-fn gltf_parse_material_alpha_mode(
-  obj : Map[String, Json],
-) -> @render3d.AlphaMode3d {
+fn gltf_parse_material_alpha_mode(obj : Map[String, Json]) -> @pbr.AlphaMode3d {
   guard json_get_string(obj, "alphaMode") is Some(alpha_mode) else {
-    return @render3d.AlphaMode3d::Opaque
+    return @pbr.AlphaMode3d::Opaque
   }
   match alpha_mode {
-    "BLEND" => @render3d.AlphaMode3d::Blend
+    "BLEND" => @pbr.AlphaMode3d::Blend
     "MASK" => {
       let cutoff = match json_get_float(obj, "alphaCutoff") {
         Some(value) => value
         None => 0.5F
       }
-      @render3d.AlphaMode3d::Mask(cutoff)
+      @pbr.AlphaMode3d::Mask(cutoff)
     }
-    _ => @render3d.AlphaMode3d::Opaque
+    _ => @pbr.AlphaMode3d::Opaque
   }
 }
 
@@ -900,7 +1060,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
   if json_get_array(root, "materials") is Some(entries) {
     for entry in entries {
       if json_object(entry) is Some(obj) {
-        let mut base_color = @render2d.Color::white()
+        let mut base_color = @color.Color::white()
         let mut metallic = 1.0F
         let mut roughness = 1.0F
         let mut clearcoat = 0.0F
@@ -960,12 +1120,9 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         anisotropy_texture = parsed_anisotropy_texture
 
         let emissive = if obj.get("emissiveFactor") is Some(value) {
-          gltf_parse_emissive(
-            value,
-            @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
-          )
+          gltf_parse_emissive(value, @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F))
         } else {
-          @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F)
+          @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F)
         }
 
         materials.push({
@@ -993,7 +1150,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         })
       } else {
         materials.push({
-          base_color: @render2d.Color::white(),
+          base_color: @color.Color::white(),
           base_color_texture: None,
           base_color_uv_offset: @math.Vec2::new(0.0F, 0.0F),
           base_color_uv_scale: @math.Vec2::new(1.0F, 1.0F),
@@ -1011,8 +1168,8 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
           occlusion_texture: None,
           metallic: 1.0F,
           roughness: 1.0F,
-          emissive: @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
-          alpha_mode: @render3d.AlphaMode3d::Opaque,
+          emissive: @color.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+          alpha_mode: @pbr.AlphaMode3d::Opaque,
           unlit: false,
         })
       }
@@ -1192,8 +1349,8 @@ fn uri_percent_decode_bytes(payload : String) -> Bytes? {
 fn data_uri_decode_bytes(uri : String) -> Bytes? {
   guard uri.has_prefix("data:") else { return None }
   guard uri.find(",") is Some(split) else { return None }
-  let head = (try! uri[0:split]).to_string()
-  let payload = (try! uri[split + 1:uri.length()]).to_string()
+  let head = uri[0:split].to_string()
+  let payload = uri[split + 1:uri.length()].to_string()
   if head.contains(";base64") {
     let decoded = @base64.decode(payload[:], ignore_whitespace=true) catch {
       _ => @base64.decode_lossy(payload[:], ignore_whitespace=true)
@@ -1742,7 +1899,7 @@ fn gltf_animation_decode_weight_samples(
 ///|
 fn path_dirname(path : String) -> String {
   if path.rev_find("/") is Some(split) {
-    return (try! path[0:split]).to_string()
+    return path[0:split].to_string()
   }
   ""
 }
@@ -1755,7 +1912,7 @@ fn path_join(base_dir : String, relative : String) -> String {
     return relative
   }
   let normalized = if relative.has_prefix("./") {
-    (try! relative[2:relative.length()]).to_string()
+    relative[2:relative.length()].to_string()
   } else {
     relative
   }
@@ -1837,9 +1994,9 @@ fn scene_try_resolve_request_buffers(
 fn gltf_texture_image_sampler(
   doc : ParsedGltfDocument,
   texture_index : Int,
-) -> @asset.ImageSampler {
+) -> @image.ImageSampler {
   guard texture_index >= 0 && texture_index < doc.textures.length() else {
-    return @asset.ImageSampler::Linear
+    return @image.ImageSampler::linear()
   }
 
   let mut nearest = false
@@ -1852,17 +2009,20 @@ fn gltf_texture_image_sampler(
     repeat = sampler.repeat
   }
 
-  if nearest {
-    if repeat {
-      @asset.ImageSampler::NearestRepeat
-    } else {
-      @asset.ImageSampler::Nearest
-    }
-  } else if repeat {
-    @asset.ImageSampler::LinearRepeat
+  let descriptor = if nearest {
+    @image.ImageSamplerDescriptor::nearest()
   } else {
-    @asset.ImageSampler::Linear
+    @image.ImageSamplerDescriptor::linear()
   }
+  descriptor.set_address_mode(
+    if repeat {
+      @image.ImageAddressMode::Repeat
+    } else {
+      @image.ImageAddressMode::ClampToEdge
+    },
+  )
+  |> ignore
+  @image.ImageSampler::Descriptor(descriptor)
 }
 
 ///|
@@ -1948,9 +2108,9 @@ fn scene_build_material_component(
   doc : ParsedGltfDocument,
   buffer_bytes : Array[Bytes],
   material_index : Int,
-  material_cache : Array[@render3d.MeshMaterial3d?],
+  material_cache : Array[@pbr.MeshMaterial3d?],
   image_cache : Array[@asset.Handle[@asset.Image]?],
-) -> @render3d.MeshMaterial3d? {
+) -> @pbr.MeshMaterial3d? {
   guard material_index >= 0 && material_index < doc.materials.length() else {
     return None
   }
@@ -1960,11 +2120,14 @@ fn scene_build_material_component(
   }
 
   let def = doc.materials[material_index]
-  let mut material = @render3d.StandardMaterial::default()
+  let mut material = @pbr.StandardMaterial::default()
   material = material.with_base_color(def.base_color)
   material = material.with_alpha_mode(def.alpha_mode)
-  material = material.with_uv_offset(def.base_color_uv_offset)
-  material = material.with_uv_scale(def.base_color_uv_scale)
+  material = material.with_uv_transform(
+    @transform.Affine2::from_translation(def.base_color_uv_offset).mul(
+      @transform.Affine2::from_scale(def.base_color_uv_scale),
+    ),
+  )
   material = material.with_clearcoat(def.clearcoat)
   material = material.with_clearcoat_perceptual_roughness(
     def.clearcoat_roughness,
@@ -2040,9 +2203,7 @@ fn scene_build_material_component(
     )
   }
 
-  let component = @render3d.MeshMaterial3d::new(
-    @render3d.standard_material_add(material),
-  )
+  let component = @pbr.MeshMaterial3d::new(@pbr.standard_material_add(material))
   material_cache[material_index] = Some(component)
   Some(component)
 }
@@ -2326,7 +2487,7 @@ fn scene_build_from_gltf(
   for _ in doc.images {
     image_cache.push(None)
   }
-  let material_cache : Array[@render3d.MeshMaterial3d?] = []
+  let material_cache : Array[@pbr.MeshMaterial3d?] = []
   for _ in doc.materials {
     material_cache.push(None)
   }
@@ -2335,8 +2496,8 @@ fn scene_build_from_gltf(
     visited_nodes.push(false)
   }
 
-  let default_material_component = @render3d.MeshMaterial3d::new(
-    @render3d.standard_material_add(@render3d.StandardMaterial::default()),
+  let default_material_component = @pbr.MeshMaterial3d::new(
+    @pbr.standard_material_add(@pbr.StandardMaterial::default()),
   )
 
   fn walk_node(
@@ -2426,7 +2587,7 @@ fn scene_build_from_gltf(
 
           nodes.push(
             SceneNode3d::new(
-              @render3d.Mesh3d::from_geometry(geometry),
+              @pbr.Mesh3d::from_geometry(geometry),
               material_component,
               world_transform,
               visibility_range,

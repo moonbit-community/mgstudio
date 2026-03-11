@@ -168,26 +168,26 @@ pub fn TextFont::with_font_smoothing(
 
 ///|
 pub struct TextColor {
-  color : @render2d.Color
+  color : @sprite.Color
 }
 
 ///|
-pub fn TextColor::new(color : @render2d.Color) -> TextColor {
+pub fn TextColor::new(color : @sprite.Color) -> TextColor {
   TextColor::{ color, }
 }
 
 ///|
 pub fn TextColor::default() -> TextColor {
-  TextColor::new(@render2d.Color::white())
+  TextColor::new(@sprite.Color::white())
 }
 
 ///|
 pub struct TextBackgroundColor {
-  color : @render2d.Color
+  color : @sprite.Color
 }
 
 ///|
-pub fn TextBackgroundColor::new(color : @render2d.Color) -> TextBackgroundColor {
+pub fn TextBackgroundColor::new(color : @sprite.Color) -> TextBackgroundColor {
   TextBackgroundColor::{ color, }
 }
 
@@ -255,20 +255,20 @@ pub fn TextBounds::new_vertical(height : Float) -> TextBounds {
 ///|
 pub struct Text2dShadow {
   offset : @math.Vec2
-  color : @render2d.Color
+  color : @sprite.Color
 }
 
 ///|
 pub fn Text2dShadow::new(
   offset : @math.Vec2,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> Text2dShadow {
   Text2dShadow::{ offset, color }
 }
 
 ///|
 pub fn Text2dShadow::default() -> Text2dShadow {
-  Text2dShadow::new(@math.Vec2::new(4.0F, -4.0F), @render2d.Color::black())
+  Text2dShadow::new(@math.Vec2::new(4.0F, -4.0F), @sprite.Color::black())
 }
 
 ///|
@@ -282,7 +282,7 @@ pub fn Text2dShadow::with_offset(
 ///|
 pub fn Text2dShadow::with_color(
   self : Text2dShadow,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> Text2dShadow {
   Text2dShadow::{ ..self, color, }
 }

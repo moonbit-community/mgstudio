@@ -14,13 +14,13 @@
 
 ///|
 /// Port of `bevy/examples/dev_tools/fps_overlay.rs`.
-fn overlay_red() -> @render2d.Color {
-  @render2d.Color::srgb(1.0F, 0.0F, 0.0F)
+fn overlay_red() -> @sprite.Color {
+  @sprite.Color::srgb(1.0F, 0.0F, 0.0F)
 }
 
 ///|
-fn overlay_green() -> @render2d.Color {
-  @render2d.Color::srgb(0.0F, 1.0F, 0.0F)
+fn overlay_green() -> @sprite.Color {
+  @sprite.Color::srgb(0.0F, 1.0F, 0.0F)
 }
 
 ///|
@@ -51,8 +51,8 @@ fn main {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -68,7 +68,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.TextFont::default().with_font_size(20.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 
@@ -104,7 +104,7 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn color_is_green(color : @render2d.Color) -> Bool {
+fn color_is_green(color : @sprite.Color) -> Bool {
   color.r == overlay_green().r &&
   color.g == overlay_green().g &&
   color.b == overlay_green().b &&

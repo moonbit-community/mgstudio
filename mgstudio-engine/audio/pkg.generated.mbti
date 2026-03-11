@@ -52,9 +52,7 @@ pub fn pitch_set(@ecs.World, @asset.Handle[Pitch], Pitch) -> Bool
 // Errors
 
 // Types and methods
-pub struct AudioOutput {
-  stream : @Milky2018/mgstudio/runtime_native/audio.NativeAudioStream?
-}
+type AudioOutput
 pub fn AudioOutput::default() -> Self
 pub impl @app.Resource for AudioOutput
 
@@ -63,7 +61,7 @@ pub struct AudioPlayer[Source] {
 }
 pub fn[Source] AudioPlayer::handle(Self[Source]) -> @asset.Handle[Source]
 pub fn[Source] AudioPlayer::new(@asset.Handle[Source]) -> Self[Source]
-pub impl @ecs.Component for AudioPlayer[AudioSource]
+pub impl[Source] @ecs.Component for AudioPlayer[Source]
 pub impl[Source] ToJson for AudioPlayer[Source]
 pub impl[Source] @json.FromJson for AudioPlayer[Source]
 
@@ -96,6 +94,7 @@ pub impl @json.FromJson for AudioSource
 
 pub struct AudioSourceAssets {
   assets : @asset.Assets[AudioSource]
+  paths : Array[(String, @asset.Handle[AudioSource])]
 }
 pub fn AudioSourceAssets::add(Self, AudioSource) -> @asset.Handle[AudioSource]
 pub fn AudioSourceAssets::get(Self, @asset.Handle[AudioSource]) -> AudioSource?

@@ -44,10 +44,8 @@ fn texture_atlas_builder_setup(world : @ecs.World) -> Unit {
   builder_state.val.built = false
   builder_state.val.texture_a = Some(texture_a)
   builder_state.val.texture_b = Some(texture_b)
-  let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
-    world,
-  )
+  let camera = @sprite.Camera::default()
+  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
   |> ignore
 }
 
@@ -78,8 +76,8 @@ fn texture_atlas_builder_update(world : @ecs.World) -> Unit {
     let layout_handle = @asset.asset_add_texture_atlas_layout(layout)
     let index_a = sources.texture_index(texture_a).unwrap_or(-1)
     let index_b = sources.texture_index(texture_b).unwrap_or(-1)
-    let entity_a = @render2d.SpriteBundle::new(
-      @render2d.Sprite::from_atlas_image(
+    let entity_a = @sprite.SpriteBundle::new(
+      @sprite.Sprite::from_atlas_image(
         atlas_texture,
         @asset.TextureAtlas::new(layout_handle, index_a),
       ),
@@ -90,8 +88,8 @@ fn texture_atlas_builder_update(world : @ecs.World) -> Unit {
       ),
     ).spawn(world)
     entity_a |> ignore
-    let entity_b = @render2d.SpriteBundle::new(
-      @render2d.Sprite::from_atlas_image(
+    let entity_b = @sprite.SpriteBundle::new(
+      @sprite.Sprite::from_atlas_image(
         atlas_texture,
         @asset.TextureAtlas::new(layout_handle, index_b),
       ),

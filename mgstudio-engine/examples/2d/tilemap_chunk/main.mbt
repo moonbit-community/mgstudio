@@ -32,8 +32,8 @@ const TILESET_RANDOM_RANGE : Int = 5
 
 ///|
 priv struct TilemapChunkState {
-  mut chunk : @render2d.TilemapChunk?
-  mut tiles : Array[@render2d.TileData?]
+  mut chunk : @sprite.TilemapChunk?
+  mut tiles : Array[@sprite.TileData?]
   mut update_accumulator : Float
   mut seed : Int
   mut player : @core.Entity
@@ -63,11 +63,12 @@ fn tilemap_chunk_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let tileset_texture = asset_server.load_with_settings(
     "textures/array_texture.png",
-    @asset.ImageLoaderSettings::default()
-    .with_sampler(@asset.ImageSampler::Nearest)
-    .with_array_layout(Some(@asset.ImageArrayLayout::RowCount(4))),
+    fn(settings) {
+      settings.sampler = @asset.ImageSampler::nearest()
+      settings.array_layout = Some(@asset.ImageArrayLayout::RowCount(4))
+    },
   )
-  let chunk = @render2d.TilemapChunk::new(
+  let chunk = @sprite.TilemapChunk::new(
     @math.UVec2::splat(CHUNK_SIDE),
     @math.UVec2::splat(TILE_SIZE),
     tileset_texture,
@@ -78,8 +79,8 @@ fn tilemap_chunk_setup(world : @ecs.World) -> Unit {
   let player = spawn_fake_player(world, chunk, @math.UVec2::new(0, 0))
   spawn_fake_player(world, chunk, @math.UVec2::new(5, 6)) |> ignore
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -94,12 +95,12 @@ fn tilemap_chunk_setup(world : @ecs.World) -> Unit {
 fn tilemap_chunk_update(world : @ecs.World) -> Unit {
   guard tilemap_chunk_state.val.chunk is Some(chunk) else { return }
 
-  @render2d.render2d_draw_tilemap_chunk(
+  @sprite_render.render2d_draw_tilemap_chunk(
     world,
     chunk,
-    @render2d.TilemapChunkTileData::new(tilemap_chunk_state.val.tiles),
+    @sprite.TilemapChunkTileData::new(tilemap_chunk_state.val.tiles),
     @math.Transform::identity(),
-    @render2d.RenderLayers::default(),
+    @sprite.RenderLayers::default(),
   )
 
   update_fake_player(world, chunk)
@@ -107,10 +108,7 @@ fn tilemap_chunk_update(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn update_fake_player(
-  world : @ecs.World,
-  chunk : @render2d.TilemapChunk,
-) -> Unit {
+fn update_fake_player(world : @ecs.World, chunk : @sprite.TilemapChunk) -> Unit {
   if tilemap_chunk_state.val.player.is_placeholder() {
     return
   }
@@ -135,7 +133,7 @@ fn update_fake_player(
 }
 
 ///|
-fn update_tilemap_data(_chunk : @render2d.TilemapChunk) -> Unit {
+fn update_tilemap_data(_chunk : @sprite.TilemapChunk) -> Unit {
   tilemap_chunk_state.val.update_accumulator = tilemap_chunk_state.val.update_accumulator +
     @time.time_delta_seconds()
   if tilemap_chunk_state.val.update_accumulator < UPDATE_INTERVAL_SECONDS {
@@ -150,21 +148,21 @@ fn update_tilemap_data(_chunk : @render2d.TilemapChunk) -> Unit {
     let index = seeded_random_range(tile_count)
     let value = seeded_random_range(TILESET_RANDOM_RANGE)
     tilemap_chunk_state.val.tiles[index] = Some(
-      @render2d.TileData::from_tileset_index(value),
+      @sprite.TileData::from_tileset_index(value),
     )
   }
 }
 
 ///|
-fn build_initial_tile_data(tile_count : Int) -> Array[@render2d.TileData?] {
-  let tiles : Array[@render2d.TileData?] = []
+fn build_initial_tile_data(tile_count : Int) -> Array[@sprite.TileData?] {
+  let tiles : Array[@sprite.TileData?] = []
   for _ in 0..<tile_count {
     let value = seeded_random_range(TILESET_RANDOM_RANGE)
     tiles.push(
       if value == 0 {
         None
       } else {
-        Some(@render2d.TileData::from_tileset_index(value - 1))
+        Some(@sprite.TileData::from_tileset_index(value - 1))
       },
     )
   }
@@ -174,7 +172,7 @@ fn build_initial_tile_data(tile_count : Int) -> Array[@render2d.TileData?] {
 ///|
 fn spawn_fake_player(
   world : @ecs.World,
-  chunk : @render2d.TilemapChunk,
+  chunk : @sprite.TilemapChunk,
   tile_pos : @math.UVec2,
 ) -> @core.Entity {
   let tile_transform = chunk.calculate_tile_transform(tile_pos)
@@ -184,11 +182,9 @@ fn spawn_fake_player(
     @math.Vec2::new(1.0F, 1.0F),
     z=1.0F,
   )
-  @render2d.Mesh2dBundle::new(
-    @render2d.Mesh2d::from_rectangle(@render2d.Rectangle::new(8.0F, 8.0F)),
-    @render2d.ColorMaterial::new(
-      @render2d.Color::new(0.956F, 0.271F, 0.271F, 1.0F),
-    ),
+  @sprite.Mesh2dBundle::new(
+    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(8.0F, 8.0F)),
+    @sprite.ColorMaterial::new(@sprite.Color::new(0.956F, 0.271F, 0.271F, 1.0F)),
     player_transform,
   ).spawn(world)
 }

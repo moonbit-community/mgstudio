@@ -32,16 +32,6 @@ let progress_text_marker_component_key : @ecs.ComponentKey[ProgressTextMarker] =
 )
 
 ///|
-impl @ecs.Component for MyMusic with component() {
-  my_music_component_key
-}
-
-///|
-impl @ecs.Component for ProgressTextMarker with component() {
-  progress_text_marker_component_key
-}
-
-///|
 fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
@@ -108,7 +98,7 @@ fn spawn_ui_text(
       @text.TextFont::default().with_font(font).with_font_size(20.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 
@@ -173,12 +163,9 @@ fn spawn_ui_overlay(world : @ecs.World) -> Unit {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  guard @audio.audio_source_load(
-      world, asset_server, "sounds/Windless Slopes.ogg",
-    )
-    is Some(track) else {
-    return
-  }
+  let track : @asset.Handle[@audio.AudioSource] = asset_server.load(
+    "sounds/Windless Slopes.ogg",
+  )
 
   let tick = world.read_change_tick()
   let music = world.spawn_empty()
@@ -189,8 +176,8 @@ fn setup(world : @ecs.World) -> Unit {
 
   spawn_ui_overlay(world)
 
-  @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
   |> ignore

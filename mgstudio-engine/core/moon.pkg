@@ -1,4 +1,5 @@
 import {
-  "Milky2018/mgstudio/runtime_native/native_time",
+  "moonbitlang/core/bench",
   "moonbitlang/core/json",
+  "moonbitlang/core/ref",
 }

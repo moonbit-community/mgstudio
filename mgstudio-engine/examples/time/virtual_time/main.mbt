@@ -51,7 +51,9 @@ let virtual_time_state : Ref[VirtualTimeState] = Ref::new({
 
 ///|
 fn read_real_time(world : @ecs.World) -> @time.Time[@time.Real] {
-  let real_time = try! world.get_resource(@time.real_time_resource_key())
+  let real_time = try! world.get_resource(
+    @time.time_resource_key_of(@time.Real::default()),
+  )
   match real_time {
     Some(real_time) => real_time
     None => {
@@ -63,7 +65,9 @@ fn read_real_time(world : @ecs.World) -> @time.Time[@time.Real] {
 
 ///|
 fn read_virtual_time(world : @ecs.World) -> @time.Time[@time.Virtual] {
-  let virtual_time = try! world.get_resource(@time.virtual_time_resource_key())
+  let virtual_time = try! world.get_resource(
+    @time.time_resource_key_of(@time.Virtual::default()),
+  )
   match virtual_time {
     Some(virtual_time) => virtual_time
     None => {
@@ -75,7 +79,7 @@ fn read_virtual_time(world : @ecs.World) -> @time.Time[@time.Virtual] {
 
 ///|
 fn read_generic_time(world : @ecs.World) -> @time.Time[Unit] {
-  let time = try! world.get_resource(@time.default_time_resource_key())
+  let time = try! world.get_resource(@time.time_resource_key_of(()))
   match time {
     Some(time) => time
     None => {
@@ -92,10 +96,13 @@ fn update_virtual_time_resource(
 ) -> Unit {
   let change_tick = world.increment_change_tick()
   let virtual_ref = try! world
-    .get_resource_ref_mut(@time.virtual_time_resource_key(), change_tick)
+    .get_resource_ref_mut(
+      @time.time_resource_key_of(@time.Virtual::default()),
+      change_tick,
+    )
     .unwrap()
   let time_ref = try! world
-    .get_resource_ref_mut(@time.default_time_resource_key(), change_tick)
+    .get_resource_ref_mut(@time.time_resource_key_of(()), change_tick)
     .unwrap()
   let next_virtual = update(virtual_ref.val)
   virtual_ref.val = next_virtual
@@ -148,14 +155,14 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
 
-  let real_sprite = @render2d.SpriteBundle::new(
-    @render2d.Sprite::from_image(texture).with_custom_size(
+  let real_sprite = @sprite.SpriteBundle::new(
+    @sprite.Sprite::from_image(texture).with_custom_size(
       Some(@math.Vec2::new(256.0F, 256.0F)),
     ),
     @math.Transform::from_xy_rotation_scale(
@@ -166,9 +173,9 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   virtual_time_state.val.real_sprite = Some(real_sprite)
 
-  let virtual_sprite = @render2d.SpriteBundle::new(
-    @render2d.Sprite::from_image(texture)
-    .with_color(@render2d.Color::new(1.0F, 0.843F, 0.0F, 1.0F))
+  let virtual_sprite = @sprite.SpriteBundle::new(
+    @sprite.Sprite::from_image(texture)
+    .with_color(@sprite.Color::new(1.0F, 0.843F, 0.0F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(256.0F, 256.0F))),
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, -160.0F),
@@ -190,10 +197,10 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(260.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
   virtual_time_state.val.real_text = Some(real_text)
@@ -208,11 +215,11 @@ fn setup(world : @ecs.World) -> Unit {
       z=50.0F,
     ),
   )
-  .with_anchor(@render2d.Anchor::top_center())
+  .with_anchor(@sprite.Anchor::top_center())
   .with_bounds(@text.TextBounds::new_horizontal(300.0F))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
   .with_color(
-    @text.TextColor::new(@render2d.Color::new(0.85F, 0.85F, 0.85F, 1.0F)),
+    @text.TextColor::new(@sprite.Color::new(0.85F, 0.85F, 0.85F, 1.0F)),
   )
   .with_shadow(Some(@text.Text2dShadow::default()))
   .spawn()
@@ -228,11 +235,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_right())
+    .with_anchor(@sprite.Anchor::top_right())
     .with_bounds(@text.TextBounds::new_horizontal(260.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Right))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(1.0F, 0.843F, 0.0F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(1.0F, 0.843F, 0.0F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()

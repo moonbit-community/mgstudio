@@ -140,9 +140,9 @@ fn update_help_text() -> Unit {
 fn button_background(selected : Bool) -> @ui.BackgroundColor {
   @ui.BackgroundColor::new(
     if selected {
-      @render2d.Color::white()
+      @sprite.Color::white()
     } else {
-      @render2d.Color::black()
+      @sprite.Color::black()
     },
   )
 }
@@ -151,9 +151,9 @@ fn button_background(selected : Bool) -> @ui.BackgroundColor {
 fn button_border(selected : Bool) -> @ui.BorderColor {
   @ui.BorderColor::new(
     if selected {
-      @render2d.Color::black()
+      @sprite.Color::black()
     } else {
-      @render2d.Color::white()
+      @sprite.Color::white()
     },
   )
 }
@@ -163,7 +163,7 @@ fn spawn_ui_text_handle(
   content : String,
   font : @asset.Handle[@asset.Font],
   font_size : Float,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> @text.TextHandle {
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
@@ -231,7 +231,7 @@ fn spawn_button(
     label,
     font,
     16.0F,
-    @render2d.Color::white(),
+    @sprite.Color::white(),
   )
   let text_entity = world.spawn_empty()
   world
@@ -255,8 +255,8 @@ fn spawn_button(
 fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   let tick = world.read_change_tick()
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(100).with_clear_color_none(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(100).with_clear_color_none(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -277,7 +277,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
     "",
     font,
     16.0F,
-    @render2d.Color::white(),
+    @sprite.Color::white(),
   )
   let help_entity = world.spawn_empty()
   world
@@ -320,7 +320,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
     "Drag to Move",
     font,
     16.0F,
-    @render2d.Color::white(),
+    @sprite.Color::white(),
   )
   let hint_entity = world.spawn_empty()
   world
@@ -480,22 +480,22 @@ fn setup(world : @ecs.World) -> Unit {
   clustered_decals_state.val.drag_mode_widgets.clear()
   clustered_decals_state.val.last_mouse = None
 
-  let cube_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
+  let cube_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
     ),
   )
-  let cube = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(3.0F, 3.0F, 3.0F),
-    @render3d.MeshMaterial3d::new(cube_material),
+  let cube = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(3.0F, 3.0F, 3.0F),
+    @pbr.MeshMaterial3d::new(cube_material),
     @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_y(1.0471975512F),
     ),
   ).spawn(world)
   clustered_decals_state.val.rotating_cube = Some(cube)
 
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 2.5F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -505,8 +505,8 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
-  .insert(light, @render3d.DirectionalLight::default(), tick)
+  .component(@pbr.ecs_key_directional_light)
+  .insert(light, @pbr.DirectionalLight::default(), tick)
   world
   .component(@math.ecs_key_transform)
   .insert(
@@ -519,26 +519,26 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let decal_texture = asset_server.load("branding/icon.png")
-  let decal_a_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 0.27F, 0.0F, 0.80F),
+  let decal_a_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(1.0F, 0.27F, 0.0F, 0.80F),
     )
     .with_base_color_texture(Some(decal_texture))
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_unlit(true),
   )
-  let decal_b_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.0F, 1.0F, 0.0F, 0.80F),
+  let decal_b_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.0F, 1.0F, 0.0F, 0.80F),
     )
     .with_base_color_texture(Some(decal_texture))
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_unlit(true),
   )
 
-  let decal_a = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(decal_a_material),
+  let decal_a = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(decal_a_material),
     calculate_initial_decal_transform(
       @math.Vec3::new(1.0F, 3.0F, 5.0F),
       @math.Vec3::zero(),
@@ -546,19 +546,19 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_clustered_decal)
+  .component(@pbr.ecs_key_clustered_decal)
   .insert(
     decal_a,
-    @render3d.ClusteredDecal::default()
+    @pbr.ClusteredDecal::default()
     .with_base_color_texture(Some(decal_texture))
     .with_tag(1),
     tick,
   )
   clustered_decals_state.val.decal_a = Some(decal_a)
 
-  let decal_b = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(decal_b_material),
+  let decal_b = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(decal_b_material),
     calculate_initial_decal_transform(
       @math.Vec3::new(-2.0F, -1.0F, 4.0F),
       @math.Vec3::zero(),
@@ -566,10 +566,10 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_clustered_decal)
+  .component(@pbr.ecs_key_clustered_decal)
   .insert(
     decal_b,
-    @render3d.ClusteredDecal::default()
+    @pbr.ClusteredDecal::default()
     .with_base_color_texture(Some(decal_texture))
     .with_tag(2),
     tick,
@@ -757,9 +757,9 @@ fn switch_drag_mode(world : @ecs.World) -> Bool {
   }
   @window.window_set_cursor_icon(
     icon=if hover_resize_cursor {
-      @window.CursorIcon::EwResize
+      @window.CursorIcon::from(@window.SystemCursorIcon::EwResize)
     } else {
-      @window.CursorIcon::Default
+      @window.CursorIcon::from(@window.SystemCursorIcon::Default)
     },
   )
 

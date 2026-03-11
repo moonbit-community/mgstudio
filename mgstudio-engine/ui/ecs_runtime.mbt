@@ -38,6 +38,21 @@ pub let ecs_key_is_default_ui_camera : @ecs.ComponentKey[IsDefaultUiCamera] = @e
 )
 
 ///|
+pub let ecs_key_ui_target_camera : @ecs.ComponentKey[UiTargetCamera] = @ecs.register_component(
+  debug_name="ui.ui_target_camera",
+)
+
+///|
+pub let ecs_key_computed_ui_target_camera : @ecs.ComponentKey[
+  ComputedUiTargetCamera,
+] = @ecs.register_component(debug_name="ui.computed_ui_target_camera")
+
+///|
+pub let ecs_key_computed_ui_render_target_info : @ecs.ComponentKey[
+  ComputedUiRenderTargetInfo,
+] = @ecs.register_component(debug_name="ui.computed_ui_render_target_info")
+
+///|
 pub let ecs_key_ui_text : @ecs.ComponentKey[UiText] = @ecs.register_component(
   debug_name="ui.ui_text",
 )
@@ -93,11 +108,6 @@ pub let ecs_key_interaction : @ecs.ComponentKey[Interaction] = @ecs.register_com
 )
 
 ///|
-pub let ecs_key_ui_anti_alias : @ecs.ComponentKey[UiAntiAlias] = @ecs.register_component(
-  debug_name="ui.ui_anti_alias",
-)
-
-///|
 pub let ecs_key_border_radius : @ecs.ComponentKey[BorderRadius] = @ecs.register_component(
   debug_name="ui.border_radius",
 )
@@ -138,11 +148,6 @@ pub let ecs_key_accessibility_label : @ecs.ComponentKey[AccessibilityLabel] = @e
 )
 
 ///|
-pub let ecs_key_ui_box_shadow_samples : @ecs.ComponentKey[UiBoxShadowSamples] = @ecs.register_component(
-  debug_name="ui.ui_box_shadow_samples",
-)
-
-///|
 pub let ecs_key_relative_cursor_position : @ecs.ComponentKey[
   RelativeCursorPosition,
 ] = @ecs.register_component(debug_name="ui.relative_cursor_position")
@@ -170,6 +175,21 @@ pub impl @ecs.Component for UiRoot with component() {
 ///|
 pub impl @ecs.Component for IsDefaultUiCamera with component() {
   ecs_key_is_default_ui_camera
+}
+
+///|
+pub impl @ecs.Component for UiTargetCamera with component() {
+  ecs_key_ui_target_camera
+}
+
+///|
+pub impl @ecs.Component for ComputedUiTargetCamera with component() {
+  ecs_key_computed_ui_target_camera
+}
+
+///|
+pub impl @ecs.Component for ComputedUiRenderTargetInfo with component() {
+  ecs_key_computed_ui_render_target_info
 }
 
 ///|
@@ -228,11 +248,6 @@ pub impl @ecs.Component for Interaction with component() {
 }
 
 ///|
-pub impl @ecs.Component for UiAntiAlias with component() {
-  ecs_key_ui_anti_alias
-}
-
-///|
 pub impl @ecs.Component for BorderRadius with component() {
   ecs_key_border_radius
 }
@@ -270,11 +285,6 @@ pub impl @ecs.Component for BackgroundColor with component() {
 ///|
 pub impl @ecs.Component for AccessibilityLabel with component() {
   ecs_key_accessibility_label
-}
-
-///|
-pub impl @ecs.Component for UiBoxShadowSamples with component() {
-  ecs_key_ui_box_shadow_samples
 }
 
 ///|

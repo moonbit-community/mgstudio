@@ -1,0 +1,15 @@
+import {
+  "Milky2018/moon_accesskit",
+  "Milky2018/window/macos" @window_macos,
+  "Milky2018/wgpu_mbt" @wgpu,
+  "Milky2018/wgpu_mbt/c" @wgpu_c,
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/ref",
+  "moonbitlang/x/sys",
+}
+
+options(
+  "native-stub": [ "layer_attach_stub.c" ],
+  "supported-targets": "native",
+  targets: { "raw.mbt": [ "native" ] },
+)

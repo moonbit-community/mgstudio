@@ -17,22 +17,22 @@ pub struct Font {}
 
 ///|
 pub fn host_asset_load_font(path~ : String) -> Int {
-  @native_asset.load_font(path~)
+  load_font(path~)
 }
 
 ///|
 pub fn host_asset_font_bytes_len(font_id : Int) -> Int {
-  @native_asset.font_bytes_len(font_id)
+  font_bytes_len(font_id)
 }
 
 ///|
 pub fn host_asset_font_bytes_get(font_id~ : Int, index~ : Int) -> Int {
-  @native_asset.font_bytes_get(font_id~, index~)
+  font_bytes_get(font_id~, index~)
 }
 
 ///|
 pub fn host_asset_font_bytes_get_u32(font_id~ : Int, index~ : Int) -> Int {
-  @native_asset.font_bytes_get_u32(font_id~, index~)
+  font_bytes_get_u32(font_id~, index~)
 }
 
 ///|

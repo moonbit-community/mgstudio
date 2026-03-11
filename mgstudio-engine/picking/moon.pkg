@@ -7,7 +7,7 @@ import {
   "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/hierarchy",
-  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/ui",
@@ -17,3 +17,7 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
+
+options(
+  "supported-targets": "native",
+)

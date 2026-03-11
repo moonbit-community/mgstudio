@@ -115,13 +115,13 @@ fn create_text() -> String {
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @render3d.Mesh3d,
-  material : @asset.Handle[@render3d.StandardMaterial],
+  mesh : @pbr.Mesh3d,
+  material : @asset.Handle[@pbr.StandardMaterial],
   transform : @math.Transform,
 ) -> Unit {
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     mesh,
-    @render3d.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
   |> ignore
@@ -129,25 +129,25 @@ fn spawn_mesh(
 
 ///|
 fn setup_scene_geometry(world : @ecs.World) -> Unit {
-  let corridor_floor_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.10F, 0.10F, 0.11F, 1.0F),
+  let corridor_floor_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.10F, 0.10F, 0.11F, 1.0F),
     )
     .with_perceptual_roughness(0.95F)
     .with_metallic(0.0F),
   )
 
-  let wall_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.16F, 0.16F, 0.18F, 1.0F),
+  let wall_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.16F, 0.16F, 0.18F, 1.0F),
     )
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F),
   )
 
-  let block_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.42F, 0.45F, 0.48F, 1.0F),
+  let block_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.42F, 0.45F, 0.48F, 1.0F),
     )
     .with_perceptual_roughness(0.6F)
     .with_metallic(0.0F),
@@ -155,28 +155,28 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
 
   spawn_mesh(
     world,
-    @render3d.Mesh3d::from_cuboid(7.0F, 0.2F, 11.0F),
+    @pbr.Mesh3d::from_cuboid(7.0F, 0.2F, 11.0F),
     corridor_floor_material,
     @math.Transform::from_xyz(-1.5F, -0.1F, 3.5F),
   )
 
   spawn_mesh(
     world,
-    @render3d.Mesh3d::from_cuboid(7.0F, 0.2F, 11.0F),
+    @pbr.Mesh3d::from_cuboid(7.0F, 0.2F, 11.0F),
     wall_material,
     @math.Transform::from_xyz(-1.5F, 3.9F, 3.5F),
   )
 
   spawn_mesh(
     world,
-    @render3d.Mesh3d::from_cuboid(0.2F, 4.0F, 11.0F),
+    @pbr.Mesh3d::from_cuboid(0.2F, 4.0F, 11.0F),
     wall_material,
     @math.Transform::from_xyz(-4.9F, 1.9F, 3.5F),
   )
 
   spawn_mesh(
     world,
-    @render3d.Mesh3d::from_cuboid(0.2F, 4.0F, 11.0F),
+    @pbr.Mesh3d::from_cuboid(0.2F, 4.0F, 11.0F),
     wall_material,
     @math.Transform::from_xyz(1.9F, 1.9F, 3.5F),
   )
@@ -185,31 +185,31 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
     let z = -0.5F + float_from_int(i) * 1.2F
     spawn_mesh(
       world,
-      @render3d.Mesh3d::from_cuboid(0.45F, 1.6F, 0.45F),
+      @pbr.Mesh3d::from_cuboid(0.45F, 1.6F, 0.45F),
       block_material,
       @math.Transform::from_xyz(-3.7F, 0.8F, z),
     )
     spawn_mesh(
       world,
-      @render3d.Mesh3d::from_cuboid(0.45F, 1.6F, 0.45F),
+      @pbr.Mesh3d::from_cuboid(0.45F, 1.6F, 0.45F),
       block_material,
       @math.Transform::from_xyz(0.7F, 0.8F, z),
     )
   }
 
-  let fog_volume_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.78F, 0.82F, 0.92F, 0.18F),
+  let fog_volume_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.78F, 0.82F, 0.92F, 0.18F),
     )
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F)
-    .with_emissive(@render2d.Color::new(0.08F, 0.08F, 0.10F, 1.0F)),
+    .with_emissive(@sprite.Color::new(0.08F, 0.08F, 0.10F, 1.0F)),
   )
 
   spawn_mesh(
     world,
-    @render3d.Mesh3d::from_cuboid(5.0F, 3.8F, 10.0F),
+    @pbr.Mesh3d::from_cuboid(5.0F, 3.8F, 10.0F),
     fog_volume_material,
     @math.Transform::from_xyz(-1.5F, 1.9F, 3.5F),
   )
@@ -218,8 +218,8 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-1.7F, 1.5F, 4.5F).looking_at(
       scene_focus(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -227,16 +227,16 @@ fn setup_camera(world : @ecs.World) -> Unit {
   ).spawn(world)
   let tick = world.read_change_tick()
   world
-  .component(@render3d.ecs_key_tonemapping)
-  .insert(camera, @render3d.Tonemapping::TonyMcMapface, tick)
+  .component(@post_process.ecs_key_tonemapping)
+  .insert(camera, @post_process.Tonemapping::TonyMcMapface, tick)
   world
-  .component(@render3d.ecs_key_bloom)
-  .insert(camera, @render3d.Bloom::default(), tick)
+  .component(@post_process.ecs_key_bloom)
+  .insert(camera, @post_process.Bloom::default(), tick)
   world
-  .component(@render3d.ecs_key_skybox)
+  .component(@pbr.ecs_key_skybox)
   .insert(
     camera,
-    @render3d.Skybox::new(
+    @pbr.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       1000.0F,
     ),
@@ -261,10 +261,10 @@ fn setup_lights(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
     tick,
   )
   volumetric_fog_state.val.directional_light = Some(directional_light)
@@ -274,11 +274,11 @@ fn setup_lights(world : @ecs.World) -> Unit {
   .component(@math.ecs_key_transform)
   .insert(point_light, @math.Transform::from_xyz(-0.4F, 1.9F, 1.0F), tick)
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     point_light,
-    @render3d.PointLight::new(
-      @render2d.Color::new(1.0F, 0.15F, 0.15F, 1.0F),
+    @pbr.PointLight::new(
+      @sprite.Color::new(1.0F, 0.15F, 0.15F, 1.0F),
       10_000.0F,
       150.0F,
       true,
@@ -299,11 +299,11 @@ fn setup_lights(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@render3d.ecs_key_spot_light)
+  .component(@pbr.ecs_key_spot_light)
   .insert(
     spot_light,
-    @render3d.SpotLight::new(
-      @render2d.Color::white(),
+    @pbr.SpotLight::new(
+      @sprite.Color::white(),
       50_000.0F,
       150.0F,
       0.76F,
@@ -329,11 +329,11 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -345,13 +345,12 @@ fn apply_light_switches(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   if volumetric_fog_state.val.point_light is Some(point_light) {
-    if world.component(@render3d.ecs_key_point_light).get(point_light)
-      is Some(light) {
+    if world.component(@pbr.ecs_key_point_light).get(point_light) is Some(light) {
       world
-      .component(@render3d.ecs_key_point_light)
+      .component(@pbr.ecs_key_point_light)
       .set(
         point_light,
-        @render3d.PointLight::new(
+        @pbr.PointLight::new(
           light.color,
           if volumetric_fog_state.val.volumetric_pointlight {
             10_000.0F
@@ -368,13 +367,12 @@ fn apply_light_switches(world : @ecs.World) -> Unit {
   }
 
   if volumetric_fog_state.val.spot_light is Some(spot_light) {
-    if world.component(@render3d.ecs_key_spot_light).get(spot_light)
-      is Some(light) {
+    if world.component(@pbr.ecs_key_spot_light).get(spot_light) is Some(light) {
       world
-      .component(@render3d.ecs_key_spot_light)
+      .component(@pbr.ecs_key_spot_light)
       .set(
         spot_light,
-        @render3d.SpotLight::new(
+        @pbr.SpotLight::new(
           light.color,
           if volumetric_fog_state.val.volumetric_spotlight {
             50_000.0F
@@ -431,21 +429,21 @@ fn apply_fog_proxy(world : @ecs.World) -> Unit {
   )
   let density = clampf(0.34F - brightness * 0.22F, 0.10F, 0.32F)
 
-  let fog = @render3d.DistanceFog::new(
-    @render2d.Color::new(
+  let fog = @pbr.DistanceFog::new(
+    @sprite.Color::new(
       clamp01(0.06F + brightness * 0.42F),
       clamp01(0.06F + brightness * 0.40F),
       clamp01(0.08F + brightness * 0.50F),
       1.0F,
     ),
-    @render3d.FogFalloff3d::exponential_squared(density),
+    @pbr.FogFalloff3d::exponential_squared(density),
   )
   guard volumetric_fog_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
-  let camera3d_store = world.component(@render3d.ecs_key_camera3d)
+  let camera3d_store = world.component(@pbr.ecs_key_camera3d)
   let camera3d = match camera3d_store.get(camera) {
     Some(value) => value
-    None => @render3d.Camera3d::default()
+    None => @pbr.Camera3d::default()
   }
   camera3d_store.set(camera, camera3d.with_distance_fog(Some(fog)), tick)
   |> ignore
@@ -575,8 +573,8 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   world.insert_resource(
-    @render3d.ecs_key_global_ambient_light,
-    @render3d.GlobalAmbientLight::new(@render2d.Color::white(), 0.0F),
+    @pbr.ecs_key_global_ambient_light,
+    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
   )
 
   setup_scene_geometry(world)

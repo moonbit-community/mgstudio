@@ -8,7 +8,8 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio",
   "Milky2018/mgstudio/physics2d",
-  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/sprite_render",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/window",
@@ -16,4 +17,5 @@ import {
 
 options(
   "is-main": true,
+  "supported-targets": "native",
 )

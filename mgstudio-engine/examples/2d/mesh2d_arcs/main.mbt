@@ -80,8 +80,8 @@ fn int_to_float(value : Int) -> Float {
 ///|
 fn spawn_arc_shape(
   world : @ecs.World,
-  mesh : @render2d.Mesh2d,
-  material : @render2d.ColorMaterial,
+  mesh : @sprite.Mesh2d,
+  material : @sprite.ColorMaterial,
   position : @math.Vec2,
   rotation : Float,
 ) -> Unit {
@@ -90,35 +90,33 @@ fn spawn_arc_shape(
     rotation,
     @math.Vec2::new(1.0F, 1.0F),
   )
-  @render2d.Mesh2dBundle::new(mesh, material, transform).spawn(world) |> ignore
+  @sprite.Mesh2dBundle::new(mesh, material, transform).spawn(world) |> ignore
 }
 
 ///|
 fn mesh2d_arcs_setup(world : @ecs.World) -> Unit {
-  let camera = @render2d.Camera::new(
-    @render2d.Color::new(0.5019608F, 0.5019608F, 0.5019608F, 1.0F),
+  let camera = @sprite.Camera::new(
+    @sprite.Color::new(0.5019608F, 0.5019608F, 0.5019608F, 1.0F),
   )
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
-    world,
-  )
+  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
   |> ignore
 
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
-  let material = @render2d.ColorMaterial::from_image(texture)
+  let material = @sprite.ColorMaterial::from_image(texture)
 
   mesh2d_arcs_state.val.bounds_samples.clear()
   for i in 0..<NUM_SLICES {
     let fraction = int_to_float(i + 1) / int_to_float(NUM_SLICES)
     let x = SPACING_X * int_to_float(i) - OFFSET_X
 
-    let sector = @render2d.CircularSector::from_turns(ARC_RADIUS, fraction).with_vertices(
+    let sector = @sprite.CircularSector::from_turns(ARC_RADIUS, fraction).with_vertices(
       BOUNDS_SAMPLES,
     )
     let sector_rotation = -sector.half_angle()
     spawn_arc_shape(
       world,
-      @render2d.Mesh2d::from_circular_sector(
+      @sprite.Mesh2d::from_circular_sector(
         sector.with_uv_mask_angle(sector_rotation),
       ),
       material,
@@ -133,13 +131,13 @@ fn mesh2d_arcs_setup(world : @ecs.World) -> Unit {
       rotation: sector_rotation,
     })
 
-    let segment = @render2d.CircularSegment::from_turns(ARC_RADIUS, fraction).with_vertices(
+    let segment = @sprite.CircularSegment::from_turns(ARC_RADIUS, fraction).with_vertices(
       BOUNDS_SAMPLES,
     )
     let segment_rotation = -@math.pi_half()
     spawn_arc_shape(
       world,
-      @render2d.Mesh2d::from_circular_segment(
+      @sprite.Mesh2d::from_circular_segment(
         segment.with_uv_mask_angle(-segment_rotation),
       ),
       material,
@@ -238,14 +236,14 @@ fn compute_world_aabb(sample : ArcBoundsSample) -> Aabb2dLite {
 
 ///|
 fn mesh2d_arcs_draw_bounds(_world : @ecs.World) -> Unit {
-  let red = @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
-  let blue = @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F)
-  let gizmos = @render2d.Gizmos::new()
+  let red = @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
+  let blue = @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F)
+  let gizmos = @sprite.Gizmos::new()
   for sample in mesh2d_arcs_state.val.bounds_samples {
     let aabb = compute_world_aabb(sample)
-    gizmos.rect_2d(@render2d.Isometry2d::new(aabb.center, 0.0F), aabb.size, red)
+    gizmos.rect_2d(@sprite.Isometry2d::new(aabb.center, 0.0F), aabb.size, red)
     gizmos.circle_2d(
-      @render2d.Isometry2d::new(sample.center, 0.0F),
+      @sprite.Isometry2d::new(sample.center, 0.0F),
       sample.radius,
       blue,
     )

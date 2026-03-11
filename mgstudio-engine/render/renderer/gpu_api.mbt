@@ -1,0 +1,1246 @@
+// Copyright 2025 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+/// Global native GPU entry points.
+///
+/// This file is split from gpu.mbt to keep module boundaries closer to Bevy:
+/// the backend implementation lives on `GpuBackend`, while runtime-facing entry points
+/// (surface/frame lifecycle, asset upload helpers, diagnostics snapshot) live here.
+pub type NativeGpuDevice = Int
+
+///|
+pub type NativeGpuQueue = Int
+
+///|
+pub type NativeGpuSurface = Int
+
+///|
+pub type NativeGpuFrame = Int
+
+///|
+pub struct RenderDiagnosticsSnapshot {
+  mesh2d_draw_calls : Int
+  mesh2d_executed_draw_calls : Int
+  mesh3d_draw_calls : Int
+  mesh3d_executed_draw_calls : Int
+}
+
+///|
+pub fn RenderDiagnosticsSnapshot::default() -> RenderDiagnosticsSnapshot {
+  RenderDiagnosticsSnapshot::{
+    mesh2d_draw_calls: 0,
+    mesh2d_executed_draw_calls: 0,
+    mesh3d_draw_calls: 0,
+    mesh3d_executed_draw_calls: 0,
+  }
+}
+
+///|
+pub fn RenderDiagnosticsSnapshot::new(
+  mesh2d_draw_calls : Int,
+  mesh2d_executed_draw_calls : Int,
+  mesh3d_draw_calls : Int,
+  mesh3d_executed_draw_calls : Int,
+) -> RenderDiagnosticsSnapshot {
+  RenderDiagnosticsSnapshot::{
+    mesh2d_draw_calls,
+    mesh2d_executed_draw_calls,
+    mesh3d_draw_calls,
+    mesh3d_executed_draw_calls,
+  }
+}
+
+///|
+priv struct SurfaceBinding {}
+
+///|
+const PRIMARY_DEVICE_ID : NativeGpuDevice = 1
+
+///|
+const PRIMARY_QUEUE_ID : NativeGpuQueue = 2
+
+///|
+const DEFAULT_ASSETS_DIR : String = "./assets"
+
+///|
+let backend_ref : Ref[GpuBackend?] = Ref::new(None)
+
+///|
+let surfaces_ref : Ref[Array[SurfaceBinding]] = Ref::new([])
+
+///|
+let next_surface_id_ref : Ref[Int] = Ref::new(1)
+
+///|
+let next_frame_id_ref : Ref[Int] = Ref::new(1)
+
+///|
+
+///|
+let gizmo_line_mesh_id_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_frame_counter_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_draw_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh3d_draw_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_invalid_id_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh3d_invalid_id_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_executed_draw_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh3d_executed_draw_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let current_frame_mesh2d_draw_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let current_frame_mesh2d_executed_draw_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let current_frame_mesh3d_draw_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let current_frame_mesh3d_executed_draw_calls_ref : Ref[Int] = Ref::new(0)
+
+///|
+let last_frame_render_diagnostics_snapshot_ref : Ref[RenderDiagnosticsSnapshot] = Ref::new(
+  RenderDiagnosticsSnapshot::default(),
+)
+
+///|
+let debug_mesh2d_drop_no_frame_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_drop_no_pass_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_drop_no_pass_state_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_drop_missing_mesh_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_drop_bad_stride_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_drop_no_pipeline_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_drop_no_uniform_buf_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_drop_no_uniform_bg_ref : Ref[Int] = Ref::new(0)
+
+///|
+let debug_mesh2d_drop_no_texture_ref : Ref[Int] = Ref::new(0)
+
+///|
+fn next_surface_id() -> NativeGpuSurface {
+  let id = next_surface_id_ref.val
+  next_surface_id_ref.val = next_surface_id_ref.val + 1
+  id
+}
+
+///|
+fn next_frame_id() -> NativeGpuFrame {
+  let id = next_frame_id_ref.val
+  next_frame_id_ref.val = next_frame_id_ref.val + 1
+  id
+}
+
+///|
+
+///|
+fn env_or_default(key : String, default_value : String) -> String {
+  match @sys.get_env_var(key) {
+    Some(value) if value != "" => value
+    _ => default_value
+  }
+}
+
+///|
+fn debug_runtime_error(context : String, err : Error) -> Unit {
+  @debug.debug("[renderer] " + context + ": " + err.to_string())
+}
+
+///|
+fn ensure_backend() -> GpuBackend? {
+  if backend_ref.val is Some(backend) {
+    return Some(backend)
+  }
+  let assets_base = env_or_default("MGSTUDIO_ASSETS_DIR", DEFAULT_ASSETS_DIR)
+  let backend = GpuBackend::new(assets_base~) catch { _ => return None }
+  backend_ref.val = Some(backend)
+  Some(backend)
+}
+
+///|
+fn parse_f32_csv(csv : String) -> Array[Float]? {
+  let trimmed = csv.trim().to_string()
+  if trimmed == "" {
+    return Some([])
+  }
+  let values : Array[Float] = []
+  for part in csv.split(",") {
+    let token = part.to_string().trim().to_string()
+    if token == "" {
+      continue
+    }
+    let parsed = @strconv.parse_double(token) catch { _ => return None }
+    values.push(Float::from_double(parsed))
+  }
+  Some(values)
+}
+
+///|
+pub fn request_device() -> NativeGpuDevice {
+  if ensure_backend() is Some(_) {
+    PRIMARY_DEVICE_ID
+  } else {
+    0
+  }
+}
+
+///|
+pub fn get_queue(device : NativeGpuDevice) -> NativeGpuQueue {
+  if device == PRIMARY_DEVICE_ID && ensure_backend() is Some(_) {
+    PRIMARY_QUEUE_ID
+  } else {
+    0
+  }
+}
+
+///|
+pub fn create_surface(window : Int) -> NativeGpuSurface {
+  let surface_id = next_surface_id()
+  surfaces_ref.val.push(SurfaceBinding::{  })
+  if ensure_backend() is Some(backend) {
+    backend.create_surface(window)
+  }
+  surface_id
+}
+
+///|
+pub fn configure_surface(
+  device~ : NativeGpuDevice,
+  surface~ : NativeGpuSurface,
+  width~ : Int,
+  height~ : Int,
+) -> Unit {
+  device |> ignore
+  surface |> ignore
+  if ensure_backend() is Some(backend) {
+    backend.configure_surface(width, height)
+  }
+}
+
+///|
+pub fn begin_frame(surface : NativeGpuSurface) -> NativeGpuFrame {
+  surface |> ignore
+  current_frame_mesh2d_draw_calls_ref.val = 0
+  current_frame_mesh2d_executed_draw_calls_ref.val = 0
+  current_frame_mesh3d_draw_calls_ref.val = 0
+  current_frame_mesh3d_executed_draw_calls_ref.val = 0
+  if ensure_backend() is Some(backend) {
+    backend.begin_frame()
+    return next_frame_id()
+  }
+  0
+}
+
+///|
+pub fn end_frame(frame : NativeGpuFrame) -> Unit {
+  frame |> ignore
+  if ensure_backend() is Some(backend) {
+    backend.end_frame() catch {
+      err => debug_runtime_error("end_frame", err)
+    }
+  }
+  last_frame_render_diagnostics_snapshot_ref.val = RenderDiagnosticsSnapshot::{
+    mesh2d_draw_calls: current_frame_mesh2d_draw_calls_ref.val,
+    mesh2d_executed_draw_calls: current_frame_mesh2d_executed_draw_calls_ref.val,
+    mesh3d_draw_calls: current_frame_mesh3d_draw_calls_ref.val,
+    mesh3d_executed_draw_calls: current_frame_mesh3d_executed_draw_calls_ref.val,
+  }
+  debug_frame_counter_ref.val = debug_frame_counter_ref.val + 1
+  if debug_frame_counter_ref.val % 60 == 0 {
+    @debug.debug(
+      "[renderer] draw stats(60f): mesh2d=" +
+      debug_mesh2d_draw_calls_ref.val.to_string() +
+      ", mesh2d_invalid_id=" +
+      debug_mesh2d_invalid_id_calls_ref.val.to_string() +
+      ", mesh2d_executed=" +
+      debug_mesh2d_executed_draw_calls_ref.val.to_string() +
+      ", mesh2d_drop(no_frame/no_pass/no_state/missing/stride/pipeline/ubo/bg/tex)=" +
+      debug_mesh2d_drop_no_frame_ref.val.to_string() +
+      "/" +
+      debug_mesh2d_drop_no_pass_ref.val.to_string() +
+      "/" +
+      debug_mesh2d_drop_no_pass_state_ref.val.to_string() +
+      "/" +
+      debug_mesh2d_drop_missing_mesh_ref.val.to_string() +
+      "/" +
+      debug_mesh2d_drop_bad_stride_ref.val.to_string() +
+      "/" +
+      debug_mesh2d_drop_no_pipeline_ref.val.to_string() +
+      "/" +
+      debug_mesh2d_drop_no_uniform_buf_ref.val.to_string() +
+      "/" +
+      debug_mesh2d_drop_no_uniform_bg_ref.val.to_string() +
+      "/" +
+      debug_mesh2d_drop_no_texture_ref.val.to_string() +
+      ", mesh3d=" +
+      debug_mesh3d_draw_calls_ref.val.to_string() +
+      ", mesh3d_invalid_id=" +
+      debug_mesh3d_invalid_id_calls_ref.val.to_string() +
+      ", mesh3d_executed=" +
+      debug_mesh3d_executed_draw_calls_ref.val.to_string(),
+    )
+    debug_mesh2d_draw_calls_ref.val = 0
+    debug_mesh3d_draw_calls_ref.val = 0
+    debug_mesh2d_invalid_id_calls_ref.val = 0
+    debug_mesh3d_invalid_id_calls_ref.val = 0
+    debug_mesh2d_executed_draw_calls_ref.val = 0
+    debug_mesh3d_executed_draw_calls_ref.val = 0
+    debug_mesh2d_drop_no_frame_ref.val = 0
+    debug_mesh2d_drop_no_pass_ref.val = 0
+    debug_mesh2d_drop_no_pass_state_ref.val = 0
+    debug_mesh2d_drop_missing_mesh_ref.val = 0
+    debug_mesh2d_drop_bad_stride_ref.val = 0
+    debug_mesh2d_drop_no_pipeline_ref.val = 0
+    debug_mesh2d_drop_no_uniform_buf_ref.val = 0
+    debug_mesh2d_drop_no_uniform_bg_ref.val = 0
+    debug_mesh2d_drop_no_texture_ref.val = 0
+  }
+}
+
+///|
+pub fn begin_pass(
+  target_id~ : Int,
+  width~ : Int,
+  height~ : Int,
+  clear_r~ : Float,
+  clear_g~ : Float,
+  clear_b~ : Float,
+  clear_a~ : Float,
+  camera_x~ : Float,
+  camera_y~ : Float,
+  camera_rotation~ : Float,
+  camera_scale~ : Float,
+  viewport_x~ : Int,
+  viewport_y~ : Int,
+  viewport_width~ : Int,
+  viewport_height~ : Int,
+  viewport_depth_min~ : Float,
+  viewport_depth_max~ : Float,
+  clear_enabled~ : Int,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.begin_pass(
+      target_id, width, height, clear_r, clear_g, clear_b, clear_a, camera_x, camera_y,
+      camera_rotation, camera_scale, viewport_x, viewport_y, viewport_width, viewport_height,
+      viewport_depth_min, viewport_depth_max, clear_enabled,
+    ) catch {
+      err => debug_runtime_error("begin_pass", err)
+    }
+  }
+}
+
+///|
+pub fn begin_pass_3d(
+  target_id~ : Int,
+  target_layer? : Int = -1,
+  width~ : Int,
+  height~ : Int,
+  clear_r~ : Float,
+  clear_g~ : Float,
+  clear_b~ : Float,
+  clear_a~ : Float,
+  camera_x~ : Float,
+  camera_y~ : Float,
+  camera_z~ : Float,
+  camera_rot_x~ : Float,
+  camera_rot_y~ : Float,
+  camera_rot_z~ : Float,
+  camera_rot_w~ : Float,
+  clip_from_world_x_axis_x~ : Float,
+  clip_from_world_x_axis_y~ : Float,
+  clip_from_world_x_axis_z~ : Float,
+  clip_from_world_x_axis_w~ : Float,
+  clip_from_world_y_axis_x~ : Float,
+  clip_from_world_y_axis_y~ : Float,
+  clip_from_world_y_axis_z~ : Float,
+  clip_from_world_y_axis_w~ : Float,
+  clip_from_world_z_axis_x~ : Float,
+  clip_from_world_z_axis_y~ : Float,
+  clip_from_world_z_axis_z~ : Float,
+  clip_from_world_z_axis_w~ : Float,
+  clip_from_world_w_axis_x~ : Float,
+  clip_from_world_w_axis_y~ : Float,
+  clip_from_world_w_axis_z~ : Float,
+  clip_from_world_w_axis_w~ : Float,
+  unjittered_clip_from_world_x_axis_x~ : Float,
+  unjittered_clip_from_world_x_axis_y~ : Float,
+  unjittered_clip_from_world_x_axis_z~ : Float,
+  unjittered_clip_from_world_x_axis_w~ : Float,
+  unjittered_clip_from_world_y_axis_x~ : Float,
+  unjittered_clip_from_world_y_axis_y~ : Float,
+  unjittered_clip_from_world_y_axis_z~ : Float,
+  unjittered_clip_from_world_y_axis_w~ : Float,
+  unjittered_clip_from_world_z_axis_x~ : Float,
+  unjittered_clip_from_world_z_axis_y~ : Float,
+  unjittered_clip_from_world_z_axis_z~ : Float,
+  unjittered_clip_from_world_z_axis_w~ : Float,
+  unjittered_clip_from_world_w_axis_x~ : Float,
+  unjittered_clip_from_world_w_axis_y~ : Float,
+  unjittered_clip_from_world_w_axis_z~ : Float,
+  unjittered_clip_from_world_w_axis_w~ : Float,
+  previous_clip_from_world_x_axis_x~ : Float,
+  previous_clip_from_world_x_axis_y~ : Float,
+  previous_clip_from_world_x_axis_z~ : Float,
+  previous_clip_from_world_x_axis_w~ : Float,
+  previous_clip_from_world_y_axis_x~ : Float,
+  previous_clip_from_world_y_axis_y~ : Float,
+  previous_clip_from_world_y_axis_z~ : Float,
+  previous_clip_from_world_y_axis_w~ : Float,
+  previous_clip_from_world_z_axis_x~ : Float,
+  previous_clip_from_world_z_axis_y~ : Float,
+  previous_clip_from_world_z_axis_z~ : Float,
+  previous_clip_from_world_z_axis_w~ : Float,
+  previous_clip_from_world_w_axis_x~ : Float,
+  previous_clip_from_world_w_axis_y~ : Float,
+  previous_clip_from_world_w_axis_z~ : Float,
+  previous_clip_from_world_w_axis_w~ : Float,
+  viewport_x~ : Int,
+  viewport_y~ : Int,
+  viewport_width~ : Int,
+  viewport_height~ : Int,
+  ambient_r~ : Float,
+  ambient_g~ : Float,
+  ambient_b~ : Float,
+  ambient_brightness~ : Float,
+  directional_dir_x~ : Float,
+  directional_dir_y~ : Float,
+  directional_dir_z~ : Float,
+  directional_color_r~ : Float,
+  directional_color_g~ : Float,
+  directional_color_b~ : Float,
+  directional_illuminance~ : Float,
+  point_pos_x~ : Float,
+  point_pos_y~ : Float,
+  point_pos_z~ : Float,
+  point_color_r~ : Float,
+  point_color_g~ : Float,
+  point_color_b~ : Float,
+  point_intensity~ : Float,
+  point_range~ : Float,
+  spot_pos_x~ : Float,
+  spot_pos_y~ : Float,
+  spot_pos_z~ : Float,
+  spot_dir_x~ : Float,
+  spot_dir_y~ : Float,
+  spot_dir_z~ : Float,
+  spot_color_r~ : Float,
+  spot_color_g~ : Float,
+  spot_color_b~ : Float,
+  spot_intensity~ : Float,
+  spot_range~ : Float,
+  spot_inner_angle~ : Float,
+  spot_outer_angle~ : Float,
+  point_shadow_near~ : Float,
+  pass_kind~ : Int,
+  clear_enabled~ : Int,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.begin_pass_3d(
+      target_id, target_layer, width, height, clear_r, clear_g, clear_b, clear_a,
+      camera_x, camera_y, camera_z, camera_rot_x, camera_rot_y, camera_rot_z, camera_rot_w,
+      clip_from_world_x_axis_x, clip_from_world_x_axis_y, clip_from_world_x_axis_z,
+      clip_from_world_x_axis_w, clip_from_world_y_axis_x, clip_from_world_y_axis_y,
+      clip_from_world_y_axis_z, clip_from_world_y_axis_w, clip_from_world_z_axis_x,
+      clip_from_world_z_axis_y, clip_from_world_z_axis_z, clip_from_world_z_axis_w,
+      clip_from_world_w_axis_x, clip_from_world_w_axis_y, clip_from_world_w_axis_z,
+      clip_from_world_w_axis_w, unjittered_clip_from_world_x_axis_x, unjittered_clip_from_world_x_axis_y,
+      unjittered_clip_from_world_x_axis_z, unjittered_clip_from_world_x_axis_w, unjittered_clip_from_world_y_axis_x,
+      unjittered_clip_from_world_y_axis_y, unjittered_clip_from_world_y_axis_z, unjittered_clip_from_world_y_axis_w,
+      unjittered_clip_from_world_z_axis_x, unjittered_clip_from_world_z_axis_y, unjittered_clip_from_world_z_axis_z,
+      unjittered_clip_from_world_z_axis_w, unjittered_clip_from_world_w_axis_x, unjittered_clip_from_world_w_axis_y,
+      unjittered_clip_from_world_w_axis_z, unjittered_clip_from_world_w_axis_w, previous_clip_from_world_x_axis_x,
+      previous_clip_from_world_x_axis_y, previous_clip_from_world_x_axis_z, previous_clip_from_world_x_axis_w,
+      previous_clip_from_world_y_axis_x, previous_clip_from_world_y_axis_y, previous_clip_from_world_y_axis_z,
+      previous_clip_from_world_y_axis_w, previous_clip_from_world_z_axis_x, previous_clip_from_world_z_axis_y,
+      previous_clip_from_world_z_axis_z, previous_clip_from_world_z_axis_w, previous_clip_from_world_w_axis_x,
+      previous_clip_from_world_w_axis_y, previous_clip_from_world_w_axis_z, previous_clip_from_world_w_axis_w,
+      viewport_x, viewport_y, viewport_width, viewport_height, ambient_r, ambient_g,
+      ambient_b, ambient_brightness, directional_dir_x, directional_dir_y, directional_dir_z,
+      directional_color_r, directional_color_g, directional_color_b, directional_illuminance,
+      point_pos_x, point_pos_y, point_pos_z, point_color_r, point_color_g, point_color_b,
+      point_intensity, point_range, spot_pos_x, spot_pos_y, spot_pos_z, spot_dir_x,
+      spot_dir_y, spot_dir_z, spot_color_r, spot_color_g, spot_color_b, spot_intensity,
+      spot_range, spot_inner_angle, spot_outer_angle, point_shadow_near, pass_kind,
+      clear_enabled,
+    ) catch {
+      err => debug_runtime_error("begin_pass_3d", err)
+    }
+  }
+}
+
+///|
+pub fn set_scissor(x~ : Int, y~ : Int, width~ : Int, height~ : Int) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.set_scissor(x, y, width, height) catch {
+      _ => ()
+    }
+  }
+}
+
+///|
+pub fn clear_scissor() -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.clear_scissor() catch {
+      _ => ()
+    }
+  }
+}
+
+///|
+pub fn draw_sprite(
+  texture_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+) -> Unit {
+  draw_sprite_uv(
+    texture_id~,
+    x~,
+    y~,
+    rotation~,
+    scale_x~,
+    scale_y~,
+    color_r~,
+    color_g~,
+    color_b~,
+    color_a~,
+    uv_min_x=0.0F,
+    uv_min_y=0.0F,
+    uv_max_x=1.0F,
+    uv_max_y=1.0F,
+  )
+}
+
+///|
+pub fn draw_sprite_uv(
+  texture_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  uv_min_x~ : Float,
+  uv_min_y~ : Float,
+  uv_max_x~ : Float,
+  uv_max_y~ : Float,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.draw_sprite_uv(
+      texture_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
+      uv_min_x, uv_min_y, uv_max_x, uv_max_y,
+    ) catch {
+      err => debug_runtime_error("draw_sprite_uv", err)
+    }
+  }
+}
+
+///|
+pub fn draw_ui_rect(
+  texture_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  uv_min_x~ : Float,
+  uv_min_y~ : Float,
+  uv_max_x~ : Float,
+  uv_max_y~ : Float,
+  flags~ : Int,
+  radius_tl~ : Float,
+  radius_tr~ : Float,
+  radius_br~ : Float,
+  radius_bl~ : Float,
+  border_left~ : Float,
+  border_top~ : Float,
+  border_right~ : Float,
+  border_bottom~ : Float,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.draw_ui_rect(
+      texture_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
+      uv_min_x, uv_min_y, uv_max_x, uv_max_y, flags, radius_tl, radius_tr, radius_br,
+      radius_bl, border_left, border_top, border_right, border_bottom,
+    ) catch {
+      err => debug_runtime_error("draw_ui_rect", err)
+    }
+  }
+}
+
+///|
+pub fn draw_ui_box_shadow(
+  texture_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  size_x~ : Float,
+  size_y~ : Float,
+  radius_tl~ : Float,
+  radius_tr~ : Float,
+  radius_br~ : Float,
+  radius_bl~ : Float,
+  blur~ : Float,
+  samples~ : Int,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.draw_ui_box_shadow(
+      texture_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
+      size_x, size_y, radius_tl, radius_tr, radius_br, radius_bl, blur, samples,
+    ) catch {
+      err => debug_runtime_error("draw_ui_box_shadow", err)
+    }
+  }
+}
+
+///|
+pub fn draw_ui_texture_slice(
+  texture_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  texture_slice_l~ : Float,
+  texture_slice_t~ : Float,
+  texture_slice_r~ : Float,
+  texture_slice_b~ : Float,
+  target_slice_l~ : Float,
+  target_slice_t~ : Float,
+  target_slice_r~ : Float,
+  target_slice_b~ : Float,
+  repeat_side_x~ : Float,
+  repeat_side_y~ : Float,
+  repeat_center_x~ : Float,
+  repeat_center_y~ : Float,
+  atlas_l~ : Float,
+  atlas_t~ : Float,
+  atlas_r~ : Float,
+  atlas_b~ : Float,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.draw_ui_texture_slice(
+      texture_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
+      texture_slice_l, texture_slice_t, texture_slice_r, texture_slice_b, target_slice_l,
+      target_slice_t, target_slice_r, target_slice_b, repeat_side_x, repeat_side_y,
+      repeat_center_x, repeat_center_y, atlas_l, atlas_t, atlas_r, atlas_b,
+    ) catch {
+      err => debug_runtime_error("draw_ui_texture_slice", err)
+    }
+  }
+}
+
+///|
+pub fn draw_mesh(
+  mesh_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  texture_id~ : Int,
+  uv_offset_x~ : Float,
+  uv_offset_y~ : Float,
+  uv_scale_x~ : Float,
+  uv_scale_y~ : Float,
+) -> Unit {
+  debug_mesh2d_draw_calls_ref.val = debug_mesh2d_draw_calls_ref.val + 1
+  current_frame_mesh2d_draw_calls_ref.val = current_frame_mesh2d_draw_calls_ref.val +
+    1
+  if mesh_id <= 0 {
+    debug_mesh2d_invalid_id_calls_ref.val = debug_mesh2d_invalid_id_calls_ref.val +
+      1
+  }
+  if ensure_backend() is Some(backend) {
+    backend.draw_mesh(
+      mesh_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
+      texture_id, uv_offset_x, uv_offset_y, uv_scale_x, uv_scale_y,
+    ) catch {
+      err => debug_runtime_error("draw_mesh", err)
+    }
+  }
+}
+
+///|
+pub fn draw_mesh3d(
+  mesh_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  z~ : Float,
+  rotation_x~ : Float,
+  rotation_y~ : Float,
+  rotation_z~ : Float,
+  rotation_w~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  scale_z~ : Float,
+  previous_x~ : Float,
+  previous_y~ : Float,
+  previous_z~ : Float,
+  previous_rotation_x~ : Float,
+  previous_rotation_y~ : Float,
+  previous_rotation_z~ : Float,
+  previous_rotation_w~ : Float,
+  previous_scale_x~ : Float,
+  previous_scale_y~ : Float,
+  previous_scale_z~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+  texture_id~ : Int,
+  uv_transform_a~ : Float,
+  uv_transform_b~ : Float,
+  uv_transform_c~ : Float,
+  uv_transform_d~ : Float,
+  uv_transform_tx~ : Float,
+  uv_transform_ty~ : Float,
+  uv_transform_mode~ : Float,
+  normal_texture_id~ : Int,
+  emissive_texture_id~ : Int,
+  metallic_roughness_texture_id~ : Int,
+  occlusion_texture_id~ : Int,
+  depth_texture_id~ : Int,
+  emissive_r~ : Float,
+  emissive_g~ : Float,
+  emissive_b~ : Float,
+  unlit~ : Float,
+  metallic~ : Float,
+  roughness~ : Float,
+  reflectance~ : Float,
+  parallax_depth_scale~ : Float,
+  max_parallax_layer_count~ : Float,
+  max_relief_mapping_search_steps~ : Float,
+  anisotropy_texture_id~ : Int,
+  anisotropy_strength~ : Float,
+  anisotropy_rotation~ : Float,
+  specular_tint_texture_id~ : Int,
+  specular_tint_r~ : Float,
+  specular_tint_g~ : Float,
+  specular_tint_b~ : Float,
+  diffuse_transmission~ : Float,
+  specular_transmission~ : Float,
+  thickness~ : Float,
+  ior~ : Float,
+  transmission_source_texture_id~ : Int,
+  transmission_blur_taps~ : Float,
+  transmission_steps~ : Float,
+  point_shadow_texture_id~ : Int,
+  point_shadow_enabled~ : Float,
+  point_shadow_depth_bias~ : Float,
+  cull_mode~ : Int,
+) -> Unit {
+  debug_mesh3d_draw_calls_ref.val = debug_mesh3d_draw_calls_ref.val + 1
+  current_frame_mesh3d_draw_calls_ref.val = current_frame_mesh3d_draw_calls_ref.val +
+    1
+  if mesh_id <= 0 {
+    debug_mesh3d_invalid_id_calls_ref.val = debug_mesh3d_invalid_id_calls_ref.val +
+      1
+  }
+  if ensure_backend() is Some(backend) {
+    backend.draw_mesh3d(
+      mesh_id, x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x,
+      scale_y, scale_z, previous_x, previous_y, previous_z, previous_rotation_x,
+      previous_rotation_y, previous_rotation_z, previous_rotation_w, previous_scale_x,
+      previous_scale_y, previous_scale_z, color_r, color_g, color_b, color_a, texture_id,
+      uv_transform_a, uv_transform_b, uv_transform_c, uv_transform_d, uv_transform_tx,
+      uv_transform_ty, uv_transform_mode, normal_texture_id, emissive_texture_id,
+      metallic_roughness_texture_id, occlusion_texture_id, depth_texture_id, emissive_r,
+      emissive_g, emissive_b, unlit, metallic, roughness, reflectance, parallax_depth_scale,
+      max_parallax_layer_count, max_relief_mapping_search_steps, anisotropy_texture_id,
+      anisotropy_strength, anisotropy_rotation, specular_tint_texture_id, specular_tint_r,
+      specular_tint_g, specular_tint_b, diffuse_transmission, specular_transmission,
+      thickness, ior, transmission_source_texture_id, transmission_blur_taps, transmission_steps,
+      point_shadow_texture_id, point_shadow_enabled, point_shadow_depth_bias, cull_mode,
+    ) catch {
+      err => debug_runtime_error("draw_mesh3d", err)
+    }
+  }
+}
+
+///|
+pub fn draw_motion_blur(
+  scene_texture_id~ : Int,
+  velocity_texture_id~ : Int,
+  shutter_angle~ : Float,
+  samples~ : Int,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.draw_motion_blur(
+      scene_texture_id, velocity_texture_id, shutter_angle, samples,
+    ) catch {
+      err => debug_runtime_error("draw_motion_blur", err)
+    }
+  }
+}
+
+///|
+pub fn render_diagnostics_snapshot() -> RenderDiagnosticsSnapshot {
+  last_frame_render_diagnostics_snapshot_ref.val
+}
+
+///|
+
+///|
+pub fn draw_gizmo_line(
+  start_x~ : Float,
+  start_y~ : Float,
+  start_r~ : Float,
+  start_g~ : Float,
+  start_b~ : Float,
+  start_a~ : Float,
+  end_x~ : Float,
+  end_y~ : Float,
+  end_r~ : Float,
+  end_g~ : Float,
+  end_b~ : Float,
+  end_a~ : Float,
+  line_width~ : Float,
+  style_kind~ : Int,
+  gap_scale~ : Float,
+  line_scale~ : Float,
+) -> Unit {
+  let line_width_value = if line_width < 1.0F { 1.0F } else { line_width }
+  style_kind |> ignore
+  gap_scale |> ignore
+  line_scale |> ignore
+  let dx = end_x - start_x
+  let dy = end_y - start_y
+  let length = Float::sqrt(dx * dx + dy * dy)
+  if length <= 0.0F {
+    return
+  }
+  let center_x = (start_x + end_x) * 0.5F
+  let center_y = (start_y + end_y) * 0.5F
+  let rotation = atan2f(dy, dx)
+  let color_r = (start_r + end_r) * 0.5F
+  let color_g = (start_g + end_g) * 0.5F
+  let color_b = (start_b + end_b) * 0.5F
+  let color_a = (start_a + end_a) * 0.5F
+  if ensure_backend() is Some(backend) {
+    try {
+      let mesh_id = if gizmo_line_mesh_id_ref.val > 0 {
+        gizmo_line_mesh_id_ref.val
+      } else {
+        let created = backend.create_mesh_rectangle(1.0F, 1.0F)
+        if created > 0 {
+          gizmo_line_mesh_id_ref.val = created
+        }
+        created
+      }
+      if mesh_id > 0 {
+        backend.draw_mesh(
+          mesh_id, center_x, center_y, rotation, length, line_width_value, color_r,
+          color_g, color_b, color_a, -1, 0.0F, 0.0F, 1.0F, 1.0F,
+        )
+      }
+    } catch {
+      err => debug_runtime_error("draw_gizmo_line", err)
+    }
+  }
+}
+
+///|
+pub fn end_pass() -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.end_pass() catch {
+      err => debug_runtime_error("end_pass", err)
+    }
+  }
+}
+
+///|
+pub fn create_render_target(
+  width~ : Int,
+  height~ : Int,
+  nearest~ : Bool,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_render_target(width, height, nearest)
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn create_render_target_rgba16f(
+  width~ : Int,
+  height~ : Int,
+  nearest~ : Bool,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_render_target_rgba16f(width, height, nearest)
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn create_point_light_shadow_target(size~ : Int) -> Int {
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_point_light_shadow_target(size)
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+fn mip_dim(base : Int, level : Int) -> Int {
+  let shifted = base >> level
+  if shifted <= 0 {
+    1
+  } else {
+    shifted
+  }
+}
+
+///|
+pub fn asset_create_texture_empty(
+  width~ : Int,
+  height~ : Int,
+  mip_level_count~ : Int,
+  nearest~ : Bool,
+) -> Int {
+  let safe_width = if width <= 0 { 1 } else { width }
+  let safe_height = if height <= 0 { 1 } else { height }
+  let safe_mips = if mip_level_count <= 0 { 1 } else { mip_level_count }
+  if ensure_backend() is Some(backend) {
+    try {
+      if safe_mips == 1 {
+        let bytes = Bytes::makei(safe_width * safe_height * 4, _ => {
+          (0).to_byte()
+        })
+        return backend.create_texture_rgba8(
+          safe_width, safe_height, bytes, nearest,
+        )
+      }
+      let levels : Array[Bytes] = []
+      for level in 0..<safe_mips {
+        let level_width = mip_dim(safe_width, level)
+        let level_height = mip_dim(safe_height, level)
+        levels.push(
+          Bytes::makei(level_width * level_height * 4, _ => (0).to_byte()),
+        )
+      }
+      return backend.create_texture_stacked_2d_with_format(
+        safe_width,
+        safe_height,
+        1,
+        @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+        levels,
+        nearest,
+      )
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn asset_write_texture_region_rgba8(
+  texture_id~ : Int,
+  x~ : Int,
+  y~ : Int,
+  width~ : Int,
+  height~ : Int,
+  pixels_rgba8~ : Bytes,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.write_texture_region_rgba8(
+      texture_id, x, y, width, height, pixels_rgba8,
+    )
+  }
+}
+
+///|
+pub fn asset_write_texture_region_rgba8_mip(
+  texture_id~ : Int,
+  x~ : Int,
+  y~ : Int,
+  width~ : Int,
+  height~ : Int,
+  mip_level~ : Int,
+  pixels_rgba8~ : Bytes,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.write_texture_region_rgba8_mip(
+      texture_id, x, y, width, height, mip_level, pixels_rgba8,
+    )
+  }
+}
+
+///|
+pub fn asset_create_texture_mip_view(
+  texture_id~ : Int,
+  mip_level~ : Int,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_texture_mip_view(texture_id, mip_level)
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn asset_texture_width(texture_id~ : Int) -> Int {
+  if ensure_backend() is Some(backend) {
+    backend.texture_width(texture_id)
+  } else {
+    0
+  }
+}
+
+///|
+pub fn asset_texture_height(texture_id~ : Int) -> Int {
+  if ensure_backend() is Some(backend) {
+    backend.texture_height(texture_id)
+  } else {
+    0
+  }
+}
+
+///|
+pub fn asset_is_texture_loaded(texture_id~ : Int) -> Bool {
+  if ensure_backend() is Some(backend) {
+    backend.is_texture_loaded(texture_id)
+  } else {
+    false
+  }
+}
+
+///|
+pub fn asset_supported_compressed_image_formats() -> Int {
+  if ensure_backend() is Some(backend) {
+    backend.supported_compressed_image_formats_mask()
+  } else {
+    0
+  }
+}
+
+///|
+pub fn asset_copy_texture_to_texture(
+  dst_texture_id~ : Int,
+  dst_x~ : Int,
+  dst_y~ : Int,
+  src_texture_id~ : Int,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.copy_texture_to_texture(
+      dst_texture_id, dst_x, dst_y, src_texture_id,
+    )
+  }
+}
+
+///|
+pub fn asset_set_texture_sampler(
+  texture_id~ : Int,
+  address_mode_u~ : Int,
+  address_mode_v~ : Int,
+  address_mode_w~ : Int,
+  mag_filter~ : Int,
+  min_filter~ : Int,
+  mipmap_filter~ : Int,
+  lod_min_clamp~ : Float,
+  lod_max_clamp~ : Float,
+  compare~ : Int,
+  anisotropy_clamp~ : Int,
+  border_color~ : Int,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.set_texture_sampler(
+      texture_id, address_mode_u, address_mode_v, address_mode_w, mag_filter, min_filter,
+      mipmap_filter, lod_min_clamp, lod_max_clamp, compare, anisotropy_clamp, border_color,
+    ) catch {
+      err => {
+        let error_message = match err {
+          Fatal(message) => message
+        }
+        abort(
+          "wgpu: failed to set texture sampler for texture " +
+          texture_id.to_string() +
+          ": " +
+          error_message,
+        )
+      }
+    }
+  }
+}
+
+///|
+pub fn create_mesh_capsule(
+  radius~ : Float,
+  half_length~ : Float,
+  segments~ : Int,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    return backend.create_mesh_capsule(radius, half_length, segments)
+  }
+  0
+}
+
+///|
+pub fn create_mesh_rectangle(width~ : Float, height~ : Float) -> Int {
+  if ensure_backend() is Some(backend) {
+    return backend.create_mesh_rectangle(width, height)
+  }
+  0
+}
+
+///|
+pub fn create_mesh_triangles(vertices_xy_csv~ : String) -> Int {
+  if parse_f32_csv(vertices_xy_csv) is Some(vertices) {
+    if ensure_backend() is Some(backend) {
+      let mesh_id = backend.create_mesh_triangles_xy(vertices)
+      if mesh_id <= 0 {
+        @debug.debug(
+          "[renderer] create_mesh_triangles failed: parsed_values=" +
+          vertices.length().to_string(),
+        )
+      }
+      return mesh_id
+    }
+  } else {
+    @debug.debug(
+      "[renderer] create_mesh_triangles parse failed: csv_len=" +
+      vertices_xy_csv.length().to_string(),
+    )
+  }
+  0
+}
+
+///|
+pub fn create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~ : String) -> Int {
+  if parse_f32_csv(vertices_xyuvrgba_csv) is Some(vertices) {
+    if ensure_backend() is Some(backend) {
+      let mesh_id = backend.create_mesh_triangles_xyuvrgba(vertices)
+      if mesh_id <= 0 {
+        @debug.debug(
+          "[renderer] create_mesh_triangles_xyuvrgba failed: parsed_values=" +
+          vertices.length().to_string(),
+        )
+      }
+      return mesh_id
+    }
+  } else {
+    @debug.debug(
+      "[renderer] create_mesh_triangles_xyuvrgba parse failed: csv_len=" +
+      vertices_xyuvrgba_csv.length().to_string(),
+    )
+  }
+  0
+}
+
+///|
+pub fn create_mesh3d(
+  vertices_xyzuvrgba_csv~ : String,
+  primitive_topology~ : Int,
+) -> Int {
+  if parse_f32_csv(vertices_xyzuvrgba_csv) is Some(vertices) {
+    if ensure_backend() is Some(backend) {
+      let mesh_id = backend.create_mesh3d_xyzuvrgba(
+        vertices, primitive_topology,
+      )
+      if mesh_id <= 0 {
+        @debug.debug(
+          "[renderer] create_mesh3d failed: parsed_values=" +
+          vertices.length().to_string() +
+          ", topology=" +
+          primitive_topology.to_string(),
+        )
+      }
+      return mesh_id
+    }
+  } else {
+    @debug.debug(
+      "[renderer] create_mesh3d parse failed: csv_len=" +
+      vertices_xyzuvrgba_csv.length().to_string() +
+      ", topology=" +
+      primitive_topology.to_string(),
+    )
+  }
+  0
+}
+
+///|
+pub fn debug_string(value~ : String) -> Unit {
+  @debug.debug(value)
+}

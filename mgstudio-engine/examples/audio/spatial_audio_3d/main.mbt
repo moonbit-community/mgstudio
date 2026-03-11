@@ -71,18 +71,18 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn color_blue() -> @render2d.Color {
-  @render2d.Color::srgb(0.0F, 0.0F, 1.0F)
+fn color_blue() -> @sprite.Color {
+  @sprite.Color::srgb(0.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_red() -> @render2d.Color {
-  @render2d.Color::srgb(1.0F, 0.0F, 0.0F)
+fn color_red() -> @sprite.Color {
+  @sprite.Color::srgb(1.0F, 0.0F, 0.0F)
 }
 
 ///|
-fn color_lime() -> @render2d.Color {
-  @render2d.Color::srgb(0.0F, 1.0F, 0.0F)
+fn color_lime() -> @sprite.Color {
+  @sprite.Color::srgb(0.0F, 1.0F, 0.0F)
 }
 
 ///|
@@ -100,11 +100,7 @@ fn toggle_stopwatch(stopwatch : @time.Stopwatch) -> @time.Stopwatch {
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -150,7 +146,7 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -164,7 +160,7 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
       @text.TextFont::default().with_font(font).with_font_size(20.0F),
       @math.Transform::identity(),
     )
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
 
@@ -203,16 +199,16 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @render3d.Mesh3d,
-  color : @render2d.Color,
+  mesh : @pbr.Mesh3d,
+  color : @sprite.Color,
   transform : @math.Transform,
 ) -> @core.Entity {
-  let material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(color),
+  let material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(color),
   )
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     mesh,
-    @render3d.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
 }
@@ -222,11 +218,11 @@ fn spawn_listener_ear(
   world : @ecs.World,
   listener : @core.Entity,
   offset : @math.Vec3,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> Unit {
   let ear = spawn_mesh(
     world,
-    @render3d.Mesh3d::from_cuboid(EAR_SIZE, EAR_SIZE, EAR_SIZE),
+    @pbr.Mesh3d::from_cuboid(EAR_SIZE, EAR_SIZE, EAR_SIZE),
     color,
     @math.Transform::from_xyz(offset.x, offset.y, offset.z),
   )
@@ -245,12 +241,9 @@ fn setup(world : @ecs.World) -> Unit {
   }
 
   let asset_server = @asset.AssetServer::new()
-  guard @audio.audio_source_load(
-      world, asset_server, "sounds/Windless Slopes.ogg",
-    )
-    is Some(track) else {
-    return
-  }
+  let track : @asset.Handle[@audio.AudioSource] = asset_server.load(
+    "sounds/Windless Slopes.ogg",
+  )
   let emitter = spawn_mesh(
     world,
     uv_sphere_mesh(EMITTER_RADIUS, UV_SPHERE_STACKS, UV_SPHERE_SECTORS),
@@ -290,8 +283,8 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
-  .insert(light, @render3d.DirectionalLight::default(), tick)
+  .component(@pbr.ecs_key_directional_light)
+  .insert(light, @pbr.DirectionalLight::default(), tick)
   world
   .component(@math.ecs_key_transform)
   .insert(
@@ -307,8 +300,8 @@ fn setup(world : @ecs.World) -> Unit {
     world, "Up/Down/Left/Right: Move Listener\nSpace: Toggle Emitter Movement\nM: Toggle Mute",
   )
 
-  @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

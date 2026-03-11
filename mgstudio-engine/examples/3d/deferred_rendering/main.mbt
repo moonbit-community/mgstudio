@@ -115,11 +115,11 @@ fn update_help_text() -> Unit {
 ///|
 fn set_default_opaque_method(
   world : @ecs.World,
-  renderer_method : @render3d.OpaqueRendererMethod,
+  renderer_method : @pbr.OpaqueRendererMethod,
 ) -> Unit {
   world.insert_resource(
-    @render3d.ecs_key_default_opaque_renderer_method,
-    @render3d.DefaultOpaqueRendererMethod::new(renderer_method),
+    @pbr.ecs_key_default_opaque_renderer_method,
+    @pbr.DefaultOpaqueRendererMethod::new(renderer_method),
   )
 }
 
@@ -129,40 +129,38 @@ fn apply_render_mode(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   match deferred_state.val.mode {
     Deferred => {
-      set_default_opaque_method(world, @render3d.OpaqueRendererMethod::Deferred)
-      world.component(@render3d.ecs_key_normal_prepass).remove(camera) |> ignore
+      set_default_opaque_method(world, @pbr.OpaqueRendererMethod::Deferred)
+      world.component(@pbr.ecs_key_normal_prepass).remove(camera) |> ignore
       world
-      .component(@render3d.ecs_key_depth_prepass)
-      .insert(camera, @render3d.DepthPrepass::default(), tick)
+      .component(@pbr.ecs_key_depth_prepass)
+      .insert(camera, @pbr.DepthPrepass::default(), tick)
       world
-      .component(@render3d.ecs_key_motion_vector_prepass)
-      .insert(camera, @render3d.MotionVectorPrepass::default(), tick)
+      .component(@pbr.ecs_key_motion_vector_prepass)
+      .insert(camera, @pbr.MotionVectorPrepass::default(), tick)
       world
-      .component(@render3d.ecs_key_deferred_prepass)
-      .insert(camera, @render3d.DeferredPrepass::default(), tick)
+      .component(@pbr.ecs_key_deferred_prepass)
+      .insert(camera, @pbr.DeferredPrepass::default(), tick)
     }
     Forward => {
-      set_default_opaque_method(world, @render3d.OpaqueRendererMethod::Forward)
-      world.component(@render3d.ecs_key_normal_prepass).remove(camera) |> ignore
-      world.component(@render3d.ecs_key_depth_prepass).remove(camera) |> ignore
-      world.component(@render3d.ecs_key_motion_vector_prepass).remove(camera)
+      set_default_opaque_method(world, @pbr.OpaqueRendererMethod::Forward)
+      world.component(@pbr.ecs_key_normal_prepass).remove(camera) |> ignore
+      world.component(@pbr.ecs_key_depth_prepass).remove(camera) |> ignore
+      world.component(@pbr.ecs_key_motion_vector_prepass).remove(camera)
       |> ignore
-      world.component(@render3d.ecs_key_deferred_prepass).remove(camera)
-      |> ignore
+      world.component(@pbr.ecs_key_deferred_prepass).remove(camera) |> ignore
     }
     ForwardPrepass => {
-      set_default_opaque_method(world, @render3d.OpaqueRendererMethod::Forward)
+      set_default_opaque_method(world, @pbr.OpaqueRendererMethod::Forward)
       world
-      .component(@render3d.ecs_key_normal_prepass)
-      .insert(camera, @render3d.NormalPrepass::default(), tick)
+      .component(@pbr.ecs_key_normal_prepass)
+      .insert(camera, @pbr.NormalPrepass::default(), tick)
       world
-      .component(@render3d.ecs_key_depth_prepass)
-      .insert(camera, @render3d.DepthPrepass::default(), tick)
+      .component(@pbr.ecs_key_depth_prepass)
+      .insert(camera, @pbr.DepthPrepass::default(), tick)
       world
-      .component(@render3d.ecs_key_motion_vector_prepass)
-      .insert(camera, @render3d.MotionVectorPrepass::default(), tick)
-      world.component(@render3d.ecs_key_deferred_prepass).remove(camera)
-      |> ignore
+      .component(@pbr.ecs_key_motion_vector_prepass)
+      .insert(camera, @pbr.MotionVectorPrepass::default(), tick)
+      world.component(@pbr.ecs_key_deferred_prepass).remove(camera) |> ignore
     }
   }
 }
@@ -170,13 +168,13 @@ fn apply_render_mode(world : @ecs.World) -> Unit {
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @render3d.Mesh3d,
-  material : @asset.Handle[@render3d.StandardMaterial],
+  mesh : @pbr.Mesh3d,
+  material : @asset.Handle[@pbr.StandardMaterial],
   transform : @math.Transform,
 ) -> @core.Entity {
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     mesh,
-    @render3d.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
 }
@@ -192,29 +190,27 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
   world.insert_resource(
-    @render3d.ecs_key_directional_light_shadow_map,
-    @render3d.DirectionalLightShadowMap::new(4096),
+    @pbr.ecs_key_directional_light_shadow_map,
+    @pbr.DirectionalLightShadowMap::new(4096),
   )
 
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
       @math.Vec3::new(0.0F, 0.3F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
   deferred_state.val.camera = Some(camera)
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
-  .component(@render3d.ecs_key_msaa)
-  .insert(camera, @render3d.Msaa::Off, tick)
+  .component(@post_process.ecs_key_fxaa)
+  .insert(camera, @post_process.Fxaa::default(), tick)
   world
-  .component(@render3d.ecs_key_fxaa)
-  .insert(camera, @render3d.Fxaa::default(), tick)
-  world
-  .component(@render3d.ecs_key_environment_map_light)
+  .component(@pbr.ecs_key_environment_map_light)
   .insert(
     camera,
-    @render3d.EnvironmentMapLight::new(
+    @pbr.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       2000.0F,
@@ -225,11 +221,11 @@ fn setup(world : @ecs.World) -> Unit {
   let directional_light = world.spawn_empty()
   deferred_state.val.directional_light = Some(directional_light)
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
-      @render3d.CascadeShadowConfigBuilder::default()
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true).with_cascade_shadow_config_builder(
+      @pbr.CascadeShadowConfigBuilder::default()
       .with_num_cascades(3)
       .with_maximum_distance(10.0F),
     ),
@@ -245,16 +241,16 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
 
-  @render3d.render3d_set_distance_fog(
-    @render3d.DistanceFog::new(
-      @render2d.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
-      @render3d.FogFalloff3d::linear(1.0F, 8.0F),
+  @pbr.render3d_set_distance_fog(
+    @pbr.DistanceFog::new(
+      @sprite.Color::new(43.0F / 255.0F, 44.0F / 255.0F, 47.0F / 255.0F, 1.0F),
+      @pbr.FogFalloff3d::linear(1.0F, 8.0F),
     ),
   )
 
   let helmet_scene = @scene.scene_load_gltf_scene(
     asset_server,
-    @scene.GltfAssetLabel::Scene(0).from_asset(
+    @gltf.GltfAssetLabel::Scene(0).from_asset(
       "models/FlightHelmet/FlightHelmet.gltf",
     ),
   )
@@ -271,20 +267,20 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@math.ecs_key_transform)
   .insert(helmet_b, @math.Transform::from_xyz(-4.0F, 0.0F, -3.0F), tick)
 
-  let forward_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.1F, 0.2F, 0.1F, 1.0F),
-    ).with_opaque_render_method(@render3d.OpaqueRendererMethod::Forward),
+  let forward_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.1F, 0.2F, 0.1F, 1.0F),
+    ).with_opaque_render_method(@pbr.OpaqueRendererMethod::Forward),
   )
   let plane = spawn_mesh(
     world,
-    @render3d.Mesh3d::from_plane(50.0F, 50.0F),
+    @pbr.Mesh3d::from_plane(50.0F, 50.0F),
     forward_material,
     @math.Transform::identity(),
   )
   plane |> ignore
 
-  let cube_mesh = @render3d.Mesh3d::from_cuboid(0.1F, 0.1F, 0.1F)
+  let cube_mesh = @pbr.Mesh3d::from_cuboid(0.1F, 0.1F, 0.1F)
   spawn_mesh(
     world,
     cube_mesh,
@@ -300,28 +296,26 @@ fn setup(world : @ecs.World) -> Unit {
   )
   |> ignore
 
-  let emissive_color = @render2d.Color::new(1.0F, 0.4F, 0.1F, 1.0F)
-  let emissive_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(emissive_color).with_unlit(true),
+  let emissive_color = @sprite.Color::new(1.0F, 0.4F, 0.1F, 1.0F)
+  let emissive_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(emissive_color).with_unlit(true),
   )
   let emissive_cube = spawn_mesh(
     world,
-    @render3d.Mesh3d::from_cuboid(0.125F, 0.125F, 0.125F),
+    @pbr.Mesh3d::from_cuboid(0.125F, 0.125F, 0.125F),
     emissive_material,
     @math.Transform::from_xyz(0.4F, 0.5F, -0.8F),
   )
   world
-  .component(@render3d.ecs_key_not_shadow_caster)
-  .insert(emissive_cube, @render3d.NotShadowCaster::default(), tick)
+  .component(@pbr.ecs_key_not_shadow_caster)
+  .insert(emissive_cube, @pbr.NotShadowCaster::default(), tick)
 
   let point_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     point_light,
-    @render3d.PointLight::new(emissive_color, 800.0F, 4.0F, true).with_radius(
-      0.125F,
-    ),
+    @pbr.PointLight::new(emissive_color, 800.0F, 4.0F, true).with_radius(0.125F),
     tick,
   )
   world
@@ -332,14 +326,14 @@ fn setup(world : @ecs.World) -> Unit {
     let j = i % 3
     let s_val = if i < 3 { 0.0F } else { 0.2F }
     let color = if j == 0 {
-      @render2d.Color::new(s_val, s_val, 1.0F, 1.0F)
+      @sprite.Color::new(s_val, s_val, 1.0F, 1.0F)
     } else if j == 1 {
-      @render2d.Color::new(s_val, 1.0F, s_val, 1.0F)
+      @sprite.Color::new(s_val, 1.0F, s_val, 1.0F)
     } else {
-      @render2d.Color::new(1.0F, s_val, s_val, 1.0F)
+      @sprite.Color::new(1.0F, s_val, s_val, 1.0F)
     }
-    let material = @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(color)
+    let material = @pbr.standard_material_add(
+      @pbr.StandardMaterial::from_color(color)
       .with_perceptual_roughness(0.089F)
       .with_metallic(0.0F),
     )
@@ -348,16 +342,16 @@ fn setup(world : @ecs.World) -> Unit {
     let z = -jf * 0.25F + (if i < 3 { -0.15F } else { 0.15F }) + 0.4F
     let entity = spawn_mesh(
       world,
-      @render3d.Mesh3d::from_cuboid(0.125F, 0.125F, 0.125F),
+      @pbr.Mesh3d::from_cuboid(0.125F, 0.125F, 0.125F),
       material,
       @math.Transform::from_xyz(x, 0.125F, z),
     )
     entity |> ignore
   }
 
-  let sky_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(
+  let sky_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(
         136.0F / 255.0F,
         136.0F / 255.0F,
         136.0F / 255.0F,
@@ -369,21 +363,21 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let sky = spawn_mesh(
     world,
-    @render3d.Mesh3d::from_cuboid(2.0F, 1.0F, 1.0F),
+    @pbr.Mesh3d::from_cuboid(2.0F, 1.0F, 1.0F),
     sky_material,
     @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_scale(
       @math.Vec3::splat(1_000_000.0F),
     ),
   )
   world
-  .component(@render3d.ecs_key_not_shadow_caster)
-  .insert(sky, @render3d.NotShadowCaster::default(), tick)
+  .component(@pbr.ecs_key_not_shadow_caster)
+  .insert(sky, @pbr.NotShadowCaster::default(), tick)
   world
-  .component(@render3d.ecs_key_not_shadow_receiver)
-  .insert(sky, @render3d.NotShadowReceiver::default(), tick)
+  .component(@pbr.ecs_key_not_shadow_receiver)
+  .insert(sky, @pbr.NotShadowReceiver::default(), tick)
 
-  let parallax_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::default()
+  let parallax_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::default()
     .with_perceptual_roughness(0.4F)
     .with_base_color_texture(
       Some(asset_server.load("textures/parallax_example/cube_color.png")),
@@ -392,7 +386,7 @@ fn setup(world : @ecs.World) -> Unit {
       Some(
         asset_server.load_with_settings(
           "textures/parallax_example/cube_normal.png",
-          @asset.ImageLoaderSettings::default().with_is_srgb(false),
+          fn(settings) { settings.is_srgb = false },
         ),
       ),
     )
@@ -400,12 +394,12 @@ fn setup(world : @ecs.World) -> Unit {
       Some(asset_server.load("textures/parallax_example/cube_depth.png")),
     )
     .with_parallax_depth_scale(0.09F)
-    .with_parallax_mapping_method(@render3d.ParallaxMappingMethod::Relief(4))
+    .with_parallax_mapping_method(@pbr.ParallaxMappingMethod::Relief(4))
     .with_max_parallax_layer_count(32.0F),
   )
   let parallax_cube = spawn_mesh(
     world,
-    @render3d.Mesh3d::from_cuboid(0.15F, 0.15F, 0.15F),
+    @pbr.Mesh3d::from_cuboid(0.15F, 0.15F, 0.15F),
     parallax_material,
     @math.Transform::from_xyz(0.4F, 0.2F, -0.8F),
   )
@@ -423,10 +417,10 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(760.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .with_color(@text.TextColor::new(@render2d.Color::white()))
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
   deferred_state.val.help_text = Some(help_text)

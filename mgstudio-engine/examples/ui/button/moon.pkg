@@ -7,7 +7,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/ui",
   "Milky2018/moon_accesskit",
@@ -15,4 +15,5 @@ import {
 
 options(
   "is-main": true,
+  "supported-targets": "native",
 )

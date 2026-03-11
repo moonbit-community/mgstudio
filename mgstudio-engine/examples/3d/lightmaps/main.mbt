@@ -99,11 +99,11 @@ fn update_help_text() -> Unit {
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @render2d.Color,
+  color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
-  let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
+  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
+  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -116,7 +116,7 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let tick = world.read_change_tick()
 
-  set_global_ambient_light(world, @render2d.Color::white(), 0.0F)
+  set_global_ambient_light(world, @sprite.Color::white(), 0.0F)
 
   let scene_root = world.spawn_empty()
   world
@@ -126,7 +126,7 @@ fn setup(world : @ecs.World) -> Unit {
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
-        @scene.GltfAssetLabel::Scene(0).from_asset(
+        @gltf.GltfAssetLabel::Scene(0).from_asset(
           "models/CornellBox/CornellBox.glb",
         ),
       ),
@@ -135,27 +135,25 @@ fn setup(world : @ecs.World) -> Unit {
   )
   lightmaps_state.val.scene_root = Some(scene_root)
 
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-278.0F, 273.0F, 800.0F),
   ).spawn(world)
   if lightmaps_state.val.args.deferred {
     world.insert_resource(
-      @render3d.ecs_key_default_opaque_renderer_method,
-      @render3d.DefaultOpaqueRendererMethod::deferred(),
+      @pbr.ecs_key_default_opaque_renderer_method,
+      @pbr.DefaultOpaqueRendererMethod::deferred(),
     )
     world
-    .component(@render3d.ecs_key_depth_prepass)
-    .insert(camera, @render3d.DepthPrepass::default(), tick)
+    .component(@pbr.ecs_key_depth_prepass)
+    .insert(camera, @pbr.DepthPrepass::default(), tick)
     world
-    .component(@render3d.ecs_key_motion_vector_prepass)
-    .insert(camera, @render3d.MotionVectorPrepass::default(), tick)
+    .component(@pbr.ecs_key_motion_vector_prepass)
+    .insert(camera, @pbr.MotionVectorPrepass::default(), tick)
     world
-    .component(@render3d.ecs_key_deferred_prepass)
-    .insert(camera, @render3d.DeferredPrepass::default(), tick)
-    world
-    .component(@render3d.ecs_key_msaa)
-    .insert(camera, @render3d.Msaa::Off, tick)
+    .component(@pbr.ecs_key_deferred_prepass)
+    .insert(camera, @pbr.DeferredPrepass::default(), tick)
+    world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   }
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
@@ -169,11 +167,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -195,7 +193,7 @@ fn add_lightmaps_to_meshes(world : @ecs.World) -> Unit {
   // independent from runtime directional/point lights.
   set_global_ambient_light(
     world,
-    @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+    @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
     LIGHTMAP_EXPOSURE,
   )
   lightmaps_state.val.lightmaps_applied = true

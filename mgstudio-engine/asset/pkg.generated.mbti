@@ -4,8 +4,12 @@ package "Milky2018/mgstudio/asset"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/shader",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
+  "moonbitlang/core/ref",
 }
 
 // Values
@@ -29,9 +33,9 @@ pub fn asset_add_texture_atlas_layout(TextureAtlasLayout) -> Handle[TextureAtlas
 
 pub fn[T] asset_assets_or_abort() -> Assets[T]
 
-pub fn[T] asset_assets_ref_mut_or_abort() -> Ref[Assets[T]]
+pub fn[T] asset_assets_ref_mut_or_abort() -> @ref.Ref[Assets[T]]
 
-pub fn[T] asset_assets_ref_or_abort() -> Ref[Assets[T]]
+pub fn[T] asset_assets_ref_or_abort() -> @ref.Ref[Assets[T]]
 
 pub fn asset_blob_read_bytes(Handle[Blob]) -> Bytes?
 
@@ -41,15 +45,15 @@ pub fn asset_canonical_path(String) -> String
 
 pub fn asset_compressed_image_formats_contains(Int, Int) -> Bool
 
-pub fn asset_copy_texture_to_texture(Handle[Image], @math.UVec2, Handle[Image]) -> Unit
+pub fn asset_copy_texture_to_texture(Handle[@image.Image], @math.UVec2, Handle[@image.Image]) -> Unit
 
-pub fn asset_create_dynamic_texture(@math.UVec2, Bool) -> Handle[Image]
+pub fn asset_create_dynamic_texture(@math.UVec2, Bool) -> Handle[@image.Image]
 
-pub fn asset_create_dynamic_texture_mip_chain_rgba8(Int, Int, Bytes, Bool) -> Array[Handle[Image]]
+pub fn asset_create_dynamic_texture_mip_chain_rgba8(Int, Int, Bytes, Bool) -> Array[Handle[@image.Image]]
 
-pub fn asset_create_dynamic_texture_with_mips(@math.UVec2, Int, Bool) -> Handle[Image]
+pub fn asset_create_dynamic_texture_with_mips(@math.UVec2, Int, Bool) -> Handle[@image.Image]
 
-pub fn asset_create_texture_mip_view(Handle[Image], Int) -> Handle[Image]
+pub fn asset_create_texture_mip_view(Handle[@image.Image], Int) -> Handle[@image.Image]
 
 pub fn asset_font_read_bytes(Handle[Font]) -> Bytes?
 
@@ -61,21 +65,21 @@ pub fn asset_get_loaded_folder(Handle[LoadedFolder]) -> LoadedFolder?
 
 pub fn asset_get_texture_atlas_layout(Handle[TextureAtlasLayout]) -> TextureAtlasLayout?
 
-pub fn asset_image_add_usage(Handle[Image], Int) -> Unit
+pub fn asset_image_add_usage(Handle[@image.Image], Int) -> Unit
 
-pub fn asset_image_array_layout(Handle[Image]) -> ImageArrayLayout?
+pub fn asset_image_array_layout(Handle[@image.Image]) -> @image.ImageArrayLayout?
 
-pub fn asset_image_has_usage(Handle[Image], Int) -> Bool
+pub fn asset_image_has_usage(Handle[@image.Image], Int) -> Bool
 
-pub fn asset_image_is_srgb(Handle[Image]) -> Bool
+pub fn asset_image_is_srgb(Handle[@image.Image]) -> Bool
 
-pub fn asset_image_remove_usage(Handle[Image], Int) -> Unit
+pub fn asset_image_remove_usage(Handle[@image.Image], Int) -> Unit
 
-pub fn asset_image_set_usage_bits(Handle[Image], Int) -> Unit
+pub fn asset_image_set_usage_bits(Handle[@image.Image], Int) -> Unit
 
-pub fn asset_image_usage_bits(Handle[Image]) -> Int
+pub fn asset_image_usage_bits(Handle[@image.Image]) -> Int
 
-pub fn asset_is_texture_loaded(Handle[Image]) -> Bool
+pub fn asset_is_texture_loaded(Handle[@image.Image]) -> Bool
 
 pub fn asset_loaded_folder_drain_events() -> Array[AssetEvent[LoadedFolder]]
 
@@ -95,11 +99,11 @@ pub fn asset_remove_loader_extension(String) -> Unit
 
 pub fn[T : @app.Resource] asset_resource_or_abort() -> T
 
-pub fn[T : @app.Resource] asset_resource_ref_mut_or_abort() -> Ref[T]
+pub fn[T : @app.Resource] asset_resource_ref_mut_or_abort() -> @ref.Ref[T]
 
-pub fn[T : @app.Resource] asset_resource_ref_or_abort() -> Ref[T]
+pub fn[T : @app.Resource] asset_resource_ref_or_abort() -> @ref.Ref[T]
 
-pub fn asset_save_texture_png(Handle[Image], String) -> Unit
+pub fn asset_save_texture_png(Handle[@image.Image], String) -> Unit
 
 pub fn asset_server_resource_key() -> @ecs.ResourceKey[AssetServer]
 
@@ -107,7 +111,7 @@ pub fn asset_set_default_sampler_nearest(Bool) -> Unit
 
 pub fn asset_set_texture_atlas_layout(Handle[TextureAtlasLayout], TextureAtlasLayout) -> Bool
 
-pub fn asset_set_texture_sampler(Handle[Image], ImageSampler) -> Unit
+pub fn asset_set_texture_sampler(Handle[@image.Image], @image.ImageSampler) -> Unit
 
 pub fn asset_strip_label(String) -> String
 
@@ -115,21 +119,25 @@ pub fn asset_supported_compressed_image_formats() -> Int
 
 pub fn asset_system(@ecs.World) -> Unit
 
-pub fn asset_texture_height(Handle[Image]) -> Int
+pub fn asset_texture_height(Handle[@image.Image]) -> Int
 
-pub fn asset_texture_width(Handle[Image]) -> Int
+pub fn asset_texture_width(Handle[@image.Image]) -> Int
 
-pub fn asset_transparent_texture() -> Handle[Image]
+pub fn asset_transparent_texture() -> Handle[@image.Image]
+
+pub fn asset_try_parse_path(String) -> Result[ParsedAssetPath, ParseAssetPathError]
+
+pub fn asset_update_event_messages(@ecs.World) -> Unit
 
 pub fn asset_update_loaded_folders(@ecs.World) -> Unit
 
-pub fn asset_update_texture_region(Handle[Image], @math.URect, Int) -> Unit
+pub fn asset_update_texture_region(Handle[@image.Image], @math.URect, Int) -> Unit
 
-pub fn asset_update_texture_region_rgba8(Handle[Image], @math.URect, Bytes) -> Unit
+pub fn asset_update_texture_region_rgba8(Handle[@image.Image], @math.URect, Bytes) -> Unit
 
-pub fn asset_update_texture_region_rgba8_mip(Handle[Image], @math.URect, Int, Bytes) -> Unit
+pub fn asset_update_texture_region_rgba8_mip(Handle[@image.Image], @math.URect, Int, Bytes) -> Unit
 
-pub fn asset_white_texture() -> Handle[Image]
+pub fn asset_white_texture() -> Handle[@image.Image]
 
 pub fn[T] assets_resource_key() -> @ecs.ResourceKey[Assets[T]]
 
@@ -191,7 +199,9 @@ pub fn host_asset_register_loader_extension(extension~ : String, kind~ : Int) ->
 
 pub fn host_asset_remove_loader_extension(extension~ : String) -> Unit
 
-pub fn host_asset_set_texture_sampler(texture_id~ : Int, sampler~ : Int) -> Unit
+pub fn host_asset_save_rgba8_png(width~ : Int, height~ : Int, pixels~ : Bytes, path~ : String) -> Unit
+
+pub fn host_asset_set_texture_sampler(texture_id~ : Int, address_mode_u~ : Int, address_mode_v~ : Int, address_mode_w~ : Int, mag_filter~ : Int, min_filter~ : Int, mipmap_filter~ : Int, lod_min_clamp~ : Float, lod_max_clamp~ : Float, compare~ : Int, anisotropy_clamp~ : Int, border_color~ : Int) -> Unit
 
 pub fn host_asset_supported_compressed_image_formats() -> Int
 
@@ -216,6 +226,7 @@ pub(all) enum AssetEvent[T] {
   Removed(Handle[T])
   LoadedWithDependencies(Handle[T])
 }
+pub impl[T] @ecs.Message for AssetEvent[T]
 
 pub struct AssetId[T] {
   id : Int
@@ -235,24 +246,25 @@ pub(all) enum AssetLoaderKind {
 }
 
 pub struct AssetServer {
-  paths : Ref[Array[String]]
-  image_paths : Ref[Array[(String, Handle[Image])]]
-  image_array_layouts : Ref[Array[(Int, ImageArrayLayout)]]
-  image_srgb_settings : Ref[Array[(Int, Bool)]]
-  image_usage_settings : Ref[Array[(Int, Int)]]
-  default_sampler_nearest : Ref[Bool]
+  paths : @ref.Ref[Array[String]]
+  image_paths : @ref.Ref[Array[(String, Handle[@image.Image])]]
+  image_loaded_states : @ref.Ref[@hashmap.HashMap[Int, Bool]]
+  image_array_layouts : @ref.Ref[Array[(Int, @image.ImageArrayLayout)]]
+  image_srgb_settings : @ref.Ref[Array[(Int, Bool)]]
+  image_usage_settings : @ref.Ref[Array[(Int, Int)]]
+  default_sampler_nearest : @ref.Ref[Bool]
 }
-pub fn AssetServer::get_handle(Self, String) -> Handle[Image]?
+pub fn AssetServer::get_handle(Self, String) -> Handle[@image.Image]?
 pub fn[T] AssetServer::load(Self, String) -> Handle[T]
 pub fn AssetServer::load_bytes(Self, String) -> Handle[Blob]
 pub fn AssetServer::load_folder(Self, String) -> Handle[LoadedFolder]
 pub fn AssetServer::load_font(Self, String) -> Handle[Font]
-pub fn AssetServer::load_image(Self, String) -> Handle[Image]
-pub fn AssetServer::load_nearest(Self, String) -> Handle[Image]
-pub fn AssetServer::load_texture_bytes(Self, Bytes, Bool) -> Handle[Image]
-pub fn AssetServer::load_wgsl(Self, String) -> Handle[Shader]
+pub fn AssetServer::load_image(Self, String) -> Handle[@image.Image]
+pub fn AssetServer::load_nearest(Self, String) -> Handle[@image.Image]
+pub fn AssetServer::load_texture_bytes(Self, Bytes, Bool) -> Handle[@image.Image]
+pub fn AssetServer::load_wgsl(Self, String) -> Handle[@shader.Shader]
 pub fn AssetServer::load_with_registered_loader(Self, String, Bool) -> Int
-pub fn AssetServer::load_with_settings(Self, String, ImageLoaderSettings) -> Handle[Image]
+pub fn AssetServer::load_with_settings(Self, String, (ImageLoaderSettings) -> Unit) -> Handle[@image.Image]
 pub fn AssetServer::new() -> Self
 pub impl @app.Resource for AssetServer
 
@@ -306,40 +318,26 @@ pub fn[T] Handle::asset_id(Self[T]) -> AssetId[T]
 pub fn[T] Handle::from_asset_id(AssetId[T]) -> Self[T]
 pub fn[T] Handle::id(Self[T]) -> Int
 pub fn[T] Handle::new(Int) -> Self[T]
+pub impl @image.TextureHandle for Handle[@image.Image]
 pub impl[T] ToJson for Handle[T]
 pub impl[T] @json.FromJson for Handle[T]
 
-pub struct Image {
-  width : Int
-  height : Int
-  pixels : Bytes
-}
-pub fn Image::new(Int, Int, Bytes) -> Self
-
-pub(all) enum ImageArrayLayout {
-  RowCount(Int)
-  RowHeight(Int)
-}
-
-pub struct ImageLoaderSettings {
-  sampler : ImageSampler
-  is_srgb : Bool
-  array_layout : ImageArrayLayout?
+pub(all) struct ImageLoaderSettings {
+  mut sampler : @image.ImageSampler
+  mut is_srgb : Bool
+  mut array_layout : @image.ImageArrayLayout?
 }
 pub fn ImageLoaderSettings::default() -> Self
-pub fn ImageLoaderSettings::with_array_layout(Self, ImageArrayLayout?) -> Self
-pub fn ImageLoaderSettings::with_is_srgb(Self, Bool) -> Self
-pub fn ImageLoaderSettings::with_sampler(Self, ImageSampler) -> Self
-
-pub(all) enum ImageSampler {
-  Linear
-  Nearest
-  LinearRepeat
-  NearestRepeat
-}
 
 pub struct LoadedFolder {
-  handles : Array[Handle[Image]]
+  handles : Array[Handle[@image.Image]]
+}
+
+pub(all) enum ParseAssetPathError {
+  InvalidSourceSyntax
+  InvalidLabelSyntax
+  MissingSource
+  MissingLabel
 }
 
 pub struct ParsedAssetPath {
@@ -347,11 +345,6 @@ pub struct ParsedAssetPath {
   path : String
   label : String?
 }
-
-pub struct Shader {
-  source : String
-}
-pub fn Shader::new(String) -> Self
 
 pub struct TextureAtlas {
   layout : Handle[TextureAtlasLayout]
@@ -370,16 +363,16 @@ pub struct TextureAtlasBuilder {
   initial_size : @math.UVec2
   max_size : @math.UVec2
   nearest : Bool
-  textures : Array[Handle[Image]]
+  textures : Array[Handle[@image.Image]]
 }
-pub fn TextureAtlasBuilder::add_texture(Self, Handle[Image]) -> Self
-pub fn TextureAtlasBuilder::build(Self) -> (TextureAtlasLayout, TextureAtlasSources, Handle[Image])
+pub fn TextureAtlasBuilder::add_texture(Self, Handle[@image.Image]) -> Self
+pub fn TextureAtlasBuilder::build(Self) -> (TextureAtlasLayout, TextureAtlasSources, Handle[@image.Image])
 pub fn TextureAtlasBuilder::default() -> Self
 pub fn TextureAtlasBuilder::initial_size(Self, @math.UVec2) -> Self
 pub fn TextureAtlasBuilder::max_size(Self, @math.UVec2) -> Self
 pub fn TextureAtlasBuilder::padding(Self, @math.UVec2) -> Self
 pub fn TextureAtlasBuilder::sampler_nearest(Self, Bool) -> Self
-pub fn TextureAtlasBuilder::try_build(Self) -> (TextureAtlasLayout, TextureAtlasSources, Handle[Image])?
+pub fn TextureAtlasBuilder::try_build(Self) -> (TextureAtlasLayout, TextureAtlasSources, Handle[@image.Image])?
 
 pub struct TextureAtlasLayout {
   size : @math.UVec2
@@ -392,12 +385,29 @@ pub fn TextureAtlasLayout::len(Self) -> Int
 pub fn TextureAtlasLayout::new_empty(@math.UVec2) -> Self
 
 pub struct TextureAtlasSources {
-  texture_ids : Array[(Handle[Image], Int)]
+  texture_ids : Array[(Handle[@image.Image], Int)]
 }
-pub fn TextureAtlasSources::handle(Self, Handle[TextureAtlasLayout], Handle[Image]) -> TextureAtlas?
-pub fn TextureAtlasSources::texture_index(Self, Handle[Image]) -> Int?
+pub fn TextureAtlasSources::handle(Self, Handle[TextureAtlasLayout], Handle[@image.Image]) -> TextureAtlas?
+pub fn TextureAtlasSources::texture_index(Self, Handle[@image.Image]) -> Int?
 
 // Type aliases
+pub using @image {type Image}
+
+pub using @image {type ImageAddressMode}
+
+pub using @image {type ImageArrayLayout}
+
+pub using @image {type ImageCompareFunction}
+
+pub using @image {type ImageFilterMode}
+
+pub using @image {type ImageSampler}
+
+pub using @image {type ImageSamplerBorderColor}
+
+pub using @image {type ImageSamplerDescriptor}
+
+pub using @shader {type Shader}
 
 // Traits
 

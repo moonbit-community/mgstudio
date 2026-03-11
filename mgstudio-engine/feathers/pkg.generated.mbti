@@ -1,0 +1,28 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/feathers"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+pub fn feathers_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn feathers_plugins() -> () -> @app.PluginGroupBuilder[@ecs.World]
+
+// Errors
+
+// Types and methods
+pub struct FeathersPlugin {
+}
+pub fn FeathersPlugin::default() -> Self
+
+pub struct FeathersPlugins {
+}
+pub fn FeathersPlugins::default() -> Self
+
+// Type aliases
+
+// Traits
+

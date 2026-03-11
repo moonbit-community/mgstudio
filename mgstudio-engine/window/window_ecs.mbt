@@ -310,6 +310,9 @@ pub impl @ecs.Component for CursorIcon with component() {
 }
 
 ///|
+pub(all) struct RequestRedraw {} derive(Eq)
+
+///|
 pub(all) struct WindowCreated {
   window : @core.Entity
 } derive(Eq)
@@ -330,10 +333,21 @@ pub(all) struct WindowClosed {
 } derive(Eq)
 
 ///|
+pub(all) struct WindowDestroyed {
+  window : @core.Entity
+} derive(Eq)
+
+///|
 pub(all) struct WindowMoved {
   window : @core.Entity
   x : Int
   y : Int
+} derive(Eq)
+
+///|
+pub(all) struct WindowScaleFactorChanged {
+  window : @core.Entity
+  scale_factor : Float
 } derive(Eq)
 
 ///|
@@ -354,6 +368,11 @@ pub let ecs_key_window_created : @ecs.MessageKey[WindowCreated] = @ecs.register_
 )
 
 ///|
+pub let ecs_key_request_redraw : @ecs.MessageKey[RequestRedraw] = @ecs.register_message(
+  debug_name="bevy_window::RequestRedraw",
+)
+
+///|
 pub let ecs_key_window_close_requested : @ecs.MessageKey[WindowCloseRequested] = @ecs.register_message(
   debug_name="bevy_window::WindowCloseRequested",
 )
@@ -369,9 +388,19 @@ pub let ecs_key_window_closed : @ecs.MessageKey[WindowClosed] = @ecs.register_me
 )
 
 ///|
+pub let ecs_key_window_destroyed : @ecs.MessageKey[WindowDestroyed] = @ecs.register_message(
+  debug_name="bevy_window::WindowDestroyed",
+)
+
+///|
 pub let ecs_key_window_moved : @ecs.MessageKey[WindowMoved] = @ecs.register_message(
   debug_name="bevy_window::WindowMoved",
 )
+
+///|
+pub let ecs_key_window_scale_factor_changed : @ecs.MessageKey[
+  WindowScaleFactorChanged,
+] = @ecs.register_message(debug_name="bevy_window::WindowScaleFactorChanged")
 
 ///|
 pub let ecs_key_window_backend_scale_factor_changed : @ecs.MessageKey[
@@ -391,6 +420,11 @@ pub impl @ecs.Message for WindowCreated with message() {
 }
 
 ///|
+pub impl @ecs.Message for RequestRedraw with message() {
+  ecs_key_request_redraw
+}
+
+///|
 pub impl @ecs.Message for WindowCloseRequested with message() {
   ecs_key_window_close_requested
 }
@@ -406,8 +440,18 @@ pub impl @ecs.Message for WindowClosed with message() {
 }
 
 ///|
+pub impl @ecs.Message for WindowDestroyed with message() {
+  ecs_key_window_destroyed
+}
+
+///|
 pub impl @ecs.Message for WindowMoved with message() {
   ecs_key_window_moved
+}
+
+///|
+pub impl @ecs.Message for WindowScaleFactorChanged with message() {
+  ecs_key_window_scale_factor_changed
 }
 
 ///|

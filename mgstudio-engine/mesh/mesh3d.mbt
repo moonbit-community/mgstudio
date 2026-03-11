@@ -404,6 +404,103 @@ pub fn Mesh3dGeometry::clear_tangents(self : Mesh3dGeometry) -> Unit {
 }
 
 ///|
+pub fn Mesh3dGeometry::cuboid(cuboid : @math.Cuboid) -> Mesh3dGeometry {
+  let size = cuboid.size()
+  let hx = size.x * 0.5F
+  let hy = size.y * 0.5F
+  let hz = size.z * 0.5F
+  let p000 = @math.Vec3::new(-hx, -hy, -hz)
+  let p100 = @math.Vec3::new(hx, -hy, -hz)
+  let p110 = @math.Vec3::new(hx, hy, -hz)
+  let p010 = @math.Vec3::new(-hx, hy, -hz)
+  let p001 = @math.Vec3::new(-hx, -hy, hz)
+  let p101 = @math.Vec3::new(hx, -hy, hz)
+  let p111 = @math.Vec3::new(hx, hy, hz)
+  let p011 = @math.Vec3::new(-hx, hy, hz)
+  let positions : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+  // +Z front
+  positions.push(p001)
+  positions.push(p101)
+  positions.push(p111)
+  positions.push(p001)
+  positions.push(p111)
+  positions.push(p011)
+  // -Z back
+  positions.push(p100)
+  positions.push(p000)
+  positions.push(p010)
+  positions.push(p100)
+  positions.push(p010)
+  positions.push(p110)
+  // +X right
+  positions.push(p101)
+  positions.push(p100)
+  positions.push(p110)
+  positions.push(p101)
+  positions.push(p110)
+  positions.push(p111)
+  // -X left
+  positions.push(p000)
+  positions.push(p001)
+  positions.push(p011)
+  positions.push(p000)
+  positions.push(p011)
+  positions.push(p010)
+  // +Y top
+  positions.push(p011)
+  positions.push(p111)
+  positions.push(p110)
+  positions.push(p011)
+  positions.push(p110)
+  positions.push(p010)
+  // -Y bottom
+  positions.push(p000)
+  positions.push(p100)
+  positions.push(p101)
+  positions.push(p000)
+  positions.push(p101)
+  positions.push(p001)
+  for _ in 0..<6 {
+    uvs.push(@math.Vec2::new(0.0F, 0.0F))
+    uvs.push(@math.Vec2::new(1.0F, 0.0F))
+    uvs.push(@math.Vec2::new(1.0F, 1.0F))
+    uvs.push(@math.Vec2::new(0.0F, 0.0F))
+    uvs.push(@math.Vec2::new(1.0F, 1.0F))
+    uvs.push(@math.Vec2::new(0.0F, 1.0F))
+  }
+  Mesh3dGeometry::new(positions, uvs, None)
+}
+
+///|
+pub fn Mesh3dGeometry::rectangle(
+  width : Float,
+  height : Float,
+) -> Mesh3dGeometry {
+  let safe_width = if width <= 0.0F { 1.0F } else { width }
+  let safe_height = if height <= 0.0F { 1.0F } else { height }
+  let half_width = safe_width * 0.5F
+  let half_height = safe_height * 0.5F
+  let positions : Array[@math.Vec3] = [
+    @math.Vec3::new(-half_width, -half_height, 0.0F),
+    @math.Vec3::new(half_width, -half_height, 0.0F),
+    @math.Vec3::new(half_width, half_height, 0.0F),
+    @math.Vec3::new(-half_width, -half_height, 0.0F),
+    @math.Vec3::new(half_width, half_height, 0.0F),
+    @math.Vec3::new(-half_width, half_height, 0.0F),
+  ]
+  let uvs : Array[@math.Vec2] = [
+    @math.Vec2::new(0.0F, 1.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+    @math.Vec2::new(1.0F, 0.0F),
+    @math.Vec2::new(0.0F, 1.0F),
+    @math.Vec2::new(1.0F, 0.0F),
+    @math.Vec2::new(0.0F, 0.0F),
+  ]
+  Mesh3dGeometry::new(positions, uvs, None)
+}
+
+///|
 pub fn Mesh3dGeometry::circle(radius : Float, segments : Int) -> Mesh3dGeometry {
   let safe_radius = if radius <= 0.0F { 1.0F } else { radius }
   let safe_segments = if segments < 3 { 3 } else { segments }
@@ -420,9 +517,9 @@ pub fn Mesh3dGeometry::circle(radius : Float, segments : Int) -> Mesh3dGeometry 
       mesh3d_float_from_int(i) /
       mesh3d_float_from_int(safe_segments)
     let x = @math.cos(angle) * safe_radius
-    let z = @math.sin(angle) * safe_radius
-    positions.push(@math.Vec3::new(x, 0.0F, z))
-    uvs.push(@math.Vec2::new(x * inv_diameter + 0.5F, z * inv_diameter + 0.5F))
+    let y = @math.sin(angle) * safe_radius
+    positions.push(@math.Vec3::new(x, y, 0.0F))
+    uvs.push(@math.Vec2::new(x * inv_diameter + 0.5F, y * inv_diameter + 0.5F))
   }
   for i in 0..<safe_segments {
     let current = i + 1
@@ -451,8 +548,8 @@ pub fn Mesh3dGeometry::circle_line_strip(
     positions.push(
       @math.Vec3::new(
         @math.cos(angle) * safe_radius,
-        0.0F,
         @math.sin(angle) * safe_radius,
+        0.0F,
       ),
     )
     uvs.push(@math.Vec2::new(0.0F, 0.0F))

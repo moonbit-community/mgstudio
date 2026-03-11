@@ -13,32 +13,28 @@
 // limitations under the License.
 
 ///|
-let audio_sink_registry : Ref[Array[@native_audio.NativeAudioPlayer?]] = Ref::new([],
+let audio_sink_registry : Ref[Array[NativeAudioPlayer?]] = Ref::new([])
+
+///|
+let spatial_audio_sink_registry : Ref[Array[NativeSpatialAudioPlayer?]] = Ref::new([],
 )
 
 ///|
-let spatial_audio_sink_registry : Ref[
-  Array[@native_audio.NativeSpatialAudioPlayer?],
-] = Ref::new([])
-
-///|
-fn audio_sink_registry_insert(player : @native_audio.NativeAudioPlayer) -> Int {
+fn audio_sink_registry_insert(player : NativeAudioPlayer) -> Int {
   let id = audio_sink_registry.val.length()
   audio_sink_registry.val.push(Some(player))
   id
 }
 
 ///|
-fn spatial_audio_sink_registry_insert(
-  player : @native_audio.NativeSpatialAudioPlayer,
-) -> Int {
+fn spatial_audio_sink_registry_insert(player : NativeSpatialAudioPlayer) -> Int {
   let id = spatial_audio_sink_registry.val.length()
   spatial_audio_sink_registry.val.push(Some(player))
   id
 }
 
 ///|
-fn audio_sink_registry_get(id : Int) -> @native_audio.NativeAudioPlayer? {
+fn audio_sink_registry_get(id : Int) -> NativeAudioPlayer? {
   if id < 0 || id >= audio_sink_registry.val.length() {
     None
   } else {
@@ -47,9 +43,7 @@ fn audio_sink_registry_get(id : Int) -> @native_audio.NativeAudioPlayer? {
 }
 
 ///|
-fn spatial_audio_sink_registry_get(
-  id : Int,
-) -> @native_audio.NativeSpatialAudioPlayer? {
+fn spatial_audio_sink_registry_get(id : Int) -> NativeSpatialAudioPlayer? {
   if id < 0 || id >= spatial_audio_sink_registry.val.length() {
     None
   } else {
@@ -102,9 +96,7 @@ pub struct SpatialAudioSink {
 } derive(ToJson, FromJson)
 
 ///|
-fn audio_sink_from_native(
-  player : @native_audio.NativeAudioPlayer,
-) -> AudioSink {
+fn audio_sink_from_native(player : NativeAudioPlayer) -> AudioSink {
   AudioSink::{
     sink_id: audio_sink_registry_insert(player),
     managed_volume: None,
@@ -113,7 +105,7 @@ fn audio_sink_from_native(
 
 ///|
 fn spatial_audio_sink_from_native(
-  player : @native_audio.NativeSpatialAudioPlayer,
+  player : NativeSpatialAudioPlayer,
 ) -> SpatialAudioSink {
   SpatialAudioSink::{
     sink_id: spatial_audio_sink_registry_insert(player),

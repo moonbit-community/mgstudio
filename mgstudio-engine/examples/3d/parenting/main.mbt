@@ -28,22 +28,22 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   rotator_state.val.rotators.clear()
 
-  let material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
+  let material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
     ),
   )
 
-  let parent = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(2.0F, 2.0F, 2.0F),
-    @render3d.MeshMaterial3d::new(material),
+  let parent = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(2.0F, 2.0F, 2.0F),
+    @pbr.MeshMaterial3d::new(material),
     @math.Transform::from_xyz(0.0F, 0.0F, 1.0F),
   ).spawn(world)
   rotator_state.val.rotators.push(parent)
 
-  let child = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(2.0F, 2.0F, 2.0F),
-    @render3d.MeshMaterial3d::new(material),
+  let child = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(2.0F, 2.0F, 2.0F),
+    @pbr.MeshMaterial3d::new(material),
     @math.Transform::from_xyz(0.0F, 0.0F, 3.0F),
   ).spawn(world)
   world
@@ -52,14 +52,14 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light_entity = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
-  .insert(light_entity, @render3d.PointLight::default(), tick)
+  .component(@pbr.ecs_key_point_light)
+  .insert(light_entity, @pbr.PointLight::default(), tick)
   world
   .component(@math.ecs_key_transform)
   .insert(light_entity, @math.Transform::from_xyz(4.0F, 5.0F, -4.0F), tick)
 
-  @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(5.0F, 10.0F, 10.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),

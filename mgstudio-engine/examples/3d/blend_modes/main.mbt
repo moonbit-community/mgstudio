@@ -35,7 +35,7 @@ const CONTROL_TEXT : String = "Up / Down - Increase / Decrease Alpha\nLeft / Rig
 
 ///|
 priv struct ControlledMaterial {
-  handle : @asset.Handle[@render3d.StandardMaterial]
+  handle : @asset.Handle[@pbr.StandardMaterial]
   allow_unlit : Bool
   allow_color : Bool
 }
@@ -104,8 +104,8 @@ fn next_random_unit() -> Float {
 }
 
 ///|
-fn random_color(alpha : Float) -> @render2d.Color {
-  @render2d.Color::new(
+fn random_color(alpha : Float) -> @sprite.Color {
+  @sprite.Color::new(
     next_random_unit(),
     next_random_unit(),
     next_random_unit(),
@@ -118,7 +118,7 @@ fn spawn_ui_text_handle(
   content : String,
   font : @asset.Handle[@asset.Font],
   font_size : Float,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> @text.TextHandle {
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
@@ -136,7 +136,7 @@ fn blend_modes_display_text(
   world : @ecs.World,
 ) -> String {
   let alpha_text = ((blend_modes_state.val.alpha * 100.0F).round() / 100.0F).to_string()
-  let hdr_on = world.component(@render3d.ecs_key_hdr).contains(camera_entity)
+  let hdr_on = world.component(@pbr.ecs_key_hdr).contains(camera_entity)
   "  HDR: " + (if hdr_on { "ON " } else { "OFF" }) + "\nAlpha: " + alpha_text
 }
 
@@ -151,8 +151,8 @@ fn setup_ui_overlay(
   multiply_entity : @core.Entity,
 ) -> Unit {
   let tick = world.read_change_tick()
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(100).with_clear_color_none(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(100).with_clear_color_none(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -173,7 +173,7 @@ fn setup_ui_overlay(
     CONTROL_TEXT,
     font,
     14.0F,
-    @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
+    @sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
   )
   let controls_entity = world.spawn_empty()
   world
@@ -198,7 +198,7 @@ fn setup_ui_overlay(
     blend_modes_display_text(camera_entity, world),
     font,
     14.0F,
-    @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
+    @sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
   )
   let display_entity = world.spawn_empty()
   world
@@ -219,7 +219,7 @@ fn setup_ui_overlay(
   .insert(display_entity, @ui.UiText::new(display_text), tick)
   blend_modes_state.val.display_text = Some(display_text)
 
-  let label_color = @render2d.Color::new(1.0F, 0.65F, 0.2F, 1.0F)
+  let label_color = @sprite.Color::new(1.0F, 0.65F, 0.2F, 1.0F)
   let labels : Array[(@core.Entity, String)] = [
     (opaque_entity, "┌─ Opaque\n│\n│\n│\n│"),
     (blend_entity, "┌─ Blend\n│\n│\n│"),
@@ -254,11 +254,7 @@ fn setup_ui_overlay(
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -306,12 +302,12 @@ fn uv_sphere_mesh(
   }
 
   let geometry = @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
-  @render3d.Mesh3d::from_geometry(geometry)
+  @pbr.Mesh3d::from_geometry(geometry)
 }
 
 ///|
 fn register_material(
-  handle : @asset.Handle[@render3d.StandardMaterial],
+  handle : @asset.Handle[@pbr.StandardMaterial],
   allow_unlit : Bool,
   allow_color : Bool,
 ) -> Unit {
@@ -321,13 +317,13 @@ fn register_material(
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @render3d.Mesh3d,
-  material : @asset.Handle[@render3d.StandardMaterial],
+  mesh : @pbr.Mesh3d,
+  material : @asset.Handle[@pbr.StandardMaterial],
   transform : @math.Transform,
 ) -> @core.Entity {
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     mesh,
-    @render3d.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
 }
@@ -343,9 +339,9 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
     blend_modes_display_text(camera_entity, world),
   )
 
-  let camera_store = world.component(@render2d.ecs_key_camera)
+  let camera_store = world.component(@sprite.ecs_key_camera)
   guard camera_store.get(camera_entity) is Some(camera) else { return }
-  let projection_store = world.component(@render3d.ecs_key_camera_projection3d)
+  let projection_store = world.component(@pbr.ecs_key_projection)
   guard projection_store.get(camera_entity) is Some(projection) else { return }
   let transform_store = world.component(@math.ecs_key_transform)
   guard transform_store.get(camera_entity) is Some(camera_transform) else {
@@ -367,7 +363,7 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
     let world_position = target_transform.translation.add(
       @math.Vec3::new(0.0F, LABEL_HEIGHT_OFFSET, 0.0F),
     )
-    guard @render3d.render3d_camera_world_to_viewport(
+    guard @pbr.render3d_camera_world_to_viewport(
         world_position, camera, projection, camera_transform, target_size, scale_factor,
       )
       is Some(screen_position) else {
@@ -398,7 +394,7 @@ fn setup(world : @ecs.World) -> Unit {
   blend_modes_state.val.labels.clear()
   blend_modes_state.val.display_text = None
 
-  let base_color = @render2d.Color::new(
+  let base_color = @sprite.Color::new(
     0.9F,
     0.2F,
     0.3F,
@@ -406,9 +402,9 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let sphere_mesh = uv_sphere_mesh(0.9F, 16, 24)
 
-  let opaque_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(base_color).with_alpha_mode(
-      @render3d.AlphaMode3d::Opaque,
+  let opaque_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
+      @pbr.AlphaMode3d::Opaque,
     ),
   )
   register_material(opaque_material, true, true)
@@ -419,9 +415,9 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Transform::from_xyz(-4.0F, 0.0F, 0.0F),
   )
 
-  let blend_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(base_color).with_alpha_mode(
-      @render3d.AlphaMode3d::Blend,
+  let blend_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
+      @pbr.AlphaMode3d::Blend,
     ),
   )
   register_material(blend_material, true, true)
@@ -432,9 +428,9 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Transform::from_xyz(-2.0F, 0.0F, 0.0F),
   )
 
-  let premultiplied_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(base_color).with_alpha_mode(
-      @render3d.AlphaMode3d::Premultiplied,
+  let premultiplied_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
+      @pbr.AlphaMode3d::Premultiplied,
     ),
   )
   register_material(premultiplied_material, true, true)
@@ -445,9 +441,9 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Transform::from_xyz(0.0F, 0.0F, 0.0F),
   )
 
-  let add_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(base_color).with_alpha_mode(
-      @render3d.AlphaMode3d::Add,
+  let add_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
+      @pbr.AlphaMode3d::Add,
     ),
   )
   register_material(add_material, true, true)
@@ -458,9 +454,9 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Transform::from_xyz(2.0F, 0.0F, 0.0F),
   )
 
-  let multiply_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(base_color).with_alpha_mode(
-      @render3d.AlphaMode3d::Multiply,
+  let multiply_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(base_color).with_alpha_mode(
+      @pbr.AlphaMode3d::Multiply,
     ),
   )
   register_material(multiply_material, true, true)
@@ -471,20 +467,20 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Transform::from_xyz(4.0F, 0.0F, 0.0F),
   )
 
-  let black_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
+  let black_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F),
     ),
   )
-  let white_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+  let white_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F),
     ),
   )
   register_material(black_material, false, true)
   register_material(white_material, false, true)
 
-  let plane_mesh = @render3d.Mesh3d::from_plane(2.0F, 2.0F)
+  let plane_mesh = @pbr.Mesh3d::from_plane(2.0F, 2.0F)
   for x in -3..<4 {
     for z in -3..<4 {
       let use_black = (x + z) % 2 == 0
@@ -505,22 +501,20 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
-  .insert(light, @render3d.PointLight::default(), tick)
+  .component(@pbr.ecs_key_point_light)
+  .insert(light, @pbr.PointLight::default(), tick)
   world
   .component(@math.ecs_key_transform)
   .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 2.5F, 10.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world
-  .component(@render3d.ecs_key_hdr)
-  .insert(camera, @render3d.Hdr::default(), tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   blend_modes_state.val.camera = Some(camera)
 
   let asset_server = @asset.AssetServer::new()
@@ -561,11 +555,11 @@ fn example_control_system(world : @ecs.World) -> Unit {
   guard state.camera is Some(camera_entity) else { return }
   let tick = world.read_change_tick()
   if @input.key_just_pressed(@window.KeyCode::KeyH) {
-    let hdr_store = world.component(@render3d.ecs_key_hdr)
+    let hdr_store = world.component(@pbr.ecs_key_hdr)
     if hdr_store.contains(camera_entity) {
       hdr_store.remove(camera_entity) |> ignore
     } else {
-      hdr_store.insert(camera_entity, @render3d.Hdr::default(), tick)
+      hdr_store.insert(camera_entity, @pbr.Hdr::default(), tick)
     }
   }
   let camera_x = @math.sin(state.camera_angle) * CAMERA_RADIUS
@@ -583,9 +577,9 @@ fn example_control_system(world : @ecs.World) -> Unit {
   |> ignore
 
   for controlled in state.materials {
-    if @render3d.standard_material_get(controlled.handle) is Some(material) {
+    if @pbr.standard_material_get(controlled.handle) is Some(material) {
       let mut next_material = material.with_base_color(
-        @render2d.Color::new(
+        @sprite.Color::new(
           material.base_color.r,
           material.base_color.g,
           material.base_color.b,
@@ -598,8 +592,7 @@ fn example_control_system(world : @ecs.World) -> Unit {
       if controlled.allow_unlit {
         next_material = next_material.with_unlit(state.unlit)
       }
-      @render3d.standard_material_set(controlled.handle, next_material)
-      |> ignore
+      @pbr.standard_material_set(controlled.handle, next_material) |> ignore
     }
   }
 

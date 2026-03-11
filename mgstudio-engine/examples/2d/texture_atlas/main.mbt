@@ -122,8 +122,8 @@ fn texture_atlas_update(
     return
   }
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -207,8 +207,8 @@ fn spawn_texture_preview(
   y : Float,
   scale : Float,
 ) -> Unit {
-  @render2d.SpriteBundle::new(
-    @render2d.Sprite::from_image(texture),
+  @sprite.SpriteBundle::new(
+    @sprite.Sprite::from_image(texture),
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(x, y),
       0.0F,
@@ -229,8 +229,8 @@ fn spawn_sampling_variant(
 ) -> Unit {
   if atlas.sources.handle(atlas.layout_handle, vendor_handle)
     is Some(vendor_sprite) {
-    @render2d.SpriteBundle::new(
-      @render2d.Sprite::from_atlas_image(atlas.texture, vendor_sprite),
+    @sprite.SpriteBundle::new(
+      @sprite.Sprite::from_atlas_image(atlas.texture, vendor_sprite),
       @math.Transform::from_xy_rotation_scale(
         @math.Vec2::new(x, 80.0F),
         0.0F,

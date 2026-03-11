@@ -1,0 +1,5 @@
+// Gamepad backend aligned with Bevy's `bevy_gilrs` role.
+import {
+  "Milky2018/gamepad",
+  "moonbitlang/core/ref",
+}

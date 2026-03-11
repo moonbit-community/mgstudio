@@ -1,0 +1,18 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/shader"
+
+// Values
+pub fn shader_from_source(String) -> Shader
+
+// Errors
+
+// Types and methods
+pub struct Shader {
+  source : String
+}
+pub fn Shader::new(String) -> Self
+
+// Type aliases
+
+// Traits
+

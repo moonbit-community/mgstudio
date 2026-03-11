@@ -54,11 +54,7 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -104,19 +100,19 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
 
 ///|
-fn create_point_light() -> @render3d.PointLight {
-  @render3d.PointLight::new(@render2d.Color::white(), 100_000.0F, 20.0F, false)
+fn create_point_light() -> @pbr.PointLight {
+  @pbr.PointLight::new(@sprite.Color::white(), 100_000.0F, 20.0F, false)
 }
 
 ///|
-fn create_directional_light() -> @render3d.DirectionalLight {
-  @render3d.DirectionalLight::new(@render2d.Color::white(), 1000.0F, false)
+fn create_directional_light() -> @pbr.DirectionalLight {
+  @pbr.DirectionalLight::new(@sprite.Color::white(), 1000.0F, false)
 }
 
 ///|
@@ -139,16 +135,16 @@ fn update_help_text() -> Unit {
 fn apply_light_mode(world : @ecs.World) -> Unit {
   guard clearcoat_state.val.light is Some(light) else { return }
   let tick = world.read_change_tick()
-  world.component(@render3d.ecs_key_point_light).remove(light) |> ignore
-  world.component(@render3d.ecs_key_directional_light).remove(light) |> ignore
+  world.component(@pbr.ecs_key_point_light).remove(light) |> ignore
+  world.component(@pbr.ecs_key_directional_light).remove(light) |> ignore
 
   if clearcoat_state.val.light_mode == LIGHT_MODE_POINT {
     world
-    .component(@render3d.ecs_key_point_light)
+    .component(@pbr.ecs_key_point_light)
     .insert(light, create_point_light(), tick)
   } else {
     world
-    .component(@render3d.ecs_key_directional_light)
+    .component(@pbr.ecs_key_directional_light)
     .insert(light, create_directional_light(), tick)
   }
 
@@ -158,13 +154,13 @@ fn apply_light_mode(world : @ecs.World) -> Unit {
 ///|
 fn spawn_sphere(
   world : @ecs.World,
-  mesh : @render3d.Mesh3d,
-  material : @asset.Handle[@render3d.StandardMaterial],
+  mesh : @pbr.Mesh3d,
+  material : @asset.Handle[@pbr.StandardMaterial],
   position : @math.Vec3,
 ) -> Unit {
-  let entity = @render3d.MeshMaterial3dBundle::new(
+  let entity = @pbr.MeshMaterial3dBundle::new(
     mesh,
-    @render3d.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3d::new(material),
     @math.Transform::from_xyz(position.x, position.y, position.z).with_scale(
       @math.Vec3::splat(SPHERE_SCALE),
     ),
@@ -188,9 +184,9 @@ fn setup(world : @ecs.World) -> Unit {
   let blue_noise = asset_server.load("textures/BlueNoise-Normal.png")
   let scratched_gold = asset_server.load("textures/ScratchedGold-Normal.png")
 
-  let car_paint = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+  let car_paint = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
     )
     .with_clearcoat(1.0F)
     .with_clearcoat_perceptual_roughness(0.1F)
@@ -200,11 +196,11 @@ fn setup(world : @ecs.World) -> Unit {
   )
   spawn_sphere(world, sphere, car_paint, @math.Vec3::new(-1.0F, 1.0F, 0.0F))
 
-  let coated_glass = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.9F, 0.9F, 0.9F, 0.3F),
+  let coated_glass = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.9F, 0.9F, 0.9F, 0.3F),
     )
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_clearcoat(1.0F)
     .with_clearcoat_perceptual_roughness(0.1F)
     .with_metallic(0.5F)
@@ -212,9 +208,9 @@ fn setup(world : @ecs.World) -> Unit {
   )
   spawn_sphere(world, sphere, coated_glass, @math.Vec3::new(-1.0F, -1.0F, 0.0F))
 
-  let scratched_gold_ball = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 0.843F, 0.0F, 1.0F),
+  let scratched_gold_ball = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(1.0F, 0.843F, 0.0F, 1.0F),
     )
     .with_clearcoat(1.0F)
     .with_clearcoat_perceptual_roughness(0.3F)
@@ -237,7 +233,7 @@ fn setup(world : @ecs.World) -> Unit {
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
-        @scene.GltfAssetLabel::Scene(0).from_asset(
+        @gltf.GltfAssetLabel::Scene(0).from_asset(
           "models/GolfBall/GolfBall.glb",
         ),
       ),
@@ -271,34 +267,33 @@ fn setup(world : @ecs.World) -> Unit {
 
   apply_light_mode(world)
 
-  let camera = @render3d.Camera3dBundle::new_with_projection(
-    @render2d.Camera::default(),
-    @render3d.Projection3d::Perspective(
-      @render3d.PerspectiveProjection3d::default().with_fov(27.0F * PI / 180.0F),
-    ),
+  let camera = @pbr.Camera3dBundle::new_with_projection(
+    @sprite.Camera::default(),
+    @pbr.Projection::Perspective(@pbr.PerspectiveProjection3d::{
+      ..@pbr.PerspectiveProjection3d::default(),
+      fov: 27.0F * PI / 180.0F,
+    }),
     @math.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world
-  .component(@render3d.ecs_key_hdr)
-  .insert(camera, @render3d.Hdr::default(), tick)
+  .component(@post_process.ecs_key_tonemapping)
+  .insert(camera, @post_process.Tonemapping::AcesFitted, tick)
   world
-  .component(@render3d.ecs_key_tonemapping)
-  .insert(camera, @render3d.Tonemapping::AcesFitted, tick)
-  world
-  .component(@render3d.ecs_key_skybox)
+  .component(@pbr.ecs_key_skybox)
   .insert(
     camera,
-    @render3d.Skybox::new(
+    @pbr.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       5000.0F,
     ),
     tick,
   )
   world
-  .component(@render3d.ecs_key_environment_map_light)
+  .component(@pbr.ecs_key_environment_map_light)
   .insert(
     camera,
-    @render3d.EnvironmentMapLight::new(
+    @pbr.EnvironmentMapLight::new(
       Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       2000.0F,
@@ -318,11 +313,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::bottom_left())
+    .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()

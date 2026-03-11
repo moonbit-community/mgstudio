@@ -116,3 +116,74 @@ test "asset system stores loaded folders in Assets<LoadedFolder> resource" {
   }
   inspect(loaded_folders.get(folder_handle) is Some(_), content="true")
 }
+
+///|
+test "asset system forwards asset events to ECS messages" {
+  let world = @ecs.World::new()
+  let key : @ecs.ResourceKey[Assets[Int]] = assets_resource_key()
+  world.insert_resource(key, Assets::new())
+
+  match (try! world.get_resource_ref_mut(key, 0)) {
+    Some(assets) => {
+      ignore(assets.val.add(42))
+      ignore(assets.val.add(43))
+    }
+    None => abort("expected Assets<Int> resource")
+  }
+
+  asset_update_event_messages(world)
+
+  let cursor_ref : Ref[Int] = Ref::new(0)
+  let key : @ecs.MessageKey[AssetEvent[Int]] = @ecs.Message::message()
+  let reader = world.message_reader(key, cursor_ref)
+  let events = try! reader.read()
+  inspect(events.length(), content="2")
+  match events[0] {
+    AssetEvent::Added(handle) => inspect(handle.id() == 0, content="true")
+    _ => inspect(false, content="false")
+  }
+  match events[1] {
+    AssetEvent::Added(handle) => inspect(handle.id() == 1, content="true")
+    _ => inspect(false, content="false")
+  }
+}
+
+///|
+test "asset system forwards image load completion to ECS messages" {
+  let world = @ecs.World::new()
+  world.insert_resource(asset_server_resource_key(), AssetServer::new())
+  world.insert_resource(loaded_folder_assets_resource_key(), Assets::new())
+
+  let asset_server = match
+    (try! world.get_resource(asset_server_resource_key())) {
+    Some(server) => server
+    None => abort("expected AssetServer resource")
+  }
+  let image = asset_server.load_image("branding/bevy_logo_dark_big.png")
+
+  for _ in 0..<120 {
+    asset_system(world)
+    if host_asset_is_texture_loaded(image.id()) {
+      break
+    }
+  }
+
+  inspect(host_asset_is_texture_loaded(image.id()), content="true")
+
+  let cursor_ref : Ref[Int] = Ref::new(0)
+  let message_key : @ecs.MessageKey[AssetEvent[Image]] = @ecs.Message::message()
+  let reader = world.message_reader(message_key, cursor_ref)
+  let events = try! reader.read()
+
+  let found = Ref::new(false)
+  for event in events {
+    match event {
+      AssetEvent::Added(handle) =>
+        if handle.id() == image.id() {
+          found.val = true
+        }
+      _ => ()
+    }
+  }
+  inspect(found.val, content="true")
+}

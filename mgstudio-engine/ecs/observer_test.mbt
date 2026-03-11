@@ -63,3 +63,26 @@ test "ecs observer: world add_observer is world-scoped and fires on replace" {
   inspect(seen_entities, content="[0, 0]")
   inspect(captured_world_id.val == world0.world_id(), content="true")
 }
+
+///|
+test "ecs observer: add_entity_observer only fires for the bound entity" {
+  let world = World::new()
+  let entity0 = world.spawn()
+  let entity1 = world.spawn()
+  let seen_entities : Array[Int] = []
+  let hits : Ref[Int] = Ref::new(0)
+
+  ignore(
+    world.add_entity_observer(entity0, fn(event : On[Insert, ObserverMarker]) {
+      hits.val = hits.val + 1
+      seen_entities.push(event.entity.id)
+    }),
+  )
+
+  try! world.set(entity0, observer_marker_key, ObserverMarker::{ value: 1 })
+  try! world.set(entity1, observer_marker_key, ObserverMarker::{ value: 2 })
+  try! world.set(entity0, observer_marker_key, ObserverMarker::{ value: 3 })
+
+  inspect(hits.val, content="2")
+  inspect(seen_entities, content="[0, 0]")
+}

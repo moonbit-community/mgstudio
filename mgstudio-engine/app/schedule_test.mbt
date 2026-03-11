@@ -50,6 +50,58 @@ test "app: run_if evaluates with condition system ticks" {
 }
 
 ///|
+test "app: repeated run_if composes and short-circuits" {
+  let log : Array[String] = []
+  let app = App::new(@ecs.World::new()).add_system_config(
+    system(fn(_world : @ecs.World) { log.push("system") })
+    .run_if(fn(_world : @ecs.World) {
+      log.push("first")
+      false
+    })
+    .run_if(fn(_world : @ecs.World) {
+      log.push("second")
+      true
+    }),
+  )
+
+  app.run_once() |> ignore
+
+  inspect(log.join(","), content="first")
+}
+
+///|
+test "app: repeated run_if_stateful keeps independent condition state" {
+  let first_seen : Array[Int] = []
+  let second_seen : Array[Int] = []
+  let system_runs = Ref::new(0)
+  let app = App::new(@ecs.World::new()).add_system_config(
+    system(fn(_world : @ecs.World) { system_runs.val = system_runs.val + 1 })
+    .run_if_stateful((0).to_json(), fn(_world : @ecs.World, state : Ref[Json]) {
+      let value : Int = try! @json.from_json(state.val)
+      first_seen.push(value)
+      state.val = (value + 1).to_json()
+      true
+    })
+    .run_if_stateful((100).to_json(), fn(
+      _world : @ecs.World,
+      state : Ref[Json],
+    ) {
+      let value : Int = try! @json.from_json(state.val)
+      second_seen.push(value)
+      state.val = (value + 10).to_json()
+      true
+    }),
+  )
+
+  app.run_once() |> ignore
+  app.run_once() |> ignore
+
+  inspect(system_runs.val, content="2")
+  inspect(first_seen[0] == 0 && first_seen[1] == 1, content="true")
+  inspect(second_seen[0] == 100 && second_seen[1] == 110, content="true")
+}
+
+///|
 test "app: add_plugin_group registers grouped plugins" {
   let log : Array[Int] = []
   fn plugin_1(app : App[@ecs.World]) -> App[@ecs.World] {
@@ -203,6 +255,16 @@ struct Param4 {
 }
 
 ///|
+struct Param5 {
+  value : Int
+}
+
+///|
+struct Param6 {
+  value : Int
+}
+
+///|
 impl SystemParam for Param1 with init_state(_world) {
   Json::null()
 }
@@ -263,6 +325,36 @@ impl SystemParam for Param4 with store(self, _state) {
 }
 
 ///|
+impl SystemParam for Param5 with init_state(_world) {
+  Json::null()
+}
+
+///|
+impl SystemParam for Param5 with get(_state) {
+  { value: 5 }
+}
+
+///|
+impl SystemParam for Param5 with store(self, _state) {
+  ignore(self)
+}
+
+///|
+impl SystemParam for Param6 with init_state(_world) {
+  Json::null()
+}
+
+///|
+impl SystemParam for Param6 with get(_state) {
+  { value: 6 }
+}
+
+///|
+impl SystemParam for Param6 with store(self, _state) {
+  ignore(self)
+}
+
+///|
 struct TickParam {
   ticks : @core.SystemTicks
 }
@@ -318,6 +410,69 @@ test "app: add_system_param4 injects parameters in order" {
     log[1] == 2 &&
     log[2] == 3 &&
     log[3] == 4,
+    content="true",
+  )
+}
+
+///|
+test "app: system_param5 injects parameters in order" {
+  let log : Array[Int] = []
+  let app = App::new(@ecs.World::new()).add_system(
+    system_param5(fn(
+      p1 : Param1,
+      p2 : Param2,
+      p3 : Param3,
+      p4 : Param4,
+      p5 : Param5,
+    ) {
+      log.push(p1.value)
+      log.push(p2.value)
+      log.push(p3.value)
+      log.push(p4.value)
+      log.push(p5.value)
+    }),
+  )
+  app.run_once() |> ignore
+  inspect(
+    log.length() == 5 &&
+    log[0] == 1 &&
+    log[1] == 2 &&
+    log[2] == 3 &&
+    log[3] == 4 &&
+    log[4] == 5,
+    content="true",
+  )
+}
+
+///|
+test "app: system_param6 injects parameters in order" {
+  let log : Array[Int] = []
+  let app = App::new(@ecs.World::new()).add_system(
+    system_param6(fn(
+      p1 : Param1,
+      p2 : Param2,
+      p3 : Param3,
+      p4 : Param4,
+      p5 : Param5,
+      p6 : Param6,
+    ) {
+      log.push(p1.value)
+      log.push(p2.value)
+      log.push(p3.value)
+      log.push(p4.value)
+      log.push(p5.value)
+      log.push(p6.value)
+    }),
+  )
+  app.run_once() |> ignore
+  inspect(
+    log.length() == 6 &&
+    log[0] == 1 &&
+    log[1] == 2 &&
+    log[2] == 3 &&
+    log[3] == 4 &&
+    log[4] == 5 &&
+    log[5] == 6,
     content="true",
   )
 }

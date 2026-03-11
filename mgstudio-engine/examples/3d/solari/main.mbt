@@ -214,18 +214,16 @@ fn despawn_entities(world : @ecs.World, entities : Array[@core.Entity]) -> Unit 
 ///|
 fn spawn_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default().with_clear_color(@render2d.Color::black()),
+  let camera = @pbr.Camera3dBundle::new(
+    @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
     @math.Transform::from_xyz(0.219417F, 2.5764852F, 6.9718704F).with_rotation(
       @math.Quat::new(-0.1466768F, 0.013738206F, 0.002037309F, 0.989087F),
     ),
   ).spawn(world)
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
-  .component(@render3d.ecs_key_msaa)
-  .insert(camera, @render3d.Msaa::Off, tick)
-  world
-  .component(@render3d.ecs_key_free_camera)
-  .insert(camera, @render3d.FreeCamera::default(), tick)
+  .component(@pbr.ecs_key_free_camera)
+  .insert(camera, @pbr.FreeCamera::default(), tick)
   solari_state.val.camera = Some(camera)
 }
 
@@ -235,11 +233,11 @@ fn spawn_lights(world : @ecs.World) -> Unit {
 
   let directional_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional_light,
-    @render3d.DirectionalLight::new(
-      @render2d.Color::white(),
+    @pbr.DirectionalLight::new(
+      @sprite.Color::white(),
       DIRECTIONAL_ILLUMINANCE,
       false,
     ),
@@ -258,11 +256,11 @@ fn spawn_lights(world : @ecs.World) -> Unit {
 
   let robot_emissive_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     robot_emissive_light,
-    @render3d.PointLight::new(
-      @render2d.Color::new(0.94F, 0.71F, 0.04F, 1.0F),
+    @pbr.PointLight::new(
+      @sprite.Color::new(0.94F, 0.71F, 0.04F, 1.0F),
       ROBOT_EMISSIVE_INTENSITY,
       8.0F,
       false,
@@ -293,11 +291,11 @@ fn spawn_text(asset_server : @asset.AssetServer) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::bottom_left())
+    .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -315,11 +313,11 @@ fn spawn_text(asset_server : @asset.AssetServer) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_right())
+    .with_anchor(@sprite.Anchor::top_right())
     .with_bounds(@text.TextBounds::new_horizontal(420.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Right))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.88F, 0.88F, 0.88F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.88F, 0.88F, 0.88F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -340,7 +338,7 @@ fn spawn_pica_scene(
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
-        @scene.GltfAssetLabel::Scene(0).from_asset(PICA_SCENE_ASSET),
+        @gltf.GltfAssetLabel::Scene(0).from_asset(PICA_SCENE_ASSET),
       ),
     ),
     tick,
@@ -362,7 +360,7 @@ fn spawn_pica_scene(
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
-        @scene.GltfAssetLabel::Scene(0).from_asset(ROBOT_SCENE_ASSET),
+        @gltf.GltfAssetLabel::Scene(0).from_asset(ROBOT_SCENE_ASSET),
       ),
     ),
     tick,
@@ -384,19 +382,22 @@ fn spawn_pica_scene(
 ///|
 fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
-  let ground = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(40.0F, 40.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::default()
+  let ground = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(40.0F, 40.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::default()
         .with_base_color_texture(
           Some(
-            asset_server.load_with_settings(
-              "textures/uv_checker_bw.png",
-              @asset.ImageLoaderSettings::default().with_sampler(
-                @asset.ImageSampler::LinearRepeat,
-              ),
-            ),
+            asset_server.load_with_settings("textures/uv_checker_bw.png", fn(
+              settings,
+            ) {
+              settings.sampler = @asset.ImageSampler::Descriptor(
+                @asset.ImageSamplerDescriptor::linear().set_address_mode(
+                  @asset.ImageAddressMode::Repeat,
+                ),
+              )
+            }),
           ),
         )
         .with_perceptual_roughness(0.0F),
@@ -414,17 +415,17 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
     let sx = rng_range(rng_seed, 0.2F, 2.0F)
     let sy = rng_range(rng_seed, 0.2F, 2.0F)
     let sz = rng_range(rng_seed, 0.2F, 2.0F)
-    let color = @render2d.Color::new(
+    let color = @sprite.Color::new(
       rng_next01(rng_seed),
       rng_next01(rng_seed),
       rng_next01(rng_seed),
       1.0F,
     )
-    let entity = @render3d.MeshMaterial3dBundle::new(
-      @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-      @render3d.MeshMaterial3d::new(
-        @render3d.standard_material_add(
-          @render3d.StandardMaterial::from_color(color).with_perceptual_roughness(
+    let entity = @pbr.MeshMaterial3dBundle::new(
+      @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+      @pbr.MeshMaterial3d::new(
+        @pbr.standard_material_add(
+          @pbr.StandardMaterial::from_color(color).with_perceptual_roughness(
             rng_next01(rng_seed),
           ),
         ),
@@ -438,12 +439,12 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
 
   for i in 0..<MANY_LIGHTS_EMISSIVE_COUNT {
     i |> ignore
-    let entity = @render3d.MeshMaterial3dBundle::new(
-      @render3d.Mesh3d::from_tetrahedron(0.5F),
-      @render3d.MeshMaterial3d::new(
-        @render3d.standard_material_add(
-          @render3d.StandardMaterial::from_color(@render2d.Color::black()).with_emissive(
-            @render2d.Color::new(
+    let entity = @pbr.MeshMaterial3dBundle::new(
+      @pbr.Mesh3d::from_tetrahedron(0.5F),
+      @pbr.MeshMaterial3d::new(
+        @pbr.standard_material_add(
+          @pbr.StandardMaterial::from_color(@sprite.Color::black()).with_emissive(
+            @sprite.Color::new(
               rng_next01(rng_seed) * 20_000.0F,
               rng_next01(rng_seed) * 20_000.0F,
               rng_next01(rng_seed) * 20_000.0F,
@@ -473,10 +474,10 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
     )
     |> ignore
     world
-    .component(@render3d.ecs_key_bloom)
+    .component(@post_process.ecs_key_bloom)
     .insert(
       camera,
-      @render3d.Bloom::default().with_intensity(0.1F),
+      @post_process.Bloom::default().with_intensity(0.1F),
       world.read_change_tick(),
     )
   }
@@ -513,7 +514,7 @@ fn apply_scene_mode(
           tick,
         )
         |> ignore
-        world.component(@render3d.ecs_key_bloom).remove(camera) |> ignore
+        world.component(@post_process.ecs_key_bloom).remove(camera) |> ignore
       }
     }
     SolariSceneMode::ManyLights => spawn_many_lights_scene(world)
@@ -524,7 +525,7 @@ fn apply_scene_mode(
 fn apply_light_switches(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   if solari_state.val.directional_light is Some(light) {
-    if world.component(@render3d.ecs_key_directional_light).get(light)
+    if world.component(@pbr.ecs_key_directional_light).get(light)
       is Some(current) {
       let updated = current.with_illuminance(
         if solari_state.val.directional_enabled {
@@ -533,16 +534,13 @@ fn apply_light_switches(world : @ecs.World) -> Unit {
           0.0F
         },
       )
-      world
-      .component(@render3d.ecs_key_directional_light)
-      .set(light, updated, tick)
+      world.component(@pbr.ecs_key_directional_light).set(light, updated, tick)
       |> ignore
     }
   }
 
   if solari_state.val.robot_emissive_light is Some(light) {
-    if world.component(@render3d.ecs_key_point_light).get(light)
-      is Some(current) {
+    if world.component(@pbr.ecs_key_point_light).get(light) is Some(current) {
       let updated = current.with_intensity(
         if solari_state.val.robot_emissive_enabled {
           ROBOT_EMISSIVE_INTENSITY
@@ -550,7 +548,7 @@ fn apply_light_switches(world : @ecs.World) -> Unit {
           0.0F
         },
       )
-      world.component(@render3d.ecs_key_point_light).set(light, updated, tick)
+      world.component(@pbr.ecs_key_point_light).set(light, updated, tick)
       |> ignore
     }
   }

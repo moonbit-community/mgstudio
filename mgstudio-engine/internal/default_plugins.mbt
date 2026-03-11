@@ -16,6 +16,11 @@
 pub struct DefaultPlugins {}
 
 ///|
+fn default_plugins_marker() -> DefaultPlugins {
+  DefaultPlugins::{  }
+}
+
+///|
 const DEFAULT_PLUGINS_NAME : String = "DefaultPlugins"
 
 ///|
@@ -29,6 +34,9 @@ const DEFAULT_PLUGIN_ID_TASK_POOL : String = "bevy_app::TaskPoolPlugin"
 
 ///|
 const DEFAULT_PLUGIN_ID_WINDOW : String = @window.WINDOW_PLUGIN_ID
+
+///|
+const DEFAULT_PLUGIN_ID_WINIT : String = @winit.WINIT_PLUGIN_ID
 
 ///|
 const DEFAULT_PLUGIN_ID_FRAME_COUNT : String = "bevy_diagnostic::FrameCountPlugin"
@@ -73,10 +81,19 @@ const DEFAULT_PLUGIN_ID_A11Y : String = "bevy_a11y::AccessibilityPlugin"
 const DEFAULT_PLUGIN_ID_UI : String = "bevy_ui::UiPlugin"
 
 ///|
+const DEFAULT_PLUGIN_ID_UI_RENDER : String = "bevy_ui_render::UiRenderPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_GLTF : String = "bevy_gltf::GltfPlugin"
+
+///|
 const DEFAULT_PLUGIN_ID_TEXT : String = "bevy_text::TextPlugin"
 
 ///|
 const DEFAULT_PLUGIN_ID_RENDER3D : String = "bevy_pbr::PbrPlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_ANTI_ALIAS : String = @anti_alias.ANTI_ALIAS_PLUGIN_ID
 
 ///|
 const DEFAULT_PLUGIN_ID_RENDER2D : String = "bevy_sprite::SpritePlugin"
@@ -131,9 +148,21 @@ fn default_plugins_builder(
     }),
   )
   .add_named(
+    id=DEFAULT_PLUGIN_ID_A11Y,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @a11y.a11y_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_WINIT,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @winit.winit_plugin(app)
+    }),
+  )
+  .add_named(
     id=DEFAULT_PLUGIN_ID_FRAME_COUNT,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @diagnostics.frame_count_plugin(app)
+      @diagnostic.frame_count_plugin(app)
     }),
   )
   .add_named(
@@ -176,7 +205,7 @@ fn default_plugins_builder(
   .add_named(
     id=DEFAULT_PLUGIN_ID_DIAGNOSTICS,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @diagnostics.diagnostics_plugin(app)
+      @diagnostic.diagnostics_plugin(app)
     }),
   )
   .add_named(
@@ -198,15 +227,21 @@ fn default_plugins_builder(
     }),
   )
   .add_named(
-    id=DEFAULT_PLUGIN_ID_A11Y,
-    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @a11y.a11y_plugin(app)
-    }),
-  )
-  .add_named(
     id=DEFAULT_PLUGIN_ID_UI,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @ui.ui_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_UI_RENDER,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @ui_render.ui_render_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_GLTF,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @gltf.gltf_plugin(app)
     }),
   )
   .add_named(
@@ -218,13 +253,19 @@ fn default_plugins_builder(
   .add_named(
     id=DEFAULT_PLUGIN_ID_RENDER3D,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @render3d.render3d_plugin(app)
+      @pbr.render3d_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_ANTI_ALIAS,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @anti_alias.anti_alias_plugin(app)
     }),
   )
   .add_named(
     id=DEFAULT_PLUGIN_ID_RENDER2D,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @render2d.render2d_plugin_ecs(app)
+      @sprite_render.render2d_plugin_ecs(app)
     }),
   )
   .add_named(
@@ -243,6 +284,7 @@ fn default_plugins_builder(
 
 ///|
 pub fn DefaultPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
+  default_plugins_marker() |> ignore
   default_plugins_builder(fn(
     app : @app.App[@ecs.World],
   ) -> @app.App[@ecs.World] {
@@ -254,11 +296,17 @@ pub fn DefaultPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
 pub fn[P : @app.PluginReplacement] DefaultPlugins::set(
   replacement : P,
 ) -> @app.PluginGroupBuilder[@ecs.World] {
+  default_plugins_marker() |> ignore
   DefaultPlugins::build().set(replacement)
 }
 
 ///|
 pub struct MinimalPlugins {}
+
+///|
+fn minimal_plugins_marker() -> MinimalPlugins {
+  MinimalPlugins::{  }
+}
 
 ///|
 fn minimal_plugins_builder() -> @app.PluginGroupBuilder[@ecs.World] {
@@ -272,7 +320,7 @@ fn minimal_plugins_builder() -> @app.PluginGroupBuilder[@ecs.World] {
   .add_named(
     id=MINIMAL_PLUGIN_ID_FRAME_COUNT,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @diagnostics.frame_count_plugin(app)
+      @diagnostic.frame_count_plugin(app)
     }),
   )
   .add_named(
@@ -299,6 +347,7 @@ fn minimal_plugins_builder() -> @app.PluginGroupBuilder[@ecs.World] {
 
 ///|
 pub fn MinimalPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
+  minimal_plugins_marker() |> ignore
   minimal_plugins_builder()
 }
 

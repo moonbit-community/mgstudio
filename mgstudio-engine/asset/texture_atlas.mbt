@@ -347,33 +347,11 @@ pub fn DynamicTextureAtlasBuilder::add_texture(
 }
 
 ///|
-pub(all) enum ImageSampler {
-  Linear
-  Nearest
-  LinearRepeat
-  NearestRepeat
-}
-
-///|
-pub fn host_asset_set_texture_sampler(
-  texture_id~ : Int,
-  sampler~ : Int,
-) -> Unit {
-  @native_asset.set_texture_sampler(texture_id~, sampler~)
-}
-
-///|
 pub fn asset_set_texture_sampler(
   texture : Handle[Image],
   sampler : ImageSampler,
 ) -> Unit {
-  let sampler_id = match sampler {
-    Linear => 0
-    Nearest => 1
-    LinearRepeat => 2
-    NearestRepeat => 3
-  }
-  host_asset_set_texture_sampler(texture_id=texture.id(), sampler=sampler_id)
+  @image.set_texture_sampler(texture, sampler)
 }
 
 ///|

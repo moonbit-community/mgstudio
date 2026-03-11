@@ -11,10 +11,10 @@ const linkConfigs = [];
 
 if (platform === 'darwin') {
   const darwinWindowLinkFlags =
-    '-framework AppKit -framework QuartzCore -framework Foundation -lobjc';
+    '-framework AppKit -framework QuartzCore -framework Foundation -lobjc -Wl,-undefined,dynamic_lookup';
 
   linkConfigs.push({
-    package: pkg('runtime_native/windowing_native'),
+    package: pkg('window/windowing_native'),
     link_flags: darwinWindowLinkFlags,
   });
 }

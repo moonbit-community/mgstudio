@@ -1,8 +1,0 @@
-// Canonical native runtime implementation package.
-import {
-  "Milky2018/mgstudio/runtime_native/native_gpu" @native_gpu,
-  "moonbitlang/core/ref",
-  "moonbitlang/x/fs",
-  "moonbitlang/x/path",
-  "moonbitlang/x/sys",
-}

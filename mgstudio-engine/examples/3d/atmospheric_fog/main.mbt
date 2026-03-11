@@ -95,7 +95,7 @@ fn fog_center() -> @math.Vec3 {
 }
 
 ///|
-fn make_fog() -> @render3d.DistanceFog {
+fn make_fog() -> @pbr.DistanceFog {
   let fog_alpha = if atmospheric_fog_state.val.fog_enabled {
     1.0F
   } else {
@@ -106,23 +106,19 @@ fn make_fog() -> @render3d.DistanceFog {
   } else {
     0.0F
   }
-  @render3d.DistanceFog::default()
+  @pbr.DistanceFog::default()
   .with_color(
-    @render2d.Color::srgba(FOG_BASE_R, FOG_BASE_G, FOG_BASE_B, fog_alpha),
+    @sprite.Color::srgba(FOG_BASE_R, FOG_BASE_G, FOG_BASE_B, fog_alpha),
   )
   .with_directional_light_color(
-    @render2d.Color::srgba(FOG_SUN_R, FOG_SUN_G, FOG_SUN_B, directional_alpha),
+    @sprite.Color::srgba(FOG_SUN_R, FOG_SUN_G, FOG_SUN_B, directional_alpha),
   )
   .with_directional_light_exponent(FOG_INSCATTER_EXPONENT)
   .with_falloff(
-    @render3d.FogFalloff3d::from_visibility_colors(
+    @pbr.FogFalloff3d::from_visibility_colors(
       FOG_VISIBILITY,
-      @render2d.Color::srgb(
-        FOG_EXTINCTION_R,
-        FOG_EXTINCTION_G,
-        FOG_EXTINCTION_B,
-      ),
-      @render2d.Color::srgb(FOG_INSCATTER_R, FOG_INSCATTER_G, FOG_INSCATTER_B),
+      @sprite.Color::srgb(FOG_EXTINCTION_R, FOG_EXTINCTION_G, FOG_EXTINCTION_B),
+      @sprite.Color::srgb(FOG_INSCATTER_R, FOG_INSCATTER_G, FOG_INSCATTER_B),
     ),
   )
 }
@@ -131,10 +127,10 @@ fn make_fog() -> @render3d.DistanceFog {
 fn apply_fog(world : @ecs.World) -> Unit {
   guard atmospheric_fog_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
-  let camera3d_store = world.component(@render3d.ecs_key_camera3d)
+  let camera3d_store = world.component(@pbr.ecs_key_camera3d)
   let camera3d = match camera3d_store.get(camera) {
     Some(value) => value
-    None => @render3d.Camera3d::default()
+    None => @pbr.Camera3d::default()
   }
   camera3d_store.set(camera, camera3d.with_distance_fog(Some(make_fog())), tick)
   |> ignore
@@ -157,8 +153,8 @@ fn instruction_text() -> String {
 
 ///|
 fn setup_camera_fog(world : @ecs.World) -> Unit {
-  let camera = @render3d.Camera3dBundle::new(
-      @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+      @sprite.Camera::default(),
       @math.Transform::from_xyz(-1.0F, 0.1F, 1.0F).looking_at(
         fog_center(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -173,13 +169,13 @@ fn setup_camera_fog(world : @ecs.World) -> Unit {
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @render3d.Mesh3d,
-  material : @asset.Handle[@render3d.StandardMaterial],
+  mesh : @pbr.Mesh3d,
+  material : @asset.Handle[@pbr.StandardMaterial],
   transform : @math.Transform,
 ) -> Unit {
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     mesh,
-    @render3d.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
   |> ignore
@@ -188,7 +184,7 @@ fn spawn_mesh(
 ///|
 fn setup_terrain_scene(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let cascade_shadow_config = @render3d.CascadeShadowConfigBuilder::default()
+  let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::default()
     .with_first_cascade_far_bound(0.3F)
     .with_maximum_distance(3.0F)
     .build()
@@ -204,20 +200,20 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     sun,
-    @render3d.DirectionalLight::new(
-      @render2d.Color::new(0.98F, 0.95F, 0.82F, 1.0F),
+    @pbr.DirectionalLight::new(
+      @sprite.Color::new(0.98F, 0.95F, 0.82F, 1.0F),
       10_000.0F,
       true,
     ).with_cascade_shadow_config(Some(cascade_shadow_config)),
     tick,
   )
 
-  let terrain_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.35F, 0.32F, 0.29F, 1.0F),
+  let terrain_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.35F, 0.32F, 0.29F, 1.0F),
     )
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F),
@@ -232,27 +228,27 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
 
     spawn_mesh(
       world,
-      @render3d.Mesh3d::from_cuboid(width, height, 0.3F),
+      @pbr.Mesh3d::from_cuboid(width, height, 0.3F),
       terrain_material,
       @math.Transform::from_xyz(shift, height / 2.0F - 0.08F, -depth),
     )
   }
 
-  let sky_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.53F, 0.53F, 0.53F, 1.0F),
+  let sky_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.53F, 0.53F, 0.53F, 1.0F),
     )
     .with_unlit(true)
     .with_cull_mode(None),
   )
-  let sky = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(2.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(sky_material),
+  let sky = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(2.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(sky_material),
     @math.Transform::identity().with_scale(@math.Vec3::splat(20.0F)),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_not_shadow_caster)
-  .insert(sky, @render3d.NotShadowCaster::default(), tick)
+  .component(@pbr.ecs_key_not_shadow_caster)
+  .insert(sky, @pbr.NotShadowCaster::default(), tick)
 }
 
 ///|
@@ -269,11 +265,11 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::bottom_left())
+    .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()

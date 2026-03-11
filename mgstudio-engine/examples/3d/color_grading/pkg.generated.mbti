@@ -6,16 +6,31 @@ package "Milky2018/mgstudio/examples/3d/color_grading"
 // Errors
 
 // Types and methods
+type ColorGradingCamera
+
+type ColorGradingOptionWidget
+
+pub(all) enum ColorGradingOptionWidgetType {
+  Button
+  Label
+  Value
+}
+pub impl Eq for ColorGradingOptionWidgetType
+
+type HelpText
+
 pub(all) enum SelectedColorGradingOption {
   Global(SelectedGlobalColorGradingOption)
   Section(SelectedColorGradingSection, SelectedSectionColorGradingOption)
 }
+pub impl Eq for SelectedColorGradingOption
 
 pub(all) enum SelectedColorGradingSection {
   Highlights
   Midtones
   Shadows
 }
+pub impl Eq for SelectedColorGradingSection
 
 pub(all) enum SelectedGlobalColorGradingOption {
   Exposure
@@ -23,6 +38,7 @@ pub(all) enum SelectedGlobalColorGradingOption {
   Tint
   Hue
 }
+pub impl Eq for SelectedGlobalColorGradingOption
 
 pub(all) enum SelectedSectionColorGradingOption {
   Saturation
@@ -31,6 +47,7 @@ pub(all) enum SelectedSectionColorGradingOption {
   Gain
   Lift
 }
+pub impl Eq for SelectedSectionColorGradingOption
 
 // Type aliases
 

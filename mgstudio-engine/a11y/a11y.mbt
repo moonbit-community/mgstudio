@@ -315,14 +315,30 @@ pub fn node_id_for_entity(entity : @core.Entity) -> @moon_accesskit.NodeId {
 ///|
 /// Queue a host update payload for the native accessibility backend.
 pub fn a11y_host_apply_update_payload(payload : String) -> Unit {
-  @native_a11y.queue_update_payload(payload~)
+  @windowing.queue_accessibility_update_payload(payload~)
 }
 
 ///|
 /// Queue an AccessKit `TreeUpdate` for the native accessibility backend.
 pub fn a11y_host_apply_update(update : @moon_accesskit.TreeUpdate) -> Unit {
-  @native_a11y.queue_update(update)
+  @windowing.queue_accessibility_update(update)
 }
 
 ///|
-pub let a11y_set : @app.SystemSet = @app.system_set("mgstudio.a11y")
+pub(all) enum AccessibilitySystems {
+  Update
+} derive(Eq, Show)
+
+///|
+pub fn accessibility_system_set_name(
+  stage_set : AccessibilitySystems,
+) -> @app.SystemSet {
+  match stage_set {
+    Update => @app.system_set("bevy_a11y::AccessibilitySystems::Update")
+  }
+}
+
+///|
+pub let a11y_set : @app.SystemSet = accessibility_system_set_name(
+  AccessibilitySystems::Update,
+)

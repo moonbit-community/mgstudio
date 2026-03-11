@@ -109,8 +109,8 @@ fn create_cube_indices() -> Array[Int] {
 }
 
 ///|
-fn create_cube_mesh(upper_uv : Bool) -> @render3d.Mesh3d {
-  @render3d.Mesh3d::from_geometry(
+fn create_cube_mesh(upper_uv : Bool) -> @pbr.Mesh3d {
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(
       create_cube_positions(),
       create_cube_uvs(upper_uv),
@@ -128,15 +128,15 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
 
   let custom_texture = asset_server.load("textures/array_texture.png")
-  let material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::default().with_base_color_texture(
+  let material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::default().with_base_color_texture(
       Some(custom_texture),
     ),
   )
 
-  let mesh_entity = @render3d.MeshMaterial3dBundle::new(
+  let mesh_entity = @pbr.MeshMaterial3dBundle::new(
     create_cube_mesh(true),
-    @render3d.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3d::new(material),
     @math.Transform::identity(),
   ).spawn(world)
   custom_mesh_state.val.mesh_entity = Some(mesh_entity)
@@ -146,16 +146,16 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
 
-  @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     camera_and_light_transform,
   ).spawn(world)
   |> ignore
 
   let light_entity = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
-  .insert(light_entity, @render3d.PointLight::default(), tick)
+  .component(@pbr.ecs_key_point_light)
+  .insert(light_entity, @pbr.PointLight::default(), tick)
   world
   .component(@math.ecs_key_transform)
   .insert(light_entity, camera_and_light_transform, tick)
@@ -173,11 +173,11 @@ fn setup(world : @ecs.World) -> Unit {
       z=50.0F,
     ),
   )
-  .with_anchor(@render2d.Anchor::top_left())
+  .with_anchor(@sprite.Anchor::top_left())
   .with_bounds(@text.TextBounds::new_horizontal(780.0F))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
   .with_color(
-    @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
   .with_shadow(Some(@text.Text2dShadow::default()))
   .spawn()
@@ -195,12 +195,14 @@ fn input_handler(world : @ecs.World) -> Unit {
     let next_upper_uv = !custom_mesh_state.val.upper_uv
     custom_mesh_state.val.upper_uv = next_upper_uv
     let next_mesh = create_cube_mesh(next_upper_uv)
-    let next_mesh_id = @render2d.render2d_upload_mesh_handle(next_mesh.mesh)
-    world.component(@render3d.ecs_key_mesh3d).set(mesh_entity, next_mesh, tick)
+    let next_mesh_id = @sprite_render.render2d_upload_mesh_handle(
+      next_mesh.mesh,
+    )
+    world.component(@pbr.ecs_key_mesh3d).set(mesh_entity, next_mesh, tick)
     |> ignore
     world
-    .component(@render2d.ecs_key_gpu_mesh2d)
-    .set(mesh_entity, @render2d.GpuMesh2d::new(next_mesh_id), tick)
+    .component(@sprite.ecs_key_gpu_mesh2d)
+    .set(mesh_entity, @sprite.GpuMesh2d::new(next_mesh_id), tick)
     |> ignore
   }
 

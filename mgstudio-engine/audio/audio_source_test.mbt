@@ -22,6 +22,39 @@ test "audio source asset registry stores bytes" {
 }
 
 ///|
+test "audio source AssetServer loader registers direct handle flow" {
+  let loaded_handle_ids : Array[Int] = []
+  let loaded_lengths : Array[Int] = []
+  let mut app = @asset.asset_plugin(@app.App::new(@ecs.World::new()))
+  app = audio_plugin(app)
+  app = app.add_systems(
+    @app.Startup,
+    @app.system(fn(world : @ecs.World) {
+      let asset_server = @asset.AssetServer::new()
+      let first : @asset.Handle[AudioSource] = asset_server.load(
+        "textures/rpg/folder.txt",
+      )
+      let second : @asset.Handle[AudioSource] = asset_server.load(
+        "textures/rpg/folder.txt",
+      )
+      loaded_handle_ids.push(first.id())
+      loaded_handle_ids.push(second.id())
+      guard audio_source_get(world, first) is Some(source) else {
+        abort("missing audio source after AssetServer::load")
+      }
+      loaded_lengths.push(source.bytes().length())
+    }),
+  )
+
+  app = app.update()
+
+  inspect(loaded_handle_ids.length(), content="2")
+  inspect(loaded_handle_ids[0] == loaded_handle_ids[1], content="true")
+  inspect(loaded_lengths.length(), content="1")
+  inspect(loaded_lengths[0] > 0, content="true")
+}
+
+///|
 test "pitch asset registry stores pitch data" {
   let app = audio_plugin(@app.App::new(@ecs.World::new()))
   let world = app.world()

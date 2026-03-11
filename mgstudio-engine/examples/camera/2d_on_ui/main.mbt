@@ -28,19 +28,19 @@ let camera_on_ui_state : Ref[CameraOnUiState] = Ref::new(CameraOnUiState::{
 ///|
 fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let ui_camera = @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  let ui_camera = @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   world
   .component(@ui.ecs_key_is_default_ui_camera)
   .insert(ui_camera, @ui.IsDefaultUiCamera::default(), tick)
 
-  @render2d.Camera2dBundle::new_with_layers(
-    @render2d.Camera::default().with_order(1).with_clear_color_none(),
+  @sprite.Camera2dBundle::new_with_layers(
+    @sprite.Camera::default().with_order(1).with_clear_color_none(),
     @math.Transform::identity(),
-    @render2d.RenderTarget::Screen,
-    @render2d.RenderLayers::layer(1),
+    @sprite.RenderTarget::Screen,
+    @sprite.RenderLayers::layer(1),
   ).spawn(world)
   |> ignore
 
@@ -61,7 +61,7 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@ui.ecs_key_background_color)
   .insert(
     root,
-    @ui.BackgroundColor::new(@render2d.Color::new(0.98F, 0.44F, 0.58F, 1.0F)),
+    @ui.BackgroundColor::new(@sprite.Color::new(0.98F, 0.44F, 0.58F, 1.0F)),
     tick,
   )
 
@@ -83,23 +83,23 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@ui.ecs_key_background_color)
   .insert(
     panel,
-    @ui.BackgroundColor::new(@render2d.Color::new(0.98F, 0.82F, 0.86F, 1.0F)),
+    @ui.BackgroundColor::new(@sprite.Color::new(0.98F, 0.82F, 0.86F, 1.0F)),
     tick,
   )
   world
   .component(@ui.ecs_key_border_color)
-  .insert(panel, @ui.BorderColor::new(@render2d.Color::white()), tick)
+  .insert(panel, @ui.BorderColor::new(@sprite.Color::white()), tick)
   world
   .component(@ui.ecs_key_border_radius)
   .insert(panel, @ui.BorderRadius::all(@ui.Val::Percent(25.0F)), tick)
 
   let asset_server = @asset.AssetServer::new()
-  let sprite = @render2d.SpriteBundle::new_with_layers(
-    @render2d.Sprite::from_image(
+  let sprite = @sprite.SpriteBundle::new_with_layers(
+    @sprite.Sprite::from_image(
       asset_server.load("textures/rpg/chars/sensei/sensei.png"),
     ).with_custom_size(Some(@math.Vec2::new(100.0F, 100.0F))),
     @math.Transform::identity(),
-    @render2d.RenderLayers::layer(1),
+    @sprite.RenderLayers::layer(1),
   ).spawn(world)
   camera_on_ui_state.val.sprite = sprite
 }

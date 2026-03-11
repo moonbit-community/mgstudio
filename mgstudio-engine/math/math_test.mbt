@@ -47,10 +47,79 @@ fn approx_vec3(a : Vec3, b : Vec3) -> Bool {
 }
 
 ///|
+fn vec3_within_half_size(value : Vec3, half_size : Vec3) -> Bool {
+  abs_float(value.x) <= half_size.x &&
+  abs_float(value.y) <= half_size.y &&
+  abs_float(value.z) <= half_size.z
+}
+
+///|
 fn rotate_vec3(rotation : Quat, value : Vec3) -> Vec3 {
   let qv = Vec3::new(rotation.x, rotation.y, rotation.z)
   let t = qv.cross(value).mul_scalar(2.0F)
   value.add(t.mul_scalar(rotation.w)).add(qv.cross(t))
+}
+
+///|
+test "math: cuboid constructors preserve Bevy full-size semantics" {
+  let cuboid = Cuboid::new(3.0F, 7.0F, 2.0F)
+  inspect(
+    approx_vec3(cuboid.half_size, Vec3::new(1.5F, 3.5F, 1.0F)),
+    content="true",
+  )
+  inspect(
+    approx_vec3(cuboid.size(), Vec3::new(3.0F, 7.0F, 2.0F)),
+    content="true",
+  )
+  inspect(
+    approx_vec3(
+      Cuboid::from_size(Vec3::new(3.0F, 7.0F, 2.0F)).half_size,
+      cuboid.half_size,
+    ),
+    content="true",
+  )
+  inspect(
+    approx_vec3(Cuboid::from_length(2.0F).half_size, Vec3::splat(1.0F)),
+    content="true",
+  )
+  inspect(
+    approx_vec3(Cuboid::default().half_size, Vec3::splat(0.5F)),
+    content="true",
+  )
+}
+
+///|
+test "math: cuboid from_corners ignores corner order like Bevy" {
+  let lhs = Cuboid::from_corners(
+    Vec3::new(-1.5F, -3.5F, -1.0F),
+    Vec3::new(1.5F, 3.5F, 1.0F),
+  )
+  let rhs = Cuboid::from_corners(
+    Vec3::new(1.5F, 3.5F, 1.0F),
+    Vec3::new(-1.5F, -3.5F, -1.0F),
+  )
+  inspect(
+    approx_vec3(lhs.half_size, Vec3::new(1.5F, 3.5F, 1.0F)),
+    content="true",
+  )
+  inspect(approx_vec3(lhs.half_size, rhs.half_size), content="true")
+}
+
+///|
+test "math: cuboid sample_interior is seeded and stays inside bounds" {
+  let cuboid = Cuboid::new(3.0F, 7.0F, 2.0F)
+  let rng0 = @random.Rand::chacha8(seed=b"mathcuboidsampleseed000000000001")
+  let rng1 = @random.Rand::chacha8(seed=b"mathcuboidsampleseed000000000001")
+  let sample0 = cuboid.sample_interior(rng0)
+  let sample1 = cuboid.sample_interior(rng1)
+  inspect(approx_vec3(sample0, sample1), content="true")
+  inspect(vec3_within_half_size(sample0, cuboid.half_size), content="true")
+
+  let degenerate = Cuboid::from_size(Vec3::zero())
+  let zero_sample = degenerate.sample_interior(
+    @random.Rand::chacha8(seed=b"mathcuboidzeroseed00000000000001"),
+  )
+  inspect(approx_vec3(zero_sample, Vec3::zero()), content="true")
 }
 
 ///|

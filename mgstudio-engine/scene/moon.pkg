@@ -3,18 +3,27 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/gltf",
   "Milky2018/mgstudio/hierarchy",
+  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/render2d",
-  "Milky2018/mgstudio/render3d",
+  "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
   "moonbitlang/core/json",
   "moonbitlang/core/encoding/base64",
   "moonbitlang/core/strconv",
+  "tonyfettes/any",
 }
 
 import {
-  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/sprite_render",
 } for "test"
+
+options(
+  "supported-targets": "native",
+)

@@ -5,11 +5,13 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/sprite_render",
   "Milky2018/mgstudio/time",
   "moonbitlang/core/ref",
 }
 
 options(
   "is-main": true,
+  "supported-targets": "native",
 )

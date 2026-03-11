@@ -3,9 +3,9 @@ package "Milky2018/mgstudio/dev_tools"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/render2d",
   "Milky2018/mgstudio/text",
 }
 
@@ -25,7 +25,7 @@ pub let fps_overlay_set_update_text : String
 // Types and methods
 pub(all) struct FpsOverlayConfig {
   mut text_config : @text.TextFont
-  mut text_color : @render2d.Color
+  mut text_color : @color.Color
   mut enabled : Bool
   mut refresh_interval : @core.Duration
   mut frame_time_graph_config : FrameTimeGraphConfig

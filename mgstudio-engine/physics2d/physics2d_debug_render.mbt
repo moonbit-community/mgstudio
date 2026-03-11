@@ -23,10 +23,10 @@ pub struct Physics2dDebugRenderConfig {
   colliders : Bool
   rigid_bodies : Bool
   impulse_joints : Bool
-  collider_color : @render2d.Color
-  sensor_color : @render2d.Color
-  rigid_body_color : @render2d.Color
-  joint_color : @render2d.Color
+  collider_color : @sprite.Color
+  sensor_color : @sprite.Color
+  rigid_body_color : @sprite.Color
+  joint_color : @sprite.Color
 }
 
 ///|
@@ -36,10 +36,10 @@ pub fn Physics2dDebugRenderConfig::default() -> Physics2dDebugRenderConfig {
     colliders: true,
     rigid_bodies: true,
     impulse_joints: true,
-    collider_color: @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
-    sensor_color: @render2d.Color::new(0.0F, 1.0F, 1.0F, 1.0F),
-    rigid_body_color: @render2d.Color::new(1.0F, 1.0F, 0.0F, 1.0F),
-    joint_color: @render2d.Color::new(1.0F, 0.0F, 1.0F, 1.0F),
+    collider_color: @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+    sensor_color: @sprite.Color::new(0.0F, 1.0F, 1.0F, 1.0F),
+    rigid_body_color: @sprite.Color::new(1.0F, 1.0F, 0.0F, 1.0F),
+    joint_color: @sprite.Color::new(1.0F, 0.0F, 1.0F, 1.0F),
   }
 }
 
@@ -70,8 +70,8 @@ pub fn physics2d_debug_render_set_enabled(enabled : Bool) -> Unit {
 }
 
 ///|
-fn iso2_to_gizmo(iso : @rapier_core.Isometry2) -> @render2d.Isometry2d {
-  @render2d.Isometry2d::new(
+fn iso2_to_gizmo(iso : @rapier_core.Isometry2) -> @sprite.Isometry2d {
+  @sprite.Isometry2d::new(
     rapier_vec2_to_mg(iso.translation),
     iso.rotation.angle(),
   )
@@ -87,10 +87,10 @@ fn transform_point(
 
 ///|
 fn draw_shape_2d(
-  gizmos : @render2d.Gizmos,
+  gizmos : @sprite.Gizmos,
   iso : @rapier_core.Isometry2,
   shape : @collision.Shape,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> Unit {
   match shape {
     Ball(r) => ignore(gizmos.circle_2d(iso2_to_gizmo(iso), r, color))
@@ -189,7 +189,7 @@ pub fn physics2d_debug_render_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(ctx) else { return }
-  let gizmos = @render2d.Gizmos::new()
+  let gizmos = @sprite.Gizmos::new()
   if config.colliders {
     for pair in ctx.colliders.iter_enabled() {
       let (_h, col) = pair

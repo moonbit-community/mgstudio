@@ -38,13 +38,13 @@ priv struct ParallaxState {
   mut camera : @core.Entity?
   mut help_text : @text.TextHandle?
   spin_targets : Array[SpinTarget]
-  parallax_materials : Array[@asset.Handle[@render3d.StandardMaterial]]
+  parallax_materials : Array[@asset.Handle[@pbr.StandardMaterial]]
   mut current_view : Int
   mut target_depth : Float
   mut displayed_depth : Float
   mut depth_update : Bool
   mut target_layers : Float
-  mut current_method : @render3d.ParallaxMappingMethod
+  mut current_method : @pbr.ParallaxMappingMethod
 }
 
 ///|
@@ -58,7 +58,7 @@ let parallax_state : Ref[ParallaxState] = Ref::new({
   displayed_depth: 0.09F,
   depth_update: false,
   target_layers: 5.0F,
-  current_method: @render3d.ParallaxMappingMethod::Relief(4),
+  current_method: @pbr.ParallaxMappingMethod::Relief(4),
 })
 
 ///|
@@ -117,9 +117,7 @@ fn float_text(value : Float) -> String {
 }
 
 ///|
-fn parallax_method_text(
-  mapping_method : @render3d.ParallaxMappingMethod,
-) -> String {
+fn parallax_method_text(mapping_method : @pbr.ParallaxMappingMethod) -> String {
   match mapping_method {
     Occlusion => "Parallax Occlusion Mapping"
     Relief(max_steps) => "Relief Mapping with \{max_steps} steps"
@@ -128,8 +126,8 @@ fn parallax_method_text(
 
 ///|
 fn next_parallax_method(
-  mapping_method : @render3d.ParallaxMappingMethod,
-) -> @render3d.ParallaxMappingMethod {
+  mapping_method : @pbr.ParallaxMappingMethod,
+) -> @pbr.ParallaxMappingMethod {
   match mapping_method {
     Occlusion => Relief(2)
     Relief(max_steps) =>
@@ -193,10 +191,8 @@ fn update_help_text() -> Unit {
 fn apply_layers_to_materials() -> Unit {
   let target_layers = layer_count(parallax_state.val.target_layers)
   for handle in parallax_state.val.parallax_materials {
-    guard @render3d.standard_material_get(handle) is Some(material) else {
-      continue
-    }
-    @render3d.standard_material_set(
+    guard @pbr.standard_material_get(handle) is Some(material) else { continue }
+    @pbr.standard_material_set(
       handle,
       material.with_max_parallax_layer_count(target_layers),
     )
@@ -208,10 +204,8 @@ fn apply_layers_to_materials() -> Unit {
 fn apply_method_to_materials() -> Unit {
   let mapping_method = parallax_state.val.current_method
   for handle in parallax_state.val.parallax_materials {
-    guard @render3d.standard_material_get(handle) is Some(material) else {
-      continue
-    }
-    @render3d.standard_material_set(
+    guard @pbr.standard_material_get(handle) is Some(material) else { continue }
+    @pbr.standard_material_set(
       handle,
       material.with_parallax_mapping_method(mapping_method),
     )
@@ -230,9 +224,7 @@ fn update_depth_scale_materials() -> Bool {
 
   for i in 0..<parallax_state.val.parallax_materials.length() {
     let handle = parallax_state.val.parallax_materials[i]
-    guard @render3d.standard_material_get(handle) is Some(material) else {
-      continue
-    }
+    guard @pbr.standard_material_get(handle) is Some(material) else { continue }
     let current_depth = material.parallax_depth_scale
     let new_depth = lerpf(current_depth, target_depth, DEPTH_CHANGE_RATE)
     if i == 0 {
@@ -241,7 +233,7 @@ fn update_depth_scale_materials() -> Bool {
     if absf(new_depth - current_depth) > 1.0e-9F {
       still_changing = true
     }
-    @render3d.standard_material_set(
+    @pbr.standard_material_set(
       handle,
       material.with_parallax_depth_scale(new_depth),
     )
@@ -275,11 +267,11 @@ fn spawn_help_text(asset_server : @asset.AssetServer) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -292,38 +284,33 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     light,
-    @render3d.PointLight::new(
-      @render2d.Color::white(),
-      1_800_000.0F,
-      40.0F,
-      true,
-    ),
+    @pbr.PointLight::new(@sprite.Color::white(), 1_800_000.0F, 40.0F, true),
     tick,
   )
   world
   .component(@math.ecs_key_transform)
   .insert(light, @math.Transform::from_xyz(2.0F, 1.0F, -1.1F), tick)
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(0.08F, 0.08F, 0.08F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(@render2d.Color::white()),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(0.08F, 0.08F, 0.08F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
       ),
     ),
     @math.Transform::from_xyz(2.0F, 1.0F, -1.1F),
   ).spawn(world)
   |> ignore
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(10.0F, 10.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.0F, 80.0F / 255.0F, 0.0F, 1.0F),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(10.0F, 10.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(
+          @sprite.Color::new(0.0F, 80.0F / 255.0F, 0.0F, 1.0F),
         )
         .with_perceptual_roughness(0.45F)
         .with_reflectance(0.18F),
@@ -335,10 +322,10 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
   let normal_texture = asset_server.load_with_settings(
     "textures/parallax_example/cube_normal.png",
-    @asset.ImageLoaderSettings::default().with_is_srgb(false),
+    fn(settings) { settings.is_srgb = false },
   )
-  let parallax_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::default()
+  let parallax_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::default()
     .with_perceptual_roughness(0.4F)
     .with_base_color_texture(
       Some(asset_server.load("textures/parallax_example/cube_color.png")),
@@ -355,37 +342,37 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
   parallax_state.val.parallax_materials.push(parallax_material)
 
-  let main_cube = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(parallax_material),
+  let main_cube = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(parallax_material),
     @math.Transform::from_xyz(0.0F, 0.0F, 0.0F),
   ).spawn(world)
   push_spin_target(main_cube, 0.3F)
 
-  let x_pos_cube = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(40.0F, 40.0F, 40.0F),
-    @render3d.MeshMaterial3d::new(parallax_material),
+  let x_pos_cube = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(40.0F, 40.0F, 40.0F),
+    @pbr.MeshMaterial3d::new(parallax_material),
     @math.Transform::from_xyz(45.0F, 0.0F, 0.0F),
   ).spawn(world)
   push_spin_target(x_pos_cube, -0.1F)
 
-  let x_neg_cube = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(40.0F, 40.0F, 40.0F),
-    @render3d.MeshMaterial3d::new(parallax_material),
+  let x_neg_cube = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(40.0F, 40.0F, 40.0F),
+    @pbr.MeshMaterial3d::new(parallax_material),
     @math.Transform::from_xyz(-45.0F, 0.0F, 0.0F),
   ).spawn(world)
   push_spin_target(x_neg_cube, -0.1F)
 
-  let z_pos_cube = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(40.0F, 40.0F, 40.0F),
-    @render3d.MeshMaterial3d::new(parallax_material),
+  let z_pos_cube = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(40.0F, 40.0F, 40.0F),
+    @pbr.MeshMaterial3d::new(parallax_material),
     @math.Transform::from_xyz(0.0F, 0.0F, 45.0F),
   ).spawn(world)
   push_spin_target(z_pos_cube, -0.1F)
 
-  let z_neg_cube = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(40.0F, 40.0F, 40.0F),
-    @render3d.MeshMaterial3d::new(parallax_material),
+  let z_neg_cube = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(40.0F, 40.0F, 40.0F),
+    @pbr.MeshMaterial3d::new(parallax_material),
     @math.Transform::from_xyz(0.0F, 0.0F, -45.0F),
   ).spawn(world)
   push_spin_target(z_neg_cube, -0.1F)
@@ -402,10 +389,10 @@ fn setup(world : @ecs.World) -> Unit {
   parallax_state.val.displayed_depth = 0.09F
   parallax_state.val.depth_update = false
   parallax_state.val.target_layers = 5.0F
-  parallax_state.val.current_method = @render3d.ParallaxMappingMethod::Relief(4)
+  parallax_state.val.current_method = @pbr.ParallaxMappingMethod::Relief(4)
 
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     camera_view_transform(0),
   ).spawn(world)
   parallax_state.val.camera = Some(camera)

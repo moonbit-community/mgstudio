@@ -1,7 +1,7 @@
 # Bevy Example Parity Matrix
 
 Status: Active (SoT)
-Last Verified: 2026-03-08
+Last Verified: 2026-03-11
 Scope: As-Implemented
 Code References:
 - `bevy/examples/`
@@ -18,26 +18,26 @@ Notes:
 | Category | Total | Exact | Blocked | N/A |
 | --- | ---: | ---: | ---: | ---: |
 | `2d` | 27 | 27 | 0 | 0 |
-| `3d` | 66 | 44 | 22 | 0 |
+| `3d` | 66 | 46 | 20 | 0 |
 | `animation` | 13 | 2 | 11 | 0 |
 | `app` | 17 | 17 | 0 | 0 |
-| `asset` | 15 | 1 | 14 | 0 |
+| `asset` | 15 | 2 | 13 | 0 |
 | `async_tasks` | 3 | 0 | 3 | 0 |
-| `audio` | 7 | 5 | 2 | 0 |
-| `camera` | 9 | 8 | 1 | 0 |
+| `audio` | 7 | 6 | 1 | 0 |
+| `camera` | 9 | 9 | 0 | 0 |
 | `dev_tools` | 1 | 1 | 0 | 0 |
 | `diagnostics` | 3 | 2 | 1 | 0 |
-| `ecs` | 32 | 5 | 27 | 0 |
+| `ecs` | 32 | 6 | 26 | 0 |
 | `games` | 7 | 0 | 7 | 0 |
 | `gizmos` | 8 | 0 | 8 | 0 |
 | `gltf` | 9 | 0 | 9 | 0 |
-| `hello_world.rs` | 1 | 0 | 1 | 0 |
+| `hello_world` | 1 | 1 | 0 | 0 |
 | `helpers` | 1 | 0 | 1 | 0 |
 | `input` | 13 | 9 | 4 | 0 |
 | `large_scenes` | 6 | 0 | 6 | 0 |
-| `math` | 6 | 2 | 4 | 0 |
+| `math` | 6 | 4 | 2 | 0 |
 | `mobile` | 2 | 0 | 0 | 2 |
-| `movement` | 2 | 0 | 2 | 0 |
+| `movement` | 2 | 1 | 1 | 0 |
 | `no_std` | 1 | 0 | 0 | 1 |
 | `picking` | 5 | 0 | 5 | 0 |
 | `reflection` | 10 | 0 | 10 | 0 |
@@ -53,8 +53,8 @@ Notes:
 | `transforms` | 5 | 4 | 1 | 0 |
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
-| `window` | 12 | 3 | 9 | 0 |
-| **Total** | **402** | **134** | **265** | **3** |
+| `window` | 12 | 4 | 8 | 0 |
+| **Total** | **402** | **145** | **254** | **3** |
 
 ## Example Inventory
 
@@ -102,7 +102,7 @@ Notes:
 | `bevy/examples/3d/clearcoat.rs` | `3d` | `mgstudio-engine/examples/3d/clearcoat` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/clustered_decal_maps.rs` | `3d` | `mgstudio-engine/examples/3d/clustered_decal_maps` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/clustered_decals.rs` | `3d` | `mgstudio-engine/examples/3d/clustered_decals` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
-| `bevy/examples/3d/color_grading.rs` | `3d` | `mgstudio-engine/examples/3d/color_grading` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/color_grading.rs` | `3d` | `mgstudio-engine/examples/3d/color_grading` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/contact_shadows.rs` | `3d` | `mgstudio-engine/examples/3d/contact_shadows` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/decal.rs` | `3d` | `mgstudio-engine/examples/3d/decal` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/deferred_rendering.rs` | `3d` | `mgstudio-engine/examples/3d/deferred_rendering` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
@@ -145,7 +145,7 @@ Notes:
 | `bevy/examples/3d/ssao.rs` | `3d` | `mgstudio-engine/examples/3d/ssao` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/ssr.rs` | `3d` | `mgstudio-engine/examples/3d/ssr` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/texture.rs` | `3d` | `mgstudio-engine/examples/3d/texture` | `Exact` | `team-render` |  |
-| `bevy/examples/3d/tonemapping.rs` | `3d` | `mgstudio-engine/examples/3d/tonemapping` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/3d/tonemapping.rs` | `3d` | `mgstudio-engine/examples/3d/tonemapping` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/transmission.rs` | `3d` | `mgstudio-engine/examples/3d/transmission` | `Blocked` | `team-render` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/3d/transparency_3d.rs` | `3d` | `mgstudio-engine/examples/3d/transparency_3d` | `Exact` | `team-render` |  |
 | `bevy/examples/3d/two_passes.rs` | `3d` | `mgstudio-engine/examples/3d/two_passes` | `Exact` | `team-render` |  |
@@ -196,7 +196,7 @@ Notes:
 | `bevy/examples/asset/hot_asset_reloading.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/asset/multi_asset_sync.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/asset/processing/asset_processing.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
-| `bevy/examples/asset/repeated_texture.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
+| `bevy/examples/asset/repeated_texture.rs` | `asset` | `mgstudio-engine/examples/asset/repeated_texture` | `Exact` | `team-asset_scene` |  |
 | `bevy/examples/asset/web_asset.rs` | `asset` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/async_tasks/async_channel_pattern.rs` | `async_tasks` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/async_tasks/async_compute.rs` | `async_tasks` |  | `Blocked` | `team-core` |  |
@@ -204,7 +204,7 @@ Notes:
 | `bevy/examples/audio/audio.rs` | `audio` | `mgstudio-engine/examples/audio/audio` | `Exact` | `team-ops` |  |
 | `bevy/examples/audio/audio_control.rs` | `audio` | `mgstudio-engine/examples/audio/audio_control` | `Exact` | `team-ops` |  |
 | `bevy/examples/audio/decodable.rs` | `audio` |  | `Blocked` | `team-ops` |  |
-| `bevy/examples/audio/pitch.rs` | `audio` |  | `Blocked` | `team-ops` |  |
+| `bevy/examples/audio/pitch.rs` | `audio` | `mgstudio-engine/examples/audio/pitch` | `Exact` | `team-ops` |  |
 | `bevy/examples/audio/soundtrack.rs` | `audio` | `mgstudio-engine/examples/audio/soundtrack` | `Exact` | `team-ops` |  |
 | `bevy/examples/audio/spatial_audio_2d.rs` | `audio` | `mgstudio-engine/examples/audio/spatial_audio_2d` | `Exact` | `team-ops` |  |
 | `bevy/examples/audio/spatial_audio_3d.rs` | `audio` | `mgstudio-engine/examples/audio/spatial_audio_3d` | `Exact` | `team-ops` |  |
@@ -212,7 +212,7 @@ Notes:
 | `bevy/examples/camera/2d_screen_shake.rs` | `camera` | `mgstudio-engine/examples/camera/2d_screen_shake` | `Exact` | `team-render` |  |
 | `bevy/examples/camera/2d_top_down_camera.rs` | `camera` | `mgstudio-engine/examples/camera/2d_top_down_camera` | `Exact` | `team-render` |  |
 | `bevy/examples/camera/camera_orbit.rs` | `camera` | `mgstudio-engine/examples/camera/camera_orbit` | `Exact` | `team-render` |  |
-| `bevy/examples/camera/custom_projection.rs` | `camera` |  | `Blocked` | `team-render` |  |
+| `bevy/examples/camera/custom_projection.rs` | `camera` | `mgstudio-engine/examples/camera/custom_projection` | `Exact` | `team-render` |  |
 | `bevy/examples/camera/first_person_view_model.rs` | `camera` | `mgstudio-engine/examples/camera/first_person_view_model` | `Exact` | `team-render` |  |
 | `bevy/examples/camera/free_camera_controller.rs` | `camera` | `mgstudio-engine/examples/camera/free_camera_controller` | `Exact` | `team-render` |  |
 | `bevy/examples/camera/pan_camera_controller.rs` | `camera` | `mgstudio-engine/examples/camera/pan_camera_controller` | `Exact` | `team-render` |  |
@@ -245,7 +245,7 @@ Notes:
 | `bevy/examples/ecs/parallel_query.rs` | `ecs` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/ecs/relationships.rs` | `ecs` |  | `Blocked` | `team-core` |  |
 | `bevy/examples/ecs/removal_detection.rs` | `ecs` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/ecs/run_conditions.rs` | `ecs` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/ecs/run_conditions.rs` | `ecs` | `mgstudio-engine/examples/ecs/run_conditions` | `Exact` | `team-core` |  |
 | `bevy/examples/ecs/send_and_receive_messages.rs` | `ecs` | `mgstudio-engine/examples/ecs/send_and_receive_messages` | `Exact` | `team-core` |  |
 | `bevy/examples/ecs/startup_system.rs` | `ecs` | `mgstudio-engine/examples/ecs/startup_system` | `Exact` | `team-core` |  |
 | `bevy/examples/ecs/state_scoped.rs` | `ecs` |  | `Blocked` | `team-core` |  |
@@ -277,7 +277,7 @@ Notes:
 | `bevy/examples/gltf/load_gltf_extras.rs` | `gltf` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/gltf/query_gltf_primitives.rs` | `gltf` |  | `Blocked` | `team-asset_scene` |  |
 | `bevy/examples/gltf/update_gltf_scene.rs` | `gltf` |  | `Blocked` | `team-asset_scene` |  |
-| `bevy/examples/hello_world.rs` | `hello_world.rs` |  | `Blocked` | `team-parity` |  |
+| `bevy/examples/hello_world.rs` | `hello_world` | `mgstudio-engine/examples/hello_world/hello_world` | `Exact` | `team-core` |  |
 | `bevy/examples/helpers/widgets.rs` | `helpers` |  | `Blocked` | `team-ops` |  |
 | `bevy/examples/input/char_input_events.rs` | `input` | `mgstudio-engine/examples/input/char_input_events` | `Exact` | `team-input_window` |  |
 | `bevy/examples/input/gamepad_input.rs` | `input` | `mgstudio-engine/examples/input/gamepad_input` | `Exact` | `team-input_window` |  |
@@ -301,13 +301,13 @@ Notes:
 | `bevy/examples/math/bounding_2d.rs` | `math` | `mgstudio-engine/examples/math/bounding_2d` | `Exact` | `team-core` |  |
 | `bevy/examples/math/cubic_splines.rs` | `math` | `mgstudio-engine/examples/math/cubic_splines` | `Exact` | `team-core` |  |
 | `bevy/examples/math/custom_primitives.rs` | `math` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/math/random_sampling.rs` | `math` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/math/random_sampling.rs` | `math` | `mgstudio-engine/examples/math/random_sampling` | `Exact` | `team-core` |  |
 | `bevy/examples/math/render_primitives.rs` | `math` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/math/sampling_primitives.rs` | `math` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/math/sampling_primitives.rs` | `math` | `mgstudio-engine/examples/math/sampling_primitives` | `Exact` | `team-core` |  |
 | `bevy/examples/mobile/src/lib.rs` | `mobile` |  | `N/A` | `team-platform_na` | WASM-first policy: platform-incompatible category. |
 | `bevy/examples/mobile/src/main.rs` | `mobile` |  | `N/A` | `team-platform_na` | WASM-first policy: platform-incompatible category. |
 | `bevy/examples/movement/physics_in_fixed_timestep.rs` | `movement` |  | `Blocked` | `team-core` |  |
-| `bevy/examples/movement/smooth_follow.rs` | `movement` |  | `Blocked` | `team-core` |  |
+| `bevy/examples/movement/smooth_follow.rs` | `movement` | `mgstudio-engine/examples/movement/smooth_follow` | `Exact` | `team-core` |  |
 | `bevy/examples/no_std/library/src/lib.rs` | `no_std` |  | `N/A` | `team-platform_na` | WASM-first policy: platform-incompatible category. |
 | `bevy/examples/picking/debug_picking.rs` | `picking` |  | `Blocked` | `team-render` |  |
 | `bevy/examples/picking/dragdrop_picking.rs` | `picking` |  | `Blocked` | `team-render` |  |
@@ -457,7 +457,7 @@ Notes:
 | `bevy/examples/window/multi_window_text.rs` | `window` |  | `Blocked` | `team-input_window` |  |
 | `bevy/examples/window/multiple_windows.rs` | `window` |  | `Blocked` | `team-input_window` |  |
 | `bevy/examples/window/scale_factor_override.rs` | `window` | `mgstudio-engine/examples/window/scale_factor_override` | `Exact` | `team-input_window` |  |
-| `bevy/examples/window/screenshot.rs` | `window` | `mgstudio-engine/examples/window/screenshot` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/window/screenshot.rs` | `window` | `mgstudio-engine/examples/window/screenshot` | `Exact` | `team-input_window` |  |
 | `bevy/examples/window/transparent_window.rs` | `window` | `mgstudio-engine/examples/window/transparent_window` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/window_drag_move.rs` | `window` | `mgstudio-engine/examples/window/window_drag_move` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/window_resizing.rs` | `window` | `mgstudio-engine/examples/window/window_resizing` | `Exact` | `team-input_window` |  |

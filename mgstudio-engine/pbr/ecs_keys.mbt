@@ -1,0 +1,359 @@
+// Copyright 2025 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+pub let ecs_key_mesh3d : @ecs.ComponentKey[Mesh3d] = @ecs.register_component(
+  debug_name="render3d.mesh3d",
+)
+
+///|
+pub let ecs_key_mesh_material3d : @ecs.ComponentKey[MeshMaterial3d] = @material.ecs_key_mesh_material3d
+
+///|
+pub let ecs_key_hdr : @ecs.ComponentKey[Hdr] = @core_pipeline.ecs_key_hdr
+
+///|
+pub let ecs_key_fxaa : @ecs.ComponentKey[Fxaa] = @post_process.ecs_key_fxaa
+
+///|
+pub let ecs_key_msaa : @ecs.ComponentKey[Msaa] = @core_pipeline.ecs_key_msaa
+
+///|
+pub let ecs_key_bloom : @ecs.ComponentKey[Bloom] = @post_process.ecs_key_bloom
+
+///|
+pub let ecs_key_skybox : @ecs.ComponentKey[Skybox] = @ecs.register_component(
+  debug_name="render3d.skybox",
+)
+
+///|
+pub let ecs_key_camera3d : @ecs.ComponentKey[Camera3d] = @ecs.register_component(
+  debug_name="render3d.camera3d",
+)
+
+///|
+pub let ecs_key_exposure : @ecs.ComponentKey[Exposure] = @ecs.register_component(
+  debug_name="render3d.exposure",
+)
+
+///|
+pub let ecs_key_vignette : @ecs.ComponentKey[Vignette] = @post_process.ecs_key_vignette
+
+///|
+pub let ecs_key_spot_light : @ecs.ComponentKey[SpotLight] = @light.ecs_key_spot_light
+
+///|
+pub let ecs_key_wireframe : @ecs.ComponentKey[Wireframe] = @ecs.register_component(
+  debug_name="render3d.wireframe",
+)
+
+///|
+pub let ecs_key_free_camera : @ecs.ComponentKey[FreeCamera] = @ecs.register_component(
+  debug_name="render3d.free_camera",
+)
+
+///|
+pub let ecs_key_light_probe : @ecs.ComponentKey[LightProbe] = @light.ecs_key_light_probe
+
+///|
+pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur] = @post_process.ecs_key_motion_blur
+
+///|
+pub let ecs_key_point_light : @ecs.ComponentKey[PointLight] = @light.ecs_key_point_light
+
+///|
+pub let ecs_key_no_wireframe : @ecs.ComponentKey[NoWireframe] = @ecs.register_component(
+  debug_name="render3d.no_wireframe",
+)
+
+///|
+pub let ecs_key_tonemapping : @ecs.ComponentKey[Tonemapping] = @post_process.ecs_key_tonemapping
+
+///|
+pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading] = @post_process.ecs_key_color_grading
+
+///|
+pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither] = @post_process.ecs_key_deband_dither
+
+///|
+pub let ecs_key_depth_prepass : @ecs.ComponentKey[DepthPrepass] = @core_pipeline.ecs_key_depth_prepass
+
+///|
+pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal] = @ecs.register_component(
+  debug_name="render3d.forward_decal",
+)
+
+///|
+pub let ecs_key_normal_prepass : @ecs.ComponentKey[NormalPrepass] = @core_pipeline.ecs_key_normal_prepass
+
+///|
+pub let ecs_key_clustered_decal : @ecs.ComponentKey[ClusteredDecal] = @ecs.register_component(
+  debug_name="render3d.clustered_decal",
+)
+
+///|
+pub let ecs_key_contact_shadows : @ecs.ComponentKey[ContactShadows] = @ecs.register_component(
+  debug_name="render3d.contact_shadows",
+)
+
+///|
+pub let ecs_key_temporal_jitter : @ecs.ComponentKey[TemporalJitter] = @post_process.ecs_key_temporal_jitter
+
+///|
+pub let ecs_key_wireframe_color : @ecs.ComponentKey[WireframeColor] = @ecs.register_component(
+  debug_name="render3d.wireframe_color",
+)
+
+///|
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass] = @core_pipeline.ecs_key_deferred_prepass
+
+///|
+pub let ecs_key_free_camera_state : @ecs.ComponentKey[FreeCameraState] = @ecs.register_component(
+  debug_name="render3d.free_camera_state",
+)
+
+///|
+pub let ecs_key_not_shadow_caster : @ecs.ComponentKey[NotShadowCaster] = @ecs.register_component(
+  debug_name="render3d.not_shadow_caster",
+)
+
+///|
+pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @ecs.register_component(
+  debug_name="render3d.sub_camera_view3d",
+)
+
+///|
+pub let ecs_key_directional_light : @ecs.ComponentKey[DirectionalLight] = @light.ecs_key_directional_light
+
+///|
+pub let ecs_key_irradiance_volume : @ecs.ComponentKey[IrradianceVolume] = @light.ecs_key_irradiance_volume
+
+///|
+pub let ecs_key_occlusion_culling : @ecs.ComponentKey[OcclusionCulling] = @ecs.register_component(
+  debug_name="render3d.occlusion_culling",
+)
+
+///|
+pub let ecs_key_spot_light_texture : @ecs.ComponentKey[SpotLightTexture] = @light.ecs_key_spot_light_texture
+
+///|
+pub let ecs_key_not_shadow_receiver : @ecs.ComponentKey[NotShadowReceiver] = @ecs.register_component(
+  debug_name="render3d.not_shadow_receiver",
+)
+
+///|
+pub let ecs_key_point_light_texture : @ecs.ComponentKey[PointLightTexture] = @light.ecs_key_point_light_texture
+
+///|
+pub let ecs_key_projection : @ecs.ComponentKey[Projection] = @ecs.register_component(
+  debug_name="render3d.projection",
+)
+
+///|
+pub let ecs_key_frustum : @ecs.ComponentKey[Frustum] = @ecs.register_component(
+  debug_name="render3d.frustum",
+)
+
+///|
+pub let ecs_key_parallax_correction : @ecs.ComponentKey[ParallaxCorrection] = @light.ecs_key_parallax_correction
+
+///|
+pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[ChromaticAberration] = @post_process.ecs_key_chromatic_aberration
+
+///|
+pub let ecs_key_environment_map_light : @ecs.ComponentKey[EnvironmentMapLight] = @light.ecs_key_environment_map_light
+
+///|
+pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass] = @core_pipeline.ecs_key_motion_vector_prepass
+
+///|
+pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[TemporalAntiAliasing] = @post_process.ecs_key_temporal_anti_aliasing
+
+///|
+pub let ecs_key_shadow_filtering_method : @ecs.ComponentKey[
+  ShadowFilteringMethod,
+] = @ecs.register_component(debug_name="render3d.shadow_filtering_method")
+
+///|
+pub let ecs_key_screen_space_reflections : @ecs.ComponentKey[
+  ScreenSpaceReflections,
+] = @post_process.ecs_key_screen_space_reflections
+
+///|
+pub let ecs_key_directional_light_texture : @ecs.ComponentKey[
+  DirectionalLightTexture,
+] = @light.ecs_key_directional_light_texture
+
+///|
+pub let ecs_key_forward_decal_material_ext : @ecs.ComponentKey[
+  ForwardDecalMaterialExt,
+] = @material.ecs_key_forward_decal_material_ext
+
+///|
+pub let ecs_key_screen_space_transmission : @ecs.ComponentKey[
+  ScreenSpaceTransmission,
+] = @post_process.ecs_key_screen_space_transmission
+
+///|
+pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[
+  TransmittedShadowReceiver,
+] = @ecs.register_component(debug_name="render3d.transmitted_shadow_receiver")
+
+///|
+pub let ecs_key_screen_space_ambient_occlusion : @ecs.ComponentKey[
+  ScreenSpaceAmbientOcclusion,
+] = @post_process.ecs_key_screen_space_ambient_occlusion
+
+///|
+pub let ecs_key_generated_environment_map_light : @ecs.ComponentKey[
+  GeneratedEnvironmentMapLight,
+] = @light.ecs_key_generated_environment_map_light
+
+///|
+pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[
+  OrderIndependentTransparencySettings,
+] = @ecs.register_component(
+  debug_name="render3d.order_independent_transparency_settings",
+)
+
+///|
+pub impl @ecs.Component for Mesh3d with component() {
+  ecs_key_mesh3d
+}
+
+///|
+pub impl @ecs.Component for Skybox with component() {
+  ecs_key_skybox
+}
+
+///|
+pub impl @ecs.Component for Camera3d with component() {
+  ecs_key_camera3d
+}
+
+///|
+pub impl @ecs.Component for Exposure with component() {
+  ecs_key_exposure
+}
+
+///|
+pub impl @ecs.Component for Wireframe with component() {
+  ecs_key_wireframe
+}
+
+///|
+pub impl @ecs.Component for FreeCamera with component() {
+  ecs_key_free_camera
+}
+
+///|
+pub impl @ecs.Component for NoWireframe with component() {
+  ecs_key_no_wireframe
+}
+
+///|
+pub impl @ecs.Component for ForwardDecal with component() {
+  ecs_key_forward_decal
+}
+
+///|
+pub impl @ecs.Component for ClusteredDecal with component() {
+  ecs_key_clustered_decal
+}
+
+///|
+pub impl @ecs.Component for ContactShadows with component() {
+  ecs_key_contact_shadows
+}
+
+///|
+pub impl @ecs.Component for WireframeColor with component() {
+  ecs_key_wireframe_color
+}
+
+///|
+pub impl @ecs.Component for FreeCameraState with component() {
+  ecs_key_free_camera_state
+}
+
+///|
+pub impl @ecs.Component for NotShadowCaster with component() {
+  ecs_key_not_shadow_caster
+}
+
+///|
+pub impl @ecs.Component for SubCameraView3d with component() {
+  ecs_key_sub_camera_view3d
+}
+
+///|
+pub impl @ecs.Component for OcclusionCulling with component() {
+  ecs_key_occlusion_culling
+}
+
+///|
+pub impl @ecs.Component for NotShadowReceiver with component() {
+  ecs_key_not_shadow_receiver
+}
+
+///|
+pub impl @ecs.Component for Projection with component() {
+  ecs_key_projection
+}
+
+///|
+pub impl @ecs.Component for Frustum with component() {
+  ecs_key_frustum
+}
+
+///|
+pub impl @ecs.Component for ShadowFilteringMethod with component() {
+  ecs_key_shadow_filtering_method
+}
+
+///|
+pub impl @ecs.Component for TransmittedShadowReceiver with component() {
+  ecs_key_transmitted_shadow_receiver
+}
+
+///|
+pub impl @ecs.Component for OrderIndependentTransparencySettings with component() {
+  ecs_key_order_independent_transparency_settings
+}
+
+///|
+pub let ecs_key_wireframe_config : @ecs.ResourceKey[WireframeConfig] = @ecs.register_resource(
+  debug_name="render3d.wireframe_config",
+)
+
+///|
+pub let ecs_key_global_ambient_light : @ecs.ResourceKey[GlobalAmbientLight] = @light.ecs_key_global_ambient_light
+
+///|
+pub let ecs_key_point_light_shadow_map : @ecs.ResourceKey[PointLightShadowMap] = @light.ecs_key_point_light_shadow_map
+
+///|
+pub let ecs_key_directional_light_shadow_map : @ecs.ResourceKey[
+  DirectionalLightShadowMap,
+] = @light.ecs_key_directional_light_shadow_map
+
+///|
+pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[
+  DefaultOpaqueRendererMethod,
+] = @material.ecs_key_default_opaque_renderer_method
+
+///|
+pub let ecs_key_internal_assets : @ecs.ResourceKey[Render3dInternalAssetsState] = @ecs.register_resource(
+  debug_name="render3d.internal_assets",
+)

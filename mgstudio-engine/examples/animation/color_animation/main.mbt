@@ -157,8 +157,8 @@ fn color_animation_setup(world : @ecs.World) -> Unit {
   color_animation_state.val.srgba_points = to_srgba_points(linear_points)
   color_animation_state.val.oklcha_points = to_oklcha_points(linear_points)
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -197,10 +197,10 @@ fn spawn_mode_sprite(
   y : Float,
   mode : ColorAnimationMode,
 ) -> Unit {
-  let sprite = @render2d.Sprite::from_image(texture).with_custom_size(
+  let sprite = @sprite.Sprite::from_image(texture).with_custom_size(
     Some(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
   )
-  let entity = @render2d.SpriteBundle::new(
+  let entity = @sprite.SpriteBundle::new(
     sprite,
     @math.Transform::from_xyz(0.0F, y, 0.0F),
   ).spawn(world)
@@ -209,7 +209,7 @@ fn spawn_mode_sprite(
 
 ///|
 fn default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
+  match (try! world.get_resource(@time.time_resource_key_of(()))) {
     Some(time) => time
     None => {
       let time : @time.Time[Unit] = @time.Time::default()
@@ -230,11 +230,11 @@ fn color_animation_update(world : @ecs.World) -> Unit {
   let next_sprites : Array[AnimatedSprite] = []
   for animated in color_animation_state.val.sprites {
     let color = mode_color(animated.mode, t)
-    let sprite = @render2d.Sprite::from_image(texture)
+    let sprite = @sprite.Sprite::from_image(texture)
       .with_custom_size(Some(@math.Vec2::new(SPRITE_SIZE, SPRITE_SIZE)))
       .with_color(color)
     try! world.despawn(animated.entity)
-    let entity = @render2d.SpriteBundle::new(
+    let entity = @sprite.SpriteBundle::new(
       sprite,
       @math.Transform::from_xyz(x, animated.y, 0.0F),
     ).spawn(world)
@@ -251,7 +251,7 @@ fn color_animation_update(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn mode_color(mode : ColorAnimationMode, t : Float) -> @render2d.Color {
+fn mode_color(mode : ColorAnimationMode, t : Float) -> @sprite.Color {
   match mode {
     ColorAnimationMode::CurveLinearRgba =>
       linear_to_color(bezier_linear(color_animation_state.val.linear_points, t))
@@ -339,8 +339,8 @@ fn normalized_time(elapsed_seconds : Float) -> Float {
 }
 
 ///|
-fn linear_to_color(color : LinearRgba) -> @render2d.Color {
-  @render2d.Color::new(color.r, color.g, color.b, color.a)
+fn linear_to_color(color : LinearRgba) -> @sprite.Color {
+  @sprite.Color::new(color.r, color.g, color.b, color.a)
 }
 
 ///|
@@ -660,7 +660,7 @@ fn linear_to_hsla(color : LinearRgba) -> Hsla {
 
 ///|
 fn hsla_to_linear(color : Hsla) -> LinearRgba {
-  let linear_color = @render2d.Color::hsla(color.h, color.s, color.l, color.a)
+  let linear_color = @sprite.Color::hsla(color.h, color.s, color.l, color.a)
   LinearRgba::{
     r: linear_color.r,
     g: linear_color.g,

@@ -6,8 +6,9 @@ import {
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/render2d",
-  "Milky2018/mgstudio/render3d",
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/pbr",
+  "Milky2018/mgstudio/camera",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/ui",
@@ -16,4 +17,5 @@ import {
 
 options(
   "is-main": true,
+  "supported-targets": "native",
 )

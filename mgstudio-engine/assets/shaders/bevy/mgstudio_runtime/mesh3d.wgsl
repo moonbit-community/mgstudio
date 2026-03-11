@@ -24,11 +24,10 @@ struct Mesh3dUniform {
   model_rot : vec4<f32>,
   model_scale : vec4<f32>,
   camera_pos : vec4<f32>,
-  camera_rot : vec4<f32>,
-  projection : vec4<f32>, // (fov_y, aspect, near, far)
-  subview : vec4<f32>, // (scale_x, scale_y, bias_x, bias_y)
+  clip_from_world : mat4x4<f32>,
   color : vec4<f32>,
-  uv : vec4<f32>,
+  uv_transform0 : vec4<f32>, // (a, b, c, tx)
+  uv_transform1 : vec4<f32>, // (d, ty, mode, _)
   ambient : vec4<f32>, // (r, g, b, brightness)
   directional_dir_illum : vec4<f32>, // (dir.xyz, illuminance)
   directional_color : vec4<f32>, // (r, g, b, _)
@@ -45,7 +44,7 @@ struct Mesh3dUniform {
   anisotropy_params : vec4<f32>, // (strength, rot_cos, rot_sin, has_anisotropy_map)
   specular_tint : vec4<f32>, // (r, g, b, has_specular_tint_map)
   transmission_params : vec4<f32>, // (diffuse_transmission, specular_transmission, thickness, ior)
-  point_shadow_params : vec4<f32>, // (enabled, depth_bias, _, _)
+  point_shadow_params : vec4<f32>, // (enabled, depth_bias, near_z, _)
 };
 
 @group(0) @binding(0) var<uniform> u_mesh : Mesh3dUniform;
@@ -67,10 +66,6 @@ fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
   return q / sqrt(n);
 }
 
-fn quat_conjugate(q : vec4<f32>) -> vec4<f32> {
-  return vec4<f32>(-q.xyz, q.w);
-}
-
 fn quat_rotate_vec3(q : vec4<f32>, v : vec3<f32>) -> vec3<f32> {
   let t = 2.0 * cross(q.xyz, v);
   return v + q.w * t + cross(q.xyz, t);
@@ -85,55 +80,14 @@ fn vs_main(
   var out : VertexOut;
 
   let model_q = quat_normalize(u_mesh.model_rot);
-  let camera_q = quat_normalize(u_mesh.camera_rot);
-  let inv_camera_q = quat_conjugate(camera_q);
-
   let local_pos = position * u_mesh.model_scale.xyz;
   let world_pos = quat_rotate_vec3(model_q, local_pos) + u_mesh.model_pos.xyz;
-  let camera_space = quat_rotate_vec3(
-    inv_camera_q,
-    world_pos - u_mesh.camera_pos.xyz,
-  );
-
-  let aspect = max(u_mesh.projection.y, 0.001);
-  var clip_x_full = 0.0;
-  var clip_y_full = 0.0;
-  var clip_z = 0.0;
-  var clip_w = 1.0;
-  if (u_mesh.projection.x > 0.0) {
-    // Perspective projection: projection.x = vertical fov radians.
-    let fov_y = max(u_mesh.projection.x, 0.001);
-    let near_z = max(u_mesh.projection.z, 0.0001);
-    let far_z = max(u_mesh.projection.w, near_z + 0.0001);
-    let f = 1.0 / tan(0.5 * fov_y);
-    clip_x_full = camera_space.x * f / aspect;
-    clip_y_full = camera_space.y * f;
-    clip_z = camera_space.z * (far_z / (near_z - far_z)) +
-      (near_z * far_z) / (near_z - far_z);
-    clip_w = -camera_space.z;
-  } else {
-    // Orthographic projection: projection.x = -half_height(world units).
-    let half_height = max(-u_mesh.projection.x, 1e-5);
-    let half_width = max(half_height * aspect, 1e-5);
-    let near_z = u_mesh.projection.z;
-    let far_z = select(
-      near_z + 0.0001,
-      u_mesh.projection.w,
-      u_mesh.projection.w > near_z + 0.0001,
-    );
-    clip_x_full = camera_space.x / half_width;
-    clip_y_full = camera_space.y / half_height;
-    let z01 = (camera_space.z - near_z) / (far_z - near_z);
-    clip_z = z01 * 2.0 - 1.0;
-    clip_w = 1.0;
-  }
-  let clip_x = clip_x_full * u_mesh.subview.x + u_mesh.subview.z * clip_w;
-  let clip_y = clip_y_full * u_mesh.subview.y + u_mesh.subview.w * clip_w;
-
-  out.position = vec4<f32>(clip_x, clip_y, clip_z, clip_w);
+  out.position = u_mesh.clip_from_world * vec4<f32>(world_pos, 1.0);
   out.uv = vec2<f32>(
-    u_mesh.uv.x + uv.x * u_mesh.uv.z,
-    u_mesh.uv.y + uv.y * u_mesh.uv.w,
+    u_mesh.uv_transform0.x * uv.x + u_mesh.uv_transform0.z * uv.y +
+      u_mesh.uv_transform0.w,
+    u_mesh.uv_transform0.y * uv.x + u_mesh.uv_transform1.x * uv.y +
+      u_mesh.uv_transform1.y,
   );
   out.color = color * u_mesh.color;
   out.world_pos = world_pos;
@@ -147,6 +101,15 @@ fn safe_normalize(v : vec3<f32>) -> vec3<f32> {
 
 fn lambert(normal : vec3<f32>, light_dir : vec3<f32>) -> f32 {
   return max(dot(normal, light_dir), 0.0);
+}
+
+fn get_distance_attenuation(distance_square : f32, range : f32) -> f32 {
+  let safe_range = max(range, 1.0e-4);
+  let inverse_range_squared = 1.0 / (safe_range * safe_range);
+  let factor = distance_square * inverse_range_squared;
+  let smooth_factor = clamp(1.0 - factor * factor, 0.0, 1.0);
+  let attenuation = smooth_factor * smooth_factor;
+  return attenuation / max(distance_square, 1.0e-4);
 }
 
 fn cotangent_frame(
@@ -397,8 +360,8 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let has_depth_map = u_mesh.parallax_params.w > 0.5;
   let has_anisotropy_map = u_mesh.anisotropy_params.w > 0.5;
   let has_specular_tint_map = u_mesh.specular_tint.w > 0.5;
-  let use_stacked_cubemap = u_mesh.uv.w < 0.0;
-  let has_uv = u_mesh.uv.z >= 0.0 && u_mesh.uv.w >= 0.0;
+  let use_stacked_cubemap = u_mesh.uv_transform1.z < 0.0;
+  let has_uv = u_mesh.uv_transform1.z > 0.0;
   let dp1 = dpdx(in.world_pos);
   let dp2 = dpdy(in.world_pos);
   let geometric_normal = safe_normalize(cross(dp1, dp2));
@@ -526,20 +489,16 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let f0 = 0.16 * reflectance_rgb * reflectance_rgb * (1.0 - metallic) +
     base_color.xyz * metallic;
 
-  // Match Bevy-style ambient brightness semantics: 80.0 means neutral ambient.
-  let ambient_term = u_mesh.ambient.xyz * (max(u_mesh.ambient.w, 0.0) / 80.0);
+  let ambient_term = u_mesh.ambient.xyz * max(u_mesh.ambient.w, 0.0);
 
   let directional_dir = safe_normalize(u_mesh.directional_dir_illum.xyz);
-  let directional_strength = max(u_mesh.directional_dir_illum.w, 0.0) / 10000.0;
+  let directional_color = u_mesh.directional_color.xyz *
+    max(u_mesh.directional_dir_illum.w, 0.0);
   let directional_light_dir = -directional_dir;
   let directional_diff = lambert(normal, directional_light_dir);
   let directional_back_diff = lambert(-normal, directional_light_dir);
-  let directional_term = u_mesh.directional_color.xyz *
-    directional_strength *
-    directional_diff;
-  let directional_transmitted_term = u_mesh.directional_color.xyz *
-    directional_strength *
-    directional_back_diff;
+  let directional_term = directional_color * directional_diff;
+  let directional_transmitted_term = directional_color * directional_back_diff;
   var directional_specular = vec3<f32>(0.0, 0.0, 0.0);
   if anisotropy_strength > 0.0 {
     directional_specular = specular_anisotropic(
@@ -557,17 +516,18 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       specular_isotropic(normal, directional_light_dir, view_dir, roughness),
     );
   }
-  let directional_spec = u_mesh.directional_color.xyz *
-    directional_strength *
+  let directional_spec = directional_color *
     directional_diff *
     directional_specular;
 
   let to_point = u_mesh.point_pos_range.xyz - in.world_pos;
+  let point_distance_square = max(dot(to_point, to_point), 1.0e-4);
   let point_distance = length(to_point);
   let point_dir = safe_normalize(to_point);
   let point_range = max(u_mesh.point_pos_range.w, 1e-4);
-  let point_atten = clamp(1.0 - point_distance / point_range, 0.0, 1.0);
-  let point_strength = max(u_mesh.point_color_intensity.w, 0.0) / 1000000.0;
+  let point_atten = get_distance_attenuation(point_distance_square, point_range);
+  let point_color = u_mesh.point_color_intensity.xyz *
+    max(u_mesh.point_color_intensity.w, 0.0);
   let point_diff = lambert(normal, point_dir);
   let point_back_diff = lambert(-normal, point_dir);
   let point_shadow_enabled = u_mesh.point_shadow_params.x > 0.5;
@@ -587,7 +547,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       abs(to_light.x),
       max(abs(to_light.y), abs(to_light.z)),
     );
-    let point_near = max(u_mesh.projection.z, 1.0e-4);
+    let point_near = max(u_mesh.point_shadow_params.z, 1.0e-4);
     let point_far = max(point_range, point_near + 1.0e-4);
     var point_linear_depth = 0.0;
     if major_axis_magnitude <= point_near {
@@ -604,15 +564,11 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       clamp(point_linear_depth - point_depth_bias, 0.0, 1.0),
     );
   }
-  let point_term = u_mesh.point_color_intensity.xyz *
-    point_strength *
-    point_atten *
+  let point_term = point_color *
     point_atten *
     point_diff *
     point_shadow_factor;
-  let point_transmitted_term = u_mesh.point_color_intensity.xyz *
-    point_strength *
-    point_atten *
+  let point_transmitted_term = point_color *
     point_atten *
     point_back_diff *
     point_shadow_factor;
@@ -633,9 +589,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       specular_isotropic(normal, point_dir, view_dir, roughness),
     );
   }
-  let point_spec = u_mesh.point_color_intensity.xyz *
-    point_strength *
-    point_atten *
+  let point_spec = point_color *
     point_atten *
     point_diff *
     point_specular *
@@ -645,7 +599,8 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let spot_distance = length(to_spot);
   let spot_dir_to_fragment = safe_normalize(-to_spot);
   let spot_range = max(u_mesh.spot_pos_range.w, 1e-4);
-  let spot_atten_base = clamp(1.0 - spot_distance / spot_range, 0.0, 1.0);
+  let spot_distance_square = max(dot(to_spot, to_spot), 1.0e-4);
+  let spot_atten_base = get_distance_attenuation(spot_distance_square, spot_range);
   let spot_light_dir = safe_normalize(u_mesh.spot_dir_inner.xyz);
   let inner_angle = max(u_mesh.spot_dir_inner.w, 0.0);
   let outer_angle = max(u_mesh.spot_outer.x, inner_angle + 1e-4);
@@ -653,19 +608,16 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let outer_cos = cos(outer_angle);
   let spot_cos_theta = dot(spot_light_dir, spot_dir_to_fragment);
   let spot_cone = smoothstep(outer_cos, inner_cos, spot_cos_theta);
-  let spot_strength = max(u_mesh.spot_color_intensity.w, 0.0) / 1000000.0;
+  let spot_color = u_mesh.spot_color_intensity.xyz *
+    max(u_mesh.spot_color_intensity.w, 0.0);
   let spot_light_to_fragment = safe_normalize(to_spot);
   let spot_diff = lambert(normal, spot_light_to_fragment);
   let spot_back_diff = lambert(-normal, spot_light_to_fragment);
-  let spot_term = u_mesh.spot_color_intensity.xyz *
-    spot_strength *
-    spot_atten_base *
+  let spot_term = spot_color *
     spot_atten_base *
     spot_cone *
     spot_diff;
-  let spot_transmitted_term = u_mesh.spot_color_intensity.xyz *
-    spot_strength *
-    spot_atten_base *
+  let spot_transmitted_term = spot_color *
     spot_atten_base *
     spot_cone *
     spot_back_diff;
@@ -686,9 +638,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       specular_isotropic(normal, spot_light_to_fragment, view_dir, roughness),
     );
   }
-  let spot_spec = u_mesh.spot_color_intensity.xyz *
-    spot_strength *
-    spot_atten_base *
+  let spot_spec = spot_color *
     spot_atten_base *
     spot_cone *
     spot_diff *

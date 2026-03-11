@@ -4,13 +4,15 @@ package "Milky2018/mgstudio/ui"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/render2d",
   "Milky2018/mgstudio/text",
   "Milky2018/moon_accesskit",
   "moonbitlang/core/json",
+  "moonbitlang/core/ref",
 }
 
 // Values
@@ -31,6 +33,10 @@ pub let ecs_key_button : @ecs.ComponentKey[Button]
 pub let ecs_key_button_colors : @ecs.ComponentKey[ButtonColors]
 
 pub let ecs_key_calculated_clip : @ecs.ComponentKey[CalculatedClip]
+
+pub let ecs_key_computed_ui_render_target_info : @ecs.ComponentKey[ComputedUiRenderTargetInfo]
+
+pub let ecs_key_computed_ui_target_camera : @ecs.ComponentKey[ComputedUiTargetCamera]
 
 pub let ecs_key_content_size : @ecs.ComponentKey[ContentSize]
 
@@ -56,10 +62,6 @@ pub let ecs_key_relative_cursor_position : @ecs.ComponentKey[RelativeCursorPosit
 
 pub let ecs_key_scroll_position : @ecs.ComponentKey[ScrollPosition]
 
-pub let ecs_key_ui_anti_alias : @ecs.ComponentKey[UiAntiAlias]
-
-pub let ecs_key_ui_box_shadow_samples : @ecs.ComponentKey[UiBoxShadowSamples]
-
 pub let ecs_key_ui_context : @ecs.ResourceKey[UiContext]
 
 pub let ecs_key_ui_image : @ecs.ComponentKey[UiImage]
@@ -71,6 +73,8 @@ pub let ecs_key_ui_root : @ecs.ComponentKey[UiRoot]
 pub let ecs_key_ui_scale : @ecs.ResourceKey[UiScale]
 
 pub let ecs_key_ui_stack : @ecs.ResourceKey[UiStack]
+
+pub let ecs_key_ui_target_camera : @ecs.ComponentKey[UiTargetCamera]
 
 pub let ecs_key_ui_text : @ecs.ComponentKey[UiText]
 
@@ -93,6 +97,10 @@ pub fn get_button_colors_store(@ecs.World) -> @ecs.ComponentAccess[ButtonColors]
 pub fn get_button_store(@ecs.World) -> @ecs.ComponentAccess[Button]
 
 pub fn get_calculated_clip_store(@ecs.World) -> @ecs.ComponentAccess[CalculatedClip]
+
+pub fn get_computed_ui_render_target_info_store(@ecs.World) -> @ecs.ComponentAccess[ComputedUiRenderTargetInfo]
+
+pub fn get_computed_ui_target_camera_store(@ecs.World) -> @ecs.ComponentAccess[ComputedUiTargetCamera]
 
 pub fn get_content_size_store(@ecs.World) -> @ecs.ComponentAccess[ContentSize]
 
@@ -118,10 +126,6 @@ pub fn get_relative_cursor_position_store(@ecs.World) -> @ecs.ComponentAccess[Re
 
 pub fn get_scroll_position_store(@ecs.World) -> @ecs.ComponentAccess[ScrollPosition]
 
-pub fn get_ui_anti_alias_store(@ecs.World) -> @ecs.ComponentAccess[UiAntiAlias]
-
-pub fn get_ui_box_shadow_samples_store(@ecs.World) -> @ecs.ComponentAccess[UiBoxShadowSamples]
-
 pub fn get_ui_context_resource(@ecs.World) -> @ecs.ResourceAccess[UiContext]
 
 pub fn get_ui_image_store(@ecs.World) -> @ecs.ComponentAccess[UiImage]
@@ -133,6 +137,8 @@ pub fn get_ui_root_store(@ecs.World) -> @ecs.ComponentAccess[UiRoot]
 pub fn get_ui_scale_resource(@ecs.World) -> @ecs.ResourceAccess[UiScale]
 
 pub fn get_ui_stack_resource(@ecs.World) -> @ecs.ResourceAccess[UiStack]
+
+pub fn get_ui_target_camera_store(@ecs.World) -> @ecs.ComponentAccess[UiTargetCamera]
 
 pub fn get_ui_text_store(@ecs.World) -> @ecs.ComponentAccess[UiText]
 
@@ -154,7 +160,7 @@ pub fn ui_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn ui_pointer_pos_in_viewport(@math.Vec2, @math.Vec2, @math.Vec2) -> @math.Vec2?
 
-pub fn ui_render_extract_system(@ecs.World) -> Unit
+pub fn ui_propagate_target_cameras_system(@ecs.World) -> Unit
 
 pub fn ui_scroll_system(@ecs.World) -> Unit
 
@@ -181,8 +187,6 @@ pub let ui_set_post_layout : String
 pub let ui_set_prepare : String
 
 pub let ui_set_propagate : String
-
-pub let ui_set_render_extract : String
 
 pub let ui_set_scroll : String
 
@@ -251,17 +255,17 @@ pub impl ToJson for AlignSelf
 pub impl @json.FromJson for AlignSelf
 
 pub struct BackgroundColor {
-  color : @render2d.Color
+  color : @color.Color
 }
-pub fn BackgroundColor::new(@render2d.Color) -> Self
+pub fn BackgroundColor::new(@color.Color) -> Self
 pub impl @ecs.Component for BackgroundColor
 pub impl ToJson for BackgroundColor
 pub impl @json.FromJson for BackgroundColor
 
 pub struct BorderColor {
-  color : @render2d.Color
+  color : @color.Color
 }
-pub fn BorderColor::new(@render2d.Color) -> Self
+pub fn BorderColor::new(@color.Color) -> Self
 pub impl @ecs.Component for BorderColor
 pub impl ToJson for BorderColor
 pub impl @json.FromJson for BorderColor
@@ -295,14 +299,14 @@ pub impl ToJson for BorderRect
 pub impl @json.FromJson for BorderRect
 
 pub struct BoxShadow {
-  color : @render2d.Color
+  color : @color.Color
   x_offset : Val
   y_offset : Val
   spread_radius : Val
   blur_radius : Val
 }
 pub fn BoxShadow::default() -> Self
-pub fn BoxShadow::new(@render2d.Color, Val, Val, Val, Val) -> Self
+pub fn BoxShadow::new(@color.Color, Val, Val, Val, Val) -> Self
 pub impl @ecs.Component for BoxShadow
 pub impl ToJson for BoxShadow
 pub impl @json.FromJson for BoxShadow
@@ -315,11 +319,11 @@ pub impl ToJson for Button
 pub impl @json.FromJson for Button
 
 pub struct ButtonColors {
-  normal : @render2d.Color
-  hovered : @render2d.Color
-  pressed : @render2d.Color
+  normal : @color.Color
+  hovered : @color.Color
+  pressed : @color.Color
 }
-pub fn ButtonColors::new(@render2d.Color, @render2d.Color, @render2d.Color) -> Self
+pub fn ButtonColors::new(@color.Color, @color.Color, @color.Color) -> Self
 pub impl @ecs.Component for ButtonColors
 pub impl ToJson for ButtonColors
 pub impl @json.FromJson for ButtonColors
@@ -331,6 +335,29 @@ pub fn CalculatedClip::new(@math.Rect) -> Self
 pub impl @ecs.Component for CalculatedClip
 pub impl ToJson for CalculatedClip
 pub impl @json.FromJson for CalculatedClip
+
+pub struct ComputedUiRenderTargetInfo {
+  scale_factor : Float
+  physical_size : @math.IVec2
+}
+pub fn ComputedUiRenderTargetInfo::default() -> Self
+pub fn ComputedUiRenderTargetInfo::logical_size(Self) -> @math.Vec2
+pub fn ComputedUiRenderTargetInfo::new(Float, @math.IVec2) -> Self
+pub fn ComputedUiRenderTargetInfo::physical_size(Self) -> @math.IVec2
+pub fn ComputedUiRenderTargetInfo::scale_factor(Self) -> Float
+pub impl @ecs.Component for ComputedUiRenderTargetInfo
+pub impl ToJson for ComputedUiRenderTargetInfo
+pub impl @json.FromJson for ComputedUiRenderTargetInfo
+
+pub struct ComputedUiTargetCamera {
+  camera : @core.Entity
+}
+pub fn ComputedUiTargetCamera::default() -> Self
+pub fn ComputedUiTargetCamera::get(Self) -> @core.Entity?
+pub fn ComputedUiTargetCamera::new(@core.Entity) -> Self
+pub impl @ecs.Component for ComputedUiTargetCamera
+pub impl ToJson for ComputedUiTargetCamera
+pub impl @json.FromJson for ComputedUiTargetCamera
 
 pub struct ContentSize {
   size : @math.Vec2
@@ -442,8 +469,8 @@ pub impl ToJson for GridTrackRepetition
 pub impl @json.FromJson for GridTrackRepetition
 
 pub struct ImageNode {
-  color : @render2d.Color
-  image : @asset.Handle[@asset.Image]
+  color : @color.Color
+  image : @asset.Handle[@image.Image]
   texture_atlas : @asset.TextureAtlas?
   flip_x : Bool
   flip_y : Bool
@@ -451,8 +478,9 @@ pub struct ImageNode {
   image_mode : NodeImageMode
 }
 pub fn ImageNode::default() -> Self
-pub fn ImageNode::new(@asset.Handle[@asset.Image]) -> Self
-pub fn ImageNode::with_color(Self, @render2d.Color) -> Self
+pub fn ImageNode::from_atlas_image(@asset.Handle[@image.Image], @asset.TextureAtlas) -> Self
+pub fn ImageNode::new(@asset.Handle[@image.Image]) -> Self
+pub fn ImageNode::with_color(Self, @color.Color) -> Self
 pub fn ImageNode::with_flip_x(Self) -> Self
 pub fn ImageNode::with_flip_y(Self) -> Self
 pub fn ImageNode::with_mode(Self, NodeImageMode) -> Self
@@ -539,7 +567,7 @@ pub impl @ecs.Component for Label
 pub impl ToJson for Label
 pub impl @json.FromJson for Label
 
-pub struct Node {
+pub(all) struct Node {
   display : Display
   position_type : PositionType
   overflow : Overflow
@@ -583,13 +611,18 @@ pub fn Node::default() -> Self
 pub fn Node::with_align_items(Self, AlignItems) -> Self
 pub fn Node::with_border(Self, UiRect) -> Self
 pub fn Node::with_bottom(Self, Val) -> Self
+pub fn Node::with_column_gap(Self, Val) -> Self
 pub fn Node::with_display(Self, Display) -> Self
+pub fn Node::with_flex_basis(Self, Val) -> Self
 pub fn Node::with_flex_direction(Self, FlexDirection) -> Self
+pub fn Node::with_flex_grow(Self, Float) -> Self
+pub fn Node::with_flex_shrink(Self, Float) -> Self
 pub fn Node::with_grid_template_columns(Self, Array[RepeatedGridTrack]) -> Self
 pub fn Node::with_grid_template_rows(Self, Array[RepeatedGridTrack]) -> Self
 pub fn Node::with_height(Self, Val) -> Self
 pub fn Node::with_justify_content(Self, JustifyContent) -> Self
 pub fn Node::with_left(Self, Val) -> Self
+pub fn Node::with_margin(Self, UiRect) -> Self
 pub fn Node::with_overflow(Self, Overflow) -> Self
 pub fn Node::with_overflow_clip_margin(Self, OverflowClipMargin) -> Self
 pub fn Node::with_padding(Self, UiRect) -> Self
@@ -616,10 +649,10 @@ pub impl @json.FromJson for NodeImageMode
 pub struct Outline {
   width : Val
   offset : Val
-  color : @render2d.Color
+  color : @color.Color
 }
 pub fn Outline::default() -> Self
-pub fn Outline::new(Val, Val, @render2d.Color) -> Self
+pub fn Outline::new(Val, Val, @color.Color) -> Self
 pub impl @ecs.Component for Outline
 pub impl ToJson for Outline
 pub impl @json.FromJson for Outline
@@ -725,27 +758,8 @@ pub fn TextureSlicer::new(BorderRect) -> Self
 pub impl ToJson for TextureSlicer
 pub impl @json.FromJson for TextureSlicer
 
-pub(all) enum UiAntiAlias {
-  Off
-  On
-}
-pub impl @ecs.Component for UiAntiAlias
-pub impl Eq for UiAntiAlias
-pub impl Show for UiAntiAlias
-pub impl ToJson for UiAntiAlias
-pub impl @json.FromJson for UiAntiAlias
-
-pub struct UiBoxShadowSamples {
-  samples : Int
-}
-pub fn UiBoxShadowSamples::default() -> Self
-pub fn UiBoxShadowSamples::new(Int) -> Self
-pub impl @ecs.Component for UiBoxShadowSamples
-pub impl ToJson for UiBoxShadowSamples
-pub impl @json.FromJson for UiBoxShadowSamples
-
 pub struct UiContext {
-  mut white_texture : @asset.Handle[@asset.Image]
+  mut white_texture : @asset.Handle[@image.Image]
   mut viewport_origin : @math.Vec2
   mut viewport_size : @math.Vec2
   mut camera_entity : @core.Entity?
@@ -758,20 +772,20 @@ pub struct UiContext {
   mut wheel_delta : @math.Vec2
 }
 pub fn UiContext::default() -> Self
-pub fn UiContext::new(@asset.Handle[@asset.Image], @math.Vec2, @math.Vec2, @core.Entity?, @math.Transform, Float, @math.Vec2?, Bool, pointer_just_pressed? : Bool, pointer_just_released? : Bool, wheel_delta? : @math.Vec2) -> Self
+pub fn UiContext::new(@asset.Handle[@image.Image], @math.Vec2, @math.Vec2, @core.Entity?, @math.Transform, Float, @math.Vec2?, Bool, pointer_just_pressed? : Bool, pointer_just_released? : Bool, wheel_delta? : @math.Vec2) -> Self
 pub impl ToJson for UiContext
 pub impl @json.FromJson for UiContext
 
 pub struct UiImage {
-  color : @render2d.Color
-  image : @asset.Handle[@asset.Image]
+  color : @color.Color
+  image : @asset.Handle[@image.Image]
   texture_atlas : @asset.TextureAtlas?
   flip_x : Bool
   flip_y : Bool
   rect : @math.Rect?
 }
-pub fn UiImage::new(@asset.Handle[@asset.Image]) -> Self
-pub fn UiImage::with_color(Self, @render2d.Color) -> Self
+pub fn UiImage::new(@asset.Handle[@image.Image]) -> Self
+pub fn UiImage::with_color(Self, @color.Color) -> Self
 pub fn UiImage::with_flip_x(Self) -> Self
 pub fn UiImage::with_flip_y(Self) -> Self
 pub fn UiImage::with_rect(Self, @math.Rect?) -> Self
@@ -817,11 +831,20 @@ pub impl @json.FromJson for UiScale
 pub struct UiStack {
   mut uinodes : Array[@core.Entity]
 }
-pub fn UiStack::clear(Ref[Self]) -> Unit
+pub fn UiStack::clear(@ref.Ref[Self]) -> Unit
 pub fn UiStack::default() -> Self
 pub fn UiStack::uinodes(Self) -> Array[@core.Entity]
 pub impl ToJson for UiStack
 pub impl @json.FromJson for UiStack
+
+pub struct UiTargetCamera {
+  camera : @core.Entity
+}
+pub fn UiTargetCamera::entity(Self) -> @core.Entity
+pub fn UiTargetCamera::new(@core.Entity) -> Self
+pub impl @ecs.Component for UiTargetCamera
+pub impl ToJson for UiTargetCamera
+pub impl @json.FromJson for UiTargetCamera
 
 pub struct UiText {
   handle : @text.TextHandle

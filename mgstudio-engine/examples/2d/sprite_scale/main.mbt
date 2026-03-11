@@ -55,17 +55,15 @@ fn main {
   .add_systems(@app.Startup, @app.system(sprite_scale_setup_texture_atlas))
   .add_systems(@app.Startup, @app.system(sprite_scale_setup_camera))
   .add_system_query2_ecs(
-    @render2d.ecs_key_sprite, @math.ecs_key_transform, sprite_scale_update,
+    @sprite.ecs_key_sprite, @math.ecs_key_transform, sprite_scale_update,
   )
   .run()
 }
 
 ///|
 fn sprite_scale_setup_camera(world : @ecs.World) -> Unit {
-  let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
-    world,
-  )
+  let camera = @sprite.Camera::default()
+  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
   |> ignore
 }
 
@@ -296,7 +294,7 @@ fn spawn_scaled_sprite(
   size : @math.Vec2,
   intended_mode : String,
 ) -> Unit {
-  let sprite = @render2d.Sprite::from_image(texture)
+  let sprite = @sprite.Sprite::from_image(texture)
     .with_custom_size(Some(size))
     .with_image_mode(resolve_scale_mode(intended_mode))
   let transform = @math.Transform::from_xy_rotation_scale(
@@ -304,7 +302,7 @@ fn spawn_scaled_sprite(
     0.0F,
     @math.Vec2::new(1.0F, 1.0F),
   )
-  @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
+  @sprite.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
   spawn_scale_label(intended_mode, font, translation, size)
 }
 
@@ -319,7 +317,7 @@ fn spawn_scaled_atlas_sprite(
   intended_mode : String,
 ) -> Unit {
   let atlas = @asset.TextureAtlas::new(layout_handle, ATLAS_FIRST_FRAME)
-  let sprite = @render2d.Sprite::from_atlas_image(texture, atlas)
+  let sprite = @sprite.Sprite::from_atlas_image(texture, atlas)
     .with_custom_size(Some(size))
     .with_image_mode(resolve_scale_mode(intended_mode))
   let transform = @math.Transform::from_xy_rotation_scale(
@@ -327,7 +325,7 @@ fn spawn_scaled_atlas_sprite(
     0.0F,
     @math.Vec2::new(1.0F, 1.0F),
   )
-  @render2d.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
+  @sprite.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
   spawn_scale_label(intended_mode, font, translation, size)
 }
 
@@ -351,35 +349,35 @@ fn spawn_scale_label(
     @text.TextFont::default().with_font(font).with_font_size(LABEL_FONT_SIZE),
     label_transform,
   )
-  .with_color(@text.TextColor::new(@render2d.Color::white()))
+  .with_color(@text.TextColor::new(@sprite.Color::white()))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
-  .with_anchor(@render2d.Anchor::top_center())
+  .with_anchor(@sprite.Anchor::top_center())
   .spawn()
   |> ignore
 }
 
 ///|
-fn resolve_scale_mode(_intended_mode : String) -> @render2d.SpriteImageMode {
+fn resolve_scale_mode(_intended_mode : String) -> @sprite.SpriteImageMode {
   match _intended_mode {
     "FillCenter" =>
-      @render2d.SpriteImageMode::Scale(@render2d.SpriteScalingMode::FillCenter)
+      @sprite.SpriteImageMode::Scale(@sprite.SpriteScalingMode::FillCenter)
     "FillStart" =>
-      @render2d.SpriteImageMode::Scale(@render2d.SpriteScalingMode::FillStart)
+      @sprite.SpriteImageMode::Scale(@sprite.SpriteScalingMode::FillStart)
     "FillEnd" =>
-      @render2d.SpriteImageMode::Scale(@render2d.SpriteScalingMode::FillEnd)
+      @sprite.SpriteImageMode::Scale(@sprite.SpriteScalingMode::FillEnd)
     "FitCenter" =>
-      @render2d.SpriteImageMode::Scale(@render2d.SpriteScalingMode::FitCenter)
+      @sprite.SpriteImageMode::Scale(@sprite.SpriteScalingMode::FitCenter)
     "FitStart" =>
-      @render2d.SpriteImageMode::Scale(@render2d.SpriteScalingMode::FitStart)
+      @sprite.SpriteImageMode::Scale(@sprite.SpriteScalingMode::FitStart)
     "FitEnd" =>
-      @render2d.SpriteImageMode::Scale(@render2d.SpriteScalingMode::FitEnd)
-    _ => @render2d.SpriteImageMode::Auto
+      @sprite.SpriteImageMode::Scale(@sprite.SpriteScalingMode::FitEnd)
+    _ => @sprite.SpriteImageMode::Auto
   }
 }
 
 ///|
 fn sprite_scale_update(
-  query : @ecs.Query2[@render2d.Sprite, @math.Transform],
+  query : @ecs.Query2[@sprite.Sprite, @math.Transform],
   _world : @ecs.World,
 ) -> Unit {
   sprite_scale_state.val.timer_seconds = sprite_scale_state.val.timer_seconds +

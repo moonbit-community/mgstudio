@@ -31,6 +31,30 @@ test "asset path parse supports source and label" {
 }
 
 ///|
+test "asset path try_parse follows Bevy syntax checks" {
+  inspect(
+    asset_try_parse_path("://file.test")
+    is Err(ParseAssetPathError::MissingSource),
+    content="true",
+  )
+  inspect(
+    asset_try_parse_path("source://file.test#")
+    is Err(ParseAssetPathError::MissingLabel),
+    content="true",
+  )
+  inspect(
+    asset_try_parse_path("bad#source://file.test")
+    is Err(ParseAssetPathError::InvalidSourceSyntax),
+    content="true",
+  )
+  inspect(
+    asset_try_parse_path("source://file.test#bad://label")
+    is Err(ParseAssetPathError::InvalidLabelSyntax),
+    content="true",
+  )
+}
+
+///|
 test "asset loader registry supports extension override" {
   inspect(
     asset_loader_kind_for_path("textures/a.png") is AssetLoaderKind::Texture,

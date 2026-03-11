@@ -19,12 +19,8 @@ struct MotionVectorUniform {
   previous_model_pos : vec4<f32>,
   previous_model_rot : vec4<f32>,
   previous_model_scale : vec4<f32>,
-  camera_pos : vec4<f32>,
-  camera_rot : vec4<f32>,
-  previous_camera_pos : vec4<f32>,
-  previous_camera_rot : vec4<f32>,
-  projection : vec4<f32>, // (fov_y, aspect, near, far)
-  subview : vec4<f32>, // (scale_x, scale_y, bias_x, bias_y)
+  unjittered_clip_from_world : mat4x4<f32>,
+  previous_clip_from_world : mat4x4<f32>,
 };
 
 @group(0) @binding(0) var<uniform> u_mv : MotionVectorUniform;
@@ -40,10 +36,6 @@ fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
   return q / sqrt(n);
 }
 
-fn quat_conjugate(q : vec4<f32>) -> vec4<f32> {
-  return vec4<f32>(-q.xyz, q.w);
-}
-
 fn quat_rotate_vec3(q : vec4<f32>, v : vec3<f32>) -> vec3<f32> {
   let t = 2.0 * cross(q.xyz, v);
   return v + q.w * t + cross(q.xyz, t);
@@ -55,51 +47,6 @@ fn safe_project_xy(clip : vec4<f32>) -> vec2<f32> {
     w = select(-1.0e-6, 1.0e-6, w >= 0.0);
   }
   return clip.xy / w;
-}
-
-fn project_world(
-  world_pos : vec3<f32>,
-  camera_pos : vec3<f32>,
-  camera_rot : vec4<f32>,
-  projection : vec4<f32>,
-  subview : vec4<f32>,
-) -> vec4<f32> {
-  let camera_q = quat_normalize(camera_rot);
-  let inv_camera_q = quat_conjugate(camera_q);
-  let camera_space = quat_rotate_vec3(inv_camera_q, world_pos - camera_pos);
-  let aspect = max(projection.y, 0.001);
-  var clip_x_full = 0.0;
-  var clip_y_full = 0.0;
-  var clip_z = 0.0;
-  var clip_w = 1.0;
-  if projection.x > 0.0 {
-    let fov_y = max(projection.x, 0.001);
-    let near_z = max(projection.z, 0.0001);
-    let far_z = max(projection.w, near_z + 0.0001);
-    let f = 1.0 / tan(0.5 * fov_y);
-    clip_x_full = camera_space.x * f / aspect;
-    clip_y_full = camera_space.y * f;
-    clip_z = camera_space.z * (far_z / (near_z - far_z)) +
-      (near_z * far_z) / (near_z - far_z);
-    clip_w = -camera_space.z;
-  } else {
-    let half_height = max(-projection.x, 1e-5);
-    let half_width = max(half_height * aspect, 1e-5);
-    let near_z = projection.z;
-    let far_z = select(
-      near_z + 0.0001,
-      projection.w,
-      projection.w > near_z + 0.0001,
-    );
-    clip_x_full = camera_space.x / half_width;
-    clip_y_full = camera_space.y / half_height;
-    let z01 = (camera_space.z - near_z) / (far_z - near_z);
-    clip_z = z01 * 2.0 - 1.0;
-    clip_w = 1.0;
-  }
-  let clip_x = clip_x_full * subview.x + subview.z * clip_w;
-  let clip_y = clip_y_full * subview.y + subview.w * clip_w;
-  return vec4<f32>(clip_x, clip_y, clip_z, clip_w);
 }
 
 @vertex
@@ -121,20 +68,8 @@ fn vs_main(
   let world_pos_previous = quat_rotate_vec3(previous_model_q, local_pos_previous) +
     u_mv.previous_model_pos.xyz;
 
-  let clip_current = project_world(
-    world_pos_current,
-    u_mv.camera_pos.xyz,
-    u_mv.camera_rot,
-    u_mv.projection,
-    u_mv.subview,
-  );
-  let clip_previous = project_world(
-    world_pos_previous,
-    u_mv.previous_camera_pos.xyz,
-    u_mv.previous_camera_rot,
-    u_mv.projection,
-    u_mv.subview,
-  );
+  let clip_current = u_mv.unjittered_clip_from_world * vec4<f32>(world_pos_current, 1.0);
+  let clip_previous = u_mv.previous_clip_from_world * vec4<f32>(world_pos_previous, 1.0);
 
   out.position = clip_current;
   out.current_clip = safe_project_xy(clip_current);

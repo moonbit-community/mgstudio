@@ -63,12 +63,12 @@ fn setup(world : @ecs.World) -> Unit {
   split_screen_state.val.last_window_size = @math.IVec2::new(0, 0)
 
   // Plane
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(100.0F, 100.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(
-          @render2d.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(100.0F, 100.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(
+          @sprite.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
         ),
       ),
     ),
@@ -86,7 +86,7 @@ fn setup(world : @ecs.World) -> Unit {
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
-        @scene.GltfAssetLabel::Scene(0).from_asset(FOX_SCENE_ASSET),
+        @gltf.GltfAssetLabel::Scene(0).from_asset(FOX_SCENE_ASSET),
       ),
     ),
     tick,
@@ -95,10 +95,10 @@ fn setup(world : @ecs.World) -> Unit {
   // Light
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 10_000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
     tick,
   )
   world
@@ -126,8 +126,8 @@ fn setup(world : @ecs.World) -> Unit {
       camera_positions[index].z,
     ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
 
-    let camera = @render3d.Camera3dBundle::new(
-      @render2d.Camera::default().with_order(index),
+    let camera = @pbr.Camera3dBundle::new(
+      @sprite.Camera::default().with_order(index),
       camera_transform,
     ).spawn(world)
 
@@ -147,11 +147,11 @@ fn setup(world : @ecs.World) -> Unit {
       z=50.0F,
     ),
   )
-  .with_anchor(@render2d.Anchor::top_left())
+  .with_anchor(@sprite.Anchor::top_left())
   .with_bounds(@text.TextBounds::new_horizontal(780.0F))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
   .with_color(
-    @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
   .with_shadow(Some(@text.Text2dShadow::default()))
   .spawn()
@@ -180,11 +180,11 @@ fn set_camera_viewports(world : @ecs.World) -> Unit {
   }
 
   let tick = world.read_change_tick()
-  let camera_store = world.component(@render2d.ecs_key_camera)
+  let camera_store = world.component(@sprite.ecs_key_camera)
   for pair in split_screen_state.val.cameras {
     let entity = pair.0
     let grid_pos = pair.1
-    let viewport = @render2d.Viewport::new(
+    let viewport = @sprite.Viewport::new(
       @math.IVec2::new(grid_pos.x * half_size.x, grid_pos.y * half_size.y),
       half_size,
     )

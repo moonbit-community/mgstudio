@@ -41,16 +41,16 @@ fn fog_center() -> @math.Vec3 {
 priv struct FogVolumesState {
   mut camera : @core.Entity?
   mut light : @core.Entity?
-  mut volumetric_fog_stub : @render3d.VolumetricFog
-  mut fog_volume_stub : @render3d.FogVolume
+  mut volumetric_fog_stub : @pbr.VolumetricFog
+  mut fog_volume_stub : @pbr.FogVolume
 }
 
 ///|
 let fog_volumes_state : Ref[FogVolumesState] = Ref::new({
   camera: None,
   light: None,
-  volumetric_fog_stub: @render3d.VolumetricFog::default(),
-  fog_volume_stub: @render3d.FogVolume::default(),
+  volumetric_fog_stub: @pbr.VolumetricFog::default(),
+  fog_volume_stub: @pbr.FogVolume::default(),
 })
 
 ///|
@@ -99,9 +99,9 @@ fn apply_distance_fog_from_stub(world : @ecs.World, phase : Float) -> Unit {
   let directional_alpha = clampf(0.25F + phase * 0.55F, 0.2F, 0.9F)
   let fog_color = fog_volume_stub.fog_color
 
-  let fog = @render3d.DistanceFog::default()
+  let fog = @pbr.DistanceFog::default()
     .with_color(
-      @render2d.Color::new(
+      @sprite.Color::new(
         clamp01(fog_color.r * brightness + ambient_lift),
         clamp01(fog_color.g * brightness + ambient_lift),
         clamp01(fog_color.b * brightness + ambient_lift),
@@ -109,16 +109,16 @@ fn apply_distance_fog_from_stub(world : @ecs.World, phase : Float) -> Unit {
       ),
     )
     .with_directional_light_color(
-      @render2d.Color::new(1.0F, 1.0F, 1.0F, directional_alpha),
+      @sprite.Color::new(1.0F, 1.0F, 1.0F, directional_alpha),
     )
     .with_directional_light_exponent(24.0F)
-    .with_falloff(@render3d.FogFalloff3d::from_visibility_squared(visibility))
+    .with_falloff(@pbr.FogFalloff3d::from_visibility_squared(visibility))
   guard fog_volumes_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
-  let camera3d_store = world.component(@render3d.ecs_key_camera3d)
+  let camera3d_store = world.component(@pbr.ecs_key_camera3d)
   let camera3d = match camera3d_store.get(camera) {
     Some(value) => value
-    None => @render3d.Camera3d::default()
+    None => @pbr.Camera3d::default()
   }
   camera3d_store.set(camera, camera3d.with_distance_fog(Some(fog)), tick)
   |> ignore
@@ -130,11 +130,7 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -180,35 +176,35 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
 
 ///|
 fn spawn_volume_proxy(world : @ecs.World) -> Unit {
-  let fog_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.88F, 0.92F, 0.97F, 0.25F),
+  let fog_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.88F, 0.92F, 0.97F, 0.25F),
     )
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F)
-    .with_emissive(@render2d.Color::new(0.22F, 0.24F, 0.3F, 1.0F)),
+    .with_emissive(@sprite.Color::new(0.22F, 0.24F, 0.3F, 1.0F)),
   )
 
-  let head = @render3d.MeshMaterial3dBundle::new(
+  let head = @pbr.MeshMaterial3dBundle::new(
     uv_sphere_mesh(0.45F, 18, 32),
-    @render3d.MeshMaterial3d::new(fog_material),
+    @pbr.MeshMaterial3d::new(fog_material),
     @math.Transform::from_xyz(fog_center().x, fog_center().y, fog_center().z),
   ).spawn(world)
 
   let tick = world.read_change_tick()
 
   // Two elongated cubes approximate bunny ears for a fog-volume silhouette.
-  let ear_left = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(0.16F, 0.8F, 0.16F),
-    @render3d.MeshMaterial3d::new(fog_material),
+  let ear_left = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(0.16F, 0.8F, 0.16F),
+    @pbr.MeshMaterial3d::new(fog_material),
     @math.Transform::from_xyz(
       fog_center().x - 0.16F,
       fog_center().y + 0.7F,
@@ -219,9 +215,9 @@ fn spawn_volume_proxy(world : @ecs.World) -> Unit {
   .component(@hierarchy.ecs_key_parent)
   .insert(ear_left, @hierarchy.Parent::new(head), tick)
 
-  let ear_right = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(0.16F, 0.8F, 0.16F),
-    @render3d.MeshMaterial3d::new(fog_material),
+  let ear_right = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(0.16F, 0.8F, 0.16F),
+    @pbr.MeshMaterial3d::new(fog_material),
     @math.Transform::from_xyz(
       fog_center().x + 0.16F,
       fog_center().y + 0.7F,
@@ -237,20 +233,20 @@ fn spawn_volume_proxy(world : @ecs.World) -> Unit {
 fn setup(world : @ecs.World) -> Unit {
   fog_volumes_state.val.camera = None
   fog_volumes_state.val.light = None
-  fog_volumes_state.val.volumetric_fog_stub = @render3d.VolumetricFog::default()
+  fog_volumes_state.val.volumetric_fog_stub = @pbr.VolumetricFog::default()
     .with_step_count(64)
     .with_ambient_intensity(0.0F)
-  fog_volumes_state.val.fog_volume_stub = @render3d.FogVolume::default()
+  fog_volumes_state.val.fog_volume_stub = @pbr.FogVolume::default()
     .with_density_factor(1.0F)
     .with_scattering(1.0F)
     .with_absorption(0.3F)
-    .with_fog_color(@render2d.Color::new(0.45F, 0.5F, 0.56F, 1.0F))
+    .with_fog_color(@sprite.Color::new(0.45F, 0.5F, 0.56F, 1.0F))
 
   let tick = world.read_change_tick()
 
   world.insert_resource(
-    @render3d.ecs_key_global_ambient_light,
-    @render3d.GlobalAmbientLight::new(@render2d.Color::white(), 0.0F),
+    @pbr.ecs_key_global_ambient_light,
+    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
   )
 
   spawn_volume_proxy(world)
@@ -267,24 +263,22 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     light,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 32_000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 32_000.0F, true),
     tick,
   )
   fog_volumes_state.val.light = Some(light)
 
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-0.75F, 1.0F, 2.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world
-  .component(@render3d.ecs_key_hdr)
-  .insert(camera, @render3d.Hdr::default(), tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   fog_volumes_state.val.camera = Some(camera)
   apply_distance_fog_from_stub(world, 1.0F)
 }

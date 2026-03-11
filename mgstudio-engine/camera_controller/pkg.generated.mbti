@@ -1,0 +1,33 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/camera_controller"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/pbr",
+}
+
+// Values
+pub let ecs_key_free_camera : @ecs.ComponentKey[@pbr.FreeCamera]
+
+pub let ecs_key_free_camera_state : @ecs.ComponentKey[@pbr.FreeCameraState]
+
+pub fn free_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn get_free_camera_state_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.FreeCameraState]
+
+pub fn get_free_camera_store(@ecs.World) -> @ecs.ComponentAccess[@pbr.FreeCamera]
+
+pub fn run_free_camera_controller(@ecs.World) -> Unit
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @pbr {type FreeCamera}
+
+pub using @pbr {type FreeCameraState}
+
+// Traits
+

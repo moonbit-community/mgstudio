@@ -27,38 +27,38 @@ priv struct WireframeState {
 let wireframe_state : Ref[WireframeState] = Ref::new({ controls_text: None })
 
 ///|
-fn color_white() -> @render2d.Color {
-  @render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F)
+fn color_white() -> @sprite.Color {
+  @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F)
 }
 
 ///|
-fn color_deep_pink() -> @render2d.Color {
-  @render2d.Color::new(1.0F, 0.08F, 0.58F, 1.0F)
+fn color_deep_pink() -> @sprite.Color {
+  @sprite.Color::new(1.0F, 0.08F, 0.58F, 1.0F)
 }
 
 ///|
-fn color_lime() -> @render2d.Color {
-  @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
+fn color_lime() -> @sprite.Color {
+  @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_red() -> @render2d.Color {
-  @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
+fn color_red() -> @sprite.Color {
+  @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_orange() -> @render2d.Color {
-  @render2d.Color::new(1.0F, 0.65F, 0.0F, 1.0F)
+fn color_orange() -> @sprite.Color {
+  @sprite.Color::new(1.0F, 0.65F, 0.0F, 1.0F)
 }
 
 ///|
-fn color_blue() -> @render2d.Color {
-  @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F)
+fn color_blue() -> @sprite.Color {
+  @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F)
 }
 
 ///|
-fn color_black() -> @render2d.Color {
-  @render2d.Color::new(0.0F, 0.0F, 0.0F, 1.0F)
+fn color_black() -> @sprite.Color {
+  @sprite.Color::new(0.0F, 0.0F, 0.0F, 1.0F)
 }
 
 ///|
@@ -71,7 +71,7 @@ fn absf(value : Float) -> Float {
 }
 
 ///|
-fn color_approx_eq(a : @render2d.Color, b : @render2d.Color) -> Bool {
+fn color_approx_eq(a : @sprite.Color, b : @sprite.Color) -> Bool {
   absf(a.r - b.r) <= COLOR_EPSILON &&
   absf(a.g - b.g) <= COLOR_EPSILON &&
   absf(a.b - b.b) <= COLOR_EPSILON &&
@@ -79,7 +79,7 @@ fn color_approx_eq(a : @render2d.Color, b : @render2d.Color) -> Bool {
 }
 
 ///|
-fn color_label(color : @render2d.Color) -> String {
+fn color_label(color : @sprite.Color) -> String {
   if color_approx_eq(color, color_white()) {
     "White"
   } else if color_approx_eq(color, color_deep_pink()) {
@@ -102,7 +102,7 @@ fn spawn_ui_text_handle(
   content : String,
   font : @asset.Handle[@asset.Font],
   font_size : Float,
-  color : @render2d.Color,
+  color : @sprite.Color,
 ) -> @text.TextHandle {
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
@@ -116,8 +116,8 @@ fn spawn_ui_text_handle(
 
 ///|
 fn setup_wireframe_config(world : @ecs.World) -> Unit {
-  let wireframe_config = @render3d.WireframeConfig::new(true, color_white())
-  world.insert_resource(@render3d.ecs_key_wireframe_config, wireframe_config)
+  let wireframe_config = @pbr.WireframeConfig::new(true, color_white())
+  world.insert_resource(@pbr.ecs_key_wireframe_config, wireframe_config)
 }
 
 ///|
@@ -127,8 +127,8 @@ fn setup_ui(world : @ecs.World) -> Unit {
     "fonts/FiraSans-Bold.ttf",
   )
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(100).with_clear_color_none(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(100).with_clear_color_none(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -150,7 +150,7 @@ fn setup_ui(world : @ecs.World) -> Unit {
     "",
     font,
     14.0F,
-    @render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
+    @sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
   )
   let controls_entity = world.spawn_empty()
   world
@@ -175,13 +175,11 @@ fn setup_ui(world : @ecs.World) -> Unit {
 ///|
 fn update_controls_text(world : @ecs.World) -> Unit {
   guard wireframe_state.val.controls_text is Some(text_handle) else { return }
-  let config = try
-    world.get_resource(@render3d.ecs_key_wireframe_config)
-  catch {
-    _ => @render3d.WireframeConfig::default()
+  let config = try world.get_resource(@pbr.ecs_key_wireframe_config) catch {
+    _ => @pbr.WireframeConfig::default()
   } noraise {
     Some(value) => value
-    None => @render3d.WireframeConfig::default()
+    None => @pbr.WireframeConfig::default()
   }
   @text.text_set_content(
     text_handle,
@@ -203,69 +201,67 @@ fn setup_scene(world : @ecs.World) -> Unit {
   setup_wireframe_config(world)
 
   let tick = world.read_change_tick()
-  let red_cube = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(color_red()),
-      ),
+  let red_cube = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(@pbr.StandardMaterial::from_color(color_red())),
     ),
     @math.Transform::from_xyz(-1.0F, 0.5F, -1.0F),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_no_wireframe)
-  .insert(red_cube, @render3d.NoWireframe::default(), tick)
+  .component(@pbr.ecs_key_no_wireframe)
+  .insert(red_cube, @pbr.NoWireframe::default(), tick)
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(color_orange()),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(color_orange()),
       ),
     ),
     @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
   ).spawn(world)
   |> ignore
 
-  let green_cube = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(color_lime()),
+  let green_cube = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(color_lime()),
       ),
     ),
     @math.Transform::from_xyz(1.0F, 0.5F, 1.0F),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_wireframe)
-  .insert(green_cube, @render3d.Wireframe::default(), tick)
+  .component(@pbr.ecs_key_wireframe)
+  .insert(green_cube, @pbr.Wireframe::default(), tick)
   world
-  .component(@render3d.ecs_key_wireframe_color)
-  .insert(green_cube, @render3d.WireframeColor::new(color_lime()), tick)
+  .component(@pbr.ecs_key_wireframe_color)
+  .insert(green_cube, @pbr.WireframeColor::new(color_lime()), tick)
 
-  let plane = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(5.0F, 5.0F),
-    @render3d.MeshMaterial3d::new(
-      @render3d.standard_material_add(
-        @render3d.StandardMaterial::from_color(color_blue()),
+  let plane = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(5.0F, 5.0F),
+    @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(color_blue()),
       ),
     ),
     @math.Transform::identity(),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_wireframe_color)
-  .insert(plane, @render3d.WireframeColor::new(color_black()), tick)
+  .component(@pbr.ecs_key_wireframe_color)
+  .insert(plane, @pbr.WireframeColor::new(color_black()), tick)
 
   let light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
-  .insert(light, @render3d.PointLight::default(), tick)
+  .component(@pbr.ecs_key_point_light)
+  .insert(light, @pbr.PointLight::default(), tick)
   world
   .component(@math.ecs_key_transform)
   .insert(light, @math.Transform::from_xyz(2.0F, 4.0F, 2.0F), tick)
 
-  @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -281,13 +277,11 @@ fn setup_scene(world : @ecs.World) -> Unit {
 fn update_colors(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
-  let mut config = try
-    world.get_resource(@render3d.ecs_key_wireframe_config)
-  catch {
-    _ => @render3d.WireframeConfig::default()
+  let mut config = try world.get_resource(@pbr.ecs_key_wireframe_config) catch {
+    _ => @pbr.WireframeConfig::default()
   } noraise {
     Some(value) => value
-    None => @render3d.WireframeConfig::default()
+    None => @pbr.WireframeConfig::default()
   }
   let mut config_changed = false
   if @input.key_just_pressed(@window.KeyCode::KeyZ) {
@@ -304,14 +298,14 @@ fn update_colors(world : @ecs.World) -> Unit {
     config_changed = true
   }
   if config_changed {
-    world.insert_resource(@render3d.ecs_key_wireframe_config, config)
+    world.insert_resource(@pbr.ecs_key_wireframe_config, config)
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyC) {
-    let updates : Array[(@core.Entity, @render3d.WireframeColor)] = []
-    let wireframe_store = world.component(@render3d.ecs_key_wireframe)
+    let updates : Array[(@core.Entity, @pbr.WireframeColor)] = []
+    let wireframe_store = world.component(@pbr.ecs_key_wireframe)
     world
-    .component(@render3d.ecs_key_wireframe_color)
+    .component(@pbr.ecs_key_wireframe_color)
     .for_each(fn(entity, color) {
       if wireframe_store.get(entity) is Some(_) {
         let next = if color_approx_eq(color.color, color_lime()) {
@@ -323,9 +317,7 @@ fn update_colors(world : @ecs.World) -> Unit {
       }
     })
     if updates.length() > 0 {
-      let wireframe_color_store = world.component(
-        @render3d.ecs_key_wireframe_color,
-      )
+      let wireframe_color_store = world.component(@pbr.ecs_key_wireframe_color)
       for pair in updates {
         wireframe_color_store.set(pair.0, pair.1, tick) |> ignore
       }
@@ -340,7 +332,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_plugins([@render3d.wireframe_plugin])
+  .add_plugins([@pbr.wireframe_plugin])
   .add_systems(@app.Startup, @app.system(setup_scene))
   .add_systems(@app.Update, @app.system(update_colors))
   .run()

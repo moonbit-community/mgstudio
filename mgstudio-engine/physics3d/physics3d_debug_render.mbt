@@ -33,12 +33,12 @@ pub fn Physics3dDebugRenderContext::default() -> Physics3dDebugRenderContext {
 
 ///|
 priv struct Physics3dDebugRenderState {
-  mut line_mesh : @render3d.Mesh3d?
-  mut dynamic_material : @render3d.MeshMaterial3d?
-  mut fixed_material : @render3d.MeshMaterial3d?
-  mut kinematic_material : @render3d.MeshMaterial3d?
-  mut parentless_material : @render3d.MeshMaterial3d?
-  mut sensor_material : @render3d.MeshMaterial3d?
+  mut line_mesh : @pbr.Mesh3d?
+  mut dynamic_material : @pbr.MeshMaterial3d?
+  mut fixed_material : @pbr.MeshMaterial3d?
+  mut kinematic_material : @pbr.MeshMaterial3d?
+  mut parentless_material : @pbr.MeshMaterial3d?
+  mut sensor_material : @pbr.MeshMaterial3d?
   line_entities : Array[@core.Entity]
 }
 
@@ -62,13 +62,11 @@ let physics3d_debug_render_state : Ref[Physics3dDebugRenderState] = Ref::new({
 const DEBUG_LINE_THICKNESS : Float = 0.04F
 
 ///|
-fn physics3d_debug_make_material(
-  color : @render2d.Color,
-) -> @render3d.MeshMaterial3d {
-  let standard = @render3d.StandardMaterial::from_color(color)
+fn physics3d_debug_make_material(color : @sprite.Color) -> @pbr.MeshMaterial3d {
+  let standard = @pbr.StandardMaterial::from_color(color)
     .with_unlit(true)
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
-  @render3d.MeshMaterial3d::new(@render3d.standard_material_add(standard))
+    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
+  @pbr.MeshMaterial3d::new(@pbr.standard_material_add(standard))
 }
 
 ///|
@@ -84,7 +82,7 @@ fn physics3d_debug_min_extent(value : Float) -> Float {
 fn physics3d_debug_material_for(
   rb3d : RigidBody3d?,
   sensor : Bool,
-) -> @render3d.MeshMaterial3d? {
+) -> @pbr.MeshMaterial3d? {
   let state = physics3d_debug_render_state.val
   if sensor {
     return state.sensor_material
@@ -109,31 +107,21 @@ fn physics3d_debug_ensure_assets() -> Unit {
   if state.line_mesh is Some(_) {
     return
   }
-  state.line_mesh = Some(@render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F))
+  state.line_mesh = Some(@pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F))
   state.dynamic_material = Some(
-    physics3d_debug_make_material(
-      @render2d.Color::new(0.94F, 0.22F, 0.34F, 0.9F),
-    ),
+    physics3d_debug_make_material(@sprite.Color::new(0.94F, 0.22F, 0.34F, 0.9F)),
   )
   state.fixed_material = Some(
-    physics3d_debug_make_material(
-      @render2d.Color::new(0.98F, 0.56F, 0.18F, 0.9F),
-    ),
+    physics3d_debug_make_material(@sprite.Color::new(0.98F, 0.56F, 0.18F, 0.9F)),
   )
   state.kinematic_material = Some(
-    physics3d_debug_make_material(
-      @render2d.Color::new(0.98F, 0.34F, 0.20F, 0.9F),
-    ),
+    physics3d_debug_make_material(@sprite.Color::new(0.98F, 0.34F, 0.20F, 0.9F)),
   )
   state.parentless_material = Some(
-    physics3d_debug_make_material(
-      @render2d.Color::new(0.82F, 0.82F, 0.84F, 0.9F),
-    ),
+    physics3d_debug_make_material(@sprite.Color::new(0.82F, 0.82F, 0.84F, 0.9F)),
   )
   state.sensor_material = Some(
-    physics3d_debug_make_material(
-      @render2d.Color::new(0.22F, 0.82F, 0.98F, 0.9F),
-    ),
+    physics3d_debug_make_material(@sprite.Color::new(0.22F, 0.82F, 0.98F, 0.9F)),
   )
 }
 
@@ -161,7 +149,7 @@ fn physics3d_debug_clear_lines(world : @ecs.World) -> Unit {
 priv struct DebugLine3d {
   start : @math.Vec3
   end : @math.Vec3
-  material : @render3d.MeshMaterial3d
+  material : @pbr.MeshMaterial3d
 }
 
 ///|
@@ -223,7 +211,7 @@ fn physics3d_debug_add_line(
   lines : Array[DebugLine3d],
   start : @math.Vec3,
   end : @math.Vec3,
-  material : @render3d.MeshMaterial3d,
+  material : @pbr.MeshMaterial3d,
 ) -> Unit {
   if end.sub(start).length() <= 0.0001F {
     return
@@ -238,7 +226,7 @@ fn physics3d_debug_emit_cuboid_lines(
   hx : Float,
   hy : Float,
   hz : Float,
-  material : @render3d.MeshMaterial3d,
+  material : @pbr.MeshMaterial3d,
 ) -> Unit {
   let x = physics3d_debug_min_extent(hx)
   let y = physics3d_debug_min_extent(hy)
@@ -288,7 +276,7 @@ fn physics3d_debug_emit_ball_lines(
   lines : Array[DebugLine3d],
   transform : @math.Transform,
   radius : Float,
-  material : @render3d.MeshMaterial3d,
+  material : @pbr.MeshMaterial3d,
 ) -> Unit {
   let r = physics3d_debug_min_extent(radius)
   let segments = 24
@@ -336,7 +324,7 @@ fn physics3d_debug_ensure_line_pool(
   guard state.line_mesh is Some(mesh) else { return }
   guard state.dynamic_material is Some(default_material) else { return }
   while state.line_entities.length() < desired_count {
-    let entity = @render3d.MeshMaterial3dBundle::new(
+    let entity = @pbr.MeshMaterial3dBundle::new(
       mesh,
       default_material,
       @math.Transform::identity(),
@@ -365,7 +353,7 @@ pub fn physics3d_debug_render_sync_system(world : @ecs.World) -> Unit {
   let transform_store = @math.get_transform_store(ecs_world)
   let collider_store = get_collider3d_store(ecs_world)
   let rigid_body_store = get_rigid_body3d_store(ecs_world)
-  let mesh_material_store = @render3d.get_mesh_material3d_store(ecs_world)
+  let mesh_material_store = @pbr.get_mesh_material3d_store(ecs_world)
   let lines : Array[DebugLine3d] = []
 
   collider_store.for_each(fn(entity, collider) {

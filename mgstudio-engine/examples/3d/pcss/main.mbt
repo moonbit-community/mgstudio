@@ -74,11 +74,11 @@ let pcss_state : Ref[PcssState] = Ref::new({
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @render2d.Color,
+  color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
-  let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
+  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
+  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -130,8 +130,8 @@ fn update_help_text() -> Unit {
 }
 
 ///|
-fn create_directional_light() -> @render3d.DirectionalLight {
-  @render3d.DirectionalLight::new(@render2d.Color::white(), 10_000.0F, true)
+fn create_directional_light() -> @pbr.DirectionalLight {
+  @pbr.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true)
   .with_shadow_depth_bias(DIRECTIONAL_SHADOW_DEPTH_BIAS)
   .with_soft_shadow_size(
     if pcss_state.val.soft_shadows {
@@ -143,9 +143,9 @@ fn create_directional_light() -> @render3d.DirectionalLight {
 }
 
 ///|
-fn create_point_light() -> @render3d.PointLight {
-  @render3d.PointLight::new(
-    @render2d.Color::white(),
+fn create_point_light() -> @pbr.PointLight {
+  @pbr.PointLight::new(
+    @sprite.Color::white(),
     POINT_LIGHT_INTENSITY,
     POINT_LIGHT_RANGE,
     true,
@@ -157,9 +157,9 @@ fn create_point_light() -> @render3d.PointLight {
 }
 
 ///|
-fn create_spot_light() -> @render3d.SpotLight {
-  @render3d.SpotLight::new(
-    @render2d.Color::white(),
+fn create_spot_light() -> @pbr.SpotLight {
+  @pbr.SpotLight::new(
+    @sprite.Color::white(),
     POINT_LIGHT_INTENSITY,
     POINT_LIGHT_RANGE,
     0.0F,
@@ -177,18 +177,18 @@ fn apply_camera_shadow_filter(world : @ecs.World) -> Unit {
   guard pcss_state.val.camera is Some(camera) else { return }
   let tick = world.read_change_tick()
   let filter_mode = match pcss_state.val.shadow_filter {
-    ShadowFilter::NonTemporal => @render3d.ShadowFilteringMethod::Gaussian
-    ShadowFilter::Temporal => @render3d.ShadowFilteringMethod::Temporal
+    ShadowFilter::NonTemporal => @pbr.ShadowFilteringMethod::Gaussian
+    ShadowFilter::Temporal => @pbr.ShadowFilteringMethod::Temporal
   }
   world
-  .component(@render3d.ecs_key_shadow_filtering_method)
+  .component(@pbr.ecs_key_shadow_filtering_method)
   .insert(camera, filter_mode, tick)
   if pcss_state.val.shadow_filter == ShadowFilter::Temporal {
     world
-    .component(@render3d.ecs_key_temporal_anti_aliasing)
-    .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
+    .component(@post_process.ecs_key_temporal_anti_aliasing)
+    .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
   } else {
-    world.component(@render3d.ecs_key_temporal_anti_aliasing).remove(camera)
+    world.component(@post_process.ecs_key_temporal_anti_aliasing).remove(camera)
     |> ignore
   }
 }
@@ -197,22 +197,22 @@ fn apply_camera_shadow_filter(world : @ecs.World) -> Unit {
 fn apply_light_type(world : @ecs.World) -> Unit {
   guard pcss_state.val.light is Some(light) else { return }
   let tick = world.read_change_tick()
-  world.component(@render3d.ecs_key_directional_light).remove(light) |> ignore
-  world.component(@render3d.ecs_key_point_light).remove(light) |> ignore
-  world.component(@render3d.ecs_key_spot_light).remove(light) |> ignore
+  world.component(@pbr.ecs_key_directional_light).remove(light) |> ignore
+  world.component(@pbr.ecs_key_point_light).remove(light) |> ignore
+  world.component(@pbr.ecs_key_spot_light).remove(light) |> ignore
 
   match pcss_state.val.light_type {
     LightType::Directional =>
       world
-      .component(@render3d.ecs_key_directional_light)
+      .component(@pbr.ecs_key_directional_light)
       .insert(light, create_directional_light(), tick)
     LightType::Point =>
       world
-      .component(@render3d.ecs_key_point_light)
+      .component(@pbr.ecs_key_point_light)
       .insert(light, create_point_light(), tick)
     LightType::Spot =>
       world
-      .component(@render3d.ecs_key_spot_light)
+      .component(@pbr.ecs_key_spot_light)
       .insert(light, create_spot_light(), tick)
   }
 }
@@ -231,8 +231,8 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
 
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-12.912F * 0.7F, 4.466F * 0.7F, -10.624F * 0.7F).looking_at(
       @math.Vec3::new(0.0F, 3.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -241,25 +241,23 @@ fn setup(world : @ecs.World) -> Unit {
   pcss_state.val.camera = Some(camera)
 
   world
-  .component(@render3d.ecs_key_shadow_filtering_method)
-  .insert(camera, @render3d.ShadowFilteringMethod::Gaussian, tick)
+  .component(@pbr.ecs_key_shadow_filtering_method)
+  .insert(camera, @pbr.ShadowFilteringMethod::Gaussian, tick)
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
-  .component(@render3d.ecs_key_msaa)
-  .insert(camera, @render3d.Msaa::Off, tick)
+  .component(@post_process.ecs_key_temporal_jitter)
+  .insert(camera, @post_process.TemporalJitter::default(), tick)
   world
-  .component(@render3d.ecs_key_temporal_jitter)
-  .insert(camera, @render3d.TemporalJitter::default(), tick)
+  .component(@pbr.ecs_key_depth_prepass)
+  .insert(camera, @pbr.DepthPrepass::default(), tick)
   world
-  .component(@render3d.ecs_key_depth_prepass)
-  .insert(camera, @render3d.DepthPrepass::default(), tick)
+  .component(@pbr.ecs_key_motion_vector_prepass)
+  .insert(camera, @pbr.MotionVectorPrepass::default(), tick)
   world
-  .component(@render3d.ecs_key_motion_vector_prepass)
-  .insert(camera, @render3d.MotionVectorPrepass::default(), tick)
-  world
-  .component(@render3d.ecs_key_skybox)
+  .component(@pbr.ecs_key_skybox)
   .insert(
     camera,
-    @render3d.Skybox::new(
+    @pbr.Skybox::new(
       asset_server.load("environment_maps/sky_skybox.ktx2"),
       500.0F,
     ),
@@ -305,17 +303,17 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
   pcss_state.val.help_text = Some(help_text)
 
-  set_global_ambient_light(world, @render2d.Color::white(), 0.0F)
+  set_global_ambient_light(world, @sprite.Color::white(), 0.0F)
   apply_camera_shadow_filter(world)
   update_help_text()
 }

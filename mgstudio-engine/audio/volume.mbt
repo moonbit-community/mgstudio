@@ -57,8 +57,7 @@ pub fn Volume::silent() -> Volume {
 pub fn Volume::to_linear(self : Volume) -> Float {
   match self {
     Linear(value) => if value < 0.0F { 0.0F - value } else { value }
-    Decibels(value) =>
-      Float::from_double(@native_audio.db_to_linear(value.to_double()))
+    Decibels(value) => Float::from_double(db_to_linear(value.to_double()))
   }
 }
 
@@ -69,9 +68,7 @@ pub fn Volume::to_decibels(self : Volume) -> Float {
       if value == 0.0F {
         Float::from_double(-1.0 / 0.0)
       } else {
-        Float::from_double(
-          @native_audio.linear_to_db(self.to_linear().to_double()),
-        )
+        Float::from_double(linear_to_db(self.to_linear().to_double()))
       }
     Decibels(value) => value
   }

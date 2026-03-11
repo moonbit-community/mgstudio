@@ -72,14 +72,14 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
   let texture = asset_server.load("branding/icon.png")
 
   // Floor.
-  let floor_sprite = @render2d.Sprite::from_image(texture)
+  let floor_sprite = @sprite.Sprite::from_image(texture)
   let floor_transform = @math.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, -200.0F),
     0.0F,
     @math.Vec2::new(8.0F, 0.5F),
     z=0.0F,
   )
-  let floor = @render2d.SpriteBundle::new(floor_sprite, floor_transform).spawn(
+  let floor = @sprite.SpriteBundle::new(floor_sprite, floor_transform).spawn(
     world,
   )
   let rb_store = @physics2d.get_rigid_body2d_store(world)
@@ -94,16 +94,14 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
   )
 
   // Ball.
-  let ball_sprite = @render2d.Sprite::from_image(texture)
+  let ball_sprite = @sprite.Sprite::from_image(texture)
   let ball_transform = @math.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, 200.0F),
     0.0F,
     @math.Vec2::new(0.3F, 0.3F),
     z=1.0F,
   )
-  let ball = @render2d.SpriteBundle::new(ball_sprite, ball_transform).spawn(
-    world,
-  )
+  let ball = @sprite.SpriteBundle::new(ball_sprite, ball_transform).spawn(world)
   rb_store.insert(ball, @physics2d.RigidBody2d::dynamic(), tick)
   col_store.insert(
     ball,
@@ -117,15 +115,13 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
   )
 
   // Camera.
-  let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
-    world,
-  )
+  let camera = @sprite.Camera::default()
+  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
   |> ignore
 
   // Visible query line.
-  let ray_line_sprite = @render2d.Sprite::from_image(texture).with_color(
-    @render2d.Color::new(1.0F, 0.95F, 0.2F, 0.65F),
+  let ray_line_sprite = @sprite.Sprite::from_image(texture).with_color(
+    @sprite.Color::new(1.0F, 0.95F, 0.2F, 0.65F),
   )
   let ray_line_transform = @math.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, RAY_ORIGIN_Y - RAY_HALF_LENGTH),
@@ -133,13 +129,13 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
     @math.Vec2::new(0.035F, RAY_LINE_SCALE_Y),
     z=2.0F,
   )
-  let ray_line = @render2d.SpriteBundle::new(
-    ray_line_sprite, ray_line_transform,
-  ).spawn(world)
+  let ray_line = @sprite.SpriteBundle::new(ray_line_sprite, ray_line_transform).spawn(
+    world,
+  )
 
   // Visible hit marker.
-  let hit_marker_sprite = @render2d.Sprite::from_image(texture).with_color(
-    @render2d.Color::new(1.0F, 0.25F, 0.25F, 0.9F),
+  let hit_marker_sprite = @sprite.Sprite::from_image(texture).with_color(
+    @sprite.Color::new(1.0F, 0.25F, 0.25F, 0.9F),
   )
   let hit_marker_transform = @math.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, RAY_ORIGIN_Y),
@@ -147,7 +143,7 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
     @math.Vec2::new(0.14F, 0.14F),
     z=3.0F,
   )
-  let hit_marker = @render2d.SpriteBundle::new(
+  let hit_marker = @sprite.SpriteBundle::new(
     hit_marker_sprite, hit_marker_transform,
   ).spawn(world)
 

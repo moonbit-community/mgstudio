@@ -52,25 +52,25 @@ let pixel_state : Ref[PixelGridState] = Ref::new(PixelGridState::{
 
 ///|
 fn pixel_grid_snap_setup(world : @ecs.World) -> Unit {
-  let pixel_layers = @render2d.RenderLayers::layer(0)
-  let high_layers = @render2d.RenderLayers::layer(1)
+  let pixel_layers = @sprite.RenderLayers::layer(0)
+  let high_layers = @sprite.RenderLayers::layer(1)
   let asset_server = @asset.AssetServer::new()
   let pixel_dark = asset_server.load("pixel/bevy_pixel_dark.png")
   let pixel_light = asset_server.load("pixel/bevy_pixel_light.png")
-  let canvas = @render2d.render2d_create_render_target(
+  let canvas = @sprite_render.render2d_create_render_target(
     world,
     RES_WIDTH,
     RES_HEIGHT,
     true,
   )
-  let canvas_sprite = @render2d.SpriteBundle::new_with_layers(
-    @render2d.Sprite::from_image(canvas),
+  let canvas_sprite = @sprite.SpriteBundle::new_with_layers(
+    @sprite.Sprite::from_image(canvas),
     @math.Transform::identity(),
     high_layers,
   )
   canvas_sprite.spawn(world) |> ignore
-  let pixel_sprite = @render2d.SpriteBundle::new_with_layers(
-    @render2d.Sprite::from_image(pixel_dark),
+  let pixel_sprite = @sprite.SpriteBundle::new_with_layers(
+    @sprite.Sprite::from_image(pixel_dark),
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-45.0F, 20.0F),
       0.0F,
@@ -78,8 +78,8 @@ fn pixel_grid_snap_setup(world : @ecs.World) -> Unit {
     ),
     pixel_layers,
   ).spawn(world)
-  let high_sprite = @render2d.SpriteBundle::new_with_layers(
-    @render2d.Sprite::from_image(pixel_light),
+  let high_sprite = @sprite.SpriteBundle::new_with_layers(
+    @sprite.Sprite::from_image(pixel_light),
     @math.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-45.0F, -20.0F),
       0.0F,
@@ -87,10 +87,10 @@ fn pixel_grid_snap_setup(world : @ecs.World) -> Unit {
     ),
     high_layers,
   ).spawn(world)
-  let capsule = @render2d.Capsule2d::default()
-  let mesh = @render2d.Mesh2d::from_capsule(capsule)
-  let material = @render2d.ColorMaterial::new(@render2d.Color::black())
-  let mesh_handle = @render2d.Mesh2dBundle::new_with_layers(
+  let capsule = @sprite.Capsule2d::default()
+  let mesh = @sprite.Mesh2d::from_capsule(capsule)
+  let material = @sprite.ColorMaterial::new(@sprite.Color::black())
+  let mesh_handle = @sprite.Mesh2dBundle::new_with_layers(
     mesh,
     material,
     @math.Transform::from_xy_rotation_scale(
@@ -100,21 +100,21 @@ fn pixel_grid_snap_setup(world : @ecs.World) -> Unit {
     ),
     pixel_layers,
   ).spawn(world)
-  let in_game_camera = @render2d.Camera::default()
+  let in_game_camera = @sprite.Camera::default()
     .with_order(-1)
-    .with_clear_color(@render2d.Color::srgb(0.5F, 0.5F, 0.5F))
-  @render2d.Camera2dBundle::new_with_layers(
+    .with_clear_color(@sprite.Color::srgb(0.5F, 0.5F, 0.5F))
+  @sprite.Camera2dBundle::new_with_layers(
     in_game_camera,
     @math.Transform::identity(),
-    @render2d.RenderTarget::Image(canvas),
+    @sprite.RenderTarget::Image(canvas),
     pixel_layers,
   ).spawn(world)
   |> ignore
-  let outer_camera = @render2d.Camera::default()
-  let outer_handle = @render2d.Camera2dBundle::new_with_layers(
+  let outer_camera = @sprite.Camera::default()
+  let outer_handle = @sprite.Camera2dBundle::new_with_layers(
     outer_camera,
     @math.Transform::identity(),
-    @render2d.RenderTarget::Screen,
+    @sprite.RenderTarget::Screen,
     high_layers,
   ).spawn(world)
   pixel_state.val.pixel_sprite = pixel_sprite
@@ -180,12 +180,10 @@ fn pixel_grid_snap_update(world : @ecs.World) -> Unit {
   let min_scale = if h_scale < v_scale { h_scale } else { v_scale }
   let rounded = pixel_grid_round_scale(min_scale)
   let scale = 1.0F / Float::from_double(rounded.to_double())
-  let projection_store = world.component(@render2d.ecs_key_projection)
+  let projection_store = world.component(@sprite.ecs_key_projection)
   projection_store.set(
     pixel_state.val.outer_camera,
-    @render2d.Projection::Orthographic(
-      @render2d.OrthographicProjection::new(scale),
-    ),
+    @sprite.Projection::Orthographic(@sprite.OrthographicProjection::new(scale)),
     tick,
   )
   |> ignore

@@ -1,0 +1,78 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/core_pipeline"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub let ecs_key_deferred_prepass : @ecs.ComponentKey[DeferredPrepass]
+
+pub let ecs_key_depth_prepass : @ecs.ComponentKey[DepthPrepass]
+
+pub let ecs_key_hdr : @ecs.ComponentKey[Hdr]
+
+pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass]
+
+pub let ecs_key_msaa : @ecs.ComponentKey[Msaa]
+
+pub let ecs_key_normal_prepass : @ecs.ComponentKey[NormalPrepass]
+
+// Errors
+
+// Types and methods
+pub struct DeferredPrepass {
+}
+pub fn DeferredPrepass::default() -> Self
+pub impl @ecs.Component for DeferredPrepass
+pub impl ToJson for DeferredPrepass
+pub impl @json.FromJson for DeferredPrepass
+
+pub struct DepthPrepass {
+}
+pub fn DepthPrepass::default() -> Self
+pub impl @ecs.Component for DepthPrepass
+pub impl ToJson for DepthPrepass
+pub impl @json.FromJson for DepthPrepass
+
+pub struct Hdr {
+}
+pub fn Hdr::default() -> Self
+pub impl @ecs.Component for Hdr
+pub impl ToJson for Hdr
+pub impl @json.FromJson for Hdr
+
+pub struct MotionVectorPrepass {
+}
+pub fn MotionVectorPrepass::default() -> Self
+pub impl @ecs.Component for MotionVectorPrepass
+pub impl ToJson for MotionVectorPrepass
+pub impl @json.FromJson for MotionVectorPrepass
+
+pub(all) enum Msaa {
+  Off
+  Sample2
+  Sample4
+  Sample8
+}
+pub fn Msaa::default() -> Self
+pub fn Msaa::from_samples(Int) -> Self
+pub fn Msaa::samples(Self) -> Int
+pub impl @ecs.Component for Msaa
+pub impl Eq for Msaa
+pub impl Show for Msaa
+pub impl ToJson for Msaa
+pub impl @json.FromJson for Msaa
+
+pub struct NormalPrepass {
+}
+pub fn NormalPrepass::default() -> Self
+pub impl @ecs.Component for NormalPrepass
+pub impl ToJson for NormalPrepass
+pub impl @json.FromJson for NormalPrepass
+
+// Type aliases
+
+// Traits
+

@@ -3,7 +3,8 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/render2d",
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/sprite_render",
   "Milky2018/mgstudio/window",
   "Milky2018/moon_cosmic" @cosmic,
   "Milky2018/moon_zeno" @moon_zeno,
@@ -11,3 +12,7 @@ import {
   "Milky2018/moon_swash/scale" @swash_scale,
   "moonbitlang/core/ref",
 }
+
+options(
+  "supported-targets": "native",
+)

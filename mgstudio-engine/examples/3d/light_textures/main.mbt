@@ -199,7 +199,7 @@ fn update_directional_light(world : @ecs.World) -> Unit {
   guard light_textures_state.val.directional_light is Some(entity) else {
     return
   }
-  guard world.component(@render3d.ecs_key_directional_light).get(entity)
+  guard world.component(@pbr.ecs_key_directional_light).get(entity)
     is Some(light) else {
     return
   }
@@ -214,22 +214,22 @@ fn update_directional_light(world : @ecs.World) -> Unit {
     MAIN_LIGHT_INTENSITY
   }
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .set(entity, light.with_illuminance(next_illuminance), tick)
   |> ignore
 
   if light_textures_state.val.directional_visible {
     if light_textures_state.val.directional_texture is Some(texture) {
       world
-      .component(@render3d.ecs_key_directional_light_texture)
+      .component(@pbr.ecs_key_directional_light_texture)
       .insert(
         entity,
-        @render3d.DirectionalLightTexture::new(Some(texture), true),
+        @pbr.DirectionalLightTexture::new(Some(texture), true),
         tick,
       )
     }
   } else {
-    world.component(@render3d.ecs_key_directional_light_texture).remove(entity)
+    world.component(@pbr.ecs_key_directional_light_texture).remove(entity)
     |> ignore
   }
 }
@@ -238,21 +238,20 @@ fn update_directional_light(world : @ecs.World) -> Unit {
 fn apply_light_visibility(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   if light_textures_state.val.spot_light is Some(spot_entity) {
-    if world.component(@render3d.ecs_key_spot_light).get(spot_entity)
-      is Some(spot) {
+    if world.component(@pbr.ecs_key_spot_light).get(spot_entity) is Some(spot) {
       let intensity = if light_textures_state.val.spot_visible {
         SPOT_LIGHT_INTENSITY
       } else {
         0.0F
       }
       world
-      .component(@render3d.ecs_key_spot_light)
+      .component(@pbr.ecs_key_spot_light)
       .set(spot_entity, spot.with_intensity(intensity), tick)
       |> ignore
     }
   }
   if light_textures_state.val.point_light is Some(point_entity) {
-    if world.component(@render3d.ecs_key_point_light).get(point_entity)
+    if world.component(@pbr.ecs_key_point_light).get(point_entity)
       is Some(point) {
       let intensity = if light_textures_state.val.point_visible {
         POINT_LIGHT_INTENSITY
@@ -260,7 +259,7 @@ fn apply_light_visibility(world : @ecs.World) -> Unit {
         0.0F
       }
       world
-      .component(@render3d.ecs_key_point_light)
+      .component(@pbr.ecs_key_point_light)
       .set(point_entity, point.with_intensity(intensity), tick)
       |> ignore
     }
@@ -300,22 +299,22 @@ fn setup(world : @ecs.World) -> Unit {
     asset_server.load("branding/icon.png"),
   )
 
-  let cube_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
+  let cube_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.75F, 0.75F, 0.75F, 1.0F),
     ),
   )
-  let cube = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(3.0F, 3.0F, 3.0F),
-    @render3d.MeshMaterial3d::new(cube_material),
+  let cube = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(3.0F, 3.0F, 3.0F),
+    @pbr.MeshMaterial3d::new(cube_material),
     @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_y(1.0471975512F),
     ),
   ).spawn(world)
   light_textures_state.val.rotating_cube = Some(cube)
 
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(0.0F, 2.5F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -326,11 +325,11 @@ fn setup(world : @ecs.World) -> Unit {
   let directional = world.spawn_empty()
   light_textures_state.val.directional_light = Some(directional)
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional,
-    @render3d.DirectionalLight::new(
-      @render2d.Color::white(),
+    @pbr.DirectionalLight::new(
+      @sprite.Color::white(),
       MAIN_LIGHT_INTENSITY,
       true,
     ),
@@ -350,11 +349,11 @@ fn setup(world : @ecs.World) -> Unit {
   let spot = world.spawn_empty()
   light_textures_state.val.spot_light = Some(spot)
   world
-  .component(@render3d.ecs_key_spot_light)
+  .component(@pbr.ecs_key_spot_light)
   .insert(
     spot,
-    @render3d.SpotLight::new(
-      @render2d.Color::new(1.0F, 1.0F, 0.8F, 1.0F),
+    @pbr.SpotLight::new(
+      @sprite.Color::new(1.0F, 1.0F, 0.8F, 1.0F),
       SPOT_LIGHT_INTENSITY,
       30.0F,
       0.25F,
@@ -364,12 +363,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@render3d.ecs_key_spot_light_texture)
+  .component(@pbr.ecs_key_spot_light_texture)
   .insert(
     spot,
-    @render3d.SpotLightTexture::new(
-      Some(asset_server.load("branding/icon.png")),
-    ),
+    @pbr.SpotLightTexture::new(Some(asset_server.load("branding/icon.png"))),
     tick,
   )
   world
@@ -386,11 +383,11 @@ fn setup(world : @ecs.World) -> Unit {
   let point = world.spawn_empty()
   light_textures_state.val.point_light = Some(point)
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     point,
-    @render3d.PointLight::new(
-      @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+    @pbr.PointLight::new(
+      @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
       POINT_LIGHT_INTENSITY,
       20.0F,
       true,
@@ -398,12 +395,12 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@render3d.ecs_key_point_light_texture)
+  .component(@pbr.ecs_key_point_light_texture)
   .insert(
     point,
-    @render3d.PointLightTexture::new(
+    @pbr.PointLightTexture::new(
       Some(asset_server.load("branding/icon.png")),
-      @render3d.CubemapLayout3d::CrossVertical,
+      @pbr.CubemapLayout3d::CrossVertical,
     ),
     tick,
   )
@@ -411,28 +408,28 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@math.ecs_key_transform)
   .insert(point, @math.Transform::from_xyz(0.0F, 1.8F, 0.01F), tick)
 
-  let spot_proxy_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(1.0F, 0.8F, 0.2F, 0.75F),
+  let spot_proxy_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(1.0F, 0.8F, 0.2F, 0.75F),
     )
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_unlit(true),
   )
-  let point_proxy_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.2F, 0.2F, 1.0F, 0.75F),
+  let point_proxy_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.2F, 0.2F, 1.0F, 0.75F),
     )
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_unlit(true),
   )
-  let spot_proxy = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(0.35F, 0.35F, 0.35F),
-    @render3d.MeshMaterial3d::new(spot_proxy_material),
+  let spot_proxy = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(0.35F, 0.35F, 0.35F),
+    @pbr.MeshMaterial3d::new(spot_proxy_material),
     @math.Transform::from_xyz(6.0F, 1.0F, 2.0F),
   ).spawn(world)
-  let point_proxy = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(0.25F, 0.25F, 0.25F),
-    @render3d.MeshMaterial3d::new(point_proxy_material),
+  let point_proxy = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(0.25F, 0.25F, 0.25F),
+    @pbr.MeshMaterial3d::new(point_proxy_material),
     @math.Transform::from_xyz(0.0F, 1.8F, 0.01F),
   ).spawn(world)
   light_textures_state.val.spot_proxy = Some(spot_proxy)
@@ -450,11 +447,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -554,8 +551,7 @@ fn apply_selection_drag(
     }
     DragMode::Scale =>
       if light_textures_state.val.selection == Selection::SpotLight {
-        guard world.component(@render3d.ecs_key_spot_light).get(entity)
-          is Some(spot) else {
+        guard world.component(@pbr.ecs_key_spot_light).get(entity) is Some(spot) else {
           return
         }
         let next_angle = clampf(
@@ -564,7 +560,7 @@ fn apply_selection_drag(
           0.78539816339F,
         )
         world
-        .component(@render3d.ecs_key_spot_light)
+        .component(@pbr.ecs_key_spot_light)
         .set(
           entity,
           spot.with_outer_angle(next_angle).with_inner_angle(next_angle),

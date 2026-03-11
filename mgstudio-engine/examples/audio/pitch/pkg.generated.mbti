@@ -1,0 +1,24 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/audio/pitch"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type PitchFrequency
+pub impl @app.Resource for PitchFrequency
+
+type PlayPitch
+pub impl @ecs.Message for PlayPitch
+pub impl Default for PlayPitch
+
+// Type aliases
+
+// Traits
+

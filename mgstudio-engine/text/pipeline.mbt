@@ -814,7 +814,7 @@ pub fn[W] text_update_system(_world : W) -> Unit {
 pub fn text_render_system(world : @ecs.World) -> Unit {
   text_debug_clear_frame()
   let debug_capture_enabled = text_debug_capture_enabled()
-  let overlay_sprites : Array[@render2d.OverlaySpriteUvScissor] = []
+  let overlay_sprites : Array[@sprite.OverlaySpriteUvScissor] = []
   let white_texture = @asset.asset_white_texture()
   let texts = text_state.val.texts
   for instance in texts {
@@ -1013,7 +1013,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
           run_draw_scale,
           z=instance.transform.translation.z - 0.001F,
         )
-        overlay_sprites.push(@render2d.OverlaySpriteUvScissor::{
+        overlay_sprites.push(@sprite.OverlaySpriteUvScissor::{
           texture: white_texture,
           transform: background_transform,
           uv_min: @math.Vec2::new(0.0F, 0.0F),
@@ -1051,7 +1051,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
             underline_draw_scale,
             z=instance.transform.translation.z + 0.0005F,
           )
-          overlay_sprites.push(@render2d.OverlaySpriteUvScissor::{
+          overlay_sprites.push(@sprite.OverlaySpriteUvScissor::{
             texture: white_texture,
             transform: underline_transform,
             uv_min: @math.Vec2::new(0.0F, 0.0F),
@@ -1089,7 +1089,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
             strike_draw_scale,
             z=instance.transform.translation.z + 0.0005F,
           )
-          overlay_sprites.push(@render2d.OverlaySpriteUvScissor::{
+          overlay_sprites.push(@sprite.OverlaySpriteUvScissor::{
             texture: white_texture,
             transform: strike_transform,
             uv_min: @math.Vec2::new(0.0F, 0.0F),
@@ -1137,7 +1137,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
           scale,
           z=instance.transform.translation.z,
         )
-        overlay_sprites.push(@render2d.OverlaySpriteUvScissor::{
+        overlay_sprites.push(@sprite.OverlaySpriteUvScissor::{
           texture: atlas_info.texture,
           transform: shadow_transform,
           uv_min,
@@ -1147,7 +1147,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
           scissor: instance.ui_scissor,
         })
       }
-      overlay_sprites.push(@render2d.OverlaySpriteUvScissor::{
+      overlay_sprites.push(@sprite.OverlaySpriteUvScissor::{
         texture: atlas_info.texture,
         transform,
         uv_min,
@@ -1174,7 +1174,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
       }
     }
   }
-  @render2d.render2d_push_sprite_uv_scissor_batch(world, overlay_sprites)
+  @sprite_render.render2d_push_sprite_uv_scissor_batch(world, overlay_sprites)
 }
 
 ///|
@@ -1193,6 +1193,6 @@ pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.PostUpdate,
     text_set_render_extract,
     after=[@app.system_set("bevy.ui.stack")],
-    before=[@render2d.render2d_set_extract],
+    before=[@sprite_render.render2d_set_extract],
   )
 }

@@ -6,6 +6,21 @@ package "Milky2018/mgstudio/examples/3d/tonemapping"
 // Errors
 
 // Types and methods
+type CameraTransform
+
+type CurrentScene
+
+type HDRViewer
+
+type PerMethodSettings
+
+type SceneNumber
+
+type SelectedParameter
+
+type TonemappingUiRoot
+
+type TonemappingUiText
 
 // Type aliases
 

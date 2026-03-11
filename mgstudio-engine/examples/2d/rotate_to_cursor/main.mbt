@@ -38,15 +38,13 @@ fn rotate_to_cursor_setup(world : @ecs.World) -> Unit {
 
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("textures/simplespace/ship_C.png")
-  let sprite = @render2d.Sprite::from_image(texture)
+  let sprite = @sprite.Sprite::from_image(texture)
   let transform = @math.Transform::identity()
-  let player = @render2d.SpriteBundle::new(sprite, transform).spawn(world)
+  let player = @sprite.SpriteBundle::new(sprite, transform).spawn(world)
   rotate_to_cursor_state.val.player = player
 
-  let camera = @render2d.Camera::default()
-  @render2d.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
-    world,
-  )
+  let camera = @sprite.Camera::default()
+  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
   |> ignore
 }
 
@@ -58,7 +56,7 @@ fn rotate_to_cursor_update(world : @ecs.World) -> Unit {
   }
 
   if @input.mouse_position() is Some(screen_pos) {
-    if @render2d.render2d_viewport_to_world_2d(world, screen_pos)
+    if @sprite_render.render2d_viewport_to_world_2d(world, screen_pos)
       is Some(world_pos) {
       guard (try! world.get(player, @math.ecs_key_transform)) is Some(transform) else {
         return

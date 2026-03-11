@@ -154,18 +154,18 @@ fn spawn_plane(
   base_color : @asset.Handle[@asset.Image],
   normal_map : @asset.Handle[@asset.Image],
 ) -> Unit {
-  let material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.86F, 0.16F, 0.24F, 1.0F),
+  let material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.86F, 0.16F, 0.24F, 1.0F),
     )
     .with_base_color_texture(Some(base_color))
     .with_normal_map_texture(Some(normal_map))
     .with_metallic_roughness_texture(Some(base_color))
     .with_perceptual_roughness(0.35F),
   )
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(PLANE_HALF_SIZE * 2.0F, PLANE_HALF_SIZE * 2.0F),
-    @render3d.MeshMaterial3d::new(material),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(PLANE_HALF_SIZE * 2.0F, PLANE_HALF_SIZE * 2.0F),
+    @pbr.MeshMaterial3d::new(material),
     @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_x(PI),
     ),
@@ -178,15 +178,10 @@ fn spawn_light(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let point = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     point,
-    @render3d.PointLight::new(
-      @render2d.Color::white(),
-      10_000_000.0F,
-      100.0F,
-      false,
-    ),
+    @pbr.PointLight::new(@sprite.Color::white(), 10_000_000.0F, 100.0F, false),
     tick,
   )
   world
@@ -197,16 +192,14 @@ fn spawn_light(world : @ecs.World) -> Unit {
 ///|
 fn spawn_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(2.0F, 0.0F, -7.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world
-  .component(@render3d.ecs_key_hdr)
-  .insert(camera, @render3d.Hdr::default(), tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
 }
 
 ///|
@@ -223,11 +216,11 @@ fn setup(world : @ecs.World) -> Unit {
     decal_base_color_texture: asset_server.load("branding/bevy_bird_dark.png"),
     decal_normal_map_texture: asset_server.load_with_settings(
       "textures/ScratchedGold-Normal.png",
-      @asset.ImageLoaderSettings::default().with_is_srgb(false),
+      fn(settings) { settings.is_srgb = false },
     ),
     decal_metallic_roughness_texture: asset_server.load_with_settings(
       "branding/icon.png",
-      @asset.ImageLoaderSettings::default().with_is_srgb(false),
+      fn(settings) { settings.is_srgb = false },
     ),
     decal_emissive_texture: asset_server.load("branding/icon.png"),
   }
@@ -253,11 +246,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -277,22 +270,20 @@ fn spawn_decal(world : @ecs.World) -> Unit {
   let size = random_range(DECAL_MIN_SIZE, DECAL_MAX_SIZE)
   let theta = random_range(0.0F, PI)
 
-  let mut material = @render3d.StandardMaterial::from_color(
-      @render2d.Color::white(),
-    )
+  let mut material = @pbr.StandardMaterial::from_color(@sprite.Color::white())
     .with_base_color_texture(Some(textures.decal_base_color_texture))
     .with_normal_map_texture(Some(textures.decal_normal_map_texture))
     .with_metallic_roughness_texture(
       Some(textures.decal_metallic_roughness_texture),
     )
-    .with_alpha_mode(@render3d.AlphaMode3d::Blend)
+    .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_perceptual_roughness(0.25F)
   if clustered_decal_maps_state.val.emissive_decals {
     material = material
       .with_emissive_texture(Some(textures.decal_emissive_texture))
-      .with_emissive(@render2d.Color::new(1.0F, 1.0F, 1.0F, 1.0F))
+      .with_emissive(@sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F))
   }
-  let mut clustered_decal = @render3d.ClusteredDecal::default()
+  let mut clustered_decal = @pbr.ClusteredDecal::default()
     .with_base_color_texture(Some(textures.decal_base_color_texture))
     .with_normal_map_texture(Some(textures.decal_normal_map_texture))
     .with_metallic_roughness_texture(
@@ -303,15 +294,15 @@ fn spawn_decal(world : @ecs.World) -> Unit {
       Some(textures.decal_emissive_texture),
     )
   }
-  let entity = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 0.02F),
-    @render3d.MeshMaterial3d::new(@render3d.standard_material_add(material)),
+  let entity = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 0.02F),
+    @pbr.MeshMaterial3d::new(@pbr.standard_material_add(material)),
     @math.Transform::from_xyz(x, y, -0.01F)
     .with_rotation(@math.Quat::from_rotation_z(theta))
     .with_scale(@math.Vec3::new(0.001F, 0.001F, 0.02F)),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_clustered_decal)
+  .component(@pbr.ecs_key_clustered_decal)
   .insert(entity, clustered_decal, tick)
   clustered_decal_maps_state.val.decals.push({
     entity,

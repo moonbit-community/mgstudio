@@ -1,0 +1,7 @@
+import {
+  "Milky2018/mgstudio/render/renderer" @renderer,
+}
+
+options(
+  "supported-targets": "native",
+)

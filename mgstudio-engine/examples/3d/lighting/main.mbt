@@ -78,11 +78,7 @@ fn round_to_int(value : Float) -> Int {
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -128,13 +124,13 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
 
 ///|
-fn rectangle_mesh(width : Float, height : Float) -> @render3d.Mesh3d {
+fn rectangle_mesh(width : Float, height : Float) -> @pbr.Mesh3d {
   let hw = width / 2.0F
   let hh = height / 2.0F
   let positions = [
@@ -150,7 +146,7 @@ fn rectangle_mesh(width : Float, height : Float) -> @render3d.Mesh3d {
     @math.Vec2::new(0.0F, 0.0F),
   ]
   let indices = [0, 1, 2, 0, 2, 3]
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -181,13 +177,13 @@ fn lighting_update_overlay_text() -> Unit {
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @render3d.Mesh3d,
-  material : @asset.Handle[@render3d.StandardMaterial],
+  mesh : @pbr.Mesh3d,
+  material : @asset.Handle[@pbr.StandardMaterial],
   transform : @math.Transform,
 ) -> @core.Entity {
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     mesh,
-    @render3d.MeshMaterial3d::new(material),
+    @pbr.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
 }
@@ -199,28 +195,28 @@ fn setup(world : @ecs.World) -> Unit {
   let logo_texture = asset_server.load("branding/bevy_logo_light.png")
 
   // Ground plane.
-  let ground_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white()).with_perceptual_roughness(
+  let ground_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white()).with_perceptual_roughness(
       1.0F,
     ),
   )
   spawn_mesh(
     world,
-    @render3d.Mesh3d::from_plane(10.0F, 10.0F),
+    @pbr.Mesh3d::from_plane(10.0F, 10.0F),
     ground_material,
     @math.Transform::identity(),
   )
   |> ignore
 
   // Left and back walls.
-  let wall_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.294F, 0.0F, 0.51F, 1.0F),
+  let wall_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.294F, 0.0F, 0.51F, 1.0F),
     ).with_perceptual_roughness(1.0F),
   )
   spawn_mesh(
     world,
-    @render3d.Mesh3d::from_cuboid(5.0F, 0.15F, 5.0F),
+    @pbr.Mesh3d::from_cuboid(5.0F, 0.15F, 5.0F),
     wall_material,
     @math.Transform::from_xyz(2.5F, 2.5F, 0.0F).with_rotation(
       @math.Quat::from_rotation_z(PI / 2.0F),
@@ -229,7 +225,7 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
   spawn_mesh(
     world,
-    @render3d.Mesh3d::from_cuboid(5.0F, 0.15F, 5.0F),
+    @pbr.Mesh3d::from_cuboid(5.0F, 0.15F, 5.0F),
     wall_material,
     @math.Transform::from_xyz(0.0F, 2.5F, -2.5F).with_rotation(
       @math.Quat::from_rotation_x(PI / 2.0F),
@@ -238,11 +234,11 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   // Bevy logo alpha-mask quad.
-  let logo_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white())
+  let logo_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white())
     .with_base_color_texture(Some(logo_texture))
     .with_perceptual_roughness(1.0F)
-    .with_alpha_mode(@render3d.AlphaMode3d::Mask(0.5F))
+    .with_alpha_mode(@pbr.AlphaMode3d::Mask(0.5F))
     .with_cull_mode(None),
   )
   let logo = spawn_mesh(
@@ -257,10 +253,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   let cube = spawn_mesh(
     world,
-    @render3d.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(
-        @render2d.Color::new(1.0F, 0.078F, 0.576F, 1.0F),
+    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.standard_material_add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::new(1.0F, 0.078F, 0.576F, 1.0F),
       ),
     ),
     @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
@@ -271,9 +267,9 @@ fn setup(world : @ecs.World) -> Unit {
   let sphere = spawn_mesh(
     world,
     sphere_mesh,
-    @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(
-        @render2d.Color::new(0.196F, 0.804F, 0.196F, 1.0F),
+    @pbr.standard_material_add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::new(0.196F, 0.804F, 0.196F, 1.0F),
       ),
     ),
     @math.Transform::from_xyz(1.5F, 1.0F, 1.5F),
@@ -282,9 +278,9 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Ambient light.
   world.insert_resource(
-    @render3d.ecs_key_global_ambient_light,
-    @render3d.GlobalAmbientLight::new(
-      @render2d.Color::new(1.0F, 0.27F, 0.0F, 1.0F),
+    @pbr.ecs_key_global_ambient_light,
+    @pbr.GlobalAmbientLight::new(
+      @sprite.Color::new(1.0F, 0.27F, 0.0F, 1.0F),
       200.0F,
     ),
   )
@@ -293,11 +289,11 @@ fn setup(world : @ecs.World) -> Unit {
   // Red point light + emissive marker.
   let red_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     red_light,
-    @render3d.PointLight::new(
-      @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+    @pbr.PointLight::new(
+      @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
       100_000.0F,
       20.0F,
       true,
@@ -310,10 +306,10 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_mesh(
     world,
     uv_sphere_mesh(0.1F, 12, 20),
-    @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(
-        @render2d.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
-      ).with_emissive(@render2d.Color::new(4.0F, 0.0F, 0.0F, 1.0F)),
+    @pbr.standard_material_add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
+      ).with_emissive(@sprite.Color::new(4.0F, 0.0F, 0.0F, 1.0F)),
     ),
     @math.Transform::from_xyz(1.0F, 2.0F, 0.0F),
   )
@@ -322,11 +318,11 @@ fn setup(world : @ecs.World) -> Unit {
   // Green spot light + emissive marker.
   let green_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_spot_light)
+  .component(@pbr.ecs_key_spot_light)
   .insert(
     green_light,
-    @render3d.SpotLight::new(
-      @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+    @pbr.SpotLight::new(
+      @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
       100_000.0F,
       20.0F,
       0.6F,
@@ -347,11 +343,11 @@ fn setup(world : @ecs.World) -> Unit {
   )
   spawn_mesh(
     world,
-    @render3d.Mesh3d::from_cuboid(0.1F, 0.125F, 0.1F),
-    @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(
-        @render2d.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
-      ).with_emissive(@render2d.Color::new(0.0F, 4.0F, 0.0F, 1.0F)),
+    @pbr.Mesh3d::from_cuboid(0.1F, 0.125F, 0.1F),
+    @pbr.standard_material_add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
+      ).with_emissive(@sprite.Color::new(0.0F, 4.0F, 0.0F, 1.0F)),
     ),
     @math.Transform::from_xyz(-1.0F, 2.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_x(PI / 2.0F),
@@ -362,11 +358,11 @@ fn setup(world : @ecs.World) -> Unit {
   // Blue point light + emissive marker.
   let blue_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     blue_light,
-    @render3d.PointLight::new(
-      @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+    @pbr.PointLight::new(
+      @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
       100_000.0F,
       20.0F,
       true,
@@ -379,10 +375,10 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_mesh(
     world,
     uv_sphere_mesh(0.1F, 12, 20),
-    @render3d.standard_material_add(
-      @render3d.StandardMaterial::from_color(
-        @render2d.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
-      ).with_emissive(@render2d.Color::new(0.0F, 0.0F, 713.0F, 1.0F)),
+    @pbr.standard_material_add(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
+      ).with_emissive(@sprite.Color::new(0.0F, 0.0F, 713.0F, 1.0F)),
     ),
     @math.Transform::from_xyz(0.0F, 4.0F, 0.0F),
   )
@@ -391,10 +387,10 @@ fn setup(world : @ecs.World) -> Unit {
   // Directional light.
   let directional = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@pbr.ecs_key_directional_light)
   .insert(
     directional,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 10_000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
     tick,
   )
   world
@@ -419,19 +415,19 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
   lighting_state.val.ui_text = Some(overlay)
 
   // Camera.
-  @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -484,18 +480,18 @@ fn toggle_ambient_light(world : @ecs.World) -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Space) {
     return
   }
-  if (try? world.get_resource(@render3d.ecs_key_global_ambient_light))
+  if (try? world.get_resource(@pbr.ecs_key_global_ambient_light))
     is Ok(Some(ambient)) {
     if ambient.brightness > 1.0F {
       world.insert_resource(
-        @render3d.ecs_key_global_ambient_light,
-        @render3d.GlobalAmbientLight::new(ambient.color, 0.0F),
+        @pbr.ecs_key_global_ambient_light,
+        @pbr.GlobalAmbientLight::new(ambient.color, 0.0F),
       )
       lighting_state.val.ambient_enabled = false
     } else {
       world.insert_resource(
-        @render3d.ecs_key_global_ambient_light,
-        @render3d.GlobalAmbientLight::new(ambient.color, 200.0F),
+        @pbr.ecs_key_global_ambient_light,
+        @pbr.GlobalAmbientLight::new(ambient.color, 200.0F),
       )
       lighting_state.val.ambient_enabled = true
     }

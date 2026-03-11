@@ -24,8 +24,6 @@ struct BloomUniforms {
 @group(0) @binding(1) var s: sampler;
 
 @group(0) @binding(2) var<uniform> uniforms: BloomUniforms;
-// Kept to align bind-group layout with final tonemapping pass.
-@group(0) @binding(4) var dt_lut_texture: texture_2d<f32>;
 
 #ifdef FIRST_DOWNSAMPLE
 // https://catlikecoding.com/unity/tutorials/advanced-rendering/bloom/#3.4

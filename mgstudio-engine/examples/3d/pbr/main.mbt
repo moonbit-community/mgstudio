@@ -44,7 +44,7 @@ fn uv_sphere_mesh(
   radius : Float,
   stacks : Int,
   sectors : Int,
-) -> @render3d.Mesh3d {
+) -> @engine_pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -90,7 +90,7 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @engine_pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -98,13 +98,13 @@ fn uv_sphere_mesh(
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @render3d.Mesh3d,
-  material : @asset.Handle[@render3d.StandardMaterial],
+  mesh : @engine_pbr.Mesh3d,
+  material : @asset.Handle[@engine_pbr.StandardMaterial],
   transform : @math.Transform,
 ) -> Unit {
-  @render3d.MeshMaterial3dBundle::new(
+  @engine_pbr.MeshMaterial3dBundle::new(
     mesh,
-    @render3d.MeshMaterial3d::new(material),
+    @engine_pbr.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
   |> ignore
@@ -118,19 +118,19 @@ fn setup(world : @ecs.World) -> Unit {
   pbr_state.val.env_loaded = false
   let tick = world.read_change_tick()
   let sphere_mesh = uv_sphere_mesh(0.45F, 18, 32)
-  let sphere_color = @render2d.Color::new(1.0F, 0.847F, 0.569F, 1.0F)
+  let sphere_color = @sprite.Color::new(1.0F, 0.847F, 0.569F, 1.0F)
 
   for y in -2..<3 {
     for x in -5..<6 {
       let x01 = float_from_int(x + 5) / 10.0F
       let y01 = float_from_int(y + 2) / 4.0F
-      let material = @render3d.StandardMaterial::from_color(sphere_color)
+      let material = @engine_pbr.StandardMaterial::from_color(sphere_color)
         .with_metallic(y01)
         .with_perceptual_roughness(x01)
       spawn_mesh(
         world,
         sphere_mesh,
-        @render3d.standard_material_add(material),
+        @engine_pbr.standard_material_add(material),
         @math.Transform::from_xyz(
           float_from_int(x),
           float_from_int(y) + 0.5F,
@@ -140,8 +140,8 @@ fn setup(world : @ecs.World) -> Unit {
     }
   }
 
-  let unlit_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(sphere_color).with_unlit(true),
+  let unlit_material = @engine_pbr.standard_material_add(
+    @engine_pbr.StandardMaterial::from_color(sphere_color).with_unlit(true),
   )
   spawn_mesh(
     world,
@@ -152,10 +152,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   let directional = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_directional_light)
+  .component(@engine_pbr.ecs_key_directional_light)
   .insert(
     directional,
-    @render3d.DirectionalLight::new(@render2d.Color::white(), 1_500.0F, false),
+    @engine_pbr.DirectionalLight::new(@sprite.Color::white(), 1_500.0F, false),
     tick,
   )
   world
@@ -188,9 +188,9 @@ fn setup(world : @ecs.World) -> Unit {
       z=50.0F,
     ),
   )
-  .with_anchor(@render2d.Anchor::top_left())
+  .with_anchor(@sprite.Anchor::top_left())
   .with_color(
-    @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
   .spawn()
   |> ignore
@@ -205,9 +205,9 @@ fn setup(world : @ecs.World) -> Unit {
       z=50.0F,
     ),
   )
-  .with_anchor(@render2d.Anchor::top_left())
+  .with_anchor(@sprite.Anchor::top_left())
   .with_color(
-    @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
   .spawn()
   |> ignore
@@ -222,29 +222,30 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::bottom_right())
+    .with_anchor(@sprite.Anchor::bottom_right())
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .spawn()
   pbr_state.val.loading_label = Some(env_loading_label)
 
-  let orthographic = @render3d.OrthographicProjection3d::default()
-    .with_scale(0.01F)
-    .with_window_size_scaling()
-  let camera = @render3d.Camera3dBundle::new_with_projection(
-    @render2d.Camera::default(),
-    @render3d.Projection3d::Orthographic(orthographic),
+  let orthographic = @engine_pbr.OrthographicProjection3d::{
+    ..@engine_pbr.OrthographicProjection3d::default_3d(),
+    scale: 0.01F,
+  }
+  let camera = @engine_pbr.Camera3dBundle::new_with_projection(
+    @sprite.Camera::default(),
+    @engine_pbr.Projection::Orthographic(orthographic),
     @math.Transform::from_xyz(0.0F, 0.0F, 8.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_environment_map_light)
+  .component(@engine_pbr.ecs_key_environment_map_light)
   .insert(
     camera,
-    @render3d.EnvironmentMapLight::new(
+    @engine_pbr.EnvironmentMapLight::new(
       Some(diffuse_env_map),
       Some(specular_env_map),
       900.0F,

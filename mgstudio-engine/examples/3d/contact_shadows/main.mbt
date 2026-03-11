@@ -111,11 +111,11 @@ let contact_shadows_state : Ref[ContactShadowsExampleState] = Ref::new({
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @render2d.Color,
+  color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
-  let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
+  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
+  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -201,10 +201,10 @@ fn apply_camera_components(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   if contact_shadows_state.val.contact_shadows == ContactShadowState::Enabled {
     world
-    .component(@render3d.ecs_key_contact_shadows)
-    .insert(camera, @render3d.ContactShadows::default(), tick)
+    .component(@pbr.ecs_key_contact_shadows)
+    .insert(camera, @pbr.ContactShadows::default(), tick)
   } else {
-    world.component(@render3d.ecs_key_contact_shadows).remove(camera) |> ignore
+    world.component(@pbr.ecs_key_contact_shadows).remove(camera) |> ignore
   }
 }
 
@@ -215,12 +215,12 @@ fn apply_ground_receive_shadows(world : @ecs.World) -> Unit {
     ReceiveShadowsState::Enabled
   let tick = world.read_change_tick()
   if receiving {
-    world.component(@render3d.ecs_key_not_shadow_receiver).remove(ground_entity)
+    world.component(@pbr.ecs_key_not_shadow_receiver).remove(ground_entity)
     |> ignore
   } else {
     world
-    .component(@render3d.ecs_key_not_shadow_receiver)
-    .insert(ground_entity, @render3d.NotShadowReceiver::default(), tick)
+    .component(@pbr.ecs_key_not_shadow_receiver)
+    .insert(ground_entity, @pbr.NotShadowReceiver::default(), tick)
   }
 }
 
@@ -237,11 +237,11 @@ fn apply_light_state(world : @ecs.World) -> Unit {
     world.component(@math.ecs_key_transform).set(entity, transform, tick)
     |> ignore
     world
-    .component(@render3d.ecs_key_directional_light)
+    .component(@pbr.ecs_key_directional_light)
     .set(
       entity,
-      @render3d.DirectionalLight::new(
-        @render2d.Color::white(),
+      @pbr.DirectionalLight::new(
+        @sprite.Color::white(),
         if state.light_type == LightType::Directional {
           DIRECTIONAL_ILLUMINANCE
         } else {
@@ -258,11 +258,11 @@ fn apply_light_state(world : @ecs.World) -> Unit {
     world.component(@math.ecs_key_transform).set(entity, transform, tick)
     |> ignore
     world
-    .component(@render3d.ecs_key_point_light)
+    .component(@pbr.ecs_key_point_light)
     .set(
       entity,
-      @render3d.PointLight::new(
-        @render2d.Color::white(),
+      @pbr.PointLight::new(
+        @sprite.Color::white(),
         if state.light_type == LightType::Point {
           POINT_LIGHT_INTENSITY
         } else {
@@ -282,11 +282,11 @@ fn apply_light_state(world : @ecs.World) -> Unit {
     world.component(@math.ecs_key_transform).set(entity, transform, tick)
     |> ignore
     world
-    .component(@render3d.ecs_key_spot_light)
+    .component(@pbr.ecs_key_spot_light)
     .set(
       entity,
-      @render3d.SpotLight::new(
-        @render2d.Color::white(),
+      @pbr.SpotLight::new(
+        @sprite.Color::white(),
         if state.light_type == LightType::Spot {
           SPOT_LIGHT_INTENSITY
         } else {
@@ -327,45 +327,43 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
 
-  let camera = @render3d.Camera3dBundle::new(
-      @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+      @sprite.Camera::default(),
       @math.Transform::from_xyz(-0.8F, 0.6F, -0.8F).looking_at(
         @math.Vec3::new(0.0F, 0.35F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
     )
     .with_motion_blur(
-      Some(@render3d.MotionBlur::default().with_shutter_angle(2.0F)),
+      Some(@post_process.MotionBlur::default().with_shutter_angle(2.0F)),
     )
     .spawn(world)
 
   contact_shadows_state.val.camera = Some(camera)
   world
-  .component(@render3d.ecs_key_contact_shadows)
-  .insert(camera, @render3d.ContactShadows::default(), tick)
+  .component(@pbr.ecs_key_contact_shadows)
+  .insert(camera, @pbr.ContactShadows::default(), tick)
   world
-  .component(@render3d.ecs_key_screen_space_ambient_occlusion)
-  .insert(camera, @render3d.ScreenSpaceAmbientOcclusion::default(), tick)
+  .component(@post_process.ecs_key_screen_space_ambient_occlusion)
+  .insert(camera, @post_process.ScreenSpaceAmbientOcclusion::default(), tick)
   world
-  .component(@render3d.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @render3d.TemporalAntiAliasing::default(), tick)
+  .component(@post_process.ecs_key_temporal_anti_aliasing)
+  .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
   world
-  .component(@render3d.ecs_key_depth_prepass)
-  .insert(camera, @render3d.DepthPrepass::default(), tick)
+  .component(@pbr.ecs_key_depth_prepass)
+  .insert(camera, @pbr.DepthPrepass::default(), tick)
   world
-  .component(@render3d.ecs_key_bloom)
-  .insert(camera, @render3d.Bloom::default(), tick)
+  .component(@post_process.ecs_key_bloom)
+  .insert(camera, @post_process.Bloom::default(), tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world
-  .component(@render3d.ecs_key_hdr)
-  .insert(camera, @render3d.Hdr::default(), tick)
+  .component(@post_process.ecs_key_tonemapping)
+  .insert(camera, @post_process.Tonemapping::AcesFitted, tick)
   world
-  .component(@render3d.ecs_key_tonemapping)
-  .insert(camera, @render3d.Tonemapping::AcesFitted, tick)
-  world
-  .component(@render3d.ecs_key_skybox)
+  .component(@pbr.ecs_key_skybox)
   .insert(
     camera,
-    @render3d.Skybox::new(
+    @pbr.Skybox::new(
       asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"),
       1000.0F,
     ),
@@ -380,14 +378,14 @@ fn setup(world : @ecs.World) -> Unit {
   contact_shadows_state.val.spot_light = Some(spot_light)
 
   world
-  .component(@render3d.ecs_key_directional_light)
-  .insert(directional_light, @render3d.DirectionalLight::default(), tick)
+  .component(@pbr.ecs_key_directional_light)
+  .insert(directional_light, @pbr.DirectionalLight::default(), tick)
   world
-  .component(@render3d.ecs_key_point_light)
-  .insert(point_light, @render3d.PointLight::default(), tick)
+  .component(@pbr.ecs_key_point_light)
+  .insert(point_light, @pbr.PointLight::default(), tick)
   world
-  .component(@render3d.ecs_key_spot_light)
-  .insert(spot_light, @render3d.SpotLight::default(), tick)
+  .component(@pbr.ecs_key_spot_light)
+  .insert(spot_light, @pbr.SpotLight::default(), tick)
 
   let model = world.spawn_empty()
   contact_shadows_state.val.model = Some(model)
@@ -398,7 +396,7 @@ fn setup(world : @ecs.World) -> Unit {
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
-        @scene.GltfAssetLabel::Scene(0).from_asset(
+        @gltf.GltfAssetLabel::Scene(0).from_asset(
           "models/FlightHelmet/FlightHelmet.gltf",
         ),
       ),
@@ -415,16 +413,16 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
 
-  let ground_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(
-      @render2d.Color::new(0.06F, 0.06F, 0.06F, 1.0F),
+  let ground_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.06F, 0.06F, 0.06F, 1.0F),
     )
     .with_perceptual_roughness(1.0F)
     .with_metallic(0.0F),
   )
-  let ground = @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_plane(4.0F, 4.0F),
-    @render3d.MeshMaterial3d::new(ground_material),
+  let ground = @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_plane(4.0F, 4.0F),
+    @pbr.MeshMaterial3d::new(ground_material),
     @math.Transform::identity(),
   ).spawn(world)
   contact_shadows_state.val.ground = Some(ground)
@@ -441,17 +439,17 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_left())
+    .with_anchor(@sprite.Anchor::top_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
   contact_shadows_state.val.help_text = Some(help_text)
 
-  set_global_ambient_light(world, @render2d.Color::white(), 0.0F)
+  set_global_ambient_light(world, @sprite.Color::white(), 0.0F)
   apply_camera_components(world)
   apply_light_state(world)
   apply_ground_receive_shadows(world)

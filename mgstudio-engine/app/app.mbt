@@ -497,6 +497,129 @@ pub fn[
 }
 
 ///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+] system_param5(
+  system : (P1, P2, P3, P4, P5) -> Unit,
+) -> SystemFn[W] {
+  let state1 = Ref::new(Json::null())
+  let state2 = Ref::new(Json::null())
+  let state3 = Ref::new(Json::null())
+  let state4 = Ref::new(Json::null())
+  let state5 = Ref::new(Json::null())
+  let state1_initialized = Ref::new(false)
+  let state2_initialized = Ref::new(false)
+  let state3_initialized = Ref::new(false)
+  let state4_initialized = Ref::new(false)
+  let state5_initialized = Ref::new(false)
+  fn(_world : W) {
+    let world = system_param_abort_missing_world()
+    if !state1_initialized.val {
+      state1.val = P1::init_state(world)
+      state1_initialized.val = true
+    }
+    if !state2_initialized.val {
+      state2.val = P2::init_state(world)
+      state2_initialized.val = true
+    }
+    if !state3_initialized.val {
+      state3.val = P3::init_state(world)
+      state3_initialized.val = true
+    }
+    if !state4_initialized.val {
+      state4.val = P4::init_state(world)
+      state4_initialized.val = true
+    }
+    if !state5_initialized.val {
+      state5.val = P5::init_state(world)
+      state5_initialized.val = true
+    }
+    let p1 : P1 = P1::get(state1)
+    let p2 : P2 = P2::get(state2)
+    let p3 : P3 = P3::get(state3)
+    let p4 : P4 = P4::get(state4)
+    let p5 : P5 = P5::get(state5)
+    system(p1, p2, p3, p4, p5)
+    P1::store(p1, state1)
+    P2::store(p2, state2)
+    P3::store(p3, state3)
+    P4::store(p4, state4)
+    P5::store(p5, state5)
+  }
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+] system_param6(
+  system : (P1, P2, P3, P4, P5, P6) -> Unit,
+) -> SystemFn[W] {
+  let state1 = Ref::new(Json::null())
+  let state2 = Ref::new(Json::null())
+  let state3 = Ref::new(Json::null())
+  let state4 = Ref::new(Json::null())
+  let state5 = Ref::new(Json::null())
+  let state6 = Ref::new(Json::null())
+  let state1_initialized = Ref::new(false)
+  let state2_initialized = Ref::new(false)
+  let state3_initialized = Ref::new(false)
+  let state4_initialized = Ref::new(false)
+  let state5_initialized = Ref::new(false)
+  let state6_initialized = Ref::new(false)
+  fn(_world : W) {
+    let world = system_param_abort_missing_world()
+    if !state1_initialized.val {
+      state1.val = P1::init_state(world)
+      state1_initialized.val = true
+    }
+    if !state2_initialized.val {
+      state2.val = P2::init_state(world)
+      state2_initialized.val = true
+    }
+    if !state3_initialized.val {
+      state3.val = P3::init_state(world)
+      state3_initialized.val = true
+    }
+    if !state4_initialized.val {
+      state4.val = P4::init_state(world)
+      state4_initialized.val = true
+    }
+    if !state5_initialized.val {
+      state5.val = P5::init_state(world)
+      state5_initialized.val = true
+    }
+    if !state6_initialized.val {
+      state6.val = P6::init_state(world)
+      state6_initialized.val = true
+    }
+    let p1 : P1 = P1::get(state1)
+    let p2 : P2 = P2::get(state2)
+    let p3 : P3 = P3::get(state3)
+    let p4 : P4 = P4::get(state4)
+    let p5 : P5 = P5::get(state5)
+    let p6 : P6 = P6::get(state6)
+    system(p1, p2, p3, p4, p5, p6)
+    P1::store(p1, state1)
+    P2::store(p2, state2)
+    P3::store(p3, state3)
+    P4::store(p4, state4)
+    P5::store(p5, state5)
+    P6::store(p6, state6)
+  }
+}
+
+///|
 pub fn[A] system_query1_ecs(
   key_a : @ecs.ComponentKey[A],
   system : (@ecs.Query1[A], @ecs.World) -> Unit,
@@ -646,12 +769,12 @@ pub impl[T : Resource] SystemParam for ResMut[T] with store(self, state) {
 ///|
 pub struct SystemConfig[W] {
   system : SystemFn[W]
-  run_if : StatefulRunConditionFn[W]?
-  run_if_state : Ref[Json]
+  run_ifs : Array[StatefulRunConditionFn[W]]
+  run_if_states : Array[Ref[Json]]
   set : SystemSet?
   before : Array[SystemSet]
   after : Array[SystemSet]
-  mut run_if_last_run_tick : @core.Tick
+  run_if_last_run_ticks : Array[@core.Tick]
   mut last_run_tick : @core.Tick
 }
 
@@ -659,12 +782,12 @@ pub struct SystemConfig[W] {
 pub fn[W] system(system : SystemFn[W]) -> SystemConfig[W] {
   SystemConfig::{
     system,
-    run_if: None,
-    run_if_state: Ref::new(Json::null()),
+    run_ifs: [],
+    run_if_states: [],
     set: None,
     before: [],
     after: [],
-    run_if_last_run_tick: 0,
+    run_if_last_run_ticks: [],
     last_run_tick: 0,
   }
 }
@@ -685,11 +808,10 @@ pub fn[W] SystemConfig::run_if_stateful(
   init_state : Json,
   cond : StatefulRunConditionFn[W],
 ) -> SystemConfig[W] {
-  SystemConfig::{
-    ..self,
-    run_if: Some(cond),
-    run_if_state: Ref::new(init_state),
-  }
+  self.run_ifs.push(cond)
+  self.run_if_states.push(Ref::new(init_state))
+  self.run_if_last_run_ticks.push(0)
+  self
 }
 
 ///|
@@ -2284,10 +2406,12 @@ fn run_systems(
   for set_i in topo {
     for system_i in systems_by_set[set_i] {
       let cfg = systems[system_i]
-      if cfg.run_if is Some(cond) {
+      let mut should_skip = false
+      for cond_i in 0..<cfg.run_ifs.length() {
+        let cond = cfg.run_ifs[cond_i]
         let cond_this_run = world.increment_change_tick()
         let cond_ticks = @core.SystemTicks::new(
-          cfg.run_if_last_run_tick,
+          cfg.run_if_last_run_ticks[cond_i],
           cond_this_run,
         )
         let cond_ctx = world.get_system_context()
@@ -2296,13 +2420,17 @@ fn run_systems(
         let prev_world = current_world_ref.val
         current_world_ref.val = Some(world)
         current_system_ticks_ref.val = Some(cond_ticks)
-        let should_run = cond(world, cfg.run_if_state)
+        let should_run = cond(world, cfg.run_if_states[cond_i])
         current_system_ticks_ref.val = None
         current_world_ref.val = prev_world
-        systems[system_i].run_if_last_run_tick = cond_this_run
+        systems[system_i].run_if_last_run_ticks[cond_i] = cond_this_run
         if !should_run {
-          continue
+          should_skip = true
+          break
         }
+      }
+      if should_skip {
+        continue
       }
 
       // Align with Bevy: increment global change tick once per executed system

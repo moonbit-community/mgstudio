@@ -77,11 +77,11 @@ fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
 ///|
 fn set_global_ambient_light(
   world : @ecs.World,
-  color : @render2d.Color,
+  color : @sprite.Color,
   brightness : Float,
 ) -> Unit {
-  let ambient = @render3d.GlobalAmbientLight::new(color, brightness)
-  world.insert_resource(@render3d.ecs_key_global_ambient_light, ambient)
+  let ambient = @pbr.GlobalAmbientLight::new(color, brightness)
+  world.insert_resource(@pbr.ecs_key_global_ambient_light, ambient)
 }
 
 ///|
@@ -100,20 +100,20 @@ fn spawn_wall_panel(world : @ecs.World, side : @math.Vec3, level : Int) -> Unit 
   let target = height
   let position = side.mul_scalar(2.0F).add(height)
 
-  let base_color = @render2d.Color::new(
+  let base_color = @sprite.Color::new(
     clampf(0.5F + side.x * 0.5F, 0.0F, 1.0F),
     clampf(0.75F - level_f * 0.25F, 0.0F, 1.0F),
     clampf(0.5F + side.z * 0.5F, 0.0F, 1.0F),
     1.0F,
   )
 
-  let material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(base_color),
+  let material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(base_color),
   )
 
-  @render3d.MeshMaterial3dBundle::new(
-    @render3d.Mesh3d::from_cuboid(4.0F, 1.0F, 0.04F),
-    @render3d.MeshMaterial3d::new(material),
+  @pbr.MeshMaterial3dBundle::new(
+    @pbr.Mesh3d::from_cuboid(4.0F, 1.0F, 0.04F),
+    @pbr.MeshMaterial3d::new(material),
     @math.Transform::from_xyz(position.x, position.y, position.z).looking_at(
       target,
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -159,22 +159,22 @@ fn setup(world : @ecs.World) -> Unit {
   let metering_mask = asset_server.load("textures/basic_metering_mask.png")
 
   let tick = world.read_change_tick()
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     camera_transform_for_angle(auto_exposure_state.val.camera_angle),
   ).spawn(world)
   world
-  .component(@render3d.ecs_key_exposure)
+  .component(@pbr.ecs_key_exposure)
   .insert(
     camera,
-    @render3d.Exposure::new(auto_exposure_state.val.exposure_ev100),
+    @pbr.Exposure::new(auto_exposure_state.val.exposure_ev100),
     tick,
   )
   world
-  .component(@render3d.ecs_key_skybox)
+  .component(@pbr.ecs_key_skybox)
   .insert(
     camera,
-    @render3d.Skybox::new(
+    @pbr.Skybox::new(
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       100_000.0F,
     ),
@@ -197,14 +197,14 @@ fn setup(world : @ecs.World) -> Unit {
     }
   }
 
-  set_global_ambient_light(world, @render2d.Color::white(), 0.0F)
+  set_global_ambient_light(world, @sprite.Color::white(), 0.0F)
 
   let point_light = world.spawn_empty()
   world
-  .component(@render3d.ecs_key_point_light)
+  .component(@pbr.ecs_key_point_light)
   .insert(
     point_light,
-    @render3d.PointLight::new(@render2d.Color::white(), 2_000.0F, 20.0F, true),
+    @pbr.PointLight::new(@sprite.Color::white(), 2_000.0F, 20.0F, true),
     tick,
   )
   world
@@ -212,8 +212,8 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(point_light, @math.Transform::identity(), tick)
 
   // 2D overlay camera + mask image proxy for Bevy's `ImageNode` visualization.
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(100).with_clear_color_none(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(100).with_clear_color_none(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -222,10 +222,10 @@ fn setup(world : @ecs.World) -> Unit {
     float_from_int(@window.window_width()),
     float_from_int(@window.window_height()),
   )
-  let mask_overlay = @render2d.SpriteBundle::new(
-    @render2d.Sprite::from_image(metering_mask)
+  let mask_overlay = @sprite.SpriteBundle::new(
+    @sprite.Sprite::from_image(metering_mask)
     .with_custom_size(Some(mask_size))
-    .with_color(@render2d.Color::new(1.0F, 1.0F, 1.0F, MASK_OVERLAY_ALPHA)),
+    .with_color(@sprite.Color::new(1.0F, 1.0F, 1.0F, MASK_OVERLAY_ALPHA)),
     @math.Transform::identity(),
   ).spawn(world)
   world
@@ -250,11 +250,11 @@ fn setup(world : @ecs.World) -> Unit {
       z=50.0F,
     ),
   )
-  .with_anchor(@render2d.Anchor::top_left())
+  .with_anchor(@sprite.Anchor::top_left())
   .with_bounds(@text.TextBounds::new_horizontal(780.0F))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
   .with_color(
-    @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
   )
   .with_shadow(Some(@text.Text2dShadow::default()))
   .spawn()
@@ -270,11 +270,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::top_right())
+    .with_anchor(@sprite.Anchor::top_right())
     .with_bounds(@text.TextBounds::new_horizontal(360.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -380,10 +380,10 @@ fn example_control_system(world : @ecs.World) -> Unit {
     20.0F,
   )
   if auto_exposure_state.val.camera is Some(camera_entity) {
-    if world.component(@render3d.ecs_key_exposure).get(camera_entity)
+    if world.component(@pbr.ecs_key_exposure).get(camera_entity)
       is Some(exposure) {
       world
-      .component(@render3d.ecs_key_exposure)
+      .component(@pbr.ecs_key_exposure)
       .set(
         camera_entity,
         exposure.with_ev100(auto_exposure_state.val.exposure_ev100),
@@ -392,10 +392,10 @@ fn example_control_system(world : @ecs.World) -> Unit {
       |> ignore
     } else {
       world
-      .component(@render3d.ecs_key_exposure)
+      .component(@pbr.ecs_key_exposure)
       .insert(
         camera_entity,
-        @render3d.Exposure::new(auto_exposure_state.val.exposure_ev100),
+        @pbr.Exposure::new(auto_exposure_state.val.exposure_ev100),
         tick,
       )
     }

@@ -6,15 +6,20 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/render3d",
+  "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/visibility",
   "moonbitlang/core/json",
 }
 
 // Values
+pub const SCENE_PLUGIN_ID : String = "bevy_scene::ScenePlugin"
+
 pub let ecs_components : Array[String]
+
+pub let ecs_key_scene_instance : @ecs.ComponentKey[SceneInstance]
 
 pub let ecs_key_scene_instance_ready : @ecs.ComponentKey[SceneInstanceReady]
 
@@ -24,9 +29,9 @@ pub let ecs_resources : Array[String]
 
 pub fn get_scene_instance_ready_store(@ecs.World) -> @ecs.ComponentAccess[SceneInstanceReady]
 
-pub fn get_scene_root_store(@ecs.World) -> @ecs.ComponentAccess[SceneRoot]
+pub fn get_scene_instance_store(@ecs.World) -> @ecs.ComponentAccess[SceneInstance]
 
-pub fn gltf_split_asset_path_with_label(String) -> (String, GltfAssetLabel?)
+pub fn get_scene_root_store(@ecs.World) -> @ecs.ComponentAccess[SceneRoot]
 
 pub fn scene_get(@asset.Handle[Scene]) -> Scene?
 
@@ -44,6 +49,10 @@ pub fn scene_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn scene_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn scene_plugin_with(@app.App[@ecs.World], ScenePlugin) -> @app.App[@ecs.World]
+
+pub fn scene_register_gltf_asset_loaders() -> Unit
+
 pub fn scene_register_gltf_scene(String, Scene) -> @asset.Handle[Scene]
 
 pub fn scene_reset_gltf_lod_visibility_policy() -> Unit
@@ -57,23 +66,6 @@ pub fn scene_spawn_roots_system_ecs(@ecs.World) -> Unit
 // Errors
 
 // Types and methods
-pub(all) enum GltfAssetLabel {
-  Scene(Int)
-  Node(Int)
-  Mesh(Int)
-  Primitive(Int, Int)
-  MorphTarget(Int, Int)
-  Texture(Int)
-  Material(Int, Bool)
-  DefaultMaterial
-  Animation(Int)
-  Skin(Int)
-  InverseBindMatrices(Int)
-}
-pub fn GltfAssetLabel::from_asset(Self, String) -> String
-pub fn GltfAssetLabel::parse(String) -> Self?
-pub fn GltfAssetLabel::to_label(Self) -> String
-
 pub struct GltfLodVisibilityPolicy {
   enabled : Bool
   first_start_margin_min : Float
@@ -93,22 +85,36 @@ pub struct Scene {
 }
 pub fn Scene::new(Array[SceneNode3d]) -> Self
 
+pub struct SceneInstance {
+  instance_id : Int
+}
+pub fn SceneInstance::new(Int) -> Self
+pub impl @ecs.Component for SceneInstance
+pub impl ToJson for SceneInstance
+pub impl @json.FromJson for SceneInstance
+
 pub struct SceneInstanceReady {
+  instance_id : Int
   spawned_entities : Int
 }
-pub fn SceneInstanceReady::new(Int) -> Self
+pub fn SceneInstanceReady::new(Int, Int) -> Self
 pub impl @ecs.Component for SceneInstanceReady
 pub impl ToJson for SceneInstanceReady
 pub impl @json.FromJson for SceneInstanceReady
 
 pub struct SceneNode3d {
-  mesh : @render3d.Mesh3d
-  material : @render3d.MeshMaterial3d
+  mesh : @pbr.Mesh3d
+  material : @material.MeshMaterial3d
   transform : @math.Transform
   visibility_range : @visibility.VisibilityRange?
   animation_target : @animation.AnimationTargetId?
 }
-pub fn SceneNode3d::new(@render3d.Mesh3d, @render3d.MeshMaterial3d, @math.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?) -> Self
+pub fn SceneNode3d::new(@pbr.Mesh3d, @material.MeshMaterial3d, @math.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?) -> Self
+
+pub(all) struct ScenePlugin {
+}
+pub fn ScenePlugin::default() -> Self
+pub impl @app.PluginReplacement for ScenePlugin
 
 pub struct SceneRoot {
   scene : @asset.Handle[Scene]

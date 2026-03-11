@@ -61,7 +61,7 @@ priv struct ReflectionProbesState {
   mut rotating : Bool
   mut sphere_roughness : Float
   mut camera : @core.Entity?
-  mut sphere_material : @asset.Handle[@render3d.StandardMaterial]?
+  mut sphere_material : @asset.Handle[@pbr.StandardMaterial]?
   mut cubes_scene : @core.Entity?
   mut reflection_probe : @core.Entity?
   mut help_text : @text.TextHandle?
@@ -139,11 +139,7 @@ fn update_help_text() -> Unit {
 }
 
 ///|
-fn uv_sphere_mesh(
-  radius : Float,
-  stacks : Int,
-  sectors : Int,
-) -> @render3d.Mesh3d {
+fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -189,7 +185,7 @@ fn uv_sphere_mesh(
     }
   }
 
-  @render3d.Mesh3d::from_geometry(
+  @pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -216,8 +212,8 @@ fn set_entity_visibility(
 }
 
 ///|
-fn create_camera_environment_map_light() -> @render3d.EnvironmentMapLight {
-  @render3d.EnvironmentMapLight::new(
+fn create_camera_environment_map_light() -> @pbr.EnvironmentMapLight {
+  @pbr.EnvironmentMapLight::new(
     reflection_probes_state.val.diffuse_environment_map,
     reflection_probes_state.val.specular_environment_map,
     ENV_MAP_INTENSITY,
@@ -242,13 +238,13 @@ fn spawn_reflection_probe(world : @ecs.World) -> Unit {
   reflection_probes_state.val.reflection_probe = Some(probe)
 
   world
-  .component(@render3d.ecs_key_light_probe)
-  .insert(probe, @render3d.LightProbe::default(), tick)
+  .component(@pbr.ecs_key_light_probe)
+  .insert(probe, @pbr.LightProbe::default(), tick)
   world
-  .component(@render3d.ecs_key_environment_map_light)
+  .component(@pbr.ecs_key_environment_map_light)
   .insert(
     probe,
-    @render3d.EnvironmentMapLight::new(
+    @pbr.EnvironmentMapLight::new(
       reflection_probes_state.val.diffuse_environment_map,
       reflection_probes_state.val.specular_reflection_probe,
       ENV_MAP_INTENSITY,
@@ -256,8 +252,8 @@ fn spawn_reflection_probe(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@render3d.ecs_key_parallax_correction)
-  .insert(probe, @render3d.ParallaxCorrection::None, tick)
+  .component(@pbr.ecs_key_parallax_correction)
+  .insert(probe, @pbr.ParallaxCorrection::None, tick)
   world
   .component(@math.ecs_key_transform)
   .insert(
@@ -273,11 +269,8 @@ fn apply_reflection_mode(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   remove_reflection_probe(world)
-  world.component(@render3d.ecs_key_environment_map_light).remove(camera)
-  |> ignore
-  world
-  .component(@render3d.ecs_key_generated_environment_map_light)
-  .remove(camera)
+  world.component(@pbr.ecs_key_environment_map_light).remove(camera) |> ignore
+  world.component(@pbr.ecs_key_generated_environment_map_light).remove(camera)
   |> ignore
 
   match reflection_probes_state.val.reflection_mode {
@@ -288,7 +281,7 @@ fn apply_reflection_mode(world : @ecs.World) -> Unit {
         false,
       )
       world
-      .component(@render3d.ecs_key_environment_map_light)
+      .component(@pbr.ecs_key_environment_map_light)
       .insert(camera, create_camera_environment_map_light(), tick)
     }
     ReflectionMode::ReflectionProbe => {
@@ -298,7 +291,7 @@ fn apply_reflection_mode(world : @ecs.World) -> Unit {
         true,
       )
       world
-      .component(@render3d.ecs_key_environment_map_light)
+      .component(@pbr.ecs_key_environment_map_light)
       .insert(camera, create_camera_environment_map_light(), tick)
       spawn_reflection_probe(world)
     }
@@ -309,10 +302,10 @@ fn apply_reflection_mode(world : @ecs.World) -> Unit {
         false,
       )
       world
-      .component(@render3d.ecs_key_generated_environment_map_light)
+      .component(@pbr.ecs_key_generated_environment_map_light)
       .insert(
         camera,
-        @render3d.GeneratedEnvironmentMapLight::new(
+        @pbr.GeneratedEnvironmentMapLight::new(
           reflection_probes_state.val.specular_environment_map,
           ENV_MAP_INTENSITY,
         ),
@@ -347,43 +340,37 @@ fn setup(world : @ecs.World) -> Unit {
     asset_server.load(SPECULAR_REFLECTION_PROBE_ASSET),
   )
 
-  let camera = @render3d.Camera3dBundle::new(
-    @render2d.Camera::default(),
+  let camera = @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(-3.883F, 0.325F, 2.781F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
   reflection_probes_state.val.camera = Some(camera)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world
-  .component(@render3d.ecs_key_hdr)
-  .insert(camera, @render3d.Hdr::default(), tick)
+  .component(@pbr.ecs_key_exposure)
+  .insert(camera, @pbr.Exposure::new(11.0F), tick)
   world
-  .component(@render3d.ecs_key_exposure)
-  .insert(camera, @render3d.Exposure::new(11.0F), tick)
-  world
-  .component(@render3d.ecs_key_tonemapping)
-  .insert(camera, @render3d.Tonemapping::AcesFitted, tick)
+  .component(@post_process.ecs_key_tonemapping)
+  .insert(camera, @post_process.Tonemapping::AcesFitted, tick)
   if reflection_probes_state.val.specular_environment_map
     is Some(specular_env_map) {
     world
-    .component(@render3d.ecs_key_skybox)
-    .insert(
-      camera,
-      @render3d.Skybox::new(specular_env_map, ENV_MAP_INTENSITY),
-      tick,
-    )
+    .component(@pbr.ecs_key_skybox)
+    .insert(camera, @pbr.Skybox::new(specular_env_map, ENV_MAP_INTENSITY), tick)
   }
 
-  let sphere_material = @render3d.standard_material_add(
-    @render3d.StandardMaterial::from_color(@render2d.Color::white())
+  let sphere_material = @pbr.standard_material_add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white())
     .with_metallic(1.0F)
     .with_perceptual_roughness(reflection_probes_state.val.sphere_roughness),
   )
   reflection_probes_state.val.sphere_material = Some(sphere_material)
-  @render3d.MeshMaterial3dBundle::new(
+  @pbr.MeshMaterial3dBundle::new(
     uv_sphere_mesh(1.0F, 20, 36),
-    @render3d.MeshMaterial3d::new(sphere_material),
+    @pbr.MeshMaterial3d::new(sphere_material),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
@@ -396,7 +383,7 @@ fn setup(world : @ecs.World) -> Unit {
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
         asset_server,
-        @scene.GltfAssetLabel::Scene(0).from_asset(CUBES_SCENE_ASSET),
+        @gltf.GltfAssetLabel::Scene(0).from_asset(CUBES_SCENE_ASSET),
       ),
     ),
     tick,
@@ -415,11 +402,11 @@ fn setup(world : @ecs.World) -> Unit {
         z=50.0F,
       ),
     )
-    .with_anchor(@render2d.Anchor::bottom_left())
+    .with_anchor(@sprite.Anchor::bottom_left())
     .with_bounds(@text.TextBounds::new_horizontal(780.0F))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .with_color(
-      @text.TextColor::new(@render2d.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+      @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -495,8 +482,8 @@ fn change_sphere_roughness(_world : @ecs.World) -> Unit {
   )
 
   if reflection_probes_state.val.sphere_material is Some(handle) {
-    if @render3d.standard_material_get(handle) is Some(material) {
-      @render3d.standard_material_set(
+    if @pbr.standard_material_get(handle) is Some(material) {
+      @pbr.standard_material_set(
         handle,
         material.with_perceptual_roughness(
           reflection_probes_state.val.sphere_roughness,

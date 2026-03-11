@@ -99,16 +99,6 @@ impl @app.Resource for TrackChangePending with resource() {
 }
 
 ///|
-impl @ecs.Component for FadeIn with component() {
-  fade_in_component_key
-}
-
-///|
-impl @ecs.Component for FadeOut with component() {
-  fade_out_component_key
-}
-
-///|
 fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
@@ -135,24 +125,18 @@ fn setup(world : @ecs.World) -> Unit {
   })
 
   let asset_server = @asset.AssetServer::new()
-  guard @audio.audio_source_load(
-      world, asset_server, "sounds/Mysterious acoustic guitar.ogg",
-    )
-    is Some(track_1) else {
-    return
-  }
-  guard @audio.audio_source_load(
-      world, asset_server, "sounds/Epic orchestra music.ogg",
-    )
-    is Some(track_2) else {
-    return
-  }
+  let track_1 : @asset.Handle[@audio.AudioSource] = asset_server.load(
+    "sounds/Mysterious acoustic guitar.ogg",
+  )
+  let track_2 : @asset.Handle[@audio.AudioSource] = asset_server.load(
+    "sounds/Epic orchestra music.ogg",
+  )
   world.insert_resource(SoundtrackPlayer::resource(), SoundtrackPlayer::{
     track_list: [track_1, track_2],
   })
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore

@@ -24,7 +24,7 @@ pub fn mark_dirty_trees(@ecs.World) -> Unit
 
 pub fn mark_dirty_trees_ecs(@ecs.World) -> Unit
 
-pub fn propagate_parent_transforms(@ecs.World) -> Unit raise @ecs.EcsError
+pub fn propagate_parent_transforms(@ecs.World) -> Unit
 
 pub fn propagate_parent_transforms_ecs(@ecs.World) -> Unit
 
@@ -61,6 +61,9 @@ pub struct Affine2 {
   tx : Float
   ty : Float
 }
+pub fn Affine2::from_scale(@math.Vec2) -> Self
+pub fn Affine2::from_scale_translation(@math.Vec2, @math.Vec2) -> Self
+pub fn Affine2::from_translation(@math.Vec2) -> Self
 pub fn Affine2::identity() -> Self
 pub fn Affine2::mul(Self, Self) -> Self
 pub fn Affine2::transform_point2(Self, @math.Vec2) -> @math.Vec2

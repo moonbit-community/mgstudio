@@ -34,7 +34,7 @@ impl @app.Resource for CaptureState with resource() {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let target = @render2d.render2d_create_render_target_ecs(500, 500, false)
+  let target = @sprite_render.render2d_create_render_target_ecs(500, 500, false)
   let tick = world.read_change_tick()
   if (try! world.get_resource_ref_mut(capture_state_resource_key, tick))
     is Some(state) {
@@ -50,15 +50,15 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Transform::from_xyz(0.0F, 0.0F, -5.0F),
   )
 
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default().with_order(-1),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(-1),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   // Keep a visible camera on screen for web runtime.
-  @render2d.Camera2dBundle::new(
-    @render2d.Camera::default(),
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
     @math.Transform::identity(),
   ).spawn(world)
   |> ignore
