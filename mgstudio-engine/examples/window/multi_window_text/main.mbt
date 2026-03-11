@@ -1,0 +1,176 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+/// Port of `bevy/examples/window/multi_window_text.rs`.
+
+///|
+const PRIMARY_WINDOW_TITLE : String = "Primary window"
+
+///|
+const SECONDARY_WINDOW_TITLE : String = "Secondary Window"
+
+///|
+const UI_TEXT_PRIMARY : String = "UI Text Primary Window"
+
+///|
+const UI_TEXT_SECONDARY : String = "UI Text Secondary Window"
+
+///|
+const TEXT2D_PRIMARY : String = "Text2d Primary Window"
+
+///|
+const TEXT2D_SECONDARY : String = "Text2d Secondary Window"
+
+///|
+const TEXT2D_BOTH : String = "Text2d Both Windows"
+
+///|
+fn configured_primary_window() -> @window.Window {
+  let window = @window.Window::default()
+  window.title = PRIMARY_WINDOW_TITLE
+  window.resolution = @window.WindowResolution::default().with_scale_factor_override(
+    1.0F,
+  )
+  window
+}
+
+///|
+fn configured_secondary_window() -> @window.Window {
+  let window = @window.Window::default()
+  window.title = SECONDARY_WINDOW_TITLE
+  window.resolution = @window.WindowResolution::default().with_scale_factor_override(
+    2.0F,
+  )
+  window
+}
+
+///|
+fn spawn_ui_label(
+  world : @ecs.World,
+  content : String,
+  ui_camera : @core.Entity?,
+  font : @text.TextFont,
+) -> Unit {
+  let tick = world.read_change_tick()
+
+  let text_handle = @text.Text2dBundle::new(
+      @text.Text2d::new(content),
+      font,
+      @math.Transform::identity(),
+    )
+    .with_shadow(Some(@text.Text2dShadow::default()))
+    .spawn()
+
+  let root = world.spawn_empty()
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
+    root,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_top(@ui.Val::Px(12.0F))
+    .with_left(@ui.Val::Px(12.0F)),
+    tick,
+  )
+
+  if ui_camera is Some(camera) {
+    world
+    .component(@ui.ecs_key_ui_target_camera)
+    .insert(root, @ui.UiTargetCamera::new(camera), tick)
+  }
+
+  let text_entity = world.spawn_empty()
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  world
+  .component(@ui.ecs_key_ui_text)
+  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+}
+
+///|
+fn setup_scene(world : @ecs.World) -> Unit {
+  let tick = world.read_change_tick()
+  let text_font = @text.TextFont::from_font_size(30.0F)
+
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
+    @math.Transform::identity(),
+  ).spawn(world)
+  |> ignore
+
+  let secondary_window = world.spawn_empty()
+  world
+  .component(@window.ecs_key_window)
+  .insert(secondary_window, configured_secondary_window(), tick)
+
+  let secondary_window_camera = @sprite.Camera2dBundle::new_with_layers(
+    @sprite.Camera::default(),
+    @math.Transform::identity(),
+    @sprite.RenderTarget::Window(@window.WindowRef::Entity(secondary_window)),
+    @sprite.RenderLayers::layer(1),
+  ).spawn(world)
+
+  spawn_ui_label(world, UI_TEXT_PRIMARY, None, text_font)
+  spawn_ui_label(world, UI_TEXT_SECONDARY, Some(secondary_window_camera), text_font)
+
+  @text.Text2dBundle::new(
+    @text.Text2d::new(TEXT2D_PRIMARY),
+    text_font,
+    @math.Transform::identity(),
+  )
+  .with_color(@text.TextColor::new(@sprite.Color::srgb(1.0F, 1.0F, 0.0F)))
+  .with_shadow(Some(@text.Text2dShadow::default()))
+  .spawn()
+  |> ignore
+
+  @text.Text2dBundle::new_with_layers(
+    @text.Text2d::new(TEXT2D_SECONDARY),
+    text_font,
+    @math.Transform::identity(),
+    @sprite.RenderLayers::layer(1),
+  )
+  .with_color(@text.TextColor::new(@sprite.Color::srgb(1.0F, 1.0F, 0.0F)))
+  .with_shadow(Some(@text.Text2dShadow::default()))
+  .spawn()
+  |> ignore
+
+  @text.Text2dBundle::new_with_layers(
+    @text.Text2d::new(TEXT2D_BOTH),
+    text_font,
+    @math.Transform::from_xyz(0.0F, -50.0F, 0.0F),
+    @sprite.RenderLayers::from_layers([0, 1]),
+  )
+  .with_color(@text.TextColor::new(@sprite.Color::srgb(0.8784314F, 1.0F, 1.0F)))
+  .with_shadow(Some(@text.Text2dShadow::default()))
+  .spawn()
+  |> ignore
+}
+
+///|
+fn main {
+  @app.App::new(@ecs.World::new())
+  .add_plugin_group(fn() {
+    @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
+      primary_window: Some(configured_primary_window()),
+      primary_cursor_options: Some(@window.CursorOptions::default()),
+      exit_condition: @window.ExitCondition::OnAllClosed,
+      close_when_requested: true,
+    })
+  })
+  .add_systems(@app.Startup, @app.system(setup_scene))
+  .run()
+}
