@@ -179,7 +179,7 @@ fn viewport_to_world_draw_cursor(world : @ecs.World) -> Unit {
   let gizmos = @sprite.Gizmos::new()
 
   if @input.mouse_position() is Some(screen_pos) {
-    if @sprite.render2d_camera_viewport_to_world_2d(
+    if @sprite_render.render2d_camera_viewport_to_world_2d(
         screen_pos, camera, orthographic_projection, camera_transform, window_size,
         scale_factor,
       )
@@ -189,12 +189,12 @@ fn viewport_to_world_draw_cursor(world : @ecs.World) -> Unit {
       let cursor_iso = @sprite.Isometry2d::new(world_pos, 0.0F)
       gizmos.circle_2d(cursor_iso, 10.0F, white) |> ignore
 
-      if @sprite.render2d_camera_world_to_viewport_2d(
+      if @sprite_render.render2d_camera_world_to_viewport_2d(
           world_pos, camera, orthographic_projection, camera_transform, window_size,
           scale_factor,
         )
         is Some(viewport_pos) {
-        if @sprite.render2d_camera_viewport_to_world_2d(
+        if @sprite_render.render2d_camera_viewport_to_world_2d(
             viewport_pos, camera, orthographic_projection, camera_transform, window_size,
             scale_factor,
           )

@@ -45,7 +45,9 @@ pub fn[T] register_message(debug_name? : String = "") -> MessageKey[T] {
     register_resource(debug_name~)
   } else {
     named_message_queue_registry
-    .get_or_init(debug_name, fn() { register_resource(debug_name~).cast() })
+    .get_or_init(debug_name, fn() -> ResourceKey[Messages[Unit]] {
+      register_resource(debug_name~)
+    })
     .cast()
   }
   MessageKey::{ queue_key, marker: None }

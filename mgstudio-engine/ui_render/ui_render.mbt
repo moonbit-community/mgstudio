@@ -23,88 +23,19 @@ pub type UiAntiAlias = @ui.UiAntiAlias
 pub type BoxShadowSamples = @ui.UiBoxShadowSamples
 
 ///|
-pub type BackgroundColor = @ui.BackgroundColor
-
-///|
-pub type BorderColor = @ui.BorderColor
-
-///|
-pub type BoxShadow = @ui.BoxShadow
-
-///|
-pub type Outline = @ui.Outline
-
-///|
-pub type CalculatedClip = @ui.CalculatedClip
-
-///|
-pub type ComputedUiTargetCamera = @ui.ComputedUiTargetCamera
-
-///|
-pub type ComputedUiRenderTargetInfo = @ui.ComputedUiRenderTargetInfo
-
-///|
-pub type ImageNode = @ui.ImageNode
-
-///|
-pub type BorderRect = @ui.BorderRect
-
-///|
-pub type SliceScaleMode = @ui.SliceScaleMode
-
-///|
-pub type NodeImageMode = @ui.NodeImageMode
-
-///|
-pub type TextureSlicer = @ui.TextureSlicer
-
-///|
 pub let ecs_key_ui_anti_alias : @ecs.ComponentKey[UiAntiAlias] = @ui.ecs_key_ui_anti_alias
 
 ///|
 pub let ecs_key_ui_box_shadow_samples : @ecs.ComponentKey[BoxShadowSamples] = @ui.ecs_key_ui_box_shadow_samples
 
 ///|
-pub let ecs_key_background_color : @ecs.ComponentKey[BackgroundColor] = @ui.ecs_key_background_color
-
-///|
-pub let ecs_key_border_color : @ecs.ComponentKey[BorderColor] = @ui.ecs_key_border_color
-
-///|
-pub let ecs_key_box_shadow : @ecs.ComponentKey[BoxShadow] = @ui.ecs_key_box_shadow
-
-///|
-pub let ecs_key_outline : @ecs.ComponentKey[Outline] = @ui.ecs_key_outline
-
-///|
-pub let ecs_key_calculated_clip : @ecs.ComponentKey[CalculatedClip] = @ui.ecs_key_calculated_clip
-
-///|
-pub let ecs_key_computed_ui_target_camera : @ecs.ComponentKey[
-  ComputedUiTargetCamera,
-] = @ui.ecs_key_computed_ui_target_camera
-
-///|
-pub let ecs_key_computed_ui_render_target_info : @ecs.ComponentKey[
-  ComputedUiRenderTargetInfo,
-] = @ui.ecs_key_computed_ui_render_target_info
-
-///|
-pub let ecs_key_image_node : @ecs.ComponentKey[ImageNode] = @ui.ecs_key_image_node
-
-///|
 pub let ui_render_set_extract : @app.SystemSet = @ui.ui_set_render_extract
-
-///|
-pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
-  @ui.ui_render_extract_system(world)
-}
 
 ///|
 pub fn ui_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .add_post_update_system_config(
-    @app.system(ui_render_extract_system).in_set(ui_render_set_extract),
+    @app.system(@ui.ui_render_extract_system).in_set(ui_render_set_extract),
   )
   .configure_set(
     @app.PostUpdate,

@@ -205,6 +205,7 @@ fn send_and_receive_manual_message_reader(
 
 ///|
 fn main {
+  B::{  } |> ignore
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins(@mgstudio.minimal_plugins())
     .add_message(debug_message_key)

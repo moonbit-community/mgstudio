@@ -12,6 +12,7 @@ import {
   "Milky2018/mgstudio/text",
   "Milky2018/moon_accesskit",
   "moonbitlang/core/json",
+  "moonbitlang/core/ref",
 }
 
 // Values
@@ -861,7 +862,7 @@ pub impl @json.FromJson for UiScale
 pub struct UiStack {
   mut uinodes : Array[@core.Entity]
 }
-pub fn UiStack::clear(Ref[Self]) -> Unit
+pub fn UiStack::clear(@ref.Ref[Self]) -> Unit
 pub fn UiStack::default() -> Self
 pub fn UiStack::uinodes(Self) -> Array[@core.Entity]
 pub impl ToJson for UiStack

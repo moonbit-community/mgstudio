@@ -95,7 +95,7 @@ fn tilemap_chunk_setup(world : @ecs.World) -> Unit {
 fn tilemap_chunk_update(world : @ecs.World) -> Unit {
   guard tilemap_chunk_state.val.chunk is Some(chunk) else { return }
 
-  @sprite.render2d_draw_tilemap_chunk(
+  @sprite_render.render2d_draw_tilemap_chunk(
     world,
     chunk,
     @sprite.TilemapChunkTileData::new(tilemap_chunk_state.val.tiles),

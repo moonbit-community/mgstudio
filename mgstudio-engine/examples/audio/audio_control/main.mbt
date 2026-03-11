@@ -32,16 +32,6 @@ let progress_text_marker_component_key : @ecs.ComponentKey[ProgressTextMarker] =
 )
 
 ///|
-impl @ecs.Component for MyMusic with component() {
-  my_music_component_key
-}
-
-///|
-impl @ecs.Component for ProgressTextMarker with component() {
-  progress_text_marker_component_key
-}
-
-///|
 fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())

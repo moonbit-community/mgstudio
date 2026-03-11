@@ -396,6 +396,13 @@ fn window_runtime_close_host_window(
   ignore(
     world.send_message(ecs_key_window_closed, WindowClosed::{ window: entity }),
   )
+  if world.contains_message(ecs_key_window_destroyed) {
+    ignore(
+      world.send_message(ecs_key_window_destroyed, WindowDestroyed::{
+        window: entity,
+      }),
+    )
+  }
 }
 
 ///|
@@ -411,11 +418,11 @@ fn window_runtime_on_remove(
 
 ///|
 fn window_runtime_on_despawn(
-  world : @ecs.World,
-  entity : @core.Entity,
+  _world : @ecs.World,
+  _entity : @core.Entity,
   _payload : @any.Any,
 ) -> Unit {
-  window_runtime_close_host_window(world, entity)
+  ()
 }
 
 ///|
@@ -608,6 +615,26 @@ fn window_sync_observed_state(
     runtime_ref.val.last_observed_scale_factor = observed_scale_factor
   }
   if window_component(world, entity) is Some(window) {
+    let old_scale_factor = window.scale_factor()
+    let next_scale_factor = match window.resolution.scale_factor_override() {
+      Some(scale_factor_override) =>
+        if scale_factor_override <= 0.0F {
+          1.0F
+        } else {
+          scale_factor_override
+        }
+      None => observed_scale_factor
+    }
+    if old_scale_factor != next_scale_factor {
+      if world.contains_message(ecs_key_window_scale_factor_changed) {
+        ignore(
+          world.send_message(ecs_key_window_scale_factor_changed, WindowScaleFactorChanged::{
+            window: entity,
+            scale_factor: next_scale_factor,
+          }),
+        )
+      }
+    }
     if window.focused != observed_focused {
       ignore(
         world.send_message(ecs_key_window_focused, WindowFocused::{
@@ -799,11 +826,14 @@ pub fn window_plugin_with(
 
       })
       .add_message(ecs_key_window_created)
+      .add_message(ecs_key_request_redraw)
       .add_message(ecs_key_window_resized)
       .add_message(ecs_key_window_close_requested)
       .add_message(ecs_key_window_closing)
       .add_message(ecs_key_window_closed)
+      .add_message(ecs_key_window_destroyed)
       .add_message(ecs_key_window_moved)
+      .add_message(ecs_key_window_scale_factor_changed)
       .add_message(ecs_key_window_backend_scale_factor_changed)
       .add_message(ecs_key_window_focused)
       .add_systems(@app.First, @app.system(screenshot_clear_system))

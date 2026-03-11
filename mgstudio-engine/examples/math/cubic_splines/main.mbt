@@ -612,7 +612,7 @@ fn current_world_abort() -> @ecs.World {
 
 ///|
 fn screen_to_world(position : @math.Vec2) -> @math.Vec2? {
-  @sprite.render2d_viewport_to_world_2d(current_world_abort(), position)
+  @sprite_render.render2d_viewport_to_world_2d(current_world_abort(), position)
 }
 
 ///|

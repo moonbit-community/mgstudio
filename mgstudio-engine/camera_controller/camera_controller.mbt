@@ -14,40 +14,40 @@
 
 ///|
 /// Camera-controller API boundary aligned with Bevy-style controller responsibilities.
-/// Runtime implementation currently lives in `Milky2018/mgstudio/camera`.
+/// Runtime implementation currently lives in `Milky2018/mgstudio/pbr`.
 
 ///|
-pub type FreeCamera = @camera.FreeCamera
+pub type FreeCamera = @pbr.FreeCamera
 
 ///|
-pub type FreeCameraState = @camera.FreeCameraState
+pub type FreeCameraState = @pbr.FreeCameraState
 
 ///|
-pub let ecs_key_free_camera : @ecs.ComponentKey[FreeCamera] = @camera.ecs_key_free_camera
+pub let ecs_key_free_camera : @ecs.ComponentKey[FreeCamera] = @pbr.ecs_key_free_camera
 
 ///|
-pub let ecs_key_free_camera_state : @ecs.ComponentKey[FreeCameraState] = @camera.ecs_key_free_camera_state
+pub let ecs_key_free_camera_state : @ecs.ComponentKey[FreeCameraState] = @pbr.ecs_key_free_camera_state
 
 ///|
 pub fn free_camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @camera.free_camera_plugin(app)
+  @pbr.free_camera_plugin(app)
 }
 
 ///|
 pub fn run_free_camera_controller(world : @ecs.World) -> Unit {
-  @camera.run_freecamera_controller(world)
+  @pbr.run_freecamera_controller(world)
 }
 
 ///|
 pub fn get_free_camera_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[FreeCamera] {
-  @camera.get_free_camera_store(world)
+  @pbr.get_free_camera_store(world)
 }
 
 ///|
 pub fn get_free_camera_state_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[FreeCameraState] {
-  @camera.get_free_camera_state_store(world)
+  @pbr.get_free_camera_state_store(world)
 }

@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
+  "moonbitlang/core/ref",
 }
 
 // Values
@@ -73,7 +74,7 @@ pub let message_update_system_set : String
 
 pub fn[S : States] next_state_resource_key(S) -> @ecs.ResourceKey[NextState[S]]
 
-pub fn[M] on_message(@ecs.World, @ecs.MessageKey[M], Ref[Json]) -> Bool
+pub fn[M] on_message(@ecs.World, @ecs.MessageKey[M], @ref.Ref[Json]) -> Bool
 
 pub fn[S : States] previous_state_resource_key(S) -> @ecs.ResourceKey[PreviousState[S]]
 
@@ -145,7 +146,7 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 
 pub fn system_param_empty_state(@ecs.World) -> Json
 
-pub fn[T] system_param_store_no_state(T, Ref[Json]) -> Unit
+pub fn[T] system_param_store_no_state(T, @ref.Ref[Json]) -> Unit
 
 pub fn[A] system_query1_ecs(@ecs.ComponentKey[A], (@ecs.Query1[A], @ecs.World) -> Unit) -> (@ecs.World) -> Unit
 
@@ -298,7 +299,7 @@ pub fn[W] App::configure_set(Self[W], ScheduleStage, String, before? : Array[Str
 pub fn[W] App::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[T] App::contains_resource(Self[@ecs.World], @ecs.ResourceKey[T]) -> Bool
 pub fn[W] App::get_sub_app(Self[W], AppLabel) -> SubApp[W]?
-pub fn[W] App::get_sub_app_mut(Self[W], AppLabel) -> Ref[SubApp[W]]?
+pub fn[W] App::get_sub_app_mut(Self[W], AppLabel) -> @ref.Ref[SubApp[W]]?
 pub fn[T : Resource] App::init_resource(Self[@ecs.World], () -> T) -> Self[@ecs.World]
 pub fn[T : Resource] App::insert_resource(Self[@ecs.World], T) -> Self[@ecs.World]
 pub fn[S : States] App::insert_state(Self[@ecs.World], S) -> Self[@ecs.World]
@@ -314,9 +315,9 @@ pub fn[W] App::set_runner(Self[W], (Self[W]) -> () -> Unit) -> Self[W]
 pub fn[W] App::set_sub_app_extract(Self[W], AppLabel, (W, W) -> (W, W)) -> Self[W]
 pub fn App::should_exit(Self[@ecs.World]) -> AppExit?
 pub fn[W] App::sub_app(Self[W], AppLabel) -> SubApp[W]
-pub fn[W] App::sub_app_mut(Self[W], AppLabel) -> Ref[SubApp[W]]
+pub fn[W] App::sub_app_mut(Self[W], AppLabel) -> @ref.Ref[SubApp[W]]
 pub fn[W] App::sub_apps(Self[W]) -> Array[(AppLabel, SubApp[W])]
-pub fn[W] App::sub_apps_mut(Self[W]) -> Array[(AppLabel, Ref[SubApp[W]])]
+pub fn[W] App::sub_apps_mut(Self[W]) -> Array[(AppLabel, @ref.Ref[SubApp[W]])]
 pub fn[W] App::take_sub_app_extract(Self[W], AppLabel) -> ((W, W) -> (W, W))?
 pub fn App::update(Self[@ecs.World]) -> Self[@ecs.World]
 pub fn App::update_sub_app_by_label(Self[@ecs.World], AppLabel) -> Self[@ecs.World]
@@ -385,12 +386,12 @@ pub impl Eq for FixedMainScheduleOrder
 pub impl Show for FixedMainScheduleOrder
 
 pub struct Local[T] {
-  value_ref : Ref[T]
+  value_ref : @ref.Ref[T]
 }
 pub fn[T] Local::get(Self[T]) -> T
-pub fn[T] Local::get_ref(Self[T]) -> Ref[T]
+pub fn[T] Local::get_ref(Self[T]) -> @ref.Ref[T]
 pub fn[T : @ecs.Message] Local::read(Self[@ecs.MessageCursor[T]], ResMut[@ecs.Messages[T]]) -> Array[T] raise @ecs.EcsError
-pub fn[T : @ecs.Message] Local::read_mut(Self[@ecs.MessageCursor[T]], ResMut[@ecs.Messages[T]]) -> Array[Ref[T]] raise @ecs.EcsError
+pub fn[T : @ecs.Message] Local::read_mut(Self[@ecs.MessageCursor[T]], ResMut[@ecs.Messages[T]]) -> Array[@ref.Ref[T]] raise @ecs.EcsError
 pub fn[T] Local::set(Self[T], T) -> Unit
 pub impl[T : FromWorld + ToJson + @json.FromJson] SystemParam for Local[T]
 
@@ -454,12 +455,16 @@ pub impl[S : Show] Show for NextState[S]
 pub struct OnEnter[S] {
   state : S
 }
+pub fn[S] OnEnter::new(S) -> Self[S]
+pub fn[S] OnEnter::state(Self[S]) -> S
 pub impl[S : Eq] Eq for OnEnter[S]
 pub impl[S : Show] Show for OnEnter[S]
 
 pub struct OnExit[S] {
   state : S
 }
+pub fn[S] OnExit::new(S) -> Self[S]
+pub fn[S] OnExit::state(Self[S]) -> S
 pub impl[S : Eq] Eq for OnExit[S]
 pub impl[S : Show] Show for OnExit[S]
 
@@ -467,14 +472,17 @@ pub struct OnTransition[S] {
   exited : S
   entered : S
 }
+pub fn[S] OnTransition::entered(Self[S]) -> S
+pub fn[S] OnTransition::exited(Self[S]) -> S
+pub fn[S] OnTransition::new(S, S) -> Self[S]
 pub impl[S : Eq] Eq for OnTransition[S]
 pub impl[S : Show] Show for OnTransition[S]
 
 pub struct ParamSet2[P0, P1] {
   param0 : P0
   param1 : P1
-  state0 : Ref[Json]
-  state1 : Ref[Json]
+  state0 : @ref.Ref[Json]
+  state1 : @ref.Ref[Json]
 }
 pub fn[P0, P1] ParamSet2::p0(Self[P0, P1]) -> P0
 pub fn[P0, P1] ParamSet2::p1(Self[P0, P1]) -> P1
@@ -541,9 +549,9 @@ pub fn[T : Resource] Res::is_changed(Self[T]) -> Bool
 pub impl[T : Resource] SystemParam for Res[T]
 
 pub struct ResMut[T] {
-  value : Ref[T]
+  value : @ref.Ref[T]
 }
-pub fn[T] ResMut::get_ref(Self[T]) -> Ref[T]
+pub fn[T] ResMut::get_ref(Self[T]) -> @ref.Ref[T]
 pub fn[T : @ecs.Message] ResMut::write(Self[@ecs.Messages[T]], T) -> Int
 pub fn[T : @ecs.Message] ResMut::write_batch(Self[@ecs.Messages[T]], Array[T]) -> Unit
 pub fn[T : @ecs.Message + Default] ResMut::write_default(Self[@ecs.Messages[T]]) -> Int
@@ -657,14 +665,14 @@ pub fn[W] SubApp::world(Self[W]) -> W
 
 pub struct SubApps[W] {
   mut main : SubApp[W]
-  sub_apps : @hashmap.HashMap[String, Ref[SubApp[W]]]
+  sub_apps : @hashmap.HashMap[String, @ref.Ref[SubApp[W]]]
   sub_app_labels : @hashmap.HashMap[String, AppLabel]
 }
 pub fn[W] SubApps::get(Self[W], AppLabel) -> SubApp[W]?
-pub fn[W] SubApps::get_mut(Self[W], AppLabel) -> Ref[SubApp[W]]?
+pub fn[W] SubApps::get_mut(Self[W], AppLabel) -> @ref.Ref[SubApp[W]]?
 pub fn[W] SubApps::insert(Self[W], AppLabel, SubApp[W]) -> Self[W]
 pub fn[W] SubApps::list(Self[W]) -> Array[(AppLabel, SubApp[W])]
-pub fn[W] SubApps::list_mut(Self[W]) -> Array[(AppLabel, Ref[SubApp[W]])]
+pub fn[W] SubApps::list_mut(Self[W]) -> Array[(AppLabel, @ref.Ref[SubApp[W]])]
 pub fn[W] SubApps::new(SubApp[W]) -> Self[W]
 pub fn[W] SubApps::remove(Self[W], AppLabel) -> SubApp[W]?
 pub fn SubApps::run_startup(Self[@ecs.World]) -> Self[@ecs.World]
@@ -673,8 +681,8 @@ pub fn SubApps::update_sub_app_by_label(Self[@ecs.World], AppLabel) -> Self[@ecs
 
 pub struct SystemConfig[W] {
   system : (W) -> Unit
-  run_ifs : Array[(W, Ref[Json]) -> Bool]
-  run_if_states : Array[Ref[Json]]
+  run_ifs : Array[(W, @ref.Ref[Json]) -> Bool]
+  run_if_states : Array[@ref.Ref[Json]]
   set : String?
   before : Array[String]
   after : Array[String]
@@ -686,7 +694,7 @@ pub fn[W] SystemConfig::before(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::in_set(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::run_if(Self[W], (W) -> Bool) -> Self[W]
 pub fn[M] SystemConfig::run_if_on_message(Self[@ecs.World], @ecs.MessageKey[M]) -> Self[@ecs.World]
-pub fn[W] SystemConfig::run_if_stateful(Self[W], Json, (W, Ref[Json]) -> Bool) -> Self[W]
+pub fn[W] SystemConfig::run_if_stateful(Self[W], Json, (W, @ref.Ref[Json]) -> Bool) -> Self[W]
 
 pub struct TaskPoolOptions {
   num_threads : Int?
@@ -722,7 +730,7 @@ pub type RunnerBuilder[W] = (App[W]) -> () -> Unit
 
 pub type RunnerFn = () -> Unit
 
-pub type StatefulRunConditionFn[W] = (W, Ref[Json]) -> Bool
+pub type StatefulRunConditionFn[W] = (W, @ref.Ref[Json]) -> Bool
 
 pub type SubAppExtractFn[W] = (W, W) -> (W, W)
 
@@ -783,8 +791,8 @@ pub(open) trait SubStates : States + FreelyMutableState {
 
 pub(open) trait SystemParam {
   init_state(@ecs.World) -> Json
-  get(Ref[Json]) -> Self
-  store(Self, Ref[Json]) -> Unit
+  get(@ref.Ref[Json]) -> Self
+  store(Self, @ref.Ref[Json]) -> Unit
 }
 pub impl[T : @core.Message] SystemParam for @core.MessageReader[T]
 pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T]

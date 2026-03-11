@@ -36,7 +36,9 @@ fn setup(world : @ecs.World) -> Unit {
   render_to_texture_state.val.first_pass_cube = @core.Entity::placeholder()
   render_to_texture_state.val.main_pass_cube = @core.Entity::placeholder()
 
-  let image = @sprite.render2d_create_render_target(world, 512, 512, true)
+  let image = @sprite_render.render2d_create_render_target(
+    world, 512, 512, true,
+  )
   let first_pass_layer = @sprite.RenderLayers::layer(1)
 
   let first_pass_cube = @pbr.MeshMaterial3dBundle::new(

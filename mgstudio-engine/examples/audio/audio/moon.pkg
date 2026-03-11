@@ -1,7 +1,7 @@
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
-  "Milky2018/mgstudio/audio",
+  "Milky2018/mgstudio/audio" @engine_audio,
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio",
 }

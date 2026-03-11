@@ -16,6 +16,11 @@
 pub struct DefaultPlugins {}
 
 ///|
+fn default_plugins_marker() -> DefaultPlugins {
+  DefaultPlugins::{  }
+}
+
+///|
 const DEFAULT_PLUGINS_NAME : String = "DefaultPlugins"
 
 ///|
@@ -260,7 +265,7 @@ fn default_plugins_builder(
   .add_named(
     id=DEFAULT_PLUGIN_ID_RENDER2D,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @sprite.render2d_plugin_ecs(app)
+      @sprite_render.render2d_plugin_ecs(app)
     }),
   )
   .add_named(
@@ -279,6 +284,7 @@ fn default_plugins_builder(
 
 ///|
 pub fn DefaultPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
+  default_plugins_marker() |> ignore
   default_plugins_builder(fn(
     app : @app.App[@ecs.World],
   ) -> @app.App[@ecs.World] {
@@ -290,11 +296,17 @@ pub fn DefaultPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
 pub fn[P : @app.PluginReplacement] DefaultPlugins::set(
   replacement : P,
 ) -> @app.PluginGroupBuilder[@ecs.World] {
+  default_plugins_marker() |> ignore
   DefaultPlugins::build().set(replacement)
 }
 
 ///|
 pub struct MinimalPlugins {}
+
+///|
+fn minimal_plugins_marker() -> MinimalPlugins {
+  MinimalPlugins::{  }
+}
 
 ///|
 fn minimal_plugins_builder() -> @app.PluginGroupBuilder[@ecs.World] {
@@ -335,6 +347,7 @@ fn minimal_plugins_builder() -> @app.PluginGroupBuilder[@ecs.World] {
 
 ///|
 pub fn MinimalPlugins::build() -> @app.PluginGroupBuilder[@ecs.World] {
+  minimal_plugins_marker() |> ignore
   minimal_plugins_builder()
 }
 

@@ -16,14 +16,12 @@
 priv struct RuntimeState {
   mut close_requested : Bool
   stdin_line : String?
-  mut task_pool_num_threads : Int?
 }
 
 ///|
 let runtime_state_ref : Ref[RuntimeState] = Ref::new(RuntimeState::{
   close_requested: false,
   stdin_line: None,
-  task_pool_num_threads: None,
 })
 
 ///|
@@ -69,9 +67,5 @@ fn host_app_stdin_read_line_code_unit(offset~ : Int) -> Int {
 
 ///|
 fn host_task_pool_set_num_threads(num_threads~ : Int) -> Unit {
-  if num_threads <= 0 {
-    runtime_state_ref.val.task_pool_num_threads = Some(1)
-  } else {
-    runtime_state_ref.val.task_pool_num_threads = Some(num_threads)
-  }
+  num_threads |> ignore
 }

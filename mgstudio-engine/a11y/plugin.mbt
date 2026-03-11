@@ -13,7 +13,40 @@
 // limitations under the License.
 
 ///|
+pub(all) struct AccessibilityPlugin {}
+
+///|
+pub const ACCESSIBILITY_PLUGIN_ID : String = "bevy_a11y::AccessibilityPlugin"
+
+///|
+pub fn AccessibilityPlugin::default() -> AccessibilityPlugin {
+  AccessibilityPlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for AccessibilityPlugin with replacement_id(
+  _self,
+) {
+  ACCESSIBILITY_PLUGIN_ID
+}
+
+///|
+pub impl @app.PluginReplacement for AccessibilityPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    accessibility_plugin_with(app, self)
+  }
+}
+
+///|
 pub fn accessibility_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  accessibility_plugin_with(app, AccessibilityPlugin::default())
+}
+
+///|
+pub fn accessibility_plugin_with(
+  app : @app.App[@ecs.World],
+  _plugin : AccessibilityPlugin,
+) -> @app.App[@ecs.World] {
   app
   .init_resource(AccessibilityRequested::default)
   .init_resource(ManageAccessibilityUpdates::default)

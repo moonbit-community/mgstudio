@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
   "moonbitlang/core/json",
+  "moonbitlang/core/ref",
 }
 
 // Values
@@ -65,8 +66,8 @@ pub struct PickingEvents {
   mut events : Array[PointerEvent]
 }
 pub fn PickingEvents::default() -> Self
-pub fn PickingEvents::drain(Ref[Self]) -> Array[PointerEvent]
-pub fn PickingEvents::push(Ref[Self], PointerEvent) -> Unit
+pub fn PickingEvents::drain(@ref.Ref[Self]) -> Array[PointerEvent]
+pub fn PickingEvents::push(@ref.Ref[Self], PointerEvent) -> Unit
 pub impl ToJson for PickingEvents
 pub impl @json.FromJson for PickingEvents
 
@@ -76,8 +77,8 @@ pub struct PickingHits {
 }
 pub fn PickingHits::default() -> Self
 pub fn PickingHits::from_arrays(Array[@core.Entity?], Array[@core.Entity?]) -> Self
-pub fn PickingHits::set_sprite2d(Ref[Self], Int, @core.Entity?) -> Unit
-pub fn PickingHits::set_ui(Ref[Self], Int, @core.Entity?) -> Unit
+pub fn PickingHits::set_sprite2d(@ref.Ref[Self], Int, @core.Entity?) -> Unit
+pub fn PickingHits::set_ui(@ref.Ref[Self], Int, @core.Entity?) -> Unit
 pub fn PickingHits::sprite2d(Self, Int) -> @core.Entity?
 pub fn PickingHits::ui(Self, Int) -> @core.Entity?
 pub impl ToJson for PickingHits
@@ -92,9 +93,9 @@ pub fn PickingState::default() -> Self
 pub fn PickingState::hovered(Self, Int) -> @core.Entity?
 pub fn PickingState::last_position(Self, Int) -> @math.Vec2?
 pub fn PickingState::pressed(Self, Int) -> @core.Entity?
-pub fn PickingState::set_hovered(Ref[Self], Int, @core.Entity?) -> Unit
-pub fn PickingState::set_last_position(Ref[Self], Int, @math.Vec2?) -> Unit
-pub fn PickingState::set_pressed(Ref[Self], Int, @core.Entity?) -> Unit
+pub fn PickingState::set_hovered(@ref.Ref[Self], Int, @core.Entity?) -> Unit
+pub fn PickingState::set_last_position(@ref.Ref[Self], Int, @math.Vec2?) -> Unit
+pub fn PickingState::set_pressed(@ref.Ref[Self], Int, @core.Entity?) -> Unit
 pub impl ToJson for PickingState
 pub impl @json.FromJson for PickingState
 
@@ -143,10 +144,10 @@ pub impl @json.FromJson for PointerInput
 pub struct PointerInputs {
   mut pointers : Array[PointerInput]
 }
-pub fn PointerInputs::clear(Ref[Self]) -> Unit
+pub fn PointerInputs::clear(@ref.Ref[Self]) -> Unit
 pub fn PointerInputs::default() -> Self
 pub fn PointerInputs::from_array(Array[PointerInput]) -> Self
-pub fn PointerInputs::push(Ref[Self], PointerInput) -> Unit
+pub fn PointerInputs::push(@ref.Ref[Self], PointerInput) -> Unit
 pub impl ToJson for PointerInputs
 pub impl @json.FromJson for PointerInputs
 

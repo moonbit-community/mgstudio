@@ -1174,7 +1174,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
       }
     }
   }
-  @sprite.render2d_push_sprite_uv_scissor_batch(world, overlay_sprites)
+  @sprite_render.render2d_push_sprite_uv_scissor_batch(world, overlay_sprites)
 }
 
 ///|
@@ -1193,6 +1193,6 @@ pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.PostUpdate,
     text_set_render_extract,
     after=[@app.system_set("bevy.ui.stack")],
-    before=[@sprite.render2d_set_extract],
+    before=[@sprite_render.render2d_set_extract],
   )
 }

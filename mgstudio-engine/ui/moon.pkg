@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/sprite_render",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",

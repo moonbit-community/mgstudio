@@ -1769,6 +1769,37 @@ pub impl @app.Resource for Touches with resource() {
 
 ///|
 pub fn input_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  input_plugin_with(app, InputPlugin::default())
+}
+
+///|
+pub(all) struct InputPlugin {}
+
+///|
+pub const INPUT_PLUGIN_ID : String = "bevy_input::InputPlugin"
+
+///|
+pub fn InputPlugin::default() -> InputPlugin {
+  InputPlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for InputPlugin with replacement_id(_self) {
+  INPUT_PLUGIN_ID
+}
+
+///|
+pub impl @app.PluginReplacement for InputPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    input_plugin_with(app, self)
+  }
+}
+
+///|
+pub fn input_plugin_with(
+  app : @app.App[@ecs.World],
+  _plugin : InputPlugin,
+) -> @app.App[@ecs.World] {
   input_gamepad_plugin(app)
   .init_resource(AccumulatedMouseMotion::new)
   .init_resource(AccumulatedMouseScroll::new)

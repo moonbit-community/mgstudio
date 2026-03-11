@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/time",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
+  "moonbitlang/core/ref",
 }
 
 // Values
@@ -121,7 +122,7 @@ pub impl ToJson for DiagnosticPath
 pub impl @json.FromJson for DiagnosticPath
 
 pub struct Diagnostics {
-  store_ref : Ref[DiagnosticsStore]
+  store_ref : @ref.Ref[DiagnosticsStore]
 }
 pub fn Diagnostics::add_measurement(Self, DiagnosticPath, () -> Float) -> Unit
 pub impl @app.SystemParam for Diagnostics
@@ -131,16 +132,16 @@ pub struct DiagnosticsPlugin {
 pub fn DiagnosticsPlugin::default() -> Self
 
 pub struct DiagnosticsStore {
-  diagnostics : @hashmap.HashMap[String, Ref[Diagnostic]]
+  diagnostics : @hashmap.HashMap[String, @ref.Ref[Diagnostic]]
 }
 pub fn DiagnosticsStore::add(Self, Diagnostic) -> Unit
 pub fn DiagnosticsStore::default() -> Self
 pub fn DiagnosticsStore::get(Self, DiagnosticPath) -> Diagnostic?
 pub fn DiagnosticsStore::get_measurement(Self, DiagnosticPath) -> DiagnosticMeasurement?
-pub fn DiagnosticsStore::get_ref(Self, DiagnosticPath) -> Ref[Diagnostic]?
+pub fn DiagnosticsStore::get_ref(Self, DiagnosticPath) -> @ref.Ref[Diagnostic]?
 pub fn DiagnosticsStore::iter(Self) -> Array[Diagnostic]
-pub fn DiagnosticsStore::iter_mut(Self) -> Array[Ref[Diagnostic]]
-pub fn DiagnosticsStore::iter_refs(Self) -> Array[Ref[Diagnostic]]
+pub fn DiagnosticsStore::iter_mut(Self) -> Array[@ref.Ref[Diagnostic]]
+pub fn DiagnosticsStore::iter_refs(Self) -> Array[@ref.Ref[Diagnostic]]
 pub impl @app.Resource for DiagnosticsStore
 
 pub struct EntityCountDiagnosticsPlugin {

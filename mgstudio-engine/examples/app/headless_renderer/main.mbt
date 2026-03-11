@@ -34,7 +34,7 @@ impl @app.Resource for CaptureState with resource() {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let target = @sprite.render2d_create_render_target_ecs(500, 500, false)
+  let target = @sprite_render.render2d_create_render_target_ecs(500, 500, false)
   let tick = world.read_change_tick()
   if (try! world.get_resource_ref_mut(capture_state_resource_key, tick))
     is Some(state) {

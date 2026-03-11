@@ -16,6 +16,8 @@ import {
 }
 
 // Values
+pub const SCENE_PLUGIN_ID : String = "bevy_scene::ScenePlugin"
+
 pub let ecs_components : Array[String]
 
 pub let ecs_key_scene_instance : @ecs.ComponentKey[SceneInstance]
@@ -49,6 +51,8 @@ pub fn[W] scene_load_pending_system(W) -> Unit
 pub fn scene_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn scene_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn scene_plugin_with(@app.App[@ecs.World], ScenePlugin) -> @app.App[@ecs.World]
 
 pub fn scene_register_gltf_asset_loaders() -> Unit
 
@@ -109,6 +113,11 @@ pub struct SceneNode3d {
   animation_target : @animation.AnimationTargetId?
 }
 pub fn SceneNode3d::new(@pbr.Mesh3d, @material.MeshMaterial3d, @math.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?) -> Self
+
+pub(all) struct ScenePlugin {
+}
+pub fn ScenePlugin::default() -> Self
+pub impl @app.PluginReplacement for ScenePlugin
 
 pub struct SceneRoot {
   scene : @asset.Handle[Scene]

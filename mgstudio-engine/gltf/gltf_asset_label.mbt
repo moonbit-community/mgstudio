@@ -63,7 +63,7 @@ fn gltf_parse_prefixed_index(label : String, prefix : String) -> Int? {
   if !label.has_prefix(prefix) {
     return None
   }
-  let suffix = (try! label[prefix.length():label.length()]).to_string()
+  let suffix = label[prefix.length():label.length()].to_string()
   if suffix.length() == 0 {
     None
   } else {
@@ -82,8 +82,8 @@ fn gltf_parse_mesh_primitive_label(label : String) -> (Int, Int)? {
   let mesh_start = GLTF_ASSET_LABEL_MESH_PREFIX.length()
   let primitive_start = split_index +
     GLTF_ASSET_LABEL_PRIMITIVE_SEGMENT.length()
-  let mesh_text = (try! label[mesh_start:split_index]).to_string()
-  let primitive_text = (try! label[primitive_start:label.length()]).to_string()
+  let mesh_text = label[mesh_start:split_index].to_string()
+  let primitive_text = label[primitive_start:label.length()].to_string()
   if mesh_text.length() == 0 || primitive_text.length() == 0 {
     return None
   }
@@ -101,7 +101,7 @@ fn gltf_parse_material_label(label : String) -> (Int, Bool)? {
   if !label.has_prefix(GLTF_ASSET_LABEL_MATERIAL_PREFIX) {
     return None
   }
-  let payload = (try! label[GLTF_ASSET_LABEL_MATERIAL_PREFIX.length():label.length()]).to_string()
+  let payload = label[GLTF_ASSET_LABEL_MATERIAL_PREFIX.length():label.length()].to_string()
   if payload.length() == 0 {
     return None
   }
@@ -113,7 +113,7 @@ fn gltf_parse_material_label(label : String) -> (Int, Bool)? {
     if end <= 0 {
       return None
     }
-    index_payload = (try! payload[0:end]).to_string()
+    index_payload = payload[0:end].to_string()
     is_scale_inverted = true
   }
   guard gltf_parse_non_negative_int(index_payload) is Some(index) else {
@@ -168,7 +168,7 @@ pub fn GltfAssetLabel::parse(label : String) -> GltfAssetLabel? {
     if end <= 0 {
       return None
     }
-    let primitive_label = (try! label[0:end]).to_string()
+    let primitive_label = label[0:end].to_string()
     if gltf_parse_mesh_primitive_label(primitive_label)
       is Some((mesh, primitive)) {
       return Some(MorphTarget(mesh, primitive))
@@ -185,7 +185,7 @@ pub fn GltfAssetLabel::parse(label : String) -> GltfAssetLabel? {
     if end <= GLTF_ASSET_LABEL_SKIN_PREFIX.length() {
       return None
     }
-    let index_payload = (try! label[GLTF_ASSET_LABEL_SKIN_PREFIX.length():end]).to_string()
+    let index_payload = label[GLTF_ASSET_LABEL_SKIN_PREFIX.length():end].to_string()
     if gltf_parse_non_negative_int(index_payload) is Some(index) {
       return Some(InverseBindMatrices(index))
     }
@@ -220,12 +220,12 @@ pub fn gltf_split_asset_path_with_label(
   asset_path : String,
 ) -> (String, GltfAssetLabel?) {
   if asset_path.rev_find("#") is Some(index) {
-    let base_path = (try! asset_path[0:index]).to_string()
+    let base_path = asset_path[0:index].to_string()
     let label_start = index + 1
     if label_start >= asset_path.length() {
       return (base_path, None)
     }
-    let label = (try! asset_path[label_start:asset_path.length()]).to_string()
+    let label = asset_path[label_start:asset_path.length()].to_string()
     (base_path, GltfAssetLabel::parse(label))
   } else {
     (asset_path, None)
@@ -237,5 +237,10 @@ pub fn GltfAssetLabel::from_asset(
   self : GltfAssetLabel,
   asset_path : String,
 ) -> String {
-  asset_path + "#" + self.to_label()
+  let base_path = if asset_path.rev_find("#") is Some(index) {
+    asset_path[0:index].to_string()
+  } else {
+    asset_path
+  }
+  base_path + "#" + self.to_label()
 }

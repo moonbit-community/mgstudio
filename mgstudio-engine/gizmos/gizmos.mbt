@@ -51,7 +51,7 @@ pub type Grid2dBuilder = @sprite.Grid2dBuilder
 
 ///|
 pub fn gizmo_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @sprite.render2d_plugin(app)
+  @sprite_render.sprite_render_plugin(app)
 }
 
 ///|

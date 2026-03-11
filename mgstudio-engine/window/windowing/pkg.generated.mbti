@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/window/windowing"
 import {
   "Milky2018/moon_accesskit",
   "Milky2018/wgpu_mbt",
+  "moonbitlang/core/ref",
 }
 
 // Values
@@ -11,7 +12,7 @@ pub fn accessibility_requested() -> Bool
 
 pub fn attach_surface_metal_layer(Int, @wgpu_mbt.Surface) -> Unit
 
-pub fn bind_accessibility_requested(Ref[Bool]) -> Unit
+pub fn bind_accessibility_requested(@ref.Ref[Bool]) -> Unit
 
 pub fn commit_pending_accessibility_update() -> Bool
 

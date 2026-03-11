@@ -13,14 +13,6 @@
 // limitations under the License.
 
 ///|
-priv struct TextureRecord {
-  id : Int
-  width : Int
-  height : Int
-  loaded : Bool
-}
-
-///|
 priv struct BlobRecord {
   id : Int
   bytes : Bytes
@@ -39,7 +31,6 @@ priv struct FolderRecord {
 ///|
 priv struct FolderEntry {
   relative_path : String
-  absolute_path : String
   fingerprint : Int
   handle_id : Int
 }
@@ -52,9 +43,6 @@ priv struct FolderEvent {
 
 ///|
 let next_id_ref : Ref[Int] = Ref::new(1)
-
-///|
-let textures_ref : Ref[Array[TextureRecord]] = Ref::new([])
 
 ///|
 let blobs_ref : Ref[Array[BlobRecord]] = Ref::new([])
@@ -158,46 +146,28 @@ fn path_is_dir(path : String) -> Bool {
 priv struct ParsedVirtualAssetPath {
   source_name : String?
   relative_path : String
-  label : String?
 }
 
 ///|
 fn parse_virtual_asset_path(path : String) -> ParsedVirtualAssetPath {
   let hash_index = string_last_index_of_char(path, 35)
-  let (without_label, label) = if hash_index >= 0 {
-    let base = if hash_index > 0 {
-      (try! path[0:hash_index]).to_string()
-    } else {
-      ""
-    }
-    let parsed_label = if hash_index + 1 < path.length() {
-      Some((try! path[hash_index + 1:path.length()]).to_string())
-    } else {
-      None
-    }
-    (base, parsed_label)
+  let without_label = if hash_index >= 0 {
+    let base = if hash_index > 0 { path[0:hash_index].to_string() } else { "" }
+    base
   } else {
-    (path, None)
+    path
   }
   let scheme_index = string_find_substring(without_label, "://")
   if scheme_index > 0 {
-    let source_name = (try! without_label[0:scheme_index]).to_string()
+    let source_name = without_label[0:scheme_index].to_string()
     let relative_path = if scheme_index + 3 < without_label.length() {
-      (try! without_label[scheme_index + 3:without_label.length()]).to_string()
+      without_label[scheme_index + 3:without_label.length()].to_string()
     } else {
       ""
     }
-    ParsedVirtualAssetPath::{
-      source_name: Some(source_name),
-      relative_path,
-      label,
-    }
+    ParsedVirtualAssetPath::{ source_name: Some(source_name), relative_path }
   } else {
-    ParsedVirtualAssetPath::{
-      source_name: None,
-      relative_path: without_label,
-      label,
-    }
+    ParsedVirtualAssetPath::{ source_name: None, relative_path: without_label }
   }
 }
 
@@ -299,56 +269,16 @@ fn next_id() -> Int {
 }
 
 ///|
-fn register_texture(width : Int, height : Int, loaded : Bool) -> Int {
-  let id = next_id()
-  textures_ref.val.push(TextureRecord::{
-    id,
-    width: clamp_dim(width),
-    height: clamp_dim(height),
-    loaded,
-  })
-  id
-}
-
-///|
 fn register_texture_with_id(
   id : Int,
   width : Int,
   height : Int,
   loaded : Bool,
 ) -> Int {
-  let mut updated = false
-  for i in 0..<textures_ref.val.length() {
-    if textures_ref.val[i].id == id {
-      textures_ref.val[i] = TextureRecord::{
-        id,
-        width: clamp_dim(width),
-        height: clamp_dim(height),
-        loaded,
-      }
-      updated = true
-      break
-    }
-  }
-  if !updated {
-    textures_ref.val.push(TextureRecord::{
-      id,
-      width: clamp_dim(width),
-      height: clamp_dim(height),
-      loaded,
-    })
-  }
+  width |> ignore
+  height |> ignore
+  loaded |> ignore
   id
-}
-
-///|
-fn find_texture(texture_id : Int) -> TextureRecord? {
-  for record in textures_ref.val {
-    if record.id == texture_id {
-      return Some(record)
-    }
-  }
-  None
 }
 
 ///|
@@ -803,9 +733,7 @@ fn path_extension(path : String) -> String? {
     None
   } else {
     Some(
-      extension_normalize(
-        (try! relative[last_dot + 1:relative.length()]).to_string(),
-      ),
+      extension_normalize(relative[last_dot + 1:relative.length()].to_string()),
     )
   }
 }
@@ -935,7 +863,6 @@ fn folder_collect_entries(folder : FolderRecord) -> (Array[FolderEntry], Bool) {
         let handle_id = load_texture(path=child_virtual, nearest=false)
         next_entries.push(FolderEntry::{
           relative_path: child_relative,
-          absolute_path: absolute_entry_path,
           fingerprint,
           handle_id,
         })

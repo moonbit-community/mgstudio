@@ -23,13 +23,15 @@ fn main {
 
 ///|
 fn sprite_setup(world : @ecs.World) -> Unit {
-  let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
+  let camera = @engine_sprite.Camera::default()
+  @engine_sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/bevy_bird_dark.png")
-  let sprite = @sprite.Sprite::from_image(texture)
+  let sprite = @engine_sprite.Sprite::from_image(texture)
   let transform = @math.Transform::identity()
-  @sprite.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
+  @engine_sprite.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
 }

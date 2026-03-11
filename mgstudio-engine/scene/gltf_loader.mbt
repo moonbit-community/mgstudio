@@ -1184,8 +1184,8 @@ fn uri_percent_decode_bytes(payload : String) -> Bytes? {
 fn data_uri_decode_bytes(uri : String) -> Bytes? {
   guard uri.has_prefix("data:") else { return None }
   guard uri.find(",") is Some(split) else { return None }
-  let head = (try! uri[0:split]).to_string()
-  let payload = (try! uri[split + 1:uri.length()]).to_string()
+  let head = uri[0:split].to_string()
+  let payload = uri[split + 1:uri.length()].to_string()
   if head.contains(";base64") {
     let decoded = @base64.decode(payload[:], ignore_whitespace=true) catch {
       _ => @base64.decode_lossy(payload[:], ignore_whitespace=true)
@@ -1734,7 +1734,7 @@ fn gltf_animation_decode_weight_samples(
 ///|
 fn path_dirname(path : String) -> String {
   if path.rev_find("/") is Some(split) {
-    return (try! path[0:split]).to_string()
+    return path[0:split].to_string()
   }
   ""
 }
@@ -1747,7 +1747,7 @@ fn path_join(base_dir : String, relative : String) -> String {
     return relative
   }
   let normalized = if relative.has_prefix("./") {
-    (try! relative[2:relative.length()]).to_string()
+    relative[2:relative.length()].to_string()
   } else {
     relative
   }

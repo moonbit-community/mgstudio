@@ -68,12 +68,6 @@ pub type DepthOfField = @pbr.DepthOfField
 pub type DepthOfFieldMode = @pbr.DepthOfFieldMode
 
 ///|
-pub type FreeCamera = @pbr.FreeCamera
-
-///|
-pub type FreeCameraState = @pbr.FreeCameraState
-
-///|
 pub type MeshRayCastHit = @pbr.MeshRayCastHit
 
 ///|
@@ -87,12 +81,6 @@ pub let ecs_key_projection : @ecs.ComponentKey[Projection] = @pbr.ecs_key_projec
 
 ///|
 pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @pbr.ecs_key_sub_camera_view3d
-
-///|
-pub let ecs_key_free_camera : @ecs.ComponentKey[FreeCamera] = @pbr.ecs_key_free_camera
-
-///|
-pub let ecs_key_free_camera_state : @ecs.ComponentKey[FreeCameraState] = @pbr.ecs_key_free_camera_state
 
 ///|
 pub fn camera_viewport_to_world_ray(
@@ -173,28 +161,4 @@ pub fn get_sub_camera_view3d_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[SubCameraView3d] {
   @pbr.get_sub_camera_view3d_store(world)
-}
-
-///|
-pub fn get_free_camera_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[FreeCamera] {
-  @pbr.get_free_camera_store(world)
-}
-
-///|
-pub fn get_free_camera_state_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[FreeCameraState] {
-  @pbr.get_free_camera_state_store(world)
-}
-
-///|
-pub fn free_camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @pbr.free_camera_plugin(app)
-}
-
-///|
-pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
-  @pbr.run_freecamera_controller(world)
 }

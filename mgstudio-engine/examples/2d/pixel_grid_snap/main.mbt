@@ -57,7 +57,7 @@ fn pixel_grid_snap_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let pixel_dark = asset_server.load("pixel/bevy_pixel_dark.png")
   let pixel_light = asset_server.load("pixel/bevy_pixel_light.png")
-  let canvas = @sprite.render2d_create_render_target(
+  let canvas = @sprite_render.render2d_create_render_target(
     world,
     RES_WIDTH,
     RES_HEIGHT,

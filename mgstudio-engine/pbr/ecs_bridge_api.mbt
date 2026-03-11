@@ -84,7 +84,7 @@ pub fn get_vignette_store(world : @ecs.World) -> @ecs.ComponentAccess[Vignette] 
 pub fn get_spot_light_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[SpotLight] {
-  world.component(ecs_key_spot_light)
+  @light.get_spot_light_store(world)
 }
 
 ///|
@@ -105,7 +105,7 @@ pub fn get_free_camera_store(
 pub fn get_light_probe_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[LightProbe] {
-  world.component(ecs_key_light_probe)
+  @light.get_light_probe_store(world)
 }
 
 ///|
@@ -119,7 +119,7 @@ pub fn get_motion_blur_store(
 pub fn get_point_light_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[PointLight] {
-  world.component(ecs_key_point_light)
+  @light.get_point_light_store(world)
 }
 
 ///|
@@ -238,14 +238,14 @@ pub fn get_sub_camera_view3d_store(
 pub fn get_directional_light_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[DirectionalLight] {
-  world.component(ecs_key_directional_light)
+  @light.get_directional_light_store(world)
 }
 
 ///|
 pub fn get_irradiance_volume_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[IrradianceVolume] {
-  world.component(ecs_key_irradiance_volume)
+  @light.get_irradiance_volume_store(world)
 }
 
 ///|
@@ -259,7 +259,7 @@ pub fn get_occlusion_culling_store(
 pub fn get_spot_light_texture_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[SpotLightTexture] {
-  world.component(ecs_key_spot_light_texture)
+  @light.get_spot_light_texture_store(world)
 }
 
 ///|
@@ -273,7 +273,7 @@ pub fn get_not_shadow_receiver_store(
 pub fn get_point_light_texture_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[PointLightTexture] {
-  world.component(ecs_key_point_light_texture)
+  @light.get_point_light_texture_store(world)
 }
 
 ///|
@@ -292,7 +292,7 @@ pub fn get_frustum_store(world : @ecs.World) -> @ecs.ComponentAccess[Frustum] {
 pub fn get_parallax_correction_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[ParallaxCorrection] {
-  world.component(ecs_key_parallax_correction)
+  @light.get_parallax_correction_store(world)
 }
 
 ///|
@@ -306,7 +306,7 @@ pub fn get_chromatic_aberration_store(
 pub fn get_environment_map_light_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[EnvironmentMapLight] {
-  world.component(ecs_key_environment_map_light)
+  @light.get_environment_map_light_store(world)
 }
 
 ///|
@@ -341,7 +341,7 @@ pub fn get_screen_space_reflections_store(
 pub fn get_directional_light_texture_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[DirectionalLightTexture] {
-  world.component(ecs_key_directional_light_texture)
+  @light.get_directional_light_texture_store(world)
 }
 
 ///|
@@ -376,7 +376,7 @@ pub fn get_screen_space_ambient_occlusion_store(
 pub fn get_generated_environment_map_light_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[GeneratedEnvironmentMapLight] {
-  world.component(ecs_key_generated_environment_map_light)
+  @light.get_generated_environment_map_light_store(world)
 }
 
 ///|
@@ -397,21 +397,21 @@ pub fn get_wireframe_config_resource(
 pub fn get_global_ambient_light_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[GlobalAmbientLight] {
-  world.resource(ecs_key_global_ambient_light)
+  @light.get_global_ambient_light_resource(world)
 }
 
 ///|
 pub fn get_point_light_shadow_map_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[PointLightShadowMap] {
-  world.resource(ecs_key_point_light_shadow_map)
+  @light.get_point_light_shadow_map_resource(world)
 }
 
 ///|
 pub fn get_directional_light_shadow_map_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[DirectionalLightShadowMap] {
-  world.resource(ecs_key_directional_light_shadow_map)
+  @light.get_directional_light_shadow_map_resource(world)
 }
 
 ///|

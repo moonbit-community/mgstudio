@@ -4256,9 +4256,9 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
   let legacy_ctx = Some(ctx0)
   let stack_res = get_ui_stack_resource(world)
   guard stack_res.get() is Some(stack0) else { return }
-  @sprite.render2d_clear_overlay_ui_rects(world)
-  @sprite.render2d_clear_overlay_ui_box_shadows(world)
-  @sprite.render2d_clear_overlay_ui_texture_slices(world)
+  @sprite_render.render2d_clear_overlay_ui_rects(world)
+  @sprite_render.render2d_clear_overlay_ui_box_shadows(world)
+  @sprite_render.render2d_clear_overlay_ui_texture_slices(world)
   let layout_store = get_ui_layout_store(world)
   let node_store = get_node_store(world)
   let bg_store = get_background_color_store(world)
@@ -4559,7 +4559,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 scale_x * shadow_size.x,
                 scale_y * shadow_size.y,
               )
-              @sprite.render2d_push_ui_box_shadow_scissor(
+              @sprite_render.render2d_push_ui_box_shadow_scissor(
                 world,
                 entity,
                 entity_ctx.camera_entity,
@@ -4594,7 +4594,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
       Some(color) =>
         if color.a > 0.0F {
           let t_bg = transform_with_z(t0, z_base + UI_STACK_Z_BACKGROUND)
-          @sprite.render2d_push_ui_rect_uv_scissor(
+          @sprite_render.render2d_push_ui_rect_uv_scissor(
             world,
             entity,
             entity_ctx.camera_entity,
@@ -4724,7 +4724,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
             uv_max_img.x,
             uv_max_img.y,
           )
-          @sprite.render2d_push_ui_texture_slice_scissor(
+          @sprite_render.render2d_push_ui_texture_slice_scissor(
             world,
             entity,
             entity_ctx.camera_entity,
@@ -4740,7 +4740,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
             atlas_rect_uv,
           )
         } else if color.a > 0.0F {
-          @sprite.render2d_push_ui_rect_uv_scissor(
+          @sprite_render.render2d_push_ui_rect_uv_scissor(
             world,
             entity,
             entity_ctx.camera_entity,
@@ -4770,7 +4770,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
       border_color_store.get(entity) is Some(bc) &&
       bc.color.a > 0.0F {
       let t_border = transform_with_z(t0, z_base + UI_STACK_Z_BORDER)
-      @sprite.render2d_push_ui_rect_uv_scissor(
+      @sprite_render.render2d_push_ui_rect_uv_scissor(
         world,
         entity,
         entity_ctx.camera_entity,
@@ -4854,7 +4854,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                     clamp_radius_nonneg(outer, outline_size) * scale_min,
                   )
               }
-              @sprite.render2d_push_ui_rect_uv_scissor(
+              @sprite_render.render2d_push_ui_rect_uv_scissor(
                 world,
                 entity,
                 entity_ctx.camera_entity,

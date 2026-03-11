@@ -50,15 +50,50 @@ pub struct OnEnter[S] {
 } derive(Eq, Show)
 
 ///|
+pub fn[S] OnEnter::new(state : S) -> OnEnter[S] {
+  OnEnter::{ state, }
+}
+
+///|
+pub fn[S] OnEnter::state(self : OnEnter[S]) -> S {
+  self.state
+}
+
+///|
 pub struct OnExit[S] {
   state : S
 } derive(Eq, Show)
+
+///|
+pub fn[S] OnExit::new(state : S) -> OnExit[S] {
+  OnExit::{ state, }
+}
+
+///|
+pub fn[S] OnExit::state(self : OnExit[S]) -> S {
+  self.state
+}
 
 ///|
 pub struct OnTransition[S] {
   exited : S
   entered : S
 } derive(Eq, Show)
+
+///|
+pub fn[S] OnTransition::new(exited : S, entered : S) -> OnTransition[S] {
+  OnTransition::{ exited, entered }
+}
+
+///|
+pub fn[S] OnTransition::exited(self : OnTransition[S]) -> S {
+  self.exited
+}
+
+///|
+pub fn[S] OnTransition::entered(self : OnTransition[S]) -> S {
+  self.entered
+}
 
 ///|
 pub(all) enum StateTransitionSystems {

@@ -68,11 +68,6 @@ let ease_function_plot_key : @ecs.ComponentKey[EaseFunctionPlot] = @ecs.register
 )
 
 ///|
-impl @ecs.Component for EaseFunctionPlot with component() {
-  ease_function_plot_key
-}
-
-///|
 let progress_text_handle : Ref[@text.TextHandle?] = Ref::new(None)
 
 ///|

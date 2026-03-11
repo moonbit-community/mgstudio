@@ -14,7 +14,6 @@
 
 ///|
 /// Sprite-render API boundary aligned with Bevy crate responsibilities.
-/// Runtime implementation currently lives in `Milky2018/mgstudio/sprite`.
 
 ///|
 pub type AlphaMode2d = @sprite.AlphaMode2d
@@ -86,7 +85,16 @@ pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[Wireframe2dColor] = @sprit
 pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[Wireframe2dConfig] = @sprite.ecs_key_wireframe2d_config
 
 ///|
-pub let camera_update_systems : @app.SystemSet = @app.system_set(
+pub type OverlaySpriteUvScissor = @sprite.OverlaySpriteUvScissor
+
+///|
+pub type UiCornerRadii = @sprite.UiCornerRadii
+
+///|
+pub type UiBorderRect = @sprite.UiBorderRect
+
+///|
+let camera_update_systems : @app.SystemSet = @app.system_set(
   "bevy.camera.update_systems",
 )
 
@@ -114,6 +122,179 @@ pub let render2d_set_render : @app.SystemSet = @app.system_set(
 pub let render2d_set_execute : @app.SystemSet = render2d_set_render
 
 ///|
+pub fn render2d_push_sprite_uv_scissor_batch(
+  world : @ecs.World,
+  sprites : Array[OverlaySpriteUvScissor],
+) -> Unit {
+  @sprite.render2d_push_sprite_uv_scissor_batch(world, sprites)
+}
+
+///|
+pub fn render2d_clear_overlay_ui_rects(world : @ecs.World) -> Unit {
+  @sprite.render2d_clear_overlay_ui_rects(world)
+}
+
+///|
+pub fn render2d_clear_overlay_ui_box_shadows(world : @ecs.World) -> Unit {
+  @sprite.render2d_clear_overlay_ui_box_shadows(world)
+}
+
+///|
+pub fn render2d_clear_overlay_ui_texture_slices(world : @ecs.World) -> Unit {
+  @sprite.render2d_clear_overlay_ui_texture_slices(world)
+}
+
+///|
+pub fn render2d_push_ui_rect_uv_scissor(
+  world : @ecs.World,
+  entity : @core.Entity,
+  target_camera : @core.Entity?,
+  texture : @asset.Handle[@asset.Image],
+  transform : @math.Transform,
+  draw_scale : @math.Vec2,
+  uv_min : @math.Vec2,
+  uv_max : @math.Vec2,
+  color : @sprite.Color,
+  layers : @sprite.RenderLayers,
+  scissor : @math.Rect?,
+  flags : Int,
+  radius : UiCornerRadii,
+  border : UiBorderRect,
+) -> Unit {
+  @sprite.render2d_push_ui_rect_uv_scissor(
+    world, entity, target_camera, texture, transform, draw_scale, uv_min, uv_max,
+    color, layers, scissor, flags, radius, border,
+  )
+}
+
+///|
+pub fn render2d_push_ui_box_shadow_scissor(
+  world : @ecs.World,
+  entity : @core.Entity,
+  target_camera : @core.Entity?,
+  texture : @asset.Handle[@asset.Image],
+  transform : @math.Transform,
+  draw_scale : @math.Vec2,
+  color : @sprite.Color,
+  layers : @sprite.RenderLayers,
+  scissor : @math.Rect?,
+  size : @math.Vec2,
+  radius : UiCornerRadii,
+  blur : Float,
+  samples : Int,
+) -> Unit {
+  @sprite.render2d_push_ui_box_shadow_scissor(
+    world, entity, target_camera, texture, transform, draw_scale, color, layers,
+    scissor, size, radius, blur, samples,
+  )
+}
+
+///|
+pub fn render2d_push_ui_texture_slice_scissor(
+  world : @ecs.World,
+  entity : @core.Entity,
+  target_camera : @core.Entity?,
+  texture : @asset.Handle[@asset.Image],
+  transform : @math.Transform,
+  draw_scale : @math.Vec2,
+  color : @sprite.Color,
+  layers : @sprite.RenderLayers,
+  scissor : @math.Rect?,
+  texture_slices : @math.Vec4,
+  target_slices : @math.Vec4,
+  repeat : @math.Vec4,
+  atlas_rect : @math.Vec4,
+) -> Unit {
+  @sprite.render2d_push_ui_texture_slice_scissor(
+    world, entity, target_camera, texture, transform, draw_scale, color, layers,
+    scissor, texture_slices, target_slices, repeat, atlas_rect,
+  )
+}
+
+///|
+pub fn render2d_diagnostic_queued_draw_item_count() -> Int {
+  @sprite.render2d_diagnostic_queued_draw_item_count()
+}
+
+///|
+pub fn render2d_diagnostic_prepared_camera_count() -> Int {
+  @sprite.render2d_diagnostic_prepared_camera_count()
+}
+
+///|
+pub fn render2d_upload_mesh_handle(mesh : @asset.Handle[@mesh.Mesh]) -> Int {
+  @sprite.render2d_upload_mesh_handle(mesh)
+}
+
+///|
+pub fn render2d_draw_tilemap_chunk(
+  world : @ecs.World,
+  chunk : TilemapChunk,
+  tile_data : TilemapChunkTileData,
+  transform : @math.Transform,
+  layers : @sprite.RenderLayers,
+) -> Unit {
+  @sprite.render2d_draw_tilemap_chunk(
+    world, chunk, tile_data, transform, layers,
+  )
+}
+
+///|
+pub fn render2d_create_render_target(
+  world : @ecs.World,
+  width : Int,
+  height : Int,
+  nearest : Bool,
+) -> @asset.Handle[@asset.Image] {
+  @sprite.render2d_create_render_target(world, width, height, nearest)
+}
+
+///|
+pub fn render2d_create_render_target_ecs(
+  width : Int,
+  height : Int,
+  nearest : Bool,
+) -> @asset.Handle[@asset.Image] {
+  @sprite.render2d_create_render_target_ecs(width, height, nearest)
+}
+
+///|
+pub fn render2d_viewport_to_world_2d(
+  world : @ecs.World,
+  screen : @math.Vec2,
+) -> @math.Vec2? {
+  @sprite.render2d_viewport_to_world_2d(world, screen)
+}
+
+///|
+pub fn render2d_camera_viewport_to_world_2d(
+  screen : @math.Vec2,
+  camera : @sprite.Camera,
+  projection : @sprite.OrthographicProjection,
+  camera_transform : @math.Transform,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+) -> @math.Vec2? {
+  @sprite.render2d_camera_viewport_to_world_2d(
+    screen, camera, projection, camera_transform, target_size, scale_factor,
+  )
+}
+
+///|
+pub fn render2d_camera_world_to_viewport_2d(
+  world : @math.Vec2,
+  camera : @sprite.Camera,
+  projection : @sprite.OrthographicProjection,
+  camera_transform : @math.Transform,
+  target_size : @math.IVec2,
+  scale_factor : Float,
+) -> @math.Vec2? {
+  @sprite.render2d_camera_world_to_viewport_2d(
+    world, camera, projection, camera_transform, target_size, scale_factor,
+  )
+}
+
+///|
 pub fn[W, M] material2d_plugin(plugin : Material2dPlugin[M]) -> @app.Plugin[W] {
   @sprite.material2d_plugin(plugin)
 }
@@ -132,63 +313,19 @@ pub fn sprite_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
   })
   .add_startup_system(@sprite.init_render_state_system)
   .add_post_update_system_config(
-    @app.system(render_camera_system).in_set(camera_update_systems),
+    @app.system(@sprite.render2d_camera_system).in_set(camera_update_systems),
   )
   .add_post_update_system_config(
-    @app.system(render_extract_system).in_set(render2d_set_extract),
+    @app.system(@sprite.render_extract_system).in_set(render2d_set_extract),
   )
   .add_post_update_system_config(
-    @app.system(render_prepare_system).in_set(render2d_set_prepare),
+    @app.system(@sprite.render_prepare_system).in_set(render2d_set_prepare),
   )
   .add_post_update_system_config(
-    @app.system(render_queue_system).in_set(render2d_set_queue),
+    @app.system(@sprite.render_queue_system).in_set(render2d_set_queue),
   )
   .add_post_update_system_config(
-    @app.system(render_execute_system).in_set(render2d_set_render),
-  )
-  .configure_set(@app.PostUpdate, camera_update_systems, before=[
-    render2d_set_extract,
-  ])
-  .configure_set(@app.PostUpdate, render2d_set_extract, before=[
-    render2d_set_prepare,
-  ])
-  .configure_set(@app.PostUpdate, render2d_set_prepare, before=[
-    render2d_set_queue,
-  ])
-  .configure_set(@app.PostUpdate, render2d_set_queue, before=[
-    render2d_set_render,
-  ])
-}
-
-///|
-pub fn sprite_render_plugin_ecs(
-  app : @app.App[@ecs.World],
-) -> @app.App[@ecs.World] {
-  app
-  .init_resource(fn() { @sprite.ClearColor::default() })
-  .init_resource(fn() {
-    let assets : @asset.Assets[ColorMaterialAsset] = @asset.Assets::new()
-    assets
-  })
-  .init_resource(fn() {
-    let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
-    assets
-  })
-  .add_startup_system(@sprite.init_render_state_system)
-  .add_post_update_system_config(
-    @app.system(render_camera_system_ecs).in_set(camera_update_systems),
-  )
-  .add_post_update_system_config(
-    @app.system(render_extract_system_ecs).in_set(render2d_set_extract),
-  )
-  .add_post_update_system_config(
-    @app.system(render_prepare_system).in_set(render2d_set_prepare),
-  )
-  .add_post_update_system_config(
-    @app.system(render_queue_system).in_set(render2d_set_queue),
-  )
-  .add_post_update_system_config(
-    @app.system(render_execute_system).in_set(render2d_set_render),
+    @app.system(@sprite.render_execute_system).in_set(render2d_set_render),
   )
   .configure_set(@app.PostUpdate, camera_update_systems, before=[
     render2d_set_extract,
@@ -210,82 +347,6 @@ pub fn wireframe2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub fn render_camera_system(world : @ecs.World) -> Unit {
-  @sprite.render2d_camera_system(world)
-}
-
-///|
-pub fn render_camera_system_ecs(world : @ecs.World) -> Unit {
-  @sprite.render2d_camera_system_ecs(world)
-}
-
-///|
-pub fn render_extract_system(world : @ecs.World) -> Unit {
-  @sprite.render_extract_system(world)
-}
-
-///|
-pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
-  @sprite.render_extract_system_ecs(world)
-}
-
-///|
-pub fn render_prepare_system(world : @ecs.World) -> Unit {
-  @sprite.render_prepare_system(world)
-}
-
-///|
-pub fn render_queue_system(world : @ecs.World) -> Unit {
-  @sprite.render_queue_system(world)
-}
-
-///|
-pub fn render_execute_system(world : @ecs.World) -> Unit {
-  @sprite.render_execute_system(world)
-}
-
-///|
-pub fn render2d_create_render_target(
-  world : @ecs.World,
-  width : Int,
-  height : Int,
-  nearest : Bool,
-) -> @asset.Handle[@asset.Image] {
-  @sprite.render2d_create_render_target(world, width, height, nearest)
-}
-
-///|
-pub fn render2d_diagnostic_prepared_camera_count() -> Int {
-  @sprite.render2d_diagnostic_prepared_camera_count()
-}
-
-///|
-pub fn render2d_diagnostic_queued_draw_item_count() -> Int {
-  @sprite.render2d_diagnostic_queued_draw_item_count()
-}
-
-///|
-pub fn render2d_prepared_camera_count(world : @ecs.World) -> Int? {
-  @sprite.render2d_prepared_camera_count(world)
-}
-
-///|
-pub fn render2d_queued_draw_item_count(world : @ecs.World) -> Int? {
-  @sprite.render2d_queued_draw_item_count(world)
-}
-
-///|
-pub fn render2d_viewport_to_world_2d(
-  world : @ecs.World,
-  screen : @math.Vec2,
-) -> @math.Vec2? {
-  @sprite.render2d_viewport_to_world_2d(world, screen)
-}
-
-///|
-pub fn render2d_world_to_viewport(
-  world : @ecs.World,
-  world_position : @math.Vec2,
-) -> @math.Vec2? {
-  @sprite.render2d_world_to_viewport(world, world_position)
+pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  @sprite.render2d_plugin_ecs(app)
 }

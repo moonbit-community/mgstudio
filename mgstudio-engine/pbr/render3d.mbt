@@ -412,364 +412,29 @@ pub fn render3d_distance_fog() -> DistanceFog {
 }
 
 ///|
-/// API-parity data model stub aligned with Bevy's `VolumetricLight`.
-pub struct VolumetricLight {}
+/// Light-facing ownership lives in `Milky2018/mgstudio/light`.
+pub type VolumetricLight = @light.VolumetricLight
 
 ///|
-pub fn VolumetricLight::default() -> VolumetricLight {
-  VolumetricLight::{  }
-}
+pub type VolumetricFog = @light.VolumetricFog
 
 ///|
-/// API-parity data model stub aligned with Bevy's `VolumetricFog`.
-pub struct VolumetricFog {
-  ambient_color : @sprite.Color
-  ambient_intensity : Float
-  jitter : Float
-  step_count : Int
-} derive(ToJson, FromJson)
+pub type FogVolume = @light.FogVolume
 
 ///|
-pub fn VolumetricFog::default() -> VolumetricFog {
-  VolumetricFog::{
-    ambient_color: @sprite.Color::white(),
-    ambient_intensity: 0.1F,
-    jitter: 0.0F,
-    step_count: 64,
-  }
-}
+pub type AtmosphereMode = @light.AtmosphereMode
 
 ///|
-pub fn VolumetricFog::with_ambient_color(
-  self : VolumetricFog,
-  ambient_color : @sprite.Color,
-) -> VolumetricFog {
-  VolumetricFog::{ ..self, ambient_color, }
-}
+pub type AtmosphereSettings = @light.AtmosphereSettings
 
 ///|
-pub fn VolumetricFog::with_ambient_intensity(
-  self : VolumetricFog,
-  ambient_intensity : Float,
-) -> VolumetricFog {
-  VolumetricFog::{
-    ..self,
-    ambient_intensity: if ambient_intensity < 0.0F {
-      0.0F
-    } else {
-      ambient_intensity
-    },
-  }
-}
+pub type ScatteringMedium = @light.ScatteringMedium
 
 ///|
-pub fn VolumetricFog::with_jitter(
-  self : VolumetricFog,
-  jitter : Float,
-) -> VolumetricFog {
-  VolumetricFog::{ ..self, jitter: if jitter < 0.0F { 0.0F } else { jitter } }
-}
+pub type Atmosphere = @light.Atmosphere
 
 ///|
-pub fn VolumetricFog::with_step_count(
-  self : VolumetricFog,
-  step_count : Int,
-) -> VolumetricFog {
-  VolumetricFog::{
-    ..self,
-    step_count: if step_count <= 0 {
-      1
-    } else {
-      step_count
-    },
-  }
-}
-
-///|
-/// API-parity data model stub aligned with Bevy's `FogVolume`.
-pub struct FogVolume {
-  fog_color : @sprite.Color
-  density_factor : Float
-  density_texture : @asset.Handle[@asset.Image]?
-  density_texture_offset : @math.Vec3
-  absorption : Float
-  scattering : Float
-  scattering_asymmetry : Float
-  light_tint : @sprite.Color
-  light_intensity : Float
-} derive(ToJson, FromJson)
-
-///|
-pub fn FogVolume::default() -> FogVolume {
-  FogVolume::{
-    fog_color: @sprite.Color::white(),
-    density_factor: 0.1F,
-    density_texture: None,
-    density_texture_offset: @math.Vec3::new(0.0F, 0.0F, 0.0F),
-    absorption: 0.3F,
-    scattering: 0.3F,
-    scattering_asymmetry: 0.5F,
-    light_tint: @sprite.Color::white(),
-    light_intensity: 1.0F,
-  }
-}
-
-///|
-pub fn FogVolume::with_fog_color(
-  self : FogVolume,
-  fog_color : @sprite.Color,
-) -> FogVolume {
-  FogVolume::{ ..self, fog_color, }
-}
-
-///|
-pub fn FogVolume::with_density_factor(
-  self : FogVolume,
-  density_factor : Float,
-) -> FogVolume {
-  FogVolume::{
-    ..self,
-    density_factor: fog_falloff_sanitize_density(density_factor),
-  }
-}
-
-///|
-pub fn FogVolume::with_density_texture(
-  self : FogVolume,
-  density_texture : @asset.Handle[@asset.Image]?,
-) -> FogVolume {
-  FogVolume::{ ..self, density_texture, }
-}
-
-///|
-pub fn FogVolume::with_density_texture_offset(
-  self : FogVolume,
-  density_texture_offset : @math.Vec3,
-) -> FogVolume {
-  FogVolume::{ ..self, density_texture_offset, }
-}
-
-///|
-pub fn FogVolume::with_absorption(
-  self : FogVolume,
-  absorption : Float,
-) -> FogVolume {
-  FogVolume::{ ..self, absorption: fog_falloff_sanitize_density(absorption) }
-}
-
-///|
-pub fn FogVolume::with_scattering(
-  self : FogVolume,
-  scattering : Float,
-) -> FogVolume {
-  FogVolume::{ ..self, scattering: fog_falloff_sanitize_density(scattering) }
-}
-
-///|
-pub fn FogVolume::with_scattering_asymmetry(
-  self : FogVolume,
-  scattering_asymmetry : Float,
-) -> FogVolume {
-  FogVolume::{
-    ..self,
-    scattering_asymmetry: fog_falloff_clamp01(
-      (scattering_asymmetry + 1.0F) * 0.5F,
-    ) *
-    2.0F -
-    1.0F,
-  }
-}
-
-///|
-pub fn FogVolume::with_light_tint(
-  self : FogVolume,
-  light_tint : @sprite.Color,
-) -> FogVolume {
-  FogVolume::{ ..self, light_tint, }
-}
-
-///|
-pub fn FogVolume::with_light_intensity(
-  self : FogVolume,
-  light_intensity : Float,
-) -> FogVolume {
-  FogVolume::{
-    ..self,
-    light_intensity: if light_intensity < 0.0F {
-      0.0F
-    } else {
-      light_intensity
-    },
-  }
-}
-
-///|
-pub(all) enum AtmosphereMode {
-  LookupTexture
-  Raymarched
-} derive(ToJson, FromJson)
-
-///|
-pub fn AtmosphereMode::default() -> AtmosphereMode {
-  AtmosphereMode::LookupTexture
-}
-
-///|
-/// API-parity data model stub aligned with Bevy's `AtmosphereSettings`.
-pub struct AtmosphereSettings {
-  scene_units_to_m : Float
-  sky_max_samples : Int
-  rendering_method : AtmosphereMode
-} derive(ToJson, FromJson)
-
-///|
-pub fn AtmosphereSettings::default() -> AtmosphereSettings {
-  AtmosphereSettings::{
-    scene_units_to_m: 1.0F,
-    sky_max_samples: 16,
-    rendering_method: AtmosphereMode::LookupTexture,
-  }
-}
-
-///|
-pub fn AtmosphereSettings::with_scene_units_to_m(
-  self : AtmosphereSettings,
-  scene_units_to_m : Float,
-) -> AtmosphereSettings {
-  AtmosphereSettings::{
-    ..self,
-    scene_units_to_m: if scene_units_to_m <= 0.0F {
-      0.0001F
-    } else {
-      scene_units_to_m
-    },
-  }
-}
-
-///|
-pub fn AtmosphereSettings::with_sky_max_samples(
-  self : AtmosphereSettings,
-  sky_max_samples : Int,
-) -> AtmosphereSettings {
-  AtmosphereSettings::{
-    ..self,
-    sky_max_samples: if sky_max_samples <= 0 {
-      1
-    } else {
-      sky_max_samples
-    },
-  }
-}
-
-///|
-pub fn AtmosphereSettings::with_rendering_method(
-  self : AtmosphereSettings,
-  rendering_method : AtmosphereMode,
-) -> AtmosphereSettings {
-  AtmosphereSettings::{ ..self, rendering_method, }
-}
-
-///|
-pub struct ScatteringMedium {
-  density_multiplier : Float
-} derive(ToJson, FromJson)
-
-///|
-pub fn ScatteringMedium::default() -> ScatteringMedium {
-  ScatteringMedium::{ density_multiplier: 1.0F }
-}
-
-///|
-pub fn ScatteringMedium::earthlike() -> ScatteringMedium {
-  ScatteringMedium::default()
-}
-
-///|
-pub fn ScatteringMedium::with_density_multiplier(
-  self : ScatteringMedium,
-  density_multiplier : Float,
-) -> ScatteringMedium {
-  self |> ignore
-  ScatteringMedium::{
-    density_multiplier: if density_multiplier < 0.0F {
-      0.0F
-    } else {
-      density_multiplier
-    },
-  }
-}
-
-///|
-/// API-parity data model stub aligned with Bevy's `Atmosphere`.
-pub struct Atmosphere {
-  bottom_radius : Float
-  top_radius : Float
-  ground_albedo : @math.Vec3
-  medium : ScatteringMedium
-} derive(ToJson, FromJson)
-
-///|
-pub fn Atmosphere::default() -> Atmosphere {
-  Atmosphere::earthlike(ScatteringMedium::default())
-}
-
-///|
-pub fn Atmosphere::earthlike(medium : ScatteringMedium) -> Atmosphere {
-  Atmosphere::{
-    bottom_radius: 6_360_000.0F,
-    top_radius: 6_460_000.0F,
-    ground_albedo: @math.Vec3::new(0.3F, 0.3F, 0.3F),
-    medium,
-  }
-}
-
-///|
-pub fn Atmosphere::with_radii(
-  self : Atmosphere,
-  bottom_radius : Float,
-  top_radius : Float,
-) -> Atmosphere {
-  let safe_bottom_radius = if bottom_radius <= 0.0F {
-    0.0001F
-  } else {
-    bottom_radius
-  }
-  let safe_top_radius = if top_radius < safe_bottom_radius {
-    safe_bottom_radius
-  } else {
-    top_radius
-  }
-  Atmosphere::{
-    ..self,
-    bottom_radius: safe_bottom_radius,
-    top_radius: safe_top_radius,
-  }
-}
-
-///|
-pub fn Atmosphere::with_ground_albedo(
-  self : Atmosphere,
-  ground_albedo : @math.Vec3,
-) -> Atmosphere {
-  Atmosphere::{ ..self, ground_albedo, }
-}
-
-///|
-pub fn Atmosphere::with_medium(
-  self : Atmosphere,
-  medium : ScatteringMedium,
-) -> Atmosphere {
-  Atmosphere::{ ..self, medium, }
-}
-
-///|
-/// API-parity data model stub aligned with Bevy's `AtmosphereEnvironmentMapLight`.
-pub struct AtmosphereEnvironmentMapLight {}
-
-///|
-pub fn AtmosphereEnvironmentMapLight::default() -> AtmosphereEnvironmentMapLight {
-  AtmosphereEnvironmentMapLight::{  }
-}
+pub type AtmosphereEnvironmentMapLight = @light.AtmosphereEnvironmentMapLight
 
 ///|
 pub fn standard_material_add(
@@ -1344,7 +1009,7 @@ fn render3d_skybox_proxy_mesh_id(world : @ecs.World) -> Int {
       mesh.mesh
     }
   }
-  @sprite.render2d_upload_mesh_handle(handle)
+  @sprite_render.render2d_upload_mesh_handle(handle)
 }
 
 ///|
@@ -1442,1138 +1107,56 @@ pub fn ClusteredDecal::with_tag(
 }
 
 ///|
-const POINT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS : Float = 0.08F
+/// Light-facing ownership lives in `Milky2018/mgstudio/light`.
+pub type PointLight = @light.PointLight
 
 ///|
-const POINT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS : Float = 0.6F
+pub type PointLightShadowMap = @light.PointLightShadowMap
 
 ///|
-const POINT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z : Float = 0.1F
+pub type DirectionalLightShadowMap = @light.DirectionalLightShadowMap
 
 ///|
-const DIRECTIONAL_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS : Float = 0.02F
+pub type CascadeShadowConfig = @light.CascadeShadowConfig
 
 ///|
-const DIRECTIONAL_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS : Float = 1.8F
+pub type CascadeShadowConfigBuilder = @light.CascadeShadowConfigBuilder
 
 ///|
-const SPOT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS : Float = 0.02F
+pub type DirectionalLight = @light.DirectionalLight
 
 ///|
-const SPOT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS : Float = 1.8F
+pub type SpotLight = @light.SpotLight
 
 ///|
-const SPOT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z : Float = 0.1F
+pub type CubemapLayout3d = @light.CubemapLayout3d
 
 ///|
-pub struct PointLight {
-  color : @sprite.Color
-  intensity : Float
-  range : Float
-  radius : Float
-  shadow_maps_enabled : Bool
-  contact_shadows_enabled : Bool
-  soft_shadows_enabled : Bool
-  affects_lightmapped_mesh_diffuse : Bool
-  shadow_depth_bias : Float
-  shadow_normal_bias : Float
-  shadow_map_near_z : Float
-} derive(ToJson, FromJson)
+pub type DirectionalLightTexture = @light.DirectionalLightTexture
 
 ///|
-pub fn PointLight::default() -> PointLight {
-  PointLight::{
-    color: @sprite.Color::white(),
-    intensity: 1_000_000.0F,
-    range: 20.0F,
-    radius: 0.0F,
-    shadow_maps_enabled: false,
-    contact_shadows_enabled: false,
-    soft_shadows_enabled: false,
-    affects_lightmapped_mesh_diffuse: true,
-    shadow_depth_bias: POINT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
-    shadow_normal_bias: POINT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
-    shadow_map_near_z: POINT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z,
-  }
-}
+pub type SpotLightTexture = @light.SpotLightTexture
 
 ///|
-pub fn PointLight::new(
-  color : @sprite.Color,
-  intensity : Float,
-  range : Float,
-  shadow_maps_enabled : Bool,
-) -> PointLight {
-  PointLight::{
-    color,
-    intensity,
-    range,
-    radius: 0.0F,
-    shadow_maps_enabled,
-    contact_shadows_enabled: false,
-    soft_shadows_enabled: false,
-    affects_lightmapped_mesh_diffuse: true,
-    shadow_depth_bias: POINT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
-    shadow_normal_bias: POINT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
-    shadow_map_near_z: POINT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z,
-  }
-}
+pub type PointLightTexture = @light.PointLightTexture
 
 ///|
-pub fn PointLight::with_color(
-  self : PointLight,
-  color : @sprite.Color,
-) -> PointLight {
-  PointLight::{ ..self, color, }
-}
+pub type LightProbe = @light.LightProbe
 
 ///|
-pub fn PointLight::with_range(self : PointLight, range : Float) -> PointLight {
-  PointLight::{ ..self, range: if range < 0.0F { 0.0F } else { range } }
-}
+pub type EnvironmentMapLight = @light.EnvironmentMapLight
 
 ///|
-pub fn PointLight::with_intensity(
-  self : PointLight,
-  intensity : Float,
-) -> PointLight {
-  PointLight::{
-    ..self,
-    intensity: if intensity < 0.0F {
-      0.0F
-    } else {
-      intensity
-    },
-  }
-}
+pub type GeneratedEnvironmentMapLight = @light.GeneratedEnvironmentMapLight
 
 ///|
-pub fn PointLight::with_radius(self : PointLight, radius : Float) -> PointLight {
-  PointLight::{ ..self, radius: if radius < 0.0F { 0.0F } else { radius } }
-}
+pub type ParallaxCorrection = @light.ParallaxCorrection
 
 ///|
-pub fn PointLight::with_contact_shadows_enabled(
-  self : PointLight,
-  contact_shadows_enabled : Bool,
-) -> PointLight {
-  PointLight::{ ..self, contact_shadows_enabled, }
-}
+pub type IrradianceVolume = @light.IrradianceVolume
 
 ///|
-pub fn PointLight::with_soft_shadows_enabled(
-  self : PointLight,
-  soft_shadows_enabled : Bool,
-) -> PointLight {
-  PointLight::{ ..self, soft_shadows_enabled, }
-}
-
-///|
-pub fn PointLight::with_shadow_maps_enabled(
-  self : PointLight,
-  shadow_maps_enabled : Bool,
-) -> PointLight {
-  PointLight::{ ..self, shadow_maps_enabled, }
-}
-
-///|
-pub fn PointLight::with_affects_lightmapped_mesh_diffuse(
-  self : PointLight,
-  affects_lightmapped_mesh_diffuse : Bool,
-) -> PointLight {
-  PointLight::{ ..self, affects_lightmapped_mesh_diffuse, }
-}
-
-///|
-pub fn PointLight::with_shadow_depth_bias(
-  self : PointLight,
-  shadow_depth_bias : Float,
-) -> PointLight {
-  PointLight::{
-    ..self,
-    shadow_depth_bias: if shadow_depth_bias < 0.0F {
-      0.0F
-    } else {
-      shadow_depth_bias
-    },
-  }
-}
-
-///|
-pub fn PointLight::with_shadow_normal_bias(
-  self : PointLight,
-  shadow_normal_bias : Float,
-) -> PointLight {
-  PointLight::{
-    ..self,
-    shadow_normal_bias: if shadow_normal_bias < 0.0F {
-      0.0F
-    } else {
-      shadow_normal_bias
-    },
-  }
-}
-
-///|
-pub fn PointLight::with_shadow_map_near_z(
-  self : PointLight,
-  shadow_map_near_z : Float,
-) -> PointLight {
-  PointLight::{
-    ..self,
-    shadow_map_near_z: if shadow_map_near_z <= 0.0001F {
-      0.0001F
-    } else {
-      shadow_map_near_z
-    },
-  }
-}
-
-///|
-/// Point-light shadow map resource aligned with Bevy's `PointLightShadowMap`.
-pub struct PointLightShadowMap {
-  size : Int
-} derive(ToJson, FromJson)
-
-///|
-pub fn PointLightShadowMap::default() -> PointLightShadowMap {
-  PointLightShadowMap::{ size: 1024 }
-}
-
-///|
-pub fn PointLightShadowMap::new(size : Int) -> PointLightShadowMap {
-  PointLightShadowMap::{ size: if size <= 0 { 1 } else { size } }
-}
-
-///|
-pub fn PointLightShadowMap::with_size(
-  self : PointLightShadowMap,
-  size : Int,
-) -> PointLightShadowMap {
-  self |> ignore
-  PointLightShadowMap::new(size)
-}
-
-///|
-fn directional_shadow_map_size_safe(size : Int) -> Int {
-  let safe = if size <= 0 { 1 } else { size }
-  let mut pow2 = 1
-  while pow2 < safe {
-    pow2 = pow2 * 2
-  }
-  pow2
-}
-
-///|
-/// Directional/spot-light shadow map resource aligned with Bevy's
-/// `DirectionalLightShadowMap`.
-///
-/// A single `size` value controls the width/height of each shadow map slice.
-pub struct DirectionalLightShadowMap {
-  size : Int
-} derive(ToJson, FromJson)
-
-///|
-pub fn DirectionalLightShadowMap::default() -> DirectionalLightShadowMap {
-  DirectionalLightShadowMap::{ size: 2048 }
-}
-
-///|
-pub fn DirectionalLightShadowMap::new(size : Int) -> DirectionalLightShadowMap {
-  DirectionalLightShadowMap::{ size: directional_shadow_map_size_safe(size) }
-}
-
-///|
-pub fn DirectionalLightShadowMap::with_size(
-  self : DirectionalLightShadowMap,
-  size : Int,
-) -> DirectionalLightShadowMap {
-  self |> ignore
-  DirectionalLightShadowMap::new(size)
-}
-
-///|
-pub struct CascadeShadowConfig {
-  bounds : Array[Float]
-  overlap_proportion : Float
-  minimum_distance : Float
-} derive(ToJson, FromJson)
-
-///|
-pub struct CascadeShadowConfigBuilder {
-  num_cascades : Int
-  minimum_distance : Float
-  maximum_distance : Float
-  first_cascade_far_bound : Float
-  overlap_proportion : Float
-}
-
-///|
-fn cascade_shadow_config_safe_overlap(overlap : Float) -> Float {
-  if overlap < 0.0F {
-    0.0F
-  } else if overlap >= 1.0F {
-    0.9999F
-  } else {
-    overlap
-  }
-}
-
-///|
-fn cascade_shadow_config_calculate_bounds(
-  num_cascades : Int,
-  nearest_bound : Float,
-  maximum_distance : Float,
-) -> Array[Float] {
-  if num_cascades <= 1 {
-    return [maximum_distance]
-  }
-  let exponent = 1.0F / Float::from_double((num_cascades - 1).to_double())
-  let base = @math.pow(maximum_distance / nearest_bound, exponent)
-  let bounds : Array[Float] = []
-  for i in 0..<num_cascades {
-    bounds.push(
-      nearest_bound * @math.pow(base, Float::from_double(i.to_double())),
-    )
-  }
-  bounds
-}
-
-///|
-pub fn CascadeShadowConfigBuilder::default() -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::{
-    num_cascades: 4,
-    minimum_distance: 0.1F,
-    maximum_distance: 150.0F,
-    first_cascade_far_bound: 10.0F,
-    overlap_proportion: 0.2F,
-  }
-}
-
-///|
-pub fn CascadeShadowConfigBuilder::new() -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::default()
-}
-
-///|
-pub fn CascadeShadowConfigBuilder::with_num_cascades(
-  self : CascadeShadowConfigBuilder,
-  num_cascades : Int,
-) -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::{
-    ..self,
-    num_cascades: if num_cascades <= 0 {
-      1
-    } else {
-      num_cascades
-    },
-  }
-}
-
-///|
-pub fn CascadeShadowConfigBuilder::with_minimum_distance(
-  self : CascadeShadowConfigBuilder,
-  minimum_distance : Float,
-) -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::{
-    ..self,
-    minimum_distance: if minimum_distance < 0.0F {
-      0.0F
-    } else {
-      minimum_distance
-    },
-  }
-}
-
-///|
-pub fn CascadeShadowConfigBuilder::with_maximum_distance(
-  self : CascadeShadowConfigBuilder,
-  maximum_distance : Float,
-) -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::{
-    ..self,
-    maximum_distance: if maximum_distance < 0.0F {
-      0.0F
-    } else {
-      maximum_distance
-    },
-  }
-}
-
-///|
-pub fn CascadeShadowConfigBuilder::with_first_cascade_far_bound(
-  self : CascadeShadowConfigBuilder,
-  first_cascade_far_bound : Float,
-) -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::{
-    ..self,
-    first_cascade_far_bound: if first_cascade_far_bound < 0.0F {
-      0.0F
-    } else {
-      first_cascade_far_bound
-    },
-  }
-}
-
-///|
-pub fn CascadeShadowConfigBuilder::with_overlap_proportion(
-  self : CascadeShadowConfigBuilder,
-  overlap_proportion : Float,
-) -> CascadeShadowConfigBuilder {
-  CascadeShadowConfigBuilder::{
-    ..self,
-    overlap_proportion: cascade_shadow_config_safe_overlap(overlap_proportion),
-  }
-}
-
-///|
-pub fn CascadeShadowConfigBuilder::build(
-  self : CascadeShadowConfigBuilder,
-) -> CascadeShadowConfig {
-  let safe_num_cascades = if self.num_cascades <= 0 {
-    1
-  } else {
-    self.num_cascades
-  }
-  let safe_minimum_distance = if self.minimum_distance < 0.0F {
-    0.0F
-  } else {
-    self.minimum_distance
-  }
-  let mut safe_maximum_distance = if self.maximum_distance <=
-    safe_minimum_distance {
-    safe_minimum_distance + 0.1F
-  } else {
-    self.maximum_distance
-  }
-  if safe_maximum_distance <= 0.0F {
-    safe_maximum_distance = 0.1F
-  }
-  let mut safe_first_cascade_far_bound = if self.first_cascade_far_bound <=
-    safe_minimum_distance {
-    safe_minimum_distance + 0.1F
-  } else {
-    self.first_cascade_far_bound
-  }
-  if safe_num_cascades == 1 {
-    safe_first_cascade_far_bound = safe_maximum_distance
-  } else if safe_first_cascade_far_bound > safe_maximum_distance {
-    safe_first_cascade_far_bound = safe_maximum_distance
-  }
-
-  CascadeShadowConfig::{
-    bounds: cascade_shadow_config_calculate_bounds(
-      safe_num_cascades, safe_first_cascade_far_bound, safe_maximum_distance,
-    ),
-    overlap_proportion: cascade_shadow_config_safe_overlap(
-      self.overlap_proportion,
-    ),
-    minimum_distance: safe_minimum_distance,
-  }
-}
-
-///|
-pub fn CascadeShadowConfig::default() -> CascadeShadowConfig {
-  CascadeShadowConfigBuilder::default().build()
-}
-
-///|
-pub struct DirectionalLight {
-  color : @sprite.Color
-  illuminance : Float
-  shadow_maps_enabled : Bool
-  contact_shadows_enabled : Bool
-  soft_shadow_size : Float?
-  cascade_shadow_config : CascadeShadowConfig?
-  shadow_depth_bias : Float
-  shadow_normal_bias : Float
-} derive(ToJson, FromJson)
-
-///|
-pub fn DirectionalLight::default() -> DirectionalLight {
-  DirectionalLight::{
-    color: @sprite.Color::white(),
-    illuminance: 10000.0F,
-    shadow_maps_enabled: false,
-    contact_shadows_enabled: false,
-    soft_shadow_size: None,
-    cascade_shadow_config: None,
-    shadow_depth_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
-    shadow_normal_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
-  }
-}
-
-///|
-pub fn DirectionalLight::new(
-  color : @sprite.Color,
-  illuminance : Float,
-  shadow_maps_enabled : Bool,
-) -> DirectionalLight {
-  DirectionalLight::{
-    color,
-    illuminance,
-    shadow_maps_enabled,
-    contact_shadows_enabled: false,
-    soft_shadow_size: None,
-    cascade_shadow_config: None,
-    shadow_depth_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
-    shadow_normal_bias: DIRECTIONAL_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
-  }
-}
-
-///|
-pub fn DirectionalLight::with_illuminance(
-  self : DirectionalLight,
-  illuminance : Float,
-) -> DirectionalLight {
-  DirectionalLight::{
-    ..self,
-    illuminance: if illuminance < 0.0F {
-      0.0F
-    } else {
-      illuminance
-    },
-  }
-}
-
-///|
-pub fn DirectionalLight::with_contact_shadows_enabled(
-  self : DirectionalLight,
-  contact_shadows_enabled : Bool,
-) -> DirectionalLight {
-  DirectionalLight::{ ..self, contact_shadows_enabled, }
-}
-
-///|
-pub fn DirectionalLight::with_soft_shadow_size(
-  self : DirectionalLight,
-  soft_shadow_size : Float?,
-) -> DirectionalLight {
-  let safe_soft_shadow_size = match soft_shadow_size {
-    Some(value) => Some(if value < 0.0F { 0.0F } else { value })
-    None => None
-  }
-  DirectionalLight::{ ..self, soft_shadow_size: safe_soft_shadow_size }
-}
-
-///|
-pub fn DirectionalLight::with_cascade_shadow_config(
-  self : DirectionalLight,
-  cascade_shadow_config : CascadeShadowConfig?,
-) -> DirectionalLight {
-  DirectionalLight::{ ..self, cascade_shadow_config, }
-}
-
-///|
-pub fn DirectionalLight::with_cascade_shadow_config_builder(
-  self : DirectionalLight,
-  cascade_shadow_config_builder : CascadeShadowConfigBuilder,
-) -> DirectionalLight {
-  DirectionalLight::{
-    ..self,
-    cascade_shadow_config: Some(cascade_shadow_config_builder.build()),
-  }
-}
-
-///|
-pub fn DirectionalLight::with_shadow_depth_bias(
-  self : DirectionalLight,
-  shadow_depth_bias : Float,
-) -> DirectionalLight {
-  DirectionalLight::{
-    ..self,
-    shadow_depth_bias: if shadow_depth_bias < 0.0F {
-      0.0F
-    } else {
-      shadow_depth_bias
-    },
-  }
-}
-
-///|
-pub fn DirectionalLight::with_shadow_normal_bias(
-  self : DirectionalLight,
-  shadow_normal_bias : Float,
-) -> DirectionalLight {
-  DirectionalLight::{
-    ..self,
-    shadow_normal_bias: if shadow_normal_bias < 0.0F {
-      0.0F
-    } else {
-      shadow_normal_bias
-    },
-  }
-}
-
-///|
-pub struct SpotLight {
-  color : @sprite.Color
-  intensity : Float
-  range : Float
-  radius : Float
-  inner_angle : Float
-  outer_angle : Float
-  shadow_maps_enabled : Bool
-  contact_shadows_enabled : Bool
-  soft_shadows_enabled : Bool
-  shadow_depth_bias : Float
-  shadow_normal_bias : Float
-  shadow_map_near_z : Float
-} derive(ToJson, FromJson)
-
-///|
-pub fn SpotLight::default() -> SpotLight {
-  SpotLight::{
-    color: @sprite.Color::white(),
-    intensity: 1_000_000.0F,
-    range: 20.0F,
-    radius: 0.0F,
-    inner_angle: 0.6F,
-    outer_angle: 0.8F,
-    shadow_maps_enabled: false,
-    contact_shadows_enabled: false,
-    soft_shadows_enabled: false,
-    shadow_depth_bias: SPOT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
-    shadow_normal_bias: SPOT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
-    shadow_map_near_z: SPOT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z,
-  }
-}
-
-///|
-pub fn SpotLight::new(
-  color : @sprite.Color,
-  intensity : Float,
-  range : Float,
-  inner_angle : Float,
-  outer_angle : Float,
-  shadow_maps_enabled : Bool,
-) -> SpotLight {
-  SpotLight::{
-    color,
-    intensity,
-    range,
-    radius: 0.0F,
-    inner_angle,
-    outer_angle,
-    shadow_maps_enabled,
-    contact_shadows_enabled: false,
-    soft_shadows_enabled: false,
-    shadow_depth_bias: SPOT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
-    shadow_normal_bias: SPOT_LIGHT_DEFAULT_SHADOW_NORMAL_BIAS,
-    shadow_map_near_z: SPOT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z,
-  }
-}
-
-///|
-pub fn SpotLight::with_intensity(
-  self : SpotLight,
-  intensity : Float,
-) -> SpotLight {
-  SpotLight::{
-    ..self,
-    intensity: if intensity < 0.0F {
-      0.0F
-    } else {
-      intensity
-    },
-  }
-}
-
-///|
-pub fn SpotLight::with_inner_angle(
-  self : SpotLight,
-  inner_angle : Float,
-) -> SpotLight {
-  let safe_inner_angle = if inner_angle < 0.0F {
-    0.0F
-  } else if inner_angle > self.outer_angle {
-    self.outer_angle
-  } else {
-    inner_angle
-  }
-  SpotLight::{ ..self, inner_angle: safe_inner_angle }
-}
-
-///|
-pub fn SpotLight::with_outer_angle(
-  self : SpotLight,
-  outer_angle : Float,
-) -> SpotLight {
-  let safe_outer_angle = if outer_angle <= 0.0001F {
-    0.0001F
-  } else {
-    outer_angle
-  }
-  let safe_inner_angle = if self.inner_angle > safe_outer_angle {
-    safe_outer_angle
-  } else {
-    self.inner_angle
-  }
-  SpotLight::{
-    ..self,
-    outer_angle: safe_outer_angle,
-    inner_angle: safe_inner_angle,
-  }
-}
-
-///|
-pub fn SpotLight::with_radius(self : SpotLight, radius : Float) -> SpotLight {
-  SpotLight::{ ..self, radius: if radius < 0.0F { 0.0F } else { radius } }
-}
-
-///|
-pub fn SpotLight::with_contact_shadows_enabled(
-  self : SpotLight,
-  contact_shadows_enabled : Bool,
-) -> SpotLight {
-  SpotLight::{ ..self, contact_shadows_enabled, }
-}
-
-///|
-pub fn SpotLight::with_soft_shadows_enabled(
-  self : SpotLight,
-  soft_shadows_enabled : Bool,
-) -> SpotLight {
-  SpotLight::{ ..self, soft_shadows_enabled, }
-}
-
-///|
-pub fn SpotLight::with_shadow_depth_bias(
-  self : SpotLight,
-  shadow_depth_bias : Float,
-) -> SpotLight {
-  SpotLight::{
-    ..self,
-    shadow_depth_bias: if shadow_depth_bias < 0.0F {
-      0.0F
-    } else {
-      shadow_depth_bias
-    },
-  }
-}
-
-///|
-pub fn SpotLight::with_shadow_normal_bias(
-  self : SpotLight,
-  shadow_normal_bias : Float,
-) -> SpotLight {
-  SpotLight::{
-    ..self,
-    shadow_normal_bias: if shadow_normal_bias < 0.0F {
-      0.0F
-    } else {
-      shadow_normal_bias
-    },
-  }
-}
-
-///|
-pub fn SpotLight::with_shadow_map_near_z(
-  self : SpotLight,
-  shadow_map_near_z : Float,
-) -> SpotLight {
-  SpotLight::{
-    ..self,
-    shadow_map_near_z: if shadow_map_near_z <= 0.0001F {
-      0.0001F
-    } else {
-      shadow_map_near_z
-    },
-  }
-}
-
-///|
-/// Cubemap texture layout aligned with Bevy's `CubemapLayout`.
-pub(all) enum CubemapLayout3d {
-  CrossVertical
-  CrossHorizontal
-  LineVertical
-  LineHorizontal
-  Equirectangular
-  Faces
-} derive(Eq, Show, ToJson, FromJson)
-
-///|
-pub fn CubemapLayout3d::default() -> CubemapLayout3d {
-  CubemapLayout3d::CrossVertical
-}
-
-///|
-/// Directional light texture settings aligned with Bevy's
-/// `DirectionalLightTexture`.
-///
-/// Current runtime note: texture projection is not yet applied in this backend;
-/// this component preserves API parity for example migration.
-pub struct DirectionalLightTexture {
-  image : @asset.Handle[@asset.Image]?
-  tiled : Bool
-} derive(ToJson, FromJson)
-
-///|
-pub fn DirectionalLightTexture::default() -> DirectionalLightTexture {
-  DirectionalLightTexture::{ image: None, tiled: false }
-}
-
-///|
-pub fn DirectionalLightTexture::new(
-  image : @asset.Handle[@asset.Image]?,
-  tiled : Bool,
-) -> DirectionalLightTexture {
-  DirectionalLightTexture::{ image, tiled }
-}
-
-///|
-pub fn DirectionalLightTexture::with_image(
-  self : DirectionalLightTexture,
-  image : @asset.Handle[@asset.Image]?,
-) -> DirectionalLightTexture {
-  DirectionalLightTexture::{ ..self, image, }
-}
-
-///|
-pub fn DirectionalLightTexture::with_tiled(
-  self : DirectionalLightTexture,
-  tiled : Bool,
-) -> DirectionalLightTexture {
-  DirectionalLightTexture::{ ..self, tiled, }
-}
-
-///|
-/// Spot light texture settings aligned with Bevy's `SpotLightTexture`.
-///
-/// Current runtime note: texture projection is not yet applied in this backend;
-/// this component preserves API parity for example migration.
-pub struct SpotLightTexture {
-  image : @asset.Handle[@asset.Image]?
-} derive(ToJson, FromJson)
-
-///|
-pub fn SpotLightTexture::default() -> SpotLightTexture {
-  SpotLightTexture::{ image: None }
-}
-
-///|
-pub fn SpotLightTexture::new(
-  image : @asset.Handle[@asset.Image]?,
-) -> SpotLightTexture {
-  SpotLightTexture::{ image, }
-}
-
-///|
-pub fn SpotLightTexture::with_image(
-  self : SpotLightTexture,
-  image : @asset.Handle[@asset.Image]?,
-) -> SpotLightTexture {
-  self |> ignore
-  SpotLightTexture::{ image, }
-}
-
-///|
-/// Point light texture settings aligned with Bevy's `PointLightTexture`.
-///
-/// Current runtime note: texture projection is not yet applied in this backend;
-/// this component preserves API parity for example migration.
-pub struct PointLightTexture {
-  image : @asset.Handle[@asset.Image]?
-  cubemap_layout : CubemapLayout3d
-} derive(ToJson, FromJson)
-
-///|
-pub fn PointLightTexture::default() -> PointLightTexture {
-  PointLightTexture::{
-    image: None,
-    cubemap_layout: CubemapLayout3d::CrossVertical,
-  }
-}
-
-///|
-pub fn PointLightTexture::new(
-  image : @asset.Handle[@asset.Image]?,
-  cubemap_layout : CubemapLayout3d,
-) -> PointLightTexture {
-  PointLightTexture::{ image, cubemap_layout }
-}
-
-///|
-pub fn PointLightTexture::with_image(
-  self : PointLightTexture,
-  image : @asset.Handle[@asset.Image]?,
-) -> PointLightTexture {
-  PointLightTexture::{ ..self, image, }
-}
-
-///|
-pub fn PointLightTexture::with_cubemap_layout(
-  self : PointLightTexture,
-  cubemap_layout : CubemapLayout3d,
-) -> PointLightTexture {
-  PointLightTexture::{ ..self, cubemap_layout, }
-}
-
-///|
-/// Light probe component aligned with Bevy's `LightProbe`.
-///
-/// The probe influence volume is a unit cube transformed by the entity
-/// transform. `falloff` controls the attenuation region inside this cube.
-pub struct LightProbe {
-  falloff : @math.Vec3
-} derive(ToJson, FromJson)
-
-///|
-pub fn LightProbe::default() -> LightProbe {
-  LightProbe::{ falloff: @math.Vec3::zero() }
-}
-
-///|
-pub fn LightProbe::new() -> LightProbe {
-  LightProbe::default()
-}
-
-///|
-pub fn LightProbe::with_falloff(
-  self : LightProbe,
-  falloff : @math.Vec3,
-) -> LightProbe {
-  self |> ignore
-  LightProbe::{ falloff, }
-}
-
-///|
-/// Environment map lighting component aligned with Bevy's
-/// `EnvironmentMapLight`.
-///
-/// Current runtime note: this backend stores and exposes the Bevy-aligned
-/// component surface; reflection probe shading remains adapted.
-pub struct EnvironmentMapLight {
-  diffuse_map : @asset.Handle[@asset.Image]?
-  specular_map : @asset.Handle[@asset.Image]?
-  intensity : Float
-  rotation : @math.Quat
-  affects_lightmapped_mesh_diffuse : Bool
-} derive(ToJson, FromJson)
-
-///|
-pub fn EnvironmentMapLight::default() -> EnvironmentMapLight {
-  EnvironmentMapLight::{
-    diffuse_map: None,
-    specular_map: None,
-    intensity: 0.0F,
-    rotation: @math.Quat::identity(),
-    affects_lightmapped_mesh_diffuse: true,
-  }
-}
-
-///|
-pub fn EnvironmentMapLight::new(
-  diffuse_map : @asset.Handle[@asset.Image]?,
-  specular_map : @asset.Handle[@asset.Image]?,
-  intensity : Float,
-) -> EnvironmentMapLight {
-  EnvironmentMapLight::default()
-  .with_diffuse_map(diffuse_map)
-  .with_specular_map(specular_map)
-  .with_intensity(intensity)
-}
-
-///|
-pub fn EnvironmentMapLight::with_diffuse_map(
-  self : EnvironmentMapLight,
-  diffuse_map : @asset.Handle[@asset.Image]?,
-) -> EnvironmentMapLight {
-  EnvironmentMapLight::{ ..self, diffuse_map, }
-}
-
-///|
-pub fn EnvironmentMapLight::with_specular_map(
-  self : EnvironmentMapLight,
-  specular_map : @asset.Handle[@asset.Image]?,
-) -> EnvironmentMapLight {
-  EnvironmentMapLight::{ ..self, specular_map, }
-}
-
-///|
-pub fn EnvironmentMapLight::with_intensity(
-  self : EnvironmentMapLight,
-  intensity : Float,
-) -> EnvironmentMapLight {
-  EnvironmentMapLight::{
-    ..self,
-    intensity: if intensity < 0.0F {
-      0.0F
-    } else {
-      intensity
-    },
-  }
-}
-
-///|
-pub fn EnvironmentMapLight::with_rotation(
-  self : EnvironmentMapLight,
-  rotation : @math.Quat,
-) -> EnvironmentMapLight {
-  EnvironmentMapLight::{ ..self, rotation, }
-}
-
-///|
-pub fn EnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(
-  self : EnvironmentMapLight,
-  affects_lightmapped_mesh_diffuse : Bool,
-) -> EnvironmentMapLight {
-  EnvironmentMapLight::{ ..self, affects_lightmapped_mesh_diffuse, }
-}
-
-///|
-/// Runtime-generated environment map lighting aligned with Bevy's
-/// `GeneratedEnvironmentMapLight`.
-///
-/// Current runtime note: this backend stores this component for API parity.
-/// Runtime cubemap filtering remains adapted.
-pub struct GeneratedEnvironmentMapLight {
-  environment_map : @asset.Handle[@asset.Image]?
-  intensity : Float
-  rotation : @math.Quat
-  affects_lightmapped_mesh_diffuse : Bool
-} derive(ToJson, FromJson)
-
-///|
-pub fn GeneratedEnvironmentMapLight::default() -> GeneratedEnvironmentMapLight {
-  GeneratedEnvironmentMapLight::{
-    environment_map: None,
-    intensity: 0.0F,
-    rotation: @math.Quat::identity(),
-    affects_lightmapped_mesh_diffuse: true,
-  }
-}
-
-///|
-pub fn GeneratedEnvironmentMapLight::new(
-  environment_map : @asset.Handle[@asset.Image]?,
-  intensity : Float,
-) -> GeneratedEnvironmentMapLight {
-  GeneratedEnvironmentMapLight::default()
-  .with_environment_map(environment_map)
-  .with_intensity(intensity)
-}
-
-///|
-pub fn GeneratedEnvironmentMapLight::with_environment_map(
-  self : GeneratedEnvironmentMapLight,
-  environment_map : @asset.Handle[@asset.Image]?,
-) -> GeneratedEnvironmentMapLight {
-  GeneratedEnvironmentMapLight::{ ..self, environment_map, }
-}
-
-///|
-pub fn GeneratedEnvironmentMapLight::with_intensity(
-  self : GeneratedEnvironmentMapLight,
-  intensity : Float,
-) -> GeneratedEnvironmentMapLight {
-  GeneratedEnvironmentMapLight::{
-    ..self,
-    intensity: if intensity < 0.0F {
-      0.0F
-    } else {
-      intensity
-    },
-  }
-}
-
-///|
-pub fn GeneratedEnvironmentMapLight::with_rotation(
-  self : GeneratedEnvironmentMapLight,
-  rotation : @math.Quat,
-) -> GeneratedEnvironmentMapLight {
-  GeneratedEnvironmentMapLight::{ ..self, rotation, }
-}
-
-///|
-pub fn GeneratedEnvironmentMapLight::with_affects_lightmapped_mesh_diffuse(
-  self : GeneratedEnvironmentMapLight,
-  affects_lightmapped_mesh_diffuse : Bool,
-) -> GeneratedEnvironmentMapLight {
-  GeneratedEnvironmentMapLight::{ ..self, affects_lightmapped_mesh_diffuse, }
-}
-
-///|
-/// Parallax correction mode aligned with Bevy's `ParallaxCorrection`.
-///
-/// Current runtime note: this backend stores this component for parity and
-/// example behavior; probe-space correction is currently adapted.
-pub(all) enum ParallaxCorrection {
-  None
-  Auto
-  Custom(@math.Vec3)
-} derive(ToJson, FromJson)
-
-///|
-pub fn ParallaxCorrection::default() -> ParallaxCorrection {
-  ParallaxCorrection::Auto
-}
-
-///|
-/// Irradiance volume settings aligned with Bevy's `IrradianceVolume`.
-///
-/// Current runtime note: this backend uses this component as API surface and
-/// scene intent metadata; voxel-light transfer remains adapted.
-pub struct IrradianceVolume {
-  voxels : @asset.Handle[@asset.Image]?
-  intensity : Float
-} derive(ToJson, FromJson)
-
-///|
-pub fn IrradianceVolume::default() -> IrradianceVolume {
-  IrradianceVolume::{ voxels: None, intensity: 1.0F }
-}
-
-///|
-pub fn IrradianceVolume::new(
-  voxels : @asset.Handle[@asset.Image]?,
-  intensity : Float,
-) -> IrradianceVolume {
-  IrradianceVolume::{
-    voxels,
-    intensity: if intensity < 0.0F {
-      0.0F
-    } else {
-      intensity
-    },
-  }
-}
-
-///|
-pub fn IrradianceVolume::with_voxels(
-  self : IrradianceVolume,
-  voxels : @asset.Handle[@asset.Image]?,
-) -> IrradianceVolume {
-  IrradianceVolume::{ ..self, voxels, }
-}
-
-///|
-pub fn IrradianceVolume::with_intensity(
-  self : IrradianceVolume,
-  intensity : Float,
-) -> IrradianceVolume {
-  IrradianceVolume::new(self.voxels, intensity)
-}
-
-///|
-pub struct GlobalAmbientLight {
-  color : @sprite.Color
-  brightness : Float
-} derive(ToJson, FromJson)
-
-///|
-pub fn GlobalAmbientLight::default() -> GlobalAmbientLight {
-  GlobalAmbientLight::{ color: @sprite.Color::white(), brightness: 80.0F }
-}
-
-///|
-pub fn GlobalAmbientLight::new(
-  color : @sprite.Color,
-  brightness : Float,
-) -> GlobalAmbientLight {
-  GlobalAmbientLight::{ color, brightness }
-}
+pub type GlobalAmbientLight = @light.GlobalAmbientLight
 
 ///|
 pub struct Camera3dBundle {
@@ -2978,7 +1561,7 @@ fn mesh_material3d_bundle_insert(
     tick,
   )
   @math.get_transform_store(ecs_world).insert(entity, bundle.transform, tick)
-  let mesh_id = @sprite.render2d_upload_mesh_handle(bundle.mesh.mesh)
+  let mesh_id = @sprite_render.render2d_upload_mesh_handle(bundle.mesh.mesh)
   @sprite.get_gpu_mesh2d_store(ecs_world).insert(
     entity,
     @sprite.GpuMesh2d::new(mesh_id),
@@ -3016,7 +1599,6 @@ priv struct Camera3dInstance {
   projection : Projection
   sub_camera_view : SubCameraView3d?
   screen_space_transmission : ScreenSpaceTransmission?
-  screen_space_reflections : ScreenSpaceReflections?
   bloom : Bloom?
   tonemapping : Tonemapping?
   deband_dither : DebandDither?
@@ -3026,8 +1608,6 @@ priv struct Camera3dInstance {
   exposure : Exposure?
   color_grading : ColorGrading?
   skybox : Skybox?
-  environment_map_light : EnvironmentMapLight?
-  generated_environment_map_light : GeneratedEnvironmentMapLight?
   depth_prepass_enabled : Bool
   deferred_prepass_enabled : Bool
   hdr_enabled : Bool
@@ -3055,11 +1635,6 @@ priv struct ProjectionRuntime3d {
 let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d] = @ecs.register_component(
   debug_name="render3d.projection_runtime3d",
 )
-
-///|
-impl @ecs.Component for ProjectionRuntime3d with component() {
-  ecs_key_projection_runtime3d
-}
 
 ///|
 priv struct Mesh3dInstance {
@@ -3377,8 +1952,8 @@ fn render3d_default_lighting_state() -> Render3dLightingState {
     point_intensity: 0.0F,
     point_range: 1.0F,
     point_shadow_maps_enabled: false,
-    point_shadow_depth_bias: POINT_LIGHT_DEFAULT_SHADOW_DEPTH_BIAS,
-    point_shadow_map_near_z: POINT_LIGHT_DEFAULT_SHADOW_MAP_NEAR_Z,
+    point_shadow_depth_bias: 0.08F,
+    point_shadow_map_near_z: 0.1F,
     spot_pos: @math.Vec3::new(0.0F, 0.0F, 0.0F),
     spot_dir: @math.Vec3::new(0.0F, -1.0F, 0.0F),
     spot_color: @sprite.Color::white(),
@@ -3960,7 +2535,7 @@ fn render3d_wireframe_mesh_id(mesh_handle : @asset.Handle[@mesh.Mesh]) -> Int? {
               let wireframe_handle = @sprite.render_mesh_asset_add(
                 @mesh.Mesh::from_3d_geometry(wireframe_geometry),
               )
-              let wireframe_mesh_id = @sprite.render2d_upload_mesh_handle(
+              let wireframe_mesh_id = @sprite_render.render2d_upload_mesh_handle(
                 wireframe_handle,
               )
               render3d_wireframe_mesh_cache_set(
@@ -3971,12 +2546,12 @@ fn render3d_wireframe_mesh_id(mesh_handle : @asset.Handle[@mesh.Mesh]) -> Int? {
             None => return None
           }
         @mesh.Mesh3dPrimitiveTopology::LineList => {
-          let mesh_id = @sprite.render2d_upload_mesh_handle(mesh_handle)
+          let mesh_id = @sprite_render.render2d_upload_mesh_handle(mesh_handle)
           render3d_wireframe_mesh_cache_set(source_mesh_handle_id, mesh_id)
           Some(mesh_id)
         }
         @mesh.Mesh3dPrimitiveTopology::LineStrip => {
-          let mesh_id = @sprite.render2d_upload_mesh_handle(mesh_handle)
+          let mesh_id = @sprite_render.render2d_upload_mesh_handle(mesh_handle)
           render3d_wireframe_mesh_cache_set(source_mesh_handle_id, mesh_id)
           Some(mesh_id)
         }
@@ -6057,7 +4632,7 @@ pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
     if gpu_mesh_store.get(entity) is Some(_) {
       return
     }
-    let mesh_id = @sprite.render2d_upload_mesh_handle(mesh.mesh)
+    let mesh_id = @sprite_render.render2d_upload_mesh_handle(mesh.mesh)
     gpu_mesh_store.insert(entity, @sprite.GpuMesh2d::new(mesh_id), tick)
   })
   if render3d_prepared_camera_order_ref.val.length() == 0 {
@@ -6383,9 +4958,6 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let screen_space_transmission_store = world.component(
     ecs_key_screen_space_transmission,
   )
-  let screen_space_reflections_store = world.component(
-    ecs_key_screen_space_reflections,
-  )
   let bloom_store = world.component(ecs_key_bloom)
   let tonemapping_store = world.component(ecs_key_tonemapping)
   let deband_dither_store = world.component(ecs_key_deband_dither)
@@ -6395,12 +4967,6 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let exposure_store = world.component(ecs_key_exposure)
   let color_grading_store = world.component(ecs_key_color_grading)
   let skybox_store = world.component(ecs_key_skybox)
-  let environment_map_light_store = world.component(
-    ecs_key_environment_map_light,
-  )
-  let generated_environment_map_light_store = world.component(
-    ecs_key_generated_environment_map_light,
-  )
   let hdr_store = world.component(ecs_key_hdr)
   let fxaa_store = world.component(ecs_key_fxaa)
   let temporal_jitter_store = world.component(ecs_key_temporal_jitter)
@@ -6459,7 +5025,6 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     }
     let sub_camera_view = sub_camera_view_store.get(entity)
     let screen_space_transmission = screen_space_transmission_store.get(entity)
-    let screen_space_reflections = screen_space_reflections_store.get(entity)
     let bloom = bloom_store.get(entity)
     let tonemapping = tonemapping_store.get(entity)
     let deband_dither = deband_dither_store.get(entity)
@@ -6469,10 +5034,6 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     let exposure = exposure_store.get(entity)
     let color_grading = color_grading_store.get(entity)
     let skybox = skybox_store.get(entity)
-    let environment_map_light = environment_map_light_store.get(entity)
-    let generated_environment_map_light = generated_environment_map_light_store.get(
-      entity,
-    )
     let hdr_enabled = hdr_store.get(entity) is Some(_)
     let fxaa = fxaa_store.get(entity)
     let temporal_jitter = temporal_jitter_store.get(entity)
@@ -6541,7 +5102,6 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           projection,
           sub_camera_view,
           screen_space_transmission,
-          screen_space_reflections,
           bloom,
           tonemapping,
           deband_dither,
@@ -6551,8 +5111,6 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           exposure,
           color_grading,
           skybox,
-          environment_map_light,
-          generated_environment_map_light,
           depth_prepass_enabled,
           deferred_prepass_enabled,
           hdr_enabled,

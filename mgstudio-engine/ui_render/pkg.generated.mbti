@@ -8,27 +8,9 @@ import {
 }
 
 // Values
-pub let ecs_key_background_color : @ecs.ComponentKey[@ui.BackgroundColor]
-
-pub let ecs_key_border_color : @ecs.ComponentKey[@ui.BorderColor]
-
-pub let ecs_key_box_shadow : @ecs.ComponentKey[@ui.BoxShadow]
-
-pub let ecs_key_calculated_clip : @ecs.ComponentKey[@ui.CalculatedClip]
-
-pub let ecs_key_computed_ui_render_target_info : @ecs.ComponentKey[@ui.ComputedUiRenderTargetInfo]
-
-pub let ecs_key_computed_ui_target_camera : @ecs.ComponentKey[@ui.ComputedUiTargetCamera]
-
-pub let ecs_key_image_node : @ecs.ComponentKey[@ui.ImageNode]
-
-pub let ecs_key_outline : @ecs.ComponentKey[@ui.Outline]
-
 pub let ecs_key_ui_anti_alias : @ecs.ComponentKey[@ui.UiAntiAlias]
 
 pub let ecs_key_ui_box_shadow_samples : @ecs.ComponentKey[@ui.UiBoxShadowSamples]
-
-pub fn ui_render_extract_system(@ecs.World) -> Unit
 
 pub fn ui_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -39,31 +21,7 @@ pub let ui_render_set_extract : String
 // Types and methods
 
 // Type aliases
-pub using @ui {type BackgroundColor}
-
-pub using @ui {type BorderColor}
-
-pub using @ui {type BorderRect}
-
-pub using @ui {type BoxShadow}
-
 pub using @ui {type UiBoxShadowSamples as BoxShadowSamples}
-
-pub using @ui {type CalculatedClip}
-
-pub using @ui {type ComputedUiRenderTargetInfo}
-
-pub using @ui {type ComputedUiTargetCamera}
-
-pub using @ui {type ImageNode}
-
-pub using @ui {type NodeImageMode}
-
-pub using @ui {type Outline}
-
-pub using @ui {type SliceScaleMode}
-
-pub using @ui {type TextureSlicer}
 
 pub using @ui {type UiAntiAlias}
 

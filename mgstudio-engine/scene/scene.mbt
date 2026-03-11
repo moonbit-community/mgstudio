@@ -844,7 +844,38 @@ fn scene_runtime_plugin_base(
 }
 
 ///|
+pub(all) struct ScenePlugin {}
+
+///|
+pub const SCENE_PLUGIN_ID : String = "bevy_scene::ScenePlugin"
+
+///|
+pub fn ScenePlugin::default() -> ScenePlugin {
+  ScenePlugin::{  }
+}
+
+///|
+pub impl @app.PluginReplacement for ScenePlugin with replacement_id(_self) {
+  SCENE_PLUGIN_ID
+}
+
+///|
+pub impl @app.PluginReplacement for ScenePlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    scene_plugin_with(app, self)
+  }
+}
+
+///|
 pub fn scene_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  scene_plugin_with(app, ScenePlugin::default())
+}
+
+///|
+pub fn scene_plugin_with(
+  app : @app.App[@ecs.World],
+  _plugin : ScenePlugin,
+) -> @app.App[@ecs.World] {
   scene_runtime_plugin_base(
     app
     .init_resource(fn() {

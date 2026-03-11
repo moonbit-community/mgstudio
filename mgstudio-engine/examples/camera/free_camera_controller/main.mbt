@@ -157,11 +157,11 @@ fn spawn_camera(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   world
-  .component(@camera.ecs_key_free_camera)
+  .component(@camera_controller.ecs_key_free_camera)
   .insert(
     camera,
-    @camera.FreeCamera::{
-      ..@camera.FreeCamera::default(),
+    @camera_controller.FreeCamera::{
+      ..@camera_controller.FreeCamera::default(),
       sensitivity: 0.2F,
       friction: 25.0F,
       walk_speed: 3.0F,
@@ -296,13 +296,15 @@ fn update_camera_settings(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let config_store = world.component(@camera.ecs_key_free_camera)
-  let state_store = world.component(@camera.ecs_key_free_camera_state)
+  let config_store = world.component(@camera_controller.ecs_key_free_camera)
+  let state_store = world.component(
+    @camera_controller.ecs_key_free_camera_state,
+  )
 
   if config_store.get(camera) is Some(config) {
     let mut next = config
     if @input.key_pressed(@window.KeyCode::KeyZ) {
-      next = @camera.FreeCamera::{
+      next = @camera_controller.FreeCamera::{
         ..next,
         sensitivity: if next.sensitivity - 0.005F < 0.005F {
           0.005F
@@ -312,13 +314,13 @@ fn update_camera_settings(world : @ecs.World) -> Unit {
       }
     }
     if @input.key_pressed(@window.KeyCode::KeyX) {
-      next = @camera.FreeCamera::{
+      next = @camera_controller.FreeCamera::{
         ..next,
         sensitivity: next.sensitivity + 0.005F,
       }
     }
     if @input.key_pressed(@window.KeyCode::KeyC) {
-      next = @camera.FreeCamera::{
+      next = @camera_controller.FreeCamera::{
         ..next,
         friction: if next.friction - 0.2F < 0.0F {
           0.0F
@@ -328,10 +330,13 @@ fn update_camera_settings(world : @ecs.World) -> Unit {
       }
     }
     if @input.key_pressed(@window.KeyCode::KeyV) {
-      next = @camera.FreeCamera::{ ..next, friction: next.friction + 0.2F }
+      next = @camera_controller.FreeCamera::{
+        ..next,
+        friction: next.friction + 0.2F,
+      }
     }
     if @input.key_pressed(@window.KeyCode::KeyF) {
-      next = @camera.FreeCamera::{
+      next = @camera_controller.FreeCamera::{
         ..next,
         scroll_factor: if next.scroll_factor - 0.02F < 0.02F {
           0.02F
@@ -341,7 +346,7 @@ fn update_camera_settings(world : @ecs.World) -> Unit {
       }
     }
     if @input.key_pressed(@window.KeyCode::KeyG) {
-      next = @camera.FreeCamera::{
+      next = @camera_controller.FreeCamera::{
         ..next,
         scroll_factor: next.scroll_factor + 0.02F,
       }
@@ -353,7 +358,7 @@ fn update_camera_settings(world : @ecs.World) -> Unit {
     if state_store.get(camera) is Some(state) {
       state_store.set(
         camera,
-        @camera.FreeCameraState::{ ..state, enabled: !state.enabled },
+        @camera_controller.FreeCameraState::{ ..state, enabled: !state.enabled },
         tick,
       )
       |> ignore
@@ -368,8 +373,10 @@ fn update_text(world : @ecs.World) -> Unit {
     return
   }
   if free_camera_example_state.val.info_text is Some(handle) {
-    let config_store = world.component(@camera.ecs_key_free_camera)
-    let state_store = world.component(@camera.ecs_key_free_camera_state)
+    let config_store = world.component(@camera_controller.ecs_key_free_camera)
+    let state_store = world.component(
+      @camera_controller.ecs_key_free_camera_state,
+    )
     if config_store.get(camera) is Some(config) {
       if state_store.get(camera) is Some(state) {
         @text.text_set_content(
@@ -401,7 +408,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_plugins([@camera.free_camera_plugin])
+  .add_plugins([@camera_controller.free_camera_plugin])
   .add_systems(@app.Startup, @app.system(spawn_camera))
   .add_systems(@app.Startup, @app.system(spawn_overlay))
   .add_systems(@app.Startup, @app.system(spawn_lights))

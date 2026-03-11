@@ -63,10 +63,7 @@ pub fn RenderDiagnosticsSnapshot::new(
 }
 
 ///|
-priv struct SurfaceBinding {
-  id : NativeGpuSurface
-  window : Int
-}
+priv struct SurfaceBinding {}
 
 ///|
 const PRIMARY_DEVICE_ID : NativeGpuDevice = 1
@@ -184,7 +181,7 @@ fn env_or_default(key : String, default_value : String) -> String {
 }
 
 ///|
-fn debug_runtime_error(context : String, err : GpuBackendError) -> Unit {
+fn debug_runtime_error(context : String, err : Error) -> Unit {
   @debug.debug("[renderer] " + context + ": " + err.to_string())
 }
 
@@ -238,11 +235,9 @@ pub fn get_queue(device : NativeGpuDevice) -> NativeGpuQueue {
 ///|
 pub fn create_surface(window : Int) -> NativeGpuSurface {
   let surface_id = next_surface_id()
-  surfaces_ref.val.push(SurfaceBinding::{ id: surface_id, window })
+  surfaces_ref.val.push(SurfaceBinding::{  })
   if ensure_backend() is Some(backend) {
-    backend.create_surface(window) catch {
-      err => debug_runtime_error("create_surface", err)
-    }
+    backend.create_surface(window)
   }
   surface_id
 }
@@ -255,13 +250,9 @@ pub fn configure_surface(
   height~ : Int,
 ) -> Unit {
   device |> ignore
-  if surface > 0 {
-    let _ = surfaces_ref.val.length()
-  }
+  surface |> ignore
   if ensure_backend() is Some(backend) {
-    backend.configure_surface(width, height) catch {
-      err => debug_runtime_error("configure_surface", err)
-    }
+    backend.configure_surface(width, height)
   }
 }
 
@@ -273,12 +264,8 @@ pub fn begin_frame(surface : NativeGpuSurface) -> NativeGpuFrame {
   current_frame_mesh3d_draw_calls_ref.val = 0
   current_frame_mesh3d_executed_draw_calls_ref.val = 0
   if ensure_backend() is Some(backend) {
-    try {
-      backend.begin_frame()
-      return next_frame_id()
-    } catch {
-      err => debug_runtime_error("begin_frame", err)
-    }
+    backend.begin_frame()
+    return next_frame_id()
   }
   0
 }
@@ -1165,11 +1152,7 @@ pub fn create_mesh_capsule(
   segments~ : Int,
 ) -> Int {
   if ensure_backend() is Some(backend) {
-    try {
-      return backend.create_mesh_capsule(radius, half_length, segments)
-    } catch {
-      _ => ()
-    }
+    return backend.create_mesh_capsule(radius, half_length, segments)
   }
   0
 }
@@ -1177,11 +1160,7 @@ pub fn create_mesh_capsule(
 ///|
 pub fn create_mesh_rectangle(width~ : Float, height~ : Float) -> Int {
   if ensure_backend() is Some(backend) {
-    try {
-      return backend.create_mesh_rectangle(width, height)
-    } catch {
-      _ => ()
-    }
+    return backend.create_mesh_rectangle(width, height)
   }
   0
 }
@@ -1190,18 +1169,14 @@ pub fn create_mesh_rectangle(width~ : Float, height~ : Float) -> Int {
 pub fn create_mesh_triangles(vertices_xy_csv~ : String) -> Int {
   if parse_f32_csv(vertices_xy_csv) is Some(vertices) {
     if ensure_backend() is Some(backend) {
-      try {
-        let mesh_id = backend.create_mesh_triangles_xy(vertices)
-        if mesh_id <= 0 {
-          @debug.debug(
-            "[renderer] create_mesh_triangles failed: parsed_values=" +
-            vertices.length().to_string(),
-          )
-        }
-        return mesh_id
-      } catch {
-        err => debug_runtime_error("create_mesh_triangles", err)
+      let mesh_id = backend.create_mesh_triangles_xy(vertices)
+      if mesh_id <= 0 {
+        @debug.debug(
+          "[renderer] create_mesh_triangles failed: parsed_values=" +
+          vertices.length().to_string(),
+        )
       }
+      return mesh_id
     }
   } else {
     @debug.debug(
@@ -1216,18 +1191,14 @@ pub fn create_mesh_triangles(vertices_xy_csv~ : String) -> Int {
 pub fn create_mesh_triangles_xyuvrgba(vertices_xyuvrgba_csv~ : String) -> Int {
   if parse_f32_csv(vertices_xyuvrgba_csv) is Some(vertices) {
     if ensure_backend() is Some(backend) {
-      try {
-        let mesh_id = backend.create_mesh_triangles_xyuvrgba(vertices)
-        if mesh_id <= 0 {
-          @debug.debug(
-            "[renderer] create_mesh_triangles_xyuvrgba failed: parsed_values=" +
-            vertices.length().to_string(),
-          )
-        }
-        return mesh_id
-      } catch {
-        err => debug_runtime_error("create_mesh_triangles_xyuvrgba", err)
+      let mesh_id = backend.create_mesh_triangles_xyuvrgba(vertices)
+      if mesh_id <= 0 {
+        @debug.debug(
+          "[renderer] create_mesh_triangles_xyuvrgba failed: parsed_values=" +
+          vertices.length().to_string(),
+        )
       }
+      return mesh_id
     }
   } else {
     @debug.debug(
@@ -1245,22 +1216,18 @@ pub fn create_mesh3d(
 ) -> Int {
   if parse_f32_csv(vertices_xyzuvrgba_csv) is Some(vertices) {
     if ensure_backend() is Some(backend) {
-      try {
-        let mesh_id = backend.create_mesh3d_xyzuvrgba(
-          vertices, primitive_topology,
+      let mesh_id = backend.create_mesh3d_xyzuvrgba(
+        vertices, primitive_topology,
+      )
+      if mesh_id <= 0 {
+        @debug.debug(
+          "[renderer] create_mesh3d failed: parsed_values=" +
+          vertices.length().to_string() +
+          ", topology=" +
+          primitive_topology.to_string(),
         )
-        if mesh_id <= 0 {
-          @debug.debug(
-            "[renderer] create_mesh3d failed: parsed_values=" +
-            vertices.length().to_string() +
-            ", topology=" +
-            primitive_topology.to_string(),
-          )
-        }
-        return mesh_id
-      } catch {
-        err => debug_runtime_error("create_mesh3d", err)
       }
+      return mesh_id
     }
   } else {
     @debug.debug(

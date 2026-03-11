@@ -303,6 +303,14 @@ pub(all) enum AssetSourceId {
 }
 
 ///|
+pub(all) enum ParseAssetPathError {
+  InvalidSourceSyntax
+  InvalidLabelSyntax
+  MissingSource
+  MissingLabel
+}
+
+///|
 pub struct ParsedAssetPath {
   source : AssetSourceId
   path : String
@@ -370,42 +378,84 @@ fn string_find_substring(input : String, pattern : String) -> Int {
 }
 
 ///|
-pub fn asset_parse_path(path : String) -> ParsedAssetPath {
+fn asset_parse_path_error_message(error : ParseAssetPathError) -> String {
+  match error {
+    ParseAssetPathError::InvalidSourceSyntax =>
+      "asset source must not contain `#`"
+    ParseAssetPathError::InvalidLabelSyntax =>
+      "asset label must not contain `://`"
+    ParseAssetPathError::MissingSource =>
+      "asset source must contain at least one character before `://`"
+    ParseAssetPathError::MissingLabel =>
+      "asset label must contain at least one character after `#`"
+  }
+}
+
+///|
+pub fn asset_try_parse_path(
+  path : String,
+) -> Result[ParsedAssetPath, ParseAssetPathError] {
   let hash_index = string_last_index_of_char(path, 35)
+  let scheme_index = string_find_substring(path, "://")
+  if hash_index >= 0 && scheme_index > hash_index {
+    return Err(ParseAssetPathError::InvalidSourceSyntax)
+  }
   let (without_label, label) = if hash_index >= 0 {
-    let base = if hash_index > 0 {
-      (try! path[0:hash_index]).to_string()
-    } else {
-      ""
+    if hash_index + 1 >= path.length() {
+      return Err(ParseAssetPathError::MissingLabel)
     }
-    let parsed_label = if hash_index + 1 < path.length() {
-      Some((try! path[hash_index + 1:path.length()]).to_string())
-    } else {
-      None
+    let base = if hash_index > 0 { path[0:hash_index].to_string() } else { "" }
+    let parsed_label = path[hash_index + 1:path.length()].to_string()
+    if string_find_substring(parsed_label, "://") >= 0 {
+      return Err(ParseAssetPathError::InvalidLabelSyntax)
     }
-    (base, parsed_label)
+    (base, Some(parsed_label))
   } else {
     (path, None)
   }
-  let scheme_index = string_find_substring(without_label, "://")
-  if scheme_index > 0 {
-    let source_name = (try! without_label[0:scheme_index]).to_string()
-    let relative_path = if scheme_index + 3 < without_label.length() {
-      (try! without_label[scheme_index + 3:without_label.length()]).to_string()
+
+  if scheme_index == 0 {
+    return Err(ParseAssetPathError::MissingSource)
+  }
+
+  let source_scheme_index = string_find_substring(without_label, "://")
+  if source_scheme_index == 0 {
+    return Err(ParseAssetPathError::MissingSource)
+  }
+
+  if string_last_index_of_char(without_label, 35) >= 0 {
+    return Err(ParseAssetPathError::InvalidSourceSyntax)
+  }
+
+  if source_scheme_index > 0 {
+    let source_name = without_label[0:source_scheme_index].to_string()
+    let relative_path = if source_scheme_index + 3 < without_label.length() {
+      without_label[source_scheme_index + 3:without_label.length()].to_string()
     } else {
       ""
     }
-    ParsedAssetPath::{
+    Ok(ParsedAssetPath::{
       source: AssetSourceId::Named(source_name),
       path: relative_path,
       label,
-    }
+    })
   } else {
-    ParsedAssetPath::{
+    Ok(ParsedAssetPath::{
       source: AssetSourceId::Default,
       path: without_label,
       label,
-    }
+    })
+  }
+}
+
+///|
+pub fn asset_parse_path(path : String) -> ParsedAssetPath {
+  match asset_try_parse_path(path) {
+    Ok(parsed) => parsed
+    Err(error) =>
+      abort(
+        "invalid asset path syntax: " + asset_parse_path_error_message(error),
+      )
   }
 }
 

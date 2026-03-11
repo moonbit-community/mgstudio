@@ -40,7 +40,11 @@ fn float_from_int(value : Int) -> Float {
 }
 
 ///|
-fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
+fn uv_sphere_mesh(
+  radius : Float,
+  stacks : Int,
+  sectors : Int,
+) -> @engine_pbr.Mesh3d {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   let indices : Array[Int] = []
@@ -86,7 +90,7 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
     }
   }
 
-  @pbr.Mesh3d::from_geometry(
+  @engine_pbr.Mesh3d::from_geometry(
     @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
   )
 }
@@ -94,13 +98,13 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
 ///|
 fn spawn_mesh(
   world : @ecs.World,
-  mesh : @pbr.Mesh3d,
-  material : @asset.Handle[@pbr.StandardMaterial],
+  mesh : @engine_pbr.Mesh3d,
+  material : @asset.Handle[@engine_pbr.StandardMaterial],
   transform : @math.Transform,
 ) -> Unit {
-  @pbr.MeshMaterial3dBundle::new(
+  @engine_pbr.MeshMaterial3dBundle::new(
     mesh,
-    @pbr.MeshMaterial3d::new(material),
+    @engine_pbr.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
   |> ignore
@@ -120,13 +124,13 @@ fn setup(world : @ecs.World) -> Unit {
     for x in -5..<6 {
       let x01 = float_from_int(x + 5) / 10.0F
       let y01 = float_from_int(y + 2) / 4.0F
-      let material = @pbr.StandardMaterial::from_color(sphere_color)
+      let material = @engine_pbr.StandardMaterial::from_color(sphere_color)
         .with_metallic(y01)
         .with_perceptual_roughness(x01)
       spawn_mesh(
         world,
         sphere_mesh,
-        @pbr.standard_material_add(material),
+        @engine_pbr.standard_material_add(material),
         @math.Transform::from_xyz(
           float_from_int(x),
           float_from_int(y) + 0.5F,
@@ -136,8 +140,8 @@ fn setup(world : @ecs.World) -> Unit {
     }
   }
 
-  let unlit_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(sphere_color).with_unlit(true),
+  let unlit_material = @engine_pbr.standard_material_add(
+    @engine_pbr.StandardMaterial::from_color(sphere_color).with_unlit(true),
   )
   spawn_mesh(
     world,
@@ -148,10 +152,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   let directional = world.spawn_empty()
   world
-  .component(@pbr.ecs_key_directional_light)
+  .component(@engine_pbr.ecs_key_directional_light)
   .insert(
     directional,
-    @pbr.DirectionalLight::new(@sprite.Color::white(), 1_500.0F, false),
+    @engine_pbr.DirectionalLight::new(@sprite.Color::white(), 1_500.0F, false),
     tick,
   )
   world
@@ -225,23 +229,23 @@ fn setup(world : @ecs.World) -> Unit {
     .spawn()
   pbr_state.val.loading_label = Some(env_loading_label)
 
-  let orthographic = @pbr.OrthographicProjection3d::{
-    ..@pbr.OrthographicProjection3d::default_3d(),
+  let orthographic = @engine_pbr.OrthographicProjection3d::{
+    ..@engine_pbr.OrthographicProjection3d::default_3d(),
     scale: 0.01F,
   }
-  let camera = @pbr.Camera3dBundle::new_with_projection(
+  let camera = @engine_pbr.Camera3dBundle::new_with_projection(
     @sprite.Camera::default(),
-    @pbr.Projection::Orthographic(orthographic),
+    @engine_pbr.Projection::Orthographic(orthographic),
     @math.Transform::from_xyz(0.0F, 0.0F, 8.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
   world
-  .component(@pbr.ecs_key_environment_map_light)
+  .component(@engine_pbr.ecs_key_environment_map_light)
   .insert(
     camera,
-    @pbr.EnvironmentMapLight::new(
+    @engine_pbr.EnvironmentMapLight::new(
       Some(diffuse_env_map),
       Some(specular_env_map),
       900.0F,

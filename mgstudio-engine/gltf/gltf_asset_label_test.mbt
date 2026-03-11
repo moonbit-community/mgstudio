@@ -46,6 +46,9 @@ test "gltf asset label path encoding" {
   let animation_path = @gltf.GltfAssetLabel::Animation(2).from_asset(
     "models/Foo/Foo.gltf",
   )
+  let replaced_label_path = @gltf.GltfAssetLabel::Scene(1).from_asset(
+    "remote://models/Foo/Foo.gltf#Animation9",
+  )
   inspect(scene_path, content="models/Foo/Foo.gltf#Scene3")
   inspect(node_path, content="models/Foo/Foo.gltf#Node8")
   inspect(primitive_path, content="models/Foo/Foo.gltf#Mesh5/Primitive2")
@@ -63,6 +66,7 @@ test "gltf asset label path encoding" {
     content="models/Foo/Foo.gltf#Skin1/InverseBindMatrices",
   )
   inspect(animation_path, content="models/Foo/Foo.gltf#Animation2")
+  inspect(replaced_label_path, content="remote://models/Foo/Foo.gltf#Scene1")
 }
 
 ///|

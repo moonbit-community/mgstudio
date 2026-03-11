@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/core"
 
 import {
   "moonbitlang/core/json",
+  "moonbitlang/core/ref",
 }
 
 // Values
@@ -150,12 +151,12 @@ pub fn[T] Messages::send_batch(Self[T], Int, Array[T]) -> Unit
 pub fn[T] Messages::writer(Self[T], Int) -> MessageWriter[T]
 
 pub struct Resource[T] {
-  mut cell : Ref[T]?
+  mut cell : @ref.Ref[T]?
   ticks : ComponentTicks
 }
 pub fn[T] Resource::get(Self[T]) -> T?
-pub fn[T] Resource::get_ref(Self[T]) -> Ref[T]?
-pub fn[T] Resource::get_ref_mut(Self[T], Int) -> Ref[T]?
+pub fn[T] Resource::get_ref(Self[T]) -> @ref.Ref[T]?
+pub fn[T] Resource::get_ref_mut(Self[T], Int) -> @ref.Ref[T]?
 pub fn[T] Resource::insert(Self[T], T, Int) -> Unit
 pub fn[T] Resource::is_present(Self[T]) -> Bool
 pub fn[T] Resource::new() -> Self[T]

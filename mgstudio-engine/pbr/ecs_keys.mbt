@@ -51,9 +51,7 @@ pub let ecs_key_exposure : @ecs.ComponentKey[Exposure] = @ecs.register_component
 pub let ecs_key_vignette : @ecs.ComponentKey[Vignette] = @post_process.ecs_key_vignette
 
 ///|
-pub let ecs_key_spot_light : @ecs.ComponentKey[SpotLight] = @ecs.register_component(
-  debug_name="render3d.spot_light",
-)
+pub let ecs_key_spot_light : @ecs.ComponentKey[SpotLight] = @light.ecs_key_spot_light
 
 ///|
 pub let ecs_key_wireframe : @ecs.ComponentKey[Wireframe] = @ecs.register_component(
@@ -66,17 +64,13 @@ pub let ecs_key_free_camera : @ecs.ComponentKey[FreeCamera] = @ecs.register_comp
 )
 
 ///|
-pub let ecs_key_light_probe : @ecs.ComponentKey[LightProbe] = @ecs.register_component(
-  debug_name="render3d.light_probe",
-)
+pub let ecs_key_light_probe : @ecs.ComponentKey[LightProbe] = @light.ecs_key_light_probe
 
 ///|
 pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur] = @post_process.ecs_key_motion_blur
 
 ///|
-pub let ecs_key_point_light : @ecs.ComponentKey[PointLight] = @ecs.register_component(
-  debug_name="render3d.point_light",
-)
+pub let ecs_key_point_light : @ecs.ComponentKey[PointLight] = @light.ecs_key_point_light
 
 ///|
 pub let ecs_key_no_wireframe : @ecs.ComponentKey[NoWireframe] = @ecs.register_component(
@@ -140,14 +134,10 @@ pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @ecs.re
 )
 
 ///|
-pub let ecs_key_directional_light : @ecs.ComponentKey[DirectionalLight] = @ecs.register_component(
-  debug_name="render3d.directional_light",
-)
+pub let ecs_key_directional_light : @ecs.ComponentKey[DirectionalLight] = @light.ecs_key_directional_light
 
 ///|
-pub let ecs_key_irradiance_volume : @ecs.ComponentKey[IrradianceVolume] = @ecs.register_component(
-  debug_name="render3d.irradiance_volume",
-)
+pub let ecs_key_irradiance_volume : @ecs.ComponentKey[IrradianceVolume] = @light.ecs_key_irradiance_volume
 
 ///|
 pub let ecs_key_occlusion_culling : @ecs.ComponentKey[OcclusionCulling] = @ecs.register_component(
@@ -155,9 +145,7 @@ pub let ecs_key_occlusion_culling : @ecs.ComponentKey[OcclusionCulling] = @ecs.r
 )
 
 ///|
-pub let ecs_key_spot_light_texture : @ecs.ComponentKey[SpotLightTexture] = @ecs.register_component(
-  debug_name="render3d.spot_light_texture",
-)
+pub let ecs_key_spot_light_texture : @ecs.ComponentKey[SpotLightTexture] = @light.ecs_key_spot_light_texture
 
 ///|
 pub let ecs_key_not_shadow_receiver : @ecs.ComponentKey[NotShadowReceiver] = @ecs.register_component(
@@ -165,9 +153,7 @@ pub let ecs_key_not_shadow_receiver : @ecs.ComponentKey[NotShadowReceiver] = @ec
 )
 
 ///|
-pub let ecs_key_point_light_texture : @ecs.ComponentKey[PointLightTexture] = @ecs.register_component(
-  debug_name="render3d.point_light_texture",
-)
+pub let ecs_key_point_light_texture : @ecs.ComponentKey[PointLightTexture] = @light.ecs_key_point_light_texture
 
 ///|
 pub let ecs_key_projection : @ecs.ComponentKey[Projection] = @ecs.register_component(
@@ -180,17 +166,13 @@ pub let ecs_key_frustum : @ecs.ComponentKey[Frustum] = @ecs.register_component(
 )
 
 ///|
-pub let ecs_key_parallax_correction : @ecs.ComponentKey[ParallaxCorrection] = @ecs.register_component(
-  debug_name="render3d.parallax_correction",
-)
+pub let ecs_key_parallax_correction : @ecs.ComponentKey[ParallaxCorrection] = @light.ecs_key_parallax_correction
 
 ///|
 pub let ecs_key_chromatic_aberration : @ecs.ComponentKey[ChromaticAberration] = @post_process.ecs_key_chromatic_aberration
 
 ///|
-pub let ecs_key_environment_map_light : @ecs.ComponentKey[EnvironmentMapLight] = @ecs.register_component(
-  debug_name="render3d.environment_map_light",
-)
+pub let ecs_key_environment_map_light : @ecs.ComponentKey[EnvironmentMapLight] = @light.ecs_key_environment_map_light
 
 ///|
 pub let ecs_key_motion_vector_prepass : @ecs.ComponentKey[MotionVectorPrepass] = @core_pipeline.ecs_key_motion_vector_prepass
@@ -211,7 +193,7 @@ pub let ecs_key_screen_space_reflections : @ecs.ComponentKey[
 ///|
 pub let ecs_key_directional_light_texture : @ecs.ComponentKey[
   DirectionalLightTexture,
-] = @ecs.register_component(debug_name="render3d.directional_light_texture")
+] = @light.ecs_key_directional_light_texture
 
 ///|
 pub let ecs_key_forward_decal_material_ext : @ecs.ComponentKey[
@@ -236,9 +218,7 @@ pub let ecs_key_screen_space_ambient_occlusion : @ecs.ComponentKey[
 ///|
 pub let ecs_key_generated_environment_map_light : @ecs.ComponentKey[
   GeneratedEnvironmentMapLight,
-] = @ecs.register_component(
-  debug_name="render3d.generated_environment_map_light",
-)
+] = @light.ecs_key_generated_environment_map_light
 
 ///|
 pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[
@@ -268,11 +248,6 @@ pub impl @ecs.Component for Exposure with component() {
 }
 
 ///|
-pub impl @ecs.Component for SpotLight with component() {
-  ecs_key_spot_light
-}
-
-///|
 pub impl @ecs.Component for Wireframe with component() {
   ecs_key_wireframe
 }
@@ -280,16 +255,6 @@ pub impl @ecs.Component for Wireframe with component() {
 ///|
 pub impl @ecs.Component for FreeCamera with component() {
   ecs_key_free_camera
-}
-
-///|
-pub impl @ecs.Component for LightProbe with component() {
-  ecs_key_light_probe
-}
-
-///|
-pub impl @ecs.Component for PointLight with component() {
-  ecs_key_point_light
 }
 
 ///|
@@ -333,33 +298,13 @@ pub impl @ecs.Component for SubCameraView3d with component() {
 }
 
 ///|
-pub impl @ecs.Component for DirectionalLight with component() {
-  ecs_key_directional_light
-}
-
-///|
-pub impl @ecs.Component for IrradianceVolume with component() {
-  ecs_key_irradiance_volume
-}
-
-///|
 pub impl @ecs.Component for OcclusionCulling with component() {
   ecs_key_occlusion_culling
 }
 
 ///|
-pub impl @ecs.Component for SpotLightTexture with component() {
-  ecs_key_spot_light_texture
-}
-
-///|
 pub impl @ecs.Component for NotShadowReceiver with component() {
   ecs_key_not_shadow_receiver
-}
-
-///|
-pub impl @ecs.Component for PointLightTexture with component() {
-  ecs_key_point_light_texture
 }
 
 ///|
@@ -373,33 +318,13 @@ pub impl @ecs.Component for Frustum with component() {
 }
 
 ///|
-pub impl @ecs.Component for ParallaxCorrection with component() {
-  ecs_key_parallax_correction
-}
-
-///|
-pub impl @ecs.Component for EnvironmentMapLight with component() {
-  ecs_key_environment_map_light
-}
-
-///|
 pub impl @ecs.Component for ShadowFilteringMethod with component() {
   ecs_key_shadow_filtering_method
 }
 
 ///|
-pub impl @ecs.Component for DirectionalLightTexture with component() {
-  ecs_key_directional_light_texture
-}
-
-///|
 pub impl @ecs.Component for TransmittedShadowReceiver with component() {
   ecs_key_transmitted_shadow_receiver
-}
-
-///|
-pub impl @ecs.Component for GeneratedEnvironmentMapLight with component() {
-  ecs_key_generated_environment_map_light
 }
 
 ///|
@@ -413,19 +338,15 @@ pub let ecs_key_wireframe_config : @ecs.ResourceKey[WireframeConfig] = @ecs.regi
 )
 
 ///|
-pub let ecs_key_global_ambient_light : @ecs.ResourceKey[GlobalAmbientLight] = @ecs.register_resource(
-  debug_name="render3d.global_ambient_light",
-)
+pub let ecs_key_global_ambient_light : @ecs.ResourceKey[GlobalAmbientLight] = @light.ecs_key_global_ambient_light
 
 ///|
-pub let ecs_key_point_light_shadow_map : @ecs.ResourceKey[PointLightShadowMap] = @ecs.register_resource(
-  debug_name="render3d.point_light_shadow_map",
-)
+pub let ecs_key_point_light_shadow_map : @ecs.ResourceKey[PointLightShadowMap] = @light.ecs_key_point_light_shadow_map
 
 ///|
 pub let ecs_key_directional_light_shadow_map : @ecs.ResourceKey[
   DirectionalLightShadowMap,
-] = @ecs.register_resource(debug_name="render3d.directional_light_shadow_map")
+] = @light.ecs_key_directional_light_shadow_map
 
 ///|
 pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[

@@ -2,24 +2,24 @@
 package "Milky2018/mgstudio/ptr"
 
 import {
-  "moonbitlang/core/builtin",
+  "moonbitlang/core/ref",
 }
 
 // Values
-pub fn[T] ptr(T) -> Ref[T]
+pub fn[T] ptr(T) -> @ref.Ref[T]
 
-pub fn[T] read(Ref[T]) -> T
+pub fn[T] read(@ref.Ref[T]) -> T
 
-pub fn[T] write(Ref[T], T) -> Unit
+pub fn[T] write(@ref.Ref[T], T) -> Unit
 
 // Errors
 
 // Types and methods
 
 // Type aliases
-pub using @builtin {type Ref as Ptr}
+pub using @ref {type Ref as Ptr}
 
-pub using @builtin {type Ref as PtrMut}
+pub using @ref {type Ref as PtrMut}
 
 // Traits
 

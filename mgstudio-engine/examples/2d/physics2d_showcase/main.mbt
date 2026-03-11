@@ -539,7 +539,8 @@ fn physics2d_showcase_spawn_ball_on_click(world : @ecs.World) -> Unit {
     return
   }
   guard @input.mouse_position() is Some(screen_pos) else { return }
-  guard @sprite.render2d_viewport_to_world_2d(world, screen_pos) is Some(p) else {
+  guard @sprite_render.render2d_viewport_to_world_2d(world, screen_pos)
+    is Some(p) else {
     return
   }
   let tick = world.read_change_tick()

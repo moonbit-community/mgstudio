@@ -8,12 +8,15 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/window",
   "moonbitlang/core/json",
+  "moonbitlang/core/ref",
 }
 
 // Values
 pub const AXIS_MAX : Float = 1.0
 
 pub const AXIS_MIN : Float = -1.
+
+pub const INPUT_PLUGIN_ID : String = "bevy_input::InputPlugin"
 
 pub let ecs_key_gamepad : @ecs.ComponentKey[Gamepad]
 
@@ -38,6 +41,8 @@ pub fn input_gamepad_finish_frame() -> Unit
 pub fn input_gamepad_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn input_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn input_plugin_with(@app.App[@ecs.World], InputPlugin) -> @app.App[@ecs.World]
 
 pub fn input_poll_drag_and_drop_system(@ecs.World) -> Unit
 
@@ -459,6 +464,11 @@ pub impl @ecs.Component for GamepadSettings
 pub impl Default for GamepadSettings
 pub impl ToJson for GamepadSettings
 pub impl @json.FromJson for GamepadSettings
+
+pub(all) struct InputPlugin {
+}
+pub fn InputPlugin::default() -> Self
+pub impl @app.PluginReplacement for InputPlugin
 
 pub(all) enum Key {
   Character(String)

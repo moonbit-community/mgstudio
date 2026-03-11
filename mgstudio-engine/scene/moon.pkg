@@ -10,7 +10,6 @@ import {
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
@@ -21,4 +20,5 @@ import {
 
 import {
   "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/sprite_render",
 } for "test"

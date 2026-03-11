@@ -27,6 +27,8 @@ pub let ecs_key_cursor_options : @ecs.ComponentKey[CursorOptions]
 
 pub let ecs_key_primary_window : @ecs.ComponentKey[PrimaryWindow]
 
+pub let ecs_key_request_redraw : @ecs.MessageKey[RequestRedraw]
+
 pub let ecs_key_screenshot : @ecs.ComponentKey[Screenshot]
 
 pub let ecs_key_screenshot_captured : @ecs.ComponentKey[ScreenshotCaptured]
@@ -43,11 +45,15 @@ pub let ecs_key_window_closing : @ecs.MessageKey[WindowClosing]
 
 pub let ecs_key_window_created : @ecs.MessageKey[WindowCreated]
 
+pub let ecs_key_window_destroyed : @ecs.MessageKey[WindowDestroyed]
+
 pub let ecs_key_window_focused : @ecs.MessageKey[WindowFocused]
 
 pub let ecs_key_window_moved : @ecs.MessageKey[WindowMoved]
 
 pub let ecs_key_window_resized : @ecs.MessageKey[WindowResized]
+
+pub let ecs_key_window_scale_factor_changed : @ecs.MessageKey[WindowScaleFactorChanged]
 
 pub fn exit_on_all_closed(@ecs.MessageWriter[@app.AppExit], @ecs.EntityQuery[@ecs.With[Window]]) -> Unit
 
@@ -288,6 +294,11 @@ pub impl @ecs.Component for PrimaryWindow
 pub impl Eq for PrimaryWindow
 pub impl Show for PrimaryWindow
 
+pub(all) struct RequestRedraw {
+}
+pub impl @ecs.Message for RequestRedraw
+pub impl Eq for RequestRedraw
+
 pub struct Screenshot {
   target : ScreenshotTarget
 }
@@ -387,6 +398,12 @@ pub(all) struct WindowCreated {
 pub impl @ecs.Message for WindowCreated
 pub impl Eq for WindowCreated
 
+pub(all) struct WindowDestroyed {
+  window : @core.Entity
+}
+pub impl @ecs.Message for WindowDestroyed
+pub impl Eq for WindowDestroyed
+
 pub(all) struct WindowFocused {
   window : @core.Entity
   focused : Bool
@@ -465,6 +482,13 @@ pub fn WindowResolution::width(Self) -> Float
 pub fn WindowResolution::with_scale_factor_override(Self, Float) -> Self
 pub impl Eq for WindowResolution
 pub impl Show for WindowResolution
+
+pub(all) struct WindowScaleFactorChanged {
+  window : @core.Entity
+  scale_factor : Float
+}
+pub impl @ecs.Message for WindowScaleFactorChanged
+pub impl Eq for WindowScaleFactorChanged
 
 // Type aliases
 pub type HostWindow = Int

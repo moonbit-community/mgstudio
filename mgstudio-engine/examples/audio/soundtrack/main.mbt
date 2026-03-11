@@ -99,16 +99,6 @@ impl @app.Resource for TrackChangePending with resource() {
 }
 
 ///|
-impl @ecs.Component for FadeIn with component() {
-  fade_in_component_key
-}
-
-///|
-impl @ecs.Component for FadeOut with component() {
-  fade_out_component_key
-}
-
-///|
 fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())

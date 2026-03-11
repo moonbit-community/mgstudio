@@ -9,6 +9,7 @@ import {
   "Milky2018/mgstudio/shader",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
+  "moonbitlang/core/ref",
 }
 
 // Values
@@ -32,9 +33,9 @@ pub fn asset_add_texture_atlas_layout(TextureAtlasLayout) -> Handle[TextureAtlas
 
 pub fn[T] asset_assets_or_abort() -> Assets[T]
 
-pub fn[T] asset_assets_ref_mut_or_abort() -> Ref[Assets[T]]
+pub fn[T] asset_assets_ref_mut_or_abort() -> @ref.Ref[Assets[T]]
 
-pub fn[T] asset_assets_ref_or_abort() -> Ref[Assets[T]]
+pub fn[T] asset_assets_ref_or_abort() -> @ref.Ref[Assets[T]]
 
 pub fn asset_blob_read_bytes(Handle[Blob]) -> Bytes?
 
@@ -98,9 +99,9 @@ pub fn asset_remove_loader_extension(String) -> Unit
 
 pub fn[T : @app.Resource] asset_resource_or_abort() -> T
 
-pub fn[T : @app.Resource] asset_resource_ref_mut_or_abort() -> Ref[T]
+pub fn[T : @app.Resource] asset_resource_ref_mut_or_abort() -> @ref.Ref[T]
 
-pub fn[T : @app.Resource] asset_resource_ref_or_abort() -> Ref[T]
+pub fn[T : @app.Resource] asset_resource_ref_or_abort() -> @ref.Ref[T]
 
 pub fn asset_save_texture_png(Handle[@image.Image], String) -> Unit
 
@@ -123,6 +124,8 @@ pub fn asset_texture_height(Handle[@image.Image]) -> Int
 pub fn asset_texture_width(Handle[@image.Image]) -> Int
 
 pub fn asset_transparent_texture() -> Handle[@image.Image]
+
+pub fn asset_try_parse_path(String) -> Result[ParsedAssetPath, ParseAssetPathError]
 
 pub fn asset_update_event_messages(@ecs.World) -> Unit
 
@@ -243,13 +246,13 @@ pub(all) enum AssetLoaderKind {
 }
 
 pub struct AssetServer {
-  paths : Ref[Array[String]]
-  image_paths : Ref[Array[(String, Handle[@image.Image])]]
-  image_loaded_states : Ref[@hashmap.HashMap[Int, Bool]]
-  image_array_layouts : Ref[Array[(Int, @image.ImageArrayLayout)]]
-  image_srgb_settings : Ref[Array[(Int, Bool)]]
-  image_usage_settings : Ref[Array[(Int, Int)]]
-  default_sampler_nearest : Ref[Bool]
+  paths : @ref.Ref[Array[String]]
+  image_paths : @ref.Ref[Array[(String, Handle[@image.Image])]]
+  image_loaded_states : @ref.Ref[@hashmap.HashMap[Int, Bool]]
+  image_array_layouts : @ref.Ref[Array[(Int, @image.ImageArrayLayout)]]
+  image_srgb_settings : @ref.Ref[Array[(Int, Bool)]]
+  image_usage_settings : @ref.Ref[Array[(Int, Int)]]
+  default_sampler_nearest : @ref.Ref[Bool]
 }
 pub fn AssetServer::get_handle(Self, String) -> Handle[@image.Image]?
 pub fn[T] AssetServer::load(Self, String) -> Handle[T]
@@ -328,6 +331,13 @@ pub fn ImageLoaderSettings::default() -> Self
 
 pub struct LoadedFolder {
   handles : Array[Handle[@image.Image]]
+}
+
+pub(all) enum ParseAssetPathError {
+  InvalidSourceSyntax
+  InvalidLabelSyntax
+  MissingSource
+  MissingLabel
 }
 
 pub struct ParsedAssetPath {

@@ -56,7 +56,7 @@ fn rotate_to_cursor_update(world : @ecs.World) -> Unit {
   }
 
   if @input.mouse_position() is Some(screen_pos) {
-    if @sprite.render2d_viewport_to_world_2d(world, screen_pos)
+    if @sprite_render.render2d_viewport_to_world_2d(world, screen_pos)
       is Some(world_pos) {
       guard (try! world.get(player, @math.ecs_key_transform)) is Some(transform) else {
         return

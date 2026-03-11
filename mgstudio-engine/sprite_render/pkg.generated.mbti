@@ -4,15 +4,16 @@ package "Milky2018/mgstudio/sprite_render"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/sprite",
 }
 
 // Values
-pub let camera_update_systems : String
-
 pub let ecs_key_color_material : @ecs.ComponentKey[@sprite.ColorMaterial]
 
 pub let ecs_key_gpu_mesh2d : @ecs.ComponentKey[@sprite.GpuMesh2d]
@@ -31,15 +32,35 @@ pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[@sprite.Wireframe2dConfig]
 
 pub fn[W, M] material2d_plugin(@sprite.Material2dPlugin[M]) -> (@app.App[W]) -> @app.App[W]
 
+pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, @sprite.Camera, @sprite.OrthographicProjection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
+
+pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, @sprite.Camera, @sprite.OrthographicProjection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
+
+pub fn render2d_clear_overlay_ui_box_shadows(@ecs.World) -> Unit
+
+pub fn render2d_clear_overlay_ui_rects(@ecs.World) -> Unit
+
+pub fn render2d_clear_overlay_ui_texture_slices(@ecs.World) -> Unit
+
 pub fn render2d_create_render_target(@ecs.World, Int, Int, Bool) -> @asset.Handle[@image.Image]
+
+pub fn render2d_create_render_target_ecs(Int, Int, Bool) -> @asset.Handle[@image.Image]
 
 pub fn render2d_diagnostic_prepared_camera_count() -> Int
 
 pub fn render2d_diagnostic_queued_draw_item_count() -> Int
 
-pub fn render2d_prepared_camera_count(@ecs.World) -> Int?
+pub fn render2d_draw_tilemap_chunk(@ecs.World, @sprite.TilemapChunk, @sprite.TilemapChunkTileData, @math.Transform, @sprite.RenderLayers) -> Unit
 
-pub fn render2d_queued_draw_item_count(@ecs.World) -> Int?
+pub fn render2d_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn render2d_push_sprite_uv_scissor_batch(@ecs.World, Array[@sprite.OverlaySpriteUvScissor]) -> Unit
+
+pub fn render2d_push_ui_box_shadow_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @math.Transform, @math.Vec2, @color.Color, @sprite.RenderLayers, @math.Rect?, @math.Vec2, @sprite.UiCornerRadii, Float, Int) -> Unit
+
+pub fn render2d_push_ui_rect_uv_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @math.Transform, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color, @sprite.RenderLayers, @math.Rect?, Int, @sprite.UiCornerRadii, @sprite.UiBorderRect) -> Unit
+
+pub fn render2d_push_ui_texture_slice_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @math.Transform, @math.Vec2, @color.Color, @sprite.RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
 
 pub let render2d_set_execute : String
 
@@ -51,27 +72,11 @@ pub let render2d_set_queue : String
 
 pub let render2d_set_render : String
 
+pub fn render2d_upload_mesh_handle(@asset.Handle[@mesh.Mesh]) -> Int
+
 pub fn render2d_viewport_to_world_2d(@ecs.World, @math.Vec2) -> @math.Vec2?
 
-pub fn render2d_world_to_viewport(@ecs.World, @math.Vec2) -> @math.Vec2?
-
-pub fn render_camera_system(@ecs.World) -> Unit
-
-pub fn render_camera_system_ecs(@ecs.World) -> Unit
-
-pub fn render_execute_system(@ecs.World) -> Unit
-
-pub fn render_extract_system(@ecs.World) -> Unit
-
-pub fn render_extract_system_ecs(@ecs.World) -> Unit
-
-pub fn render_prepare_system(@ecs.World) -> Unit
-
-pub fn render_queue_system(@ecs.World) -> Unit
-
 pub fn sprite_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
-
-pub fn sprite_render_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn wireframe2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -98,11 +103,17 @@ pub using @sprite {type MeshMaterial2d}
 
 pub using @sprite {type NoWireframe2d}
 
+pub using @sprite {type OverlaySpriteUvScissor}
+
 pub using @sprite {type TileData}
 
 pub using @sprite {type TilemapChunk}
 
 pub using @sprite {type TilemapChunkTileData}
+
+pub using @sprite {type UiBorderRect}
+
+pub using @sprite {type UiCornerRadii}
 
 pub using @sprite {type Wireframe2d}
 

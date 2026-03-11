@@ -24,11 +24,6 @@ let custom_text_key : @ecs.ComponentKey[CustomText] = @ecs.register_component(
 )
 
 ///|
-impl @ecs.Component for CustomText with component() {
-  custom_text_key
-}
-
-///|
 fn configured_window() -> @window.Window {
   let window = @window.Window::default()
   window.resolution = @window.WindowResolution::new(500, 300).with_scale_factor_override(

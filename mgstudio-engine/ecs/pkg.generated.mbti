@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/ecs"
 import {
   "Milky2018/mgstudio/core",
   "moonbitlang/core/json",
+  "moonbitlang/core/ref",
   "tonyfettes/any",
 }
 
@@ -124,14 +125,14 @@ pub fn[T] ComponentKey::debug_name(Self[T]) -> String
 pub fn[T] ComponentKey::id(Self[T]) -> Int
 
 pub struct ComponentMut[T] {
-  value_ref : Ref[T]
+  value_ref : @ref.Ref[T]
   ticks : @core.ComponentTicks
   system : @core.SystemTicks
   mut changed : Bool
   writeback : ComponentMutWriteback[T]?
 }
 pub fn[T] ComponentMut::get(Self[T]) -> T
-pub fn[T] ComponentMut::get_ref(Self[T]) -> Ref[T]
+pub fn[T] ComponentMut::get_ref(Self[T]) -> @ref.Ref[T]
 pub fn[T] ComponentMut::is_added(Self[T]) -> Bool
 pub fn[T] ComponentMut::is_changed(Self[T]) -> Bool
 pub fn[T] ComponentMut::set_changed(Self[T]) -> Unit
@@ -184,7 +185,7 @@ pub fn[T] MessageCursor::is_empty(Self[T], Messages[T]) -> Bool
 pub fn[T] MessageCursor::len(Self[T], Messages[T]) -> Int
 pub fn[T] MessageCursor::missed_messages(Self[T], Messages[T]) -> Int
 pub fn[T : Message] MessageCursor::read(Self[T], Messages[T]) -> Array[T] raise EcsError
-pub fn[T : Message] MessageCursor::read_mut(Self[T], Messages[T]) -> Array[Ref[T]] raise EcsError
+pub fn[T : Message] MessageCursor::read_mut(Self[T], Messages[T]) -> Array[@ref.Ref[T]] raise EcsError
 pub impl[T] Default for MessageCursor[T]
 pub impl[T] ToJson for MessageCursor[T]
 pub impl[T] @json.FromJson for MessageCursor[T]
@@ -200,13 +201,13 @@ pub fn[T] MessageKey::messages_resource(Self[T]) -> ResourceKey[Messages[T]]
 pub struct MessageMutator[T] {
   world : World
   key : MessageKey[T]
-  cursor_ref : Ref[Int]
+  cursor_ref : @ref.Ref[Int]
 }
 pub fn[T] MessageMutator::clear(Self[T]) -> Unit
 pub fn[T] MessageMutator::cursor(Self[T]) -> Int
 pub fn[T] MessageMutator::is_empty(Self[T]) -> Bool
 pub fn[T] MessageMutator::len(Self[T]) -> Int
-pub fn[T] MessageMutator::read(Self[T]) -> Array[Ref[T]] raise EcsError
+pub fn[T] MessageMutator::read(Self[T]) -> Array[@ref.Ref[T]] raise EcsError
 
 pub struct MessageQueueState {
   mut messages_a_start : Int
@@ -226,7 +227,7 @@ pub fn MessageQueueState::write_batch(Self, Array[ErasedValue]) -> Unit
 pub struct MessageReader[T] {
   world : World
   key : MessageKey[T]
-  cursor_ref : Ref[Int]
+  cursor_ref : @ref.Ref[Int]
 }
 pub fn[T] MessageReader::clear(Self[T]) -> Unit
 pub fn[T] MessageReader::cursor(Self[T]) -> Int
@@ -552,10 +553,10 @@ pub struct World {
   entities : @core.Entities
   mut change_tick : Int
   mut system_context : @core.SystemContext
-  component_columns : Map[Int, Ref[@core.ComponentStore[ErasedValue]]]
-  required_components : Map[Int, Ref[RequiredComponentsState]]
+  component_columns : Map[Int, @ref.Ref[@core.ComponentStore[ErasedValue]]]
+  required_components : Map[Int, @ref.Ref[RequiredComponentsState]]
   used_components : Map[Int, Bool]
-  removed_components : Map[Int, Ref[@core.Messages[@core.Entity]]]
+  removed_components : Map[Int, @ref.Ref[@core.Messages[@core.Entity]]]
   resources : Map[Int, ResourceSlot]
   mut previous_events : Map[Int, Array[ErasedValue]]
   current_events : Map[Int, Array[ErasedValue]]
@@ -577,8 +578,8 @@ pub fn[A] World::get_ref(Self, @core.Entity, ComponentKey[A]) -> ComponentRef[A]
 pub fn[T] World::get_required_components(Self, ComponentKey[T]) -> RequiredComponents?
 pub fn World::get_required_components_by_id(Self, Int) -> RequiredComponents?
 pub fn[T] World::get_resource(Self, ResourceKey[T]) -> T? raise EcsError
-pub fn[T] World::get_resource_ref(Self, ResourceKey[T]) -> Ref[T]? raise EcsError
-pub fn[T] World::get_resource_ref_mut(Self, ResourceKey[T], Int) -> Ref[T]? raise EcsError
+pub fn[T] World::get_resource_ref(Self, ResourceKey[T]) -> @ref.Ref[T]? raise EcsError
+pub fn[T] World::get_resource_ref_mut(Self, ResourceKey[T], Int) -> @ref.Ref[T]? raise EcsError
 pub fn[T] World::get_resource_ticks(Self, ResourceKey[T]) -> @core.ComponentTicks?
 pub fn World::get_system_context(Self) -> @core.SystemContext
 pub fn World::increment_change_tick(Self) -> Int
@@ -586,8 +587,8 @@ pub fn[T] World::init_message(Self, MessageKey[T]) -> Unit
 pub fn[T] World::insert_resource(Self, ResourceKey[T], T) -> Unit
 pub fn[T] World::insert_resource_with_change_tick(Self, ResourceKey[T], T, Int) -> Unit
 pub fn World::is_alive(Self, @core.Entity) -> Bool
-pub fn[T] World::message_mutator(Self, MessageKey[T], Ref[Int]) -> MessageMutator[T]
-pub fn[T] World::message_reader(Self, MessageKey[T], Ref[Int]) -> MessageReader[T]
+pub fn[T] World::message_mutator(Self, MessageKey[T], @ref.Ref[Int]) -> MessageMutator[T]
+pub fn[T] World::message_reader(Self, MessageKey[T], @ref.Ref[Int]) -> MessageReader[T]
 pub fn[T] World::message_writer(Self, MessageKey[T]) -> MessageWriter[T]
 pub fn World::new() -> Self
 pub fn[A] World::query1(Self, ComponentKey[A]) -> Query1[A]

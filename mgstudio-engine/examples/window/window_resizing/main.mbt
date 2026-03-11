@@ -24,11 +24,6 @@ let resolution_text_key : @ecs.ComponentKey[ResolutionText] = @ecs.register_comp
 )
 
 ///|
-impl @ecs.Component for ResolutionText with component() {
-  resolution_text_key
-}
-
-///|
 struct ResolutionSettings {
   small : @math.Vec2
   medium : @math.Vec2

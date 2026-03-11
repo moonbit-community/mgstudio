@@ -678,26 +678,6 @@ fn atan2f(y : Float, x : Float) -> Float {
 }
 
 ///|
-fn absf(x : Float) -> Float {
-  if x < 0.0F {
-    -x
-  } else {
-    x
-  }
-}
-
-///|
-fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {
-  if value < min_value {
-    min_value
-  } else if value > max_value {
-    max_value
-  } else {
-    value
-  }
-}
-
-///|
 fn quat_to_z_rotation(x : Float, y : Float, z : Float, w : Float) -> Float {
   let siny_cosp = 2.0F * (w * z + x * y)
   let cosy_cosp = 1.0F - 2.0F * (y * y + z * z)
@@ -1114,13 +1094,13 @@ fn normalize_shader_rel_path(rel : String) -> String {
     i = i + 1
   }
   if i != 0 {
-    text = (try! text[i:n]).to_string()
+    text = text[i:n].to_string()
   }
-  while text.length() >= 2 && (try! text[:2].to_string()) == "./" {
-    text = try! text[2:text.length()].to_string()
+  while text.length() >= 2 && text[:2].to_string() == "./" {
+    text = text[2:text.length()].to_string()
   }
-  if text.length() >= 7 && (try! text[:7].to_string()) == "assets/" {
-    text = try! text[7:text.length()].to_string()
+  if text.length() >= 7 && text[:7].to_string() == "assets/" {
+    text = text[7:text.length()].to_string()
   }
   text
 }
@@ -1136,7 +1116,7 @@ fn starts_with_text(text : String, prefix : String) -> Bool {
   if text.length() < p {
     return false
   }
-  try! (text[:p].to_string() == prefix)
+  text[:p].to_string() == prefix
 }
 
 ///|
@@ -1148,7 +1128,7 @@ fn trim_trailing_semicolons(text : String) -> String {
   if end == text.length() {
     text
   } else {
-    try! text[:end].to_string()
+    text[:end].to_string()
   }
 }
 
@@ -1199,14 +1179,14 @@ fn split_top_level_wgsl_import_items(text : String) -> Array[String] {
       continue
     }
     if ch == 44 && depth == 0 { // ','
-      let item = try! text[start:i].to_string().trim().to_string()
+      let item = text[start:i].to_string().trim().to_string()
       if item != "" {
         items.push(trim_trailing_semicolons(item))
       }
       start = i + 1
     }
   }
-  let tail = try! text[start:text.length()].to_string().trim().to_string()
+  let tail = text[start:text.length()].to_string().trim().to_string()
   if tail != "" {
     items.push(trim_trailing_semicolons(tail))
   }
@@ -1256,7 +1236,7 @@ fn extract_wgsl_group_body(text : String, open_brace_index : Int) -> String {
     if ch == 125 { // '}'
       depth = depth - 1
       if depth == 0 {
-        return try! text[body_start:i].to_string()
+        return text[body_start:i].to_string()
       }
     }
   }
@@ -1275,10 +1255,7 @@ fn collect_wgsl_import_targets(
   }
   let group_separator = find_top_level_wgsl_group_separator(text)
   if group_separator >= 0 {
-    let group_prefix = try! text[:group_separator]
-      .to_string()
-      .trim()
-      .to_string()
+    let group_prefix = text[:group_separator].to_string().trim().to_string()
     let body = extract_wgsl_group_body(text, group_separator + 2)
     let next_prefix = join_wgsl_import_prefix(prefix, group_prefix)
     for item in split_top_level_wgsl_import_items(body) {
@@ -1389,7 +1366,7 @@ fn apply_wgsl_ifdefs(
     let line = line_item.to_string()
     let trimmed = line.trim().to_string()
     if starts_with_text(trimmed, "#ifdef ") {
-      let name = try! trimmed[7:trimmed.length()].to_string().trim().to_string()
+      let name = trimmed[7:trimmed.length()].to_string().trim().to_string()
       let cond = defines.get(name).unwrap_or(false)
       let parent = active_stack[active_stack.length() - 1]
       active_stack.push(parent && cond)
@@ -1397,7 +1374,7 @@ fn apply_wgsl_ifdefs(
       continue
     }
     if starts_with_text(trimmed, "#ifndef ") {
-      let name = try! trimmed[8:trimmed.length()].to_string().trim().to_string()
+      let name = trimmed[8:trimmed.length()].to_string().trim().to_string()
       let cond = !defines.get(name).unwrap_or(false)
       let parent = active_stack[active_stack.length() - 1]
       active_stack.push(parent && cond)
@@ -1407,10 +1384,7 @@ fn apply_wgsl_ifdefs(
     if starts_with_text(trimmed, "#else ifdef ") {
       if branch_taken_stack.length() > 0 {
         let idx = branch_taken_stack.length() - 1
-        let name = try! trimmed[13:trimmed.length()]
-          .to_string()
-          .trim()
-          .to_string()
+        let name = trimmed[13:trimmed.length()].to_string().trim().to_string()
         let cond = !branch_taken_stack[idx] &&
           defines.get(name).unwrap_or(false)
         let parent = if active_stack.length() >= 2 {
@@ -1426,10 +1400,7 @@ fn apply_wgsl_ifdefs(
     if starts_with_text(trimmed, "#else ifndef ") {
       if branch_taken_stack.length() > 0 {
         let idx = branch_taken_stack.length() - 1
-        let name = try! trimmed[14:trimmed.length()]
-          .to_string()
-          .trim()
-          .to_string()
+        let name = trimmed[14:trimmed.length()].to_string().trim().to_string()
         let cond = !branch_taken_stack[idx] &&
           !defines.get(name).unwrap_or(false)
         let parent = if active_stack.length() >= 2 {
@@ -1494,7 +1465,7 @@ fn preprocess_wgsl_source(
       continue
     }
     if starts_with_text(trimmed, "#import ") {
-      let mut spec = try! trimmed[8:trimmed.length()].to_string()
+      let mut spec = trimmed[8:trimmed.length()].to_string()
       let mut brace_balance = wgsl_import_brace_balance(spec)
       while brace_balance > 0 && line_index + 1 < lines.length() {
         line_index = line_index + 1

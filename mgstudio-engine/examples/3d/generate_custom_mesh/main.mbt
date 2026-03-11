@@ -195,7 +195,9 @@ fn input_handler(world : @ecs.World) -> Unit {
     let next_upper_uv = !custom_mesh_state.val.upper_uv
     custom_mesh_state.val.upper_uv = next_upper_uv
     let next_mesh = create_cube_mesh(next_upper_uv)
-    let next_mesh_id = @sprite.render2d_upload_mesh_handle(next_mesh.mesh)
+    let next_mesh_id = @sprite_render.render2d_upload_mesh_handle(
+      next_mesh.mesh,
+    )
     world.component(@pbr.ecs_key_mesh3d).set(mesh_entity, next_mesh, tick)
     |> ignore
     world

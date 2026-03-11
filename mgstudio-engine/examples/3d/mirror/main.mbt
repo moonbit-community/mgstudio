@@ -304,7 +304,7 @@ fn setup(world : @ecs.World) -> Unit {
   } else {
     1024
   }
-  let mirror_target = @sprite.render2d_create_render_target(
+  let mirror_target = @sprite_render.render2d_create_render_target(
     world, target_width, target_height, true,
   )
   mirror_state.val.mirror_target_size = @math.IVec2::new(
@@ -573,7 +573,7 @@ fn handle_window_resize_messages(world : @ecs.World) -> Unit {
     return
   }
 
-  let mirror_target = @sprite.render2d_create_render_target(
+  let mirror_target = @sprite_render.render2d_create_render_target(
     world, width, height, true,
   )
   mirror_state.val.mirror_target_size = size

@@ -13,6 +13,7 @@ import {
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
   "moonbitlang/core/json",
+  "moonbitlang/core/ref",
 }
 
 // Values

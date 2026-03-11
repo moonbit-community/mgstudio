@@ -62,6 +62,12 @@ fn read_window_created(world : @ecs.World) -> Array[WindowCreated] {
 }
 
 ///|
+fn read_window_destroyed(world : @ecs.World) -> Array[WindowDestroyed] {
+  let reader = world.message_reader(ecs_key_window_destroyed, Ref::new(0))
+  try! reader.read()
+}
+
+///|
 test "window: plugin spawns configured primary window entity and messages" {
   let configured_window = Window::default()
   configured_window.title = "Configured Window"
@@ -83,13 +89,22 @@ test "window: plugin spawns configured primary window entity and messages" {
   }).run_once()
 
   inspect(app.world().contains_message(ecs_key_window_created), content="true")
+  inspect(app.world().contains_message(ecs_key_request_redraw), content="true")
   inspect(
     app.world().contains_message(ecs_key_window_close_requested),
     content="true",
   )
   inspect(app.world().contains_message(ecs_key_window_closing), content="true")
   inspect(app.world().contains_message(ecs_key_window_closed), content="true")
+  inspect(
+    app.world().contains_message(ecs_key_window_destroyed),
+    content="true",
+  )
   inspect(app.world().contains_message(ecs_key_window_moved), content="true")
+  inspect(
+    app.world().contains_message(ecs_key_window_scale_factor_changed),
+    content="true",
+  )
   inspect(
     app.world().contains_message(ecs_key_window_backend_scale_factor_changed),
     content="true",
@@ -348,6 +363,7 @@ test "window: close_when_requested marks then despawns windows across updates" {
     .add_message(ecs_key_window_close_requested)
     .add_message(ecs_key_window_closing)
     .add_message(ecs_key_window_closed)
+    .add_message(ecs_key_window_destroyed)
     .add_systems(
       @app.Update,
       @app.system(@app.system_param2(close_when_requested)),
@@ -367,6 +383,7 @@ test "window: close_when_requested marks then despawns windows across updates" {
 
   app = app.run_once()
   inspect(app.world().is_alive(entity), content="false")
+  inspect(read_window_destroyed(app.world()).length(), content="1")
 }
 
 ///|
