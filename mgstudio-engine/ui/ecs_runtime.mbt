@@ -108,11 +108,6 @@ pub let ecs_key_interaction : @ecs.ComponentKey[Interaction] = @ecs.register_com
 )
 
 ///|
-pub let ecs_key_ui_anti_alias : @ecs.ComponentKey[UiAntiAlias] = @ecs.register_component(
-  debug_name="ui.ui_anti_alias",
-)
-
-///|
 pub let ecs_key_border_radius : @ecs.ComponentKey[BorderRadius] = @ecs.register_component(
   debug_name="ui.border_radius",
 )
@@ -150,11 +145,6 @@ pub let ecs_key_background_color : @ecs.ComponentKey[BackgroundColor] = @ecs.reg
 ///|
 pub let ecs_key_accessibility_label : @ecs.ComponentKey[AccessibilityLabel] = @ecs.register_component(
   debug_name="ui.accessibility_label",
-)
-
-///|
-pub let ecs_key_ui_box_shadow_samples : @ecs.ComponentKey[UiBoxShadowSamples] = @ecs.register_component(
-  debug_name="ui.ui_box_shadow_samples",
 )
 
 ///|
@@ -258,11 +248,6 @@ pub impl @ecs.Component for Interaction with component() {
 }
 
 ///|
-pub impl @ecs.Component for UiAntiAlias with component() {
-  ecs_key_ui_anti_alias
-}
-
-///|
 pub impl @ecs.Component for BorderRadius with component() {
   ecs_key_border_radius
 }
@@ -300,11 +285,6 @@ pub impl @ecs.Component for BackgroundColor with component() {
 ///|
 pub impl @ecs.Component for AccessibilityLabel with component() {
   ecs_key_accessibility_label
-}
-
-///|
-pub impl @ecs.Component for UiBoxShadowSamples with component() {
-  ecs_key_ui_box_shadow_samples
 }
 
 ///|

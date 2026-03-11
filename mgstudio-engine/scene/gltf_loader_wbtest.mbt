@@ -54,7 +54,7 @@ fn sampler_tag(sampler : @asset.ImageSampler) -> Int {
 }
 
 ///|
-fn label_option_text(label : GltfAssetLabel?) -> String {
+fn label_option_text(label : @gltf.GltfAssetLabel?) -> String {
   match label {
     Some(value) => "Some(" + value.to_label() + ")"
     None => "None"

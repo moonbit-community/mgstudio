@@ -62,10 +62,6 @@ pub let ecs_key_relative_cursor_position : @ecs.ComponentKey[RelativeCursorPosit
 
 pub let ecs_key_scroll_position : @ecs.ComponentKey[ScrollPosition]
 
-pub let ecs_key_ui_anti_alias : @ecs.ComponentKey[UiAntiAlias]
-
-pub let ecs_key_ui_box_shadow_samples : @ecs.ComponentKey[UiBoxShadowSamples]
-
 pub let ecs_key_ui_context : @ecs.ResourceKey[UiContext]
 
 pub let ecs_key_ui_image : @ecs.ComponentKey[UiImage]
@@ -130,10 +126,6 @@ pub fn get_relative_cursor_position_store(@ecs.World) -> @ecs.ComponentAccess[Re
 
 pub fn get_scroll_position_store(@ecs.World) -> @ecs.ComponentAccess[ScrollPosition]
 
-pub fn get_ui_anti_alias_store(@ecs.World) -> @ecs.ComponentAccess[UiAntiAlias]
-
-pub fn get_ui_box_shadow_samples_store(@ecs.World) -> @ecs.ComponentAccess[UiBoxShadowSamples]
-
 pub fn get_ui_context_resource(@ecs.World) -> @ecs.ResourceAccess[UiContext]
 
 pub fn get_ui_image_store(@ecs.World) -> @ecs.ComponentAccess[UiImage]
@@ -170,8 +162,6 @@ pub fn ui_pointer_pos_in_viewport(@math.Vec2, @math.Vec2, @math.Vec2) -> @math.V
 
 pub fn ui_propagate_target_cameras_system(@ecs.World) -> Unit
 
-pub fn ui_render_extract_system(@ecs.World) -> Unit
-
 pub fn ui_scroll_system(@ecs.World) -> Unit
 
 pub let ui_set_a11y : String
@@ -197,8 +187,6 @@ pub let ui_set_post_layout : String
 pub let ui_set_prepare : String
 
 pub let ui_set_propagate : String
-
-pub let ui_set_render_extract : String
 
 pub let ui_set_scroll : String
 
@@ -769,25 +757,6 @@ pub fn TextureSlicer::default() -> Self
 pub fn TextureSlicer::new(BorderRect) -> Self
 pub impl ToJson for TextureSlicer
 pub impl @json.FromJson for TextureSlicer
-
-pub(all) enum UiAntiAlias {
-  Off
-  On
-}
-pub impl @ecs.Component for UiAntiAlias
-pub impl Eq for UiAntiAlias
-pub impl Show for UiAntiAlias
-pub impl ToJson for UiAntiAlias
-pub impl @json.FromJson for UiAntiAlias
-
-pub struct UiBoxShadowSamples {
-  samples : Int
-}
-pub fn UiBoxShadowSamples::default() -> Self
-pub fn UiBoxShadowSamples::new(Int) -> Self
-pub impl @ecs.Component for UiBoxShadowSamples
-pub impl ToJson for UiBoxShadowSamples
-pub impl @json.FromJson for UiBoxShadowSamples
 
 pub struct UiContext {
   mut white_texture : @asset.Handle[@image.Image]

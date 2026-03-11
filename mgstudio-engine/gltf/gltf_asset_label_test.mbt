@@ -13,14 +13,6 @@
 // limitations under the License.
 
 ///|
-fn label_option_text(label : @gltf.GltfAssetLabel?) -> String {
-  match label {
-    Some(value) => "Some(" + value.to_label() + ")"
-    None => "None"
-  }
-}
-
-///|
 test "gltf asset label path encoding" {
   let scene_path = @gltf.GltfAssetLabel::Scene(3).from_asset(
     "models/Foo/Foo.gltf",
@@ -67,55 +59,4 @@ test "gltf asset label path encoding" {
   )
   inspect(animation_path, content="models/Foo/Foo.gltf#Animation2")
   inspect(replaced_label_path, content="remote://models/Foo/Foo.gltf#Scene1")
-}
-
-///|
-test "gltf asset label parsing and path split" {
-  inspect(
-    label_option_text(@gltf.GltfAssetLabel::parse("Mesh5/Primitive2")),
-    content="Some(Mesh5/Primitive2)",
-  )
-  inspect(
-    label_option_text(
-      @gltf.GltfAssetLabel::parse("Mesh5/Primitive2/MorphTargets"),
-    ),
-    content="Some(Mesh5/Primitive2/MorphTargets)",
-  )
-  inspect(
-    label_option_text(@gltf.GltfAssetLabel::parse("Material4 (inverted)")),
-    content="Some(Material4 (inverted))",
-  )
-  inspect(
-    label_option_text(@gltf.GltfAssetLabel::parse("Skin1/InverseBindMatrices")),
-    content="Some(Skin1/InverseBindMatrices)",
-  )
-  inspect(
-    label_option_text(@gltf.GltfAssetLabel::parse("DefaultMaterial")),
-    content="Some(DefaultMaterial)",
-  )
-  inspect(
-    label_option_text(@gltf.GltfAssetLabel::parse("Unknown12")),
-    content="None",
-  )
-
-  let split_scene = @gltf.gltf_split_asset_path_with_label(
-    "models/Foo/Foo.gltf#Scene7",
-  )
-  inspect(split_scene.0, content="models/Foo/Foo.gltf")
-  inspect(label_option_text(split_scene.1), content="Some(Scene7)")
-
-  let split_primitive = @gltf.gltf_split_asset_path_with_label(
-    "models/Foo/Foo.gltf#Mesh2/Primitive1",
-  )
-  inspect(split_primitive.0, content="models/Foo/Foo.gltf")
-  inspect(
-    label_option_text(split_primitive.1),
-    content="Some(Mesh2/Primitive1)",
-  )
-
-  let split_invalid = @gltf.gltf_split_asset_path_with_label(
-    "models/Foo/Foo.gltf#SceneX",
-  )
-  inspect(split_invalid.0, content="models/Foo/Foo.gltf")
-  inspect(label_option_text(split_invalid.1), content="None")
 }

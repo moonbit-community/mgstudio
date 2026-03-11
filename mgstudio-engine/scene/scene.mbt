@@ -19,18 +19,6 @@
 /// - Bevy-like `SceneRoot` / `SceneInstance` runtime lifecycle behavior.
 /// - Runtime glTF loading path for `.gltf + .bin + textures` (subset used by
 ///   current 3D parity examples).
-///
-/// glTF path label parsing APIs are hosted in `Milky2018/mgstudio/gltf`.
-
-///|
-pub type GltfAssetLabel = @gltf.GltfAssetLabel
-
-///|
-pub fn gltf_split_asset_path_with_label(
-  asset_path : String,
-) -> (String, GltfAssetLabel?) {
-  @gltf.gltf_split_asset_path_with_label(asset_path)
-}
 
 ///|
 pub struct SceneNode3d {

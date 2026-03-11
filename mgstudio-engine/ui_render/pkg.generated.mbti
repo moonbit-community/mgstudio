@@ -4,13 +4,15 @@ package "Milky2018/mgstudio/ui_render"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/ui",
+  "moonbitlang/core/json",
 }
 
 // Values
-pub let ecs_key_ui_anti_alias : @ecs.ComponentKey[@ui.UiAntiAlias]
+pub let ecs_key_ui_anti_alias : @ecs.ComponentKey[UiAntiAlias]
 
-pub let ecs_key_ui_box_shadow_samples : @ecs.ComponentKey[@ui.UiBoxShadowSamples]
+pub let ecs_key_ui_box_shadow_samples : @ecs.ComponentKey[BoxShadowSamples]
+
+pub fn ui_render_extract_system(@ecs.World) -> Unit
 
 pub fn ui_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -19,11 +21,26 @@ pub let ui_render_set_extract : String
 // Errors
 
 // Types and methods
+pub struct BoxShadowSamples {
+  samples : Int
+}
+pub fn BoxShadowSamples::default() -> Self
+pub fn BoxShadowSamples::new(Int) -> Self
+pub impl @ecs.Component for BoxShadowSamples
+pub impl ToJson for BoxShadowSamples
+pub impl @json.FromJson for BoxShadowSamples
+
+pub(all) enum UiAntiAlias {
+  Off
+  On
+}
+pub impl @ecs.Component for UiAntiAlias
+pub impl Eq for UiAntiAlias
+pub impl Show for UiAntiAlias
+pub impl ToJson for UiAntiAlias
+pub impl @json.FromJson for UiAntiAlias
 
 // Type aliases
-pub using @ui {type UiBoxShadowSamples as BoxShadowSamples}
-
-pub using @ui {type UiAntiAlias}
 
 // Traits
 

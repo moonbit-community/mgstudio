@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-test "ui: ui_uv_from_image_rects handles atlas + rect + flips" {
+test "ui_render: ui_uv_from_image_rects handles atlas + rect + flips" {
   let image_size = @math.Vec2::new(128.0F, 128.0F)
   let atlas_rect = @math.Rect::new(
     @math.Vec2::new(32.0F, 32.0F),
@@ -56,7 +56,7 @@ test "ui: ui_uv_from_image_rects handles atlas + rect + flips" {
 }
 
 ///|
-test "ui: ui_uv_from_image_rects defaults to full UVs" {
+test "ui_render: ui_uv_from_image_rects defaults to full UVs" {
   let image_size = @math.Vec2::new(128.0F, 128.0F)
   let pair = ui_uv_from_image_rects(image_size, None, None, false, false)
   let ok = pair.0.x == 0.0F &&

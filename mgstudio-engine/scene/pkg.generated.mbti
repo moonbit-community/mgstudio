@@ -6,7 +6,6 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/gltf",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
@@ -33,8 +32,6 @@ pub fn get_scene_instance_ready_store(@ecs.World) -> @ecs.ComponentAccess[SceneI
 pub fn get_scene_instance_store(@ecs.World) -> @ecs.ComponentAccess[SceneInstance]
 
 pub fn get_scene_root_store(@ecs.World) -> @ecs.ComponentAccess[SceneRoot]
-
-pub fn gltf_split_asset_path_with_label(String) -> (String, @gltf.GltfAssetLabel?)
 
 pub fn scene_get(@asset.Handle[Scene]) -> Scene?
 
@@ -128,7 +125,6 @@ pub impl ToJson for SceneRoot
 pub impl @json.FromJson for SceneRoot
 
 // Type aliases
-pub using @gltf {type GltfAssetLabel}
 
 // Traits
 

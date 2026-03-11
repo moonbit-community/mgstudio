@@ -11,8 +11,6 @@ pub fn gltf_install_loader_registration(() -> Unit) -> Unit
 
 pub fn gltf_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn gltf_split_asset_path_with_label(String) -> (String, GltfAssetLabel?)
-
 // Errors
 
 // Types and methods
@@ -30,7 +28,6 @@ pub(all) enum GltfAssetLabel {
   InverseBindMatrices(Int)
 }
 pub fn GltfAssetLabel::from_asset(Self, String) -> String
-pub fn GltfAssetLabel::parse(String) -> Self?
 pub fn GltfAssetLabel::to_label(Self) -> String
 
 // Type aliases

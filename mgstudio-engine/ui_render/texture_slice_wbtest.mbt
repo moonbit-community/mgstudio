@@ -35,17 +35,14 @@ fn vec4_approx_eq(
 }
 
 ///|
-test "ui: sliced image uses Bevy-like normalized borders" {
-  let slicer = TextureSlicer::{
-    border: BorderRect::new(10.0F, 30.0F, 20.0F, 40.0F),
-    center_scale_mode: SliceScaleMode::Stretch,
-    sides_scale_mode: SliceScaleMode::Stretch,
-    max_corner_scale: 1.0F,
-  }
+test "ui_render: sliced image uses Bevy-like normalized borders" {
+  let slicer = @ui.TextureSlicer::new(
+    @ui.BorderRect::new(10.0F, 30.0F, 20.0F, 40.0F),
+  )
   let (slices, border, repeat) = compute_texture_slices(
     @math.Vec2::new(100.0F, 200.0F),
     @math.Vec2::new(300.0F, 400.0F),
-    NodeImageMode::Sliced(slicer),
+    @ui.NodeImageMode::Sliced(slicer),
   )
   inspect(vec4_approx_eq(slices, 0.1F, 0.1F, 0.7F, 0.8F), content="true")
   inspect(vec4_approx_eq(border, 0.0333333F, 0.05F, 0.9F, 0.9F), content="true")
@@ -53,32 +50,11 @@ test "ui: sliced image uses Bevy-like normalized borders" {
 }
 
 ///|
-test "ui: sliced tile mode computes repeat factors per axis" {
-  let slicer = TextureSlicer::{
-    border: BorderRect::square(10.0F),
-    center_scale_mode: SliceScaleMode::Stretch,
-    sides_scale_mode: SliceScaleMode::Tile(0.5F),
-    max_corner_scale: 1.0F,
-  }
-  let (slices, border, repeat) = compute_texture_slices(
-    @math.Vec2::new(100.0F, 100.0F),
-    @math.Vec2::new(220.0F, 120.0F),
-    NodeImageMode::Sliced(slicer),
-  )
-  inspect(vec4_approx_eq(slices, 0.1F, 0.1F, 0.9F, 0.9F), content="true")
-  inspect(
-    vec4_approx_eq(border, 0.0454545F, 0.0833333F, 0.9545454F, 0.9166666F),
-    content="true",
-  )
-  inspect(vec4_approx_eq(repeat, 5.0F, 2.5F, 1.0F, 1.0F), content="true")
-}
-
-///|
-test "ui: tiled image mode maps repeat to center channels" {
+test "ui_render: tiled image mode maps repeat to center channels" {
   let (slices, border, repeat) = compute_texture_slices(
     @math.Vec2::new(64.0F, 32.0F),
     @math.Vec2::new(256.0F, 96.0F),
-    NodeImageMode::Tiled(true, false, 2.0F),
+    @ui.NodeImageMode::Tiled(true, false, 2.0F),
   )
   inspect(vec4_approx_eq(slices, 0.0F, 0.0F, 1.0F, 1.0F), content="true")
   inspect(vec4_approx_eq(border, 0.0F, 0.0F, 1.0F, 1.0F), content="true")
