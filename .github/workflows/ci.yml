@@ -14,7 +14,7 @@ env:
 jobs:
   bevy-parity-artifacts:
     name: bevy parity artifacts
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
 
   bevy-wgsl-modules:
     name: bevy WGSL modules
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -52,17 +52,10 @@ jobs:
 
   engine-native:
     name: engine (native check/test/build)
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Install Linux native audio headers
-        shell: bash
-        run: |
-          set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y libasound2-dev libjack-jackd2-dev
 
       - name: Install MoonBit
         shell: bash
@@ -108,17 +101,10 @@ jobs:
 
   engine-examples-smoke:
     name: engine examples (native smoke)
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Install Linux native audio headers
-        shell: bash
-        run: |
-          set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y libasound2-dev libjack-jackd2-dev
 
       - name: Install MoonBit
         shell: bash
