@@ -153,13 +153,12 @@ test "picking: handles multiple pointers independently" {
 }
 
 ///|
-#skip
 test "picking: a11y focus action maps to hovered interaction" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
   @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default(), tick)
   get_picking_events_resource(world).insert(PickingEvents::default(), tick)
-  let entity = @core.Entity::new(7, 3)
+  let entity = world.spawn_empty()
   let packed = entity.id * 65536 + entity.generation + 1
   let req = @moon_accesskit.ActionRequest::new(
     @moon_accesskit.Action::Focus,
@@ -176,13 +175,12 @@ test "picking: a11y focus action maps to hovered interaction" {
 }
 
 ///|
-#skip
 test "picking: a11y scroll actions update ScrollPosition without click events" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
   @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default(), tick)
   get_picking_events_resource(world).insert(PickingEvents::default(), tick)
-  let entity = @core.Entity::new(9, 1)
+  let entity = world.spawn_empty()
   @ui.get_node_store(world).insert(
     entity,
     @ui.Node::default().with_overflow(
@@ -205,7 +203,7 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
     @ui.ScrollPosition::default(),
     tick,
   )
-  let child = @core.Entity::new(10, 1)
+  let child = world.spawn_empty()
   @ui.get_ui_layout_store(world).insert(
     child,
     @ui.UiLayout::new(
@@ -249,7 +247,6 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
 }
 
 ///|
-#skip
 test "picking: a11y set-value action updates UiText content" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
@@ -262,7 +259,7 @@ test "picking: a11y set-value action updates UiText content" {
       @math.Transform::identity(),
     ),
   )
-  let entity = @core.Entity::new(11, 2)
+  let entity = world.spawn_empty()
   @ui.get_ui_text_store(world).insert(
     entity,
     @ui.UiText::new(text_handle),
@@ -283,6 +280,37 @@ test "picking: a11y set-value action updates UiText content" {
   picking_apply_a11y_actions_system(world)
   inspect(
     @text.text_get_content(text_handle).unwrap() == "Updated",
+    content="true",
+  )
+  let events = drain_events(world, tick)
+  inspect(events.length(), content="0")
+}
+
+///|
+test "picking: ignores a11y actions targeting non-alive entities" {
+  let world = @ecs.World::new()
+  let tick = world.increment_change_tick()
+  @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default(), tick)
+  get_picking_events_resource(world).insert(PickingEvents::default(), tick)
+  let dead_entity = @core.Entity::new(999, 1)
+  let packed = dead_entity.id * 65536 + dead_entity.generation + 1
+  let req = @moon_accesskit.ActionRequest::new(
+    @moon_accesskit.Action::Focus,
+    @moon_accesskit.TreeId::root(),
+    @moon_accesskit.NodeId::from_u64(packed.to_uint64()),
+  )
+  let state_res = @a11y.get_a11y_state_resource(world)
+  let state = Ref::new(state_res.get().unwrap())
+  @a11y.A11yState::push_action(state, req)
+  state_res.insert(state.val, tick)
+  picking_apply_a11y_actions_system(world)
+  let state_after = @a11y.get_a11y_state_resource(world).get().unwrap()
+  inspect(
+    state_after.focused_node() == @moon_accesskit.NodeId::root(),
+    content="true",
+  )
+  inspect(
+    @ui.get_interaction_store(world).get(dead_entity) is None,
     content="true",
   )
   let events = drain_events(world, tick)

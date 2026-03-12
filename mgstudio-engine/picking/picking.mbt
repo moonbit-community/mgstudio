@@ -825,6 +825,9 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
 
   for req in actions {
     let entity = entity_from_node_id(req.target_node())
+    if !world.is_alive(entity) {
+      continue
+    }
     match req.action() {
       @moon_accesskit.Action::Focus => {
         @a11y.A11yState::set_focused_node(state, req.target_node())
