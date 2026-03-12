@@ -162,8 +162,17 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None =>
+      abort("Missing Time<Unit> resource in rotate_environment_map example")
+  }
+}
+
+///|
 fn rotate_skybox_and_environment_map(world : @ecs.World) -> Unit {
-  let now = @time.time_elapsed_seconds()
+  let now = world_time(world).elapsed_seconds()
   let angle = 0.2F * now
   let rotation = @math.Quat::from_rotation_y(angle)
   let tick = world.read_change_tick()

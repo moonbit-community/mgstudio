@@ -222,8 +222,16 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in camera_sub_view example")
+  }
+}
+
+///|
 fn move_camera_view(world : @ecs.World) -> Unit {
-  let elapsed = @time.time_elapsed_seconds()
+  let elapsed = world_time(world).elapsed_seconds()
   let sweep = elapsed * 150.0F
   let cycle = 450.0F
   let wrapped = sweep - float_from_int((sweep / cycle).to_int()) * cycle

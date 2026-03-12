@@ -673,6 +673,14 @@ fn controls(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in light_textures example")
+  }
+}
+
+///|
 fn rotate_cube(world : @ecs.World) -> Unit {
   guard light_textures_state.val.rotating_cube is Some(cube_entity) else {
     return
@@ -682,7 +690,7 @@ fn rotate_cube(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let delta = @time.time_delta_seconds()
+  let delta = world_time(world).delta_seconds()
   let rotation = transform.rotation
     .mul(@math.Quat::from_rotation_y(CUBE_ROTATION_SPEED * delta * 60.0F))
     .normalize()

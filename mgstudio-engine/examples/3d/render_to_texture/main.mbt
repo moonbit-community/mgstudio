@@ -108,6 +108,14 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in render_to_texture example")
+  }
+}
+
+///|
 fn rotator_system(world : @ecs.World) -> Unit {
   if render_to_texture_state.val.first_pass_cube.is_placeholder() {
     return
@@ -116,7 +124,7 @@ fn rotator_system(world : @ecs.World) -> Unit {
   let transform_store = world.component(@math.ecs_key_transform)
   if transform_store.get(render_to_texture_state.val.first_pass_cube)
     is Some(transform) {
-    let delta = @time.time_delta_seconds()
+    let delta = world_time(world).delta_seconds()
     let rotation = transform.rotation
       .mul(@math.Quat::from_rotation_x(1.5F * delta))
       .mul(@math.Quat::from_rotation_z(1.3F * delta))
@@ -139,7 +147,7 @@ fn cube_rotator_system(world : @ecs.World) -> Unit {
   let transform_store = world.component(@math.ecs_key_transform)
   if transform_store.get(render_to_texture_state.val.main_pass_cube)
     is Some(transform) {
-    let delta = @time.time_delta_seconds()
+    let delta = world_time(world).delta_seconds()
     let rotation = transform.rotation
       .mul(@math.Quat::from_rotation_x(1.0F * delta))
       .mul(@math.Quat::from_rotation_y(0.7F * delta))

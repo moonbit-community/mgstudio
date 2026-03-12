@@ -497,6 +497,14 @@ fn change_sphere_roughness(_world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in reflection_probes example")
+  }
+}
+
+///|
 fn rotate_camera(world : @ecs.World) -> Unit {
   if !reflection_probes_state.val.rotating {
     return
@@ -506,7 +514,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
     return
   }
 
-  let angle = @time.time_delta_seconds() * PI / 5.0F
+  let angle = world_time(world).delta_seconds() * PI / 5.0F
   let cos_v = @math.cos(angle)
   let sin_v = @math.sin(angle)
   let x = transform.translation.x

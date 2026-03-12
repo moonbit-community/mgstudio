@@ -185,6 +185,14 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in generate_custom_mesh example")
+  }
+}
+
+///|
 fn input_handler(world : @ecs.World) -> Unit {
   guard custom_mesh_state.val.mesh_entity is Some(mesh_entity) else { return }
 
@@ -217,7 +225,7 @@ fn input_handler(world : @ecs.World) -> Unit {
       return
     }
 
-    let delta = @time.time_delta_seconds() / 1.2F
+    let delta = world_time(world).delta_seconds() / 1.2F
     let mut rotation = transform.rotation
     let mut changed = false
 
