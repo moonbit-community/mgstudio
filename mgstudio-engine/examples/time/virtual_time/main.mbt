@@ -33,27 +33,45 @@ fn get_sprite_translation_x(elapsed : Float) -> Float {
 
 ///|
 priv struct VirtualTimeState {
-  mut real_sprite : @core.Entity?
-  mut virtual_sprite : @core.Entity?
   mut real_text : @text.TextHandle?
   mut virtual_text : @text.TextHandle?
-  mut info_timer : @time.Timer
 }
 
 ///|
 let virtual_time_state : Ref[VirtualTimeState] = Ref::new({
-  real_sprite: None,
-  virtual_sprite: None,
   real_text: None,
   virtual_text: None,
-  info_timer: @time.Timer::from_seconds(0.25F, @time.TimerMode::Repeating),
 })
 
 ///|
+struct RealTime {}
+
+///|
+let real_time_component_key : @ecs.ComponentKey[RealTime] = @ecs.register_component(
+  debug_name="examples.time.virtual_time.RealTime",
+)
+
+///|
+impl @ecs.Component for RealTime with component() {
+  real_time_component_key
+}
+
+///|
+struct VirtualTime {}
+
+///|
+let virtual_time_component_key : @ecs.ComponentKey[VirtualTime] = @ecs.register_component(
+  debug_name="examples.time.virtual_time.VirtualTime",
+)
+
+///|
+impl @ecs.Component for VirtualTime with component() {
+  virtual_time_component_key
+}
+
+///|
 fn read_real_time(world : @ecs.World) -> @time.Time[@time.Real] {
-  let real_time = try! world.get_resource(
-    @time.time_resource_key_of(@time.Real::default()),
-  )
+  let real_time = try! world.get_resource(@time.real_time_resource_key())
   match real_time {
     Some(real_time) => real_time
     None => {
@@ -65,26 +83,12 @@ fn read_real_time(world : @ecs.World) -> @time.Time[@time.Real] {
 
 ///|
 fn read_virtual_time(world : @ecs.World) -> @time.Time[@time.Virtual] {
-  let virtual_time = try! world.get_resource(
-    @time.time_resource_key_of(@time.Virtual::default()),
-  )
+  let virtual_time = try! world.get_resource(@time.virtual_time_resource_key())
   match virtual_time {
     Some(virtual_time) => virtual_time
     None => {
       let time : @time.Time[@time.Virtual] = @time.Time::default()
       time
-    }
-  }
-}
-
-///|
-fn read_generic_time(world : @ecs.World) -> @time.Time[Unit] {
-  let time = try! world.get_resource(@time.time_resource_key_of(()))
-  match time {
-    Some(time) => time
-    None => {
-      let default_time : @time.Time[Unit] = @time.Time::default()
-      default_time
     }
   }
 }
@@ -96,13 +100,10 @@ fn update_virtual_time_resource(
 ) -> Unit {
   let change_tick = world.increment_change_tick()
   let virtual_ref = try! world
-    .get_resource_ref_mut(
-      @time.time_resource_key_of(@time.Virtual::default()),
-      change_tick,
-    )
+    .get_resource_ref_mut(@time.virtual_time_resource_key(), change_tick)
     .unwrap()
   let time_ref = try! world
-    .get_resource_ref_mut(@time.time_resource_key_of(()), change_tick)
+    .get_resource_ref_mut(@time.default_time_resource_key(), change_tick)
     .unwrap()
   let next_virtual = update(virtual_ref.val)
   virtual_ref.val = next_virtual
@@ -138,13 +139,8 @@ fn update_info_text(world : @ecs.World) -> Unit {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  virtual_time_state.val = {
-    real_sprite: None,
-    virtual_sprite: None,
-    real_text: None,
-    virtual_text: None,
-    info_timer: @time.Timer::from_seconds(0.25F, @time.TimerMode::Repeating),
-  }
+  let tick = world.read_change_tick()
+  virtual_time_state.val = { real_text: None, virtual_text: None }
 
   update_virtual_time_resource(world, fn(
     virtual_time : @time.Time[@time.Virtual],
@@ -171,7 +167,9 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec2::new(0.5F, 0.5F),
     ),
   ).spawn(world)
-  virtual_time_state.val.real_sprite = Some(real_sprite)
+  world
+  .component(RealTime::component())
+  .insert(real_sprite, RealTime::{  }, tick)
 
   let virtual_sprite = @sprite.SpriteBundle::new(
     @sprite.Sprite::from_image(texture)
@@ -183,7 +181,9 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec2::new(0.5F, 0.5F),
     ),
   ).spawn(world)
-  virtual_time_state.val.virtual_sprite = Some(virtual_sprite)
+  world
+  .component(VirtualTime::component())
+  .insert(virtual_sprite, VirtualTime::{  }, tick)
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
@@ -249,92 +249,86 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn handle_time_controls(world : @ecs.World) -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::Space) {
-    update_virtual_time_resource(world, fn(
-      virtual_time : @time.Time[@time.Virtual],
-    ) {
-      virtual_time.toggle()
-    })
-  }
-  if @input.key_just_pressed(@window.KeyCode::ArrowUp) {
-    let virtual_time = read_virtual_time(world)
-    let next_speed = clampf(virtual_time.relative_speed() + 1.0F, 0.25F, 5.0F)
-    update_virtual_time_resource(world, fn(
-      virtual_time : @time.Time[@time.Virtual],
-    ) {
-      virtual_time.set_relative_speed(next_speed)
-    })
-  }
-  if @input.key_just_pressed(@window.KeyCode::ArrowDown) {
-    let virtual_time = read_virtual_time(world)
-    let next_speed = clampf(virtual_time.relative_speed() - 1.0F, 0.25F, 5.0F)
-    update_virtual_time_resource(world, fn(
-      virtual_time : @time.Time[@time.Virtual],
-    ) {
-      virtual_time.set_relative_speed(next_speed)
-    })
-  }
+fn input_toggle_pressed(_world : @ecs.World) -> Bool {
+  @input.key_just_pressed(@window.KeyCode::Space)
 }
 
 ///|
-fn update_sprite_positions(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
-  let real_time = read_real_time(world)
-  let time = read_generic_time(world)
-
-  if virtual_time_state.val.real_sprite is Some(real_sprite) {
-    if transform_store.get(real_sprite) is Some(transform) {
-      transform_store.set(
-        real_sprite,
-        transform.with_translation(
-          @math.Vec3::new(
-            get_sprite_translation_x(real_time.elapsed_seconds()),
-            transform.translation.y,
-            transform.translation.z,
-          ),
-        ),
-        tick,
-      )
-      |> ignore
-    }
-  }
-
-  if virtual_time_state.val.virtual_sprite is Some(virtual_sprite) {
-    if transform_store.get(virtual_sprite) is Some(transform) {
-      transform_store.set(
-        virtual_sprite,
-        transform.with_translation(
-          @math.Vec3::new(
-            get_sprite_translation_x(time.elapsed_seconds()),
-            transform.translation.y,
-            transform.translation.z,
-          ),
-        ),
-        tick,
-      )
-      |> ignore
-    }
-  }
+fn input_speed_up_pressed(_world : @ecs.World) -> Bool {
+  @input.key_just_pressed(@window.KeyCode::ArrowUp)
 }
 
 ///|
-fn update_text_with_real_timer(world : @ecs.World) -> Unit {
-  let real_time = read_real_time(world)
-  virtual_time_state.val.info_timer = virtual_time_state.val.info_timer.tick(
-    real_time.delta(),
+fn input_speed_down_pressed(_world : @ecs.World) -> Bool {
+  @input.key_just_pressed(@window.KeyCode::ArrowDown)
+}
+
+///|
+fn toggle_pause(world : @ecs.World) -> Unit {
+  update_virtual_time_resource(world, fn(
+    virtual_time : @time.Time[@time.Virtual],
+  ) {
+    virtual_time.toggle()
+  })
+}
+
+///|
+fn change_time_speed(world : @ecs.World, delta : Float) -> Unit {
+  let virtual_time = read_virtual_time(world)
+  let next_speed = clampf(
+    (virtual_time.relative_speed() + delta).round(),
+    0.25F,
+    5.0F,
   )
-  if virtual_time_state.val.info_timer.just_finished() {
-    update_info_text(world)
-  }
+  update_virtual_time_resource(world, fn(
+    virtual_time : @time.Time[@time.Virtual],
+  ) {
+    virtual_time.set_relative_speed(next_speed)
+  })
 }
 
 ///|
-fn update(world : @ecs.World) -> Unit {
-  handle_time_controls(world)
-  update_sprite_positions(world)
-  update_text_with_real_timer(world)
+fn change_time_speed_up(world : @ecs.World) -> Unit {
+  change_time_speed(world, 1.0F)
+}
+
+///|
+fn change_time_speed_down(world : @ecs.World) -> Unit {
+  change_time_speed(world, -1.0F)
+}
+
+///|
+fn move_real_time_sprites(
+  sprite_query : @ecs.Query2RefMutFiltered[
+    RealTime,
+    @math.Transform,
+    @ecs.With[@sprite.Sprite],
+  ],
+  time : @app.Res[@time.Time[@time.Real]],
+) -> Unit {
+  try! sprite_query.view_mut(fn(_entity, _real_time, transform) {
+    let transform_ref = transform.get_ref()
+    transform_ref.val.translation.x = get_sprite_translation_x(
+      time.get().elapsed_secs(),
+    )
+  })
+}
+
+///|
+fn move_virtual_time_sprites(
+  sprite_query : @ecs.Query2RefMutFiltered[
+    VirtualTime,
+    @math.Transform,
+    @ecs.With[@sprite.Sprite],
+  ],
+  time : @app.Res[@time.Time[Unit]],
+) -> Unit {
+  try! sprite_query.view_mut(fn(_entity, _virtual_time, transform) {
+    let transform_ref = transform.get_ref()
+    transform_ref.val.translation.x = get_sprite_translation_x(
+      time.get().elapsed_secs(),
+    )
+  })
 }
 
 ///|
@@ -343,6 +337,31 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(update))
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param2(move_virtual_time_sprites)),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param2(move_real_time_sprites)),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system(toggle_pause).run_if(input_toggle_pressed),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system(change_time_speed_up).run_if(input_speed_up_pressed),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system(change_time_speed_down).run_if(input_speed_down_pressed),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system(update_info_text).run_if(
+      @time.on_real_timer(@core.Duration::from_millis(250L)),
+    ),
+  )
   .run()
 }

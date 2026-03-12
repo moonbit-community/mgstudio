@@ -6,6 +6,9 @@ package "Milky2018/mgstudio/examples/time/timers"
 // Errors
 
 // Types and methods
+type Countdown
+
+type PrintOnCompletionTimer
 
 // Type aliases
 

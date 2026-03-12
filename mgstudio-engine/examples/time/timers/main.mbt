@@ -16,75 +16,90 @@
 /// Port of `bevy/examples/time/timers.rs`.
 
 ///|
-priv struct Countdown {
+struct PrintOnCompletionTimer {
+  mut timer : @time.Timer
+}
+
+///|
+let print_on_completion_timer_component_key : @ecs.ComponentKey[
+  PrintOnCompletionTimer,
+] = @ecs.register_component(
+  debug_name="examples.time.timers.PrintOnCompletionTimer",
+)
+
+///|
+impl @ecs.Component for PrintOnCompletionTimer with component() {
+  print_on_completion_timer_component_key
+}
+
+///|
+struct Countdown {
   mut percent_trigger : @time.Timer
   mut main_timer : @time.Timer
 }
 
 ///|
-priv struct TimerExampleState {
-  mut entity_timer : @time.Timer
-  countdown : Countdown
-  mut percent_trigger_paused : Bool
+let countdown_resource_key : @ecs.ResourceKey[Countdown] = @ecs.register_resource(
+  debug_name="examples.time.timers.Countdown",
+)
+
+///|
+impl @app.Resource for Countdown with resource() {
+  countdown_resource_key
 }
 
 ///|
-let timer_example_state : Ref[TimerExampleState] = Ref::new({
-  entity_timer: @time.Timer::from_seconds(5.0F, @time.TimerMode::Once),
-  countdown: {
+impl Default for Countdown with default() {
+  {
     percent_trigger: @time.Timer::from_seconds(4.0F, @time.TimerMode::Repeating),
     main_timer: @time.Timer::from_seconds(20.0F, @time.TimerMode::Once),
-  },
-  percent_trigger_paused: false,
-})
-
-///|
-fn setup(_world : @ecs.World) -> Unit {
-  timer_example_state.val = {
-    entity_timer: @time.Timer::from_seconds(5.0F, @time.TimerMode::Once),
-    countdown: {
-      percent_trigger: @time.Timer::from_seconds(
-        4.0F,
-        @time.TimerMode::Repeating,
-      ),
-      main_timer: @time.Timer::from_seconds(20.0F, @time.TimerMode::Once),
-    },
-    percent_trigger_paused: false,
   }
 }
 
 ///|
-fn print_when_completed(time : @app.Res[@time.Time[Unit]]) -> Unit {
-  let delta = time.get().delta()
-  timer_example_state.val.entity_timer = timer_example_state.val.entity_timer.tick(
-    delta,
-  )
-  if timer_example_state.val.entity_timer.just_finished() {
-    println("Entity timer just finished")
-  }
+fn setup(commands : @app.Commands) -> Unit {
+  let timer_entity = commands.spawn_empty()
+  commands
+  .entity(timer_entity)
+  .insert_component(PrintOnCompletionTimer::{
+    timer: @time.Timer::from_seconds(5.0F, @time.TimerMode::Once),
+  })
 }
 
 ///|
-fn countdown(time : @app.Res[@time.Time[Unit]]) -> Unit {
+fn print_when_completed(
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query1[PrintOnCompletionTimer],
+) -> Unit {
   let delta = time.get().delta()
+  try! query.view_mut(fn(_entity, timer_component) {
+    let timer_ref = timer_component.get_ref()
+    timer_ref.val.timer = timer_ref.val.timer.tick(delta)
+    if timer_ref.val.timer.just_finished() {
+      @app.log_info("Entity timer just finished")
+    }
+  })
+}
 
-  timer_example_state.val.countdown.main_timer = timer_example_state.val.countdown.main_timer.tick(
+///|
+fn countdown(
+  time : @app.Res[@time.Time[Unit]],
+  countdown : @app.ResMut[Countdown],
+) -> Unit {
+  let delta = time.get().delta()
+  let countdown_ref = countdown.get_ref()
+  countdown_ref.val.main_timer = countdown_ref.val.main_timer.tick(delta)
+  countdown_ref.val.percent_trigger = countdown_ref.val.percent_trigger.tick(
     delta,
   )
 
-  timer_example_state.val.countdown.percent_trigger = timer_example_state.val.countdown.percent_trigger.tick(
-    delta,
-  )
-
-  if timer_example_state.val.countdown.percent_trigger.just_finished() {
-    if !timer_example_state.val.countdown.main_timer.is_finished() {
-      println(
-        "Timer is \{(timer_example_state.val.countdown.main_timer.fraction() * 100.0F).to_int()}% complete!",
-      )
-    } else if !timer_example_state.val.percent_trigger_paused {
-      timer_example_state.val.countdown.percent_trigger = timer_example_state.val.countdown.percent_trigger.pause()
-      timer_example_state.val.percent_trigger_paused = true
-      println("Paused percent trigger timer")
+  if countdown_ref.val.percent_trigger.just_finished() {
+    if !countdown_ref.val.main_timer.is_finished() {
+      let percent_complete = (countdown_ref.val.main_timer.fraction() * 100.0F).to_int()
+      @app.log_info("Timer is \{percent_complete}% complete!")
+    } else {
+      countdown_ref.val.percent_trigger = countdown_ref.val.percent_trigger.pause()
+      @app.log_info("Paused percent trigger timer")
     }
   }
 }
@@ -94,11 +109,12 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(@app.system_param(countdown)))
+  .init_resource(fn() { Countdown::default() })
+  .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
+  .add_systems(@app.Update, @app.system(@app.system_param2(countdown)))
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param(print_when_completed)),
+    @app.system(@app.system_param2(print_when_completed)),
   )
   .run()
 }

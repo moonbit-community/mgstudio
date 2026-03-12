@@ -346,7 +346,7 @@ fn current_world_or_abort() -> @ecs.World {
 ///|
 fn default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
   let time : @time.Time[Unit]? = try! world.get_resource(
-    @time.time_resource_key_of(()),
+    @time.default_time_resource_key(),
   )
   match time {
     Some(time) => time

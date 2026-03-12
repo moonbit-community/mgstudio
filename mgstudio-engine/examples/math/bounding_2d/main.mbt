@@ -422,7 +422,8 @@ fn read_current_test(world : @ecs.World) -> Test {
 
 ///|
 fn spin(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource(@time.time_resource_key_of(()))) is Some(time) else {
+  guard (try! world.get_resource(@time.default_time_resource_key()))
+    is Some(time) else {
     return
   }
 
@@ -652,7 +653,7 @@ fn bounding_circle_cast_system(world : @ecs.World) -> Unit {
 
 ///|
 fn world_time(world : @ecs.World) -> @time.Time[Unit]? {
-  try! world.get_resource(@time.time_resource_key_of(()))
+  try! world.get_resource(@time.default_time_resource_key())
 }
 
 ///|

@@ -431,7 +431,7 @@ fn spawn_label(
 
 ///|
 fn default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.time_resource_key_of(()))) {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
     Some(time) => time
     None => @time.Time::default()
   }

@@ -667,8 +667,7 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
   guard ctx_res.get() is Some(current_ctx) else { return }
   let ctx_ref = Ref::new(current_ctx)
   let ctx = ctx_ref.val
-  let dt = match
-    (try! world.get_resource(@time.time_resource_key_of(@time.Fixed::default()))) {
+  let dt = match (try! world.get_resource(@time.fixed_time_resource_key())) {
     Some(fixed_time) => fixed_time.timestep_seconds()
     None => {
       let fixed_time : @time.Time[@time.Fixed] = @time.Time::default()
