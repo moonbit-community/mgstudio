@@ -96,6 +96,15 @@ priv struct Ktx2TexturePayload {
 const KTX2_HEADER_SIZE : Int = 80
 
 ///|
+const KTX2_LEVEL_INDEX_ENTRY_SIZE : Int = 24
+
+///|
+const KTX2_SUPERCOMPRESSION_NONE : Int = 0
+
+///|
+const KTX2_SUPERCOMPRESSION_ZSTD : Int = 2
+
+///|
 const KTX2_VK_FORMAT_R16G16B16A16_SFLOAT : Int = 97
 
 ///|
@@ -656,7 +665,7 @@ fn ktx2_vulkan_format_to_wgpu_format(vulkan_format : Int) -> (Int, Int)? {
 
 ///|
 fn ktx2_decode_uncompressed_3d_payload(bytes : Bytes) -> Ktx2TexturePayload? {
-  if bytes.length() < KTX2_HEADER_SIZE {
+  if bytes.length() < KTX2_HEADER_SIZE + KTX2_LEVEL_INDEX_ENTRY_SIZE {
     return None
   }
   let width = blob_u32_at(bytes, 20)
@@ -668,7 +677,10 @@ fn ktx2_decode_uncompressed_3d_payload(bytes : Bytes) -> Ktx2TexturePayload? {
     height <= 0 ||
     depth <= 1 ||
     level_count < 1 ||
-    supercompression_scheme != 0 {
+    (
+      supercompression_scheme != KTX2_SUPERCOMPRESSION_NONE &&
+      supercompression_scheme != KTX2_SUPERCOMPRESSION_ZSTD
+    ) {
     return None
   }
   guard ktx2_vulkan_format_to_wgpu_format(blob_u32_at(bytes, 12))
@@ -677,15 +689,43 @@ fn ktx2_decode_uncompressed_3d_payload(bytes : Bytes) -> Ktx2TexturePayload? {
   }
   let level0_offset = blob_u64_at_as_int(bytes, KTX2_HEADER_SIZE)
   let level0_length = blob_u64_at_as_int(bytes, KTX2_HEADER_SIZE + 8)
-  if level0_offset < 0 || level0_length < 0 {
+  let level0_uncompressed_length = blob_u64_at_as_int(
+    bytes,
+    KTX2_HEADER_SIZE + 16,
+  )
+  if level0_offset < 0 || level0_length < 0 || level0_uncompressed_length < 0 {
     return None
   }
   let expected_bytes = width * height * depth * bytes_per_texel
-  if expected_bytes <= 0 || level0_length < expected_bytes {
+  if expected_bytes <= 0 {
     return None
   }
-  guard bytes_slice_copy(bytes, level0_offset, expected_bytes) is Some(pixels) else {
+  guard bytes_slice_copy(bytes, level0_offset, level0_length)
+    is Some(level0_bytes) else {
     return None
+  }
+  let pixels = if supercompression_scheme == KTX2_SUPERCOMPRESSION_NONE {
+    if level0_length < expected_bytes {
+      return None
+    }
+    guard bytes_slice_copy(level0_bytes, 0, expected_bytes) is Some(raw_pixels) else {
+      return None
+    }
+    raw_pixels
+  } else {
+    let decompressed = @zstd.decompress(level0_bytes) catch { _ => return None }
+    let announced_len = if level0_uncompressed_length > 0 {
+      level0_uncompressed_length
+    } else {
+      decompressed.length()
+    }
+    if announced_len < expected_bytes || decompressed.length() < expected_bytes {
+      return None
+    }
+    guard bytes_slice_copy(decompressed, 0, expected_bytes) is Some(raw_pixels) else {
+      return None
+    }
+    raw_pixels
   }
   Some(Ktx2TexturePayload::{ width, height, depth, format_raw, pixels })
 }
