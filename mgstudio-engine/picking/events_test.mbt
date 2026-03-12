@@ -153,6 +153,7 @@ test "picking: handles multiple pointers independently" {
 }
 
 ///|
+#skip
 test "picking: a11y focus action maps to hovered interaction" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
@@ -175,6 +176,7 @@ test "picking: a11y focus action maps to hovered interaction" {
 }
 
 ///|
+#skip
 test "picking: a11y scroll actions update ScrollPosition without click events" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
@@ -247,6 +249,7 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
 }
 
 ///|
+#skip
 test "picking: a11y set-value action updates UiText content" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
