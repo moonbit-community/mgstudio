@@ -182,6 +182,11 @@ pub fn[A] Query1::get(
 }
 
 ///|
+pub fn[A] Query1::single(self : Query1[A]) -> A? raise EcsError {
+  self.world.query1_filtered(self.key_a, All::new()).single()
+}
+
+///|
 pub fn[A] Query1::count(self : Query1[A]) -> Int {
   match self.world.component_store(self.key_a.id()) {
     Some(store_ref) => store_ref.val.len()
@@ -343,6 +348,27 @@ pub fn[A, F : QueryFilter] Query1Filtered::for_each(
   let tick = component_write_change_tick(self.world)
   for write in writes {
     store_ref.val.set(write.0, write.1, tick) |> ignore
+  }
+}
+
+///|
+pub fn[A, F : QueryFilter] Query1Filtered::single(
+  self : Query1Filtered[A, F],
+) -> A? raise EcsError {
+  let count_ref : Ref[Int] = Ref::new(0)
+  let value_ref : Ref[A?] = Ref::new(None)
+  self.view(fn(_entity, value) {
+    count_ref.val = count_ref.val + 1
+    if count_ref.val == 1 {
+      value_ref.val = Some(value)
+    } else {
+      value_ref.val = None
+    }
+  })
+  if count_ref.val == 1 {
+    value_ref.val
+  } else {
+    None
   }
 }
 

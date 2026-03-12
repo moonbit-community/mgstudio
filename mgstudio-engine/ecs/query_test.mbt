@@ -62,6 +62,42 @@ test "ecs query: query1 view and for_each" {
 }
 
 ///|
+test "ecs query: single returns only for exactly one match" {
+  let world = World::new()
+  let comp_position : ComponentKey[Position] = register_component(
+    debug_name="position_single",
+  )
+  let comp_velocity : ComponentKey[Velocity] = register_component(
+    debug_name="velocity_single",
+  )
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+
+  inspect(try! world.query1(comp_position).single(), content="None")
+
+  try! world.set(e0, comp_position, Position::{ x: 5, y: 8 })
+  inspect(
+    try! world.query1_filtered(comp_position, All::new()).single(),
+    content="Some({x: 5, y: 8})",
+  )
+
+  try! world.set(e1, comp_position, Position::{ x: 13, y: 21 })
+  inspect(try! world.query1(comp_position).single(), content="None")
+
+  try! world.set(e0, comp_velocity, Velocity::{ dx: 1, dy: 1 })
+  inspect(
+    try! world.query1_filtered(comp_position, With::new(comp_velocity)).single(),
+    content="Some({x: 5, y: 8})",
+  )
+
+  try! world.set(e1, comp_velocity, Velocity::{ dx: 2, dy: 3 })
+  inspect(
+    try! world.query1_filtered(comp_position, With::new(comp_velocity)).single(),
+    content="None",
+  )
+}
+
+///|
 test "ecs query: query2 view intersection and for_each" {
   let world = World::new()
   let comp_position : ComponentKey[Position] = register_component(

@@ -13,6 +13,23 @@
 // limitations under the License.
 
 ///|
+test "ecs batching strategy: calc batch size respects limits" {
+  inspect(
+    BatchingStrategy::new()
+    .min_batch_size(4)
+    .max_batch_size(16)
+    .batches_per_thread(2)
+    .calc_batch_size(fn() { 100 }, 4),
+    content="13",
+  )
+
+  inspect(
+    BatchingStrategy::fixed(32).calc_batch_size(fn() { 1000 }, 4),
+    content="32",
+  )
+}
+
+///|
 test "ecs query mut: iter_many_mut writes back filtered components" {
   let world = World::new()
   let comp_position : ComponentKey[Position] = register_component(
@@ -131,6 +148,7 @@ test "ecs query mut: query2 ref mut supports iter_many_mut and par_iter_mut" {
 
   try! query
   .par_iter_mut()
+  .batching_strategy(BatchingStrategy::fixed(32))
   .for_each(fn(_entity, position_ref, velocity_mut) {
     velocity_mut.get_ref().val.dy = velocity_mut.get_ref().val.dy +
       position_ref.value().y

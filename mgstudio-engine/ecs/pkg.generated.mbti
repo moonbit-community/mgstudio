@@ -88,6 +88,21 @@ pub struct All {
 pub fn All::new() -> Self
 pub impl QueryFilter for All
 
+pub struct BatchingStrategy {
+  min_batch_size : Int
+  max_batch_size : Int
+  batches_per_thread : Int
+}
+pub fn BatchingStrategy::batches_per_thread(Self, Int) -> Self
+pub fn BatchingStrategy::calc_batch_size(Self, () -> Int, Int) -> Int
+pub fn BatchingStrategy::fixed(Int) -> Self
+pub fn BatchingStrategy::max_batch_size(Self, Int) -> Self
+pub fn BatchingStrategy::min_batch_size(Self, Int) -> Self
+pub fn BatchingStrategy::new() -> Self
+pub impl Default for BatchingStrategy
+pub impl Eq for BatchingStrategy
+pub impl Show for BatchingStrategy
+
 pub struct Changed[T] {
   key : ComponentKey[T]
 }
@@ -313,6 +328,7 @@ pub fn[A] Query1::iter_many_unique_ref(Self[A], Array[@core.Entity]) -> Query1Fi
 pub fn[A] Query1::iter_many_unique_ref_unsafe(Self[A], Array[@core.Entity]) -> Query1FilteredManyRef[A, All]
 pub fn[A] Query1::iter_many_unique_unsafe(Self[A], Array[@core.Entity]) -> Query1FilteredMany[A, All]
 pub fn[A] Query1::par_iter_mut(Self[A]) -> Query1FilteredParallelMut[A, All]
+pub fn[A] Query1::single(Self[A]) -> A? raise EcsError
 pub fn[A] Query1::view(Self[A], (@core.Entity, A) -> Unit) -> Unit raise EcsError
 pub fn[A] Query1::view_mut(Self[A], (@core.Entity, ComponentMut[A]) -> Unit) -> Unit raise EcsError
 pub fn[A] Query1::with_mut(Self[A], @core.Entity, (ComponentMut[A]) -> Unit) -> Bool raise EcsError
@@ -339,6 +355,7 @@ pub fn[A, F] Query1Filtered::iter_many_unique_ref(Self[A, F], Array[@core.Entity
 pub fn[A, F] Query1Filtered::iter_many_unique_ref_unsafe(Self[A, F], Array[@core.Entity]) -> Query1FilteredManyRef[A, F]
 pub fn[A, F] Query1Filtered::iter_many_unique_unsafe(Self[A, F], Array[@core.Entity]) -> Query1FilteredMany[A, F]
 pub fn[A, F] Query1Filtered::par_iter_mut(Self[A, F]) -> Query1FilteredParallelMut[A, F]
+pub fn[A, F : QueryFilter] Query1Filtered::single(Self[A, F]) -> A? raise EcsError
 pub fn[A, F : QueryFilter] Query1Filtered::view(Self[A, F], (@core.Entity, A) -> Unit) -> Unit raise EcsError
 pub fn[A, F : QueryFilter] Query1Filtered::view_mut(Self[A, F], (@core.Entity, ComponentMut[A]) -> Unit) -> Unit raise EcsError
 pub fn[A, F : QueryFilter] Query1Filtered::view_ref(Self[A, F], (@core.Entity, ComponentRef[A]) -> Unit) -> Unit raise EcsError
@@ -367,7 +384,9 @@ pub fn[A, F : QueryFilter] Query1FilteredManyRef::fetch_next(Self[A, F]) -> (@co
 
 pub struct Query1FilteredParallelMut[A, F] {
   query : Query1Filtered[A, F]
+  batching_strategy : BatchingStrategy
 }
+pub fn[A, F] Query1FilteredParallelMut::batching_strategy(Self[A, F], BatchingStrategy) -> Self[A, F]
 pub fn[A, F : QueryFilter] Query1FilteredParallelMut::for_each(Self[A, F], (@core.Entity, ComponentMut[A]) -> Unit) -> Unit raise EcsError
 
 pub struct Query2[A, B] {
@@ -418,7 +437,9 @@ pub fn[A, B, F : QueryFilter] Query2RefMutFilteredMany::fetch_next(Self[A, B, F]
 
 pub struct Query2RefMutFilteredParallel[A, B, F] {
   query : Query2RefMutFiltered[A, B, F]
+  batching_strategy : BatchingStrategy
 }
+pub fn[A, B, F] Query2RefMutFilteredParallel::batching_strategy(Self[A, B, F], BatchingStrategy) -> Self[A, B, F]
 pub fn[A, B, F : QueryFilter] Query2RefMutFilteredParallel::for_each(Self[A, B, F], (@core.Entity, ComponentRef[A], ComponentMut[B]) -> Unit) -> Unit raise EcsError
 
 pub struct Query2ValueMutFiltered[A, B, F] {
@@ -437,7 +458,9 @@ pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::with_mut(Self[A, B, F], @c
 
 pub struct Query2ValueMutFilteredParallel[A, B, F] {
   query : Query2ValueMutFiltered[A, B, F]
+  batching_strategy : BatchingStrategy
 }
+pub fn[A, B, F] Query2ValueMutFilteredParallel::batching_strategy(Self[A, B, F], BatchingStrategy) -> Self[A, B, F]
 pub fn[A, B, F : QueryFilter] Query2ValueMutFilteredParallel::for_each(Self[A, B, F], (@core.Entity, A, ComponentMut[B]) -> Unit) -> Unit raise EcsError
 
 pub struct Query3[A, B, C] {
@@ -495,7 +518,9 @@ pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::with_mut(Self[A, B, 
 
 pub struct Query3ValueRefMutFilteredParallel[A, B, C, F] {
   query : Query3ValueRefMutFiltered[A, B, C, F]
+  batching_strategy : BatchingStrategy
 }
+pub fn[A, B, C, F] Query3ValueRefMutFilteredParallel::batching_strategy(Self[A, B, C, F], BatchingStrategy) -> Self[A, B, C, F]
 pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFilteredParallel::for_each(Self[A, B, C, F], (@core.Entity, A, ComponentRef[B], ComponentMut[C]) -> Unit) -> Unit raise EcsError
 
 pub struct Remove {

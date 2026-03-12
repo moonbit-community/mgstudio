@@ -1,0 +1,128 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+/// Port of `bevy/examples/ecs/parallel_query.rs`.
+
+///|
+struct Velocity {
+  mut vector : @math.Vec2
+}
+
+///|
+let velocity_key : @ecs.ComponentKey[Velocity] = @ecs.register_component(
+  debug_name="examples.ecs.parallel_query.Velocity",
+)
+
+///|
+impl @ecs.Component for Velocity with component() {
+  velocity_key
+}
+
+///|
+fn deterministic_random_unit(seed_ref : Ref[Int]) -> Float {
+  seed_ref.val = seed_ref.val * 48271 % 2147483647
+  Float::from_int(seed_ref.val) / 2147483647.0F
+}
+
+///|
+fn spawn_system(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  commands.spawn(
+    @sprite.Camera2dBundle::new(
+      @sprite.Camera::default(),
+      @math.Transform::identity(),
+    ),
+  )
+  |> ignore
+
+  let texture = asset_server.get().load_image("branding/icon.png")
+  let rng_seed : Ref[Int] = Ref::new(1258831081)
+  for z in 0..<128 {
+    let velocity = @math.Vec2::new(
+      deterministic_random_unit(rng_seed) - 0.5F,
+      deterministic_random_unit(rng_seed) - 0.5F,
+    ).mul_scalar(20.0F)
+    commands.spawn(
+      (
+        @sprite.Sprite::from_image(texture),
+        @math.Transform::identity()
+        .with_scale(@math.Vec3::splat(0.1F))
+        .with_translation(@math.Vec3::new(0.0F, 0.0F, Float::from_int(z))),
+        Velocity::{ vector: velocity },
+      ),
+    )
+    |> ignore
+  }
+}
+
+///|
+fn move_system(
+  sprites : @ecs.Query2RefMutFiltered[Velocity, @math.Transform, @ecs.All],
+) -> Unit {
+  try! sprites
+  .par_iter_mut()
+  .for_each(fn(_entity, velocity, transform) {
+    let transform_ref = transform.get_ref()
+    transform_ref.val.translation = transform_ref.val.translation.add(
+      @math.Vec3::new(
+        velocity.value().vector.x,
+        velocity.value().vector.y,
+        0.0F,
+      ),
+    )
+  })
+}
+
+///|
+fn bounce_system(
+  window_query : @ecs.Query1Filtered[
+    @window.Window,
+    @ecs.With[@window.PrimaryWindow],
+  ],
+  sprites : @ecs.Query2RefMutFiltered[@math.Transform, Velocity, @ecs.All],
+) -> Unit {
+  guard (try! window_query.single()) is Some(window) else { return }
+  let width = window.width()
+  let height = window.height()
+  let left = width / -2.0F
+  let right = width / 2.0F
+  let bottom = height / -2.0F
+  let top = height / 2.0F
+  try! sprites
+  .par_iter_mut()
+  .batching_strategy(@ecs.BatchingStrategy::fixed(32))
+  .for_each(fn(_entity, transform, velocity) {
+    let translation = transform.value().translation
+    if !(left < translation.x &&
+      translation.x < right &&
+      bottom < translation.y &&
+      translation.y < top) {
+      let velocity_ref = velocity.get_ref()
+      velocity_ref.val.vector = velocity_ref.val.vector.mul_scalar(-1.0F)
+    }
+  })
+}
+
+///|
+fn main {
+  @app.App::new(@ecs.World::new())
+  .add_plugins(@mgstudio.default_plugins())
+  .add_systems(@app.Startup, @app.system(@app.system_param2(spawn_system)))
+  .add_systems(@app.Update, @app.system(@app.system_param(move_system)))
+  .add_systems(@app.Update, @app.system(@app.system_param2(bounce_system)))
+  .run()
+}
