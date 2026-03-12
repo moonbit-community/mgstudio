@@ -4049,41 +4049,6 @@ fn render2d_tonemapping_lut_handles(
 }
 
 ///|
-fn render2d_apply_camera_bloom(
-  world : @ecs.World,
-  camera : CameraInstance,
-  source : @asset.Handle[@asset.Image],
-  view_width_logical : Int,
-  view_height_logical : Int,
-) -> Unit {
-  guard camera.bloom2d is Some(bloom) else { return }
-  if view_width_logical <= 0 || view_height_logical <= 0 {
-    return
-  }
-  let settings = bloom2d_sanitize_settings(bloom.settings)
-  world |> ignore
-  @render.host_gpu_apply_bloom2d(
-    scene_texture_id=source.id(),
-    enabled=if bloom.enabled { 1 } else { 0 },
-    intensity=settings.intensity,
-    low_frequency_boost=settings.low_frequency_boost,
-    low_frequency_boost_curvature=settings.low_frequency_boost_curvature,
-    high_pass_frequency=settings.high_pass_frequency,
-    threshold=settings.prefilter.threshold,
-    threshold_softness=settings.prefilter.threshold_softness,
-    composite_mode=match settings.composite_mode {
-      EnergyConserving => 0
-      Additive => 1
-    },
-    max_mip_dimension=settings.max_mip_dimension,
-    scale_x=settings.scale.x,
-    scale_y=settings.scale.y,
-    view_width=view_width_logical,
-    view_height=view_height_logical,
-  )
-}
-
-///|
 fn render2d_draw_camera_tonemapping(
   world : @ecs.World,
   source : @asset.Handle[@asset.Image],
@@ -8008,36 +7973,6 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         )
         @render.host_gpu_end_pass()
 
-        if camera.bloom2d is Some(_) {
-          @render.host_gpu_begin_pass(
-            target_id=@asset.Handle::id(source),
-            width=view_width_logical,
-            height=view_height_logical,
-            clear_r=0.0F,
-            clear_g=0.0F,
-            clear_b=0.0F,
-            clear_a=1.0F,
-            camera_x=camera.transform.translation.x,
-            camera_y=camera.transform.translation.y,
-            camera_rotation=camera.transform.rotation_z(),
-            camera_scale=render2d_camera_uniform_scale(
-              camera.projection,
-              camera.transform,
-            ),
-            viewport_x=0,
-            viewport_y=0,
-            viewport_width~,
-            viewport_height~,
-            viewport_depth_min~,
-            viewport_depth_max~,
-            clear_enabled=0,
-          )
-          render2d_apply_camera_bloom(
-            world, camera, source, viewport_width, viewport_height,
-          )
-          @render.host_gpu_end_pass()
-        }
-
         @render.host_gpu_begin_pass(
           target_id~,
           width=view_width_logical,
@@ -8061,10 +7996,17 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           viewport_depth_max~,
           clear_enabled=if clear_enabled { 1 } else { 0 },
         )
-        render2d_draw_camera_tonemapping(
-          world, source, tonemapping_mode, deband_dither_enabled, viewport_width,
-          viewport_height,
-        )
+        if camera.bloom2d is Some(_) {
+          render2d_draw_camera_bloom_from_source(
+            world, camera, source, tonemapping_mode, deband_dither_enabled, viewport_width,
+            viewport_height,
+          )
+        } else {
+          render2d_draw_camera_tonemapping(
+            world, source, tonemapping_mode, deband_dither_enabled, viewport_width,
+            viewport_height,
+          )
+        }
         draw_camera_items(
           ui_overlay_draw_items, viewport_x, viewport_y, viewport_width, viewport_height,
           scale_factor,

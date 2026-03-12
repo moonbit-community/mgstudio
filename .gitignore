@@ -8,5 +8,3 @@ AGENTS.md
 .codex
 /mgstudio-runtime/web/mgstudio-runtime-web.js
 **/.mgstudio/run/
-.playwright-cli/
-output/playwright/
