@@ -216,6 +216,18 @@ pub fn[T : CommandSpawnComponents] Commands::spawn(
 }
 
 ///|
+pub fn[T : CommandSpawnComponents] Commands::spawn_batch(
+  self : Commands,
+  component_batch : Array[T],
+) -> Array[@core.Entity] {
+  let entities : Array[@core.Entity] = []
+  for components in component_batch {
+    entities.push(self.spawn(components))
+  }
+  entities
+}
+
+///|
 pub fn[T : CommandSpawnComponents] EntityCommands::insert(
   self : EntityCommands,
   components : T,

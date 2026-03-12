@@ -357,6 +357,7 @@ pub struct Commands {
 }
 pub fn Commands::entity(Self, @core.Entity) -> EntityCommands
 pub fn[T : CommandSpawnComponents] Commands::spawn(Self, T) -> @core.Entity
+pub fn[T : CommandSpawnComponents] Commands::spawn_batch(Self, Array[T]) -> Array[@core.Entity]
 pub fn Commands::spawn_empty(Self) -> @core.Entity
 pub impl SystemParam for Commands
 

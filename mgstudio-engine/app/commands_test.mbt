@@ -226,6 +226,57 @@ test "app: Commands spawn supports eight-component tuples" {
 }
 
 ///|
+test "app: Commands spawn_batch defers all batch insertions until flush" {
+  let counts : Array[Int] = []
+  let spawned : Ref[Array[@core.Entity]] = Ref::new([])
+  let mut app = App::new(@ecs.World::new())
+    .add_system_param2(fn(
+      commands : Commands,
+      query : @ecs.Query1[CommandsPosition],
+    ) {
+      counts.push(query.count())
+      spawned.val = commands.spawn_batch([
+        (
+          CommandsPosition::{ x: 21, y: 22 },
+          CommandsVelocity::{ dx: 23, dy: 24 },
+          CommandsMarker::{  },
+        ),
+        (
+          CommandsPosition::{ x: 31, y: 32 },
+          CommandsVelocity::{ dx: 33, dy: 34 },
+          CommandsMarker::{  },
+        ),
+        (
+          CommandsPosition::{ x: 41, y: 42 },
+          CommandsVelocity::{ dx: 43, dy: 44 },
+          CommandsMarker::{  },
+        ),
+      ])
+      counts.push(query.count())
+    })
+    .add_system_param(fn(query : @ecs.Query1[CommandsPosition]) {
+      counts.push(query.count())
+    })
+
+  app = app.run_once()
+
+  inspect(counts, content="[0, 0, 3]")
+  inspect(spawned.val.length(), content="3")
+  inspect(
+    try! app.world().get(spawned.val[0], commands_position_key),
+    content="Some({x: 21, y: 22})",
+  )
+  inspect(
+    try! app.world().get(spawned.val[1], commands_position_key),
+    content="Some({x: 31, y: 32})",
+  )
+  inspect(
+    try! app.world().get(spawned.val[2], commands_position_key),
+    content="Some({x: 41, y: 42})",
+  )
+}
+
+///|
 test "app: Commands entity insert defers component insertion until flush" {
   let spawned : Ref[@core.Entity?] = Ref::new(None)
   let counts : Array[Int] = []
