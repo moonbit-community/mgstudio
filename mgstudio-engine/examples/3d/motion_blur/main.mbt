@@ -547,13 +547,21 @@ fn keyboard_inputs(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in motion_blur example")
+  }
+}
+
+///|
 fn move_cars(world : @ecs.World) -> Unit {
   if motion_blur_state.val.car_bodies.length() == 0 {
     return
   }
   let tick = world.read_change_tick()
   let transform_store = world.component(@math.ecs_key_transform)
-  let now = @time.time_elapsed_seconds() * 0.25F
+  let now = world_time(world).elapsed_seconds() * 0.25F
   for car in motion_blur_state.val.car_bodies {
     guard transform_store.get(car.entity) is Some(current_transform) else {
       continue

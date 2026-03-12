@@ -479,6 +479,14 @@ fn bounce_ray(
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in mesh_ray_cast example")
+  }
+}
+
+///|
 fn bouncing_raycast(world : @ecs.World) -> Unit {
   guard raycast_state.val.red_pool is Some(red_pool) else { return }
   guard raycast_state.val.green_pool is Some(green_pool) else { return }
@@ -486,7 +494,7 @@ fn bouncing_raycast(world : @ecs.World) -> Unit {
     .with_max_hits(1)
     .with_only_entities(Some(raycast_state.val.collider_entities))
 
-  let elapsed = @time.time_elapsed_seconds()
+  let elapsed = world_time(world).elapsed_seconds()
   let phase_time = if elapsed > 4.0F { elapsed - 4.0F } else { 0.0F }
   let t = @math.cos(phase_time * LASER_SPEED) * PI
   let auto_origin = @math.Vec3::new(

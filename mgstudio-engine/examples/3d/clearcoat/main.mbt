@@ -326,8 +326,16 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in clearcoat example")
+  }
+}
+
+///|
 fn animate_light(world : @ecs.World) -> Unit {
-  let now = @time.time_elapsed_seconds()
+  let now = world_time(world).elapsed_seconds()
   let light_pos = @math.Vec3::new(
     @math.sin(now * 1.4F) * 3.0F,
     @math.cos(now * 1.0F) * 4.0F,
@@ -353,7 +361,7 @@ fn animate_light(world : @ecs.World) -> Unit {
 
 ///|
 fn animate_spheres(world : @ecs.World) -> Unit {
-  let angle = SPHERE_ROTATION_SPEED * @time.time_elapsed_seconds()
+  let angle = SPHERE_ROTATION_SPEED * world_time(world).elapsed_seconds()
   let rotation = @math.Quat::from_rotation_y(angle)
   let tick = world.read_change_tick()
   let count = clearcoat_state.val.sphere_entities.length()

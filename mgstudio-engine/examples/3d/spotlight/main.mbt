@@ -272,9 +272,17 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in spotlight example")
+  }
+}
+
+///|
 fn light_sway(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let elapsed = @time.time_elapsed_seconds()
+  let elapsed = world_time(world).elapsed_seconds()
   let transform_store = world.component(@math.ecs_key_transform)
   let spot_light_store = world.component(@pbr.ecs_key_spot_light)
 
@@ -336,7 +344,9 @@ fn movement(world : @ecs.World) -> Unit {
     return
   }
 
-  let delta = translation.mul_scalar(MOVE_SPEED * @time.time_delta_seconds())
+  let delta = translation.mul_scalar(
+    MOVE_SPEED * world_time(world).delta_seconds(),
+  )
   let tick = world.read_change_tick()
   let transform_store = world.component(@math.ecs_key_transform)
   for entity in spotlight_state.val.movables {
@@ -351,7 +361,7 @@ fn movement(world : @ecs.World) -> Unit {
 fn rotation(world : @ecs.World) -> Unit {
   guard spotlight_state.val.camera is Some(camera_entity) else { return }
 
-  let delta = @time.time_delta_seconds()
+  let delta = world_time(world).delta_seconds()
   let angle = if @input.key_pressed(@window.KeyCode::ArrowLeft) {
     delta
   } else if @input.key_pressed(@window.KeyCode::ArrowRight) {

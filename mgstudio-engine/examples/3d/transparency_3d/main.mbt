@@ -225,8 +225,16 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn fade_transparency(_world : @ecs.World) -> Unit {
-  let alpha = @math.sin(@time.time_elapsed_seconds()) / 2.0F + 0.5F
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in transparency_3d example")
+  }
+}
+
+///|
+fn fade_transparency(world : @ecs.World) -> Unit {
+  let alpha = @math.sin(world_time(world).elapsed_seconds()) / 2.0F + 0.5F
   for handle in transparency_state.val.materials {
     if @pbr.standard_material_get(handle) is Some(material) {
       let next_color = @sprite.Color::new(
