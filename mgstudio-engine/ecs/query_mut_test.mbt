@@ -160,6 +160,112 @@ test "ecs query mut: query2 ref mut supports iter_many_mut and par_iter_mut" {
 }
 
 ///|
+test "ecs query mut: query2 value mut contiguous_iter_mut yields dense chunks" {
+  let world = World::new()
+  let comp_position : ComponentKey[Position] = register_component(
+    debug_name="position_query2_value_mut_contiguous",
+  )
+  let comp_velocity : ComponentKey[Velocity] = register_component(
+    debug_name="velocity_query2_value_mut_contiguous",
+  )
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  let e2 = world.spawn()
+  let e3 = world.spawn()
+
+  try! world.set(e0, comp_velocity, Velocity::{ dx: 10, dy: 0 })
+  try! world.set(e1, comp_velocity, Velocity::{ dx: 20, dy: 0 })
+  try! world.set(e2, comp_velocity, Velocity::{ dx: 30, dy: 0 })
+  try! world.set(e3, comp_velocity, Velocity::{ dx: 40, dy: 0 })
+
+  try! world.set(e0, comp_position, Position::{ x: 1, y: 0 })
+  try! world.set(e1, comp_position, Position::{ x: 2, y: 0 })
+  try! world.set(e3, comp_position, Position::{ x: 4, y: 0 })
+
+  let ctx = @core.SystemContext::new()
+  ctx.set(@core.SystemTicks::new(0, 1))
+  world.set_system_context(ctx)
+
+  let query = world.query2_value_mut_filtered(
+    comp_position,
+    comp_velocity,
+    All::new(),
+  )
+  guard query.contiguous_iter_mut() is Some(iter) else {
+    fail("expected contiguous iterator for query2 value mut")
+  }
+
+  let chunk_lens : Array[Int] = []
+  while iter.fetch_next() is Some((positions, velocities)) {
+    chunk_lens.push(positions.length())
+    inspect(positions.length() == velocities.length(), content="true")
+    for i in 0..<positions.length() {
+      velocities[i].get_ref().val.dx = velocities[i].get_ref().val.dx +
+        positions[i].x
+    }
+  }
+
+  inspect(chunk_lens, content="[2, 1]")
+  inspect(try! world.get(e0, comp_velocity), content="Some({dx: 11, dy: 0})")
+  inspect(try! world.get(e1, comp_velocity), content="Some({dx: 22, dy: 0})")
+  inspect(try! world.get(e2, comp_velocity), content="Some({dx: 30, dy: 0})")
+  inspect(try! world.get(e3, comp_velocity), content="Some({dx: 44, dy: 0})")
+}
+
+///|
+test "ecs query mut: query2 ref mut contiguous_iter_mut preserves chunk shape" {
+  let world = World::new()
+  let comp_position : ComponentKey[Position] = register_component(
+    debug_name="position_query2_ref_mut_contiguous",
+  )
+  let comp_velocity : ComponentKey[Velocity] = register_component(
+    debug_name="velocity_query2_ref_mut_contiguous",
+  )
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  let e2 = world.spawn()
+  let e3 = world.spawn()
+
+  try! world.set(e0, comp_velocity, Velocity::{ dx: 10, dy: 0 })
+  try! world.set(e1, comp_velocity, Velocity::{ dx: 20, dy: 0 })
+  try! world.set(e2, comp_velocity, Velocity::{ dx: 30, dy: 0 })
+  try! world.set(e3, comp_velocity, Velocity::{ dx: 40, dy: 0 })
+
+  try! world.set(e0, comp_position, Position::{ x: 1, y: 0 })
+  try! world.set(e1, comp_position, Position::{ x: 2, y: 0 })
+  try! world.set(e3, comp_position, Position::{ x: 4, y: 0 })
+
+  let ctx = @core.SystemContext::new()
+  ctx.set(@core.SystemTicks::new(0, 1))
+  world.set_system_context(ctx)
+
+  let query = world.query2_ref_mut_filtered(
+    comp_position,
+    comp_velocity,
+    All::new(),
+  )
+  guard query.contiguous_iter_mut() is Some(iter) else {
+    fail("expected contiguous iterator for query2 ref mut")
+  }
+
+  let chunk_lens : Array[Int] = []
+  while iter.fetch_next() is Some((positions, velocities)) {
+    chunk_lens.push(positions.length())
+    inspect(positions.length() == velocities.length(), content="true")
+    for i in 0..<positions.length() {
+      velocities[i].get_ref().val.dx = velocities[i].get_ref().val.dx +
+        positions[i].value().x
+    }
+  }
+
+  inspect(chunk_lens, content="[2, 1]")
+  inspect(try! world.get(e0, comp_velocity), content="Some({dx: 11, dy: 0})")
+  inspect(try! world.get(e1, comp_velocity), content="Some({dx: 22, dy: 0})")
+  inspect(try! world.get(e2, comp_velocity), content="Some({dx: 30, dy: 0})")
+  inspect(try! world.get(e3, comp_velocity), content="Some({dx: 44, dy: 0})")
+}
+
+///|
 test "ecs query mut: plain query1 supports count and set_changed writeback" {
   let world = World::new()
   let comp_position : ComponentKey[Position] = register_component(

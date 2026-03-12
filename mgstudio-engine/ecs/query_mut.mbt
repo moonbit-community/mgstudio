@@ -63,6 +63,20 @@ pub struct Query2ValueMutFilteredParallel[A, B, F] {
 }
 
 ///|
+pub struct Query2RefMutFilteredContiguousMut[A, B, F] {
+  query : Query2RefMutFiltered[A, B, F]
+  chunks : Array[Array[@core.Entity]]
+  mut index : Int
+}
+
+///|
+pub struct Query2ValueMutFilteredContiguousMut[A, B, F] {
+  query : Query2ValueMutFiltered[A, B, F]
+  chunks : Array[Array[@core.Entity]]
+  mut index : Int
+}
+
+///|
 pub struct Query3ValueRefMutFiltered[A, B, C, F] {
   world : World
   key_a : ComponentKey[A]
@@ -117,6 +131,47 @@ fn[A] query_component_mut_from_payload(
     changed: false,
     writeback: Some(ComponentMutWriteback::{ world, key, entity }),
   }
+}
+
+///|
+fn[A, B, F : QueryFilter] query2_contiguous_chunks(
+  world : World,
+  key_a : ComponentKey[A],
+  key_b : ComponentKey[B],
+  filter : F,
+  system : @core.SystemTicks,
+) -> Array[Array[@core.Entity]] {
+  let chunks : Array[Array[@core.Entity]] = []
+  guard world.component_store(key_a.id()) is Some(store_a_ref) else {
+    return chunks
+  }
+  guard world.component_store(key_b.id()) is Some(store_b_ref) else {
+    return chunks
+  }
+
+  let store_a = store_a_ref.val
+  let store_b = store_b_ref.val
+  let mut current_chunk : Array[@core.Entity] = []
+  let mut previous_dense_index = -2
+  let dense_index_ref = Ref::new(0)
+  store_b.for_each(fn(entity, _payload) {
+    let dense_i = dense_index_ref.val
+    dense_index_ref.val = dense_index_ref.val + 1
+    if store_a.contains(entity) &&
+      QueryFilter::matches(filter, world, entity, system) {
+      if dense_i != previous_dense_index + 1 && current_chunk.length() > 0 {
+        chunks.push(current_chunk)
+        current_chunk = []
+      }
+      current_chunk.push(entity)
+      previous_dense_index = dense_i
+    }
+  })
+
+  if current_chunk.length() > 0 {
+    chunks.push(current_chunk)
+  }
+  chunks
 }
 
 ///|
@@ -439,6 +494,23 @@ pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::get_unchecked(
 }
 
 ///|
+pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::contiguous_iter_mut(
+  self : Query2ValueMutFiltered[A, B, F],
+) -> Query2ValueMutFilteredContiguousMut[A, B, F]? {
+  Some({
+    query: self,
+    chunks: query2_contiguous_chunks(
+      self.world,
+      self.key_a,
+      self.key_b,
+      self.filter,
+      self.system,
+    ),
+    index: 0,
+  })
+}
+
+///|
 pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::with_mut(
   self : Query2ValueMutFiltered[A, B, F],
   entity : @core.Entity,
@@ -610,6 +682,61 @@ pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::view_mut(
       f(entry.0, component_ref, component_mut)
     }
   }
+}
+
+///|
+pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::contiguous_iter_mut(
+  self : Query2RefMutFiltered[A, B, F],
+) -> Query2RefMutFilteredContiguousMut[A, B, F]? {
+  Some({
+    query: self,
+    chunks: query2_contiguous_chunks(
+      self.world,
+      self.key_a,
+      self.key_b,
+      self.filter,
+      self.system,
+    ),
+    index: 0,
+  })
+}
+
+///|
+pub fn[A, B, F : QueryFilter] Query2RefMutFilteredContiguousMut::fetch_next(
+  self : Query2RefMutFilteredContiguousMut[A, B, F],
+) -> (Array[ComponentRef[A]], Array[ComponentMut[B]])? {
+  guard self.chunks.get(self.index) is Some(chunk_entities) else { return None }
+  self.index = self.index + 1
+
+  let refs : Array[ComponentRef[A]] = []
+  let muts : Array[ComponentMut[B]] = []
+  for entity in chunk_entities {
+    if (try? self.query.get_unchecked(entity))
+      is Ok(Some((component_ref, component_mut))) {
+      refs.push(component_ref)
+      muts.push(component_mut)
+    }
+  }
+  Some((refs, muts))
+}
+
+///|
+pub fn[A, B, F : QueryFilter] Query2ValueMutFilteredContiguousMut::fetch_next(
+  self : Query2ValueMutFilteredContiguousMut[A, B, F],
+) -> (Array[A], Array[ComponentMut[B]])? {
+  guard self.chunks.get(self.index) is Some(chunk_entities) else { return None }
+  self.index = self.index + 1
+
+  let values_a : Array[A] = []
+  let muts : Array[ComponentMut[B]] = []
+  for entity in chunk_entities {
+    if (try? self.query.get_unchecked(entity))
+      is Ok(Some((value_a, component_mut))) {
+      values_a.push(value_a)
+      muts.push(component_mut)
+    }
+  }
+  Some((values_a, muts))
 }
 
 ///|

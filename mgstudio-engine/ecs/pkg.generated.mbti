@@ -418,6 +418,7 @@ pub struct Query2RefMutFiltered[A, B, F] {
   filter : F
   system : @core.SystemTicks
 }
+pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::contiguous_iter_mut(Self[A, B, F]) -> Query2RefMutFilteredContiguousMut[A, B, F]?
 pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::count(Self[A, B, F]) -> Int
 pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::get(Self[A, B, F], @core.Entity) -> (ComponentRef[A], ComponentMut[B])? raise EcsError
 pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::get_unchecked(Self[A, B, F], @core.Entity) -> (ComponentRef[A], ComponentMut[B])? raise EcsError
@@ -427,6 +428,13 @@ pub fn[A, B, F] Query2RefMutFiltered::iter_many_unique_mut_unsafe(Self[A, B, F],
 pub fn[A, B, F] Query2RefMutFiltered::par_iter_mut(Self[A, B, F]) -> Query2RefMutFilteredParallel[A, B, F]
 pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::view_mut(Self[A, B, F], (@core.Entity, ComponentRef[A], ComponentMut[B]) -> Unit) -> Unit raise EcsError
 pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::with_mut(Self[A, B, F], @core.Entity, (ComponentRef[A], ComponentMut[B]) -> Unit) -> Bool raise EcsError
+
+pub struct Query2RefMutFilteredContiguousMut[A, B, F] {
+  query : Query2RefMutFiltered[A, B, F]
+  chunks : Array[Array[@core.Entity]]
+  mut index : Int
+}
+pub fn[A, B, F : QueryFilter] Query2RefMutFilteredContiguousMut::fetch_next(Self[A, B, F]) -> (Array[ComponentRef[A]], Array[ComponentMut[B]])?
 
 pub struct Query2RefMutFilteredMany[A, B, F] {
   query : Query2RefMutFiltered[A, B, F]
@@ -449,12 +457,20 @@ pub struct Query2ValueMutFiltered[A, B, F] {
   filter : F
   system : @core.SystemTicks
 }
+pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::contiguous_iter_mut(Self[A, B, F]) -> Query2ValueMutFilteredContiguousMut[A, B, F]?
 pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::count(Self[A, B, F]) -> Int
 pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::get(Self[A, B, F], @core.Entity) -> (A, ComponentMut[B])? raise EcsError
 pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::get_unchecked(Self[A, B, F], @core.Entity) -> (A, ComponentMut[B])? raise EcsError
 pub fn[A, B, F] Query2ValueMutFiltered::par_iter_mut(Self[A, B, F]) -> Query2ValueMutFilteredParallel[A, B, F]
 pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::view_mut(Self[A, B, F], (@core.Entity, A, ComponentMut[B]) -> Unit) -> Unit raise EcsError
 pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::with_mut(Self[A, B, F], @core.Entity, (A, ComponentMut[B]) -> Unit) -> Bool raise EcsError
+
+pub struct Query2ValueMutFilteredContiguousMut[A, B, F] {
+  query : Query2ValueMutFiltered[A, B, F]
+  chunks : Array[Array[@core.Entity]]
+  mut index : Int
+}
+pub fn[A, B, F : QueryFilter] Query2ValueMutFilteredContiguousMut::fetch_next(Self[A, B, F]) -> (Array[A], Array[ComponentMut[B]])?
 
 pub struct Query2ValueMutFilteredParallel[A, B, F] {
   query : Query2ValueMutFiltered[A, B, F]
