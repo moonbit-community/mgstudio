@@ -465,3 +465,15 @@ test "window: exit_on_primary_closed only exits after primary window disappears"
   app = app.run_once()
   inspect(app.should_exit(), content="Some(Success)")
 }
+
+///|
+test "window: keycode supports Eq/Hash/Show for map-backed indexing" {
+  let key_index : @hashmap.HashMap[KeyCode, Int] = @hashmap.HashMap::new()
+  key_index.set(KeyCode::KeyA, 1)
+  key_index.set(KeyCode::Space, 2)
+
+  inspect(key_index.get(KeyCode::KeyA), content="Some(1)")
+  inspect(key_index.get(KeyCode::Space), content="Some(2)")
+  inspect(KeyCode::KeyA == KeyCode::KeyA, content="true")
+  inspect(KeyCode::KeyA.to_string(), content="KeyA")
+}

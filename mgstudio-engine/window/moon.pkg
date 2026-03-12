@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/render/renderer" @renderer,
   "Milky2018/mgstudio/window/windowing_native" @windowing,
   "tonyfettes/any",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
   "moonbitlang/core/strconv",

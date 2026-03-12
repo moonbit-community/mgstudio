@@ -349,6 +349,9 @@ pub(all) enum KeyCode {
   BracketRight
   Quote
 }
+pub impl Eq for KeyCode
+pub impl Hash for KeyCode
+pub impl Show for KeyCode
 pub impl ToJson for KeyCode
 pub impl @json.FromJson for KeyCode
 
@@ -357,6 +360,9 @@ pub(all) enum MouseButton {
   Right
   Middle
 }
+pub impl Eq for MouseButton
+pub impl Hash for MouseButton
+pub impl Show for MouseButton
 pub impl ToJson for MouseButton
 pub impl @json.FromJson for MouseButton
 
