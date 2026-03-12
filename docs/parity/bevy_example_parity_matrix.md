@@ -1,7 +1,7 @@
 # Bevy Example Parity Matrix
 
 Status: Active (SoT)
-Last Verified: 2026-03-11
+Last Verified: 2026-03-12
 Scope: As-Implemented
 Code References:
 - `bevy/examples/`
@@ -53,8 +53,8 @@ Notes:
 | `transforms` | 5 | 4 | 1 | 0 |
 | `ui` | 52 | 1 | 51 | 0 |
 | `usage` | 2 | 0 | 2 | 0 |
-| `window` | 12 | 6 | 6 | 0 |
-| **Total** | **402** | **147** | **252** | **3** |
+| `window` | 12 | 7 | 5 | 0 |
+| **Total** | **402** | **148** | **251** | **3** |
 
 ## Example Inventory
 
@@ -461,4 +461,4 @@ Notes:
 | `bevy/examples/window/transparent_window.rs` | `window` | `mgstudio-engine/examples/window/transparent_window` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/window_drag_move.rs` | `window` | `mgstudio-engine/examples/window/window_drag_move` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
 | `bevy/examples/window/window_resizing.rs` | `window` | `mgstudio-engine/examples/window/window_resizing` | `Exact` | `team-input_window` |  |
-| `bevy/examples/window/window_settings.rs` | `window` | `mgstudio-engine/examples/window/window_settings` | `Blocked` | `team-input_window` | Fallback implementation exists; blocked until exact parity. |
+| `bevy/examples/window/window_settings.rs` | `window` | `mgstudio-engine/examples/window/window_settings` | `Exact` | `team-input_window` |  |

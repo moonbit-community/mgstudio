@@ -400,4 +400,4 @@ bevy/examples/window/screenshot.rs,window,screenshot,mgstudio-engine/examples/wi
 bevy/examples/window/transparent_window.rs,window,transparent_window,mgstudio-engine/examples/window/transparent_window,Blocked,team-input_window,Fallback implementation exists; blocked until exact parity.
 bevy/examples/window/window_drag_move.rs,window,window_drag_move,mgstudio-engine/examples/window/window_drag_move,Blocked,team-input_window,Fallback implementation exists; blocked until exact parity.
 bevy/examples/window/window_resizing.rs,window,window_resizing,mgstudio-engine/examples/window/window_resizing,Exact,team-input_window,
-bevy/examples/window/window_settings.rs,window,window_settings,mgstudio-engine/examples/window/window_settings,Blocked,team-input_window,Fallback implementation exists; blocked until exact parity.
+bevy/examples/window/window_settings.rs,window,window_settings,mgstudio-engine/examples/window/window_settings,Exact,team-input_window,
