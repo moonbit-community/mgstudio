@@ -108,6 +108,16 @@ pub fn host_gpu_create_surface(window : Int) -> HostGpuSurface {
 }
 
 ///|
+pub fn host_gpu_surface_target_id(surface : HostGpuSurface) -> Int {
+  @renderer.surface_target_id(surface)
+}
+
+///|
+pub fn host_gpu_surface_target_id_for_window(window : Int) -> Int {
+  @renderer.surface_target_id_for_window(window)
+}
+
+///|
 pub fn host_gpu_configure_surface(
   device~ : HostGpuDevice,
   surface~ : HostGpuSurface,
@@ -125,6 +135,11 @@ pub fn host_gpu_begin_frame(surface : HostGpuSurface) -> HostGpuFrame {
 ///|
 pub fn host_gpu_end_frame(frame : HostGpuFrame) -> Unit {
   @renderer.end_frame(frame)
+}
+
+///|
+pub fn host_gpu_set_active_surface_target(target_id : Int) -> Unit {
+  @renderer.set_active_surface_target(target_id)
 }
 
 ///|

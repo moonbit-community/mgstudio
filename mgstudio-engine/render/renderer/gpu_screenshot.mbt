@@ -41,106 +41,33 @@ pub struct ScreenshotCaptureResult {
 }
 
 ///|
-fn ensure_surface_capture_texture(
-  backend : GpuBackend,
-  width : Int,
-  height : Int,
-  format_raw : UInt,
-) -> Int raise GpuBackendError {
-  ensure_sprite_resources(backend)
-  let safe_width = if width <= 0 { 1 } else { width }
-  let safe_height = if height <= 0 { 1 } else { height }
-  if backend.surface_capture_texture_id >= 0 {
-    if find_texture(backend, backend.surface_capture_texture_id)
-      is Some(existing) {
-      if existing.width == safe_width &&
-        existing.height == safe_height &&
-        existing.format_raw == format_raw {
-        return existing.id
-      }
-    }
-  }
-  let texture_id = if backend.surface_capture_texture_id >= 0 {
-    backend.surface_capture_texture_id
-  } else {
-    let allocated_id = alloc_id(backend)
-    backend.surface_capture_texture_id = allocated_id
-    allocated_id
-  }
-  let usage = @wgpu.TextureUsage::from_u64(
-    @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
-    @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
-    @wgpu.TEXTURE_USAGE_COPY_SRC |
-    @wgpu.TEXTURE_USAGE_COPY_DST,
-  )
-  let texture = backend.device.create_texture_u32(
-    safe_width.reinterpret_as_uint(),
-    safe_height.reinterpret_as_uint(),
-    1U,
-    usage,
-    @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
-    tf(format_raw),
-  )
-  let view = texture.create_view()
-  let sampler = backend.device.create_sampler_linear_clamp()
-  let bind_group = backend.device.create_bind_group_sampler_texture_2d(
-    backend.sprite_bgl_tex.unwrap(),
-    sampler,
-    view,
-  )
-  replace_texture_info(backend, GpuTextureInfo::{
-    id: texture_id,
-    width: safe_width,
-    height: safe_height,
-    mip_level_count: 1,
-    base_mip_level: 0,
-    format_raw,
-    texture,
-    view,
-    sample_view: None,
-    layer_views: [],
-    sampler,
-    bind_group,
-  })
-  mesh3d_material_cache_clear(backend)
-  texture_id
-}
-
-///|
-fn surface_capture_texture_info(backend : GpuBackend) -> GpuTextureInfo? {
-  if backend.surface_capture_texture_id < 0 {
-    None
-  } else {
-    find_texture(backend, backend.surface_capture_texture_id)
-  }
+pub struct ScreenshotTextureRef {
+  id : Int
+  width : Int
+  height : Int
 }
 
 ///|
 fn prepare_surface_capture_frame(
   backend : GpuBackend,
-) -> Unit raise GpuBackendError {
-  backend.surface_capture_active = false
-  active_surface_screenshot_capture_ids_ref.val.clear()
+) -> Unit {
+  if backend.surface_capture_active {
+    return
+  }
+  if active_surface_screenshot_capture_ids_ref.val.length() > 0 {
+    backend.surface_capture_active = true
+    return
+  }
   if pending_surface_screenshot_capture_ids_ref.val.length() == 0 {
     return
   }
-  guard backend.surface_format is Some(surface_format) else { return }
-  let width = if backend.configured_width <= 0 {
-    1
-  } else {
-    backend.configured_width
-  }
-  let height = if backend.configured_height <= 0 {
-    1
-  } else {
-    backend.configured_height
-  }
-  if ensure_surface_capture_texture(backend, width, height, surface_format.raw) <=
-    0 {
+  guard backend.surface_format is Some(_) else { return }
+  if backend.configured_width <= 0 || backend.configured_height <= 0 {
     return
   }
   active_surface_screenshot_capture_ids_ref.val = pending_surface_screenshot_capture_ids_ref.val
   pending_surface_screenshot_capture_ids_ref.val = []
+  active_surface_screenshot_capture_target_id_ref.val = backend.active_surface_target_id
   backend.surface_capture_active = true
 }
 
@@ -156,6 +83,9 @@ let pending_surface_screenshot_capture_ids_ref : Ref[Array[Int]] = Ref::new([])
 
 ///|
 let active_surface_screenshot_capture_ids_ref : Ref[Array[Int]] = Ref::new([])
+
+///|
+let active_surface_screenshot_capture_target_id_ref : Ref[Int] = Ref::new(0)
 
 ///|
 let inflight_screenshot_captures_ref : Ref[Array[InflightScreenshotCapture]] = Ref::new([],
@@ -368,33 +298,11 @@ fn screenshot_encode_active_surface_captures(
   if !backend.surface_capture_active {
     return
   }
-  guard surface_capture_texture_info(backend) is Some(surface_capture_texture) else {
+  if active_surface_screenshot_capture_target_id_ref.val !=
+    backend.active_surface_target_id {
     return
   }
-  let active_capture_ids = active_surface_screenshot_capture_ids_ref.val
-  active_surface_screenshot_capture_ids_ref.val = []
-  for capture_id in active_capture_ids {
-    screenshot_enqueue_copy_to_buffer(
-      backend,
-      frame,
-      capture_id,
-      surface_capture_texture.texture,
-      surface_capture_texture.width,
-      surface_capture_texture.height,
-      surface_capture_texture.format_raw,
-    )
-  }
-}
-
-///|
-fn screenshot_present_surface_capture(
-  backend : GpuBackend,
-) -> Unit raise GpuBackendError {
-  if !backend.surface_capture_active {
-    return
-  }
-  guard surface_capture_texture_info(backend) is Some(surface_capture_texture) else {
-    backend.surface_capture_active = false
+  guard backend.surface_format is Some(surface_format) else {
     return
   }
   let width = if backend.configured_width <= 0 {
@@ -407,28 +315,38 @@ fn screenshot_present_surface_capture(
   } else {
     backend.configured_height
   }
+  guard screenshot_capture_bytes_per_pixel(surface_format.raw) is Some(_) else {
+    return
+  }
+  let active_capture_ids = active_surface_screenshot_capture_ids_ref.val
+  active_surface_screenshot_capture_ids_ref.val = []
+  for capture_id in active_capture_ids {
+    screenshot_enqueue_copy_to_buffer(
+      backend,
+      frame,
+      capture_id,
+      frame.surface_texture,
+      width,
+      height,
+      surface_format.raw,
+    )
+  }
+}
+
+///|
+fn screenshot_present_surface_capture(
+  backend : GpuBackend,
+) -> Unit {
+  if !backend.surface_capture_active {
+    return
+  }
+  if active_surface_screenshot_capture_target_id_ref.val !=
+    backend.active_surface_target_id {
+    return
+  }
   backend.surface_capture_active = false
-  backend.begin_pass(
-    -1, width, height, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0, 0, width,
-    height, 0.0F, 1.0F, 1,
-  )
-  backend.draw_sprite_uv(
-    surface_capture_texture.id,
-    0.0F,
-    0.0F,
-    0.0F,
-    Float::from_double(width.to_double()) / 128.0F,
-    Float::from_double(height.to_double()) / 128.0F,
-    1.0F,
-    1.0F,
-    1.0F,
-    1.0F,
-    0.0F,
-    0.0F,
-    1.0F,
-    1.0F,
-  )
-  backend.end_pass()
+  active_surface_screenshot_capture_ids_ref.val.clear()
+  active_surface_screenshot_capture_target_id_ref.val = 0
 }
 
 ///|
@@ -503,4 +421,24 @@ pub fn screenshot_capture_texture_sync(
     texture.height,
     texture.format_raw,
   )
+}
+
+///|
+pub fn screenshot_resource_id_upper_bound() -> Int {
+  guard ensure_backend() is Some(backend) else { return 0 }
+  backend.next_id - 1
+}
+
+///|
+pub fn screenshot_texture_refs() -> Array[ScreenshotTextureRef] {
+  guard ensure_backend() is Some(backend) else { return [] }
+  let refs : Array[ScreenshotTextureRef] = []
+  for texture in backend.textures {
+    refs.push(ScreenshotTextureRef::{
+      id: texture.id,
+      width: texture.width,
+      height: texture.height,
+    })
+  }
+  refs
 }

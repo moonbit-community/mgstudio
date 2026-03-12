@@ -750,54 +750,17 @@ fn GpuBackend::create_render_target_with_format(
   id
 }
 
-///|
-fn release_texture_resources(info : GpuTextureInfo) -> Unit {
-  info.bind_group.release()
-  info.sampler.release()
-  for layer_view in info.layer_views {
-    layer_view.release()
-  }
-  if info.sample_view is Some(sample_view) {
-    sample_view.release()
-  }
-  info.view.release()
-  info.texture.release()
-}
-
-///|
-fn replace_texture_info(
-  backend : GpuBackend,
-  replacement : GpuTextureInfo,
-) -> Unit {
-  for i in 0..<backend.textures.length() {
-    if backend.textures[i].id == replacement.id {
-      release_texture_resources(backend.textures[i])
-      backend.textures[i] = replacement
-      return
-    }
-  }
-  backend.textures.push(replacement)
-}
-
-///|
-
-///|
 fn target_view(
   backend : GpuBackend,
   target_id : Int,
   target_layer : Int,
 ) -> @wgpu.TextureView? {
-  if target_id == -1 {
+  if target_id < 0 {
+    if backend.active_surface_target_id != target_id {
+      return None
+    }
     match backend.frame {
-      Some(frame) => {
-        if backend.surface_capture_active {
-          if surface_capture_texture_info(backend)
-            is Some(surface_capture_texture) {
-            return Some(surface_capture_texture.view)
-          }
-        }
-        Some(frame.surface_view)
-      }
+      Some(frame) => Some(frame.surface_view)
       None => None
     }
   } else {
@@ -820,8 +783,8 @@ fn current_pass_color_format(backend : GpuBackend) -> @wgpu.TextureFormat? {
       if pass_kind_base_kind(pass_state.pass_kind) ==
         PASS_KIND_BASE_POINT_SHADOW {
         Some(tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM))
-      } else if pass_state.target_id == -1 {
-        backend.surface_format
+      } else if pass_state.target_id < 0 {
+        surface_target_format(backend, pass_state.target_id)
       } else {
         match find_texture(backend, pass_state.target_id) {
           Some(texture) => Some(tf(texture.format_raw))
@@ -834,8 +797,8 @@ fn current_pass_color_format(backend : GpuBackend) -> @wgpu.TextureFormat? {
 
 ///|
 fn target_size_for_pass(backend : GpuBackend, target_id : Int) -> (Int, Int)? {
-  if target_id == -1 {
-    Some((backend.configured_width, backend.configured_height))
+  if target_id < 0 {
+    surface_target_size(backend, target_id)
   } else {
     match find_texture(backend, target_id) {
       Some(info) => Some((info.width, info.height))

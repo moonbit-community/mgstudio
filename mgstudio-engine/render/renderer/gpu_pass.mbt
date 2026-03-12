@@ -174,19 +174,32 @@ pub fn GpuBackend::begin_pass(
   viewport_depth_max : Float,
   clear_enabled : Int,
 ) -> Unit raise GpuBackendError {
+  if !activate_surface_frame_for_target(self, target_id) {
+    return
+  }
   guard self.frame is Some(frame) else { return }
   if frame.pass is Some(pass) {
     pass.end()
     pass.release()
     frame.pass = None
   }
+  let effective_clear_enabled = if target_id < 0 &&
+    clear_enabled != 0 &&
+    self.surface_cleared_this_frame {
+    0
+  } else {
+    clear_enabled
+  }
   guard target_view(self, target_id, -1) is Some(view) else { return }
-  let pass = if clear_enabled == 0 {
+  let pass = if effective_clear_enabled == 0 {
     frame.encoder.begin_render_pass_color_load(view)
   } else {
     frame.encoder.begin_render_pass_color_clear(
       view, clear_r, clear_g, clear_b, clear_a,
     )
+  }
+  if target_id < 0 && effective_clear_enabled != 0 {
+    set_active_surface_cleared_state(self, true)
   }
   let vx = if viewport_x < 0 { 0U } else { viewport_x.reinterpret_as_uint() }
   let vy = if viewport_y < 0 { 0U } else { viewport_y.reinterpret_as_uint() }
@@ -405,6 +418,9 @@ pub fn GpuBackend::begin_pass_3d(
   let camera_rot = quat_to_z_rotation(
     camera_rot_x, camera_rot_y, camera_rot_z, camera_rot_w,
   )
+  if !activate_surface_frame_for_target(self, target_id) {
+    return
+  }
   guard self.frame is Some(frame) else { return }
   if frame.pass is Some(pass) {
     pass.end()
@@ -434,17 +450,24 @@ pub fn GpuBackend::begin_pass_3d(
     }
     (view, scene_depth_view)
   }
-  let color_load_op_u32 = if clear_enabled == 0 {
+  let effective_clear_enabled = if target_id < 0 &&
+    clear_enabled != 0 &&
+    self.surface_cleared_this_frame {
+    0
+  } else {
+    clear_enabled
+  }
+  let color_load_op_u32 = if effective_clear_enabled == 0 {
     @wgpu.LOAD_OP_LOAD
   } else {
     @wgpu.LOAD_OP_CLEAR
   }
-  let depth_load_op_u32 = if clear_enabled == 0 {
+  let depth_load_op_u32 = if effective_clear_enabled == 0 {
     @wgpu.LOAD_OP_LOAD
   } else {
     @wgpu.LOAD_OP_CLEAR
   }
-  let stencil_load_op_u32 = if clear_enabled == 0 {
+  let stencil_load_op_u32 = if effective_clear_enabled == 0 {
     @wgpu.LOAD_OP_LOAD
   } else {
     @wgpu.LOAD_OP_CLEAR
@@ -484,6 +507,9 @@ pub fn GpuBackend::begin_pass_3d(
   )
   pass.set_scissor_rect(sx, sy, sw, sh)
   frame.pass = Some(pass)
+  if target_id < 0 && effective_clear_enabled != 0 {
+    set_active_surface_cleared_state(self, true)
+  }
   self.pass_state = Some(GpuPassState::{
     target_id,
     target_layer,

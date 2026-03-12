@@ -7582,9 +7582,21 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       let target_size = camera.computed.target_size
       let target_width = target_size.x
       let target_height = target_size.y
-      if camera.target is Image(handle) {
-        target_id = handle.id()
+      match camera.target {
+        Screen => target_id = -1
+        Window(window_ref) =>
+          if @window.window_host_window_for_ref(world, window_ref)
+            is Some(host_window) {
+            let surface_target_id = @render.host_gpu_surface_target_id_for_window(
+              host_window,
+            )
+            if surface_target_id < 0 {
+              target_id = surface_target_id
+            }
+          }
+        Image(handle) => target_id = handle.id()
       }
+      @render.host_gpu_set_active_surface_target(target_id)
       if target_width <= 0 || target_height <= 0 {
         continue
       }
@@ -7645,12 +7657,11 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         view_width = viewport_width
         view_height = viewport_height
       }
-      let view_width_f = Float::from_double(view_width.to_double()) /
-        scale_factor
-      let view_height_f = Float::from_double(view_height.to_double()) /
-        scale_factor
-      let view_width_logical = view_width_f.to_int()
-      let view_height_logical = view_height_f.to_int()
+      // Render targets and viewports are already physical pixels at this stage.
+      // Dividing by scale_factor here shrinks the effective render size on HiDPI
+      // displays and breaks camera framing/post-process parity.
+      let view_width_logical = view_width
+      let view_height_logical = view_height
       if view_width_logical <= 0 || view_height_logical <= 0 {
         continue
       }

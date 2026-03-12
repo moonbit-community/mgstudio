@@ -2118,11 +2118,11 @@ fn bloom2d_pipeline_for_current_pass(
   backend : GpuBackend,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   let target_is_surface = match backend.pass_state {
-    Some(ps) => ps.target_id == -1
+    Some(ps) => ps.target_id < 0
     None => false
   }
   if target_is_surface {
-    match backend.surface_format {
+    match current_pass_color_format(backend) {
       Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
         ensure_bloom2d_pipeline_surface(backend)
         return backend.bloom2d_final_pipeline_surface

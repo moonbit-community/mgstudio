@@ -22,7 +22,15 @@ priv struct WindowRuntime {
   mut last_applied_height : Int
   mut last_applied_position : WindowPosition
   mut last_applied_mode : WindowMode
+  mut last_applied_visible : Bool
   mut last_applied_resizable : Bool
+  mut last_applied_enabled_buttons : EnabledButtons
+  mut last_applied_decorations : Bool
+  mut last_applied_transparent : Bool
+  mut last_applied_window_level : WindowLevel
+  mut last_applied_window_theme : WindowTheme?
+  mut last_applied_ime_enabled : Bool
+  mut last_applied_ime_position : @math.Vec2
   mut last_applied_cursor_visible : Bool
   mut last_applied_cursor_grab_mode : CursorGrabMode
   mut last_applied_cursor_icon : CursorIcon?
@@ -216,6 +224,70 @@ pub fn window_entity_for_ref(
 }
 
 ///|
+pub fn window_entity_for_host(
+  world : @ecs.World,
+  host_window : HostWindow,
+) -> @core.Entity? {
+  let result : Ref[@core.Entity?] = Ref::new(None)
+  let runtime_store = world.component(ecs_key_window_runtime)
+  world
+  .query_entities_filtered(@ecs.With::new(ecs_key_window_runtime))
+  .view(fn(entity) {
+    if result.val is Some(_) {
+      return
+    }
+    if runtime_store.get(entity) is Some(runtime) {
+      if runtime.window == host_window {
+        result.val = Some(entity)
+      }
+    }
+  })
+  result.val
+}
+
+///|
+pub struct WindowHostEntry {
+  entity : @core.Entity
+  host_window : HostWindow
+}
+
+///|
+pub fn WindowHostEntry::new(
+  entity : @core.Entity,
+  host_window : HostWindow,
+) -> WindowHostEntry {
+  WindowHostEntry::{ entity, host_window }
+}
+
+///|
+pub fn window_host_window_for_ref(
+  world : @ecs.World,
+  window_ref : WindowRef,
+) -> HostWindow? {
+  guard window_entity_for_ref(world, window_ref) is Some(entity) else {
+    return None
+  }
+  guard window_runtime_component(world, entity) is Some(runtime) else {
+    return None
+  }
+  Some(runtime.window)
+}
+
+///|
+pub fn window_host_entries(world : @ecs.World) -> Array[WindowHostEntry] {
+  let entries : Array[WindowHostEntry] = []
+  let runtime_store = world.component(ecs_key_window_runtime)
+  world
+  .query_entities_filtered(@ecs.With::new(ecs_key_window_runtime))
+  .view(fn(entity) {
+    if runtime_store.get(entity) is Some(runtime) {
+      entries.push(WindowHostEntry::new(entity, runtime.window))
+    }
+  })
+  entries
+}
+
+///|
 fn window_physical_width_for_entity(
   world : @ecs.World,
   entity : @core.Entity,
@@ -375,6 +447,11 @@ fn window_resolution_matches_runtime(
 }
 
 ///|
+fn window_vec2_eq(a : @math.Vec2, b : @math.Vec2) -> Bool {
+  a.x == b.x && a.y == b.y
+}
+
+///|
 fn window_apply_position(
   window : HostWindow,
   position : WindowPosition,
@@ -383,6 +460,18 @@ fn window_apply_position(
     Automatic => ()
     At(x, y) => host_window_set_position(window, x~, y~)
   }
+}
+
+///|
+fn window_apply_ime_settings(window : HostWindow, ime_enabled : Bool, ime_position : @math.Vec2) -> Unit {
+  host_window_set_ime_allowed(window, allowed=ime_enabled)
+  host_window_set_ime_cursor_area(
+    window,
+    x=ime_position.x.to_int(),
+    y=ime_position.y.to_int(),
+    width=1,
+    height=1,
+  )
 }
 
 ///|
@@ -459,12 +548,22 @@ fn window_create_runtime_for_entity(
       window.resolution,
     ),
     title=window.title,
+    visible=window.visible,
+    resizable=window.resizable,
+    decorations=window.decorations,
   )
   let cursor_options = window_current_cursor_options(world, entity)
   let cursor_icon = window_current_cursor_icon(world, entity)
+  host_window_set_visible(host_window, visible=window.visible)
   window_apply_position(host_window, window.position)
   host_window_set_mode(host_window, mode=window.mode)
   host_window_set_resizable(host_window, resizable=window.resizable)
+  host_window_set_enabled_buttons(host_window, window.enabled_buttons)
+  host_window_set_decorations(host_window, decorations=window.decorations)
+  host_window_set_transparent(host_window, transparent=window.transparent)
+  host_window_set_window_level(host_window, level=window.window_level)
+  host_window_set_theme(host_window, theme=window.window_theme)
+  window_apply_ime_settings(host_window, window.ime_enabled, window.ime_position)
   host_window_set_cursor_visible(host_window, visible=cursor_options.visible)
   host_window_set_cursor_grab_mode(host_window, mode=cursor_options.grab_mode)
   if cursor_icon is Some(cursor_icon0) {
@@ -484,7 +583,15 @@ fn window_create_runtime_for_entity(
     last_applied_height: window.physical_height(),
     last_applied_position: window.position,
     last_applied_mode: window.mode,
+    last_applied_visible: window.visible,
     last_applied_resizable: window.resizable,
+    last_applied_enabled_buttons: window.enabled_buttons,
+    last_applied_decorations: window.decorations,
+    last_applied_transparent: window.transparent,
+    last_applied_window_level: window.window_level,
+    last_applied_window_theme: window.window_theme,
+    last_applied_ime_enabled: window.ime_enabled,
+    last_applied_ime_position: window.ime_position,
     last_applied_cursor_visible: cursor_options.visible,
     last_applied_cursor_grab_mode: cursor_options.grab_mode,
     last_applied_cursor_icon: cursor_icon,
@@ -531,9 +638,39 @@ fn window_sync_requested_state(
     host_window_set_mode(host_window, mode=window.mode)
     runtime_ref.val.last_applied_mode = window.mode
   }
+  if window.visible != runtime_ref.val.last_applied_visible {
+    host_window_set_visible(host_window, visible=window.visible)
+    runtime_ref.val.last_applied_visible = window.visible
+  }
   if window.resizable != runtime_ref.val.last_applied_resizable {
     host_window_set_resizable(host_window, resizable=window.resizable)
     runtime_ref.val.last_applied_resizable = window.resizable
+  }
+  if window.enabled_buttons != runtime_ref.val.last_applied_enabled_buttons {
+    host_window_set_enabled_buttons(host_window, window.enabled_buttons)
+    runtime_ref.val.last_applied_enabled_buttons = window.enabled_buttons
+  }
+  if window.decorations != runtime_ref.val.last_applied_decorations {
+    host_window_set_decorations(host_window, decorations=window.decorations)
+    runtime_ref.val.last_applied_decorations = window.decorations
+  }
+  if window.transparent != runtime_ref.val.last_applied_transparent {
+    host_window_set_transparent(host_window, transparent=window.transparent)
+    runtime_ref.val.last_applied_transparent = window.transparent
+  }
+  if window.window_level != runtime_ref.val.last_applied_window_level {
+    host_window_set_window_level(host_window, level=window.window_level)
+    runtime_ref.val.last_applied_window_level = window.window_level
+  }
+  if window.window_theme != runtime_ref.val.last_applied_window_theme {
+    host_window_set_theme(host_window, theme=window.window_theme)
+    runtime_ref.val.last_applied_window_theme = window.window_theme
+  }
+  if window.ime_enabled != runtime_ref.val.last_applied_ime_enabled ||
+    !window_vec2_eq(window.ime_position, runtime_ref.val.last_applied_ime_position) {
+    window_apply_ime_settings(host_window, window.ime_enabled, window.ime_position)
+    runtime_ref.val.last_applied_ime_enabled = window.ime_enabled
+    runtime_ref.val.last_applied_ime_position = window.ime_position
   }
   let cursor_options = window_current_cursor_options(world, entity)
   if cursor_options.visible != runtime_ref.val.last_applied_cursor_visible {
@@ -552,6 +689,24 @@ fn window_sync_requested_state(
       host_window_set_cursor_icon(host_window, icon=CursorIcon::default())
     }
     runtime_ref.val.last_applied_cursor_icon = cursor_icon
+  }
+  let requested_drag_move = window.drag_move_request
+  let requested_drag_resize = window.drag_resize_request
+  if requested_drag_move {
+    host_window_drag_move(host_window) |> ignore
+  }
+  if requested_drag_resize is Some(direction) {
+    host_window_drag_resize(host_window, direction) |> ignore
+  }
+  if requested_drag_move || requested_drag_resize is Some(_) {
+    ignore(
+      window_update_component(world, entity, fn(current) {
+        let next : Window = current
+        next.drag_move_request = false
+        next.drag_resize_request = None
+        next
+      }),
+    )
   }
 }
 
@@ -719,6 +874,15 @@ pub fn window_poll_host_events(world : @ecs.World) -> Unit {
 }
 
 ///|
+pub fn window_request_close_all_hosts(world : @ecs.World) -> Unit {
+  for entity in window_runtime_entities_with_host(world) {
+    if window_runtime_component(world, entity) is Some(runtime) {
+      host_window_request_close(runtime.window)
+    }
+  }
+}
+
+///|
 fn window_primary_physical_width(world : @ecs.World) -> Int {
   window_physical_width_for(world, WindowRef::Primary)
 }
@@ -836,6 +1000,7 @@ pub fn window_plugin_with(
       .add_message(ecs_key_window_scale_factor_changed)
       .add_message(ecs_key_window_backend_scale_factor_changed)
       .add_message(ecs_key_window_focused)
+      .add_message(ecs_key_ime)
       .add_systems(@app.First, @app.system(screenshot_clear_system))
     if plugin.close_when_requested {
       next = next.add_systems(

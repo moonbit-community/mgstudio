@@ -121,6 +121,14 @@ pub(all) enum SystemCursorIcon {
   SwResize
   WResize
   EwResize
+  NsResize
+  NeswResize
+  NwseResize
+  ColResize
+  RowResize
+  AllScroll
+  ZoomIn
+  ZoomOut
 } derive(Eq, Show)
 
 ///|
@@ -151,6 +159,41 @@ pub(all) enum WindowMode {
   BorderlessFullscreen
   Fullscreen
 } derive(Eq, Show)
+
+///|
+pub(all) enum PresentMode {
+  AutoVsync
+  AutoNoVsync
+  Fifo
+  FifoRelaxed
+  Immediate
+  Mailbox
+} derive(Eq, Show)
+
+///|
+pub(all) enum WindowLevel {
+  AlwaysOnBottom
+  Normal
+  AlwaysOnTop
+} derive(Eq, Show)
+
+///|
+pub(all) enum WindowTheme {
+  Light
+  Dark
+} derive(Eq, Show)
+
+///|
+pub(all) struct EnabledButtons {
+  mut minimize : Bool
+  mut maximize : Bool
+  mut close : Bool
+} derive(Eq, Show)
+
+///|
+pub fn EnabledButtons::default() -> EnabledButtons {
+  EnabledButtons::{ minimize: true, maximize: true, close: true }
+}
 
 ///|
 pub(all) enum HostEvent {
@@ -189,6 +232,10 @@ pub fn host_window_create(
   physical_height~ : Int,
   use_physical_size_on_create~ : Bool,
   title~ : String,
+  visible~ : Bool = true,
+  resizable~ : Bool = true,
+  decorations~ : Bool = true,
+  panel~ : Bool = false,
 ) -> HostWindow {
   @windowing.create(
     logical_width~,
@@ -197,6 +244,10 @@ pub fn host_window_create(
     physical_height~,
     use_physical_size_on_create~,
     title~,
+    visible~,
+    resizable~,
+    decorations~,
+    panel~,
   )
 }
 
@@ -285,9 +336,39 @@ fn cursor_icon_to_int(icon : CursorIcon) -> Int {
     System(system_icon) =>
       match system_icon {
         Default => 0
-        EwResize => 1
-        Progress => 2
-        _ => 0
+        ContextMenu => 1
+        Help => 2
+        Progress => 3
+        Wait => 4
+        Cell => 5
+        VerticalText => 6
+        Alias => 7
+        Copy => 8
+        NoDrop => 9
+        Grab => 10
+        Grabbing => 11
+        EResize => 12
+        NResize => 13
+        NeResize => 14
+        NwResize => 15
+        SResize => 16
+        SeResize => 17
+        SwResize => 18
+        WResize => 19
+        EwResize => 20
+        NsResize => 21
+        NeswResize => 22
+        NwseResize => 23
+        ColResize => 24
+        RowResize => 25
+        AllScroll => 26
+        ZoomIn => 27
+        ZoomOut => 28
+        Pointer => 29
+        Text => 30
+        Crosshair => 31
+        Move => 32
+        NotAllowed => 33
       }
   }
 }
@@ -334,6 +415,40 @@ fn window_mode_to_int(mode : WindowMode) -> Int {
 }
 
 ///|
+fn window_level_to_int(level : WindowLevel) -> Int {
+  match level {
+    Normal => 0
+    AlwaysOnTop => 1
+    AlwaysOnBottom => 2
+  }
+}
+
+///|
+fn window_theme_to_int(theme : WindowTheme?) -> Int {
+  match theme {
+    Some(Light) => 1
+    Some(Dark) => 2
+    None => 0
+  }
+}
+
+///|
+fn compass_octant_to_resize_direction_int(
+  direction : @math.CompassOctant,
+) -> Int {
+  match direction {
+    North => 1
+    NorthEast => 2
+    East => 0
+    SouthEast => 5
+    South => 4
+    SouthWest => 6
+    West => 7
+    NorthWest => 3
+  }
+}
+
+///|
 pub fn host_window_set_mode(window : HostWindow, mode~ : WindowMode) -> Unit {
   host_window_set_mode_raw(window~, mode=window_mode_to_int(mode))
 }
@@ -341,6 +456,91 @@ pub fn host_window_set_mode(window : HostWindow, mode~ : WindowMode) -> Unit {
 ///|
 fn host_window_set_mode_raw(window~ : HostWindow, mode~ : Int) -> Unit {
   @windowing.set_mode(window, mode~)
+}
+
+///|
+pub fn host_window_set_visible(window : HostWindow, visible~ : Bool) -> Unit {
+  @windowing.set_visible(window, visible~)
+}
+
+///|
+pub fn host_window_set_decorations(
+  window : HostWindow,
+  decorations~ : Bool,
+) -> Unit {
+  @windowing.set_decorations(window, decorations~)
+}
+
+///|
+pub fn host_window_set_transparent(
+  window : HostWindow,
+  transparent~ : Bool,
+) -> Unit {
+  @windowing.set_transparent(window, transparent~)
+}
+
+///|
+pub fn host_window_set_window_level(
+  window : HostWindow,
+  level~ : WindowLevel,
+) -> Unit {
+  @windowing.set_window_level(window, level=window_level_to_int(level))
+}
+
+///|
+pub fn host_window_set_theme(
+  window : HostWindow,
+  theme~ : WindowTheme?,
+) -> Unit {
+  @windowing.set_theme(window, theme=window_theme_to_int(theme))
+}
+
+///|
+pub fn host_window_set_ime_allowed(
+  window : HostWindow,
+  allowed~ : Bool,
+) -> Unit {
+  @windowing.set_ime_allowed(window, allowed~)
+}
+
+///|
+pub fn host_window_set_ime_cursor_area(
+  window : HostWindow,
+  x~ : Int,
+  y~ : Int,
+  width~ : Int = 1,
+  height~ : Int = 1,
+) -> Unit {
+  @windowing.set_ime_cursor_area(window, x~, y~, width~, height~)
+}
+
+///|
+pub fn host_window_set_enabled_buttons(
+  window : HostWindow,
+  buttons : EnabledButtons,
+) -> Unit {
+  @windowing.set_enabled_buttons(
+    window,
+    close=buttons.close,
+    minimize=buttons.minimize,
+    maximize=buttons.maximize,
+  )
+}
+
+///|
+pub fn host_window_drag_move(window : HostWindow) -> Bool {
+  @windowing.drag_window(window)
+}
+
+///|
+pub fn host_window_drag_resize(
+  window : HostWindow,
+  direction : @math.CompassOctant,
+) -> Bool {
+  @windowing.drag_resize_window(
+    window,
+    direction=compass_octant_to_resize_direction_int(direction),
+  )
 }
 
 ///|
@@ -394,6 +594,80 @@ fn env_int_or_default(key : String, default_value : Int) -> Int {
     }
     None => default_value
   }
+}
+
+///|
+fn screenshot_pixels_have_non_black_rgb(pixels : Bytes) -> Bool {
+  if pixels.length() < 4 {
+    return false
+  }
+  let pixel_count = pixels.length() / 4
+  for i in 0..<pixel_count {
+    let base = i * 4
+    if pixels[base] != (0).to_byte() ||
+      pixels[base + 1] != (0).to_byte() ||
+      pixels[base + 2] != (0).to_byte() {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn screenshot_try_non_black_texture_capture(
+  texture_id : Int,
+) -> @renderer.ScreenshotCaptureResult? {
+  guard @render.screenshot_capture_texture_sync(texture_id=texture_id)
+    is Some(capture) else {
+    return None
+  }
+  if !screenshot_pixels_have_non_black_rgb(capture.pixels) {
+    return None
+  }
+  Some(capture)
+}
+
+///|
+fn screenshot_capture_with_texture_fallback(
+  capture : @renderer.ScreenshotCaptureResult?,
+) -> @renderer.ScreenshotCaptureResult? {
+  guard capture is Some(surface_capture) else { return None }
+  if screenshot_pixels_have_non_black_rgb(surface_capture.pixels) {
+    return Some(surface_capture)
+  }
+  let texture_refs = @renderer.screenshot_texture_refs()
+  if texture_refs.length() == 0 {
+    return Some(surface_capture)
+  }
+  for offset in 0..<texture_refs.length() {
+    let texture_ref = texture_refs[texture_refs.length() - 1 - offset]
+    if texture_ref.width != surface_capture.width ||
+      texture_ref.height != surface_capture.height {
+      continue
+    }
+    guard screenshot_try_non_black_texture_capture(texture_ref.id)
+      is Some(texture_capture) else {
+      continue
+    }
+    host_debug_string(
+      value="[screenshot] surface capture is black; fallback texture_id=" +
+      texture_ref.id.to_string() +
+      " (" +
+      texture_ref.width.to_string() +
+      "x" +
+      texture_ref.height.to_string() +
+      ")",
+    )
+    return Some(texture_capture)
+  }
+  let fallback_upper_bound = @renderer.screenshot_resource_id_upper_bound()
+  if fallback_upper_bound > 0 {
+    host_debug_string(
+      value="[screenshot] surface capture remains black; no non-black same-size texture in resource_id<= " +
+      fallback_upper_bound.to_string(),
+    )
+  }
+  Some(surface_capture)
 }
 
 ///|
@@ -456,6 +730,71 @@ pub fn window_set_resizable(resizable~ : Bool) -> Unit {
 }
 
 ///|
+pub fn window_set_visible(visible~ : Bool) -> Unit {
+  guard window_current_world() is Some(world) else { return }
+  guard window_primary_entity(world) is Some(entity) else { return }
+  ignore(
+    window_update_component(world, entity, fn(window) {
+      let next : Window = window
+      next.visible = visible
+      next
+    }),
+  )
+}
+
+///|
+pub fn window_set_decorations(decorations~ : Bool) -> Unit {
+  guard window_current_world() is Some(world) else { return }
+  guard window_primary_entity(world) is Some(entity) else { return }
+  ignore(
+    window_update_component(world, entity, fn(window) {
+      let next : Window = window
+      next.decorations = decorations
+      next
+    }),
+  )
+}
+
+///|
+pub fn window_set_transparent(transparent~ : Bool) -> Unit {
+  guard window_current_world() is Some(world) else { return }
+  guard window_primary_entity(world) is Some(entity) else { return }
+  ignore(
+    window_update_component(world, entity, fn(window) {
+      let next : Window = window
+      next.transparent = transparent
+      next
+    }),
+  )
+}
+
+///|
+pub fn window_set_window_level(level~ : WindowLevel) -> Unit {
+  guard window_current_world() is Some(world) else { return }
+  guard window_primary_entity(world) is Some(entity) else { return }
+  ignore(
+    window_update_component(world, entity, fn(window) {
+      let next : Window = window
+      next.window_level = level
+      next
+    }),
+  )
+}
+
+///|
+pub fn window_set_theme(theme~ : WindowTheme?) -> Unit {
+  guard window_current_world() is Some(world) else { return }
+  guard window_primary_entity(world) is Some(entity) else { return }
+  ignore(
+    window_update_component(world, entity, fn(window) {
+      let next : Window = window
+      next.window_theme = theme
+      next
+    }),
+  )
+}
+
+///|
 pub fn window_set_cursor_visible(visible~ : Bool) -> Unit {
   guard window_current_world() is Some(world) else { return }
   guard window_primary_entity(world) is Some(entity) else { return }
@@ -488,6 +827,38 @@ pub fn window_set_mode(mode~ : WindowMode) -> Unit {
     window_update_component(world, entity, fn(window) {
       let next : Window = window
       next.mode = mode
+      next
+    }),
+  )
+}
+
+///|
+pub fn window_set_present_mode(mode~ : PresentMode) -> Unit {
+  guard window_current_world() is Some(world) else { return }
+  guard window_primary_entity(world) is Some(entity) else { return }
+  ignore(
+    window_update_component(world, entity, fn(window) {
+      let next : Window = window
+      next.present_mode = mode
+      next
+    }),
+  )
+}
+
+///|
+pub fn window_set_enabled_buttons(
+  minimize~ : Bool,
+  maximize~ : Bool,
+  close~ : Bool,
+) -> Unit {
+  guard window_current_world() is Some(world) else { return }
+  guard window_primary_entity(world) is Some(entity) else { return }
+  ignore(
+    window_update_component(world, entity, fn(window) {
+      let next : Window = window
+      next.enabled_buttons.minimize = minimize
+      next.enabled_buttons.maximize = maximize
+      next.enabled_buttons.close = close
       next
     }),
   )
@@ -539,6 +910,52 @@ fn runner_tick() -> Unit {
 }
 
 ///|
+priv struct RunnerSurfaceBinding {
+  host_window : HostWindow
+  surface : @render.HostGpuSurface
+  target_id : Int
+  width : Int
+  height : Int
+}
+
+///|
+priv struct RunnerFrameBinding {
+  frame : @render.HostGpuFrame
+}
+
+///|
+fn runner_surface_binding_find(
+  bindings : Array[RunnerSurfaceBinding],
+  host_window : HostWindow,
+) -> RunnerSurfaceBinding? {
+  for binding in bindings {
+    if binding.host_window == host_window {
+      return Some(binding)
+    }
+  }
+  None
+}
+
+///|
+fn runner_surface_binding_ordered(
+  bindings : Array[RunnerSurfaceBinding],
+  primary_window : HostWindow,
+) -> Array[RunnerSurfaceBinding] {
+  let ordered : Array[RunnerSurfaceBinding] = []
+  for binding in bindings {
+    if binding.host_window == primary_window {
+      ordered.push(binding)
+    }
+  }
+  for binding in bindings {
+    if binding.host_window != primary_window {
+      ordered.push(binding)
+    }
+  }
+  ordered
+}
+
+///|
 pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
   fn() {
     guard window_ensure_primary_host(app.world()) is Some(window) else {
@@ -546,13 +963,8 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
       return
     }
     let device = @render.host_gpu_request_device()
-    let surface = @render.host_gpu_create_surface(window)
-    let width = host_window_get_width(window)
-    let height = host_window_get_height(window)
-    @render.host_gpu_configure_surface(device~, surface~, width~, height~)
-    let surface_width_ref : Ref[Int] = Ref::new(width)
-    let surface_height_ref : Ref[Int] = Ref::new(height)
     let app_ref : Ref[@app.App[@ecs.World]] = Ref::new(app.run_startup())
+    let runner_surfaces_ref : Ref[Array[RunnerSurfaceBinding]] = Ref::new([])
     let debug_screenshot_path = match
       @sys.get_env_var("MGSTUDIO_SCREENSHOT_PATH") {
       Some(path) if path.trim().to_string() != "" =>
@@ -580,50 +992,119 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
     } else {
       1
     }
+    let debug_screenshot_surface_index = {
+      let value = env_int_or_default("MGSTUDIO_SCREENSHOT_SURFACE_INDEX", 0)
+      if value < 0 {
+        0
+      } else {
+        value
+      }
+    }
     let debug_screenshot_requested_ref : Ref[Bool] = Ref::new(false)
     let debug_screenshot_saved_ref : Ref[Bool] = Ref::new(false)
     let debug_screenshot_capture_id_ref : Ref[Int] = Ref::new(0)
     let debug_screenshot_render_frame_ref : Ref[Int] = Ref::new(0)
     runner_state.val.tick = Some(fn() {
       window_poll_host_events(app_ref.val.world())
-      let current_width = host_window_get_width(window)
-      let current_height = host_window_get_height(window)
-      if current_width > 0 &&
-        current_height > 0 &&
-        (
-          current_width != surface_width_ref.val ||
-          current_height != surface_height_ref.val
-        ) {
-        @render.host_gpu_configure_surface(
-          device~,
-          surface~,
-          width=current_width,
-          height=current_height,
-        )
-        surface_width_ref.val = current_width
-        surface_height_ref.val = current_height
+
+      let world = app_ref.val.world()
+      let host_entries = window_host_entries(world)
+      let next_surfaces : Array[RunnerSurfaceBinding] = []
+      let previous_surfaces = runner_surfaces_ref.val
+      for entry in host_entries {
+        let host_window = entry.host_window
+        if runner_surface_binding_find(previous_surfaces, host_window)
+          is Some(previous) {
+          let width = host_window_get_width(host_window)
+          let height = host_window_get_height(host_window)
+          if width > 0 &&
+            height > 0 &&
+            (width != previous.width || height != previous.height) {
+            @render.host_gpu_configure_surface(
+              device=device,
+              surface=previous.surface,
+              width=width,
+              height=height,
+            )
+          }
+          next_surfaces.push(RunnerSurfaceBinding::{
+            host_window,
+            surface: previous.surface,
+            target_id: previous.target_id,
+            width,
+            height,
+          })
+          continue
+        }
+
+        let surface = @render.host_gpu_create_surface(host_window)
+        let target_id = @render.host_gpu_surface_target_id(surface)
+        let width = host_window_get_width(host_window)
+        let height = host_window_get_height(host_window)
+        if width > 0 && height > 0 {
+          @render.host_gpu_configure_surface(
+            device=device,
+            surface=surface,
+            width=width,
+            height=height,
+          )
+        }
+        next_surfaces.push(RunnerSurfaceBinding::{
+          host_window,
+          surface,
+          target_id,
+          width,
+          height,
+        })
       }
+      runner_surfaces_ref.val = next_surfaces
+
       if @app.app_rendering_enabled() {
         let next_render_frame = debug_screenshot_render_frame_ref.val + 1
-        if !debug_screenshot_requested_ref.val &&
-          debug_screenshot_path is Some(_) &&
-          debug_screenshot_texture_id <= 0 &&
-          next_render_frame >= debug_screenshot_frame {
-          let capture_id = @render.screenshot_capture_surface_request()
-          if capture_id > 0 {
-            debug_screenshot_requested_ref.val = true
-            debug_screenshot_capture_id_ref.val = capture_id
+        let ordered_surface_bindings = runner_surface_binding_ordered(
+          runner_surfaces_ref.val,
+          window,
+        )
+        let capture_surface_index = if ordered_surface_bindings.length() <= 0 {
+          0
+        } else if debug_screenshot_surface_index >=
+          ordered_surface_bindings.length() {
+          0
+        } else {
+          debug_screenshot_surface_index
+        }
+        let frame_bindings : Array[RunnerFrameBinding] = []
+        for i, binding in ordered_surface_bindings {
+          if !debug_screenshot_requested_ref.val &&
+            debug_screenshot_path is Some(_) &&
+            debug_screenshot_texture_id <= 0 &&
+            next_render_frame >= debug_screenshot_frame &&
+            i == capture_surface_index {
+            let capture_id = @render.screenshot_capture_surface_request()
+            if capture_id > 0 {
+              debug_screenshot_requested_ref.val = true
+              debug_screenshot_capture_id_ref.val = capture_id
+            }
+          }
+          if binding.width <= 0 || binding.height <= 0 {
+            continue
+          }
+          @render.host_gpu_set_active_surface_target(binding.target_id)
+          let frame = @render.host_gpu_begin_frame(binding.surface)
+          if frame > 0 {
+            frame_bindings.push(RunnerFrameBinding::{ frame })
           }
         }
-        let frame = @render.host_gpu_begin_frame(surface)
         app_ref.val = app_ref.val.run_once()
         debug_screenshot_render_frame_ref.val = next_render_frame
         screenshot_queue_capture_requests(app_ref.val.world())
-        @render.host_gpu_end_frame(frame)
+        for frame_binding in frame_bindings {
+          @render.host_gpu_end_frame(frame_binding.frame)
+        }
         screenshot_finalize_capture_requests(app_ref.val.world())
         if !debug_screenshot_saved_ref.val &&
           debug_screenshot_path is Some(path) {
-          let capture = if debug_screenshot_texture_id > 0 &&
+          let capture0 = if debug_screenshot_texture_id > 0 &&
             next_render_frame >= debug_screenshot_frame {
             @render.screenshot_capture_texture_sync(
               texture_id=debug_screenshot_texture_id,
@@ -635,6 +1116,11 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
           } else {
             None
           }
+          let capture = if debug_screenshot_texture_id > 0 {
+            capture0
+          } else {
+            screenshot_capture_with_texture_fallback(capture0)
+          }
           if capture is Some(capture) {
             @asset.host_asset_save_rgba8_png(
               width=capture.width,
@@ -644,7 +1130,7 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
             )
             debug_screenshot_saved_ref.val = true
             if debug_screenshot_exit_on_save {
-              host_window_request_close(window)
+              window_request_close_all_hosts(app_ref.val.world())
               runner_state.val.tick = None
               return
             }
@@ -654,12 +1140,12 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
         app_ref.val = app_ref.val.run_once()
       }
       if app_ref.val.should_exit() is Some(_) {
-        host_window_request_close(window)
+        window_request_close_all_hosts(app_ref.val.world())
         runner_state.val.tick = None
         return
       }
       if host_window_should_close(window) {
-        host_window_request_close(window)
+        window_request_close_all_hosts(app_ref.val.world())
         // Web runtimes cannot block in `window_run_loop`, so cleanup must happen
         // inside the tick closure (not after `window_run_loop` returns).
         runner_state.val.tick = None

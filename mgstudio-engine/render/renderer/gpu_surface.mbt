@@ -18,13 +18,229 @@
 /// Split from gpu.mbt to keep backend subsystems cohesive and closer to Bevy's module layout.
 
 ///|
-pub fn GpuBackend::create_surface(self : GpuBackend, window : Int) -> Unit {
-  if self.surface is Some(_) {
+fn surface_state_index_by_surface_id(
+  backend : GpuBackend,
+  surface_id : Int,
+) -> Int? {
+  for i in 0..<backend.surfaces.length() {
+    if backend.surfaces[i].surface_id == surface_id {
+      return Some(i)
+    }
+  }
+  None
+}
+
+///|
+fn surface_state_index_by_target_id(
+  backend : GpuBackend,
+  target_id : Int,
+) -> Int? {
+  for i in 0..<backend.surfaces.length() {
+    if backend.surfaces[i].target_id == target_id {
+      return Some(i)
+    }
+  }
+  None
+}
+
+///|
+fn default_surface_target_id(backend : GpuBackend) -> Int? {
+  if backend.surfaces.length() == 0 {
+    None
+  } else {
+    Some(backend.surfaces[0].target_id)
+  }
+}
+
+///|
+fn sync_active_surface_legacy_state(backend : GpuBackend) -> Unit {
+  guard surface_state_index_by_target_id(
+    backend,
+    backend.active_surface_target_id,
+  )
+    is Some(index) else {
+    backend.surface = None
+    backend.surface_format = None
+    backend.configured_width = 0
+    backend.configured_height = 0
+    backend.surface_cleared_this_frame = false
+    return
+  }
+  let state = backend.surfaces[index]
+  backend.surface = Some(state.surface)
+  backend.surface_format = state.surface_format
+  backend.configured_width = state.configured_width
+  backend.configured_height = state.configured_height
+  backend.surface_cleared_this_frame = state.cleared_this_frame
+}
+
+///|
+fn store_active_surface_frame(backend : GpuBackend) -> Unit {
+  guard backend.frame is Some(frame) else { return }
+  guard surface_state_index_by_target_id(
+    backend,
+    backend.active_surface_target_id,
+  )
+    is Some(index) else {
+    backend.frame = None
+    return
+  }
+  backend.surfaces[index].frame = Some(frame)
+  backend.frame = None
+}
+
+///|
+fn activate_surface_frame_for_target(
+  backend : GpuBackend,
+  target_id : Int,
+) -> Bool {
+  let desired_target_id = if target_id < 0 {
+    target_id
+  } else if backend.active_surface_target_id < 0 {
+    match default_surface_target_id(backend) {
+      Some(value) => value
+      None => return false
+    }
+  } else {
+    backend.active_surface_target_id
+  }
+  guard desired_target_id < 0 else { return false }
+
+  if backend.active_surface_target_id != desired_target_id {
+    store_active_surface_frame(backend)
+    backend.active_surface_target_id = desired_target_id
+  }
+  if backend.frame is None {
+    guard surface_state_index_by_target_id(backend, desired_target_id) is Some(
+      index,
+    ) else { return false }
+    guard backend.surfaces[index].frame is Some(frame) else { return false }
+    backend.surfaces[index].frame = None
+    backend.frame = Some(frame)
+  }
+  sync_active_surface_legacy_state(backend)
+  true
+}
+
+///|
+fn set_active_surface_cleared_state(
+  backend : GpuBackend,
+  cleared : Bool,
+) -> Unit {
+  backend.surface_cleared_this_frame = cleared
+  guard surface_state_index_by_target_id(
+    backend,
+    backend.active_surface_target_id,
+  )
+    is Some(index) else { return }
+  backend.surfaces[index].cleared_this_frame = cleared
+}
+
+///|
+fn surface_target_exists(backend : GpuBackend, target_id : Int) -> Bool {
+  surface_state_index_by_target_id(backend, target_id) is Some(_)
+}
+
+///|
+fn surface_target_format(
+  backend : GpuBackend,
+  target_id : Int,
+) -> @wgpu.TextureFormat? {
+  guard surface_state_index_by_target_id(backend, target_id) is Some(index) else {
+    return None
+  }
+  backend.surfaces[index].surface_format
+}
+
+///|
+fn surface_target_size(backend : GpuBackend, target_id : Int) -> (Int, Int)? {
+  guard surface_state_index_by_target_id(backend, target_id) is Some(index) else {
+    return None
+  }
+  let state = backend.surfaces[index]
+  Some((state.configured_width, state.configured_height))
+}
+
+pub fn GpuBackend::set_active_surface_target(
+  self : GpuBackend,
+  target_id : Int,
+) -> Unit {
+  if target_id >= 0 {
+    return
+  }
+  if !surface_target_exists(self, target_id) {
+    return
+  }
+  if self.active_surface_target_id == target_id {
+    return
+  }
+  store_active_surface_frame(self)
+  self.active_surface_target_id = target_id
+  sync_active_surface_legacy_state(self)
+}
+
+///|
+pub fn GpuBackend::create_surface_binding(
+  self : GpuBackend,
+  surface_id : Int,
+  target_id : Int,
+  window : Int,
+) -> Unit {
+  if surface_state_index_by_surface_id(self, surface_id) is Some(_) {
     return
   }
   let surface = self.instance.create_surface_metal_layer()
   @windowing.attach_surface_metal_layer(window, surface)
-  self.surface = Some(surface)
+  self.surfaces.push(GpuSurfaceState::{
+    surface_id,
+    target_id,
+    surface,
+    surface_format: None,
+    configured_width: 0,
+    configured_height: 0,
+    frame: None,
+    cleared_this_frame: false,
+  })
+  if self.active_surface_target_id >= 0 {
+    self.active_surface_target_id = target_id
+  }
+  sync_active_surface_legacy_state(self)
+}
+
+///|
+pub fn GpuBackend::create_surface(self : GpuBackend, window : Int) -> Unit {
+  self.create_surface_binding(1, -1, window)
+}
+
+///|
+pub fn GpuBackend::configure_surface_binding(
+  self : GpuBackend,
+  surface_id : Int,
+  width : Int,
+  height : Int,
+) -> Unit {
+  guard surface_state_index_by_surface_id(self, surface_id) is Some(index) else {
+    return
+  }
+  let state = self.surfaces[index]
+  let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
+  let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
+  // Surface textures cannot be used as sampled textures (`texture_binding`).
+  // Requesting RESOURCE usage triggers a wgpu-native validation error.
+  let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
+    @wgpu.TEXTURE_USAGE_COPY_SRC
+  let usage = @wgpu.TextureUsage::from_u64(usage_bits)
+  let format = state.surface.configure_default(self.adapter, self.device, w, h, usage)
+  self.surfaces[index].configured_width = width
+  self.surfaces[index].configured_height = height
+  self.surfaces[index].surface_format = Some(format)
+  if self.active_surface_target_id >= 0 {
+    self.active_surface_target_id = state.target_id
+  }
+  sync_active_surface_legacy_state(self)
+  @debug.debug(
+    "wgpu: surface_format_u32(surface_id=\{surface_id.to_string()})=\{format.to_u32().to_string()}",
+  )
 }
 
 ///|
@@ -33,77 +249,92 @@ pub fn GpuBackend::configure_surface(
   width : Int,
   height : Int,
 ) -> Unit {
-  guard self.surface is Some(surface) else { return }
-  self.configured_width = width
-  self.configured_height = height
-  let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
-  let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
-  // Surface textures cannot be used as sampled textures (`texture_binding`).
-  // Requesting RESOURCE usage triggers a wgpu-native validation error.
-  let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
-    @wgpu.TEXTURE_USAGE_COPY_SRC
-  let usage = @wgpu.TextureUsage::from_u64(usage_bits)
-  self.surface_format = Some(
-    surface.configure_default(self.adapter, self.device, w, h, usage),
-  )
-  let fmt_u32 = match self.surface_format {
-    Some(f) => f.to_u32()
-    None => 0U
+  let target_id = match default_surface_target_id(self) {
+    Some(v) => v
+    None => return
   }
-  @debug.debug("wgpu: surface_format_u32=" + fmt_u32.to_string())
+  guard surface_state_index_by_target_id(self, target_id) is Some(index) else {
+    return
+  }
+  self.configure_surface_binding(self.surfaces[index].surface_id, width, height)
 }
 
 ///|
-/// Ensure the surface is configured for the latest window size.
-///
-/// This is a bring-up convenience: the guest does not yet have a resize event
-/// path, so the host keeps the surface in sync.
 pub fn GpuBackend::ensure_surface_configured(
   self : GpuBackend,
   width : Int,
   height : Int,
 ) -> Unit {
-  if self.surface is None {
+  let target_id = match default_surface_target_id(self) {
+    Some(v) => v
+    None => return
+  }
+  guard surface_state_index_by_target_id(self, target_id) is Some(index) else {
     return
   }
-  if width == self.configured_width && height == self.configured_height {
+  let state = self.surfaces[index]
+  if width == state.configured_width && height == state.configured_height {
     return
   }
-  self.configure_surface(width, height)
+  self.configure_surface_binding(state.surface_id, width, height)
 }
 
 ///|
-pub fn GpuBackend::begin_frame(self : GpuBackend) -> Unit {
-  guard self.surface is Some(surface) else { return }
+pub fn GpuBackend::begin_frame_binding(
+  self : GpuBackend,
+  surface_id : Int,
+) -> Unit {
+  guard surface_state_index_by_surface_id(self, surface_id) is Some(index) else {
+    return
+  }
   if self.frame_count == 4294967295U {
     self.frame_count = 0U
   } else {
     self.frame_count = self.frame_count + 1U
   }
+  let target_id = self.surfaces[index].target_id
+  self.set_active_surface_target(target_id)
+  self.surfaces[index].cleared_this_frame = false
+  sync_active_surface_legacy_state(self)
+
   self.mesh_uniform_slot_used = 0
   self.mesh3d_uniform_slot_used = 0
-  let st = surface.get_current_texture()
+  let st = self.surfaces[index].surface.get_current_texture()
   let tex = st.take_texture()
   let view = tex.create_view()
   view.set_label("mgstudio_surface_view")
   let encoder = self.device.create_command_encoder()
-  self.frame = Some(GpuFrameState::{
+  self.surfaces[index].frame = Some(GpuFrameState::{
     surface_tex: st,
     surface_texture: tex,
     surface_view: view,
     encoder,
     pass: None,
   })
-  prepare_surface_capture_frame(self) catch {
-    _ => {
-      self.surface_capture_active = false
-      active_surface_screenshot_capture_ids_ref.val.clear()
-    }
-  }
+  prepare_surface_capture_frame(self)
 }
 
 ///|
-pub fn GpuBackend::end_frame(self : GpuBackend) -> Unit raise GpuBackendError {
+pub fn GpuBackend::begin_frame(self : GpuBackend) -> Unit {
+  guard default_surface_target_id(self) is Some(target_id) else { return }
+  guard surface_state_index_by_target_id(self, target_id) is Some(index) else {
+    return
+  }
+  self.begin_frame_binding(self.surfaces[index].surface_id)
+}
+
+///|
+pub fn GpuBackend::end_frame_binding(
+  self : GpuBackend,
+  surface_id : Int,
+) -> Unit raise GpuBackendError {
+  guard surface_state_index_by_surface_id(self, surface_id) is Some(index) else {
+    return
+  }
+  let target_id = self.surfaces[index].target_id
+  if !activate_surface_frame_for_target(self, target_id) {
+    return
+  }
   guard self.frame is Some(frame) else { return }
   if frame.pass is Some(pass) {
     flush_ui_shadow_batches(self)
@@ -121,25 +352,24 @@ pub fn GpuBackend::end_frame(self : GpuBackend) -> Unit raise GpuBackendError {
   self.queue.submit_one(cmd)
   screenshot_collect_completed_captures(self)
   cmd.release()
-  guard self.surface is Some(surface) else {
-    frame.encoder.release()
-    frame.surface_texture.release()
-    frame.surface_view.release()
-    frame.surface_tex.release()
-    self.surface_capture_active = false
-    active_surface_screenshot_capture_ids_ref.val.clear()
-    self.frame = None
-    self.pass_state = None
-    return
-  }
-  surface.present() |> ignore
+  self.surfaces[index].surface.present() |> ignore
   self.instance.process_events()
   frame.encoder.release()
   frame.surface_texture.release()
   frame.surface_view.release()
   frame.surface_tex.release()
-  self.surface_capture_active = false
-  active_surface_screenshot_capture_ids_ref.val.clear()
+  self.surfaces[index].frame = None
+  self.surfaces[index].cleared_this_frame = false
   self.frame = None
   self.pass_state = None
+  sync_active_surface_legacy_state(self)
+}
+
+///|
+pub fn GpuBackend::end_frame(self : GpuBackend) -> Unit raise GpuBackendError {
+  guard default_surface_target_id(self) is Some(target_id) else { return }
+  guard surface_state_index_by_target_id(self, target_id) is Some(index) else {
+    return
+  }
+  self.end_frame_binding(self.surfaces[index].surface_id)
 }

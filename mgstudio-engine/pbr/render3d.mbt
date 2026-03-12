@@ -1853,15 +1853,14 @@ fn render3d_target_info(
       })
     }
     @sprite.RenderTarget::Window(window_ref) => {
-      let is_primary_window_target = match window_ref {
-        @window.WindowRef::Primary => true
-        @window.WindowRef::Entity(entity) =>
-          world.component(@window.ecs_key_primary_window).contains(entity)
+      guard @window.window_host_window_for_ref(world, window_ref)
+        is Some(host_window) else {
+        return None
       }
-      // Current native backend owns a single swapchain/surface bound to the
-      // primary host window. Skip non-primary window targets until multi-surface
-      // rendering support lands.
-      if !is_primary_window_target {
+      let surface_target_id = @render.host_gpu_surface_target_id_for_window(
+        host_window,
+      )
+      if surface_target_id >= 0 {
         return None
       }
       let width = @window.window_physical_width_for(world, window_ref)
@@ -1874,7 +1873,7 @@ fn render3d_target_info(
         scale_factor = 1.0F
       }
       Some(RenderTargetComputed3d::{
-        target_id: -1,
+        target_id: surface_target_id,
         target_size: @math.IVec2::new(width, height),
         scale_factor,
       })
@@ -5245,6 +5244,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let next_camera_motion_blur_history : Array[CameraMotionBlurHistoryEntry] = []
   for camera_index in camera_indices {
     let camera = cameras[camera_index]
+    @render.host_gpu_set_active_surface_target(camera.target_id)
     let target_width = camera.target_size.x
     let target_height = camera.target_size.y
     if target_width <= 0 || target_height <= 0 {

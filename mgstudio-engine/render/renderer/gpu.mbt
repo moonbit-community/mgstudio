@@ -210,6 +210,18 @@ pub struct GpuFrameState {
 }
 
 ///|
+pub struct GpuSurfaceState {
+  surface_id : Int
+  target_id : Int
+  surface : @wgpu.Surface
+  mut surface_format : @wgpu.TextureFormat?
+  mut configured_width : Int
+  mut configured_height : Int
+  mut frame : GpuFrameState?
+  mut cleared_this_frame : Bool
+}
+
+///|
 
 ///|
 pub struct GpuBackend {
@@ -222,8 +234,8 @@ pub struct GpuBackend {
   mut surface_format : @wgpu.TextureFormat?
   mut configured_width : Int
   mut configured_height : Int
-  mut surface_capture_texture_id : Int
   mut surface_capture_active : Bool
+  mut surface_cleared_this_frame : Bool
   mut frame : GpuFrameState?
   mut pass_state : GpuPassState?
   mut frame_count : UInt
@@ -354,6 +366,8 @@ pub struct GpuBackend {
   mut shadow_color_view : @wgpu.TextureView?
   mut shadow_color_width : Int
   mut shadow_color_height : Int
+  surfaces : Array[GpuSurfaceState]
+  mut active_surface_target_id : Int
   textures : Array[GpuTextureInfo]
   meshes : Array[GpuMeshInfo]
 }
@@ -529,8 +543,8 @@ pub fn GpuBackend::new(
     surface_format: None,
     configured_width: 0,
     configured_height: 0,
-    surface_capture_texture_id: -1,
     surface_capture_active: false,
+    surface_cleared_this_frame: false,
     frame: None,
     pass_state: None,
     frame_count: 0U,
@@ -651,6 +665,8 @@ pub fn GpuBackend::new(
     shadow_color_view: None,
     shadow_color_width: 0,
     shadow_color_height: 0,
+    surfaces: [],
+    active_surface_target_id: -1,
     textures: [],
     meshes: [],
   }
