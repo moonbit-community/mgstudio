@@ -127,6 +127,14 @@ fn pixel_grid_snap_setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in pixel_grid_snap example")
+  }
+}
+
+///|
 fn pixel_grid_snap_update(world : @ecs.World) -> Unit {
   if pixel_state.val.outer_camera.is_placeholder() ||
     pixel_state.val.pixel_sprite.is_placeholder() ||
@@ -134,7 +142,7 @@ fn pixel_grid_snap_update(world : @ecs.World) -> Unit {
     pixel_state.val.pixel_mesh.is_placeholder() {
     return
   }
-  let delta = @time.time_delta_seconds()
+  let delta = world_time(world).delta_seconds()
   let next_rotation = pixel_state.val.rotation + delta
   pixel_state.val.rotation = next_rotation
   let pixel_transform = @math.Transform::from_xy_rotation_scale(

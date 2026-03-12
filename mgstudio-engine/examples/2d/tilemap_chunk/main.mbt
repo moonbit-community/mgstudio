@@ -104,7 +104,15 @@ fn tilemap_chunk_update(world : @ecs.World) -> Unit {
   )
 
   update_fake_player(world, chunk)
-  update_tilemap_data(chunk)
+  update_tilemap_data(world, chunk)
+}
+
+///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in tilemap_chunk example")
+  }
 }
 
 ///|
@@ -114,7 +122,7 @@ fn update_fake_player(world : @ecs.World, chunk : @sprite.TilemapChunk) -> Unit 
   }
   let start = chunk.calculate_tile_transform(@math.UVec2::new(0, 0)).translation.x
   let end = chunk.calculate_tile_transform(@math.UVec2::new(CHUNK_SIDE - 1, 0)).translation.x
-  let t = (1.0F + @math.sin(@time.time_elapsed_seconds())) * 0.5F
+  let t = (1.0F + @math.sin(world_time(world).elapsed_seconds())) * 0.5F
   let next_x = start + (end - start) * t
 
   let transform_store = world.component(@math.ecs_key_transform)
@@ -133,9 +141,12 @@ fn update_fake_player(world : @ecs.World, chunk : @sprite.TilemapChunk) -> Unit 
 }
 
 ///|
-fn update_tilemap_data(_chunk : @sprite.TilemapChunk) -> Unit {
+fn update_tilemap_data(
+  world : @ecs.World,
+  _chunk : @sprite.TilemapChunk,
+) -> Unit {
   tilemap_chunk_state.val.update_accumulator = tilemap_chunk_state.val.update_accumulator +
-    @time.time_delta_seconds()
+    world_time(world).delta_seconds()
   if tilemap_chunk_state.val.update_accumulator < UPDATE_INTERVAL_SECONDS {
     return
   }

@@ -302,8 +302,16 @@ fn anchor_name(anchor : @sprite.Anchor) -> String {
 }
 
 ///|
-fn text2d_animate(_world : @ecs.World) -> Unit {
-  let elapsed = @time.time_elapsed_seconds()
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in text2d example")
+  }
+}
+
+///|
+fn text2d_animate(world : @ecs.World) -> Unit {
+  let elapsed = world_time(world).elapsed_seconds()
 
   if text2d_state.val.translation_text is Some(handle) {
     @text.text_set_transform(

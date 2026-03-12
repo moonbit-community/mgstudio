@@ -140,6 +140,14 @@ fn single_camera_entity(world : @ecs.World) -> @core.Entity? {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in bloom_2d example")
+  }
+}
+
+///|
 fn single_help_text_handle(world : @ecs.World) -> @text.TextHandle? {
   let handle_ref = Ref::new(None)
   let query = world.query1_filtered(@ui.ecs_key_ui_text, @ecs.All::new())
@@ -287,7 +295,7 @@ fn bloom_update(world : @ecs.World) -> Unit {
   let bloom_store = world.component(@sprite.ecs_key_bloom2d)
   let tonemapping_store = world.component(@sprite.ecs_key_tonemapping)
   let tick = world.read_change_tick()
-  let dt = @time.time_delta_seconds()
+  let dt = world_time(world).delta_seconds()
   let tonemapping = tonemapping_store
     .get(camera_entity)
     .unwrap_or(@sprite.Tonemapping::TonyMcMapface)

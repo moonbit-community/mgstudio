@@ -68,6 +68,14 @@ fn sprite_tile_setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in sprite_tile example")
+  }
+}
+
+///|
 fn sprite_tile_animate(world : @ecs.World) -> Unit {
   if sprite_tile_animation_state.val.sprite is None ||
     sprite_tile_animation_state.val.texture is None {
@@ -80,7 +88,7 @@ fn sprite_tile_animate(world : @ecs.World) -> Unit {
     sprite_tile_animation_state.val.speed = -sprite_tile_animation_state.val.speed
   }
   sprite_tile_animation_state.val.current = sprite_tile_animation_state.val.current +
-    sprite_tile_animation_state.val.speed * @time.time_delta_seconds()
+    sprite_tile_animation_state.val.speed * world_time(world).delta_seconds()
   if sprite_tile_animation_state.val.sprite is Some(entity) &&
     sprite_tile_animation_state.val.texture is Some(texture) {
     try! world.despawn(entity)

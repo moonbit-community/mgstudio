@@ -144,6 +144,15 @@ fn dynamic_mip_update(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None =>
+      abort("Missing Time<Unit> resource in dynamic_mip_generation example")
+  }
+}
+
+///|
 fn handle_app_setting_input() -> Unit {
   if @input.key_just_pressed(@window.KeyCode::KeyR) {
     dynamic_mip_state.val.regenerate_requested = true
@@ -242,7 +251,10 @@ fn animate_image_scale(world : @ecs.World) -> Unit {
 
   let window_size = current_window_size()
   let animated_size = animated_mesh_size(window_size)
-  let wave = triangle_wave(@time.time_elapsed_seconds(), ANIMATION_PERIOD)
+  let wave = triangle_wave(
+    world_time(world).elapsed_seconds(),
+    ANIMATION_PERIOD,
+  )
   let next_scale = vec2_scale(animated_size, wave)
 
   let transform_store = world.component(@math.ecs_key_transform)

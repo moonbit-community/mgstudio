@@ -153,11 +153,19 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in physics2d_queries example")
+  }
+}
+
+///|
 fn physics2d_queries_raycast(world : @ecs.World) -> Unit {
+  let delta_seconds = world_time(world).delta_seconds()
   let tick = world.read_change_tick()
   let transform_store = world.component(@math.ecs_key_transform)
-  query_state.val.phase = query_state.val.phase +
-    @time.time_delta_seconds() * 0.75F
+  query_state.val.phase = query_state.val.phase + delta_seconds * 0.75F
   let ray_x = @math.sin(query_state.val.phase) * RAY_SWEEP_AMPLITUDE
 
   if query_state.val.ray_line is Some(ray_line) {
@@ -170,8 +178,7 @@ fn physics2d_queries_raycast(world : @ecs.World) -> Unit {
     transform_store.insert(ray_line, ray_transform, tick)
   }
 
-  query_state.val.accumulator = query_state.val.accumulator +
-    @time.time_delta_seconds()
+  query_state.val.accumulator = query_state.val.accumulator + delta_seconds
   if query_state.val.accumulator < 1.0F {
     return
   }
