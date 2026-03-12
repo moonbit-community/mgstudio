@@ -34,39 +34,41 @@ fn run_registered_observer_system(
 }
 
 ///|
-pub impl[C : @ecs.Component] SystemParam for @ecs.On[@ecs.Insert, C] with init_state(
-  world,
-) {
+pub impl[E : @ecs.ObserverEvent, C : @ecs.Component] SystemParam for @ecs.On[
+  E,
+  C,
+] with init_state(world) {
   system_param_empty_state(world)
 }
 
 ///|
-pub impl[C : @ecs.Component] SystemParam for @ecs.On[@ecs.Insert, C] with get(
-  _state,
-) {
-  let event : @ecs.On[@ecs.Insert, C] = @ecs.current_insert_observer()
+pub impl[E : @ecs.ObserverEvent, C : @ecs.Component] SystemParam for @ecs.On[
+  E,
+  C,
+] with get(_state) {
+  let event : @ecs.On[E, C] = @ecs.current_observer()
   event
 }
 
 ///|
-pub impl[C : @ecs.Component] SystemParam for @ecs.On[@ecs.Insert, C] with store(
-  self,
-  state,
-) {
+pub impl[E : @ecs.ObserverEvent, C : @ecs.Component] SystemParam for @ecs.On[
+  E,
+  C,
+] with store(self, state) {
   system_param_store_no_state(self, state)
 }
 
 ///|
-pub fn[C : @ecs.Component] SubApp::add_observer(
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component] SubApp::add_observer(
   self : SubApp[@ecs.World],
-  observer : (@ecs.On[@ecs.Insert, C]) -> Unit,
+  observer : (@ecs.On[E, C]) -> Unit,
 ) -> SubApp[@ecs.World] {
   let observer_system = system_param(observer)
   let last_run_tick_ref : Ref[@core.Tick] = Ref::new(0)
   ignore(
     self
     .world()
-    .add_observer(fn(_event : @ecs.On[@ecs.Insert, C]) {
+    .add_observer(fn(_event : @ecs.On[E, C]) {
       run_registered_observer_system(
         @ecs.current_observer_world_abort_missing(),
         last_run_tick_ref,
@@ -78,25 +80,25 @@ pub fn[C : @ecs.Component] SubApp::add_observer(
 }
 
 ///|
-pub fn[C : @ecs.Component] App::add_observer(
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component] App::add_observer(
   self : App[@ecs.World],
-  observer : (@ecs.On[@ecs.Insert, C]) -> Unit,
+  observer : (@ecs.On[E, C]) -> Unit,
 ) -> App[@ecs.World] {
   self.sub_apps.main = self.sub_apps.main.add_observer(observer)
   self
 }
 
 ///|
-pub fn[C : @ecs.Component, P2 : SystemParam] SubApp::add_observer2(
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam] SubApp::add_observer2(
   self : SubApp[@ecs.World],
-  observer : (@ecs.On[@ecs.Insert, C], P2) -> Unit,
+  observer : (@ecs.On[E, C], P2) -> Unit,
 ) -> SubApp[@ecs.World] {
   let observer_system = system_param2(observer)
   let last_run_tick_ref : Ref[@core.Tick] = Ref::new(0)
   ignore(
     self
     .world()
-    .add_observer(fn(_event : @ecs.On[@ecs.Insert, C]) {
+    .add_observer(fn(_event : @ecs.On[E, C]) {
       run_registered_observer_system(
         @ecs.current_observer_world_abort_missing(),
         last_run_tick_ref,
@@ -108,25 +110,30 @@ pub fn[C : @ecs.Component, P2 : SystemParam] SubApp::add_observer2(
 }
 
 ///|
-pub fn[C : @ecs.Component, P2 : SystemParam] App::add_observer2(
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam] App::add_observer2(
   self : App[@ecs.World],
-  observer : (@ecs.On[@ecs.Insert, C], P2) -> Unit,
+  observer : (@ecs.On[E, C], P2) -> Unit,
 ) -> App[@ecs.World] {
   self.sub_apps.main = self.sub_apps.main.add_observer2(observer)
   self
 }
 
 ///|
-pub fn[C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] SubApp::add_observer3(
+pub fn[
+  E : @ecs.ObserverEvent,
+  C : @ecs.Component,
+  P2 : SystemParam,
+  P3 : SystemParam,
+] SubApp::add_observer3(
   self : SubApp[@ecs.World],
-  observer : (@ecs.On[@ecs.Insert, C], P2, P3) -> Unit,
+  observer : (@ecs.On[E, C], P2, P3) -> Unit,
 ) -> SubApp[@ecs.World] {
   let observer_system = system_param3(observer)
   let last_run_tick_ref : Ref[@core.Tick] = Ref::new(0)
   ignore(
     self
     .world()
-    .add_observer(fn(_event : @ecs.On[@ecs.Insert, C]) {
+    .add_observer(fn(_event : @ecs.On[E, C]) {
       run_registered_observer_system(
         @ecs.current_observer_world_abort_missing(),
         last_run_tick_ref,
@@ -138,25 +145,36 @@ pub fn[C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] SubApp::add_obser
 }
 
 ///|
-pub fn[C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] App::add_observer3(
+pub fn[
+  E : @ecs.ObserverEvent,
+  C : @ecs.Component,
+  P2 : SystemParam,
+  P3 : SystemParam,
+] App::add_observer3(
   self : App[@ecs.World],
-  observer : (@ecs.On[@ecs.Insert, C], P2, P3) -> Unit,
+  observer : (@ecs.On[E, C], P2, P3) -> Unit,
 ) -> App[@ecs.World] {
   self.sub_apps.main = self.sub_apps.main.add_observer3(observer)
   self
 }
 
 ///|
-pub fn[C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_observer4(
+pub fn[
+  E : @ecs.ObserverEvent,
+  C : @ecs.Component,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] SubApp::add_observer4(
   self : SubApp[@ecs.World],
-  observer : (@ecs.On[@ecs.Insert, C], P2, P3, P4) -> Unit,
+  observer : (@ecs.On[E, C], P2, P3, P4) -> Unit,
 ) -> SubApp[@ecs.World] {
   let observer_system = system_param4(observer)
   let last_run_tick_ref : Ref[@core.Tick] = Ref::new(0)
   ignore(
     self
     .world()
-    .add_observer(fn(_event : @ecs.On[@ecs.Insert, C]) {
+    .add_observer(fn(_event : @ecs.On[E, C]) {
       run_registered_observer_system(
         @ecs.current_observer_world_abort_missing(),
         last_run_tick_ref,
@@ -168,9 +186,15 @@ pub fn[C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam]
 }
 
 ///|
-pub fn[C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_observer4(
+pub fn[
+  E : @ecs.ObserverEvent,
+  C : @ecs.Component,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] App::add_observer4(
   self : App[@ecs.World],
-  observer : (@ecs.On[@ecs.Insert, C], P2, P3, P4) -> Unit,
+  observer : (@ecs.On[E, C], P2, P3, P4) -> Unit,
 ) -> App[@ecs.World] {
   self.sub_apps.main = self.sub_apps.main.add_observer4(observer)
   self

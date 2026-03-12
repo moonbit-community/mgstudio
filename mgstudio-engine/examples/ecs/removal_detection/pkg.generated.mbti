@@ -1,0 +1,21 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/removal_detection"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type MyComponent
+pub impl @ecs.Component for MyComponent
+pub impl Eq for MyComponent
+pub impl Show for MyComponent
+
+// Type aliases
+
+// Traits
+

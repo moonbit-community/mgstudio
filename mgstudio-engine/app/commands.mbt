@@ -248,6 +248,27 @@ pub fn EntityCommands::despawn(self : EntityCommands) -> Unit {
 }
 
 ///|
+pub fn[T] EntityCommands::remove_component(
+  self : EntityCommands,
+  key : @ecs.ComponentKey[T],
+) -> Unit {
+  let entity = self.entity
+  self.commands.queue.push(fn(world : @ecs.World, _change_tick : @core.Tick) {
+    if world.is_alive(entity) {
+      ignore(try! world.remove(entity, key))
+    }
+  })
+}
+
+///|
+pub fn[T] EntityCommands::remove(
+  self : EntityCommands,
+  key : @ecs.ComponentKey[T],
+) -> Unit {
+  self.remove_component(key)
+}
+
+///|
 fn Commands::flush(self : Commands) -> Unit {
   self.queue.each(fn(command) { command(self.world, self.change_tick) })
   self.queue.clear()

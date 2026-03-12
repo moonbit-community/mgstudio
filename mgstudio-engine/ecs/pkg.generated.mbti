@@ -13,9 +13,13 @@ pub fn[T] component_key_from_id(Int, debug_name? : String) -> ComponentKey[T]
 
 pub fn[C : Component] current_insert_observer() -> On[Insert, C]
 
+pub fn[E : ObserverEvent, C : Component] current_observer() -> On[E, C]
+
 pub fn current_observer_world() -> World?
 
 pub fn current_observer_world_abort_missing() -> World
+
+pub fn[C : Component] current_remove_observer() -> On[Remove, C]
 
 pub let ecs_key_name : ComponentKey[Name]
 
@@ -175,6 +179,7 @@ pub fn[T] EventKey::id(Self[T]) -> Int
 
 pub struct Insert {
 }
+pub impl ObserverEvent for Insert
 
 pub struct MessageCursor[T] {
   mut last_message_count : Int
@@ -493,6 +498,10 @@ pub struct Query3ValueRefMutFilteredParallel[A, B, C, F] {
 }
 pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFilteredParallel::for_each(Self[A, B, C, F], (@core.Entity, A, ComponentRef[B], ComponentMut[C]) -> Unit) -> Unit raise EcsError
 
+pub struct Remove {
+}
+pub impl ObserverEvent for Remove
+
 pub struct RemovedComponents[T] {
   reader : @core.MessageReader[@core.Entity]
   marker : T?
@@ -561,8 +570,10 @@ pub struct World {
   mut previous_events : Map[Int, Array[ErasedValue]]
   current_events : Map[Int, Array[ErasedValue]]
 }
-pub fn[C : Component] World::add_entity_observer(Self, @core.Entity, (On[Insert, C]) -> Unit) -> ObserverHandle
-pub fn[C : Component] World::add_observer(Self, (On[Insert, C]) -> Unit) -> ObserverHandle
+pub fn[E : ObserverEvent, C : Component] World::add_entity_observer(Self, @core.Entity, (On[E, C]) -> Unit) -> ObserverHandle
+pub fn[E : ObserverEvent, C : Component] World::add_observer(Self, (On[E, C]) -> Unit) -> ObserverHandle
+pub fn[C : Component] World::add_remove_entity_observer(Self, @core.Entity, (On[Remove, C]) -> Unit) -> ObserverHandle
+pub fn[C : Component] World::add_remove_observer(Self, (On[Remove, C]) -> Unit) -> ObserverHandle
 pub fn World::advance_event_frame(Self) -> Unit
 pub fn[T] World::clear_events(Self, EventKey[T]) -> Unit
 pub fn[T] World::clear_messages(Self, MessageKey[T]) -> Unit
@@ -640,6 +651,14 @@ pub(open) trait EventData {
 
 pub(open) trait Message {
   message() -> MessageKey[Self]
+}
+
+pub(open) trait ObserverEvent {
+  register_observer(World, Int, @core.Entity?, (World) -> Unit) -> ObserverHandle
+  current_observer_entity() -> @core.Entity
+  current_observer_component_id() -> Int
+  marker() -> Self
+  debug_name() -> String
 }
 
 pub(open) trait QueryFilter {

@@ -57,6 +57,19 @@ fn write_insert_message(
 }
 
 ///|
+fn write_remove_message(
+  event : @ecs.On[@ecs.Remove, ObserverMarker],
+  writer : @ecs.MessageWriter[ObserverTriggered],
+) -> Unit {
+  ignore(
+    writer.write({
+      entity_id: event.entity.id,
+      entity_generation: event.entity.generation,
+    }),
+  )
+}
+
+///|
 test "app observer: add_observer2 exposes On<Insert, C> with MessageWriter" {
   let message_key = observer_triggered_key()
   let app = App::new(@ecs.World::new())
@@ -66,6 +79,25 @@ test "app observer: add_observer2 exposes On<Insert, C> with MessageWriter" {
   let entity = world.spawn()
 
   try! world.set(entity, observer_marker_key, ObserverMarker::{ value: 7 })
+
+  let reader = world.message_reader(message_key, Ref::new(0))
+  let messages = try! reader.read()
+  inspect(messages.length(), content="1")
+  inspect(messages[0].entity_id, content="0")
+  inspect(messages[0].entity_generation, content="1")
+}
+
+///|
+test "app observer: add_observer2 exposes On<Remove, C> with MessageWriter" {
+  let message_key = observer_triggered_key()
+  let app = App::new(@ecs.World::new())
+    .add_message(message_key)
+    .add_observer2(write_remove_message)
+  let world = app.world()
+  let entity = world.spawn()
+
+  try! world.set(entity, observer_marker_key, ObserverMarker::{ value: 11 })
+  ignore(try! world.remove(entity, observer_marker_key))
 
   let reader = world.message_reader(message_key, Ref::new(0))
   let messages = try! reader.read()

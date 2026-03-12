@@ -228,10 +228,10 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_last_system_param2(Self[W
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_last_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_last_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[M] App::add_message(Self[@ecs.World], @ecs.MessageKey[M]) -> Self[@ecs.World]
-pub fn[C : @ecs.Component] App::add_observer(Self[@ecs.World], (@ecs.On[@ecs.Insert, C]) -> Unit) -> Self[@ecs.World]
-pub fn[C : @ecs.Component, P2 : SystemParam] App::add_observer2(Self[@ecs.World], (@ecs.On[@ecs.Insert, C], P2) -> Unit) -> Self[@ecs.World]
-pub fn[C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] App::add_observer3(Self[@ecs.World], (@ecs.On[@ecs.Insert, C], P2, P3) -> Unit) -> Self[@ecs.World]
-pub fn[C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_observer4(Self[@ecs.World], (@ecs.On[@ecs.Insert, C], P2, P3, P4) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component] App::add_observer(Self[@ecs.World], (@ecs.On[E, C]) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam] App::add_observer2(Self[@ecs.World], (@ecs.On[E, C], P2) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] App::add_observer3(Self[@ecs.World], (@ecs.On[E, C], P2, P3) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_observer4(Self[@ecs.World], (@ecs.On[E, C], P2, P3, P4) -> Unit) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_enter_system(Self[@ecs.World], S, (@ecs.World) -> Unit) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_enter_system_config(Self[@ecs.World], S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_exit_system(Self[@ecs.World], S, (@ecs.World) -> Unit) -> Self[@ecs.World]
@@ -367,6 +367,8 @@ pub struct EntityCommands {
 pub fn EntityCommands::despawn(Self) -> Unit
 pub fn[T : CommandSpawnComponents] EntityCommands::insert(Self, T) -> Unit
 pub fn[T : @ecs.Component] EntityCommands::insert_component(Self, T) -> Unit
+pub fn[T] EntityCommands::remove(Self, @ecs.ComponentKey[T]) -> Unit
+pub fn[T] EntityCommands::remove_component(Self, @ecs.ComponentKey[T]) -> Unit
 
 pub(all) enum ExecutorKind {
   SingleThreaded
@@ -647,10 +649,10 @@ pub struct SubApp[W] {
   extract : ((W, W) -> (W, W))?
 }
 pub fn[M] SubApp::add_message(Self[@ecs.World], @ecs.MessageKey[M]) -> Self[@ecs.World]
-pub fn[C : @ecs.Component] SubApp::add_observer(Self[@ecs.World], (@ecs.On[@ecs.Insert, C]) -> Unit) -> Self[@ecs.World]
-pub fn[C : @ecs.Component, P2 : SystemParam] SubApp::add_observer2(Self[@ecs.World], (@ecs.On[@ecs.Insert, C], P2) -> Unit) -> Self[@ecs.World]
-pub fn[C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] SubApp::add_observer3(Self[@ecs.World], (@ecs.On[@ecs.Insert, C], P2, P3) -> Unit) -> Self[@ecs.World]
-pub fn[C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_observer4(Self[@ecs.World], (@ecs.On[@ecs.Insert, C], P2, P3, P4) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component] SubApp::add_observer(Self[@ecs.World], (@ecs.On[E, C]) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam] SubApp::add_observer2(Self[@ecs.World], (@ecs.On[E, C], P2) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] SubApp::add_observer3(Self[@ecs.World], (@ecs.On[E, C], P2, P3) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_observer4(Self[@ecs.World], (@ecs.On[E, C], P2, P3, P4) -> Unit) -> Self[@ecs.World]
 pub fn[W] SubApp::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
 pub fn[W] SubApp::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W] SubApp::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
@@ -800,7 +802,7 @@ pub impl[F : FromWorld] SystemParam for @ecs.EntityQuery[F]
 pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T]
 pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T]
 pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T]
-pub impl[C : @ecs.Component] SystemParam for @ecs.On[@ecs.Insert, C]
+pub impl[E : @ecs.ObserverEvent, C : @ecs.Component] SystemParam for @ecs.On[E, C]
 pub impl[A : @ecs.Component] SystemParam for @ecs.Query1[A]
 pub impl[A : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query1Filtered[A, F]
 pub impl[A : @ecs.Component, B : @ecs.Component] SystemParam for @ecs.Query2[A, B]

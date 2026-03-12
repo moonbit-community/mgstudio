@@ -259,6 +259,7 @@ pub fn World::despawn(
     if self.component_columns.get(key_id) is Some(store_ref) &&
       store_ref.val.remove(entity) is Some(_) {
       self.run_component_remove_hooks(entity, key_id, payload)
+      self.run_remove_observers(entity, key_id)
       self.ensure_removed_component_messages(key_id).val.send(
         component_write_change_tick(self),
         entity,
@@ -331,6 +332,7 @@ pub fn[T] World::remove(
       match store_ref.val.remove(entity) {
         Some(payload) => {
           self.run_component_remove_hooks(entity, key.id(), payload)
+          self.run_remove_observers(entity, key.id())
           self.ensure_removed_component_messages(key.id()).val.send(
             component_write_change_tick(self),
             entity,

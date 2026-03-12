@@ -86,3 +86,51 @@ test "ecs observer: add_entity_observer only fires for the bound entity" {
   inspect(hits.val, content="2")
   inspect(seen_entities, content="[0, 0]")
 }
+
+///|
+test "ecs observer: world add_observer fires on remove" {
+  let world = World::new()
+  let entity = world.spawn()
+  let seen_entities : Array[Int] = []
+  let hits : Ref[Int] = Ref::new(0)
+
+  ignore(
+    world.add_observer(fn(event : On[Remove, ObserverMarker]) {
+      hits.val = hits.val + 1
+      seen_entities.push(event.entity.id)
+    }),
+  )
+
+  try! world.set(entity, observer_marker_key, ObserverMarker::{ value: 1 })
+  inspect(try! world.remove(entity, observer_marker_key), content="true")
+  inspect(try! world.remove(entity, observer_marker_key), content="false")
+
+  inspect(hits.val, content="1")
+  inspect(seen_entities, content="[0]")
+}
+
+///|
+test "ecs observer: add_remove_entity_observer only fires for the bound entity" {
+  let world = World::new()
+  let entity0 = world.spawn()
+  let entity1 = world.spawn()
+  let seen_entities : Array[Int] = []
+  let hits : Ref[Int] = Ref::new(0)
+
+  ignore(
+    world.add_remove_entity_observer(entity0, fn(
+      event : On[Remove, ObserverMarker],
+    ) {
+      hits.val = hits.val + 1
+      seen_entities.push(event.entity.id)
+    }),
+  )
+
+  try! world.set(entity0, observer_marker_key, ObserverMarker::{ value: 1 })
+  try! world.set(entity1, observer_marker_key, ObserverMarker::{ value: 2 })
+  inspect(try! world.remove(entity0, observer_marker_key), content="true")
+  inspect(try! world.remove(entity1, observer_marker_key), content="true")
+
+  inspect(hits.val, content="1")
+  inspect(seen_entities, content="[0]")
+}

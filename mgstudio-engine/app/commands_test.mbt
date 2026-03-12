@@ -317,3 +317,34 @@ test "app: Commands entity despawn defers entity removal until flush" {
   }
   inspect(app.world().is_alive(entity), content="false")
 }
+
+///|
+test "app: Commands entity remove and remove_component defer component removal until flush" {
+  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+    commands : Commands,
+  ) {
+    let entity = commands.spawn(
+      (
+        CommandsPosition::{ x: 21, y: 22 },
+        CommandsVelocity::{ dx: 23, dy: 24 },
+        CommandsMarker::{  },
+      ),
+    )
+    spawned.val = Some(entity)
+    commands.entity(entity).remove_component(commands_velocity_key)
+    commands.entity(entity).remove(commands_marker_key)
+  })
+
+  app = app.run_once()
+
+  guard spawned.val is Some(entity) else {
+    abort("expected Commands::spawn to return an entity")
+  }
+  inspect(
+    try! app.world().get(entity, commands_position_key),
+    content="Some({x: 21, y: 22})",
+  )
+  inspect(try! app.world().get(entity, commands_velocity_key), content="None")
+  inspect(try! app.world().get(entity, commands_marker_key), content="None")
+}
