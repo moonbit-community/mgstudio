@@ -404,11 +404,19 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in parallax_mapping example")
+  }
+}
+
+///|
 fn spin(world : @ecs.World) -> Unit {
   if parallax_state.val.spin_targets.length() == 0 {
     return
   }
-  let delta = @time.time_delta_seconds()
+  let delta = world_time(world).delta_seconds()
   if delta <= 0.0F {
     return
   }

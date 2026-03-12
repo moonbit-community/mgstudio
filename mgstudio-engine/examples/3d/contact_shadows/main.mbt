@@ -458,12 +458,20 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in contact_shadows example")
+  }
+}
+
+///|
 fn rotate_light(world : @ecs.World) -> Unit {
   if contact_shadows_state.val.light_rotation != LightRotationState::Rotating {
     return
   }
   contact_shadows_state.val.light_angle = contact_shadows_state.val.light_angle +
-    LIGHT_ROTATION_SPEED * @time.time_delta_seconds()
+    LIGHT_ROTATION_SPEED * world_time(world).delta_seconds()
   apply_light_state(world)
 }
 
@@ -518,7 +526,7 @@ fn controls(world : @ecs.World) -> Unit {
     changed = true
   }
 
-  let dt = @time.time_delta_seconds()
+  let dt = world_time(world).delta_seconds()
   if @input.key_pressed(@window.KeyCode::ArrowLeft) {
     contact_shadows_state.val.model_angle = contact_shadows_state.val.model_angle +
       dt

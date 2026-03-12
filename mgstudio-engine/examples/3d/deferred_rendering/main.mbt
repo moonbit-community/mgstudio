@@ -461,6 +461,14 @@ fn switch_mode(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in deferred_rendering example")
+  }
+}
+
+///|
 fn animate_light_direction(world : @ecs.World) -> Unit {
   if deferred_state.val.pause {
     return
@@ -469,7 +477,7 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
   guard world.component(@math.ecs_key_transform).get(light) is Some(transform) else {
     return
   }
-  let delta_angle = LIGHT_ROTATION_SPEED * @time.time_delta_seconds()
+  let delta_angle = LIGHT_ROTATION_SPEED * world_time(world).delta_seconds()
   let tick = world.read_change_tick()
   world
   .component(@math.ecs_key_transform)
@@ -491,7 +499,7 @@ fn spin(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let delta = @time.time_delta_seconds()
+  let delta = world_time(world).delta_seconds()
   for i in 0..<deferred_state.val.spin_targets.length() {
     let target = deferred_state.val.spin_targets[i]
     guard world.component(@math.ecs_key_transform).get(target.entity)
