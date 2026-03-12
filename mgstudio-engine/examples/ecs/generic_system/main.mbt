@@ -64,6 +64,11 @@ impl @app.States for AppState with debug_name(self) {
 }
 
 ///|
+impl Default for AppState with default() {
+  AppState::MainMenu
+}
+
+///|
 impl @ecs.Component for TextToPrint with component() {
   text_to_print_key
 }
@@ -85,27 +90,27 @@ impl @ecs.Component for LevelUnload with component() {
 
 ///|
 fn setup_system(commands : @app.Commands) -> Unit {
-  let menu_entity = commands.spawn_empty()
-  commands
-  .entity(menu_entity)
-  .insert_component(PrinterTick::{
-    timer: @time.Timer::from_seconds(1.0F, @time.TimerMode::Repeating),
-  })
-  commands
-  .entity(menu_entity)
-  .insert_component(TextToPrint::{ text: "I will print until you press space." })
-  commands.entity(menu_entity).insert_component(MenuClose::{  })
+  commands.spawn(
+    (
+      PrinterTick::{
+        timer: @time.Timer::from_seconds(1.0F, @time.TimerMode::Repeating),
+      },
+      TextToPrint::{ text: "I will print until you press space." },
+      MenuClose::{  },
+    ),
+  )
+  |> ignore
 
-  let level_entity = commands.spawn_empty()
-  commands
-  .entity(level_entity)
-  .insert_component(PrinterTick::{
-    timer: @time.Timer::from_seconds(1.0F, @time.TimerMode::Repeating),
-  })
-  commands
-  .entity(level_entity)
-  .insert_component(TextToPrint::{ text: "I will always print" })
-  commands.entity(level_entity).insert_component(LevelUnload::{  })
+  commands.spawn(
+    (
+      PrinterTick::{
+        timer: @time.Timer::from_seconds(1.0F, @time.TimerMode::Repeating),
+      },
+      TextToPrint::{ text: "I will always print" },
+      LevelUnload::{  },
+    ),
+  )
+  |> ignore
 }
 
 ///|
@@ -124,8 +129,10 @@ fn print_text_system(
 }
 
 ///|
-fn transition_to_in_game_system(_world : @ecs.World) -> Unit {
-  if @input.key_pressed(@window.KeyCode::Space) {
+fn transition_to_in_game_system(
+  keyboard_input : @input.ButtonInput[@window.KeyCode],
+) -> Unit {
+  if keyboard_input.pressed(@window.KeyCode::Space) {
     @app.set_state(AppState::InGame)
   }
 }
@@ -158,12 +165,12 @@ fn cleanup_level_unload(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.default_plugins())
-  .insert_state(AppState::MainMenu)
+  .insert_state(AppState::default())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup_system)))
   .add_systems(@app.Update, @app.system(@app.system_param2(print_text_system)))
   .add_systems(
     @app.Update,
-    @app.system(transition_to_in_game_system).run_if(
+    @app.system(@app.system_param(transition_to_in_game_system)).run_if(
       @app.in_state(AppState::MainMenu),
     ),
   )
