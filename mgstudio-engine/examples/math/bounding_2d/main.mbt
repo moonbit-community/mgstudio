@@ -499,7 +499,7 @@ fn render_volumes(world : @ecs.World) -> Unit {
 
 ///|
 fn aabb_intersection_system(world : @ecs.World) -> Unit {
-  guard world_time(world) is Some(time) else { return }
+  let time = world_time(world)
 
   let center = get_intersection_position(time)
   let aabb = { center, half_size: @math.Vec2::new(50.0F, 50.0F) }
@@ -526,7 +526,7 @@ fn aabb_intersection_system(world : @ecs.World) -> Unit {
 
 ///|
 fn circle_intersection_system(world : @ecs.World) -> Unit {
-  guard world_time(world) is Some(time) else { return }
+  let time = world_time(world)
 
   let center = get_intersection_position(time)
   let circle = { center, radius: 50.0F }
@@ -554,7 +554,7 @@ fn circle_intersection_system(world : @ecs.World) -> Unit {
 
 ///|
 fn ray_cast_system(world : @ecs.World) -> Unit {
-  guard world_time(world) is Some(time) else { return }
+  let time = world_time(world)
 
   let gizmos = @sprite.Gizmos::new()
   let ray_cast = get_and_draw_ray(gizmos, time)
@@ -582,7 +582,7 @@ fn ray_cast_system(world : @ecs.World) -> Unit {
 
 ///|
 fn aabb_cast_system(world : @ecs.World) -> Unit {
-  guard world_time(world) is Some(time) else { return }
+  let time = world_time(world)
 
   let gizmos = @sprite.Gizmos::new()
   let ray_cast = get_and_draw_ray(gizmos, time)
@@ -619,7 +619,7 @@ fn aabb_cast_system(world : @ecs.World) -> Unit {
 
 ///|
 fn bounding_circle_cast_system(world : @ecs.World) -> Unit {
-  guard world_time(world) is Some(time) else { return }
+  let time = world_time(world)
 
   let gizmos = @sprite.Gizmos::new()
   let ray_cast = get_and_draw_ray(gizmos, time)
@@ -652,8 +652,11 @@ fn bounding_circle_cast_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit]? {
-  try! world.get_resource(@time.default_time_resource_key())
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in bounding_2d example")
+  }
 }
 
 ///|

@@ -350,7 +350,7 @@ fn default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
   )
   match time {
     Some(time) => time
-    None => @time.Time::default()
+    None => abort("Missing Time<Unit> resource in sampling_primitives example")
   }
 }
 

@@ -396,7 +396,10 @@ test "animation clip events: bevy looping forward and reverse traversal cases" {
 
 ///|
 test "animation runtime: animate_targets applies sampled transform and weights" {
-  let mut app = @app.App::new(@ecs.World::new()).add_plugins([animation_plugin])
+  let default_time : @time.Time[Unit] = @time.Time::default()
+  let mut app = @app.App::new(@ecs.World::new())
+    .insert_resource(default_time)
+    .add_plugins([animation_plugin])
   let world = app.world()
   let player_entity = world.spawn()
   let target_entity = world.spawn()

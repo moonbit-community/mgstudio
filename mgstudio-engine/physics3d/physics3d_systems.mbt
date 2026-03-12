@@ -311,10 +311,7 @@ pub fn physics3d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
   let ctx = ctx_ref.val
   let dt = match (try! world.get_resource(@time.fixed_time_resource_key())) {
     Some(fixed_time) => fixed_time.timestep_seconds()
-    None => {
-      let fixed_time : @time.Time[@time.Fixed] = @time.Time::default()
-      fixed_time.timestep_seconds()
-    }
+    None => abort("Missing Time<Fixed> resource in physics3d systems")
   }
   ctx.integration = ctx.integration.set_dt(dt)
   let transform_store = @math.get_transform_store(ecs_world)

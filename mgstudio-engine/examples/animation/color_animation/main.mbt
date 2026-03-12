@@ -211,10 +211,7 @@ fn spawn_mode_sprite(
 fn default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
   match (try! world.get_resource(@time.default_time_resource_key())) {
     Some(time) => time
-    None => {
-      let time : @time.Time[Unit] = @time.Time::default()
-      time
-    }
+    None => abort("Missing Time<Unit> resource in color_animation example")
   }
 }
 
