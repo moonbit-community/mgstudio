@@ -126,6 +126,14 @@ fn maxf(a : Float, b : Float) -> Float {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in solari example")
+  }
+}
+
+///|
 fn scene_mode_text(mode : SolariSceneMode) -> String {
   match mode {
     SolariSceneMode::PicaPica => "Pica Pica"
@@ -173,7 +181,7 @@ fn control_text_content() -> String {
 }
 
 ///|
-fn performance_text_content() -> String {
+fn performance_text_content(frame_delta_seconds : Float) -> String {
   "Light tiles        N/A\n" +
   "World cache        N/A\n" +
   "Direct lighting    N/A\n" +
@@ -182,7 +190,7 @@ fn performance_text_content() -> String {
   "DLSS-RR            N/A\n" +
   "Total              N/A\n\n" +
   "Frame (CPU): " +
-  (@time.time_delta_seconds() * 1000.0F).to_string() +
+  (frame_delta_seconds * 1000.0F).to_string() +
   " ms\n" +
   "FPS (CPU est): " +
   solari_state.val.perf_fps.to_string()
@@ -196,9 +204,12 @@ fn update_control_text() -> Unit {
 }
 
 ///|
-fn update_performance_text() -> Unit {
+fn update_performance_text(frame_delta_seconds : Float) -> Unit {
   if solari_state.val.performance_text is Some(handle) {
-    @text.text_set_content(handle, performance_text_content())
+    @text.text_set_content(
+      handle,
+      performance_text_content(frame_delta_seconds),
+    )
   }
 }
 
@@ -581,7 +592,7 @@ fn setup(world : @ecs.World) -> Unit {
   apply_scene_mode(world, asset_server)
   apply_light_switches(world)
   update_control_text()
-  update_performance_text()
+  update_performance_text(0.0F)
 }
 
 ///|
@@ -662,7 +673,7 @@ fn patrol_path(world : @ecs.World) -> Unit {
   let target = path[solari_state.val.patrol_index]
   let to_target = target.0.sub(transform.translation)
   let distance = to_target.length()
-  let max_step = PATROL_SPEED * @time.time_delta_seconds()
+  let max_step = PATROL_SPEED * world_time(world).delta_seconds()
   let tick = world.read_change_tick()
 
   if distance <= max_step || distance < 0.01F {
@@ -716,8 +727,8 @@ fn sync_robot_emissive_light(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn update_performance(_world : @ecs.World) -> Unit {
-  let delta = maxf(@time.time_delta_seconds(), 1.0e-6F)
+fn update_performance(world : @ecs.World) -> Unit {
+  let delta = maxf(world_time(world).delta_seconds(), 1.0e-6F)
   solari_state.val.perf_accum = solari_state.val.perf_accum + delta
   solari_state.val.perf_frames = solari_state.val.perf_frames + 1
   if solari_state.val.perf_accum >= 0.5F {
@@ -726,7 +737,7 @@ fn update_performance(_world : @ecs.World) -> Unit {
     solari_state.val.perf_accum = 0.0F
     solari_state.val.perf_frames = 0
   }
-  update_performance_text()
+  update_performance_text(delta)
 }
 
 ///|

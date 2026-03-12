@@ -506,8 +506,16 @@ fn create_material_variants(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in anisotropy example")
+  }
+}
+
+///|
 fn animate_light(world : @ecs.World) -> Unit {
-  let now = @time.time_elapsed_seconds()
+  let now = world_time(world).elapsed_seconds()
   let next_transform = @math.Transform::from_xyz(
     @math.cos(now) * 3.0F,
     4.0F,
@@ -536,7 +544,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
   match anisotropy_state.val.light_mode {
     LightMode::EnvironmentMap =>
       anisotropy_state.val.environment_angle = anisotropy_state.val.environment_angle +
-        @time.time_delta_seconds()
+        world_time(world).delta_seconds()
     _ => ()
   }
 

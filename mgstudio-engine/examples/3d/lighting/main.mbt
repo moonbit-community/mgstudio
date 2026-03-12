@@ -500,6 +500,14 @@ fn toggle_ambient_light(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in lighting example")
+  }
+}
+
+///|
 fn animate_light_direction(world : @ecs.World) -> Unit {
   guard lighting_state.val.directional_light is Some(light_entity) else {
     return
@@ -507,7 +515,7 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let transform_store = world.component(@math.ecs_key_transform)
   if transform_store.get(light_entity) is Some(transform) {
-    let delta = @time.time_delta_seconds() * 0.5F
+    let delta = world_time(world).delta_seconds() * 0.5F
     let spin = @math.Quat::from_rotation_y(delta)
     let next = transform.with_rotation(transform.rotation.mul(spin).normalize())
     transform_store.set(light_entity, next, tick) |> ignore
@@ -535,7 +543,7 @@ fn movement(world : @ecs.World) -> Unit {
   }
 
   let tick = world.read_change_tick()
-  let delta = @time.time_delta_seconds() * MOVE_SPEED
+  let delta = world_time(world).delta_seconds() * MOVE_SPEED
   let transform_store = world.component(@math.ecs_key_transform)
   for entity in lighting_state.val.movables {
     if transform_store.get(entity) is Some(transform) {

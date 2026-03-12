@@ -742,11 +742,21 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in light_probe_blending example")
+  }
+}
+
+///|
 fn move_sphere(world : @ecs.World) -> Unit {
   guard light_probe_blending_state.val.sphere is Some(entity) else { return }
 
   let t = (
-      @math.sin(@time.time_elapsed_seconds() * SPHERE_MOVEMENT_SPEED * PI) +
+      @math.sin(
+        world_time(world).elapsed_seconds() * SPHERE_MOVEMENT_SPEED * PI,
+      ) +
       1.0F
     ) *
     0.5F
@@ -877,7 +887,7 @@ fn free_camera(world : @ecs.World) -> Unit {
     light_probe_blending_state.val.free_position = light_probe_blending_state.val.free_position.add(
       movement
       .normalize_or_zero()
-      .mul_scalar(CAMERA_FREE_MOVE_SPEED * @time.time_delta_seconds()),
+      .mul_scalar(CAMERA_FREE_MOVE_SPEED * world_time(world).delta_seconds()),
     )
   }
 

@@ -450,8 +450,16 @@ fn apply_fog_proxy(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in volumetric_fog example")
+  }
+}
+
+///|
 fn move_directional_light(world : @ecs.World) -> Unit {
-  let delta_time = @time.time_delta_seconds()
+  let delta_time = world_time(world).delta_seconds()
   let mut delta_x = 0.0F
   let mut delta_y = 0.0F
 
@@ -501,7 +509,8 @@ fn move_point_light(world : @ecs.World) -> Unit {
     if world.component(@math.ecs_key_transform).get(point_entity)
       is Some(point_transform) {
       let mut x = point_transform.translation.x +
-        volumetric_fog_state.val.point_light_speed * @time.time_delta_seconds()
+        volumetric_fog_state.val.point_light_speed *
+        world_time(world).delta_seconds()
 
       if x > POINT_LIGHT_MAX_X {
         x = POINT_LIGHT_MAX_X

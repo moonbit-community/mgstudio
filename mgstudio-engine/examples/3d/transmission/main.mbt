@@ -835,8 +835,16 @@ fn apply_material_controls(randomize_colors : Bool) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in transmission example")
+  }
+}
+
+///|
 fn example_control_system(world : @ecs.World) -> Unit {
-  let delta = @time.time_delta_seconds()
+  let delta = world_time(world).delta_seconds()
   let mut materials_changed = false
   let mut randomize_colors = false
   let mut transmission_settings = camera_screen_space_transmission(world)
@@ -1042,7 +1050,7 @@ fn example_control_system(world : @ecs.World) -> Unit {
 
 ///|
 fn flicker_system(world : @ecs.World) -> Unit {
-  let s = @time.time_elapsed_seconds()
+  let s = world_time(world).elapsed_seconds()
   let a = @math.cos(s * 6.0F) * 0.0125F + @math.cos(s * 4.0F) * 0.025F
   let b = @math.cos(s * 5.0F) * 0.0125F + @math.cos(s * 3.0F) * 0.025F
   let c = @math.cos(s * 7.0F) * 0.0125F + @math.cos(s * 2.0F) * 0.025F

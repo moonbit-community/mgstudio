@@ -157,6 +157,14 @@ fn print_controls() -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in atmosphere example")
+  }
+}
+
+///|
 fn apply_atmosphere(world : @ecs.World) -> Unit {
   let state = atmosphere_state.val
   let medium_density = clampf(
@@ -488,7 +496,7 @@ fn atmosphere_controls(world : @ecs.World) -> Unit {
     changed = true
   }
 
-  let delta = @time.time_delta_seconds()
+  let delta = world_time(world).delta_seconds()
   let mut exposure_changed = false
   let exposure_delta = if @input.key_pressed(@window.KeyCode::ArrowUp) {
     -delta * 2.0F
@@ -540,7 +548,7 @@ fn dynamic_scene(world : @ecs.World) -> Unit {
 
   if !atmosphere_state.val.paused {
     atmosphere_state.val.sun_pitch = atmosphere_state.val.sun_pitch -
-      @time.time_delta_seconds() * SUN_ROTATION_SPEED
+      world_time(world).delta_seconds() * SUN_ROTATION_SPEED
   }
 
   if atmosphere_state.val.sun is Some(sun_entity) {
@@ -564,7 +572,7 @@ fn dynamic_scene(world : @ecs.World) -> Unit {
 
   if atmosphere_state.val.water_material is Some(material_handle) {
     if @pbr.standard_material_get(material_handle) is Some(material) {
-      let t = @time.time_elapsed_seconds()
+      let t = world_time(world).elapsed_seconds()
       let wave = (@math.sin(t * 0.8F) + 1.0F) * 0.5F
       let base_blue = 0.10F + wave * 0.10F
       let updated = material

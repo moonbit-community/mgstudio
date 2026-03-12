@@ -683,9 +683,19 @@ fn setup_text(_world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in ssr example")
+  }
+}
+
+///|
 fn rotate_models(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let rotation = @math.Quat::from_rotation_y(@time.time_elapsed_seconds())
+  let rotation = @math.Quat::from_rotation_y(
+    world_time(world).elapsed_seconds(),
+  )
 
   if ssr_state.val.cube_model is Some(cube) {
     if world.component(@math.ecs_key_transform).get(cube) is Some(transform) {
@@ -707,10 +717,10 @@ fn rotate_models(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn animate_water_material(_world : @ecs.World) -> Unit {
+fn animate_water_material(world : @ecs.World) -> Unit {
   if ssr_state.val.water_material is Some(handle) {
     if @pbr.standard_material_get(handle) is Some(material) {
-      let t = @time.time_elapsed_seconds()
+      let t = world_time(world).elapsed_seconds()
       let offset = @math.Vec2::new(
         @math.sin(t * 0.31F) * 0.04F,
         @math.cos(t * 0.27F) * 0.04F,

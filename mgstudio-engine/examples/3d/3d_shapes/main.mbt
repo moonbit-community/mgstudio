@@ -1066,11 +1066,19 @@ fn toggle_rotation(_world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in 3d_shapes example")
+  }
+}
+
+///|
 fn rotate(world : @ecs.World) -> Unit {
   if !shapes_state.val.rotating {
     return
   }
-  let delta = @time.time_delta_seconds() / 2.0F
+  let delta = world_time(world).delta_seconds() / 2.0F
   let spin = @math.Quat::from_rotation_y(delta)
   let tick = world.read_change_tick()
   let transform_store = world.component(@math.ecs_key_transform)
