@@ -89,8 +89,16 @@ fn toggle_stopwatch(stopwatch : @time.Stopwatch) -> @time.Stopwatch {
 }
 
 ///|
-fn tick_delta() -> @core.Duration {
-  @core.Duration::from_secs_f32(@time.time_delta_seconds())
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in spatial_audio_2d example")
+  }
+}
+
+///|
+fn tick_delta(world : @ecs.World) -> @core.Duration {
+  world_time(world).delta()
 }
 
 ///|
@@ -226,7 +234,7 @@ fn update_emitters(world : @ecs.World) -> Unit {
   }
 
   spatial_audio_2d_state.val.emitter_stopwatch = spatial_audio_2d_state.val.emitter_stopwatch.tick(
-    tick_delta(),
+    tick_delta(world),
   )
 
   if spatial_audio_2d_state.val.emitter_stopwatch.is_paused() {
@@ -250,17 +258,18 @@ fn update_emitters(world : @ecs.World) -> Unit {
 
 ///|
 fn update_listener(world : @ecs.World) -> Unit {
+  let delta_seconds = world_time(world).delta_seconds()
   let dx = if @input.key_pressed(@window.KeyCode::ArrowRight) {
-    LISTENER_SPEED * @time.time_delta_seconds()
+    LISTENER_SPEED * delta_seconds
   } else if @input.key_pressed(@window.KeyCode::ArrowLeft) {
-    -LISTENER_SPEED * @time.time_delta_seconds()
+    -LISTENER_SPEED * delta_seconds
   } else {
     0.0F
   }
   let dy = if @input.key_pressed(@window.KeyCode::ArrowUp) {
-    LISTENER_SPEED * @time.time_delta_seconds()
+    LISTENER_SPEED * delta_seconds
   } else if @input.key_pressed(@window.KeyCode::ArrowDown) {
-    -LISTENER_SPEED * @time.time_delta_seconds()
+    -LISTENER_SPEED * delta_seconds
   } else {
     0.0F
   }

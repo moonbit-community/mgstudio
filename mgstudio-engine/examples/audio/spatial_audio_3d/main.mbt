@@ -86,8 +86,16 @@ fn color_lime() -> @sprite.Color {
 }
 
 ///|
-fn tick_delta() -> @core.Duration {
-  @core.Duration::from_secs_f32(@time.time_delta_seconds())
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in spatial_audio_3d example")
+  }
+}
+
+///|
+fn tick_delta(world : @ecs.World) -> @core.Duration {
+  world_time(world).delta()
 }
 
 ///|
@@ -322,7 +330,7 @@ fn update_positions(world : @ecs.World) -> Unit {
   }
 
   spatial_audio_3d_state.val.emitter_stopwatch = spatial_audio_3d_state.val.emitter_stopwatch.tick(
-    tick_delta(),
+    tick_delta(world),
   )
 
   if spatial_audio_3d_state.val.emitter_stopwatch.is_paused() {
@@ -344,7 +352,7 @@ fn update_positions(world : @ecs.World) -> Unit {
 
 ///|
 fn update_listener(world : @ecs.World) -> Unit {
-  let delta = LISTENER_SPEED * @time.time_delta_seconds()
+  let delta = LISTENER_SPEED * world_time(world).delta_seconds()
   let dx = if @input.key_pressed(@window.KeyCode::ArrowRight) {
     delta
   } else if @input.key_pressed(@window.KeyCode::ArrowLeft) {

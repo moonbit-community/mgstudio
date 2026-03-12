@@ -184,6 +184,14 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in audio_control example")
+  }
+}
+
+///|
 fn update_progress_text(world : @ecs.World) -> Unit {
   guard find_music_entity(world) is Some(music) else { return }
   guard find_progress_text_handle(world) is Some(handle) else { return }
@@ -204,7 +212,7 @@ fn update_speed(world : @ecs.World) -> Unit {
   }
 
   let next_speed = maxf(
-    @math.sin(@time.time_elapsed_seconds() / 5.0F) + 1.0F,
+    @math.sin(world_time(world).elapsed_seconds() / 5.0F) + 1.0F,
     0.1F,
   )
   let tick = world.read_change_tick()
