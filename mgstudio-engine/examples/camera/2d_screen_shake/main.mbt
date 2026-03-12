@@ -301,10 +301,19 @@ fn increase_trauma(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in 2d_screen_shake example")
+  }
+}
+
+///|
 fn shake_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let elapsed_seconds = @time.time_elapsed_seconds()
-  let delta_seconds = @time.time_delta_seconds()
+  let time = world_time(world)
+  let elapsed_seconds = time.elapsed_seconds()
+  let delta_seconds = time.delta_seconds()
   let config_store = world.component(camera_shake_config_key)
   let state_store = world.component(camera_shake_state_key)
   let transform_store = world.component(@math.ecs_key_transform)

@@ -148,7 +148,12 @@ fn cycle_game_state(world : @ecs.World) -> Unit {
     is Some(timer_state) else {
     return
   }
-  let next_timer = timer_state.timer.tick(@time.time_delta())
+  let time : @time.Time[Unit] = match
+    (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in soundtrack example")
+  }
+  let next_timer = timer_state.timer.tick(time.delta())
   world.insert_resource(GameStateTimer::resource(), GameStateTimer::{
     timer: next_timer,
   })

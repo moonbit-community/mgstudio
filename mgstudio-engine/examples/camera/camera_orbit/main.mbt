@@ -172,6 +172,7 @@ fn orbit(
   mouse_buttons : @input.ButtonInput[@window.MouseButton],
   mouse_motion : @app.Res[@input.AccumulatedMouseMotion],
 ) -> Unit {
+  guard @app.current_world() is Some(world) else { return }
   let camera_settings = camera_settings_res.get()
   let delta = mouse_motion.get().delta
   let delta_pitch = delta.y * camera_settings.pitch_speed
@@ -184,9 +185,12 @@ fn orbit(
   if mouse_buttons.pressed(Right) {
     delta_roll = delta_roll + 1.0F
   }
-  delta_roll = delta_roll *
-    camera_settings.roll_speed *
-    @time.time_delta_seconds()
+  let time = match
+    (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in camera_orbit example")
+  }
+  delta_roll = delta_roll * camera_settings.roll_speed * time.delta_seconds()
 
   try! camera_query.view_mut(fn(_entity, camera_transform) {
     let transform_ref = camera_transform.get_ref()

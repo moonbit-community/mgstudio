@@ -273,12 +273,17 @@ fn listen_keyboard_input_events_system(
 }
 
 ///|
-fn bubbling_text_system(_world : @ecs.World) -> Unit {
+fn bubbling_text_system(world : @ecs.World) -> Unit {
   if bubble_lines_ref.val.length() == 0 {
     return
   }
-  let delta = @time.time_delta()
-  let delta_seconds = @time.time_delta_seconds()
+  let time : @time.Time[Unit] = match
+    (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in text_input example")
+  }
+  let delta = time.delta()
+  let delta_seconds = time.delta_seconds()
   let next_lines : Array[BubbleLine] = []
   for bubble_line in bubble_lines_ref.val {
     let next_timer = bubble_line.timer.tick(delta)

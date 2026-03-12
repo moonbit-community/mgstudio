@@ -109,6 +109,14 @@ fn setup_camera(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in 2d_top_down_camera example")
+  }
+}
+
+///|
 fn move_player(world : @ecs.World) -> Unit {
   let player = top_down_camera_state.val.player
   if player.is_placeholder() {
@@ -132,9 +140,10 @@ fn move_player(world : @ecs.World) -> Unit {
     direction.x = direction.x + 1.0F
   }
 
+  let delta_seconds = world_time(world).delta_seconds()
   let move_delta = direction
     .normalize_or_zero()
-    .mul_scalar(PLAYER_SPEED * @time.time_delta_seconds())
+    .mul_scalar(PLAYER_SPEED * delta_seconds)
   let next_transform = transform.with_translation(
     transform.translation.add(@math.Vec3::new(move_delta.x, move_delta.y, 0.0F)),
   )
@@ -154,6 +163,7 @@ fn update_camera(world : @ecs.World) -> Unit {
   guard transform_store.get(camera) is Some(camera_transform) else { return }
 
   let translation = camera_transform.translation
+  let delta_seconds = world_time(world).delta_seconds()
   translation.smooth_nudge(
     @math.Vec3::new(
       player_transform.translation.x,
@@ -161,7 +171,7 @@ fn update_camera(world : @ecs.World) -> Unit {
       camera_transform.translation.z,
     ),
     CAMERA_DECAY_RATE,
-    @time.time_delta_seconds(),
+    delta_seconds,
   )
   transform_store.set(
     camera,

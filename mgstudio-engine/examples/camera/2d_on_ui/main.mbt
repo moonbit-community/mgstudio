@@ -114,8 +114,14 @@ fn rotate_sprite(world : @ecs.World) -> Unit {
   let transform_store = @math.get_transform_store(world)
   guard transform_store.get(sprite) is Some(transform) else { return }
 
-  let rotation = @math.Quat::from_rotation_z(@time.time_delta_seconds() * 0.5F).mul(
-    @math.Quat::from_rotation_y(@time.time_delta_seconds()),
+  let time = match
+    (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in 2d_on_ui example")
+  }
+  let delta_seconds = time.delta_seconds()
+  let rotation = @math.Quat::from_rotation_z(delta_seconds * 0.5F).mul(
+    @math.Quat::from_rotation_y(delta_seconds),
   )
   transform_store.set(
     sprite,

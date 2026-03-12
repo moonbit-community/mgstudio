@@ -4522,8 +4522,16 @@ fn pan_camera_step(
 }
 
 ///|
+fn pan_camera_world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in pancamera controller")
+  }
+}
+
+///|
 pub fn run_pancamera_controller(world : @ecs.World) -> Unit {
-  let delta_seconds = @time.time_delta_seconds()
+  let delta_seconds = pan_camera_world_time(world).delta_seconds()
   let tick = world.read_change_tick()
   let camera_store = world.component(ecs_key_camera)
   let transform_store = world.component(@math.ecs_key_transform)

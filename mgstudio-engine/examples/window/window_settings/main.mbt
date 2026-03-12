@@ -181,7 +181,12 @@ fn toggle_window_controls(input : @input.ButtonInput[@window.KeyCode]) -> Unit {
 
 ///|
 fn change_title(world : @ecs.World) -> Unit {
-  let seconds = @time.time_elapsed_seconds().round()
+  let time : @time.Time[Unit] = match
+    (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in window_settings example")
+  }
+  let seconds = time.elapsed_seconds().round()
   update_primary_window(world, fn(window) {
     window.title = "Seconds since startup: " + seconds.to_string()
   })

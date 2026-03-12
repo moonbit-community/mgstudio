@@ -44,6 +44,14 @@ pub impl @app.Resource for Unused with resource() {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in run_conditions example")
+  }
+}
+
+///|
 fn main {
   @app.log_info(
     "For the first 2 seconds you will not be able to increment the counter",
@@ -81,8 +89,8 @@ fn main {
     @app.system(print_time_message)
     .run_if_stateful(0.0F.to_json(), time_passed(2.0F))
     .run_if(
-      @app.run_condition_not(fn(_world : @ecs.World) {
-        @time.time_elapsed_seconds() >= 2.5F
+      @app.run_condition_not(fn(world : @ecs.World) {
+        world_time(world).elapsed_seconds() >= 2.5F
       }),
     ),
   )
@@ -123,9 +131,10 @@ fn input_counter_changed_and_not_added(world : @ecs.World) -> Bool {
 
 ///|
 fn time_passed(threshold : Float) -> @app.StatefulRunConditionFn[@ecs.World] {
-  fn(_world : @ecs.World, state : Ref[Json]) {
+  fn(world : @ecs.World, state : Ref[Json]) {
     let elapsed_seconds : Float = try! @json.from_json(state.val)
-    let updated_elapsed_seconds = elapsed_seconds + @time.time_delta_seconds()
+    let updated_elapsed_seconds = elapsed_seconds +
+      world_time(world).delta_seconds()
     state.val = updated_elapsed_seconds.to_json()
     updated_elapsed_seconds >= threshold
   }
