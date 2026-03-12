@@ -142,6 +142,10 @@ pub fn create_window(
     physical_height~,
     use_physical_size_on_create~,
     title~,
+    visible=true,
+    resizable=true,
+    decorations=true,
+    panel=false,
   )
 }
 

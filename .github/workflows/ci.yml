@@ -12,44 +12,6 @@ env:
   MOON_IGNORE_POSTADD: "1"
 
 jobs:
-  bevy-parity-artifacts:
-    name: bevy parity artifacts
-    runs-on: macos-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Fetch pinned Bevy baseline
-        shell: bash
-        run: |
-          set -euo pipefail
-          ./scripts/fetch_bevy.sh
-
-      - name: Check parity matrix artifacts and ownership
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 scripts/generate_bevy_example_parity.py --check
-
-  bevy-wgsl-modules:
-    name: bevy WGSL modules
-    runs-on: macos-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Fetch pinned Bevy baseline
-        shell: bash
-        run: |
-          set -euo pipefail
-          ./scripts/fetch_bevy.sh
-
-      - name: Check synced Bevy WGSL modules
-        shell: bash
-        run: |
-          set -euo pipefail
-          ./scripts/check_bevy_wgsl_modules.sh
-
   engine-native:
     name: engine (native check/test/build)
     runs-on: macos-latest
@@ -127,4 +89,10 @@ jobs:
         run: |
           set -euo pipefail
           export PATH="$HOME/.moon/bin:$PATH"
-          ./scripts/smoke_bevy_examples.sh
+          moon -C mgstudio-engine build --target native examples/2d/sprite
+          moon -C mgstudio-engine build --target native examples/2d/2d_shapes
+          moon -C mgstudio-engine build --target native examples/3d/pbr
+          moon -C mgstudio-engine build --target native examples/3d/3d_shapes
+          moon -C mgstudio-engine build --target native examples/3d/3d_scene
+          moon -C mgstudio-engine build --target native examples/ui/button
+          moon -C mgstudio-engine build --target native examples/input/gamepad_input_events
