@@ -284,10 +284,18 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in fog_volumes example")
+  }
+}
+
+///|
 fn rotate_camera(world : @ecs.World) -> Unit {
   guard fog_volumes_state.val.camera is Some(camera_entity) else { return }
 
-  let elapsed = @time.time_elapsed_seconds()
+  let elapsed = world_time(world).elapsed_seconds()
   let angle = elapsed * CAMERA_SPEED
   let camera_pos = @math.Vec3::new(
     @math.cos(angle) * CAMERA_RADIUS,

@@ -289,9 +289,17 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in fog example")
+  }
+}
+
+///|
 fn update_system(world : @ecs.World) -> Unit {
-  let now = @time.time_elapsed_seconds()
-  let delta = @time.time_delta_seconds()
+  let now = world_time(world).elapsed_seconds()
+  let delta = world_time(world).delta_seconds()
   let tick = world.read_change_tick()
 
   guard fog_example_state.val.camera is Some(camera) else { return }

@@ -280,8 +280,16 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn cycle_cubemap_asset() -> Unit {
-  let now = @time.time_elapsed_seconds()
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in skybox example")
+  }
+}
+
+///|
+fn cycle_cubemap_asset(world : @ecs.World) -> Unit {
+  let now = world_time(world).elapsed_seconds()
   if cubemap_state.val.next_swap_time == 0.0F {
     cubemap_state.val.next_swap_time = now + CUBEMAP_SWAP_DELAY
     return
@@ -352,7 +360,9 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
     is Some(transform) {
     let tick = world.read_change_tick()
     let next_rotation = transform.rotation
-      .mul(@math.Quat::from_rotation_y(@time.time_delta_seconds() * 0.5F))
+      .mul(
+        @math.Quat::from_rotation_y(world_time(world).delta_seconds() * 0.5F),
+      )
       .normalize()
     world
     .component(@math.ecs_key_transform)
@@ -363,7 +373,7 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
 
 ///|
 fn update(world : @ecs.World) -> Unit {
-  cycle_cubemap_asset()
+  cycle_cubemap_asset(world)
   asset_loaded(world)
   animate_light_direction(world)
 }

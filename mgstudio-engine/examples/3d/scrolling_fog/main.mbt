@@ -295,8 +295,16 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in scrolling_fog example")
+  }
+}
+
+///|
 fn scroll_fog(world : @ecs.World) -> Unit {
-  let elapsed = @time.time_elapsed_seconds()
+  let elapsed = world_time(world).elapsed_seconds()
   let density_texture_offset_z = elapsed * FOG_DENSITY_TEXTURE_SCROLL_SPEED
   let tick = world.read_change_tick()
 
