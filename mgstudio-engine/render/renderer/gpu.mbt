@@ -358,6 +358,7 @@ pub struct GpuBackend {
   mut bloom2d_mip_count : Int
   mut bloom2d_mip_width : Int
   mut bloom2d_mip_height : Int
+  mut bloom2d_fallback_lut_texture_id : Int
   mesh3d_material_bg_cache : Array[Mesh3dMaterialBindGroupCacheEntry]
   sampler_cache : @hashmap.HashMap[String, @wgpu.Sampler]
   mut next_id : Int
@@ -657,6 +658,7 @@ pub fn GpuBackend::new(
     bloom2d_mip_count: 0,
     bloom2d_mip_width: 0,
     bloom2d_mip_height: 0,
+    bloom2d_fallback_lut_texture_id: -1,
     mesh3d_material_bg_cache: [],
     sampler_cache: @hashmap.HashMap::new(),
     next_id: 1,

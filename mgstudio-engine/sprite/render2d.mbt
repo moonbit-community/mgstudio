@@ -6716,7 +6716,7 @@ fn cmp_float(a : Float, b : Float) -> Int {
 fn mesh_alpha_phase(alpha_mode : AlphaMode2d, alpha : Float) -> Int? {
   match alpha_mode {
     Opaque => Some(0)
-    Blend => Some(if alpha >= 1.0F { 0 } else { 1 })
+    Blend => Some(1)
     Mask(cutoff) => if alpha >= cutoff { Some(0) } else { None }
   }
 }
@@ -6745,15 +6745,9 @@ priv enum DrawKind {
 priv struct DrawItem {
   kind : DrawKind
   z : Float
-  // 0 = opaque, 1 = transparent (opaque first for stable blending).
+  // 0 = scene opaque/mask, 1 = scene transparent, 2 = UI overlay.
   phase : Int
-  // Rough pipeline grouping: 0 = sprite, 1 = mesh, 2 = ui.
-  pipeline : Int
-  // Batch key for opaque items (e.g. texture id / mesh id).
-  batch : Int
-  // Stable tie-break keys.
-  entity_id : Int
-  entity_generation : Int
+  // Stable insertion order tie-break key.
   tie : Int
 }
 
@@ -6789,31 +6783,13 @@ fn draw_items_for_layers(
 ///|
 fn sort_draw_items(items : Array[DrawItem]) -> Array[DrawItem] {
   items.sort_by(fn(a, b) {
-    let cz = cmp_float(a.z, b.z)
-    if cz != 0 {
-      return cz
-    }
     let cp = cmp_int(a.phase, b.phase)
     if cp != 0 {
       return cp
     }
-    let cpipe = cmp_int(a.pipeline, b.pipeline)
-    if cpipe != 0 {
-      return cpipe
-    }
-    if a.phase == 0 {
-      let cb = cmp_int(a.batch, b.batch)
-      if cb != 0 {
-        return cb
-      }
-    }
-    let ce = cmp_int(a.entity_id, b.entity_id)
-    if ce != 0 {
-      return ce
-    }
-    let cg = cmp_int(a.entity_generation, b.entity_generation)
-    if cg != 0 {
-      return cg
+    let cz = cmp_float(a.z, b.z)
+    if cz != 0 {
+      return cz
     }
     cmp_int(a.tie, b.tie)
   })
@@ -6829,58 +6805,9 @@ fn draw_scene_items_for_layers(
   layers : RenderLayers,
 ) -> Array[DrawItem] {
   let items : Array[DrawItem] = []
-  for i in 0..<sprites.length() {
-    let sprite = sprites[i]
-    if !sprite.layers.matches(layers) {
-      continue
-    }
-    let phase = if sprite.color.a >= 1.0F { 0 } else { 1 }
-    items.push(DrawItem::{
-      kind: SpriteMain(i),
-      z: sprite.transform.translation.z,
-      phase,
-      pipeline: 0,
-      batch: sprite.texture.id(),
-      entity_id: sprite.entity.id,
-      entity_generation: sprite.entity.generation,
-      tie: i,
-    })
-  }
-  for i in 0..<extra_sprites.length() {
-    let sprite = extra_sprites[i]
-    if !sprite.layers.matches(layers) {
-      continue
-    }
-    let phase = if sprite.color.a >= 1.0F { 0 } else { 1 }
-    items.push(DrawItem::{
-      kind: SpriteExtra(i),
-      z: sprite.transform.translation.z,
-      phase,
-      pipeline: 0,
-      batch: sprite.texture.id(),
-      entity_id: sprite.entity.id,
-      entity_generation: sprite.entity.generation,
-      // Ensure extra-sprites tie-break after main sprites with the same entity key.
-      tie: 1_000_000 + i,
-    })
-  }
-  for i in 0..<extra_sprite_texture_slices.length() {
-    let slice = extra_sprite_texture_slices[i]
-    if !slice.layers.matches(layers) {
-      continue
-    }
-    let phase = if slice.color.a >= 1.0F { 0 } else { 1 }
-    items.push(DrawItem::{
-      kind: SpriteTextureSliceExtra(i),
-      z: slice.transform.translation.z,
-      phase,
-      pipeline: 0,
-      batch: slice.texture.id(),
-      entity_id: slice.entity.id,
-      entity_generation: slice.entity.generation,
-      tie: 1_500_000 + i,
-    })
-  }
+  let mut tie = 0
+  // Align with Bevy queue structure: mesh phases are queued before sprite phases.
+  // Transparent items are then sorted by z with stable insertion order.
   for i in 0..<meshes.length() {
     let mesh = meshes[i]
     if !mesh.layers.matches(layers) {
@@ -6893,12 +6820,48 @@ fn draw_scene_items_for_layers(
       kind: Mesh(i),
       z: mesh.transform.translation.z,
       phase,
-      pipeline: 1,
-      batch: mesh.mesh_id,
-      entity_id: mesh.entity.id,
-      entity_generation: mesh.entity.generation,
-      tie: i,
+      tie,
     })
+    tie = tie + 1
+  }
+  for i in 0..<sprites.length() {
+    let sprite = sprites[i]
+    if !sprite.layers.matches(layers) {
+      continue
+    }
+    items.push(DrawItem::{
+      kind: SpriteMain(i),
+      z: sprite.transform.translation.z,
+      phase: 1,
+      tie,
+    })
+    tie = tie + 1
+  }
+  for i in 0..<extra_sprites.length() {
+    let sprite = extra_sprites[i]
+    if !sprite.layers.matches(layers) {
+      continue
+    }
+    items.push(DrawItem::{
+      kind: SpriteExtra(i),
+      z: sprite.transform.translation.z,
+      phase: 1,
+      tie,
+    })
+    tie = tie + 1
+  }
+  for i in 0..<extra_sprite_texture_slices.length() {
+    let slice = extra_sprite_texture_slices[i]
+    if !slice.layers.matches(layers) {
+      continue
+    }
+    items.push(DrawItem::{
+      kind: SpriteTextureSliceExtra(i),
+      z: slice.transform.translation.z,
+      phase: 1,
+      tie,
+    })
+    tie = tie + 1
   }
   sort_draw_items(items)
 }
@@ -6912,23 +6875,20 @@ fn draw_ui_overlay_items_for_layers(
   layers : RenderLayers,
 ) -> Array[DrawItem] {
   let items : Array[DrawItem] = []
+  let mut tie = 0
   for i in 0..<extra_ui_rects.length() {
     let rect = extra_ui_rects[i]
     if !rect.layers.matches(layers) ||
       !render2d_ui_overlay_matches_camera(rect.target_camera, camera_entity) {
       continue
     }
-    let phase = if rect.color.a >= 1.0F { 0 } else { 1 }
     items.push(DrawItem::{
       kind: UiRectExtra(i),
       z: rect.transform.translation.z,
-      phase,
-      pipeline: 2,
-      batch: rect.texture.id(),
-      entity_id: rect.entity.id,
-      entity_generation: rect.entity.generation,
-      tie: 2_000_000 + i,
+      phase: 2,
+      tie,
     })
+    tie = tie + 1
   }
   for i in 0..<extra_ui_box_shadows.length() {
     let shadow = extra_ui_box_shadows[i]
@@ -6936,17 +6896,13 @@ fn draw_ui_overlay_items_for_layers(
       !render2d_ui_overlay_matches_camera(shadow.target_camera, camera_entity) {
       continue
     }
-    let phase = if shadow.color.a >= 1.0F { 0 } else { 1 }
     items.push(DrawItem::{
       kind: UiBoxShadowExtra(i),
       z: shadow.transform.translation.z,
-      phase,
-      pipeline: 2,
-      batch: shadow.texture.id(),
-      entity_id: shadow.entity.id,
-      entity_generation: shadow.entity.generation,
-      tie: 2_500_000 + i,
+      phase: 2,
+      tie,
     })
+    tie = tie + 1
   }
   for i in 0..<extra_ui_texture_slices.length() {
     let slice = extra_ui_texture_slices[i]
@@ -6954,17 +6910,13 @@ fn draw_ui_overlay_items_for_layers(
       !render2d_ui_overlay_matches_camera(slice.target_camera, camera_entity) {
       continue
     }
-    let phase = if slice.color.a >= 1.0F { 0 } else { 1 }
     items.push(DrawItem::{
       kind: UiTextureSliceExtra(i),
       z: slice.transform.translation.z,
-      phase,
-      pipeline: 2,
-      batch: slice.texture.id(),
-      entity_id: slice.entity.id,
-      entity_generation: slice.entity.generation,
-      tie: 2_000_000 + i,
+      phase: 2,
+      tie,
     })
+    tie = tie + 1
   }
   sort_draw_items(items)
 }
@@ -7249,6 +7201,43 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
   let ok = items.length() == 2 &&
     items[0].kind is Mesh(0) &&
     items[1].kind is Mesh(1)
+  inspect(ok, content="true")
+}
+
+///|
+test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
+  let layers = RenderLayers::default()
+  let sprites : Array[SpriteInstance] = [
+    SpriteInstance::{
+      entity: @core.Entity::new(2, 0),
+      transform: @math.Transform::identity(),
+      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+      draw_scale: @math.Vec2::new(1.0F, 1.0F),
+      color: Color::white(),
+      texture: @asset.Handle::new(10),
+      layers,
+      uv_min: @math.Vec2::new(0.0F, 0.0F),
+      uv_max: @math.Vec2::new(1.0F, 1.0F),
+      scissor: None,
+    },
+  ]
+  let meshes : Array[MeshInstance] = [
+    MeshInstance::{
+      entity: @core.Entity::new(1, 0),
+      mesh_id: 99,
+      transform: @math.Transform::identity(),
+      color: Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      alpha_mode: AlphaMode2d::Blend,
+      texture: None,
+      uv_offset: @math.Vec2::new(0.0F, 0.0F),
+      uv_scale: @math.Vec2::new(1.0F, 1.0F),
+      layers,
+    },
+  ]
+  let items = draw_scene_items_for_layers(sprites, [], [], meshes, layers)
+  let ok = items.length() == 2 &&
+    items[0].kind is Mesh(0) &&
+    items[1].kind is SpriteMain(0)
   inspect(ok, content="true")
 }
 

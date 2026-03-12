@@ -585,8 +585,7 @@ pub fn GpuBackend::draw_tonemapping2d(
     pass_state.viewport_h.to_double(),
   )
   let selected_lut_view = bloom2d_selected_lut_view(
-    self, scene_texture, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id,
-    blender_lut_texture_id,
+    self, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
   let exposure_value = if exposure < 0.0F { 0.0F } else { exposure }
   let tonemapping_mode_value = Float::from_int(
@@ -627,48 +626,48 @@ pub fn GpuBackend::draw_tonemapping2d(
     source_viewport_y,
     source_viewport_width,
     source_viewport_height,
-    0.0F,
-    0.0F,
-    1.0F,
-    1.0F,
+    0.0F, // threshold
+    0.0F, // threshold_softness
+    1.0F, // scale_x
+    1.0F, // scale_y
     exposure_value,
-    0.0F,
-    0.125F,
+    0.0F, // fxaa_enabled
+    0.125F, // fxaa_edge_threshold
     tonemapping_mode_value,
     deband_dither_enabled_value,
-    0.0F,
-    0.0F,
-    0.0F,
-    0.0F,
-    0.0F,
-    0.0F,
-    0.0F,
-    0.0F,
-    1.0F,
-    0.0F,
-    0.0F,
-    1.0F,
-    0.0F,
-    1.0F,
-    1.0F,
-    1.0F,
-    1.0F,
-    1.0F,
-    1.0F,
-    1.0F,
-    0.0F,
-    0.0F,
-    0.0F,
-    0.0F,
-    0.0F,
-    0.0F,
-    0.0F,
-    0.0F,
-    0.2F,
-    0.7F,
-    0.0F,
-    0.0F,
-    1.0F,
+    0.0F, // bloom_weight
+    0.0F, // upsample_blend
+    0.0F, // chromatic_aberration
+    0.0F, // vignette
+    1.0F, // color_grading_balance_x_axis_x
+    0.0F, // color_grading_balance_x_axis_y
+    0.0F, // color_grading_balance_x_axis_z
+    0.0F, // color_grading_balance_y_axis_x
+    1.0F, // color_grading_balance_y_axis_y
+    0.0F, // color_grading_balance_y_axis_z
+    0.0F, // color_grading_balance_z_axis_x
+    0.0F, // color_grading_balance_z_axis_y
+    1.0F, // color_grading_balance_z_axis_z
+    1.0F, // color_grading_saturation_shadows
+    1.0F, // color_grading_saturation_midtones
+    1.0F, // color_grading_saturation_highlights
+    1.0F, // color_grading_contrast_shadows
+    1.0F, // color_grading_contrast_midtones
+    1.0F, // color_grading_contrast_highlights
+    1.0F, // color_grading_gamma_shadows
+    1.0F, // color_grading_gamma_midtones
+    1.0F, // color_grading_gamma_highlights
+    1.0F, // color_grading_gain_shadows
+    1.0F, // color_grading_gain_midtones
+    1.0F, // color_grading_gain_highlights
+    0.0F, // color_grading_lift_shadows
+    0.0F, // color_grading_lift_midtones
+    0.0F, // color_grading_lift_highlights
+    0.2F, // color_grading_midtones_start
+    0.7F, // color_grading_midtones_end
+    0.0F, // color_grading_exposure
+    0.0F, // color_grading_hue
+    1.0F, // color_grading_post_saturation
   )
   self.queue.write_buffer(settings_buf, 0UL, final_uniform)
   if target_view(self, pass_state.target_id, pass_state.target_layer)
@@ -795,8 +794,7 @@ pub fn GpuBackend::draw_bloom2d(
     pass_state.viewport_h.to_double(),
   )
   let selected_lut_view = bloom2d_selected_lut_view(
-    self, scene_texture, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id,
-    blender_lut_texture_id,
+    self, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
   let low_frequency_boost_value = if low_frequency_boost < 0.0F {
     0.0F
@@ -2252,14 +2250,42 @@ fn bloom2d_pipeline_for_current_pass(
 }
 
 ///|
+fn ensure_bloom2d_fallback_lut_view(
+  backend : GpuBackend,
+) -> @wgpu.TextureView raise GpuBackendError {
+  if backend.bloom2d_fallback_lut_texture_id > 0 {
+    if find_texture(backend, backend.bloom2d_fallback_lut_texture_id)
+      is Some(texture) {
+      return texture.view
+    }
+    backend.bloom2d_fallback_lut_texture_id = -1
+  }
+  let bytes = Bytes::makei(4, _ => (255).to_byte())
+  let texture_id = backend.create_texture_3d_with_format(
+    1,
+    1,
+    1,
+    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    [bytes],
+  )
+  backend.bloom2d_fallback_lut_texture_id = texture_id
+  if find_texture(backend, texture_id) is Some(texture) {
+    texture.view
+  } else {
+    fatal(
+      "wgpu: bloom2d fallback LUT texture missing after creation (id=\{texture_id})",
+    )
+  }
+}
+
+///|
 fn bloom2d_selected_lut_view(
   backend : GpuBackend,
-  scene_texture : GpuTextureInfo,
   tonemapping_mode : Int,
   agx_lut_texture_id : Int,
   tony_lut_texture_id : Int,
   blender_lut_texture_id : Int,
-) -> @wgpu.TextureView {
+) -> @wgpu.TextureView raise GpuBackendError {
   let selected_lut_texture_id = if tonemapping_mode == 4 {
     agx_lut_texture_id
   } else if tonemapping_mode == 6 {
@@ -2289,7 +2315,7 @@ fn bloom2d_selected_lut_view(
       return lut_texture.view
     }
   }
-  scene_texture.view
+  ensure_bloom2d_fallback_lut_view(backend)
 }
 
 ///|
