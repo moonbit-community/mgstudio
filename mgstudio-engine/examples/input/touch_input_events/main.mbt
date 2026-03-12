@@ -15,9 +15,9 @@
 ///|
 /// Port of `bevy/examples/input/touch_input_events.rs`.
 ///
-/// Baseline parity:
+/// Current parity state:
 /// - Uses `MessageReader<TouchInput>` with Bevy-like event iteration.
-/// - Runtime touch host events are not wired yet, so no touch events are emitted.
+/// - Native exact parity is blocked by missing native touch event source (`bd-6xp`).
 
 ///|
 fn main {

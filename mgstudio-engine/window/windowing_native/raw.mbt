@@ -22,6 +22,12 @@ const MOUSE_BUTTON_COUNT : Int = 3
 const MAX_TEXT_EVENTS : Int = 256
 
 ///|
+const MAX_IME_EVENTS : Int = 256
+
+///|
+const MAX_KEYBOARD_EVENTS : Int = 512
+
+///|
 const MAX_DRAG_EVENTS : Int = 64
 
 ///|
@@ -64,7 +70,19 @@ const ELEMENT_STATE_PRESSED : Int = 1
 const ELEMENT_STATE_RELEASED : Int = 2
 
 ///|
+const IME_EVENT_ENABLED : Int = 1
+
+///|
+const IME_EVENT_PREEDIT : Int = 2
+
+///|
 const IME_EVENT_COMMIT : Int = 3
+
+///|
+const IME_EVENT_DISABLED : Int = 4
+
+///|
+const IME_EVENT_DELETE_SURROUNDING : Int = 5
 
 ///|
 const DEFAULT_FRAME_LIMIT : Int = 0
@@ -76,6 +94,23 @@ pub type NativeWindowHandle = Int
 priv struct DragEvent {
   kind : Int
   text : Bytes
+}
+
+///|
+priv struct KeyboardEvent {
+  key_id : Int
+  state : Int
+  repeat : Bool
+  text : Bytes
+}
+
+///|
+priv struct ImeEvent {
+  window : Int
+  kind : Int
+  text : Bytes
+  cursor_start : Int
+  cursor_end : Int
 }
 
 ///|
@@ -209,6 +244,12 @@ let wheel_y_ref : Ref[Float] = Ref::new(0.0)
 
 ///|
 let text_events_ref : Ref[Array[Bytes]] = Ref::new([])
+
+///|
+let keyboard_events_ref : Ref[Array[KeyboardEvent]] = Ref::new([])
+
+///|
+let ime_events_ref : Ref[Array[ImeEvent]] = Ref::new([])
 
 ///|
 let drag_events_ref : Ref[Array[DragEvent]] = Ref::new([])
@@ -361,6 +402,43 @@ fn push_drag_event(kind : Int, text : Bytes) -> Unit {
 }
 
 ///|
+fn push_ime_event(
+  window : Int,
+  kind : Int,
+  text : Bytes,
+  cursor_start : Int,
+  cursor_end : Int,
+) -> Unit {
+  if kind != IME_EVENT_ENABLED &&
+    kind != IME_EVENT_PREEDIT &&
+    kind != IME_EVENT_COMMIT &&
+    kind != IME_EVENT_DISABLED &&
+    kind != IME_EVENT_DELETE_SURROUNDING {
+    return
+  }
+  if ime_events_ref.val.length() >= MAX_IME_EVENTS {
+    return
+  }
+  ime_events_ref.val.push(ImeEvent::{ window, kind, text, cursor_start, cursor_end })
+}
+
+///|
+fn push_keyboard_event(
+  key_id : Int,
+  state : Int,
+  repeat : Bool,
+  text : Bytes,
+) -> Unit {
+  if state != ELEMENT_STATE_PRESSED && state != ELEMENT_STATE_RELEASED {
+    return
+  }
+  if keyboard_events_ref.val.length() >= MAX_KEYBOARD_EVENTS {
+    return
+  }
+  keyboard_events_ref.val.push(KeyboardEvent::{ key_id, state, repeat, text })
+}
+
+///|
 fn key_id_from_scancode(scancode : Int) -> Int {
   match scancode {
     0 => 0
@@ -459,19 +537,23 @@ fn process_keyboard_input(window : Int) -> Unit {
   }
   let state = host_window_input_event_state(window)
   if state == ELEMENT_STATE_PRESSED {
-    if host_window_input_event_repeat(window) {
+    let repeated = host_window_input_event_repeat(window)
+    let text = host_window_input_event_text_with_all_modifiers(window)
+    if repeated {
       bool_state_set(key_repeated_ref.val, key_id, true)
     }
     if !bool_state_get(key_down_ref.val, key_id) {
       bool_state_set(key_just_pressed_ref.val, key_id, true)
     }
     bool_state_set(key_down_ref.val, key_id, true)
-    push_text_event(host_window_input_event_text_with_all_modifiers(window))
+    push_text_event(text)
+    push_keyboard_event(key_id, state, repeated, text)
   } else if state == ELEMENT_STATE_RELEASED {
     if bool_state_get(key_down_ref.val, key_id) {
       bool_state_set(key_just_released_ref.val, key_id, true)
     }
     bool_state_set(key_down_ref.val, key_id, false)
+    push_keyboard_event(key_id, state, false, Bytes::from_array([]))
   }
 }
 
@@ -540,8 +622,13 @@ fn process_input_events(window : Int) -> Unit {
     }
 
     if kind == INPUT_EVENT_IME {
-      if host_window_input_event_ime_kind(window) == IME_EVENT_COMMIT {
-        push_text_event(host_window_input_event_ime_text(window))
+      let ime_kind = host_window_input_event_ime_kind(window)
+      let ime_text = host_window_input_event_ime_text(window)
+      let ime_cursor_start = host_window_input_event_ime_cursor_start(window)
+      let ime_cursor_end = host_window_input_event_ime_cursor_end(window)
+      push_ime_event(window, ime_kind, ime_text, ime_cursor_start, ime_cursor_end)
+      if ime_kind == IME_EVENT_COMMIT {
+        push_text_event(ime_text)
       }
       continue
     }
@@ -565,6 +652,10 @@ pub fn create_utf8(
   use_physical_size_on_create : Bool,
   title : Bytes,
   title_len : UInt64,
+  visible : Bool,
+  resizable : Bool,
+  decorations : Bool,
+  panel : Bool,
 ) -> Int {
   let width = if use_physical_size_on_create {
     if physical_width > 0 {
@@ -585,7 +676,15 @@ pub fn create_utf8(
     logical_height
   }
   let window = host_window_create_utf8(
-    width, height, true, true, true, true, false, title, title_len,
+    width,
+    height,
+    visible,
+    true,
+    resizable,
+    decorations,
+    panel,
+    title,
+    title_len,
   )
   mark_window_open(window)
   window
@@ -599,6 +698,10 @@ pub fn create(
   physical_height~ : Int,
   use_physical_size_on_create~ : Bool,
   title~ : String,
+  visible~ : Bool,
+  resizable~ : Bool,
+  decorations~ : Bool,
+  panel~ : Bool,
 ) -> NativeWindowHandle {
   let title_bytes = encode_utf8_bytes(title)
   create_utf8(
@@ -609,6 +712,10 @@ pub fn create(
     use_physical_size_on_create,
     title_bytes,
     title_bytes.length().to_uint64(),
+    visible,
+    resizable,
+    decorations,
+    panel,
   )
 }
 
@@ -701,6 +808,57 @@ pub fn set_resizable(window : Int, resizable~ : Bool) -> Unit {
 }
 
 ///|
+pub fn set_visible(window : Int, visible~ : Bool) -> Unit {
+  host_window_set_visible(window, visible)
+}
+
+///|
+pub fn set_decorations(window : Int, decorations~ : Bool) -> Unit {
+  host_window_set_decorations(window, decorations)
+}
+
+///|
+pub fn set_transparent(window : Int, transparent~ : Bool) -> Unit {
+  host_window_set_transparent(window, transparent)
+}
+
+///|
+pub fn set_enabled_buttons(
+  window : Int,
+  close~ : Bool,
+  minimize~ : Bool,
+  maximize~ : Bool,
+) -> Unit {
+  host_window_set_enabled_buttons(window, close, minimize, maximize)
+}
+
+///|
+pub fn set_window_level(window : Int, level~ : Int) -> Unit {
+  host_window_set_window_level(window, level)
+}
+
+///|
+pub fn set_theme(window : Int, theme~ : Int) -> Unit {
+  host_window_set_theme(window, theme)
+}
+
+///|
+pub fn set_ime_allowed(window : Int, allowed~ : Bool) -> Unit {
+  host_window_set_ime_allowed(window, allowed)
+}
+
+///|
+pub fn set_ime_cursor_area(
+  window : Int,
+  x~ : Int,
+  y~ : Int,
+  width~ : Int,
+  height~ : Int,
+) -> Unit {
+  host_window_set_ime_cursor_area(window, x, y, width, height)
+}
+
+///|
 pub fn set_cursor_visible(window : Int, visible~ : Bool) -> Unit {
   host_window_set_cursor_visible(window, visible)
 }
@@ -730,6 +888,16 @@ pub fn set_mode(window : Int, mode~ : Int) -> Unit {
 ///|
 pub fn set_position(window : Int, x~ : Int, y~ : Int) -> Unit {
   host_window_set_position(window, x, y)
+}
+
+///|
+pub fn drag_window(window : Int) -> Bool {
+  host_window_drag_window(window)
+}
+
+///|
+pub fn drag_resize_window(window : Int, direction~ : Int) -> Bool {
+  host_window_drag_resize_window(window, direction)
 }
 
 ///|
@@ -770,6 +938,8 @@ pub fn input_finish_frame() -> Unit {
   wheel_x_ref.val = 0.0
   wheel_y_ref.val = 0.0
   text_events_ref.val.clear()
+  keyboard_events_ref.val.clear()
+  ime_events_ref.val.clear()
   drag_events_ref.val.clear()
 }
 
@@ -1010,6 +1180,112 @@ pub fn input_text_event_code_unit(index~ : Int, offset~ : Int) -> Int {
 }
 
 ///|
+pub fn input_keyboard_event_count() -> Int {
+  keyboard_events_ref.val.length()
+}
+
+///|
+pub fn input_keyboard_event_key_id(index~ : Int) -> Int {
+  if index < 0 || index >= keyboard_events_ref.val.length() {
+    return -1
+  }
+  keyboard_events_ref.val[index].key_id
+}
+
+///|
+pub fn input_keyboard_event_state(index~ : Int) -> Int {
+  if index < 0 || index >= keyboard_events_ref.val.length() {
+    return 0
+  }
+  keyboard_events_ref.val[index].state
+}
+
+///|
+pub fn input_keyboard_event_repeat(index~ : Int) -> Bool {
+  if index < 0 || index >= keyboard_events_ref.val.length() {
+    return false
+  }
+  keyboard_events_ref.val[index].repeat
+}
+
+///|
+pub fn input_keyboard_event_text_len(index~ : Int) -> Int {
+  if index < 0 || index >= keyboard_events_ref.val.length() {
+    return 0
+  }
+  keyboard_events_ref.val[index].text.length()
+}
+
+///|
+pub fn input_keyboard_event_text_code_unit(index~ : Int, offset~ : Int) -> Int {
+  if index < 0 || index >= keyboard_events_ref.val.length() || offset < 0 {
+    return 0
+  }
+  let text = keyboard_events_ref.val[index].text
+  if offset >= text.length() {
+    return 0
+  }
+  text[offset].to_int()
+}
+
+///|
+pub fn input_ime_event_count() -> Int {
+  ime_events_ref.val.length()
+}
+
+///|
+pub fn input_ime_event_kind(index~ : Int) -> Int {
+  if index < 0 || index >= ime_events_ref.val.length() {
+    return 0
+  }
+  ime_events_ref.val[index].kind
+}
+
+///|
+pub fn input_ime_event_window(index~ : Int) -> Int {
+  if index < 0 || index >= ime_events_ref.val.length() {
+    return 0
+  }
+  ime_events_ref.val[index].window
+}
+
+///|
+pub fn input_ime_event_len(index~ : Int) -> Int {
+  if index < 0 || index >= ime_events_ref.val.length() {
+    return 0
+  }
+  ime_events_ref.val[index].text.length()
+}
+
+///|
+pub fn input_ime_event_code_unit(index~ : Int, offset~ : Int) -> Int {
+  if index < 0 || index >= ime_events_ref.val.length() || offset < 0 {
+    return 0
+  }
+  let text = ime_events_ref.val[index].text
+  if offset >= text.length() {
+    return 0
+  }
+  text[offset].to_int()
+}
+
+///|
+pub fn input_ime_event_cursor_start(index~ : Int) -> Int {
+  if index < 0 || index >= ime_events_ref.val.length() {
+    return -1
+  }
+  ime_events_ref.val[index].cursor_start
+}
+
+///|
+pub fn input_ime_event_cursor_end(index~ : Int) -> Int {
+  if index < 0 || index >= ime_events_ref.val.length() {
+    return -1
+  }
+  ime_events_ref.val[index].cursor_end
+}
+
+///|
 pub fn input_touch_event_count() -> Int {
   0
 }
@@ -1125,6 +1401,53 @@ extern "C" fn host_window_set_surface_size(
 extern "C" fn host_window_set_resizable(window : Int, resizable : Bool) -> Unit = "mbw_window_set_resizable"
 
 ///|
+extern "C" fn host_window_set_visible(window : Int, visible : Bool) -> Unit = "mbw_window_set_visible"
+
+///|
+extern "C" fn host_window_set_decorations(
+  window : Int,
+  decorations : Bool,
+) -> Unit = "mbw_window_set_decorations"
+
+///|
+extern "C" fn host_window_set_enabled_buttons(
+  window : Int,
+  close : Bool,
+  minimize : Bool,
+  maximize : Bool,
+) -> Unit = "mbw_window_set_enabled_buttons"
+
+///|
+extern "C" fn host_window_set_transparent(
+  window : Int,
+  transparent : Bool,
+) -> Unit = "mbw_window_set_transparent"
+
+///|
+extern "C" fn host_window_set_window_level(
+  window : Int,
+  level : Int,
+) -> Unit = "mbw_window_set_window_level"
+
+///|
+extern "C" fn host_window_set_theme(window : Int, theme : Int) -> Unit = "mbw_window_set_theme"
+
+///|
+extern "C" fn host_window_set_ime_allowed(
+  window : Int,
+  allowed : Bool,
+) -> Unit = "mbw_window_set_ime_allowed"
+
+///|
+extern "C" fn host_window_set_ime_cursor_area(
+  window : Int,
+  x : Int,
+  y : Int,
+  width : Int,
+  height : Int,
+) -> Unit = "mbw_window_set_ime_cursor_area"
+
+///|
 extern "C" fn host_window_set_cursor_visible(
   window : Int,
   visible : Bool,
@@ -1150,6 +1473,15 @@ extern "C" fn host_window_set_simple_fullscreen(
 
 ///|
 extern "C" fn host_window_set_position(window : Int, x : Int, y : Int) -> Unit = "mbw_window_set_position"
+
+///|
+extern "C" fn host_window_drag_window(window : Int) -> Bool = "mbw_window_drag_window"
+
+///|
+extern "C" fn host_window_drag_resize_window(
+  window : Int,
+  direction : Int,
+) -> Bool = "mbw_window_drag_resize_window"
 
 ///|
 extern "C" fn host_window_x(window : Int) -> Int = "mbw_window_x"
@@ -1203,6 +1535,14 @@ extern "C" fn host_window_input_event_ime_kind(window : Int) -> Int = "mbw_windo
 
 ///|
 extern "C" fn host_window_input_event_ime_text(window : Int) -> Bytes = "mbw_window_input_event_ime_text"
+
+///|
+extern "C" fn host_window_input_event_ime_cursor_start(
+  window : Int,
+) -> Int = "mbw_window_input_event_ime_cursor_start"
+
+///|
+extern "C" fn host_window_input_event_ime_cursor_end(window : Int) -> Int = "mbw_window_input_event_ime_cursor_end"
 
 ///|
 extern "C" fn host_window_input_event_path(window : Int) -> Bytes = "mbw_window_input_event_path"

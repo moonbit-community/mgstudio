@@ -14,32 +14,255 @@
 
 ///|
 /// Port of `bevy/examples/window/window_drag_move.rs`.
-///
-/// Baseline parity:
-/// - Captures drag-move intent in runtime logs.
-/// - Host window drag API is not exposed in current mgstudio path.
-let logged_ref : Ref[Bool] = Ref::new(false)
+
+///|
+pub(all) enum LeftClickAction {
+  Nothing
+  Move
+  Resize
+} derive(Eq, Show)
+
+///|
+struct ResizeDir {
+  mut index : Int
+}
+
+///|
+struct ExampleText {} derive(Eq, Show)
+
+///|
+let left_click_action_key : @ecs.ResourceKey[LeftClickAction] = @ecs.register_resource(
+  debug_name="examples.window.window_drag_move.LeftClickAction",
+)
+
+///|
+let resize_dir_key : @ecs.ResourceKey[ResizeDir] = @ecs.register_resource(
+  debug_name="examples.window.window_drag_move.ResizeDir",
+)
+
+///|
+let example_text_key : @ecs.ComponentKey[ExampleText] = @ecs.register_component(
+  debug_name="examples.window.window_drag_move.ExampleText",
+)
+
+///|
+impl @app.Resource for LeftClickAction with resource() {
+  left_click_action_key
+}
+
+///|
+impl @app.Resource for ResizeDir with resource() {
+  resize_dir_key
+}
+
+///|
+fn direction_by_index(index : Int) -> @math.CompassOctant {
+  match index {
+    0 => @math.CompassOctant::North
+    1 => @math.CompassOctant::NorthEast
+    2 => @math.CompassOctant::East
+    3 => @math.CompassOctant::SouthEast
+    4 => @math.CompassOctant::South
+    5 => @math.CompassOctant::SouthWest
+    6 => @math.CompassOctant::West
+    _ => @math.CompassOctant::NorthWest
+  }
+}
+
+///|
+fn cycle_left_click_action(action : LeftClickAction) -> LeftClickAction {
+  match action {
+    Move => Resize
+    Resize => Nothing
+    Nothing => Move
+  }
+}
+
+///|
+fn instruction_text(action : LeftClickAction, direction : @math.CompassOctant) -> String {
+  "Demonstrate drag move and drag resize without window decorations.\n\n" +
+  "Controls:\n" +
+  "A - change left click action [" + action.to_string() + "]\n" +
+  "S / D - change resize direction [" + direction.to_string() + "]\n"
+}
+
+///|
+fn find_instruction_text(world : @ecs.World) -> @text.TextHandle? {
+  let result : Ref[@text.TextHandle?] = Ref::new(None)
+  let ui_text_store = world.component(@ui.ecs_key_ui_text)
+  world
+  .query_entities_filtered(@ecs.With::new(example_text_key))
+  .view(fn(entity) {
+    guard ui_text_store.get(entity) is Some(ui_text) else { return }
+    if result.val is None {
+      result.val = Some(ui_text.handle)
+    }
+  })
+  result.val
+}
+
+///|
+fn refresh_instruction_text(world : @ecs.World) -> Unit {
+  guard (try! world.get_resource(left_click_action_key)) is Some(action) else {
+    return
+  }
+  guard (try! world.get_resource(resize_dir_key)) is Some(direction) else {
+    return
+  }
+  guard find_instruction_text(world) is Some(handle) else { return }
+  @text.text_set_content(
+    handle,
+    instruction_text(action, direction_by_index(direction.index)),
+  )
+}
+
+///|
+fn setup(world : @ecs.World) -> Unit {
+  @pbr.Camera3dBundle::new(
+    @sprite.Camera::default(),
+    @math.Transform::identity(),
+  ).spawn(world)
+  |> ignore
+  let overlay_camera = @sprite.Camera2dBundle::new(
+    @sprite.Camera::default().with_order(1).with_clear_color_none(),
+    @math.Transform::identity(),
+  ).spawn(world)
+  let camera_tick = world.read_change_tick()
+  world
+  .component(@ui.IsDefaultUiCamera::component())
+  .insert(overlay_camera, @ui.IsDefaultUiCamera::default(), camera_tick)
+
+  let content = instruction_text(LeftClickAction::Move, @math.CompassOctant::NorthWest)
+  let text_position = @math.Transform::from_xyz(
+    -Float::from_int(@window.window_width()) * 0.5F + 12.0F,
+    Float::from_int(@window.window_height()) * 0.5F - 12.0F,
+    0.0F,
+  )
+  let text_handle = @text.Text2dBundle::new(
+      @text.Text2d::new(content),
+      @text.TextFont::default(),
+      text_position,
+    )
+    .with_anchor(@sprite.Anchor::top_left())
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
+    .spawn()
+
+  let tick = world.read_change_tick()
+  let root = world.spawn_empty()
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
+    root,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_top(@ui.Val::Px(0.0F))
+    .with_left(@ui.Val::Px(0.0F))
+    .with_padding(@ui.UiRect::all(@ui.Val::Px(5.0F))),
+    tick,
+  )
+  world
+  .component(@ui.GlobalZIndex::component())
+  .insert(root, @ui.GlobalZIndex::new(2147483647), tick)
+  world
+  .component(@ui.ecs_key_background_color)
+  .insert(
+    root,
+    @ui.BackgroundColor::new(@sprite.Color::new(0.0F, 0.0F, 0.0F, 0.75F)),
+    tick,
+  )
+  world
+  .component(@ui.ecs_key_ui_target_camera)
+  .insert(root, @ui.UiTargetCamera::new(overlay_camera), tick)
+  let text_entity = world.spawn_empty()
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  world
+  .component(@ui.ecs_key_ui_text)
+  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+  world.component(example_text_key).insert(text_entity, ExampleText::{  }, tick)
+}
+
+///|
+fn handle_input(
+  input : @input.ButtonInput[@window.KeyCode],
+  action : @app.ResMut[LeftClickAction],
+  direction : @app.ResMut[ResizeDir],
+) -> Unit {
+  guard @app.current_world() is Some(world) else { return }
+  let mut changed = false
+  if input.just_pressed(KeyA) {
+    action.get_ref().val = cycle_left_click_action(action.get_ref().val)
+    changed = true
+  }
+  if input.just_pressed(KeyS) {
+    let current = direction.get_ref().val.index
+    direction.get_ref().val.index = if current <= 0 { 7 } else { current - 1 }
+    changed = true
+  }
+  if input.just_pressed(KeyD) {
+    direction.get_ref().val.index = (direction.get_ref().val.index + 1) % 8
+    changed = true
+  }
+  if changed {
+    refresh_instruction_text(world)
+  }
+}
+
+///|
+fn move_or_resize_windows(
+  input : @input.ButtonInput[@window.MouseButton],
+  action : @app.Res[LeftClickAction],
+  direction : @app.Res[ResizeDir],
+) -> Unit {
+  if !input.just_pressed(Left) {
+    return
+  }
+  guard @app.current_world() is Some(world) else { return }
+  let window_query = world.query1(@window.ecs_key_window)
+  world.query_entities_filtered(@ecs.With::new(@window.ecs_key_window)).view(fn(entity) {
+    ignore(
+      try! window_query.with_mut(entity, fn(window_mut) {
+        let window_ref = window_mut.get_ref()
+        match action.get() {
+          Nothing => ()
+          Move => window_ref.val.start_drag_move()
+          Resize =>
+            window_ref.val.start_drag_resize(
+              direction_by_index(direction.get().index),
+            )
+        }
+      }),
+    )
+  })
+}
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_systems(@app.Update, @app.system(window_drag_move_system))
+  .insert_resource(ResizeDir::{ index: 7 })
+  .insert_resource(LeftClickAction::Move)
+  .add_plugin_group(fn() {
+    @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
+      primary_window: Some({
+        let window = @window.Window::default()
+        window.decorations = false
+        window
+      }),
+      primary_cursor_options: Some(@window.CursorOptions::default()),
+      exit_condition: @window.ExitCondition::OnAllClosed,
+      close_when_requested: true,
+    })
+  })
+  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param3(handle_input)),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param3(move_or_resize_windows)),
+  )
   .run()
-}
-
-///|
-fn window_drag_move_system(world : @ecs.World) -> Unit {
-  world |> ignore
-  if logged_ref.val {
-    return
-  }
-  logged_ref.val = true
-  log_line("window drag-move is not available in current runtime API")
-}
-
-///|
-fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[window_drag_move] " + text)
 }

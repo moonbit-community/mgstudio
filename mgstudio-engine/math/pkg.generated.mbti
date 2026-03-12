@@ -53,6 +53,19 @@ pub impl Default for Capsule3d
 pub impl ToJson for Capsule3d
 pub impl @json.FromJson for Capsule3d
 
+pub(all) enum CompassOctant {
+  North
+  NorthEast
+  East
+  SouthEast
+  South
+  SouthWest
+  West
+  NorthWest
+}
+pub impl Eq for CompassOctant
+pub impl Show for CompassOctant
+
 pub struct CubicBSpline[P] {
   control_points : Array[P]
 }

@@ -1,0 +1,18 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/system_param"
+
+// Values
+
+// Errors
+
+// Types and methods
+type Player
+
+type PlayerCount
+
+type PlayerCounter[P0, P1]
+
+// Type aliases
+
+// Traits
+

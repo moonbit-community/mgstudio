@@ -471,6 +471,77 @@ fn blob_u32_be_at(bytes : Bytes, index : Int) -> Int {
 }
 
 ///|
+priv struct DecodedTextureImage {
+  width : Int
+  height : Int
+  pixels : Bytes
+}
+
+///|
+fn is_png_bytes(bytes : Bytes) -> Bool {
+  bytes.length() >= 8 &&
+  blob_u8_at(bytes, 0) == 0x89 &&
+  blob_u8_at(bytes, 1) == 0x50 &&
+  blob_u8_at(bytes, 2) == 0x4E &&
+  blob_u8_at(bytes, 3) == 0x47 &&
+  blob_u8_at(bytes, 4) == 0x0D &&
+  blob_u8_at(bytes, 5) == 0x0A &&
+  blob_u8_at(bytes, 6) == 0x1A &&
+  blob_u8_at(bytes, 7) == 0x0A
+}
+
+///|
+fn is_jpeg_bytes(bytes : Bytes) -> Bool {
+  bytes.length() >= 2 &&
+  blob_u8_at(bytes, 0) == 0xFF &&
+  blob_u8_at(bytes, 1) == 0xD8
+}
+
+///|
+fn is_bmp_bytes(bytes : Bytes) -> Bool {
+  bytes.length() >= 2 &&
+  blob_u8_at(bytes, 0) == 0x42 &&
+  blob_u8_at(bytes, 1) == 0x4D
+}
+
+///|
+fn decoded_texture_image_from_mizchi(
+  decoded : @img_decode.ImageData,
+) -> DecodedTextureImage {
+  DecodedTextureImage::{
+    width: clamp_dim(decoded.width),
+    height: clamp_dim(decoded.height),
+    pixels: decoded.data,
+  }
+}
+
+///|
+fn decode_texture_image(bytes : Bytes) -> DecodedTextureImage? {
+  if is_png_bytes(bytes) {
+    return Some(
+      decoded_texture_image_from_mizchi(@img_decode.decode_png(bytes)),
+    ) catch {
+      _ => None
+    }
+  }
+  if is_jpeg_bytes(bytes) {
+    return Some(
+      decoded_texture_image_from_mizchi(@img_decode.decode_jpeg(bytes)),
+    ) catch {
+      _ => None
+    }
+  }
+  if is_bmp_bytes(bytes) {
+    return Some(
+      decoded_texture_image_from_mizchi(@img_decode.decode_bmp(bytes)),
+    ) catch {
+      _ => None
+    }
+  }
+  None
+}
+
+///|
 fn png_dimensions(bytes : Bytes) -> (Int, Int)? {
   if bytes.length() < 24 {
     return None
@@ -937,10 +1008,13 @@ fn load_texture(path~ : String, nearest~ : Bool) -> Int {
 ///|
 fn load_texture_bytes(bytes~ : Bytes, nearest~ : Bool) -> Int {
   let loaded = bytes.length() > 0
-  let (width, height) = if texture_dimensions_from_bytes(bytes) is Some(dims) {
-    dims
+  let (width, height, upload_pixels) = if decode_texture_image(bytes)
+    is Some(decoded) {
+    (decoded.width, decoded.height, decoded.pixels)
+  } else if texture_dimensions_from_bytes(bytes) is Some(dims) {
+    (dims.0, dims.1, source_bytes_to_rgba8(bytes, dims.0, dims.1))
   } else {
-    (1, 1)
+    (1, 1, source_bytes_to_rgba8(bytes, 1, 1))
   }
   let safe_width = clamp_dim(width)
   let safe_height = clamp_dim(height)
@@ -953,7 +1027,6 @@ fn load_texture_bytes(bytes~ : Bytes, nearest~ : Bool) -> Int {
   if texture_id <= 0 {
     return 0
   }
-  let upload_pixels = source_bytes_to_rgba8(bytes, safe_width, safe_height)
   @render.asset_write_texture_region_rgba8(
     texture_id~,
     x=0,

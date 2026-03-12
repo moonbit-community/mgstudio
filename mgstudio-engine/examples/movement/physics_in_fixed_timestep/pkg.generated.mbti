@@ -1,0 +1,24 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/movement/physics_in_fixed_timestep"
+
+// Values
+
+// Errors
+
+// Types and methods
+type AccumulatedInput
+
+type CameraSensitivity
+
+type DidFixedTimestepRunThisFrame
+
+type PhysicalTranslation
+
+type PreviousPhysicalTranslation
+
+type Velocity
+
+// Type aliases
+
+// Traits
+

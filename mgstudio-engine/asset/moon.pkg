@@ -8,6 +8,7 @@ import {
   "moonbitlang/core/hashmap",
   "moonbitlang/core/ref",
   "Milky2018/mgstudio/ecs",
+  "mizchi/image" @img_decode,
   "moonbitlang/x/fs",
   "moonbitlang/x/path",
   "moonbitlang/x/sys",

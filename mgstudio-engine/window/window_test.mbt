@@ -73,10 +73,19 @@ test "window: plugin spawns configured primary window entity and messages" {
   configured_window.title = "Configured Window"
   configured_window.resolution.set_physical_resolution(800, 600)
   configured_window.resolution.set_scale_factor(2.0F)
+  configured_window.present_mode = PresentMode::AutoNoVsync
   configured_window.position = WindowPosition::new(12, 34)
   configured_window.mode = WindowMode::BorderlessFullscreen
   configured_window.resizable = false
+  configured_window.enabled_buttons.minimize = false
+  configured_window.enabled_buttons.maximize = false
+  configured_window.enabled_buttons.close = false
+  configured_window.decorations = false
+  configured_window.transparent = true
   configured_window.focused = false
+  configured_window.window_level = WindowLevel::AlwaysOnTop
+  configured_window.window_theme = Some(WindowTheme::Dark)
+  configured_window.visible = false
   let configured_cursor = CursorOptions::default()
   configured_cursor.visible = false
   configured_cursor.grab_mode = CursorGrabMode::GrabLocked
@@ -125,10 +134,19 @@ test "window: plugin spawns configured primary window entity and messages" {
   inspect(stored_window.physical_width(), content="800")
   inspect(stored_window.physical_height(), content="600")
   inspect(stored_window.scale_factor(), content="2")
+  inspect(stored_window.present_mode, content="AutoNoVsync")
   inspect(stored_window.position, content="At(12, 34)")
   inspect(stored_window.mode, content="BorderlessFullscreen")
   inspect(stored_window.resizable, content="false")
+  inspect(stored_window.enabled_buttons.minimize, content="false")
+  inspect(stored_window.enabled_buttons.maximize, content="false")
+  inspect(stored_window.enabled_buttons.close, content="false")
+  inspect(stored_window.decorations, content="false")
+  inspect(stored_window.transparent, content="true")
   inspect(stored_window.focused, content="false")
+  inspect(stored_window.window_level, content="AlwaysOnTop")
+  inspect(stored_window.window_theme, content="Some(Dark)")
+  inspect(stored_window.visible, content="false")
 
   let stored_cursor = match cursor_options_value(app.world(), entity) {
     Some(cursor) => cursor
@@ -167,9 +185,16 @@ test "window: compatibility helpers read and write ECS primary window state" {
       window_set_title(title="Updated")
       window_set_size(width=640, height=360)
       window_set_resizable(resizable=false)
+      window_set_visible(visible=false)
+      window_set_decorations(decorations=false)
+      window_set_transparent(transparent=true)
       window_set_cursor_visible(visible=false)
       window_set_cursor_grab_mode(mode=CursorGrabMode::GrabConfined)
       window_set_cursor_icon(icon=CursorIcon::from(SystemCursorIcon::EwResize))
+      window_set_present_mode(mode=PresentMode::AutoNoVsync)
+      window_set_enabled_buttons(minimize=false, maximize=false, close=false)
+      window_set_window_level(level=WindowLevel::AlwaysOnTop)
+      window_set_theme(theme=Some(WindowTheme::Dark))
       window_set_position(x=30, y=40)
       window_set_mode(mode=WindowMode::Fullscreen)
     }),
@@ -189,9 +214,18 @@ test "window: compatibility helpers read and write ECS primary window state" {
   inspect(stored_window.title, content="Updated")
   inspect(stored_window.physical_width(), content="640")
   inspect(stored_window.physical_height(), content="360")
+  inspect(stored_window.present_mode, content="AutoNoVsync")
   inspect(stored_window.position, content="At(30, 40)")
   inspect(stored_window.mode, content="Fullscreen")
   inspect(stored_window.resizable, content="false")
+  inspect(stored_window.visible, content="false")
+  inspect(stored_window.decorations, content="false")
+  inspect(stored_window.transparent, content="true")
+  inspect(stored_window.enabled_buttons.minimize, content="false")
+  inspect(stored_window.enabled_buttons.maximize, content="false")
+  inspect(stored_window.enabled_buttons.close, content="false")
+  inspect(stored_window.window_level, content="AlwaysOnTop")
+  inspect(stored_window.window_theme, content="Some(Dark)")
 
   let stored_cursor = match cursor_options_value(app.world(), entity) {
     Some(cursor) => cursor
@@ -203,6 +237,15 @@ test "window: compatibility helpers read and write ECS primary window state" {
     cursor_icon_value(app.world(), entity),
     content="Some(System(EwResize))",
   )
+}
+
+///|
+test "window: drag request helpers write pending requests" {
+  let window = Window::default()
+  window.start_drag_move()
+  window.start_drag_resize(@math.CompassOctant::North)
+  inspect(window.drag_move_request, content="true")
+  inspect(window.drag_resize_request, content="Some(North)")
 }
 
 ///|

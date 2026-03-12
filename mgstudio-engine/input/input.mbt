@@ -601,6 +601,7 @@ pub struct KeyboardInput {
   logical_key : Key
   state : ButtonState
   repeat : Bool
+  text : String?
 } derive(ToJson, FromJson)
 
 ///|
@@ -951,6 +952,71 @@ fn host_input_text_event_code_unit(index~ : Int, offset~ : Int) -> Int {
 }
 
 ///|
+fn host_input_keyboard_event_count() -> Int {
+  @windowing.input_keyboard_event_count()
+}
+
+///|
+fn host_input_keyboard_event_key_id(index~ : Int) -> Int {
+  @windowing.input_keyboard_event_key_id(index~)
+}
+
+///|
+fn host_input_keyboard_event_state(index~ : Int) -> Int {
+  @windowing.input_keyboard_event_state(index~)
+}
+
+///|
+fn host_input_keyboard_event_repeat(index~ : Int) -> Bool {
+  @windowing.input_keyboard_event_repeat(index~)
+}
+
+///|
+fn host_input_keyboard_event_text_len(index~ : Int) -> Int {
+  @windowing.input_keyboard_event_text_len(index~)
+}
+
+///|
+fn host_input_keyboard_event_text_code_unit(index~ : Int, offset~ : Int) -> Int {
+  @windowing.input_keyboard_event_text_code_unit(index~, offset~)
+}
+
+///|
+fn host_input_ime_event_count() -> Int {
+  @windowing.input_ime_event_count()
+}
+
+///|
+fn host_input_ime_event_kind(index~ : Int) -> Int {
+  @windowing.input_ime_event_kind(index~)
+}
+
+///|
+fn host_input_ime_event_window(index~ : Int) -> Int {
+  @windowing.input_ime_event_window(index~)
+}
+
+///|
+fn host_input_ime_event_len(index~ : Int) -> Int {
+  @windowing.input_ime_event_len(index~)
+}
+
+///|
+fn host_input_ime_event_code_unit(index~ : Int, offset~ : Int) -> Int {
+  @windowing.input_ime_event_code_unit(index~, offset~)
+}
+
+///|
+fn host_input_ime_event_cursor_start(index~ : Int) -> Int {
+  @windowing.input_ime_event_cursor_start(index~)
+}
+
+///|
+fn host_input_ime_event_cursor_end(index~ : Int) -> Int {
+  @windowing.input_ime_event_cursor_end(index~)
+}
+
+///|
 fn host_input_touch_event_count() -> Int {
   @windowing.input_touch_event_count()
 }
@@ -1088,6 +1154,73 @@ fn logical_key_from_keycode(code : @window.KeyCode) -> Key {
     BracketLeft => if shifted { Character("{") } else { Character("[") }
     BracketRight => if shifted { Character("}") } else { Character("]") }
     Quote => if shifted { Character("\"") } else { Character("'") }
+  }
+}
+
+///|
+fn keycode_from_key_id(key_id : Int) -> @window.KeyCode? {
+  match key_id {
+    0 => Some(KeyA)
+    1 => Some(KeyB)
+    2 => Some(KeyC)
+    3 => Some(KeyD)
+    4 => Some(KeyE)
+    5 => Some(KeyF)
+    6 => Some(KeyG)
+    7 => Some(KeyH)
+    8 => Some(KeyI)
+    9 => Some(KeyJ)
+    10 => Some(KeyK)
+    11 => Some(KeyL)
+    12 => Some(KeyM)
+    13 => Some(KeyN)
+    14 => Some(KeyO)
+    15 => Some(KeyP)
+    16 => Some(KeyQ)
+    17 => Some(KeyR)
+    18 => Some(KeyS)
+    19 => Some(KeyT)
+    20 => Some(KeyU)
+    21 => Some(KeyV)
+    22 => Some(KeyW)
+    23 => Some(KeyX)
+    24 => Some(KeyY)
+    25 => Some(KeyZ)
+    26 => Some(Digit1)
+    27 => Some(Digit2)
+    28 => Some(Digit3)
+    29 => Some(Digit4)
+    30 => Some(Digit5)
+    31 => Some(Digit6)
+    32 => Some(Digit7)
+    33 => Some(Digit8)
+    36 => Some(Tab)
+    37 => Some(Enter)
+    38 => Some(Backspace)
+    39 => Some(ShiftLeft)
+    40 => Some(ShiftRight)
+    41 => Some(ControlLeft)
+    42 => Some(ControlRight)
+    43 => Some(ArrowUp)
+    44 => Some(ArrowDown)
+    45 => Some(ArrowLeft)
+    46 => Some(ArrowRight)
+    47 => Some(PageUp)
+    48 => Some(PageDown)
+    49 => Some(Space)
+    50 => Some(Escape)
+    51 => Some(Semicolon)
+    52 => Some(Comma)
+    53 => Some(Period)
+    54 => Some(Slash)
+    55 => Some(Minus)
+    56 => Some(Equal)
+    57 => Some(BracketLeft)
+    58 => Some(BracketRight)
+    59 => Some(Quote)
+    62 => Some(NumpadAdd)
+    63 => Some(NumpadSubtract)
+    _ => None
   }
 }
 
@@ -1249,6 +1382,73 @@ fn input_text_event_at(index : Int) -> String? {
 }
 
 ///|
+fn input_keyboard_event_text(index : Int) -> String? {
+  let len = host_input_keyboard_event_text_len(index~)
+  if len <= 0 {
+    return None
+  }
+  let chars : Array[Char] = []
+  for i in 0..<len {
+    let code_unit = host_input_keyboard_event_text_code_unit(index~, offset=i)
+    if code_unit.to_char() is Some(ch) {
+      chars.push(ch)
+    } else {
+      chars.push(Int::unsafe_to_char(0xFFFD))
+    }
+  }
+  Some(String::from_array(chars))
+}
+
+///|
+fn input_ime_event_text(index : Int) -> String? {
+  let len = host_input_ime_event_len(index~)
+  if len <= 0 {
+    return None
+  }
+  let chars : Array[Char] = []
+  for i in 0..<len {
+    let code_unit = host_input_ime_event_code_unit(index~, offset=i)
+    if code_unit.to_char() is Some(ch) {
+      chars.push(ch)
+    } else {
+      chars.push(Int::unsafe_to_char(0xFFFD))
+    }
+  }
+  Some(String::from_array(chars))
+}
+
+///|
+fn input_ime_event_at(world : @ecs.World, index : Int) -> @window.Ime? {
+  let host_window = host_input_ime_event_window(index~)
+  let window_entity = if @window.window_entity_for_host(world, host_window)
+    is Some(entity) {
+    Some(entity)
+  } else {
+    @window.window_entity_for_ref(world, @window.WindowRef::Primary)
+  }
+  guard window_entity is Some(window_entity0) else { return None }
+  let kind = host_input_ime_event_kind(index~)
+  let text = input_ime_event_text(index).unwrap_or("")
+  let cursor_start = host_input_ime_event_cursor_start(index~)
+  let cursor_end = host_input_ime_event_cursor_end(index~)
+  match kind {
+    1 => Some(@window.Ime::Enabled(window_entity0))
+    2 => {
+      let cursor = if cursor_start >= 0 && cursor_end >= cursor_start {
+        Some(@window.ImeCursorRange::new(cursor_start, cursor_end))
+      } else {
+        None
+      }
+      Some(@window.Ime::Preedit(window_entity0, text, cursor))
+    }
+    3 => Some(@window.Ime::Commit(window_entity0, text))
+    4 => Some(@window.Ime::Disabled(window_entity0))
+    5 => Some(@window.Ime::DeleteSurrounding(window_entity0, cursor_start, cursor_end))
+    _ => None
+  }
+}
+
+///|
 fn input_drag_and_drop_event_text(index : Int) -> String? {
   let len = host_input_drag_and_drop_event_len(index~)
   if len <= 0 {
@@ -1291,42 +1491,40 @@ fn input_drag_and_drop_event_at(index : Int) -> FileDragAndDrop? {
 pub fn input_poll_keyboard_system(world : @ecs.World) -> Unit {
   let keyboard_writer = world.message_writer(keyboard_input_message_key)
   let character_writer = world.message_writer(keyboard_character_message_key)
-  for code in keyboard_event_keycodes {
-    if key_repeated(code) {
-      ignore(
-        keyboard_writer.write(KeyboardInput::{
-          key_code: code,
-          logical_key: logical_key_from_keycode(code),
-          state: ButtonState::Pressed,
-          repeat: true,
-        }),
-      )
+  let keyboard_event_count = host_input_keyboard_event_count()
+  for i in 0..<keyboard_event_count {
+    let key_id = host_input_keyboard_event_key_id(index=i)
+    guard keycode_from_key_id(key_id) is Some(code) else { continue }
+    let state = if host_input_keyboard_event_state(index=i) == 1 {
+      ButtonState::Pressed
+    } else {
+      ButtonState::Released
     }
-    if key_just_pressed(code) {
-      ignore(
-        keyboard_writer.write(KeyboardInput::{
-          key_code: code,
-          logical_key: logical_key_from_keycode(code),
-          state: ButtonState::Pressed,
-          repeat: false,
-        }),
-      )
-    }
-    if key_just_released(code) {
-      ignore(
-        keyboard_writer.write(KeyboardInput::{
-          key_code: code,
-          logical_key: logical_key_from_keycode(code),
-          state: ButtonState::Released,
-          repeat: false,
-        }),
-      )
-    }
+    let logical_key = logical_key_from_keycode(code)
+    let text = if state.is_pressed() { input_keyboard_event_text(i) } else { None }
+    ignore(
+      keyboard_writer.write(KeyboardInput::{
+        key_code: code,
+        logical_key,
+        state,
+        repeat: host_input_keyboard_event_repeat(index=i),
+        text,
+      }),
+    )
   }
   let text_event_count = host_input_text_event_count()
   for i in 0..<text_event_count {
     if input_text_event_at(i) is Some(text) {
       ignore(character_writer.write(KeyboardCharacter::{ character: text }))
+    }
+  }
+  let ime_event_count = host_input_ime_event_count()
+  if world.contains_message(@window.Ime::message()) {
+    let ime_writer = world.message_writer(@window.Ime::message())
+    for i in 0..<ime_event_count {
+      if input_ime_event_at(world, i) is Some(ime) {
+        ignore(ime_writer.write(ime))
+      }
     }
   }
 }

@@ -6,6 +6,19 @@ package "Milky2018/mgstudio/examples/window/window_drag_move"
 // Errors
 
 // Types and methods
+type ExampleText
+pub impl Eq for ExampleText
+pub impl Show for ExampleText
+
+pub(all) enum LeftClickAction {
+  Nothing
+  Move
+  Resize
+}
+pub impl Eq for LeftClickAction
+pub impl Show for LeftClickAction
+
+type ResizeDir
 
 // Type aliases
 

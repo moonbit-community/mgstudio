@@ -187,22 +187,50 @@ pub fn CursorOptions::default() -> CursorOptions {
 ///|
 pub(all) struct Window {
   mut title : String
+  mut name : String?
   mut resolution : WindowResolution
+  mut present_mode : PresentMode
   mut position : WindowPosition
   mut mode : WindowMode
   mut resizable : Bool
+  mut enabled_buttons : EnabledButtons
+  mut decorations : Bool
+  mut transparent : Bool
   mut focused : Bool
-} derive(Eq, Show)
+  mut window_level : WindowLevel
+  mut fit_canvas_to_parent : Bool
+  mut prevent_default_event_handling : Bool
+  mut window_theme : WindowTheme?
+  mut visible : Bool
+  mut ime_enabled : Bool
+  mut ime_position : @math.Vec2
+  mut drag_move_request : Bool
+  mut drag_resize_request : @math.CompassOctant?
+}
 
 ///|
 pub fn Window::default() -> Window {
   Window::{
     title: DEFAULT_WINDOW_TITLE,
+    name: None,
     resolution: WindowResolution::default(),
+    present_mode: PresentMode::Fifo,
     position: Automatic,
     mode: Windowed,
     resizable: true,
+    enabled_buttons: EnabledButtons::default(),
+    decorations: true,
+    transparent: false,
     focused: true,
+    window_level: WindowLevel::Normal,
+    fit_canvas_to_parent: false,
+    prevent_default_event_handling: true,
+    window_theme: None,
+    visible: true,
+    ime_enabled: false,
+    ime_position: @math.Vec2::new(0.0F, 0.0F),
+    drag_move_request: false,
+    drag_resize_request: None,
   }
 }
 
@@ -229,6 +257,19 @@ pub fn Window::physical_height(self : Window) -> Int {
 ///|
 pub fn Window::scale_factor(self : Window) -> Float {
   self.resolution.scale_factor()
+}
+
+///|
+pub fn Window::start_drag_move(self : Window) -> Unit {
+  self.drag_move_request = true
+}
+
+///|
+pub fn Window::start_drag_resize(
+  self : Window,
+  direction : @math.CompassOctant,
+) -> Unit {
+  self.drag_resize_request = Some(direction)
 }
 
 ///|
@@ -363,6 +404,26 @@ pub(all) struct WindowFocused {
 } derive(Eq)
 
 ///|
+pub(all) struct ImeCursorRange {
+  start : Int
+  end : Int
+} derive(Eq, Show)
+
+///|
+pub fn ImeCursorRange::new(start : Int, end : Int) -> ImeCursorRange {
+  ImeCursorRange::{ start, end }
+}
+
+///|
+pub(all) enum Ime {
+  Enabled(@core.Entity)
+  Preedit(@core.Entity, String, ImeCursorRange?)
+  Commit(@core.Entity, String)
+  Disabled(@core.Entity)
+  DeleteSurrounding(@core.Entity, Int, Int)
+} derive(Eq)
+
+///|
 pub let ecs_key_window_created : @ecs.MessageKey[WindowCreated] = @ecs.register_message(
   debug_name="bevy_window::WindowCreated",
 )
@@ -415,6 +476,11 @@ pub let ecs_key_window_focused : @ecs.MessageKey[WindowFocused] = @ecs.register_
 )
 
 ///|
+pub let ecs_key_ime : @ecs.MessageKey[Ime] = @ecs.register_message(
+  debug_name="bevy_window::Ime",
+)
+
+///|
 pub impl @ecs.Message for WindowCreated with message() {
   ecs_key_window_created
 }
@@ -462,4 +528,9 @@ pub impl @ecs.Message for WindowBackendScaleFactorChanged with message() {
 ///|
 pub impl @ecs.Message for WindowFocused with message() {
   ecs_key_window_focused
+}
+
+///|
+pub impl @ecs.Message for Ime with message() {
+  ecs_key_ime
 }

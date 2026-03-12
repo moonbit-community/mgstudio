@@ -78,7 +78,6 @@ fn ensure_mesh_pipeline_rgba8(
   @wgpu_c.render_pipeline_descriptor_free(desc)
   pipeline.set_label("mgstudio_mesh_rgba8")
   backend.mesh_pipeline = Some(pipeline)
-  @debug.debug("[renderer] ensure_mesh_pipeline_rgba8: pipeline created")
   sm.release()
 }
 

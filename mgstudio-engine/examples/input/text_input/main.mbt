@@ -15,37 +15,248 @@
 ///|
 /// Port of `bevy/examples/input/text_input.rs`.
 ///
-/// Baseline parity:
-/// - Enter creates a committed bubble line and Backspace removes one character.
-/// - Mouse left click toggles an IME-enabled flag.
-/// - Bevy UI/IME event surfaces are not available in mgstudio runtime yet.
-let ime_enabled_ref : Ref[Bool] = Ref::new(false)
+/// Features:
+/// - Enter commits a bubble line and Backspace removes one character.
+/// - Mouse left click toggles IME and updates IME cursor position.
+/// - IME events (`Enabled`, `Disabled`, `Preedit`, `Commit`) update UI and edit text.
+struct StatusTextHandles {
+  ime_enabled : @text.TextHandle
+  ime_active : @text.TextHandle
+  ime_buffer : @text.TextHandle
+}
 
 ///|
-let edit_buffer_ref : Ref[Array[String]] = Ref::new([])
+struct EditTextState {
+  handle : @text.TextHandle
+  font : @text.TextFont
+}
+
+///|
+struct BubbleLine {
+  handle : @text.TextHandle
+  timer : @time.Timer
+  y : Float
+}
+
+///|
+let status_text_handles_ref : Ref[StatusTextHandles?] = Ref::new(None)
+
+///|
+let edit_text_state_ref : Ref[EditTextState?] = Ref::new(None)
+
+///|
+let bubble_lines_ref : Ref[Array[BubbleLine]] = Ref::new([])
 
 ///|
 fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
+  .add_systems(@app.Startup, @app.system(setup_scene))
   .add_systems(@app.Update, @app.system(@app.system_param(toggle_ime_system)))
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param(listen_ime_events_system)),
+  )
   .add_systems(
     @app.Update,
     @app.system(@app.system_param(listen_keyboard_input_events_system)),
   )
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param(listen_character_input_events_system)),
-  )
+  .add_systems(@app.Update, @app.system(bubbling_text_system))
   .run()
 }
 
 ///|
+fn setup_scene(world : @ecs.World) -> Unit {
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
+    @math.Transform::identity(),
+  ).spawn(world)
+  |> ignore
+
+  let asset_server = @asset.AssetServer::new()
+  let font = asset_server.load_font("fonts/FiraMono-Medium.ttf")
+  let ui_font = @text.TextFont::default().with_font(font).with_font_size(30.0F)
+  let edit_font = @text.TextFont::default().with_font(font).with_font_size(100.0F)
+
+  let tick = world.read_change_tick()
+  let root = world.spawn_empty()
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(
+    root,
+    @ui.Node::default()
+    .with_position_type(@ui.PositionType::Absolute)
+    .with_top(@ui.Val::Px(12.0F))
+    .with_left(@ui.Val::Px(12.0F))
+    .with_flex_direction(@ui.FlexDirection::Column),
+    tick,
+  )
+
+  ignore(
+    spawn_ui_text_line(
+      world,
+      root,
+      tick,
+      "Click to toggle IME. Press return to start a new line.\n",
+      ui_font,
+    ),
+  )
+  ignore(spawn_ui_text_line(world, root, tick, "\n", ui_font))
+
+  let ime_enabled = spawn_ui_text_line(
+    world,
+    root,
+    tick,
+    "IME Enabled: false\n",
+    ui_font,
+  )
+  let ime_active = spawn_ui_text_line(
+    world,
+    root,
+    tick,
+    "IME Active:  false\n",
+    ui_font,
+  )
+  let ime_buffer = spawn_ui_text_line(
+    world,
+    root,
+    tick,
+    "IME Buffer:  \n",
+    ui_font,
+  )
+  status_text_handles_ref.val = Some(StatusTextHandles::{
+    ime_enabled,
+    ime_active,
+    ime_buffer,
+  })
+
+  let edit_handle = @text.Text2dBundle::new(
+      @text.Text2d::new(""),
+      edit_font,
+      @math.Transform::identity(),
+    )
+    .spawn()
+  edit_text_state_ref.val = Some(EditTextState::{ handle: edit_handle, font: edit_font })
+  bubble_lines_ref.val.clear()
+}
+
+///|
+fn spawn_ui_text_line(
+  world : @ecs.World,
+  root : @core.Entity,
+  tick : @core.Tick,
+  content : String,
+  font : @text.TextFont,
+) -> @text.TextHandle {
+  let handle = @text.Text2dBundle::new(
+      @text.Text2d::new(content),
+      font,
+      @math.Transform::identity(),
+    )
+    .spawn()
+
+  let text_entity = world.spawn_empty()
+  world
+  .component(@hierarchy.ecs_key_parent)
+  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  world.component(@ui.ecs_key_node).insert(text_entity, @ui.Node::default(), tick)
+  world
+  .component(@ui.ecs_key_ui_text)
+  .insert(text_entity, @ui.UiText::new(handle), tick)
+  handle
+}
+
+///|
+fn update_primary_window(
+  world : @ecs.World,
+  update : (@window.Window) -> Unit,
+) -> Unit {
+  let tick = world.read_change_tick()
+  let window_store = world.component(@window.ecs_key_window)
+  world
+  .query_entities_filtered(
+    (
+      @ecs.With::new(@window.ecs_key_window),
+      @ecs.With::new(@window.ecs_key_primary_window),
+    ),
+  )
+  .view(fn(entity) {
+    guard window_store.get(entity) is Some(window) else { return }
+    update(window)
+    window_store.set(entity, window, tick) |> ignore
+  })
+}
+
+///|
+fn set_ime_enabled_text(value : Bool) -> Unit {
+  guard status_text_handles_ref.val is Some(handles) else { return }
+  @text.text_set_content(handles.ime_enabled, "IME Enabled: \{value}\n")
+}
+
+///|
+fn set_ime_active_text(value : Bool) -> Unit {
+  guard status_text_handles_ref.val is Some(handles) else { return }
+  @text.text_set_content(handles.ime_active, "IME Active:  \{value}\n")
+}
+
+///|
+fn set_ime_buffer_text(value : String) -> Unit {
+  guard status_text_handles_ref.val is Some(handles) else { return }
+  @text.text_set_content(handles.ime_buffer, "IME Buffer:  \{value}\n")
+}
+
+///|
+fn edit_text_content() -> String {
+  guard edit_text_state_ref.val is Some(edit_state) else { return "" }
+  @text.text_get_content(edit_state.handle).unwrap_or("")
+}
+
+///|
+fn set_edit_text_content(content : String) -> Unit {
+  guard edit_text_state_ref.val is Some(edit_state) else { return }
+  @text.text_set_content(edit_state.handle, content)
+}
+
+///|
+fn append_edit_text(content : String) -> Unit {
+  set_edit_text_content(edit_text_content() + content)
+}
+
+///|
 fn toggle_ime_system(mouse : @input.ButtonInput[@window.MouseButton]) -> Unit {
-  if mouse.just_pressed(Left) {
-    ime_enabled_ref.val = !ime_enabled_ref.val
-    log_line("IME Enabled: \{ime_enabled_ref.val}")
+  if !mouse.just_pressed(Left) {
+    return
+  }
+  guard @app.current_world() is Some(world) else { return }
+  guard @input.mouse_position() is Some(cursor_position) else { return }
+  let ime_enabled : Ref[Bool?] = Ref::new(None)
+  update_primary_window(world, fn(window) {
+    window.ime_position = cursor_position
+    window.ime_enabled = !window.ime_enabled
+    ime_enabled.val = Some(window.ime_enabled)
+  })
+  if ime_enabled.val is Some(value) {
+    set_ime_enabled_text(value)
+  }
+}
+
+///|
+fn listen_ime_events_system(ime_reader : @ecs.MessageReader[@window.Ime]) -> Unit {
+  for ime in (try! ime_reader.read()) {
+    match ime {
+      Enabled(_) => set_ime_active_text(true)
+      Disabled(_) => set_ime_active_text(false)
+      Preedit(_, value, cursor) =>
+        if cursor is Some(_) {
+          set_ime_buffer_text(value)
+        } else {
+          set_ime_buffer_text("")
+        }
+      Commit(_, value) => append_edit_text(value)
+      DeleteSurrounding(_, _, _) => ()
+    }
   }
 }
 
@@ -54,60 +265,76 @@ fn listen_keyboard_input_events_system(
   keyboard_inputs : @ecs.MessageReader[@input.KeyboardInput],
 ) -> Unit {
   for keyboard_input in (try! keyboard_inputs.read()) {
-    if keyboard_input.state is Released {
+    if !keyboard_input.state.is_pressed() {
       continue
     }
     match keyboard_input.logical_key {
       @input.Key::Enter => commit_text_line()
       @input.Key::Backspace => remove_last_character()
-      _ => ()
+      _ =>
+        if keyboard_input.text is Some(inserted_text) &&
+          is_printable_text(inserted_text) {
+          append_edit_text(inserted_text)
+        }
     }
   }
 }
 
 ///|
-fn listen_character_input_events_system(
-  keyboard_characters : @ecs.MessageReader[@input.KeyboardCharacter],
-) -> Unit {
-  for keyboard_character in (try! keyboard_characters.read()) {
-    if is_printable_text(keyboard_character.character) {
-      edit_buffer_ref.val.push(keyboard_character.character)
-      log_line("Edit text: \{buffer_to_text()}")
+fn bubbling_text_system(_world : @ecs.World) -> Unit {
+  if bubble_lines_ref.val.length() == 0 {
+    return
+  }
+  let delta = @time.time_delta()
+  let delta_seconds = @time.time_delta_seconds()
+  let next_lines : Array[BubbleLine] = []
+  for bubble_line in bubble_lines_ref.val {
+    let next_timer = bubble_line.timer.tick(delta)
+    if next_timer.just_finished() {
+      @text.text_despawn(bubble_line.handle) |> ignore
+      continue
     }
+    let next_y = bubble_line.y + delta_seconds * 100.0F
+    @text.text_set_transform(
+      bubble_line.handle,
+      @math.Transform::from_xyz(0.0F, next_y, 0.0F),
+    )
+    next_lines.push(BubbleLine::{
+      handle: bubble_line.handle,
+      timer: next_timer,
+      y: next_y,
+    })
   }
-}
-
-///|
-fn is_printable_text(text : String) -> Bool {
-  if text.length() == 0 {
-    return false
-  }
-  for ch in text {
-    let code_point = ch.to_int()
-    if code_point < 0x20 || code_point == 0x7F {
-      return false
-    }
-  }
-  true
+  bubble_lines_ref.val = next_lines
 }
 
 ///|
 fn commit_text_line() -> Unit {
-  if edit_buffer_ref.val.length() == 0 {
+  guard edit_text_state_ref.val is Some(edit_state) else { return }
+  let committed = edit_text_content()
+  if committed == "" {
     return
   }
-  let committed = buffer_to_text()
-  log_line("Bubble committed: \{committed}")
-  edit_buffer_ref.val.clear()
-  log_line("Edit text: ")
+  let handle = @text.Text2dBundle::new(
+      @text.Text2d::new(committed),
+      edit_state.font,
+      @math.Transform::identity(),
+    )
+    .spawn()
+  bubble_lines_ref.val.push(BubbleLine::{
+    handle,
+    timer: @time.Timer::from_seconds(5.0F, @time.TimerMode::Once),
+    y: 0.0F,
+  })
+  set_edit_text_content("")
 }
 
 ///|
 fn remove_last_character() -> Unit {
-  if edit_buffer_ref.val.length() == 0 {
+  let text = edit_text_content()
+  if text == "" {
     return
   }
-  let text = buffer_to_text()
   let chars : Array[Char] = []
   for ch in text {
     chars.push(ch)
@@ -116,23 +343,31 @@ fn remove_last_character() -> Unit {
     return
   }
   chars.pop() |> ignore
-  edit_buffer_ref.val.clear()
   if chars.length() > 0 {
-    edit_buffer_ref.val.push(String::from_array(chars))
+    set_edit_text_content(String::from_array(chars))
+  } else {
+    set_edit_text_content("")
   }
-  log_line("Edit text: \{buffer_to_text()}")
 }
 
 ///|
-fn buffer_to_text() -> String {
-  let mut text = ""
-  for chunk in edit_buffer_ref.val {
-    text = text + chunk
-  }
-  text
+fn is_printable_char(ch : Char) -> Bool {
+  let code_point = ch.to_int()
+  let is_private_use = (code_point >= 0xE000 && code_point <= 0xF8FF) ||
+    (code_point >= 0xF0000 && code_point <= 0xFFFFD) ||
+    (code_point >= 0x100000 && code_point <= 0x10FFFD)
+  !is_private_use && !(code_point < 0x20 || code_point == 0x7F)
 }
 
 ///|
-fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[text_input] " + text)
+fn is_printable_text(text : String) -> Bool {
+  if text.length() == 0 {
+    return false
+  }
+  for ch in text {
+    if !is_printable_char(ch) {
+      return false
+    }
+  }
+  true
 }

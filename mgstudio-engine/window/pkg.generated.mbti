@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/math",
   "moonbitlang/core/json",
 }
 
@@ -61,7 +62,11 @@ pub fn exit_on_primary_closed(@ecs.MessageWriter[@app.AppExit], @ecs.EntityQuery
 
 pub fn host_debug_string(value~ : String) -> Unit
 
-pub fn host_window_create(logical_width~ : Int, logical_height~ : Int, physical_width~ : Int, physical_height~ : Int, use_physical_size_on_create~ : Bool, title~ : String) -> Int
+pub fn host_window_create(logical_width~ : Int, logical_height~ : Int, physical_width~ : Int, physical_height~ : Int, use_physical_size_on_create~ : Bool, title~ : String, visible? : Bool, resizable? : Bool, decorations? : Bool, panel? : Bool) -> Int
+
+pub fn host_window_drag_move(Int) -> Bool
+
+pub fn host_window_drag_resize(Int, @math.CompassOctant) -> Bool
 
 pub fn host_window_get_focused(Int) -> Bool
 
@@ -87,6 +92,10 @@ pub fn host_window_set_cursor_icon(Int, icon~ : CursorIcon) -> Unit
 
 pub fn host_window_set_cursor_visible(Int, visible~ : Bool) -> Unit
 
+pub fn host_window_set_decorations(Int, decorations~ : Bool) -> Unit
+
+pub fn host_window_set_enabled_buttons(Int, EnabledButtons) -> Unit
+
 pub fn host_window_set_mode(Int, mode~ : WindowMode) -> Unit
 
 pub fn host_window_set_position(Int, x~ : Int, y~ : Int) -> Unit
@@ -95,7 +104,15 @@ pub fn host_window_set_resizable(Int, resizable~ : Bool) -> Unit
 
 pub fn host_window_set_size(Int, width~ : Int, height~ : Int) -> Unit
 
+pub fn host_window_set_theme(Int, theme~ : WindowTheme?) -> Unit
+
 pub fn host_window_set_title(Int, title~ : String) -> Unit
+
+pub fn host_window_set_transparent(Int, transparent~ : Bool) -> Unit
+
+pub fn host_window_set_visible(Int, visible~ : Bool) -> Unit
+
+pub fn host_window_set_window_level(Int, level~ : WindowLevel) -> Unit
 
 pub fn host_window_should_close(Int) -> Bool
 
@@ -139,15 +156,29 @@ pub fn window_set_cursor_icon(icon~ : CursorIcon) -> Unit
 
 pub fn window_set_cursor_visible(visible~ : Bool) -> Unit
 
+pub fn window_set_decorations(decorations~ : Bool) -> Unit
+
+pub fn window_set_enabled_buttons(minimize~ : Bool, maximize~ : Bool, close~ : Bool) -> Unit
+
 pub fn window_set_mode(mode~ : WindowMode) -> Unit
 
 pub fn window_set_position(x~ : Int, y~ : Int) -> Unit
+
+pub fn window_set_present_mode(mode~ : PresentMode) -> Unit
 
 pub fn window_set_resizable(resizable~ : Bool) -> Unit
 
 pub fn window_set_size(width~ : Int, height~ : Int) -> Unit
 
+pub fn window_set_theme(theme~ : WindowTheme?) -> Unit
+
 pub fn window_set_title(title~ : String) -> Unit
+
+pub fn window_set_transparent(transparent~ : Bool) -> Unit
+
+pub fn window_set_visible(visible~ : Bool) -> Unit
+
+pub fn window_set_window_level(level~ : WindowLevel) -> Unit
 
 pub fn window_width() -> Int
 
@@ -195,6 +226,15 @@ pub fn CursorOptions::default() -> Self
 pub impl @ecs.Component for CursorOptions
 pub impl Eq for CursorOptions
 pub impl Show for CursorOptions
+
+pub(all) struct EnabledButtons {
+  mut minimize : Bool
+  mut maximize : Bool
+  mut close : Bool
+}
+pub fn EnabledButtons::default() -> Self
+pub impl Eq for EnabledButtons
+pub impl Show for EnabledButtons
 
 pub(all) enum ExitCondition {
   OnPrimaryClosed
@@ -288,6 +328,17 @@ pub(all) enum MouseButton {
 pub impl ToJson for MouseButton
 pub impl @json.FromJson for MouseButton
 
+pub(all) enum PresentMode {
+  AutoVsync
+  AutoNoVsync
+  Fifo
+  FifoRelaxed
+  Immediate
+  Mailbox
+}
+pub impl Eq for PresentMode
+pub impl Show for PresentMode
+
 pub(all) struct PrimaryWindow {
 }
 pub impl @ecs.Component for PrimaryWindow
@@ -345,23 +396,45 @@ pub(all) enum SystemCursorIcon {
   SwResize
   WResize
   EwResize
+  NsResize
+  NeswResize
+  NwseResize
+  ColResize
+  RowResize
+  AllScroll
+  ZoomIn
+  ZoomOut
 }
 pub impl Eq for SystemCursorIcon
 pub impl Show for SystemCursorIcon
 
 pub(all) struct Window {
   mut title : String
+  mut name : String?
   mut resolution : WindowResolution
+  mut present_mode : PresentMode
   mut position : WindowPosition
   mut mode : WindowMode
   mut resizable : Bool
+  mut enabled_buttons : EnabledButtons
+  mut decorations : Bool
+  mut transparent : Bool
   mut focused : Bool
+  mut window_level : WindowLevel
+  mut fit_canvas_to_parent : Bool
+  mut prevent_default_event_handling : Bool
+  mut window_theme : WindowTheme?
+  mut visible : Bool
+  mut drag_move_request : Bool
+  mut drag_resize_request : @math.CompassOctant?
 }
 pub fn Window::default() -> Self
 pub fn Window::height(Self) -> Float
 pub fn Window::physical_height(Self) -> Int
 pub fn Window::physical_width(Self) -> Int
 pub fn Window::scale_factor(Self) -> Float
+pub fn Window::start_drag_move(Self) -> Unit
+pub fn Window::start_drag_resize(Self, @math.CompassOctant) -> Unit
 pub fn Window::width(Self) -> Float
 pub impl @ecs.Component for Window
 pub impl Eq for Window
@@ -410,6 +483,14 @@ pub(all) struct WindowFocused {
 }
 pub impl @ecs.Message for WindowFocused
 pub impl Eq for WindowFocused
+
+pub(all) enum WindowLevel {
+  AlwaysOnBottom
+  Normal
+  AlwaysOnTop
+}
+pub impl Eq for WindowLevel
+pub impl Show for WindowLevel
 
 pub(all) enum WindowMode {
   Windowed
@@ -489,6 +570,13 @@ pub(all) struct WindowScaleFactorChanged {
 }
 pub impl @ecs.Message for WindowScaleFactorChanged
 pub impl Eq for WindowScaleFactorChanged
+
+pub(all) enum WindowTheme {
+  Light
+  Dark
+}
+pub impl Eq for WindowTheme
+pub impl Show for WindowTheme
 
 // Type aliases
 pub type HostWindow = Int

@@ -14,47 +14,66 @@
 
 ///|
 /// Port of `bevy/examples/input/mouse_grab.rs`.
-///
-/// Baseline parity:
-/// - Left click enters grabbed state; Escape exits grabbed state.
-/// - Behavior is applied through mgstudio window cursor APIs.
-let cursor_grabbed_ref : Ref[Bool] = Ref::new(false)
 
 ///|
 fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Update, @app.system(@app.system_param2(grab_mouse_system)))
+  .add_systems(@app.Update, @app.system(@app.system_param2(grab_mouse)))
   .run()
 }
 
 ///|
-fn grab_mouse_system(
+fn primary_window_entity(world : @ecs.World) -> @core.Entity? {
+  let result : Ref[@core.Entity?] = Ref::new(None)
+  world
+  .query_entities_filtered(
+    (
+      @ecs.With::new(@window.ecs_key_window),
+      @ecs.With::new(@window.ecs_key_primary_window),
+    ),
+  )
+  .view(fn(entity) { if result.val is None { result.val = Some(entity) } })
+  result.val
+}
+
+///|
+fn update_primary_cursor_options(
+  world : @ecs.World,
+  update : (@window.CursorOptions) -> Unit,
+) -> Unit {
+  guard primary_window_entity(world) is Some(entity) else { return }
+  let tick = world.read_change_tick()
+  let store = world.component(@window.ecs_key_cursor_options)
+  let options = match store.get(entity) {
+    Some(options) => options
+    None => @window.CursorOptions::default()
+  }
+  update(options)
+  if store.get(entity) is Some(_) {
+    store.set(entity, options, tick) |> ignore
+  } else {
+    store.insert(entity, options, tick)
+  }
+}
+
+///|
+fn grab_mouse(
   mouse : @input.ButtonInput[@window.MouseButton],
   key : @input.ButtonInput[@window.KeyCode],
 ) -> Unit {
+  guard @app.current_world() is Some(world) else { return }
   if mouse.just_pressed(Left) {
-    @window.window_set_cursor_visible(visible=false)
-    @window.window_set_cursor_grab_mode(mode=GrabLocked)
-    cursor_grabbed_ref.val = true
-    log_state("Locked")
+    update_primary_cursor_options(world, fn(cursor_options) {
+      cursor_options.visible = false
+      cursor_options.grab_mode = GrabLocked
+    })
   }
   if key.just_pressed(Escape) {
-    @window.window_set_cursor_visible(visible=true)
-    @window.window_set_cursor_grab_mode(mode=GrabNone)
-    cursor_grabbed_ref.val = false
-    log_state("None")
+    update_primary_cursor_options(world, fn(cursor_options) {
+      cursor_options.visible = true
+      cursor_options.grab_mode = GrabNone
+    })
   }
-}
-
-///|
-fn log_state(grab_mode : String) -> Unit {
-  let visible = !cursor_grabbed_ref.val
-  log_line("cursor_options { visible: \{visible}, grab_mode: \{grab_mode} }")
-}
-
-///|
-fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[mouse_grab] " + text)
 }

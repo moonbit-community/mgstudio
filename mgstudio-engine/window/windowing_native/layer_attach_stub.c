@@ -27,17 +27,13 @@ void mgstudio_window_attach_metal_layer_from_mbw(int window_id, void *layer) {
     return;
   }
 
-  uint64_t raw_window = mbw_window_handle(window_id);
-  if (raw_window == 0) {
+  // mbw_window_handle returns MBWContentView handle (not NSWindow handle).
+  uint64_t raw_content_view = mbw_window_handle(window_id);
+  if (raw_content_view == 0) {
     return;
   }
 
-  id ns_window = (id)(uintptr_t)raw_window;
-  SEL content_view_sel = sel_registerName("contentView");
-  id content_view = ((id(*)(id, SEL))objc_msgSend)(ns_window, content_view_sel);
-  if (!content_view) {
-    return;
-  }
+  id content_view = (id)(uintptr_t)raw_content_view;
 
   ((void(*)(id, SEL, BOOL))objc_msgSend)(
     content_view,

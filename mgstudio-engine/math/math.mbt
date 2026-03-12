@@ -145,6 +145,18 @@ pub fn Vec3::normalize_or_zero(self : Vec3) -> Vec3 {
 }
 
 ///|
+pub(all) enum CompassOctant {
+  North
+  NorthEast
+  East
+  SouthEast
+  South
+  SouthWest
+  West
+  NorthWest
+} derive(Eq, Show)
+
+///|
 pub(all) struct Cuboid {
   half_size : Vec3
 }

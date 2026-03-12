@@ -14,32 +14,44 @@
 
 ///|
 /// Port of `bevy/examples/window/transparent_window.rs`.
-///
-/// Baseline parity:
-/// - Captures transparent-window configuration intent.
-/// - Transparent-window creation setting is not exposed in current API.
-let logged_ref : Ref[Bool] = Ref::new(false)
+
+///|
+fn configured_window() -> @window.Window {
+  let window = @window.Window::default()
+  window.transparent = true
+  window.decorations = false
+  window
+}
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_systems(@app.Update, @app.system(transparent_window_system))
+  .add_plugin_group(fn() {
+    @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
+      primary_window: Some(configured_window()),
+      primary_cursor_options: Some(@window.CursorOptions::default()),
+      exit_condition: @window.ExitCondition::OnAllClosed,
+      close_when_requested: true,
+    })
+  })
+  .insert_resource(
+    @sprite.ClearColor::new(@sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F)),
+  )
+  .add_systems(@app.Startup, @app.system(setup))
   .run()
 }
 
 ///|
-fn transparent_window_system(world : @ecs.World) -> Unit {
-  world |> ignore
-  if logged_ref.val {
-    return
-  }
-  logged_ref.val = true
-  log_line("transparent window mode is not available in current runtime path")
-}
-
-///|
-fn log_line(text : String) -> Unit {
-  @window.host_debug_string(value="[transparent_window] " + text)
+fn setup(world : @ecs.World) -> Unit {
+  @sprite.Camera2dBundle::new(
+    @sprite.Camera::default(),
+    @math.Transform::identity(),
+  ).spawn(world)
+  |> ignore
+  let asset_server = @asset.AssetServer::new()
+  @sprite.SpriteBundle::new(
+    @sprite.Sprite::from_image(asset_server.load("branding/icon.png")),
+    @math.Transform::identity(),
+  ).spawn(world)
+  |> ignore
 }
