@@ -4,6 +4,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/renderer" @renderer,
   "Milky2018/mgstudio/window/windowing_native" @windowing,
   "tonyfettes/any",
   "moonbitlang/core/json",

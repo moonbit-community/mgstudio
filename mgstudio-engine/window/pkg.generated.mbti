@@ -109,9 +109,15 @@ pub fn window_backend_sync_system(@ecs.World) -> Unit
 
 pub fn window_ensure_primary_host(@ecs.World) -> Int?
 
+pub fn window_entity_for_host(@ecs.World, Int) -> @core.Entity?
+
 pub fn window_entity_for_ref(@ecs.World, WindowRef) -> @core.Entity?
 
 pub fn window_height() -> Int
+
+pub fn window_host_entries(@ecs.World) -> Array[WindowHostEntry]
+
+pub fn window_host_window_for_ref(@ecs.World, WindowRef) -> Int?
 
 pub fn window_physical_height_for(@ecs.World, WindowRef) -> Int
 
@@ -126,6 +132,8 @@ pub fn window_poll_host_events(@ecs.World) -> Unit
 pub fn window_position_x() -> Int
 
 pub fn window_position_y() -> Int
+
+pub fn window_request_close_all_hosts(@ecs.World) -> Unit
 
 pub fn window_runner_builder(@app.App[@ecs.World]) -> () -> Unit
 
@@ -195,6 +203,15 @@ pub fn CursorOptions::default() -> Self
 pub impl @ecs.Component for CursorOptions
 pub impl Eq for CursorOptions
 pub impl Show for CursorOptions
+
+pub(all) struct EnabledButtons {
+  mut minimize : Bool
+  mut maximize : Bool
+  mut close : Bool
+}
+pub fn EnabledButtons::default() -> Self
+pub impl Eq for EnabledButtons
+pub impl Show for EnabledButtons
 
 pub(all) enum ExitCondition {
   OnPrimaryClosed
@@ -288,6 +305,17 @@ pub(all) enum MouseButton {
 pub impl ToJson for MouseButton
 pub impl @json.FromJson for MouseButton
 
+pub(all) enum PresentMode {
+  AutoVsync
+  AutoNoVsync
+  Fifo
+  FifoRelaxed
+  Immediate
+  Mailbox
+}
+pub impl Eq for PresentMode
+pub impl Show for PresentMode
+
 pub(all) struct PrimaryWindow {
 }
 pub impl @ecs.Component for PrimaryWindow
@@ -345,16 +373,34 @@ pub(all) enum SystemCursorIcon {
   SwResize
   WResize
   EwResize
+  NsResize
+  NeswResize
+  NwseResize
+  ColResize
+  RowResize
+  AllScroll
+  ZoomIn
+  ZoomOut
 }
 pub impl Eq for SystemCursorIcon
 pub impl Show for SystemCursorIcon
 
 pub(all) struct Window {
   mut title : String
+  mut name : String?
   mut resolution : WindowResolution
   mut position : WindowPosition
   mut mode : WindowMode
+  mut present_mode : PresentMode
+  mut fit_canvas_to_parent : Bool
+  mut prevent_default_event_handling : Bool
   mut resizable : Bool
+  mut enabled_buttons : EnabledButtons
+  mut decorations : Bool
+  mut transparent : Bool
+  mut window_level : WindowLevel
+  mut window_theme : WindowTheme?
+  mut visible : Bool
   mut focused : Bool
 }
 pub fn Window::default() -> Self
@@ -410,6 +456,20 @@ pub(all) struct WindowFocused {
 }
 pub impl @ecs.Message for WindowFocused
 pub impl Eq for WindowFocused
+
+pub struct WindowHostEntry {
+  entity : @core.Entity
+  host_window : Int
+}
+pub fn WindowHostEntry::new(@core.Entity, Int) -> Self
+
+pub(all) enum WindowLevel {
+  AlwaysOnBottom
+  Normal
+  AlwaysOnTop
+}
+pub impl Eq for WindowLevel
+pub impl Show for WindowLevel
 
 pub(all) enum WindowMode {
   Windowed
@@ -489,6 +549,13 @@ pub(all) struct WindowScaleFactorChanged {
 }
 pub impl @ecs.Message for WindowScaleFactorChanged
 pub impl Eq for WindowScaleFactorChanged
+
+pub(all) enum WindowTheme {
+  Light
+  Dark
+}
+pub impl Eq for WindowTheme
+pub impl Show for WindowTheme
 
 // Type aliases
 pub type HostWindow = Int

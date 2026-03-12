@@ -187,10 +187,20 @@ pub fn CursorOptions::default() -> CursorOptions {
 ///|
 pub(all) struct Window {
   mut title : String
+  mut name : String?
   mut resolution : WindowResolution
   mut position : WindowPosition
   mut mode : WindowMode
+  mut present_mode : PresentMode
+  mut fit_canvas_to_parent : Bool
+  mut prevent_default_event_handling : Bool
   mut resizable : Bool
+  mut enabled_buttons : EnabledButtons
+  mut decorations : Bool
+  mut transparent : Bool
+  mut window_level : WindowLevel
+  mut window_theme : WindowTheme?
+  mut visible : Bool
   mut focused : Bool
 } derive(Eq, Show)
 
@@ -198,10 +208,20 @@ pub(all) struct Window {
 pub fn Window::default() -> Window {
   Window::{
     title: DEFAULT_WINDOW_TITLE,
+    name: None,
     resolution: WindowResolution::default(),
     position: Automatic,
     mode: Windowed,
+    present_mode: AutoVsync,
+    fit_canvas_to_parent: true,
+    prevent_default_event_handling: true,
     resizable: true,
+    enabled_buttons: EnabledButtons::default(),
+    decorations: true,
+    transparent: false,
+    window_level: Normal,
+    window_theme: None,
+    visible: true,
     focused: true,
   }
 }

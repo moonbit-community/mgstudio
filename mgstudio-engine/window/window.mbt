@@ -232,10 +232,6 @@ pub fn host_window_create(
   physical_height~ : Int,
   use_physical_size_on_create~ : Bool,
   title~ : String,
-  visible~ : Bool = true,
-  resizable~ : Bool = true,
-  decorations~ : Bool = true,
-  panel~ : Bool = false,
 ) -> HostWindow {
   @windowing.create(
     logical_width~,
@@ -244,10 +240,6 @@ pub fn host_window_create(
     physical_height~,
     use_physical_size_on_create~,
     title~,
-    visible~,
-    resizable~,
-    decorations~,
-    panel~,
   )
 }
 
@@ -415,40 +407,6 @@ fn window_mode_to_int(mode : WindowMode) -> Int {
 }
 
 ///|
-fn window_level_to_int(level : WindowLevel) -> Int {
-  match level {
-    Normal => 0
-    AlwaysOnTop => 1
-    AlwaysOnBottom => 2
-  }
-}
-
-///|
-fn window_theme_to_int(theme : WindowTheme?) -> Int {
-  match theme {
-    Some(Light) => 1
-    Some(Dark) => 2
-    None => 0
-  }
-}
-
-///|
-fn compass_octant_to_resize_direction_int(
-  direction : @math.CompassOctant,
-) -> Int {
-  match direction {
-    North => 1
-    NorthEast => 2
-    East => 0
-    SouthEast => 5
-    South => 4
-    SouthWest => 6
-    West => 7
-    NorthWest => 3
-  }
-}
-
-///|
 pub fn host_window_set_mode(window : HostWindow, mode~ : WindowMode) -> Unit {
   host_window_set_mode_raw(window~, mode=window_mode_to_int(mode))
 }
@@ -456,91 +414,6 @@ pub fn host_window_set_mode(window : HostWindow, mode~ : WindowMode) -> Unit {
 ///|
 fn host_window_set_mode_raw(window~ : HostWindow, mode~ : Int) -> Unit {
   @windowing.set_mode(window, mode~)
-}
-
-///|
-pub fn host_window_set_visible(window : HostWindow, visible~ : Bool) -> Unit {
-  @windowing.set_visible(window, visible~)
-}
-
-///|
-pub fn host_window_set_decorations(
-  window : HostWindow,
-  decorations~ : Bool,
-) -> Unit {
-  @windowing.set_decorations(window, decorations~)
-}
-
-///|
-pub fn host_window_set_transparent(
-  window : HostWindow,
-  transparent~ : Bool,
-) -> Unit {
-  @windowing.set_transparent(window, transparent~)
-}
-
-///|
-pub fn host_window_set_window_level(
-  window : HostWindow,
-  level~ : WindowLevel,
-) -> Unit {
-  @windowing.set_window_level(window, level=window_level_to_int(level))
-}
-
-///|
-pub fn host_window_set_theme(
-  window : HostWindow,
-  theme~ : WindowTheme?,
-) -> Unit {
-  @windowing.set_theme(window, theme=window_theme_to_int(theme))
-}
-
-///|
-pub fn host_window_set_ime_allowed(
-  window : HostWindow,
-  allowed~ : Bool,
-) -> Unit {
-  @windowing.set_ime_allowed(window, allowed~)
-}
-
-///|
-pub fn host_window_set_ime_cursor_area(
-  window : HostWindow,
-  x~ : Int,
-  y~ : Int,
-  width~ : Int = 1,
-  height~ : Int = 1,
-) -> Unit {
-  @windowing.set_ime_cursor_area(window, x~, y~, width~, height~)
-}
-
-///|
-pub fn host_window_set_enabled_buttons(
-  window : HostWindow,
-  buttons : EnabledButtons,
-) -> Unit {
-  @windowing.set_enabled_buttons(
-    window,
-    close=buttons.close,
-    minimize=buttons.minimize,
-    maximize=buttons.maximize,
-  )
-}
-
-///|
-pub fn host_window_drag_move(window : HostWindow) -> Bool {
-  @windowing.drag_window(window)
-}
-
-///|
-pub fn host_window_drag_resize(
-  window : HostWindow,
-  direction : @math.CompassOctant,
-) -> Bool {
-  @windowing.drag_resize_window(
-    window,
-    direction=compass_octant_to_resize_direction_int(direction),
-  )
 }
 
 ///|
@@ -617,8 +490,7 @@ fn screenshot_pixels_have_non_black_rgb(pixels : Bytes) -> Bool {
 fn screenshot_try_non_black_texture_capture(
   texture_id : Int,
 ) -> @renderer.ScreenshotCaptureResult? {
-  guard @render.screenshot_capture_texture_sync(texture_id=texture_id)
-    is Some(capture) else {
+  guard @render.screenshot_capture_texture_sync(texture_id~) is Some(capture) else {
     return None
   }
   if !screenshot_pixels_have_non_black_rgb(capture.pixels) {
@@ -651,12 +523,12 @@ fn screenshot_capture_with_texture_fallback(
     }
     host_debug_string(
       value="[screenshot] surface capture is black; fallback texture_id=" +
-      texture_ref.id.to_string() +
-      " (" +
-      texture_ref.width.to_string() +
-      "x" +
-      texture_ref.height.to_string() +
-      ")",
+        texture_ref.id.to_string() +
+        " (" +
+        texture_ref.width.to_string() +
+        "x" +
+        texture_ref.height.to_string() +
+        ")",
     )
     return Some(texture_capture)
   }
@@ -664,7 +536,7 @@ fn screenshot_capture_with_texture_fallback(
   if fallback_upper_bound > 0 {
     host_debug_string(
       value="[screenshot] surface capture remains black; no non-black same-size texture in resource_id<= " +
-      fallback_upper_bound.to_string(),
+        fallback_upper_bound.to_string(),
     )
   }
   Some(surface_capture)
@@ -730,71 +602,6 @@ pub fn window_set_resizable(resizable~ : Bool) -> Unit {
 }
 
 ///|
-pub fn window_set_visible(visible~ : Bool) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      next.visible = visible
-      next
-    }),
-  )
-}
-
-///|
-pub fn window_set_decorations(decorations~ : Bool) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      next.decorations = decorations
-      next
-    }),
-  )
-}
-
-///|
-pub fn window_set_transparent(transparent~ : Bool) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      next.transparent = transparent
-      next
-    }),
-  )
-}
-
-///|
-pub fn window_set_window_level(level~ : WindowLevel) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      next.window_level = level
-      next
-    }),
-  )
-}
-
-///|
-pub fn window_set_theme(theme~ : WindowTheme?) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      next.window_theme = theme
-      next
-    }),
-  )
-}
-
-///|
 pub fn window_set_cursor_visible(visible~ : Bool) -> Unit {
   guard window_current_world() is Some(world) else { return }
   guard window_primary_entity(world) is Some(entity) else { return }
@@ -827,38 +634,6 @@ pub fn window_set_mode(mode~ : WindowMode) -> Unit {
     window_update_component(world, entity, fn(window) {
       let next : Window = window
       next.mode = mode
-      next
-    }),
-  )
-}
-
-///|
-pub fn window_set_present_mode(mode~ : PresentMode) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      next.present_mode = mode
-      next
-    }),
-  )
-}
-
-///|
-pub fn window_set_enabled_buttons(
-  minimize~ : Bool,
-  maximize~ : Bool,
-  close~ : Bool,
-) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      next.enabled_buttons.minimize = minimize
-      next.enabled_buttons.maximize = maximize
-      next.enabled_buttons.close = close
       next
     }),
   )
@@ -1021,10 +796,10 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
             height > 0 &&
             (width != previous.width || height != previous.height) {
             @render.host_gpu_configure_surface(
-              device=device,
+              device~,
               surface=previous.surface,
-              width=width,
-              height=height,
+              width~,
+              height~,
             )
           }
           next_surfaces.push(RunnerSurfaceBinding::{
@@ -1042,12 +817,7 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
         let width = host_window_get_width(host_window)
         let height = host_window_get_height(host_window)
         if width > 0 && height > 0 {
-          @render.host_gpu_configure_surface(
-            device=device,
-            surface=surface,
-            width=width,
-            height=height,
-          )
+          @render.host_gpu_configure_surface(device~, surface~, width~, height~)
         }
         next_surfaces.push(RunnerSurfaceBinding::{
           host_window,
@@ -1092,7 +862,7 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
           @render.host_gpu_set_active_surface_target(binding.target_id)
           let frame = @render.host_gpu_begin_frame(binding.surface)
           if frame > 0 {
-            frame_bindings.push(RunnerFrameBinding::{ frame })
+            frame_bindings.push(RunnerFrameBinding::{ frame, })
           }
         }
         app_ref.val = app_ref.val.run_once()
