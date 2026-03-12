@@ -18,13 +18,15 @@
 ///|
 fn banner() -> Unit {
   println(
-    "This example intuitively demonstrates how Time works in Bevy-style schedules.",
+    "This example is meant to intuitively demonstrate how Time works in Bevy.",
   )
   println("")
-  println("Time is printed in three schedules:")
-  println("- PreUpdate: real time clock")
-  println("- FixedUpdate: generic time clock inside fixed schedule")
-  println("- Update: generic time clock (virtual time)")
+  println("Time will be printed in three different schedules in the app:")
+  println("- PreUpdate: real time is printed")
+  println(
+    "- FixedUpdate: fixed time step time is printed, may be run zero or multiple times",
+  )
+  println("- Update: virtual game time is printed")
   println("")
   println(
     "Max delta time is set to 5 seconds. Fixed timestep is set to 1 second.",
@@ -34,47 +36,29 @@ fn banner() -> Unit {
 
 ///|
 fn help() -> Unit {
-  println("Scripted commands:")
-  println("  empty line: run app.update() once")
-  println("  f: set speed to fast (2x)")
-  println("  n: set speed to normal (1x)")
-  println("  s: set speed to slow (0.5x)")
-  println("  p: pause virtual clock")
-  println("  u: unpause virtual clock")
-  println("  q: quit")
+  println("The app reads commands line-by-line from standard input.")
+  println("")
+  println("Commands:")
+  println("  empty line: Run app.update() once on the Bevy App")
+  println("  q: Quit the app.")
+  println("  f: Set speed to fast, 2x")
+  println("  n: Set speed to normal, 1x")
+  println("  s: Set speed to slow, 0.5x")
+  println("  p: Pause")
+  println("  u: Unpause")
   println("")
 }
 
 ///|
-fn read_real_time(world : @ecs.World) -> @my_time.Time[@my_time.Real] {
-  let real_time = try! world.get_resource(
-    @my_time.time_resource_key_of(@my_time.Real::default()),
-  )
-  match real_time {
-    Some(real_time) => real_time
-    None => {
-      let default_time : @my_time.Time[@my_time.Real] = @my_time.Time::default()
-      default_time
-    }
-  }
-}
-
-///|
-fn read_generic_time(world : @ecs.World) -> @my_time.Time[Unit] {
-  let time = try! world.get_resource(@my_time.time_resource_key_of(()))
-  match time {
+fn[T] read_time_resource(
+  world : @ecs.World,
+  key : @ecs.ResourceKey[@my_time.Time[T]],
+  debug_name : String,
+) -> @my_time.Time[T] {
+  match (try! world.get_resource(key)) {
     Some(time) => time
-    None => {
-      let default_time : @my_time.Time[Unit] = @my_time.Time::default()
-      default_time
-    }
+    None => abort("Missing required time resource: " + debug_name)
   }
-}
-
-///|
-fn default_virtual_time() -> @my_time.Time[@my_time.Virtual] {
-  let virtual_time : @my_time.Time[@my_time.Virtual] = @my_time.Time::default()
-  virtual_time
 }
 
 ///|
@@ -85,13 +69,10 @@ fn update_virtual_time_resource(
   let world = app.world()
   let change_tick = world.increment_change_tick()
   let virtual_ref = try! world
-    .get_resource_ref_mut(
-      @my_time.time_resource_key_of(@my_time.Virtual::default()),
-      change_tick,
-    )
+    .get_resource_ref_mut(@my_time.virtual_time_resource_key(), change_tick)
     .unwrap()
   let time_ref = try! world
-    .get_resource_ref_mut(@my_time.time_resource_key_of(()), change_tick)
+    .get_resource_ref_mut(@my_time.default_time_resource_key(), change_tick)
     .unwrap()
   let next_virtual = update(virtual_ref.val)
   virtual_ref.val = next_virtual
@@ -101,34 +82,46 @@ fn update_virtual_time_resource(
 
 ///|
 fn print_real_time(world : @ecs.World) -> Unit {
-  let real_time = read_real_time(world)
+  let real_time = read_time_resource(
+    world,
+    @my_time.real_time_resource_key(),
+    "Time<Real>",
+  )
   println(
-    "PreUpdate: real time, delta=" +
-    real_time.delta_seconds().to_string() +
-    ", elapsed=" +
-    real_time.elapsed_seconds().to_string(),
+    "PreUpdate: this is real time clock, delta is " +
+    real_time.delta().to_string() +
+    " and elapsed is " +
+    real_time.elapsed().to_string(),
   )
 }
 
 ///|
 fn print_fixed_time(world : @ecs.World) -> Unit {
-  let time = read_generic_time(world)
+  let time = read_time_resource(
+    world,
+    @my_time.default_time_resource_key(),
+    "Time<Unit>",
+  )
   println(
-    "FixedUpdate: generic time in fixed schedule, delta=" +
-    time.delta_seconds().to_string() +
-    ", elapsed=" +
-    time.elapsed_seconds().to_string(),
+    "FixedUpdate: this is generic time clock inside fixed, delta is " +
+    time.delta().to_string() +
+    " and elapsed is " +
+    time.elapsed().to_string(),
   )
 }
 
 ///|
 fn print_time(world : @ecs.World) -> Unit {
-  let time = read_generic_time(world)
+  let time = read_time_resource(
+    world,
+    @my_time.default_time_resource_key(),
+    "Time<Unit>",
+  )
   println(
-    "Update: generic time clock, delta=" +
-    time.delta_seconds().to_string() +
-    ", elapsed=" +
-    time.elapsed_seconds().to_string(),
+    "Update: this is generic time clock, delta is " +
+    time.delta().to_string() +
+    " and elapsed is " +
+    time.elapsed().to_string(),
   )
 }
 
@@ -210,25 +203,16 @@ fn time_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
   fn() {
     banner()
     help()
-
-    // `time.rs` is stdin-driven in Bevy. For native smoke runs we replay the
-    // same command model using a deterministic script.
-    let commands : Array[String] = [
-      "", "", "f", "", "n", "", "s", "", "p", "", "u", "", "q",
-    ]
-
     let mut runtime_app = app
-      .insert_resource(@my_time.Time::from_seconds(1.0F))
-      .insert_resource(
-        default_virtual_time()
-        .set_max_delta_seconds(5.0F)
-        .set_relative_speed(1.0F),
-      )
-    for command in commands {
-      let (next_app, should_quit) = apply_command(runtime_app, command)
-      runtime_app = next_app
-      if should_quit {
-        break
+    let mut should_quit = false
+    while !should_quit {
+      match @app.app_stdin_read_line() {
+        Some(command) => {
+          let (next_app, quit_now) = apply_command(runtime_app, command)
+          runtime_app = next_app
+          should_quit = quit_now
+        }
+        None => should_quit = true
       }
     }
   }
@@ -236,11 +220,10 @@ fn time_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = [
-    fn(app : @app.App[@ecs.World]) { @my_time.time_plugin(app) },
-  ]
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.minimal_plugins())
+  .insert_resource(@my_time.Time::from_max_delta(@core.Duration::from_secs(5L)))
+  .insert_resource(@my_time.Time::from_duration(@core.Duration::from_secs(1L)))
   .add_systems(@app.PreUpdate, @app.system(print_real_time))
   .add_systems(@app.FixedUpdate, @app.system(print_fixed_time))
   .add_systems(@app.Update, @app.system(print_time))
