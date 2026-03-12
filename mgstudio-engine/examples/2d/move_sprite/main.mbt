@@ -61,11 +61,19 @@ fn move_sprite_setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in move_sprite example")
+  }
+}
+
+///|
 fn move_sprite_movement(
   query : @ecs.Query2[@math.Transform, @sprite.Sprite],
-  _world : @ecs.World,
+  world : @ecs.World,
 ) -> Unit {
-  let delta = SPEED * @time.time_delta_seconds()
+  let delta = SPEED * world_time(world).delta_seconds()
   let move_x = if move_state.val.direction is Right { delta } else { -delta }
   let mut next_direction = move_state.val.direction
   try! query.for_each(fn(_entity, transform, _sprite) {

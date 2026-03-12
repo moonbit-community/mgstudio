@@ -90,9 +90,17 @@ fn sprite_sheet_setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in sprite_sheet example")
+  }
+}
+
+///|
 fn sprite_sheet_animate(world : @ecs.World) -> Unit {
   sprite_sheet_state.val.timer_seconds = sprite_sheet_state.val.timer_seconds +
-    @time.time_delta_seconds()
+    world_time(world).delta_seconds()
 
   if sprite_sheet_state.val.timer_seconds >= GABE_ANIMATION_STEP_SECONDS {
     sprite_sheet_state.val.timer_seconds = 0.0F

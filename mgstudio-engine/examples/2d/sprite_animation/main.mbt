@@ -223,8 +223,16 @@ fn execute_animation_step(
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in sprite_animation example")
+  }
+}
+
+///|
 fn execute_animations(world : @ecs.World) -> Unit {
-  let delta_seconds = @time.time_delta_seconds()
+  let delta_seconds = world_time(world).delta_seconds()
 
   animation_state.val.left_frame_timer = execute_animation_step(
     world,

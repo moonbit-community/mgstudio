@@ -125,9 +125,17 @@ fn change_scale_direction(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in transforms/scale example")
+  }
+}
+
+///|
 fn scale_cube(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let delta = @time.time_delta_seconds()
+  let delta = world_time(world).delta_seconds()
   let transform_store = world.component(@math.Transform::component())
   let scaling_store = world.component(Scaling::component())
   let updates : Array[(@core.Entity, Scaling, @math.Transform)] = []

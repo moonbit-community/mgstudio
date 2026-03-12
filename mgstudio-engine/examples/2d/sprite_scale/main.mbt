@@ -376,12 +376,20 @@ fn resolve_scale_mode(_intended_mode : String) -> @sprite.SpriteImageMode {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in sprite_scale example")
+  }
+}
+
+///|
 fn sprite_scale_update(
   query : @ecs.Query2[@sprite.Sprite, @math.Transform],
-  _world : @ecs.World,
+  world : @ecs.World,
 ) -> Unit {
   sprite_scale_state.val.timer_seconds = sprite_scale_state.val.timer_seconds +
-    @time.time_delta_seconds()
+    world_time(world).delta_seconds()
 
   if sprite_scale_state.val.timer_seconds >= ANIMATION_STEP_SECONDS {
     sprite_scale_state.val.timer_seconds = 0.0F

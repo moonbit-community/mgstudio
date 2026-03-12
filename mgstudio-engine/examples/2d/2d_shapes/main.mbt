@@ -300,6 +300,14 @@ fn setup_wireframe2d_config(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in 2d_shapes example")
+  }
+}
+
+///|
 fn shapes_rotate(
   query : @ecs.Query2[@math.Transform, @sprite.Mesh2d],
   world : @ecs.World,
@@ -321,7 +329,7 @@ fn shapes_rotate(
     return
   }
 
-  let delta_secs = @time.time_delta_seconds()
+  let delta_secs = world_time(world).delta_seconds()
   let speed = 0.5F
   try! query.for_each(fn(_entity, transform, _mesh) {
     let next_rotation = transform.rotation_z() + speed * delta_secs
