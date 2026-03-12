@@ -284,8 +284,16 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in auto_exposure example")
+  }
+}
+
+///|
 fn example_control_system(world : @ecs.World) -> Unit {
-  let delta = @time.time_delta_seconds()
+  let delta = world_time(world).delta_seconds()
 
   let rotation = if @input.key_pressed(@window.KeyCode::ArrowLeft) {
     CAMERA_ROTATE_SPEED * delta

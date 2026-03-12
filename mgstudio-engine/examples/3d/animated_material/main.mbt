@@ -108,8 +108,16 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn animate_materials(_world : @ecs.World) -> Unit {
-  let delta = @time.time_delta_seconds()
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in animated_material example")
+  }
+}
+
+///|
+fn animate_materials(world : @ecs.World) -> Unit {
+  let delta = world_time(world).delta_seconds()
   if delta <= 0.0F {
     return
   }

@@ -515,6 +515,14 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn world_time(world : @ecs.World) -> @time.Time[Unit] {
+  match (try! world.get_resource(@time.default_time_resource_key())) {
+    Some(time) => time
+    None => abort("Missing Time<Unit> resource in irradiance_volumes example")
+  }
+}
+
+///|
 fn rotate_camera(world : @ecs.World) -> Unit {
   if !irradiance_volumes_state.val.rotating {
     return
@@ -523,7 +531,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
   guard world.component(@math.ecs_key_transform).get(camera) is Some(transform) else {
     return
   }
-  let angle = ROTATION_SPEED * @time.time_delta_seconds()
+  let angle = ROTATION_SPEED * world_time(world).delta_seconds()
   let x = transform.translation.x * @math.cos(angle) -
     transform.translation.z * @math.sin(angle)
   let z = transform.translation.x * @math.sin(angle) +
