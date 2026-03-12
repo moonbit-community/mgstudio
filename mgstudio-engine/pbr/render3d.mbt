@@ -1853,6 +1853,17 @@ fn render3d_target_info(
       })
     }
     @sprite.RenderTarget::Window(window_ref) => {
+      let is_primary_window_target = match window_ref {
+        @window.WindowRef::Primary => true
+        @window.WindowRef::Entity(entity) =>
+          world.component(@window.ecs_key_primary_window).contains(entity)
+      }
+      // Current native backend owns a single swapchain/surface bound to the
+      // primary host window. Skip non-primary window targets until multi-surface
+      // rendering support lands.
+      if !is_primary_window_target {
+        return None
+      }
       let width = @window.window_physical_width_for(world, window_ref)
       let height = @window.window_physical_height_for(world, window_ref)
       if width <= 0 || height <= 0 {
@@ -5260,15 +5271,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       view_width = viewport_width
       view_height = viewport_height
     }
-    let mut scale_factor = camera.scale_factor
-    if scale_factor <= 0.0F {
-      scale_factor = 1.0F
-    }
-    let view_width_f = Float::from_double(view_width.to_double()) / scale_factor
-    let view_height_f = Float::from_double(view_height.to_double()) /
-      scale_factor
-    let view_width_logical = view_width_f.to_int()
-    let view_height_logical = view_height_f.to_int()
+    // Render target textures and viewport dimensions are in physical pixels.
+    // Do not divide by window scale factor here; doing so halves render size on
+    // high-DPI displays and breaks camera framing/post-process alignment.
+    camera.scale_factor |> ignore
+    let view_width_logical = view_width
+    let view_height_logical = view_height
     if view_width_logical <= 0 || view_height_logical <= 0 {
       continue
     }

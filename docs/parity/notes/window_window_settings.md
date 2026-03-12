@@ -1,34 +1,27 @@
 # window_settings Parity Note
 
-- Bevy source: bevy/examples/window/window_settings.rs
-- mgstudio target: mgstudio-engine/examples/window/window_settings/
-- Baseline commit: 48ec375a3a3cdc904476ef1d13f9d71c9f2820d3
-- Status: Adapted
+- Bevy source: `bevy/examples/window/window_settings.rs`
+- mgstudio target: `mgstudio-engine/examples/window/window_settings/`
+- Status: Exact
 - Owner: team-input_window
 
 ## Behavioral Comparison
 
-- Rendering: Adapted with runtime logging for parity visibility.
-- Window/Input: Captures the Bevy example intent under current API constraints.
-- Timing/Update model: Update system per frame.
-- Asset path/loading: Not applicable.
-
-## Known Differences
-
-- Advanced window settings mutation API is not exposed in current path.
-- This port keeps behavior traceability through window.host_debug_string logs.
-
-## Runtime Constraints
-
-- WASM/Web: Available features depend on current web host window API exposure.
-- Native runtime: Available features depend on current native host window API exposure.
+- Runtime behavior is aligned:
+  - startup window config (`title`, `name`, `resolution`, `present_mode`, theme, enabled buttons, initially hidden)
+  - frame-count based visibility toggle (`visible = true` at frame 3)
+  - key controls for vsync/theme/window level/window controls/cursor behavior
+  - mouse left/right cycles cursor icon index
 
 ## Validation Evidence
 
-- Build command: moon -C mgstudio-engine build --release --target wasm examples/window/window_settings
-- Smoke command: moon -C mgstudio-engine check
-- Logs: window.host_debug_string with [window_settings] prefix.
+- Check command:
+  - `moon -C mgstudio-engine check --target native examples/window/window_settings`
+- Screenshot command:
+  - `MGSTUDIO_SCREENSHOT_PATH=/Users/zhengyu/Documents/projects/moon-game-studio/docs/parity/artifacts/window_window_settings_latest.png MGSTUDIO_SCREENSHOT_FRAME=120 MGSTUDIO_SCREENSHOT_EXIT_ON_SAVE=1 MGSTUDIO_WINDOW_FRAME_LIMIT=240 moon -C mgstudio-engine run --target native examples/window/window_settings`
+- Captured artifact:
+  - `docs/parity/artifacts/window_window_settings_latest.png`
 
-## Follow-up Tasks
+## Notes
 
-- Remaining blockers: Advanced window settings mutation API is not exposed in current path.
+- The startup system now spawns a default `Camera2d` so the window presents the engine clear color instead of a black frame.
