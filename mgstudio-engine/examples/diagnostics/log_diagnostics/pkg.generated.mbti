@@ -1,0 +1,29 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/diagnostics/log_diagnostics"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type LogDiagnosticsCommandsText
+pub impl @app.Resource for LogDiagnosticsCommandsText
+
+type LogDiagnosticsFilters
+pub impl @app.Resource for LogDiagnosticsFilters
+
+pub(all) enum LogDiagnosticsStatus {
+  Disabled
+  Enabled
+}
+pub impl @app.Resource for LogDiagnosticsStatus
+
+// Type aliases
+
+// Traits
+
