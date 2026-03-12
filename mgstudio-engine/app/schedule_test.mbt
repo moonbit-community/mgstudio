@@ -196,6 +196,47 @@ test "app: schedule sets order and preserve insertion within a set" {
 }
 
 ///|
+test "app: chained tuple system configs run in declared order" {
+  let log : Array[Int] = []
+  let app = App::new(@ecs.World::new()).add_systems(
+    Update,
+    chain(
+      (
+        system(fn(_world : @ecs.World) { log.push(1) }),
+        system(fn(_world : @ecs.World) { log.push(2) }),
+        system(fn(_world : @ecs.World) { log.push(3) }),
+      ),
+    ),
+  )
+  app.run_once() |> ignore
+  inspect(log, content="[1, 2, 3]")
+}
+
+///|
+test "app: chained tuple preserves per-system run_if evaluation" {
+  let log : Array[String] = []
+  let app = App::new(@ecs.World::new()).add_systems(
+    Update,
+    chain(
+      (
+        system(fn(_world : @ecs.World) { log.push("first") }).run_if(fn(
+          _world : @ecs.World,
+        ) {
+          false
+        }),
+        system(fn(_world : @ecs.World) { log.push("second") }).run_if(fn(
+          _world : @ecs.World,
+        ) {
+          true
+        }),
+      ),
+    ),
+  )
+  app.run_once() |> ignore
+  inspect(log.join(","), content="second")
+}
+
+///|
 test "app: Last stage runs after PostUpdate" {
   let log : Array[String] = []
   let app = App::new(@ecs.World::new())

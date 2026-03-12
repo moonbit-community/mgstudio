@@ -22,6 +22,8 @@ pub fn app_runtime_reset() -> Unit
 
 pub fn app_stdin_read_line() -> String?
 
+pub fn[T : ChainedSystemConfigs] chain(T) -> SystemConfig[@ecs.World]
+
 pub fn[C] check_parent_has_component_message_key(@ecs.ComponentKey[C]) -> @ecs.MessageKey[CheckParentHasComponent[C]]
 
 pub fn current_schedule_stage() -> ScheduleStage?
@@ -742,6 +744,15 @@ pub type SystemFn[W] = (W) -> Unit
 pub type SystemSet = String
 
 // Traits
+pub(open) trait ChainedSystemConfigs {
+  chain(Self) -> SystemConfig[@ecs.World]
+}
+pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.World])
+pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World])
+pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World])
+pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World])
+pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World])
+
 pub(open) trait CommandSpawnComponents {
   spawn_components(Self, @ecs.World, @core.Entity, Int) -> Unit
 }

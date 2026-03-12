@@ -841,6 +841,202 @@ pub fn[W] SystemConfig::after(
 }
 
 ///|
+pub(open) trait ChainedSystemConfigs {
+  chain(Self) -> SystemConfig[@ecs.World]
+}
+
+///|
+pub fn[T : ChainedSystemConfigs] chain(configs : T) -> SystemConfig[@ecs.World] {
+  ChainedSystemConfigs::chain(configs)
+}
+
+///|
+fn run_chained_system_config(
+  world : @ecs.World,
+  config_ref : Ref[SystemConfig[@ecs.World]],
+) -> Unit {
+  let mut should_skip = false
+  for cond_i in 0..<config_ref.val.run_ifs.length() {
+    let cond = config_ref.val.run_ifs[cond_i]
+    let cond_this_run = world.increment_change_tick()
+    let cond_ticks = @core.SystemTicks::new(
+      config_ref.val.run_if_last_run_ticks[cond_i],
+      cond_this_run,
+    )
+    let cond_ctx = world.get_system_context()
+    cond_ctx.set(cond_ticks)
+    world.set_system_context(cond_ctx)
+    let prev_world = current_world_ref.val
+    current_world_ref.val = Some(world)
+    let prev_ticks = current_system_ticks_ref.val
+    current_system_ticks_ref.val = Some(cond_ticks)
+    let should_run = cond(world, config_ref.val.run_if_states[cond_i])
+    current_system_ticks_ref.val = prev_ticks
+    current_world_ref.val = prev_world
+    config_ref.val.run_if_last_run_ticks[cond_i] = cond_this_run
+    if !should_run {
+      should_skip = true
+      break
+    }
+  }
+  if should_skip {
+    return
+  }
+
+  let this_run = world.increment_change_tick()
+  let sys_ticks = @core.SystemTicks::new(config_ref.val.last_run_tick, this_run)
+  let ctx = world.get_system_context()
+  ctx.set(sys_ticks)
+  world.set_system_context(ctx)
+  let prev_world = current_world_ref.val
+  current_world_ref.val = Some(world)
+  let prev_ticks = current_system_ticks_ref.val
+  current_system_ticks_ref.val = Some(sys_ticks)
+  (config_ref.val.system)(world)
+  current_system_ticks_ref.val = prev_ticks
+  current_world_ref.val = prev_world
+  config_ref.val.last_run_tick = this_run
+}
+
+///|
+fn chain_copy_order_edges(
+  target : SystemConfig[@ecs.World],
+  source : SystemConfig[@ecs.World],
+) -> Unit {
+  for before_set in source.before {
+    target.before.push(before_set)
+  }
+  for after_set in source.after {
+    target.after.push(after_set)
+  }
+}
+
+///|
+pub impl ChainedSystemConfigs for (
+  SystemConfig[@ecs.World],
+  SystemConfig[@ecs.World],
+) with chain(self) {
+  let (first, second) = self
+  let first_ref = Ref::new(first)
+  let second_ref = Ref::new(second)
+  let chained = system(fn(world) {
+    run_chained_system_config(world, first_ref)
+    run_chained_system_config(world, second_ref)
+  })
+  chain_copy_order_edges(chained, first_ref.val)
+  chain_copy_order_edges(chained, second_ref.val)
+  chained
+}
+
+///|
+pub impl ChainedSystemConfigs for (
+  SystemConfig[@ecs.World],
+  SystemConfig[@ecs.World],
+  SystemConfig[@ecs.World],
+) with chain(self) {
+  let (first, second, third) = self
+  let first_ref = Ref::new(first)
+  let second_ref = Ref::new(second)
+  let third_ref = Ref::new(third)
+  let chained = system(fn(world) {
+    run_chained_system_config(world, first_ref)
+    run_chained_system_config(world, second_ref)
+    run_chained_system_config(world, third_ref)
+  })
+  chain_copy_order_edges(chained, first_ref.val)
+  chain_copy_order_edges(chained, second_ref.val)
+  chain_copy_order_edges(chained, third_ref.val)
+  chained
+}
+
+///|
+pub impl ChainedSystemConfigs for (
+  SystemConfig[@ecs.World],
+  SystemConfig[@ecs.World],
+  SystemConfig[@ecs.World],
+  SystemConfig[@ecs.World],
+) with chain(self) {
+  let (first, second, third, fourth) = self
+  let first_ref = Ref::new(first)
+  let second_ref = Ref::new(second)
+  let third_ref = Ref::new(third)
+  let fourth_ref = Ref::new(fourth)
+  let chained = system(fn(world) {
+    run_chained_system_config(world, first_ref)
+    run_chained_system_config(world, second_ref)
+    run_chained_system_config(world, third_ref)
+    run_chained_system_config(world, fourth_ref)
+  })
+  chain_copy_order_edges(chained, first_ref.val)
+  chain_copy_order_edges(chained, second_ref.val)
+  chain_copy_order_edges(chained, third_ref.val)
+  chain_copy_order_edges(chained, fourth_ref.val)
+  chained
+}
+
+///|
+pub impl ChainedSystemConfigs for (
+  SystemConfig[@ecs.World],
+  SystemConfig[@ecs.World],
+  SystemConfig[@ecs.World],
+  SystemConfig[@ecs.World],
+  SystemConfig[@ecs.World],
+) with chain(self) {
+  let (first, second, third, fourth, fifth) = self
+  let first_ref = Ref::new(first)
+  let second_ref = Ref::new(second)
+  let third_ref = Ref::new(third)
+  let fourth_ref = Ref::new(fourth)
+  let fifth_ref = Ref::new(fifth)
+  let chained = system(fn(world) {
+    run_chained_system_config(world, first_ref)
+    run_chained_system_config(world, second_ref)
+    run_chained_system_config(world, third_ref)
+    run_chained_system_config(world, fourth_ref)
+    run_chained_system_config(world, fifth_ref)
+  })
+  chain_copy_order_edges(chained, first_ref.val)
+  chain_copy_order_edges(chained, second_ref.val)
+  chain_copy_order_edges(chained, third_ref.val)
+  chain_copy_order_edges(chained, fourth_ref.val)
+  chain_copy_order_edges(chained, fifth_ref.val)
+  chained
+}
+
+///|
+pub impl ChainedSystemConfigs for (
+  SystemConfig[@ecs.World],
+  SystemConfig[@ecs.World],
+  SystemConfig[@ecs.World],
+  SystemConfig[@ecs.World],
+  SystemConfig[@ecs.World],
+  SystemConfig[@ecs.World],
+) with chain(self) {
+  let (first, second, third, fourth, fifth, sixth) = self
+  let first_ref = Ref::new(first)
+  let second_ref = Ref::new(second)
+  let third_ref = Ref::new(third)
+  let fourth_ref = Ref::new(fourth)
+  let fifth_ref = Ref::new(fifth)
+  let sixth_ref = Ref::new(sixth)
+  let chained = system(fn(world) {
+    run_chained_system_config(world, first_ref)
+    run_chained_system_config(world, second_ref)
+    run_chained_system_config(world, third_ref)
+    run_chained_system_config(world, fourth_ref)
+    run_chained_system_config(world, fifth_ref)
+    run_chained_system_config(world, sixth_ref)
+  })
+  chain_copy_order_edges(chained, first_ref.val)
+  chain_copy_order_edges(chained, second_ref.val)
+  chain_copy_order_edges(chained, third_ref.val)
+  chain_copy_order_edges(chained, fourth_ref.val)
+  chain_copy_order_edges(chained, fifth_ref.val)
+  chain_copy_order_edges(chained, sixth_ref.val)
+  chained
+}
+
+///|
 pub type RunnerFn = () -> Unit
 
 ///|
