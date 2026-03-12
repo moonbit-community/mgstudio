@@ -6,6 +6,11 @@ package "Milky2018/mgstudio/examples/input/text_input"
 // Errors
 
 // Types and methods
+type BubbleLine
+
+type EditTextState
+
+type StatusTextHandles
 
 // Type aliases
 

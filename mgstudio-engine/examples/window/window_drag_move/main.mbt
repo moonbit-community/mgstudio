@@ -79,11 +79,18 @@ fn cycle_left_click_action(action : LeftClickAction) -> LeftClickAction {
 }
 
 ///|
-fn instruction_text(action : LeftClickAction, direction : @math.CompassOctant) -> String {
+fn instruction_text(
+  action : LeftClickAction,
+  direction : @math.CompassOctant,
+) -> String {
   "Demonstrate drag move and drag resize without window decorations.\n\n" +
   "Controls:\n" +
-  "A - change left click action [" + action.to_string() + "]\n" +
-  "S / D - change resize direction [" + direction.to_string() + "]\n"
+  "A - change left click action [" +
+  action.to_string() +
+  "]\n" +
+  "S / D - change resize direction [" +
+  direction.to_string() +
+  "]\n"
 }
 
 ///|
@@ -132,7 +139,10 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@ui.IsDefaultUiCamera::component())
   .insert(overlay_camera, @ui.IsDefaultUiCamera::default(), camera_tick)
 
-  let content = instruction_text(LeftClickAction::Move, @math.CompassOctant::NorthWest)
+  let content = instruction_text(
+    LeftClickAction::Move,
+    @math.CompassOctant::NorthWest,
+  )
   let text_position = @math.Transform::from_xyz(
     -Float::from_int(@window.window_width()) * 0.5F + 12.0F,
     Float::from_int(@window.window_height()) * 0.5F - 12.0F,
@@ -221,7 +231,9 @@ fn move_or_resize_windows(
   }
   guard @app.current_world() is Some(world) else { return }
   let window_query = world.query1(@window.ecs_key_window)
-  world.query_entities_filtered(@ecs.With::new(@window.ecs_key_window)).view(fn(entity) {
+  world
+  .query_entities_filtered(@ecs.With::new(@window.ecs_key_window))
+  .view(fn(entity) {
     ignore(
       try! window_query.with_mut(entity, fn(window_mut) {
         let window_ref = window_mut.get_ref()
@@ -245,21 +257,20 @@ fn main {
   .insert_resource(LeftClickAction::Move)
   .add_plugin_group(fn() {
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
-      primary_window: Some({
-        let window = @window.Window::default()
-        window.decorations = false
-        window
-      }),
+      primary_window: Some(
+        {
+          let window = @window.Window::default()
+          window.decorations = false
+          window
+        },
+      ),
       primary_cursor_options: Some(@window.CursorOptions::default()),
       exit_condition: @window.ExitCondition::OnAllClosed,
       close_when_requested: true,
     })
   })
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param3(handle_input)),
-  )
+  .add_systems(@app.Update, @app.system(@app.system_param3(handle_input)))
   .add_systems(
     @app.Update,
     @app.system(@app.system_param3(move_or_resize_windows)),

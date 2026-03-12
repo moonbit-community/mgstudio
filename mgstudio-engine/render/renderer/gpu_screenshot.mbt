@@ -48,9 +48,7 @@ pub struct ScreenshotTextureRef {
 }
 
 ///|
-fn prepare_surface_capture_frame(
-  backend : GpuBackend,
-) -> Unit {
+fn prepare_surface_capture_frame(backend : GpuBackend) -> Unit {
   if backend.surface_capture_active {
     return
   }
@@ -302,9 +300,7 @@ fn screenshot_encode_active_surface_captures(
     backend.active_surface_target_id {
     return
   }
-  guard backend.surface_format is Some(surface_format) else {
-    return
-  }
+  guard backend.surface_format is Some(surface_format) else { return }
   let width = if backend.configured_width <= 0 {
     1
   } else {
@@ -334,9 +330,7 @@ fn screenshot_encode_active_surface_captures(
 }
 
 ///|
-fn screenshot_present_surface_capture(
-  backend : GpuBackend,
-) -> Unit {
+fn screenshot_present_surface_capture(backend : GpuBackend) -> Unit {
   if !backend.surface_capture_active {
     return
   }

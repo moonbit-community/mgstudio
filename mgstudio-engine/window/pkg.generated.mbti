@@ -26,6 +26,8 @@ pub let ecs_key_cursor_icon : @ecs.ComponentKey[CursorIcon]
 
 pub let ecs_key_cursor_options : @ecs.ComponentKey[CursorOptions]
 
+pub let ecs_key_ime : @ecs.MessageKey[Ime]
+
 pub let ecs_key_primary_window : @ecs.ComponentKey[PrimaryWindow]
 
 pub let ecs_key_request_redraw : @ecs.MessageKey[RequestRedraw]
@@ -96,6 +98,10 @@ pub fn host_window_set_decorations(Int, decorations~ : Bool) -> Unit
 
 pub fn host_window_set_enabled_buttons(Int, EnabledButtons) -> Unit
 
+pub fn host_window_set_ime_allowed(Int, allowed~ : Bool) -> Unit
+
+pub fn host_window_set_ime_cursor_area(Int, x~ : Int, y~ : Int, width? : Int, height? : Int) -> Unit
+
 pub fn host_window_set_mode(Int, mode~ : WindowMode) -> Unit
 
 pub fn host_window_set_position(Int, x~ : Int, y~ : Int) -> Unit
@@ -126,9 +132,15 @@ pub fn window_backend_sync_system(@ecs.World) -> Unit
 
 pub fn window_ensure_primary_host(@ecs.World) -> Int?
 
+pub fn window_entity_for_host(@ecs.World, Int) -> @core.Entity?
+
 pub fn window_entity_for_ref(@ecs.World, WindowRef) -> @core.Entity?
 
 pub fn window_height() -> Int
+
+pub fn window_host_entries(@ecs.World) -> Array[WindowHostEntry]
+
+pub fn window_host_window_for_ref(@ecs.World, WindowRef) -> Int?
 
 pub fn window_physical_height_for(@ecs.World, WindowRef) -> Int
 
@@ -143,6 +155,8 @@ pub fn window_poll_host_events(@ecs.World) -> Unit
 pub fn window_position_x() -> Int
 
 pub fn window_position_y() -> Int
+
+pub fn window_request_close_all_hosts(@ecs.World) -> Unit
 
 pub fn window_runner_builder(@app.App[@ecs.World]) -> () -> Unit
 
@@ -254,6 +268,24 @@ pub(all) enum HostEvent {
   WindowResized(Int, Int)
   WindowCloseRequested
 }
+
+pub(all) enum Ime {
+  Enabled(@core.Entity)
+  Preedit(@core.Entity, String, ImeCursorRange?)
+  Commit(@core.Entity, String)
+  Disabled(@core.Entity)
+  DeleteSurrounding(@core.Entity, Int, Int)
+}
+pub impl @ecs.Message for Ime
+pub impl Eq for Ime
+
+pub(all) struct ImeCursorRange {
+  start : Int
+  end : Int
+}
+pub fn ImeCursorRange::new(Int, Int) -> Self
+pub impl Eq for ImeCursorRange
+pub impl Show for ImeCursorRange
 
 pub(all) enum KeyCode {
   KeyA
@@ -425,6 +457,8 @@ pub(all) struct Window {
   mut prevent_default_event_handling : Bool
   mut window_theme : WindowTheme?
   mut visible : Bool
+  mut ime_enabled : Bool
+  mut ime_position : @math.Vec2
   mut drag_move_request : Bool
   mut drag_resize_request : @math.CompassOctant?
 }
@@ -437,8 +471,6 @@ pub fn Window::start_drag_move(Self) -> Unit
 pub fn Window::start_drag_resize(Self, @math.CompassOctant) -> Unit
 pub fn Window::width(Self) -> Float
 pub impl @ecs.Component for Window
-pub impl Eq for Window
-pub impl Show for Window
 
 pub(all) struct WindowBackendScaleFactorChanged {
   window : @core.Entity
@@ -483,6 +515,12 @@ pub(all) struct WindowFocused {
 }
 pub impl @ecs.Message for WindowFocused
 pub impl Eq for WindowFocused
+
+pub struct WindowHostEntry {
+  entity : @core.Entity
+  host_window : Int
+}
+pub fn WindowHostEntry::new(@core.Entity, Int) -> Self
 
 pub(all) enum WindowLevel {
   AlwaysOnBottom

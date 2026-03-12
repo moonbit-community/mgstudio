@@ -750,6 +750,7 @@ fn GpuBackend::create_render_target_with_format(
   id
 }
 
+///|
 fn target_view(
   backend : GpuBackend,
   target_id : Int,

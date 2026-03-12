@@ -55,9 +55,9 @@ fn default_surface_target_id(backend : GpuBackend) -> Int? {
 ///|
 fn sync_active_surface_legacy_state(backend : GpuBackend) -> Unit {
   guard surface_state_index_by_target_id(
-    backend,
-    backend.active_surface_target_id,
-  )
+      backend,
+      backend.active_surface_target_id,
+    )
     is Some(index) else {
     backend.surface = None
     backend.surface_format = None
@@ -78,9 +78,9 @@ fn sync_active_surface_legacy_state(backend : GpuBackend) -> Unit {
 fn store_active_surface_frame(backend : GpuBackend) -> Unit {
   guard backend.frame is Some(frame) else { return }
   guard surface_state_index_by_target_id(
-    backend,
-    backend.active_surface_target_id,
-  )
+      backend,
+      backend.active_surface_target_id,
+    )
     is Some(index) else {
     backend.frame = None
     return
@@ -111,9 +111,10 @@ fn activate_surface_frame_for_target(
     backend.active_surface_target_id = desired_target_id
   }
   if backend.frame is None {
-    guard surface_state_index_by_target_id(backend, desired_target_id) is Some(
-      index,
-    ) else { return false }
+    guard surface_state_index_by_target_id(backend, desired_target_id)
+      is Some(index) else {
+      return false
+    }
     guard backend.surfaces[index].frame is Some(frame) else { return false }
     backend.surfaces[index].frame = None
     backend.frame = Some(frame)
@@ -129,10 +130,12 @@ fn set_active_surface_cleared_state(
 ) -> Unit {
   backend.surface_cleared_this_frame = cleared
   guard surface_state_index_by_target_id(
-    backend,
-    backend.active_surface_target_id,
-  )
-    is Some(index) else { return }
+      backend,
+      backend.active_surface_target_id,
+    )
+    is Some(index) else {
+    return
+  }
   backend.surfaces[index].cleared_this_frame = cleared
 }
 
@@ -161,6 +164,7 @@ fn surface_target_size(backend : GpuBackend, target_id : Int) -> (Int, Int)? {
   Some((state.configured_width, state.configured_height))
 }
 
+///|
 pub fn GpuBackend::set_active_surface_target(
   self : GpuBackend,
   target_id : Int,
@@ -230,7 +234,13 @@ pub fn GpuBackend::configure_surface_binding(
   let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
     @wgpu.TEXTURE_USAGE_COPY_SRC
   let usage = @wgpu.TextureUsage::from_u64(usage_bits)
-  let format = state.surface.configure_default(self.adapter, self.device, w, h, usage)
+  let format = state.surface.configure_default(
+    self.adapter,
+    self.device,
+    w,
+    h,
+    usage,
+  )
   self.surfaces[index].configured_width = width
   self.surfaces[index].configured_height = height
   self.surfaces[index].surface_format = Some(format)

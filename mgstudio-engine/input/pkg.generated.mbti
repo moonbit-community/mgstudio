@@ -504,6 +504,7 @@ pub struct KeyboardInput {
   logical_key : Key
   state : ButtonState
   repeat : Bool
+  text : String?
 }
 pub impl @ecs.Message for KeyboardInput
 pub impl ToJson for KeyboardInput

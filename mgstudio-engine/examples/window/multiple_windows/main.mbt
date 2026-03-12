@@ -25,7 +25,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   // Scene
   let scene_entity = world.spawn_empty()
-  world.component(@scene.ecs_key_scene_root).insert(
+  world
+  .component(@scene.ecs_key_scene_root)
+  .insert(
     scene_entity,
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(
@@ -38,12 +40,12 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   // Directional light
   let light = world.spawn_empty()
-  world.component(@pbr.ecs_key_directional_light).insert(
-    light,
-    @pbr.DirectionalLight::default(),
-    tick,
-  )
-  world.component(@math.ecs_key_transform).insert(
+  world
+  .component(@pbr.ecs_key_directional_light)
+  .insert(light, @pbr.DirectionalLight::default(), tick)
+  world
+  .component(@math.ecs_key_transform)
+  .insert(
     light,
     @math.Transform::from_xyz(3.0F, 3.0F, 3.0F).looking_at(
       @math.Vec3::zero(),
@@ -71,21 +73,27 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   // Camera for secondary window
   let second_window_camera = @pbr.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    @math.Transform::from_xyz(6.0F, 0.0F, 0.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  )
-  .with_target(@sprite.RenderTarget::Window(@window.WindowRef::Entity(second_window)))
-  .spawn(world)
+      @sprite.Camera::default(),
+      @math.Transform::from_xyz(6.0F, 0.0F, 0.0F).looking_at(
+        @math.Vec3::zero(),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
+    )
+    .with_target(
+      @sprite.RenderTarget::Window(@window.WindowRef::Entity(second_window)),
+    )
+    .spawn(world)
 
   spawn_label(world, first_window_camera, "First window")
   spawn_label(world, second_window_camera, "Second window")
 }
 
 ///|
-fn spawn_label(world : @ecs.World, camera : @core.Entity, label : String) -> Unit {
+fn spawn_label(
+  world : @ecs.World,
+  camera : @core.Entity,
+  label : String,
+) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let text_handle = @text.Text2dBundle::new(

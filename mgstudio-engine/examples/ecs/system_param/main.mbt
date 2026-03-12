@@ -32,7 +32,10 @@ struct PlayerCounter[P0, P1] {
 }
 
 ///|
-type PlayerCounterParam = PlayerCounter[@ecs.Query1[Player], @app.ResMut[PlayerCount]]
+type PlayerCounterParam = PlayerCounter[
+  @ecs.Query1[Player],
+  @app.ResMut[PlayerCount],
+]
 
 ///|
 let player_key : @ecs.ComponentKey[Player] = @ecs.register_component(
@@ -54,6 +57,7 @@ impl @app.Resource for PlayerCount with resource() {
   player_count_key
 }
 
+///|
 fn player_counter_decode_state(state : Ref[Json]) -> (Json, Json) {
   try @json.from_json(state.val) catch {
     _ => (Json::null(), Json::null())
@@ -63,14 +67,18 @@ fn player_counter_decode_state(state : Ref[Json]) -> (Json, Json) {
 }
 
 ///|
-impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCounter[P0, P1]
-  with init_state(world) {
+impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCounter[
+  P0,
+  P1,
+] with init_state(world) {
   (P0::init_state(world), P1::init_state(world)).to_json()
 }
 
 ///|
-impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCounter[P0, P1]
-  with get(state) {
+impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCounter[
+  P0,
+  P1,
+] with get(state) {
   let (players_state, count_state) = player_counter_decode_state(state)
   let players_state_ref = Ref::new(players_state)
   let count_state_ref = Ref::new(count_state)
@@ -83,8 +91,10 @@ impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCo
 }
 
 ///|
-impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCounter[P0, P1]
-  with store(self, state) {
+impl[P0 : @app.SystemParam, P1 : @app.SystemParam] @app.SystemParam for PlayerCounter[
+  P0,
+  P1,
+] with store(self, state) {
   P0::store(self.players, self.players_state)
   P1::store(self.count, self.count_state)
   state.val = (self.players_state.val, self.count_state.val).to_json()

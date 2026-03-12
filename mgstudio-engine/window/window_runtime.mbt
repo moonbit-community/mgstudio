@@ -463,7 +463,11 @@ fn window_apply_position(
 }
 
 ///|
-fn window_apply_ime_settings(window : HostWindow, ime_enabled : Bool, ime_position : @math.Vec2) -> Unit {
+fn window_apply_ime_settings(
+  window : HostWindow,
+  ime_enabled : Bool,
+  ime_position : @math.Vec2,
+) -> Unit {
   host_window_set_ime_allowed(window, allowed=ime_enabled)
   host_window_set_ime_cursor_area(
     window,
@@ -563,7 +567,11 @@ fn window_create_runtime_for_entity(
   host_window_set_transparent(host_window, transparent=window.transparent)
   host_window_set_window_level(host_window, level=window.window_level)
   host_window_set_theme(host_window, theme=window.window_theme)
-  window_apply_ime_settings(host_window, window.ime_enabled, window.ime_position)
+  window_apply_ime_settings(
+    host_window,
+    window.ime_enabled,
+    window.ime_position,
+  )
   host_window_set_cursor_visible(host_window, visible=cursor_options.visible)
   host_window_set_cursor_grab_mode(host_window, mode=cursor_options.grab_mode)
   if cursor_icon is Some(cursor_icon0) {
@@ -667,8 +675,15 @@ fn window_sync_requested_state(
     runtime_ref.val.last_applied_window_theme = window.window_theme
   }
   if window.ime_enabled != runtime_ref.val.last_applied_ime_enabled ||
-    !window_vec2_eq(window.ime_position, runtime_ref.val.last_applied_ime_position) {
-    window_apply_ime_settings(host_window, window.ime_enabled, window.ime_position)
+    !window_vec2_eq(
+      window.ime_position,
+      runtime_ref.val.last_applied_ime_position,
+    ) {
+    window_apply_ime_settings(
+      host_window,
+      window.ime_enabled,
+      window.ime_position,
+    )
     runtime_ref.val.last_applied_ime_enabled = window.ime_enabled
     runtime_ref.val.last_applied_ime_position = window.ime_position
   }

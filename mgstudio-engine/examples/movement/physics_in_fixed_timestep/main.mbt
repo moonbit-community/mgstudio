@@ -96,7 +96,7 @@ let physical_translation_key : @ecs.ComponentKey[PhysicalTranslation] = @ecs.reg
 
 ///|
 let previous_physical_translation_key : @ecs.ComponentKey[
-  PreviousPhysicalTranslation
+  PreviousPhysicalTranslation,
 ] = @ecs.register_component(
   debug_name="examples.movement.physics_in_fixed_timestep.PreviousPhysicalTranslation",
 )
@@ -107,9 +107,7 @@ let camera_sensitivity_key : @ecs.ComponentKey[CameraSensitivity] = @ecs.registe
 )
 
 ///|
-let fixed_frame_flag_key : @ecs.ResourceKey[
-  DidFixedTimestepRunThisFrame
-] = @ecs.register_resource(
+let fixed_frame_flag_key : @ecs.ResourceKey[DidFixedTimestepRunThisFrame] = @ecs.register_resource(
   debug_name="examples.movement.physics_in_fixed_timestep.DidFixedTimestepRunThisFrame",
 )
 
@@ -284,7 +282,9 @@ fn spawn_player(world : @ecs.World) -> Unit {
   world
   .component(AccumulatedInput::component())
   .insert(player, AccumulatedInput::default(), tick)
-  world.component(Velocity::component()).insert(player, Velocity::default(), tick)
+  world
+  .component(Velocity::component())
+  .insert(player, Velocity::default(), tick)
   world
   .component(PhysicalTranslation::component())
   .insert(player, PhysicalTranslation::default(), tick)
@@ -342,9 +342,9 @@ fn spawn_environment(world : @ecs.World) -> Unit {
 fn clear_fixed_timestep_flag(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
   guard (try! world.get_resource_ref_mut(
-    DidFixedTimestepRunThisFrame::resource(),
-    tick,
-  ))
+      DidFixedTimestepRunThisFrame::resource(),
+      tick,
+    ))
     is Some(flag) else {
     return
   }
@@ -355,9 +355,9 @@ fn clear_fixed_timestep_flag(world : @ecs.World) -> Unit {
 fn set_fixed_time_step_flag(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
   guard (try! world.get_resource_ref_mut(
-    DidFixedTimestepRunThisFrame::resource(),
-    tick,
-  ))
+      DidFixedTimestepRunThisFrame::resource(),
+      tick,
+    ))
     is Some(flag) else {
     return
   }
@@ -451,11 +451,13 @@ fn accumulate_input(world : @ecs.World) -> Unit {
     let next_input = input
     next_input.movement = movement
     let next_velocity = existing_velocity
-    let velocity_from_input = camera_transform.right().mul_scalar(
-      next_input.movement.x,
-    ).add(camera_transform.forward().mul_scalar(next_input.movement.y))
-    next_velocity.value = vec3_clamp_length_max(velocity_from_input, 1.0F)
-      .mul_scalar(PLAYER_SPEED)
+    let velocity_from_input = camera_transform
+      .right()
+      .mul_scalar(next_input.movement.x)
+      .add(camera_transform.forward().mul_scalar(next_input.movement.y))
+    next_velocity.value = vec3_clamp_length_max(velocity_from_input, 1.0F).mul_scalar(
+      PLAYER_SPEED,
+    )
     ignore(accumulated_input_store.set(entity, next_input, tick))
     ignore(velocity_store.set(entity, next_velocity, tick))
   })
@@ -488,7 +490,9 @@ fn advance_physics(world : @ecs.World) -> Unit {
   let previous_store = world.component(PreviousPhysicalTranslation::component())
   let velocity_store = world.component(Velocity::component())
   current_store.for_each(fn(entity, current_translation) {
-    guard previous_store.get(entity) is Some(previous_translation) else { return }
+    guard previous_store.get(entity) is Some(previous_translation) else {
+      return
+    }
     guard velocity_store.get(entity) is Some(velocity) else { return }
 
     let next_previous = previous_translation
@@ -511,7 +515,9 @@ fn interpolate_rendered_transform(world : @ecs.World) -> Unit {
   let previous_store = world.component(PreviousPhysicalTranslation::component())
   let transform_store = world.component(@math.Transform::component())
   current_store.for_each(fn(entity, current_translation) {
-    guard previous_store.get(entity) is Some(previous_translation) else { return }
+    guard previous_store.get(entity) is Some(previous_translation) else {
+      return
+    }
     guard transform_store.get(entity) is Some(transform) else { return }
     let next_transform = transform
     next_transform.translation = previous_translation.value.interpolate(
@@ -546,7 +552,9 @@ fn first_player_translation(world : @ecs.World) -> @math.Vec3? {
 
 ///|
 fn translate_camera(world : @ecs.World) -> Unit {
-  guard first_player_translation(world) is Some(player_translation) else { return }
+  guard first_player_translation(world) is Some(player_translation) else {
+    return
+  }
   let tick = world.increment_change_tick()
   let transform_store = world.component(@math.Transform::component())
   world
@@ -606,24 +614,27 @@ fn main {
     .before(fixed_main_loop_set),
   )
   .add_run_fixed_main_loop_system_config(
-    @app.system(accumulate_input).in_set(SET_ACCUMULATE_INPUT).before(
-      fixed_main_loop_set,
-    ),
+    @app.system(accumulate_input)
+    .in_set(SET_ACCUMULATE_INPUT)
+    .before(fixed_main_loop_set),
   )
   .add_run_fixed_main_loop_system_config(
-    @app.system(clear_input).run_if(did_fixed_timestep_run_this_frame).in_set(
-      SET_CLEAR_INPUT,
-    ).after(fixed_main_loop_set).before(SET_INTERPOLATE_TRANSFORM),
+    @app.system(clear_input)
+    .run_if(did_fixed_timestep_run_this_frame)
+    .in_set(SET_CLEAR_INPUT)
+    .after(fixed_main_loop_set)
+    .before(SET_INTERPOLATE_TRANSFORM),
   )
   .add_run_fixed_main_loop_system_config(
-    @app.system(interpolate_rendered_transform).in_set(SET_INTERPOLATE_TRANSFORM)
+    @app.system(interpolate_rendered_transform)
+    .in_set(SET_INTERPOLATE_TRANSFORM)
     .after(fixed_main_loop_set)
     .before(SET_TRANSLATE_CAMERA),
   )
   .add_run_fixed_main_loop_system_config(
-    @app.system(translate_camera).in_set(SET_TRANSLATE_CAMERA).after(
-      fixed_main_loop_set,
-    ),
+    @app.system(translate_camera)
+    .in_set(SET_TRANSLATE_CAMERA)
+    .after(fixed_main_loop_set),
   )
   .run()
 }

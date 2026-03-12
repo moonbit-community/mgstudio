@@ -77,7 +77,9 @@ fn setup_scene(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraMono-Medium.ttf")
   let ui_font = @text.TextFont::default().with_font(font).with_font_size(30.0F)
-  let edit_font = @text.TextFont::default().with_font(font).with_font_size(100.0F)
+  let edit_font = @text.TextFont::default()
+    .with_font(font)
+    .with_font_size(100.0F)
 
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
@@ -96,35 +98,20 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   ignore(
     spawn_ui_text_line(
-      world,
-      root,
-      tick,
-      "Click to toggle IME. Press return to start a new line.\n",
+      world, root, tick, "Click to toggle IME. Press return to start a new line.\n",
       ui_font,
     ),
   )
   ignore(spawn_ui_text_line(world, root, tick, "\n", ui_font))
 
   let ime_enabled = spawn_ui_text_line(
-    world,
-    root,
-    tick,
-    "IME Enabled: false\n",
-    ui_font,
+    world, root, tick, "IME Enabled: false\n", ui_font,
   )
   let ime_active = spawn_ui_text_line(
-    world,
-    root,
-    tick,
-    "IME Active:  false\n",
-    ui_font,
+    world, root, tick, "IME Active:  false\n", ui_font,
   )
   let ime_buffer = spawn_ui_text_line(
-    world,
-    root,
-    tick,
-    "IME Buffer:  \n",
-    ui_font,
+    world, root, tick, "IME Buffer:  \n", ui_font,
   )
   status_text_handles_ref.val = Some(StatusTextHandles::{
     ime_enabled,
@@ -133,12 +120,14 @@ fn setup_scene(world : @ecs.World) -> Unit {
   })
 
   let edit_handle = @text.Text2dBundle::new(
-      @text.Text2d::new(""),
-      edit_font,
-      @math.Transform::identity(),
-    )
-    .spawn()
-  edit_text_state_ref.val = Some(EditTextState::{ handle: edit_handle, font: edit_font })
+    @text.Text2d::new(""),
+    edit_font,
+    @math.Transform::identity(),
+  ).spawn()
+  edit_text_state_ref.val = Some(EditTextState::{
+    handle: edit_handle,
+    font: edit_font,
+  })
   bubble_lines_ref.val.clear()
 }
 
@@ -151,17 +140,18 @@ fn spawn_ui_text_line(
   font : @text.TextFont,
 ) -> @text.TextHandle {
   let handle = @text.Text2dBundle::new(
-      @text.Text2d::new(content),
-      font,
-      @math.Transform::identity(),
-    )
-    .spawn()
+    @text.Text2d::new(content),
+    font,
+    @math.Transform::identity(),
+  ).spawn()
 
   let text_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
   .insert(text_entity, @hierarchy.Parent::new(root), tick)
-  world.component(@ui.ecs_key_node).insert(text_entity, @ui.Node::default(), tick)
+  world
+  .component(@ui.ecs_key_node)
+  .insert(text_entity, @ui.Node::default(), tick)
   world
   .component(@ui.ecs_key_ui_text)
   .insert(text_entity, @ui.UiText::new(handle), tick)
@@ -243,7 +233,9 @@ fn toggle_ime_system(mouse : @input.ButtonInput[@window.MouseButton]) -> Unit {
 }
 
 ///|
-fn listen_ime_events_system(ime_reader : @ecs.MessageReader[@window.Ime]) -> Unit {
+fn listen_ime_events_system(
+  ime_reader : @ecs.MessageReader[@window.Ime],
+) -> Unit {
   for ime in (try! ime_reader.read()) {
     match ime {
       Enabled(_) => set_ime_active_text(true)
@@ -316,11 +308,10 @@ fn commit_text_line() -> Unit {
     return
   }
   let handle = @text.Text2dBundle::new(
-      @text.Text2d::new(committed),
-      edit_state.font,
-      @math.Transform::identity(),
-    )
-    .spawn()
+    @text.Text2d::new(committed),
+    edit_state.font,
+    @math.Transform::identity(),
+  ).spawn()
   bubble_lines_ref.val.push(BubbleLine::{
     handle,
     timer: @time.Timer::from_seconds(5.0F, @time.TimerMode::Once),

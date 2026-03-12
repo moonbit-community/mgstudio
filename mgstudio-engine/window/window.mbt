@@ -232,10 +232,10 @@ pub fn host_window_create(
   physical_height~ : Int,
   use_physical_size_on_create~ : Bool,
   title~ : String,
-  visible~ : Bool = true,
-  resizable~ : Bool = true,
-  decorations~ : Bool = true,
-  panel~ : Bool = false,
+  visible? : Bool = true,
+  resizable? : Bool = true,
+  decorations? : Bool = true,
+  panel? : Bool = false,
 ) -> HostWindow {
   @windowing.create(
     logical_width~,
@@ -508,8 +508,8 @@ pub fn host_window_set_ime_cursor_area(
   window : HostWindow,
   x~ : Int,
   y~ : Int,
-  width~ : Int = 1,
-  height~ : Int = 1,
+  width? : Int = 1,
+  height? : Int = 1,
 ) -> Unit {
   @windowing.set_ime_cursor_area(window, x~, y~, width~, height~)
 }
@@ -617,8 +617,7 @@ fn screenshot_pixels_have_non_black_rgb(pixels : Bytes) -> Bool {
 fn screenshot_try_non_black_texture_capture(
   texture_id : Int,
 ) -> @renderer.ScreenshotCaptureResult? {
-  guard @render.screenshot_capture_texture_sync(texture_id=texture_id)
-    is Some(capture) else {
+  guard @render.screenshot_capture_texture_sync(texture_id~) is Some(capture) else {
     return None
   }
   if !screenshot_pixels_have_non_black_rgb(capture.pixels) {
@@ -651,12 +650,12 @@ fn screenshot_capture_with_texture_fallback(
     }
     host_debug_string(
       value="[screenshot] surface capture is black; fallback texture_id=" +
-      texture_ref.id.to_string() +
-      " (" +
-      texture_ref.width.to_string() +
-      "x" +
-      texture_ref.height.to_string() +
-      ")",
+        texture_ref.id.to_string() +
+        " (" +
+        texture_ref.width.to_string() +
+        "x" +
+        texture_ref.height.to_string() +
+        ")",
     )
     return Some(texture_capture)
   }
@@ -664,7 +663,7 @@ fn screenshot_capture_with_texture_fallback(
   if fallback_upper_bound > 0 {
     host_debug_string(
       value="[screenshot] surface capture remains black; no non-black same-size texture in resource_id<= " +
-      fallback_upper_bound.to_string(),
+        fallback_upper_bound.to_string(),
     )
   }
   Some(surface_capture)
@@ -1021,10 +1020,10 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
             height > 0 &&
             (width != previous.width || height != previous.height) {
             @render.host_gpu_configure_surface(
-              device=device,
+              device~,
               surface=previous.surface,
-              width=width,
-              height=height,
+              width~,
+              height~,
             )
           }
           next_surfaces.push(RunnerSurfaceBinding::{
@@ -1042,12 +1041,7 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
         let width = host_window_get_width(host_window)
         let height = host_window_get_height(host_window)
         if width > 0 && height > 0 {
-          @render.host_gpu_configure_surface(
-            device=device,
-            surface=surface,
-            width=width,
-            height=height,
-          )
+          @render.host_gpu_configure_surface(device~, surface~, width~, height~)
         }
         next_surfaces.push(RunnerSurfaceBinding::{
           host_window,
@@ -1092,7 +1086,7 @@ pub fn window_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
           @render.host_gpu_set_active_surface_target(binding.target_id)
           let frame = @render.host_gpu_begin_frame(binding.surface)
           if frame > 0 {
-            frame_bindings.push(RunnerFrameBinding::{ frame })
+            frame_bindings.push(RunnerFrameBinding::{ frame, })
           }
         }
         app_ref.val = app_ref.val.run_once()

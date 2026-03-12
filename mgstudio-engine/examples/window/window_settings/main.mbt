@@ -88,7 +88,10 @@ fn update_primary_cursor_options(
 }
 
 ///|
-fn set_primary_cursor_icon(world : @ecs.World, icon : @window.CursorIcon) -> Unit {
+fn set_primary_cursor_icon(
+  world : @ecs.World,
+  icon : @window.CursorIcon,
+) -> Unit {
   guard primary_window_entity(world) is Some(entity) else { return }
   let tick = world.read_change_tick()
   let store = world.component(@window.ecs_key_cursor_icon)
@@ -119,9 +122,12 @@ fn toggle_vsync(input : @input.ButtonInput[@window.KeyCode]) -> Unit {
     return
   }
   guard @app.current_world() is Some(world) else { return }
-  let present_mode_ref : Ref[@window.PresentMode] = Ref::new(@window.PresentMode::AutoVsync)
+  let present_mode_ref : Ref[@window.PresentMode] = Ref::new(
+    @window.PresentMode::AutoVsync,
+  )
   update_primary_window(world, fn(window) {
-    window.present_mode = if window.present_mode == @window.PresentMode::AutoVsync {
+    window.present_mode = if window.present_mode ==
+      @window.PresentMode::AutoVsync {
       @window.PresentMode::AutoNoVsync
     } else {
       @window.PresentMode::AutoVsync
@@ -137,7 +143,9 @@ fn switch_level(input : @input.ButtonInput[@window.KeyCode]) -> Unit {
     return
   }
   guard @app.current_world() is Some(world) else { return }
-  let level_ref : Ref[@window.WindowLevel] = Ref::new(@window.WindowLevel::Normal)
+  let level_ref : Ref[@window.WindowLevel] = Ref::new(
+    @window.WindowLevel::Normal,
+  )
   update_primary_window(world, fn(window) {
     window.window_level = match window.window_level {
       @window.WindowLevel::AlwaysOnBottom => @window.WindowLevel::Normal

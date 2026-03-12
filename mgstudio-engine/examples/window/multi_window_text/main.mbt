@@ -125,7 +125,12 @@ fn setup_scene(world : @ecs.World) -> Unit {
   ).spawn(world)
 
   spawn_ui_label(world, UI_TEXT_PRIMARY, None, text_font)
-  spawn_ui_label(world, UI_TEXT_SECONDARY, Some(secondary_window_camera), text_font)
+  spawn_ui_label(
+    world,
+    UI_TEXT_SECONDARY,
+    Some(secondary_window_camera),
+    text_font,
+  )
 
   @text.Text2dBundle::new(
     @text.Text2d::new(TEXT2D_PRIMARY),

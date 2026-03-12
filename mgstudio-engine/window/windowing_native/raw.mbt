@@ -419,7 +419,13 @@ fn push_ime_event(
   if ime_events_ref.val.length() >= MAX_IME_EVENTS {
     return
   }
-  ime_events_ref.val.push(ImeEvent::{ window, kind, text, cursor_start, cursor_end })
+  ime_events_ref.val.push(ImeEvent::{
+    window,
+    kind,
+    text,
+    cursor_start,
+    cursor_end,
+  })
 }
 
 ///|
@@ -626,7 +632,9 @@ fn process_input_events(window : Int) -> Unit {
       let ime_text = host_window_input_event_ime_text(window)
       let ime_cursor_start = host_window_input_event_ime_cursor_start(window)
       let ime_cursor_end = host_window_input_event_ime_cursor_end(window)
-      push_ime_event(window, ime_kind, ime_text, ime_cursor_start, ime_cursor_end)
+      push_ime_event(
+        window, ime_kind, ime_text, ime_cursor_start, ime_cursor_end,
+      )
       if ime_kind == IME_EVENT_COMMIT {
         push_text_event(ime_text)
       }
@@ -676,15 +684,7 @@ pub fn create_utf8(
     logical_height
   }
   let window = host_window_create_utf8(
-    width,
-    height,
-    visible,
-    true,
-    resizable,
-    decorations,
-    panel,
-    title,
-    title_len,
+    width, height, visible, true, resizable, decorations, panel, title, title_len,
   )
   mark_window_open(window)
   window
@@ -1424,19 +1424,13 @@ extern "C" fn host_window_set_transparent(
 ) -> Unit = "mbw_window_set_transparent"
 
 ///|
-extern "C" fn host_window_set_window_level(
-  window : Int,
-  level : Int,
-) -> Unit = "mbw_window_set_window_level"
+extern "C" fn host_window_set_window_level(window : Int, level : Int) -> Unit = "mbw_window_set_window_level"
 
 ///|
 extern "C" fn host_window_set_theme(window : Int, theme : Int) -> Unit = "mbw_window_set_theme"
 
 ///|
-extern "C" fn host_window_set_ime_allowed(
-  window : Int,
-  allowed : Bool,
-) -> Unit = "mbw_window_set_ime_allowed"
+extern "C" fn host_window_set_ime_allowed(window : Int, allowed : Bool) -> Unit = "mbw_window_set_ime_allowed"
 
 ///|
 extern "C" fn host_window_set_ime_cursor_area(
@@ -1537,9 +1531,7 @@ extern "C" fn host_window_input_event_ime_kind(window : Int) -> Int = "mbw_windo
 extern "C" fn host_window_input_event_ime_text(window : Int) -> Bytes = "mbw_window_input_event_ime_text"
 
 ///|
-extern "C" fn host_window_input_event_ime_cursor_start(
-  window : Int,
-) -> Int = "mbw_window_input_event_ime_cursor_start"
+extern "C" fn host_window_input_event_ime_cursor_start(window : Int) -> Int = "mbw_window_input_event_ime_cursor_start"
 
 ///|
 extern "C" fn host_window_input_event_ime_cursor_end(window : Int) -> Int = "mbw_window_input_event_ime_cursor_end"

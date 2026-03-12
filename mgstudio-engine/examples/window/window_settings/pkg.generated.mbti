@@ -6,8 +6,6 @@ package "Milky2018/mgstudio/examples/window/window_settings"
 // Errors
 
 // Types and methods
-type CursorIconIndex
-
 type CursorIcons
 
 // Type aliases

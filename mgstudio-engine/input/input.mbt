@@ -1443,7 +1443,10 @@ fn input_ime_event_at(world : @ecs.World, index : Int) -> @window.Ime? {
     }
     3 => Some(@window.Ime::Commit(window_entity0, text))
     4 => Some(@window.Ime::Disabled(window_entity0))
-    5 => Some(@window.Ime::DeleteSurrounding(window_entity0, cursor_start, cursor_end))
+    5 =>
+      Some(
+        @window.Ime::DeleteSurrounding(window_entity0, cursor_start, cursor_end),
+      )
     _ => None
   }
 }
@@ -1501,7 +1504,11 @@ pub fn input_poll_keyboard_system(world : @ecs.World) -> Unit {
       ButtonState::Released
     }
     let logical_key = logical_key_from_keycode(code)
-    let text = if state.is_pressed() { input_keyboard_event_text(i) } else { None }
+    let text = if state.is_pressed() {
+      input_keyboard_event_text(i)
+    } else {
+      None
+    }
     ignore(
       keyboard_writer.write(KeyboardInput::{
         key_code: code,
