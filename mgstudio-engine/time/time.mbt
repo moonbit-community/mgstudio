@@ -75,15 +75,6 @@ fn time_elapsed_wrapped_for(
 }
 
 ///|
-fn time_time_or_default() -> Time[Unit] {
-  world_time_resource_or_default(
-    current_time_world_abort_missing(),
-    default_time_resource_key(),
-    fn() { Time::default() },
-  )
-}
-
-///|
 pub fn[T] Time::new_with(context : T) -> Time[T] {
   {
     context,
@@ -234,24 +225,4 @@ pub fn[T] Time::as_generic(self : Time[T]) -> Time[Unit] {
     elapsed_secs_wrapped: self.elapsed_secs_wrapped,
     elapsed_secs_wrapped_f64: self.elapsed_secs_wrapped_f64,
   }
-}
-
-///|
-pub fn time_delta() -> @core.Duration {
-  time_time_or_default().delta()
-}
-
-///|
-pub fn time_delta_seconds() -> Float {
-  time_time_or_default().delta_seconds()
-}
-
-///|
-pub fn time_elapsed() -> @core.Duration {
-  time_time_or_default().elapsed()
-}
-
-///|
-pub fn time_elapsed_seconds() -> Float {
-  time_time_or_default().elapsed_seconds()
 }

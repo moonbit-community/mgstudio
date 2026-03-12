@@ -32,14 +32,6 @@ pub fn repeating_after_delay(@core.Duration) -> (@ecs.World) -> Bool
 
 pub fn repeating_after_real_delay(@core.Duration) -> (@ecs.World) -> Bool
 
-pub fn time_delta() -> @core.Duration
-
-pub fn time_delta_seconds() -> Float
-
-pub fn time_elapsed() -> @core.Duration
-
-pub fn time_elapsed_seconds() -> Float
-
 pub fn time_fixed_delta() -> @core.Duration
 
 pub fn time_fixed_delta_seconds() -> Float
