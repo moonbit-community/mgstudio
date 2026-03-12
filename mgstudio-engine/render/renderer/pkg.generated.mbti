@@ -11,6 +11,8 @@ pub fn apply_bloom2d(scene_texture_id~ : Int, enabled~ : Int, intensity~ : Float
 
 pub fn asset_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
 
+pub fn asset_create_texture_3d_with_format(width~ : Int, height~ : Int, depth~ : Int, format_raw~ : Int, pixels~ : Bytes) -> Int
+
 pub fn asset_create_texture_empty(width~ : Int, height~ : Int, mip_level_count~ : Int, nearest~ : Bool) -> Int
 
 pub fn asset_create_texture_mip_view(texture_id~ : Int, mip_level~ : Int) -> Int
@@ -275,6 +277,7 @@ pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int raise GpuBa
 pub fn GpuBackend::create_render_target_rgba16f(Self, Int, Int, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_surface(Self, Int) -> Unit
 pub fn GpuBackend::create_surface_binding(Self, Int, Int, Int) -> Unit
+pub fn GpuBackend::create_texture_3d_with_format(Self, Int, Int, Int, UInt, Array[Bytes]) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_mip_view(Self, Int, Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_stacked_2d_with_format(Self, Int, Int, Int, UInt, Array[Bytes], Bool) -> Int raise GpuBackendError

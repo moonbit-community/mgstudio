@@ -1171,6 +1171,23 @@ pub fn asset_create_texture_empty(
 }
 
 ///|
+pub fn asset_create_texture_3d_with_format(
+  width~ : Int,
+  height~ : Int,
+  depth~ : Int,
+  format_raw~ : Int,
+  pixels~ : Bytes,
+) -> Int {
+  @renderer.asset_create_texture_3d_with_format(
+    width~,
+    height~,
+    depth~,
+    format_raw~,
+    pixels~,
+  )
+}
+
+///|
 pub fn asset_write_texture_region_rgba8(
   texture_id~ : Int,
   x~ : Int,

@@ -8,6 +8,8 @@ import {
 // Values
 pub fn asset_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
 
+pub fn asset_create_texture_3d_with_format(width~ : Int, height~ : Int, depth~ : Int, format_raw~ : Int, pixels~ : Bytes) -> Int
+
 pub fn asset_create_texture_empty(width~ : Int, height~ : Int, mip_level_count~ : Int, nearest~ : Bool) -> Int
 
 pub fn asset_create_texture_mip_view(texture_id~ : Int, mip_level~ : Int) -> Int

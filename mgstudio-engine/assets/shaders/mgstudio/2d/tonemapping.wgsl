@@ -46,8 +46,7 @@ struct BloomUniforms {
 @group(0) @binding(1) var hdr_sampler: sampler;
 @group(0) @binding(2) var<uniform> uniforms: BloomUniforms;
 @group(0) @binding(3) var scene_texture: texture_2d<f32>;
-// KTX2 LUTs are uploaded as vertically stacked 2D slices.
-@group(0) @binding(4) var dt_lut_texture: texture_2d<f32>;
+@group(0) @binding(4) var dt_lut_texture: texture_3d<f32>;
 
 struct ColorGrading {
     balance: mat3x3<f32>,
@@ -172,28 +171,16 @@ fn apply_agx_log(image: vec3<f32>) -> vec3<f32> {
 
 fn lut_is_ready() -> bool {
     let dims = textureDimensions(dt_lut_texture);
-    return dims.x > 1u && dims.y > dims.x;
+    return dims.x > 1u && dims.y > 1u && dims.z > 1u;
 }
 
 fn sample_current_lut(p: vec3<f32>) -> vec3<f32> {
-    let dims = textureDimensions(dt_lut_texture);
-    if dims.x <= 1u || dims.y <= dims.x {
-        return p;
-    }
-    let lut_size = f32(dims.x);
-    let slice_count = f32(dims.y) / lut_size;
-    let uv_xy = clamp(p.xy, vec2<f32>(0.0), vec2<f32>(1.0))
-        * ((lut_size - 1.0) / lut_size)
-        + vec2<f32>(0.5 / lut_size);
-    let z = clamp(p.z, 0.0, 1.0) * (slice_count - 1.0);
-    let z0 = floor(z);
-    let z1 = min(z0 + 1.0, slice_count - 1.0);
-    let zf = z - z0;
-    let uv0 = vec2<f32>(uv_xy.x, (uv_xy.y + z0) / slice_count);
-    let uv1 = vec2<f32>(uv_xy.x, (uv_xy.y + z1) / slice_count);
-    let c0 = textureSampleLevel(dt_lut_texture, hdr_sampler, uv0, 0.0).rgb;
-    let c1 = textureSampleLevel(dt_lut_texture, hdr_sampler, uv1, 0.0).rgb;
-    return mix(c0, c1, vec3<f32>(zf));
+    return textureSampleLevel(
+        dt_lut_texture,
+        hdr_sampler,
+        clamp(p, vec3<f32>(0.0), vec3<f32>(1.0)),
+        0.0,
+    ).rgb;
 }
 
 fn apply_lut3d(image: vec3<f32>, block_size: f32) -> vec3<f32> {

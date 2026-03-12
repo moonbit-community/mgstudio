@@ -84,6 +84,30 @@ const LOADER_KIND_FONT : Int = 3
 const LOADER_KIND_FOLDER : Int = 4
 
 ///|
+priv struct Ktx2TexturePayload {
+  width : Int
+  height : Int
+  depth : Int
+  format_raw : Int
+  pixels : Bytes
+}
+
+///|
+const KTX2_HEADER_SIZE : Int = 80
+
+///|
+const KTX2_VK_FORMAT_R16G16B16A16_SFLOAT : Int = 97
+
+///|
+const KTX2_VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 : Int = 123
+
+///|
+const WGPU_TEXTURE_FORMAT_RGB9_E5_UFLOAT : Int = 0x1C
+
+///|
+const WGPU_TEXTURE_FORMAT_RGBA16_FLOAT : Int = 0x22
+
+///|
 let loader_extensions_ref : Ref[Array[(String, Int)]] = Ref::new([
   ("png", LOADER_KIND_TEXTURE),
   ("jpg", LOADER_KIND_TEXTURE),
@@ -458,6 +482,32 @@ fn blob_u32_at(bytes : Bytes, index : Int) -> Int {
 }
 
 ///|
+fn blob_u64_at_as_int(bytes : Bytes, index : Int) -> Int {
+  let low = blob_u32_at(bytes, index)
+  let high = blob_u32_at(bytes, index + 4)
+  if high != 0 || low < 0 {
+    -1
+  } else {
+    low
+  }
+}
+
+///|
+fn bytes_slice_copy(bytes : Bytes, start : Int, len : Int) -> Bytes? {
+  if start < 0 || len < 0 || start + len > bytes.length() {
+    return None
+  }
+  Some(
+    Bytes::makei(len, i => {
+      match bytes.get(start + i) {
+        Some(value) => value
+        None => (0).to_byte()
+      }
+    }),
+  )
+}
+
+///|
 fn blob_u32_be_at(bytes : Bytes, index : Int) -> Int {
   let b0 = blob_u8_at(bytes, index)
   let b1 = blob_u8_at(bytes, index + 1)
@@ -591,6 +641,53 @@ fn ktx2_dimensions(bytes : Bytes) -> (Int, Int)? {
   } else {
     return Some((width, height))
   }
+}
+
+///|
+fn ktx2_vulkan_format_to_wgpu_format(vulkan_format : Int) -> (Int, Int)? {
+  if vulkan_format == KTX2_VK_FORMAT_R16G16B16A16_SFLOAT {
+    return Some((WGPU_TEXTURE_FORMAT_RGBA16_FLOAT, 8))
+  }
+  if vulkan_format == KTX2_VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 {
+    return Some((WGPU_TEXTURE_FORMAT_RGB9_E5_UFLOAT, 4))
+  }
+  None
+}
+
+///|
+fn ktx2_decode_uncompressed_3d_payload(bytes : Bytes) -> Ktx2TexturePayload? {
+  if bytes.length() < KTX2_HEADER_SIZE {
+    return None
+  }
+  let width = blob_u32_at(bytes, 20)
+  let height = blob_u32_at(bytes, 24)
+  let depth = blob_u32_at(bytes, 28)
+  let level_count = blob_u32_at(bytes, 40)
+  let supercompression_scheme = blob_u32_at(bytes, 44)
+  if width <= 0 ||
+    height <= 0 ||
+    depth <= 1 ||
+    level_count < 1 ||
+    supercompression_scheme != 0 {
+    return None
+  }
+  guard ktx2_vulkan_format_to_wgpu_format(blob_u32_at(bytes, 12))
+    is Some((format_raw, bytes_per_texel)) else {
+    return None
+  }
+  let level0_offset = blob_u64_at_as_int(bytes, KTX2_HEADER_SIZE)
+  let level0_length = blob_u64_at_as_int(bytes, KTX2_HEADER_SIZE + 8)
+  if level0_offset < 0 || level0_length < 0 {
+    return None
+  }
+  let expected_bytes = width * height * depth * bytes_per_texel
+  if expected_bytes <= 0 || level0_length < expected_bytes {
+    return None
+  }
+  guard bytes_slice_copy(bytes, level0_offset, expected_bytes) is Some(pixels) else {
+    return None
+  }
+  Some(Ktx2TexturePayload::{ width, height, depth, format_raw, pixels })
 }
 
 ///|
@@ -1008,6 +1105,19 @@ fn load_texture(path~ : String, nearest~ : Bool) -> Int {
 ///|
 fn load_texture_bytes(bytes~ : Bytes, nearest~ : Bool) -> Int {
   let loaded = bytes.length() > 0
+  if ktx2_decode_uncompressed_3d_payload(bytes) is Some(payload) {
+    let texture_id = @render.asset_create_texture_3d_with_format(
+      width=payload.width,
+      height=payload.height,
+      depth=payload.depth,
+      format_raw=payload.format_raw,
+      pixels=payload.pixels,
+    )
+    if texture_id > 0 {
+      sync_texture_record(texture_id, payload.width, payload.height, loaded)
+      return texture_id
+    }
+  }
   let (width, height, upload_pixels) = if decode_texture_image(bytes)
     is Some(decoded) {
     (decoded.width, decoded.height, decoded.pixels)

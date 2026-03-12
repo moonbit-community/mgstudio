@@ -186,6 +186,5 @@ fn downsample(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
 
 @fragment
 fn upsample(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
-    let blend = clamp(uniforms.options.w, 0.0, 1.0);
-    return vec4<f32>(sample_input_3x3_tent(uv), blend);
+    return vec4<f32>(sample_input_3x3_tent(uv), 1.0);
 }

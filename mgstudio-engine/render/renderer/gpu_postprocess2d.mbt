@@ -425,6 +425,12 @@ pub fn GpuBackend::apply_bloom2d(
             )
             pass.set_pipeline(upsample_pipeline.unwrap())
             pass.set_bind_group(0U, upsample_bg, [])
+            pass.set_blend_constant_rgba(
+              blend.to_double(),
+              blend.to_double(),
+              blend.to_double(),
+              1.0,
+            )
             pass.draw(3U, 1U, 0U, 0U)
             pass.end()
             pass.release()
@@ -524,6 +530,12 @@ pub fn GpuBackend::apply_bloom2d(
     )
     final_pass.set_pipeline(final_pipeline)
     final_pass.set_bind_group(0U, final_bg, [])
+    final_pass.set_blend_constant_rgba(
+      final_blend.to_double(),
+      final_blend.to_double(),
+      final_blend.to_double(),
+      1.0,
+    )
     final_pass.draw(3U, 1U, 0U, 0U)
     final_pass.end()
     final_pass.release()
@@ -1188,6 +1200,12 @@ pub fn GpuBackend::draw_bloom2d(
             )
             pass.set_pipeline(upsample_pipeline.unwrap())
             pass.set_bind_group(0U, upsample_bg, [])
+            pass.set_blend_constant_rgba(
+              blend.to_double(),
+              blend.to_double(),
+              blend.to_double(),
+              1.0,
+            )
             pass.draw(3U, 1U, 0U, 0U)
             pass.end()
             pass.release()
@@ -1525,25 +1543,16 @@ fn bloom2d_compute_blend_factor(
   max_mip : Float,
 ) -> Float {
   let safe_max_mip = if max_mip <= 0.0F { 1.0F } else { max_mip }
-  let mip_ratio = clamp01(mip / safe_max_mip)
-  let safe_curvature = if low_frequency_boost_curvature >= 0.999F {
-    0.999F
-  } else {
-    low_frequency_boost_curvature
-  }
-  let curvature_factor = 1.0F / (1.0F - safe_curvature)
-  let one_minus_mip = 1.0F - mip_ratio
+  let mip_ratio = mip / safe_max_mip
   let lf_pow = Float::from_double(
-    @coremath.pow(one_minus_mip.to_double(), curvature_factor.to_double()),
+    @coremath.pow(
+      (1.0F - mip_ratio).to_double(),
+      (1.0F / (1.0F - low_frequency_boost_curvature)).to_double(),
+    ),
   )
   let mut low_freq = (1.0F - lf_pow) * low_frequency_boost
-  let safe_high_pass = if high_pass_frequency <= 0.0001F {
-    0.0001F
-  } else {
-    high_pass_frequency
-  }
   let high_pass_lq = 1.0F -
-    clamp01((mip_ratio - high_pass_frequency) / safe_high_pass)
+    clamp01((mip_ratio - high_pass_frequency) / high_pass_frequency)
   let mode_factor = if composite_mode == 0 { 1.0F - intensity } else { 1.0F }
   low_freq = low_freq * mode_factor
   (intensity + low_freq) * high_pass_lq
@@ -1752,7 +1761,7 @@ fn ensure_bloom2d_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
         4U,
         frag,
         @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+        @wgpu.TEXTURE_VIEW_DIMENSION_3D,
       )
     if !ok {
       builder.free()
@@ -1767,13 +1776,67 @@ fn ensure_bloom2d_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
 }
 
 ///|
+const BLOOM2D_BLEND_MODE_NONE : Int = 0
+
+///|
+const BLOOM2D_BLEND_MODE_CONSTANT_ENERGY : Int = 2
+
+///|
+const BLOOM2D_BLEND_MODE_CONSTANT_ADDITIVE : Int = 3
+
+///|
+extern "C" fn bloom2d_builder_set_blend_components_raw(
+  builder : @wgpu_c.OpaquePtr,
+  color_src_factor : UInt,
+  color_dst_factor : UInt,
+  color_operation : UInt,
+  alpha_src_factor : UInt,
+  alpha_dst_factor : UInt,
+  alpha_operation : UInt,
+) -> UInt = "mbt_wgpu_render_pipeline_desc_builder_set_blend_components"
+
+///|
+fn bloom2d_builder_set_blend_mode(
+  builder : @wgpu.RenderPipelineDescBuilder,
+  blend_mode : Int,
+) -> Unit raise GpuBackendError {
+  if blend_mode == BLOOM2D_BLEND_MODE_NONE {
+    return
+  }
+  let (color_src, color_dst) = if blend_mode ==
+    BLOOM2D_BLEND_MODE_CONSTANT_ENERGY {
+    (@wgpu.BLEND_FACTOR_CONSTANT, @wgpu.BLEND_FACTOR_ONE_MINUS_CONSTANT)
+  } else if blend_mode == BLOOM2D_BLEND_MODE_CONSTANT_ADDITIVE {
+    (@wgpu.BLEND_FACTOR_CONSTANT, @wgpu.BLEND_FACTOR_ONE)
+  } else {
+    fatal("wgpu: unsupported bloom blend mode: " + blend_mode.to_string())
+  }
+  let err = bloom2d_builder_set_blend_components_raw(
+    builder.raw,
+    color_src,
+    color_dst,
+    @wgpu.BLEND_OPERATION_ADD,
+    @wgpu.BLEND_FACTOR_ZERO,
+    @wgpu.BLEND_FACTOR_ONE,
+    @wgpu.BLEND_OPERATION_ADD,
+  )
+  if err != 0U {
+    fatal(
+      "wgpu: failed to configure bloom custom blend state (error=" +
+      err.reinterpret_as_int().to_string() +
+      ")",
+    )
+  }
+}
+
+///|
 fn bloom2d_create_pipeline(
   backend : GpuBackend,
   layout : @wgpu.PipelineLayout,
   source : String,
   format : @wgpu.TextureFormat,
   fs_entry : String,
-  alpha_blend : Bool,
+  blend_mode : Int,
   label : String,
 ) -> @wgpu.RenderPipeline raise GpuBackendError {
   let sm = backend.device.create_shader_module_wgsl(source)
@@ -1781,14 +1844,13 @@ fn bloom2d_create_pipeline(
     let builder = @wgpu.RenderPipelineDescBuilder::new(sm, layout~)
     builder.set_entry_points("fullscreen_vertex_shader", fs_entry)
     builder.set_color_target_format(format)
-    if alpha_blend {
-      builder.enable_alpha_blend()
-    }
+    bloom2d_builder_set_blend_mode(builder, blend_mode)
     builder.create_pipeline(backend.device)
   } catch {
     err => {
+      err |> ignore
       sm.release()
-      fatal("wgpu: failed to build bloom pipeline descriptor: " + err.message())
+      fatal("wgpu: failed to build bloom pipeline descriptor")
     }
   }
   pipeline.set_label(label)
@@ -1957,36 +2019,76 @@ fn ensure_bloom2d_pipeline_rgba8(
       [],
     )
     let downsample_first_pipeline = bloom2d_create_pipeline(
-      backend, intermediate_pipeline_layout, downsample_first_source, mip_format,
-      "downsample_first", false, "mgstudio_bloom2d_downsample_first",
+      backend,
+      intermediate_pipeline_layout,
+      downsample_first_source,
+      mip_format,
+      "downsample_first",
+      BLOOM2D_BLEND_MODE_NONE,
+      "mgstudio_bloom2d_downsample_first",
     )
     let downsample_first_no_threshold_pipeline = bloom2d_create_pipeline(
-      backend, intermediate_pipeline_layout, downsample_first_no_threshold_source,
-      mip_format, "downsample_first", false, "mgstudio_bloom2d_downsample_first_no_threshold",
+      backend,
+      intermediate_pipeline_layout,
+      downsample_first_no_threshold_source,
+      mip_format,
+      "downsample_first",
+      BLOOM2D_BLEND_MODE_NONE,
+      "mgstudio_bloom2d_downsample_first_no_threshold",
     )
     let downsample_first_uniform_pipeline = bloom2d_create_pipeline(
-      backend, intermediate_pipeline_layout, downsample_first_uniform_source, mip_format,
-      "downsample_first", false, "mgstudio_bloom2d_downsample_first_uniform",
+      backend,
+      intermediate_pipeline_layout,
+      downsample_first_uniform_source,
+      mip_format,
+      "downsample_first",
+      BLOOM2D_BLEND_MODE_NONE,
+      "mgstudio_bloom2d_downsample_first_uniform",
     )
     let downsample_first_no_threshold_uniform_pipeline = bloom2d_create_pipeline(
-      backend, intermediate_pipeline_layout, downsample_first_no_threshold_uniform_source,
-      mip_format, "downsample_first", false, "mgstudio_bloom2d_downsample_first_no_threshold_uniform",
+      backend,
+      intermediate_pipeline_layout,
+      downsample_first_no_threshold_uniform_source,
+      mip_format,
+      "downsample_first",
+      BLOOM2D_BLEND_MODE_NONE,
+      "mgstudio_bloom2d_downsample_first_no_threshold_uniform",
     )
     let downsample_pipeline = bloom2d_create_pipeline(
-      backend, intermediate_pipeline_layout, downsample_source, mip_format, "downsample",
-      false, "mgstudio_bloom2d_downsample",
+      backend,
+      intermediate_pipeline_layout,
+      downsample_source,
+      mip_format,
+      "downsample",
+      BLOOM2D_BLEND_MODE_NONE,
+      "mgstudio_bloom2d_downsample",
     )
     let downsample_uniform_pipeline = bloom2d_create_pipeline(
-      backend, intermediate_pipeline_layout, downsample_uniform_source, mip_format,
-      "downsample", false, "mgstudio_bloom2d_downsample_uniform",
+      backend,
+      intermediate_pipeline_layout,
+      downsample_uniform_source,
+      mip_format,
+      "downsample",
+      BLOOM2D_BLEND_MODE_NONE,
+      "mgstudio_bloom2d_downsample_uniform",
     )
     let upsample_pipeline_energy = bloom2d_create_pipeline(
-      backend, intermediate_pipeline_layout, upsample_source, mip_format, "upsample",
-      true, "mgstudio_bloom2d_upsample_energy",
+      backend,
+      intermediate_pipeline_layout,
+      upsample_source,
+      mip_format,
+      "upsample",
+      BLOOM2D_BLEND_MODE_CONSTANT_ENERGY,
+      "mgstudio_bloom2d_upsample_energy",
     )
     let upsample_pipeline_additive = bloom2d_create_pipeline(
-      backend, intermediate_pipeline_layout, upsample_source, mip_format, "upsample",
-      true, "mgstudio_bloom2d_upsample_additive",
+      backend,
+      intermediate_pipeline_layout,
+      upsample_source,
+      mip_format,
+      "upsample",
+      BLOOM2D_BLEND_MODE_CONSTANT_ADDITIVE,
+      "mgstudio_bloom2d_upsample_additive",
     )
     backend.bloom2d_downsample_first_pipeline = Some(downsample_first_pipeline)
     backend.bloom2d_downsample_first_no_threshold_pipeline = Some(
@@ -2022,7 +2124,7 @@ fn ensure_bloom2d_pipeline_rgba8(
     final_source,
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     "final_fragment",
-    false,
+    BLOOM2D_BLEND_MODE_NONE,
     "mgstudio_bloom2d_final_rgba8",
   )
   backend.bloom2d_final_pipeline = Some(final_pipeline)
@@ -2052,7 +2154,12 @@ fn ensure_bloom2d_pipeline_surface(
     backend, "shaders/mgstudio/2d/tonemapping.wgsl",
   )
   let final_pipeline = bloom2d_create_pipeline(
-    backend, final_pipeline_layout, final_source, format, "final_fragment", false,
+    backend,
+    final_pipeline_layout,
+    final_source,
+    format,
+    "final_fragment",
+    BLOOM2D_BLEND_MODE_NONE,
     "mgstudio_bloom2d_final_surface",
   )
   backend.bloom2d_final_pipeline_surface = Some(final_pipeline)
@@ -2087,11 +2194,21 @@ fn ensure_bloom2d_final_composite_pipeline(
     [],
   )
   let energy_pipeline = bloom2d_create_pipeline(
-    backend, intermediate_pipeline_layout, upsample_source, format, "upsample", true,
+    backend,
+    intermediate_pipeline_layout,
+    upsample_source,
+    format,
+    "upsample",
+    BLOOM2D_BLEND_MODE_CONSTANT_ENERGY,
     "mgstudio_bloom2d_upsample_final_energy",
   )
   let additive_pipeline = bloom2d_create_pipeline(
-    backend, intermediate_pipeline_layout, upsample_source, format, "upsample", true,
+    backend,
+    intermediate_pipeline_layout,
+    upsample_source,
+    format,
+    "upsample",
+    BLOOM2D_BLEND_MODE_CONSTANT_ADDITIVE,
     "mgstudio_bloom2d_upsample_final_additive",
   )
   backend.bloom2d_upsample_final_pipeline_energy = Some(energy_pipeline)
@@ -2154,6 +2271,21 @@ fn bloom2d_selected_lut_view(
   }
   if selected_lut_texture_id >= 0 {
     if find_texture(backend, selected_lut_texture_id) is Some(lut_texture) {
+      return lut_texture.view
+    }
+  }
+  if agx_lut_texture_id >= 0 {
+    if find_texture(backend, agx_lut_texture_id) is Some(lut_texture) {
+      return lut_texture.view
+    }
+  }
+  if tony_lut_texture_id >= 0 {
+    if find_texture(backend, tony_lut_texture_id) is Some(lut_texture) {
+      return lut_texture.view
+    }
+  }
+  if blender_lut_texture_id >= 0 {
+    if find_texture(backend, blender_lut_texture_id) is Some(lut_texture) {
       return lut_texture.view
     }
   }

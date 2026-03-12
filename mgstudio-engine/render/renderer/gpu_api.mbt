@@ -1096,6 +1096,34 @@ pub fn asset_create_texture_empty(
 }
 
 ///|
+pub fn asset_create_texture_3d_with_format(
+  width~ : Int,
+  height~ : Int,
+  depth~ : Int,
+  format_raw~ : Int,
+  pixels~ : Bytes,
+) -> Int {
+  let safe_width = if width <= 0 { 1 } else { width }
+  let safe_height = if height <= 0 { 1 } else { height }
+  let safe_depth = if depth <= 0 { 1 } else { depth }
+  if ensure_backend() is Some(backend) {
+    try {
+      let levels = [pixels]
+      return backend.create_texture_3d_with_format(
+        safe_width,
+        safe_height,
+        safe_depth,
+        format_raw.reinterpret_as_uint(),
+        levels,
+      )
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
 pub fn asset_write_texture_region_rgba8(
   texture_id~ : Int,
   x~ : Int,

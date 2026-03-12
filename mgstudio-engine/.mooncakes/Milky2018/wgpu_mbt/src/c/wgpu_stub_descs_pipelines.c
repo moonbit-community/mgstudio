@@ -1502,6 +1502,41 @@ uint32_t mbt_wgpu_render_pipeline_desc_builder_enable_alpha_blend(void *builder)
   return MBT_WGPU_RP_OK;
 }
 
+uint32_t mbt_wgpu_render_pipeline_desc_builder_set_blend_components(
+    void *builder, uint32_t color_src_factor, uint32_t color_dst_factor,
+    uint32_t color_operation, uint32_t alpha_src_factor, uint32_t alpha_dst_factor,
+    uint32_t alpha_operation) {
+  if (!builder) {
+    return MBT_WGPU_RP_ERR_NULL_BUILDER;
+  }
+  mbt_render_pipeline_desc_t *out = (mbt_render_pipeline_desc_t *)builder;
+  mbt_wgpu_rp_builder_clear_error(out);
+
+  out->blend_color = (WGPUBlendComponent){
+      .operation = (WGPUBlendOperation)color_operation,
+      .srcFactor = (WGPUBlendFactor)color_src_factor,
+      .dstFactor = (WGPUBlendFactor)color_dst_factor,
+  };
+  out->blend_alpha = (WGPUBlendComponent){
+      .operation = (WGPUBlendOperation)alpha_operation,
+      .srcFactor = (WGPUBlendFactor)alpha_src_factor,
+      .dstFactor = (WGPUBlendFactor)alpha_dst_factor,
+  };
+  out->blend = (WGPUBlendState){
+      .color = out->blend_color,
+      .alpha = out->blend_alpha,
+  };
+  // Apply to all current color targets.
+  uint32_t n = out->color_target_count;
+  if (n > MBT_WGPU_RP_MAX_TARGETS) {
+    n = MBT_WGPU_RP_MAX_TARGETS;
+  }
+  for (uint32_t i = 0; i < n; i++) {
+    out->color_targets[i].blend = &out->blend;
+  }
+  return MBT_WGPU_RP_OK;
+}
+
 uint32_t mbt_wgpu_render_pipeline_desc_builder_set_vertex_buffer_layout(
     void *builder, uint64_t array_stride, uint32_t step_mode_u32) {
   if (!builder) {
