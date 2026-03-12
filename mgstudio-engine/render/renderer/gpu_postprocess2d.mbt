@@ -1783,17 +1783,6 @@ const BLOOM2D_BLEND_MODE_CONSTANT_ENERGY : Int = 2
 const BLOOM2D_BLEND_MODE_CONSTANT_ADDITIVE : Int = 3
 
 ///|
-extern "C" fn bloom2d_builder_set_blend_components_raw(
-  builder : @wgpu_c.OpaquePtr,
-  color_src_factor : UInt,
-  color_dst_factor : UInt,
-  color_operation : UInt,
-  alpha_src_factor : UInt,
-  alpha_dst_factor : UInt,
-  alpha_operation : UInt,
-) -> UInt = "mbt_wgpu_render_pipeline_desc_builder_set_blend_components"
-
-///|
 fn bloom2d_builder_set_blend_mode(
   builder : @wgpu.RenderPipelineDescBuilder,
   blend_mode : Int,
@@ -1809,21 +1798,18 @@ fn bloom2d_builder_set_blend_mode(
   } else {
     fatal("wgpu: unsupported bloom blend mode: " + blend_mode.to_string())
   }
-  let err = bloom2d_builder_set_blend_components_raw(
-    builder.raw,
+  builder.set_blend_components(
     color_src,
     color_dst,
     @wgpu.BLEND_OPERATION_ADD,
     @wgpu.BLEND_FACTOR_ZERO,
     @wgpu.BLEND_FACTOR_ONE,
     @wgpu.BLEND_OPERATION_ADD,
-  )
-  if err != 0U {
-    fatal(
-      "wgpu: failed to configure bloom custom blend state (error=" +
-      err.reinterpret_as_int().to_string() +
-      ")",
-    )
+  ) catch {
+    err => {
+      err |> ignore
+      fatal("wgpu: failed to configure bloom custom blend state")
+    }
   }
 }
 
