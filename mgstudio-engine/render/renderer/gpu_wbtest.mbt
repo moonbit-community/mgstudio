@@ -294,6 +294,46 @@ test "renderer: mesh pipeline specializes to hdr render target format" {
 }
 
 ///|
+test "renderer: bloom2d final composite uses hdr scene target format even from rgba8 final pass" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let final_target_id = backend.create_render_target_with_format(
+    128,
+    128,
+    false,
+    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+  )
+  let scene_texture_id = backend.create_render_target_rgba16f(128, 128, false)
+  backend.pass_state = Some(gpu_test_pass_state(final_target_id))
+  bloom2d_final_composite_pipeline_for_scene_texture(
+    backend, scene_texture_id, 0,
+  )
+  |> ignore
+  let ok = match backend.bloom2d_upsample_final_pipeline_format {
+    Some(format) => format == tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
+    None => false
+  }
+  inspect(ok, content="true")
+}
+
+///|
+test "renderer: tonemapping2d final pipeline specializes to current final target without bloom composite" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let target_id = backend.create_render_target_with_format(
+    128,
+    128,
+    false,
+    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+  )
+  backend.pass_state = Some(gpu_test_pass_state(target_id))
+  bloom2d_pipeline_for_current_pass(backend) |> ignore
+  let ok = match backend.bloom2d_final_pipeline {
+    Some(_) => backend.bloom2d_upsample_final_pipeline_format is None
+    None => false
+  }
+  inspect(ok, content="true")
+}
+
+///|
 test "renderer: sampler cache key includes compare anisotropy and lod" {
   let key0 = image_sampler_cache_key(
     IMAGE_SAMPLER_ADDRESS_MODE_REPEAT,

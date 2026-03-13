@@ -38,10 +38,6 @@ pub fn GpuBackend::apply_bloom2d(
   flush_ui_batches(self)
   flush_sprite_batches(self)
   guard self.pass_state is Some(pass_state) else { return }
-  guard bloom2d_final_composite_pipeline_for_current_pass(self, composite_mode)
-    is Some(final_pipeline) else {
-    return
-  }
   guard self.bloom2d_intermediate_bgl is Some(intermediate_bind_layout) else {
     return
   }
@@ -51,6 +47,12 @@ pub fn GpuBackend::apply_bloom2d(
     return
   }
   guard find_texture(self, scene_texture_id) is Some(scene_texture) else {
+    return
+  }
+  guard bloom2d_final_composite_pipeline_for_scene_texture(
+      self, scene_texture_id, composite_mode,
+    )
+    is Some(final_pipeline) else {
     return
   }
   let source_viewport_x = Float::from_double(pass_state.viewport_x.to_double())
@@ -2201,11 +2203,27 @@ fn ensure_bloom2d_final_composite_pipeline(
 }
 
 ///|
-fn bloom2d_final_composite_pipeline_for_current_pass(
+fn bloom2d_final_composite_pipeline_for_scene_texture(
   backend : GpuBackend,
+  scene_texture_id : Int,
   composite_mode : Int,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
-  guard current_pass_color_format(backend) is Some(format) else { return None }
+  guard find_texture(backend, scene_texture_id) is Some(scene_texture) else {
+    return None
+  }
+  bloom2d_final_composite_pipeline_for_format(
+    backend,
+    composite_mode,
+    tf(scene_texture.format_raw),
+  )
+}
+
+///|
+fn bloom2d_final_composite_pipeline_for_format(
+  backend : GpuBackend,
+  composite_mode : Int,
+  format : @wgpu.TextureFormat,
+) -> @wgpu.RenderPipeline? raise GpuBackendError {
   ensure_bloom2d_final_composite_pipeline(backend, format)
   if composite_mode == 0 {
     backend.bloom2d_upsample_final_pipeline_energy
