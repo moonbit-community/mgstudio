@@ -218,6 +218,7 @@ pub fn GpuBackend::begin_pass(
   )
   pass.set_scissor_rect(sx, sy, sw, sh)
   frame.pass = Some(pass)
+  self.auto_exposure_active_state_buf = None
   self.pass_state = Some(GpuPassState::{
     target_id,
     target_layer: -1,
@@ -510,6 +511,7 @@ pub fn GpuBackend::begin_pass_3d(
   if target_id < 0 && effective_clear_enabled != 0 {
     set_active_surface_cleared_state(self, true)
   }
+  self.auto_exposure_active_state_buf = None
   self.pass_state = Some(GpuPassState::{
     target_id,
     target_layer,

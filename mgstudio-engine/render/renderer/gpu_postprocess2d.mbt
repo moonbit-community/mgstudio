@@ -672,6 +672,7 @@ pub fn GpuBackend::draw_tonemapping2d(
     1.0F, // color_grading_post_saturation
   )
   self.queue.write_buffer(settings_buf, 0UL, final_uniform)
+  let auto_exposure_state_buf = bloom2d_auto_exposure_state_buffer(self)
   if target_view(self, pass_state.target_id, pass_state.target_layer)
     is Some(dst_view) {
     if create_bloom2d_final_bind_group(
@@ -682,6 +683,7 @@ pub fn GpuBackend::draw_tonemapping2d(
         settings_buf,
         scene_texture.view,
         selected_lut_view,
+        auto_exposure_state_buf,
         "mgstudio_tonemapping2d_final_bg",
       )
       is Some(final_bg) {
@@ -1280,6 +1282,7 @@ pub fn GpuBackend::draw_bloom2d(
     color_grading_post_saturation,
   )
   self.queue.write_buffer(settings_buf, 0UL, final_uniform)
+  let auto_exposure_state_buf = bloom2d_auto_exposure_state_buffer(self)
 
   let hdr_view = if bloom_ready {
     self.bloom2d_mip_views[0]
@@ -1296,6 +1299,7 @@ pub fn GpuBackend::draw_bloom2d(
         settings_buf,
         scene_texture.view,
         selected_lut_view,
+        auto_exposure_state_buf,
         "mgstudio_bloom2d_final_bg",
       )
       is Some(final_bg) {
@@ -1371,6 +1375,103 @@ pub fn draw_tonemapping2d(
       view_height, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
     ) catch {
       err => debug_runtime_error("draw_tonemapping2d", err)
+    }
+  }
+}
+
+///|
+pub fn draw_tonemapping3d(
+  scene_texture_id~ : Int,
+  exposure~ : Float,
+  tonemapping_mode~ : Int,
+  deband_dither_enabled~ : Int,
+  fxaa_enabled~ : Int,
+  fxaa_edge_threshold~ : Float,
+  fxaa_edge_threshold_min~ : Float,
+  chromatic_aberration_intensity~ : Float,
+  chromatic_aberration_max_samples~ : Int,
+  vignette_intensity~ : Float,
+  vignette_radius~ : Float,
+  vignette_smoothness~ : Float,
+  vignette_roundness~ : Float,
+  vignette_center_x~ : Float,
+  vignette_center_y~ : Float,
+  vignette_edge_compensation~ : Float,
+  vignette_color_r~ : Float,
+  vignette_color_g~ : Float,
+  vignette_color_b~ : Float,
+  vignette_color_a~ : Float,
+  view_width~ : Int,
+  view_height~ : Int,
+  agx_lut_texture_id~ : Int,
+  tony_lut_texture_id~ : Int,
+  blender_lut_texture_id~ : Int,
+  color_grading_balance_x_axis_x~ : Float,
+  color_grading_balance_x_axis_y~ : Float,
+  color_grading_balance_x_axis_z~ : Float,
+  color_grading_balance_y_axis_x~ : Float,
+  color_grading_balance_y_axis_y~ : Float,
+  color_grading_balance_y_axis_z~ : Float,
+  color_grading_balance_z_axis_x~ : Float,
+  color_grading_balance_z_axis_y~ : Float,
+  color_grading_balance_z_axis_z~ : Float,
+  color_grading_saturation_shadows~ : Float,
+  color_grading_saturation_midtones~ : Float,
+  color_grading_saturation_highlights~ : Float,
+  color_grading_contrast_shadows~ : Float,
+  color_grading_contrast_midtones~ : Float,
+  color_grading_contrast_highlights~ : Float,
+  color_grading_gamma_shadows~ : Float,
+  color_grading_gamma_midtones~ : Float,
+  color_grading_gamma_highlights~ : Float,
+  color_grading_gain_shadows~ : Float,
+  color_grading_gain_midtones~ : Float,
+  color_grading_gain_highlights~ : Float,
+  color_grading_lift_shadows~ : Float,
+  color_grading_lift_midtones~ : Float,
+  color_grading_lift_highlights~ : Float,
+  color_grading_midtones_start~ : Float,
+  color_grading_midtones_end~ : Float,
+  color_grading_exposure~ : Float,
+  color_grading_hue~ : Float,
+  color_grading_post_saturation~ : Float,
+) -> Unit {
+  let fxaa_edge_threshold_value = if fxaa_edge_threshold <
+    fxaa_edge_threshold_min {
+    fxaa_edge_threshold_min
+  } else {
+    fxaa_edge_threshold
+  }
+  let chromatic_aberration_value = chromatic_aberration_intensity
+  let vignette_value = vignette_intensity
+  chromatic_aberration_max_samples |> ignore
+  vignette_radius |> ignore
+  vignette_smoothness |> ignore
+  vignette_roundness |> ignore
+  vignette_center_x |> ignore
+  vignette_center_y |> ignore
+  vignette_edge_compensation |> ignore
+  vignette_color_r |> ignore
+  vignette_color_g |> ignore
+  vignette_color_b |> ignore
+  vignette_color_a |> ignore
+  if ensure_backend() is Some(backend) {
+    backend.draw_bloom2d(
+      scene_texture_id, 0, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0, 64, 1.0F, 1.0F,
+      exposure, tonemapping_mode, deband_dither_enabled, view_width, view_height,
+      agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id, color_grading_balance_x_axis_x,
+      color_grading_balance_x_axis_y, color_grading_balance_x_axis_z, color_grading_balance_y_axis_x,
+      color_grading_balance_y_axis_y, color_grading_balance_y_axis_z, color_grading_balance_z_axis_x,
+      color_grading_balance_z_axis_y, color_grading_balance_z_axis_z, color_grading_saturation_shadows,
+      color_grading_saturation_midtones, color_grading_saturation_highlights, color_grading_contrast_shadows,
+      color_grading_contrast_midtones, color_grading_contrast_highlights, color_grading_gamma_shadows,
+      color_grading_gamma_midtones, color_grading_gamma_highlights, color_grading_gain_shadows,
+      color_grading_gain_midtones, color_grading_gain_highlights, color_grading_lift_shadows,
+      color_grading_lift_midtones, color_grading_lift_highlights, color_grading_midtones_start,
+      color_grading_midtones_end, color_grading_exposure, color_grading_hue, color_grading_post_saturation,
+      fxaa_enabled, fxaa_edge_threshold_value, chromatic_aberration_value, vignette_value,
+    ) catch {
+      err => debug_runtime_error("draw_tonemapping3d", err)
     }
   }
 }
@@ -1742,7 +1843,7 @@ fn ensure_bloom2d_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
     backend.bloom2d_intermediate_pipeline_layout = Some(pl)
   }
   if backend.bloom2d_final_bgl is None {
-    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=5UL)
+    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=6UL)
     let ok = builder.add_texture(
         0U,
         frag,
@@ -1762,7 +1863,8 @@ fn ensure_bloom2d_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
         frag,
         @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
         @wgpu.TEXTURE_VIEW_DIMENSION_3D,
-      )
+      ) &&
+      builder.add_buffer(5U, frag, @wgpu.BUFFER_BINDING_TYPE_STORAGE)
     if !ok {
       builder.free()
       fatal("wgpu: failed to build bloom final bind group layout")
@@ -1927,14 +2029,16 @@ fn create_bloom2d_final_bind_group(
   settings_buf : @wgpu.Buffer,
   scene_view : @wgpu.TextureView,
   lut_view : @wgpu.TextureView,
+  auto_exposure_state_buf : @wgpu.Buffer,
   label : String,
 ) -> @wgpu.BindGroup? {
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=5UL)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=6UL)
   let ok = builder.add_texture_view(0U, input_view) &&
     builder.add_sampler(1U, sampler) &&
     builder.add_buffer(2U, settings_buf) &&
     builder.add_texture_view(3U, scene_view) &&
-    builder.add_texture_view(4U, lut_view)
+    builder.add_texture_view(4U, lut_view) &&
+    builder.add_buffer(5U, auto_exposure_state_buf)
   if !ok {
     builder.free()
     return None

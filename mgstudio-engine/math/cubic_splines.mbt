@@ -124,6 +124,59 @@ pub impl SplinePoint for Vec4 with mul_scalar(self, scalar) {
 }
 
 ///|
+pub struct LinearSpline[P] {
+  control_points : Array[P]
+}
+
+///|
+pub fn[P] LinearSpline::new(control_points : Array[P]) -> LinearSpline[P] {
+  LinearSpline::{ control_points, }
+}
+
+///|
+pub fn[P : SplinePoint] LinearSpline::to_curve(
+  self : LinearSpline[P],
+) -> Result[CubicCurve[P], InsufficientDataError] {
+  if self.control_points.length() < 2 {
+    return Err(InsufficientData(2, self.control_points.length()))
+  }
+  let segment_count = self.control_points.length() - 1
+  let segments : Array[CubicSegment[P]] = []
+  for index in 0..<segment_count {
+    let start = self.control_points[index]
+    let end_ = self.control_points[index + 1]
+    segments.push(CubicSegment::{
+      coeff0: start,
+      coeff1: end_.sub(start),
+      coeff2: P::zero(),
+      coeff3: P::zero(),
+    })
+  }
+  Ok(CubicCurve::{ segments, })
+}
+
+///|
+pub fn[P : SplinePoint] LinearSpline::to_curve_cyclic(
+  self : LinearSpline[P],
+) -> Result[CubicCurve[P], InsufficientDataError] {
+  if self.control_points.length() < 2 {
+    return Err(InsufficientData(2, self.control_points.length()))
+  }
+  let segments : Array[CubicSegment[P]] = []
+  for index in 0..<self.control_points.length() {
+    let start = self.control_points[index]
+    let end_ = self.control_points[(index + 1) % self.control_points.length()]
+    segments.push(CubicSegment::{
+      coeff0: start,
+      coeff1: end_.sub(start),
+      coeff2: P::zero(),
+      coeff3: P::zero(),
+    })
+  }
+  Ok(CubicCurve::{ segments, })
+}
+
+///|
 pub struct CubicHermite[P] {
   control_points : Array[(P, P)]
 }

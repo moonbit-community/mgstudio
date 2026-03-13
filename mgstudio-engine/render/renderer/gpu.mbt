@@ -359,6 +359,18 @@ pub struct GpuBackend {
   mut bloom2d_mip_width : Int
   mut bloom2d_mip_height : Int
   mut bloom2d_fallback_lut_texture_id : Int
+  mut auto_exposure_compute_bgl : @wgpu.BindGroupLayout?
+  mut auto_exposure_compute_pipeline_layout : @wgpu.PipelineLayout?
+  mut auto_exposure_histogram_pipeline : @wgpu.ComputePipeline?
+  mut auto_exposure_average_pipeline : @wgpu.ComputePipeline?
+  mut auto_exposure_settings_buf : @wgpu.Buffer?
+  mut auto_exposure_curve_extents_buf : @wgpu.Buffer?
+  mut auto_exposure_histogram_buf : @wgpu.Buffer?
+  mut auto_exposure_curve_texture : @wgpu.Texture?
+  mut auto_exposure_curve_view : @wgpu.TextureView?
+  mut auto_exposure_dummy_state_buf : @wgpu.Buffer?
+  mut auto_exposure_active_state_buf : @wgpu.Buffer?
+  auto_exposure_view_states : Array[GpuAutoExposureViewState]
   mesh3d_material_bg_cache : Array[Mesh3dMaterialBindGroupCacheEntry]
   sampler_cache : @hashmap.HashMap[String, @wgpu.Sampler]
   mut next_id : Int
@@ -659,6 +671,18 @@ pub fn GpuBackend::new(
     bloom2d_mip_width: 0,
     bloom2d_mip_height: 0,
     bloom2d_fallback_lut_texture_id: -1,
+    auto_exposure_compute_bgl: None,
+    auto_exposure_compute_pipeline_layout: None,
+    auto_exposure_histogram_pipeline: None,
+    auto_exposure_average_pipeline: None,
+    auto_exposure_settings_buf: None,
+    auto_exposure_curve_extents_buf: None,
+    auto_exposure_histogram_buf: None,
+    auto_exposure_curve_texture: None,
+    auto_exposure_curve_view: None,
+    auto_exposure_dummy_state_buf: None,
+    auto_exposure_active_state_buf: None,
+    auto_exposure_view_states: [],
     mesh3d_material_bg_cache: [],
     sampler_cache: @hashmap.HashMap::new(),
     next_id: 1,

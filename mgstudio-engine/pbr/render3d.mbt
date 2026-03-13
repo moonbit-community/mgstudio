@@ -3261,6 +3261,95 @@ fn render3d_tonemapping_lut_handles(
 }
 
 ///|
+priv struct Render3dAutoExposureCurveGpuData {
+  lut : Bytes
+  min_log_lum : Float
+  max_log_lum : Float
+  min_compensation : Float
+  max_compensation : Float
+}
+
+///|
+fn render3d_default_auto_exposure_curve_gpu_data() -> Render3dAutoExposureCurveGpuData {
+  Render3dAutoExposureCurveGpuData::{
+    lut: Bytes::makei(256, _ => 0),
+    min_log_lum: 0.0F,
+    max_log_lum: 0.0F,
+    min_compensation: 0.0F,
+    max_compensation: 0.0F,
+  }
+}
+
+///|
+fn render3d_auto_exposure_curve_gpu_data(
+  world : @ecs.World,
+  curve_handle : @asset.Handle[AutoExposureCompensationCurve]?,
+) -> Render3dAutoExposureCurveGpuData {
+  let key : @ecs.ResourceKey[@asset.Assets[AutoExposureCompensationCurve]] = @asset.assets_resource_key()
+  guard (try! world.get_resource(key)) is Some(curves) else {
+    return render3d_default_auto_exposure_curve_gpu_data()
+  }
+  let resolved_handle = match curve_handle {
+    Some(handle) => handle
+    None => @asset.Handle::new(0)
+  }
+  match curves.get(resolved_handle) {
+    Some(curve) =>
+      Render3dAutoExposureCurveGpuData::{
+        lut: curve.lut,
+        min_log_lum: curve.min_log_lum,
+        max_log_lum: curve.max_log_lum,
+        min_compensation: curve.min_compensation,
+        max_compensation: curve.max_compensation,
+      }
+    None => render3d_default_auto_exposure_curve_gpu_data()
+  }
+}
+
+///|
+fn render3d_apply_camera_auto_exposure(
+  world : @ecs.World,
+  camera_entity : @core.Entity,
+  auto_exposure : AutoExposure,
+  scene_texture_id : Int,
+  view_width_logical : Int,
+  view_height_logical : Int,
+  delta_time : Float,
+) -> Unit {
+  if scene_texture_id < 0 || view_width_logical <= 0 || view_height_logical <= 0 {
+    return
+  }
+  let curve = render3d_auto_exposure_curve_gpu_data(
+    world,
+    auto_exposure.compensation_curve,
+  )
+  @render.host_gpu_apply_auto_exposure(
+    view_key_hi=camera_entity.id,
+    view_key_lo=camera_entity.generation,
+    scene_texture_id~,
+    min_ev100=auto_exposure.min_ev100,
+    max_ev100=auto_exposure.max_ev100,
+    low_percent=auto_exposure.low_percent,
+    high_percent=auto_exposure.high_percent,
+    speed_brighten=auto_exposure.speed_brighten,
+    speed_darken=auto_exposure.speed_darken,
+    exponential_transition_distance=auto_exposure.exponential_transition_distance,
+    delta_time~,
+    metering_mask_texture_id=match auto_exposure.metering_mask {
+      Some(mask) => mask.id()
+      None => -1
+    },
+    compensation_curve_lut=curve.lut,
+    compensation_curve_min_log_lum=curve.min_log_lum,
+    compensation_curve_max_log_lum=curve.max_log_lum,
+    compensation_curve_min_compensation=curve.min_compensation,
+    compensation_curve_max_compensation=curve.max_compensation,
+    view_width=view_width_logical,
+    view_height=view_height_logical,
+  )
+}
+
+///|
 const RENDER3D_COLOR_GRADING_D65_X : Float = 0.31272F
 
 ///|
@@ -3601,10 +3690,9 @@ fn render3d_vignette_postprocess_values(
 }
 
 ///|
-fn render3d_draw_camera_bloom(
+fn render3d_draw_camera_postprocess_final(
   world : @ecs.World,
   scene_texture_id : Int,
-  bloom : Bloom,
   exposure : Exposure?,
   tonemapping : Tonemapping?,
   deband_dither : DebandDither?,
@@ -3615,12 +3703,8 @@ fn render3d_draw_camera_bloom(
   view_width_logical : Int,
   view_height_logical : Int,
 ) -> Unit {
-  if scene_texture_id < 0 || view_width_logical <= 0 || view_height_logical <= 0 {
-    return
-  }
   let luts = render3d_tonemapping_lut_handles(world)
   let color_grading_uniform = render3d_color_grading_host_uniform(color_grading)
-  let settings = render3d_bloom_sanitize(bloom)
   let (fxaa_enabled, fxaa_edge_threshold, fxaa_edge_threshold_min) = render3d_fxaa_postprocess_values(
     fxaa,
   )
@@ -3640,22 +3724,8 @@ fn render3d_draw_camera_bloom(
     vignette_color_b,
     vignette_color_a,
   ) = render3d_vignette_postprocess_values(vignette)
-  @render.host_gpu_draw_bloom2d(
+  @render.host_gpu_draw_tonemapping3d(
     scene_texture_id~,
-    enabled=1,
-    intensity=settings.intensity,
-    low_frequency_boost=settings.low_frequency_boost,
-    low_frequency_boost_curvature=settings.low_frequency_boost_curvature,
-    high_pass_frequency=settings.high_pass_frequency,
-    threshold=settings.prefilter.threshold,
-    threshold_softness=settings.prefilter.threshold_softness,
-    composite_mode=match settings.composite_mode {
-      EnergyConserving => 0
-      Additive => 1
-    },
-    max_mip_dimension=settings.max_mip_dimension,
-    scale_x=settings.scale.x,
-    scale_y=settings.scale.y,
     exposure=match exposure {
       Some(value) => value.exposure()
       None => Exposure::default().exposure()
@@ -3694,9 +3764,12 @@ fn render3d_draw_camera_bloom(
 }
 
 ///|
-fn render3d_draw_camera_tonemap_only(
+fn render3d_draw_camera_bloom(
   world : @ecs.World,
+  camera_entity : @core.Entity,
   scene_texture_id : Int,
+  auto_exposure : AutoExposure?,
+  bloom : Bloom,
   exposure : Exposure?,
   tonemapping : Tonemapping?,
   deband_dither : DebandDither?,
@@ -3706,82 +3779,72 @@ fn render3d_draw_camera_tonemap_only(
   vignette : Vignette?,
   view_width_logical : Int,
   view_height_logical : Int,
+  delta_seconds : Float,
 ) -> Unit {
   if scene_texture_id < 0 || view_width_logical <= 0 || view_height_logical <= 0 {
     return
   }
-  let luts = render3d_tonemapping_lut_handles(world)
-  let color_grading_uniform = render3d_color_grading_host_uniform(color_grading)
-  let bloom_defaults = render3d_bloom_sanitize(Bloom::default())
-  let (fxaa_enabled, fxaa_edge_threshold, fxaa_edge_threshold_min) = render3d_fxaa_postprocess_values(
-    fxaa,
-  )
-  let (chromatic_aberration_intensity, chromatic_aberration_max_samples) = render3d_chromatic_aberration_postprocess_values(
-    chromatic_aberration,
-  )
-  let (
-    vignette_intensity,
-    vignette_radius,
-    vignette_smoothness,
-    vignette_roundness,
-    vignette_center_x,
-    vignette_center_y,
-    vignette_edge_compensation,
-    vignette_color_r,
-    vignette_color_g,
-    vignette_color_b,
-    vignette_color_a,
-  ) = render3d_vignette_postprocess_values(vignette)
-  @render.host_gpu_draw_bloom2d(
+  if auto_exposure is Some(auto_exposure_settings) {
+    render3d_apply_camera_auto_exposure(
+      world, camera_entity, auto_exposure_settings, scene_texture_id, view_width_logical,
+      view_height_logical, delta_seconds,
+    )
+  }
+  let settings = render3d_bloom_sanitize(bloom)
+  @render.host_gpu_apply_bloom2d(
     scene_texture_id~,
-    enabled=0,
-    intensity=0.0F,
-    low_frequency_boost=bloom_defaults.low_frequency_boost,
-    low_frequency_boost_curvature=bloom_defaults.low_frequency_boost_curvature,
-    high_pass_frequency=bloom_defaults.high_pass_frequency,
-    threshold=bloom_defaults.prefilter.threshold,
-    threshold_softness=bloom_defaults.prefilter.threshold_softness,
-    composite_mode=match bloom_defaults.composite_mode {
+    enabled=1,
+    intensity=settings.intensity,
+    low_frequency_boost=settings.low_frequency_boost,
+    low_frequency_boost_curvature=settings.low_frequency_boost_curvature,
+    high_pass_frequency=settings.high_pass_frequency,
+    threshold=settings.prefilter.threshold,
+    threshold_softness=settings.prefilter.threshold_softness,
+    composite_mode=match settings.composite_mode {
       EnergyConserving => 0
       Additive => 1
     },
-    max_mip_dimension=bloom_defaults.max_mip_dimension,
-    scale_x=bloom_defaults.scale.x,
-    scale_y=bloom_defaults.scale.y,
-    exposure=match exposure {
-      Some(value) => value.exposure()
-      None => Exposure::default().exposure()
-    },
-    tonemapping_mode=match tonemapping {
-      Some(mode) => render3d_tonemapping_mode_to_int(mode)
-      None => 0
-    },
-    deband_dither_enabled=match deband_dither {
-      Some(Enabled) => 1
-      _ => 0
-    },
-    fxaa_enabled~,
-    fxaa_edge_threshold~,
-    fxaa_edge_threshold_min~,
-    chromatic_aberration_intensity~,
-    chromatic_aberration_max_samples~,
-    vignette_intensity~,
-    vignette_radius~,
-    vignette_smoothness~,
-    vignette_roundness~,
-    vignette_center_x~,
-    vignette_center_y~,
-    vignette_edge_compensation~,
-    vignette_color_r~,
-    vignette_color_g~,
-    vignette_color_b~,
-    vignette_color_a~,
+    max_mip_dimension=settings.max_mip_dimension,
+    scale_x=settings.scale.x,
+    scale_y=settings.scale.y,
     view_width=view_width_logical,
     view_height=view_height_logical,
-    agx_lut_texture_id=luts.agx.id(),
-    tony_lut_texture_id=luts.tony.id(),
-    blender_lut_texture_id=luts.blender.id(),
-    color_grading=color_grading_uniform,
+  )
+  render3d_draw_camera_postprocess_final(
+    world, scene_texture_id, exposure, tonemapping, deband_dither, color_grading,
+    fxaa, chromatic_aberration, vignette, view_width_logical, view_height_logical,
+  )
+}
+
+///|
+fn render3d_draw_camera_tonemap_only(
+  world : @ecs.World,
+  camera_entity : @core.Entity,
+  scene_texture_id : Int,
+  auto_exposure : AutoExposure?,
+  exposure : Exposure?,
+  tonemapping : Tonemapping?,
+  deband_dither : DebandDither?,
+  color_grading : ColorGrading?,
+  fxaa : Fxaa?,
+  chromatic_aberration : ChromaticAberration?,
+  vignette : Vignette?,
+  view_width_logical : Int,
+  view_height_logical : Int,
+  delta_seconds : Float,
+) -> Unit {
+  if scene_texture_id < 0 || view_width_logical <= 0 || view_height_logical <= 0 {
+    return
+  }
+  if auto_exposure is Some(auto_exposure_settings) {
+    render3d_apply_camera_auto_exposure(
+      world, camera_entity, auto_exposure_settings, scene_texture_id, view_width_logical,
+      view_height_logical, delta_seconds,
+    )
+  }
+  render3d_draw_camera_postprocess_final(
+    world, scene_texture_id, exposure, tonemapping, deband_dither, color_grading,
+    fxaa, chromatic_aberration, vignette, view_width_logical, view_height_logical,
   )
 }
 
@@ -4993,6 +5056,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     @visibility.ecs_key_view_visibility,
   )
   let tick = world.read_change_tick()
+  let delta_seconds = render3d_default_time_or_default(world).delta_seconds()
   let default_opaque_renderer_method = if (try! world.get_resource(
       ecs_key_default_opaque_renderer_method,
     ))
@@ -6102,7 +6166,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         )
         render3d_draw_camera_bloom(
           world,
+          camera_entity,
           bloom_source_texture_id,
+          camera.camera3d.auto_exposure,
           bloom,
           effective_exposure,
           camera.tonemapping,
@@ -6113,6 +6179,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           camera.vignette,
           view_width_logical,
           view_height_logical,
+          delta_seconds,
         )
         @render.host_gpu_end_pass()
       }
@@ -6145,7 +6212,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         )
         render3d_draw_camera_tonemap_only(
           world,
+          camera_entity,
           tonemap_source_texture_id,
+          camera.camera3d.auto_exposure,
           effective_exposure,
           camera.tonemapping,
           camera.deband_dither,
@@ -6155,6 +6224,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           camera.vignette,
           view_width_logical,
           view_height_logical,
+          delta_seconds,
         )
         @render.host_gpu_end_pass()
       }
@@ -6915,6 +6985,25 @@ fn init_render3d_resources(world : @ecs.World) -> Unit {
       ecs_key_internal_assets,
       Render3dInternalAssetsState::new(),
     )
+  }
+  let auto_exposure_curve_assets_key : @ecs.ResourceKey[
+    @asset.Assets[AutoExposureCompensationCurve],
+  ] = @asset.assets_resource_key()
+  if (try! world.get_resource(auto_exposure_curve_assets_key)) is None {
+    world.insert_resource(auto_exposure_curve_assets_key, @asset.Assets::new())
+  }
+  if (try! world.get_resource_ref_mut(auto_exposure_curve_assets_key, tick))
+    is Some(curves_ref) {
+    let default_curve_handle : @asset.Handle[AutoExposureCompensationCurve] = @asset.Handle::new(
+      0,
+    )
+    if !curves_ref.val.contains(default_curve_handle) {
+      curves_ref.val.insert(
+        default_curve_handle,
+        AutoExposureCompensationCurve::default(),
+      )
+      |> ignore
+    }
   }
 }
 

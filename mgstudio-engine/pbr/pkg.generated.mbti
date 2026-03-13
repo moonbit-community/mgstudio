@@ -324,6 +324,11 @@ pub fn standard_material_set(@asset.Handle[@material.StandardMaterial], @materia
 pub fn wireframe_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors
+pub(all) suberror AutoExposureCompensationCurveError {
+  InvalidCurve
+  DiscontinuityFound
+  NotMonotonic
+}
 
 // Types and methods
 pub struct AutoExposure {
@@ -334,12 +339,12 @@ pub struct AutoExposure {
   speed_brighten : Float
   speed_darken : Float
   exponential_transition_distance : Float
-  compensation_ev : Float
+  compensation_curve : @asset.Handle[AutoExposureCompensationCurve]?
   metering_mask : @asset.Handle[@image.Image]?
 }
 pub fn AutoExposure::default() -> Self
 pub fn AutoExposure::new(Float, Float) -> Self
-pub fn AutoExposure::with_compensation_ev(Self, Float) -> Self
+pub fn AutoExposure::with_compensation_curve(Self, @asset.Handle[AutoExposureCompensationCurve]?) -> Self
 pub fn AutoExposure::with_exponential_transition_distance(Self, Float) -> Self
 pub fn AutoExposure::with_filter(Self, Float, Float) -> Self
 pub fn AutoExposure::with_metering_mask(Self, @asset.Handle[@image.Image]?) -> Self
@@ -348,6 +353,16 @@ pub fn AutoExposure::with_speed_brighten(Self, Float) -> Self
 pub fn AutoExposure::with_speed_darken(Self, Float) -> Self
 pub impl ToJson for AutoExposure
 pub impl @json.FromJson for AutoExposure
+
+pub struct AutoExposureCompensationCurve {
+  min_log_lum : Float
+  max_log_lum : Float
+  min_compensation : Float
+  max_compensation : Float
+  lut : Bytes
+}
+pub fn AutoExposureCompensationCurve::default() -> Self
+pub fn[T : AutoExposureCompensationCurveSource] AutoExposureCompensationCurve::from_curve(T) -> Result[Self, AutoExposureCompensationCurveError]
 
 pub struct Camera3d {
   decal_config : CameraDecalConfig3d
@@ -1058,6 +1073,12 @@ pub using @light {type VolumetricFog}
 pub using @light {type VolumetricLight}
 
 // Traits
+pub(open) trait AutoExposureCompensationCurveSource {
+  to_auto_exposure_curve(Self) -> Result[@math.CubicCurve[@math.Vec2], @math.InsufficientDataError]
+}
+pub impl AutoExposureCompensationCurveSource for @math.CubicCurve[@math.Vec2]
+pub impl AutoExposureCompensationCurveSource for @math.LinearSpline[@math.Vec2]
+
 pub(open) trait CameraProjection3d {
   get_clip_from_view(Self) -> ProjectionMatrix3d
   get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d

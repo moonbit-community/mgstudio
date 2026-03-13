@@ -248,6 +248,13 @@ pub impl Show for JumpAt
 pub impl ToJson for JumpAt
 pub impl @json.FromJson for JumpAt
 
+pub struct LinearSpline[P] {
+  control_points : Array[P]
+}
+pub fn[P] LinearSpline::new(Array[P]) -> Self[P]
+pub fn[P : SplinePoint] LinearSpline::to_curve(Self[P]) -> Result[CubicCurve[P], InsufficientDataError]
+pub fn[P : SplinePoint] LinearSpline::to_curve_cyclic(Self[P]) -> Result[CubicCurve[P], InsufficientDataError]
+
 pub(all) struct Quat {
   mut x : Float
   mut y : Float

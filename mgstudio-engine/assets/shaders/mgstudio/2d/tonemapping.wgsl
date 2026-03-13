@@ -47,6 +47,7 @@ struct BloomUniforms {
 @group(0) @binding(2) var<uniform> uniforms: BloomUniforms;
 @group(0) @binding(3) var scene_texture: texture_2d<f32>;
 @group(0) @binding(4) var dt_lut_texture: texture_3d<f32>;
+@group(0) @binding(5) var<storage, read> auto_exposure_state: f32;
 
 struct ColorGrading {
     balance: mat3x3<f32>,
@@ -225,6 +226,10 @@ fn bloom_uniform_color_grading() -> ColorGrading {
     );
 }
 
+fn effective_exposure() -> f32 {
+    return max(uniforms.scale_exposure.w * exp2(auto_exposure_state), 0.0);
+}
+
 fn saturation(color: vec3<f32>, saturation_amount: f32) -> vec3<f32> {
     let luma = tonemapping_luminance(color);
     return mix(vec3<f32>(luma), color, vec3<f32>(saturation_amount));
@@ -366,7 +371,7 @@ fn sample_tonemapped_scene_for_fxaa(uv: vec2<f32>) -> vec3<f32> {
     let clamped_uv = clamp(uv, vec2<f32>(0.0), vec2<f32>(1.0));
     // Use explicit LOD so this call is valid under non-uniform FXAA control flow.
     let scene_color = textureSampleLevel(scene_texture, hdr_sampler, clamped_uv, 0.0).rgb;
-    let exposure = max(uniforms.scale_exposure.w, 0.0);
+    let exposure = effective_exposure();
     return tone_mapping(
         vec4<f32>(scene_color * exposure, 1.0),
         bloom_uniform_color_grading(),
@@ -444,7 +449,7 @@ fn final_fragment(
 ) -> @location(0) vec4<f32> {
     let bloom_color = sample_input_3x3_tent(uv) * uniforms.options.z;
     let scene_color = sample_scene_with_chromatic(uv);
-    let exposure = max(uniforms.scale_exposure.w, 0.0);
+    let exposure = effective_exposure();
     var output_rgb = tone_mapping(
         vec4<f32>((scene_color + bloom_color) * exposure, 1.0),
         bloom_uniform_color_grading(),

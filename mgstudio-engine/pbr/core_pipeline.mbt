@@ -117,7 +117,7 @@ pub struct AutoExposure {
   speed_brighten : Float
   speed_darken : Float
   exponential_transition_distance : Float
-  compensation_ev : Float
+  compensation_curve : @asset.Handle[AutoExposureCompensationCurve]?
   metering_mask : @asset.Handle[@asset.Image]?
 } derive(ToJson, FromJson)
 
@@ -131,7 +131,7 @@ pub fn AutoExposure::default() -> AutoExposure {
     speed_brighten: 3.0F,
     speed_darken: 1.0F,
     exponential_transition_distance: 1.5F,
-    compensation_ev: 0.0F,
+    compensation_curve: None,
     metering_mask: None,
   }
 }
@@ -224,11 +224,11 @@ pub fn AutoExposure::with_exponential_transition_distance(
 }
 
 ///|
-pub fn AutoExposure::with_compensation_ev(
+pub fn AutoExposure::with_compensation_curve(
   self : AutoExposure,
-  compensation_ev : Float,
+  compensation_curve : @asset.Handle[AutoExposureCompensationCurve]?,
 ) -> AutoExposure {
-  AutoExposure::{ ..self, compensation_ev, }
+  AutoExposure::{ ..self, compensation_curve, }
 }
 
 ///|

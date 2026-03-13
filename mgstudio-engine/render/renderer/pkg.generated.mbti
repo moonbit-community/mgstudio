@@ -7,6 +7,8 @@ import {
 }
 
 // Values
+pub fn apply_auto_exposure(view_key_hi~ : Int, view_key_lo~ : Int, scene_texture_id~ : Int, min_ev100~ : Float, max_ev100~ : Float, low_percent~ : Float, high_percent~ : Float, speed_brighten~ : Float, speed_darken~ : Float, exponential_transition_distance~ : Float, delta_time~ : Float, metering_mask_texture_id~ : Int, compensation_curve_lut~ : Bytes, compensation_curve_min_log_lum~ : Float, compensation_curve_max_log_lum~ : Float, compensation_curve_min_compensation~ : Float, compensation_curve_max_compensation~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
+
 pub fn apply_bloom2d(scene_texture_id~ : Int, enabled~ : Int, intensity~ : Float, low_frequency_boost~ : Float, low_frequency_boost_curvature~ : Float, high_pass_frequency~ : Float, threshold~ : Float, threshold_softness~ : Float, composite_mode~ : Int, max_mip_dimension~ : Int, scale_x~ : Float, scale_y~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
 
 pub fn asset_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
@@ -77,6 +79,8 @@ pub fn draw_sprite_uv(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Flo
 
 pub fn draw_tonemapping2d(scene_texture_id~ : Int, exposure~ : Float, tonemapping_mode~ : Int, deband_dither_enabled~ : Int, view_width~ : Int, view_height~ : Int, agx_lut_texture_id~ : Int, tony_lut_texture_id~ : Int, blender_lut_texture_id~ : Int) -> Unit
 
+pub fn draw_tonemapping3d(scene_texture_id~ : Int, exposure~ : Float, tonemapping_mode~ : Int, deband_dither_enabled~ : Int, fxaa_enabled~ : Int, fxaa_edge_threshold~ : Float, fxaa_edge_threshold_min~ : Float, chromatic_aberration_intensity~ : Float, chromatic_aberration_max_samples~ : Int, vignette_intensity~ : Float, vignette_radius~ : Float, vignette_smoothness~ : Float, vignette_roundness~ : Float, vignette_center_x~ : Float, vignette_center_y~ : Float, vignette_edge_compensation~ : Float, vignette_color_r~ : Float, vignette_color_g~ : Float, vignette_color_b~ : Float, vignette_color_a~ : Float, view_width~ : Int, view_height~ : Int, agx_lut_texture_id~ : Int, tony_lut_texture_id~ : Int, blender_lut_texture_id~ : Int, color_grading_balance_x_axis_x~ : Float, color_grading_balance_x_axis_y~ : Float, color_grading_balance_x_axis_z~ : Float, color_grading_balance_y_axis_x~ : Float, color_grading_balance_y_axis_y~ : Float, color_grading_balance_y_axis_z~ : Float, color_grading_balance_z_axis_x~ : Float, color_grading_balance_z_axis_y~ : Float, color_grading_balance_z_axis_z~ : Float, color_grading_saturation_shadows~ : Float, color_grading_saturation_midtones~ : Float, color_grading_saturation_highlights~ : Float, color_grading_contrast_shadows~ : Float, color_grading_contrast_midtones~ : Float, color_grading_contrast_highlights~ : Float, color_grading_gamma_shadows~ : Float, color_grading_gamma_midtones~ : Float, color_grading_gamma_highlights~ : Float, color_grading_gain_shadows~ : Float, color_grading_gain_midtones~ : Float, color_grading_gain_highlights~ : Float, color_grading_lift_shadows~ : Float, color_grading_lift_midtones~ : Float, color_grading_lift_highlights~ : Float, color_grading_midtones_start~ : Float, color_grading_midtones_end~ : Float, color_grading_exposure~ : Float, color_grading_hue~ : Float, color_grading_post_saturation~ : Float) -> Unit
+
 pub fn draw_ui_box_shadow(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, size_x~ : Float, size_y~ : Float, radius_tl~ : Float, radius_tr~ : Float, radius_br~ : Float, radius_bl~ : Float, blur~ : Float, samples~ : Int) -> Unit
 
 pub fn draw_ui_rect(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, uv_min_x~ : Float, uv_min_y~ : Float, uv_max_x~ : Float, uv_max_y~ : Float, flags~ : Int, radius_tl~ : Float, radius_tr~ : Float, radius_br~ : Float, radius_bl~ : Float, border_left~ : Float, border_top~ : Float, border_right~ : Float, border_bottom~ : Float) -> Unit
@@ -120,6 +124,8 @@ pub(all) suberror GpuBackendError {
 pub impl Show for GpuBackendError
 
 // Types and methods
+type GpuAutoExposureViewState
+
 pub struct GpuBackend {
   instance : @wgpu_mbt.Instance
   adapter : @wgpu_mbt.Adapter
@@ -245,6 +251,18 @@ pub struct GpuBackend {
   mut bloom2d_mip_width : Int
   mut bloom2d_mip_height : Int
   mut bloom2d_fallback_lut_texture_id : Int
+  mut auto_exposure_compute_bgl : @wgpu_mbt.BindGroupLayout?
+  mut auto_exposure_compute_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut auto_exposure_histogram_pipeline : @wgpu_mbt.ComputePipeline?
+  mut auto_exposure_average_pipeline : @wgpu_mbt.ComputePipeline?
+  mut auto_exposure_settings_buf : @wgpu_mbt.Buffer?
+  mut auto_exposure_curve_extents_buf : @wgpu_mbt.Buffer?
+  mut auto_exposure_histogram_buf : @wgpu_mbt.Buffer?
+  mut auto_exposure_curve_texture : @wgpu_mbt.Texture?
+  mut auto_exposure_curve_view : @wgpu_mbt.TextureView?
+  mut auto_exposure_dummy_state_buf : @wgpu_mbt.Buffer?
+  mut auto_exposure_active_state_buf : @wgpu_mbt.Buffer?
+  auto_exposure_view_states : Array[GpuAutoExposureViewState]
   mesh3d_material_bg_cache : Array[Mesh3dMaterialBindGroupCacheEntry]
   sampler_cache : @hashmap.HashMap[String, @wgpu_mbt.Sampler]
   mut next_id : Int
@@ -258,6 +276,7 @@ pub struct GpuBackend {
   textures : Array[GpuTextureInfo]
   meshes : Array[GpuMeshInfo]
 }
+pub fn GpuBackend::apply_auto_exposure(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Bytes, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::apply_bloom2d(Self, Int, Int, Float, Float, Float, Float, Float, Float, Int, Int, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::begin_frame(Self) -> Unit
 pub fn GpuBackend::begin_frame_binding(Self, Int) -> Unit

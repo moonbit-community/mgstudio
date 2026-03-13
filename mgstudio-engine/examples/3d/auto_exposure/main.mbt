@@ -15,11 +15,7 @@
 ///|
 /// Port of `bevy/examples/3d/auto_exposure.rs`.
 ///
-/// Baseline parity: Bevy's `AutoExposurePlugin` and camera
-/// `AutoExposure`/compensation-curve assets are not available in current
-/// mgstudio render APIs. This port keeps the same controls and scene topology,
-/// uses a real camera `Skybox`, and approximates auto-exposure behavior with a
-/// time-smoothed ambient-light model.
+/// Uses `Camera3d.auto_exposure` with the render3d GPU histogram pipeline.
 
 ///|
 const CAMERA_ORBIT_RADIUS : Float = 1.0F
@@ -28,13 +24,7 @@ const CAMERA_ORBIT_RADIUS : Float = 1.0F
 const CAMERA_ROTATE_SPEED : Float = 1.0F
 
 ///|
-const AUTO_EXPOSURE_LERP_RATE : Float = 2.0F
-
-///|
 const MASK_OVERLAY_ALPHA : Float = 0.65F
-
-///|
-const INITIAL_EXPOSURE_EV100 : Float = 10.0F
 
 ///|
 priv struct AutoExposureState {
@@ -43,8 +33,11 @@ priv struct AutoExposureState {
   mut mask_overlay : @core.Entity?
   mut compensation_curve_enabled : Bool
   mut metering_mask_enabled : Bool
-  mut exposure_ev100 : Float
   mut display_text : @text.TextHandle?
+  mut basic_compensation_curve : @asset.Handle[
+    @pbr.AutoExposureCompensationCurve,
+  ]?
+  mut basic_metering_mask : @asset.Handle[@asset.Image]?
 }
 
 ///|
@@ -54,8 +47,9 @@ let auto_exposure_state : Ref[AutoExposureState] = Ref::new({
   mask_overlay: None,
   compensation_curve_enabled: true,
   metering_mask_enabled: true,
-  exposure_ev100: INITIAL_EXPOSURE_EV100,
   display_text: None,
+  basic_compensation_curve: None,
+  basic_metering_mask: None,
 })
 
 ///|
@@ -146,30 +140,123 @@ fn update_display_text() -> Unit {
 }
 
 ///|
+fn auto_exposure_curve_assets_ref_mut_or_abort(
+  world : @ecs.World,
+  tick : @core.Tick,
+) -> Ref[@asset.Assets[@pbr.AutoExposureCompensationCurve]] {
+  let key : @ecs.ResourceKey[@asset.Assets[@pbr.AutoExposureCompensationCurve]] = @asset.assets_resource_key()
+  if (try! world.get_resource(key)) is None {
+    world.insert_resource(key, @asset.Assets::new())
+  }
+  match (try! world.get_resource_ref_mut(key, tick)) {
+    Some(assets_ref) => assets_ref
+    None =>
+      abort(
+        "Missing Assets<AutoExposureCompensationCurve> resource in auto_exposure example",
+      )
+  }
+}
+
+///|
+fn build_basic_compensation_curve(
+  world : @ecs.World,
+  tick : @core.Tick,
+) -> @asset.Handle[@pbr.AutoExposureCompensationCurve] {
+  let curve = match
+    @pbr.AutoExposureCompensationCurve::from_curve(
+      @math.LinearSpline::new([
+        @math.Vec2::new(-4.0F, -2.0F),
+        @math.Vec2::new(0.0F, 0.0F),
+        @math.Vec2::new(2.0F, 0.0F),
+        @math.Vec2::new(4.0F, 2.0F),
+      ]),
+    ) {
+    Ok(value) => value
+    Err(err) =>
+      abort(
+        "Failed to build auto exposure compensation curve in example: " +
+        auto_exposure_curve_error_message(err),
+      )
+  }
+  auto_exposure_curve_assets_ref_mut_or_abort(world, tick).val.add(curve)
+}
+
+///|
+fn auto_exposure_curve_error_message(
+  err : @pbr.AutoExposureCompensationCurveError,
+) -> String {
+  match err {
+    @pbr.InvalidCurve => "invalid curve"
+    @pbr.DiscontinuityFound => "discontinuity found"
+    @pbr.NotMonotonic => "not monotonic"
+  }
+}
+
+///|
+fn example_auto_exposure_settings() -> @pbr.AutoExposure {
+  let compensation_curve = if auto_exposure_state.val.compensation_curve_enabled {
+    auto_exposure_state.val.basic_compensation_curve
+  } else {
+    None
+  }
+  let metering_mask = if auto_exposure_state.val.metering_mask_enabled {
+    auto_exposure_state.val.basic_metering_mask
+  } else {
+    None
+  }
+  @pbr.AutoExposure::default()
+  .with_compensation_curve(compensation_curve)
+  .with_metering_mask(metering_mask)
+}
+
+///|
+fn apply_example_auto_exposure_to_camera(
+  world : @ecs.World,
+  camera_entity : @core.Entity,
+  tick : @core.Tick,
+) -> Unit {
+  let camera3d_store = world.component(@pbr.ecs_key_camera3d)
+  let camera3d = match camera3d_store.get(camera_entity) {
+    Some(value) => value
+    None => @pbr.Camera3d::default()
+  }
+  camera3d_store.set(
+    camera_entity,
+    camera3d.with_auto_exposure(Some(example_auto_exposure_settings())),
+    tick,
+  )
+  |> ignore
+}
+
+///|
 fn setup(world : @ecs.World) -> Unit {
   auto_exposure_state.val.camera = None
   auto_exposure_state.val.camera_angle = 0.0F
   auto_exposure_state.val.mask_overlay = None
   auto_exposure_state.val.compensation_curve_enabled = true
   auto_exposure_state.val.metering_mask_enabled = true
-  auto_exposure_state.val.exposure_ev100 = INITIAL_EXPOSURE_EV100
   auto_exposure_state.val.display_text = None
+  auto_exposure_state.val.basic_compensation_curve = None
+  auto_exposure_state.val.basic_metering_mask = None
 
   let asset_server = @asset.AssetServer::new()
   let metering_mask = asset_server.load("textures/basic_metering_mask.png")
 
   let tick = world.read_change_tick()
+  let basic_curve = build_basic_compensation_curve(world, tick)
+  auto_exposure_state.val.basic_compensation_curve = Some(basic_curve)
+  auto_exposure_state.val.basic_metering_mask = Some(metering_mask)
+
   let camera = @pbr.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    camera_transform_for_angle(auto_exposure_state.val.camera_angle),
-  ).spawn(world)
-  world
-  .component(@pbr.ecs_key_exposure)
-  .insert(
-    camera,
-    @pbr.Exposure::new(auto_exposure_state.val.exposure_ev100),
-    tick,
-  )
+      @sprite.Camera::default(),
+      camera_transform_for_angle(auto_exposure_state.val.camera_angle),
+    )
+    .with_camera3d(
+      @pbr.Camera3d::default().with_auto_exposure(
+        Some(example_auto_exposure_settings()),
+      ),
+    )
+    .spawn(world)
   world
   .component(@pbr.ecs_key_skybox)
   .insert(
@@ -326,6 +413,7 @@ fn example_control_system(world : @ecs.World) -> Unit {
       tick,
     )
     |> ignore
+    apply_example_auto_exposure_to_camera(world, camera_entity, tick)
   }
 
   if auto_exposure_state.val.mask_overlay is Some(mask_entity) {
@@ -342,71 +430,6 @@ fn example_control_system(world : @ecs.World) -> Unit {
       tick,
     )
     |> ignore
-  }
-
-  let camera_transform = if auto_exposure_state.val.camera
-    is Some(camera_entity) {
-    world.component(@math.ecs_key_transform).get(camera_entity)
-  } else {
-    None
-  }
-
-  let view_to_opening = match camera_transform {
-    Some(transform) => {
-      let view_dir = transform.translation.neg().normalize_or_zero()
-      clampf(view_dir.dot(@math.Vec3::new(0.0F, 0.0F, 1.0F)), 0.0F, 1.0F)
-    }
-    None => 0.0F
-  }
-
-  let metering_weight = if auto_exposure_state.val.metering_mask_enabled {
-    view_to_opening * view_to_opening
-  } else {
-    view_to_opening
-  }
-
-  let mut target_ev100 = 8.0F + metering_weight * 8.0F
-  if auto_exposure_state.val.compensation_curve_enabled {
-    let curve_input = metering_weight * 8.0F - 4.0F
-    let compensation = if curve_input < 0.0F {
-      curve_input * 0.5F
-    } else if curve_input <= 2.0F {
-      0.0F
-    } else {
-      curve_input - 2.0F
-    }
-    target_ev100 = target_ev100 + compensation
-  }
-  target_ev100 = clampf(target_ev100, 4.0F, 20.0F)
-
-  let lerp = clampf(AUTO_EXPOSURE_LERP_RATE * delta, 0.0F, 1.0F)
-  auto_exposure_state.val.exposure_ev100 = auto_exposure_state.val.exposure_ev100 +
-    (target_ev100 - auto_exposure_state.val.exposure_ev100) * lerp
-  auto_exposure_state.val.exposure_ev100 = clampf(
-    auto_exposure_state.val.exposure_ev100,
-    4.0F,
-    20.0F,
-  )
-  if auto_exposure_state.val.camera is Some(camera_entity) {
-    if world.component(@pbr.ecs_key_exposure).get(camera_entity)
-      is Some(exposure) {
-      world
-      .component(@pbr.ecs_key_exposure)
-      .set(
-        camera_entity,
-        exposure.with_ev100(auto_exposure_state.val.exposure_ev100),
-        tick,
-      )
-      |> ignore
-    } else {
-      world
-      .component(@pbr.ecs_key_exposure)
-      .insert(
-        camera_entity,
-        @pbr.Exposure::new(auto_exposure_state.val.exposure_ev100),
-        tick,
-      )
-    }
   }
 
   update_display_text()
