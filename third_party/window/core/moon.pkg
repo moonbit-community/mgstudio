@@ -1,0 +1,10 @@
+import {
+  "moonbitlang/core/math",
+  "moonbitlang/core/encoding/utf8",
+  "Milky2018/window/dpi",
+}
+
+options(
+  "supported-targets": "native",
+  targets: { },
+)

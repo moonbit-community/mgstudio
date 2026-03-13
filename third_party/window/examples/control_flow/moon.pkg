@@ -1,0 +1,10 @@
+import {
+  "Milky2018/window/core",
+  "Milky2018/window/macos",
+}
+
+options(
+  "is-main": true,
+  "supported-targets": "native",
+  targets: { "main.mbt": [ "native" ] },
+)

@@ -438,3 +438,17 @@ test "renderer: screenshot capture reads rgba8 texture bytes" {
   )
   backend_ref.val = previous_backend
 }
+
+///|
+test "renderer: sprite uv axis metrics preserves flipped spans" {
+  let (signed_scale, region_extent) = sprite_uv_axis_metrics(1.0F, 0.0F, 128)
+  let ok = signed_scale == -1.0F && region_extent == 128.0F
+  inspect(ok, content="true")
+}
+
+///|
+test "renderer: sprite uv axis metrics keeps zero span safe" {
+  let (signed_scale, region_extent) = sprite_uv_axis_metrics(0.5F, 0.5F, 128)
+  let ok = signed_scale == 1.0F && region_extent == 128.0F
+  inspect(ok, content="true")
+}

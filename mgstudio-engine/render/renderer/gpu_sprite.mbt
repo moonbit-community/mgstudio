@@ -221,6 +221,24 @@ fn flush_sprite_batches(backend : GpuBackend) -> Unit raise GpuBackendError {
 }
 
 ///|
+fn sprite_uv_axis_metrics(
+  uv_min : Float,
+  uv_max : Float,
+  texture_extent : Int,
+) -> (Float, Float) {
+  let raw_uv_scale = uv_max - uv_min
+  let abs_uv_scale = if raw_uv_scale < 0.0F {
+    -raw_uv_scale
+  } else {
+    raw_uv_scale
+  }
+  let safe_abs_uv_scale = if abs_uv_scale <= 0.0F { 1.0F } else { abs_uv_scale }
+  let signed_uv_scale = if abs_uv_scale <= 0.0F { 1.0F } else { raw_uv_scale }
+  let texture_extent_f = Float::from_double(texture_extent.to_double())
+  (signed_uv_scale, texture_extent_f * safe_abs_uv_scale)
+}
+
+///|
 pub fn GpuBackend::draw_sprite_uv(
   self : GpuBackend,
   texture_id : Int,
@@ -245,14 +263,16 @@ pub fn GpuBackend::draw_sprite_uv(
   flush_ui_batches(self)
   ensure_sprite_resources(self)
   guard resolve_draw_texture(self, texture_id) is Some(tex) else { return }
-  let raw_uv_scale_x = uv_max_x - uv_min_x
-  let raw_uv_scale_y = uv_max_y - uv_min_y
-  let uv_scale_x = if raw_uv_scale_x <= 0.0F { 1.0F } else { raw_uv_scale_x }
-  let uv_scale_y = if raw_uv_scale_y <= 0.0F { 1.0F } else { raw_uv_scale_y }
-  let tex_w = Float::from_double(tex.width.to_double())
-  let tex_h = Float::from_double(tex.height.to_double())
-  let region_w = tex_w * uv_scale_x
-  let region_h = tex_h * uv_scale_y
+  let (uv_scale_x, region_w) = sprite_uv_axis_metrics(
+    uv_min_x,
+    uv_max_x,
+    tex.width,
+  )
+  let (uv_scale_y, region_h) = sprite_uv_axis_metrics(
+    uv_min_y,
+    uv_max_y,
+    tex.height,
+  )
   let base_size = 128.0F
   let tex_scale_x = if region_w > 0.0F { region_w / base_size } else { 1.0F }
   let tex_scale_y = if region_h > 0.0F { region_h / base_size } else { 1.0F }
