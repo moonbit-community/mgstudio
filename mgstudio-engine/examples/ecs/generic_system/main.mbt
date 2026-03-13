@@ -146,20 +146,16 @@ fn[T] cleanup_system(
 }
 
 ///|
-fn cleanup_menu_close(
-  commands : @app.Commands,
-  query : @ecs.EntityQuery[@ecs.With[MenuClose]],
-) -> Unit {
-  cleanup_system(commands, query)
-}
+let cleanup_menu_close_system : (
+  @app.Commands,
+  @ecs.EntityQuery[@ecs.With[MenuClose]],
+) -> Unit = cleanup_system
 
 ///|
-fn cleanup_level_unload(
-  commands : @app.Commands,
-  query : @ecs.EntityQuery[@ecs.With[LevelUnload]],
-) -> Unit {
-  cleanup_system(commands, query)
-}
+let cleanup_level_unload_system : (
+  @app.Commands,
+  @ecs.EntityQuery[@ecs.With[LevelUnload]],
+) -> Unit = cleanup_system
 
 ///|
 fn main {
@@ -176,11 +172,11 @@ fn main {
   )
   .add_on_exit_system(
     AppState::MainMenu,
-    @app.system_param2(cleanup_menu_close),
+    @app.system_param2(cleanup_menu_close_system),
   )
   .add_on_exit_system(
     AppState::InGame,
-    @app.system_param2(cleanup_level_unload),
+    @app.system_param2(cleanup_level_unload_system),
   )
   .run()
 }
