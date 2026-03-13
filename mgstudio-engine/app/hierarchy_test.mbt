@@ -49,6 +49,9 @@ test "app hierarchy: validate-parent plugin queues a check when parent lacks com
     Ref::new(0),
   )
   inspect(reader.len(), content="1")
+  let pending = try! reader.read()
+  inspect(pending.length(), content="1")
+  inspect(pending[0].caller is None, content="true")
 }
 
 ///|
@@ -107,4 +110,31 @@ test "app hierarchy: validate-parent plugin rechecks on component replace" {
     Ref::new(0),
   )
   inspect(reader.len(), content="2")
+}
+
+///|
+test "app hierarchy: check-parent message preserves explicit caller" {
+  let entity = @core.Entity::new(10, 1)
+  let message : CheckParentHasComponent[HierarchyValidationMarker] = CheckParentHasComponent::new(
+    entity,
+    caller=Some("caller-location"),
+  )
+  inspect(
+    message.entity().id == 10 && message.entity().generation == 1,
+    content="true",
+  )
+  inspect(message.caller(), content="Some(\"caller-location\")")
+}
+
+///|
+test "app hierarchy: check-parent message defaults caller to none" {
+  let entity = @core.Entity::new(11, 3)
+  let message : CheckParentHasComponent[HierarchyValidationMarker] = CheckParentHasComponent::new(
+    entity,
+  )
+  inspect(
+    message.entity().id == 11 && message.entity().generation == 3,
+    content="true",
+  )
+  inspect(message.caller() is None, content="true")
 }

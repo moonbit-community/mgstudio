@@ -347,9 +347,12 @@ pub impl Show for AppLabel
 
 pub struct CheckParentHasComponent[C] {
   entity : @core.Entity
+  caller : String?
   marker : C?
 }
-pub fn[C] CheckParentHasComponent::new(@core.Entity) -> Self[C]
+pub fn[C] CheckParentHasComponent::caller(Self[C]) -> String?
+pub fn[C] CheckParentHasComponent::entity(Self[C]) -> @core.Entity
+pub fn[C] CheckParentHasComponent::new(@core.Entity, caller? : String?) -> Self[C]
 pub impl[C : @ecs.Component] @ecs.Message for CheckParentHasComponent[C]
 
 pub struct Commands {

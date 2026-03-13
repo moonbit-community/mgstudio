@@ -301,9 +301,11 @@ pub fn ObserverHandle::world_id(Self) -> Int
 
 pub struct On[E, C] {
   entity : @core.Entity
+  caller : String?
   marker_event : E?
   marker_component : C?
 }
+pub fn[E, C] On::caller(Self[E, C]) -> String?
 
 pub struct Or[F] {
   filters : F

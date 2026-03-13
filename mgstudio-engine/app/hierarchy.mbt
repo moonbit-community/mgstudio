@@ -40,14 +40,30 @@ pub let validate_parent_has_component_system_set : SystemSet = system_set(
 ///|
 pub struct CheckParentHasComponent[C] {
   entity : @core.Entity
+  caller : String?
   marker : C?
 }
 
 ///|
 pub fn[C] CheckParentHasComponent::new(
   entity : @core.Entity,
+  caller? : String? = None,
 ) -> CheckParentHasComponent[C] {
-  { entity, marker: None }
+  { entity, caller, marker: None }
+}
+
+///|
+pub fn[C] CheckParentHasComponent::entity(
+  self : CheckParentHasComponent[C],
+) -> @core.Entity {
+  self.entity
+}
+
+///|
+pub fn[C] CheckParentHasComponent::caller(
+  self : CheckParentHasComponent[C],
+) -> String? {
+  self.caller
 }
 
 ///|
@@ -92,26 +108,58 @@ fn[C : @ecs.Component] validate_parent_has_component(
     return
   }
   ignore(
-    world.send_message(message_key, CheckParentHasComponent::new(event.entity)),
+    world.send_message(
+      message_key,
+      CheckParentHasComponent::new(event.entity, caller=event.caller()),
+    ),
   )
 }
 
 ///|
+fn validate_parent_has_component_entity_label(
+  entity : @core.Entity,
+  name : @ecs.Name?,
+  is_parent? : Bool = false,
+) -> String {
+  if name is Some(name_value) {
+    if is_parent {
+      "the " + name_value.as_str() + " entity"
+    } else {
+      "The " + name_value.as_str() + " entity"
+    }
+  } else {
+    "Entity (" +
+    entity.id.to_string() +
+    ", " +
+    entity.generation.to_string() +
+    ")"
+  }
+}
+
+///|
 fn validate_parent_has_component_warning(
+  caller : String?,
   component_name : String,
   child : @core.Entity,
+  child_name : @ecs.Name?,
   parent : @core.Entity,
+  parent_name : @ecs.Name?,
 ) -> String {
-  "warning[B0004]: Entity (" +
-  child.id.to_string() +
-  ", " +
-  child.generation.to_string() +
-  ") with the " +
+  let caller_prefix = match caller {
+    Some(location) => location + ": "
+    None => ""
+  }
+  "warning[B0004]: " +
+  caller_prefix +
+  validate_parent_has_component_entity_label(child, child_name) +
+  " with the " +
   component_name +
   " component has a parent (" +
-  parent.id.to_string() +
-  ", " +
-  parent.generation.to_string() +
+  validate_parent_has_component_entity_label(
+    parent,
+    parent_name,
+    is_parent=true,
+  ) +
   ") without " +
   component_name +
   ". This will cause inconsistent behaviors! See: https://bevy.org/learn/errors/b0004"
@@ -132,24 +180,31 @@ fn[C] check_parent_has_component(
   messages : @ecs.MessageReader[CheckParentHasComponent[C]],
 ) -> Unit {
   let world = current_world_abort_missing()
+  let component_access = world.component(component_key)
+  let name_access = world.component(@ecs.ecs_key_name)
   for message in (try! messages.read()) {
     let child_of_result : Result[@hierarchy.Parent?, @ecs.EcsError] = try? world.get(
       message.entity,
       @hierarchy.ecs_key_parent,
     )
     guard child_of_result is Ok(Some(child_of)) else { continue }
-    if !world.component(component_key).contains(message.entity) {
+    if !component_access.contains(message.entity) {
       continue
     }
     let parent = child_of.entity()
-    if world.component(component_key).contains(parent) {
+    if component_access.contains(parent) {
       continue
     }
+    let child_name = name_access.get(message.entity)
+    let parent_name = name_access.get(parent)
     println(
       validate_parent_has_component_warning(
+        message.caller,
         component_name,
         message.entity,
+        child_name,
         parent,
+        parent_name,
       ),
     )
   }

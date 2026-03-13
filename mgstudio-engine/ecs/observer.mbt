@@ -21,8 +21,14 @@ pub struct Remove {}
 ///|
 pub struct On[E, C] {
   entity : @core.Entity
+  caller : String?
   marker_event : E?
   marker_component : C?
+}
+
+///|
+pub fn[E, C] On::caller(self : On[E, C]) -> String? {
+  self.caller
 }
 
 ///|
@@ -139,6 +145,7 @@ pub fn[E : ObserverEvent, C : Component] current_observer() -> On[E, C] {
   }
   On::{
     entity: context.entity,
+    caller: None,
     marker_event: Some(E::marker()),
     marker_component: None,
   }
