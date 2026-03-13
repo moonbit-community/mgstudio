@@ -100,9 +100,10 @@ fn main {
   let finish_off_first_system : @app.SystemConfig[@ecs.World] = @app.system(
     @app.system_param2(finish_off_first),
   )
-  let update_chain : @app.SystemConfig[@ecs.World] = @app.chain(
-    (apply_health_decay_system, finish_off_first_system),
-  )
+  let update_chain : @app.SystemConfig[@ecs.World] = (
+      apply_health_decay_system, finish_off_first_system,
+    )
+    |> @app.chain()
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.default_plugins())
   .add_systems(@app.Startup, @app.system(@app.system_param(setup)))
