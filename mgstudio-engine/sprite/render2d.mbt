@@ -4120,7 +4120,7 @@ fn render2d_draw_camera_tonemapping(
 
 ///|
 fn render2d_apply_camera_bloom_from_source(
-  camera : CameraInstance,
+  camera : ExtractedCamera2d,
   source : @asset.Handle[@asset.Image],
   view_width_logical : Int,
   view_height_logical : Int,
@@ -4154,7 +4154,7 @@ fn render2d_apply_camera_bloom_from_source(
 ///|
 fn render2d_draw_camera_postprocess_from_source(
   world : @ecs.World,
-  camera : CameraInstance,
+  camera : ExtractedCamera2d,
   source : @asset.Handle[@asset.Image],
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
@@ -4170,8 +4170,44 @@ fn render2d_draw_camera_postprocess_from_source(
 }
 
 ///|
-priv struct SpriteInstance {
-  entity : @core.Entity
+priv struct PhaseEntityRef {
+  render_entity : @core.Entity
+  main_entity : @core.Entity
+}
+
+///|
+fn phase_entity_ref_for_main(main_entity : @core.Entity) -> PhaseEntityRef {
+  PhaseEntityRef::{ render_entity: main_entity, main_entity }
+}
+
+///|
+fn phase_entity_ref_placeholder() -> PhaseEntityRef {
+  let placeholder = @core.Entity::placeholder()
+  PhaseEntityRef::{ render_entity: placeholder, main_entity: placeholder }
+}
+
+///|
+fn phase_entity_ref_cmp(lhs : PhaseEntityRef, rhs : PhaseEntityRef) -> Int {
+  let render_id = cmp_int(lhs.render_entity.id, rhs.render_entity.id)
+  if render_id != 0 {
+    return render_id
+  }
+  let render_generation = cmp_int(
+    lhs.render_entity.generation,
+    rhs.render_entity.generation,
+  )
+  if render_generation != 0 {
+    return render_generation
+  }
+  let main_id = cmp_int(lhs.main_entity.id, rhs.main_entity.id)
+  if main_id != 0 {
+    return main_id
+  }
+  cmp_int(lhs.main_entity.generation, rhs.main_entity.generation)
+}
+
+///|
+priv struct SpriteDrawPayload {
   transform : @math.Transform
   anchor_offset : @math.Vec2
   draw_scale : @math.Vec2
@@ -4184,8 +4220,13 @@ priv struct SpriteInstance {
 }
 
 ///|
-priv struct SpriteTextureSliceInstance {
-  entity : @core.Entity
+priv struct ExtractedSprite {
+  entity : PhaseEntityRef
+  payload : SpriteDrawPayload
+}
+
+///|
+priv struct SpriteTextureSliceDrawPayload {
   transform : @math.Transform
   anchor_offset : @math.Vec2
   draw_scale : @math.Vec2
@@ -4200,9 +4241,13 @@ priv struct SpriteTextureSliceInstance {
 }
 
 ///|
-priv struct UiRectInstance {
-  entity : @core.Entity
-  target_camera : @core.Entity
+priv struct ExtractedSpriteTextureSlice {
+  entity : PhaseEntityRef
+  payload : SpriteTextureSliceDrawPayload
+}
+
+///|
+priv struct UiRectDrawPayload {
   transform : @math.Transform
   anchor_offset : @math.Vec2
   draw_scale : @math.Vec2
@@ -4218,9 +4263,14 @@ priv struct UiRectInstance {
 }
 
 ///|
-priv struct UiBoxShadowInstance {
-  entity : @core.Entity
-  target_camera : @core.Entity
+priv struct ExtractedUiRect {
+  entity : PhaseEntityRef
+  extracted_camera_entity : @core.Entity
+  payload : UiRectDrawPayload
+}
+
+///|
+priv struct UiBoxShadowDrawPayload {
   transform : @math.Transform
   anchor_offset : @math.Vec2
   // Full geometry bounds (shadow size + 6*blur), in world units.
@@ -4241,9 +4291,14 @@ priv struct UiBoxShadowInstance {
 }
 
 ///|
-priv struct UiTextureSliceInstance {
-  entity : @core.Entity
-  target_camera : @core.Entity
+priv struct ExtractedUiBoxShadow {
+  entity : PhaseEntityRef
+  extracted_camera_entity : @core.Entity
+  payload : UiBoxShadowDrawPayload
+}
+
+///|
+priv struct UiTextureSliceDrawPayload {
   transform : @math.Transform
   anchor_offset : @math.Vec2
   draw_scale : @math.Vec2
@@ -4262,7 +4317,14 @@ priv struct UiTextureSliceInstance {
 }
 
 ///|
-priv struct CameraInstance {
+priv struct ExtractedUiTextureSlice {
+  entity : PhaseEntityRef
+  extracted_camera_entity : @core.Entity
+  payload : UiTextureSliceDrawPayload
+}
+
+///|
+priv struct ExtractedCamera2d {
   entity : @core.Entity
   camera : Camera
   projection : OrthographicProjection
@@ -4280,8 +4342,7 @@ priv struct CameraComputed {
 }
 
 ///|
-priv struct MeshInstance {
-  entity : @core.Entity
+priv struct Mesh2dDrawPayload {
   mesh_id : Int
   transform : @math.Transform
   color : Color
@@ -4290,6 +4351,12 @@ priv struct MeshInstance {
   uv_offset : @math.Vec2
   uv_scale : @math.Vec2
   layers : RenderLayers
+}
+
+///|
+priv struct ExtractedMesh2d {
+  entity : PhaseEntityRef
+  payload : Mesh2dDrawPayload
 }
 
 ///|
@@ -4314,14 +4381,14 @@ struct RenderState {
   mut draw_enabled : Bool
   mut primary_camera : @core.Entity
   mut tonemapping_lut_handles : TonemappingLutHandles?
-  sprites : Array[SpriteInstance]
-  extra_sprites : Array[SpriteInstance]
-  extra_sprite_texture_slices : Array[SpriteTextureSliceInstance]
-  extra_ui_rects : Array[UiRectInstance]
-  extra_ui_box_shadows : Array[UiBoxShadowInstance]
-  extra_ui_texture_slices : Array[UiTextureSliceInstance]
-  cameras : Array[CameraInstance]
-  meshes : Array[MeshInstance]
+  sprites : Array[ExtractedSprite]
+  extra_sprites : Array[ExtractedSprite]
+  extra_sprite_texture_slices : Array[ExtractedSpriteTextureSlice]
+  extra_ui_rects : Array[ExtractedUiRect]
+  extra_ui_box_shadows : Array[ExtractedUiBoxShadow]
+  extra_ui_texture_slices : Array[ExtractedUiTextureSlice]
+  cameras : Array[ExtractedCamera2d]
+  meshes : Array[ExtractedMesh2d]
   render_targets : Array[RenderTargetInfo]
   bloom2d_auto_targets : Array[Bloom2dAutoTargetInfo]
   // Prepare stage output: stable camera iteration order for the frame.
@@ -5285,17 +5352,19 @@ pub fn render2d_push_sprite_uv(
   layers : RenderLayers,
 ) -> Unit {
   render_state_update(world, fn(rs) {
-    rs.val.extra_sprites.push(SpriteInstance::{
-      entity: @core.Entity::placeholder(),
-      transform,
-      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-      draw_scale: @math.Vec2::new(transform.scale.x, transform.scale.y),
-      color,
-      texture,
-      layers,
-      uv_min,
-      uv_max,
-      scissor: None,
+    rs.val.extra_sprites.push(ExtractedSprite::{
+      entity: phase_entity_ref_placeholder(),
+      payload: SpriteDrawPayload::{
+        transform,
+        anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+        draw_scale: @math.Vec2::new(transform.scale.x, transform.scale.y),
+        color,
+        texture,
+        layers,
+        uv_min,
+        uv_max,
+        scissor: None,
+      },
     })
   })
   |> ignore
@@ -5313,17 +5382,19 @@ pub fn render2d_push_sprite_uv_scissor(
   scissor : @math.Rect?,
 ) -> Unit {
   render_state_update(world, fn(rs) {
-    rs.val.extra_sprites.push(SpriteInstance::{
-      entity: @core.Entity::placeholder(),
-      transform,
-      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-      draw_scale: @math.Vec2::new(transform.scale.x, transform.scale.y),
-      color,
-      texture,
-      layers,
-      uv_min,
-      uv_max,
-      scissor,
+    rs.val.extra_sprites.push(ExtractedSprite::{
+      entity: phase_entity_ref_placeholder(),
+      payload: SpriteDrawPayload::{
+        transform,
+        anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+        draw_scale: @math.Vec2::new(transform.scale.x, transform.scale.y),
+        color,
+        texture,
+        layers,
+        uv_min,
+        uv_max,
+        scissor,
+      },
     })
   })
   |> ignore
@@ -5350,20 +5421,22 @@ pub fn render2d_push_sprite_uv_scissor_batch(
   }
   render_state_update(world, fn(rs) {
     for sprite in sprites {
-      rs.val.extra_sprites.push(SpriteInstance::{
-        entity: @core.Entity::placeholder(),
-        transform: sprite.transform,
-        anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-        draw_scale: @math.Vec2::new(
-          sprite.transform.scale.x,
-          sprite.transform.scale.y,
-        ),
-        color: sprite.color,
-        texture: sprite.texture,
-        layers: sprite.layers,
-        uv_min: sprite.uv_min,
-        uv_max: sprite.uv_max,
-        scissor: sprite.scissor,
+      rs.val.extra_sprites.push(ExtractedSprite::{
+        entity: phase_entity_ref_placeholder(),
+        payload: SpriteDrawPayload::{
+          transform: sprite.transform,
+          anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+          draw_scale: @math.Vec2::new(
+            sprite.transform.scale.x,
+            sprite.transform.scale.y,
+          ),
+          color: sprite.color,
+          texture: sprite.texture,
+          layers: sprite.layers,
+          uv_min: sprite.uv_min,
+          uv_max: sprite.uv_max,
+          scissor: sprite.scissor,
+        },
       })
     }
   })
@@ -5405,21 +5478,23 @@ pub fn render2d_push_ui_rect_uv_scissor(
   border : UiBorderRect,
 ) -> Unit {
   render_state_update(world, fn(rs) {
-    rs.val.extra_ui_rects.push(UiRectInstance::{
-      entity,
-      target_camera: render2d_ui_overlay_target_camera(target_camera),
-      transform,
-      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-      draw_scale,
-      color,
-      texture,
-      layers,
-      uv_min,
-      uv_max,
-      scissor,
-      flags,
-      radius,
-      border,
+    rs.val.extra_ui_rects.push(ExtractedUiRect::{
+      entity: phase_entity_ref_for_main(entity),
+      extracted_camera_entity: render2d_ui_overlay_target_camera(target_camera),
+      payload: UiRectDrawPayload::{
+        transform,
+        anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+        draw_scale,
+        color,
+        texture,
+        layers,
+        uv_min,
+        uv_max,
+        scissor,
+        flags,
+        radius,
+        border,
+      },
     })
   })
   |> ignore
@@ -5442,20 +5517,22 @@ pub fn render2d_push_ui_box_shadow_scissor(
   samples : Int,
 ) -> Unit {
   render_state_update(world, fn(rs) {
-    rs.val.extra_ui_box_shadows.push(UiBoxShadowInstance::{
-      entity,
-      target_camera: render2d_ui_overlay_target_camera(target_camera),
-      transform,
-      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-      draw_scale,
-      color,
-      texture,
-      layers,
-      size,
-      radius,
-      blur,
-      samples,
-      scissor,
+    rs.val.extra_ui_box_shadows.push(ExtractedUiBoxShadow::{
+      entity: phase_entity_ref_for_main(entity),
+      extracted_camera_entity: render2d_ui_overlay_target_camera(target_camera),
+      payload: UiBoxShadowDrawPayload::{
+        transform,
+        anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+        draw_scale,
+        color,
+        texture,
+        layers,
+        size,
+        radius,
+        blur,
+        samples,
+        scissor,
+      },
     })
   })
   |> ignore
@@ -5478,20 +5555,22 @@ pub fn render2d_push_ui_texture_slice_scissor(
   atlas_rect : @math.Vec4,
 ) -> Unit {
   render_state_update(world, fn(rs) {
-    rs.val.extra_ui_texture_slices.push(UiTextureSliceInstance::{
-      entity,
-      target_camera: render2d_ui_overlay_target_camera(target_camera),
-      transform,
-      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-      draw_scale,
-      color,
-      texture,
-      layers,
-      scissor,
-      texture_slices,
-      target_slices,
-      repeat,
-      atlas_rect,
+    rs.val.extra_ui_texture_slices.push(ExtractedUiTextureSlice::{
+      entity: phase_entity_ref_for_main(entity),
+      extracted_camera_entity: render2d_ui_overlay_target_camera(target_camera),
+      payload: UiTextureSliceDrawPayload::{
+        transform,
+        anchor_offset: @math.Vec2::new(0.0F, 0.0F),
+        draw_scale,
+        color,
+        texture,
+        layers,
+        scissor,
+        texture_slices,
+        target_slices,
+        repeat,
+        atlas_rect,
+      },
     })
   })
   |> ignore
@@ -6117,7 +6196,7 @@ pub let camera_update_systems : @app.SystemSet = @app.system_set(
 
 ///|
 fn render2d_sorted_camera_indices(
-  cameras : Array[CameraInstance],
+  cameras : Array[ExtractedCamera2d],
 ) -> Array[Int] {
   let count = cameras.length()
   let indices : Array[Int] = []
@@ -6209,7 +6288,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
         }
         computed = CameraComputed::{ target_size: info.size, scale_factor }
       }
-      rs.val.cameras.push(CameraInstance::{
+      rs.val.cameras.push(ExtractedCamera2d::{
         entity,
         camera,
         projection,
@@ -6311,32 +6390,36 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
           target_size,
           sprite.image_mode,
         )
-        rs.val.extra_sprite_texture_slices.push(SpriteTextureSliceInstance::{
-          entity,
-          transform,
-          anchor_offset,
-          draw_scale,
-          color: sprite.color,
-          texture: sprite.image,
-          layers,
-          scissor,
-          texture_slices,
-          target_slices,
-          repeat,
-          atlas_rect: @math.Vec4::new(uv_min.x, uv_min.y, uv_max.x, uv_max.y),
+        rs.val.extra_sprite_texture_slices.push(ExtractedSpriteTextureSlice::{
+          entity: phase_entity_ref_for_main(entity),
+          payload: SpriteTextureSliceDrawPayload::{
+            transform,
+            anchor_offset,
+            draw_scale,
+            color: sprite.color,
+            texture: sprite.image,
+            layers,
+            scissor,
+            texture_slices,
+            target_slices,
+            repeat,
+            atlas_rect: @math.Vec4::new(uv_min.x, uv_min.y, uv_max.x, uv_max.y),
+          },
         })
       } else {
-        rs.val.sprites.push(SpriteInstance::{
-          entity,
-          transform,
-          anchor_offset,
-          draw_scale: draw_scale_for_host,
-          color: sprite.color,
-          texture: sprite.image,
-          layers,
-          uv_min: uv_draw_min,
-          uv_max: uv_draw_max,
-          scissor,
+        rs.val.sprites.push(ExtractedSprite::{
+          entity: phase_entity_ref_for_main(entity),
+          payload: SpriteDrawPayload::{
+            transform,
+            anchor_offset,
+            draw_scale: draw_scale_for_host,
+            color: sprite.color,
+            texture: sprite.image,
+            layers,
+            uv_min: uv_draw_min,
+            uv_max: uv_draw_max,
+            scissor,
+          },
         })
       }
     })
@@ -6378,16 +6461,18 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
             None => @math.Transform::identity()
           }
       }
-      rs.val.meshes.push(MeshInstance::{
-        entity,
-        mesh_id: gpu.mesh_id,
-        transform,
-        color: mat.color(),
-        alpha_mode: mat.alpha_mode(),
-        texture: mat.texture(),
-        uv_offset: mat.uv_offset(),
-        uv_scale: mat.uv_scale(),
-        layers,
+      rs.val.meshes.push(ExtractedMesh2d::{
+        entity: phase_entity_ref_for_main(entity),
+        payload: Mesh2dDrawPayload::{
+          mesh_id: gpu.mesh_id,
+          transform,
+          color: mat.color(),
+          alpha_mode: mat.alpha_mode(),
+          texture: mat.texture(),
+          uv_offset: mat.uv_offset(),
+          uv_scale: mat.uv_scale(),
+          layers,
+        },
       })
 
       if !render2d_mesh_should_draw_wireframe(
@@ -6465,7 +6550,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         }
         computed = CameraComputed::{ target_size: info.size, scale_factor }
       }
-      rs.val.cameras.push(CameraInstance::{
+      rs.val.cameras.push(ExtractedCamera2d::{
         entity,
         camera,
         projection,
@@ -6559,32 +6644,36 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
           target_size,
           sprite.image_mode,
         )
-        rs.val.extra_sprite_texture_slices.push(SpriteTextureSliceInstance::{
-          entity,
-          transform,
-          anchor_offset,
-          draw_scale,
-          color: sprite.color,
-          texture: sprite.image,
-          layers,
-          scissor,
-          texture_slices,
-          target_slices,
-          repeat,
-          atlas_rect: @math.Vec4::new(uv_min.x, uv_min.y, uv_max.x, uv_max.y),
+        rs.val.extra_sprite_texture_slices.push(ExtractedSpriteTextureSlice::{
+          entity: phase_entity_ref_for_main(entity),
+          payload: SpriteTextureSliceDrawPayload::{
+            transform,
+            anchor_offset,
+            draw_scale,
+            color: sprite.color,
+            texture: sprite.image,
+            layers,
+            scissor,
+            texture_slices,
+            target_slices,
+            repeat,
+            atlas_rect: @math.Vec4::new(uv_min.x, uv_min.y, uv_max.x, uv_max.y),
+          },
         })
       } else {
-        rs.val.sprites.push(SpriteInstance::{
-          entity,
-          transform,
-          anchor_offset,
-          draw_scale: draw_scale_for_host,
-          color: sprite.color,
-          texture: sprite.image,
-          layers,
-          uv_min: uv_draw_min,
-          uv_max: uv_draw_max,
-          scissor,
+        rs.val.sprites.push(ExtractedSprite::{
+          entity: phase_entity_ref_for_main(entity),
+          payload: SpriteDrawPayload::{
+            transform,
+            anchor_offset,
+            draw_scale: draw_scale_for_host,
+            color: sprite.color,
+            texture: sprite.image,
+            layers,
+            uv_min: uv_draw_min,
+            uv_max: uv_draw_max,
+            scissor,
+          },
         })
       }
     })
@@ -6619,16 +6708,18 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         RenderLayers::default(),
       )
       let transform = render2d_resolve_transform_ecs(world, entity)
-      rs.val.meshes.push(MeshInstance::{
-        entity,
-        mesh_id: gpu.mesh_id,
-        transform,
-        color: mat.color(),
-        alpha_mode: mat.alpha_mode(),
-        texture: mat.texture(),
-        uv_offset: mat.uv_offset(),
-        uv_scale: mat.uv_scale(),
-        layers,
+      rs.val.meshes.push(ExtractedMesh2d::{
+        entity: phase_entity_ref_for_main(entity),
+        payload: Mesh2dDrawPayload::{
+          mesh_id: gpu.mesh_id,
+          transform,
+          color: mat.color(),
+          alpha_mode: mat.alpha_mode(),
+          texture: mat.texture(),
+          uv_offset: mat.uv_offset(),
+          uv_scale: mat.uv_scale(),
+          layers,
+        },
       })
 
       if !render2d_mesh_should_draw_wireframe(
@@ -6800,6 +6891,7 @@ priv enum DrawKind {
 ///|
 priv struct DrawItem {
   kind : DrawKind
+  entity : PhaseEntityRef
   z : Float
   // 0 = scene opaque/mask, 1 = scene transparent, 2 = UI overlay.
   phase : Int
@@ -6809,13 +6901,13 @@ priv struct DrawItem {
 
 ///|
 fn draw_items_for_layers(
-  sprites : Array[SpriteInstance],
-  extra_sprites : Array[SpriteInstance],
-  extra_sprite_texture_slices : Array[SpriteTextureSliceInstance],
-  extra_ui_rects : Array[UiRectInstance],
-  extra_ui_box_shadows : Array[UiBoxShadowInstance],
-  extra_ui_texture_slices : Array[UiTextureSliceInstance],
-  meshes : Array[MeshInstance],
+  sprites : Array[ExtractedSprite],
+  extra_sprites : Array[ExtractedSprite],
+  extra_sprite_texture_slices : Array[ExtractedSpriteTextureSlice],
+  extra_ui_rects : Array[ExtractedUiRect],
+  extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
+  extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
+  meshes : Array[ExtractedMesh2d],
   camera_entity : @core.Entity,
   layers : RenderLayers,
 ) -> Array[DrawItem] {
@@ -6847,6 +6939,10 @@ fn sort_draw_items(items : Array[DrawItem]) -> Array[DrawItem] {
     if cz != 0 {
       return cz
     }
+    let ce = phase_entity_ref_cmp(a.entity, b.entity)
+    if ce != 0 {
+      return ce
+    }
     cmp_int(a.tie, b.tie)
   })
   items
@@ -6854,10 +6950,10 @@ fn sort_draw_items(items : Array[DrawItem]) -> Array[DrawItem] {
 
 ///|
 fn draw_scene_items_for_layers(
-  sprites : Array[SpriteInstance],
-  extra_sprites : Array[SpriteInstance],
-  extra_sprite_texture_slices : Array[SpriteTextureSliceInstance],
-  meshes : Array[MeshInstance],
+  sprites : Array[ExtractedSprite],
+  extra_sprites : Array[ExtractedSprite],
+  extra_sprite_texture_slices : Array[ExtractedSpriteTextureSlice],
+  meshes : Array[ExtractedMesh2d],
   layers : RenderLayers,
 ) -> Array[DrawItem] {
   let items : Array[DrawItem] = []
@@ -6866,15 +6962,17 @@ fn draw_scene_items_for_layers(
   // Transparent items are then sorted by z with stable insertion order.
   for i in 0..<meshes.length() {
     let mesh = meshes[i]
-    if !mesh.layers.matches(layers) {
+    if !mesh.payload.layers.matches(layers) {
       continue
     }
-    guard mesh_alpha_phase(mesh.alpha_mode, mesh.color.a) is Some(phase) else {
+    guard mesh_alpha_phase(mesh.payload.alpha_mode, mesh.payload.color.a)
+      is Some(phase) else {
       continue
     }
     items.push(DrawItem::{
       kind: Mesh(i),
-      z: mesh.transform.translation.z,
+      entity: mesh.entity,
+      z: mesh.payload.transform.translation.z,
       phase,
       tie,
     })
@@ -6882,12 +6980,13 @@ fn draw_scene_items_for_layers(
   }
   for i in 0..<sprites.length() {
     let sprite = sprites[i]
-    if !sprite.layers.matches(layers) {
+    if !sprite.payload.layers.matches(layers) {
       continue
     }
     items.push(DrawItem::{
       kind: SpriteMain(i),
-      z: sprite.transform.translation.z,
+      entity: sprite.entity,
+      z: sprite.payload.transform.translation.z,
       phase: 1,
       tie,
     })
@@ -6895,12 +6994,13 @@ fn draw_scene_items_for_layers(
   }
   for i in 0..<extra_sprites.length() {
     let sprite = extra_sprites[i]
-    if !sprite.layers.matches(layers) {
+    if !sprite.payload.layers.matches(layers) {
       continue
     }
     items.push(DrawItem::{
       kind: SpriteExtra(i),
-      z: sprite.transform.translation.z,
+      entity: sprite.entity,
+      z: sprite.payload.transform.translation.z,
       phase: 1,
       tie,
     })
@@ -6908,12 +7008,13 @@ fn draw_scene_items_for_layers(
   }
   for i in 0..<extra_sprite_texture_slices.length() {
     let slice = extra_sprite_texture_slices[i]
-    if !slice.layers.matches(layers) {
+    if !slice.payload.layers.matches(layers) {
       continue
     }
     items.push(DrawItem::{
       kind: SpriteTextureSliceExtra(i),
-      z: slice.transform.translation.z,
+      entity: slice.entity,
+      z: slice.payload.transform.translation.z,
       phase: 1,
       tie,
     })
@@ -6924,9 +7025,9 @@ fn draw_scene_items_for_layers(
 
 ///|
 fn draw_ui_overlay_items_for_layers(
-  extra_ui_rects : Array[UiRectInstance],
-  extra_ui_box_shadows : Array[UiBoxShadowInstance],
-  extra_ui_texture_slices : Array[UiTextureSliceInstance],
+  extra_ui_rects : Array[ExtractedUiRect],
+  extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
+  extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
   camera_entity : @core.Entity,
   layers : RenderLayers,
 ) -> Array[DrawItem] {
@@ -6934,13 +7035,17 @@ fn draw_ui_overlay_items_for_layers(
   let mut tie = 0
   for i in 0..<extra_ui_rects.length() {
     let rect = extra_ui_rects[i]
-    if !rect.layers.matches(layers) ||
-      !render2d_ui_overlay_matches_camera(rect.target_camera, camera_entity) {
+    if !rect.payload.layers.matches(layers) ||
+      !render2d_ui_overlay_matches_camera(
+        rect.extracted_camera_entity,
+        camera_entity,
+      ) {
       continue
     }
     items.push(DrawItem::{
       kind: UiRectExtra(i),
-      z: rect.transform.translation.z,
+      entity: rect.entity,
+      z: rect.payload.transform.translation.z,
       phase: 2,
       tie,
     })
@@ -6948,13 +7053,17 @@ fn draw_ui_overlay_items_for_layers(
   }
   for i in 0..<extra_ui_box_shadows.length() {
     let shadow = extra_ui_box_shadows[i]
-    if !shadow.layers.matches(layers) ||
-      !render2d_ui_overlay_matches_camera(shadow.target_camera, camera_entity) {
+    if !shadow.payload.layers.matches(layers) ||
+      !render2d_ui_overlay_matches_camera(
+        shadow.extracted_camera_entity,
+        camera_entity,
+      ) {
       continue
     }
     items.push(DrawItem::{
       kind: UiBoxShadowExtra(i),
-      z: shadow.transform.translation.z,
+      entity: shadow.entity,
+      z: shadow.payload.transform.translation.z,
       phase: 2,
       tie,
     })
@@ -6962,13 +7071,17 @@ fn draw_ui_overlay_items_for_layers(
   }
   for i in 0..<extra_ui_texture_slices.length() {
     let slice = extra_ui_texture_slices[i]
-    if !slice.layers.matches(layers) ||
-      !render2d_ui_overlay_matches_camera(slice.target_camera, camera_entity) {
+    if !slice.payload.layers.matches(layers) ||
+      !render2d_ui_overlay_matches_camera(
+        slice.extracted_camera_entity,
+        camera_entity,
+      ) {
       continue
     }
     items.push(DrawItem::{
       kind: UiTextureSliceExtra(i),
-      z: slice.transform.translation.z,
+      entity: slice.entity,
+      z: slice.payload.transform.translation.z,
       phase: 2,
       tie,
     })
@@ -6978,49 +7091,142 @@ fn draw_ui_overlay_items_for_layers(
 }
 
 ///|
+fn extracted_sprite_item(
+  entity : @core.Entity,
+  transform : @math.Transform,
+  anchor_offset : @math.Vec2,
+  draw_scale : @math.Vec2,
+  color : Color,
+  texture : @asset.Handle[@asset.Image],
+  layers : RenderLayers,
+  uv_min : @math.Vec2,
+  uv_max : @math.Vec2,
+  scissor : @math.Rect?,
+) -> ExtractedSprite {
+  ExtractedSprite::{
+    entity: phase_entity_ref_for_main(entity),
+    payload: SpriteDrawPayload::{
+      transform,
+      anchor_offset,
+      draw_scale,
+      color,
+      texture,
+      layers,
+      uv_min,
+      uv_max,
+      scissor,
+    },
+  }
+}
+
+///|
+fn extracted_ui_rect_item(
+  entity : @core.Entity,
+  extracted_camera_entity : @core.Entity,
+  transform : @math.Transform,
+  anchor_offset : @math.Vec2,
+  draw_scale : @math.Vec2,
+  color : Color,
+  texture : @asset.Handle[@asset.Image],
+  layers : RenderLayers,
+  uv_min : @math.Vec2,
+  uv_max : @math.Vec2,
+  scissor : @math.Rect?,
+  flags : Int,
+  radius : UiCornerRadii,
+  border : UiBorderRect,
+) -> ExtractedUiRect {
+  ExtractedUiRect::{
+    entity: phase_entity_ref_for_main(entity),
+    extracted_camera_entity,
+    payload: UiRectDrawPayload::{
+      transform,
+      anchor_offset,
+      draw_scale,
+      color,
+      texture,
+      layers,
+      uv_min,
+      uv_max,
+      scissor,
+      flags,
+      radius,
+      border,
+    },
+  }
+}
+
+///|
+fn extracted_mesh2d_item(
+  entity : @core.Entity,
+  mesh_id : Int,
+  transform : @math.Transform,
+  color : Color,
+  alpha_mode : AlphaMode2d,
+  texture : @asset.Handle[@asset.Image]?,
+  uv_offset : @math.Vec2,
+  uv_scale : @math.Vec2,
+  layers : RenderLayers,
+) -> ExtractedMesh2d {
+  ExtractedMesh2d::{
+    entity: phase_entity_ref_for_main(entity),
+    payload: Mesh2dDrawPayload::{
+      mesh_id,
+      transform,
+      color,
+      alpha_mode,
+      texture,
+      uv_offset,
+      uv_scale,
+      layers,
+    },
+  }
+}
+
+///|
 test "render2d: unified draw items order sprites and meshes by z" {
   let layers = RenderLayers::default()
-  let sprites : Array[SpriteInstance] = [
-    SpriteInstance::{
-      entity: @core.Entity::new(2, 0),
-      transform: @math.Transform::from_xy_rotation_scale(
+  let sprites : Array[ExtractedSprite] = [
+    extracted_sprite_item(
+      @core.Entity::new(2, 0),
+      @math.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 0.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
         z=0.0F,
       ),
-      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-      draw_scale: @math.Vec2::new(1.0F, 1.0F),
-      color: Color::new(1.0F, 1.0F, 1.0F, 1.0F),
-      texture: @asset.Handle::new(2),
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      @asset.Handle::new(2),
       layers,
-      uv_min: @math.Vec2::new(0.0F, 0.0F),
-      uv_max: @math.Vec2::new(1.0F, 1.0F),
-      scissor: None,
-    },
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      None,
+    ),
   ]
-  let extra : Array[SpriteInstance] = []
-  let extra_sprite_slices : Array[SpriteTextureSliceInstance] = []
-  let extra_ui : Array[UiRectInstance] = []
-  let extra_shadow : Array[UiBoxShadowInstance] = []
-  let extra_slices : Array[UiTextureSliceInstance] = []
-  let meshes : Array[MeshInstance] = [
-    MeshInstance::{
-      entity: @core.Entity::new(1, 0),
-      mesh_id: 7,
-      transform: @math.Transform::from_xy_rotation_scale(
+  let extra : Array[ExtractedSprite] = []
+  let extra_sprite_slices : Array[ExtractedSpriteTextureSlice] = []
+  let extra_ui : Array[ExtractedUiRect] = []
+  let extra_shadow : Array[ExtractedUiBoxShadow] = []
+  let extra_slices : Array[ExtractedUiTextureSlice] = []
+  let meshes : Array[ExtractedMesh2d] = [
+    extracted_mesh2d_item(
+      @core.Entity::new(1, 0),
+      7,
+      @math.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 0.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
         z=-1.0F,
       ),
-      color: Color::white(),
-      alpha_mode: AlphaMode2d::Blend,
-      texture: None,
-      uv_offset: @math.Vec2::new(0.0F, 0.0F),
-      uv_scale: @math.Vec2::new(1.0F, 1.0F),
+      Color::white(),
+      AlphaMode2d::Blend,
+      None,
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
       layers,
-    },
+    ),
   ]
   let items = draw_items_for_layers(
     sprites,
@@ -7044,46 +7250,46 @@ test "render2d: UI overlay draw items route by target camera" {
   let layers = RenderLayers::default()
   let camera_a = @core.Entity::new(10, 0)
   let camera_b = @core.Entity::new(11, 0)
-  let sprites : Array[SpriteInstance] = []
-  let extra : Array[SpriteInstance] = []
-  let extra_sprite_slices : Array[SpriteTextureSliceInstance] = []
-  let extra_ui : Array[UiRectInstance] = [
-    UiRectInstance::{
-      entity: @core.Entity::new(100, 0),
-      target_camera: camera_a,
-      transform: @math.Transform::identity(),
-      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-      draw_scale: @math.Vec2::new(1.0F, 1.0F),
-      color: Color::white(),
-      texture: @asset.Handle::new(1),
+  let sprites : Array[ExtractedSprite] = []
+  let extra : Array[ExtractedSprite] = []
+  let extra_sprite_slices : Array[ExtractedSpriteTextureSlice] = []
+  let extra_ui : Array[ExtractedUiRect] = [
+    extracted_ui_rect_item(
+      @core.Entity::new(100, 0),
+      camera_a,
+      @math.Transform::identity(),
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      Color::white(),
+      @asset.Handle::new(1),
       layers,
-      uv_min: @math.Vec2::new(0.0F, 0.0F),
-      uv_max: @math.Vec2::new(1.0F, 1.0F),
-      scissor: None,
-      flags: 0,
-      radius: UiCornerRadii::zero(),
-      border: UiBorderRect::zero(),
-    },
-    UiRectInstance::{
-      entity: @core.Entity::new(101, 0),
-      target_camera: camera_b,
-      transform: @math.Transform::identity(),
-      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-      draw_scale: @math.Vec2::new(1.0F, 1.0F),
-      color: Color::white(),
-      texture: @asset.Handle::new(2),
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      None,
+      0,
+      UiCornerRadii::zero(),
+      UiBorderRect::zero(),
+    ),
+    extracted_ui_rect_item(
+      @core.Entity::new(101, 0),
+      camera_b,
+      @math.Transform::identity(),
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      Color::white(),
+      @asset.Handle::new(2),
       layers,
-      uv_min: @math.Vec2::new(0.0F, 0.0F),
-      uv_max: @math.Vec2::new(1.0F, 1.0F),
-      scissor: None,
-      flags: 0,
-      radius: UiCornerRadii::zero(),
-      border: UiBorderRect::zero(),
-    },
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      None,
+      0,
+      UiCornerRadii::zero(),
+      UiBorderRect::zero(),
+    ),
   ]
-  let extra_shadow : Array[UiBoxShadowInstance] = []
-  let extra_slices : Array[UiTextureSliceInstance] = []
-  let meshes : Array[MeshInstance] = []
+  let extra_shadow : Array[ExtractedUiBoxShadow] = []
+  let extra_slices : Array[ExtractedUiTextureSlice] = []
+  let meshes : Array[ExtractedMesh2d] = []
   let items = draw_items_for_layers(
     sprites, extra, extra_sprite_slices, extra_ui, extra_shadow, extra_slices, meshes,
     camera_a, layers,
@@ -7099,22 +7305,22 @@ test "render2d: scene draw items exclude UI overlays" {
   let scene_items = draw_scene_items_for_layers([], [], [], [], layers)
   let ui_items = draw_ui_overlay_items_for_layers(
     [
-      UiRectInstance::{
-        entity: @core.Entity::new(100, 0),
-        target_camera: camera,
-        transform: @math.Transform::identity(),
-        anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-        draw_scale: @math.Vec2::new(1.0F, 1.0F),
-        color: Color::white(),
-        texture: @asset.Handle::new(1),
+      extracted_ui_rect_item(
+        @core.Entity::new(100, 0),
+        camera,
+        @math.Transform::identity(),
+        @math.Vec2::new(0.0F, 0.0F),
+        @math.Vec2::new(1.0F, 1.0F),
+        Color::white(),
+        @asset.Handle::new(1),
         layers,
-        uv_min: @math.Vec2::new(0.0F, 0.0F),
-        uv_max: @math.Vec2::new(1.0F, 1.0F),
-        scissor: None,
-        flags: 0,
-        radius: UiCornerRadii::zero(),
-        border: UiBorderRect::zero(),
-      },
+        @math.Vec2::new(0.0F, 0.0F),
+        @math.Vec2::new(1.0F, 1.0F),
+        None,
+        0,
+        UiCornerRadii::zero(),
+        UiBorderRect::zero(),
+      ),
     ],
     [],
     [],
@@ -7160,7 +7366,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
   render_state_update(world, fn(rs) {
     rs.val.draw_enabled = true
     rs.val.cameras.clear()
-    rs.val.cameras.push(CameraInstance::{
+    rs.val.cameras.push(ExtractedCamera2d::{
       entity: camera_a,
       camera: Camera::default().with_order(0),
       projection: OrthographicProjection::default_2d(),
@@ -7173,7 +7379,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
         scale_factor: 1.0F,
       },
     })
-    rs.val.cameras.push(CameraInstance::{
+    rs.val.cameras.push(ExtractedCamera2d::{
       entity: camera_b,
       camera: Camera::default().with_order(1),
       projection: OrthographicProjection::default_2d(),
@@ -7190,38 +7396,42 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
     rs.val.prepared_camera_indices.push(0)
     rs.val.prepared_camera_indices.push(1)
     rs.val.extra_ui_rects.clear()
-    rs.val.extra_ui_rects.push(UiRectInstance::{
-      entity: @core.Entity::new(200, 0),
-      target_camera: camera_a,
-      transform: @math.Transform::identity(),
-      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-      draw_scale: @math.Vec2::new(1.0F, 1.0F),
-      color: Color::white(),
-      texture: @asset.Handle::new(3),
-      layers,
-      uv_min: @math.Vec2::new(0.0F, 0.0F),
-      uv_max: @math.Vec2::new(1.0F, 1.0F),
-      scissor: None,
-      flags: 0,
-      radius: UiCornerRadii::zero(),
-      border: UiBorderRect::zero(),
-    })
-    rs.val.extra_ui_rects.push(UiRectInstance::{
-      entity: @core.Entity::new(201, 0),
-      target_camera: camera_b,
-      transform: @math.Transform::identity(),
-      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-      draw_scale: @math.Vec2::new(1.0F, 1.0F),
-      color: Color::white(),
-      texture: @asset.Handle::new(4),
-      layers,
-      uv_min: @math.Vec2::new(0.0F, 0.0F),
-      uv_max: @math.Vec2::new(1.0F, 1.0F),
-      scissor: None,
-      flags: 0,
-      radius: UiCornerRadii::zero(),
-      border: UiBorderRect::zero(),
-    })
+    rs.val.extra_ui_rects.push(
+      extracted_ui_rect_item(
+        @core.Entity::new(200, 0),
+        camera_a,
+        @math.Transform::identity(),
+        @math.Vec2::new(0.0F, 0.0F),
+        @math.Vec2::new(1.0F, 1.0F),
+        Color::white(),
+        @asset.Handle::new(3),
+        layers,
+        @math.Vec2::new(0.0F, 0.0F),
+        @math.Vec2::new(1.0F, 1.0F),
+        None,
+        0,
+        UiCornerRadii::zero(),
+        UiBorderRect::zero(),
+      ),
+    )
+    rs.val.extra_ui_rects.push(
+      extracted_ui_rect_item(
+        @core.Entity::new(201, 0),
+        camera_b,
+        @math.Transform::identity(),
+        @math.Vec2::new(0.0F, 0.0F),
+        @math.Vec2::new(1.0F, 1.0F),
+        Color::white(),
+        @asset.Handle::new(4),
+        layers,
+        @math.Vec2::new(0.0F, 0.0F),
+        @math.Vec2::new(1.0F, 1.0F),
+        None,
+        0,
+        UiCornerRadii::zero(),
+        UiBorderRect::zero(),
+      ),
+    )
     rs.val.extra_ui_box_shadows.clear()
     rs.val.extra_ui_texture_slices.clear()
   })
@@ -7236,35 +7446,35 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
 ///|
 test "render2d: mesh opaque alpha mode stays in opaque phase" {
   let layers = RenderLayers::default()
-  let sprites : Array[SpriteInstance] = []
-  let extra : Array[SpriteInstance] = []
-  let extra_sprite_slices : Array[SpriteTextureSliceInstance] = []
-  let extra_ui : Array[UiRectInstance] = []
-  let extra_shadow : Array[UiBoxShadowInstance] = []
-  let extra_slices : Array[UiTextureSliceInstance] = []
-  let meshes : Array[MeshInstance] = [
-    MeshInstance::{
-      entity: @core.Entity::new(2, 0),
-      mesh_id: 10,
-      transform: @math.Transform::identity(),
-      color: Color::new(1.0F, 0.0F, 0.0F, 0.2F),
-      alpha_mode: AlphaMode2d::Opaque,
-      texture: None,
-      uv_offset: @math.Vec2::new(0.0F, 0.0F),
-      uv_scale: @math.Vec2::new(1.0F, 1.0F),
+  let sprites : Array[ExtractedSprite] = []
+  let extra : Array[ExtractedSprite] = []
+  let extra_sprite_slices : Array[ExtractedSpriteTextureSlice] = []
+  let extra_ui : Array[ExtractedUiRect] = []
+  let extra_shadow : Array[ExtractedUiBoxShadow] = []
+  let extra_slices : Array[ExtractedUiTextureSlice] = []
+  let meshes : Array[ExtractedMesh2d] = [
+    extracted_mesh2d_item(
+      @core.Entity::new(2, 0),
+      10,
+      @math.Transform::identity(),
+      Color::new(1.0F, 0.0F, 0.0F, 0.2F),
+      AlphaMode2d::Opaque,
+      None,
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
       layers,
-    },
-    MeshInstance::{
-      entity: @core.Entity::new(1, 0),
-      mesh_id: 11,
-      transform: @math.Transform::identity(),
-      color: Color::new(0.0F, 1.0F, 0.0F, 0.2F),
-      alpha_mode: AlphaMode2d::Blend,
-      texture: None,
-      uv_offset: @math.Vec2::new(0.0F, 0.0F),
-      uv_scale: @math.Vec2::new(1.0F, 1.0F),
+    ),
+    extracted_mesh2d_item(
+      @core.Entity::new(1, 0),
+      11,
+      @math.Transform::identity(),
+      Color::new(0.0F, 1.0F, 0.0F, 0.2F),
+      AlphaMode2d::Blend,
+      None,
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
       layers,
-    },
+    ),
   ]
   let items = draw_items_for_layers(
     sprites,
@@ -7286,32 +7496,32 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
 ///|
 test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
   let layers = RenderLayers::default()
-  let sprites : Array[SpriteInstance] = [
-    SpriteInstance::{
-      entity: @core.Entity::new(2, 0),
-      transform: @math.Transform::identity(),
-      anchor_offset: @math.Vec2::new(0.0F, 0.0F),
-      draw_scale: @math.Vec2::new(1.0F, 1.0F),
-      color: Color::white(),
-      texture: @asset.Handle::new(10),
+  let sprites : Array[ExtractedSprite] = [
+    extracted_sprite_item(
+      @core.Entity::new(2, 0),
+      @math.Transform::identity(),
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      Color::white(),
+      @asset.Handle::new(10),
       layers,
-      uv_min: @math.Vec2::new(0.0F, 0.0F),
-      uv_max: @math.Vec2::new(1.0F, 1.0F),
-      scissor: None,
-    },
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+      None,
+    ),
   ]
-  let meshes : Array[MeshInstance] = [
-    MeshInstance::{
-      entity: @core.Entity::new(1, 0),
-      mesh_id: 99,
-      transform: @math.Transform::identity(),
-      color: Color::new(1.0F, 1.0F, 1.0F, 1.0F),
-      alpha_mode: AlphaMode2d::Blend,
-      texture: None,
-      uv_offset: @math.Vec2::new(0.0F, 0.0F),
-      uv_scale: @math.Vec2::new(1.0F, 1.0F),
+  let meshes : Array[ExtractedMesh2d] = [
+    extracted_mesh2d_item(
+      @core.Entity::new(1, 0),
+      99,
+      @math.Transform::identity(),
+      Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+      AlphaMode2d::Blend,
+      None,
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
       layers,
-    },
+    ),
   ]
   let items = draw_scene_items_for_layers(sprites, [], [], meshes, layers)
   let ok = items.length() == 2 &&
@@ -7323,35 +7533,35 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
 ///|
 test "render2d: mesh mask alpha mode drops below cutoff" {
   let layers = RenderLayers::default()
-  let sprites : Array[SpriteInstance] = []
-  let extra : Array[SpriteInstance] = []
-  let extra_sprite_slices : Array[SpriteTextureSliceInstance] = []
-  let extra_ui : Array[UiRectInstance] = []
-  let extra_shadow : Array[UiBoxShadowInstance] = []
-  let extra_slices : Array[UiTextureSliceInstance] = []
-  let meshes : Array[MeshInstance] = [
-    MeshInstance::{
-      entity: @core.Entity::new(1, 0),
-      mesh_id: 20,
-      transform: @math.Transform::identity(),
-      color: Color::new(1.0F, 1.0F, 1.0F, 0.2F),
-      alpha_mode: AlphaMode2d::Mask(0.5F),
-      texture: None,
-      uv_offset: @math.Vec2::new(0.0F, 0.0F),
-      uv_scale: @math.Vec2::new(1.0F, 1.0F),
+  let sprites : Array[ExtractedSprite] = []
+  let extra : Array[ExtractedSprite] = []
+  let extra_sprite_slices : Array[ExtractedSpriteTextureSlice] = []
+  let extra_ui : Array[ExtractedUiRect] = []
+  let extra_shadow : Array[ExtractedUiBoxShadow] = []
+  let extra_slices : Array[ExtractedUiTextureSlice] = []
+  let meshes : Array[ExtractedMesh2d] = [
+    extracted_mesh2d_item(
+      @core.Entity::new(1, 0),
+      20,
+      @math.Transform::identity(),
+      Color::new(1.0F, 1.0F, 1.0F, 0.2F),
+      AlphaMode2d::Mask(0.5F),
+      None,
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
       layers,
-    },
-    MeshInstance::{
-      entity: @core.Entity::new(2, 0),
-      mesh_id: 21,
-      transform: @math.Transform::identity(),
-      color: Color::new(1.0F, 1.0F, 1.0F, 0.8F),
-      alpha_mode: AlphaMode2d::Mask(0.5F),
-      texture: None,
-      uv_offset: @math.Vec2::new(0.0F, 0.0F),
-      uv_scale: @math.Vec2::new(1.0F, 1.0F),
+    ),
+    extracted_mesh2d_item(
+      @core.Entity::new(2, 0),
+      21,
+      @math.Transform::identity(),
+      Color::new(1.0F, 1.0F, 1.0F, 0.8F),
+      AlphaMode2d::Mask(0.5F),
+      None,
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
       layers,
-    },
+    ),
   ]
   let items = draw_items_for_layers(
     sprites,
@@ -7780,7 +7990,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         for item in items {
           match item.kind {
             SpriteMain(i) => {
-              let sprite = sprites[i]
+              let sprite = sprites[i].payload
               apply_scissor(sprite.scissor)
               let transform = sprite.transform
               let pos = @math.Vec2::new(
@@ -7805,7 +8015,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
               )
             }
             SpriteExtra(i) => {
-              let sprite = extra_sprites[i]
+              let sprite = extra_sprites[i].payload
               apply_scissor(sprite.scissor)
               let transform = sprite.transform
               let pos = @math.Vec2::new(
@@ -7830,7 +8040,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
               )
             }
             SpriteTextureSliceExtra(i) => {
-              let slice = extra_sprite_texture_slices[i]
+              let slice = extra_sprite_texture_slices[i].payload
               apply_scissor(slice.scissor)
               let transform = slice.transform
               let pos = @math.Vec2::new(
@@ -7868,7 +8078,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             }
             Mesh(i) => {
               apply_scissor(None)
-              let mesh = meshes[i]
+              let mesh = meshes[i].payload
               guard mesh_draw_alpha(mesh.alpha_mode, mesh.color.a)
                 is Some(draw_alpha) else {
                 continue
@@ -7897,7 +8107,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
               )
             }
             UiRectExtra(i) => {
-              let rect = extra_ui_rects[i]
+              let rect = extra_ui_rects[i].payload
               apply_scissor(rect.scissor)
               let transform = rect.transform
               let pos = @math.Vec2::new(
@@ -7931,7 +8141,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
               )
             }
             UiBoxShadowExtra(i) => {
-              let shadow = extra_ui_box_shadows[i]
+              let shadow = extra_ui_box_shadows[i].payload
               apply_scissor(shadow.scissor)
               let transform = shadow.transform
               let pos = @math.Vec2::new(
@@ -7960,7 +8170,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
               )
             }
             UiTextureSliceExtra(i) => {
-              let slice = extra_ui_texture_slices[i]
+              let slice = extra_ui_texture_slices[i].payload
               apply_scissor(slice.scissor)
               let transform = slice.transform
               let pos = @math.Vec2::new(
@@ -8153,7 +8363,7 @@ pub fn render2d_viewport_to_world_2d(
   if id.is_placeholder() {
     return None
   }
-  let mut found : CameraInstance? = None
+  let mut found : ExtractedCamera2d? = None
   for camera in rs.cameras {
     if camera.entity.id == id.id && camera.entity.generation == id.generation {
       found = Some(camera)
@@ -8181,7 +8391,7 @@ pub fn render2d_world_to_viewport(
   if id.is_placeholder() {
     return None
   }
-  let mut found : CameraInstance? = None
+  let mut found : ExtractedCamera2d? = None
   for camera in rs.cameras {
     if camera.entity.id == id.id && camera.entity.generation == id.generation {
       found = Some(camera)

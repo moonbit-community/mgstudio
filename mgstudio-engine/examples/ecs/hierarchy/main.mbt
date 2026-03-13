@@ -57,8 +57,8 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(first_child, @hierarchy.Parent::new(parent), tick)
+  .component(@mg_hierarchy.ecs_key_parent)
+  .insert(first_child, @mg_hierarchy.Parent::new(parent), tick)
 
   let second_child = @sprite.SpriteBundle::new(
     @sprite.Sprite::from_image(texture).with_color(
@@ -69,8 +69,8 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(second_child, @hierarchy.Parent::new(parent), tick)
+  .component(@mg_hierarchy.ecs_key_parent)
+  .insert(second_child, @mg_hierarchy.Parent::new(parent), tick)
 }
 
 ///|
@@ -81,11 +81,11 @@ fn rotate(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   let transform_store = @math.get_transform_store(world)
-  let children_store = @hierarchy.get_children_store(world)
+  let children_store = @mg_hierarchy.get_children_store(world)
   let parents = world.query_entities_filtered(
     (
       @ecs.With::new(@sprite.ecs_key_sprite),
-      @ecs.With::new(@hierarchy.ecs_key_children),
+      @ecs.With::new(@mg_hierarchy.ecs_key_children),
     ),
   )
 
