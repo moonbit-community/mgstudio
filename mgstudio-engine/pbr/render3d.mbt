@@ -1592,40 +1592,6 @@ pub fn MeshMaterial3dBundle::spawn(
 }
 
 ///|
-priv struct Camera3dInstance {
-  entity : @core.Entity
-  camera3d : Camera3d
-  camera : @sprite.Camera
-  projection : Projection
-  sub_camera_view : SubCameraView3d?
-  screen_space_transmission : ScreenSpaceTransmission?
-  bloom : Bloom?
-  tonemapping : Tonemapping?
-  deband_dither : DebandDither?
-  chromatic_aberration : ChromaticAberration?
-  vignette : Vignette?
-  motion_blur : MotionBlur?
-  exposure : Exposure?
-  color_grading : ColorGrading?
-  skybox : Skybox?
-  depth_prepass_enabled : Bool
-  deferred_prepass_enabled : Bool
-  hdr_enabled : Bool
-  fxaa : Fxaa?
-  temporal_jitter : TemporalJitter?
-  temporal_anti_aliasing : TemporalAntiAliasing?
-  motion_vector_prepass_enabled : Bool
-  msaa : Msaa?
-  transform : @math.Transform
-  previous_transform : @math.Transform
-  previous_clip_from_world : ProjectionMatrix3d?
-  target_id : Int
-  target_size : @math.IVec2
-  scale_factor : Float
-  layers : @sprite.RenderLayers
-}
-
-///|
 priv struct ProjectionRuntime3d {
   last_view_width : Float
   last_view_height : Float
@@ -1635,53 +1601,6 @@ priv struct ProjectionRuntime3d {
 let ecs_key_projection_runtime3d : @ecs.ComponentKey[ProjectionRuntime3d] = @ecs.register_component(
   debug_name="render3d.projection_runtime3d",
 )
-
-///|
-priv struct Mesh3dInstance {
-  entity : @core.Entity
-  mesh_handle : @asset.Handle[@mesh.Mesh]
-  mesh_id : Int
-  transform : @math.Transform
-  previous_transform : @math.Transform
-  visibility_range : @visibility.VisibilityRange?
-  aabb_center_world : @math.Vec3?
-  material : StandardMaterial
-  material_extension : ExtendedMaterialMetadata3d?
-  is_forward_decal : Bool
-  forward_decal_material_ext : ForwardDecalMaterialExt?
-  clustered_decal : ClusteredDecal?
-  layers : @sprite.RenderLayers
-  has_wireframe : Bool
-  has_no_wireframe : Bool
-  wireframe_color : WireframeColor?
-}
-
-///|
-priv struct TransmissionMeshDraw {
-  mesh : Mesh3dInstance
-  draw_flags : Int
-  draw_color_r : Float
-  draw_color_g : Float
-  draw_color_b : Float
-  draw_alpha : Float
-  texture_id : Int
-  normal_texture_id : Int
-  emissive_texture_id : Int
-  metallic_roughness_texture_id : Int
-  occlusion_texture_id : Int
-  depth_texture_id : Int
-  anisotropy_texture_id : Int
-  specular_tint_texture_id : Int
-  draw_surface_roughness : Float
-  draw_reflectance : Float
-  draw_diffuse_transmission : Float
-  draw_specular_transmission : Float
-  draw_thickness : Float
-  draw_ior : Float
-  specular_tint : @sprite.Color
-  anisotropy_strength : Float
-  max_relief_mapping_search_steps : Float
-}
 
 ///|
 priv struct RenderTargetComputed3d {
@@ -1986,10 +1905,13 @@ fn motion_blur_history_get(entity : @core.Entity) -> @math.Transform? {
 }
 
 ///|
-fn motion_blur_history_sync(meshes : Array[Mesh3dInstance]) -> Unit {
+fn motion_blur_history_sync(meshes : Array[ExtractedMesh3d]) -> Unit {
   let next : Array[MotionBlurHistoryEntry] = []
   for mesh in meshes {
-    next.push({ entity: mesh.entity, transform: mesh.transform })
+    next.push({
+      entity: mesh.entity.main_entity,
+      transform: mesh.payload.transform,
+    })
   }
   motion_blur_history.val = next
 }
@@ -2116,9 +2038,9 @@ fn render3d_pass_kind_encode(
 }
 
 ///|
-fn render3d_mesh_draw_flags(mesh : Mesh3dInstance) -> Int {
+fn render3d_mesh_draw_flags(mesh : ExtractedMesh3d) -> Int {
   let mut flags = 0
-  if mesh.is_forward_decal || mesh.clustered_decal is Some(_) {
+  if mesh.payload.is_forward_decal || mesh.payload.clustered_decal is Some(_) {
     flags = flags | RENDER3D_MESH3D_DRAW_FLAG_DECAL
   }
   flags
@@ -2569,13 +2491,13 @@ fn render3d_wireframe_mesh_id(mesh_handle : @asset.Handle[@mesh.Mesh]) -> Int? {
 
 ///|
 fn render3d_mesh_should_draw_wireframe(
-  mesh : Mesh3dInstance,
+  mesh : ExtractedMesh3d,
   wireframe_config : WireframeConfig?,
 ) -> Bool {
   guard wireframe_config is Some(config) else { return false }
-  if mesh.has_no_wireframe {
+  if mesh.payload.has_no_wireframe {
     false
-  } else if mesh.has_wireframe {
+  } else if mesh.payload.has_wireframe {
     true
   } else {
     config.global
@@ -2584,10 +2506,10 @@ fn render3d_mesh_should_draw_wireframe(
 
 ///|
 fn render3d_mesh_wireframe_color(
-  mesh : Mesh3dInstance,
+  mesh : ExtractedMesh3d,
   wireframe_config : WireframeConfig?,
 ) -> @sprite.Color {
-  if mesh.wireframe_color is Some(color_component) {
+  if mesh.payload.wireframe_color is Some(color_component) {
     color_component.color
   } else if wireframe_config is Some(config) {
     config.default_color
@@ -2702,10 +2624,10 @@ fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
 ///|
 fn render3d_draw_camera_skybox(
   world : @ecs.World,
-  camera : Camera3dInstance,
+  camera : ExtractedCamera3d,
   camera_far : Float,
 ) -> Unit {
-  guard camera.skybox is Some(skybox) else { return }
+  guard camera.payload.skybox is Some(skybox) else { return }
   guard skybox.image is Some(image) else { return }
   let mesh_id = render3d_skybox_proxy_mesh_id(world)
   if mesh_id <= 0 {
@@ -2716,9 +2638,9 @@ fn render3d_draw_camera_skybox(
   // Negative d marks stacked-vertical cubemap sampling in mesh3d.wgsl.
   @render.host_gpu_draw_mesh3d(
     mesh_id~,
-    x=camera.transform.translation.x,
-    y=camera.transform.translation.y,
-    z=camera.transform.translation.z,
+    x=camera.payload.transform.translation.x,
+    y=camera.payload.transform.translation.y,
+    z=camera.payload.transform.translation.z,
     rotation_x=skybox.rotation.x,
     rotation_y=skybox.rotation.y,
     rotation_z=skybox.rotation.z,
@@ -2726,16 +2648,16 @@ fn render3d_draw_camera_skybox(
     scale_x=skybox_extent,
     scale_y=skybox_extent,
     scale_z=skybox_extent,
-    previous_x=camera.previous_transform.translation.x,
-    previous_y=camera.previous_transform.translation.y,
-    previous_z=camera.previous_transform.translation.z,
-    previous_rotation_x=camera.previous_transform.rotation.x,
-    previous_rotation_y=camera.previous_transform.rotation.y,
-    previous_rotation_z=camera.previous_transform.rotation.z,
-    previous_rotation_w=camera.previous_transform.rotation.w,
-    previous_scale_x=camera.previous_transform.scale.x,
-    previous_scale_y=camera.previous_transform.scale.y,
-    previous_scale_z=camera.previous_transform.scale.z,
+    previous_x=camera.payload.previous_transform.translation.x,
+    previous_y=camera.payload.previous_transform.translation.y,
+    previous_z=camera.payload.previous_transform.translation.z,
+    previous_rotation_x=camera.payload.previous_transform.rotation.x,
+    previous_rotation_y=camera.payload.previous_transform.rotation.y,
+    previous_rotation_z=camera.payload.previous_transform.rotation.z,
+    previous_rotation_w=camera.payload.previous_transform.rotation.w,
+    previous_scale_x=camera.payload.previous_transform.scale.x,
+    previous_scale_y=camera.payload.previous_transform.scale.y,
+    previous_scale_z=camera.payload.previous_transform.scale.z,
     color_r=brightness,
     color_g=brightness,
     color_b=brightness,
@@ -2785,39 +2707,43 @@ fn render3d_draw_camera_skybox(
 }
 
 ///|
-fn render3d_sorted_camera_indices(
-  cameras : Array[Camera3dInstance],
-) -> Array[Int] {
-  let order : Array[Int] = []
+fn render3d_queue_camera_phase_items(
+  cameras : Array[ExtractedCamera3d],
+) -> Array[CameraPhaseItem3d] {
+  let items : Array[CameraPhaseItem3d] = []
   for i in 0..<cameras.length() {
-    order.push(i)
+    let camera = cameras[i]
+    items.push(CameraPhaseItem3d::{
+      entity: camera.entity,
+      extracted_index: i,
+      order: camera.payload.camera.order,
+    })
   }
-  order.sort_by(fn(a, b) {
-    let ca = cameras[a]
-    let cb = cameras[b]
-    let order_cmp = cmp_int(ca.camera.order, cb.camera.order)
+  items.sort_by(fn(a, b) {
+    let order_cmp = cmp_int(a.order, b.order)
     if order_cmp != 0 {
       return order_cmp
     }
-    let id_cmp = cmp_int(ca.entity.id, cb.entity.id)
-    if id_cmp != 0 {
-      return id_cmp
-    }
-    cmp_int(ca.entity.generation, cb.entity.generation)
+    phase_entity_ref3d_cmp(a.entity, b.entity)
   })
-  order
+  items
 }
 
 ///|
-fn render3d_mesh_alpha_phase(alpha_mode : AlphaMode3d, alpha : Float) -> Int? {
+fn render3d_mesh_phase_kind(alpha_mode : AlphaMode3d, alpha : Float) -> Int? {
   match alpha_mode {
-    Opaque => Some(0)
-    Blend => Some(if alpha >= 1.0F { 0 } else { 1 })
-    Premultiplied => Some(if alpha >= 1.0F { 0 } else { 1 })
-    Add => Some(1)
-    Multiply => Some(if alpha >= 1.0F { 0 } else { 1 })
-    AlphaToCoverage => Some(if alpha >= 1.0F { 0 } else { 1 })
-    Mask(cutoff) => if alpha >= cutoff { Some(0) } else { None }
+    Opaque => Some(RENDER3D_PHASE_OPAQUE)
+    AlphaToCoverage => Some(RENDER3D_PHASE_OPAQUE)
+    Mask(cutoff) =>
+      if alpha >= cutoff {
+        Some(RENDER3D_PHASE_ALPHA_MASK)
+      } else {
+        None
+      }
+    Blend => Some(RENDER3D_PHASE_TRANSPARENT)
+    Premultiplied => Some(RENDER3D_PHASE_TRANSPARENT)
+    Add => Some(RENDER3D_PHASE_TRANSPARENT)
+    Multiply => Some(RENDER3D_PHASE_TRANSPARENT)
   }
 }
 
@@ -4251,81 +4177,70 @@ fn render3d_visibility_range_visible(
 }
 
 ///|
-fn render3d_sorted_mesh_indices(
-  meshes : Array[Mesh3dInstance],
+fn render3d_queue_mesh_phase_items(
+  meshes : Array[ExtractedMesh3d],
   layers : @sprite.RenderLayers,
   camera_transform : @math.Transform,
-) -> Array[Int] {
-  let order : Array[Int] = []
+) -> Array[MeshPhaseItem3d] {
+  let items : Array[MeshPhaseItem3d] = []
   for i in 0..<meshes.length() {
     let mesh = meshes[i]
-    if mesh.mesh_id <= 0 {
+    let payload = mesh.payload
+    if payload.mesh_id <= 0 {
       continue
     }
-    if !mesh.layers.matches(layers) {
+    if !payload.layers.matches(layers) {
       continue
     }
-    if mesh.visibility_range is Some(visibility_range) &&
+    if payload.visibility_range is Some(visibility_range) &&
       !render3d_visibility_range_visible(
         visibility_range,
         camera_transform,
-        mesh.transform,
-        mesh.aabb_center_world,
+        payload.transform,
+        payload.aabb_center_world,
       ) {
       continue
     }
-    if render3d_mesh_alpha_phase(
-        mesh.material.alpha_mode,
-        mesh.material.base_color.a,
-      )
-      is None {
+    let alpha = payload.material.base_color.a
+    if render3d_mesh_phase_kind(payload.material.alpha_mode, alpha) is None {
       continue
     }
-    order.push(i)
+    let phase = render3d_mesh_phase_kind(payload.material.alpha_mode, alpha).unwrap()
+    let batch_texture_id = match payload.material.base_color_texture {
+      Some(texture) => texture.id()
+      None => -1
+    }
+    items.push(MeshPhaseItem3d::{
+      entity: mesh.entity,
+      extracted_index: i,
+      phase,
+      distance: render3d_mesh_view_depth(payload.transform, camera_transform),
+      batch_texture_id,
+    })
   }
-  order.sort_by(fn(a, b) {
-    let ma = meshes[a]
-    let mb = meshes[b]
-    let alpha_a = ma.material.base_color.a
-    let alpha_b = mb.material.base_color.a
-    let phase_a = render3d_mesh_alpha_phase(ma.material.alpha_mode, alpha_a).unwrap()
-    let phase_b = render3d_mesh_alpha_phase(mb.material.alpha_mode, alpha_b).unwrap()
-    let phase_cmp = cmp_int(phase_a, phase_b)
+  items.sort_by(fn(a, b) {
+    let phase_cmp = cmp_int(a.phase, b.phase)
     if phase_cmp != 0 {
       return phase_cmp
     }
-    let depth_a = render3d_mesh_view_depth(ma.transform, camera_transform)
-    let depth_b = render3d_mesh_view_depth(mb.transform, camera_transform)
-    if phase_a == 0 {
-      let texture_a = match ma.material.base_color_texture {
-        Some(texture) => texture.id()
-        None => -1
-      }
-      let texture_b = match mb.material.base_color_texture {
-        Some(texture) => texture.id()
-        None => -1
-      }
-      let texture_cmp = cmp_int(texture_a, texture_b)
-      if texture_cmp != 0 {
-        return texture_cmp
-      }
-      let depth_cmp = cmp_float(depth_a, depth_b)
+    if a.phase == RENDER3D_PHASE_TRANSPARENT {
+      let depth_cmp = cmp_float(b.distance, a.distance)
       if depth_cmp != 0 {
         return depth_cmp
       }
     } else {
-      let depth_cmp = cmp_float(depth_b, depth_a)
+      let texture_cmp = cmp_int(a.batch_texture_id, b.batch_texture_id)
+      if texture_cmp != 0 {
+        return texture_cmp
+      }
+      let depth_cmp = cmp_float(a.distance, b.distance)
       if depth_cmp != 0 {
         return depth_cmp
       }
     }
-    let id_cmp = cmp_int(ma.entity.id, mb.entity.id)
-    if id_cmp != 0 {
-      return id_cmp
-    }
-    cmp_int(ma.entity.generation, mb.entity.generation)
+    phase_entity_ref3d_cmp(a.entity, b.entity)
   })
-  order
+  items
 }
 
 ///|
@@ -4594,20 +4509,20 @@ fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
 }
 
 ///|
-fn render3d_prepared_camera_indices(
-  cameras : Array[Camera3dInstance],
-) -> Array[Int]? {
+fn render3d_prepared_camera_phase_items(
+  cameras : Array[ExtractedCamera3d],
+) -> Array[CameraPhaseItem3d]? {
   let prepared = render3d_prepared_camera_order_ref.val
   if prepared.length() != cameras.length() {
     return None
   }
-  let indices : Array[Int] = []
+  let items : Array[CameraPhaseItem3d] = []
   for entity in prepared {
     let mut found_index = -1
     for i in 0..<cameras.length() {
       let camera = cameras[i]
-      if camera.entity.id == entity.id &&
-        camera.entity.generation == entity.generation {
+      if camera.entity.main_entity.id == entity.id &&
+        camera.entity.main_entity.generation == entity.generation {
         found_index = i
         break
       }
@@ -4615,9 +4530,14 @@ fn render3d_prepared_camera_indices(
     if found_index < 0 {
       return None
     }
-    indices.push(found_index)
+    let camera = cameras[found_index]
+    items.push(CameraPhaseItem3d::{
+      entity: camera.entity,
+      extracted_index: found_index,
+      order: camera.payload.camera.order,
+    })
   }
-  Some(indices)
+  Some(items)
 }
 
 ///|
@@ -4837,8 +4757,25 @@ fn render3d_begin_pass_3d(
 }
 
 ///|
-fn render3d_draw_mesh_instance(
-  mesh : Mesh3dInstance,
+fn render3d_cull_mode_value(
+  material : StandardMaterial,
+  draw_flags : Int,
+) -> Int {
+  let draw_cull_mode_base = match material.cull_mode {
+    None => 0
+    Some(face) =>
+      match face {
+        Face3d::Front => 1
+        Face3d::Back => 2
+      }
+  }
+  draw_cull_mode_base | draw_flags
+}
+
+///|
+fn render3d_build_mesh_gpu_draw_payload(
+  mesh_id : Int,
+  material : StandardMaterial,
   transform : @math.Transform,
   previous_transform : @math.Transform,
   draw_color_r : Float,
@@ -4869,90 +4806,125 @@ fn render3d_draw_mesh_instance(
   anisotropy_strength : Float,
   max_relief_mapping_search_steps : Float,
   draw_flags : Int,
-) -> Unit {
-  let draw_cull_mode_base = match mesh.material.cull_mode {
-    None => 0
-    Some(face) =>
-      match face {
-        Face3d::Front => 1
-        Face3d::Back => 2
-      }
+) -> MeshGpuDrawPayload3d {
+  MeshGpuDrawPayload3d::{
+    mesh_id,
+    transform,
+    previous_transform,
+    color_r: draw_color_r,
+    color_g: draw_color_g,
+    color_b: draw_color_b,
+    color_a: draw_alpha,
+    texture_id,
+    uv_transform: material.uv_transform,
+    normal_texture_id,
+    emissive_texture_id,
+    metallic_roughness_texture_id,
+    occlusion_texture_id,
+    depth_texture_id,
+    emissive: material.emissive,
+    unlit: material.unlit,
+    metallic: material.metallic,
+    anisotropy_texture_id,
+    anisotropy_rotation: material.anisotropy_rotation,
+    specular_tint_texture_id,
+    parallax_depth_scale: material.parallax_depth_scale,
+    max_parallax_layer_count: material.max_parallax_layer_count,
+    surface_roughness: draw_surface_roughness,
+    reflectance: draw_reflectance,
+    diffuse_transmission: draw_diffuse_transmission,
+    specular_transmission: draw_specular_transmission,
+    thickness: draw_thickness,
+    ior: draw_ior,
+    transmission_source_texture_id,
+    transmission_blur_taps,
+    transmission_steps,
+    point_shadow_texture_id,
+    point_shadow_enabled,
+    point_shadow_depth_bias,
+    specular_tint,
+    anisotropy_strength,
+    max_relief_mapping_search_steps,
+    cull_mode: render3d_cull_mode_value(material, draw_flags),
   }
-  let draw_cull_mode = draw_cull_mode_base | draw_flags
+}
+
+///|
+fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
   @render.host_gpu_draw_mesh3d(
-    mesh_id=mesh.mesh_id,
-    x=transform.translation.x,
-    y=transform.translation.y,
-    z=transform.translation.z,
-    rotation_x=transform.rotation.x,
-    rotation_y=transform.rotation.y,
-    rotation_z=transform.rotation.z,
-    rotation_w=transform.rotation.w,
-    scale_x=transform.scale.x,
-    scale_y=transform.scale.y,
-    scale_z=transform.scale.z,
-    previous_x=previous_transform.translation.x,
-    previous_y=previous_transform.translation.y,
-    previous_z=previous_transform.translation.z,
-    previous_rotation_x=previous_transform.rotation.x,
-    previous_rotation_y=previous_transform.rotation.y,
-    previous_rotation_z=previous_transform.rotation.z,
-    previous_rotation_w=previous_transform.rotation.w,
-    previous_scale_x=previous_transform.scale.x,
-    previous_scale_y=previous_transform.scale.y,
-    previous_scale_z=previous_transform.scale.z,
-    color_r=draw_color_r,
-    color_g=draw_color_g,
-    color_b=draw_color_b,
-    color_a=draw_alpha,
-    texture_id~,
-    uv_transform_a=mesh.material.uv_transform.a,
-    uv_transform_b=mesh.material.uv_transform.b,
-    uv_transform_c=mesh.material.uv_transform.c,
-    uv_transform_d=mesh.material.uv_transform.d,
-    uv_transform_tx=mesh.material.uv_transform.tx,
-    uv_transform_ty=mesh.material.uv_transform.ty,
+    mesh_id=payload.mesh_id,
+    x=payload.transform.translation.x,
+    y=payload.transform.translation.y,
+    z=payload.transform.translation.z,
+    rotation_x=payload.transform.rotation.x,
+    rotation_y=payload.transform.rotation.y,
+    rotation_z=payload.transform.rotation.z,
+    rotation_w=payload.transform.rotation.w,
+    scale_x=payload.transform.scale.x,
+    scale_y=payload.transform.scale.y,
+    scale_z=payload.transform.scale.z,
+    previous_x=payload.previous_transform.translation.x,
+    previous_y=payload.previous_transform.translation.y,
+    previous_z=payload.previous_transform.translation.z,
+    previous_rotation_x=payload.previous_transform.rotation.x,
+    previous_rotation_y=payload.previous_transform.rotation.y,
+    previous_rotation_z=payload.previous_transform.rotation.z,
+    previous_rotation_w=payload.previous_transform.rotation.w,
+    previous_scale_x=payload.previous_transform.scale.x,
+    previous_scale_y=payload.previous_transform.scale.y,
+    previous_scale_z=payload.previous_transform.scale.z,
+    color_r=payload.color_r,
+    color_g=payload.color_g,
+    color_b=payload.color_b,
+    color_a=payload.color_a,
+    texture_id=payload.texture_id,
+    uv_transform_a=payload.uv_transform.a,
+    uv_transform_b=payload.uv_transform.b,
+    uv_transform_c=payload.uv_transform.c,
+    uv_transform_d=payload.uv_transform.d,
+    uv_transform_tx=payload.uv_transform.tx,
+    uv_transform_ty=payload.uv_transform.ty,
     uv_transform_mode=1.0F,
-    normal_texture_id~,
-    emissive_texture_id~,
-    metallic_roughness_texture_id~,
-    occlusion_texture_id~,
-    depth_texture_id~,
-    emissive_r=mesh.material.emissive.r,
-    emissive_g=mesh.material.emissive.g,
-    emissive_b=mesh.material.emissive.b,
-    unlit=if mesh.material.unlit { 1.0F } else { 0.0F },
-    metallic=mesh.material.metallic,
-    roughness=draw_surface_roughness,
-    reflectance=draw_reflectance,
-    parallax_depth_scale=mesh.material.parallax_depth_scale,
-    max_parallax_layer_count=mesh.material.max_parallax_layer_count,
-    max_relief_mapping_search_steps~,
-    anisotropy_texture_id~,
-    anisotropy_strength~,
-    anisotropy_rotation=mesh.material.anisotropy_rotation,
-    specular_tint_texture_id~,
-    specular_tint_r=specular_tint.r,
-    specular_tint_g=specular_tint.g,
-    specular_tint_b=specular_tint.b,
-    diffuse_transmission=draw_diffuse_transmission,
-    specular_transmission=draw_specular_transmission,
-    thickness=draw_thickness,
-    ior=draw_ior,
-    transmission_source_texture_id~,
-    transmission_blur_taps~,
-    transmission_steps~,
-    point_shadow_texture_id~,
-    point_shadow_enabled~,
-    point_shadow_depth_bias~,
-    cull_mode=draw_cull_mode,
+    normal_texture_id=payload.normal_texture_id,
+    emissive_texture_id=payload.emissive_texture_id,
+    metallic_roughness_texture_id=payload.metallic_roughness_texture_id,
+    occlusion_texture_id=payload.occlusion_texture_id,
+    depth_texture_id=payload.depth_texture_id,
+    emissive_r=payload.emissive.r,
+    emissive_g=payload.emissive.g,
+    emissive_b=payload.emissive.b,
+    unlit=if payload.unlit { 1.0F } else { 0.0F },
+    metallic=payload.metallic,
+    roughness=payload.surface_roughness,
+    reflectance=payload.reflectance,
+    parallax_depth_scale=payload.parallax_depth_scale,
+    max_parallax_layer_count=payload.max_parallax_layer_count,
+    max_relief_mapping_search_steps=payload.max_relief_mapping_search_steps,
+    anisotropy_texture_id=payload.anisotropy_texture_id,
+    anisotropy_strength=payload.anisotropy_strength,
+    anisotropy_rotation=payload.anisotropy_rotation,
+    specular_tint_texture_id=payload.specular_tint_texture_id,
+    specular_tint_r=payload.specular_tint.r,
+    specular_tint_g=payload.specular_tint.g,
+    specular_tint_b=payload.specular_tint.b,
+    diffuse_transmission=payload.diffuse_transmission,
+    specular_transmission=payload.specular_transmission,
+    thickness=payload.thickness,
+    ior=payload.ior,
+    transmission_source_texture_id=payload.transmission_source_texture_id,
+    transmission_blur_taps=payload.transmission_blur_taps,
+    transmission_steps=payload.transmission_steps,
+    point_shadow_texture_id=payload.point_shadow_texture_id,
+    point_shadow_enabled=payload.point_shadow_enabled,
+    point_shadow_depth_bias=payload.point_shadow_depth_bias,
+    cull_mode=payload.cull_mode,
   )
 }
 
 ///|
 pub fn render3d_execute_system(world : @ecs.World) -> Unit {
-  let cameras : Array[Camera3dInstance] = []
-  let meshes : Array[Mesh3dInstance] = []
+  let cameras : Array[ExtractedCamera3d] = []
+  let meshes : Array[ExtractedMesh3d] = []
   let projection_updates : Array[
     (@core.Entity, Projection, ProjectionRuntime3d),
   ] = []
@@ -5102,40 +5074,42 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
               target_info.scale_factor,
             )
         }
-        cameras.push(Camera3dInstance::{
-          entity,
-          camera3d,
-          camera: camera_clamped,
-          projection,
-          sub_camera_view,
-          screen_space_transmission,
-          bloom,
-          tonemapping,
-          deband_dither,
-          chromatic_aberration,
-          vignette,
-          motion_blur,
-          exposure,
-          color_grading,
-          skybox,
-          depth_prepass_enabled,
-          deferred_prepass_enabled,
-          hdr_enabled,
-          fxaa,
-          temporal_jitter,
-          temporal_anti_aliasing,
-          motion_vector_prepass_enabled,
-          msaa,
-          transform,
-          previous_transform,
-          previous_clip_from_world: match previous_camera_history {
-            Some(v) => Some(v.clip_from_world)
-            None => None
+        cameras.push(ExtractedCamera3d::{
+          entity: phase_entity_ref3d_for_main(entity),
+          payload: Camera3dViewPayload::{
+            camera3d,
+            camera: camera_clamped,
+            projection,
+            sub_camera_view,
+            screen_space_transmission,
+            bloom,
+            tonemapping,
+            deband_dither,
+            chromatic_aberration,
+            vignette,
+            motion_blur,
+            exposure,
+            color_grading,
+            skybox,
+            depth_prepass_enabled,
+            deferred_prepass_enabled,
+            hdr_enabled,
+            fxaa,
+            temporal_jitter,
+            temporal_anti_aliasing,
+            motion_vector_prepass_enabled,
+            msaa,
+            transform,
+            previous_transform,
+            previous_clip_from_world: match previous_camera_history {
+              Some(v) => Some(v.clip_from_world)
+              None => None
+            },
+            target_id: target_info.target_id,
+            target_size: target_info.target_size,
+            scale_factor: target_info.scale_factor,
+            layers,
           },
-          target_id: target_info.target_id,
-          target_size: target_info.target_size,
-          scale_factor: target_info.scale_factor,
-          layers,
         })
       }
       None => ()
@@ -5213,34 +5187,38 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     } else {
       None
     }
-    meshes.push(Mesh3dInstance::{
-      entity,
-      mesh_handle: mesh3d.mesh,
-      mesh_id: gpu_mesh.mesh_id,
-      transform,
-      previous_transform,
-      visibility_range,
-      aabb_center_world,
-      material,
-      material_extension: material_handle.extended_material,
-      is_forward_decal: forward_decal_store.get(entity) is Some(_),
-      forward_decal_material_ext: forward_decal_material_ext_store.get(entity),
-      clustered_decal: clustered_decal_store.get(entity),
-      layers,
-      has_wireframe: wireframe_store.get(entity) is Some(_),
-      has_no_wireframe: no_wireframe_store.get(entity) is Some(_),
-      wireframe_color: wireframe_color_store.get(entity),
+    meshes.push(ExtractedMesh3d::{
+      entity: phase_entity_ref3d_for_main(entity),
+      payload: Mesh3dExtractedPayload::{
+        mesh_handle: mesh3d.mesh,
+        mesh_id: gpu_mesh.mesh_id,
+        transform,
+        previous_transform,
+        visibility_range,
+        aabb_center_world,
+        material,
+        material_extension: material_handle.extended_material,
+        is_forward_decal: forward_decal_store.get(entity) is Some(_),
+        forward_decal_material_ext: forward_decal_material_ext_store.get(entity),
+        clustered_decal: clustered_decal_store.get(entity),
+        layers,
+        has_wireframe: wireframe_store.get(entity) is Some(_),
+        has_no_wireframe: no_wireframe_store.get(entity) is Some(_),
+        wireframe_color: wireframe_color_store.get(entity),
+      },
     })
   })
   motion_blur_history_sync(meshes)
   let lighting = render3d_collect_lighting(world)
-  let camera_indices = match render3d_prepared_camera_indices(cameras) {
-    Some(indices) => indices
-    None => render3d_sorted_camera_indices(cameras)
+  let camera_phase_items = match render3d_prepared_camera_phase_items(cameras) {
+    Some(items) => items
+    None => render3d_queue_camera_phase_items(cameras)
   }
   let next_camera_motion_blur_history : Array[CameraMotionBlurHistoryEntry] = []
-  for camera_index in camera_indices {
-    let camera = cameras[camera_index]
+  for camera_phase_item in camera_phase_items {
+    let extracted_camera = cameras[camera_phase_item.extracted_index]
+    let camera_entity = extracted_camera.entity.main_entity
+    let camera = extracted_camera.payload
     @render.host_gpu_set_active_surface_target(camera.target_id)
     let target_width = camera.target_size.x
     let target_height = camera.target_size.y
@@ -5292,7 +5270,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       camera.transform,
     )
     next_camera_motion_blur_history.push({
-      entity: camera.entity,
+      entity: camera_entity,
       transform: camera.transform,
       clip_from_world: current_clip_from_world,
     })
@@ -5403,9 +5381,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     }
     if motion_vector_prepass_enabled {
       let (shared_scene_id, shared_velocity_id) = render3d_motion_blur_targets_get_or_create(
-        camera.entity,
-        view_width,
-        view_height,
+        camera_entity, view_width, view_height,
       )
       if motion_blur_active {
         scene_target_id = shared_scene_id
@@ -5431,13 +5407,18 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         pass_kind=motion_vector_pass_kind,
         clear_enabled=1,
       )
-      let velocity_draw_order = render3d_sorted_mesh_indices(
+      let velocity_draw_items = render3d_queue_mesh_phase_items(
         meshes,
         camera.layers,
         camera.transform,
       )
-      for draw_index in velocity_draw_order {
-        let mesh = meshes[draw_index]
+      for draw_item in velocity_draw_items {
+        if draw_item.phase != RENDER3D_PHASE_OPAQUE &&
+          draw_item.phase != RENDER3D_PHASE_ALPHA_MASK {
+          continue
+        }
+        let extracted_mesh = meshes[draw_item.extracted_index]
+        let mesh = extracted_mesh.payload
         guard render3d_mesh_draw_alpha(
             mesh.material.alpha_mode,
             mesh.material.base_color.a,
@@ -5448,43 +5429,46 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         if draw_alpha < 0.999F {
           continue
         }
-        render3d_draw_mesh_instance(
-          mesh,
-          mesh.transform,
-          mesh.previous_transform,
-          1.0F,
-          1.0F,
-          1.0F,
-          1.0F,
-          -1,
-          -1,
-          -1,
-          -1,
-          -1,
-          -1,
-          -1,
-          -1,
-          0.5F,
-          0.5F,
-          0.0F,
-          0.0F,
-          0.0F,
-          1.5F,
-          -1,
-          0.0F,
-          0.0F,
-          -1,
-          0.0F,
-          0.0F,
-          @sprite.Color::white(),
-          0.0F,
-          0.0F,
-          render3d_mesh_draw_flags(mesh),
+        render3d_draw_mesh_gpu_payload(
+          render3d_build_mesh_gpu_draw_payload(
+            mesh.mesh_id,
+            mesh.material,
+            mesh.transform,
+            mesh.previous_transform,
+            1.0F,
+            1.0F,
+            1.0F,
+            1.0F,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            0.5F,
+            0.5F,
+            0.0F,
+            0.0F,
+            0.0F,
+            1.5F,
+            -1,
+            0.0F,
+            0.0F,
+            -1,
+            0.0F,
+            0.0F,
+            @sprite.Color::white(),
+            0.0F,
+            0.0F,
+            render3d_mesh_draw_flags(extracted_mesh),
+          ),
         )
       }
       @render.host_gpu_end_pass()
     }
-    let draw_order = render3d_sorted_mesh_indices(
+    let draw_items = render3d_queue_mesh_phase_items(
       meshes,
       camera.layers,
       camera.transform,
@@ -5540,8 +5524,13 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           pass_kind=point_shadow_pass_kind,
           clear_enabled=1,
         )
-        for shadow_draw_index in draw_order {
-          let shadow_mesh = meshes[shadow_draw_index]
+        for shadow_draw_item in draw_items {
+          if shadow_draw_item.phase != RENDER3D_PHASE_OPAQUE &&
+            shadow_draw_item.phase != RENDER3D_PHASE_ALPHA_MASK {
+            continue
+          }
+          let extracted_shadow_mesh = meshes[shadow_draw_item.extracted_index]
+          let shadow_mesh = extracted_shadow_mesh.payload
           if shadow_mesh.is_forward_decal ||
             shadow_mesh.clustered_decal is Some(_) {
             continue
@@ -5556,38 +5545,41 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           if shadow_alpha < 0.999F {
             continue
           }
-          render3d_draw_mesh_instance(
-            shadow_mesh,
-            shadow_mesh.transform,
-            shadow_mesh.transform,
-            1.0F,
-            1.0F,
-            1.0F,
-            1.0F,
-            -1,
-            -1,
-            -1,
-            -1,
-            -1,
-            -1,
-            -1,
-            -1,
-            0.5F,
-            0.5F,
-            0.0F,
-            0.0F,
-            0.0F,
-            1.5F,
-            -1,
-            0.0F,
-            0.0F,
-            -1,
-            0.0F,
-            0.0F,
-            @sprite.Color::white(),
-            0.0F,
-            0.0F,
-            0,
+          render3d_draw_mesh_gpu_payload(
+            render3d_build_mesh_gpu_draw_payload(
+              shadow_mesh.mesh_id,
+              shadow_mesh.material,
+              shadow_mesh.transform,
+              shadow_mesh.transform,
+              1.0F,
+              1.0F,
+              1.0F,
+              1.0F,
+              -1,
+              -1,
+              -1,
+              -1,
+              -1,
+              -1,
+              -1,
+              -1,
+              0.5F,
+              0.5F,
+              0.0F,
+              0.0F,
+              0.0F,
+              1.5F,
+              -1,
+              0.0F,
+              0.0F,
+              -1,
+              0.0F,
+              0.0F,
+              @sprite.Color::white(),
+              0.0F,
+              0.0F,
+              0,
+            ),
           )
         }
         @render.host_gpu_end_pass()
@@ -5597,9 +5589,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       (transmission_enabled || bloom_enabled || tonemap_postprocess_enabled) &&
       (camera.target_id < 0 || bloom_enabled || tonemap_postprocess_enabled) {
       let (scene_id, _velocity_id) = render3d_motion_blur_targets_get_or_create(
-        camera.entity,
-        view_width,
-        view_height,
+        camera_entity, view_width, view_height,
       )
       scene_target_id = scene_id
     }
@@ -5624,10 +5614,11 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       pass_kind=scene_pass_kind,
       clear_enabled=if clear_enabled { 1 } else { 0 },
     )
-    render3d_draw_camera_skybox(world, camera, camera_far)
-    let transmissive_draws : Array[TransmissionMeshDraw] = []
-    for draw_index in draw_order {
-      let mesh = meshes[draw_index]
+    render3d_draw_camera_skybox(world, extracted_camera, camera_far)
+    let transmissive_draws : Array[TransmissionPhaseItem3d] = []
+    for draw_item in draw_items {
+      let extracted_mesh = meshes[draw_item.extracted_index]
+      let mesh = extracted_mesh.payload
       if mesh.is_forward_decal && !camera_forward_decal_enabled {
         continue
       }
@@ -5776,11 +5767,53 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       )
       let draw_thickness = maxf(0.0F, mesh.material.thickness)
       let draw_ior = maxf(1.0F, mesh.material.ior)
-      let draw_flags = render3d_mesh_draw_flags(mesh)
+      let draw_flags = render3d_mesh_draw_flags(extracted_mesh)
       if transmission_enabled && draw_specular_transmission > 0.0F {
-        transmissive_draws.push(TransmissionMeshDraw::{
-          mesh,
-          draw_flags,
+        transmissive_draws.push(TransmissionPhaseItem3d::{
+          entity: extracted_mesh.entity,
+          payload: render3d_build_mesh_gpu_draw_payload(
+            mesh.mesh_id,
+            mesh.material,
+            mesh.transform,
+            mesh.previous_transform,
+            draw_color_r,
+            draw_color_g,
+            draw_color_b,
+            draw_alpha,
+            texture_id,
+            normal_texture_id,
+            emissive_texture_id,
+            metallic_roughness_texture_id,
+            occlusion_texture_id,
+            depth_texture_id,
+            anisotropy_texture_id,
+            specular_tint_texture_id,
+            draw_surface_roughness,
+            draw_reflectance,
+            draw_diffuse_transmission,
+            draw_specular_transmission,
+            draw_thickness,
+            draw_ior,
+            -1,
+            0.0F,
+            0.0F,
+            point_shadow_texture_id,
+            point_shadow_enabled,
+            point_shadow_depth_bias,
+            mesh.material.specular_tint,
+            anisotropy_strength,
+            max_relief_mapping_search_steps,
+            draw_flags,
+          ),
+        })
+        continue
+      }
+      render3d_draw_mesh_gpu_payload(
+        render3d_build_mesh_gpu_draw_payload(
+          mesh.mesh_id,
+          mesh.material,
+          mesh.transform,
+          mesh.previous_transform,
           draw_color_r,
           draw_color_g,
           draw_color_b,
@@ -5799,52 +5832,23 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           draw_specular_transmission,
           draw_thickness,
           draw_ior,
-          specular_tint: mesh.material.specular_tint,
+          -1,
+          0.0F,
+          0.0F,
+          point_shadow_texture_id,
+          point_shadow_enabled,
+          point_shadow_depth_bias,
+          mesh.material.specular_tint,
           anisotropy_strength,
           max_relief_mapping_search_steps,
-        })
-        continue
-      }
-      render3d_draw_mesh_instance(
-        mesh,
-        mesh.transform,
-        mesh.previous_transform,
-        draw_color_r,
-        draw_color_g,
-        draw_color_b,
-        draw_alpha,
-        texture_id,
-        normal_texture_id,
-        emissive_texture_id,
-        metallic_roughness_texture_id,
-        occlusion_texture_id,
-        depth_texture_id,
-        anisotropy_texture_id,
-        specular_tint_texture_id,
-        draw_surface_roughness,
-        draw_reflectance,
-        draw_diffuse_transmission,
-        draw_specular_transmission,
-        draw_thickness,
-        draw_ior,
-        -1,
-        0.0F,
-        0.0F,
-        point_shadow_texture_id,
-        point_shadow_enabled,
-        point_shadow_depth_bias,
-        mesh.material.specular_tint,
-        anisotropy_strength,
-        max_relief_mapping_search_steps,
-        draw_flags,
+          draw_flags,
+        ),
       )
     }
     if transmissive_draws.length() > 0 {
       @render.host_gpu_end_pass()
       transmission_source_target_id = render3d_transmission_source_target_get_or_create(
-        camera.entity,
-        view_width,
-        view_height,
+        camera_entity, view_width, view_height,
       )
       render3d_blit_texture_to_target(
         scene_target_id, transmission_source_target_id, view_width_logical, view_height_logical,
@@ -5870,44 +5874,24 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         clear_enabled=0,
       )
       for transmissive_draw in transmissive_draws {
-        render3d_draw_mesh_instance(
-          transmissive_draw.mesh,
-          transmissive_draw.mesh.transform,
-          transmissive_draw.mesh.previous_transform,
-          transmissive_draw.draw_color_r,
-          transmissive_draw.draw_color_g,
-          transmissive_draw.draw_color_b,
-          transmissive_draw.draw_alpha,
-          transmissive_draw.texture_id,
-          transmissive_draw.normal_texture_id,
-          transmissive_draw.emissive_texture_id,
-          transmissive_draw.metallic_roughness_texture_id,
-          transmissive_draw.occlusion_texture_id,
-          transmissive_draw.depth_texture_id,
-          transmissive_draw.anisotropy_texture_id,
-          transmissive_draw.specular_tint_texture_id,
-          transmissive_draw.draw_surface_roughness,
-          transmissive_draw.draw_reflectance,
-          transmissive_draw.draw_diffuse_transmission,
-          transmissive_draw.draw_specular_transmission,
-          transmissive_draw.draw_thickness,
-          transmissive_draw.draw_ior,
-          transmission_source_target_id,
-          Float::from_double(transmission_blur_taps.to_double()),
-          Float::from_double(transmission_steps.to_double()),
+        transmissive_draw.entity |> ignore
+        render3d_draw_mesh_gpu_payload(MeshGpuDrawPayload3d::{
+          ..transmissive_draw.payload,
+          transmission_source_texture_id: transmission_source_target_id,
+          transmission_blur_taps: Float::from_double(
+            transmission_blur_taps.to_double(),
+          ),
+          transmission_steps: Float::from_double(transmission_steps.to_double()),
           point_shadow_texture_id,
           point_shadow_enabled,
           point_shadow_depth_bias,
-          transmissive_draw.specular_tint,
-          transmissive_draw.anisotropy_strength,
-          transmissive_draw.max_relief_mapping_search_steps,
-          transmissive_draw.draw_flags,
-        )
+        })
       }
     }
-    for draw_index in draw_order {
-      let mesh = meshes[draw_index]
-      if !render3d_mesh_should_draw_wireframe(mesh, wireframe_config) {
+    for draw_item in draw_items {
+      let extracted_mesh = meshes[draw_item.extracted_index]
+      let mesh = extracted_mesh.payload
+      if !render3d_mesh_should_draw_wireframe(extracted_mesh, wireframe_config) {
         continue
       }
       guard render3d_wireframe_mesh_id(mesh.mesh_handle)
@@ -5915,7 +5899,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         continue
       }
       let wireframe_color = render3d_mesh_wireframe_color(
-        mesh, wireframe_config,
+        extracted_mesh, wireframe_config,
       )
       let wireframe_material = StandardMaterial::from_color(wireframe_color)
         .with_unlit(true)
@@ -5927,42 +5911,41 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         is Some(wireframe_draw_alpha) else {
         continue
       }
-      render3d_draw_mesh_instance(
-        Mesh3dInstance::{
-          ..mesh,
-          mesh_id: wireframe_mesh_id,
-          material: wireframe_material,
-        },
-        mesh.transform,
-        mesh.previous_transform,
-        wireframe_material.base_color.r,
-        wireframe_material.base_color.g,
-        wireframe_material.base_color.b,
-        wireframe_draw_alpha,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        0.5F,
-        0.5F,
-        0.0F,
-        0.0F,
-        0.0F,
-        1.5F,
-        -1,
-        0.0F,
-        0.0F,
-        -1,
-        0.0F,
-        0.0F,
-        @sprite.Color::white(),
-        0.0F,
-        0.0F,
-        render3d_mesh_draw_flags(mesh),
+      render3d_draw_mesh_gpu_payload(
+        render3d_build_mesh_gpu_draw_payload(
+          wireframe_mesh_id,
+          wireframe_material,
+          mesh.transform,
+          mesh.previous_transform,
+          wireframe_material.base_color.r,
+          wireframe_material.base_color.g,
+          wireframe_material.base_color.b,
+          wireframe_draw_alpha,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          0.5F,
+          0.5F,
+          0.0F,
+          0.0F,
+          0.0F,
+          1.5F,
+          -1,
+          0.0F,
+          0.0F,
+          -1,
+          0.0F,
+          0.0F,
+          @sprite.Color::white(),
+          0.0F,
+          0.0F,
+          render3d_mesh_draw_flags(extracted_mesh),
+        ),
       )
     }
     @render.host_gpu_end_pass()
@@ -5972,9 +5955,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       velocity_target_id >= 0 {
       if bloom_enabled || tonemap_postprocess_enabled {
         let post_motion_blur_target_id = render3d_transmission_source_target_get_or_create(
-          camera.entity,
-          view_width,
-          view_height,
+          camera_entity, view_width, view_height,
         )
         @render.host_gpu_begin_pass(
           target_id=post_motion_blur_target_id,
