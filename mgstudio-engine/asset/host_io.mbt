@@ -566,13 +566,40 @@ fn decoded_texture_image_from_mizchi(
 }
 
 ///|
+fn decoded_texture_image_from_gm_image(
+  decoded : &@gm_image.Image,
+) -> DecodedTextureImage {
+  let bounds = decoded.bounds()
+  let width = clamp_dim(bounds.dx())
+  let height = clamp_dim(bounds.dy())
+  let pixels = Array::make(rgba8_len(width, height), b'\x00')
+  let mut out_index = 0
+  for y in bounds.min.y..<bounds.max.y {
+    for x in bounds.min.x..<bounds.max.x {
+      let pixel = @gm_color.NRGBA::from(decoded.at(x, y))
+      pixels[out_index] = pixel.r
+      pixels[out_index + 1] = pixel.g
+      pixels[out_index + 2] = pixel.b
+      pixels[out_index + 3] = pixel.a
+      out_index += 4
+    }
+  }
+  DecodedTextureImage::{ width, height, pixels: Bytes::from_array(pixels) }
+}
+
+///|
+fn decode_texture_image_from_gm_png(bytes : Bytes) -> DecodedTextureImage? {
+  let reader = @gm_io.Buffer::from_bytes(bytes)
+  match @gm_png.decode(reader) {
+    (decoded, None) => Some(decoded_texture_image_from_gm_image(decoded))
+    _ => None
+  }
+}
+
+///|
 fn decode_texture_image(bytes : Bytes) -> DecodedTextureImage? {
   if is_png_bytes(bytes) {
-    return Some(
-      decoded_texture_image_from_mizchi(@img_decode.decode_png(bytes)),
-    ) catch {
-      _ => None
-    }
+    return decode_texture_image_from_gm_png(bytes)
   }
   if is_jpeg_bytes(bytes) {
     return Some(

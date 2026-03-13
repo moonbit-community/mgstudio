@@ -35,3 +35,17 @@ test "asset host io: save_rgba8_png writes a valid png file" {
   inspect(encoded[2].to_uint(), content="78")
   inspect(encoded[3].to_uint(), content="71")
 }
+
+///|
+test "asset host io: palette png preserves transparent background" {
+  let path = resolve_asset_path("textures/simplespace/ship_C.png")
+  let bytes = @fs.read_file_to_bytes(path)
+  let decoded = decode_texture_image(bytes).unwrap()
+  let center = (32 * decoded.width + 32) * 4
+  inspect((decoded.width, decoded.height), content="(64, 64)")
+  inspect(decoded.pixels[0].to_uint(), content="0")
+  inspect(decoded.pixels[1].to_uint(), content="0")
+  inspect(decoded.pixels[2].to_uint(), content="0")
+  inspect(decoded.pixels[3].to_uint(), content="0")
+  inspect(decoded.pixels[center + 3].to_uint(), content="255")
+}
