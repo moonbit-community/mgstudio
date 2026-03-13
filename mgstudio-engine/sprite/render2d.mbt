@@ -5785,6 +5785,25 @@ fn render2d_scale_viewport_axis(value : Int, scale : Float) -> Int {
 }
 
 ///|
+fn render2d_logical_view_extent_axis(value : Int, scale_factor : Float) -> Int {
+  if value <= 0 {
+    return 0
+  }
+  let safe_scale_factor = if scale_factor <= 0.0F { 1.0F } else { scale_factor }
+  let logical = Float::from_double(value.to_double()) / safe_scale_factor
+  if logical <= 0.0F {
+    1
+  } else {
+    let logical_i = logical.to_int()
+    if logical_i <= 0 {
+      1
+    } else {
+      logical_i
+    }
+  }
+}
+
+///|
 fn render2d_camera_transform_scale_axis(value : Float) -> Float {
   let safe = if value < 0.0F { -value } else { value }
   if safe == 0.0F {
@@ -7493,6 +7512,14 @@ test "render2d: camera viewport scales with dpi resize factor" {
 }
 
 ///|
+test "render2d: logical view extent derives from physical viewport and scale factor" {
+  let ok = render2d_logical_view_extent_axis(2560, 2.0F) == 1280 &&
+    render2d_logical_view_extent_axis(1440, 2.0F) == 720 &&
+    render2d_logical_view_extent_axis(999, 1.5F) == 666
+  inspect(ok, content="true")
+}
+
+///|
 pub fn render_execute_system(world : @ecs.World) -> Unit {
   render_state_update(world, fn(rs) {
     if !rs.val.draw_enabled {
@@ -7671,11 +7698,15 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         view_width = viewport_width
         view_height = viewport_height
       }
-      // Render targets and viewports are already physical pixels at this stage.
-      // Dividing by scale_factor here shrinks the effective render size on HiDPI
-      // displays and breaks camera framing/post-process parity.
-      let view_width_logical = view_width
-      let view_height_logical = view_height
+      // Keep render targets in physical pixels, but derive the camera
+      // projection extent from the logical viewport size like Bevy does via
+      // `Camera::logical_viewport_size()`.
+      let view_width_logical = render2d_logical_view_extent_axis(
+        view_width, scale_factor,
+      )
+      let view_height_logical = render2d_logical_view_extent_axis(
+        view_height, scale_factor,
+      )
       if view_width_logical <= 0 || view_height_logical <= 0 {
         continue
       }
