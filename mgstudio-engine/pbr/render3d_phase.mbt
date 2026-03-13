@@ -182,7 +182,22 @@ priv struct MeshGpuDrawPayload3d {
 }
 
 ///|
-priv struct TransmissionPhaseItem3d {
+priv struct TransmissivePhaseItem3d {
   entity : PhaseEntityRef3d
+  distance : Float
   payload : MeshGpuDrawPayload3d
+}
+
+///|
+fn render3d_sort_transmissive_phase_items(
+  items : Array[TransmissivePhaseItem3d],
+) -> Array[TransmissivePhaseItem3d] {
+  items.sort_by(fn(a, b) {
+    let distance_cmp = cmp_float(b.distance, a.distance)
+    if distance_cmp != 0 {
+      return distance_cmp
+    }
+    phase_entity_ref3d_cmp(a.entity, b.entity)
+  })
+  items
 }

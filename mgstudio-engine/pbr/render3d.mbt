@@ -2748,6 +2748,34 @@ fn render3d_mesh_phase_kind(alpha_mode : AlphaMode3d, alpha : Float) -> Int? {
 }
 
 ///|
+fn render3d_split_phase_ranges(
+  length : Int,
+  max_num_splits : Int,
+) -> Array[(Int, Int)] {
+  if length <= 0 || max_num_splits <= 0 {
+    return []
+  }
+  let num_splits = if length < max_num_splits { length } else { max_num_splits }
+  let step = length / num_splits
+  let ranges : Array[(Int, Int)] = []
+  let mut remainder = length % num_splits
+  let mut start = 0
+  for _ in 0..<num_splits {
+    let extra = if remainder > 0 {
+      remainder = remainder - 1
+      1
+    } else {
+      0
+    }
+    let next_end = start + step + extra
+    let end_ = if next_end < length { next_end } else { length }
+    ranges.push((start, end_))
+    start = end_
+  }
+  ranges
+}
+
+///|
 fn render3d_mesh_draw_alpha(alpha_mode : AlphaMode3d, alpha : Float) -> Float? {
   match alpha_mode {
     Opaque => Some(1.0F)
@@ -5614,8 +5642,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       pass_kind=scene_pass_kind,
       clear_enabled=if clear_enabled { 1 } else { 0 },
     )
-    render3d_draw_camera_skybox(world, extracted_camera, camera_far)
-    let transmissive_draws : Array[TransmissionPhaseItem3d] = []
+    let main_pass_draws : Array[MeshGpuDrawPayload3d] = []
+    let transmissive_phase_items : Array[TransmissivePhaseItem3d] = []
+    let transparent_draws : Array[MeshGpuDrawPayload3d] = []
     for draw_item in draw_items {
       let extracted_mesh = meshes[draw_item.extracted_index]
       let mesh = extracted_mesh.payload
@@ -5768,126 +5797,125 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       let draw_thickness = maxf(0.0F, mesh.material.thickness)
       let draw_ior = maxf(1.0F, mesh.material.ior)
       let draw_flags = render3d_mesh_draw_flags(extracted_mesh)
+      let draw_payload = render3d_build_mesh_gpu_draw_payload(
+        mesh.mesh_id,
+        mesh.material,
+        mesh.transform,
+        mesh.previous_transform,
+        draw_color_r,
+        draw_color_g,
+        draw_color_b,
+        draw_alpha,
+        texture_id,
+        normal_texture_id,
+        emissive_texture_id,
+        metallic_roughness_texture_id,
+        occlusion_texture_id,
+        depth_texture_id,
+        anisotropy_texture_id,
+        specular_tint_texture_id,
+        draw_surface_roughness,
+        draw_reflectance,
+        draw_diffuse_transmission,
+        draw_specular_transmission,
+        draw_thickness,
+        draw_ior,
+        -1,
+        0.0F,
+        0.0F,
+        point_shadow_texture_id,
+        point_shadow_enabled,
+        point_shadow_depth_bias,
+        mesh.material.specular_tint,
+        anisotropy_strength,
+        max_relief_mapping_search_steps,
+        draw_flags,
+      )
+      if draw_item.phase == RENDER3D_PHASE_TRANSPARENT {
+        transparent_draws.push(draw_payload)
+        continue
+      }
       if transmission_enabled && draw_specular_transmission > 0.0F {
-        transmissive_draws.push(TransmissionPhaseItem3d::{
+        transmissive_phase_items.push(TransmissivePhaseItem3d::{
           entity: extracted_mesh.entity,
-          payload: render3d_build_mesh_gpu_draw_payload(
-            mesh.mesh_id,
-            mesh.material,
-            mesh.transform,
-            mesh.previous_transform,
-            draw_color_r,
-            draw_color_g,
-            draw_color_b,
-            draw_alpha,
-            texture_id,
-            normal_texture_id,
-            emissive_texture_id,
-            metallic_roughness_texture_id,
-            occlusion_texture_id,
-            depth_texture_id,
-            anisotropy_texture_id,
-            specular_tint_texture_id,
-            draw_surface_roughness,
-            draw_reflectance,
-            draw_diffuse_transmission,
-            draw_specular_transmission,
-            draw_thickness,
-            draw_ior,
-            -1,
-            0.0F,
-            0.0F,
-            point_shadow_texture_id,
-            point_shadow_enabled,
-            point_shadow_depth_bias,
-            mesh.material.specular_tint,
-            anisotropy_strength,
-            max_relief_mapping_search_steps,
-            draw_flags,
-          ),
+          distance: draw_item.distance,
+          payload: draw_payload,
         })
         continue
       }
-      render3d_draw_mesh_gpu_payload(
-        render3d_build_mesh_gpu_draw_payload(
-          mesh.mesh_id,
-          mesh.material,
-          mesh.transform,
-          mesh.previous_transform,
-          draw_color_r,
-          draw_color_g,
-          draw_color_b,
-          draw_alpha,
-          texture_id,
-          normal_texture_id,
-          emissive_texture_id,
-          metallic_roughness_texture_id,
-          occlusion_texture_id,
-          depth_texture_id,
-          anisotropy_texture_id,
-          specular_tint_texture_id,
-          draw_surface_roughness,
-          draw_reflectance,
-          draw_diffuse_transmission,
-          draw_specular_transmission,
-          draw_thickness,
-          draw_ior,
-          -1,
-          0.0F,
-          0.0F,
-          point_shadow_texture_id,
-          point_shadow_enabled,
-          point_shadow_depth_bias,
-          mesh.material.specular_tint,
-          anisotropy_strength,
-          max_relief_mapping_search_steps,
-          draw_flags,
-        ),
-      )
+      main_pass_draws.push(draw_payload)
     }
+    for draw_payload in main_pass_draws {
+      render3d_draw_mesh_gpu_payload(draw_payload)
+    }
+    render3d_draw_camera_skybox(world, extracted_camera, camera_far)
+    @render.host_gpu_end_pass()
+    let transmissive_draws = render3d_sort_transmissive_phase_items(
+      transmissive_phase_items,
+    )
     if transmissive_draws.length() > 0 {
-      @render.host_gpu_end_pass()
       transmission_source_target_id = render3d_transmission_source_target_get_or_create(
         camera_entity, view_width, view_height,
       )
-      render3d_blit_texture_to_target(
-        scene_target_id, transmission_source_target_id, view_width_logical, view_height_logical,
-      )
-      render3d_begin_pass_3d(
-        target_id=scene_target_id,
-        width=view_width_logical,
-        height=view_height_logical,
-        clear_r=clear_color.r,
-        clear_g=clear_color.g,
-        clear_b=clear_color.b,
-        clear_a=clear_color.a,
-        camera.transform,
-        camera_pass_projection,
-        viewport_x~,
-        viewport_y~,
-        viewport_width~,
-        viewport_height~,
-        pass_lighting,
-        previous_clip_from_world=camera.previous_clip_from_world,
-        point_shadow_near~,
-        pass_kind=scene_pass_kind,
-        clear_enabled=0,
-      )
-      for transmissive_draw in transmissive_draws {
-        transmissive_draw.entity |> ignore
-        render3d_draw_mesh_gpu_payload(MeshGpuDrawPayload3d::{
-          ..transmissive_draw.payload,
-          transmission_source_texture_id: transmission_source_target_id,
-          transmission_blur_taps: Float::from_double(
-            transmission_blur_taps.to_double(),
-          ),
-          transmission_steps: Float::from_double(transmission_steps.to_double()),
-          point_shadow_texture_id,
-          point_shadow_enabled,
-          point_shadow_depth_bias,
-        })
+      let transmission_ranges = if transmission_steps > 0 {
+        render3d_split_phase_ranges(
+          transmissive_draws.length(),
+          transmission_steps,
+        )
+      } else {
+        [(0, transmissive_draws.length())]
+      }
+      for transmission_range in transmission_ranges {
+        if transmission_steps > 0 {
+          render3d_blit_texture_to_target(
+            scene_target_id, transmission_source_target_id, view_width_logical, view_height_logical,
+          )
+        }
+        render3d_begin_pass_3d(
+          target_id=scene_target_id,
+          width=view_width_logical,
+          height=view_height_logical,
+          clear_r=clear_color.r,
+          clear_g=clear_color.g,
+          clear_b=clear_color.b,
+          clear_a=clear_color.a,
+          camera.transform,
+          camera_pass_projection,
+          viewport_x~,
+          viewport_y~,
+          viewport_width~,
+          viewport_height~,
+          pass_lighting,
+          previous_clip_from_world=camera.previous_clip_from_world,
+          point_shadow_near~,
+          pass_kind=scene_pass_kind,
+          clear_enabled=0,
+        )
+        for i in transmission_range.0..<transmission_range.1 {
+          let transmissive_draw = transmissive_draws[i]
+          transmissive_draw.entity |> ignore
+          render3d_draw_mesh_gpu_payload(MeshGpuDrawPayload3d::{
+            ..transmissive_draw.payload,
+            transmission_source_texture_id: if transmission_steps > 0 {
+              transmission_source_target_id
+            } else {
+              -1
+            },
+            transmission_blur_taps: Float::from_double(
+              transmission_blur_taps.to_double(),
+            ),
+            transmission_steps: Float::from_double(
+              transmission_steps.to_double(),
+            ),
+            point_shadow_texture_id,
+            point_shadow_enabled,
+            point_shadow_depth_bias,
+          })
+        }
+        @render.host_gpu_end_pass()
       }
     }
+    let wireframe_draws : Array[MeshGpuDrawPayload3d] = []
     for draw_item in draw_items {
       let extracted_mesh = meshes[draw_item.extracted_index]
       let mesh = extracted_mesh.payload
@@ -5911,7 +5939,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         is Some(wireframe_draw_alpha) else {
         continue
       }
-      render3d_draw_mesh_gpu_payload(
+      wireframe_draws.push(
         render3d_build_mesh_gpu_draw_payload(
           wireframe_mesh_id,
           wireframe_material,
@@ -5948,7 +5976,35 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         ),
       )
     }
-    @render.host_gpu_end_pass()
+    if transparent_draws.length() > 0 || wireframe_draws.length() > 0 {
+      render3d_begin_pass_3d(
+        target_id=scene_target_id,
+        width=view_width_logical,
+        height=view_height_logical,
+        clear_r=clear_color.r,
+        clear_g=clear_color.g,
+        clear_b=clear_color.b,
+        clear_a=clear_color.a,
+        camera.transform,
+        camera_pass_projection,
+        viewport_x~,
+        viewport_y~,
+        viewport_width~,
+        viewport_height~,
+        pass_lighting,
+        previous_clip_from_world=camera.previous_clip_from_world,
+        point_shadow_near~,
+        pass_kind=scene_pass_kind,
+        clear_enabled=0,
+      )
+      for draw_payload in transparent_draws {
+        render3d_draw_mesh_gpu_payload(draw_payload)
+      }
+      for wireframe_draw in wireframe_draws {
+        render3d_draw_mesh_gpu_payload(wireframe_draw)
+      }
+      @render.host_gpu_end_pass()
+    }
     let mut final_source_texture_id = -1
     if motion_blur_active &&
       camera.motion_blur is Some(motion_blur) &&
