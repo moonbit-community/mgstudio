@@ -33,3 +33,40 @@ test "window: duplicate screenshot targets are despawned during queueing" {
   inspect(world.is_alive(first_request), content="true")
   inspect(world.is_alive(duplicate_request), content="false")
 }
+
+///|
+test "window: non-primary window screenshot target still deduplicates" {
+  let world = @ecs.World::new()
+  let secondary_window = world.spawn()
+  try! world.set_component(secondary_window, Window::default())
+
+  let first_request = world.spawn()
+  try! world.set_component(first_request, Screenshot::window(secondary_window))
+
+  let duplicate_request = world.spawn()
+  try! world.set_component(
+    duplicate_request,
+    Screenshot::window(secondary_window),
+  )
+
+  screenshot_queue_capture_requests(world)
+
+  inspect(world.is_alive(first_request), content="true")
+  inspect(world.is_alive(duplicate_request), content="false")
+}
+
+///|
+test "window: duplicate texture-view screenshot targets are despawned during queueing" {
+  let world = @ecs.World::new()
+
+  let first_request = world.spawn()
+  try! world.set_component(first_request, Screenshot::texture_view(42))
+
+  let duplicate_request = world.spawn()
+  try! world.set_component(duplicate_request, Screenshot::texture_view(42))
+
+  screenshot_queue_capture_requests(world)
+
+  inspect(world.is_alive(first_request), content="true")
+  inspect(world.is_alive(duplicate_request), content="false")
+}

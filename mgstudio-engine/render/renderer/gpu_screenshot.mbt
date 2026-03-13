@@ -23,6 +23,12 @@ priv struct PendingScreenshotCapture {
 }
 
 ///|
+priv struct PendingSurfaceScreenshotCapture {
+  id : Int
+  target_id : Int
+}
+
+///|
 priv struct InflightScreenshotCapture {
   id : Int
   width : Int
@@ -56,15 +62,28 @@ fn prepare_surface_capture_frame(backend : GpuBackend) -> Unit {
     backend.surface_capture_active = true
     return
   }
-  if pending_surface_screenshot_capture_ids_ref.val.length() == 0 {
+  if pending_surface_screenshot_captures_ref.val.length() == 0 {
     return
   }
   guard backend.surface_format is Some(_) else { return }
   if backend.configured_width <= 0 || backend.configured_height <= 0 {
     return
   }
-  active_surface_screenshot_capture_ids_ref.val = pending_surface_screenshot_capture_ids_ref.val
-  pending_surface_screenshot_capture_ids_ref.val = []
+  let captures_for_target : Array[Int] = []
+  let remaining_captures : Array[PendingSurfaceScreenshotCapture] = []
+  for pending_capture in pending_surface_screenshot_captures_ref.val {
+    if pending_capture.target_id <= 0 ||
+      pending_capture.target_id == backend.active_surface_target_id {
+      captures_for_target.push(pending_capture.id)
+    } else {
+      remaining_captures.push(pending_capture)
+    }
+  }
+  if captures_for_target.length() == 0 {
+    return
+  }
+  active_surface_screenshot_capture_ids_ref.val = captures_for_target
+  pending_surface_screenshot_captures_ref.val = remaining_captures
   active_surface_screenshot_capture_target_id_ref.val = backend.active_surface_target_id
   backend.surface_capture_active = true
 }
@@ -77,7 +96,9 @@ let pending_screenshot_captures_ref : Ref[Array[PendingScreenshotCapture]] = Ref
 )
 
 ///|
-let pending_surface_screenshot_capture_ids_ref : Ref[Array[Int]] = Ref::new([])
+let pending_surface_screenshot_captures_ref : Ref[
+  Array[PendingSurfaceScreenshotCapture],
+] = Ref::new([])
 
 ///|
 let active_surface_screenshot_capture_ids_ref : Ref[Array[Int]] = Ref::new([])
@@ -371,7 +392,22 @@ fn screenshot_collect_completed_captures(backend : GpuBackend) -> Unit {
 pub fn screenshot_capture_surface_request() -> Int {
   guard ensure_backend() is Some(_) else { return 0 }
   let capture_id = next_screenshot_capture_id()
-  pending_surface_screenshot_capture_ids_ref.val.push(capture_id)
+  pending_surface_screenshot_captures_ref.val.push(PendingSurfaceScreenshotCapture::{
+    id: capture_id,
+    target_id: 0,
+  })
+  capture_id
+}
+
+///|
+pub fn screenshot_capture_surface_target_request(target_id~ : Int) -> Int {
+  guard target_id > 0 else { return 0 }
+  guard ensure_backend() is Some(_) else { return 0 }
+  let capture_id = next_screenshot_capture_id()
+  pending_surface_screenshot_captures_ref.val.push(PendingSurfaceScreenshotCapture::{
+    id: capture_id,
+    target_id,
+  })
   capture_id
 }
 

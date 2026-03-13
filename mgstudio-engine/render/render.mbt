@@ -1269,6 +1269,11 @@ pub fn screenshot_capture_surface_request() -> Int {
 }
 
 ///|
+pub fn screenshot_capture_surface_target_request(target_id~ : Int) -> Int {
+  @renderer.screenshot_capture_surface_target_request(target_id~)
+}
+
+///|
 pub fn screenshot_capture_texture_request(texture_id~ : Int) -> Int {
   @renderer.screenshot_capture_texture_request(texture_id~)
 }

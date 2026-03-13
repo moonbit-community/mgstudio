@@ -13,9 +13,13 @@
 // limitations under the License.
 
 ///|
+pub type ManualTextureViewHandle = Int
+
+///|
 pub(all) enum ScreenshotTarget {
   Window(WindowRef)
   Image(@asset.Handle[@asset.Image])
+  TextureView(ManualTextureViewHandle)
 }
 
 ///|
@@ -59,6 +63,13 @@ pub fn Screenshot::primary_window() -> Screenshot {
 ///|
 pub fn Screenshot::image(image : @asset.Handle[@asset.Image]) -> Screenshot {
   { target: Image(image) }
+}
+
+///|
+pub fn Screenshot::texture_view(
+  texture_view : ManualTextureViewHandle,
+) -> Screenshot {
+  { target: TextureView(texture_view) }
 }
 
 ///|
@@ -147,16 +158,14 @@ fn screenshot_target_key(
 ) -> String? {
   match screenshot.target {
     Window(window_ref) => {
-      let primary = window_entity_for_ref(world, WindowRef::Primary)
       guard window_entity_for_ref(world, window_ref) is Some(window_entity) else {
-        return None
-      }
-      if Some(window_entity) != primary {
         return None
       }
       Some("window:" + window_entity.id.to_string())
     }
     Image(image) => Some("image:" + image.id().to_string())
+    TextureView(texture_view) =>
+      Some("texture_view:" + texture_view.to_string())
   }
 }
 
@@ -167,14 +176,19 @@ fn screenshot_request_capture(
 ) -> Int {
   match screenshot.target {
     Window(window_ref) => {
-      let primary = window_entity_for_ref(world, WindowRef::Primary)
-      if window_entity_for_ref(world, window_ref) != primary {
+      guard window_host_window_for_ref(world, window_ref) is Some(host_window) else {
         return 0
       }
-      @render.screenshot_capture_surface_request()
+      let target_id = @render.host_gpu_surface_target_id_for_window(host_window)
+      if target_id <= 0 {
+        return 0
+      }
+      @render.screenshot_capture_surface_target_request(target_id~)
     }
     Image(image) =>
       @render.screenshot_capture_texture_request(texture_id=image.id())
+    TextureView(texture_view) =>
+      @render.screenshot_capture_texture_request(texture_id=texture_view)
   }
 }
 

@@ -393,6 +393,7 @@ pub struct Screenshot {
 }
 pub fn Screenshot::image(@asset.Handle[@image.Image]) -> Self
 pub fn Screenshot::primary_window() -> Self
+pub fn Screenshot::texture_view(Int) -> Self
 pub fn Screenshot::window(@core.Entity) -> Self
 pub impl @ecs.Component for Screenshot
 
@@ -405,6 +406,7 @@ pub impl @ecs.Component for ScreenshotCaptured
 pub(all) enum ScreenshotTarget {
   Window(WindowRef)
   Image(@asset.Handle[@image.Image])
+  TextureView(Int)
 }
 
 pub(all) enum SystemCursorIcon {
@@ -624,6 +626,8 @@ pub impl Show for WindowTheme
 
 // Type aliases
 pub type HostWindow = Int
+
+pub type ManualTextureViewHandle = Int
 
 // Traits
 
