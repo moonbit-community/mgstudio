@@ -100,6 +100,7 @@ pub fn winit_plugin_with(
         ),
       )
       .add_last_system_config(@app.system(winit_changed_windows_system))
+      .add_last_system_config(@app.system(winit_changed_cursor_options_system))
       .add_last_system_config(
         @app.system(winit_check_keyboard_focus_lost_system),
       )

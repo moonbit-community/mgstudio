@@ -610,7 +610,7 @@ fn window_create_runtime_for_entity(
 }
 
 ///|
-fn window_sync_requested_state(
+fn window_sync_requested_window_state(
   world : @ecs.World,
   entity : @core.Entity,
   runtime_ref : Ref[WindowRuntime],
@@ -679,24 +679,6 @@ fn window_sync_requested_state(
     runtime_ref.val.last_applied_ime_enabled = window.ime_enabled
     runtime_ref.val.last_applied_ime_position = window.ime_position
   }
-  let cursor_options = window_current_cursor_options(world, entity)
-  if cursor_options.visible != runtime_ref.val.last_applied_cursor_visible {
-    host_window_set_cursor_visible(host_window, visible=cursor_options.visible)
-    runtime_ref.val.last_applied_cursor_visible = cursor_options.visible
-  }
-  if cursor_options.grab_mode != runtime_ref.val.last_applied_cursor_grab_mode {
-    host_window_set_cursor_grab_mode(host_window, mode=cursor_options.grab_mode)
-    runtime_ref.val.last_applied_cursor_grab_mode = cursor_options.grab_mode
-  }
-  let cursor_icon = window_current_cursor_icon(world, entity)
-  if cursor_icon != runtime_ref.val.last_applied_cursor_icon {
-    if cursor_icon is Some(cursor_icon0) {
-      host_window_set_cursor_icon(host_window, icon=cursor_icon0)
-    } else {
-      host_window_set_cursor_icon(host_window, icon=CursorIcon::default())
-    }
-    runtime_ref.val.last_applied_cursor_icon = cursor_icon
-  }
   let requested_drag_move = window.drag_move_request
   let requested_drag_resize = window.drag_resize_request
   if requested_drag_move {
@@ -714,6 +696,33 @@ fn window_sync_requested_state(
         next
       }),
     )
+  }
+}
+
+///|
+fn window_sync_requested_cursor_state(
+  world : @ecs.World,
+  entity : @core.Entity,
+  runtime_ref : Ref[WindowRuntime],
+) -> Unit {
+  let host_window = runtime_ref.val.window
+  let cursor_options = window_current_cursor_options(world, entity)
+  if cursor_options.visible != runtime_ref.val.last_applied_cursor_visible {
+    host_window_set_cursor_visible(host_window, visible=cursor_options.visible)
+    runtime_ref.val.last_applied_cursor_visible = cursor_options.visible
+  }
+  if cursor_options.grab_mode != runtime_ref.val.last_applied_cursor_grab_mode {
+    host_window_set_cursor_grab_mode(host_window, mode=cursor_options.grab_mode)
+    runtime_ref.val.last_applied_cursor_grab_mode = cursor_options.grab_mode
+  }
+  let cursor_icon = window_current_cursor_icon(world, entity)
+  if cursor_icon != runtime_ref.val.last_applied_cursor_icon {
+    if cursor_icon is Some(cursor_icon0) {
+      host_window_set_cursor_icon(host_window, icon=cursor_icon0)
+    } else {
+      host_window_set_cursor_icon(host_window, icon=CursorIcon::default())
+    }
+    runtime_ref.val.last_applied_cursor_icon = cursor_icon
   }
 }
 
@@ -1314,12 +1323,33 @@ pub fn window_backend_prepare_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn window_backend_apply_requested_system(world : @ecs.World) -> Unit {
+  window_backend_apply_changed_windows_system(world)
+  window_backend_apply_changed_cursor_options_system(world)
+}
+
+///|
+pub fn window_backend_apply_changed_windows_system(world : @ecs.World) -> Unit {
   let runtime_query = world.query1(ecs_key_window_runtime)
   for entity in window_runtime_entities_with_host(world) {
     ignore(
       try! runtime_query.with_mut(entity, fn(runtime_mut) {
         let runtime_ref = runtime_mut.get_ref()
-        window_sync_requested_state(world, entity, runtime_ref)
+        window_sync_requested_window_state(world, entity, runtime_ref)
+      }),
+    )
+  }
+}
+
+///|
+pub fn window_backend_apply_changed_cursor_options_system(
+  world : @ecs.World,
+) -> Unit {
+  let runtime_query = world.query1(ecs_key_window_runtime)
+  for entity in window_runtime_entities_with_host(world) {
+    ignore(
+      try! runtime_query.with_mut(entity, fn(runtime_mut) {
+        let runtime_ref = runtime_mut.get_ref()
+        window_sync_requested_cursor_state(world, entity, runtime_ref)
       }),
     )
   }
