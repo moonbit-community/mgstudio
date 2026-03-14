@@ -3,7 +3,6 @@ package "Milky2018/mgstudio/winit"
 
 import {
   "Milky2018/mgstudio/app",
-  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/window/windowing_native",
 }
@@ -42,12 +41,29 @@ pub impl Show for RawWinitWindowEvent
 
 pub(all) enum UpdateMode {
   Continuous
-  Reactive(@core.Duration, Bool, Bool, Bool)
+  Reactive(@Milky2018/mgstudio/core.Duration, Bool, Bool, Bool)
 }
-pub fn UpdateMode::reactive(@core.Duration) -> Self
-pub fn UpdateMode::reactive_low_power(@core.Duration) -> Self
+pub fn UpdateMode::reactive(@Milky2018/mgstudio/core.Duration) -> Self
+pub fn UpdateMode::reactive_low_power(@Milky2018/mgstudio/core.Duration) -> Self
 pub impl Eq for UpdateMode
 pub impl Show for UpdateMode
+
+pub struct WinitMonitorEntry {
+  monitor : @Milky2018/window/core.MonitorHandle
+  entity : @Milky2018/mgstudio/core.Entity
+}
+pub fn WinitMonitorEntry::new(@Milky2018/window/core.MonitorHandle, @Milky2018/mgstudio/core.Entity) -> Self
+pub impl Eq for WinitMonitorEntry
+
+pub struct WinitMonitors {
+  monitors : Array[WinitMonitorEntry]
+}
+pub fn WinitMonitors::find_entity(Self, @Milky2018/mgstudio/core.Entity) -> @Milky2018/window/core.MonitorHandle?
+pub fn WinitMonitors::new() -> Self
+pub fn WinitMonitors::nth(Self, Int) -> @Milky2018/window/core.MonitorHandle?
+pub impl @app.Resource for WinitMonitors
+pub impl Default for WinitMonitors
+pub impl Eq for WinitMonitors
 
 pub(all) struct WinitPlugin {
   run_on_any_thread : Bool

@@ -46,6 +46,15 @@ fn read_winit_settings(world : @ecs.World) -> WinitSettings? {
 }
 
 ///|
+fn read_winit_monitors(world : @ecs.World) -> WinitMonitors? {
+  try world.get_resource(WinitMonitors::resource()) catch {
+    _ => None
+  } noraise {
+    value => value
+  }
+}
+
+///|
 fn read_keyboard_focus_lost(
   world : @ecs.World,
 ) -> Array[@window.KeyboardFocusLost] {
@@ -119,6 +128,30 @@ test "winit: plugin initializes bevy-aligned default settings resource" {
     }
     _ => abort("expected reactive unfocused mode")
   }
+}
+
+///|
+test "winit: plugin initializes bevy-aligned monitors resource" {
+  let app_with_winit = winit_plugin(
+    @window.window_plugin(@app.App::new(@ecs.World::new())),
+  ).run_once()
+  let monitors = match read_winit_monitors(app_with_winit.world()) {
+    Some(monitors) => monitors
+    None => abort("missing WinitMonitors resource")
+  }
+
+  inspect(monitors.nth(0) is None, content="true")
+}
+
+///|
+test "winit: monitors resource provides nth and find_entity accessors" {
+  let world = @ecs.World::new()
+  let missing_entity = world.spawn()
+  let monitors = WinitMonitors::default()
+  inspect(monitors.nth(0) is None, content="true")
+  inspect(monitors.nth(-1) is None, content="true")
+  inspect(monitors.find_entity(world.spawn()) is None, content="true")
+  inspect(monitors.find_entity(missing_entity) is None, content="true")
 }
 
 ///|
