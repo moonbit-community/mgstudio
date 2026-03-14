@@ -35,6 +35,10 @@ pub fn drag_window(Int) -> Bool
 
 pub fn enqueue_accessibility_action(@moon_accesskit.ActionRequest) -> Unit
 
+pub fn event_loop_any_thread_applied() -> Bool
+
+pub fn event_loop_any_thread_requested() -> Bool
+
 pub fn focused(Int) -> Bool
 
 pub fn height(Int) -> Int
@@ -218,6 +222,8 @@ pub fn set_cursor_visible(Int, visible~ : Bool) -> Unit
 pub fn set_decorations(Int, decorations~ : Bool) -> Unit
 
 pub fn set_enabled_buttons(Int, close~ : Bool, minimize~ : Bool, maximize~ : Bool) -> Unit
+
+pub fn set_event_loop_any_thread(Bool) -> Unit
 
 pub fn set_ime_allowed(Int, allowed~ : Bool) -> Unit
 

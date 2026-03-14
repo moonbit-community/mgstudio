@@ -422,6 +422,12 @@ priv struct NativePumpHandler {}
 let native_event_loop_ref : Ref[@window_macos.EventLoop?] = Ref::new(None)
 
 ///|
+let event_loop_any_thread_ref : Ref[Bool] = Ref::new(false)
+
+///|
+let event_loop_any_thread_applied_ref : Ref[Bool] = Ref::new(false)
+
+///|
 let native_pump_handler_ref : Ref[NativePumpHandler] = Ref::new(NativePumpHandler::{
 
 })
@@ -909,8 +915,11 @@ fn ensure_native_event_loop() -> @window_macos.EventLoop {
   match native_event_loop_ref.val {
     Some(event_loop) => event_loop
     None => {
-      let event_loop = @window_macos.EventLoop::new()
+      let event_loop = @window_macos.EventLoopBuilder::new()
+        .with_any_thread(event_loop_any_thread_ref.val)
+        .build()
       event_loop.set_control_flow(@window_core.ControlFlow::Poll)
+      event_loop_any_thread_applied_ref.val = event_loop_any_thread_ref.val
       native_event_loop_ref.val = Some(event_loop)
       event_loop
     }
@@ -1624,6 +1633,21 @@ pub fn attach_surface_metal_layer(
 pub fn native_backend_available() -> Bool {
   @window_macos.EventLoopBuilder::new() |> ignore
   true
+}
+
+///|
+pub fn set_event_loop_any_thread(any_thread : Bool) -> Unit {
+  event_loop_any_thread_ref.val = any_thread
+}
+
+///|
+pub fn event_loop_any_thread_requested() -> Bool {
+  event_loop_any_thread_ref.val
+}
+
+///|
+pub fn event_loop_any_thread_applied() -> Bool {
+  event_loop_any_thread_applied_ref.val
 }
 
 ///|

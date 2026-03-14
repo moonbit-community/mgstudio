@@ -109,6 +109,17 @@ test "winit: plugin replacement id aligns with bevy_winit" {
 }
 
 ///|
+test "winit: plugin forwards run_on_any_thread setting to native backend" {
+  @windowing.set_event_loop_any_thread(false)
+  let _app = winit_plugin_with(
+    @window.window_plugin(@app.App::new(@ecs.World::new())),
+    WinitPlugin::{ run_on_any_thread: true },
+  ).run_once()
+  inspect(@windowing.event_loop_any_thread_requested(), content="true")
+  @windowing.set_event_loop_any_thread(false)
+}
+
+///|
 test "winit: backend sync is owned by winit plugin" {
   let app_without_winit = @window.window_plugin(
     @app.App::new(@ecs.World::new()),

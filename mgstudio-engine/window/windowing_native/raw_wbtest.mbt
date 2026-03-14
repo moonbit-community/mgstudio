@@ -111,3 +111,28 @@ test "windowing_native wbtest: clear-all-keys resets pressed and transition stat
   assert_false(input_is_key_just_released_by_id(key_id))
   assert_false(input_is_key_repeated_by_id(key_id))
 }
+
+///|
+test "windowing_native wbtest: any-thread preference is applied on event loop creation" {
+  match native_event_loop_ref.val {
+    Some(event_loop) => {
+      event_loop.drop()
+      native_event_loop_ref.val = None
+    }
+    None => ()
+  }
+
+  set_event_loop_any_thread(true)
+  inspect(event_loop_any_thread_requested(), content="true")
+  ignore(ensure_native_event_loop())
+  inspect(event_loop_any_thread_applied(), content="true")
+
+  match native_event_loop_ref.val {
+    Some(event_loop) => {
+      event_loop.drop()
+      native_event_loop_ref.val = None
+    }
+    None => ()
+  }
+  set_event_loop_any_thread(false)
+}

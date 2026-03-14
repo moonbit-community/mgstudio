@@ -74,7 +74,7 @@ pub fn winit_plugin_with(
   app : @app.App[@ecs.World],
   plugin : WinitPlugin,
 ) -> @app.App[@ecs.World] {
-  plugin.run_on_any_thread |> ignore
+  @windowing.set_event_loop_any_thread(plugin.run_on_any_thread)
   let mut next = app
   if !next.contains_resource(ecs_key_winit_plugin_marker) {
     next = next
