@@ -13,6 +13,6 @@
 // limitations under the License.
 
 ///|
-pub fn winit_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
+pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
   @window.window_runner_builder(app)
 }

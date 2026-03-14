@@ -25,7 +25,7 @@ pub fn winit_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn winit_plugin_with(@app.App[@ecs.World], WinitPlugin) -> @app.App[@ecs.World]
 
-pub fn winit_runner_builder(@app.App[@ecs.World]) -> () -> Unit
+pub fn winit_runner(@app.App[@ecs.World]) -> () -> Unit
 
 pub fn winit_window_backend_sync_system(@ecs.World) -> Unit
 

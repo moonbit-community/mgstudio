@@ -113,7 +113,7 @@ pub fn winit_plugin_with(
         @app.PreUpdate,
         @app.system(winit_window_backend_sync_system),
       )
-      .set_runner(winit_runner_builder)
+      .set_runner(winit_runner)
   }
   next
 }
