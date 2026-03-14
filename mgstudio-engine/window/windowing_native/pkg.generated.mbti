@@ -5,6 +5,7 @@ import {
   "Milky2018/moon_accesskit",
   "Milky2018/wgpu_mbt",
   "Milky2018/wgpu_mbt/c",
+  "Milky2018/window/core",
   "moonbitlang/core/ref",
 }
 
@@ -25,7 +26,7 @@ pub fn create(logical_width~ : Int, logical_height~ : Int, physical_width~ : Int
 
 pub fn create_utf8(Int, Int, Int, Int, Bool, Bytes, UInt64, Bool, Bool, Bool, Bool) -> Int
 
-pub fn drag_resize_window(Int, direction~ : Int) -> Bool
+pub fn drag_resize_window(Int, direction~ : @core.ResizeDirection) -> Bool
 
 pub fn drag_window(Int) -> Bool
 
@@ -151,9 +152,9 @@ pub fn scale_factor(Int) -> Float
 
 pub fn set_accessibility_requested(Bool) -> Unit
 
-pub fn set_cursor_grab_mode(Int, mode~ : Int) -> Unit
+pub fn set_cursor_grab_mode(Int, mode~ : @core.CursorGrabMode) -> Unit
 
-pub fn set_cursor_icon(Int, icon~ : Int) -> Unit
+pub fn set_cursor_icon(Int, icon~ : @core.CursorIcon) -> Unit
 
 pub fn set_cursor_visible(Int, visible~ : Bool) -> Unit
 
@@ -173,7 +174,7 @@ pub fn set_resizable(Int, resizable~ : Bool) -> Unit
 
 pub fn set_size(Int, width~ : Int, height~ : Int) -> Unit
 
-pub fn set_theme(Int, theme~ : Int) -> Unit
+pub fn set_theme(Int, theme~ : @core.Theme?) -> Unit
 
 pub fn set_title(Int, title~ : String) -> Unit
 
@@ -183,7 +184,7 @@ pub fn set_transparent(Int, transparent~ : Bool) -> Unit
 
 pub fn set_visible(Int, visible~ : Bool) -> Unit
 
-pub fn set_window_level(Int, level~ : Int) -> Unit
+pub fn set_window_level(Int, level~ : @core.WindowLevel) -> Unit
 
 pub fn should_close(Int) -> Bool
 

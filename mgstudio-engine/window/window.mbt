@@ -94,42 +94,7 @@ pub(all) enum CursorGrabMode {
 } derive(Eq, Show)
 
 ///|
-pub(all) enum SystemCursorIcon {
-  Default
-  ContextMenu
-  Help
-  Pointer
-  Progress
-  Wait
-  Cell
-  Crosshair
-  Text
-  VerticalText
-  Alias
-  Copy
-  Move
-  NoDrop
-  NotAllowed
-  Grab
-  Grabbing
-  EResize
-  NResize
-  NeResize
-  NwResize
-  SResize
-  SeResize
-  SwResize
-  WResize
-  EwResize
-  NsResize
-  NeswResize
-  NwseResize
-  ColResize
-  RowResize
-  AllScroll
-  ZoomIn
-  ZoomOut
-} derive(Eq, Show)
+pub type SystemCursorIcon = @window_core.CursorIcon
 
 ///|
 pub(all) enum CursorIcon {
@@ -150,7 +115,7 @@ pub fn CursorIcon::as_system(self : CursorIcon) -> SystemCursorIcon? {
 
 ///|
 pub impl Default for CursorIcon with default() {
-  System(Default)
+  System(@window_core.CursorIcon::Default)
 }
 
 ///|
@@ -171,17 +136,10 @@ pub(all) enum PresentMode {
 } derive(Eq, Show)
 
 ///|
-pub(all) enum WindowLevel {
-  AlwaysOnBottom
-  Normal
-  AlwaysOnTop
-} derive(Eq, Show)
+pub type WindowLevel = @window_core.WindowLevel
 
 ///|
-pub(all) enum WindowTheme {
-  Light
-  Dark
-} derive(Eq, Show)
+pub type WindowTheme = @window_core.Theme
 
 ///|
 pub(all) struct EnabledButtons {
@@ -322,54 +280,20 @@ pub fn host_window_set_cursor_visible(
 }
 
 ///|
-fn cursor_grab_mode_to_int(mode : CursorGrabMode) -> Int {
+fn cursor_grab_mode_to_native(
+  mode : CursorGrabMode,
+) -> @window_core.CursorGrabMode {
   match mode {
-    GrabNone => 0
-    GrabConfined => 1
-    GrabLocked => 2
+    GrabNone => @window_core.CursorGrabMode::None
+    GrabConfined => @window_core.CursorGrabMode::Confined
+    GrabLocked => @window_core.CursorGrabMode::Locked
   }
 }
 
 ///|
-fn cursor_icon_to_int(icon : CursorIcon) -> Int {
+fn cursor_icon_to_native(icon : CursorIcon) -> @window_core.CursorIcon {
   match icon {
-    System(system_icon) =>
-      match system_icon {
-        Default => 0
-        ContextMenu => 1
-        Help => 2
-        Progress => 3
-        Wait => 4
-        Cell => 5
-        VerticalText => 6
-        Alias => 7
-        Copy => 8
-        NoDrop => 9
-        Grab => 10
-        Grabbing => 11
-        EResize => 12
-        NResize => 13
-        NeResize => 14
-        NwResize => 15
-        SResize => 16
-        SeResize => 17
-        SwResize => 18
-        WResize => 19
-        EwResize => 20
-        NsResize => 21
-        NeswResize => 22
-        NwseResize => 23
-        ColResize => 24
-        RowResize => 25
-        AllScroll => 26
-        ZoomIn => 27
-        ZoomOut => 28
-        Pointer => 29
-        Text => 30
-        Crosshair => 31
-        Move => 32
-        NotAllowed => 33
-      }
+    System(system_icon) => system_icon
   }
 }
 
@@ -378,18 +302,7 @@ pub fn host_window_set_cursor_grab_mode(
   window : HostWindow,
   mode~ : CursorGrabMode,
 ) -> Unit {
-  host_window_set_cursor_grab_mode_raw(
-    window~,
-    mode=cursor_grab_mode_to_int(mode),
-  )
-}
-
-///|
-fn host_window_set_cursor_grab_mode_raw(
-  window~ : HostWindow,
-  mode~ : Int,
-) -> Unit {
-  @windowing.set_cursor_grab_mode(window, mode~)
+  @windowing.set_cursor_grab_mode(window, mode=cursor_grab_mode_to_native(mode))
 }
 
 ///|
@@ -397,12 +310,7 @@ pub fn host_window_set_cursor_icon(
   window : HostWindow,
   icon~ : CursorIcon,
 ) -> Unit {
-  host_window_set_cursor_icon_raw(window~, icon=cursor_icon_to_int(icon))
-}
-
-///|
-fn host_window_set_cursor_icon_raw(window~ : HostWindow, icon~ : Int) -> Unit {
-  @windowing.set_cursor_icon(window, icon~)
+  @windowing.set_cursor_icon(window, icon=cursor_icon_to_native(icon))
 }
 
 ///|
@@ -415,36 +323,18 @@ fn window_mode_to_int(mode : WindowMode) -> Int {
 }
 
 ///|
-fn window_level_to_int(level : WindowLevel) -> Int {
-  match level {
-    Normal => 0
-    AlwaysOnTop => 1
-    AlwaysOnBottom => 2
-  }
-}
-
-///|
-fn window_theme_to_int(theme : WindowTheme?) -> Int {
-  match theme {
-    Some(Light) => 1
-    Some(Dark) => 2
-    None => 0
-  }
-}
-
-///|
-fn compass_octant_to_resize_direction_int(
+fn compass_octant_to_resize_direction(
   direction : @math.CompassOctant,
-) -> Int {
+) -> @window_core.ResizeDirection {
   match direction {
-    North => 1
-    NorthEast => 2
-    East => 0
-    SouthEast => 5
-    South => 4
-    SouthWest => 6
-    West => 7
-    NorthWest => 3
+    North => @window_core.ResizeDirection::North
+    NorthEast => @window_core.ResizeDirection::NorthEast
+    East => @window_core.ResizeDirection::East
+    SouthEast => @window_core.ResizeDirection::SouthEast
+    South => @window_core.ResizeDirection::South
+    SouthWest => @window_core.ResizeDirection::SouthWest
+    West => @window_core.ResizeDirection::West
+    NorthWest => @window_core.ResizeDirection::NorthWest
   }
 }
 
@@ -484,7 +374,7 @@ pub fn host_window_set_window_level(
   window : HostWindow,
   level~ : WindowLevel,
 ) -> Unit {
-  @windowing.set_window_level(window, level=window_level_to_int(level))
+  @windowing.set_window_level(window, level~)
 }
 
 ///|
@@ -492,7 +382,7 @@ pub fn host_window_set_theme(
   window : HostWindow,
   theme~ : WindowTheme?,
 ) -> Unit {
-  @windowing.set_theme(window, theme=window_theme_to_int(theme))
+  @windowing.set_theme(window, theme~)
 }
 
 ///|
@@ -539,7 +429,7 @@ pub fn host_window_drag_resize(
 ) -> Bool {
   @windowing.drag_resize_window(
     window,
-    direction=compass_octant_to_resize_direction_int(direction),
+    direction=compass_octant_to_resize_direction(direction),
   )
 }
 

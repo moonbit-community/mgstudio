@@ -4,7 +4,6 @@ package "Milky2018/mgstudio/window"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
-  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
@@ -110,7 +109,7 @@ pub fn host_window_set_resizable(Int, resizable~ : Bool) -> Unit
 
 pub fn host_window_set_size(Int, width~ : Int, height~ : Int) -> Unit
 
-pub fn host_window_set_theme(Int, theme~ : WindowTheme?) -> Unit
+pub fn host_window_set_theme(Int, theme~ : @Milky2018/window/core.Theme?) -> Unit
 
 pub fn host_window_set_title(Int, title~ : String) -> Unit
 
@@ -118,7 +117,7 @@ pub fn host_window_set_transparent(Int, transparent~ : Bool) -> Unit
 
 pub fn host_window_set_visible(Int, visible~ : Bool) -> Unit
 
-pub fn host_window_set_window_level(Int, level~ : WindowLevel) -> Unit
+pub fn host_window_set_window_level(Int, level~ : @Milky2018/window/core.WindowLevel) -> Unit
 
 pub fn host_window_should_close(Int) -> Bool
 
@@ -132,9 +131,9 @@ pub fn window_backend_sync_system(@ecs.World) -> Unit
 
 pub fn window_ensure_primary_host(@ecs.World) -> Int?
 
-pub fn window_entity_for_host(@ecs.World, Int) -> @core.Entity?
+pub fn window_entity_for_host(@ecs.World, Int) -> @Milky2018/mgstudio/core.Entity?
 
-pub fn window_entity_for_ref(@ecs.World, WindowRef) -> @core.Entity?
+pub fn window_entity_for_ref(@ecs.World, WindowRef) -> @Milky2018/mgstudio/core.Entity?
 
 pub fn window_height() -> Int
 
@@ -184,7 +183,7 @@ pub fn window_set_resizable(resizable~ : Bool) -> Unit
 
 pub fn window_set_size(width~ : Int, height~ : Int) -> Unit
 
-pub fn window_set_theme(theme~ : WindowTheme?) -> Unit
+pub fn window_set_theme(theme~ : @Milky2018/window/core.Theme?) -> Unit
 
 pub fn window_set_title(title~ : String) -> Unit
 
@@ -192,7 +191,7 @@ pub fn window_set_transparent(transparent~ : Bool) -> Unit
 
 pub fn window_set_visible(visible~ : Bool) -> Unit
 
-pub fn window_set_window_level(level~ : WindowLevel) -> Unit
+pub fn window_set_window_level(level~ : @Milky2018/window/core.WindowLevel) -> Unit
 
 pub fn window_width() -> Int
 
@@ -222,10 +221,10 @@ pub impl Eq for CursorGrabMode
 pub impl Show for CursorGrabMode
 
 pub(all) enum CursorIcon {
-  System(SystemCursorIcon)
+  System(@Milky2018/window/core.CursorIcon)
 }
-pub fn CursorIcon::as_system(Self) -> SystemCursorIcon?
-pub fn CursorIcon::from(SystemCursorIcon) -> Self
+pub fn CursorIcon::as_system(Self) -> @Milky2018/window/core.CursorIcon?
+pub fn CursorIcon::from(@Milky2018/window/core.CursorIcon) -> Self
 pub impl @ecs.Component for CursorIcon
 pub impl Default for CursorIcon
 pub impl Eq for CursorIcon
@@ -270,11 +269,11 @@ pub(all) enum HostEvent {
 }
 
 pub(all) enum Ime {
-  Enabled(@core.Entity)
-  Preedit(@core.Entity, String, ImeCursorRange?)
-  Commit(@core.Entity, String)
-  Disabled(@core.Entity)
-  DeleteSurrounding(@core.Entity, Int, Int)
+  Enabled(@Milky2018/mgstudio/core.Entity)
+  Preedit(@Milky2018/mgstudio/core.Entity, String, ImeCursorRange?)
+  Commit(@Milky2018/mgstudio/core.Entity, String)
+  Disabled(@Milky2018/mgstudio/core.Entity)
+  DeleteSurrounding(@Milky2018/mgstudio/core.Entity, Int, Int)
 }
 pub impl @ecs.Message for Ime
 pub impl Eq for Ime
@@ -394,11 +393,11 @@ pub struct Screenshot {
 pub fn Screenshot::image(@asset.Handle[@image.Image]) -> Self
 pub fn Screenshot::primary_window() -> Self
 pub fn Screenshot::texture_view(Int) -> Self
-pub fn Screenshot::window(@core.Entity) -> Self
+pub fn Screenshot::window(@Milky2018/mgstudio/core.Entity) -> Self
 pub impl @ecs.Component for Screenshot
 
 pub struct ScreenshotCaptured {
-  entity : @core.Entity
+  entity : @Milky2018/mgstudio/core.Entity
   image : @image.Image
 }
 pub impl @ecs.Component for ScreenshotCaptured
@@ -408,45 +407,6 @@ pub(all) enum ScreenshotTarget {
   Image(@asset.Handle[@image.Image])
   TextureView(Int)
 }
-
-pub(all) enum SystemCursorIcon {
-  Default
-  ContextMenu
-  Help
-  Pointer
-  Progress
-  Wait
-  Cell
-  Crosshair
-  Text
-  VerticalText
-  Alias
-  Copy
-  Move
-  NoDrop
-  NotAllowed
-  Grab
-  Grabbing
-  EResize
-  NResize
-  NeResize
-  NwResize
-  SResize
-  SeResize
-  SwResize
-  WResize
-  EwResize
-  NsResize
-  NeswResize
-  NwseResize
-  ColResize
-  RowResize
-  AllScroll
-  ZoomIn
-  ZoomOut
-}
-pub impl Eq for SystemCursorIcon
-pub impl Show for SystemCursorIcon
 
 pub(all) struct Window {
   mut title : String
@@ -460,10 +420,10 @@ pub(all) struct Window {
   mut decorations : Bool
   mut transparent : Bool
   mut focused : Bool
-  mut window_level : WindowLevel
+  mut window_level : @Milky2018/window/core.WindowLevel
   mut fit_canvas_to_parent : Bool
   mut prevent_default_event_handling : Bool
-  mut window_theme : WindowTheme?
+  mut window_theme : @Milky2018/window/core.Theme?
   mut visible : Bool
   mut ime_enabled : Bool
   mut ime_position : @math.Vec2
@@ -481,62 +441,54 @@ pub fn Window::width(Self) -> Float
 pub impl @ecs.Component for Window
 
 pub(all) struct WindowBackendScaleFactorChanged {
-  window : @core.Entity
+  window : @Milky2018/mgstudio/core.Entity
   scale_factor : Float
 }
 pub impl @ecs.Message for WindowBackendScaleFactorChanged
 pub impl Eq for WindowBackendScaleFactorChanged
 
 pub(all) struct WindowCloseRequested {
-  window : @core.Entity
+  window : @Milky2018/mgstudio/core.Entity
 }
 pub impl @ecs.Message for WindowCloseRequested
 pub impl Eq for WindowCloseRequested
 
 pub(all) struct WindowClosed {
-  window : @core.Entity
+  window : @Milky2018/mgstudio/core.Entity
 }
 pub impl @ecs.Message for WindowClosed
 pub impl Eq for WindowClosed
 
 pub(all) struct WindowClosing {
-  window : @core.Entity
+  window : @Milky2018/mgstudio/core.Entity
 }
 pub impl @ecs.Message for WindowClosing
 pub impl Eq for WindowClosing
 
 pub(all) struct WindowCreated {
-  window : @core.Entity
+  window : @Milky2018/mgstudio/core.Entity
 }
 pub impl @ecs.Message for WindowCreated
 pub impl Eq for WindowCreated
 
 pub(all) struct WindowDestroyed {
-  window : @core.Entity
+  window : @Milky2018/mgstudio/core.Entity
 }
 pub impl @ecs.Message for WindowDestroyed
 pub impl Eq for WindowDestroyed
 
 pub(all) struct WindowFocused {
-  window : @core.Entity
+  window : @Milky2018/mgstudio/core.Entity
   focused : Bool
 }
 pub impl @ecs.Message for WindowFocused
 pub impl Eq for WindowFocused
 
 pub struct WindowHostEntry {
-  entity : @core.Entity
+  entity : @Milky2018/mgstudio/core.Entity
   host_window : Int
 }
-pub fn WindowHostEntry::new(@core.Entity, Int) -> Self
-
-pub(all) enum WindowLevel {
-  AlwaysOnBottom
-  Normal
-  AlwaysOnTop
-}
-pub impl Eq for WindowLevel
-pub impl Show for WindowLevel
+pub fn WindowHostEntry::new(@Milky2018/mgstudio/core.Entity, Int) -> Self
 
 pub(all) enum WindowMode {
   Windowed
@@ -547,7 +499,7 @@ pub impl Eq for WindowMode
 pub impl Show for WindowMode
 
 pub(all) struct WindowMoved {
-  window : @core.Entity
+  window : @Milky2018/mgstudio/core.Entity
   x : Int
   y : Int
 }
@@ -573,14 +525,14 @@ pub impl Show for WindowPosition
 
 pub(all) enum WindowRef {
   Primary
-  Entity(@core.Entity)
+  Entity(@Milky2018/mgstudio/core.Entity)
 }
 pub impl Eq for WindowRef
 pub impl ToJson for WindowRef
 pub impl @json.FromJson for WindowRef
 
 pub(all) struct WindowResized {
-  window : @core.Entity
+  window : @Milky2018/mgstudio/core.Entity
   width : Float
   height : Float
 }
@@ -611,23 +563,22 @@ pub impl Eq for WindowResolution
 pub impl Show for WindowResolution
 
 pub(all) struct WindowScaleFactorChanged {
-  window : @core.Entity
+  window : @Milky2018/mgstudio/core.Entity
   scale_factor : Float
 }
 pub impl @ecs.Message for WindowScaleFactorChanged
 pub impl Eq for WindowScaleFactorChanged
 
-pub(all) enum WindowTheme {
-  Light
-  Dark
-}
-pub impl Eq for WindowTheme
-pub impl Show for WindowTheme
-
 // Type aliases
 pub type HostWindow = Int
 
 pub type ManualTextureViewHandle = Int
+
+pub using @Milky2018/window/core {type CursorIcon as SystemCursorIcon}
+
+pub using @Milky2018/window/core {type WindowLevel}
+
+pub using @Milky2018/window/core {type Theme as WindowTheme}
 
 // Traits
 

@@ -541,87 +541,6 @@ fn element_state_to_int(state : @window_core.ElementState) -> Int {
 }
 
 ///|
-fn cursor_icon_from_int(icon : Int) -> @window_core.CursorIcon {
-  match icon {
-    1 => @window_core.CursorIcon::ContextMenu
-    2 => @window_core.CursorIcon::Help
-    3 => @window_core.CursorIcon::Progress
-    4 => @window_core.CursorIcon::Wait
-    5 => @window_core.CursorIcon::Cell
-    6 => @window_core.CursorIcon::VerticalText
-    7 => @window_core.CursorIcon::Alias
-    8 => @window_core.CursorIcon::Copy
-    9 => @window_core.CursorIcon::NoDrop
-    10 => @window_core.CursorIcon::Grab
-    11 => @window_core.CursorIcon::Grabbing
-    12 => @window_core.CursorIcon::EResize
-    13 => @window_core.CursorIcon::NResize
-    14 => @window_core.CursorIcon::NeResize
-    15 => @window_core.CursorIcon::NwResize
-    16 => @window_core.CursorIcon::SResize
-    17 => @window_core.CursorIcon::SeResize
-    18 => @window_core.CursorIcon::SwResize
-    19 => @window_core.CursorIcon::WResize
-    20 => @window_core.CursorIcon::EwResize
-    21 => @window_core.CursorIcon::NsResize
-    22 => @window_core.CursorIcon::NeswResize
-    23 => @window_core.CursorIcon::NwseResize
-    24 => @window_core.CursorIcon::ColResize
-    25 => @window_core.CursorIcon::RowResize
-    26 => @window_core.CursorIcon::AllScroll
-    27 => @window_core.CursorIcon::ZoomIn
-    28 => @window_core.CursorIcon::ZoomOut
-    29 => @window_core.CursorIcon::Pointer
-    30 => @window_core.CursorIcon::Text
-    31 => @window_core.CursorIcon::Crosshair
-    32 => @window_core.CursorIcon::Move
-    33 => @window_core.CursorIcon::NotAllowed
-    _ => @window_core.CursorIcon::Default
-  }
-}
-
-///|
-fn cursor_grab_mode_from_int(mode : Int) -> @window_core.CursorGrabMode {
-  match mode {
-    1 => @window_core.CursorGrabMode::Confined
-    2 => @window_core.CursorGrabMode::Locked
-    _ => @window_core.CursorGrabMode::None
-  }
-}
-
-///|
-fn resize_direction_from_int(direction : Int) -> @window_core.ResizeDirection {
-  match direction {
-    1 => @window_core.ResizeDirection::North
-    2 => @window_core.ResizeDirection::NorthEast
-    5 => @window_core.ResizeDirection::SouthEast
-    4 => @window_core.ResizeDirection::South
-    6 => @window_core.ResizeDirection::SouthWest
-    7 => @window_core.ResizeDirection::West
-    3 => @window_core.ResizeDirection::NorthWest
-    _ => @window_core.ResizeDirection::East
-  }
-}
-
-///|
-fn window_level_from_int(level : Int) -> @window_core.WindowLevel {
-  match level {
-    1 => @window_core.WindowLevel::AlwaysOnTop
-    2 => @window_core.WindowLevel::AlwaysOnBottom
-    _ => @window_core.WindowLevel::Normal
-  }
-}
-
-///|
-fn window_theme_from_int(theme : Int) -> @window_core.Theme? {
-  match theme {
-    1 => Some(@window_core.Theme::Light)
-    2 => Some(@window_core.Theme::Dark)
-    _ => None
-  }
-}
-
-///|
 fn ensure_native_event_loop() -> @window_macos.EventLoop {
   match native_event_loop_ref.val {
     Some(event_loop) => event_loop
@@ -1102,18 +1021,20 @@ pub fn set_enabled_buttons(
 }
 
 ///|
-pub fn set_window_level(window : Int, level~ : Int) -> Unit {
+pub fn set_window_level(
+  window : Int,
+  level~ : @window_core.WindowLevel,
+) -> Unit {
   match native_window_ref(window) {
-    Some(window_ref) =>
-      window_ref.val.set_window_level(window_level_from_int(level))
+    Some(window_ref) => window_ref.val.set_window_level(level)
     None => ()
   }
 }
 
 ///|
-pub fn set_theme(window : Int, theme~ : Int) -> Unit {
+pub fn set_theme(window : Int, theme~ : @window_core.Theme?) -> Unit {
   match native_window_ref(window) {
-    Some(window_ref) => window_ref.val.set_theme(window_theme_from_int(theme))
+    Some(window_ref) => window_ref.val.set_theme(theme)
     None => ()
   }
 }
@@ -1153,21 +1074,20 @@ pub fn set_cursor_visible(window : Int, visible~ : Bool) -> Unit {
 }
 
 ///|
-pub fn set_cursor_grab_mode(window : Int, mode~ : Int) -> Unit {
+pub fn set_cursor_grab_mode(
+  window : Int,
+  mode~ : @window_core.CursorGrabMode,
+) -> Unit {
   match native_window_ref(window) {
-    Some(window_ref) =>
-      window_ref.val.set_cursor_grab(cursor_grab_mode_from_int(mode)) catch {
-        _ => ()
-      }
+    Some(window_ref) => window_ref.val.set_cursor_grab(mode) catch { _ => () }
     None => ()
   }
 }
 
 ///|
-pub fn set_cursor_icon(window : Int, icon~ : Int) -> Unit {
+pub fn set_cursor_icon(window : Int, icon~ : @window_core.CursorIcon) -> Unit {
   match native_window_ref(window) {
-    Some(window_ref) =>
-      window_ref.val.set_cursor_icon(cursor_icon_from_int(icon))
+    Some(window_ref) => window_ref.val.set_cursor_icon(icon)
     None => ()
   }
 }
@@ -1218,11 +1138,14 @@ pub fn drag_window(window : Int) -> Bool {
 }
 
 ///|
-pub fn drag_resize_window(window : Int, direction~ : Int) -> Bool {
+pub fn drag_resize_window(
+  window : Int,
+  direction~ : @window_core.ResizeDirection,
+) -> Bool {
   match native_window_ref(window) {
     Some(window_ref) =>
       try {
-        window_ref.val.drag_resize_window(resize_direction_from_int(direction))
+        window_ref.val.drag_resize_window(direction)
         true
       } catch {
         _ => false

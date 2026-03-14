@@ -4,6 +4,7 @@ package "Milky2018/mgstudio/platform"
 import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/window",
+  "Milky2018/window/core",
 }
 
 // Values
@@ -61,44 +62,13 @@ pub impl Eq for CursorGrabMode
 pub impl Show for CursorGrabMode
 
 pub(all) enum CursorIcon {
-  System(SystemCursorIcon)
+  System(@core.CursorIcon)
 }
-pub fn CursorIcon::as_system(Self) -> SystemCursorIcon?
-pub fn CursorIcon::from(SystemCursorIcon) -> Self
+pub fn CursorIcon::as_system(Self) -> @core.CursorIcon?
+pub fn CursorIcon::from(@core.CursorIcon) -> Self
 pub impl Default for CursorIcon
 pub impl Eq for CursorIcon
 pub impl Show for CursorIcon
-
-pub(all) enum SystemCursorIcon {
-  Default
-  ContextMenu
-  Help
-  Pointer
-  Progress
-  Wait
-  Cell
-  Crosshair
-  Text
-  VerticalText
-  Alias
-  Copy
-  Move
-  NoDrop
-  NotAllowed
-  Grab
-  Grabbing
-  EResize
-  NResize
-  NeResize
-  NwResize
-  SResize
-  SeResize
-  SwResize
-  WResize
-  EwResize
-}
-pub impl Eq for SystemCursorIcon
-pub impl Show for SystemCursorIcon
 
 pub(all) enum WindowMode {
   Windowed
@@ -112,6 +82,8 @@ pub impl Show for WindowMode
 pub using @window {type HostEvent}
 
 pub type HostWindow = Int
+
+pub using @core {type CursorIcon as SystemCursorIcon}
 
 // Traits
 

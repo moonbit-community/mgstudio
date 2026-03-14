@@ -32,34 +32,7 @@ pub(all) enum CursorGrabMode {
 } derive(Eq, Show)
 
 ///|
-pub(all) enum SystemCursorIcon {
-  Default
-  ContextMenu
-  Help
-  Pointer
-  Progress
-  Wait
-  Cell
-  Crosshair
-  Text
-  VerticalText
-  Alias
-  Copy
-  Move
-  NoDrop
-  NotAllowed
-  Grab
-  Grabbing
-  EResize
-  NResize
-  NeResize
-  NwResize
-  SResize
-  SeResize
-  SwResize
-  WResize
-  EwResize
-} derive(Eq, Show)
+pub type SystemCursorIcon = @window_core.CursorIcon
 
 ///|
 pub(all) enum CursorIcon {
@@ -80,7 +53,7 @@ pub fn CursorIcon::as_system(self : CursorIcon) -> SystemCursorIcon? {
 
 ///|
 pub impl Default for CursorIcon with default() {
-  System(Default)
+  System(@window_core.CursorIcon::Default)
 }
 
 ///|
@@ -91,24 +64,20 @@ pub(all) enum WindowMode {
 } derive(Eq, Show)
 
 ///|
-fn cursor_grab_mode_to_int(mode : CursorGrabMode) -> Int {
+fn cursor_grab_mode_to_native(
+  mode : CursorGrabMode,
+) -> @window_core.CursorGrabMode {
   match mode {
-    GrabNone => 0
-    GrabConfined => 1
-    GrabLocked => 2
+    GrabNone => @window_core.CursorGrabMode::None
+    GrabConfined => @window_core.CursorGrabMode::Confined
+    GrabLocked => @window_core.CursorGrabMode::Locked
   }
 }
 
 ///|
-fn cursor_icon_to_int(icon : CursorIcon) -> Int {
+fn cursor_icon_to_native(icon : CursorIcon) -> @window_core.CursorIcon {
   match icon {
-    System(system_icon) =>
-      match system_icon {
-        Default => 0
-        EwResize => 1
-        Progress => 2
-        _ => 0
-      }
+    System(system_icon) => system_icon
   }
 }
 
@@ -226,7 +195,7 @@ pub fn set_resizable(window : HostWindow, resizable~ : Bool) -> Unit {
 
 ///|
 pub fn set_cursor_icon(window : HostWindow, icon~ : CursorIcon) -> Unit {
-  @windowing.set_cursor_icon(window, icon=cursor_icon_to_int(icon))
+  @windowing.set_cursor_icon(window, icon=cursor_icon_to_native(icon))
 }
 
 ///|
@@ -239,7 +208,7 @@ pub fn set_cursor_grab_mode(
   window : HostWindow,
   mode~ : CursorGrabMode,
 ) -> Unit {
-  @windowing.set_cursor_grab_mode(window, mode=cursor_grab_mode_to_int(mode))
+  @windowing.set_cursor_grab_mode(window, mode=cursor_grab_mode_to_native(mode))
 }
 
 ///|
