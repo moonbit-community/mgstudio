@@ -51,11 +51,11 @@ pub fn winit_changed_cursor_options_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-pub fn winit_check_keyboard_focus_lost_system(world : @ecs.World) -> Unit {
-  @input.input_check_keyboard_focus_lost_system(world)
+pub fn winit_despawn_windows_system(world : @ecs.World) -> Unit {
+  @window.window_despawn_closing_windows_system(world)
 }
 
 ///|
-pub fn winit_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
-  @window.window_runner_builder(app)
+pub fn winit_check_keyboard_focus_lost_system(world : @ecs.World) -> Unit {
+  @input.input_check_keyboard_focus_lost_system(world)
 }

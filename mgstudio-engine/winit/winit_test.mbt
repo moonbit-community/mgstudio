@@ -57,6 +57,27 @@ fn read_keyboard_focus_lost(
 }
 
 ///|
+fn read_window_closing(world : @ecs.World) -> Array[@window.WindowClosing] {
+  let reader = world.message_reader(@window.ecs_key_window_closing, Ref::new(0))
+  try! reader.read()
+}
+
+///|
+fn read_window_closed(world : @ecs.World) -> Array[@window.WindowClosed] {
+  let reader = world.message_reader(@window.ecs_key_window_closed, Ref::new(0))
+  try! reader.read()
+}
+
+///|
+fn read_window_destroyed(world : @ecs.World) -> Array[@window.WindowDestroyed] {
+  let reader = world.message_reader(
+    @window.ecs_key_window_destroyed,
+    Ref::new(0),
+  )
+  try! reader.read()
+}
+
+///|
 test "winit: plugin replacement id aligns with bevy_winit" {
   let plugin = WinitPlugin::default()
   inspect(plugin.replacement_id(), content=WINIT_PLUGIN_ID)
@@ -201,6 +222,37 @@ test "winit: keyboard focus-loss check runs in winit plugin lifecycle" {
     }
   }
   inspect(focus_lost_count, content="1")
+}
+
+///|
+test "winit: close request is despawned by Last-stage winit system" {
+  let world = @ecs.World::new()
+  let window_entity = world.spawn()
+  try! world.set_component(window_entity, @window.Window::default())
+
+  let mut app = winit_plugin(
+    @window.window_plugin_with(@app.App::new(world), @window.WindowPlugin::{
+      primary_window: None,
+      primary_cursor_options: None,
+      exit_condition: @window.ExitCondition::DontExit,
+      close_when_requested: true,
+    }),
+  ).run_once()
+
+  ignore(
+    app
+    .world()
+    .send_message(@window.ecs_key_window_close_requested, @window.WindowCloseRequested::{
+      window: window_entity,
+    }),
+  )
+
+  app = app.run_once()
+
+  inspect(app.world().is_alive(window_entity), content="false")
+  inspect(read_window_closing(app.world()).length(), content="1")
+  inspect(read_window_closed(app.world()).length(), content="1")
+  inspect(read_window_destroyed(app.world()).length(), content="1")
 }
 
 ///|

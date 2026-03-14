@@ -1454,14 +1454,9 @@ pub fn window_plugin_with(
 ///|
 pub fn close_when_requested(
   requested : @ecs.MessageReader[WindowCloseRequested],
-  closing : @ecs.EntityQuery[@ecs.With[ClosingWindow]],
+  _closing : @ecs.EntityQuery[@ecs.With[ClosingWindow]],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
-  let closing_entities : Array[@core.Entity] = []
-  closing.view(fn(entity) { closing_entities.push(entity) })
-  for entity in closing_entities {
-    try! world.despawn(entity)
-  }
   let events = try requested.read() catch {
     _ => []
   } noraise {
@@ -1477,9 +1472,23 @@ pub fn close_when_requested(
       None => false
     }
     if !is_already_closing {
-      window_emit_window_closing(world, WindowClosing::{ window: event.window })
       window_set_closing_component(world, event.window)
     }
+  }
+}
+
+///|
+pub fn window_despawn_closing_windows_system(world : @ecs.World) -> Unit {
+  let closing_entities : Array[@core.Entity] = []
+  world
+  .query_entities_filtered(@ecs.With::new(ecs_key_closing_window))
+  .view(fn(entity) { closing_entities.push(entity) })
+  for entity in closing_entities {
+    if !world.is_alive(entity) {
+      continue
+    }
+    window_emit_window_closing(world, WindowClosing::{ window: entity })
+    try! world.despawn(entity)
   }
 }
 

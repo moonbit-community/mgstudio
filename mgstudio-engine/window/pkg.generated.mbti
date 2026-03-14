@@ -190,6 +190,8 @@ pub fn window_backend_prepare_system(@ecs.World) -> Unit
 
 pub fn window_backend_sync_system(@ecs.World) -> Unit
 
+pub fn window_despawn_closing_windows_system(@ecs.World) -> Unit
+
 pub fn window_emit_cursor_entered(@ecs.World, CursorEntered) -> Unit
 
 pub fn window_emit_cursor_left(@ecs.World, CursorLeft) -> Unit

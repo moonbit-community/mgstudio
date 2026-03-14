@@ -418,7 +418,7 @@ test "window: plugin does not own backend window synchronization" {
 }
 
 ///|
-test "window: close_when_requested marks then despawns windows across updates" {
+test "window: close_when_requested marks windows without immediate despawn" {
   let world = @ecs.World::new()
   let entity = world.spawn()
   try! world.set_component(entity, Window::default())
@@ -442,11 +442,8 @@ test "window: close_when_requested marks then despawns windows across updates" {
   app = app.run_once()
   inspect(app.world().is_alive(entity), content="true")
   inspect(has_closing_window(app.world(), entity), content="true")
-  inspect(read_window_closing(app.world()).length(), content="1")
-
-  app = app.run_once()
-  inspect(app.world().is_alive(entity), content="false")
-  inspect(read_window_destroyed(app.world()).length(), content="1")
+  inspect(read_window_closing(app.world()).length(), content="0")
+  inspect(read_window_destroyed(app.world()).length(), content="0")
 }
 
 ///|
