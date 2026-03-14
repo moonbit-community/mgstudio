@@ -1293,6 +1293,16 @@ pub fn poll_events(_window : Int) -> Unit {
 }
 
 ///|
+pub fn available_monitors() -> Array[@window_core.MonitorHandle] {
+  ensure_native_event_loop().available_monitors()
+}
+
+///|
+pub fn primary_monitor() -> @window_core.MonitorHandle? {
+  ensure_native_event_loop().primary_monitor()
+}
+
+///|
 pub fn width(window : Int) -> Int {
   match native_window_ref(window) {
     Some(window_ref) => window_ref.val.surface_size().width()

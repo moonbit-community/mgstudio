@@ -19,6 +19,8 @@ pub fn attach_metal_layer(Int, @c.OpaquePtr) -> Unit
 
 pub fn attach_surface_metal_layer(Int, @wgpu_mbt.Surface) -> Unit
 
+pub fn available_monitors() -> Array[@core.MonitorHandle]
+
 pub fn bind_accessibility_requested(@ref.Ref[Bool]) -> Unit
 
 pub fn commit_pending_accessibility_update() -> Bool
@@ -192,6 +194,8 @@ pub fn poll_events(Int) -> Unit
 pub fn position_x(Int) -> Int
 
 pub fn position_y(Int) -> Int
+
+pub fn primary_monitor() -> @core.MonitorHandle?
 
 pub fn queue_accessibility_update(@moon_accesskit.TreeUpdate) -> Unit
 

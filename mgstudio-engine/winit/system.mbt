@@ -13,6 +13,157 @@
 // limitations under the License.
 
 ///|
+fn winit_monitor_entry_index(
+  entries : Array[WinitMonitorEntry],
+  monitor : @window_core.MonitorHandle,
+) -> Int? {
+  for i, entry in entries {
+    if entry.monitor == monitor {
+      return Some(i)
+    }
+  }
+  None
+}
+
+///|
+fn winit_video_mode_from_native(
+  mode : @window_core.VideoMode,
+) -> @window.VideoMode {
+  let size = mode.surface_size()
+  @window.VideoMode::new(
+    @math.UVec2::new(size.width(), size.height()),
+    match mode.bit_depth() {
+      Some(bit_depth) => bit_depth
+      None => 0
+    },
+    match mode.refresh_rate_millihertz() {
+      Some(refresh_rate) => refresh_rate
+      None => 0
+    },
+  )
+}
+
+///|
+fn winit_monitor_from_native(
+  monitor : @window_core.MonitorHandle,
+) -> @window.Monitor {
+  let size = monitor.surface_size()
+  let position = monitor.position()
+  let video_modes : Array[@window.VideoMode] = []
+  for mode in monitor.video_modes() {
+    video_modes.push(winit_video_mode_from_native(mode))
+  }
+  @window.Monitor::{
+    name: monitor.name(),
+    physical_height: size.height(),
+    physical_width: size.width(),
+    physical_position: @math.IVec2::new(position.x(), position.y()),
+    refresh_rate_millihertz: match monitor.current_video_mode() {
+      Some(mode) => mode.refresh_rate_millihertz()
+      None => None
+    },
+    scale_factor: monitor.scale_factor(),
+    video_modes,
+  }
+}
+
+///|
+fn winit_has_primary_monitor(world : @ecs.World, entity : @core.Entity) -> Bool {
+  match (try! world.get_component(entity) : @window.PrimaryMonitor?) {
+    Some(_) => true
+    None => false
+  }
+}
+
+///|
+fn winit_sync_primary_monitor_marker(
+  world : @ecs.World,
+  entity : @core.Entity,
+  monitor : @window_core.MonitorHandle,
+  primary_monitor : @window_core.MonitorHandle?,
+) -> Unit {
+  let is_primary = match primary_monitor {
+    Some(primary) => primary == monitor
+    None => false
+  }
+  if is_primary {
+    if !winit_has_primary_monitor(world, entity) {
+      try! world.set_component(entity, @window.PrimaryMonitor::{  })
+    }
+  } else if winit_has_primary_monitor(world, entity) {
+    try! (world.remove(entity, @window.ecs_key_primary_monitor) |> ignore)
+  }
+}
+
+///|
+fn winit_sync_monitor_entity(
+  world : @ecs.World,
+  entity : @core.Entity,
+  monitor : @window_core.MonitorHandle,
+  primary_monitor : @window_core.MonitorHandle?,
+) -> Unit {
+  try! world.set_component(entity, winit_monitor_from_native(monitor))
+  winit_sync_primary_monitor_marker(world, entity, monitor, primary_monitor)
+}
+
+///|
+pub fn winit_create_monitors_system(world : @ecs.World) -> Unit {
+  let monitor_handles = @windowing.available_monitors()
+  let primary_monitor = @windowing.primary_monitor()
+  let monitors = match (try! world.get_resource(WinitMonitors::resource())) {
+    Some(monitors) => monitors
+    None => WinitMonitors::default()
+  }
+
+  let seen_entries : Array[Bool] = []
+  for _ in 0..<monitors.monitors.length() {
+    seen_entries.push(false)
+  }
+
+  for monitor in monitor_handles {
+    match winit_monitor_entry_index(monitors.monitors, monitor) {
+      Some(index) => {
+        seen_entries[index] = true
+        let existing_entry = monitors.monitors[index]
+        if world.is_alive(existing_entry.entity) {
+          winit_sync_monitor_entity(
+            world,
+            existing_entry.entity,
+            monitor,
+            primary_monitor,
+          )
+        } else {
+          let entity = world.spawn()
+          winit_sync_monitor_entity(world, entity, monitor, primary_monitor)
+          monitors.monitors[index] = WinitMonitorEntry::new(monitor, entity)
+        }
+      }
+      None => {
+        let entity = world.spawn()
+        winit_sync_monitor_entity(world, entity, monitor, primary_monitor)
+        monitors.monitors.push(WinitMonitorEntry::new(monitor, entity))
+        seen_entries.push(true)
+      }
+    }
+  }
+
+  let next_entries : Array[WinitMonitorEntry] = []
+  for i, entry in monitors.monitors {
+    if i < seen_entries.length() && seen_entries[i] {
+      next_entries.push(entry)
+    } else if world.is_alive(entry.entity) {
+      try! world.despawn(entry.entity)
+    }
+  }
+  monitors.monitors.clear()
+  for entry in next_entries {
+    monitors.monitors.push(entry)
+  }
+
+  world.insert_resource(WinitMonitors::resource(), monitors)
+}
+
+///|
 fn winit_write_raw_winit_window_events(
   world : @ecs.World,
   events : Array[@windowing.RawWinitWindowEventSnapshot],
@@ -33,6 +184,7 @@ fn winit_write_raw_winit_window_events(
 
 ///|
 pub fn winit_window_backend_sync_system(world : @ecs.World) -> Unit {
+  winit_create_monitors_system(world)
   @window.window_backend_prepare_system(world)
   winit_write_raw_winit_window_events(
     world,

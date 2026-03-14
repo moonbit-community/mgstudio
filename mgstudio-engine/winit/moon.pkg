@@ -4,6 +4,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/a11y",
   "Milky2018/mgstudio/input",
+  "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/window",
   "Milky2018/window/core" @window_core,
   "Milky2018/mgstudio/window/windowing_native" @windowing,

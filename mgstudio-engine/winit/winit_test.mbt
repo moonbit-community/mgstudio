@@ -55,6 +55,22 @@ fn read_winit_monitors(world : @ecs.World) -> WinitMonitors? {
 }
 
 ///|
+fn read_monitor_component(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @window.Monitor? {
+  try! world.get_component(entity)
+}
+
+///|
+fn has_primary_monitor(world : @ecs.World, entity : @core.Entity) -> Bool {
+  match (try! world.get_component(entity) : @window.PrimaryMonitor?) {
+    Some(_) => true
+    None => false
+  }
+}
+
+///|
 fn read_keyboard_focus_lost(
   world : @ecs.World,
 ) -> Array[@window.KeyboardFocusLost] {
@@ -132,6 +148,7 @@ test "winit: plugin initializes bevy-aligned default settings resource" {
 
 ///|
 test "winit: plugin initializes bevy-aligned monitors resource" {
+  let native_monitor_count = @windowing.available_monitors().length()
   let app_with_winit = winit_plugin(
     @window.window_plugin(@app.App::new(@ecs.World::new())),
   ).run_once()
@@ -140,7 +157,12 @@ test "winit: plugin initializes bevy-aligned monitors resource" {
     None => abort("missing WinitMonitors resource")
   }
 
-  inspect(monitors.nth(0) is None, content="true")
+  assert_eq(monitors.monitors.length(), native_monitor_count)
+  if native_monitor_count == 0 {
+    inspect(monitors.nth(0) is None, content="true")
+  } else {
+    inspect(monitors.nth(0) is Some(_), content="true")
+  }
 }
 
 ///|
@@ -152,6 +174,55 @@ test "winit: monitors resource provides nth and find_entity accessors" {
   inspect(monitors.nth(-1) is None, content="true")
   inspect(monitors.find_entity(world.spawn()) is None, content="true")
   inspect(monitors.find_entity(missing_entity) is None, content="true")
+}
+
+///|
+test "winit: monitor sync mirrors native monitor snapshot" {
+  let native_monitors = @windowing.available_monitors()
+  let native_primary = @windowing.primary_monitor()
+  let app = winit_plugin(
+    @window.window_plugin(@app.App::new(@ecs.World::new())),
+  ).run_once()
+  let world = app.world()
+  let monitors = match read_winit_monitors(world) {
+    Some(monitors) => monitors
+    None => abort("missing WinitMonitors resource")
+  }
+
+  assert_eq(monitors.monitors.length(), native_monitors.length())
+
+  let mut primary_count = 0
+  for entry in monitors.monitors {
+    assert_true(world.is_alive(entry.entity))
+    assert_true(read_monitor_component(world, entry.entity) is Some(_))
+
+    let mut found = false
+    for native_monitor in native_monitors {
+      if native_monitor == entry.monitor {
+        found = true
+      }
+    }
+    assert_true(found)
+
+    if has_primary_monitor(world, entry.entity) {
+      primary_count = primary_count + 1
+    }
+  }
+
+  match native_primary {
+    Some(primary_monitor) => {
+      inspect(primary_count, content="1")
+      let mut primary_matched = false
+      for entry in monitors.monitors {
+        if has_primary_monitor(world, entry.entity) &&
+          entry.monitor == primary_monitor {
+          primary_matched = true
+        }
+      }
+      assert_true(primary_matched)
+    }
+    None => inspect(primary_count, content="0")
+  }
 }
 
 ///|
