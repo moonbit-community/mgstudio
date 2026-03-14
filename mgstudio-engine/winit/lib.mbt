@@ -99,11 +99,15 @@ pub fn winit_plugin_with(
           @a11y.a11y_set,
         ),
       )
-      .add_last_system_config(@app.system(winit_changed_windows_system))
-      .add_last_system_config(@app.system(winit_changed_cursor_options_system))
-      .add_last_system_config(@app.system(winit_despawn_windows_system))
-      .add_last_system_config(
-        @app.system(winit_check_keyboard_focus_lost_system),
+      .add_systems(
+        @app.Last,
+        (
+          @app.system(winit_changed_windows_system),
+          @app.system(winit_changed_cursor_options_system),
+          @app.system(winit_despawn_windows_system),
+          @app.system(winit_check_keyboard_focus_lost_system),
+        )
+        |> @app.chain(),
       )
       .add_systems(
         @app.PreUpdate,
