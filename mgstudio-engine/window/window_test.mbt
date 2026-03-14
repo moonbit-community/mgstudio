@@ -50,6 +50,22 @@ fn has_closing_window(world : @ecs.World, entity : @core.Entity) -> Bool {
 }
 
 ///|
+fn monitor_component_value(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Monitor? {
+  try! world.get_component(entity)
+}
+
+///|
+fn has_primary_monitor(world : @ecs.World, entity : @core.Entity) -> Bool {
+  match (try! world.get_component(entity) : PrimaryMonitor?) {
+    Some(_) => true
+    None => false
+  }
+}
+
+///|
 fn read_window_closing(world : @ecs.World) -> Array[WindowClosing] {
   let reader = world.message_reader(ecs_key_window_closing, Ref::new(0))
   try! reader.read()
@@ -493,6 +509,48 @@ test "window: keycode supports Eq/Hash/Show for map-backed indexing" {
   inspect(key_index.get(KeyCode::Space), content="Some(2)")
   inspect(KeyCode::KeyA == KeyCode::KeyA, content="true")
   inspect(KeyCode::KeyA.to_string(), content="KeyA")
+}
+
+///|
+test "window: monitor ECS types align with bevy monitor data model" {
+  let world = @ecs.World::new()
+  let monitor_entity = world.spawn()
+  let video_mode = VideoMode::new(@math.UVec2::new(1920, 1080), 24, 60000)
+  let monitor = Monitor::{
+    name: Some("Main Display"),
+    physical_height: 1080,
+    physical_width: 1920,
+    physical_position: @math.IVec2::new(0, 0),
+    refresh_rate_millihertz: Some(60000),
+    scale_factor: 2.0,
+    video_modes: [video_mode],
+  }
+
+  try! world.set_component(monitor_entity, monitor)
+  try! world.set_component(monitor_entity, PrimaryMonitor::{  })
+
+  let stored_monitor = match monitor_component_value(world, monitor_entity) {
+    Some(value) => value
+    None => abort("missing monitor component")
+  }
+  let physical_size = stored_monitor.physical_size()
+  assert_eq(physical_size.x, 1920)
+  assert_eq(physical_size.y, 1080)
+  assert_eq(stored_monitor.video_modes.length(), 1)
+  assert_eq(
+    stored_monitor.video_modes[0].physical_size.x,
+    video_mode.physical_size.x,
+  )
+  assert_eq(
+    stored_monitor.video_modes[0].physical_size.y,
+    video_mode.physical_size.y,
+  )
+  assert_eq(stored_monitor.video_modes[0].bit_depth, video_mode.bit_depth)
+  assert_eq(
+    stored_monitor.video_modes[0].refresh_rate_millihertz,
+    video_mode.refresh_rate_millihertz,
+  )
+  assert_true(has_primary_monitor(world, monitor_entity))
 }
 
 ///|

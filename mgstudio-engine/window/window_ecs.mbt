@@ -22,6 +22,43 @@ pub(all) struct PrimaryWindow {} derive(Eq, Show)
 pub(all) struct ClosingWindow {} derive(Eq, Show)
 
 ///|
+pub(all) struct VideoMode {
+  physical_size : @math.UVec2
+  bit_depth : Int
+  refresh_rate_millihertz : Int
+}
+
+///|
+pub fn VideoMode::new(
+  physical_size : @math.UVec2,
+  bit_depth : Int,
+  refresh_rate_millihertz : Int,
+) -> VideoMode {
+  VideoMode::{ physical_size, bit_depth, refresh_rate_millihertz }
+}
+
+///|
+pub(all) struct Monitor {
+  name : String?
+  physical_height : Int
+  physical_width : Int
+  physical_position : @math.IVec2
+  refresh_rate_millihertz : Int?
+  scale_factor : Double
+  video_modes : Array[VideoMode]
+}
+
+///|
+pub fn Monitor::physical_size(self : Monitor) -> @math.UVec2 {
+  let width = if self.physical_width < 0 { 0 } else { self.physical_width }
+  let height = if self.physical_height < 0 { 0 } else { self.physical_height }
+  @math.UVec2::new(width, height)
+}
+
+///|
+pub(all) struct PrimaryMonitor {} derive(Eq, Show)
+
+///|
 pub(all) enum WindowRef {
   Primary
   Entity(@core.Entity)
@@ -316,6 +353,16 @@ pub let ecs_key_closing_window : @ecs.ComponentKey[ClosingWindow] = @ecs.registe
 )
 
 ///|
+pub let ecs_key_monitor : @ecs.ComponentKey[Monitor] = @ecs.register_component(
+  debug_name="bevy_window::Monitor",
+)
+
+///|
+pub let ecs_key_primary_monitor : @ecs.ComponentKey[PrimaryMonitor] = @ecs.register_component(
+  debug_name="bevy_window::PrimaryMonitor",
+)
+
+///|
 pub let ecs_key_cursor_options : @ecs.ComponentKey[CursorOptions] = @ecs.register_component(
   debug_name="bevy_window::CursorOptions",
 )
@@ -338,6 +385,16 @@ pub impl @ecs.Component for PrimaryWindow with component() {
 ///|
 pub impl @ecs.Component for ClosingWindow with component() {
   ecs_key_closing_window
+}
+
+///|
+pub impl @ecs.Component for Monitor with component() {
+  ecs_key_monitor
+}
+
+///|
+pub impl @ecs.Component for PrimaryMonitor with component() {
+  ecs_key_primary_monitor
 }
 
 ///|
