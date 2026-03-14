@@ -5,8 +5,8 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/input/events",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/window",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
@@ -21,6 +21,12 @@ pub const INPUT_PLUGIN_ID : String = "bevy_input::InputPlugin"
 pub let ecs_key_gamepad : @ecs.ComponentKey[Gamepad]
 
 pub let ecs_key_gamepad_settings : @ecs.ComponentKey[GamepadSettings]
+
+pub fn host_input_cursor_entered_window() -> Int
+
+pub fn host_input_cursor_left_window() -> Int
+
+pub fn host_input_cursor_window() -> Int
 
 pub fn host_input_finish_frame() -> Unit
 
@@ -54,19 +60,19 @@ pub fn input_poll_mouse_system(@ecs.World) -> Unit
 
 pub let input_systems_set : String
 
-pub fn key_just_pressed(@window.KeyCode) -> Bool
+pub fn key_just_pressed(@events.KeyCode) -> Bool
 
-pub fn key_just_released(@window.KeyCode) -> Bool
+pub fn key_just_released(@events.KeyCode) -> Bool
 
-pub fn key_pressed(@window.KeyCode) -> Bool
+pub fn key_pressed(@events.KeyCode) -> Bool
 
-pub fn key_repeated(@window.KeyCode) -> Bool
+pub fn key_repeated(@events.KeyCode) -> Bool
 
-pub fn mouse_button_just_pressed(@window.MouseButton) -> Bool
+pub fn mouse_button_just_pressed(@events.MouseButton) -> Bool
 
-pub fn mouse_button_just_released(@window.MouseButton) -> Bool
+pub fn mouse_button_just_released(@events.MouseButton) -> Bool
 
-pub fn mouse_button_pressed(@window.MouseButton) -> Bool
+pub fn mouse_button_pressed(@events.MouseButton) -> Bool
 
 pub fn mouse_motion_delta() -> @math.Vec2
 
@@ -115,11 +121,11 @@ pub fn AccumulatedMouseMotion::new() -> Self
 pub impl @app.Resource for AccumulatedMouseMotion
 
 pub struct AccumulatedMouseScroll {
-  unit : MouseScrollUnit
+  unit : @events.MouseScrollUnit
   delta : @math.Vec2
 }
 pub fn AccumulatedMouseScroll::new() -> Self
-pub fn AccumulatedMouseScroll::new_with_unit(MouseScrollUnit, @math.Vec2) -> Self
+pub fn AccumulatedMouseScroll::new_with_unit(@events.MouseScrollUnit, @math.Vec2) -> Self
 pub impl @app.Resource for AccumulatedMouseScroll
 
 pub struct Axis[T] {
@@ -225,40 +231,6 @@ pub impl Eq for ButtonSettings
 pub impl ToJson for ButtonSettings
 pub impl @json.FromJson for ButtonSettings
 
-pub(all) enum ButtonState {
-  Pressed
-  Released
-}
-pub fn ButtonState::is_pressed(Self) -> Bool
-pub impl Eq for ButtonState
-pub impl Show for ButtonState
-pub impl ToJson for ButtonState
-pub impl @json.FromJson for ButtonState
-
-pub struct CursorMoved {
-  position : @math.Vec2
-  delta : @math.Vec2?
-}
-pub impl @ecs.Message for CursorMoved
-pub impl ToJson for CursorMoved
-pub impl @json.FromJson for CursorMoved
-
-pub struct DoubleTapGesture {
-  position : @math.Vec2
-}
-pub impl @ecs.Message for DoubleTapGesture
-pub impl ToJson for DoubleTapGesture
-pub impl @json.FromJson for DoubleTapGesture
-
-pub(all) enum FileDragAndDrop {
-  DroppedFile(String)
-  HoveredFile(String)
-  HoveredFileCanceled
-}
-pub impl @ecs.Message for FileDragAndDrop
-pub impl ToJson for FileDragAndDrop
-pub impl @json.FromJson for FileDragAndDrop
-
 pub struct Gamepad {
   vendor_id : Int?
   product_id : Int?
@@ -356,10 +328,10 @@ pub impl @json.FromJson for GamepadButton
 pub struct GamepadButtonChangedEvent {
   entity : @core.Entity
   button : GamepadButton
-  state : ButtonState
+  state : @events.ButtonState
   value : Float
 }
-pub fn GamepadButtonChangedEvent::new(@core.Entity, GamepadButton, ButtonState, Float) -> Self
+pub fn GamepadButtonChangedEvent::new(@core.Entity, GamepadButton, @events.ButtonState, Float) -> Self
 pub impl @ecs.Message for GamepadButtonChangedEvent
 pub impl Eq for GamepadButtonChangedEvent
 pub impl ToJson for GamepadButtonChangedEvent
@@ -368,9 +340,9 @@ pub impl @json.FromJson for GamepadButtonChangedEvent
 pub struct GamepadButtonStateChangedEvent {
   entity : @core.Entity
   button : GamepadButton
-  state : ButtonState
+  state : @events.ButtonState
 }
-pub fn GamepadButtonStateChangedEvent::new(@core.Entity, GamepadButton, ButtonState) -> Self
+pub fn GamepadButtonStateChangedEvent::new(@core.Entity, GamepadButton, @events.ButtonState) -> Self
 pub impl @ecs.Message for GamepadButtonStateChangedEvent
 pub impl Eq for GamepadButtonStateChangedEvent
 pub impl ToJson for GamepadButtonStateChangedEvent
@@ -470,84 +442,6 @@ pub(all) struct InputPlugin {
 pub fn InputPlugin::default() -> Self
 pub impl @app.PluginReplacement for InputPlugin
 
-pub(all) enum Key {
-  Character(String)
-  Enter
-  Backspace
-  Tab
-  Shift
-  Control
-  ArrowUp
-  ArrowDown
-  ArrowLeft
-  ArrowRight
-  PageUp
-  PageDown
-  Space
-  Escape
-}
-pub impl ButtonInputButton for Key
-pub impl ButtonInputSnapshotProvider for Key
-pub impl Eq for Key
-pub impl ToJson for Key
-pub impl @json.FromJson for Key
-
-pub struct KeyboardCharacter {
-  character : String
-}
-pub impl @ecs.Message for KeyboardCharacter
-pub impl ToJson for KeyboardCharacter
-pub impl @json.FromJson for KeyboardCharacter
-
-pub struct KeyboardInput {
-  key_code : @window.KeyCode
-  logical_key : Key
-  state : ButtonState
-  repeat : Bool
-  text : String?
-}
-pub impl @ecs.Message for KeyboardInput
-pub impl ToJson for KeyboardInput
-pub impl @json.FromJson for KeyboardInput
-
-pub struct MouseButtonInput {
-  button : @window.MouseButton
-  state : ButtonState
-}
-pub impl @ecs.Message for MouseButtonInput
-pub impl ToJson for MouseButtonInput
-pub impl @json.FromJson for MouseButtonInput
-
-pub struct MouseMotion {
-  delta : @math.Vec2
-}
-pub impl @ecs.Message for MouseMotion
-pub impl ToJson for MouseMotion
-pub impl @json.FromJson for MouseMotion
-
-pub(all) enum MouseScrollUnit {
-  Line
-  Pixel
-}
-pub impl ToJson for MouseScrollUnit
-pub impl @json.FromJson for MouseScrollUnit
-
-pub struct MouseWheel {
-  unit : MouseScrollUnit
-  x : Float
-  y : Float
-}
-pub impl @ecs.Message for MouseWheel
-pub impl ToJson for MouseWheel
-pub impl @json.FromJson for MouseWheel
-
-pub struct PinchGesture {
-  delta : Float
-}
-pub impl @ecs.Message for PinchGesture
-pub impl ToJson for PinchGesture
-pub impl @json.FromJson for PinchGesture
-
 pub struct RawGamepadAxisChangedEvent {
   gamepad : @core.Entity
   axis : GamepadAxis
@@ -580,13 +474,6 @@ pub impl Eq for RawGamepadEvent
 pub impl ToJson for RawGamepadEvent
 pub impl @json.FromJson for RawGamepadEvent
 
-pub struct RotationGesture {
-  delta : Float
-}
-pub impl @ecs.Message for RotationGesture
-pub impl ToJson for RotationGesture
-pub impl @json.FromJson for RotationGesture
-
 type RunningRumbleEffects
 pub impl @app.Resource for RunningRumbleEffects
 pub impl Eq for RunningRumbleEffects
@@ -599,24 +486,6 @@ pub struct Touch {
 }
 pub fn Touch::id(Self) -> Int
 pub fn Touch::position(Self) -> @math.Vec2
-
-pub struct TouchInput {
-  id : Int
-  phase : TouchPhase
-  position : @math.Vec2
-}
-pub impl @ecs.Message for TouchInput
-pub impl ToJson for TouchInput
-pub impl @json.FromJson for TouchInput
-
-pub(all) enum TouchPhase {
-  Started
-  Moved
-  Ended
-  Canceled
-}
-pub impl ToJson for TouchPhase
-pub impl @json.FromJson for TouchPhase
 
 pub struct Touches {
   active : Array[Touch]
@@ -634,19 +503,50 @@ pub fn Touches::new() -> Self
 pub impl @app.Resource for Touches
 
 // Type aliases
+pub using @events {type ButtonState}
+
+pub using @events {type DoubleTapGesture}
+
+pub using @events {type Key}
+
+pub using @events {type KeyboardCharacter}
+
+pub using @events {type KeyboardFocusLost}
+
+pub using @events {type KeyboardInput}
+
+pub using @events {type MouseButtonInput}
+
+pub using @events {type MouseMotion}
+
+pub using @events {type MouseScrollUnit}
+
+pub using @events {type MouseWheel}
+
+pub using @events {type PanGesture}
+
+pub using @events {type PinchGesture}
+
+pub using @events {type RotationGesture}
+
+pub using @events {type TouchInput}
+
+pub using @events {type TouchPhase}
 
 // Traits
 pub(open) trait ButtonInputButton {
   button_id(Self) -> String
 }
-pub impl ButtonInputButton for @window.KeyCode
-pub impl ButtonInputButton for @window.MouseButton
+pub impl ButtonInputButton for @events.Key
+pub impl ButtonInputButton for @events.KeyCode
+pub impl ButtonInputButton for @events.MouseButton
 
 pub(open) trait ButtonInputSnapshotProvider {
   read_button_input() -> ButtonInput[Self]
 }
-pub impl ButtonInputSnapshotProvider for @window.KeyCode
-pub impl ButtonInputSnapshotProvider for @window.MouseButton
+pub impl ButtonInputSnapshotProvider for @events.Key
+pub impl ButtonInputSnapshotProvider for @events.KeyCode
+pub impl ButtonInputSnapshotProvider for @events.MouseButton
 
 pub(open) trait IntoGamepadInput {
   into_gamepad_input(Self) -> GamepadInput

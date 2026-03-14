@@ -16,75 +16,10 @@
 pub type HostWindow = Int
 
 ///|
-pub(all) enum KeyCode {
-  KeyA
-  KeyB
-  KeyC
-  KeyD
-  KeyE
-  KeyF
-  KeyG
-  KeyH
-  KeyI
-  KeyJ
-  KeyK
-  KeyL
-  KeyM
-  KeyN
-  KeyO
-  KeyP
-  KeyQ
-  KeyR
-  KeyS
-  KeyT
-  KeyU
-  KeyV
-  KeyW
-  KeyX
-  KeyY
-  KeyZ
-  Digit1
-  Digit2
-  Digit3
-  Digit4
-  Digit5
-  Digit6
-  Digit7
-  Digit8
-  Tab
-  Enter
-  Backspace
-  ShiftLeft
-  ShiftRight
-  ControlLeft
-  ControlRight
-  ArrowUp
-  ArrowDown
-  ArrowLeft
-  ArrowRight
-  PageUp
-  PageDown
-  Space
-  Escape
-  Semicolon
-  Comma
-  Period
-  Slash
-  Minus
-  Equal
-  NumpadAdd
-  NumpadSubtract
-  BracketLeft
-  BracketRight
-  Quote
-} derive(Eq, Hash, Show, ToJson, FromJson)
+pub type KeyCode = @input_events.KeyCode
 
 ///|
-pub(all) enum MouseButton {
-  Left
-  Right
-  Middle
-} derive(Eq, Hash, Show, ToJson, FromJson)
+pub type MouseButton = @input_events.MouseButton
 
 ///|
 pub(all) enum CursorGrabMode {
@@ -450,6 +385,46 @@ pub fn host_window_get_position_x(window : HostWindow) -> Int {
 ///|
 pub fn host_window_get_position_y(window : HostWindow) -> Int {
   @windowing.position_y(window)
+}
+
+///|
+pub fn host_window_theme_event_count() -> Int {
+  @windowing.input_window_theme_event_count()
+}
+
+///|
+pub fn host_window_theme_event_window(index~ : Int) -> Int {
+  @windowing.input_window_theme_event_window(index~)
+}
+
+///|
+pub fn host_window_theme_event_theme(index~ : Int) -> Int {
+  @windowing.input_window_theme_event_theme(index~)
+}
+
+///|
+pub fn host_window_occluded_event_count() -> Int {
+  @windowing.input_window_occluded_event_count()
+}
+
+///|
+pub fn host_window_occluded_event_window(index~ : Int) -> Int {
+  @windowing.input_window_occluded_event_window(index~)
+}
+
+///|
+pub fn host_window_occluded_event_occluded(index~ : Int) -> Bool {
+  @windowing.input_window_occluded_event_occluded(index~)
+}
+
+///|
+pub fn host_app_lifecycle_event_count() -> Int {
+  @windowing.input_app_lifecycle_event_count()
+}
+
+///|
+pub fn host_app_lifecycle_event_kind(index~ : Int) -> Int {
+  @windowing.input_app_lifecycle_event_kind(index~)
 }
 
 ///|

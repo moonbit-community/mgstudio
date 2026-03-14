@@ -486,16 +486,8 @@ fn window_runtime_close_host_window(
   if window_runtime_component(world, entity) is Some(runtime) {
     host_window_request_close(runtime.window)
   }
-  ignore(
-    world.send_message(ecs_key_window_closed, WindowClosed::{ window: entity }),
-  )
-  if world.contains_message(ecs_key_window_destroyed) {
-    ignore(
-      world.send_message(ecs_key_window_destroyed, WindowDestroyed::{
-        window: entity,
-      }),
-    )
-  }
+  window_emit_window_closed(world, WindowClosed::{ window: entity })
+  window_emit_window_destroyed(world, WindowDestroyed::{ window: entity })
 }
 
 ///|
@@ -744,44 +736,34 @@ fn window_sync_observed_state(
     scale_factor0
   }
   if !runtime_ref.val.created_sent {
-    ignore(
-      world.send_message(ecs_key_window_created, WindowCreated::{
-        window: entity,
-      }),
-    )
+    window_emit_window_created(world, WindowCreated::{ window: entity })
     runtime_ref.val.created_sent = true
   }
   if observed_width != runtime_ref.val.last_observed_width ||
     observed_height != runtime_ref.val.last_observed_height {
-    ignore(
-      world.send_message(ecs_key_window_resized, WindowResized::{
-        window: entity,
-        width: Float::from_int(observed_width) / observed_scale_factor,
-        height: Float::from_int(observed_height) / observed_scale_factor,
-      }),
-    )
+    window_emit_window_resized(world, WindowResized::{
+      window: entity,
+      width: Float::from_int(observed_width) / observed_scale_factor,
+      height: Float::from_int(observed_height) / observed_scale_factor,
+    })
     runtime_ref.val.last_observed_width = observed_width
     runtime_ref.val.last_observed_height = observed_height
   }
   if observed_position_x != runtime_ref.val.last_observed_position_x ||
     observed_position_y != runtime_ref.val.last_observed_position_y {
-    ignore(
-      world.send_message(ecs_key_window_moved, WindowMoved::{
-        window: entity,
-        x: observed_position_x,
-        y: observed_position_y,
-      }),
-    )
+    window_emit_window_moved(world, WindowMoved::{
+      window: entity,
+      x: observed_position_x,
+      y: observed_position_y,
+    })
     runtime_ref.val.last_observed_position_x = observed_position_x
     runtime_ref.val.last_observed_position_y = observed_position_y
   }
   if observed_scale_factor != runtime_ref.val.last_observed_scale_factor {
-    ignore(
-      world.send_message(ecs_key_window_backend_scale_factor_changed, WindowBackendScaleFactorChanged::{
-        window: entity,
-        scale_factor: observed_scale_factor,
-      }),
-    )
+    window_emit_window_backend_scale_factor_changed(world, WindowBackendScaleFactorChanged::{
+      window: entity,
+      scale_factor: observed_scale_factor,
+    })
     runtime_ref.val.last_observed_scale_factor = observed_scale_factor
   }
   if window_component(world, entity) is Some(window) {
@@ -797,30 +779,24 @@ fn window_sync_observed_state(
     }
     if old_scale_factor != next_scale_factor {
       if world.contains_message(ecs_key_window_scale_factor_changed) {
-        ignore(
-          world.send_message(ecs_key_window_scale_factor_changed, WindowScaleFactorChanged::{
-            window: entity,
-            scale_factor: next_scale_factor,
-          }),
-        )
+        window_emit_window_scale_factor_changed(world, WindowScaleFactorChanged::{
+          window: entity,
+          scale_factor: next_scale_factor,
+        })
       }
     }
     if window.focused != observed_focused {
-      ignore(
-        world.send_message(ecs_key_window_focused, WindowFocused::{
-          window: entity,
-          focused: observed_focused,
-        }),
-      )
+      window_emit_window_focused(world, WindowFocused::{
+        window: entity,
+        focused: observed_focused,
+      })
     }
   }
   if host_window_should_close(host_window) &&
     !runtime_ref.val.close_requested_sent {
-    ignore(
-      world.send_message(ecs_key_window_close_requested, WindowCloseRequested::{
-        window: entity,
-      }),
-    )
+    window_emit_window_close_requested(world, WindowCloseRequested::{
+      window: entity,
+    })
     runtime_ref.val.close_requested_sent = true
   }
   ignore(
@@ -943,10 +919,382 @@ fn window_primary_position_y(world : @ecs.World) -> Int {
 }
 
 ///|
+fn window_emit_window_event(world : @ecs.World, event : WindowEvent) -> Unit {
+  if world.contains_message(ecs_key_window_event) {
+    ignore(world.send_message(ecs_key_window_event, event))
+  }
+}
+
+///|
+fn window_emit_window_created(
+  world : @ecs.World,
+  event : WindowCreated,
+) -> Unit {
+  if world.contains_message(ecs_key_window_created) {
+    ignore(world.send_message(ecs_key_window_created, event))
+  }
+  window_emit_window_event(world, WindowEvent::WindowCreated(event))
+}
+
+///|
+fn window_emit_window_close_requested(
+  world : @ecs.World,
+  event : WindowCloseRequested,
+) -> Unit {
+  if world.contains_message(ecs_key_window_close_requested) {
+    ignore(world.send_message(ecs_key_window_close_requested, event))
+  }
+  window_emit_window_event(world, WindowEvent::WindowCloseRequested(event))
+}
+
+///|
+fn window_emit_window_closing(
+  world : @ecs.World,
+  event : WindowClosing,
+) -> Unit {
+  if world.contains_message(ecs_key_window_closing) {
+    ignore(world.send_message(ecs_key_window_closing, event))
+  }
+}
+
+///|
+fn window_emit_window_closed(world : @ecs.World, event : WindowClosed) -> Unit {
+  if world.contains_message(ecs_key_window_closed) {
+    ignore(world.send_message(ecs_key_window_closed, event))
+  }
+}
+
+///|
+fn window_emit_window_destroyed(
+  world : @ecs.World,
+  event : WindowDestroyed,
+) -> Unit {
+  if world.contains_message(ecs_key_window_destroyed) {
+    ignore(world.send_message(ecs_key_window_destroyed, event))
+  }
+  window_emit_window_event(world, WindowEvent::WindowDestroyed(event))
+}
+
+///|
+fn window_emit_window_resized(
+  world : @ecs.World,
+  event : WindowResized,
+) -> Unit {
+  if world.contains_message(ecs_key_window_resized) {
+    ignore(world.send_message(ecs_key_window_resized, event))
+  }
+  window_emit_window_event(world, WindowEvent::WindowResized(event))
+}
+
+///|
+fn window_emit_window_moved(world : @ecs.World, event : WindowMoved) -> Unit {
+  if world.contains_message(ecs_key_window_moved) {
+    ignore(world.send_message(ecs_key_window_moved, event))
+  }
+  window_emit_window_event(world, WindowEvent::WindowMoved(event))
+}
+
+///|
+fn window_emit_window_scale_factor_changed(
+  world : @ecs.World,
+  event : WindowScaleFactorChanged,
+) -> Unit {
+  if world.contains_message(ecs_key_window_scale_factor_changed) {
+    ignore(world.send_message(ecs_key_window_scale_factor_changed, event))
+  }
+  window_emit_window_event(world, WindowEvent::WindowScaleFactorChanged(event))
+}
+
+///|
+fn window_emit_window_backend_scale_factor_changed(
+  world : @ecs.World,
+  event : WindowBackendScaleFactorChanged,
+) -> Unit {
+  if world.contains_message(ecs_key_window_backend_scale_factor_changed) {
+    ignore(
+      world.send_message(ecs_key_window_backend_scale_factor_changed, event),
+    )
+  }
+  window_emit_window_event(
+    world,
+    WindowEvent::WindowBackendScaleFactorChanged(event),
+  )
+}
+
+///|
+fn window_emit_window_focused(
+  world : @ecs.World,
+  event : WindowFocused,
+) -> Unit {
+  if world.contains_message(ecs_key_window_focused) {
+    ignore(world.send_message(ecs_key_window_focused, event))
+  }
+  window_emit_window_event(world, WindowEvent::WindowFocused(event))
+}
+
+///|
+pub fn window_emit_cursor_moved(
+  world : @ecs.World,
+  event : CursorMoved,
+) -> Unit {
+  if world.contains_message(ecs_key_cursor_moved) {
+    ignore(world.send_message(ecs_key_cursor_moved, event))
+  }
+  window_emit_window_event(world, WindowEvent::CursorMoved(event))
+}
+
+///|
+pub fn window_emit_cursor_entered(
+  world : @ecs.World,
+  event : CursorEntered,
+) -> Unit {
+  if world.contains_message(ecs_key_cursor_entered) {
+    ignore(world.send_message(ecs_key_cursor_entered, event))
+  }
+  window_emit_window_event(world, WindowEvent::CursorEntered(event))
+}
+
+///|
+pub fn window_emit_cursor_left(world : @ecs.World, event : CursorLeft) -> Unit {
+  if world.contains_message(ecs_key_cursor_left) {
+    ignore(world.send_message(ecs_key_cursor_left, event))
+  }
+  window_emit_window_event(world, WindowEvent::CursorLeft(event))
+}
+
+///|
+pub fn window_emit_file_drag_and_drop(
+  world : @ecs.World,
+  event : FileDragAndDrop,
+) -> Unit {
+  if world.contains_message(ecs_key_file_drag_and_drop) {
+    ignore(world.send_message(ecs_key_file_drag_and_drop, event))
+  }
+  window_emit_window_event(world, WindowEvent::FileDragAndDrop(event))
+}
+
+///|
+pub fn window_emit_ime(world : @ecs.World, event : Ime) -> Unit {
+  if world.contains_message(ecs_key_ime) {
+    ignore(world.send_message(ecs_key_ime, event))
+  }
+  window_emit_window_event(world, WindowEvent::Ime(event))
+}
+
+///|
+pub fn window_emit_mouse_button_input(
+  world : @ecs.World,
+  event : MouseButtonInput,
+) -> Unit {
+  if world.contains_message(ecs_key_mouse_button_input) {
+    ignore(world.send_message(ecs_key_mouse_button_input, event))
+  }
+  window_emit_window_event(world, WindowEvent::MouseButtonInput(event))
+}
+
+///|
+pub fn window_emit_mouse_motion(
+  world : @ecs.World,
+  event : MouseMotion,
+) -> Unit {
+  if world.contains_message(ecs_key_mouse_motion) {
+    ignore(world.send_message(ecs_key_mouse_motion, event))
+  }
+  window_emit_window_event(world, WindowEvent::MouseMotion(event))
+}
+
+///|
+pub fn window_emit_mouse_wheel(world : @ecs.World, event : MouseWheel) -> Unit {
+  if world.contains_message(ecs_key_mouse_wheel) {
+    ignore(world.send_message(ecs_key_mouse_wheel, event))
+  }
+  window_emit_window_event(world, WindowEvent::MouseWheel(event))
+}
+
+///|
+pub fn window_emit_pinch_gesture(
+  world : @ecs.World,
+  event : PinchGesture,
+) -> Unit {
+  if world.contains_message(ecs_key_pinch_gesture) {
+    ignore(world.send_message(ecs_key_pinch_gesture, event))
+  }
+  window_emit_window_event(world, WindowEvent::PinchGesture(event))
+}
+
+///|
+pub fn window_emit_rotation_gesture(
+  world : @ecs.World,
+  event : RotationGesture,
+) -> Unit {
+  if world.contains_message(ecs_key_rotation_gesture) {
+    ignore(world.send_message(ecs_key_rotation_gesture, event))
+  }
+  window_emit_window_event(world, WindowEvent::RotationGesture(event))
+}
+
+///|
+pub fn window_emit_double_tap_gesture(
+  world : @ecs.World,
+  event : DoubleTapGesture,
+) -> Unit {
+  if world.contains_message(ecs_key_double_tap_gesture) {
+    ignore(world.send_message(ecs_key_double_tap_gesture, event))
+  }
+  window_emit_window_event(world, WindowEvent::DoubleTapGesture(event))
+}
+
+///|
+pub fn window_emit_pan_gesture(world : @ecs.World, event : PanGesture) -> Unit {
+  if world.contains_message(ecs_key_pan_gesture) {
+    ignore(world.send_message(ecs_key_pan_gesture, event))
+  }
+  window_emit_window_event(world, WindowEvent::PanGesture(event))
+}
+
+///|
+pub fn window_emit_touch_input(world : @ecs.World, event : TouchInput) -> Unit {
+  if world.contains_message(ecs_key_touch_input) {
+    ignore(world.send_message(ecs_key_touch_input, event))
+  }
+  window_emit_window_event(world, WindowEvent::TouchInput(event))
+}
+
+///|
+pub fn window_emit_keyboard_input(
+  world : @ecs.World,
+  event : KeyboardInput,
+) -> Unit {
+  if world.contains_message(ecs_key_keyboard_input) {
+    ignore(world.send_message(ecs_key_keyboard_input, event))
+  }
+  window_emit_window_event(world, WindowEvent::KeyboardInput(event))
+}
+
+///|
+pub fn window_emit_keyboard_focus_lost(
+  world : @ecs.World,
+  event : KeyboardFocusLost,
+) -> Unit {
+  if world.contains_message(ecs_key_keyboard_focus_lost) {
+    ignore(world.send_message(ecs_key_keyboard_focus_lost, event))
+  }
+  window_emit_window_event(world, WindowEvent::KeyboardFocusLost(event))
+}
+
+///|
+fn window_emit_window_occluded(
+  world : @ecs.World,
+  event : WindowOccluded,
+) -> Unit {
+  if world.contains_message(ecs_key_window_occluded) {
+    ignore(world.send_message(ecs_key_window_occluded, event))
+  }
+  window_emit_window_event(world, WindowEvent::WindowOccluded(event))
+}
+
+///|
+fn window_emit_window_theme_changed(
+  world : @ecs.World,
+  event : WindowThemeChanged,
+) -> Unit {
+  if world.contains_message(ecs_key_window_theme_changed) {
+    ignore(world.send_message(ecs_key_window_theme_changed, event))
+  }
+  window_emit_window_event(world, WindowEvent::WindowThemeChanged(event))
+}
+
+///|
+fn window_emit_app_lifecycle(
+  world : @ecs.World,
+  lifecycle : AppLifecycle,
+) -> Unit {
+  if world.contains_message(ecs_key_app_lifecycle) {
+    ignore(world.send_message(ecs_key_app_lifecycle, lifecycle))
+  }
+  window_emit_window_event(world, WindowEvent::AppLifecycle(lifecycle))
+}
+
+///|
+fn window_theme_from_host(theme : Int) -> WindowTheme? {
+  match theme {
+    1 => Some(WindowTheme::Light)
+    2 => Some(WindowTheme::Dark)
+    _ => None
+  }
+}
+
+///|
+fn app_lifecycle_from_host(kind : Int) -> AppLifecycle? {
+  match kind {
+    0 => Some(AppLifecycle::Idle)
+    1 => Some(AppLifecycle::Running)
+    2 => Some(AppLifecycle::WillSuspend)
+    3 => Some(AppLifecycle::Suspended)
+    4 => Some(AppLifecycle::WillResume)
+    _ => None
+  }
+}
+
+///|
+fn window_emit_native_theme_events(world : @ecs.World) -> Unit {
+  let count = host_window_theme_event_count()
+  for i in 0..<count {
+    let host_window = host_window_theme_event_window(index=i)
+    if host_window < 0 {
+      continue
+    }
+    guard window_entity_for_host(world, host_window) is Some(window_entity) else {
+      continue
+    }
+    guard window_theme_from_host(host_window_theme_event_theme(index=i))
+      is Some(theme) else {
+      continue
+    }
+    window_emit_window_theme_changed(world, WindowThemeChanged::{
+      window: window_entity,
+      theme,
+    })
+  }
+}
+
+///|
+fn window_emit_native_occluded_events(world : @ecs.World) -> Unit {
+  let count = host_window_occluded_event_count()
+  for i in 0..<count {
+    let host_window = host_window_occluded_event_window(index=i)
+    if host_window < 0 {
+      continue
+    }
+    guard window_entity_for_host(world, host_window) is Some(window_entity) else {
+      continue
+    }
+    window_emit_window_occluded(world, WindowOccluded::{
+      window: window_entity,
+      occluded: host_window_occluded_event_occluded(index=i),
+    })
+  }
+}
+
+///|
+fn window_emit_native_app_lifecycle_events(world : @ecs.World) -> Unit {
+  let count = host_app_lifecycle_event_count()
+  for i in 0..<count {
+    if app_lifecycle_from_host(host_app_lifecycle_event_kind(index=i))
+      is Some(lifecycle) {
+      window_emit_app_lifecycle(world, lifecycle)
+    }
+  }
+}
+
+///|
 pub fn window_backend_sync_system(world : @ecs.World) -> Unit {
   for entity in window_runtime_entities_without_host(world) {
     window_create_runtime_for_entity(world, entity) |> ignore
   }
+  window_emit_native_theme_events(world)
+  window_emit_native_occluded_events(world)
+  window_emit_native_app_lifecycle_events(world)
   let runtime_query = world.query1(ecs_key_window_runtime)
   for entity in window_runtime_entities_with_host(world) {
     ignore(
@@ -1004,17 +1352,25 @@ pub fn window_plugin_with(
       .insert_world_resource(window_plugin_marker_key(), WindowPluginMarker::{
 
       })
-      .add_message(ecs_key_window_created)
-      .add_message(ecs_key_request_redraw)
+      .add_message(ecs_key_window_event)
       .add_message(ecs_key_window_resized)
+      .add_message(ecs_key_window_created)
+      .add_message(ecs_key_cursor_moved)
+      .add_message(ecs_key_cursor_entered)
+      .add_message(ecs_key_cursor_left)
+      .add_message(ecs_key_window_backend_scale_factor_changed)
       .add_message(ecs_key_window_close_requested)
       .add_message(ecs_key_window_closing)
       .add_message(ecs_key_window_closed)
       .add_message(ecs_key_window_destroyed)
-      .add_message(ecs_key_window_moved)
-      .add_message(ecs_key_window_scale_factor_changed)
-      .add_message(ecs_key_window_backend_scale_factor_changed)
       .add_message(ecs_key_window_focused)
+      .add_message(ecs_key_window_occluded)
+      .add_message(ecs_key_window_scale_factor_changed)
+      .add_message(ecs_key_file_drag_and_drop)
+      .add_message(ecs_key_window_moved)
+      .add_message(ecs_key_window_theme_changed)
+      .add_message(ecs_key_app_lifecycle)
+      .add_message(ecs_key_request_redraw)
       .add_message(ecs_key_ime)
       .add_systems(@app.First, @app.system(screenshot_clear_system))
     if plugin.close_when_requested {
@@ -1073,11 +1429,7 @@ pub fn close_when_requested(
       None => false
     }
     if !is_already_closing {
-      ignore(
-        world.send_message(ecs_key_window_closing, WindowClosing::{
-          window: event.window,
-        }),
-      )
+      window_emit_window_closing(world, WindowClosing::{ window: event.window })
       window_set_closing_component(world, event.window)
     }
   }

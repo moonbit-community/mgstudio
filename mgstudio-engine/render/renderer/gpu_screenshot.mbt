@@ -440,7 +440,9 @@ pub fn screenshot_capture_surface_target_request(target_id~ : Int) -> Int {
     id: capture_id,
     target_id,
   })
-  screenshot_debug_log("request surface capture id=\{capture_id}, target=\{target_id}")
+  screenshot_debug_log(
+    "request surface capture id=\{capture_id}, target=\{target_id}",
+  )
   capture_id
 }
 

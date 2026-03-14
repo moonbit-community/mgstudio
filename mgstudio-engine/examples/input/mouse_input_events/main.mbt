@@ -34,7 +34,7 @@ fn main {
 fn print_mouse_events_system(
   mouse_button_input_reader : @ecs.MessageReader[@input.MouseButtonInput],
   mouse_motion_reader : @ecs.MessageReader[@input.MouseMotion],
-  cursor_moved_reader : @ecs.MessageReader[@input.CursorMoved],
+  cursor_moved_reader : @ecs.MessageReader[@window.CursorMoved],
   mouse_wheel_reader : @ecs.MessageReader[@input.MouseWheel],
 ) -> Unit {
   for event in (try! mouse_button_input_reader.read()) {
@@ -63,8 +63,8 @@ fn print_mouse_gesture_events_system(
   for event in (try! rotation_gesture_reader.read()) {
     log_line("RotationGesture { delta: \{event.delta} }")
   }
-  for event in (try! double_tap_gesture_reader.read()) {
-    log_line("DoubleTapGesture { position: \{format_vec2(event.position)} }")
+  for _event in (try! double_tap_gesture_reader.read()) {
+    log_line("DoubleTapGesture")
   }
 }
 
@@ -79,12 +79,12 @@ fn format_mouse_motion(event : @input.MouseMotion) -> String {
 }
 
 ///|
-fn format_cursor_moved(event : @input.CursorMoved) -> String {
+fn format_cursor_moved(event : @window.CursorMoved) -> String {
   let delta_text = match event.delta {
     Some(delta) => "Some(\{format_vec2(delta)})"
     None => "None"
   }
-  "CursorMoved { position: \{format_vec2(event.position)}, delta: \{delta_text} }"
+  "CursorMoved { window: \{event.window.id}, position: \{format_vec2(event.position)}, delta: \{delta_text} }"
 }
 
 ///|

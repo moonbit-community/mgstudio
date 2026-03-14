@@ -60,6 +60,7 @@ fn reset_input_runtime_state() -> Unit {
   input_active_touches_ref.val = []
   input_primary_pointer_position_ref.val = None
   input_primary_pointer_delta_ref.val = @math.Vec2::new(0.0, 0.0)
+  input_window_focused_event_cursor_ref.val = 0
   input_probe_before_ran_ref.val = false
   input_probe_before_stage_ref.val = "none"
   input_probe_after_stage_ref.val = "none"
@@ -158,4 +159,47 @@ test "input: finish-frame runs after Update and clears previous gamepad snapshot
   inspect(current_gamepads_ref.val.length(), content="0")
   inspect(previous_gamepads_ref.val.length(), content="0")
   app |> ignore
+}
+
+///|
+test "input: keyboard focus loss emits KeyboardFocusLost and WindowEvent" {
+  reset_input_runtime_state()
+  @gilrs.gamepad_test_reset_state()
+
+  let world = @ecs.World::new()
+  let window_entity = world.spawn()
+  let window = @window.Window::default()
+  window.focused = false
+  try! world.set_component(window_entity, window)
+  try! world.set_component(window_entity, @window.PrimaryWindow::{  })
+
+  let mut app = input_plugin(@time.time_plugin(@app.App::new(world)))
+    .add_message(@window.WindowFocused::message())
+    .add_message(@window.WindowEvent::message())
+  ignore(
+    app
+    .world()
+    .send_message(@window.WindowFocused::message(), @window.WindowFocused::{
+      window: window_entity,
+      focused: false,
+    }),
+  )
+
+  app = app.run_once()
+  let focus_lost_reader = app
+    .world()
+    .message_reader(keyboard_focus_lost_message_key, Ref::new(0))
+  inspect((try! focus_lost_reader.read()).length(), content="1")
+
+  let window_event_reader = app
+    .world()
+    .message_reader(@window.WindowEvent::message(), Ref::new(0))
+  let mut aggregate_focus_lost_count = 0
+  let window_events = try! window_event_reader.read()
+  for event in window_events {
+    if event is @window.WindowEvent::KeyboardFocusLost(_) {
+      aggregate_focus_lost_count = aggregate_focus_lost_count + 1
+    }
+  }
+  inspect(aggregate_focus_lost_count, content="1")
 }

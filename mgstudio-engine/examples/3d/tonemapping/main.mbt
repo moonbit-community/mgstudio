@@ -736,14 +736,15 @@ fn drag_drop_image(
   image_material_query : @ecs.Query2[HDRViewer, @pbr.MeshMaterial3d],
   image_viewer_text_query : @ecs.Query2[@ui.UiText, SceneNumber],
   material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
-  drag_and_drop_reader : @ecs.MessageReader[@input.FileDragAndDrop],
+  drag_and_drop_reader : @ecs.MessageReader[@window.FileDragAndDrop],
   asset_server : @app.Res[@asset.AssetServer],
   commands : @app.Commands,
 ) -> Unit {
   let mut new_image : @asset.Handle[@asset.Image]? = None
   for event in (try! drag_and_drop_reader.read()) {
     match event {
-      DroppedFile(path) => new_image = Some(asset_server.get().load(path))
+      DroppedFile(_window, path) =>
+        new_image = Some(asset_server.get().load(path))
       _ => ()
     }
   }

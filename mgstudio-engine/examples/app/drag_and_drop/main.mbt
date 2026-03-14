@@ -17,16 +17,16 @@
 
 ///|
 fn file_drag_and_drop_system(
-  reader : @ecs.MessageReader[@input.FileDragAndDrop],
+  reader : @ecs.MessageReader[@window.FileDragAndDrop],
 ) -> Unit {
   for event in (try! reader.read()) {
     match event {
-      @input.FileDragAndDrop::DroppedFile(path) =>
-        println("DroppedFile(\"" + path + "\")")
-      @input.FileDragAndDrop::HoveredFile(path) =>
-        println("HoveredFile(\"" + path + "\")")
-      @input.FileDragAndDrop::HoveredFileCanceled =>
-        println("HoveredFileCanceled")
+      @window.FileDragAndDrop::DroppedFile(window, path) =>
+        println("DroppedFile(window=\{window.id}, \"" + path + "\")")
+      @window.FileDragAndDrop::HoveredFile(window, path) =>
+        println("HoveredFile(window=\{window.id}, \"" + path + "\")")
+      @window.FileDragAndDrop::HoveredFileCanceled(window) =>
+        println("HoveredFileCanceled(window=\{window.id})")
     }
   }
 }

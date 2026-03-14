@@ -68,6 +68,12 @@ fn read_window_destroyed(world : @ecs.World) -> Array[WindowDestroyed] {
 }
 
 ///|
+fn read_window_events(world : @ecs.World) -> Array[WindowEvent] {
+  let reader = world.message_reader(ecs_key_window_event, Ref::new(0))
+  try! reader.read()
+}
+
+///|
 test "window: plugin spawns configured primary window entity and messages" {
   let configured_window = Window::default()
   configured_window.title = "Configured Window"
@@ -98,6 +104,7 @@ test "window: plugin spawns configured primary window entity and messages" {
   }).run_once()
 
   inspect(app.world().contains_message(ecs_key_window_created), content="true")
+  inspect(app.world().contains_message(ecs_key_window_event), content="true")
   inspect(app.world().contains_message(ecs_key_request_redraw), content="true")
   inspect(
     app.world().contains_message(ecs_key_window_close_requested),
@@ -107,6 +114,13 @@ test "window: plugin spawns configured primary window entity and messages" {
   inspect(app.world().contains_message(ecs_key_window_closed), content="true")
   inspect(
     app.world().contains_message(ecs_key_window_destroyed),
+    content="true",
+  )
+  inspect(app.world().contains_message(ecs_key_cursor_moved), content="true")
+  inspect(app.world().contains_message(ecs_key_cursor_entered), content="true")
+  inspect(app.world().contains_message(ecs_key_cursor_left), content="true")
+  inspect(
+    app.world().contains_message(ecs_key_file_drag_and_drop),
     content="true",
   )
   inspect(app.world().contains_message(ecs_key_window_moved), content="true")
@@ -119,6 +133,12 @@ test "window: plugin spawns configured primary window entity and messages" {
     content="true",
   )
   inspect(app.world().contains_message(ecs_key_window_focused), content="true")
+  inspect(app.world().contains_message(ecs_key_window_occluded), content="true")
+  inspect(
+    app.world().contains_message(ecs_key_window_theme_changed),
+    content="true",
+  )
+  inspect(app.world().contains_message(ecs_key_app_lifecycle), content="true")
 
   let entity = match primary_window_entity(app.world()) {
     Some(entity) => entity
@@ -476,4 +496,126 @@ test "window: keycode supports Eq/Hash/Show for map-backed indexing" {
   inspect(key_index.get(KeyCode::Space), content="Some(2)")
   inspect(KeyCode::KeyA == KeyCode::KeyA, content="true")
   inspect(KeyCode::KeyA.to_string(), content="KeyA")
+}
+
+///|
+test "window: app lifecycle active states align with bevy semantics" {
+  inspect(AppLifecycle::Idle.is_active(), content="false")
+  inspect(AppLifecycle::Running.is_active(), content="true")
+  inspect(AppLifecycle::WillSuspend.is_active(), content="true")
+  inspect(AppLifecycle::Suspended.is_active(), content="false")
+  inspect(AppLifecycle::WillResume.is_active(), content="true")
+}
+
+///|
+test "window: aggregate event bus mirrors window-owned emit helpers" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! world.set_component(entity, Window::default())
+  try! world.set_component(entity, PrimaryWindow::{  })
+
+  let app = window_plugin(@app.App::new(world)).run_once()
+  let world0 = app.world()
+
+  window_emit_cursor_moved(world0, CursorMoved::{
+    window: entity,
+    position: @math.Vec2::new(1.0F, 2.0F),
+    delta: None,
+  })
+  window_emit_cursor_entered(world0, CursorEntered::{ window: entity })
+  window_emit_cursor_left(world0, CursorLeft::{ window: entity })
+  window_emit_file_drag_and_drop(
+    world0,
+    FileDragAndDrop::HoveredFile(entity, "assets/icon.png"),
+  )
+  window_emit_ime(world0, Ime::Enabled(entity))
+  window_emit_mouse_button_input(world0, MouseButtonInput::{
+    button: MouseButton::Left,
+    state: ButtonState::Pressed,
+  })
+  window_emit_mouse_motion(world0, MouseMotion::{
+    delta: @math.Vec2::new(3.0F, -1.0F),
+  })
+  window_emit_mouse_wheel(world0, MouseWheel::{
+    unit: MouseScrollUnit::Line,
+    x: 1.0F,
+    y: -2.0F,
+  })
+  window_emit_pinch_gesture(world0, PinchGesture::{ delta: 0.5F })
+  window_emit_rotation_gesture(world0, RotationGesture::{ delta: -0.25F })
+  window_emit_double_tap_gesture(world0, DoubleTapGesture::{  })
+  window_emit_pan_gesture(world0, PanGesture::{
+    delta: @math.Vec2::new(2.0F, -3.0F),
+  })
+  window_emit_touch_input(world0, TouchInput::{
+    id: 7,
+    phase: TouchPhase::Started,
+    position: @math.Vec2::new(5.0F, 6.0F),
+  })
+  window_emit_keyboard_input(world0, KeyboardInput::{
+    key_code: KeyCode::Space,
+    logical_key: Key::Character(" "),
+    state: ButtonState::Pressed,
+    repeat: false,
+    text: Some(" "),
+  })
+  window_emit_keyboard_focus_lost(world0, KeyboardFocusLost::{  })
+
+  let events = read_window_events(world0)
+  let mut cursor_moved_count = 0
+  let mut cursor_entered_count = 0
+  let mut cursor_left_count = 0
+  let mut drag_count = 0
+  let mut ime_count = 0
+  let mut mouse_button_count = 0
+  let mut mouse_motion_count = 0
+  let mut mouse_wheel_count = 0
+  let mut pinch_count = 0
+  let mut rotation_count = 0
+  let mut double_tap_count = 0
+  let mut pan_count = 0
+  let mut touch_count = 0
+  let mut keyboard_input_count = 0
+  let mut keyboard_focus_lost_count = 0
+  for event in events {
+    match event {
+      WindowEvent::CursorMoved(_) => cursor_moved_count = cursor_moved_count + 1
+      WindowEvent::CursorEntered(_) =>
+        cursor_entered_count = cursor_entered_count + 1
+      WindowEvent::CursorLeft(_) => cursor_left_count = cursor_left_count + 1
+      WindowEvent::FileDragAndDrop(_) => drag_count = drag_count + 1
+      WindowEvent::Ime(_) => ime_count = ime_count + 1
+      WindowEvent::MouseButtonInput(_) =>
+        mouse_button_count = mouse_button_count + 1
+      WindowEvent::MouseMotion(_) => mouse_motion_count = mouse_motion_count + 1
+      WindowEvent::MouseWheel(_) => mouse_wheel_count = mouse_wheel_count + 1
+      WindowEvent::PinchGesture(_) => pinch_count = pinch_count + 1
+      WindowEvent::RotationGesture(_) => rotation_count = rotation_count + 1
+      WindowEvent::DoubleTapGesture(_) =>
+        double_tap_count = double_tap_count + 1
+      WindowEvent::PanGesture(_) => pan_count = pan_count + 1
+      WindowEvent::TouchInput(_) => touch_count = touch_count + 1
+      WindowEvent::KeyboardInput(_) =>
+        keyboard_input_count = keyboard_input_count + 1
+      WindowEvent::KeyboardFocusLost(_) =>
+        keyboard_focus_lost_count = keyboard_focus_lost_count + 1
+      _ => ()
+    }
+  }
+
+  inspect(cursor_moved_count, content="1")
+  inspect(cursor_entered_count, content="1")
+  inspect(cursor_left_count, content="1")
+  inspect(drag_count, content="1")
+  inspect(ime_count, content="1")
+  inspect(mouse_button_count, content="1")
+  inspect(mouse_motion_count, content="1")
+  inspect(mouse_wheel_count, content="1")
+  inspect(pinch_count, content="1")
+  inspect(rotation_count, content="1")
+  inspect(double_tap_count, content="1")
+  inspect(pan_count, content="1")
+  inspect(touch_count, content="1")
+  inspect(keyboard_input_count, content="1")
+  inspect(keyboard_focus_lost_count, content="1")
 }

@@ -436,7 +436,7 @@ fn update_cycling_mode_text(
 
 ///|
 fn handle_mouse_move(
-  cursor_moved_reader : @ecs.MessageReader[@input.CursorMoved],
+  cursor_moved_reader : @ecs.MessageReader[@window.CursorMoved],
   mouse_position : @app.ResMut[MousePosition],
 ) -> Unit {
   let mouse_position_ref = mouse_position.get_ref()

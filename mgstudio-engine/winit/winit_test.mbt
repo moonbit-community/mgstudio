@@ -19,12 +19,30 @@ fn read_window_created(world : @ecs.World) -> Array[@window.WindowCreated] {
 }
 
 ///|
+fn read_raw_winit_window_events(
+  world : @ecs.World,
+  cursor : Ref[Int],
+) -> Array[RawWinitWindowEvent] {
+  let reader = world.message_reader(ecs_key_raw_winit_window_event, cursor)
+  try! reader.read()
+}
+
+///|
 fn read_action_requests(world : @ecs.World) -> Array[@a11y.ActionRequest] {
   let reader = world.message_reader(
     @a11y.ecs_msg_key_action_request,
     Ref::new(0),
   )
   try! reader.read()
+}
+
+///|
+fn read_winit_settings(world : @ecs.World) -> WinitSettings? {
+  try world.get_resource(WinitSettings::resource()) catch {
+    _ => None
+  } noraise {
+    value => value
+  }
 }
 
 ///|
@@ -44,6 +62,91 @@ test "winit: backend sync is owned by winit plugin" {
     @window.window_plugin(@app.App::new(@ecs.World::new())),
   ).run_once()
   inspect(read_window_created(app_with_winit.world()).length(), content="1")
+}
+
+///|
+test "winit: plugin initializes bevy-aligned default settings resource" {
+  let app_with_winit = winit_plugin(
+    @window.window_plugin(@app.App::new(@ecs.World::new())),
+  ).run_once()
+  let settings = match read_winit_settings(app_with_winit.world()) {
+    Some(settings) => settings
+    None => abort("missing WinitSettings resource")
+  }
+
+  inspect(settings.update_mode(true), content="Continuous")
+  match settings.update_mode(false) {
+    Reactive(wait, react_to_device, react_to_user, react_to_window) => {
+      inspect(
+        wait.as_secs_f64() > 0.016 && wait.as_secs_f64() < 0.017,
+        content="true",
+      )
+      inspect(react_to_device, content="false")
+      inspect(react_to_user, content="true")
+      inspect(react_to_window, content="true")
+    }
+    _ => abort("expected reactive unfocused mode")
+  }
+}
+
+///|
+test "winit: update mode constructors align with bevy settings semantics" {
+  let reactive = UpdateMode::reactive(@core.Duration::from_secs(5L))
+  match reactive {
+    Reactive(wait, react_to_device, react_to_user, react_to_window) => {
+      assert_eq(wait, @core.Duration::from_secs(5L))
+      inspect(react_to_device, content="true")
+      inspect(react_to_user, content="true")
+      inspect(react_to_window, content="true")
+    }
+    _ => abort("expected reactive mode")
+  }
+
+  let low_power = UpdateMode::reactive_low_power(@core.Duration::from_secs(60L))
+  match low_power {
+    Reactive(wait, react_to_device, react_to_user, react_to_window) => {
+      assert_eq(wait, @core.Duration::from_secs(60L))
+      inspect(react_to_device, content="false")
+      inspect(react_to_user, content="true")
+      inspect(react_to_window, content="true")
+    }
+    _ => abort("expected reactive_low_power mode")
+  }
+}
+
+///|
+test "winit: typed raw winit events are published as messages" {
+  let app = winit_plugin(
+    @window.window_plugin(@app.App::new(@ecs.World::new())),
+  ).run_once()
+  let world = app.world()
+  let cursor = Ref::new(0)
+  let writer = world.message_writer(ecs_key_raw_winit_window_event)
+
+  assert_true(world.contains_message(ecs_key_raw_winit_window_event))
+
+  ignore(
+    writer.write(RawWinitWindowEvent::{ window_id: 21, event: CloseRequested }),
+  )
+  ignore(
+    writer.write(RawWinitWindowEvent::{ window_id: 34, event: Focused(true) }),
+  )
+
+  let events = read_raw_winit_window_events(world, cursor)
+  assert_eq(events.length(), 2)
+  assert_eq(events[0].window_id, 21)
+  match events[0].event {
+    CloseRequested => ()
+    _ => abort("expected CloseRequested raw event")
+  }
+
+  assert_eq(events[1].window_id, 34)
+  match events[1].event {
+    Focused(focused) => assert_true(focused)
+    _ => abort("expected Focused raw event")
+  }
+
+  assert_eq(read_raw_winit_window_events(world, cursor).length(), 0)
 }
 
 ///|

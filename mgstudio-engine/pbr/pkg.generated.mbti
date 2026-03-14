@@ -9,6 +9,7 @@ import {
   "Milky2018/mgstudio/core_pipeline",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/input/events",
   "Milky2018/mgstudio/light",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/math",
@@ -16,7 +17,6 @@ import {
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/visibility",
-  "Milky2018/mgstudio/window",
   "moonbitlang/core/json",
 }
 
@@ -608,15 +608,15 @@ pub impl @json.FromJson for ForwardDecal
 
 pub(all) struct FreeCamera {
   sensitivity : Float
-  key_forward : @window.KeyCode
-  key_back : @window.KeyCode
-  key_left : @window.KeyCode
-  key_right : @window.KeyCode
-  key_up : @window.KeyCode
-  key_down : @window.KeyCode
-  key_run : @window.KeyCode
-  mouse_key_cursor_grab : @window.MouseButton
-  keyboard_key_toggle_cursor_grab : @window.KeyCode
+  key_forward : @events.KeyCode
+  key_back : @events.KeyCode
+  key_left : @events.KeyCode
+  key_right : @events.KeyCode
+  key_up : @events.KeyCode
+  key_down : @events.KeyCode
+  key_run : @events.KeyCode
+  mouse_key_cursor_grab : @events.MouseButton
+  keyboard_key_toggle_cursor_grab : @events.KeyCode
   walk_speed : Float
   run_speed : Float
   scroll_factor : Float

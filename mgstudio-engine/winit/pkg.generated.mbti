@@ -3,26 +3,66 @@ package "Milky2018/mgstudio/winit"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/window/windowing_native",
 }
 
 // Values
 pub const WINIT_PLUGIN_ID : String = "bevy_winit::WinitPlugin"
 
+pub let ecs_key_raw_winit_window_event : @ecs.MessageKey[RawWinitWindowEvent]
+
 pub fn winit_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn winit_plugin_with(@app.App[@ecs.World], WinitPlugin) -> @app.App[@ecs.World]
 
+pub fn winit_runner_builder(@app.App[@ecs.World]) -> () -> Unit
+
+pub fn winit_window_backend_sync_system(@ecs.World) -> Unit
+
 // Errors
 
 // Types and methods
+pub(all) struct RawWinitWindowEvent {
+  window_id : Int
+  event : @windowing_native.RawWinitWindowEventData
+}
+pub impl @ecs.Message for RawWinitWindowEvent
+pub impl Eq for RawWinitWindowEvent
+pub impl Show for RawWinitWindowEvent
+
+pub(all) enum UpdateMode {
+  Continuous
+  Reactive(@core.Duration, Bool, Bool, Bool)
+}
+pub fn UpdateMode::reactive(@core.Duration) -> Self
+pub fn UpdateMode::reactive_low_power(@core.Duration) -> Self
+pub impl Eq for UpdateMode
+pub impl Show for UpdateMode
+
 pub(all) struct WinitPlugin {
   run_on_any_thread : Bool
 }
 pub fn WinitPlugin::default() -> Self
 pub impl @app.PluginReplacement for WinitPlugin
 
+pub(all) struct WinitSettings {
+  focused_mode : UpdateMode
+  unfocused_mode : UpdateMode
+}
+pub fn WinitSettings::continuous() -> Self
+pub fn WinitSettings::desktop_app() -> Self
+pub fn WinitSettings::game() -> Self
+pub fn WinitSettings::mobile() -> Self
+pub fn WinitSettings::update_mode(Self, Bool) -> UpdateMode
+pub impl @app.Resource for WinitSettings
+pub impl Default for WinitSettings
+pub impl Eq for WinitSettings
+pub impl Show for WinitSettings
+
 // Type aliases
+pub using @windowing_native {type RawWinitWindowEventData}
 
 // Traits
 

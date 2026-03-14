@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/input/events",
   "Milky2018/mgstudio/math",
   "moonbitlang/core/json",
 }
@@ -15,25 +16,55 @@ pub const WINDOW_PLUGIN_ID : String = "bevy_window::WindowPlugin"
 
 pub fn close_when_requested(@ecs.MessageReader[WindowCloseRequested], @ecs.EntityQuery[@ecs.With[ClosingWindow]]) -> Unit
 
+pub let ecs_key_app_lifecycle : @ecs.MessageKey[AppLifecycle]
+
 pub let ecs_key_captured : @ecs.ComponentKey[Captured]
 
 pub let ecs_key_capturing : @ecs.ComponentKey[Capturing]
 
 pub let ecs_key_closing_window : @ecs.ComponentKey[ClosingWindow]
 
+pub let ecs_key_cursor_entered : @ecs.MessageKey[CursorEntered]
+
 pub let ecs_key_cursor_icon : @ecs.ComponentKey[CursorIcon]
+
+pub let ecs_key_cursor_left : @ecs.MessageKey[CursorLeft]
+
+pub let ecs_key_cursor_moved : @ecs.MessageKey[CursorMoved]
 
 pub let ecs_key_cursor_options : @ecs.ComponentKey[CursorOptions]
 
+pub let ecs_key_double_tap_gesture : @ecs.MessageKey[@events.DoubleTapGesture]
+
+pub let ecs_key_file_drag_and_drop : @ecs.MessageKey[FileDragAndDrop]
+
 pub let ecs_key_ime : @ecs.MessageKey[Ime]
+
+pub let ecs_key_keyboard_focus_lost : @ecs.MessageKey[@events.KeyboardFocusLost]
+
+pub let ecs_key_keyboard_input : @ecs.MessageKey[@events.KeyboardInput]
+
+pub let ecs_key_mouse_button_input : @ecs.MessageKey[@events.MouseButtonInput]
+
+pub let ecs_key_mouse_motion : @ecs.MessageKey[@events.MouseMotion]
+
+pub let ecs_key_mouse_wheel : @ecs.MessageKey[@events.MouseWheel]
+
+pub let ecs_key_pan_gesture : @ecs.MessageKey[@events.PanGesture]
+
+pub let ecs_key_pinch_gesture : @ecs.MessageKey[@events.PinchGesture]
 
 pub let ecs_key_primary_window : @ecs.ComponentKey[PrimaryWindow]
 
 pub let ecs_key_request_redraw : @ecs.MessageKey[RequestRedraw]
 
+pub let ecs_key_rotation_gesture : @ecs.MessageKey[@events.RotationGesture]
+
 pub let ecs_key_screenshot : @ecs.ComponentKey[Screenshot]
 
 pub let ecs_key_screenshot_captured : @ecs.ComponentKey[ScreenshotCaptured]
+
+pub let ecs_key_touch_input : @ecs.MessageKey[@events.TouchInput]
 
 pub let ecs_key_window : @ecs.ComponentKey[Window]
 
@@ -49,17 +80,27 @@ pub let ecs_key_window_created : @ecs.MessageKey[WindowCreated]
 
 pub let ecs_key_window_destroyed : @ecs.MessageKey[WindowDestroyed]
 
+pub let ecs_key_window_event : @ecs.MessageKey[WindowEvent]
+
 pub let ecs_key_window_focused : @ecs.MessageKey[WindowFocused]
 
 pub let ecs_key_window_moved : @ecs.MessageKey[WindowMoved]
+
+pub let ecs_key_window_occluded : @ecs.MessageKey[WindowOccluded]
 
 pub let ecs_key_window_resized : @ecs.MessageKey[WindowResized]
 
 pub let ecs_key_window_scale_factor_changed : @ecs.MessageKey[WindowScaleFactorChanged]
 
+pub let ecs_key_window_theme_changed : @ecs.MessageKey[WindowThemeChanged]
+
 pub fn exit_on_all_closed(@ecs.MessageWriter[@app.AppExit], @ecs.EntityQuery[@ecs.With[Window]]) -> Unit
 
 pub fn exit_on_primary_closed(@ecs.MessageWriter[@app.AppExit], @ecs.EntityQuery[(@ecs.With[Window], @ecs.With[PrimaryWindow])]) -> Unit
+
+pub fn host_app_lifecycle_event_count() -> Int
+
+pub fn host_app_lifecycle_event_kind(index~ : Int) -> Int
 
 pub fn host_debug_string(value~ : String) -> Unit
 
@@ -80,6 +121,12 @@ pub fn host_window_get_position_y(Int) -> Int
 pub fn host_window_get_scale_factor(Int) -> Float
 
 pub fn host_window_get_width(Int) -> Int
+
+pub fn host_window_occluded_event_count() -> Int
+
+pub fn host_window_occluded_event_occluded(index~ : Int) -> Bool
+
+pub fn host_window_occluded_event_window(index~ : Int) -> Int
 
 pub fn host_window_poll_events(Int) -> Unit
 
@@ -121,6 +168,12 @@ pub fn host_window_set_window_level(Int, level~ : @Milky2018/window/core.WindowL
 
 pub fn host_window_should_close(Int) -> Bool
 
+pub fn host_window_theme_event_count() -> Int
+
+pub fn host_window_theme_event_theme(index~ : Int) -> Int
+
+pub fn host_window_theme_event_window(index~ : Int) -> Int
+
 pub fn save_to_disk(String) -> (@ecs.On[@ecs.Insert, ScreenshotCaptured]) -> Unit
 
 pub fn screenshot_finalize_capture_requests(@ecs.World) -> Unit
@@ -128,6 +181,36 @@ pub fn screenshot_finalize_capture_requests(@ecs.World) -> Unit
 pub fn screenshot_queue_capture_requests(@ecs.World) -> Unit
 
 pub fn window_backend_sync_system(@ecs.World) -> Unit
+
+pub fn window_emit_cursor_entered(@ecs.World, CursorEntered) -> Unit
+
+pub fn window_emit_cursor_left(@ecs.World, CursorLeft) -> Unit
+
+pub fn window_emit_cursor_moved(@ecs.World, CursorMoved) -> Unit
+
+pub fn window_emit_double_tap_gesture(@ecs.World, @events.DoubleTapGesture) -> Unit
+
+pub fn window_emit_file_drag_and_drop(@ecs.World, FileDragAndDrop) -> Unit
+
+pub fn window_emit_ime(@ecs.World, Ime) -> Unit
+
+pub fn window_emit_keyboard_focus_lost(@ecs.World, @events.KeyboardFocusLost) -> Unit
+
+pub fn window_emit_keyboard_input(@ecs.World, @events.KeyboardInput) -> Unit
+
+pub fn window_emit_mouse_button_input(@ecs.World, @events.MouseButtonInput) -> Unit
+
+pub fn window_emit_mouse_motion(@ecs.World, @events.MouseMotion) -> Unit
+
+pub fn window_emit_mouse_wheel(@ecs.World, @events.MouseWheel) -> Unit
+
+pub fn window_emit_pan_gesture(@ecs.World, @events.PanGesture) -> Unit
+
+pub fn window_emit_pinch_gesture(@ecs.World, @events.PinchGesture) -> Unit
+
+pub fn window_emit_rotation_gesture(@ecs.World, @events.RotationGesture) -> Unit
+
+pub fn window_emit_touch_input(@ecs.World, @events.TouchInput) -> Unit
 
 pub fn window_ensure_primary_host(@ecs.World) -> Int?
 
@@ -198,6 +281,18 @@ pub fn window_width() -> Int
 // Errors
 
 // Types and methods
+pub(all) enum AppLifecycle {
+  Idle
+  Running
+  WillSuspend
+  Suspended
+  WillResume
+}
+pub fn AppLifecycle::is_active(Self) -> Bool
+pub impl @ecs.Message for AppLifecycle
+pub impl Eq for AppLifecycle
+pub impl Show for AppLifecycle
+
 pub struct Captured {
 }
 pub impl @ecs.Component for Captured
@@ -211,6 +306,12 @@ pub(all) struct ClosingWindow {
 pub impl @ecs.Component for ClosingWindow
 pub impl Eq for ClosingWindow
 pub impl Show for ClosingWindow
+
+pub(all) struct CursorEntered {
+  window : @Milky2018/mgstudio/core.Entity
+}
+pub impl @ecs.Message for CursorEntered
+pub impl Eq for CursorEntered
 
 pub(all) enum CursorGrabMode {
   GrabNone
@@ -229,6 +330,19 @@ pub impl @ecs.Component for CursorIcon
 pub impl Default for CursorIcon
 pub impl Eq for CursorIcon
 pub impl Show for CursorIcon
+
+pub(all) struct CursorLeft {
+  window : @Milky2018/mgstudio/core.Entity
+}
+pub impl @ecs.Message for CursorLeft
+pub impl Eq for CursorLeft
+
+pub(all) struct CursorMoved {
+  window : @Milky2018/mgstudio/core.Entity
+  position : @math.Vec2
+  delta : @math.Vec2?
+}
+pub impl @ecs.Message for CursorMoved
 
 pub(all) struct CursorOptions {
   mut visible : Bool
@@ -257,12 +371,20 @@ pub(all) enum ExitCondition {
 pub impl Eq for ExitCondition
 pub impl Show for ExitCondition
 
+pub(all) enum FileDragAndDrop {
+  DroppedFile(@Milky2018/mgstudio/core.Entity, String)
+  HoveredFile(@Milky2018/mgstudio/core.Entity, String)
+  HoveredFileCanceled(@Milky2018/mgstudio/core.Entity)
+}
+pub impl @ecs.Message for FileDragAndDrop
+pub impl Eq for FileDragAndDrop
+
 pub(all) enum HostEvent {
-  KeyDown(KeyCode)
-  KeyUp(KeyCode)
+  KeyDown(@events.KeyCode)
+  KeyUp(@events.KeyCode)
   MouseMove(Int, Int)
-  MouseDown(MouseButton)
-  MouseUp(MouseButton)
+  MouseDown(@events.MouseButton)
+  MouseUp(@events.MouseButton)
   MouseWheel(Int, Int)
   WindowResized(Int, Int)
   WindowCloseRequested
@@ -285,85 +407,6 @@ pub(all) struct ImeCursorRange {
 pub fn ImeCursorRange::new(Int, Int) -> Self
 pub impl Eq for ImeCursorRange
 pub impl Show for ImeCursorRange
-
-pub(all) enum KeyCode {
-  KeyA
-  KeyB
-  KeyC
-  KeyD
-  KeyE
-  KeyF
-  KeyG
-  KeyH
-  KeyI
-  KeyJ
-  KeyK
-  KeyL
-  KeyM
-  KeyN
-  KeyO
-  KeyP
-  KeyQ
-  KeyR
-  KeyS
-  KeyT
-  KeyU
-  KeyV
-  KeyW
-  KeyX
-  KeyY
-  KeyZ
-  Digit1
-  Digit2
-  Digit3
-  Digit4
-  Digit5
-  Digit6
-  Digit7
-  Digit8
-  Tab
-  Enter
-  Backspace
-  ShiftLeft
-  ShiftRight
-  ControlLeft
-  ControlRight
-  ArrowUp
-  ArrowDown
-  ArrowLeft
-  ArrowRight
-  PageUp
-  PageDown
-  Space
-  Escape
-  Semicolon
-  Comma
-  Period
-  Slash
-  Minus
-  Equal
-  NumpadAdd
-  NumpadSubtract
-  BracketLeft
-  BracketRight
-  Quote
-}
-pub impl Eq for KeyCode
-pub impl Hash for KeyCode
-pub impl Show for KeyCode
-pub impl ToJson for KeyCode
-pub impl @json.FromJson for KeyCode
-
-pub(all) enum MouseButton {
-  Left
-  Right
-  Middle
-}
-pub impl Eq for MouseButton
-pub impl Hash for MouseButton
-pub impl Show for MouseButton
-pub impl ToJson for MouseButton
-pub impl @json.FromJson for MouseButton
 
 pub(all) enum PresentMode {
   AutoVsync
@@ -477,6 +520,37 @@ pub(all) struct WindowDestroyed {
 pub impl @ecs.Message for WindowDestroyed
 pub impl Eq for WindowDestroyed
 
+pub(all) enum WindowEvent {
+  AppLifecycle(AppLifecycle)
+  CursorEntered(CursorEntered)
+  CursorLeft(CursorLeft)
+  CursorMoved(CursorMoved)
+  FileDragAndDrop(FileDragAndDrop)
+  Ime(Ime)
+  RequestRedraw(RequestRedraw)
+  WindowBackendScaleFactorChanged(WindowBackendScaleFactorChanged)
+  WindowCloseRequested(WindowCloseRequested)
+  WindowCreated(WindowCreated)
+  WindowDestroyed(WindowDestroyed)
+  WindowFocused(WindowFocused)
+  WindowMoved(WindowMoved)
+  WindowOccluded(WindowOccluded)
+  WindowResized(WindowResized)
+  WindowScaleFactorChanged(WindowScaleFactorChanged)
+  WindowThemeChanged(WindowThemeChanged)
+  MouseButtonInput(@events.MouseButtonInput)
+  MouseMotion(@events.MouseMotion)
+  MouseWheel(@events.MouseWheel)
+  PinchGesture(@events.PinchGesture)
+  RotationGesture(@events.RotationGesture)
+  DoubleTapGesture(@events.DoubleTapGesture)
+  PanGesture(@events.PanGesture)
+  TouchInput(@events.TouchInput)
+  KeyboardInput(@events.KeyboardInput)
+  KeyboardFocusLost(@events.KeyboardFocusLost)
+}
+pub impl @ecs.Message for WindowEvent
+
 pub(all) struct WindowFocused {
   window : @Milky2018/mgstudio/core.Entity
   focused : Bool
@@ -505,6 +579,13 @@ pub(all) struct WindowMoved {
 }
 pub impl @ecs.Message for WindowMoved
 pub impl Eq for WindowMoved
+
+pub(all) struct WindowOccluded {
+  window : @Milky2018/mgstudio/core.Entity
+  occluded : Bool
+}
+pub impl @ecs.Message for WindowOccluded
+pub impl Eq for WindowOccluded
 
 pub(all) struct WindowPlugin {
   primary_window : Window?
@@ -569,12 +650,51 @@ pub(all) struct WindowScaleFactorChanged {
 pub impl @ecs.Message for WindowScaleFactorChanged
 pub impl Eq for WindowScaleFactorChanged
 
+pub(all) struct WindowThemeChanged {
+  window : @Milky2018/mgstudio/core.Entity
+  theme : @Milky2018/window/core.Theme
+}
+pub impl @ecs.Message for WindowThemeChanged
+pub impl Eq for WindowThemeChanged
+
 // Type aliases
+pub using @events {type ButtonState}
+
+pub using @events {type DoubleTapGesture}
+
 pub type HostWindow = Int
+
+pub using @events {type Key}
+
+pub using @events {type KeyCode}
+
+pub using @events {type KeyboardFocusLost}
+
+pub using @events {type KeyboardInput}
 
 pub type ManualTextureViewHandle = Int
 
+pub using @events {type MouseButton}
+
+pub using @events {type MouseButtonInput}
+
+pub using @events {type MouseMotion}
+
+pub using @events {type MouseScrollUnit}
+
+pub using @events {type MouseWheel}
+
+pub using @events {type PanGesture}
+
+pub using @events {type PinchGesture}
+
+pub using @events {type RotationGesture}
+
 pub using @Milky2018/window/core {type CursorIcon as SystemCursorIcon}
+
+pub using @events {type TouchInput}
+
+pub using @events {type TouchPhase}
 
 pub using @Milky2018/window/core {type WindowLevel}
 

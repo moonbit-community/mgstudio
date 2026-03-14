@@ -6,6 +6,7 @@ import {
   "Milky2018/wgpu_mbt",
   "Milky2018/wgpu_mbt/c",
   "Milky2018/window/core",
+  "Milky2018/window/dpi",
   "moonbitlang/core/ref",
 }
 
@@ -36,6 +37,20 @@ pub fn focused(Int) -> Bool
 
 pub fn height(Int) -> Int
 
+pub fn input_app_lifecycle_event_count() -> Int
+
+pub fn input_app_lifecycle_event_kind(index~ : Int) -> Int
+
+pub fn input_cursor_entered_window() -> Int
+
+pub fn input_cursor_left_window() -> Int
+
+pub fn input_cursor_window() -> Int
+
+pub fn input_double_tap_gesture_event_count() -> Int
+
+pub fn input_double_tap_gesture_event_window(index~ : Int) -> Int
+
 pub fn input_drag_and_drop_event_code_unit(index~ : Int, offset~ : Int) -> Int
 
 pub fn input_drag_and_drop_event_count() -> Int
@@ -43,6 +58,8 @@ pub fn input_drag_and_drop_event_count() -> Int
 pub fn input_drag_and_drop_event_kind(index~ : Int) -> Int
 
 pub fn input_drag_and_drop_event_len(index~ : Int) -> Int
+
+pub fn input_drag_and_drop_event_window(index~ : Int) -> Int
 
 pub fn input_finish_frame() -> Unit
 
@@ -92,6 +109,8 @@ pub fn input_is_mouse_button_just_released_by_id(Int) -> Bool
 
 pub fn input_key_id(String) -> Int
 
+pub fn input_key_id_from_key_code(@core.KeyCode) -> Int
+
 pub fn input_keyboard_event_count() -> Int
 
 pub fn input_keyboard_event_key_id(index~ : Int) -> Int
@@ -109,6 +128,26 @@ pub fn input_mouse_button_id(String) -> Int
 pub fn input_mouse_x() -> Float
 
 pub fn input_mouse_y() -> Float
+
+pub fn input_pan_gesture_event_count() -> Int
+
+pub fn input_pan_gesture_event_window(index~ : Int) -> Int
+
+pub fn input_pan_gesture_event_x(index~ : Int) -> Float
+
+pub fn input_pan_gesture_event_y(index~ : Int) -> Float
+
+pub fn input_pinch_gesture_event_count() -> Int
+
+pub fn input_pinch_gesture_event_delta(index~ : Int) -> Float
+
+pub fn input_pinch_gesture_event_window(index~ : Int) -> Int
+
+pub fn input_rotation_gesture_event_count() -> Int
+
+pub fn input_rotation_gesture_event_delta(index~ : Int) -> Float
+
+pub fn input_rotation_gesture_event_window(index~ : Int) -> Int
 
 pub fn input_text_event_code_unit(index~ : Int, offset~ : Int) -> Int
 
@@ -129,6 +168,18 @@ pub fn input_touch_event_y(index~ : Int) -> Float
 pub fn input_wheel_x() -> Float
 
 pub fn input_wheel_y() -> Float
+
+pub fn input_window_occluded_event_count() -> Int
+
+pub fn input_window_occluded_event_occluded(index~ : Int) -> Bool
+
+pub fn input_window_occluded_event_window(index~ : Int) -> Int
+
+pub fn input_window_theme_event_count() -> Int
+
+pub fn input_window_theme_event_theme(index~ : Int) -> Int
+
+pub fn input_window_theme_event_window(index~ : Int) -> Int
 
 pub fn last_accessibility_update_payload() -> String
 
@@ -190,11 +241,50 @@ pub fn should_close(Int) -> Bool
 
 pub fn take_accessibility_actions() -> Array[@moon_accesskit.ActionRequest]
 
+pub fn take_raw_winit_window_events() -> Array[RawWinitWindowEventSnapshot]
+
 pub fn width(Int) -> Int
 
 // Errors
 
 // Types and methods
+pub(all) enum RawWinitWindowEventData {
+  ActivationTokenDone(@core.AsyncRequestSerial, @core.ActivationToken)
+  CloseRequested
+  CursorEntered(@core.DeviceId?)
+  CursorLeft(@core.DeviceId?)
+  CursorMoved(@core.DeviceId?, @dpi.PhysicalPositionF64)
+  Destroyed
+  DoubleTapGesture(@core.DeviceId?)
+  DroppedFile(String)
+  Focused(Bool)
+  HoveredFile(String)
+  HoveredFileCancelled
+  Ime(@core.Ime)
+  KeyboardInput(@core.DeviceId?, @core.KeyEvent, Bool)
+  ModifiersChanged(@core.Modifiers)
+  MouseInput(@core.DeviceId?, @core.ElementState, @core.MouseButton)
+  MouseWheel(@core.DeviceId?, @core.MouseScrollDelta, @core.TouchPhase)
+  Moved(@dpi.PhysicalPosition)
+  Occluded(Bool)
+  PanGesture(@core.DeviceId?, @dpi.PhysicalPositionF64, @core.TouchPhase)
+  PinchGesture(@core.DeviceId?, Double, @core.TouchPhase)
+  RedrawRequested
+  Resized(@dpi.PhysicalSize)
+  RotationGesture(@core.DeviceId?, Double, @core.TouchPhase)
+  ScaleFactorChanged(Double, @dpi.PhysicalSize)
+  ThemeChanged(@core.Theme)
+  TouchpadPressure(@core.DeviceId?, Double, Int)
+}
+pub impl Eq for RawWinitWindowEventData
+pub impl Show for RawWinitWindowEventData
+
+pub(all) struct RawWinitWindowEventSnapshot {
+  window_id : Int
+  event : RawWinitWindowEventData
+}
+pub impl Eq for RawWinitWindowEventSnapshot
+pub impl Show for RawWinitWindowEventSnapshot
 
 // Type aliases
 pub type NativeWindowHandle = Int

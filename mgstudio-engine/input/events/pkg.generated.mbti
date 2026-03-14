@@ -1,0 +1,249 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/input/events"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub let ecs_key_double_tap_gesture : @ecs.MessageKey[DoubleTapGesture]
+
+pub let ecs_key_keyboard_character : @ecs.MessageKey[KeyboardCharacter]
+
+pub let ecs_key_keyboard_focus_lost : @ecs.MessageKey[KeyboardFocusLost]
+
+pub let ecs_key_keyboard_input : @ecs.MessageKey[KeyboardInput]
+
+pub let ecs_key_mouse_button_input : @ecs.MessageKey[MouseButtonInput]
+
+pub let ecs_key_mouse_motion : @ecs.MessageKey[MouseMotion]
+
+pub let ecs_key_mouse_wheel : @ecs.MessageKey[MouseWheel]
+
+pub let ecs_key_pan_gesture : @ecs.MessageKey[PanGesture]
+
+pub let ecs_key_pinch_gesture : @ecs.MessageKey[PinchGesture]
+
+pub let ecs_key_rotation_gesture : @ecs.MessageKey[RotationGesture]
+
+pub let ecs_key_touch_input : @ecs.MessageKey[TouchInput]
+
+// Errors
+
+// Types and methods
+pub(all) enum ButtonState {
+  Pressed
+  Released
+}
+pub fn ButtonState::is_pressed(Self) -> Bool
+pub impl Eq for ButtonState
+pub impl Show for ButtonState
+pub impl ToJson for ButtonState
+pub impl @json.FromJson for ButtonState
+
+pub(all) struct DoubleTapGesture {
+}
+pub impl @ecs.Message for DoubleTapGesture
+pub impl ToJson for DoubleTapGesture
+pub impl @json.FromJson for DoubleTapGesture
+
+pub(all) enum Key {
+  Character(String)
+  Enter
+  Backspace
+  Tab
+  Shift
+  Control
+  ArrowUp
+  ArrowDown
+  ArrowLeft
+  ArrowRight
+  PageUp
+  PageDown
+  Space
+  Escape
+}
+pub impl Eq for Key
+pub impl ToJson for Key
+pub impl @json.FromJson for Key
+
+pub(all) enum KeyCode {
+  KeyA
+  KeyB
+  KeyC
+  KeyD
+  KeyE
+  KeyF
+  KeyG
+  KeyH
+  KeyI
+  KeyJ
+  KeyK
+  KeyL
+  KeyM
+  KeyN
+  KeyO
+  KeyP
+  KeyQ
+  KeyR
+  KeyS
+  KeyT
+  KeyU
+  KeyV
+  KeyW
+  KeyX
+  KeyY
+  KeyZ
+  Digit1
+  Digit2
+  Digit3
+  Digit4
+  Digit5
+  Digit6
+  Digit7
+  Digit8
+  Tab
+  Enter
+  Backspace
+  ShiftLeft
+  ShiftRight
+  ControlLeft
+  ControlRight
+  ArrowUp
+  ArrowDown
+  ArrowLeft
+  ArrowRight
+  PageUp
+  PageDown
+  Space
+  Escape
+  Semicolon
+  Comma
+  Period
+  Slash
+  Minus
+  Equal
+  NumpadAdd
+  NumpadSubtract
+  BracketLeft
+  BracketRight
+  Quote
+}
+pub impl Eq for KeyCode
+pub impl Hash for KeyCode
+pub impl Show for KeyCode
+pub impl ToJson for KeyCode
+pub impl @json.FromJson for KeyCode
+
+pub(all) struct KeyboardCharacter {
+  character : String
+}
+pub impl @ecs.Message for KeyboardCharacter
+pub impl ToJson for KeyboardCharacter
+pub impl @json.FromJson for KeyboardCharacter
+
+pub(all) struct KeyboardFocusLost {
+}
+pub impl @ecs.Message for KeyboardFocusLost
+pub impl Eq for KeyboardFocusLost
+pub impl ToJson for KeyboardFocusLost
+pub impl @json.FromJson for KeyboardFocusLost
+
+pub(all) struct KeyboardInput {
+  key_code : KeyCode
+  logical_key : Key
+  state : ButtonState
+  repeat : Bool
+  text : String?
+}
+pub impl @ecs.Message for KeyboardInput
+pub impl ToJson for KeyboardInput
+pub impl @json.FromJson for KeyboardInput
+
+pub(all) enum MouseButton {
+  Left
+  Right
+  Middle
+}
+pub impl Eq for MouseButton
+pub impl Hash for MouseButton
+pub impl Show for MouseButton
+pub impl ToJson for MouseButton
+pub impl @json.FromJson for MouseButton
+
+pub(all) struct MouseButtonInput {
+  button : MouseButton
+  state : ButtonState
+}
+pub impl @ecs.Message for MouseButtonInput
+pub impl ToJson for MouseButtonInput
+pub impl @json.FromJson for MouseButtonInput
+
+pub(all) struct MouseMotion {
+  delta : @math.Vec2
+}
+pub impl @ecs.Message for MouseMotion
+pub impl ToJson for MouseMotion
+pub impl @json.FromJson for MouseMotion
+
+pub(all) enum MouseScrollUnit {
+  Line
+  Pixel
+}
+pub impl ToJson for MouseScrollUnit
+pub impl @json.FromJson for MouseScrollUnit
+
+pub(all) struct MouseWheel {
+  unit : MouseScrollUnit
+  x : Float
+  y : Float
+}
+pub impl @ecs.Message for MouseWheel
+pub impl ToJson for MouseWheel
+pub impl @json.FromJson for MouseWheel
+
+pub(all) struct PanGesture {
+  delta : @math.Vec2
+}
+pub impl @ecs.Message for PanGesture
+pub impl ToJson for PanGesture
+pub impl @json.FromJson for PanGesture
+
+pub(all) struct PinchGesture {
+  delta : Float
+}
+pub impl @ecs.Message for PinchGesture
+pub impl ToJson for PinchGesture
+pub impl @json.FromJson for PinchGesture
+
+pub(all) struct RotationGesture {
+  delta : Float
+}
+pub impl @ecs.Message for RotationGesture
+pub impl ToJson for RotationGesture
+pub impl @json.FromJson for RotationGesture
+
+pub(all) struct TouchInput {
+  id : Int
+  phase : TouchPhase
+  position : @math.Vec2
+}
+pub impl @ecs.Message for TouchInput
+pub impl ToJson for TouchInput
+pub impl @json.FromJson for TouchInput
+
+pub(all) enum TouchPhase {
+  Started
+  Moved
+  Ended
+  Canceled
+}
+pub impl ToJson for TouchPhase
+pub impl @json.FromJson for TouchPhase
+
+// Type aliases
+
+// Traits
+

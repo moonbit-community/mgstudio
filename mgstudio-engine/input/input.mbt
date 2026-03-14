@@ -143,36 +143,10 @@ let keyboard_event_keycodes : Array[@window.KeyCode] = [
 ]
 
 ///|
-pub(all) enum ButtonState {
-  Pressed
-  Released
-} derive(Eq, Show, ToJson, FromJson)
+pub type ButtonState = @input_events.ButtonState
 
 ///|
-pub fn ButtonState::is_pressed(self : ButtonState) -> Bool {
-  match self {
-    Pressed => true
-    Released => false
-  }
-}
-
-///|
-pub(all) enum Key {
-  Character(String)
-  Enter
-  Backspace
-  Tab
-  Shift
-  Control
-  ArrowUp
-  ArrowDown
-  ArrowLeft
-  ArrowRight
-  PageUp
-  PageDown
-  Space
-  Escape
-} derive(Eq, ToJson, FromJson)
+pub type Key = @input_events.Key
 
 ///|
 pub(open) trait ButtonInputButton {
@@ -596,85 +570,43 @@ pub fn[T] Axis::all_axes_and_values(self : Axis[T]) -> Array[(T, Float)] {
 }
 
 ///|
-pub struct KeyboardInput {
-  key_code : @window.KeyCode
-  logical_key : Key
-  state : ButtonState
-  repeat : Bool
-  text : String?
-} derive(ToJson, FromJson)
+pub type KeyboardInput = @input_events.KeyboardInput
 
 ///|
-pub struct KeyboardCharacter {
-  character : String
-} derive(ToJson, FromJson)
+pub type KeyboardCharacter = @input_events.KeyboardCharacter
 
 ///|
-pub struct MouseButtonInput {
-  button : @window.MouseButton
-  state : ButtonState
-} derive(ToJson, FromJson)
+pub type KeyboardFocusLost = @input_events.KeyboardFocusLost
 
 ///|
-pub struct MouseMotion {
-  delta : @math.Vec2
-} derive(ToJson, FromJson)
+pub type MouseButtonInput = @input_events.MouseButtonInput
 
 ///|
-pub struct CursorMoved {
-  position : @math.Vec2
-  delta : @math.Vec2?
-} derive(ToJson, FromJson)
+pub type MouseMotion = @input_events.MouseMotion
 
 ///|
-pub(all) enum MouseScrollUnit {
-  Line
-  Pixel
-} derive(ToJson, FromJson)
+pub type MouseScrollUnit = @input_events.MouseScrollUnit
 
 ///|
-pub struct MouseWheel {
-  unit : MouseScrollUnit
-  x : Float
-  y : Float
-} derive(ToJson, FromJson)
+pub type MouseWheel = @input_events.MouseWheel
 
 ///|
-pub struct PinchGesture {
-  delta : Float
-} derive(ToJson, FromJson)
+pub type PinchGesture = @input_events.PinchGesture
 
 ///|
-pub struct RotationGesture {
-  delta : Float
-} derive(ToJson, FromJson)
+pub type RotationGesture = @input_events.RotationGesture
 
 ///|
-pub struct DoubleTapGesture {
-  position : @math.Vec2
-} derive(ToJson, FromJson)
+pub type DoubleTapGesture = @input_events.DoubleTapGesture
 
 ///|
-pub(all) enum TouchPhase {
-  Started
-  Moved
-  Ended
-  Canceled
-} derive(ToJson, FromJson)
+pub type PanGesture = @input_events.PanGesture
 
 ///|
-pub struct TouchInput {
-  id : Int
-  phase : TouchPhase
-  position : @math.Vec2
-} derive(ToJson, FromJson)
+pub type TouchPhase = @input_events.TouchPhase
 
 ///|
-pub(all) enum FileDragAndDrop {
-  DroppedFile(String)
-  HoveredFile(String)
-  HoveredFileCanceled
-} derive(ToJson, FromJson)
+pub type TouchInput = @input_events.TouchInput
 
 ///|
 pub struct Touch {
@@ -770,59 +702,37 @@ pub fn AccumulatedMouseScroll::new_with_unit(
 }
 
 ///|
-let keyboard_input_message_key : @ecs.MessageKey[KeyboardInput] = @ecs.register_message(
-  debug_name="bevy_input::keyboard::KeyboardInput",
-)
+let keyboard_input_message_key : @ecs.MessageKey[KeyboardInput] = @input_events.ecs_key_keyboard_input
 
 ///|
-let keyboard_character_message_key : @ecs.MessageKey[KeyboardCharacter] = @ecs.register_message(
-  debug_name="bevy_input::keyboard::KeyboardCharacter",
-)
+let keyboard_character_message_key : @ecs.MessageKey[KeyboardCharacter] = @input_events.ecs_key_keyboard_character
 
 ///|
-let mouse_button_input_message_key : @ecs.MessageKey[MouseButtonInput] = @ecs.register_message(
-  debug_name="bevy_input::mouse::MouseButtonInput",
-)
+let keyboard_focus_lost_message_key : @ecs.MessageKey[KeyboardFocusLost] = @input_events.ecs_key_keyboard_focus_lost
 
 ///|
-let mouse_motion_message_key : @ecs.MessageKey[MouseMotion] = @ecs.register_message(
-  debug_name="bevy_input::mouse::MouseMotion",
-)
+let mouse_button_input_message_key : @ecs.MessageKey[MouseButtonInput] = @input_events.ecs_key_mouse_button_input
 
 ///|
-let cursor_moved_message_key : @ecs.MessageKey[CursorMoved] = @ecs.register_message(
-  debug_name="bevy_input::mouse::CursorMoved",
-)
+let mouse_motion_message_key : @ecs.MessageKey[MouseMotion] = @input_events.ecs_key_mouse_motion
 
 ///|
-let mouse_wheel_message_key : @ecs.MessageKey[MouseWheel] = @ecs.register_message(
-  debug_name="bevy_input::mouse::MouseWheel",
-)
+let mouse_wheel_message_key : @ecs.MessageKey[MouseWheel] = @input_events.ecs_key_mouse_wheel
 
 ///|
-let pinch_gesture_message_key : @ecs.MessageKey[PinchGesture] = @ecs.register_message(
-  debug_name="bevy_input::gestures::PinchGesture",
-)
+let pinch_gesture_message_key : @ecs.MessageKey[PinchGesture] = @input_events.ecs_key_pinch_gesture
 
 ///|
-let rotation_gesture_message_key : @ecs.MessageKey[RotationGesture] = @ecs.register_message(
-  debug_name="bevy_input::gestures::RotationGesture",
-)
+let rotation_gesture_message_key : @ecs.MessageKey[RotationGesture] = @input_events.ecs_key_rotation_gesture
 
 ///|
-let double_tap_gesture_message_key : @ecs.MessageKey[DoubleTapGesture] = @ecs.register_message(
-  debug_name="bevy_input::gestures::DoubleTapGesture",
-)
+let double_tap_gesture_message_key : @ecs.MessageKey[DoubleTapGesture] = @input_events.ecs_key_double_tap_gesture
 
 ///|
-let touch_input_message_key : @ecs.MessageKey[TouchInput] = @ecs.register_message(
-  debug_name="bevy_input::touch::TouchInput",
-)
+let pan_gesture_message_key : @ecs.MessageKey[PanGesture] = @input_events.ecs_key_pan_gesture
 
 ///|
-let file_drag_and_drop_message_key : @ecs.MessageKey[FileDragAndDrop] = @ecs.register_message(
-  debug_name="bevy_input::drag_and_drop::FileDragAndDrop",
-)
+let touch_input_message_key : @ecs.MessageKey[TouchInput] = @input_events.ecs_key_touch_input
 
 ///|
 pub let input_systems_set : @app.SystemSet = @app.system_set(
@@ -870,6 +780,9 @@ let input_primary_pointer_position_ref : Ref[@math.Vec2?] = Ref::new(None)
 let input_primary_pointer_delta_ref : Ref[@math.Vec2] = Ref::new(
   @math.Vec2::new(0.0F, 0.0F),
 )
+
+///|
+let input_window_focused_event_cursor_ref : Ref[Int] = Ref::new(0)
 
 ///|
 fn host_input_is_key_down(code : String) -> Bool {
@@ -924,6 +837,21 @@ pub fn host_input_mouse_y() -> Float {
 ///|
 pub fn host_input_has_cursor() -> Bool {
   @windowing.input_has_cursor()
+}
+
+///|
+pub fn host_input_cursor_window() -> Int {
+  @windowing.input_cursor_window()
+}
+
+///|
+pub fn host_input_cursor_entered_window() -> Int {
+  @windowing.input_cursor_entered_window()
+}
+
+///|
+pub fn host_input_cursor_left_window() -> Int {
+  @windowing.input_cursor_left_window()
 }
 
 ///|
@@ -1017,6 +945,46 @@ fn host_input_ime_event_cursor_end(index~ : Int) -> Int {
 }
 
 ///|
+fn host_input_pinch_gesture_event_count() -> Int {
+  @windowing.input_pinch_gesture_event_count()
+}
+
+///|
+fn host_input_pinch_gesture_event_delta(index~ : Int) -> Float {
+  @windowing.input_pinch_gesture_event_delta(index~)
+}
+
+///|
+fn host_input_rotation_gesture_event_count() -> Int {
+  @windowing.input_rotation_gesture_event_count()
+}
+
+///|
+fn host_input_rotation_gesture_event_delta(index~ : Int) -> Float {
+  @windowing.input_rotation_gesture_event_delta(index~)
+}
+
+///|
+fn host_input_pan_gesture_event_count() -> Int {
+  @windowing.input_pan_gesture_event_count()
+}
+
+///|
+fn host_input_pan_gesture_event_x(index~ : Int) -> Float {
+  @windowing.input_pan_gesture_event_x(index~)
+}
+
+///|
+fn host_input_pan_gesture_event_y(index~ : Int) -> Float {
+  @windowing.input_pan_gesture_event_y(index~)
+}
+
+///|
+fn host_input_double_tap_gesture_event_count() -> Int {
+  @windowing.input_double_tap_gesture_event_count()
+}
+
+///|
 fn host_input_touch_event_count() -> Int {
   @windowing.input_touch_event_count()
 }
@@ -1049,6 +1017,11 @@ fn host_input_drag_and_drop_event_count() -> Int {
 ///|
 fn host_input_drag_and_drop_event_kind(index~ : Int) -> Int {
   @windowing.input_drag_and_drop_event_kind(index~)
+}
+
+///|
+fn host_input_drag_and_drop_event_window(index~ : Int) -> Int {
+  @windowing.input_drag_and_drop_event_window(index~)
 }
 
 ///|
@@ -1470,29 +1443,82 @@ fn input_drag_and_drop_event_text(index : Int) -> String? {
 }
 
 ///|
-fn input_drag_and_drop_event_at(index : Int) -> FileDragAndDrop? {
+fn input_drag_and_drop_event_at(
+  world : @ecs.World,
+  index : Int,
+) -> @window.FileDragAndDrop? {
+  let host_window = host_input_drag_and_drop_event_window(index~)
+  if host_window < 0 {
+    return None
+  }
+  guard @window.window_entity_for_host(world, host_window)
+    is Some(window_entity) else {
+    return None
+  }
   let kind = host_input_drag_and_drop_event_kind(index~)
   match kind {
     0 =>
       if input_drag_and_drop_event_text(index) is Some(path) {
-        Some(FileDragAndDrop::DroppedFile(path))
+        Some(@window.FileDragAndDrop::DroppedFile(window_entity, path))
       } else {
         None
       }
     1 =>
       if input_drag_and_drop_event_text(index) is Some(path) {
-        Some(FileDragAndDrop::HoveredFile(path))
+        Some(@window.FileDragAndDrop::HoveredFile(window_entity, path))
       } else {
         None
       }
-    2 => Some(FileDragAndDrop::HoveredFileCanceled)
+    2 => Some(@window.FileDragAndDrop::HoveredFileCanceled(window_entity))
     _ => None
   }
 }
 
 ///|
+fn input_has_focused_window(world : @ecs.World) -> Bool {
+  let entities : Array[@core.Entity] = []
+  world
+  .query_entities_filtered(@ecs.With::new(@window.ecs_key_window))
+  .view(fn(entity) { entities.push(entity) })
+  for entity in entities {
+    if (try! world.get_component(entity) : @window.Window?) is Some(window) {
+      if window.focused {
+        return true
+      }
+    }
+  }
+  false
+}
+
+///|
+fn input_emit_keyboard_focus_lost(world : @ecs.World) -> Unit {
+  if !world.contains_message(@window.WindowFocused::message()) {
+    return
+  }
+  let focused_reader = world.message_reader(
+    @window.WindowFocused::message(),
+    input_window_focused_event_cursor_ref,
+  )
+  let focused_events = try focused_reader.read() catch {
+    _ => []
+  } noraise {
+    value => value
+  }
+  let mut saw_focus_loss = false
+  for event in focused_events {
+    if !event.focused {
+      saw_focus_loss = true
+    }
+  }
+  if saw_focus_loss && !input_has_focused_window(world) {
+    @window.window_emit_keyboard_focus_lost(world, @window.KeyboardFocusLost::{
+
+    })
+  }
+}
+
+///|
 pub fn input_poll_keyboard_system(world : @ecs.World) -> Unit {
-  let keyboard_writer = world.message_writer(keyboard_input_message_key)
   let character_writer = world.message_writer(keyboard_character_message_key)
   let keyboard_event_count = host_input_keyboard_event_count()
   for i in 0..<keyboard_event_count {
@@ -1509,15 +1535,13 @@ pub fn input_poll_keyboard_system(world : @ecs.World) -> Unit {
     } else {
       None
     }
-    ignore(
-      keyboard_writer.write(KeyboardInput::{
-        key_code: code,
-        logical_key,
-        state,
-        repeat: host_input_keyboard_event_repeat(index=i),
-        text,
-      }),
-    )
+    @window.window_emit_keyboard_input(world, @window.KeyboardInput::{
+      key_code: code,
+      logical_key,
+      state,
+      repeat: host_input_keyboard_event_repeat(index=i),
+      text,
+    })
   }
   let text_event_count = host_input_text_event_count()
   for i in 0..<text_event_count {
@@ -1525,24 +1549,21 @@ pub fn input_poll_keyboard_system(world : @ecs.World) -> Unit {
       ignore(character_writer.write(KeyboardCharacter::{ character: text }))
     }
   }
+  input_emit_keyboard_focus_lost(world)
   let ime_event_count = host_input_ime_event_count()
-  if world.contains_message(@window.Ime::message()) {
-    let ime_writer = world.message_writer(@window.Ime::message())
-    for i in 0..<ime_event_count {
-      if input_ime_event_at(world, i) is Some(ime) {
-        ignore(ime_writer.write(ime))
-      }
+  for i in 0..<ime_event_count {
+    if input_ime_event_at(world, i) is Some(ime) {
+      @window.window_emit_ime(world, ime)
     }
   }
 }
 
 ///|
 pub fn input_poll_drag_and_drop_system(world : @ecs.World) -> Unit {
-  let writer = world.message_writer(file_drag_and_drop_message_key)
   let event_count = host_input_drag_and_drop_event_count()
   for i in 0..<event_count {
-    if input_drag_and_drop_event_at(i) is Some(event) {
-      ignore(writer.write(event))
+    if input_drag_and_drop_event_at(world, i) is Some(event) {
+      @window.window_emit_file_drag_and_drop(world, event)
     }
   }
 }
@@ -1633,32 +1654,44 @@ fn active_touches_remove(active : Array[Touch], id : Int) -> Unit {
 pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   ensure_input_resources(world, tick)
-  let mouse_button_writer = world.message_writer(mouse_button_input_message_key)
-  let mouse_motion_writer = world.message_writer(mouse_motion_message_key)
-  let cursor_moved_writer = world.message_writer(cursor_moved_message_key)
-  let mouse_wheel_writer = world.message_writer(mouse_wheel_message_key)
-  let pinch_gesture_writer = world.message_writer(pinch_gesture_message_key)
-  let rotation_gesture_writer = world.message_writer(
-    rotation_gesture_message_key,
-  )
-  let touch_input_writer = world.message_writer(touch_input_message_key)
 
   for button in mouse_event_buttons {
     if mouse_button_just_pressed(button) {
-      ignore(
-        mouse_button_writer.write(MouseButtonInput::{ button, state: Pressed }),
-      )
+      @window.window_emit_mouse_button_input(world, @window.MouseButtonInput::{
+        button,
+        state: Pressed,
+      })
     }
     if mouse_button_just_released(button) {
-      ignore(
-        mouse_button_writer.write(MouseButtonInput::{ button, state: Released }),
-      )
+      @window.window_emit_mouse_button_input(world, @window.MouseButtonInput::{
+        button,
+        state: Released,
+      })
     }
   }
 
   let mut mouse_delta = @math.Vec2::new(0.0F, 0.0F)
+  let entered_host_window = host_input_cursor_entered_window()
+  if entered_host_window >= 0 {
+    if @window.window_entity_for_host(world, entered_host_window)
+      is Some(window_entity) {
+      @window.window_emit_cursor_entered(world, @window.CursorEntered::{
+        window: window_entity,
+      })
+    }
+  }
+  let left_host_window = host_input_cursor_left_window()
+  if left_host_window >= 0 {
+    if @window.window_entity_for_host(world, left_host_window)
+      is Some(window_entity) {
+      @window.window_emit_cursor_left(world, @window.CursorLeft::{
+        window: window_entity,
+      })
+    }
+  }
   let current_position_opt = mouse_position()
-  if current_position_opt is Some(current_position) {
+  let cursor_host_window = host_input_cursor_window()
+  if current_position_opt is Some(current_position) && cursor_host_window >= 0 {
     let delta_opt = match input_last_mouse_position_ref.val {
       Some(last_position) => {
         let delta = @math.Vec2::sub(current_position, last_position)
@@ -1670,40 +1703,53 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
       }
       None => None
     }
-    ignore(
-      cursor_moved_writer.write(CursorMoved::{
+    if @window.window_entity_for_host(world, cursor_host_window)
+      is Some(window_entity) {
+      @window.window_emit_cursor_moved(world, @window.CursorMoved::{
+        window: window_entity,
         position: current_position,
         delta: delta_opt,
-      }),
-    )
+      })
+    }
     if delta_opt is Some(delta) {
       mouse_delta = delta
-      ignore(mouse_motion_writer.write(MouseMotion::{ delta, }))
+      @window.window_emit_mouse_motion(world, @window.MouseMotion::{ delta, })
     }
   }
   input_last_mouse_position_ref.val = current_position_opt
 
   let wheel_delta = mouse_wheel_delta()
   if !vec2_is_zero(wheel_delta) {
-    ignore(
-      mouse_wheel_writer.write(MouseWheel::{
-        unit: MouseScrollUnit::Line,
-        x: wheel_delta.x,
-        y: wheel_delta.y,
-      }),
-    )
+    @window.window_emit_mouse_wheel(world, @window.MouseWheel::{
+      unit: MouseScrollUnit::Line,
+      x: wheel_delta.x,
+      y: wheel_delta.y,
+    })
   }
-  // Gesture event shapes are kept for Bevy API surface parity.
-  // Runtime backends do not provide gesture sources yet, so emission stays dormant.
-  let pinch_delta = wheel_delta.x
-  if pinch_delta > 1_000_000.0F || pinch_delta < -1_000_000.0F {
-    ignore(pinch_gesture_writer.write(PinchGesture::{ delta: pinch_delta }))
+  let pinch_gesture_event_count = host_input_pinch_gesture_event_count()
+  for i in 0..<pinch_gesture_event_count {
+    @window.window_emit_pinch_gesture(world, @window.PinchGesture::{
+      delta: host_input_pinch_gesture_event_delta(index=i),
+    })
   }
-  let rotation_delta = wheel_delta.y
-  if rotation_delta > 1_000_000.0F || rotation_delta < -1_000_000.0F {
-    ignore(
-      rotation_gesture_writer.write(RotationGesture::{ delta: rotation_delta }),
-    )
+  let rotation_gesture_event_count = host_input_rotation_gesture_event_count()
+  for i in 0..<rotation_gesture_event_count {
+    @window.window_emit_rotation_gesture(world, @window.RotationGesture::{
+      delta: host_input_rotation_gesture_event_delta(index=i),
+    })
+  }
+  let pan_gesture_event_count = host_input_pan_gesture_event_count()
+  for i in 0..<pan_gesture_event_count {
+    @window.window_emit_pan_gesture(world, @window.PanGesture::{
+      delta: @math.Vec2::new(
+        host_input_pan_gesture_event_x(index=i),
+        host_input_pan_gesture_event_y(index=i),
+      ),
+    })
+  }
+  let double_tap_gesture_event_count = host_input_double_tap_gesture_event_count()
+  for _ in 0..<double_tap_gesture_event_count {
+    @window.window_emit_double_tap_gesture(world, @window.DoubleTapGesture::{  })
   }
 
   if (try! world.get_resource_ref_mut(AccumulatedMouseMotion::resource(), tick))
@@ -1746,23 +1792,17 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
       TouchPhase::Ended => {
         active_touches_remove(active_touches, touch_id)
         touches.just_released.push(touch)
-        // Keep `DoubleTapGesture` constructed for API surface parity while
-        // dedicated host-side gesture events are not wired yet.
-        let probe = DoubleTapGesture::{ position, }
-        probe |> ignore
       }
       TouchPhase::Canceled => {
         active_touches_remove(active_touches, touch_id)
         touches.just_canceled.push(touch)
       }
     }
-    ignore(
-      touch_input_writer.write(TouchInput::{
-        id: touch_id,
-        phase: touch_phase,
-        position,
-      }),
-    )
+    @window.window_emit_touch_input(world, @window.TouchInput::{
+      id: touch_id,
+      phase: touch_phase,
+      position,
+    })
   }
   for touch in active_touches {
     touches.active.push(touch)
@@ -1790,61 +1830,6 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
   }
   input_primary_pointer_position_ref.val = primary_pointer_position
   input_primary_pointer_delta_ref.val = primary_pointer_delta
-}
-
-///|
-pub impl @ecs.Message for KeyboardInput with message() {
-  keyboard_input_message_key
-}
-
-///|
-pub impl @ecs.Message for KeyboardCharacter with message() {
-  keyboard_character_message_key
-}
-
-///|
-pub impl @ecs.Message for MouseButtonInput with message() {
-  mouse_button_input_message_key
-}
-
-///|
-pub impl @ecs.Message for MouseMotion with message() {
-  mouse_motion_message_key
-}
-
-///|
-pub impl @ecs.Message for CursorMoved with message() {
-  cursor_moved_message_key
-}
-
-///|
-pub impl @ecs.Message for MouseWheel with message() {
-  mouse_wheel_message_key
-}
-
-///|
-pub impl @ecs.Message for PinchGesture with message() {
-  pinch_gesture_message_key
-}
-
-///|
-pub impl @ecs.Message for RotationGesture with message() {
-  rotation_gesture_message_key
-}
-
-///|
-pub impl @ecs.Message for DoubleTapGesture with message() {
-  double_tap_gesture_message_key
-}
-
-///|
-pub impl @ecs.Message for TouchInput with message() {
-  touch_input_message_key
-}
-
-///|
-pub impl @ecs.Message for FileDragAndDrop with message() {
-  file_drag_and_drop_message_key
 }
 
 ///|
@@ -2011,15 +1996,15 @@ pub fn input_plugin_with(
   .init_resource(Touches::new)
   .add_message(keyboard_input_message_key)
   .add_message(keyboard_character_message_key)
+  .add_message(keyboard_focus_lost_message_key)
   .add_message(mouse_button_input_message_key)
   .add_message(mouse_motion_message_key)
-  .add_message(cursor_moved_message_key)
   .add_message(mouse_wheel_message_key)
   .add_message(pinch_gesture_message_key)
   .add_message(rotation_gesture_message_key)
   .add_message(double_tap_gesture_message_key)
+  .add_message(pan_gesture_message_key)
   .add_message(touch_input_message_key)
-  .add_message(file_drag_and_drop_message_key)
   .add_pre_update_system_config(
     @app.system(input_poll_keyboard_system).in_set(input_systems_set),
   )

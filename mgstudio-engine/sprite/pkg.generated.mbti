@@ -8,6 +8,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
+  "Milky2018/mgstudio/input/events",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/visibility",
@@ -695,16 +696,16 @@ pub(all) struct PanCamera {
   mut min_zoom : Float
   mut max_zoom : Float
   mut zoom_speed : Float
-  mut key_zoom_in : @window.KeyCode?
-  mut key_zoom_out : @window.KeyCode?
+  mut key_zoom_in : @events.KeyCode?
+  mut key_zoom_out : @events.KeyCode?
   mut pan_speed : Float
-  mut key_up : @window.KeyCode?
-  mut key_down : @window.KeyCode?
-  mut key_left : @window.KeyCode?
-  mut key_right : @window.KeyCode?
+  mut key_up : @events.KeyCode?
+  mut key_down : @events.KeyCode?
+  mut key_left : @events.KeyCode?
+  mut key_right : @events.KeyCode?
   mut rotation_speed : Float
-  mut key_rotate_ccw : @window.KeyCode?
-  mut key_rotate_cw : @window.KeyCode?
+  mut key_rotate_ccw : @events.KeyCode?
+  mut key_rotate_cw : @events.KeyCode?
 }
 pub fn PanCamera::default() -> Self
 pub impl @ecs.Component for PanCamera

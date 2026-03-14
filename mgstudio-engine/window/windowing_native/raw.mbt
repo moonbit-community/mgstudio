@@ -31,6 +31,30 @@ const MAX_KEYBOARD_EVENTS : Int = 512
 const MAX_DRAG_EVENTS : Int = 64
 
 ///|
+const MAX_WINDOW_THEME_EVENTS : Int = 64
+
+///|
+const MAX_WINDOW_OCCLUDED_EVENTS : Int = 64
+
+///|
+const MAX_APP_LIFECYCLE_EVENTS : Int = 16
+
+///|
+const MAX_PINCH_GESTURE_EVENTS : Int = 64
+
+///|
+const MAX_ROTATION_GESTURE_EVENTS : Int = 64
+
+///|
+const MAX_PAN_GESTURE_EVENTS : Int = 64
+
+///|
+const MAX_DOUBLE_TAP_GESTURE_EVENTS : Int = 64
+
+///|
+const MAX_RAW_WINIT_WINDOW_EVENTS : Int = 1024
+
+///|
 const ELEMENT_STATE_PRESSED : Int = 1
 
 ///|
@@ -52,6 +76,27 @@ const IME_EVENT_DISABLED : Int = 4
 const IME_EVENT_DELETE_SURROUNDING : Int = 5
 
 ///|
+const WINDOW_THEME_LIGHT : Int = 1
+
+///|
+const WINDOW_THEME_DARK : Int = 2
+
+///|
+const APP_LIFECYCLE_IDLE : Int = 0
+
+///|
+const APP_LIFECYCLE_RUNNING : Int = 1
+
+///|
+const APP_LIFECYCLE_WILL_SUSPEND : Int = 2
+
+///|
+const APP_LIFECYCLE_SUSPENDED : Int = 3
+
+///|
+const APP_LIFECYCLE_WILL_RESUME : Int = 4
+
+///|
 const DEFAULT_FRAME_LIMIT : Int = 0
 
 ///|
@@ -59,6 +104,7 @@ pub type NativeWindowHandle = Int
 
 ///|
 priv struct DragEvent {
+  window : Int
   kind : Int
   text : Bytes
 }
@@ -79,6 +125,87 @@ priv struct ImeEvent {
   cursor_start : Int
   cursor_end : Int
 }
+
+///|
+priv struct WindowThemeEvent {
+  window : Int
+  theme : Int
+}
+
+///|
+priv struct WindowOccludedEvent {
+  window : Int
+  occluded : Bool
+}
+
+///|
+priv struct ScalarGestureEvent {
+  window : Int
+  delta : Float
+}
+
+///|
+priv struct PanGestureEvent {
+  window : Int
+  x : Float
+  y : Float
+}
+
+///|
+priv struct DoubleTapGestureEvent {
+  window : Int
+}
+
+///|
+pub(all) enum RawWinitWindowEventData {
+  ActivationTokenDone(
+    @window_core.AsyncRequestSerial,
+    @window_core.ActivationToken
+  )
+  CloseRequested
+  CursorEntered(@window_core.DeviceId?)
+  CursorLeft(@window_core.DeviceId?)
+  CursorMoved(@window_core.DeviceId?, @window_dpi.PhysicalPositionF64)
+  Destroyed
+  DoubleTapGesture(@window_core.DeviceId?)
+  DroppedFile(String)
+  Focused(Bool)
+  HoveredFile(String)
+  HoveredFileCancelled
+  Ime(@window_core.Ime)
+  KeyboardInput(@window_core.DeviceId?, @window_core.KeyEvent, Bool)
+  ModifiersChanged(@window_core.Modifiers)
+  MouseInput(
+    @window_core.DeviceId?,
+    @window_core.ElementState,
+    @window_core.MouseButton
+  )
+  MouseWheel(
+    @window_core.DeviceId?,
+    @window_core.MouseScrollDelta,
+    @window_core.TouchPhase
+  )
+  Moved(@window_dpi.PhysicalPosition)
+  Occluded(Bool)
+  PanGesture(
+    @window_core.DeviceId?,
+    @window_dpi.PhysicalPositionF64,
+    @window_core.TouchPhase
+  )
+  PinchGesture(@window_core.DeviceId?, Double, @window_core.TouchPhase)
+  RedrawRequested
+  Resized(@window_dpi.PhysicalSize)
+  RotationGesture(@window_core.DeviceId?, Double, @window_core.TouchPhase)
+  ScaleFactorChanged(Double, @window_dpi.PhysicalSize)
+  ThemeChanged(@window_core.Theme)
+  TouchpadPressure(@window_core.DeviceId?, Double, Int)
+} derive(Eq, Show)
+
+///|
+pub(all) struct RawWinitWindowEventSnapshot {
+  window_id : Int
+  event : RawWinitWindowEventData
+} derive(Eq, Show)
 
 ///|
 fn new_bool_state(size : Int) -> Array[Bool] {
@@ -203,6 +330,15 @@ let mouse_just_released_ref : Ref[Array[Bool]] = Ref::new(
 let has_cursor_ref : Ref[Bool] = Ref::new(false)
 
 ///|
+let cursor_window_ref : Ref[Int] = Ref::new(-1)
+
+///|
+let cursor_entered_window_ref : Ref[Int] = Ref::new(-1)
+
+///|
+let cursor_left_window_ref : Ref[Int] = Ref::new(-1)
+
+///|
 let mouse_x_ref : Ref[Float] = Ref::new(0.0)
 
 ///|
@@ -228,6 +364,35 @@ let drag_events_ref : Ref[Array[DragEvent]] = Ref::new([])
 
 ///|
 let drag_hovered_path_ref : Ref[Bytes?] = Ref::new(None)
+
+///|
+let drag_hovered_window_ref : Ref[Int] = Ref::new(-1)
+
+///|
+let window_theme_events_ref : Ref[Array[WindowThemeEvent]] = Ref::new([])
+
+///|
+let window_occluded_events_ref : Ref[Array[WindowOccludedEvent]] = Ref::new([])
+
+///|
+let app_lifecycle_events_ref : Ref[Array[Int]] = Ref::new([])
+
+///|
+let pinch_gesture_events_ref : Ref[Array[ScalarGestureEvent]] = Ref::new([])
+
+///|
+let rotation_gesture_events_ref : Ref[Array[ScalarGestureEvent]] = Ref::new([])
+
+///|
+let pan_gesture_events_ref : Ref[Array[PanGestureEvent]] = Ref::new([])
+
+///|
+let double_tap_gesture_events_ref : Ref[Array[DoubleTapGestureEvent]] = Ref::new([],
+)
+
+///|
+let raw_winit_window_events_ref : Ref[Array[RawWinitWindowEventSnapshot]] = Ref::new([],
+)
 
 ///|
 let detached_accessibility_requested_ref : Ref[Bool] = Ref::new(false)
@@ -373,6 +538,13 @@ pub fn take_accessibility_actions() -> Array[@moon_accesskit.ActionRequest] {
 }
 
 ///|
+pub fn take_raw_winit_window_events() -> Array[RawWinitWindowEventSnapshot] {
+  let events = raw_winit_window_events_ref.val
+  raw_winit_window_events_ref.val = []
+  events
+}
+
+///|
 fn bytes_has_non_control(text : Bytes) -> Bool {
   for i in 0..<text.length() {
     if text[i].to_int() >= 32 {
@@ -397,11 +569,136 @@ fn push_text_event(text : Bytes) -> Unit {
 }
 
 ///|
-fn push_drag_event(kind : Int, text : Bytes) -> Unit {
+fn push_drag_event(window : Int, kind : Int, text : Bytes) -> Unit {
   if drag_events_ref.val.length() >= MAX_DRAG_EVENTS {
     return
   }
-  drag_events_ref.val.push(DragEvent::{ kind, text })
+  drag_events_ref.val.push(DragEvent::{ window, kind, text })
+}
+
+///|
+fn push_window_theme_event(window : Int, theme : @window_core.Theme) -> Unit {
+  if window_theme_events_ref.val.length() >= MAX_WINDOW_THEME_EVENTS {
+    return
+  }
+  let encoded_theme = match theme {
+    @window_core.Theme::Light => WINDOW_THEME_LIGHT
+    @window_core.Theme::Dark => WINDOW_THEME_DARK
+  }
+  window_theme_events_ref.val.push(WindowThemeEvent::{
+    window,
+    theme: encoded_theme,
+  })
+}
+
+///|
+fn push_window_occluded_event(window : Int, occluded : Bool) -> Unit {
+  if window_occluded_events_ref.val.length() >= MAX_WINDOW_OCCLUDED_EVENTS {
+    return
+  }
+  window_occluded_events_ref.val.push(WindowOccludedEvent::{ window, occluded })
+}
+
+///|
+fn push_app_lifecycle_event(kind : Int) -> Unit {
+  if kind != APP_LIFECYCLE_IDLE &&
+    kind != APP_LIFECYCLE_RUNNING &&
+    kind != APP_LIFECYCLE_WILL_SUSPEND &&
+    kind != APP_LIFECYCLE_SUSPENDED &&
+    kind != APP_LIFECYCLE_WILL_RESUME {
+    return
+  }
+  if app_lifecycle_events_ref.val.length() >= MAX_APP_LIFECYCLE_EVENTS {
+    return
+  }
+  app_lifecycle_events_ref.val.push(kind)
+}
+
+///|
+fn push_pinch_gesture_event(window : Int, delta : Float) -> Unit {
+  if pinch_gesture_events_ref.val.length() >= MAX_PINCH_GESTURE_EVENTS {
+    return
+  }
+  pinch_gesture_events_ref.val.push(ScalarGestureEvent::{ window, delta })
+}
+
+///|
+fn push_rotation_gesture_event(window : Int, delta : Float) -> Unit {
+  if rotation_gesture_events_ref.val.length() >= MAX_ROTATION_GESTURE_EVENTS {
+    return
+  }
+  rotation_gesture_events_ref.val.push(ScalarGestureEvent::{ window, delta })
+}
+
+///|
+fn push_pan_gesture_event(window : Int, x : Float, y : Float) -> Unit {
+  if pan_gesture_events_ref.val.length() >= MAX_PAN_GESTURE_EVENTS {
+    return
+  }
+  pan_gesture_events_ref.val.push(PanGestureEvent::{ window, x, y })
+}
+
+///|
+fn push_double_tap_gesture_event(window : Int) -> Unit {
+  if double_tap_gesture_events_ref.val.length() >= MAX_DOUBLE_TAP_GESTURE_EVENTS {
+    return
+  }
+  double_tap_gesture_events_ref.val.push(DoubleTapGestureEvent::{ window, })
+}
+
+///|
+fn raw_winit_window_event_data_from_winit_event(
+  event : @window_core.WinitWindowEvent,
+) -> RawWinitWindowEventData {
+  match event {
+    ActivationTokenDone(serial, token) => ActivationTokenDone(serial, token)
+    CloseRequested => CloseRequested
+    CursorEntered(device_id) => CursorEntered(device_id)
+    CursorLeft(device_id) => CursorLeft(device_id)
+    CursorMoved(device_id, position) => CursorMoved(device_id, position)
+    Destroyed => Destroyed
+    DoubleTapGesture(device_id) => DoubleTapGesture(device_id)
+    DroppedFile(path) => DroppedFile(path)
+    Focused(focused) => Focused(focused)
+    HoveredFile(path) => HoveredFile(path)
+    HoveredFileCancelled => HoveredFileCancelled
+    Ime(ime_event) => Ime(ime_event)
+    KeyboardInput(device_id, key_event, is_synthetic) =>
+      KeyboardInput(device_id, key_event, is_synthetic)
+    ModifiersChanged(modifiers) => ModifiersChanged(modifiers)
+    MouseInput(device_id, state, button) => MouseInput(device_id, state, button)
+    MouseWheel(device_id, delta, phase) => MouseWheel(device_id, delta, phase)
+    Moved(position) => Moved(position)
+    Occluded(occluded) => Occluded(occluded)
+    PanGesture(device_id, delta, phase) => PanGesture(device_id, delta, phase)
+    PinchGesture(device_id, delta, phase) =>
+      PinchGesture(device_id, delta, phase)
+    RedrawRequested => RedrawRequested
+    Resized(size) => Resized(size)
+    RotationGesture(device_id, delta, phase) =>
+      RotationGesture(device_id, delta, phase)
+    ScaleFactorChanged(scale_factor, writer) =>
+      ScaleFactorChanged(scale_factor, writer.surface_size())
+    ThemeChanged(theme) => ThemeChanged(theme)
+    TouchpadPressure(device_id, pressure, stage) =>
+      TouchpadPressure(device_id, pressure, stage)
+  }
+}
+
+///|
+fn push_raw_winit_window_events(
+  window_id : Int,
+  events : Array[@window_core.WinitWindowEvent],
+) -> Unit {
+  for event in events {
+    if raw_winit_window_events_ref.val.length() >= MAX_RAW_WINIT_WINDOW_EVENTS {
+      return
+    }
+    raw_winit_window_events_ref.val.push(RawWinitWindowEventSnapshot::{
+      window_id,
+      event: raw_winit_window_event_data_from_winit_event(event),
+    })
+  }
 }
 
 ///|
@@ -519,6 +816,73 @@ fn key_id_from_physical_key(physical_key : @window_core.PhysicalKey) -> Int {
   match physical_key {
     Code(key_code) => key_id_from_key_code(key_code)
     Unidentified(_) => -1
+  }
+}
+
+///|
+fn key_code_from_name(code : String) -> @window_core.KeyCode? {
+  match code {
+    "KeyA" => Some(KeyA)
+    "KeyB" => Some(KeyB)
+    "KeyC" => Some(KeyC)
+    "KeyD" => Some(KeyD)
+    "KeyE" => Some(KeyE)
+    "KeyF" => Some(KeyF)
+    "KeyG" => Some(KeyG)
+    "KeyH" => Some(KeyH)
+    "KeyI" => Some(KeyI)
+    "KeyJ" => Some(KeyJ)
+    "KeyK" => Some(KeyK)
+    "KeyL" => Some(KeyL)
+    "KeyM" => Some(KeyM)
+    "KeyN" => Some(KeyN)
+    "KeyO" => Some(KeyO)
+    "KeyP" => Some(KeyP)
+    "KeyQ" => Some(KeyQ)
+    "KeyR" => Some(KeyR)
+    "KeyS" => Some(KeyS)
+    "KeyT" => Some(KeyT)
+    "KeyU" => Some(KeyU)
+    "KeyV" => Some(KeyV)
+    "KeyW" => Some(KeyW)
+    "KeyX" => Some(KeyX)
+    "KeyY" => Some(KeyY)
+    "KeyZ" => Some(KeyZ)
+    "Digit1" => Some(Digit1)
+    "Digit2" => Some(Digit2)
+    "Digit3" => Some(Digit3)
+    "Digit4" => Some(Digit4)
+    "Digit5" => Some(Digit5)
+    "Digit6" => Some(Digit6)
+    "Digit7" => Some(Digit7)
+    "Digit8" => Some(Digit8)
+    "Tab" => Some(Tab)
+    "Enter" => Some(Enter)
+    "Backspace" => Some(Backspace)
+    "ShiftLeft" => Some(ShiftLeft)
+    "ShiftRight" => Some(ShiftRight)
+    "ControlLeft" => Some(ControlLeft)
+    "ControlRight" => Some(ControlRight)
+    "ArrowUp" => Some(ArrowUp)
+    "ArrowDown" => Some(ArrowDown)
+    "ArrowLeft" => Some(ArrowLeft)
+    "ArrowRight" => Some(ArrowRight)
+    "PageUp" => Some(PageUp)
+    "PageDown" => Some(PageDown)
+    "Space" => Some(Space)
+    "Escape" => Some(Escape)
+    "Semicolon" => Some(Semicolon)
+    "Comma" => Some(Comma)
+    "Period" => Some(Period)
+    "Slash" => Some(Slash)
+    "Minus" => Some(Minus)
+    "Equal" => Some(Equal)
+    "NumpadAdd" => Some(NumpadAdd)
+    "NumpadSubtract" => Some(NumpadSubtract)
+    "BracketLeft" => Some(BracketLeft)
+    "BracketRight" => Some(BracketRight)
+    "Quote" => Some(Quote)
+    _ => None
   }
 }
 
@@ -678,65 +1042,87 @@ fn process_ime_event(window : Int, ime_event : @window_core.Ime) -> Unit {
 }
 
 ///|
-fn process_drag_entered(paths : Array[String]) -> Unit {
+fn process_drag_entered(window : Int, paths : Array[String]) -> Unit {
   drag_hovered_path_ref.val = None
+  drag_hovered_window_ref.val = window
   for path in paths {
     let path_bytes = encode_utf8_bytes(path)
     if drag_hovered_path_ref.val is None {
       drag_hovered_path_ref.val = Some(path_bytes)
     }
-    push_drag_event(1, path_bytes)
+    push_drag_event(window, 1, path_bytes)
   }
 }
 
 ///|
-fn process_drag_moved() -> Unit {
+fn process_drag_moved(window : Int) -> Unit {
+  drag_hovered_window_ref.val = window
   match drag_hovered_path_ref.val {
-    Some(path) => push_drag_event(1, path)
+    Some(path) => push_drag_event(window, 1, path)
     None => ()
   }
 }
 
 ///|
-fn process_drag_dropped(paths : Array[String]) -> Unit {
+fn process_drag_dropped(window : Int, paths : Array[String]) -> Unit {
+  let hovered_window = if drag_hovered_window_ref.val >= 0 {
+    drag_hovered_window_ref.val
+  } else {
+    window
+  }
   if paths.length() > 0 {
     for path in paths {
-      push_drag_event(0, encode_utf8_bytes(path))
+      push_drag_event(window, 0, encode_utf8_bytes(path))
     }
   } else {
     match drag_hovered_path_ref.val {
-      Some(path) => push_drag_event(0, path)
+      Some(path) => push_drag_event(hovered_window, 0, path)
       None => ()
     }
   }
   drag_hovered_path_ref.val = None
+  drag_hovered_window_ref.val = -1
 }
 
 ///|
-fn process_drag_left() -> Unit {
+fn process_drag_left(window : Int) -> Unit {
   let path = match drag_hovered_path_ref.val {
     Some(value) => value
     None => Bytes::from_array([])
   }
+  let hovered_window = if drag_hovered_window_ref.val >= 0 {
+    drag_hovered_window_ref.val
+  } else {
+    window
+  }
   drag_hovered_path_ref.val = None
-  push_drag_event(2, path)
+  drag_hovered_window_ref.val = -1
+  push_drag_event(hovered_window, 2, path)
 }
 
 ///|
 fn process_window_event(window : Int, event : @window_core.WindowEvent) -> Unit {
+  push_raw_winit_window_events(window, event.into_winit_events())
   match event {
     CloseRequested => mark_window_closed(window)
     Destroyed => mark_window_closed(window)
     PointerMoved(_, position, _is_primary, _source) => {
       has_cursor_ref.val = true
+      cursor_window_ref.val = window
       set_pointer_position(position)
     }
     PointerEntered(_, position, _is_primary, _kind) => {
       has_cursor_ref.val = true
+      cursor_window_ref.val = window
+      cursor_entered_window_ref.val = window
       set_pointer_position(position)
     }
     PointerLeft(_, position, _is_primary, _kind) => {
       has_cursor_ref.val = false
+      cursor_left_window_ref.val = window
+      if cursor_window_ref.val == window {
+        cursor_window_ref.val = -1
+      }
       match position {
         Some(value) => set_pointer_position(value)
         None => ()
@@ -744,6 +1130,7 @@ fn process_window_event(window : Int, event : @window_core.WindowEvent) -> Unit 
     }
     PointerButton(_, state, position, _is_primary, source) => {
       has_cursor_ref.val = true
+      cursor_window_ref.val = window
       set_pointer_position(position)
       process_pointer_button(state, source)
     }
@@ -758,13 +1145,26 @@ fn process_window_event(window : Int, event : @window_core.WindowEvent) -> Unit 
           wheel_y_ref.val = wheel_y_ref.val + Float::from_double(position.y())
         }
       }
+    PinchGesture(_device_id, delta, _phase) =>
+      push_pinch_gesture_event(window, Float::from_double(delta))
+    RotationGesture(_device_id, delta, _phase) =>
+      push_rotation_gesture_event(window, Float::from_double(delta))
+    PanGesture(_device_id, delta, _phase) =>
+      push_pan_gesture_event(
+        window,
+        Float::from_double(delta.x()),
+        Float::from_double(delta.y()),
+      )
+    DoubleTapGesture(_device_id) => push_double_tap_gesture_event(window)
     KeyboardInput(_device_id, key_event, _is_synthetic) =>
       process_keyboard_input(key_event)
     Ime(ime_event) => process_ime_event(window, ime_event)
-    DragEntered(paths, _position) => process_drag_entered(paths)
-    DragMoved(_position) => process_drag_moved()
-    DragDropped(paths, _position) => process_drag_dropped(paths)
-    DragLeft(_position) => process_drag_left()
+    DragEntered(paths, _position) => process_drag_entered(window, paths)
+    DragMoved(_position) => process_drag_moved(window)
+    DragDropped(paths, _position) => process_drag_dropped(window, paths)
+    DragLeft(_position) => process_drag_left(window)
+    ThemeChanged(theme) => push_window_theme_event(window, theme)
+    Occluded(occluded) => push_window_occluded_event(window, occluded)
     _ => ()
   }
 }
@@ -777,6 +1177,24 @@ impl @window_macos.ApplicationHandler for NativePumpHandler with window_event(
   event,
 ) {
   process_window_event(window_id.into_raw(), event)
+}
+
+///|
+impl @window_macos.ApplicationHandler for NativePumpHandler with resumed(
+  _self,
+  _event_loop,
+) {
+  push_app_lifecycle_event(APP_LIFECYCLE_WILL_RESUME)
+  push_app_lifecycle_event(APP_LIFECYCLE_RUNNING)
+}
+
+///|
+impl @window_macos.ApplicationHandler for NativePumpHandler with suspended(
+  _self,
+  _event_loop,
+) {
+  push_app_lifecycle_event(APP_LIFECYCLE_WILL_SUSPEND)
+  push_app_lifecycle_event(APP_LIFECYCLE_SUSPENDED)
 }
 
 ///|
@@ -1211,11 +1629,40 @@ pub fn input_finish_frame() -> Unit {
   keyboard_events_ref.val.clear()
   ime_events_ref.val.clear()
   drag_events_ref.val.clear()
+  window_theme_events_ref.val.clear()
+  window_occluded_events_ref.val.clear()
+  app_lifecycle_events_ref.val.clear()
+  pinch_gesture_events_ref.val.clear()
+  rotation_gesture_events_ref.val.clear()
+  pan_gesture_events_ref.val.clear()
+  double_tap_gesture_events_ref.val.clear()
+  raw_winit_window_events_ref.val.clear()
+  cursor_entered_window_ref.val = -1
+  cursor_left_window_ref.val = -1
 }
 
 ///|
 pub fn input_has_cursor() -> Bool {
   has_cursor_ref.val
+}
+
+///|
+pub fn input_cursor_window() -> Int {
+  if has_cursor_ref.val {
+    cursor_window_ref.val
+  } else {
+    -1
+  }
+}
+
+///|
+pub fn input_cursor_entered_window() -> Int {
+  cursor_entered_window_ref.val
+}
+
+///|
+pub fn input_cursor_left_window() -> Int {
+  cursor_left_window_ref.val
 }
 
 ///|
@@ -1274,73 +1721,15 @@ pub fn input_is_mouse_button_just_released_by_id(button_id : Int) -> Bool {
 }
 
 ///|
+pub fn input_key_id_from_key_code(key_code : @window_core.KeyCode) -> Int {
+  key_id_from_key_code(key_code)
+}
+
+///|
 pub fn input_key_id(code : String) -> Int {
-  match code {
-    "KeyA" => 0
-    "KeyB" => 1
-    "KeyC" => 2
-    "KeyD" => 3
-    "KeyE" => 4
-    "KeyF" => 5
-    "KeyG" => 6
-    "KeyH" => 7
-    "KeyI" => 8
-    "KeyJ" => 9
-    "KeyK" => 10
-    "KeyL" => 11
-    "KeyM" => 12
-    "KeyN" => 13
-    "KeyO" => 14
-    "KeyP" => 15
-    "KeyQ" => 16
-    "KeyR" => 17
-    "KeyS" => 18
-    "KeyT" => 19
-    "KeyU" => 20
-    "KeyV" => 21
-    "KeyW" => 22
-    "KeyX" => 23
-    "KeyY" => 24
-    "KeyZ" => 25
-    "Digit1" => 26
-    "Digit2" => 27
-    "Digit3" => 28
-    "Digit4" => 29
-    "Digit5" => 30
-    "Digit6" => 31
-    "Digit7" => 32
-    "Digit8" => 33
-    "Digit9" => 34
-    "Digit0" => 35
-    "Tab" => 36
-    "Enter" => 37
-    "Backspace" => 38
-    "ShiftLeft" => 39
-    "ShiftRight" => 40
-    "ControlLeft" => 41
-    "ControlRight" => 42
-    "ArrowUp" => 43
-    "ArrowDown" => 44
-    "ArrowLeft" => 45
-    "ArrowRight" => 46
-    "PageUp" => 47
-    "PageDown" => 48
-    "Space" => 49
-    "Escape" => 50
-    "Semicolon" => 51
-    "Comma" => 52
-    "Period" => 53
-    "Slash" => 54
-    "Minus" => 55
-    "Equal" => 56
-    "NumpadAdd" => 62
-    "NumpadSubtract" => 63
-    "BracketLeft" => 57
-    "BracketRight" => 58
-    "Quote" => 59
-    "Backquote" => 60
-    "Backslash" => 61
-    _ => -1
+  match key_code_from_name(code) {
+    Some(key_code) => input_key_id_from_key_code(key_code)
+    None => -1
   }
 }
 
@@ -1556,6 +1945,90 @@ pub fn input_ime_event_cursor_end(index~ : Int) -> Int {
 }
 
 ///|
+pub fn input_pinch_gesture_event_count() -> Int {
+  pinch_gesture_events_ref.val.length()
+}
+
+///|
+pub fn input_pinch_gesture_event_window(index~ : Int) -> Int {
+  if index < 0 || index >= pinch_gesture_events_ref.val.length() {
+    return -1
+  }
+  pinch_gesture_events_ref.val[index].window
+}
+
+///|
+pub fn input_pinch_gesture_event_delta(index~ : Int) -> Float {
+  if index < 0 || index >= pinch_gesture_events_ref.val.length() {
+    return 0.0
+  }
+  pinch_gesture_events_ref.val[index].delta
+}
+
+///|
+pub fn input_rotation_gesture_event_count() -> Int {
+  rotation_gesture_events_ref.val.length()
+}
+
+///|
+pub fn input_rotation_gesture_event_window(index~ : Int) -> Int {
+  if index < 0 || index >= rotation_gesture_events_ref.val.length() {
+    return -1
+  }
+  rotation_gesture_events_ref.val[index].window
+}
+
+///|
+pub fn input_rotation_gesture_event_delta(index~ : Int) -> Float {
+  if index < 0 || index >= rotation_gesture_events_ref.val.length() {
+    return 0.0
+  }
+  rotation_gesture_events_ref.val[index].delta
+}
+
+///|
+pub fn input_pan_gesture_event_count() -> Int {
+  pan_gesture_events_ref.val.length()
+}
+
+///|
+pub fn input_pan_gesture_event_window(index~ : Int) -> Int {
+  if index < 0 || index >= pan_gesture_events_ref.val.length() {
+    return -1
+  }
+  pan_gesture_events_ref.val[index].window
+}
+
+///|
+pub fn input_pan_gesture_event_x(index~ : Int) -> Float {
+  if index < 0 || index >= pan_gesture_events_ref.val.length() {
+    return 0.0
+  }
+  pan_gesture_events_ref.val[index].x
+}
+
+///|
+pub fn input_pan_gesture_event_y(index~ : Int) -> Float {
+  if index < 0 || index >= pan_gesture_events_ref.val.length() {
+    return 0.0
+  }
+  pan_gesture_events_ref.val[index].y
+}
+
+///|
+pub fn input_double_tap_gesture_event_count() -> Int {
+  double_tap_gesture_events_ref.val.length()
+}
+
+///|
+pub fn input_double_tap_gesture_event_window(index~ : Int) -> Int {
+  if index < 0 || index >= double_tap_gesture_events_ref.val.length() {
+    return -1
+  }
+  double_tap_gesture_events_ref.val[index].window
+}
+
+///|
 pub fn input_touch_event_count() -> Int {
   0
 }
@@ -1598,6 +2071,14 @@ pub fn input_drag_and_drop_event_kind(index~ : Int) -> Int {
 }
 
 ///|
+pub fn input_drag_and_drop_event_window(index~ : Int) -> Int {
+  if index < 0 || index >= drag_events_ref.val.length() {
+    return -1
+  }
+  drag_events_ref.val[index].window
+}
+
+///|
 pub fn input_drag_and_drop_event_len(index~ : Int) -> Int {
   if index < 0 || index >= drag_events_ref.val.length() {
     return 0
@@ -1615,6 +2096,61 @@ pub fn input_drag_and_drop_event_code_unit(index~ : Int, offset~ : Int) -> Int {
     return 0
   }
   text[offset].to_int()
+}
+
+///|
+pub fn input_window_theme_event_count() -> Int {
+  window_theme_events_ref.val.length()
+}
+
+///|
+pub fn input_window_theme_event_window(index~ : Int) -> Int {
+  if index < 0 || index >= window_theme_events_ref.val.length() {
+    return -1
+  }
+  window_theme_events_ref.val[index].window
+}
+
+///|
+pub fn input_window_theme_event_theme(index~ : Int) -> Int {
+  if index < 0 || index >= window_theme_events_ref.val.length() {
+    return 0
+  }
+  window_theme_events_ref.val[index].theme
+}
+
+///|
+pub fn input_window_occluded_event_count() -> Int {
+  window_occluded_events_ref.val.length()
+}
+
+///|
+pub fn input_window_occluded_event_window(index~ : Int) -> Int {
+  if index < 0 || index >= window_occluded_events_ref.val.length() {
+    return -1
+  }
+  window_occluded_events_ref.val[index].window
+}
+
+///|
+pub fn input_window_occluded_event_occluded(index~ : Int) -> Bool {
+  if index < 0 || index >= window_occluded_events_ref.val.length() {
+    return false
+  }
+  window_occluded_events_ref.val[index].occluded
+}
+
+///|
+pub fn input_app_lifecycle_event_count() -> Int {
+  app_lifecycle_events_ref.val.length()
+}
+
+///|
+pub fn input_app_lifecycle_event_kind(index~ : Int) -> Int {
+  if index < 0 || index >= app_lifecycle_events_ref.val.length() {
+    return APP_LIFECYCLE_IDLE
+  }
+  app_lifecycle_events_ref.val[index]
 }
 
 ///|

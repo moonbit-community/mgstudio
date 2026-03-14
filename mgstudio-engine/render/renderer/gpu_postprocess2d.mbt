@@ -1800,12 +1800,7 @@ fn load_wgsl_with_defines_required(
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = build_wgsl_import_module_paths(base)
   load_wgsl_preprocessed(
-    base,
-    normalized_rel,
-    defines,
-    value_defines,
-    visited,
-    modules,
+    base, normalized_rel, defines, value_defines, visited, modules,
   )
 }
 

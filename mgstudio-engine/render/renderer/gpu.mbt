@@ -1548,7 +1548,9 @@ fn strip_wgsl_line_comment(text : String) -> String {
 
 ///|
 fn wgsl_directive_tail(text : String, prefix_length : Int) -> String {
-  strip_wgsl_line_comment(text[prefix_length:text.length()].to_string()).trim().to_string()
+  strip_wgsl_line_comment(text[prefix_length:text.length()].to_string())
+  .trim()
+  .to_string()
 }
 
 ///|
@@ -1911,12 +1913,7 @@ fn load_wgsl_preprocessed(
       )
   }
   preprocess_wgsl_source(
-    assets_base,
-    source,
-    defines,
-    value_defines,
-    visited,
-    modules,
+    assets_base, source, defines, value_defines, visited, modules,
   )
 }
 
@@ -1943,12 +1940,7 @@ fn load_wgsl_from_assets_base_required(
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = build_wgsl_import_module_paths(base)
   load_wgsl_preprocessed(
-    base,
-    normalized_rel,
-    defines,
-    value_defines,
-    visited,
-    modules,
+    base, normalized_rel, defines, value_defines, visited, modules,
   )
 }
 
