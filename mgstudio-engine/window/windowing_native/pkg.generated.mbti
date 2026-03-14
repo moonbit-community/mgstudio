@@ -41,6 +41,8 @@ pub fn input_app_lifecycle_event_count() -> Int
 
 pub fn input_app_lifecycle_event_kind(index~ : Int) -> Int
 
+pub fn input_clear_all_keys() -> Unit
+
 pub fn input_cursor_entered_window() -> Int
 
 pub fn input_cursor_left_window() -> Int

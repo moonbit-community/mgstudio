@@ -180,6 +180,10 @@ pub fn screenshot_finalize_capture_requests(@ecs.World) -> Unit
 
 pub fn screenshot_queue_capture_requests(@ecs.World) -> Unit
 
+pub fn window_backend_apply_requested_system(@ecs.World) -> Unit
+
+pub fn window_backend_prepare_system(@ecs.World) -> Unit
+
 pub fn window_backend_sync_system(@ecs.World) -> Unit
 
 pub fn window_emit_cursor_entered(@ecs.World, CursorEntered) -> Unit

@@ -99,6 +99,10 @@ pub fn winit_plugin_with(
           @a11y.a11y_set,
         ),
       )
+      .add_last_system_config(@app.system(winit_changed_windows_system))
+      .add_last_system_config(
+        @app.system(winit_check_keyboard_focus_lost_system),
+      )
       .add_systems(
         @app.PreUpdate,
         @app.system(winit_window_backend_sync_system),

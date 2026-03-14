@@ -1289,6 +1289,12 @@ fn window_emit_native_app_lifecycle_events(world : @ecs.World) -> Unit {
 
 ///|
 pub fn window_backend_sync_system(world : @ecs.World) -> Unit {
+  window_backend_prepare_system(world)
+  window_backend_apply_requested_system(world)
+}
+
+///|
+pub fn window_backend_prepare_system(world : @ecs.World) -> Unit {
   for entity in window_runtime_entities_without_host(world) {
     window_create_runtime_for_entity(world, entity) |> ignore
   }
@@ -1300,8 +1306,20 @@ pub fn window_backend_sync_system(world : @ecs.World) -> Unit {
     ignore(
       try! runtime_query.with_mut(entity, fn(runtime_mut) {
         let runtime_ref = runtime_mut.get_ref()
-        window_sync_requested_state(world, entity, runtime_ref)
         window_sync_observed_state(world, entity, runtime_ref)
+      }),
+    )
+  }
+}
+
+///|
+pub fn window_backend_apply_requested_system(world : @ecs.World) -> Unit {
+  let runtime_query = world.query1(ecs_key_window_runtime)
+  for entity in window_runtime_entities_with_host(world) {
+    ignore(
+      try! runtime_query.with_mut(entity, fn(runtime_mut) {
+        let runtime_ref = runtime_mut.get_ref()
+        window_sync_requested_state(world, entity, runtime_ref)
       }),
     )
   }

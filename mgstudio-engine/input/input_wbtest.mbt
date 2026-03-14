@@ -162,7 +162,7 @@ test "input: finish-frame runs after Update and clears previous gamepad snapshot
 }
 
 ///|
-test "input: keyboard focus loss emits KeyboardFocusLost and WindowEvent" {
+test "input: keyboard focus-loss helper emits KeyboardFocusLost and WindowEvent" {
   reset_input_runtime_state()
   @gilrs.gamepad_test_reset_state()
 
@@ -173,7 +173,7 @@ test "input: keyboard focus loss emits KeyboardFocusLost and WindowEvent" {
   try! world.set_component(window_entity, window)
   try! world.set_component(window_entity, @window.PrimaryWindow::{  })
 
-  let mut app = input_plugin(@time.time_plugin(@app.App::new(world)))
+  let app = input_plugin(@time.time_plugin(@app.App::new(world)))
     .add_message(@window.WindowFocused::message())
     .add_message(@window.WindowEvent::message())
   ignore(
@@ -185,7 +185,8 @@ test "input: keyboard focus loss emits KeyboardFocusLost and WindowEvent" {
     }),
   )
 
-  app = app.run_once()
+  input_check_keyboard_focus_lost_system(app.world())
+
   let focus_lost_reader = app
     .world()
     .message_reader(keyboard_focus_lost_message_key, Ref::new(0))

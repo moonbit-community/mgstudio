@@ -1706,6 +1706,14 @@ pub fn input_is_key_repeated_by_id(key_id : Int) -> Bool {
 }
 
 ///|
+pub fn input_clear_all_keys() -> Unit {
+  clear_bool_state(key_down_ref.val)
+  clear_bool_state(key_just_pressed_ref.val)
+  clear_bool_state(key_just_released_ref.val)
+  clear_bool_state(key_repeated_ref.val)
+}
+
+///|
 pub fn input_is_mouse_button_down_by_id(button_id : Int) -> Bool {
   bool_state_get(mouse_down_ref.val, button_id)
 }

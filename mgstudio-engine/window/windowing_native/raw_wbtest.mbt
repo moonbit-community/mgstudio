@@ -95,3 +95,19 @@ test "windowing_native wbtest: raw winit event snapshots preserve typed payloads
 
   assert_eq(take_raw_winit_window_events().length(), 0)
 }
+
+///|
+test "windowing_native wbtest: clear-all-keys resets pressed and transition state" {
+  let key_id = input_key_id_from_key_code(KeyA)
+  bool_state_set(key_down_ref.val, key_id, true)
+  bool_state_set(key_just_pressed_ref.val, key_id, true)
+  bool_state_set(key_just_released_ref.val, key_id, true)
+  bool_state_set(key_repeated_ref.val, key_id, true)
+
+  input_clear_all_keys()
+
+  assert_false(input_is_key_down_by_id(key_id))
+  assert_false(input_is_key_just_pressed_by_id(key_id))
+  assert_false(input_is_key_just_released_by_id(key_id))
+  assert_false(input_is_key_repeated_by_id(key_id))
+}

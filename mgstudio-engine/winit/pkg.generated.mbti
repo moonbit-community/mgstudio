@@ -13,6 +13,10 @@ pub const WINIT_PLUGIN_ID : String = "bevy_winit::WinitPlugin"
 
 pub let ecs_key_raw_winit_window_event : @ecs.MessageKey[RawWinitWindowEvent]
 
+pub fn winit_changed_windows_system(@ecs.World) -> Unit
+
+pub fn winit_check_keyboard_focus_lost_system(@ecs.World) -> Unit
+
 pub fn winit_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn winit_plugin_with(@app.App[@ecs.World], WinitPlugin) -> @app.App[@ecs.World]

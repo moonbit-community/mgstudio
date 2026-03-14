@@ -46,6 +46,17 @@ fn read_winit_settings(world : @ecs.World) -> WinitSettings? {
 }
 
 ///|
+fn read_keyboard_focus_lost(
+  world : @ecs.World,
+) -> Array[@window.KeyboardFocusLost] {
+  let reader = world.message_reader(
+    @window.ecs_key_keyboard_focus_lost,
+    Ref::new(0),
+  )
+  try! reader.read()
+}
+
+///|
 test "winit: plugin replacement id aligns with bevy_winit" {
   let plugin = WinitPlugin::default()
   inspect(plugin.replacement_id(), content=WINIT_PLUGIN_ID)
@@ -147,6 +158,49 @@ test "winit: typed raw winit events are published as messages" {
   }
 
   assert_eq(read_raw_winit_window_events(world, cursor).length(), 0)
+}
+
+///|
+test "winit: keyboard focus-loss check runs in winit plugin lifecycle" {
+  @windowing.set_accessibility_requested(false)
+  ignore(@windowing.take_accessibility_actions())
+
+  let world = @ecs.World::new()
+  let window_entity = world.spawn()
+  let window = @window.Window::default()
+  window.focused = false
+  try! world.set_component(window_entity, window)
+  try! world.set_component(window_entity, @window.PrimaryWindow::{  })
+
+  let mut app = winit_plugin(@window.window_plugin(@app.App::new(world)))
+    .add_message(@window.ecs_key_keyboard_focus_lost)
+    .add_message(@window.WindowFocused::message())
+    .run_once()
+
+  ignore(
+    app
+    .world()
+    .send_message(@window.WindowFocused::message(), @window.WindowFocused::{
+      window: window_entity,
+      focused: false,
+    }),
+  )
+
+  app = app.run_once()
+
+  inspect(read_keyboard_focus_lost(app.world()).length(), content="1")
+
+  let window_event_reader = app
+    .world()
+    .message_reader(@window.WindowEvent::message(), Ref::new(0))
+  let window_events = try! window_event_reader.read()
+  let mut focus_lost_count = 0
+  for event in window_events {
+    if event is @window.WindowEvent::KeyboardFocusLost(_) {
+      focus_lost_count = focus_lost_count + 1
+    }
+  }
+  inspect(focus_lost_count, content="1")
 }
 
 ///|

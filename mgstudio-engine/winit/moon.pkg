@@ -3,6 +3,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/a11y",
+  "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/window",
   "Milky2018/mgstudio/window/windowing_native" @windowing,
   "Milky2018/moon_accesskit",

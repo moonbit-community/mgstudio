@@ -805,6 +805,11 @@ fn host_input_is_key_repeated(code : String) -> Bool {
 }
 
 ///|
+fn host_input_clear_all_keys() -> Unit {
+  @windowing.input_clear_all_keys()
+}
+
+///|
 pub fn host_input_finish_frame() -> Unit {
   @windowing.input_finish_frame()
 }
@@ -1491,7 +1496,7 @@ fn input_has_focused_window(world : @ecs.World) -> Bool {
 }
 
 ///|
-fn input_emit_keyboard_focus_lost(world : @ecs.World) -> Unit {
+pub fn input_check_keyboard_focus_lost_system(world : @ecs.World) -> Unit {
   if !world.contains_message(@window.WindowFocused::message()) {
     return
   }
@@ -1514,6 +1519,18 @@ fn input_emit_keyboard_focus_lost(world : @ecs.World) -> Unit {
     @window.window_emit_keyboard_focus_lost(world, @window.KeyboardFocusLost::{
 
     })
+    for code in keyboard_event_keycodes {
+      if key_pressed(code) {
+        @window.window_emit_keyboard_input(world, @window.KeyboardInput::{
+          key_code: code,
+          logical_key: logical_key_from_keycode(code),
+          state: Released,
+          repeat: false,
+          text: None,
+        })
+      }
+    }
+    host_input_clear_all_keys()
   }
 }
 
@@ -1549,7 +1566,6 @@ pub fn input_poll_keyboard_system(world : @ecs.World) -> Unit {
       ignore(character_writer.write(KeyboardCharacter::{ character: text }))
     }
   }
-  input_emit_keyboard_focus_lost(world)
   let ime_event_count = host_input_ime_event_count()
   for i in 0..<ime_event_count {
     if input_ime_event_at(world, i) is Some(ime) {

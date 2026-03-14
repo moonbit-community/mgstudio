@@ -33,11 +33,21 @@ fn winit_write_raw_winit_window_events(
 
 ///|
 pub fn winit_window_backend_sync_system(world : @ecs.World) -> Unit {
-  @window.window_backend_sync_system(world)
+  @window.window_backend_prepare_system(world)
   winit_write_raw_winit_window_events(
     world,
     @windowing.take_raw_winit_window_events(),
   )
+}
+
+///|
+pub fn winit_changed_windows_system(world : @ecs.World) -> Unit {
+  @window.window_backend_apply_requested_system(world)
+}
+
+///|
+pub fn winit_check_keyboard_focus_lost_system(world : @ecs.World) -> Unit {
+  @input.input_check_keyboard_focus_lost_system(world)
 }
 
 ///|
