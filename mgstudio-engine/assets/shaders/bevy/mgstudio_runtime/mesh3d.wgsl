@@ -99,6 +99,8 @@ fn safe_normalize(v : vec3<f32>) -> vec3<f32> {
   return v * inverseSqrt(n2);
 }
 
+const PI : f32 = 3.141592653589793;
+
 fn lambert(normal : vec3<f32>, light_dir : vec3<f32>) -> f32 {
   return max(dot(normal, light_dir), 0.0);
 }
@@ -218,16 +220,59 @@ fn fresnel_schlick_vec(f0 : vec3<f32>, ldoth : f32) -> vec3<f32> {
   return f0 + (vec3<f32>(1.0, 1.0, 1.0) - f0) * pow(1.0 - ldoth, 5.0);
 }
 
+fn F_Schlick(f0 : f32, f90 : f32, u : f32) -> f32 {
+  return f0 + (f90 - f0) * pow(1.0 - u, 5.0);
+}
+
+fn Fd_Burley(
+  roughness : f32,
+  ndotv : f32,
+  ndotl : f32,
+  ldoth : f32,
+) -> f32 {
+  let f90 = 0.5 + 2.0 * roughness * ldoth * ldoth;
+  let light_scatter = F_Schlick(1.0, f90, ndotl);
+  let view_scatter = F_Schlick(1.0, f90, ndotv);
+  return light_scatter * view_scatter * (1.0 / PI);
+}
+
+fn D_GGX(
+  roughness : f32,
+  ndoth : f32,
+) -> f32 {
+  let one_minus_ndoth_squared = 1.0 - ndoth * ndoth;
+  let a = ndoth * roughness;
+  let k = roughness / (one_minus_ndoth_squared + a * a);
+  return k * k * (1.0 / PI);
+}
+
+fn V_SmithGGXCorrelated(
+  roughness : f32,
+  ndotv : f32,
+  ndotl : f32,
+) -> f32 {
+  let a2 = roughness * roughness;
+  let lambda_v = ndotl * sqrt((ndotv - a2 * ndotv) * ndotv + a2);
+  let lambda_l = ndotv * sqrt((ndotl - a2 * ndotl) * ndotl + a2);
+  return 0.5 / max(lambda_v + lambda_l, 1.0e-8);
+}
+
 fn specular_isotropic(
   normal : vec3<f32>,
   light_dir : vec3<f32>,
   view_dir : vec3<f32>,
   roughness : f32,
-) -> f32 {
+  f0 : vec3<f32>,
+) -> vec3<f32> {
   let half_dir = safe_normalize(light_dir + view_dir);
+  let ndotv = max(dot(normal, view_dir), 1.0e-4);
+  let ndotl = max(dot(normal, light_dir), 0.0);
   let ndoth = max(dot(normal, half_dir), 0.0);
-  let shininess = mix(8.0, 256.0, 1.0 - roughness);
-  return pow(ndoth, shininess);
+  let ldoth = max(dot(light_dir, half_dir), 0.0);
+  let d = D_GGX(roughness, ndoth);
+  let v = V_SmithGGXCorrelated(roughness, ndotv, ndotl);
+  let f = fresnel_schlick_vec(f0, ldoth);
+  return d * v * f;
 }
 
 fn specular_anisotropic(
@@ -465,10 +510,16 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
     vec3<f32>(anisotropy_direction.x, anisotropy_direction.y, 0.0),
   );
   let anisotropy_b = safe_normalize(cross(normal, anisotropy_t));
+  let ndotv = max(dot(normal, view_dir), 1.0e-4);
   let emissive = max(u_mesh.emissive_unlit.xyz * emissive_tex, vec3<f32>(0.0));
   let unlit_factor = clamp(u_mesh.emissive_unlit.w, 0.0, 1.0);
   let metallic = clamp(u_mesh.material_params.x * metallic_roughness_tex.b, 0.0, 1.0);
-  let roughness = clamp(u_mesh.material_params.y * metallic_roughness_tex.g, 0.045, 1.0);
+  let perceptual_roughness = clamp(
+    u_mesh.material_params.y * metallic_roughness_tex.g,
+    0.045,
+    1.0,
+  );
+  let roughness = perceptual_roughness * perceptual_roughness;
   let reflectance = max(u_mesh.material_params.z, 0.0);
   let diffuse_transmission = clamp(u_mesh.transmission_params.x, 0.0, 1.0);
   let specular_transmission = clamp(u_mesh.transmission_params.y, 0.0, 1.0);
@@ -496,8 +547,16 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
     max(u_mesh.directional_dir_illum.w, 0.0);
   let directional_light_dir = -directional_dir;
   let directional_diff = lambert(normal, directional_light_dir);
+  let directional_half_dir = safe_normalize(directional_light_dir + view_dir);
+  let directional_ldoth = max(dot(directional_light_dir, directional_half_dir), 0.0);
+  let directional_diffuse_brdf = Fd_Burley(
+    roughness,
+    ndotv,
+    directional_diff,
+    directional_ldoth,
+  );
   let directional_back_diff = lambert(-normal, directional_light_dir);
-  let directional_term = directional_color * directional_diff;
+  let directional_term = directional_color * directional_diffuse_brdf * directional_diff;
   let directional_transmitted_term = directional_color * directional_back_diff;
   var directional_specular = vec3<f32>(0.0, 0.0, 0.0);
   if anisotropy_strength > 0.0 {
@@ -512,8 +571,12 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       anisotropy_b,
     );
   } else {
-    directional_specular = vec3<f32>(
-      specular_isotropic(normal, directional_light_dir, view_dir, roughness),
+    directional_specular = specular_isotropic(
+      normal,
+      directional_light_dir,
+      view_dir,
+      roughness,
+      f0,
     );
   }
   let directional_spec = directional_color *
@@ -522,13 +585,15 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
 
   let to_point = u_mesh.point_pos_range.xyz - in.world_pos;
   let point_distance_square = max(dot(to_point, to_point), 1.0e-4);
-  let point_distance = length(to_point);
   let point_dir = safe_normalize(to_point);
   let point_range = max(u_mesh.point_pos_range.w, 1e-4);
   let point_atten = get_distance_attenuation(point_distance_square, point_range);
   let point_color = u_mesh.point_color_intensity.xyz *
     max(u_mesh.point_color_intensity.w, 0.0);
   let point_diff = lambert(normal, point_dir);
+  let point_half_dir = safe_normalize(point_dir + view_dir);
+  let point_ldoth = max(dot(point_dir, point_half_dir), 0.0);
+  let point_diffuse_brdf = Fd_Burley(roughness, ndotv, point_diff, point_ldoth);
   let point_back_diff = lambert(-normal, point_dir);
   let point_shadow_enabled = u_mesh.point_shadow_params.x > 0.5;
   var point_shadow_factor = 1.0;
@@ -566,6 +631,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   }
   let point_term = point_color *
     point_atten *
+    point_diffuse_brdf *
     point_diff *
     point_shadow_factor;
   let point_transmitted_term = point_color *
@@ -585,8 +651,12 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       anisotropy_b,
     );
   } else {
-    point_specular = vec3<f32>(
-      specular_isotropic(normal, point_dir, view_dir, roughness),
+    point_specular = specular_isotropic(
+      normal,
+      point_dir,
+      view_dir,
+      roughness,
+      f0,
     );
   }
   let point_spec = point_color *
@@ -596,7 +666,6 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
     point_shadow_factor;
 
   let to_spot = u_mesh.spot_pos_range.xyz - in.world_pos;
-  let spot_distance = length(to_spot);
   let spot_dir_to_fragment = safe_normalize(-to_spot);
   let spot_range = max(u_mesh.spot_pos_range.w, 1e-4);
   let spot_distance_square = max(dot(to_spot, to_spot), 1.0e-4);
@@ -607,15 +676,26 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let inner_cos = cos(inner_angle);
   let outer_cos = cos(outer_angle);
   let spot_cos_theta = dot(spot_light_dir, spot_dir_to_fragment);
-  let spot_cone = smoothstep(outer_cos, inner_cos, spot_cos_theta);
+  let spot_scale = 1.0 / max(inner_cos - outer_cos, 1.0e-4);
+  let spot_offset = -outer_cos * spot_scale;
+  let spot_attenuation = clamp(
+    spot_cos_theta * spot_scale + spot_offset,
+    0.0,
+    1.0,
+  );
+  let spot_cone = spot_attenuation * spot_attenuation;
   let spot_color = u_mesh.spot_color_intensity.xyz *
     max(u_mesh.spot_color_intensity.w, 0.0);
   let spot_light_to_fragment = safe_normalize(to_spot);
   let spot_diff = lambert(normal, spot_light_to_fragment);
+  let spot_half_dir = safe_normalize(spot_light_to_fragment + view_dir);
+  let spot_ldoth = max(dot(spot_light_to_fragment, spot_half_dir), 0.0);
+  let spot_diffuse_brdf = Fd_Burley(roughness, ndotv, spot_diff, spot_ldoth);
   let spot_back_diff = lambert(-normal, spot_light_to_fragment);
   let spot_term = spot_color *
     spot_atten_base *
     spot_cone *
+    spot_diffuse_brdf *
     spot_diff;
   let spot_transmitted_term = spot_color *
     spot_atten_base *
@@ -634,8 +714,12 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       anisotropy_b,
     );
   } else {
-    spot_specular = vec3<f32>(
-      specular_isotropic(normal, spot_light_to_fragment, view_dir, roughness),
+    spot_specular = specular_isotropic(
+      normal,
+      spot_light_to_fragment,
+      view_dir,
+      roughness,
+      f0,
     );
   }
   let spot_spec = spot_color *
@@ -647,8 +731,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let diffuse_lighting = (ambient_term +
     directional_term +
     point_term +
-    spot_term +
-    vec3<f32>(0.02, 0.02, 0.02)) * occlusion_tex;
+    spot_term) * occlusion_tex;
   let diffuse_transmitted_lighting = (ambient_term +
     directional_transmitted_term +
     point_transmitted_term +
@@ -660,7 +743,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
     directional_term +
     point_term +
     spot_term) *
-    (0.35 + 0.65 * (1.0 - roughness * roughness)) *
+    (0.35 + 0.65 * (1.0 - perceptual_roughness * perceptual_roughness)) *
     (1.0 - 0.4 * thickness_factor) *
     (0.2 + 0.8 * (1.0 - ior_f0));
   if specular_transmission > 0.0 &&
@@ -680,7 +763,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
     let transmission_scene = sample_transmission_source(
       screen_uv,
       transmission_blur_taps,
-      roughness,
+      perceptual_roughness,
       thickness,
     );
     let transmission_scene_weight = clamp(
@@ -697,7 +780,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let transmitted_light = diffuse_transmissive_color * diffuse_transmitted_lighting +
     specular_transmissive_color * specular_transmitted_lighting;
   let lit_rgb = diffuse_color * diffuse_lighting +
-    f0 * specular_lighting +
+    specular_lighting +
     emissive +
     transmitted_light;
   let unlit_rgb = base_color.xyz + emissive;

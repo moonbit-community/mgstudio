@@ -15,6 +15,8 @@
 // Derived from Bevy:
 // - bevy/crates/bevy_post_process/src/auto_exposure/auto_exposure.wgsl
 
+#define_import_path mgstudio::3d::auto_exposure_shared
+
 const RGB_TO_LUM = vec3<f32>(0.2125, 0.7154, 0.0721);
 const HISTOGRAM_BIN_COUNT : u32 = 64u;
 

@@ -1960,20 +1960,29 @@ fn render3d_fxaa_enabled(fxaa : Fxaa?) -> Bool {
 }
 
 ///|
-fn render3d_tonemap_postprocess_enabled(
+fn render3d_tonemapping_stage_enabled(
   tonemapping : Tonemapping?,
   deband_dither : DebandDither?,
   hdr_enabled : Bool,
   color_grading : ColorGrading?,
-  fxaa : Fxaa?,
+) -> Bool {
+  deband_dither |> ignore
+  color_grading |> ignore
+  if !hdr_enabled {
+    return false
+  }
+  match tonemapping {
+    Some(None) => false
+    Some(_) => true
+    None => Tonemapping::default() != None
+  }
+}
+
+///|
+fn render3d_effect_stack_enabled(
   chromatic_aberration : ChromaticAberration?,
   vignette : Vignette?,
 ) -> Bool {
-  hdr_enabled ||
-  tonemapping is Some(_) ||
-  deband_dither is Some(Enabled) ||
-  color_grading is Some(_) ||
-  render3d_fxaa_enabled(fxaa) ||
   render3d_chromatic_aberration_enabled(chromatic_aberration) ||
   render3d_vignette_enabled(vignette)
 }
@@ -3135,14 +3144,16 @@ fn render3d_view_from_world_matrix(
     @math.Vec3::new(0.0F, 0.0F, 1.0F),
   )
   let translation = transform.translation
+  // `x_axis/y_axis/z_axis` are columns of the inverse rotation matrix.
+  // Translation in view space is `-(R_inv * world_translation)`.
   let offset_x = -(x_axis.x * translation.x +
-    x_axis.y * translation.y +
-    x_axis.z * translation.z)
-  let offset_y = -(y_axis.x * translation.x +
+    y_axis.x * translation.y +
+    z_axis.x * translation.z)
+  let offset_y = -(x_axis.y * translation.x +
     y_axis.y * translation.y +
-    y_axis.z * translation.z)
-  let offset_z = -(z_axis.x * translation.x +
-    z_axis.y * translation.y +
+    z_axis.y * translation.z)
+  let offset_z = -(x_axis.z * translation.x +
+    y_axis.z * translation.y +
     z_axis.z * translation.z)
   ProjectionMatrix3d::from_cols(
     @math.Vec4::new(x_axis.x, x_axis.y, x_axis.z, 0.0F),
@@ -3543,33 +3554,18 @@ fn render3d_tonemapping_mode_to_int(mode : Tonemapping) -> Int {
 }
 
 ///|
-fn render3d_fxaa_sensitivity_edge_threshold(
-  sensitivity : FxaaSensitivity,
-) -> Float {
+fn render3d_fxaa_sensitivity_mode_int(sensitivity : FxaaSensitivity) -> Int {
   match sensitivity {
-    Low => 0.250F
-    Medium => 0.166F
-    High => 0.125F
-    Ultra => 0.063F
-    Extreme => 0.031F
+    Low => 0
+    Medium => 1
+    High => 2
+    Ultra => 3
+    Extreme => 4
   }
 }
 
 ///|
-fn render3d_fxaa_sensitivity_edge_threshold_min(
-  sensitivity : FxaaSensitivity,
-) -> Float {
-  match sensitivity {
-    Low => 0.0833F
-    Medium => 0.0625F
-    High => 0.0312F
-    Ultra => 0.0156F
-    Extreme => 0.0078F
-  }
-}
-
-///|
-fn render3d_fxaa_postprocess_values(fxaa : Fxaa?) -> (Int, Float, Float) {
+fn render3d_fxaa_postprocess_values(fxaa : Fxaa?) -> (Int, Int, Int) {
   match fxaa {
     Some(value) =>
       (
@@ -3578,14 +3574,14 @@ fn render3d_fxaa_postprocess_values(fxaa : Fxaa?) -> (Int, Float, Float) {
         } else {
           0
         },
-        render3d_fxaa_sensitivity_edge_threshold(value.edge_threshold),
-        render3d_fxaa_sensitivity_edge_threshold_min(value.edge_threshold_min),
+        render3d_fxaa_sensitivity_mode_int(value.edge_threshold),
+        render3d_fxaa_sensitivity_mode_int(value.edge_threshold_min),
       )
     None =>
       (
         0,
-        render3d_fxaa_sensitivity_edge_threshold(FxaaSensitivity::default()),
-        render3d_fxaa_sensitivity_edge_threshold_min(FxaaSensitivity::default()),
+        render3d_fxaa_sensitivity_mode_int(FxaaSensitivity::default()),
+        render3d_fxaa_sensitivity_mode_int(FxaaSensitivity::default()),
       )
   }
 }
@@ -3690,24 +3686,34 @@ fn render3d_vignette_postprocess_values(
 }
 
 ///|
-fn render3d_draw_camera_postprocess_final(
-  world : @ecs.World,
+fn render3d_postprocess_stage_target(
+  source_texture_id : Int,
   scene_texture_id : Int,
-  exposure : Exposure?,
-  tonemapping : Tonemapping?,
-  deband_dither : DebandDither?,
-  color_grading : ColorGrading?,
-  fxaa : Fxaa?,
+  ping_texture_id : Int,
+  camera_target_id : Int,
+  stage_index : Int,
+  stage_count : Int,
+) -> Int {
+  if stage_index >= stage_count - 1 {
+    camera_target_id
+  } else if source_texture_id == ping_texture_id {
+    scene_texture_id
+  } else {
+    ping_texture_id
+  }
+}
+
+///|
+fn render3d_draw_camera_effect_stack_stage(
+  scene_texture_id : Int,
   chromatic_aberration : ChromaticAberration?,
   vignette : Vignette?,
   view_width_logical : Int,
   view_height_logical : Int,
 ) -> Unit {
-  let luts = render3d_tonemapping_lut_handles(world)
-  let color_grading_uniform = render3d_color_grading_host_uniform(color_grading)
-  let (fxaa_enabled, fxaa_edge_threshold, fxaa_edge_threshold_min) = render3d_fxaa_postprocess_values(
-    fxaa,
-  )
+  if !render3d_effect_stack_enabled(chromatic_aberration, vignette) {
+    return
+  }
   let (chromatic_aberration_intensity, chromatic_aberration_max_samples) = render3d_chromatic_aberration_postprocess_values(
     chromatic_aberration,
   )
@@ -3724,23 +3730,8 @@ fn render3d_draw_camera_postprocess_final(
     vignette_color_b,
     vignette_color_a,
   ) = render3d_vignette_postprocess_values(vignette)
-  @render.host_gpu_draw_tonemapping3d(
+  @render.host_gpu_draw_effect_stack3d(
     scene_texture_id~,
-    exposure=match exposure {
-      Some(value) => value.exposure()
-      None => Exposure::default().exposure()
-    },
-    tonemapping_mode=match tonemapping {
-      Some(mode) => render3d_tonemapping_mode_to_int(mode)
-      None => 0
-    },
-    deband_dither_enabled=match deband_dither {
-      Some(Enabled) => 1
-      _ => 0
-    },
-    fxaa_enabled~,
-    fxaa_edge_threshold~,
-    fxaa_edge_threshold_min~,
     chromatic_aberration_intensity~,
     chromatic_aberration_max_samples~,
     vignette_intensity~,
@@ -3756,6 +3747,60 @@ fn render3d_draw_camera_postprocess_final(
     vignette_color_a~,
     view_width=view_width_logical,
     view_height=view_height_logical,
+  )
+}
+
+///|
+fn render3d_draw_camera_tonemapping_stage(
+  world : @ecs.World,
+  scene_texture_id : Int,
+  exposure : Exposure?,
+  tonemapping : Tonemapping?,
+  deband_dither : DebandDither?,
+  color_grading : ColorGrading?,
+  hdr_enabled : Bool,
+  view_width_logical : Int,
+  view_height_logical : Int,
+) -> Unit {
+  if !render3d_tonemapping_stage_enabled(
+      tonemapping, deband_dither, hdr_enabled, color_grading,
+    ) {
+    return
+  }
+  let luts = render3d_tonemapping_lut_handles(world)
+  let color_grading_uniform = render3d_color_grading_host_uniform(color_grading)
+  @render.host_gpu_draw_tonemapping3d(
+    scene_texture_id~,
+    exposure=match exposure {
+      Some(value) => value.exposure()
+      None => Exposure::default().exposure()
+    },
+    tonemapping_mode=match tonemapping {
+      Some(mode) => render3d_tonemapping_mode_to_int(mode)
+      None => 0
+    },
+    deband_dither_enabled=match deband_dither {
+      Some(Enabled) => 1
+      _ => 0
+    },
+    fxaa_enabled=0,
+    fxaa_edge_threshold=0.0F,
+    fxaa_edge_threshold_min=0.0F,
+    chromatic_aberration_intensity=0.0F,
+    chromatic_aberration_max_samples=0,
+    vignette_intensity=0.0F,
+    vignette_radius=0.0F,
+    vignette_smoothness=0.0F,
+    vignette_roundness=0.0F,
+    vignette_center_x=0.0F,
+    vignette_center_y=0.0F,
+    vignette_edge_compensation=0.0F,
+    vignette_color_r=0.0F,
+    vignette_color_g=0.0F,
+    vignette_color_b=0.0F,
+    vignette_color_a=0.0F,
+    view_width=view_width_logical,
+    view_height=view_height_logical,
     agx_lut_texture_id=luts.agx.id(),
     tony_lut_texture_id=luts.tony.id(),
     blender_lut_texture_id=luts.blender.id(),
@@ -3764,31 +3809,37 @@ fn render3d_draw_camera_postprocess_final(
 }
 
 ///|
-fn render3d_draw_camera_bloom(
-  world : @ecs.World,
-  camera_entity : @core.Entity,
+fn render3d_draw_camera_fxaa_stage(
   scene_texture_id : Int,
-  auto_exposure : AutoExposure?,
-  bloom : Bloom,
-  exposure : Exposure?,
-  tonemapping : Tonemapping?,
-  deband_dither : DebandDither?,
-  color_grading : ColorGrading?,
   fxaa : Fxaa?,
-  chromatic_aberration : ChromaticAberration?,
-  vignette : Vignette?,
   view_width_logical : Int,
   view_height_logical : Int,
-  delta_seconds : Float,
+) -> Unit {
+  let (fxaa_enabled, fxaa_edge_threshold_mode, fxaa_edge_threshold_min_mode) = render3d_fxaa_postprocess_values(
+    fxaa,
+  )
+  if fxaa_enabled == 0 {
+    return
+  }
+  @render.host_gpu_draw_fxaa3d(
+    scene_texture_id~,
+    fxaa_enabled~,
+    fxaa_edge_threshold_mode~,
+    fxaa_edge_threshold_min_mode~,
+    view_width=view_width_logical,
+    view_height=view_height_logical,
+  )
+}
+
+///|
+fn render3d_draw_camera_bloom_stage(
+  scene_texture_id : Int,
+  bloom : Bloom,
+  view_width_logical : Int,
+  view_height_logical : Int,
 ) -> Unit {
   if scene_texture_id < 0 || view_width_logical <= 0 || view_height_logical <= 0 {
     return
-  }
-  if auto_exposure is Some(auto_exposure_settings) {
-    render3d_apply_camera_auto_exposure(
-      world, camera_entity, auto_exposure_settings, scene_texture_id, view_width_logical,
-      view_height_logical, delta_seconds,
-    )
   }
   let settings = render3d_bloom_sanitize(bloom)
   @render.host_gpu_apply_bloom2d(
@@ -3809,42 +3860,6 @@ fn render3d_draw_camera_bloom(
     scale_y=settings.scale.y,
     view_width=view_width_logical,
     view_height=view_height_logical,
-  )
-  render3d_draw_camera_postprocess_final(
-    world, scene_texture_id, exposure, tonemapping, deband_dither, color_grading,
-    fxaa, chromatic_aberration, vignette, view_width_logical, view_height_logical,
-  )
-}
-
-///|
-fn render3d_draw_camera_tonemap_only(
-  world : @ecs.World,
-  camera_entity : @core.Entity,
-  scene_texture_id : Int,
-  auto_exposure : AutoExposure?,
-  exposure : Exposure?,
-  tonemapping : Tonemapping?,
-  deband_dither : DebandDither?,
-  color_grading : ColorGrading?,
-  fxaa : Fxaa?,
-  chromatic_aberration : ChromaticAberration?,
-  vignette : Vignette?,
-  view_width_logical : Int,
-  view_height_logical : Int,
-  delta_seconds : Float,
-) -> Unit {
-  if scene_texture_id < 0 || view_width_logical <= 0 || view_height_logical <= 0 {
-    return
-  }
-  if auto_exposure is Some(auto_exposure_settings) {
-    render3d_apply_camera_auto_exposure(
-      world, camera_entity, auto_exposure_settings, scene_texture_id, view_width_logical,
-      view_height_logical, delta_seconds,
-    )
-  }
-  render3d_draw_camera_postprocess_final(
-    world, scene_texture_id, exposure, tonemapping, deband_dither, color_grading,
-    fxaa, chromatic_aberration, vignette, view_width_logical, view_height_logical,
   )
 }
 
@@ -5425,15 +5440,20 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     }
     let transmission_enabled = transmission_blur_taps > 0
     let bloom_enabled = camera.bloom is Some(_)
-    let tonemap_postprocess_enabled = render3d_tonemap_postprocess_enabled(
+    let tonemapping_stage_enabled = render3d_tonemapping_stage_enabled(
       camera.tonemapping,
       camera.deband_dither,
       camera.hdr_enabled,
       camera.color_grading,
-      camera.fxaa,
+    )
+    let effect_stack_postprocess_enabled = render3d_effect_stack_enabled(
       camera.chromatic_aberration,
       camera.vignette,
     )
+    let fxaa_postprocess_enabled = render3d_fxaa_enabled(camera.fxaa)
+    let tonemap_postprocess_enabled = tonemapping_stage_enabled ||
+      effect_stack_postprocess_enabled ||
+      fxaa_postprocess_enabled
     let motion_vector_prepass_enabled = motion_blur_active ||
       camera.motion_vector_prepass_enabled ||
       temporal_aa_enabled
@@ -6137,96 +6157,239 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     } else if scene_target_id != camera.target_id {
       final_source_texture_id = scene_target_id
     }
-    if bloom_enabled && camera.bloom is Some(bloom) {
-      let bloom_source_texture_id = if final_source_texture_id >= 0 {
+    if bloom_enabled || tonemap_postprocess_enabled {
+      let postprocess_source_texture_id = if final_source_texture_id >= 0 {
         final_source_texture_id
       } else {
         scene_target_id
       }
-      if bloom_source_texture_id >= 0 {
-        @render.host_gpu_begin_pass(
-          target_id=camera.target_id,
-          width=view_width_logical,
-          height=view_height_logical,
-          clear_r=clear_color.r,
-          clear_g=clear_color.g,
-          clear_b=clear_color.b,
-          clear_a=clear_color.a,
-          camera_x=0.0F,
-          camera_y=0.0F,
-          camera_rotation=0.0F,
-          camera_scale=1.0F,
-          viewport_x~,
-          viewport_y~,
-          viewport_width~,
-          viewport_height~,
-          viewport_depth_min~,
-          viewport_depth_max~,
-          clear_enabled=if clear_enabled { 1 } else { 0 },
-        )
-        render3d_draw_camera_bloom(
-          world,
-          camera_entity,
-          bloom_source_texture_id,
-          camera.camera3d.auto_exposure,
-          bloom,
-          effective_exposure,
-          camera.tonemapping,
-          camera.deband_dither,
-          camera.color_grading,
-          camera.fxaa,
-          camera.chromatic_aberration,
-          camera.vignette,
-          view_width_logical,
-          view_height_logical,
-          delta_seconds,
-        )
-        @render.host_gpu_end_pass()
-      }
-    } else if tonemap_postprocess_enabled {
-      let tonemap_source_texture_id = if final_source_texture_id >= 0 {
-        final_source_texture_id
-      } else {
-        scene_target_id
-      }
-      if tonemap_source_texture_id >= 0 {
-        @render.host_gpu_begin_pass(
-          target_id=camera.target_id,
-          width=view_width_logical,
-          height=view_height_logical,
-          clear_r=clear_color.r,
-          clear_g=clear_color.g,
-          clear_b=clear_color.b,
-          clear_a=clear_color.a,
-          camera_x=0.0F,
-          camera_y=0.0F,
-          camera_rotation=0.0F,
-          camera_scale=1.0F,
-          viewport_x~,
-          viewport_y~,
-          viewport_width~,
-          viewport_height~,
-          viewport_depth_min~,
-          viewport_depth_max~,
-          clear_enabled=if clear_enabled { 1 } else { 0 },
-        )
-        render3d_draw_camera_tonemap_only(
-          world,
-          camera_entity,
-          tonemap_source_texture_id,
-          camera.camera3d.auto_exposure,
-          effective_exposure,
-          camera.tonemapping,
-          camera.deband_dither,
-          camera.color_grading,
-          camera.fxaa,
-          camera.chromatic_aberration,
-          camera.vignette,
-          view_width_logical,
-          view_height_logical,
-          delta_seconds,
-        )
-        @render.host_gpu_end_pass()
+      if postprocess_source_texture_id >= 0 {
+        if camera.camera3d.auto_exposure is Some(auto_exposure_settings) {
+          @render.host_gpu_begin_pass(
+            target_id=camera.target_id,
+            width=view_width_logical,
+            height=view_height_logical,
+            clear_r=clear_color.r,
+            clear_g=clear_color.g,
+            clear_b=clear_color.b,
+            clear_a=clear_color.a,
+            camera_x=0.0F,
+            camera_y=0.0F,
+            camera_rotation=0.0F,
+            camera_scale=1.0F,
+            viewport_x~,
+            viewport_y~,
+            viewport_width~,
+            viewport_height~,
+            viewport_depth_min~,
+            viewport_depth_max~,
+            clear_enabled=if clear_enabled { 1 } else { 0 },
+          )
+          render3d_apply_camera_auto_exposure(
+            world, camera_entity, auto_exposure_settings, postprocess_source_texture_id,
+            view_width_logical, view_height_logical, delta_seconds,
+          )
+          @render.host_gpu_end_pass()
+        }
+        if bloom_enabled && camera.bloom is Some(bloom) {
+          @render.host_gpu_begin_pass(
+            target_id=camera.target_id,
+            width=view_width_logical,
+            height=view_height_logical,
+            clear_r=clear_color.r,
+            clear_g=clear_color.g,
+            clear_b=clear_color.b,
+            clear_a=clear_color.a,
+            camera_x=0.0F,
+            camera_y=0.0F,
+            camera_rotation=0.0F,
+            camera_scale=1.0F,
+            viewport_x~,
+            viewport_y~,
+            viewport_width~,
+            viewport_height~,
+            viewport_depth_min~,
+            viewport_depth_max~,
+            clear_enabled=if clear_enabled { 1 } else { 0 },
+          )
+          render3d_draw_camera_bloom_stage(
+            postprocess_source_texture_id, bloom, view_width_logical, view_height_logical,
+          )
+          @render.host_gpu_end_pass()
+        }
+        let postprocess_stage_count = (if effect_stack_postprocess_enabled {
+            1
+          } else {
+            0
+          }) +
+          (if tonemapping_stage_enabled { 1 } else { 0 }) +
+          (if fxaa_postprocess_enabled { 1 } else { 0 })
+        if postprocess_stage_count > 0 {
+          let stage_ping_target_id = render3d_transmission_source_target_get_or_create(
+            camera_entity, view_width, view_height,
+          )
+          let mut current_source_texture_id = postprocess_source_texture_id
+          let mut stage_index = 0
+          if effect_stack_postprocess_enabled {
+            let stage_target_id = render3d_postprocess_stage_target(
+              current_source_texture_id,
+              scene_target_id,
+              stage_ping_target_id,
+              camera.target_id,
+              stage_index,
+              postprocess_stage_count,
+            )
+            @render.host_gpu_begin_pass(
+              target_id=stage_target_id,
+              width=view_width_logical,
+              height=view_height_logical,
+              clear_r=clear_color.r,
+              clear_g=clear_color.g,
+              clear_b=clear_color.b,
+              clear_a=clear_color.a,
+              camera_x=0.0F,
+              camera_y=0.0F,
+              camera_rotation=0.0F,
+              camera_scale=1.0F,
+              viewport_x~,
+              viewport_y~,
+              viewport_width~,
+              viewport_height~,
+              viewport_depth_min~,
+              viewport_depth_max~,
+              clear_enabled=if clear_enabled { 1 } else { 0 },
+            )
+            render3d_draw_camera_effect_stack_stage(
+              current_source_texture_id,
+              camera.chromatic_aberration,
+              camera.vignette,
+              view_width_logical,
+              view_height_logical,
+            )
+            @render.host_gpu_end_pass()
+            current_source_texture_id = stage_target_id
+            stage_index = stage_index + 1
+          }
+          if tonemapping_stage_enabled {
+            let stage_target_id = render3d_postprocess_stage_target(
+              current_source_texture_id,
+              scene_target_id,
+              stage_ping_target_id,
+              camera.target_id,
+              stage_index,
+              postprocess_stage_count,
+            )
+            @render.host_gpu_begin_pass(
+              target_id=stage_target_id,
+              width=view_width_logical,
+              height=view_height_logical,
+              clear_r=clear_color.r,
+              clear_g=clear_color.g,
+              clear_b=clear_color.b,
+              clear_a=clear_color.a,
+              camera_x=0.0F,
+              camera_y=0.0F,
+              camera_rotation=0.0F,
+              camera_scale=1.0F,
+              viewport_x~,
+              viewport_y~,
+              viewport_width~,
+              viewport_height~,
+              viewport_depth_min~,
+              viewport_depth_max~,
+              clear_enabled=if clear_enabled { 1 } else { 0 },
+            )
+            render3d_draw_camera_tonemapping_stage(
+              world,
+              current_source_texture_id,
+              effective_exposure,
+              camera.tonemapping,
+              camera.deband_dither,
+              camera.color_grading,
+              camera.hdr_enabled,
+              view_width_logical,
+              view_height_logical,
+            )
+            @render.host_gpu_end_pass()
+            current_source_texture_id = stage_target_id
+            stage_index = stage_index + 1
+          }
+          if fxaa_postprocess_enabled {
+            let stage_target_id = render3d_postprocess_stage_target(
+              current_source_texture_id,
+              scene_target_id,
+              stage_ping_target_id,
+              camera.target_id,
+              stage_index,
+              postprocess_stage_count,
+            )
+            @render.host_gpu_begin_pass(
+              target_id=stage_target_id,
+              width=view_width_logical,
+              height=view_height_logical,
+              clear_r=clear_color.r,
+              clear_g=clear_color.g,
+              clear_b=clear_color.b,
+              clear_a=clear_color.a,
+              camera_x=0.0F,
+              camera_y=0.0F,
+              camera_rotation=0.0F,
+              camera_scale=1.0F,
+              viewport_x~,
+              viewport_y~,
+              viewport_width~,
+              viewport_height~,
+              viewport_depth_min~,
+              viewport_depth_max~,
+              clear_enabled=if clear_enabled { 1 } else { 0 },
+            )
+            render3d_draw_camera_fxaa_stage(
+              current_source_texture_id,
+              camera.fxaa,
+              view_width_logical,
+              view_height_logical,
+            )
+            @render.host_gpu_end_pass()
+          }
+        } else if postprocess_source_texture_id != camera.target_id {
+          @render.host_gpu_begin_pass(
+            target_id=camera.target_id,
+            width=view_width_logical,
+            height=view_height_logical,
+            clear_r=clear_color.r,
+            clear_g=clear_color.g,
+            clear_b=clear_color.b,
+            clear_a=clear_color.a,
+            camera_x=0.0F,
+            camera_y=0.0F,
+            camera_rotation=0.0F,
+            camera_scale=1.0F,
+            viewport_x~,
+            viewport_y~,
+            viewport_width~,
+            viewport_height~,
+            viewport_depth_min~,
+            viewport_depth_max~,
+            clear_enabled=if clear_enabled { 1 } else { 0 },
+          )
+          @render.host_gpu_draw_sprite_uv(
+            texture_id=postprocess_source_texture_id,
+            x=0.0F,
+            y=0.0F,
+            rotation=0.0F,
+            scale_x=Float::from_double(view_width_logical.to_double()) / 128.0F,
+            scale_y=Float::from_double(view_height_logical.to_double()) / 128.0F,
+            color_r=1.0F,
+            color_g=1.0F,
+            color_b=1.0F,
+            color_a=1.0F,
+            uv_min_x=0.0F,
+            uv_min_y=0.0F,
+            uv_max_x=1.0F,
+            uv_max_y=1.0F,
+          )
+          @render.host_gpu_end_pass()
+        }
       }
     } else if final_source_texture_id >= 0 {
       @render.host_gpu_begin_pass(

@@ -103,6 +103,7 @@ test "renderer: large mesh3d upload switches to u32 index buffers" {
 ///|
 test "renderer: grouped wgsl imports resolve Bevy module files" {
   let assets_base = "assets"
+  let modules = build_wgsl_import_module_paths(assets_base)
   let targets : Array[WgslImportTarget] = []
   collect_wgsl_import_targets(
     "bevy_render::{\n  color_operations::{hsv_to_rgb, rgb_to_hsv},\n  maths::{PI_2, powsafe},\n}",
@@ -110,19 +111,35 @@ test "renderer: grouped wgsl imports resolve Bevy module files" {
   )
   inspect(targets.length(), content="4")
   inspect(
-    resolve_wgsl_import_module_path(assets_base, targets[0].raw_path),
+    resolve_wgsl_import_module_path_for_test(
+      assets_base,
+      targets[0].raw_path,
+      modules,
+    ),
     content="bevy_render::color_operations",
   )
   inspect(
-    resolve_wgsl_import_module_path(assets_base, targets[1].raw_path),
+    resolve_wgsl_import_module_path_for_test(
+      assets_base,
+      targets[1].raw_path,
+      modules,
+    ),
     content="bevy_render::color_operations",
   )
   inspect(
-    resolve_wgsl_import_module_path(assets_base, targets[2].raw_path),
+    resolve_wgsl_import_module_path_for_test(
+      assets_base,
+      targets[2].raw_path,
+      modules,
+    ),
     content="bevy_render::maths",
   )
   inspect(
-    resolve_wgsl_import_module_path(assets_base, targets[3].raw_path),
+    resolve_wgsl_import_module_path_for_test(
+      assets_base,
+      targets[3].raw_path,
+      modules,
+    ),
     content="bevy_render::maths",
   )
 }
@@ -130,10 +147,12 @@ test "renderer: grouped wgsl imports resolve Bevy module files" {
 ///|
 test "renderer: preprocess_wgsl_source supports multiline grouped imports" {
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let value_defines = default_wgsl_value_defines()
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths("assets")
   let preprocessed = preprocess_wgsl_source(
     "assets", "#import bevy_render::{\n  color_operations::{hsv_to_rgb, rgb_to_hsv},\n  maths::{PI_2, powsafe},\n}\nfn demo(color: vec3<f32>) -> vec3<f32> {\n  let h = rgb_to_hsv(color);\n  return hsv_to_rgb(vec3<f32>(h.x + PI_2, h.y, powsafe(h.z, 1.0)));\n}\n",
-    defines, visited,
+    defines, value_defines, visited, modules,
   )
   inspect(preprocessed.contains("fn rgb_to_hsv"), content="true")
   inspect(preprocessed.contains("fn hsv_to_rgb"), content="true")
@@ -144,13 +163,28 @@ test "renderer: preprocess_wgsl_source supports multiline grouped imports" {
 ///|
 test "renderer: preprocess_wgsl_source strips module aliases" {
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let value_defines = default_wgsl_value_defines()
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths("assets")
   let preprocessed = preprocess_wgsl_source(
     "assets", "#import bevy_render::maths as maths\nfn demo() -> f32 {\n  return maths::PI_2;\n}\n",
-    defines, visited,
+    defines, value_defines, visited, modules,
   )
   inspect(preprocessed.contains("return PI_2;"), content="true")
   inspect(preprocessed.contains("maths::PI_2"), content="false")
+}
+
+///|
+fn resolve_wgsl_import_module_path_for_test(
+  assets_base : String,
+  import_path : String,
+  modules : @hashmap.HashMap[String, String],
+) -> String {
+  guard resolve_wgsl_import_module(assets_base, import_path, modules)
+    is Some(resolved_module) else {
+    return ""
+  }
+  resolved_module.module_path
 }
 
 ///|

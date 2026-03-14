@@ -333,6 +333,26 @@ pub struct GpuBackend {
   mut motion_blur_pipeline_surface_format : @wgpu.TextureFormat?
   mut motion_blur_settings_buf : @wgpu.Buffer?
   mut motion_blur_globals_buf : @wgpu.Buffer?
+  mut effect_stack3d_bgl : @wgpu.BindGroupLayout?
+  mut effect_stack3d_pipeline_layout : @wgpu.PipelineLayout?
+  mut effect_stack3d_pipeline : @wgpu.RenderPipeline?
+  mut effect_stack3d_pipeline_surface : @wgpu.RenderPipeline?
+  mut effect_stack3d_pipeline_surface_format : @wgpu.TextureFormat?
+  mut effect_stack3d_sampler : @wgpu.Sampler?
+  mut effect_stack3d_lut_sampler : @wgpu.Sampler?
+  mut effect_stack3d_chromatic_settings_buf : @wgpu.Buffer?
+  mut effect_stack3d_vignette_settings_buf : @wgpu.Buffer?
+  mut effect_stack3d_default_lut_texture_id : Int
+  mut fxaa3d_bgl : @wgpu.BindGroupLayout?
+  mut fxaa3d_pipeline_layout : @wgpu.PipelineLayout?
+  mut fxaa3d_pipeline : @wgpu.RenderPipeline?
+  mut fxaa3d_pipeline_surface : @wgpu.RenderPipeline?
+  mut fxaa3d_pipeline_surface_format : @wgpu.TextureFormat?
+  mut fxaa3d_pipeline_edge_threshold_mode : Int
+  mut fxaa3d_pipeline_edge_threshold_min_mode : Int
+  mut fxaa3d_pipeline_surface_edge_threshold_mode : Int
+  mut fxaa3d_pipeline_surface_edge_threshold_min_mode : Int
+  mut fxaa3d_sampler : @wgpu.Sampler?
   mut bloom2d_intermediate_bgl : @wgpu.BindGroupLayout?
   mut bloom2d_intermediate_pipeline_layout : @wgpu.PipelineLayout?
   mut bloom2d_final_bgl : @wgpu.BindGroupLayout?
@@ -645,6 +665,26 @@ pub fn GpuBackend::new(
     motion_blur_pipeline_surface_format: None,
     motion_blur_settings_buf: None,
     motion_blur_globals_buf: None,
+    effect_stack3d_bgl: None,
+    effect_stack3d_pipeline_layout: None,
+    effect_stack3d_pipeline: None,
+    effect_stack3d_pipeline_surface: None,
+    effect_stack3d_pipeline_surface_format: None,
+    effect_stack3d_sampler: None,
+    effect_stack3d_lut_sampler: None,
+    effect_stack3d_chromatic_settings_buf: None,
+    effect_stack3d_vignette_settings_buf: None,
+    effect_stack3d_default_lut_texture_id: -1,
+    fxaa3d_bgl: None,
+    fxaa3d_pipeline_layout: None,
+    fxaa3d_pipeline: None,
+    fxaa3d_pipeline_surface: None,
+    fxaa3d_pipeline_surface_format: None,
+    fxaa3d_pipeline_edge_threshold_mode: -1,
+    fxaa3d_pipeline_edge_threshold_min_mode: -1,
+    fxaa3d_pipeline_surface_edge_threshold_mode: -1,
+    fxaa3d_pipeline_surface_edge_threshold_min_mode: -1,
+    fxaa3d_sampler: None,
     bloom2d_intermediate_bgl: None,
     bloom2d_intermediate_pipeline_layout: None,
     bloom2d_final_bgl: None,
@@ -1136,17 +1176,22 @@ fn normalize_shader_rel_path(rel : String) -> String {
 }
 
 ///|
-fn is_motion_blur_shader_path(rel : String) -> Bool {
-  normalize_shader_rel_path(rel) == "shaders/mgstudio/3d/motion_blur.wgsl"
-}
-
-///|
 fn starts_with_text(text : String, prefix : String) -> Bool {
   let p = prefix.length()
   if text.length() < p {
     return false
   }
   text[:p].to_string() == prefix
+}
+
+///|
+fn ends_with_text(text : String, suffix : String) -> Bool {
+  let n = text.length()
+  let m = suffix.length()
+  if n < m {
+    return false
+  }
+  text[n - m:n].to_string() == suffix
 }
 
 ///|
@@ -1166,6 +1211,12 @@ fn trim_trailing_semicolons(text : String) -> String {
 priv struct WgslImportTarget {
   raw_path : String
   alias_name : String
+}
+
+///|
+priv struct WgslResolvedImportModule {
+  module_path : String
+  rel_path : String
 }
 
 ///|
@@ -1323,10 +1374,78 @@ fn path_is_file(path : String) -> Bool {
 }
 
 ///|
-fn resolve_wgsl_import_module_path(
+fn path_is_dir(path : String) -> Bool {
+  @fs.is_dir(path) catch {
+    _ => false
+  }
+}
+
+///|
+fn parse_wgsl_define_import_path(source : String) -> String {
+  for line_item in source.split("\n") {
+    let line = line_item.to_string().trim().to_string()
+    if starts_with_text(line, "#define_import_path ") {
+      return trim_trailing_semicolons(
+        line[20:line.length()].to_string().trim().to_string(),
+      )
+    }
+  }
+  ""
+}
+
+///|
+fn collect_wgsl_import_module_paths(
+  assets_base : String,
+  rel_dir : String,
+  modules : @hashmap.HashMap[String, String],
+) -> Unit {
+  let dir_path = join_asset_path(assets_base, rel_dir)
+  if !path_is_dir(dir_path) {
+    return
+  }
+  let entries : Array[String] = @fs.read_dir(dir_path) catch { _ => [] }
+  entries.sort()
+  for entry in entries {
+    let name = entry.trim().to_string()
+    if name == "" {
+      continue
+    }
+    let child_rel = if rel_dir == "" { name } else { rel_dir + "/" + name }
+    let child_path = join_asset_path(assets_base, child_rel)
+    if path_is_dir(child_path) {
+      collect_wgsl_import_module_paths(assets_base, child_rel, modules)
+      continue
+    }
+    if !path_is_file(child_path) || !ends_with_text(name, ".wgsl") {
+      continue
+    }
+    let source = @fs.read_file_to_string(child_path) catch { _ => continue }
+    let import_path = parse_wgsl_define_import_path(source)
+    if import_path == "" {
+      continue
+    }
+    let normalized_child_rel = normalize_shader_rel_path(child_rel)
+    if !modules.contains(import_path) {
+      modules.set(import_path, normalized_child_rel)
+    }
+  }
+}
+
+///|
+fn build_wgsl_import_module_paths(
+  assets_base : String,
+) -> @hashmap.HashMap[String, String] {
+  let modules : @hashmap.HashMap[String, String] = @hashmap.HashMap::new()
+  collect_wgsl_import_module_paths(assets_base, "shaders", modules)
+  modules
+}
+
+///|
+fn resolve_wgsl_import_module(
   assets_base : String,
   import_path : String,
-) -> String {
+  modules : @hashmap.HashMap[String, String],
+) -> WgslResolvedImportModule? {
   let segments : Array[String] = []
   for seg in import_path.split("::") {
     let text = seg.to_string().trim().to_string()
@@ -1339,14 +1458,25 @@ fn resolve_wgsl_import_module_path(
     for i in 1..<segments.length() {
       module_path = module_path + "::" + segments[i]
     }
-    let rel = wgsl_module_path_to_rel_path(module_path)
-    let full_path = join_asset_path(assets_base, rel)
-    if path_is_file(full_path) {
-      return module_path
+    if modules.get(module_path) is Some(rel_path) {
+      return Some(WgslResolvedImportModule::{ module_path, rel_path })
+    }
+    let bevy_rel = wgsl_module_path_to_rel_path(module_path)
+    if path_is_file(join_asset_path(assets_base, bevy_rel)) {
+      return Some(WgslResolvedImportModule::{ module_path, rel_path: bevy_rel })
+    }
+    let namespace_rel = wgsl_module_path_to_rel_path_namespace(module_path)
+    if namespace_rel != "" &&
+      namespace_rel != bevy_rel &&
+      path_is_file(join_asset_path(assets_base, namespace_rel)) {
+      return Some(WgslResolvedImportModule::{
+        module_path,
+        rel_path: namespace_rel,
+      })
     }
     segments.pop() |> ignore
   }
-  ""
+  None
 }
 
 ///|
@@ -1385,9 +1515,200 @@ fn wgsl_module_path_to_rel_path(module_path : String) -> String {
 }
 
 ///|
+fn wgsl_module_path_to_rel_path_namespace(module_path : String) -> String {
+  let segments : Array[String] = []
+  for seg in module_path.split("::") {
+    let text = seg.to_string().trim().to_string()
+    if text != "" {
+      segments.push(text)
+    }
+  }
+  if segments.length() == 0 {
+    return ""
+  }
+  let mut rel = "shaders/" + segments[0]
+  for i in 1..<segments.length() {
+    rel = rel + "/" + segments[i]
+  }
+  rel + ".wgsl"
+}
+
+///|
+fn strip_wgsl_line_comment(text : String) -> String {
+  let mut i = 0
+  while i + 1 < text.length() {
+    if text.code_unit_at(i).to_int() == 47 && // '/'
+      text.code_unit_at(i + 1).to_int() == 47 { // '/'
+      return text[:i].to_string()
+    }
+    i = i + 1
+  }
+  text
+}
+
+///|
+fn wgsl_directive_tail(text : String, prefix_length : Int) -> String {
+  strip_wgsl_line_comment(text[prefix_length:text.length()].to_string()).trim().to_string()
+}
+
+///|
+fn parse_wgsl_uint_literal(text : String) -> Int? {
+  let mut token = strip_wgsl_line_comment(text).trim().to_string()
+  if token == "" {
+    return None
+  }
+  if ends_with_text(token, "u") || ends_with_text(token, "U") {
+    token = token[:token.length() - 1].to_string().trim().to_string()
+  }
+  if token == "" {
+    return None
+  }
+  let parsed = @strconv.parse_int(token[:], base=10) catch { _ => return None }
+  Some(parsed)
+}
+
+///|
+fn split_once_text(text : String, sep : String) -> (String, String)? {
+  let parts : Array[String] = []
+  for piece in text.split(sep) {
+    parts.push(piece.to_string())
+  }
+  if parts.length() != 2 {
+    return None
+  }
+  Some((parts[0], parts[1]))
+}
+
+///|
+fn wgsl_define_value(
+  defines : @hashmap.HashMap[String, Bool],
+  value_defines : @hashmap.HashMap[String, Int],
+  name : String,
+) -> Int {
+  if value_defines.get(name) is Some(value) {
+    return value
+  }
+  if defines.get(name) is Some(flag) && flag {
+    return 1
+  }
+  0
+}
+
+///|
+fn wgsl_define_enabled(
+  defines : @hashmap.HashMap[String, Bool],
+  value_defines : @hashmap.HashMap[String, Int],
+  name : String,
+) -> Bool {
+  if value_defines.contains(name) {
+    return true
+  }
+  defines.get(name).unwrap_or(false)
+}
+
+///|
+fn wgsl_if_expr_value(
+  token : String,
+  defines : @hashmap.HashMap[String, Bool],
+  value_defines : @hashmap.HashMap[String, Int],
+) -> Int {
+  let text = strip_wgsl_line_comment(token).trim().to_string()
+  if text == "" {
+    return 0
+  }
+  if parse_wgsl_uint_literal(text) is Some(value) {
+    return value
+  }
+  wgsl_define_value(defines, value_defines, text)
+}
+
+///|
+fn eval_wgsl_if_expr(
+  expr : String,
+  defines : @hashmap.HashMap[String, Bool],
+  value_defines : @hashmap.HashMap[String, Int],
+) -> Bool {
+  let text = strip_wgsl_line_comment(expr).trim().to_string()
+  if text == "" {
+    return false
+  }
+  if split_once_text(text, ">=") is Some((lhs, rhs)) {
+    return wgsl_if_expr_value(lhs, defines, value_defines) >=
+      wgsl_if_expr_value(rhs, defines, value_defines)
+  }
+  if split_once_text(text, "<=") is Some((lhs, rhs)) {
+    return wgsl_if_expr_value(lhs, defines, value_defines) <=
+      wgsl_if_expr_value(rhs, defines, value_defines)
+  }
+  if split_once_text(text, "==") is Some((lhs, rhs)) {
+    return wgsl_if_expr_value(lhs, defines, value_defines) ==
+      wgsl_if_expr_value(rhs, defines, value_defines)
+  }
+  if split_once_text(text, "!=") is Some((lhs, rhs)) {
+    return wgsl_if_expr_value(lhs, defines, value_defines) !=
+      wgsl_if_expr_value(rhs, defines, value_defines)
+  }
+  if split_once_text(text, ">") is Some((lhs, rhs)) {
+    return wgsl_if_expr_value(lhs, defines, value_defines) >
+      wgsl_if_expr_value(rhs, defines, value_defines)
+  }
+  if split_once_text(text, "<") is Some((lhs, rhs)) {
+    return wgsl_if_expr_value(lhs, defines, value_defines) <
+      wgsl_if_expr_value(rhs, defines, value_defines)
+  }
+  wgsl_if_expr_value(text, defines, value_defines) != 0
+}
+
+///|
+fn apply_wgsl_template_consts(
+  source : String,
+  value_defines : @hashmap.HashMap[String, Int],
+) -> String {
+  let mut out = ""
+  let mut i = 0
+  let n = source.length()
+  while i < n {
+    if i + 1 < n &&
+      source.code_unit_at(i).to_int() == 35 && // '#'
+      source.code_unit_at(i + 1).to_int() == 123 { // '{'
+      let mut j = i + 2
+      while j < n && source.code_unit_at(j).to_int() != 125 { // '}'
+        j = j + 1
+      }
+      if j < n {
+        let name = source[i + 2:j].to_string().trim().to_string()
+        if value_defines.get(name) is Some(value) {
+          out = out + value.to_string()
+          i = j + 1
+          continue
+        }
+      }
+    }
+    out = out + source[i:i + 1].to_string()
+    i = i + 1
+  }
+  out
+}
+
+///|
+fn default_wgsl_value_defines() -> @hashmap.HashMap[String, Int] {
+  let defines : @hashmap.HashMap[String, Int] = @hashmap.HashMap::new()
+  defines.set("AVAILABLE_STORAGE_BUFFER_BINDINGS", 8)
+  defines.set("MAX_DIRECTIONAL_LIGHTS", 10)
+  defines.set("MAX_CASCADES_PER_LIGHT", 4)
+  defines.set("MATERIAL_BIND_GROUP", 3)
+  defines.set("SORTED_FRAGMENT_MAX_COUNT", 8)
+  defines.set("WORLD_CACHE_SIZE", 1048576)
+  defines.set("PER_OBJECT_BUFFER_BATCH_SIZE", 1)
+  defines.set("SCREEN_SPACE_SPECULAR_TRANSMISSION_BLUR_TAPS", 8)
+  defines
+}
+
+///|
 fn apply_wgsl_ifdefs(
   source : String,
   defines : @hashmap.HashMap[String, Bool],
+  value_defines : @hashmap.HashMap[String, Int],
 ) -> String {
   let mut out = ""
   let active_stack : Array[Bool] = [true]
@@ -1396,16 +1717,24 @@ fn apply_wgsl_ifdefs(
     let line = line_item.to_string()
     let trimmed = line.trim().to_string()
     if starts_with_text(trimmed, "#ifdef ") {
-      let name = trimmed[7:trimmed.length()].to_string().trim().to_string()
-      let cond = defines.get(name).unwrap_or(false)
+      let name = wgsl_directive_tail(trimmed, 7)
+      let cond = wgsl_define_enabled(defines, value_defines, name)
       let parent = active_stack[active_stack.length() - 1]
       active_stack.push(parent && cond)
       branch_taken_stack.push(cond)
       continue
     }
     if starts_with_text(trimmed, "#ifndef ") {
-      let name = trimmed[8:trimmed.length()].to_string().trim().to_string()
-      let cond = !defines.get(name).unwrap_or(false)
+      let name = wgsl_directive_tail(trimmed, 8)
+      let cond = !wgsl_define_enabled(defines, value_defines, name)
+      let parent = active_stack[active_stack.length() - 1]
+      active_stack.push(parent && cond)
+      branch_taken_stack.push(cond)
+      continue
+    }
+    if starts_with_text(trimmed, "#if ") {
+      let expr = wgsl_directive_tail(trimmed, 4)
+      let cond = eval_wgsl_if_expr(expr, defines, value_defines)
       let parent = active_stack[active_stack.length() - 1]
       active_stack.push(parent && cond)
       branch_taken_stack.push(cond)
@@ -1414,9 +1743,9 @@ fn apply_wgsl_ifdefs(
     if starts_with_text(trimmed, "#else ifdef ") {
       if branch_taken_stack.length() > 0 {
         let idx = branch_taken_stack.length() - 1
-        let name = trimmed[13:trimmed.length()].to_string().trim().to_string()
+        let name = wgsl_directive_tail(trimmed, 13)
         let cond = !branch_taken_stack[idx] &&
-          defines.get(name).unwrap_or(false)
+          wgsl_define_enabled(defines, value_defines, name)
         let parent = if active_stack.length() >= 2 {
           active_stack[active_stack.length() - 2]
         } else {
@@ -1430,9 +1759,9 @@ fn apply_wgsl_ifdefs(
     if starts_with_text(trimmed, "#else ifndef ") {
       if branch_taken_stack.length() > 0 {
         let idx = branch_taken_stack.length() - 1
-        let name = trimmed[14:trimmed.length()].to_string().trim().to_string()
+        let name = wgsl_directive_tail(trimmed, 14)
         let cond = !branch_taken_stack[idx] &&
-          !defines.get(name).unwrap_or(false)
+          !wgsl_define_enabled(defines, value_defines, name)
         let parent = if active_stack.length() >= 2 {
           active_stack[active_stack.length() - 2]
         } else {
@@ -1443,7 +1772,7 @@ fn apply_wgsl_ifdefs(
       }
       continue
     }
-    if trimmed == "#else" {
+    if starts_with_text(trimmed, "#else") {
       if branch_taken_stack.length() > 0 {
         let idx = branch_taken_stack.length() - 1
         let cond = !branch_taken_stack[idx]
@@ -1457,7 +1786,7 @@ fn apply_wgsl_ifdefs(
       }
       continue
     }
-    if trimmed == "#endif" {
+    if starts_with_text(trimmed, "#endif") {
       if active_stack.length() > 1 {
         active_stack.pop() |> ignore
       }
@@ -1478,7 +1807,9 @@ fn preprocess_wgsl_source(
   assets_base : String,
   source : String,
   defines : @hashmap.HashMap[String, Bool],
+  value_defines : @hashmap.HashMap[String, Int],
   visited : @hashmap.HashMap[String, Bool],
+  modules : @hashmap.HashMap[String, String],
 ) -> String raise GpuBackendError {
   let mut merged = ""
   let aliases : Array[String] = []
@@ -1506,13 +1837,11 @@ fn preprocess_wgsl_source(
       let targets : Array[WgslImportTarget] = []
       collect_wgsl_import_targets(spec, "", targets)
       for target in targets {
-        let module_path = resolve_wgsl_import_module_path(
-          assets_base,
-          target.raw_path,
-        )
-        if module_path == "" {
+        guard resolve_wgsl_import_module(assets_base, target.raw_path, modules)
+          is Some(resolved_module) else {
           fatal("wgpu: failed to resolve shader import: " + target.raw_path)
         }
+        let module_path = resolved_module.module_path
         let module_alias = if target.alias_name != "" {
           target.alias_name
         } else if module_path == target.raw_path {
@@ -1520,12 +1849,19 @@ fn preprocess_wgsl_source(
         } else {
           ""
         }
+        if module_alias != "" && !source.contains(module_alias + "::") {
+          continue
+        }
         if module_alias != "" {
           aliases.push(module_alias)
         }
-        let module_rel = wgsl_module_path_to_rel_path(module_path)
         let module_source = load_wgsl_preprocessed(
-          assets_base, module_rel, defines, visited,
+          assets_base,
+          resolved_module.rel_path,
+          defines,
+          value_defines,
+          visited,
+          modules,
         )
         if module_source != "" {
           merged = merged + module_source
@@ -1542,7 +1878,8 @@ fn preprocess_wgsl_source(
     merged = merged + line + "\n"
     line_index = line_index + 1
   }
-  let mut out = apply_wgsl_ifdefs(merged, defines)
+  let mut out = apply_wgsl_ifdefs(merged, defines, value_defines)
+  out = apply_wgsl_template_consts(out, value_defines)
   for module_alias in aliases {
     out = replace_substring_all(out, module_alias + "::", "")
   }
@@ -1554,7 +1891,9 @@ fn load_wgsl_preprocessed(
   assets_base : String,
   rel : String,
   defines : @hashmap.HashMap[String, Bool],
+  value_defines : @hashmap.HashMap[String, Int],
   visited : @hashmap.HashMap[String, Bool],
+  modules : @hashmap.HashMap[String, String],
 ) -> String raise GpuBackendError {
   let normalized_rel = normalize_shader_rel_path(rel)
   if normalized_rel == "" {
@@ -1571,7 +1910,14 @@ fn load_wgsl_preprocessed(
         "wgpu: failed to read shader: " + full_path + ": " + err.to_string(),
       )
   }
-  preprocess_wgsl_source(assets_base, source, defines, visited)
+  preprocess_wgsl_source(
+    assets_base,
+    source,
+    defines,
+    value_defines,
+    visited,
+    modules,
+  )
 }
 
 ///|
@@ -1593,13 +1939,17 @@ fn load_wgsl_from_assets_base_required(
   }
   let normalized_rel = normalize_shader_rel_path(rel)
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let value_defines = default_wgsl_value_defines()
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let source = load_wgsl_preprocessed(base, normalized_rel, defines, visited)
-  if is_motion_blur_shader_path(normalized_rel) {
-    lower_motion_blur_texture_samples_for_runtime(source)
-  } else {
-    source
-  }
+  let modules = build_wgsl_import_module_paths(base)
+  load_wgsl_preprocessed(
+    base,
+    normalized_rel,
+    defines,
+    value_defines,
+    visited,
+    modules,
+  )
 }
 
 ///|
@@ -1618,29 +1968,6 @@ fn replace_substring_all(source : String, from : String, to : String) -> String 
     out = out + piece.to_string()
   }
   out
-}
-
-///|
-fn lower_motion_blur_texture_samples_for_runtime(source : String) -> String {
-  let mut out = source
-  out = replace_substring_all(
-    out, "textureSample(screen_texture, texture_sampler, in.uv)", "textureSampleLevel(screen_texture, texture_sampler, in.uv, 0.0)",
-  )
-  out = replace_substring_all(
-    out, "textureSample(motion_vectors, texture_sampler, in.uv).rg", "textureSampleLevel(motion_vectors, texture_sampler, in.uv, 0.0).rg",
-  )
-  out = replace_substring_all(
-    out, "textureSample(depth, texture_sampler, in.uv)", "textureLoad(depth, frag_coords, 0)",
-  )
-  out = replace_substring_all(
-    out, "textureSample(screen_texture, texture_sampler, sample_uv)", "textureSampleLevel(screen_texture, texture_sampler, sample_uv, 0.0)",
-  )
-  out = replace_substring_all(
-    out, "textureSample(motion_vectors, texture_sampler, sample_uv).rg", "textureSampleLevel(motion_vectors, texture_sampler, sample_uv, 0.0).rg",
-  )
-  replace_substring_all(
-    out, "textureSample(depth, texture_sampler, sample_uv)", "textureLoad(depth, sample_coords, 0)",
-  )
 }
 
 ///|
@@ -1737,7 +2064,7 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
       builder,
       @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
       depth_write_enabled,
-      @wgpu.COMPARE_FUNCTION_LESS_EQUAL,
+      @wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
     )
     if set_depth_err != 0U {
       @wgpu_c.render_pipeline_desc_builder_free(builder)

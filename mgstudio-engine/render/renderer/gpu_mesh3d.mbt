@@ -529,7 +529,7 @@ fn ensure_mesh3d_point_shadow_compare_sampler(
         @wgpu.FILTER_MODE_LINEAR,
         @wgpu.FILTER_MODE_LINEAR,
         @wgpu.MIPMAP_FILTER_MODE_NEAREST,
-        compare_u32=@wgpu.COMPARE_FUNCTION_LESS_EQUAL,
+        compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
       )
       backend.mesh3d_point_shadow_compare_sampler = Some(sampler)
       sampler
@@ -619,7 +619,13 @@ fn resolve_mesh3d_texture(
   backend : GpuBackend,
   id : Int,
 ) -> GpuTextureInfo? raise GpuBackendError {
-  resolve_draw_texture(backend, id)
+  if id < 0 {
+    return Some(ensure_default_texture(backend))
+  }
+  match find_texture(backend, id) {
+    Some(texture) => Some(texture)
+    None => Some(ensure_default_texture(backend))
+  }
 }
 
 ///|

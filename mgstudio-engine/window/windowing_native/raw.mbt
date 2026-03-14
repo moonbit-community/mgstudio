@@ -31,39 +31,6 @@ const MAX_KEYBOARD_EVENTS : Int = 512
 const MAX_DRAG_EVENTS : Int = 64
 
 ///|
-const INPUT_EVENT_POINTER_MOVED : Int = 1
-
-///|
-const INPUT_EVENT_POINTER_ENTERED : Int = 2
-
-///|
-const INPUT_EVENT_POINTER_LEFT : Int = 3
-
-///|
-const INPUT_EVENT_POINTER_BUTTON : Int = 4
-
-///|
-const INPUT_EVENT_MOUSE_WHEEL : Int = 5
-
-///|
-const INPUT_EVENT_KEYBOARD_INPUT : Int = 7
-
-///|
-const INPUT_EVENT_IME : Int = 8
-
-///|
-const INPUT_EVENT_DRAG_ENTERED : Int = 9
-
-///|
-const INPUT_EVENT_DRAG_MOVED : Int = 10
-
-///|
-const INPUT_EVENT_DRAG_DROPPED : Int = 11
-
-///|
-const INPUT_EVENT_DRAG_LEFT : Int = 12
-
-///|
 const ELEMENT_STATE_PRESSED : Int = 1
 
 ///|
@@ -154,6 +121,11 @@ fn run_loop_frame_limit() -> Int {
 ///|
 fn encode_utf8_bytes(value : String) -> Bytes {
   @utf8.encode(value[:])
+}
+
+///|
+fn decode_utf8_lossy(value : Bytes) -> String {
+  @utf8.decode_lossy(value[:], ignore_bom=true)
 }
 
 ///|
@@ -273,7 +245,38 @@ let last_update_payload_ref : Ref[String] = Ref::new("")
 let pending_actions_ref : Ref[Array[@moon_accesskit.ActionRequest]] = Ref::new([])
 
 ///|
+priv struct NativeWindowEntry {
+  id : Int
+  window_ref : Ref[@window_macos.Window]
+}
+
+///|
+priv struct NativePumpHandler {}
+
+///|
+let native_event_loop_ref : Ref[@window_macos.EventLoop?] = Ref::new(None)
+
+///|
+let native_pump_handler_ref : Ref[NativePumpHandler] = Ref::new(NativePumpHandler::{
+
+})
+
+///|
+let native_windows_ref : Ref[Array[NativeWindowEntry]] = Ref::new([])
+
+///|
+fn remove_int(items : Array[Int], value : Int) -> Unit {
+  for i, item in items {
+    if item == value {
+      items.remove(i) |> ignore
+      return
+    }
+  }
+}
+
+///|
 fn mark_window_open(window : Int) -> Unit {
+  remove_int(closed_window_ids_ref.val, window)
   if !contains_int(open_window_ids_ref.val, window) {
     open_window_ids_ref.val.push(window)
   }
@@ -445,89 +448,237 @@ fn push_keyboard_event(
 }
 
 ///|
-fn key_id_from_scancode(scancode : Int) -> Int {
-  match scancode {
-    0 => 0
-    11 => 1
-    8 => 2
-    2 => 3
-    14 => 4
-    3 => 5
-    5 => 6
-    4 => 7
-    34 => 8
-    38 => 9
-    40 => 10
-    37 => 11
-    46 => 12
-    45 => 13
-    31 => 14
-    35 => 15
-    12 => 16
-    15 => 17
-    1 => 18
-    17 => 19
-    32 => 20
-    9 => 21
-    13 => 22
-    7 => 23
-    16 => 24
-    6 => 25
-    18 => 26
-    19 => 27
-    20 => 28
-    21 => 29
-    23 => 30
-    22 => 31
-    26 => 32
-    28 => 33
-    25 => 34
-    29 => 35
-    48 => 36
-    36 => 37
-    51 => 38
-    56 => 39
-    60 => 40
-    59 => 41
-    62 => 42
-    126 => 43
-    125 => 44
-    123 => 45
-    124 => 46
-    116 => 47
-    121 => 48
-    49 => 49
-    53 => 50
-    41 => 51
-    43 => 52
-    47 => 53
-    44 => 54
-    27 => 55
-    24 => 56
-    33 => 57
-    30 => 58
-    39 => 59
-    50 => 60
-    42 => 61
-    69 => 62
-    78 => 63
+fn key_id_from_key_code(key_code : @window_core.KeyCode) -> Int {
+  match key_code {
+    KeyA => 0
+    KeyB => 1
+    KeyC => 2
+    KeyD => 3
+    KeyE => 4
+    KeyF => 5
+    KeyG => 6
+    KeyH => 7
+    KeyI => 8
+    KeyJ => 9
+    KeyK => 10
+    KeyL => 11
+    KeyM => 12
+    KeyN => 13
+    KeyO => 14
+    KeyP => 15
+    KeyQ => 16
+    KeyR => 17
+    KeyS => 18
+    KeyT => 19
+    KeyU => 20
+    KeyV => 21
+    KeyW => 22
+    KeyX => 23
+    KeyY => 24
+    KeyZ => 25
+    Digit1 => 26
+    Digit2 => 27
+    Digit3 => 28
+    Digit4 => 29
+    Digit5 => 30
+    Digit6 => 31
+    Digit7 => 32
+    Digit8 => 33
+    Tab => 34
+    Enter => 35
+    Backspace => 36
+    ShiftLeft => 37
+    ShiftRight => 38
+    ControlLeft => 39
+    ControlRight => 40
+    ArrowUp => 41
+    ArrowDown => 42
+    ArrowLeft => 43
+    ArrowRight => 44
+    PageUp => 45
+    PageDown => 46
+    Space => 47
+    Escape => 48
+    Semicolon => 49
+    Comma => 50
+    Period => 51
+    Slash => 52
+    Minus => 53
+    Equal => 54
+    NumpadAdd => 55
+    NumpadSubtract => 56
+    BracketLeft => 57
+    BracketRight => 58
+    Quote => 59
     _ => -1
   }
 }
 
 ///|
-fn process_pointer_button(window : Int) -> Unit {
-  let button = host_window_input_event_button(window)
+fn key_id_from_physical_key(physical_key : @window_core.PhysicalKey) -> Int {
+  match physical_key {
+    Code(key_code) => key_id_from_key_code(key_code)
+    Unidentified(_) => -1
+  }
+}
+
+///|
+fn mouse_button_id_from_button(button : @window_core.MouseButton) -> Int {
+  match button {
+    Left => 0
+    Right => 1
+    Middle => 2
+    _ => -1
+  }
+}
+
+///|
+fn element_state_to_int(state : @window_core.ElementState) -> Int {
+  match state {
+    Pressed => ELEMENT_STATE_PRESSED
+    Released => ELEMENT_STATE_RELEASED
+  }
+}
+
+///|
+fn cursor_icon_from_int(icon : Int) -> @window_core.CursorIcon {
+  match icon {
+    1 => @window_core.CursorIcon::ContextMenu
+    2 => @window_core.CursorIcon::Help
+    3 => @window_core.CursorIcon::Progress
+    4 => @window_core.CursorIcon::Wait
+    5 => @window_core.CursorIcon::Cell
+    6 => @window_core.CursorIcon::VerticalText
+    7 => @window_core.CursorIcon::Alias
+    8 => @window_core.CursorIcon::Copy
+    9 => @window_core.CursorIcon::NoDrop
+    10 => @window_core.CursorIcon::Grab
+    11 => @window_core.CursorIcon::Grabbing
+    12 => @window_core.CursorIcon::EResize
+    13 => @window_core.CursorIcon::NResize
+    14 => @window_core.CursorIcon::NeResize
+    15 => @window_core.CursorIcon::NwResize
+    16 => @window_core.CursorIcon::SResize
+    17 => @window_core.CursorIcon::SeResize
+    18 => @window_core.CursorIcon::SwResize
+    19 => @window_core.CursorIcon::WResize
+    20 => @window_core.CursorIcon::EwResize
+    21 => @window_core.CursorIcon::NsResize
+    22 => @window_core.CursorIcon::NeswResize
+    23 => @window_core.CursorIcon::NwseResize
+    24 => @window_core.CursorIcon::ColResize
+    25 => @window_core.CursorIcon::RowResize
+    26 => @window_core.CursorIcon::AllScroll
+    27 => @window_core.CursorIcon::ZoomIn
+    28 => @window_core.CursorIcon::ZoomOut
+    29 => @window_core.CursorIcon::Pointer
+    30 => @window_core.CursorIcon::Text
+    31 => @window_core.CursorIcon::Crosshair
+    32 => @window_core.CursorIcon::Move
+    33 => @window_core.CursorIcon::NotAllowed
+    _ => @window_core.CursorIcon::Default
+  }
+}
+
+///|
+fn cursor_grab_mode_from_int(mode : Int) -> @window_core.CursorGrabMode {
+  match mode {
+    1 => @window_core.CursorGrabMode::Confined
+    2 => @window_core.CursorGrabMode::Locked
+    _ => @window_core.CursorGrabMode::None
+  }
+}
+
+///|
+fn resize_direction_from_int(direction : Int) -> @window_core.ResizeDirection {
+  match direction {
+    1 => @window_core.ResizeDirection::North
+    2 => @window_core.ResizeDirection::NorthEast
+    5 => @window_core.ResizeDirection::SouthEast
+    4 => @window_core.ResizeDirection::South
+    6 => @window_core.ResizeDirection::SouthWest
+    7 => @window_core.ResizeDirection::West
+    3 => @window_core.ResizeDirection::NorthWest
+    _ => @window_core.ResizeDirection::East
+  }
+}
+
+///|
+fn window_level_from_int(level : Int) -> @window_core.WindowLevel {
+  match level {
+    1 => @window_core.WindowLevel::AlwaysOnTop
+    2 => @window_core.WindowLevel::AlwaysOnBottom
+    _ => @window_core.WindowLevel::Normal
+  }
+}
+
+///|
+fn window_theme_from_int(theme : Int) -> @window_core.Theme? {
+  match theme {
+    1 => Some(@window_core.Theme::Light)
+    2 => Some(@window_core.Theme::Dark)
+    _ => None
+  }
+}
+
+///|
+fn ensure_native_event_loop() -> @window_macos.EventLoop {
+  match native_event_loop_ref.val {
+    Some(event_loop) => event_loop
+    None => {
+      let event_loop = @window_macos.EventLoop::new()
+      event_loop.set_control_flow(@window_core.ControlFlow::Poll)
+      native_event_loop_ref.val = Some(event_loop)
+      event_loop
+    }
+  }
+}
+
+///|
+fn native_window_ref(window : Int) -> Ref[@window_macos.Window]? {
+  for entry in native_windows_ref.val {
+    if entry.id == window {
+      return Some(entry.window_ref)
+    }
+  }
+  None
+}
+
+///|
+fn native_window_remove(window : Int) -> Unit {
+  for i, entry in native_windows_ref.val {
+    if entry.id == window {
+      native_windows_ref.val.remove(i) |> ignore
+      return
+    }
+  }
+}
+
+///|
+fn set_pointer_position(position : @window_dpi.PhysicalPositionF64) -> Unit {
+  mouse_x_ref.val = Float::from_double(position.x())
+  mouse_y_ref.val = Float::from_double(position.y())
+}
+
+///|
+fn process_pointer_button(
+  state : @window_core.ElementState,
+  source : @window_core.ButtonSource,
+) -> Unit {
+  let button = match source.mouse_button() {
+    Some(mouse_button) => mouse_button_id_from_button(mouse_button)
+    None => -1
+  }
   if button < 0 || button >= MOUSE_BUTTON_COUNT {
     return
   }
-  let state = host_window_input_event_state(window)
-  if state == ELEMENT_STATE_PRESSED {
+  let state_value = element_state_to_int(state)
+  if state_value == ELEMENT_STATE_PRESSED {
     if !bool_state_get(mouse_down_ref.val, button) {
       bool_state_set(mouse_just_pressed_ref.val, button, true)
     }
     bool_state_set(mouse_down_ref.val, button, true)
-  } else if state == ELEMENT_STATE_RELEASED {
+  } else if state_value == ELEMENT_STATE_RELEASED {
     if bool_state_get(mouse_down_ref.val, button) {
       bool_state_set(mouse_just_released_ref.val, button, true)
     }
@@ -536,15 +687,18 @@ fn process_pointer_button(window : Int) -> Unit {
 }
 
 ///|
-fn process_keyboard_input(window : Int) -> Unit {
-  let key_id = key_id_from_scancode(host_window_input_event_scancode(window))
+fn process_keyboard_input(key_event : @window_core.KeyEvent) -> Unit {
+  let key_id = key_id_from_physical_key(key_event.physical_key())
   if key_id < 0 {
     return
   }
-  let state = host_window_input_event_state(window)
+  let state = element_state_to_int(key_event.state())
   if state == ELEMENT_STATE_PRESSED {
-    let repeated = host_window_input_event_repeat(window)
-    let text = host_window_input_event_text_with_all_modifiers(window)
+    let repeated = key_event.repeat()
+    let text = match key_event.text_with_all_modifiers() {
+      Some(value) => encode_utf8_bytes(value)
+      None => Bytes::from_array([])
+    }
     if repeated {
       bool_state_set(key_repeated_ref.val, key_id, true)
     }
@@ -564,90 +718,154 @@ fn process_keyboard_input(window : Int) -> Unit {
 }
 
 ///|
-fn process_drag_event(window : Int, kind : Int) -> Unit {
-  match kind {
-    INPUT_EVENT_DRAG_ENTERED => {
-      let path = host_window_input_event_path(window)
-      drag_hovered_path_ref.val = Some(path)
-      push_drag_event(1, path)
+fn process_ime_event(window : Int, ime_event : @window_core.Ime) -> Unit {
+  match ime_event {
+    Enabled =>
+      push_ime_event(window, IME_EVENT_ENABLED, Bytes::from_array([]), 0, 0)
+    Preedit(text, cursor_range) => {
+      let mut cursor_start = -1
+      let mut cursor_end = -1
+      match cursor_range {
+        Some(range) => {
+          cursor_start = range.start()
+          cursor_end = range.end()
+        }
+        None => ()
+      }
+      push_ime_event(
+        window,
+        IME_EVENT_PREEDIT,
+        encode_utf8_bytes(text),
+        cursor_start,
+        cursor_end,
+      )
     }
-    INPUT_EVENT_DRAG_MOVED =>
-      match drag_hovered_path_ref.val {
-        Some(path) => push_drag_event(1, path)
-        None => {
-          let path = host_window_input_event_path(window)
-          if path.length() > 0 {
-            drag_hovered_path_ref.val = Some(path)
-            push_drag_event(1, path)
-          }
+    Commit(text) => {
+      let text_bytes = encode_utf8_bytes(text)
+      push_ime_event(window, IME_EVENT_COMMIT, text_bytes, 0, 0)
+      push_text_event(text_bytes)
+    }
+    DeleteSurrounding(before_bytes, after_bytes) =>
+      push_ime_event(
+        window,
+        IME_EVENT_DELETE_SURROUNDING,
+        Bytes::from_array([]),
+        before_bytes,
+        after_bytes,
+      )
+    Disabled =>
+      push_ime_event(window, IME_EVENT_DISABLED, Bytes::from_array([]), 0, 0)
+  }
+}
+
+///|
+fn process_drag_entered(paths : Array[String]) -> Unit {
+  drag_hovered_path_ref.val = None
+  for path in paths {
+    let path_bytes = encode_utf8_bytes(path)
+    if drag_hovered_path_ref.val is None {
+      drag_hovered_path_ref.val = Some(path_bytes)
+    }
+    push_drag_event(1, path_bytes)
+  }
+}
+
+///|
+fn process_drag_moved() -> Unit {
+  match drag_hovered_path_ref.val {
+    Some(path) => push_drag_event(1, path)
+    None => ()
+  }
+}
+
+///|
+fn process_drag_dropped(paths : Array[String]) -> Unit {
+  if paths.length() > 0 {
+    for path in paths {
+      push_drag_event(0, encode_utf8_bytes(path))
+    }
+  } else {
+    match drag_hovered_path_ref.val {
+      Some(path) => push_drag_event(0, path)
+      None => ()
+    }
+  }
+  drag_hovered_path_ref.val = None
+}
+
+///|
+fn process_drag_left() -> Unit {
+  let path = match drag_hovered_path_ref.val {
+    Some(value) => value
+    None => Bytes::from_array([])
+  }
+  drag_hovered_path_ref.val = None
+  push_drag_event(2, path)
+}
+
+///|
+fn process_window_event(window : Int, event : @window_core.WindowEvent) -> Unit {
+  match event {
+    CloseRequested => mark_window_closed(window)
+    Destroyed => mark_window_closed(window)
+    PointerMoved(_, position, _is_primary, _source) => {
+      has_cursor_ref.val = true
+      set_pointer_position(position)
+    }
+    PointerEntered(_, position, _is_primary, _kind) => {
+      has_cursor_ref.val = true
+      set_pointer_position(position)
+    }
+    PointerLeft(_, position, _is_primary, _kind) => {
+      has_cursor_ref.val = false
+      match position {
+        Some(value) => set_pointer_position(value)
+        None => ()
+      }
+    }
+    PointerButton(_, state, position, _is_primary, source) => {
+      has_cursor_ref.val = true
+      set_pointer_position(position)
+      process_pointer_button(state, source)
+    }
+    MouseWheel(_, delta, _phase) =>
+      match delta {
+        LineDelta(delta_x, delta_y) => {
+          wheel_x_ref.val = wheel_x_ref.val + Float::from_double(delta_x)
+          wheel_y_ref.val = wheel_y_ref.val + Float::from_double(delta_y)
+        }
+        PixelDelta(position) => {
+          wheel_x_ref.val = wheel_x_ref.val + Float::from_double(position.x())
+          wheel_y_ref.val = wheel_y_ref.val + Float::from_double(position.y())
         }
       }
-    INPUT_EVENT_DRAG_DROPPED => {
-      let path = host_window_input_event_path(window)
-      drag_hovered_path_ref.val = None
-      push_drag_event(0, path)
-    }
-    INPUT_EVENT_DRAG_LEFT => {
-      drag_hovered_path_ref.val = None
-      push_drag_event(2, host_window_input_event_path(window))
-    }
+    KeyboardInput(_device_id, key_event, _is_synthetic) =>
+      process_keyboard_input(key_event)
+    Ime(ime_event) => process_ime_event(window, ime_event)
+    DragEntered(paths, _position) => process_drag_entered(paths)
+    DragMoved(_position) => process_drag_moved()
+    DragDropped(paths, _position) => process_drag_dropped(paths)
+    DragLeft(_position) => process_drag_left()
     _ => ()
   }
 }
 
 ///|
-fn process_input_events(window : Int) -> Unit {
-  while host_window_take_input_event(window) {
-    let kind = host_window_input_event_kind(window)
+impl @window_macos.ApplicationHandler for NativePumpHandler with window_event(
+  _self,
+  _event_loop,
+  window_id,
+  event,
+) {
+  process_window_event(window_id.into_raw(), event)
+}
 
-    if kind == INPUT_EVENT_POINTER_MOVED ||
-      kind == INPUT_EVENT_POINTER_ENTERED ||
-      kind == INPUT_EVENT_POINTER_LEFT ||
-      kind == INPUT_EVENT_POINTER_BUTTON {
-      has_cursor_ref.val = kind != INPUT_EVENT_POINTER_LEFT
-      mouse_x_ref.val = Float::from_double(host_window_input_event_x(window))
-      mouse_y_ref.val = Float::from_double(host_window_input_event_y(window))
-    }
-
-    if kind == INPUT_EVENT_POINTER_BUTTON {
-      process_pointer_button(window)
-      continue
-    }
-
-    if kind == INPUT_EVENT_MOUSE_WHEEL {
-      wheel_x_ref.val = wheel_x_ref.val +
-        Float::from_double(host_window_input_event_scroll_delta_x(window))
-      wheel_y_ref.val = wheel_y_ref.val +
-        Float::from_double(host_window_input_event_scroll_delta_y(window))
-      continue
-    }
-
-    if kind == INPUT_EVENT_KEYBOARD_INPUT {
-      process_keyboard_input(window)
-      continue
-    }
-
-    if kind == INPUT_EVENT_IME {
-      let ime_kind = host_window_input_event_ime_kind(window)
-      let ime_text = host_window_input_event_ime_text(window)
-      let ime_cursor_start = host_window_input_event_ime_cursor_start(window)
-      let ime_cursor_end = host_window_input_event_ime_cursor_end(window)
-      push_ime_event(
-        window, ime_kind, ime_text, ime_cursor_start, ime_cursor_end,
-      )
-      if ime_kind == IME_EVENT_COMMIT {
-        push_text_event(ime_text)
-      }
-      continue
-    }
-
-    if kind == INPUT_EVENT_DRAG_ENTERED ||
-      kind == INPUT_EVENT_DRAG_MOVED ||
-      kind == INPUT_EVENT_DRAG_DROPPED ||
-      kind == INPUT_EVENT_DRAG_LEFT {
-      process_drag_event(window, kind)
-      continue
-    }
+///|
+fn pump_native_events() -> Unit {
+  match native_event_loop_ref.val {
+    Some(event_loop) =>
+      event_loop.pump_app_events(Some(0), native_pump_handler_ref.val) |> ignore
+    None => ()
   }
 }
 
@@ -659,33 +877,46 @@ pub fn create_utf8(
   physical_height : Int,
   use_physical_size_on_create : Bool,
   title : Bytes,
-  title_len : UInt64,
+  _title_len : UInt64,
   visible : Bool,
   resizable : Bool,
   decorations : Bool,
   panel : Bool,
 ) -> Int {
-  let width = if use_physical_size_on_create {
-    if physical_width > 0 {
-      physical_width
-    } else {
-      logical_width
-    }
-  } else {
-    logical_width
-  }
-  let height = if use_physical_size_on_create {
-    if physical_height > 0 {
+  let event_loop = ensure_native_event_loop()
+  let mut attributes = @window_core.WindowAttributes::default()
+    .with_title(decode_utf8_lossy(title))
+    .with_visible(visible)
+    .with_active(true)
+    .with_resizable(resizable)
+    .with_decorations(decorations)
+    .with_platform_attributes(
+      @window_core.PlatformWindowAttributes::default().with_panel(panel),
+    )
+  if use_physical_size_on_create {
+    let width = if physical_width > 0 { physical_width } else { logical_width }
+    let height = if physical_height > 0 {
       physical_height
     } else {
       logical_height
     }
+    attributes = attributes.with_surface_size(
+      @window_dpi.PhysicalSize::new(width, height).into_size(),
+    )
   } else {
-    logical_height
+    attributes = attributes.with_inner_size(
+      @window_dpi.LogicalSize::new(
+        logical_width.to_double(),
+        logical_height.to_double(),
+      ).into_size(),
+    )
   }
-  let window = host_window_create_utf8(
-    width, height, visible, true, resizable, decorations, panel, title, title_len,
-  )
+  let native_window = event_loop.create_window(attributes)
+  let window = native_window.id().into_raw()
+  native_windows_ref.val.push(NativeWindowEntry::{
+    id: window,
+    window_ref: Ref::new(native_window),
+  })
   mark_window_open(window)
   window
 }
@@ -720,32 +951,40 @@ pub fn create(
 }
 
 ///|
-pub fn poll_events(window : Int) -> Unit {
-  host_window_poll(window)
-  if host_window_take_close_requested(window) {
-    mark_window_closed(window)
-  }
-  process_input_events(window)
+pub fn poll_events(_window : Int) -> Unit {
+  pump_native_events()
 }
 
 ///|
 pub fn width(window : Int) -> Int {
-  host_window_width(window)
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.surface_size().width()
+    None => 0
+  }
 }
 
 ///|
 pub fn height(window : Int) -> Int {
-  host_window_height(window)
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.surface_size().height()
+    None => 0
+  }
 }
 
 ///|
 pub fn scale_factor(window : Int) -> Float {
-  Float::from_double(host_window_scale_factor(window))
+  match native_window_ref(window) {
+    Some(window_ref) => Float::from_double(window_ref.val.scale_factor())
+    None => 1.0
+  }
 }
 
 ///|
 pub fn focused(window : Int) -> Bool {
-  host_window_has_focus(window)
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.has_focus()
+    None => false
+  }
 }
 
 ///|
@@ -753,17 +992,17 @@ pub fn should_close(window : Int) -> Bool {
   if is_window_closed(window) {
     return true
   }
-  if host_window_take_close_requested(window) {
-    mark_window_closed(window)
-    true
-  } else {
-    false
-  }
+  native_window_ref(window) is None &&
+  contains_int(open_window_ids_ref.val, window)
 }
 
 ///|
 pub fn request_close(window : Int) -> Unit {
-  host_window_close(window)
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.drop()
+    None => ()
+  }
+  native_window_remove(window)
   mark_window_closed(window)
 }
 
@@ -787,39 +1026,60 @@ pub fn run_loop(step : FuncRef[() -> Unit]) -> Unit {
 }
 
 ///|
-pub fn set_title_utf8(window : Int, title : Bytes, title_len : UInt64) -> Unit {
-  host_window_set_title_utf8(window, title, title_len)
+pub fn set_title_utf8(window : Int, title : Bytes, _title_len : UInt64) -> Unit {
+  set_title(window, title=decode_utf8_lossy(title))
 }
 
 ///|
 pub fn set_title(window : Int, title~ : String) -> Unit {
-  let title_bytes = encode_utf8_bytes(title)
-  set_title_utf8(window, title_bytes, title_bytes.length().to_uint64())
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.set_title(title)
+    None => ()
+  }
 }
 
 ///|
 pub fn set_size(window : Int, width~ : Int, height~ : Int) -> Unit {
-  host_window_set_surface_size(window, width, height)
+  match native_window_ref(window) {
+    Some(window_ref) =>
+      window_ref.val.request_surface_size(
+        @window_dpi.PhysicalSize::new(width, height).into_size(),
+      )
+      |> ignore
+    None => ()
+  }
 }
 
 ///|
 pub fn set_resizable(window : Int, resizable~ : Bool) -> Unit {
-  host_window_set_resizable(window, resizable)
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.set_resizable(resizable)
+    None => ()
+  }
 }
 
 ///|
 pub fn set_visible(window : Int, visible~ : Bool) -> Unit {
-  host_window_set_visible(window, visible)
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.set_visible(visible)
+    None => ()
+  }
 }
 
 ///|
 pub fn set_decorations(window : Int, decorations~ : Bool) -> Unit {
-  host_window_set_decorations(window, decorations)
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.set_decorations(decorations)
+    None => ()
+  }
 }
 
 ///|
 pub fn set_transparent(window : Int, transparent~ : Bool) -> Unit {
-  host_window_set_transparent(window, transparent)
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.set_transparent(transparent)
+    None => ()
+  }
 }
 
 ///|
@@ -829,22 +1089,41 @@ pub fn set_enabled_buttons(
   minimize~ : Bool,
   maximize~ : Bool,
 ) -> Unit {
-  host_window_set_enabled_buttons(window, close, minimize, maximize)
+  match native_window_ref(window) {
+    Some(window_ref) =>
+      window_ref.val.set_enabled_buttons(
+        @window_core.WindowButtons::all()
+        .with_close(close)
+        .with_minimize(minimize)
+        .with_maximize(maximize),
+      )
+    None => ()
+  }
 }
 
 ///|
 pub fn set_window_level(window : Int, level~ : Int) -> Unit {
-  host_window_set_window_level(window, level)
+  match native_window_ref(window) {
+    Some(window_ref) =>
+      window_ref.val.set_window_level(window_level_from_int(level))
+    None => ()
+  }
 }
 
 ///|
 pub fn set_theme(window : Int, theme~ : Int) -> Unit {
-  host_window_set_theme(window, theme)
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.set_theme(window_theme_from_int(theme))
+    None => ()
+  }
 }
 
 ///|
 pub fn set_ime_allowed(window : Int, allowed~ : Bool) -> Unit {
-  host_window_set_ime_allowed(window, allowed)
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.set_ime_allowed(allowed)
+    None => ()
+  }
 }
 
 ///|
@@ -855,64 +1134,131 @@ pub fn set_ime_cursor_area(
   width~ : Int,
   height~ : Int,
 ) -> Unit {
-  host_window_set_ime_cursor_area(window, x, y, width, height)
+  match native_window_ref(window) {
+    Some(window_ref) =>
+      window_ref.val.set_ime_cursor_area(
+        @window_dpi.PhysicalPosition::new(x, y).into_position(),
+        @window_dpi.PhysicalSize::new(width, height).into_size(),
+      )
+    None => ()
+  }
 }
 
 ///|
 pub fn set_cursor_visible(window : Int, visible~ : Bool) -> Unit {
-  host_window_set_cursor_visible(window, visible)
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.set_cursor_visible(visible)
+    None => ()
+  }
 }
 
 ///|
 pub fn set_cursor_grab_mode(window : Int, mode~ : Int) -> Unit {
-  host_window_set_cursor_grab(window, mode) |> ignore
+  match native_window_ref(window) {
+    Some(window_ref) =>
+      window_ref.val.set_cursor_grab(cursor_grab_mode_from_int(mode)) catch {
+        _ => ()
+      }
+    None => ()
+  }
 }
 
 ///|
 pub fn set_cursor_icon(window : Int, icon~ : Int) -> Unit {
-  host_window_set_cursor(window, icon)
+  match native_window_ref(window) {
+    Some(window_ref) =>
+      window_ref.val.set_cursor_icon(cursor_icon_from_int(icon))
+    None => ()
+  }
 }
 
 ///|
 pub fn set_mode(window : Int, mode~ : Int) -> Unit {
-  if mode == 0 {
-    host_window_set_fullscreen(window, false)
-    host_window_set_simple_fullscreen(window, false) |> ignore
-  } else if mode == 1 {
-    host_window_set_simple_fullscreen(window, true) |> ignore
-  } else if mode == 2 {
-    host_window_set_fullscreen(window, true)
+  match native_window_ref(window) {
+    Some(window_ref) =>
+      if mode == 0 {
+        window_ref.val.set_simple_fullscreen(false) |> ignore
+        window_ref.val.set_fullscreen(None)
+      } else if mode == 1 {
+        window_ref.val.set_fullscreen(None)
+        window_ref.val.set_simple_fullscreen(true) |> ignore
+      } else if mode == 2 {
+        window_ref.val.set_simple_fullscreen(false) |> ignore
+        window_ref.val.set_fullscreen(
+          Some(@window_core.Fullscreen::Borderless(None)),
+        )
+      }
+    None => ()
   }
 }
 
 ///|
 pub fn set_position(window : Int, x~ : Int, y~ : Int) -> Unit {
-  host_window_set_position(window, x, y)
+  match native_window_ref(window) {
+    Some(window_ref) =>
+      window_ref.val.set_outer_position(
+        @window_dpi.PhysicalPosition::new(x, y).into_position(),
+      )
+    None => ()
+  }
 }
 
 ///|
 pub fn drag_window(window : Int) -> Bool {
-  host_window_drag_window(window)
+  match native_window_ref(window) {
+    Some(window_ref) =>
+      try {
+        window_ref.val.drag_window()
+        true
+      } catch {
+        _ => false
+      }
+    None => false
+  }
 }
 
 ///|
 pub fn drag_resize_window(window : Int, direction~ : Int) -> Bool {
-  host_window_drag_resize_window(window, direction)
+  match native_window_ref(window) {
+    Some(window_ref) =>
+      try {
+        window_ref.val.drag_resize_window(resize_direction_from_int(direction))
+        true
+      } catch {
+        _ => false
+      }
+    None => false
+  }
 }
 
 ///|
 pub fn position_x(window : Int) -> Int {
-  host_window_x(window)
+  match native_window_ref(window) {
+    Some(window_ref) =>
+      (window_ref.val.outer_position() catch {
+        _ => @window_dpi.PhysicalPosition::new(0, 0)
+      }).x()
+    None => 0
+  }
 }
 
 ///|
 pub fn position_y(window : Int) -> Int {
-  host_window_y(window)
+  match native_window_ref(window) {
+    Some(window_ref) =>
+      (window_ref.val.outer_position() catch {
+        _ => @window_dpi.PhysicalPosition::new(0, 0)
+      }).y()
+    None => 0
+  }
 }
 
 ///|
 pub fn attach_metal_layer(window : Int, layer : @wgpu_c.OpaquePtr) -> Unit {
-  host_window_attach_metal_layer(window, layer)
+  match native_window_ref(window) {
+    Some(_window_ref) => host_window_attach_metal_layer(window, layer)
+    None => ()
+  }
 }
 
 ///|
@@ -925,7 +1271,8 @@ pub fn attach_surface_metal_layer(
 
 ///|
 pub fn native_backend_available() -> Bool {
-  @window_macos.native_backend_available()
+  @window_macos.EventLoopBuilder::new() |> ignore
+  true
 }
 
 ///|
@@ -1348,193 +1695,7 @@ pub fn input_drag_and_drop_event_code_unit(index~ : Int, offset~ : Int) -> Int {
 }
 
 ///|
-#borrow(title)
-extern "C" fn host_window_create_utf8(
-  width : Int,
-  height : Int,
-  visible : Bool,
-  active : Bool,
-  resizable : Bool,
-  decorations : Bool,
-  panel : Bool,
-  title : Bytes,
-  title_len : UInt64,
-) -> Int = "mbw_window_create_utf8"
-
-///|
-extern "C" fn host_window_poll(window : Int) -> Unit = "mbw_window_poll"
-
-///|
-extern "C" fn host_window_width(window : Int) -> Int = "mbw_window_width"
-
-///|
-extern "C" fn host_window_height(window : Int) -> Int = "mbw_window_height"
-
-///|
-extern "C" fn host_window_scale_factor(window : Int) -> Double = "mbw_window_scale_factor"
-
-///|
-extern "C" fn host_window_has_focus(window : Int) -> Bool = "mbw_window_has_focus"
-
-///|
-extern "C" fn host_window_take_close_requested(window : Int) -> Bool = "mbw_window_take_close_requested"
-
-///|
-extern "C" fn host_window_close(window : Int) -> Unit = "mbw_window_close"
-
-///|
-#borrow(title)
-extern "C" fn host_window_set_title_utf8(
-  window : Int,
-  title : Bytes,
-  title_len : UInt64,
-) -> Unit = "mbw_window_set_title_utf8"
-
-///|
-extern "C" fn host_window_set_surface_size(
-  window : Int,
-  width : Int,
-  height : Int,
-) -> Unit = "mbw_window_set_surface_size"
-
-///|
-extern "C" fn host_window_set_resizable(window : Int, resizable : Bool) -> Unit = "mbw_window_set_resizable"
-
-///|
-extern "C" fn host_window_set_visible(window : Int, visible : Bool) -> Unit = "mbw_window_set_visible"
-
-///|
-extern "C" fn host_window_set_decorations(
-  window : Int,
-  decorations : Bool,
-) -> Unit = "mbw_window_set_decorations"
-
-///|
-extern "C" fn host_window_set_enabled_buttons(
-  window : Int,
-  close : Bool,
-  minimize : Bool,
-  maximize : Bool,
-) -> Unit = "mbw_window_set_enabled_buttons"
-
-///|
-extern "C" fn host_window_set_transparent(
-  window : Int,
-  transparent : Bool,
-) -> Unit = "mbw_window_set_transparent"
-
-///|
-extern "C" fn host_window_set_window_level(window : Int, level : Int) -> Unit = "mbw_window_set_window_level"
-
-///|
-extern "C" fn host_window_set_theme(window : Int, theme : Int) -> Unit = "mbw_window_set_theme"
-
-///|
-extern "C" fn host_window_set_ime_allowed(window : Int, allowed : Bool) -> Unit = "mbw_window_set_ime_allowed"
-
-///|
-extern "C" fn host_window_set_ime_cursor_area(
-  window : Int,
-  x : Int,
-  y : Int,
-  width : Int,
-  height : Int,
-) -> Unit = "mbw_window_set_ime_cursor_area"
-
-///|
-extern "C" fn host_window_set_cursor_visible(
-  window : Int,
-  visible : Bool,
-) -> Unit = "mbw_window_set_cursor_visible"
-
-///|
-extern "C" fn host_window_set_cursor_grab(window : Int, mode : Int) -> Bool = "mbw_window_set_cursor_grab"
-
-///|
-extern "C" fn host_window_set_cursor(window : Int, cursor : Int) -> Unit = "mbw_window_set_cursor"
-
-///|
-extern "C" fn host_window_set_fullscreen(
-  window : Int,
-  fullscreen : Bool,
-) -> Unit = "mbw_window_set_fullscreen"
-
-///|
-extern "C" fn host_window_set_simple_fullscreen(
-  window : Int,
-  fullscreen : Bool,
-) -> Bool = "mbw_window_set_simple_fullscreen"
-
-///|
-extern "C" fn host_window_set_position(window : Int, x : Int, y : Int) -> Unit = "mbw_window_set_position"
-
-///|
-extern "C" fn host_window_drag_window(window : Int) -> Bool = "mbw_window_drag_window"
-
-///|
-extern "C" fn host_window_drag_resize_window(
-  window : Int,
-  direction : Int,
-) -> Bool = "mbw_window_drag_resize_window"
-
-///|
-extern "C" fn host_window_x(window : Int) -> Int = "mbw_window_x"
-
-///|
-extern "C" fn host_window_y(window : Int) -> Int = "mbw_window_y"
-
-///|
 extern "C" fn host_window_attach_metal_layer(
   window : Int,
   layer : @wgpu_c.OpaquePtr,
-) -> Unit = "mgstudio_window_attach_metal_layer_from_mbw"
-
-///|
-extern "C" fn host_window_take_input_event(window : Int) -> Bool = "mbw_window_take_input_event"
-
-///|
-extern "C" fn host_window_input_event_kind(window : Int) -> Int = "mbw_window_input_event_kind"
-
-///|
-extern "C" fn host_window_input_event_x(window : Int) -> Double = "mbw_window_input_event_x"
-
-///|
-extern "C" fn host_window_input_event_y(window : Int) -> Double = "mbw_window_input_event_y"
-
-///|
-extern "C" fn host_window_input_event_state(window : Int) -> Int = "mbw_window_input_event_state"
-
-///|
-extern "C" fn host_window_input_event_button(window : Int) -> Int = "mbw_window_input_event_button"
-
-///|
-extern "C" fn host_window_input_event_scroll_delta_x(window : Int) -> Double = "mbw_window_input_event_scroll_delta_x"
-
-///|
-extern "C" fn host_window_input_event_scroll_delta_y(window : Int) -> Double = "mbw_window_input_event_scroll_delta_y"
-
-///|
-extern "C" fn host_window_input_event_scancode(window : Int) -> Int = "mbw_window_input_event_scancode"
-
-///|
-extern "C" fn host_window_input_event_repeat(window : Int) -> Bool = "mbw_window_input_event_repeat"
-
-///|
-extern "C" fn host_window_input_event_text_with_all_modifiers(
-  window : Int,
-) -> Bytes = "mbw_window_input_event_text_with_all_modifiers"
-
-///|
-extern "C" fn host_window_input_event_ime_kind(window : Int) -> Int = "mbw_window_input_event_ime_kind"
-
-///|
-extern "C" fn host_window_input_event_ime_text(window : Int) -> Bytes = "mbw_window_input_event_ime_text"
-
-///|
-extern "C" fn host_window_input_event_ime_cursor_start(window : Int) -> Int = "mbw_window_input_event_ime_cursor_start"
-
-///|
-extern "C" fn host_window_input_event_ime_cursor_end(window : Int) -> Int = "mbw_window_input_event_ime_cursor_end"
-
-///|
-extern "C" fn host_window_input_event_path(window : Int) -> Bytes = "mbw_window_input_event_path"
+) -> Unit = "mgstudio_window_attach_metal_layer"

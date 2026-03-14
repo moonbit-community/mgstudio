@@ -1436,40 +1436,24 @@ pub fn draw_tonemapping3d(
   color_grading_hue~ : Float,
   color_grading_post_saturation~ : Float,
 ) -> Unit {
-  let fxaa_edge_threshold_value = if fxaa_edge_threshold <
-    fxaa_edge_threshold_min {
-    fxaa_edge_threshold_min
-  } else {
-    fxaa_edge_threshold
-  }
-  let chromatic_aberration_value = chromatic_aberration_intensity
-  let vignette_value = vignette_intensity
-  chromatic_aberration_max_samples |> ignore
-  vignette_radius |> ignore
-  vignette_smoothness |> ignore
-  vignette_roundness |> ignore
-  vignette_center_x |> ignore
-  vignette_center_y |> ignore
-  vignette_edge_compensation |> ignore
-  vignette_color_r |> ignore
-  vignette_color_g |> ignore
-  vignette_color_b |> ignore
-  vignette_color_a |> ignore
   if ensure_backend() is Some(backend) {
-    backend.draw_bloom2d(
-      scene_texture_id, 0, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0, 64, 1.0F, 1.0F,
-      exposure, tonemapping_mode, deband_dither_enabled, view_width, view_height,
-      agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id, color_grading_balance_x_axis_x,
-      color_grading_balance_x_axis_y, color_grading_balance_x_axis_z, color_grading_balance_y_axis_x,
-      color_grading_balance_y_axis_y, color_grading_balance_y_axis_z, color_grading_balance_z_axis_x,
-      color_grading_balance_z_axis_y, color_grading_balance_z_axis_z, color_grading_saturation_shadows,
-      color_grading_saturation_midtones, color_grading_saturation_highlights, color_grading_contrast_shadows,
-      color_grading_contrast_midtones, color_grading_contrast_highlights, color_grading_gamma_shadows,
-      color_grading_gamma_midtones, color_grading_gamma_highlights, color_grading_gain_shadows,
-      color_grading_gain_midtones, color_grading_gain_highlights, color_grading_lift_shadows,
-      color_grading_lift_midtones, color_grading_lift_highlights, color_grading_midtones_start,
-      color_grading_midtones_end, color_grading_exposure, color_grading_hue, color_grading_post_saturation,
-      fxaa_enabled, fxaa_edge_threshold_value, chromatic_aberration_value, vignette_value,
+    backend.draw_tonemapping3d(
+      scene_texture_id, exposure, tonemapping_mode, deband_dither_enabled, fxaa_enabled,
+      fxaa_edge_threshold, fxaa_edge_threshold_min, chromatic_aberration_intensity,
+      chromatic_aberration_max_samples, vignette_intensity, vignette_radius, vignette_smoothness,
+      vignette_roundness, vignette_center_x, vignette_center_y, vignette_edge_compensation,
+      vignette_color_r, vignette_color_g, vignette_color_b, vignette_color_a, view_width,
+      view_height, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
+      color_grading_balance_x_axis_x, color_grading_balance_x_axis_y, color_grading_balance_x_axis_z,
+      color_grading_balance_y_axis_x, color_grading_balance_y_axis_y, color_grading_balance_y_axis_z,
+      color_grading_balance_z_axis_x, color_grading_balance_z_axis_y, color_grading_balance_z_axis_z,
+      color_grading_saturation_shadows, color_grading_saturation_midtones, color_grading_saturation_highlights,
+      color_grading_contrast_shadows, color_grading_contrast_midtones, color_grading_contrast_highlights,
+      color_grading_gamma_shadows, color_grading_gamma_midtones, color_grading_gamma_highlights,
+      color_grading_gain_shadows, color_grading_gain_midtones, color_grading_gain_highlights,
+      color_grading_lift_shadows, color_grading_lift_midtones, color_grading_lift_highlights,
+      color_grading_midtones_start, color_grading_midtones_end, color_grading_exposure,
+      color_grading_hue, color_grading_post_saturation,
     ) catch {
       err => debug_runtime_error("draw_tonemapping3d", err)
     }
@@ -1812,8 +1796,17 @@ fn load_wgsl_with_defines_required(
   for key in define_keys {
     defines.set(key, true)
   }
+  let value_defines = default_wgsl_value_defines()
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  load_wgsl_preprocessed(base, normalized_rel, defines, visited)
+  let modules = build_wgsl_import_module_paths(base)
+  load_wgsl_preprocessed(
+    base,
+    normalized_rel,
+    defines,
+    value_defines,
+    visited,
+    modules,
+  )
 }
 
 ///|
@@ -1864,7 +1857,7 @@ fn ensure_bloom2d_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
         @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
         @wgpu.TEXTURE_VIEW_DIMENSION_3D,
       ) &&
-      builder.add_buffer(5U, frag, @wgpu.BUFFER_BINDING_TYPE_STORAGE)
+      builder.add_buffer(5U, frag, @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE)
     if !ok {
       builder.free()
       fatal("wgpu: failed to build bloom final bind group layout")
@@ -2223,9 +2216,9 @@ fn ensure_bloom2d_pipeline_rgba8(
 ///|
 fn ensure_bloom2d_pipeline_surface(
   backend : GpuBackend,
+  format : @wgpu.TextureFormat,
 ) -> Unit raise GpuBackendError {
   ensure_bloom2d_pipeline_rgba8(backend)
-  guard backend.surface_format is Some(format) else { return }
   if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
     return
   }
@@ -2340,18 +2333,12 @@ fn bloom2d_final_composite_pipeline_for_format(
 fn bloom2d_pipeline_for_current_pass(
   backend : GpuBackend,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
-  let target_is_surface = match backend.pass_state {
-    Some(ps) => ps.target_id < 0
-    None => false
-  }
-  if target_is_surface {
-    match current_pass_color_format(backend) {
-      Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
-        ensure_bloom2d_pipeline_surface(backend)
-        return backend.bloom2d_final_pipeline_surface
-      }
-      _ => ()
+  match current_pass_color_format(backend) {
+    Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
+      ensure_bloom2d_pipeline_surface(backend, format)
+      return backend.bloom2d_final_pipeline_surface
     }
+    _ => ()
   }
   ensure_bloom2d_pipeline_rgba8(backend)
   backend.bloom2d_final_pipeline

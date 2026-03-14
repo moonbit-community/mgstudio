@@ -54,6 +54,21 @@ pub struct ScreenshotTextureRef {
 }
 
 ///|
+fn screenshot_debug_enabled() -> Bool {
+  match @sys.get_env_var("MGSTUDIO_SCREENSHOT_DEBUG") {
+    Some(flag) => flag.trim().to_string() == "1"
+    _ => false
+  }
+}
+
+///|
+fn screenshot_debug_log(message : String) -> Unit {
+  if screenshot_debug_enabled() {
+    println("[screenshot] " + message)
+  }
+}
+
+///|
 fn prepare_surface_capture_frame(backend : GpuBackend) -> Unit {
   if backend.surface_capture_active {
     return
@@ -86,6 +101,9 @@ fn prepare_surface_capture_frame(backend : GpuBackend) -> Unit {
   pending_surface_screenshot_captures_ref.val = remaining_captures
   active_surface_screenshot_capture_target_id_ref.val = backend.active_surface_target_id
   backend.surface_capture_active = true
+  screenshot_debug_log(
+    "activate surface capture target=\{backend.active_surface_target_id}, ids=\{captures_for_target.length()}",
+  )
 }
 
 ///|
@@ -333,11 +351,17 @@ fn screenshot_encode_active_surface_captures(
     backend.configured_height
   }
   guard screenshot_capture_bytes_per_pixel(surface_format.raw) is Some(_) else {
+    screenshot_debug_log(
+      "skip surface capture: unsupported format=\{surface_format.raw.reinterpret_as_int()}",
+    )
     return
   }
   let active_capture_ids = active_surface_screenshot_capture_ids_ref.val
   active_surface_screenshot_capture_ids_ref.val = []
   for capture_id in active_capture_ids {
+    screenshot_debug_log(
+      "enqueue surface capture id=\{capture_id}, size=\{width}x\{height}, format=\{surface_format.raw.reinterpret_as_int()}",
+    )
     screenshot_enqueue_copy_to_buffer(
       backend,
       frame,
@@ -384,6 +408,13 @@ fn screenshot_collect_completed_captures(backend : GpuBackend) -> Unit {
         height: capture.height,
         pixels,
       })
+      screenshot_debug_log(
+        "complete capture id=\{capture.id}, size=\{capture.width}x\{capture.height}",
+      )
+    } else {
+      screenshot_debug_log(
+        "drop capture id=\{capture.id}: decode failed format=\{capture.format_raw.reinterpret_as_int()}, byte_len=\{bytes.length()}",
+      )
     }
   }
 }
@@ -396,6 +427,7 @@ pub fn screenshot_capture_surface_request() -> Int {
     id: capture_id,
     target_id: 0,
   })
+  screenshot_debug_log("request surface capture id=\{capture_id}, target=0")
   capture_id
 }
 
@@ -408,6 +440,7 @@ pub fn screenshot_capture_surface_target_request(target_id~ : Int) -> Int {
     id: capture_id,
     target_id,
   })
+  screenshot_debug_log("request surface capture id=\{capture_id}, target=\{target_id}")
   capture_id
 }
 
@@ -432,9 +465,11 @@ pub fn screenshot_take_capture_result(
     let capture = completed_screenshot_captures_ref.val[i]
     if capture.id == capture_id {
       completed_screenshot_captures_ref.val.remove(i) |> ignore
+      screenshot_debug_log("take capture id=\{capture_id}: hit")
       return Some(capture)
     }
   }
+  screenshot_debug_log("take capture id=\{capture_id}: miss")
   None
 }
 

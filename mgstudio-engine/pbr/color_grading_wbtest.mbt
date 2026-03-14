@@ -167,14 +167,11 @@ test "render3d: color grading all_sections_mut updates original sections" {
 
 ///|
 test "render3d: color grading alone enables tonemap postprocess path" {
-  let enabled = render3d_tonemap_postprocess_enabled(
+  let enabled = render3d_tonemapping_stage_enabled(
     None,
     None,
     false,
     Some(ColorGrading::default()),
-    None,
-    None,
-    None,
   )
   inspect(enabled, content="true")
 }

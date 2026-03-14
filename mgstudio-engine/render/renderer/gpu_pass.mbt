@@ -484,7 +484,8 @@ pub fn GpuBackend::begin_pass_3d(
     color_clear_a_f32=clear_a,
     depth_load_op_u32~,
     depth_store_op_u32=@wgpu.STORE_OP_STORE,
-    depth_clear_value_f32=1.0F,
+    // Bevy-aligned reverse-Z: clear depth to far plane.
+    depth_clear_value_f32=0.0F,
     depth_read_only=false,
     stencil_load_op_u32~,
     stencil_store_op_u32=@wgpu.STORE_OP_STORE,

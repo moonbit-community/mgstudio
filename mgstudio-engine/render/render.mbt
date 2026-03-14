@@ -1037,6 +1037,64 @@ pub fn host_gpu_draw_tonemapping3d(
 }
 
 ///|
+pub fn host_gpu_draw_effect_stack3d(
+  scene_texture_id~ : Int,
+  chromatic_aberration_intensity~ : Float,
+  chromatic_aberration_max_samples~ : Int,
+  vignette_intensity~ : Float,
+  vignette_radius~ : Float,
+  vignette_smoothness~ : Float,
+  vignette_roundness~ : Float,
+  vignette_center_x~ : Float,
+  vignette_center_y~ : Float,
+  vignette_edge_compensation~ : Float,
+  vignette_color_r~ : Float,
+  vignette_color_g~ : Float,
+  vignette_color_b~ : Float,
+  vignette_color_a~ : Float,
+  view_width~ : Int,
+  view_height~ : Int,
+) -> Unit {
+  @renderer.draw_effect_stack3d(
+    scene_texture_id~,
+    chromatic_aberration_intensity~,
+    chromatic_aberration_max_samples~,
+    vignette_intensity~,
+    vignette_radius~,
+    vignette_smoothness~,
+    vignette_roundness~,
+    vignette_center_x~,
+    vignette_center_y~,
+    vignette_edge_compensation~,
+    vignette_color_r~,
+    vignette_color_g~,
+    vignette_color_b~,
+    vignette_color_a~,
+    view_width~,
+    view_height~,
+  )
+}
+
+///|
+pub fn host_gpu_draw_fxaa3d(
+  scene_texture_id~ : Int,
+  fxaa_enabled~ : Int,
+  fxaa_edge_threshold_mode~ : Int,
+  fxaa_edge_threshold_min_mode~ : Int,
+  view_width~ : Int,
+  view_height~ : Int,
+) -> Unit {
+  @renderer.draw_fxaa3d(
+    scene_texture_id~,
+    fxaa_enabled~,
+    fxaa_edge_threshold_mode~,
+    fxaa_edge_threshold_min_mode~,
+    view_width~,
+    view_height~,
+  )
+}
+
+///|
 pub fn host_gpu_draw_bloom2d(
   scene_texture_id~ : Int,
   enabled~ : Int,

@@ -13,6 +13,21 @@
 // limitations under the License.
 
 ///|
+fn motion_blur_debug_enabled() -> Bool {
+  match @sys.get_env_var("MGSTUDIO_MOTION_BLUR_DEBUG") {
+    Some(flag) => flag.trim().to_string() == "1"
+    _ => false
+  }
+}
+
+///|
+fn motion_blur_debug_log(message : String) -> Unit {
+  if motion_blur_debug_enabled() {
+    println("[motion_blur] " + message)
+  }
+}
+
+///|
 fn ensure_motion_blur_pipeline_rgba8(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
@@ -39,7 +54,7 @@ fn ensure_motion_blur_pipeline_rgba8(
     sm,
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     vs_entry="fullscreen_vertex_shader",
-    fs_entry="final_fragment",
+    fs_entry="fragment",
     alpha_blend=false,
     depth=false,
   )
@@ -74,7 +89,7 @@ fn ensure_motion_blur_pipeline_surface(
     sm,
     format,
     vs_entry="fullscreen_vertex_shader",
-    fs_entry="final_fragment",
+    fs_entry="fragment",
     alpha_blend=false,
     depth=false,
   )
@@ -107,27 +122,52 @@ pub fn GpuBackend::draw_motion_blur(
   shutter_angle : Float,
   samples : Int,
 ) -> Unit raise GpuBackendError {
-  guard self.frame is Some(frame) else { return }
-  guard frame.pass is Some(pass) else { return }
+  guard self.frame is Some(frame) else {
+    motion_blur_debug_log("skip: no frame")
+    return
+  }
+  guard frame.pass is Some(pass) else {
+    motion_blur_debug_log("skip: no active render pass")
+    return
+  }
   flush_ui_shadow_batches(self)
   flush_ui_slice_batches(self)
   flush_ui_batches(self)
   flush_sprite_batches(self)
   guard motion_blur_pipeline_for_current_pass(self) is Some(pipeline) else {
+    motion_blur_debug_log("skip: no pipeline")
     return
   }
-  guard self.motion_blur_settings_buf is Some(settings_buf) else { return }
-  guard self.motion_blur_globals_buf is Some(globals_buf) else { return }
+  guard self.motion_blur_settings_buf is Some(settings_buf) else {
+    motion_blur_debug_log("skip: no settings buffer")
+    return
+  }
+  guard self.motion_blur_globals_buf is Some(globals_buf) else {
+    motion_blur_debug_log("skip: no globals buffer")
+    return
+  }
   if scene_texture_id < 0 || velocity_texture_id < 0 {
+    motion_blur_debug_log(
+      "skip: invalid texture ids scene=\{scene_texture_id}, velocity=\{velocity_texture_id}",
+    )
     return
   }
   guard find_texture(self, scene_texture_id) is Some(scene_texture) else {
+    motion_blur_debug_log(
+      "skip: scene texture not found id=\{scene_texture_id}",
+    )
     return
   }
   guard find_texture(self, velocity_texture_id) is Some(velocity_texture) else {
+    motion_blur_debug_log(
+      "skip: velocity texture not found id=\{velocity_texture_id}",
+    )
     return
   }
-  guard self.depth_view is Some(depth_view) else { return }
+  guard self.depth_view is Some(depth_view) else {
+    motion_blur_debug_log("skip: no depth_view")
+    return
+  }
   let clamped_samples = if samples < 0 {
     0
   } else if samples > 64 {
@@ -167,6 +207,9 @@ pub fn GpuBackend::draw_motion_blur(
     self.device,
     material_bgl,
     label="mgstudio_motion_blur_bg",
+  )
+  motion_blur_debug_log(
+    "draw: scene=\{scene_texture_id}, velocity=\{velocity_texture_id}, samples=\{clamped_samples}",
   )
   pass.set_pipeline(pipeline)
   pass.set_bind_group(0U, material_bg, [])
