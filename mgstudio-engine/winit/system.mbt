@@ -142,10 +142,25 @@ fn winit_write_raw_winit_window_events(
 
 ///|
 pub fn winit_window_backend_sync_system(world : @ecs.World) -> Unit {
-  @window.window_backend_create_windows_system(world)
-  @window.window_backend_prepare_system(world)
+  winit_create_windows_system(world)
+  winit_prepare_windows_system(world)
   winit_sync_windows_resource_system(world)
   winit_create_monitors_system(world)
+  winit_write_raw_winit_window_events_system(world)
+}
+
+///|
+pub fn winit_create_windows_system(world : @ecs.World) -> Unit {
+  @window.window_backend_create_windows_system(world)
+}
+
+///|
+pub fn winit_prepare_windows_system(world : @ecs.World) -> Unit {
+  @window.window_backend_prepare_system(world)
+}
+
+///|
+pub fn winit_write_raw_winit_window_events_system(world : @ecs.World) -> Unit {
   winit_write_raw_winit_window_events(
     world,
     @windowing.take_raw_winit_window_events(),
