@@ -889,11 +889,24 @@ priv enum GpuPreprocessWorkItemBuffers3d {
 }
 
 ///|
+const RENDER3D_GPU_PREPROCESS_WORKGROUP_SIZE : Int = 64
+
+///|
+priv struct GpuPreprocessDispatchMetadata3d {
+  direct_workgroup_count : Int
+  indexed_workgroup_count : Int
+  non_indexed_workgroup_count : Int
+  late_indexed_workgroup_count : Int
+  late_non_indexed_workgroup_count : Int
+}
+
+///|
 priv struct GpuPreprocessCameraQueueEntry3d {
   camera_entity : @core.Entity
   items : Array[GpuPreprocessPrequeuedMeshItem3d]
   phase_ranges : Array[GpuPreprocessPhaseRange3d]
   indirect_metadata : GpuPreprocessIndirectMetadata3d
+  dispatch_metadata : GpuPreprocessDispatchMetadata3d
   work_item_buffers : GpuPreprocessWorkItemBuffers3d
 }
 
@@ -902,6 +915,7 @@ priv struct GpuPreprocessResolvedCameraQueueEntry3d {
   draw_items : Array[MeshPhaseItem3d]
   phase_ranges : Array[GpuPreprocessPhaseRange3d]
   indirect_metadata : GpuPreprocessIndirectMetadata3d
+  dispatch_metadata : GpuPreprocessDispatchMetadata3d
   work_item_buffers : GpuPreprocessWorkItemBuffers3d
 }
 
@@ -4025,6 +4039,62 @@ fn render3d_build_gpu_preprocess_indirect_metadata(
 }
 
 ///|
+fn render3d_gpu_preprocess_workgroup_count(item_count : Int) -> Int {
+  if item_count <= 0 {
+    return 0
+  }
+  let quotient = item_count / RENDER3D_GPU_PREPROCESS_WORKGROUP_SIZE
+  if item_count % RENDER3D_GPU_PREPROCESS_WORKGROUP_SIZE == 0 {
+    quotient
+  } else {
+    quotient + 1
+  }
+}
+
+///|
+fn render3d_build_gpu_preprocess_dispatch_metadata(
+  work_item_buffers : GpuPreprocessWorkItemBuffers3d,
+) -> GpuPreprocessDispatchMetadata3d {
+  match work_item_buffers {
+    Direct(items) =>
+      GpuPreprocessDispatchMetadata3d::{
+        direct_workgroup_count: render3d_gpu_preprocess_workgroup_count(
+          items.length(),
+        ),
+        indexed_workgroup_count: 0,
+        non_indexed_workgroup_count: 0,
+        late_indexed_workgroup_count: 0,
+        late_non_indexed_workgroup_count: 0,
+      }
+    Indirect(indexed_items, non_indexed_items, gpu_occlusion_culling) => {
+      let late_indexed_item_count = match gpu_occlusion_culling {
+        Some(culling_buffers) => culling_buffers.late_indexed.length()
+        None => 0
+      }
+      let late_non_indexed_item_count = match gpu_occlusion_culling {
+        Some(culling_buffers) => culling_buffers.late_non_indexed.length()
+        None => 0
+      }
+      GpuPreprocessDispatchMetadata3d::{
+        direct_workgroup_count: 0,
+        indexed_workgroup_count: render3d_gpu_preprocess_workgroup_count(
+          indexed_items.length(),
+        ),
+        non_indexed_workgroup_count: render3d_gpu_preprocess_workgroup_count(
+          non_indexed_items.length(),
+        ),
+        late_indexed_workgroup_count: render3d_gpu_preprocess_workgroup_count(
+          late_indexed_item_count,
+        ),
+        late_non_indexed_workgroup_count: render3d_gpu_preprocess_workgroup_count(
+          late_non_indexed_item_count,
+        ),
+      }
+    }
+  }
+}
+
+///|
 fn render3d_build_gpu_preprocess_work_item_buffers_from_prequeued_items(
   items : Array[GpuPreprocessPrequeuedMeshItem3d],
   indirect_enabled : Bool,
@@ -4243,11 +4313,15 @@ fn render3d_build_gpu_preprocess_camera_queue_entry(
   let indirect_metadata = render3d_build_gpu_preprocess_indirect_metadata(
     work_item_buffers,
   )
+  let dispatch_metadata = render3d_build_gpu_preprocess_dispatch_metadata(
+    work_item_buffers,
+  )
   GpuPreprocessCameraQueueEntry3d::{
     camera_entity,
     items,
     phase_ranges,
     indirect_metadata,
+    dispatch_metadata,
     work_item_buffers,
   }
 }
@@ -4294,10 +4368,14 @@ fn render3d_make_fallback_gpu_preprocess_queue_entry(
   let indirect_metadata = render3d_build_gpu_preprocess_indirect_metadata(
     work_item_buffers,
   )
+  let dispatch_metadata = render3d_build_gpu_preprocess_dispatch_metadata(
+    work_item_buffers,
+  )
   GpuPreprocessResolvedCameraQueueEntry3d::{
     draw_items,
     phase_ranges,
     indirect_metadata,
+    dispatch_metadata,
     work_item_buffers,
   }
 }
@@ -4325,6 +4403,7 @@ fn render3d_take_gpu_preprocess_camera_queue_items(
         draw_items,
         phase_ranges: queue_entry.phase_ranges,
         indirect_metadata: queue_entry.indirect_metadata,
+        dispatch_metadata: queue_entry.dispatch_metadata,
         work_item_buffers,
       })
     }
@@ -4432,6 +4511,17 @@ fn render3d_gpu_preprocess_work_item_buffers_checksum(
       checksum
     }
   }
+}
+
+///|
+fn render3d_gpu_preprocess_dispatch_metadata_checksum(
+  metadata : GpuPreprocessDispatchMetadata3d,
+) -> Int {
+  metadata.direct_workgroup_count +
+  metadata.indexed_workgroup_count +
+  metadata.non_indexed_workgroup_count +
+  metadata.late_indexed_workgroup_count +
+  metadata.late_non_indexed_workgroup_count
 }
 
 ///|
@@ -5747,6 +5837,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     |> ignore
     render3d_gpu_preprocess_work_item_buffers_checksum(
       draw_queue_entry.work_item_buffers,
+    )
+    |> ignore
+    render3d_gpu_preprocess_dispatch_metadata_checksum(
+      draw_queue_entry.dispatch_metadata,
     )
     |> ignore
     if motion_vector_prepass_enabled {
