@@ -76,7 +76,7 @@ test "render3d: pbr plugin config updates runtime feature switches" {
   inspect(read_deferred_lighting_state(_app.world()).enabled, content="false")
   inspect(
     read_standard_material_plugin_state(_app.world()).prepass_enabled,
-    content="false",
+    content="true",
   )
 
   let _reset = pbr_plugin(@app.App::new(@ecs.World::new()))
@@ -104,7 +104,7 @@ test "render3d: plugin group set(PbrPlugin) overrides runtime config resource" {
   inspect(read_deferred_lighting_state(app.world()).enabled, content="false")
   inspect(
     read_standard_material_plugin_state(app.world()).prepass_enabled,
-    content="false",
+    content="true",
   )
 }
 

@@ -4240,8 +4240,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   )
   let tick = world.read_change_tick()
   let runtime_config = render3d_runtime_config_or_default(world)
-  let prepass_enabled = runtime_config.prepass_enabled &&
-    standard_material_prepass_enabled(world)
+  let prepass_enabled = standard_material_prepass_enabled(world)
   let deferred_lighting_enabled = runtime_config.add_default_deferred_lighting_plugin &&
     deferred_pbr_lighting_enabled(world)
   let gpu_instance_buffer_builder_enabled = runtime_config.use_gpu_instance_buffer_builder
