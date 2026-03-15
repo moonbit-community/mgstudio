@@ -68,6 +68,7 @@ priv struct Camera3dViewPayload {
   skybox : Skybox?
   depth_prepass_enabled : Bool
   deferred_prepass_enabled : Bool
+  gpu_occlusion_culling_enabled : Bool
   hdr_enabled : Bool
   fxaa : Fxaa?
   temporal_jitter : TemporalJitter?

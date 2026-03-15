@@ -4095,9 +4095,35 @@ fn render3d_build_gpu_preprocess_dispatch_metadata(
 }
 
 ///|
+fn render3d_build_gpu_occlusion_culling_work_item_buffers(
+  indexed_work_items : Array[GpuPreprocessShaderWorkItem3d],
+  non_indexed_work_items : Array[GpuPreprocessShaderWorkItem3d],
+  enabled : Bool,
+) -> GpuOcclusionCullingWorkItemBuffers3d? {
+  if !enabled {
+    return None
+  }
+  let late_indexed : Array[GpuPreprocessShaderWorkItem3d] = []
+  for item in indexed_work_items {
+    late_indexed.push(item)
+  }
+  let late_non_indexed : Array[GpuPreprocessShaderWorkItem3d] = []
+  for item in non_indexed_work_items {
+    late_non_indexed.push(item)
+  }
+  Some(GpuOcclusionCullingWorkItemBuffers3d::{
+    late_indexed,
+    late_non_indexed,
+    late_indirect_parameters_indexed_offset: 0,
+    late_indirect_parameters_non_indexed_offset: 0,
+  })
+}
+
+///|
 fn render3d_build_gpu_preprocess_work_item_buffers_from_prequeued_items(
   items : Array[GpuPreprocessPrequeuedMeshItem3d],
   indirect_enabled : Bool,
+  gpu_occlusion_culling_enabled : Bool,
 ) -> GpuPreprocessWorkItemBuffers3d {
   if !indirect_enabled {
     let direct_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
@@ -4127,7 +4153,9 @@ fn render3d_build_gpu_preprocess_work_item_buffers_from_prequeued_items(
   GpuPreprocessWorkItemBuffers3d::Indirect(
     indexed_work_items,
     non_indexed_work_items,
-    None,
+    render3d_build_gpu_occlusion_culling_work_item_buffers(
+      indexed_work_items, non_indexed_work_items, gpu_occlusion_culling_enabled,
+    ),
   )
 }
 
@@ -4136,6 +4164,7 @@ fn render3d_build_gpu_preprocess_work_item_buffers_from_draw_items(
   draw_items : Array[MeshPhaseItem3d],
   meshes : Array[ExtractedMesh3d],
   indirect_enabled : Bool,
+  gpu_occlusion_culling_enabled : Bool,
 ) -> GpuPreprocessWorkItemBuffers3d {
   if !indirect_enabled {
     let direct_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
@@ -4174,7 +4203,9 @@ fn render3d_build_gpu_preprocess_work_item_buffers_from_draw_items(
   GpuPreprocessWorkItemBuffers3d::Indirect(
     indexed_work_items,
     non_indexed_work_items,
-    None,
+    render3d_build_gpu_occlusion_culling_work_item_buffers(
+      indexed_work_items, non_indexed_work_items, gpu_occlusion_culling_enabled,
+    ),
   )
 }
 
@@ -4300,6 +4331,7 @@ fn render3d_build_gpu_preprocess_camera_queue_entry(
   camera_layers : @sprite.RenderLayers,
   camera_transform : @math.Transform,
   indirect_enabled : Bool,
+  gpu_occlusion_culling_enabled : Bool,
 ) -> GpuPreprocessCameraQueueEntry3d {
   let items = render3d_collect_gpu_preprocess_camera_queue_items(
     mesh_candidates, camera_layers, camera_transform,
@@ -4308,7 +4340,7 @@ fn render3d_build_gpu_preprocess_camera_queue_entry(
     items,
   )
   let work_item_buffers = render3d_build_gpu_preprocess_work_item_buffers_from_prequeued_items(
-    items, indirect_enabled,
+    items, indirect_enabled, gpu_occlusion_culling_enabled,
   )
   let indirect_metadata = render3d_build_gpu_preprocess_indirect_metadata(
     work_item_buffers,
@@ -4358,12 +4390,13 @@ fn render3d_make_fallback_gpu_preprocess_queue_entry(
   draw_items : Array[MeshPhaseItem3d],
   meshes : Array[ExtractedMesh3d],
   indirect_enabled : Bool,
+  gpu_occlusion_culling_enabled : Bool,
 ) -> GpuPreprocessResolvedCameraQueueEntry3d {
   let phase_ranges = render3d_build_gpu_preprocess_phase_ranges_from_draw_items(
     draw_items,
   )
   let work_item_buffers = render3d_build_gpu_preprocess_work_item_buffers_from_draw_items(
-    draw_items, meshes, indirect_enabled,
+    draw_items, meshes, indirect_enabled, gpu_occlusion_culling_enabled,
   )
   let indirect_metadata = render3d_build_gpu_preprocess_indirect_metadata(
     work_item_buffers,
@@ -4944,6 +4977,7 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
     @visibility.ecs_key_view_visibility,
   )
   let layers_store = world.component(@sprite.ecs_key_render_layers)
+  let occlusion_culling_store = world.component(ecs_key_occlusion_culling)
   let transform_store = world.component(@math.ecs_key_transform)
   let mut visible_mesh_count = 0
   mesh_store.for_each(fn(entity, _mesh3d) {
@@ -4970,6 +5004,10 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
       Some(value) => value
       None => @math.Transform::identity()
     }
+    let gpu_occlusion_culling_enabled = occlusion_culling_store.get(
+        camera_entity,
+      )
+      is Some(_)
     render3d_gpu_preprocess_camera_queues_ref.val.push(
       render3d_build_gpu_preprocess_camera_queue_entry(
         camera_entity,
@@ -4977,6 +5015,7 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
         camera_layers,
         camera_transform,
         runtime_config.use_gpu_instance_buffer_builder,
+        gpu_occlusion_culling_enabled,
       ),
     )
   }
@@ -5349,6 +5388,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let layers_store = world.component(@sprite.ecs_key_render_layers)
   let depth_prepass_store = world.component(ecs_key_depth_prepass)
   let deferred_prepass_store = world.component(ecs_key_deferred_prepass)
+  let occlusion_culling_store = world.component(ecs_key_occlusion_culling)
   let msaa_store = world.component(ecs_key_msaa)
   let transform_store = world.component(@math.ecs_key_transform)
   let view_visibility_store = world.component(
@@ -5426,6 +5466,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       depth_prepass_store.get(entity) is Some(_)
     let deferred_prepass_enabled = prepass_enabled &&
       deferred_prepass_store.get(entity) is Some(_)
+    let gpu_occlusion_culling_enabled = depth_prepass_enabled &&
+      occlusion_culling_store.get(entity) is Some(_)
     let msaa = msaa_store.get(entity)
     let target = match target_store.get(entity) {
       Some(v) => v
@@ -5498,6 +5540,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
             skybox,
             depth_prepass_enabled,
             deferred_prepass_enabled,
+            gpu_occlusion_culling_enabled,
             hdr_enabled,
             fxaa,
             temporal_jitter,
@@ -5811,6 +5854,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
             ),
             meshes,
             true,
+            camera.gpu_occlusion_culling_enabled,
           )
       }
     } else {
@@ -5822,6 +5866,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           false,
         ),
         meshes,
+        false,
         false,
       )
     }
