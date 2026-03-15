@@ -97,7 +97,9 @@ test "window: plugin spawns configured primary window entity and messages" {
   configured_window.resolution.set_scale_factor(2.0F)
   configured_window.present_mode = PresentMode::AutoNoVsync
   configured_window.position = WindowPosition::new(12, 34)
-  configured_window.mode = WindowMode::BorderlessFullscreen
+  configured_window.mode = WindowMode::BorderlessFullscreen(
+    MonitorSelection::Primary,
+  )
   configured_window.resizable = false
   configured_window.enabled_buttons.minimize = false
   configured_window.enabled_buttons.maximize = false
@@ -172,7 +174,11 @@ test "window: plugin spawns configured primary window entity and messages" {
   inspect(stored_window.scale_factor(), content="2")
   inspect(stored_window.present_mode, content="AutoNoVsync")
   inspect(stored_window.position, content="At(12, 34)")
-  inspect(stored_window.mode, content="BorderlessFullscreen")
+  inspect(
+    stored_window.mode ==
+    WindowMode::BorderlessFullscreen(MonitorSelection::Primary),
+    content="true",
+  )
   inspect(stored_window.resizable, content="false")
   inspect(stored_window.enabled_buttons.minimize, content="false")
   inspect(stored_window.enabled_buttons.maximize, content="false")
@@ -232,7 +238,12 @@ test "window: compatibility helpers read and write ECS primary window state" {
       window_set_window_level(level=WindowLevel::AlwaysOnTop)
       window_set_theme(theme=Some(WindowTheme::Dark))
       window_set_position(x=30, y=40)
-      window_set_mode(mode=WindowMode::Fullscreen)
+      window_set_mode(
+        mode=WindowMode::Fullscreen(
+          MonitorSelection::Primary,
+          VideoModeSelection::Current,
+        ),
+      )
     }),
   )
   let app = app.run_once()
@@ -252,7 +263,14 @@ test "window: compatibility helpers read and write ECS primary window state" {
   inspect(stored_window.physical_height(), content="360")
   inspect(stored_window.present_mode, content="AutoNoVsync")
   inspect(stored_window.position, content="At(30, 40)")
-  inspect(stored_window.mode, content="Fullscreen")
+  inspect(
+    stored_window.mode ==
+    WindowMode::Fullscreen(
+      MonitorSelection::Primary,
+      VideoModeSelection::Current,
+    ),
+    content="true",
+  )
   inspect(stored_window.resizable, content="false")
   inspect(stored_window.visible, content="false")
   inspect(stored_window.decorations, content="false")
@@ -371,7 +389,12 @@ test "window: singleton helpers no-op when no primary window exists" {
       window_set_cursor_grab_mode(mode=CursorGrabMode::GrabConfined)
       window_set_cursor_icon(icon=CursorIcon::from(SystemCursorIcon::EwResize))
       window_set_position(x=30, y=40)
-      window_set_mode(mode=WindowMode::Fullscreen)
+      window_set_mode(
+        mode=WindowMode::Fullscreen(
+          MonitorSelection::Primary,
+          VideoModeSelection::Current,
+        ),
+      )
     }),
   )
   let app = app.run_once()
@@ -389,7 +412,7 @@ test "window: singleton helpers no-op when no primary window exists" {
   inspect(stored_window.physical_width(), content="640")
   inspect(stored_window.physical_height(), content="360")
   inspect(stored_window.position, content="Automatic")
-  inspect(stored_window.mode, content="Windowed")
+  inspect(stored_window.mode == WindowMode::Windowed, content="true")
   inspect(stored_window.resizable, content="true")
   inspect(cursor_options_value(app.world(), secondary), content="None")
   inspect(cursor_icon_value(app.world(), secondary), content="None")

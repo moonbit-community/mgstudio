@@ -17,6 +17,10 @@ pub fn convert_winit_video_mode(@Milky2018/window/core.VideoMode) -> @window.Vid
 
 pub let ecs_key_raw_winit_window_event : @ecs.MessageKey[RawWinitWindowEvent]
 
+pub fn get_selected_videomode(@Milky2018/window/core.MonitorHandle, @window.VideoModeSelection) -> @Milky2018/window/core.VideoMode?
+
+pub fn select_monitor(WinitMonitors, @Milky2018/window/core.MonitorHandle?, @Milky2018/window/core.MonitorHandle?, @window.MonitorSelection) -> @Milky2018/window/core.MonitorHandle?
+
 pub fn winit_changed_cursor_options_system(@ecs.World) -> Unit
 
 pub fn winit_changed_windows_system(@ecs.World) -> Unit

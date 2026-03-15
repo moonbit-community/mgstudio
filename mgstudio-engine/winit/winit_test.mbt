@@ -249,6 +249,131 @@ test "winit: monitors resource provides nth and find_entity accessors" {
 }
 
 ///|
+test "winit: select_monitor aligns with bevy monitor selection semantics" {
+  let native_monitors = @windowing.available_monitors()
+  if native_monitors.length() == 0 {
+    inspect(true, content="true")
+    return
+  }
+
+  let world = @ecs.World::new()
+  let entity_a = world.spawn()
+  let entity_b = world.spawn()
+  let monitor_a = native_monitors[0]
+  let monitor_b = if native_monitors.length() > 1 {
+    native_monitors[1]
+  } else {
+    native_monitors[0]
+  }
+  let monitors = WinitMonitors::default()
+  monitors.monitors.push(WinitMonitorEntry::new(monitor_a, entity_a))
+  monitors.monitors.push(WinitMonitorEntry::new(monitor_b, entity_b))
+  let primary_monitor = @windowing.primary_monitor()
+
+  assert_eq(
+    select_monitor(
+      monitors,
+      primary_monitor,
+      Some(monitor_b),
+      @window.MonitorSelection::Current,
+    ),
+    Some(monitor_b),
+  )
+  assert_eq(
+    select_monitor(
+      monitors,
+      primary_monitor,
+      Some(monitor_b),
+      @window.MonitorSelection::Primary,
+    ),
+    primary_monitor,
+  )
+  assert_eq(
+    select_monitor(
+      monitors,
+      primary_monitor,
+      Some(monitor_b),
+      @window.MonitorSelection::Index(1),
+    ),
+    Some(monitor_b),
+  )
+  assert_eq(
+    select_monitor(
+      monitors,
+      primary_monitor,
+      Some(monitor_b),
+      @window.MonitorSelection::Entity(entity_a),
+    ),
+    Some(monitor_a),
+  )
+  inspect(
+    select_monitor(
+      monitors,
+      primary_monitor,
+      Some(monitor_b),
+      @window.MonitorSelection::Index(9),
+    )
+    is None,
+    content="true",
+  )
+  inspect(
+    select_monitor(
+      monitors,
+      primary_monitor,
+      Some(monitor_b),
+      @window.MonitorSelection::Entity(world.spawn()),
+    )
+    is None,
+    content="true",
+  )
+  inspect(
+    select_monitor(
+      monitors,
+      primary_monitor,
+      None,
+      @window.MonitorSelection::Current,
+    )
+    is None,
+    content="true",
+  )
+}
+
+///|
+test "winit: get_selected_videomode aligns with bevy fullscreen selection" {
+  let native_monitors = @windowing.available_monitors()
+  if native_monitors.length() == 0 {
+    inspect(true, content="true")
+    return
+  }
+
+  let monitor = native_monitors[0]
+  match monitor.current_video_mode() {
+    Some(current_mode) =>
+      assert_eq(
+        get_selected_videomode(monitor, @window.VideoModeSelection::Current),
+        Some(current_mode),
+      )
+    None =>
+      inspect(
+        get_selected_videomode(monitor, @window.VideoModeSelection::Current)
+        is None,
+        content="true",
+      )
+  }
+  let modes = monitor.video_modes()
+  if modes.length() > 0 {
+    let mode = modes[0]
+    assert_eq(
+      get_selected_videomode(
+        monitor,
+        @window.VideoModeSelection::Specific(mode),
+      ),
+      Some(mode),
+    )
+  }
+}
+
+///|
 test "winit: monitor sync mirrors native monitor snapshot" {
   let native_monitors = @windowing.available_monitors()
   let native_primary = @windowing.primary_monitor()

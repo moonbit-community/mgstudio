@@ -82,11 +82,20 @@ fn cursor_icon_to_native(icon : CursorIcon) -> @window_core.CursorIcon {
 }
 
 ///|
-fn window_mode_to_int(mode : WindowMode) -> Int {
+fn window_mode_to_fullscreen(mode : WindowMode) -> @window_core.Fullscreen? {
   match mode {
-    Windowed => 0
-    BorderlessFullscreen => 1
-    Fullscreen => 2
+    Windowed => None
+    BorderlessFullscreen => Some(@window_core.Fullscreen::Borderless(None))
+    Fullscreen =>
+      match @windowing.primary_monitor() {
+        Some(monitor) =>
+          match monitor.current_video_mode() {
+            Some(video_mode) =>
+              Some(@window_core.Fullscreen::Exclusive(monitor, video_mode))
+            None => None
+          }
+        None => None
+      }
   }
 }
 
@@ -185,7 +194,7 @@ pub fn set_position(window : HostWindow, x~ : Int, y~ : Int) -> Unit {
 
 ///|
 pub fn set_mode(window : HostWindow, mode~ : WindowMode) -> Unit {
-  @windowing.set_mode(window, mode=window_mode_to_int(mode))
+  @windowing.set_fullscreen(window, fullscreen=window_mode_to_fullscreen(mode))
 }
 
 ///|

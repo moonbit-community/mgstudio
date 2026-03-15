@@ -29,6 +29,8 @@ pub fn create(logical_width~ : Int, logical_height~ : Int, physical_width~ : Int
 
 pub fn create_utf8(Int, Int, Int, Int, Bool, Bytes, UInt64, Bool, Bool, Bool, Bool) -> Int
 
+pub fn current_monitor(Int) -> @core.MonitorHandle?
+
 pub fn drag_resize_window(Int, direction~ : @core.ResizeDirection) -> Bool
 
 pub fn drag_window(Int) -> Bool
@@ -225,11 +227,11 @@ pub fn set_enabled_buttons(Int, close~ : Bool, minimize~ : Bool, maximize~ : Boo
 
 pub fn set_event_loop_any_thread(Bool) -> Unit
 
+pub fn set_fullscreen(Int, fullscreen~ : @core.Fullscreen?) -> Unit
+
 pub fn set_ime_allowed(Int, allowed~ : Bool) -> Unit
 
 pub fn set_ime_cursor_area(Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int) -> Unit
-
-pub fn set_mode(Int, mode~ : Int) -> Unit
 
 pub fn set_position(Int, x~ : Int, y~ : Int) -> Unit
 

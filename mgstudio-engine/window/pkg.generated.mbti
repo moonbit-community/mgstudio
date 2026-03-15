@@ -288,6 +288,8 @@ pub fn window_set_visible(visible~ : Bool) -> Unit
 
 pub fn window_set_window_level(level~ : @Milky2018/window/core.WindowLevel) -> Unit
 
+pub fn window_take_changed_mode_requests(@ecs.World) -> Array[WindowModeChangeRequest]
+
 pub fn window_width() -> Int
 
 // Errors
@@ -432,6 +434,14 @@ pub(all) struct Monitor {
 pub fn Monitor::physical_size(Self) -> @math.UVec2
 pub impl @ecs.Component for Monitor
 
+pub(all) enum MonitorSelection {
+  Current
+  Primary
+  Index(Int)
+  Entity(@Milky2018/mgstudio/core.Entity)
+}
+pub impl Eq for MonitorSelection
+
 pub(all) enum PresentMode {
   AutoVsync
   AutoNoVsync
@@ -487,6 +497,12 @@ pub(all) struct VideoMode {
   refresh_rate_millihertz : Int
 }
 pub fn VideoMode::new(@math.UVec2, Int, Int) -> Self
+
+pub(all) enum VideoModeSelection {
+  Current
+  Specific(@Milky2018/window/core.VideoMode)
+}
+pub impl Eq for VideoModeSelection
 
 pub(all) struct Window {
   mut title : String
@@ -603,11 +619,17 @@ pub fn WindowHostEntry::new(@Milky2018/mgstudio/core.Entity, Int) -> Self
 
 pub(all) enum WindowMode {
   Windowed
-  BorderlessFullscreen
-  Fullscreen
+  BorderlessFullscreen(MonitorSelection)
+  Fullscreen(MonitorSelection, VideoModeSelection)
 }
 pub impl Eq for WindowMode
-pub impl Show for WindowMode
+
+pub struct WindowModeChangeRequest {
+  entity : @Milky2018/mgstudio/core.Entity
+  host_window : Int
+  mode : WindowMode
+}
+pub fn WindowModeChangeRequest::new(@Milky2018/mgstudio/core.Entity, Int, WindowMode) -> Self
 
 pub(all) struct WindowMoved {
   window : @Milky2018/mgstudio/core.Entity

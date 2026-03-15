@@ -260,6 +260,22 @@ pub fn WindowHostEntry::new(
 }
 
 ///|
+pub struct WindowModeChangeRequest {
+  entity : @core.Entity
+  host_window : HostWindow
+  mode : WindowMode
+}
+
+///|
+pub fn WindowModeChangeRequest::new(
+  entity : @core.Entity,
+  host_window : HostWindow,
+  mode : WindowMode,
+) -> WindowModeChangeRequest {
+  WindowModeChangeRequest::{ entity, host_window, mode }
+}
+
+///|
 pub fn window_host_window_for_ref(
   world : @ecs.World,
   window_ref : WindowRef,
@@ -552,7 +568,6 @@ fn window_create_runtime_for_entity(
   let cursor_icon = window_current_cursor_icon(world, entity)
   host_window_set_visible(host_window, visible=window.visible)
   window_apply_position(host_window, window.position)
-  host_window_set_mode(host_window, mode=window.mode)
   host_window_set_resizable(host_window, resizable=window.resizable)
   host_window_set_enabled_buttons(host_window, window.enabled_buttons)
   host_window_set_decorations(host_window, decorations=window.decorations)
@@ -582,7 +597,7 @@ fn window_create_runtime_for_entity(
     last_applied_width: window.physical_width(),
     last_applied_height: window.physical_height(),
     last_applied_position: window.position,
-    last_applied_mode: window.mode,
+    last_applied_mode: WindowMode::Windowed,
     last_applied_visible: window.visible,
     last_applied_resizable: window.resizable,
     last_applied_enabled_buttons: window.enabled_buttons,
@@ -633,10 +648,6 @@ fn window_sync_requested_window_state(
   if window.position != runtime_ref.val.last_applied_position {
     window_apply_position(host_window, window.position)
     runtime_ref.val.last_applied_position = window.position
-  }
-  if window.mode != runtime_ref.val.last_applied_mode {
-    host_window_set_mode(host_window, mode=window.mode)
-    runtime_ref.val.last_applied_mode = window.mode
   }
   if window.visible != runtime_ref.val.last_applied_visible {
     host_window_set_visible(host_window, visible=window.visible)
@@ -1338,6 +1349,33 @@ pub fn window_backend_apply_changed_windows_system(world : @ecs.World) -> Unit {
       }),
     )
   }
+}
+
+///|
+pub fn window_take_changed_mode_requests(
+  world : @ecs.World,
+) -> Array[WindowModeChangeRequest] {
+  let requests : Array[WindowModeChangeRequest] = []
+  let runtime_query = world.query1(ecs_key_window_runtime)
+  for entity in window_runtime_entities_with_host(world) {
+    ignore(
+      try! runtime_query.with_mut(entity, fn(runtime_mut) {
+        let runtime_ref = runtime_mut.get_ref()
+        guard window_component(world, entity) is Some(window) else { return }
+        if window.mode != runtime_ref.val.last_applied_mode {
+          requests.push(
+            WindowModeChangeRequest::new(
+              entity,
+              runtime_ref.val.window,
+              window.mode,
+            ),
+          )
+          runtime_ref.val.last_applied_mode = window.mode
+        }
+      }),
+    )
+  }
+  requests
 }
 
 ///|

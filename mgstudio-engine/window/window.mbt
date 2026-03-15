@@ -54,11 +54,25 @@ pub impl Default for CursorIcon with default() {
 }
 
 ///|
+pub(all) enum MonitorSelection {
+  Current
+  Primary
+  Index(Int)
+  Entity(@core.Entity)
+} derive(Eq)
+
+///|
+pub(all) enum VideoModeSelection {
+  Current
+  Specific(@window_core.VideoMode)
+} derive(Eq)
+
+///|
 pub(all) enum WindowMode {
   Windowed
-  BorderlessFullscreen
-  Fullscreen
-} derive(Eq, Show)
+  BorderlessFullscreen(MonitorSelection)
+  Fullscreen(MonitorSelection, VideoModeSelection)
+} derive(Eq)
 
 ///|
 pub(all) enum PresentMode {
@@ -249,11 +263,40 @@ pub fn host_window_set_cursor_icon(
 }
 
 ///|
-fn window_mode_to_int(mode : WindowMode) -> Int {
-  match mode {
-    Windowed => 0
-    BorderlessFullscreen => 1
-    Fullscreen => 2
+fn monitor_selection_to_native(
+  window : HostWindow,
+  selection : MonitorSelection,
+) -> @window_core.MonitorHandle? {
+  match selection {
+    Current => @windowing.current_monitor(window)
+    Primary => @windowing.primary_monitor()
+    Index(n) => {
+      let monitors = @windowing.available_monitors()
+      if n < 0 || n >= monitors.length() {
+        None
+      } else {
+        Some(monitors[n])
+      }
+    }
+    Entity(_) => None
+  }
+}
+
+///|
+fn video_mode_selection_to_native(
+  monitor : @window_core.MonitorHandle,
+  selection : VideoModeSelection,
+) -> @window_core.VideoMode? {
+  match selection {
+    Current => monitor.current_video_mode()
+    Specific(video_mode) => {
+      for candidate in monitor.video_modes() {
+        if candidate == video_mode {
+          return Some(candidate)
+        }
+      }
+      None
+    }
   }
 }
 
@@ -275,12 +318,39 @@ fn compass_octant_to_resize_direction(
 
 ///|
 pub fn host_window_set_mode(window : HostWindow, mode~ : WindowMode) -> Unit {
-  host_window_set_mode_raw(window~, mode=window_mode_to_int(mode))
-}
-
-///|
-fn host_window_set_mode_raw(window~ : HostWindow, mode~ : Int) -> Unit {
-  @windowing.set_mode(window, mode~)
+  match mode {
+    Windowed => @windowing.set_fullscreen(window, fullscreen=None)
+    BorderlessFullscreen(monitor_selection) =>
+      @windowing.set_fullscreen(
+        window,
+        fullscreen=Some(
+          @window_core.Fullscreen::Borderless(
+            monitor_selection_to_native(window, monitor_selection),
+          ),
+        ),
+      )
+    Fullscreen(monitor_selection, video_mode_selection) =>
+      match monitor_selection_to_native(window, monitor_selection) {
+        Some(monitor) =>
+          match video_mode_selection_to_native(monitor, video_mode_selection) {
+            Some(video_mode) =>
+              @windowing.set_fullscreen(
+                window,
+                fullscreen=Some(
+                  @window_core.Fullscreen::Exclusive(monitor, video_mode),
+                ),
+              )
+            None =>
+              host_debug_string(
+                value="bevy_winit: could not find valid fullscreen video mode",
+              )
+          }
+        None =>
+          host_debug_string(
+            value="bevy_winit: could not find monitor for fullscreen selection",
+          )
+      }
+  }
 }
 
 ///|

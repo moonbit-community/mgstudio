@@ -152,8 +152,63 @@ pub fn winit_window_backend_sync_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn winit_monitors_resource(world : @ecs.World) -> WinitMonitors {
+  match (try! world.get_resource(WinitMonitors::resource())) {
+    Some(monitors) => monitors
+    None => WinitMonitors::default()
+  }
+}
+
+///|
+fn winit_apply_window_mode_change(
+  monitors : WinitMonitors,
+  request : @window.WindowModeChangeRequest,
+) -> Unit {
+  let primary_monitor = @windowing.primary_monitor()
+  let current_monitor = @windowing.current_monitor(request.host_window)
+  match request.mode {
+    Windowed => @windowing.set_fullscreen(request.host_window, fullscreen=None)
+    BorderlessFullscreen(monitor_selection) => {
+      let monitor = select_monitor(
+        monitors, primary_monitor, current_monitor, monitor_selection,
+      )
+      @windowing.set_fullscreen(
+        request.host_window,
+        fullscreen=Some(@window_core.Fullscreen::Borderless(monitor)),
+      )
+    }
+    Fullscreen(monitor_selection, video_mode_selection) =>
+      match
+        select_monitor(
+          monitors, primary_monitor, current_monitor, monitor_selection,
+        ) {
+        Some(monitor) =>
+          match get_selected_videomode(monitor, video_mode_selection) {
+            Some(video_mode) =>
+              @windowing.set_fullscreen(
+                request.host_window,
+                fullscreen=Some(
+                  @window_core.Fullscreen::Exclusive(monitor, video_mode),
+                ),
+              )
+            None =>
+              @window.host_debug_string(
+                value="bevy_winit: could not find valid fullscreen video mode",
+              )
+          }
+        None =>
+          abort("bevy_winit: could not find monitor for fullscreen selection")
+      }
+  }
+}
+
+///|
 pub fn winit_changed_windows_system(world : @ecs.World) -> Unit {
   @window.window_backend_apply_changed_windows_system(world)
+  let monitors = winit_monitors_resource(world)
+  for request in @window.window_take_changed_mode_requests(world) {
+    winit_apply_window_mode_change(monitors, request)
+  }
 }
 
 ///|

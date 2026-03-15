@@ -87,6 +87,46 @@ pub fn WinitWindows::remove_window(
 }
 
 ///|
+pub fn get_selected_videomode(
+  monitor : @window_core.MonitorHandle,
+  selection : @window.VideoModeSelection,
+) -> @window_core.VideoMode? {
+  match selection {
+    Current => monitor.current_video_mode()
+    Specific(specified) => {
+      for mode in monitor.video_modes() {
+        if mode == specified {
+          return Some(mode)
+        }
+      }
+      None
+    }
+  }
+}
+
+///|
+pub fn select_monitor(
+  monitors : WinitMonitors,
+  primary_monitor : @window_core.MonitorHandle?,
+  current_monitor : @window_core.MonitorHandle?,
+  monitor_selection : @window.MonitorSelection,
+) -> @window_core.MonitorHandle? {
+  match monitor_selection {
+    Current => {
+      if current_monitor is None {
+        @window.host_debug_string(
+          value="bevy_winit: cannot select current monitor on window creation",
+        )
+      }
+      current_monitor
+    }
+    Primary => primary_monitor
+    Index(n) => monitors.nth(n)
+    Entity(entity) => monitors.find_entity(entity)
+  }
+}
+
+///|
 pub impl Default for WinitWindows with default() {
   WinitWindows::new()
 }

@@ -1530,21 +1530,23 @@ pub fn set_cursor_icon(window : Int, icon~ : @window_core.CursorIcon) -> Unit {
 }
 
 ///|
-pub fn set_mode(window : Int, mode~ : Int) -> Unit {
+pub fn current_monitor(window : Int) -> @window_core.MonitorHandle? {
   match native_window_ref(window) {
-    Some(window_ref) =>
-      if mode == 0 {
-        window_ref.val.set_simple_fullscreen(false) |> ignore
-        window_ref.val.set_fullscreen(None)
-      } else if mode == 1 {
-        window_ref.val.set_fullscreen(None)
-        window_ref.val.set_simple_fullscreen(true) |> ignore
-      } else if mode == 2 {
-        window_ref.val.set_simple_fullscreen(false) |> ignore
-        window_ref.val.set_fullscreen(
-          Some(@window_core.Fullscreen::Borderless(None)),
-        )
-      }
+    Some(window_ref) => window_ref.val.current_monitor()
+    None => None
+  }
+}
+
+///|
+pub fn set_fullscreen(
+  window : Int,
+  fullscreen~ : @window_core.Fullscreen?,
+) -> Unit {
+  match native_window_ref(window) {
+    Some(window_ref) => {
+      window_ref.val.set_simple_fullscreen(false) |> ignore
+      window_ref.val.set_fullscreen(fullscreen)
+    }
     None => ()
   }
 }
