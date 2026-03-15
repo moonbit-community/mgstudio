@@ -816,6 +816,7 @@ priv struct Render3dCameraOrderEntry {
 ///|
 priv struct GpuPreprocessPrequeuedMeshItem3d {
   entity : PhaseEntityRef3d
+  indexed : Bool
   phase : Int
   distance : Float
 }
@@ -3694,6 +3695,7 @@ fn render3d_write_batched_instance_buffers(
 priv struct GpuPreprocessMeshCandidate3d {
   entity : PhaseEntityRef3d
   mesh_id : Int
+  indexed : Bool
   layers : @sprite.RenderLayers
   visibility_range : @visibility.VisibilityRange?
   aabb_center_world : @math.Vec3?
@@ -3709,6 +3711,21 @@ fn phase_entity_ref3d_main_eq(
 ) -> Bool {
   lhs.main_entity.id == rhs.main_entity.id &&
   lhs.main_entity.generation == rhs.main_entity.generation
+}
+
+///|
+fn render3d_mesh_handle_is_indexed(
+  mesh_handle : @asset.Handle[@mesh.Mesh],
+) -> Bool {
+  match @sprite.render_mesh_asset_get(mesh_handle) {
+    Some(mesh_asset) =>
+      match mesh_asset.geometry {
+        @mesh.MeshGeometry::Geometry3d(geometry3d) =>
+          geometry3d.indices is Some(_)
+        _ => false
+      }
+    None => false
+  }
 }
 
 ///|
@@ -3812,6 +3829,7 @@ fn render3d_collect_gpu_preprocess_mesh_candidates(
     candidates.push(GpuPreprocessMeshCandidate3d::{
       entity: phase_entity_ref3d_for_main(entity),
       mesh_id: gpu_mesh.mesh_id,
+      indexed: render3d_mesh_handle_is_indexed(mesh3d.mesh),
       layers,
       visibility_range,
       aabb_center_world,
@@ -3852,6 +3870,7 @@ fn render3d_collect_gpu_preprocess_camera_queue_items(
     }
     items.push(GpuPreprocessPrequeuedMeshItem3d::{
       entity: candidate.entity,
+      indexed: candidate.indexed,
       phase,
       distance: render3d_mesh_view_depth(candidate.transform, camera_transform),
     })
@@ -3958,28 +3977,58 @@ fn render3d_build_gpu_preprocess_indirect_metadata(
 fn render3d_build_gpu_preprocess_work_item_buffers_from_prequeued_items(
   items : Array[GpuPreprocessPrequeuedMeshItem3d],
 ) -> GpuPreprocessWorkItemBuffers3d {
-  let direct_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
+  let indexed_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
+  let non_indexed_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
   for i in 0..<items.length() {
-    direct_work_items.push(GpuPreprocessShaderWorkItem3d::{
-      input_index: i,
-      output_or_indirect_parameters_index: i,
-    })
+    if items[i].indexed {
+      indexed_work_items.push(GpuPreprocessShaderWorkItem3d::{
+        input_index: i,
+        output_or_indirect_parameters_index: indexed_work_items.length(),
+      })
+    } else {
+      non_indexed_work_items.push(GpuPreprocessShaderWorkItem3d::{
+        input_index: i,
+        output_or_indirect_parameters_index: non_indexed_work_items.length(),
+      })
+    }
   }
-  GpuPreprocessWorkItemBuffers3d::Direct(direct_work_items)
+  GpuPreprocessWorkItemBuffers3d::Indirect(
+    indexed_work_items, non_indexed_work_items,
+  )
 }
 
 ///|
 fn render3d_build_gpu_preprocess_work_item_buffers_from_draw_items(
   draw_items : Array[MeshPhaseItem3d],
+  meshes : Array[ExtractedMesh3d],
 ) -> GpuPreprocessWorkItemBuffers3d {
-  let direct_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
+  let indexed_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
+  let non_indexed_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
   for i in 0..<draw_items.length() {
-    direct_work_items.push(GpuPreprocessShaderWorkItem3d::{
-      input_index: i,
-      output_or_indirect_parameters_index: i,
-    })
+    let draw_item = draw_items[i]
+    let indexed = if draw_item.extracted_index >= 0 &&
+      draw_item.extracted_index < meshes.length() {
+      render3d_mesh_handle_is_indexed(
+        meshes[draw_item.extracted_index].payload.mesh_handle,
+      )
+    } else {
+      false
+    }
+    if indexed {
+      indexed_work_items.push(GpuPreprocessShaderWorkItem3d::{
+        input_index: i,
+        output_or_indirect_parameters_index: indexed_work_items.length(),
+      })
+    } else {
+      non_indexed_work_items.push(GpuPreprocessShaderWorkItem3d::{
+        input_index: i,
+        output_or_indirect_parameters_index: non_indexed_work_items.length(),
+      })
+    }
   }
-  GpuPreprocessWorkItemBuffers3d::Direct(direct_work_items)
+  GpuPreprocessWorkItemBuffers3d::Indirect(
+    indexed_work_items, non_indexed_work_items,
+  )
 }
 
 ///|
@@ -4126,6 +4175,7 @@ fn render3d_resolve_prequeued_mesh_phase_items(
 ///|
 fn render3d_make_fallback_gpu_preprocess_queue_entry(
   draw_items : Array[MeshPhaseItem3d],
+  meshes : Array[ExtractedMesh3d],
 ) -> GpuPreprocessResolvedCameraQueueEntry3d {
   let phase_ranges = render3d_build_gpu_preprocess_phase_ranges_from_draw_items(
     draw_items,
@@ -4136,7 +4186,7 @@ fn render3d_make_fallback_gpu_preprocess_queue_entry(
     indirect_batch_sets,
   ) = render3d_build_gpu_preprocess_indirect_metadata(draw_items.length())
   let work_item_buffers = render3d_build_gpu_preprocess_work_item_buffers_from_draw_items(
-    draw_items,
+    draw_items, meshes,
   )
   GpuPreprocessResolvedCameraQueueEntry3d::{
     draw_items,
@@ -5540,6 +5590,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
               camera.transform,
               true,
             ),
+            meshes,
           )
       }
     } else {
@@ -5550,6 +5601,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           camera.transform,
           false,
         ),
+        meshes,
       )
     }
     let draw_items = draw_queue_entry.draw_items
