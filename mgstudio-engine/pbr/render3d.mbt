@@ -3434,11 +3434,10 @@ fn render3d_visibility_range_visible(
 }
 
 ///|
-fn render3d_queue_mesh_phase_items(
+fn render3d_queue_mesh_phase_items_cpu_builder(
   meshes : Array[ExtractedMesh3d],
   layers : @sprite.RenderLayers,
   camera_transform : @math.Transform,
-  batch_by_texture : Bool,
 ) -> Array[MeshPhaseItem3d] {
   let items : Array[MeshPhaseItem3d] = []
   for i in 0..<meshes.length() {
@@ -3464,16 +3463,11 @@ fn render3d_queue_mesh_phase_items(
       continue
     }
     let phase = render3d_mesh_phase_kind(payload.material.alpha_mode, alpha).unwrap()
-    let batch_texture_id = match payload.material.base_color_texture {
-      Some(texture) => texture.id()
-      None => -1
-    }
     items.push(MeshPhaseItem3d::{
       entity: mesh.entity,
       extracted_index: i,
       phase,
       distance: render3d_mesh_view_depth(payload.transform, camera_transform),
-      batch_texture_id,
     })
   }
   items.sort_by(fn(a, b) {
@@ -3487,12 +3481,6 @@ fn render3d_queue_mesh_phase_items(
         return depth_cmp
       }
     } else {
-      if batch_by_texture {
-        let texture_cmp = cmp_int(a.batch_texture_id, b.batch_texture_id)
-        if texture_cmp != 0 {
-          return texture_cmp
-        }
-      }
       let depth_cmp = cmp_float(a.distance, b.distance)
       if depth_cmp != 0 {
         return depth_cmp
@@ -3501,6 +3489,32 @@ fn render3d_queue_mesh_phase_items(
     phase_entity_ref3d_cmp(a.entity, b.entity)
   })
   items
+}
+
+///|
+fn render3d_queue_mesh_phase_items_gpu_builder(
+  meshes : Array[ExtractedMesh3d],
+  layers : @sprite.RenderLayers,
+  camera_transform : @math.Transform,
+) -> Array[MeshPhaseItem3d] {
+  // Keep a dedicated GPU-builder entry point aligned with Bevy pipeline shape.
+  // The current renderer still uses the CPU-style queue item payload layout.
+  render3d_queue_mesh_phase_items_cpu_builder(meshes, layers, camera_transform)
+}
+
+///|
+fn render3d_queue_mesh_phase_items(
+  meshes : Array[ExtractedMesh3d],
+  layers : @sprite.RenderLayers,
+  camera_transform : @math.Transform,
+  use_gpu_instance_buffer_builder : Bool,
+) -> Array[MeshPhaseItem3d] {
+  if use_gpu_instance_buffer_builder {
+    return render3d_queue_mesh_phase_items_gpu_builder(
+      meshes, layers, camera_transform,
+    )
+  }
+  render3d_queue_mesh_phase_items_cpu_builder(meshes, layers, camera_transform)
 }
 
 ///|

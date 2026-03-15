@@ -136,7 +136,6 @@ priv struct MeshPhaseItem3d {
   extracted_index : Int
   phase : Int
   distance : Float
-  batch_texture_id : Int
 }
 
 ///|
