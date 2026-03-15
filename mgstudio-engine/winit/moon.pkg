@@ -1,14 +1,19 @@
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/a11y",
   "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render",
+  "Milky2018/mgstudio/render/renderer" @renderer,
   "Milky2018/mgstudio/window",
   "Milky2018/window/core" @window_core,
   "Milky2018/mgstudio/window/windowing_native" @windowing,
   "Milky2018/moon_accesskit",
+  "moonbitlang/core/strconv",
+  "moonbitlang/x/sys",
 }
 
 options(

@@ -254,8 +254,6 @@ pub fn window_position_y() -> Int
 
 pub fn window_request_close_all_hosts(@ecs.World) -> Unit
 
-pub fn window_runner_builder(@app.App[@ecs.World]) -> () -> Unit
-
 pub fn window_scale_factor() -> Float
 
 pub fn window_scale_factor_for(@ecs.World, WindowRef) -> Float
