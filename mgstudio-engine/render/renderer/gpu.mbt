@@ -325,6 +325,11 @@ pub struct GpuBackend {
   mut mesh3d_point_shadow_compare_sampler : @wgpu.Sampler?
   mesh3d_uniform_slots : Array[GpuUniformSlot]
   mut mesh3d_uniform_slot_used : Int
+  mut mesh3d_gpu_instance_builder_enabled : Bool
+  mut mesh3d_instance_uniform_buf : @wgpu.Buffer?
+  mut mesh3d_instance_uniform_bg : @wgpu.BindGroup?
+  mut mesh3d_instance_uniform_capacity : UInt64
+  mut mesh3d_instance_uniform_used : Int
   mut mesh3d_motion_vector_bgl_uniform : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh3d_motion_vector_pipeline : @wgpu.RenderPipeline?
@@ -657,6 +662,11 @@ pub fn GpuBackend::new(
     mesh3d_point_shadow_compare_sampler: None,
     mesh3d_uniform_slots: [],
     mesh3d_uniform_slot_used: 0,
+    mesh3d_gpu_instance_builder_enabled: false,
+    mesh3d_instance_uniform_buf: None,
+    mesh3d_instance_uniform_bg: None,
+    mesh3d_instance_uniform_capacity: 0UL,
+    mesh3d_instance_uniform_used: 0,
     mesh3d_motion_vector_bgl_uniform: None,
     mesh3d_motion_vector_pipeline_layout: None,
     mesh3d_motion_vector_pipeline: None,
@@ -1969,12 +1979,14 @@ fn replace_substring_all(source : String, from : String, to : String) -> String 
 fn create_uniform_bind_group_layout_vertex_fragment(
   backend : GpuBackend,
   label : String,
+  has_dynamic_offset? : Bool = false,
 ) -> @wgpu.BindGroupLayout raise GpuBackendError {
   let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=1UL)
   let ok = builder.add_buffer(
     0U,
     ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT),
     @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+    has_dynamic_offset~,
   )
   if !ok {
     builder.free()

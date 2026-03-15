@@ -4244,6 +4244,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let deferred_lighting_enabled = runtime_config.add_default_deferred_lighting_plugin &&
     deferred_pbr_lighting_enabled(world)
   let gpu_instance_buffer_builder_enabled = runtime_config.use_gpu_instance_buffer_builder
+  @render.host_gpu_set_mesh3d_gpu_instance_builder_enabled(
+    gpu_instance_buffer_builder_enabled,
+  )
   let delta_seconds = render3d_default_time_or_default(world).delta_seconds()
   let mut default_opaque_renderer_method = if (try! world.get_resource(
       ecs_key_default_opaque_renderer_method,

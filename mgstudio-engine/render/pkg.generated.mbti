@@ -104,6 +104,8 @@ pub fn host_gpu_request_device() -> Int
 
 pub fn host_gpu_set_active_surface_target(Int) -> Unit
 
+pub fn host_gpu_set_mesh3d_gpu_instance_builder_enabled(Bool) -> Unit
+
 pub fn host_gpu_set_scissor(x~ : Int, y~ : Int, width~ : Int, height~ : Int) -> Unit
 
 pub fn host_gpu_surface_target_id(Int) -> Int

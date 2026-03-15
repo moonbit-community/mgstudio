@@ -141,6 +141,8 @@ pub fn screenshot_texture_refs() -> Array[ScreenshotTextureRef]
 
 pub fn set_active_surface_target(Int) -> Unit
 
+pub fn set_mesh3d_gpu_instance_builder_enabled(Bool) -> Unit
+
 pub fn set_scissor(x~ : Int, y~ : Int, width~ : Int, height~ : Int) -> Unit
 
 pub fn surface_target_id(Int) -> Int
@@ -244,6 +246,11 @@ pub struct GpuBackend {
   mut mesh3d_point_shadow_compare_sampler : @wgpu_mbt.Sampler?
   mesh3d_uniform_slots : Array[GpuUniformSlot]
   mut mesh3d_uniform_slot_used : Int
+  mut mesh3d_gpu_instance_builder_enabled : Bool
+  mut mesh3d_instance_uniform_buf : @wgpu_mbt.Buffer?
+  mut mesh3d_instance_uniform_bg : @wgpu_mbt.BindGroup?
+  mut mesh3d_instance_uniform_capacity : UInt64
+  mut mesh3d_instance_uniform_used : Int
   mut mesh3d_motion_vector_bgl_uniform : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh3d_motion_vector_pipeline : @wgpu_mbt.RenderPipeline?

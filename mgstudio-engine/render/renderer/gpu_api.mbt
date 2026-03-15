@@ -356,6 +356,13 @@ pub fn set_active_surface_target(target_id : Int) -> Unit {
 }
 
 ///|
+pub fn set_mesh3d_gpu_instance_builder_enabled(enabled : Bool) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.mesh3d_gpu_instance_builder_enabled = enabled
+  }
+}
+
+///|
 pub fn configure_surface(
   device~ : NativeGpuDevice,
   surface~ : NativeGpuSurface,

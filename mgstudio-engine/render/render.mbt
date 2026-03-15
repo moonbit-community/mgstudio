@@ -211,6 +211,11 @@ pub fn host_gpu_set_active_surface_target(target_id : Int) -> Unit {
 }
 
 ///|
+pub fn host_gpu_set_mesh3d_gpu_instance_builder_enabled(enabled : Bool) -> Unit {
+  @renderer.set_mesh3d_gpu_instance_builder_enabled(enabled)
+}
+
+///|
 pub fn host_gpu_begin_pass(
   target_id~ : Int,
   width~ : Int,
