@@ -814,6 +814,19 @@ priv struct Render3dCameraOrderEntry {
 }
 
 ///|
+priv struct GpuPreprocessPrequeuedMeshItem3d {
+  entity : PhaseEntityRef3d
+  phase : Int
+  distance : Float
+}
+
+///|
+priv struct GpuPreprocessCameraQueueEntry3d {
+  camera_entity : @core.Entity
+  items : Array[GpuPreprocessPrequeuedMeshItem3d]
+}
+
+///|
 let motion_blur_history : Ref[Array[MotionBlurHistoryEntry]] = Ref::new([])
 
 ///|
@@ -845,6 +858,11 @@ let render3d_diagnostic_queued_visible_mesh_count_ref : Ref[Int] = Ref::new(0)
 
 ///|
 let render3d_diagnostic_prepared_camera_count_ref : Ref[Int] = Ref::new(0)
+
+///|
+let render3d_gpu_preprocess_camera_queues_ref : Ref[
+  Array[GpuPreprocessCameraQueueEntry3d],
+] = Ref::new([])
 
 ///|
 priv struct WireframeMeshCacheEntry {
@@ -3609,6 +3627,220 @@ fn render3d_write_batched_instance_buffers(
 }
 
 ///|
+priv struct GpuPreprocessMeshCandidate3d {
+  entity : PhaseEntityRef3d
+  mesh_id : Int
+  layers : @sprite.RenderLayers
+  visibility_range : @visibility.VisibilityRange?
+  aabb_center_world : @math.Vec3?
+  transform : @math.Transform
+  alpha_mode : AlphaMode3d
+  alpha : Float
+}
+
+///|
+fn phase_entity_ref3d_main_eq(
+  lhs : PhaseEntityRef3d,
+  rhs : PhaseEntityRef3d,
+) -> Bool {
+  lhs.main_entity.id == rhs.main_entity.id &&
+  lhs.main_entity.generation == rhs.main_entity.generation
+}
+
+///|
+fn render3d_sort_gpu_preprocess_prequeued_items(
+  items : Array[GpuPreprocessPrequeuedMeshItem3d],
+) -> Array[GpuPreprocessPrequeuedMeshItem3d] {
+  let opaque_items : Array[GpuPreprocessPrequeuedMeshItem3d] = []
+  let alpha_mask_items : Array[GpuPreprocessPrequeuedMeshItem3d] = []
+  let transparent_items : Array[GpuPreprocessPrequeuedMeshItem3d] = []
+  for item in items {
+    if item.phase == RENDER3D_PHASE_OPAQUE {
+      opaque_items.push(item)
+    } else if item.phase == RENDER3D_PHASE_ALPHA_MASK {
+      alpha_mask_items.push(item)
+    } else if item.phase == RENDER3D_PHASE_TRANSPARENT {
+      transparent_items.push(item)
+    }
+  }
+  opaque_items.sort_by(fn(a, b) {
+    let depth_cmp = cmp_float(a.distance, b.distance)
+    if depth_cmp != 0 {
+      return depth_cmp
+    }
+    phase_entity_ref3d_cmp(a.entity, b.entity)
+  })
+  alpha_mask_items.sort_by(fn(a, b) {
+    let depth_cmp = cmp_float(a.distance, b.distance)
+    if depth_cmp != 0 {
+      return depth_cmp
+    }
+    phase_entity_ref3d_cmp(a.entity, b.entity)
+  })
+  transparent_items.sort_by(fn(a, b) {
+    let depth_cmp = cmp_float(b.distance, a.distance)
+    if depth_cmp != 0 {
+      return depth_cmp
+    }
+    phase_entity_ref3d_cmp(a.entity, b.entity)
+  })
+  let sorted : Array[GpuPreprocessPrequeuedMeshItem3d] = []
+  for item in opaque_items {
+    sorted.push(item)
+  }
+  for item in alpha_mask_items {
+    sorted.push(item)
+  }
+  for item in transparent_items {
+    sorted.push(item)
+  }
+  sorted
+}
+
+///|
+fn render3d_collect_gpu_preprocess_mesh_candidates(
+  world : @ecs.World,
+) -> Array[GpuPreprocessMeshCandidate3d] {
+  let mesh_store = world.component(ecs_key_mesh3d)
+  let material_store = world.component(ecs_key_mesh_material3d)
+  let gpu_mesh_store = world.component(@sprite.ecs_key_gpu_mesh2d)
+  let visibility_range_store = world.component(
+    @visibility.ecs_key_visibility_range,
+  )
+  let view_visibility_store = world.component(
+    @visibility.ecs_key_view_visibility,
+  )
+  let layers_store = world.component(@sprite.ecs_key_render_layers)
+  let transform_store = world.component(@math.ecs_key_transform)
+  let candidates : Array[GpuPreprocessMeshCandidate3d] = []
+  mesh_store.for_each(fn(entity, mesh3d) {
+    if view_visibility_store.get(entity) is Some(view_visibility) &&
+      !view_visibility.is_visible() {
+      return
+    }
+    guard gpu_mesh_store.get(entity) is Some(gpu_mesh) else { return }
+    guard material_store.get(entity) is Some(material_handle) else { return }
+    guard standard_material_get(material_handle.material) is Some(base_material) else {
+      return
+    }
+    let material = render3d_apply_extended_material_metadata(
+      base_material,
+      material_handle.extended_material,
+    )
+    let transform = match transform_store.get(entity) {
+      Some(value) => value
+      None => @math.Transform::identity()
+    }
+    let visibility_range = visibility_range_store.get(entity)
+    let aabb_center_world = if visibility_range is Some(range) && range.use_aabb {
+      match render3d_mesh_local_aabb_center(mesh3d) {
+        Some(local_center) =>
+          Some(render3d_transform_point(transform, local_center))
+        None => None
+      }
+    } else {
+      None
+    }
+    let layers = match layers_store.get(entity) {
+      Some(value) => value
+      None => @sprite.RenderLayers::default()
+    }
+    candidates.push(GpuPreprocessMeshCandidate3d::{
+      entity: phase_entity_ref3d_for_main(entity),
+      mesh_id: gpu_mesh.mesh_id,
+      layers,
+      visibility_range,
+      aabb_center_world,
+      transform,
+      alpha_mode: material.alpha_mode,
+      alpha: material.base_color.a,
+    })
+  })
+  candidates
+}
+
+///|
+fn render3d_collect_gpu_preprocess_camera_queue_items(
+  mesh_candidates : Array[GpuPreprocessMeshCandidate3d],
+  layers : @sprite.RenderLayers,
+  camera_transform : @math.Transform,
+) -> Array[GpuPreprocessPrequeuedMeshItem3d] {
+  let items : Array[GpuPreprocessPrequeuedMeshItem3d] = []
+  for candidate in mesh_candidates {
+    if candidate.mesh_id <= 0 {
+      continue
+    }
+    if !candidate.layers.matches(layers) {
+      continue
+    }
+    if candidate.visibility_range is Some(visibility_range) &&
+      !render3d_visibility_range_visible(
+        visibility_range,
+        camera_transform,
+        candidate.transform,
+        candidate.aabb_center_world,
+      ) {
+      continue
+    }
+    guard render3d_mesh_phase_kind(candidate.alpha_mode, candidate.alpha)
+      is Some(phase) else {
+      continue
+    }
+    items.push(GpuPreprocessPrequeuedMeshItem3d::{
+      entity: candidate.entity,
+      phase,
+      distance: render3d_mesh_view_depth(candidate.transform, camera_transform),
+    })
+  }
+  render3d_sort_gpu_preprocess_prequeued_items(items)
+}
+
+///|
+fn render3d_resolve_prequeued_mesh_phase_items(
+  prequeued_items : Array[GpuPreprocessPrequeuedMeshItem3d],
+  meshes : Array[ExtractedMesh3d],
+) -> Array[MeshPhaseItem3d] {
+  let resolved : Array[MeshPhaseItem3d] = []
+  for prequeued_item in prequeued_items {
+    let mut extracted_index = -1
+    for i in 0..<meshes.length() {
+      if phase_entity_ref3d_main_eq(meshes[i].entity, prequeued_item.entity) {
+        extracted_index = i
+        break
+      }
+    }
+    if extracted_index < 0 {
+      continue
+    }
+    resolved.push(MeshPhaseItem3d::{
+      entity: prequeued_item.entity,
+      extracted_index,
+      phase: prequeued_item.phase,
+      distance: prequeued_item.distance,
+    })
+  }
+  resolved
+}
+
+///|
+fn render3d_take_gpu_preprocess_camera_queue_items(
+  camera_entity : @core.Entity,
+  meshes : Array[ExtractedMesh3d],
+) -> Array[MeshPhaseItem3d]? {
+  for i in 0..<render3d_gpu_preprocess_camera_queues_ref.val.length() {
+    let queue_entry = render3d_gpu_preprocess_camera_queues_ref.val[i]
+    if queue_entry.camera_entity.id == camera_entity.id &&
+      queue_entry.camera_entity.generation == camera_entity.generation {
+      render3d_gpu_preprocess_camera_queues_ref.val.remove(i) |> ignore
+      return Some(
+        render3d_resolve_prequeued_mesh_phase_items(queue_entry.items, meshes),
+      )
+    }
+  }
+  None
+}
+
+///|
 fn render3d_queue_mesh_phase_items_gpu_builder(
   meshes : Array[ExtractedMesh3d],
   layers : @sprite.RenderLayers,
@@ -3939,6 +4171,7 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
   render3d_prepared_camera_order_ref.val = render3d_sorted_camera_entities(
     world,
   )
+  render3d_gpu_preprocess_camera_queues_ref.val.clear()
   render3d_diagnostic_prepared_camera_count_ref.val = render3d_prepared_camera_order_ref.val.length()
   render3d_queued_visible_mesh_count_ref.val = 0
   render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
@@ -3965,6 +4198,7 @@ pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn render3d_queue_system(world : @ecs.World) -> Unit {
+  render3d_gpu_preprocess_camera_queues_ref.val.clear()
   if render3d_prepared_camera_order_ref.val.length() == 0 {
     render3d_queued_visible_mesh_count_ref.val = 0
     render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
@@ -3974,6 +4208,8 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
   let view_visibility_store = world.component(
     @visibility.ecs_key_view_visibility,
   )
+  let layers_store = world.component(@sprite.ecs_key_render_layers)
+  let transform_store = world.component(@math.ecs_key_transform)
   let mut visible_mesh_count = 0
   mesh_store.for_each(fn(entity, _mesh3d) {
     if view_visibility_store.get(entity) is Some(view_visibility) &&
@@ -3984,6 +4220,28 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
   })
   render3d_queued_visible_mesh_count_ref.val = visible_mesh_count
   render3d_diagnostic_queued_visible_mesh_count_ref.val = visible_mesh_count
+  let runtime_config = render3d_runtime_config_or_default(world)
+  if !runtime_config.use_gpu_instance_buffer_builder {
+    return
+  }
+  let mesh_candidates = render3d_collect_gpu_preprocess_mesh_candidates(world)
+  for prepared_camera in render3d_prepared_camera_order_ref.val {
+    let camera_entity = prepared_camera
+    let camera_layers = match layers_store.get(camera_entity) {
+      Some(value) => value
+      None => @sprite.RenderLayers::default()
+    }
+    let camera_transform = match transform_store.get(camera_entity) {
+      Some(value) => value
+      None => @math.Transform::identity()
+    }
+    render3d_gpu_preprocess_camera_queues_ref.val.push(GpuPreprocessCameraQueueEntry3d::{
+      camera_entity,
+      items: render3d_collect_gpu_preprocess_camera_queue_items(
+        mesh_candidates, camera_layers, camera_transform,
+      ),
+    })
+  }
 }
 
 ///|
@@ -4801,6 +5059,26 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     } else {
       0.0001F
     }
+    let draw_items = if gpu_instance_buffer_builder_enabled {
+      match
+        render3d_take_gpu_preprocess_camera_queue_items(camera_entity, meshes) {
+        Some(prequeued_items) => prequeued_items
+        None =>
+          render3d_queue_mesh_phase_items(
+            meshes,
+            camera.layers,
+            camera.transform,
+            true,
+          )
+      }
+    } else {
+      render3d_queue_mesh_phase_items(
+        meshes,
+        camera.layers,
+        camera.transform,
+        false,
+      )
+    }
     if motion_vector_prepass_enabled {
       let (shared_scene_id, shared_velocity_id) = render3d_motion_blur_targets_get_or_create(
         camera_entity, view_width, view_height,
@@ -4829,13 +5107,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         pass_kind=motion_vector_pass_kind,
         clear_enabled=1,
       )
-      let velocity_draw_items = render3d_queue_mesh_phase_items(
-        meshes,
-        camera.layers,
-        camera.transform,
-        gpu_instance_buffer_builder_enabled,
-      )
-      for draw_item in velocity_draw_items {
+      for draw_item in draw_items {
         if draw_item.phase != RENDER3D_PHASE_OPAQUE &&
           draw_item.phase != RENDER3D_PHASE_ALPHA_MASK {
           continue
@@ -4891,12 +5163,6 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       }
       @render.host_gpu_end_pass()
     }
-    let draw_items = render3d_queue_mesh_phase_items(
-      meshes,
-      camera.layers,
-      camera.transform,
-      gpu_instance_buffer_builder_enabled,
-    )
     if pass_lighting.point_shadow_maps_enabled &&
       !pass_lighting.point_entity.is_placeholder() &&
       pass_lighting.point_range > 0.0F &&
