@@ -41,6 +41,12 @@ const CAMERA_PITCH_LIMIT : Float = 1.5607963267948965F
 const FOX_ASSET_PATH : String = "models/animated/Fox.glb"
 
 ///|
+const LAYER_MAIN_SCENE : Int = 0
+
+///|
+const LAYER_MIRROR_SURFACE : Int = 1
+
+///|
 pub(all) enum DragAction {
   MoveCamera
   MoveFox
@@ -364,6 +370,13 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3d::new(mirror_material),
     mirror_transform,
   ).spawn(world)
+  world
+  .component(@sprite.ecs_key_render_layers)
+  .insert(
+    mirror_entity,
+    @sprite.RenderLayers::layer(LAYER_MIRROR_SURFACE),
+    tick,
+  )
   mirror_state.val.mirror_plane = mirror_entity
 
   // Lighting.
@@ -401,6 +414,13 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.Projection::Perspective(main_camera_projection),
     main_camera_transform,
   ).spawn(world)
+  world
+  .component(@sprite.ecs_key_render_layers)
+  .insert(
+    main_camera,
+    @sprite.RenderLayers::from_layers([LAYER_MAIN_SCENE, LAYER_MIRROR_SURFACE]),
+    tick,
+  )
   mirror_state.val.main_camera = main_camera
   let (initial_yaw, initial_pitch) = orbit_angles_from_translation(
     main_camera_transform.translation.sub(camera_target()),
@@ -420,6 +440,9 @@ fn setup(world : @ecs.World) -> Unit {
   world
   .component(@sprite.ecs_key_render_target)
   .insert(mirror_camera, @sprite.RenderTarget::Image(mirror_target), tick)
+  world
+  .component(@sprite.ecs_key_render_layers)
+  .insert(mirror_camera, @sprite.RenderLayers::layer(LAYER_MAIN_SCENE), tick)
   mirror_state.val.mirror_camera = mirror_camera
 
   // Help text.

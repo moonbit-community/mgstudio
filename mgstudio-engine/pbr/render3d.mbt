@@ -1104,7 +1104,10 @@ fn render3d_tonemapping_stage_enabled(
   color_grading : ColorGrading?,
 ) -> Bool {
   deband_dither |> ignore
-  color_grading |> ignore
+  let color_grading_enabled = color_grading is Some(_)
+  if color_grading_enabled {
+    return true
+  }
   if !hdr_enabled {
     return false
   }
@@ -3492,14 +3495,131 @@ fn render3d_queue_mesh_phase_items_cpu_builder(
 }
 
 ///|
+priv struct GpuPreprocessWorkItem3d {
+  entity : PhaseEntityRef3d
+  extracted_index : Int
+  phase : Int
+  distance : Float
+}
+
+///|
+fn render3d_collect_meshes_for_gpu_building(
+  meshes : Array[ExtractedMesh3d],
+  layers : @sprite.RenderLayers,
+  camera_transform : @math.Transform,
+) -> Array[GpuPreprocessWorkItem3d] {
+  let work_items : Array[GpuPreprocessWorkItem3d] = []
+  for i in 0..<meshes.length() {
+    let mesh = meshes[i]
+    let payload = mesh.payload
+    if payload.mesh_id <= 0 {
+      continue
+    }
+    if !payload.layers.matches(layers) {
+      continue
+    }
+    if payload.visibility_range is Some(visibility_range) &&
+      !render3d_visibility_range_visible(
+        visibility_range,
+        camera_transform,
+        payload.transform,
+        payload.aabb_center_world,
+      ) {
+      continue
+    }
+    let alpha = payload.material.base_color.a
+    guard render3d_mesh_phase_kind(payload.material.alpha_mode, alpha)
+      is Some(phase) else {
+      continue
+    }
+    work_items.push(GpuPreprocessWorkItem3d::{
+      entity: mesh.entity,
+      extracted_index: i,
+      phase,
+      distance: render3d_mesh_view_depth(payload.transform, camera_transform),
+    })
+  }
+  work_items
+}
+
+///|
+fn render3d_sort_gpu_preprocess_work_items(
+  work_items : Array[GpuPreprocessWorkItem3d],
+) -> Array[GpuPreprocessWorkItem3d] {
+  let opaque_items : Array[GpuPreprocessWorkItem3d] = []
+  let alpha_mask_items : Array[GpuPreprocessWorkItem3d] = []
+  let transparent_items : Array[GpuPreprocessWorkItem3d] = []
+  for work_item in work_items {
+    if work_item.phase == RENDER3D_PHASE_OPAQUE {
+      opaque_items.push(work_item)
+    } else if work_item.phase == RENDER3D_PHASE_ALPHA_MASK {
+      alpha_mask_items.push(work_item)
+    } else if work_item.phase == RENDER3D_PHASE_TRANSPARENT {
+      transparent_items.push(work_item)
+    }
+  }
+  opaque_items.sort_by(fn(a, b) {
+    let depth_cmp = cmp_float(a.distance, b.distance)
+    if depth_cmp != 0 {
+      return depth_cmp
+    }
+    phase_entity_ref3d_cmp(a.entity, b.entity)
+  })
+  alpha_mask_items.sort_by(fn(a, b) {
+    let depth_cmp = cmp_float(a.distance, b.distance)
+    if depth_cmp != 0 {
+      return depth_cmp
+    }
+    phase_entity_ref3d_cmp(a.entity, b.entity)
+  })
+  transparent_items.sort_by(fn(a, b) {
+    let depth_cmp = cmp_float(b.distance, a.distance)
+    if depth_cmp != 0 {
+      return depth_cmp
+    }
+    phase_entity_ref3d_cmp(a.entity, b.entity)
+  })
+  let sorted : Array[GpuPreprocessWorkItem3d] = []
+  for item in opaque_items {
+    sorted.push(item)
+  }
+  for item in alpha_mask_items {
+    sorted.push(item)
+  }
+  for item in transparent_items {
+    sorted.push(item)
+  }
+  sorted
+}
+
+///|
+fn render3d_write_batched_instance_buffers(
+  work_items : Array[GpuPreprocessWorkItem3d],
+) -> Array[MeshPhaseItem3d] {
+  let phase_items : Array[MeshPhaseItem3d] = []
+  for work_item in render3d_sort_gpu_preprocess_work_items(work_items) {
+    phase_items.push(MeshPhaseItem3d::{
+      entity: work_item.entity,
+      extracted_index: work_item.extracted_index,
+      phase: work_item.phase,
+      distance: work_item.distance,
+    })
+  }
+  phase_items
+}
+
+///|
 fn render3d_queue_mesh_phase_items_gpu_builder(
   meshes : Array[ExtractedMesh3d],
   layers : @sprite.RenderLayers,
   camera_transform : @math.Transform,
 ) -> Array[MeshPhaseItem3d] {
-  // Keep a dedicated GPU-builder entry point aligned with Bevy pipeline shape.
-  // The current renderer still uses the CPU-style queue item payload layout.
-  render3d_queue_mesh_phase_items_cpu_builder(meshes, layers, camera_transform)
+  // Keep the same high-level architecture as Bevy's GPU preprocessing path:
+  // collect mesh work items, then write batched instance work payloads.
+  let work_items = render3d_collect_meshes_for_gpu_building(
+    meshes, layers, camera_transform,
+  )
+  render3d_write_batched_instance_buffers(work_items)
 }
 
 ///|
