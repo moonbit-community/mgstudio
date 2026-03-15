@@ -871,11 +871,20 @@ priv struct GpuPreprocessShaderWorkItem3d {
 }
 
 ///|
+priv struct GpuOcclusionCullingWorkItemBuffers3d {
+  late_indexed : Array[GpuPreprocessShaderWorkItem3d]
+  late_non_indexed : Array[GpuPreprocessShaderWorkItem3d]
+  late_indirect_parameters_indexed_offset : Int
+  late_indirect_parameters_non_indexed_offset : Int
+}
+
+///|
 priv enum GpuPreprocessWorkItemBuffers3d {
   Direct(Array[GpuPreprocessShaderWorkItem3d])
   Indirect(
     Array[GpuPreprocessShaderWorkItem3d],
-    Array[GpuPreprocessShaderWorkItem3d]
+    Array[GpuPreprocessShaderWorkItem3d],
+    GpuOcclusionCullingWorkItemBuffers3d?
   )
 }
 
@@ -4003,7 +4012,7 @@ fn render3d_build_gpu_preprocess_indirect_metadata(
         indexed: render3d_empty_gpu_preprocess_indirect_mesh_class_metadata(),
         non_indexed: render3d_empty_gpu_preprocess_indirect_mesh_class_metadata(),
       }
-    Indirect(indexed_items, non_indexed_items) =>
+    Indirect(indexed_items, non_indexed_items, _) =>
       GpuPreprocessIndirectMetadata3d::{
         indexed: render3d_build_gpu_preprocess_indirect_mesh_class_metadata(
           indexed_items,
@@ -4035,7 +4044,9 @@ fn render3d_build_gpu_preprocess_work_item_buffers_from_prequeued_items(
     }
   }
   GpuPreprocessWorkItemBuffers3d::Indirect(
-    indexed_work_items, non_indexed_work_items,
+    indexed_work_items,
+    non_indexed_work_items,
+    None,
   )
 }
 
@@ -4069,7 +4080,9 @@ fn render3d_build_gpu_preprocess_work_item_buffers_from_draw_items(
     }
   }
   GpuPreprocessWorkItemBuffers3d::Indirect(
-    indexed_work_items, non_indexed_work_items,
+    indexed_work_items,
+    non_indexed_work_items,
+    None,
   )
 }
 
@@ -4125,7 +4138,7 @@ fn render3d_remap_gpu_preprocess_work_item_buffers_to_resolved_draw_items(
       }
       GpuPreprocessWorkItemBuffers3d::Direct(remapped_direct_items)
     }
-    Indirect(indexed_items, non_indexed_items) => {
+    Indirect(indexed_items, non_indexed_items, gpu_occlusion_culling) => {
       let remapped_indexed_items : Array[GpuPreprocessShaderWorkItem3d] = []
       for item in indexed_items {
         let input_index = remap_index(item.input_index)
@@ -4148,8 +4161,41 @@ fn render3d_remap_gpu_preprocess_work_item_buffers_to_resolved_draw_items(
           output_or_indirect_parameters_index: item.output_or_indirect_parameters_index,
         })
       }
+      let remapped_gpu_occlusion_culling = match gpu_occlusion_culling {
+        None => None
+        Some(buffers) => {
+          let remapped_late_indexed : Array[GpuPreprocessShaderWorkItem3d] = []
+          for item in buffers.late_indexed {
+            let input_index = remap_index(item.input_index)
+            if input_index < 0 {
+              continue
+            }
+            remapped_late_indexed.push(GpuPreprocessShaderWorkItem3d::{
+              input_index,
+              output_or_indirect_parameters_index: item.output_or_indirect_parameters_index,
+            })
+          }
+          let remapped_late_non_indexed : Array[GpuPreprocessShaderWorkItem3d] = []
+          for item in buffers.late_non_indexed {
+            let input_index = remap_index(item.input_index)
+            if input_index < 0 {
+              continue
+            }
+            remapped_late_non_indexed.push(GpuPreprocessShaderWorkItem3d::{
+              input_index,
+              output_or_indirect_parameters_index: item.output_or_indirect_parameters_index,
+            })
+          }
+          Some(GpuOcclusionCullingWorkItemBuffers3d::{
+            late_indexed: remapped_late_indexed,
+            late_non_indexed: remapped_late_non_indexed,
+            late_indirect_parameters_indexed_offset: buffers.late_indirect_parameters_indexed_offset,
+            late_indirect_parameters_non_indexed_offset: buffers.late_indirect_parameters_non_indexed_offset,
+          })
+        }
+      }
       GpuPreprocessWorkItemBuffers3d::Indirect(
-        remapped_indexed_items, remapped_non_indexed_items,
+        remapped_indexed_items, remapped_non_indexed_items, remapped_gpu_occlusion_culling,
       )
     }
   }
@@ -4332,7 +4378,7 @@ fn render3d_gpu_preprocess_work_item_buffers_checksum(
       }
       checksum
     }
-    Indirect(indexed_items, non_indexed_items) => {
+    Indirect(indexed_items, non_indexed_items, gpu_occlusion_culling) => {
       let mut checksum = 0
       for item in indexed_items {
         checksum = checksum +
@@ -4343,6 +4389,21 @@ fn render3d_gpu_preprocess_work_item_buffers_checksum(
         checksum = checksum +
           item.input_index +
           item.output_or_indirect_parameters_index
+      }
+      if gpu_occlusion_culling is Some(culling_buffers) {
+        checksum = checksum +
+          culling_buffers.late_indirect_parameters_indexed_offset +
+          culling_buffers.late_indirect_parameters_non_indexed_offset
+        for item in culling_buffers.late_indexed {
+          checksum = checksum +
+            item.input_index +
+            item.output_or_indirect_parameters_index
+        }
+        for item in culling_buffers.late_non_indexed {
+          checksum = checksum +
+            item.input_index +
+            item.output_or_indirect_parameters_index
+        }
       }
       checksum
     }
@@ -4379,7 +4440,7 @@ fn render3d_gpu_preprocess_opaque_alpha_draw_item_indices(
       for item in items {
         push_if_valid(item.output_or_indirect_parameters_index)
       }
-    Indirect(indexed_items, non_indexed_items) => {
+    Indirect(indexed_items, non_indexed_items, _) => {
       for item in indexed_items {
         push_if_valid(item.input_index)
       }
