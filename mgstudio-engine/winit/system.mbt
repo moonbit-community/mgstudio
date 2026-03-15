@@ -26,48 +26,6 @@ fn winit_monitor_entry_index(
 }
 
 ///|
-fn winit_video_mode_from_native(
-  mode : @window_core.VideoMode,
-) -> @window.VideoMode {
-  let size = mode.surface_size()
-  @window.VideoMode::new(
-    @math.UVec2::new(size.width(), size.height()),
-    match mode.bit_depth() {
-      Some(bit_depth) => bit_depth
-      None => 0
-    },
-    match mode.refresh_rate_millihertz() {
-      Some(refresh_rate) => refresh_rate
-      None => 0
-    },
-  )
-}
-
-///|
-fn winit_monitor_from_native(
-  monitor : @window_core.MonitorHandle,
-) -> @window.Monitor {
-  let size = monitor.surface_size()
-  let position = monitor.position()
-  let video_modes : Array[@window.VideoMode] = []
-  for mode in monitor.video_modes() {
-    video_modes.push(winit_video_mode_from_native(mode))
-  }
-  @window.Monitor::{
-    name: monitor.name(),
-    physical_height: size.height(),
-    physical_width: size.width(),
-    physical_position: @math.IVec2::new(position.x(), position.y()),
-    refresh_rate_millihertz: match monitor.current_video_mode() {
-      Some(mode) => mode.refresh_rate_millihertz()
-      None => None
-    },
-    scale_factor: monitor.scale_factor(),
-    video_modes,
-  }
-}
-
-///|
 fn winit_has_primary_monitor(world : @ecs.World, entity : @core.Entity) -> Bool {
   match (try! world.get_component(entity) : @window.PrimaryMonitor?) {
     Some(_) => true
@@ -102,7 +60,7 @@ fn winit_sync_monitor_entity(
   monitor : @window_core.MonitorHandle,
   primary_monitor : @window_core.MonitorHandle?,
 ) -> Unit {
-  try! world.set_component(entity, winit_monitor_from_native(monitor))
+  try! world.set_component(entity, convert_winit_monitor(monitor))
   winit_sync_primary_monitor_marker(world, entity, monitor, primary_monitor)
 }
 
@@ -184,8 +142,9 @@ fn winit_write_raw_winit_window_events(
 
 ///|
 pub fn winit_window_backend_sync_system(world : @ecs.World) -> Unit {
-  winit_create_monitors_system(world)
   @window.window_backend_prepare_system(world)
+  winit_sync_windows_resource_system(world)
+  winit_create_monitors_system(world)
   winit_write_raw_winit_window_events(
     world,
     @windowing.take_raw_winit_window_events(),

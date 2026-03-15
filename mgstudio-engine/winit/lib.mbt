@@ -81,6 +81,7 @@ pub fn winit_plugin_with(
       .insert_world_resource(ecs_key_winit_plugin_marker, WinitPluginMarker::{
 
       })
+      .init_resource(WinitWindows::default)
       .init_resource(WinitMonitors::default)
       .init_resource(WinitSettings::default)
       .add_message(ecs_key_raw_winit_window_event)

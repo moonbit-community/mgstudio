@@ -55,6 +55,15 @@ fn read_winit_monitors(world : @ecs.World) -> WinitMonitors? {
 }
 
 ///|
+fn read_winit_windows(world : @ecs.World) -> WinitWindows? {
+  try world.get_resource(WinitWindows::resource()) catch {
+    _ => None
+  } noraise {
+    value => value
+  }
+}
+
+///|
 fn read_monitor_component(
   world : @ecs.World,
   entity : @core.Entity,
@@ -174,6 +183,58 @@ test "winit: plugin initializes bevy-aligned monitors resource" {
   } else {
     inspect(monitors.nth(0) is Some(_), content="true")
   }
+}
+
+///|
+test "winit: plugin initializes bevy-aligned windows resource" {
+  let app_with_winit = winit_plugin(
+    @window.window_plugin(@app.App::new(@ecs.World::new())),
+  ).run_once()
+  let windows = match read_winit_windows(app_with_winit.world()) {
+    Some(windows) => windows
+    None => abort("missing WinitWindows resource")
+  }
+  let host_entries = @window.window_host_entries(app_with_winit.world())
+  assert_eq(windows.windows.length(), host_entries.length())
+}
+
+///|
+test "winit: windows resource mirrors host window runtime mapping" {
+  let app = winit_plugin(
+    @window.window_plugin(@app.App::new(@ecs.World::new())),
+  ).run_once()
+  let world = app.world()
+  let windows = match read_winit_windows(world) {
+    Some(windows) => windows
+    None => abort("missing WinitWindows resource")
+  }
+  let host_entries = @window.window_host_entries(world)
+
+  assert_eq(windows.windows.length(), host_entries.length())
+  for entry in host_entries {
+    assert_eq(windows.get_window(entry.entity), Some(entry.host_window))
+    inspect(
+      windows.get_window_entity(entry.host_window) is Some(entity) &&
+      entity == entry.entity,
+      content="true",
+    )
+  }
+}
+
+///|
+test "winit: windows resource supports remove by entity" {
+  let world = @ecs.World::new()
+  let entity_a = world.spawn()
+  let entity_b = world.spawn()
+  let windows = WinitWindows::default()
+  windows.windows.push(WinitWindowEntry::new(entity_a, 101))
+  windows.windows.push(WinitWindowEntry::new(entity_b, 202))
+
+  assert_eq(windows.remove_window(entity_a), Some(101))
+  assert_eq(windows.get_window(entity_a), None)
+  inspect(windows.get_window_entity(101) is None, content="true")
+  assert_eq(windows.get_window(entity_b), Some(202))
+  assert_eq(windows.windows.length(), 1)
 }
 
 ///|

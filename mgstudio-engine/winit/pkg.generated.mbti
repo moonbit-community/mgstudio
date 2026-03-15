@@ -4,11 +4,16 @@ package "Milky2018/mgstudio/winit"
 import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/window",
   "Milky2018/mgstudio/window/windowing_native",
 }
 
 // Values
 pub const WINIT_PLUGIN_ID : String = "bevy_winit::WinitPlugin"
+
+pub fn convert_winit_monitor(@Milky2018/window/core.MonitorHandle) -> @window.Monitor
+
+pub fn convert_winit_video_mode(@Milky2018/window/core.VideoMode) -> @window.VideoMode
 
 pub let ecs_key_raw_winit_window_event : @ecs.MessageKey[RawWinitWindowEvent]
 
@@ -27,6 +32,8 @@ pub fn winit_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 pub fn winit_plugin_with(@app.App[@ecs.World], WinitPlugin) -> @app.App[@ecs.World]
 
 pub fn winit_runner(@app.App[@ecs.World]) -> () -> Unit
+
+pub fn winit_sync_windows_resource_system(@ecs.World) -> Unit
 
 pub fn winit_window_backend_sync_system(@ecs.World) -> Unit
 
@@ -86,6 +93,25 @@ pub impl @app.Resource for WinitSettings
 pub impl Default for WinitSettings
 pub impl Eq for WinitSettings
 pub impl Show for WinitSettings
+
+pub struct WinitWindowEntry {
+  entity : @Milky2018/mgstudio/core.Entity
+  window : Int
+}
+pub fn WinitWindowEntry::new(@Milky2018/mgstudio/core.Entity, Int) -> Self
+pub impl Eq for WinitWindowEntry
+
+pub struct WinitWindows {
+  windows : Array[WinitWindowEntry]
+}
+pub fn WinitWindows::get_window(Self, @Milky2018/mgstudio/core.Entity) -> Int?
+pub fn WinitWindows::get_window_entity(Self, Int) -> @Milky2018/mgstudio/core.Entity?
+pub fn WinitWindows::new() -> Self
+pub fn WinitWindows::remove_window(Self, @Milky2018/mgstudio/core.Entity) -> Int?
+pub fn WinitWindows::sync_windows(Self, @ecs.World) -> Unit
+pub impl @app.Resource for WinitWindows
+pub impl Default for WinitWindows
+pub impl Eq for WinitWindows
 
 // Type aliases
 pub using @windowing_native {type RawWinitWindowEventData}
