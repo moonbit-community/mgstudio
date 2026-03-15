@@ -821,9 +821,56 @@ priv struct GpuPreprocessPrequeuedMeshItem3d {
 }
 
 ///|
+priv struct GpuPreprocessPhaseRange3d {
+  phase : Int
+  start : Int
+  end : Int
+}
+
+///|
+priv struct GpuPreprocessIndirectParametersCpuMetadata3d {
+  base_output_index : Int
+  batch_set_index : Int
+}
+
+///|
+priv struct GpuPreprocessIndirectParametersGpuMetadata3d {
+  mesh_index : Int
+  early_instance_count : Int
+  late_instance_count : Int
+}
+
+///|
+priv struct GpuPreprocessIndirectBatchSet3d {
+  indirect_parameters_count : Int
+  indirect_parameters_base : Int
+}
+
+///|
 priv struct GpuPreprocessCameraQueueEntry3d {
   camera_entity : @core.Entity
   items : Array[GpuPreprocessPrequeuedMeshItem3d]
+  phase_ranges : Array[GpuPreprocessPhaseRange3d]
+  indirect_parameters_cpu_metadata : Array[
+    GpuPreprocessIndirectParametersCpuMetadata3d,
+  ]
+  indirect_parameters_gpu_metadata : Array[
+    GpuPreprocessIndirectParametersGpuMetadata3d,
+  ]
+  indirect_batch_sets : Array[GpuPreprocessIndirectBatchSet3d]
+}
+
+///|
+priv struct GpuPreprocessResolvedCameraQueueEntry3d {
+  draw_items : Array[MeshPhaseItem3d]
+  phase_ranges : Array[GpuPreprocessPhaseRange3d]
+  indirect_parameters_cpu_metadata : Array[
+    GpuPreprocessIndirectParametersCpuMetadata3d,
+  ]
+  indirect_parameters_gpu_metadata : Array[
+    GpuPreprocessIndirectParametersGpuMetadata3d,
+  ]
+  indirect_batch_sets : Array[GpuPreprocessIndirectBatchSet3d]
 }
 
 ///|
@@ -3796,6 +3843,129 @@ fn render3d_collect_gpu_preprocess_camera_queue_items(
 }
 
 ///|
+fn render3d_build_gpu_preprocess_phase_ranges_from_prequeued_items(
+  items : Array[GpuPreprocessPrequeuedMeshItem3d],
+) -> Array[GpuPreprocessPhaseRange3d] {
+  let phase_ranges : Array[GpuPreprocessPhaseRange3d] = []
+  if items.length() == 0 {
+    return phase_ranges
+  }
+  let mut current_phase = items[0].phase
+  let mut range_start = 0
+  for i in 1..<items.length() {
+    if items[i].phase == current_phase {
+      continue
+    }
+    phase_ranges.push(GpuPreprocessPhaseRange3d::{
+      phase: current_phase,
+      start: range_start,
+      end: i,
+    })
+    current_phase = items[i].phase
+    range_start = i
+  }
+  phase_ranges.push(GpuPreprocessPhaseRange3d::{
+    phase: current_phase,
+    start: range_start,
+    end: items.length(),
+  })
+  phase_ranges
+}
+
+///|
+fn render3d_build_gpu_preprocess_phase_ranges_from_draw_items(
+  draw_items : Array[MeshPhaseItem3d],
+) -> Array[GpuPreprocessPhaseRange3d] {
+  let phase_ranges : Array[GpuPreprocessPhaseRange3d] = []
+  if draw_items.length() == 0 {
+    return phase_ranges
+  }
+  let mut current_phase = draw_items[0].phase
+  let mut range_start = 0
+  for i in 1..<draw_items.length() {
+    if draw_items[i].phase == current_phase {
+      continue
+    }
+    phase_ranges.push(GpuPreprocessPhaseRange3d::{
+      phase: current_phase,
+      start: range_start,
+      end: i,
+    })
+    current_phase = draw_items[i].phase
+    range_start = i
+  }
+  phase_ranges.push(GpuPreprocessPhaseRange3d::{
+    phase: current_phase,
+    start: range_start,
+    end: draw_items.length(),
+  })
+  phase_ranges
+}
+
+///|
+fn render3d_build_gpu_preprocess_indirect_metadata(
+  item_count : Int,
+) -> (
+  Array[GpuPreprocessIndirectParametersCpuMetadata3d],
+  Array[GpuPreprocessIndirectParametersGpuMetadata3d],
+  Array[GpuPreprocessIndirectBatchSet3d],
+) {
+  let indirect_parameters_cpu_metadata : Array[
+    GpuPreprocessIndirectParametersCpuMetadata3d,
+  ] = []
+  let indirect_parameters_gpu_metadata : Array[
+    GpuPreprocessIndirectParametersGpuMetadata3d,
+  ] = []
+  let indirect_batch_sets : Array[GpuPreprocessIndirectBatchSet3d] = []
+  for i in 0..<item_count {
+    indirect_parameters_cpu_metadata.push(GpuPreprocessIndirectParametersCpuMetadata3d::{
+      base_output_index: i,
+      batch_set_index: i,
+    })
+    indirect_parameters_gpu_metadata.push(GpuPreprocessIndirectParametersGpuMetadata3d::{
+      mesh_index: i,
+      early_instance_count: 0,
+      late_instance_count: 0,
+    })
+    indirect_batch_sets.push(GpuPreprocessIndirectBatchSet3d::{
+      indirect_parameters_count: 1,
+      indirect_parameters_base: i,
+    })
+  }
+  (
+    indirect_parameters_cpu_metadata, indirect_parameters_gpu_metadata, indirect_batch_sets,
+  )
+}
+
+///|
+fn render3d_build_gpu_preprocess_camera_queue_entry(
+  camera_entity : @core.Entity,
+  mesh_candidates : Array[GpuPreprocessMeshCandidate3d],
+  camera_layers : @sprite.RenderLayers,
+  camera_transform : @math.Transform,
+) -> GpuPreprocessCameraQueueEntry3d {
+  let items = render3d_collect_gpu_preprocess_camera_queue_items(
+    mesh_candidates, camera_layers, camera_transform,
+  )
+  let phase_ranges = render3d_build_gpu_preprocess_phase_ranges_from_prequeued_items(
+    items,
+  )
+  let (
+    indirect_parameters_cpu_metadata,
+    indirect_parameters_gpu_metadata,
+    indirect_batch_sets,
+  ) = render3d_build_gpu_preprocess_indirect_metadata(items.length())
+  GpuPreprocessCameraQueueEntry3d::{
+    camera_entity,
+    items,
+    phase_ranges,
+    indirect_parameters_cpu_metadata,
+    indirect_parameters_gpu_metadata,
+    indirect_batch_sets,
+  }
+}
+
+///|
 fn render3d_resolve_prequeued_mesh_phase_items(
   prequeued_items : Array[GpuPreprocessPrequeuedMeshItem3d],
   meshes : Array[ExtractedMesh3d],
@@ -3823,21 +3993,98 @@ fn render3d_resolve_prequeued_mesh_phase_items(
 }
 
 ///|
+fn render3d_make_fallback_gpu_preprocess_queue_entry(
+  draw_items : Array[MeshPhaseItem3d],
+) -> GpuPreprocessResolvedCameraQueueEntry3d {
+  let phase_ranges = render3d_build_gpu_preprocess_phase_ranges_from_draw_items(
+    draw_items,
+  )
+  let (
+    indirect_parameters_cpu_metadata,
+    indirect_parameters_gpu_metadata,
+    indirect_batch_sets,
+  ) = render3d_build_gpu_preprocess_indirect_metadata(draw_items.length())
+  GpuPreprocessResolvedCameraQueueEntry3d::{
+    draw_items,
+    phase_ranges,
+    indirect_parameters_cpu_metadata,
+    indirect_parameters_gpu_metadata,
+    indirect_batch_sets,
+  }
+}
+
+///|
 fn render3d_take_gpu_preprocess_camera_queue_items(
   camera_entity : @core.Entity,
   meshes : Array[ExtractedMesh3d],
-) -> Array[MeshPhaseItem3d]? {
+) -> GpuPreprocessResolvedCameraQueueEntry3d? {
   for i in 0..<render3d_gpu_preprocess_camera_queues_ref.val.length() {
     let queue_entry = render3d_gpu_preprocess_camera_queues_ref.val[i]
     if queue_entry.camera_entity.id == camera_entity.id &&
       queue_entry.camera_entity.generation == camera_entity.generation {
       render3d_gpu_preprocess_camera_queues_ref.val.remove(i) |> ignore
-      return Some(
-        render3d_resolve_prequeued_mesh_phase_items(queue_entry.items, meshes),
+      let draw_items = render3d_resolve_prequeued_mesh_phase_items(
+        queue_entry.items,
+        meshes,
       )
+      return Some(GpuPreprocessResolvedCameraQueueEntry3d::{
+        draw_items,
+        phase_ranges: queue_entry.phase_ranges,
+        indirect_parameters_cpu_metadata: queue_entry.indirect_parameters_cpu_metadata,
+        indirect_parameters_gpu_metadata: queue_entry.indirect_parameters_gpu_metadata,
+        indirect_batch_sets: queue_entry.indirect_batch_sets,
+      })
     }
   }
   None
+}
+
+///|
+fn render3d_gpu_preprocess_opaque_alpha_end_index(
+  phase_ranges : Array[GpuPreprocessPhaseRange3d],
+) -> Int {
+  let mut opaque_alpha_end = 0
+  for phase_range in phase_ranges {
+    if phase_range.start < 0 {
+      continue
+    }
+    if phase_range.phase != RENDER3D_PHASE_OPAQUE &&
+      phase_range.phase != RENDER3D_PHASE_ALPHA_MASK {
+      continue
+    }
+    if phase_range.end > opaque_alpha_end {
+      opaque_alpha_end = phase_range.end
+    }
+  }
+  opaque_alpha_end
+}
+
+///|
+fn render3d_gpu_preprocess_indirect_metadata_checksum(
+  indirect_parameters_cpu_metadata : Array[
+    GpuPreprocessIndirectParametersCpuMetadata3d,
+  ],
+  indirect_parameters_gpu_metadata : Array[
+    GpuPreprocessIndirectParametersGpuMetadata3d,
+  ],
+  indirect_batch_sets : Array[GpuPreprocessIndirectBatchSet3d],
+) -> Int {
+  let mut checksum = 0
+  for metadata in indirect_parameters_cpu_metadata {
+    checksum = checksum + metadata.base_output_index + metadata.batch_set_index
+  }
+  for metadata in indirect_parameters_gpu_metadata {
+    checksum = checksum +
+      metadata.mesh_index +
+      metadata.early_instance_count +
+      metadata.late_instance_count
+  }
+  for batch_set in indirect_batch_sets {
+    checksum = checksum +
+      batch_set.indirect_parameters_count +
+      batch_set.indirect_parameters_base
+  }
+  checksum
 }
 
 ///|
@@ -4235,12 +4482,11 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
       Some(value) => value
       None => @math.Transform::identity()
     }
-    render3d_gpu_preprocess_camera_queues_ref.val.push(GpuPreprocessCameraQueueEntry3d::{
-      camera_entity,
-      items: render3d_collect_gpu_preprocess_camera_queue_items(
-        mesh_candidates, camera_layers, camera_transform,
+    render3d_gpu_preprocess_camera_queues_ref.val.push(
+      render3d_build_gpu_preprocess_camera_queue_entry(
+        camera_entity, mesh_candidates, camera_layers, camera_transform,
       ),
-    })
+    )
   }
 }
 
@@ -5059,26 +5305,46 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     } else {
       0.0001F
     }
-    let draw_items = if gpu_instance_buffer_builder_enabled {
+    let draw_queue_entry = if gpu_instance_buffer_builder_enabled {
       match
         render3d_take_gpu_preprocess_camera_queue_items(camera_entity, meshes) {
-        Some(prequeued_items) => prequeued_items
+        Some(prequeued_entry) => prequeued_entry
         None =>
-          render3d_queue_mesh_phase_items(
-            meshes,
-            camera.layers,
-            camera.transform,
-            true,
+          render3d_make_fallback_gpu_preprocess_queue_entry(
+            render3d_queue_mesh_phase_items(
+              meshes,
+              camera.layers,
+              camera.transform,
+              true,
+            ),
           )
       }
     } else {
-      render3d_queue_mesh_phase_items(
-        meshes,
-        camera.layers,
-        camera.transform,
-        false,
+      render3d_make_fallback_gpu_preprocess_queue_entry(
+        render3d_queue_mesh_phase_items(
+          meshes,
+          camera.layers,
+          camera.transform,
+          false,
+        ),
       )
     }
+    let draw_items = draw_queue_entry.draw_items
+    let opaque_alpha_end_index_raw = render3d_gpu_preprocess_opaque_alpha_end_index(
+      draw_queue_entry.phase_ranges,
+    )
+    let opaque_alpha_end_index = if opaque_alpha_end_index_raw >
+      draw_items.length() {
+      draw_items.length()
+    } else {
+      opaque_alpha_end_index_raw
+    }
+    render3d_gpu_preprocess_indirect_metadata_checksum(
+      draw_queue_entry.indirect_parameters_cpu_metadata,
+      draw_queue_entry.indirect_parameters_gpu_metadata,
+      draw_queue_entry.indirect_batch_sets,
+    )
+    |> ignore
     if motion_vector_prepass_enabled {
       let (shared_scene_id, shared_velocity_id) = render3d_motion_blur_targets_get_or_create(
         camera_entity, view_width, view_height,
@@ -5107,7 +5373,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         pass_kind=motion_vector_pass_kind,
         clear_enabled=1,
       )
-      for draw_item in draw_items {
+      for i in 0..<opaque_alpha_end_index {
+        let draw_item = draw_items[i]
         if draw_item.phase != RENDER3D_PHASE_OPAQUE &&
           draw_item.phase != RENDER3D_PHASE_ALPHA_MASK {
           continue
@@ -5214,7 +5481,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           pass_kind=point_shadow_pass_kind,
           clear_enabled=1,
         )
-        for shadow_draw_item in draw_items {
+        for i in 0..<opaque_alpha_end_index {
+          let shadow_draw_item = draw_items[i]
           if shadow_draw_item.phase != RENDER3D_PHASE_OPAQUE &&
             shadow_draw_item.phase != RENDER3D_PHASE_ALPHA_MASK {
             continue
