@@ -145,6 +145,11 @@ pub let ecs_key_occlusion_culling : @ecs.ComponentKey[OcclusionCulling] = @ecs.r
 )
 
 ///|
+pub let ecs_key_no_indirect_drawing : @ecs.ComponentKey[NoIndirectDrawing] = @ecs.register_component(
+  debug_name="render3d.no_indirect_drawing",
+)
+
+///|
 pub let ecs_key_spot_light_texture : @ecs.ComponentKey[SpotLightTexture] = @light.ecs_key_spot_light_texture
 
 ///|
@@ -300,6 +305,11 @@ pub impl @ecs.Component for SubCameraView3d with component() {
 ///|
 pub impl @ecs.Component for OcclusionCulling with component() {
   ecs_key_occlusion_culling
+}
+
+///|
+pub impl @ecs.Component for NoIndirectDrawing with component() {
+  ecs_key_no_indirect_drawing
 }
 
 ///|

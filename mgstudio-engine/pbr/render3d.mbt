@@ -4977,6 +4977,7 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
     @visibility.ecs_key_view_visibility,
   )
   let layers_store = world.component(@sprite.ecs_key_render_layers)
+  let no_indirect_drawing_store = world.component(ecs_key_no_indirect_drawing)
   let occlusion_culling_store = world.component(ecs_key_occlusion_culling)
   let transform_store = world.component(@math.ecs_key_transform)
   let mut visible_mesh_count = 0
@@ -5004,17 +5005,15 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
       Some(value) => value
       None => @math.Transform::identity()
     }
-    let gpu_occlusion_culling_enabled = occlusion_culling_store.get(
-        camera_entity,
-      )
+    let no_indirect_drawing = no_indirect_drawing_store.get(camera_entity)
       is Some(_)
+    let camera_indirect_enabled = runtime_config.use_gpu_instance_buffer_builder &&
+      !no_indirect_drawing
+    let gpu_occlusion_culling_enabled = camera_indirect_enabled &&
+      occlusion_culling_store.get(camera_entity) is Some(_)
     render3d_gpu_preprocess_camera_queues_ref.val.push(
       render3d_build_gpu_preprocess_camera_queue_entry(
-        camera_entity,
-        mesh_candidates,
-        camera_layers,
-        camera_transform,
-        runtime_config.use_gpu_instance_buffer_builder,
+        camera_entity, mesh_candidates, camera_layers, camera_transform, camera_indirect_enabled,
         gpu_occlusion_culling_enabled,
       ),
     )
@@ -5388,6 +5387,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let layers_store = world.component(@sprite.ecs_key_render_layers)
   let depth_prepass_store = world.component(ecs_key_depth_prepass)
   let deferred_prepass_store = world.component(ecs_key_deferred_prepass)
+  let no_indirect_drawing_store = world.component(ecs_key_no_indirect_drawing)
   let occlusion_culling_store = world.component(ecs_key_occlusion_culling)
   let msaa_store = world.component(ecs_key_msaa)
   let transform_store = world.component(@math.ecs_key_transform)
@@ -5466,7 +5466,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       depth_prepass_store.get(entity) is Some(_)
     let deferred_prepass_enabled = prepass_enabled &&
       deferred_prepass_store.get(entity) is Some(_)
+    let no_indirect_drawing = no_indirect_drawing_store.get(entity) is Some(_)
     let gpu_occlusion_culling_enabled = depth_prepass_enabled &&
+      !no_indirect_drawing &&
       occlusion_culling_store.get(entity) is Some(_)
     let msaa = msaa_store.get(entity)
     let target = match target_store.get(entity) {
@@ -5540,6 +5542,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
             skybox,
             depth_prepass_enabled,
             deferred_prepass_enabled,
+            no_indirect_drawing,
             gpu_occlusion_culling_enabled,
             hdr_enabled,
             fxaa,
@@ -5853,7 +5856,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
               true,
             ),
             meshes,
-            true,
+            gpu_instance_buffer_builder_enabled && !camera.no_indirect_drawing,
             camera.gpu_occlusion_culling_enabled,
           )
       }

@@ -20,12 +20,12 @@ pub let ecs_components : Array[String] = [
   "NoWireframe", "Tonemapping", "ColorGrading", "DebandDither", "DepthPrepass", "ForwardDecal",
   "NormalPrepass", "ClusteredDecal", "ContactShadows", "MeshMaterial3d", "TemporalJitter",
   "WireframeColor", "DeferredPrepass", "FreeCameraState", "NotShadowCaster", "SubCameraView3d",
-  "DirectionalLight", "IrradianceVolume", "OcclusionCulling", "SpotLightTexture",
-  "NotShadowReceiver", "PointLightTexture", "Projection", "Frustum", "ParallaxCorrection",
-  "ChromaticAberration", "EnvironmentMapLight", "MotionVectorPrepass", "TemporalAntiAliasing",
-  "ShadowFilteringMethod", "ScreenSpaceReflections", "DirectionalLightTexture", "ForwardDecalMaterialExt",
-  "ScreenSpaceTransmission", "TransmittedShadowReceiver", "ScreenSpaceAmbientOcclusion",
-  "GeneratedEnvironmentMapLight", "OrderIndependentTransparencySettings",
+  "DirectionalLight", "IrradianceVolume", "OcclusionCulling", "NoIndirectDrawing",
+  "SpotLightTexture", "NotShadowReceiver", "PointLightTexture", "Projection", "Frustum",
+  "ParallaxCorrection", "ChromaticAberration", "EnvironmentMapLight", "MotionVectorPrepass",
+  "TemporalAntiAliasing", "ShadowFilteringMethod", "ScreenSpaceReflections", "DirectionalLightTexture",
+  "ForwardDecalMaterialExt", "ScreenSpaceTransmission", "TransmittedShadowReceiver",
+  "ScreenSpaceAmbientOcclusion", "GeneratedEnvironmentMapLight", "OrderIndependentTransparencySettings",
 ]
 
 ///|
@@ -253,6 +253,13 @@ pub fn get_occlusion_culling_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[OcclusionCulling] {
   world.component(ecs_key_occlusion_culling)
+}
+
+///|
+pub fn get_no_indirect_drawing_store(
+  world : @ecs.World,
+) -> @ecs.ComponentAccess[NoIndirectDrawing] {
+  world.component(ecs_key_no_indirect_drawing)
 }
 
 ///|

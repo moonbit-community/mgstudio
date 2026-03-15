@@ -1426,6 +1426,15 @@ pub fn OcclusionCulling::default() -> OcclusionCulling {
 }
 
 ///|
+/// Marker component aligned with Bevy's `NoIndirectDrawing`.
+pub struct NoIndirectDrawing {} derive(ToJson, FromJson)
+
+///|
+pub fn NoIndirectDrawing::default() -> NoIndirectDrawing {
+  NoIndirectDrawing::{  }
+}
+
+///|
 /// Marker component aligned with Bevy's `NotShadowCaster`.
 pub struct NotShadowCaster {} derive(ToJson, FromJson)
 
