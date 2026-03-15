@@ -848,6 +848,23 @@ priv struct GpuPreprocessIndirectBatchSet3d {
 }
 
 ///|
+priv struct GpuPreprocessIndirectMeshClassMetadata3d {
+  indirect_parameters_cpu_metadata : Array[
+    GpuPreprocessIndirectParametersCpuMetadata3d,
+  ]
+  indirect_parameters_gpu_metadata : Array[
+    GpuPreprocessIndirectParametersGpuMetadata3d,
+  ]
+  indirect_batch_sets : Array[GpuPreprocessIndirectBatchSet3d]
+}
+
+///|
+priv struct GpuPreprocessIndirectMetadata3d {
+  indexed : GpuPreprocessIndirectMeshClassMetadata3d
+  non_indexed : GpuPreprocessIndirectMeshClassMetadata3d
+}
+
+///|
 priv struct GpuPreprocessShaderWorkItem3d {
   input_index : Int
   output_or_indirect_parameters_index : Int
@@ -867,13 +884,7 @@ priv struct GpuPreprocessCameraQueueEntry3d {
   camera_entity : @core.Entity
   items : Array[GpuPreprocessPrequeuedMeshItem3d]
   phase_ranges : Array[GpuPreprocessPhaseRange3d]
-  indirect_parameters_cpu_metadata : Array[
-    GpuPreprocessIndirectParametersCpuMetadata3d,
-  ]
-  indirect_parameters_gpu_metadata : Array[
-    GpuPreprocessIndirectParametersGpuMetadata3d,
-  ]
-  indirect_batch_sets : Array[GpuPreprocessIndirectBatchSet3d]
+  indirect_metadata : GpuPreprocessIndirectMetadata3d
   work_item_buffers : GpuPreprocessWorkItemBuffers3d
 }
 
@@ -881,13 +892,7 @@ priv struct GpuPreprocessCameraQueueEntry3d {
 priv struct GpuPreprocessResolvedCameraQueueEntry3d {
   draw_items : Array[MeshPhaseItem3d]
   phase_ranges : Array[GpuPreprocessPhaseRange3d]
-  indirect_parameters_cpu_metadata : Array[
-    GpuPreprocessIndirectParametersCpuMetadata3d,
-  ]
-  indirect_parameters_gpu_metadata : Array[
-    GpuPreprocessIndirectParametersGpuMetadata3d,
-  ]
-  indirect_batch_sets : Array[GpuPreprocessIndirectBatchSet3d]
+  indirect_metadata : GpuPreprocessIndirectMetadata3d
   work_item_buffers : GpuPreprocessWorkItemBuffers3d
 }
 
@@ -3939,13 +3944,7 @@ fn render3d_build_gpu_preprocess_phase_ranges_from_draw_items(
 }
 
 ///|
-fn render3d_build_gpu_preprocess_indirect_metadata(
-  item_count : Int,
-) -> (
-  Array[GpuPreprocessIndirectParametersCpuMetadata3d],
-  Array[GpuPreprocessIndirectParametersGpuMetadata3d],
-  Array[GpuPreprocessIndirectBatchSet3d],
-) {
+fn render3d_empty_gpu_preprocess_indirect_mesh_class_metadata() -> GpuPreprocessIndirectMeshClassMetadata3d {
   let indirect_parameters_cpu_metadata : Array[
     GpuPreprocessIndirectParametersCpuMetadata3d,
   ] = []
@@ -3953,24 +3952,67 @@ fn render3d_build_gpu_preprocess_indirect_metadata(
     GpuPreprocessIndirectParametersGpuMetadata3d,
   ] = []
   let indirect_batch_sets : Array[GpuPreprocessIndirectBatchSet3d] = []
-  for i in 0..<item_count {
+  GpuPreprocessIndirectMeshClassMetadata3d::{
+    indirect_parameters_cpu_metadata,
+    indirect_parameters_gpu_metadata,
+    indirect_batch_sets,
+  }
+}
+
+///|
+fn render3d_build_gpu_preprocess_indirect_mesh_class_metadata(
+  items : Array[GpuPreprocessShaderWorkItem3d],
+) -> GpuPreprocessIndirectMeshClassMetadata3d {
+  let indirect_parameters_cpu_metadata : Array[
+    GpuPreprocessIndirectParametersCpuMetadata3d,
+  ] = []
+  let indirect_parameters_gpu_metadata : Array[
+    GpuPreprocessIndirectParametersGpuMetadata3d,
+  ] = []
+  let indirect_batch_sets : Array[GpuPreprocessIndirectBatchSet3d] = []
+  for item in items {
+    let indirect_parameters_index = item.output_or_indirect_parameters_index
     indirect_parameters_cpu_metadata.push(GpuPreprocessIndirectParametersCpuMetadata3d::{
-      base_output_index: i,
-      batch_set_index: i,
+      base_output_index: item.input_index,
+      batch_set_index: indirect_parameters_index,
     })
     indirect_parameters_gpu_metadata.push(GpuPreprocessIndirectParametersGpuMetadata3d::{
-      mesh_index: i,
+      mesh_index: item.input_index,
       early_instance_count: 0,
       late_instance_count: 0,
     })
     indirect_batch_sets.push(GpuPreprocessIndirectBatchSet3d::{
       indirect_parameters_count: 1,
-      indirect_parameters_base: i,
+      indirect_parameters_base: indirect_parameters_index,
     })
   }
-  (
-    indirect_parameters_cpu_metadata, indirect_parameters_gpu_metadata, indirect_batch_sets,
-  )
+  GpuPreprocessIndirectMeshClassMetadata3d::{
+    indirect_parameters_cpu_metadata,
+    indirect_parameters_gpu_metadata,
+    indirect_batch_sets,
+  }
+}
+
+///|
+fn render3d_build_gpu_preprocess_indirect_metadata(
+  work_item_buffers : GpuPreprocessWorkItemBuffers3d,
+) -> GpuPreprocessIndirectMetadata3d {
+  match work_item_buffers {
+    Direct(_) =>
+      GpuPreprocessIndirectMetadata3d::{
+        indexed: render3d_empty_gpu_preprocess_indirect_mesh_class_metadata(),
+        non_indexed: render3d_empty_gpu_preprocess_indirect_mesh_class_metadata(),
+      }
+    Indirect(indexed_items, non_indexed_items) =>
+      GpuPreprocessIndirectMetadata3d::{
+        indexed: render3d_build_gpu_preprocess_indirect_mesh_class_metadata(
+          indexed_items,
+        ),
+        non_indexed: render3d_build_gpu_preprocess_indirect_mesh_class_metadata(
+          non_indexed_items,
+        ),
+      }
+  }
 }
 
 ///|
@@ -4126,21 +4168,17 @@ fn render3d_build_gpu_preprocess_camera_queue_entry(
   let phase_ranges = render3d_build_gpu_preprocess_phase_ranges_from_prequeued_items(
     items,
   )
-  let (
-    indirect_parameters_cpu_metadata,
-    indirect_parameters_gpu_metadata,
-    indirect_batch_sets,
-  ) = render3d_build_gpu_preprocess_indirect_metadata(items.length())
   let work_item_buffers = render3d_build_gpu_preprocess_work_item_buffers_from_prequeued_items(
     items,
+  )
+  let indirect_metadata = render3d_build_gpu_preprocess_indirect_metadata(
+    work_item_buffers,
   )
   GpuPreprocessCameraQueueEntry3d::{
     camera_entity,
     items,
     phase_ranges,
-    indirect_parameters_cpu_metadata,
-    indirect_parameters_gpu_metadata,
-    indirect_batch_sets,
+    indirect_metadata,
     work_item_buffers,
   }
 }
@@ -4180,20 +4218,16 @@ fn render3d_make_fallback_gpu_preprocess_queue_entry(
   let phase_ranges = render3d_build_gpu_preprocess_phase_ranges_from_draw_items(
     draw_items,
   )
-  let (
-    indirect_parameters_cpu_metadata,
-    indirect_parameters_gpu_metadata,
-    indirect_batch_sets,
-  ) = render3d_build_gpu_preprocess_indirect_metadata(draw_items.length())
   let work_item_buffers = render3d_build_gpu_preprocess_work_item_buffers_from_draw_items(
     draw_items, meshes,
+  )
+  let indirect_metadata = render3d_build_gpu_preprocess_indirect_metadata(
+    work_item_buffers,
   )
   GpuPreprocessResolvedCameraQueueEntry3d::{
     draw_items,
     phase_ranges,
-    indirect_parameters_cpu_metadata,
-    indirect_parameters_gpu_metadata,
-    indirect_batch_sets,
+    indirect_metadata,
     work_item_buffers,
   }
 }
@@ -4220,9 +4254,7 @@ fn render3d_take_gpu_preprocess_camera_queue_items(
       return Some(GpuPreprocessResolvedCameraQueueEntry3d::{
         draw_items,
         phase_ranges: queue_entry.phase_ranges,
-        indirect_parameters_cpu_metadata: queue_entry.indirect_parameters_cpu_metadata,
-        indirect_parameters_gpu_metadata: queue_entry.indirect_parameters_gpu_metadata,
-        indirect_batch_sets: queue_entry.indirect_batch_sets,
+        indirect_metadata: queue_entry.indirect_metadata,
         work_item_buffers,
       })
     }
@@ -4251,31 +4283,39 @@ fn render3d_gpu_preprocess_opaque_alpha_end_index(
 }
 
 ///|
-fn render3d_gpu_preprocess_indirect_metadata_checksum(
-  indirect_parameters_cpu_metadata : Array[
-    GpuPreprocessIndirectParametersCpuMetadata3d,
-  ],
-  indirect_parameters_gpu_metadata : Array[
-    GpuPreprocessIndirectParametersGpuMetadata3d,
-  ],
-  indirect_batch_sets : Array[GpuPreprocessIndirectBatchSet3d],
+fn render3d_gpu_preprocess_indirect_mesh_class_metadata_checksum(
+  metadata : GpuPreprocessIndirectMeshClassMetadata3d,
 ) -> Int {
   let mut checksum = 0
-  for metadata in indirect_parameters_cpu_metadata {
-    checksum = checksum + metadata.base_output_index + metadata.batch_set_index
-  }
-  for metadata in indirect_parameters_gpu_metadata {
+  for cpu_metadata in metadata.indirect_parameters_cpu_metadata {
     checksum = checksum +
-      metadata.mesh_index +
-      metadata.early_instance_count +
-      metadata.late_instance_count
+      cpu_metadata.base_output_index +
+      cpu_metadata.batch_set_index
   }
-  for batch_set in indirect_batch_sets {
+  for gpu_metadata in metadata.indirect_parameters_gpu_metadata {
+    checksum = checksum +
+      gpu_metadata.mesh_index +
+      gpu_metadata.early_instance_count +
+      gpu_metadata.late_instance_count
+  }
+  for batch_set in metadata.indirect_batch_sets {
     checksum = checksum +
       batch_set.indirect_parameters_count +
       batch_set.indirect_parameters_base
   }
   checksum
+}
+
+///|
+fn render3d_gpu_preprocess_indirect_metadata_checksum(
+  metadata : GpuPreprocessIndirectMetadata3d,
+) -> Int {
+  render3d_gpu_preprocess_indirect_mesh_class_metadata_checksum(
+    metadata.indexed,
+  ) +
+  render3d_gpu_preprocess_indirect_mesh_class_metadata_checksum(
+    metadata.non_indexed,
+  )
 }
 
 ///|
@@ -5611,9 +5651,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       draw_queue_entry.work_item_buffers,
     )
     render3d_gpu_preprocess_indirect_metadata_checksum(
-      draw_queue_entry.indirect_parameters_cpu_metadata,
-      draw_queue_entry.indirect_parameters_gpu_metadata,
-      draw_queue_entry.indirect_batch_sets,
+      draw_queue_entry.indirect_metadata,
     )
     |> ignore
     render3d_gpu_preprocess_work_item_buffers_checksum(
