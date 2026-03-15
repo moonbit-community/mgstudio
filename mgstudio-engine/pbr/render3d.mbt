@@ -42,376 +42,6 @@ pub type MeshMaterial3d = @material.MeshMaterial3d
 pub type ForwardDecalMaterialExt = @material.ForwardDecalMaterialExt
 
 ///|
-pub(all) enum FogFalloff3d {
-  Linear(Float, Float)
-  Exponential(Float)
-  ExponentialSquared(Float)
-  Atmospheric(@math.Vec3, @math.Vec3)
-} derive(ToJson, FromJson)
-
-///|
-const FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD : Float = 0.05F
-
-///|
-const FOG_FALLOFF_E : Float = 2.718281828459045F
-
-///|
-const FOG_FALLOFF_LN2 : Float = 0.6931471805599453F
-
-///|
-const FOG_FALLOFF_MIN_VISIBILITY : Float = 0.0001F
-
-///|
-const FOG_FALLOFF_MIN_CONTRAST : Float = 0.000001F
-
-///|
-const FOG_FALLOFF_MAX_CONTRAST : Float = 0.999999F
-
-///|
-fn fog_falloff_clamp01(value : Float) -> Float {
-  if value <= 0.0F {
-    0.0F
-  } else if value >= 1.0F {
-    1.0F
-  } else {
-    value
-  }
-}
-
-///|
-fn fog_falloff_sanitize_density(value : Float) -> Float {
-  if value < 0.0F {
-    0.0F
-  } else {
-    value
-  }
-}
-
-///|
-fn fog_falloff_sanitize_visibility(visibility : Float) -> Float {
-  if visibility <= FOG_FALLOFF_MIN_VISIBILITY {
-    FOG_FALLOFF_MIN_VISIBILITY
-  } else {
-    visibility
-  }
-}
-
-///|
-fn fog_falloff_sanitize_contrast(contrast_threshold : Float) -> Float {
-  if contrast_threshold <= FOG_FALLOFF_MIN_CONTRAST {
-    FOG_FALLOFF_MIN_CONTRAST
-  } else if contrast_threshold >= FOG_FALLOFF_MAX_CONTRAST {
-    FOG_FALLOFF_MAX_CONTRAST
-  } else {
-    contrast_threshold
-  }
-}
-
-///|
-fn fog_falloff_ln(value : Float) -> Float {
-  if value <= 0.0F {
-    return -87.3365447505531F
-  }
-  let mut x = value
-  let mut exponent_shift = 0.0F
-  while x > 2.0F {
-    x = x * 0.5F
-    exponent_shift = exponent_shift + FOG_FALLOFF_LN2
-  }
-  while x < 0.5F {
-    x = x * 2.0F
-    exponent_shift = exponent_shift - FOG_FALLOFF_LN2
-  }
-  let y = (x - 1.0F) / (x + 1.0F)
-  let y_squared = y * y
-  let mut series = 0.0F
-  let mut numerator = y
-  let mut denominator = 1.0F
-  for _ in 0..<8 {
-    series = series + numerator / denominator
-    numerator = numerator * y_squared
-    denominator = denominator + 2.0F
-  }
-  exponent_shift + 2.0F * series
-}
-
-///|
-fn fog_falloff_pow_e(value : Float) -> Float {
-  @math.pow(FOG_FALLOFF_E, value)
-}
-
-///|
-fn fog_falloff_koschmieder(
-  visibility : Float,
-  contrast_threshold : Float,
-) -> Float {
-  let safe_visibility = fog_falloff_sanitize_visibility(visibility)
-  let safe_contrast = fog_falloff_sanitize_contrast(contrast_threshold)
-  -fog_falloff_ln(safe_contrast) / safe_visibility
-}
-
-///|
-fn fog_falloff_atmospheric_from_colors(
-  visibility : Float,
-  contrast_threshold : Float,
-  extinction_color : @sprite.Color,
-  inscattering_color : @sprite.Color,
-) -> FogFalloff3d {
-  let beta = fog_falloff_koschmieder(visibility, contrast_threshold)
-
-  let extinction_alpha = fog_falloff_pow_e(
-    fog_falloff_clamp01(extinction_color.a),
-  )
-  let inscattering_alpha = fog_falloff_pow_e(
-    fog_falloff_clamp01(inscattering_color.a),
-  )
-
-  let extinction = @math.Vec3::new(
-    fog_falloff_pow_e(1.0F - fog_falloff_clamp01(extinction_color.r)) *
-    beta *
-    extinction_alpha,
-    fog_falloff_pow_e(1.0F - fog_falloff_clamp01(extinction_color.g)) *
-    beta *
-    extinction_alpha,
-    fog_falloff_pow_e(1.0F - fog_falloff_clamp01(extinction_color.b)) *
-    beta *
-    extinction_alpha,
-  )
-
-  let inscattering = @math.Vec3::new(
-    fog_falloff_pow_e(fog_falloff_clamp01(inscattering_color.r)) *
-    beta *
-    inscattering_alpha,
-    fog_falloff_pow_e(fog_falloff_clamp01(inscattering_color.g)) *
-    beta *
-    inscattering_alpha,
-    fog_falloff_pow_e(fog_falloff_clamp01(inscattering_color.b)) *
-    beta *
-    inscattering_alpha,
-  )
-
-  FogFalloff3d::Atmospheric(extinction, inscattering)
-}
-
-///|
-pub fn FogFalloff3d::revised_koschmieder_contrast_threshold() -> Float {
-  FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD
-}
-
-///|
-pub fn FogFalloff3d::linear(start : Float, end_ : Float) -> FogFalloff3d {
-  let safe_start = if start < 0.0F { 0.0F } else { start }
-  let safe_end = if end_ < safe_start { safe_start } else { end_ }
-  FogFalloff3d::Linear(safe_start, safe_end)
-}
-
-///|
-pub fn FogFalloff3d::exponential(density : Float) -> FogFalloff3d {
-  let safe_density = fog_falloff_sanitize_density(density)
-  FogFalloff3d::Exponential(safe_density)
-}
-
-///|
-pub fn FogFalloff3d::exponential_squared(density : Float) -> FogFalloff3d {
-  let safe_density = fog_falloff_sanitize_density(density)
-  FogFalloff3d::ExponentialSquared(safe_density)
-}
-
-///|
-pub fn FogFalloff3d::atmospheric(
-  extinction : @math.Vec3,
-  inscattering : @math.Vec3,
-) -> FogFalloff3d {
-  let safe_extinction = @math.Vec3::new(
-    fog_falloff_sanitize_density(extinction.x),
-    fog_falloff_sanitize_density(extinction.y),
-    fog_falloff_sanitize_density(extinction.z),
-  )
-  let safe_inscattering = @math.Vec3::new(
-    fog_falloff_sanitize_density(inscattering.x),
-    fog_falloff_sanitize_density(inscattering.y),
-    fog_falloff_sanitize_density(inscattering.z),
-  )
-  FogFalloff3d::Atmospheric(safe_extinction, safe_inscattering)
-}
-
-///|
-pub fn FogFalloff3d::from_visibility(visibility : Float) -> FogFalloff3d {
-  FogFalloff3d::from_visibility_contrast(
-    visibility,
-    FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD,
-  )
-}
-
-///|
-pub fn FogFalloff3d::from_visibility_contrast(
-  visibility : Float,
-  contrast_threshold : Float,
-) -> FogFalloff3d {
-  FogFalloff3d::Exponential(
-    fog_falloff_koschmieder(visibility, contrast_threshold),
-  )
-}
-
-///|
-pub fn FogFalloff3d::from_visibility_squared(
-  visibility : Float,
-) -> FogFalloff3d {
-  FogFalloff3d::from_visibility_contrast_squared(
-    visibility,
-    FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD,
-  )
-}
-
-///|
-pub fn FogFalloff3d::from_visibility_contrast_squared(
-  visibility : Float,
-  contrast_threshold : Float,
-) -> FogFalloff3d {
-  let safe_visibility = fog_falloff_sanitize_visibility(visibility)
-  let density = @math.sqrt(
-    fog_falloff_koschmieder(safe_visibility, contrast_threshold) /
-    safe_visibility,
-  )
-  FogFalloff3d::ExponentialSquared(fog_falloff_sanitize_density(density))
-}
-
-///|
-pub fn FogFalloff3d::from_visibility_color(
-  visibility : Float,
-  extinction_inscattering_color : @sprite.Color,
-) -> FogFalloff3d {
-  FogFalloff3d::from_visibility_contrast_colors(
-    visibility,
-    FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD,
-    extinction_inscattering_color,
-    extinction_inscattering_color,
-  )
-}
-
-///|
-pub fn FogFalloff3d::from_visibility_colors(
-  visibility : Float,
-  extinction_color : @sprite.Color,
-  inscattering_color : @sprite.Color,
-) -> FogFalloff3d {
-  FogFalloff3d::from_visibility_contrast_colors(
-    visibility,
-    FOG_FALLOFF_REVISED_KOSCHMIEDER_CONTRAST_THRESHOLD,
-    extinction_color,
-    inscattering_color,
-  )
-}
-
-///|
-pub fn FogFalloff3d::from_visibility_contrast_color(
-  visibility : Float,
-  contrast_threshold : Float,
-  extinction_inscattering_color : @sprite.Color,
-) -> FogFalloff3d {
-  FogFalloff3d::from_visibility_contrast_colors(
-    visibility, contrast_threshold, extinction_inscattering_color, extinction_inscattering_color,
-  )
-}
-
-///|
-pub fn FogFalloff3d::from_visibility_contrast_colors(
-  visibility : Float,
-  contrast_threshold : Float,
-  extinction_color : @sprite.Color,
-  inscattering_color : @sprite.Color,
-) -> FogFalloff3d {
-  fog_falloff_atmospheric_from_colors(
-    visibility, contrast_threshold, extinction_color, inscattering_color,
-  )
-}
-
-///|
-// Global fog defaults. Camera3d can apply per-camera volumetric/atmosphere
-// overrides on top during render execution.
-pub struct DistanceFog {
-  color : @sprite.Color
-  directional_light_color : @sprite.Color
-  directional_light_exponent : Float
-  falloff : FogFalloff3d
-} derive(ToJson, FromJson)
-
-///|
-pub fn DistanceFog::default() -> DistanceFog {
-  DistanceFog::{
-    color: @sprite.Color::white(),
-    directional_light_color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
-    directional_light_exponent: 8.0F,
-    falloff: FogFalloff3d::linear(0.0F, 100.0F),
-  }
-}
-
-///|
-pub fn DistanceFog::new(
-  color : @sprite.Color,
-  falloff : FogFalloff3d,
-) -> DistanceFog {
-  DistanceFog::{
-    color,
-    directional_light_color: @sprite.Color::new(0.0F, 0.0F, 0.0F, 0.0F),
-    directional_light_exponent: 8.0F,
-    falloff,
-  }
-}
-
-///|
-pub fn DistanceFog::with_color(
-  self : DistanceFog,
-  color : @sprite.Color,
-) -> DistanceFog {
-  DistanceFog::{ ..self, color, }
-}
-
-///|
-pub fn DistanceFog::with_directional_light_color(
-  self : DistanceFog,
-  directional_light_color : @sprite.Color,
-) -> DistanceFog {
-  DistanceFog::{ ..self, directional_light_color, }
-}
-
-///|
-pub fn DistanceFog::with_directional_light_exponent(
-  self : DistanceFog,
-  directional_light_exponent : Float,
-) -> DistanceFog {
-  DistanceFog::{
-    ..self,
-    directional_light_exponent: if directional_light_exponent < 0.0F {
-      0.0F
-    } else {
-      directional_light_exponent
-    },
-  }
-}
-
-///|
-pub fn DistanceFog::with_falloff(
-  self : DistanceFog,
-  falloff : FogFalloff3d,
-) -> DistanceFog {
-  DistanceFog::{ ..self, falloff, }
-}
-
-///|
-let distance_fog_state : Ref[DistanceFog] = Ref::new(DistanceFog::default())
-
-///|
-pub fn render3d_set_distance_fog(fog : DistanceFog) -> Unit {
-  distance_fog_state.val = fog
-}
-
-///|
-pub fn render3d_distance_fog() -> DistanceFog {
-  distance_fog_state.val
-}
-
-///|
 /// Light-facing ownership lives in `Milky2018/mgstudio/light`.
 pub type VolumetricLight = @light.VolumetricLight
 
@@ -456,499 +86,6 @@ pub fn standard_material_set(
   material : StandardMaterial,
 ) -> Bool {
   @material.standard_material_set(handle, material)
-}
-
-///|
-pub struct Mesh3d {
-  mesh : @asset.Handle[@mesh.Mesh]
-}
-
-///|
-pub fn Mesh3d::new(mesh : @asset.Handle[@mesh.Mesh]) -> Mesh3d {
-  Mesh3d::{ mesh, }
-}
-
-///|
-pub impl ToJson for Mesh3d with to_json(self) {
-  self.mesh.id().to_json()
-}
-
-///|
-pub impl @json.FromJson for Mesh3d with from_json(json, path) {
-  let mesh_id : Int = @json.from_json(json, path~)
-  Mesh3d::new(@asset.Handle::new(mesh_id))
-}
-
-///|
-fn mesh3d_append_quad(
-  positions : Array[@math.Vec3],
-  uvs : Array[@math.Vec2],
-  a : @math.Vec3,
-  b : @math.Vec3,
-  c : @math.Vec3,
-  d : @math.Vec3,
-) -> Unit {
-  positions.push(a)
-  positions.push(b)
-  positions.push(c)
-  positions.push(a)
-  positions.push(c)
-  positions.push(d)
-  uvs.push(@math.Vec2::new(0.0F, 0.0F))
-  uvs.push(@math.Vec2::new(1.0F, 0.0F))
-  uvs.push(@math.Vec2::new(1.0F, 1.0F))
-  uvs.push(@math.Vec2::new(0.0F, 0.0F))
-  uvs.push(@math.Vec2::new(1.0F, 1.0F))
-  uvs.push(@math.Vec2::new(0.0F, 1.0F))
-}
-
-///|
-fn mesh3d_append_triangle(
-  positions : Array[@math.Vec3],
-  uvs : Array[@math.Vec2],
-  a : @math.Vec3,
-  b : @math.Vec3,
-  c : @math.Vec3,
-) -> Unit {
-  positions.push(a)
-  positions.push(b)
-  positions.push(c)
-  uvs.push(@math.Vec2::new(0.5F, 0.0F))
-  uvs.push(@math.Vec2::new(0.0F, 1.0F))
-  uvs.push(@math.Vec2::new(1.0F, 1.0F))
-}
-
-///|
-fn mesh3d_geometry_plane(width : Float, depth : Float) -> @mesh.Mesh3dGeometry {
-  let safe_width = if width <= 0.0F { 1.0F } else { width }
-  let safe_depth = if depth <= 0.0F { 1.0F } else { depth }
-  let hx = safe_width * 0.5F
-  let hz = safe_depth * 0.5F
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  mesh3d_append_quad(
-    positions,
-    uvs,
-    @math.Vec3::new(-hx, 0.0F, -hz),
-    @math.Vec3::new(hx, 0.0F, -hz),
-    @math.Vec3::new(hx, 0.0F, hz),
-    @math.Vec3::new(-hx, 0.0F, hz),
-  )
-  @mesh.Mesh3dGeometry::new(positions, uvs, None)
-}
-
-///|
-fn mesh3d_geometry_tetrahedron(edge : Float) -> @mesh.Mesh3dGeometry {
-  let safe_edge = if edge <= 0.0F { 1.0F } else { edge }
-  let h = safe_edge * 0.5F
-  let v0 = @math.Vec3::new(0.0F, h, 0.0F)
-  let v1 = @math.Vec3::new(-h, -h, h)
-  let v2 = @math.Vec3::new(h, -h, h)
-  let v3 = @math.Vec3::new(0.0F, -h, -h)
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  mesh3d_append_triangle(positions, uvs, v0, v1, v2)
-  mesh3d_append_triangle(positions, uvs, v0, v2, v3)
-  mesh3d_append_triangle(positions, uvs, v0, v3, v1)
-  mesh3d_append_triangle(positions, uvs, v1, v3, v2)
-  @mesh.Mesh3dGeometry::new(positions, uvs, None)
-}
-
-///|
-fn mesh3d_revolve_geometry(
-  profile : Array[(Float, Float)],
-  segments : Int,
-) -> @mesh.Mesh3dGeometry {
-  let safe_segments = if segments < 3 { 3 } else { segments }
-  let segment_count = Float::from_int(safe_segments)
-  let count = profile.length()
-  let profile_denominator = if count > 1 {
-    Float::from_int(count - 1)
-  } else {
-    1.0F
-  }
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-
-  for i in 0..<count {
-    let p = profile[i]
-    let y = p.0
-    let r = if p.1 < 0.0F { 0.0F } else { p.1 }
-    let v = Float::from_int(i) / profile_denominator
-    for s in 0..<(safe_segments + 1) {
-      let u = Float::from_int(s) / segment_count
-      let angle = 2.0F * @math.pi() * u
-      positions.push(
-        @math.Vec3::new(r * @math.cos(angle), y, r * @math.sin(angle)),
-      )
-      uvs.push(@math.Vec2::new(u, 1.0F - v))
-    }
-  }
-
-  let indices : Array[Int] = []
-  let row = safe_segments + 1
-  for i in 0..<(count - 1) {
-    let k1 = i * row
-    let k2 = k1 + row
-    for j in 0..<safe_segments {
-      indices.push(k1 + j)
-      indices.push(k2 + j)
-      indices.push(k1 + j + 1)
-
-      indices.push(k1 + j + 1)
-      indices.push(k2 + j)
-      indices.push(k2 + j + 1)
-    }
-  }
-
-  @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
-}
-
-///|
-fn mesh3d_triangle_uvs(
-  triangle : @math.Triangle3d,
-) -> (@math.Vec2, @math.Vec2, @math.Vec2) {
-  if triangle.vertices.length() < 3 {
-    return (
-      @math.Vec2::new(0.0F, 0.0F),
-      @math.Vec2::new(1.0F, 0.0F),
-      @math.Vec2::new(0.0F, 1.0F),
-    )
-  }
-  let a = triangle.vertices[0]
-  let b = triangle.vertices[1]
-  let c = triangle.vertices[2]
-  let ab = @math.Vec3::new(b.x - a.x, b.y - a.y, b.z - a.z)
-  let main_length = @math.sqrt(ab.x * ab.x + ab.y * ab.y + ab.z * ab.z)
-  if main_length <= 0.000001F {
-    return (
-      @math.Vec2::new(0.0F, 0.0F),
-      @math.Vec2::new(1.0F, 0.0F),
-      @math.Vec2::new(0.0F, 1.0F),
-    )
-  }
-  let x_dir = ab.normalize_or_zero()
-  let y_vec = @math.Vec3::new(c.x - a.x, c.y - a.y, c.z - a.z)
-  let offset = (y_vec.x * x_dir.x + y_vec.y * x_dir.y + y_vec.z * x_dir.z) /
-    main_length
-  if offset < 0.0F {
-    let total_length = 1.0F - offset
-    return (
-      @math.Vec2::new(offset.abs() / total_length, 0.0F),
-      @math.Vec2::new(1.0F, 0.0F),
-      @math.Vec2::new(0.0F, 1.0F),
-    )
-  }
-  if offset > 1.0F {
-    return (
-      @math.Vec2::new(0.0F, 0.0F),
-      @math.Vec2::new(1.0F / offset, 0.0F),
-      @math.Vec2::new(1.0F, 1.0F),
-    )
-  }
-  (
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(1.0F, 0.0F),
-    @math.Vec2::new(offset, 1.0F),
-  )
-}
-
-///|
-fn mesh3d_geometry_triangle(
-  triangle : @math.Triangle3d,
-) -> @mesh.Mesh3dGeometry {
-  if triangle.vertices.length() < 3 {
-    return @mesh.Mesh3dGeometry::new([], [], None)
-  }
-  let a = triangle.vertices[0]
-  let b = triangle.vertices[1]
-  let c = triangle.vertices[2]
-  let (uv_a, uv_b, uv_c) = mesh3d_triangle_uvs(triangle)
-  let positions : Array[@math.Vec3] = [a, b, c]
-  let uvs : Array[@math.Vec2] = [uv_a, uv_b, uv_c]
-  @mesh.Mesh3dGeometry::new(positions, uvs, Some([0, 1, 2]))
-}
-
-///|
-fn mesh3d_tetrahedron_signed_volume(tetrahedron : @math.Tetrahedron) -> Float {
-  if tetrahedron.vertices.length() < 4 {
-    return 0.0F
-  }
-  let a = tetrahedron.vertices[0]
-  let b = tetrahedron.vertices[1]
-  let c = tetrahedron.vertices[2]
-  let d = tetrahedron.vertices[3]
-  let ab = @math.Vec3::new(b.x - a.x, b.y - a.y, b.z - a.z)
-  let ac = @math.Vec3::new(c.x - a.x, c.y - a.y, c.z - a.z)
-  let ad = @math.Vec3::new(d.x - a.x, d.y - a.y, d.z - a.z)
-  let cross = ab.cross(ac)
-  (cross.x * ad.x + cross.y * ad.y + cross.z * ad.z) / 6.0F
-}
-
-///|
-fn mesh3d_geometry_tetrahedron_shape(
-  tetrahedron : @math.Tetrahedron,
-) -> @mesh.Mesh3dGeometry {
-  let reverse_faces = mesh3d_tetrahedron_signed_volume(tetrahedron) < 0.0F
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-  for face in tetrahedron.faces() {
-    if face.vertices.length() < 3 {
-      continue
-    }
-    let face_vertices = if reverse_faces {
-      [face.vertices[0], face.vertices[2], face.vertices[1]]
-    } else {
-      [face.vertices[0], face.vertices[1], face.vertices[2]]
-    }
-    let oriented_face = @math.Triangle3d::new(
-      face_vertices[0],
-      face_vertices[1],
-      face_vertices[2],
-    )
-    let (uv_a, uv_b, uv_c) = mesh3d_triangle_uvs(oriented_face)
-    positions.push(face_vertices[0])
-    positions.push(face_vertices[1])
-    positions.push(face_vertices[2])
-    uvs.push(uv_a)
-    uvs.push(uv_b)
-    uvs.push(uv_c)
-  }
-  @mesh.Mesh3dGeometry::new(positions, uvs, None)
-}
-
-///|
-fn mesh3d_geometry_cylinder_shape(
-  cylinder : @math.Cylinder,
-) -> @mesh.Mesh3dGeometry {
-  let safe_radius = if cylinder.radius <= 0.0F { 0.5F } else { cylinder.radius }
-  let safe_half_height = if cylinder.half_height <= 0.0F {
-    0.5F
-  } else {
-    cylinder.half_height
-  }
-  mesh3d_revolve_geometry(
-    [
-      (safe_half_height, 0.0F),
-      (safe_half_height, safe_radius),
-      (-safe_half_height, safe_radius),
-      (-safe_half_height, 0.0F),
-    ],
-    32,
-  )
-}
-
-///|
-fn mesh3d_geometry_capsule_shape(
-  capsule : @math.Capsule3d,
-) -> @mesh.Mesh3dGeometry {
-  let safe_radius = if capsule.radius <= 0.0F { 0.5F } else { capsule.radius }
-  let safe_half_length = if capsule.half_length < 0.0F {
-    0.0F
-  } else {
-    capsule.half_length
-  }
-  let lat_segments = 16
-  let lat_f = Float::from_int(lat_segments)
-  let profile : Array[(Float, Float)] = []
-  profile.push((safe_half_length + safe_radius, 0.0F))
-  for i in 1..<(lat_segments + 1) {
-    let t = Float::from_int(i) / lat_f
-    let angle = @math.pi() / 2.0F - t * (@math.pi() / 2.0F)
-    profile.push(
-      (
-        safe_half_length + safe_radius * @math.sin(angle),
-        safe_radius * @math.cos(angle),
-      ),
-    )
-  }
-  profile.push((-safe_half_length, safe_radius))
-  for i in 1..<(lat_segments + 1) {
-    let t = Float::from_int(i) / lat_f
-    let angle = -t * (@math.pi() / 2.0F)
-    profile.push(
-      (
-        -safe_half_length + safe_radius * @math.sin(angle),
-        safe_radius * @math.cos(angle),
-      ),
-    )
-  }
-  mesh3d_revolve_geometry(profile, 32)
-}
-
-///|
-fn mesh3d_append_uv_sphere_triangle(
-  positions : Array[@math.Vec3],
-  uvs : Array[@math.Vec2],
-  a : @math.Vec3,
-  b : @math.Vec3,
-  c : @math.Vec3,
-  uv_a : @math.Vec2,
-  uv_b : @math.Vec2,
-  uv_c : @math.Vec2,
-) -> Unit {
-  positions.push(a)
-  positions.push(b)
-  positions.push(c)
-  uvs.push(uv_a)
-  uvs.push(uv_b)
-  uvs.push(uv_c)
-}
-
-///|
-fn mesh3d_geometry_uv_sphere(
-  radius : Float,
-  sectors : Int,
-  stacks : Int,
-) -> @mesh.Mesh3dGeometry {
-  let safe_radius = if radius <= 0.0F { 0.5F } else { radius }
-  let safe_sectors = if sectors < 3 { 3 } else { sectors }
-  let safe_stacks = if stacks < 2 { 2 } else { stacks }
-  let stack_count = Float::from_int(safe_stacks)
-  let sector_count = Float::from_int(safe_sectors)
-  let positions : Array[@math.Vec3] = []
-  let uvs : Array[@math.Vec2] = []
-
-  fn sphere_point(
-    radius : Float,
-    stack : Int,
-    sector : Int,
-    stack_count : Float,
-    sector_count : Float,
-  ) -> (@math.Vec3, @math.Vec2) {
-    let v = Float::from_int(stack) / stack_count
-    let u = Float::from_int(sector) / sector_count
-    let theta = v * @math.pi()
-    let phi = u * @math.pi() * 2.0F
-    let sin_theta = @math.sin(theta)
-    let x = radius * sin_theta * @math.cos(phi)
-    let y = radius * @math.cos(theta)
-    let z = radius * sin_theta * @math.sin(phi)
-    (@math.Vec3::new(x, y, z), @math.Vec2::new(u, 1.0F - v))
-  }
-
-  for stack in 0..<safe_stacks {
-    for sector in 0..<safe_sectors {
-      let next_sector = sector + 1
-      let (p00, uv00) = sphere_point(
-        safe_radius, stack, sector, stack_count, sector_count,
-      )
-      let (p01, uv01) = sphere_point(
-        safe_radius, stack, next_sector, stack_count, sector_count,
-      )
-      let (p10, uv10) = sphere_point(
-        safe_radius,
-        stack + 1,
-        sector,
-        stack_count,
-        sector_count,
-      )
-      let (p11, uv11) = sphere_point(
-        safe_radius,
-        stack + 1,
-        next_sector,
-        stack_count,
-        sector_count,
-      )
-
-      if stack == 0 {
-        mesh3d_append_uv_sphere_triangle(
-          positions, uvs, p00, p10, p11, uv00, uv10, uv11,
-        )
-      } else if stack + 1 == safe_stacks {
-        mesh3d_append_uv_sphere_triangle(
-          positions, uvs, p00, p10, p01, uv00, uv10, uv01,
-        )
-      } else {
-        mesh3d_append_uv_sphere_triangle(
-          positions, uvs, p00, p10, p11, uv00, uv10, uv11,
-        )
-        mesh3d_append_uv_sphere_triangle(
-          positions, uvs, p00, p11, p01, uv00, uv11, uv01,
-        )
-      }
-    }
-  }
-  @mesh.Mesh3dGeometry::new(positions, uvs, None)
-}
-
-///|
-pub fn Mesh3d::from_geometry(geometry : @mesh.Mesh3dGeometry) -> Mesh3d {
-  Mesh3d::new(
-    @sprite.render_mesh_asset_add(@mesh.Mesh::from_3d_geometry(geometry)),
-  )
-}
-
-///|
-pub fn Mesh3d::from_cuboid(
-  width : Float,
-  height : Float,
-  depth : Float,
-) -> Mesh3d {
-  Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::cuboid(@math.Cuboid::new(width, height, depth)),
-  )
-}
-
-///|
-pub fn Mesh3d::from_cylinder(cylinder : @math.Cylinder) -> Mesh3d {
-  Mesh3d::from_geometry(mesh3d_geometry_cylinder_shape(cylinder))
-}
-
-///|
-pub fn Mesh3d::from_capsule(capsule : @math.Capsule3d) -> Mesh3d {
-  Mesh3d::from_geometry(mesh3d_geometry_capsule_shape(capsule))
-}
-
-///|
-pub fn Mesh3d::from_triangle(triangle : @math.Triangle3d) -> Mesh3d {
-  Mesh3d::from_geometry(mesh3d_geometry_triangle(triangle))
-}
-
-///|
-pub fn Mesh3d::from_circle(radius : Float) -> Mesh3d {
-  Mesh3d::from_geometry(@mesh.Mesh3dGeometry::circle(radius, 32))
-}
-
-///|
-pub fn Mesh3d::from_rectangle(width : Float, height : Float) -> Mesh3d {
-  Mesh3d::from_geometry(@mesh.Mesh3dGeometry::rectangle(width, height))
-}
-
-///|
-pub fn Mesh3d::from_plane(width : Float, depth : Float) -> Mesh3d {
-  Mesh3d::from_geometry(mesh3d_geometry_plane(width, depth))
-}
-
-///|
-pub fn Mesh3d::from_uv_sphere(
-  radius : Float,
-  sectors : Int,
-  stacks : Int,
-) -> Mesh3d {
-  Mesh3d::from_geometry(mesh3d_geometry_uv_sphere(radius, sectors, stacks))
-}
-
-///|
-pub fn Mesh3d::from_icosphere(radius : Float, subdivisions : Int) -> Mesh3d {
-  Mesh3d::from_geometry(@mesh.Mesh3dGeometry::icosphere(radius, subdivisions))
-}
-
-///|
-pub fn Mesh3d::from_sphere(radius : Float) -> Mesh3d {
-  Mesh3d::from_uv_sphere(radius, 32, 16)
-}
-
-///|
-pub fn Mesh3d::from_tetrahedron(edge : Float) -> Mesh3d {
-  Mesh3d::from_geometry(mesh3d_geometry_tetrahedron(edge))
-}
-
-///|
-pub fn Mesh3d::from_tetrahedron_shape(
-  tetrahedron : @math.Tetrahedron,
-) -> Mesh3d {
-  Mesh3d::from_geometry(mesh3d_geometry_tetrahedron_shape(tetrahedron))
 }
 
 ///|
@@ -2099,7 +1236,11 @@ fn render3d_decal_mode_allows_clustered(mode : DecalRenderMode3d) -> Bool {
 fn render3d_camera_deferred_mode(
   config : CameraDeferredConfig3d,
   default_method : OpaqueRendererMethod,
+  deferred_lighting_enabled : Bool,
 ) -> OpaqueRendererMethod {
+  if !deferred_lighting_enabled {
+    return OpaqueRendererMethod::Forward
+  }
   match config.mode {
     CameraDeferredMode3d::Forward => OpaqueRendererMethod::Forward
     CameraDeferredMode3d::Deferred => OpaqueRendererMethod::Deferred
@@ -2134,6 +1275,16 @@ fn render3d_default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
   match (try! world.get_resource(@time.default_time_resource_key())) {
     Some(time) => time
     None => abort("Missing Time<Unit> resource in render3d systems")
+  }
+}
+
+///|
+fn render3d_runtime_config_or_default(
+  world : @ecs.World,
+) -> PbrPluginRuntimeConfig {
+  match (try! world.get_resource(ecs_key_pbr_plugin_runtime_config)) {
+    Some(config) => config
+    None => pbr_plugin_runtime_config()
   }
 }
 
@@ -4287,6 +3438,7 @@ fn render3d_queue_mesh_phase_items(
   meshes : Array[ExtractedMesh3d],
   layers : @sprite.RenderLayers,
   camera_transform : @math.Transform,
+  batch_by_texture : Bool,
 ) -> Array[MeshPhaseItem3d] {
   let items : Array[MeshPhaseItem3d] = []
   for i in 0..<meshes.length() {
@@ -4335,9 +3487,11 @@ fn render3d_queue_mesh_phase_items(
         return depth_cmp
       }
     } else {
-      let texture_cmp = cmp_int(a.batch_texture_id, b.batch_texture_id)
-      if texture_cmp != 0 {
-        return texture_cmp
+      if batch_by_texture {
+        let texture_cmp = cmp_int(a.batch_texture_id, b.batch_texture_id)
+        if texture_cmp != 0 {
+          return texture_cmp
+        }
       }
       let depth_cmp = cmp_float(a.distance, b.distance)
       if depth_cmp != 0 {
@@ -5071,14 +4225,24 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     @visibility.ecs_key_view_visibility,
   )
   let tick = world.read_change_tick()
+  let runtime_config = render3d_runtime_config_or_default(world)
+  let prepass_enabled = runtime_config.prepass_enabled &&
+    standard_material_prepass_enabled(world)
+  let deferred_lighting_enabled = runtime_config.add_default_deferred_lighting_plugin &&
+    deferred_pbr_lighting_enabled(world)
+  let gpu_instance_buffer_builder_enabled = runtime_config.use_gpu_instance_buffer_builder
   let delta_seconds = render3d_default_time_or_default(world).delta_seconds()
-  let default_opaque_renderer_method = if (try! world.get_resource(
+  let mut default_opaque_renderer_method = if (try! world.get_resource(
       ecs_key_default_opaque_renderer_method,
     ))
     is Some(default_method) {
     default_method.renderer_method()
   } else {
     OpaqueRendererMethod::Forward
+  }
+  if !deferred_lighting_enabled &&
+    default_opaque_renderer_method is OpaqueRendererMethod::Deferred {
+    default_opaque_renderer_method = OpaqueRendererMethod::Forward
   }
   let point_light_shadow_map_size = if (try! world.get_resource(
       ecs_key_point_light_shadow_map,
@@ -5123,11 +4287,13 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     let hdr_enabled = hdr_store.get(entity) is Some(_)
     let fxaa = fxaa_store.get(entity)
     let temporal_jitter = temporal_jitter_store.get(entity)
-    let motion_vector_prepass_enabled = motion_vector_prepass_store.get(entity)
-      is Some(_)
+    let motion_vector_prepass_enabled = prepass_enabled &&
+      motion_vector_prepass_store.get(entity) is Some(_)
     let temporal_anti_aliasing = temporal_anti_aliasing_store.get(entity)
-    let depth_prepass_enabled = depth_prepass_store.get(entity) is Some(_)
-    let deferred_prepass_enabled = deferred_prepass_store.get(entity) is Some(_)
+    let depth_prepass_enabled = prepass_enabled &&
+      depth_prepass_store.get(entity) is Some(_)
+    let deferred_prepass_enabled = prepass_enabled &&
+      deferred_prepass_store.get(entity) is Some(_)
     let msaa = msaa_store.get(entity)
     let target = match target_store.get(entity) {
       Some(v) => v
@@ -5385,10 +4551,15 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     let camera_deferred_mode = render3d_camera_deferred_mode(
       camera.camera3d.deferred_config,
       default_opaque_renderer_method,
+      deferred_lighting_enabled,
     )
-    let camera_deferred_enabled = camera.deferred_prepass_enabled ||
-      camera.camera3d.deferred_config.requires_deferred_prepass ||
-      camera_deferred_mode is OpaqueRendererMethod::Deferred
+    let camera_deferred_enabled = deferred_lighting_enabled &&
+      prepass_enabled &&
+      (
+        camera.deferred_prepass_enabled ||
+        camera.camera3d.deferred_config.requires_deferred_prepass ||
+        camera_deferred_mode is OpaqueRendererMethod::Deferred
+      )
     let camera_msaa_allows_forward_decals = match camera.msaa {
       Some(msaa) => msaa is Msaa::Off
       None => true
@@ -5454,9 +4625,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     let tonemap_postprocess_enabled = tonemapping_stage_enabled ||
       effect_stack_postprocess_enabled ||
       fxaa_postprocess_enabled
-    let motion_vector_prepass_enabled = motion_blur_active ||
-      camera.motion_vector_prepass_enabled ||
-      temporal_aa_enabled
+    let motion_vector_prepass_enabled = prepass_enabled &&
+      (
+        motion_blur_active ||
+        camera.motion_vector_prepass_enabled ||
+        temporal_aa_enabled
+      )
     let fog_enabled = render3d_distance_fog_enabled(distance_fog)
     let decal_enabled = camera_forward_decal_enabled ||
       camera_clustered_decal_enabled
@@ -5523,6 +4697,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         meshes,
         camera.layers,
         camera.transform,
+        gpu_instance_buffer_builder_enabled,
       )
       for draw_item in velocity_draw_items {
         if draw_item.phase != RENDER3D_PHASE_OPAQUE &&
@@ -5584,6 +4759,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       meshes,
       camera.layers,
       camera.transform,
+      gpu_instance_buffer_builder_enabled,
     )
     if pass_lighting.point_shadow_maps_enabled &&
       !pass_lighting.point_entity.is_placeholder() &&
@@ -7119,136 +6295,4 @@ pub fn render3d_camera_world_to_viewport(
     return None
   }
   Some(@math.Vec2::new(local_x + viewport_x, local_y + viewport_y))
-}
-
-///|
-fn init_render3d_resources(world : @ecs.World) -> Unit {
-  let ecs_world = world
-  let tick = world.read_change_tick()
-  render3d_runtime_initialized_ref.val = true
-  let ambient = get_global_ambient_light_resource(ecs_world)
-  if !ambient.is_present() {
-    ambient.insert(GlobalAmbientLight::default(), tick)
-  }
-  let point_light_shadow_map = get_point_light_shadow_map_resource(ecs_world)
-  if !point_light_shadow_map.is_present() {
-    point_light_shadow_map.insert(PointLightShadowMap::default(), tick)
-  }
-  let default_opaque_renderer_method = get_default_opaque_renderer_method_resource(
-    ecs_world,
-  )
-  if !default_opaque_renderer_method.is_present() {
-    default_opaque_renderer_method.insert(
-      DefaultOpaqueRendererMethod::forward(),
-      tick,
-    )
-  }
-  if (try! world.get_resource(ecs_key_internal_assets)) is None {
-    world.insert_resource(
-      ecs_key_internal_assets,
-      Render3dInternalAssetsState::new(),
-    )
-  }
-  let auto_exposure_curve_assets_key : @ecs.ResourceKey[
-    @asset.Assets[AutoExposureCompensationCurve],
-  ] = @asset.assets_resource_key()
-  if (try! world.get_resource(auto_exposure_curve_assets_key)) is None {
-    world.insert_resource(auto_exposure_curve_assets_key, @asset.Assets::new())
-  }
-  if (try! world.get_resource_ref_mut(auto_exposure_curve_assets_key, tick))
-    is Some(curves_ref) {
-    let default_curve_handle : @asset.Handle[AutoExposureCompensationCurve] = @asset.Handle::new(
-      0,
-    )
-    if !curves_ref.val.contains(default_curve_handle) {
-      curves_ref.val.insert(
-        default_curve_handle,
-        AutoExposureCompensationCurve::default(),
-      )
-      |> ignore
-    }
-  }
-}
-
-///|
-fn init_wireframe_resources(world : @ecs.World) -> Unit {
-  let ecs_world = world
-  let tick = world.read_change_tick()
-  let wireframe_config = get_wireframe_config_resource(ecs_world)
-  if !wireframe_config.is_present() {
-    wireframe_config.insert(WireframeConfig::default(), tick)
-  }
-}
-
-///|
-pub fn wireframe_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app.add_startup_system(init_wireframe_resources)
-}
-
-///|
-pub let render3d_set_extract : @app.SystemSet = @app.system_set(
-  "bevy.render3d.extract",
-)
-
-///|
-pub let render3d_set_update_frusta : @app.SystemSet = @app.system_set(
-  "bevy.render3d.update_frusta",
-)
-
-///|
-pub let render3d_set_prepare : @app.SystemSet = @app.system_set(
-  "bevy.render3d.prepare",
-)
-
-///|
-pub let render3d_set_queue : @app.SystemSet = @app.system_set(
-  "bevy.render3d.queue",
-)
-
-///|
-pub let render3d_set_render : @app.SystemSet = @app.system_set(
-  "bevy.render3d.render",
-)
-
-///|
-/// Legacy alias kept for source compatibility.
-pub let render3d_set_execute : @app.SystemSet = render3d_set_render
-
-///|
-pub fn render3d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
-  .init_resource(fn() {
-    let assets : @asset.Assets[StandardMaterial] = @asset.Assets::new()
-    assets
-  })
-  .add_startup_system(init_render3d_resources)
-  .add_post_update_system_config(
-    @app.system(render3d_update_frusta_system).in_set(
-      render3d_set_update_frusta,
-    ),
-  )
-  .add_post_update_system_config(
-    @app.system(render3d_extract_system).in_set(render3d_set_extract),
-  )
-  .add_post_update_system_config(
-    @app.system(render3d_prepare_system).in_set(render3d_set_prepare),
-  )
-  .add_post_update_system_config(
-    @app.system(render3d_queue_system).in_set(render3d_set_queue),
-  )
-  .add_post_update_system_config(
-    @app.system(render3d_execute_system).in_set(render3d_set_render),
-  )
-  .configure_set(@app.PostUpdate, render3d_set_extract, before=[
-    render3d_set_prepare,
-  ])
-  .configure_set(@app.PostUpdate, render3d_set_update_frusta, before=[
-    render3d_set_extract,
-  ])
-  .configure_set(@app.PostUpdate, render3d_set_prepare, before=[
-    render3d_set_queue,
-  ])
-  .configure_set(@app.PostUpdate, render3d_set_queue, before=[
-    render3d_set_render,
-  ])
 }

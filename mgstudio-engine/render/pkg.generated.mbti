@@ -6,6 +6,8 @@ import {
 }
 
 // Values
+pub const HOST_GPU_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY : Int = 2
+
 pub fn asset_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
 
 pub fn asset_create_texture_3d_with_format(width~ : Int, height~ : Int, depth~ : Int, format_raw~ : Int, pixels~ : Bytes) -> Int
@@ -42,7 +44,7 @@ pub fn host_gpu_begin_pass_3d(target_id~ : Int, target_layer? : Int, width~ : In
 
 pub fn host_gpu_clear_scissor() -> Unit
 
-pub fn host_gpu_configure_surface(device~ : Int, surface~ : Int, width~ : Int, height~ : Int) -> Unit
+pub fn host_gpu_configure_surface(device~ : Int, surface~ : Int, width~ : Int, height~ : Int, present_mode? : HostGpuPresentMode, composite_alpha_mode? : HostGpuCompositeAlphaMode, desired_maximum_frame_latency? : Int) -> Unit
 
 pub fn host_gpu_create_mesh3d(vertices_xyzuvrgba_csv~ : String, primitive_topology~ : Int) -> Int
 
@@ -155,6 +157,29 @@ pub(all) struct HostColorGrading {
   post_saturation : Float
 }
 pub fn HostColorGrading::default() -> Self
+
+pub(all) enum HostGpuCompositeAlphaMode {
+  Auto
+  Opaque
+  PreMultiplied
+  PostMultiplied
+  Inherit
+}
+pub fn HostGpuCompositeAlphaMode::default() -> Self
+pub impl Eq for HostGpuCompositeAlphaMode
+pub impl Show for HostGpuCompositeAlphaMode
+
+pub(all) enum HostGpuPresentMode {
+  AutoVsync
+  AutoNoVsync
+  Fifo
+  FifoRelaxed
+  Immediate
+  Mailbox
+}
+pub fn HostGpuPresentMode::default() -> Self
+pub impl Eq for HostGpuPresentMode
+pub impl Show for HostGpuPresentMode
 
 // Type aliases
 pub type HostGpuDevice = Int

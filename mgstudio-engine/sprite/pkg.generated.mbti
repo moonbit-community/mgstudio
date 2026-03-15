@@ -18,6 +18,8 @@ import {
 }
 
 // Values
+pub const SPRITE_PLUGIN_ID : String = "bevy_sprite::SpritePlugin"
+
 pub let camera_update_systems : String
 
 pub let ecs_components : Array[String]
@@ -207,6 +209,8 @@ pub fn render_prepare_system(@ecs.World) -> Unit
 pub fn render_queue_system(@ecs.World) -> Unit
 
 pub fn run_pancamera_controller(@ecs.World) -> Unit
+
+pub fn sprite_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn wireframe2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 

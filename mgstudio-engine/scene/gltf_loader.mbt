@@ -2114,6 +2114,9 @@ fn scene_build_material_component(
   guard material_index >= 0 && material_index < doc.materials.length() else {
     return None
   }
+  if !@gltf.gltf_pbr_material_handler_enabled() {
+    return None
+  }
 
   if material_cache[material_index] is Some(component) {
     return Some(component)

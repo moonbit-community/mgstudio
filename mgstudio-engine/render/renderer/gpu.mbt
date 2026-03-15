@@ -217,6 +217,9 @@ pub struct GpuSurfaceState {
   mut surface_format : @wgpu.TextureFormat?
   mut configured_width : Int
   mut configured_height : Int
+  mut configured_present_mode : UInt
+  mut configured_alpha_mode : UInt
+  mut configured_desired_maximum_frame_latency : UInt
   mut frame : GpuFrameState?
   mut cleared_this_frame : Bool
 }

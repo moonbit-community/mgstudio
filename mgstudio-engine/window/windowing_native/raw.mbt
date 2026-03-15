@@ -1224,6 +1224,7 @@ pub fn create_utf8(
   use_physical_size_on_create : Bool,
   title : Bytes,
   _title_len : UInt64,
+  name : Bytes?,
   visible : Bool,
   resizable : Bool,
   decorations : Bool,
@@ -1245,6 +1246,8 @@ pub fn create_utf8(
   titlebar_show_title : Bool,
   titlebar_show_buttons : Bool,
   borderless_game : Bool,
+  skip_taskbar : Bool,
+  clip_children : Bool,
 ) -> Int {
   let event_loop = ensure_native_event_loop()
   let platform_attributes = @window_core.PlatformWindowAttributes::default()
@@ -1271,6 +1274,11 @@ pub fn create_utf8(
       .with_maximize(maximize_button_enabled),
     )
     .with_platform_attributes(platform_attributes)
+    .with_skip_taskbar(skip_taskbar)
+    .with_clip_children(clip_children)
+  if name is Some(window_name) {
+    attributes = attributes.with_name(decode_utf8_lossy(window_name))
+  }
   attributes = attributes.with_min_inner_size(
     @window_dpi.LogicalSize::new(
       min_inner_width.to_double(),
@@ -1323,6 +1331,7 @@ pub fn create(
   physical_height~ : Int,
   use_physical_size_on_create~ : Bool,
   title~ : String,
+  name? : String? = None,
   visible~ : Bool,
   resizable~ : Bool,
   decorations~ : Bool,
@@ -1344,8 +1353,14 @@ pub fn create(
   titlebar_show_title? : Bool = true,
   titlebar_show_buttons? : Bool = true,
   borderless_game? : Bool = true,
+  skip_taskbar? : Bool = false,
+  clip_children? : Bool = true,
 ) -> NativeWindowHandle {
   let title_bytes = encode_utf8_bytes(title)
+  let name_bytes = match name {
+    Some(value) => Some(encode_utf8_bytes(value))
+    None => None
+  }
   create_utf8(
     logical_width,
     logical_height,
@@ -1354,6 +1369,7 @@ pub fn create(
     use_physical_size_on_create,
     title_bytes,
     title_bytes.length().to_uint64(),
+    name_bytes,
     visible,
     resizable,
     decorations,
@@ -1375,6 +1391,8 @@ pub fn create(
     titlebar_show_title,
     titlebar_show_buttons,
     borderless_game,
+    skip_taskbar,
+    clip_children,
   )
 }
 
@@ -1619,6 +1637,34 @@ pub fn set_window_level(
 pub fn set_theme(window : Int, theme~ : @window_core.Theme?) -> Unit {
   match native_window_ref(window) {
     Some(window_ref) => window_ref.val.set_theme(theme)
+    None => ()
+  }
+}
+
+///|
+pub fn set_prefers_home_indicator_hidden(window : Int, hidden~ : Bool) -> Unit {
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.set_prefers_home_indicator_hidden(hidden)
+    None => ()
+  }
+}
+
+///|
+pub fn set_prefers_status_bar_hidden(window : Int, hidden~ : Bool) -> Unit {
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.set_prefers_status_bar_hidden(hidden)
+    None => ()
+  }
+}
+
+///|
+pub fn set_preferred_screen_edges_deferring_system_gestures(
+  window : Int,
+  edges~ : @window_core.ScreenEdge,
+) -> Unit {
+  match native_window_ref(window) {
+    Some(window_ref) =>
+      window_ref.val.set_preferred_screen_edges_deferring_system_gestures(edges)
     None => ()
   }
 }

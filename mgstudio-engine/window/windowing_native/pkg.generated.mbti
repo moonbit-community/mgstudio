@@ -25,9 +25,9 @@ pub fn bind_accessibility_requested(@ref.Ref[Bool]) -> Unit
 
 pub fn commit_pending_accessibility_update() -> Bool
 
-pub fn create(logical_width~ : Int, logical_height~ : Int, physical_width~ : Int, physical_height~ : Int, use_physical_size_on_create~ : Bool, title~ : String, visible~ : Bool, resizable~ : Bool, decorations~ : Bool, transparent? : Bool, panel? : Bool, focused? : Bool, close_button_enabled? : Bool, minimize_button_enabled? : Bool, maximize_button_enabled? : Bool, min_inner_width? : Float, min_inner_height? : Float, max_inner_width? : Float?, max_inner_height? : Float?, movable_by_window_background? : Bool, fullsize_content_view? : Bool, has_shadow? : Bool, titlebar_shown? : Bool, titlebar_transparent? : Bool, titlebar_show_title? : Bool, titlebar_show_buttons? : Bool, borderless_game? : Bool) -> Int
+pub fn create(logical_width~ : Int, logical_height~ : Int, physical_width~ : Int, physical_height~ : Int, use_physical_size_on_create~ : Bool, title~ : String, name? : String?, visible~ : Bool, resizable~ : Bool, decorations~ : Bool, transparent? : Bool, panel? : Bool, focused? : Bool, close_button_enabled? : Bool, minimize_button_enabled? : Bool, maximize_button_enabled? : Bool, min_inner_width? : Float, min_inner_height? : Float, max_inner_width? : Float?, max_inner_height? : Float?, movable_by_window_background? : Bool, fullsize_content_view? : Bool, has_shadow? : Bool, titlebar_shown? : Bool, titlebar_transparent? : Bool, titlebar_show_title? : Bool, titlebar_show_buttons? : Bool, borderless_game? : Bool, skip_taskbar? : Bool, clip_children? : Bool) -> Int
 
-pub fn create_utf8(Int, Int, Int, Int, Bool, Bytes, UInt64, Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool, Float, Float, Float?, Float?, Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool) -> Int
+pub fn create_utf8(Int, Int, Int, Int, Bool, Bytes, UInt64, Bytes?, Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool, Float, Float, Float?, Float?, Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool) -> Int
 
 pub fn current_monitor(Int) -> @core.MonitorHandle?
 
@@ -244,6 +244,12 @@ pub fn set_min_inner_size(Int, width~ : Float, height~ : Float) -> Unit
 pub fn set_minimized(Int, minimized~ : Bool) -> Unit
 
 pub fn set_position(Int, x~ : Int, y~ : Int) -> Unit
+
+pub fn set_preferred_screen_edges_deferring_system_gestures(Int, edges~ : @core.ScreenEdge) -> Unit
+
+pub fn set_prefers_home_indicator_hidden(Int, hidden~ : Bool) -> Unit
+
+pub fn set_prefers_status_bar_hidden(Int, hidden~ : Bool) -> Unit
 
 pub fn set_resizable(Int, resizable~ : Bool) -> Unit
 

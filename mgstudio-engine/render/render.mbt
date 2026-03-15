@@ -25,6 +25,61 @@ pub type HostGpuSurface = Int
 pub type HostGpuFrame = Int
 
 ///|
+pub(all) enum HostGpuPresentMode {
+  AutoVsync
+  AutoNoVsync
+  Fifo
+  FifoRelaxed
+  Immediate
+  Mailbox
+} derive(Eq, Show)
+
+///|
+pub fn HostGpuPresentMode::default() -> HostGpuPresentMode {
+  AutoVsync
+}
+
+///|
+pub(all) enum HostGpuCompositeAlphaMode {
+  Auto
+  Opaque
+  PreMultiplied
+  PostMultiplied
+  Inherit
+} derive(Eq, Show)
+
+///|
+pub fn HostGpuCompositeAlphaMode::default() -> HostGpuCompositeAlphaMode {
+  Auto
+}
+
+///|
+pub const HOST_GPU_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY : Int = @renderer.SURFACE_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY
+
+///|
+fn host_gpu_present_mode_kind(mode : HostGpuPresentMode) -> Int {
+  match mode {
+    AutoVsync => @renderer.SURFACE_PRESENT_MODE_AUTO_VSYNC
+    AutoNoVsync => @renderer.SURFACE_PRESENT_MODE_AUTO_NO_VSYNC
+    Fifo => @renderer.SURFACE_PRESENT_MODE_FIFO
+    FifoRelaxed => @renderer.SURFACE_PRESENT_MODE_FIFO_RELAXED
+    Immediate => @renderer.SURFACE_PRESENT_MODE_IMMEDIATE
+    Mailbox => @renderer.SURFACE_PRESENT_MODE_MAILBOX
+  }
+}
+
+///|
+fn host_gpu_composite_alpha_mode_kind(mode : HostGpuCompositeAlphaMode) -> Int {
+  match mode {
+    Auto => @renderer.SURFACE_COMPOSITE_ALPHA_MODE_AUTO
+    Opaque => @renderer.SURFACE_COMPOSITE_ALPHA_MODE_OPAQUE
+    PreMultiplied => @renderer.SURFACE_COMPOSITE_ALPHA_MODE_PRE_MULTIPLIED
+    PostMultiplied => @renderer.SURFACE_COMPOSITE_ALPHA_MODE_POST_MULTIPLIED
+    Inherit => @renderer.SURFACE_COMPOSITE_ALPHA_MODE_INHERIT
+  }
+}
+
+///|
 pub(all) struct HostColorGrading {
   balance_x_axis_x : Float
   balance_x_axis_y : Float
@@ -123,8 +178,21 @@ pub fn host_gpu_configure_surface(
   surface~ : HostGpuSurface,
   width~ : Int,
   height~ : Int,
+  present_mode? : HostGpuPresentMode = HostGpuPresentMode::default(),
+  composite_alpha_mode? : HostGpuCompositeAlphaMode = HostGpuCompositeAlphaMode::default(),
+  desired_maximum_frame_latency? : Int = HOST_GPU_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY,
 ) -> Unit {
-  @renderer.configure_surface(device~, surface~, width~, height~)
+  @renderer.configure_surface(
+    device~,
+    surface~,
+    width~,
+    height~,
+    present_mode_kind=host_gpu_present_mode_kind(present_mode),
+    composite_alpha_mode_kind=host_gpu_composite_alpha_mode_kind(
+      composite_alpha_mode,
+    ),
+    desired_maximum_frame_latency~,
+  )
 }
 
 ///|

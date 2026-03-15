@@ -22,6 +22,19 @@ let gltf_loader_registration_ref : Ref[GltfLoaderRegistration?] = Ref::new(None)
 let gltf_loader_registered_ref : Ref[Bool] = Ref::new(false)
 
 ///|
+let gltf_pbr_material_handler_enabled_ref : Ref[Bool] = Ref::new(true)
+
+///|
+pub fn gltf_set_pbr_material_handler_enabled(enabled : Bool) -> Unit {
+  gltf_pbr_material_handler_enabled_ref.val = enabled
+}
+
+///|
+pub fn gltf_pbr_material_handler_enabled() -> Bool {
+  gltf_pbr_material_handler_enabled_ref.val
+}
+
+///|
 pub fn gltf_install_loader_registration(
   register : GltfLoaderRegistration,
 ) -> Unit {

@@ -19,7 +19,10 @@ const DEFAULT_PLUGIN_ID_RENDER3D : String = "bevy_pbr::PbrPlugin"
 const DEFAULT_PLUGIN_ID_ANTI_ALIAS : String = "bevy_anti_alias::AntiAliasPlugin"
 
 ///|
-const DEFAULT_PLUGIN_ID_RENDER2D : String = "bevy_sprite::SpritePlugin"
+const DEFAULT_PLUGIN_ID_SPRITE : String = "bevy_sprite::SpritePlugin"
+
+///|
+const DEFAULT_PLUGIN_ID_SPRITE_RENDER : String = "bevy_sprite_render::SpriteRenderPlugin"
 
 ///|
 fn plugin_index(
@@ -43,11 +46,20 @@ test "default plugins: include winit plugin after window plugin" {
   inspect(builder.enabled("bevy_winit::WinitPlugin"), content="true")
   inspect(builder.contains(DEFAULT_PLUGIN_ID_ANTI_ALIAS), content="true")
   inspect(builder.enabled(DEFAULT_PLUGIN_ID_ANTI_ALIAS), content="true")
+  inspect(builder.contains(DEFAULT_PLUGIN_ID_SPRITE), content="true")
+  inspect(builder.enabled(DEFAULT_PLUGIN_ID_SPRITE), content="true")
+  inspect(builder.contains(DEFAULT_PLUGIN_ID_SPRITE_RENDER), content="true")
+  inspect(builder.enabled(DEFAULT_PLUGIN_ID_SPRITE_RENDER), content="true")
   let render3d_index = plugin_index(builder, DEFAULT_PLUGIN_ID_RENDER3D)
   let anti_alias_index = plugin_index(builder, DEFAULT_PLUGIN_ID_ANTI_ALIAS)
-  let render2d_index = plugin_index(builder, DEFAULT_PLUGIN_ID_RENDER2D)
+  let sprite_index = plugin_index(builder, DEFAULT_PLUGIN_ID_SPRITE)
+  let sprite_render_index = plugin_index(
+    builder,
+    DEFAULT_PLUGIN_ID_SPRITE_RENDER,
+  )
   inspect(render3d_index < anti_alias_index, content="true")
-  inspect(anti_alias_index < render2d_index, content="true")
+  inspect(anti_alias_index < sprite_index, content="true")
+  inspect(sprite_index < sprite_render_index, content="true")
   inspect(builder.contains("bevy_gltf::GltfPlugin"), content="true")
   inspect(builder.enabled("bevy_gltf::GltfPlugin"), content="true")
 }

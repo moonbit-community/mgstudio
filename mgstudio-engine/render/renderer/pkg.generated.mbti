@@ -7,6 +7,30 @@ import {
 }
 
 // Values
+pub const SURFACE_COMPOSITE_ALPHA_MODE_AUTO : Int = 0
+
+pub const SURFACE_COMPOSITE_ALPHA_MODE_INHERIT : Int = 4
+
+pub const SURFACE_COMPOSITE_ALPHA_MODE_OPAQUE : Int = 1
+
+pub const SURFACE_COMPOSITE_ALPHA_MODE_POST_MULTIPLIED : Int = 3
+
+pub const SURFACE_COMPOSITE_ALPHA_MODE_PRE_MULTIPLIED : Int = 2
+
+pub const SURFACE_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY : Int = 2
+
+pub const SURFACE_PRESENT_MODE_AUTO_NO_VSYNC : Int = 1
+
+pub const SURFACE_PRESENT_MODE_AUTO_VSYNC : Int = 0
+
+pub const SURFACE_PRESENT_MODE_FIFO : Int = 2
+
+pub const SURFACE_PRESENT_MODE_FIFO_RELAXED : Int = 3
+
+pub const SURFACE_PRESENT_MODE_IMMEDIATE : Int = 4
+
+pub const SURFACE_PRESENT_MODE_MAILBOX : Int = 5
+
 pub fn apply_auto_exposure(view_key_hi~ : Int, view_key_lo~ : Int, scene_texture_id~ : Int, min_ev100~ : Float, max_ev100~ : Float, low_percent~ : Float, high_percent~ : Float, speed_brighten~ : Float, speed_darken~ : Float, exponential_transition_distance~ : Float, delta_time~ : Float, metering_mask_texture_id~ : Int, compensation_curve_lut~ : Bytes, compensation_curve_min_log_lum~ : Float, compensation_curve_max_log_lum~ : Float, compensation_curve_min_compensation~ : Float, compensation_curve_max_compensation~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
 
 pub fn apply_bloom2d(scene_texture_id~ : Int, enabled~ : Int, intensity~ : Float, low_frequency_boost~ : Float, low_frequency_boost_curvature~ : Float, high_pass_frequency~ : Float, threshold~ : Float, threshold_softness~ : Float, composite_mode~ : Int, max_mip_dimension~ : Int, scale_x~ : Float, scale_y~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
@@ -41,7 +65,7 @@ pub fn begin_pass_3d(target_id~ : Int, target_layer? : Int, width~ : Int, height
 
 pub fn clear_scissor() -> Unit
 
-pub fn configure_surface(device~ : Int, surface~ : Int, width~ : Int, height~ : Int) -> Unit
+pub fn configure_surface(device~ : Int, surface~ : Int, width~ : Int, height~ : Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
 
 pub fn create_mesh3d(vertices_xyzuvrgba_csv~ : String, primitive_topology~ : Int) -> Int
 
@@ -309,8 +333,8 @@ pub fn GpuBackend::begin_frame_binding(Self, Int) -> Unit
 pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::clear_scissor(Self) -> Unit raise GpuBackendError
-pub fn GpuBackend::configure_surface(Self, Int, Int) -> Unit
-pub fn GpuBackend::configure_surface_binding(Self, Int, Int, Int) -> Unit
+pub fn GpuBackend::configure_surface(Self, Int, Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
+pub fn GpuBackend::configure_surface_binding(Self, Int, Int, Int, Int, Int, Int) -> Unit
 pub fn GpuBackend::copy_texture_to_texture(Self, Int, Int, Int, Int) -> Unit
 pub fn GpuBackend::create_mesh3d_xyzuvrgba(Self, Array[Float], Int) -> Int
 pub fn GpuBackend::create_mesh_capsule(Self, Float, Float, Int) -> Int
@@ -342,7 +366,7 @@ pub fn GpuBackend::draw_ui_texture_slice(Self, Int, Float, Float, Float, Float, 
 pub fn GpuBackend::end_frame(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::end_frame_binding(Self, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::end_pass(Self) -> Unit raise GpuBackendError
-pub fn GpuBackend::ensure_surface_configured(Self, Int, Int) -> Unit
+pub fn GpuBackend::ensure_surface_configured(Self, Int, Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
 pub fn GpuBackend::set_active_surface_target(Self, Int) -> Unit
@@ -460,6 +484,9 @@ pub struct GpuSurfaceState {
   mut surface_format : @wgpu_mbt.TextureFormat?
   mut configured_width : Int
   mut configured_height : Int
+  mut configured_present_mode : UInt
+  mut configured_alpha_mode : UInt
+  mut configured_desired_maximum_frame_latency : UInt
   mut frame : GpuFrameState?
   mut cleared_this_frame : Bool
 }

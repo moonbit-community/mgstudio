@@ -139,6 +139,7 @@ pub fn host_window_create(
   physical_height~ : Int,
   use_physical_size_on_create~ : Bool,
   title~ : String,
+  name? : String? = None,
   visible? : Bool = true,
   resizable? : Bool = true,
   decorations? : Bool = true,
@@ -160,6 +161,8 @@ pub fn host_window_create(
   titlebar_show_title? : Bool = true,
   titlebar_show_buttons? : Bool = true,
   borderless_game? : Bool = true,
+  skip_taskbar? : Bool = false,
+  clip_children? : Bool = true,
 ) -> HostWindow {
   @windowing.create(
     logical_width~,
@@ -168,6 +171,7 @@ pub fn host_window_create(
     physical_height~,
     use_physical_size_on_create~,
     title~,
+    name~,
     visible~,
     resizable~,
     decorations~,
@@ -189,6 +193,8 @@ pub fn host_window_create(
     titlebar_show_title~,
     titlebar_show_buttons~,
     borderless_game~,
+    skip_taskbar~,
+    clip_children~,
   )
 }
 
@@ -465,6 +471,45 @@ pub fn host_window_set_theme(
   theme~ : WindowTheme?,
 ) -> Unit {
   @windowing.set_theme(window, theme~)
+}
+
+///|
+pub fn host_window_set_prefers_home_indicator_hidden(
+  window : HostWindow,
+  hidden~ : Bool,
+) -> Unit {
+  @windowing.set_prefers_home_indicator_hidden(window, hidden~)
+}
+
+///|
+pub fn host_window_set_prefers_status_bar_hidden(
+  window : HostWindow,
+  hidden~ : Bool,
+) -> Unit {
+  @windowing.set_prefers_status_bar_hidden(window, hidden~)
+}
+
+///|
+fn screen_edge_to_native(edge : ScreenEdge) -> @window_core.ScreenEdge {
+  match edge {
+    ScreenEdge::None => @window_core.ScreenEdge::none()
+    ScreenEdge::Top => @window_core.ScreenEdge::top()
+    ScreenEdge::Left => @window_core.ScreenEdge::left()
+    ScreenEdge::Bottom => @window_core.ScreenEdge::bottom()
+    ScreenEdge::Right => @window_core.ScreenEdge::right()
+    ScreenEdge::All => @window_core.ScreenEdge::all()
+  }
+}
+
+///|
+pub fn host_window_set_preferred_screen_edges_deferring_system_gestures(
+  window : HostWindow,
+  edges~ : ScreenEdge,
+) -> Unit {
+  @windowing.set_preferred_screen_edges_deferring_system_gestures(
+    window,
+    edges=screen_edge_to_native(edges),
+  )
 }
 
 ///|

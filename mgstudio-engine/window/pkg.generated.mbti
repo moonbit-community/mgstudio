@@ -108,7 +108,7 @@ pub fn host_app_lifecycle_event_kind(index~ : Int) -> Int
 
 pub fn host_debug_string(value~ : String) -> Unit
 
-pub fn host_window_create(logical_width~ : Int, logical_height~ : Int, physical_width~ : Int, physical_height~ : Int, use_physical_size_on_create~ : Bool, title~ : String, visible? : Bool, resizable? : Bool, decorations? : Bool, transparent? : Bool, panel? : Bool, focused? : Bool, close_button_enabled? : Bool, minimize_button_enabled? : Bool, maximize_button_enabled? : Bool, min_inner_width? : Float, min_inner_height? : Float, max_inner_width? : Float?, max_inner_height? : Float?, movable_by_window_background? : Bool, fullsize_content_view? : Bool, has_shadow? : Bool, titlebar_shown? : Bool, titlebar_transparent? : Bool, titlebar_show_title? : Bool, titlebar_show_buttons? : Bool, borderless_game? : Bool) -> Int
+pub fn host_window_create(logical_width~ : Int, logical_height~ : Int, physical_width~ : Int, physical_height~ : Int, use_physical_size_on_create~ : Bool, title~ : String, name? : String?, visible? : Bool, resizable? : Bool, decorations? : Bool, transparent? : Bool, panel? : Bool, focused? : Bool, close_button_enabled? : Bool, minimize_button_enabled? : Bool, maximize_button_enabled? : Bool, min_inner_width? : Float, min_inner_height? : Float, max_inner_width? : Float?, max_inner_height? : Float?, movable_by_window_background? : Bool, fullsize_content_view? : Bool, has_shadow? : Bool, titlebar_shown? : Bool, titlebar_transparent? : Bool, titlebar_show_title? : Bool, titlebar_show_buttons? : Bool, borderless_game? : Bool, skip_taskbar? : Bool, clip_children? : Bool) -> Int
 
 pub fn host_window_drag_move(Int) -> Bool
 
@@ -163,6 +163,12 @@ pub fn host_window_set_mode(Int, mode~ : WindowMode) -> Unit
 pub fn host_window_set_position(Int, x~ : Int, y~ : Int) -> Unit
 
 pub fn host_window_set_position_from(Int, WindowPosition, WindowResolution) -> Unit
+
+pub fn host_window_set_preferred_screen_edges_deferring_system_gestures(Int, edges~ : ScreenEdge) -> Unit
+
+pub fn host_window_set_prefers_home_indicator_hidden(Int, hidden~ : Bool) -> Unit
+
+pub fn host_window_set_prefers_status_bar_hidden(Int, hidden~ : Bool) -> Unit
 
 pub fn host_window_set_resizable(Int, resizable~ : Bool) -> Unit
 

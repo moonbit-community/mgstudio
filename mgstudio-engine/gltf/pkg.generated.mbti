@@ -9,7 +9,11 @@ import {
 // Values
 pub fn gltf_install_loader_registration(() -> Unit) -> Unit
 
+pub fn gltf_pbr_material_handler_enabled() -> Bool
+
 pub fn gltf_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn gltf_set_pbr_material_handler_enabled(Bool) -> Unit
 
 // Errors
 

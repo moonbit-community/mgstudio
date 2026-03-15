@@ -30,6 +30,42 @@ pub type NativeGpuSurface = Int
 pub type NativeGpuFrame = Int
 
 ///|
+pub const SURFACE_PRESENT_MODE_AUTO_VSYNC : Int = 0
+
+///|
+pub const SURFACE_PRESENT_MODE_AUTO_NO_VSYNC : Int = 1
+
+///|
+pub const SURFACE_PRESENT_MODE_FIFO : Int = 2
+
+///|
+pub const SURFACE_PRESENT_MODE_FIFO_RELAXED : Int = 3
+
+///|
+pub const SURFACE_PRESENT_MODE_IMMEDIATE : Int = 4
+
+///|
+pub const SURFACE_PRESENT_MODE_MAILBOX : Int = 5
+
+///|
+pub const SURFACE_COMPOSITE_ALPHA_MODE_AUTO : Int = 0
+
+///|
+pub const SURFACE_COMPOSITE_ALPHA_MODE_OPAQUE : Int = 1
+
+///|
+pub const SURFACE_COMPOSITE_ALPHA_MODE_PRE_MULTIPLIED : Int = 2
+
+///|
+pub const SURFACE_COMPOSITE_ALPHA_MODE_POST_MULTIPLIED : Int = 3
+
+///|
+pub const SURFACE_COMPOSITE_ALPHA_MODE_INHERIT : Int = 4
+
+///|
+pub const SURFACE_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY : Int = 2
+
+///|
 pub struct RenderDiagnosticsSnapshot {
   mesh2d_draw_calls : Int
   mesh2d_executed_draw_calls : Int
@@ -325,13 +361,18 @@ pub fn configure_surface(
   surface~ : NativeGpuSurface,
   width~ : Int,
   height~ : Int,
+  present_mode_kind? : Int = SURFACE_PRESENT_MODE_AUTO_VSYNC,
+  composite_alpha_mode_kind? : Int = SURFACE_COMPOSITE_ALPHA_MODE_AUTO,
+  desired_maximum_frame_latency? : Int = SURFACE_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY,
 ) -> Unit {
   device |> ignore
   if surface <= 0 {
     return
   }
   if ensure_backend() is Some(backend) {
-    backend.configure_surface_binding(surface, width, height)
+    backend.configure_surface_binding(
+      surface, width, height, present_mode_kind, composite_alpha_mode_kind, desired_maximum_frame_latency,
+    )
   }
 }
 

@@ -101,6 +101,54 @@ test "renderer: large mesh3d upload switches to u32 index buffers" {
 }
 
 ///|
+test "renderer: present mode fallbacks align with bevy auto-vsync policy" {
+  let candidates = surface_present_mode_candidates(
+    SURFACE_PRESENT_MODE_AUTO_VSYNC,
+  )
+  let ok = candidates.length() == 2 &&
+    candidates[0] == @wgpu.PRESENT_MODE_FIFO_RELAXED &&
+    candidates[1] == @wgpu.PRESENT_MODE_FIFO
+  inspect(ok, content="true")
+}
+
+///|
+test "renderer: present mode fallbacks align with bevy auto-no-vsync policy" {
+  let candidates = surface_present_mode_candidates(
+    SURFACE_PRESENT_MODE_AUTO_NO_VSYNC,
+  )
+  let ok = candidates.length() == 3 &&
+    candidates[0] == @wgpu.PRESENT_MODE_IMMEDIATE &&
+    candidates[1] == @wgpu.PRESENT_MODE_MAILBOX &&
+    candidates[2] == @wgpu.PRESENT_MODE_FIFO
+  inspect(ok, content="true")
+}
+
+///|
+test "renderer: present mode mailbox fallback keeps bevy ordering" {
+  let candidates = surface_present_mode_candidates(SURFACE_PRESENT_MODE_MAILBOX)
+  let ok = candidates.length() == 3 &&
+    candidates[0] == @wgpu.PRESENT_MODE_MAILBOX &&
+    candidates[1] == @wgpu.PRESENT_MODE_IMMEDIATE &&
+    candidates[2] == @wgpu.PRESENT_MODE_FIFO
+  inspect(ok, content="true")
+}
+
+///|
+test "renderer: composite alpha mode mapping matches wgpu native constants" {
+  let ok = surface_alpha_mode_resolve(SURFACE_COMPOSITE_ALPHA_MODE_AUTO) ==
+    @wgpu.COMPOSITE_ALPHA_MODE_AUTO &&
+    surface_alpha_mode_resolve(SURFACE_COMPOSITE_ALPHA_MODE_OPAQUE) ==
+    @wgpu.COMPOSITE_ALPHA_MODE_OPAQUE &&
+    surface_alpha_mode_resolve(SURFACE_COMPOSITE_ALPHA_MODE_PRE_MULTIPLIED) ==
+    @wgpu.COMPOSITE_ALPHA_MODE_PREMULTIPLIED &&
+    surface_alpha_mode_resolve(SURFACE_COMPOSITE_ALPHA_MODE_POST_MULTIPLIED) ==
+    @wgpu.COMPOSITE_ALPHA_MODE_UNPREMULTIPLIED &&
+    surface_alpha_mode_resolve(SURFACE_COMPOSITE_ALPHA_MODE_INHERIT) ==
+    @wgpu.COMPOSITE_ALPHA_MODE_INHERIT
+  inspect(ok, content="true")
+}
+
+///|
 test "renderer: grouped wgsl imports resolve Bevy module files" {
   let assets_base = "assets"
   let modules = build_wgsl_import_module_paths(assets_base)

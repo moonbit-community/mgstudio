@@ -53,6 +53,108 @@ fn default_surface_target_id(backend : GpuBackend) -> Int? {
 }
 
 ///|
+fn surface_present_mode_primary(requested_kind : Int) -> UInt {
+  match requested_kind {
+    SURFACE_PRESENT_MODE_FIFO => @wgpu.PRESENT_MODE_FIFO
+    SURFACE_PRESENT_MODE_FIFO_RELAXED => @wgpu.PRESENT_MODE_FIFO_RELAXED
+    SURFACE_PRESENT_MODE_IMMEDIATE => @wgpu.PRESENT_MODE_IMMEDIATE
+    SURFACE_PRESENT_MODE_MAILBOX => @wgpu.PRESENT_MODE_MAILBOX
+    _ => @wgpu.PRESENT_MODE_FIFO
+  }
+}
+
+///|
+fn surface_present_mode_candidates(requested_kind : Int) -> Array[UInt] {
+  let candidates : Array[UInt] = []
+  match requested_kind {
+    SURFACE_PRESENT_MODE_AUTO_VSYNC => {
+      candidates.push(@wgpu.PRESENT_MODE_FIFO_RELAXED)
+      candidates.push(@wgpu.PRESENT_MODE_FIFO)
+    }
+    SURFACE_PRESENT_MODE_AUTO_NO_VSYNC => {
+      candidates.push(@wgpu.PRESENT_MODE_IMMEDIATE)
+      candidates.push(@wgpu.PRESENT_MODE_MAILBOX)
+      candidates.push(@wgpu.PRESENT_MODE_FIFO)
+    }
+    SURFACE_PRESENT_MODE_MAILBOX => {
+      candidates.push(@wgpu.PRESENT_MODE_MAILBOX)
+      candidates.push(@wgpu.PRESENT_MODE_IMMEDIATE)
+      candidates.push(@wgpu.PRESENT_MODE_FIFO)
+    }
+    _ => {
+      let requested = surface_present_mode_primary(requested_kind)
+      candidates.push(requested)
+      candidates.push(@wgpu.PRESENT_MODE_FIFO)
+    }
+  }
+  candidates
+}
+
+///|
+fn surface_present_mode_resolve(
+  surface : @wgpu.Surface,
+  adapter : @wgpu.Adapter,
+  requested_kind : Int,
+) -> UInt {
+  let supported_modes = surface.capabilities_present_modes(adapter)
+  let candidates = surface_present_mode_candidates(requested_kind)
+  for candidate in candidates {
+    for supported in supported_modes {
+      if supported == candidate {
+        return candidate
+      }
+    }
+  }
+  if supported_modes.length() > 0 {
+    return supported_modes[0]
+  }
+  @wgpu.PRESENT_MODE_FIFO
+}
+
+///|
+fn surface_alpha_mode_resolve(requested_kind : Int) -> UInt {
+  match requested_kind {
+    SURFACE_COMPOSITE_ALPHA_MODE_OPAQUE => @wgpu.COMPOSITE_ALPHA_MODE_OPAQUE
+    SURFACE_COMPOSITE_ALPHA_MODE_PRE_MULTIPLIED =>
+      @wgpu.COMPOSITE_ALPHA_MODE_PREMULTIPLIED
+    SURFACE_COMPOSITE_ALPHA_MODE_POST_MULTIPLIED =>
+      @wgpu.COMPOSITE_ALPHA_MODE_UNPREMULTIPLIED
+    SURFACE_COMPOSITE_ALPHA_MODE_INHERIT => @wgpu.COMPOSITE_ALPHA_MODE_INHERIT
+    _ => @wgpu.COMPOSITE_ALPHA_MODE_AUTO
+  }
+}
+
+///|
+fn surface_desired_maximum_frame_latency_resolve(requested : Int) -> UInt {
+  if requested >= 1 {
+    requested.reinterpret_as_uint()
+  } else {
+    @wgpu.SURFACE_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY
+  }
+}
+
+///|
+fn surface_preferred_format(
+  surface : @wgpu.Surface,
+  adapter : @wgpu.Adapter,
+) -> @wgpu.TextureFormat {
+  let formats = surface.capabilities_formats(adapter)
+  if formats.length() == 0 {
+    return @wgpu.TextureFormat::from_u32(@wgpu.TEXTURE_FORMAT_BGRA8_UNORM)
+  }
+  let mut preferred = formats[0]
+  for available in formats {
+    let format_raw = available.to_u32()
+    if format_raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB ||
+      format_raw == @wgpu.TEXTURE_FORMAT_BGRA8_UNORM_SRGB {
+      preferred = available
+      break
+    }
+  }
+  preferred
+}
+
+///|
 fn sync_active_surface_legacy_state(backend : GpuBackend) -> Unit {
   guard surface_state_index_by_target_id(
       backend,
@@ -202,6 +304,9 @@ pub fn GpuBackend::create_surface_binding(
     surface_format: None,
     configured_width: 0,
     configured_height: 0,
+    configured_present_mode: @wgpu.PRESENT_MODE_UNDEFINED,
+    configured_alpha_mode: @wgpu.COMPOSITE_ALPHA_MODE_AUTO,
+    configured_desired_maximum_frame_latency: @wgpu.SURFACE_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY,
     frame: None,
     cleared_this_frame: false,
   })
@@ -222,11 +327,31 @@ pub fn GpuBackend::configure_surface_binding(
   surface_id : Int,
   width : Int,
   height : Int,
+  present_mode_kind : Int,
+  composite_alpha_mode_kind : Int,
+  desired_maximum_frame_latency : Int,
 ) -> Unit {
   guard surface_state_index_by_surface_id(self, surface_id) is Some(index) else {
     return
   }
   let state = self.surfaces[index]
+  let present_mode_u32 = surface_present_mode_resolve(
+    state.surface,
+    self.adapter,
+    present_mode_kind,
+  )
+  let alpha_mode_u32 = surface_alpha_mode_resolve(composite_alpha_mode_kind)
+  let desired_maximum_frame_latency_u32 = surface_desired_maximum_frame_latency_resolve(
+    desired_maximum_frame_latency,
+  )
+  if width == state.configured_width &&
+    height == state.configured_height &&
+    present_mode_u32 == state.configured_present_mode &&
+    alpha_mode_u32 == state.configured_alpha_mode &&
+    desired_maximum_frame_latency_u32 ==
+    state.configured_desired_maximum_frame_latency {
+    return
+  }
   let w = if width <= 0 { 1U } else { width.reinterpret_as_uint() }
   let h = if height <= 0 { 1U } else { height.reinterpret_as_uint() }
   // Surface textures cannot be used as sampled textures (`texture_binding`).
@@ -234,22 +359,45 @@ pub fn GpuBackend::configure_surface_binding(
   let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
     @wgpu.TEXTURE_USAGE_COPY_SRC
   let usage = @wgpu.TextureUsage::from_u64(usage_bits)
-  let format = state.surface.configure_default(
+  let format = match state.surface_format {
+    Some(surface_format) => surface_format
+    None => surface_preferred_format(state.surface, self.adapter)
+  }
+  let configured = state.surface.configure_u32(
     self.adapter,
     self.device,
     w,
     h,
     usage,
+    format,
+    present_mode_u32,
+    alpha_mode_u32,
+    desired_maximum_frame_latency=desired_maximum_frame_latency_u32,
   )
+  let configured_format = if configured {
+    format
+  } else {
+    state.surface.configure_default(
+      self.adapter,
+      self.device,
+      w,
+      h,
+      usage,
+      desired_maximum_frame_latency=desired_maximum_frame_latency_u32,
+    )
+  }
   self.surfaces[index].configured_width = width
   self.surfaces[index].configured_height = height
-  self.surfaces[index].surface_format = Some(format)
+  self.surfaces[index].configured_present_mode = present_mode_u32
+  self.surfaces[index].configured_alpha_mode = alpha_mode_u32
+  self.surfaces[index].configured_desired_maximum_frame_latency = desired_maximum_frame_latency_u32
+  self.surfaces[index].surface_format = Some(configured_format)
   if self.active_surface_target_id >= 0 {
     self.active_surface_target_id = state.target_id
   }
   sync_active_surface_legacy_state(self)
   @debug.debug(
-    "wgpu: surface_format_u32(surface_id=\{surface_id.to_string()})=\{format.to_u32().to_string()}",
+    "wgpu: surface_format_u32(surface_id=\{surface_id.to_string()})=\{configured_format.to_u32().to_string()}",
   )
 }
 
@@ -258,6 +406,9 @@ pub fn GpuBackend::configure_surface(
   self : GpuBackend,
   width : Int,
   height : Int,
+  present_mode_kind? : Int = SURFACE_PRESENT_MODE_AUTO_VSYNC,
+  composite_alpha_mode_kind? : Int = SURFACE_COMPOSITE_ALPHA_MODE_AUTO,
+  desired_maximum_frame_latency? : Int = SURFACE_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY,
 ) -> Unit {
   let target_id = match default_surface_target_id(self) {
     Some(v) => v
@@ -266,7 +417,14 @@ pub fn GpuBackend::configure_surface(
   guard surface_state_index_by_target_id(self, target_id) is Some(index) else {
     return
   }
-  self.configure_surface_binding(self.surfaces[index].surface_id, width, height)
+  self.configure_surface_binding(
+    self.surfaces[index].surface_id,
+    width,
+    height,
+    present_mode_kind,
+    composite_alpha_mode_kind,
+    desired_maximum_frame_latency,
+  )
 }
 
 ///|
@@ -274,6 +432,9 @@ pub fn GpuBackend::ensure_surface_configured(
   self : GpuBackend,
   width : Int,
   height : Int,
+  present_mode_kind? : Int = SURFACE_PRESENT_MODE_AUTO_VSYNC,
+  composite_alpha_mode_kind? : Int = SURFACE_COMPOSITE_ALPHA_MODE_AUTO,
+  desired_maximum_frame_latency? : Int = SURFACE_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY,
 ) -> Unit {
   let target_id = match default_surface_target_id(self) {
     Some(v) => v
@@ -283,10 +444,31 @@ pub fn GpuBackend::ensure_surface_configured(
     return
   }
   let state = self.surfaces[index]
+  let present_mode_u32 = surface_present_mode_resolve(
+    state.surface,
+    self.adapter,
+    present_mode_kind,
+  )
+  let alpha_mode_u32 = surface_alpha_mode_resolve(composite_alpha_mode_kind)
+  let desired_maximum_frame_latency_u32 = surface_desired_maximum_frame_latency_resolve(
+    desired_maximum_frame_latency,
+  )
   if width == state.configured_width && height == state.configured_height {
-    return
+    if present_mode_u32 == state.configured_present_mode &&
+      alpha_mode_u32 == state.configured_alpha_mode &&
+      desired_maximum_frame_latency_u32 ==
+      state.configured_desired_maximum_frame_latency {
+      return
+    }
   }
-  self.configure_surface_binding(state.surface_id, width, height)
+  self.configure_surface_binding(
+    state.surface_id,
+    width,
+    height,
+    present_mode_kind,
+    composite_alpha_mode_kind,
+    desired_maximum_frame_latency,
+  )
 }
 
 ///|

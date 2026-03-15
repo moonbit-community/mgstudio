@@ -21,9 +21,21 @@ import {
 }
 
 // Values
+pub const DEFERRED_PBR_LIGHTING_PLUGIN_ID : String = "bevy_pbr::DeferredPbrLightingPlugin"
+
+pub const FOG_PLUGIN_ID : String = "bevy_pbr::FogPlugin"
+
+pub const PBR_PLUGIN_ID : String = "bevy_pbr::PbrPlugin"
+
+pub const STANDARD_MATERIAL_PLUGIN_ID : String = "bevy_pbr::MaterialPlugin<StandardMaterial>"
+
 pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = 5
 
 pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
+
+pub fn deferred_pbr_lighting_enabled(@ecs.World) -> Bool
+
+pub fn deferred_pbr_lighting_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let ecs_components : Array[String]
 
@@ -42,6 +54,8 @@ pub let ecs_key_contact_shadows : @ecs.ComponentKey[ContactShadows]
 pub let ecs_key_deband_dither : @ecs.ComponentKey[@post_process.DebandDither]
 
 pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[@material.DefaultOpaqueRendererMethod]
+
+pub let ecs_key_deferred_pbr_lighting_state : @ecs.ResourceKey[DeferredPbrLightingState]
 
 pub let ecs_key_deferred_prepass : @ecs.ComponentKey[@core_pipeline.DeferredPrepass]
 
@@ -105,6 +119,8 @@ pub let ecs_key_order_independent_transparency_settings : @ecs.ComponentKey[Orde
 
 pub let ecs_key_parallax_correction : @ecs.ComponentKey[@light.ParallaxCorrection]
 
+pub let ecs_key_pbr_plugin_runtime_config : @ecs.ResourceKey[PbrPluginRuntimeConfig]
+
 pub let ecs_key_point_light : @ecs.ComponentKey[@light.PointLight]
 
 pub let ecs_key_point_light_shadow_map : @ecs.ResourceKey[@light.PointLightShadowMap]
@@ -127,6 +143,8 @@ pub let ecs_key_spot_light : @ecs.ComponentKey[@light.SpotLight]
 
 pub let ecs_key_spot_light_texture : @ecs.ComponentKey[@light.SpotLightTexture]
 
+pub let ecs_key_standard_material_plugin_state : @ecs.ResourceKey[StandardMaterialPluginState]
+
 pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d]
 
 pub let ecs_key_temporal_anti_aliasing : @ecs.ComponentKey[@post_process.TemporalAntiAliasing]
@@ -146,6 +164,8 @@ pub let ecs_key_wireframe_color : @ecs.ComponentKey[WireframeColor]
 pub let ecs_key_wireframe_config : @ecs.ResourceKey[WireframeConfig]
 
 pub let ecs_resources : Array[String]
+
+pub fn fog_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn free_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -273,6 +293,20 @@ pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @sprite.Camera, Project
 
 pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @sprite.Camera, Projection, @math.Transform, @math.IVec2, Float, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
 
+pub fn pbr_deferred_lighting_enabled() -> Bool
+
+pub fn pbr_gltf_render_enabled() -> Bool
+
+pub fn pbr_gpu_instance_buffer_builder_enabled() -> Bool
+
+pub fn pbr_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn pbr_plugin_runtime_config() -> PbrPluginRuntimeConfig
+
+pub fn pbr_plugin_with(@app.App[@ecs.World], PbrPlugin) -> @app.App[@ecs.World]
+
+pub fn pbr_prepass_enabled() -> Bool
+
 pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @sprite.Camera, Projection, @math.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
 
 pub fn render3d_camera_world_to_viewport(@math.Vec3, @sprite.Camera, Projection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
@@ -318,6 +352,12 @@ pub fn run_freecamera_controller(@ecs.World) -> Unit
 pub fn standard_material_add(@material.StandardMaterial) -> @asset.Handle[@material.StandardMaterial]
 
 pub fn standard_material_get(@asset.Handle[@material.StandardMaterial]) -> @material.StandardMaterial?
+
+pub fn standard_material_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn standard_material_plugin_with(@app.App[@ecs.World], StandardMaterialPlugin) -> @app.App[@ecs.World]
+
+pub fn standard_material_prepass_enabled(@ecs.World) -> Bool
 
 pub fn standard_material_set(@asset.Handle[@material.StandardMaterial], @material.StandardMaterial) -> Bool
 
@@ -522,6 +562,17 @@ pub impl Eq for DecalRenderMode3d
 pub impl Show for DecalRenderMode3d
 pub impl ToJson for DecalRenderMode3d
 pub impl @json.FromJson for DecalRenderMode3d
+
+pub struct DeferredPbrLightingPlugin {
+}
+pub fn DeferredPbrLightingPlugin::default() -> Self
+pub impl @app.PluginReplacement for DeferredPbrLightingPlugin
+
+pub struct DeferredPbrLightingState {
+  enabled : Bool
+}
+pub fn DeferredPbrLightingState::disabled() -> Self
+pub fn DeferredPbrLightingState::enabled() -> Self
 
 pub(all) struct DepthOfField {
   mut mode : DepthOfFieldMode
@@ -800,6 +851,23 @@ pub impl Show for OrthographicScalingMode3d
 pub impl ToJson for OrthographicScalingMode3d
 pub impl @json.FromJson for OrthographicScalingMode3d
 
+pub(all) struct PbrPlugin {
+  prepass_enabled : Bool
+  add_default_deferred_lighting_plugin : Bool
+  use_gpu_instance_buffer_builder : Bool
+  gltf_render_enabled : Bool
+}
+pub fn PbrPlugin::default() -> Self
+pub impl @app.PluginReplacement for PbrPlugin
+
+pub struct PbrPluginRuntimeConfig {
+  prepass_enabled : Bool
+  add_default_deferred_lighting_plugin : Bool
+  use_gpu_instance_buffer_builder : Bool
+  gltf_render_enabled : Bool
+}
+pub fn PbrPluginRuntimeConfig::from_plugin(PbrPlugin) -> Self
+
 pub(all) struct PerspectiveProjection3d {
   mut fov : Float
   mut near : Float
@@ -891,6 +959,17 @@ pub fn Skybox::with_rotation(Self, @math.Quat) -> Self
 pub impl @ecs.Component for Skybox
 pub impl ToJson for Skybox
 pub impl @json.FromJson for Skybox
+
+pub(all) struct StandardMaterialPlugin {
+  prepass_enabled : Bool
+}
+pub fn StandardMaterialPlugin::default() -> Self
+pub impl @app.PluginReplacement for StandardMaterialPlugin
+
+pub struct StandardMaterialPluginState {
+  prepass_enabled : Bool
+}
+pub fn StandardMaterialPluginState::from_plugin(StandardMaterialPlugin) -> Self
 
 pub struct SubCameraView3d {
   full_size : @math.IVec2

@@ -90,13 +90,16 @@ const DEFAULT_PLUGIN_ID_GLTF : String = "bevy_gltf::GltfPlugin"
 const DEFAULT_PLUGIN_ID_TEXT : String = "bevy_text::TextPlugin"
 
 ///|
-const DEFAULT_PLUGIN_ID_RENDER3D : String = "bevy_pbr::PbrPlugin"
+const DEFAULT_PLUGIN_ID_RENDER3D : String = @pbr.PBR_PLUGIN_ID
 
 ///|
 const DEFAULT_PLUGIN_ID_ANTI_ALIAS : String = @anti_alias.ANTI_ALIAS_PLUGIN_ID
 
 ///|
-const DEFAULT_PLUGIN_ID_RENDER2D : String = "bevy_sprite::SpritePlugin"
+const DEFAULT_PLUGIN_ID_SPRITE : String = @sprite.SPRITE_PLUGIN_ID
+
+///|
+const DEFAULT_PLUGIN_ID_SPRITE_RENDER : String = @sprite_render.SPRITE_RENDER_PLUGIN_ID
 
 ///|
 const DEFAULT_PLUGIN_ID_PHYSICS2D : String = "mgstudio::Physics2dPlugin"
@@ -253,7 +256,7 @@ fn default_plugins_builder(
   .add_named(
     id=DEFAULT_PLUGIN_ID_RENDER3D,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @pbr.render3d_plugin(app)
+      @pbr.pbr_plugin(app)
     }),
   )
   .add_named(
@@ -263,9 +266,15 @@ fn default_plugins_builder(
     }),
   )
   .add_named(
-    id=DEFAULT_PLUGIN_ID_RENDER2D,
+    id=DEFAULT_PLUGIN_ID_SPRITE,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @sprite_render.render2d_plugin_ecs(app)
+      @sprite.sprite_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_SPRITE_RENDER,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @sprite_render.sprite_render_plugin_ecs(app)
     }),
   )
   .add_named(

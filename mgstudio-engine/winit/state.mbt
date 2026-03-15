@@ -34,6 +34,9 @@ priv struct RunnerSurfaceBinding {
   target_id : Int
   width : Int
   height : Int
+  present_mode : @render.HostGpuPresentMode
+  composite_alpha_mode : @render.HostGpuCompositeAlphaMode
+  desired_maximum_frame_latency : Int
 }
 
 ///|
@@ -71,6 +74,67 @@ fn runner_surface_binding_ordered(
     }
   }
   ordered
+}
+
+///|
+fn runner_surface_present_mode(
+  window : @window.Window?,
+) -> @render.HostGpuPresentMode {
+  match window {
+    Some(value) =>
+      match value.present_mode {
+        @window.PresentMode::AutoVsync => @render.HostGpuPresentMode::AutoVsync
+        @window.PresentMode::AutoNoVsync =>
+          @render.HostGpuPresentMode::AutoNoVsync
+        @window.PresentMode::Fifo => @render.HostGpuPresentMode::Fifo
+        @window.PresentMode::FifoRelaxed =>
+          @render.HostGpuPresentMode::FifoRelaxed
+        @window.PresentMode::Immediate => @render.HostGpuPresentMode::Immediate
+        @window.PresentMode::Mailbox => @render.HostGpuPresentMode::Mailbox
+      }
+    None => @render.HostGpuPresentMode::Fifo
+  }
+}
+
+///|
+fn runner_surface_composite_alpha_mode(
+  window : @window.Window?,
+) -> @render.HostGpuCompositeAlphaMode {
+  match window {
+    Some(value) =>
+      match value.composite_alpha_mode {
+        @window.CompositeAlphaMode::Auto =>
+          @render.HostGpuCompositeAlphaMode::Auto
+        @window.CompositeAlphaMode::Opaque =>
+          @render.HostGpuCompositeAlphaMode::Opaque
+        @window.CompositeAlphaMode::PreMultiplied =>
+          @render.HostGpuCompositeAlphaMode::PreMultiplied
+        @window.CompositeAlphaMode::PostMultiplied =>
+          @render.HostGpuCompositeAlphaMode::PostMultiplied
+        @window.CompositeAlphaMode::Inherit =>
+          @render.HostGpuCompositeAlphaMode::Inherit
+      }
+    None => @render.HostGpuCompositeAlphaMode::default()
+  }
+}
+
+///|
+fn runner_surface_desired_maximum_frame_latency(
+  window : @window.Window?,
+) -> Int {
+  let desired = match window {
+    Some(value) =>
+      match value.desired_maximum_frame_latency {
+        Some(latency) => latency
+        None => @render.HOST_GPU_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY
+      }
+    None => @render.HOST_GPU_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY
+  }
+  if desired >= 1 {
+    desired
+  } else {
+    @render.HOST_GPU_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY
+  }
 }
 
 ///|
@@ -230,22 +294,41 @@ pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
 
       let world = app_ref.val.world()
       let host_entries = @window.window_host_entries(world)
+      let window_store = world.component(@window.Window::component())
       let next_surfaces : Array[RunnerSurfaceBinding] = []
       let previous_surfaces = runner_surfaces_ref.val
       for entry in host_entries {
         let host_window = entry.host_window
+        let window_component = window_store.get(entry.entity)
+        let present_mode = runner_surface_present_mode(window_component)
+        let composite_alpha_mode = runner_surface_composite_alpha_mode(
+          window_component,
+        )
+        let desired_maximum_frame_latency = runner_surface_desired_maximum_frame_latency(
+          window_component,
+        )
         if runner_surface_binding_find(previous_surfaces, host_window)
           is Some(previous) {
           let width = @window.host_window_get_width(host_window)
           let height = @window.host_window_get_height(host_window)
           if width > 0 &&
             height > 0 &&
-            (width != previous.width || height != previous.height) {
+            (
+              width != previous.width ||
+              height != previous.height ||
+              present_mode != previous.present_mode ||
+              composite_alpha_mode != previous.composite_alpha_mode ||
+              desired_maximum_frame_latency !=
+              previous.desired_maximum_frame_latency
+            ) {
             @render.host_gpu_configure_surface(
               device~,
               surface=previous.surface,
               width~,
               height~,
+              present_mode~,
+              composite_alpha_mode~,
+              desired_maximum_frame_latency~,
             )
           }
           next_surfaces.push(RunnerSurfaceBinding::{
@@ -254,6 +337,9 @@ pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
             target_id: previous.target_id,
             width,
             height,
+            present_mode,
+            composite_alpha_mode,
+            desired_maximum_frame_latency,
           })
           continue
         }
@@ -263,7 +349,15 @@ pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
         let width = @window.host_window_get_width(host_window)
         let height = @window.host_window_get_height(host_window)
         if width > 0 && height > 0 {
-          @render.host_gpu_configure_surface(device~, surface~, width~, height~)
+          @render.host_gpu_configure_surface(
+            device~,
+            surface~,
+            width~,
+            height~,
+            present_mode~,
+            composite_alpha_mode~,
+            desired_maximum_frame_latency~,
+          )
         }
         next_surfaces.push(RunnerSurfaceBinding::{
           host_window,
@@ -271,6 +365,9 @@ pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
           target_id,
           width,
           height,
+          present_mode,
+          composite_alpha_mode,
+          desired_maximum_frame_latency,
         })
       }
       runner_surfaces_ref.val = next_surfaces

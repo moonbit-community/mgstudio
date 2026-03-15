@@ -18,11 +18,14 @@ priv struct WindowRuntime {
   mut created_sent : Bool
   mut close_requested_sent : Bool
   mut last_applied_title : String
+  last_applied_name : String?
   mut last_applied_width : Int
   mut last_applied_height : Int
   mut last_applied_position : WindowPosition
   mut last_applied_mode : WindowMode
   mut last_applied_visible : Bool
+  last_applied_skip_taskbar : Bool
+  last_applied_clip_children : Bool
   mut last_applied_resizable : Bool
   mut last_applied_resize_constraints : WindowResizeConstraints
   mut last_applied_enabled_buttons : EnabledButtons
@@ -32,6 +35,9 @@ priv struct WindowRuntime {
   mut last_applied_focused : Bool
   mut last_applied_window_level : WindowLevel
   mut last_applied_window_theme : WindowTheme?
+  mut last_applied_prefers_home_indicator_hidden : Bool
+  mut last_applied_prefers_status_bar_hidden : Bool
+  mut last_applied_preferred_screen_edges_deferring_system_gestures : ScreenEdge
   mut last_applied_ime_enabled : Bool
   mut last_applied_ime_position : @math.Vec2
   mut last_applied_cursor_visible : Bool
@@ -584,6 +590,7 @@ fn window_create_runtime_for_entity(
       window.resolution,
     ),
     title=window.title,
+    name=window.name,
     visible=window.visible,
     resizable=window.resizable,
     decorations=window.decorations,
@@ -604,6 +611,8 @@ fn window_create_runtime_for_entity(
     titlebar_show_title=window.titlebar_show_title,
     titlebar_show_buttons=window.titlebar_show_buttons,
     borderless_game=window.borderless_game,
+    skip_taskbar=window.skip_taskbar,
+    clip_children=window.clip_children,
   )
   let cursor_options = window_current_cursor_options(world, entity)
   let cursor_icon = window_current_cursor_icon(world, entity)
@@ -615,6 +624,18 @@ fn window_create_runtime_for_entity(
   host_window_set_decorations(host_window, decorations=window.decorations)
   host_window_set_window_level(host_window, level=window.window_level)
   host_window_set_theme(host_window, theme=window.window_theme)
+  host_window_set_prefers_home_indicator_hidden(
+    host_window,
+    hidden=window.prefers_home_indicator_hidden,
+  )
+  host_window_set_prefers_status_bar_hidden(
+    host_window,
+    hidden=window.prefers_status_bar_hidden,
+  )
+  host_window_set_preferred_screen_edges_deferring_system_gestures(
+    host_window,
+    edges=window.preferred_screen_edges_deferring_system_gestures,
+  )
   window_apply_ime_settings(
     host_window,
     window.ime_enabled,
@@ -635,11 +656,14 @@ fn window_create_runtime_for_entity(
     created_sent: false,
     close_requested_sent: false,
     last_applied_title: window.title,
+    last_applied_name: window.name,
     last_applied_width: window.physical_width(),
     last_applied_height: window.physical_height(),
     last_applied_position: window.position,
     last_applied_mode: WindowMode::Windowed,
     last_applied_visible: window.visible,
+    last_applied_skip_taskbar: window.skip_taskbar,
+    last_applied_clip_children: window.clip_children,
     last_applied_resizable: window.resizable,
     last_applied_resize_constraints: window.resize_constraints,
     last_applied_enabled_buttons: window.enabled_buttons,
@@ -649,6 +673,9 @@ fn window_create_runtime_for_entity(
     last_applied_focused: window.focused,
     last_applied_window_level: window.window_level,
     last_applied_window_theme: window.window_theme,
+    last_applied_prefers_home_indicator_hidden: window.prefers_home_indicator_hidden,
+    last_applied_prefers_status_bar_hidden: window.prefers_status_bar_hidden,
+    last_applied_preferred_screen_edges_deferring_system_gestures: window.preferred_screen_edges_deferring_system_gestures,
     last_applied_ime_enabled: window.ime_enabled,
     last_applied_ime_position: window.ime_position,
     last_applied_cursor_visible: cursor_options.visible,
@@ -676,11 +703,20 @@ fn window_sync_requested_window_state(
 ) -> Unit {
   guard window_component(world, entity) is Some(window) else { return }
   let host_window = runtime_ref.val.window
+  let mut restore_name = false
   let mut restore_transparent = false
   let mut restore_canvas = false
+  let mut restore_skip_taskbar = false
+  let mut restore_clip_children = false
   if window.title != runtime_ref.val.last_applied_title {
     host_window_set_title(host_window, title=window.title)
     runtime_ref.val.last_applied_title = window.title
+  }
+  if window.name != runtime_ref.val.last_applied_name {
+    restore_name = true
+    host_debug_string(
+      value="bevy_winit: modifying window name after initialization is unsupported",
+    )
   }
   if !window_resolution_matches_runtime(window.resolution, runtime_ref.val) {
     host_window_set_size(
@@ -698,6 +734,18 @@ fn window_sync_requested_window_state(
   if window.visible != runtime_ref.val.last_applied_visible {
     host_window_set_visible(host_window, visible=window.visible)
     runtime_ref.val.last_applied_visible = window.visible
+  }
+  if window.skip_taskbar != runtime_ref.val.last_applied_skip_taskbar {
+    restore_skip_taskbar = true
+    host_debug_string(
+      value="bevy_winit: modifying skip_taskbar after window creation is unsupported",
+    )
+  }
+  if window.clip_children != runtime_ref.val.last_applied_clip_children {
+    restore_clip_children = true
+    host_debug_string(
+      value="bevy_winit: modifying clip_children after window creation is unsupported",
+    )
   }
   if window.resizable != runtime_ref.val.last_applied_resizable {
     host_window_set_resizable(host_window, resizable=window.resizable)
@@ -742,6 +790,31 @@ fn window_sync_requested_window_state(
     host_window_set_theme(host_window, theme=window.window_theme)
     runtime_ref.val.last_applied_window_theme = window.window_theme
   }
+  if window.prefers_home_indicator_hidden !=
+    runtime_ref.val.last_applied_prefers_home_indicator_hidden {
+    host_window_set_prefers_home_indicator_hidden(
+      host_window,
+      hidden=window.prefers_home_indicator_hidden,
+    )
+    runtime_ref.val.last_applied_prefers_home_indicator_hidden = window.prefers_home_indicator_hidden
+  }
+  if window.prefers_status_bar_hidden !=
+    runtime_ref.val.last_applied_prefers_status_bar_hidden {
+    host_window_set_prefers_status_bar_hidden(
+      host_window,
+      hidden=window.prefers_status_bar_hidden,
+    )
+    runtime_ref.val.last_applied_prefers_status_bar_hidden = window.prefers_status_bar_hidden
+  }
+  if window.preferred_screen_edges_deferring_system_gestures !=
+    runtime_ref.val.last_applied_preferred_screen_edges_deferring_system_gestures {
+    host_window_set_preferred_screen_edges_deferring_system_gestures(
+      host_window,
+      edges=window.preferred_screen_edges_deferring_system_gestures,
+    )
+    runtime_ref.val.last_applied_preferred_screen_edges_deferring_system_gestures
+    = window.preferred_screen_edges_deferring_system_gestures
+  }
   if window.ime_enabled != runtime_ref.val.last_applied_ime_enabled ||
     !window_vec2_eq(
       window.ime_position,
@@ -775,10 +848,16 @@ fn window_sync_requested_window_state(
     requested_drag_resize is Some(_) ||
     requested_maximize is Some(_) ||
     requested_minimize is Some(_) ||
+    restore_name ||
     restore_transparent ||
-    restore_canvas {
+    restore_canvas ||
+    restore_skip_taskbar ||
+    restore_clip_children {
+    let cached_name = runtime_ref.val.last_applied_name
     let cached_transparent = runtime_ref.val.last_applied_transparent
     let cached_canvas = runtime_ref.val.last_applied_canvas
+    let cached_skip_taskbar = runtime_ref.val.last_applied_skip_taskbar
+    let cached_clip_children = runtime_ref.val.last_applied_clip_children
     ignore(
       window_update_component(world, entity, fn(current) {
         let next : Window = current
@@ -792,11 +871,20 @@ fn window_sync_requested_window_state(
         if requested_minimize is Some(_) {
           next.minimize_request = None
         }
+        if restore_name {
+          next.name = cached_name
+        }
         if restore_transparent {
           next.transparent = cached_transparent
         }
         if restore_canvas {
           next.canvas = cached_canvas
+        }
+        if restore_skip_taskbar {
+          next.skip_taskbar = cached_skip_taskbar
+        }
+        if restore_clip_children {
+          next.clip_children = cached_clip_children
         }
         next
       }),
