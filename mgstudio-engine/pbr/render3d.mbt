@@ -847,6 +847,21 @@ priv struct GpuPreprocessIndirectBatchSet3d {
 }
 
 ///|
+priv struct GpuPreprocessShaderWorkItem3d {
+  input_index : Int
+  output_or_indirect_parameters_index : Int
+}
+
+///|
+priv enum GpuPreprocessWorkItemBuffers3d {
+  Direct(Array[GpuPreprocessShaderWorkItem3d])
+  Indirect(
+    Array[GpuPreprocessShaderWorkItem3d],
+    Array[GpuPreprocessShaderWorkItem3d]
+  )
+}
+
+///|
 priv struct GpuPreprocessCameraQueueEntry3d {
   camera_entity : @core.Entity
   items : Array[GpuPreprocessPrequeuedMeshItem3d]
@@ -858,6 +873,7 @@ priv struct GpuPreprocessCameraQueueEntry3d {
     GpuPreprocessIndirectParametersGpuMetadata3d,
   ]
   indirect_batch_sets : Array[GpuPreprocessIndirectBatchSet3d]
+  work_item_buffers : GpuPreprocessWorkItemBuffers3d
 }
 
 ///|
@@ -871,6 +887,7 @@ priv struct GpuPreprocessResolvedCameraQueueEntry3d {
     GpuPreprocessIndirectParametersGpuMetadata3d,
   ]
   indirect_batch_sets : Array[GpuPreprocessIndirectBatchSet3d]
+  work_item_buffers : GpuPreprocessWorkItemBuffers3d
 }
 
 ///|
@@ -3938,6 +3955,116 @@ fn render3d_build_gpu_preprocess_indirect_metadata(
 }
 
 ///|
+fn render3d_build_gpu_preprocess_work_item_buffers_from_prequeued_items(
+  items : Array[GpuPreprocessPrequeuedMeshItem3d],
+) -> GpuPreprocessWorkItemBuffers3d {
+  let direct_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
+  for i in 0..<items.length() {
+    direct_work_items.push(GpuPreprocessShaderWorkItem3d::{
+      input_index: i,
+      output_or_indirect_parameters_index: i,
+    })
+  }
+  GpuPreprocessWorkItemBuffers3d::Direct(direct_work_items)
+}
+
+///|
+fn render3d_build_gpu_preprocess_work_item_buffers_from_draw_items(
+  draw_items : Array[MeshPhaseItem3d],
+) -> GpuPreprocessWorkItemBuffers3d {
+  let direct_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
+  for i in 0..<draw_items.length() {
+    direct_work_items.push(GpuPreprocessShaderWorkItem3d::{
+      input_index: i,
+      output_or_indirect_parameters_index: i,
+    })
+  }
+  GpuPreprocessWorkItemBuffers3d::Direct(direct_work_items)
+}
+
+///|
+fn render3d_resolve_prequeued_to_draw_item_indices(
+  prequeued_items : Array[GpuPreprocessPrequeuedMeshItem3d],
+  draw_items : Array[MeshPhaseItem3d],
+) -> Array[Int] {
+  let prequeued_to_draw_item_indices : Array[Int] = []
+  for prequeued_item in prequeued_items {
+    let mut draw_item_index = -1
+    for i in 0..<draw_items.length() {
+      if phase_entity_ref3d_main_eq(prequeued_item.entity, draw_items[i].entity) {
+        draw_item_index = i
+        break
+      }
+    }
+    prequeued_to_draw_item_indices.push(draw_item_index)
+  }
+  prequeued_to_draw_item_indices
+}
+
+///|
+fn render3d_remap_gpu_preprocess_work_item_buffers_to_resolved_draw_items(
+  work_item_buffers : GpuPreprocessWorkItemBuffers3d,
+  prequeued_items : Array[GpuPreprocessPrequeuedMeshItem3d],
+  draw_items : Array[MeshPhaseItem3d],
+) -> GpuPreprocessWorkItemBuffers3d {
+  let prequeued_to_draw_item_indices = render3d_resolve_prequeued_to_draw_item_indices(
+    prequeued_items, draw_items,
+  )
+  let remap_index = fn(index : Int) -> Int {
+    if index < 0 || index >= prequeued_to_draw_item_indices.length() {
+      return -1
+    }
+    prequeued_to_draw_item_indices[index]
+  }
+  match work_item_buffers {
+    Direct(items) => {
+      let remapped_direct_items : Array[GpuPreprocessShaderWorkItem3d] = []
+      for item in items {
+        let input_index = remap_index(item.input_index)
+        let output_or_indirect_parameters_index = remap_index(
+          item.output_or_indirect_parameters_index,
+        )
+        if input_index < 0 || output_or_indirect_parameters_index < 0 {
+          continue
+        }
+        remapped_direct_items.push(GpuPreprocessShaderWorkItem3d::{
+          input_index,
+          output_or_indirect_parameters_index,
+        })
+      }
+      GpuPreprocessWorkItemBuffers3d::Direct(remapped_direct_items)
+    }
+    Indirect(indexed_items, non_indexed_items) => {
+      let remapped_indexed_items : Array[GpuPreprocessShaderWorkItem3d] = []
+      for item in indexed_items {
+        let input_index = remap_index(item.input_index)
+        if input_index < 0 {
+          continue
+        }
+        remapped_indexed_items.push(GpuPreprocessShaderWorkItem3d::{
+          input_index,
+          output_or_indirect_parameters_index: item.output_or_indirect_parameters_index,
+        })
+      }
+      let remapped_non_indexed_items : Array[GpuPreprocessShaderWorkItem3d] = []
+      for item in non_indexed_items {
+        let input_index = remap_index(item.input_index)
+        if input_index < 0 {
+          continue
+        }
+        remapped_non_indexed_items.push(GpuPreprocessShaderWorkItem3d::{
+          input_index,
+          output_or_indirect_parameters_index: item.output_or_indirect_parameters_index,
+        })
+      }
+      GpuPreprocessWorkItemBuffers3d::Indirect(
+        remapped_indexed_items, remapped_non_indexed_items,
+      )
+    }
+  }
+}
+
+///|
 fn render3d_build_gpu_preprocess_camera_queue_entry(
   camera_entity : @core.Entity,
   mesh_candidates : Array[GpuPreprocessMeshCandidate3d],
@@ -3955,6 +4082,9 @@ fn render3d_build_gpu_preprocess_camera_queue_entry(
     indirect_parameters_gpu_metadata,
     indirect_batch_sets,
   ) = render3d_build_gpu_preprocess_indirect_metadata(items.length())
+  let work_item_buffers = render3d_build_gpu_preprocess_work_item_buffers_from_prequeued_items(
+    items,
+  )
   GpuPreprocessCameraQueueEntry3d::{
     camera_entity,
     items,
@@ -3962,6 +4092,7 @@ fn render3d_build_gpu_preprocess_camera_queue_entry(
     indirect_parameters_cpu_metadata,
     indirect_parameters_gpu_metadata,
     indirect_batch_sets,
+    work_item_buffers,
   }
 }
 
@@ -4004,12 +4135,16 @@ fn render3d_make_fallback_gpu_preprocess_queue_entry(
     indirect_parameters_gpu_metadata,
     indirect_batch_sets,
   ) = render3d_build_gpu_preprocess_indirect_metadata(draw_items.length())
+  let work_item_buffers = render3d_build_gpu_preprocess_work_item_buffers_from_draw_items(
+    draw_items,
+  )
   GpuPreprocessResolvedCameraQueueEntry3d::{
     draw_items,
     phase_ranges,
     indirect_parameters_cpu_metadata,
     indirect_parameters_gpu_metadata,
     indirect_batch_sets,
+    work_item_buffers,
   }
 }
 
@@ -4027,12 +4162,18 @@ fn render3d_take_gpu_preprocess_camera_queue_items(
         queue_entry.items,
         meshes,
       )
+      let work_item_buffers = render3d_remap_gpu_preprocess_work_item_buffers_to_resolved_draw_items(
+        queue_entry.work_item_buffers,
+        queue_entry.items,
+        draw_items,
+      )
       return Some(GpuPreprocessResolvedCameraQueueEntry3d::{
         draw_items,
         phase_ranges: queue_entry.phase_ranges,
         indirect_parameters_cpu_metadata: queue_entry.indirect_parameters_cpu_metadata,
         indirect_parameters_gpu_metadata: queue_entry.indirect_parameters_gpu_metadata,
         indirect_batch_sets: queue_entry.indirect_batch_sets,
+        work_item_buffers,
       })
     }
   }
@@ -4085,6 +4226,88 @@ fn render3d_gpu_preprocess_indirect_metadata_checksum(
       batch_set.indirect_parameters_base
   }
   checksum
+}
+
+///|
+fn render3d_gpu_preprocess_work_item_buffers_checksum(
+  work_item_buffers : GpuPreprocessWorkItemBuffers3d,
+) -> Int {
+  match work_item_buffers {
+    Direct(items) => {
+      let mut checksum = 0
+      for item in items {
+        checksum = checksum +
+          item.input_index +
+          item.output_or_indirect_parameters_index
+      }
+      checksum
+    }
+    Indirect(indexed_items, non_indexed_items) => {
+      let mut checksum = 0
+      for item in indexed_items {
+        checksum = checksum +
+          item.input_index +
+          item.output_or_indirect_parameters_index
+      }
+      for item in non_indexed_items {
+        checksum = checksum +
+          item.input_index +
+          item.output_or_indirect_parameters_index
+      }
+      checksum
+    }
+  }
+}
+
+///|
+fn render3d_gpu_preprocess_opaque_alpha_draw_item_indices(
+  draw_items : Array[MeshPhaseItem3d],
+  phase_ranges : Array[GpuPreprocessPhaseRange3d],
+  work_item_buffers : GpuPreprocessWorkItemBuffers3d,
+) -> Array[Int] {
+  let opaque_alpha_end_index_raw = render3d_gpu_preprocess_opaque_alpha_end_index(
+    phase_ranges,
+  )
+  let opaque_alpha_end_index = if opaque_alpha_end_index_raw >
+    draw_items.length() {
+    draw_items.length()
+  } else {
+    opaque_alpha_end_index_raw
+  }
+  let indices : Array[Int] = []
+  let push_if_valid = fn(index : Int) {
+    if index < 0 || index >= opaque_alpha_end_index {
+      return
+    }
+    if draw_items[index].phase == RENDER3D_PHASE_OPAQUE ||
+      draw_items[index].phase == RENDER3D_PHASE_ALPHA_MASK {
+      indices.push(index)
+    }
+  }
+  match work_item_buffers {
+    Direct(items) =>
+      for item in items {
+        push_if_valid(item.output_or_indirect_parameters_index)
+      }
+    Indirect(indexed_items, non_indexed_items) => {
+      for item in indexed_items {
+        push_if_valid(item.input_index)
+      }
+      for item in non_indexed_items {
+        push_if_valid(item.input_index)
+      }
+    }
+  }
+  if indices.length() > 0 {
+    return indices
+  }
+  for i in 0..<opaque_alpha_end_index {
+    if draw_items[i].phase == RENDER3D_PHASE_OPAQUE ||
+      draw_items[i].phase == RENDER3D_PHASE_ALPHA_MASK {
+      indices.push(i)
+    }
+  }
+  indices
 }
 
 ///|
@@ -5330,19 +5553,19 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       )
     }
     let draw_items = draw_queue_entry.draw_items
-    let opaque_alpha_end_index_raw = render3d_gpu_preprocess_opaque_alpha_end_index(
+    let opaque_alpha_draw_item_indices = render3d_gpu_preprocess_opaque_alpha_draw_item_indices(
+      draw_items,
       draw_queue_entry.phase_ranges,
+      draw_queue_entry.work_item_buffers,
     )
-    let opaque_alpha_end_index = if opaque_alpha_end_index_raw >
-      draw_items.length() {
-      draw_items.length()
-    } else {
-      opaque_alpha_end_index_raw
-    }
     render3d_gpu_preprocess_indirect_metadata_checksum(
       draw_queue_entry.indirect_parameters_cpu_metadata,
       draw_queue_entry.indirect_parameters_gpu_metadata,
       draw_queue_entry.indirect_batch_sets,
+    )
+    |> ignore
+    render3d_gpu_preprocess_work_item_buffers_checksum(
+      draw_queue_entry.work_item_buffers,
     )
     |> ignore
     if motion_vector_prepass_enabled {
@@ -5373,8 +5596,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         pass_kind=motion_vector_pass_kind,
         clear_enabled=1,
       )
-      for i in 0..<opaque_alpha_end_index {
-        let draw_item = draw_items[i]
+      for draw_item_index in opaque_alpha_draw_item_indices {
+        let draw_item = draw_items[draw_item_index]
         if draw_item.phase != RENDER3D_PHASE_OPAQUE &&
           draw_item.phase != RENDER3D_PHASE_ALPHA_MASK {
           continue
@@ -5481,8 +5704,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           pass_kind=point_shadow_pass_kind,
           clear_enabled=1,
         )
-        for i in 0..<opaque_alpha_end_index {
-          let shadow_draw_item = draw_items[i]
+        for draw_item_index in opaque_alpha_draw_item_indices {
+          let shadow_draw_item = draw_items[draw_item_index]
           if shadow_draw_item.phase != RENDER3D_PHASE_OPAQUE &&
             shadow_draw_item.phase != RENDER3D_PHASE_ALPHA_MASK {
             continue
