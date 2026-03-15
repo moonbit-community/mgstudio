@@ -54,6 +54,15 @@ pub struct ScreenshotTextureRef {
 }
 
 ///|
+const PARITY_CAPTURE_OUTPUT_ENV : String = "MGSTUDIO_PARITY_CAPTURE_RGBA8_BLOB"
+
+///|
+const PARITY_CAPTURE_DELAY_ENV : String = "MGSTUDIO_PARITY_CAPTURE_DELAY_FRAMES"
+
+///|
+const PARITY_CAPTURE_DEFAULT_DELAY_FRAMES : Int = 1
+
+///|
 fn screenshot_debug_enabled() -> Bool {
   match @sys.get_env_var("MGSTUDIO_SCREENSHOT_DEBUG") {
     Some(flag) => flag.trim().to_string() == "1"
@@ -69,6 +78,148 @@ fn screenshot_debug_log(message : String) -> Unit {
 }
 
 ///|
+fn screenshot_env_trimmed(key : String) -> String? {
+  match @sys.get_env_var(key) {
+    Some(raw) => {
+      let trimmed = raw.trim().to_string()
+      if trimmed == "" {
+        None
+      } else {
+        Some(trimmed)
+      }
+    }
+    _ => None
+  }
+}
+
+///|
+fn parity_capture_delay_frames_from_env() -> Int {
+  match screenshot_env_trimmed(PARITY_CAPTURE_DELAY_ENV) {
+    Some(raw) => {
+      let parsed = @strconv.parse_int(raw[:], base=10) catch {
+        _ => PARITY_CAPTURE_DEFAULT_DELAY_FRAMES
+      }
+      if parsed < 0 {
+        0
+      } else {
+        parsed
+      }
+    }
+    _ => PARITY_CAPTURE_DEFAULT_DELAY_FRAMES
+  }
+}
+
+///|
+fn parity_capture_load_config() -> Unit {
+  if parity_capture_config_loaded_ref.val {
+    return
+  }
+  parity_capture_config_loaded_ref.val = true
+  parity_capture_delay_frames_ref.val = parity_capture_delay_frames_from_env()
+  parity_capture_blob_path_ref.val = screenshot_env_trimmed(
+    PARITY_CAPTURE_OUTPUT_ENV,
+  )
+  if parity_capture_blob_path_ref.val is Some(path) {
+    screenshot_debug_log(
+      "parity capture enabled path=\{path}, delay_frames=\{parity_capture_delay_frames_ref.val}",
+    )
+  }
+}
+
+///|
+fn parity_capture_push_u32_le(out : Array[Byte], value : UInt) -> Unit {
+  out.push((value & 0xFFU).to_byte())
+  out.push(((value >> 8) & 0xFFU).to_byte())
+  out.push(((value >> 16) & 0xFFU).to_byte())
+  out.push(((value >> 24) & 0xFFU).to_byte())
+}
+
+///|
+fn parity_capture_ensure_parent_dir(path : String) -> Unit {
+  let path_value : @path.Path = path
+  let parent = path_value.dirname().to_string()
+  if parent == "" || parent == "." || parent == path {
+    return
+  }
+  if @fs.path_exists(parent) {
+    return
+  }
+  parity_capture_ensure_parent_dir(parent)
+  @fs.create_dir(parent) catch {
+    _ => ()
+  }
+}
+
+///|
+fn parity_capture_write_blob(
+  path : String,
+  capture : ScreenshotCaptureResult,
+) -> Bool {
+  if capture.width <= 0 || capture.height <= 0 {
+    return false
+  }
+  if capture.pixels.length() != capture.width * capture.height * 4 {
+    return false
+  }
+  let out : Array[Byte] = []
+  parity_capture_push_u32_le(out, capture.width.reinterpret_as_uint())
+  parity_capture_push_u32_le(out, capture.height.reinterpret_as_uint())
+  for i in 0..<capture.pixels.length() {
+    out.push(capture.pixels[i])
+  }
+  parity_capture_ensure_parent_dir(path)
+  let mut write_ok = true
+  @fs.write_bytes_to_file(path, Bytes::from_array(out)) catch {
+    _ => write_ok = false
+  }
+  write_ok
+}
+
+///|
+fn parity_capture_maybe_request_surface_capture() -> Unit {
+  parity_capture_load_config()
+  guard parity_capture_blob_path_ref.val is Some(_) else { return }
+  if parity_capture_written_ref.val || parity_capture_request_id_ref.val > 0 {
+    return
+  }
+  if parity_capture_seen_frames_ref.val < parity_capture_delay_frames_ref.val {
+    parity_capture_seen_frames_ref.val = parity_capture_seen_frames_ref.val + 1
+    return
+  }
+  let capture_id = next_screenshot_capture_id()
+  pending_surface_screenshot_captures_ref.val.push(PendingSurfaceScreenshotCapture::{
+    id: capture_id,
+    target_id: 0,
+  })
+  parity_capture_request_id_ref.val = capture_id
+  screenshot_debug_log(
+    "request parity surface capture id=\{capture_id}, delay_frames=\{parity_capture_delay_frames_ref.val}",
+  )
+}
+
+///|
+fn parity_capture_try_write_completed_capture(
+  capture : ScreenshotCaptureResult,
+) -> Unit {
+  if parity_capture_request_id_ref.val <= 0 ||
+    capture.id != parity_capture_request_id_ref.val {
+    return
+  }
+  parity_capture_request_id_ref.val = 0
+  guard parity_capture_blob_path_ref.val is Some(path) else { return }
+  if parity_capture_write_blob(path, capture) {
+    parity_capture_written_ref.val = true
+    screenshot_debug_log(
+      "wrote parity capture blob id=\{capture.id}, size=\{capture.width}x\{capture.height}, path=\{path}",
+    )
+  } else {
+    screenshot_debug_log(
+      "failed parity capture blob id=\{capture.id}, path=\{path}",
+    )
+  }
+}
+
+///|
 fn prepare_surface_capture_frame(backend : GpuBackend) -> Unit {
   if backend.surface_capture_active {
     return
@@ -77,6 +228,7 @@ fn prepare_surface_capture_frame(backend : GpuBackend) -> Unit {
     backend.surface_capture_active = true
     return
   }
+  parity_capture_maybe_request_surface_capture()
   if pending_surface_screenshot_captures_ref.val.length() == 0 {
     return
   }
@@ -131,6 +283,24 @@ let inflight_screenshot_captures_ref : Ref[Array[InflightScreenshotCapture]] = R
 ///|
 let completed_screenshot_captures_ref : Ref[Array[ScreenshotCaptureResult]] = Ref::new([],
 )
+
+///|
+let parity_capture_config_loaded_ref : Ref[Bool] = Ref::new(false)
+
+///|
+let parity_capture_blob_path_ref : Ref[String?] = Ref::new(None)
+
+///|
+let parity_capture_delay_frames_ref : Ref[Int] = Ref::new(0)
+
+///|
+let parity_capture_seen_frames_ref : Ref[Int] = Ref::new(0)
+
+///|
+let parity_capture_request_id_ref : Ref[Int] = Ref::new(0)
+
+///|
+let parity_capture_written_ref : Ref[Bool] = Ref::new(false)
 
 ///|
 fn next_screenshot_capture_id() -> Int {
@@ -402,12 +572,14 @@ fn screenshot_collect_completed_captures(backend : GpuBackend) -> Unit {
         bytes,
       )
       is Some(pixels) {
-      completed_screenshot_captures_ref.val.push(ScreenshotCaptureResult::{
+      let completed = ScreenshotCaptureResult::{
         id: capture.id,
         width: capture.width,
         height: capture.height,
         pixels,
-      })
+      }
+      completed_screenshot_captures_ref.val.push(completed)
+      parity_capture_try_write_completed_capture(completed)
       screenshot_debug_log(
         "complete capture id=\{capture.id}, size=\{capture.width}x\{capture.height}",
       )

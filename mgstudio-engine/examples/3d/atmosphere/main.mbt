@@ -316,7 +316,9 @@ fn spawn_mesh(
 ///|
 fn setup_camera(world : @ecs.World) -> Unit {
   let camera = @pbr.Camera3dBundle::new(
-      @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
+      @sprite.Camera::default().with_clear_color(
+        @sprite.Color::srgb(0.12F, 0.16F, 0.24F),
+      ),
       @math.Transform::from_xyz(-2.4F, 0.04F, 0.0F).looking_at(
         scene_focus(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),

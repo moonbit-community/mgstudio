@@ -222,19 +222,15 @@ fn spawn_fog_proxy(world : @ecs.World) -> Unit {
 fn setup_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let camera = @pbr.Camera3dBundle::new(
-    @sprite.Camera::default(),
+    @sprite.Camera::default().with_clear_color(
+      @sprite.Color::srgb(0.10F, 0.12F, 0.16F),
+    ),
     @math.Transform::from_xyz(CAMERA_X, CAMERA_Y, CAMERA_Z).looking_at(
       focus_point(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
   world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
-  world
-  .component(@post_process.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
-  world
-  .component(@post_process.ecs_key_bloom)
-  .insert(camera, @post_process.Bloom::default(), tick)
   scrolling_fog_state.val.camera = Some(camera)
 }
 
@@ -244,7 +240,7 @@ fn setup_lighting(world : @ecs.World) -> Unit {
 
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
-    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
+    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 25.0F),
   )
 
   let light = world.spawn_empty()
@@ -262,7 +258,7 @@ fn setup_lighting(world : @ecs.World) -> Unit {
   .component(@pbr.ecs_key_directional_light)
   .insert(
     light,
-    @pbr.DirectionalLight::new(@sprite.Color::white(), 12_000.0F, true),
+    @pbr.DirectionalLight::new(@sprite.Color::white(), 25_000.0F, false),
     tick,
   )
 }
