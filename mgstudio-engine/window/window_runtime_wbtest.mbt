@@ -32,3 +32,19 @@ test "window runtime: create forces physical request only when override exists" 
   inspect(window_requested_logical_width(resolution), content="1280")
   inspect(window_requested_logical_height(resolution), content="720")
 }
+
+///|
+test "window runtime: create pass is separated from prepare pass" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! world.set_component(entity, Window::default())
+
+  window_backend_prepare_system(world)
+  inspect(window_host_entries(world).length(), content="0")
+
+  window_backend_create_windows_system(world)
+  inspect(window_host_entries(world).length(), content="1")
+
+  try! world.despawn(entity)
+  inspect(window_host_entries(world).length(), content="0")
+}

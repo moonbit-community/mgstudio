@@ -1309,15 +1309,20 @@ fn window_emit_native_app_lifecycle_events(world : @ecs.World) -> Unit {
 
 ///|
 pub fn window_backend_sync_system(world : @ecs.World) -> Unit {
+  window_backend_create_windows_system(world)
   window_backend_prepare_system(world)
   window_backend_apply_requested_system(world)
 }
 
 ///|
-pub fn window_backend_prepare_system(world : @ecs.World) -> Unit {
+pub fn window_backend_create_windows_system(world : @ecs.World) -> Unit {
   for entity in window_runtime_entities_without_host(world) {
     window_create_runtime_for_entity(world, entity) |> ignore
   }
+}
+
+///|
+pub fn window_backend_prepare_system(world : @ecs.World) -> Unit {
   window_emit_native_theme_events(world)
   window_emit_native_occluded_events(world)
   window_emit_native_app_lifecycle_events(world)

@@ -190,6 +190,8 @@ pub fn window_backend_apply_changed_windows_system(@ecs.World) -> Unit
 
 pub fn window_backend_apply_requested_system(@ecs.World) -> Unit
 
+pub fn window_backend_create_windows_system(@ecs.World) -> Unit
+
 pub fn window_backend_prepare_system(@ecs.World) -> Unit
 
 pub fn window_backend_sync_system(@ecs.World) -> Unit

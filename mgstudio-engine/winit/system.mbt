@@ -142,6 +142,7 @@ fn winit_write_raw_winit_window_events(
 
 ///|
 pub fn winit_window_backend_sync_system(world : @ecs.World) -> Unit {
+  @window.window_backend_create_windows_system(world)
   @window.window_backend_prepare_system(world)
   winit_sync_windows_resource_system(world)
   winit_create_monitors_system(world)
