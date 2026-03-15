@@ -108,11 +108,13 @@ pub fn host_app_lifecycle_event_kind(index~ : Int) -> Int
 
 pub fn host_debug_string(value~ : String) -> Unit
 
-pub fn host_window_create(logical_width~ : Int, logical_height~ : Int, physical_width~ : Int, physical_height~ : Int, use_physical_size_on_create~ : Bool, title~ : String, visible? : Bool, resizable? : Bool, decorations? : Bool, panel? : Bool) -> Int
+pub fn host_window_create(logical_width~ : Int, logical_height~ : Int, physical_width~ : Int, physical_height~ : Int, use_physical_size_on_create~ : Bool, title~ : String, visible? : Bool, resizable? : Bool, decorations? : Bool, transparent? : Bool, panel? : Bool, focused? : Bool, close_button_enabled? : Bool, minimize_button_enabled? : Bool, maximize_button_enabled? : Bool, min_inner_width? : Float, min_inner_height? : Float, max_inner_width? : Float?, max_inner_height? : Float?, movable_by_window_background? : Bool, fullsize_content_view? : Bool, has_shadow? : Bool, titlebar_shown? : Bool, titlebar_transparent? : Bool, titlebar_show_title? : Bool, titlebar_show_buttons? : Bool, borderless_game? : Bool) -> Int
 
 pub fn host_window_drag_move(Int) -> Bool
 
 pub fn host_window_drag_resize(Int, @math.CompassOctant) -> Bool
+
+pub fn host_window_focus(Int) -> Unit
 
 pub fn host_window_get_focused(Int) -> Bool
 
@@ -152,11 +154,19 @@ pub fn host_window_set_ime_allowed(Int, allowed~ : Bool) -> Unit
 
 pub fn host_window_set_ime_cursor_area(Int, x~ : Int, y~ : Int, width? : Int, height? : Int) -> Unit
 
+pub fn host_window_set_maximized(Int, maximized~ : Bool) -> Unit
+
+pub fn host_window_set_minimized(Int, minimized~ : Bool) -> Unit
+
 pub fn host_window_set_mode(Int, mode~ : WindowMode) -> Unit
 
 pub fn host_window_set_position(Int, x~ : Int, y~ : Int) -> Unit
 
+pub fn host_window_set_position_from(Int, WindowPosition, WindowResolution) -> Unit
+
 pub fn host_window_set_resizable(Int, resizable~ : Bool) -> Unit
+
+pub fn host_window_set_resize_constraints(Int, WindowResizeConstraints) -> Unit
 
 pub fn host_window_set_size(Int, width~ : Int, height~ : Int) -> Unit
 
@@ -323,6 +333,17 @@ pub impl @ecs.Component for ClosingWindow
 pub impl Eq for ClosingWindow
 pub impl Show for ClosingWindow
 
+pub(all) enum CompositeAlphaMode {
+  Auto
+  Opaque
+  PreMultiplied
+  PostMultiplied
+  Inherit
+}
+pub fn CompositeAlphaMode::default() -> Self
+pub impl Eq for CompositeAlphaMode
+pub impl Show for CompositeAlphaMode
+
 pub(all) struct CursorEntered {
   window : @Milky2018/mgstudio/core.Entity
 }
@@ -472,6 +493,18 @@ pub(all) struct RequestRedraw {
 pub impl @ecs.Message for RequestRedraw
 pub impl Eq for RequestRedraw
 
+pub(all) enum ScreenEdge {
+  None
+  Top
+  Left
+  Bottom
+  Right
+  All
+}
+pub fn ScreenEdge::default() -> Self
+pub impl Eq for ScreenEdge
+pub impl Show for ScreenEdge
+
 pub struct Screenshot {
   target : ScreenshotTarget
 }
@@ -509,6 +542,9 @@ pub impl Eq for VideoModeSelection
 pub(all) struct Window {
   mut title : String
   mut name : String?
+  mut composite_alpha_mode : CompositeAlphaMode
+  mut resize_constraints : WindowResizeConstraints
+  mut canvas : String?
   mut resolution : WindowResolution
   mut present_mode : PresentMode
   mut position : WindowPosition
@@ -523,8 +559,28 @@ pub(all) struct Window {
   mut prevent_default_event_handling : Bool
   mut window_theme : @Milky2018/window/core.Theme?
   mut visible : Bool
+  mut skip_taskbar : Bool
+  mut clip_children : Bool
+  mut desired_maximum_frame_latency : Int?
+  mut recognize_pinch_gesture : Bool
+  mut recognize_rotation_gesture : Bool
+  mut recognize_doubletap_gesture : Bool
+  mut recognize_pan_gesture : (Int, Int)?
+  mut movable_by_window_background : Bool
+  mut fullsize_content_view : Bool
+  mut has_shadow : Bool
+  mut titlebar_shown : Bool
+  mut titlebar_transparent : Bool
+  mut titlebar_show_title : Bool
+  mut titlebar_show_buttons : Bool
+  mut borderless_game : Bool
+  mut prefers_home_indicator_hidden : Bool
+  mut prefers_status_bar_hidden : Bool
+  mut preferred_screen_edges_deferring_system_gestures : ScreenEdge
   mut ime_enabled : Bool
   mut ime_position : @math.Vec2
+  mut maximize_request : Bool?
+  mut minimize_request : Bool?
   mut drag_move_request : Bool
   mut drag_resize_request : @math.CompassOctant?
 }
@@ -533,6 +589,8 @@ pub fn Window::height(Self) -> Float
 pub fn Window::physical_height(Self) -> Int
 pub fn Window::physical_width(Self) -> Int
 pub fn Window::scale_factor(Self) -> Float
+pub fn Window::set_maximized(Self, Bool) -> Unit
+pub fn Window::set_minimized(Self, Bool) -> Unit
 pub fn Window::start_drag_move(Self) -> Unit
 pub fn Window::start_drag_resize(Self, @math.CompassOctant) -> Unit
 pub fn Window::width(Self) -> Float
@@ -659,11 +717,13 @@ pub impl @app.PluginReplacement for WindowPlugin
 
 pub(all) enum WindowPosition {
   Automatic
+  Centered(MonitorSelection)
   At(Int, Int)
 }
+pub fn WindowPosition::center(Self, MonitorSelection) -> Self
 pub fn WindowPosition::new(Int, Int) -> Self
+pub fn WindowPosition::set(Self, Int, Int) -> Self
 pub impl Eq for WindowPosition
-pub impl Show for WindowPosition
 
 pub(all) enum WindowRef {
   Primary
@@ -672,6 +732,17 @@ pub(all) enum WindowRef {
 pub impl Eq for WindowRef
 pub impl ToJson for WindowRef
 pub impl @json.FromJson for WindowRef
+
+pub(all) struct WindowResizeConstraints {
+  min_width : Float
+  min_height : Float
+  max_width : Float
+  max_height : Float
+}
+pub fn WindowResizeConstraints::check_constraints(Self) -> Self
+pub fn WindowResizeConstraints::default() -> Self
+pub impl Eq for WindowResizeConstraints
+pub impl Show for WindowResizeConstraints
 
 pub(all) struct WindowResized {
   window : @Milky2018/mgstudio/core.Entity

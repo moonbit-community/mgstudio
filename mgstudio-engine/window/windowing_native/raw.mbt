@@ -1227,18 +1227,66 @@ pub fn create_utf8(
   visible : Bool,
   resizable : Bool,
   decorations : Bool,
+  transparent : Bool,
   panel : Bool,
+  focused : Bool,
+  close_button_enabled : Bool,
+  minimize_button_enabled : Bool,
+  maximize_button_enabled : Bool,
+  min_inner_width : Float,
+  min_inner_height : Float,
+  max_inner_width : Float?,
+  max_inner_height : Float?,
+  movable_by_window_background : Bool,
+  fullsize_content_view : Bool,
+  has_shadow : Bool,
+  titlebar_shown : Bool,
+  titlebar_transparent : Bool,
+  titlebar_show_title : Bool,
+  titlebar_show_buttons : Bool,
+  borderless_game : Bool,
 ) -> Int {
   let event_loop = ensure_native_event_loop()
+  let platform_attributes = @window_core.PlatformWindowAttributes::default()
+    .with_panel(panel)
+    .with_movable_by_window_background(movable_by_window_background)
+    .with_fullsize_content_view(fullsize_content_view)
+    .with_has_shadow(has_shadow)
+    .with_titlebar_hidden(!titlebar_shown)
+    .with_titlebar_transparent(titlebar_transparent)
+    .with_title_hidden(!titlebar_show_title)
+    .with_titlebar_buttons_hidden(!titlebar_show_buttons)
+    .with_borderless_game(borderless_game)
   let mut attributes = @window_core.WindowAttributes::default()
     .with_title(decode_utf8_lossy(title))
     .with_visible(visible)
-    .with_active(true)
+    .with_active(focused)
     .with_resizable(resizable)
     .with_decorations(decorations)
-    .with_platform_attributes(
-      @window_core.PlatformWindowAttributes::default().with_panel(panel),
+    .with_transparent(transparent)
+    .with_enabled_buttons(
+      @window_core.WindowButtons::all()
+      .with_close(close_button_enabled)
+      .with_minimize(minimize_button_enabled)
+      .with_maximize(maximize_button_enabled),
     )
+    .with_platform_attributes(platform_attributes)
+  attributes = attributes.with_min_inner_size(
+    @window_dpi.LogicalSize::new(
+      min_inner_width.to_double(),
+      min_inner_height.to_double(),
+    ).into_size(),
+  )
+  match (max_inner_width, max_inner_height) {
+    (Some(max_width), Some(max_height)) =>
+      attributes = attributes.with_max_inner_size(
+        @window_dpi.LogicalSize::new(
+          max_width.to_double(),
+          max_height.to_double(),
+        ).into_size(),
+      )
+    _ => ()
+  }
   if use_physical_size_on_create {
     let width = if physical_width > 0 { physical_width } else { logical_width }
     let height = if physical_height > 0 {
@@ -1246,7 +1294,7 @@ pub fn create_utf8(
     } else {
       logical_height
     }
-    attributes = attributes.with_surface_size(
+    attributes = attributes.with_inner_size(
       @window_dpi.PhysicalSize::new(width, height).into_size(),
     )
   } else {
@@ -1278,7 +1326,24 @@ pub fn create(
   visible~ : Bool,
   resizable~ : Bool,
   decorations~ : Bool,
-  panel~ : Bool,
+  transparent? : Bool = false,
+  panel? : Bool = false,
+  focused? : Bool = true,
+  close_button_enabled? : Bool = true,
+  minimize_button_enabled? : Bool = true,
+  maximize_button_enabled? : Bool = true,
+  min_inner_width? : Float = 180.0F,
+  min_inner_height? : Float = 120.0F,
+  max_inner_width? : Float? = None,
+  max_inner_height? : Float? = None,
+  movable_by_window_background? : Bool = false,
+  fullsize_content_view? : Bool = false,
+  has_shadow? : Bool = true,
+  titlebar_shown? : Bool = true,
+  titlebar_transparent? : Bool = false,
+  titlebar_show_title? : Bool = true,
+  titlebar_show_buttons? : Bool = true,
+  borderless_game? : Bool = true,
 ) -> NativeWindowHandle {
   let title_bytes = encode_utf8_bytes(title)
   create_utf8(
@@ -1292,7 +1357,24 @@ pub fn create(
     visible,
     resizable,
     decorations,
+    transparent,
     panel,
+    focused,
+    close_button_enabled,
+    minimize_button_enabled,
+    maximize_button_enabled,
+    min_inner_width,
+    min_inner_height,
+    max_inner_width,
+    max_inner_height,
+    movable_by_window_background,
+    fullsize_content_view,
+    has_shadow,
+    titlebar_shown,
+    titlebar_transparent,
+    titlebar_show_title,
+    titlebar_show_buttons,
+    borderless_game,
   )
 }
 
@@ -1410,6 +1492,71 @@ pub fn set_size(window : Int, width~ : Int, height~ : Int) -> Unit {
 pub fn set_resizable(window : Int, resizable~ : Bool) -> Unit {
   match native_window_ref(window) {
     Some(window_ref) => window_ref.val.set_resizable(resizable)
+    None => ()
+  }
+}
+
+///|
+pub fn set_min_inner_size(
+  window : Int,
+  width~ : Float,
+  height~ : Float,
+) -> Unit {
+  match native_window_ref(window) {
+    Some(window_ref) =>
+      window_ref.val.set_min_inner_size(
+        Some(
+          @window_dpi.LogicalSize::new(width.to_double(), height.to_double()).into_size(),
+        ),
+      )
+    None => ()
+  }
+}
+
+///|
+pub fn set_max_inner_size(
+  window : Int,
+  width~ : Float?,
+  height~ : Float?,
+) -> Unit {
+  match native_window_ref(window) {
+    Some(window_ref) =>
+      match (width, height) {
+        (Some(width0), Some(height0)) =>
+          window_ref.val.set_max_inner_size(
+            Some(
+              @window_dpi.LogicalSize::new(
+                width0.to_double(),
+                height0.to_double(),
+              ).into_size(),
+            ),
+          )
+        _ => window_ref.val.set_max_inner_size(None)
+      }
+    None => ()
+  }
+}
+
+///|
+pub fn set_maximized(window : Int, maximized~ : Bool) -> Unit {
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.set_maximized(maximized)
+    None => ()
+  }
+}
+
+///|
+pub fn set_minimized(window : Int, minimized~ : Bool) -> Unit {
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.set_minimized(minimized)
+    None => ()
+  }
+}
+
+///|
+pub fn focus_window(window : Int) -> Unit {
+  match native_window_ref(window) {
+    Some(window_ref) => window_ref.val.focus_window()
     None => ()
   }
 }

@@ -67,12 +67,96 @@ pub(all) enum WindowRef {
 ///|
 pub(all) enum WindowPosition {
   Automatic
+  Centered(MonitorSelection)
   At(Int, Int)
-} derive(Eq, Show)
+} derive(Eq)
 
 ///|
 pub fn WindowPosition::new(x : Int, y : Int) -> WindowPosition {
   At(x, y)
+}
+
+///|
+pub fn WindowPosition::set(
+  _self : WindowPosition,
+  x : Int,
+  y : Int,
+) -> WindowPosition {
+  WindowPosition::new(x, y)
+}
+
+///|
+pub fn WindowPosition::center(
+  _self : WindowPosition,
+  monitor : MonitorSelection,
+) -> WindowPosition {
+  Centered(monitor)
+}
+
+///|
+pub(all) struct WindowResizeConstraints {
+  min_width : Float
+  min_height : Float
+  max_width : Float
+  max_height : Float
+} derive(Eq, Show)
+
+///|
+pub fn WindowResizeConstraints::default() -> WindowResizeConstraints {
+  WindowResizeConstraints::{
+    min_width: 180.0F,
+    min_height: 120.0F,
+    max_width: @float.infinity,
+    max_height: @float.infinity,
+  }
+}
+
+///|
+pub fn WindowResizeConstraints::check_constraints(
+  self : WindowResizeConstraints,
+) -> WindowResizeConstraints {
+  let min_width = if self.min_width < 1.0F { 1.0F } else { self.min_width }
+  let min_height = if self.min_height < 1.0F { 1.0F } else { self.min_height }
+  let max_width = if self.max_width < min_width {
+    min_width
+  } else {
+    self.max_width
+  }
+  let max_height = if self.max_height < min_height {
+    min_height
+  } else {
+    self.max_height
+  }
+  WindowResizeConstraints::{ min_width, min_height, max_width, max_height }
+}
+
+///|
+pub(all) enum CompositeAlphaMode {
+  Auto
+  Opaque
+  PreMultiplied
+  PostMultiplied
+  Inherit
+} derive(Eq, Show)
+
+///|
+pub fn CompositeAlphaMode::default() -> CompositeAlphaMode {
+  CompositeAlphaMode::Auto
+}
+
+///|
+pub(all) enum ScreenEdge {
+  None
+  Top
+  Left
+  Bottom
+  Right
+  All
+} derive(Eq, Show)
+
+///|
+pub fn ScreenEdge::default() -> ScreenEdge {
+  ScreenEdge::None
 }
 
 ///|
@@ -225,6 +309,9 @@ pub fn CursorOptions::default() -> CursorOptions {
 pub(all) struct Window {
   mut title : String
   mut name : String?
+  mut composite_alpha_mode : CompositeAlphaMode
+  mut resize_constraints : WindowResizeConstraints
+  mut canvas : String?
   mut resolution : WindowResolution
   mut present_mode : PresentMode
   mut position : WindowPosition
@@ -239,8 +326,28 @@ pub(all) struct Window {
   mut prevent_default_event_handling : Bool
   mut window_theme : WindowTheme?
   mut visible : Bool
+  mut skip_taskbar : Bool
+  mut clip_children : Bool
+  mut desired_maximum_frame_latency : Int?
+  mut recognize_pinch_gesture : Bool
+  mut recognize_rotation_gesture : Bool
+  mut recognize_doubletap_gesture : Bool
+  mut recognize_pan_gesture : (Int, Int)?
+  mut movable_by_window_background : Bool
+  mut fullsize_content_view : Bool
+  mut has_shadow : Bool
+  mut titlebar_shown : Bool
+  mut titlebar_transparent : Bool
+  mut titlebar_show_title : Bool
+  mut titlebar_show_buttons : Bool
+  mut borderless_game : Bool
+  mut prefers_home_indicator_hidden : Bool
+  mut prefers_status_bar_hidden : Bool
+  mut preferred_screen_edges_deferring_system_gestures : ScreenEdge
   mut ime_enabled : Bool
   mut ime_position : @math.Vec2
+  mut maximize_request : Bool?
+  mut minimize_request : Bool?
   mut drag_move_request : Bool
   mut drag_resize_request : @math.CompassOctant?
 }
@@ -250,6 +357,9 @@ pub fn Window::default() -> Window {
   Window::{
     title: DEFAULT_WINDOW_TITLE,
     name: None,
+    composite_alpha_mode: CompositeAlphaMode::default(),
+    resize_constraints: WindowResizeConstraints::default(),
+    canvas: None,
     resolution: WindowResolution::default(),
     present_mode: PresentMode::Fifo,
     position: Automatic,
@@ -264,8 +374,28 @@ pub fn Window::default() -> Window {
     prevent_default_event_handling: true,
     window_theme: None,
     visible: true,
+    skip_taskbar: false,
+    clip_children: true,
+    desired_maximum_frame_latency: None,
+    recognize_pinch_gesture: false,
+    recognize_rotation_gesture: false,
+    recognize_doubletap_gesture: false,
+    recognize_pan_gesture: None,
+    movable_by_window_background: false,
+    fullsize_content_view: false,
+    has_shadow: true,
+    titlebar_shown: true,
+    titlebar_transparent: false,
+    titlebar_show_title: true,
+    titlebar_show_buttons: true,
+    borderless_game: true,
+    prefers_home_indicator_hidden: false,
+    prefers_status_bar_hidden: false,
+    preferred_screen_edges_deferring_system_gestures: ScreenEdge::default(),
     ime_enabled: false,
     ime_position: @math.Vec2::new(0.0F, 0.0F),
+    maximize_request: None,
+    minimize_request: None,
     drag_move_request: false,
     drag_resize_request: None,
   }
@@ -307,6 +437,16 @@ pub fn Window::start_drag_resize(
   direction : @math.CompassOctant,
 ) -> Unit {
   self.drag_resize_request = Some(direction)
+}
+
+///|
+pub fn Window::set_maximized(self : Window, maximized : Bool) -> Unit {
+  self.maximize_request = Some(maximized)
+}
+
+///|
+pub fn Window::set_minimized(self : Window, minimized : Bool) -> Unit {
+  self.minimize_request = Some(minimized)
 }
 
 ///|

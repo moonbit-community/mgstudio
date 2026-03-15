@@ -142,7 +142,24 @@ pub fn host_window_create(
   visible? : Bool = true,
   resizable? : Bool = true,
   decorations? : Bool = true,
+  transparent? : Bool = false,
   panel? : Bool = false,
+  focused? : Bool = true,
+  close_button_enabled? : Bool = true,
+  minimize_button_enabled? : Bool = true,
+  maximize_button_enabled? : Bool = true,
+  min_inner_width? : Float = 180.0F,
+  min_inner_height? : Float = 120.0F,
+  max_inner_width? : Float? = None,
+  max_inner_height? : Float? = None,
+  movable_by_window_background? : Bool = false,
+  fullsize_content_view? : Bool = false,
+  has_shadow? : Bool = true,
+  titlebar_shown? : Bool = true,
+  titlebar_transparent? : Bool = false,
+  titlebar_show_title? : Bool = true,
+  titlebar_show_buttons? : Bool = true,
+  borderless_game? : Bool = true,
 ) -> HostWindow {
   @windowing.create(
     logical_width~,
@@ -154,7 +171,24 @@ pub fn host_window_create(
     visible~,
     resizable~,
     decorations~,
+    transparent~,
     panel~,
+    focused~,
+    close_button_enabled~,
+    minimize_button_enabled~,
+    maximize_button_enabled~,
+    min_inner_width~,
+    min_inner_height~,
+    max_inner_width~,
+    max_inner_height~,
+    movable_by_window_background~,
+    fullsize_content_view~,
+    has_shadow~,
+    titlebar_shown~,
+    titlebar_transparent~,
+    titlebar_show_title~,
+    titlebar_show_buttons~,
+    borderless_game~,
   )
 }
 
@@ -218,6 +252,49 @@ pub fn host_window_set_resizable(
   resizable~ : Bool,
 ) -> Unit {
   @windowing.set_resizable(window, resizable~)
+}
+
+///|
+pub fn host_window_set_resize_constraints(
+  window : HostWindow,
+  constraints : WindowResizeConstraints,
+) -> Unit {
+  let checked = constraints.check_constraints()
+  @windowing.set_min_inner_size(
+    window,
+    width=checked.min_width,
+    height=checked.min_height,
+  )
+  if checked.max_width < @float.infinity && checked.max_height < @float.infinity {
+    @windowing.set_max_inner_size(
+      window,
+      width=Some(checked.max_width),
+      height=Some(checked.max_height),
+    )
+  } else {
+    @windowing.set_max_inner_size(window, width=None, height=None)
+  }
+}
+
+///|
+pub fn host_window_set_maximized(
+  window : HostWindow,
+  maximized~ : Bool,
+) -> Unit {
+  @windowing.set_maximized(window, maximized~)
+}
+
+///|
+pub fn host_window_set_minimized(
+  window : HostWindow,
+  minimized~ : Bool,
+) -> Unit {
+  @windowing.set_minimized(window, minimized~)
+}
+
+///|
+pub fn host_window_focus(window : HostWindow) -> Unit {
+  @windowing.focus_window(window)
 }
 
 ///|
@@ -445,6 +522,55 @@ pub fn host_window_set_position(
   y~ : Int,
 ) -> Unit {
   @windowing.set_position(window, x~, y~)
+}
+
+///|
+pub fn host_window_set_position_from(
+  window : HostWindow,
+  position : WindowPosition,
+  resolution : WindowResolution,
+) -> Unit {
+  match position {
+    Automatic => ()
+    Centered(selection) =>
+      match monitor_selection_to_native(window, selection) {
+        Some(monitor) => {
+          let surface_size = monitor.surface_size()
+          let monitor_position = monitor.position()
+          let resolution_scale = if resolution.scale_factor() <= 0.0F {
+            1.0F
+          } else {
+            resolution.scale_factor()
+          }
+          let scale_factor = match resolution.scale_factor_override() {
+            Some(scale_factor_override) =>
+              if scale_factor_override <= 0.0F {
+                1.0F
+              } else {
+                scale_factor_override
+              }
+            None => Float::from_double(monitor.scale_factor())
+          }
+          let width = (Float::from_int(resolution.physical_width()) /
+          resolution_scale *
+          scale_factor).to_int()
+          let height = (Float::from_int(resolution.physical_height()) /
+          resolution_scale *
+          scale_factor).to_int()
+          let centered_x = (Float::from_int(surface_size.width() - width) / 2.0F).to_int() +
+            monitor_position.x()
+          let centered_y = (Float::from_int(surface_size.height() - height) /
+            2.0F).to_int() +
+            monitor_position.y()
+          host_window_set_position(window, x=centered_x, y=centered_y)
+        }
+        None =>
+          host_debug_string(
+            value="bevy_winit: could not resolve monitor for centered window position",
+          )
+      }
+    At(x, y) => host_window_set_position(window, x~, y~)
+  }
 }
 
 ///|

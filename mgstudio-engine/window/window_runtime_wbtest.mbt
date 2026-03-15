@@ -48,3 +48,59 @@ test "window runtime: create pass is separated from prepare pass" {
   try! world.despawn(entity)
   inspect(window_host_entries(world).length(), content="0")
 }
+
+///|
+test "window runtime: maximize and minimize requests are consumed during apply" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! world.set_component(entity, Window::default())
+
+  window_backend_create_windows_system(world)
+  ignore(
+    window_update_component(world, entity, fn(current) {
+      let next : Window = current
+      next.set_maximized(true)
+      next.set_minimized(true)
+      next
+    }),
+  )
+  window_backend_apply_changed_windows_system(world)
+
+  let stored_window = match (try! world.get_component(entity) : Window?) {
+    Some(window) => window
+    None => abort("missing window component")
+  }
+  inspect(stored_window.maximize_request, content="None")
+  inspect(stored_window.minimize_request, content="None")
+
+  try! world.despawn(entity)
+}
+
+///|
+test "window runtime: unsupported transparent and canvas updates are reverted" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  let initial_window = Window::default()
+  initial_window.canvas = Some("#existing")
+  try! world.set_component(entity, initial_window)
+
+  window_backend_create_windows_system(world)
+  ignore(
+    window_update_component(world, entity, fn(current) {
+      let next : Window = current
+      next.transparent = true
+      next.canvas = Some("#new")
+      next
+    }),
+  )
+  window_backend_apply_changed_windows_system(world)
+
+  let stored_window = match (try! world.get_component(entity) : Window?) {
+    Some(window) => window
+    None => abort("missing window component")
+  }
+  inspect(stored_window.transparent, content="false")
+  inspect(stored_window.canvas, content="Some(\"#existing\")")
+
+  try! world.despawn(entity)
+}

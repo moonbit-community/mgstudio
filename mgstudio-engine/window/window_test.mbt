@@ -90,6 +90,47 @@ fn read_window_events(world : @ecs.World) -> Array[WindowEvent] {
 }
 
 ///|
+test "window: default window fields align with bevy defaults" {
+  let window = Window::default()
+  inspect(window.composite_alpha_mode, content="Auto")
+  inspect(window.resize_constraints.min_width, content="180")
+  inspect(window.resize_constraints.min_height, content="120")
+  inspect(window.canvas, content="None")
+  inspect(window.skip_taskbar, content="false")
+  inspect(window.clip_children, content="true")
+  inspect(window.desired_maximum_frame_latency, content="None")
+  inspect(window.movable_by_window_background, content="false")
+  inspect(window.fullsize_content_view, content="false")
+  inspect(window.has_shadow, content="true")
+  inspect(window.titlebar_shown, content="true")
+  inspect(window.titlebar_transparent, content="false")
+  inspect(window.titlebar_show_title, content="true")
+  inspect(window.titlebar_show_buttons, content="true")
+  inspect(window.borderless_game, content="true")
+  inspect(window.prefers_home_indicator_hidden, content="false")
+  inspect(window.prefers_status_bar_hidden, content="false")
+  inspect(
+    window.preferred_screen_edges_deferring_system_gestures,
+    content="None",
+  )
+}
+
+///|
+test "window: resize constraints clamp invalid values" {
+  let checked = WindowResizeConstraints::{
+    min_width: 0.0F,
+    min_height: 0.0F,
+    max_width: 0.5F,
+    max_height: -2.0F,
+  }.check_constraints()
+
+  inspect(checked.min_width, content="1")
+  inspect(checked.min_height, content="1")
+  inspect(checked.max_width, content="1")
+  inspect(checked.max_height, content="1")
+}
+
+///|
 test "window: plugin spawns configured primary window entity and messages" {
   let configured_window = Window::default()
   configured_window.title = "Configured Window"
@@ -173,7 +214,7 @@ test "window: plugin spawns configured primary window entity and messages" {
   inspect(stored_window.physical_height(), content="600")
   inspect(stored_window.scale_factor(), content="2")
   inspect(stored_window.present_mode, content="AutoNoVsync")
-  inspect(stored_window.position, content="At(12, 34)")
+  inspect(stored_window.position == WindowPosition::new(12, 34), content="true")
   inspect(
     stored_window.mode ==
     WindowMode::BorderlessFullscreen(MonitorSelection::Primary),
@@ -262,7 +303,7 @@ test "window: compatibility helpers read and write ECS primary window state" {
   inspect(stored_window.physical_width(), content="640")
   inspect(stored_window.physical_height(), content="360")
   inspect(stored_window.present_mode, content="AutoNoVsync")
-  inspect(stored_window.position, content="At(30, 40)")
+  inspect(stored_window.position == WindowPosition::new(30, 40), content="true")
   inspect(
     stored_window.mode ==
     WindowMode::Fullscreen(
@@ -296,8 +337,12 @@ test "window: compatibility helpers read and write ECS primary window state" {
 ///|
 test "window: drag request helpers write pending requests" {
   let window = Window::default()
+  window.set_maximized(true)
+  window.set_minimized(true)
   window.start_drag_move()
   window.start_drag_resize(@math.CompassOctant::North)
+  inspect(window.maximize_request, content="Some(true)")
+  inspect(window.minimize_request, content="Some(true)")
   inspect(window.drag_move_request, content="true")
   inspect(window.drag_resize_request, content="Some(North)")
 }
@@ -411,7 +456,7 @@ test "window: singleton helpers no-op when no primary window exists" {
   inspect(stored_window.title, content="Secondary")
   inspect(stored_window.physical_width(), content="640")
   inspect(stored_window.physical_height(), content="360")
-  inspect(stored_window.position, content="Automatic")
+  inspect(stored_window.position == WindowPosition::Automatic, content="true")
   inspect(stored_window.mode == WindowMode::Windowed, content="true")
   inspect(stored_window.resizable, content="true")
   inspect(cursor_options_value(app.world(), secondary), content="None")

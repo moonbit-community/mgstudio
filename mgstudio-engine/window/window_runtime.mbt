@@ -24,9 +24,12 @@ priv struct WindowRuntime {
   mut last_applied_mode : WindowMode
   mut last_applied_visible : Bool
   mut last_applied_resizable : Bool
+  mut last_applied_resize_constraints : WindowResizeConstraints
   mut last_applied_enabled_buttons : EnabledButtons
   mut last_applied_decorations : Bool
-  mut last_applied_transparent : Bool
+  last_applied_transparent : Bool
+  last_applied_canvas : String?
+  mut last_applied_focused : Bool
   mut last_applied_window_level : WindowLevel
   mut last_applied_window_theme : WindowTheme?
   mut last_applied_ime_enabled : Bool
@@ -468,14 +471,20 @@ fn window_vec2_eq(a : @math.Vec2, b : @math.Vec2) -> Bool {
 }
 
 ///|
+fn window_resize_constraints_has_finite_max(
+  constraints : WindowResizeConstraints,
+) -> Bool {
+  constraints.max_width < @float.infinity &&
+  constraints.max_height < @float.infinity
+}
+
+///|
 fn window_apply_position(
   window : HostWindow,
   position : WindowPosition,
+  resolution : WindowResolution,
 ) -> Unit {
-  match position {
-    Automatic => ()
-    At(x, y) => host_window_set_position(window, x~, y~)
-  }
+  host_window_set_position_from(window, position, resolution)
 }
 
 ///|
@@ -551,6 +560,21 @@ fn window_create_runtime_for_entity(
     return Some(runtime.window)
   }
   guard window_component(world, entity) is Some(window) else { return None }
+  let checked_constraints = window.resize_constraints.check_constraints()
+  let max_width = if window_resize_constraints_has_finite_max(
+      checked_constraints,
+    ) {
+    Some(checked_constraints.max_width)
+  } else {
+    None
+  }
+  let max_height = if window_resize_constraints_has_finite_max(
+      checked_constraints,
+    ) {
+    Some(checked_constraints.max_height)
+  } else {
+    None
+  }
   let host_window = host_window_create(
     logical_width=window_requested_logical_width(window.resolution),
     logical_height=window_requested_logical_height(window.resolution),
@@ -563,15 +587,32 @@ fn window_create_runtime_for_entity(
     visible=window.visible,
     resizable=window.resizable,
     decorations=window.decorations,
+    transparent=window.transparent,
+    focused=window.focused,
+    close_button_enabled=window.enabled_buttons.close,
+    minimize_button_enabled=window.enabled_buttons.minimize,
+    maximize_button_enabled=window.enabled_buttons.maximize,
+    min_inner_width=checked_constraints.min_width,
+    min_inner_height=checked_constraints.min_height,
+    max_inner_width=max_width,
+    max_inner_height=max_height,
+    movable_by_window_background=window.movable_by_window_background,
+    fullsize_content_view=window.fullsize_content_view,
+    has_shadow=window.has_shadow,
+    titlebar_shown=window.titlebar_shown,
+    titlebar_transparent=window.titlebar_transparent,
+    titlebar_show_title=window.titlebar_show_title,
+    titlebar_show_buttons=window.titlebar_show_buttons,
+    borderless_game=window.borderless_game,
   )
   let cursor_options = window_current_cursor_options(world, entity)
   let cursor_icon = window_current_cursor_icon(world, entity)
   host_window_set_visible(host_window, visible=window.visible)
-  window_apply_position(host_window, window.position)
+  window_apply_position(host_window, window.position, window.resolution)
   host_window_set_resizable(host_window, resizable=window.resizable)
+  host_window_set_resize_constraints(host_window, window.resize_constraints)
   host_window_set_enabled_buttons(host_window, window.enabled_buttons)
   host_window_set_decorations(host_window, decorations=window.decorations)
-  host_window_set_transparent(host_window, transparent=window.transparent)
   host_window_set_window_level(host_window, level=window.window_level)
   host_window_set_theme(host_window, theme=window.window_theme)
   window_apply_ime_settings(
@@ -600,9 +641,12 @@ fn window_create_runtime_for_entity(
     last_applied_mode: WindowMode::Windowed,
     last_applied_visible: window.visible,
     last_applied_resizable: window.resizable,
+    last_applied_resize_constraints: window.resize_constraints,
     last_applied_enabled_buttons: window.enabled_buttons,
     last_applied_decorations: window.decorations,
     last_applied_transparent: window.transparent,
+    last_applied_canvas: window.canvas,
+    last_applied_focused: window.focused,
     last_applied_window_level: window.window_level,
     last_applied_window_theme: window.window_theme,
     last_applied_ime_enabled: window.ime_enabled,
@@ -632,6 +676,8 @@ fn window_sync_requested_window_state(
 ) -> Unit {
   guard window_component(world, entity) is Some(window) else { return }
   let host_window = runtime_ref.val.window
+  let mut restore_transparent = false
+  let mut restore_canvas = false
   if window.title != runtime_ref.val.last_applied_title {
     host_window_set_title(host_window, title=window.title)
     runtime_ref.val.last_applied_title = window.title
@@ -646,7 +692,7 @@ fn window_sync_requested_window_state(
     runtime_ref.val.last_applied_height = window.physical_height()
   }
   if window.position != runtime_ref.val.last_applied_position {
-    window_apply_position(host_window, window.position)
+    window_apply_position(host_window, window.position, window.resolution)
     runtime_ref.val.last_applied_position = window.position
   }
   if window.visible != runtime_ref.val.last_applied_visible {
@@ -657,6 +703,11 @@ fn window_sync_requested_window_state(
     host_window_set_resizable(host_window, resizable=window.resizable)
     runtime_ref.val.last_applied_resizable = window.resizable
   }
+  if window.resize_constraints !=
+    runtime_ref.val.last_applied_resize_constraints {
+    host_window_set_resize_constraints(host_window, window.resize_constraints)
+    runtime_ref.val.last_applied_resize_constraints = window.resize_constraints
+  }
   if window.enabled_buttons != runtime_ref.val.last_applied_enabled_buttons {
     host_window_set_enabled_buttons(host_window, window.enabled_buttons)
     runtime_ref.val.last_applied_enabled_buttons = window.enabled_buttons
@@ -666,8 +717,22 @@ fn window_sync_requested_window_state(
     runtime_ref.val.last_applied_decorations = window.decorations
   }
   if window.transparent != runtime_ref.val.last_applied_transparent {
-    host_window_set_transparent(host_window, transparent=window.transparent)
-    runtime_ref.val.last_applied_transparent = window.transparent
+    restore_transparent = true
+    host_debug_string(
+      value="bevy_winit: transparency changes after window creation are unsupported",
+    )
+  }
+  if window.canvas != runtime_ref.val.last_applied_canvas {
+    restore_canvas = true
+    host_debug_string(
+      value="bevy_winit: modifying window canvas after initialization is unsupported",
+    )
+  }
+  if window.focused != runtime_ref.val.last_applied_focused {
+    if window.focused {
+      host_window_focus(host_window)
+    }
+    runtime_ref.val.last_applied_focused = window.focused
   }
   if window.window_level != runtime_ref.val.last_applied_window_level {
     host_window_set_window_level(host_window, level=window.window_level)
@@ -690,6 +755,14 @@ fn window_sync_requested_window_state(
     runtime_ref.val.last_applied_ime_enabled = window.ime_enabled
     runtime_ref.val.last_applied_ime_position = window.ime_position
   }
+  let requested_maximize = window.maximize_request
+  let requested_minimize = window.minimize_request
+  if requested_maximize is Some(maximized) {
+    host_window_set_maximized(host_window, maximized~)
+  }
+  if requested_minimize is Some(minimized) {
+    host_window_set_minimized(host_window, minimized~)
+  }
   let requested_drag_move = window.drag_move_request
   let requested_drag_resize = window.drag_resize_request
   if requested_drag_move {
@@ -698,12 +771,33 @@ fn window_sync_requested_window_state(
   if requested_drag_resize is Some(direction) {
     host_window_drag_resize(host_window, direction) |> ignore
   }
-  if requested_drag_move || requested_drag_resize is Some(_) {
+  if requested_drag_move ||
+    requested_drag_resize is Some(_) ||
+    requested_maximize is Some(_) ||
+    requested_minimize is Some(_) ||
+    restore_transparent ||
+    restore_canvas {
+    let cached_transparent = runtime_ref.val.last_applied_transparent
+    let cached_canvas = runtime_ref.val.last_applied_canvas
     ignore(
       window_update_component(world, entity, fn(current) {
         let next : Window = current
-        next.drag_move_request = false
-        next.drag_resize_request = None
+        if requested_drag_move || requested_drag_resize is Some(_) {
+          next.drag_move_request = false
+          next.drag_resize_request = None
+        }
+        if requested_maximize is Some(_) {
+          next.maximize_request = None
+        }
+        if requested_minimize is Some(_) {
+          next.minimize_request = None
+        }
+        if restore_transparent {
+          next.transparent = cached_transparent
+        }
+        if restore_canvas {
+          next.canvas = cached_canvas
+        }
         next
       }),
     )
@@ -916,6 +1010,7 @@ fn window_primary_position_x(world : @ecs.World) -> Int {
   if window_primary_window(world) is Some(window) {
     match window.position {
       Automatic => 0
+      Centered(_) => 0
       At(x, _y) => x
     }
   } else {
@@ -931,6 +1026,7 @@ fn window_primary_position_y(world : @ecs.World) -> Int {
   if window_primary_window(world) is Some(window) {
     match window.position {
       Automatic => 0
+      Centered(_) => 0
       At(_x, y) => y
     }
   } else {
