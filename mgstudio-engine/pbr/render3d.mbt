@@ -4027,7 +4027,18 @@ fn render3d_build_gpu_preprocess_indirect_metadata(
 ///|
 fn render3d_build_gpu_preprocess_work_item_buffers_from_prequeued_items(
   items : Array[GpuPreprocessPrequeuedMeshItem3d],
+  indirect_enabled : Bool,
 ) -> GpuPreprocessWorkItemBuffers3d {
+  if !indirect_enabled {
+    let direct_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
+    for i in 0..<items.length() {
+      direct_work_items.push(GpuPreprocessShaderWorkItem3d::{
+        input_index: i,
+        output_or_indirect_parameters_index: i,
+      })
+    }
+    return GpuPreprocessWorkItemBuffers3d::Direct(direct_work_items)
+  }
   let indexed_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
   let non_indexed_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
   for i in 0..<items.length() {
@@ -4054,7 +4065,18 @@ fn render3d_build_gpu_preprocess_work_item_buffers_from_prequeued_items(
 fn render3d_build_gpu_preprocess_work_item_buffers_from_draw_items(
   draw_items : Array[MeshPhaseItem3d],
   meshes : Array[ExtractedMesh3d],
+  indirect_enabled : Bool,
 ) -> GpuPreprocessWorkItemBuffers3d {
+  if !indirect_enabled {
+    let direct_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
+    for i in 0..<draw_items.length() {
+      direct_work_items.push(GpuPreprocessShaderWorkItem3d::{
+        input_index: i,
+        output_or_indirect_parameters_index: i,
+      })
+    }
+    return GpuPreprocessWorkItemBuffers3d::Direct(direct_work_items)
+  }
   let indexed_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
   let non_indexed_work_items : Array[GpuPreprocessShaderWorkItem3d] = []
   for i in 0..<draw_items.length() {
@@ -4207,6 +4229,7 @@ fn render3d_build_gpu_preprocess_camera_queue_entry(
   mesh_candidates : Array[GpuPreprocessMeshCandidate3d],
   camera_layers : @sprite.RenderLayers,
   camera_transform : @math.Transform,
+  indirect_enabled : Bool,
 ) -> GpuPreprocessCameraQueueEntry3d {
   let items = render3d_collect_gpu_preprocess_camera_queue_items(
     mesh_candidates, camera_layers, camera_transform,
@@ -4215,7 +4238,7 @@ fn render3d_build_gpu_preprocess_camera_queue_entry(
     items,
   )
   let work_item_buffers = render3d_build_gpu_preprocess_work_item_buffers_from_prequeued_items(
-    items,
+    items, indirect_enabled,
   )
   let indirect_metadata = render3d_build_gpu_preprocess_indirect_metadata(
     work_item_buffers,
@@ -4260,12 +4283,13 @@ fn render3d_resolve_prequeued_mesh_phase_items(
 fn render3d_make_fallback_gpu_preprocess_queue_entry(
   draw_items : Array[MeshPhaseItem3d],
   meshes : Array[ExtractedMesh3d],
+  indirect_enabled : Bool,
 ) -> GpuPreprocessResolvedCameraQueueEntry3d {
   let phase_ranges = render3d_build_gpu_preprocess_phase_ranges_from_draw_items(
     draw_items,
   )
   let work_item_buffers = render3d_build_gpu_preprocess_work_item_buffers_from_draw_items(
-    draw_items, meshes,
+    draw_items, meshes, indirect_enabled,
   )
   let indirect_metadata = render3d_build_gpu_preprocess_indirect_metadata(
     work_item_buffers,
@@ -4858,7 +4882,11 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
     }
     render3d_gpu_preprocess_camera_queues_ref.val.push(
       render3d_build_gpu_preprocess_camera_queue_entry(
-        camera_entity, mesh_candidates, camera_layers, camera_transform,
+        camera_entity,
+        mesh_candidates,
+        camera_layers,
+        camera_transform,
+        runtime_config.use_gpu_instance_buffer_builder,
       ),
     )
   }
@@ -5692,6 +5720,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
               true,
             ),
             meshes,
+            true,
           )
       }
     } else {
@@ -5703,6 +5732,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           false,
         ),
         meshes,
+        false,
       )
     }
     let draw_items = draw_queue_entry.draw_items
