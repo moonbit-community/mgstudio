@@ -4904,7 +4904,6 @@ priv struct CameraComputed {
 priv struct Mesh2dDrawPayload {
   mesh_id : Int
   transform : @math.Transform
-  material_asset_id : Int
   layers : RenderLayers
 }
 
@@ -6995,9 +6994,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
         return
       }
       guard gpu_mesh_store.get(entity) is Some(gpu) else { return }
-      guard material_instances_ref.val.get(entity) is Some(material_handle) else {
-        return
-      }
+      guard material_instances_ref.val.get(entity) is Some(_) else { return }
       let layers = match layers_store.get(entity) {
         Some(v) => v
         None => RenderLayers::default()
@@ -7012,12 +7009,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
       }
       rs.val.meshes.push(ExtractedMesh2d::{
         entity: phase_entity_ref_for_main(entity),
-        payload: Mesh2dDrawPayload::{
-          mesh_id: gpu.mesh_id,
-          transform,
-          material_asset_id: material_handle.id(),
-          layers,
-        },
+        payload: Mesh2dDrawPayload::{ mesh_id: gpu.mesh_id, transform, layers },
       })
 
       if !render2d_mesh_should_draw_wireframe(
@@ -7248,21 +7240,14 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
       guard (try! world.get(entity, ecs_key_gpu_mesh2d)) is Some(gpu) else {
         return
       }
-      guard material_instances_ref.val.get(entity) is Some(material_handle) else {
-        return
-      }
+      guard material_instances_ref.val.get(entity) is Some(_) else { return }
       let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
         RenderLayers::default(),
       )
       let transform = render2d_resolve_transform_ecs(world, entity)
       rs.val.meshes.push(ExtractedMesh2d::{
         entity: phase_entity_ref_for_main(entity),
-        payload: Mesh2dDrawPayload::{
-          mesh_id: gpu.mesh_id,
-          transform,
-          material_asset_id: material_handle.id(),
-          layers,
-        },
+        payload: Mesh2dDrawPayload::{ mesh_id: gpu.mesh_id, transform, layers },
       })
 
       if !render2d_mesh_should_draw_wireframe(
@@ -7318,6 +7303,9 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
   let prepared_assets = prepared_material2d_assets_or_empty(
     world, color_material_probe,
   )
+  let material_instances = render_material2d_instances_or_empty(
+    world, color_material_probe,
+  )
   render_state_update(world, fn(rs) {
     if !rs.val.draw_enabled {
       rs.val.queued_draw_item_counts.clear()
@@ -7346,6 +7334,7 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
         rs.val.extra_ui_texture_slices,
         rs.val.meshes,
         prepared_assets,
+        material_instances,
         camera.entity,
         camera.layers,
       )
@@ -7523,14 +7512,25 @@ fn[M] prepared_material2d_get(
 }
 
 ///|
-fn[M] prepared_material2d_handle_from_asset_id(
-  material_asset_id : Int,
+fn[M] prepared_material2d_handle_for_entity(
+  entity : @core.Entity,
+  material_instances : RenderMaterial2dInstances[M],
 ) -> @asset.Handle[PreparedMaterial2d[M]]? {
-  if material_asset_id < 0 {
-    None
-  } else {
-    Some(@asset.Handle::new(material_asset_id))
+  guard material_instances.get(entity) is Some(material_handle) else {
+    return None
   }
+  Some(PreparedMaterial2d::prepared_handle(material_handle))
+}
+
+///|
+fn[M] prepared_material2d_handle_for_mesh(
+  mesh : ExtractedMesh2d,
+  material_instances : RenderMaterial2dInstances[M],
+) -> @asset.Handle[PreparedMaterial2d[M]]? {
+  prepared_material2d_handle_for_entity(
+    mesh.entity.main_entity,
+    material_instances,
+  )
 }
 
 ///|
@@ -7552,15 +7552,28 @@ fn[M] prepared_material2d_assets_or_empty(
 }
 
 ///|
+fn[M] render_material2d_instances_or_empty(
+  world : @ecs.World,
+  _probe : @asset.Handle[M],
+) -> RenderMaterial2dInstances[M] {
+  _probe |> ignore
+  let instances_key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = RenderMaterial2dInstances::resource()
+  let empty_instances = RenderMaterial2dInstances::new()
+  if (try! world.get_resource_ref(instances_key)) is Some(instances_ref) {
+    instances_ref.val
+  } else {
+    empty_instances
+  }
+}
+
+///|
 fn[M] append_material2d_mesh_draw_items(
   items : Array[DrawItem],
   meshes : Array[ExtractedMesh2d],
   prepared_materials : @asset.Assets[PreparedMaterial2d[M]],
+  material_instances : RenderMaterial2dInstances[M],
   layers : RenderLayers,
   tie : Int,
-  material_handle_of : (Mesh2dDrawPayload) -> @asset.Handle[
-    PreparedMaterial2d[M],
-  ]?,
 ) -> Int {
   let mut next_tie = tie
   for i in 0..<meshes.length() {
@@ -7568,7 +7581,8 @@ fn[M] append_material2d_mesh_draw_items(
     if !mesh.payload.layers.matches(layers) {
       continue
     }
-    guard material_handle_of(mesh.payload) is Some(material_handle) else {
+    guard prepared_material2d_handle_for_mesh(mesh, material_instances)
+      is Some(material_handle) else {
       continue
     }
     guard prepared_material2d_get(prepared_materials, material_handle)
@@ -7591,21 +7605,15 @@ fn[M] append_material2d_mesh_draw_items(
 }
 
 ///|
-fn color_material_prepared_handle(
-  mesh : Mesh2dDrawPayload,
-) -> @asset.Handle[PreparedMaterial2d[ColorMaterialAsset]]? {
-  prepared_material2d_handle_from_asset_id(mesh.material_asset_id)
-}
-
-///|
 fn[M] draw_material2d_mesh_item(
-  mesh : Mesh2dDrawPayload,
+  mesh : ExtractedMesh2d,
   prepared_assets : @asset.Assets[PreparedMaterial2d[M]],
-  material_handle_of : (Mesh2dDrawPayload) -> @asset.Handle[
-    PreparedMaterial2d[M],
-  ]?,
+  material_instances : RenderMaterial2dInstances[M],
 ) -> Unit {
-  guard material_handle_of(mesh) is Some(material_handle) else { return }
+  guard prepared_material2d_handle_for_mesh(mesh, material_instances)
+    is Some(material_handle) else {
+    return
+  }
   guard prepared_material2d_get(prepared_assets, material_handle)
     is Some(material) else {
     return
@@ -7613,9 +7621,10 @@ fn[M] draw_material2d_mesh_item(
   guard prepared_material2d_draw_params(material) is Some(draw_params) else {
     return
   }
-  let transform = mesh.transform
+  let payload = mesh.payload
+  let transform = payload.transform
   @render.host_gpu_draw_mesh(
-    mesh_id=mesh.mesh_id,
+    mesh_id=payload.mesh_id,
     x=transform.translation.x,
     y=transform.translation.y,
     rotation=transform.rotation_z(),
@@ -7637,12 +7646,11 @@ fn[M] draw_material2d_mesh_item(
 
 ///|
 fn draw_color_material_mesh_item(
-  mesh : Mesh2dDrawPayload,
+  mesh : ExtractedMesh2d,
   prepared_assets : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
+  material_instances : RenderMaterial2dInstances[ColorMaterialAsset],
 ) -> Unit {
-  draw_material2d_mesh_item(
-    mesh, prepared_assets, color_material_prepared_handle,
-  )
+  draw_material2d_mesh_item(mesh, prepared_assets, material_instances)
 }
 
 ///|
@@ -7677,17 +7685,15 @@ fn[M] draw_material2d_items_for_layers(
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
   meshes : Array[ExtractedMesh2d],
   prepared_materials : @asset.Assets[PreparedMaterial2d[M]],
+  material_instances : RenderMaterial2dInstances[M],
   camera_entity : @core.Entity,
   layers : RenderLayers,
-  material_handle_of : (Mesh2dDrawPayload) -> @asset.Handle[
-    PreparedMaterial2d[M],
-  ]?,
 ) -> Array[DrawItem] {
   let items : Array[DrawItem] = []
   for
     item in draw_material2d_scene_items_for_layers(
       sprites, extra_sprites, extra_sprite_texture_slices, meshes, prepared_materials,
-      layers, material_handle_of,
+      material_instances, layers,
     ) {
     items.push(item)
   }
@@ -7711,12 +7717,14 @@ fn draw_items_for_layers(
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
   meshes : Array[ExtractedMesh2d],
   prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
+  material_instances : RenderMaterial2dInstances[ColorMaterialAsset],
   camera_entity : @core.Entity,
   layers : RenderLayers,
 ) -> Array[DrawItem] {
   draw_material2d_items_for_layers(
     sprites, extra_sprites, extra_sprite_texture_slices, extra_ui_rects, extra_ui_box_shadows,
-    extra_ui_texture_slices, meshes, prepared_materials, camera_entity, layers, color_material_prepared_handle,
+    extra_ui_texture_slices, meshes, prepared_materials, material_instances, camera_entity,
+    layers,
   )
 }
 
@@ -7747,17 +7755,15 @@ fn[M] draw_material2d_scene_items_for_layers(
   extra_sprite_texture_slices : Array[ExtractedSpriteTextureSlice],
   meshes : Array[ExtractedMesh2d],
   prepared_materials : @asset.Assets[PreparedMaterial2d[M]],
+  material_instances : RenderMaterial2dInstances[M],
   layers : RenderLayers,
-  material_handle_of : (Mesh2dDrawPayload) -> @asset.Handle[
-    PreparedMaterial2d[M],
-  ]?,
 ) -> Array[DrawItem] {
   let items : Array[DrawItem] = []
   let mut tie = 0
   // Align with Bevy queue structure: mesh phases are queued before sprite phases.
   // Transparent items are then sorted by z with stable insertion order.
   tie = append_material2d_mesh_draw_items(
-    items, meshes, prepared_materials, layers, tie, material_handle_of,
+    items, meshes, prepared_materials, material_instances, layers, tie,
   )
   for i in 0..<sprites.length() {
     let sprite = sprites[i]
@@ -7811,11 +7817,12 @@ fn draw_scene_items_for_layers(
   extra_sprite_texture_slices : Array[ExtractedSpriteTextureSlice],
   meshes : Array[ExtractedMesh2d],
   prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
+  material_instances : RenderMaterial2dInstances[ColorMaterialAsset],
   layers : RenderLayers,
 ) -> Array[DrawItem] {
   draw_material2d_scene_items_for_layers(
     sprites, extra_sprites, extra_sprite_texture_slices, meshes, prepared_materials,
-    layers, color_material_prepared_handle,
+    material_instances, layers,
   )
 }
 
@@ -7957,17 +7964,11 @@ fn extracted_mesh2d_item(
   entity : @core.Entity,
   mesh_id : Int,
   transform : @math.Transform,
-  material : @asset.Handle[ColorMaterialAsset],
   layers : RenderLayers,
 ) -> ExtractedMesh2d {
   ExtractedMesh2d::{
     entity: phase_entity_ref_for_main(entity),
-    payload: Mesh2dDrawPayload::{
-      mesh_id,
-      transform,
-      material_asset_id: material.id(),
-      layers,
-    },
+    payload: Mesh2dDrawPayload::{ mesh_id, transform, layers },
   }
 }
 
@@ -8063,22 +8064,40 @@ fn prepared_color_material_assets_for_tests(
 }
 
 ///|
-test "render2d: extracted mesh payload stores source material asset id" {
-  let handle = @asset.Handle::new(77)
+fn[M] render_material2d_instances_for_tests(
+  instances_info : Array[(@core.Entity, @asset.Handle[M])],
+) -> RenderMaterial2dInstances[M] {
+  let instances = RenderMaterial2dInstances::new()
+  for info in instances_info {
+    let (entity, material) = info
+    instances.set(entity, material)
+  }
+  instances
+}
+
+///|
+test "render2d: mesh prepared material handle resolves from extracted entity instance" {
+  let entity = @core.Entity::new(1, 0)
+  let handle : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(77)
   let extracted = extracted_mesh2d_item(
-    @core.Entity::new(1, 0),
+    entity,
     12,
     @math.Transform::identity(),
-    handle,
     RenderLayers::default(),
   )
-
-  inspect(extracted.payload.material_asset_id, content="77")
+  let instances = render_material2d_instances_for_tests([(entity, handle)])
+  let prepared_id = match
+    prepared_material2d_handle_for_mesh(extracted, instances) {
+    Some(prepared_handle) => prepared_handle.id()
+    None => -1
+  }
+  inspect(prepared_id, content="77")
 }
 
 ///|
 test "render2d: unified draw items order sprites and meshes by z" {
   let layers = RenderLayers::default()
+  let mesh_entity = @core.Entity::new(1, 0)
   let material_handle = @asset.Handle::new(1)
   let prepared_materials = prepared_color_material_assets_for_tests([
     (
@@ -8112,7 +8131,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
   let extra_slices : Array[ExtractedUiTextureSlice] = []
   let meshes : Array[ExtractedMesh2d] = [
     extracted_mesh2d_item(
-      @core.Entity::new(1, 0),
+      mesh_entity,
       7,
       @math.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 0.0F),
@@ -8120,10 +8139,12 @@ test "render2d: unified draw items order sprites and meshes by z" {
         @math.Vec2::new(1.0F, 1.0F),
         z=-1.0F,
       ),
-      material_handle,
       layers,
     ),
   ]
+  let material_instances = render_material2d_instances_for_tests([
+    (mesh_entity, material_handle),
+  ])
   let items = draw_items_for_layers(
     sprites,
     extra,
@@ -8133,6 +8154,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
     extra_slices,
     meshes,
     prepared_materials,
+    material_instances,
     @core.Entity::new(0, 0),
     layers,
   )
@@ -8146,6 +8168,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
 test "render2d: UI overlay draw items route by target camera" {
   let layers = RenderLayers::default()
   let prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]] = @asset.Assets::new()
+  let material_instances : RenderMaterial2dInstances[ColorMaterialAsset] = RenderMaterial2dInstances::new()
   let camera_a = @core.Entity::new(10, 0)
   let camera_b = @core.Entity::new(11, 0)
   let sprites : Array[ExtractedSprite] = []
@@ -8190,7 +8213,7 @@ test "render2d: UI overlay draw items route by target camera" {
   let meshes : Array[ExtractedMesh2d] = []
   let items = draw_items_for_layers(
     sprites, extra, extra_sprite_slices, extra_ui, extra_shadow, extra_slices, meshes,
-    prepared_materials, camera_a, layers,
+    prepared_materials, material_instances, camera_a, layers,
   )
   let ok = items.length() == 1 && items[0].kind is UiRectExtra(0)
   inspect(ok, content="true")
@@ -8200,6 +8223,7 @@ test "render2d: UI overlay draw items route by target camera" {
 test "render2d: scene draw items exclude UI overlays" {
   let layers = RenderLayers::default()
   let prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]] = @asset.Assets::new()
+  let material_instances : RenderMaterial2dInstances[ColorMaterialAsset] = RenderMaterial2dInstances::new()
   let camera = @core.Entity::new(10, 0)
   let scene_items = draw_scene_items_for_layers(
     [],
@@ -8207,6 +8231,7 @@ test "render2d: scene draw items exclude UI overlays" {
     [],
     [],
     prepared_materials,
+    material_instances,
     layers,
   )
   let ui_items = draw_ui_overlay_items_for_layers(
@@ -8352,6 +8377,8 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
 ///|
 test "render2d: mesh opaque alpha mode stays in opaque phase" {
   let layers = RenderLayers::default()
+  let opaque_entity = @core.Entity::new(2, 0)
+  let blend_entity = @core.Entity::new(1, 0)
   let opaque_handle = @asset.Handle::new(20)
   let blend_handle = @asset.Handle::new(21)
   let prepared_materials = prepared_color_material_assets_for_tests([
@@ -8378,20 +8405,17 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
   let extra_slices : Array[ExtractedUiTextureSlice] = []
   let meshes : Array[ExtractedMesh2d] = [
     extracted_mesh2d_item(
-      @core.Entity::new(2, 0),
+      opaque_entity,
       10,
       @math.Transform::identity(),
-      opaque_handle,
       layers,
     ),
-    extracted_mesh2d_item(
-      @core.Entity::new(1, 0),
-      11,
-      @math.Transform::identity(),
-      blend_handle,
-      layers,
-    ),
+    extracted_mesh2d_item(blend_entity, 11, @math.Transform::identity(), layers),
   ]
+  let material_instances = render_material2d_instances_for_tests([
+    (opaque_entity, opaque_handle),
+    (blend_entity, blend_handle),
+  ])
   let items = draw_items_for_layers(
     sprites,
     extra,
@@ -8401,6 +8425,7 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
     extra_slices,
     meshes,
     prepared_materials,
+    material_instances,
     @core.Entity::new(0, 0),
     layers,
   )
@@ -8413,6 +8438,7 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
 ///|
 test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
   let layers = RenderLayers::default()
+  let mesh_entity = @core.Entity::new(1, 0)
   let material_handle = @asset.Handle::new(30)
   let prepared_materials = prepared_color_material_assets_for_tests([
     (
@@ -8438,20 +8464,18 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
     ),
   ]
   let meshes : Array[ExtractedMesh2d] = [
-    extracted_mesh2d_item(
-      @core.Entity::new(1, 0),
-      99,
-      @math.Transform::identity(),
-      material_handle,
-      layers,
-    ),
+    extracted_mesh2d_item(mesh_entity, 99, @math.Transform::identity(), layers),
   ]
+  let material_instances = render_material2d_instances_for_tests([
+    (mesh_entity, material_handle),
+  ])
   let items = draw_scene_items_for_layers(
     sprites,
     [],
     [],
     meshes,
     prepared_materials,
+    material_instances,
     layers,
   )
   let ok = items.length() == 2 &&
@@ -8463,6 +8487,8 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
 ///|
 test "render2d: mesh mask alpha mode drops below cutoff" {
   let layers = RenderLayers::default()
+  let masked_low_entity = @core.Entity::new(1, 0)
+  let masked_high_entity = @core.Entity::new(2, 0)
   let masked_low_handle = @asset.Handle::new(40)
   let masked_high_handle = @asset.Handle::new(41)
   let prepared_materials = prepared_color_material_assets_for_tests([
@@ -8489,20 +8515,22 @@ test "render2d: mesh mask alpha mode drops below cutoff" {
   let extra_slices : Array[ExtractedUiTextureSlice] = []
   let meshes : Array[ExtractedMesh2d] = [
     extracted_mesh2d_item(
-      @core.Entity::new(1, 0),
+      masked_low_entity,
       20,
       @math.Transform::identity(),
-      masked_low_handle,
       layers,
     ),
     extracted_mesh2d_item(
-      @core.Entity::new(2, 0),
+      masked_high_entity,
       21,
       @math.Transform::identity(),
-      masked_high_handle,
       layers,
     ),
   ]
+  let material_instances = render_material2d_instances_for_tests([
+    (masked_low_entity, masked_low_handle),
+    (masked_high_entity, masked_high_handle),
+  ])
   let items = draw_items_for_layers(
     sprites,
     extra,
@@ -8512,6 +8540,7 @@ test "render2d: mesh mask alpha mode drops below cutoff" {
     extra_slices,
     meshes,
     prepared_materials,
+    material_instances,
     @core.Entity::new(0, 0),
     layers,
   )
@@ -8676,6 +8705,9 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
     0,
   )
   let prepared_assets = prepared_material2d_assets_or_empty(
+    world, color_material_probe,
+  )
+  let material_instances = render_material2d_instances_or_empty(
     world, color_material_probe,
   )
   render_state_update(world, fn(rs) {
@@ -8874,6 +8906,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         extra_sprite_texture_slices,
         meshes,
         prepared_assets,
+        material_instances,
         camera.layers,
       )
       let ui_overlay_draw_items = draw_ui_overlay_items_for_layers(
@@ -8892,6 +8925,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         extra_ui_texture_slices,
         meshes,
         prepared_assets,
+        material_instances,
         camera.entity,
         camera.layers,
       )
@@ -9027,8 +9061,10 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             }
             Mesh(i) => {
               apply_scissor(None)
-              let mesh = meshes[i].payload
-              draw_color_material_mesh_item(mesh, prepared_assets)
+              let mesh = meshes[i]
+              draw_color_material_mesh_item(
+                mesh, prepared_assets, material_instances,
+              )
             }
             UiRectExtra(i) => {
               let rect = extra_ui_rects[i].payload
