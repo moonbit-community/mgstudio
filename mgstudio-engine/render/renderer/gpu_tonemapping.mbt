@@ -357,7 +357,7 @@ fn GpuBackend::draw_tonemapping3d_fullscreen(
       let final_bg = builder.finish(
         self.device,
         final_bind_layout,
-        label="mgstudio_tonemapping3d_bg",
+        label="mgstudio_tonemapping_bind_group",
       )
       let final_pass = frame.encoder.begin_render_pass_color_load(dst_view)
       final_pass.set_viewport(
