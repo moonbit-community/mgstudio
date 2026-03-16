@@ -184,7 +184,7 @@ test "render2d: Mesh2dBundle::spawn inserts expected components" {
   let expected_transform = @math.Transform::identity()
 
   @app.App::new(world)
-  .add_plugins([render2d_plugin])
+  .add_plugins([@asset.asset_plugin, render2d_plugin])
   .add_system(fn(world : @ecs.World) {
     let mesh = Mesh2d::from_rectangle(Rectangle::new(8.0F, 6.0F))
     let material = ColorMaterial::new(Color::white())
@@ -235,5 +235,52 @@ test "render2d: Mesh2dBundle::spawn inserts expected components" {
   inspect(
     ecs_transform_matches(world, entity, expected_transform),
     content="true",
+  )
+}
+
+///|
+test "render2d: ColorMaterialPlugin initializes the Bevy default material handle" {
+  let app = @app.App::new(@ecs.World::new()).add_plugins([
+    color_material_plugin(ColorMaterialPlugin::default()),
+  ])
+  let key : @ecs.ResourceKey[@asset.Assets[ColorMaterialAsset]] = @asset.assets_resource_key()
+  let assets = try! app.world().get_resource(key).unwrap()
+  let handle : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(0)
+  let material = assets.get(handle).unwrap()
+
+  inspect(assets.contains(handle), content="true")
+  inspect(material.color.r.to_double(), content="1")
+  inspect(material.color.g.to_double(), content="0")
+  inspect(material.color.b.to_double(), content="1")
+  inspect(material.color.a.to_double(), content="1")
+  inspect(material.alpha_mode is Blend, content="true")
+  inspect(material.texture is None, content="true")
+}
+
+///|
+test "render2d: ColorMaterial::new matches Bevy alpha inference" {
+  let opaque_alpha_mode : Ref[AlphaMode2d?] = Ref::new(None)
+  let blend_alpha_mode : Ref[AlphaMode2d?] = Ref::new(None)
+
+  @app.App::new(@ecs.World::new())
+  .add_plugins([@asset.asset_plugin, render2d_plugin])
+  .add_system(fn(_world : @ecs.World) {
+    opaque_alpha_mode.val = Some(
+      ColorMaterial::new(Color::white()).alpha_mode(),
+    )
+    blend_alpha_mode.val = Some(
+      ColorMaterial::new(Color::new(0.25F, 0.5F, 0.75F, 0.4F)).alpha_mode(),
+    )
+  })
+  .run_once()
+  |> ignore
+
+  inspect(
+    opaque_alpha_mode.val.map(fn(mode) { mode is Opaque }),
+    content="Some(true)",
+  )
+  inspect(
+    blend_alpha_mode.val.map(fn(mode) { mode is Blend }),
+    content="Some(true)",
   )
 }

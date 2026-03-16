@@ -16,6 +16,7 @@ pub struct Color {
   b : Float
   a : Float
 }
+pub fn Color::alpha(Self) -> Float
 pub fn Color::black() -> Self
 pub fn Color::darker(Self, Float) -> Self
 pub fn Color::hsl(Float, Float, Float) -> Self

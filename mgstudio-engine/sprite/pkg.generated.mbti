@@ -469,6 +469,7 @@ pub struct ColorMaterial {
 }
 pub fn ColorMaterial::alpha_mode(Self) -> AlphaMode2d
 pub fn ColorMaterial::color(Self) -> @color.Color
+pub fn ColorMaterial::from_color(@color.Color) -> Self
 pub fn ColorMaterial::from_image(@asset.Handle[@image.Image]) -> Self
 pub fn ColorMaterial::new(@color.Color) -> Self
 pub fn ColorMaterial::new_with_alpha_mode(@color.Color, AlphaMode2d) -> Self
@@ -481,6 +482,7 @@ pub fn ColorMaterial::with_uv_offset(Self, @math.Vec2) -> Self
 pub fn ColorMaterial::with_uv_scale(Self, @math.Vec2) -> Self
 pub impl @ecs.Component for ColorMaterial
 pub impl Material2d for ColorMaterial
+pub impl Default for ColorMaterial
 pub impl ToJson for ColorMaterial
 pub impl @json.FromJson for ColorMaterial
 

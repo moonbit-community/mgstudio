@@ -175,6 +175,11 @@ fn color_mix(a : Color, b : Color, factor : Float) -> Color {
 }
 
 ///|
+pub fn Color::alpha(self : Color) -> Float {
+  self.a
+}
+
+///|
 pub impl ToJson for Color with to_json(self) {
   (self.r, self.g, self.b, self.a).to_json()
 }

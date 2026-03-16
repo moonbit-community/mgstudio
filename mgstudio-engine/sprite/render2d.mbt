@@ -1170,6 +1170,31 @@ pub fn ColorMaterialAsset::new(
 }
 
 ///|
+fn default_color_material_asset_handle() -> @asset.Handle[ColorMaterialAsset] {
+  @asset.Handle::new(0)
+}
+
+///|
+fn default_color_material_asset() -> ColorMaterialAsset {
+  ColorMaterialAsset::new(
+    Color::srgb(1.0F, 0.0F, 1.0F),
+    AlphaMode2d::Blend,
+    texture=None,
+    uv_offset=@math.Vec2::new(0.0F, 0.0F),
+    uv_scale=@math.Vec2::new(1.0F, 1.0F),
+  )
+}
+
+///|
+fn color_material_alpha_mode_for_color(color : Color) -> AlphaMode2d {
+  if color.alpha() < 1.0F {
+    AlphaMode2d::Blend
+  } else {
+    AlphaMode2d::Opaque
+  }
+}
+
+///|
 fn color_material_get(
   handle : @asset.Handle[ColorMaterialAsset],
 ) -> ColorMaterialAsset? {
@@ -1197,9 +1222,14 @@ fn color_material_add(
 
 ///|
 pub fn ColorMaterial::new(color : Color) -> ColorMaterial {
+  ColorMaterial::from_color(color)
+}
+
+///|
+pub fn ColorMaterial::from_color(color : Color) -> ColorMaterial {
   color_material_add(
     color,
-    AlphaMode2d::Blend,
+    color_material_alpha_mode_for_color(color),
     None,
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(1.0F, 1.0F),
@@ -1290,6 +1320,11 @@ pub fn ColorMaterial::uv_scale(self : ColorMaterial) -> @math.Vec2 {
 }
 
 ///|
+pub impl Default for ColorMaterial with default() {
+  ColorMaterial::{ handle: default_color_material_asset_handle() }
+}
+
+///|
 pub fn ColorMaterial::with_texture(
   self : ColorMaterial,
   texture : @asset.Handle[@asset.Image],
@@ -1376,6 +1411,22 @@ fn init_color_material_assets_resource(
 }
 
 ///|
+fn init_default_color_material_asset(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  let world = app.world()
+  let key : @ecs.ResourceKey[@asset.Assets[ColorMaterialAsset]] = @asset.assets_resource_key()
+  if (try! world.get_resource_ref_mut(key, world.read_change_tick()))
+    is Some(assets_ref) {
+    let handle = default_color_material_asset_handle()
+    if !assets_ref.val.contains(handle) {
+      assets_ref.val.insert(handle, default_color_material_asset()) |> ignore
+    }
+  }
+  app
+}
+
+///|
 pub struct Material2dPlugin[M] {
   marker : M?
 }
@@ -1390,7 +1441,7 @@ pub fn material2d_plugin(
   _plugin : Material2dPlugin[ColorMaterial],
 ) -> @app.Plugin[@ecs.World] {
   fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    init_color_material_assets_resource(app)
+    init_default_color_material_asset(init_color_material_assets_resource(app))
   }
 }
 

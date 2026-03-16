@@ -25,3 +25,9 @@ test "color owns Color constructors" {
   inspect(black.b.to_double(), content="0")
   inspect(black.a.to_double(), content="1")
 }
+
+///|
+test "color exposes alpha channel" {
+  let color = @color.Color::new(0.2F, 0.4F, 0.6F, 0.25F)
+  inspect(color.alpha().to_double(), content="0.25")
+}
