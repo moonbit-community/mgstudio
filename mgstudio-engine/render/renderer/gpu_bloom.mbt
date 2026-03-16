@@ -250,7 +250,7 @@ pub fn GpuBackend::apply_bloom(
           scene_texture.view,
           bloom_sampler,
           settings_buf,
-          "mgstudio_bloom2d_downsample_first_bg",
+          "mgstudio_bloom_downsampling_first_bind_group",
         )
         is Some(first_bg) {
         let first_pass = frame.encoder.begin_render_pass_color_clear(
@@ -293,7 +293,7 @@ pub fn GpuBackend::apply_bloom(
               self.bloom_mip_views[mip - 1],
               bloom_sampler,
               settings_buf,
-              "mgstudio_bloom2d_downsample_bg",
+              "mgstudio_bloom_downsampling_bind_group",
             )
             is Some(downsample_bg) {
             mip_size_w = if mip_size_w > 1 { mip_size_w / 2 } else { 1 }
@@ -400,7 +400,7 @@ pub fn GpuBackend::apply_bloom(
               self.bloom_mip_views[upsample_mip],
               bloom_sampler,
               settings_buf,
-              "mgstudio_bloom2d_upsample_bg",
+              "mgstudio_bloom_upsampling_bind_group",
             )
             is Some(upsample_bg) {
             let size_w = bloom_mip_dimension(bloom_width, upsample_mip - 1)
@@ -452,7 +452,7 @@ pub fn GpuBackend::apply_bloom(
       self.bloom_mip_views[0],
       bloom_sampler,
       settings_buf,
-      "mgstudio_bloom2d_upsample_final_bg",
+      "mgstudio_bloom_upsampling_final_bind_group",
     )
     is Some(final_bg) {
     let final_blend = bloom_compute_blend_factor(
@@ -800,10 +800,10 @@ fn ensure_bloom_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
     }
     let bgl = builder.finish(
       backend.device,
-      label="mgstudio_bloom2d_intermediate_bgl",
+      label="mgstudio_bloom_intermediate_bind_group_layout",
     )
     let pl = backend.device.create_pipeline_layout_1(bgl)
-    pl.set_label("mgstudio_bloom2d_intermediate_pipeline_layout")
+    pl.set_label("mgstudio_bloom_intermediate_pipeline_layout")
     backend.bloom_intermediate_bgl = Some(bgl)
     backend.bloom_intermediate_pipeline_layout = Some(pl)
   }
@@ -854,7 +854,7 @@ fn ensure_bloom_mip_texture(
       mip.reinterpret_as_uint(),
       1U,
     )
-    view.set_label("mgstudio_bloom2d_mip_\{mip}")
+    view.set_label("mgstudio_bloom_mip_\{mip}")
     backend.bloom_mip_views.push(view)
   }
   backend.bloom_mip_texture = Some(texture)
@@ -945,7 +945,7 @@ fn ensure_bloom_pipeline_rgba8(
       mip_format,
       "downsample_first",
       POSTPROCESS_BLEND_MODE_NONE,
-      "mgstudio_bloom2d_downsample_first",
+      "mgstudio_bloom_downsampling_pipeline_first",
     )
     let downsample_first_no_threshold_pipeline = create_postprocess_pipeline(
       backend,
@@ -954,7 +954,7 @@ fn ensure_bloom_pipeline_rgba8(
       mip_format,
       "downsample_first",
       POSTPROCESS_BLEND_MODE_NONE,
-      "mgstudio_bloom2d_downsample_first_no_threshold",
+      "mgstudio_bloom_downsampling_pipeline_first_no_threshold",
     )
     let downsample_first_uniform_pipeline = create_postprocess_pipeline(
       backend,
@@ -963,7 +963,7 @@ fn ensure_bloom_pipeline_rgba8(
       mip_format,
       "downsample_first",
       POSTPROCESS_BLEND_MODE_NONE,
-      "mgstudio_bloom2d_downsample_first_uniform",
+      "mgstudio_bloom_downsampling_pipeline_first_uniform",
     )
     let downsample_first_no_threshold_uniform_pipeline = create_postprocess_pipeline(
       backend,
@@ -972,7 +972,7 @@ fn ensure_bloom_pipeline_rgba8(
       mip_format,
       "downsample_first",
       POSTPROCESS_BLEND_MODE_NONE,
-      "mgstudio_bloom2d_downsample_first_no_threshold_uniform",
+      "mgstudio_bloom_downsampling_pipeline_first_no_threshold_uniform",
     )
     let downsample_pipeline = create_postprocess_pipeline(
       backend,
@@ -981,7 +981,7 @@ fn ensure_bloom_pipeline_rgba8(
       mip_format,
       "downsample",
       POSTPROCESS_BLEND_MODE_NONE,
-      "mgstudio_bloom2d_downsample",
+      "mgstudio_bloom_downsampling_pipeline",
     )
     let downsample_uniform_pipeline = create_postprocess_pipeline(
       backend,
@@ -990,7 +990,7 @@ fn ensure_bloom_pipeline_rgba8(
       mip_format,
       "downsample",
       POSTPROCESS_BLEND_MODE_NONE,
-      "mgstudio_bloom2d_downsample_uniform",
+      "mgstudio_bloom_downsampling_pipeline_uniform",
     )
     let upsample_pipeline_energy = create_postprocess_pipeline(
       backend,
@@ -999,7 +999,7 @@ fn ensure_bloom_pipeline_rgba8(
       mip_format,
       "upsample",
       POSTPROCESS_BLEND_MODE_CONSTANT_ENERGY,
-      "mgstudio_bloom2d_upsample_energy",
+      "mgstudio_bloom_upsampling_pipeline_energy",
     )
     let upsample_pipeline_additive = create_postprocess_pipeline(
       backend,
@@ -1008,7 +1008,7 @@ fn ensure_bloom_pipeline_rgba8(
       mip_format,
       "upsample",
       POSTPROCESS_BLEND_MODE_CONSTANT_ADDITIVE,
-      "mgstudio_bloom2d_upsample_additive",
+      "mgstudio_bloom_upsampling_pipeline_additive",
     )
     backend.bloom_downsample_first_pipeline = Some(downsample_first_pipeline)
     backend.bloom_downsample_first_no_threshold_pipeline = Some(
@@ -1062,7 +1062,7 @@ fn ensure_bloom_final_composite_pipeline(
     format,
     "upsample",
     POSTPROCESS_BLEND_MODE_CONSTANT_ENERGY,
-    "mgstudio_bloom2d_upsample_final_energy",
+    "mgstudio_bloom_upsampling_final_pipeline_energy",
   )
   let additive_pipeline = create_postprocess_pipeline(
     backend,
@@ -1071,7 +1071,7 @@ fn ensure_bloom_final_composite_pipeline(
     format,
     "upsample",
     POSTPROCESS_BLEND_MODE_CONSTANT_ADDITIVE,
-    "mgstudio_bloom2d_upsample_final_additive",
+    "mgstudio_bloom_upsampling_final_pipeline_additive",
   )
   backend.bloom_upsample_final_pipeline_energy = Some(energy_pipeline)
   backend.bloom_upsample_final_pipeline_additive = Some(additive_pipeline)
