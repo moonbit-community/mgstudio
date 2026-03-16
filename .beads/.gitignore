@@ -1,6 +1,9 @@
 # Dolt database (managed by Dolt, not git)
 dolt/
 dolt-access.lock
+beads/
+beads_*/
+config.yaml
 
 # Root-level Dolt SQL server runtime state (local-only)
 /.dolt/
