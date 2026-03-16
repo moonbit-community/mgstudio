@@ -4904,7 +4904,7 @@ priv struct CameraComputed {
 priv struct Mesh2dDrawPayload {
   mesh_id : Int
   transform : @math.Transform
-  material : @asset.Handle[PreparedMaterial2d[ColorMaterialAsset]]
+  material_asset_id : Int
   layers : RenderLayers
 }
 
@@ -7015,7 +7015,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
         payload: Mesh2dDrawPayload::{
           mesh_id: gpu.mesh_id,
           transform,
-          material: PreparedMaterial2d::prepared_handle(material_handle),
+          material_asset_id: material_handle.id(),
           layers,
         },
       })
@@ -7260,7 +7260,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         payload: Mesh2dDrawPayload::{
           mesh_id: gpu.mesh_id,
           transform,
-          material: PreparedMaterial2d::prepared_handle(material_handle),
+          material_asset_id: material_handle.id(),
           layers,
         },
       })
@@ -7523,6 +7523,17 @@ fn[M] prepared_material2d_get(
 }
 
 ///|
+fn[M] prepared_material2d_handle_from_asset_id(
+  material_asset_id : Int,
+) -> @asset.Handle[PreparedMaterial2d[M]]? {
+  if material_asset_id < 0 {
+    None
+  } else {
+    Some(@asset.Handle::new(material_asset_id))
+  }
+}
+
+///|
 fn[M] prepared_material2d_assets_or_empty(
   world : @ecs.World,
   _probe : @asset.Handle[M],
@@ -7583,7 +7594,7 @@ fn[M] append_material2d_mesh_draw_items(
 fn color_material_prepared_handle(
   mesh : Mesh2dDrawPayload,
 ) -> @asset.Handle[PreparedMaterial2d[ColorMaterialAsset]]? {
-  Some(mesh.material)
+  prepared_material2d_handle_from_asset_id(mesh.material_asset_id)
 }
 
 ///|
@@ -7591,7 +7602,10 @@ fn draw_color_material_mesh_item(
   mesh : Mesh2dDrawPayload,
   prepared_assets : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
 ) -> Unit {
-  guard prepared_material2d_get(prepared_assets, mesh.material)
+  guard color_material_prepared_handle(mesh) is Some(material_handle) else {
+    return
+  }
+  guard prepared_material2d_get(prepared_assets, material_handle)
     is Some(material) else {
     return
   }
@@ -7900,7 +7914,7 @@ fn extracted_mesh2d_item(
     payload: Mesh2dDrawPayload::{
       mesh_id,
       transform,
-      material: PreparedMaterial2d::prepared_handle(material),
+      material_asset_id: material.id(),
       layers,
     },
   }
@@ -7995,6 +8009,20 @@ fn prepared_color_material_assets_for_tests(
     |> ignore
   }
   prepared
+}
+
+///|
+test "render2d: extracted mesh payload stores source material asset id" {
+  let handle = @asset.Handle::new(77)
+  let extracted = extracted_mesh2d_item(
+    @core.Entity::new(1, 0),
+    12,
+    @math.Transform::identity(),
+    handle,
+    RenderLayers::default(),
+  )
+
+  inspect(extracted.payload.material_asset_id, content="77")
 }
 
 ///|
