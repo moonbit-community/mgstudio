@@ -355,17 +355,6 @@ fn create_auto_exposure_bind_group(
 }
 
 ///|
-fn bloom2d_auto_exposure_state_buffer(
-  backend : GpuBackend,
-) -> @wgpu.Buffer raise GpuBackendError {
-  ensure_auto_exposure_resources(backend)
-  match backend.auto_exposure_active_state_buf {
-    Some(buffer) => buffer
-    None => backend.auto_exposure_dummy_state_buf.unwrap()
-  }
-}
-
-///|
 pub fn GpuBackend::apply_auto_exposure(
   self : GpuBackend,
   view_key_hi : Int,

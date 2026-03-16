@@ -4054,7 +4054,6 @@ fn render2d_bevy_shader_asset_paths() -> Array[String] {
     "shaders/bevy/bevy_render/maths.wgsl",
     "shaders/bevy/bevy_render/view/view.wgsl",
     "shaders/bevy/bevy_core_pipeline/tonemapping/tonemapping_shared.wgsl",
-    "shaders/bevy/mgstudio_runtime/2d/tonemapping.wgsl",
   ]
 }
 

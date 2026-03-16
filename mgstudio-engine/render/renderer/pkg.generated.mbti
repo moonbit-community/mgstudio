@@ -310,8 +310,6 @@ pub struct GpuBackend {
   mut fxaa3d_sampler : @wgpu_mbt.Sampler?
   mut bloom2d_intermediate_bgl : @wgpu_mbt.BindGroupLayout?
   mut bloom2d_intermediate_pipeline_layout : @wgpu_mbt.PipelineLayout?
-  mut bloom2d_final_bgl : @wgpu_mbt.BindGroupLayout?
-  mut bloom2d_final_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut tonemapping2d_bgl : @wgpu_mbt.BindGroupLayout?
   mut tonemapping2d_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut tonemapping2d_view_buf : @wgpu_mbt.Buffer?
@@ -328,9 +326,6 @@ pub struct GpuBackend {
   mut bloom2d_upsample_final_pipeline_energy : @wgpu_mbt.RenderPipeline?
   mut bloom2d_upsample_final_pipeline_additive : @wgpu_mbt.RenderPipeline?
   mut bloom2d_upsample_final_pipeline_format : @wgpu_mbt.TextureFormat?
-  mut bloom2d_final_pipeline : @wgpu_mbt.RenderPipeline?
-  mut bloom2d_final_pipeline_surface : @wgpu_mbt.RenderPipeline?
-  mut bloom2d_final_pipeline_surface_format : @wgpu_mbt.TextureFormat?
   mut bloom2d_settings_buf : @wgpu_mbt.Buffer?
   mut bloom2d_sampler : @wgpu_mbt.Sampler?
   mut bloom2d_mip_texture : @wgpu_mbt.Texture?

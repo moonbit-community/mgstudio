@@ -22,35 +22,6 @@ fn clamp_non_negative(value : Float) -> Float {
 }
 
 ///|
-fn tonemapping_mode_clamped(tonemapping_mode : Int) -> Float {
-  Float::from_int(
-    if tonemapping_mode < 0 {
-      0
-    } else if tonemapping_mode > 7 {
-      7
-    } else {
-      tonemapping_mode
-    },
-  )
-}
-
-///|
-fn fxaa_edge_threshold_clamped(
-  fxaa_enabled : Int,
-  fxaa_edge_threshold : Float,
-) -> Float {
-  if fxaa_enabled == 0 {
-    0.0F
-  } else if fxaa_edge_threshold < 0.01F {
-    0.01F
-  } else if fxaa_edge_threshold > 0.333F {
-    0.333F
-  } else {
-    fxaa_edge_threshold
-  }
-}
-
-///|
 const EFFECT_STACK3D_CHROMATIC_SETTINGS_BUFFER_SIZE : UInt64 = 16UL
 
 ///|
@@ -551,81 +522,40 @@ fn GpuBackend::draw_postprocess3d_fullscreen(
   flush_ui_batches(self)
   flush_sprite_batches(self)
   guard self.pass_state is Some(pass_state) else { return }
-  guard bloom2d_pipeline_for_current_pass(self) is Some(final_pipeline) else {
-    return
-  }
-  guard self.bloom2d_final_bgl is Some(final_bind_layout) else { return }
-  guard self.bloom2d_settings_buf is Some(settings_buf) else { return }
-  guard self.bloom2d_sampler is Some(bloom_sampler) else { return }
   if scene_texture_id < 0 {
     return
   }
   guard find_texture(self, scene_texture_id) is Some(scene_texture) else {
     return
   }
-
-  let source_viewport_x = Float::from_double(pass_state.viewport_x.to_double())
-  let source_viewport_y = Float::from_double(pass_state.viewport_y.to_double())
-  let source_viewport_width = Float::from_double(
-    pass_state.viewport_w.to_double(),
-  )
-  let source_viewport_height = Float::from_double(
-    pass_state.viewport_h.to_double(),
-  )
-
+  let format = match current_pass_color_format(self) {
+    Some(format) => format
+    _ => tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM)
+  }
+  let deband_dither = deband_dither_enabled != 0
+  guard tonemapping2d_pipeline_for_format(
+      self, format, tonemapping_mode, deband_dither,
+    )
+    is Some(final_pipeline) else {
+    return
+  }
+  guard self.tonemapping2d_bgl is Some(final_bind_layout) else { return }
+  guard self.tonemapping2d_view_buf is Some(view_buf) else { return }
+  guard self.tonemapping2d_sampler is Some(tonemapping_sampler) else { return }
   let selected_lut_view = bloom2d_selected_lut_view(
     self, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
   let exposure_value = clamp_non_negative(exposure)
-  let tonemapping_mode_value = tonemapping_mode_clamped(tonemapping_mode)
-  let deband_dither_enabled_value = if deband_dither_enabled == 0 {
-    0.0F
-  } else {
-    1.0F
-  }
-  let fxaa_enabled_value = if fxaa_enabled == 0 { 0.0F } else { 1.0F }
-  let fxaa_edge_threshold_value = fxaa_edge_threshold_clamped(
-    fxaa_enabled, fxaa_edge_threshold,
-  )
-  let chromatic_aberration_value = clamp_non_negative(chromatic_aberration)
-  let vignette_value = clamp_non_negative(vignette)
-  let safe_scene_width = if scene_texture.width > 0 {
-    scene_texture.width
-  } else {
-    1
-  }
-  let safe_scene_height = if scene_texture.height > 0 {
-    scene_texture.height
-  } else {
-    1
-  }
+  fxaa_enabled |> ignore
+  fxaa_edge_threshold |> ignore
+  chromatic_aberration |> ignore
+  vignette |> ignore
   view_width |> ignore
   view_height |> ignore
-
-  active_pass.end()
-  active_pass.release()
-  frame.pass = None
-
-  let final_uniform = bloom2d_uniform_bytes(
-    Float::from_double(safe_scene_width.to_double()),
-    Float::from_double(safe_scene_height.to_double()),
-    source_viewport_x,
-    source_viewport_y,
-    source_viewport_width,
-    source_viewport_height,
-    0.0F, // threshold
-    0.0F, // threshold_softness
-    1.0F, // scale_x
-    1.0F, // scale_y
+  let view_uniform = tonemapping_view_uniform_bytes_full(
+    pass_state,
     exposure_value,
-    fxaa_enabled_value,
-    fxaa_edge_threshold_value,
-    tonemapping_mode_value,
-    deband_dither_enabled_value,
-    0.0F, // bloom_weight
-    0.0F, // upsample_blend
-    chromatic_aberration_value,
-    vignette_value,
+    self.frame_count,
     color_grading_balance_x_axis_x,
     color_grading_balance_x_axis_y,
     color_grading_balance_x_axis_z,
@@ -656,22 +586,26 @@ fn GpuBackend::draw_postprocess3d_fullscreen(
     color_grading_hue,
     color_grading_post_saturation,
   )
-  self.queue.write_buffer(settings_buf, 0UL, final_uniform)
-  let auto_exposure_state_buf = bloom2d_auto_exposure_state_buffer(self)
+  self.queue.write_buffer(view_buf, 0UL, view_uniform)
+
+  active_pass.end()
+  active_pass.release()
+  frame.pass = None
+
   if target_view(self, pass_state.target_id, pass_state.target_layer)
     is Some(dst_view) {
-    if create_bloom2d_final_bind_group(
-        self,
+    let builder = @wgpu.BindGroupBuilder::new(max_entries=5UL)
+    let ok = builder.add_buffer(0U, view_buf, size=MESH2D_BEVY_VIEW_BUFFER_SIZE) &&
+      builder.add_texture_view(1U, scene_texture.view) &&
+      builder.add_sampler(2U, tonemapping_sampler) &&
+      builder.add_texture_view(3U, selected_lut_view) &&
+      builder.add_sampler(4U, tonemapping_sampler)
+    if ok {
+      let final_bg = builder.finish(
+        self.device,
         final_bind_layout,
-        scene_texture.view,
-        bloom_sampler,
-        settings_buf,
-        scene_texture.view,
-        selected_lut_view,
-        auto_exposure_state_buf,
-        "mgstudio_postprocess3d_final_bg",
+        label="mgstudio_postprocess3d_tonemapping_bg",
       )
-      is Some(final_bg) {
       let final_pass = frame.encoder.begin_render_pass_color_load(dst_view)
       final_pass.set_viewport(
         Float::from_double(pass_state.viewport_x.to_double()),
@@ -688,11 +622,13 @@ fn GpuBackend::draw_postprocess3d_fullscreen(
         pass_state.viewport_h,
       )
       final_pass.set_pipeline(final_pipeline)
-      final_pass.set_bind_group(0U, final_bg, [])
+      final_pass.set_bind_group(0U, final_bg, [0U])
       final_pass.draw(3U, 1U, 0U, 0U)
       final_pass.end()
       final_pass.release()
       final_bg.release()
+    } else {
+      builder.free()
     }
   }
   reopen_saved_pass(self, pass_state)

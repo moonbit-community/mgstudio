@@ -437,8 +437,6 @@ pub struct GpuBackend {
   mut fxaa3d_sampler : @wgpu.Sampler?
   mut bloom2d_intermediate_bgl : @wgpu.BindGroupLayout?
   mut bloom2d_intermediate_pipeline_layout : @wgpu.PipelineLayout?
-  mut bloom2d_final_bgl : @wgpu.BindGroupLayout?
-  mut bloom2d_final_pipeline_layout : @wgpu.PipelineLayout?
   mut tonemapping2d_bgl : @wgpu.BindGroupLayout?
   mut tonemapping2d_pipeline_layout : @wgpu.PipelineLayout?
   mut tonemapping2d_view_buf : @wgpu.Buffer?
@@ -455,9 +453,6 @@ pub struct GpuBackend {
   mut bloom2d_upsample_final_pipeline_energy : @wgpu.RenderPipeline?
   mut bloom2d_upsample_final_pipeline_additive : @wgpu.RenderPipeline?
   mut bloom2d_upsample_final_pipeline_format : @wgpu.TextureFormat?
-  mut bloom2d_final_pipeline : @wgpu.RenderPipeline?
-  mut bloom2d_final_pipeline_surface : @wgpu.RenderPipeline?
-  mut bloom2d_final_pipeline_surface_format : @wgpu.TextureFormat?
   mut bloom2d_settings_buf : @wgpu.Buffer?
   mut bloom2d_sampler : @wgpu.Sampler?
   mut bloom2d_mip_texture : @wgpu.Texture?
@@ -799,8 +794,6 @@ pub fn GpuBackend::new(
     fxaa3d_sampler: None,
     bloom2d_intermediate_bgl: None,
     bloom2d_intermediate_pipeline_layout: None,
-    bloom2d_final_bgl: None,
-    bloom2d_final_pipeline_layout: None,
     tonemapping2d_bgl: None,
     tonemapping2d_pipeline_layout: None,
     tonemapping2d_view_buf: None,
@@ -817,9 +810,6 @@ pub fn GpuBackend::new(
     bloom2d_upsample_final_pipeline_energy: None,
     bloom2d_upsample_final_pipeline_additive: None,
     bloom2d_upsample_final_pipeline_format: None,
-    bloom2d_final_pipeline: None,
-    bloom2d_final_pipeline_surface: None,
-    bloom2d_final_pipeline_surface_format: None,
     bloom2d_settings_buf: None,
     bloom2d_sampler: None,
     bloom2d_mip_texture: None,

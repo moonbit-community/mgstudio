@@ -463,9 +463,16 @@ test "renderer: tonemapping2d final pipeline specializes to current final target
     @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
   )
   backend.pass_state = Some(gpu_test_pass_state(target_id))
-  bloom2d_pipeline_for_current_pass(backend) |> ignore
-  let ok = match backend.bloom2d_final_pipeline {
-    Some(_) => backend.bloom2d_upsample_final_pipeline_format is None
+  let ok = match
+    tonemapping2d_pipeline_for_format(
+      backend,
+      tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+      0,
+      false,
+    ) {
+    Some(_) =>
+      backend.tonemapping2d_pipeline_cache.length() == 1 &&
+      backend.bloom2d_upsample_final_pipeline_format is None
     None => false
   }
   inspect(ok, content="true")

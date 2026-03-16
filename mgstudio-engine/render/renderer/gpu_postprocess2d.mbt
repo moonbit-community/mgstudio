@@ -702,563 +702,48 @@ pub fn GpuBackend::draw_bloom2d(
   chromatic_aberration : Float,
   vignette : Float,
 ) -> Unit raise GpuBackendError {
-  guard self.frame is Some(frame) else { return }
-  guard frame.pass is Some(active_pass) else { return }
-  flush_ui_shadow_batches(self)
-  flush_ui_slice_batches(self)
-  flush_ui_batches(self)
-  flush_sprite_batches(self)
-  guard self.pass_state is Some(pass_state) else { return }
-  guard bloom2d_pipeline_for_current_pass(self) is Some(final_pipeline) else {
-    return
-  }
-  guard self.bloom2d_final_bgl is Some(final_bind_layout) else { return }
-  guard self.bloom2d_settings_buf is Some(settings_buf) else { return }
-  guard self.bloom2d_sampler is Some(bloom_sampler) else { return }
-  if scene_texture_id < 0 {
-    return
-  }
-  guard find_texture(self, scene_texture_id) is Some(scene_texture) else {
-    return
-  }
-  let source_viewport_x = Float::from_double(pass_state.viewport_x.to_double())
-  let source_viewport_y = Float::from_double(pass_state.viewport_y.to_double())
-  let source_viewport_width = Float::from_double(
-    pass_state.viewport_w.to_double(),
+  color_grading_balance_x_axis_x |> ignore
+  color_grading_balance_x_axis_y |> ignore
+  color_grading_balance_x_axis_z |> ignore
+  color_grading_balance_y_axis_x |> ignore
+  color_grading_balance_y_axis_y |> ignore
+  color_grading_balance_y_axis_z |> ignore
+  color_grading_balance_z_axis_x |> ignore
+  color_grading_balance_z_axis_y |> ignore
+  color_grading_balance_z_axis_z |> ignore
+  color_grading_saturation_shadows |> ignore
+  color_grading_saturation_midtones |> ignore
+  color_grading_saturation_highlights |> ignore
+  color_grading_contrast_shadows |> ignore
+  color_grading_contrast_midtones |> ignore
+  color_grading_contrast_highlights |> ignore
+  color_grading_gamma_shadows |> ignore
+  color_grading_gamma_midtones |> ignore
+  color_grading_gamma_highlights |> ignore
+  color_grading_gain_shadows |> ignore
+  color_grading_gain_midtones |> ignore
+  color_grading_gain_highlights |> ignore
+  color_grading_lift_shadows |> ignore
+  color_grading_lift_midtones |> ignore
+  color_grading_lift_highlights |> ignore
+  color_grading_midtones_start |> ignore
+  color_grading_midtones_end |> ignore
+  color_grading_exposure |> ignore
+  color_grading_hue |> ignore
+  color_grading_post_saturation |> ignore
+  fxaa_enabled |> ignore
+  fxaa_edge_threshold |> ignore
+  chromatic_aberration |> ignore
+  vignette |> ignore
+  self.apply_bloom2d(
+    scene_texture_id, enabled, intensity, low_frequency_boost, low_frequency_boost_curvature,
+    high_pass_frequency, threshold, threshold_softness, composite_mode, max_mip_dimension,
+    scale_x, scale_y, view_width, view_height,
   )
-  let source_viewport_height = Float::from_double(
-    pass_state.viewport_h.to_double(),
+  self.draw_tonemapping2d(
+    scene_texture_id, exposure, tonemapping_mode, deband_dither_enabled, view_width,
+    view_height, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
-  let selected_lut_view = bloom2d_selected_lut_view(
-    self, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
-  )
-  let low_frequency_boost_value = if low_frequency_boost < 0.0F {
-    0.0F
-  } else if low_frequency_boost > 1.0F {
-    1.0F
-  } else {
-    low_frequency_boost
-  }
-  let low_frequency_boost_curvature_value = if low_frequency_boost_curvature <
-    0.0F {
-    0.0F
-  } else if low_frequency_boost_curvature > 1.0F {
-    1.0F
-  } else {
-    low_frequency_boost_curvature
-  }
-  let high_pass_frequency_value = if high_pass_frequency < 0.0F {
-    0.0F
-  } else if high_pass_frequency > 1.0F {
-    1.0F
-  } else {
-    high_pass_frequency
-  }
-  let intensity_value = if intensity < 0.0F { 0.0F } else { intensity }
-  let threshold_value = if threshold < 0.0F { 0.0F } else { threshold }
-  let threshold_softness_value = if threshold_softness < 0.0F {
-    0.0F
-  } else if threshold_softness > 1.0F {
-    1.0F
-  } else {
-    threshold_softness
-  }
-  let scale_x_value = if scale_x < 0.0F { 0.0F } else { scale_x }
-  let scale_y_value = if scale_y < 0.0F { 0.0F } else { scale_y }
-  let exposure_value = if exposure < 0.0F { 0.0F } else { exposure }
-  let tonemapping_mode_value = Float::from_int(
-    if tonemapping_mode < 0 {
-      0
-    } else if tonemapping_mode > 7 {
-      7
-    } else {
-      tonemapping_mode
-    },
-  )
-  let deband_dither_enabled_value = if deband_dither_enabled == 0 {
-    0.0F
-  } else {
-    1.0F
-  }
-  let fxaa_enabled_value = if fxaa_enabled == 0 { 0.0F } else { 1.0F }
-  let fxaa_edge_threshold_value = if fxaa_enabled_value > 0.0F {
-    if fxaa_edge_threshold < 0.01F {
-      0.01F
-    } else if fxaa_edge_threshold > 0.333F {
-      0.333F
-    } else {
-      fxaa_edge_threshold
-    }
-  } else {
-    0.0F
-  }
-  let chromatic_aberration_value = if chromatic_aberration < 0.0F {
-    0.0F
-  } else {
-    chromatic_aberration
-  }
-  let vignette_value = if vignette < 0.0F { 0.0F } else { vignette }
-  let use_uniform_scale = scale_x_value == 1.0F && scale_y_value == 1.0F
-  let use_prefilter = threshold_value > 0.0F
-  let bloom_enabled = enabled != 0
-  let bloom_weight = if bloom_enabled { intensity_value } else { 0.0F }
-  let safe_scene_width = if scene_texture.width > 0 {
-    scene_texture.width
-  } else {
-    1
-  }
-  let safe_scene_height = if scene_texture.height > 0 {
-    scene_texture.height
-  } else {
-    1
-  }
-  let viewport_width = if pass_state.viewport_w > 0U {
-    pass_state.viewport_w.reinterpret_as_int()
-  } else if view_width > 0 {
-    view_width
-  } else {
-    safe_scene_width
-  }
-  let viewport_height = if pass_state.viewport_h > 0U {
-    pass_state.viewport_h.reinterpret_as_int()
-  } else if view_height > 0 {
-    view_height
-  } else {
-    safe_scene_height
-  }
-  let safe_viewport_width = if viewport_width > 0 { viewport_width } else { 1 }
-  let safe_viewport_height = if viewport_height > 0 {
-    viewport_height
-  } else {
-    1
-  }
-  let safe_max_mip_dimension = if max_mip_dimension < 4 {
-    4
-  } else {
-    max_mip_dimension
-  }
-  let mip_count = bloom2d_effective_mip_count(safe_max_mip_dimension)
-  let downsample_first_pipeline : @wgpu.RenderPipeline? = if use_uniform_scale {
-    if use_prefilter {
-      self.bloom2d_downsample_first_uniform_pipeline
-    } else {
-      self.bloom2d_downsample_first_no_threshold_uniform_pipeline
-    }
-  } else if use_prefilter {
-    self.bloom2d_downsample_first_pipeline
-  } else {
-    self.bloom2d_downsample_first_no_threshold_pipeline
-  }
-  let downsample_pipeline : @wgpu.RenderPipeline? = if use_uniform_scale {
-    self.bloom2d_downsample_uniform_pipeline
-  } else {
-    self.bloom2d_downsample_pipeline
-  }
-  let upsample_pipeline : @wgpu.RenderPipeline? = if composite_mode == 0 {
-    self.bloom2d_upsample_pipeline_energy
-  } else {
-    self.bloom2d_upsample_pipeline_additive
-  }
-  let intermediate_bind_layout = self.bloom2d_intermediate_bgl
-
-  active_pass.end()
-  active_pass.release()
-  frame.pass = None
-
-  let mut bloom_ready = bloom_enabled &&
-    intensity_value > 0.0F &&
-    downsample_first_pipeline is Some(_) &&
-    downsample_pipeline is Some(_) &&
-    upsample_pipeline is Some(_)
-  let mut bloom_width = 1
-  let mut bloom_height = 1
-  let mut max_mip_f = 1.0F
-  if bloom_ready {
-    let mip_height_ratio = safe_max_mip_dimension.to_double() /
-      safe_viewport_height.to_double()
-    let bloom_width_est = safe_viewport_width.to_double() * mip_height_ratio +
-      0.5
-    let bloom_height_est = safe_viewport_height.to_double() * mip_height_ratio +
-      0.5
-    bloom_width = {
-      let raw = bloom_width_est.to_int()
-      if raw < 1 {
-        1
-      } else {
-        raw
-      }
-    }
-    bloom_height = {
-      let raw = bloom_height_est.to_int()
-      if raw < 1 {
-        1
-      } else {
-        raw
-      }
-    }
-    ensure_bloom2d_mip_texture(self, mip_count, bloom_width, bloom_height)
-    if self.bloom2d_mip_views.length() < mip_count {
-      bloom_ready = false
-    } else {
-      let bloom_uniform = bloom2d_uniform_bytes(
-        Float::from_double(safe_scene_width.to_double()),
-        Float::from_double(safe_scene_height.to_double()),
-        source_viewport_x,
-        source_viewport_y,
-        source_viewport_width,
-        source_viewport_height,
-        threshold_value,
-        threshold_softness_value,
-        scale_x_value,
-        scale_y_value,
-        exposure_value,
-        fxaa_enabled_value,
-        fxaa_edge_threshold_value,
-        tonemapping_mode_value,
-        deband_dither_enabled_value,
-        bloom_weight,
-        0.0F,
-        chromatic_aberration_value,
-        vignette_value,
-        color_grading_balance_x_axis_x,
-        color_grading_balance_x_axis_y,
-        color_grading_balance_x_axis_z,
-        color_grading_balance_y_axis_x,
-        color_grading_balance_y_axis_y,
-        color_grading_balance_y_axis_z,
-        color_grading_balance_z_axis_x,
-        color_grading_balance_z_axis_y,
-        color_grading_balance_z_axis_z,
-        color_grading_saturation_shadows,
-        color_grading_saturation_midtones,
-        color_grading_saturation_highlights,
-        color_grading_contrast_shadows,
-        color_grading_contrast_midtones,
-        color_grading_contrast_highlights,
-        color_grading_gamma_shadows,
-        color_grading_gamma_midtones,
-        color_grading_gamma_highlights,
-        color_grading_gain_shadows,
-        color_grading_gain_midtones,
-        color_grading_gain_highlights,
-        color_grading_lift_shadows,
-        color_grading_lift_midtones,
-        color_grading_lift_highlights,
-        color_grading_midtones_start,
-        color_grading_midtones_end,
-        color_grading_exposure,
-        color_grading_hue,
-        color_grading_post_saturation,
-      )
-      self.queue.write_buffer(settings_buf, 0UL, bloom_uniform)
-      if intermediate_bind_layout is Some(bind_layout) &&
-        create_bloom2d_intermediate_bind_group(
-          self,
-          bind_layout,
-          scene_texture.view,
-          bloom_sampler,
-          settings_buf,
-          "mgstudio_bloom2d_downsample_first_bg",
-        )
-        is Some(first_bg) {
-        let first_pass = frame.encoder.begin_render_pass_color_clear(
-          self.bloom2d_mip_views[0],
-          0.0F,
-          0.0F,
-          0.0F,
-          1.0F,
-        )
-        let mut mip_size_w = bloom_width
-        let mut mip_size_h = bloom_height
-        first_pass.set_viewport(
-          0.0F,
-          0.0F,
-          Float::from_double(mip_size_w.to_double()),
-          Float::from_double(mip_size_h.to_double()),
-          0.0F,
-          1.0F,
-        )
-        first_pass.set_scissor_rect(
-          0U,
-          0U,
-          mip_size_w.reinterpret_as_uint(),
-          mip_size_h.reinterpret_as_uint(),
-        )
-        first_pass.set_pipeline(downsample_first_pipeline.unwrap())
-        first_pass.set_bind_group(0U, first_bg, [])
-        first_pass.draw(3U, 1U, 0U, 0U)
-        first_pass.end()
-        first_pass.release()
-        first_bg.release()
-
-        for mip in 1..<mip_count {
-          if !bloom_ready {
-            break
-          }
-          if intermediate_bind_layout is Some(bind_layout) &&
-            create_bloom2d_intermediate_bind_group(
-              self,
-              bind_layout,
-              self.bloom2d_mip_views[mip - 1],
-              bloom_sampler,
-              settings_buf,
-              "mgstudio_bloom2d_downsample_bg",
-            )
-            is Some(downsample_bg) {
-            mip_size_w = if mip_size_w > 1 { mip_size_w / 2 } else { 1 }
-            mip_size_h = if mip_size_h > 1 { mip_size_h / 2 } else { 1 }
-            let pass = frame.encoder.begin_render_pass_color_clear(
-              self.bloom2d_mip_views[mip],
-              0.0F,
-              0.0F,
-              0.0F,
-              1.0F,
-            )
-            pass.set_viewport(
-              0.0F,
-              0.0F,
-              Float::from_double(mip_size_w.to_double()),
-              Float::from_double(mip_size_h.to_double()),
-              0.0F,
-              1.0F,
-            )
-            pass.set_scissor_rect(
-              0U,
-              0U,
-              mip_size_w.reinterpret_as_uint(),
-              mip_size_h.reinterpret_as_uint(),
-            )
-            pass.set_pipeline(downsample_pipeline.unwrap())
-            pass.set_bind_group(0U, downsample_bg, [])
-            pass.draw(3U, 1U, 0U, 0U)
-            pass.end()
-            pass.release()
-            downsample_bg.release()
-          } else {
-            bloom_ready = false
-          }
-        }
-
-        let max_mip = if mip_count > 1 { mip_count - 1 } else { 1 }
-        max_mip_f = Float::from_double(max_mip.to_double())
-        let mut upsample_mip = mip_count - 1
-        while bloom_ready && upsample_mip >= 1 {
-          let blend = bloom2d_compute_blend_factor(
-            intensity_value,
-            low_frequency_boost_value,
-            low_frequency_boost_curvature_value,
-            high_pass_frequency_value,
-            composite_mode,
-            Float::from_double(upsample_mip.to_double()),
-            max_mip_f,
-          )
-          let upsample_uniform = bloom2d_uniform_bytes(
-            Float::from_double(safe_scene_width.to_double()),
-            Float::from_double(safe_scene_height.to_double()),
-            source_viewport_x,
-            source_viewport_y,
-            source_viewport_width,
-            source_viewport_height,
-            threshold_value,
-            threshold_softness_value,
-            scale_x_value,
-            scale_y_value,
-            exposure_value,
-            fxaa_enabled_value,
-            fxaa_edge_threshold_value,
-            tonemapping_mode_value,
-            deband_dither_enabled_value,
-            bloom_weight,
-            blend,
-            chromatic_aberration_value,
-            vignette_value,
-            color_grading_balance_x_axis_x,
-            color_grading_balance_x_axis_y,
-            color_grading_balance_x_axis_z,
-            color_grading_balance_y_axis_x,
-            color_grading_balance_y_axis_y,
-            color_grading_balance_y_axis_z,
-            color_grading_balance_z_axis_x,
-            color_grading_balance_z_axis_y,
-            color_grading_balance_z_axis_z,
-            color_grading_saturation_shadows,
-            color_grading_saturation_midtones,
-            color_grading_saturation_highlights,
-            color_grading_contrast_shadows,
-            color_grading_contrast_midtones,
-            color_grading_contrast_highlights,
-            color_grading_gamma_shadows,
-            color_grading_gamma_midtones,
-            color_grading_gamma_highlights,
-            color_grading_gain_shadows,
-            color_grading_gain_midtones,
-            color_grading_gain_highlights,
-            color_grading_lift_shadows,
-            color_grading_lift_midtones,
-            color_grading_lift_highlights,
-            color_grading_midtones_start,
-            color_grading_midtones_end,
-            color_grading_exposure,
-            color_grading_hue,
-            color_grading_post_saturation,
-          )
-          self.queue.write_buffer(settings_buf, 0UL, upsample_uniform)
-          if intermediate_bind_layout is Some(bind_layout) &&
-            create_bloom2d_intermediate_bind_group(
-              self,
-              bind_layout,
-              self.bloom2d_mip_views[upsample_mip],
-              bloom_sampler,
-              settings_buf,
-              "mgstudio_bloom2d_upsample_bg",
-            )
-            is Some(upsample_bg) {
-            let size_w = bloom2d_mip_dimension(bloom_width, upsample_mip - 1)
-            let size_h = bloom2d_mip_dimension(bloom_height, upsample_mip - 1)
-            let pass = frame.encoder.begin_render_pass_color_load(
-              self.bloom2d_mip_views[upsample_mip - 1],
-            )
-            pass.set_viewport(
-              0.0F,
-              0.0F,
-              Float::from_double(size_w.to_double()),
-              Float::from_double(size_h.to_double()),
-              0.0F,
-              1.0F,
-            )
-            pass.set_scissor_rect(
-              0U,
-              0U,
-              size_w.reinterpret_as_uint(),
-              size_h.reinterpret_as_uint(),
-            )
-            pass.set_pipeline(upsample_pipeline.unwrap())
-            pass.set_bind_group(0U, upsample_bg, [])
-            pass.set_blend_constant_rgba(
-              blend.to_double(),
-              blend.to_double(),
-              blend.to_double(),
-              1.0,
-            )
-            pass.draw(3U, 1U, 0U, 0U)
-            pass.end()
-            pass.release()
-            upsample_bg.release()
-          } else {
-            bloom_ready = false
-          }
-          upsample_mip = upsample_mip - 1
-        }
-      } else {
-        bloom_ready = false
-      }
-    }
-  }
-
-  let final_bloom_weight = if bloom_ready {
-    bloom2d_compute_blend_factor(
-      intensity_value, low_frequency_boost_value, low_frequency_boost_curvature_value,
-      high_pass_frequency_value, composite_mode, 0.0F, max_mip_f,
-    )
-  } else {
-    0.0F
-  }
-  let final_uniform = bloom2d_uniform_bytes(
-    Float::from_double(safe_scene_width.to_double()),
-    Float::from_double(safe_scene_height.to_double()),
-    source_viewport_x,
-    source_viewport_y,
-    source_viewport_width,
-    source_viewport_height,
-    0.0F,
-    0.0F,
-    1.0F,
-    1.0F,
-    exposure_value,
-    fxaa_enabled_value,
-    fxaa_edge_threshold_value,
-    tonemapping_mode_value,
-    deband_dither_enabled_value,
-    final_bloom_weight,
-    0.0F,
-    chromatic_aberration_value,
-    vignette_value,
-    color_grading_balance_x_axis_x,
-    color_grading_balance_x_axis_y,
-    color_grading_balance_x_axis_z,
-    color_grading_balance_y_axis_x,
-    color_grading_balance_y_axis_y,
-    color_grading_balance_y_axis_z,
-    color_grading_balance_z_axis_x,
-    color_grading_balance_z_axis_y,
-    color_grading_balance_z_axis_z,
-    color_grading_saturation_shadows,
-    color_grading_saturation_midtones,
-    color_grading_saturation_highlights,
-    color_grading_contrast_shadows,
-    color_grading_contrast_midtones,
-    color_grading_contrast_highlights,
-    color_grading_gamma_shadows,
-    color_grading_gamma_midtones,
-    color_grading_gamma_highlights,
-    color_grading_gain_shadows,
-    color_grading_gain_midtones,
-    color_grading_gain_highlights,
-    color_grading_lift_shadows,
-    color_grading_lift_midtones,
-    color_grading_lift_highlights,
-    color_grading_midtones_start,
-    color_grading_midtones_end,
-    color_grading_exposure,
-    color_grading_hue,
-    color_grading_post_saturation,
-  )
-  self.queue.write_buffer(settings_buf, 0UL, final_uniform)
-  let auto_exposure_state_buf = bloom2d_auto_exposure_state_buffer(self)
-
-  let hdr_view = if bloom_ready {
-    self.bloom2d_mip_views[0]
-  } else {
-    scene_texture.view
-  }
-  if target_view(self, pass_state.target_id, pass_state.target_layer)
-    is Some(dst_view) {
-    if create_bloom2d_final_bind_group(
-        self,
-        final_bind_layout,
-        hdr_view,
-        bloom_sampler,
-        settings_buf,
-        scene_texture.view,
-        selected_lut_view,
-        auto_exposure_state_buf,
-        "mgstudio_bloom2d_final_bg",
-      )
-      is Some(final_bg) {
-      let final_pass = frame.encoder.begin_render_pass_color_load(dst_view)
-      final_pass.set_viewport(
-        Float::from_double(pass_state.viewport_x.to_double()),
-        Float::from_double(pass_state.viewport_y.to_double()),
-        Float::from_double(pass_state.viewport_w.to_double()),
-        Float::from_double(pass_state.viewport_h.to_double()),
-        pass_state.viewport_depth_min,
-        pass_state.viewport_depth_max,
-      )
-      final_pass.set_scissor_rect(
-        pass_state.viewport_x,
-        pass_state.viewport_y,
-        pass_state.viewport_w,
-        pass_state.viewport_h,
-      )
-      final_pass.set_pipeline(final_pipeline)
-      final_pass.set_bind_group(0U, final_bg, [])
-      final_pass.draw(3U, 1U, 0U, 0U)
-      final_pass.end()
-      final_pass.release()
-      final_bg.release()
-    }
-  }
-  reopen_saved_pass(self, pass_state)
 }
 
 ///|
@@ -1736,10 +1221,39 @@ fn gpu_clip_matrix_words(matrix : GpuClipMatrix) -> Array[UInt] {
 }
 
 ///|
-fn tonemapping2d_view_uniform_bytes(
+fn tonemapping_view_uniform_bytes_full(
   pass_state : GpuPassState,
   exposure : Float,
   frame_count : UInt,
+  color_grading_balance_x_axis_x : Float,
+  color_grading_balance_x_axis_y : Float,
+  color_grading_balance_x_axis_z : Float,
+  color_grading_balance_y_axis_x : Float,
+  color_grading_balance_y_axis_y : Float,
+  color_grading_balance_y_axis_z : Float,
+  color_grading_balance_z_axis_x : Float,
+  color_grading_balance_z_axis_y : Float,
+  color_grading_balance_z_axis_z : Float,
+  color_grading_saturation_shadows : Float,
+  color_grading_saturation_midtones : Float,
+  color_grading_saturation_highlights : Float,
+  color_grading_contrast_shadows : Float,
+  color_grading_contrast_midtones : Float,
+  color_grading_contrast_highlights : Float,
+  color_grading_gamma_shadows : Float,
+  color_grading_gamma_midtones : Float,
+  color_grading_gamma_highlights : Float,
+  color_grading_gain_shadows : Float,
+  color_grading_gain_midtones : Float,
+  color_grading_gain_highlights : Float,
+  color_grading_lift_shadows : Float,
+  color_grading_lift_midtones : Float,
+  color_grading_lift_highlights : Float,
+  color_grading_midtones_start : Float,
+  color_grading_midtones_end : Float,
+  color_grading_exposure : Float,
+  color_grading_hue : Float,
+  color_grading_post_saturation : Float,
 ) -> Bytes {
   let viewport_x = Float::from_double(pass_state.viewport_x.to_double())
   let viewport_y = Float::from_double(pass_state.viewport_y.to_double())
@@ -1771,7 +1285,7 @@ fn tonemapping2d_view_uniform_bytes(
   words.push(f32_bits(pass_state.camera_x))
   words.push(f32_bits(pass_state.camera_y))
   words.push(f32_bits(pass_state.camera_z))
-  words.push(f32_bits(pass_state.camera_exposure))
+  words.push(f32_bits(exposure))
   words.push(f32_bits(viewport_x))
   words.push(f32_bits(viewport_y))
   words.push(f32_bits(viewport_w))
@@ -1783,43 +1297,43 @@ fn tonemapping2d_view_uniform_bytes(
   for _ in 0..<24 {
     words.push(0U)
   }
-  words.push(f32_bits(1.0F))
-  words.push(f32_bits(0.0F))
-  words.push(f32_bits(0.0F))
+  words.push(f32_bits(color_grading_balance_x_axis_x))
+  words.push(f32_bits(color_grading_balance_x_axis_y))
+  words.push(f32_bits(color_grading_balance_x_axis_z))
   words.push(0U)
-  words.push(f32_bits(0.0F))
-  words.push(f32_bits(1.0F))
-  words.push(f32_bits(0.0F))
+  words.push(f32_bits(color_grading_balance_y_axis_x))
+  words.push(f32_bits(color_grading_balance_y_axis_y))
+  words.push(f32_bits(color_grading_balance_y_axis_z))
   words.push(0U)
-  words.push(f32_bits(0.0F))
-  words.push(f32_bits(0.0F))
-  words.push(f32_bits(1.0F))
+  words.push(f32_bits(color_grading_balance_z_axis_x))
+  words.push(f32_bits(color_grading_balance_z_axis_y))
+  words.push(f32_bits(color_grading_balance_z_axis_z))
   words.push(0U)
-  words.push(f32_bits(1.0F))
-  words.push(f32_bits(1.0F))
-  words.push(f32_bits(1.0F))
+  words.push(f32_bits(color_grading_saturation_shadows))
+  words.push(f32_bits(color_grading_saturation_midtones))
+  words.push(f32_bits(color_grading_saturation_highlights))
   words.push(0U)
-  words.push(f32_bits(1.0F))
-  words.push(f32_bits(1.0F))
-  words.push(f32_bits(1.0F))
+  words.push(f32_bits(color_grading_contrast_shadows))
+  words.push(f32_bits(color_grading_contrast_midtones))
+  words.push(f32_bits(color_grading_contrast_highlights))
   words.push(0U)
-  words.push(f32_bits(1.0F))
-  words.push(f32_bits(1.0F))
-  words.push(f32_bits(1.0F))
+  words.push(f32_bits(color_grading_gamma_shadows))
+  words.push(f32_bits(color_grading_gamma_midtones))
+  words.push(f32_bits(color_grading_gamma_highlights))
   words.push(0U)
-  words.push(f32_bits(1.0F))
-  words.push(f32_bits(1.0F))
-  words.push(f32_bits(1.0F))
+  words.push(f32_bits(color_grading_gain_shadows))
+  words.push(f32_bits(color_grading_gain_midtones))
+  words.push(f32_bits(color_grading_gain_highlights))
   words.push(0U)
-  words.push(f32_bits(0.0F))
-  words.push(f32_bits(0.0F))
-  words.push(f32_bits(0.0F))
+  words.push(f32_bits(color_grading_lift_shadows))
+  words.push(f32_bits(color_grading_lift_midtones))
+  words.push(f32_bits(color_grading_lift_highlights))
   words.push(0U)
-  words.push(f32_bits(0.2F))
-  words.push(f32_bits(0.7F))
-  words.push(f32_bits(exposure))
-  words.push(f32_bits(0.0F))
-  words.push(f32_bits(1.0F))
+  words.push(f32_bits(color_grading_midtones_start))
+  words.push(f32_bits(color_grading_midtones_end))
+  words.push(f32_bits(color_grading_exposure))
+  words.push(f32_bits(color_grading_hue))
+  words.push(f32_bits(color_grading_post_saturation))
   words.push(0U)
   words.push(0U)
   words.push(0U)
@@ -1830,6 +1344,19 @@ fn tonemapping2d_view_uniform_bytes(
     words.push(0U)
   }
   u32le_pack(words)
+}
+
+///|
+fn tonemapping2d_view_uniform_bytes(
+  pass_state : GpuPassState,
+  exposure : Float,
+  frame_count : UInt,
+) -> Bytes {
+  tonemapping_view_uniform_bytes_full(
+    pass_state, exposure, frame_count, 1.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
+    0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F,
+    1.0F, 0.0F, 0.0F, 0.0F, 0.2F, 0.7F, exposure, 0.0F, 1.0F,
+  )
 }
 
 ///|
@@ -1977,22 +1504,6 @@ fn load_fullscreen_tonemapping2d_wgsl_with_defines_required(
 }
 
 ///|
-fn load_registered_wgsl_required(rel : String) -> String raise GpuBackendError {
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = copy_registered_wgsl_import_module_paths()
-  load_wgsl_preprocessed(
-    "",
-    normalize_shader_rel_path(rel),
-    defines,
-    value_defines,
-    visited,
-    modules,
-  )
-}
-
-///|
 fn ensure_tonemapping2d_resources(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
@@ -2105,39 +1616,6 @@ fn ensure_bloom2d_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
     pl.set_label("mgstudio_bloom2d_intermediate_pipeline_layout")
     backend.bloom2d_intermediate_bgl = Some(bgl)
     backend.bloom2d_intermediate_pipeline_layout = Some(pl)
-  }
-  if backend.bloom2d_final_bgl is None {
-    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=6UL)
-    let ok = builder.add_texture(
-        0U,
-        frag,
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      builder.add_sampler(1U, frag, @wgpu.SAMPLER_BINDING_TYPE_FILTERING) &&
-      builder.add_buffer(2U, frag, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
-      builder.add_texture(
-        3U,
-        frag,
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      builder.add_texture(
-        4U,
-        frag,
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_3D,
-      ) &&
-      builder.add_buffer(5U, frag, @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE)
-    if !ok {
-      builder.free()
-      fatal("wgpu: failed to build bloom final bind group layout")
-    }
-    let bgl = builder.finish(backend.device, label="mgstudio_bloom2d_final_bgl")
-    let pl = backend.device.create_pipeline_layout_1(bgl)
-    pl.set_label("mgstudio_bloom2d_final_pipeline_layout")
-    backend.bloom2d_final_bgl = Some(bgl)
-    backend.bloom2d_final_pipeline_layout = Some(pl)
   }
 }
 
@@ -2278,54 +1756,6 @@ fn create_bloom2d_intermediate_bind_group(
     builder.add_sampler(1U, sampler) &&
     builder.add_buffer(2U, settings_buf)
   if !ok {
-    builder.free()
-    return None
-  }
-  Some(builder.finish(backend.device, bind_layout, label~))
-}
-
-///|
-fn create_bloom2d_final_bind_group(
-  backend : GpuBackend,
-  bind_layout : @wgpu.BindGroupLayout,
-  input_view : @wgpu.TextureView,
-  sampler : @wgpu.Sampler,
-  settings_buf : @wgpu.Buffer,
-  scene_view : @wgpu.TextureView,
-  lut_view : @wgpu.TextureView,
-  auto_exposure_state_buf : @wgpu.Buffer,
-  label : String,
-) -> @wgpu.BindGroup? {
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=6UL)
-  let debug_postprocess = match @sys.get_env_var("MGSTUDIO_POSTPROCESS_DEBUG") {
-    Some(raw) => raw.trim().to_string() == "1"
-    _ => false
-  }
-  let ok0 = builder.add_texture_view(0U, input_view)
-  let ok1 = builder.add_sampler(1U, sampler)
-  let ok2 = builder.add_buffer(2U, settings_buf)
-  let ok3 = builder.add_texture_view(3U, scene_view)
-  let ok4 = builder.add_texture_view(4U, lut_view)
-  let ok5 = builder.add_buffer(5U, auto_exposure_state_buf)
-  if !ok0 || !ok1 || !ok2 || !ok3 || !ok4 || !ok5 {
-    if debug_postprocess {
-      let failed_index = if !ok0 {
-        0
-      } else if !ok1 {
-        1
-      } else if !ok2 {
-        2
-      } else if !ok3 {
-        3
-      } else if !ok4 {
-        4
-      } else {
-        5
-      }
-      println(
-        "[postprocess] final bind group build failed: label=\{label}, failed_binding=\{failed_index}",
-      )
-    }
     builder.free()
     return None
   }
@@ -2478,61 +1908,6 @@ fn ensure_bloom2d_pipeline_rgba8(
       upsample_pipeline_additive,
     )
   }
-  if backend.bloom2d_final_pipeline is Some(_) {
-    return
-  }
-  guard backend.bloom2d_final_pipeline_layout is Some(final_pipeline_layout) else {
-    return
-  }
-  let final_source = load_registered_wgsl_required(
-    "shaders/bevy/mgstudio_runtime/2d/tonemapping.wgsl",
-  )
-  let final_pipeline = bloom2d_create_pipeline(
-    backend,
-    final_pipeline_layout,
-    final_source,
-    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
-    "final_fragment",
-    BLOOM2D_BLEND_MODE_NONE,
-    "mgstudio_bloom2d_final_rgba8",
-  )
-  backend.bloom2d_final_pipeline = Some(final_pipeline)
-}
-
-///|
-fn ensure_bloom2d_pipeline_surface(
-  backend : GpuBackend,
-  format : @wgpu.TextureFormat,
-) -> Unit raise GpuBackendError {
-  ensure_bloom2d_pipeline_rgba8(backend)
-  if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
-    return
-  }
-  if backend.bloom2d_final_pipeline_surface_format is Some(prev) &&
-    prev == format &&
-    backend.bloom2d_final_pipeline_surface is Some(_) {
-    return
-  }
-  if backend.bloom2d_final_pipeline_surface is Some(old) {
-    old.release()
-  }
-  guard backend.bloom2d_final_pipeline_layout is Some(final_pipeline_layout) else {
-    return
-  }
-  let final_source = load_registered_wgsl_required(
-    "shaders/bevy/mgstudio_runtime/2d/tonemapping.wgsl",
-  )
-  let final_pipeline = bloom2d_create_pipeline(
-    backend,
-    final_pipeline_layout,
-    final_source,
-    format,
-    "final_fragment",
-    BLOOM2D_BLEND_MODE_NONE,
-    "mgstudio_bloom2d_final_surface",
-  )
-  backend.bloom2d_final_pipeline_surface = Some(final_pipeline)
-  backend.bloom2d_final_pipeline_surface_format = Some(format)
 }
 
 ///|
@@ -2612,21 +1987,6 @@ fn bloom2d_final_composite_pipeline_for_format(
   } else {
     backend.bloom2d_upsample_final_pipeline_additive
   }
-}
-
-///|
-fn bloom2d_pipeline_for_current_pass(
-  backend : GpuBackend,
-) -> @wgpu.RenderPipeline? raise GpuBackendError {
-  match current_pass_color_format(backend) {
-    Some(format) if format != tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) => {
-      ensure_bloom2d_pipeline_surface(backend, format)
-      return backend.bloom2d_final_pipeline_surface
-    }
-    _ => ()
-  }
-  ensure_bloom2d_pipeline_rgba8(backend)
-  backend.bloom2d_final_pipeline
 }
 
 ///|
