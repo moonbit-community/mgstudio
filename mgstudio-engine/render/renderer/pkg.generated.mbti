@@ -229,13 +229,23 @@ pub struct GpuBackend {
   ui_slice_instance_data : Array[Float]
   ui_slice_batches : Array[UiBatch]
   mut ui_slice_instance_count : UInt
-  mut mesh_bgl_uniform : @wgpu_mbt.BindGroupLayout?
   mut mesh_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh_pipeline : @wgpu_mbt.RenderPipeline?
   mut mesh_pipeline_surface : @wgpu_mbt.RenderPipeline?
   mut mesh_pipeline_surface_format : @wgpu_mbt.TextureFormat?
-  mesh_uniform_slots : Array[GpuUniformSlot]
-  mut mesh_uniform_slot_used : Int
+  mut mesh2d_bevy_bgl_view : @wgpu_mbt.BindGroupLayout?
+  mut mesh2d_bevy_bgl_mesh : @wgpu_mbt.BindGroupLayout?
+  mut mesh2d_bevy_view_buf : @wgpu_mbt.Buffer?
+  mut mesh2d_bevy_globals_buf : @wgpu_mbt.Buffer?
+  mut mesh2d_bevy_view_bg : @wgpu_mbt.BindGroup?
+  mut mesh2d_bevy_lut_texture : @wgpu_mbt.Texture?
+  mut mesh2d_bevy_lut_view : @wgpu_mbt.TextureView?
+  mut mesh2d_bevy_lut_sampler : @wgpu_mbt.Sampler?
+  mut mesh2d_bevy_instance_buf : @wgpu_mbt.Buffer?
+  mut mesh2d_bevy_instance_bg : @wgpu_mbt.BindGroup?
+  mut mesh2d_bevy_instance_capacity : UInt64
+  mut mesh2d_bevy_instance_used : Int
+  mesh2d_pipeline_cache : Array[Mesh2dPipelineCacheEntry]
   mut mesh3d_bgl_uniform : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_bgl_material : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_pipeline_layout : @wgpu_mbt.PipelineLayout?
@@ -573,6 +583,11 @@ pub(all) struct HostMesh3dPreprocessIndirectParametersGpuMetadata {
 pub(all) struct HostMesh3dPreprocessShaderWorkItem {
   input_index : Int
   output_or_indirect_parameters_index : Int
+}
+
+pub struct Mesh2dPipelineCacheEntry {
+  key : String
+  pipeline : @wgpu_mbt.RenderPipeline
 }
 
 pub struct Mesh3dMaterialBindGroupCacheEntry {

@@ -47,17 +47,34 @@ test "renderer: interleaved 2d mesh csv keeps original vertex count" {
     backend.meshes.length() == 1 &&
     backend.meshes[0].id == mesh_id &&
     backend.meshes[0].vertex_count.reinterpret_as_int() == 3 &&
-    backend.meshes[0].vertex_stride_bytes == 32UL
+    backend.meshes[0].vertex_stride_bytes == MESH2D_BEVY_VERTEX_STRIDE_BYTES
   inspect(ok, content="true")
 }
 
 ///|
-test "renderer: mesh2d uniform slot pool grows per draw slot" {
+test "renderer: mesh2d bevy resources initialize expected bind groups" {
   let backend = GpuBackend::new(assets_base="assets")
-  ensure_mesh_pipeline_rgba8(backend)
-  let ok = ensure_mesh_uniform_slot(backend, 0) is Some(_) &&
-    ensure_mesh_uniform_slot(backend, 2) is Some(_) &&
-    backend.mesh_uniform_slots.length() == 3
+  ensure_mesh_bevy_resources(backend)
+  let ok = backend.mesh2d_bevy_view_bg is Some(_) &&
+    backend.mesh2d_bevy_instance_bg is Some(_) &&
+    backend.mesh2d_bevy_instance_capacity >=
+    MESH2D_BEVY_UNIFORM_DYNAMIC_STRIDE_BYTES
+  inspect(ok, content="true")
+}
+
+///|
+test "renderer: mesh2d dynamic uniform pool grows by required capacity" {
+  let backend = GpuBackend::new(assets_base="assets")
+  ensure_mesh_bevy_resources(backend)
+  let grow_required = backend.mesh2d_bevy_instance_capacity +
+    MESH2D_BEVY_UNIFORM_DYNAMIC_STRIDE_BYTES
+  let ok = ensure_mesh2d_instance_uniform_binding(
+      backend,
+      MESH2D_BEVY_UNIFORM_DYNAMIC_STRIDE_BYTES,
+    )
+    is Some(_) &&
+    ensure_mesh2d_instance_uniform_binding(backend, grow_required) is Some(_) &&
+    backend.mesh2d_bevy_instance_capacity >= grow_required
   inspect(ok, content="true")
 }
 
@@ -368,7 +385,23 @@ test "renderer: mesh pipeline specializes to hdr render target format" {
   let backend = GpuBackend::new(assets_base="assets")
   let target_id = backend.create_render_target_rgba16f(128, 128, false)
   backend.pass_state = Some(gpu_test_pass_state(target_id))
-  mesh_pipeline_for_current_pass(backend) |> ignore
+  ensure_mesh_bevy_resources(backend)
+  let format = match current_pass_color_format(backend) {
+    Some(v) => v
+    None => tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM)
+  }
+  mesh2d_get_or_create_pipeline(
+    backend,
+    mesh2d_pipeline_key_for_format(
+      format,
+      @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+      true,
+      false,
+      false,
+      false,
+    ),
+  )
+  |> ignore
   let ok = match backend.mesh_pipeline_surface_format {
     Some(format) => format == tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
     None => false

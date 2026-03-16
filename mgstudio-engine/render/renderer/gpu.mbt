@@ -23,9 +23,16 @@
 /// Missing capabilities should be tracked in project issues and reported upstream.
 
 ///|
-/// Use wgpu_mbt's "alpha blend + arbitrary format" render pipeline descriptor
-/// helper (added in wgpu_mbt 0.2.2).
-const MESH2D_UNIFORM_BUFFER_SIZE : UInt64 = 80UL
+const MESH2D_BEVY_VIEW_BUFFER_SIZE : UInt64 = 1024UL
+
+///|
+const MESH2D_BEVY_GLOBALS_BUFFER_SIZE : UInt64 = 16UL
+
+///|
+const MESH2D_BEVY_UNIFORM_STRIDE_BYTES : UInt64 = 96UL
+
+///|
+const MESH2D_BEVY_UNIFORM_DYNAMIC_STRIDE_BYTES : UInt64 = 256UL
 
 ///|
 const MESH3D_UNIFORM_BUFFER_SIZE : UInt64 = 512UL
@@ -95,6 +102,12 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
   transmission_source_texture_id : Int
   point_shadow_texture_id : Int
   bind_group : @wgpu.BindGroup
+}
+
+///|
+pub struct Mesh2dPipelineCacheEntry {
+  key : String
+  pipeline : @wgpu.RenderPipeline
 }
 
 ///|
@@ -339,13 +352,23 @@ pub struct GpuBackend {
   mut ui_slice_instance_count : UInt
 
   // Mesh pipeline (solid-color).
-  mut mesh_bgl_uniform : @wgpu.BindGroupLayout?
   mut mesh_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh_pipeline : @wgpu.RenderPipeline?
   mut mesh_pipeline_surface : @wgpu.RenderPipeline?
   mut mesh_pipeline_surface_format : @wgpu.TextureFormat?
-  mesh_uniform_slots : Array[GpuUniformSlot]
-  mut mesh_uniform_slot_used : Int
+  mut mesh2d_bevy_bgl_view : @wgpu.BindGroupLayout?
+  mut mesh2d_bevy_bgl_mesh : @wgpu.BindGroupLayout?
+  mut mesh2d_bevy_view_buf : @wgpu.Buffer?
+  mut mesh2d_bevy_globals_buf : @wgpu.Buffer?
+  mut mesh2d_bevy_view_bg : @wgpu.BindGroup?
+  mut mesh2d_bevy_lut_texture : @wgpu.Texture?
+  mut mesh2d_bevy_lut_view : @wgpu.TextureView?
+  mut mesh2d_bevy_lut_sampler : @wgpu.Sampler?
+  mut mesh2d_bevy_instance_buf : @wgpu.Buffer?
+  mut mesh2d_bevy_instance_bg : @wgpu.BindGroup?
+  mut mesh2d_bevy_instance_capacity : UInt64
+  mut mesh2d_bevy_instance_used : Int
+  mesh2d_pipeline_cache : Array[Mesh2dPipelineCacheEntry]
   mut mesh3d_bgl_uniform : @wgpu.BindGroupLayout?
   mut mesh3d_bgl_material : @wgpu.BindGroupLayout?
   mut mesh3d_pipeline_layout : @wgpu.PipelineLayout?
@@ -688,13 +711,23 @@ pub fn GpuBackend::new(
     ui_slice_instance_data: [],
     ui_slice_batches: [],
     ui_slice_instance_count: 0U,
-    mesh_bgl_uniform: None,
     mesh_pipeline_layout: None,
     mesh_pipeline: None,
     mesh_pipeline_surface: None,
     mesh_pipeline_surface_format: None,
-    mesh_uniform_slots: [],
-    mesh_uniform_slot_used: 0,
+    mesh2d_bevy_bgl_view: None,
+    mesh2d_bevy_bgl_mesh: None,
+    mesh2d_bevy_view_buf: None,
+    mesh2d_bevy_globals_buf: None,
+    mesh2d_bevy_view_bg: None,
+    mesh2d_bevy_lut_texture: None,
+    mesh2d_bevy_lut_view: None,
+    mesh2d_bevy_lut_sampler: None,
+    mesh2d_bevy_instance_buf: None,
+    mesh2d_bevy_instance_bg: None,
+    mesh2d_bevy_instance_capacity: 0UL,
+    mesh2d_bevy_instance_used: 0,
+    mesh2d_pipeline_cache: [],
     mesh3d_bgl_uniform: None,
     mesh3d_bgl_material: None,
     mesh3d_pipeline_layout: None,
