@@ -7312,18 +7312,12 @@ pub fn render_prepare_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn render_queue_system(world : @ecs.World) -> Unit {
-  let prepared_assets_key : @ecs.ResourceKey[
-    @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
-  ] = @asset.assets_resource_key()
-  let empty_prepared_assets : @asset.Assets[
-    PreparedMaterial2d[ColorMaterialAsset],
-  ] = @asset.Assets::new()
-  let prepared_assets = if (try! world.get_resource_ref(prepared_assets_key))
-    is Some(prepared_assets_ref) {
-    prepared_assets_ref.val
-  } else {
-    empty_prepared_assets
-  }
+  let color_material_probe : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(
+    0,
+  )
+  let prepared_assets = prepared_material2d_assets_or_empty(
+    world, color_material_probe,
+  )
   render_state_update(world, fn(rs) {
     if !rs.val.draw_enabled {
       rs.val.queued_draw_item_counts.clear()
@@ -7451,29 +7445,179 @@ fn mesh_alpha_cutoff(alpha_mode : AlphaMode2d) -> Float {
 }
 
 ///|
+fn material2d_mesh_phase_from_properties(
+  properties : Material2dProperties,
+  alpha : Float,
+) -> Int? {
+  let key_bits = properties.mesh_pipeline_key_bits
+  if (key_bits & MATERIAL2D_PIPELINE_KEY_BLEND) != 0 {
+    Some(1)
+  } else if (key_bits & MATERIAL2D_PIPELINE_KEY_ALPHA_MASK) != 0 {
+    mesh_alpha_phase(properties.alpha_mode, alpha)
+  } else {
+    Some(0)
+  }
+}
+
+///|
 fn[M] prepared_material2d_alpha_phase(material : PreparedMaterial2d[M]) -> Int? {
-  mesh_alpha_phase(material.properties.alpha_mode, material.color.a)
+  material2d_mesh_phase_from_properties(material.properties, material.color.a)
 }
 
 ///|
-fn[M] prepared_material2d_draw_alpha(
-  material : PreparedMaterial2d[M],
-) -> Float? {
-  mesh_draw_alpha(material.properties.alpha_mode, material.color.a)
+priv struct Material2dMeshDrawParams {
+  color : Color
+  draw_alpha : Float
+  alpha_mode_kind : Int
+  alpha_cutoff : Float
+  texture_id : Int
+  uv_offset : @math.Vec2
+  uv_scale : @math.Vec2
 }
 
 ///|
-fn[M] prepared_material2d_alpha_mode_kind(
+fn material2d_mesh_draw_params(
+  color : Color,
+  properties : Material2dProperties,
+  texture : @asset.Handle[@asset.Image]?,
+  uv_offset : @math.Vec2,
+  uv_scale : @math.Vec2,
+) -> Material2dMeshDrawParams? {
+  guard mesh_draw_alpha(properties.alpha_mode, color.a) is Some(draw_alpha) else {
+    return None
+  }
+  let texture_id = match texture {
+    Some(value) => value.id()
+    None => -1
+  }
+  Some(Material2dMeshDrawParams::{
+    color,
+    draw_alpha,
+    alpha_mode_kind: mesh_alpha_mode_kind(properties.alpha_mode),
+    alpha_cutoff: mesh_alpha_cutoff(properties.alpha_mode),
+    texture_id,
+    uv_offset,
+    uv_scale,
+  })
+}
+
+///|
+fn[M] prepared_material2d_draw_params(
   material : PreparedMaterial2d[M],
+) -> Material2dMeshDrawParams? {
+  material2d_mesh_draw_params(
+    material.color,
+    material.properties,
+    material.texture,
+    material.uv_offset,
+    material.uv_scale,
+  )
+}
+
+///|
+fn[M] prepared_material2d_get(
+  prepared_assets : @asset.Assets[PreparedMaterial2d[M]],
+  handle : @asset.Handle[PreparedMaterial2d[M]],
+) -> PreparedMaterial2d[M]? {
+  prepared_assets.get(handle)
+}
+
+///|
+fn[M] prepared_material2d_assets_or_empty(
+  world : @ecs.World,
+  _probe : @asset.Handle[M],
+) -> @asset.Assets[PreparedMaterial2d[M]] {
+  _probe |> ignore
+  let prepared_assets_key : @ecs.ResourceKey[
+    @asset.Assets[PreparedMaterial2d[M]],
+  ] = @asset.assets_resource_key()
+  let empty_prepared_assets : @asset.Assets[PreparedMaterial2d[M]] = @asset.Assets::new()
+  if (try! world.get_resource_ref(prepared_assets_key))
+    is Some(prepared_assets_ref) {
+    prepared_assets_ref.val
+  } else {
+    empty_prepared_assets
+  }
+}
+
+///|
+fn[M] append_material2d_mesh_draw_items(
+  items : Array[DrawItem],
+  meshes : Array[ExtractedMesh2d],
+  prepared_materials : @asset.Assets[PreparedMaterial2d[M]],
+  layers : RenderLayers,
+  tie : Int,
+  material_handle_of : (Mesh2dDrawPayload) -> @asset.Handle[
+    PreparedMaterial2d[M],
+  ]?,
 ) -> Int {
-  mesh_alpha_mode_kind(material.properties.alpha_mode)
+  let mut next_tie = tie
+  for i in 0..<meshes.length() {
+    let mesh = meshes[i]
+    if !mesh.payload.layers.matches(layers) {
+      continue
+    }
+    guard material_handle_of(mesh.payload) is Some(material_handle) else {
+      continue
+    }
+    guard prepared_material2d_get(prepared_materials, material_handle)
+      is Some(material) else {
+      continue
+    }
+    guard prepared_material2d_alpha_phase(material) is Some(phase) else {
+      continue
+    }
+    items.push(DrawItem::{
+      kind: Mesh(i),
+      entity: mesh.entity,
+      z: mesh.payload.transform.translation.z,
+      phase,
+      tie: next_tie,
+    })
+    next_tie = next_tie + 1
+  }
+  next_tie
 }
 
 ///|
-fn[M] prepared_material2d_alpha_cutoff(
-  material : PreparedMaterial2d[M],
-) -> Float {
-  mesh_alpha_cutoff(material.properties.alpha_mode)
+fn color_material_prepared_handle(
+  mesh : Mesh2dDrawPayload,
+) -> @asset.Handle[PreparedMaterial2d[ColorMaterialAsset]]? {
+  Some(mesh.material)
+}
+
+///|
+fn draw_color_material_mesh_item(
+  mesh : Mesh2dDrawPayload,
+  prepared_assets : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
+) -> Unit {
+  guard prepared_material2d_get(prepared_assets, mesh.material)
+    is Some(material) else {
+    return
+  }
+  guard prepared_material2d_draw_params(material) is Some(draw_params) else {
+    return
+  }
+  let transform = mesh.transform
+  @render.host_gpu_draw_mesh(
+    mesh_id=mesh.mesh_id,
+    x=transform.translation.x,
+    y=transform.translation.y,
+    rotation=transform.rotation_z(),
+    scale_x=transform.scale.x,
+    scale_y=transform.scale.y,
+    color_r=draw_params.color.r,
+    color_g=draw_params.color.g,
+    color_b=draw_params.color.b,
+    color_a=draw_params.draw_alpha,
+    alpha_mode_kind=draw_params.alpha_mode_kind,
+    alpha_cutoff=draw_params.alpha_cutoff,
+    texture_id=draw_params.texture_id,
+    uv_offset_x=draw_params.uv_offset.x,
+    uv_offset_y=draw_params.uv_offset.y,
+    uv_scale_x=draw_params.uv_scale.x,
+    uv_scale_y=draw_params.uv_scale.y,
+  )
 }
 
 ///|
@@ -7562,26 +7706,9 @@ fn draw_scene_items_for_layers(
   let mut tie = 0
   // Align with Bevy queue structure: mesh phases are queued before sprite phases.
   // Transparent items are then sorted by z with stable insertion order.
-  for i in 0..<meshes.length() {
-    let mesh = meshes[i]
-    if !mesh.payload.layers.matches(layers) {
-      continue
-    }
-    guard prepared_materials.get(mesh.payload.material) is Some(material) else {
-      continue
-    }
-    guard prepared_material2d_alpha_phase(material) is Some(phase) else {
-      continue
-    }
-    items.push(DrawItem::{
-      kind: Mesh(i),
-      entity: mesh.entity,
-      z: mesh.payload.transform.translation.z,
-      phase,
-      tie,
-    })
-    tie = tie + 1
-  }
+  tie = append_material2d_mesh_draw_items(
+    items, meshes, prepared_materials, layers, tie, color_material_prepared_handle,
+  )
   for i in 0..<sprites.length() {
     let sprite = sprites[i]
     if !sprite.payload.layers.matches(layers) {
@@ -8466,18 +8593,12 @@ test "render2d: logical view extent derives from physical viewport and scale fac
 
 ///|
 pub fn render_execute_system(world : @ecs.World) -> Unit {
-  let prepared_assets_key : @ecs.ResourceKey[
-    @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
-  ] = @asset.assets_resource_key()
-  let empty_prepared_assets : @asset.Assets[
-    PreparedMaterial2d[ColorMaterialAsset],
-  ] = @asset.Assets::new()
-  let prepared_assets = if (try! world.get_resource_ref(prepared_assets_key))
-    is Some(prepared_assets_ref) {
-    prepared_assets_ref.val
-  } else {
-    empty_prepared_assets
-  }
+  let color_material_probe : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(
+    0,
+  )
+  let prepared_assets = prepared_material2d_assets_or_empty(
+    world, color_material_probe,
+  )
   render_state_update(world, fn(rs) {
     if !rs.val.draw_enabled {
       render2d_diagnostic_prepared_camera_count_ref.val = 0
@@ -8828,36 +8949,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             Mesh(i) => {
               apply_scissor(None)
               let mesh = meshes[i].payload
-              guard prepared_assets.get(mesh.material) is Some(material) else {
-                continue
-              }
-              guard prepared_material2d_draw_alpha(material) is Some(draw_alpha) else {
-                continue
-              }
-              let transform = mesh.transform
-              let texture_id = match material.texture {
-                Some(texture) => texture.id()
-                None => -1
-              }
-              @render.host_gpu_draw_mesh(
-                mesh_id=mesh.mesh_id,
-                x=transform.translation.x,
-                y=transform.translation.y,
-                rotation=transform.rotation_z(),
-                scale_x=transform.scale.x,
-                scale_y=transform.scale.y,
-                color_r=material.color.r,
-                color_g=material.color.g,
-                color_b=material.color.b,
-                color_a=draw_alpha,
-                alpha_mode_kind=prepared_material2d_alpha_mode_kind(material),
-                alpha_cutoff=prepared_material2d_alpha_cutoff(material),
-                texture_id~,
-                uv_offset_x=material.uv_offset.x,
-                uv_offset_y=material.uv_offset.y,
-                uv_scale_x=material.uv_scale.x,
-                uv_scale_y=material.uv_scale.y,
-              )
+              draw_color_material_mesh_item(mesh, prepared_assets)
             }
             UiRectExtra(i) => {
               let rect = extra_ui_rects[i].payload
