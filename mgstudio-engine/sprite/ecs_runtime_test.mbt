@@ -311,11 +311,15 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
     material2d_plugin(plugin),
   ])
   let key : @ecs.ResourceKey[@asset.Assets[DummyMaterialAsset]] = @asset.assets_resource_key()
+  let prepared_key : @ecs.ResourceKey[
+    @asset.Assets[PreparedMaterial2d[DummyMaterialAsset]],
+  ] = @asset.assets_resource_key()
   let instances_key : @ecs.ResourceKey[
     RenderMaterial2dInstances[DummyMaterialAsset],
   ] = RenderMaterial2dInstances::resource()
 
   inspect(app.contains_resource(key), content="true")
+  inspect(app.contains_resource(prepared_key), content="true")
   inspect(app.contains_resource(instances_key), content="true")
 }
 
@@ -353,6 +357,38 @@ test "render2d: extract_color_material_mesh_instances_system populates resource"
     instances.get(entity).map(fn(value) { value.id() == handle.id() }),
     content="Some(true)",
   )
+}
+
+///|
+test "render2d: prepare_color_material2d_assets_system populates prepared assets" {
+  let handle_ref : Ref[@asset.Handle[ColorMaterialAsset]?] = Ref::new(None)
+
+  let mut app = @app.App::new(@ecs.World::new()).add_plugins([
+    @asset.asset_plugin, render2d_plugin,
+  ])
+  app = app.add_system(fn(world : @ecs.World) {
+    let material = ColorMaterial::from_image(@asset.Handle::new(11))
+    handle_ref.val = Some(material.handle)
+    Mesh2dBundle::new(
+      Mesh2d::from_rectangle(Rectangle::new(8.0F, 6.0F)),
+      material,
+      @math.Transform::identity(),
+    ).spawn(world)
+    |> ignore
+  })
+  app = app.run_once()
+  let world = app.world()
+  let handle = handle_ref.val.unwrap_or(@asset.Handle::new(-1))
+  let prepared_key : @ecs.ResourceKey[
+    @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
+  ] = @asset.assets_resource_key()
+  let prepared_assets = try! world.get_resource(prepared_key).unwrap()
+  let prepared_handle = PreparedMaterial2d::prepared_handle(handle)
+  let prepared = prepared_assets.get(prepared_handle).unwrap()
+
+  inspect(prepared.source.id() == handle.id(), content="true")
+  inspect(prepared.texture.map(fn(value) { value.id() }), content="Some(11)")
+  inspect(prepared.properties.alpha_mode is Blend, content="true")
 }
 
 ///|

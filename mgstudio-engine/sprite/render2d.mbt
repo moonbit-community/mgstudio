@@ -1477,6 +1477,50 @@ pub(open) trait Material2d {
 }
 
 ///|
+pub struct Material2dProperties {
+  alpha_mode : AlphaMode2d
+}
+
+///|
+pub fn Material2dProperties::new(
+  alpha_mode : AlphaMode2d,
+) -> Material2dProperties {
+  Material2dProperties::{ alpha_mode, }
+}
+
+///|
+pub struct PreparedMaterial2d[M] {
+  source : @asset.Handle[M]
+  color : Color
+  texture : @asset.Handle[@asset.Image]?
+  uv_offset : @math.Vec2
+  uv_scale : @math.Vec2
+  properties : Material2dProperties
+}
+
+///|
+pub fn[M : Material2d] PreparedMaterial2d::from_material(
+  source : @asset.Handle[M],
+  material : M,
+) -> PreparedMaterial2d[M] {
+  PreparedMaterial2d::{
+    source,
+    color: material.color(),
+    texture: material.texture(),
+    uv_offset: material.uv_offset(),
+    uv_scale: material.uv_scale(),
+    properties: Material2dProperties::new(material.alpha_mode()),
+  }
+}
+
+///|
+pub fn[M] PreparedMaterial2d::prepared_handle(
+  source : @asset.Handle[M],
+) -> @asset.Handle[PreparedMaterial2d[M]] {
+  @asset.Handle::new(source.id())
+}
+
+///|
 pub impl Material2d for ColorMaterial with color(self) {
   ColorMaterial::color(self)
 }
@@ -1502,12 +1546,48 @@ pub impl Material2d for ColorMaterial with uv_scale(self) {
 }
 
 ///|
+pub impl Material2d for ColorMaterialAsset with color(self) {
+  self.color
+}
+
+///|
+pub impl Material2d for ColorMaterialAsset with alpha_mode(self) {
+  self.alpha_mode
+}
+
+///|
+pub impl Material2d for ColorMaterialAsset with texture(self) {
+  self.texture
+}
+
+///|
+pub impl Material2d for ColorMaterialAsset with uv_offset(self) {
+  self.uv_offset
+}
+
+///|
+pub impl Material2d for ColorMaterialAsset with uv_scale(self) {
+  self.uv_scale
+}
+
+///|
 fn[M] init_material2d_assets_resource(
   app : @app.App[@ecs.World],
   _probe : @asset.Handle[M],
 ) -> @app.App[@ecs.World] {
   app.init_resource(fn() {
     let assets : @asset.Assets[M] = @asset.Assets::new()
+    assets
+  })
+}
+
+///|
+fn[M] init_prepared_material2d_assets_resource(
+  app : @app.App[@ecs.World],
+  _probe : @asset.Handle[M],
+) -> @app.App[@ecs.World] {
+  app.init_resource(fn() {
+    let assets : @asset.Assets[PreparedMaterial2d[M]] = @asset.Assets::new()
     assets
   })
 }
@@ -1555,7 +1635,10 @@ pub fn[M] material2d_plugin(
   fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     let probe : @asset.Handle[M] = @asset.Handle::new(0)
     init_render_material2d_instances_resource(
-      init_material2d_assets_resource(app, probe),
+      init_prepared_material2d_assets_resource(
+        init_material2d_assets_resource(app, probe),
+        probe,
+      ),
       probe,
     )
   }
@@ -4598,11 +4681,7 @@ priv struct CameraComputed {
 priv struct Mesh2dDrawPayload {
   mesh_id : Int
   transform : @math.Transform
-  color : Color
-  alpha_mode : AlphaMode2d
-  texture : @asset.Handle[@asset.Image]?
-  uv_offset : @math.Vec2
-  uv_scale : @math.Vec2
+  material : @asset.Handle[PreparedMaterial2d[ColorMaterialAsset]]
   layers : RenderLayers
 }
 
@@ -6696,9 +6775,6 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
       guard material_instances_ref.val.get(entity) is Some(material_handle) else {
         return
       }
-      guard color_material_get(material_handle) is Some(material) else {
-        return
-      }
       let layers = match layers_store.get(entity) {
         Some(v) => v
         None => RenderLayers::default()
@@ -6716,11 +6792,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
         payload: Mesh2dDrawPayload::{
           mesh_id: gpu.mesh_id,
           transform,
-          color: material.color,
-          alpha_mode: material.alpha_mode,
-          texture: material.texture,
-          uv_offset: material.uv_offset,
-          uv_scale: material.uv_scale,
+          material: PreparedMaterial2d::prepared_handle(material_handle),
           layers,
         },
       })
@@ -6956,9 +7028,6 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
       guard material_instances_ref.val.get(entity) is Some(material_handle) else {
         return
       }
-      guard color_material_get(material_handle) is Some(material) else {
-        return
-      }
       let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
         RenderLayers::default(),
       )
@@ -6968,11 +7037,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         payload: Mesh2dDrawPayload::{
           mesh_id: gpu.mesh_id,
           transform,
-          color: material.color,
-          alpha_mode: material.alpha_mode,
-          texture: material.texture,
-          uv_offset: material.uv_offset,
-          uv_scale: material.uv_scale,
+          material: PreparedMaterial2d::prepared_handle(material_handle),
           layers,
         },
       })
@@ -7024,6 +7089,18 @@ pub fn render_prepare_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn render_queue_system(world : @ecs.World) -> Unit {
+  let prepared_assets_key : @ecs.ResourceKey[
+    @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
+  ] = @asset.assets_resource_key()
+  let empty_prepared_assets : @asset.Assets[
+    PreparedMaterial2d[ColorMaterialAsset],
+  ] = @asset.Assets::new()
+  let prepared_assets = if (try! world.get_resource_ref(prepared_assets_key))
+    is Some(prepared_assets_ref) {
+    prepared_assets_ref.val
+  } else {
+    empty_prepared_assets
+  }
   render_state_update(world, fn(rs) {
     if !rs.val.draw_enabled {
       rs.val.queued_draw_item_counts.clear()
@@ -7051,6 +7128,7 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
         rs.val.extra_ui_box_shadows,
         rs.val.extra_ui_texture_slices,
         rs.val.meshes,
+        prepared_assets,
         camera.entity,
         camera.layers,
       )
@@ -7150,6 +7228,32 @@ fn mesh_alpha_cutoff(alpha_mode : AlphaMode2d) -> Float {
 }
 
 ///|
+fn[M] prepared_material2d_alpha_phase(material : PreparedMaterial2d[M]) -> Int? {
+  mesh_alpha_phase(material.properties.alpha_mode, material.color.a)
+}
+
+///|
+fn[M] prepared_material2d_draw_alpha(
+  material : PreparedMaterial2d[M],
+) -> Float? {
+  mesh_draw_alpha(material.properties.alpha_mode, material.color.a)
+}
+
+///|
+fn[M] prepared_material2d_alpha_mode_kind(
+  material : PreparedMaterial2d[M],
+) -> Int {
+  mesh_alpha_mode_kind(material.properties.alpha_mode)
+}
+
+///|
+fn[M] prepared_material2d_alpha_cutoff(
+  material : PreparedMaterial2d[M],
+) -> Float {
+  mesh_alpha_cutoff(material.properties.alpha_mode)
+}
+
+///|
 priv enum DrawKind {
   SpriteMain(Int)
   SpriteExtra(Int)
@@ -7180,13 +7284,15 @@ fn draw_items_for_layers(
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
   meshes : Array[ExtractedMesh2d],
+  prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
   camera_entity : @core.Entity,
   layers : RenderLayers,
 ) -> Array[DrawItem] {
   let items : Array[DrawItem] = []
   for
     item in draw_scene_items_for_layers(
-      sprites, extra_sprites, extra_sprite_texture_slices, meshes, layers,
+      sprites, extra_sprites, extra_sprite_texture_slices, meshes, prepared_materials,
+      layers,
     ) {
     items.push(item)
   }
@@ -7226,6 +7332,7 @@ fn draw_scene_items_for_layers(
   extra_sprites : Array[ExtractedSprite],
   extra_sprite_texture_slices : Array[ExtractedSpriteTextureSlice],
   meshes : Array[ExtractedMesh2d],
+  prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
   layers : RenderLayers,
 ) -> Array[DrawItem] {
   let items : Array[DrawItem] = []
@@ -7237,8 +7344,10 @@ fn draw_scene_items_for_layers(
     if !mesh.payload.layers.matches(layers) {
       continue
     }
-    guard mesh_alpha_phase(mesh.payload.alpha_mode, mesh.payload.color.a)
-      is Some(phase) else {
+    guard prepared_materials.get(mesh.payload.material) is Some(material) else {
+      continue
+    }
+    guard prepared_material2d_alpha_phase(material) is Some(phase) else {
       continue
     }
     items.push(DrawItem::{
@@ -7433,11 +7542,7 @@ fn extracted_mesh2d_item(
   entity : @core.Entity,
   mesh_id : Int,
   transform : @math.Transform,
-  color : Color,
-  alpha_mode : AlphaMode2d,
-  texture : @asset.Handle[@asset.Image]?,
-  uv_offset : @math.Vec2,
-  uv_scale : @math.Vec2,
+  material : @asset.Handle[ColorMaterialAsset],
   layers : RenderLayers,
 ) -> ExtractedMesh2d {
   ExtractedMesh2d::{
@@ -7445,11 +7550,7 @@ fn extracted_mesh2d_item(
     payload: Mesh2dDrawPayload::{
       mesh_id,
       transform,
-      color,
-      alpha_mode,
-      texture,
-      uv_offset,
-      uv_scale,
+      material: PreparedMaterial2d::prepared_handle(material),
       layers,
     },
   }
@@ -7474,8 +7575,67 @@ fn extract_color_material_mesh_instances_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn prepare_color_material2d_assets_system(world : @ecs.World) -> Unit {
+  let instances_key : @ecs.ResourceKey[
+    RenderMaterial2dInstances[ColorMaterialAsset],
+  ] = RenderMaterial2dInstances::resource()
+  let source_assets_key : @ecs.ResourceKey[@asset.Assets[ColorMaterialAsset]] = @asset.assets_resource_key()
+  let prepared_assets_key : @ecs.ResourceKey[
+    @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
+  ] = @asset.assets_resource_key()
+  guard (try! world.get_resource_ref(instances_key)) is Some(instances_ref) else {
+    return
+  }
+  guard (try! world.get_resource_ref(source_assets_key))
+    is Some(source_assets_ref) else {
+    return
+  }
+  guard (try! world.get_resource_ref_mut(
+      prepared_assets_key,
+      world.read_change_tick(),
+    ))
+    is Some(prepared_assets_ref) else {
+    return
+  }
+  for _, material_handle in instances_ref.val.instances {
+    guard source_assets_ref.val.get(material_handle) is Some(material) else {
+      continue
+    }
+    let prepared_handle = PreparedMaterial2d::prepared_handle(material_handle)
+    prepared_assets_ref.val.insert(
+      prepared_handle,
+      PreparedMaterial2d::from_material(material_handle, material),
+    )
+    |> ignore
+  }
+}
+
+///|
+fn prepared_color_material_assets_for_tests(
+  materials : Array[(@asset.Handle[ColorMaterialAsset], ColorMaterialAsset)],
+) -> @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]] {
+  let prepared : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]] = @asset.Assets::new()
+  for material_info in materials {
+    let (handle, material) = material_info
+    prepared.insert(
+      PreparedMaterial2d::prepared_handle(handle),
+      PreparedMaterial2d::from_material(handle, material),
+    )
+    |> ignore
+  }
+  prepared
+}
+
+///|
 test "render2d: unified draw items order sprites and meshes by z" {
   let layers = RenderLayers::default()
+  let material_handle = @asset.Handle::new(1)
+  let prepared_materials = prepared_color_material_assets_for_tests([
+    (
+      material_handle,
+      ColorMaterialAsset::new(Color::white(), AlphaMode2d::Blend),
+    ),
+  ])
   let sprites : Array[ExtractedSprite] = [
     extracted_sprite_item(
       @core.Entity::new(2, 0),
@@ -7510,11 +7670,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
         @math.Vec2::new(1.0F, 1.0F),
         z=-1.0F,
       ),
-      Color::white(),
-      AlphaMode2d::Blend,
-      None,
-      @math.Vec2::new(0.0F, 0.0F),
-      @math.Vec2::new(1.0F, 1.0F),
+      material_handle,
       layers,
     ),
   ]
@@ -7526,6 +7682,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
     extra_shadow,
     extra_slices,
     meshes,
+    prepared_materials,
     @core.Entity::new(0, 0),
     layers,
   )
@@ -7538,6 +7695,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
 ///|
 test "render2d: UI overlay draw items route by target camera" {
   let layers = RenderLayers::default()
+  let prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]] = @asset.Assets::new()
   let camera_a = @core.Entity::new(10, 0)
   let camera_b = @core.Entity::new(11, 0)
   let sprites : Array[ExtractedSprite] = []
@@ -7582,7 +7740,7 @@ test "render2d: UI overlay draw items route by target camera" {
   let meshes : Array[ExtractedMesh2d] = []
   let items = draw_items_for_layers(
     sprites, extra, extra_sprite_slices, extra_ui, extra_shadow, extra_slices, meshes,
-    camera_a, layers,
+    prepared_materials, camera_a, layers,
   )
   let ok = items.length() == 1 && items[0].kind is UiRectExtra(0)
   inspect(ok, content="true")
@@ -7591,8 +7749,16 @@ test "render2d: UI overlay draw items route by target camera" {
 ///|
 test "render2d: scene draw items exclude UI overlays" {
   let layers = RenderLayers::default()
+  let prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]] = @asset.Assets::new()
   let camera = @core.Entity::new(10, 0)
-  let scene_items = draw_scene_items_for_layers([], [], [], [], layers)
+  let scene_items = draw_scene_items_for_layers(
+    [],
+    [],
+    [],
+    [],
+    prepared_materials,
+    layers,
+  )
   let ui_items = draw_ui_overlay_items_for_layers(
     [
       extracted_ui_rect_item(
@@ -7736,6 +7902,24 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
 ///|
 test "render2d: mesh opaque alpha mode stays in opaque phase" {
   let layers = RenderLayers::default()
+  let opaque_handle = @asset.Handle::new(20)
+  let blend_handle = @asset.Handle::new(21)
+  let prepared_materials = prepared_color_material_assets_for_tests([
+    (
+      opaque_handle,
+      ColorMaterialAsset::new(
+        Color::new(1.0F, 0.0F, 0.0F, 0.2F),
+        AlphaMode2d::Opaque,
+      ),
+    ),
+    (
+      blend_handle,
+      ColorMaterialAsset::new(
+        Color::new(0.0F, 1.0F, 0.0F, 0.2F),
+        AlphaMode2d::Blend,
+      ),
+    ),
+  ])
   let sprites : Array[ExtractedSprite] = []
   let extra : Array[ExtractedSprite] = []
   let extra_sprite_slices : Array[ExtractedSpriteTextureSlice] = []
@@ -7747,22 +7931,14 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
       @core.Entity::new(2, 0),
       10,
       @math.Transform::identity(),
-      Color::new(1.0F, 0.0F, 0.0F, 0.2F),
-      AlphaMode2d::Opaque,
-      None,
-      @math.Vec2::new(0.0F, 0.0F),
-      @math.Vec2::new(1.0F, 1.0F),
+      opaque_handle,
       layers,
     ),
     extracted_mesh2d_item(
       @core.Entity::new(1, 0),
       11,
       @math.Transform::identity(),
-      Color::new(0.0F, 1.0F, 0.0F, 0.2F),
-      AlphaMode2d::Blend,
-      None,
-      @math.Vec2::new(0.0F, 0.0F),
-      @math.Vec2::new(1.0F, 1.0F),
+      blend_handle,
       layers,
     ),
   ]
@@ -7774,6 +7950,7 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
     extra_shadow,
     extra_slices,
     meshes,
+    prepared_materials,
     @core.Entity::new(0, 0),
     layers,
   )
@@ -7786,6 +7963,16 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
 ///|
 test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
   let layers = RenderLayers::default()
+  let material_handle = @asset.Handle::new(30)
+  let prepared_materials = prepared_color_material_assets_for_tests([
+    (
+      material_handle,
+      ColorMaterialAsset::new(
+        Color::new(1.0F, 1.0F, 1.0F, 1.0F),
+        AlphaMode2d::Blend,
+      ),
+    ),
+  ])
   let sprites : Array[ExtractedSprite] = [
     extracted_sprite_item(
       @core.Entity::new(2, 0),
@@ -7805,15 +7992,18 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
       @core.Entity::new(1, 0),
       99,
       @math.Transform::identity(),
-      Color::new(1.0F, 1.0F, 1.0F, 1.0F),
-      AlphaMode2d::Blend,
-      None,
-      @math.Vec2::new(0.0F, 0.0F),
-      @math.Vec2::new(1.0F, 1.0F),
+      material_handle,
       layers,
     ),
   ]
-  let items = draw_scene_items_for_layers(sprites, [], [], meshes, layers)
+  let items = draw_scene_items_for_layers(
+    sprites,
+    [],
+    [],
+    meshes,
+    prepared_materials,
+    layers,
+  )
   let ok = items.length() == 2 &&
     items[0].kind is Mesh(0) &&
     items[1].kind is SpriteMain(0)
@@ -7823,6 +8013,24 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
 ///|
 test "render2d: mesh mask alpha mode drops below cutoff" {
   let layers = RenderLayers::default()
+  let masked_low_handle = @asset.Handle::new(40)
+  let masked_high_handle = @asset.Handle::new(41)
+  let prepared_materials = prepared_color_material_assets_for_tests([
+    (
+      masked_low_handle,
+      ColorMaterialAsset::new(
+        Color::new(1.0F, 1.0F, 1.0F, 0.2F),
+        AlphaMode2d::Mask(0.5F),
+      ),
+    ),
+    (
+      masked_high_handle,
+      ColorMaterialAsset::new(
+        Color::new(1.0F, 1.0F, 1.0F, 0.8F),
+        AlphaMode2d::Mask(0.5F),
+      ),
+    ),
+  ])
   let sprites : Array[ExtractedSprite] = []
   let extra : Array[ExtractedSprite] = []
   let extra_sprite_slices : Array[ExtractedSpriteTextureSlice] = []
@@ -7834,22 +8042,14 @@ test "render2d: mesh mask alpha mode drops below cutoff" {
       @core.Entity::new(1, 0),
       20,
       @math.Transform::identity(),
-      Color::new(1.0F, 1.0F, 1.0F, 0.2F),
-      AlphaMode2d::Mask(0.5F),
-      None,
-      @math.Vec2::new(0.0F, 0.0F),
-      @math.Vec2::new(1.0F, 1.0F),
+      masked_low_handle,
       layers,
     ),
     extracted_mesh2d_item(
       @core.Entity::new(2, 0),
       21,
       @math.Transform::identity(),
-      Color::new(1.0F, 1.0F, 1.0F, 0.8F),
-      AlphaMode2d::Mask(0.5F),
-      None,
-      @math.Vec2::new(0.0F, 0.0F),
-      @math.Vec2::new(1.0F, 1.0F),
+      masked_high_handle,
       layers,
     ),
   ]
@@ -7861,6 +8061,7 @@ test "render2d: mesh mask alpha mode drops below cutoff" {
     extra_shadow,
     extra_slices,
     meshes,
+    prepared_materials,
     @core.Entity::new(0, 0),
     layers,
   )
@@ -8021,6 +8222,18 @@ test "render2d: logical view extent derives from physical viewport and scale fac
 
 ///|
 pub fn render_execute_system(world : @ecs.World) -> Unit {
+  let prepared_assets_key : @ecs.ResourceKey[
+    @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
+  ] = @asset.assets_resource_key()
+  let empty_prepared_assets : @asset.Assets[
+    PreparedMaterial2d[ColorMaterialAsset],
+  ] = @asset.Assets::new()
+  let prepared_assets = if (try! world.get_resource_ref(prepared_assets_key))
+    is Some(prepared_assets_ref) {
+    prepared_assets_ref.val
+  } else {
+    empty_prepared_assets
+  }
   render_state_update(world, fn(rs) {
     if !rs.val.draw_enabled {
       render2d_diagnostic_prepared_camera_count_ref.val = 0
@@ -8216,6 +8429,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         extra_sprites,
         extra_sprite_texture_slices,
         meshes,
+        prepared_assets,
         camera.layers,
       )
       let ui_overlay_draw_items = draw_ui_overlay_items_for_layers(
@@ -8233,6 +8447,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         extra_ui_box_shadows,
         extra_ui_texture_slices,
         meshes,
+        prepared_assets,
         camera.entity,
         camera.layers,
       )
@@ -8369,12 +8584,14 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             Mesh(i) => {
               apply_scissor(None)
               let mesh = meshes[i].payload
-              guard mesh_draw_alpha(mesh.alpha_mode, mesh.color.a)
-                is Some(draw_alpha) else {
+              guard prepared_assets.get(mesh.material) is Some(material) else {
+                continue
+              }
+              guard prepared_material2d_draw_alpha(material) is Some(draw_alpha) else {
                 continue
               }
               let transform = mesh.transform
-              let texture_id = match mesh.texture {
+              let texture_id = match material.texture {
                 Some(texture) => texture.id()
                 None => -1
               }
@@ -8385,17 +8602,17 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 rotation=transform.rotation_z(),
                 scale_x=transform.scale.x,
                 scale_y=transform.scale.y,
-                color_r=mesh.color.r,
-                color_g=mesh.color.g,
-                color_b=mesh.color.b,
+                color_r=material.color.r,
+                color_g=material.color.g,
+                color_b=material.color.b,
                 color_a=draw_alpha,
-                alpha_mode_kind=mesh_alpha_mode_kind(mesh.alpha_mode),
-                alpha_cutoff=mesh_alpha_cutoff(mesh.alpha_mode),
+                alpha_mode_kind=prepared_material2d_alpha_mode_kind(material),
+                alpha_cutoff=prepared_material2d_alpha_cutoff(material),
                 texture_id~,
-                uv_offset_x=mesh.uv_offset.x,
-                uv_offset_y=mesh.uv_offset.y,
-                uv_scale_x=mesh.uv_scale.x,
-                uv_scale_y=mesh.uv_scale.y,
+                uv_offset_x=material.uv_offset.x,
+                uv_offset_y=material.uv_offset.y,
+                uv_scale_x=material.uv_scale.x,
+                uv_scale_y=material.uv_scale.y,
               )
             }
             UiRectExtra(i) => {
@@ -8954,6 +9171,11 @@ pub let render2d_set_extract_materials : @app.SystemSet = @app.system_set(
 )
 
 ///|
+pub let render2d_set_prepare_materials : @app.SystemSet = @app.system_set(
+  "bevy.render2d.prepare_materials",
+)
+
+///|
 pub let render2d_set_prepare : @app.SystemSet = @app.system_set(
   "bevy.render2d.prepare",
 )
@@ -8978,8 +9200,11 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     0,
   )
   init_render_material2d_instances_resource(
-    init_material2d_assets_resource(
-      app.init_resource(fn() { ClearColor::default() }),
+    init_prepared_material2d_assets_resource(
+      init_material2d_assets_resource(
+        app.init_resource(fn() { ClearColor::default() }),
+        color_material_probe,
+      ),
       color_material_probe,
     ),
     color_material_probe,
@@ -9002,6 +9227,11 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.system(render_extract_system).in_set(render2d_set_extract),
   )
   .add_post_update_system_config(
+    @app.system(prepare_color_material2d_assets_system).in_set(
+      render2d_set_prepare_materials,
+    ),
+  )
+  .add_post_update_system_config(
     @app.system(render_prepare_system).in_set(render2d_set_prepare),
   )
   .add_post_update_system_config(
@@ -9017,6 +9247,9 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     render2d_set_extract,
   ])
   .configure_set(@app.PostUpdate, render2d_set_extract, before=[
+    render2d_set_prepare_materials,
+  ])
+  .configure_set(@app.PostUpdate, render2d_set_prepare_materials, before=[
     render2d_set_prepare,
   ])
   .configure_set(@app.PostUpdate, render2d_set_prepare, before=[
@@ -9033,8 +9266,11 @@ pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     0,
   )
   init_render_material2d_instances_resource(
-    init_material2d_assets_resource(
-      app.init_resource(fn() { ClearColor::default() }),
+    init_prepared_material2d_assets_resource(
+      init_material2d_assets_resource(
+        app.init_resource(fn() { ClearColor::default() }),
+        color_material_probe,
+      ),
       color_material_probe,
     ),
     color_material_probe,
@@ -9057,6 +9293,11 @@ pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.system(render_extract_system_ecs).in_set(render2d_set_extract),
   )
   .add_post_update_system_config(
+    @app.system(prepare_color_material2d_assets_system).in_set(
+      render2d_set_prepare_materials,
+    ),
+  )
+  .add_post_update_system_config(
     @app.system(render_prepare_system).in_set(render2d_set_prepare),
   )
   .add_post_update_system_config(
@@ -9072,6 +9313,9 @@ pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     render2d_set_extract,
   ])
   .configure_set(@app.PostUpdate, render2d_set_extract, before=[
+    render2d_set_prepare_materials,
+  ])
+  .configure_set(@app.PostUpdate, render2d_set_prepare_materials, before=[
     render2d_set_prepare,
   ])
   .configure_set(@app.PostUpdate, render2d_set_prepare, before=[

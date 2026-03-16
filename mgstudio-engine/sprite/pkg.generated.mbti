@@ -187,6 +187,8 @@ pub let render2d_set_extract_materials : String
 
 pub let render2d_set_prepare : String
 
+pub let render2d_set_prepare_materials : String
+
 pub let render2d_set_queue : String
 
 pub let render2d_set_render : String
@@ -499,6 +501,7 @@ pub struct ColorMaterialAsset {
   uv_scale : @math.Vec2
 }
 pub fn ColorMaterialAsset::new(@color.Color, AlphaMode2d, texture? : @asset.Handle[@image.Image]?, uv_offset? : @math.Vec2, uv_scale? : @math.Vec2) -> Self
+pub impl Material2d for ColorMaterialAsset
 
 pub struct ColorMaterialPlugin {
 }
@@ -621,6 +624,11 @@ pub struct Material2dPlugin[M] {
 }
 pub fn[M] Material2dPlugin::default() -> Self[M]
 
+pub struct Material2dProperties {
+  alpha_mode : AlphaMode2d
+}
+pub fn Material2dProperties::new(AlphaMode2d) -> Self
+
 pub struct Mesh2d {
   mesh : @asset.Handle[@mesh.Mesh]
 }
@@ -736,6 +744,17 @@ pub struct Polyline2d {
 }
 pub fn Polyline2d::new(Array[@math.Vec2]) -> Self
 pub fn Polyline2d::with_half_thickness(Self, Float) -> Self
+
+pub struct PreparedMaterial2d[M] {
+  source : @asset.Handle[M]
+  color : @color.Color
+  texture : @asset.Handle[@image.Image]?
+  uv_offset : @math.Vec2
+  uv_scale : @math.Vec2
+  properties : Material2dProperties
+}
+pub fn[M : Material2d] PreparedMaterial2d::from_material(@asset.Handle[M], M) -> Self[M]
+pub fn[M] PreparedMaterial2d::prepared_handle(@asset.Handle[M]) -> @asset.Handle[Self[M]]
 
 pub(all) enum Projection {
   Orthographic(OrthographicProjection)
