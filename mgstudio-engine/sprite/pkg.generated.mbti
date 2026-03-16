@@ -42,7 +42,7 @@ pub let ecs_key_color_grading : @ecs.ComponentKey[@post_process.ColorGrading]
 
 pub let ecs_key_color_material : @ecs.ComponentKey[ColorMaterial]
 
-pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither]
+pub let ecs_key_deband_dither : @ecs.ComponentKey[@post_process.DebandDither]
 
 pub let ecs_key_gpu_mesh2d : @ecs.ComponentKey[GpuMesh2d]
 
@@ -66,7 +66,7 @@ pub let ecs_key_scissor_rect : @ecs.ComponentKey[ScissorRect]
 
 pub let ecs_key_sprite : @ecs.ComponentKey[Sprite]
 
-pub let ecs_key_tonemapping : @ecs.ComponentKey[Tonemapping]
+pub let ecs_key_tonemapping : @ecs.ComponentKey[@post_process.Tonemapping]
 
 pub let ecs_key_wireframe2d : @ecs.ComponentKey[Wireframe2d]
 
@@ -90,7 +90,7 @@ pub fn get_color_grading_store(@ecs.World) -> @ecs.ComponentAccess[@post_process
 
 pub fn get_color_material_store(@ecs.World) -> @ecs.ComponentAccess[ColorMaterial]
 
-pub fn get_deband_dither_store(@ecs.World) -> @ecs.ComponentAccess[DebandDither]
+pub fn get_deband_dither_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.DebandDither]
 
 pub fn get_gpu_mesh2d_store(@ecs.World) -> @ecs.ComponentAccess[GpuMesh2d]
 
@@ -114,7 +114,7 @@ pub fn get_scissor_rect_store(@ecs.World) -> @ecs.ComponentAccess[ScissorRect]
 
 pub fn get_sprite_store(@ecs.World) -> @ecs.ComponentAccess[Sprite]
 
-pub fn get_tonemapping_store(@ecs.World) -> @ecs.ComponentAccess[Tonemapping]
+pub fn get_tonemapping_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.Tonemapping]
 
 pub fn get_wireframe2d_color_store(@ecs.World) -> @ecs.ComponentAccess[Wireframe2dColor]
 
@@ -365,9 +365,9 @@ pub struct Camera2dBundle {
   target : RenderTarget
   layers : RenderLayers
   bloom2d : Bloom2d?
-  tonemapping : Tonemapping?
+  tonemapping : @post_process.Tonemapping?
   color_grading : @post_process.ColorGrading?
-  deband_dither : DebandDither?
+  deband_dither : @post_process.DebandDither?
 }
 pub fn Camera2dBundle::new(Camera, @math.Transform) -> Self
 pub fn Camera2dBundle::new_with_layers(Camera, @math.Transform, RenderTarget, RenderLayers) -> Self
@@ -376,8 +376,8 @@ pub fn Camera2dBundle::new_with_target(Camera, @math.Transform, RenderTarget) ->
 pub fn Camera2dBundle::spawn(Self, @ecs.World) -> @core.Entity
 pub fn Camera2dBundle::with_bloom2d(Self, Bloom2d) -> Self
 pub fn Camera2dBundle::with_color_grading(Self, @post_process.ColorGrading?) -> Self
-pub fn Camera2dBundle::with_deband_dither(Self, DebandDither?) -> Self
-pub fn Camera2dBundle::with_tonemapping(Self, Tonemapping?) -> Self
+pub fn Camera2dBundle::with_deband_dither(Self, @post_process.DebandDither?) -> Self
+pub fn Camera2dBundle::with_tonemapping(Self, @post_process.Tonemapping?) -> Self
 pub impl @app.CommandSpawnComponents for Camera2dBundle
 
 pub struct CameraComputedValues {
@@ -517,15 +517,6 @@ pub impl Material2d for ColorMaterialAsset
 pub struct ColorMaterialPlugin {
 }
 pub fn ColorMaterialPlugin::default() -> Self
-
-pub(all) enum DebandDither {
-  Disabled
-  Enabled
-}
-pub fn DebandDither::default() -> Self
-pub impl @ecs.Component for DebandDither
-pub impl ToJson for DebandDither
-pub impl @json.FromJson for DebandDither
 
 pub struct Ellipse {
   half_size : @math.Vec2
@@ -1018,21 +1009,6 @@ pub fn TilemapChunkTileData::new(Array[TileData?]) -> Self
 pub fn TilemapChunkTileData::set_tile_data_from_tile_pos(Self, @math.UVec2, @math.UVec2, TileData?) -> Self
 pub fn TilemapChunkTileData::tile_data_from_tile_pos(Self, @math.UVec2, @math.UVec2) -> TileData?
 
-pub(all) enum Tonemapping {
-  None
-  Reinhard
-  ReinhardLuminance
-  AcesFitted
-  AgX
-  SomewhatBoringDisplayTransform
-  TonyMcMapface
-  BlenderFilmic
-}
-pub fn Tonemapping::default() -> Self
-pub impl @ecs.Component for Tonemapping
-pub impl ToJson for Tonemapping
-pub impl @json.FromJson for Tonemapping
-
 pub struct Triangle2d {
   a : @math.Vec2
   b : @math.Vec2
@@ -1119,6 +1095,10 @@ pub using @post_process {type ColorGradingGlobal}
 pub using @post_process {type ColorGradingRange}
 
 pub using @post_process {type ColorGradingSection}
+
+pub using @post_process {type DebandDither}
+
+pub using @post_process {type Tonemapping}
 
 // Traits
 pub(open) trait Material2d {

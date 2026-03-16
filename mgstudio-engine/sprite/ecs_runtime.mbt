@@ -58,14 +58,10 @@ pub let ecs_key_bloom2d : @ecs.ComponentKey[Bloom2d] = @ecs.register_component(
 )
 
 ///|
-pub let ecs_key_tonemapping : @ecs.ComponentKey[Tonemapping] = @ecs.register_component(
-  debug_name="render2d.tonemapping",
-)
+pub let ecs_key_tonemapping : @ecs.ComponentKey[Tonemapping] = @post_process.ecs_key_tonemapping
 
 ///|
-pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither] = @ecs.register_component(
-  debug_name="render2d.deband_dither",
-)
+pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither] = @post_process.ecs_key_deband_dither
 
 ///|
 pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading] = @post_process.ecs_key_color_grading
@@ -189,16 +185,6 @@ pub impl @ecs.Component for RenderTarget with component() {
 ///|
 pub impl @ecs.Component for Bloom2d with component() {
   ecs_key_bloom2d
-}
-
-///|
-pub impl @ecs.Component for Tonemapping with component() {
-  ecs_key_tonemapping
-}
-
-///|
-pub impl @ecs.Component for DebandDither with component() {
-  ecs_key_deband_dither
 }
 
 ///|
@@ -486,28 +472,6 @@ fn encode_bloom2d(bloom2d : Bloom2d) -> Json {
     bloom2d.enabled,
     encode_bloom_settings(bloom2d.settings),
   ).to_json()
-}
-
-///|
-fn encode_tonemapping(mode : Tonemapping) -> Json {
-  match mode {
-    None => (0).to_json()
-    Reinhard => (1).to_json()
-    ReinhardLuminance => (2).to_json()
-    AcesFitted => (3).to_json()
-    AgX => (4).to_json()
-    SomewhatBoringDisplayTransform => (5).to_json()
-    TonyMcMapface => (6).to_json()
-    BlenderFilmic => (7).to_json()
-  }
-}
-
-///|
-fn encode_deband_dither(mode : DebandDither) -> Json {
-  match mode {
-    Disabled => (0).to_json()
-    Enabled => (1).to_json()
-  }
 }
 
 ///|
@@ -827,32 +791,6 @@ fn decode_bloom2d(json : Json) -> Bloom2d {
 }
 
 ///|
-fn decode_tonemapping(json : Json) -> Tonemapping {
-  let tag : Int = try! @json.from_json(json)
-  match tag {
-    0 => None
-    1 => Reinhard
-    2 => ReinhardLuminance
-    3 => AcesFitted
-    4 => AgX
-    5 => SomewhatBoringDisplayTransform
-    6 => TonyMcMapface
-    7 => BlenderFilmic
-    _ => None
-  }
-}
-
-///|
-fn decode_deband_dither(json : Json) -> DebandDither {
-  let tag : Int = try! @json.from_json(json)
-  match tag {
-    0 => Disabled
-    1 => Enabled
-    _ => Disabled
-  }
-}
-
-///|
 fn decode_mesh2d(json : Json) -> Mesh2d {
   Mesh2d::new(decode_mesh_handle(json))
 }
@@ -992,26 +930,6 @@ pub impl ToJson for Bloom2d with to_json(self) {
 ///|
 pub impl @json.FromJson for Bloom2d with from_json(json, _path) {
   decode_bloom2d(json)
-}
-
-///|
-pub impl ToJson for Tonemapping with to_json(self) {
-  encode_tonemapping(self)
-}
-
-///|
-pub impl @json.FromJson for Tonemapping with from_json(json, _path) {
-  decode_tonemapping(json)
-}
-
-///|
-pub impl ToJson for DebandDither with to_json(self) {
-  encode_deband_dither(self)
-}
-
-///|
-pub impl @json.FromJson for DebandDither with from_json(json, _path) {
-  decode_deband_dither(json)
 }
 
 ///|

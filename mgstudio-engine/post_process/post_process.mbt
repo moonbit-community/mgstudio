@@ -500,7 +500,7 @@ pub(all) enum DebandDither {
 
 ///|
 pub fn DebandDither::default() -> DebandDither {
-  DebandDither::Enabled
+  DebandDither::Disabled
 }
 
 ///|
@@ -1130,7 +1130,7 @@ pub let ecs_key_motion_blur : @ecs.ComponentKey[MotionBlur] = @ecs.register_comp
 
 ///|
 pub let ecs_key_tonemapping : @ecs.ComponentKey[Tonemapping] = @ecs.register_component(
-  debug_name="render3d.tonemapping",
+  debug_name="post_process.tonemapping",
 )
 
 ///|
@@ -1140,7 +1140,7 @@ pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading] = @ecs.register_
 
 ///|
 pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither] = @ecs.register_component(
-  debug_name="render3d.deband_dither",
+  debug_name="post_process.deband_dither",
 )
 
 ///|

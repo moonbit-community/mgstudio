@@ -178,6 +178,31 @@ test "render2d: Commands::spawn accepts Camera2dBundle" {
 }
 
 ///|
+test "render2d: tonemapping and deband components share post_process ownership" {
+  let world = @ecs.World::new()
+  let entity = Camera2dBundle::new(
+      Camera::default(),
+      @math.Transform::identity(),
+    )
+    .with_tonemapping(Some(AgX))
+    .with_deband_dither(Some(Enabled))
+    .spawn(world)
+
+  let tonemapping_ok = match
+    (try! world.get(entity, @post_process.ecs_key_tonemapping)) {
+    Some(AgX) => true
+    _ => false
+  }
+  let deband_ok = match
+    (try! world.get(entity, @post_process.ecs_key_deband_dither)) {
+    Some(Enabled) => true
+    _ => false
+  }
+  inspect(tonemapping_ok, content="true")
+  inspect(deband_ok, content="true")
+}
+
+///|
 test "render2d: Camera2dBundle::new_with_target stores window render target" {
   let world = @ecs.World::new()
   let target_window = @core.Entity::new(7, 2)

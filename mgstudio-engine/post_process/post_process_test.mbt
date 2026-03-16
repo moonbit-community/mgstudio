@@ -21,6 +21,7 @@ test "post_process boundary re-exports bloom and tonemapping APIs" {
     tonemapping.to_json().to_string(),
     content="String(\"TonyMcMapface\")",
   )
+  inspect(@post_process.DebandDither::default() == Disabled, content="true")
 }
 
 ///|

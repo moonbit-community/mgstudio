@@ -28,6 +28,12 @@ pub type ColorGradingSection = @post_process.ColorGradingSection
 pub type ColorGrading = @post_process.ColorGrading
 
 ///|
+pub type Tonemapping = @post_process.Tonemapping
+
+///|
+pub type DebandDither = @post_process.DebandDither
+
+///|
 pub struct RenderLayers {
   mask : Int
 }
@@ -4253,36 +4259,6 @@ pub fn render2d_draw_tilemap_chunk(
       )
     }
   }
-}
-
-///|
-/// Camera tonemapping mode aligned with Bevy's `Tonemapping`.
-pub(all) enum Tonemapping {
-  None
-  Reinhard
-  ReinhardLuminance
-  AcesFitted
-  AgX
-  SomewhatBoringDisplayTransform
-  TonyMcMapface
-  BlenderFilmic
-}
-
-///|
-pub fn Tonemapping::default() -> Tonemapping {
-  Tonemapping::None
-}
-
-///|
-/// Enables / disables screen-space deband dithering in the tonemapping pass.
-pub(all) enum DebandDither {
-  Disabled
-  Enabled
-}
-
-///|
-pub fn DebandDither::default() -> DebandDither {
-  DebandDither::Disabled
 }
 
 ///|

@@ -176,3 +176,23 @@ test "render3d: Commands::spawn accepts Camera3dBundle" {
     content="true",
   )
 }
+
+///|
+test "render3d: Camera3dBundle injects Bevy-style tonemapping defaults" {
+  let world = @ecs.World::new()
+  let entity = Camera3dBundle::new(
+    @sprite.Camera::default(),
+    @math.Transform::identity(),
+  ).spawn(world)
+
+  let tonemapping_ok = match (try! world.get(entity, ecs_key_tonemapping)) {
+    Some(TonyMcMapface) => true
+    _ => false
+  }
+  let deband_ok = match (try! world.get(entity, ecs_key_deband_dither)) {
+    Some(Enabled) => true
+    _ => false
+  }
+  inspect(tonemapping_ok, content="true")
+  inspect(deband_ok, content="true")
+}
