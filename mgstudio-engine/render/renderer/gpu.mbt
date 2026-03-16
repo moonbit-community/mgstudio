@@ -41,7 +41,7 @@ const MESH2D_BEVY_COLOR_MATERIAL_UNIFORM_BUFFER_SIZE : UInt64 = 80UL
 const MESH3D_UNIFORM_BUFFER_SIZE : UInt64 = 512UL
 
 ///|
-const BLOOM2D_UNIFORM_BUFFER_SIZE : UInt64 = 240UL
+const BLOOM_UNIFORM_BUFFER_SIZE : UInt64 = 240UL
 
 ///|
 pub struct GpuTextureInfo {
@@ -447,31 +447,31 @@ pub struct GpuBackend {
   mut fxaa_pipeline_surface_edge_threshold_mode : Int
   mut fxaa_pipeline_surface_edge_threshold_min_mode : Int
   mut fxaa_sampler : @wgpu.Sampler?
-  mut bloom2d_intermediate_bgl : @wgpu.BindGroupLayout?
-  mut bloom2d_intermediate_pipeline_layout : @wgpu.PipelineLayout?
+  mut bloom_intermediate_bgl : @wgpu.BindGroupLayout?
+  mut bloom_intermediate_pipeline_layout : @wgpu.PipelineLayout?
   mut tonemapping2d_bgl : @wgpu.BindGroupLayout?
   mut tonemapping2d_pipeline_layout : @wgpu.PipelineLayout?
   mut tonemapping2d_view_buf : @wgpu.Buffer?
   mut tonemapping2d_sampler : @wgpu.Sampler?
   tonemapping2d_pipeline_cache : Array[Tonemapping2dPipelineCacheEntry]
-  mut bloom2d_downsample_first_pipeline : @wgpu.RenderPipeline?
-  mut bloom2d_downsample_first_no_threshold_pipeline : @wgpu.RenderPipeline?
-  mut bloom2d_downsample_first_uniform_pipeline : @wgpu.RenderPipeline?
-  mut bloom2d_downsample_first_no_threshold_uniform_pipeline : @wgpu.RenderPipeline?
-  mut bloom2d_downsample_pipeline : @wgpu.RenderPipeline?
-  mut bloom2d_downsample_uniform_pipeline : @wgpu.RenderPipeline?
-  mut bloom2d_upsample_pipeline_energy : @wgpu.RenderPipeline?
-  mut bloom2d_upsample_pipeline_additive : @wgpu.RenderPipeline?
-  mut bloom2d_upsample_final_pipeline_energy : @wgpu.RenderPipeline?
-  mut bloom2d_upsample_final_pipeline_additive : @wgpu.RenderPipeline?
-  mut bloom2d_upsample_final_pipeline_format : @wgpu.TextureFormat?
-  mut bloom2d_settings_buf : @wgpu.Buffer?
-  mut bloom2d_sampler : @wgpu.Sampler?
-  mut bloom2d_mip_texture : @wgpu.Texture?
-  bloom2d_mip_views : Array[@wgpu.TextureView]
-  mut bloom2d_mip_count : Int
-  mut bloom2d_mip_width : Int
-  mut bloom2d_mip_height : Int
+  mut bloom_downsample_first_pipeline : @wgpu.RenderPipeline?
+  mut bloom_downsample_first_no_threshold_pipeline : @wgpu.RenderPipeline?
+  mut bloom_downsample_first_uniform_pipeline : @wgpu.RenderPipeline?
+  mut bloom_downsample_first_no_threshold_uniform_pipeline : @wgpu.RenderPipeline?
+  mut bloom_downsample_pipeline : @wgpu.RenderPipeline?
+  mut bloom_downsample_uniform_pipeline : @wgpu.RenderPipeline?
+  mut bloom_upsample_pipeline_energy : @wgpu.RenderPipeline?
+  mut bloom_upsample_pipeline_additive : @wgpu.RenderPipeline?
+  mut bloom_upsample_final_pipeline_energy : @wgpu.RenderPipeline?
+  mut bloom_upsample_final_pipeline_additive : @wgpu.RenderPipeline?
+  mut bloom_upsample_final_pipeline_format : @wgpu.TextureFormat?
+  mut bloom_settings_buf : @wgpu.Buffer?
+  mut bloom_sampler : @wgpu.Sampler?
+  mut bloom_mip_texture : @wgpu.Texture?
+  bloom_mip_views : Array[@wgpu.TextureView]
+  mut bloom_mip_count : Int
+  mut bloom_mip_width : Int
+  mut bloom_mip_height : Int
   mut tonemapping_fallback_lut_texture_id : Int
   mut auto_exposure_compute_bgl : @wgpu.BindGroupLayout?
   mut auto_exposure_compute_pipeline_layout : @wgpu.PipelineLayout?
@@ -806,31 +806,31 @@ pub fn GpuBackend::new(
     fxaa_pipeline_surface_edge_threshold_mode: -1,
     fxaa_pipeline_surface_edge_threshold_min_mode: -1,
     fxaa_sampler: None,
-    bloom2d_intermediate_bgl: None,
-    bloom2d_intermediate_pipeline_layout: None,
+    bloom_intermediate_bgl: None,
+    bloom_intermediate_pipeline_layout: None,
     tonemapping2d_bgl: None,
     tonemapping2d_pipeline_layout: None,
     tonemapping2d_view_buf: None,
     tonemapping2d_sampler: None,
     tonemapping2d_pipeline_cache: [],
-    bloom2d_downsample_first_pipeline: None,
-    bloom2d_downsample_first_no_threshold_pipeline: None,
-    bloom2d_downsample_first_uniform_pipeline: None,
-    bloom2d_downsample_first_no_threshold_uniform_pipeline: None,
-    bloom2d_downsample_pipeline: None,
-    bloom2d_downsample_uniform_pipeline: None,
-    bloom2d_upsample_pipeline_energy: None,
-    bloom2d_upsample_pipeline_additive: None,
-    bloom2d_upsample_final_pipeline_energy: None,
-    bloom2d_upsample_final_pipeline_additive: None,
-    bloom2d_upsample_final_pipeline_format: None,
-    bloom2d_settings_buf: None,
-    bloom2d_sampler: None,
-    bloom2d_mip_texture: None,
-    bloom2d_mip_views: [],
-    bloom2d_mip_count: 0,
-    bloom2d_mip_width: 0,
-    bloom2d_mip_height: 0,
+    bloom_downsample_first_pipeline: None,
+    bloom_downsample_first_no_threshold_pipeline: None,
+    bloom_downsample_first_uniform_pipeline: None,
+    bloom_downsample_first_no_threshold_uniform_pipeline: None,
+    bloom_downsample_pipeline: None,
+    bloom_downsample_uniform_pipeline: None,
+    bloom_upsample_pipeline_energy: None,
+    bloom_upsample_pipeline_additive: None,
+    bloom_upsample_final_pipeline_energy: None,
+    bloom_upsample_final_pipeline_additive: None,
+    bloom_upsample_final_pipeline_format: None,
+    bloom_settings_buf: None,
+    bloom_sampler: None,
+    bloom_mip_texture: None,
+    bloom_mip_views: [],
+    bloom_mip_count: 0,
+    bloom_mip_width: 0,
+    bloom_mip_height: 0,
     tonemapping_fallback_lut_texture_id: -1,
     auto_exposure_compute_bgl: None,
     auto_exposure_compute_pipeline_layout: None,

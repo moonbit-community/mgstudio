@@ -37,18 +37,18 @@ pub fn GpuBackend::apply_bloom(
   flush_ui_batches(self)
   flush_sprite_batches(self)
   guard self.pass_state is Some(pass_state) else { return }
-  guard self.bloom2d_intermediate_bgl is Some(intermediate_bind_layout) else {
+  guard self.bloom_intermediate_bgl is Some(intermediate_bind_layout) else {
     return
   }
-  guard self.bloom2d_settings_buf is Some(settings_buf) else { return }
-  guard self.bloom2d_sampler is Some(bloom_sampler) else { return }
+  guard self.bloom_settings_buf is Some(settings_buf) else { return }
+  guard self.bloom_sampler is Some(bloom_sampler) else { return }
   if scene_texture_id < 0 {
     return
   }
   guard find_texture(self, scene_texture_id) is Some(scene_texture) else {
     return
   }
-  guard bloom2d_final_composite_pipeline_for_scene_texture(
+  guard bloom_final_composite_pipeline_for_scene_texture(
       self, scene_texture_id, composite_mode,
     )
     is Some(final_pipeline) else {
@@ -132,27 +132,27 @@ pub fn GpuBackend::apply_bloom(
   } else {
     max_mip_dimension
   }
-  let mip_count = bloom2d_effective_mip_count(safe_max_mip_dimension)
+  let mip_count = bloom_effective_mip_count(safe_max_mip_dimension)
   let downsample_first_pipeline : @wgpu.RenderPipeline? = if use_uniform_scale {
     if use_prefilter {
-      self.bloom2d_downsample_first_uniform_pipeline
+      self.bloom_downsample_first_uniform_pipeline
     } else {
-      self.bloom2d_downsample_first_no_threshold_uniform_pipeline
+      self.bloom_downsample_first_no_threshold_uniform_pipeline
     }
   } else if use_prefilter {
-    self.bloom2d_downsample_first_pipeline
+    self.bloom_downsample_first_pipeline
   } else {
-    self.bloom2d_downsample_first_no_threshold_pipeline
+    self.bloom_downsample_first_no_threshold_pipeline
   }
   let downsample_pipeline : @wgpu.RenderPipeline? = if use_uniform_scale {
-    self.bloom2d_downsample_uniform_pipeline
+    self.bloom_downsample_uniform_pipeline
   } else {
-    self.bloom2d_downsample_pipeline
+    self.bloom_downsample_pipeline
   }
   let upsample_pipeline : @wgpu.RenderPipeline? = if composite_mode == 0 {
-    self.bloom2d_upsample_pipeline_energy
+    self.bloom_upsample_pipeline_energy
   } else {
-    self.bloom2d_upsample_pipeline_additive
+    self.bloom_upsample_pipeline_additive
   }
 
   active_pass.end()
@@ -189,11 +189,11 @@ pub fn GpuBackend::apply_bloom(
         raw
       }
     }
-    ensure_bloom2d_mip_texture(self, mip_count, bloom_width, bloom_height)
-    if self.bloom2d_mip_views.length() < mip_count {
+    ensure_bloom_mip_texture(self, mip_count, bloom_width, bloom_height)
+    if self.bloom_mip_views.length() < mip_count {
       bloom_ready = false
     } else {
-      let bloom_uniform = bloom2d_uniform_bytes(
+      let bloom_uniform = bloom_uniform_bytes(
         Float::from_double(safe_scene_width.to_double()),
         Float::from_double(safe_scene_height.to_double()),
         source_viewport_x,
@@ -244,7 +244,7 @@ pub fn GpuBackend::apply_bloom(
         1.0F,
       )
       self.queue.write_buffer(settings_buf, 0UL, bloom_uniform)
-      if create_bloom2d_intermediate_bind_group(
+      if create_bloom_intermediate_bind_group(
           self,
           intermediate_bind_layout,
           scene_texture.view,
@@ -254,7 +254,7 @@ pub fn GpuBackend::apply_bloom(
         )
         is Some(first_bg) {
         let first_pass = frame.encoder.begin_render_pass_color_clear(
-          self.bloom2d_mip_views[0],
+          self.bloom_mip_views[0],
           0.0F,
           0.0F,
           0.0F,
@@ -287,10 +287,10 @@ pub fn GpuBackend::apply_bloom(
           if !bloom_ready {
             break
           }
-          if create_bloom2d_intermediate_bind_group(
+          if create_bloom_intermediate_bind_group(
               self,
               intermediate_bind_layout,
-              self.bloom2d_mip_views[mip - 1],
+              self.bloom_mip_views[mip - 1],
               bloom_sampler,
               settings_buf,
               "mgstudio_bloom2d_downsample_bg",
@@ -299,7 +299,7 @@ pub fn GpuBackend::apply_bloom(
             mip_size_w = if mip_size_w > 1 { mip_size_w / 2 } else { 1 }
             mip_size_h = if mip_size_h > 1 { mip_size_h / 2 } else { 1 }
             let pass = frame.encoder.begin_render_pass_color_clear(
-              self.bloom2d_mip_views[mip],
+              self.bloom_mip_views[mip],
               0.0F,
               0.0F,
               0.0F,
@@ -334,7 +334,7 @@ pub fn GpuBackend::apply_bloom(
         max_mip_f = Float::from_double(max_mip.to_double())
         let mut upsample_mip = mip_count - 1
         while bloom_ready && upsample_mip >= 1 {
-          let blend = bloom2d_compute_blend_factor(
+          let blend = bloom_compute_blend_factor(
             intensity_value,
             low_frequency_boost_value,
             low_frequency_boost_curvature_value,
@@ -343,7 +343,7 @@ pub fn GpuBackend::apply_bloom(
             Float::from_double(upsample_mip.to_double()),
             max_mip_f,
           )
-          let upsample_uniform = bloom2d_uniform_bytes(
+          let upsample_uniform = bloom_uniform_bytes(
             Float::from_double(safe_scene_width.to_double()),
             Float::from_double(safe_scene_height.to_double()),
             source_viewport_x,
@@ -394,19 +394,19 @@ pub fn GpuBackend::apply_bloom(
             1.0F,
           )
           self.queue.write_buffer(settings_buf, 0UL, upsample_uniform)
-          if create_bloom2d_intermediate_bind_group(
+          if create_bloom_intermediate_bind_group(
               self,
               intermediate_bind_layout,
-              self.bloom2d_mip_views[upsample_mip],
+              self.bloom_mip_views[upsample_mip],
               bloom_sampler,
               settings_buf,
               "mgstudio_bloom2d_upsample_bg",
             )
             is Some(upsample_bg) {
-            let size_w = bloom2d_mip_dimension(bloom_width, upsample_mip - 1)
-            let size_h = bloom2d_mip_dimension(bloom_height, upsample_mip - 1)
+            let size_w = bloom_mip_dimension(bloom_width, upsample_mip - 1)
+            let size_h = bloom_mip_dimension(bloom_height, upsample_mip - 1)
             let pass = frame.encoder.begin_render_pass_color_load(
-              self.bloom2d_mip_views[upsample_mip - 1],
+              self.bloom_mip_views[upsample_mip - 1],
             )
             pass.set_viewport(
               0.0F,
@@ -446,20 +446,20 @@ pub fn GpuBackend::apply_bloom(
   }
 
   if bloom_ready &&
-    create_bloom2d_intermediate_bind_group(
+    create_bloom_intermediate_bind_group(
       self,
       intermediate_bind_layout,
-      self.bloom2d_mip_views[0],
+      self.bloom_mip_views[0],
       bloom_sampler,
       settings_buf,
       "mgstudio_bloom2d_upsample_final_bg",
     )
     is Some(final_bg) {
-    let final_blend = bloom2d_compute_blend_factor(
+    let final_blend = bloom_compute_blend_factor(
       intensity_value, low_frequency_boost_value, low_frequency_boost_curvature_value,
       high_pass_frequency_value, composite_mode, 0.0F, max_mip_f,
     )
-    let final_uniform = bloom2d_uniform_bytes(
+    let final_uniform = bloom_uniform_bytes(
       Float::from_double(safe_scene_width.to_double()),
       Float::from_double(safe_scene_height.to_double()),
       source_viewport_x,
@@ -582,7 +582,7 @@ fn clamp01(value : Float) -> Float {
 }
 
 ///|
-fn bloom2d_ilog2_floor(value : Int) -> Int {
+fn bloom_ilog2_floor(value : Int) -> Int {
   let mut v = if value < 1 { 1 } else { value }
   let mut power = 0
   while v > 1 {
@@ -593,9 +593,9 @@ fn bloom2d_ilog2_floor(value : Int) -> Int {
 }
 
 ///|
-fn bloom2d_effective_mip_count(max_mip_dimension : Int) -> Int {
+fn bloom_effective_mip_count(max_mip_dimension : Int) -> Int {
   let safe_dimension = if max_mip_dimension < 4 { 4 } else { max_mip_dimension }
-  let ilog2 = bloom2d_ilog2_floor(safe_dimension)
+  let ilog2 = bloom_ilog2_floor(safe_dimension)
   let count = if ilog2 < 2 { 1 } else { ilog2 - 1 }
   if count < 1 {
     1
@@ -605,7 +605,7 @@ fn bloom2d_effective_mip_count(max_mip_dimension : Int) -> Int {
 }
 
 ///|
-fn bloom2d_mip_dimension(base : Int, mip : Int) -> Int {
+fn bloom_mip_dimension(base : Int, mip : Int) -> Int {
   let mut value = if base < 1 { 1 } else { base }
   for _ in 0..<mip {
     value = if value > 1 { value / 2 } else { 1 }
@@ -618,7 +618,7 @@ fn bloom2d_mip_dimension(base : Int, mip : Int) -> Int {
 }
 
 ///|
-fn bloom2d_compute_blend_factor(
+fn bloom_compute_blend_factor(
   intensity : Float,
   low_frequency_boost : Float,
   low_frequency_boost_curvature : Float,
@@ -644,7 +644,7 @@ fn bloom2d_compute_blend_factor(
 }
 
 ///|
-fn bloom2d_uniform_bytes(
+fn bloom_uniform_bytes(
   source_width : Float,
   source_height : Float,
   source_viewport_x : Float,
@@ -782,9 +782,9 @@ fn bloom2d_uniform_bytes(
 }
 
 ///|
-fn ensure_bloom2d_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
+fn ensure_bloom_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
   let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
-  if backend.bloom2d_intermediate_bgl is None {
+  if backend.bloom_intermediate_bgl is None {
     let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=3UL)
     let ok = builder.add_texture(
         0U,
@@ -804,13 +804,13 @@ fn ensure_bloom2d_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
     )
     let pl = backend.device.create_pipeline_layout_1(bgl)
     pl.set_label("mgstudio_bloom2d_intermediate_pipeline_layout")
-    backend.bloom2d_intermediate_bgl = Some(bgl)
-    backend.bloom2d_intermediate_pipeline_layout = Some(pl)
+    backend.bloom_intermediate_bgl = Some(bgl)
+    backend.bloom_intermediate_pipeline_layout = Some(pl)
   }
 }
 
 ///|
-fn ensure_bloom2d_mip_texture(
+fn ensure_bloom_mip_texture(
   backend : GpuBackend,
   mip_count : Int,
   width : Int,
@@ -819,18 +819,18 @@ fn ensure_bloom2d_mip_texture(
   let safe_mip_count = if mip_count < 1 { 1 } else { mip_count }
   let safe_width = if width < 1 { 1 } else { width }
   let safe_height = if height < 1 { 1 } else { height }
-  if backend.bloom2d_mip_texture is Some(_) &&
-    backend.bloom2d_mip_count == safe_mip_count &&
-    backend.bloom2d_mip_width == safe_width &&
-    backend.bloom2d_mip_height == safe_height &&
-    backend.bloom2d_mip_views.length() == safe_mip_count {
+  if backend.bloom_mip_texture is Some(_) &&
+    backend.bloom_mip_count == safe_mip_count &&
+    backend.bloom_mip_width == safe_width &&
+    backend.bloom_mip_height == safe_height &&
+    backend.bloom_mip_views.length() == safe_mip_count {
     return
   }
-  for view in backend.bloom2d_mip_views {
+  for view in backend.bloom_mip_views {
     view.release()
   }
-  backend.bloom2d_mip_views.clear()
-  if backend.bloom2d_mip_texture is Some(old_tex) {
+  backend.bloom_mip_views.clear()
+  if backend.bloom_mip_texture is Some(old_tex) {
     old_tex.release()
   }
   let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
@@ -855,16 +855,16 @@ fn ensure_bloom2d_mip_texture(
       1U,
     )
     view.set_label("mgstudio_bloom2d_mip_\{mip}")
-    backend.bloom2d_mip_views.push(view)
+    backend.bloom_mip_views.push(view)
   }
-  backend.bloom2d_mip_texture = Some(texture)
-  backend.bloom2d_mip_count = safe_mip_count
-  backend.bloom2d_mip_width = safe_width
-  backend.bloom2d_mip_height = safe_height
+  backend.bloom_mip_texture = Some(texture)
+  backend.bloom_mip_count = safe_mip_count
+  backend.bloom_mip_width = safe_width
+  backend.bloom_mip_height = safe_height
 }
 
 ///|
-fn create_bloom2d_intermediate_bind_group(
+fn create_bloom_intermediate_bind_group(
   backend : GpuBackend,
   bind_layout : @wgpu.BindGroupLayout,
   input_view : @wgpu.TextureView,
@@ -884,29 +884,29 @@ fn create_bloom2d_intermediate_bind_group(
 }
 
 ///|
-fn ensure_bloom2d_pipeline_rgba8(
+fn ensure_bloom_pipeline_rgba8(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
-  if backend.bloom2d_settings_buf is None {
+  if backend.bloom_settings_buf is None {
     let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
-    backend.bloom2d_settings_buf = Some(
-      backend.device.create_buffer(size=BLOOM2D_UNIFORM_BUFFER_SIZE, usage~),
+    backend.bloom_settings_buf = Some(
+      backend.device.create_buffer(size=BLOOM_UNIFORM_BUFFER_SIZE, usage~),
     )
   }
-  if backend.bloom2d_sampler is None {
-    backend.bloom2d_sampler = Some(backend.device.create_sampler_linear_clamp())
+  if backend.bloom_sampler is None {
+    backend.bloom_sampler = Some(backend.device.create_sampler_linear_clamp())
   }
-  ensure_bloom2d_layouts(backend)
+  ensure_bloom_layouts(backend)
   let mip_format = tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
-  if backend.bloom2d_downsample_first_pipeline is None ||
-    backend.bloom2d_downsample_first_no_threshold_pipeline is None ||
-    backend.bloom2d_downsample_first_uniform_pipeline is None ||
-    backend.bloom2d_downsample_first_no_threshold_uniform_pipeline is None ||
-    backend.bloom2d_downsample_pipeline is None ||
-    backend.bloom2d_downsample_uniform_pipeline is None ||
-    backend.bloom2d_upsample_pipeline_energy is None ||
-    backend.bloom2d_upsample_pipeline_additive is None {
-    guard backend.bloom2d_intermediate_pipeline_layout
+  if backend.bloom_downsample_first_pipeline is None ||
+    backend.bloom_downsample_first_no_threshold_pipeline is None ||
+    backend.bloom_downsample_first_uniform_pipeline is None ||
+    backend.bloom_downsample_first_no_threshold_uniform_pipeline is None ||
+    backend.bloom_downsample_pipeline is None ||
+    backend.bloom_downsample_uniform_pipeline is None ||
+    backend.bloom_upsample_pipeline_energy is None ||
+    backend.bloom_upsample_pipeline_additive is None {
+    guard backend.bloom_intermediate_pipeline_layout
       is Some(intermediate_pipeline_layout) else {
       return
     }
@@ -1010,46 +1010,44 @@ fn ensure_bloom2d_pipeline_rgba8(
       POSTPROCESS_BLEND_MODE_CONSTANT_ADDITIVE,
       "mgstudio_bloom2d_upsample_additive",
     )
-    backend.bloom2d_downsample_first_pipeline = Some(downsample_first_pipeline)
-    backend.bloom2d_downsample_first_no_threshold_pipeline = Some(
+    backend.bloom_downsample_first_pipeline = Some(downsample_first_pipeline)
+    backend.bloom_downsample_first_no_threshold_pipeline = Some(
       downsample_first_no_threshold_pipeline,
     )
-    backend.bloom2d_downsample_first_uniform_pipeline = Some(
+    backend.bloom_downsample_first_uniform_pipeline = Some(
       downsample_first_uniform_pipeline,
     )
-    backend.bloom2d_downsample_first_no_threshold_uniform_pipeline = Some(
+    backend.bloom_downsample_first_no_threshold_uniform_pipeline = Some(
       downsample_first_no_threshold_uniform_pipeline,
     )
-    backend.bloom2d_downsample_pipeline = Some(downsample_pipeline)
-    backend.bloom2d_downsample_uniform_pipeline = Some(
+    backend.bloom_downsample_pipeline = Some(downsample_pipeline)
+    backend.bloom_downsample_uniform_pipeline = Some(
       downsample_uniform_pipeline,
     )
-    backend.bloom2d_upsample_pipeline_energy = Some(upsample_pipeline_energy)
-    backend.bloom2d_upsample_pipeline_additive = Some(
-      upsample_pipeline_additive,
-    )
+    backend.bloom_upsample_pipeline_energy = Some(upsample_pipeline_energy)
+    backend.bloom_upsample_pipeline_additive = Some(upsample_pipeline_additive)
   }
 }
 
 ///|
-fn ensure_bloom2d_final_composite_pipeline(
+fn ensure_bloom_final_composite_pipeline(
   backend : GpuBackend,
   format : @wgpu.TextureFormat,
 ) -> Unit raise GpuBackendError {
-  ensure_bloom2d_pipeline_rgba8(backend)
-  if backend.bloom2d_upsample_final_pipeline_format is Some(prev) &&
+  ensure_bloom_pipeline_rgba8(backend)
+  if backend.bloom_upsample_final_pipeline_format is Some(prev) &&
     prev == format &&
-    backend.bloom2d_upsample_final_pipeline_energy is Some(_) &&
-    backend.bloom2d_upsample_final_pipeline_additive is Some(_) {
+    backend.bloom_upsample_final_pipeline_energy is Some(_) &&
+    backend.bloom_upsample_final_pipeline_additive is Some(_) {
     return
   }
-  if backend.bloom2d_upsample_final_pipeline_energy is Some(old) {
+  if backend.bloom_upsample_final_pipeline_energy is Some(old) {
     old.release()
   }
-  if backend.bloom2d_upsample_final_pipeline_additive is Some(old) {
+  if backend.bloom_upsample_final_pipeline_additive is Some(old) {
     old.release()
   }
-  guard backend.bloom2d_intermediate_pipeline_layout
+  guard backend.bloom_intermediate_pipeline_layout
     is Some(intermediate_pipeline_layout) else {
     return
   }
@@ -1075,13 +1073,13 @@ fn ensure_bloom2d_final_composite_pipeline(
     POSTPROCESS_BLEND_MODE_CONSTANT_ADDITIVE,
     "mgstudio_bloom2d_upsample_final_additive",
   )
-  backend.bloom2d_upsample_final_pipeline_energy = Some(energy_pipeline)
-  backend.bloom2d_upsample_final_pipeline_additive = Some(additive_pipeline)
-  backend.bloom2d_upsample_final_pipeline_format = Some(format)
+  backend.bloom_upsample_final_pipeline_energy = Some(energy_pipeline)
+  backend.bloom_upsample_final_pipeline_additive = Some(additive_pipeline)
+  backend.bloom_upsample_final_pipeline_format = Some(format)
 }
 
 ///|
-fn bloom2d_final_composite_pipeline_for_scene_texture(
+fn bloom_final_composite_pipeline_for_scene_texture(
   backend : GpuBackend,
   scene_texture_id : Int,
   composite_mode : Int,
@@ -1089,7 +1087,7 @@ fn bloom2d_final_composite_pipeline_for_scene_texture(
   guard find_texture(backend, scene_texture_id) is Some(scene_texture) else {
     return None
   }
-  bloom2d_final_composite_pipeline_for_format(
+  bloom_final_composite_pipeline_for_format(
     backend,
     composite_mode,
     tf(scene_texture.format_raw),
@@ -1097,15 +1095,15 @@ fn bloom2d_final_composite_pipeline_for_scene_texture(
 }
 
 ///|
-fn bloom2d_final_composite_pipeline_for_format(
+fn bloom_final_composite_pipeline_for_format(
   backend : GpuBackend,
   composite_mode : Int,
   format : @wgpu.TextureFormat,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
-  ensure_bloom2d_final_composite_pipeline(backend, format)
+  ensure_bloom_final_composite_pipeline(backend, format)
   if composite_mode == 0 {
-    backend.bloom2d_upsample_final_pipeline_energy
+    backend.bloom_upsample_final_pipeline_energy
   } else {
-    backend.bloom2d_upsample_final_pipeline_additive
+    backend.bloom_upsample_final_pipeline_additive
   }
 }

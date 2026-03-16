@@ -486,7 +486,7 @@ test "renderer: mesh pipeline specializes to hdr render target format" {
 }
 
 ///|
-test "renderer: bloom2d final composite uses hdr scene target format even from rgba8 final pass" {
+test "renderer: bloom final composite uses hdr scene target format even from rgba8 final pass" {
   register_renderer_test_shaders()
   let backend = GpuBackend::new(assets_base="assets")
   let final_target_id = backend.create_render_target_with_format(
@@ -497,11 +497,9 @@ test "renderer: bloom2d final composite uses hdr scene target format even from r
   )
   let scene_texture_id = backend.create_render_target_rgba16f(128, 128, false)
   backend.pass_state = Some(gpu_test_pass_state(final_target_id))
-  bloom2d_final_composite_pipeline_for_scene_texture(
-    backend, scene_texture_id, 0,
-  )
+  bloom_final_composite_pipeline_for_scene_texture(backend, scene_texture_id, 0)
   |> ignore
-  let ok = match backend.bloom2d_upsample_final_pipeline_format {
+  let ok = match backend.bloom_upsample_final_pipeline_format {
     Some(format) => format == tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
     None => false
   }
@@ -528,7 +526,7 @@ test "renderer: tonemapping2d final pipeline specializes to current final target
     ) {
     Some(_) =>
       backend.tonemapping2d_pipeline_cache.length() == 1 &&
-      backend.bloom2d_upsample_final_pipeline_format is None
+      backend.bloom_upsample_final_pipeline_format is None
     None => false
   }
   inspect(ok, content="true")
