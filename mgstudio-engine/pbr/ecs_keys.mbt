@@ -137,6 +137,12 @@ pub let ecs_key_sub_camera_view3d : @ecs.ComponentKey[SubCameraView3d] = @ecs.re
 pub let ecs_key_directional_light : @ecs.ComponentKey[DirectionalLight] = @light.ecs_key_directional_light
 
 ///|
+pub let ecs_key_volumetric_light : @ecs.ComponentKey[VolumetricLight] = @light.ecs_key_volumetric_light
+
+///|
+pub let ecs_key_fog_volume : @ecs.ComponentKey[FogVolume] = @light.ecs_key_fog_volume
+
+///|
 pub let ecs_key_irradiance_volume : @ecs.ComponentKey[IrradianceVolume] = @light.ecs_key_irradiance_volume
 
 ///|

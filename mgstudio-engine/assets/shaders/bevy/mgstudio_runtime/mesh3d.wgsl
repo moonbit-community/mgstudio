@@ -44,7 +44,7 @@ struct Mesh3dUniform {
   anisotropy_params : vec4<f32>, // (strength, rot_cos, rot_sin, has_anisotropy_map)
   specular_tint : vec4<f32>, // (r, g, b, has_specular_tint_map)
   transmission_params : vec4<f32>, // (diffuse_transmission, specular_transmission, thickness, ior)
-  point_shadow_params : vec4<f32>, // (enabled, depth_bias, near_z, _)
+  point_shadow_params : vec4<f32>, // (enabled, depth_bias, near_z, exposure)
 };
 
 @group(0) @binding(0) var<uniform> u_mesh : Mesh3dUniform;
@@ -779,10 +779,11 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   }
   let transmitted_light = diffuse_transmissive_color * diffuse_transmitted_lighting +
     specular_transmissive_color * specular_transmitted_lighting;
-  let lit_rgb = diffuse_color * diffuse_lighting +
+  let exposure = max(u_mesh.point_shadow_params.w, 0.0);
+  let lighting_rgb = diffuse_color * diffuse_lighting +
     specular_lighting +
-    emissive +
     transmitted_light;
+  let lit_rgb = lighting_rgb * exposure + emissive;
   let unlit_rgb = base_color.xyz + emissive;
   let final_rgb = mix(lit_rgb, unlit_rgb, unlit_factor);
   return vec4<f32>(final_rgb, base_color.w);

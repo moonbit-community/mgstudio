@@ -149,6 +149,8 @@ pub fn surface_target_id(Int) -> Int
 
 pub fn surface_target_id_for_window(Int) -> Int
 
+pub fn upload_mesh3d_preprocess_camera_payload(camera_key_hi~ : Int, camera_key_lo~ : Int, payload~ : HostMesh3dPreprocessCameraPayload) -> Unit
+
 // Errors
 pub(all) suberror GpuBackendError {
   Fatal(String)
@@ -251,6 +253,7 @@ pub struct GpuBackend {
   mut mesh3d_instance_uniform_bg : @wgpu_mbt.BindGroup?
   mut mesh3d_instance_uniform_capacity : UInt64
   mut mesh3d_instance_uniform_used : Int
+  mesh3d_preprocess_camera_upload_states : Array[GpuMesh3dPreprocessCameraUploadState]
   mut mesh3d_motion_vector_bgl_uniform : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh3d_motion_vector_pipeline : @wgpu_mbt.RenderPipeline?
@@ -382,6 +385,7 @@ pub fn GpuBackend::set_texture_sampler(Self, Int, Int, Int, Int, Int, Int, Int, 
 pub fn GpuBackend::supported_compressed_image_formats_mask(Self) -> Int
 pub fn GpuBackend::texture_height(Self, Int) -> Int
 pub fn GpuBackend::texture_width(Self, Int) -> Int
+pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(Self, Int, Int, HostMesh3dPreprocessCameraPayload) -> Unit
 pub fn GpuBackend::write_texture_region_rgba8(Self, Int, Int, Int, Int, Int, Bytes) -> Unit
 pub fn GpuBackend::write_texture_region_rgba8_mip(Self, Int, Int, Int, Int, Int, Int, Bytes) -> Unit
 
@@ -411,6 +415,8 @@ pub struct GpuFrameState {
   encoder : @wgpu_mbt.CommandEncoder
   mut pass : @wgpu_mbt.RenderPass?
 }
+
+type GpuMesh3dPreprocessCameraUploadState
 
 pub struct GpuMeshInfo {
   id : Int
@@ -514,6 +520,50 @@ pub struct GpuTextureInfo {
 }
 
 type GpuUniformSlot
+
+pub(all) struct HostMesh3dPreprocessCameraPayload {
+  direct_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
+  indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
+  non_indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
+  late_indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
+  late_non_indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
+  indexed_cpu_metadata : Array[HostMesh3dPreprocessIndirectParametersCpuMetadata]
+  indexed_gpu_metadata : Array[HostMesh3dPreprocessIndirectParametersGpuMetadata]
+  indexed_batch_sets : Array[HostMesh3dPreprocessIndirectBatchSet]
+  non_indexed_cpu_metadata : Array[HostMesh3dPreprocessIndirectParametersCpuMetadata]
+  non_indexed_gpu_metadata : Array[HostMesh3dPreprocessIndirectParametersGpuMetadata]
+  non_indexed_batch_sets : Array[HostMesh3dPreprocessIndirectBatchSet]
+  dispatch_metadata : HostMesh3dPreprocessDispatchMetadata
+}
+
+pub(all) struct HostMesh3dPreprocessDispatchMetadata {
+  direct_workgroup_count : Int
+  indexed_workgroup_count : Int
+  non_indexed_workgroup_count : Int
+  late_indexed_workgroup_count : Int
+  late_non_indexed_workgroup_count : Int
+}
+
+pub(all) struct HostMesh3dPreprocessIndirectBatchSet {
+  indirect_parameters_count : Int
+  indirect_parameters_base : Int
+}
+
+pub(all) struct HostMesh3dPreprocessIndirectParametersCpuMetadata {
+  base_output_index : Int
+  batch_set_index : Int
+}
+
+pub(all) struct HostMesh3dPreprocessIndirectParametersGpuMetadata {
+  mesh_index : Int
+  early_instance_count : Int
+  late_instance_count : Int
+}
+
+pub(all) struct HostMesh3dPreprocessShaderWorkItem {
+  input_index : Int
+  output_or_indirect_parameters_index : Int
+}
 
 pub struct Mesh3dMaterialBindGroupCacheEntry {
   base_texture_id : Int

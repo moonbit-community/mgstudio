@@ -71,6 +71,8 @@ pub let ecs_key_environment_map_light : @ecs.ComponentKey[@light.EnvironmentMapL
 
 pub let ecs_key_exposure : @ecs.ComponentKey[Exposure]
 
+pub let ecs_key_fog_volume : @ecs.ComponentKey[@light.FogVolume]
+
 pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal]
 
 pub let ecs_key_forward_decal_material_ext : @ecs.ComponentKey[@material.ForwardDecalMaterialExt]
@@ -158,6 +160,8 @@ pub let ecs_key_tonemapping : @ecs.ComponentKey[@post_process.Tonemapping]
 pub let ecs_key_transmitted_shadow_receiver : @ecs.ComponentKey[TransmittedShadowReceiver]
 
 pub let ecs_key_vignette : @ecs.ComponentKey[@post_process.Vignette]
+
+pub let ecs_key_volumetric_light : @ecs.ComponentKey[@light.VolumetricLight]
 
 pub let ecs_key_wireframe : @ecs.ComponentKey[Wireframe]
 

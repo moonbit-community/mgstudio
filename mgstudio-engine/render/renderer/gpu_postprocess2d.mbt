@@ -2021,13 +2021,35 @@ fn create_bloom2d_final_bind_group(
   label : String,
 ) -> @wgpu.BindGroup? {
   let builder = @wgpu.BindGroupBuilder::new(max_entries=6UL)
-  let ok = builder.add_texture_view(0U, input_view) &&
-    builder.add_sampler(1U, sampler) &&
-    builder.add_buffer(2U, settings_buf) &&
-    builder.add_texture_view(3U, scene_view) &&
-    builder.add_texture_view(4U, lut_view) &&
-    builder.add_buffer(5U, auto_exposure_state_buf)
-  if !ok {
+  let debug_postprocess = match @sys.get_env_var("MGSTUDIO_POSTPROCESS_DEBUG") {
+    Some(raw) => raw.trim().to_string() == "1"
+    _ => false
+  }
+  let ok0 = builder.add_texture_view(0U, input_view)
+  let ok1 = builder.add_sampler(1U, sampler)
+  let ok2 = builder.add_buffer(2U, settings_buf)
+  let ok3 = builder.add_texture_view(3U, scene_view)
+  let ok4 = builder.add_texture_view(4U, lut_view)
+  let ok5 = builder.add_buffer(5U, auto_exposure_state_buf)
+  if !ok0 || !ok1 || !ok2 || !ok3 || !ok4 || !ok5 {
+    if debug_postprocess {
+      let failed_index = if !ok0 {
+        0
+      } else if !ok1 {
+        1
+      } else if !ok2 {
+        2
+      } else if !ok3 {
+        3
+      } else if !ok4 {
+        4
+      } else {
+        5
+      }
+      println(
+        "[postprocess] final bind group build failed: label=\{label}, failed_binding=\{failed_index}",
+      )
+    }
     builder.free()
     return None
   }

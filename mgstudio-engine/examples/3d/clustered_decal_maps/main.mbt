@@ -191,16 +191,15 @@ fn spawn_light(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_camera(world : @ecs.World) -> Unit {
+  let tick = world.read_change_tick()
   let camera = @pbr.Camera3dBundle::new(
-    @sprite.Camera::default().with_clear_color(
-      @sprite.Color::srgb(0.10F, 0.12F, 0.16F),
-    ),
+    @sprite.Camera::default(),
     @math.Transform::from_xyz(2.0F, 0.0F, -7.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  camera |> ignore
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
 }
 
 ///|

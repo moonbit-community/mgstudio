@@ -1438,6 +1438,16 @@ pub let ecs_key_directional_light : @ecs.ComponentKey[DirectionalLight] = @ecs.r
 )
 
 ///|
+pub let ecs_key_volumetric_light : @ecs.ComponentKey[VolumetricLight] = @ecs.register_component(
+  debug_name="render3d.volumetric_light",
+)
+
+///|
+pub let ecs_key_fog_volume : @ecs.ComponentKey[FogVolume] = @ecs.register_component(
+  debug_name="render3d.fog_volume",
+)
+
+///|
 pub let ecs_key_directional_light_texture : @ecs.ComponentKey[
   DirectionalLightTexture,
 ] = @ecs.register_component(debug_name="render3d.directional_light_texture")
@@ -1492,6 +1502,16 @@ pub impl @ecs.Component for SpotLightTexture with component() {
 ///|
 pub impl @ecs.Component for DirectionalLight with component() {
   ecs_key_directional_light
+}
+
+///|
+pub impl @ecs.Component for VolumetricLight with component() {
+  ecs_key_volumetric_light
+}
+
+///|
+pub impl @ecs.Component for FogVolume with component() {
+  ecs_key_fog_volume
 }
 
 ///|
@@ -1572,6 +1592,20 @@ pub fn get_directional_light_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[DirectionalLight] {
   world.component(ecs_key_directional_light)
+}
+
+///|
+pub fn get_volumetric_light_store(
+  world : @ecs.World,
+) -> @ecs.ComponentAccess[VolumetricLight] {
+  world.component(ecs_key_volumetric_light)
+}
+
+///|
+pub fn get_fog_volume_store(
+  world : @ecs.World,
+) -> @ecs.ComponentAccess[FogVolume] {
+  world.component(ecs_key_fog_volume)
 }
 
 ///|

@@ -148,6 +148,64 @@ pub fn HostColorGrading::default() -> HostColorGrading {
 }
 
 ///|
+pub(all) struct HostMesh3dPreprocessShaderWorkItem {
+  input_index : Int
+  output_or_indirect_parameters_index : Int
+}
+
+///|
+pub(all) struct HostMesh3dPreprocessIndirectParametersCpuMetadata {
+  base_output_index : Int
+  batch_set_index : Int
+}
+
+///|
+pub(all) struct HostMesh3dPreprocessIndirectParametersGpuMetadata {
+  mesh_index : Int
+  early_instance_count : Int
+  late_instance_count : Int
+}
+
+///|
+pub(all) struct HostMesh3dPreprocessIndirectBatchSet {
+  indirect_parameters_count : Int
+  indirect_parameters_base : Int
+}
+
+///|
+pub(all) struct HostMesh3dPreprocessDispatchMetadata {
+  direct_workgroup_count : Int
+  indexed_workgroup_count : Int
+  non_indexed_workgroup_count : Int
+  late_indexed_workgroup_count : Int
+  late_non_indexed_workgroup_count : Int
+}
+
+///|
+pub(all) struct HostMesh3dPreprocessCameraPayload {
+  direct_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
+  indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
+  non_indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
+  late_indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
+  late_non_indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
+  indexed_cpu_metadata : Array[
+    HostMesh3dPreprocessIndirectParametersCpuMetadata,
+  ]
+  indexed_gpu_metadata : Array[
+    HostMesh3dPreprocessIndirectParametersGpuMetadata,
+  ]
+  indexed_batch_sets : Array[HostMesh3dPreprocessIndirectBatchSet]
+  non_indexed_cpu_metadata : Array[
+    HostMesh3dPreprocessIndirectParametersCpuMetadata,
+  ]
+  non_indexed_gpu_metadata : Array[
+    HostMesh3dPreprocessIndirectParametersGpuMetadata,
+  ]
+  non_indexed_batch_sets : Array[HostMesh3dPreprocessIndirectBatchSet]
+  dispatch_metadata : HostMesh3dPreprocessDispatchMetadata
+}
+
+///|
 pub fn host_gpu_request_device() -> HostGpuDevice {
   @renderer.request_device()
 }
@@ -216,6 +274,162 @@ pub fn host_gpu_set_mesh3d_gpu_instance_builder_enabled(enabled : Bool) -> Unit 
 }
 
 ///|
+fn host_mesh3d_preprocess_shader_work_item_to_renderer(
+  item : HostMesh3dPreprocessShaderWorkItem,
+) -> @renderer.HostMesh3dPreprocessShaderWorkItem {
+  @renderer.HostMesh3dPreprocessShaderWorkItem::{
+    input_index: item.input_index,
+    output_or_indirect_parameters_index: item.output_or_indirect_parameters_index,
+  }
+}
+
+///|
+fn host_mesh3d_preprocess_cpu_metadata_to_renderer(
+  metadata : HostMesh3dPreprocessIndirectParametersCpuMetadata,
+) -> @renderer.HostMesh3dPreprocessIndirectParametersCpuMetadata {
+  @renderer.HostMesh3dPreprocessIndirectParametersCpuMetadata::{
+    base_output_index: metadata.base_output_index,
+    batch_set_index: metadata.batch_set_index,
+  }
+}
+
+///|
+fn host_mesh3d_preprocess_gpu_metadata_to_renderer(
+  metadata : HostMesh3dPreprocessIndirectParametersGpuMetadata,
+) -> @renderer.HostMesh3dPreprocessIndirectParametersGpuMetadata {
+  @renderer.HostMesh3dPreprocessIndirectParametersGpuMetadata::{
+    mesh_index: metadata.mesh_index,
+    early_instance_count: metadata.early_instance_count,
+    late_instance_count: metadata.late_instance_count,
+  }
+}
+
+///|
+fn host_mesh3d_preprocess_batch_set_to_renderer(
+  batch_set : HostMesh3dPreprocessIndirectBatchSet,
+) -> @renderer.HostMesh3dPreprocessIndirectBatchSet {
+  @renderer.HostMesh3dPreprocessIndirectBatchSet::{
+    indirect_parameters_count: batch_set.indirect_parameters_count,
+    indirect_parameters_base: batch_set.indirect_parameters_base,
+  }
+}
+
+///|
+pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(
+  camera_key_hi~ : Int,
+  camera_key_lo~ : Int,
+  payload~ : HostMesh3dPreprocessCameraPayload,
+) -> Unit {
+  let direct_work_items : Array[@renderer.HostMesh3dPreprocessShaderWorkItem] = []
+  for item in payload.direct_work_items {
+    direct_work_items.push(
+      host_mesh3d_preprocess_shader_work_item_to_renderer(item),
+    )
+  }
+  let indexed_work_items : Array[@renderer.HostMesh3dPreprocessShaderWorkItem] = []
+  for item in payload.indexed_work_items {
+    indexed_work_items.push(
+      host_mesh3d_preprocess_shader_work_item_to_renderer(item),
+    )
+  }
+  let non_indexed_work_items : Array[
+    @renderer.HostMesh3dPreprocessShaderWorkItem,
+  ] = []
+  for item in payload.non_indexed_work_items {
+    non_indexed_work_items.push(
+      host_mesh3d_preprocess_shader_work_item_to_renderer(item),
+    )
+  }
+  let late_indexed_work_items : Array[
+    @renderer.HostMesh3dPreprocessShaderWorkItem,
+  ] = []
+  for item in payload.late_indexed_work_items {
+    late_indexed_work_items.push(
+      host_mesh3d_preprocess_shader_work_item_to_renderer(item),
+    )
+  }
+  let late_non_indexed_work_items : Array[
+    @renderer.HostMesh3dPreprocessShaderWorkItem,
+  ] = []
+  for item in payload.late_non_indexed_work_items {
+    late_non_indexed_work_items.push(
+      host_mesh3d_preprocess_shader_work_item_to_renderer(item),
+    )
+  }
+  let indexed_cpu_metadata : Array[
+    @renderer.HostMesh3dPreprocessIndirectParametersCpuMetadata,
+  ] = []
+  for metadata in payload.indexed_cpu_metadata {
+    indexed_cpu_metadata.push(
+      host_mesh3d_preprocess_cpu_metadata_to_renderer(metadata),
+    )
+  }
+  let indexed_gpu_metadata : Array[
+    @renderer.HostMesh3dPreprocessIndirectParametersGpuMetadata,
+  ] = []
+  for metadata in payload.indexed_gpu_metadata {
+    indexed_gpu_metadata.push(
+      host_mesh3d_preprocess_gpu_metadata_to_renderer(metadata),
+    )
+  }
+  let indexed_batch_sets : Array[@renderer.HostMesh3dPreprocessIndirectBatchSet] = []
+  for batch_set in payload.indexed_batch_sets {
+    indexed_batch_sets.push(
+      host_mesh3d_preprocess_batch_set_to_renderer(batch_set),
+    )
+  }
+  let non_indexed_cpu_metadata : Array[
+    @renderer.HostMesh3dPreprocessIndirectParametersCpuMetadata,
+  ] = []
+  for metadata in payload.non_indexed_cpu_metadata {
+    non_indexed_cpu_metadata.push(
+      host_mesh3d_preprocess_cpu_metadata_to_renderer(metadata),
+    )
+  }
+  let non_indexed_gpu_metadata : Array[
+    @renderer.HostMesh3dPreprocessIndirectParametersGpuMetadata,
+  ] = []
+  for metadata in payload.non_indexed_gpu_metadata {
+    non_indexed_gpu_metadata.push(
+      host_mesh3d_preprocess_gpu_metadata_to_renderer(metadata),
+    )
+  }
+  let non_indexed_batch_sets : Array[
+    @renderer.HostMesh3dPreprocessIndirectBatchSet,
+  ] = []
+  for batch_set in payload.non_indexed_batch_sets {
+    non_indexed_batch_sets.push(
+      host_mesh3d_preprocess_batch_set_to_renderer(batch_set),
+    )
+  }
+  let dispatch_metadata = @renderer.HostMesh3dPreprocessDispatchMetadata::{
+    direct_workgroup_count: payload.dispatch_metadata.direct_workgroup_count,
+    indexed_workgroup_count: payload.dispatch_metadata.indexed_workgroup_count,
+    non_indexed_workgroup_count: payload.dispatch_metadata.non_indexed_workgroup_count,
+    late_indexed_workgroup_count: payload.dispatch_metadata.late_indexed_workgroup_count,
+    late_non_indexed_workgroup_count: payload.dispatch_metadata.late_non_indexed_workgroup_count,
+  }
+  @renderer.upload_mesh3d_preprocess_camera_payload(
+    camera_key_hi~,
+    camera_key_lo~,
+    payload=@renderer.HostMesh3dPreprocessCameraPayload::{
+      direct_work_items,
+      indexed_work_items,
+      non_indexed_work_items,
+      late_indexed_work_items,
+      late_non_indexed_work_items,
+      indexed_cpu_metadata,
+      indexed_gpu_metadata,
+      indexed_batch_sets,
+      non_indexed_cpu_metadata,
+      non_indexed_gpu_metadata,
+      non_indexed_batch_sets,
+      dispatch_metadata,
+    },
+  )
+}
+
+///|
 pub fn host_gpu_begin_pass(
   target_id~ : Int,
   width~ : Int,
@@ -271,6 +485,7 @@ pub fn host_gpu_begin_pass_3d(
   camera_x~ : Float,
   camera_y~ : Float,
   camera_z~ : Float,
+  camera_exposure~ : Float,
   camera_rot_x~ : Float,
   camera_rot_y~ : Float,
   camera_rot_z~ : Float,
@@ -375,6 +590,7 @@ pub fn host_gpu_begin_pass_3d(
     camera_x~,
     camera_y~,
     camera_z~,
+    camera_exposure~,
     camera_rot_x~,
     camera_rot_y~,
     camera_rot_z~,

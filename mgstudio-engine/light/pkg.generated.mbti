@@ -19,6 +19,8 @@ pub let ecs_key_directional_light_texture : @ecs.ComponentKey[DirectionalLightTe
 
 pub let ecs_key_environment_map_light : @ecs.ComponentKey[EnvironmentMapLight]
 
+pub let ecs_key_fog_volume : @ecs.ComponentKey[FogVolume]
+
 pub let ecs_key_generated_environment_map_light : @ecs.ComponentKey[GeneratedEnvironmentMapLight]
 
 pub let ecs_key_global_ambient_light : @ecs.ResourceKey[GlobalAmbientLight]
@@ -39,6 +41,8 @@ pub let ecs_key_spot_light : @ecs.ComponentKey[SpotLight]
 
 pub let ecs_key_spot_light_texture : @ecs.ComponentKey[SpotLightTexture]
 
+pub let ecs_key_volumetric_light : @ecs.ComponentKey[VolumetricLight]
+
 pub fn get_directional_light_shadow_map_resource(@ecs.World) -> @ecs.ResourceAccess[DirectionalLightShadowMap]
 
 pub fn get_directional_light_store(@ecs.World) -> @ecs.ComponentAccess[DirectionalLight]
@@ -46,6 +50,8 @@ pub fn get_directional_light_store(@ecs.World) -> @ecs.ComponentAccess[Direction
 pub fn get_directional_light_texture_store(@ecs.World) -> @ecs.ComponentAccess[DirectionalLightTexture]
 
 pub fn get_environment_map_light_store(@ecs.World) -> @ecs.ComponentAccess[EnvironmentMapLight]
+
+pub fn get_fog_volume_store(@ecs.World) -> @ecs.ComponentAccess[FogVolume]
 
 pub fn get_generated_environment_map_light_store(@ecs.World) -> @ecs.ComponentAccess[GeneratedEnvironmentMapLight]
 
@@ -66,6 +72,8 @@ pub fn get_point_light_texture_store(@ecs.World) -> @ecs.ComponentAccess[PointLi
 pub fn get_spot_light_store(@ecs.World) -> @ecs.ComponentAccess[SpotLight]
 
 pub fn get_spot_light_texture_store(@ecs.World) -> @ecs.ComponentAccess[SpotLightTexture]
+
+pub fn get_volumetric_light_store(@ecs.World) -> @ecs.ComponentAccess[VolumetricLight]
 
 // Errors
 
@@ -230,6 +238,7 @@ pub fn FogVolume::with_light_intensity(Self, Float) -> Self
 pub fn FogVolume::with_light_tint(Self, @color.Color) -> Self
 pub fn FogVolume::with_scattering(Self, Float) -> Self
 pub fn FogVolume::with_scattering_asymmetry(Self, Float) -> Self
+pub impl @ecs.Component for FogVolume
 pub impl ToJson for FogVolume
 pub impl @json.FromJson for FogVolume
 
@@ -406,6 +415,7 @@ pub impl @json.FromJson for VolumetricFog
 pub struct VolumetricLight {
 }
 pub fn VolumetricLight::default() -> Self
+pub impl @ecs.Component for VolumetricLight
 
 // Type aliases
 

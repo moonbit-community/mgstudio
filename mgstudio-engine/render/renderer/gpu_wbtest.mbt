@@ -248,6 +248,7 @@ fn gpu_test_pass_state(target_id : Int) -> GpuPassState {
     camera_rot: 0.0F,
     camera_scale: 1.0F,
     camera_z: 0.0F,
+    camera_exposure: 1.0F,
     camera_rot_x: 0.0F,
     camera_rot_y: 0.0F,
     camera_rot_z: 0.0F,

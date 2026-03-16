@@ -3027,6 +3027,7 @@ fn render3d_draw_camera_tonemapping_stage(
   view_width_logical : Int,
   view_height_logical : Int,
 ) -> Unit {
+  exposure |> ignore
   if !render3d_tonemapping_stage_enabled(
       tonemapping, deband_dither, hdr_enabled, color_grading,
     ) {
@@ -3036,10 +3037,7 @@ fn render3d_draw_camera_tonemapping_stage(
   let color_grading_uniform = render3d_color_grading_host_uniform(color_grading)
   @render.host_gpu_draw_tonemapping3d(
     scene_texture_id~,
-    exposure=match exposure {
-      Some(value) => value.exposure()
-      None => Exposure::default().exposure()
-    },
+    exposure=1.0F,
     tonemapping_mode=match tonemapping {
       Some(mode) => render3d_tonemapping_mode_to_int(mode)
       None => 0
@@ -4558,6 +4556,153 @@ fn render3d_gpu_preprocess_dispatch_metadata_checksum(
 }
 
 ///|
+fn render3d_host_preprocess_shader_work_item(
+  item : GpuPreprocessShaderWorkItem3d,
+) -> @render.HostMesh3dPreprocessShaderWorkItem {
+  @render.HostMesh3dPreprocessShaderWorkItem::{
+    input_index: item.input_index,
+    output_or_indirect_parameters_index: item.output_or_indirect_parameters_index,
+  }
+}
+
+///|
+fn render3d_host_preprocess_cpu_metadata(
+  metadata : GpuPreprocessIndirectParametersCpuMetadata3d,
+) -> @render.HostMesh3dPreprocessIndirectParametersCpuMetadata {
+  @render.HostMesh3dPreprocessIndirectParametersCpuMetadata::{
+    base_output_index: metadata.base_output_index,
+    batch_set_index: metadata.batch_set_index,
+  }
+}
+
+///|
+fn render3d_host_preprocess_gpu_metadata(
+  metadata : GpuPreprocessIndirectParametersGpuMetadata3d,
+) -> @render.HostMesh3dPreprocessIndirectParametersGpuMetadata {
+  @render.HostMesh3dPreprocessIndirectParametersGpuMetadata::{
+    mesh_index: metadata.mesh_index,
+    early_instance_count: metadata.early_instance_count,
+    late_instance_count: metadata.late_instance_count,
+  }
+}
+
+///|
+fn render3d_host_preprocess_batch_set(
+  batch_set : GpuPreprocessIndirectBatchSet3d,
+) -> @render.HostMesh3dPreprocessIndirectBatchSet {
+  @render.HostMesh3dPreprocessIndirectBatchSet::{
+    indirect_parameters_count: batch_set.indirect_parameters_count,
+    indirect_parameters_base: batch_set.indirect_parameters_base,
+  }
+}
+
+///|
+fn render3d_host_preprocess_camera_payload(
+  queue_entry : GpuPreprocessResolvedCameraQueueEntry3d,
+) -> @render.HostMesh3dPreprocessCameraPayload {
+  let direct_work_items : Array[@render.HostMesh3dPreprocessShaderWorkItem] = []
+  let indexed_work_items : Array[@render.HostMesh3dPreprocessShaderWorkItem] = []
+  let non_indexed_work_items : Array[@render.HostMesh3dPreprocessShaderWorkItem] = []
+  let late_indexed_work_items : Array[
+    @render.HostMesh3dPreprocessShaderWorkItem,
+  ] = []
+  let late_non_indexed_work_items : Array[
+    @render.HostMesh3dPreprocessShaderWorkItem,
+  ] = []
+  match queue_entry.work_item_buffers {
+    Direct(items) =>
+      for item in items {
+        direct_work_items.push(render3d_host_preprocess_shader_work_item(item))
+      }
+    Indirect(indexed_items, non_indexed_items, gpu_occlusion_culling) => {
+      for item in indexed_items {
+        indexed_work_items.push(render3d_host_preprocess_shader_work_item(item))
+      }
+      for item in non_indexed_items {
+        non_indexed_work_items.push(
+          render3d_host_preprocess_shader_work_item(item),
+        )
+      }
+      if gpu_occlusion_culling is Some(culling) {
+        for item in culling.late_indexed {
+          late_indexed_work_items.push(
+            render3d_host_preprocess_shader_work_item(item),
+          )
+        }
+        for item in culling.late_non_indexed {
+          late_non_indexed_work_items.push(
+            render3d_host_preprocess_shader_work_item(item),
+          )
+        }
+      }
+    }
+  }
+  let indexed_cpu_metadata : Array[
+    @render.HostMesh3dPreprocessIndirectParametersCpuMetadata,
+  ] = []
+  for
+    metadata in queue_entry.indirect_metadata.indexed.indirect_parameters_cpu_metadata {
+    indexed_cpu_metadata.push(render3d_host_preprocess_cpu_metadata(metadata))
+  }
+  let indexed_gpu_metadata : Array[
+    @render.HostMesh3dPreprocessIndirectParametersGpuMetadata,
+  ] = []
+  for
+    metadata in queue_entry.indirect_metadata.indexed.indirect_parameters_gpu_metadata {
+    indexed_gpu_metadata.push(render3d_host_preprocess_gpu_metadata(metadata))
+  }
+  let indexed_batch_sets : Array[@render.HostMesh3dPreprocessIndirectBatchSet] = []
+  for batch_set in queue_entry.indirect_metadata.indexed.indirect_batch_sets {
+    indexed_batch_sets.push(render3d_host_preprocess_batch_set(batch_set))
+  }
+  let non_indexed_cpu_metadata : Array[
+    @render.HostMesh3dPreprocessIndirectParametersCpuMetadata,
+  ] = []
+  for
+    metadata in queue_entry.indirect_metadata.non_indexed.indirect_parameters_cpu_metadata {
+    non_indexed_cpu_metadata.push(
+      render3d_host_preprocess_cpu_metadata(metadata),
+    )
+  }
+  let non_indexed_gpu_metadata : Array[
+    @render.HostMesh3dPreprocessIndirectParametersGpuMetadata,
+  ] = []
+  for
+    metadata in queue_entry.indirect_metadata.non_indexed.indirect_parameters_gpu_metadata {
+    non_indexed_gpu_metadata.push(
+      render3d_host_preprocess_gpu_metadata(metadata),
+    )
+  }
+  let non_indexed_batch_sets : Array[
+    @render.HostMesh3dPreprocessIndirectBatchSet,
+  ] = []
+  for batch_set in queue_entry.indirect_metadata.non_indexed.indirect_batch_sets {
+    non_indexed_batch_sets.push(render3d_host_preprocess_batch_set(batch_set))
+  }
+  let dispatch_metadata = @render.HostMesh3dPreprocessDispatchMetadata::{
+    direct_workgroup_count: queue_entry.dispatch_metadata.direct_workgroup_count,
+    indexed_workgroup_count: queue_entry.dispatch_metadata.indexed_workgroup_count,
+    non_indexed_workgroup_count: queue_entry.dispatch_metadata.non_indexed_workgroup_count,
+    late_indexed_workgroup_count: queue_entry.dispatch_metadata.late_indexed_workgroup_count,
+    late_non_indexed_workgroup_count: queue_entry.dispatch_metadata.late_non_indexed_workgroup_count,
+  }
+  @render.HostMesh3dPreprocessCameraPayload::{
+    direct_work_items,
+    indexed_work_items,
+    non_indexed_work_items,
+    late_indexed_work_items,
+    late_non_indexed_work_items,
+    indexed_cpu_metadata,
+    indexed_gpu_metadata,
+    indexed_batch_sets,
+    non_indexed_cpu_metadata,
+    non_indexed_gpu_metadata,
+    non_indexed_batch_sets,
+    dispatch_metadata,
+  }
+}
+
+///|
 fn render3d_gpu_preprocess_opaque_alpha_draw_item_indices(
   draw_items : Array[MeshPhaseItem3d],
   phase_ranges : Array[GpuPreprocessPhaseRange3d],
@@ -5063,6 +5208,7 @@ fn render3d_begin_pass_3d(
   viewport_width~ : Int,
   viewport_height~ : Int,
   lighting : Render3dLightingState,
+  camera_exposure? : Float = 1.0F,
   previous_clip_from_world~ : ProjectionMatrix3d?,
   point_shadow_near~ : Float,
   pass_kind~ : Int,
@@ -5090,6 +5236,7 @@ fn render3d_begin_pass_3d(
     camera_x=camera_transform.translation.x,
     camera_y=camera_transform.translation.y,
     camera_z=camera_transform.translation.z,
+    camera_exposure~,
     camera_rot_x=camera_transform.rotation.x,
     camera_rot_y=camera_transform.rotation.y,
     camera_rot_z=camera_transform.rotation.z,
@@ -5758,6 +5905,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         camera_deferred_enabled
       )
     let effective_exposure = camera.exposure
+    let camera_exposure_value = match effective_exposure {
+      Some(value) => value.exposure()
+      None => Exposure::default().exposure()
+    }
     let camera_base_fog = match camera.camera3d.distance_fog {
       Some(value) => value
       None => render3d_distance_fog()
@@ -5768,7 +5919,26 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       camera.camera3d.atmosphere,
       camera.camera3d.atmosphere_settings,
     )
-    let (clear_enabled, clear_color) = camera.camera.clear_color.resolve()
+    let (clear_enabled, resolved_clear_color) = camera.camera.clear_color.resolve()
+    let mut clear_color = resolved_clear_color
+    // Bevy renders atmosphere / volumetric fog sky contribution as a full-view
+    // background. Until that stage is fully ported, use fog color as the clear
+    // background when the camera clear color is black to avoid losing the scene
+    // behind sparse geometry.
+    if clear_enabled &&
+      (
+        camera.camera3d.atmosphere is Some(_) ||
+        camera.camera3d.volumetric_fog is Some(_) ||
+        render3d_distance_fog_enabled(distance_fog)
+      ) {
+      let fog_color = distance_fog.color
+      clear_color = @sprite.Color::new(
+        maxf(clear_color.r, maxf(0.02F, fog_color.r)),
+        maxf(clear_color.g, maxf(0.02F, fog_color.g)),
+        maxf(clear_color.b, maxf(0.02F, fog_color.b)),
+        clear_color.a,
+      )
+    }
     let motion_blur_active = if camera.motion_blur is Some(motion_blur) {
       motion_blur.samples > 0 && motion_blur.shutter_angle > 0.0F
     } else {
@@ -5891,6 +6061,11 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       draw_queue_entry.dispatch_metadata,
     )
     |> ignore
+    @render.host_gpu_upload_mesh3d_preprocess_camera_payload(
+      camera_key_hi=camera_entity.id,
+      camera_key_lo=camera_entity.generation,
+      payload=render3d_host_preprocess_camera_payload(draw_queue_entry),
+    )
     if motion_vector_prepass_enabled {
       let (shared_scene_id, shared_velocity_id) = render3d_motion_blur_targets_get_or_create(
         camera_entity, view_width, view_height,
@@ -5914,6 +6089,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         viewport_width~,
         viewport_height~,
         pass_lighting,
+        camera_exposure=camera_exposure_value,
         previous_clip_from_world=camera.previous_clip_from_world,
         point_shadow_near~,
         pass_kind=motion_vector_pass_kind,
@@ -6113,6 +6289,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       viewport_width~,
       viewport_height~,
       pass_lighting,
+      camera_exposure=camera_exposure_value,
       previous_clip_from_world=camera.previous_clip_from_world,
       point_shadow_near~,
       pass_kind=scene_pass_kind,
@@ -6362,6 +6539,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           viewport_width~,
           viewport_height~,
           pass_lighting,
+          camera_exposure=camera_exposure_value,
           previous_clip_from_world=camera.previous_clip_from_world,
           point_shadow_near~,
           pass_kind=scene_pass_kind,
@@ -6468,6 +6646,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         viewport_width~,
         viewport_height~,
         pass_lighting,
+        camera_exposure=camera_exposure_value,
         previous_clip_from_world=camera.previous_clip_from_world,
         point_shadow_near~,
         pass_kind=scene_pass_kind,
@@ -6764,22 +6943,41 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
             viewport_depth_max~,
             clear_enabled=if clear_enabled { 1 } else { 0 },
           )
-          @render.host_gpu_draw_sprite_uv(
-            texture_id=postprocess_source_texture_id,
-            x=0.0F,
-            y=0.0F,
-            rotation=0.0F,
-            scale_x=Float::from_double(view_width_logical.to_double()) / 128.0F,
-            scale_y=Float::from_double(view_height_logical.to_double()) / 128.0F,
-            color_r=1.0F,
-            color_g=1.0F,
-            color_b=1.0F,
-            color_a=1.0F,
-            uv_min_x=0.0F,
-            uv_min_y=0.0F,
-            uv_max_x=1.0F,
-            uv_max_y=1.0F,
-          )
+          if bloom_enabled {
+            // Bloom can render through an fp16 intermediate even when camera
+            // HDR is disabled. Resolve through the postprocess fullscreen
+            // shader to avoid dark fp16->surface blits on this path.
+            render3d_draw_camera_tonemapping_stage(
+              world,
+              postprocess_source_texture_id,
+              Some(Exposure::new(0.0F)),
+              None,
+              None,
+              None,
+              true,
+              view_width_logical,
+              view_height_logical,
+            )
+          } else {
+            @render.host_gpu_draw_sprite_uv(
+              texture_id=postprocess_source_texture_id,
+              x=0.0F,
+              y=0.0F,
+              rotation=0.0F,
+              scale_x=Float::from_double(view_width_logical.to_double()) /
+                128.0F,
+              scale_y=Float::from_double(view_height_logical.to_double()) /
+                128.0F,
+              color_r=1.0F,
+              color_g=1.0F,
+              color_b=1.0F,
+              color_a=1.0F,
+              uv_min_x=0.0F,
+              uv_min_y=0.0F,
+              uv_max_x=1.0F,
+              uv_max_y=1.0F,
+            )
+          }
           @render.host_gpu_end_pass()
         }
       }

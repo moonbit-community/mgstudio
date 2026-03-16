@@ -25,7 +25,12 @@ PACKAGE="$1"
 OUTPUT_PNG="$2"
 RUN_TIMEOUT_SECONDS="${MGSTUDIO_PARITY_RUN_TIMEOUT_SECONDS:-60}"
 SETTLE_SECONDS="${MGSTUDIO_PARITY_SETTLE_SECONDS:-4}"
-CAPTURE_DELAY_FRAMES="${MGSTUDIO_PARITY_CAPTURE_DELAY_FRAMES:-1}"
+CAPTURE_DELAY_FRAMES="${MGSTUDIO_PARITY_CAPTURE_DELAY_FRAMES:-120}"
+CAPTURE_RETRY_DELAY_FRAMES="${MGSTUDIO_PARITY_CAPTURE_RETRY_DELAY_FRAMES:-1}"
+CAPTURE_RETRY_TIMEOUT_SECONDS="${MGSTUDIO_PARITY_CAPTURE_RETRY_TIMEOUT_SECONDS:-60}"
+CAPTURE_DISABLE_RETRY="${MGSTUDIO_PARITY_CAPTURE_DISABLE_RETRY:-0}"
+STOP_GRACE_SECONDS="${MGSTUDIO_PARITY_STOP_GRACE_SECONDS:-3}"
+FORCE_KILL_AFTER_GRACE="${MGSTUDIO_PARITY_FORCE_KILL_AFTER_GRACE:-1}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENGINE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -41,40 +46,102 @@ moon -C "${ENGINE_DIR}" build --target native --release "${PACKAGE}"
 
 rm -f "${OUTPUT_PNG}" "${RGBA8_BLOB}"
 
-echo "[capture] moon run --target native --release ${PACKAGE}"
-(
-  MGSTUDIO_PARITY_CAPTURE_RGBA8_BLOB="${RGBA8_BLOB}" \
-    MGSTUDIO_PARITY_CAPTURE_DELAY_FRAMES="${CAPTURE_DELAY_FRAMES}" \
-    moon -C "${ENGINE_DIR}" run --target native --release "${PACKAGE}" >"${RUN_LOG}" 2>&1
-) &
-APP_PID=$!
+APP_PID=""
+
+start_app() {
+  local delay_frames="$1"
+  rm -f "${RGBA8_BLOB}"
+  : >"${RUN_LOG}"
+  echo "[capture] moon run --target native --release ${PACKAGE} (delay_frames=${delay_frames})"
+  (
+    MGSTUDIO_PARITY_CAPTURE_RGBA8_BLOB="${RGBA8_BLOB}" \
+      MGSTUDIO_PARITY_CAPTURE_DELAY_FRAMES="${delay_frames}" \
+      moon -C "${ENGINE_DIR}" run --target native --release "${PACKAGE}" >"${RUN_LOG}" 2>&1
+  ) &
+  APP_PID=$!
+}
+
+stop_app() {
+  if [[ -z "${APP_PID}" ]]; then
+    return
+  fi
+  if kill -0 "${APP_PID}" >/dev/null 2>&1; then
+    kill -TERM "${APP_PID}" >/dev/null 2>&1 || true
+    elapsed_ms=0
+    grace_ms=$((STOP_GRACE_SECONDS * 1000))
+    while [[ "${elapsed_ms}" -lt "${grace_ms}" ]]; do
+      if ! kill -0 "${APP_PID}" >/dev/null 2>&1; then
+        break
+      fi
+      sleep 0.1
+      elapsed_ms=$((elapsed_ms + 100))
+    done
+    if kill -0 "${APP_PID}" >/dev/null 2>&1; then
+      if [[ "${FORCE_KILL_AFTER_GRACE}" == "1" ]]; then
+        echo "[capture] warning: app pid=${APP_PID} still alive after ${STOP_GRACE_SECONDS}s; forcing SIGKILL" >&2
+        kill -KILL "${APP_PID}" >/dev/null 2>&1 || true
+      else
+        echo "[capture] warning: app pid=${APP_PID} still alive after ${STOP_GRACE_SECONDS}s; leaving process running by config" >&2
+        APP_PID=""
+        return
+      fi
+    fi
+  fi
+  wait "${APP_PID}" >/dev/null 2>&1 || true
+  APP_PID=""
+}
+
+wait_for_blob() {
+  local timeout_seconds="$1"
+  local elapsed_local=0
+  while [[ "${elapsed_local}" -lt "${timeout_seconds}" ]]; do
+    if [[ -s "${RGBA8_BLOB}" ]]; then
+      return 0
+    fi
+    if [[ -n "${APP_PID}" ]] && ! kill -0 "${APP_PID}" >/dev/null 2>&1; then
+      # The app may exit right after writing the capture blob.
+      # Give the filesystem a short grace window before failing.
+      local grace_ms=0
+      while [[ "${grace_ms}" -lt 1000 ]]; do
+        if [[ -s "${RGBA8_BLOB}" ]]; then
+          return 0
+        fi
+        sleep 0.1
+        grace_ms=$((grace_ms + 100))
+      done
+      return 1
+    fi
+    sleep 1
+    elapsed_local=$((elapsed_local + 1))
+  done
+  return 1
+}
 
 cleanup() {
-  set +e
-  if kill -0 "${APP_PID}" >/dev/null 2>&1; then
-    kill "${APP_PID}" >/dev/null 2>&1
-    sleep 0.3
-    kill -9 "${APP_PID}" >/dev/null 2>&1 || true
-    wait "${APP_PID}" >/dev/null 2>&1 || true
-  fi
+  stop_app
 }
 trap cleanup EXIT
 
-elapsed=0
 blob_ready=0
 capture_mode="gpu-surface-readback"
 capture_source="${RGBA8_BLOB}"
-while [[ "${elapsed}" -lt "${RUN_TIMEOUT_SECONDS}" ]]; do
-  if [[ -s "${RGBA8_BLOB}" ]]; then
-    blob_ready=1
-    break
-  fi
-  if ! kill -0 "${APP_PID}" >/dev/null 2>&1; then
-    break
-  fi
-  sleep 1
-  elapsed=$((elapsed + 1))
-done
+capture_delay_frames_used="${CAPTURE_DELAY_FRAMES}"
+
+start_app "${CAPTURE_DELAY_FRAMES}"
+if wait_for_blob "${RUN_TIMEOUT_SECONDS}"; then
+  blob_ready=1
+fi
+
+if [[ "${blob_ready}" -eq 0 && "${CAPTURE_DELAY_FRAMES}" != "${CAPTURE_RETRY_DELAY_FRAMES}" && "${CAPTURE_DISABLE_RETRY}" != "1" ]]; then
+  echo "[capture] gpu blob unavailable within ${RUN_TIMEOUT_SECONDS}s (delay=${CAPTURE_DELAY_FRAMES}); retry in fresh process with delay=${CAPTURE_RETRY_DELAY_FRAMES}" >&2
+  stop_app
+  rm -f "${OUTPUT_PNG}" "${RGBA8_BLOB}" "${META_JSON}"
+  MGSTUDIO_PARITY_CAPTURE_DELAY_FRAMES="${CAPTURE_RETRY_DELAY_FRAMES}" \
+    MGSTUDIO_PARITY_RUN_TIMEOUT_SECONDS="${CAPTURE_RETRY_TIMEOUT_SECONDS}" \
+    MGSTUDIO_PARITY_CAPTURE_DISABLE_RETRY=1 \
+    "${BASH_SOURCE[0]}" "${PACKAGE}" "${OUTPUT_PNG}"
+  exit $?
+fi
 
 if [[ "${blob_ready}" -eq 1 ]]; then
   if ! command -v python3 >/dev/null 2>&1; then
@@ -144,9 +211,7 @@ if [[ "${blob_ready}" -eq 0 ]]; then
     echo "[capture] process exited before screenshot capture: ${PACKAGE}" >&2
     exit 4
   fi
-  if [[ "${elapsed}" -lt "${SETTLE_SECONDS}" ]]; then
-    sleep "$((SETTLE_SECONDS - elapsed))"
-  fi
+  sleep "${SETTLE_SECONDS}"
   echo "[capture] screencapture -> ${OUTPUT_PNG}"
   screencapture -x "${OUTPUT_PNG}"
 fi
@@ -164,6 +229,9 @@ cat >"${META_JSON}" <<EOF
   "settle_seconds": ${SETTLE_SECONDS},
   "run_timeout_seconds": ${RUN_TIMEOUT_SECONDS},
   "capture_delay_frames": ${CAPTURE_DELAY_FRAMES},
+  "capture_delay_frames_used": ${capture_delay_frames_used},
+  "capture_retry_delay_frames": ${CAPTURE_RETRY_DELAY_FRAMES},
+  "capture_retry_timeout_seconds": ${CAPTURE_RETRY_TIMEOUT_SECONDS},
   "capture_mode": "${capture_mode}",
   "capture_source": "${capture_source}",
   "rgba8_blob": "${RGBA8_BLOB}"

@@ -151,6 +151,7 @@ pub struct GpuPassState {
   camera_rot : Float
   camera_scale : Float
   camera_z : Float
+  camera_exposure : Float
   camera_rot_x : Float
   camera_rot_y : Float
   camera_rot_z : Float
@@ -222,6 +223,38 @@ pub struct GpuSurfaceState {
   mut configured_desired_maximum_frame_latency : UInt
   mut frame : GpuFrameState?
   mut cleared_this_frame : Bool
+}
+
+///|
+
+///|
+struct GpuMesh3dPreprocessCameraUploadState {
+  key_hi : Int
+  key_lo : Int
+  mut direct_work_item_buffer : @wgpu.Buffer?
+  mut direct_work_item_capacity : UInt64
+  mut indexed_work_item_buffer : @wgpu.Buffer?
+  mut indexed_work_item_capacity : UInt64
+  mut non_indexed_work_item_buffer : @wgpu.Buffer?
+  mut non_indexed_work_item_capacity : UInt64
+  mut late_indexed_work_item_buffer : @wgpu.Buffer?
+  mut late_indexed_work_item_capacity : UInt64
+  mut late_non_indexed_work_item_buffer : @wgpu.Buffer?
+  mut late_non_indexed_work_item_capacity : UInt64
+  mut indexed_cpu_metadata_buffer : @wgpu.Buffer?
+  mut indexed_cpu_metadata_capacity : UInt64
+  mut indexed_gpu_metadata_buffer : @wgpu.Buffer?
+  mut indexed_gpu_metadata_capacity : UInt64
+  mut indexed_batch_set_buffer : @wgpu.Buffer?
+  mut indexed_batch_set_capacity : UInt64
+  mut non_indexed_cpu_metadata_buffer : @wgpu.Buffer?
+  mut non_indexed_cpu_metadata_capacity : UInt64
+  mut non_indexed_gpu_metadata_buffer : @wgpu.Buffer?
+  mut non_indexed_gpu_metadata_capacity : UInt64
+  mut non_indexed_batch_set_buffer : @wgpu.Buffer?
+  mut non_indexed_batch_set_capacity : UInt64
+  mut dispatch_metadata_buffer : @wgpu.Buffer?
+  mut dispatch_metadata_capacity : UInt64
 }
 
 ///|
@@ -330,6 +363,9 @@ pub struct GpuBackend {
   mut mesh3d_instance_uniform_bg : @wgpu.BindGroup?
   mut mesh3d_instance_uniform_capacity : UInt64
   mut mesh3d_instance_uniform_used : Int
+  mesh3d_preprocess_camera_upload_states : Array[
+    GpuMesh3dPreprocessCameraUploadState,
+  ]
   mut mesh3d_motion_vector_bgl_uniform : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh3d_motion_vector_pipeline : @wgpu.RenderPipeline?
@@ -667,6 +703,7 @@ pub fn GpuBackend::new(
     mesh3d_instance_uniform_bg: None,
     mesh3d_instance_uniform_capacity: 0UL,
     mesh3d_instance_uniform_used: 0,
+    mesh3d_preprocess_camera_upload_states: [],
     mesh3d_motion_vector_bgl_uniform: None,
     mesh3d_motion_vector_pipeline_layout: None,
     mesh3d_motion_vector_pipeline: None,

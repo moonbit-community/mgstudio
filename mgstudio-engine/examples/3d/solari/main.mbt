@@ -226,9 +226,7 @@ fn despawn_entities(world : @ecs.World, entities : Array[@core.Entity]) -> Unit 
 fn spawn_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let camera = @pbr.Camera3dBundle::new(
-    @sprite.Camera::default().with_clear_color(
-      @sprite.Color::srgb(0.10F, 0.12F, 0.16F),
-    ),
+    @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
     @math.Transform::from_xyz(0.219417F, 2.5764852F, 6.9718704F).with_rotation(
       @math.Quat::new(-0.1466768F, 0.013738206F, 0.002037309F, 0.989087F),
     ),
@@ -243,6 +241,12 @@ fn spawn_camera(world : @ecs.World) -> Unit {
 ///|
 fn spawn_lights(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
+  // Solari GI/indirect lighting is not available in the raster fallback path.
+  // Use a low ambient term to keep the adapted scene readable.
+  world.insert_resource(
+    @pbr.ecs_key_global_ambient_light,
+    @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 55.0F),
+  )
 
   let directional_light = world.spawn_empty()
   world
