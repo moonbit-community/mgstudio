@@ -89,38 +89,36 @@ fn next_tonemap(mode : @sprite.Tonemapping) -> @sprite.Tonemapping {
 
 ///|
 fn bloom_help_text(
-  bloom : @sprite.Bloom2d?,
+  bloom : @sprite.Bloom?,
   tonemapping : @sprite.Tonemapping,
 ) -> String {
   let mut text = match bloom {
-    Some(bloom) => {
-      let settings = bloom.settings
+    Some(bloom) =>
       "Bloom (Toggle: Space)\n" +
       "(Q/A) Intensity: " +
-      float_text_2(settings.intensity) +
+      float_text_2(bloom.intensity) +
       "\n" +
       "(W/S) Low-frequency boost: " +
-      float_text_2(settings.low_frequency_boost) +
+      float_text_2(bloom.low_frequency_boost) +
       "\n" +
       "(E/D) Low-frequency boost curvature: " +
-      float_text_2(settings.low_frequency_boost_curvature) +
+      float_text_2(bloom.low_frequency_boost_curvature) +
       "\n" +
       "(R/F) High-pass frequency: " +
-      float_text_2(settings.high_pass_frequency) +
+      float_text_2(bloom.high_pass_frequency) +
       "\n" +
       "(T/G) Mode: " +
-      bloom_mode_text(settings.composite_mode) +
+      bloom_mode_text(bloom.composite_mode) +
       "\n" +
       "(Y/H) Threshold: " +
-      float_text_2(settings.prefilter.threshold) +
+      float_text_2(bloom.prefilter.threshold) +
       "\n" +
       "(U/J) Threshold softness: " +
-      float_text_2(settings.prefilter.threshold_softness) +
+      float_text_2(bloom.prefilter.threshold_softness) +
       "\n" +
       "(I/K) Horizontal Scale: " +
-      float_text_2(settings.scale.x) +
+      float_text_2(bloom.scale.x) +
       "\n"
-    }
     None => "Bloom: Off (Toggle: Space)\n"
   }
   text = text + "(O) Tonemapping: " + tonemapping_text(tonemapping) + "\n"
@@ -244,7 +242,7 @@ fn bloom_setup(world : @ecs.World) -> Unit {
       @sprite.Camera::new(@sprite.Color::black()),
       @math.Transform::identity(),
     )
-    .with_bloom2d(@sprite.Bloom2d::new())
+    .with_bloom(Some(@sprite.Bloom::default()))
     .spawn(world)
   let tick = world.read_change_tick()
   world
@@ -292,7 +290,7 @@ fn bloom_setup(world : @ecs.World) -> Unit {
 fn bloom_update(world : @ecs.World) -> Unit {
   guard single_camera_entity(world) is Some(camera_entity) else { return }
 
-  let bloom_store = world.component(@sprite.ecs_key_bloom2d)
+  let bloom_store = world.component(@sprite.ecs_key_bloom)
   let tonemapping_store = world.component(@sprite.ecs_key_tonemapping)
   let tick = world.read_change_tick()
   let dt = world_time(world).delta_seconds()
@@ -308,7 +306,7 @@ fn bloom_update(world : @ecs.World) -> Unit {
       if @input.key_just_pressed(@window.KeyCode::Space) {
         bloom_store.remove(camera_entity) |> ignore
       } else {
-        let mut intensity = current_bloom.settings.intensity
+        let mut intensity = current_bloom.intensity
         if @input.key_pressed(@window.KeyCode::KeyA) {
           intensity = intensity - dt / 10.0F
         }
@@ -317,7 +315,7 @@ fn bloom_update(world : @ecs.World) -> Unit {
         }
         intensity = clampf(intensity, 0.0F, 1.0F)
 
-        let mut low_frequency_boost = current_bloom.settings.low_frequency_boost
+        let mut low_frequency_boost = current_bloom.low_frequency_boost
         if @input.key_pressed(@window.KeyCode::KeyS) {
           low_frequency_boost = low_frequency_boost - dt / 10.0F
         }
@@ -326,7 +324,7 @@ fn bloom_update(world : @ecs.World) -> Unit {
         }
         low_frequency_boost = clampf(low_frequency_boost, 0.0F, 1.0F)
 
-        let mut low_frequency_boost_curvature = current_bloom.settings.low_frequency_boost_curvature
+        let mut low_frequency_boost_curvature = current_bloom.low_frequency_boost_curvature
         if @input.key_pressed(@window.KeyCode::KeyD) {
           low_frequency_boost_curvature = low_frequency_boost_curvature -
             dt / 10.0F
@@ -339,7 +337,7 @@ fn bloom_update(world : @ecs.World) -> Unit {
           low_frequency_boost_curvature, 0.0F, 1.0F,
         )
 
-        let mut high_pass_frequency = current_bloom.settings.high_pass_frequency
+        let mut high_pass_frequency = current_bloom.high_pass_frequency
         if @input.key_pressed(@window.KeyCode::KeyF) {
           high_pass_frequency = high_pass_frequency - dt / 10.0F
         }
@@ -348,7 +346,7 @@ fn bloom_update(world : @ecs.World) -> Unit {
         }
         high_pass_frequency = clampf(high_pass_frequency, 0.0F, 1.0F)
 
-        let mut composite_mode = current_bloom.settings.composite_mode
+        let mut composite_mode = current_bloom.composite_mode
         if @input.key_pressed(@window.KeyCode::KeyG) {
           composite_mode = Additive
         }
@@ -356,7 +354,7 @@ fn bloom_update(world : @ecs.World) -> Unit {
           composite_mode = EnergyConserving
         }
 
-        let mut threshold = current_bloom.settings.prefilter.threshold
+        let mut threshold = current_bloom.prefilter.threshold
         if @input.key_pressed(@window.KeyCode::KeyH) {
           threshold = threshold - dt
         }
@@ -367,7 +365,7 @@ fn bloom_update(world : @ecs.World) -> Unit {
           threshold = 0.0F
         }
 
-        let mut threshold_softness = current_bloom.settings.prefilter.threshold_softness
+        let mut threshold_softness = current_bloom.prefilter.threshold_softness
         if @input.key_pressed(@window.KeyCode::KeyJ) {
           threshold_softness = threshold_softness - dt / 10.0F
         }
@@ -376,7 +374,7 @@ fn bloom_update(world : @ecs.World) -> Unit {
         }
         threshold_softness = clampf(threshold_softness, 0.0F, 1.0F)
 
-        let mut scale_x = current_bloom.settings.scale.x
+        let mut scale_x = current_bloom.scale.x
         if @input.key_pressed(@window.KeyCode::KeyK) {
           scale_x = scale_x - dt * 2.0F
         }
@@ -385,26 +383,23 @@ fn bloom_update(world : @ecs.World) -> Unit {
         }
         scale_x = clampf(scale_x, 0.0F, 16.0F)
 
-        let next_settings = @sprite.Bloom2dSettings::{
-          intensity,
-          low_frequency_boost,
-          low_frequency_boost_curvature,
-          high_pass_frequency,
-          prefilter: @sprite.BloomPrefilter::{ threshold, threshold_softness },
-          composite_mode,
-          max_mip_dimension: current_bloom.settings.max_mip_dimension,
-          scale: @math.Vec2::new(scale_x, current_bloom.settings.scale.y),
-        }
         bloom_store.set(
           camera_entity,
-          current_bloom.with_settings(next_settings).with_enabled(true),
+          current_bloom
+          .with_intensity(intensity)
+          .with_low_frequency_boost(low_frequency_boost)
+          .with_low_frequency_boost_curvature(low_frequency_boost_curvature)
+          .with_high_pass_frequency(high_pass_frequency)
+          .with_prefilter(threshold, threshold_softness)
+          .with_composite_mode(composite_mode)
+          .with_scale(@math.Vec2::new(scale_x, current_bloom.scale.y)),
           tick,
         )
         |> ignore
       }
     None =>
       if @input.key_just_pressed(@window.KeyCode::Space) {
-        bloom_store.insert(camera_entity, @sprite.Bloom2d::new(), tick)
+        bloom_store.insert(camera_entity, @sprite.Bloom::default(), tick)
       }
   }
 

@@ -34,6 +34,15 @@ pub type Tonemapping = @post_process.Tonemapping
 pub type DebandDither = @post_process.DebandDither
 
 ///|
+pub type BloomPrefilter = @post_process.BloomPrefilter
+
+///|
+pub type BloomCompositeMode = @post_process.BloomCompositeMode
+
+///|
+pub type Bloom = @post_process.Bloom
+
+///|
 pub struct RenderLayers {
   mask : Int
 }
@@ -3767,7 +3776,7 @@ pub struct Camera2dBundle {
   transform : @math.Transform
   target : RenderTarget
   layers : RenderLayers
-  bloom2d : Bloom2d?
+  bloom : Bloom?
   tonemapping : Tonemapping?
   color_grading : ColorGrading?
   deband_dither : DebandDither?
@@ -3785,7 +3794,7 @@ pub fn Camera2dBundle::new(
     transform,
     target: RenderTarget::Screen,
     layers: RenderLayers::default(),
-    bloom2d: None,
+    bloom: None,
     tonemapping: Some(Tonemapping::None),
     color_grading: None,
     deband_dither: Some(DebandDither::Disabled),
@@ -3805,7 +3814,7 @@ pub fn Camera2dBundle::new_with_projection(
     transform,
     target: RenderTarget::Screen,
     layers: RenderLayers::default(),
-    bloom2d: None,
+    bloom: None,
     tonemapping: Some(Tonemapping::None),
     color_grading: None,
     deband_dither: Some(DebandDither::Disabled),
@@ -3825,7 +3834,7 @@ pub fn Camera2dBundle::new_with_target(
     transform,
     target,
     layers: RenderLayers::default(),
-    bloom2d: None,
+    bloom: None,
     tonemapping: Some(Tonemapping::None),
     color_grading: None,
     deband_dither: Some(DebandDither::Disabled),
@@ -3846,7 +3855,7 @@ pub fn Camera2dBundle::new_with_layers(
     transform,
     target,
     layers,
-    bloom2d: None,
+    bloom: None,
     tonemapping: Some(Tonemapping::None),
     color_grading: None,
     deband_dither: Some(DebandDither::Disabled),
@@ -3854,11 +3863,11 @@ pub fn Camera2dBundle::new_with_layers(
 }
 
 ///|
-pub fn Camera2dBundle::with_bloom2d(
+pub fn Camera2dBundle::with_bloom(
   self : Camera2dBundle,
-  bloom2d : Bloom2d,
+  bloom : Bloom?,
 ) -> Camera2dBundle {
-  Camera2dBundle::{ ..self, bloom2d: Some(bloom2d) }
+  Camera2dBundle::{ ..self, bloom, }
 }
 
 ///|
@@ -4262,82 +4271,6 @@ pub fn render2d_draw_tilemap_chunk(
 }
 
 ///|
-pub(all) struct Bloom2dSettings {
-  intensity : Float
-  low_frequency_boost : Float
-  low_frequency_boost_curvature : Float
-  high_pass_frequency : Float
-  prefilter : BloomPrefilter
-  composite_mode : BloomCompositeMode
-  max_mip_dimension : Int
-  scale : @math.Vec2
-}
-
-///|
-pub(all) struct BloomPrefilter {
-  threshold : Float
-  threshold_softness : Float
-}
-
-///|
-pub(all) enum BloomCompositeMode {
-  EnergyConserving
-  Additive
-}
-
-///|
-pub fn BloomPrefilter::default() -> BloomPrefilter {
-  BloomPrefilter::{ threshold: 0.0F, threshold_softness: 0.0F }
-}
-
-///|
-pub fn Bloom2dSettings::default() -> Bloom2dSettings {
-  Bloom2dSettings::{
-    intensity: 0.15F,
-    low_frequency_boost: 0.7F,
-    low_frequency_boost_curvature: 0.95F,
-    high_pass_frequency: 1.0F,
-    prefilter: BloomPrefilter::default(),
-    composite_mode: EnergyConserving,
-    max_mip_dimension: 512,
-    scale: @math.Vec2::new(1.0F, 1.0F),
-  }
-}
-
-///|
-pub struct Bloom2d {
-  source : @asset.Handle[@asset.Image]?
-  enabled : Bool
-  settings : Bloom2dSettings
-}
-
-///|
-pub fn Bloom2d::new() -> Bloom2d {
-  Bloom2d::{ source: None, enabled: true, settings: Bloom2dSettings::default() }
-}
-
-///|
-pub fn Bloom2d::with_source(
-  self : Bloom2d,
-  source : @asset.Handle[@asset.Image],
-) -> Bloom2d {
-  Bloom2d::{ ..self, source: Some(source) }
-}
-
-///|
-pub fn Bloom2d::with_settings(
-  self : Bloom2d,
-  settings : Bloom2dSettings,
-) -> Bloom2d {
-  Bloom2d::{ ..self, settings, }
-}
-
-///|
-pub fn Bloom2d::with_enabled(self : Bloom2d, enabled : Bool) -> Bloom2d {
-  Bloom2d::{ ..self, enabled, }
-}
-
-///|
 fn bloom2d_clamp_unit(value : Float) -> Float {
   if value < 0.0F {
     0.0F
@@ -4376,29 +4309,22 @@ fn bloom2d_safe_scale_axis(value : Float) -> Float {
 }
 
 ///|
-fn bloom2d_sanitize_settings(settings : Bloom2dSettings) -> Bloom2dSettings {
-  Bloom2dSettings::{
-    intensity: bloom2d_clamp_non_negative(settings.intensity),
-    low_frequency_boost: bloom2d_clamp_unit(settings.low_frequency_boost),
-    low_frequency_boost_curvature: bloom2d_clamp_unit(
-      settings.low_frequency_boost_curvature,
+fn render2d_sanitize_bloom(bloom : Bloom) -> Bloom {
+  Bloom::new(bloom.intensity)
+  .with_low_frequency_boost(bloom.low_frequency_boost)
+  .with_low_frequency_boost_curvature(bloom.low_frequency_boost_curvature)
+  .with_high_pass_frequency(bloom.high_pass_frequency)
+  .with_prefilter(bloom.prefilter.threshold, bloom.prefilter.threshold_softness)
+  .with_composite_mode(bloom.composite_mode)
+  .with_max_mip_dimension(
+    bloom2d_safe_max_mip_dimension(bloom.max_mip_dimension),
+  )
+  .with_scale(
+    @math.Vec2::new(
+      bloom2d_safe_scale_axis(bloom.scale.x),
+      bloom2d_safe_scale_axis(bloom.scale.y),
     ),
-    high_pass_frequency: bloom2d_clamp_unit(settings.high_pass_frequency),
-    prefilter: BloomPrefilter::{
-      threshold: bloom2d_clamp_non_negative(settings.prefilter.threshold),
-      threshold_softness: bloom2d_clamp_unit(
-        settings.prefilter.threshold_softness,
-      ),
-    },
-    composite_mode: settings.composite_mode,
-    max_mip_dimension: bloom2d_safe_max_mip_dimension(
-      settings.max_mip_dimension,
-    ),
-    scale: @math.Vec2::new(
-      bloom2d_safe_scale_axis(settings.scale.x),
-      bloom2d_safe_scale_axis(settings.scale.y),
-    ),
-  }
+  )
 }
 
 ///|
@@ -4413,9 +4339,9 @@ fn bloom2d_log2_floor(value : Int) -> Int {
 }
 
 ///|
-fn bloom2d_mip_count(settings : Bloom2dSettings) -> Int {
+fn bloom2d_mip_count(bloom : Bloom) -> Int {
   let logv = bloom2d_log2_floor(
-    bloom2d_safe_max_mip_dimension(settings.max_mip_dimension),
+    bloom2d_safe_max_mip_dimension(bloom.max_mip_dimension),
   )
   let mip_count = if logv < 2 { 1 } else { logv - 1 }
   if mip_count < 1 {
@@ -4426,9 +4352,9 @@ fn bloom2d_mip_count(settings : Bloom2dSettings) -> Int {
 }
 
 ///|
-fn bloom2d_prefilter_weight(settings : Bloom2dSettings) -> Float {
-  let threshold = bloom2d_clamp_non_negative(settings.prefilter.threshold)
-  let softness = bloom2d_clamp_unit(settings.prefilter.threshold_softness)
+fn bloom2d_prefilter_weight(bloom : Bloom) -> Float {
+  let threshold = bloom2d_clamp_non_negative(bloom.prefilter.threshold)
+  let softness = bloom2d_clamp_unit(bloom.prefilter.threshold_softness)
   // Approximate prefilter attenuation in sprite-overlay bloom path.
   let attenuation = 1.0F + threshold * (1.0F - softness * 0.5F)
   if attenuation <= 0.0F {
@@ -4440,23 +4366,23 @@ fn bloom2d_prefilter_weight(settings : Bloom2dSettings) -> Float {
 
 ///|
 fn bloom2d_compute_blend_factor(
-  settings : Bloom2dSettings,
+  bloom : Bloom,
   mip : Float,
   max_mip : Float,
 ) -> Float {
   if max_mip <= 0.0F {
-    return settings.intensity
+    return bloom.intensity
   }
   let mip_ratio = bloom2d_clamp_unit(mip / max_mip)
-  let curvature = bloom2d_clamp_unit(settings.low_frequency_boost_curvature)
+  let curvature = bloom2d_clamp_unit(bloom.low_frequency_boost_curvature)
   let exponent = if curvature >= 0.9999F {
     10_000.0F
   } else {
     1.0F / (1.0F - curvature)
   }
   let mut lf_boost = (1.0F - @math.pow(1.0F - mip_ratio, exponent)) *
-    settings.low_frequency_boost
-  let high_pass = bloom2d_clamp_unit(settings.high_pass_frequency)
+    bloom.low_frequency_boost
+  let high_pass = bloom2d_clamp_unit(bloom.high_pass_frequency)
   let high_pass_lq = if high_pass <= 1.0e-6F {
     if mip_ratio <= 0.0F {
       1.0F
@@ -4466,17 +4392,17 @@ fn bloom2d_compute_blend_factor(
   } else {
     1.0F - bloom2d_clamp_unit((mip_ratio - high_pass) / high_pass)
   }
-  let mode_factor = match settings.composite_mode {
-    EnergyConserving => 1.0F - settings.intensity
+  let mode_factor = match bloom.composite_mode {
+    EnergyConserving => 1.0F - bloom.intensity
     Additive => 1.0F
   }
   lf_boost = lf_boost * mode_factor
-  (settings.intensity + lf_boost) * high_pass_lq
+  (bloom.intensity + lf_boost) * high_pass_lq
 }
 
 ///|
 fn bloom2d_pass_scale_factor(
-  settings : Bloom2dSettings,
+  bloom : Bloom,
   pass_index : Int,
   max_mip : Int,
 ) -> @math.Vec2 {
@@ -4486,8 +4412,8 @@ fn bloom2d_pass_scale_factor(
   )
   let blur_scale = 0.35F * (0.2F + pass_ratio * 0.8F)
   @math.Vec2::new(
-    1.0F + blur_scale * settings.scale.x,
-    1.0F + blur_scale * settings.scale.y,
+    1.0F + blur_scale * bloom.scale.x,
+    1.0F + blur_scale * bloom.scale.y,
   )
 }
 
@@ -4496,10 +4422,10 @@ pub fn render2d_draw_bloom_overlay(
   world : @ecs.World,
   source : @asset.Handle[@asset.Image],
   base_transform : @math.Transform,
-  settings : Bloom2dSettings,
+  bloom : Bloom,
   layers : RenderLayers,
 ) -> Unit {
-  let bloom = bloom2d_sanitize_settings(settings)
+  let bloom = render2d_sanitize_bloom(bloom)
   let mip_count = bloom2d_mip_count(bloom)
   let max_mip = mip_count - 1
   let max_mip_f = if max_mip <= 0 { 1.0F } else { Float::from_int(max_mip) }
@@ -4612,7 +4538,7 @@ priv struct TonemappingLutHandles {
 }
 
 ///|
-priv struct Render2dHostWindowPostprocessPlan {
+priv struct Render2dCameraPostprocessPlan {
   uses_intermediate_source : Bool
   apply_bloom_before_tonemapping : Bool
   tonemap_source_to_target : Bool
@@ -4620,41 +4546,20 @@ priv struct Render2dHostWindowPostprocessPlan {
 }
 
 ///|
-fn render2d_host_window_postprocess_plan(
-  bloom : Bloom2d?,
+fn render2d_camera_postprocess_plan(
+  bloom : Bloom?,
   tonemapping_mode : Int,
   color_grading : ColorGrading?,
-) -> Render2dHostWindowPostprocessPlan {
+) -> Render2dCameraPostprocessPlan {
   let tonemapping_enabled = render2d_tonemapping_stage_enabled(
     tonemapping_mode, color_grading,
   )
-  match bloom {
-    Some(bloom) =>
-      if bloom.source is None {
-        // Match Bevy Core2d ordering for the official bloom_2d path:
-        // scene -> bloom -> tonemapping -> UI. Tonemapping::None still performs
-        // the fullscreen copy from the HDR intermediate into the final target.
-        Render2dHostWindowPostprocessPlan::{
-          uses_intermediate_source: true,
-          apply_bloom_before_tonemapping: bloom.enabled,
-          tonemap_source_to_target: true,
-          draw_ui_overlay_after_postprocess: true,
-        }
-      } else {
-        Render2dHostWindowPostprocessPlan::{
-          uses_intermediate_source: false,
-          apply_bloom_before_tonemapping: false,
-          tonemap_source_to_target: false,
-          draw_ui_overlay_after_postprocess: false,
-        }
-      }
-    None =>
-      Render2dHostWindowPostprocessPlan::{
-        uses_intermediate_source: tonemapping_enabled,
-        apply_bloom_before_tonemapping: false,
-        tonemap_source_to_target: tonemapping_enabled,
-        draw_ui_overlay_after_postprocess: tonemapping_enabled,
-      }
+  let uses_intermediate_source = bloom is Some(_) || tonemapping_enabled
+  Render2dCameraPostprocessPlan::{
+    uses_intermediate_source,
+    apply_bloom_before_tonemapping: bloom is Some(_),
+    tonemap_source_to_target: uses_intermediate_source,
+    draw_ui_overlay_after_postprocess: uses_intermediate_source,
   }
 }
 
@@ -4719,14 +4624,14 @@ fn render2d_apply_camera_bloom_from_source(
   view_width_logical : Int,
   view_height_logical : Int,
 ) -> Unit {
-  guard camera.bloom2d is Some(bloom) else { return }
+  guard camera.bloom is Some(bloom) else { return }
   if view_width_logical <= 0 || view_height_logical <= 0 {
     return
   }
-  let settings = bloom2d_sanitize_settings(bloom.settings)
+  let settings = render2d_sanitize_bloom(bloom)
   @render.host_gpu_apply_bloom2d(
     scene_texture_id=source.id(),
-    enabled=if bloom.enabled { 1 } else { 0 },
+    enabled=1,
     intensity=settings.intensity,
     low_frequency_boost=settings.low_frequency_boost,
     low_frequency_boost_curvature=settings.low_frequency_boost_curvature,
@@ -4742,26 +4647,6 @@ fn render2d_apply_camera_bloom_from_source(
     scale_y=settings.scale.y,
     view_width=view_width_logical,
     view_height=view_height_logical,
-  )
-}
-
-///|
-fn render2d_draw_camera_postprocess_from_source(
-  world : @ecs.World,
-  camera : ExtractedCamera2d,
-  source : @asset.Handle[@asset.Image],
-  tonemapping_mode : Int,
-  deband_dither_enabled : Bool,
-  color_grading : ColorGrading?,
-  view_width_logical : Int,
-  view_height_logical : Int,
-) -> Unit {
-  render2d_apply_camera_bloom_from_source(
-    camera, source, view_width_logical, view_height_logical,
-  )
-  render2d_draw_camera_tonemapping(
-    world, source, tonemapping_mode, deband_dither_enabled, color_grading, view_width_logical,
-    view_height_logical,
   )
 }
 
@@ -4927,7 +4812,7 @@ priv struct ExtractedCamera2d {
   transform : @math.Transform
   target : RenderTarget
   layers : RenderLayers
-  bloom2d : Bloom2d?
+  bloom : Bloom?
   computed : CameraComputed
 }
 
@@ -5863,8 +5748,8 @@ fn camera2d_bundle_insert(
   try! (world.set(entity, ecs_key_projection, bundle.projection) |> ignore)
   try! (world.set(entity, ecs_key_render_target, bundle.target) |> ignore)
   try! (world.set(entity, ecs_key_render_layers, bundle.layers) |> ignore)
-  if bundle.bloom2d is Some(bloom2d) {
-    try! (world.set(entity, ecs_key_bloom2d, bloom2d) |> ignore)
+  if bundle.bloom is Some(bloom) {
+    try! (world.set(entity, ecs_key_bloom, bloom) |> ignore)
   }
   if bundle.tonemapping is Some(tonemapping) {
     try! (world.set(entity, ecs_key_tonemapping, tonemapping) |> ignore)
@@ -6853,7 +6738,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
     let projection_store = get_projection_store(ecs_world)
     let target_store = get_render_target_store(ecs_world)
     let layers_store = get_render_layers_store(ecs_world)
-    let bloom2d_store = get_bloom2d_store(ecs_world)
+    let bloom_store = get_bloom_store(ecs_world)
     let view_visibility_store = @visibility.get_view_visibility_store(ecs_world)
     let transform_store = @math.get_transform_store(ecs_world)
     let global_store = @transform.get_global_transform_store(ecs_world)
@@ -6866,7 +6751,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
         Some(v) => v
         None => RenderLayers::default()
       }
-      let bloom2d = bloom2d_store.get(entity)
+      let bloom = bloom_store.get(entity)
       let camera = match camera_store.get(entity) {
         Some(v) => v
         None => Camera::default()
@@ -6912,7 +6797,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
         transform,
         target,
         layers,
-        bloom2d,
+        bloom,
         computed,
       })
     })
@@ -7125,7 +7010,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
       let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
         RenderLayers::default(),
       )
-      let bloom2d = try! world.get(entity, ecs_key_bloom2d)
+      let bloom = try! world.get(entity, ecs_key_bloom)
       let camera = (try! world.get(entity, ecs_key_camera)).unwrap_or(
         Camera::default(),
       )
@@ -7163,7 +7048,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         transform,
         target,
         layers,
-        bloom2d,
+        bloom,
         computed,
       })
     })
@@ -8335,11 +8220,7 @@ test "render2d: scene draw items exclude UI overlays" {
 
 ///|
 test "render2d: host window bloom postprocess keeps Bevy stage ownership" {
-  let plan = render2d_host_window_postprocess_plan(
-    Some(Bloom2d::new()),
-    0,
-    None,
-  )
+  let plan = render2d_camera_postprocess_plan(Some(Bloom::default()), 0, None)
   let ok = plan.uses_intermediate_source &&
     plan.apply_bloom_before_tonemapping &&
     plan.tonemap_source_to_target &&
@@ -8349,7 +8230,7 @@ test "render2d: host window bloom postprocess keeps Bevy stage ownership" {
 
 ///|
 test "render2d: host window tonemapping without bloom still leaves UI after postprocess" {
-  let plan = render2d_host_window_postprocess_plan(
+  let plan = render2d_camera_postprocess_plan(
     None,
     render2d_tonemapping_mode_to_int(TonyMcMapface),
     None,
@@ -8363,7 +8244,7 @@ test "render2d: host window tonemapping without bloom still leaves UI after post
 
 ///|
 test "render2d: color grading alone keeps host window tonemapping copy stage" {
-  let plan = render2d_host_window_postprocess_plan(
+  let plan = render2d_camera_postprocess_plan(
     None,
     0,
     Some(ColorGrading::default()),
@@ -8392,7 +8273,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
       transform: @math.Transform::identity(),
       target: RenderTarget::Screen,
       layers,
-      bloom2d: None,
+      bloom: None,
       computed: CameraComputed::{
         target_size: @math.IVec2::new(640, 360),
         scale_factor: 1.0F,
@@ -8405,7 +8286,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
       transform: @math.Transform::identity(),
       target: RenderTarget::Screen,
       layers,
-      bloom2d: None,
+      bloom: None,
       computed: CameraComputed::{
         target_size: @math.IVec2::new(640, 360),
         scale_factor: 1.0F,
@@ -9004,19 +8885,6 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         camera.entity,
         camera.layers,
       )
-      let draw_items = draw_items_for_layers(
-        sprites,
-        extra_sprites,
-        extra_sprite_texture_slices,
-        extra_ui_rects,
-        extra_ui_box_shadows,
-        extra_ui_texture_slices,
-        meshes,
-        prepared_assets,
-        material_instances,
-        camera.entity,
-        camera.layers,
-      )
       fn draw_camera_items(
         items : Array[DrawItem],
         draw_viewport_x : Int,
@@ -9264,14 +9132,13 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         camera.entity,
       )
       let color_grading = camera_color_grading(world, camera.entity)
-      let host_window_postprocess_plan = render2d_host_window_postprocess_plan(
-        camera.bloom2d,
+      let camera_postprocess_plan = render2d_camera_postprocess_plan(
+        camera.bloom,
         tonemapping_mode,
         color_grading,
       )
       let mut auto_postprocess_source : @asset.Handle[@asset.Image]? = None
-      if render2d_targets_host_window(camera.target) &&
-        host_window_postprocess_plan.uses_intermediate_source {
+      if camera_postprocess_plan.uses_intermediate_source {
         auto_postprocess_source = Some(
           render2d_get_or_create_bloom2d_auto_target(
             rs.val,
@@ -9334,18 +9201,18 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
           viewport_depth_max~,
           clear_enabled=if clear_enabled { 1 } else { 0 },
         )
-        if host_window_postprocess_plan.apply_bloom_before_tonemapping {
+        if camera_postprocess_plan.apply_bloom_before_tonemapping {
           render2d_apply_camera_bloom_from_source(
             camera, source, viewport_width, viewport_height,
           )
         }
-        if host_window_postprocess_plan.tonemap_source_to_target {
+        if camera_postprocess_plan.tonemap_source_to_target {
           render2d_draw_camera_tonemapping(
             world, source, tonemapping_mode, deband_dither_enabled, color_grading,
             viewport_width, viewport_height,
           )
         }
-        if host_window_postprocess_plan.draw_ui_overlay_after_postprocess {
+        if camera_postprocess_plan.draw_ui_overlay_after_postprocess {
           draw_camera_items(
             ui_overlay_draw_items, viewport_x, viewport_y, viewport_width, viewport_height,
             scale_factor,
@@ -9356,7 +9223,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         continue
       }
 
-      if camera.bloom2d is None {
+      if camera.bloom is None {
         @render.host_gpu_begin_pass_with_depth(
           target_id~,
           width=view_width_logical,
@@ -9442,14 +9309,9 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         clear_enabled=if clear_enabled { 1 } else { 0 },
       )
       draw_camera_items(
-        draw_items, viewport_x, viewport_y, viewport_width, viewport_height, scale_factor,
+        scene_draw_items, viewport_x, viewport_y, viewport_width, viewport_height,
+        scale_factor,
       )
-      if camera.bloom2d is Some(bloom) && bloom.source is Some(source) {
-        render2d_draw_camera_postprocess_from_source(
-          world, camera, source, tonemapping_mode, deband_dither_enabled, color_grading,
-          viewport_width, viewport_height,
-        )
-      }
       gizmos_draw_lines(camera.layers)
       @render.host_gpu_end_pass()
     }

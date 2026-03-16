@@ -30,7 +30,7 @@ pub let ecs_components : Array[String]
 
 pub let ecs_key_anchor : @ecs.ComponentKey[Anchor]
 
-pub let ecs_key_bloom2d : @ecs.ComponentKey[Bloom2d]
+pub let ecs_key_bloom : @ecs.ComponentKey[@post_process.Bloom]
 
 pub let ecs_key_camera : @ecs.ComponentKey[Camera]
 
@@ -78,7 +78,7 @@ pub let ecs_resources : Array[String]
 
 pub fn get_anchor_store(@ecs.World) -> @ecs.ComponentAccess[Anchor]
 
-pub fn get_bloom2d_store(@ecs.World) -> @ecs.ComponentAccess[Bloom2d]
+pub fn get_bloom_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.Bloom]
 
 pub fn get_camera2d_store(@ecs.World) -> @ecs.ComponentAccess[Camera2d]
 
@@ -160,7 +160,7 @@ pub fn render2d_diagnostic_prepared_camera_count() -> Int
 
 pub fn render2d_diagnostic_queued_draw_item_count() -> Int
 
-pub fn render2d_draw_bloom_overlay(@ecs.World, @asset.Handle[@image.Image], @math.Transform, Bloom2dSettings, RenderLayers) -> Unit
+pub fn render2d_draw_bloom_overlay(@ecs.World, @asset.Handle[@image.Image], @math.Transform, @post_process.Bloom, RenderLayers) -> Unit
 
 pub fn render2d_draw_tilemap_chunk(@ecs.World, TilemapChunk, TilemapChunkTileData, @math.Transform, RenderLayers) -> Unit
 
@@ -278,42 +278,6 @@ pub struct ArrowBuilder {
 pub fn ArrowBuilder::with_double_end(Self) -> Self
 pub fn ArrowBuilder::with_tip_length(Self, Float) -> Self
 
-pub struct Bloom2d {
-  source : @asset.Handle[@image.Image]?
-  enabled : Bool
-  settings : Bloom2dSettings
-}
-pub fn Bloom2d::new() -> Self
-pub fn Bloom2d::with_enabled(Self, Bool) -> Self
-pub fn Bloom2d::with_settings(Self, Bloom2dSettings) -> Self
-pub fn Bloom2d::with_source(Self, @asset.Handle[@image.Image]) -> Self
-pub impl @ecs.Component for Bloom2d
-pub impl ToJson for Bloom2d
-pub impl @json.FromJson for Bloom2d
-
-pub(all) struct Bloom2dSettings {
-  intensity : Float
-  low_frequency_boost : Float
-  low_frequency_boost_curvature : Float
-  high_pass_frequency : Float
-  prefilter : BloomPrefilter
-  composite_mode : BloomCompositeMode
-  max_mip_dimension : Int
-  scale : @math.Vec2
-}
-pub fn Bloom2dSettings::default() -> Self
-
-pub(all) enum BloomCompositeMode {
-  EnergyConserving
-  Additive
-}
-
-pub(all) struct BloomPrefilter {
-  threshold : Float
-  threshold_softness : Float
-}
-pub fn BloomPrefilter::default() -> Self
-
 pub struct BorderRect {
   left : Float
   right : Float
@@ -364,7 +328,7 @@ pub struct Camera2dBundle {
   transform : @math.Transform
   target : RenderTarget
   layers : RenderLayers
-  bloom2d : Bloom2d?
+  bloom : @post_process.Bloom?
   tonemapping : @post_process.Tonemapping?
   color_grading : @post_process.ColorGrading?
   deband_dither : @post_process.DebandDither?
@@ -374,7 +338,7 @@ pub fn Camera2dBundle::new_with_layers(Camera, @math.Transform, RenderTarget, Re
 pub fn Camera2dBundle::new_with_projection(Camera, Projection, @math.Transform) -> Self
 pub fn Camera2dBundle::new_with_target(Camera, @math.Transform, RenderTarget) -> Self
 pub fn Camera2dBundle::spawn(Self, @ecs.World) -> @core.Entity
-pub fn Camera2dBundle::with_bloom2d(Self, Bloom2d) -> Self
+pub fn Camera2dBundle::with_bloom(Self, @post_process.Bloom?) -> Self
 pub fn Camera2dBundle::with_color_grading(Self, @post_process.ColorGrading?) -> Self
 pub fn Camera2dBundle::with_deband_dither(Self, @post_process.DebandDither?) -> Self
 pub fn Camera2dBundle::with_tonemapping(Self, @post_process.Tonemapping?) -> Self
@@ -1086,6 +1050,12 @@ pub impl ToJson for Wireframe2dConfig
 pub impl @json.FromJson for Wireframe2dConfig
 
 // Type aliases
+pub using @post_process {type Bloom}
+
+pub using @post_process {type BloomCompositeMode}
+
+pub using @post_process {type BloomPrefilter}
+
 pub using @color {type Color}
 
 pub using @post_process {type ColorGrading}

@@ -87,7 +87,7 @@ test "render2d: Camera2dBundle::spawn inserts expected components" {
       Camera::default(),
       @math.Transform::identity(),
     )
-    .with_bloom2d(Bloom2d::new())
+    .with_bloom(Some(Bloom::default()))
     .with_color_grading(Some(ColorGrading::default()))
   let entity = bundle.spawn(world)
 
@@ -117,7 +117,7 @@ test "render2d: Camera2dBundle::spawn inserts expected components" {
     content="true",
   )
   inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_bloom2d),
+    ecs_has_non_null_payload(world, entity, ecs_key_bloom),
     content="true",
   )
   inspect(
@@ -149,7 +149,7 @@ test "render2d: Commands::spawn accepts Camera2dBundle" {
     spawned.val = Some(
       commands.spawn(
         Camera2dBundle::new(Camera::default(), @math.Transform::identity())
-        .with_bloom2d(Bloom2d::new())
+        .with_bloom(Some(Bloom::default()))
         .with_color_grading(Some(ColorGrading::default())),
       ),
     )
@@ -168,7 +168,7 @@ test "render2d: Commands::spawn accepts Camera2dBundle" {
     content="true",
   )
   inspect(
-    ecs_has_non_null_payload(app.world(), entity, ecs_key_bloom2d),
+    ecs_has_non_null_payload(app.world(), entity, ecs_key_bloom),
     content="true",
   )
   inspect(
@@ -200,6 +200,23 @@ test "render2d: tonemapping and deband components share post_process ownership" 
   }
   inspect(tonemapping_ok, content="true")
   inspect(deband_ok, content="true")
+}
+
+///|
+test "render2d: bloom component shares post_process ownership" {
+  let world = @ecs.World::new()
+  let entity = Camera2dBundle::new(
+      Camera::default(),
+      @math.Transform::identity(),
+    )
+    .with_bloom(Some(Bloom::default().with_intensity(0.35F)))
+    .spawn(world)
+
+  let bloom_ok = match (try! world.get(entity, @post_process.ecs_key_bloom)) {
+    Some(bloom) => bloom.intensity == 0.35F
+    None => false
+  }
+  inspect(bloom_ok, content="true")
 }
 
 ///|

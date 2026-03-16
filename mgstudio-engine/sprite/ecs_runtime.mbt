@@ -53,9 +53,7 @@ pub let ecs_key_render_target : @ecs.ComponentKey[RenderTarget] = @ecs.register_
 )
 
 ///|
-pub let ecs_key_bloom2d : @ecs.ComponentKey[Bloom2d] = @ecs.register_component(
-  debug_name="render2d.bloom2d",
-)
+pub let ecs_key_bloom : @ecs.ComponentKey[Bloom] = @post_process.ecs_key_bloom
 
 ///|
 pub let ecs_key_tonemapping : @ecs.ComponentKey[Tonemapping] = @post_process.ecs_key_tonemapping
@@ -180,11 +178,6 @@ pub impl @ecs.Component for PanCamera with component() {
 ///|
 pub impl @ecs.Component for RenderTarget with component() {
   ecs_key_render_target
-}
-
-///|
-pub impl @ecs.Component for Bloom2d with component() {
-  ecs_key_bloom2d
 }
 
 ///|
@@ -436,42 +429,6 @@ fn encode_render_target(target : RenderTarget) -> Json {
     Image(image) => (1, encode_image_handle(image)).to_json()
     Window(window_ref) => (2, window_ref.to_json()).to_json()
   }
-}
-
-///|
-fn encode_bloom_prefilter(prefilter : BloomPrefilter) -> Json {
-  (prefilter.threshold, prefilter.threshold_softness).to_json()
-}
-
-///|
-fn encode_bloom_composite_mode(mode : BloomCompositeMode) -> Json {
-  match mode {
-    EnergyConserving => (0).to_json()
-    Additive => (1).to_json()
-  }
-}
-
-///|
-fn encode_bloom_settings(settings : Bloom2dSettings) -> Json {
-  (
-    settings.intensity,
-    settings.low_frequency_boost,
-    settings.low_frequency_boost_curvature,
-    settings.high_pass_frequency,
-    encode_bloom_prefilter(settings.prefilter),
-    encode_bloom_composite_mode(settings.composite_mode),
-    settings.max_mip_dimension,
-    encode_vec2(settings.scale),
-  ).to_json()
-}
-
-///|
-fn encode_bloom2d(bloom2d : Bloom2d) -> Json {
-  (
-    bloom2d.source.map(fn(source) { encode_image_handle(source) }),
-    bloom2d.enabled,
-    encode_bloom_settings(bloom2d.settings),
-  ).to_json()
 }
 
 ///|
@@ -735,62 +692,6 @@ fn decode_render_target(json : Json) -> RenderTarget {
 }
 
 ///|
-fn decode_bloom_prefilter(json : Json) -> BloomPrefilter {
-  let (threshold, threshold_softness) : (Float, Float) = try! @json.from_json(
-    json,
-  )
-  BloomPrefilter::{ threshold, threshold_softness }
-}
-
-///|
-fn decode_bloom_composite_mode(json : Json) -> BloomCompositeMode {
-  let tag : Int = try! @json.from_json(json)
-  match tag {
-    0 => EnergyConserving
-    1 => Additive
-    _ => EnergyConserving
-  }
-}
-
-///|
-fn decode_bloom_settings(json : Json) -> Bloom2dSettings {
-  let (
-    intensity,
-    low_frequency_boost,
-    low_frequency_boost_curvature,
-    high_pass_frequency,
-    prefilter_json,
-    composite_mode_json,
-    max_mip_dimension,
-    scale_json,
-  ) : (Float, Float, Float, Float, Json, Json, Int, Json) = try! @json.from_json(
-    json,
-  )
-  Bloom2dSettings::{
-    intensity,
-    low_frequency_boost,
-    low_frequency_boost_curvature,
-    high_pass_frequency,
-    prefilter: decode_bloom_prefilter(prefilter_json),
-    composite_mode: decode_bloom_composite_mode(composite_mode_json),
-    max_mip_dimension,
-    scale: decode_vec2(scale_json),
-  }
-}
-
-///|
-fn decode_bloom2d(json : Json) -> Bloom2d {
-  let (source_json, enabled, settings_json) : (Json?, Bool, Json) = try! @json.from_json(
-    json,
-  )
-  Bloom2d::{
-    source: source_json.map(fn(value) { decode_image_handle(value) }),
-    enabled,
-    settings: decode_bloom_settings(settings_json),
-  }
-}
-
-///|
 fn decode_mesh2d(json : Json) -> Mesh2d {
   Mesh2d::new(decode_mesh_handle(json))
 }
@@ -920,16 +821,6 @@ pub impl ToJson for RenderTarget with to_json(self) {
 ///|
 pub impl @json.FromJson for RenderTarget with from_json(json, _path) {
   decode_render_target(json)
-}
-
-///|
-pub impl ToJson for Bloom2d with to_json(self) {
-  encode_bloom2d(self)
-}
-
-///|
-pub impl @json.FromJson for Bloom2d with from_json(json, _path) {
-  decode_bloom2d(json)
 }
 
 ///|

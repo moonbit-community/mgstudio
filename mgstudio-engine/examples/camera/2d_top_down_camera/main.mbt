@@ -103,7 +103,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
       @sprite.Camera::default(),
       @math.Transform::identity(),
     )
-    .with_bloom2d(@sprite.Bloom2d::new())
+    .with_bloom(Some(@sprite.Bloom::default()))
     .spawn(world)
   top_down_camera_state.val.camera = camera
 }
