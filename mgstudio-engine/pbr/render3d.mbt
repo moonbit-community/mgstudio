@@ -2995,7 +2995,7 @@ fn render3d_draw_camera_effect_stack_stage(
     vignette_color_b,
     vignette_color_a,
   ) = render3d_vignette_postprocess_values(vignette)
-  @render.host_gpu_draw_effect_stack3d(
+  @render.host_gpu_draw_effect_stack(
     scene_texture_id~,
     chromatic_aberration_intensity~,
     chromatic_aberration_max_samples~,
@@ -3084,7 +3084,7 @@ fn render3d_draw_camera_fxaa_stage(
   if fxaa_enabled == 0 {
     return
   }
-  @render.host_gpu_draw_fxaa3d(
+  @render.host_gpu_draw_fxaa(
     scene_texture_id~,
     fxaa_enabled~,
     fxaa_edge_threshold_mode~,

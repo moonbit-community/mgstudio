@@ -92,9 +92,9 @@ pub fn create_surface(Int) -> Int
 
 pub fn debug_string(value~ : String) -> Unit
 
-pub fn draw_effect_stack3d(scene_texture_id~ : Int, chromatic_aberration_intensity~ : Float, chromatic_aberration_max_samples~ : Int, vignette_intensity~ : Float, vignette_radius~ : Float, vignette_smoothness~ : Float, vignette_roundness~ : Float, vignette_center_x~ : Float, vignette_center_y~ : Float, vignette_edge_compensation~ : Float, vignette_color_r~ : Float, vignette_color_g~ : Float, vignette_color_b~ : Float, vignette_color_a~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
+pub fn draw_effect_stack(scene_texture_id~ : Int, chromatic_aberration_intensity~ : Float, chromatic_aberration_max_samples~ : Int, vignette_intensity~ : Float, vignette_radius~ : Float, vignette_smoothness~ : Float, vignette_roundness~ : Float, vignette_center_x~ : Float, vignette_center_y~ : Float, vignette_edge_compensation~ : Float, vignette_color_r~ : Float, vignette_color_g~ : Float, vignette_color_b~ : Float, vignette_color_a~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
 
-pub fn draw_fxaa3d(scene_texture_id~ : Int, fxaa_enabled~ : Int, fxaa_edge_threshold_mode~ : Int, fxaa_edge_threshold_min_mode~ : Int, view_width~ : Int, view_height~ : Int) -> Unit
+pub fn draw_fxaa(scene_texture_id~ : Int, fxaa_enabled~ : Int, fxaa_edge_threshold_mode~ : Int, fxaa_edge_threshold_min_mode~ : Int, view_width~ : Int, view_height~ : Int) -> Unit
 
 pub fn draw_gizmo_line(start_x~ : Float, start_y~ : Float, start_r~ : Float, start_g~ : Float, start_b~ : Float, start_a~ : Float, end_x~ : Float, end_y~ : Float, end_r~ : Float, end_g~ : Float, end_b~ : Float, end_a~ : Float, line_width~ : Float, style_kind~ : Int, gap_scale~ : Float, line_scale~ : Float) -> Unit
 
@@ -297,26 +297,26 @@ pub struct GpuBackend {
   mut motion_blur_pipeline_surface_format : @wgpu_mbt.TextureFormat?
   mut motion_blur_settings_buf : @wgpu_mbt.Buffer?
   mut motion_blur_globals_buf : @wgpu_mbt.Buffer?
-  mut effect_stack3d_bgl : @wgpu_mbt.BindGroupLayout?
-  mut effect_stack3d_pipeline_layout : @wgpu_mbt.PipelineLayout?
-  mut effect_stack3d_pipeline : @wgpu_mbt.RenderPipeline?
-  mut effect_stack3d_pipeline_surface : @wgpu_mbt.RenderPipeline?
-  mut effect_stack3d_pipeline_surface_format : @wgpu_mbt.TextureFormat?
-  mut effect_stack3d_sampler : @wgpu_mbt.Sampler?
-  mut effect_stack3d_lut_sampler : @wgpu_mbt.Sampler?
-  mut effect_stack3d_chromatic_settings_buf : @wgpu_mbt.Buffer?
-  mut effect_stack3d_vignette_settings_buf : @wgpu_mbt.Buffer?
-  mut effect_stack3d_default_lut_texture_id : Int
-  mut fxaa3d_bgl : @wgpu_mbt.BindGroupLayout?
-  mut fxaa3d_pipeline_layout : @wgpu_mbt.PipelineLayout?
-  mut fxaa3d_pipeline : @wgpu_mbt.RenderPipeline?
-  mut fxaa3d_pipeline_surface : @wgpu_mbt.RenderPipeline?
-  mut fxaa3d_pipeline_surface_format : @wgpu_mbt.TextureFormat?
-  mut fxaa3d_pipeline_edge_threshold_mode : Int
-  mut fxaa3d_pipeline_edge_threshold_min_mode : Int
-  mut fxaa3d_pipeline_surface_edge_threshold_mode : Int
-  mut fxaa3d_pipeline_surface_edge_threshold_min_mode : Int
-  mut fxaa3d_sampler : @wgpu_mbt.Sampler?
+  mut effect_stack_bgl : @wgpu_mbt.BindGroupLayout?
+  mut effect_stack_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut effect_stack_pipeline : @wgpu_mbt.RenderPipeline?
+  mut effect_stack_pipeline_surface : @wgpu_mbt.RenderPipeline?
+  mut effect_stack_pipeline_surface_format : @wgpu_mbt.TextureFormat?
+  mut effect_stack_sampler : @wgpu_mbt.Sampler?
+  mut effect_stack_lut_sampler : @wgpu_mbt.Sampler?
+  mut effect_stack_chromatic_settings_buf : @wgpu_mbt.Buffer?
+  mut effect_stack_vignette_settings_buf : @wgpu_mbt.Buffer?
+  mut effect_stack_default_lut_texture_id : Int
+  mut fxaa_bgl : @wgpu_mbt.BindGroupLayout?
+  mut fxaa_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut fxaa_pipeline : @wgpu_mbt.RenderPipeline?
+  mut fxaa_pipeline_surface : @wgpu_mbt.RenderPipeline?
+  mut fxaa_pipeline_surface_format : @wgpu_mbt.TextureFormat?
+  mut fxaa_pipeline_edge_threshold_mode : Int
+  mut fxaa_pipeline_edge_threshold_min_mode : Int
+  mut fxaa_pipeline_surface_edge_threshold_mode : Int
+  mut fxaa_pipeline_surface_edge_threshold_min_mode : Int
+  mut fxaa_sampler : @wgpu_mbt.Sampler?
   mut bloom2d_intermediate_bgl : @wgpu_mbt.BindGroupLayout?
   mut bloom2d_intermediate_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut tonemapping2d_bgl : @wgpu_mbt.BindGroupLayout?
@@ -394,8 +394,8 @@ pub fn GpuBackend::create_texture_3d_with_format(Self, Int, Int, Int, UInt, Arra
 pub fn GpuBackend::create_texture_mip_view(Self, Int, Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_stacked_2d_with_format(Self, Int, Int, Int, UInt, Array[Bytes], Bool) -> Int raise GpuBackendError
-pub fn GpuBackend::draw_effect_stack3d(Self, Int, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
-pub fn GpuBackend::draw_fxaa3d(Self, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_effect_stack(Self, Int, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_fxaa(Self, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Int, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh3d(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_motion_blur(Self, Int, Int, Float, Int) -> Unit raise GpuBackendError

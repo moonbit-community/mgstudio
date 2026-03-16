@@ -427,26 +427,26 @@ pub struct GpuBackend {
   mut motion_blur_pipeline_surface_format : @wgpu.TextureFormat?
   mut motion_blur_settings_buf : @wgpu.Buffer?
   mut motion_blur_globals_buf : @wgpu.Buffer?
-  mut effect_stack3d_bgl : @wgpu.BindGroupLayout?
-  mut effect_stack3d_pipeline_layout : @wgpu.PipelineLayout?
-  mut effect_stack3d_pipeline : @wgpu.RenderPipeline?
-  mut effect_stack3d_pipeline_surface : @wgpu.RenderPipeline?
-  mut effect_stack3d_pipeline_surface_format : @wgpu.TextureFormat?
-  mut effect_stack3d_sampler : @wgpu.Sampler?
-  mut effect_stack3d_lut_sampler : @wgpu.Sampler?
-  mut effect_stack3d_chromatic_settings_buf : @wgpu.Buffer?
-  mut effect_stack3d_vignette_settings_buf : @wgpu.Buffer?
-  mut effect_stack3d_default_lut_texture_id : Int
-  mut fxaa3d_bgl : @wgpu.BindGroupLayout?
-  mut fxaa3d_pipeline_layout : @wgpu.PipelineLayout?
-  mut fxaa3d_pipeline : @wgpu.RenderPipeline?
-  mut fxaa3d_pipeline_surface : @wgpu.RenderPipeline?
-  mut fxaa3d_pipeline_surface_format : @wgpu.TextureFormat?
-  mut fxaa3d_pipeline_edge_threshold_mode : Int
-  mut fxaa3d_pipeline_edge_threshold_min_mode : Int
-  mut fxaa3d_pipeline_surface_edge_threshold_mode : Int
-  mut fxaa3d_pipeline_surface_edge_threshold_min_mode : Int
-  mut fxaa3d_sampler : @wgpu.Sampler?
+  mut effect_stack_bgl : @wgpu.BindGroupLayout?
+  mut effect_stack_pipeline_layout : @wgpu.PipelineLayout?
+  mut effect_stack_pipeline : @wgpu.RenderPipeline?
+  mut effect_stack_pipeline_surface : @wgpu.RenderPipeline?
+  mut effect_stack_pipeline_surface_format : @wgpu.TextureFormat?
+  mut effect_stack_sampler : @wgpu.Sampler?
+  mut effect_stack_lut_sampler : @wgpu.Sampler?
+  mut effect_stack_chromatic_settings_buf : @wgpu.Buffer?
+  mut effect_stack_vignette_settings_buf : @wgpu.Buffer?
+  mut effect_stack_default_lut_texture_id : Int
+  mut fxaa_bgl : @wgpu.BindGroupLayout?
+  mut fxaa_pipeline_layout : @wgpu.PipelineLayout?
+  mut fxaa_pipeline : @wgpu.RenderPipeline?
+  mut fxaa_pipeline_surface : @wgpu.RenderPipeline?
+  mut fxaa_pipeline_surface_format : @wgpu.TextureFormat?
+  mut fxaa_pipeline_edge_threshold_mode : Int
+  mut fxaa_pipeline_edge_threshold_min_mode : Int
+  mut fxaa_pipeline_surface_edge_threshold_mode : Int
+  mut fxaa_pipeline_surface_edge_threshold_min_mode : Int
+  mut fxaa_sampler : @wgpu.Sampler?
   mut bloom2d_intermediate_bgl : @wgpu.BindGroupLayout?
   mut bloom2d_intermediate_pipeline_layout : @wgpu.PipelineLayout?
   mut tonemapping2d_bgl : @wgpu.BindGroupLayout?
@@ -786,26 +786,26 @@ pub fn GpuBackend::new(
     motion_blur_pipeline_surface_format: None,
     motion_blur_settings_buf: None,
     motion_blur_globals_buf: None,
-    effect_stack3d_bgl: None,
-    effect_stack3d_pipeline_layout: None,
-    effect_stack3d_pipeline: None,
-    effect_stack3d_pipeline_surface: None,
-    effect_stack3d_pipeline_surface_format: None,
-    effect_stack3d_sampler: None,
-    effect_stack3d_lut_sampler: None,
-    effect_stack3d_chromatic_settings_buf: None,
-    effect_stack3d_vignette_settings_buf: None,
-    effect_stack3d_default_lut_texture_id: -1,
-    fxaa3d_bgl: None,
-    fxaa3d_pipeline_layout: None,
-    fxaa3d_pipeline: None,
-    fxaa3d_pipeline_surface: None,
-    fxaa3d_pipeline_surface_format: None,
-    fxaa3d_pipeline_edge_threshold_mode: -1,
-    fxaa3d_pipeline_edge_threshold_min_mode: -1,
-    fxaa3d_pipeline_surface_edge_threshold_mode: -1,
-    fxaa3d_pipeline_surface_edge_threshold_min_mode: -1,
-    fxaa3d_sampler: None,
+    effect_stack_bgl: None,
+    effect_stack_pipeline_layout: None,
+    effect_stack_pipeline: None,
+    effect_stack_pipeline_surface: None,
+    effect_stack_pipeline_surface_format: None,
+    effect_stack_sampler: None,
+    effect_stack_lut_sampler: None,
+    effect_stack_chromatic_settings_buf: None,
+    effect_stack_vignette_settings_buf: None,
+    effect_stack_default_lut_texture_id: -1,
+    fxaa_bgl: None,
+    fxaa_pipeline_layout: None,
+    fxaa_pipeline: None,
+    fxaa_pipeline_surface: None,
+    fxaa_pipeline_surface_format: None,
+    fxaa_pipeline_edge_threshold_mode: -1,
+    fxaa_pipeline_edge_threshold_min_mode: -1,
+    fxaa_pipeline_surface_edge_threshold_mode: -1,
+    fxaa_pipeline_surface_edge_threshold_min_mode: -1,
+    fxaa_sampler: None,
     bloom2d_intermediate_bgl: None,
     bloom2d_intermediate_pipeline_layout: None,
     tonemapping2d_bgl: None,

@@ -13,45 +13,45 @@
 // limitations under the License.
 
 ///|
-const FXAA3D_SENSITIVITY_LOW : Int = 0
+const FXAA_SENSITIVITY_LOW : Int = 0
 
 ///|
-const FXAA3D_SENSITIVITY_MEDIUM : Int = 1
+const FXAA_SENSITIVITY_MEDIUM : Int = 1
 
 ///|
-const FXAA3D_SENSITIVITY_HIGH : Int = 2
+const FXAA_SENSITIVITY_HIGH : Int = 2
 
 ///|
-const FXAA3D_SENSITIVITY_ULTRA : Int = 3
+const FXAA_SENSITIVITY_ULTRA : Int = 3
 
 ///|
-const FXAA3D_SENSITIVITY_EXTREME : Int = 4
+const FXAA_SENSITIVITY_EXTREME : Int = 4
 
 ///|
-fn fxaa3d_sensitivity_mode_clamped(mode : Int) -> Int {
-  if mode < FXAA3D_SENSITIVITY_LOW {
-    FXAA3D_SENSITIVITY_LOW
-  } else if mode > FXAA3D_SENSITIVITY_EXTREME {
-    FXAA3D_SENSITIVITY_EXTREME
+fn fxaa_sensitivity_mode_clamped(mode : Int) -> Int {
+  if mode < FXAA_SENSITIVITY_LOW {
+    FXAA_SENSITIVITY_LOW
+  } else if mode > FXAA_SENSITIVITY_EXTREME {
+    FXAA_SENSITIVITY_EXTREME
   } else {
     mode
   }
 }
 
 ///|
-fn fxaa3d_sensitivity_define_suffix(mode : Int) -> String {
-  match fxaa3d_sensitivity_mode_clamped(mode) {
-    FXAA3D_SENSITIVITY_LOW => "LOW"
-    FXAA3D_SENSITIVITY_MEDIUM => "MEDIUM"
-    FXAA3D_SENSITIVITY_HIGH => "HIGH"
-    FXAA3D_SENSITIVITY_ULTRA => "ULTRA"
+fn fxaa_sensitivity_define_suffix(mode : Int) -> String {
+  match fxaa_sensitivity_mode_clamped(mode) {
+    FXAA_SENSITIVITY_LOW => "LOW"
+    FXAA_SENSITIVITY_MEDIUM => "MEDIUM"
+    FXAA_SENSITIVITY_HIGH => "HIGH"
+    FXAA_SENSITIVITY_ULTRA => "ULTRA"
     _ => "EXTREME"
   }
 }
 
 ///|
-fn ensure_fxaa3d_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
-  if backend.fxaa3d_bgl is None {
+fn ensure_fxaa_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
+  if backend.fxaa_bgl is None {
     let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
     let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=2UL)
     let ok = builder.add_texture(
@@ -63,46 +63,46 @@ fn ensure_fxaa3d_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
       builder.add_sampler(1U, frag, @wgpu.SAMPLER_BINDING_TYPE_FILTERING)
     if !ok {
       builder.free()
-      fatal("wgpu: failed to build fxaa3d bind group layout")
+      fatal("wgpu: failed to build fxaa bind group layout")
     }
-    let bgl = builder.finish(backend.device, label="mgstudio_fxaa3d_bgl")
+    let bgl = builder.finish(backend.device, label="mgstudio_fxaa_bgl")
     let pipeline_layout = backend.device.create_pipeline_layout_1(bgl)
-    pipeline_layout.set_label("mgstudio_fxaa3d_pipeline_layout")
-    backend.fxaa3d_bgl = Some(bgl)
-    backend.fxaa3d_pipeline_layout = Some(pipeline_layout)
+    pipeline_layout.set_label("mgstudio_fxaa_pipeline_layout")
+    backend.fxaa_bgl = Some(bgl)
+    backend.fxaa_pipeline_layout = Some(pipeline_layout)
   }
-  if backend.fxaa3d_sampler is None {
-    backend.fxaa3d_sampler = Some(backend.device.create_sampler_linear_clamp())
+  if backend.fxaa_sampler is None {
+    backend.fxaa_sampler = Some(backend.device.create_sampler_linear_clamp())
   }
 }
 
 ///|
-fn ensure_fxaa3d_pipeline_rgba8(
+fn ensure_fxaa_pipeline_rgba8(
   backend : GpuBackend,
   edge_threshold_mode : Int,
   edge_threshold_min_mode : Int,
 ) -> Unit raise GpuBackendError {
-  ensure_fxaa3d_layouts(backend)
-  let safe_edge_threshold_mode = fxaa3d_sensitivity_mode_clamped(
+  ensure_fxaa_layouts(backend)
+  let safe_edge_threshold_mode = fxaa_sensitivity_mode_clamped(
     edge_threshold_mode,
   )
-  let safe_edge_threshold_min_mode = fxaa3d_sensitivity_mode_clamped(
+  let safe_edge_threshold_min_mode = fxaa_sensitivity_mode_clamped(
     edge_threshold_min_mode,
   )
-  if backend.fxaa3d_pipeline is Some(_) &&
-    backend.fxaa3d_pipeline_edge_threshold_mode == safe_edge_threshold_mode &&
-    backend.fxaa3d_pipeline_edge_threshold_min_mode ==
+  if backend.fxaa_pipeline is Some(_) &&
+    backend.fxaa_pipeline_edge_threshold_mode == safe_edge_threshold_mode &&
+    backend.fxaa_pipeline_edge_threshold_min_mode ==
     safe_edge_threshold_min_mode {
     return
   }
-  if backend.fxaa3d_pipeline is Some(old) {
+  if backend.fxaa_pipeline is Some(old) {
     old.release()
   }
-  guard backend.fxaa3d_pipeline_layout is Some(pipeline_layout) else { return }
+  guard backend.fxaa_pipeline_layout is Some(pipeline_layout) else { return }
   let define_keys = [
-    "EDGE_THRESH_" + fxaa3d_sensitivity_define_suffix(safe_edge_threshold_mode),
+    "EDGE_THRESH_" + fxaa_sensitivity_define_suffix(safe_edge_threshold_mode),
     "EDGE_THRESH_MIN_" +
-    fxaa3d_sensitivity_define_suffix(safe_edge_threshold_min_mode),
+    fxaa_sensitivity_define_suffix(safe_edge_threshold_min_mode),
   ]
   let source = load_wgsl_with_defines_required(
     backend, "shaders/bevy/bevy_anti_alias/fxaa/fxaa.wgsl", define_keys,
@@ -114,44 +114,44 @@ fn ensure_fxaa3d_pipeline_rgba8(
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     "fragment",
     POSTPROCESS_BLEND_MODE_NONE,
-    "mgstudio_fxaa3d_rgba8",
+    "mgstudio_fxaa_rgba8",
   )
-  backend.fxaa3d_pipeline = Some(pipeline)
-  backend.fxaa3d_pipeline_edge_threshold_mode = safe_edge_threshold_mode
-  backend.fxaa3d_pipeline_edge_threshold_min_mode = safe_edge_threshold_min_mode
+  backend.fxaa_pipeline = Some(pipeline)
+  backend.fxaa_pipeline_edge_threshold_mode = safe_edge_threshold_mode
+  backend.fxaa_pipeline_edge_threshold_min_mode = safe_edge_threshold_min_mode
 }
 
 ///|
-fn ensure_fxaa3d_pipeline_surface(
+fn ensure_fxaa_pipeline_surface(
   backend : GpuBackend,
   format : @wgpu.TextureFormat,
   edge_threshold_mode : Int,
   edge_threshold_min_mode : Int,
 ) -> Unit raise GpuBackendError {
-  ensure_fxaa3d_layouts(backend)
-  let safe_edge_threshold_mode = fxaa3d_sensitivity_mode_clamped(
+  ensure_fxaa_layouts(backend)
+  let safe_edge_threshold_mode = fxaa_sensitivity_mode_clamped(
     edge_threshold_mode,
   )
-  let safe_edge_threshold_min_mode = fxaa3d_sensitivity_mode_clamped(
+  let safe_edge_threshold_min_mode = fxaa_sensitivity_mode_clamped(
     edge_threshold_min_mode,
   )
-  if backend.fxaa3d_pipeline_surface is Some(_) &&
-    backend.fxaa3d_pipeline_surface_format is Some(prev_format) &&
+  if backend.fxaa_pipeline_surface is Some(_) &&
+    backend.fxaa_pipeline_surface_format is Some(prev_format) &&
     prev_format == format &&
-    backend.fxaa3d_pipeline_surface_edge_threshold_mode ==
+    backend.fxaa_pipeline_surface_edge_threshold_mode ==
     safe_edge_threshold_mode &&
-    backend.fxaa3d_pipeline_surface_edge_threshold_min_mode ==
+    backend.fxaa_pipeline_surface_edge_threshold_min_mode ==
     safe_edge_threshold_min_mode {
     return
   }
-  if backend.fxaa3d_pipeline_surface is Some(old) {
+  if backend.fxaa_pipeline_surface is Some(old) {
     old.release()
   }
-  guard backend.fxaa3d_pipeline_layout is Some(pipeline_layout) else { return }
+  guard backend.fxaa_pipeline_layout is Some(pipeline_layout) else { return }
   let define_keys = [
-    "EDGE_THRESH_" + fxaa3d_sensitivity_define_suffix(safe_edge_threshold_mode),
+    "EDGE_THRESH_" + fxaa_sensitivity_define_suffix(safe_edge_threshold_mode),
     "EDGE_THRESH_MIN_" +
-    fxaa3d_sensitivity_define_suffix(safe_edge_threshold_min_mode),
+    fxaa_sensitivity_define_suffix(safe_edge_threshold_min_mode),
   ]
   let source = load_wgsl_with_defines_required(
     backend, "shaders/bevy/bevy_anti_alias/fxaa/fxaa.wgsl", define_keys,
@@ -163,46 +163,46 @@ fn ensure_fxaa3d_pipeline_surface(
     format,
     "fragment",
     POSTPROCESS_BLEND_MODE_NONE,
-    "mgstudio_fxaa3d_surface",
+    "mgstudio_fxaa_surface",
   )
-  backend.fxaa3d_pipeline_surface = Some(pipeline)
-  backend.fxaa3d_pipeline_surface_format = Some(format)
-  backend.fxaa3d_pipeline_surface_edge_threshold_mode = safe_edge_threshold_mode
-  backend.fxaa3d_pipeline_surface_edge_threshold_min_mode = safe_edge_threshold_min_mode
+  backend.fxaa_pipeline_surface = Some(pipeline)
+  backend.fxaa_pipeline_surface_format = Some(format)
+  backend.fxaa_pipeline_surface_edge_threshold_mode = safe_edge_threshold_mode
+  backend.fxaa_pipeline_surface_edge_threshold_min_mode = safe_edge_threshold_min_mode
 }
 
 ///|
-fn fxaa3d_pipeline_for_current_pass(
+fn fxaa_pipeline_for_current_pass(
   backend : GpuBackend,
   edge_threshold_mode : Int,
   edge_threshold_min_mode : Int,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
-  let safe_edge_threshold_mode = fxaa3d_sensitivity_mode_clamped(
+  let safe_edge_threshold_mode = fxaa_sensitivity_mode_clamped(
     edge_threshold_mode,
   )
-  let safe_edge_threshold_min_mode = fxaa3d_sensitivity_mode_clamped(
+  let safe_edge_threshold_min_mode = fxaa_sensitivity_mode_clamped(
     edge_threshold_min_mode,
   )
   if current_pass_color_format(backend) is Some(format) {
     if format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
-      ensure_fxaa3d_pipeline_rgba8(
+      ensure_fxaa_pipeline_rgba8(
         backend, safe_edge_threshold_mode, safe_edge_threshold_min_mode,
       )
-      return backend.fxaa3d_pipeline
+      return backend.fxaa_pipeline
     }
-    ensure_fxaa3d_pipeline_surface(
+    ensure_fxaa_pipeline_surface(
       backend, format, safe_edge_threshold_mode, safe_edge_threshold_min_mode,
     )
-    return backend.fxaa3d_pipeline_surface
+    return backend.fxaa_pipeline_surface
   }
-  ensure_fxaa3d_pipeline_rgba8(
+  ensure_fxaa_pipeline_rgba8(
     backend, safe_edge_threshold_mode, safe_edge_threshold_min_mode,
   )
-  backend.fxaa3d_pipeline
+  backend.fxaa_pipeline
 }
 
 ///|
-pub fn GpuBackend::draw_fxaa3d(
+pub fn GpuBackend::draw_fxaa(
   self : GpuBackend,
   scene_texture_id : Int,
   fxaa_enabled : Int,
@@ -223,14 +223,14 @@ pub fn GpuBackend::draw_fxaa3d(
   flush_ui_batches(self)
   flush_sprite_batches(self)
   guard self.pass_state is Some(pass_state) else { return }
-  guard fxaa3d_pipeline_for_current_pass(
+  guard fxaa_pipeline_for_current_pass(
       self, fxaa_edge_threshold_mode, fxaa_edge_threshold_min_mode,
     )
     is Some(pipeline) else {
     return
   }
-  guard self.fxaa3d_bgl is Some(bind_layout) else { return }
-  guard self.fxaa3d_sampler is Some(sampler) else { return }
+  guard self.fxaa_bgl is Some(bind_layout) else { return }
+  guard self.fxaa_sampler is Some(sampler) else { return }
   guard find_texture(self, scene_texture_id) is Some(scene_texture) else {
     return
   }
@@ -246,7 +246,7 @@ pub fn GpuBackend::draw_fxaa3d(
       let bind_group = builder.finish(
         self.device,
         bind_layout,
-        label="mgstudio_fxaa3d_bg",
+        label="mgstudio_fxaa_bg",
       )
       let render_pass = frame.encoder.begin_render_pass_color_load(dst_view)
       render_pass.set_viewport(
@@ -277,7 +277,7 @@ pub fn GpuBackend::draw_fxaa3d(
 }
 
 ///|
-pub fn draw_fxaa3d(
+pub fn draw_fxaa(
   scene_texture_id~ : Int,
   fxaa_enabled~ : Int,
   fxaa_edge_threshold_mode~ : Int,
@@ -286,11 +286,11 @@ pub fn draw_fxaa3d(
   view_height~ : Int,
 ) -> Unit {
   if ensure_backend() is Some(backend) {
-    backend.draw_fxaa3d(
+    backend.draw_fxaa(
       scene_texture_id, fxaa_enabled, fxaa_edge_threshold_mode, fxaa_edge_threshold_min_mode,
       view_width, view_height,
     ) catch {
-      err => debug_runtime_error("draw_fxaa3d", err)
+      err => debug_runtime_error("draw_fxaa", err)
     }
   }
 }

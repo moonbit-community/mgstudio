@@ -1383,7 +1383,7 @@ pub fn host_gpu_draw_tonemapping3d(
 }
 
 ///|
-pub fn host_gpu_draw_effect_stack3d(
+pub fn host_gpu_draw_effect_stack(
   scene_texture_id~ : Int,
   chromatic_aberration_intensity~ : Float,
   chromatic_aberration_max_samples~ : Int,
@@ -1401,7 +1401,7 @@ pub fn host_gpu_draw_effect_stack3d(
   view_width~ : Int,
   view_height~ : Int,
 ) -> Unit {
-  @renderer.draw_effect_stack3d(
+  @renderer.draw_effect_stack(
     scene_texture_id~,
     chromatic_aberration_intensity~,
     chromatic_aberration_max_samples~,
@@ -1422,7 +1422,7 @@ pub fn host_gpu_draw_effect_stack3d(
 }
 
 ///|
-pub fn host_gpu_draw_fxaa3d(
+pub fn host_gpu_draw_fxaa(
   scene_texture_id~ : Int,
   fxaa_enabled~ : Int,
   fxaa_edge_threshold_mode~ : Int,
@@ -1430,7 +1430,7 @@ pub fn host_gpu_draw_fxaa3d(
   view_width~ : Int,
   view_height~ : Int,
 ) -> Unit {
-  @renderer.draw_fxaa3d(
+  @renderer.draw_fxaa(
     scene_texture_id~,
     fxaa_enabled~,
     fxaa_edge_threshold_mode~,
