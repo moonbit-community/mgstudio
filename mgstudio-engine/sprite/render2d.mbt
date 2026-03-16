@@ -7598,13 +7598,14 @@ fn color_material_prepared_handle(
 }
 
 ///|
-fn draw_color_material_mesh_item(
+fn[M] draw_material2d_mesh_item(
   mesh : Mesh2dDrawPayload,
-  prepared_assets : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
+  prepared_assets : @asset.Assets[PreparedMaterial2d[M]],
+  material_handle_of : (Mesh2dDrawPayload) -> @asset.Handle[
+    PreparedMaterial2d[M],
+  ]?,
 ) -> Unit {
-  guard color_material_prepared_handle(mesh) is Some(material_handle) else {
-    return
-  }
+  guard material_handle_of(mesh) is Some(material_handle) else { return }
   guard prepared_material2d_get(prepared_assets, material_handle)
     is Some(material) else {
     return
@@ -7635,6 +7636,16 @@ fn draw_color_material_mesh_item(
 }
 
 ///|
+fn draw_color_material_mesh_item(
+  mesh : Mesh2dDrawPayload,
+  prepared_assets : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
+) -> Unit {
+  draw_material2d_mesh_item(
+    mesh, prepared_assets, color_material_prepared_handle,
+  )
+}
+
+///|
 priv enum DrawKind {
   SpriteMain(Int)
   SpriteExtra(Int)
@@ -7657,6 +7668,40 @@ priv struct DrawItem {
 }
 
 ///|
+fn[M] draw_material2d_items_for_layers(
+  sprites : Array[ExtractedSprite],
+  extra_sprites : Array[ExtractedSprite],
+  extra_sprite_texture_slices : Array[ExtractedSpriteTextureSlice],
+  extra_ui_rects : Array[ExtractedUiRect],
+  extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
+  extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
+  meshes : Array[ExtractedMesh2d],
+  prepared_materials : @asset.Assets[PreparedMaterial2d[M]],
+  camera_entity : @core.Entity,
+  layers : RenderLayers,
+  material_handle_of : (Mesh2dDrawPayload) -> @asset.Handle[
+    PreparedMaterial2d[M],
+  ]?,
+) -> Array[DrawItem] {
+  let items : Array[DrawItem] = []
+  for
+    item in draw_material2d_scene_items_for_layers(
+      sprites, extra_sprites, extra_sprite_texture_slices, meshes, prepared_materials,
+      layers, material_handle_of,
+    ) {
+    items.push(item)
+  }
+  for
+    item in draw_ui_overlay_items_for_layers(
+      extra_ui_rects, extra_ui_box_shadows, extra_ui_texture_slices, camera_entity,
+      layers,
+    ) {
+    items.push(item)
+  }
+  sort_draw_items(items)
+}
+
+///|
 fn draw_items_for_layers(
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
@@ -7669,22 +7714,10 @@ fn draw_items_for_layers(
   camera_entity : @core.Entity,
   layers : RenderLayers,
 ) -> Array[DrawItem] {
-  let items : Array[DrawItem] = []
-  for
-    item in draw_scene_items_for_layers(
-      sprites, extra_sprites, extra_sprite_texture_slices, meshes, prepared_materials,
-      layers,
-    ) {
-    items.push(item)
-  }
-  for
-    item in draw_ui_overlay_items_for_layers(
-      extra_ui_rects, extra_ui_box_shadows, extra_ui_texture_slices, camera_entity,
-      layers,
-    ) {
-    items.push(item)
-  }
-  sort_draw_items(items)
+  draw_material2d_items_for_layers(
+    sprites, extra_sprites, extra_sprite_texture_slices, extra_ui_rects, extra_ui_box_shadows,
+    extra_ui_texture_slices, meshes, prepared_materials, camera_entity, layers, color_material_prepared_handle,
+  )
 }
 
 ///|
@@ -7708,20 +7741,23 @@ fn sort_draw_items(items : Array[DrawItem]) -> Array[DrawItem] {
 }
 
 ///|
-fn draw_scene_items_for_layers(
+fn[M] draw_material2d_scene_items_for_layers(
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
   extra_sprite_texture_slices : Array[ExtractedSpriteTextureSlice],
   meshes : Array[ExtractedMesh2d],
-  prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
+  prepared_materials : @asset.Assets[PreparedMaterial2d[M]],
   layers : RenderLayers,
+  material_handle_of : (Mesh2dDrawPayload) -> @asset.Handle[
+    PreparedMaterial2d[M],
+  ]?,
 ) -> Array[DrawItem] {
   let items : Array[DrawItem] = []
   let mut tie = 0
   // Align with Bevy queue structure: mesh phases are queued before sprite phases.
   // Transparent items are then sorted by z with stable insertion order.
   tie = append_material2d_mesh_draw_items(
-    items, meshes, prepared_materials, layers, tie, color_material_prepared_handle,
+    items, meshes, prepared_materials, layers, tie, material_handle_of,
   )
   for i in 0..<sprites.length() {
     let sprite = sprites[i]
@@ -7766,6 +7802,21 @@ fn draw_scene_items_for_layers(
     tie = tie + 1
   }
   sort_draw_items(items)
+}
+
+///|
+fn draw_scene_items_for_layers(
+  sprites : Array[ExtractedSprite],
+  extra_sprites : Array[ExtractedSprite],
+  extra_sprite_texture_slices : Array[ExtractedSpriteTextureSlice],
+  meshes : Array[ExtractedMesh2d],
+  prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
+  layers : RenderLayers,
+) -> Array[DrawItem] {
+  draw_material2d_scene_items_for_layers(
+    sprites, extra_sprites, extra_sprite_texture_slices, meshes, prepared_materials,
+    layers, color_material_prepared_handle,
+  )
 }
 
 ///|
