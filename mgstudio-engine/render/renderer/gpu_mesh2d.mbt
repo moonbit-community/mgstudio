@@ -64,7 +64,7 @@ fn ensure_mesh_pipeline_rgba8(
     return
   }
   let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/mgstudio/2d/mesh.wgsl",
+    backend, "shaders/bevy/mgstudio_runtime/2d/mesh.wgsl",
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let desc = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
@@ -103,7 +103,7 @@ fn ensure_mesh_pipeline_surface(
   }
   guard backend.mesh_pipeline_layout is Some(pl) else { return }
   let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/mgstudio/2d/mesh.wgsl",
+    backend, "shaders/bevy/mgstudio_runtime/2d/mesh.wgsl",
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let desc = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(

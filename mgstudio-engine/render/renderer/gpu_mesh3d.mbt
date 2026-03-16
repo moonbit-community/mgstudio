@@ -717,7 +717,7 @@ fn ensure_mesh3d_motion_vector_pipeline(
   }
   guard backend.mesh3d_motion_vector_pipeline_layout is Some(pl) else { return }
   let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/mgstudio/3d/motion_vector.wgsl",
+    backend, "shaders/bevy/mgstudio_runtime/3d/motion_vector.wgsl",
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let desc = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(

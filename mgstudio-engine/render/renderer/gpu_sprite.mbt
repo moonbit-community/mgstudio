@@ -13,66 +13,230 @@
 // limitations under the License.
 
 ///|
+const SPRITE_BEVY_VIEW_BUFFER_SIZE : UInt64 = 1024UL
+
+///|
+const SPRITE_BEVY_INSTANCE_STRIDE_BYTES : UInt64 = 80UL
+
+///|
 fn ensure_sprite_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
-  if backend.sprite_pipeline_layout is Some(_) {
-    return
+  if backend.sprite_pipeline_layout is None {
+    let b0 = @wgpu.BindGroupLayoutBuilder::new(max_entries=2UL)
+    let ok0 = b0.add_sampler(
+      0U,
+      ss(@wgpu.SHADER_STAGE_FRAGMENT),
+      @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
+    )
+    let ok1 = b0.add_texture(
+      1U,
+      ss(@wgpu.SHADER_STAGE_FRAGMENT),
+      @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    )
+    if !ok0 || !ok1 {
+      b0.free()
+      fatal(
+        "wgpu: failed to build sprite compatibility texture bind group layout",
+      )
+    }
+    let bgl_tex = b0.finish(backend.device, label="mgstudio_sprite_tex")
+    let b1 = @wgpu.BindGroupLayoutBuilder::new(max_entries=2UL)
+    let ok2 = b1.add_buffer(
+      0U,
+      ss(@wgpu.SHADER_STAGE_VERTEX),
+      @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+    )
+    let ok3 = b1.add_buffer(
+      1U,
+      ss(@wgpu.SHADER_STAGE_VERTEX),
+      @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+    )
+    if !ok2 || !ok3 {
+      b1.free()
+      fatal(
+        "wgpu: failed to build sprite compatibility globals bind group layout",
+      )
+    }
+    let bgl_globals = b1.finish(backend.device, label="mgstudio_sprite_globals")
+    let pl = backend.device.create_pipeline_layout_2(bgl_tex, bgl_globals)
+    let globals_usage = bu(
+      @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST,
+    )
+    let globals_buf = backend.device.create_buffer(
+      size=32UL,
+      usage=globals_usage,
+    )
+    backend.sprite_bgl_tex = Some(bgl_tex)
+    backend.sprite_bgl_globals = Some(bgl_globals)
+    backend.sprite_pipeline_layout = Some(pl)
+    backend.sprite_globals_buf = Some(globals_buf)
+    backend.sprite_globals_bg = None
   }
-  let b0 = @wgpu.BindGroupLayoutBuilder::new(max_entries=2UL)
-  let ok0 = b0.add_sampler(
-    0U,
-    ss(@wgpu.SHADER_STAGE_FRAGMENT),
-    @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
-  )
-  let ok1 = b0.add_texture(
-    1U,
-    ss(@wgpu.SHADER_STAGE_FRAGMENT),
-    @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-    @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-  )
-  if !ok0 || !ok1 {
-    b0.free()
-    return
+  if backend.sprite_instance_buf is None {
+    let instance_usage = bu(
+      @wgpu.BUFFER_USAGE_STORAGE |
+      @wgpu.BUFFER_USAGE_VERTEX |
+      @wgpu.BUFFER_USAGE_COPY_DST,
+    )
+    let instance_cap = 65536UL
+    let instance_buf = backend.device.create_buffer(
+      size=instance_cap,
+      usage=instance_usage,
+    )
+    backend.sprite_instance_buf = Some(instance_buf)
+    backend.sprite_instance_capacity = instance_cap
+    backend.sprite_instance_data.clear()
+    backend.sprite_batches.clear()
+    backend.sprite_instance_count = 0U
   }
-  let bgl_tex = b0.finish(backend.device, label="mgstudio_sprite_tex")
-  let b1 = @wgpu.BindGroupLayoutBuilder::new(max_entries=2UL)
-  let ok2 = b1.add_buffer(
-    0U,
-    ss(@wgpu.SHADER_STAGE_VERTEX),
-    @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
-  )
-  let ok3 = b1.add_buffer(
-    1U,
-    ss(@wgpu.SHADER_STAGE_VERTEX),
-    @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
-  )
-  if !ok2 || !ok3 {
-    b1.free()
-    fatal("wgpu: failed to build sprite bind group layout")
+  if backend.sprite_index_buf is None {
+    let index_usage = bu(@wgpu.BUFFER_USAGE_INDEX | @wgpu.BUFFER_USAGE_COPY_DST)
+    // Match Bevy sprite index pattern: [2, 0, 1, 1, 3, 2].
+    let index_buf = backend.device.create_buffer_init(
+      usage=index_usage,
+      u32le_pack([2U, 0U, 1U, 1U, 3U, 2U]),
+    )
+    backend.sprite_index_buf = Some(index_buf)
   }
-  let bgl_globals = b1.finish(backend.device, label="mgstudio_sprite_globals")
-  let pl = backend.device.create_pipeline_layout_2(bgl_tex, bgl_globals)
-  let globals_usage = bu(
-    @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST,
+  if backend.sprite_bevy_pipeline_layout is None {
+    let view_stage = ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT)
+    let fragment_stage = ss(@wgpu.SHADER_STAGE_FRAGMENT)
+    let view_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=3UL)
+    let view_ok = view_builder.add_buffer(
+        0U,
+        view_stage,
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+      ) &&
+      view_builder.add_texture(
+        1U,
+        fragment_stage,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_3D,
+      ) &&
+      view_builder.add_sampler(
+        2U,
+        fragment_stage,
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
+      )
+    if !view_ok {
+      view_builder.free()
+      fatal("wgpu: failed to build sprite bevy view bind group layout")
+    }
+    let bgl_view = view_builder.finish(
+      backend.device,
+      label="mgstudio_sprite_bevy_view_bgl",
+    )
+    let tex_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=2UL)
+    let tex_ok = tex_builder.add_texture(
+        0U,
+        fragment_stage,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      tex_builder.add_sampler(
+        1U,
+        fragment_stage,
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
+      )
+    if !tex_ok {
+      tex_builder.free()
+      fatal("wgpu: failed to build sprite bevy texture bind group layout")
+    }
+    let bgl_tex = tex_builder.finish(
+      backend.device,
+      label="mgstudio_sprite_bevy_tex_bgl",
+    )
+    let pipeline_layout = backend.device.create_pipeline_layout_2(
+      bgl_view, bgl_tex,
+    )
+    pipeline_layout.set_label("mgstudio_sprite_bevy_pipeline_layout")
+    let view_buf = backend.device.create_buffer(
+      size=SPRITE_BEVY_VIEW_BUFFER_SIZE,
+      usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+    )
+    let lut_texture = backend.device.create_texture_u32(
+      1U,
+      1U,
+      1U,
+      @wgpu.TextureUsage::from_u64(
+        @wgpu.TEXTURE_USAGE_TEXTURE_BINDING | @wgpu.TEXTURE_USAGE_COPY_DST,
+      ),
+      @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_3D),
+      tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    )
+    let lut_view = lut_texture.create_view_u32(
+      tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+      @wgpu.TEXTURE_VIEW_DIMENSION_3D,
+      @wgpu.TEXTURE_ASPECT_ALL,
+      0U,
+      1U,
+      0U,
+      1U,
+    )
+    lut_view.set_label("mgstudio_sprite_bevy_lut_view")
+    let lut_sampler = backend.device.create_sampler_linear_clamp()
+    let view_bg_builder = @wgpu.BindGroupBuilder::new(max_entries=3UL)
+    let view_bg_ok = view_bg_builder.add_buffer(0U, view_buf) &&
+      view_bg_builder.add_texture_view(1U, lut_view) &&
+      view_bg_builder.add_sampler(2U, lut_sampler)
+    if !view_bg_ok {
+      view_bg_builder.free()
+      fatal("wgpu: failed to build sprite bevy view bind group")
+    }
+    let view_bg = view_bg_builder.finish(
+      backend.device,
+      bgl_view,
+      label="mgstudio_sprite_bevy_view_bg",
+    )
+    backend.sprite_bevy_bgl_view = Some(bgl_view)
+    backend.sprite_bevy_bgl_tex = Some(bgl_tex)
+    backend.sprite_bevy_pipeline_layout = Some(pipeline_layout)
+    backend.sprite_bevy_view_buf = Some(view_buf)
+    backend.sprite_bevy_lut_texture = Some(lut_texture)
+    backend.sprite_bevy_lut_view = Some(lut_view)
+    backend.sprite_bevy_lut_sampler = Some(lut_sampler)
+    backend.sprite_bevy_view_bg = Some(view_bg)
+  }
+}
+
+///|
+fn create_sprite_bevy_pipeline(
+  backend : GpuBackend,
+  format : @wgpu.TextureFormat,
+  label : String,
+) -> @wgpu.RenderPipeline raise GpuBackendError {
+  guard backend.sprite_bevy_pipeline_layout is Some(layout) else {
+    fatal("wgpu: sprite bevy pipeline layout is None")
+  }
+  let wgsl = load_wgsl_from_assets_required(
+    backend, "shaders/bevy/bevy_sprite_render/render/sprite.wgsl",
   )
-  let globals_buf = backend.device.create_buffer(size=32UL, usage=globals_usage)
-  let instance_usage = bu(
-    @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST,
-  )
-  let instance_cap = 65536UL
-  let instance_buf = backend.device.create_buffer(
-    size=instance_cap,
-    usage=instance_usage,
-  )
-  backend.sprite_bgl_tex = Some(bgl_tex)
-  backend.sprite_bgl_globals = Some(bgl_globals)
-  backend.sprite_pipeline_layout = Some(pl)
-  backend.sprite_globals_buf = Some(globals_buf)
-  backend.sprite_instance_buf = Some(instance_buf)
-  backend.sprite_instance_capacity = instance_cap
-  backend.sprite_globals_bg = None
-  backend.sprite_instance_data.clear()
-  backend.sprite_batches.clear()
-  backend.sprite_instance_count = 0U
+  let sm = backend.device.create_shader_module_wgsl(wgsl)
+  let pipeline = try {
+    let builder = @wgpu.RenderPipelineDescBuilder::new(sm, layout~)
+    builder.set_entry_points("vertex", "fragment")
+    builder.set_color_target_format(format)
+    builder.enable_alpha_blend()
+    builder.set_vertex_buffer_layout(
+      SPRITE_BEVY_INSTANCE_STRIDE_BYTES,
+      @wgpu.VERTEX_STEP_MODE_INSTANCE,
+    )
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 0UL, 0U)
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 16UL, 1U)
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 32UL, 2U)
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 48UL, 3U)
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 64UL, 4U)
+    builder.create_pipeline(backend.device)
+  } catch {
+    err => {
+      err |> ignore
+      sm.release()
+      fatal("wgpu: failed to build sprite bevy render pipeline")
+    }
+  }
+  pipeline.set_label(label)
+  sm.release()
+  pipeline
 }
 
 ///|
@@ -83,21 +247,13 @@ fn ensure_sprite_pipeline_rgba8(
   if backend.sprite_pipeline is Some(_) {
     return
   }
-  guard backend.sprite_pipeline_layout is Some(pl) else { return }
-  let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/mgstudio/2d/sprite.wgsl",
+  backend.sprite_pipeline = Some(
+    create_sprite_bevy_pipeline(
+      backend,
+      tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+      "mgstudio_sprite_rgba8",
+    ),
   )
-  let sm = backend.device.create_shader_module_wgsl(wgsl)
-  let desc = @wgpu_c.render_pipeline_descriptor_color_format_alpha_blend_new(
-    pl.raw_handle(),
-    sm.raw_handle(),
-    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
-  )
-  let pipeline = backend.device.create_render_pipeline_ptr(desc)
-  @wgpu_c.render_pipeline_descriptor_free(desc)
-  pipeline.set_label("mgstudio_sprite_rgba8")
-  backend.sprite_pipeline = Some(pipeline)
-  sm.release()
 }
 
 ///|
@@ -117,22 +273,10 @@ fn ensure_sprite_pipeline_surface(
   if backend.sprite_pipeline_surface is Some(old) {
     old.release()
   }
-  guard backend.sprite_pipeline_layout is Some(pl) else { return }
-  let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/mgstudio/2d/sprite.wgsl",
+  backend.sprite_pipeline_surface = Some(
+    create_sprite_bevy_pipeline(backend, format, "mgstudio_sprite_surface"),
   )
-  let sm = backend.device.create_shader_module_wgsl(wgsl)
-  let desc = @wgpu_c.render_pipeline_descriptor_color_format_alpha_blend_new(
-    pl.raw_handle(),
-    sm.raw_handle(),
-    format.to_u32(),
-  )
-  let pipeline = backend.device.create_render_pipeline_ptr(desc)
-  @wgpu_c.render_pipeline_descriptor_free(desc)
-  pipeline.set_label("mgstudio_sprite_surface")
-  backend.sprite_pipeline_surface = Some(pipeline)
   backend.sprite_pipeline_surface_format = Some(format)
-  sm.release()
 }
 
 ///|
@@ -152,24 +296,63 @@ fn sprite_pipeline_for_current_pass(
 }
 
 ///|
-fn ensure_sprite_globals_bind_group(
-  backend : GpuBackend,
-) -> Unit raise GpuBackendError {
-  if backend.sprite_globals_bg is Some(_) {
-    return
+fn sprite_bevy_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
+  let safe_width = if pass_state.width_logical <= 0.0F {
+    1.0F
+  } else {
+    pass_state.width_logical
   }
-  guard backend.sprite_bgl_globals is Some(layout) else { return }
-  guard backend.sprite_globals_buf is Some(globals_buf) else { return }
-  guard backend.sprite_instance_buf is Some(instance_buf) else { return }
+  let safe_height = if pass_state.height_logical <= 0.0F {
+    1.0F
+  } else {
+    pass_state.height_logical
+  }
+  let safe_camera_scale = if pass_state.camera_scale == 0.0F {
+    1.0F
+  } else {
+    pass_state.camera_scale
+  }
+  let cam_cos = cosf(pass_state.camera_rot)
+  let cam_sin = sinf(pass_state.camera_rot)
+  let ndc_scale_x = 2.0F / safe_width / safe_camera_scale
+  let ndc_scale_y = 2.0F / safe_height / safe_camera_scale
+  let clip_x_axis_x = cam_cos * ndc_scale_x
+  let clip_x_axis_y = cam_sin * ndc_scale_y
+  let clip_y_axis_x = -cam_sin * ndc_scale_x
+  let clip_y_axis_y = cam_cos * ndc_scale_y
+  let clip_w_axis_x = (
+      -pass_state.camera_x * cam_cos + pass_state.camera_y * cam_sin
+    ) *
+    ndc_scale_x
+  let clip_w_axis_y = (
+      -pass_state.camera_x * cam_sin - pass_state.camera_y * cam_cos
+    ) *
+    ndc_scale_y
+  let floats : Array[Float] = [
+    clip_x_axis_x, clip_x_axis_y, 0.0F, 0.0F, clip_y_axis_x, clip_y_axis_y, 0.0F,
+    0.0F, 0.0F, 0.0F, 1.0F, 0.0F, clip_w_axis_x, clip_w_axis_y, 0.0F, 1.0F,
+  ]
+  let target_float_count = (SPRITE_BEVY_VIEW_BUFFER_SIZE / 4UL).to_int()
+  for _ in floats.length()..<target_float_count {
+    floats.push(0.0F)
+  }
+  f32le_pack(floats)
+}
+
+///|
+fn create_sprite_bevy_texture_bind_group(
+  backend : GpuBackend,
+  texture : GpuTextureInfo,
+) -> @wgpu.BindGroup? {
+  guard backend.sprite_bevy_bgl_tex is Some(layout) else { return None }
   let b = @wgpu.BindGroupBuilder::new(max_entries=2UL)
-  let ok0 = b.add_buffer(0U, globals_buf)
-  let ok1 = b.add_buffer(1U, instance_buf)
+  let ok0 = b.add_texture_view(0U, texture.view)
+  let ok1 = b.add_sampler(1U, texture.sampler)
   if !ok0 || !ok1 {
     b.free()
-    fatal("wgpu: failed to build sprite globals bind group")
+    return None
   }
-  let bg = b.finish(backend.device, layout, label="mgstudio_sprite_globals")
-  backend.sprite_globals_bg = Some(bg)
+  Some(b.finish(backend.device, layout, label="mgstudio_sprite_bevy_tex_bg"))
 }
 
 ///|
@@ -192,28 +375,44 @@ fn flush_sprite_batches(backend : GpuBackend) -> Unit raise GpuBackendError {
   let required_bytes = (float_count * 4).to_uint64()
   if required_bytes > backend.sprite_instance_capacity {
     let new_cap = if required_bytes < 256UL { 256UL } else { required_bytes }
-    let usage = bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST)
+    let usage = bu(
+      @wgpu.BUFFER_USAGE_STORAGE |
+      @wgpu.BUFFER_USAGE_VERTEX |
+      @wgpu.BUFFER_USAGE_COPY_DST,
+    )
     let new_buf = backend.device.create_buffer(size=new_cap, usage~)
     if backend.sprite_instance_buf is Some(old) {
       old.release()
     }
     backend.sprite_instance_buf = Some(new_buf)
     backend.sprite_instance_capacity = new_cap
-    backend.sprite_globals_bg = None
   }
-  ensure_sprite_globals_bind_group(backend)
+  guard backend.pass_state is Some(pass_state) else { return }
+  guard backend.sprite_bevy_view_buf is Some(view_buf) else { return }
+  guard backend.sprite_bevy_view_bg is Some(view_bg) else { return }
   guard backend.sprite_instance_buf is Some(instance_buf) else { return }
-  guard backend.sprite_globals_bg is Some(globals_bg) else { return }
+  guard backend.sprite_index_buf is Some(index_buf) else { return }
+  backend.queue.write_buffer(
+    view_buf,
+    0UL,
+    sprite_bevy_view_uniform_bytes(pass_state),
+  )
   let bytes = f32le_pack(backend.sprite_instance_data)
   backend.queue.write_buffer(instance_buf, 0UL, bytes)
   pass.set_pipeline(pipeline)
-  pass.set_bind_group(1U, globals_bg, [])
+  pass.set_bind_group(0U, view_bg, [])
+  pass.set_index_buffer_u32(index_buf, 0UL, 24UL)
+  pass.set_vertex_buffer(0U, instance_buf, 0UL, required_bytes)
   for batch in backend.sprite_batches {
     guard resolve_draw_texture(backend, batch.texture_id) is Some(tex) else {
       continue
     }
-    pass.set_bind_group(0U, tex.bind_group, [])
-    pass.draw(6U, batch.instance_count, 0U, batch.first_instance)
+    guard create_sprite_bevy_texture_bind_group(backend, tex) is Some(tex_bg) else {
+      continue
+    }
+    pass.set_bind_group(1U, tex_bg, [])
+    pass.draw_indexed(6U, batch.instance_count, 0U, 0, batch.first_instance)
+    tex_bg.release()
   }
   backend.sprite_instance_data.clear()
   backend.sprite_batches.clear()
@@ -280,20 +479,37 @@ pub fn GpuBackend::draw_sprite_uv(
   let sprite_scale_y = scale_y * tex_scale_y
   let cosv = cosf(rotation)
   let sinv = sinf(rotation)
+  let width = base_size * sprite_scale_x
+  let height = base_size * sprite_scale_y
+  let axis_x_x = cosv * width
+  let axis_x_y = sinv * width
+  let axis_y_x = sinv * height
+  let axis_y_y = -cosv * height
+  let translation_x = x - 0.5F * axis_x_x - 0.5F * axis_y_x
+  let translation_y = y - 0.5F * axis_x_y - 0.5F * axis_y_y
   let first_instance = self.sprite_instance_count
   self.sprite_instance_count = first_instance + 1U
-  self.sprite_instance_data.push(x)
-  self.sprite_instance_data.push(y)
-  self.sprite_instance_data.push(cosv)
-  self.sprite_instance_data.push(sinv)
-  self.sprite_instance_data.push(sprite_scale_x)
-  self.sprite_instance_data.push(sprite_scale_y)
+  // i_model_transpose_col0
+  self.sprite_instance_data.push(axis_x_x)
+  self.sprite_instance_data.push(axis_y_x)
+  self.sprite_instance_data.push(0.0F)
+  self.sprite_instance_data.push(translation_x)
+  // i_model_transpose_col1
+  self.sprite_instance_data.push(axis_x_y)
+  self.sprite_instance_data.push(axis_y_y)
+  self.sprite_instance_data.push(0.0F)
+  self.sprite_instance_data.push(translation_y)
+  // i_model_transpose_col2
   self.sprite_instance_data.push(0.0F)
   self.sprite_instance_data.push(0.0F)
+  self.sprite_instance_data.push(1.0F)
+  self.sprite_instance_data.push(0.0F)
+  // i_color
   self.sprite_instance_data.push(color_r)
   self.sprite_instance_data.push(color_g)
   self.sprite_instance_data.push(color_b)
   self.sprite_instance_data.push(color_a)
+  // i_uv_offset_scale
   self.sprite_instance_data.push(uv_min_x)
   self.sprite_instance_data.push(uv_min_y)
   self.sprite_instance_data.push(uv_scale_x)

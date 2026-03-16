@@ -35,21 +35,17 @@ generate_example_cards() {
 
   find "${engine_dir}/examples" -mindepth 2 -maxdepth 2 -type d | sort | while read -r dir; do
     local pkg_rel="${dir#${engine_dir}/}"
-    local group name title group_label parity_note
+    local group name title group_label
     group="$(basename "$(dirname "${pkg_rel}")")"
     name="$(basename "${pkg_rel}")"
     title="$(fn_title_case "${name}")"
     group_label="$(fn_title_case "${group}")"
-    parity_note="${REPO_DIR}/docs/parity/notes/${group}_${name}.md"
 
     {
       echo '        <article class="example-card">'
       echo "          <h3>${title}</h3>"
       echo "          <p class=\"example-meta\">group: ${group_label}</p>"
       echo "          <code>moon -C mgstudio-engine run --target native ${pkg_rel}</code>"
-      if [[ -f "${parity_note}" ]]; then
-        echo "          <a href=\"../docs/parity/notes/${group}_${name}.md\">parity note</a>"
-      fi
       echo '        </article>'
     } >> "${out_file}"
   done

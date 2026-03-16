@@ -17,7 +17,7 @@ set -euo pipefail
 
 if [[ $# -ne 2 ]]; then
   echo "usage: $0 <moon-package> <output-png>" >&2
-  echo "example: $0 examples/3d/3d_scene docs/parity/artifacts/3d_scene.png" >&2
+  echo "example: $0 examples/3d/3d_scene .private/parity/artifacts/3d_scene.png" >&2
   exit 2
 fi
 

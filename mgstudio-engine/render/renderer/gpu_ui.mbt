@@ -42,7 +42,7 @@ fn ensure_ui_pipeline_rgba8(backend : GpuBackend) -> Unit raise GpuBackendError 
   }
   guard backend.sprite_pipeline_layout is Some(pl) else { return }
   let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/mgstudio/ui/ui.wgsl",
+    backend, "shaders/bevy/mgstudio_runtime/ui/ui.wgsl",
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let desc = @wgpu_c.render_pipeline_descriptor_color_format_alpha_blend_new(
@@ -76,7 +76,7 @@ fn ensure_ui_pipeline_surface(
   }
   guard backend.sprite_pipeline_layout is Some(pl) else { return }
   let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/mgstudio/ui/ui.wgsl",
+    backend, "shaders/bevy/mgstudio_runtime/ui/ui.wgsl",
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let desc = @wgpu_c.render_pipeline_descriptor_color_format_alpha_blend_new(
@@ -163,7 +163,7 @@ fn ensure_ui_shadow_pipeline_rgba8(
   }
   guard backend.sprite_pipeline_layout is Some(pl) else { return }
   let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/mgstudio/ui/box_shadow.wgsl",
+    backend, "shaders/bevy/mgstudio_runtime/ui/box_shadow.wgsl",
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let desc = @wgpu_c.render_pipeline_descriptor_color_format_alpha_blend_new(
@@ -197,7 +197,7 @@ fn ensure_ui_shadow_pipeline_surface(
   }
   guard backend.sprite_pipeline_layout is Some(pl) else { return }
   let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/mgstudio/ui/box_shadow.wgsl",
+    backend, "shaders/bevy/mgstudio_runtime/ui/box_shadow.wgsl",
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let desc = @wgpu_c.render_pipeline_descriptor_color_format_alpha_blend_new(
@@ -288,7 +288,7 @@ fn ensure_ui_slice_pipeline_rgba8(
   }
   guard backend.sprite_pipeline_layout is Some(pl) else { return }
   let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/mgstudio/ui/ui_texture_slice.wgsl",
+    backend, "shaders/bevy/mgstudio_runtime/ui/ui_texture_slice.wgsl",
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let desc = @wgpu_c.render_pipeline_descriptor_color_format_alpha_blend_new(
@@ -322,7 +322,7 @@ fn ensure_ui_slice_pipeline_surface(
   }
   guard backend.sprite_pipeline_layout is Some(pl) else { return }
   let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/mgstudio/ui/ui_texture_slice.wgsl",
+    backend, "shaders/bevy/mgstudio_runtime/ui/ui_texture_slice.wgsl",
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let desc = @wgpu_c.render_pipeline_descriptor_color_format_alpha_blend_new(

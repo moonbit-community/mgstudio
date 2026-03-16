@@ -12,6 +12,25 @@ env:
   MOON_IGNORE_POSTADD: "1"
 
 jobs:
+  parity-static-gates:
+    name: parity static gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Shader mirror gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./mgstudio-engine/scripts/gate_shader_mirror.sh
+
+      - name: Asset provenance gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./mgstudio-engine/scripts/gate_asset_provenance.sh
+
   engine-native:
     name: engine (native check/test/build)
     runs-on: macos-latest

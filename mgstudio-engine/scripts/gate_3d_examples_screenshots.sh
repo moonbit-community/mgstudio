@@ -22,7 +22,7 @@ REPO_DIR="$(cd "${ENGINE_DIR}/.." && pwd)"
 CAPTURE_SCRIPT="${SCRIPT_DIR}/p0_visual_capture_native.sh"
 SANITY_SCRIPT="${SCRIPT_DIR}/visual_image_sanity.py"
 
-ARTIFACT_ROOT_DEFAULT="${REPO_DIR}/docs/parity/artifacts/3d_examples_gate/$(date +%Y%m%d_%H%M%S)"
+ARTIFACT_ROOT_DEFAULT="${REPO_DIR}/.private/parity/artifacts/3d_examples_gate/$(date +%Y%m%d_%H%M%S)"
 ARTIFACT_DIR="${MGSTUDIO_PARITY_ARTIFACT_DIR:-${ARTIFACT_ROOT_DEFAULT}}"
 FILTER_REGEX="${MGSTUDIO_3D_EXAMPLES_FILTER:-}"
 MAX_CASES="${MGSTUDIO_3D_EXAMPLES_MAX_CASES:-0}"

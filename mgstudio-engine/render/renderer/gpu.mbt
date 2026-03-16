@@ -290,8 +290,17 @@ pub struct GpuBackend {
   mut sprite_pipeline_surface_format : @wgpu.TextureFormat?
   mut sprite_globals_buf : @wgpu.Buffer?
   mut sprite_instance_buf : @wgpu.Buffer?
+  mut sprite_index_buf : @wgpu.Buffer?
   mut sprite_instance_capacity : UInt64
   mut sprite_globals_bg : @wgpu.BindGroup?
+  mut sprite_bevy_bgl_view : @wgpu.BindGroupLayout?
+  mut sprite_bevy_bgl_tex : @wgpu.BindGroupLayout?
+  mut sprite_bevy_pipeline_layout : @wgpu.PipelineLayout?
+  mut sprite_bevy_view_buf : @wgpu.Buffer?
+  mut sprite_bevy_view_bg : @wgpu.BindGroup?
+  mut sprite_bevy_lut_texture : @wgpu.Texture?
+  mut sprite_bevy_lut_view : @wgpu.TextureView?
+  mut sprite_bevy_lut_sampler : @wgpu.Sampler?
   sprite_instance_data : Array[Float]
   sprite_batches : Array[SpriteBatch]
   mut sprite_instance_count : UInt
@@ -638,8 +647,17 @@ pub fn GpuBackend::new(
     sprite_pipeline_surface_format: None,
     sprite_globals_buf: None,
     sprite_instance_buf: None,
+    sprite_index_buf: None,
     sprite_instance_capacity: 0UL,
     sprite_globals_bg: None,
+    sprite_bevy_bgl_view: None,
+    sprite_bevy_bgl_tex: None,
+    sprite_bevy_pipeline_layout: None,
+    sprite_bevy_view_buf: None,
+    sprite_bevy_view_bg: None,
+    sprite_bevy_lut_texture: None,
+    sprite_bevy_lut_view: None,
+    sprite_bevy_lut_sampler: None,
     sprite_instance_data: [],
     sprite_batches: [],
     sprite_instance_count: 0U,
@@ -1231,7 +1249,12 @@ fn starts_with_text(text : String, prefix : String) -> Bool {
   if text.length() < p {
     return false
   }
-  text[:p].to_string() == prefix
+  for i in 0..<p {
+    if text.code_unit_at(i) != prefix.code_unit_at(i) {
+      return false
+    }
+  }
+  true
 }
 
 ///|
@@ -1241,7 +1264,13 @@ fn ends_with_text(text : String, suffix : String) -> Bool {
   if n < m {
     return false
   }
-  text[n - m:n].to_string() == suffix
+  let offset = n - m
+  for i in 0..<m {
+    if text.code_unit_at(offset + i) != suffix.code_unit_at(i) {
+      return false
+    }
+  }
+  true
 }
 
 ///|
@@ -1424,6 +1453,43 @@ fn path_is_file(path : String) -> Bool {
 }
 
 ///|
+fn path_is_file_exact(path : String) -> Bool {
+  if !path_is_file(path) {
+    return false
+  }
+  let mut sep_index = -1
+  for i in 0..<path.length() {
+    if path.code_unit_at(i).to_int() == 47 { // '/'
+      sep_index = i
+    }
+  }
+  let dir = if sep_index < 0 {
+    "."
+  } else if sep_index == 0 {
+    "/"
+  } else {
+    path[:sep_index].to_string()
+  }
+  let base = if sep_index < 0 {
+    path
+  } else if sep_index + 1 >= path.length() {
+    ""
+  } else {
+    path[sep_index + 1:path.length()].to_string()
+  }
+  if base == "" {
+    return false
+  }
+  let entries : Array[String] = @fs.read_dir(dir) catch { _ => [] }
+  for entry in entries {
+    if entry.to_string() == base {
+      return true
+    }
+  }
+  false
+}
+
+///|
 fn path_is_dir(path : String) -> Bool {
   @fs.is_dir(path) catch {
     _ => false
@@ -1512,13 +1578,13 @@ fn resolve_wgsl_import_module(
       return Some(WgslResolvedImportModule::{ module_path, rel_path })
     }
     let bevy_rel = wgsl_module_path_to_rel_path(module_path)
-    if path_is_file(join_asset_path(assets_base, bevy_rel)) {
+    if path_is_file_exact(join_asset_path(assets_base, bevy_rel)) {
       return Some(WgslResolvedImportModule::{ module_path, rel_path: bevy_rel })
     }
     let namespace_rel = wgsl_module_path_to_rel_path_namespace(module_path)
     if namespace_rel != "" &&
       namespace_rel != bevy_rel &&
-      path_is_file(join_asset_path(assets_base, namespace_rel)) {
+      path_is_file_exact(join_asset_path(assets_base, namespace_rel)) {
       return Some(WgslResolvedImportModule::{
         module_path,
         rel_path: namespace_rel,
@@ -1866,6 +1932,8 @@ fn preprocess_wgsl_source(
   let mut merged = ""
   let aliases : Array[String] = []
   let lines : Array[String] = []
+  let import_active_stack : Array[Bool] = [true]
+  let import_branch_taken_stack : Array[Bool] = []
   for line_item in source.split("\n") {
     lines.push(line_item.to_string())
   }
@@ -1873,11 +1941,109 @@ fn preprocess_wgsl_source(
   while line_index < lines.length() {
     let line = lines[line_index]
     let trimmed = line.trim().to_string()
+    if starts_with_text(trimmed, "#ifdef ") {
+      let name = wgsl_directive_tail(trimmed, 7)
+      let cond = wgsl_define_enabled(defines, value_defines, name)
+      let parent = import_active_stack[import_active_stack.length() - 1]
+      import_active_stack.push(parent && cond)
+      import_branch_taken_stack.push(cond)
+      merged = merged + line + "\n"
+      line_index = line_index + 1
+      continue
+    }
+    if starts_with_text(trimmed, "#ifndef ") {
+      let name = wgsl_directive_tail(trimmed, 8)
+      let cond = !wgsl_define_enabled(defines, value_defines, name)
+      let parent = import_active_stack[import_active_stack.length() - 1]
+      import_active_stack.push(parent && cond)
+      import_branch_taken_stack.push(cond)
+      merged = merged + line + "\n"
+      line_index = line_index + 1
+      continue
+    }
+    if starts_with_text(trimmed, "#if ") {
+      let expr = wgsl_directive_tail(trimmed, 4)
+      let cond = eval_wgsl_if_expr(expr, defines, value_defines)
+      let parent = import_active_stack[import_active_stack.length() - 1]
+      import_active_stack.push(parent && cond)
+      import_branch_taken_stack.push(cond)
+      merged = merged + line + "\n"
+      line_index = line_index + 1
+      continue
+    }
+    if starts_with_text(trimmed, "#else ifdef ") {
+      if import_branch_taken_stack.length() > 0 {
+        let idx = import_branch_taken_stack.length() - 1
+        let name = wgsl_directive_tail(trimmed, 13)
+        let cond = !import_branch_taken_stack[idx] &&
+          wgsl_define_enabled(defines, value_defines, name)
+        let parent = if import_active_stack.length() >= 2 {
+          import_active_stack[import_active_stack.length() - 2]
+        } else {
+          true
+        }
+        import_active_stack[import_active_stack.length() - 1] = parent && cond
+        import_branch_taken_stack[idx] = import_branch_taken_stack[idx] || cond
+      }
+      merged = merged + line + "\n"
+      line_index = line_index + 1
+      continue
+    }
+    if starts_with_text(trimmed, "#else ifndef ") {
+      if import_branch_taken_stack.length() > 0 {
+        let idx = import_branch_taken_stack.length() - 1
+        let name = wgsl_directive_tail(trimmed, 14)
+        let cond = !import_branch_taken_stack[idx] &&
+          !wgsl_define_enabled(defines, value_defines, name)
+        let parent = if import_active_stack.length() >= 2 {
+          import_active_stack[import_active_stack.length() - 2]
+        } else {
+          true
+        }
+        import_active_stack[import_active_stack.length() - 1] = parent && cond
+        import_branch_taken_stack[idx] = import_branch_taken_stack[idx] || cond
+      }
+      merged = merged + line + "\n"
+      line_index = line_index + 1
+      continue
+    }
+    if starts_with_text(trimmed, "#else") {
+      if import_branch_taken_stack.length() > 0 {
+        let idx = import_branch_taken_stack.length() - 1
+        let cond = !import_branch_taken_stack[idx]
+        let parent = if import_active_stack.length() >= 2 {
+          import_active_stack[import_active_stack.length() - 2]
+        } else {
+          true
+        }
+        import_active_stack[import_active_stack.length() - 1] = parent && cond
+        import_branch_taken_stack[idx] = import_branch_taken_stack[idx] || cond
+      }
+      merged = merged + line + "\n"
+      line_index = line_index + 1
+      continue
+    }
+    if starts_with_text(trimmed, "#endif") {
+      if import_active_stack.length() > 1 {
+        import_active_stack.pop() |> ignore
+      }
+      if import_branch_taken_stack.length() > 0 {
+        import_branch_taken_stack.pop() |> ignore
+      }
+      merged = merged + line + "\n"
+      line_index = line_index + 1
+      continue
+    }
     if starts_with_text(trimmed, "#define_import_path") {
       line_index = line_index + 1
       continue
     }
     if starts_with_text(trimmed, "#import ") {
+      if !import_active_stack[import_active_stack.length() - 1] {
+        merged = merged + line + "\n"
+        line_index = line_index + 1
+        continue
+      }
       let mut spec = trimmed[8:trimmed.length()].to_string()
       let mut brace_balance = wgsl_import_brace_balance(spec)
       while brace_balance > 0 && line_index + 1 < lines.length() {

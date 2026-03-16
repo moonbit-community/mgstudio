@@ -140,7 +140,7 @@ fn ensure_auto_exposure_resources(
       return
     }
     let source = load_wgsl_from_assets_required(
-      backend, "shaders/mgstudio/3d/auto_exposure_histogram.wgsl",
+      backend, "shaders/bevy/mgstudio_runtime/3d/auto_exposure_histogram.wgsl",
     )
     let shader = backend.device.create_shader_module_wgsl(source)
     let pipeline = backend.device.create_compute_pipeline_with_layout(
@@ -155,7 +155,7 @@ fn ensure_auto_exposure_resources(
       return
     }
     let source = load_wgsl_from_assets_required(
-      backend, "shaders/mgstudio/3d/auto_exposure_average.wgsl",
+      backend, "shaders/bevy/mgstudio_runtime/3d/auto_exposure_average.wgsl",
     )
     let shader = backend.device.create_shader_module_wgsl(source)
     let pipeline = backend.device.create_compute_pipeline_with_layout(

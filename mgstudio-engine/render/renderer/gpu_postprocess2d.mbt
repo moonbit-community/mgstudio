@@ -2085,37 +2085,37 @@ fn ensure_bloom2d_pipeline_rgba8(
     }
     let downsample_first_source = load_wgsl_with_defines_required(
       backend,
-      "shaders/mgstudio/2d/bloom.wgsl",
+      "shaders/bevy/mgstudio_runtime/2d/bloom.wgsl",
       ["FIRST_DOWNSAMPLE", "USE_THRESHOLD"],
     )
     let downsample_first_no_threshold_source = load_wgsl_with_defines_required(
       backend,
-      "shaders/mgstudio/2d/bloom.wgsl",
+      "shaders/bevy/mgstudio_runtime/2d/bloom.wgsl",
       ["FIRST_DOWNSAMPLE"],
     )
     let downsample_first_uniform_source = load_wgsl_with_defines_required(
       backend,
-      "shaders/mgstudio/2d/bloom.wgsl",
+      "shaders/bevy/mgstudio_runtime/2d/bloom.wgsl",
       ["FIRST_DOWNSAMPLE", "USE_THRESHOLD", "UNIFORM_SCALE"],
     )
     let downsample_first_no_threshold_uniform_source = load_wgsl_with_defines_required(
       backend,
-      "shaders/mgstudio/2d/bloom.wgsl",
+      "shaders/bevy/mgstudio_runtime/2d/bloom.wgsl",
       ["FIRST_DOWNSAMPLE", "UNIFORM_SCALE"],
     )
     let downsample_source = load_wgsl_with_defines_required(
       backend,
-      "shaders/mgstudio/2d/bloom.wgsl",
+      "shaders/bevy/mgstudio_runtime/2d/bloom.wgsl",
       [],
     )
     let downsample_uniform_source = load_wgsl_with_defines_required(
       backend,
-      "shaders/mgstudio/2d/bloom.wgsl",
+      "shaders/bevy/mgstudio_runtime/2d/bloom.wgsl",
       ["UNIFORM_SCALE"],
     )
     let upsample_source = load_wgsl_with_defines_required(
       backend,
-      "shaders/mgstudio/2d/bloom.wgsl",
+      "shaders/bevy/mgstudio_runtime/2d/bloom.wgsl",
       [],
     )
     let downsample_first_pipeline = bloom2d_create_pipeline(
@@ -2216,7 +2216,7 @@ fn ensure_bloom2d_pipeline_rgba8(
     return
   }
   let final_source = load_wgsl_from_assets_required(
-    backend, "shaders/mgstudio/2d/tonemapping.wgsl",
+    backend, "shaders/bevy/mgstudio_runtime/2d/tonemapping.wgsl",
   )
   let final_pipeline = bloom2d_create_pipeline(
     backend,
@@ -2251,7 +2251,7 @@ fn ensure_bloom2d_pipeline_surface(
     return
   }
   let final_source = load_wgsl_from_assets_required(
-    backend, "shaders/mgstudio/2d/tonemapping.wgsl",
+    backend, "shaders/bevy/mgstudio_runtime/2d/tonemapping.wgsl",
   )
   let final_pipeline = bloom2d_create_pipeline(
     backend,
@@ -2290,7 +2290,7 @@ fn ensure_bloom2d_final_composite_pipeline(
   }
   let upsample_source = load_wgsl_with_defines_required(
     backend,
-    "shaders/mgstudio/2d/bloom.wgsl",
+    "shaders/bevy/mgstudio_runtime/2d/bloom.wgsl",
     [],
   )
   let energy_pipeline = bloom2d_create_pipeline(
