@@ -40,7 +40,7 @@ pub type Mesh2d = @sprite.Mesh2d
 pub type Mesh2dBundle = @sprite.Mesh2dBundle
 
 ///|
-pub type MeshMaterial2d = @sprite.MeshMaterial2d
+pub type MeshMaterial2d[M] = @sprite.MeshMaterial2d[M]
 
 ///|
 pub type GpuMesh2d = @sprite.GpuMesh2d
@@ -73,7 +73,9 @@ pub let ecs_key_color_material : @ecs.ComponentKey[ColorMaterial] = @sprite.ecs_
 pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d] = @sprite.ecs_key_mesh2d
 
 ///|
-pub let ecs_key_mesh_material2d : @ecs.ComponentKey[MeshMaterial2d] = @sprite.ecs_key_mesh_material2d
+pub let ecs_key_mesh_material2d : @ecs.ComponentKey[
+  MeshMaterial2d[ColorMaterialAsset],
+] = @sprite.ecs_key_mesh_material2d
 
 ///|
 pub let ecs_key_gpu_mesh2d : @ecs.ComponentKey[GpuMesh2d] = @sprite.ecs_key_gpu_mesh2d
@@ -296,8 +298,8 @@ pub fn render2d_camera_world_to_viewport_2d(
 }
 
 ///|
-pub fn material2d_plugin(
-  plugin : Material2dPlugin[ColorMaterial],
+pub fn[M] material2d_plugin(
+  plugin : Material2dPlugin[M],
 ) -> @app.Plugin[@ecs.World] {
   @sprite.material2d_plugin(plugin)
 }

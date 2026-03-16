@@ -35,6 +35,9 @@ fn ecs_transform_matches(
 }
 
 ///|
+struct DummyMaterialAsset {}
+
+///|
 test "render2d: SpriteBundle::spawn inserts expected components" {
   let world = @ecs.World::new()
   let image : @asset.Handle[@asset.Image] = @asset.Handle::new(1)
@@ -255,6 +258,30 @@ test "render2d: ColorMaterialPlugin initializes the Bevy default material handle
   inspect(material.color.a.to_double(), content="1")
   inspect(material.alpha_mode is Blend, content="true")
   inspect(material.texture is None, content="true")
+}
+
+///|
+test "render2d: Material2dPlugin initializes generic material asset resources" {
+  DummyMaterialAsset::{  } |> ignore
+  let plugin : Material2dPlugin[DummyMaterialAsset] = Material2dPlugin::default()
+  let app = @app.App::new(@ecs.World::new()).add_plugins([
+    material2d_plugin(plugin),
+  ])
+  let key : @ecs.ResourceKey[@asset.Assets[DummyMaterialAsset]] = @asset.assets_resource_key()
+
+  inspect(app.contains_resource(key), content="true")
+}
+
+///|
+test "render2d: MeshMaterial2d component keys are registered per material type" {
+  let color_key : @ecs.ComponentKey[MeshMaterial2d[ColorMaterialAsset]] = ecs_key_mesh_material2d
+  let color_key_from_trait : @ecs.ComponentKey[
+    MeshMaterial2d[ColorMaterialAsset],
+  ] = MeshMaterial2d::component()
+  let dummy_key : @ecs.ComponentKey[MeshMaterial2d[DummyMaterialAsset]] = MeshMaterial2d::component()
+
+  inspect(color_key.id() == color_key_from_trait.id(), content="true")
+  inspect(color_key.id() == dummy_key.id(), content="false")
 }
 
 ///|

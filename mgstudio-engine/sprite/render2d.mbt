@@ -1401,11 +1401,12 @@ pub impl Material2d for ColorMaterial with uv_scale(self) {
 }
 
 ///|
-fn init_color_material_assets_resource(
+fn[M] init_material2d_assets_resource(
   app : @app.App[@ecs.World],
+  _probe : @asset.Handle[M],
 ) -> @app.App[@ecs.World] {
   app.init_resource(fn() {
-    let assets : @asset.Assets[ColorMaterialAsset] = @asset.Assets::new()
+    let assets : @asset.Assets[M] = @asset.Assets::new()
     assets
   })
 }
@@ -1437,11 +1438,12 @@ pub fn[M] Material2dPlugin::default() -> Material2dPlugin[M] {
 }
 
 ///|
-pub fn material2d_plugin(
-  _plugin : Material2dPlugin[ColorMaterial],
+pub fn[M] material2d_plugin(
+  _plugin : Material2dPlugin[M],
 ) -> @app.Plugin[@ecs.World] {
   fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    init_default_color_material_asset(init_color_material_assets_resource(app))
+    let probe : @asset.Handle[M] = @asset.Handle::new(0)
+    init_material2d_assets_resource(app, probe)
   }
 }
 
@@ -1457,40 +1459,41 @@ pub fn ColorMaterialPlugin::default() -> ColorMaterialPlugin {
 pub fn color_material_plugin(
   _plugin : ColorMaterialPlugin,
 ) -> @app.Plugin[@ecs.World] {
-  material2d_plugin(Material2dPlugin::default())
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    let plugin : Material2dPlugin[ColorMaterialAsset] = Material2dPlugin::default()
+    init_default_color_material_asset(material2d_plugin(plugin)(app))
+  }
 }
 
 ///|
-pub struct MeshMaterial2d {
-  handle : @asset.Handle[ColorMaterialAsset]
+pub struct MeshMaterial2d[M] {
+  handle : @asset.Handle[M]
 }
 
 ///|
-pub fn MeshMaterial2d::new(
-  material : @asset.Handle[ColorMaterialAsset],
-) -> MeshMaterial2d {
+pub fn[M] MeshMaterial2d::new(material : @asset.Handle[M]) -> MeshMaterial2d[M] {
   MeshMaterial2d::{ handle: material }
 }
 
 ///|
 pub fn MeshMaterial2d::from_color_material(
   material : ColorMaterial,
-) -> MeshMaterial2d {
+) -> MeshMaterial2d[ColorMaterialAsset] {
   MeshMaterial2d::{ handle: material.handle }
 }
 
 ///|
 pub fn MeshMaterial2d::to_color_material(
-  self : MeshMaterial2d,
+  self : MeshMaterial2d[ColorMaterialAsset],
 ) -> ColorMaterial {
   ColorMaterial::{ handle: self.handle }
 }
 
 ///|
 pub fn MeshMaterial2d::with_alpha_mode(
-  self : MeshMaterial2d,
+  self : MeshMaterial2d[ColorMaterialAsset],
   alpha_mode : AlphaMode2d,
-) -> MeshMaterial2d {
+) -> MeshMaterial2d[ColorMaterialAsset] {
   MeshMaterial2d::from_color_material(
     self.to_color_material().with_alpha_mode(alpha_mode),
   )
@@ -1498,9 +1501,9 @@ pub fn MeshMaterial2d::with_alpha_mode(
 
 ///|
 pub fn MeshMaterial2d::with_texture(
-  self : MeshMaterial2d,
+  self : MeshMaterial2d[ColorMaterialAsset],
   texture : @asset.Handle[@asset.Image],
-) -> MeshMaterial2d {
+) -> MeshMaterial2d[ColorMaterialAsset] {
   MeshMaterial2d::from_color_material(
     self.to_color_material().with_texture(texture),
   )
@@ -1508,9 +1511,9 @@ pub fn MeshMaterial2d::with_texture(
 
 ///|
 pub fn MeshMaterial2d::with_uv_offset(
-  self : MeshMaterial2d,
+  self : MeshMaterial2d[ColorMaterialAsset],
   uv_offset : @math.Vec2,
-) -> MeshMaterial2d {
+) -> MeshMaterial2d[ColorMaterialAsset] {
   MeshMaterial2d::from_color_material(
     self.to_color_material().with_uv_offset(uv_offset),
   )
@@ -1518,36 +1521,36 @@ pub fn MeshMaterial2d::with_uv_offset(
 
 ///|
 pub fn MeshMaterial2d::with_uv_scale(
-  self : MeshMaterial2d,
+  self : MeshMaterial2d[ColorMaterialAsset],
   uv_scale : @math.Vec2,
-) -> MeshMaterial2d {
+) -> MeshMaterial2d[ColorMaterialAsset] {
   MeshMaterial2d::from_color_material(
     self.to_color_material().with_uv_scale(uv_scale),
   )
 }
 
 ///|
-pub impl Material2d for MeshMaterial2d with color(self) {
+pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with color(self) {
   self.to_color_material().color()
 }
 
 ///|
-pub impl Material2d for MeshMaterial2d with alpha_mode(self) {
+pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with alpha_mode(self) {
   self.to_color_material().alpha_mode()
 }
 
 ///|
-pub impl Material2d for MeshMaterial2d with texture(self) {
+pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with texture(self) {
   self.to_color_material().texture()
 }
 
 ///|
-pub impl Material2d for MeshMaterial2d with uv_offset(self) {
+pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with uv_offset(self) {
   self.to_color_material().uv_offset()
 }
 
 ///|
-pub impl Material2d for MeshMaterial2d with uv_scale(self) {
+pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with uv_scale(self) {
   self.to_color_material().uv_scale()
 }
 
@@ -3436,7 +3439,7 @@ pub fn Mesh2dBundle::new(
 ///|
 pub fn Mesh2dBundle::new_with_mesh_material(
   mesh : Mesh2d,
-  material : MeshMaterial2d,
+  material : MeshMaterial2d[ColorMaterialAsset],
   transform : @math.Transform,
 ) -> Mesh2dBundle {
   Mesh2dBundle::new(mesh, material.to_color_material(), transform)
@@ -3463,7 +3466,7 @@ pub fn Mesh2dBundle::new_with_layers(
 ///|
 pub fn Mesh2dBundle::new_with_mesh_material_layers(
   mesh : Mesh2d,
-  material : MeshMaterial2d,
+  material : MeshMaterial2d[ColorMaterialAsset],
   transform : @math.Transform,
   layers : RenderLayers,
 ) -> Mesh2dBundle {
@@ -8828,8 +8831,12 @@ pub let render2d_set_execute : @app.SystemSet = render2d_set_render
 
 ///|
 pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  init_color_material_assets_resource(
+  let color_material_probe : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(
+    0,
+  )
+  init_material2d_assets_resource(
     app.init_resource(fn() { ClearColor::default() }),
+    color_material_probe,
   )
   .init_resource(fn() {
     let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
@@ -8868,8 +8875,12 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 
 ///|
 pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  init_color_material_assets_resource(
+  let color_material_probe : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(
+    0,
+  )
+  init_material2d_assets_resource(
     app.init_resource(fn() { ClearColor::default() }),
+    color_material_probe,
   )
   .init_resource(fn() {
     let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()

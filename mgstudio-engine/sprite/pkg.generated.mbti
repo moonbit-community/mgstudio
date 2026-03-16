@@ -44,7 +44,7 @@ pub let ecs_key_gpu_mesh2d : @ecs.ComponentKey[GpuMesh2d]
 
 pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d]
 
-pub let ecs_key_mesh_material2d : @ecs.ComponentKey[MeshMaterial2d]
+pub let ecs_key_mesh_material2d : @ecs.ComponentKey[MeshMaterial2d[ColorMaterialAsset]]
 
 pub let ecs_key_no_wireframe2d : @ecs.ComponentKey[NoWireframe2d]
 
@@ -90,7 +90,7 @@ pub fn get_gpu_mesh2d_store(@ecs.World) -> @ecs.ComponentAccess[GpuMesh2d]
 
 pub fn get_mesh2d_store(@ecs.World) -> @ecs.ComponentAccess[Mesh2d]
 
-pub fn get_mesh_material2d_store(@ecs.World) -> @ecs.ComponentAccess[MeshMaterial2d]
+pub fn get_mesh_material2d_store(@ecs.World) -> @ecs.ComponentAccess[MeshMaterial2d[ColorMaterialAsset]]
 
 pub fn get_no_wireframe2d_store(@ecs.World) -> @ecs.ComponentAccess[NoWireframe2d]
 
@@ -122,7 +122,7 @@ pub fn gizmo_set_config(GizmoConfig) -> Unit
 
 pub fn init_render_state_system(@ecs.World) -> Unit
 
-pub fn material2d_plugin(Material2dPlugin[ColorMaterial]) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
+pub fn[M] material2d_plugin(Material2dPlugin[M]) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn pan_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -657,24 +657,24 @@ pub struct Mesh2dBundle {
 }
 pub fn Mesh2dBundle::new(Mesh2d, ColorMaterial, @math.Transform) -> Self
 pub fn Mesh2dBundle::new_with_layers(Mesh2d, ColorMaterial, @math.Transform, RenderLayers) -> Self
-pub fn Mesh2dBundle::new_with_mesh_material(Mesh2d, MeshMaterial2d, @math.Transform) -> Self
-pub fn Mesh2dBundle::new_with_mesh_material_layers(Mesh2d, MeshMaterial2d, @math.Transform, RenderLayers) -> Self
+pub fn Mesh2dBundle::new_with_mesh_material(Mesh2d, MeshMaterial2d[ColorMaterialAsset], @math.Transform) -> Self
+pub fn Mesh2dBundle::new_with_mesh_material_layers(Mesh2d, MeshMaterial2d[ColorMaterialAsset], @math.Transform, RenderLayers) -> Self
 pub fn Mesh2dBundle::spawn(Self, @ecs.World) -> @core.Entity
 
-pub struct MeshMaterial2d {
-  handle : @asset.Handle[ColorMaterialAsset]
+pub struct MeshMaterial2d[M] {
+  handle : @asset.Handle[M]
 }
-pub fn MeshMaterial2d::from_color_material(ColorMaterial) -> Self
-pub fn MeshMaterial2d::new(@asset.Handle[ColorMaterialAsset]) -> Self
-pub fn MeshMaterial2d::to_color_material(Self) -> ColorMaterial
-pub fn MeshMaterial2d::with_alpha_mode(Self, AlphaMode2d) -> Self
-pub fn MeshMaterial2d::with_texture(Self, @asset.Handle[@image.Image]) -> Self
-pub fn MeshMaterial2d::with_uv_offset(Self, @math.Vec2) -> Self
-pub fn MeshMaterial2d::with_uv_scale(Self, @math.Vec2) -> Self
-pub impl @ecs.Component for MeshMaterial2d
-pub impl Material2d for MeshMaterial2d
-pub impl ToJson for MeshMaterial2d
-pub impl @json.FromJson for MeshMaterial2d
+pub fn MeshMaterial2d::from_color_material(ColorMaterial) -> Self[ColorMaterialAsset]
+pub fn[M] MeshMaterial2d::new(@asset.Handle[M]) -> Self[M]
+pub fn MeshMaterial2d::to_color_material(Self[ColorMaterialAsset]) -> ColorMaterial
+pub fn MeshMaterial2d::with_alpha_mode(Self[ColorMaterialAsset], AlphaMode2d) -> Self[ColorMaterialAsset]
+pub fn MeshMaterial2d::with_texture(Self[ColorMaterialAsset], @asset.Handle[@image.Image]) -> Self[ColorMaterialAsset]
+pub fn MeshMaterial2d::with_uv_offset(Self[ColorMaterialAsset], @math.Vec2) -> Self[ColorMaterialAsset]
+pub fn MeshMaterial2d::with_uv_scale(Self[ColorMaterialAsset], @math.Vec2) -> Self[ColorMaterialAsset]
+pub impl[M] @ecs.Component for MeshMaterial2d[M]
+pub impl Material2d for MeshMaterial2d[ColorMaterialAsset]
+pub impl[M] ToJson for MeshMaterial2d[M]
+pub impl[M] @json.FromJson for MeshMaterial2d[M]
 
 pub struct NoWireframe2d {
 }

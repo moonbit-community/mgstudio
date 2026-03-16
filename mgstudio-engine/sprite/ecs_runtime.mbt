@@ -78,9 +78,40 @@ pub let ecs_key_color_material : @ecs.ComponentKey[ColorMaterial] = @ecs.registe
 )
 
 ///|
-pub let ecs_key_mesh_material2d : @ecs.ComponentKey[MeshMaterial2d] = @ecs.register_component(
-  debug_name="render2d.mesh_material2d",
+let mesh_material2d_component_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
+  @hashmap.HashMap::new(),
 )
+
+///|
+fn[M] registered_mesh_material2d_component_key() -> @ecs.ComponentKey[
+  MeshMaterial2d[M],
+] {
+  let probe : MeshMaterial2d[M] = MeshMaterial2d::new(@asset.Handle::new(0))
+  let type_name = @any.of(probe).type_name()
+  match mesh_material2d_component_registry.val.get(type_name) {
+    Some(existing_key) =>
+      match existing_key.try_to() {
+        Some(key) => key
+        None =>
+          abort(
+            "mesh material2d component registry contained a mismatched key for " +
+            type_name,
+          )
+      }
+    None => {
+      let key : @ecs.ComponentKey[MeshMaterial2d[M]] = @ecs.register_component(
+        debug_name="bevy_sprite_render::" + type_name,
+      )
+      mesh_material2d_component_registry.val.set(type_name, @any.of(key))
+      key
+    }
+  }
+}
+
+///|
+pub let ecs_key_mesh_material2d : @ecs.ComponentKey[
+  MeshMaterial2d[ColorMaterialAsset],
+] = registered_mesh_material2d_component_key()
 
 ///|
 pub let ecs_key_gpu_mesh2d : @ecs.ComponentKey[GpuMesh2d] = @ecs.register_component(
@@ -178,8 +209,8 @@ pub impl @ecs.Component for ColorMaterial with component() {
 }
 
 ///|
-pub impl @ecs.Component for MeshMaterial2d with component() {
-  ecs_key_mesh_material2d
+pub impl[M] @ecs.Component for MeshMaterial2d[M] with component() {
+  registered_mesh_material2d_component_key()
 }
 
 ///|
@@ -487,8 +518,8 @@ fn encode_color_material(material : ColorMaterial) -> Json {
 }
 
 ///|
-fn encode_mesh_material2d(material : MeshMaterial2d) -> Json {
-  encode_color_material_asset_handle(material.handle)
+fn[M] encode_mesh_material2d(material : MeshMaterial2d[M]) -> Json {
+  material.handle.to_json()
 }
 
 ///|
@@ -829,8 +860,9 @@ fn decode_color_material(json : Json) -> ColorMaterial {
 }
 
 ///|
-fn decode_mesh_material2d(json : Json) -> MeshMaterial2d {
-  MeshMaterial2d::new(decode_color_material_asset_handle(json))
+fn[M] decode_mesh_material2d(json : Json) -> MeshMaterial2d[M] {
+  let handle : @asset.Handle[M] = try! @json.from_json(json)
+  MeshMaterial2d::new(handle)
 }
 
 ///|
@@ -1000,12 +1032,12 @@ pub impl @json.FromJson for ColorMaterial with from_json(json, _path) {
 }
 
 ///|
-pub impl ToJson for MeshMaterial2d with to_json(self) {
+pub impl[M] ToJson for MeshMaterial2d[M] with to_json(self) {
   encode_mesh_material2d(self)
 }
 
 ///|
-pub impl @json.FromJson for MeshMaterial2d with from_json(json, _path) {
+pub impl[M] @json.FromJson for MeshMaterial2d[M] with from_json(json, _path) {
   decode_mesh_material2d(json)
 }
 
