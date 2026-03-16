@@ -4039,6 +4039,7 @@ fn render2d_bevy_shader_asset_paths() -> Array[String] {
   [
     MESH2D_SHADER_PATH,
     MESH2D_SHADER_BINDINGS_PATH,
+    "shaders/bevy/bevy_sprite_render/mesh2d/color_material.wgsl",
     SPRITE_SHADER_PATH,
     SPRITE_VIEW_BINDINGS_PATH,
     "shaders/bevy/bevy_post_process/bloom/bloom.wgsl",
@@ -6924,7 +6925,24 @@ fn mesh_draw_alpha(alpha_mode : AlphaMode2d, alpha : Float) -> Float? {
   match alpha_mode {
     Opaque => Some(1.0F)
     Blend => Some(alpha)
-    Mask(cutoff) => if alpha >= cutoff { Some(1.0F) } else { None }
+    Mask(cutoff) => if alpha >= cutoff { Some(alpha) } else { None }
+  }
+}
+
+///|
+fn mesh_alpha_mode_kind(alpha_mode : AlphaMode2d) -> Int {
+  match alpha_mode {
+    Opaque => 0
+    Mask(_) => 1
+    Blend => 2
+  }
+}
+
+///|
+fn mesh_alpha_cutoff(alpha_mode : AlphaMode2d) -> Float {
+  match alpha_mode {
+    Mask(cutoff) => cutoff
+    _ => 0.5F
   }
 }
 
@@ -8150,6 +8168,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 color_g=mesh.color.g,
                 color_b=mesh.color.b,
                 color_a=draw_alpha,
+                alpha_mode_kind=mesh_alpha_mode_kind(mesh.alpha_mode),
+                alpha_cutoff=mesh_alpha_cutoff(mesh.alpha_mode),
                 texture_id~,
                 uv_offset_x=mesh.uv_offset.x,
                 uv_offset_y=mesh.uv_offset.y,

@@ -45,6 +45,8 @@ test "diagnostics: render diagnostics plugin records native gpu frame counters" 
     color_g=1.0F,
     color_b=1.0F,
     color_a=1.0F,
+    alpha_mode_kind=0,
+    alpha_cutoff=0.5F,
     texture_id=0,
     uv_offset_x=0.0F,
     uv_offset_y=0.0F,

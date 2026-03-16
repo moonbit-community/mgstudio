@@ -939,6 +939,8 @@ pub fn draw_mesh(
   color_g~ : Float,
   color_b~ : Float,
   color_a~ : Float,
+  alpha_mode_kind~ : Int,
+  alpha_cutoff~ : Float,
   texture_id~ : Int,
   uv_offset_x~ : Float,
   uv_offset_y~ : Float,
@@ -955,7 +957,8 @@ pub fn draw_mesh(
   if ensure_backend() is Some(backend) {
     backend.draw_mesh(
       mesh_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
-      texture_id, uv_offset_x, uv_offset_y, uv_scale_x, uv_scale_y,
+      alpha_mode_kind, alpha_cutoff, texture_id, uv_offset_x, uv_offset_y, uv_scale_x,
+      uv_scale_y,
     ) catch {
       err => debug_runtime_error("draw_mesh", err)
     }
@@ -1130,9 +1133,15 @@ pub fn draw_gizmo_line(
         created
       }
       if mesh_id > 0 {
+        let alpha_mode_kind = if color_a < 1.0F {
+          MESH2D_ALPHA_MODE_KIND_BLEND
+        } else {
+          MESH2D_ALPHA_MODE_KIND_OPAQUE
+        }
         backend.draw_mesh(
           mesh_id, center_x, center_y, rotation, length, line_width_value, color_r,
-          color_g, color_b, color_a, -1, 0.0F, 0.0F, 1.0F, 1.0F,
+          color_g, color_b, color_a, alpha_mode_kind, 0.5F, -1, 0.0F, 0.0F, 1.0F,
+          1.0F,
         )
       }
     } catch {

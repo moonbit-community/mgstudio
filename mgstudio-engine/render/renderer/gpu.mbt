@@ -35,6 +35,9 @@ const MESH2D_BEVY_UNIFORM_STRIDE_BYTES : UInt64 = 96UL
 const MESH2D_BEVY_UNIFORM_DYNAMIC_STRIDE_BYTES : UInt64 = 256UL
 
 ///|
+const MESH2D_BEVY_COLOR_MATERIAL_UNIFORM_BUFFER_SIZE : UInt64 = 80UL
+
+///|
 const MESH3D_UNIFORM_BUFFER_SIZE : UInt64 = 512UL
 
 ///|
@@ -108,6 +111,13 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
 pub struct Mesh2dPipelineCacheEntry {
   key : String
   pipeline : @wgpu.RenderPipeline
+}
+
+///|
+struct Mesh2dMaterialBindGroupCacheEntry {
+  key : String
+  bind_group : @wgpu.BindGroup
+  uniform_buf : @wgpu.Buffer
 }
 
 ///|
@@ -364,6 +374,7 @@ pub struct GpuBackend {
   mut mesh_pipeline_surface_format : @wgpu.TextureFormat?
   mut mesh2d_bevy_bgl_view : @wgpu.BindGroupLayout?
   mut mesh2d_bevy_bgl_mesh : @wgpu.BindGroupLayout?
+  mut mesh2d_bevy_bgl_material : @wgpu.BindGroupLayout?
   mut mesh2d_bevy_view_buf : @wgpu.Buffer?
   mut mesh2d_bevy_globals_buf : @wgpu.Buffer?
   mut mesh2d_bevy_view_bg : @wgpu.BindGroup?
@@ -375,6 +386,7 @@ pub struct GpuBackend {
   mut mesh2d_bevy_instance_capacity : UInt64
   mut mesh2d_bevy_instance_used : Int
   mesh2d_pipeline_cache : Array[Mesh2dPipelineCacheEntry]
+  mesh2d_material_bg_cache : Array[Mesh2dMaterialBindGroupCacheEntry]
   mut mesh3d_bgl_uniform : @wgpu.BindGroupLayout?
   mut mesh3d_bgl_material : @wgpu.BindGroupLayout?
   mut mesh3d_pipeline_layout : @wgpu.PipelineLayout?
@@ -723,6 +735,7 @@ pub fn GpuBackend::new(
     mesh_pipeline_surface_format: None,
     mesh2d_bevy_bgl_view: None,
     mesh2d_bevy_bgl_mesh: None,
+    mesh2d_bevy_bgl_material: None,
     mesh2d_bevy_view_buf: None,
     mesh2d_bevy_globals_buf: None,
     mesh2d_bevy_view_bg: None,
@@ -734,6 +747,7 @@ pub fn GpuBackend::new(
     mesh2d_bevy_instance_capacity: 0UL,
     mesh2d_bevy_instance_used: 0,
     mesh2d_pipeline_cache: [],
+    mesh2d_material_bg_cache: [],
     mesh3d_bgl_uniform: None,
     mesh3d_bgl_material: None,
     mesh3d_pipeline_layout: None,
@@ -1561,6 +1575,25 @@ pub fn register_wgsl_source(rel_path : String, source : String) -> Unit {
   let import_path = parse_wgsl_define_import_path(source)
   if import_path != "" {
     registered_wgsl_import_modules_ref.val.set(import_path, normalized_rel)
+  }
+}
+
+///|
+fn registered_wgsl_source(rel_path : String) -> String? {
+  let normalized_rel = normalize_shader_rel_path(rel_path)
+  if normalized_rel == "" {
+    return None
+  }
+  registered_wgsl_sources_ref.val.get(normalized_rel)
+}
+
+///|
+fn registered_wgsl_source_required(
+  rel_path : String,
+) -> String raise GpuBackendError {
+  match registered_wgsl_source(rel_path) {
+    Some(source) => source
+    None => fatal("wgpu: missing registered WGSL source: " + rel_path)
   }
 }
 

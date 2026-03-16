@@ -14,5 +14,6 @@ import {
 }
 
 options(
+  "native-stub": [ "pipeline_layout_stub.c" ],
   "supported-targets": "native",
 )

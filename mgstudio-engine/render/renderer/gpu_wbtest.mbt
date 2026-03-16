@@ -57,6 +57,7 @@ test "renderer: mesh2d bevy resources initialize expected bind groups" {
   ensure_mesh_bevy_resources(backend)
   let ok = backend.mesh2d_bevy_view_bg is Some(_) &&
     backend.mesh2d_bevy_instance_bg is Some(_) &&
+    backend.mesh2d_bevy_bgl_material is Some(_) &&
     backend.mesh2d_bevy_instance_capacity >=
     MESH2D_BEVY_UNIFORM_DYNAMIC_STRIDE_BYTES
   inspect(ok, content="true")
@@ -76,6 +77,24 @@ test "renderer: mesh2d dynamic uniform pool grows by required capacity" {
     ensure_mesh2d_instance_uniform_binding(backend, grow_required) is Some(_) &&
     backend.mesh2d_bevy_instance_capacity >= grow_required
   inspect(ok, content="true")
+}
+
+///|
+test "renderer: mesh2d color material uniform bytes match Bevy size" {
+  let bytes = mesh2d_color_material_uniform_bytes(
+    1.0F,
+    0.5F,
+    0.25F,
+    0.75F,
+    9,
+    0.1F,
+    0.2F,
+    2.0F,
+    3.0F,
+    MESH2D_ALPHA_MODE_KIND_MASK,
+    0.33F,
+  )
+  inspect(bytes.length(), content="80")
 }
 
 ///|
@@ -251,9 +270,13 @@ test "renderer: registered wgsl sources satisfy strict mesh2d preprocessing" {
   register_wgsl_source(
     "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d.wgsl", "#import bevy_sprite::mesh2d_functions as mesh_functions\nfn demo() -> f32 {\n  return mesh_functions::twice_pi();\n}\n",
   )
-  let preprocessed = load_wgsl_with_defines_required_mesh2d(
-    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d.wgsl",
-    [],
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = copy_registered_wgsl_import_module_paths()
+  let preprocessed = load_wgsl_preprocessed(
+    "", "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d.wgsl", defines, value_defines,
+    visited, modules,
   )
   inspect(preprocessed.contains("const PI_2"), content="true")
   inspect(preprocessed.contains("return twice_pi();"), content="true")
@@ -272,6 +295,35 @@ fn resolve_wgsl_import_module_path_for_test(
     return ""
   }
   resolved_module.module_path
+}
+
+///|
+fn register_renderer_test_shader_source(path : String) -> Unit {
+  let full_path = join_asset_path("assets", path)
+  let source = @fs.read_file_to_string(full_path) catch {
+    _ => abort("failed to load renderer test shader source: " + path)
+  }
+  register_wgsl_source(path, source)
+}
+
+///|
+fn register_renderer_test_shaders() -> Unit {
+  clear_registered_wgsl_source_registry()
+  let paths = [
+    "shaders/bevy/bevy_sprite_render/render/sprite.wgsl", "shaders/bevy/bevy_sprite_render/render/sprite_view_bindings.wgsl",
+    "shaders/bevy/bevy_sprite_render/mesh2d/color_material.wgsl", "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d.wgsl",
+    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_bindings.wgsl", "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl",
+    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_types.wgsl", "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_vertex_output.wgsl",
+    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl", "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_view_types.wgsl",
+    "shaders/bevy/bevy_post_process/bloom/bloom.wgsl", "shaders/bevy/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
+    "shaders/bevy/bevy_core_pipeline/tonemapping/tonemapping.wgsl", "shaders/bevy/bevy_core_pipeline/tonemapping/lut_bindings.wgsl",
+    "shaders/bevy/bevy_core_pipeline/tonemapping/tonemapping_shared.wgsl", "shaders/bevy/bevy_render/color_operations.wgsl",
+    "shaders/bevy/bevy_render/globals.wgsl", "shaders/bevy/bevy_render/maths.wgsl",
+    "shaders/bevy/bevy_render/view/view.wgsl",
+  ]
+  for path in paths {
+    register_renderer_test_shader_source(path)
+  }
 }
 
 ///|
@@ -391,6 +443,7 @@ fn gpu_test_pass_state(target_id : Int) -> GpuPassState {
 
 ///|
 test "renderer: sprite pipeline specializes to hdr render target format" {
+  register_renderer_test_shaders()
   let backend = GpuBackend::new(assets_base="assets")
   let target_id = backend.create_render_target_rgba16f(128, 128, false)
   backend.pass_state = Some(gpu_test_pass_state(target_id))
@@ -404,6 +457,7 @@ test "renderer: sprite pipeline specializes to hdr render target format" {
 
 ///|
 test "renderer: mesh pipeline specializes to hdr render target format" {
+  register_renderer_test_shaders()
   let backend = GpuBackend::new(assets_base="assets")
   let target_id = backend.create_render_target_rgba16f(128, 128, false)
   backend.pass_state = Some(gpu_test_pass_state(target_id))
@@ -433,6 +487,7 @@ test "renderer: mesh pipeline specializes to hdr render target format" {
 
 ///|
 test "renderer: bloom2d final composite uses hdr scene target format even from rgba8 final pass" {
+  register_renderer_test_shaders()
   let backend = GpuBackend::new(assets_base="assets")
   let final_target_id = backend.create_render_target_with_format(
     128,
@@ -455,6 +510,7 @@ test "renderer: bloom2d final composite uses hdr scene target format even from r
 
 ///|
 test "renderer: tonemapping2d final pipeline specializes to current final target without bloom composite" {
+  register_renderer_test_shaders()
   let backend = GpuBackend::new(assets_base="assets")
   let target_id = backend.create_render_target_with_format(
     128,
