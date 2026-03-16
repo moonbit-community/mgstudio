@@ -4842,7 +4842,7 @@ priv struct RenderTargetInfo {
 }
 
 ///|
-priv struct Bloom2dAutoTargetInfo {
+priv struct PostProcessIntermediateTargetInfo {
   camera : @core.Entity
   width : Int
   height : Int
@@ -4865,7 +4865,7 @@ struct RenderState {
   cameras : Array[ExtractedCamera2d]
   meshes : Array[ExtractedMesh2d]
   render_targets : Array[RenderTargetInfo]
-  bloom2d_auto_targets : Array[Bloom2dAutoTargetInfo]
+  postprocess_intermediate_targets : Array[PostProcessIntermediateTargetInfo]
   // Prepare stage output: stable camera iteration order for the frame.
   mut prepared_camera_indices : Array[Int]
   // Queue stage output: per-camera queued item counts for diagnostics/sanity.
@@ -4893,7 +4893,7 @@ fn RenderState::new() -> RenderState {
     cameras: [],
     meshes: [],
     render_targets: [],
-    bloom2d_auto_targets: [],
+    postprocess_intermediate_targets: [],
     prepared_camera_indices: [],
     queued_draw_item_counts: [],
   }
@@ -6148,9 +6148,9 @@ fn render2d_ui_overlay_matches_camera(
 }
 
 ///|
-fn render2d_prune_bloom2d_auto_targets(state : RenderState) -> Unit {
-  let kept : Array[Bloom2dAutoTargetInfo] = []
-  for entry in state.bloom2d_auto_targets {
+fn render2d_prune_postprocess_intermediate_targets(state : RenderState) -> Unit {
+  let kept : Array[PostProcessIntermediateTargetInfo] = []
+  for entry in state.postprocess_intermediate_targets {
     let mut active = false
     for camera in state.cameras {
       if render2d_same_entity(entry.camera, camera.entity) {
@@ -6162,14 +6162,14 @@ fn render2d_prune_bloom2d_auto_targets(state : RenderState) -> Unit {
       kept.push(entry)
     }
   }
-  state.bloom2d_auto_targets.clear()
+  state.postprocess_intermediate_targets.clear()
   for entry in kept {
-    state.bloom2d_auto_targets.push(entry)
+    state.postprocess_intermediate_targets.push(entry)
   }
 }
 
 ///|
-fn render2d_get_or_create_bloom2d_auto_target(
+fn render2d_get_or_create_postprocess_intermediate_target(
   state : RenderState,
   camera : @core.Entity,
   width : Int,
@@ -6177,7 +6177,7 @@ fn render2d_get_or_create_bloom2d_auto_target(
 ) -> @asset.Handle[@asset.Image] {
   let safe_width = if width <= 0 { 1 } else { width }
   let safe_height = if height <= 0 { 1 } else { height }
-  for entry in state.bloom2d_auto_targets {
+  for entry in state.postprocess_intermediate_targets {
     if render2d_same_entity(entry.camera, camera) &&
       entry.width == safe_width &&
       entry.height == safe_height {
@@ -6195,10 +6195,10 @@ fn render2d_get_or_create_bloom2d_auto_target(
     width: safe_width,
     height: safe_height,
   })
-  for i in 0..<state.bloom2d_auto_targets.length() {
-    let entry = state.bloom2d_auto_targets[i]
+  for i in 0..<state.postprocess_intermediate_targets.length() {
+    let entry = state.postprocess_intermediate_targets[i]
     if render2d_same_entity(entry.camera, camera) {
-      state.bloom2d_auto_targets[i] = Bloom2dAutoTargetInfo::{
+      state.postprocess_intermediate_targets[i] = PostProcessIntermediateTargetInfo::{
         camera,
         width: safe_width,
         height: safe_height,
@@ -6207,7 +6207,7 @@ fn render2d_get_or_create_bloom2d_auto_target(
       return handle
     }
   }
-  state.bloom2d_auto_targets.push(Bloom2dAutoTargetInfo::{
+  state.postprocess_intermediate_targets.push(PostProcessIntermediateTargetInfo::{
     camera,
     width: safe_width,
     height: safe_height,
@@ -6806,7 +6806,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
         rs.val.primary_camera = rs.val.cameras[order[0]].entity
       }
     }
-    render2d_prune_bloom2d_auto_targets(rs.val)
+    render2d_prune_postprocess_intermediate_targets(rs.val)
     let sprite_store = get_sprite_store(ecs_world)
     let anchor_store = get_anchor_store(ecs_world)
     let scissor_store = get_scissor_rect_store(ecs_world)
@@ -7057,7 +7057,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         rs.val.primary_camera = rs.val.cameras[order[0]].entity
       }
     }
-    render2d_prune_bloom2d_auto_targets(rs.val)
+    render2d_prune_postprocess_intermediate_targets(rs.val)
 
     // ECS sprite components.
     try! world
@@ -9139,7 +9139,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       let mut auto_postprocess_source : @asset.Handle[@asset.Image]? = None
       if camera_postprocess_plan.uses_intermediate_source {
         auto_postprocess_source = Some(
-          render2d_get_or_create_bloom2d_auto_target(
+          render2d_get_or_create_postprocess_intermediate_target(
             rs.val,
             camera.entity,
             viewport_width,
