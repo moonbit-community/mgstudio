@@ -17,7 +17,6 @@
 pub fn GpuBackend::apply_bloom2d(
   self : GpuBackend,
   scene_texture_id : Int,
-  enabled : Int,
   intensity : Float,
   low_frequency_boost : Float,
   low_frequency_boost_curvature : Float,
@@ -98,7 +97,6 @@ pub fn GpuBackend::apply_bloom2d(
   let scale_y_value = if scale_y < 0.0F { 0.0F } else { scale_y }
   let use_uniform_scale = scale_x_value == 1.0F && scale_y_value == 1.0F
   let use_prefilter = threshold_value > 0.0F
-  let bloom_enabled = enabled != 0
   let safe_scene_width = if scene_texture.width > 0 {
     scene_texture.width
   } else {
@@ -161,8 +159,7 @@ pub fn GpuBackend::apply_bloom2d(
   active_pass.release()
   frame.pass = None
 
-  let mut bloom_ready = bloom_enabled &&
-    intensity_value > 0.0F &&
+  let mut bloom_ready = intensity_value > 0.0F &&
     downsample_first_pipeline is Some(_) &&
     downsample_pipeline is Some(_) &&
     upsample_pipeline is Some(_)
@@ -549,7 +546,6 @@ pub fn GpuBackend::apply_bloom2d(
 ///|
 pub fn apply_bloom2d(
   scene_texture_id~ : Int,
-  enabled~ : Int,
   intensity~ : Float,
   low_frequency_boost~ : Float,
   low_frequency_boost_curvature~ : Float,
@@ -565,7 +561,7 @@ pub fn apply_bloom2d(
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.apply_bloom2d(
-      scene_texture_id, enabled, intensity, low_frequency_boost, low_frequency_boost_curvature,
+      scene_texture_id, intensity, low_frequency_boost, low_frequency_boost_curvature,
       high_pass_frequency, threshold, threshold_softness, composite_mode, max_mip_dimension,
       scale_x, scale_y, view_width, view_height,
     ) catch {

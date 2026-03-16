@@ -2981,7 +2981,6 @@ fn render3d_draw_camera_bloom_stage(
   let settings = render3d_bloom_sanitize(bloom)
   @render.host_gpu_apply_bloom2d(
     scene_texture_id~,
-    enabled=1,
     intensity=settings.intensity,
     low_frequency_boost=settings.low_frequency_boost,
     low_frequency_boost_curvature=settings.low_frequency_boost_curvature,

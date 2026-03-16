@@ -1350,7 +1350,6 @@ pub fn host_gpu_apply_auto_exposure(
 ///|
 pub fn host_gpu_apply_bloom2d(
   scene_texture_id~ : Int,
-  enabled~ : Int,
   intensity~ : Float,
   low_frequency_boost~ : Float,
   low_frequency_boost_curvature~ : Float,
@@ -1366,7 +1365,6 @@ pub fn host_gpu_apply_bloom2d(
 ) -> Unit {
   @renderer.apply_bloom2d(
     scene_texture_id~,
-    enabled~,
     intensity~,
     low_frequency_boost~,
     low_frequency_boost_curvature~,
