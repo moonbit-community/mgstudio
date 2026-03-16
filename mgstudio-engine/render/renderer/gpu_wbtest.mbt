@@ -52,22 +52,21 @@ test "renderer: interleaved 2d mesh csv keeps original vertex count" {
 }
 
 ///|
-test "renderer: mesh2d bevy resources initialize expected bind groups" {
+test "renderer: mesh2d resources initialize expected bind groups" {
   let backend = GpuBackend::new(assets_base="assets")
-  ensure_mesh_bevy_resources(backend)
-  let ok = backend.mesh2d_bevy_view_bg is Some(_) &&
-    backend.mesh2d_bevy_instance_bg is Some(_) &&
-    backend.mesh2d_bevy_bgl_material is Some(_) &&
-    backend.mesh2d_bevy_instance_capacity >=
-    MESH2D_BEVY_UNIFORM_DYNAMIC_STRIDE_BYTES
+  ensure_mesh2d_resources(backend)
+  let ok = backend.mesh2d_view_bg is Some(_) &&
+    backend.mesh2d_instance_bg is Some(_) &&
+    backend.mesh2d_material_bgl is Some(_) &&
+    backend.mesh2d_instance_capacity >= MESH2D_BEVY_UNIFORM_DYNAMIC_STRIDE_BYTES
   inspect(ok, content="true")
 }
 
 ///|
 test "renderer: mesh2d dynamic uniform pool grows by required capacity" {
   let backend = GpuBackend::new(assets_base="assets")
-  ensure_mesh_bevy_resources(backend)
-  let grow_required = backend.mesh2d_bevy_instance_capacity +
+  ensure_mesh2d_resources(backend)
+  let grow_required = backend.mesh2d_instance_capacity +
     MESH2D_BEVY_UNIFORM_DYNAMIC_STRIDE_BYTES
   let ok = ensure_mesh2d_instance_uniform_binding(
       backend,
@@ -75,7 +74,7 @@ test "renderer: mesh2d dynamic uniform pool grows by required capacity" {
     )
     is Some(_) &&
     ensure_mesh2d_instance_uniform_binding(backend, grow_required) is Some(_) &&
-    backend.mesh2d_bevy_instance_capacity >= grow_required
+    backend.mesh2d_instance_capacity >= grow_required
   inspect(ok, content="true")
 }
 
@@ -461,7 +460,7 @@ test "renderer: mesh pipeline specializes to hdr render target format" {
   let backend = GpuBackend::new(assets_base="assets")
   let target_id = backend.create_render_target_rgba16f(128, 128, false)
   backend.pass_state = Some(gpu_test_pass_state(target_id))
-  ensure_mesh_bevy_resources(backend)
+  ensure_mesh2d_resources(backend)
   let format = match current_pass_color_format(backend) {
     Some(v) => v
     None => tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM)

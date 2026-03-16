@@ -244,19 +244,19 @@ pub struct GpuBackend {
   mut mesh_pipeline : @wgpu_mbt.RenderPipeline?
   mut mesh_pipeline_surface : @wgpu_mbt.RenderPipeline?
   mut mesh_pipeline_surface_format : @wgpu_mbt.TextureFormat?
-  mut mesh2d_bevy_bgl_view : @wgpu_mbt.BindGroupLayout?
-  mut mesh2d_bevy_bgl_mesh : @wgpu_mbt.BindGroupLayout?
-  mut mesh2d_bevy_bgl_material : @wgpu_mbt.BindGroupLayout?
-  mut mesh2d_bevy_view_buf : @wgpu_mbt.Buffer?
-  mut mesh2d_bevy_globals_buf : @wgpu_mbt.Buffer?
-  mut mesh2d_bevy_view_bg : @wgpu_mbt.BindGroup?
-  mut mesh2d_bevy_lut_texture : @wgpu_mbt.Texture?
-  mut mesh2d_bevy_lut_view : @wgpu_mbt.TextureView?
-  mut mesh2d_bevy_lut_sampler : @wgpu_mbt.Sampler?
-  mut mesh2d_bevy_instance_buf : @wgpu_mbt.Buffer?
-  mut mesh2d_bevy_instance_bg : @wgpu_mbt.BindGroup?
-  mut mesh2d_bevy_instance_capacity : UInt64
-  mut mesh2d_bevy_instance_used : Int
+  mut mesh2d_view_bgl : @wgpu_mbt.BindGroupLayout?
+  mut mesh2d_mesh_bgl : @wgpu_mbt.BindGroupLayout?
+  mut mesh2d_material_bgl : @wgpu_mbt.BindGroupLayout?
+  mut mesh2d_view_buf : @wgpu_mbt.Buffer?
+  mut mesh2d_globals_buf : @wgpu_mbt.Buffer?
+  mut mesh2d_view_bg : @wgpu_mbt.BindGroup?
+  mut mesh2d_lut_texture : @wgpu_mbt.Texture?
+  mut mesh2d_lut_view : @wgpu_mbt.TextureView?
+  mut mesh2d_lut_sampler : @wgpu_mbt.Sampler?
+  mut mesh2d_instance_buf : @wgpu_mbt.Buffer?
+  mut mesh2d_instance_bg : @wgpu_mbt.BindGroup?
+  mut mesh2d_instance_capacity : UInt64
+  mut mesh2d_instance_used : Int
   mesh2d_pipeline_cache : Array[Mesh2dPipelineCacheEntry]
   mesh2d_material_bg_cache : Array[Mesh2dMaterialBindGroupCacheEntry]
   mut mesh3d_bgl_uniform : @wgpu_mbt.BindGroupLayout?

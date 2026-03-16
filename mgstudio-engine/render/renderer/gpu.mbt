@@ -372,19 +372,19 @@ pub struct GpuBackend {
   mut mesh_pipeline : @wgpu.RenderPipeline?
   mut mesh_pipeline_surface : @wgpu.RenderPipeline?
   mut mesh_pipeline_surface_format : @wgpu.TextureFormat?
-  mut mesh2d_bevy_bgl_view : @wgpu.BindGroupLayout?
-  mut mesh2d_bevy_bgl_mesh : @wgpu.BindGroupLayout?
-  mut mesh2d_bevy_bgl_material : @wgpu.BindGroupLayout?
-  mut mesh2d_bevy_view_buf : @wgpu.Buffer?
-  mut mesh2d_bevy_globals_buf : @wgpu.Buffer?
-  mut mesh2d_bevy_view_bg : @wgpu.BindGroup?
-  mut mesh2d_bevy_lut_texture : @wgpu.Texture?
-  mut mesh2d_bevy_lut_view : @wgpu.TextureView?
-  mut mesh2d_bevy_lut_sampler : @wgpu.Sampler?
-  mut mesh2d_bevy_instance_buf : @wgpu.Buffer?
-  mut mesh2d_bevy_instance_bg : @wgpu.BindGroup?
-  mut mesh2d_bevy_instance_capacity : UInt64
-  mut mesh2d_bevy_instance_used : Int
+  mut mesh2d_view_bgl : @wgpu.BindGroupLayout?
+  mut mesh2d_mesh_bgl : @wgpu.BindGroupLayout?
+  mut mesh2d_material_bgl : @wgpu.BindGroupLayout?
+  mut mesh2d_view_buf : @wgpu.Buffer?
+  mut mesh2d_globals_buf : @wgpu.Buffer?
+  mut mesh2d_view_bg : @wgpu.BindGroup?
+  mut mesh2d_lut_texture : @wgpu.Texture?
+  mut mesh2d_lut_view : @wgpu.TextureView?
+  mut mesh2d_lut_sampler : @wgpu.Sampler?
+  mut mesh2d_instance_buf : @wgpu.Buffer?
+  mut mesh2d_instance_bg : @wgpu.BindGroup?
+  mut mesh2d_instance_capacity : UInt64
+  mut mesh2d_instance_used : Int
   mesh2d_pipeline_cache : Array[Mesh2dPipelineCacheEntry]
   mesh2d_material_bg_cache : Array[Mesh2dMaterialBindGroupCacheEntry]
   mut mesh3d_bgl_uniform : @wgpu.BindGroupLayout?
@@ -733,19 +733,19 @@ pub fn GpuBackend::new(
     mesh_pipeline: None,
     mesh_pipeline_surface: None,
     mesh_pipeline_surface_format: None,
-    mesh2d_bevy_bgl_view: None,
-    mesh2d_bevy_bgl_mesh: None,
-    mesh2d_bevy_bgl_material: None,
-    mesh2d_bevy_view_buf: None,
-    mesh2d_bevy_globals_buf: None,
-    mesh2d_bevy_view_bg: None,
-    mesh2d_bevy_lut_texture: None,
-    mesh2d_bevy_lut_view: None,
-    mesh2d_bevy_lut_sampler: None,
-    mesh2d_bevy_instance_buf: None,
-    mesh2d_bevy_instance_bg: None,
-    mesh2d_bevy_instance_capacity: 0UL,
-    mesh2d_bevy_instance_used: 0,
+    mesh2d_view_bgl: None,
+    mesh2d_mesh_bgl: None,
+    mesh2d_material_bgl: None,
+    mesh2d_view_buf: None,
+    mesh2d_globals_buf: None,
+    mesh2d_view_bg: None,
+    mesh2d_lut_texture: None,
+    mesh2d_lut_view: None,
+    mesh2d_lut_sampler: None,
+    mesh2d_instance_buf: None,
+    mesh2d_instance_bg: None,
+    mesh2d_instance_capacity: 0UL,
+    mesh2d_instance_used: 0,
     mesh2d_pipeline_cache: [],
     mesh2d_material_bg_cache: [],
     mesh3d_bgl_uniform: None,
