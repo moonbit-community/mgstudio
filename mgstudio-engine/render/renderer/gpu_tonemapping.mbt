@@ -764,7 +764,7 @@ fn ensure_tonemapping_resources(
       builder.add_sampler(4U, frag, @wgpu.SAMPLER_BINDING_TYPE_FILTERING)
     if !ok {
       builder.free()
-      fatal("wgpu: failed to build tonemapping2d bind group layout")
+      fatal("wgpu: failed to build tonemapping bind group layout")
     }
     let bgl = builder.finish(
       backend.device,
