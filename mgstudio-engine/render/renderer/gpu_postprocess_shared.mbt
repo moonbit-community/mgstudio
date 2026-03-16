@@ -13,6 +13,15 @@
 // limitations under the License.
 
 ///|
+fn clamp_non_negative(value : Float) -> Float {
+  if value < 0.0F {
+    0.0F
+  } else {
+    value
+  }
+}
+
+///|
 fn load_postprocess_wgsl_with_defines_required(
   rel : String,
   define_keys : Array[String],
