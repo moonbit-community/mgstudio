@@ -483,6 +483,49 @@ pub fn host_gpu_begin_pass(
 }
 
 ///|
+pub fn host_gpu_begin_pass_with_depth(
+  target_id~ : Int,
+  width~ : Int,
+  height~ : Int,
+  clear_r~ : Float,
+  clear_g~ : Float,
+  clear_b~ : Float,
+  clear_a~ : Float,
+  camera_x~ : Float,
+  camera_y~ : Float,
+  camera_rotation~ : Float,
+  camera_scale~ : Float,
+  viewport_x~ : Int,
+  viewport_y~ : Int,
+  viewport_width~ : Int,
+  viewport_height~ : Int,
+  viewport_depth_min~ : Float,
+  viewport_depth_max~ : Float,
+  clear_enabled~ : Int,
+) -> Unit {
+  @renderer.begin_pass_with_depth(
+    target_id~,
+    width~,
+    height~,
+    clear_r~,
+    clear_g~,
+    clear_b~,
+    clear_a~,
+    camera_x~,
+    camera_y~,
+    camera_rotation~,
+    camera_scale~,
+    viewport_x~,
+    viewport_y~,
+    viewport_width~,
+    viewport_height~,
+    viewport_depth_min~,
+    viewport_depth_max~,
+    clear_enabled~,
+  )
+}
+
+///|
 pub fn host_gpu_begin_pass_3d(
   target_id~ : Int,
   target_layer? : Int = -1,

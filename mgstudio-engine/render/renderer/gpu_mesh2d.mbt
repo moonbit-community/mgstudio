@@ -286,7 +286,7 @@ fn create_mesh_bevy_pipeline(
       builder.disable_blend()
     }
     builder.set_depth_stencil(
-      tf(@wgpu.TEXTURE_FORMAT_DEPTH24_PLUS),
+      tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
       depth_write_enabled=!key.blend_alpha,
       depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
     )

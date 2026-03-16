@@ -8284,7 +8284,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       }
 
       if auto_postprocess_source is Some(source) {
-        @render.host_gpu_begin_pass(
+        @render.host_gpu_begin_pass_with_depth(
           target_id=@asset.Handle::id(source),
           width=view_width_logical,
           height=view_height_logical,
@@ -8357,7 +8357,69 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         continue
       }
 
-      @render.host_gpu_begin_pass(
+      if camera.bloom2d is None {
+        @render.host_gpu_begin_pass_with_depth(
+          target_id~,
+          width=view_width_logical,
+          height=view_height_logical,
+          clear_r=clear.r,
+          clear_g=clear.g,
+          clear_b=clear.b,
+          clear_a=clear.a,
+          camera_x=camera.transform.translation.x,
+          camera_y=camera.transform.translation.y,
+          camera_rotation=camera.transform.rotation_z(),
+          camera_scale=render2d_camera_uniform_scale(
+            camera.projection,
+            camera.transform,
+          ),
+          viewport_x~,
+          viewport_y~,
+          viewport_width~,
+          viewport_height~,
+          viewport_depth_min~,
+          viewport_depth_max~,
+          clear_enabled=if clear_enabled { 1 } else { 0 },
+        )
+        draw_camera_items(
+          scene_draw_items, viewport_x, viewport_y, viewport_width, viewport_height,
+          scale_factor,
+        )
+        gizmos_draw_lines(camera.layers)
+        @render.host_gpu_end_pass()
+        if ui_overlay_draw_items.length() > 0 {
+          @render.host_gpu_begin_pass(
+            target_id~,
+            width=view_width_logical,
+            height=view_height_logical,
+            clear_r=clear.r,
+            clear_g=clear.g,
+            clear_b=clear.b,
+            clear_a=clear.a,
+            camera_x=camera.transform.translation.x,
+            camera_y=camera.transform.translation.y,
+            camera_rotation=camera.transform.rotation_z(),
+            camera_scale=render2d_camera_uniform_scale(
+              camera.projection,
+              camera.transform,
+            ),
+            viewport_x~,
+            viewport_y~,
+            viewport_width~,
+            viewport_height~,
+            viewport_depth_min~,
+            viewport_depth_max~,
+            clear_enabled=0,
+          )
+          draw_camera_items(
+            ui_overlay_draw_items, viewport_x, viewport_y, viewport_width, viewport_height,
+            scale_factor,
+          )
+          @render.host_gpu_end_pass()
+        }
+        continue
+      }
+      @render.host_gpu_begin_pass_with_depth(
         target_id~,
         width=view_width_logical,
         height=view_height_logical,

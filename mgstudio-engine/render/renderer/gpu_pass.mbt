@@ -313,6 +313,194 @@ pub fn GpuBackend::begin_pass(
 }
 
 ///|
+pub fn GpuBackend::begin_pass_with_depth(
+  self : GpuBackend,
+  target_id : Int,
+  width_logical : Int,
+  height_logical : Int,
+  clear_r : Float,
+  clear_g : Float,
+  clear_b : Float,
+  clear_a : Float,
+  camera_x : Float,
+  camera_y : Float,
+  camera_rot : Float,
+  camera_scale : Float,
+  viewport_x : Int,
+  viewport_y : Int,
+  viewport_w : Int,
+  viewport_h : Int,
+  viewport_depth_min : Float,
+  viewport_depth_max : Float,
+  clear_enabled : Int,
+) -> Unit raise GpuBackendError {
+  if !activate_surface_frame_for_target(self, target_id) {
+    return
+  }
+  guard self.frame is Some(frame) else { return }
+  if frame.pass is Some(pass) {
+    pass.end()
+    pass.release()
+    frame.pass = None
+  }
+  let effective_clear_enabled = if target_id < 0 &&
+    clear_enabled != 0 &&
+    self.surface_cleared_this_frame {
+    0
+  } else {
+    clear_enabled
+  }
+  guard target_view(self, target_id, -1) is Some(view) else { return }
+  guard ensure_depth_view_for_target(self, target_id) is Some(depth_view) else {
+    return
+  }
+  let color_load_op_u32 = if effective_clear_enabled == 0 {
+    @wgpu.LOAD_OP_LOAD
+  } else {
+    @wgpu.LOAD_OP_CLEAR
+  }
+  let depth_load_op_u32 = if effective_clear_enabled == 0 {
+    @wgpu.LOAD_OP_LOAD
+  } else {
+    @wgpu.LOAD_OP_CLEAR
+  }
+  let stencil_load_op_u32 = if effective_clear_enabled == 0 {
+    @wgpu.LOAD_OP_LOAD
+  } else {
+    @wgpu.LOAD_OP_CLEAR
+  }
+  let pass = frame.encoder.begin_render_pass_color_depth_u32(
+    view,
+    depth_view,
+    color_load_op_u32~,
+    color_store_op_u32=@wgpu.STORE_OP_STORE,
+    color_clear_r_f32=clear_r,
+    color_clear_g_f32=clear_g,
+    color_clear_b_f32=clear_b,
+    color_clear_a_f32=clear_a,
+    depth_load_op_u32~,
+    depth_store_op_u32=@wgpu.STORE_OP_STORE,
+    depth_clear_value_f32=0.0F,
+    depth_read_only=false,
+    stencil_load_op_u32~,
+    stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+    stencil_clear_value_u32=0U,
+    stencil_read_only=true,
+  )
+  if target_id < 0 && effective_clear_enabled != 0 {
+    set_active_surface_cleared_state(self, true)
+  }
+  let vx = if viewport_x < 0 { 0U } else { viewport_x.reinterpret_as_uint() }
+  let vy = if viewport_y < 0 { 0U } else { viewport_y.reinterpret_as_uint() }
+  let vw = if viewport_w < 0 { 0U } else { viewport_w.reinterpret_as_uint() }
+  let vh = if viewport_h < 0 { 0U } else { viewport_h.reinterpret_as_uint() }
+  pass.set_viewport(
+    Float::from_double(vx.to_double()),
+    Float::from_double(vy.to_double()),
+    Float::from_double(vw.to_double()),
+    Float::from_double(vh.to_double()),
+    viewport_depth_min,
+    viewport_depth_max,
+  )
+  let (sx, sy, sw, sh) = clamp_scissor_to_target(
+    self, target_id, vx, vy, vw, vh,
+  )
+  pass.set_scissor_rect(sx, sy, sw, sh)
+  frame.pass = Some(pass)
+  self.auto_exposure_active_state_buf = None
+  self.pass_state = Some(GpuPassState::{
+    target_id,
+    target_layer: -1,
+    width_logical: Float::from_double(width_logical.to_double()),
+    height_logical: Float::from_double(height_logical.to_double()),
+    is_3d: false,
+    camera_x,
+    camera_y,
+    camera_rot,
+    camera_scale: if camera_scale == 0.0F {
+      1.0F
+    } else {
+      camera_scale
+    },
+    camera_z: 0.0F,
+    camera_exposure: 1.0F,
+    camera_rot_x: 0.0F,
+    camera_rot_y: 0.0F,
+    camera_rot_z: 0.0F,
+    camera_rot_w: 1.0F,
+    clip_from_world: gpu_clip_matrix_identity(),
+    unjittered_clip_from_world: gpu_clip_matrix_identity(),
+    previous_clip_from_world: gpu_clip_matrix_identity(),
+    pass_kind: 0,
+    viewport_x: vx,
+    viewport_y: vy,
+    viewport_w: vw,
+    viewport_h: vh,
+    viewport_depth_min,
+    viewport_depth_max,
+    ambient_r: 1.0F,
+    ambient_g: 1.0F,
+    ambient_b: 1.0F,
+    ambient_brightness: 0.0F,
+    directional_dir_x: 0.0F,
+    directional_dir_y: -1.0F,
+    directional_dir_z: 0.0F,
+    directional_color_r: 1.0F,
+    directional_color_g: 1.0F,
+    directional_color_b: 1.0F,
+    directional_illuminance: 0.0F,
+    point_pos_x: 0.0F,
+    point_pos_y: 0.0F,
+    point_pos_z: 0.0F,
+    point_color_r: 1.0F,
+    point_color_g: 1.0F,
+    point_color_b: 1.0F,
+    point_intensity: 0.0F,
+    point_range: 1.0F,
+    spot_pos_x: 0.0F,
+    spot_pos_y: 0.0F,
+    spot_pos_z: 0.0F,
+    spot_dir_x: 0.0F,
+    spot_dir_y: -1.0F,
+    spot_dir_z: 0.0F,
+    spot_color_r: 1.0F,
+    spot_color_g: 1.0F,
+    spot_color_b: 1.0F,
+    spot_intensity: 0.0F,
+    spot_range: 1.0F,
+    spot_inner_angle: 0.6F,
+    spot_outer_angle: 0.8F,
+    point_shadow_near: 0.1F,
+  })
+  self.sprite_instance_data.clear()
+  self.sprite_batches.clear()
+  self.sprite_instance_count = 0U
+  self.ui_instance_data.clear()
+  self.ui_batches.clear()
+  self.ui_instance_count = 0U
+  self.ui_shadow_instance_data.clear()
+  self.ui_shadow_batches.clear()
+  self.ui_shadow_instance_count = 0U
+  self.ui_slice_instance_data.clear()
+  self.ui_slice_batches.clear()
+  self.ui_slice_instance_count = 0U
+  ensure_sprite_resources(self)
+  if self.sprite_globals_buf is Some(globals_buf) {
+    let safe_scale = if camera_scale == 0.0F { 1.0F } else { camera_scale }
+    let w = Float::from_double(width_logical.to_double())
+    let h = Float::from_double(height_logical.to_double())
+    let scale_x_base = if w > 0.0F { 2.0F / w / safe_scale } else { 0.0F }
+    let scale_y_base = if h > 0.0F { 2.0F / h / safe_scale } else { 0.0F }
+    let cam_cos = cosf(-camera_rot)
+    let cam_sin = sinf(-camera_rot)
+    let bytes = f32le_pack([
+      camera_x, camera_y, cam_cos, cam_sin, scale_x_base, scale_y_base, 0.0F, 0.0F,
+    ])
+    self.queue.write_buffer(globals_buf, 0UL, bytes)
+  }
+}
+
+///|
 pub fn GpuBackend::begin_pass_3d(
   self : GpuBackend,
   target_id : Int,

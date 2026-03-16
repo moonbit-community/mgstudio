@@ -222,6 +222,11 @@ fn create_sprite_bevy_pipeline(
     builder.set_entry_points("vertex", "fragment")
     builder.set_color_target_format(format)
     builder.enable_alpha_blend()
+    builder.set_depth_stencil(
+      tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
+      depth_write_enabled=false,
+      depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+    )
     builder.set_vertex_buffer_layout(
       SPRITE_BEVY_INSTANCE_STRIDE_BYTES,
       @wgpu.VERTEX_STEP_MODE_INSTANCE,
