@@ -18,6 +18,74 @@
 /// Split from gpu.mbt to keep subsystems cohesive and closer to Bevy's module layout.
 
 ///|
+fn find_texture(backend : GpuBackend, id : Int) -> GpuTextureInfo? {
+  for t in backend.textures {
+    if t.id == id {
+      return Some(t)
+    }
+  }
+  None
+}
+
+///|
+fn ensure_default_texture(
+  backend : GpuBackend,
+) -> GpuTextureInfo raise GpuBackendError {
+  let id = -1
+  if find_texture(backend, id) is Some(t) {
+    t
+  } else {
+    ensure_sprite_resources(backend)
+    let bgl_tex = backend.sprite_bgl_tex.unwrap()
+    let w = 128U
+    let h = 128U
+    let usage_bits = @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+      @wgpu.TEXTURE_USAGE_COPY_DST |
+      @wgpu.TEXTURE_USAGE_COPY_SRC
+    let usage = @wgpu.TextureUsage::from_u64(usage_bits)
+    let tex = backend.device.create_texture_rgba8_2d_with_usage(w, h, usage)
+    let view = tex.create_view()
+    let sampler = backend.device.create_sampler_linear_clamp()
+    let bg = backend.device.create_bind_group_sampler_texture_2d(
+      bgl_tex, sampler, view,
+    )
+    // Fill the texture with white.
+    let byte_len = w.reinterpret_as_int() * h.reinterpret_as_int() * 4
+    let data = Bytes::makei(byte_len, _ => (255).to_byte())
+    backend.queue.write_texture_rgba8_2d(tex, w, h, data)
+    let info = GpuTextureInfo::{
+      id,
+      width: w.reinterpret_as_int(),
+      height: h.reinterpret_as_int(),
+      mip_level_count: 1,
+      base_mip_level: 0,
+      format_raw: @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+      texture: tex,
+      view,
+      sample_view: None,
+      layer_views: [],
+      sampler,
+      bind_group: bg,
+    }
+    backend.textures.push(info)
+    mesh3d_material_cache_clear(backend)
+    info
+  }
+}
+
+///|
+fn resolve_draw_texture(
+  backend : GpuBackend,
+  id : Int,
+) -> GpuTextureInfo? raise GpuBackendError {
+  if id < 0 {
+    Some(ensure_default_texture(backend))
+  } else {
+    find_texture(backend, id)
+  }
+}
+
+///|
 pub fn GpuBackend::create_texture_rgba8(
   self : GpuBackend,
   width : Int,
