@@ -34,6 +34,12 @@ pub type ColorMaterialPlugin = @sprite.ColorMaterialPlugin
 pub type Material2dPlugin[M] = @sprite.Material2dPlugin[M]
 
 ///|
+pub type Material2dKey[M] = @sprite.Material2dKey[M]
+
+///|
+pub type Material2dPipeline[M] = @sprite.Material2dPipeline[M]
+
+///|
 pub type Mesh2d = @sprite.Mesh2d
 
 ///|

@@ -317,10 +317,12 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
   let instances_key : @ecs.ResourceKey[
     RenderMaterial2dInstances[DummyMaterialAsset],
   ] = RenderMaterial2dInstances::resource()
+  let pipeline_key : @ecs.ResourceKey[Material2dPipeline[DummyMaterialAsset]] = Material2dPipeline::resource()
 
   inspect(app.contains_resource(key), content="true")
   inspect(app.contains_resource(prepared_key), content="true")
   inspect(app.contains_resource(instances_key), content="true")
+  inspect(app.contains_resource(pipeline_key), content="true")
 }
 
 ///|
@@ -379,16 +381,37 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
   app = app.run_once()
   let world = app.world()
   let handle = handle_ref.val.unwrap_or(@asset.Handle::new(-1))
+  let source_key : @ecs.ResourceKey[@asset.Assets[ColorMaterialAsset]] = @asset.assets_resource_key()
   let prepared_key : @ecs.ResourceKey[
     @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
   ] = @asset.assets_resource_key()
+  let pipeline_key : @ecs.ResourceKey[Material2dPipeline[ColorMaterialAsset]] = Material2dPipeline::resource()
+  let source_assets = try! world.get_resource(source_key).unwrap()
   let prepared_assets = try! world.get_resource(prepared_key).unwrap()
+  let pipeline = try! world.get_resource(pipeline_key).unwrap()
   let prepared_handle = PreparedMaterial2d::prepared_handle(handle)
+  let source_material = source_assets.get(handle).unwrap()
   let prepared = prepared_assets.get(prepared_handle).unwrap()
 
   inspect(prepared.source.id() == handle.id(), content="true")
   inspect(prepared.texture.map(fn(value) { value.id() }), content="Some(11)")
   inspect(prepared.properties.alpha_mode is Blend, content="true")
+  inspect(
+    prepared.key.mesh_key == prepared.properties.mesh_pipeline_key_bits,
+    content="true",
+  )
+  inspect(
+    prepared.key.bind_group_data == source_material.bind_group_data(),
+    content="true",
+  )
+  inspect(
+    pipeline.vertex_shader,
+    content="Some(\"shaders/bevy/bevy_sprite_render/mesh2d/mesh2d.wgsl\")",
+  )
+  inspect(
+    pipeline.fragment_shader,
+    content="Some(\"shaders/bevy/bevy_sprite_render/mesh2d/color_material.wgsl\")",
+  )
 }
 
 ///|

@@ -101,6 +101,10 @@ pub using @sprite {type ColorMaterialPlugin}
 
 pub using @sprite {type GpuMesh2d}
 
+pub using @sprite {type Material2dKey}
+
+pub using @sprite {type Material2dPipeline}
+
 pub using @sprite {type Material2dPlugin}
 
 pub using @sprite {type Mesh2d}

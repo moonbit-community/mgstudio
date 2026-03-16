@@ -619,6 +619,23 @@ pub fn Isometry2d::identity() -> Self
 pub fn Isometry2d::new(@math.Vec2, Float) -> Self
 pub fn Isometry2d::transform_point(Self, @math.Vec2) -> @math.Vec2
 
+pub struct Material2dKey[M] {
+  mesh_key : Int
+  bind_group_data : String
+  marker : M?
+}
+pub fn[M] Material2dKey::new(Int, String) -> Self[M]
+
+pub struct Material2dPipeline[M] {
+  vertex_shader : String?
+  fragment_shader : String?
+  marker : M?
+}
+pub fn[M] Material2dPipeline::default() -> Self[M]
+pub fn[M : Material2d] Material2dPipeline::key_for(Self[M], M) -> Material2dKey[M]
+pub fn[M] Material2dPipeline::new(String?, String?) -> Self[M]
+pub impl[M] @app.Resource for Material2dPipeline[M]
+
 pub struct Material2dPlugin[M] {
   marker : M?
 }
@@ -626,8 +643,9 @@ pub fn[M] Material2dPlugin::default() -> Self[M]
 
 pub struct Material2dProperties {
   alpha_mode : AlphaMode2d
+  mesh_pipeline_key_bits : Int
 }
-pub fn Material2dProperties::new(AlphaMode2d) -> Self
+pub fn Material2dProperties::new(AlphaMode2d, Int) -> Self
 
 pub struct Mesh2d {
   mesh : @asset.Handle[@mesh.Mesh]
@@ -751,9 +769,10 @@ pub struct PreparedMaterial2d[M] {
   texture : @asset.Handle[@image.Image]?
   uv_offset : @math.Vec2
   uv_scale : @math.Vec2
+  key : Material2dKey[M]
   properties : Material2dProperties
 }
-pub fn[M : Material2d] PreparedMaterial2d::from_material(@asset.Handle[M], M) -> Self[M]
+pub fn[M : Material2d] PreparedMaterial2d::from_material(@asset.Handle[M], M, Material2dPipeline[M]) -> Self[M]
 pub fn[M] PreparedMaterial2d::prepared_handle(@asset.Handle[M]) -> @asset.Handle[Self[M]]
 
 pub(all) enum Projection {
@@ -1089,5 +1108,6 @@ pub(open) trait Material2d {
   texture(Self) -> @asset.Handle[@image.Image]?
   uv_offset(Self) -> @math.Vec2
   uv_scale(Self) -> @math.Vec2
+  bind_group_data(Self) -> String
 }
 

@@ -1468,24 +1468,151 @@ pub fn ColorMaterial::with_uv_scale(
 }
 
 ///|
+const MATERIAL2D_PIPELINE_KEY_OPAQUE : Int = 1
+
+///|
+const MATERIAL2D_PIPELINE_KEY_ALPHA_MASK : Int = 2
+
+///|
+const MATERIAL2D_PIPELINE_KEY_BLEND : Int = 4
+
+///|
+fn material2d_mesh_pipeline_key_bits(alpha_mode : AlphaMode2d) -> Int {
+  match alpha_mode {
+    Opaque => MATERIAL2D_PIPELINE_KEY_OPAQUE
+    Mask(_) => MATERIAL2D_PIPELINE_KEY_ALPHA_MASK
+    Blend => MATERIAL2D_PIPELINE_KEY_BLEND
+  }
+}
+
+///|
+fn material2d_alpha_mode_bind_group_data(alpha_mode : AlphaMode2d) -> String {
+  match alpha_mode {
+    Opaque => "opaque"
+    Blend => "blend"
+    Mask(cutoff) => "mask:" + cutoff.to_string()
+  }
+}
+
+///|
+fn material2d_opt_texture_bind_group_data(
+  texture : @asset.Handle[@asset.Image]?,
+) -> String {
+  match texture {
+    Some(value) => value.id().to_string()
+    None => "none"
+  }
+}
+
+///|
+fn material2d_vec2_bind_group_data(value : @math.Vec2) -> String {
+  value.x.to_string() + "," + value.y.to_string()
+}
+
+///|
+fn material2d_color_bind_group_data(color : Color) -> String {
+  color.r.to_string() +
+  "," +
+  color.g.to_string() +
+  "," +
+  color.b.to_string() +
+  "," +
+  color.a.to_string()
+}
+
+///|
+fn material2d_bind_group_data_string(
+  color : Color,
+  alpha_mode : AlphaMode2d,
+  texture : @asset.Handle[@asset.Image]?,
+  uv_offset : @math.Vec2,
+  uv_scale : @math.Vec2,
+) -> String {
+  "color=" +
+  material2d_color_bind_group_data(color) +
+  ";alpha_mode=" +
+  material2d_alpha_mode_bind_group_data(alpha_mode) +
+  ";texture=" +
+  material2d_opt_texture_bind_group_data(texture) +
+  ";uv_offset=" +
+  material2d_vec2_bind_group_data(uv_offset) +
+  ";uv_scale=" +
+  material2d_vec2_bind_group_data(uv_scale)
+}
+
+///|
 pub(open) trait Material2d {
   color(self : Self) -> Color
   alpha_mode(self : Self) -> AlphaMode2d
   texture(self : Self) -> @asset.Handle[@asset.Image]?
   uv_offset(self : Self) -> @math.Vec2
   uv_scale(self : Self) -> @math.Vec2
+  bind_group_data(self : Self) -> String
+}
+
+///|
+pub struct Material2dKey[M] {
+  mesh_key : Int
+  bind_group_data : String
+  marker : M?
+}
+
+///|
+pub fn[M] Material2dKey::new(
+  mesh_key : Int,
+  bind_group_data : String,
+) -> Material2dKey[M] {
+  Material2dKey::{ mesh_key, bind_group_data, marker: None }
+}
+
+///|
+pub struct Material2dPipeline[M] {
+  vertex_shader : String?
+  fragment_shader : String?
+  marker : M?
+}
+
+///|
+pub fn[M] Material2dPipeline::default() -> Material2dPipeline[M] {
+  Material2dPipeline::{
+    vertex_shader: None,
+    fragment_shader: None,
+    marker: None,
+  }
+}
+
+///|
+pub fn[M] Material2dPipeline::new(
+  vertex_shader : String?,
+  fragment_shader : String?,
+) -> Material2dPipeline[M] {
+  Material2dPipeline::{ vertex_shader, fragment_shader, marker: None }
+}
+
+///|
+pub fn[M : Material2d] Material2dPipeline::key_for(
+  self : Material2dPipeline[M],
+  material : M,
+) -> Material2dKey[M] {
+  self.marker |> ignore
+  Material2dKey::new(
+    material2d_mesh_pipeline_key_bits(material.alpha_mode()),
+    material.bind_group_data(),
+  )
 }
 
 ///|
 pub struct Material2dProperties {
   alpha_mode : AlphaMode2d
+  mesh_pipeline_key_bits : Int
 }
 
 ///|
 pub fn Material2dProperties::new(
   alpha_mode : AlphaMode2d,
+  mesh_pipeline_key_bits : Int,
 ) -> Material2dProperties {
-  Material2dProperties::{ alpha_mode, }
+  Material2dProperties::{ alpha_mode, mesh_pipeline_key_bits }
 }
 
 ///|
@@ -1495,6 +1622,7 @@ pub struct PreparedMaterial2d[M] {
   texture : @asset.Handle[@asset.Image]?
   uv_offset : @math.Vec2
   uv_scale : @math.Vec2
+  key : Material2dKey[M]
   properties : Material2dProperties
 }
 
@@ -1502,14 +1630,17 @@ pub struct PreparedMaterial2d[M] {
 pub fn[M : Material2d] PreparedMaterial2d::from_material(
   source : @asset.Handle[M],
   material : M,
+  pipeline : Material2dPipeline[M],
 ) -> PreparedMaterial2d[M] {
+  let key = pipeline.key_for(material)
   PreparedMaterial2d::{
     source,
     color: material.color(),
     texture: material.texture(),
     uv_offset: material.uv_offset(),
     uv_scale: material.uv_scale(),
-    properties: Material2dProperties::new(material.alpha_mode()),
+    key,
+    properties: Material2dProperties::new(material.alpha_mode(), key.mesh_key),
   }
 }
 
@@ -1546,6 +1677,17 @@ pub impl Material2d for ColorMaterial with uv_scale(self) {
 }
 
 ///|
+pub impl Material2d for ColorMaterial with bind_group_data(self) {
+  material2d_bind_group_data_string(
+    ColorMaterial::color(self),
+    ColorMaterial::alpha_mode(self),
+    ColorMaterial::texture(self),
+    ColorMaterial::uv_offset(self),
+    ColorMaterial::uv_scale(self),
+  )
+}
+
+///|
 pub impl Material2d for ColorMaterialAsset with color(self) {
   self.color
 }
@@ -1571,6 +1713,17 @@ pub impl Material2d for ColorMaterialAsset with uv_scale(self) {
 }
 
 ///|
+pub impl Material2d for ColorMaterialAsset with bind_group_data(self) {
+  material2d_bind_group_data_string(
+    self.color,
+    self.alpha_mode,
+    self.texture,
+    self.uv_offset,
+    self.uv_scale,
+  )
+}
+
+///|
 fn[M] init_material2d_assets_resource(
   app : @app.App[@ecs.World],
   _probe : @asset.Handle[M],
@@ -1590,6 +1743,62 @@ fn[M] init_prepared_material2d_assets_resource(
     let assets : @asset.Assets[PreparedMaterial2d[M]] = @asset.Assets::new()
     assets
   })
+}
+
+///|
+let material2d_pipeline_resource_registry : Ref[
+  @hashmap.HashMap[String, @any.Any],
+] = Ref::new(@hashmap.HashMap::new())
+
+///|
+fn[M] registered_material2d_pipeline_resource_key() -> @ecs.ResourceKey[
+  Material2dPipeline[M],
+] {
+  let probe : Material2dPipeline[M] = Material2dPipeline::default()
+  let type_name = @any.of(probe).type_name()
+  match material2d_pipeline_resource_registry.val.get(type_name) {
+    Some(existing_key) =>
+      match existing_key.try_to() {
+        Some(key) => key
+        None =>
+          abort(
+            "material2d pipeline resource registry contained a mismatched key for " +
+            type_name,
+          )
+      }
+    None => {
+      let key : @ecs.ResourceKey[Material2dPipeline[M]] = @ecs.register_resource(
+        debug_name="bevy_sprite_render::" + type_name,
+      )
+      material2d_pipeline_resource_registry.val.set(type_name, @any.of(key))
+      key
+    }
+  }
+}
+
+///|
+pub impl[M] @app.Resource for Material2dPipeline[M] with resource() {
+  registered_material2d_pipeline_resource_key()
+}
+
+///|
+fn[M] init_material2d_pipeline_resource(
+  app : @app.App[@ecs.World],
+  _probe : @asset.Handle[M],
+) -> @app.App[@ecs.World] {
+  app.init_resource(fn() -> Material2dPipeline[M] {
+    Material2dPipeline::default()
+  })
+}
+
+///|
+fn color_material2d_pipeline_resource() -> Material2dPipeline[
+  ColorMaterialAsset,
+] {
+  Material2dPipeline::new(
+    Some(MESH2D_SHADER_PATH),
+    Some("shaders/bevy/bevy_sprite_render/mesh2d/color_material.wgsl"),
+  )
 }
 
 ///|
@@ -1636,7 +1845,10 @@ pub fn[M] material2d_plugin(
     let probe : @asset.Handle[M] = @asset.Handle::new(0)
     init_render_material2d_instances_resource(
       init_prepared_material2d_assets_resource(
-        init_material2d_assets_resource(app, probe),
+        init_material2d_pipeline_resource(
+          init_material2d_assets_resource(app, probe),
+          probe,
+        ),
         probe,
       ),
       probe,
@@ -1658,7 +1870,11 @@ pub fn color_material_plugin(
 ) -> @app.Plugin[@ecs.World] {
   fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     let plugin : Material2dPlugin[ColorMaterialAsset] = Material2dPlugin::default()
-    init_default_color_material_asset(material2d_plugin(plugin)(app))
+    init_default_color_material_asset(
+      material2d_plugin(plugin)(app).insert_resource(
+        color_material2d_pipeline_resource(),
+      ),
+    )
   }
 }
 
@@ -1749,6 +1965,13 @@ pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with uv_offset(self) 
 ///|
 pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with uv_scale(self) {
   self.to_color_material().uv_scale()
+}
+
+///|
+pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with bind_group_data(
+  self,
+) {
+  self.to_color_material().bind_group_data()
 }
 
 ///|
@@ -7557,13 +7780,15 @@ fn extracted_mesh2d_item(
 }
 
 ///|
-fn extract_color_material_mesh_instances_system(world : @ecs.World) -> Unit {
-  let material_store : @ecs.ComponentAccess[MeshMaterial2d[ColorMaterialAsset]] = get_mesh_material2d_store(
+fn[M] extract_material2d_mesh_instances_system(
+  world : @ecs.World,
+  _probe : @asset.Handle[M],
+) -> Unit {
+  _probe |> ignore
+  let material_store : @ecs.ComponentAccess[MeshMaterial2d[M]] = get_mesh_material2d_store(
     world,
   )
-  let key : @ecs.ResourceKey[RenderMaterial2dInstances[ColorMaterialAsset]] = render_material2d_instances_resource_key_of(
-    @asset.Handle::new(0),
-  )
+  let key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = RenderMaterial2dInstances::resource()
   guard (try! world.get_resource_ref_mut(key, world.read_change_tick()))
     is Some(instances_ref) else {
     return
@@ -7575,19 +7800,31 @@ fn extract_color_material_mesh_instances_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn prepare_color_material2d_assets_system(world : @ecs.World) -> Unit {
-  let instances_key : @ecs.ResourceKey[
-    RenderMaterial2dInstances[ColorMaterialAsset],
-  ] = RenderMaterial2dInstances::resource()
-  let source_assets_key : @ecs.ResourceKey[@asset.Assets[ColorMaterialAsset]] = @asset.assets_resource_key()
+fn extract_color_material_mesh_instances_system(world : @ecs.World) -> Unit {
+  let probe : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(0)
+  extract_material2d_mesh_instances_system(world, probe)
+}
+
+///|
+fn[M : Material2d] prepare_material2d_assets_system(
+  world : @ecs.World,
+  _probe : @asset.Handle[M],
+) -> Unit {
+  _probe |> ignore
+  let instances_key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = RenderMaterial2dInstances::resource()
+  let source_assets_key : @ecs.ResourceKey[@asset.Assets[M]] = @asset.assets_resource_key()
+  let pipeline_key : @ecs.ResourceKey[Material2dPipeline[M]] = Material2dPipeline::resource()
   let prepared_assets_key : @ecs.ResourceKey[
-    @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
+    @asset.Assets[PreparedMaterial2d[M]],
   ] = @asset.assets_resource_key()
   guard (try! world.get_resource_ref(instances_key)) is Some(instances_ref) else {
     return
   }
   guard (try! world.get_resource_ref(source_assets_key))
     is Some(source_assets_ref) else {
+    return
+  }
+  guard (try! world.get_resource(pipeline_key)) is Some(pipeline) else {
     return
   }
   guard (try! world.get_resource_ref_mut(
@@ -7604,10 +7841,16 @@ fn prepare_color_material2d_assets_system(world : @ecs.World) -> Unit {
     let prepared_handle = PreparedMaterial2d::prepared_handle(material_handle)
     prepared_assets_ref.val.insert(
       prepared_handle,
-      PreparedMaterial2d::from_material(material_handle, material),
+      PreparedMaterial2d::from_material(material_handle, material, pipeline),
     )
     |> ignore
   }
+}
+
+///|
+fn prepare_color_material2d_assets_system(world : @ecs.World) -> Unit {
+  let probe : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(0)
+  prepare_material2d_assets_system(world, probe)
 }
 
 ///|
@@ -7615,11 +7858,12 @@ fn prepared_color_material_assets_for_tests(
   materials : Array[(@asset.Handle[ColorMaterialAsset], ColorMaterialAsset)],
 ) -> @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]] {
   let prepared : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]] = @asset.Assets::new()
+  let pipeline = color_material2d_pipeline_resource()
   for material_info in materials {
     let (handle, material) = material_info
     prepared.insert(
       PreparedMaterial2d::prepared_handle(handle),
-      PreparedMaterial2d::from_material(handle, material),
+      PreparedMaterial2d::from_material(handle, material, pipeline),
     )
     |> ignore
   }
@@ -9201,14 +9445,18 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   )
   init_render_material2d_instances_resource(
     init_prepared_material2d_assets_resource(
-      init_material2d_assets_resource(
-        app.init_resource(fn() { ClearColor::default() }),
+      init_material2d_pipeline_resource(
+        init_material2d_assets_resource(
+          app.init_resource(fn() { ClearColor::default() }),
+          color_material_probe,
+        ),
         color_material_probe,
       ),
       color_material_probe,
     ),
     color_material_probe,
   )
+  .insert_resource(color_material2d_pipeline_resource())
   .init_resource(fn() {
     let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
     assets
@@ -9267,14 +9515,18 @@ pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   )
   init_render_material2d_instances_resource(
     init_prepared_material2d_assets_resource(
-      init_material2d_assets_resource(
-        app.init_resource(fn() { ClearColor::default() }),
+      init_material2d_pipeline_resource(
+        init_material2d_assets_resource(
+          app.init_resource(fn() { ClearColor::default() }),
+          color_material_probe,
+        ),
         color_material_probe,
       ),
       color_material_probe,
     ),
     color_material_probe,
   )
+  .insert_resource(color_material2d_pipeline_resource())
   .init_resource(fn() {
     let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
     assets
