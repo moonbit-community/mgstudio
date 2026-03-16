@@ -311,8 +311,48 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
     material2d_plugin(plugin),
   ])
   let key : @ecs.ResourceKey[@asset.Assets[DummyMaterialAsset]] = @asset.assets_resource_key()
+  let instances_key : @ecs.ResourceKey[
+    RenderMaterial2dInstances[DummyMaterialAsset],
+  ] = RenderMaterial2dInstances::resource()
 
   inspect(app.contains_resource(key), content="true")
+  inspect(app.contains_resource(instances_key), content="true")
+}
+
+///|
+test "render2d: extract_color_material_mesh_instances_system populates resource" {
+  let entity_ref : Ref[@core.Entity?] = Ref::new(None)
+  let handle_ref : Ref[@asset.Handle[ColorMaterialAsset]?] = Ref::new(None)
+
+  let mut app = @app.App::new(@ecs.World::new()).add_plugins([
+    @asset.asset_plugin, render2d_plugin,
+  ])
+  app = app.add_system(fn(world : @ecs.World) {
+    let material = ColorMaterial::from_image(@asset.Handle::new(7))
+    handle_ref.val = Some(material.handle)
+    entity_ref.val = Some(
+      Mesh2dBundle::new(
+        Mesh2d::from_rectangle(Rectangle::new(8.0F, 6.0F)),
+        material,
+        @math.Transform::identity(),
+      ).spawn(world),
+    )
+  })
+  app = app.run_once()
+  let world = app.world()
+  let entity = entity_ref.val.unwrap_or(@core.Entity::new(0, 0))
+  let handle = handle_ref.val.unwrap_or(@asset.Handle::new(-1))
+
+  let instances_key : @ecs.ResourceKey[
+    RenderMaterial2dInstances[ColorMaterialAsset],
+  ] = RenderMaterial2dInstances::resource()
+  let instances = try! world.get_resource(instances_key).unwrap()
+
+  inspect(instances.contains(entity), content="true")
+  inspect(
+    instances.get(entity).map(fn(value) { value.id() == handle.id() }),
+    content="Some(true)",
+  )
 }
 
 ///|

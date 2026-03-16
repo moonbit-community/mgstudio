@@ -133,10 +133,11 @@ pub fn get_no_wireframe2d_store(
 }
 
 ///|
-pub fn get_mesh_material2d_store(
+pub fn[M] get_mesh_material2d_store(
   world : @ecs.World,
-) -> @ecs.ComponentAccess[MeshMaterial2d[ColorMaterialAsset]] {
-  world.component(ecs_key_mesh_material2d)
+) -> @ecs.ComponentAccess[MeshMaterial2d[M]] {
+  let key : @ecs.ComponentKey[MeshMaterial2d[M]] = MeshMaterial2d::component()
+  world.component(key)
 }
 
 ///|

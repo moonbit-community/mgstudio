@@ -13,6 +13,7 @@ import {
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
@@ -90,7 +91,7 @@ pub fn get_gpu_mesh2d_store(@ecs.World) -> @ecs.ComponentAccess[GpuMesh2d]
 
 pub fn get_mesh2d_store(@ecs.World) -> @ecs.ComponentAccess[Mesh2d]
 
-pub fn get_mesh_material2d_store(@ecs.World) -> @ecs.ComponentAccess[MeshMaterial2d[ColorMaterialAsset]]
+pub fn[M] get_mesh_material2d_store(@ecs.World) -> @ecs.ComponentAccess[MeshMaterial2d[M]]
 
 pub fn get_no_wireframe2d_store(@ecs.World) -> @ecs.ComponentAccess[NoWireframe2d]
 
@@ -182,6 +183,8 @@ pub let render2d_set_execute : String
 
 pub let render2d_set_extract : String
 
+pub let render2d_set_extract_materials : String
+
 pub let render2d_set_prepare : String
 
 pub let render2d_set_queue : String
@@ -199,6 +202,8 @@ pub fn render_execute_system(@ecs.World) -> Unit
 pub fn render_extract_system(@ecs.World) -> Unit
 
 pub fn render_extract_system_ecs(@ecs.World) -> Unit
+
+pub fn[M] render_material2d_instances_resource_key_of(@asset.Handle[M]) -> @ecs.ResourceKey[RenderMaterial2dInstances[M]]
 
 pub fn render_mesh_asset_add(@mesh.Mesh) -> @asset.Handle[@mesh.Mesh]
 
@@ -788,6 +793,17 @@ pub fn RenderLayers::without_layer(Self, Int) -> Self
 pub impl @ecs.Component for RenderLayers
 pub impl ToJson for RenderLayers
 pub impl @json.FromJson for RenderLayers
+
+pub struct RenderMaterial2dInstances[M] {
+  instances : @hashmap.HashMap[(Int, Int), @asset.Handle[M]]
+}
+pub fn[M] RenderMaterial2dInstances::clear(Self[M]) -> Unit
+pub fn[M] RenderMaterial2dInstances::contains(Self[M], @core.Entity) -> Bool
+pub fn[M] RenderMaterial2dInstances::get(Self[M], @core.Entity) -> @asset.Handle[M]?
+pub fn[M] RenderMaterial2dInstances::new() -> Self[M]
+pub fn[M] RenderMaterial2dInstances::remove(Self[M], @core.Entity) -> Unit
+pub fn[M] RenderMaterial2dInstances::set(Self[M], @core.Entity, @asset.Handle[M]) -> Unit
+pub impl[M] @app.Resource for RenderMaterial2dInstances[M]
 
 type RenderState
 pub impl ToJson for RenderState

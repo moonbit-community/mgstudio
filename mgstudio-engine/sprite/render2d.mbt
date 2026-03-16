@@ -1320,6 +1320,107 @@ pub fn ColorMaterial::uv_scale(self : ColorMaterial) -> @math.Vec2 {
 }
 
 ///|
+fn material2d_entity_key(entity : @core.Entity) -> (Int, Int) {
+  (entity.id, entity.generation)
+}
+
+///|
+pub struct RenderMaterial2dInstances[M] {
+  instances : @hashmap.HashMap[(Int, Int), @asset.Handle[M]]
+}
+
+///|
+let render_material2d_instances_resource_registry : Ref[
+  @hashmap.HashMap[String, @any.Any],
+] = Ref::new(@hashmap.HashMap::new())
+
+///|
+pub fn[M] RenderMaterial2dInstances::new() -> RenderMaterial2dInstances[M] {
+  RenderMaterial2dInstances::{ instances: @hashmap.HashMap::new() }
+}
+
+///|
+pub fn[M] RenderMaterial2dInstances::contains(
+  self : RenderMaterial2dInstances[M],
+  entity : @core.Entity,
+) -> Bool {
+  self.instances.contains(material2d_entity_key(entity))
+}
+
+///|
+pub fn[M] RenderMaterial2dInstances::get(
+  self : RenderMaterial2dInstances[M],
+  entity : @core.Entity,
+) -> @asset.Handle[M]? {
+  self.instances.get(material2d_entity_key(entity))
+}
+
+///|
+pub fn[M] RenderMaterial2dInstances::set(
+  self : RenderMaterial2dInstances[M],
+  entity : @core.Entity,
+  material : @asset.Handle[M],
+) -> Unit {
+  self.instances.set(material2d_entity_key(entity), material)
+}
+
+///|
+pub fn[M] RenderMaterial2dInstances::remove(
+  self : RenderMaterial2dInstances[M],
+  entity : @core.Entity,
+) -> Unit {
+  self.instances.remove(material2d_entity_key(entity)) |> ignore
+}
+
+///|
+pub fn[M] RenderMaterial2dInstances::clear(
+  self : RenderMaterial2dInstances[M],
+) -> Unit {
+  self.instances.clear()
+}
+
+///|
+fn[M] registered_render_material2d_instances_resource_key() -> @ecs.ResourceKey[
+  RenderMaterial2dInstances[M],
+] {
+  let probe : RenderMaterial2dInstances[M] = RenderMaterial2dInstances::new()
+  let type_name = @any.of(probe).type_name()
+  match render_material2d_instances_resource_registry.val.get(type_name) {
+    Some(existing_key) =>
+      match existing_key.try_to() {
+        Some(key) => key
+        None =>
+          abort(
+            "render material2d instances resource registry contained a mismatched key for " +
+            type_name,
+          )
+      }
+    None => {
+      let key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = @ecs.register_resource(
+        debug_name="bevy_sprite_render::" + type_name,
+      )
+      render_material2d_instances_resource_registry.val.set(
+        type_name,
+        @any.of(key),
+      )
+      key
+    }
+  }
+}
+
+///|
+pub fn[M] render_material2d_instances_resource_key_of(
+  _probe : @asset.Handle[M],
+) -> @ecs.ResourceKey[RenderMaterial2dInstances[M]] {
+  registered_render_material2d_instances_resource_key()
+}
+
+///|
+pub impl[M] @app.Resource for RenderMaterial2dInstances[M] with resource() {
+  registered_render_material2d_instances_resource_key()
+}
+
+///|
 pub impl Default for ColorMaterial with default() {
   ColorMaterial::{ handle: default_color_material_asset_handle() }
 }
@@ -1412,6 +1513,16 @@ fn[M] init_material2d_assets_resource(
 }
 
 ///|
+fn[M] init_render_material2d_instances_resource(
+  app : @app.App[@ecs.World],
+  _probe : @asset.Handle[M],
+) -> @app.App[@ecs.World] {
+  app.init_resource(fn() -> RenderMaterial2dInstances[M] {
+    RenderMaterial2dInstances::new()
+  })
+}
+
+///|
 fn init_default_color_material_asset(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
@@ -1443,7 +1554,10 @@ pub fn[M] material2d_plugin(
 ) -> @app.Plugin[@ecs.World] {
   fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     let probe : @asset.Handle[M] = @asset.Handle::new(0)
-    init_material2d_assets_resource(app, probe)
+    init_render_material2d_instances_resource(
+      init_material2d_assets_resource(app, probe),
+      probe,
+    )
   }
 }
 
@@ -6558,7 +6672,13 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
     })
     let mesh_store = get_mesh2d_store(ecs_world)
     let gpu_mesh_store = get_gpu_mesh2d_store(ecs_world)
-    let material_store = get_mesh_material2d_store(ecs_world)
+    let material_instances_key : @ecs.ResourceKey[
+      RenderMaterial2dInstances[ColorMaterialAsset],
+    ] = render_material2d_instances_resource_key_of(@asset.Handle::new(0))
+    guard (try! ecs_world.get_resource_ref(material_instances_key))
+      is Some(material_instances_ref) else {
+      return
+    }
     let wireframe_store = get_wireframe2d_store(ecs_world)
     let no_wireframe_store = get_no_wireframe2d_store(ecs_world)
     let wireframe_color_store = get_wireframe2d_color_store(ecs_world)
@@ -6573,7 +6693,12 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
         return
       }
       guard gpu_mesh_store.get(entity) is Some(gpu) else { return }
-      guard material_store.get(entity) is Some(material) else { return }
+      guard material_instances_ref.val.get(entity) is Some(material_handle) else {
+        return
+      }
+      guard color_material_get(material_handle) is Some(material) else {
+        return
+      }
       let layers = match layers_store.get(entity) {
         Some(v) => v
         None => RenderLayers::default()
@@ -6591,11 +6716,11 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
         payload: Mesh2dDrawPayload::{
           mesh_id: gpu.mesh_id,
           transform,
-          color: material.color(),
-          alpha_mode: material.alpha_mode(),
-          texture: material.texture(),
-          uv_offset: material.uv_offset(),
-          uv_scale: material.uv_scale(),
+          color: material.color,
+          alpha_mode: material.alpha_mode,
+          texture: material.texture,
+          uv_offset: material.uv_offset,
+          uv_scale: material.uv_scale,
           layers,
         },
       })
@@ -6810,6 +6935,14 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
       None
     }
 
+    let material_instances_key : @ecs.ResourceKey[
+      RenderMaterial2dInstances[ColorMaterialAsset],
+    ] = render_material2d_instances_resource_key_of(@asset.Handle::new(0))
+    guard (try! world.get_resource_ref(material_instances_key))
+      is Some(material_instances_ref) else {
+      return
+    }
+
     // ECS mesh components.
     try! world
     .query1(ecs_key_mesh2d)
@@ -6820,7 +6953,10 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
       guard (try! world.get(entity, ecs_key_gpu_mesh2d)) is Some(gpu) else {
         return
       }
-      guard (try! world.get(entity, ecs_key_mesh_material2d)) is Some(material) else {
+      guard material_instances_ref.val.get(entity) is Some(material_handle) else {
+        return
+      }
+      guard color_material_get(material_handle) is Some(material) else {
         return
       }
       let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
@@ -6832,11 +6968,11 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         payload: Mesh2dDrawPayload::{
           mesh_id: gpu.mesh_id,
           transform,
-          color: material.color(),
-          alpha_mode: material.alpha_mode(),
-          texture: material.texture(),
-          uv_offset: material.uv_offset(),
-          uv_scale: material.uv_scale(),
+          color: material.color,
+          alpha_mode: material.alpha_mode,
+          texture: material.texture,
+          uv_offset: material.uv_offset,
+          uv_scale: material.uv_scale,
           layers,
         },
       })
@@ -7317,6 +7453,24 @@ fn extracted_mesh2d_item(
       layers,
     },
   }
+}
+
+///|
+fn extract_color_material_mesh_instances_system(world : @ecs.World) -> Unit {
+  let material_store : @ecs.ComponentAccess[MeshMaterial2d[ColorMaterialAsset]] = get_mesh_material2d_store(
+    world,
+  )
+  let key : @ecs.ResourceKey[RenderMaterial2dInstances[ColorMaterialAsset]] = render_material2d_instances_resource_key_of(
+    @asset.Handle::new(0),
+  )
+  guard (try! world.get_resource_ref_mut(key, world.read_change_tick()))
+    is Some(instances_ref) else {
+    return
+  }
+  instances_ref.val.clear()
+  material_store.for_each(fn(entity, material) {
+    instances_ref.val.set(entity, material.handle)
+  })
 }
 
 ///|
@@ -8795,6 +8949,11 @@ pub let render2d_set_extract : @app.SystemSet = @app.system_set(
 )
 
 ///|
+pub let render2d_set_extract_materials : @app.SystemSet = @app.system_set(
+  "bevy.render2d.extract_materials",
+)
+
+///|
 pub let render2d_set_prepare : @app.SystemSet = @app.system_set(
   "bevy.render2d.prepare",
 )
@@ -8818,8 +8977,11 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let color_material_probe : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(
     0,
   )
-  init_material2d_assets_resource(
-    app.init_resource(fn() { ClearColor::default() }),
+  init_render_material2d_instances_resource(
+    init_material2d_assets_resource(
+      app.init_resource(fn() { ClearColor::default() }),
+      color_material_probe,
+    ),
     color_material_probe,
   )
   .init_resource(fn() {
@@ -8828,6 +8990,11 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   })
   .add_startup_system(register_render2d_bevy_shader_sources)
   .add_startup_system(init_render_state_system)
+  .add_post_update_system_config(
+    @app.system(extract_color_material_mesh_instances_system).in_set(
+      render2d_set_extract_materials,
+    ),
+  )
   .add_post_update_system_config(
     @app.system(render2d_camera_system).in_set(camera_update_systems),
   )
@@ -8844,6 +9011,9 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.system(render_execute_system).in_set(render2d_set_render),
   )
   .configure_set(@app.PostUpdate, camera_update_systems, before=[
+    render2d_set_extract_materials,
+  ])
+  .configure_set(@app.PostUpdate, render2d_set_extract_materials, before=[
     render2d_set_extract,
   ])
   .configure_set(@app.PostUpdate, render2d_set_extract, before=[
@@ -8862,8 +9032,11 @@ pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let color_material_probe : @asset.Handle[ColorMaterialAsset] = @asset.Handle::new(
     0,
   )
-  init_material2d_assets_resource(
-    app.init_resource(fn() { ClearColor::default() }),
+  init_render_material2d_instances_resource(
+    init_material2d_assets_resource(
+      app.init_resource(fn() { ClearColor::default() }),
+      color_material_probe,
+    ),
     color_material_probe,
   )
   .init_resource(fn() {
@@ -8872,6 +9045,11 @@ pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   })
   .add_startup_system(register_render2d_bevy_shader_sources)
   .add_startup_system(init_render_state_system)
+  .add_post_update_system_config(
+    @app.system(extract_color_material_mesh_instances_system).in_set(
+      render2d_set_extract_materials,
+    ),
+  )
   .add_post_update_system_config(
     @app.system(render2d_camera_system_ecs).in_set(camera_update_systems),
   )
@@ -8888,6 +9066,9 @@ pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.system(render_execute_system).in_set(render2d_set_render),
   )
   .configure_set(@app.PostUpdate, camera_update_systems, before=[
+    render2d_set_extract_materials,
+  ])
+  .configure_set(@app.PostUpdate, render2d_set_extract_materials, before=[
     render2d_set_extract,
   ])
   .configure_set(@app.PostUpdate, render2d_set_extract, before=[
