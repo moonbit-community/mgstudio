@@ -472,7 +472,7 @@ pub struct GpuBackend {
   mut bloom2d_mip_count : Int
   mut bloom2d_mip_width : Int
   mut bloom2d_mip_height : Int
-  mut bloom2d_fallback_lut_texture_id : Int
+  mut tonemapping_fallback_lut_texture_id : Int
   mut auto_exposure_compute_bgl : @wgpu.BindGroupLayout?
   mut auto_exposure_compute_pipeline_layout : @wgpu.PipelineLayout?
   mut auto_exposure_histogram_pipeline : @wgpu.ComputePipeline?
@@ -831,7 +831,7 @@ pub fn GpuBackend::new(
     bloom2d_mip_count: 0,
     bloom2d_mip_width: 0,
     bloom2d_mip_height: 0,
-    bloom2d_fallback_lut_texture_id: -1,
+    tonemapping_fallback_lut_texture_id: -1,
     auto_exposure_compute_bgl: None,
     auto_exposure_compute_pipeline_layout: None,
     auto_exposure_histogram_pipeline: None,

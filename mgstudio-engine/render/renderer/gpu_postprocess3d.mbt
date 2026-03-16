@@ -542,7 +542,7 @@ fn GpuBackend::draw_postprocess3d_fullscreen(
   guard self.tonemapping2d_bgl is Some(final_bind_layout) else { return }
   guard self.tonemapping2d_view_buf is Some(view_buf) else { return }
   guard self.tonemapping2d_sampler is Some(tonemapping_sampler) else { return }
-  let selected_lut_view = bloom2d_selected_lut_view(
+  let selected_lut_view = tonemapping_selected_lut_view(
     self, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
   let exposure_value = clamp_non_negative(exposure)

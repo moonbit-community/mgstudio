@@ -344,7 +344,7 @@ pub struct GpuBackend {
   mut bloom2d_mip_count : Int
   mut bloom2d_mip_width : Int
   mut bloom2d_mip_height : Int
-  mut bloom2d_fallback_lut_texture_id : Int
+  mut tonemapping_fallback_lut_texture_id : Int
   mut auto_exposure_compute_bgl : @wgpu_mbt.BindGroupLayout?
   mut auto_exposure_compute_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut auto_exposure_histogram_pipeline : @wgpu_mbt.ComputePipeline?
