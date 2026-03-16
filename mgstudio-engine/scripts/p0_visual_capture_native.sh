@@ -23,7 +23,6 @@ fi
 
 PACKAGE="$1"
 OUTPUT_PNG="$2"
-WGPU_LINK_MODE="${MBT_WGPU_LINK_MODE:-static}"
 RUN_TIMEOUT_SECONDS="${MGSTUDIO_PARITY_RUN_TIMEOUT_SECONDS:-60}"
 SETTLE_SECONDS="${MGSTUDIO_PARITY_SETTLE_SECONDS:-4}"
 CAPTURE_DELAY_FRAMES="${MGSTUDIO_PARITY_CAPTURE_DELAY_FRAMES:-120}"
@@ -43,7 +42,7 @@ META_JSON="${OUTPUT_PNG%.png}.meta.json"
 RGBA8_BLOB="${OUTPUT_PNG%.png}.rgba8.blob"
 
 echo "[capture] moon build --target native --release ${PACKAGE}"
-MBT_WGPU_LINK_MODE="${WGPU_LINK_MODE}" moon -C "${ENGINE_DIR}" build --target native --release "${PACKAGE}"
+moon -C "${ENGINE_DIR}" build --target native --release "${PACKAGE}"
 
 rm -f "${OUTPUT_PNG}" "${RGBA8_BLOB}"
 
@@ -55,8 +54,7 @@ start_app() {
   : >"${RUN_LOG}"
   echo "[capture] moon run --target native --release ${PACKAGE} (delay_frames=${delay_frames})"
   (
-    MBT_WGPU_LINK_MODE="${WGPU_LINK_MODE}" \
-      MGSTUDIO_PARITY_CAPTURE_RGBA8_BLOB="${RGBA8_BLOB}" \
+    MGSTUDIO_PARITY_CAPTURE_RGBA8_BLOB="${RGBA8_BLOB}" \
       MGSTUDIO_PARITY_CAPTURE_DELAY_FRAMES="${delay_frames}" \
       moon -C "${ENGINE_DIR}" run --target native --release "${PACKAGE}" >"${RUN_LOG}" 2>&1
   ) &
