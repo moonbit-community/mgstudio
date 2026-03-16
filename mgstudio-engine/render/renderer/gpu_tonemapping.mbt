@@ -134,7 +134,7 @@ pub fn draw_tonemapping2d(
 }
 
 ///|
-fn GpuBackend::draw_postprocess3d_fullscreen(
+fn GpuBackend::draw_tonemapping3d_fullscreen(
   self : GpuBackend,
   scene_texture_id : Int,
   exposure : Float,
@@ -174,10 +174,6 @@ fn GpuBackend::draw_postprocess3d_fullscreen(
   color_grading_exposure : Float,
   color_grading_hue : Float,
   color_grading_post_saturation : Float,
-  fxaa_enabled : Int,
-  fxaa_edge_threshold : Float,
-  chromatic_aberration : Float,
-  vignette : Float,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(active_pass) else { return }
@@ -210,10 +206,6 @@ fn GpuBackend::draw_postprocess3d_fullscreen(
     self, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
   let exposure_value = clamp_non_negative(exposure)
-  fxaa_enabled |> ignore
-  fxaa_edge_threshold |> ignore
-  chromatic_aberration |> ignore
-  vignette |> ignore
   view_width |> ignore
   view_height |> ignore
   let view_uniform = tonemapping_view_uniform_bytes_full(
@@ -268,7 +260,7 @@ fn GpuBackend::draw_postprocess3d_fullscreen(
       let final_bg = builder.finish(
         self.device,
         final_bind_layout,
-        label="mgstudio_postprocess3d_tonemapping_bg",
+        label="mgstudio_tonemapping3d_bg",
       )
       let final_pass = frame.encoder.begin_render_pass_color_load(dst_view)
       final_pass.set_viewport(
@@ -305,22 +297,6 @@ pub fn GpuBackend::draw_tonemapping3d(
   exposure : Float,
   tonemapping_mode : Int,
   deband_dither_enabled : Int,
-  fxaa_enabled : Int,
-  fxaa_edge_threshold : Float,
-  fxaa_edge_threshold_min : Float,
-  chromatic_aberration_intensity : Float,
-  chromatic_aberration_max_samples : Int,
-  vignette_intensity : Float,
-  vignette_radius : Float,
-  vignette_smoothness : Float,
-  vignette_roundness : Float,
-  vignette_center_x : Float,
-  vignette_center_y : Float,
-  vignette_edge_compensation : Float,
-  vignette_color_r : Float,
-  vignette_color_g : Float,
-  vignette_color_b : Float,
-  vignette_color_a : Float,
   view_width : Int,
   view_height : Int,
   agx_lut_texture_id : Int,
@@ -356,23 +332,7 @@ pub fn GpuBackend::draw_tonemapping3d(
   color_grading_hue : Float,
   color_grading_post_saturation : Float,
 ) -> Unit raise GpuBackendError {
-  fxaa_enabled |> ignore
-  fxaa_edge_threshold |> ignore
-  fxaa_edge_threshold_min |> ignore
-  chromatic_aberration_intensity |> ignore
-  chromatic_aberration_max_samples |> ignore
-  vignette_intensity |> ignore
-  vignette_radius |> ignore
-  vignette_smoothness |> ignore
-  vignette_roundness |> ignore
-  vignette_center_x |> ignore
-  vignette_center_y |> ignore
-  vignette_edge_compensation |> ignore
-  vignette_color_r |> ignore
-  vignette_color_g |> ignore
-  vignette_color_b |> ignore
-  vignette_color_a |> ignore
-  self.draw_postprocess3d_fullscreen(
+  self.draw_tonemapping3d_fullscreen(
     scene_texture_id, exposure, tonemapping_mode, deband_dither_enabled, view_width,
     view_height, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
     color_grading_balance_x_axis_x, color_grading_balance_x_axis_y, color_grading_balance_x_axis_z,
@@ -384,7 +344,7 @@ pub fn GpuBackend::draw_tonemapping3d(
     color_grading_gain_shadows, color_grading_gain_midtones, color_grading_gain_highlights,
     color_grading_lift_shadows, color_grading_lift_midtones, color_grading_lift_highlights,
     color_grading_midtones_start, color_grading_midtones_end, color_grading_exposure,
-    color_grading_hue, color_grading_post_saturation, 0, 0.0F, 0.0F, 0.0F,
+    color_grading_hue, color_grading_post_saturation,
   )
 }
 
@@ -394,22 +354,6 @@ pub fn draw_tonemapping3d(
   exposure~ : Float,
   tonemapping_mode~ : Int,
   deband_dither_enabled~ : Int,
-  fxaa_enabled~ : Int,
-  fxaa_edge_threshold~ : Float,
-  fxaa_edge_threshold_min~ : Float,
-  chromatic_aberration_intensity~ : Float,
-  chromatic_aberration_max_samples~ : Int,
-  vignette_intensity~ : Float,
-  vignette_radius~ : Float,
-  vignette_smoothness~ : Float,
-  vignette_roundness~ : Float,
-  vignette_center_x~ : Float,
-  vignette_center_y~ : Float,
-  vignette_edge_compensation~ : Float,
-  vignette_color_r~ : Float,
-  vignette_color_g~ : Float,
-  vignette_color_b~ : Float,
-  vignette_color_a~ : Float,
   view_width~ : Int,
   view_height~ : Int,
   agx_lut_texture_id~ : Int,
@@ -447,11 +391,7 @@ pub fn draw_tonemapping3d(
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.draw_tonemapping3d(
-      scene_texture_id, exposure, tonemapping_mode, deband_dither_enabled, fxaa_enabled,
-      fxaa_edge_threshold, fxaa_edge_threshold_min, chromatic_aberration_intensity,
-      chromatic_aberration_max_samples, vignette_intensity, vignette_radius, vignette_smoothness,
-      vignette_roundness, vignette_center_x, vignette_center_y, vignette_edge_compensation,
-      vignette_color_r, vignette_color_g, vignette_color_b, vignette_color_a, view_width,
+      scene_texture_id, exposure, tonemapping_mode, deband_dither_enabled, view_width,
       view_height, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
       color_grading_balance_x_axis_x, color_grading_balance_x_axis_y, color_grading_balance_x_axis_z,
       color_grading_balance_y_axis_x, color_grading_balance_y_axis_y, color_grading_balance_y_axis_z,
