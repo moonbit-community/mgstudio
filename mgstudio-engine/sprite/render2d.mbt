@@ -4629,7 +4629,7 @@ fn render2d_apply_camera_bloom_from_source(
     return
   }
   let settings = render2d_sanitize_bloom(bloom)
-  @render.host_gpu_apply_bloom2d(
+  @render.host_gpu_apply_bloom(
     scene_texture_id=source.id(),
     intensity=settings.intensity,
     low_frequency_boost=settings.low_frequency_boost,

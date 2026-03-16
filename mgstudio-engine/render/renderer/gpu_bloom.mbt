@@ -13,8 +13,8 @@
 // limitations under the License.
 
 ///|
-/// 2D bloom implementation extracted from the generic post-process boundary.
-pub fn GpuBackend::apply_bloom2d(
+/// Shared bloom implementation extracted from the generic post-process boundary.
+pub fn GpuBackend::apply_bloom(
   self : GpuBackend,
   scene_texture_id : Int,
   intensity : Float,
@@ -544,7 +544,7 @@ pub fn GpuBackend::apply_bloom2d(
 }
 
 ///|
-pub fn apply_bloom2d(
+pub fn apply_bloom(
   scene_texture_id~ : Int,
   intensity~ : Float,
   low_frequency_boost~ : Float,
@@ -560,12 +560,12 @@ pub fn apply_bloom2d(
   view_height~ : Int,
 ) -> Unit {
   if ensure_backend() is Some(backend) {
-    backend.apply_bloom2d(
+    backend.apply_bloom(
       scene_texture_id, intensity, low_frequency_boost, low_frequency_boost_curvature,
       high_pass_frequency, threshold, threshold_softness, composite_mode, max_mip_dimension,
       scale_x, scale_y, view_width, view_height,
     ) catch {
-      err => debug_runtime_error("apply_bloom2d", err)
+      err => debug_runtime_error("apply_bloom", err)
     }
   }
 }

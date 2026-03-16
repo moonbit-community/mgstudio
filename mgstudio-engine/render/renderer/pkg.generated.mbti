@@ -34,7 +34,7 @@ pub const SURFACE_PRESENT_MODE_MAILBOX : Int = 5
 
 pub fn apply_auto_exposure(view_key_hi~ : Int, view_key_lo~ : Int, scene_texture_id~ : Int, min_ev100~ : Float, max_ev100~ : Float, low_percent~ : Float, high_percent~ : Float, speed_brighten~ : Float, speed_darken~ : Float, exponential_transition_distance~ : Float, delta_time~ : Float, metering_mask_texture_id~ : Int, compensation_curve_lut~ : Bytes, compensation_curve_min_log_lum~ : Float, compensation_curve_max_log_lum~ : Float, compensation_curve_min_compensation~ : Float, compensation_curve_max_compensation~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
 
-pub fn apply_bloom2d(scene_texture_id~ : Int, intensity~ : Float, low_frequency_boost~ : Float, low_frequency_boost_curvature~ : Float, high_pass_frequency~ : Float, threshold~ : Float, threshold_softness~ : Float, composite_mode~ : Int, max_mip_dimension~ : Int, scale_x~ : Float, scale_y~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
+pub fn apply_bloom(scene_texture_id~ : Int, intensity~ : Float, low_frequency_boost~ : Float, low_frequency_boost_curvature~ : Float, high_pass_frequency~ : Float, threshold~ : Float, threshold_softness~ : Float, composite_mode~ : Int, max_mip_dimension~ : Int, scale_x~ : Float, scale_y~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
 
 pub fn asset_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
 
@@ -369,7 +369,7 @@ pub struct GpuBackend {
   meshes : Array[GpuMeshInfo]
 }
 pub fn GpuBackend::apply_auto_exposure(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Bytes, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
-pub fn GpuBackend::apply_bloom2d(Self, Int, Float, Float, Float, Float, Float, Float, Int, Int, Float, Float, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::apply_bloom(Self, Int, Float, Float, Float, Float, Float, Float, Int, Int, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::begin_frame(Self) -> Unit
 pub fn GpuBackend::begin_frame_binding(Self, Int) -> Unit
 pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Int) -> Unit raise GpuBackendError
