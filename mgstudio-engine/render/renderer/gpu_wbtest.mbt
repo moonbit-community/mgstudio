@@ -47,7 +47,7 @@ test "renderer: interleaved 2d mesh csv keeps original vertex count" {
     backend.meshes.length() == 1 &&
     backend.meshes[0].id == mesh_id &&
     backend.meshes[0].vertex_count.reinterpret_as_int() == 3 &&
-    backend.meshes[0].vertex_stride_bytes == MESH2D_BEVY_VERTEX_STRIDE_BYTES
+    backend.meshes[0].vertex_stride_bytes == MESH2D_VERTEX_STRIDE_BYTES
   inspect(ok, content="true")
 }
 
@@ -58,7 +58,7 @@ test "renderer: mesh2d resources initialize expected bind groups" {
   let ok = backend.mesh2d_view_bg is Some(_) &&
     backend.mesh2d_instance_bg is Some(_) &&
     backend.mesh2d_material_bgl is Some(_) &&
-    backend.mesh2d_instance_capacity >= MESH2D_BEVY_UNIFORM_DYNAMIC_STRIDE_BYTES
+    backend.mesh2d_instance_capacity >= MESH2D_UNIFORM_DYNAMIC_STRIDE_BYTES
   inspect(ok, content="true")
 }
 
@@ -67,10 +67,10 @@ test "renderer: mesh2d dynamic uniform pool grows by required capacity" {
   let backend = GpuBackend::new(assets_base="assets")
   ensure_mesh2d_resources(backend)
   let grow_required = backend.mesh2d_instance_capacity +
-    MESH2D_BEVY_UNIFORM_DYNAMIC_STRIDE_BYTES
+    MESH2D_UNIFORM_DYNAMIC_STRIDE_BYTES
   let ok = ensure_mesh2d_instance_uniform_binding(
       backend,
-      MESH2D_BEVY_UNIFORM_DYNAMIC_STRIDE_BYTES,
+      MESH2D_UNIFORM_DYNAMIC_STRIDE_BYTES,
     )
     is Some(_) &&
     ensure_mesh2d_instance_uniform_binding(backend, grow_required) is Some(_) &&

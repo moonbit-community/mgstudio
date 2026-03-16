@@ -130,7 +130,7 @@ pub fn GpuBackend::draw_tonemapping2d(
   if target_view(self, pass_state.target_id, pass_state.target_layer)
     is Some(dst_view) {
     let builder = @wgpu.BindGroupBuilder::new(max_entries=5UL)
-    let ok = builder.add_buffer(0U, view_buf, size=MESH2D_BEVY_VIEW_BUFFER_SIZE) &&
+    let ok = builder.add_buffer(0U, view_buf, size=MESH2D_VIEW_BUFFER_SIZE) &&
       builder.add_texture_view(1U, scene_texture.view) &&
       builder.add_sampler(2U, tonemapping_sampler) &&
       builder.add_texture_view(3U, selected_lut_view) &&
@@ -348,7 +348,7 @@ fn GpuBackend::draw_tonemapping3d_fullscreen(
   if target_view(self, pass_state.target_id, pass_state.target_layer)
     is Some(dst_view) {
     let builder = @wgpu.BindGroupBuilder::new(max_entries=5UL)
-    let ok = builder.add_buffer(0U, view_buf, size=MESH2D_BEVY_VIEW_BUFFER_SIZE) &&
+    let ok = builder.add_buffer(0U, view_buf, size=MESH2D_VIEW_BUFFER_SIZE) &&
       builder.add_texture_view(1U, scene_texture.view) &&
       builder.add_sampler(2U, tonemapping_sampler) &&
       builder.add_texture_view(3U, selected_lut_view) &&
@@ -647,7 +647,7 @@ fn tonemapping_view_uniform_bytes_full(
   words.push(0U)
   words.push(f32_bits(0.0F))
   words.push(frame_count)
-  let target_word_count = (MESH2D_BEVY_VIEW_BUFFER_SIZE / 4UL).to_int()
+  let target_word_count = (MESH2D_VIEW_BUFFER_SIZE / 4UL).to_int()
   for _ in words.length()..<target_word_count {
     words.push(0U)
   }
@@ -778,7 +778,7 @@ fn ensure_tonemapping_resources(
   if backend.tonemapping_view_buf is None {
     let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
     backend.tonemapping_view_buf = Some(
-      backend.device.create_buffer(size=MESH2D_BEVY_VIEW_BUFFER_SIZE, usage~),
+      backend.device.create_buffer(size=MESH2D_VIEW_BUFFER_SIZE, usage~),
     )
   }
   if backend.tonemapping_sampler is None {

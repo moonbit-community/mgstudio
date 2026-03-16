@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const MESH2D_BEVY_VERTEX_STRIDE_BYTES : UInt64 = 36UL
+const MESH2D_VERTEX_STRIDE_BYTES : UInt64 = 36UL
 
 ///|
 const MESH2D_COLOR_MATERIAL_SHADER_PATH : String = "shaders/bevy/bevy_sprite_render/mesh2d/color_material.wgsl"
@@ -111,8 +111,8 @@ fn ensure_mesh2d_instance_uniform_binding(
     backend.mesh2d_instance_capacity
   } else {
     mesh2d_align_up(
-      MESH2D_BEVY_UNIFORM_DYNAMIC_STRIDE_BYTES * 1024UL,
-      MESH2D_BEVY_UNIFORM_DYNAMIC_STRIDE_BYTES,
+      MESH2D_UNIFORM_DYNAMIC_STRIDE_BYTES * 1024UL,
+      MESH2D_UNIFORM_DYNAMIC_STRIDE_BYTES,
     )
   }
   while next_capacity < required_size {
@@ -121,11 +121,7 @@ fn ensure_mesh2d_instance_uniform_binding(
   let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
   let uniform_buf = backend.device.create_buffer(size=next_capacity, usage~)
   let builder = @wgpu.BindGroupBuilder::new(max_entries=1UL)
-  let ok = builder.add_buffer(
-    0U,
-    uniform_buf,
-    size=MESH2D_BEVY_UNIFORM_STRIDE_BYTES,
-  )
+  let ok = builder.add_buffer(0U, uniform_buf, size=MESH2D_UNIFORM_STRIDE_BYTES)
   if !ok {
     builder.free()
     return None
@@ -258,11 +254,11 @@ fn ensure_mesh2d_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
     )
     pipeline_layout.set_label("mgstudio_mesh2d_pipeline_layout")
     let view_buf = backend.device.create_buffer(
-      size=MESH2D_BEVY_VIEW_BUFFER_SIZE,
+      size=MESH2D_VIEW_BUFFER_SIZE,
       usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
     )
     let globals_buf = backend.device.create_buffer(
-      size=MESH2D_BEVY_GLOBALS_BUFFER_SIZE,
+      size=MESH2D_GLOBALS_BUFFER_SIZE,
       usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
     )
     let lut_texture = backend.device.create_texture_u32(
@@ -289,7 +285,7 @@ fn ensure_mesh2d_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
     let view_bg_ok = view_bg_builder.add_buffer(
         0U,
         view_buf,
-        size=MESH2D_BEVY_VIEW_BUFFER_SIZE,
+        size=MESH2D_VIEW_BUFFER_SIZE,
       ) &&
       view_bg_builder.add_buffer(1U, globals_buf) &&
       view_bg_builder.add_texture_view(2U, lut_view) &&
@@ -321,7 +317,7 @@ fn ensure_mesh2d_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
     backend.mesh2d_material_bg_cache.clear()
     if ensure_mesh2d_instance_uniform_binding(
         backend,
-        MESH2D_BEVY_UNIFORM_DYNAMIC_STRIDE_BYTES,
+        MESH2D_UNIFORM_DYNAMIC_STRIDE_BYTES,
       )
       is None {
       fatal("wgpu: failed to initialize mesh2d uniform bind group")
@@ -358,7 +354,7 @@ fn create_mesh2d_pipeline(
       depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
     )
     builder.set_vertex_buffer_layout(
-      MESH2D_BEVY_VERTEX_STRIDE_BYTES,
+      MESH2D_VERTEX_STRIDE_BYTES,
       @wgpu.VERTEX_STEP_MODE_VERTEX,
     )
     builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 0UL, 0U)
@@ -414,7 +410,7 @@ fn mesh2d_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
     clip_x_axis_x, clip_x_axis_y, 0.0F, 0.0F, clip_y_axis_x, clip_y_axis_y, 0.0F,
     0.0F, 0.0F, 0.0F, 1.0F, 0.0F, clip_w_axis_x, clip_w_axis_y, 0.0F, 1.0F,
   ]
-  let target_float_count = (MESH2D_BEVY_VIEW_BUFFER_SIZE / 4UL).to_int()
+  let target_float_count = (MESH2D_VIEW_BUFFER_SIZE / 4UL).to_int()
   for _ in floats.length()..<target_float_count {
     floats.push(0.0F)
   }
@@ -423,7 +419,7 @@ fn mesh2d_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
 
 ///|
 fn mesh2d_globals_uniform_bytes() -> Bytes {
-  Bytes::makei(MESH2D_BEVY_GLOBALS_BUFFER_SIZE.to_int(), _ => (0).to_byte())
+  Bytes::makei(MESH2D_GLOBALS_BUFFER_SIZE.to_int(), _ => (0).to_byte())
 }
 
 ///|
@@ -621,7 +617,7 @@ fn mesh2d_color_material_bind_group_for_draw(
   let ok = builder.add_buffer(
       0U,
       uniform_buf,
-      size=MESH2D_BEVY_COLOR_MATERIAL_UNIFORM_BUFFER_SIZE,
+      size=MESH2D_COLOR_MATERIAL_UNIFORM_BUFFER_SIZE,
     ) &&
     builder.add_texture_view(1U, texture.view) &&
     builder.add_sampler(2U, texture.sampler)
@@ -782,7 +778,7 @@ pub fn GpuBackend::create_mesh_rectangle(
     index_count: 6U,
     vertex_count: 4U,
     primitive_topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-    vertex_stride_bytes: MESH2D_BEVY_VERTEX_STRIDE_BYTES,
+    vertex_stride_bytes: MESH2D_VERTEX_STRIDE_BYTES,
     index_stride_bytes: 2UL,
     uses_u32_indices: false,
     vertex_buf: vb,
@@ -868,7 +864,7 @@ pub fn GpuBackend::create_mesh_capsule(
     index_count: inds.length().reinterpret_as_uint(),
     vertex_count: (verts.length() / 9).reinterpret_as_uint(),
     primitive_topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-    vertex_stride_bytes: MESH2D_BEVY_VERTEX_STRIDE_BYTES,
+    vertex_stride_bytes: MESH2D_VERTEX_STRIDE_BYTES,
     index_stride_bytes: 2UL,
     uses_u32_indices: false,
     vertex_buf: vb,
@@ -997,7 +993,7 @@ pub fn GpuBackend::create_mesh_triangles_xyuvrgba(
     index_count: indices_u16.length().reinterpret_as_uint(),
     vertex_count: usable_vcount.reinterpret_as_uint(),
     primitive_topology: @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-    vertex_stride_bytes: MESH2D_BEVY_VERTEX_STRIDE_BYTES,
+    vertex_stride_bytes: MESH2D_VERTEX_STRIDE_BYTES,
     index_stride_bytes: 2UL,
     uses_u32_indices: false,
     vertex_buf: vb,
@@ -1050,7 +1046,7 @@ pub fn GpuBackend::draw_mesh(
       1
     return
   }
-  if mesh.vertex_stride_bytes != MESH2D_BEVY_VERTEX_STRIDE_BYTES {
+  if mesh.vertex_stride_bytes != MESH2D_VERTEX_STRIDE_BYTES {
     debug_mesh2d_drop_bad_stride_ref.val = debug_mesh2d_drop_bad_stride_ref.val +
       1
     return
@@ -1063,7 +1059,7 @@ pub fn GpuBackend::draw_mesh(
   }
   let uniform_write_offset = self.mesh2d_instance_used
   let next_instance_used = uniform_write_offset +
-    MESH2D_BEVY_UNIFORM_DYNAMIC_STRIDE_BYTES.to_int()
+    MESH2D_UNIFORM_DYNAMIC_STRIDE_BYTES.to_int()
   if next_instance_used < 0 {
     debug_mesh2d_drop_no_uniform_buf_ref.val = debug_mesh2d_drop_no_uniform_buf_ref.val +
       1
