@@ -3411,7 +3411,7 @@ pub fn Camera2dBundle::with_bloom2d(
 ///|
 pub struct Mesh2dBundle {
   mesh : Mesh2d
-  material : ColorMaterial
+  material : MeshMaterial2d[ColorMaterialAsset]
   transform : @math.Transform
   layers : RenderLayers
   visibility : @visibility.Visibility
@@ -3423,6 +3423,19 @@ pub struct Mesh2dBundle {
 pub fn Mesh2dBundle::new(
   mesh : Mesh2d,
   material : ColorMaterial,
+  transform : @math.Transform,
+) -> Mesh2dBundle {
+  Mesh2dBundle::new_with_mesh_material(
+    mesh,
+    MeshMaterial2d::from_color_material(material),
+    transform,
+  )
+}
+
+///|
+pub fn Mesh2dBundle::new_with_mesh_material(
+  mesh : Mesh2d,
+  material : MeshMaterial2d[ColorMaterialAsset],
   transform : @math.Transform,
 ) -> Mesh2dBundle {
   Mesh2dBundle::{
@@ -3437,18 +3450,24 @@ pub fn Mesh2dBundle::new(
 }
 
 ///|
-pub fn Mesh2dBundle::new_with_mesh_material(
-  mesh : Mesh2d,
-  material : MeshMaterial2d[ColorMaterialAsset],
-  transform : @math.Transform,
-) -> Mesh2dBundle {
-  Mesh2dBundle::new(mesh, material.to_color_material(), transform)
-}
-
-///|
 pub fn Mesh2dBundle::new_with_layers(
   mesh : Mesh2d,
   material : ColorMaterial,
+  transform : @math.Transform,
+  layers : RenderLayers,
+) -> Mesh2dBundle {
+  Mesh2dBundle::new_with_mesh_material_layers(
+    mesh,
+    MeshMaterial2d::from_color_material(material),
+    transform,
+    layers,
+  )
+}
+
+///|
+pub fn Mesh2dBundle::new_with_mesh_material_layers(
+  mesh : Mesh2d,
+  material : MeshMaterial2d[ColorMaterialAsset],
   transform : @math.Transform,
   layers : RenderLayers,
 ) -> Mesh2dBundle {
@@ -3461,21 +3480,6 @@ pub fn Mesh2dBundle::new_with_layers(
     inherited_visibility: @visibility.InheritedVisibility::new(true),
     view_visibility: @visibility.ViewVisibility::new(true),
   }
-}
-
-///|
-pub fn Mesh2dBundle::new_with_mesh_material_layers(
-  mesh : Mesh2d,
-  material : MeshMaterial2d[ColorMaterialAsset],
-  transform : @math.Transform,
-  layers : RenderLayers,
-) -> Mesh2dBundle {
-  Mesh2dBundle::new_with_layers(
-    mesh,
-    material.to_color_material(),
-    transform,
-    layers,
-  )
 }
 
 ///|
@@ -5440,13 +5444,7 @@ pub fn Mesh2dBundle::spawn(
 ) -> @core.Entity {
   let e = world.spawn_empty()
   try! (world.set(e, ecs_key_mesh2d, self.mesh) |> ignore)
-  try! (world.set(e, ecs_key_color_material, self.material) |> ignore)
-  try! (world.set(
-    e,
-    ecs_key_mesh_material2d,
-    MeshMaterial2d::from_color_material(self.material),
-  )
-  |> ignore)
+  try! (world.set(e, ecs_key_mesh_material2d, self.material) |> ignore)
   try! (world.set(e, ecs_key_render_layers, self.layers) |> ignore)
   try! (world.set(e, @visibility.ecs_key_visibility, self.visibility) |> ignore)
   try! (world.set(
@@ -6560,7 +6558,6 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
     })
     let mesh_store = get_mesh2d_store(ecs_world)
     let gpu_mesh_store = get_gpu_mesh2d_store(ecs_world)
-    let color_material_store = get_color_material_store(ecs_world)
     let material_store = get_mesh_material2d_store(ecs_world)
     let wireframe_store = get_wireframe2d_store(ecs_world)
     let no_wireframe_store = get_no_wireframe2d_store(ecs_world)
@@ -6576,14 +6573,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
         return
       }
       guard gpu_mesh_store.get(entity) is Some(gpu) else { return }
-      let mat = if material_store.get(entity) is Some(material) {
-        material.to_color_material()
-      } else {
-        match color_material_store.get(entity) {
-          Some(color_material) => color_material
-          None => return
-        }
-      }
+      guard material_store.get(entity) is Some(material) else { return }
       let layers = match layers_store.get(entity) {
         Some(v) => v
         None => RenderLayers::default()
@@ -6601,11 +6591,11 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
         payload: Mesh2dDrawPayload::{
           mesh_id: gpu.mesh_id,
           transform,
-          color: mat.color(),
-          alpha_mode: mat.alpha_mode(),
-          texture: mat.texture(),
-          uv_offset: mat.uv_offset(),
-          uv_scale: mat.uv_scale(),
+          color: material.color(),
+          alpha_mode: material.alpha_mode(),
+          texture: material.texture(),
+          uv_offset: material.uv_offset(),
+          uv_scale: material.uv_scale(),
           layers,
         },
       })
@@ -6830,14 +6820,8 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
       guard (try! world.get(entity, ecs_key_gpu_mesh2d)) is Some(gpu) else {
         return
       }
-      let mat = if (try! world.get(entity, ecs_key_mesh_material2d))
-        is Some(material) {
-        material.to_color_material()
-      } else {
-        match (try! world.get(entity, ecs_key_color_material)) {
-          Some(color_material) => color_material
-          None => return
-        }
+      guard (try! world.get(entity, ecs_key_mesh_material2d)) is Some(material) else {
+        return
       }
       let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
         RenderLayers::default(),
@@ -6848,11 +6832,11 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         payload: Mesh2dDrawPayload::{
           mesh_id: gpu.mesh_id,
           transform,
-          color: mat.color(),
-          alpha_mode: mat.alpha_mode(),
-          texture: mat.texture(),
-          uv_offset: mat.uv_offset(),
-          uv_scale: mat.uv_scale(),
+          color: material.color(),
+          alpha_mode: material.alpha_mode(),
+          texture: material.texture(),
+          uv_offset: material.uv_offset(),
+          uv_scale: material.uv_scale(),
           layers,
         },
       })

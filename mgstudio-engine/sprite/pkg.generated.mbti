@@ -648,7 +648,7 @@ pub impl @json.FromJson for Mesh2d
 
 pub struct Mesh2dBundle {
   mesh : Mesh2d
-  material : ColorMaterial
+  material : MeshMaterial2d[ColorMaterialAsset]
   transform : @math.Transform
   layers : RenderLayers
   visibility : @visibility.Visibility

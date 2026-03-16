@@ -207,7 +207,7 @@ test "render2d: Mesh2dBundle::spawn inserts expected components" {
   )
   inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_color_material),
-    content="true",
+    content="false",
   )
   inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_mesh_material2d),
@@ -237,6 +237,49 @@ test "render2d: Mesh2dBundle::spawn inserts expected components" {
   )
   inspect(
     ecs_transform_matches(world, entity, expected_transform),
+    content="true",
+  )
+}
+
+///|
+test "render2d: Mesh2dBundle constructors normalize to MeshMaterial2d" {
+  let wrapped_material_handle : Ref[Int?] = Ref::new(None)
+  let preserved_material_handle : Ref[Int?] = Ref::new(None)
+  let color_material_handle : Ref[Int?] = Ref::new(None)
+  let explicit_mesh_material_handle : Ref[Int?] = Ref::new(None)
+
+  @app.App::new(@ecs.World::new())
+  .add_plugins([@asset.asset_plugin, render2d_plugin])
+  .add_system(fn(_world : @ecs.World) {
+    let color_material = ColorMaterial::new(Color::white())
+    let mesh_material = MeshMaterial2d::from_color_material(color_material)
+    let mesh = Mesh2d::from_rectangle(Rectangle::new(4.0F, 4.0F))
+
+    let wrapped_bundle = Mesh2dBundle::new(
+      mesh,
+      color_material,
+      @math.Transform::identity(),
+    )
+    let preserved_bundle = Mesh2dBundle::new_with_mesh_material(
+      mesh,
+      mesh_material,
+      @math.Transform::identity(),
+    )
+
+    wrapped_material_handle.val = Some(wrapped_bundle.material.handle.id())
+    preserved_material_handle.val = Some(preserved_bundle.material.handle.id())
+    color_material_handle.val = Some(color_material.handle.id())
+    explicit_mesh_material_handle.val = Some(mesh_material.handle.id())
+  })
+  .run_once()
+  |> ignore
+
+  inspect(
+    wrapped_material_handle.val == color_material_handle.val,
+    content="true",
+  )
+  inspect(
+    preserved_material_handle.val == explicit_mesh_material_handle.val,
     content="true",
   )
 }
