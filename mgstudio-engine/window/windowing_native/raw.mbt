@@ -1463,6 +1463,16 @@ pub fn request_close(window : Int) -> Unit {
 }
 
 ///|
+fn request_close_all_open_windows() -> Unit {
+  let windows = open_window_ids_ref.val
+  for window in windows {
+    if !is_window_closed(window) {
+      request_close(window)
+    }
+  }
+}
+
+///|
 pub fn run_loop(step : FuncRef[() -> Unit]) -> Unit {
   if !any_window_open() {
     step()
@@ -1475,6 +1485,7 @@ pub fn run_loop(step : FuncRef[() -> Unit]) -> Unit {
     if frame_limit > 0 {
       frames = frames + 1
       if frames >= frame_limit {
+        request_close_all_open_windows()
         break
       }
     }
