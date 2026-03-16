@@ -72,15 +72,15 @@ pub fn GpuBackend::draw_tonemapping2d(
     _ => tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM)
   }
   let deband_dither = deband_dither_enabled != 0
-  guard tonemapping2d_pipeline_for_format(
+  guard tonemapping_pipeline_for_format(
       self, format, tonemapping_mode, deband_dither,
     )
     is Some(final_pipeline) else {
     return
   }
-  guard self.tonemapping2d_bgl is Some(final_bind_layout) else { return }
-  guard self.tonemapping2d_view_buf is Some(view_buf) else { return }
-  guard self.tonemapping2d_sampler is Some(tonemapping_sampler) else { return }
+  guard self.tonemapping_bgl is Some(final_bind_layout) else { return }
+  guard self.tonemapping_view_buf is Some(view_buf) else { return }
+  guard self.tonemapping_sampler is Some(tonemapping_sampler) else { return }
   let selected_lut_view = tonemapping_selected_lut_view(
     self, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
@@ -290,15 +290,15 @@ fn GpuBackend::draw_tonemapping3d_fullscreen(
     _ => tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM)
   }
   let deband_dither = deband_dither_enabled != 0
-  guard tonemapping2d_pipeline_for_format(
+  guard tonemapping_pipeline_for_format(
       self, format, tonemapping_mode, deband_dither,
     )
     is Some(final_pipeline) else {
     return
   }
-  guard self.tonemapping2d_bgl is Some(final_bind_layout) else { return }
-  guard self.tonemapping2d_view_buf is Some(view_buf) else { return }
-  guard self.tonemapping2d_sampler is Some(tonemapping_sampler) else { return }
+  guard self.tonemapping_bgl is Some(final_bind_layout) else { return }
+  guard self.tonemapping_view_buf is Some(view_buf) else { return }
+  guard self.tonemapping_sampler is Some(tonemapping_sampler) else { return }
   let selected_lut_view = tonemapping_selected_lut_view(
     self, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
@@ -655,7 +655,7 @@ fn tonemapping_view_uniform_bytes_full(
 }
 
 ///|
-fn tonemapping2d_mode_clamped(tonemapping_mode : Int) -> Int {
+fn tonemapping_mode_clamped(tonemapping_mode : Int) -> Int {
   if tonemapping_mode < 0 {
     0
   } else if tonemapping_mode > 7 {
@@ -666,8 +666,8 @@ fn tonemapping2d_mode_clamped(tonemapping_mode : Int) -> Int {
 }
 
 ///|
-fn tonemapping2d_method_define(tonemapping_mode : Int) -> String {
-  match tonemapping2d_mode_clamped(tonemapping_mode) {
+fn tonemapping_method_define(tonemapping_mode : Int) -> String {
+  match tonemapping_mode_clamped(tonemapping_mode) {
     0 => "TONEMAP_METHOD_NONE"
     1 => "TONEMAP_METHOD_REINHARD"
     2 => "TONEMAP_METHOD_REINHARD_LUMINANCE"
@@ -680,11 +680,11 @@ fn tonemapping2d_method_define(tonemapping_mode : Int) -> String {
 }
 
 ///|
-fn tonemapping2d_pipeline_define_keys(
+fn tonemapping_pipeline_define_keys(
   tonemapping_mode : Int,
   deband_dither : Bool,
 ) -> Array[String] {
-  let defines = [tonemapping2d_method_define(tonemapping_mode)]
+  let defines = [tonemapping_method_define(tonemapping_mode)]
   if deband_dither {
     defines.push("DEBAND_DITHER")
   }
@@ -692,7 +692,7 @@ fn tonemapping2d_pipeline_define_keys(
 }
 
 ///|
-fn tonemapping2d_pipeline_cache_key(
+fn tonemapping_pipeline_cache_key(
   format : @wgpu.TextureFormat,
   tonemapping_mode : Int,
   deband_dither : Bool,
@@ -700,13 +700,13 @@ fn tonemapping2d_pipeline_cache_key(
   let deband_bits = if deband_dither { "1" } else { "0" }
   format.raw.to_string() +
   "_" +
-  tonemapping2d_mode_clamped(tonemapping_mode).to_string() +
+  tonemapping_mode_clamped(tonemapping_mode).to_string() +
   "_" +
   deband_bits
 }
 
 ///|
-fn load_fullscreen_tonemapping2d_wgsl_with_defines_required(
+fn load_fullscreen_tonemapping_wgsl_with_defines_required(
   define_keys : Array[String],
 ) -> String raise GpuBackendError {
   let modules = copy_registered_wgsl_import_module_paths()
@@ -736,11 +736,11 @@ fn load_fullscreen_tonemapping2d_wgsl_with_defines_required(
 }
 
 ///|
-fn ensure_tonemapping2d_resources(
+fn ensure_tonemapping_resources(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
   let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
-  if backend.tonemapping2d_bgl is None {
+  if backend.tonemapping_bgl is None {
     let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=5UL)
     let ok = builder.add_buffer(
         0U,
@@ -769,43 +769,43 @@ fn ensure_tonemapping2d_resources(
     let bgl = builder.finish(backend.device, label="mgstudio_tonemapping2d_bgl")
     let pipeline_layout = backend.device.create_pipeline_layout_1(bgl)
     pipeline_layout.set_label("mgstudio_tonemapping2d_pipeline_layout")
-    backend.tonemapping2d_bgl = Some(bgl)
-    backend.tonemapping2d_pipeline_layout = Some(pipeline_layout)
+    backend.tonemapping_bgl = Some(bgl)
+    backend.tonemapping_pipeline_layout = Some(pipeline_layout)
   }
-  if backend.tonemapping2d_view_buf is None {
+  if backend.tonemapping_view_buf is None {
     let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
-    backend.tonemapping2d_view_buf = Some(
+    backend.tonemapping_view_buf = Some(
       backend.device.create_buffer(size=MESH2D_BEVY_VIEW_BUFFER_SIZE, usage~),
     )
   }
-  if backend.tonemapping2d_sampler is None {
-    backend.tonemapping2d_sampler = Some(
+  if backend.tonemapping_sampler is None {
+    backend.tonemapping_sampler = Some(
       backend.device.create_sampler_linear_clamp(),
     )
   }
 }
 
 ///|
-fn tonemapping2d_pipeline_for_format(
+fn tonemapping_pipeline_for_format(
   backend : GpuBackend,
   format : @wgpu.TextureFormat,
   tonemapping_mode : Int,
   deband_dither : Bool,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
-  ensure_tonemapping2d_resources(backend)
-  let key = tonemapping2d_pipeline_cache_key(
+  ensure_tonemapping_resources(backend)
+  let key = tonemapping_pipeline_cache_key(
     format, tonemapping_mode, deband_dither,
   )
-  for entry in backend.tonemapping2d_pipeline_cache {
+  for entry in backend.tonemapping_pipeline_cache {
     if entry.key == key {
       return Some(entry.pipeline)
     }
   }
-  guard backend.tonemapping2d_pipeline_layout is Some(pipeline_layout) else {
+  guard backend.tonemapping_pipeline_layout is Some(pipeline_layout) else {
     return None
   }
-  let source = load_fullscreen_tonemapping2d_wgsl_with_defines_required(
-    tonemapping2d_pipeline_define_keys(tonemapping_mode, deband_dither),
+  let source = load_fullscreen_tonemapping_wgsl_with_defines_required(
+    tonemapping_pipeline_define_keys(tonemapping_mode, deband_dither),
   )
   let pipeline = create_postprocess_pipeline(
     backend,
@@ -816,7 +816,7 @@ fn tonemapping2d_pipeline_for_format(
     POSTPROCESS_BLEND_MODE_NONE,
     "mgstudio_tonemapping2d_" + key,
   )
-  backend.tonemapping2d_pipeline_cache.push(Tonemapping2dPipelineCacheEntry::{
+  backend.tonemapping_pipeline_cache.push(TonemappingPipelineCacheEntry::{
     key,
     pipeline,
   })

@@ -319,11 +319,11 @@ pub struct GpuBackend {
   mut fxaa_sampler : @wgpu_mbt.Sampler?
   mut bloom_intermediate_bgl : @wgpu_mbt.BindGroupLayout?
   mut bloom_intermediate_pipeline_layout : @wgpu_mbt.PipelineLayout?
-  mut tonemapping2d_bgl : @wgpu_mbt.BindGroupLayout?
-  mut tonemapping2d_pipeline_layout : @wgpu_mbt.PipelineLayout?
-  mut tonemapping2d_view_buf : @wgpu_mbt.Buffer?
-  mut tonemapping2d_sampler : @wgpu_mbt.Sampler?
-  tonemapping2d_pipeline_cache : Array[Tonemapping2dPipelineCacheEntry]
+  mut tonemapping_bgl : @wgpu_mbt.BindGroupLayout?
+  mut tonemapping_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut tonemapping_view_buf : @wgpu_mbt.Buffer?
+  mut tonemapping_sampler : @wgpu_mbt.Sampler?
+  tonemapping_pipeline_cache : Array[TonemappingPipelineCacheEntry]
   mut bloom_downsample_first_pipeline : @wgpu_mbt.RenderPipeline?
   mut bloom_downsample_first_no_threshold_pipeline : @wgpu_mbt.RenderPipeline?
   mut bloom_downsample_first_uniform_pipeline : @wgpu_mbt.RenderPipeline?
@@ -647,7 +647,7 @@ pub struct SpriteBatch {
   mut instance_count : UInt
 }
 
-pub struct Tonemapping2dPipelineCacheEntry {
+pub struct TonemappingPipelineCacheEntry {
   key : String
   pipeline : @wgpu_mbt.RenderPipeline
 }

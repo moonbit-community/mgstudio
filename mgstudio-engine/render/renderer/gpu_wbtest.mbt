@@ -507,7 +507,7 @@ test "renderer: bloom final composite uses hdr scene target format even from rgb
 }
 
 ///|
-test "renderer: tonemapping2d final pipeline specializes to current final target without bloom composite" {
+test "renderer: tonemapping final pipeline specializes to current final target without bloom composite" {
   register_renderer_test_shaders()
   let backend = GpuBackend::new(assets_base="assets")
   let target_id = backend.create_render_target_with_format(
@@ -518,14 +518,14 @@ test "renderer: tonemapping2d final pipeline specializes to current final target
   )
   backend.pass_state = Some(gpu_test_pass_state(target_id))
   let ok = match
-    tonemapping2d_pipeline_for_format(
+    tonemapping_pipeline_for_format(
       backend,
       tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
       0,
       false,
     ) {
     Some(_) =>
-      backend.tonemapping2d_pipeline_cache.length() == 1 &&
+      backend.tonemapping_pipeline_cache.length() == 1 &&
       backend.bloom_upsample_final_pipeline_format is None
     None => false
   }

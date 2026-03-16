@@ -121,7 +121,7 @@ struct Mesh2dMaterialBindGroupCacheEntry {
 }
 
 ///|
-pub struct Tonemapping2dPipelineCacheEntry {
+pub struct TonemappingPipelineCacheEntry {
   key : String
   pipeline : @wgpu.RenderPipeline
 }
@@ -449,11 +449,11 @@ pub struct GpuBackend {
   mut fxaa_sampler : @wgpu.Sampler?
   mut bloom_intermediate_bgl : @wgpu.BindGroupLayout?
   mut bloom_intermediate_pipeline_layout : @wgpu.PipelineLayout?
-  mut tonemapping2d_bgl : @wgpu.BindGroupLayout?
-  mut tonemapping2d_pipeline_layout : @wgpu.PipelineLayout?
-  mut tonemapping2d_view_buf : @wgpu.Buffer?
-  mut tonemapping2d_sampler : @wgpu.Sampler?
-  tonemapping2d_pipeline_cache : Array[Tonemapping2dPipelineCacheEntry]
+  mut tonemapping_bgl : @wgpu.BindGroupLayout?
+  mut tonemapping_pipeline_layout : @wgpu.PipelineLayout?
+  mut tonemapping_view_buf : @wgpu.Buffer?
+  mut tonemapping_sampler : @wgpu.Sampler?
+  tonemapping_pipeline_cache : Array[TonemappingPipelineCacheEntry]
   mut bloom_downsample_first_pipeline : @wgpu.RenderPipeline?
   mut bloom_downsample_first_no_threshold_pipeline : @wgpu.RenderPipeline?
   mut bloom_downsample_first_uniform_pipeline : @wgpu.RenderPipeline?
@@ -808,11 +808,11 @@ pub fn GpuBackend::new(
     fxaa_sampler: None,
     bloom_intermediate_bgl: None,
     bloom_intermediate_pipeline_layout: None,
-    tonemapping2d_bgl: None,
-    tonemapping2d_pipeline_layout: None,
-    tonemapping2d_view_buf: None,
-    tonemapping2d_sampler: None,
-    tonemapping2d_pipeline_cache: [],
+    tonemapping_bgl: None,
+    tonemapping_pipeline_layout: None,
+    tonemapping_view_buf: None,
+    tonemapping_sampler: None,
+    tonemapping_pipeline_cache: [],
     bloom_downsample_first_pipeline: None,
     bloom_downsample_first_no_threshold_pipeline: None,
     bloom_downsample_first_uniform_pipeline: None,
