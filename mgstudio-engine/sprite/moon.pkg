@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/visibility",

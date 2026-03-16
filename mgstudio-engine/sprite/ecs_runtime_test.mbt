@@ -84,9 +84,11 @@ test "render2d: SpriteBundle::spawn inserts expected components" {
 test "render2d: Camera2dBundle::spawn inserts expected components" {
   let world = @ecs.World::new()
   let bundle = Camera2dBundle::new(
-    Camera::default(),
-    @math.Transform::identity(),
-  ).with_bloom2d(Bloom2d::new())
+      Camera::default(),
+      @math.Transform::identity(),
+    )
+    .with_bloom2d(Bloom2d::new())
+    .with_color_grading(Some(ColorGrading::default()))
   let entity = bundle.spawn(world)
 
   inspect(world.is_alive(entity), content="true")
@@ -119,6 +121,18 @@ test "render2d: Camera2dBundle::spawn inserts expected components" {
     content="true",
   )
   inspect(
+    ecs_has_non_null_payload(world, entity, ecs_key_tonemapping),
+    content="true",
+  )
+  inspect(
+    ecs_has_non_null_payload(world, entity, ecs_key_deband_dither),
+    content="true",
+  )
+  inspect(
+    ecs_has_non_null_payload(world, entity, ecs_key_color_grading),
+    content="true",
+  )
+  inspect(
     ecs_transform_matches(world, entity, bundle.transform),
     content="true",
   )
@@ -134,9 +148,9 @@ test "render2d: Commands::spawn accepts Camera2dBundle" {
   ) {
     spawned.val = Some(
       commands.spawn(
-        Camera2dBundle::new(Camera::default(), @math.Transform::identity()).with_bloom2d(
-          Bloom2d::new(),
-        ),
+        Camera2dBundle::new(Camera::default(), @math.Transform::identity())
+        .with_bloom2d(Bloom2d::new())
+        .with_color_grading(Some(ColorGrading::default())),
       ),
     )
   })
@@ -155,6 +169,10 @@ test "render2d: Commands::spawn accepts Camera2dBundle" {
   )
   inspect(
     ecs_has_non_null_payload(app.world(), entity, ecs_key_bloom2d),
+    content="true",
+  )
+  inspect(
+    ecs_has_non_null_payload(app.world(), entity, ecs_key_color_grading),
     content="true",
   )
 }

@@ -17,8 +17,8 @@
 pub let ecs_components : Array[String] = [
   "Anchor", "Camera", "Mesh2d", "Sprite", "Bloom2d", "Camera2d", "GpuMesh2d", "Projection",
   "PanCamera", "ScissorRect", "Wireframe2d", "RenderLayers", "RenderTarget", "ColorMaterial",
-  "Tonemapping", "DebandDither", "NoWireframe2d", "MeshMaterial2d", "ClearColorConfig",
-  "Wireframe2dColor",
+  "Tonemapping", "DebandDither", "ColorGrading", "NoWireframe2d", "MeshMaterial2d",
+  "ClearColorConfig", "Wireframe2dColor",
 ]
 
 ///|
@@ -62,6 +62,13 @@ pub fn get_deband_dither_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[DebandDither] {
   world.component(ecs_key_deband_dither)
+}
+
+///|
+pub fn get_color_grading_store(
+  world : @ecs.World,
+) -> @ecs.ComponentAccess[ColorGrading] {
+  world.component(ecs_key_color_grading)
 }
 
 ///|

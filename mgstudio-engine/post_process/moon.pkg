@@ -1,8 +1,8 @@
 import {
+  "Milky2018/mgstudio/color",
   "moonbitlang/core/json",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/sprite",
 }
 
 options(

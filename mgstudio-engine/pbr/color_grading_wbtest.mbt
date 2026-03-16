@@ -24,7 +24,7 @@ fn color_grading_approx_eq(a : Float, b : Float) -> Bool {
 
 ///|
 test "render3d: default color grading host uniform matches Bevy defaults" {
-  let uniform = render3d_color_grading_host_uniform(None)
+  let uniform = @render.host_color_grading_from_post_process(None)
   let ok = color_grading_approx_eq(uniform.balance_x_axis_x, 1.0F) &&
     color_grading_approx_eq(uniform.balance_x_axis_y, 0.0F) &&
     color_grading_approx_eq(uniform.balance_x_axis_z, 0.0F) &&
@@ -89,7 +89,7 @@ test "render3d: custom color grading host uniform preserves Bevy section values"
   grading.shadows = shadows
   grading.midtones = midtones
   grading.highlights = highlights
-  let uniform = render3d_color_grading_host_uniform(Some(grading))
+  let uniform = @render.host_color_grading_from_post_process(Some(grading))
   let ok = !color_grading_approx_eq(uniform.balance_x_axis_x, 1.0F) &&
     color_grading_approx_eq(uniform.saturation_shadows, 0.8F) &&
     color_grading_approx_eq(uniform.saturation_midtones, 1.2F) &&
@@ -122,7 +122,7 @@ test "render3d: direct color grading field mutation matches Bevy-style usage" {
   grading.global.midtones_range = { start: 0.3F, end_: 0.6F }
   grading.midtones.gamma = 1.1F
   grading.highlights.gain = 1.25F
-  let uniform = render3d_color_grading_host_uniform(Some(grading))
+  let uniform = @render.host_color_grading_from_post_process(Some(grading))
   let ok = color_grading_approx_eq(uniform.exposure, 0.75F) &&
     color_grading_approx_eq(uniform.post_saturation, 1.4F) &&
     color_grading_approx_eq(uniform.midtones_start, 0.3F) &&

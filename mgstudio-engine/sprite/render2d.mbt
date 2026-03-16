@@ -16,6 +16,18 @@
 pub type Color = @color.Color
 
 ///|
+pub type ColorGradingRange = @post_process.ColorGradingRange
+
+///|
+pub type ColorGradingGlobal = @post_process.ColorGradingGlobal
+
+///|
+pub type ColorGradingSection = @post_process.ColorGradingSection
+
+///|
+pub type ColorGrading = @post_process.ColorGrading
+
+///|
 pub struct RenderLayers {
   mask : Int
 }
@@ -3750,6 +3762,9 @@ pub struct Camera2dBundle {
   target : RenderTarget
   layers : RenderLayers
   bloom2d : Bloom2d?
+  tonemapping : Tonemapping?
+  color_grading : ColorGrading?
+  deband_dither : DebandDither?
 }
 
 ///|
@@ -3765,6 +3780,9 @@ pub fn Camera2dBundle::new(
     target: RenderTarget::Screen,
     layers: RenderLayers::default(),
     bloom2d: None,
+    tonemapping: Some(Tonemapping::None),
+    color_grading: None,
+    deband_dither: Some(DebandDither::Disabled),
   }
 }
 
@@ -3782,6 +3800,9 @@ pub fn Camera2dBundle::new_with_projection(
     target: RenderTarget::Screen,
     layers: RenderLayers::default(),
     bloom2d: None,
+    tonemapping: Some(Tonemapping::None),
+    color_grading: None,
+    deband_dither: Some(DebandDither::Disabled),
   }
 }
 
@@ -3799,6 +3820,9 @@ pub fn Camera2dBundle::new_with_target(
     target,
     layers: RenderLayers::default(),
     bloom2d: None,
+    tonemapping: Some(Tonemapping::None),
+    color_grading: None,
+    deband_dither: Some(DebandDither::Disabled),
   }
 }
 
@@ -3817,6 +3841,9 @@ pub fn Camera2dBundle::new_with_layers(
     target,
     layers,
     bloom2d: None,
+    tonemapping: Some(Tonemapping::None),
+    color_grading: None,
+    deband_dither: Some(DebandDither::Disabled),
   }
 }
 
@@ -3826,6 +3853,30 @@ pub fn Camera2dBundle::with_bloom2d(
   bloom2d : Bloom2d,
 ) -> Camera2dBundle {
   Camera2dBundle::{ ..self, bloom2d: Some(bloom2d) }
+}
+
+///|
+pub fn Camera2dBundle::with_tonemapping(
+  self : Camera2dBundle,
+  tonemapping : Tonemapping?,
+) -> Camera2dBundle {
+  Camera2dBundle::{ ..self, tonemapping, }
+}
+
+///|
+pub fn Camera2dBundle::with_color_grading(
+  self : Camera2dBundle,
+  color_grading : ColorGrading?,
+) -> Camera2dBundle {
+  Camera2dBundle::{ ..self, color_grading, }
+}
+
+///|
+pub fn Camera2dBundle::with_deband_dither(
+  self : Camera2dBundle,
+  deband_dither : DebandDither?,
+) -> Camera2dBundle {
+  Camera2dBundle::{ ..self, deband_dither, }
 }
 
 ///|
@@ -4596,8 +4647,11 @@ priv struct Render2dHostWindowPostprocessPlan {
 fn render2d_host_window_postprocess_plan(
   bloom : Bloom2d?,
   tonemapping_mode : Int,
+  color_grading : ColorGrading?,
 ) -> Render2dHostWindowPostprocessPlan {
-  let tonemapping_enabled = render2d_tonemapping_mode_enabled(tonemapping_mode)
+  let tonemapping_enabled = render2d_tonemapping_stage_enabled(
+    tonemapping_mode, color_grading,
+  )
   match bloom {
     Some(bloom) =>
       if bloom.source is None {
@@ -4657,6 +4711,7 @@ fn render2d_draw_camera_tonemapping(
   source : @asset.Handle[@asset.Image],
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
+  color_grading : ColorGrading?,
   view_width_logical : Int,
   view_height_logical : Int,
 ) -> Unit {
@@ -4664,6 +4719,9 @@ fn render2d_draw_camera_tonemapping(
     return
   }
   let luts = render2d_tonemapping_lut_handles(world)
+  let color_grading_uniform = @render.host_color_grading_from_post_process(
+    color_grading,
+  )
   @render.host_gpu_draw_tonemapping2d(
     scene_texture_id=source.id(),
     exposure=1.0F,
@@ -4674,6 +4732,7 @@ fn render2d_draw_camera_tonemapping(
     agx_lut_texture_id=luts.agx.id(),
     tony_lut_texture_id=luts.tony.id(),
     blender_lut_texture_id=luts.blender.id(),
+    color_grading=color_grading_uniform,
   )
 }
 
@@ -4717,6 +4776,7 @@ fn render2d_draw_camera_postprocess_from_source(
   source : @asset.Handle[@asset.Image],
   tonemapping_mode : Int,
   deband_dither_enabled : Bool,
+  color_grading : ColorGrading?,
   view_width_logical : Int,
   view_height_logical : Int,
 ) -> Unit {
@@ -4724,7 +4784,8 @@ fn render2d_draw_camera_postprocess_from_source(
     camera, source, view_width_logical, view_height_logical,
   )
   render2d_draw_camera_tonemapping(
-    world, source, tonemapping_mode, deband_dither_enabled, view_width_logical, view_height_logical,
+    world, source, tonemapping_mode, deband_dither_enabled, color_grading, view_width_logical,
+    view_height_logical,
   )
 }
 
@@ -5829,6 +5890,15 @@ fn camera2d_bundle_insert(
   if bundle.bloom2d is Some(bloom2d) {
     try! (world.set(entity, ecs_key_bloom2d, bloom2d) |> ignore)
   }
+  if bundle.tonemapping is Some(tonemapping) {
+    try! (world.set(entity, ecs_key_tonemapping, tonemapping) |> ignore)
+  }
+  if bundle.color_grading is Some(color_grading) {
+    try! (world.set(entity, ecs_key_color_grading, color_grading) |> ignore)
+  }
+  if bundle.deband_dither is Some(deband_dither) {
+    try! (world.set(entity, ecs_key_deband_dither, deband_dither) |> ignore)
+  }
   try! (world.set(entity, @math.ecs_key_transform, bundle.transform) |> ignore)
 }
 
@@ -6532,6 +6602,20 @@ fn render2d_tonemapping_mode_enabled(mode : Int) -> Bool {
 }
 
 ///|
+fn render2d_color_grading_enabled(color_grading : ColorGrading?) -> Bool {
+  color_grading is Some(_)
+}
+
+///|
+fn render2d_tonemapping_stage_enabled(
+  tonemapping_mode : Int,
+  color_grading : ColorGrading?,
+) -> Bool {
+  render2d_color_grading_enabled(color_grading) ||
+  render2d_tonemapping_mode_enabled(tonemapping_mode)
+}
+
+///|
 fn camera_tonemapping_mode(world : @ecs.World, camera : @core.Entity) -> Int {
   let store = world.component(ecs_key_tonemapping)
   match store.get(camera) {
@@ -6551,6 +6635,15 @@ fn camera_deband_dither_enabled(
     Some(Disabled) => false
     None => false
   }
+}
+
+///|
+fn camera_color_grading(
+  world : @ecs.World,
+  camera : @core.Entity,
+) -> ColorGrading? {
+  let store = world.component(ecs_key_color_grading)
+  store.get(camera)
 }
 
 ///|
@@ -8266,7 +8359,11 @@ test "render2d: scene draw items exclude UI overlays" {
 
 ///|
 test "render2d: host window bloom postprocess keeps Bevy stage ownership" {
-  let plan = render2d_host_window_postprocess_plan(Some(Bloom2d::new()), 0)
+  let plan = render2d_host_window_postprocess_plan(
+    Some(Bloom2d::new()),
+    0,
+    None,
+  )
   let ok = plan.uses_intermediate_source &&
     plan.apply_bloom_before_tonemapping &&
     plan.tonemap_source_to_target &&
@@ -8279,6 +8376,21 @@ test "render2d: host window tonemapping without bloom still leaves UI after post
   let plan = render2d_host_window_postprocess_plan(
     None,
     render2d_tonemapping_mode_to_int(TonyMcMapface),
+    None,
+  )
+  let ok = plan.uses_intermediate_source &&
+    !plan.apply_bloom_before_tonemapping &&
+    plan.tonemap_source_to_target &&
+    plan.draw_ui_overlay_after_postprocess
+  inspect(ok, content="true")
+}
+
+///|
+test "render2d: color grading alone keeps host window tonemapping copy stage" {
+  let plan = render2d_host_window_postprocess_plan(
+    None,
+    0,
+    Some(ColorGrading::default()),
   )
   let ok = plan.uses_intermediate_source &&
     !plan.apply_bloom_before_tonemapping &&
@@ -9175,9 +9287,11 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         world,
         camera.entity,
       )
+      let color_grading = camera_color_grading(world, camera.entity)
       let host_window_postprocess_plan = render2d_host_window_postprocess_plan(
         camera.bloom2d,
         tonemapping_mode,
+        color_grading,
       )
       let mut auto_postprocess_source : @asset.Handle[@asset.Image]? = None
       if render2d_targets_host_window(camera.target) &&
@@ -9251,8 +9365,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         }
         if host_window_postprocess_plan.tonemap_source_to_target {
           render2d_draw_camera_tonemapping(
-            world, source, tonemapping_mode, deband_dither_enabled, viewport_width,
-            viewport_height,
+            world, source, tonemapping_mode, deband_dither_enabled, color_grading,
+            viewport_width, viewport_height,
           )
         }
         if host_window_postprocess_plan.draw_ui_overlay_after_postprocess {
@@ -9356,8 +9470,8 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       )
       if camera.bloom2d is Some(bloom) && bloom.source is Some(source) {
         render2d_draw_camera_postprocess_from_source(
-          world, camera, source, tonemapping_mode, deband_dither_enabled, viewport_width,
-          viewport_height,
+          world, camera, source, tonemapping_mode, deband_dither_enabled, color_grading,
+          viewport_width, viewport_height,
         )
       }
       gizmos_draw_lines(camera.layers)

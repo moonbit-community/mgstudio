@@ -2626,118 +2626,6 @@ fn render3d_apply_camera_auto_exposure(
 }
 
 ///|
-const RENDER3D_COLOR_GRADING_D65_X : Float = 0.31272F
-
-///|
-const RENDER3D_COLOR_GRADING_D65_Y : Float = 0.32903F
-
-///|
-const RENDER3D_COLOR_GRADING_D65_LMS_X : Float = 0.975538F
-
-///|
-const RENDER3D_COLOR_GRADING_D65_LMS_Y : Float = 1.01648F
-
-///|
-const RENDER3D_COLOR_GRADING_D65_LMS_Z : Float = 1.08475F
-
-///|
-fn render3d_color_grading_mat3_mul_vec3(
-  x_axis : @math.Vec3,
-  y_axis : @math.Vec3,
-  z_axis : @math.Vec3,
-  value : @math.Vec3,
-) -> @math.Vec3 {
-  x_axis
-  .mul_scalar(value.x)
-  .add(y_axis.mul_scalar(value.y))
-  .add(z_axis.mul_scalar(value.z))
-}
-
-///|
-fn render3d_color_grading_host_uniform(
-  color_grading : ColorGrading?,
-) -> @render.HostColorGrading {
-  let grading = match color_grading {
-    Some(value) => value
-    None => ColorGrading::default()
-  }
-  let white_point_x = RENDER3D_COLOR_GRADING_D65_X - grading.global.temperature
-  let white_point_y = RENDER3D_COLOR_GRADING_D65_Y + grading.global.tint
-  let white_point_lms = @math.Vec3::new(
-    0.701634F + (-0.051461F + 0.452749F * white_point_x) / white_point_y,
-    1.15856F + (0.045854F - 0.296122F * white_point_x) / white_point_y,
-    -0.904175F + (0.953127F - 0.955206F * white_point_x) / white_point_y,
-  )
-  let white_point_adjustment = @math.Vec3::new(
-    RENDER3D_COLOR_GRADING_D65_LMS_X / white_point_lms.x,
-    RENDER3D_COLOR_GRADING_D65_LMS_Y / white_point_lms.y,
-    RENDER3D_COLOR_GRADING_D65_LMS_Z / white_point_lms.z,
-  )
-  let rgb_to_lms_x_axis = @math.Vec3::new(0.311692F, 0.0905138F, 0.00764433F)
-  let rgb_to_lms_y_axis = @math.Vec3::new(0.652085F, 0.901341F, 0.0486554F)
-  let rgb_to_lms_z_axis = @math.Vec3::new(0.0362225F, 0.00814478F, 0.943700F)
-  let lms_to_rgb_x_axis = @math.Vec3::new(4.06305F, -0.40791F, -0.0118812F)
-  let lms_to_rgb_y_axis = @math.Vec3::new(-2.93241F, 1.40437F, -0.0486532F)
-  let lms_to_rgb_z_axis = @math.Vec3::new(-0.130646F, 0.00353630F, 1.0605344F)
-  let scaled_rgb_to_lms_x_axis = @math.Vec3::new(
-    rgb_to_lms_x_axis.x * white_point_adjustment.x,
-    rgb_to_lms_x_axis.y * white_point_adjustment.y,
-    rgb_to_lms_x_axis.z * white_point_adjustment.z,
-  )
-  let scaled_rgb_to_lms_y_axis = @math.Vec3::new(
-    rgb_to_lms_y_axis.x * white_point_adjustment.x,
-    rgb_to_lms_y_axis.y * white_point_adjustment.y,
-    rgb_to_lms_y_axis.z * white_point_adjustment.z,
-  )
-  let scaled_rgb_to_lms_z_axis = @math.Vec3::new(
-    rgb_to_lms_z_axis.x * white_point_adjustment.x,
-    rgb_to_lms_z_axis.y * white_point_adjustment.y,
-    rgb_to_lms_z_axis.z * white_point_adjustment.z,
-  )
-  let balance_x_axis = render3d_color_grading_mat3_mul_vec3(
-    lms_to_rgb_x_axis, lms_to_rgb_y_axis, lms_to_rgb_z_axis, scaled_rgb_to_lms_x_axis,
-  )
-  let balance_y_axis = render3d_color_grading_mat3_mul_vec3(
-    lms_to_rgb_x_axis, lms_to_rgb_y_axis, lms_to_rgb_z_axis, scaled_rgb_to_lms_y_axis,
-  )
-  let balance_z_axis = render3d_color_grading_mat3_mul_vec3(
-    lms_to_rgb_x_axis, lms_to_rgb_y_axis, lms_to_rgb_z_axis, scaled_rgb_to_lms_z_axis,
-  )
-  let midtones_range = grading.global.midtones_range
-  @render.HostColorGrading::{
-    balance_x_axis_x: balance_x_axis.x,
-    balance_x_axis_y: balance_x_axis.y,
-    balance_x_axis_z: balance_x_axis.z,
-    balance_y_axis_x: balance_y_axis.x,
-    balance_y_axis_y: balance_y_axis.y,
-    balance_y_axis_z: balance_y_axis.z,
-    balance_z_axis_x: balance_z_axis.x,
-    balance_z_axis_y: balance_z_axis.y,
-    balance_z_axis_z: balance_z_axis.z,
-    saturation_shadows: grading.shadows.saturation,
-    saturation_midtones: grading.midtones.saturation,
-    saturation_highlights: grading.highlights.saturation,
-    contrast_shadows: grading.shadows.contrast,
-    contrast_midtones: grading.midtones.contrast,
-    contrast_highlights: grading.highlights.contrast,
-    gamma_shadows: grading.shadows.gamma,
-    gamma_midtones: grading.midtones.gamma,
-    gamma_highlights: grading.highlights.gamma,
-    gain_shadows: grading.shadows.gain,
-    gain_midtones: grading.midtones.gain,
-    gain_highlights: grading.highlights.gain,
-    lift_shadows: grading.shadows.lift,
-    lift_midtones: grading.midtones.lift,
-    lift_highlights: grading.highlights.lift,
-    midtones_start: midtones_range.start,
-    midtones_end: midtones_range.end_,
-    exposure: grading.global.exposure,
-    hue: grading.global.hue,
-    post_saturation: grading.global.post_saturation,
-  }
-}
-
-///|
 fn render3d_bloom_clamp_unit(value : Float) -> Float {
   if value < 0.0F {
     0.0F
@@ -3034,7 +2922,9 @@ fn render3d_draw_camera_tonemapping_stage(
     return
   }
   let luts = render3d_tonemapping_lut_handles(world)
-  let color_grading_uniform = render3d_color_grading_host_uniform(color_grading)
+  let color_grading_uniform = @render.host_color_grading_from_post_process(
+    color_grading,
+  )
   @render.host_gpu_draw_tonemapping3d(
     scene_texture_id~,
     exposure=1.0F,

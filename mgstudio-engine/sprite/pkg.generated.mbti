@@ -11,6 +11,7 @@ import {
   "Milky2018/mgstudio/input/events",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
+  "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
   "moonbitlang/core/hashmap",
@@ -36,6 +37,8 @@ pub let ecs_key_camera : @ecs.ComponentKey[Camera]
 pub let ecs_key_camera2d : @ecs.ComponentKey[Camera2d]
 
 pub let ecs_key_clear_color_config : @ecs.ComponentKey[ClearColorConfig]
+
+pub let ecs_key_color_grading : @ecs.ComponentKey[@post_process.ColorGrading]
 
 pub let ecs_key_color_material : @ecs.ComponentKey[ColorMaterial]
 
@@ -82,6 +85,8 @@ pub fn get_camera2d_store(@ecs.World) -> @ecs.ComponentAccess[Camera2d]
 pub fn get_camera_store(@ecs.World) -> @ecs.ComponentAccess[Camera]
 
 pub fn get_clear_color_config_store(@ecs.World) -> @ecs.ComponentAccess[ClearColorConfig]
+
+pub fn get_color_grading_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.ColorGrading]
 
 pub fn get_color_material_store(@ecs.World) -> @ecs.ComponentAccess[ColorMaterial]
 
@@ -360,6 +365,9 @@ pub struct Camera2dBundle {
   target : RenderTarget
   layers : RenderLayers
   bloom2d : Bloom2d?
+  tonemapping : Tonemapping?
+  color_grading : @post_process.ColorGrading?
+  deband_dither : DebandDither?
 }
 pub fn Camera2dBundle::new(Camera, @math.Transform) -> Self
 pub fn Camera2dBundle::new_with_layers(Camera, @math.Transform, RenderTarget, RenderLayers) -> Self
@@ -367,6 +375,9 @@ pub fn Camera2dBundle::new_with_projection(Camera, Projection, @math.Transform) 
 pub fn Camera2dBundle::new_with_target(Camera, @math.Transform, RenderTarget) -> Self
 pub fn Camera2dBundle::spawn(Self, @ecs.World) -> @core.Entity
 pub fn Camera2dBundle::with_bloom2d(Self, Bloom2d) -> Self
+pub fn Camera2dBundle::with_color_grading(Self, @post_process.ColorGrading?) -> Self
+pub fn Camera2dBundle::with_deband_dither(Self, DebandDither?) -> Self
+pub fn Camera2dBundle::with_tonemapping(Self, Tonemapping?) -> Self
 pub impl @app.CommandSpawnComponents for Camera2dBundle
 
 pub struct CameraComputedValues {
@@ -1100,6 +1111,14 @@ pub impl @json.FromJson for Wireframe2dConfig
 
 // Type aliases
 pub using @color {type Color}
+
+pub using @post_process {type ColorGrading}
+
+pub using @post_process {type ColorGradingGlobal}
+
+pub using @post_process {type ColorGradingRange}
+
+pub using @post_process {type ColorGradingSection}
 
 // Traits
 pub(open) trait Material2d {

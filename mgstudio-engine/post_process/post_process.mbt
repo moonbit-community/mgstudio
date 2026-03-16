@@ -70,7 +70,7 @@ pub struct Vignette {
   roundness : Float
   center : @math.Vec2
   edge_compensation : Float
-  color : @sprite.Color
+  color : @color.Color
 } derive(ToJson, FromJson)
 
 ///|
@@ -82,7 +82,7 @@ pub fn Vignette::default() -> Vignette {
     roundness: 1.0F,
     center: @math.Vec2::new(0.5F, 0.5F),
     edge_compensation: 1.0F,
-    color: @sprite.Color::black(),
+    color: @color.Color::black(),
   }
 }
 
@@ -171,7 +171,7 @@ pub fn Vignette::with_edge_compensation(
 }
 
 ///|
-pub fn Vignette::with_color(self : Vignette, color : @sprite.Color) -> Vignette {
+pub fn Vignette::with_color(self : Vignette, color : @color.Color) -> Vignette {
   Vignette::{ ..self, color, }
 }
 
@@ -1135,7 +1135,7 @@ pub let ecs_key_tonemapping : @ecs.ComponentKey[Tonemapping] = @ecs.register_com
 
 ///|
 pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading] = @ecs.register_component(
-  debug_name="render3d.color_grading",
+  debug_name="post_process.color_grading",
 )
 
 ///|

@@ -24,6 +24,35 @@ pub fn GpuBackend::draw_tonemapping2d(
   agx_lut_texture_id : Int,
   tony_lut_texture_id : Int,
   blender_lut_texture_id : Int,
+  color_grading_balance_x_axis_x : Float,
+  color_grading_balance_x_axis_y : Float,
+  color_grading_balance_x_axis_z : Float,
+  color_grading_balance_y_axis_x : Float,
+  color_grading_balance_y_axis_y : Float,
+  color_grading_balance_y_axis_z : Float,
+  color_grading_balance_z_axis_x : Float,
+  color_grading_balance_z_axis_y : Float,
+  color_grading_balance_z_axis_z : Float,
+  color_grading_saturation_shadows : Float,
+  color_grading_saturation_midtones : Float,
+  color_grading_saturation_highlights : Float,
+  color_grading_contrast_shadows : Float,
+  color_grading_contrast_midtones : Float,
+  color_grading_contrast_highlights : Float,
+  color_grading_gamma_shadows : Float,
+  color_grading_gamma_midtones : Float,
+  color_grading_gamma_highlights : Float,
+  color_grading_gain_shadows : Float,
+  color_grading_gain_midtones : Float,
+  color_grading_gain_highlights : Float,
+  color_grading_lift_shadows : Float,
+  color_grading_lift_midtones : Float,
+  color_grading_lift_highlights : Float,
+  color_grading_midtones_start : Float,
+  color_grading_midtones_end : Float,
+  color_grading_exposure : Float,
+  color_grading_hue : Float,
+  color_grading_post_saturation : Float,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   guard frame.pass is Some(active_pass) else { return }
@@ -58,10 +87,39 @@ pub fn GpuBackend::draw_tonemapping2d(
   let exposure_value = if exposure < 0.0F { 0.0F } else { exposure }
   view_width |> ignore
   view_height |> ignore
-  let view_uniform = tonemapping2d_view_uniform_bytes(
+  let view_uniform = tonemapping_view_uniform_bytes_full(
     pass_state,
     exposure_value,
     self.frame_count,
+    color_grading_balance_x_axis_x,
+    color_grading_balance_x_axis_y,
+    color_grading_balance_x_axis_z,
+    color_grading_balance_y_axis_x,
+    color_grading_balance_y_axis_y,
+    color_grading_balance_y_axis_z,
+    color_grading_balance_z_axis_x,
+    color_grading_balance_z_axis_y,
+    color_grading_balance_z_axis_z,
+    color_grading_saturation_shadows,
+    color_grading_saturation_midtones,
+    color_grading_saturation_highlights,
+    color_grading_contrast_shadows,
+    color_grading_contrast_midtones,
+    color_grading_contrast_highlights,
+    color_grading_gamma_shadows,
+    color_grading_gamma_midtones,
+    color_grading_gamma_highlights,
+    color_grading_gain_shadows,
+    color_grading_gain_midtones,
+    color_grading_gain_highlights,
+    color_grading_lift_shadows,
+    color_grading_lift_midtones,
+    color_grading_lift_highlights,
+    color_grading_midtones_start,
+    color_grading_midtones_end,
+    color_grading_exposure,
+    color_grading_hue,
+    color_grading_post_saturation,
   )
   self.queue.write_buffer(view_buf, 0UL, view_uniform)
 
@@ -122,11 +180,50 @@ pub fn draw_tonemapping2d(
   agx_lut_texture_id~ : Int,
   tony_lut_texture_id~ : Int,
   blender_lut_texture_id~ : Int,
+  color_grading_balance_x_axis_x~ : Float,
+  color_grading_balance_x_axis_y~ : Float,
+  color_grading_balance_x_axis_z~ : Float,
+  color_grading_balance_y_axis_x~ : Float,
+  color_grading_balance_y_axis_y~ : Float,
+  color_grading_balance_y_axis_z~ : Float,
+  color_grading_balance_z_axis_x~ : Float,
+  color_grading_balance_z_axis_y~ : Float,
+  color_grading_balance_z_axis_z~ : Float,
+  color_grading_saturation_shadows~ : Float,
+  color_grading_saturation_midtones~ : Float,
+  color_grading_saturation_highlights~ : Float,
+  color_grading_contrast_shadows~ : Float,
+  color_grading_contrast_midtones~ : Float,
+  color_grading_contrast_highlights~ : Float,
+  color_grading_gamma_shadows~ : Float,
+  color_grading_gamma_midtones~ : Float,
+  color_grading_gamma_highlights~ : Float,
+  color_grading_gain_shadows~ : Float,
+  color_grading_gain_midtones~ : Float,
+  color_grading_gain_highlights~ : Float,
+  color_grading_lift_shadows~ : Float,
+  color_grading_lift_midtones~ : Float,
+  color_grading_lift_highlights~ : Float,
+  color_grading_midtones_start~ : Float,
+  color_grading_midtones_end~ : Float,
+  color_grading_exposure~ : Float,
+  color_grading_hue~ : Float,
+  color_grading_post_saturation~ : Float,
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.draw_tonemapping2d(
       scene_texture_id, exposure, tonemapping_mode, deband_dither_enabled, view_width,
       view_height, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
+      color_grading_balance_x_axis_x, color_grading_balance_x_axis_y, color_grading_balance_x_axis_z,
+      color_grading_balance_y_axis_x, color_grading_balance_y_axis_y, color_grading_balance_y_axis_z,
+      color_grading_balance_z_axis_x, color_grading_balance_z_axis_y, color_grading_balance_z_axis_z,
+      color_grading_saturation_shadows, color_grading_saturation_midtones, color_grading_saturation_highlights,
+      color_grading_contrast_shadows, color_grading_contrast_midtones, color_grading_contrast_highlights,
+      color_grading_gamma_shadows, color_grading_gamma_midtones, color_grading_gamma_highlights,
+      color_grading_gain_shadows, color_grading_gain_midtones, color_grading_gain_highlights,
+      color_grading_lift_shadows, color_grading_lift_midtones, color_grading_lift_highlights,
+      color_grading_midtones_start, color_grading_midtones_end, color_grading_exposure,
+      color_grading_hue, color_grading_post_saturation,
     ) catch {
       err => debug_runtime_error("draw_tonemapping2d", err)
     }
@@ -555,19 +652,6 @@ fn tonemapping_view_uniform_bytes_full(
     words.push(0U)
   }
   u32le_pack(words)
-}
-
-///|
-fn tonemapping2d_view_uniform_bytes(
-  pass_state : GpuPassState,
-  exposure : Float,
-  frame_count : UInt,
-) -> Bytes {
-  tonemapping_view_uniform_bytes_full(
-    pass_state, exposure, frame_count, 1.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
-    0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F, 1.0F,
-    1.0F, 0.0F, 0.0F, 0.0F, 0.2F, 0.7F, exposure, 0.0F, 1.0F,
-  )
 }
 
 ///|

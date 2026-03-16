@@ -68,6 +68,9 @@ pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither] = @ecs.register_
 )
 
 ///|
+pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading] = @post_process.ecs_key_color_grading
+
+///|
 pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d] = @ecs.register_component(
   debug_name="render2d.mesh2d",
 )
