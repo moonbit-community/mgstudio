@@ -4018,6 +4018,12 @@ const MESH2D_SHADER_PATH : String = "shaders/bevy/bevy_sprite_render/mesh2d/mesh
 const MESH2D_SHADER_BINDINGS_PATH : String = "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_bindings.wgsl"
 
 ///|
+const SPRITE_SHADER_PATH : String = "shaders/bevy/bevy_sprite_render/render/sprite.wgsl"
+
+///|
+const SPRITE_VIEW_BINDINGS_PATH : String = "shaders/bevy/bevy_sprite_render/render/sprite_view_bindings.wgsl"
+
+///|
 fn render2d_asset_server_or_abort(world : @ecs.World) -> @asset.AssetServer {
   match (try! world.get_resource(@asset.asset_server_resource_key())) {
     Some(asset_server) => asset_server
@@ -4029,10 +4035,12 @@ fn render2d_asset_server_or_abort(world : @ecs.World) -> @asset.AssetServer {
 }
 
 ///|
-fn mesh2d_bevy_shader_asset_paths() -> Array[String] {
+fn render2d_bevy_shader_asset_paths() -> Array[String] {
   [
     MESH2D_SHADER_PATH,
     MESH2D_SHADER_BINDINGS_PATH,
+    SPRITE_SHADER_PATH,
+    SPRITE_VIEW_BINDINGS_PATH,
     "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl",
     "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_types.wgsl",
     "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_vertex_output.wgsl",
@@ -4046,12 +4054,12 @@ fn mesh2d_bevy_shader_asset_paths() -> Array[String] {
 }
 
 ///|
-fn register_mesh2d_bevy_shader_sources(world : @ecs.World) -> Unit {
+fn register_render2d_bevy_shader_sources(world : @ecs.World) -> Unit {
   let asset_server = render2d_asset_server_or_abort(world)
-  for path in mesh2d_bevy_shader_asset_paths() {
+  for path in render2d_bevy_shader_asset_paths() {
     let blob = asset_server.load_bytes(path)
     guard @asset.asset_blob_read_text(blob) is Some(source) else {
-      abort("failed to load mesh2d shader asset text: " + path)
+      abort("failed to load render2d shader asset text: " + path)
     }
     @render.register_wgsl_source(path, source)
   }
@@ -8664,7 +8672,7 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
     assets
   })
-  .add_startup_system(register_mesh2d_bevy_shader_sources)
+  .add_startup_system(register_render2d_bevy_shader_sources)
   .add_startup_system(init_render_state_system)
   .add_post_update_system_config(
     @app.system(render2d_camera_system).in_set(camera_update_systems),
@@ -8707,7 +8715,7 @@ pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
     assets
   })
-  .add_startup_system(register_mesh2d_bevy_shader_sources)
+  .add_startup_system(register_render2d_bevy_shader_sources)
   .add_startup_system(init_render_state_system)
   .add_post_update_system_config(
     @app.system(render2d_camera_system_ecs).in_set(camera_update_systems),

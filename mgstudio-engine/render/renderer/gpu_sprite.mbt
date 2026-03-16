@@ -208,8 +208,13 @@ fn create_sprite_bevy_pipeline(
   guard backend.sprite_bevy_pipeline_layout is Some(layout) else {
     fatal("wgpu: sprite bevy pipeline layout is None")
   }
-  let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/bevy/bevy_sprite_render/render/sprite.wgsl",
+  let modules = copy_registered_wgsl_import_module_paths()
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let wgsl = load_wgsl_preprocessed(
+    "", "shaders/bevy/bevy_sprite_render/render/sprite.wgsl", defines, value_defines,
+    visited, modules,
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let pipeline = try {
