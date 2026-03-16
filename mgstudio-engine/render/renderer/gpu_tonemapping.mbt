@@ -139,7 +139,7 @@ pub fn GpuBackend::draw_tonemapping2d(
       let final_bg = builder.finish(
         self.device,
         final_bind_layout,
-        label="mgstudio_tonemapping2d_bevy_bg",
+        label="mgstudio_tonemapping_bind_group",
       )
       let final_pass = frame.encoder.begin_render_pass_color_load(dst_view)
       final_pass.set_viewport(
@@ -766,9 +766,12 @@ fn ensure_tonemapping_resources(
       builder.free()
       fatal("wgpu: failed to build tonemapping2d bind group layout")
     }
-    let bgl = builder.finish(backend.device, label="mgstudio_tonemapping2d_bgl")
+    let bgl = builder.finish(
+      backend.device,
+      label="mgstudio_tonemapping_bind_group_layout",
+    )
     let pipeline_layout = backend.device.create_pipeline_layout_1(bgl)
-    pipeline_layout.set_label("mgstudio_tonemapping2d_pipeline_layout")
+    pipeline_layout.set_label("mgstudio_tonemapping_pipeline_layout")
     backend.tonemapping_bgl = Some(bgl)
     backend.tonemapping_pipeline_layout = Some(pipeline_layout)
   }
@@ -814,7 +817,7 @@ fn tonemapping_pipeline_for_format(
     format,
     "fragment",
     POSTPROCESS_BLEND_MODE_NONE,
-    "mgstudio_tonemapping2d_" + key,
+    "mgstudio_tonemapping_" + key,
   )
   backend.tonemapping_pipeline_cache.push(TonemappingPipelineCacheEntry::{
     key,
