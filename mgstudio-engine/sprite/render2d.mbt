@@ -4012,6 +4012,52 @@ const TONEMAPPING_LUT_TONY_PATH : String = "textures/tonemapping/tony_mc_mapface
 const TONEMAPPING_LUT_BLENDER_PATH : String = "textures/tonemapping/Blender_-11_12.ktx2"
 
 ///|
+const MESH2D_SHADER_PATH : String = "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d.wgsl"
+
+///|
+const MESH2D_SHADER_BINDINGS_PATH : String = "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_bindings.wgsl"
+
+///|
+fn render2d_asset_server_or_abort(world : @ecs.World) -> @asset.AssetServer {
+  match (try! world.get_resource(@asset.asset_server_resource_key())) {
+    Some(asset_server) => asset_server
+    None =>
+      abort(
+        "Render2dPlugin requires the world-owned AssetServer resource; add AssetPlugin before Render2dPlugin",
+      )
+  }
+}
+
+///|
+fn mesh2d_bevy_shader_asset_paths() -> Array[String] {
+  [
+    MESH2D_SHADER_PATH,
+    MESH2D_SHADER_BINDINGS_PATH,
+    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl",
+    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_types.wgsl",
+    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_vertex_output.wgsl",
+    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl",
+    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_view_types.wgsl",
+    "shaders/bevy/bevy_render/globals.wgsl",
+    "shaders/bevy/bevy_render/maths.wgsl",
+    "shaders/bevy/bevy_render/view/view.wgsl",
+    "shaders/bevy/bevy_core_pipeline/tonemapping/tonemapping_shared.wgsl",
+  ]
+}
+
+///|
+fn register_mesh2d_bevy_shader_sources(world : @ecs.World) -> Unit {
+  let asset_server = render2d_asset_server_or_abort(world)
+  for path in mesh2d_bevy_shader_asset_paths() {
+    let blob = asset_server.load_bytes(path)
+    guard @asset.asset_blob_read_text(blob) is Some(source) else {
+      abort("failed to load mesh2d shader asset text: " + path)
+    }
+    @render.register_wgsl_source(path, source)
+  }
+}
+
+///|
 priv struct TonemappingLutHandles {
   agx : @asset.Handle[@asset.Image]
   tony : @asset.Handle[@asset.Image]
@@ -4072,14 +4118,7 @@ fn render2d_tonemapping_lut_handles(
       return handles
     }
   }
-  let asset_server = match
-    (try! world.get_resource(@asset.asset_server_resource_key())) {
-    Some(asset_server) => asset_server
-    None =>
-      abort(
-        "render2d tonemapping LUT cache requires the world-owned AssetServer resource; add AssetPlugin before Render2dPlugin",
-      )
-  }
+  let asset_server = render2d_asset_server_or_abort(world)
   let handles = TonemappingLutHandles::{
     agx: asset_server.load(TONEMAPPING_LUT_AGX_PATH),
     tony: asset_server.load(TONEMAPPING_LUT_TONY_PATH),
@@ -8625,6 +8664,7 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
     assets
   })
+  .add_startup_system(register_mesh2d_bevy_shader_sources)
   .add_startup_system(init_render_state_system)
   .add_post_update_system_config(
     @app.system(render2d_camera_system).in_set(camera_update_systems),
@@ -8667,6 +8707,7 @@ pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
     assets
   })
+  .add_startup_system(register_mesh2d_bevy_shader_sources)
   .add_startup_system(init_render_state_system)
   .add_post_update_system_config(
     @app.system(render2d_camera_system_ecs).in_set(camera_update_systems),

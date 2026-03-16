@@ -1530,6 +1530,48 @@ fn path_is_dir(path : String) -> Bool {
 }
 
 ///|
+let registered_wgsl_sources_ref : Ref[@hashmap.HashMap[String, String]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
+
+///|
+let registered_wgsl_import_modules_ref : Ref[@hashmap.HashMap[String, String]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
+
+///|
+pub fn clear_registered_wgsl_source_registry() -> Unit {
+  registered_wgsl_sources_ref.val = @hashmap.HashMap::new()
+  registered_wgsl_import_modules_ref.val = @hashmap.HashMap::new()
+}
+
+///|
+pub fn register_wgsl_source(rel_path : String, source : String) -> Unit {
+  let normalized_rel = normalize_shader_rel_path(rel_path)
+  if normalized_rel == "" {
+    return
+  }
+  registered_wgsl_sources_ref.val.set(normalized_rel, source)
+  let import_path = parse_wgsl_define_import_path(source)
+  if import_path != "" {
+    registered_wgsl_import_modules_ref.val.set(import_path, normalized_rel)
+  }
+}
+
+///|
+fn copy_registered_wgsl_import_module_paths() -> @hashmap.HashMap[
+  String,
+  String,
+] {
+  let copied : @hashmap.HashMap[String, String] = @hashmap.HashMap::new()
+  for entry in registered_wgsl_import_modules_ref.val.iter() {
+    let (module_path, rel_path) = entry
+    copied.set(module_path, rel_path)
+  }
+  copied
+}
+
+///|
 fn parse_wgsl_define_import_path(source : String) -> String {
   for line_item in source.split("\n") {
     let line = line_item.to_string().trim().to_string()
@@ -1584,8 +1626,11 @@ fn collect_wgsl_import_module_paths(
 fn build_wgsl_import_module_paths(
   assets_base : String,
 ) -> @hashmap.HashMap[String, String] {
-  let modules : @hashmap.HashMap[String, String] = @hashmap.HashMap::new()
-  collect_wgsl_import_module_paths(assets_base, "shaders", modules)
+  let modules = copy_registered_wgsl_import_module_paths()
+  let normalized_assets_base = assets_base.trim().to_string()
+  if normalized_assets_base != "" {
+    collect_wgsl_import_module_paths(normalized_assets_base, "shaders", modules)
+  }
   modules
 }
 
@@ -1595,6 +1640,7 @@ fn resolve_wgsl_import_module(
   import_path : String,
   modules : @hashmap.HashMap[String, String],
 ) -> WgslResolvedImportModule? {
+  let normalized_assets_base = assets_base.trim().to_string()
   let segments : Array[String] = []
   for seg in import_path.split("::") {
     let text = seg.to_string().trim().to_string()
@@ -1610,18 +1656,25 @@ fn resolve_wgsl_import_module(
     if modules.get(module_path) is Some(rel_path) {
       return Some(WgslResolvedImportModule::{ module_path, rel_path })
     }
-    let bevy_rel = wgsl_module_path_to_rel_path(module_path)
-    if path_is_file_exact(join_asset_path(assets_base, bevy_rel)) {
-      return Some(WgslResolvedImportModule::{ module_path, rel_path: bevy_rel })
-    }
-    let namespace_rel = wgsl_module_path_to_rel_path_namespace(module_path)
-    if namespace_rel != "" &&
-      namespace_rel != bevy_rel &&
-      path_is_file_exact(join_asset_path(assets_base, namespace_rel)) {
-      return Some(WgslResolvedImportModule::{
-        module_path,
-        rel_path: namespace_rel,
-      })
+    if normalized_assets_base != "" {
+      let bevy_rel = wgsl_module_path_to_rel_path(module_path)
+      if path_is_file_exact(join_asset_path(normalized_assets_base, bevy_rel)) {
+        return Some(WgslResolvedImportModule::{
+          module_path,
+          rel_path: bevy_rel,
+        })
+      }
+      let namespace_rel = wgsl_module_path_to_rel_path_namespace(module_path)
+      if namespace_rel != "" &&
+        namespace_rel != bevy_rel &&
+        path_is_file_exact(
+          join_asset_path(normalized_assets_base, namespace_rel),
+        ) {
+        return Some(WgslResolvedImportModule::{
+          module_path,
+          rel_path: namespace_rel,
+        })
+      }
     }
     segments.pop() |> ignore
   }
@@ -2154,12 +2207,23 @@ fn load_wgsl_preprocessed(
     return ""
   }
   visited.set(normalized_rel, true)
-  let full_path = join_asset_path(assets_base, normalized_rel)
-  let source = @fs.read_file_to_string(full_path) catch {
-    err =>
-      fatal(
-        "wgpu: failed to read shader: " + full_path + ": " + err.to_string(),
-      )
+  let source = match registered_wgsl_sources_ref.val.get(normalized_rel) {
+    Some(source) => source
+    None => {
+      let normalized_assets_base = assets_base.trim().to_string()
+      if normalized_assets_base == "" {
+        fatal(
+          "wgpu: shader source was not startup-registered: " + normalized_rel,
+        )
+      }
+      let full_path = join_asset_path(normalized_assets_base, normalized_rel)
+      @fs.read_file_to_string(full_path) catch {
+        err =>
+          fatal(
+            "wgpu: failed to read shader: " + full_path + ": " + err.to_string(),
+          )
+      }
+    }
   }
   preprocess_wgsl_source(
     assets_base, source, defines, value_defines, visited, modules,

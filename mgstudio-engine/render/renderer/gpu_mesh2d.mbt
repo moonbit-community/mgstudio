@@ -122,14 +122,9 @@ fn ensure_mesh2d_instance_uniform_binding(
 
 ///|
 fn load_wgsl_with_defines_required_mesh2d(
-  backend : GpuBackend,
   rel : String,
   define_keys : Array[String],
 ) -> String raise GpuBackendError {
-  let base = backend.assets_base.trim().to_string()
-  if base == "" {
-    fatal("wgpu: assets_base is empty; cannot load shader: " + rel)
-  }
   let normalized_rel = normalize_shader_rel_path(rel)
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   for key in define_keys {
@@ -137,9 +132,9 @@ fn load_wgsl_with_defines_required_mesh2d(
   }
   let value_defines = default_wgsl_value_defines()
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(base)
+  let modules = copy_registered_wgsl_import_module_paths()
   load_wgsl_preprocessed(
-    base, normalized_rel, defines, value_defines, visited, modules,
+    "", normalized_rel, defines, value_defines, visited, modules,
   )
 }
 
@@ -276,7 +271,6 @@ fn create_mesh_bevy_pipeline(
     fatal("wgpu: mesh2d bevy pipeline layout is None")
   }
   let wgsl = load_wgsl_with_defines_required_mesh2d(
-    backend,
     "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d.wgsl",
     mesh2d_pipeline_define_keys(key),
   )

@@ -216,6 +216,16 @@ pub fn host_gpu_get_queue(device : HostGpuDevice) -> HostGpuQueue {
 }
 
 ///|
+pub fn register_wgsl_source(rel_path : String, source : String) -> Unit {
+  @renderer.register_wgsl_source(rel_path, source)
+}
+
+///|
+pub fn clear_registered_wgsl_source_registry() -> Unit {
+  @renderer.clear_registered_wgsl_source_registry()
+}
+
+///|
 pub fn host_gpu_create_surface(window : Int) -> HostGpuSurface {
   @renderer.create_surface(window)
 }

@@ -97,11 +97,6 @@ pub type UiCornerRadii = @sprite.UiCornerRadii
 pub type UiBorderRect = @sprite.UiBorderRect
 
 ///|
-let camera_update_systems : @app.SystemSet = @app.system_set(
-  "bevy.camera.update_systems",
-)
-
-///|
 pub let render2d_set_extract : @app.SystemSet = @app.system_set(
   "bevy.render2d.extract",
 )
@@ -304,44 +299,7 @@ pub fn[W, M] material2d_plugin(plugin : Material2dPlugin[M]) -> @app.Plugin[W] {
 
 ///|
 pub fn sprite_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
-  .init_resource(fn() { @sprite.ClearColor::default() })
-  .init_resource(fn() {
-    let assets : @asset.Assets[ColorMaterialAsset] = @asset.Assets::new()
-    assets
-  })
-  .init_resource(fn() {
-    let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
-    assets
-  })
-  .add_startup_system(@sprite.init_render_state_system)
-  .add_post_update_system_config(
-    @app.system(@sprite.render2d_camera_system).in_set(camera_update_systems),
-  )
-  .add_post_update_system_config(
-    @app.system(@sprite.render_extract_system).in_set(render2d_set_extract),
-  )
-  .add_post_update_system_config(
-    @app.system(@sprite.render_prepare_system).in_set(render2d_set_prepare),
-  )
-  .add_post_update_system_config(
-    @app.system(@sprite.render_queue_system).in_set(render2d_set_queue),
-  )
-  .add_post_update_system_config(
-    @app.system(@sprite.render_execute_system).in_set(render2d_set_render),
-  )
-  .configure_set(@app.PostUpdate, camera_update_systems, before=[
-    render2d_set_extract,
-  ])
-  .configure_set(@app.PostUpdate, render2d_set_extract, before=[
-    render2d_set_prepare,
-  ])
-  .configure_set(@app.PostUpdate, render2d_set_prepare, before=[
-    render2d_set_queue,
-  ])
-  .configure_set(@app.PostUpdate, render2d_set_queue, before=[
-    render2d_set_render,
-  ])
+  @sprite.render2d_plugin(app)
 }
 
 ///|

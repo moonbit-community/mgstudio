@@ -240,6 +240,28 @@ test "renderer: preprocess_wgsl_source strips module aliases" {
 }
 
 ///|
+test "renderer: registered wgsl sources satisfy strict mesh2d preprocessing" {
+  clear_registered_wgsl_source_registry()
+  register_wgsl_source(
+    "shaders/bevy/bevy_render/maths.wgsl", "#define_import_path bevy_render::maths\nconst PI_2: f32 = 6.28318;\n",
+  )
+  register_wgsl_source(
+    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl", "#define_import_path bevy_sprite::mesh2d_functions\n#import bevy_render::maths::PI_2\nfn twice_pi() -> f32 {\n  return PI_2;\n}\n",
+  )
+  register_wgsl_source(
+    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d.wgsl", "#import bevy_sprite::mesh2d_functions as mesh_functions\nfn demo() -> f32 {\n  return mesh_functions::twice_pi();\n}\n",
+  )
+  let preprocessed = load_wgsl_with_defines_required_mesh2d(
+    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d.wgsl",
+    [],
+  )
+  inspect(preprocessed.contains("const PI_2"), content="true")
+  inspect(preprocessed.contains("return twice_pi();"), content="true")
+  inspect(preprocessed.contains("mesh_functions::"), content="false")
+  clear_registered_wgsl_source_registry()
+}
+
+///|
 fn resolve_wgsl_import_module_path_for_test(
   assets_base : String,
   import_path : String,
