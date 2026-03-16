@@ -4041,15 +4041,20 @@ fn render2d_bevy_shader_asset_paths() -> Array[String] {
     MESH2D_SHADER_BINDINGS_PATH,
     SPRITE_SHADER_PATH,
     SPRITE_VIEW_BINDINGS_PATH,
+    "shaders/bevy/bevy_post_process/bloom/bloom.wgsl",
     "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl",
     "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_types.wgsl",
     "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_vertex_output.wgsl",
     "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl",
     "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_view_types.wgsl",
+    "shaders/bevy/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
+    "shaders/bevy/bevy_core_pipeline/tonemapping/tonemapping.wgsl",
+    "shaders/bevy/bevy_core_pipeline/tonemapping/lut_bindings.wgsl",
     "shaders/bevy/bevy_render/globals.wgsl",
     "shaders/bevy/bevy_render/maths.wgsl",
     "shaders/bevy/bevy_render/view/view.wgsl",
     "shaders/bevy/bevy_core_pipeline/tonemapping/tonemapping_shared.wgsl",
+    "shaders/bevy/mgstudio_runtime/2d/tonemapping.wgsl",
   ]
 }
 

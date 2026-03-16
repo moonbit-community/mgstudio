@@ -566,127 +566,57 @@ pub fn GpuBackend::draw_tonemapping2d(
   flush_ui_batches(self)
   flush_sprite_batches(self)
   guard self.pass_state is Some(pass_state) else { return }
-  guard bloom2d_pipeline_for_current_pass(self) is Some(final_pipeline) else {
-    return
-  }
-  guard self.bloom2d_final_bgl is Some(final_bind_layout) else { return }
-  guard self.bloom2d_settings_buf is Some(settings_buf) else { return }
-  guard self.bloom2d_sampler is Some(bloom_sampler) else { return }
   if scene_texture_id < 0 {
     return
   }
   guard find_texture(self, scene_texture_id) is Some(scene_texture) else {
     return
   }
-  let source_viewport_x = Float::from_double(pass_state.viewport_x.to_double())
-  let source_viewport_y = Float::from_double(pass_state.viewport_y.to_double())
-  let source_viewport_width = Float::from_double(
-    pass_state.viewport_w.to_double(),
-  )
-  let source_viewport_height = Float::from_double(
-    pass_state.viewport_h.to_double(),
-  )
+  let format = match current_pass_color_format(self) {
+    Some(format) => format
+    _ => tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM)
+  }
+  let deband_dither = deband_dither_enabled != 0
+  guard tonemapping2d_pipeline_for_format(
+      self, format, tonemapping_mode, deband_dither,
+    )
+    is Some(final_pipeline) else {
+    return
+  }
+  guard self.tonemapping2d_bgl is Some(final_bind_layout) else { return }
+  guard self.tonemapping2d_view_buf is Some(view_buf) else { return }
+  guard self.tonemapping2d_sampler is Some(tonemapping_sampler) else { return }
   let selected_lut_view = bloom2d_selected_lut_view(
     self, tonemapping_mode, agx_lut_texture_id, tony_lut_texture_id, blender_lut_texture_id,
   )
   let exposure_value = if exposure < 0.0F { 0.0F } else { exposure }
-  let tonemapping_mode_value = Float::from_int(
-    if tonemapping_mode < 0 {
-      0
-    } else if tonemapping_mode > 7 {
-      7
-    } else {
-      tonemapping_mode
-    },
-  )
-  let deband_dither_enabled_value = if deband_dither_enabled == 0 {
-    0.0F
-  } else {
-    1.0F
-  }
-  let safe_scene_width = if scene_texture.width > 0 {
-    scene_texture.width
-  } else {
-    1
-  }
-  let safe_scene_height = if scene_texture.height > 0 {
-    scene_texture.height
-  } else {
-    1
-  }
   view_width |> ignore
   view_height |> ignore
+  let view_uniform = tonemapping2d_view_uniform_bytes(
+    pass_state,
+    exposure_value,
+    self.frame_count,
+  )
+  self.queue.write_buffer(view_buf, 0UL, view_uniform)
 
   active_pass.end()
   active_pass.release()
   frame.pass = None
 
-  let final_uniform = bloom2d_uniform_bytes(
-    Float::from_double(safe_scene_width.to_double()),
-    Float::from_double(safe_scene_height.to_double()),
-    source_viewport_x,
-    source_viewport_y,
-    source_viewport_width,
-    source_viewport_height,
-    0.0F, // threshold
-    0.0F, // threshold_softness
-    1.0F, // scale_x
-    1.0F, // scale_y
-    exposure_value,
-    0.0F, // fxaa_enabled
-    0.125F, // fxaa_edge_threshold
-    tonemapping_mode_value,
-    deband_dither_enabled_value,
-    0.0F, // bloom_weight
-    0.0F, // upsample_blend
-    0.0F, // chromatic_aberration
-    0.0F, // vignette
-    1.0F, // color_grading_balance_x_axis_x
-    0.0F, // color_grading_balance_x_axis_y
-    0.0F, // color_grading_balance_x_axis_z
-    0.0F, // color_grading_balance_y_axis_x
-    1.0F, // color_grading_balance_y_axis_y
-    0.0F, // color_grading_balance_y_axis_z
-    0.0F, // color_grading_balance_z_axis_x
-    0.0F, // color_grading_balance_z_axis_y
-    1.0F, // color_grading_balance_z_axis_z
-    1.0F, // color_grading_saturation_shadows
-    1.0F, // color_grading_saturation_midtones
-    1.0F, // color_grading_saturation_highlights
-    1.0F, // color_grading_contrast_shadows
-    1.0F, // color_grading_contrast_midtones
-    1.0F, // color_grading_contrast_highlights
-    1.0F, // color_grading_gamma_shadows
-    1.0F, // color_grading_gamma_midtones
-    1.0F, // color_grading_gamma_highlights
-    1.0F, // color_grading_gain_shadows
-    1.0F, // color_grading_gain_midtones
-    1.0F, // color_grading_gain_highlights
-    0.0F, // color_grading_lift_shadows
-    0.0F, // color_grading_lift_midtones
-    0.0F, // color_grading_lift_highlights
-    0.2F, // color_grading_midtones_start
-    0.7F, // color_grading_midtones_end
-    0.0F, // color_grading_exposure
-    0.0F, // color_grading_hue
-    1.0F, // color_grading_post_saturation
-  )
-  self.queue.write_buffer(settings_buf, 0UL, final_uniform)
-  let auto_exposure_state_buf = bloom2d_auto_exposure_state_buffer(self)
   if target_view(self, pass_state.target_id, pass_state.target_layer)
     is Some(dst_view) {
-    if create_bloom2d_final_bind_group(
-        self,
+    let builder = @wgpu.BindGroupBuilder::new(max_entries=5UL)
+    let ok = builder.add_buffer(0U, view_buf, size=MESH2D_BEVY_VIEW_BUFFER_SIZE) &&
+      builder.add_texture_view(1U, scene_texture.view) &&
+      builder.add_sampler(2U, tonemapping_sampler) &&
+      builder.add_texture_view(3U, selected_lut_view) &&
+      builder.add_sampler(4U, tonemapping_sampler)
+    if ok {
+      let final_bg = builder.finish(
+        self.device,
         final_bind_layout,
-        scene_texture.view,
-        bloom_sampler,
-        settings_buf,
-        scene_texture.view,
-        selected_lut_view,
-        auto_exposure_state_buf,
-        "mgstudio_tonemapping2d_final_bg",
+        label="mgstudio_tonemapping2d_bevy_bg",
       )
-      is Some(final_bg) {
       let final_pass = frame.encoder.begin_render_pass_color_load(dst_view)
       final_pass.set_viewport(
         Float::from_double(pass_state.viewport_x.to_double()),
@@ -703,11 +633,13 @@ pub fn GpuBackend::draw_tonemapping2d(
         pass_state.viewport_h,
       )
       final_pass.set_pipeline(final_pipeline)
-      final_pass.set_bind_group(0U, final_bg, [])
+      final_pass.set_bind_group(0U, final_bg, [0U])
       final_pass.draw(3U, 1U, 0U, 0U)
       final_pass.end()
       final_pass.release()
       final_bg.release()
+    } else {
+      builder.free()
     }
   }
   reopen_saved_pass(self, pass_state)
@@ -1782,6 +1714,194 @@ fn bloom2d_uniform_bytes(
 }
 
 ///|
+fn gpu_clip_matrix_words(matrix : GpuClipMatrix) -> Array[UInt] {
+  [
+    f32_bits(matrix.x_axis_x),
+    f32_bits(matrix.x_axis_y),
+    f32_bits(matrix.x_axis_z),
+    f32_bits(matrix.x_axis_w),
+    f32_bits(matrix.y_axis_x),
+    f32_bits(matrix.y_axis_y),
+    f32_bits(matrix.y_axis_z),
+    f32_bits(matrix.y_axis_w),
+    f32_bits(matrix.z_axis_x),
+    f32_bits(matrix.z_axis_y),
+    f32_bits(matrix.z_axis_z),
+    f32_bits(matrix.z_axis_w),
+    f32_bits(matrix.w_axis_x),
+    f32_bits(matrix.w_axis_y),
+    f32_bits(matrix.w_axis_z),
+    f32_bits(matrix.w_axis_w),
+  ]
+}
+
+///|
+fn tonemapping2d_view_uniform_bytes(
+  pass_state : GpuPassState,
+  exposure : Float,
+  frame_count : UInt,
+) -> Bytes {
+  let viewport_x = Float::from_double(pass_state.viewport_x.to_double())
+  let viewport_y = Float::from_double(pass_state.viewport_y.to_double())
+  let viewport_w = Float::from_double(pass_state.viewport_w.to_double())
+  let viewport_h = Float::from_double(pass_state.viewport_h.to_double())
+  let identity = gpu_clip_matrix_identity()
+  let words : Array[UInt] = []
+  for word in gpu_clip_matrix_words(pass_state.clip_from_world) {
+    words.push(word)
+  }
+  for word in gpu_clip_matrix_words(pass_state.unjittered_clip_from_world) {
+    words.push(word)
+  }
+  for word in gpu_clip_matrix_words(identity) {
+    words.push(word)
+  }
+  for word in gpu_clip_matrix_words(identity) {
+    words.push(word)
+  }
+  for word in gpu_clip_matrix_words(identity) {
+    words.push(word)
+  }
+  for word in gpu_clip_matrix_words(pass_state.clip_from_world) {
+    words.push(word)
+  }
+  for word in gpu_clip_matrix_words(identity) {
+    words.push(word)
+  }
+  words.push(f32_bits(pass_state.camera_x))
+  words.push(f32_bits(pass_state.camera_y))
+  words.push(f32_bits(pass_state.camera_z))
+  words.push(f32_bits(pass_state.camera_exposure))
+  words.push(f32_bits(viewport_x))
+  words.push(f32_bits(viewport_y))
+  words.push(f32_bits(viewport_w))
+  words.push(f32_bits(viewport_h))
+  words.push(f32_bits(viewport_x))
+  words.push(f32_bits(viewport_y))
+  words.push(f32_bits(viewport_w))
+  words.push(f32_bits(viewport_h))
+  for _ in 0..<24 {
+    words.push(0U)
+  }
+  words.push(f32_bits(1.0F))
+  words.push(f32_bits(0.0F))
+  words.push(f32_bits(0.0F))
+  words.push(0U)
+  words.push(f32_bits(0.0F))
+  words.push(f32_bits(1.0F))
+  words.push(f32_bits(0.0F))
+  words.push(0U)
+  words.push(f32_bits(0.0F))
+  words.push(f32_bits(0.0F))
+  words.push(f32_bits(1.0F))
+  words.push(0U)
+  words.push(f32_bits(1.0F))
+  words.push(f32_bits(1.0F))
+  words.push(f32_bits(1.0F))
+  words.push(0U)
+  words.push(f32_bits(1.0F))
+  words.push(f32_bits(1.0F))
+  words.push(f32_bits(1.0F))
+  words.push(0U)
+  words.push(f32_bits(1.0F))
+  words.push(f32_bits(1.0F))
+  words.push(f32_bits(1.0F))
+  words.push(0U)
+  words.push(f32_bits(1.0F))
+  words.push(f32_bits(1.0F))
+  words.push(f32_bits(1.0F))
+  words.push(0U)
+  words.push(f32_bits(0.0F))
+  words.push(f32_bits(0.0F))
+  words.push(f32_bits(0.0F))
+  words.push(0U)
+  words.push(f32_bits(0.2F))
+  words.push(f32_bits(0.7F))
+  words.push(f32_bits(exposure))
+  words.push(f32_bits(0.0F))
+  words.push(f32_bits(1.0F))
+  words.push(0U)
+  words.push(0U)
+  words.push(0U)
+  words.push(f32_bits(0.0F))
+  words.push(frame_count)
+  let target_word_count = (MESH2D_BEVY_VIEW_BUFFER_SIZE / 4UL).to_int()
+  for _ in words.length()..<target_word_count {
+    words.push(0U)
+  }
+  u32le_pack(words)
+}
+
+///|
+fn tonemapping2d_mode_clamped(tonemapping_mode : Int) -> Int {
+  if tonemapping_mode < 0 {
+    0
+  } else if tonemapping_mode > 7 {
+    7
+  } else {
+    tonemapping_mode
+  }
+}
+
+///|
+fn tonemapping2d_method_define(tonemapping_mode : Int) -> String {
+  match tonemapping2d_mode_clamped(tonemapping_mode) {
+    0 => "TONEMAP_METHOD_NONE"
+    1 => "TONEMAP_METHOD_REINHARD"
+    2 => "TONEMAP_METHOD_REINHARD_LUMINANCE"
+    3 => "TONEMAP_METHOD_ACES_FITTED"
+    4 => "TONEMAP_METHOD_AGX"
+    5 => "TONEMAP_METHOD_SOMEWHAT_BORING_DISPLAY_TRANSFORM"
+    6 => "TONEMAP_METHOD_TONY_MC_MAPFACE"
+    _ => "TONEMAP_METHOD_BLENDER_FILMIC"
+  }
+}
+
+///|
+fn tonemapping2d_pipeline_define_keys(
+  tonemapping_mode : Int,
+  deband_dither : Bool,
+) -> Array[String] {
+  let defines = [tonemapping2d_method_define(tonemapping_mode)]
+  if deband_dither {
+    defines.push("DEBAND_DITHER")
+  }
+  defines
+}
+
+///|
+fn tonemapping2d_pipeline_cache_key(
+  format : @wgpu.TextureFormat,
+  tonemapping_mode : Int,
+  deband_dither : Bool,
+) -> String {
+  let deband_bits = if deband_dither { "1" } else { "0" }
+  format.raw.to_string() +
+  "_" +
+  tonemapping2d_mode_clamped(tonemapping_mode).to_string() +
+  "_" +
+  deband_bits
+}
+
+///|
+fn load_postprocess2d_wgsl_with_defines_required(
+  rel : String,
+  define_keys : Array[String],
+) -> String raise GpuBackendError {
+  let normalized_rel = normalize_shader_rel_path(rel)
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  for key in define_keys {
+    defines.set(key, true)
+  }
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = copy_registered_wgsl_import_module_paths()
+  load_wgsl_preprocessed(
+    "", normalized_rel, defines, value_defines, visited, modules,
+  )
+}
+
+///|
 fn load_wgsl_with_defines_required(
   backend : GpuBackend,
   rel : String,
@@ -1802,6 +1922,162 @@ fn load_wgsl_with_defines_required(
   load_wgsl_preprocessed(
     base, normalized_rel, defines, value_defines, visited, modules,
   )
+}
+
+///|
+fn load_fullscreen_postprocess_wgsl_with_defines_required(
+  rel : String,
+  define_keys : Array[String],
+) -> String raise GpuBackendError {
+  let modules = copy_registered_wgsl_import_module_paths()
+  let fullscreen_defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let fullscreen_value_defines = default_wgsl_value_defines()
+  let fullscreen_visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let fullscreen_source = load_wgsl_preprocessed(
+    "", "shaders/bevy/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
+    fullscreen_defines, fullscreen_value_defines, fullscreen_visited, modules,
+  )
+  let main_source = load_postprocess2d_wgsl_with_defines_required(
+    rel, define_keys,
+  )
+  if main_source.contains("fn fullscreen_vertex_shader(") {
+    return main_source
+  }
+  fullscreen_source + "\n" + main_source
+}
+
+///|
+fn load_fullscreen_tonemapping2d_wgsl_with_defines_required(
+  define_keys : Array[String],
+) -> String raise GpuBackendError {
+  let modules = copy_registered_wgsl_import_module_paths()
+  let fullscreen_defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let fullscreen_value_defines = default_wgsl_value_defines()
+  let fullscreen_visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let fullscreen_source = load_wgsl_preprocessed(
+    "", "shaders/bevy/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
+    fullscreen_defines, fullscreen_value_defines, fullscreen_visited, modules,
+  )
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  for key in define_keys {
+    defines.set(key, true)
+  }
+  let value_defines = default_wgsl_value_defines()
+  value_defines.set("TONEMAPPING_LUT_TEXTURE_BINDING_INDEX", 3)
+  value_defines.set("TONEMAPPING_LUT_SAMPLER_BINDING_INDEX", 4)
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let main_source = load_wgsl_preprocessed(
+    "", "shaders/bevy/bevy_core_pipeline/tonemapping/tonemapping.wgsl", defines,
+    value_defines, visited, modules,
+  )
+  if main_source.contains("fn fullscreen_vertex_shader(") {
+    return main_source
+  }
+  fullscreen_source + "\n" + main_source
+}
+
+///|
+fn load_registered_wgsl_required(rel : String) -> String raise GpuBackendError {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = copy_registered_wgsl_import_module_paths()
+  load_wgsl_preprocessed(
+    "",
+    normalize_shader_rel_path(rel),
+    defines,
+    value_defines,
+    visited,
+    modules,
+  )
+}
+
+///|
+fn ensure_tonemapping2d_resources(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
+  if backend.tonemapping2d_bgl is None {
+    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=5UL)
+    let ok = builder.add_buffer(
+        0U,
+        frag,
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+        has_dynamic_offset=true,
+      ) &&
+      builder.add_texture(
+        1U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_sampler(2U, frag, @wgpu.SAMPLER_BINDING_TYPE_FILTERING) &&
+      builder.add_texture(
+        3U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_3D,
+      ) &&
+      builder.add_sampler(4U, frag, @wgpu.SAMPLER_BINDING_TYPE_FILTERING)
+    if !ok {
+      builder.free()
+      fatal("wgpu: failed to build tonemapping2d bind group layout")
+    }
+    let bgl = builder.finish(backend.device, label="mgstudio_tonemapping2d_bgl")
+    let pipeline_layout = backend.device.create_pipeline_layout_1(bgl)
+    pipeline_layout.set_label("mgstudio_tonemapping2d_pipeline_layout")
+    backend.tonemapping2d_bgl = Some(bgl)
+    backend.tonemapping2d_pipeline_layout = Some(pipeline_layout)
+  }
+  if backend.tonemapping2d_view_buf is None {
+    let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
+    backend.tonemapping2d_view_buf = Some(
+      backend.device.create_buffer(size=MESH2D_BEVY_VIEW_BUFFER_SIZE, usage~),
+    )
+  }
+  if backend.tonemapping2d_sampler is None {
+    backend.tonemapping2d_sampler = Some(
+      backend.device.create_sampler_linear_clamp(),
+    )
+  }
+}
+
+///|
+fn tonemapping2d_pipeline_for_format(
+  backend : GpuBackend,
+  format : @wgpu.TextureFormat,
+  tonemapping_mode : Int,
+  deband_dither : Bool,
+) -> @wgpu.RenderPipeline? raise GpuBackendError {
+  ensure_tonemapping2d_resources(backend)
+  let key = tonemapping2d_pipeline_cache_key(
+    format, tonemapping_mode, deband_dither,
+  )
+  for entry in backend.tonemapping2d_pipeline_cache {
+    if entry.key == key {
+      return Some(entry.pipeline)
+    }
+  }
+  guard backend.tonemapping2d_pipeline_layout is Some(pipeline_layout) else {
+    return None
+  }
+  let source = load_fullscreen_tonemapping2d_wgsl_with_defines_required(
+    tonemapping2d_pipeline_define_keys(tonemapping_mode, deband_dither),
+  )
+  let pipeline = bloom2d_create_pipeline(
+    backend,
+    pipeline_layout,
+    source,
+    format,
+    "fragment",
+    BLOOM2D_BLEND_MODE_NONE,
+    "mgstudio_tonemapping2d_" + key,
+  )
+  backend.tonemapping2d_pipeline_cache.push(Tonemapping2dPipelineCacheEntry::{
+    key,
+    pipeline,
+  })
+  Some(pipeline)
 }
 
 ///|
@@ -2083,39 +2359,32 @@ fn ensure_bloom2d_pipeline_rgba8(
       is Some(intermediate_pipeline_layout) else {
       return
     }
-    let downsample_first_source = load_wgsl_with_defines_required(
-      backend,
-      "shaders/bevy/mgstudio_runtime/2d/bloom.wgsl",
+    let downsample_first_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+      "shaders/bevy/bevy_post_process/bloom/bloom.wgsl",
       ["FIRST_DOWNSAMPLE", "USE_THRESHOLD"],
     )
-    let downsample_first_no_threshold_source = load_wgsl_with_defines_required(
-      backend,
-      "shaders/bevy/mgstudio_runtime/2d/bloom.wgsl",
+    let downsample_first_no_threshold_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+      "shaders/bevy/bevy_post_process/bloom/bloom.wgsl",
       ["FIRST_DOWNSAMPLE"],
     )
-    let downsample_first_uniform_source = load_wgsl_with_defines_required(
-      backend,
-      "shaders/bevy/mgstudio_runtime/2d/bloom.wgsl",
+    let downsample_first_uniform_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+      "shaders/bevy/bevy_post_process/bloom/bloom.wgsl",
       ["FIRST_DOWNSAMPLE", "USE_THRESHOLD", "UNIFORM_SCALE"],
     )
-    let downsample_first_no_threshold_uniform_source = load_wgsl_with_defines_required(
-      backend,
-      "shaders/bevy/mgstudio_runtime/2d/bloom.wgsl",
+    let downsample_first_no_threshold_uniform_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+      "shaders/bevy/bevy_post_process/bloom/bloom.wgsl",
       ["FIRST_DOWNSAMPLE", "UNIFORM_SCALE"],
     )
-    let downsample_source = load_wgsl_with_defines_required(
-      backend,
-      "shaders/bevy/mgstudio_runtime/2d/bloom.wgsl",
+    let downsample_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+      "shaders/bevy/bevy_post_process/bloom/bloom.wgsl",
       [],
     )
-    let downsample_uniform_source = load_wgsl_with_defines_required(
-      backend,
-      "shaders/bevy/mgstudio_runtime/2d/bloom.wgsl",
+    let downsample_uniform_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+      "shaders/bevy/bevy_post_process/bloom/bloom.wgsl",
       ["UNIFORM_SCALE"],
     )
-    let upsample_source = load_wgsl_with_defines_required(
-      backend,
-      "shaders/bevy/mgstudio_runtime/2d/bloom.wgsl",
+    let upsample_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+      "shaders/bevy/bevy_post_process/bloom/bloom.wgsl",
       [],
     )
     let downsample_first_pipeline = bloom2d_create_pipeline(
@@ -2215,8 +2484,8 @@ fn ensure_bloom2d_pipeline_rgba8(
   guard backend.bloom2d_final_pipeline_layout is Some(final_pipeline_layout) else {
     return
   }
-  let final_source = load_wgsl_from_assets_required(
-    backend, "shaders/bevy/mgstudio_runtime/2d/tonemapping.wgsl",
+  let final_source = load_registered_wgsl_required(
+    "shaders/bevy/mgstudio_runtime/2d/tonemapping.wgsl",
   )
   let final_pipeline = bloom2d_create_pipeline(
     backend,
@@ -2250,8 +2519,8 @@ fn ensure_bloom2d_pipeline_surface(
   guard backend.bloom2d_final_pipeline_layout is Some(final_pipeline_layout) else {
     return
   }
-  let final_source = load_wgsl_from_assets_required(
-    backend, "shaders/bevy/mgstudio_runtime/2d/tonemapping.wgsl",
+  let final_source = load_registered_wgsl_required(
+    "shaders/bevy/mgstudio_runtime/2d/tonemapping.wgsl",
   )
   let final_pipeline = bloom2d_create_pipeline(
     backend,
@@ -2288,9 +2557,8 @@ fn ensure_bloom2d_final_composite_pipeline(
     is Some(intermediate_pipeline_layout) else {
     return
   }
-  let upsample_source = load_wgsl_with_defines_required(
-    backend,
-    "shaders/bevy/mgstudio_runtime/2d/bloom.wgsl",
+  let upsample_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+    "shaders/bevy/bevy_post_process/bloom/bloom.wgsl",
     [],
   )
   let energy_pipeline = bloom2d_create_pipeline(
