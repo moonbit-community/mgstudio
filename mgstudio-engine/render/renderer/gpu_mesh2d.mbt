@@ -210,7 +210,7 @@ fn ensure_mesh_bevy_resources(
     }
     let bgl_view = view_builder.finish(
       backend.device,
-      label="mgstudio_mesh2d_bevy_view_bgl",
+      label="mgstudio_mesh2d_view_bind_group_layout",
     )
     let mesh_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=1UL)
     let mesh_ok = mesh_builder.add_buffer(
@@ -225,7 +225,7 @@ fn ensure_mesh_bevy_resources(
     }
     let bgl_mesh = mesh_builder.finish(
       backend.device,
-      label="mgstudio_mesh2d_bevy_mesh_bgl",
+      label="mgstudio_mesh2d_mesh_bind_group_layout",
     )
     let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=3UL)
     let material_ok = material_builder.add_buffer(
@@ -250,7 +250,7 @@ fn ensure_mesh_bevy_resources(
     }
     let bgl_material = material_builder.finish(
       backend.device,
-      label="mgstudio_mesh2d_bevy_material_bgl",
+      label="mgstudio_mesh2d_material_bind_group_layout",
     )
     let pipeline_layout = create_pipeline_layout_3(
       backend.device,
@@ -258,7 +258,7 @@ fn ensure_mesh_bevy_resources(
       bgl_mesh,
       bgl_material,
     )
-    pipeline_layout.set_label("mgstudio_mesh2d_bevy_pipeline_layout")
+    pipeline_layout.set_label("mgstudio_mesh2d_pipeline_layout")
     let view_buf = backend.device.create_buffer(
       size=MESH2D_BEVY_VIEW_BUFFER_SIZE,
       usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
@@ -303,7 +303,7 @@ fn ensure_mesh_bevy_resources(
     let view_bg = view_bg_builder.finish(
       backend.device,
       bgl_view,
-      label="mgstudio_mesh2d_bevy_view_bg",
+      label="mgstudio_mesh2d_view_bind_group",
     )
     backend.mesh2d_bevy_bgl_view = Some(bgl_view)
     backend.mesh2d_bevy_bgl_mesh = Some(bgl_mesh)
