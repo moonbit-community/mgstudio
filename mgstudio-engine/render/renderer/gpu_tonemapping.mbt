@@ -447,13 +447,13 @@ fn tonemapping2d_pipeline_for_format(
   let source = load_fullscreen_tonemapping2d_wgsl_with_defines_required(
     tonemapping2d_pipeline_define_keys(tonemapping_mode, deband_dither),
   )
-  let pipeline = bloom2d_create_pipeline(
+  let pipeline = create_postprocess_pipeline(
     backend,
     pipeline_layout,
     source,
     format,
     "fragment",
-    BLOOM2D_BLEND_MODE_NONE,
+    POSTPROCESS_BLEND_MODE_NONE,
     "mgstudio_tonemapping2d_" + key,
   )
   backend.tonemapping2d_pipeline_cache.push(Tonemapping2dPipelineCacheEntry::{

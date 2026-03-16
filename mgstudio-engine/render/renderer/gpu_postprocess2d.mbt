@@ -997,69 +997,6 @@ fn bloom2d_uniform_bytes(
 }
 
 ///|
-fn load_postprocess2d_wgsl_with_defines_required(
-  rel : String,
-  define_keys : Array[String],
-) -> String raise GpuBackendError {
-  let normalized_rel = normalize_shader_rel_path(rel)
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  for key in define_keys {
-    defines.set(key, true)
-  }
-  let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = copy_registered_wgsl_import_module_paths()
-  load_wgsl_preprocessed(
-    "", normalized_rel, defines, value_defines, visited, modules,
-  )
-}
-
-///|
-fn load_wgsl_with_defines_required(
-  backend : GpuBackend,
-  rel : String,
-  define_keys : Array[String],
-) -> String raise GpuBackendError {
-  let base = backend.assets_base.trim().to_string()
-  if base == "" {
-    fatal("wgpu: assets_base is empty; cannot load shader: " + rel)
-  }
-  let normalized_rel = normalize_shader_rel_path(rel)
-  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  for key in define_keys {
-    defines.set(key, true)
-  }
-  let value_defines = default_wgsl_value_defines()
-  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let modules = build_wgsl_import_module_paths(base)
-  load_wgsl_preprocessed(
-    base, normalized_rel, defines, value_defines, visited, modules,
-  )
-}
-
-///|
-fn load_fullscreen_postprocess_wgsl_with_defines_required(
-  rel : String,
-  define_keys : Array[String],
-) -> String raise GpuBackendError {
-  let modules = copy_registered_wgsl_import_module_paths()
-  let fullscreen_defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let fullscreen_value_defines = default_wgsl_value_defines()
-  let fullscreen_visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  let fullscreen_source = load_wgsl_preprocessed(
-    "", "shaders/bevy/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
-    fullscreen_defines, fullscreen_value_defines, fullscreen_visited, modules,
-  )
-  let main_source = load_postprocess2d_wgsl_with_defines_required(
-    rel, define_keys,
-  )
-  if main_source.contains("fn fullscreen_vertex_shader(") {
-    return main_source
-  }
-  fullscreen_source + "\n" + main_source
-}
-
-///|
 fn ensure_bloom2d_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
   let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
   if backend.bloom2d_intermediate_bgl is None {
@@ -1085,75 +1022,6 @@ fn ensure_bloom2d_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
     backend.bloom2d_intermediate_bgl = Some(bgl)
     backend.bloom2d_intermediate_pipeline_layout = Some(pl)
   }
-}
-
-///|
-const BLOOM2D_BLEND_MODE_NONE : Int = 0
-
-///|
-const BLOOM2D_BLEND_MODE_CONSTANT_ENERGY : Int = 2
-
-///|
-const BLOOM2D_BLEND_MODE_CONSTANT_ADDITIVE : Int = 3
-
-///|
-fn bloom2d_builder_set_blend_mode(
-  builder : @wgpu.RenderPipelineDescBuilder,
-  blend_mode : Int,
-) -> Unit raise GpuBackendError {
-  if blend_mode == BLOOM2D_BLEND_MODE_NONE {
-    return
-  }
-  let (color_src, color_dst) = if blend_mode ==
-    BLOOM2D_BLEND_MODE_CONSTANT_ENERGY {
-    (@wgpu.BLEND_FACTOR_CONSTANT, @wgpu.BLEND_FACTOR_ONE_MINUS_CONSTANT)
-  } else if blend_mode == BLOOM2D_BLEND_MODE_CONSTANT_ADDITIVE {
-    (@wgpu.BLEND_FACTOR_CONSTANT, @wgpu.BLEND_FACTOR_ONE)
-  } else {
-    fatal("wgpu: unsupported bloom blend mode: " + blend_mode.to_string())
-  }
-  builder.set_blend_components(
-    color_src,
-    color_dst,
-    @wgpu.BLEND_OPERATION_ADD,
-    @wgpu.BLEND_FACTOR_ZERO,
-    @wgpu.BLEND_FACTOR_ONE,
-    @wgpu.BLEND_OPERATION_ADD,
-  ) catch {
-    err => {
-      err |> ignore
-      fatal("wgpu: failed to configure bloom custom blend state")
-    }
-  }
-}
-
-///|
-fn bloom2d_create_pipeline(
-  backend : GpuBackend,
-  layout : @wgpu.PipelineLayout,
-  source : String,
-  format : @wgpu.TextureFormat,
-  fs_entry : String,
-  blend_mode : Int,
-  label : String,
-) -> @wgpu.RenderPipeline raise GpuBackendError {
-  let sm = backend.device.create_shader_module_wgsl(source)
-  let pipeline = try {
-    let builder = @wgpu.RenderPipelineDescBuilder::new(sm, layout~)
-    builder.set_entry_points("fullscreen_vertex_shader", fs_entry)
-    builder.set_color_target_format(format)
-    bloom2d_builder_set_blend_mode(builder, blend_mode)
-    builder.create_pipeline(backend.device)
-  } catch {
-    err => {
-      err |> ignore
-      sm.release()
-      fatal("wgpu: failed to build bloom pipeline descriptor")
-    }
-  }
-  pipeline.set_label(label)
-  sm.release()
-  pipeline
 }
 
 ///|
@@ -1285,76 +1153,76 @@ fn ensure_bloom2d_pipeline_rgba8(
       "shaders/bevy/bevy_post_process/bloom/bloom.wgsl",
       [],
     )
-    let downsample_first_pipeline = bloom2d_create_pipeline(
+    let downsample_first_pipeline = create_postprocess_pipeline(
       backend,
       intermediate_pipeline_layout,
       downsample_first_source,
       mip_format,
       "downsample_first",
-      BLOOM2D_BLEND_MODE_NONE,
+      POSTPROCESS_BLEND_MODE_NONE,
       "mgstudio_bloom2d_downsample_first",
     )
-    let downsample_first_no_threshold_pipeline = bloom2d_create_pipeline(
+    let downsample_first_no_threshold_pipeline = create_postprocess_pipeline(
       backend,
       intermediate_pipeline_layout,
       downsample_first_no_threshold_source,
       mip_format,
       "downsample_first",
-      BLOOM2D_BLEND_MODE_NONE,
+      POSTPROCESS_BLEND_MODE_NONE,
       "mgstudio_bloom2d_downsample_first_no_threshold",
     )
-    let downsample_first_uniform_pipeline = bloom2d_create_pipeline(
+    let downsample_first_uniform_pipeline = create_postprocess_pipeline(
       backend,
       intermediate_pipeline_layout,
       downsample_first_uniform_source,
       mip_format,
       "downsample_first",
-      BLOOM2D_BLEND_MODE_NONE,
+      POSTPROCESS_BLEND_MODE_NONE,
       "mgstudio_bloom2d_downsample_first_uniform",
     )
-    let downsample_first_no_threshold_uniform_pipeline = bloom2d_create_pipeline(
+    let downsample_first_no_threshold_uniform_pipeline = create_postprocess_pipeline(
       backend,
       intermediate_pipeline_layout,
       downsample_first_no_threshold_uniform_source,
       mip_format,
       "downsample_first",
-      BLOOM2D_BLEND_MODE_NONE,
+      POSTPROCESS_BLEND_MODE_NONE,
       "mgstudio_bloom2d_downsample_first_no_threshold_uniform",
     )
-    let downsample_pipeline = bloom2d_create_pipeline(
+    let downsample_pipeline = create_postprocess_pipeline(
       backend,
       intermediate_pipeline_layout,
       downsample_source,
       mip_format,
       "downsample",
-      BLOOM2D_BLEND_MODE_NONE,
+      POSTPROCESS_BLEND_MODE_NONE,
       "mgstudio_bloom2d_downsample",
     )
-    let downsample_uniform_pipeline = bloom2d_create_pipeline(
+    let downsample_uniform_pipeline = create_postprocess_pipeline(
       backend,
       intermediate_pipeline_layout,
       downsample_uniform_source,
       mip_format,
       "downsample",
-      BLOOM2D_BLEND_MODE_NONE,
+      POSTPROCESS_BLEND_MODE_NONE,
       "mgstudio_bloom2d_downsample_uniform",
     )
-    let upsample_pipeline_energy = bloom2d_create_pipeline(
+    let upsample_pipeline_energy = create_postprocess_pipeline(
       backend,
       intermediate_pipeline_layout,
       upsample_source,
       mip_format,
       "upsample",
-      BLOOM2D_BLEND_MODE_CONSTANT_ENERGY,
+      POSTPROCESS_BLEND_MODE_CONSTANT_ENERGY,
       "mgstudio_bloom2d_upsample_energy",
     )
-    let upsample_pipeline_additive = bloom2d_create_pipeline(
+    let upsample_pipeline_additive = create_postprocess_pipeline(
       backend,
       intermediate_pipeline_layout,
       upsample_source,
       mip_format,
       "upsample",
-      BLOOM2D_BLEND_MODE_CONSTANT_ADDITIVE,
+      POSTPROCESS_BLEND_MODE_CONSTANT_ADDITIVE,
       "mgstudio_bloom2d_upsample_additive",
     )
     backend.bloom2d_downsample_first_pipeline = Some(downsample_first_pipeline)
@@ -1404,22 +1272,22 @@ fn ensure_bloom2d_final_composite_pipeline(
     "shaders/bevy/bevy_post_process/bloom/bloom.wgsl",
     [],
   )
-  let energy_pipeline = bloom2d_create_pipeline(
+  let energy_pipeline = create_postprocess_pipeline(
     backend,
     intermediate_pipeline_layout,
     upsample_source,
     format,
     "upsample",
-    BLOOM2D_BLEND_MODE_CONSTANT_ENERGY,
+    POSTPROCESS_BLEND_MODE_CONSTANT_ENERGY,
     "mgstudio_bloom2d_upsample_final_energy",
   )
-  let additive_pipeline = bloom2d_create_pipeline(
+  let additive_pipeline = create_postprocess_pipeline(
     backend,
     intermediate_pipeline_layout,
     upsample_source,
     format,
     "upsample",
-    BLOOM2D_BLEND_MODE_CONSTANT_ADDITIVE,
+    POSTPROCESS_BLEND_MODE_CONSTANT_ADDITIVE,
     "mgstudio_bloom2d_upsample_final_additive",
   )
   backend.bloom2d_upsample_final_pipeline_energy = Some(energy_pipeline)

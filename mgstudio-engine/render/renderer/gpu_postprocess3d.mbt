@@ -211,13 +211,13 @@ fn ensure_effect_stack3d_pipeline_rgba8(
   let source = load_wgsl_from_assets_required(
     backend, "shaders/bevy/bevy_post_process/effect_stack/post_process.wgsl",
   )
-  let pipeline = bloom2d_create_pipeline(
+  let pipeline = create_postprocess_pipeline(
     backend,
     pipeline_layout,
     source,
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     "fragment_main",
-    BLOOM2D_BLEND_MODE_NONE,
+    POSTPROCESS_BLEND_MODE_NONE,
     "mgstudio_effect_stack3d_rgba8",
   )
   backend.effect_stack3d_pipeline = Some(pipeline)
@@ -246,13 +246,13 @@ fn ensure_effect_stack3d_pipeline_surface(
   let source = load_wgsl_from_assets_required(
     backend, "shaders/bevy/bevy_post_process/effect_stack/post_process.wgsl",
   )
-  let pipeline = bloom2d_create_pipeline(
+  let pipeline = create_postprocess_pipeline(
     backend,
     pipeline_layout,
     source,
     format,
     "fragment_main",
-    BLOOM2D_BLEND_MODE_NONE,
+    POSTPROCESS_BLEND_MODE_NONE,
     "mgstudio_effect_stack3d_surface",
   )
   backend.effect_stack3d_pipeline_surface = Some(pipeline)
@@ -375,13 +375,13 @@ fn ensure_fxaa3d_pipeline_rgba8(
   let source = load_wgsl_with_defines_required(
     backend, "shaders/bevy/bevy_anti_alias/fxaa/fxaa.wgsl", define_keys,
   )
-  let pipeline = bloom2d_create_pipeline(
+  let pipeline = create_postprocess_pipeline(
     backend,
     pipeline_layout,
     source,
     tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
     "fragment",
-    BLOOM2D_BLEND_MODE_NONE,
+    POSTPROCESS_BLEND_MODE_NONE,
     "mgstudio_fxaa3d_rgba8",
   )
   backend.fxaa3d_pipeline = Some(pipeline)
@@ -424,13 +424,13 @@ fn ensure_fxaa3d_pipeline_surface(
   let source = load_wgsl_with_defines_required(
     backend, "shaders/bevy/bevy_anti_alias/fxaa/fxaa.wgsl", define_keys,
   )
-  let pipeline = bloom2d_create_pipeline(
+  let pipeline = create_postprocess_pipeline(
     backend,
     pipeline_layout,
     source,
     format,
     "fragment",
-    BLOOM2D_BLEND_MODE_NONE,
+    POSTPROCESS_BLEND_MODE_NONE,
     "mgstudio_fxaa3d_surface",
   )
   backend.fxaa3d_pipeline_surface = Some(pipeline)
