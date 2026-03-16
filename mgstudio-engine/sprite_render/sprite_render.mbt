@@ -28,6 +28,9 @@ pub type ColorMaterial = @sprite.ColorMaterial
 pub type ColorMaterialAsset = @sprite.ColorMaterialAsset
 
 ///|
+pub type ColorMaterialPlugin = @sprite.ColorMaterialPlugin
+
+///|
 pub type Material2dPlugin[M] = @sprite.Material2dPlugin[M]
 
 ///|
@@ -293,8 +296,17 @@ pub fn render2d_camera_world_to_viewport_2d(
 }
 
 ///|
-pub fn[W, M] material2d_plugin(plugin : Material2dPlugin[M]) -> @app.Plugin[W] {
+pub fn material2d_plugin(
+  plugin : Material2dPlugin[ColorMaterial],
+) -> @app.Plugin[@ecs.World] {
   @sprite.material2d_plugin(plugin)
+}
+
+///|
+pub fn color_material_plugin(
+  plugin : ColorMaterialPlugin,
+) -> @app.Plugin[@ecs.World] {
+  @sprite.color_material_plugin(plugin)
 }
 
 ///|

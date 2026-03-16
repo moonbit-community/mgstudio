@@ -1084,6 +1084,25 @@ pub fn render_diagnostics_snapshot() -> RenderDiagnosticsSnapshot {
 }
 
 ///|
+pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit {
+  last_frame_render_diagnostics_snapshot_ref.val = RenderDiagnosticsSnapshot::{
+    mesh2d_draw_calls: current_frame_mesh2d_draw_calls_ref.val,
+    mesh2d_executed_draw_calls: current_frame_mesh2d_executed_draw_calls_ref.val,
+    mesh3d_draw_calls: current_frame_mesh3d_draw_calls_ref.val,
+    mesh3d_executed_draw_calls: current_frame_mesh3d_executed_draw_calls_ref.val,
+  }
+}
+
+///|
+pub fn render_diagnostics_reset_current_frame_counters() -> Unit {
+  current_frame_mesh2d_draw_calls_ref.val = 0
+  current_frame_mesh2d_executed_draw_calls_ref.val = 0
+  current_frame_mesh3d_draw_calls_ref.val = 0
+  current_frame_mesh3d_executed_draw_calls_ref.val = 0
+  last_frame_render_diagnostics_snapshot_ref.val = RenderDiagnosticsSnapshot::default()
+}
+
+///|
 
 ///|
 pub fn draw_gizmo_line(

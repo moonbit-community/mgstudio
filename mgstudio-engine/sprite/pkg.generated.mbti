@@ -22,6 +22,8 @@ pub const SPRITE_PLUGIN_ID : String = "bevy_sprite::SpritePlugin"
 
 pub let camera_update_systems : String
 
+pub fn color_material_plugin(ColorMaterialPlugin) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub let ecs_components : Array[String]
 
 pub let ecs_key_anchor : @ecs.ComponentKey[Anchor]
@@ -120,7 +122,7 @@ pub fn gizmo_set_config(GizmoConfig) -> Unit
 
 pub fn init_render_state_system(@ecs.World) -> Unit
 
-pub fn[W, M] material2d_plugin(Material2dPlugin[M]) -> (@app.App[W]) -> @app.App[W]
+pub fn material2d_plugin(Material2dPlugin[ColorMaterial]) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn pan_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -490,6 +492,10 @@ pub struct ColorMaterialAsset {
   uv_scale : @math.Vec2
 }
 pub fn ColorMaterialAsset::new(@color.Color, AlphaMode2d, texture? : @asset.Handle[@image.Image]?, uv_offset? : @math.Vec2, uv_scale? : @math.Vec2) -> Self
+
+pub struct ColorMaterialPlugin {
+}
+pub fn ColorMaterialPlugin::default() -> Self
 
 pub(all) enum DebandDither {
   Disabled

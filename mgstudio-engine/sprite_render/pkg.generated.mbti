@@ -16,6 +16,8 @@ import {
 // Values
 pub const SPRITE_RENDER_PLUGIN_ID : String = "bevy_sprite_render::SpriteRenderPlugin"
 
+pub fn color_material_plugin(@sprite.ColorMaterialPlugin) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub let ecs_key_color_material : @ecs.ComponentKey[@sprite.ColorMaterial]
 
 pub let ecs_key_gpu_mesh2d : @ecs.ComponentKey[@sprite.GpuMesh2d]
@@ -32,7 +34,7 @@ pub let ecs_key_wireframe2d_color : @ecs.ComponentKey[@sprite.Wireframe2dColor]
 
 pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[@sprite.Wireframe2dConfig]
 
-pub fn[W, M] material2d_plugin(@sprite.Material2dPlugin[M]) -> (@app.App[W]) -> @app.App[W]
+pub fn material2d_plugin(@sprite.Material2dPlugin[@sprite.ColorMaterial]) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, @sprite.Camera, @sprite.OrthographicProjection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
 
@@ -94,6 +96,8 @@ pub using @sprite {type AlphaMode2d}
 pub using @sprite {type ColorMaterial}
 
 pub using @sprite {type ColorMaterialAsset}
+
+pub using @sprite {type ColorMaterialPlugin}
 
 pub using @sprite {type GpuMesh2d}
 

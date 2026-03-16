@@ -1668,6 +1668,16 @@ pub fn render_diagnostics_snapshot() -> @renderer.RenderDiagnosticsSnapshot {
 }
 
 ///|
+pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit {
+  @renderer.render_diagnostics_commit_current_frame_snapshot()
+}
+
+///|
+pub fn render_diagnostics_reset_current_frame_counters() -> Unit {
+  @renderer.render_diagnostics_reset_current_frame_counters()
+}
+
+///|
 pub fn screenshot_capture_surface_request() -> Int {
   @renderer.screenshot_capture_surface_request()
 }

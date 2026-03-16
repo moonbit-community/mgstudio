@@ -120,6 +120,10 @@ pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(camera_key_hi~ : Int, ca
 
 pub fn register_wgsl_source(String, String) -> Unit
 
+pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit
+
+pub fn render_diagnostics_reset_current_frame_counters() -> Unit
+
 pub fn render_diagnostics_snapshot() -> @renderer.RenderDiagnosticsSnapshot
 
 pub fn screenshot_capture_surface_request() -> Int

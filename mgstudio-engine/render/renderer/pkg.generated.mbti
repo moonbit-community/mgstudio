@@ -130,6 +130,10 @@ pub fn pipeline_layout_descriptor_3_new(@c.WGPUBindGroupLayout, @c.WGPUBindGroup
 
 pub fn register_wgsl_source(String, String) -> Unit
 
+pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit
+
+pub fn render_diagnostics_reset_current_frame_counters() -> Unit
+
 pub fn render_diagnostics_snapshot() -> RenderDiagnosticsSnapshot
 
 pub fn request_device() -> Int

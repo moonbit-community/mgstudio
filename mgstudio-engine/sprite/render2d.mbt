@@ -1366,6 +1366,16 @@ pub impl Material2d for ColorMaterial with uv_scale(self) {
 }
 
 ///|
+fn init_color_material_assets_resource(
+  app : @app.App[@ecs.World],
+) -> @app.App[@ecs.World] {
+  app.init_resource(fn() {
+    let assets : @asset.Assets[ColorMaterialAsset] = @asset.Assets::new()
+    assets
+  })
+}
+
+///|
 pub struct Material2dPlugin[M] {
   marker : M?
 }
@@ -1376,8 +1386,27 @@ pub fn[M] Material2dPlugin::default() -> Material2dPlugin[M] {
 }
 
 ///|
-pub fn[W, M] material2d_plugin(_plugin : Material2dPlugin[M]) -> @app.Plugin[W] {
-  fn(app : @app.App[W]) -> @app.App[W] { app }
+pub fn material2d_plugin(
+  _plugin : Material2dPlugin[ColorMaterial],
+) -> @app.Plugin[@ecs.World] {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    init_color_material_assets_resource(app)
+  }
+}
+
+///|
+pub struct ColorMaterialPlugin {}
+
+///|
+pub fn ColorMaterialPlugin::default() -> ColorMaterialPlugin {
+  ColorMaterialPlugin::{  }
+}
+
+///|
+pub fn color_material_plugin(
+  _plugin : ColorMaterialPlugin,
+) -> @app.Plugin[@ecs.World] {
+  material2d_plugin(Material2dPlugin::default())
 }
 
 ///|
@@ -8748,12 +8777,9 @@ pub let render2d_set_execute : @app.SystemSet = render2d_set_render
 
 ///|
 pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
-  .init_resource(fn() { ClearColor::default() })
-  .init_resource(fn() {
-    let assets : @asset.Assets[ColorMaterialAsset] = @asset.Assets::new()
-    assets
-  })
+  init_color_material_assets_resource(
+    app.init_resource(fn() { ClearColor::default() }),
+  )
   .init_resource(fn() {
     let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
     assets
@@ -8791,12 +8817,9 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 
 ///|
 pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
-  .init_resource(fn() { ClearColor::default() })
-  .init_resource(fn() {
-    let assets : @asset.Assets[ColorMaterialAsset] = @asset.Assets::new()
-    assets
-  })
+  init_color_material_assets_resource(
+    app.init_resource(fn() { ClearColor::default() }),
+  )
   .init_resource(fn() {
     let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
     assets
