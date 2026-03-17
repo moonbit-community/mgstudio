@@ -299,7 +299,7 @@ pub struct GpuBackend {
   mut mesh3d_instance_uniform_used : Int
   mesh3d_preprocess_camera_upload_states : Array[GpuMesh3dPreprocessCameraUploadState]
   mut mesh3d_motion_vector_bgl_view : @wgpu_mbt.BindGroupLayout?
-  mut mesh3d_motion_vector_bgl_environment : @wgpu_mbt.BindGroupLayout?
+  mut mesh3d_motion_vector_bgl_empty : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_mesh : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh3d_motion_vector_pipeline : @wgpu_mbt.RenderPipeline?
@@ -308,10 +308,6 @@ pub struct GpuBackend {
   mut mesh3d_motion_vector_previous_view_buf : @wgpu_mbt.Buffer?
   mut mesh3d_motion_vector_visibility_ranges_buf : @wgpu_mbt.Buffer?
   mut mesh3d_motion_vector_view_bg : @wgpu_mbt.BindGroup?
-  mut mesh3d_motion_vector_environment_texture : @wgpu_mbt.Texture?
-  mut mesh3d_motion_vector_environment_view : @wgpu_mbt.TextureView?
-  mut mesh3d_motion_vector_environment_sampler : @wgpu_mbt.Sampler?
-  mut mesh3d_motion_vector_environment_bg : @wgpu_mbt.BindGroup?
   mut mesh3d_motion_vector_mesh_buf : @wgpu_mbt.Buffer?
   mut mesh3d_motion_vector_mesh_bg : @wgpu_mbt.BindGroup?
   mut motion_blur_bgl : @wgpu_mbt.BindGroupLayout?
