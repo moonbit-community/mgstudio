@@ -319,6 +319,7 @@ fn register_renderer_test_shaders() -> Unit {
     "shaders/bevy/bevy_core_pipeline/tonemapping/tonemapping_shared.wgsl", "shaders/bevy/bevy_render/color_operations.wgsl",
     "shaders/bevy/bevy_render/globals.wgsl", "shaders/bevy/bevy_render/maths.wgsl",
     "shaders/bevy/bevy_render/view/view.wgsl", "shaders/bevy/bevy_ui_render/ui.wgsl",
+    "shaders/bevy/bevy_ui_render/ui_texture_slice.wgsl", "shaders/bevy/bevy_ui_render/box_shadow.wgsl",
   ]
   for path in paths {
     register_renderer_test_shader_source(path)
@@ -527,6 +528,127 @@ test "renderer: ui node batching expands rects to vertices and splits anti alias
     content="6",
   )
   inspect(backend.ui_batches[1].anti_alias, content="false")
+}
+
+///|
+test "renderer: ui texture slice shader loads canonical bevy ui texture slice module" {
+  register_renderer_test_shaders()
+  let wgsl = load_ui_texture_slice_wgsl()
+  inspect(
+    wgsl.contains("@group(0) @binding(0)\nvar<uniform> view: View;"),
+    content="true",
+  )
+  inspect(
+    wgsl.contains("@group(0) @binding(1)\nvar<uniform> globals: Globals;"),
+    content="true",
+  )
+  inspect(
+    wgsl.contains("@group(1) @binding(0) var sprite_texture: texture_2d<f32>;"),
+    content="true",
+  )
+  inspect(wgsl.contains("bevy_render::"), content="false")
+}
+
+///|
+test "renderer: ui texture slice batching expands rects to vertices and merges by texture" {
+  let backend = GpuBackend::new(assets_base="assets")
+  ensure_ui_slice_resources(backend)
+  let texture_a = backend.create_texture_rgba8(
+    1,
+    1,
+    Bytes::makei(4, _ => (255).to_byte()),
+    false,
+  )
+  let texture_b = backend.create_texture_rgba8(
+    1,
+    1,
+    Bytes::makei(4, _ => (127).to_byte()),
+    false,
+  )
+  ui_enqueue_texture_slice(
+    backend, texture_a, 0.0F, 0.0F, 0.0F, 20.0F, 10.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.1F,
+    0.1F, 0.9F, 0.9F, 0.1F, 0.1F, 0.9F, 0.9F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F,
+    1.0F, 1.0F,
+  )
+  ui_enqueue_texture_slice(
+    backend, texture_a, 8.0F, 4.0F, 0.0F, 20.0F, 10.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.1F,
+    0.1F, 0.9F, 0.9F, 0.1F, 0.1F, 0.9F, 0.9F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F,
+    1.0F, 1.0F,
+  )
+  ui_enqueue_texture_slice(
+    backend, texture_b, 16.0F, 8.0F, 0.0F, 20.0F, 10.0F, 1.0F, 1.0F, 1.0F, 1.0F,
+    0.1F, 0.1F, 0.9F, 0.9F, 0.1F, 0.1F, 0.9F, 0.9F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F,
+    0.0F, 1.0F, 1.0F,
+  )
+  inspect(backend.ui_slice_view_bg is Some(_), content="true")
+  inspect(backend.ui_slice_vertex_count.reinterpret_as_int(), content="18")
+  inspect(backend.ui_slice_vertex_data.length(), content="450")
+  inspect(backend.ui_slice_batches.length(), content="2")
+  inspect(
+    backend.ui_slice_batches[0].instance_count.reinterpret_as_int(),
+    content="12",
+  )
+  inspect(
+    backend.ui_slice_batches[1].instance_count.reinterpret_as_int(),
+    content="6",
+  )
+}
+
+///|
+test "renderer: ui box shadow shader loads canonical bevy ui box shadow module" {
+  register_renderer_test_shaders()
+  let wgsl = load_ui_box_shadow_wgsl(16)
+  inspect(wgsl.contains("const SAMPLES: i32 = "), content="true")
+  inspect(load_ui_box_shadow_wgsl(8) == wgsl, content="false")
+  inspect(
+    wgsl.contains("@group(0) @binding(0) var<uniform> view: View;"),
+    content="true",
+  )
+  inspect(wgsl.contains("bevy_render::"), content="false")
+}
+
+///|
+test "renderer: ui box shadow batching expands rects to vertices and merges by samples" {
+  let backend = GpuBackend::new(assets_base="assets")
+  ensure_ui_shadow_resources(backend)
+  ui_enqueue_box_shadow(
+    backend, 0.0F, 0.0F, 0.0F, 24.0F, 16.0F, 1.0F, 1.0F, 1.0F, 0.5F, 18.0F, 10.0F,
+    2.0F, 2.0F, 2.0F, 2.0F, 4.0F, 16,
+  )
+  ui_enqueue_box_shadow(
+    backend, 8.0F, 4.0F, 0.0F, 24.0F, 16.0F, 1.0F, 1.0F, 1.0F, 0.5F, 18.0F, 10.0F,
+    2.0F, 2.0F, 2.0F, 2.0F, 4.0F, 16,
+  )
+  ui_enqueue_box_shadow(
+    backend, 16.0F, 8.0F, 0.0F, 24.0F, 16.0F, 1.0F, 1.0F, 1.0F, 0.5F, 18.0F, 10.0F,
+    2.0F, 2.0F, 2.0F, 2.0F, 4.0F, 8,
+  )
+  inspect(backend.ui_shadow_view_bg is Some(_), content="true")
+  inspect(backend.ui_shadow_vertex_count.reinterpret_as_int(), content="18")
+  inspect(backend.ui_shadow_vertex_data.length(), content="324")
+  inspect(backend.ui_shadow_batches.length(), content="2")
+  inspect(backend.ui_shadow_batches[0].samples, content="16")
+  inspect(
+    backend.ui_shadow_batches[0].instance_count.reinterpret_as_int(),
+    content="12",
+  )
+  inspect(backend.ui_shadow_batches[1].samples, content="8")
+  inspect(
+    backend.ui_shadow_batches[1].instance_count.reinterpret_as_int(),
+    content="6",
+  )
+}
+
+///|
+test "renderer: ui box shadow pipeline specializes by sample count" {
+  register_renderer_test_shaders()
+  let backend = GpuBackend::new(assets_base="assets")
+  let target_id = backend.create_render_target_rgba16f(128, 128, false)
+  backend.pass_state = Some(gpu_test_pass_state(target_id))
+  let ok = ui_shadow_pipeline_for_current_pass(backend, 16) is Some(_) &&
+    ui_shadow_pipeline_for_current_pass(backend, 8) is Some(_) &&
+    backend.ui_shadow_pipeline_cache.length() == 2
+  inspect(ok, content="true")
 }
 
 ///|

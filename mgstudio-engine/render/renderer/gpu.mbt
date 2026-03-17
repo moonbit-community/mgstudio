@@ -88,6 +88,20 @@ pub struct UiBatch {
 }
 
 ///|
+pub struct UiShadowBatch {
+  first_instance : UInt
+  mut instance_count : UInt
+  samples : Int
+}
+
+///|
+pub struct UiShadowPipelineCacheEntry {
+  format : @wgpu.TextureFormat
+  samples : Int
+  pipeline : @wgpu.RenderPipeline
+}
+
+///|
 struct GpuUniformSlot {
   buffer : @wgpu.Buffer
   bind_group : @wgpu.BindGroup
@@ -352,26 +366,31 @@ pub struct GpuBackend {
   mut ui_vertex_count : UInt
 
   // UI box shadow pipeline (Bevy-aligned).
-  mut ui_shadow_pipeline : @wgpu.RenderPipeline?
-  mut ui_shadow_pipeline_surface : @wgpu.RenderPipeline?
-  mut ui_shadow_pipeline_surface_format : @wgpu.TextureFormat?
-  mut ui_shadow_instance_buf : @wgpu.Buffer?
-  mut ui_shadow_instance_capacity : UInt64
-  mut ui_shadow_globals_bg : @wgpu.BindGroup?
-  ui_shadow_instance_data : Array[Float]
-  ui_shadow_batches : Array[UiBatch]
-  mut ui_shadow_instance_count : UInt
+  mut ui_shadow_view_bgl : @wgpu.BindGroupLayout?
+  mut ui_shadow_pipeline_layout : @wgpu.PipelineLayout?
+  mut ui_shadow_view_buf : @wgpu.Buffer?
+  mut ui_shadow_view_bg : @wgpu.BindGroup?
+  mut ui_shadow_vertex_buf : @wgpu.Buffer?
+  mut ui_shadow_vertex_capacity : UInt64
+  ui_shadow_vertex_data : Array[UInt]
+  ui_shadow_batches : Array[UiShadowBatch]
+  ui_shadow_pipeline_cache : Array[UiShadowPipelineCacheEntry]
+  mut ui_shadow_vertex_count : UInt
 
   // UI texture slice pipeline (Bevy-aligned).
+  mut ui_slice_view_bgl : @wgpu.BindGroupLayout?
+  mut ui_slice_pipeline_layout : @wgpu.PipelineLayout?
   mut ui_slice_pipeline : @wgpu.RenderPipeline?
   mut ui_slice_pipeline_surface : @wgpu.RenderPipeline?
   mut ui_slice_pipeline_surface_format : @wgpu.TextureFormat?
-  mut ui_slice_instance_buf : @wgpu.Buffer?
-  mut ui_slice_instance_capacity : UInt64
-  mut ui_slice_globals_bg : @wgpu.BindGroup?
-  ui_slice_instance_data : Array[Float]
+  mut ui_slice_view_buf : @wgpu.Buffer?
+  mut ui_slice_globals_buf : @wgpu.Buffer?
+  mut ui_slice_view_bg : @wgpu.BindGroup?
+  mut ui_slice_vertex_buf : @wgpu.Buffer?
+  mut ui_slice_vertex_capacity : UInt64
+  ui_slice_vertex_data : Array[UInt]
   ui_slice_batches : Array[UiBatch]
-  mut ui_slice_instance_count : UInt
+  mut ui_slice_vertex_count : UInt
 
   // Mesh pipeline (solid-color).
   mut mesh_pipeline_layout : @wgpu.PipelineLayout?
@@ -722,24 +741,29 @@ pub fn GpuBackend::new(
     ui_vertex_data: [],
     ui_batches: [],
     ui_vertex_count: 0U,
-    ui_shadow_pipeline: None,
-    ui_shadow_pipeline_surface: None,
-    ui_shadow_pipeline_surface_format: None,
-    ui_shadow_instance_buf: None,
-    ui_shadow_instance_capacity: 0UL,
-    ui_shadow_globals_bg: None,
-    ui_shadow_instance_data: [],
+    ui_shadow_view_bgl: None,
+    ui_shadow_pipeline_layout: None,
+    ui_shadow_view_buf: None,
+    ui_shadow_view_bg: None,
+    ui_shadow_vertex_buf: None,
+    ui_shadow_vertex_capacity: 0UL,
+    ui_shadow_vertex_data: [],
     ui_shadow_batches: [],
-    ui_shadow_instance_count: 0U,
+    ui_shadow_pipeline_cache: [],
+    ui_shadow_vertex_count: 0U,
+    ui_slice_view_bgl: None,
+    ui_slice_pipeline_layout: None,
     ui_slice_pipeline: None,
     ui_slice_pipeline_surface: None,
     ui_slice_pipeline_surface_format: None,
-    ui_slice_instance_buf: None,
-    ui_slice_instance_capacity: 0UL,
-    ui_slice_globals_bg: None,
-    ui_slice_instance_data: [],
+    ui_slice_view_buf: None,
+    ui_slice_globals_buf: None,
+    ui_slice_view_bg: None,
+    ui_slice_vertex_buf: None,
+    ui_slice_vertex_capacity: 0UL,
+    ui_slice_vertex_data: [],
     ui_slice_batches: [],
-    ui_slice_instance_count: 0U,
+    ui_slice_vertex_count: 0U,
     mesh_pipeline_layout: None,
     mesh_pipeline: None,
     mesh_pipeline_surface: None,
@@ -1934,6 +1958,29 @@ fn apply_wgsl_template_consts(
         if value_defines.get(name) is Some(value) {
           out = out + value.to_string()
           i = j + 1
+          continue
+        }
+      }
+    }
+    if i + 1 < n && source.code_unit_at(i).to_int() == 35 { // '#'
+      let next = source.code_unit_at(i + 1).to_int()
+      let starts_name = (next >= 65 && next <= 90) || next == 95
+      if starts_name {
+        let mut j = i + 1
+        while j < n {
+          let cu = source.code_unit_at(j).to_int()
+          let continues_name = (cu >= 65 && cu <= 90) ||
+            (cu >= 48 && cu <= 57) ||
+            cu == 95
+          if !continues_name {
+            break
+          }
+          j = j + 1
+        }
+        let name = source[i + 1:j].to_string()
+        if value_defines.get(name) is Some(value) {
+          out = out + value.to_string()
+          i = j
           continue
         }
       }

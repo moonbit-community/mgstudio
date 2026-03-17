@@ -290,12 +290,12 @@ pub fn GpuBackend::begin_pass(
   self.ui_vertex_data.clear()
   self.ui_batches.clear()
   self.ui_vertex_count = 0U
-  self.ui_shadow_instance_data.clear()
+  self.ui_shadow_vertex_data.clear()
   self.ui_shadow_batches.clear()
-  self.ui_shadow_instance_count = 0U
-  self.ui_slice_instance_data.clear()
+  self.ui_shadow_vertex_count = 0U
+  self.ui_slice_vertex_data.clear()
   self.ui_slice_batches.clear()
-  self.ui_slice_instance_count = 0U
+  self.ui_slice_vertex_count = 0U
   ensure_sprite_resources(self)
   if self.sprite_globals_buf is Some(globals_buf) {
     let safe_scale = if camera_scale == 0.0F { 1.0F } else { camera_scale }
@@ -478,12 +478,12 @@ pub fn GpuBackend::begin_pass_with_depth(
   self.ui_vertex_data.clear()
   self.ui_batches.clear()
   self.ui_vertex_count = 0U
-  self.ui_shadow_instance_data.clear()
+  self.ui_shadow_vertex_data.clear()
   self.ui_shadow_batches.clear()
-  self.ui_shadow_instance_count = 0U
-  self.ui_slice_instance_data.clear()
+  self.ui_shadow_vertex_count = 0U
+  self.ui_slice_vertex_data.clear()
   self.ui_slice_batches.clear()
-  self.ui_slice_instance_count = 0U
+  self.ui_slice_vertex_count = 0U
   ensure_sprite_resources(self)
   if self.sprite_globals_buf is Some(globals_buf) {
     let safe_scale = if camera_scale == 0.0F { 1.0F } else { camera_scale }
@@ -821,12 +821,12 @@ pub fn GpuBackend::begin_pass_3d(
   self.ui_vertex_data.clear()
   self.ui_batches.clear()
   self.ui_vertex_count = 0U
-  self.ui_shadow_instance_data.clear()
+  self.ui_shadow_vertex_data.clear()
   self.ui_shadow_batches.clear()
-  self.ui_shadow_instance_count = 0U
-  self.ui_slice_instance_data.clear()
+  self.ui_shadow_vertex_count = 0U
+  self.ui_slice_vertex_data.clear()
   self.ui_slice_batches.clear()
-  self.ui_slice_instance_count = 0U
+  self.ui_slice_vertex_count = 0U
   ensure_sprite_resources(self)
   if self.sprite_globals_buf is Some(globals_buf) {
     let w = Float::from_double(width_logical.to_double())

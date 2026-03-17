@@ -74,8 +74,6 @@ actual_keys = set(actual.keys())
 allowed_legacy_extra = {
     Path('mgstudio_runtime/mesh3d.wgsl'),
     Path('mgstudio_runtime/3d/motion_vector.wgsl'),
-    Path('mgstudio_runtime/ui/box_shadow.wgsl'),
-    Path('mgstudio_runtime/ui/ui_texture_slice.wgsl'),
 }
 
 missing = sorted(expected_keys - actual_keys)

@@ -227,24 +227,29 @@ pub struct GpuBackend {
   ui_vertex_data : Array[UInt]
   ui_batches : Array[UiBatch]
   mut ui_vertex_count : UInt
-  mut ui_shadow_pipeline : @wgpu_mbt.RenderPipeline?
-  mut ui_shadow_pipeline_surface : @wgpu_mbt.RenderPipeline?
-  mut ui_shadow_pipeline_surface_format : @wgpu_mbt.TextureFormat?
-  mut ui_shadow_instance_buf : @wgpu_mbt.Buffer?
-  mut ui_shadow_instance_capacity : UInt64
-  mut ui_shadow_globals_bg : @wgpu_mbt.BindGroup?
-  ui_shadow_instance_data : Array[Float]
-  ui_shadow_batches : Array[UiBatch]
-  mut ui_shadow_instance_count : UInt
+  mut ui_shadow_view_bgl : @wgpu_mbt.BindGroupLayout?
+  mut ui_shadow_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut ui_shadow_view_buf : @wgpu_mbt.Buffer?
+  mut ui_shadow_view_bg : @wgpu_mbt.BindGroup?
+  mut ui_shadow_vertex_buf : @wgpu_mbt.Buffer?
+  mut ui_shadow_vertex_capacity : UInt64
+  ui_shadow_vertex_data : Array[UInt]
+  ui_shadow_batches : Array[UiShadowBatch]
+  ui_shadow_pipeline_cache : Array[UiShadowPipelineCacheEntry]
+  mut ui_shadow_vertex_count : UInt
+  mut ui_slice_view_bgl : @wgpu_mbt.BindGroupLayout?
+  mut ui_slice_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut ui_slice_pipeline : @wgpu_mbt.RenderPipeline?
   mut ui_slice_pipeline_surface : @wgpu_mbt.RenderPipeline?
   mut ui_slice_pipeline_surface_format : @wgpu_mbt.TextureFormat?
-  mut ui_slice_instance_buf : @wgpu_mbt.Buffer?
-  mut ui_slice_instance_capacity : UInt64
-  mut ui_slice_globals_bg : @wgpu_mbt.BindGroup?
-  ui_slice_instance_data : Array[Float]
+  mut ui_slice_view_buf : @wgpu_mbt.Buffer?
+  mut ui_slice_globals_buf : @wgpu_mbt.Buffer?
+  mut ui_slice_view_bg : @wgpu_mbt.BindGroup?
+  mut ui_slice_vertex_buf : @wgpu_mbt.Buffer?
+  mut ui_slice_vertex_capacity : UInt64
+  ui_slice_vertex_data : Array[UInt]
   ui_slice_batches : Array[UiBatch]
-  mut ui_slice_instance_count : UInt
+  mut ui_slice_vertex_count : UInt
   mut mesh_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh_pipeline : @wgpu_mbt.RenderPipeline?
   mut mesh_pipeline_surface : @wgpu_mbt.RenderPipeline?
@@ -662,6 +667,18 @@ pub struct UiBatch {
   first_instance : UInt
   mut instance_count : UInt
   anti_alias : Bool
+}
+
+pub struct UiShadowBatch {
+  first_instance : UInt
+  mut instance_count : UInt
+  samples : Int
+}
+
+pub struct UiShadowPipelineCacheEntry {
+  format : @wgpu_mbt.TextureFormat
+  samples : Int
+  pipeline : @wgpu_mbt.RenderPipeline
 }
 
 // Type aliases
