@@ -1222,8 +1222,10 @@ fn ensure_mesh3d_motion_vector_pipeline(
     fatal("wgpu: failed to configure mesh3d motion vector MRT pipeline")
   }
   let desc = @wgpu_c.render_pipeline_desc_builder_finish(builder)
-  let last_error = @wgpu_c.render_pipeline_desc_builder_last_error_u32(builder)
-  if last_error != 0U || @wgpu_c.render_pipeline_descriptor_ptr_is_null(desc) {
+  if @wgpu_c.render_pipeline_descriptor_ptr_is_null(desc) {
+    let last_error = @wgpu_c.render_pipeline_desc_builder_last_error_u32(
+      builder,
+    )
     let last_error_args = @wgpu_c.render_pipeline_desc_builder_last_error_args_u64(
       builder,
     )
