@@ -19,6 +19,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Fetch Bevy baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./scripts/fetch_bevy.sh
+
       - name: Shader mirror gate
         shell: bash
         run: |

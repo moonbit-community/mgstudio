@@ -33,7 +33,11 @@ bevy = repo / 'bevy'
 mirror = repo / 'mgstudio-engine' / 'assets' / 'shaders' / 'bevy'
 
 if not (bevy / 'crates').is_dir():
-    print(f"[shader-mirror-gate] missing bevy crates dir: {bevy / 'crates'}", file=sys.stderr)
+    print(
+        f"[shader-mirror-gate] missing Bevy baseline checkout at {bevy / 'crates'}; "
+        "run ./scripts/fetch_bevy.sh first",
+        file=sys.stderr,
+    )
     sys.exit(2)
 if not mirror.is_dir():
     print(f"[shader-mirror-gate] missing mirror dir: {mirror}", file=sys.stderr)

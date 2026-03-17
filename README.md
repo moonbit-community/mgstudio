@@ -6,7 +6,7 @@ A Bevy-aligned game engine in MoonBit, now running in a native-only architecture
 
 - `mgstudio-engine/`: engine core + native runtime bridge (`runtime_native/*`)
 - `mgstudio-page/`: docs-only static site for example catalog and run instructions
-- `bevy/`: vendored Bevy source for parity reference
+- `bevy/`: local gitignored Bevy baseline checkout for parity reference
 - `scripts/`: project scripts (native smoke, parity tooling)
 
 ### Quick start (native)
