@@ -84,6 +84,7 @@ pub struct UiBatch {
   texture_id : Int
   first_instance : UInt
   mut instance_count : UInt
+  anti_alias : Bool
 }
 
 ///|
@@ -335,15 +336,20 @@ pub struct GpuBackend {
   mut sprite_instance_count : UInt
 
   // UI pipeline (rounded rect + border, Bevy-aligned).
+  mut ui_view_bgl : @wgpu.BindGroupLayout?
+  mut ui_pipeline_layout : @wgpu.PipelineLayout?
   mut ui_pipeline : @wgpu.RenderPipeline?
+  mut ui_pipeline_anti_alias : @wgpu.RenderPipeline?
   mut ui_pipeline_surface : @wgpu.RenderPipeline?
+  mut ui_pipeline_surface_anti_alias : @wgpu.RenderPipeline?
   mut ui_pipeline_surface_format : @wgpu.TextureFormat?
-  mut ui_instance_buf : @wgpu.Buffer?
-  mut ui_instance_capacity : UInt64
-  mut ui_globals_bg : @wgpu.BindGroup?
-  ui_instance_data : Array[Float]
+  mut ui_view_buf : @wgpu.Buffer?
+  mut ui_view_bg : @wgpu.BindGroup?
+  mut ui_vertex_buf : @wgpu.Buffer?
+  mut ui_vertex_capacity : UInt64
+  ui_vertex_data : Array[UInt]
   ui_batches : Array[UiBatch]
-  mut ui_instance_count : UInt
+  mut ui_vertex_count : UInt
 
   // UI box shadow pipeline (Bevy-aligned).
   mut ui_shadow_pipeline : @wgpu.RenderPipeline?
@@ -702,15 +708,20 @@ pub fn GpuBackend::new(
     sprite_instance_data: [],
     sprite_batches: [],
     sprite_instance_count: 0U,
+    ui_view_bgl: None,
+    ui_pipeline_layout: None,
     ui_pipeline: None,
+    ui_pipeline_anti_alias: None,
     ui_pipeline_surface: None,
+    ui_pipeline_surface_anti_alias: None,
     ui_pipeline_surface_format: None,
-    ui_instance_buf: None,
-    ui_instance_capacity: 0UL,
-    ui_globals_bg: None,
-    ui_instance_data: [],
+    ui_view_buf: None,
+    ui_view_bg: None,
+    ui_vertex_buf: None,
+    ui_vertex_capacity: 0UL,
+    ui_vertex_data: [],
     ui_batches: [],
-    ui_instance_count: 0U,
+    ui_vertex_count: 0U,
     ui_shadow_pipeline: None,
     ui_shadow_pipeline_surface: None,
     ui_shadow_pipeline_surface_format: None,

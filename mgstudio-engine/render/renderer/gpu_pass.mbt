@@ -287,9 +287,9 @@ pub fn GpuBackend::begin_pass(
   self.sprite_instance_data.clear()
   self.sprite_batches.clear()
   self.sprite_instance_count = 0U
-  self.ui_instance_data.clear()
+  self.ui_vertex_data.clear()
   self.ui_batches.clear()
-  self.ui_instance_count = 0U
+  self.ui_vertex_count = 0U
   self.ui_shadow_instance_data.clear()
   self.ui_shadow_batches.clear()
   self.ui_shadow_instance_count = 0U
@@ -475,9 +475,9 @@ pub fn GpuBackend::begin_pass_with_depth(
   self.sprite_instance_data.clear()
   self.sprite_batches.clear()
   self.sprite_instance_count = 0U
-  self.ui_instance_data.clear()
+  self.ui_vertex_data.clear()
   self.ui_batches.clear()
-  self.ui_instance_count = 0U
+  self.ui_vertex_count = 0U
   self.ui_shadow_instance_data.clear()
   self.ui_shadow_batches.clear()
   self.ui_shadow_instance_count = 0U
@@ -818,9 +818,9 @@ pub fn GpuBackend::begin_pass_3d(
   self.sprite_instance_data.clear()
   self.sprite_batches.clear()
   self.sprite_instance_count = 0U
-  self.ui_instance_data.clear()
+  self.ui_vertex_data.clear()
   self.ui_batches.clear()
-  self.ui_instance_count = 0U
+  self.ui_vertex_count = 0U
   self.ui_shadow_instance_data.clear()
   self.ui_shadow_batches.clear()
   self.ui_shadow_instance_count = 0U

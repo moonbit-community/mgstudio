@@ -81,10 +81,19 @@ pub let ui_render_set_extract : @app.SystemSet = @app.system_set(
 const UI_DRAW_FLAG_TEXTURED : Int = 1
 
 ///|
-const UI_DRAW_FLAG_BORDER : Int = 2
+const UI_DRAW_FLAG_ANTIALIAS : Int = 4
 
 ///|
-const UI_DRAW_FLAG_ANTIALIAS : Int = 4
+const UI_DRAW_FLAG_BORDER_LEFT : Int = 256
+
+///|
+const UI_DRAW_FLAG_BORDER_TOP : Int = 512
+
+///|
+const UI_DRAW_FLAG_BORDER_RIGHT : Int = 1024
+
+///|
+const UI_DRAW_FLAG_BORDER_BOTTOM : Int = 2048
 
 ///|
 const UI_STACK_Z_BASE : Float = 10000.0F
@@ -119,6 +128,29 @@ fn safe_scale_factor(scale : Float) -> Float {
   } else {
     scale
   }
+}
+
+///|
+fn ui_draw_border_flags(
+  left : Float,
+  top : Float,
+  right : Float,
+  bottom : Float,
+) -> Int {
+  let mut flags = 0
+  if left > 0.0F {
+    flags = flags | UI_DRAW_FLAG_BORDER_LEFT
+  }
+  if top > 0.0F {
+    flags = flags | UI_DRAW_FLAG_BORDER_TOP
+  }
+  if right > 0.0F {
+    flags = flags | UI_DRAW_FLAG_BORDER_RIGHT
+  }
+  if bottom > 0.0F {
+    flags = flags | UI_DRAW_FLAG_BORDER_BOTTOM
+  }
+  flags
 }
 
 ///|
@@ -640,6 +672,9 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
     if aa_enabled {
       flags = flags | UI_DRAW_FLAG_ANTIALIAS
     }
+    let border_flags = ui_draw_border_flags(
+      border_left, border_top, border_right, border_bottom,
+    )
     let z_base = UI_STACK_Z_BASE + int_to_float(i) * UI_STACK_Z_STEP
 
     // BoxShadow (behind background/content/border/text).
@@ -956,7 +991,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
         bc.color,
         layers,
         scissor,
-        flags | UI_DRAW_FLAG_BORDER,
+        flags | border_flags,
         radius,
         border,
       )
@@ -1040,7 +1075,13 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 outline.color,
                 layers,
                 scissor,
-                flags | UI_DRAW_FLAG_BORDER,
+                flags |
+                ui_draw_border_flags(
+                  outline_border.left,
+                  outline_border.top,
+                  outline_border.right,
+                  outline_border.bottom,
+                ),
                 outline_radius,
                 outline_border,
               )

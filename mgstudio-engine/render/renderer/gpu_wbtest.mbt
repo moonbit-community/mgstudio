@@ -318,7 +318,7 @@ fn register_renderer_test_shaders() -> Unit {
     "shaders/bevy/bevy_core_pipeline/tonemapping/tonemapping.wgsl", "shaders/bevy/bevy_core_pipeline/tonemapping/lut_bindings.wgsl",
     "shaders/bevy/bevy_core_pipeline/tonemapping/tonemapping_shared.wgsl", "shaders/bevy/bevy_render/color_operations.wgsl",
     "shaders/bevy/bevy_render/globals.wgsl", "shaders/bevy/bevy_render/maths.wgsl",
-    "shaders/bevy/bevy_render/view/view.wgsl",
+    "shaders/bevy/bevy_render/view/view.wgsl", "shaders/bevy/bevy_ui_render/ui.wgsl",
   ]
   for path in paths {
     register_renderer_test_shader_source(path)
@@ -452,6 +452,81 @@ test "renderer: sprite pipeline specializes to hdr render target format" {
     None => false
   }
   inspect(ok, content="true")
+}
+
+///|
+test "renderer: ui node shader loads canonical bevy ui module with anti alias define" {
+  register_renderer_test_shaders()
+  let with_anti_alias = load_ui_node_wgsl(true)
+  let without_anti_alias = load_ui_node_wgsl(false)
+  inspect(
+    with_anti_alias.contains("@group(0) @binding(0) var<uniform> view: View;"),
+    content="true",
+  )
+  inspect(with_anti_alias.contains("bevy_ui::"), content="false")
+  inspect(
+    with_anti_alias.contains("antialias(border_distance)"),
+    content="true",
+  )
+  inspect(
+    without_anti_alias.contains("let t = 1.0 - step(0.0, border_distance);"),
+    content="true",
+  )
+}
+
+///|
+test "renderer: ui node batching expands rects to vertices and splits anti alias batches" {
+  let backend = GpuBackend::new(assets_base="assets")
+  ensure_ui_resources(backend)
+  let texture_id = backend.create_texture_rgba8(
+    1,
+    1,
+    Bytes::makei(4, _ => (255).to_byte()),
+    false,
+  )
+  ui_enqueue_rect(
+    backend,
+    texture_id,
+    0.0F,
+    0.0F,
+    0.0F,
+    20.0F,
+    10.0F,
+    1.0F,
+    1.0F,
+    1.0F,
+    1.0F,
+    0.0F,
+    0.0F,
+    1.0F,
+    1.0F,
+    1 | 4,
+    2.0F,
+    2.0F,
+    2.0F,
+    2.0F,
+    0.0F,
+    0.0F,
+    0.0F,
+    0.0F,
+  )
+  ui_enqueue_rect(
+    backend, texture_id, 8.0F, 4.0F, 0.0F, 20.0F, 10.0F, 1.0F, 1.0F, 1.0F, 1.0F,
+    0.0F, 0.0F, 1.0F, 1.0F, 1, 2.0F, 2.0F, 2.0F, 2.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+  )
+  inspect(backend.ui_vertex_count.reinterpret_as_int(), content="12")
+  inspect(backend.ui_vertex_data.length(), content="264")
+  inspect(backend.ui_batches.length(), content="2")
+  inspect(
+    backend.ui_batches[0].instance_count.reinterpret_as_int(),
+    content="6",
+  )
+  inspect(backend.ui_batches[0].anti_alias, content="true")
+  inspect(
+    backend.ui_batches[1].instance_count.reinterpret_as_int(),
+    content="6",
+  )
+  inspect(backend.ui_batches[1].anti_alias, content="false")
 }
 
 ///|

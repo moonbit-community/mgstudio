@@ -931,8 +931,9 @@ pub fn host_gpu_draw_sprite_uv(
 /// Draw a UI rectangle (background or border) using the dedicated UI pipeline.
 ///
 /// Parameters intentionally mirror `gpu_draw_sprite_uv` plus UI-specific fields:
-/// - `flags`: bitset (TEXTURED/BORDER/ANTI_ALIAS) defined by the engine-side UI
-///   extraction.
+/// - `flags`: bitset defined by the engine-side UI extraction. This follows the
+///   Bevy UI shader contract for `TEXTURED` and per-edge `BORDER_*` bits, plus
+///   a local transport bit for `ANTI_ALIAS` pipeline selection.
 /// - `radius_*`: corner radii in logical pixels (top-left, top-right, bottom-right, bottom-left).
 /// - `border_*`: border thickness in logical pixels (left, top, right, bottom).
 pub fn host_gpu_draw_ui_rect(

@@ -213,15 +213,20 @@ pub struct GpuBackend {
   sprite_instance_data : Array[Float]
   sprite_batches : Array[SpriteBatch]
   mut sprite_instance_count : UInt
+  mut ui_view_bgl : @wgpu_mbt.BindGroupLayout?
+  mut ui_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut ui_pipeline : @wgpu_mbt.RenderPipeline?
+  mut ui_pipeline_anti_alias : @wgpu_mbt.RenderPipeline?
   mut ui_pipeline_surface : @wgpu_mbt.RenderPipeline?
+  mut ui_pipeline_surface_anti_alias : @wgpu_mbt.RenderPipeline?
   mut ui_pipeline_surface_format : @wgpu_mbt.TextureFormat?
-  mut ui_instance_buf : @wgpu_mbt.Buffer?
-  mut ui_instance_capacity : UInt64
-  mut ui_globals_bg : @wgpu_mbt.BindGroup?
-  ui_instance_data : Array[Float]
+  mut ui_view_buf : @wgpu_mbt.Buffer?
+  mut ui_view_bg : @wgpu_mbt.BindGroup?
+  mut ui_vertex_buf : @wgpu_mbt.Buffer?
+  mut ui_vertex_capacity : UInt64
+  ui_vertex_data : Array[UInt]
   ui_batches : Array[UiBatch]
-  mut ui_instance_count : UInt
+  mut ui_vertex_count : UInt
   mut ui_shadow_pipeline : @wgpu_mbt.RenderPipeline?
   mut ui_shadow_pipeline_surface : @wgpu_mbt.RenderPipeline?
   mut ui_shadow_pipeline_surface_format : @wgpu_mbt.TextureFormat?
@@ -656,6 +661,7 @@ pub struct UiBatch {
   texture_id : Int
   first_instance : UInt
   mut instance_count : UInt
+  anti_alias : Bool
 }
 
 // Type aliases
