@@ -199,6 +199,7 @@ fn gpu_clip_matrix_identity() -> GpuClipMatrix {
 pub struct GpuPassState {
   target_id : Int
   target_layer : Int
+  secondary_target_id : Int
   width_logical : Float
   height_logical : Float
   is_3d : Bool

@@ -641,6 +641,7 @@ pub fn host_gpu_begin_pass_with_depth(
 pub fn host_gpu_begin_pass_3d(
   target_id~ : Int,
   target_layer? : Int = -1,
+  secondary_target_id? : Int = -1,
   width~ : Int,
   height~ : Int,
   clear_r~ : Float,
@@ -746,6 +747,7 @@ pub fn host_gpu_begin_pass_3d(
   @renderer.begin_pass_3d(
     target_id~,
     target_layer~,
+    secondary_target_id~,
     width~,
     height~,
     clear_r~,
@@ -1639,6 +1641,15 @@ pub fn host_gpu_create_render_target_rgba16f(
   nearest~ : Bool,
 ) -> Int {
   @renderer.create_render_target_rgba16f(width~, height~, nearest~)
+}
+
+///|
+pub fn host_gpu_create_render_target_rg16f(
+  width~ : Int,
+  height~ : Int,
+  nearest~ : Bool,
+) -> Int {
+  @renderer.create_render_target_rg16f(width~, height~, nearest~)
 }
 
 ///|

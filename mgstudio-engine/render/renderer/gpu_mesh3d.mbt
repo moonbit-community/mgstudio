@@ -1147,18 +1147,94 @@ fn ensure_mesh3d_motion_vector_pipeline(
     backend, "shaders/bevy/mgstudio_runtime/3d/motion_vector.wgsl",
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
-  let desc = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
-    pl,
-    sm,
-    @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
-    with_depth=true,
-    depth_write_enabled=true,
-    position3d=true,
-    alpha_blend=false,
+  let builder = @wgpu_c.render_pipeline_desc_builder_new(
+    pl.raw_handle(),
+    sm.raw_handle(),
   )
+  let set_count_err = @wgpu_c.render_pipeline_desc_builder_set_color_target_count(
+    builder, 2U,
+  )
+  let set_format0_err = @wgpu_c.render_pipeline_desc_builder_set_color_target_format_at(
+    builder,
+    0U,
+    @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
+  )
+  let set_format1_err = @wgpu_c.render_pipeline_desc_builder_set_color_target_format_at(
+    builder,
+    1U,
+    @wgpu.TEXTURE_FORMAT_RG16_FLOAT,
+  )
+  let set_write_mask0_err = @wgpu_c.render_pipeline_desc_builder_set_color_target_write_mask_at(
+    builder,
+    0U,
+    @wgpu.COLOR_WRITE_MASK_NONE,
+  )
+  let set_write_mask1_err = @wgpu_c.render_pipeline_desc_builder_set_color_target_write_mask_at(
+    builder,
+    1U,
+    @wgpu.COLOR_WRITE_MASK_ALL,
+  )
+  let set_vertex_layout_err = @wgpu_c.render_pipeline_desc_builder_set_vertex_buffer_layout(
+    builder,
+    36UL,
+    @wgpu.VERTEX_STEP_MODE_VERTEX,
+  )
+  let pos_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+    builder,
+    @wgpu.VERTEX_FORMAT_FLOAT32X3,
+    0UL,
+    0U,
+  )
+  let uv_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+    builder,
+    @wgpu.VERTEX_FORMAT_FLOAT32X2,
+    12UL,
+    1U,
+  )
+  let color_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+    builder,
+    @wgpu.VERTEX_FORMAT_FLOAT32X4,
+    20UL,
+    2U,
+  )
+  let set_topology_err = @wgpu_c.render_pipeline_desc_builder_set_topology(
+    builder,
+    @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+  )
+  let set_depth_err = @wgpu_c.render_pipeline_desc_builder_set_depth_stencil(
+    builder,
+    @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
+    true,
+    @wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+  )
+  if set_count_err != 0U ||
+    set_format0_err != 0U ||
+    set_format1_err != 0U ||
+    set_write_mask0_err != 0U ||
+    set_write_mask1_err != 0U ||
+    set_vertex_layout_err != 0U ||
+    pos_err != 0U ||
+    uv_err != 0U ||
+    color_err != 0U ||
+    set_topology_err != 0U ||
+    set_depth_err != 0U {
+    @wgpu_c.render_pipeline_desc_builder_free(builder)
+    fatal("wgpu: failed to configure mesh3d motion vector MRT pipeline")
+  }
+  let desc = @wgpu_c.render_pipeline_desc_builder_finish(builder)
+  let last_error = @wgpu_c.render_pipeline_desc_builder_last_error_u32(builder)
+  if last_error != 0U || @wgpu_c.render_pipeline_descriptor_ptr_is_null(desc) {
+    let last_error_args = @wgpu_c.render_pipeline_desc_builder_last_error_args_u64(
+      builder,
+    )
+    @wgpu_c.render_pipeline_desc_builder_free(builder)
+    fatal(
+      "wgpu: mesh3d motion vector pipeline descriptor builder finish failed (error=\{last_error.reinterpret_as_int()}, args=\{last_error_args.to_int()})",
+    )
+  }
   let pipeline = backend.device.create_render_pipeline_ptr(desc)
   @wgpu_c.render_pipeline_descriptor_free(desc)
-  pipeline.set_label("mgstudio_motion_vector_rgba16f")
+  pipeline.set_label("mgstudio_motion_vector_prepass")
   backend.mesh3d_motion_vector_pipeline = Some(pipeline)
   sm.release()
 }

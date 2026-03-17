@@ -62,12 +62,20 @@ fn vs_main(
   return out;
 }
 
+struct FragmentOut {
+  @location(0) unused_prepass_slot0 : vec4<f32>,
+  @location(1) motion_vector : vec2<f32>,
+};
+
 @fragment
-fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
+fn fs_main(in : VertexOut) -> FragmentOut {
   let clip_position = safe_project_xy(view.unjittered_clip_from_world * in.world_position);
   let previous_clip_position = safe_project_xy(
     previous_view_uniforms.clip_from_world * in.previous_world_position,
   );
   let motion = (clip_position - previous_clip_position) * vec2<f32>(0.5, -0.5);
-  return vec4<f32>(motion, 0.0, 1.0);
+  FragmentOut::{
+    unused_prepass_slot0: vec4<f32>(0.0),
+    motion_vector: motion,
+  }
 }

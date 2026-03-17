@@ -131,6 +131,7 @@ test "renderer: motion vector prepass buffers match bevy struct sizes" {
   let pass_state = GpuPassState::{
     target_id: -1,
     target_layer: -1,
+    secondary_target_id: -1,
     width_logical: 128.0F,
     height_logical: 128.0F,
     is_3d: true,
@@ -231,6 +232,10 @@ test "renderer: motion vector shader reads Bevy-style view and previous-view bin
   )
   inspect(
     wgsl.contains("@group(2) @binding(0) var<uniform> mesh : array<Mesh, 1u>;"),
+    content="true",
+  )
+  inspect(
+    wgsl.contains("@location(1) motion_vector : vec2<f32>,"),
     content="true",
   )
 }
@@ -460,6 +465,7 @@ fn gpu_test_pass_state(target_id : Int) -> GpuPassState {
   GpuPassState::{
     target_id,
     target_layer: -1,
+    secondary_target_id: -1,
     width_logical: 128.0F,
     height_logical: 128.0F,
     is_3d: false,
@@ -579,6 +585,17 @@ test "renderer: sprite pipeline specializes to hdr render target format" {
   sprite_pipeline_for_current_pass(backend) |> ignore
   let ok = match backend.sprite_pipeline_surface_format {
     Some(format) => format == tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
+    None => false
+  }
+  inspect(ok, content="true")
+}
+
+///|
+test "renderer: rg16f render target preserves Bevy motion-vector texture format" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let target_id = backend.create_render_target_rg16f(128, 128, false)
+  let ok = match find_texture(backend, target_id) {
+    Some(texture) => texture.format_raw == @wgpu.TEXTURE_FORMAT_RG16_FLOAT
     None => false
   }
   inspect(ok, content="true")

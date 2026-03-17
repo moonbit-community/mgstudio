@@ -27,6 +27,7 @@ fn reopen_saved_pass(
     backend.begin_pass_3d(
       pass_state.target_id,
       pass_state.target_layer,
+      pass_state.secondary_target_id,
       width_logical,
       height_logical,
       0.0F,
@@ -223,6 +224,7 @@ pub fn GpuBackend::begin_pass(
   self.pass_state = Some(GpuPassState::{
     target_id,
     target_layer: -1,
+    secondary_target_id: -1,
     width_logical: Float::from_double(width_logical.to_double()),
     height_logical: Float::from_double(height_logical.to_double()),
     is_3d: false,
@@ -411,6 +413,7 @@ pub fn GpuBackend::begin_pass_with_depth(
   self.pass_state = Some(GpuPassState::{
     target_id,
     target_layer: -1,
+    secondary_target_id: -1,
     width_logical: Float::from_double(width_logical.to_double()),
     height_logical: Float::from_double(height_logical.to_double()),
     is_3d: false,
@@ -505,6 +508,7 @@ pub fn GpuBackend::begin_pass_3d(
   self : GpuBackend,
   target_id : Int,
   target_layer : Int,
+  secondary_target_id : Int,
   width_logical : Int,
   height_logical : Int,
   clear_r : Float,
@@ -620,7 +624,8 @@ pub fn GpuBackend::begin_pass_3d(
     frame.pass = None
   }
   let base_kind = pass_kind_base_kind(pass_kind)
-  let (color_view, depth_view) = if base_kind == PASS_KIND_BASE_POINT_SHADOW {
+  let (color_view, secondary_color_view, depth_view) = if base_kind ==
+    PASS_KIND_BASE_POINT_SHADOW {
     guard target_view(self, target_id, target_layer) is Some(shadow_depth_view) else {
       return
     }
@@ -630,8 +635,33 @@ pub fn GpuBackend::begin_pass_3d(
     }
     (
       ensure_shadow_color_view(self, target_width, target_height),
+      None,
       shadow_depth_view,
     )
+  } else if base_kind == PASS_KIND_BASE_MOTION_VECTOR &&
+    secondary_target_id >= 0 {
+    guard target_view(self, target_id, target_layer) is Some(primary_view) else {
+      return
+    }
+    guard target_view(self, secondary_target_id, target_layer)
+      is Some(velocity_view) else {
+      return
+    }
+    guard target_size_for_pass(self, target_id) is Some((primary_w, primary_h)) else {
+      return
+    }
+    guard target_size_for_pass(self, secondary_target_id)
+      is Some((secondary_w, secondary_h)) else {
+      return
+    }
+    if primary_w != secondary_w || primary_h != secondary_h {
+      return
+    }
+    guard ensure_depth_view_for_target(self, target_id)
+      is Some(scene_depth_view) else {
+      return
+    }
+    (primary_view, Some(velocity_view), scene_depth_view)
   } else {
     guard target_view(self, target_id, target_layer) is Some(view) else {
       return
@@ -640,7 +670,7 @@ pub fn GpuBackend::begin_pass_3d(
       is Some(scene_depth_view) else {
       return
     }
-    (view, scene_depth_view)
+    (view, None, scene_depth_view)
   }
   let effective_clear_enabled = if target_id < 0 &&
     clear_enabled != 0 &&
@@ -664,25 +694,55 @@ pub fn GpuBackend::begin_pass_3d(
   } else {
     @wgpu.LOAD_OP_CLEAR
   }
-  let pass = frame.encoder.begin_render_pass_color_depth_u32(
-    color_view,
-    depth_view,
-    color_load_op_u32~,
-    color_store_op_u32=@wgpu.STORE_OP_STORE,
-    color_clear_r_f32=clear_r,
-    color_clear_g_f32=clear_g,
-    color_clear_b_f32=clear_b,
-    color_clear_a_f32=clear_a,
-    depth_load_op_u32~,
-    depth_store_op_u32=@wgpu.STORE_OP_STORE,
-    depth_clear_value_f32=0.0F,
-    depth_read_only=false,
-    // Bevy-aligned reverse-Z: clear depth to far plane.
-    stencil_load_op_u32~,
-    stencil_store_op_u32=@wgpu.STORE_OP_STORE,
-    stencil_clear_value_u32=0U,
-    stencil_read_only=true,
-  )
+  let pass = match secondary_color_view {
+    Some(color1_view) =>
+      frame.encoder.begin_render_pass_color2_depth_u32(
+        color_view,
+        color1_view,
+        depth_view,
+        color0_load_op_u32=color_load_op_u32,
+        color0_store_op_u32=@wgpu.STORE_OP_STORE,
+        color0_clear_r_f32=clear_r,
+        color0_clear_g_f32=clear_g,
+        color0_clear_b_f32=clear_b,
+        color0_clear_a_f32=clear_a,
+        color1_load_op_u32=color_load_op_u32,
+        color1_store_op_u32=@wgpu.STORE_OP_STORE,
+        color1_clear_r_f32=0.0F,
+        color1_clear_g_f32=0.0F,
+        color1_clear_b_f32=0.0F,
+        color1_clear_a_f32=0.0F,
+        depth_load_op_u32~,
+        depth_store_op_u32=@wgpu.STORE_OP_STORE,
+        depth_clear_value_f32=0.0F,
+        depth_read_only=false,
+        // Bevy-aligned reverse-Z: clear depth to far plane.
+        stencil_load_op_u32~,
+        stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+        stencil_clear_value_u32=0U,
+        stencil_read_only=true,
+      )
+    None =>
+      frame.encoder.begin_render_pass_color_depth_u32(
+        color_view,
+        depth_view,
+        color_load_op_u32~,
+        color_store_op_u32=@wgpu.STORE_OP_STORE,
+        color_clear_r_f32=clear_r,
+        color_clear_g_f32=clear_g,
+        color_clear_b_f32=clear_b,
+        color_clear_a_f32=clear_a,
+        depth_load_op_u32~,
+        depth_store_op_u32=@wgpu.STORE_OP_STORE,
+        depth_clear_value_f32=0.0F,
+        depth_read_only=false,
+        // Bevy-aligned reverse-Z: clear depth to far plane.
+        stencil_load_op_u32~,
+        stencil_store_op_u32=@wgpu.STORE_OP_STORE,
+        stencil_clear_value_u32=0U,
+        stencil_read_only=true,
+      )
+  }
   let vx = if viewport_x < 0 { 0U } else { viewport_x.reinterpret_as_uint() }
   let vy = if viewport_y < 0 { 0U } else { viewport_y.reinterpret_as_uint() }
   let vw = if viewport_w < 0 { 0U } else { viewport_w.reinterpret_as_uint() }
@@ -707,6 +767,7 @@ pub fn GpuBackend::begin_pass_3d(
   self.pass_state = Some(GpuPassState::{
     target_id,
     target_layer,
+    secondary_target_id,
     width_logical: Float::from_double(width_logical.to_double()),
     height_logical: Float::from_double(height_logical.to_double()),
     is_3d: true,

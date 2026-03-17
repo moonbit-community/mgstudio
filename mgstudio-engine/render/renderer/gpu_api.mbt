@@ -606,6 +606,7 @@ pub fn begin_pass_with_depth(
 pub fn begin_pass_3d(
   target_id~ : Int,
   target_layer? : Int = -1,
+  secondary_target_id? : Int = -1,
   width~ : Int,
   height~ : Int,
   clear_r~ : Float,
@@ -710,7 +711,7 @@ pub fn begin_pass_3d(
 ) -> Unit {
   if ensure_backend() is Some(backend) {
     backend.begin_pass_3d(
-      target_id, target_layer, width, height, clear_r, clear_g, clear_b, clear_a,
+      target_id, target_layer, secondary_target_id, width, height, clear_r, clear_g, clear_b, clear_a,
       camera_x, camera_y, camera_z, camera_exposure, camera_rot_x, camera_rot_y,
       camera_rot_z, camera_rot_w, clip_from_world_x_axis_x, clip_from_world_x_axis_y,
       clip_from_world_x_axis_z, clip_from_world_x_axis_w, clip_from_world_y_axis_x,
@@ -1203,6 +1204,22 @@ pub fn create_render_target_rgba16f(
   if ensure_backend() is Some(backend) {
     try {
       return backend.create_render_target_rgba16f(width, height, nearest)
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
+pub fn create_render_target_rg16f(
+  width~ : Int,
+  height~ : Int,
+  nearest~ : Bool,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    try {
+      return backend.create_render_target_rg16f(width, height, nearest)
     } catch {
       _ => ()
     }

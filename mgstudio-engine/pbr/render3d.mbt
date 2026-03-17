@@ -1566,7 +1566,7 @@ fn render3d_motion_blur_targets_get_or_create(
     height~,
     nearest=false,
   )
-  let velocity_target_id = @render.host_gpu_create_render_target_rgba16f(
+  let velocity_target_id = @render.host_gpu_create_render_target_rg16f(
     width~,
     height~,
     nearest=false,
@@ -5130,6 +5130,7 @@ pub fn render3d_queued_visible_mesh_count() -> Int? {
 fn render3d_begin_pass_3d(
   target_id~ : Int,
   target_layer? : Int = -1,
+  secondary_target_id? : Int = -1,
   width~ : Int,
   height~ : Int,
   clear_r~ : Float,
@@ -5162,6 +5163,7 @@ fn render3d_begin_pass_3d(
   @render.host_gpu_begin_pass_3d(
     target_id~,
     target_layer~,
+    secondary_target_id~,
     width~,
     height~,
     clear_r~,
@@ -6010,7 +6012,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       }
       velocity_target_id = shared_velocity_id
       render3d_begin_pass_3d(
-        target_id=velocity_target_id,
+        target_id=shared_scene_id,
+        secondary_target_id=velocity_target_id,
         width=view_width_logical,
         height=view_height_logical,
         clear_r=0.0F,

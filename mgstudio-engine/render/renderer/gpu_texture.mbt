@@ -836,6 +836,21 @@ pub fn GpuBackend::create_render_target_rgba16f(
 }
 
 ///|
+pub fn GpuBackend::create_render_target_rg16f(
+  self : GpuBackend,
+  width : Int,
+  height : Int,
+  nearest : Bool,
+) -> Int raise GpuBackendError {
+  self.create_render_target_with_format(
+    width,
+    height,
+    nearest,
+    @wgpu.TEXTURE_FORMAT_RG16_FLOAT,
+  )
+}
+
+///|
 pub fn GpuBackend::create_point_light_shadow_target(
   self : GpuBackend,
   size : Int,
