@@ -455,7 +455,7 @@ pub struct GpuBackend {
     GpuMesh3dPreprocessCameraUploadState,
   ]
   mut mesh3d_motion_vector_bgl_view : @wgpu.BindGroupLayout?
-  mut mesh3d_motion_vector_bgl_environment : @wgpu.BindGroupLayout?
+  mut mesh3d_motion_vector_bgl_empty : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_mesh : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh3d_motion_vector_pipeline : @wgpu.RenderPipeline?
@@ -464,10 +464,6 @@ pub struct GpuBackend {
   mut mesh3d_motion_vector_previous_view_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_visibility_ranges_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_view_bg : @wgpu.BindGroup?
-  mut mesh3d_motion_vector_environment_texture : @wgpu.Texture?
-  mut mesh3d_motion_vector_environment_view : @wgpu.TextureView?
-  mut mesh3d_motion_vector_environment_sampler : @wgpu.Sampler?
-  mut mesh3d_motion_vector_environment_bg : @wgpu.BindGroup?
   mut mesh3d_motion_vector_mesh_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_mesh_bg : @wgpu.BindGroup?
   mut motion_blur_bgl : @wgpu.BindGroupLayout?
@@ -835,7 +831,7 @@ pub fn GpuBackend::new(
     mesh3d_instance_uniform_used: 0,
     mesh3d_preprocess_camera_upload_states: [],
     mesh3d_motion_vector_bgl_view: None,
-    mesh3d_motion_vector_bgl_environment: None,
+    mesh3d_motion_vector_bgl_empty: None,
     mesh3d_motion_vector_bgl_mesh: None,
     mesh3d_motion_vector_pipeline_layout: None,
     mesh3d_motion_vector_pipeline: None,
@@ -844,10 +840,6 @@ pub fn GpuBackend::new(
     mesh3d_motion_vector_previous_view_buf: None,
     mesh3d_motion_vector_visibility_ranges_buf: None,
     mesh3d_motion_vector_view_bg: None,
-    mesh3d_motion_vector_environment_texture: None,
-    mesh3d_motion_vector_environment_view: None,
-    mesh3d_motion_vector_environment_sampler: None,
-    mesh3d_motion_vector_environment_bg: None,
     mesh3d_motion_vector_mesh_buf: None,
     mesh3d_motion_vector_mesh_bg: None,
     motion_blur_bgl: None,
@@ -1422,6 +1414,14 @@ priv struct WgslResolvedImportModule {
 }
 
 ///|
+priv struct WgslImportRequest {
+  module_path : String
+  rel_path : String
+  mut import_full_module : Bool
+  requested_items : Array[String]
+}
+
+///|
 fn join_wgsl_import_prefix(prefix : String, path : String) -> String {
   let lhs = prefix.trim().to_string()
   let rhs = path.trim().to_string()
@@ -1858,6 +1858,328 @@ fn strip_wgsl_line_comment(text : String) -> String {
 }
 
 ///|
+fn wgsl_string_list_push_unique(items : Array[String], item : String) -> Unit {
+  for existing in items {
+    if existing == item {
+      return
+    }
+  }
+  items.push(item)
+}
+
+///|
+fn wgsl_identifier_char(code : Int) -> Bool {
+  (code >= 65 && code <= 90) ||
+  (code >= 97 && code <= 122) ||
+  (code >= 48 && code <= 57) ||
+  code == 95
+}
+
+///|
+fn text_contains_code_unit(text : String, code : Int) -> Bool {
+  for i in 0..<text.length() {
+    if text.code_unit_at(i).to_int() == code {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn wgsl_import_requested_item_name(
+  raw_path : String,
+  module_path : String,
+) -> String {
+  let prefix = module_path + "::"
+  if !starts_with_text(raw_path, prefix) {
+    return ""
+  }
+  let suffix = raw_path[prefix.length():raw_path.length()].to_string()
+  let mut requested_item = ""
+  for seg in suffix.split("::") {
+    let text = seg.to_string().trim().to_string()
+    if text != "" {
+      requested_item = text
+    }
+  }
+  requested_item
+}
+
+///|
+fn collect_wgsl_alias_requested_items(
+  source : String,
+  alias_name : String,
+  requested_items : Array[String],
+) -> Unit {
+  let alias_text = alias_name.trim().to_string()
+  if alias_text == "" {
+    return
+  }
+  let needle = alias_text + "::"
+  if needle == "::" {
+    return
+  }
+  let mut i = 0
+  while i + needle.length() <= source.length() {
+    if source[i:i + needle.length()].to_string() != needle {
+      i = i + 1
+      continue
+    }
+    let start = i + needle.length()
+    let mut end = start
+    while end < source.length() &&
+          wgsl_identifier_char(source.code_unit_at(end).to_int()) {
+      end = end + 1
+    }
+    if end > start {
+      wgsl_string_list_push_unique(
+        requested_items,
+        source[start:end].to_string(),
+      )
+    }
+    i = if end > i { end } else { i + 1 }
+  }
+}
+
+///|
+fn find_wgsl_import_request_index(
+  requests : Array[WgslImportRequest],
+  module_path : String,
+  rel_path : String,
+) -> Int? {
+  for i in 0..<requests.length() {
+    let request = requests[i]
+    if request.module_path == module_path && request.rel_path == rel_path {
+      return Some(i)
+    }
+  }
+  None
+}
+
+///|
+fn wgsl_import_request_visit_key(request : WgslImportRequest) -> String {
+  if request.import_full_module || request.requested_items.length() == 0 {
+    return request.rel_path
+  }
+  let sorted_items : Array[String] = []
+  for item in request.requested_items {
+    sorted_items.push(item)
+  }
+  sorted_items.sort()
+  let mut items_key = ""
+  for i in 0..<sorted_items.length() {
+    if i > 0 {
+      items_key = items_key + ","
+    }
+    items_key = items_key + sorted_items[i]
+  }
+  request.rel_path + "#" + items_key
+}
+
+///|
+fn wgsl_declaration_name(line : String) -> String {
+  let trimmed = line.trim().to_string()
+  if trimmed == "" {
+    return ""
+  }
+  if starts_with_text(trimmed, "@") {
+    let mut i = 0
+    while i + 3 < trimmed.length() {
+      if trimmed.code_unit_at(i).to_int() == 32 && // ' '
+        trimmed.code_unit_at(i + 1).to_int() == 118 && // 'v'
+        trimmed.code_unit_at(i + 2).to_int() == 97 && // 'a'
+        trimmed.code_unit_at(i + 3).to_int() == 114 { // 'r'
+        return wgsl_declaration_name(
+          trimmed[i + 1:trimmed.length()].to_string(),
+        )
+      }
+      i = i + 1
+    }
+  }
+  if starts_with_text(trimmed, "struct ") {
+    let rest = trimmed[7:trimmed.length()].to_string()
+    let mut end = 0
+    while end < rest.length() &&
+          wgsl_identifier_char(rest.code_unit_at(end).to_int()) {
+      end = end + 1
+    }
+    return if end == 0 { "" } else { rest[:end].to_string() }
+  }
+  if starts_with_text(trimmed, "fn ") {
+    let rest = trimmed[3:trimmed.length()].to_string()
+    let mut end = 0
+    while end < rest.length() &&
+          wgsl_identifier_char(rest.code_unit_at(end).to_int()) {
+      end = end + 1
+    }
+    return if end == 0 { "" } else { rest[:end].to_string() }
+  }
+  if starts_with_text(trimmed, "const ") {
+    let rest = trimmed[6:trimmed.length()].to_string()
+    let mut end = 0
+    while end < rest.length() &&
+          wgsl_identifier_char(rest.code_unit_at(end).to_int()) {
+      end = end + 1
+    }
+    return if end == 0 { "" } else { rest[:end].to_string() }
+  }
+  if starts_with_text(trimmed, "override ") {
+    let rest = trimmed[9:trimmed.length()].to_string()
+    let mut end = 0
+    while end < rest.length() &&
+          wgsl_identifier_char(rest.code_unit_at(end).to_int()) {
+      end = end + 1
+    }
+    return if end == 0 { "" } else { rest[:end].to_string() }
+  }
+  if starts_with_text(trimmed, "alias ") {
+    let rest = trimmed[6:trimmed.length()].to_string()
+    let mut end = 0
+    while end < rest.length() &&
+          wgsl_identifier_char(rest.code_unit_at(end).to_int()) {
+      end = end + 1
+    }
+    return if end == 0 { "" } else { rest[:end].to_string() }
+  }
+  if starts_with_text(trimmed, "type ") {
+    let rest = trimmed[5:trimmed.length()].to_string()
+    let mut end = 0
+    while end < rest.length() &&
+          wgsl_identifier_char(rest.code_unit_at(end).to_int()) {
+      end = end + 1
+    }
+    return if end == 0 { "" } else { rest[:end].to_string() }
+  }
+  if starts_with_text(trimmed, "var") {
+    let mut i = 3
+    while i < trimmed.length() &&
+          (
+            trimmed.code_unit_at(i).to_int() == 32 ||
+            trimmed.code_unit_at(i).to_int() == 9
+          ) {
+      i = i + 1
+    }
+    if i < trimmed.length() && trimmed.code_unit_at(i).to_int() == 60 {
+      while i < trimmed.length() && trimmed.code_unit_at(i).to_int() != 62 {
+        i = i + 1
+      }
+      if i < trimmed.length() {
+        i = i + 1
+      }
+    }
+    while i < trimmed.length() &&
+          (
+            trimmed.code_unit_at(i).to_int() == 32 ||
+            trimmed.code_unit_at(i).to_int() == 9
+          ) {
+      i = i + 1
+    }
+    let start = i
+    while i < trimmed.length() &&
+          wgsl_identifier_char(trimmed.code_unit_at(i).to_int()) {
+      i = i + 1
+    }
+    return if i == start { "" } else { trimmed[start:i].to_string() }
+  }
+  ""
+}
+
+///|
+fn extract_wgsl_module_items(
+  source : String,
+  requested_items : Array[String],
+) -> String {
+  if requested_items.length() == 0 {
+    return source
+  }
+  let requested : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  for item in requested_items {
+    requested.set(item, true)
+  }
+  let lines : Array[String] = []
+  for line_item in source.split("\n") {
+    lines.push(line_item.to_string())
+  }
+  let pending_prefix : Array[String] = []
+  let mut out = ""
+  let mut matched_count = 0
+  let mut i = 0
+  while i < lines.length() {
+    let line = lines[i]
+    let trimmed = line.trim().to_string()
+    let decl_name_hint = wgsl_declaration_name(trimmed)
+    if trimmed == "" ||
+      starts_with_text(trimmed, "//") ||
+      (starts_with_text(trimmed, "@") && decl_name_hint == "") {
+      pending_prefix.push(line)
+      i = i + 1
+      continue
+    }
+    if starts_with_text(trimmed, "#define_import_path") {
+      i = i + 1
+      continue
+    }
+    if starts_with_text(trimmed, "#import ") {
+      let mut import_block = line
+      let mut balance = wgsl_import_brace_balance(
+        trimmed[8:trimmed.length()].to_string(),
+      )
+      while balance > 0 && i + 1 < lines.length() {
+        i = i + 1
+        let next_line = lines[i]
+        import_block = import_block + "\n" + next_line
+        balance = balance + wgsl_import_brace_balance(next_line)
+      }
+      out = out + import_block + "\n"
+      pending_prefix.clear()
+      i = i + 1
+      continue
+    }
+    let block_lines : Array[String] = []
+    for prefix_line in pending_prefix {
+      block_lines.push(prefix_line)
+    }
+    pending_prefix.clear()
+    let decl_name = decl_name_hint
+    let mut saw_brace = false
+    let mut brace_depth = 0
+    let mut done = false
+    while !done {
+      let block_line = lines[i]
+      block_lines.push(block_line)
+      if text_contains_code_unit(block_line, 123) {
+        saw_brace = true
+      }
+      brace_depth = brace_depth + wgsl_import_brace_balance(block_line)
+      let block_trimmed = block_line.trim().to_string()
+      if saw_brace {
+        done = brace_depth == 0
+      } else {
+        done = ends_with_text(block_trimmed, ";")
+      }
+      if !done {
+        i = i + 1
+        if i >= lines.length() {
+          done = true
+        }
+      }
+    }
+    if requested.contains(decl_name) {
+      matched_count = matched_count + 1
+      for block_line in block_lines {
+        out = out + block_line + "\n"
+      }
+    }
+    i = i + 1
+  }
+  if matched_count == 0 {
+    source
+  } else {
+    out
+  }
+}
+
+///|
 fn wgsl_directive_tail(text : String, prefix_length : Int) -> String {
   strip_wgsl_line_comment(text[prefix_length:text.length()].to_string())
   .trim()
@@ -2271,6 +2593,7 @@ fn preprocess_wgsl_source(
         brace_balance = brace_balance + wgsl_import_brace_balance(next_line)
       }
       let targets : Array[WgslImportTarget] = []
+      let requests : Array[WgslImportRequest] = []
       collect_wgsl_import_targets(spec, "", targets)
       for target in targets {
         guard resolve_wgsl_import_module(assets_base, target.raw_path, modules)
@@ -2291,14 +2614,82 @@ fn preprocess_wgsl_source(
         if module_alias != "" {
           aliases.push(module_alias)
         }
-        let module_source = load_wgsl_preprocessed(
+        let requested_items : Array[String] = []
+        let mut import_full_module = module_path == target.raw_path
+        if target.alias_name != "" {
+          import_full_module = false
+          collect_wgsl_alias_requested_items(
+            source,
+            target.alias_name,
+            requested_items,
+          )
+          if requested_items.length() == 0 {
+            continue
+          }
+        } else if module_path != target.raw_path {
+          import_full_module = false
+          let requested_item = wgsl_import_requested_item_name(
+            target.raw_path,
+            module_path,
+          )
+          if requested_item == "" {
+            import_full_module = true
+          } else {
+            requested_items.push(requested_item)
+          }
+        }
+        if find_wgsl_import_request_index(
+            requests,
+            module_path,
+            resolved_module.rel_path,
+          )
+          is Some(request_index) {
+          let request = requests[request_index]
+          if import_full_module {
+            request.import_full_module = true
+          }
+          for requested_item in requested_items {
+            wgsl_string_list_push_unique(
+              request.requested_items,
+              requested_item,
+            )
+          }
+        } else {
+          requests.push(WgslImportRequest::{
+            module_path,
+            rel_path: resolved_module.rel_path,
+            import_full_module,
+            requested_items,
+          })
+        }
+      }
+      for request in requests {
+        let visit_key = wgsl_import_request_visit_key(request)
+        if visited.contains(visit_key) {
+          continue
+        }
+        visited.set(visit_key, true)
+        let raw_source = load_wgsl_source_required_raw(
           assets_base,
-          resolved_module.rel_path,
-          defines,
-          value_defines,
-          visited,
-          modules,
+          request.rel_path,
         )
+        let module_source = if request.import_full_module {
+          preprocess_wgsl_source(
+            assets_base, raw_source, defines, value_defines, visited, modules,
+          )
+        } else {
+          let prepared_source = apply_wgsl_template_consts(
+            apply_wgsl_ifdefs(raw_source, defines, value_defines),
+            value_defines,
+          )
+          let filtered_source = extract_wgsl_module_items(
+            prepared_source,
+            request.requested_items,
+          )
+          preprocess_wgsl_source(
+            assets_base, filtered_source, defines, value_defines, visited, modules,
+          )
+        }
         if module_source != "" {
           merged = merged + module_source
           let merged_len = merged.length()
@@ -2323,23 +2714,15 @@ fn preprocess_wgsl_source(
 }
 
 ///|
-fn load_wgsl_preprocessed(
+fn load_wgsl_source_required_raw(
   assets_base : String,
   rel : String,
-  defines : @hashmap.HashMap[String, Bool],
-  value_defines : @hashmap.HashMap[String, Int],
-  visited : @hashmap.HashMap[String, Bool],
-  modules : @hashmap.HashMap[String, String],
 ) -> String raise GpuBackendError {
   let normalized_rel = normalize_shader_rel_path(rel)
   if normalized_rel == "" {
     return ""
   }
-  if visited.contains(normalized_rel) {
-    return ""
-  }
-  visited.set(normalized_rel, true)
-  let source = match registered_wgsl_sources_ref.val.get(normalized_rel) {
+  match registered_wgsl_sources_ref.val.get(normalized_rel) {
     Some(source) => source
     None => {
       let normalized_assets_base = assets_base.trim().to_string()
@@ -2357,6 +2740,26 @@ fn load_wgsl_preprocessed(
       }
     }
   }
+}
+
+///|
+fn load_wgsl_preprocessed(
+  assets_base : String,
+  rel : String,
+  defines : @hashmap.HashMap[String, Bool],
+  value_defines : @hashmap.HashMap[String, Int],
+  visited : @hashmap.HashMap[String, Bool],
+  modules : @hashmap.HashMap[String, String],
+) -> String raise GpuBackendError {
+  let normalized_rel = normalize_shader_rel_path(rel)
+  if normalized_rel == "" {
+    return ""
+  }
+  if visited.contains(normalized_rel) {
+    return ""
+  }
+  visited.set(normalized_rel, true)
+  let source = load_wgsl_source_required_raw(assets_base, normalized_rel)
   preprocess_wgsl_source(
     assets_base, source, defines, value_defines, visited, modules,
   )

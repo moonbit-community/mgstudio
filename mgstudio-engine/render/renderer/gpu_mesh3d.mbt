@@ -119,6 +119,22 @@ fn mesh3d_motion_vector_visibility_ranges_bytes() -> Bytes {
 }
 
 ///|
+fn load_wgsl_required_mesh3d_motion_vector_prepass(
+  assets_base : String,
+) -> String raise GpuBackendError {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  defines.set("PREPASS_FRAGMENT", true)
+  defines.set("MOTION_VECTOR_PREPASS", true)
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths(assets_base)
+  load_wgsl_preprocessed(
+    assets_base, "shaders/bevy/bevy_pbr/prepass/prepass.wgsl", defines, value_defines,
+    visited, modules,
+  )
+}
+
+///|
 fn mesh3d_normalize_quat(
   x : Float,
   y : Float,
@@ -297,70 +313,6 @@ fn mesh3d_motion_vector_mesh_uniform_bytes(
     words.push(0U)
   }
   u32le_pack(words)
-}
-
-///|
-fn ensure_mesh3d_motion_vector_environment_bind_group(
-  backend : GpuBackend,
-) -> @wgpu.BindGroup? {
-  guard backend.mesh3d_motion_vector_bgl_environment is Some(environment_bgl) else {
-    return None
-  }
-  if backend.mesh3d_motion_vector_environment_bg is Some(environment_bg) {
-    return Some(environment_bg)
-  }
-  if backend.mesh3d_motion_vector_environment_texture is None ||
-    backend.mesh3d_motion_vector_environment_view is None {
-    let usage = @wgpu.TextureUsage::from_u64(
-      @wgpu.TEXTURE_USAGE_TEXTURE_BINDING | @wgpu.TEXTURE_USAGE_COPY_DST,
-    )
-    let texture = backend.device.create_texture_u32(
-      1U,
-      1U,
-      6U,
-      usage,
-      @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
-      tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
-    )
-    let cube_view = texture.create_view_u32(
-      tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
-      @wgpu.TEXTURE_VIEW_DIMENSION_CUBE,
-      @wgpu.TEXTURE_ASPECT_ALL,
-      0U,
-      6U,
-      0U,
-      1U,
-    )
-    backend.mesh3d_motion_vector_environment_texture = Some(texture)
-    backend.mesh3d_motion_vector_environment_view = Some(cube_view)
-  }
-  if backend.mesh3d_motion_vector_environment_sampler is None {
-    backend.mesh3d_motion_vector_environment_sampler = Some(
-      backend.device.create_sampler_linear_clamp(),
-    )
-  }
-  guard backend.mesh3d_motion_vector_environment_view is Some(environment_view) else {
-    return None
-  }
-  guard backend.mesh3d_motion_vector_environment_sampler
-    is Some(environment_sampler) else {
-    return None
-  }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=3UL)
-  let ok = builder.add_texture_view(0U, environment_view) &&
-    builder.add_texture_view(1U, environment_view) &&
-    builder.add_sampler(2U, environment_sampler)
-  if !ok {
-    builder.free()
-    return None
-  }
-  let environment_bg = builder.finish(
-    backend.device,
-    environment_bgl,
-    label="mgstudio_motion_vector_environment_bg",
-  )
-  backend.mesh3d_motion_vector_environment_bg = Some(environment_bg)
-  Some(environment_bg)
 }
 
 ///|
@@ -981,15 +933,15 @@ fn ensure_mesh3d_motion_vector_pipeline(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
   if backend.mesh3d_motion_vector_pipeline_layout is None {
-    let stage = ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT)
+    let view_stage = ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT)
     let view_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=4UL)
     let view_ok = view_builder.add_buffer(
         0U,
-        stage,
+        view_stage,
         @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
       ) &&
-      view_builder.add_buffer(1U, stage, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
-      view_builder.add_buffer(2U, stage, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
+      view_builder.add_buffer(1U, view_stage, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
+      view_builder.add_buffer(2U, view_stage, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
       view_builder.add_buffer(
         14U,
         ss(@wgpu.SHADER_STAGE_VERTEX),
@@ -1003,46 +955,29 @@ fn ensure_mesh3d_motion_vector_pipeline(
       backend.device,
       label="mgstudio_motion_vector_view_bgl",
     )
-    let fragment_stage = ss(@wgpu.SHADER_STAGE_FRAGMENT)
-    let environment_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=3UL)
-    let environment_ok = environment_builder.add_texture(
-        0U,
-        fragment_stage,
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_CUBE,
-      ) &&
-      environment_builder.add_texture(
-        1U,
-        fragment_stage,
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_CUBE,
-      ) &&
-      environment_builder.add_sampler(
-        2U,
-        fragment_stage,
-        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
-      )
-    if !environment_ok {
-      environment_builder.free()
-      fatal(
-        "wgpu: failed to build mesh3d motion vector environment bind group layout",
-      )
-    }
-    let environment_bgl = environment_builder.finish(
-      backend.device,
-      label="mgstudio_motion_vector_environment_bgl",
+    let empty_bgl = backend.device.create_bind_group_layout_empty()
+    let mesh_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=1UL)
+    let mesh_ok = mesh_builder.add_buffer(
+      0U,
+      ss(@wgpu.SHADER_STAGE_VERTEX),
+      @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
     )
-    let mesh_bgl = create_uniform_bind_group_layout_vertex_fragment(
-      backend, "mgstudio_motion_vector_mesh_bgl",
+    if !mesh_ok {
+      mesh_builder.free()
+      fatal("wgpu: failed to build mesh3d motion vector mesh bind group layout")
+    }
+    let mesh_bgl = mesh_builder.finish(
+      backend.device,
+      label="mgstudio_motion_vector_mesh_bgl",
     )
     let pl = create_pipeline_layout_3(
       backend.device,
       view_bgl,
-      environment_bgl,
+      empty_bgl,
       mesh_bgl,
     )
     backend.mesh3d_motion_vector_bgl_view = Some(view_bgl)
-    backend.mesh3d_motion_vector_bgl_environment = Some(environment_bgl)
+    backend.mesh3d_motion_vector_bgl_empty = Some(empty_bgl)
     backend.mesh3d_motion_vector_bgl_mesh = Some(mesh_bgl)
     backend.mesh3d_motion_vector_pipeline_layout = Some(pl)
   }
@@ -1120,9 +1055,6 @@ fn ensure_mesh3d_motion_vector_pipeline(
     )
     backend.mesh3d_motion_vector_view_bg = Some(view_bg)
   }
-  if ensure_mesh3d_motion_vector_environment_bind_group(backend) is None {
-    return
-  }
   if backend.mesh3d_motion_vector_mesh_buf is None ||
     backend.mesh3d_motion_vector_mesh_bg is None {
     guard backend.mesh3d_motion_vector_bgl_mesh is Some(mesh_bgl) else {
@@ -1143,99 +1075,42 @@ fn ensure_mesh3d_motion_vector_pipeline(
     return
   }
   guard backend.mesh3d_motion_vector_pipeline_layout is Some(pl) else { return }
-  let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/bevy/mgstudio_runtime/3d/motion_vector.wgsl",
+  let wgsl = load_wgsl_required_mesh3d_motion_vector_prepass(
+    backend.assets_base,
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
-  let builder = @wgpu_c.render_pipeline_desc_builder_new(
-    pl.raw_handle(),
-    sm.raw_handle(),
-  )
-  let set_count_err = @wgpu_c.render_pipeline_desc_builder_set_color_target_count(
-    builder, 2U,
-  )
-  let set_format0_err = @wgpu_c.render_pipeline_desc_builder_set_color_target_format_at(
-    builder,
-    0U,
-    @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT,
-  )
-  let set_format1_err = @wgpu_c.render_pipeline_desc_builder_set_color_target_format_at(
-    builder,
-    1U,
-    @wgpu.TEXTURE_FORMAT_RG16_FLOAT,
-  )
-  let set_write_mask0_err = @wgpu_c.render_pipeline_desc_builder_set_color_target_write_mask_at(
-    builder,
-    0U,
-    @wgpu.COLOR_WRITE_MASK_NONE,
-  )
-  let set_write_mask1_err = @wgpu_c.render_pipeline_desc_builder_set_color_target_write_mask_at(
-    builder,
-    1U,
-    @wgpu.COLOR_WRITE_MASK_ALL,
-  )
-  let set_vertex_layout_err = @wgpu_c.render_pipeline_desc_builder_set_vertex_buffer_layout(
-    builder,
-    36UL,
-    @wgpu.VERTEX_STEP_MODE_VERTEX,
-  )
-  let pos_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
-    builder,
-    @wgpu.VERTEX_FORMAT_FLOAT32X3,
-    0UL,
-    0U,
-  )
-  let uv_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
-    builder,
-    @wgpu.VERTEX_FORMAT_FLOAT32X2,
-    12UL,
-    1U,
-  )
-  let color_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
-    builder,
-    @wgpu.VERTEX_FORMAT_FLOAT32X4,
-    20UL,
-    2U,
-  )
-  let set_topology_err = @wgpu_c.render_pipeline_desc_builder_set_topology(
-    builder,
-    @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-  )
-  let set_depth_err = @wgpu_c.render_pipeline_desc_builder_set_depth_stencil(
-    builder,
-    @wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT,
-    true,
-    @wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
-  )
-  if set_count_err != 0U ||
-    set_format0_err != 0U ||
-    set_format1_err != 0U ||
-    set_write_mask0_err != 0U ||
-    set_write_mask1_err != 0U ||
-    set_vertex_layout_err != 0U ||
-    pos_err != 0U ||
-    uv_err != 0U ||
-    color_err != 0U ||
-    set_topology_err != 0U ||
-    set_depth_err != 0U {
-    @wgpu_c.render_pipeline_desc_builder_free(builder)
-    fatal("wgpu: failed to configure mesh3d motion vector MRT pipeline")
+  let pipeline = try {
+    let builder = @wgpu.RenderPipelineDescBuilder::new(sm, layout=pl)
+    builder.set_entry_points("vertex", "fragment")
+    builder.set_color_target_count(2U)
+    builder.set_color_target_format_at(
+      0U,
+      tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
+    )
+    builder.set_color_target_format_at(1U, tf(@wgpu.TEXTURE_FORMAT_RG16_FLOAT))
+    builder.set_color_target_write_mask_at(0U, @wgpu.COLOR_WRITE_MASK_NONE)
+    builder.set_color_target_write_mask_at(1U, @wgpu.COLOR_WRITE_MASK_ALL)
+    builder.disable_blend()
+    builder.set_vertex_buffer_layout(36UL, @wgpu.VERTEX_STEP_MODE_VERTEX)
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 0UL, 0U)
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X2, 12UL, 1U)
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 20UL, 2U)
+    builder.set_topology_u32(@wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+    builder.set_depth_stencil(
+      tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
+      depth_write_enabled=true,
+      depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
+    )
+    builder.create_pipeline(backend.device)
+  } catch {
+    err => {
+      err |> ignore
+      sm.release()
+      fatal(
+        "wgpu: failed to build canonical mesh3d motion vector prepass pipeline",
+      )
+    }
   }
-  let desc = @wgpu_c.render_pipeline_desc_builder_finish(builder)
-  if @wgpu_c.render_pipeline_descriptor_ptr_is_null(desc) {
-    let last_error = @wgpu_c.render_pipeline_desc_builder_last_error_u32(
-      builder,
-    )
-    let last_error_args = @wgpu_c.render_pipeline_desc_builder_last_error_args_u64(
-      builder,
-    )
-    @wgpu_c.render_pipeline_desc_builder_free(builder)
-    fatal(
-      "wgpu: mesh3d motion vector pipeline descriptor builder finish failed (error=\{last_error.reinterpret_as_int()}, args=\{last_error_args.to_int()})",
-    )
-  }
-  let pipeline = backend.device.create_render_pipeline_ptr(desc)
-  @wgpu_c.render_pipeline_descriptor_free(desc)
   pipeline.set_label("mgstudio_motion_vector_prepass")
   backend.mesh3d_motion_vector_pipeline = Some(pipeline)
   sm.release()
@@ -1791,9 +1666,6 @@ pub fn GpuBackend::draw_mesh3d(
       return
     }
     guard self.mesh3d_motion_vector_view_bg is Some(view_bg) else { return }
-    guard self.mesh3d_motion_vector_environment_bg is Some(environment_bg) else {
-      return
-    }
     guard self.mesh3d_motion_vector_mesh_buf is Some(mesh_buf) else { return }
     guard self.mesh3d_motion_vector_mesh_bg is Some(mesh_bg) else { return }
     self.queue.write_buffer(
@@ -1818,7 +1690,6 @@ pub fn GpuBackend::draw_mesh3d(
     )
     pass.set_pipeline(pipeline)
     pass.set_bind_group(0U, view_bg, [])
-    pass.set_bind_group(1U, environment_bg, [])
     pass.set_bind_group(2U, mesh_bg, [])
     let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
       mesh.vertex_stride_bytes

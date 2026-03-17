@@ -111,16 +111,13 @@ test "renderer: motion vector resources initialize prepass-style bind groups" {
   let backend = GpuBackend::new(assets_base="assets")
   ensure_mesh3d_motion_vector_pipeline(backend)
   let ok = backend.mesh3d_motion_vector_bgl_view is Some(_) &&
-    backend.mesh3d_motion_vector_bgl_environment is Some(_) &&
+    backend.mesh3d_motion_vector_bgl_empty is Some(_) &&
     backend.mesh3d_motion_vector_bgl_mesh is Some(_) &&
     backend.mesh3d_motion_vector_view_buf is Some(_) &&
     backend.mesh3d_motion_vector_globals_buf is Some(_) &&
     backend.mesh3d_motion_vector_previous_view_buf is Some(_) &&
     backend.mesh3d_motion_vector_visibility_ranges_buf is Some(_) &&
     backend.mesh3d_motion_vector_view_bg is Some(_) &&
-    backend.mesh3d_motion_vector_environment_view is Some(_) &&
-    backend.mesh3d_motion_vector_environment_sampler is Some(_) &&
-    backend.mesh3d_motion_vector_environment_bg is Some(_) &&
     backend.mesh3d_motion_vector_mesh_buf is Some(_) &&
     backend.mesh3d_motion_vector_mesh_bg is Some(_)
   inspect(ok, content="true")
@@ -205,39 +202,30 @@ test "renderer: motion vector prepass buffers match bevy struct sizes" {
 }
 
 ///|
-test "renderer: motion vector shader reads Bevy-style view and previous-view bindings" {
-  let backend = GpuBackend::new(assets_base="assets")
-  let wgsl = load_wgsl_from_assets_required(
-    backend, "shaders/bevy/mgstudio_runtime/3d/motion_vector.wgsl",
-  )
+test "renderer: motion vector shader reads canonical Bevy prepass bindings" {
+  let wgsl = load_wgsl_required_mesh3d_motion_vector_prepass("assets")
   inspect(
-    wgsl.contains("@group(0) @binding(0) var<uniform> view : View;"),
-    content="true",
-  )
-  inspect(
-    wgsl.contains("@group(0) @binding(1) var<uniform> globals : Globals;"),
+    wgsl.contains("@group(0) @binding(0) var<uniform> view: View;"),
     content="true",
   )
   inspect(
     wgsl.contains(
-      "@group(0) @binding(2) var<uniform> previous_view_uniforms : PreviousViewUniforms;",
+      "@group(0) @binding(2) var<uniform> previous_view_uniforms: PreviousViewUniforms;",
     ),
     content="true",
   )
   inspect(
     wgsl.contains(
-      "@group(0) @binding(14) var<storage> visibility_ranges : array<vec4<f32>>;",
+      "@group(0) @binding(14) var<storage> visibility_ranges: array<vec4<f32>>;",
     ),
     content="true",
   )
   inspect(
-    wgsl.contains("@group(2) @binding(0) var<uniform> mesh : array<Mesh, 1u>;"),
+    wgsl.contains("@group(2) @binding(0) var<uniform> mesh: array<Mesh, 1u>;"),
     content="true",
   )
-  inspect(
-    wgsl.contains("@location(1) motion_vector : vec2<f32>,"),
-    content="true",
-  )
+  inspect(wgsl.contains("fn vertex(vertex_no_morph: Vertex)"), content="true")
+  inspect(wgsl.contains("fn fragment(in: VertexOutput)"), content="true")
 }
 
 ///|
@@ -389,6 +377,32 @@ test "renderer: preprocess_wgsl_source strips module aliases" {
   )
   inspect(preprocessed.contains("return PI_2;"), content="true")
   inspect(preprocessed.contains("maths::PI_2"), content="false")
+}
+
+///|
+test "renderer: canonical prepass import preprocessing keeps motion-vector bindings narrow" {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  defines.set("PREPASS_FRAGMENT", true)
+  defines.set("MOTION_VECTOR_PREPASS", true)
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths("assets")
+  let preprocessed = load_wgsl_preprocessed(
+    "assets", "shaders/bevy/bevy_pbr/prepass/prepass.wgsl", defines, value_defines,
+    visited, modules,
+  )
+  inspect(
+    preprocessed.contains("@group(0) @binding(0) var<uniform> view: View;"),
+    content="true",
+  )
+  inspect(
+    preprocessed.contains(
+      "@group(0) @binding(2) var<uniform> previous_view_uniforms: PreviousViewUniforms;",
+    ),
+    content="true",
+  )
+  inspect(preprocessed.contains("point_shadow_textures"), content="false")
+  inspect(preprocessed.contains("environment_map_sampler"), content="false")
 }
 
 ///|
