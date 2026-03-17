@@ -73,9 +73,6 @@ actual_keys = set(actual.keys())
 
 allowed_legacy_extra = {
     Path('mgstudio_runtime/mesh3d.wgsl'),
-    Path('mgstudio_runtime/3d/auto_exposure_average.wgsl'),
-    Path('mgstudio_runtime/3d/auto_exposure_histogram.wgsl'),
-    Path('mgstudio_runtime/3d/auto_exposure_shared.wgsl'),
     Path('mgstudio_runtime/3d/motion_vector.wgsl'),
     Path('mgstudio_runtime/ui/box_shadow.wgsl'),
     Path('mgstudio_runtime/ui/ui.wgsl'),

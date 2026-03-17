@@ -477,12 +477,12 @@ pub struct GpuBackend {
   mut auto_exposure_compute_pipeline_layout : @wgpu.PipelineLayout?
   mut auto_exposure_histogram_pipeline : @wgpu.ComputePipeline?
   mut auto_exposure_average_pipeline : @wgpu.ComputePipeline?
+  mut auto_exposure_globals_buf : @wgpu.Buffer?
   mut auto_exposure_settings_buf : @wgpu.Buffer?
   mut auto_exposure_curve_extents_buf : @wgpu.Buffer?
   mut auto_exposure_histogram_buf : @wgpu.Buffer?
   mut auto_exposure_curve_texture : @wgpu.Texture?
   mut auto_exposure_curve_view : @wgpu.TextureView?
-  mut auto_exposure_dummy_state_buf : @wgpu.Buffer?
   mut auto_exposure_active_state_buf : @wgpu.Buffer?
   auto_exposure_view_states : Array[GpuAutoExposureViewState]
   mesh3d_material_bg_cache : Array[Mesh3dMaterialBindGroupCacheEntry]
@@ -836,12 +836,12 @@ pub fn GpuBackend::new(
     auto_exposure_compute_pipeline_layout: None,
     auto_exposure_histogram_pipeline: None,
     auto_exposure_average_pipeline: None,
+    auto_exposure_globals_buf: None,
     auto_exposure_settings_buf: None,
     auto_exposure_curve_extents_buf: None,
     auto_exposure_histogram_buf: None,
     auto_exposure_curve_texture: None,
     auto_exposure_curve_view: None,
-    auto_exposure_dummy_state_buf: None,
     auto_exposure_active_state_buf: None,
     auto_exposure_view_states: [],
     mesh3d_material_bg_cache: [],

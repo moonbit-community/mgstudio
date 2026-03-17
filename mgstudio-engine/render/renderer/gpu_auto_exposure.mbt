@@ -37,14 +37,9 @@ fn ensure_auto_exposure_resources(
 ) -> Unit raise GpuBackendError {
   if backend.auto_exposure_compute_bgl is None {
     let compute = ss(@wgpu.SHADER_STAGE_COMPUTE)
-    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=7UL)
+    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=9UL)
     let ok = builder.add_buffer(0U, compute, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
-      builder.add_texture(
-        1U,
-        compute,
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
+      builder.add_buffer(1U, compute, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
       builder.add_texture(
         2U,
         compute,
@@ -55,11 +50,18 @@ fn ensure_auto_exposure_resources(
         3U,
         compute,
         @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_texture(
+        4U,
+        compute,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
         @wgpu.TEXTURE_VIEW_DIMENSION_1D,
       ) &&
-      builder.add_buffer(4U, compute, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
-      builder.add_buffer(5U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
-      builder.add_buffer(6U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE)
+      builder.add_buffer(5U, compute, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
+      builder.add_buffer(6U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+      builder.add_buffer(7U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+      builder.add_buffer(8U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE)
     if !ok {
       builder.free()
       fatal("wgpu: failed to build auto exposure compute bind group layout")
@@ -72,6 +74,14 @@ fn ensure_auto_exposure_resources(
     pl.set_label("mgstudio_auto_exposure_compute_pipeline_layout")
     backend.auto_exposure_compute_bgl = Some(bgl)
     backend.auto_exposure_compute_pipeline_layout = Some(pl)
+  }
+  if backend.auto_exposure_globals_buf is None {
+    backend.auto_exposure_globals_buf = Some(
+      backend.device.create_buffer(
+        size=16UL,
+        usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+      ),
+    )
   }
   if backend.auto_exposure_settings_buf is None {
     backend.auto_exposure_settings_buf = Some(
@@ -127,25 +137,23 @@ fn ensure_auto_exposure_resources(
     backend.auto_exposure_curve_texture = Some(texture)
     backend.auto_exposure_curve_view = Some(view)
   }
-  if backend.auto_exposure_dummy_state_buf is None {
-    let state_buf = backend.device.create_buffer(
-      size=4UL,
-      usage=bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST),
-    )
-    backend.queue.write_buffer(state_buf, 0UL, f32le_pack([0.0F]))
-    backend.auto_exposure_dummy_state_buf = Some(state_buf)
-  }
   if backend.auto_exposure_histogram_pipeline is None {
     guard backend.auto_exposure_compute_pipeline_layout is Some(layout) else {
       return
     }
     let source = load_wgsl_from_assets_required(
-      backend, "shaders/bevy/mgstudio_runtime/3d/auto_exposure_histogram.wgsl",
+      backend, "shaders/bevy/bevy_post_process/auto_exposure/auto_exposure.wgsl",
     )
     let shader = backend.device.create_shader_module_wgsl(source)
-    let pipeline = backend.device.create_compute_pipeline_with_layout(
-      layout, shader,
-    )
+    let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+      layout, shader, "compute_histogram",
+    ) catch {
+      err =>
+        fatal(
+          "wgpu: failed to create auto exposure histogram pipeline: " +
+          err.message(),
+        )
+    }
     pipeline.set_label("mgstudio_auto_exposure_histogram")
     backend.auto_exposure_histogram_pipeline = Some(pipeline)
     shader.release()
@@ -155,12 +163,18 @@ fn ensure_auto_exposure_resources(
       return
     }
     let source = load_wgsl_from_assets_required(
-      backend, "shaders/bevy/mgstudio_runtime/3d/auto_exposure_average.wgsl",
+      backend, "shaders/bevy/bevy_post_process/auto_exposure/auto_exposure.wgsl",
     )
     let shader = backend.device.create_shader_module_wgsl(source)
-    let pipeline = backend.device.create_compute_pipeline_with_layout(
-      layout, shader,
-    )
+    let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+      layout, shader, "compute_average",
+    ) catch {
+      err =>
+        fatal(
+          "wgpu: failed to create auto exposure average pipeline: " +
+          err.message(),
+        )
+    }
     pipeline.set_label("mgstudio_auto_exposure_average")
     backend.auto_exposure_average_pipeline = Some(pipeline)
     shader.release()
@@ -224,6 +238,16 @@ fn auto_exposure_settings_bytes(
     0.0F,
     0.0F,
     0.0F,
+  ])
+}
+
+///|
+fn auto_exposure_globals_bytes(frame_count : UInt, delta_time : Float) -> Bytes {
+  u32le_pack([
+    f32_bits(0.0F),
+    f32_bits(if delta_time < 0.0F { 0.0F } else { delta_time }),
+    frame_count,
+    0U,
   ])
 }
 
@@ -323,8 +347,12 @@ fn create_auto_exposure_bind_group(
   scene_view : @wgpu.TextureView,
   mask_view : @wgpu.TextureView,
   state_buf : @wgpu.Buffer,
+  view_buf : @wgpu.Buffer,
 ) -> @wgpu.BindGroup? {
   guard backend.auto_exposure_compute_bgl is Some(layout) else { return None }
+  guard backend.auto_exposure_globals_buf is Some(globals_buf) else {
+    return None
+  }
   guard backend.auto_exposure_settings_buf is Some(settings_buf) else {
     return None
   }
@@ -337,14 +365,16 @@ fn create_auto_exposure_bind_group(
   guard backend.auto_exposure_curve_view is Some(curve_view) else {
     return None
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=7UL)
-  let ok = builder.add_buffer(0U, settings_buf) &&
-    builder.add_texture_view(1U, scene_view) &&
-    builder.add_texture_view(2U, mask_view) &&
-    builder.add_texture_view(3U, curve_view) &&
-    builder.add_buffer(4U, curve_extents_buf) &&
-    builder.add_buffer(5U, histogram_buf) &&
-    builder.add_buffer(6U, state_buf)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=9UL)
+  let ok = builder.add_buffer(0U, globals_buf) &&
+    builder.add_buffer(1U, settings_buf) &&
+    builder.add_texture_view(2U, scene_view) &&
+    builder.add_texture_view(3U, mask_view) &&
+    builder.add_texture_view(4U, curve_view) &&
+    builder.add_buffer(5U, curve_extents_buf) &&
+    builder.add_buffer(6U, histogram_buf) &&
+    builder.add_buffer(7U, state_buf) &&
+    builder.add_buffer(8U, view_buf)
   if !ok {
     builder.free()
     return None
@@ -368,6 +398,35 @@ pub fn GpuBackend::apply_auto_exposure(
   speed_darken : Float,
   exponential_transition_distance : Float,
   delta_time : Float,
+  color_grading_balance_x_axis_x : Float,
+  color_grading_balance_x_axis_y : Float,
+  color_grading_balance_x_axis_z : Float,
+  color_grading_balance_y_axis_x : Float,
+  color_grading_balance_y_axis_y : Float,
+  color_grading_balance_y_axis_z : Float,
+  color_grading_balance_z_axis_x : Float,
+  color_grading_balance_z_axis_y : Float,
+  color_grading_balance_z_axis_z : Float,
+  color_grading_saturation_shadows : Float,
+  color_grading_saturation_midtones : Float,
+  color_grading_saturation_highlights : Float,
+  color_grading_contrast_shadows : Float,
+  color_grading_contrast_midtones : Float,
+  color_grading_contrast_highlights : Float,
+  color_grading_gamma_shadows : Float,
+  color_grading_gamma_midtones : Float,
+  color_grading_gamma_highlights : Float,
+  color_grading_gain_shadows : Float,
+  color_grading_gain_midtones : Float,
+  color_grading_gain_highlights : Float,
+  color_grading_lift_shadows : Float,
+  color_grading_lift_midtones : Float,
+  color_grading_lift_highlights : Float,
+  color_grading_midtones_start : Float,
+  color_grading_midtones_end : Float,
+  color_grading_exposure : Float,
+  color_grading_hue : Float,
+  color_grading_post_saturation : Float,
   metering_mask_texture_id : Int,
   compensation_curve_lut : Bytes,
   compensation_curve_min_log_lum : Float,
@@ -395,10 +454,12 @@ pub fn GpuBackend::apply_auto_exposure(
   guard self.auto_exposure_average_pipeline is Some(average_pipeline) else {
     return
   }
+  guard self.auto_exposure_globals_buf is Some(globals_buf) else { return }
   guard self.auto_exposure_settings_buf is Some(settings_buf) else { return }
   guard self.auto_exposure_curve_extents_buf is Some(curve_extents_buf) else {
     return
   }
+  guard self.tonemapping_view_buf is Some(view_buf) else { return }
   let mask_view = if metering_mask_texture_id >= 0 {
     match find_texture(self, metering_mask_texture_id) {
       Some(mask_texture) => mask_texture.view
@@ -409,6 +470,23 @@ pub fn GpuBackend::apply_auto_exposure(
   }
   let state_buf = auto_exposure_view_state_buffer(
     self, view_key_hi, view_key_lo,
+  )
+  self.queue.write_buffer(
+    globals_buf,
+    0UL,
+    auto_exposure_globals_bytes(self.frame_count, delta_time),
+  )
+  tonemapping_write_view_uniform(
+    self, pass_state, 1.0F, color_grading_balance_x_axis_x, color_grading_balance_x_axis_y,
+    color_grading_balance_x_axis_z, color_grading_balance_y_axis_x, color_grading_balance_y_axis_y,
+    color_grading_balance_y_axis_z, color_grading_balance_z_axis_x, color_grading_balance_z_axis_y,
+    color_grading_balance_z_axis_z, color_grading_saturation_shadows, color_grading_saturation_midtones,
+    color_grading_saturation_highlights, color_grading_contrast_shadows, color_grading_contrast_midtones,
+    color_grading_contrast_highlights, color_grading_gamma_shadows, color_grading_gamma_midtones,
+    color_grading_gamma_highlights, color_grading_gain_shadows, color_grading_gain_midtones,
+    color_grading_gain_highlights, color_grading_lift_shadows, color_grading_lift_midtones,
+    color_grading_lift_highlights, color_grading_midtones_start, color_grading_midtones_end,
+    color_grading_exposure, color_grading_hue, color_grading_post_saturation,
   )
   self.queue.write_buffer(
     settings_buf,
@@ -432,6 +510,7 @@ pub fn GpuBackend::apply_auto_exposure(
       scene_texture.view,
       mask_view,
       state_buf,
+      view_buf,
     )
     is Some(bind_group) else {
     return
@@ -497,6 +576,35 @@ pub fn apply_auto_exposure(
   speed_darken~ : Float,
   exponential_transition_distance~ : Float,
   delta_time~ : Float,
+  color_grading_balance_x_axis_x~ : Float,
+  color_grading_balance_x_axis_y~ : Float,
+  color_grading_balance_x_axis_z~ : Float,
+  color_grading_balance_y_axis_x~ : Float,
+  color_grading_balance_y_axis_y~ : Float,
+  color_grading_balance_y_axis_z~ : Float,
+  color_grading_balance_z_axis_x~ : Float,
+  color_grading_balance_z_axis_y~ : Float,
+  color_grading_balance_z_axis_z~ : Float,
+  color_grading_saturation_shadows~ : Float,
+  color_grading_saturation_midtones~ : Float,
+  color_grading_saturation_highlights~ : Float,
+  color_grading_contrast_shadows~ : Float,
+  color_grading_contrast_midtones~ : Float,
+  color_grading_contrast_highlights~ : Float,
+  color_grading_gamma_shadows~ : Float,
+  color_grading_gamma_midtones~ : Float,
+  color_grading_gamma_highlights~ : Float,
+  color_grading_gain_shadows~ : Float,
+  color_grading_gain_midtones~ : Float,
+  color_grading_gain_highlights~ : Float,
+  color_grading_lift_shadows~ : Float,
+  color_grading_lift_midtones~ : Float,
+  color_grading_lift_highlights~ : Float,
+  color_grading_midtones_start~ : Float,
+  color_grading_midtones_end~ : Float,
+  color_grading_exposure~ : Float,
+  color_grading_hue~ : Float,
+  color_grading_post_saturation~ : Float,
   metering_mask_texture_id~ : Int,
   compensation_curve_lut~ : Bytes,
   compensation_curve_min_log_lum~ : Float,
@@ -510,9 +618,19 @@ pub fn apply_auto_exposure(
     backend.apply_auto_exposure(
       view_key_hi, view_key_lo, scene_texture_id, min_ev100, max_ev100, low_percent,
       high_percent, speed_brighten, speed_darken, exponential_transition_distance,
-      delta_time, metering_mask_texture_id, compensation_curve_lut, compensation_curve_min_log_lum,
-      compensation_curve_max_log_lum, compensation_curve_min_compensation, compensation_curve_max_compensation,
-      view_width, view_height,
+      delta_time, color_grading_balance_x_axis_x, color_grading_balance_x_axis_y,
+      color_grading_balance_x_axis_z, color_grading_balance_y_axis_x, color_grading_balance_y_axis_y,
+      color_grading_balance_y_axis_z, color_grading_balance_z_axis_x, color_grading_balance_z_axis_y,
+      color_grading_balance_z_axis_z, color_grading_saturation_shadows, color_grading_saturation_midtones,
+      color_grading_saturation_highlights, color_grading_contrast_shadows, color_grading_contrast_midtones,
+      color_grading_contrast_highlights, color_grading_gamma_shadows, color_grading_gamma_midtones,
+      color_grading_gamma_highlights, color_grading_gain_shadows, color_grading_gain_midtones,
+      color_grading_gain_highlights, color_grading_lift_shadows, color_grading_lift_midtones,
+      color_grading_lift_highlights, color_grading_midtones_start, color_grading_midtones_end,
+      color_grading_exposure, color_grading_hue, color_grading_post_saturation, metering_mask_texture_id,
+      compensation_curve_lut, compensation_curve_min_log_lum, compensation_curve_max_log_lum,
+      compensation_curve_min_compensation, compensation_curve_max_compensation, view_width,
+      view_height,
     ) catch {
       err => debug_runtime_error("apply_auto_exposure", err)
     }

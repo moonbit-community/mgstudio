@@ -2644,6 +2644,7 @@ fn render3d_apply_camera_auto_exposure(
   world : @ecs.World,
   camera_entity : @core.Entity,
   auto_exposure : AutoExposure,
+  color_grading : @post_process.ColorGrading?,
   scene_texture_id : Int,
   view_width_logical : Int,
   view_height_logical : Int,
@@ -2655,6 +2656,9 @@ fn render3d_apply_camera_auto_exposure(
   let curve = render3d_auto_exposure_curve_gpu_data(
     world,
     auto_exposure.compensation_curve,
+  )
+  let color_grading_uniform = @render.host_color_grading_from_post_process(
+    color_grading,
   )
   @render.host_gpu_apply_auto_exposure(
     view_key_hi=camera_entity.id,
@@ -2668,6 +2672,7 @@ fn render3d_apply_camera_auto_exposure(
     speed_darken=auto_exposure.speed_darken,
     exponential_transition_distance=auto_exposure.exponential_transition_distance,
     delta_time~,
+    color_grading=color_grading_uniform,
     metering_mask_texture_id=match auto_exposure.metering_mask {
       Some(mask) => mask.id()
       None => -1
@@ -6687,8 +6692,14 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
             clear_enabled=if clear_enabled { 1 } else { 0 },
           )
           render3d_apply_camera_auto_exposure(
-            world, camera_entity, auto_exposure_settings, postprocess_source_texture_id,
-            view_width_logical, view_height_logical, delta_seconds,
+            world,
+            camera_entity,
+            auto_exposure_settings,
+            camera.color_grading,
+            postprocess_source_texture_id,
+            view_width_logical,
+            view_height_logical,
+            delta_seconds,
           )
           @render.host_gpu_end_pass()
         }

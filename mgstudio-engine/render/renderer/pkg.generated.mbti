@@ -32,7 +32,7 @@ pub const SURFACE_PRESENT_MODE_IMMEDIATE : Int = 4
 
 pub const SURFACE_PRESENT_MODE_MAILBOX : Int = 5
 
-pub fn apply_auto_exposure(view_key_hi~ : Int, view_key_lo~ : Int, scene_texture_id~ : Int, min_ev100~ : Float, max_ev100~ : Float, low_percent~ : Float, high_percent~ : Float, speed_brighten~ : Float, speed_darken~ : Float, exponential_transition_distance~ : Float, delta_time~ : Float, metering_mask_texture_id~ : Int, compensation_curve_lut~ : Bytes, compensation_curve_min_log_lum~ : Float, compensation_curve_max_log_lum~ : Float, compensation_curve_min_compensation~ : Float, compensation_curve_max_compensation~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
+pub fn apply_auto_exposure(view_key_hi~ : Int, view_key_lo~ : Int, scene_texture_id~ : Int, min_ev100~ : Float, max_ev100~ : Float, low_percent~ : Float, high_percent~ : Float, speed_brighten~ : Float, speed_darken~ : Float, exponential_transition_distance~ : Float, delta_time~ : Float, color_grading_balance_x_axis_x~ : Float, color_grading_balance_x_axis_y~ : Float, color_grading_balance_x_axis_z~ : Float, color_grading_balance_y_axis_x~ : Float, color_grading_balance_y_axis_y~ : Float, color_grading_balance_y_axis_z~ : Float, color_grading_balance_z_axis_x~ : Float, color_grading_balance_z_axis_y~ : Float, color_grading_balance_z_axis_z~ : Float, color_grading_saturation_shadows~ : Float, color_grading_saturation_midtones~ : Float, color_grading_saturation_highlights~ : Float, color_grading_contrast_shadows~ : Float, color_grading_contrast_midtones~ : Float, color_grading_contrast_highlights~ : Float, color_grading_gamma_shadows~ : Float, color_grading_gamma_midtones~ : Float, color_grading_gamma_highlights~ : Float, color_grading_gain_shadows~ : Float, color_grading_gain_midtones~ : Float, color_grading_gain_highlights~ : Float, color_grading_lift_shadows~ : Float, color_grading_lift_midtones~ : Float, color_grading_lift_highlights~ : Float, color_grading_midtones_start~ : Float, color_grading_midtones_end~ : Float, color_grading_exposure~ : Float, color_grading_hue~ : Float, color_grading_post_saturation~ : Float, metering_mask_texture_id~ : Int, compensation_curve_lut~ : Bytes, compensation_curve_min_log_lum~ : Float, compensation_curve_max_log_lum~ : Float, compensation_curve_min_compensation~ : Float, compensation_curve_max_compensation~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
 
 pub fn apply_bloom(scene_texture_id~ : Int, intensity~ : Float, low_frequency_boost~ : Float, low_frequency_boost_curvature~ : Float, high_pass_frequency~ : Float, threshold~ : Float, threshold_softness~ : Float, composite_mode~ : Int, max_mip_dimension~ : Int, scale_x~ : Float, scale_y~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
 
@@ -347,12 +347,12 @@ pub struct GpuBackend {
   mut auto_exposure_compute_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut auto_exposure_histogram_pipeline : @wgpu_mbt.ComputePipeline?
   mut auto_exposure_average_pipeline : @wgpu_mbt.ComputePipeline?
+  mut auto_exposure_globals_buf : @wgpu_mbt.Buffer?
   mut auto_exposure_settings_buf : @wgpu_mbt.Buffer?
   mut auto_exposure_curve_extents_buf : @wgpu_mbt.Buffer?
   mut auto_exposure_histogram_buf : @wgpu_mbt.Buffer?
   mut auto_exposure_curve_texture : @wgpu_mbt.Texture?
   mut auto_exposure_curve_view : @wgpu_mbt.TextureView?
-  mut auto_exposure_dummy_state_buf : @wgpu_mbt.Buffer?
   mut auto_exposure_active_state_buf : @wgpu_mbt.Buffer?
   auto_exposure_view_states : Array[GpuAutoExposureViewState]
   mesh3d_material_bg_cache : Array[Mesh3dMaterialBindGroupCacheEntry]
@@ -368,7 +368,7 @@ pub struct GpuBackend {
   textures : Array[GpuTextureInfo]
   meshes : Array[GpuMeshInfo]
 }
-pub fn GpuBackend::apply_auto_exposure(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Bytes, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::apply_auto_exposure(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Bytes, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::apply_bloom(Self, Int, Float, Float, Float, Float, Float, Float, Int, Int, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::begin_frame(Self) -> Unit
 pub fn GpuBackend::begin_frame_binding(Self, Int) -> Unit
