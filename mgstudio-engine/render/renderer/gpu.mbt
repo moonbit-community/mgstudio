@@ -322,14 +322,14 @@ pub struct GpuBackend {
   mut sprite_index_buf : @wgpu.Buffer?
   mut sprite_instance_capacity : UInt64
   mut sprite_globals_bg : @wgpu.BindGroup?
-  mut sprite_bevy_bgl_view : @wgpu.BindGroupLayout?
-  mut sprite_bevy_bgl_tex : @wgpu.BindGroupLayout?
-  mut sprite_bevy_pipeline_layout : @wgpu.PipelineLayout?
-  mut sprite_bevy_view_buf : @wgpu.Buffer?
-  mut sprite_bevy_view_bg : @wgpu.BindGroup?
-  mut sprite_bevy_lut_texture : @wgpu.Texture?
-  mut sprite_bevy_lut_view : @wgpu.TextureView?
-  mut sprite_bevy_lut_sampler : @wgpu.Sampler?
+  mut sprite_view_bgl : @wgpu.BindGroupLayout?
+  mut sprite_texture_bgl : @wgpu.BindGroupLayout?
+  mut sprite_render_pipeline_layout : @wgpu.PipelineLayout?
+  mut sprite_view_buf : @wgpu.Buffer?
+  mut sprite_view_bg : @wgpu.BindGroup?
+  mut sprite_lut_texture : @wgpu.Texture?
+  mut sprite_lut_view : @wgpu.TextureView?
+  mut sprite_lut_sampler : @wgpu.Sampler?
   sprite_instance_data : Array[Float]
   sprite_batches : Array[SpriteBatch]
   mut sprite_instance_count : UInt
@@ -691,14 +691,14 @@ pub fn GpuBackend::new(
     sprite_index_buf: None,
     sprite_instance_capacity: 0UL,
     sprite_globals_bg: None,
-    sprite_bevy_bgl_view: None,
-    sprite_bevy_bgl_tex: None,
-    sprite_bevy_pipeline_layout: None,
-    sprite_bevy_view_buf: None,
-    sprite_bevy_view_bg: None,
-    sprite_bevy_lut_texture: None,
-    sprite_bevy_lut_view: None,
-    sprite_bevy_lut_sampler: None,
+    sprite_view_bgl: None,
+    sprite_texture_bgl: None,
+    sprite_render_pipeline_layout: None,
+    sprite_view_buf: None,
+    sprite_view_bg: None,
+    sprite_lut_texture: None,
+    sprite_lut_view: None,
+    sprite_lut_sampler: None,
     sprite_instance_data: [],
     sprite_batches: [],
     sprite_instance_count: 0U,

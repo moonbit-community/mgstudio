@@ -98,7 +98,7 @@ fn ensure_sprite_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
     )
     backend.sprite_index_buf = Some(index_buf)
   }
-  if backend.sprite_bevy_pipeline_layout is None {
+  if backend.sprite_render_pipeline_layout is None {
     let view_stage = ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT)
     let fragment_stage = ss(@wgpu.SHADER_STAGE_FRAGMENT)
     let view_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=3UL)
@@ -188,24 +188,24 @@ fn ensure_sprite_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
       bgl_view,
       label="mgstudio_sprite_view_bind_group",
     )
-    backend.sprite_bevy_bgl_view = Some(bgl_view)
-    backend.sprite_bevy_bgl_tex = Some(bgl_tex)
-    backend.sprite_bevy_pipeline_layout = Some(pipeline_layout)
-    backend.sprite_bevy_view_buf = Some(view_buf)
-    backend.sprite_bevy_lut_texture = Some(lut_texture)
-    backend.sprite_bevy_lut_view = Some(lut_view)
-    backend.sprite_bevy_lut_sampler = Some(lut_sampler)
-    backend.sprite_bevy_view_bg = Some(view_bg)
+    backend.sprite_view_bgl = Some(bgl_view)
+    backend.sprite_texture_bgl = Some(bgl_tex)
+    backend.sprite_render_pipeline_layout = Some(pipeline_layout)
+    backend.sprite_view_buf = Some(view_buf)
+    backend.sprite_lut_texture = Some(lut_texture)
+    backend.sprite_lut_view = Some(lut_view)
+    backend.sprite_lut_sampler = Some(lut_sampler)
+    backend.sprite_view_bg = Some(view_bg)
   }
 }
 
 ///|
-fn create_sprite_bevy_pipeline(
+fn create_sprite_render_pipeline(
   backend : GpuBackend,
   format : @wgpu.TextureFormat,
   label : String,
 ) -> @wgpu.RenderPipeline raise GpuBackendError {
-  guard backend.sprite_bevy_pipeline_layout is Some(layout) else {
+  guard backend.sprite_render_pipeline_layout is Some(layout) else {
     fatal("wgpu: sprite bevy pipeline layout is None")
   }
   let modules = copy_registered_wgsl_import_module_paths()
@@ -258,7 +258,7 @@ fn ensure_sprite_pipeline_rgba8(
     return
   }
   backend.sprite_pipeline = Some(
-    create_sprite_bevy_pipeline(
+    create_sprite_render_pipeline(
       backend,
       tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
       "mgstudio_sprite_rgba8",
@@ -284,7 +284,7 @@ fn ensure_sprite_pipeline_surface(
     old.release()
   }
   backend.sprite_pipeline_surface = Some(
-    create_sprite_bevy_pipeline(backend, format, "mgstudio_sprite_surface"),
+    create_sprite_render_pipeline(backend, format, "mgstudio_sprite_surface"),
   )
   backend.sprite_pipeline_surface_format = Some(format)
 }
@@ -306,7 +306,7 @@ fn sprite_pipeline_for_current_pass(
 }
 
 ///|
-fn sprite_bevy_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
+fn sprite_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
   let safe_width = if pass_state.width_logical <= 0.0F {
     1.0F
   } else {
@@ -350,11 +350,11 @@ fn sprite_bevy_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
 }
 
 ///|
-fn create_sprite_bevy_texture_bind_group(
+fn create_sprite_texture_bind_group(
   backend : GpuBackend,
   texture : GpuTextureInfo,
 ) -> @wgpu.BindGroup? {
-  guard backend.sprite_bevy_bgl_tex is Some(layout) else { return None }
+  guard backend.sprite_texture_bgl is Some(layout) else { return None }
   let b = @wgpu.BindGroupBuilder::new(max_entries=2UL)
   let ok0 = b.add_texture_view(0U, texture.view)
   let ok1 = b.add_sampler(1U, texture.sampler)
@@ -400,14 +400,14 @@ fn flush_sprite_batches(backend : GpuBackend) -> Unit raise GpuBackendError {
     backend.sprite_instance_capacity = new_cap
   }
   guard backend.pass_state is Some(pass_state) else { return }
-  guard backend.sprite_bevy_view_buf is Some(view_buf) else { return }
-  guard backend.sprite_bevy_view_bg is Some(view_bg) else { return }
+  guard backend.sprite_view_buf is Some(view_buf) else { return }
+  guard backend.sprite_view_bg is Some(view_bg) else { return }
   guard backend.sprite_instance_buf is Some(instance_buf) else { return }
   guard backend.sprite_index_buf is Some(index_buf) else { return }
   backend.queue.write_buffer(
     view_buf,
     0UL,
-    sprite_bevy_view_uniform_bytes(pass_state),
+    sprite_view_uniform_bytes(pass_state),
   )
   let bytes = f32le_pack(backend.sprite_instance_data)
   backend.queue.write_buffer(instance_buf, 0UL, bytes)
@@ -419,7 +419,7 @@ fn flush_sprite_batches(backend : GpuBackend) -> Unit raise GpuBackendError {
     guard resolve_draw_texture(backend, batch.texture_id) is Some(tex) else {
       continue
     }
-    guard create_sprite_bevy_texture_bind_group(backend, tex) is Some(tex_bg) else {
+    guard create_sprite_texture_bind_group(backend, tex) is Some(tex_bg) else {
       continue
     }
     pass.set_bind_group(1U, tex_bg, [])

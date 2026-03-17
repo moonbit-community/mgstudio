@@ -202,14 +202,14 @@ pub struct GpuBackend {
   mut sprite_index_buf : @wgpu_mbt.Buffer?
   mut sprite_instance_capacity : UInt64
   mut sprite_globals_bg : @wgpu_mbt.BindGroup?
-  mut sprite_bevy_bgl_view : @wgpu_mbt.BindGroupLayout?
-  mut sprite_bevy_bgl_tex : @wgpu_mbt.BindGroupLayout?
-  mut sprite_bevy_pipeline_layout : @wgpu_mbt.PipelineLayout?
-  mut sprite_bevy_view_buf : @wgpu_mbt.Buffer?
-  mut sprite_bevy_view_bg : @wgpu_mbt.BindGroup?
-  mut sprite_bevy_lut_texture : @wgpu_mbt.Texture?
-  mut sprite_bevy_lut_view : @wgpu_mbt.TextureView?
-  mut sprite_bevy_lut_sampler : @wgpu_mbt.Sampler?
+  mut sprite_view_bgl : @wgpu_mbt.BindGroupLayout?
+  mut sprite_texture_bgl : @wgpu_mbt.BindGroupLayout?
+  mut sprite_render_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut sprite_view_buf : @wgpu_mbt.Buffer?
+  mut sprite_view_bg : @wgpu_mbt.BindGroup?
+  mut sprite_lut_texture : @wgpu_mbt.Texture?
+  mut sprite_lut_view : @wgpu_mbt.TextureView?
+  mut sprite_lut_sampler : @wgpu_mbt.Sampler?
   sprite_instance_data : Array[Float]
   sprite_batches : Array[SpriteBatch]
   mut sprite_instance_count : UInt
