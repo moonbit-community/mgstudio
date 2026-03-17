@@ -124,7 +124,7 @@ fn ensure_sprite_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
     }
     let bgl_view = view_builder.finish(
       backend.device,
-      label="mgstudio_sprite_bevy_view_bgl",
+      label="mgstudio_sprite_view_bind_group_layout",
     )
     let tex_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=2UL)
     let tex_ok = tex_builder.add_texture(
@@ -144,12 +144,12 @@ fn ensure_sprite_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
     }
     let bgl_tex = tex_builder.finish(
       backend.device,
-      label="mgstudio_sprite_bevy_tex_bgl",
+      label="mgstudio_sprite_texture_bind_group_layout",
     )
     let pipeline_layout = backend.device.create_pipeline_layout_2(
       bgl_view, bgl_tex,
     )
-    pipeline_layout.set_label("mgstudio_sprite_bevy_pipeline_layout")
+    pipeline_layout.set_label("mgstudio_sprite_pipeline_layout")
     let view_buf = backend.device.create_buffer(
       size=SPRITE_BEVY_VIEW_BUFFER_SIZE,
       usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
@@ -173,7 +173,7 @@ fn ensure_sprite_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
       0U,
       1U,
     )
-    lut_view.set_label("mgstudio_sprite_bevy_lut_view")
+    lut_view.set_label("mgstudio_sprite_lut_view")
     let lut_sampler = backend.device.create_sampler_linear_clamp()
     let view_bg_builder = @wgpu.BindGroupBuilder::new(max_entries=3UL)
     let view_bg_ok = view_bg_builder.add_buffer(0U, view_buf) &&
@@ -186,7 +186,7 @@ fn ensure_sprite_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
     let view_bg = view_bg_builder.finish(
       backend.device,
       bgl_view,
-      label="mgstudio_sprite_bevy_view_bg",
+      label="mgstudio_sprite_view_bind_group",
     )
     backend.sprite_bevy_bgl_view = Some(bgl_view)
     backend.sprite_bevy_bgl_tex = Some(bgl_tex)
@@ -362,7 +362,9 @@ fn create_sprite_bevy_texture_bind_group(
     b.free()
     return None
   }
-  Some(b.finish(backend.device, layout, label="mgstudio_sprite_bevy_tex_bg"))
+  Some(
+    b.finish(backend.device, layout, label="mgstudio_sprite_texture_bind_group"),
+  )
 }
 
 ///|
