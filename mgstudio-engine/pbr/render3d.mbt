@@ -595,58 +595,89 @@ fn camera3d_bundle_insert(
   world : @ecs.World,
   entity : @core.Entity,
   tick : @core.Tick,
+  loc~ : SourceLoc,
 ) -> Unit {
   let ecs_world = world
-  get_camera3d_store(ecs_world).insert(entity, bundle.camera3d, tick)
-  get_projection_store(ecs_world).insert(entity, bundle.projection, tick)
+  get_camera3d_store(ecs_world).insert(entity, bundle.camera3d, tick, loc~)
+  get_projection_store(ecs_world).insert(entity, bundle.projection, tick, loc~)
   if bundle.sub_camera_view is Some(sub_camera_view) {
-    get_sub_camera_view3d_store(ecs_world).insert(entity, sub_camera_view, tick)
+    get_sub_camera_view3d_store(ecs_world).insert(
+      entity,
+      sub_camera_view,
+      tick,
+      loc~,
+    )
   }
   if bundle.screen_space_transmission is Some(screen_space_transmission) {
     get_screen_space_transmission_store(ecs_world).insert(
-      entity, screen_space_transmission, tick,
+      entity,
+      screen_space_transmission,
+      tick,
+      loc~,
     )
   }
   if bundle.screen_space_reflections is Some(screen_space_reflections) {
     get_screen_space_reflections_store(ecs_world).insert(
-      entity, screen_space_reflections, tick,
+      entity,
+      screen_space_reflections,
+      tick,
+      loc~,
     )
   }
   if bundle.bloom is Some(bloom) {
-    get_bloom_store(ecs_world).insert(entity, bloom, tick)
+    get_bloom_store(ecs_world).insert(entity, bloom, tick, loc~)
   }
   if bundle.tonemapping is Some(tonemapping) {
-    get_tonemapping_store(ecs_world).insert(entity, tonemapping, tick)
+    get_tonemapping_store(ecs_world).insert(entity, tonemapping, tick, loc~)
   }
   if bundle.deband_dither is Some(deband_dither) {
-    get_deband_dither_store(ecs_world).insert(entity, deband_dither, tick)
+    get_deband_dither_store(ecs_world).insert(entity, deband_dither, tick, loc~)
   }
   if bundle.chromatic_aberration is Some(chromatic_aberration) {
     get_chromatic_aberration_store(ecs_world).insert(
-      entity, chromatic_aberration, tick,
+      entity,
+      chromatic_aberration,
+      tick,
+      loc~,
     )
   }
   if bundle.vignette is Some(vignette) {
-    get_vignette_store(ecs_world).insert(entity, vignette, tick)
+    get_vignette_store(ecs_world).insert(entity, vignette, tick, loc~)
   }
   if bundle.motion_blur is Some(motion_blur) {
-    get_motion_blur_store(ecs_world).insert(entity, motion_blur, tick)
+    get_motion_blur_store(ecs_world).insert(entity, motion_blur, tick, loc~)
   }
   if bundle.exposure is Some(exposure) {
-    get_exposure_store(ecs_world).insert(entity, exposure, tick)
+    get_exposure_store(ecs_world).insert(entity, exposure, tick, loc~)
   }
   if bundle.color_grading is Some(color_grading) {
-    get_color_grading_store(ecs_world).insert(entity, color_grading, tick)
+    get_color_grading_store(ecs_world).insert(entity, color_grading, tick, loc~)
   }
-  @sprite.get_camera_store(ecs_world).insert(entity, bundle.camera, tick)
-  @sprite.get_render_target_store(ecs_world).insert(entity, bundle.target, tick)
-  @sprite.get_render_layers_store(ecs_world).insert(entity, bundle.layers, tick)
+  @sprite.get_camera_store(ecs_world).insert(entity, bundle.camera, tick, loc~)
+  @sprite.get_render_target_store(ecs_world).insert(
+    entity,
+    bundle.target,
+    tick,
+    loc~,
+  )
+  @sprite.get_render_layers_store(ecs_world).insert(
+    entity,
+    bundle.layers,
+    tick,
+    loc~,
+  )
   get_frustum_store(ecs_world).insert(
     entity,
     bundle.projection.compute_frustum(bundle.transform),
     tick,
+    loc~,
   )
-  @math.get_transform_store(ecs_world).insert(entity, bundle.transform, tick)
+  @math.get_transform_store(ecs_world).insert(
+    entity,
+    bundle.transform,
+    tick,
+    loc~,
+  )
 }
 
 ///|
@@ -655,19 +686,22 @@ pub impl @app.CommandSpawnComponents for Camera3dBundle with spawn_components(
   world,
   entity,
   change_tick,
+  loc~,
 ) {
-  camera3d_bundle_insert(self, world, entity, change_tick)
+  camera3d_bundle_insert(self, world, entity, change_tick, loc~)
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn Camera3dBundle::spawn(
   self : Camera3dBundle,
   world : @ecs.World,
+  loc~ : SourceLoc,
 ) -> @core.Entity {
   let ecs_world = world
   let tick = world.read_change_tick()
   let entity = ecs_world.spawn_empty()
-  camera3d_bundle_insert(self, ecs_world, entity, tick)
+  camera3d_bundle_insert(self, ecs_world, entity, tick, loc~)
   entity
 }
 
@@ -677,32 +711,52 @@ fn mesh_material3d_bundle_insert(
   world : @ecs.World,
   entity : @core.Entity,
   tick : @core.Tick,
+  loc~ : SourceLoc,
 ) -> Unit {
   let ecs_world = world
-  get_mesh3d_store(ecs_world).insert(entity, bundle.mesh, tick)
-  get_mesh_material3d_store(ecs_world).insert(entity, bundle.material, tick)
-  @sprite.get_render_layers_store(ecs_world).insert(entity, bundle.layers, tick)
+  get_mesh3d_store(ecs_world).insert(entity, bundle.mesh, tick, loc~)
+  get_mesh_material3d_store(ecs_world).insert(
+    entity,
+    bundle.material,
+    tick,
+    loc~,
+  )
+  @sprite.get_render_layers_store(ecs_world).insert(
+    entity,
+    bundle.layers,
+    tick,
+    loc~,
+  )
   @visibility.get_visibility_store(ecs_world).insert(
     entity,
     bundle.visibility,
     tick,
+    loc~,
   )
   @visibility.get_inherited_visibility_store(ecs_world).insert(
     entity,
     bundle.inherited_visibility,
     tick,
+    loc~,
   )
   @visibility.get_view_visibility_store(ecs_world).insert(
     entity,
     bundle.view_visibility,
     tick,
+    loc~,
   )
-  @math.get_transform_store(ecs_world).insert(entity, bundle.transform, tick)
+  @math.get_transform_store(ecs_world).insert(
+    entity,
+    bundle.transform,
+    tick,
+    loc~,
+  )
   let mesh_id = @sprite_render.render2d_upload_mesh_handle(bundle.mesh.mesh)
   @sprite.get_gpu_mesh2d_store(ecs_world).insert(
     entity,
     @sprite.GpuMesh2d::new(mesh_id),
     tick,
+    loc~,
   )
 }
 
@@ -712,19 +766,22 @@ pub impl @app.CommandSpawnComponents for MeshMaterial3dBundle with spawn_compone
   world,
   entity,
   change_tick,
+  loc~,
 ) {
-  mesh_material3d_bundle_insert(self, world, entity, change_tick)
+  mesh_material3d_bundle_insert(self, world, entity, change_tick, loc~)
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn MeshMaterial3dBundle::spawn(
   self : MeshMaterial3dBundle,
   world : @ecs.World,
+  loc~ : SourceLoc,
 ) -> @core.Entity {
   let ecs_world = world
   let tick = world.read_change_tick()
   let entity = ecs_world.spawn_empty()
-  mesh_material3d_bundle_insert(self, ecs_world, entity, tick)
+  mesh_material3d_bundle_insert(self, ecs_world, entity, tick, loc~)
   entity
 }
 

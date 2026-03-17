@@ -235,11 +235,14 @@ pub fn World::entity_count(self : World) -> Int {
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn World::despawn(
   self : World,
   entity : @core.Entity,
+  loc~ : SourceLoc,
 ) -> Unit raise EcsError {
   self.ensure_entity_alive(entity)
+  let caller = hook_caller_from_loc(loc)
   let removed_components : Array[(Int, ErasedValue)] = []
   for entry in self.component_columns.iter() {
     let (key_id, store_ref) = entry
@@ -248,11 +251,11 @@ pub fn World::despawn(
     }
   }
   for entry in removed_components {
-    self.run_component_despawn_hooks(entity, entry.0)
+    self.run_component_despawn_hooks(entity, entry.0, caller~)
   }
   for entry in removed_components {
-    self.run_component_replace_hooks(entity, entry.0)
-    self.run_component_remove_hooks(entity, entry.0)
+    self.run_component_replace_hooks(entity, entry.0, caller~)
+    self.run_component_remove_hooks(entity, entry.0, caller~)
   }
   self.entities.despawn(entity) catch {
     err => raise EntityStateError(err)
@@ -271,17 +274,20 @@ pub fn World::despawn(
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[T] World::set(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
   value : T,
+  loc~ : SourceLoc,
 ) -> Unit raise EcsError {
   self.insert_component_with_requirements(
     entity,
     key.id(),
     erased_value(value),
     component_write_change_tick(self),
+    caller=hook_caller_from_loc(loc),
   )
 }
 
@@ -302,11 +308,13 @@ pub fn[T] World::get(
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[T] World::update(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
   update : (T) -> T,
+  loc~ : SourceLoc,
 ) -> Bool raise EcsError {
   self.ensure_entity_alive(entity)
   guard self.component_columns.get(key.id()) is Some(store_ref) else {
@@ -316,26 +324,30 @@ pub fn[T] World::update(
   let old_value : T = self.component_value(key, entity, payload)
   let new_value = update(old_value)
   let new_payload = erased_value(new_value)
-  self.run_component_replace_hooks(entity, key.id())
+  let caller = hook_caller_from_loc(loc)
+  self.run_component_replace_hooks(entity, key.id(), caller~)
   store_ref.val.set(entity, new_payload, component_write_change_tick(self))
   |> ignore
-  self.run_component_insert_hooks(entity, key.id())
+  self.run_component_insert_hooks(entity, key.id(), caller~)
   true
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[T] World::remove(
   self : World,
   entity : @core.Entity,
   key : ComponentKey[T],
+  loc~ : SourceLoc,
 ) -> Bool raise EcsError {
   self.ensure_entity_alive(entity)
+  let caller = hook_caller_from_loc(loc)
   match self.component_columns.get(key.id()) {
     Some(store_ref) =>
       match store_ref.val.get(entity) {
         Some(_) => {
-          self.run_component_replace_hooks(entity, key.id())
-          self.run_component_remove_hooks(entity, key.id())
+          self.run_component_replace_hooks(entity, key.id(), caller~)
+          self.run_component_remove_hooks(entity, key.id(), caller~)
           ignore(store_ref.val.remove(entity))
           self.run_remove_observers(entity, key.id())
           self.ensure_removed_component_messages(key.id()).val.send(

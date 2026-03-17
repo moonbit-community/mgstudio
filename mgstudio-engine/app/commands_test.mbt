@@ -43,6 +43,11 @@ struct CommandsTagD {} derive(Eq, Show)
 struct CommandsTagE {} derive(Eq, Show)
 
 ///|
+struct CommandsHookComponent {
+  value : Int
+} derive(Eq, Show)
+
+///|
 let commands_position_key : @ecs.ComponentKey[CommandsPosition] = @ecs.register_component(
   debug_name="tests.app.commands_position",
 )
@@ -83,6 +88,11 @@ let commands_tag_e_key : @ecs.ComponentKey[CommandsTagE] = @ecs.register_compone
 )
 
 ///|
+let commands_hook_component_key : @ecs.ComponentKey[CommandsHookComponent] = @ecs.register_component(
+  debug_name="tests.app.commands_hook_component",
+)
+
+///|
 pub impl @ecs.Component for CommandsPosition with component() {
   commands_position_key
 }
@@ -120,6 +130,46 @@ pub impl @ecs.Component for CommandsTagD with component() {
 ///|
 pub impl @ecs.Component for CommandsTagE with component() {
   commands_tag_e_key
+}
+
+///|
+pub impl @ecs.Component for CommandsHookComponent with component() {
+  commands_hook_component_key
+}
+
+///|
+let commands_hook_callers_ref : Ref[Array[String]] = Ref::new([])
+
+///|
+fn commands_hook_test_reset() -> Unit {
+  commands_hook_callers_ref.val.clear()
+}
+
+///|
+fn commands_install_hook_test_hooks() -> Unit {
+  let hooks = @ecs.register_component_hooks_for_key(commands_hook_component_key)
+  ignore(
+    try! hooks
+    .on_add(fn(_world, context) {
+      if context.caller is Some(caller) {
+        commands_hook_callers_ref.val.push("add:" + caller)
+      } else {
+        commands_hook_callers_ref.val.push("add:none")
+      }
+    })
+    .on_remove(fn(_world, context) {
+      if context.caller is Some(caller) {
+        commands_hook_callers_ref.val.push("remove:" + caller)
+      } else {
+        commands_hook_callers_ref.val.push("remove:none")
+      }
+    }),
+  )
+}
+
+///|
+fn init {
+  commands_install_hook_test_hooks()
 }
 
 ///|
@@ -398,4 +448,39 @@ test "app: Commands entity remove and remove_component defer component removal u
   )
   inspect(try! app.world().get(entity, commands_velocity_key), content="None")
   inspect(try! app.world().get(entity, commands_marker_key), content="None")
+}
+
+///|
+test "app: Commands preserve hook caller provenance across deferred spawn and remove" {
+  commands_hook_test_reset()
+  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+    commands : Commands,
+  ) {
+    let entity = commands.spawn(
+      (CommandsHookComponent::{ value: 1 }, CommandsMarker::{  }),
+    )
+    spawned.val = Some(entity)
+    commands.entity(entity).remove_component(commands_hook_component_key)
+  })
+
+  app = app.run_once()
+
+  guard spawned.val is Some(entity) else {
+    abort("expected Commands::spawn to return an entity")
+  }
+  inspect(app.world().is_alive(entity), content="true")
+  inspect(
+    try! app.world().get(entity, commands_hook_component_key),
+    content="None",
+  )
+  inspect(commands_hook_callers_ref.val.length(), content="2")
+  inspect(
+    commands_hook_callers_ref.val[0].contains("commands_test.mbt"),
+    content="true",
+  )
+  inspect(
+    commands_hook_callers_ref.val[1].contains("commands_test.mbt"),
+    content="true",
+  )
 }

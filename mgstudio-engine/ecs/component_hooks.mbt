@@ -113,8 +113,17 @@ fn component_hooks(component_id : Int) -> ComponentHooks? {
 }
 
 ///|
-fn hook_context(entity : @core.Entity, component_id : Int) -> HookContext {
-  { entity, component_id, caller: None }
+fn hook_caller_from_loc(loc : SourceLoc) -> String? {
+  Some(loc.to_string())
+}
+
+///|
+fn hook_context(
+  entity : @core.Entity,
+  component_id : Int,
+  caller? : String? = None,
+) -> HookContext {
+  { entity, component_id, caller }
 }
 
 ///|
@@ -201,10 +210,11 @@ fn World::run_component_add_hooks(
   self : World,
   entity : @core.Entity,
   component_id : Int,
+  caller? : String? = None,
 ) -> Unit {
   guard component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_add is Some(on_add) {
-    on_add(self, hook_context(entity, component_id))
+    on_add(self, hook_context(entity, component_id, caller~))
   }
 }
 
@@ -213,10 +223,11 @@ fn World::run_component_insert_hooks(
   self : World,
   entity : @core.Entity,
   component_id : Int,
+  caller? : String? = None,
 ) -> Unit {
   guard component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_insert is Some(on_insert) {
-    on_insert(self, hook_context(entity, component_id))
+    on_insert(self, hook_context(entity, component_id, caller~))
   }
 }
 
@@ -225,10 +236,11 @@ fn World::run_component_replace_hooks(
   self : World,
   entity : @core.Entity,
   component_id : Int,
+  caller? : String? = None,
 ) -> Unit {
   guard component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_replace is Some(on_replace) {
-    on_replace(self, hook_context(entity, component_id))
+    on_replace(self, hook_context(entity, component_id, caller~))
   }
 }
 
@@ -237,10 +249,11 @@ fn World::run_component_remove_hooks(
   self : World,
   entity : @core.Entity,
   component_id : Int,
+  caller? : String? = None,
 ) -> Unit {
   guard component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_remove is Some(on_remove) {
-    on_remove(self, hook_context(entity, component_id))
+    on_remove(self, hook_context(entity, component_id, caller~))
   }
 }
 
@@ -249,9 +262,10 @@ fn World::run_component_despawn_hooks(
   self : World,
   entity : @core.Entity,
   component_id : Int,
+  caller? : String? = None,
 ) -> Unit {
   guard component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_despawn is Some(on_despawn) {
-    on_despawn(self, hook_context(entity, component_id))
+    on_despawn(self, hook_context(entity, component_id, caller~))
   }
 }

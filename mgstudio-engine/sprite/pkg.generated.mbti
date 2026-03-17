@@ -337,7 +337,8 @@ pub fn Camera2dBundle::new(Camera, @math.Transform) -> Self
 pub fn Camera2dBundle::new_with_layers(Camera, @math.Transform, RenderTarget, RenderLayers) -> Self
 pub fn Camera2dBundle::new_with_projection(Camera, Projection, @math.Transform) -> Self
 pub fn Camera2dBundle::new_with_target(Camera, @math.Transform, RenderTarget) -> Self
-pub fn Camera2dBundle::spawn(Self, @ecs.World) -> @core.Entity
+#callsite(autofill(loc))
+pub fn Camera2dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub fn Camera2dBundle::with_bloom(Self, @post_process.Bloom?) -> Self
 pub fn Camera2dBundle::with_color_grading(Self, @post_process.ColorGrading?) -> Self
 pub fn Camera2dBundle::with_deband_dither(Self, @post_process.DebandDither?) -> Self

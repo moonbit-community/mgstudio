@@ -456,7 +456,8 @@ pub struct Camera3dBundle {
 }
 pub fn Camera3dBundle::new(@sprite.Camera, @math.Transform) -> Self
 pub fn Camera3dBundle::new_with_projection(@sprite.Camera, Projection, @math.Transform) -> Self
-pub fn Camera3dBundle::spawn(Self, @ecs.World) -> @core.Entity
+#callsite(autofill(loc))
+pub fn Camera3dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub fn Camera3dBundle::with_atmosphere(Self, @light.Atmosphere?) -> Self
 pub fn Camera3dBundle::with_atmosphere_settings(Self, @light.AtmosphereSettings?) -> Self
 pub fn Camera3dBundle::with_auto_exposure(Self, AutoExposure?) -> Self
@@ -753,7 +754,8 @@ pub struct MeshMaterial3dBundle {
   view_visibility : @visibility.ViewVisibility
 }
 pub fn MeshMaterial3dBundle::new(Mesh3d, @material.MeshMaterial3d, @math.Transform) -> Self
-pub fn MeshMaterial3dBundle::spawn(Self, @ecs.World) -> @core.Entity
+#callsite(autofill(loc))
+pub fn MeshMaterial3dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub impl @app.CommandSpawnComponents for MeshMaterial3dBundle
 
 pub struct MeshRayCastHit {

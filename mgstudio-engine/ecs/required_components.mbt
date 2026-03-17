@@ -333,10 +333,15 @@ fn World::insert_component_with_requirements(
   component_id : Int,
   payload : ErasedValue,
   change_tick : @core.Tick,
+  caller? : String? = None,
 ) -> Unit raise EcsError {
   self.ensure_entity_alive(entity)
   self.insert_component_with_requirements_unchecked(
-    entity, component_id, payload, change_tick,
+    entity,
+    component_id,
+    payload,
+    change_tick,
+    caller~,
   )
 }
 
@@ -347,19 +352,20 @@ fn World::insert_component_with_requirements_unchecked(
   component_id : Int,
   payload : ErasedValue,
   change_tick : @core.Tick,
+  caller? : String? = None,
 ) -> Unit {
   let store_ref = self.ensure_component_store(component_id)
   let replacing = store_ref.val.get(entity) is Some(_)
   if replacing {
-    self.run_component_replace_hooks(entity, component_id)
+    self.run_component_replace_hooks(entity, component_id, caller~)
   }
   store_ref.val.insert(entity, payload, change_tick)
   self.mark_component_used(component_id)
 
   if !replacing {
-    self.run_component_add_hooks(entity, component_id)
+    self.run_component_add_hooks(entity, component_id, caller~)
   }
-  self.run_component_insert_hooks(entity, component_id)
+  self.run_component_insert_hooks(entity, component_id, caller~)
   self.run_insert_observers(entity, component_id)
   if replacing {
     return
@@ -378,6 +384,7 @@ fn World::insert_component_with_requirements_unchecked(
       entry.component_id,
       (entry.init)(),
       change_tick,
+      caller~,
     )
   }
 }

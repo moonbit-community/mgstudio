@@ -5741,25 +5741,29 @@ fn camera2d_bundle_insert(
   bundle : Camera2dBundle,
   world : @ecs.World,
   entity : @core.Entity,
+  loc~ : SourceLoc,
 ) -> Unit {
-  try! (world.set(entity, ecs_key_camera2d, bundle.camera2d) |> ignore)
-  try! (world.set(entity, ecs_key_camera, bundle.camera) |> ignore)
-  try! (world.set(entity, ecs_key_projection, bundle.projection) |> ignore)
-  try! (world.set(entity, ecs_key_render_target, bundle.target) |> ignore)
-  try! (world.set(entity, ecs_key_render_layers, bundle.layers) |> ignore)
+  try! (world.set(entity, ecs_key_camera2d, bundle.camera2d, loc~) |> ignore)
+  try! (world.set(entity, ecs_key_camera, bundle.camera, loc~) |> ignore)
+  try! (world.set(entity, ecs_key_projection, bundle.projection, loc~) |> ignore)
+  try! (world.set(entity, ecs_key_render_target, bundle.target, loc~) |> ignore)
+  try! (world.set(entity, ecs_key_render_layers, bundle.layers, loc~) |> ignore)
   if bundle.bloom is Some(bloom) {
-    try! (world.set(entity, ecs_key_bloom, bloom) |> ignore)
+    try! (world.set(entity, ecs_key_bloom, bloom, loc~) |> ignore)
   }
   if bundle.tonemapping is Some(tonemapping) {
-    try! (world.set(entity, ecs_key_tonemapping, tonemapping) |> ignore)
+    try! (world.set(entity, ecs_key_tonemapping, tonemapping, loc~) |> ignore)
   }
   if bundle.color_grading is Some(color_grading) {
-    try! (world.set(entity, ecs_key_color_grading, color_grading) |> ignore)
+    try! (world.set(entity, ecs_key_color_grading, color_grading, loc~)
+    |> ignore)
   }
   if bundle.deband_dither is Some(deband_dither) {
-    try! (world.set(entity, ecs_key_deband_dither, deband_dither) |> ignore)
+    try! (world.set(entity, ecs_key_deband_dither, deband_dither, loc~)
+    |> ignore)
   }
-  try! (world.set(entity, @math.ecs_key_transform, bundle.transform) |> ignore)
+  try! (world.set(entity, @math.ecs_key_transform, bundle.transform, loc~)
+  |> ignore)
 }
 
 ///|
@@ -5768,17 +5772,20 @@ pub impl @app.CommandSpawnComponents for Camera2dBundle with spawn_components(
   world,
   entity,
   _change_tick,
+  loc~,
 ) {
-  camera2d_bundle_insert(self, world, entity)
+  camera2d_bundle_insert(self, world, entity, loc~)
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn Camera2dBundle::spawn(
   self : Camera2dBundle,
   world : @ecs.World,
+  loc~ : SourceLoc,
 ) -> @core.Entity {
   let e = world.spawn_empty()
-  camera2d_bundle_insert(self, world, e)
+  camera2d_bundle_insert(self, world, e, loc~)
   e
 }
 

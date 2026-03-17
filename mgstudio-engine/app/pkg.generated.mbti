@@ -361,8 +361,10 @@ pub struct Commands {
   queue : Array[(@ecs.World, Int) -> Unit]
 }
 pub fn Commands::entity(Self, @core.Entity) -> EntityCommands
-pub fn[T : CommandSpawnComponents] Commands::spawn(Self, T) -> @core.Entity
-pub fn[T : CommandSpawnComponents] Commands::spawn_batch(Self, Array[T]) -> Array[@core.Entity]
+#callsite(autofill(loc))
+pub fn[T : CommandSpawnComponents] Commands::spawn(Self, T, loc~ : SourceLoc) -> @core.Entity
+#callsite(autofill(loc))
+pub fn[T : CommandSpawnComponents] Commands::spawn_batch(Self, Array[T], loc~ : SourceLoc) -> Array[@core.Entity]
 pub fn Commands::spawn_empty(Self) -> @core.Entity
 pub impl SystemParam for Commands
 
@@ -370,11 +372,16 @@ pub struct EntityCommands {
   commands : Commands
   entity : @core.Entity
 }
-pub fn EntityCommands::despawn(Self) -> Unit
-pub fn[T : CommandSpawnComponents] EntityCommands::insert(Self, T) -> Unit
-pub fn[T : @ecs.Component] EntityCommands::insert_component(Self, T) -> Unit
-pub fn[T] EntityCommands::remove(Self, @ecs.ComponentKey[T]) -> Unit
-pub fn[T] EntityCommands::remove_component(Self, @ecs.ComponentKey[T]) -> Unit
+#callsite(autofill(loc))
+pub fn EntityCommands::despawn(Self, loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T : CommandSpawnComponents] EntityCommands::insert(Self, T, loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T : @ecs.Component] EntityCommands::insert_component(Self, T, loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T] EntityCommands::remove(Self, @ecs.ComponentKey[T], loc~ : SourceLoc) -> Unit
+#callsite(autofill(loc))
+pub fn[T] EntityCommands::remove_component(Self, @ecs.ComponentKey[T], loc~ : SourceLoc) -> Unit
 
 pub(all) enum ExecutorKind {
   SingleThreaded
@@ -757,7 +764,7 @@ pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.W
 pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World])
 
 pub(open) trait CommandSpawnComponents {
-  spawn_components(Self, @ecs.World, @core.Entity, Int) -> Unit
+  spawn_components(Self, @ecs.World, @core.Entity, Int, loc~ : SourceLoc) -> Unit
 }
 pub impl[A : @ecs.Component, B : @ecs.Component] CommandSpawnComponents for (A, B)
 pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] CommandSpawnComponents for (A, B, C)

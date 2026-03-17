@@ -124,12 +124,17 @@ pub fn[T] ComponentAccess::for_each_added(Self[T], @core.SystemTicks, (@core.Ent
 pub fn[T] ComponentAccess::for_each_changed(Self[T], @core.SystemTicks, (@core.Entity, T) -> Unit) -> Unit
 pub fn[T] ComponentAccess::get(Self[T], @core.Entity) -> T?
 pub fn[T] ComponentAccess::get_ticks(Self[T], @core.Entity) -> @core.ComponentTicks?
-pub fn[T] ComponentAccess::insert(Self[T], @core.Entity, T, Int) -> Unit
+#callsite(autofill(loc))
+pub fn[T] ComponentAccess::insert(Self[T], @core.Entity, T, Int, loc~ : SourceLoc) -> Unit
 pub fn[T] ComponentAccess::len(Self[T]) -> Int
-pub fn[T] ComponentAccess::remove(Self[T], @core.Entity) -> T?
-pub fn[T] ComponentAccess::set(Self[T], @core.Entity, T, Int) -> Bool
-pub fn[T] ComponentAccess::update(Self[T], @core.Entity, Int, (T) -> T) -> Bool
-pub fn[T] ComponentAccess::upsert(Self[T], @core.Entity, T, Int) -> Unit
+#callsite(autofill(loc))
+pub fn[T] ComponentAccess::remove(Self[T], @core.Entity, loc~ : SourceLoc) -> T?
+#callsite(autofill(loc))
+pub fn[T] ComponentAccess::set(Self[T], @core.Entity, T, Int, loc~ : SourceLoc) -> Bool
+#callsite(autofill(loc))
+pub fn[T] ComponentAccess::update(Self[T], @core.Entity, Int, (T) -> T, loc~ : SourceLoc) -> Bool
+#callsite(autofill(loc))
+pub fn[T] ComponentAccess::upsert(Self[T], @core.Entity, T, Int, loc~ : SourceLoc) -> Unit
 
 pub(all) enum ComponentHookKind {
   OnAdd
@@ -652,7 +657,8 @@ pub fn[T] World::clear_messages(Self, MessageKey[T]) -> Unit
 pub fn[T] World::component(Self, ComponentKey[T]) -> ComponentAccess[T]
 pub fn[T : Component] World::component_typed(Self) -> ComponentAccess[T]
 pub fn[T] World::contains_message(Self, MessageKey[T]) -> Bool
-pub fn World::despawn(Self, @core.Entity) -> Unit raise EcsError
+#callsite(autofill(loc))
+pub fn World::despawn(Self, @core.Entity, loc~ : SourceLoc) -> Unit raise EcsError
 pub fn World::entity_count(Self) -> Int
 pub fn[T] World::get(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
 pub fn[T : Component] World::get_component(Self, @core.Entity) -> T? raise EcsError
@@ -693,22 +699,27 @@ pub fn[T : Component] World::register_component_hooks(Self) -> ComponentHooksBui
 pub fn[T] World::register_component_hooks_for_key(Self, ComponentKey[T]) -> ComponentHooksBuilder[T] raise ComponentHooksError
 pub fn[T, R : Default] World::register_required_components(Self, ComponentKey[T], ComponentKey[R]) -> Unit raise RequiredComponentsError
 pub fn[T, R] World::register_required_components_with(Self, ComponentKey[T], ComponentKey[R], () -> R) -> Unit raise RequiredComponentsError
-pub fn[T] World::remove(Self, @core.Entity, ComponentKey[T]) -> Bool raise EcsError
+#callsite(autofill(loc))
+pub fn[T] World::remove(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> Bool raise EcsError
 pub fn[T] World::remove_resource(Self, ResourceKey[T]) -> T? raise EcsError
 pub fn[T] World::removed_components(Self, ComponentKey[T], @core.SystemTicks) -> RemovedComponents[T]
 pub fn[T] World::resource(Self, ResourceKey[T]) -> ResourceAccess[T]
 pub fn[T] World::send_event(Self, EventKey[T], T) -> Unit
 pub fn[T] World::send_message(Self, MessageKey[T], T) -> Int
 pub fn[T] World::send_message_batch(Self, MessageKey[T], Array[T]) -> Unit
-pub fn[T] World::set(Self, @core.Entity, ComponentKey[T], T) -> Unit raise EcsError
-pub fn[T : Component] World::set_component(Self, @core.Entity, T) -> Unit raise EcsError
+#callsite(autofill(loc))
+pub fn[T] World::set(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Unit raise EcsError
+#callsite(autofill(loc))
+pub fn[T : Component] World::set_component(Self, @core.Entity, T, loc~ : SourceLoc) -> Unit raise EcsError
 pub fn World::set_system_context(Self, @core.SystemContext) -> Unit
 pub fn World::spawn(Self) -> @core.Entity
 pub fn World::spawn_empty(Self) -> @core.Entity
 pub fn[T, R : Default] World::try_register_required_components(Self, ComponentKey[T], ComponentKey[R]) -> Result[Unit, RequiredComponentsError]
 pub fn[T, R] World::try_register_required_components_with(Self, ComponentKey[T], ComponentKey[R], () -> R) -> Result[Unit, RequiredComponentsError]
-pub fn[T] World::update(Self, @core.Entity, ComponentKey[T], (T) -> T) -> Bool raise EcsError
-pub fn[T : Component] World::update_component(Self, @core.Entity, (T) -> T) -> Bool raise EcsError
+#callsite(autofill(loc))
+pub fn[T] World::update(Self, @core.Entity, ComponentKey[T], (T) -> T, loc~ : SourceLoc) -> Bool raise EcsError
+#callsite(autofill(loc))
+pub fn[T : Component] World::update_component(Self, @core.Entity, (T) -> T, loc~ : SourceLoc) -> Bool raise EcsError
 pub fn World::update_messages(Self) -> Unit
 pub fn[T] World::update_resource(Self, ResourceKey[T], (T) -> T) -> Bool raise EcsError
 pub fn World::world_id(Self) -> Int

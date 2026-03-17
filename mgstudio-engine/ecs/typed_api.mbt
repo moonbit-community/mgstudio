@@ -54,21 +54,25 @@ pub fn[T : Component] World::get_component_ref(
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[T : Component] World::set_component(
   self : World,
   entity : @core.Entity,
   value : T,
+  loc~ : SourceLoc,
 ) -> Unit raise EcsError {
   let key : ComponentKey[T] = Component::component()
-  self.set(entity, key, value)
+  self.set(entity, key, value, loc~)
 }
 
 ///|
+#callsite(autofill(loc))
 pub fn[T : Component] World::update_component(
   self : World,
   entity : @core.Entity,
   update : (T) -> T,
+  loc~ : SourceLoc,
 ) -> Bool raise EcsError {
   let key : ComponentKey[T] = Component::component()
-  self.update(entity, key, update)
+  self.update(entity, key, update, loc~)
 }

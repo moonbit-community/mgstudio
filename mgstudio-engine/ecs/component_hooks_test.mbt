@@ -63,14 +63,18 @@ let hook_entity_ids_ref : Ref[Array[Int]] = Ref::new([])
 let hook_component_id_matches_ref : Ref[Bool] = Ref::new(true)
 
 ///|
-let hook_callers_none_ref : Ref[Bool] = Ref::new(true)
+let hook_callers_present_ref : Ref[Bool] = Ref::new(true)
+
+///|
+let hook_callers_match_test_file_ref : Ref[Bool] = Ref::new(true)
 
 ///|
 fn hook_test_reset() -> Unit {
   hook_event_log_ref.val.clear()
   hook_entity_ids_ref.val.clear()
   hook_component_id_matches_ref.val = true
-  hook_callers_none_ref.val = true
+  hook_callers_present_ref.val = true
+  hook_callers_match_test_file_ref.val = true
 }
 
 ///|
@@ -99,8 +103,15 @@ fn hook_test_record(
   if context.component_id != hook_test_component_key.id() {
     hook_component_id_matches_ref.val = false
   }
-  if context.caller is Some(_) {
-    hook_callers_none_ref.val = false
+  match context.caller {
+    Some(caller) =>
+      if !caller.contains("component_hooks_test.mbt") {
+        hook_callers_match_test_file_ref.val = false
+      }
+    None => {
+      hook_callers_present_ref.val = false
+      hook_callers_match_test_file_ref.val = false
+    }
   }
 }
 
@@ -139,7 +150,8 @@ test "ecs component hooks: first insert fires add then insert with readable payl
   inspect(hook_event_log_ref.val, content="[\"add:1\", \"insert:1\"]")
   inspect(hook_entity_ids_ref.val, content="[0, 0]")
   inspect(hook_component_id_matches_ref.val, content="true")
-  inspect(hook_callers_none_ref.val, content="true")
+  inspect(hook_callers_present_ref.val, content="true")
+  inspect(hook_callers_match_test_file_ref.val, content="true")
 }
 
 ///|
@@ -160,7 +172,8 @@ test "ecs component hooks: replace fires replace then insert around the new payl
   inspect(hook_event_log_ref.val, content="[\"replace:1\", \"insert:2\"]")
   inspect(hook_entity_ids_ref.val, content="[0, 0]")
   inspect(hook_component_id_matches_ref.val, content="true")
-  inspect(hook_callers_none_ref.val, content="true")
+  inspect(hook_callers_present_ref.val, content="true")
+  inspect(hook_callers_match_test_file_ref.val, content="true")
 }
 
 ///|
@@ -178,7 +191,8 @@ test "ecs component hooks: remove keeps the old payload visible through replace 
   inspect(hook_event_log_ref.val, content="[\"replace:7\", \"remove:7\"]")
   inspect(hook_entity_ids_ref.val, content="[0, 0]")
   inspect(hook_component_id_matches_ref.val, content="true")
-  inspect(hook_callers_none_ref.val, content="true")
+  inspect(hook_callers_present_ref.val, content="true")
+  inspect(hook_callers_match_test_file_ref.val, content="true")
   inspect(try! world.get(entity, hook_test_component_key), content="None")
 }
 
@@ -201,8 +215,33 @@ test "ecs component hooks: despawn fires despawn replace remove before entity te
   )
   inspect(hook_entity_ids_ref.val, content="[0, 0, 0]")
   inspect(hook_component_id_matches_ref.val, content="true")
-  inspect(hook_callers_none_ref.val, content="true")
+  inspect(hook_callers_present_ref.val, content="true")
+  inspect(hook_callers_match_test_file_ref.val, content="true")
   inspect(world.is_alive(entity), content="false")
+}
+
+///|
+test "ecs component hooks: component access mutation paths preserve caller provenance" {
+  hook_test_reset()
+  let world = World::new()
+  let entity = world.spawn()
+  let access = world.component(hook_test_component_key)
+
+  access.insert(
+    entity,
+    HookTestComponent::{ value: 3 },
+    world.read_change_tick(),
+  )
+
+  inspect(hook_event_log_ref.val, content="[\"add:3\", \"insert:3\"]")
+  inspect(hook_callers_present_ref.val, content="true")
+  inspect(hook_callers_match_test_file_ref.val, content="true")
+
+  hook_test_reset()
+  ignore(access.remove(entity))
+  inspect(hook_event_log_ref.val, content="[\"replace:3\", \"remove:3\"]")
+  inspect(hook_callers_present_ref.val, content="true")
+  inspect(hook_callers_match_test_file_ref.val, content="true")
 }
 
 ///|
