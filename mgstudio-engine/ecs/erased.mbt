@@ -36,8 +36,3 @@ fn[T] ErasedValue::to_value(self : ErasedValue) -> T raise @any.TypeMismatch {
 fn ErasedValue::type_name(self : ErasedValue) -> String {
   self.value.type_name()
 }
-
-///|
-fn ErasedValue::to_any(self : ErasedValue) -> @any.Any {
-  self.value
-}
