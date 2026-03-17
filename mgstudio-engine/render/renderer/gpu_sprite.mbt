@@ -120,7 +120,7 @@ fn ensure_sprite_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
       )
     if !view_ok {
       view_builder.free()
-      fatal("wgpu: failed to build sprite bevy view bind group layout")
+      fatal("wgpu: failed to build sprite view bind group layout")
     }
     let bgl_view = view_builder.finish(
       backend.device,
@@ -140,7 +140,7 @@ fn ensure_sprite_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
       )
     if !tex_ok {
       tex_builder.free()
-      fatal("wgpu: failed to build sprite bevy texture bind group layout")
+      fatal("wgpu: failed to build sprite texture bind group layout")
     }
     let bgl_tex = tex_builder.finish(
       backend.device,
@@ -181,7 +181,7 @@ fn ensure_sprite_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
       view_bg_builder.add_sampler(2U, lut_sampler)
     if !view_bg_ok {
       view_bg_builder.free()
-      fatal("wgpu: failed to build sprite bevy view bind group")
+      fatal("wgpu: failed to build sprite view bind group")
     }
     let view_bg = view_bg_builder.finish(
       backend.device,
@@ -206,7 +206,7 @@ fn create_sprite_render_pipeline(
   label : String,
 ) -> @wgpu.RenderPipeline raise GpuBackendError {
   guard backend.sprite_render_pipeline_layout is Some(layout) else {
-    fatal("wgpu: sprite bevy pipeline layout is None")
+    fatal("wgpu: sprite pipeline layout is None")
   }
   let modules = copy_registered_wgsl_import_module_paths()
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
@@ -241,7 +241,7 @@ fn create_sprite_render_pipeline(
     err => {
       err |> ignore
       sm.release()
-      fatal("wgpu: failed to build sprite bevy render pipeline")
+      fatal("wgpu: failed to build sprite render pipeline")
     }
   }
   pipeline.set_label(label)
