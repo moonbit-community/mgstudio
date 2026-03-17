@@ -111,10 +111,14 @@ test "renderer: motion vector resources initialize prepass-style bind groups" {
   let backend = GpuBackend::new(assets_base="assets")
   ensure_mesh3d_motion_vector_pipeline(backend)
   let ok = backend.mesh3d_motion_vector_bgl_view is Some(_) &&
+    backend.mesh3d_motion_vector_bgl_environment is Some(_) &&
     backend.mesh3d_motion_vector_bgl_mesh is Some(_) &&
     backend.mesh3d_motion_vector_view_buf is Some(_) &&
     backend.mesh3d_motion_vector_previous_view_buf is Some(_) &&
     backend.mesh3d_motion_vector_view_bg is Some(_) &&
+    backend.mesh3d_motion_vector_environment_view is Some(_) &&
+    backend.mesh3d_motion_vector_environment_sampler is Some(_) &&
+    backend.mesh3d_motion_vector_environment_bg is Some(_) &&
     backend.mesh3d_motion_vector_mesh_buf is Some(_) &&
     backend.mesh3d_motion_vector_mesh_bg is Some(_)
   inspect(ok, content="true")
@@ -214,7 +218,7 @@ test "renderer: motion vector shader reads Bevy-style view and previous-view bin
     content="true",
   )
   inspect(
-    wgsl.contains("@group(1) @binding(0) var<uniform> mesh : array<Mesh, 1u>;"),
+    wgsl.contains("@group(2) @binding(0) var<uniform> mesh : array<Mesh, 1u>;"),
     content="true",
   )
 }

@@ -22,7 +22,7 @@
 }
 
 @group(0) @binding(0) var<uniform> view : View;
-@group(1) @binding(0) var<uniform> mesh : array<Mesh, 1u>;
+@group(2) @binding(0) var<uniform> mesh : array<Mesh, 1u>;
 
 struct VertexOut {
   @builtin(position) position : vec4<f32>,

@@ -448,12 +448,17 @@ pub struct GpuBackend {
     GpuMesh3dPreprocessCameraUploadState,
   ]
   mut mesh3d_motion_vector_bgl_view : @wgpu.BindGroupLayout?
+  mut mesh3d_motion_vector_bgl_environment : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_mesh : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh3d_motion_vector_pipeline : @wgpu.RenderPipeline?
   mut mesh3d_motion_vector_view_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_previous_view_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_view_bg : @wgpu.BindGroup?
+  mut mesh3d_motion_vector_environment_texture : @wgpu.Texture?
+  mut mesh3d_motion_vector_environment_view : @wgpu.TextureView?
+  mut mesh3d_motion_vector_environment_sampler : @wgpu.Sampler?
+  mut mesh3d_motion_vector_environment_bg : @wgpu.BindGroup?
   mut mesh3d_motion_vector_mesh_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_mesh_bg : @wgpu.BindGroup?
   mut motion_blur_bgl : @wgpu.BindGroupLayout?
@@ -821,12 +826,17 @@ pub fn GpuBackend::new(
     mesh3d_instance_uniform_used: 0,
     mesh3d_preprocess_camera_upload_states: [],
     mesh3d_motion_vector_bgl_view: None,
+    mesh3d_motion_vector_bgl_environment: None,
     mesh3d_motion_vector_bgl_mesh: None,
     mesh3d_motion_vector_pipeline_layout: None,
     mesh3d_motion_vector_pipeline: None,
     mesh3d_motion_vector_view_buf: None,
     mesh3d_motion_vector_previous_view_buf: None,
     mesh3d_motion_vector_view_bg: None,
+    mesh3d_motion_vector_environment_texture: None,
+    mesh3d_motion_vector_environment_view: None,
+    mesh3d_motion_vector_environment_sampler: None,
+    mesh3d_motion_vector_environment_bg: None,
     mesh3d_motion_vector_mesh_buf: None,
     mesh3d_motion_vector_mesh_bg: None,
     motion_blur_bgl: None,
