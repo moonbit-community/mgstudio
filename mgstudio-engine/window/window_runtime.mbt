@@ -523,12 +523,21 @@ fn window_runtime_close_host_window(
 
 ///|
 fn window_runtime_on_remove(
-  world : @ecs.World,
+  world : @ecs.DeferredWorld,
   context : @ecs.HookContext,
 ) -> Unit {
-  window_runtime_close_host_window(world, context.entity)
-  window_remove_component(world, context.entity, ecs_key_window_runtime)
-  window_remove_component(world, context.entity, ecs_key_closing_window)
+  let deferred_world = world.world()
+  window_runtime_close_host_window(deferred_world, context.entity)
+  window_remove_component(
+    deferred_world,
+    context.entity,
+    ecs_key_window_runtime,
+  )
+  window_remove_component(
+    deferred_world,
+    context.entity,
+    ecs_key_closing_window,
+  )
 }
 
 ///|

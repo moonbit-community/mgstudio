@@ -336,6 +336,7 @@ fn World::insert_component_with_requirements(
   caller? : String? = None,
 ) -> Unit raise EcsError {
   self.ensure_entity_alive(entity)
+  let outermost = self.begin_deferred_hook_command_scope()
   self.insert_component_with_requirements_unchecked(
     entity,
     component_id,
@@ -343,6 +344,7 @@ fn World::insert_component_with_requirements(
     change_tick,
     caller~,
   )
+  self.end_deferred_hook_command_scope(outermost)
 }
 
 ///|

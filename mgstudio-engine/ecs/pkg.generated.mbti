@@ -145,22 +145,22 @@ pub(all) enum ComponentHookKind {
 }
 
 pub struct ComponentHooks {
-  on_add : ((World, HookContext) -> Unit)?
-  on_insert : ((World, HookContext) -> Unit)?
-  on_replace : ((World, HookContext) -> Unit)?
-  on_remove : ((World, HookContext) -> Unit)?
-  on_despawn : ((World, HookContext) -> Unit)?
+  on_add : ((DeferredWorld, HookContext) -> Unit)?
+  on_insert : ((DeferredWorld, HookContext) -> Unit)?
+  on_replace : ((DeferredWorld, HookContext) -> Unit)?
+  on_remove : ((DeferredWorld, HookContext) -> Unit)?
+  on_despawn : ((DeferredWorld, HookContext) -> Unit)?
 }
-pub fn ComponentHooks::new(on_add? : ((World, HookContext) -> Unit)?, on_insert? : ((World, HookContext) -> Unit)?, on_replace? : ((World, HookContext) -> Unit)?, on_remove? : ((World, HookContext) -> Unit)?, on_despawn? : ((World, HookContext) -> Unit)?) -> Self
+pub fn ComponentHooks::new(on_add? : ((DeferredWorld, HookContext) -> Unit)?, on_insert? : ((DeferredWorld, HookContext) -> Unit)?, on_replace? : ((DeferredWorld, HookContext) -> Unit)?, on_remove? : ((DeferredWorld, HookContext) -> Unit)?, on_despawn? : ((DeferredWorld, HookContext) -> Unit)?) -> Self
 
 pub struct ComponentHooksBuilder[T] {
   key : ComponentKey[T]
 }
-pub fn[T] ComponentHooksBuilder::on_add(Self[T], (World, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
-pub fn[T] ComponentHooksBuilder::on_despawn(Self[T], (World, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
-pub fn[T] ComponentHooksBuilder::on_insert(Self[T], (World, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
-pub fn[T] ComponentHooksBuilder::on_remove(Self[T], (World, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
-pub fn[T] ComponentHooksBuilder::on_replace(Self[T], (World, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
+pub fn[T] ComponentHooksBuilder::on_add(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
+pub fn[T] ComponentHooksBuilder::on_despawn(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
+pub fn[T] ComponentHooksBuilder::on_insert(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
+pub fn[T] ComponentHooksBuilder::on_remove(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
+pub fn[T] ComponentHooksBuilder::on_replace(Self[T], (DeferredWorld, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
 
 pub struct ComponentKey[T] {
   id : Int
@@ -200,6 +200,36 @@ pub fn[T] ComponentRef::is_added(Self[T]) -> Bool
 pub fn[T] ComponentRef::is_changed(Self[T]) -> Bool
 pub fn[T] ComponentRef::ticks(Self[T]) -> @core.ComponentTicks
 pub fn[T] ComponentRef::value(Self[T]) -> T
+
+pub struct DeferredEntityCommands {
+  commands : DeferredWorldCommands
+  entity : @core.Entity
+}
+#callsite(autofill(loc))
+pub fn DeferredEntityCommands::despawn(Self, loc~ : SourceLoc) -> Unit
+
+pub struct DeferredWorld {
+  world : World
+}
+pub fn DeferredWorld::commands(Self) -> DeferredWorldCommands
+pub fn[T] DeferredWorld::component(Self, ComponentKey[T]) -> ComponentAccess[T]
+#callsite(autofill(loc))
+pub fn DeferredWorld::despawn(Self, @core.Entity, loc~ : SourceLoc) -> Unit raise EcsError
+pub fn[T] DeferredWorld::get(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
+pub fn DeferredWorld::is_alive(Self, @core.Entity) -> Bool
+pub fn DeferredWorld::read_change_tick(Self) -> Int
+#callsite(autofill(loc))
+pub fn[T] DeferredWorld::remove(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> Bool raise EcsError
+pub fn[T] DeferredWorld::resource(Self, ResourceKey[T]) -> ResourceAccess[T]
+#callsite(autofill(loc))
+pub fn[T] DeferredWorld::set(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Unit raise EcsError
+pub fn DeferredWorld::spawn_empty(Self) -> @core.Entity
+pub fn DeferredWorld::world(Self) -> World
+
+pub struct DeferredWorldCommands {
+  world : World
+}
+pub fn DeferredWorldCommands::entity(Self, @core.Entity) -> DeferredEntityCommands
 
 pub struct EntityQuery[F] {
   world : World
@@ -646,6 +676,8 @@ pub struct World {
   resources : Map[Int, ResourceSlot]
   mut previous_events : Map[Int, Array[ErasedValue]]
   current_events : Map[Int, Array[ErasedValue]]
+  mut deferred_hook_command_depth : Int
+  deferred_hook_commands : Array[(World) -> Unit]
 }
 pub fn[E : ObserverEvent, C : Component] World::add_entity_observer(Self, @core.Entity, (On[E, C]) -> Unit) -> ObserverHandle
 pub fn[E : ObserverEvent, C : Component] World::add_observer(Self, (On[E, C]) -> Unit) -> ObserverHandle

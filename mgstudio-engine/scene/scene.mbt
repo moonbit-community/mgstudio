@@ -641,20 +641,23 @@ fn scene_unregister_root_instance(
 }
 
 ///|
-fn scene_root_on_remove(world : @ecs.World, context : @ecs.HookContext) -> Unit {
-  scene_unregister_root_instance(world, context.entity)
+fn scene_root_on_remove(
+  world : @ecs.DeferredWorld,
+  context : @ecs.HookContext,
+) -> Unit {
+  scene_unregister_root_instance(world.world(), context.entity)
 }
 
 ///|
 fn scene_instance_on_remove(
-  world : @ecs.World,
+  world : @ecs.DeferredWorld,
   context : @ecs.HookContext,
 ) -> Unit {
   guard (try! world.get(context.entity, ecs_key_scene_instance))
     is Some(instance) else {
     return
   }
-  scene_unregister_instance(world, instance.instance_id)
+  scene_unregister_instance(world.world(), instance.instance_id)
 }
 
 ///|

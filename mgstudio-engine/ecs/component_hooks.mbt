@@ -36,12 +36,31 @@ pub struct HookContext {
 }
 
 ///|
+type DeferredHookCommand = (World) -> Unit
+
+///|
+pub struct DeferredWorld {
+  world : World
+}
+
+///|
+pub struct DeferredWorldCommands {
+  world : World
+}
+
+///|
+pub struct DeferredEntityCommands {
+  commands : DeferredWorldCommands
+  entity : @core.Entity
+}
+
+///|
 pub struct ComponentHooks {
-  on_add : ((World, HookContext) -> Unit)?
-  on_insert : ((World, HookContext) -> Unit)?
-  on_replace : ((World, HookContext) -> Unit)?
-  on_remove : ((World, HookContext) -> Unit)?
-  on_despawn : ((World, HookContext) -> Unit)?
+  on_add : ((DeferredWorld, HookContext) -> Unit)?
+  on_insert : ((DeferredWorld, HookContext) -> Unit)?
+  on_replace : ((DeferredWorld, HookContext) -> Unit)?
+  on_remove : ((DeferredWorld, HookContext) -> Unit)?
+  on_despawn : ((DeferredWorld, HookContext) -> Unit)?
 }
 
 ///|
@@ -50,12 +69,118 @@ pub struct ComponentHooksBuilder[T] {
 }
 
 ///|
+pub fn DeferredWorld::world(self : DeferredWorld) -> World {
+  self.world
+}
+
+///|
+pub fn DeferredWorld::read_change_tick(self : DeferredWorld) -> @core.Tick {
+  self.world.read_change_tick()
+}
+
+///|
+pub fn DeferredWorld::is_alive(
+  self : DeferredWorld,
+  entity : @core.Entity,
+) -> Bool {
+  self.world.is_alive(entity)
+}
+
+///|
+pub fn DeferredWorld::spawn_empty(self : DeferredWorld) -> @core.Entity {
+  self.world.spawn_empty()
+}
+
+///|
+pub fn[T] DeferredWorld::get(
+  self : DeferredWorld,
+  entity : @core.Entity,
+  key : ComponentKey[T],
+) -> T? raise EcsError {
+  self.world.get(entity, key)
+}
+
+///|
+pub fn[T] DeferredWorld::component(
+  self : DeferredWorld,
+  key : ComponentKey[T],
+) -> ComponentAccess[T] {
+  self.world.component(key)
+}
+
+///|
+pub fn[T] DeferredWorld::resource(
+  self : DeferredWorld,
+  key : ResourceKey[T],
+) -> ResourceAccess[T] {
+  self.world.resource(key)
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T] DeferredWorld::set(
+  self : DeferredWorld,
+  entity : @core.Entity,
+  key : ComponentKey[T],
+  component : T,
+  loc~ : SourceLoc,
+) -> Unit raise EcsError {
+  self.world.set(entity, key, component, loc~)
+}
+
+///|
+#callsite(autofill(loc))
+pub fn[T] DeferredWorld::remove(
+  self : DeferredWorld,
+  entity : @core.Entity,
+  key : ComponentKey[T],
+  loc~ : SourceLoc,
+) -> Bool raise EcsError {
+  self.world.remove(entity, key, loc~)
+}
+
+///|
+#callsite(autofill(loc))
+pub fn DeferredWorld::despawn(
+  self : DeferredWorld,
+  entity : @core.Entity,
+  loc~ : SourceLoc,
+) -> Unit raise EcsError {
+  self.world.despawn(entity, loc~)
+}
+
+///|
+pub fn DeferredWorld::commands(self : DeferredWorld) -> DeferredWorldCommands {
+  { world: self.world }
+}
+
+///|
+pub fn DeferredWorldCommands::entity(
+  self : DeferredWorldCommands,
+  entity : @core.Entity,
+) -> DeferredEntityCommands {
+  { commands: self, entity }
+}
+
+///|
+#callsite(autofill(loc))
+pub fn DeferredEntityCommands::despawn(
+  self : DeferredEntityCommands,
+  loc~ : SourceLoc,
+) -> Unit {
+  let entity = self.entity
+  self.commands.world.enqueue_deferred_hook_command(fn(world : World) {
+    try! world.despawn(entity, loc~)
+  })
+}
+
+///|
 pub fn ComponentHooks::new(
-  on_add? : ((World, HookContext) -> Unit)? = None,
-  on_insert? : ((World, HookContext) -> Unit)? = None,
-  on_replace? : ((World, HookContext) -> Unit)? = None,
-  on_remove? : ((World, HookContext) -> Unit)? = None,
-  on_despawn? : ((World, HookContext) -> Unit)? = None,
+  on_add? : ((DeferredWorld, HookContext) -> Unit)? = None,
+  on_insert? : ((DeferredWorld, HookContext) -> Unit)? = None,
+  on_replace? : ((DeferredWorld, HookContext) -> Unit)? = None,
+  on_remove? : ((DeferredWorld, HookContext) -> Unit)? = None,
+  on_despawn? : ((DeferredWorld, HookContext) -> Unit)? = None,
 ) -> ComponentHooks {
   { on_add, on_insert, on_replace, on_remove, on_despawn }
 }
@@ -144,7 +269,7 @@ fn component_hooks_kind_registered(
 fn component_hooks_register_kind(
   component_id : Int,
   kind : ComponentHookKind,
-  hook : (World, HookContext) -> Unit,
+  hook : (DeferredWorld, HookContext) -> Unit,
 ) -> Unit raise ComponentHooksError {
   let hooks = component_hooks(component_id).unwrap_or(ComponentHooks::new())
   if component_hooks_kind_registered(hooks, kind) {
@@ -163,7 +288,7 @@ fn component_hooks_register_kind(
 ///|
 pub fn[T] ComponentHooksBuilder::on_add(
   self : ComponentHooksBuilder[T],
-  hook : (World, HookContext) -> Unit,
+  hook : (DeferredWorld, HookContext) -> Unit,
 ) -> ComponentHooksBuilder[T] raise ComponentHooksError {
   component_hooks_register_kind(self.key.id(), OnAdd, hook)
   self
@@ -172,7 +297,7 @@ pub fn[T] ComponentHooksBuilder::on_add(
 ///|
 pub fn[T] ComponentHooksBuilder::on_insert(
   self : ComponentHooksBuilder[T],
-  hook : (World, HookContext) -> Unit,
+  hook : (DeferredWorld, HookContext) -> Unit,
 ) -> ComponentHooksBuilder[T] raise ComponentHooksError {
   component_hooks_register_kind(self.key.id(), OnInsert, hook)
   self
@@ -181,7 +306,7 @@ pub fn[T] ComponentHooksBuilder::on_insert(
 ///|
 pub fn[T] ComponentHooksBuilder::on_replace(
   self : ComponentHooksBuilder[T],
-  hook : (World, HookContext) -> Unit,
+  hook : (DeferredWorld, HookContext) -> Unit,
 ) -> ComponentHooksBuilder[T] raise ComponentHooksError {
   component_hooks_register_kind(self.key.id(), OnReplace, hook)
   self
@@ -190,7 +315,7 @@ pub fn[T] ComponentHooksBuilder::on_replace(
 ///|
 pub fn[T] ComponentHooksBuilder::on_remove(
   self : ComponentHooksBuilder[T],
-  hook : (World, HookContext) -> Unit,
+  hook : (DeferredWorld, HookContext) -> Unit,
 ) -> ComponentHooksBuilder[T] raise ComponentHooksError {
   component_hooks_register_kind(self.key.id(), OnRemove, hook)
   self
@@ -199,10 +324,61 @@ pub fn[T] ComponentHooksBuilder::on_remove(
 ///|
 pub fn[T] ComponentHooksBuilder::on_despawn(
   self : ComponentHooksBuilder[T],
-  hook : (World, HookContext) -> Unit,
+  hook : (DeferredWorld, HookContext) -> Unit,
 ) -> ComponentHooksBuilder[T] raise ComponentHooksError {
   component_hooks_register_kind(self.key.id(), OnDespawn, hook)
   self
+}
+
+///|
+fn World::enqueue_deferred_hook_command(
+  self : World,
+  command : DeferredHookCommand,
+) -> Unit {
+  self.deferred_hook_commands.push(command)
+}
+
+///|
+fn World::begin_deferred_hook_command_scope(self : World) -> Bool {
+  let outermost = self.deferred_hook_command_depth == 0
+  self.deferred_hook_command_depth = self.deferred_hook_command_depth + 1
+  outermost
+}
+
+///|
+fn World::flush_deferred_hook_commands(self : World) -> Unit {
+  while self.deferred_hook_commands.length() > 0 {
+    let commands = self.deferred_hook_commands.copy()
+    self.deferred_hook_commands.clear()
+    for command in commands {
+      command(self)
+    }
+  }
+}
+
+///|
+fn World::end_deferred_hook_command_scope(
+  self : World,
+  outermost : Bool,
+) -> Unit {
+  self.deferred_hook_command_depth = self.deferred_hook_command_depth - 1
+  if outermost {
+    self.flush_deferred_hook_commands()
+  }
+}
+
+///|
+fn World::run_component_hook(
+  self : World,
+  entity : @core.Entity,
+  component_id : Int,
+  caller? : String? = None,
+  hook : (DeferredWorld, HookContext) -> Unit,
+) -> Unit {
+  hook(
+    DeferredWorld::{ world: self },
+    hook_context(entity, component_id, caller~),
+  )
 }
 
 ///|
@@ -214,7 +390,7 @@ fn World::run_component_add_hooks(
 ) -> Unit {
   guard component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_add is Some(on_add) {
-    on_add(self, hook_context(entity, component_id, caller~))
+    self.run_component_hook(entity, component_id, caller~, on_add)
   }
 }
 
@@ -227,7 +403,7 @@ fn World::run_component_insert_hooks(
 ) -> Unit {
   guard component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_insert is Some(on_insert) {
-    on_insert(self, hook_context(entity, component_id, caller~))
+    self.run_component_hook(entity, component_id, caller~, on_insert)
   }
 }
 
@@ -240,7 +416,7 @@ fn World::run_component_replace_hooks(
 ) -> Unit {
   guard component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_replace is Some(on_replace) {
-    on_replace(self, hook_context(entity, component_id, caller~))
+    self.run_component_hook(entity, component_id, caller~, on_replace)
   }
 }
 
@@ -253,7 +429,7 @@ fn World::run_component_remove_hooks(
 ) -> Unit {
   guard component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_remove is Some(on_remove) {
-    on_remove(self, hook_context(entity, component_id, caller~))
+    self.run_component_hook(entity, component_id, caller~, on_remove)
   }
 }
 
@@ -266,6 +442,6 @@ fn World::run_component_despawn_hooks(
 ) -> Unit {
   guard component_hooks(component_id) is Some(hooks) else { return }
   if hooks.on_despawn is Some(on_despawn) {
-    on_despawn(self, hook_context(entity, component_id, caller~))
+    self.run_component_hook(entity, component_id, caller~, on_despawn)
   }
 }

@@ -54,6 +54,19 @@ pub impl Component for LateRegistrationHookTestComponent with component() {
 }
 
 ///|
+struct HookCommandsTestComponent {} derive(Eq, Show)
+
+///|
+let hook_commands_test_component_key : ComponentKey[HookCommandsTestComponent] = register_component(
+  debug_name="tests.ecs.component_hooks.deferred_commands",
+)
+
+///|
+pub impl Component for HookCommandsTestComponent with component() {
+  hook_commands_test_component_key
+}
+
+///|
 let hook_event_log_ref : Ref[Array[String]] = Ref::new([])
 
 ///|
@@ -93,11 +106,11 @@ fn hook_test_value_text(world : World, entity : @core.Entity) -> String {
 ///|
 fn hook_test_record(
   kind : String,
-  world : World,
+  world : DeferredWorld,
   context : HookContext,
 ) -> Unit {
   hook_event_log_ref.val.push(
-    "\{kind}:\{hook_test_value_text(world, context.entity)}",
+    "\{kind}:\{hook_test_value_text(world.world(), context.entity)}",
   )
   hook_entity_ids_ref.val.push(context.entity.id)
   if context.component_id != hook_test_component_key.id() {
@@ -133,8 +146,19 @@ fn hook_test_install_hooks() -> Unit {
 }
 
 ///|
+fn hook_commands_test_install_hooks() -> Unit {
+  let hooks = register_component_hooks_for_key(hook_commands_test_component_key)
+  ignore(
+    try! hooks.on_remove(fn(world, context) {
+      world.commands().entity(context.entity).despawn()
+    }),
+  )
+}
+
+///|
 fn init {
   hook_test_install_hooks()
+  hook_commands_test_install_hooks()
 }
 
 ///|
@@ -242,6 +266,20 @@ test "ecs component hooks: component access mutation paths preserve caller prove
   inspect(hook_event_log_ref.val, content="[\"replace:3\", \"remove:3\"]")
   inspect(hook_callers_present_ref.val, content="true")
   inspect(hook_callers_match_test_file_ref.val, content="true")
+}
+
+///|
+test "ecs component hooks: deferred hook commands flush after callback" {
+  let world = World::new()
+  let entity = world.spawn()
+
+  try! world.set(entity, hook_commands_test_component_key, HookCommandsTestComponent::{
+
+  })
+  inspect(world.is_alive(entity), content="true")
+
+  ignore(try! world.remove(entity, hook_commands_test_component_key))
+  inspect(world.is_alive(entity), content="false")
 }
 
 ///|

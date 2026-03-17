@@ -188,6 +188,8 @@ pub struct World {
   resources : Map[Int, ResourceSlot]
   mut previous_events : Map[Int, Array[ErasedValue]]
   current_events : Map[Int, Array[ErasedValue]]
+  mut deferred_hook_command_depth : Int
+  deferred_hook_commands : Array[DeferredHookCommand]
 }
 
 ///|
@@ -206,6 +208,8 @@ pub fn World::new() -> World {
     resources: {},
     previous_events: {},
     current_events: {},
+    deferred_hook_command_depth: 0,
+    deferred_hook_commands: [],
   }
 }
 
@@ -242,6 +246,7 @@ pub fn World::despawn(
   loc~ : SourceLoc,
 ) -> Unit raise EcsError {
   self.ensure_entity_alive(entity)
+  let outermost = self.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
   let removed_components : Array[(Int, ErasedValue)] = []
   for entry in self.component_columns.iter() {
@@ -271,6 +276,7 @@ pub fn World::despawn(
       )
     }
   }
+  self.end_deferred_hook_command_scope(outermost)
 }
 
 ///|
@@ -317,10 +323,15 @@ pub fn[T] World::update(
   loc~ : SourceLoc,
 ) -> Bool raise EcsError {
   self.ensure_entity_alive(entity)
+  let outermost = self.begin_deferred_hook_command_scope()
   guard self.component_columns.get(key.id()) is Some(store_ref) else {
+    self.end_deferred_hook_command_scope(outermost)
     return false
   }
-  guard store_ref.val.get(entity) is Some(payload) else { return false }
+  guard store_ref.val.get(entity) is Some(payload) else {
+    self.end_deferred_hook_command_scope(outermost)
+    return false
+  }
   let old_value : T = self.component_value(key, entity, payload)
   let new_value = update(old_value)
   let new_payload = erased_value(new_value)
@@ -329,6 +340,7 @@ pub fn[T] World::update(
   store_ref.val.set(entity, new_payload, component_write_change_tick(self))
   |> ignore
   self.run_component_insert_hooks(entity, key.id(), caller~)
+  self.end_deferred_hook_command_scope(outermost)
   true
 }
 
@@ -341,6 +353,7 @@ pub fn[T] World::remove(
   loc~ : SourceLoc,
 ) -> Bool raise EcsError {
   self.ensure_entity_alive(entity)
+  let outermost = self.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
   match self.component_columns.get(key.id()) {
     Some(store_ref) =>
@@ -354,11 +367,18 @@ pub fn[T] World::remove(
             component_write_change_tick(self),
             entity,
           )
+          self.end_deferred_hook_command_scope(outermost)
           true
         }
-        None => false
+        None => {
+          self.end_deferred_hook_command_scope(outermost)
+          false
+        }
       }
-    None => false
+    None => {
+      self.end_deferred_hook_command_scope(outermost)
+      false
+    }
   }
 }
 

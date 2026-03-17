@@ -43,7 +43,7 @@ fn hierarchy_child_index(
 
 ///|
 fn hierarchy_add_child(
-  world : @ecs.World,
+  world : @ecs.DeferredWorld,
   children_key : @ecs.ComponentKey[Children],
   parent : @core.Entity,
   child : @core.Entity,
@@ -70,7 +70,7 @@ fn hierarchy_add_child(
 
 ///|
 fn hierarchy_remove_child(
-  world : @ecs.World,
+  world : @ecs.DeferredWorld,
   children_key : @ecs.ComponentKey[Children],
   parent : @core.Entity,
   child : @core.Entity,
@@ -97,7 +97,7 @@ fn hierarchy_remove_child(
 
 ///|
 fn hierarchy_parent_target_valid(
-  world : @ecs.World,
+  world : @ecs.DeferredWorld,
   child : @core.Entity,
   parent : @core.Entity,
 ) -> Bool {
@@ -116,7 +116,7 @@ fn hierarchy_parent_target_valid(
 
 ///|
 fn hierarchy_parent_on_insert(
-  world : @ecs.World,
+  world : @ecs.DeferredWorld,
   parent_key : @ecs.ComponentKey[Parent],
   children_key : @ecs.ComponentKey[Children],
   child : @core.Entity,
@@ -134,7 +134,7 @@ fn hierarchy_parent_on_insert(
 
 ///|
 fn hierarchy_parent_on_replace(
-  world : @ecs.World,
+  world : @ecs.DeferredWorld,
   parent_key : @ecs.ComponentKey[Parent],
   children_key : @ecs.ComponentKey[Children],
   child : @core.Entity,
@@ -148,7 +148,7 @@ fn hierarchy_parent_on_replace(
 
 ///|
 fn hierarchy_parent_on_remove(
-  world : @ecs.World,
+  world : @ecs.DeferredWorld,
   parent_key : @ecs.ComponentKey[Parent],
   children_key : @ecs.ComponentKey[Children],
   child : @core.Entity,

@@ -91,10 +91,12 @@ pub fn[T] ComponentAccess::set(
   if !replacing {
     return false
   }
+  let outermost = self.world.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
   self.world.run_component_replace_hooks(entity, self.key.id(), caller~)
   ignore(store_ref.val.set(entity, payload, change_tick))
   self.world.run_component_insert_hooks(entity, self.key.id(), caller~)
+  self.world.end_deferred_hook_command_scope(outermost)
   true
 }
 
@@ -154,6 +156,7 @@ pub fn[T] ComponentAccess::remove(
     return None
   }
   guard store_ref.val.get(entity) is Some(payload) else { return None }
+  let outermost = self.world.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
   self.world.run_component_replace_hooks(entity, self.key.id(), caller~)
   self.world.run_component_remove_hooks(entity, self.key.id(), caller~)
@@ -162,6 +165,7 @@ pub fn[T] ComponentAccess::remove(
     component_write_change_tick(self.world),
     entity,
   )
+  self.world.end_deferred_hook_command_scope(outermost)
   try self.world.component_value(self.key, entity, payload) catch {
     _ => None
   } noraise {
