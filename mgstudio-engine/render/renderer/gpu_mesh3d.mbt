@@ -109,6 +109,16 @@ fn mesh3d_motion_vector_previous_view_uniform_bytes(
 }
 
 ///|
+fn mesh3d_motion_vector_globals_uniform_bytes() -> Bytes {
+  u32le_pack([0U, 0U, 0U, 0U])
+}
+
+///|
+fn mesh3d_motion_vector_visibility_ranges_bytes() -> Bytes {
+  u32le_pack([0U, 0U, 0U, 0U])
+}
+
+///|
 fn mesh3d_normalize_quat(
   x : Float,
   y : Float,
@@ -972,13 +982,19 @@ fn ensure_mesh3d_motion_vector_pipeline(
 ) -> Unit raise GpuBackendError {
   if backend.mesh3d_motion_vector_pipeline_layout is None {
     let stage = ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT)
-    let view_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=2UL)
+    let view_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=4UL)
     let view_ok = view_builder.add_buffer(
         0U,
         stage,
         @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
       ) &&
-      view_builder.add_buffer(2U, stage, @wgpu.BUFFER_BINDING_TYPE_UNIFORM)
+      view_builder.add_buffer(1U, stage, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
+      view_builder.add_buffer(2U, stage, @wgpu.BUFFER_BINDING_TYPE_UNIFORM) &&
+      view_builder.add_buffer(
+        14U,
+        ss(@wgpu.SHADER_STAGE_VERTEX),
+        @wgpu.BUFFER_BINDING_TYPE_STORAGE,
+      )
     if !view_ok {
       view_builder.free()
       fatal("wgpu: failed to build mesh3d motion vector view bind group layout")
@@ -1031,26 +1047,61 @@ fn ensure_mesh3d_motion_vector_pipeline(
     backend.mesh3d_motion_vector_pipeline_layout = Some(pl)
   }
   if backend.mesh3d_motion_vector_view_buf is None ||
+    backend.mesh3d_motion_vector_globals_buf is None ||
     backend.mesh3d_motion_vector_previous_view_buf is None ||
+    backend.mesh3d_motion_vector_visibility_ranges_buf is None ||
     backend.mesh3d_motion_vector_view_bg is None {
     guard backend.mesh3d_motion_vector_bgl_view is Some(view_bgl) else {
       return
     }
-    let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
+    let uniform_usage = bu(
+      @wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST,
+    )
+    let storage_usage = bu(
+      @wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST,
+    )
     let view_buf = backend.device.create_buffer(
       size=MESH2D_VIEW_BUFFER_SIZE,
-      usage~,
+      usage=uniform_usage,
+    )
+    let globals_buf = backend.device.create_buffer(
+      size=MESH3D_PREPASS_GLOBALS_BUFFER_SIZE,
+      usage=uniform_usage,
     )
     let previous_view_buf = backend.device.create_buffer(
       size=MESH3D_PREPASS_PREVIOUS_VIEW_BUFFER_SIZE,
-      usage~,
+      usage=uniform_usage,
     )
-    let builder = @wgpu.BindGroupBuilder::new(max_entries=2UL)
+    let visibility_ranges_buf = backend.device.create_buffer(
+      size=MESH3D_PREPASS_VISIBILITY_RANGES_BUFFER_SIZE,
+      usage=storage_usage,
+    )
+    backend.queue.write_buffer(
+      globals_buf,
+      0UL,
+      mesh3d_motion_vector_globals_uniform_bytes(),
+    )
+    backend.queue.write_buffer(
+      visibility_ranges_buf,
+      0UL,
+      mesh3d_motion_vector_visibility_ranges_bytes(),
+    )
+    let builder = @wgpu.BindGroupBuilder::new(max_entries=4UL)
     let ok = builder.add_buffer(0U, view_buf, size=MESH2D_VIEW_BUFFER_SIZE) &&
+      builder.add_buffer(
+        1U,
+        globals_buf,
+        size=MESH3D_PREPASS_GLOBALS_BUFFER_SIZE,
+      ) &&
       builder.add_buffer(
         2U,
         previous_view_buf,
         size=MESH3D_PREPASS_PREVIOUS_VIEW_BUFFER_SIZE,
+      ) &&
+      builder.add_buffer(
+        14U,
+        visibility_ranges_buf,
+        size=MESH3D_PREPASS_VISIBILITY_RANGES_BUFFER_SIZE,
       )
     if !ok {
       builder.free()
@@ -1062,7 +1113,11 @@ fn ensure_mesh3d_motion_vector_pipeline(
       label="mgstudio_motion_vector_view_bg",
     )
     backend.mesh3d_motion_vector_view_buf = Some(view_buf)
+    backend.mesh3d_motion_vector_globals_buf = Some(globals_buf)
     backend.mesh3d_motion_vector_previous_view_buf = Some(previous_view_buf)
+    backend.mesh3d_motion_vector_visibility_ranges_buf = Some(
+      visibility_ranges_buf,
+    )
     backend.mesh3d_motion_vector_view_bg = Some(view_bg)
   }
   if ensure_mesh3d_motion_vector_environment_bind_group(backend) is None {

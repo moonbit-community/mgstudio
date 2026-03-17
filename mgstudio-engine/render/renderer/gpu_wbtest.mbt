@@ -114,7 +114,9 @@ test "renderer: motion vector resources initialize prepass-style bind groups" {
     backend.mesh3d_motion_vector_bgl_environment is Some(_) &&
     backend.mesh3d_motion_vector_bgl_mesh is Some(_) &&
     backend.mesh3d_motion_vector_view_buf is Some(_) &&
+    backend.mesh3d_motion_vector_globals_buf is Some(_) &&
     backend.mesh3d_motion_vector_previous_view_buf is Some(_) &&
+    backend.mesh3d_motion_vector_visibility_ranges_buf is Some(_) &&
     backend.mesh3d_motion_vector_view_bg is Some(_) &&
     backend.mesh3d_motion_vector_environment_view is Some(_) &&
     backend.mesh3d_motion_vector_environment_sampler is Some(_) &&
@@ -212,8 +214,18 @@ test "renderer: motion vector shader reads Bevy-style view and previous-view bin
     content="true",
   )
   inspect(
+    wgsl.contains("@group(0) @binding(1) var<uniform> globals : Globals;"),
+    content="true",
+  )
+  inspect(
     wgsl.contains(
-      "@group(0) @binding(2) var<uniform> previous_view_uniforms: PreviousViewUniforms;",
+      "@group(0) @binding(2) var<uniform> previous_view_uniforms : PreviousViewUniforms;",
+    ),
+    content="true",
+  )
+  inspect(
+    wgsl.contains(
+      "@group(0) @binding(14) var<storage> visibility_ranges : array<vec4<f32>>;",
     ),
     content="true",
   )

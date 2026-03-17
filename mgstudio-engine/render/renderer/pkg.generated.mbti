@@ -302,7 +302,9 @@ pub struct GpuBackend {
   mut mesh3d_motion_vector_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh3d_motion_vector_pipeline : @wgpu_mbt.RenderPipeline?
   mut mesh3d_motion_vector_view_buf : @wgpu_mbt.Buffer?
+  mut mesh3d_motion_vector_globals_buf : @wgpu_mbt.Buffer?
   mut mesh3d_motion_vector_previous_view_buf : @wgpu_mbt.Buffer?
+  mut mesh3d_motion_vector_visibility_ranges_buf : @wgpu_mbt.Buffer?
   mut mesh3d_motion_vector_view_bg : @wgpu_mbt.BindGroup?
   mut mesh3d_motion_vector_environment_texture : @wgpu_mbt.Texture?
   mut mesh3d_motion_vector_environment_view : @wgpu_mbt.TextureView?

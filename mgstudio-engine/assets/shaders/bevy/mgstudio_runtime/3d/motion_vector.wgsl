@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #import bevy_render::{
+  globals::Globals,
   maths::affine3_to_square,
   view::View,
 }
@@ -22,6 +23,13 @@
 }
 
 @group(0) @binding(0) var<uniform> view : View;
+@group(0) @binding(1) var<uniform> globals : Globals;
+@group(0) @binding(2) var<uniform> previous_view_uniforms : prepass_bindings::PreviousViewUniforms;
+#if AVAILABLE_STORAGE_BUFFER_BINDINGS >= 6
+@group(0) @binding(14) var<storage> visibility_ranges : array<vec4<f32>>;
+#else
+@group(0) @binding(14) var<uniform> visibility_ranges : array<vec4<f32>, 1u>;
+#endif
 @group(2) @binding(0) var<uniform> mesh : array<Mesh, 1u>;
 
 struct VertexOut {
@@ -58,7 +66,7 @@ fn vs_main(
 fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let clip_position = safe_project_xy(view.unjittered_clip_from_world * in.world_position);
   let previous_clip_position = safe_project_xy(
-    prepass_bindings::previous_view_uniforms.clip_from_world * in.previous_world_position,
+    previous_view_uniforms.clip_from_world * in.previous_world_position,
   );
   let motion = (clip_position - previous_clip_position) * vec2<f32>(0.5, -0.5);
   return vec4<f32>(motion, 0.0, 1.0);

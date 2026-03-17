@@ -44,6 +44,12 @@ const MESH3D_UNIFORM_BUFFER_SIZE : UInt64 = 512UL
 const MESH3D_PREPASS_PREVIOUS_VIEW_BUFFER_SIZE : UInt64 = 320UL
 
 ///|
+const MESH3D_PREPASS_GLOBALS_BUFFER_SIZE : UInt64 = 16UL
+
+///|
+const MESH3D_PREPASS_VISIBILITY_RANGES_BUFFER_SIZE : UInt64 = 16UL
+
+///|
 const MESH3D_PREPASS_MESH_BUFFER_SIZE : UInt64 = 176UL
 
 ///|
@@ -453,7 +459,9 @@ pub struct GpuBackend {
   mut mesh3d_motion_vector_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh3d_motion_vector_pipeline : @wgpu.RenderPipeline?
   mut mesh3d_motion_vector_view_buf : @wgpu.Buffer?
+  mut mesh3d_motion_vector_globals_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_previous_view_buf : @wgpu.Buffer?
+  mut mesh3d_motion_vector_visibility_ranges_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_view_bg : @wgpu.BindGroup?
   mut mesh3d_motion_vector_environment_texture : @wgpu.Texture?
   mut mesh3d_motion_vector_environment_view : @wgpu.TextureView?
@@ -831,7 +839,9 @@ pub fn GpuBackend::new(
     mesh3d_motion_vector_pipeline_layout: None,
     mesh3d_motion_vector_pipeline: None,
     mesh3d_motion_vector_view_buf: None,
+    mesh3d_motion_vector_globals_buf: None,
     mesh3d_motion_vector_previous_view_buf: None,
+    mesh3d_motion_vector_visibility_ranges_buf: None,
     mesh3d_motion_vector_view_bg: None,
     mesh3d_motion_vector_environment_texture: None,
     mesh3d_motion_vector_environment_view: None,
