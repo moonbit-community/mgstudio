@@ -192,8 +192,7 @@ fn trigger_hooks(
     }
   }
   for key in keys.get_just_pressed() {
-    let entity = commands.spawn_empty()
-    commands.entity(entity).insert_component(MyComponent::new(key))
+    ignore(commands.spawn_component(MyComponent::new(key)))
   }
 }
 

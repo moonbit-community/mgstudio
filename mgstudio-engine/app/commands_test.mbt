@@ -233,6 +233,37 @@ test "app: Commands spawn_empty reserves an entity without queued components" {
 }
 
 ///|
+test "app: Commands spawn_component defers single component insertion until after system" {
+  let counts : Array[Int] = []
+  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let mut app = App::new(@ecs.World::new())
+    .add_system_param2(fn(
+      commands : Commands,
+      query : @ecs.Query1[CommandsPosition],
+    ) {
+      counts.push(query.count())
+      spawned.val = Some(
+        commands.spawn_component(CommandsPosition::{ x: 8, y: 13 }),
+      )
+      counts.push(query.count())
+    })
+    .add_system_param(fn(query : @ecs.Query1[CommandsPosition]) {
+      counts.push(query.count())
+    })
+
+  app = app.run_once()
+
+  inspect(counts, content="[0, 0, 1]")
+  guard spawned.val is Some(entity) else {
+    abort("expected Commands::spawn_component to return an entity")
+  }
+  inspect(
+    try! app.world().get(entity, commands_position_key),
+    content="Some({x: 8, y: 13})",
+  )
+}
+
+///|
 test "app: Commands spawn supports eight-component tuples" {
   let spawned : Ref[@core.Entity?] = Ref::new(None)
   let mut app = App::new(@ecs.World::new()).add_system_param(fn(

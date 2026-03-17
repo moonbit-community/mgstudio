@@ -211,6 +211,20 @@ pub fn Commands::entity(
 
 ///|
 #callsite(autofill(loc))
+pub fn[T : @ecs.Component] Commands::spawn_component(
+  self : Commands,
+  component : T,
+  loc~ : SourceLoc,
+) -> @core.Entity {
+  let entity = self.world.spawn_empty()
+  self.queue.push(fn(world : @ecs.World, change_tick : @core.Tick) {
+    insert_spawn_component(world, entity, component, change_tick, loc~)
+  })
+  entity
+}
+
+///|
+#callsite(autofill(loc))
 pub fn[T : CommandSpawnComponents] Commands::spawn(
   self : Commands,
   components : T,

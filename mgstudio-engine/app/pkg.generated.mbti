@@ -365,6 +365,8 @@ pub fn Commands::entity(Self, @core.Entity) -> EntityCommands
 pub fn[T : CommandSpawnComponents] Commands::spawn(Self, T, loc~ : SourceLoc) -> @core.Entity
 #callsite(autofill(loc))
 pub fn[T : CommandSpawnComponents] Commands::spawn_batch(Self, Array[T], loc~ : SourceLoc) -> Array[@core.Entity]
+#callsite(autofill(loc))
+pub fn[T : @ecs.Component] Commands::spawn_component(Self, T, loc~ : SourceLoc) -> @core.Entity
 pub fn Commands::spawn_empty(Self) -> @core.Entity
 pub impl SystemParam for Commands
 
