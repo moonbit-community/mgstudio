@@ -13,10 +13,10 @@
 // limitations under the License.
 
 ///|
-const SPRITE_BEVY_VIEW_BUFFER_SIZE : UInt64 = 1024UL
+const SPRITE_VIEW_BUFFER_SIZE : UInt64 = 1024UL
 
 ///|
-const SPRITE_BEVY_INSTANCE_STRIDE_BYTES : UInt64 = 80UL
+const SPRITE_INSTANCE_STRIDE_BYTES : UInt64 = 80UL
 
 ///|
 fn ensure_sprite_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
@@ -151,7 +151,7 @@ fn ensure_sprite_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
     )
     pipeline_layout.set_label("mgstudio_sprite_pipeline_layout")
     let view_buf = backend.device.create_buffer(
-      size=SPRITE_BEVY_VIEW_BUFFER_SIZE,
+      size=SPRITE_VIEW_BUFFER_SIZE,
       usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
     )
     let lut_texture = backend.device.create_texture_u32(
@@ -228,7 +228,7 @@ fn create_sprite_render_pipeline(
       depth_compare_u32=@wgpu.COMPARE_FUNCTION_GREATER_EQUAL,
     )
     builder.set_vertex_buffer_layout(
-      SPRITE_BEVY_INSTANCE_STRIDE_BYTES,
+      SPRITE_INSTANCE_STRIDE_BYTES,
       @wgpu.VERTEX_STEP_MODE_INSTANCE,
     )
     builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 0UL, 0U)
@@ -342,7 +342,7 @@ fn sprite_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
     clip_x_axis_x, clip_x_axis_y, 0.0F, 0.0F, clip_y_axis_x, clip_y_axis_y, 0.0F,
     0.0F, 0.0F, 0.0F, 1.0F, 0.0F, clip_w_axis_x, clip_w_axis_y, 0.0F, 1.0F,
   ]
-  let target_float_count = (SPRITE_BEVY_VIEW_BUFFER_SIZE / 4UL).to_int()
+  let target_float_count = (SPRITE_VIEW_BUFFER_SIZE / 4UL).to_int()
   for _ in floats.length()..<target_float_count {
     floats.push(0.0F)
   }
