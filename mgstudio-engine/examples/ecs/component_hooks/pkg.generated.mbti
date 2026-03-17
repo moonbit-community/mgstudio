@@ -1,0 +1,30 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/component_hooks"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/input/events",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type MyComponent
+pub fn MyComponent::new(@events.KeyCode) -> Self
+pub impl @ecs.Component for MyComponent
+pub impl Eq for MyComponent
+
+type MyComponentIndex
+pub impl @app.Resource for MyComponentIndex
+pub impl Default for MyComponentIndex
+
+type MyMessage
+pub impl @ecs.Message for MyMessage
+
+// Type aliases
+
+// Traits
+
