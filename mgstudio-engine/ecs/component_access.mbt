@@ -85,17 +85,14 @@ pub fn[T] ComponentAccess::set(
 ) -> Bool {
   let store_ref = self.world.ensure_component_store(self.key.id())
   let payload = erased_value(value)
-  let old_payload = store_ref.val.get(entity)
-  let updated = store_ref.val.set(entity, payload, change_tick)
-  if updated && old_payload is Some(previous) {
-    self.world.run_component_replace_hooks(
-      entity,
-      self.key.id(),
-      previous,
-      payload,
-    )
+  let replacing = store_ref.val.get(entity) is Some(_)
+  if !replacing {
+    return false
   }
-  updated
+  self.world.run_component_replace_hooks(entity, self.key.id())
+  ignore(store_ref.val.set(entity, payload, change_tick))
+  self.world.run_component_insert_hooks(entity, self.key.id())
+  true
 }
 
 ///|
@@ -144,8 +141,10 @@ pub fn[T] ComponentAccess::remove(
   guard self.world.component_store(self.key.id()) is Some(store_ref) else {
     return None
   }
-  guard store_ref.val.remove(entity) is Some(payload) else { return None }
-  self.world.run_component_remove_hooks(entity, self.key.id(), payload)
+  guard store_ref.val.get(entity) is Some(payload) else { return None }
+  self.world.run_component_replace_hooks(entity, self.key.id())
+  self.world.run_component_remove_hooks(entity, self.key.id())
+  ignore(store_ref.val.remove(entity))
   self.world.ensure_removed_component_messages(self.key.id()).val.send(
     component_write_change_tick(self.world),
     entity,

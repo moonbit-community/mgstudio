@@ -5,7 +5,6 @@ import {
   "Milky2018/mgstudio/core",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
-  "tonyfettes/any",
 }
 
 // Values
@@ -47,6 +46,10 @@ pub fn[T] register_component(debug_name? : String) -> ComponentKey[T]
 
 pub fn[T] register_component_hooks(ComponentKey[T], ComponentHooks) -> Unit raise ComponentHooksError
 
+pub fn[T : Component] register_component_hooks_for() -> ComponentHooksBuilder[T]
+
+pub fn[T] register_component_hooks_for_key(ComponentKey[T]) -> ComponentHooksBuilder[T]
+
 pub fn[T] register_event(debug_name? : String) -> EventKey[T]
 
 pub fn[T] register_message(debug_name? : String) -> MessageKey[T]
@@ -58,6 +61,8 @@ pub fn[T] resource_key_from_id(Int, debug_name? : String) -> ResourceKey[T]
 // Errors
 pub(all) suberror ComponentHooksError {
   DuplicateRegistration(Int)
+  DuplicateHookRegistration(Int, ComponentHookKind)
+  ComponentAlreadyInUse(Int)
 }
 
 pub(all) suberror EcsError {
@@ -126,13 +131,31 @@ pub fn[T] ComponentAccess::set(Self[T], @core.Entity, T, Int) -> Bool
 pub fn[T] ComponentAccess::update(Self[T], @core.Entity, Int, (T) -> T) -> Bool
 pub fn[T] ComponentAccess::upsert(Self[T], @core.Entity, T, Int) -> Unit
 
-pub struct ComponentHooks {
-  on_insert : ((World, @core.Entity, @any.Any) -> Unit)?
-  on_replace : ((World, @core.Entity, @any.Any, @any.Any) -> Unit)?
-  on_remove : ((World, @core.Entity, @any.Any) -> Unit)?
-  on_despawn : ((World, @core.Entity, @any.Any) -> Unit)?
+pub(all) enum ComponentHookKind {
+  OnAdd
+  OnInsert
+  OnReplace
+  OnRemove
+  OnDespawn
 }
-pub fn ComponentHooks::new(on_insert? : ((World, @core.Entity, @any.Any) -> Unit)?, on_replace? : ((World, @core.Entity, @any.Any, @any.Any) -> Unit)?, on_remove? : ((World, @core.Entity, @any.Any) -> Unit)?, on_despawn? : ((World, @core.Entity, @any.Any) -> Unit)?) -> Self
+
+pub struct ComponentHooks {
+  on_add : ((World, HookContext) -> Unit)?
+  on_insert : ((World, HookContext) -> Unit)?
+  on_replace : ((World, HookContext) -> Unit)?
+  on_remove : ((World, HookContext) -> Unit)?
+  on_despawn : ((World, HookContext) -> Unit)?
+}
+pub fn ComponentHooks::new(on_add? : ((World, HookContext) -> Unit)?, on_insert? : ((World, HookContext) -> Unit)?, on_replace? : ((World, HookContext) -> Unit)?, on_remove? : ((World, HookContext) -> Unit)?, on_despawn? : ((World, HookContext) -> Unit)?) -> Self
+
+pub struct ComponentHooksBuilder[T] {
+  key : ComponentKey[T]
+}
+pub fn[T] ComponentHooksBuilder::on_add(Self[T], (World, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
+pub fn[T] ComponentHooksBuilder::on_despawn(Self[T], (World, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
+pub fn[T] ComponentHooksBuilder::on_insert(Self[T], (World, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
+pub fn[T] ComponentHooksBuilder::on_remove(Self[T], (World, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
+pub fn[T] ComponentHooksBuilder::on_replace(Self[T], (World, HookContext) -> Unit) -> Self[T] raise ComponentHooksError
 
 pub struct ComponentKey[T] {
   id : Int
@@ -191,6 +214,12 @@ pub struct EventKey[T] {
 pub fn[U, T] EventKey::cast(Self[T]) -> Self[U]
 pub fn[T] EventKey::debug_name(Self[T]) -> String
 pub fn[T] EventKey::id(Self[T]) -> Int
+
+pub struct HookContext {
+  entity : @core.Entity
+  component_id : Int
+  caller : String?
+}
 
 pub struct Insert {
 }
@@ -660,6 +689,8 @@ pub fn[A, B, C, F] World::query3_value_ref_mut_filtered(Self, ComponentKey[A], C
 pub fn[F] World::query_entities_filtered(Self, F) -> EntityQuery[F]
 pub fn World::read_change_tick(Self) -> Int
 pub fn[T] World::read_events(Self, EventKey[T]) -> Array[T] raise EcsError
+pub fn[T : Component] World::register_component_hooks(Self) -> ComponentHooksBuilder[T] raise ComponentHooksError
+pub fn[T] World::register_component_hooks_for_key(Self, ComponentKey[T]) -> ComponentHooksBuilder[T] raise ComponentHooksError
 pub fn[T, R : Default] World::register_required_components(Self, ComponentKey[T], ComponentKey[R]) -> Unit raise RequiredComponentsError
 pub fn[T, R] World::register_required_components_with(Self, ComponentKey[T], ComponentKey[R], () -> R) -> Unit raise RequiredComponentsError
 pub fn[T] World::remove(Self, @core.Entity, ComponentKey[T]) -> Bool raise EcsError

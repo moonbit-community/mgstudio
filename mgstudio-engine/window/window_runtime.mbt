@@ -524,32 +524,17 @@ fn window_runtime_close_host_window(
 ///|
 fn window_runtime_on_remove(
   world : @ecs.World,
-  entity : @core.Entity,
-  _payload : @any.Any,
+  context : @ecs.HookContext,
 ) -> Unit {
-  window_runtime_close_host_window(world, entity)
-  window_remove_component(world, entity, ecs_key_window_runtime)
-  window_remove_component(world, entity, ecs_key_closing_window)
-}
-
-///|
-fn window_runtime_on_despawn(
-  _world : @ecs.World,
-  _entity : @core.Entity,
-  _payload : @any.Any,
-) -> Unit {
-  ()
+  window_runtime_close_host_window(world, context.entity)
+  window_remove_component(world, context.entity, ecs_key_window_runtime)
+  window_remove_component(world, context.entity, ecs_key_closing_window)
 }
 
 ///|
 fn window_register_component_hooks() -> Unit {
-  try! @ecs.register_component_hooks(
-    ecs_key_window,
-    @ecs.ComponentHooks::new(
-      on_remove=Some(window_runtime_on_remove),
-      on_despawn=Some(window_runtime_on_despawn),
-    ),
-  )
+  let window_hooks = @ecs.register_component_hooks_for_key(ecs_key_window)
+  ignore(try! window_hooks.on_remove(window_runtime_on_remove))
 }
 
 ///|

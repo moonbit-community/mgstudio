@@ -641,65 +641,32 @@ fn scene_unregister_root_instance(
 }
 
 ///|
-fn scene_decode_scene_instance(payload : @any.Any) -> SceneInstance {
-  let value_ref : Ref[SceneInstance] = try! payload.to()
-  value_ref.val
-}
-
-///|
-fn scene_root_on_remove(
-  world : @ecs.World,
-  entity : @core.Entity,
-  _payload : @any.Any,
-) -> Unit {
-  scene_unregister_root_instance(world, entity)
-}
-
-///|
-fn scene_root_on_despawn(
-  world : @ecs.World,
-  entity : @core.Entity,
-  _payload : @any.Any,
-) -> Unit {
-  scene_unregister_root_instance(world, entity)
+fn scene_root_on_remove(world : @ecs.World, context : @ecs.HookContext) -> Unit {
+  scene_unregister_root_instance(world, context.entity)
 }
 
 ///|
 fn scene_instance_on_remove(
   world : @ecs.World,
-  _entity : @core.Entity,
-  payload : @any.Any,
+  context : @ecs.HookContext,
 ) -> Unit {
-  let instance = scene_decode_scene_instance(payload)
-  scene_unregister_instance(world, instance.instance_id)
-}
-
-///|
-fn scene_instance_on_despawn(
-  world : @ecs.World,
-  _entity : @core.Entity,
-  payload : @any.Any,
-) -> Unit {
-  let instance = scene_decode_scene_instance(payload)
+  guard (try! world.get(context.entity, ecs_key_scene_instance))
+    is Some(instance) else {
+    return
+  }
   scene_unregister_instance(world, instance.instance_id)
 }
 
 ///|
 fn scene_register_component_hooks() -> Bool {
-  try! @ecs.register_component_hooks(
+  let scene_root_hooks = @ecs.register_component_hooks_for_key(
     ecs_key_scene_root,
-    @ecs.ComponentHooks::new(
-      on_remove=Some(scene_root_on_remove),
-      on_despawn=Some(scene_root_on_despawn),
-    ),
   )
-  try! @ecs.register_component_hooks(
+  ignore(try! scene_root_hooks.on_remove(scene_root_on_remove))
+  let scene_instance_hooks = @ecs.register_component_hooks_for_key(
     ecs_key_scene_instance,
-    @ecs.ComponentHooks::new(
-      on_remove=Some(scene_instance_on_remove),
-      on_despawn=Some(scene_instance_on_despawn),
-    ),
   )
+  ignore(try! scene_instance_hooks.on_remove(scene_instance_on_remove))
   true
 }
 

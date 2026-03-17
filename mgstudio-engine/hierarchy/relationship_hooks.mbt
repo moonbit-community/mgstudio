@@ -24,18 +24,6 @@ fn hierarchy_warn_invalid_parent(
 }
 
 ///|
-fn hierarchy_decode_parent(payload : @any.Any) -> Parent {
-  let value_ref : Ref[Parent] = try! payload.to()
-  value_ref.val
-}
-
-///|
-fn hierarchy_decode_children(payload : @any.Any) -> Children {
-  let value_ref : Ref[Children] = try! payload.to()
-  value_ref.val
-}
-
-///|
 fn hierarchy_entities_equal(a : @core.Entity, b : @core.Entity) -> Bool {
   a.id == b.id && a.generation == b.generation
 }
@@ -132,9 +120,11 @@ fn hierarchy_parent_on_insert(
   parent_key : @ecs.ComponentKey[Parent],
   children_key : @ecs.ComponentKey[Children],
   child : @core.Entity,
-  payload : @any.Any,
 ) -> Unit {
-  let parent = hierarchy_decode_parent(payload).entity()
+  guard (try! world.get(child, parent_key)) is Some(parent_component) else {
+    return
+  }
+  let parent = parent_component.entity()
   if !hierarchy_parent_target_valid(world, child, parent) {
     try! (world.remove(child, parent_key) |> ignore)
     return
@@ -148,45 +138,26 @@ fn hierarchy_parent_on_replace(
   parent_key : @ecs.ComponentKey[Parent],
   children_key : @ecs.ComponentKey[Children],
   child : @core.Entity,
-  old_payload : @any.Any,
-  new_payload : @any.Any,
 ) -> Unit {
-  let old_parent = hierarchy_decode_parent(old_payload).entity()
-  let new_parent = hierarchy_decode_parent(new_payload).entity()
-  if hierarchy_entities_equal(old_parent, new_parent) {
+  guard (try! world.get(child, parent_key)) is Some(old_parent_component) else {
     return
   }
+  let old_parent = old_parent_component.entity()
   hierarchy_remove_child(world, children_key, old_parent, child)
-  if !hierarchy_parent_target_valid(world, child, new_parent) {
-    try! (world.remove(child, parent_key) |> ignore)
-    return
-  }
-  hierarchy_add_child(world, children_key, new_parent, child)
 }
 
 ///|
 fn hierarchy_parent_on_remove(
   world : @ecs.World,
+  parent_key : @ecs.ComponentKey[Parent],
   children_key : @ecs.ComponentKey[Children],
   child : @core.Entity,
-  payload : @any.Any,
 ) -> Unit {
-  let parent = hierarchy_decode_parent(payload).entity()
-  hierarchy_remove_child(world, children_key, parent, child)
-}
-
-///|
-fn hierarchy_children_on_despawn(
-  world : @ecs.World,
-  _parent : @core.Entity,
-  payload : @any.Any,
-) -> Unit {
-  let children = hierarchy_decode_children(payload)
-  for child in children.entities() {
-    if world.is_alive(child) {
-      try! world.despawn(child)
-    }
+  guard (try! world.get(child, parent_key)) is Some(parent_component) else {
+    return
   }
+  let parent = parent_component.entity()
+  hierarchy_remove_child(world, children_key, parent, child)
 }
 
 ///|
@@ -194,27 +165,46 @@ fn hierarchy_register_component_hooks(
   parent_key : @ecs.ComponentKey[Parent],
   children_key : @ecs.ComponentKey[Children],
 ) -> Bool {
-  try! @ecs.register_component_hooks(
-    parent_key,
-    @ecs.ComponentHooks::new(
-      on_insert=Some(fn(world, child, payload) {
-        hierarchy_parent_on_insert(
-          world, parent_key, children_key, child, payload,
-        )
-      }),
-      on_replace=Some(fn(world, child, old_payload, new_payload) {
-        hierarchy_parent_on_replace(
-          world, parent_key, children_key, child, old_payload, new_payload,
-        )
-      }),
-      on_remove=Some(fn(world, child, payload) {
-        hierarchy_parent_on_remove(world, children_key, child, payload)
-      }),
-    ),
+  let parent_hooks = @ecs.register_component_hooks_for_key(parent_key)
+  ignore(
+    try! parent_hooks
+    .on_insert(fn(world, context) {
+      hierarchy_parent_on_insert(
+        world,
+        parent_key,
+        children_key,
+        context.entity,
+      )
+    })
+    .on_replace(fn(world, context) {
+      hierarchy_parent_on_replace(
+        world,
+        parent_key,
+        children_key,
+        context.entity,
+      )
+    })
+    .on_remove(fn(world, context) {
+      hierarchy_parent_on_remove(
+        world,
+        parent_key,
+        children_key,
+        context.entity,
+      )
+    }),
   )
-  try! @ecs.register_component_hooks(
-    children_key,
-    @ecs.ComponentHooks::new(on_despawn=Some(hierarchy_children_on_despawn)),
+  let children_hooks = @ecs.register_component_hooks_for_key(children_key)
+  ignore(
+    try! children_hooks.on_despawn(fn(world, context) {
+      guard (try! world.get(context.entity, children_key)) is Some(children) else {
+        return
+      }
+      for child in children.entities() {
+        if world.is_alive(child) {
+          try! world.despawn(child)
+        }
+      }
+    }),
   )
   true
 }

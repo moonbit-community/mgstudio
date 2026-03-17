@@ -349,20 +349,20 @@ fn World::insert_component_with_requirements_unchecked(
   change_tick : @core.Tick,
 ) -> Unit {
   let store_ref = self.ensure_component_store(component_id)
-  let old_payload = store_ref.val.get(entity)
+  let replacing = store_ref.val.get(entity) is Some(_)
+  if replacing {
+    self.run_component_replace_hooks(entity, component_id)
+  }
   store_ref.val.insert(entity, payload, change_tick)
   self.mark_component_used(component_id)
 
-  match old_payload {
-    Some(previous) => {
-      self.run_component_replace_hooks(entity, component_id, previous, payload)
-      self.run_insert_observers(entity, component_id)
-      return
-    }
-    None => {
-      self.run_component_insert_hooks(entity, component_id, payload)
-      self.run_insert_observers(entity, component_id)
-    }
+  if !replacing {
+    self.run_component_add_hooks(entity, component_id)
+  }
+  self.run_component_insert_hooks(entity, component_id)
+  self.run_insert_observers(entity, component_id)
+  if replacing {
+    return
   }
 
   guard self.required_components_state(component_id) is Some(state_ref) else {

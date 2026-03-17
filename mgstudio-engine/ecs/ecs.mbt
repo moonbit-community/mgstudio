@@ -248,17 +248,19 @@ pub fn World::despawn(
     }
   }
   for entry in removed_components {
-    self.run_component_despawn_hooks(entity, entry.0, entry.1)
+    self.run_component_despawn_hooks(entity, entry.0)
+  }
+  for entry in removed_components {
+    self.run_component_replace_hooks(entity, entry.0)
+    self.run_component_remove_hooks(entity, entry.0)
   }
   self.entities.despawn(entity) catch {
     err => raise EntityStateError(err)
   }
   for entry in removed_components {
     let key_id = entry.0
-    let payload = entry.1
     if self.component_columns.get(key_id) is Some(store_ref) &&
       store_ref.val.remove(entity) is Some(_) {
-      self.run_component_remove_hooks(entity, key_id, payload)
       self.run_remove_observers(entity, key_id)
       self.ensure_removed_component_messages(key_id).val.send(
         component_write_change_tick(self),
@@ -314,9 +316,10 @@ pub fn[T] World::update(
   let old_value : T = self.component_value(key, entity, payload)
   let new_value = update(old_value)
   let new_payload = erased_value(new_value)
+  self.run_component_replace_hooks(entity, key.id())
   store_ref.val.set(entity, new_payload, component_write_change_tick(self))
   |> ignore
-  self.run_component_replace_hooks(entity, key.id(), payload, new_payload)
+  self.run_component_insert_hooks(entity, key.id())
   true
 }
 
@@ -329,9 +332,11 @@ pub fn[T] World::remove(
   self.ensure_entity_alive(entity)
   match self.component_columns.get(key.id()) {
     Some(store_ref) =>
-      match store_ref.val.remove(entity) {
-        Some(payload) => {
-          self.run_component_remove_hooks(entity, key.id(), payload)
+      match store_ref.val.get(entity) {
+        Some(_) => {
+          self.run_component_replace_hooks(entity, key.id())
+          self.run_component_remove_hooks(entity, key.id())
+          ignore(store_ref.val.remove(entity))
           self.run_remove_observers(entity, key.id())
           self.ensure_removed_component_messages(key.id()).val.send(
             component_write_change_tick(self),
