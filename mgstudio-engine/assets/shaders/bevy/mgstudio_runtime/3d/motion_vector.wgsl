@@ -12,34 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-struct MotionVectorUniform {
-  model_pos : vec4<f32>,
-  model_rot : vec4<f32>,
-  model_scale : vec4<f32>,
-  previous_model_pos : vec4<f32>,
-  previous_model_rot : vec4<f32>,
-  previous_model_scale : vec4<f32>,
-  unjittered_clip_from_world : mat4x4<f32>,
-  previous_clip_from_world : mat4x4<f32>,
-};
+#import bevy_render::{
+  maths::affine3_to_square,
+  view::View,
+}
+#import bevy_pbr::{
+  mesh_types::Mesh,
+  prepass_bindings,
+}
 
-@group(0) @binding(0) var<uniform> u_mv : MotionVectorUniform;
+@group(0) @binding(0) var<uniform> view : View;
+@group(1) @binding(0) var<uniform> mesh : array<Mesh, 1u>;
 
 struct VertexOut {
   @builtin(position) position : vec4<f32>,
-  @location(0) current_clip : vec2<f32>,
-  @location(1) previous_clip : vec2<f32>,
+  @location(0) world_position : vec4<f32>,
+  @location(1) previous_world_position : vec4<f32>,
 };
-
-fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
-  let n = max(dot(q, q), 1e-8);
-  return q / sqrt(n);
-}
-
-fn quat_rotate_vec3(q : vec4<f32>, v : vec3<f32>) -> vec3<f32> {
-  let t = 2.0 * cross(q.xyz, v);
-  return v + q.w * t + cross(q.xyz, t);
-}
 
 fn safe_project_xy(clip : vec4<f32>) -> vec2<f32> {
   var w = clip.w;
@@ -51,34 +40,26 @@ fn safe_project_xy(clip : vec4<f32>) -> vec2<f32> {
 
 @vertex
 fn vs_main(
+  @builtin(instance_index) _instance_index : u32,
   @location(0) position : vec3<f32>,
   @location(1) _uv : vec2<f32>,
   @location(2) _color : vec4<f32>,
 ) -> VertexOut {
   var out : VertexOut;
-
-  let model_q = quat_normalize(u_mv.model_rot);
-  let previous_model_q = quat_normalize(u_mv.previous_model_rot);
-
-  let local_pos_current = position * u_mv.model_scale.xyz;
-  let local_pos_previous = position * u_mv.previous_model_scale.xyz;
-
-  let world_pos_current = quat_rotate_vec3(model_q, local_pos_current) +
-    u_mv.model_pos.xyz;
-  let world_pos_previous = quat_rotate_vec3(previous_model_q, local_pos_previous) +
-    u_mv.previous_model_pos.xyz;
-
-  let clip_current = u_mv.unjittered_clip_from_world * vec4<f32>(world_pos_current, 1.0);
-  let clip_previous = u_mv.previous_clip_from_world * vec4<f32>(world_pos_previous, 1.0);
-
-  out.position = clip_current;
-  out.current_clip = safe_project_xy(clip_current);
-  out.previous_clip = safe_project_xy(clip_previous);
+  let world_from_local = affine3_to_square(mesh[0].world_from_local);
+  let previous_world_from_local = affine3_to_square(mesh[0].previous_world_from_local);
+  out.world_position = world_from_local * vec4<f32>(position, 1.0);
+  out.previous_world_position = previous_world_from_local * vec4<f32>(position, 1.0);
+  out.position = view.unjittered_clip_from_world * out.world_position;
   return out;
 }
 
 @fragment
 fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
-  let motion = (in.current_clip - in.previous_clip) * vec2<f32>(0.5, -0.5);
+  let clip_position = safe_project_xy(view.unjittered_clip_from_world * in.world_position);
+  let previous_clip_position = safe_project_xy(
+    prepass_bindings::previous_view_uniforms.clip_from_world * in.previous_world_position,
+  );
+  let motion = (clip_position - previous_clip_position) * vec2<f32>(0.5, -0.5);
   return vec4<f32>(motion, 0.0, 1.0);
 }

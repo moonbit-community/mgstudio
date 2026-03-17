@@ -76,6 +76,220 @@ fn ensure_mesh3d_instance_uniform_binding(
 }
 
 ///|
+fn mesh3d_motion_vector_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
+  tonemapping_view_uniform_bytes_full(
+    pass_state, 1.0F, 0U, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
+  )
+}
+
+///|
+fn mesh3d_motion_vector_previous_view_uniform_bytes(
+  pass_state : GpuPassState,
+) -> Bytes {
+  let identity = gpu_clip_matrix_identity()
+  let words : Array[UInt] = []
+  for word in gpu_clip_matrix_words(identity) {
+    words.push(word)
+  }
+  for word in gpu_clip_matrix_words(pass_state.previous_clip_from_world) {
+    words.push(word)
+  }
+  for word in gpu_clip_matrix_words(identity) {
+    words.push(word)
+  }
+  for word in gpu_clip_matrix_words(identity) {
+    words.push(word)
+  }
+  for word in gpu_clip_matrix_words(identity) {
+    words.push(word)
+  }
+  u32le_pack(words)
+}
+
+///|
+fn mesh3d_normalize_quat(
+  x : Float,
+  y : Float,
+  z : Float,
+  w : Float,
+) -> (Float, Float, Float, Float) {
+  let len_sq = x * x + y * y + z * z + w * w
+  if len_sq <= 1.0e-8F {
+    (0.0F, 0.0F, 0.0F, 1.0F)
+  } else {
+    let inv_len = 1.0F / Float::sqrt(len_sq)
+    (x * inv_len, y * inv_len, z * inv_len, w * inv_len)
+  }
+}
+
+///|
+fn mesh3d_quat_rotation_matrix(
+  x : Float,
+  y : Float,
+  z : Float,
+  w : Float,
+) -> (Float, Float, Float, Float, Float, Float, Float, Float, Float) {
+  let (safe_x, safe_y, safe_z, safe_w) = mesh3d_normalize_quat(x, y, z, w)
+  let xx = safe_x * safe_x
+  let yy = safe_y * safe_y
+  let zz = safe_z * safe_z
+  let xy = safe_x * safe_y
+  let xz = safe_x * safe_z
+  let yz = safe_y * safe_z
+  let wx = safe_w * safe_x
+  let wy = safe_w * safe_y
+  let wz = safe_w * safe_z
+  (
+    1.0F - 2.0F * (yy + zz),
+    2.0F * (xy - wz),
+    2.0F * (xz + wy),
+    2.0F * (xy + wz),
+    1.0F - 2.0F * (xx + zz),
+    2.0F * (yz - wx),
+    2.0F * (xz - wy),
+    2.0F * (yz + wx),
+    1.0F - 2.0F * (xx + yy),
+  )
+}
+
+///|
+fn mesh3d_world_from_local_words(
+  translation_x : Float,
+  translation_y : Float,
+  translation_z : Float,
+  rotation_x : Float,
+  rotation_y : Float,
+  rotation_z : Float,
+  rotation_w : Float,
+  scale_x : Float,
+  scale_y : Float,
+  scale_z : Float,
+) -> Array[UInt] {
+  let (m00, m01, m02, m10, m11, m12, m20, m21, m22) = mesh3d_quat_rotation_matrix(
+    rotation_x, rotation_y, rotation_z, rotation_w,
+  )
+  let world_x_axis_x = m00 * scale_x
+  let world_x_axis_y = m10 * scale_x
+  let world_x_axis_z = m20 * scale_x
+  let world_y_axis_x = m01 * scale_y
+  let world_y_axis_y = m11 * scale_y
+  let world_y_axis_z = m21 * scale_y
+  let world_z_axis_x = m02 * scale_z
+  let world_z_axis_y = m12 * scale_z
+  let world_z_axis_z = m22 * scale_z
+  [
+    f32_bits(world_x_axis_x),
+    f32_bits(world_y_axis_x),
+    f32_bits(world_z_axis_x),
+    f32_bits(translation_x),
+    f32_bits(world_x_axis_y),
+    f32_bits(world_y_axis_y),
+    f32_bits(world_z_axis_y),
+    f32_bits(translation_y),
+    f32_bits(world_x_axis_z),
+    f32_bits(world_y_axis_z),
+    f32_bits(world_z_axis_z),
+    f32_bits(translation_z),
+  ]
+}
+
+///|
+fn mesh3d_inverse_transpose_words(
+  rotation_x : Float,
+  rotation_y : Float,
+  rotation_z : Float,
+  rotation_w : Float,
+  scale_x : Float,
+  scale_y : Float,
+  scale_z : Float,
+) -> Array[UInt] {
+  let safe_scale_x = if scale_x == 0.0F { 1.0F } else { scale_x }
+  let safe_scale_y = if scale_y == 0.0F { 1.0F } else { scale_y }
+  let safe_scale_z = if scale_z == 0.0F { 1.0F } else { scale_z }
+  let (m00, m01, m02, m10, m11, m12, m20, m21, m22) = mesh3d_quat_rotation_matrix(
+    rotation_x, rotation_y, rotation_z, rotation_w,
+  )
+  [
+    f32_bits(m00 / safe_scale_x),
+    f32_bits(m10 / safe_scale_x),
+    f32_bits(m20 / safe_scale_x),
+    f32_bits(m01 / safe_scale_y),
+    f32_bits(m11 / safe_scale_y),
+    f32_bits(m21 / safe_scale_y),
+    f32_bits(m02 / safe_scale_z),
+    f32_bits(m12 / safe_scale_z),
+    f32_bits(m22 / safe_scale_z),
+  ]
+}
+
+///|
+fn mesh3d_motion_vector_mesh_uniform_bytes(
+  translation_x : Float,
+  translation_y : Float,
+  translation_z : Float,
+  rotation_x : Float,
+  rotation_y : Float,
+  rotation_z : Float,
+  rotation_w : Float,
+  scale_x : Float,
+  scale_y : Float,
+  scale_z : Float,
+  previous_translation_x : Float,
+  previous_translation_y : Float,
+  previous_translation_z : Float,
+  previous_rotation_x : Float,
+  previous_rotation_y : Float,
+  previous_rotation_z : Float,
+  previous_rotation_w : Float,
+  previous_scale_x : Float,
+  previous_scale_y : Float,
+  previous_scale_z : Float,
+) -> Bytes {
+  let determinant = scale_x * scale_y * scale_z
+  let mut flags = 0xFFFFU
+  if determinant >= 0.0F {
+    flags = flags | (1U << 31)
+  }
+  let inverse_transpose = mesh3d_inverse_transpose_words(
+    rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
+  )
+  let words : Array[UInt] = []
+  for
+    word in mesh3d_world_from_local_words(
+      translation_x, translation_y, translation_z, rotation_x, rotation_y, rotation_z,
+      rotation_w, scale_x, scale_y, scale_z,
+    ) {
+    words.push(word)
+  }
+  for
+    word in mesh3d_world_from_local_words(
+      previous_translation_x, previous_translation_y, previous_translation_z, previous_rotation_x,
+      previous_rotation_y, previous_rotation_z, previous_rotation_w, previous_scale_x,
+      previous_scale_y, previous_scale_z,
+    ) {
+    words.push(word)
+  }
+  for i in 0..<8 {
+    words.push(inverse_transpose[i])
+  }
+  words.push(inverse_transpose[8])
+  words.push(flags)
+  words.push(0U)
+  words.push(0U)
+  words.push(0U)
+  words.push(0xFFFFFFFFU)
+  words.push(0U)
+  words.push(0U)
+  words.push(0U)
+  for _ in 0..<3 {
+    words.push(0U)
+  }
+  u32le_pack(words)
+}
+
+///|
 const MESH3D_PREPROCESS_CPU_METADATA_STRIDE_U32 : Int = 2
 
 ///|
@@ -692,25 +906,81 @@ fn mesh3d_pipeline_for_current_pass(
 fn ensure_mesh3d_motion_vector_pipeline(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
-  ensure_sprite_resources(backend)
   if backend.mesh3d_motion_vector_pipeline_layout is None {
-    let bgl = create_uniform_bind_group_layout_vertex_fragment(
-      backend, "mgstudio_motion_vector_uniform_bgl",
+    let stage = ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT)
+    let view_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=2UL)
+    let view_ok = view_builder.add_buffer(
+        0U,
+        stage,
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+      ) &&
+      view_builder.add_buffer(2U, stage, @wgpu.BUFFER_BINDING_TYPE_UNIFORM)
+    if !view_ok {
+      view_builder.free()
+      fatal("wgpu: failed to build mesh3d motion vector view bind group layout")
+    }
+    let view_bgl = view_builder.finish(
+      backend.device,
+      label="mgstudio_motion_vector_view_bgl",
     )
-    let pl = backend.device.create_pipeline_layout_1(bgl)
-    backend.mesh3d_motion_vector_bgl_uniform = Some(bgl)
+    let mesh_bgl = create_uniform_bind_group_layout_vertex_fragment(
+      backend, "mgstudio_motion_vector_mesh_bgl",
+    )
+    let pl = backend.device.create_pipeline_layout_2(view_bgl, mesh_bgl)
+    backend.mesh3d_motion_vector_bgl_view = Some(view_bgl)
+    backend.mesh3d_motion_vector_bgl_mesh = Some(mesh_bgl)
     backend.mesh3d_motion_vector_pipeline_layout = Some(pl)
   }
-  if backend.mesh3d_motion_vector_uniform_buf is None ||
-    backend.mesh3d_motion_vector_uniform_bg is None {
-    guard backend.mesh3d_motion_vector_bgl_uniform is Some(bgl) else { return }
+  if backend.mesh3d_motion_vector_view_buf is None ||
+    backend.mesh3d_motion_vector_previous_view_buf is None ||
+    backend.mesh3d_motion_vector_view_bg is None {
+    guard backend.mesh3d_motion_vector_bgl_view is Some(view_bgl) else {
+      return
+    }
     let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
-    let uniform_buf = backend.device.create_buffer(size=256UL, usage~)
-    let uniform_bg = backend.device.create_bind_group_uniform_buffer(
-      bgl, uniform_buf,
+    let view_buf = backend.device.create_buffer(
+      size=MESH2D_VIEW_BUFFER_SIZE,
+      usage~,
     )
-    backend.mesh3d_motion_vector_uniform_buf = Some(uniform_buf)
-    backend.mesh3d_motion_vector_uniform_bg = Some(uniform_bg)
+    let previous_view_buf = backend.device.create_buffer(
+      size=MESH3D_PREPASS_PREVIOUS_VIEW_BUFFER_SIZE,
+      usage~,
+    )
+    let builder = @wgpu.BindGroupBuilder::new(max_entries=2UL)
+    let ok = builder.add_buffer(0U, view_buf, size=MESH2D_VIEW_BUFFER_SIZE) &&
+      builder.add_buffer(
+        2U,
+        previous_view_buf,
+        size=MESH3D_PREPASS_PREVIOUS_VIEW_BUFFER_SIZE,
+      )
+    if !ok {
+      builder.free()
+      return
+    }
+    let view_bg = builder.finish(
+      backend.device,
+      view_bgl,
+      label="mgstudio_motion_vector_view_bg",
+    )
+    backend.mesh3d_motion_vector_view_buf = Some(view_buf)
+    backend.mesh3d_motion_vector_previous_view_buf = Some(previous_view_buf)
+    backend.mesh3d_motion_vector_view_bg = Some(view_bg)
+  }
+  if backend.mesh3d_motion_vector_mesh_buf is None ||
+    backend.mesh3d_motion_vector_mesh_bg is None {
+    guard backend.mesh3d_motion_vector_bgl_mesh is Some(mesh_bgl) else {
+      return
+    }
+    let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
+    let mesh_buf = backend.device.create_buffer(
+      size=MESH3D_PREPASS_MESH_BUFFER_SIZE,
+      usage~,
+    )
+    let mesh_bg = backend.device.create_bind_group_uniform_buffer(
+      mesh_bgl, mesh_buf,
+    )
+    backend.mesh3d_motion_vector_mesh_buf = Some(mesh_buf)
+    backend.mesh3d_motion_vector_mesh_bg = Some(mesh_bg)
   }
   if backend.mesh3d_motion_vector_pipeline is Some(_) {
     return
@@ -1281,73 +1551,36 @@ pub fn GpuBackend::draw_mesh3d(
     }
     ensure_mesh3d_motion_vector_pipeline(self)
     guard self.mesh3d_motion_vector_pipeline is Some(pipeline) else { return }
-    guard self.mesh3d_motion_vector_uniform_buf is Some(uniform_buf) else {
+    guard self.mesh3d_motion_vector_view_buf is Some(view_buf) else { return }
+    guard self.mesh3d_motion_vector_previous_view_buf is Some(previous_view_buf) else {
       return
     }
-    guard self.mesh3d_motion_vector_uniform_bg is Some(uniform_bg) else {
-      return
-    }
-    let bytes = f32le_pack([
-      x,
-      y,
-      z,
-      1.0F,
-      rotation_x,
-      rotation_y,
-      rotation_z,
-      rotation_w,
-      scale_x,
-      scale_y,
-      scale_z,
-      1.0F,
-      previous_x,
-      previous_y,
-      previous_z,
-      1.0F,
-      previous_rotation_x,
-      previous_rotation_y,
-      previous_rotation_z,
-      previous_rotation_w,
-      previous_scale_x,
-      previous_scale_y,
-      previous_scale_z,
-      1.0F,
-      ps.unjittered_clip_from_world.x_axis_x,
-      ps.unjittered_clip_from_world.x_axis_y,
-      ps.unjittered_clip_from_world.x_axis_z,
-      ps.unjittered_clip_from_world.x_axis_w,
-      ps.unjittered_clip_from_world.y_axis_x,
-      ps.unjittered_clip_from_world.y_axis_y,
-      ps.unjittered_clip_from_world.y_axis_z,
-      ps.unjittered_clip_from_world.y_axis_w,
-      ps.unjittered_clip_from_world.z_axis_x,
-      ps.unjittered_clip_from_world.z_axis_y,
-      ps.unjittered_clip_from_world.z_axis_z,
-      ps.unjittered_clip_from_world.z_axis_w,
-      ps.unjittered_clip_from_world.w_axis_x,
-      ps.unjittered_clip_from_world.w_axis_y,
-      ps.unjittered_clip_from_world.w_axis_z,
-      ps.unjittered_clip_from_world.w_axis_w,
-      ps.previous_clip_from_world.x_axis_x,
-      ps.previous_clip_from_world.x_axis_y,
-      ps.previous_clip_from_world.x_axis_z,
-      ps.previous_clip_from_world.x_axis_w,
-      ps.previous_clip_from_world.y_axis_x,
-      ps.previous_clip_from_world.y_axis_y,
-      ps.previous_clip_from_world.y_axis_z,
-      ps.previous_clip_from_world.y_axis_w,
-      ps.previous_clip_from_world.z_axis_x,
-      ps.previous_clip_from_world.z_axis_y,
-      ps.previous_clip_from_world.z_axis_z,
-      ps.previous_clip_from_world.z_axis_w,
-      ps.previous_clip_from_world.w_axis_x,
-      ps.previous_clip_from_world.w_axis_y,
-      ps.previous_clip_from_world.w_axis_z,
-      ps.previous_clip_from_world.w_axis_w,
-    ])
-    self.queue.write_buffer(uniform_buf, 0UL, bytes)
+    guard self.mesh3d_motion_vector_view_bg is Some(view_bg) else { return }
+    guard self.mesh3d_motion_vector_mesh_buf is Some(mesh_buf) else { return }
+    guard self.mesh3d_motion_vector_mesh_bg is Some(mesh_bg) else { return }
+    self.queue.write_buffer(
+      view_buf,
+      0UL,
+      mesh3d_motion_vector_view_uniform_bytes(ps),
+    )
+    self.queue.write_buffer(
+      previous_view_buf,
+      0UL,
+      mesh3d_motion_vector_previous_view_uniform_bytes(ps),
+    )
+    self.queue.write_buffer(
+      mesh_buf,
+      0UL,
+      mesh3d_motion_vector_mesh_uniform_bytes(
+        x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y,
+        scale_z, previous_x, previous_y, previous_z, previous_rotation_x, previous_rotation_y,
+        previous_rotation_z, previous_rotation_w, previous_scale_x, previous_scale_y,
+        previous_scale_z,
+      ),
+    )
     pass.set_pipeline(pipeline)
-    pass.set_bind_group(0U, uniform_bg, [])
+    pass.set_bind_group(0U, view_bg, [])
+    pass.set_bind_group(1U, mesh_bg, [])
     let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
       mesh.vertex_stride_bytes
     pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)

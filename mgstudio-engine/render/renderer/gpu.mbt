@@ -41,6 +41,12 @@ const MESH2D_COLOR_MATERIAL_UNIFORM_BUFFER_SIZE : UInt64 = 80UL
 const MESH3D_UNIFORM_BUFFER_SIZE : UInt64 = 512UL
 
 ///|
+const MESH3D_PREPASS_PREVIOUS_VIEW_BUFFER_SIZE : UInt64 = 320UL
+
+///|
+const MESH3D_PREPASS_MESH_BUFFER_SIZE : UInt64 = 176UL
+
+///|
 const BLOOM_UNIFORM_BUFFER_SIZE : UInt64 = 240UL
 
 ///|
@@ -441,11 +447,15 @@ pub struct GpuBackend {
   mesh3d_preprocess_camera_upload_states : Array[
     GpuMesh3dPreprocessCameraUploadState,
   ]
-  mut mesh3d_motion_vector_bgl_uniform : @wgpu.BindGroupLayout?
+  mut mesh3d_motion_vector_bgl_view : @wgpu.BindGroupLayout?
+  mut mesh3d_motion_vector_bgl_mesh : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh3d_motion_vector_pipeline : @wgpu.RenderPipeline?
-  mut mesh3d_motion_vector_uniform_buf : @wgpu.Buffer?
-  mut mesh3d_motion_vector_uniform_bg : @wgpu.BindGroup?
+  mut mesh3d_motion_vector_view_buf : @wgpu.Buffer?
+  mut mesh3d_motion_vector_previous_view_buf : @wgpu.Buffer?
+  mut mesh3d_motion_vector_view_bg : @wgpu.BindGroup?
+  mut mesh3d_motion_vector_mesh_buf : @wgpu.Buffer?
+  mut mesh3d_motion_vector_mesh_bg : @wgpu.BindGroup?
   mut motion_blur_bgl : @wgpu.BindGroupLayout?
   mut motion_blur_pipeline : @wgpu.RenderPipeline?
   mut motion_blur_pipeline_surface : @wgpu.RenderPipeline?
@@ -810,11 +820,15 @@ pub fn GpuBackend::new(
     mesh3d_instance_uniform_capacity: 0UL,
     mesh3d_instance_uniform_used: 0,
     mesh3d_preprocess_camera_upload_states: [],
-    mesh3d_motion_vector_bgl_uniform: None,
+    mesh3d_motion_vector_bgl_view: None,
+    mesh3d_motion_vector_bgl_mesh: None,
     mesh3d_motion_vector_pipeline_layout: None,
     mesh3d_motion_vector_pipeline: None,
-    mesh3d_motion_vector_uniform_buf: None,
-    mesh3d_motion_vector_uniform_bg: None,
+    mesh3d_motion_vector_view_buf: None,
+    mesh3d_motion_vector_previous_view_buf: None,
+    mesh3d_motion_vector_view_bg: None,
+    mesh3d_motion_vector_mesh_buf: None,
+    mesh3d_motion_vector_mesh_bg: None,
     motion_blur_bgl: None,
     motion_blur_pipeline: None,
     motion_blur_pipeline_surface: None,

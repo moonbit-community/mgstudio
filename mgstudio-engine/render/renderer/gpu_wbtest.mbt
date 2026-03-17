@@ -107,6 +107,119 @@ test "renderer: mesh3d uniform slot pool grows per draw slot" {
 }
 
 ///|
+test "renderer: motion vector resources initialize prepass-style bind groups" {
+  let backend = GpuBackend::new(assets_base="assets")
+  ensure_mesh3d_motion_vector_pipeline(backend)
+  let ok = backend.mesh3d_motion_vector_bgl_view is Some(_) &&
+    backend.mesh3d_motion_vector_bgl_mesh is Some(_) &&
+    backend.mesh3d_motion_vector_view_buf is Some(_) &&
+    backend.mesh3d_motion_vector_previous_view_buf is Some(_) &&
+    backend.mesh3d_motion_vector_view_bg is Some(_) &&
+    backend.mesh3d_motion_vector_mesh_buf is Some(_) &&
+    backend.mesh3d_motion_vector_mesh_bg is Some(_)
+  inspect(ok, content="true")
+}
+
+///|
+test "renderer: motion vector prepass buffers match bevy struct sizes" {
+  let pass_state = GpuPassState::{
+    target_id: -1,
+    target_layer: -1,
+    width_logical: 128.0F,
+    height_logical: 128.0F,
+    is_3d: true,
+    camera_x: 1.0F,
+    camera_y: 2.0F,
+    camera_rot: 0.0F,
+    camera_scale: 1.0F,
+    camera_z: 3.0F,
+    camera_exposure: 1.0F,
+    camera_rot_x: 0.0F,
+    camera_rot_y: 0.0F,
+    camera_rot_z: 0.0F,
+    camera_rot_w: 1.0F,
+    clip_from_world: gpu_clip_matrix_identity(),
+    unjittered_clip_from_world: gpu_clip_matrix_identity(),
+    previous_clip_from_world: gpu_clip_matrix_identity(),
+    pass_kind: PASS_KIND_BASE_MOTION_VECTOR,
+    viewport_x: 0U,
+    viewport_y: 0U,
+    viewport_w: 128U,
+    viewport_h: 128U,
+    viewport_depth_min: 0.0F,
+    viewport_depth_max: 1.0F,
+    ambient_r: 0.0F,
+    ambient_g: 0.0F,
+    ambient_b: 0.0F,
+    ambient_brightness: 0.0F,
+    directional_dir_x: 0.0F,
+    directional_dir_y: 0.0F,
+    directional_dir_z: -1.0F,
+    directional_color_r: 0.0F,
+    directional_color_g: 0.0F,
+    directional_color_b: 0.0F,
+    directional_illuminance: 0.0F,
+    point_pos_x: 0.0F,
+    point_pos_y: 0.0F,
+    point_pos_z: 0.0F,
+    point_color_r: 0.0F,
+    point_color_g: 0.0F,
+    point_color_b: 0.0F,
+    point_intensity: 0.0F,
+    point_range: 0.0F,
+    spot_pos_x: 0.0F,
+    spot_pos_y: 0.0F,
+    spot_pos_z: 0.0F,
+    spot_dir_x: 0.0F,
+    spot_dir_y: 0.0F,
+    spot_dir_z: -1.0F,
+    spot_color_r: 0.0F,
+    spot_color_g: 0.0F,
+    spot_color_b: 0.0F,
+    spot_intensity: 0.0F,
+    spot_range: 0.0F,
+    spot_inner_angle: 0.0F,
+    spot_outer_angle: 0.0F,
+    point_shadow_near: 0.0F,
+  }
+  let mesh_bytes = mesh3d_motion_vector_mesh_uniform_bytes(
+    0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F,
+    0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F,
+  )
+  inspect(
+    mesh3d_motion_vector_view_uniform_bytes(pass_state).length(),
+    content="1024",
+  )
+  inspect(
+    mesh3d_motion_vector_previous_view_uniform_bytes(pass_state).length(),
+    content="320",
+  )
+  inspect(mesh_bytes.length(), content="176")
+}
+
+///|
+test "renderer: motion vector shader reads Bevy-style view and previous-view bindings" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let wgsl = load_wgsl_from_assets_required(
+    backend, "shaders/bevy/mgstudio_runtime/3d/motion_vector.wgsl",
+  )
+  inspect(
+    wgsl.contains("@group(0) @binding(0) var<uniform> view : View;"),
+    content="true",
+  )
+  inspect(
+    wgsl.contains(
+      "@group(0) @binding(2) var<uniform> previous_view_uniforms: PreviousViewUniforms;",
+    ),
+    content="true",
+  )
+  inspect(
+    wgsl.contains("@group(1) @binding(0) var<uniform> mesh : array<Mesh, 1u>;"),
+    content="true",
+  )
+}
+
+///|
 test "renderer: large mesh3d upload switches to u32 index buffers" {
   let backend = GpuBackend::new()
   backend.meshes.clear()
