@@ -406,6 +406,43 @@ test "renderer: canonical prepass import preprocessing keeps motion-vector bindi
 }
 
 ///|
+test "renderer: view item imports keep dependent ColorGrading declarations" {
+  register_renderer_test_shaders()
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let value_defines = default_wgsl_value_defines()
+  let modules = copy_registered_wgsl_import_module_paths()
+
+  let sprite_visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let sprite_preprocessed = load_wgsl_preprocessed(
+    "", "shaders/bevy/bevy_sprite_render/render/sprite_view_bindings.wgsl", defines,
+    value_defines, sprite_visited, modules,
+  )
+  inspect(sprite_preprocessed.contains("struct ColorGrading"), content="true")
+  inspect(sprite_preprocessed.contains("struct View"), content="true")
+  inspect(
+    sprite_preprocessed.contains(
+      "@group(0) @binding(0) var<uniform> view: View;",
+    ),
+    content="true",
+  )
+
+  let mesh2d_visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let mesh2d_preprocessed = load_wgsl_preprocessed(
+    "", "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl", defines,
+    value_defines, mesh2d_visited, modules,
+  )
+  inspect(mesh2d_preprocessed.contains("struct ColorGrading"), content="true")
+  inspect(mesh2d_preprocessed.contains("struct View"), content="true")
+  inspect(
+    mesh2d_preprocessed.contains(
+      "@group(0) @binding(0) var<uniform> view: View;",
+    ),
+    content="true",
+  )
+  clear_registered_wgsl_source_registry()
+}
+
+///|
 test "renderer: registered wgsl sources satisfy strict mesh2d preprocessing" {
   clear_registered_wgsl_source_registry()
   register_wgsl_source(

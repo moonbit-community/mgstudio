@@ -2085,6 +2085,39 @@ fn wgsl_declaration_name(line : String) -> String {
 }
 
 ///|
+priv struct WgslDeclarationBlock {
+  name : String
+  text : String
+}
+
+///|
+fn collect_wgsl_declaration_dependencies(
+  declaration_text : String,
+  self_name : String,
+  declaration_names : @hashmap.HashMap[String, Bool],
+  dependencies : Array[String],
+) -> Unit {
+  let mut i = 0
+  while i < declaration_text.length() {
+    while i < declaration_text.length() &&
+          !wgsl_identifier_char(declaration_text.code_unit_at(i).to_int()) {
+      i = i + 1
+    }
+    let start = i
+    while i < declaration_text.length() &&
+          wgsl_identifier_char(declaration_text.code_unit_at(i).to_int()) {
+      i = i + 1
+    }
+    if i > start {
+      let name = declaration_text[start:i].to_string()
+      if name != self_name && declaration_names.contains(name) {
+        wgsl_string_list_push_unique(dependencies, name)
+      }
+    }
+  }
+}
+
+///|
 fn extract_wgsl_module_items(
   source : String,
   requested_items : Array[String],
@@ -2092,17 +2125,13 @@ fn extract_wgsl_module_items(
   if requested_items.length() == 0 {
     return source
   }
-  let requested : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
-  for item in requested_items {
-    requested.set(item, true)
-  }
   let lines : Array[String] = []
   for line_item in source.split("\n") {
     lines.push(line_item.to_string())
   }
   let pending_prefix : Array[String] = []
-  let mut out = ""
-  let mut matched_count = 0
+  let import_blocks : Array[String] = []
+  let declaration_blocks : Array[WgslDeclarationBlock] = []
   let mut i = 0
   while i < lines.length() {
     let line = lines[i]
@@ -2130,7 +2159,7 @@ fn extract_wgsl_module_items(
         import_block = import_block + "\n" + next_line
         balance = balance + wgsl_import_brace_balance(next_line)
       }
-      out = out + import_block + "\n"
+      import_blocks.push(import_block + "\n")
       pending_prefix.clear()
       i = i + 1
       continue
@@ -2164,17 +2193,67 @@ fn extract_wgsl_module_items(
         }
       }
     }
-    if requested.contains(decl_name) {
-      matched_count = matched_count + 1
-      for block_line in block_lines {
-        out = out + block_line + "\n"
-      }
+    let mut block_text = ""
+    for block_line in block_lines {
+      block_text = block_text + block_line + "\n"
     }
+    declaration_blocks.push(WgslDeclarationBlock::{
+      name: decl_name,
+      text: block_text,
+    })
     i = i + 1
   }
-  if matched_count == 0 {
+  let declaration_names : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let declaration_indexes : @hashmap.HashMap[String, Int] = @hashmap.HashMap::new()
+  for i in 0..<declaration_blocks.length() {
+    let block = declaration_blocks[i]
+    if block.name != "" {
+      declaration_names.set(block.name, true)
+      declaration_indexes.set(block.name, i)
+    }
+  }
+  let included_names : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let worklist : Array[String] = []
+  let mut matched_requested = 0
+  for item in requested_items {
+    if declaration_names.contains(item) {
+      worklist.push(item)
+      matched_requested = matched_requested + 1
+    }
+  }
+  if matched_requested == 0 {
     source
   } else {
+    while worklist.length() > 0 {
+      let name = worklist.pop().unwrap()
+      if included_names.contains(name) {
+        continue
+      }
+      included_names.set(name, true)
+      guard declaration_indexes.get(name) is Some(index) else { continue }
+      let block = declaration_blocks[index]
+      let dependencies : Array[String] = []
+      collect_wgsl_declaration_dependencies(
+        block.text,
+        name,
+        declaration_names,
+        dependencies,
+      )
+      for dependency in dependencies {
+        if !included_names.contains(dependency) {
+          worklist.push(dependency)
+        }
+      }
+    }
+    let mut out = ""
+    for import_block in import_blocks {
+      out = out + import_block
+    }
+    for block in declaration_blocks {
+      if block.name == "" || included_names.contains(block.name) {
+        out = out + block.text
+      }
+    }
     out
   }
 }
