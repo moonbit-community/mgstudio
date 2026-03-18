@@ -13,9 +13,107 @@
 // limitations under the License.
 
 ///|
-fn starts_with_text(text : String, prefix : String) -> Bool {
-  text.length() >= prefix.length() &&
-  text[:prefix.length()].to_string() == prefix
+pub struct Preprocessor {}
+
+///|
+pub fn Preprocessor::default() -> Preprocessor {
+  Preprocessor::{  }
+}
+
+///|
+pub(all) suberror PreprocessError {
+  GlslInvalidVersion(Int)
+  ElseWithoutCondition(Int)
+  TooManyEndIfs(Int)
+  NotEnoughEndIfs(Int)
+  UnknownShaderDef(String, Int)
+  UnknownShaderDefOperator(String, Int)
+  InvalidShaderDefComparisonValue(String, String, String, Int)
+  ImportParseError(String, Int)
+  DefineInModule(Int)
+}
+
+///|
+enum ScopeLevel {
+  Active
+  PreviouslyActive
+  NotActive
+} derive(Eq)
+
+///|
+priv struct Scope {
+  levels : Array[ScopeLevel]
+}
+
+///|
+fn Scope::new() -> Scope {
+  Scope::{ levels: [ScopeLevel::Active] }
+}
+
+///|
+fn Scope::branch(
+  self : Scope,
+  is_else : Bool,
+  condition : Bool,
+  offset : Int,
+) -> Result[Unit, PreprocessError] {
+  if is_else {
+    let previous_scope = self.levels.pop()
+    guard previous_scope is Some(previous) else {
+      return Err(PreprocessError::ElseWithoutCondition(offset))
+    }
+    guard self.levels.length() > 0 else {
+      return Err(PreprocessError::ElseWithoutCondition(offset))
+    }
+    let parent_scope = self.levels[self.levels.length() - 1]
+    let new_scope = if parent_scope != ScopeLevel::Active {
+      ScopeLevel::NotActive
+    } else if previous != ScopeLevel::NotActive {
+      ScopeLevel::PreviouslyActive
+    } else if condition {
+      ScopeLevel::Active
+    } else {
+      ScopeLevel::NotActive
+    }
+    self.levels.push(new_scope)
+    return Ok(())
+  }
+  let parent_scope = if self.levels.is_empty() {
+    ScopeLevel::Active
+  } else {
+    self.levels[self.levels.length() - 1]
+  }
+  let new_scope = if parent_scope == ScopeLevel::Active && condition {
+    ScopeLevel::Active
+  } else {
+    ScopeLevel::NotActive
+  }
+  self.levels.push(new_scope)
+  Ok(())
+}
+
+///|
+fn Scope::pop(self : Scope, offset : Int) -> Result[Unit, PreprocessError] {
+  self.levels.pop() |> ignore
+  if self.levels.is_empty() {
+    Err(PreprocessError::TooManyEndIfs(offset))
+  } else {
+    Ok(())
+  }
+}
+
+///|
+fn Scope::active(self : Scope) -> Bool {
+  self.levels[self.levels.length() - 1] == ScopeLevel::Active
+}
+
+///|
+fn Scope::finish(self : Scope, offset : Int) -> Result[Unit, PreprocessError] {
+  if self.levels.length() != 1 {
+    Err(PreprocessError::NotEnoughEndIfs(offset))
+  } else {
+    Ok(())
+  }
 }
 
 ///|
@@ -28,192 +126,63 @@ fn trim_trailing_semicolons(text : String) -> String {
 }
 
 ///|
-fn strip_wgsl_line_comment(text : String) -> String {
+fn split_extensions(raw : String) -> Array[String] {
+  let extensions : Array[String] = []
+  for item in raw.split(",") {
+    let text = item.to_string().trim().to_string()
+    if text != "" {
+      extensions.push(text)
+    }
+  }
+  extensions
+}
+
+///|
+fn collect_effective_def_names(
+  line : String,
+  effective_defs : @hashset.HashSet[String],
+) -> Unit {
   let mut i = 0
-  while i + 1 < text.length() {
-    if text.code_unit_at(i).to_int() == 47 && // '/'
-      text.code_unit_at(i + 1).to_int() == 47 { // '/'
-      return text[:i].to_string()
-    }
-    i = i + 1
-  }
-  text
-}
-
-///|
-fn join_wgsl_import_prefix(prefix : String, path : String) -> String {
-  let lhs = prefix.trim().to_string()
-  let rhs = path.trim().to_string()
-  if lhs == "" {
-    rhs
-  } else if rhs == "" {
-    lhs
-  } else {
-    lhs + "::" + rhs
-  }
-}
-
-///|
-fn wgsl_import_brace_balance(text : String) -> Int {
-  let mut balance = 0
-  for i in 0..<text.length() {
-    let ch = text.code_unit_at(i).to_int()
-    if ch == 123 { // '{'
-      balance = balance + 1
-      continue
-    }
-    if ch == 125 { // '}'
-      balance = balance - 1
-    }
-  }
-  balance
-}
-
-///|
-fn split_top_level_wgsl_import_items(text : String) -> Array[String] {
-  let items : Array[String] = []
-  let mut start = 0
-  let mut depth = 0
-  for i in 0..<text.length() {
-    let ch = text.code_unit_at(i).to_int()
-    if ch == 123 { // '{'
-      depth = depth + 1
-      continue
-    }
-    if ch == 125 { // '}'
-      depth = depth - 1
-      continue
-    }
-    if ch == 44 && depth == 0 { // ','
-      let item = text[start:i].to_string().trim().to_string()
-      if item != "" {
-        items.push(trim_trailing_semicolons(item))
+  while i < line.length() {
+    if line.code_unit_at(i).to_int() == 35 { // '#'
+      if i + 1 < line.length() && line.code_unit_at(i + 1).to_int() == 123 { // '{'
+        let mut j = i + 2
+        while j < line.length() && line.code_unit_at(j).to_int() != 125 { // '}'
+          j = j + 1
+        }
+        if j < line.length() {
+          let name = line[i + 2:j].to_string().trim().to_string()
+          if name != "" {
+            effective_defs.add(name)
+          }
+          i = j + 1
+          continue
+        }
       }
-      start = i + 1
-    }
-  }
-  let tail = text[start:text.length()].to_string().trim().to_string()
-  if tail != "" {
-    items.push(trim_trailing_semicolons(tail))
-  }
-  items
-}
-
-///|
-fn find_top_level_wgsl_group_separator(text : String) -> Int {
-  let mut depth = 0
-  let mut i = 0
-  while i + 2 < text.length() {
-    let ch = text.code_unit_at(i).to_int()
-    if ch == 123 { // '{'
-      depth = depth + 1
-      i = i + 1
-      continue
-    }
-    if ch == 125 { // '}'
-      depth = depth - 1
-      i = i + 1
-      continue
-    }
-    if depth == 0 &&
-      ch == 58 &&
-      text.code_unit_at(i + 1).to_int() == 58 &&
-      text.code_unit_at(i + 2).to_int() == 123 {
-      return i
-    }
-    i = i + 1
-  }
-  -1
-}
-
-///|
-fn extract_wgsl_group_body(text : String, open_brace_index : Int) -> String {
-  let mut depth = 0
-  let mut body_start = open_brace_index + 1
-  for i in open_brace_index..<text.length() {
-    let ch = text.code_unit_at(i).to_int()
-    if ch == 123 { // '{'
-      depth = depth + 1
-      if depth == 1 {
-        body_start = i + 1
+      let mut j = i + 1
+      while j < line.length() {
+        let code = line.code_unit_at(j).to_int()
+        let continue_name = (code >= 65 && code <= 90) ||
+          (code >= 48 && code <= 57) ||
+          code == 95
+        if !continue_name {
+          break
+        }
+        j = j + 1
       }
-      continue
-    }
-    if ch == 125 { // '}'
-      depth = depth - 1
-      if depth == 0 {
-        return text[body_start:i].to_string()
+      if j > i + 1 {
+        effective_defs.add(line[i + 1:j].to_string())
+        i = j
+        continue
       }
     }
-  }
-  ""
-}
-
-///|
-fn split_last_wgsl_path(text : String) -> (String, String)? {
-  let mut index = -1
-  let mut i = 0
-  while i + 1 < text.length() {
-    if text.code_unit_at(i).to_int() == 58 && // ':'
-      text.code_unit_at(i + 1).to_int() == 58 { // ':'
-      index = i
-    }
     i = i + 1
   }
-  if index < 0 {
-    return None
-  }
-  Some(
-    (
-      text[:index].to_string().trim().to_string(),
-      text[index + 2:text.length()].to_string().trim().to_string(),
-    ),
-  )
-}
-
-///|
-fn split_import_head_and_tail(text : String) -> (String, String) {
-  let trimmed = text.trim().to_string()
-  if trimmed == "" {
-    return ("", "")
-  }
-  if trimmed.code_unit_at(0).to_int() == 34 { // '"'
-    let mut end_quote = 1
-    while end_quote < trimmed.length() &&
-          trimmed.code_unit_at(end_quote).to_int() != 34 {
-      end_quote = end_quote + 1
-    }
-    if end_quote < trimmed.length() {
-      let head = trimmed[:end_quote + 1].to_string().trim().to_string()
-      let tail = trimmed[end_quote + 1:trimmed.length()]
-        .to_string()
-        .trim()
-        .to_string()
-      return (head, tail)
-    }
-  }
-  let mut split_index = -1
-  let mut i = 0
-  while i < trimmed.length() {
-    let ch = trimmed.code_unit_at(i).to_int()
-    if ch == 32 || ch == 9 { // ' ' or '\t'
-      split_index = i
-      break
-    }
-    i = i + 1
-  }
-  if split_index < 0 {
-    return (trimmed, "")
-  }
-  (
-    trimmed[:split_index].to_string().trim().to_string(),
-    trimmed[split_index:trimmed.length()].to_string().trim().to_string(),
-  )
 }
 
 ///|
 fn parse_define_value(raw_value : String) -> ShaderDefValue {
-  let value = trim_trailing_semicolons(strip_wgsl_line_comment(raw_value))
+  let value = trim_trailing_semicolons(raw_value)
   if value == "" {
     return ShaderDefValue::Bool(true)
   }
@@ -223,153 +192,455 @@ fn parse_define_value(raw_value : String) -> ShaderDefValue {
   if value == "false" {
     return ShaderDefValue::Bool(false)
   }
-  if ends_with_text(value, "u") || ends_with_text(value, "U") {
+  if value.has_suffix("u") || value.has_suffix("U") {
     let unsigned_text = value[:value.length() - 1]
       .to_string()
       .trim()
       .to_string()
     let parsed = @strconv.parse_int(unsigned_text[:], base=10) catch {
-      _ => return ShaderDefValue::Bool(true)
+      _ => return ShaderDefValue::Bool(false)
     }
     return ShaderDefValue::UInt(parsed.reinterpret_as_uint())
   }
   let parsed = @strconv.parse_int(value[:], base=10) catch {
-    _ => return ShaderDefValue::Bool(true)
+    _ => return ShaderDefValue::Bool(false)
   }
   ShaderDefValue::Int(parsed)
 }
 
 ///|
-fn ends_with_text(text : String, suffix : String) -> Bool {
-  text.length() >= suffix.length() &&
-  text[text.length() - suffix.length():text.length()].to_string() == suffix
+fn split_define_name_and_value(text : String) -> (String, String) {
+  let trimmed = text.trim().to_string()
+  if trimmed == "" {
+    return ("", "")
+  }
+  let mut i = 0
+  while i < trimmed.length() {
+    let code = trimmed.code_unit_at(i).to_int()
+    if code == 32 || code == 9 {
+      return (
+        trimmed[:i].to_string().trim().to_string(),
+        trimmed[i:trimmed.length()].to_string().trim().to_string(),
+      )
+    }
+    i = i + 1
+  }
+  (trimmed, "")
 }
 
 ///|
-fn collect_import_definitions(
-  spec : String,
+fn starts_with_text(text : String, prefix : String) -> Bool {
+  text.length() >= prefix.length() &&
+  text[:prefix.length()].to_string() == prefix
+}
+
+///|
+fn import_brace_balance(text : String) -> Int {
+  let mut balance = 0
+  for i in 0..<text.length() {
+    let code = text.code_unit_at(i).to_int()
+    if code == 123 { // '{'
+      balance = balance + 1
+    } else if code == 125 { // '}'
+      balance = balance - 1
+    }
+  }
+  balance
+}
+
+///|
+fn parse_bool_text(text : String) -> Bool? {
+  let trimmed = trim_trailing_semicolons(text)
+  if trimmed == "true" {
+    return Some(true)
+  }
+  if trimmed == "false" {
+    return Some(false)
+  }
+  None
+}
+
+///|
+fn parse_prefixed_identifier(line : String, prefix : String) -> String? {
+  let trimmed = line.trim().to_string()
+  guard starts_with_text(trimmed, prefix) else { return None }
+  let name = trim_trailing_semicolons(
+    trimmed[prefix.length():trimmed.length()].to_string(),
+  )
+  if name == "" {
+    None
+  } else {
+    Some(name)
+  }
+}
+
+///|
+fn parse_if_operator_clause(
+  line : String,
   prefix : String,
-  from_group : Bool,
-  imports : Array[ImportDefinition],
-) -> Unit {
-  let text = trim_trailing_semicolons(strip_wgsl_line_comment(spec))
-  if text == "" {
-    return
-  }
-
-  let group_separator = find_top_level_wgsl_group_separator(text)
-  if group_separator >= 0 {
-    let group_prefix = text[:group_separator].to_string().trim().to_string()
-    let body = extract_wgsl_group_body(text, group_separator + 2)
-    let next_prefix = join_wgsl_import_prefix(prefix, group_prefix)
-    for item in split_top_level_wgsl_import_items(body) {
-      collect_import_definitions(item, next_prefix, true, imports)
-    }
-    return
-  }
-
-  let alias_split : Array[String] = []
-  for part in text.split(" as ") {
-    alias_split.push(part.to_string())
-  }
-  let raw_spec = alias_split[0].trim().to_string()
-  let alias_name = if alias_split.length() > 1 {
-    trim_trailing_semicolons(alias_split[1])
-  } else {
-    ""
-  }
-  let (head, tail) = split_import_head_and_tail(raw_spec)
-  let full_head = if prefix != "" &&
-    !(head.length() > 0 && head.code_unit_at(0).to_int() == 34) {
-    join_wgsl_import_prefix(prefix, head)
-  } else {
-    head
-  }
-
-  if full_head == "" {
-    return
-  }
-
-  if tail != "" {
-    imports.push(ImportDefinition::{
-      import_path: full_head,
-      items: split_top_level_wgsl_import_items(tail),
-    })
-    return
-  }
-
-  if alias_name != "" {
-    imports.push(ImportDefinition::{ import_path: full_head, items: [] })
-    return
-  }
-
-  if from_group {
-    if split_last_wgsl_path(full_head) is Some((module_path, item_name)) {
-      imports.push(ImportDefinition::{
-        import_path: module_path,
-        items: [item_name],
-      })
-      return
+) -> (String, String, String)? {
+  let trimmed = line.trim().to_string()
+  guard starts_with_text(trimmed, prefix) else { return None }
+  let expression = trim_trailing_semicolons(
+    trimmed[prefix.length():trimmed.length()].to_string(),
+  )
+  let parts : Array[String] = []
+  for part in expression.split(" ") {
+    let token = part.to_string().trim().to_string()
+    if token != "" {
+      parts.push(token)
     }
   }
-
-  imports.push(ImportDefinition::{ import_path: full_head, items: [] })
+  if parts.length() != 3 {
+    return None
+  }
+  Some((parts[0], parts[1], parts[2]))
 }
 
 ///|
-pub fn get_preprocessor_metadata(source : String) -> PreprocessorMetaData {
-  let imports : Array[ImportDefinition] = []
-  let defines : @hashmap.HashMap[String, ShaderDefValue] = @hashmap.HashMap::new()
-  let cleaned_lines : Array[String] = []
-  let lines : Array[String] = []
-  let mut name : String? = None
-
-  for line_item in source.split("\n") {
-    lines.push(line_item.to_string())
+fn compare_bool_values(
+  lhs : Bool,
+  rhs : Bool,
+  operator : String,
+  offset : Int,
+) -> Result[Bool, PreprocessError] {
+  match operator {
+    "==" => Ok(lhs == rhs)
+    "!=" => Ok(lhs != rhs)
+    ">" => Ok(lhs > rhs)
+    ">=" => Ok(lhs >= rhs)
+    "<" => Ok(lhs < rhs)
+    "<=" => Ok(lhs <= rhs)
+    _ => Err(PreprocessError::UnknownShaderDefOperator(operator, offset))
   }
+}
 
-  let mut line_index = 0
-  while line_index < lines.length() {
-    let line = lines[line_index]
-    let trimmed = strip_wgsl_line_comment(line).trim().to_string()
+///|
+fn compare_int_values(
+  lhs : Int,
+  rhs : Int,
+  operator : String,
+  offset : Int,
+) -> Result[Bool, PreprocessError] {
+  match operator {
+    "==" => Ok(lhs == rhs)
+    "!=" => Ok(lhs != rhs)
+    ">" => Ok(lhs > rhs)
+    ">=" => Ok(lhs >= rhs)
+    "<" => Ok(lhs < rhs)
+    "<=" => Ok(lhs <= rhs)
+    _ => Err(PreprocessError::UnknownShaderDefOperator(operator, offset))
+  }
+}
 
-    if starts_with_text(trimmed, "#define_import_path ") {
-      let raw_name = trimmed[20:trimmed.length()].to_string()
-      let import_name = trim_trailing_semicolons(raw_name)
-      if import_name != "" {
-        name = Some(import_name)
+///|
+fn compare_uint_values(
+  lhs : UInt,
+  rhs : UInt,
+  operator : String,
+  offset : Int,
+) -> Result[Bool, PreprocessError] {
+  match operator {
+    "==" => Ok(lhs == rhs)
+    "!=" => Ok(lhs != rhs)
+    ">" => Ok(lhs > rhs)
+    ">=" => Ok(lhs >= rhs)
+    "<" => Ok(lhs < rhs)
+    "<=" => Ok(lhs <= rhs)
+    _ => Err(PreprocessError::UnknownShaderDefOperator(operator, offset))
+  }
+}
+
+///|
+fn eval_if_condition(
+  shader_defs : @hashmap.HashMap[String, ShaderDefValue],
+  def : String,
+  operator : String,
+  value : String,
+  offset : Int,
+) -> Result[Bool, PreprocessError] {
+  guard shader_defs.get(def) is Some(def_value) else {
+    return Err(PreprocessError::UnknownShaderDef(def, offset))
+  }
+  match def_value {
+    ShaderDefValue::Bool(bool_value) =>
+      match parse_bool_text(value) {
+        Some(expected) =>
+          compare_bool_values(bool_value, expected, operator, offset)
+        None =>
+          Err(
+            PreprocessError::InvalidShaderDefComparisonValue(
+              def, value, "bool", offset,
+            ),
+          )
       }
-      line_index = line_index + 1
+    ShaderDefValue::Int(int_value) => {
+      let parsed = @strconv.parse_int(value[:], base=10) catch {
+        _ =>
+          return Err(
+            PreprocessError::InvalidShaderDefComparisonValue(
+              def, value, "int", offset,
+            ),
+          )
+      }
+      compare_int_values(int_value, parsed, operator, offset)
+    }
+    ShaderDefValue::UInt(uint_value) => {
+      let parsed_text = if value.has_suffix("u") || value.has_suffix("U") {
+        value[:value.length() - 1].to_string()
+      } else {
+        value
+      }
+      let parsed = @strconv.parse_int(parsed_text[:], base=10) catch {
+        _ =>
+          return Err(
+            PreprocessError::InvalidShaderDefComparisonValue(
+              def, value, "uint", offset,
+            ),
+          )
+      }
+      compare_uint_values(
+        uint_value,
+        parsed.reinterpret_as_uint(),
+        operator,
+        offset,
+      )
+    }
+  }
+}
+
+///|
+fn check_scope(
+  shader_defs : @hashmap.HashMap[String, ShaderDefValue],
+  line : String,
+  scope : Scope?,
+  offset : Int,
+) -> Result[(Bool, String?), PreprocessError] {
+  if parse_prefixed_identifier(line, "#ifdef ") is Some(name) {
+    let condition = shader_defs.contains(name)
+    if scope is Some(scope_state) {
+      match scope_state.branch(false, condition, offset) {
+        Ok(_) => ()
+        Err(err) => return Err(err)
+      }
+    }
+    return Ok((true, Some(name)))
+  }
+  if parse_prefixed_identifier(line, "#ifndef ") is Some(name) {
+    let condition = !shader_defs.contains(name)
+    if scope is Some(scope_state) {
+      match scope_state.branch(false, condition, offset) {
+        Ok(_) => ()
+        Err(err) => return Err(err)
+      }
+    }
+    return Ok((true, Some(name)))
+  }
+  if parse_prefixed_identifier(line, "#else ifdef ") is Some(name) {
+    let condition = shader_defs.contains(name)
+    if scope is Some(scope_state) {
+      match scope_state.branch(true, condition, offset) {
+        Ok(_) => ()
+        Err(err) => return Err(err)
+      }
+    }
+    return Ok((true, Some(name)))
+  }
+  if parse_prefixed_identifier(line, "#else ifndef ") is Some(name) {
+    let condition = !shader_defs.contains(name)
+    if scope is Some(scope_state) {
+      match scope_state.branch(true, condition, offset) {
+        Ok(_) => ()
+        Err(err) => return Err(err)
+      }
+    }
+    return Ok((true, Some(name)))
+  }
+  if parse_if_operator_clause(line, "#else if ") is Some((def, operator, value)) {
+    if scope is None {
+      return Ok((true, Some(def)))
+    }
+    let condition = match
+      eval_if_condition(shader_defs, def, operator, value, offset) {
+      Ok(result) => result
+      Err(err) => return Err(err)
+    }
+    guard scope is Some(scope_state) else { abort("unreachable missing scope") }
+    match scope_state.branch(true, condition, offset) {
+      Ok(_) => ()
+      Err(err) => return Err(err)
+    }
+    return Ok((true, Some(def)))
+  }
+  if parse_if_operator_clause(line, "#if ") is Some((def, operator, value)) {
+    if scope is None {
+      return Ok((true, Some(def)))
+    }
+    let condition = match
+      eval_if_condition(shader_defs, def, operator, value, offset) {
+      Ok(result) => result
+      Err(err) => return Err(err)
+    }
+    guard scope is Some(scope_state) else { abort("unreachable missing scope") }
+    match scope_state.branch(false, condition, offset) {
+      Ok(_) => ()
+      Err(err) => return Err(err)
+    }
+    return Ok((true, Some(def)))
+  }
+  let trimmed = line.trim().to_string()
+  if starts_with_text(trimmed, "#else") {
+    if scope is Some(scope_state) {
+      match scope_state.branch(true, true, offset) {
+        Ok(_) => ()
+        Err(err) => return Err(err)
+      }
+    }
+    return Ok((true, None))
+  }
+  if starts_with_text(trimmed, "#endif") {
+    if scope is Some(scope_state) {
+      match scope_state.pop(offset) {
+        Ok(_) => ()
+        Err(err) => return Err(err)
+      }
+    }
+    return Ok((true, None))
+  }
+  Ok((false, None))
+}
+
+///|
+fn replace_shader_defs_in_line(
+  line : String,
+  shader_defs : @hashmap.HashMap[String, ShaderDefValue],
+) -> String {
+  let mut output = ""
+  let mut i = 0
+  while i < line.length() {
+    if line.code_unit_at(i).to_int() != 35 { // '#'
+      output = output + line[i:i + 1].to_string()
+      i = i + 1
       continue
     }
 
-    if starts_with_text(trimmed, "#define ") {
-      let raw_define = trimmed[8:trimmed.length()]
-        .to_string()
-        .trim()
-        .to_string()
-      if raw_define != "" {
-        let (define_name, define_tail) = split_import_head_and_tail(raw_define)
-        if define_name != "" {
-          defines.set(define_name, parse_define_value(define_tail))
+    let start = i
+    i = i + 1
+    while i < line.length() {
+      let code = line.code_unit_at(i).to_int()
+      if code == 32 || code == 9 {
+        i = i + 1
+        continue
+      }
+      break
+    }
+
+    if i < line.length() && line.code_unit_at(i).to_int() == 123 { // '{'
+      let mut j = i + 1
+      while j < line.length() && line.code_unit_at(j).to_int() != 125 { // '}'
+        j = j + 1
+      }
+      if j < line.length() {
+        let name = line[i + 1:j].to_string().trim().to_string()
+        if shader_defs.get(name) is Some(value) {
+          output = output + value.value_as_string()
+          i = j + 1
+          continue
         }
       }
+      output = output + line[start:i].to_string()
+      continue
+    }
+
+    let mut j = i
+    while j < line.length() {
+      let code = line.code_unit_at(j).to_int()
+      let is_ident = (code >= 65 && code <= 90) ||
+        (code >= 97 && code <= 122) ||
+        (code >= 48 && code <= 57) ||
+        code == 95
+      if !is_ident {
+        break
+      }
+      j = j + 1
+    }
+    if j > i {
+      let name = line[i:j].to_string()
+      if shader_defs.get(name) is Some(value) {
+        output = output + value.value_as_string()
+        i = j
+        continue
+      }
+    }
+
+    output = output + line[start:i].to_string()
+  }
+  output
+}
+
+///|
+pub fn Preprocessor::extract_wgsl_directives(
+  _self : Preprocessor,
+  source : String,
+) -> (String, WgslDirectives) {
+  let directives = WgslDirectives::default()
+  let cleaned_lines : Array[String] = []
+  let mut in_directive_section = true
+  let mut line_index = 0
+  for line_item in source.split("\n") {
+    let line = line_item.to_string()
+    let trimmed = line.trim().to_string()
+
+    if trimmed == "" || starts_with_text(trimmed, "//") {
+      cleaned_lines.push(line)
       line_index = line_index + 1
       continue
     }
 
-    if starts_with_text(trimmed, "#import ") {
-      let mut spec = trimmed[8:trimmed.length()].to_string()
-      let mut brace_balance = wgsl_import_brace_balance(spec)
-      while brace_balance > 0 && line_index + 1 < lines.length() {
+    if in_directive_section {
+      if starts_with_text(trimmed, "enable ") && trimmed.has_suffix(";") {
+        cleaned_lines.push("")
+        directives.enables.push(EnableDirective::{
+          extensions: split_extensions(
+            trimmed[7:trimmed.length() - 1].to_string(),
+          ),
+          source_location: line_index,
+        })
         line_index = line_index + 1
-        let next_line = strip_wgsl_line_comment(lines[line_index])
-        spec = spec + "\n" + next_line
-        brace_balance = brace_balance + wgsl_import_brace_balance(next_line)
+        continue
       }
-      collect_import_definitions(spec, "", false, imports)
-      line_index = line_index + 1
-      continue
+      if starts_with_text(trimmed, "requires ") && trimmed.has_suffix(";") {
+        cleaned_lines.push("")
+        directives.requires.push(RequiresDirective::{
+          extensions: split_extensions(
+            trimmed[9:trimmed.length() - 1].to_string(),
+          ),
+          source_location: line_index,
+        })
+        line_index = line_index + 1
+        continue
+      }
+      if starts_with_text(trimmed, "diagnostic(") && trimmed.has_suffix(");") {
+        let body = trimmed[11:trimmed.length() - 2].to_string()
+        if body.find(",") is Some(comma_index) {
+          cleaned_lines.push("")
+          directives.diagnostics.push(DiagnosticDirective::{
+            severity: body[:comma_index].to_string().trim().to_string(),
+            rule: body[comma_index + 1:body.length()]
+            .to_string()
+            .trim()
+            .to_string(),
+            source_location: line_index,
+          })
+          line_index = line_index + 1
+          continue
+        }
+      }
+      if !starts_with_text(trimmed, "enable") &&
+        !starts_with_text(trimmed, "requires") &&
+        !starts_with_text(trimmed, "diagnostic") {
+        in_directive_section = false
+      }
     }
 
     cleaned_lines.push(line)
@@ -384,7 +655,264 @@ pub fn get_preprocessor_metadata(source : String) -> PreprocessorMetaData {
     cleaned_source = cleaned_source + cleaned_lines[i]
   }
 
-  PreprocessorMetaData::{ name, imports, defines, cleaned_source }
+  (cleaned_source, directives)
+}
+
+///|
+pub fn Preprocessor::preprocess(
+  _self : Preprocessor,
+  source : String,
+  shader_defs : @hashmap.HashMap[String, ShaderDefValue],
+) -> Result[PreprocessOutput, PreprocessError] {
+  let declared_imports : Array[DeclaredImportBinding] = []
+  let used_imports : Array[ImportDefWithOffset] = []
+  let scope = Scope::new()
+  let original_lines : Array[String] = []
+  let decommented_lines : Array[String] = []
+  for line_item in source.split("\n") {
+    original_lines.push(line_item.to_string())
+  }
+  for line_item in replace_comments(source).split("\n") {
+    decommented_lines.push(line_item.to_string())
+  }
+
+  let mut final_string = ""
+  let mut offset = 0
+  let mut line_index = 0
+  while line_index < decommented_lines.length() {
+    let mut line = decommented_lines[line_index]
+    let original_line = original_lines[line_index]
+    let mut output = false
+    let trimmed = line.trim().to_string()
+
+    if starts_with_text(trimmed, "#version ") {
+      let version = trim_trailing_semicolons(
+        trimmed[9:trimmed.length()].to_string(),
+      )
+      if version != "440" && version != "450" {
+        return Err(PreprocessError::GlslInvalidVersion(offset))
+      }
+    } else {
+      let scope_result = check_scope(shader_defs, line, Some(scope), offset)
+      let is_scope = match scope_result {
+        Ok((matched, _)) => matched
+        Err(err) => return Err(err)
+      }
+      if is_scope ||
+        starts_with_text(trimmed, "#define_import_path ") ||
+        starts_with_text(trimmed, "#define ") {
+        ()
+      } else if scope.active() {
+        if starts_with_text(trimmed, "#import ") {
+          let mut import_lines = ""
+          let mut open_count = 0
+          let initial_offset = offset
+          while true {
+            final_string = final_string + spaces(line.length())
+            offset = offset + line.length() + 1
+            open_count = open_count + import_brace_balance(line)
+            import_lines = import_lines + line + "\n"
+            if open_count == 0 || line_index + 1 >= decommented_lines.length() {
+              break
+            }
+            final_string = final_string + "\n"
+            line_index = line_index + 1
+            line = decommented_lines[line_index]
+          }
+          match parse_imports(import_lines, declared_imports) {
+            Ok(_) => ()
+            Err((message, line_offset)) =>
+              return Err(
+                PreprocessError::ImportParseError(
+                  message,
+                  initial_offset + line_offset,
+                ),
+              )
+          }
+          output = true
+        } else {
+          let replaced_original = replace_shader_defs_in_line(
+            original_line, shader_defs,
+          )
+          let replaced_decommented = replace_shader_defs_in_line(
+            line, shader_defs,
+          )
+          let ignored_imports : Array[ImportDefWithOffset] = []
+          let item_replaced_line = match
+            substitute_identifiers(
+              replaced_original, offset, declared_imports, ignored_imports, true,
+            ) {
+            Ok(replaced) => replaced
+            Err(position) =>
+              return Err(
+                PreprocessError::ImportParseError(
+                  "Ambiguous import path for item", position,
+                ),
+              )
+          }
+          match
+            substitute_identifiers(
+              replaced_decommented, offset, declared_imports, used_imports, false,
+            ) {
+            Ok(_) => ()
+            Err(position) =>
+              return Err(
+                PreprocessError::ImportParseError(
+                  "Ambiguous import path for item", position,
+                ),
+              )
+          }
+          final_string = final_string + item_replaced_line
+          let diff = line.length() - item_replaced_line.length()
+          if diff > 0 {
+            final_string = final_string + spaces(diff)
+          }
+          offset = offset + original_line.length() + 1
+          output = true
+        }
+      }
+    }
+
+    if !output {
+      final_string = final_string + spaces(line.length())
+      offset = offset + line.length() + 1
+    }
+    final_string = final_string + "\n"
+    line_index = line_index + 1
+  }
+
+  match scope.finish(offset) {
+    Ok(_) => ()
+    Err(err) => return Err(err)
+  }
+  Ok(PreprocessOutput::{
+    preprocessed_source: final_string,
+    imports: used_imports,
+  })
+}
+
+///|
+fn try_get_preprocessor_metadata(
+  source : String,
+  allow_defines : Bool,
+) -> Result[PreprocessorMetaData, PreprocessError] {
+  let preprocessor = Preprocessor::default()
+  let (cleaned_for_directives, wgsl_directives) = preprocessor.extract_wgsl_directives(
+    source,
+  )
+  let stripped = replace_comments(cleaned_for_directives)
+
+  let declared_imports : Array[DeclaredImportBinding] = []
+  let used_imports : Array[ImportDefWithOffset] = []
+  let defines : @hashmap.HashMap[String, ShaderDefValue] = @hashmap.HashMap::new()
+  let effective_defs : @hashset.HashSet[String] = @hashset.HashSet::new()
+  let lines : Array[String] = []
+  let mut name : String? = None
+  let mut offset = 0
+
+  for line_item in stripped.split("\n") {
+    lines.push(line_item.to_string())
+  }
+
+  let mut line_index = 0
+  while line_index < lines.length() {
+    let line = lines[line_index]
+    let trimmed = line.trim().to_string()
+    let scope_result = check_scope(@hashmap.HashMap::new(), line, None, offset)
+    let (is_scope, def) = match scope_result {
+      Ok(result) => result
+      Err(err) => return Err(err)
+    }
+
+    if is_scope {
+      if def is Some(def_name) {
+        effective_defs.add(def_name)
+      }
+    } else if starts_with_text(trimmed, "#import ") {
+      let mut import_lines = line + "\n"
+      let mut open_count = import_brace_balance(line)
+      let initial_offset = offset
+
+      while open_count > 0 && line_index + 1 < lines.length() {
+        line_index = line_index + 1
+        let next_line = lines[line_index]
+        import_lines = import_lines + next_line + "\n"
+        open_count = open_count + import_brace_balance(next_line)
+        offset = offset + next_line.length() + 1
+      }
+
+      match parse_imports(import_lines, declared_imports) {
+        Ok(_) => ()
+        Err((message, line_offset)) =>
+          return Err(
+            PreprocessError::ImportParseError(
+              message,
+              initial_offset + line_offset,
+            ),
+          )
+      }
+    } else if starts_with_text(trimmed, "#define_import_path ") {
+      let raw_name = trimmed[20:trimmed.length()].to_string()
+      let import_path = trim_trailing_semicolons(raw_name)
+      if import_path != "" {
+        name = Some(import_path)
+      }
+    } else if starts_with_text(trimmed, "#define ") {
+      if allow_defines {
+        let raw_define = trimmed[8:trimmed.length()].to_string()
+        let (define_name, define_value) = split_define_name_and_value(
+          raw_define,
+        )
+        if define_name != "" {
+          defines.set(define_name, parse_define_value(define_value))
+        }
+      } else {
+        return Err(PreprocessError::DefineInModule(offset))
+      }
+    } else {
+      collect_effective_def_names(line, effective_defs)
+      match
+        substitute_identifiers(
+          line, offset, declared_imports, used_imports, true,
+        ) {
+        Ok(_) => ()
+        Err(position) =>
+          return Err(
+            PreprocessError::ImportParseError(
+              "Ambiguous import path for item", position,
+            ),
+          )
+      }
+    }
+
+    offset = offset + line.length() + 1
+    line_index = line_index + 1
+  }
+
+  Ok(PreprocessorMetaData::{
+    name,
+    imports: used_imports,
+    defines,
+    effective_defs,
+    wgsl_directives,
+    cleaned_source: cleaned_for_directives,
+  })
+}
+
+///|
+pub fn get_preprocessor_metadata(source : String) -> PreprocessorMetaData {
+  match try_get_preprocessor_metadata(source, true) {
+    Ok(metadata) => metadata
+    Err(_) =>
+      PreprocessorMetaData::{
+        name: None,
+        imports: [],
+        defines: @hashmap.HashMap::new(),
+        effective_defs: @hashset.HashSet::new(),
+        wgsl_directives: WgslDirectives::default(),
+        cleaned_source: source,
+      }
+  }
 }
 
 ///|
@@ -396,5 +924,9 @@ pub fn get_preprocessor_data(
   @hashmap.HashMap[String, ShaderDefValue],
 ) {
   let metadata = get_preprocessor_metadata(source)
-  (metadata.name, metadata.imports, metadata.defines)
+  let imports : Array[ImportDefinition] = []
+  for import_with_offset in metadata.imports {
+    imports.push(import_with_offset.definition)
+  }
+  (metadata.name, imports, metadata.defines)
 }

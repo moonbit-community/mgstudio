@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/naga_oil"
 
 import {
   "moonbitlang/core/hashmap",
+  "moonbitlang/core/hashset",
 }
 
 // Values
@@ -11,20 +12,79 @@ pub fn get_preprocessor_data(String) -> (String?, Array[ImportDefinition], @hash
 pub fn get_preprocessor_metadata(String) -> PreprocessorMetaData
 
 // Errors
+pub(all) suberror PreprocessError {
+  GlslInvalidVersion(Int)
+  ElseWithoutCondition(Int)
+  TooManyEndIfs(Int)
+  NotEnoughEndIfs(Int)
+  UnknownShaderDef(String, Int)
+  UnknownShaderDefOperator(String, Int)
+  InvalidShaderDefComparisonValue(String, String, String, Int)
+  ImportParseError(String, Int)
+  DefineInModule(Int)
+}
 
 // Types and methods
+pub struct DiagnosticDirective {
+  severity : String
+  rule : String
+  source_location : Int
+}
+pub impl Eq for DiagnosticDirective
+pub impl Show for DiagnosticDirective
+
+pub struct EnableDirective {
+  extensions : Array[String]
+  source_location : Int
+}
+pub impl Eq for EnableDirective
+pub impl Show for EnableDirective
+
+pub struct ImportDefWithOffset {
+  definition : ImportDefinition
+  offset : Int
+}
+pub impl Eq for ImportDefWithOffset
+pub impl Show for ImportDefWithOffset
+
 pub struct ImportDefinition {
   import_path : String
   items : Array[String]
 }
 pub fn ImportDefinition::default() -> Self
+pub impl Eq for ImportDefinition
+pub impl Show for ImportDefinition
+
+pub struct PreprocessOutput {
+  preprocessed_source : String
+  imports : Array[ImportDefWithOffset]
+}
+pub fn PreprocessOutput::default() -> Self
+
+pub struct Preprocessor {
+}
+pub fn Preprocessor::default() -> Self
+pub fn Preprocessor::extract_wgsl_directives(Self, String) -> (String, WgslDirectives)
+pub fn Preprocessor::preprocess(Self, String, @hashmap.HashMap[String, ShaderDefValue]) -> Result[PreprocessOutput, PreprocessError]
 
 pub struct PreprocessorMetaData {
   name : String?
-  imports : Array[ImportDefinition]
+  imports : Array[ImportDefWithOffset]
   defines : @hashmap.HashMap[String, ShaderDefValue]
+  effective_defs : @hashset.HashSet[String]
+  wgsl_directives : WgslDirectives
   cleaned_source : String
 }
+
+pub struct RequiresDirective {
+  extensions : Array[String]
+  source_location : Int
+}
+pub impl Eq for RequiresDirective
+pub impl Show for RequiresDirective
+
+type ScopeLevel
+pub impl Eq for ScopeLevel
 
 pub(all) enum ShaderDefValue {
   Bool(Bool)
@@ -49,6 +109,21 @@ pub(all) enum ShaderType {
 }
 pub impl Eq for ShaderType
 pub impl Show for ShaderType
+
+type Token
+pub impl Eq for Token
+pub impl Show for Token
+
+pub struct WgslDirectives {
+  enables : Array[EnableDirective]
+  requires : Array[RequiresDirective]
+  diagnostics : Array[DiagnosticDirective]
+}
+pub fn WgslDirectives::default() -> Self
+pub fn WgslDirectives::is_empty(Self) -> Bool
+pub fn WgslDirectives::to_wgsl_string(Self) -> String
+pub impl Eq for WgslDirectives
+pub impl Show for WgslDirectives
 
 // Type aliases
 

@@ -13,20 +13,49 @@
 // limitations under the License.
 
 ///|
-test "naga_oil: metadata parser reads grouped imports and defines" {
+fn empty_shader_defs() -> @hashmap.HashMap[String, @naga_oil.ShaderDefValue] {
+  @hashmap.HashMap::new()
+}
+
+///|
+fn bool_shader_def(
+  name : String,
+  value : Bool,
+) -> @hashmap.HashMap[String, @naga_oil.ShaderDefValue] {
+  let shader_defs = empty_shader_defs()
+  shader_defs.set(name, @naga_oil.ShaderDefValue::Bool(value))
+  shader_defs
+}
+
+///|
+test "naga_oil: metadata parser records only used imports like upstream" {
   let metadata = @naga_oil.get_preprocessor_metadata(
-    "#define_import_path bevy_ui::ui_node\n#define HDR\n#define TONEMAP_MODE 2u\n#import bevy_render::{\n  view::View,\n  globals::Globals,\n}\n#import bevy_render::maths as maths\nfn main() -> f32 {\n  return 1.0;\n}\n",
+    "#define_import_path bevy_ui::ui_node\n#define HDR\n#define TONEMAP_MODE 2u\n#import bevy_render::{\n  view::View,\n  globals::Globals,\n}\n#import bevy_render::maths as maths\nfn main(view: View, globals: Globals) -> f32 {\n  return maths::tone_map(1.0);\n}\n",
   )
   inspect(metadata.name, content="Some(\"bevy_ui::ui_node\")")
   inspect(metadata.imports.length(), content="3")
-  inspect(metadata.imports[0].import_path, content="bevy_render::view")
-  inspect(metadata.imports[0].items[0], content="View")
-  inspect(metadata.imports[1].import_path, content="bevy_render::globals")
-  inspect(metadata.imports[1].items[0], content="Globals")
-  inspect(metadata.imports[2].import_path, content="bevy_render::maths")
-  inspect(metadata.imports[2].items.length(), content="0")
-  inspect(metadata.cleaned_source.contains("#import"), content="false")
-  inspect(metadata.cleaned_source.contains("fn main() -> f32"), content="true")
+  inspect(
+    metadata.imports[0].definition.import_path,
+    content="bevy_render::view",
+  )
+  inspect(metadata.imports[0].definition.items[0], content="View")
+  inspect(
+    metadata.imports[1].definition.import_path,
+    content="bevy_render::globals",
+  )
+  inspect(metadata.imports[1].definition.items[0], content="Globals")
+  inspect(
+    metadata.imports[2].definition.import_path,
+    content="bevy_render::maths",
+  )
+  inspect(metadata.imports[2].definition.items[0], content="tone_map")
+  inspect(metadata.cleaned_source.contains("#import"), content="true")
+  inspect(
+    metadata.cleaned_source.contains("fn main(view: View"),
+    content="true",
+  )
+  inspect(metadata.effective_defs.contains("HDR"), content="false")
+  inspect(metadata.wgsl_directives.is_empty(), content="true")
 
   guard metadata.defines.get("HDR")
     is Some(@naga_oil.ShaderDefValue::Bool(enabled)) else {
@@ -42,13 +71,130 @@ test "naga_oil: metadata parser reads grouped imports and defines" {
 }
 
 ///|
-test "naga_oil: metadata parser keeps quoted path imports and item lists" {
+test "naga_oil: metadata parser keeps quoted path imports and duplicate item uses" {
   let (_, imports, _) = @naga_oil.get_preprocessor_data(
-    "#import \"shaders/skills/shared.wgsl\" Vertex, VertexOutput\n",
+    "#import \"shaders/skills/shared.wgsl\" Vertex, VertexOutput\nfn vertex(vertex: Vertex) -> VertexOutput {\n  var out : VertexOutput;\n  return out;\n}\n",
   )
   inspect(imports.length(), content="1")
   inspect(imports[0].import_path, content="\"shaders/skills/shared.wgsl\"")
-  inspect(imports[0].items.length(), content="2")
+  inspect(imports[0].items.length(), content="3")
   inspect(imports[0].items[0], content="Vertex")
   inspect(imports[0].items[1], content="VertexOutput")
+  inspect(imports[0].items[2], content="VertexOutput")
+}
+
+///|
+test "naga_oil: metadata parser preserves wgsl directives and effective defs" {
+  let metadata = @naga_oil.get_preprocessor_metadata(
+    "enable f16, subgroups;\nrequires readonly_and_readwrite_storage_textures;\ndiagnostic(warn, derivative_uniformity);\nfn shade() -> f32 {\n  return #EXPOSURE + #{WHITE_POINT};\n}\n",
+  )
+  inspect(metadata.wgsl_directives.is_empty(), content="false")
+  inspect(
+    metadata.wgsl_directives.to_wgsl_string().contains("enable f16, subgroups;"),
+    content="true",
+  )
+  inspect(
+    metadata.wgsl_directives
+    .to_wgsl_string()
+    .contains("requires readonly_and_readwrite_storage_textures;"),
+    content="true",
+  )
+  inspect(
+    metadata.wgsl_directives
+    .to_wgsl_string()
+    .contains("diagnostic(warn, derivative_uniformity);"),
+    content="true",
+  )
+  inspect(metadata.effective_defs.contains("EXPOSURE"), content="true")
+  inspect(metadata.effective_defs.contains("WHITE_POINT"), content="true")
+}
+
+///|
+test "naga_oil: metadata parser matches upstream bevy path import usage shape" {
+  let (_, imports, _) = @naga_oil.get_preprocessor_data(
+    "#import \"shaders/skills/shared.wgsl\" Vertex, VertexOutput\n\n#if EFFECT_ID == 0\n    #import \"shaders/skills/sound.wgsl\" frag, vert\n#else if EFFECT_ID == 1\n    #import \"shaders/skills/orb.wgsl\" frag, vert\n#else if EFFECT_ID == 2\n    #import \"shaders/skills/slash.wgsl\" frag, vert\n#else if EFFECT_ID == 3\n    #import \"shaders/skills/railgun_trail.wgsl\" frag, vert\n#else if EFFECT_ID == 4\n    #import \"shaders/skills/magic_arrow.wgsl\" frag, vert\n#else if EFFECT_ID == 5\n    #import \"shaders/skills/hit.wgsl\" frag, vert\n#else if EFFECT_ID == 6\n    #import \"shaders/skills/lightning_ring.wgsl\" frag, vert\n#else if EFFECT_ID == 7\n    #import \"shaders/skills/lightning.wgsl\" frag, vert\n#endif\n\n#import something_unused\n\n@fragment\nfn fragment(in: VertexOutput) -> @location(0) vec4<f32> {\n    return frag(in);\n}\n\n@vertex\nfn vertex(vertex: Vertex) -> VertexOutput {\n    return vert(vertex);\n}\n",
+  )
+  inspect(imports.length(), content="9")
+  inspect(imports[0].import_path, content="\"shaders/skills/shared.wgsl\"")
+  inspect(imports[0].items.length(), content="3")
+  inspect(imports[1].import_path, content="\"shaders/skills/sound.wgsl\"")
+  inspect(imports[2].import_path, content="\"shaders/skills/orb.wgsl\"")
+  inspect(imports[3].import_path, content="\"shaders/skills/slash.wgsl\"")
+  inspect(
+    imports[4].import_path,
+    content="\"shaders/skills/railgun_trail.wgsl\"",
+  )
+  inspect(imports[5].import_path, content="\"shaders/skills/magic_arrow.wgsl\"")
+  inspect(imports[6].import_path, content="\"shaders/skills/hit.wgsl\"")
+  inspect(
+    imports[7].import_path,
+    content="\"shaders/skills/lightning_ring.wgsl\"",
+  )
+  inspect(imports[8].import_path, content="\"shaders/skills/lightning.wgsl\"")
+}
+
+///|
+test "naga_oil: preprocess strips imports and records used import offsets" {
+  let result = @naga_oil.Preprocessor::default().preprocess(
+    "#import bevy_render::view::View\nfn main(view: View) -> View {\n  return view;\n}\n",
+    empty_shader_defs(),
+  )
+  guard result is Ok(output) else { abort("expected preprocess success") }
+  inspect(output.imports.length(), content="1")
+  inspect(output.imports[0].definition.import_path, content="bevy_render::view")
+  inspect(output.imports[0].definition.items[0], content="View")
+  inspect(output.preprocessed_source.contains("#import"), content="false")
+  inspect(output.preprocessed_source.contains("return view;"), content="true")
+}
+
+///|
+test "naga_oil: preprocess follows else-ifdef fallback semantics" {
+  let source = "\nstruct View {\n    view_proj: mat4x4<f32>,\n    world_position: vec3<f32>,\n};\n@group(0) @binding(0)\nvar<uniform> view: View;\n\n#ifdef TEXTURE\n@group(1) @binding(0)\nvar sprite_texture: texture_2d<f32>;\n#else ifdef SECOND_TEXTURE\n@group(1) @binding(0)\nvar sprite_texture: texture_2d<f32>;\n#else\n@group(1) @binding(0)\nvar sprite_texture: texture_2d_array<f32>;\n#endif\n"
+  let fallback = @naga_oil.Preprocessor::default().preprocess(
+    source,
+    empty_shader_defs(),
+  )
+  guard fallback is Ok(fallback_output) else {
+    abort("expected fallback preprocess success")
+  }
+  inspect(
+    fallback_output.preprocessed_source.contains("texture_2d_array<f32>;"),
+    content="true",
+  )
+  inspect(
+    fallback_output.preprocessed_source.contains("texture_2d<f32>;"),
+    content="false",
+  )
+
+  let first_clause = @naga_oil.Preprocessor::default().preprocess(
+    source,
+    bool_shader_def("TEXTURE", true),
+  )
+  guard first_clause is Ok(first_clause_output) else {
+    abort("expected first-clause preprocess success")
+  }
+  inspect(
+    first_clause_output.preprocessed_source.contains("texture_2d<f32>;"),
+    content="true",
+  )
+  inspect(
+    first_clause_output.preprocessed_source.contains("texture_2d_array<f32>;"),
+    content="false",
+  )
+}
+
+///|
+test "naga_oil: preprocess applies module defines to output" {
+  let source = "#define DEFUINT 1\n#define DEFINT -1\n#define DEFBOOL false\n#if DEFUINT == 1\nuint: #DEFUINT\n#endif\n#if DEFINT == -1\nint: #DEFINT\n#endif\n#if DEFBOOL == false\nbool: #DEFBOOL\n#endif\n"
+  let metadata = @naga_oil.get_preprocessor_metadata(source)
+  let result = @naga_oil.Preprocessor::default().preprocess(
+    source,
+    metadata.defines,
+  )
+  guard result is Ok(output) else {
+    abort("expected preprocess success with module defines")
+  }
+  inspect(output.preprocessed_source.contains("uint: 1"), content="true")
+  inspect(output.preprocessed_source.contains("int: -1"), content="true")
+  inspect(output.preprocessed_source.contains("bool: false"), content="true")
 }
