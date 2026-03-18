@@ -1642,7 +1642,11 @@ pub fn register_wgsl_source(rel_path : String, source : String) -> Unit {
     return
   }
   registered_wgsl_sources_ref.val.set(normalized_rel, source)
-  let import_path = parse_wgsl_define_import_path(source)
+  let shader_asset = @shader.Shader::from_wgsl(source, normalized_rel)
+  let import_path = match shader_asset.import_path {
+    @shader.ShaderImport::Custom(path) => path
+    @shader.ShaderImport::AssetPath(_) => ""
+  }
   if import_path != "" {
     registered_wgsl_import_modules_ref.val.set(import_path, normalized_rel)
   }
@@ -1681,19 +1685,6 @@ fn copy_registered_wgsl_import_module_paths() -> @hashmap.HashMap[
 }
 
 ///|
-fn parse_wgsl_define_import_path(source : String) -> String {
-  for line_item in source.split("\n") {
-    let line = line_item.to_string().trim().to_string()
-    if starts_with_text(line, "#define_import_path ") {
-      return trim_trailing_semicolons(
-        line[20:line.length()].to_string().trim().to_string(),
-      )
-    }
-  }
-  ""
-}
-
-///|
 fn collect_wgsl_import_module_paths(
   assets_base : String,
   rel_dir : String,
@@ -1720,11 +1711,15 @@ fn collect_wgsl_import_module_paths(
       continue
     }
     let source = @fs.read_file_to_string(child_path) catch { _ => continue }
-    let import_path = parse_wgsl_define_import_path(source)
+    let normalized_child_rel = normalize_shader_rel_path(child_rel)
+    let shader_asset = @shader.Shader::from_wgsl(source, normalized_child_rel)
+    let import_path = match shader_asset.import_path {
+      @shader.ShaderImport::Custom(path) => path
+      @shader.ShaderImport::AssetPath(_) => ""
+    }
     if import_path == "" {
       continue
     }
-    let normalized_child_rel = normalize_shader_rel_path(child_rel)
     if !modules.contains(import_path) {
       modules.set(import_path, normalized_child_rel)
     }
