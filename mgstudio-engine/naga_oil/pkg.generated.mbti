@@ -1,0 +1,56 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/naga_oil"
+
+import {
+  "moonbitlang/core/hashmap",
+}
+
+// Values
+pub fn get_preprocessor_data(String) -> (String?, Array[ImportDefinition], @hashmap.HashMap[String, ShaderDefValue])
+
+pub fn get_preprocessor_metadata(String) -> PreprocessorMetaData
+
+// Errors
+
+// Types and methods
+pub struct ImportDefinition {
+  import_path : String
+  items : Array[String]
+}
+pub fn ImportDefinition::default() -> Self
+
+pub struct PreprocessorMetaData {
+  name : String?
+  imports : Array[ImportDefinition]
+  defines : @hashmap.HashMap[String, ShaderDefValue]
+  cleaned_source : String
+}
+
+pub(all) enum ShaderDefValue {
+  Bool(Bool)
+  Int(Int)
+  UInt(UInt)
+}
+pub fn ShaderDefValue::value_as_string(Self) -> String
+pub impl Eq for ShaderDefValue
+pub impl Show for ShaderDefValue
+
+pub(all) enum ShaderLanguage {
+  Wgsl
+  Glsl
+}
+pub impl Eq for ShaderLanguage
+pub impl Show for ShaderLanguage
+
+pub(all) enum ShaderType {
+  Wgsl
+  GlslVertex
+  GlslFragment
+}
+pub impl Eq for ShaderType
+pub impl Show for ShaderType
+
+// Type aliases
+
+// Traits
+

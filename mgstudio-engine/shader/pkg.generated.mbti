@@ -1,16 +1,75 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/shader"
 
+import {
+  "Milky2018/mgstudio/naga_oil",
+}
+
 // Values
+pub fn shader_def(String) -> ShaderDefVal
+
 pub fn shader_from_source(String) -> Shader
 
 // Errors
 
 // Types and methods
 pub struct Shader {
-  source : String
+  path : String
+  source : Source
+  import_path : ShaderImport
+  imports : Array[ShaderImport]
+  additional_imports : Array[@naga_oil.ImportDefinition]
+  shader_defs : Array[ShaderDefVal]
+  validate_shader : ValidateShader
 }
+pub fn Shader::from_glsl(String, ShaderStage, String) -> Self
+pub fn Shader::from_spirv(Bytes, String) -> Self
+pub fn Shader::from_wgsl(String, String) -> Self
+pub fn Shader::from_wgsl_with_defs(String, String, Array[ShaderDefVal]) -> Self
 pub fn Shader::new(String) -> Self
+
+pub(all) enum ShaderDefVal {
+  Bool(String, Bool)
+  Int(String, Int)
+  UInt(String, UInt)
+}
+pub fn ShaderDefVal::name(Self) -> String
+pub fn ShaderDefVal::value_as_string(Self) -> String
+pub impl Eq for ShaderDefVal
+pub impl Show for ShaderDefVal
+
+pub(all) enum ShaderImport {
+  AssetPath(String)
+  Custom(String)
+}
+pub fn ShaderImport::module_name(Self) -> String
+pub impl Eq for ShaderImport
+pub impl Show for ShaderImport
+
+pub(all) enum ShaderStage {
+  Vertex
+  Fragment
+  Compute
+}
+pub impl Eq for ShaderStage
+pub impl Show for ShaderStage
+
+pub(all) enum Source {
+  Wgsl(String)
+  Glsl(String, ShaderStage)
+  SpirV(Bytes)
+}
+pub fn Source::as_str(Self) -> String
+pub fn Source::language(Self) -> @naga_oil.ShaderLanguage
+pub fn Source::shader_type(Self) -> @naga_oil.ShaderType
+
+pub(all) enum ValidateShader {
+  Disabled
+  Enabled
+}
+pub fn ValidateShader::default() -> Self
+pub impl Eq for ValidateShader
+pub impl Show for ValidateShader
 
 // Type aliases
 

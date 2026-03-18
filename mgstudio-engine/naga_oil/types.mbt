@@ -1,0 +1,61 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+pub(all) enum ShaderLanguage {
+  Wgsl
+  Glsl
+} derive(Eq, Show)
+
+///|
+pub(all) enum ShaderType {
+  Wgsl
+  GlslVertex
+  GlslFragment
+} derive(Eq, Show)
+
+///|
+pub(all) enum ShaderDefValue {
+  Bool(Bool)
+  Int(Int)
+  UInt(UInt)
+} derive(Eq, Show)
+
+///|
+pub fn ShaderDefValue::value_as_string(self : ShaderDefValue) -> String {
+  match self {
+    Bool(value) => value.to_string()
+    Int(value) => value.to_string()
+    UInt(value) => value.to_string()
+  }
+}
+
+///|
+pub struct ImportDefinition {
+  import_path : String
+  items : Array[String]
+}
+
+///|
+pub fn ImportDefinition::default() -> ImportDefinition {
+  ImportDefinition::{ import_path: "", items: [] }
+}
+
+///|
+pub struct PreprocessorMetaData {
+  name : String?
+  imports : Array[ImportDefinition]
+  defines : @hashmap.HashMap[String, ShaderDefValue]
+  cleaned_source : String
+}

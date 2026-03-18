@@ -13,8 +13,47 @@
 // limitations under the License.
 
 ///|
-test "shader boundary re-exports shader asset type" {
-  let shader = @shader.shader_from_source("fn main() {}")
-  let _ : @shader.Shader = shader
-  inspect("ok", content="ok")
+test "shader: from_wgsl collects Bevy-style import metadata" {
+  let shader = @shader.Shader::from_wgsl(
+    "#define_import_path bevy_ui::ui_node\n#import bevy_render::{view::View, globals::Globals}\nfn main() -> f32 {\n  return 1.0;\n}\n",
+    "shaders/bevy/bevy_ui_render/ui.wgsl",
+  )
+  inspect(shader.path, content="shaders/bevy/bevy_ui_render/ui.wgsl")
+  inspect(shader.import_path, content="Custom(\"bevy_ui::ui_node\")")
+  inspect(shader.imports.length(), content="2")
+  inspect(shader.imports[0], content="Custom(\"bevy_render::view\")")
+  inspect(shader.imports[1], content="Custom(\"bevy_render::globals\")")
+  inspect(shader.validate_shader, content="Disabled")
+}
+
+///|
+test "shader: from_wgsl_with_defs preserves shader defs" {
+  let shader = @shader.Shader::from_wgsl_with_defs(
+    "fn main() -> f32 {\n  return 1.0;\n}\n",
+    "shaders/demo.wgsl",
+    [@shader.shader_def("HDR"), @shader.ShaderDefVal::UInt("TONEMAP_MODE", 2U)],
+  )
+  inspect(shader.shader_defs.length(), content="2")
+  inspect(shader.shader_defs[0].value_as_string(), content="true")
+  inspect(shader.shader_defs[1].value_as_string(), content="2")
+}
+
+///|
+test "shader: source language and shader type align with naga_oil surface" {
+  let wgsl = @shader.Source::Wgsl("fn main() {}")
+  inspect(wgsl.language(), content="Wgsl")
+  inspect(wgsl.shader_type(), content="Wgsl")
+
+  let glsl = @shader.Source::Glsl(
+    "void main() {}",
+    @shader.ShaderStage::Fragment,
+  )
+  inspect(glsl.language(), content="Glsl")
+  inspect(glsl.shader_type(), content="GlslFragment")
+}
+
+///|
+test "shader: asset path imports quote module names" {
+  let shader_import = @shader.ShaderImport::AssetPath("shaders/demo.wgsl")
+  inspect(shader_import.module_name(), content="\"shaders/demo.wgsl\"")
 }
