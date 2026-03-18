@@ -32,11 +32,10 @@ fn register_composer_test_shaders() -> Unit {
   let paths = [
     "shaders/bevy/bevy_sprite_render/render/sprite.wgsl", "shaders/bevy/bevy_sprite_render/render/sprite_view_bindings.wgsl",
     "shaders/bevy/bevy_sprite_render/mesh2d/color_material.wgsl", "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d.wgsl",
-    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl",
-    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_bindings.wgsl", "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl",
-    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_types.wgsl", "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_vertex_output.wgsl",
-    "shaders/bevy/bevy_render/view/view.wgsl", "shaders/bevy/bevy_render/globals.wgsl",
-    "shaders/bevy/bevy_render/maths.wgsl",
+    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl", "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_bindings.wgsl",
+    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl", "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_types.wgsl",
+    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_vertex_output.wgsl", "shaders/bevy/bevy_render/view/view.wgsl",
+    "shaders/bevy/bevy_render/globals.wgsl", "shaders/bevy/bevy_render/maths.wgsl",
   ]
   for path in paths {
     register_composer_test_shader_source(path)

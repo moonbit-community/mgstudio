@@ -42,7 +42,7 @@ pub fn ShaderDefValue::value_as_string(self : ShaderDefValue) -> String {
 }
 
 ///|
-pub struct ImportDefinition {
+pub(all) struct ImportDefinition {
   import_path : String
   items : Array[String]
 } derive(Eq, Show)

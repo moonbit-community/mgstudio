@@ -35,7 +35,7 @@ pub(all) enum ShaderDefVal {
   Bool(String, Bool)
   Int(String, Int)
   UInt(String, UInt)
-} derive(Eq, Show)
+} derive(Eq, Hash, Show)
 
 ///|
 pub fn shader_def(name : String) -> ShaderDefVal {

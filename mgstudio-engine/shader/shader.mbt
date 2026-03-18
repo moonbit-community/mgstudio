@@ -17,7 +17,7 @@
 /// Runtime ownership lives in `Milky2018/mgstudio/shader`.
 
 ///|
-pub struct Shader {
+pub(all) struct Shader {
   path : String
   source : Source
   import_path : ShaderImport

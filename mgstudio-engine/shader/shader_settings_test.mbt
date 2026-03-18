@@ -13,15 +13,20 @@
 // limitations under the License.
 
 ///|
-pub(all) enum ShaderImport {
-  AssetPath(String)
-  Custom(String)
-} derive(Eq, Hash, Show)
+test "shader: settings default to empty shader defs" {
+  let settings = @shader.ShaderSettings::default()
+  inspect(settings.shader_defs.length(), content="0")
+}
 
 ///|
-pub fn ShaderImport::module_name(self : ShaderImport) -> String {
-  match self {
-    AssetPath(path) => "\"" + path + "\""
-    Custom(path) => path
+test "shader: settings preserve configured shader defs" {
+  let settings = @shader.ShaderSettings::{
+    shader_defs: [
+      @shader.shader_def("HDR"),
+      @shader.ShaderDefVal::UInt("MODE", 2U),
+    ],
   }
+  inspect(settings.shader_defs.length(), content="2")
+  inspect(settings.shader_defs[0], content="Bool(\"HDR\", true)")
+  inspect(settings.shader_defs[1], content="UInt(\"MODE\", 2)")
 }

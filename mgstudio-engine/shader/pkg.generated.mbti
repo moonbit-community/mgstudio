@@ -13,7 +13,7 @@ pub fn shader_from_source(String) -> Shader
 // Errors
 
 // Types and methods
-pub struct Shader {
+pub(all) struct Shader {
   path : String
   source : Source
   import_path : ShaderImport
@@ -22,11 +22,32 @@ pub struct Shader {
   shader_defs : Array[ShaderDefVal]
   validate_shader : ValidateShader
 }
+pub fn Shader::composable_module_descriptor(Self) -> @naga_oil.ComposableModuleDescriptor
 pub fn Shader::from_glsl(String, ShaderStage, String) -> Self
 pub fn Shader::from_spirv(Bytes, String) -> Self
 pub fn Shader::from_wgsl(String, String) -> Self
 pub fn Shader::from_wgsl_with_defs(String, String, Array[ShaderDefVal]) -> Self
+pub fn Shader::naga_module_descriptor(Self) -> @naga_oil.NagaModuleDescriptor
 pub fn Shader::new(String) -> Self
+
+pub(all) enum ShaderCacheSource {
+  SpirV(Bytes)
+  Wgsl(String)
+}
+pub impl Eq for ShaderCacheSource
+pub impl Show for ShaderCacheSource
+
+type ShaderData[ShaderModule, ShaderId]
+pub fn[ShaderModule, ShaderId] ShaderData::cache_processed_shader(Self[ShaderModule, ShaderId], Array[ShaderDefVal], ShaderModule) -> Unit
+pub fn[ShaderModule, ShaderId] ShaderData::default() -> Self[ShaderModule, ShaderId]
+pub fn[ShaderModule, ShaderId] ShaderData::dependent_count(Self[ShaderModule, ShaderId]) -> Int
+pub fn[ShaderModule, ShaderId] ShaderData::get_processed_shader(Self[ShaderModule, ShaderId], Array[ShaderDefVal]) -> ShaderModule?
+pub fn[ShaderModule, ShaderId] ShaderData::pipeline_count(Self[ShaderModule, ShaderId]) -> Int
+pub fn[ShaderModule, ShaderId] ShaderData::processed_shader_count(Self[ShaderModule, ShaderId]) -> Int
+pub fn[ShaderModule, ShaderId] ShaderData::resolve_import(Self[ShaderModule, ShaderId], ShaderImport, ShaderId) -> Unit
+pub fn[ShaderModule, ShaderId] ShaderData::resolved_import(Self[ShaderModule, ShaderId], ShaderImport) -> ShaderId?
+pub fn[ShaderModule, ShaderId : Hash + Eq] ShaderData::track_dependent(Self[ShaderModule, ShaderId], ShaderId) -> Unit
+pub fn[ShaderModule, ShaderId] ShaderData::track_pipeline(Self[ShaderModule, ShaderId], Int) -> Unit
 
 pub(all) enum ShaderDefVal {
   Bool(String, Bool)
@@ -36,6 +57,7 @@ pub(all) enum ShaderDefVal {
 pub fn ShaderDefVal::name(Self) -> String
 pub fn ShaderDefVal::value_as_string(Self) -> String
 pub impl Eq for ShaderDefVal
+pub impl Hash for ShaderDefVal
 pub impl Show for ShaderDefVal
 
 pub(all) enum ShaderImport {
@@ -44,7 +66,15 @@ pub(all) enum ShaderImport {
 }
 pub fn ShaderImport::module_name(Self) -> String
 pub impl Eq for ShaderImport
+pub impl Hash for ShaderImport
 pub impl Show for ShaderImport
+
+pub(all) struct ShaderSettings {
+  shader_defs : Array[ShaderDefVal]
+}
+pub fn ShaderSettings::default() -> Self
+pub impl Eq for ShaderSettings
+pub impl Show for ShaderSettings
 
 pub(all) enum ShaderStage {
   Vertex
@@ -72,6 +102,7 @@ pub impl Eq for ValidateShader
 pub impl Show for ValidateShader
 
 // Type aliases
+pub type CachedPipelineId = Int
 
 // Traits
 

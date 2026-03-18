@@ -1,3 +1,6 @@
 import {
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/hashmap",
+  "moonbitlang/core/hashset",
   "Milky2018/mgstudio/naga_oil",
 }

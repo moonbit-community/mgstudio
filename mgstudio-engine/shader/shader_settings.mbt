@@ -13,15 +13,11 @@
 // limitations under the License.
 
 ///|
-pub(all) enum ShaderImport {
-  AssetPath(String)
-  Custom(String)
-} derive(Eq, Hash, Show)
+pub(all) struct ShaderSettings {
+  shader_defs : Array[ShaderDefVal]
+} derive(Eq, Show)
 
 ///|
-pub fn ShaderImport::module_name(self : ShaderImport) -> String {
-  match self {
-    AssetPath(path) => "\"" + path + "\""
-    Custom(path) => path
-  }
+pub fn ShaderSettings::default() -> ShaderSettings {
+  { shader_defs: [] }
 }

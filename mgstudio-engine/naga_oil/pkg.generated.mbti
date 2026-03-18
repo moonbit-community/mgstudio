@@ -54,6 +54,18 @@ pub(all) suberror PreprocessError {
 }
 
 // Types and methods
+pub(all) struct ComposableModuleDescriptor {
+  source : String
+  file_path : String
+  language : ShaderLanguage
+  as_name : String?
+  additional_imports : Array[ImportDefinition]
+  shader_defs : @hashmap.HashMap[String, ShaderDefValue]
+}
+pub fn ComposableModuleDescriptor::default() -> Self
+pub impl Eq for ComposableModuleDescriptor
+pub impl Show for ComposableModuleDescriptor
+
 pub struct Composer {
 }
 pub fn Composer::default() -> Self
@@ -84,13 +96,24 @@ pub struct ImportDefWithOffset {
 pub impl Eq for ImportDefWithOffset
 pub impl Show for ImportDefWithOffset
 
-pub struct ImportDefinition {
+pub(all) struct ImportDefinition {
   import_path : String
   items : Array[String]
 }
 pub fn ImportDefinition::default() -> Self
 pub impl Eq for ImportDefinition
 pub impl Show for ImportDefinition
+
+pub(all) struct NagaModuleDescriptor {
+  source : String
+  file_path : String
+  shader_type : ShaderType
+  shader_defs : @hashmap.HashMap[String, ShaderDefValue]
+  additional_imports : Array[ImportDefinition]
+}
+pub fn NagaModuleDescriptor::default() -> Self
+pub impl Eq for NagaModuleDescriptor
+pub impl Show for NagaModuleDescriptor
 
 pub struct PreprocessOutput {
   preprocessed_source : String
