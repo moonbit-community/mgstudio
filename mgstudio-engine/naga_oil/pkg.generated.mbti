@@ -15,6 +15,8 @@ pub fn collect_wgsl_import_targets(String, String, Array[WgslImportTarget]) -> U
 
 pub fn copy_registered_wgsl_import_module_paths() -> @hashmap.HashMap[String, String]
 
+pub fn default_wgsl_value_defines() -> @hashmap.HashMap[String, Int]
+
 pub fn get_preprocessor_data(String) -> (String?, Array[ImportDefinition], @hashmap.HashMap[String, ShaderDefValue])
 
 pub fn get_preprocessor_metadata(String) -> PreprocessorMetaData
@@ -25,9 +27,20 @@ pub fn register_wgsl_source(String, String) -> Unit
 
 pub fn registered_wgsl_source(String) -> String?
 
+pub fn registered_wgsl_source_required(String) -> String raise ComposerError
+
 pub fn resolve_wgsl_import_module(String, String, @hashmap.HashMap[String, String]) -> WgslResolvedImportModule?
 
 // Errors
+pub(all) suberror ComposerError {
+  EmptyAssetsBase(String)
+  FailedToResolveImport(String)
+  MissingRegisteredSource(String)
+  MissingStartupRegisteredSource(String)
+  FailedToReadShader(String, String)
+}
+pub fn ComposerError::message(Self) -> String
+
 pub(all) suberror PreprocessError {
   GlslInvalidVersion(Int)
   ElseWithoutCondition(Int)
@@ -41,6 +54,14 @@ pub(all) suberror PreprocessError {
 }
 
 // Types and methods
+pub struct Composer {
+}
+pub fn Composer::default() -> Self
+pub fn Composer::load_wgsl_from_assets_base_required(Self, String, String) -> String raise ComposerError
+pub fn Composer::load_wgsl_preprocessed(Self, String, String, @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, Int], @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, String]) -> String raise ComposerError
+pub fn Composer::load_wgsl_source_required_raw(Self, String, String) -> String raise ComposerError
+pub fn Composer::preprocess_wgsl_source(Self, String, String, @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, Int], @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, String]) -> String raise ComposerError
+
 pub struct DiagnosticDirective {
   severity : String
   rule : String
