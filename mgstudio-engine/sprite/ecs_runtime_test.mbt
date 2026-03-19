@@ -35,17 +35,69 @@ fn ecs_transform_matches(
 }
 
 ///|
+fn dummy_f32_bits(x : Float) -> UInt {
+  x.reinterpret_as_uint()
+}
+
+///|
 struct DummyMaterialAsset {
   color : Color
-  texture : @asset.Handle[@asset.Image]?
+  checker_frequency : Float
+  checker_low_value : Float
 }
 
 ///|
 fn dummy_material_asset(
   color? : Color = Color::white(),
-  texture? : @asset.Handle[@asset.Image]? = None,
+  checker_frequency? : Float = 8.0F,
+  checker_low_value? : Float = 0.35F,
 ) -> DummyMaterialAsset {
-  DummyMaterialAsset::{ color, texture }
+  DummyMaterialAsset::{ color, checker_frequency, checker_low_value }
+}
+
+///|
+fn dummy_material_uniform_bytes(color : Color) -> Bytes {
+  let words : Array[UInt] = [
+    dummy_f32_bits(color.r),
+    dummy_f32_bits(color.g),
+    dummy_f32_bits(color.b),
+    dummy_f32_bits(color.a),
+  ]
+  Bytes::makei(words.length() * 4, i => {
+    let word = words[i / 4]
+    let shift = i % 4 * 8
+    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
+  })
+}
+
+///|
+fn dummy_checker_settings_bytes(
+  checker_frequency : Float,
+  checker_low_value : Float,
+) -> Bytes {
+  let words : Array[UInt] = [
+    dummy_f32_bits(checker_frequency),
+    dummy_f32_bits(checker_low_value),
+    dummy_f32_bits(0.0F),
+    dummy_f32_bits(0.0F),
+  ]
+  Bytes::makei(words.length() * 4, i => {
+    let word = words[i / 4]
+    let shift = i % 4 * 8
+    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
+  })
+}
+
+///|
+fn material2d_bind_group_texture_id(
+  bind_group : Material2dBindGroup,
+  binding : Int,
+) -> Int? {
+  guard bind_group.binding(binding) is Some(entry) else { return None }
+  match entry.value {
+    Texture(Some(texture)) => Some(texture.id())
+    _ => None
+  }
 }
 
 ///|
@@ -56,12 +108,16 @@ pub impl Material2d for DummyMaterialAsset with alpha_mode(self) {
 
 ///|
 pub impl Material2d for DummyMaterialAsset with bind_group(self) {
-  Material2dBindGroup::new(self.color, texture=self.texture)
-}
-
-///|
-pub impl Material2d for DummyMaterialAsset with bind_group_data(self) {
-  self.bind_group().bind_group_data(self.alpha_mode())
+  Material2dBindGroup::new([
+    Material2dBinding::uniform(0, dummy_material_uniform_bytes(self.color)),
+    Material2dBinding::uniform(
+      3,
+      dummy_checker_settings_bytes(
+        self.checker_frequency,
+        self.checker_low_value,
+      ),
+    ),
+  ])
 }
 
 ///|
@@ -437,7 +493,8 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
   let handle_ref : Ref[@asset.Handle[DummyMaterialAsset]?] = Ref::new(None)
   let expected = dummy_material_asset(
     color=Color::new(0.3F, 0.6F, 0.9F, 1.0F),
-    texture=Some(@asset.Handle::new(13)),
+    checker_frequency=5.0F,
+    checker_low_value=0.2F,
   )
 
   let plugin : Material2dPlugin[DummyMaterialAsset] = Material2dPlugin::default()
@@ -484,12 +541,13 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
     content="Some(true)",
   )
   inspect(prepared.source.id() == handle.id(), content="true")
+  inspect(prepared.bind_group.layout_key(), content="0:uniform;3:uniform")
   inspect(
-    prepared.bind_group.texture.map(fn(value) { value.id() }),
-    content="Some(13)",
+    prepared.key.bind_group_layout_key == prepared.bind_group.layout_key(),
+    content="true",
   )
   inspect(
-    prepared.key.bind_group_data == expected.bind_group_data(),
+    prepared.key.bind_group_data == expected.bind_group().bind_group_data(),
     content="true",
   )
 }
@@ -564,7 +622,7 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
 
   inspect(prepared.source.id() == handle.id(), content="true")
   inspect(
-    prepared.bind_group.texture.map(fn(value) { value.id() }),
+    material2d_bind_group_texture_id(prepared.bind_group, 1),
     content="Some(11)",
   )
   inspect(prepared.properties.alpha_mode is Blend, content="true")
@@ -573,7 +631,12 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
     content="true",
   )
   inspect(
-    prepared.key.bind_group_data == source_material.bind_group_data(),
+    prepared.key.bind_group_layout_key == prepared.bind_group.layout_key(),
+    content="true",
+  )
+  inspect(
+    prepared.key.bind_group_data ==
+    source_material.bind_group().bind_group_data(),
     content="true",
   )
   inspect(

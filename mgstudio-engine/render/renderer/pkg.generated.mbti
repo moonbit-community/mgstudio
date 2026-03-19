@@ -104,6 +104,8 @@ pub fn draw_mesh(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scal
 
 pub fn draw_mesh3d(mesh_id~ : Int, x~ : Float, y~ : Float, z~ : Float, rotation_x~ : Float, rotation_y~ : Float, rotation_z~ : Float, rotation_w~ : Float, scale_x~ : Float, scale_y~ : Float, scale_z~ : Float, previous_x~ : Float, previous_y~ : Float, previous_z~ : Float, previous_rotation_x~ : Float, previous_rotation_y~ : Float, previous_rotation_z~ : Float, previous_rotation_w~ : Float, previous_scale_x~ : Float, previous_scale_y~ : Float, previous_scale_z~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float, texture_id~ : Int, uv_transform_a~ : Float, uv_transform_b~ : Float, uv_transform_c~ : Float, uv_transform_d~ : Float, uv_transform_tx~ : Float, uv_transform_ty~ : Float, uv_transform_mode~ : Float, normal_texture_id~ : Int, emissive_texture_id~ : Int, metallic_roughness_texture_id~ : Int, occlusion_texture_id~ : Int, depth_texture_id~ : Int, emissive_r~ : Float, emissive_g~ : Float, emissive_b~ : Float, metallic~ : Float, roughness~ : Float, reflectance~ : Float, parallax_depth_scale~ : Float, max_parallax_layer_count~ : Float, max_relief_mapping_search_steps~ : Float, anisotropy_texture_id~ : Int, anisotropy_strength~ : Float, anisotropy_rotation~ : Float, specular_tint_texture_id~ : Int, specular_tint_r~ : Float, specular_tint_g~ : Float, specular_tint_b~ : Float, diffuse_transmission~ : Float, specular_transmission~ : Float, thickness~ : Float, ior~ : Float, alpha_cutoff~ : Float, material_flags~ : UInt, transmission_source_texture_id~ : Int, transmission_blur_taps~ : Float, transmission_steps~ : Float, point_shadow_texture_id~ : Int, point_shadow_enabled~ : Float, point_shadow_depth_bias~ : Float, cull_mode~ : Int) -> Unit
 
+pub fn draw_mesh_material(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, alpha_mode_kind~ : Int, material_bind_group~ : HostMaterial2dBindGroup, vertex_shader_path? : String?, fragment_shader_path? : String?) -> Unit
+
 pub fn draw_motion_blur(scene_texture_id~ : Int, velocity_texture_id~ : Int, shutter_angle~ : Float, samples~ : Int) -> Unit
 
 pub fn draw_sprite(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float) -> Unit
@@ -270,6 +272,7 @@ pub struct GpuBackend {
   mut mesh2d_instance_capacity : UInt64
   mut mesh2d_instance_used : Int
   mesh2d_pipeline_cache : Array[Mesh2dPipelineCacheEntry]
+  mesh2d_material_layout_cache : Array[Mesh2dMaterialLayoutCacheEntry]
   mesh2d_material_bg_cache : Array[Mesh2dMaterialBindGroupCacheEntry]
   mut mesh3d_bgl_view : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_bgl_uniform : @wgpu_mbt.BindGroupLayout?
@@ -421,6 +424,7 @@ pub fn GpuBackend::draw_effect_stack(Self, Int, Float, Int, Float, Float, Float,
 pub fn GpuBackend::draw_fxaa(Self, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Int, Float, Float, Float, Float, vertex_shader_path? : String?, fragment_shader_path? : String?) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh3d(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, UInt, Int, Float, Float, Int, Float, Float, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_mesh_material(Self, Int, Float, Float, Float, Float, Float, Int, HostMaterial2dBindGroup, vertex_shader_path? : String?, fragment_shader_path? : String?) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_motion_blur(Self, Int, Int, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_sprite_uv(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_tonemapping2d(Self, Int, Float, Int, Int, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit raise GpuBackendError
@@ -578,6 +582,26 @@ pub struct GpuTextureInfo {
 
 type GpuUniformSlot
 
+pub struct HostMaterial2dBindGroup {
+  bindings : Array[HostMaterial2dBinding]
+}
+pub fn HostMaterial2dBindGroup::default() -> Self
+pub fn HostMaterial2dBindGroup::new(Array[HostMaterial2dBinding]) -> Self
+
+pub(all) struct HostMaterial2dBinding {
+  binding : UInt
+  value : HostMaterial2dBindingValue
+}
+pub fn HostMaterial2dBinding::sampler(UInt, Int) -> Self
+pub fn HostMaterial2dBinding::texture(UInt, Int) -> Self
+pub fn HostMaterial2dBinding::uniform(UInt, Bytes) -> Self
+
+pub(all) enum HostMaterial2dBindingValue {
+  Uniform(Bytes)
+  Texture(Int)
+  Sampler(Int)
+}
+
 pub(all) struct HostMesh3dPreprocessCameraPayload {
   direct_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
   indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
@@ -623,6 +647,12 @@ pub(all) struct HostMesh3dPreprocessShaderWorkItem {
 }
 
 type Mesh2dMaterialBindGroupCacheEntry
+
+pub struct Mesh2dMaterialLayoutCacheEntry {
+  key : String
+  bind_group_layout : @wgpu_mbt.BindGroupLayout
+  pipeline_layout : @wgpu_mbt.PipelineLayout
+}
 
 pub struct Mesh2dPipelineCacheEntry {
   key : String

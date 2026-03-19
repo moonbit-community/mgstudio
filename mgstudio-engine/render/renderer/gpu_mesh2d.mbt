@@ -31,13 +31,7 @@ const MESH2D_ALPHA_MODE_KIND_MASK : Int = 1
 const MESH2D_ALPHA_MODE_KIND_BLEND : Int = 2
 
 ///|
-const COLOR_MATERIAL_FLAGS_TEXTURE : UInt = 1U
-
-///|
-const COLOR_MATERIAL_FLAGS_ALPHA_MODE_MASK : UInt = 0x40000000U
-
-///|
-const COLOR_MATERIAL_FLAGS_ALPHA_MODE_BLEND : UInt = 0x80000000U
+const MESH2D_DEFAULT_MATERIAL_LAYOUT_KEY : String = "0:uniform;1:texture;2:sampler"
 
 ///|
 priv struct Mesh2dPipelineKey {
@@ -48,6 +42,7 @@ priv struct Mesh2dPipelineKey {
   tonemap_in_shader : Bool
   deband_dither : Bool
   may_discard : Bool
+  material_layout_key : String
   vertex_shader_path : String
   fragment_shader_path : String
 }
@@ -83,6 +78,8 @@ fn mesh2d_pipeline_cache_key(key : Mesh2dPipelineKey) -> String {
   tonemap_bits +
   deband_bits +
   discard_bits +
+  "_" +
+  key.material_layout_key +
   "_" +
   key.vertex_shader_path +
   "_" +
@@ -171,6 +168,74 @@ fn mesh2d_fragment_shader_path_or_default(path : String?) -> String {
     Some(value) => value
     None => MESH2D_COLOR_MATERIAL_SHADER_PATH
   }
+}
+
+///|
+fn host_material2d_binding_layout_kind_key(
+  value : HostMaterial2dBindingValue,
+) -> String {
+  match value {
+    Uniform(_) => "uniform"
+    Texture(_) => "texture"
+    Sampler(_) => "sampler"
+  }
+}
+
+///|
+fn host_material2d_bind_group_layout_key(
+  bind_group : HostMaterial2dBindGroup,
+) -> String {
+  let mut data = ""
+  for i in 0..<bind_group.bindings.length() {
+    let binding = bind_group.bindings[i]
+    if i > 0 {
+      data = data + ";"
+    }
+    data = data +
+      binding.binding.to_string() +
+      ":" +
+      host_material2d_binding_layout_kind_key(binding.value)
+  }
+  data
+}
+
+///|
+fn host_material2d_binding_data_key(
+  value : HostMaterial2dBindingValue,
+) -> String {
+  match value {
+    Uniform(bytes) => {
+      let mut data = "uniform(" + bytes.length().to_string() + ":"
+      for i in 0..<bytes.length() {
+        if i > 0 {
+          data = data + ","
+        }
+        data = data + bytes[i].to_int().to_string()
+      }
+      data + ")"
+    }
+    Texture(texture_id) => "texture(" + texture_id.to_string() + ")"
+    Sampler(texture_id) => "sampler(" + texture_id.to_string() + ")"
+  }
+}
+
+///|
+fn host_material2d_bind_group_cache_key(
+  bind_group : HostMaterial2dBindGroup,
+) -> String {
+  let mut data = host_material2d_bind_group_layout_key(bind_group)
+  data = data + "#"
+  for i in 0..<bind_group.bindings.length() {
+    let binding = bind_group.bindings[i]
+    if i > 0 {
+      data = data + ";"
+    }
+    data = data +
+      binding.binding.to_string() +
+      ":" +
+      host_material2d_binding_data_key(binding.value)
+  }
+  data
 }
 
 ///|
@@ -341,6 +406,7 @@ fn ensure_mesh2d_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
     backend.mesh2d_instance_capacity = 0UL
     backend.mesh2d_instance_used = 0
     backend.mesh2d_pipeline_cache.clear()
+    backend.mesh2d_material_layout_cache.clear()
     backend.mesh2d_material_bg_cache.clear()
     if ensure_mesh2d_instance_uniform_binding(
         backend,
@@ -353,14 +419,104 @@ fn ensure_mesh2d_resources(backend : GpuBackend) -> Unit raise GpuBackendError {
 }
 
 ///|
+fn mesh2d_material_layout_from_cache(
+  backend : GpuBackend,
+  layout_key : String,
+) -> (@wgpu.BindGroupLayout, @wgpu.PipelineLayout)? {
+  if layout_key == MESH2D_DEFAULT_MATERIAL_LAYOUT_KEY {
+    guard backend.mesh2d_material_bgl is Some(material_bgl) else { return None }
+    guard backend.mesh_pipeline_layout is Some(pipeline_layout) else {
+      return None
+    }
+    return Some((material_bgl, pipeline_layout))
+  }
+  for entry in backend.mesh2d_material_layout_cache {
+    if entry.key == layout_key {
+      return Some((entry.bind_group_layout, entry.pipeline_layout))
+    }
+  }
+  None
+}
+
+///|
+fn mesh2d_material_layout_for_bind_group(
+  backend : GpuBackend,
+  bind_group : HostMaterial2dBindGroup,
+) -> (@wgpu.BindGroupLayout, @wgpu.PipelineLayout)? {
+  let layout_key = host_material2d_bind_group_layout_key(bind_group)
+  if mesh2d_material_layout_from_cache(backend, layout_key) is Some(layout_info) {
+    return Some(layout_info)
+  }
+  guard backend.mesh2d_view_bgl is Some(view_bgl) else { return None }
+  guard backend.mesh2d_mesh_bgl is Some(mesh_bgl) else { return None }
+  let fragment_stage = ss(@wgpu.SHADER_STAGE_FRAGMENT)
+  let builder = @wgpu.BindGroupLayoutBuilder::new(
+    max_entries=bind_group.bindings.length().to_uint64(),
+  )
+  let mut ok = true
+  for binding in bind_group.bindings {
+    let binding_index = binding.binding
+    match binding.value {
+      Uniform(bytes) =>
+        ok = ok &&
+          builder.add_buffer(
+            binding_index,
+            fragment_stage,
+            @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+            min_binding_size=bytes.length().to_uint64(),
+          )
+      Texture(_) =>
+        ok = ok &&
+          builder.add_texture(
+            binding_index,
+            fragment_stage,
+            @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+            @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+          )
+      Sampler(_) =>
+        ok = ok &&
+          builder.add_sampler(
+            binding_index,
+            fragment_stage,
+            @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
+          )
+    }
+  }
+  if !ok {
+    builder.free()
+    return None
+  }
+  let material_bgl = if bind_group.bindings.length() == 0 {
+    builder.free()
+    backend.device.create_bind_group_layout_empty()
+  } else {
+    builder.finish(
+      backend.device,
+      label="mgstudio_mesh2d_material_bind_group_layout_" + layout_key,
+    )
+  }
+  let pipeline_layout = create_pipeline_layout_3(
+    backend.device,
+    view_bgl,
+    mesh_bgl,
+    material_bgl,
+  )
+  pipeline_layout.set_label("mgstudio_mesh2d_pipeline_layout_" + layout_key)
+  backend.mesh2d_material_layout_cache.push(Mesh2dMaterialLayoutCacheEntry::{
+    key: layout_key,
+    bind_group_layout: material_bgl,
+    pipeline_layout,
+  })
+  Some((material_bgl, pipeline_layout))
+}
+
+///|
 fn create_mesh2d_pipeline(
   backend : GpuBackend,
   key : Mesh2dPipelineKey,
+  material_pipeline_layout : @wgpu.PipelineLayout,
   label : String,
 ) -> @wgpu.RenderPipeline raise GpuBackendError {
-  guard backend.mesh_pipeline_layout is Some(layout) else {
-    fatal("wgpu: mesh2d bevy pipeline layout is None")
-  }
   let wgsl = load_wgsl_with_defines_required_mesh2d_material(
     Some(key.vertex_shader_path),
     Some(key.fragment_shader_path),
@@ -368,7 +524,10 @@ fn create_mesh2d_pipeline(
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let pipeline = try {
-    let builder = @wgpu.RenderPipelineDescBuilder::new(sm, layout~)
+    let builder = @wgpu.RenderPipelineDescBuilder::new(
+      sm,
+      layout=material_pipeline_layout,
+    )
     builder.set_entry_points("vertex", "fragment")
     builder.set_color_target_format(key.color_format)
     builder.set_topology_u32(key.primitive_topology)
@@ -504,97 +663,6 @@ fn mesh2d_instance_uniform_bytes(
 }
 
 ///|
-fn mesh2d_color_material_flags(texture_id : Int, alpha_mode_kind : Int) -> UInt {
-  let mut flags = 0U
-  if texture_id >= 0 {
-    flags = flags | COLOR_MATERIAL_FLAGS_TEXTURE
-  }
-  if alpha_mode_kind == MESH2D_ALPHA_MODE_KIND_MASK {
-    flags = flags | COLOR_MATERIAL_FLAGS_ALPHA_MODE_MASK
-  } else if alpha_mode_kind == MESH2D_ALPHA_MODE_KIND_BLEND {
-    flags = flags | COLOR_MATERIAL_FLAGS_ALPHA_MODE_BLEND
-  }
-  flags
-}
-
-///|
-fn mesh2d_color_material_uniform_bytes(
-  color_r : Float,
-  color_g : Float,
-  color_b : Float,
-  color_a : Float,
-  texture_id : Int,
-  uv_offset_x : Float,
-  uv_offset_y : Float,
-  uv_scale_x : Float,
-  uv_scale_y : Float,
-  alpha_mode_kind : Int,
-  alpha_cutoff : Float,
-) -> Bytes {
-  let flags = mesh2d_color_material_flags(texture_id, alpha_mode_kind)
-  let words : Array[UInt] = [
-    f32_bits(color_r),
-    f32_bits(color_g),
-    f32_bits(color_b),
-    f32_bits(color_a),
-    f32_bits(uv_scale_x),
-    f32_bits(0.0F),
-    f32_bits(0.0F),
-    0U,
-    f32_bits(0.0F),
-    f32_bits(uv_scale_y),
-    f32_bits(0.0F),
-    0U,
-    f32_bits(uv_offset_x),
-    f32_bits(uv_offset_y),
-    f32_bits(1.0F),
-    0U,
-    flags,
-    f32_bits(alpha_cutoff),
-    0U,
-    0U,
-  ]
-  u32le_pack(words)
-}
-
-///|
-fn mesh2d_color_material_cache_key(
-  color_r : Float,
-  color_g : Float,
-  color_b : Float,
-  color_a : Float,
-  texture_id : Int,
-  uv_offset_x : Float,
-  uv_offset_y : Float,
-  uv_scale_x : Float,
-  uv_scale_y : Float,
-  alpha_mode_kind : Int,
-  alpha_cutoff : Float,
-) -> String {
-  texture_id.to_string() +
-  "_" +
-  f32_bits(color_r).to_string() +
-  "_" +
-  f32_bits(color_g).to_string() +
-  "_" +
-  f32_bits(color_b).to_string() +
-  "_" +
-  f32_bits(color_a).to_string() +
-  "_" +
-  f32_bits(uv_offset_x).to_string() +
-  "_" +
-  f32_bits(uv_offset_y).to_string() +
-  "_" +
-  f32_bits(uv_scale_x).to_string() +
-  "_" +
-  f32_bits(uv_scale_y).to_string() +
-  "_" +
-  alpha_mode_kind.to_string() +
-  "_" +
-  f32_bits(alpha_cutoff).to_string()
-}
-
-///|
 fn resolve_mesh2d_material_texture(
   backend : GpuBackend,
   id : Int,
@@ -609,62 +677,68 @@ fn resolve_mesh2d_material_texture(
 }
 
 ///|
-fn mesh2d_color_material_bind_group_for_draw(
+fn mesh2d_material_bind_group_for_draw(
   backend : GpuBackend,
-  color_r : Float,
-  color_g : Float,
-  color_b : Float,
-  color_a : Float,
-  texture_id : Int,
-  uv_offset_x : Float,
-  uv_offset_y : Float,
-  uv_scale_x : Float,
-  uv_scale_y : Float,
-  alpha_mode_kind : Int,
-  alpha_cutoff : Float,
-) -> @wgpu.BindGroup? raise GpuBackendError {
-  guard backend.mesh2d_material_bgl is Some(bgl_material) else { return None }
-  let cache_key = mesh2d_color_material_cache_key(
-    color_r, color_g, color_b, color_a, texture_id, uv_offset_x, uv_offset_y, uv_scale_x,
-    uv_scale_y, alpha_mode_kind, alpha_cutoff,
-  )
+  bind_group : HostMaterial2dBindGroup,
+) -> (@wgpu.BindGroupLayout, @wgpu.BindGroup)? raise GpuBackendError {
+  guard mesh2d_material_layout_for_bind_group(backend, bind_group)
+    is Some((material_bgl, _)) else {
+    return None
+  }
+  let cache_key = host_material2d_bind_group_cache_key(bind_group)
   for entry in backend.mesh2d_material_bg_cache {
     if entry.key == cache_key {
-      entry.uniform_buf |> ignore
-      return Some(entry.bind_group)
+      for uniform_buffer in entry.uniform_buffers {
+        uniform_buffer |> ignore
+      }
+      return Some((material_bgl, entry.bind_group))
     }
   }
-  let texture = resolve_mesh2d_material_texture(backend, texture_id)
-  let uniform_buf = backend.device.create_buffer_init(
-    usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
-    mesh2d_color_material_uniform_bytes(
-      color_r, color_g, color_b, color_a, texture_id, uv_offset_x, uv_offset_y, uv_scale_x,
-      uv_scale_y, alpha_mode_kind, alpha_cutoff,
-    ),
+  let uniform_buffers : Array[@wgpu.Buffer] = []
+  let builder = @wgpu.BindGroupBuilder::new(
+    max_entries=bind_group.bindings.length().to_uint64(),
   )
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=3UL)
-  let ok = builder.add_buffer(
-      0U,
-      uniform_buf,
-      size=MESH2D_COLOR_MATERIAL_UNIFORM_BUFFER_SIZE,
-    ) &&
-    builder.add_texture_view(1U, texture.view) &&
-    builder.add_sampler(2U, texture.sampler)
+  let mut ok = true
+  for binding in bind_group.bindings {
+    match binding.value {
+      Uniform(bytes) => {
+        let uniform_buffer = backend.device.create_buffer_init(
+          usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+          bytes,
+        )
+        uniform_buffers.push(uniform_buffer)
+        ok = ok &&
+          builder.add_buffer(
+            binding.binding,
+            uniform_buffer,
+            size=bytes.length().to_uint64(),
+          )
+      }
+      Texture(texture_id) => {
+        let texture = resolve_mesh2d_material_texture(backend, texture_id)
+        ok = ok && builder.add_texture_view(binding.binding, texture.view)
+      }
+      Sampler(texture_id) => {
+        let texture = resolve_mesh2d_material_texture(backend, texture_id)
+        ok = ok && builder.add_sampler(binding.binding, texture.sampler)
+      }
+    }
+  }
   if !ok {
     builder.free()
     return None
   }
   let bind_group = builder.finish(
     backend.device,
-    bgl_material,
-    label="mgstudio_mesh2d_color_material_bg",
+    material_bgl,
+    label="mgstudio_mesh2d_material_bg",
   )
   backend.mesh2d_material_bg_cache.push(Mesh2dMaterialBindGroupCacheEntry::{
     key: cache_key,
     bind_group,
-    uniform_buf,
+    uniform_buffers,
   })
-  Some(bind_group)
+  Some((material_bgl, bind_group))
 }
 
 ///|
@@ -675,6 +749,7 @@ fn mesh2d_pipeline_key_for_format(
   tonemap_in_shader : Bool,
   deband_dither : Bool,
   may_discard : Bool,
+  material_layout_key : String,
   vertex_shader_path : String?,
   fragment_shader_path : String?,
 ) -> Mesh2dPipelineKey {
@@ -687,6 +762,7 @@ fn mesh2d_pipeline_key_for_format(
     tonemap_in_shader,
     deband_dither,
     may_discard,
+    material_layout_key,
     vertex_shader_path: mesh2d_vertex_shader_path_or_default(vertex_shader_path),
     fragment_shader_path: mesh2d_fragment_shader_path_or_default(
       fragment_shader_path,
@@ -708,6 +784,7 @@ fn mesh2d_pipeline_may_discard(alpha_mode_kind : Int) -> Bool {
 fn mesh2d_get_or_create_pipeline(
   backend : GpuBackend,
   key : Mesh2dPipelineKey,
+  material_pipeline_layout : @wgpu.PipelineLayout,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   let cache_key = mesh2d_pipeline_cache_key(key)
   for entry in backend.mesh2d_pipeline_cache {
@@ -720,7 +797,9 @@ fn mesh2d_get_or_create_pipeline(
   } else {
     "mgstudio_mesh2d_opaque_pipeline"
   }
-  let pipeline = create_mesh2d_pipeline(backend, key, pipeline_label)
+  let pipeline = create_mesh2d_pipeline(
+    backend, key, material_pipeline_layout, pipeline_label,
+  )
   backend.mesh2d_pipeline_cache.push(Mesh2dPipelineCacheEntry::{
     key: cache_key,
     pipeline,
@@ -743,12 +822,20 @@ fn mesh_pipeline_for_draw(
   backend : GpuBackend,
   mesh : GpuMeshInfo,
   alpha_mode_kind : Int,
+  material_bind_group : HostMaterial2dBindGroup,
   vertex_shader_path : String?,
   fragment_shader_path : String?,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   let format = match current_pass_color_format(backend) {
     Some(v) => v
     None => tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM)
+  }
+  let material_layout_key = host_material2d_bind_group_layout_key(
+    material_bind_group,
+  )
+  guard mesh2d_material_layout_for_bind_group(backend, material_bind_group)
+    is Some((_, material_pipeline_layout)) else {
+    return None
   }
   mesh2d_get_or_create_pipeline(
     backend,
@@ -759,9 +846,11 @@ fn mesh_pipeline_for_draw(
       false,
       false,
       mesh2d_pipeline_may_discard(alpha_mode_kind),
+      material_layout_key,
       vertex_shader_path,
       fragment_shader_path,
     ),
+    material_pipeline_layout,
   )
 }
 
@@ -1069,6 +1158,38 @@ pub fn GpuBackend::draw_mesh(
   vertex_shader_path? : String? = None,
   fragment_shader_path? : String? = None,
 ) -> Unit raise GpuBackendError {
+  let material_bind_group = host_material2d_color_material_bind_group(
+    color_r, color_g, color_b, color_a, alpha_mode_kind, alpha_cutoff, texture_id,
+    uv_offset_x, uv_offset_y, uv_scale_x, uv_scale_y,
+  )
+  self.draw_mesh_material(
+    mesh_id,
+    x,
+    y,
+    rotation,
+    scale_x,
+    scale_y,
+    alpha_mode_kind,
+    material_bind_group,
+    vertex_shader_path~,
+    fragment_shader_path~,
+  )
+}
+
+///|
+pub fn GpuBackend::draw_mesh_material(
+  self : GpuBackend,
+  mesh_id : Int,
+  x : Float,
+  y : Float,
+  rotation : Float,
+  scale_x : Float,
+  scale_y : Float,
+  alpha_mode_kind : Int,
+  material_bind_group : HostMaterial2dBindGroup,
+  vertex_shader_path? : String? = None,
+  fragment_shader_path? : String? = None,
+) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else {
     debug_mesh2d_drop_no_frame_ref.val = debug_mesh2d_drop_no_frame_ref.val + 1
     return
@@ -1098,7 +1219,7 @@ pub fn GpuBackend::draw_mesh(
   }
   ensure_mesh2d_resources(self)
   guard mesh_pipeline_for_draw(
-      self, mesh, alpha_mode_kind, vertex_shader_path, fragment_shader_path,
+      self, mesh, alpha_mode_kind, material_bind_group, vertex_shader_path, fragment_shader_path,
     )
     is Some(pipeline) else {
     debug_mesh2d_drop_no_pipeline_ref.val = debug_mesh2d_drop_no_pipeline_ref.val +
@@ -1131,11 +1252,8 @@ pub fn GpuBackend::draw_mesh(
       1
     return
   }
-  guard mesh2d_color_material_bind_group_for_draw(
-      self, color_r, color_g, color_b, color_a, texture_id, uv_offset_x, uv_offset_y,
-      uv_scale_x, uv_scale_y, alpha_mode_kind, alpha_cutoff,
-    )
-    is Some(material_bg) else {
+  guard mesh2d_material_bind_group_for_draw(self, material_bind_group)
+    is Some((_, material_bg)) else {
     debug_mesh2d_drop_no_uniform_buf_ref.val = debug_mesh2d_drop_no_uniform_buf_ref.val +
       1
     return

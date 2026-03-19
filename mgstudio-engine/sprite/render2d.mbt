@@ -1513,109 +1513,266 @@ fn material2d_mesh_pipeline_key_bits(alpha_mode : AlphaMode2d) -> Int {
 }
 
 ///|
-fn material2d_alpha_mode_bind_group_data(alpha_mode : AlphaMode2d) -> String {
+fn material2d_u32le_pack(xs : Array[UInt]) -> Bytes {
+  let len = xs.length()
+  Bytes::makei(len * 4, i => {
+    let word = xs[i / 4]
+    let shift = i % 4 * 8
+    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
+  })
+}
+
+///|
+fn material2d_f32_bits(x : Float) -> UInt {
+  x.reinterpret_as_uint()
+}
+
+///|
+fn material2d_f32le_pack(xs : Array[Float]) -> Bytes {
+  material2d_u32le_pack(xs.map(material2d_f32_bits))
+}
+
+///|
+fn material2d_alpha_mode_kind_bits(alpha_mode : AlphaMode2d) -> UInt {
   match alpha_mode {
-    Opaque => "opaque"
-    Blend => "blend"
-    Mask(cutoff) => "mask:" + cutoff.to_string()
+    Opaque => 0U
+    Mask(_) => 0x40000000U
+    Blend => 0x80000000U
   }
 }
 
 ///|
-fn material2d_opt_texture_bind_group_data(
-  texture : @asset.Handle[@asset.Image]?,
-) -> String {
-  match texture {
-    Some(value) => value.id().to_string()
-    None => "none"
-  }
-}
-
-///|
-fn material2d_vec2_bind_group_data(value : @math.Vec2) -> String {
-  value.x.to_string() + "," + value.y.to_string()
-}
-
-///|
-fn material2d_color_bind_group_data(color : Color) -> String {
-  color.r.to_string() +
-  "," +
-  color.g.to_string() +
-  "," +
-  color.b.to_string() +
-  "," +
-  color.a.to_string()
-}
-
-///|
-fn material2d_bind_group_data_string(
+fn material2d_color_material_uniform_bytes(
   color : Color,
   alpha_mode : AlphaMode2d,
-  texture : @asset.Handle[@asset.Image]?,
+  texture_enabled : Bool,
   uv_offset : @math.Vec2,
   uv_scale : @math.Vec2,
-) -> String {
-  "color=" +
-  material2d_color_bind_group_data(color) +
-  ";alpha_mode=" +
-  material2d_alpha_mode_bind_group_data(alpha_mode) +
-  ";texture=" +
-  material2d_opt_texture_bind_group_data(texture) +
-  ";uv_offset=" +
-  material2d_vec2_bind_group_data(uv_offset) +
-  ";uv_scale=" +
-  material2d_vec2_bind_group_data(uv_scale)
+) -> Bytes {
+  let texture_bit = if texture_enabled { 1U } else { 0U }
+  let alpha_cutoff = mesh_alpha_cutoff(alpha_mode)
+  material2d_f32le_pack([
+    color.r,
+    color.g,
+    color.b,
+    color.a,
+    uv_scale.x,
+    0.0F,
+    0.0F,
+    0.0F,
+    0.0F,
+    uv_scale.y,
+    0.0F,
+    0.0F,
+    uv_offset.x,
+    uv_offset.y,
+    1.0F,
+    0.0F,
+    Float::from_int(
+      (texture_bit | material2d_alpha_mode_kind_bits(alpha_mode)).reinterpret_as_int(),
+    ),
+    alpha_cutoff,
+    0.0F,
+    0.0F,
+  ])
+}
+
+///|
+fn material2d_bytes_bind_group_data(bytes : Bytes) -> String {
+  let mut data = "len=" + bytes.length().to_string() + ":"
+  for i in 0..<bytes.length() {
+    if i > 0 {
+      data = data + ","
+    }
+    data = data + bytes[i].to_int().to_string()
+  }
+  data
+}
+
+///|
+pub(all) enum Material2dBindingValue {
+  Uniform(Bytes)
+  Texture(@asset.Handle[@asset.Image]?)
+  Sampler(@asset.Handle[@asset.Image]?)
+}
+
+///|
+pub struct Material2dBinding {
+  binding : Int
+  value : Material2dBindingValue
+}
+
+///|
+pub fn Material2dBinding::uniform(
+  binding : Int,
+  bytes : Bytes,
+) -> Material2dBinding {
+  Material2dBinding::{ binding, value: Uniform(bytes) }
+}
+
+///|
+pub fn Material2dBinding::texture(
+  binding : Int,
+  texture : @asset.Handle[@asset.Image]?,
+) -> Material2dBinding {
+  Material2dBinding::{ binding, value: Texture(texture) }
+}
+
+///|
+pub fn Material2dBinding::sampler(
+  binding : Int,
+  texture : @asset.Handle[@asset.Image]?,
+) -> Material2dBinding {
+  Material2dBinding::{ binding, value: Sampler(texture) }
+}
+
+///|
+fn material2d_binding_layout_kind_key(value : Material2dBindingValue) -> String {
+  match value {
+    Uniform(_) => "uniform"
+    Texture(_) => "texture"
+    Sampler(_) => "sampler"
+  }
+}
+
+///|
+fn material2d_binding_data_key(value : Material2dBindingValue) -> String {
+  match value {
+    Uniform(bytes) => "uniform(" + material2d_bytes_bind_group_data(bytes) + ")"
+    Texture(texture) => {
+      let texture_id = match texture {
+        Some(value) => value.id().to_string()
+        None => "none"
+      }
+      "texture(" + texture_id + ")"
+    }
+    Sampler(texture) => {
+      let texture_id = match texture {
+        Some(value) => value.id().to_string()
+        None => "none"
+      }
+      "sampler(" + texture_id + ")"
+    }
+  }
 }
 
 ///|
 pub struct Material2dBindGroup {
-  color : Color
-  texture : @asset.Handle[@asset.Image]?
-  uv_offset : @math.Vec2
-  uv_scale : @math.Vec2
-  alpha_cutoff : Float
+  bindings : Array[Material2dBinding]
 }
 
 ///|
 pub fn Material2dBindGroup::new(
-  color : Color,
-  texture? : @asset.Handle[@asset.Image]? = None,
-  uv_offset? : @math.Vec2 = @math.Vec2::new(0.0F, 0.0F),
-  uv_scale? : @math.Vec2 = @math.Vec2::new(1.0F, 1.0F),
-  alpha_cutoff? : Float = 0.5F,
+  bindings : Array[Material2dBinding],
 ) -> Material2dBindGroup {
-  Material2dBindGroup::{ color, texture, uv_offset, uv_scale, alpha_cutoff }
+  let normalized = bindings.copy()
+  normalized.sort_by(fn(a, b) {
+    if a.binding < b.binding {
+      -1
+    } else if a.binding > b.binding {
+      1
+    } else {
+      0
+    }
+  })
+  for i in 1..<normalized.length() {
+    if normalized[i - 1].binding == normalized[i].binding {
+      abort(
+        "duplicate Material2d bind-group binding " +
+        normalized[i].binding.to_string(),
+      )
+    }
+  }
+  Material2dBindGroup::{ bindings: normalized }
 }
 
 ///|
 pub fn Material2dBindGroup::default() -> Material2dBindGroup {
-  Material2dBindGroup::new(Color::white())
+  Material2dBindGroup::new([])
+}
+
+///|
+pub fn Material2dBindGroup::color_material(
+  color : Color,
+  alpha_mode : AlphaMode2d,
+  texture? : @asset.Handle[@asset.Image]? = None,
+  uv_offset? : @math.Vec2 = @math.Vec2::new(0.0F, 0.0F),
+  uv_scale? : @math.Vec2 = @math.Vec2::new(1.0F, 1.0F),
+) -> Material2dBindGroup {
+  let bindings : Array[Material2dBinding] = [
+    Material2dBinding::uniform(
+      0,
+      material2d_color_material_uniform_bytes(
+        color,
+        alpha_mode,
+        texture is Some(_),
+        uv_offset,
+        uv_scale,
+      ),
+    ),
+  ]
+  bindings.push(Material2dBinding::texture(1, texture))
+  bindings.push(Material2dBinding::sampler(2, texture))
+  Material2dBindGroup::new(bindings)
+}
+
+///|
+pub fn Material2dBindGroup::binding(
+  self : Material2dBindGroup,
+  binding : Int,
+) -> Material2dBinding? {
+  for entry in self.bindings {
+    if entry.binding == binding {
+      return Some(entry)
+    }
+  }
+  None
+}
+
+///|
+pub fn Material2dBindGroup::layout_key(self : Material2dBindGroup) -> String {
+  let mut data = ""
+  for i in 0..<self.bindings.length() {
+    let binding = self.bindings[i]
+    if i > 0 {
+      data = data + ";"
+    }
+    data = data +
+      binding.binding.to_string() +
+      ":" +
+      material2d_binding_layout_kind_key(binding.value)
+  }
+  data
 }
 
 ///|
 pub fn Material2dBindGroup::bind_group_data(
   self : Material2dBindGroup,
-  alpha_mode : AlphaMode2d,
 ) -> String {
-  material2d_bind_group_data_string(
-    self.color,
-    alpha_mode,
-    self.texture,
-    self.uv_offset,
-    self.uv_scale,
-  )
+  let mut data = ""
+  for i in 0..<self.bindings.length() {
+    let binding = self.bindings[i]
+    if i > 0 {
+      data = data + ";"
+    }
+    data = data +
+      binding.binding.to_string() +
+      ":" +
+      material2d_binding_data_key(binding.value)
+  }
+  data
 }
 
 ///|
 pub(open) trait Material2d {
   alpha_mode(self : Self) -> AlphaMode2d
   bind_group(self : Self) -> Material2dBindGroup
-  bind_group_data(self : Self) -> String
 }
 
 ///|
 pub struct Material2dKey[M] {
   mesh_key : Int
+  bind_group_layout_key : String
   bind_group_data : String
   marker : M?
 }
@@ -1623,9 +1780,15 @@ pub struct Material2dKey[M] {
 ///|
 pub fn[M] Material2dKey::new(
   mesh_key : Int,
+  bind_group_layout_key : String,
   bind_group_data : String,
 ) -> Material2dKey[M] {
-  Material2dKey::{ mesh_key, bind_group_data, marker: None }
+  Material2dKey::{
+    mesh_key,
+    bind_group_layout_key,
+    bind_group_data,
+    marker: None,
+  }
 }
 
 ///|
@@ -1656,11 +1819,13 @@ pub fn[M] Material2dPipeline::new(
 pub fn[M : Material2d] Material2dPipeline::key_for(
   self : Material2dPipeline[M],
   material : M,
+  bind_group : Material2dBindGroup,
 ) -> Material2dKey[M] {
   self.marker |> ignore
   Material2dKey::new(
     material2d_mesh_pipeline_key_bits(material.alpha_mode()),
-    material.bind_group_data(),
+    bind_group.layout_key(),
+    bind_group.bind_group_data(),
   )
 }
 
@@ -1692,8 +1857,8 @@ pub fn[M : Material2d] PreparedMaterial2d::from_material(
   material : M,
   pipeline : Material2dPipeline[M],
 ) -> PreparedMaterial2d[M] {
-  let key = pipeline.key_for(material)
   let bind_group = material.bind_group()
+  let key = pipeline.key_for(material, bind_group)
   PreparedMaterial2d::{
     source,
     bind_group,
@@ -1716,18 +1881,13 @@ pub impl Material2d for ColorMaterial with alpha_mode(self) {
 
 ///|
 pub impl Material2d for ColorMaterial with bind_group(self) {
-  Material2dBindGroup::new(
+  Material2dBindGroup::color_material(
     ColorMaterial::color(self),
+    ColorMaterial::alpha_mode(self),
     texture=ColorMaterial::texture(self),
     uv_offset=ColorMaterial::uv_offset(self),
     uv_scale=ColorMaterial::uv_scale(self),
-    alpha_cutoff=mesh_alpha_cutoff(ColorMaterial::alpha_mode(self)),
   )
-}
-
-///|
-pub impl Material2d for ColorMaterial with bind_group_data(self) {
-  self.bind_group().bind_group_data(ColorMaterial::alpha_mode(self))
 }
 
 ///|
@@ -1737,18 +1897,13 @@ pub impl Material2d for ColorMaterialAsset with alpha_mode(self) {
 
 ///|
 pub impl Material2d for ColorMaterialAsset with bind_group(self) {
-  Material2dBindGroup::new(
+  Material2dBindGroup::color_material(
     self.color,
+    self.alpha_mode,
     texture=self.texture,
     uv_offset=self.uv_offset,
     uv_scale=self.uv_scale,
-    alpha_cutoff=mesh_alpha_cutoff(self.alpha_mode),
   )
-}
-
-///|
-pub impl Material2d for ColorMaterialAsset with bind_group_data(self) {
-  self.bind_group().bind_group_data(self.alpha_mode)
 }
 
 ///|
@@ -2079,13 +2234,6 @@ pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with alpha_mode(self)
 ///|
 pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with bind_group(self) {
   self.to_color_material().bind_group()
-}
-
-///|
-pub impl Material2d for MeshMaterial2d[ColorMaterialAsset] with bind_group_data(
-  self,
-) {
-  self.to_color_material().bind_group_data()
 }
 
 ///|
@@ -7435,24 +7583,6 @@ fn cmp_float(a : Float, b : Float) -> Int {
 }
 
 ///|
-fn mesh_alpha_phase(alpha_mode : AlphaMode2d, alpha : Float) -> Int? {
-  match alpha_mode {
-    Opaque => Some(0)
-    Blend => Some(1)
-    Mask(cutoff) => if alpha >= cutoff { Some(0) } else { None }
-  }
-}
-
-///|
-fn mesh_draw_alpha(alpha_mode : AlphaMode2d, alpha : Float) -> Float? {
-  match alpha_mode {
-    Opaque => Some(1.0F)
-    Blend => Some(alpha)
-    Mask(cutoff) => if alpha >= cutoff { Some(alpha) } else { None }
-  }
-}
-
-///|
 fn mesh_alpha_mode_kind(alpha_mode : AlphaMode2d) -> Int {
   match alpha_mode {
     Opaque => 0
@@ -7472,13 +7602,12 @@ fn mesh_alpha_cutoff(alpha_mode : AlphaMode2d) -> Float {
 ///|
 fn material2d_mesh_phase_from_properties(
   properties : Material2dProperties,
-  alpha : Float,
 ) -> Int? {
   let key_bits = properties.mesh_pipeline_key_bits
   if (key_bits & MATERIAL2D_PIPELINE_KEY_BLEND) != 0 {
     Some(1)
   } else if (key_bits & MATERIAL2D_PIPELINE_KEY_ALPHA_MASK) != 0 {
-    mesh_alpha_phase(properties.alpha_mode, alpha)
+    Some(0)
   } else {
     Some(0)
   }
@@ -7486,52 +7615,7 @@ fn material2d_mesh_phase_from_properties(
 
 ///|
 fn[M] prepared_material2d_alpha_phase(material : PreparedMaterial2d[M]) -> Int? {
-  material2d_mesh_phase_from_properties(
-    material.properties,
-    material.bind_group.color.a,
-  )
-}
-
-///|
-priv struct Material2dMeshDrawParams {
-  color : Color
-  draw_alpha : Float
-  alpha_mode_kind : Int
-  alpha_cutoff : Float
-  texture_id : Int
-  uv_offset : @math.Vec2
-  uv_scale : @math.Vec2
-}
-
-///|
-fn material2d_mesh_draw_params(
-  bind_group : Material2dBindGroup,
-  properties : Material2dProperties,
-) -> Material2dMeshDrawParams? {
-  guard mesh_draw_alpha(properties.alpha_mode, bind_group.color.a)
-    is Some(draw_alpha) else {
-    return None
-  }
-  let texture_id = match bind_group.texture {
-    Some(value) => value.id()
-    None => -1
-  }
-  Some(Material2dMeshDrawParams::{
-    color: bind_group.color,
-    draw_alpha,
-    alpha_mode_kind: mesh_alpha_mode_kind(properties.alpha_mode),
-    alpha_cutoff: bind_group.alpha_cutoff,
-    texture_id,
-    uv_offset: bind_group.uv_offset,
-    uv_scale: bind_group.uv_scale,
-  })
-}
-
-///|
-fn[M] prepared_material2d_draw_params(
-  material : PreparedMaterial2d[M],
-) -> Material2dMeshDrawParams? {
-  material2d_mesh_draw_params(material.bind_group, material.properties)
+  material2d_mesh_phase_from_properties(material.properties)
 }
 
 ///|
@@ -7562,6 +7646,46 @@ fn[M] prepared_material2d_handle_for_mesh(
     mesh.entity.main_entity,
     material_instances,
   )
+}
+
+///|
+fn material2d_binding_to_host(
+  binding : Material2dBinding,
+) -> @render.HostMaterial2dBinding {
+  match binding.value {
+    Uniform(bytes) =>
+      @render.HostMaterial2dBinding::uniform(
+        binding.binding.reinterpret_as_uint(),
+        bytes,
+      )
+    Texture(texture) =>
+      @render.HostMaterial2dBinding::texture(
+        binding.binding.reinterpret_as_uint(),
+        match texture {
+          Some(value) => value.id()
+          None => -1
+        },
+      )
+    Sampler(texture) =>
+      @render.HostMaterial2dBinding::sampler(
+        binding.binding.reinterpret_as_uint(),
+        match texture {
+          Some(value) => value.id()
+          None => -1
+        },
+      )
+  }
+}
+
+///|
+fn material2d_bind_group_to_host(
+  bind_group : Material2dBindGroup,
+) -> @render.HostMaterial2dBindGroup {
+  let bindings : Array[@render.HostMaterial2dBinding] = []
+  for binding in bind_group.bindings {
+    bindings.push(material2d_binding_to_host(binding))
+  }
+  @render.HostMaterial2dBindGroup::new(bindings)
 }
 
 ///|
@@ -7667,29 +7791,18 @@ fn[M] draw_material2d_mesh_item(
     is Some(material) else {
     return
   }
-  guard prepared_material2d_draw_params(material) is Some(draw_params) else {
-    return
-  }
   let payload = mesh.payload
   let transform = payload.transform
-  @render.host_gpu_draw_mesh(
+  let host_bind_group = material2d_bind_group_to_host(material.bind_group)
+  @render.host_gpu_draw_mesh_material(
     mesh_id=payload.mesh_id,
     x=transform.translation.x,
     y=transform.translation.y,
     rotation=transform.rotation_z(),
     scale_x=transform.scale.x,
     scale_y=transform.scale.y,
-    color_r=draw_params.color.r,
-    color_g=draw_params.color.g,
-    color_b=draw_params.color.b,
-    color_a=draw_params.draw_alpha,
-    alpha_mode_kind=draw_params.alpha_mode_kind,
-    alpha_cutoff=draw_params.alpha_cutoff,
-    texture_id=draw_params.texture_id,
-    uv_offset_x=draw_params.uv_offset.x,
-    uv_offset_y=draw_params.uv_offset.y,
-    uv_scale_x=draw_params.uv_scale.x,
-    uv_scale_y=draw_params.uv_scale.y,
+    alpha_mode_kind=mesh_alpha_mode_kind(material.properties.alpha_mode),
+    material_bind_group=host_bind_group,
     vertex_shader_path=pipeline.vertex_shader,
     fragment_shader_path=pipeline.fragment_shader,
   )
@@ -8823,7 +8936,7 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
 }
 
 ///|
-test "render2d: mesh mask alpha mode drops below cutoff" {
+test "render2d: mesh mask alpha mode queues both items for shader-side cutoff" {
   let layers = RenderLayers::default()
   let masked_low_entity = @core.Entity::new(1, 0)
   let masked_high_entity = @core.Entity::new(2, 0)
@@ -8882,7 +8995,9 @@ test "render2d: mesh mask alpha mode drops below cutoff" {
     @core.Entity::new(0, 0),
     layers,
   )
-  let ok = items.length() == 1 && items[0].kind is Mesh(1)
+  let ok = items.length() == 2 &&
+    items[0].kind is Mesh(0) &&
+    items[1].kind is Mesh(1)
   inspect(ok, content="true")
 }
 

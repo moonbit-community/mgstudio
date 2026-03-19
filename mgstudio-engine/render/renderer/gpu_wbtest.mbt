@@ -84,8 +84,74 @@ test "renderer: mesh2d dynamic uniform pool grows by required capacity" {
 }
 
 ///|
+const WBTEST_COLOR_MATERIAL_FLAGS_TEXTURE : UInt = 1U
+
+///|
+const WBTEST_COLOR_MATERIAL_FLAGS_ALPHA_MODE_MASK : UInt = 0x40000000U
+
+///|
+const WBTEST_COLOR_MATERIAL_FLAGS_ALPHA_MODE_BLEND : UInt = 0x80000000U
+
+///|
+fn wbtest_mesh2d_color_material_flags(
+  texture_id : Int,
+  alpha_mode_kind : Int,
+) -> UInt {
+  let mut flags = 0U
+  if texture_id >= 0 {
+    flags = flags | WBTEST_COLOR_MATERIAL_FLAGS_TEXTURE
+  }
+  if alpha_mode_kind == MESH2D_ALPHA_MODE_KIND_MASK {
+    flags = flags | WBTEST_COLOR_MATERIAL_FLAGS_ALPHA_MODE_MASK
+  } else if alpha_mode_kind == MESH2D_ALPHA_MODE_KIND_BLEND {
+    flags = flags | WBTEST_COLOR_MATERIAL_FLAGS_ALPHA_MODE_BLEND
+  }
+  flags
+}
+
+///|
+fn wbtest_mesh2d_color_material_uniform_bytes(
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+  texture_id : Int,
+  uv_offset_x : Float,
+  uv_offset_y : Float,
+  uv_scale_x : Float,
+  uv_scale_y : Float,
+  alpha_mode_kind : Int,
+  alpha_cutoff : Float,
+) -> Bytes {
+  let flags = wbtest_mesh2d_color_material_flags(texture_id, alpha_mode_kind)
+  let words : Array[UInt] = [
+    f32_bits(color_r),
+    f32_bits(color_g),
+    f32_bits(color_b),
+    f32_bits(color_a),
+    f32_bits(uv_scale_x),
+    f32_bits(0.0F),
+    f32_bits(0.0F),
+    0U,
+    f32_bits(0.0F),
+    f32_bits(uv_scale_y),
+    f32_bits(0.0F),
+    0U,
+    f32_bits(uv_offset_x),
+    f32_bits(uv_offset_y),
+    f32_bits(1.0F),
+    0U,
+    flags,
+    f32_bits(alpha_cutoff),
+    0U,
+    0U,
+  ]
+  u32le_pack(words)
+}
+
+///|
 test "renderer: mesh2d color material uniform bytes match Bevy size" {
-  let bytes = mesh2d_color_material_uniform_bytes(
+  let bytes = wbtest_mesh2d_color_material_uniform_bytes(
     1.0F,
     0.5F,
     0.25F,
@@ -110,9 +176,11 @@ test "renderer: mesh2d pipeline key records custom material shader paths" {
     false,
     false,
     false,
+    "0:uniform;3:uniform",
     Some("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"),
     Some("shaders/custom/mesh2d_checker_material.wgsl"),
   )
+  inspect(key.material_layout_key, content="0:uniform;3:uniform")
   inspect(
     key.vertex_shader_path,
     content="shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl",
@@ -143,7 +211,7 @@ test "renderer: mesh2d material loader appends custom fragment shader" {
   )
   inspect(
     wgsl.contains(
-      "output_color = vec4<f32>(output_color.rgb * checker, output_color.a);",
+      "@group(2) @binding(3) var<uniform> settings: CheckerSettings;",
     ),
     content="true",
   )
@@ -1143,6 +1211,9 @@ test "renderer: mesh pipeline specializes to hdr render target format" {
     Some(v) => v
     None => tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM)
   }
+  guard backend.mesh_pipeline_layout is Some(layout) else {
+    abort("expected default mesh2d pipeline layout")
+  }
   mesh2d_get_or_create_pipeline(
     backend,
     mesh2d_pipeline_key_for_format(
@@ -1152,9 +1223,11 @@ test "renderer: mesh pipeline specializes to hdr render target format" {
       false,
       false,
       false,
+      MESH2D_DEFAULT_MATERIAL_LAYOUT_KEY,
       None,
       None,
     ),
+    layout,
   )
   |> ignore
   let ok = match backend.mesh_pipeline_surface_format {

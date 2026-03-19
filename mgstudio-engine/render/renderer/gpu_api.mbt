@@ -99,6 +99,141 @@ pub fn RenderDiagnosticsSnapshot::new(
 }
 
 ///|
+fn host_material2d_u32le_pack(xs : Array[UInt]) -> Bytes {
+  let len = xs.length()
+  Bytes::makei(len * 4, i => {
+    let word = xs[i / 4]
+    let shift = i % 4 * 8
+    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
+  })
+}
+
+///|
+fn host_material2d_f32le_pack(xs : Array[Float]) -> Bytes {
+  host_material2d_u32le_pack(xs.map(f32_bits))
+}
+
+///|
+pub(all) enum HostMaterial2dBindingValue {
+  Uniform(Bytes)
+  Texture(Int)
+  Sampler(Int)
+}
+
+///|
+pub(all) struct HostMaterial2dBinding {
+  binding : UInt
+  value : HostMaterial2dBindingValue
+}
+
+///|
+pub fn HostMaterial2dBinding::uniform(
+  binding : UInt,
+  bytes : Bytes,
+) -> HostMaterial2dBinding {
+  HostMaterial2dBinding::{ binding, value: Uniform(bytes) }
+}
+
+///|
+pub fn HostMaterial2dBinding::texture(
+  binding : UInt,
+  texture_id : Int,
+) -> HostMaterial2dBinding {
+  HostMaterial2dBinding::{ binding, value: Texture(texture_id) }
+}
+
+///|
+pub fn HostMaterial2dBinding::sampler(
+  binding : UInt,
+  texture_id : Int,
+) -> HostMaterial2dBinding {
+  HostMaterial2dBinding::{ binding, value: Sampler(texture_id) }
+}
+
+///|
+pub struct HostMaterial2dBindGroup {
+  bindings : Array[HostMaterial2dBinding]
+}
+
+///|
+pub fn HostMaterial2dBindGroup::new(
+  bindings : Array[HostMaterial2dBinding],
+) -> HostMaterial2dBindGroup {
+  let normalized = bindings.copy()
+  normalized.sort_by(fn(a, b) {
+    if a.binding < b.binding {
+      -1
+    } else if a.binding > b.binding {
+      1
+    } else {
+      0
+    }
+  })
+  for i in 1..<normalized.length() {
+    if normalized[i - 1].binding == normalized[i].binding {
+      abort(
+        "duplicate HostMaterial2d bind-group binding " +
+        normalized[i].binding.to_string(),
+      )
+    }
+  }
+  HostMaterial2dBindGroup::{ bindings: normalized }
+}
+
+///|
+pub fn HostMaterial2dBindGroup::default() -> HostMaterial2dBindGroup {
+  HostMaterial2dBindGroup::new([])
+}
+
+///|
+fn host_material2d_color_material_bind_group(
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+  alpha_mode_kind : Int,
+  alpha_cutoff : Float,
+  texture_id : Int,
+  uv_offset_x : Float,
+  uv_offset_y : Float,
+  uv_scale_x : Float,
+  uv_scale_y : Float,
+) -> HostMaterial2dBindGroup {
+  let flags = (if texture_id >= 0 { 1U } else { 0U }) |
+    alpha_mode_kind.reinterpret_as_uint()
+  let bindings : Array[HostMaterial2dBinding] = [
+    HostMaterial2dBinding::uniform(
+      0U,
+      host_material2d_f32le_pack([
+        color_r,
+        color_g,
+        color_b,
+        color_a,
+        uv_scale_x,
+        0.0F,
+        0.0F,
+        0.0F,
+        0.0F,
+        uv_scale_y,
+        0.0F,
+        0.0F,
+        uv_offset_x,
+        uv_offset_y,
+        1.0F,
+        0.0F,
+        Float::from_int(flags.reinterpret_as_int()),
+        alpha_cutoff,
+        0.0F,
+        0.0F,
+      ]),
+    ),
+    HostMaterial2dBinding::texture(1U, texture_id),
+    HostMaterial2dBinding::sampler(2U, texture_id),
+  ]
+  HostMaterial2dBindGroup::new(bindings)
+}
+
+///|
 pub(all) struct HostMesh3dPreprocessShaderWorkItem {
   input_index : Int
   output_or_indirect_parameters_index : Int
@@ -950,6 +1085,37 @@ pub fn draw_mesh(
   vertex_shader_path? : String? = None,
   fragment_shader_path? : String? = None,
 ) -> Unit {
+  let material_bind_group = host_material2d_color_material_bind_group(
+    color_r, color_g, color_b, color_a, alpha_mode_kind, alpha_cutoff, texture_id,
+    uv_offset_x, uv_offset_y, uv_scale_x, uv_scale_y,
+  )
+  draw_mesh_material(
+    mesh_id~,
+    x~,
+    y~,
+    rotation~,
+    scale_x~,
+    scale_y~,
+    alpha_mode_kind~,
+    material_bind_group~,
+    vertex_shader_path~,
+    fragment_shader_path~,
+  )
+}
+
+///|
+pub fn draw_mesh_material(
+  mesh_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  alpha_mode_kind~ : Int,
+  material_bind_group~ : HostMaterial2dBindGroup,
+  vertex_shader_path? : String? = None,
+  fragment_shader_path? : String? = None,
+) -> Unit {
   debug_mesh2d_draw_calls_ref.val = debug_mesh2d_draw_calls_ref.val + 1
   current_frame_mesh2d_draw_calls_ref.val = current_frame_mesh2d_draw_calls_ref.val +
     1
@@ -958,28 +1124,19 @@ pub fn draw_mesh(
       1
   }
   if ensure_backend() is Some(backend) {
-    backend.draw_mesh(
+    backend.draw_mesh_material(
       mesh_id,
       x,
       y,
       rotation,
       scale_x,
       scale_y,
-      color_r,
-      color_g,
-      color_b,
-      color_a,
       alpha_mode_kind,
-      alpha_cutoff,
-      texture_id,
-      uv_offset_x,
-      uv_offset_y,
-      uv_scale_x,
-      uv_scale_y,
+      material_bind_group,
       vertex_shader_path~,
       fragment_shader_path~,
     ) catch {
-      err => debug_runtime_error("draw_mesh", err)
+      err => debug_runtime_error("draw_mesh_material", err)
     }
   }
 }

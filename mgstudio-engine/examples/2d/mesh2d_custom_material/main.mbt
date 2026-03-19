@@ -16,14 +16,61 @@
 struct CheckerMaterialAsset {
   color : @sprite.Color
   alpha_mode : @sprite.AlphaMode2d
+  checker_frequency : Float
+  checker_low_value : Float
 }
 
 ///|
 fn checker_material_asset(
   color : @sprite.Color,
   alpha_mode? : @sprite.AlphaMode2d = @sprite.AlphaMode2d::Blend,
+  checker_frequency? : Float = 8.0F,
+  checker_low_value? : Float = 0.35F,
 ) -> CheckerMaterialAsset {
-  CheckerMaterialAsset::{ color, alpha_mode }
+  CheckerMaterialAsset::{
+    color,
+    alpha_mode,
+    checker_frequency,
+    checker_low_value,
+  }
+}
+
+///|
+fn checker_f32_bits(x : Float) -> UInt {
+  x.reinterpret_as_uint()
+}
+
+///|
+fn checker_material_uniform_bytes(color : @sprite.Color) -> Bytes {
+  let words : Array[UInt] = [
+    checker_f32_bits(color.r),
+    checker_f32_bits(color.g),
+    checker_f32_bits(color.b),
+    checker_f32_bits(color.a),
+  ]
+  Bytes::makei(words.length() * 4, i => {
+    let word = words[i / 4]
+    let shift = i % 4 * 8
+    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
+  })
+}
+
+///|
+fn checker_settings_uniform_bytes(
+  checker_frequency : Float,
+  checker_low_value : Float,
+) -> Bytes {
+  let words : Array[UInt] = [
+    checker_f32_bits(checker_frequency),
+    checker_f32_bits(checker_low_value),
+    checker_f32_bits(0.0F),
+    checker_f32_bits(0.0F),
+  ]
+  Bytes::makei(words.length() * 4, i => {
+    let word = words[i / 4]
+    let shift = i % 4 * 8
+    ((word >> shift) & 0xFFU).reinterpret_as_int().to_byte()
+  })
 }
 
 ///|
@@ -33,12 +80,19 @@ pub impl @sprite.Material2d for CheckerMaterialAsset with alpha_mode(self) {
 
 ///|
 pub impl @sprite.Material2d for CheckerMaterialAsset with bind_group(self) {
-  @sprite.Material2dBindGroup::new(self.color)
-}
-
-///|
-pub impl @sprite.Material2d for CheckerMaterialAsset with bind_group_data(self) {
-  self.bind_group().bind_group_data(self.alpha_mode())
+  @sprite.Material2dBindGroup::new([
+    @sprite.Material2dBinding::uniform(
+      0,
+      checker_material_uniform_bytes(self.color),
+    ),
+    @sprite.Material2dBinding::uniform(
+      3,
+      checker_settings_uniform_bytes(
+        self.checker_frequency,
+        self.checker_low_value,
+      ),
+    ),
+  ])
 }
 
 ///|

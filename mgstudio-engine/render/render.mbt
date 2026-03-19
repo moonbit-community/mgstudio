@@ -25,6 +25,15 @@ pub type HostGpuSurface = Int
 pub type HostGpuFrame = Int
 
 ///|
+pub type HostMaterial2dBindingValue = @renderer.HostMaterial2dBindingValue
+
+///|
+pub type HostMaterial2dBinding = @renderer.HostMaterial2dBinding
+
+///|
+pub type HostMaterial2dBindGroup = @renderer.HostMaterial2dBindGroup
+
+///|
 pub(all) enum HostGpuPresentMode {
   AutoVsync
   AutoNoVsync
@@ -1150,6 +1159,33 @@ pub fn host_gpu_draw_mesh(
     uv_offset_y~,
     uv_scale_x~,
     uv_scale_y~,
+    vertex_shader_path~,
+    fragment_shader_path~,
+  )
+}
+
+///|
+pub fn host_gpu_draw_mesh_material(
+  mesh_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  alpha_mode_kind~ : Int,
+  material_bind_group~ : @renderer.HostMaterial2dBindGroup,
+  vertex_shader_path? : String? = None,
+  fragment_shader_path? : String? = None,
+) -> Unit {
+  @renderer.draw_mesh_material(
+    mesh_id~,
+    x~,
+    y~,
+    rotation~,
+    scale_x~,
+    scale_y~,
+    alpha_mode_kind~,
+    material_bind_group~,
     vertex_shader_path~,
     fragment_shader_path~,
   )

@@ -589,22 +589,36 @@ pub fn Isometry2d::new(@math.Vec2, Float) -> Self
 pub fn Isometry2d::transform_point(Self, @math.Vec2) -> @math.Vec2
 
 pub struct Material2dBindGroup {
-  color : @color.Color
-  texture : @asset.Handle[@image.Image]?
-  uv_offset : @math.Vec2
-  uv_scale : @math.Vec2
-  alpha_cutoff : Float
+  bindings : Array[Material2dBinding]
 }
-pub fn Material2dBindGroup::bind_group_data(Self, AlphaMode2d) -> String
+pub fn Material2dBindGroup::bind_group_data(Self) -> String
+pub fn Material2dBindGroup::binding(Self, Int) -> Material2dBinding?
+pub fn Material2dBindGroup::color_material(@color.Color, AlphaMode2d, texture? : @asset.Handle[@image.Image]?, uv_offset? : @math.Vec2, uv_scale? : @math.Vec2) -> Self
 pub fn Material2dBindGroup::default() -> Self
-pub fn Material2dBindGroup::new(@color.Color, texture? : @asset.Handle[@image.Image]?, uv_offset? : @math.Vec2, uv_scale? : @math.Vec2, alpha_cutoff? : Float) -> Self
+pub fn Material2dBindGroup::layout_key(Self) -> String
+pub fn Material2dBindGroup::new(Array[Material2dBinding]) -> Self
+
+pub struct Material2dBinding {
+  binding : Int
+  value : Material2dBindingValue
+}
+pub fn Material2dBinding::sampler(Int, @asset.Handle[@image.Image]?) -> Self
+pub fn Material2dBinding::texture(Int, @asset.Handle[@image.Image]?) -> Self
+pub fn Material2dBinding::uniform(Int, Bytes) -> Self
+
+pub(all) enum Material2dBindingValue {
+  Uniform(Bytes)
+  Texture(@asset.Handle[@image.Image]?)
+  Sampler(@asset.Handle[@image.Image]?)
+}
 
 pub struct Material2dKey[M] {
   mesh_key : Int
+  bind_group_layout_key : String
   bind_group_data : String
   marker : M?
 }
-pub fn[M] Material2dKey::new(Int, String) -> Self[M]
+pub fn[M] Material2dKey::new(Int, String, String) -> Self[M]
 
 pub struct Material2dPipeline[M] {
   vertex_shader : String?
@@ -612,7 +626,7 @@ pub struct Material2dPipeline[M] {
   marker : M?
 }
 pub fn[M] Material2dPipeline::default() -> Self[M]
-pub fn[M : Material2d] Material2dPipeline::key_for(Self[M], M) -> Material2dKey[M]
+pub fn[M : Material2d] Material2dPipeline::key_for(Self[M], M, Material2dBindGroup) -> Material2dKey[M]
 pub fn[M] Material2dPipeline::new(String?, String?) -> Self[M]
 pub impl[M] @app.Resource for Material2dPipeline[M]
 
@@ -1095,6 +1109,5 @@ pub using @post_process {type Tonemapping}
 pub(open) trait Material2d {
   alpha_mode(Self) -> AlphaMode2d
   bind_group(Self) -> Material2dBindGroup
-  bind_group_data(Self) -> String
 }
 

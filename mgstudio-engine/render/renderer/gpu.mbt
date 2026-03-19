@@ -35,9 +35,6 @@ const MESH2D_UNIFORM_STRIDE_BYTES : UInt64 = 96UL
 const MESH2D_UNIFORM_DYNAMIC_STRIDE_BYTES : UInt64 = 256UL
 
 ///|
-const MESH2D_COLOR_MATERIAL_UNIFORM_BUFFER_SIZE : UInt64 = 80UL
-
-///|
 const MESH3D_UNIFORM_BUFFER_SIZE : UInt64 = 512UL
 
 ///|
@@ -145,10 +142,17 @@ pub struct Mesh2dPipelineCacheEntry {
 }
 
 ///|
+pub struct Mesh2dMaterialLayoutCacheEntry {
+  key : String
+  bind_group_layout : @wgpu.BindGroupLayout
+  pipeline_layout : @wgpu.PipelineLayout
+}
+
+///|
 struct Mesh2dMaterialBindGroupCacheEntry {
   key : String
   bind_group : @wgpu.BindGroup
-  uniform_buf : @wgpu.Buffer
+  uniform_buffers : Array[@wgpu.Buffer]
 }
 
 ///|
@@ -428,6 +432,7 @@ pub struct GpuBackend {
   mut mesh2d_instance_capacity : UInt64
   mut mesh2d_instance_used : Int
   mesh2d_pipeline_cache : Array[Mesh2dPipelineCacheEntry]
+  mesh2d_material_layout_cache : Array[Mesh2dMaterialLayoutCacheEntry]
   mesh2d_material_bg_cache : Array[Mesh2dMaterialBindGroupCacheEntry]
   mut mesh3d_bgl_view : @wgpu.BindGroupLayout?
   mut mesh3d_bgl_uniform : @wgpu.BindGroupLayout?
@@ -809,6 +814,7 @@ pub fn GpuBackend::new(
     mesh2d_instance_capacity: 0UL,
     mesh2d_instance_used: 0,
     mesh2d_pipeline_cache: [],
+    mesh2d_material_layout_cache: [],
     mesh2d_material_bg_cache: [],
     mesh3d_bgl_view: None,
     mesh3d_bgl_uniform: None,
