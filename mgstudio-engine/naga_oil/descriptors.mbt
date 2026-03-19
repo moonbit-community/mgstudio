@@ -53,3 +53,15 @@ pub fn NagaModuleDescriptor::default() -> NagaModuleDescriptor {
     additional_imports: [],
   }
 }
+
+///|
+pub(all) struct ComposableModuleDefinition {
+  name : String
+  sanitized_source : String
+  language : ShaderLanguage
+  file_path : String
+  shader_defs : @hashmap.HashMap[String, ShaderDefValue]
+  effective_defs : Array[String]
+  all_imports : @hashset.HashSet[String]
+  additional_imports : Array[ImportDefinition]
+}

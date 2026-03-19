@@ -13,11 +13,13 @@
 // limitations under the License.
 
 ///|
-pub struct Composer {}
+pub struct Composer {
+  module_sets : @hashmap.HashMap[String, ComposableModuleDefinition]
+}
 
 ///|
 pub fn Composer::default() -> Composer {
-  Composer::{  }
+  Composer::{ module_sets: @hashmap.HashMap::new() }
 }
 
 ///|
@@ -27,6 +29,7 @@ pub(all) suberror ComposerError {
   MissingRegisteredSource(String)
   MissingStartupRegisteredSource(String)
   FailedToReadShader(String, String)
+  NoModuleName(String)
 }
 
 ///|
@@ -40,6 +43,82 @@ pub fn ComposerError::message(self : ComposerError) -> String {
       "shader source was not startup-registered: " + rel
     FailedToReadShader(path, reason) =>
       "failed to read shader: " + path + ": " + reason
+    NoModuleName(path) =>
+      "shader module is missing #define_import_path: " + path
+  }
+}
+
+///|
+fn copy_shader_def_values(
+  defs : @hashmap.HashMap[String, ShaderDefValue],
+) -> @hashmap.HashMap[String, ShaderDefValue] {
+  let copied : @hashmap.HashMap[String, ShaderDefValue] = @hashmap.HashMap::new()
+  for entry in defs.iter() {
+    let (name, value) = entry
+    copied.set(name, value)
+  }
+  copied
+}
+
+///|
+fn copy_import_definitions(
+  imports : Array[ImportDefinition],
+) -> Array[ImportDefinition] {
+  let copied : Array[ImportDefinition] = []
+  for import_definition in imports {
+    copied.push(import_definition)
+  }
+  copied
+}
+
+///|
+fn hashset_strings_to_array(values : @hashset.HashSet[String]) -> Array[String] {
+  let out : Array[String] = []
+  for value in values.iter() {
+    out.push(value)
+  }
+  out.sort()
+  out
+}
+
+///|
+fn composable_module_name_from_descriptor(
+  desc : ComposableModuleDescriptor,
+) -> String raise ComposerError {
+  match desc.as_name {
+    Some(as_name) => {
+      let trimmed = as_name.trim().to_string()
+      if trimmed == "" {
+        raise ComposerError::NoModuleName(desc.file_path)
+      }
+      trimmed
+    }
+    None =>
+      match get_preprocessor_metadata(desc.source).name {
+        Some(name) if name.trim() != "" => name.trim().to_string()
+        _ => raise ComposerError::NoModuleName(desc.file_path)
+      }
+  }
+}
+
+///|
+fn composer_remove_composable_module_recursive(
+  composer : Composer,
+  module_name : String,
+) -> Unit {
+  if !composer.module_sets.contains(module_name) {
+    return
+  }
+  ignore(composer.module_sets.remove(module_name))
+  let dependent_modules : Array[String] = []
+  for entry in composer.module_sets.iter() {
+    let (dependent_name, module_set) = entry
+    if module_set.all_imports.contains(module_name) {
+      dependent_modules.push(dependent_name)
+    }
+  }
+  for dependent_name in dependent_modules {
+    composer_remove_composable_module_recursive(composer, dependent_name)
   }
 }
 
@@ -776,6 +855,77 @@ fn replace_substring_all(source : String, from : String, to : String) -> String 
     out = out + piece.to_string()
   }
   out
+}
+
+///|
+pub fn Composer::contains_module(self : Composer, module_name : String) -> Bool {
+  self.module_sets.contains(module_name)
+}
+
+///|
+pub fn Composer::add_composable_module(
+  self : Composer,
+  desc : ComposableModuleDescriptor,
+) -> Result[ComposableModuleDefinition, ComposerError] {
+  let metadata = get_preprocessor_metadata(desc.source)
+  let module_name = composable_module_name_from_descriptor(desc) catch {
+    err => return Err(err)
+  }
+
+  let shader_defs = copy_shader_def_values(desc.shader_defs)
+  let effective_defs = metadata.effective_defs.copy()
+  let all_imports : @hashset.HashSet[String] = @hashset.HashSet::new()
+  let additional_imports = copy_import_definitions(desc.additional_imports)
+  for import_binding in metadata.imports {
+    all_imports.add(import_binding.definition.import_path)
+  }
+  for import_definition in additional_imports {
+    all_imports.add(import_definition.import_path)
+  }
+
+  for import_name in all_imports.iter() {
+    guard self.module_sets.get(import_name) is Some(imported_module) else {
+      return Err(ComposerError::FailedToResolveImport(import_name))
+    }
+    for effective_def in imported_module.effective_defs {
+      effective_defs.add(effective_def)
+    }
+    for entry in imported_module.shader_defs.iter() {
+      let (def_name, def_value) = entry
+      shader_defs.set(def_name, def_value)
+    }
+  }
+
+  for entry in shader_defs.iter() {
+    let (def_name, _) = entry
+    effective_defs.remove(def_name)
+  }
+
+  let definition = ComposableModuleDefinition::{
+    name: module_name,
+    sanitized_source: metadata.cleaned_source,
+    language: desc.language,
+    file_path: desc.file_path,
+    shader_defs,
+    effective_defs: hashset_strings_to_array(effective_defs),
+    all_imports,
+    additional_imports,
+  }
+
+  composer_remove_composable_module_recursive(self, module_name)
+  self.module_sets.set(module_name, definition)
+  match self.module_sets.get(module_name) {
+    Some(module_definition) => Ok(module_definition)
+    None => abort("expected just-inserted composable module to exist")
+  }
+}
+
+///|
+pub fn Composer::remove_composable_module(
+  self : Composer,
+  module_name : String,
+) -> Unit {
+  composer_remove_composable_module_recursive(self, module_name)
 }
 
 ///|

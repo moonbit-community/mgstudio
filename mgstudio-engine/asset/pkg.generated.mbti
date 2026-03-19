@@ -6,7 +6,6 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/shader",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
@@ -57,7 +56,7 @@ pub fn asset_create_texture_mip_view(Handle[@image.Image], Int) -> Handle[@image
 
 pub fn asset_font_read_bytes(Handle[Font]) -> Bytes?
 
-pub fn asset_format_path(ParsedAssetPath) -> String
+pub fn asset_format_path(AssetPath) -> String
 
 pub fn asset_generate_mip_chain_rgba8(Int, Int, Bytes) -> Array[(Int, Int, Bytes)]
 
@@ -85,7 +84,7 @@ pub fn asset_loaded_folder_drain_events() -> Array[AssetEvent[LoadedFolder]]
 
 pub fn asset_loader_kind_for_path(String) -> AssetLoaderKind
 
-pub fn asset_parse_path(String) -> ParsedAssetPath
+pub fn asset_parse_path(String) -> AssetPath
 
 pub fn asset_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -125,7 +124,7 @@ pub fn asset_texture_width(Handle[@image.Image]) -> Int
 
 pub fn asset_transparent_texture() -> Handle[@image.Image]
 
-pub fn asset_try_parse_path(String) -> Result[ParsedAssetPath, ParseAssetPathError]
+pub fn asset_try_parse_path(String) -> Result[AssetPath, ParseAssetPathError]
 
 pub fn asset_update_event_messages(@ecs.World) -> Unit
 
@@ -245,6 +244,16 @@ pub(all) enum AssetLoaderKind {
   Folder
 }
 
+#alias(ParsedAssetPath)
+pub struct AssetPath {
+  source : AssetSourceId
+  path : String
+  label : String?
+}
+pub impl Eq for AssetPath
+pub impl Hash for AssetPath
+pub impl Show for AssetPath
+
 pub struct AssetServer {
   paths : @ref.Ref[Array[String]]
   image_paths : @ref.Ref[Array[(String, Handle[@image.Image])]]
@@ -262,7 +271,6 @@ pub fn AssetServer::load_font(Self, String) -> Handle[Font]
 pub fn AssetServer::load_image(Self, String) -> Handle[@image.Image]
 pub fn AssetServer::load_nearest(Self, String) -> Handle[@image.Image]
 pub fn AssetServer::load_texture_bytes(Self, Bytes, Bool) -> Handle[@image.Image]
-pub fn AssetServer::load_wgsl(Self, String) -> Handle[@shader.Shader]
 pub fn AssetServer::load_with_registered_loader(Self, String, Bool) -> Int
 pub fn AssetServer::load_with_settings(Self, String, (ImageLoaderSettings) -> Unit) -> Handle[@image.Image]
 pub fn AssetServer::new() -> Self
@@ -272,6 +280,9 @@ pub(all) enum AssetSourceId {
   Default
   Named(String)
 }
+pub impl Eq for AssetSourceId
+pub impl Hash for AssetSourceId
+pub impl Show for AssetSourceId
 
 pub struct Assets[T] {
   items : Array[T?]
@@ -340,12 +351,6 @@ pub(all) enum ParseAssetPathError {
   MissingLabel
 }
 
-pub struct ParsedAssetPath {
-  source : AssetSourceId
-  path : String
-  label : String?
-}
-
 pub struct TextureAtlas {
   layout : Handle[TextureAtlasLayout]
   index : Int
@@ -406,8 +411,6 @@ pub using @image {type ImageSampler}
 pub using @image {type ImageSamplerBorderColor}
 
 pub using @image {type ImageSamplerDescriptor}
-
-pub using @shader {type Shader}
 
 // Traits
 

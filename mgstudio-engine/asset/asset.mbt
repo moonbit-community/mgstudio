@@ -95,9 +95,6 @@ pub impl @image.TextureHandle for Handle[Image] with texture_id(self) {
 }
 
 ///|
-pub type Shader = @shader.Shader
-
-///|
 pub struct Blob {}
 
 ///|
@@ -176,7 +173,6 @@ fn asset_register_builtin_loaders() -> Unit {
   }
   asset_builtin_loaders_registered.val = true
   asset_register_loader(fn(asset_server, path) { asset_server.load_image(path) })
-  asset_register_loader(fn(asset_server, path) { asset_server.load_wgsl(path) })
   asset_register_loader(fn(asset_server, path) { asset_server.load_bytes(path) })
   asset_register_loader(fn(asset_server, path) { asset_server.load_font(path) })
   asset_register_loader(fn(asset_server, path) {
@@ -300,7 +296,7 @@ pub fn AssetServer::new() -> AssetServer {
 pub(all) enum AssetSourceId {
   Default
   Named(String)
-}
+} derive(Eq, Hash, Show)
 
 ///|
 pub(all) enum ParseAssetPathError {
@@ -311,11 +307,14 @@ pub(all) enum ParseAssetPathError {
 }
 
 ///|
-pub struct ParsedAssetPath {
+pub struct AssetPath {
   source : AssetSourceId
   path : String
   label : String?
-}
+} derive(Eq, Hash, Show)
+
+///|
+pub type ParsedAssetPath = AssetPath
 
 ///|
 pub(all) enum AssetLoaderKind {
@@ -394,7 +393,7 @@ fn asset_parse_path_error_message(error : ParseAssetPathError) -> String {
 ///|
 pub fn asset_try_parse_path(
   path : String,
-) -> Result[ParsedAssetPath, ParseAssetPathError] {
+) -> Result[AssetPath, ParseAssetPathError] {
   let hash_index = string_last_index_of_char(path, 35)
   let scheme_index = string_find_substring(path, "://")
   if hash_index >= 0 && scheme_index > hash_index {
@@ -434,22 +433,18 @@ pub fn asset_try_parse_path(
     } else {
       ""
     }
-    Ok(ParsedAssetPath::{
+    Ok(AssetPath::{
       source: AssetSourceId::Named(source_name),
       path: relative_path,
       label,
     })
   } else {
-    Ok(ParsedAssetPath::{
-      source: AssetSourceId::Default,
-      path: without_label,
-      label,
-    })
+    Ok(AssetPath::{ source: AssetSourceId::Default, path: without_label, label })
   }
 }
 
 ///|
-pub fn asset_parse_path(path : String) -> ParsedAssetPath {
+pub fn asset_parse_path(path : String) -> AssetPath {
   match asset_try_parse_path(path) {
     Ok(parsed) => parsed
     Err(error) =>
@@ -460,7 +455,7 @@ pub fn asset_parse_path(path : String) -> ParsedAssetPath {
 }
 
 ///|
-pub fn asset_format_path(parsed : ParsedAssetPath) -> String {
+pub fn asset_format_path(parsed : AssetPath) -> String {
   let base = match parsed.source {
     AssetSourceId::Default => parsed.path
     AssetSourceId::Named(name) => name + "://" + parsed.path
@@ -474,7 +469,7 @@ pub fn asset_format_path(parsed : ParsedAssetPath) -> String {
 ///|
 pub fn asset_strip_label(path : String) -> String {
   let parsed = asset_parse_path(path)
-  asset_format_path(ParsedAssetPath::{
+  asset_format_path(AssetPath::{
     source: parsed.source,
     path: parsed.path,
     label: None,
@@ -1131,17 +1126,6 @@ pub fn asset_compressed_image_formats_contains(
   }
   let supported = supported_formats.reinterpret_as_uint()
   (supported & required) == required
-}
-
-///|
-pub fn AssetServer::load_wgsl(
-  self : AssetServer,
-  path : String,
-) -> Handle[Shader] {
-  let canonical_path = asset_canonical_path(path)
-  let id = host_asset_load_wgsl(path=canonical_path)
-  self.record_path(canonical_path)
-  Handle::new(id)
 }
 
 ///|

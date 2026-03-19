@@ -2,15 +2,36 @@
 package "Milky2018/mgstudio/shader"
 
 import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/naga_oil",
+  "moonbitlang/core/hashmap",
 }
 
 // Values
+pub const SHADER_PLUGIN_ID : String = "mgstudio::ShaderPlugin"
+
 pub fn shader_def(String) -> ShaderDefVal
 
 pub fn shader_from_source(String) -> Shader
 
+pub fn shader_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 // Errors
+pub(all) suberror ShaderCacheError {
+  ShaderNotLoaded(@asset.AssetId[Shader])
+  ProcessShaderError(String)
+  ShaderImportNotYetAvailable
+  CreateShaderModule(String)
+}
+pub fn ShaderCacheError::message(Self) -> String
+
+pub(all) suberror ShaderLoaderError {
+  Io(String)
+  Parse(String)
+}
+pub fn ShaderLoaderError::message(Self) -> String
 
 // Types and methods
 pub(all) struct Shader {
@@ -20,6 +41,7 @@ pub(all) struct Shader {
   imports : Array[ShaderImport]
   additional_imports : Array[@naga_oil.ImportDefinition]
   shader_defs : Array[ShaderDefVal]
+  file_dependencies : Array[@asset.Handle[Shader]]
   validate_shader : ValidateShader
 }
 pub fn Shader::composable_module_descriptor(Self) -> @naga_oil.ComposableModuleDescriptor
@@ -29,6 +51,23 @@ pub fn Shader::from_wgsl(String, String) -> Self
 pub fn Shader::from_wgsl_with_defs(String, String, Array[ShaderDefVal]) -> Self
 pub fn Shader::naga_module_descriptor(Self) -> @naga_oil.NagaModuleDescriptor
 pub fn Shader::new(String) -> Self
+
+type ShaderAssetPaths
+pub impl @app.Resource for ShaderAssetPaths
+
+pub struct ShaderCache[ShaderModule, RenderDevice] {
+  device : RenderDevice
+  load_module : (RenderDevice, ShaderCacheSource, ValidateShader) -> Result[ShaderModule, ShaderCacheError]
+  data : @hashmap.HashMap[Int, ShaderData[ShaderModule, Int]]
+  shaders : @hashmap.HashMap[Int, Shader]
+  import_path_shaders : @hashmap.HashMap[ShaderImport, @asset.AssetId[Shader]]
+  waiting_on_import : @hashmap.HashMap[ShaderImport, Array[@asset.AssetId[Shader]]]
+  composer : @naga_oil.Composer
+}
+pub fn[ShaderModule, RenderDevice] ShaderCache::contains_shader(Self[ShaderModule, RenderDevice], @asset.AssetId[Shader]) -> Bool
+pub fn[ShaderModule, RenderDevice] ShaderCache::new(RenderDevice, (RenderDevice, ShaderCacheSource, ValidateShader) -> Result[ShaderModule, ShaderCacheError]) -> Self[ShaderModule, RenderDevice]
+pub fn[ShaderModule, RenderDevice] ShaderCache::remove(Self[ShaderModule, RenderDevice], @asset.AssetId[Shader]) -> Array[Int]
+pub fn[ShaderModule, RenderDevice] ShaderCache::set_shader(Self[ShaderModule, RenderDevice], @asset.AssetId[Shader], Shader) -> Array[Int]
 
 pub(all) enum ShaderCacheSource {
   SpirV(Bytes)
@@ -68,6 +107,19 @@ pub fn ShaderImport::module_name(Self) -> String
 pub impl Eq for ShaderImport
 pub impl Hash for ShaderImport
 pub impl Show for ShaderImport
+
+pub struct ShaderLoader {
+}
+pub fn ShaderLoader::default() -> Self
+pub fn ShaderLoader::extensions(Self) -> Array[String]
+pub fn ShaderLoader::load(Self, @asset.AssetServer, String, ShaderSettings) -> Shader raise ShaderLoaderError
+
+pub(all) enum ShaderRef {
+  Default
+  Handle(@asset.Handle[Shader])
+  Path(@asset.AssetPath)
+}
+pub fn ShaderRef::default() -> Self
 
 pub(all) struct ShaderSettings {
   shader_defs : Array[ShaderDefVal]

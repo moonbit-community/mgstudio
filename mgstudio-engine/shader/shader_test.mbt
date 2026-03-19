@@ -23,6 +23,7 @@ test "shader: from_wgsl collects Bevy-style import metadata" {
   inspect(shader.imports.length(), content="2")
   inspect(shader.imports[0], content="Custom(\"bevy_render::view\")")
   inspect(shader.imports[1], content="Custom(\"bevy_render::globals\")")
+  inspect(shader.file_dependencies.length(), content="0")
   inspect(shader.validate_shader, content="Disabled")
 }
 

@@ -38,6 +38,7 @@ pub(all) suberror ComposerError {
   MissingRegisteredSource(String)
   MissingStartupRegisteredSource(String)
   FailedToReadShader(String, String)
+  NoModuleName(String)
 }
 pub fn ComposerError::message(Self) -> String
 
@@ -54,6 +55,17 @@ pub(all) suberror PreprocessError {
 }
 
 // Types and methods
+pub(all) struct ComposableModuleDefinition {
+  name : String
+  sanitized_source : String
+  language : ShaderLanguage
+  file_path : String
+  shader_defs : @hashmap.HashMap[String, ShaderDefValue]
+  effective_defs : Array[String]
+  all_imports : @hashset.HashSet[String]
+  additional_imports : Array[ImportDefinition]
+}
+
 pub(all) struct ComposableModuleDescriptor {
   source : String
   file_path : String
@@ -67,12 +79,16 @@ pub impl Eq for ComposableModuleDescriptor
 pub impl Show for ComposableModuleDescriptor
 
 pub struct Composer {
+  module_sets : @hashmap.HashMap[String, ComposableModuleDefinition]
 }
+pub fn Composer::add_composable_module(Self, ComposableModuleDescriptor) -> Result[ComposableModuleDefinition, ComposerError]
+pub fn Composer::contains_module(Self, String) -> Bool
 pub fn Composer::default() -> Self
 pub fn Composer::load_wgsl_from_assets_base_required(Self, String, String) -> String raise ComposerError
 pub fn Composer::load_wgsl_preprocessed(Self, String, String, @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, Int], @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, String]) -> String raise ComposerError
 pub fn Composer::load_wgsl_source_required_raw(Self, String, String) -> String raise ComposerError
 pub fn Composer::preprocess_wgsl_source(Self, String, String, @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, Int], @hashmap.HashMap[String, Bool], @hashmap.HashMap[String, String]) -> String raise ComposerError
+pub fn Composer::remove_composable_module(Self, String) -> Unit
 
 pub struct DiagnosticDirective {
   severity : String

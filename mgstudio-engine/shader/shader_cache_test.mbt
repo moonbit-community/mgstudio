@@ -63,3 +63,99 @@ test "shader cache source keeps fully composed source variants" {
     content="SpirV(b\"SPV\")",
   )
 }
+
+///|
+fn shader_cache_dummy_load_module(
+  _device : Int,
+  source : @shader.ShaderCacheSource,
+  _validate : @shader.ValidateShader,
+) -> Result[String, @shader.ShaderCacheError] {
+  match source {
+    Wgsl(text) => Ok(text)
+    SpirV(_) => Ok("spirv")
+  }
+}
+
+///|
+fn shader_cache_test_shader(
+  import_path : @shader.ShaderImport,
+  imports : Array[@shader.ShaderImport],
+) -> @shader.Shader {
+  @shader.Shader::{
+    path: import_path.module_name(),
+    source: @shader.Source::Wgsl("fn main() {}"),
+    import_path,
+    imports,
+    additional_imports: [],
+    shader_defs: [],
+    file_dependencies: [],
+    validate_shader: @shader.ValidateShader::Disabled,
+  }
+}
+
+///|
+test "shader cache lifecycle tracks waiting imports and dependent invalidation" {
+  let cache : @shader.ShaderCache[String, Int] = @shader.ShaderCache::new(
+    0, shader_cache_dummy_load_module,
+  )
+  let base_id : @asset.AssetId[@shader.Shader] = @asset.AssetId::new(1)
+  let child_id : @asset.AssetId[@shader.Shader] = @asset.AssetId::new(2)
+
+  ignore(
+    cache.set_shader(
+      child_id,
+      shader_cache_test_shader(@shader.ShaderImport::Custom("test::child"), [
+        @shader.ShaderImport::Custom("test::base"),
+      ]),
+    ),
+  )
+  let child_data_before = match cache.data.get(child_id.index()) {
+    Some(data) => data
+    None => @shader.ShaderData::default()
+  }
+  child_data_before.track_pipeline(7)
+  cache.data.set(child_id.index(), child_data_before)
+
+  inspect(cache.contains_shader(child_id), content="true")
+  inspect(
+    cache.waiting_on_import.contains(@shader.ShaderImport::Custom("test::base")),
+    content="true",
+  )
+
+  ignore(
+    cache.set_shader(
+      base_id,
+      shader_cache_test_shader(@shader.ShaderImport::Custom("test::base"), []),
+    ),
+  )
+
+  let child_data_after = match cache.data.get(child_id.index()) {
+    Some(data) => data
+    None => abort("expected child shader data after import resolution")
+  }
+  inspect(
+    child_data_after.resolved_import(@shader.ShaderImport::Custom("test::base")),
+    content="Some(1)",
+  )
+  inspect(
+    cache.waiting_on_import.contains(@shader.ShaderImport::Custom("test::base")),
+    content="false",
+  )
+
+  let invalidated = cache.remove(base_id)
+  inspect(invalidated.length(), content="1")
+  inspect(invalidated[0], content="7")
+  inspect(cache.contains_shader(base_id), content="false")
+}
+
+///|
+test "shader cache error messages match lifecycle surface" {
+  inspect(
+    @shader.ShaderCacheError::ShaderImportNotYetAvailable.message(),
+    content="Shader import not yet available.",
+  )
+  inspect(
+    @shader.ShaderCacheError::CreateShaderModule("bad pipeline").message(),
+    content="Could not create shader module: bad pipeline",
+  )
+}

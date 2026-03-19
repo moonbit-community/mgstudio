@@ -24,6 +24,7 @@ pub(all) struct Shader {
   imports : Array[ShaderImport]
   additional_imports : Array[@naga_oil.ImportDefinition]
   shader_defs : Array[ShaderDefVal]
+  file_dependencies : Array[@asset.Handle[Shader]]
   validate_shader : ValidateShader
 }
 
@@ -79,6 +80,7 @@ pub fn Shader::from_wgsl(source : String, path : String) -> Shader {
     source: Source::Wgsl(source),
     additional_imports: [],
     shader_defs: [],
+    file_dependencies: [],
     validate_shader: ValidateShader::Disabled,
   }
 }
@@ -107,6 +109,7 @@ pub fn Shader::from_glsl(
     source: Source::Glsl(source, stage),
     additional_imports: [],
     shader_defs: [],
+    file_dependencies: [],
     validate_shader: ValidateShader::Disabled,
   }
 }
@@ -120,6 +123,7 @@ pub fn Shader::from_spirv(source : Bytes, path : String) -> Shader {
     source: Source::SpirV(source),
     additional_imports: [],
     shader_defs: [],
+    file_dependencies: [],
     validate_shader: ValidateShader::Disabled,
   }
 }
