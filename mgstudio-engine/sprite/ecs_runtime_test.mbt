@@ -35,7 +35,34 @@ fn ecs_transform_matches(
 }
 
 ///|
-struct DummyMaterialAsset {}
+struct DummyMaterialAsset {
+  color : Color
+  texture : @asset.Handle[@asset.Image]?
+}
+
+///|
+fn dummy_material_asset(
+  color? : Color = Color::white(),
+  texture? : @asset.Handle[@asset.Image]? = None,
+) -> DummyMaterialAsset {
+  DummyMaterialAsset::{ color, texture }
+}
+
+///|
+pub impl Material2d for DummyMaterialAsset with alpha_mode(self) {
+  self |> ignore
+  Blend
+}
+
+///|
+pub impl Material2d for DummyMaterialAsset with bind_group(self) {
+  Material2dBindGroup::new(self.color, texture=self.texture)
+}
+
+///|
+pub impl Material2d for DummyMaterialAsset with bind_group_data(self) {
+  self.bind_group().bind_group_data(self.alpha_mode())
+}
 
 ///|
 test "render2d: SpriteBundle::spawn inserts expected components" {
@@ -365,8 +392,9 @@ test "render2d: ColorMaterialPlugin initializes the Bevy default material handle
 
 ///|
 test "render2d: Material2dPlugin initializes generic material asset resources" {
-  DummyMaterialAsset::{  } |> ignore
   let plugin : Material2dPlugin[DummyMaterialAsset] = Material2dPlugin::default()
+    .with_vertex_shader("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl")
+    .with_fragment_shader("shaders/custom/mesh2d_checker_material.wgsl")
   let app = @app.App::new(@ecs.World::new()).add_plugins([
     material2d_plugin(plugin),
   ])
@@ -378,11 +406,92 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
     RenderMaterial2dInstances[DummyMaterialAsset],
   ] = RenderMaterial2dInstances::resource()
   let pipeline_key : @ecs.ResourceKey[Material2dPipeline[DummyMaterialAsset]] = Material2dPipeline::resource()
+  let registry_key : @ecs.ResourceKey[Material2dRuntimeRegistry] = Material2dRuntimeRegistry::resource()
+  let pipeline = try! app.world().get_resource(pipeline_key).unwrap()
+  let registry = try! app.world().get_resource(registry_key).unwrap()
+  let probe : @asset.Handle[DummyMaterialAsset] = @asset.Handle::new(0)
 
   inspect(app.contains_resource(key), content="true")
   inspect(app.contains_resource(prepared_key), content="true")
   inspect(app.contains_resource(instances_key), content="true")
   inspect(app.contains_resource(pipeline_key), content="true")
+  inspect(app.contains_resource(registry_key), content="true")
+  inspect(
+    pipeline.vertex_shader,
+    content="Some(\"shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl\")",
+  )
+  inspect(
+    pipeline.fragment_shader,
+    content="Some(\"shaders/custom/mesh2d_checker_material.wgsl\")",
+  )
+  inspect(registry.entry_count(), content="1")
+  inspect(
+    registry.contains_type_name(material2d_runtime_type_name(probe)),
+    content="true",
+  )
+}
+
+///|
+test "render2d: generic Material2d runtime extracts and prepares custom assets" {
+  let entity_ref : Ref[@core.Entity?] = Ref::new(None)
+  let handle_ref : Ref[@asset.Handle[DummyMaterialAsset]?] = Ref::new(None)
+  let expected = dummy_material_asset(
+    color=Color::new(0.3F, 0.6F, 0.9F, 1.0F),
+    texture=Some(@asset.Handle::new(13)),
+  )
+
+  let plugin : Material2dPlugin[DummyMaterialAsset] = Material2dPlugin::default()
+    .with_vertex_shader("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl")
+    .with_fragment_shader("shaders/custom/mesh2d_checker_material.wgsl")
+  let mut app = @app.App::new(@ecs.World::new()).add_plugins([
+    @asset.asset_plugin,
+    material2d_plugin(plugin),
+  ])
+  app = app.add_system(fn(world : @ecs.World) {
+    let handle : @asset.Handle[DummyMaterialAsset] = @asset.Handle::new(21)
+    handle_ref.val = Some(handle)
+    let key : @ecs.ResourceKey[@asset.Assets[DummyMaterialAsset]] = @asset.assets_resource_key()
+    guard (try! world.get_resource_ref_mut(key, world.read_change_tick()))
+      is Some(assets_ref) else {
+      abort("expected DummyMaterialAsset asset store")
+    }
+    assets_ref.val.insert(handle, expected) |> ignore
+    let entity = world.spawn()
+    entity_ref.val = Some(entity)
+    let material_key : @ecs.ComponentKey[MeshMaterial2d[DummyMaterialAsset]] = MeshMaterial2d::component()
+    try! (world.set(entity, material_key, MeshMaterial2d::new(handle)) |> ignore)
+  })
+  app = app.run_once()
+
+  let world = app.world()
+  let entity = entity_ref.val.unwrap_or(@core.Entity::new(0, 0))
+  let handle = handle_ref.val.unwrap_or(@asset.Handle::new(-1))
+  let instances_key : @ecs.ResourceKey[
+    RenderMaterial2dInstances[DummyMaterialAsset],
+  ] = RenderMaterial2dInstances::resource()
+  let prepared_key : @ecs.ResourceKey[
+    @asset.Assets[PreparedMaterial2d[DummyMaterialAsset]],
+  ] = @asset.assets_resource_key()
+  let instances = try! world.get_resource(instances_key).unwrap()
+  let prepared_assets = try! world.get_resource(prepared_key).unwrap()
+  let prepared = prepared_assets
+    .get(PreparedMaterial2d::prepared_handle(handle))
+    .unwrap()
+
+  inspect(instances.contains(entity), content="true")
+  inspect(
+    instances.get(entity).map(fn(value) { value.id() == handle.id() }),
+    content="Some(true)",
+  )
+  inspect(prepared.source.id() == handle.id(), content="true")
+  inspect(
+    prepared.bind_group.texture.map(fn(value) { value.id() }),
+    content="Some(13)",
+  )
+  inspect(
+    prepared.key.bind_group_data == expected.bind_group_data(),
+    content="true",
+  )
 }
 
 ///|
@@ -454,7 +563,10 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
   let prepared = prepared_assets.get(prepared_handle).unwrap()
 
   inspect(prepared.source.id() == handle.id(), content="true")
-  inspect(prepared.texture.map(fn(value) { value.id() }), content="Some(11)")
+  inspect(
+    prepared.bind_group.texture.map(fn(value) { value.id() }),
+    content="Some(11)",
+  )
   inspect(prepared.properties.alpha_mode is Blend, content="true")
   inspect(
     prepared.key.mesh_key == prepared.properties.mesh_pipeline_key_bits,

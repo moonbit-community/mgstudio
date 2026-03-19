@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/2d/mesh2d_custom_material"
+
+import {
+  "Milky2018/mgstudio/sprite",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type CheckerMaterialAsset
+pub impl @sprite.Material2d for CheckerMaterialAsset
+
+// Type aliases
+
+// Traits
+

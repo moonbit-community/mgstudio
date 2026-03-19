@@ -16,6 +16,9 @@
 const MESH2D_VERTEX_STRIDE_BYTES : UInt64 = 36UL
 
 ///|
+const MESH2D_DEFAULT_VERTEX_SHADER_PATH : String = "shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"
+
+///|
 const MESH2D_COLOR_MATERIAL_SHADER_PATH : String = "shaders/bevy_sprite_render/mesh2d/color_material.wgsl"
 
 ///|
@@ -45,6 +48,8 @@ priv struct Mesh2dPipelineKey {
   tonemap_in_shader : Bool
   deband_dither : Bool
   may_discard : Bool
+  vertex_shader_path : String
+  fragment_shader_path : String
 }
 
 ///|
@@ -77,7 +82,11 @@ fn mesh2d_pipeline_cache_key(key : Mesh2dPipelineKey) -> String {
   hdr_bits +
   tonemap_bits +
   deband_bits +
-  discard_bits
+  discard_bits +
+  "_" +
+  key.vertex_shader_path +
+  "_" +
+  key.fragment_shader_path
 }
 
 ///|
@@ -149,7 +158,25 @@ fn mesh2d_strip_fragment_entry(source : String) -> String raise GpuBackendError 
 }
 
 ///|
-fn load_wgsl_with_defines_required_mesh2d_color_material(
+fn mesh2d_vertex_shader_path_or_default(path : String?) -> String {
+  match path {
+    Some(value) => value
+    None => MESH2D_DEFAULT_VERTEX_SHADER_PATH
+  }
+}
+
+///|
+fn mesh2d_fragment_shader_path_or_default(path : String?) -> String {
+  match path {
+    Some(value) => value
+    None => MESH2D_COLOR_MATERIAL_SHADER_PATH
+  }
+}
+
+///|
+fn load_wgsl_with_defines_required_mesh2d_material(
+  vertex_shader_path : String?,
+  fragment_shader_path : String?,
   define_keys : Array[String],
 ) -> String raise GpuBackendError {
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
@@ -161,10 +188,10 @@ fn load_wgsl_with_defines_required_mesh2d_color_material(
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = copy_registered_wgsl_import_module_paths()
   let mesh_source = registered_wgsl_source_required(
-    "shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl",
+    mesh2d_vertex_shader_path_or_default(vertex_shader_path),
   )
   let material_source = registered_wgsl_source_required(
-    MESH2D_COLOR_MATERIAL_SHADER_PATH,
+    mesh2d_fragment_shader_path_or_default(fragment_shader_path),
   )
   let combined_source = mesh2d_strip_fragment_entry(mesh_source) +
     "\n" +
@@ -334,7 +361,9 @@ fn create_mesh2d_pipeline(
   guard backend.mesh_pipeline_layout is Some(layout) else {
     fatal("wgpu: mesh2d bevy pipeline layout is None")
   }
-  let wgsl = load_wgsl_with_defines_required_mesh2d_color_material(
+  let wgsl = load_wgsl_with_defines_required_mesh2d_material(
+    Some(key.vertex_shader_path),
+    Some(key.fragment_shader_path),
     mesh2d_pipeline_define_keys(key),
   )
   let sm = backend.device.create_shader_module_wgsl(wgsl)
@@ -646,6 +675,8 @@ fn mesh2d_pipeline_key_for_format(
   tonemap_in_shader : Bool,
   deband_dither : Bool,
   may_discard : Bool,
+  vertex_shader_path : String?,
+  fragment_shader_path : String?,
 ) -> Mesh2dPipelineKey {
   let hdr = format == tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
   Mesh2dPipelineKey::{
@@ -656,6 +687,10 @@ fn mesh2d_pipeline_key_for_format(
     tonemap_in_shader,
     deband_dither,
     may_discard,
+    vertex_shader_path: mesh2d_vertex_shader_path_or_default(vertex_shader_path),
+    fragment_shader_path: mesh2d_fragment_shader_path_or_default(
+      fragment_shader_path,
+    ),
   }
 }
 
@@ -690,9 +725,13 @@ fn mesh2d_get_or_create_pipeline(
     key: cache_key,
     pipeline,
   })
-  if key.color_format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
+  let uses_default_shaders = key.vertex_shader_path ==
+    MESH2D_DEFAULT_VERTEX_SHADER_PATH &&
+    key.fragment_shader_path == MESH2D_COLOR_MATERIAL_SHADER_PATH
+  if uses_default_shaders &&
+    key.color_format == tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM) {
     backend.mesh_pipeline = Some(pipeline)
-  } else {
+  } else if uses_default_shaders {
     backend.mesh_pipeline_surface = Some(pipeline)
     backend.mesh_pipeline_surface_format = Some(key.color_format)
   }
@@ -704,6 +743,8 @@ fn mesh_pipeline_for_draw(
   backend : GpuBackend,
   mesh : GpuMeshInfo,
   alpha_mode_kind : Int,
+  vertex_shader_path : String?,
+  fragment_shader_path : String?,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
   let format = match current_pass_color_format(backend) {
     Some(v) => v
@@ -718,6 +759,8 @@ fn mesh_pipeline_for_draw(
       false,
       false,
       mesh2d_pipeline_may_discard(alpha_mode_kind),
+      vertex_shader_path,
+      fragment_shader_path,
     ),
   )
 }
@@ -1023,6 +1066,8 @@ pub fn GpuBackend::draw_mesh(
   uv_offset_y : Float,
   uv_scale_x : Float,
   uv_scale_y : Float,
+  vertex_shader_path? : String? = None,
+  fragment_shader_path? : String? = None,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else {
     debug_mesh2d_drop_no_frame_ref.val = debug_mesh2d_drop_no_frame_ref.val + 1
@@ -1052,7 +1097,10 @@ pub fn GpuBackend::draw_mesh(
     return
   }
   ensure_mesh2d_resources(self)
-  guard mesh_pipeline_for_draw(self, mesh, alpha_mode_kind) is Some(pipeline) else {
+  guard mesh_pipeline_for_draw(
+      self, mesh, alpha_mode_kind, vertex_shader_path, fragment_shader_path,
+    )
+    is Some(pipeline) else {
     debug_mesh2d_drop_no_pipeline_ref.val = debug_mesh2d_drop_no_pipeline_ref.val +
       1
     return

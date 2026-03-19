@@ -102,6 +102,55 @@ test "renderer: mesh2d color material uniform bytes match Bevy size" {
 }
 
 ///|
+test "renderer: mesh2d pipeline key records custom material shader paths" {
+  let key = mesh2d_pipeline_key_for_format(
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    false,
+    false,
+    false,
+    false,
+    Some("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"),
+    Some("shaders/custom/mesh2d_checker_material.wgsl"),
+  )
+  inspect(
+    key.vertex_shader_path,
+    content="shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl",
+  )
+  inspect(
+    key.fragment_shader_path,
+    content="shaders/custom/mesh2d_checker_material.wgsl",
+  )
+}
+
+///|
+test "renderer: mesh2d material loader appends custom fragment shader" {
+  register_renderer_test_shaders()
+  register_renderer_test_shader_source(
+    "shaders/custom/mesh2d_checker_material.wgsl",
+  )
+  let wgsl = load_wgsl_with_defines_required_mesh2d_material(
+    Some("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"),
+    Some("shaders/custom/mesh2d_checker_material.wgsl"),
+    ["VERTEX_POSITIONS", "VERTEX_UVS", "VERTEX_COLORS"],
+  )
+  inspect(wgsl.contains("fn checker_value("), content="true")
+  inspect(
+    wgsl.contains(
+      "@group(2) @binding(0) var<uniform> material: CheckerMaterial;",
+    ),
+    content="true",
+  )
+  inspect(
+    wgsl.contains(
+      "output_color = vec4<f32>(output_color.rgb * checker, output_color.a);",
+    ),
+    content="true",
+  )
+  clear_registered_wgsl_source_registry()
+}
+
+///|
 test "renderer: mesh3d uniform slot pool grows per draw slot" {
   let backend = GpuBackend::new(assets_base="assets")
   ensure_mesh3d_pipeline_rgba8(backend, MESH3D_TOPOLOGY_TRIANGLE_LIST, 0)
@@ -1103,6 +1152,8 @@ test "renderer: mesh pipeline specializes to hdr render target format" {
       false,
       false,
       false,
+      None,
+      None,
     ),
   )
   |> ignore

@@ -1129,6 +1129,8 @@ pub fn host_gpu_draw_mesh(
   uv_offset_y~ : Float,
   uv_scale_x~ : Float,
   uv_scale_y~ : Float,
+  vertex_shader_path? : String? = None,
+  fragment_shader_path? : String? = None,
 ) -> Unit {
   @renderer.draw_mesh(
     mesh_id~,
@@ -1148,6 +1150,8 @@ pub fn host_gpu_draw_mesh(
     uv_offset_y~,
     uv_scale_x~,
     uv_scale_y~,
+    vertex_shader_path~,
+    fragment_shader_path~,
   )
 }
 

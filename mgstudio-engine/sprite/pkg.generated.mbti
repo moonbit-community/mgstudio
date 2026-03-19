@@ -128,7 +128,9 @@ pub fn gizmo_set_config(GizmoConfig) -> Unit
 
 pub fn init_render_state_system(@ecs.World) -> Unit
 
-pub fn[M] material2d_plugin(Material2dPlugin[M]) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
+pub fn[M : Material2d] material2d_plugin(Material2dPlugin[M]) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn[M] material2d_runtime_type_name(@asset.Handle[M]) -> String
 
 pub fn pan_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -586,6 +588,17 @@ pub fn Isometry2d::identity() -> Self
 pub fn Isometry2d::new(@math.Vec2, Float) -> Self
 pub fn Isometry2d::transform_point(Self, @math.Vec2) -> @math.Vec2
 
+pub struct Material2dBindGroup {
+  color : @color.Color
+  texture : @asset.Handle[@image.Image]?
+  uv_offset : @math.Vec2
+  uv_scale : @math.Vec2
+  alpha_cutoff : Float
+}
+pub fn Material2dBindGroup::bind_group_data(Self, AlphaMode2d) -> String
+pub fn Material2dBindGroup::default() -> Self
+pub fn Material2dBindGroup::new(@color.Color, texture? : @asset.Handle[@image.Image]?, uv_offset? : @math.Vec2, uv_scale? : @math.Vec2, alpha_cutoff? : Float) -> Self
+
 pub struct Material2dKey[M] {
   mesh_key : Int
   bind_group_data : String
@@ -604,15 +617,25 @@ pub fn[M] Material2dPipeline::new(String?, String?) -> Self[M]
 pub impl[M] @app.Resource for Material2dPipeline[M]
 
 pub struct Material2dPlugin[M] {
+  vertex_shader : String?
+  fragment_shader : String?
   marker : M?
 }
 pub fn[M] Material2dPlugin::default() -> Self[M]
+pub fn[M] Material2dPlugin::with_fragment_shader(Self[M], String) -> Self[M]
+pub fn[M] Material2dPlugin::with_vertex_shader(Self[M], String) -> Self[M]
 
 pub struct Material2dProperties {
   alpha_mode : AlphaMode2d
   mesh_pipeline_key_bits : Int
 }
 pub fn Material2dProperties::new(AlphaMode2d, Int) -> Self
+
+type Material2dRuntimeRegistry
+pub fn Material2dRuntimeRegistry::contains_type_name(Self, String) -> Bool
+pub fn Material2dRuntimeRegistry::entry_count(Self) -> Int
+pub fn Material2dRuntimeRegistry::new() -> Self
+pub impl @app.Resource for Material2dRuntimeRegistry
 
 pub struct Mesh2d {
   mesh : @asset.Handle[@mesh.Mesh]
@@ -732,10 +755,7 @@ pub fn Polyline2d::with_half_thickness(Self, Float) -> Self
 
 pub struct PreparedMaterial2d[M] {
   source : @asset.Handle[M]
-  color : @color.Color
-  texture : @asset.Handle[@image.Image]?
-  uv_offset : @math.Vec2
-  uv_scale : @math.Vec2
+  bind_group : Material2dBindGroup
   key : Material2dKey[M]
   properties : Material2dProperties
 }
@@ -1073,11 +1093,8 @@ pub using @post_process {type Tonemapping}
 
 // Traits
 pub(open) trait Material2d {
-  color(Self) -> @color.Color
   alpha_mode(Self) -> AlphaMode2d
-  texture(Self) -> @asset.Handle[@image.Image]?
-  uv_offset(Self) -> @math.Vec2
-  uv_scale(Self) -> @math.Vec2
+  bind_group(Self) -> Material2dBindGroup
   bind_group_data(Self) -> String
 }
 

@@ -304,7 +304,7 @@ pub fn render2d_camera_world_to_viewport_2d(
 }
 
 ///|
-pub fn[M] material2d_plugin(
+pub fn[M : @sprite.Material2d] material2d_plugin(
   plugin : Material2dPlugin[M],
 ) -> @app.Plugin[@ecs.World] {
   @sprite.material2d_plugin(plugin)

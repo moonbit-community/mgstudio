@@ -947,6 +947,8 @@ pub fn draw_mesh(
   uv_offset_y~ : Float,
   uv_scale_x~ : Float,
   uv_scale_y~ : Float,
+  vertex_shader_path? : String? = None,
+  fragment_shader_path? : String? = None,
 ) -> Unit {
   debug_mesh2d_draw_calls_ref.val = debug_mesh2d_draw_calls_ref.val + 1
   current_frame_mesh2d_draw_calls_ref.val = current_frame_mesh2d_draw_calls_ref.val +
@@ -957,9 +959,25 @@ pub fn draw_mesh(
   }
   if ensure_backend() is Some(backend) {
     backend.draw_mesh(
-      mesh_id, x, y, rotation, scale_x, scale_y, color_r, color_g, color_b, color_a,
-      alpha_mode_kind, alpha_cutoff, texture_id, uv_offset_x, uv_offset_y, uv_scale_x,
+      mesh_id,
+      x,
+      y,
+      rotation,
+      scale_x,
+      scale_y,
+      color_r,
+      color_g,
+      color_b,
+      color_a,
+      alpha_mode_kind,
+      alpha_cutoff,
+      texture_id,
+      uv_offset_x,
+      uv_offset_y,
+      uv_scale_x,
       uv_scale_y,
+      vertex_shader_path~,
+      fragment_shader_path~,
     ) catch {
       err => debug_runtime_error("draw_mesh", err)
     }
