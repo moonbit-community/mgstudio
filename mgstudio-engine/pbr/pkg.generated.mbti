@@ -25,6 +25,10 @@ pub const DEFERRED_PBR_LIGHTING_PLUGIN_ID : String = "bevy_pbr::DeferredPbrLight
 
 pub const FOG_PLUGIN_ID : String = "bevy_pbr::FogPlugin"
 
+pub const MATERIALS_PLUGIN_ID : String = "bevy_pbr::MaterialsPlugin"
+
+pub const MESH_RENDER_PLUGIN_ID : String = "bevy_pbr::MeshRenderPlugin"
+
 pub const PBR_PLUGIN_ID : String = "bevy_pbr::PbrPlugin"
 
 pub const STANDARD_MATERIAL_PLUGIN_ID : String = "bevy_pbr::MaterialPlugin<StandardMaterial>"
@@ -71,6 +75,8 @@ pub let ecs_key_environment_map_light : @ecs.ComponentKey[@light.EnvironmentMapL
 
 pub let ecs_key_exposure : @ecs.ComponentKey[Exposure]
 
+pub let ecs_key_fog_plugin_state : @ecs.ResourceKey[FogPluginState]
+
 pub let ecs_key_fog_volume : @ecs.ComponentKey[@light.FogVolume]
 
 pub let ecs_key_forward_decal : @ecs.ComponentKey[ForwardDecal]
@@ -97,9 +103,13 @@ pub let ecs_key_irradiance_volume : @ecs.ComponentKey[@light.IrradianceVolume]
 
 pub let ecs_key_light_probe : @ecs.ComponentKey[@light.LightProbe]
 
+pub let ecs_key_materials_plugin_state : @ecs.ResourceKey[MaterialsPluginState]
+
 pub let ecs_key_mesh3d : @ecs.ComponentKey[Mesh3d]
 
 pub let ecs_key_mesh_material3d : @ecs.ComponentKey[@material.MeshMaterial3d]
+
+pub let ecs_key_mesh_render_plugin_state : @ecs.ResourceKey[MeshRenderPluginState]
 
 pub let ecs_key_motion_blur : @ecs.ComponentKey[@post_process.MotionBlur]
 
@@ -293,6 +303,8 @@ pub fn get_wireframe_config_resource(@ecs.World) -> @ecs.ResourceAccess[Wirefram
 
 pub fn get_wireframe_store(@ecs.World) -> @ecs.ComponentAccess[Wireframe]
 
+pub fn materials_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
 pub fn mesh_ray_cast(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
 
 pub fn mesh_ray_cast_first(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
@@ -300,6 +312,10 @@ pub fn mesh_ray_cast_first(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettin
 pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @sprite.Camera, Projection, @math.Transform, @math.IVec2, Float, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
 
 pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @sprite.Camera, Projection, @math.Transform, @math.IVec2, Float, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
+
+pub fn mesh_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn mesh_render_plugin_with(@app.App[@ecs.World], MeshRenderPlugin) -> @app.App[@ecs.World]
 
 pub fn pbr_deferred_lighting_enabled() -> Bool
 
@@ -659,6 +675,9 @@ pub fn FogFalloff3d::revised_koschmieder_contrast_threshold() -> Float
 pub impl ToJson for FogFalloff3d
 pub impl @json.FromJson for FogFalloff3d
 
+pub struct FogPluginState {
+}
+
 pub struct ForwardDecal {
 }
 pub fn ForwardDecal::default() -> Self
@@ -723,6 +742,14 @@ pub impl Eq for HalfSpace
 pub impl ToJson for HalfSpace
 pub impl @json.FromJson for HalfSpace
 
+pub struct MaterialsPlugin {
+}
+pub fn MaterialsPlugin::default() -> Self
+pub impl @app.PluginReplacement for MaterialsPlugin
+
+pub struct MaterialsPluginState {
+}
+
 pub struct Mesh3d {
   mesh : @asset.Handle[@mesh.Mesh]
 }
@@ -777,6 +804,17 @@ pub fn MeshRayCastSettings::with_max_distance(Self, Float) -> Self
 pub fn MeshRayCastSettings::with_max_hits(Self, Int) -> Self
 pub fn MeshRayCastSettings::with_only_entities(Self, Array[@core.Entity]?) -> Self
 pub fn MeshRayCastSettings::with_ray_epsilon(Self, Float) -> Self
+
+pub(all) struct MeshRenderPlugin {
+  use_gpu_instance_buffer_builder : Bool
+}
+pub fn MeshRenderPlugin::default() -> Self
+pub impl @app.PluginReplacement for MeshRenderPlugin
+
+pub struct MeshRenderPluginState {
+  use_gpu_instance_buffer_builder : Bool
+}
+pub fn MeshRenderPluginState::from_plugin(MeshRenderPlugin) -> Self
 
 pub struct NoIndirectDrawing {
 }

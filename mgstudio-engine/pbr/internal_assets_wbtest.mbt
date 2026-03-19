@@ -27,8 +27,8 @@ test "render3d: internal assets are stored per world resource" {
   let world_a = render3d_test_world_with_asset_server()
   let world_b = render3d_test_world_with_asset_server()
 
-  init_render3d_resources(world_a)
-  init_render3d_resources(world_b)
+  init_mesh_render_resources(world_a)
+  init_mesh_render_resources(world_b)
   inspect(
     render3d_internal_assets_ref(world_a).unwrap().val.skybox_proxy_mesh is None,
     content="true",

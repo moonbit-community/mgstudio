@@ -100,55 +100,6 @@ pub let ecs_key_pbr_plugin_runtime_config : @ecs.ResourceKey[
 ] = @ecs.register_resource(debug_name="bevy_pbr::PbrPluginRuntimeConfig")
 
 ///|
-fn init_render3d_resources(world : @ecs.World) -> Unit {
-  let ecs_world = world
-  let tick = world.read_change_tick()
-  render3d_runtime_initialized_ref.val = true
-  let ambient = get_global_ambient_light_resource(ecs_world)
-  if !ambient.is_present() {
-    ambient.insert(GlobalAmbientLight::default(), tick)
-  }
-  let point_light_shadow_map = get_point_light_shadow_map_resource(ecs_world)
-  if !point_light_shadow_map.is_present() {
-    point_light_shadow_map.insert(PointLightShadowMap::default(), tick)
-  }
-  let default_opaque_renderer_method = get_default_opaque_renderer_method_resource(
-    ecs_world,
-  )
-  if !default_opaque_renderer_method.is_present() {
-    default_opaque_renderer_method.insert(
-      DefaultOpaqueRendererMethod::forward(),
-      tick,
-    )
-  }
-  if (try! world.get_resource(ecs_key_internal_assets)) is None {
-    world.insert_resource(
-      ecs_key_internal_assets,
-      Render3dInternalAssetsState::new(),
-    )
-  }
-  let auto_exposure_curve_assets_key : @ecs.ResourceKey[
-    @asset.Assets[AutoExposureCompensationCurve],
-  ] = @asset.assets_resource_key()
-  if (try! world.get_resource(auto_exposure_curve_assets_key)) is None {
-    world.insert_resource(auto_exposure_curve_assets_key, @asset.Assets::new())
-  }
-  if (try! world.get_resource_ref_mut(auto_exposure_curve_assets_key, tick))
-    is Some(curves_ref) {
-    let default_curve_handle : @asset.Handle[AutoExposureCompensationCurve] = @asset.Handle::new(
-      0,
-    )
-    if !curves_ref.val.contains(default_curve_handle) {
-      curves_ref.val.insert(
-        default_curve_handle,
-        AutoExposureCompensationCurve::default(),
-      )
-      |> ignore
-    }
-  }
-}
-
-///|
 fn init_wireframe_resources(world : @ecs.World) -> Unit {
   let ecs_world = world
   let tick = world.read_change_tick()
@@ -164,8 +115,38 @@ pub fn wireframe_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
+pub struct FogPluginState {}
+
+///|
+pub let ecs_key_fog_plugin_state : @ecs.ResourceKey[FogPluginState] = @ecs.register_resource(
+  debug_name="bevy_pbr::FogPluginState",
+)
+
+///|
 pub fn fog_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
+  if app.contains_resource(ecs_key_fog_plugin_state) {
+    app
+  } else {
+    app.insert_world_resource(ecs_key_fog_plugin_state, FogPluginState::{  })
+  }
+}
+
+///|
+fn pbr_plugin_sync_mesh_render_state(
+  app : @app.App[@ecs.World],
+  runtime_config : PbrPluginRuntimeConfig,
+) -> @app.App[@ecs.World] {
+  mesh_render_plugin_with(app, MeshRenderPlugin::{
+    use_gpu_instance_buffer_builder: runtime_config.use_gpu_instance_buffer_builder,
+  })
+}
+
+///|
+fn pbr_plugin_sync_materials_state(
+  app : @app.App[@ecs.World],
+  _runtime_config : PbrPluginRuntimeConfig,
+) -> @app.App[@ecs.World] {
+  materials_plugin(app)
 }
 
 ///|
@@ -188,8 +169,9 @@ fn pbr_plugin_sync_standard_material_state(
   app : @app.App[@ecs.World],
   runtime_config : PbrPluginRuntimeConfig,
 ) -> @app.App[@ecs.World] {
-  runtime_config.prepass_enabled |> ignore
-  standard_material_plugin(app)
+  standard_material_plugin_with(app, StandardMaterialPlugin::{
+    prepass_enabled: runtime_config.prepass_enabled,
+  })
 }
 
 ///|
@@ -265,48 +247,17 @@ pub fn pbr_plugin_with(
         let assets : @asset.Assets[StandardMaterial] = @asset.Assets::new()
         assets
       })
-      .add_startup_system(init_render3d_resources)
-      .add_post_update_system_config(
-        @app.system(render3d_update_frusta_system).in_set(
-          render3d_set_update_frusta,
-        ),
-      )
-      .add_post_update_system_config(
-        @app.system(render3d_extract_system).in_set(render3d_set_extract),
-      )
-      .add_post_update_system_config(
-        @app.system(render3d_prepare_system).in_set(render3d_set_prepare),
-      )
-      .add_post_update_system_config(
-        @app.system(render3d_queue_system).in_set(render3d_set_queue),
-      )
-      .add_post_update_system_config(
-        @app.system(render3d_execute_system).in_set(render3d_set_render),
-      )
-      .configure_set(@app.PostUpdate, render3d_set_extract, before=[
-        render3d_set_prepare,
-      ])
-      .configure_set(@app.PostUpdate, render3d_set_update_frusta, before=[
-        render3d_set_extract,
-      ])
-      .configure_set(@app.PostUpdate, render3d_set_prepare, before=[
-        render3d_set_queue,
-      ])
-      .configure_set(@app.PostUpdate, render3d_set_queue, before=[
-        render3d_set_render,
-      ])
-    next = fog_plugin(next)
-    next = pbr_plugin_sync_gltf_material_handler_state(next, runtime_config)
-    next = pbr_plugin_sync_standard_material_state(next, runtime_config)
-    next = pbr_plugin_sync_deferred_lighting_state(next, runtime_config)
   } else {
     next = next.insert_world_resource(
       ecs_key_pbr_plugin_runtime_config, runtime_config,
     )
-    next = pbr_plugin_sync_gltf_material_handler_state(next, runtime_config)
-    next = pbr_plugin_sync_standard_material_state(next, runtime_config)
-    next = pbr_plugin_sync_deferred_lighting_state(next, runtime_config)
   }
+  next = pbr_plugin_sync_mesh_render_state(next, runtime_config)
+  next = pbr_plugin_sync_materials_state(next, runtime_config)
+  next = pbr_plugin_sync_standard_material_state(next, runtime_config)
+  next = fog_plugin(next)
+  next = pbr_plugin_sync_gltf_material_handler_state(next, runtime_config)
+  next = pbr_plugin_sync_deferred_lighting_state(next, runtime_config)
   next
 }
 
