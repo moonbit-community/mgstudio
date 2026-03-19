@@ -276,6 +276,7 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
   inspect(wgsl.contains("struct Mesh3dViewUniform {"), content="true")
   inspect(wgsl.contains("struct Mesh3dLightsUniform {"), content="true")
   inspect(wgsl.contains("struct Mesh3dViewBindings {"), content="true")
+  inspect(wgsl.contains("struct LightContribution {"), content="true")
   inspect(wgsl.contains("struct Mesh3dTransformUniform {"), content="true")
   inspect(wgsl.contains("struct Mesh3dMaterialUniform {"), content="true")
   inspect(
@@ -351,6 +352,14 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
     content="true",
   )
   inspect(wgsl.contains("spot_light_custom_data : vec4<f32>,"), content="true")
+  inspect(wgsl.contains("fn specular_light("), content="true")
+  inspect(wgsl.contains("fn directional_light("), content="true")
+  inspect(wgsl.contains("fn point_light_shadow("), content="true")
+  inspect(wgsl.contains("fn point_light("), content="true")
+  inspect(wgsl.contains("fn spot_light("), content="true")
+  inspect(wgsl.contains("let directional = directional_light("), content="true")
+  inspect(wgsl.contains("let point = point_light("), content="true")
+  inspect(wgsl.contains("let spot = spot_light("), content="true")
   inspect(
     wgsl.contains("STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT"),
     content="true",
@@ -371,6 +380,9 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
   inspect(wgsl.contains("apply_normal_mapping("), content="true")
   inspect(wgsl.contains("discard;"), content="true")
   inspect(!wgsl.contains("has_normal_map ="), content="true")
+  inspect(!wgsl.contains("let directional_term ="), content="true")
+  inspect(!wgsl.contains("let point_term ="), content="true")
+  inspect(!wgsl.contains("let spot_term ="), content="true")
   inspect(!wgsl.contains("point_color_intensity"), content="true")
   inspect(!wgsl.contains("spot_color_intensity"), content="true")
   inspect(!wgsl.contains("emissive_params"), content="true")

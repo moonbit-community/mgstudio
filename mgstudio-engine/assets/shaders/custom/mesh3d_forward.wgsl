@@ -427,6 +427,200 @@ fn specular_anisotropic(
   return d * v * f;
 }
 
+struct LightContribution {
+  diffuse : vec3<f32>,
+  transmitted : vec3<f32>,
+  specular : vec3<f32>,
+};
+
+fn specular_light(
+  normal : vec3<f32>,
+  light_dir : vec3<f32>,
+  view_dir : vec3<f32>,
+  roughness : f32,
+  f0 : vec3<f32>,
+  anisotropy_strength : f32,
+  anisotropy_t : vec3<f32>,
+  anisotropy_b : vec3<f32>,
+) -> vec3<f32> {
+  if anisotropy_strength > 0.0 {
+    return specular_anisotropic(
+      normal,
+      light_dir,
+      view_dir,
+      roughness,
+      f0,
+      anisotropy_strength,
+      anisotropy_t,
+      anisotropy_b,
+    );
+  }
+  return specular_isotropic(normal, light_dir, view_dir, roughness, f0);
+}
+
+fn directional_light(
+  normal : vec3<f32>,
+  view_dir : vec3<f32>,
+  ndotv : f32,
+  roughness : f32,
+  f0 : vec3<f32>,
+  anisotropy_strength : f32,
+  anisotropy_t : vec3<f32>,
+  anisotropy_b : vec3<f32>,
+  light_dir : vec3<f32>,
+  light_color : vec3<f32>,
+) -> LightContribution {
+  let diffuse = lambert(normal, light_dir);
+  let half_dir = safe_normalize(light_dir + view_dir);
+  let ldoth = max(dot(light_dir, half_dir), 0.0);
+  let diffuse_brdf = Fd_Burley(roughness, ndotv, diffuse, ldoth);
+  let transmitted = lambert(-normal, light_dir);
+  let specular = specular_light(
+    normal,
+    light_dir,
+    view_dir,
+    roughness,
+    f0,
+    anisotropy_strength,
+    anisotropy_t,
+    anisotropy_b,
+  );
+  return LightContribution(
+    light_color * diffuse_brdf * diffuse,
+    light_color * transmitted,
+    light_color * diffuse * specular,
+  );
+}
+
+fn point_light_shadow(
+  world_pos : vec3<f32>,
+  light_position : vec3<f32>,
+  light_radius : f32,
+  shadow_params : vec4<f32>,
+) -> f32 {
+  if shadow_params.x <= 0.5 {
+    return 1.0;
+  }
+  // Match Bevy's cubemap shadow sampling convention:
+  // sample direction is transformed to cubemap LH space by flipping Z.
+  let point_shadow_dir = safe_normalize(vec3<f32>(
+    world_pos.x - light_position.x,
+    world_pos.y - light_position.y,
+    -(world_pos.z - light_position.z),
+  ));
+  // Cubemap shadow projections are axis-aligned 90-degree frusta.
+  // The projected depth can be reconstructed from the largest axis magnitude.
+  let to_light = world_pos - light_position;
+  let major_axis_magnitude = max(
+    abs(to_light.x),
+    max(abs(to_light.y), abs(to_light.z)),
+  );
+  let point_near = max(shadow_params.z, 1.0e-4);
+  let point_far = max(light_radius, point_near + 1.0e-4);
+  var point_linear_depth = 0.0;
+  if major_axis_magnitude > point_near {
+    point_linear_depth = point_far / (point_far - point_near) -
+      (point_far * point_near) / ((point_far - point_near) * major_axis_magnitude);
+  }
+  let point_depth_bias = max(shadow_params.y, 0.0);
+  return textureSampleCompare(
+    u_point_shadow_texture,
+    u_point_shadow_sampler,
+    point_shadow_dir,
+    clamp(point_linear_depth - point_depth_bias, 0.0, 1.0),
+  );
+}
+
+fn point_light(
+  normal : vec3<f32>,
+  world_pos : vec3<f32>,
+  view_dir : vec3<f32>,
+  ndotv : f32,
+  roughness : f32,
+  f0 : vec3<f32>,
+  anisotropy_strength : f32,
+  anisotropy_t : vec3<f32>,
+  anisotropy_b : vec3<f32>,
+  light_position_radius : vec4<f32>,
+  light_color_inverse_square_range : vec4<f32>,
+  shadow_factor : f32,
+) -> LightContribution {
+  let light_to_frag = light_position_radius.xyz - world_pos;
+  let light_dir = safe_normalize(light_to_frag);
+  let distance_square = max(dot(light_to_frag, light_to_frag), 1.0e-4);
+  let attenuation = get_distance_attenuation(
+    distance_square,
+    light_color_inverse_square_range.w,
+  ) * shadow_factor;
+  let light_color = light_color_inverse_square_range.xyz;
+  let diffuse = lambert(normal, light_dir);
+  let half_dir = safe_normalize(light_dir + view_dir);
+  let ldoth = max(dot(light_dir, half_dir), 0.0);
+  let diffuse_brdf = Fd_Burley(roughness, ndotv, diffuse, ldoth);
+  let transmitted = lambert(-normal, light_dir);
+  let specular = specular_light(
+    normal,
+    light_dir,
+    view_dir,
+    roughness,
+    f0,
+    anisotropy_strength,
+    anisotropy_t,
+    anisotropy_b,
+  );
+  return LightContribution(
+    light_color * attenuation * diffuse_brdf * diffuse,
+    light_color * attenuation * transmitted,
+    light_color * attenuation * diffuse * specular,
+  );
+}
+
+fn spot_light(
+  normal : vec3<f32>,
+  world_pos : vec3<f32>,
+  view_dir : vec3<f32>,
+  ndotv : f32,
+  roughness : f32,
+  f0 : vec3<f32>,
+  anisotropy_strength : f32,
+  anisotropy_t : vec3<f32>,
+  anisotropy_b : vec3<f32>,
+  light_position_radius : vec4<f32>,
+  light_direction_to_light : vec4<f32>,
+  light_color_inverse_square_range : vec4<f32>,
+  light_custom_data : vec4<f32>,
+) -> LightContribution {
+  let point = point_light(
+    normal,
+    world_pos,
+    view_dir,
+    ndotv,
+    roughness,
+    f0,
+    anisotropy_strength,
+    anisotropy_t,
+    anisotropy_b,
+    light_position_radius,
+    light_color_inverse_square_range,
+    1.0,
+  );
+  let light_to_frag = light_position_radius.xyz - world_pos;
+  let spot_dir_to_fragment = safe_normalize(-light_to_frag);
+  let spot_light_dir = safe_normalize(light_direction_to_light.xyz);
+  let spot_cos_theta = dot(spot_light_dir, spot_dir_to_fragment);
+  let spot_attenuation = clamp(
+    spot_cos_theta * light_custom_data.x + light_custom_data.y,
+    0.0,
+    1.0,
+  );
+  let spot_cone = spot_attenuation * spot_attenuation;
+  return LightContribution(
+    point.diffuse * spot_cone,
+    point.transmitted * spot_cone,
+    point.specular * spot_cone,
+  );
+}
+
 fn cubemap_stacked_vertical_uv(direction : vec3<f32>) -> vec2<f32> {
   let dir = safe_normalize(direction);
   let abs_dir = abs(dir);
@@ -704,208 +898,69 @@ fn fs_main(
 
   let ambient_term = u_view.lights.ambient_color.xyz;
 
-  let directional_dir = safe_normalize(
-    u_view.lights.directional_light_direction_to_light.xyz,
-  );
-  let directional_color = u_view.lights.directional_light_color.xyz;
-  let directional_light_dir = -directional_dir;
-  let directional_diff = lambert(normal, directional_light_dir);
-  let directional_half_dir = safe_normalize(directional_light_dir + view_dir);
-  let directional_ldoth = max(dot(directional_light_dir, directional_half_dir), 0.0);
-  let directional_diffuse_brdf = Fd_Burley(
-    roughness,
+  let directional = directional_light(
+    normal,
+    view_dir,
     ndotv,
-    directional_diff,
-    directional_ldoth,
+    roughness,
+    f0,
+    anisotropy_strength,
+    anisotropy_t,
+    anisotropy_b,
+    -safe_normalize(u_view.lights.directional_light_direction_to_light.xyz),
+    u_view.lights.directional_light_color.xyz,
   );
-  let directional_back_diff = lambert(-normal, directional_light_dir);
-  let directional_term = directional_color * directional_diffuse_brdf * directional_diff;
-  let directional_transmitted_term = directional_color * directional_back_diff;
-  var directional_specular = vec3<f32>(0.0, 0.0, 0.0);
-  if anisotropy_strength > 0.0 {
-    directional_specular = specular_anisotropic(
-      normal,
-      directional_light_dir,
-      view_dir,
-      roughness,
-      f0,
-      anisotropy_strength,
-      anisotropy_t,
-      anisotropy_b,
-    );
-  } else {
-    directional_specular = specular_isotropic(
-      normal,
-      directional_light_dir,
-      view_dir,
-      roughness,
-      f0,
-    );
-  }
-  let directional_spec = directional_color *
-    directional_diff *
-    directional_specular;
-
-  let to_point = u_view.lights.point_light_position_radius.xyz - in.world_pos;
-  let point_distance_square = max(dot(to_point, to_point), 1.0e-4);
-  let point_dir = safe_normalize(to_point);
-  let point_range = max(u_view.lights.point_light_position_radius.w, 1e-4);
-  let point_atten = get_distance_attenuation(
-    point_distance_square,
-    u_view.lights.point_light_color_inverse_square_range.w,
+  let point_shadow_factor = point_light_shadow(
+    in.world_pos,
+    u_view.lights.point_light_position_radius.xyz,
+    max(u_view.lights.point_light_position_radius.w, 1e-4),
+    u_view.lights.point_light_shadow_params,
   );
-  let point_color = u_view.lights.point_light_color_inverse_square_range.xyz;
-  let point_diff = lambert(normal, point_dir);
-  let point_half_dir = safe_normalize(point_dir + view_dir);
-  let point_ldoth = max(dot(point_dir, point_half_dir), 0.0);
-  let point_diffuse_brdf = Fd_Burley(roughness, ndotv, point_diff, point_ldoth);
-  let point_back_diff = lambert(-normal, point_dir);
-  let point_shadow_enabled = u_view.lights.point_light_shadow_params.x > 0.5;
-  var point_shadow_factor = 1.0;
-  if point_shadow_enabled {
-    // Match Bevy's cubemap shadow sampling convention:
-    // sample direction is transformed to cubemap LH space by flipping Z.
-    let point_shadow_dir = safe_normalize(vec3<f32>(
-      in.world_pos.x - u_view.lights.point_light_position_radius.x,
-      in.world_pos.y - u_view.lights.point_light_position_radius.y,
-      -(in.world_pos.z - u_view.lights.point_light_position_radius.z),
-    ));
-    // Cubemap shadow projections are axis-aligned 90-degree frusta.
-    // The projected depth can be reconstructed from the largest axis magnitude.
-    let to_light = in.world_pos - u_view.lights.point_light_position_radius.xyz;
-    let major_axis_magnitude = max(
-      abs(to_light.x),
-      max(abs(to_light.y), abs(to_light.z)),
-    );
-    let point_near = max(u_view.lights.point_light_shadow_params.z, 1.0e-4);
-    let point_far = max(point_range, point_near + 1.0e-4);
-    var point_linear_depth = 0.0;
-    if major_axis_magnitude <= point_near {
-      point_linear_depth = 0.0;
-    } else {
-      point_linear_depth = point_far / (point_far - point_near) -
-        (point_far * point_near) / ((point_far - point_near) * major_axis_magnitude);
-    }
-    let point_depth_bias = max(u_view.lights.point_light_shadow_params.y, 0.0);
-    point_shadow_factor = textureSampleCompare(
-      u_point_shadow_texture,
-      u_point_shadow_sampler,
-      point_shadow_dir,
-      clamp(point_linear_depth - point_depth_bias, 0.0, 1.0),
-    );
-  }
-  let point_term = point_color *
-    point_atten *
-    point_diffuse_brdf *
-    point_diff *
-    point_shadow_factor;
-  let point_transmitted_term = point_color *
-    point_atten *
-    point_back_diff *
-    point_shadow_factor;
-  var point_specular = vec3<f32>(0.0, 0.0, 0.0);
-  if anisotropy_strength > 0.0 {
-    point_specular = specular_anisotropic(
-      normal,
-      point_dir,
-      view_dir,
-      roughness,
-      f0,
-      anisotropy_strength,
-      anisotropy_t,
-      anisotropy_b,
-    );
-  } else {
-    point_specular = specular_isotropic(
-      normal,
-      point_dir,
-      view_dir,
-      roughness,
-      f0,
-    );
-  }
-  let point_spec = point_color *
-    point_atten *
-    point_diff *
-    point_specular *
-    point_shadow_factor;
-
-  let to_spot = u_view.lights.spot_light_position_radius.xyz - in.world_pos;
-  let spot_dir_to_fragment = safe_normalize(-to_spot);
-  let spot_distance_square = max(dot(to_spot, to_spot), 1.0e-4);
-  let spot_atten_base = get_distance_attenuation(
-    spot_distance_square,
-    u_view.lights.spot_light_color_inverse_square_range.w,
+  let point = point_light(
+    normal,
+    in.world_pos,
+    view_dir,
+    ndotv,
+    roughness,
+    f0,
+    anisotropy_strength,
+    anisotropy_t,
+    anisotropy_b,
+    u_view.lights.point_light_position_radius,
+    u_view.lights.point_light_color_inverse_square_range,
+    point_shadow_factor,
   );
-  let spot_light_dir = safe_normalize(
-    u_view.lights.spot_light_direction_to_light.xyz,
+  let spot = spot_light(
+    normal,
+    in.world_pos,
+    view_dir,
+    ndotv,
+    roughness,
+    f0,
+    anisotropy_strength,
+    anisotropy_t,
+    anisotropy_b,
+    u_view.lights.spot_light_position_radius,
+    u_view.lights.spot_light_direction_to_light,
+    u_view.lights.spot_light_color_inverse_square_range,
+    u_view.lights.spot_light_custom_data,
   );
-  let spot_cos_theta = dot(spot_light_dir, spot_dir_to_fragment);
-  let spot_attenuation = clamp(
-    spot_cos_theta * u_view.lights.spot_light_custom_data.x +
-      u_view.lights.spot_light_custom_data.y,
-    0.0,
-    1.0,
-  );
-  let spot_cone = spot_attenuation * spot_attenuation;
-  let spot_color = u_view.lights.spot_light_color_inverse_square_range.xyz;
-  let spot_light_to_fragment = safe_normalize(to_spot);
-  let spot_diff = lambert(normal, spot_light_to_fragment);
-  let spot_half_dir = safe_normalize(spot_light_to_fragment + view_dir);
-  let spot_ldoth = max(dot(spot_light_to_fragment, spot_half_dir), 0.0);
-  let spot_diffuse_brdf = Fd_Burley(roughness, ndotv, spot_diff, spot_ldoth);
-  let spot_back_diff = lambert(-normal, spot_light_to_fragment);
-  let spot_term = spot_color *
-    spot_atten_base *
-    spot_cone *
-    spot_diffuse_brdf *
-    spot_diff;
-  let spot_transmitted_term = spot_color *
-    spot_atten_base *
-    spot_cone *
-    spot_back_diff;
-  var spot_specular = vec3<f32>(0.0, 0.0, 0.0);
-  if anisotropy_strength > 0.0 {
-    spot_specular = specular_anisotropic(
-      normal,
-      spot_light_to_fragment,
-      view_dir,
-      roughness,
-      f0,
-      anisotropy_strength,
-      anisotropy_t,
-      anisotropy_b,
-    );
-  } else {
-    spot_specular = specular_isotropic(
-      normal,
-      spot_light_to_fragment,
-      view_dir,
-      roughness,
-      f0,
-    );
-  }
-  let spot_spec = spot_color *
-    spot_atten_base *
-    spot_cone *
-    spot_diff *
-    spot_specular;
 
   let diffuse_lighting = (ambient_term +
-    directional_term +
-    point_term +
-    spot_term) * occlusion_tex;
+    directional.diffuse +
+    point.diffuse +
+    spot.diffuse) * occlusion_tex;
   let diffuse_transmitted_lighting = (ambient_term +
-    directional_transmitted_term +
-    point_transmitted_term +
-    spot_transmitted_term) * occlusion_tex;
-  let specular_lighting = directional_spec + point_spec + spot_spec;
+    directional.transmitted +
+    point.transmitted +
+    spot.transmitted) * occlusion_tex;
+  let specular_lighting = directional.specular + point.specular + spot.specular;
   let ior_f0 = pow((ior - 1.0) / max(ior + 1.0, 1.0e-4), 2.0);
   let thickness_factor = clamp(thickness / 5.0, 0.0, 1.0);
   var specular_transmitted_lighting = (ambient_term +
-    directional_term +
-    point_term +
-    spot_term) *
+    directional.diffuse +
+    point.diffuse +
+    spot.diffuse) *
     (0.35 + 0.65 * (1.0 - perceptual_roughness * perceptual_roughness)) *
     (1.0 - 0.4 * thickness_factor) *
     (0.2 + 0.8 * (1.0 - ior_f0));
