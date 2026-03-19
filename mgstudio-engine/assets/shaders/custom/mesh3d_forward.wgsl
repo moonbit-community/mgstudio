@@ -22,15 +22,9 @@ struct VertexOut {
   @location(3) world_normal : vec3<f32>,
 };
 
-struct Mesh3dUniform {
-  model_pos : vec4<f32>,
-  model_rot : vec4<f32>,
-  model_scale : vec4<f32>,
+struct Mesh3dViewUniform {
   camera_pos : vec4<f32>,
   clip_from_world : mat4x4<f32>,
-  color : vec4<f32>,
-  uv_transform0 : vec4<f32>, // (a, b, c, tx)
-  uv_transform1 : vec4<f32>, // (d, ty, mode, _)
   ambient : vec4<f32>, // (r, g, b, brightness)
   directional_dir_illum : vec4<f32>, // (dir.xyz, illuminance)
   directional_color : vec4<f32>, // (r, g, b, _)
@@ -39,7 +33,17 @@ struct Mesh3dUniform {
   spot_pos_range : vec4<f32>, // (pos.xyz, range)
   spot_dir_inner : vec4<f32>, // (dir.xyz, inner_angle)
   spot_color_intensity : vec4<f32>, // (r, g, b, intensity)
-  spot_outer : vec4<f32>, // (outer_angle, _, _, _)
+  postprocess_params : vec4<f32>, // (outer_angle, transmission_blur_taps, transmission_steps, exposure)
+  point_shadow_params : vec4<f32>, // (enabled, depth_bias, near_z, _)
+};
+
+struct Mesh3dDrawUniform {
+  model_pos : vec4<f32>,
+  model_rot : vec4<f32>,
+  model_scale : vec4<f32>,
+  color : vec4<f32>,
+  uv_transform0 : vec4<f32>, // (a, b, c, tx)
+  uv_transform1 : vec4<f32>, // (d, ty, mode, _)
   emissive_unlit : vec4<f32>, // (emissive.rgb, unlit)
   material_params : vec4<f32>, // (metallic, roughness, reflectance, _)
   map_flags : vec4<f32>, // (base, emissive, metallic_roughness, occlusion)
@@ -47,10 +51,13 @@ struct Mesh3dUniform {
   anisotropy_params : vec4<f32>, // (strength, rot_cos, rot_sin, has_anisotropy_map)
   specular_tint : vec4<f32>, // (r, g, b, has_specular_tint_map)
   transmission_params : vec4<f32>, // (diffuse_transmission, specular_transmission, thickness, ior)
-  point_shadow_params : vec4<f32>, // (enabled, depth_bias, near_z, exposure)
 };
 
-@group(0) @binding(0) var<uniform> u_mesh : Mesh3dUniform;
+@group(0) @binding(0) var<uniform> u_view : Mesh3dViewUniform;
+@group(0) @binding(1) var u_transmission_source_texture : texture_2d<f32>;
+@group(0) @binding(2) var u_transmission_source_sampler : sampler;
+@group(0) @binding(3) var u_point_shadow_texture : texture_depth_cube;
+@group(0) @binding(4) var u_point_shadow_sampler : sampler_comparison;
 @group(1) @binding(0) var u_material_sampler : sampler;
 @group(1) @binding(1) var u_base_color_texture : texture_2d<f32>;
 @group(1) @binding(2) var u_normal_texture : texture_2d<f32>;
@@ -60,9 +67,7 @@ struct Mesh3dUniform {
 @group(1) @binding(6) var u_depth_texture : texture_2d<f32>;
 @group(1) @binding(7) var u_anisotropy_texture : texture_2d<f32>;
 @group(1) @binding(8) var u_specular_tint_texture : texture_2d<f32>;
-@group(1) @binding(9) var u_transmission_source_texture : texture_2d<f32>;
-@group(1) @binding(10) var u_point_shadow_texture : texture_depth_cube;
-@group(1) @binding(11) var u_point_shadow_sampler : sampler_comparison;
+@group(2) @binding(0) var<uniform> u_draw : Mesh3dDrawUniform;
 
 fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
   let n = max(dot(q, q), 1e-8);
@@ -96,22 +101,22 @@ fn vs_main(
 ) -> VertexOut {
   var out : VertexOut;
 
-  let model_q = quat_normalize(u_mesh.model_rot);
-  let local_pos = position * u_mesh.model_scale.xyz;
-  let world_pos = quat_rotate_vec3(model_q, local_pos) + u_mesh.model_pos.xyz;
-  out.position = u_mesh.clip_from_world * vec4<f32>(world_pos, 1.0);
+  let model_q = quat_normalize(u_draw.model_rot);
+  let local_pos = position * u_draw.model_scale.xyz;
+  let world_pos = quat_rotate_vec3(model_q, local_pos) + u_draw.model_pos.xyz;
+  out.position = u_view.clip_from_world * vec4<f32>(world_pos, 1.0);
   out.uv = vec2<f32>(
-    u_mesh.uv_transform0.x * uv.x + u_mesh.uv_transform0.z * uv.y +
-      u_mesh.uv_transform0.w,
-    u_mesh.uv_transform0.y * uv.x + u_mesh.uv_transform1.x * uv.y +
-      u_mesh.uv_transform1.y,
+    u_draw.uv_transform0.x * uv.x + u_draw.uv_transform0.z * uv.y +
+      u_draw.uv_transform0.w,
+    u_draw.uv_transform0.y * uv.x + u_draw.uv_transform1.x * uv.y +
+      u_draw.uv_transform1.y,
   );
-  out.color = color * u_mesh.color;
+  out.color = color * u_draw.color;
   out.world_pos = world_pos;
   out.world_normal = transform_normal_local_to_world(
     model_q,
     normal,
-    u_mesh.model_scale.xyz,
+    u_draw.model_scale.xyz,
   );
   return out;
 }
@@ -399,7 +404,7 @@ fn sample_transmission_source(
     let weight = 1.0 - radius * 0.8;
     let sample_color = textureSampleLevel(
       u_transmission_source_texture,
-      u_material_sampler,
+      u_transmission_source_sampler,
       sample_uv,
       0.0,
     ).rgb;
@@ -409,7 +414,7 @@ fn sample_transmission_source(
   if weight_sum <= 0.0 {
     return textureSampleLevel(
       u_transmission_source_texture,
-      u_material_sampler,
+      u_transmission_source_sampler,
       clamp(base_uv, vec2<f32>(0.0, 0.0), vec2<f32>(1.0, 1.0)),
       0.0,
     ).rgb;
@@ -419,20 +424,20 @@ fn sample_transmission_source(
 
 @fragment
 fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
-  let has_base_map = u_mesh.map_flags.x > 0.5;
-  let has_emissive_map = u_mesh.map_flags.y > 0.5;
-  let has_metallic_roughness_map = u_mesh.map_flags.z > 0.5;
-  let has_occlusion_map = u_mesh.map_flags.w > 0.5;
-  let has_normal_map = u_mesh.material_params.w > 0.5;
-  let has_depth_map = u_mesh.parallax_params.w > 0.5;
-  let has_anisotropy_map = u_mesh.anisotropy_params.w > 0.5;
-  let has_specular_tint_map = u_mesh.specular_tint.w > 0.5;
-  let use_stacked_cubemap = u_mesh.uv_transform1.z < 0.0;
-  let has_uv = u_mesh.uv_transform1.z > 0.0;
+  let has_base_map = u_draw.map_flags.x > 0.5;
+  let has_emissive_map = u_draw.map_flags.y > 0.5;
+  let has_metallic_roughness_map = u_draw.map_flags.z > 0.5;
+  let has_occlusion_map = u_draw.map_flags.w > 0.5;
+  let has_normal_map = u_draw.material_params.w > 0.5;
+  let has_depth_map = u_draw.parallax_params.w > 0.5;
+  let has_anisotropy_map = u_draw.anisotropy_params.w > 0.5;
+  let has_specular_tint_map = u_draw.specular_tint.w > 0.5;
+  let use_stacked_cubemap = u_draw.uv_transform1.z < 0.0;
+  let has_uv = u_draw.uv_transform1.z > 0.0;
   let geometric_normal = safe_normalize(in.world_normal);
-  let view_dir = safe_normalize(u_mesh.camera_pos.xyz - in.world_pos);
+  let view_dir = safe_normalize(u_view.camera_pos.xyz - in.world_pos);
   var uv = in.uv;
-  if has_depth_map && has_uv && u_mesh.parallax_params.x > 0.0 {
+  if has_depth_map && has_uv && u_draw.parallax_params.x > 0.0 {
     let tbn = cotangent_frame(geometric_normal, in.world_pos, uv);
     let tangent = tbn[0];
     let bitangent = tbn[1];
@@ -443,17 +448,17 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       dot(view_dir, basis_normal),
     );
     uv = parallaxed_uv(
-      u_mesh.parallax_params.x,
-      u_mesh.parallax_params.y,
-      u32(max(u_mesh.parallax_params.z, 0.0)),
+      u_draw.parallax_params.x,
+      u_draw.parallax_params.y,
+      u32(max(u_draw.parallax_params.z, 0.0)),
       uv,
       -view_dir_tangent,
     );
   }
-  var anisotropy_strength = clamp(u_mesh.anisotropy_params.x, 0.0, 1.0);
+  var anisotropy_strength = clamp(u_draw.anisotropy_params.x, 0.0, 1.0);
   var anisotropy_direction = vec2<f32>(
-    u_mesh.anisotropy_params.y,
-    u_mesh.anisotropy_params.z,
+    u_draw.anisotropy_params.y,
+    u_draw.anisotropy_params.z,
   );
   if has_anisotropy_map && has_uv {
     let anisotropy_texel = textureSample(
@@ -480,7 +485,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   var base_color = in.color;
   if has_base_map {
     if use_stacked_cubemap {
-      let cubemap_uv = cubemap_stacked_vertical_uv(in.world_pos - u_mesh.camera_pos.xyz);
+      let cubemap_uv = cubemap_stacked_vertical_uv(in.world_pos - u_view.camera_pos.xyz);
       base_color = textureSample(
         u_base_color_texture,
         u_material_sampler,
@@ -502,7 +507,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       uv,
     );
   }
-  var specular_tint = max(u_mesh.specular_tint.xyz, vec3<f32>(0.0, 0.0, 0.0));
+  var specular_tint = max(u_draw.specular_tint.xyz, vec3<f32>(0.0, 0.0, 0.0));
   if has_specular_tint_map && has_uv {
     specular_tint = specular_tint * textureSample(
       u_specular_tint_texture,
@@ -531,22 +536,22 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   );
   let anisotropy_b = safe_normalize(cross(normal, anisotropy_t));
   let ndotv = max(dot(normal, view_dir), 1.0e-4);
-  let emissive = max(u_mesh.emissive_unlit.xyz * emissive_tex, vec3<f32>(0.0));
-  let unlit_factor = clamp(u_mesh.emissive_unlit.w, 0.0, 1.0);
-  let metallic = clamp(u_mesh.material_params.x * metallic_roughness_tex.b, 0.0, 1.0);
+  let emissive = max(u_draw.emissive_unlit.xyz * emissive_tex, vec3<f32>(0.0));
+  let unlit_factor = clamp(u_draw.emissive_unlit.w, 0.0, 1.0);
+  let metallic = clamp(u_draw.material_params.x * metallic_roughness_tex.b, 0.0, 1.0);
   let perceptual_roughness = clamp(
-    u_mesh.material_params.y * metallic_roughness_tex.g,
+    u_draw.material_params.y * metallic_roughness_tex.g,
     0.045,
     1.0,
   );
   let roughness = perceptual_roughness * perceptual_roughness;
-  let reflectance = max(u_mesh.material_params.z, 0.0);
-  let diffuse_transmission = clamp(u_mesh.transmission_params.x, 0.0, 1.0);
-  let specular_transmission = clamp(u_mesh.transmission_params.y, 0.0, 1.0);
-  let thickness = max(u_mesh.transmission_params.z, 0.0);
-  let ior = max(u_mesh.transmission_params.w, 1.0);
-  let transmission_blur_taps = i32(max(u_mesh.spot_outer.y, 0.0));
-  let transmission_steps = max(u_mesh.spot_outer.z, 0.0);
+  let reflectance = max(u_draw.material_params.z, 0.0);
+  let diffuse_transmission = clamp(u_draw.transmission_params.x, 0.0, 1.0);
+  let specular_transmission = clamp(u_draw.transmission_params.y, 0.0, 1.0);
+  let thickness = max(u_draw.transmission_params.z, 0.0);
+  let ior = max(u_draw.transmission_params.w, 1.0);
+  let transmission_blur_taps = i32(max(u_view.postprocess_params.y, 0.0));
+  let transmission_steps = max(u_view.postprocess_params.z, 0.0);
   let reflectance_rgb = max(
     specular_tint * reflectance,
     vec3<f32>(0.0, 0.0, 0.0),
@@ -560,11 +565,11 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let f0 = 0.16 * reflectance_rgb * reflectance_rgb * (1.0 - metallic) +
     base_color.xyz * metallic;
 
-  let ambient_term = u_mesh.ambient.xyz * max(u_mesh.ambient.w, 0.0);
+  let ambient_term = u_view.ambient.xyz * max(u_view.ambient.w, 0.0);
 
-  let directional_dir = safe_normalize(u_mesh.directional_dir_illum.xyz);
-  let directional_color = u_mesh.directional_color.xyz *
-    max(u_mesh.directional_dir_illum.w, 0.0);
+  let directional_dir = safe_normalize(u_view.directional_dir_illum.xyz);
+  let directional_color = u_view.directional_color.xyz *
+    max(u_view.directional_dir_illum.w, 0.0);
   let directional_light_dir = -directional_dir;
   let directional_diff = lambert(normal, directional_light_dir);
   let directional_half_dir = safe_normalize(directional_light_dir + view_dir);
@@ -603,36 +608,36 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
     directional_diff *
     directional_specular;
 
-  let to_point = u_mesh.point_pos_range.xyz - in.world_pos;
+  let to_point = u_view.point_pos_range.xyz - in.world_pos;
   let point_distance_square = max(dot(to_point, to_point), 1.0e-4);
   let point_dir = safe_normalize(to_point);
-  let point_range = max(u_mesh.point_pos_range.w, 1e-4);
+  let point_range = max(u_view.point_pos_range.w, 1e-4);
   let point_atten = get_distance_attenuation(point_distance_square, point_range);
-  let point_color = u_mesh.point_color_intensity.xyz *
-    max(u_mesh.point_color_intensity.w, 0.0);
+  let point_color = u_view.point_color_intensity.xyz *
+    max(u_view.point_color_intensity.w, 0.0);
   let point_diff = lambert(normal, point_dir);
   let point_half_dir = safe_normalize(point_dir + view_dir);
   let point_ldoth = max(dot(point_dir, point_half_dir), 0.0);
   let point_diffuse_brdf = Fd_Burley(roughness, ndotv, point_diff, point_ldoth);
   let point_back_diff = lambert(-normal, point_dir);
-  let point_shadow_enabled = u_mesh.point_shadow_params.x > 0.5;
+  let point_shadow_enabled = u_view.point_shadow_params.x > 0.5;
   var point_shadow_factor = 1.0;
   if point_shadow_enabled {
     // Match Bevy's cubemap shadow sampling convention:
     // sample direction is transformed to cubemap LH space by flipping Z.
     let point_shadow_dir = safe_normalize(vec3<f32>(
-      in.world_pos.x - u_mesh.point_pos_range.x,
-      in.world_pos.y - u_mesh.point_pos_range.y,
-      -(in.world_pos.z - u_mesh.point_pos_range.z),
+      in.world_pos.x - u_view.point_pos_range.x,
+      in.world_pos.y - u_view.point_pos_range.y,
+      -(in.world_pos.z - u_view.point_pos_range.z),
     ));
     // Cubemap shadow projections are axis-aligned 90-degree frusta.
     // The projected depth can be reconstructed from the largest axis magnitude.
-    let to_light = in.world_pos - u_mesh.point_pos_range.xyz;
+    let to_light = in.world_pos - u_view.point_pos_range.xyz;
     let major_axis_magnitude = max(
       abs(to_light.x),
       max(abs(to_light.y), abs(to_light.z)),
     );
-    let point_near = max(u_mesh.point_shadow_params.z, 1.0e-4);
+    let point_near = max(u_view.point_shadow_params.z, 1.0e-4);
     let point_far = max(point_range, point_near + 1.0e-4);
     var point_linear_depth = 0.0;
     if major_axis_magnitude <= point_near {
@@ -641,7 +646,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       point_linear_depth = point_far / (point_far - point_near) -
         (point_far * point_near) / ((point_far - point_near) * major_axis_magnitude);
     }
-    let point_depth_bias = max(u_mesh.point_shadow_params.y, 0.0);
+    let point_depth_bias = max(u_view.point_shadow_params.y, 0.0);
     point_shadow_factor = textureSampleCompare(
       u_point_shadow_texture,
       u_point_shadow_sampler,
@@ -685,14 +690,14 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
     point_specular *
     point_shadow_factor;
 
-  let to_spot = u_mesh.spot_pos_range.xyz - in.world_pos;
+  let to_spot = u_view.spot_pos_range.xyz - in.world_pos;
   let spot_dir_to_fragment = safe_normalize(-to_spot);
-  let spot_range = max(u_mesh.spot_pos_range.w, 1e-4);
+  let spot_range = max(u_view.spot_pos_range.w, 1e-4);
   let spot_distance_square = max(dot(to_spot, to_spot), 1.0e-4);
   let spot_atten_base = get_distance_attenuation(spot_distance_square, spot_range);
-  let spot_light_dir = safe_normalize(u_mesh.spot_dir_inner.xyz);
-  let inner_angle = max(u_mesh.spot_dir_inner.w, 0.0);
-  let outer_angle = max(u_mesh.spot_outer.x, inner_angle + 1e-4);
+  let spot_light_dir = safe_normalize(u_view.spot_dir_inner.xyz);
+  let inner_angle = max(u_view.spot_dir_inner.w, 0.0);
+  let outer_angle = max(u_view.postprocess_params.x, inner_angle + 1e-4);
   let inner_cos = cos(inner_angle);
   let outer_cos = cos(outer_angle);
   let spot_cos_theta = dot(spot_light_dir, spot_dir_to_fragment);
@@ -704,8 +709,8 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
     1.0,
   );
   let spot_cone = spot_attenuation * spot_attenuation;
-  let spot_color = u_mesh.spot_color_intensity.xyz *
-    max(u_mesh.spot_color_intensity.w, 0.0);
+  let spot_color = u_view.spot_color_intensity.xyz *
+    max(u_view.spot_color_intensity.w, 0.0);
   let spot_light_to_fragment = safe_normalize(to_spot);
   let spot_diff = lambert(normal, spot_light_to_fragment);
   let spot_half_dir = safe_normalize(spot_light_to_fragment + view_dir);
@@ -799,7 +804,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   }
   let transmitted_light = diffuse_transmissive_color * diffuse_transmitted_lighting +
     specular_transmissive_color * specular_transmitted_lighting;
-  let exposure = max(u_mesh.point_shadow_params.w, 0.0);
+  let exposure = max(u_view.postprocess_params.w, 0.0);
   let lighting_rgb = diffuse_color * diffuse_lighting +
     specular_lighting +
     transmitted_light;
@@ -811,8 +816,8 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
 
 @fragment
 fn fs_shadow(in : VertexOut) -> @location(0) vec4<f32> {
-  let point_range = max(u_mesh.point_pos_range.w, 1.0e-4);
-  let point_distance = length(in.world_pos - u_mesh.point_pos_range.xyz);
+  let point_range = max(u_view.point_pos_range.w, 1.0e-4);
+  let point_distance = length(in.world_pos - u_view.point_pos_range.xyz);
   let depth01 = clamp(point_distance / point_range, 0.0, 1.0);
   return vec4<f32>(depth01, depth01, depth01, 1.0);
 }

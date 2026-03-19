@@ -41,6 +41,9 @@ const MESH2D_COLOR_MATERIAL_UNIFORM_BUFFER_SIZE : UInt64 = 80UL
 const MESH3D_UNIFORM_BUFFER_SIZE : UInt64 = 512UL
 
 ///|
+const MESH3D_VIEW_BUFFER_SIZE : UInt64 = 256UL
+
+///|
 const MESH3D_PREPASS_PREVIOUS_VIEW_BUFFER_SIZE : UInt64 = 320UL
 
 ///|
@@ -132,8 +135,6 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
   depth_texture_id : Int
   anisotropy_texture_id : Int
   specular_tint_texture_id : Int
-  transmission_source_texture_id : Int
-  point_shadow_texture_id : Int
   bind_group : @wgpu.BindGroup
 }
 
@@ -428,6 +429,7 @@ pub struct GpuBackend {
   mut mesh2d_instance_used : Int
   mesh2d_pipeline_cache : Array[Mesh2dPipelineCacheEntry]
   mesh2d_material_bg_cache : Array[Mesh2dMaterialBindGroupCacheEntry]
+  mut mesh3d_bgl_view : @wgpu.BindGroupLayout?
   mut mesh3d_bgl_uniform : @wgpu.BindGroupLayout?
   mut mesh3d_bgl_material : @wgpu.BindGroupLayout?
   mut mesh3d_pipeline_layout : @wgpu.PipelineLayout?
@@ -447,6 +449,7 @@ pub struct GpuBackend {
   mut mesh3d_pipeline_rgba8_cull_mode : Int
   mut mesh3d_pipeline_surface_cull_mode : Int
   mut mesh3d_point_shadow_compare_sampler : @wgpu.Sampler?
+  mut mesh3d_view_buf : @wgpu.Buffer?
   mesh3d_uniform_slots : Array[GpuUniformSlot]
   mut mesh3d_uniform_slot_used : Int
   mut mesh3d_gpu_instance_builder_enabled : Bool
@@ -806,6 +809,7 @@ pub fn GpuBackend::new(
     mesh2d_instance_used: 0,
     mesh2d_pipeline_cache: [],
     mesh2d_material_bg_cache: [],
+    mesh3d_bgl_view: None,
     mesh3d_bgl_uniform: None,
     mesh3d_bgl_material: None,
     mesh3d_pipeline_layout: None,
@@ -825,6 +829,7 @@ pub fn GpuBackend::new(
     mesh3d_pipeline_rgba8_cull_mode: -1,
     mesh3d_pipeline_surface_cull_mode: -1,
     mesh3d_point_shadow_compare_sampler: None,
+    mesh3d_view_buf: None,
     mesh3d_uniform_slots: [],
     mesh3d_uniform_slot_used: 0,
     mesh3d_gpu_instance_builder_enabled: false,

@@ -76,6 +76,222 @@ fn ensure_mesh3d_instance_uniform_binding(
 }
 
 ///|
+fn mesh3d_view_uniform_bytes(
+  pass_state : GpuPassState,
+  transmission_blur_taps : Float,
+  transmission_steps : Float,
+  point_shadow_enabled : Float,
+  point_shadow_depth_bias : Float,
+) -> Bytes {
+  let point_shadow_near = if point_shadow_enabled > 0.5F {
+    pass_state.point_shadow_near
+  } else {
+    0.1F
+  }
+  f32le_pack([
+    pass_state.camera_x,
+    pass_state.camera_y,
+    pass_state.camera_z,
+    1.0F,
+    pass_state.clip_from_world.x_axis_x,
+    pass_state.clip_from_world.x_axis_y,
+    pass_state.clip_from_world.x_axis_z,
+    pass_state.clip_from_world.x_axis_w,
+    pass_state.clip_from_world.y_axis_x,
+    pass_state.clip_from_world.y_axis_y,
+    pass_state.clip_from_world.y_axis_z,
+    pass_state.clip_from_world.y_axis_w,
+    pass_state.clip_from_world.z_axis_x,
+    pass_state.clip_from_world.z_axis_y,
+    pass_state.clip_from_world.z_axis_z,
+    pass_state.clip_from_world.z_axis_w,
+    pass_state.clip_from_world.w_axis_x,
+    pass_state.clip_from_world.w_axis_y,
+    pass_state.clip_from_world.w_axis_z,
+    pass_state.clip_from_world.w_axis_w,
+    pass_state.ambient_r,
+    pass_state.ambient_g,
+    pass_state.ambient_b,
+    pass_state.ambient_brightness,
+    pass_state.directional_dir_x,
+    pass_state.directional_dir_y,
+    pass_state.directional_dir_z,
+    pass_state.directional_illuminance,
+    pass_state.directional_color_r,
+    pass_state.directional_color_g,
+    pass_state.directional_color_b,
+    1.0F,
+    pass_state.point_pos_x,
+    pass_state.point_pos_y,
+    pass_state.point_pos_z,
+    pass_state.point_range,
+    pass_state.point_color_r,
+    pass_state.point_color_g,
+    pass_state.point_color_b,
+    pass_state.point_intensity,
+    pass_state.spot_pos_x,
+    pass_state.spot_pos_y,
+    pass_state.spot_pos_z,
+    pass_state.spot_range,
+    pass_state.spot_dir_x,
+    pass_state.spot_dir_y,
+    pass_state.spot_dir_z,
+    pass_state.spot_inner_angle,
+    pass_state.spot_color_r,
+    pass_state.spot_color_g,
+    pass_state.spot_color_b,
+    pass_state.spot_intensity,
+    pass_state.spot_outer_angle,
+    transmission_blur_taps,
+    transmission_steps,
+    pass_state.camera_exposure,
+    point_shadow_enabled,
+    point_shadow_depth_bias,
+    point_shadow_near,
+    0.0F,
+  ])
+}
+
+///|
+fn mesh3d_draw_uniform_bytes(
+  x : Float,
+  y : Float,
+  z : Float,
+  rotation_x : Float,
+  rotation_y : Float,
+  rotation_z : Float,
+  rotation_w : Float,
+  scale_x : Float,
+  scale_y : Float,
+  scale_z : Float,
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+  uv_transform_a : Float,
+  uv_transform_b : Float,
+  uv_transform_c : Float,
+  uv_transform_d : Float,
+  uv_transform_tx : Float,
+  uv_transform_ty : Float,
+  uv_transform_mode : Float,
+  emissive_r : Float,
+  emissive_g : Float,
+  emissive_b : Float,
+  unlit : Float,
+  metallic : Float,
+  roughness : Float,
+  reflectance : Float,
+  textured : Bool,
+  emissive_textured : Bool,
+  metallic_roughness_textured : Bool,
+  occlusion_textured : Bool,
+  normal_textured : Bool,
+  parallax_depth_scale : Float,
+  max_parallax_layer_count : Float,
+  max_relief_mapping_search_steps : Float,
+  depth_textured : Bool,
+  anisotropy_strength : Float,
+  anisotropy_rotation : Float,
+  anisotropy_textured : Bool,
+  specular_tint_r : Float,
+  specular_tint_g : Float,
+  specular_tint_b : Float,
+  specular_tint_textured : Bool,
+  diffuse_transmission : Float,
+  specular_transmission : Float,
+  thickness : Float,
+  ior : Float,
+) -> Bytes {
+  f32le_pack([
+    x,
+    y,
+    z,
+    1.0F,
+    rotation_x,
+    rotation_y,
+    rotation_z,
+    rotation_w,
+    scale_x,
+    scale_y,
+    scale_z,
+    1.0F,
+    color_r,
+    color_g,
+    color_b,
+    color_a,
+    uv_transform_a,
+    uv_transform_b,
+    uv_transform_c,
+    uv_transform_tx,
+    uv_transform_d,
+    uv_transform_ty,
+    uv_transform_mode,
+    0.0F,
+    emissive_r,
+    emissive_g,
+    emissive_b,
+    unlit,
+    metallic,
+    roughness,
+    reflectance,
+    if normal_textured {
+      1.0F
+    } else {
+      0.0F
+    },
+    if textured {
+      1.0F
+    } else {
+      0.0F
+    },
+    if emissive_textured {
+      1.0F
+    } else {
+      0.0F
+    },
+    if metallic_roughness_textured {
+      1.0F
+    } else {
+      0.0F
+    },
+    if occlusion_textured {
+      1.0F
+    } else {
+      0.0F
+    },
+    parallax_depth_scale,
+    max_parallax_layer_count,
+    max_relief_mapping_search_steps,
+    if depth_textured {
+      1.0F
+    } else {
+      0.0F
+    },
+    anisotropy_strength,
+    cosf(anisotropy_rotation),
+    sinf(anisotropy_rotation),
+    if anisotropy_textured {
+      1.0F
+    } else {
+      0.0F
+    },
+    specular_tint_r,
+    specular_tint_g,
+    specular_tint_b,
+    if specular_tint_textured {
+      1.0F
+    } else {
+      0.0F
+    },
+    diffuse_transmission,
+    specular_transmission,
+    thickness,
+    ior,
+  ])
+}
+
+///|
 fn mesh3d_motion_vector_view_uniform_bytes(pass_state : GpuPassState) -> Bytes {
   tonemapping_view_uniform_bytes_full(
     pass_state, 1.0F, 0U, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
@@ -675,13 +891,45 @@ fn ensure_mesh3d_pipeline_rgba8(
     backend.mesh3d_pipeline_rgba8_cull_mode = safe_cull_mode
   }
   if backend.mesh3d_pipeline_layout is None {
-    let bgl = create_uniform_bind_group_layout_vertex_fragment(
-      backend,
-      "mgstudio_mesh3d_uniform_bgl",
-      has_dynamic_offset=true,
+    let view_stage = ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT)
+    let view_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=5UL)
+    let view_ok = view_builder.add_buffer(
+        0U,
+        view_stage,
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+      ) &&
+      view_builder.add_texture(
+        1U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      view_builder.add_sampler(
+        2U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
+      ) &&
+      view_builder.add_texture(
+        3U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.TEXTURE_SAMPLE_TYPE_DEPTH,
+        @wgpu.TEXTURE_VIEW_DIMENSION_CUBE,
+      ) &&
+      view_builder.add_sampler(
+        4U,
+        ss(@wgpu.SHADER_STAGE_FRAGMENT),
+        @wgpu.SAMPLER_BINDING_TYPE_COMPARISON,
+      )
+    if !view_ok {
+      view_builder.free()
+      fatal("wgpu: failed to build mesh3d view bind group layout")
+    }
+    let view_bgl = view_builder.finish(
+      backend.device,
+      label="mgstudio_mesh3d_view_bgl",
     )
     let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
-    let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=12UL)
+    let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=9UL)
     let material_ok = material_builder.add_sampler(
         0U,
         frag,
@@ -734,23 +982,6 @@ fn ensure_mesh3d_pipeline_rgba8(
         frag,
         @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
         @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      material_builder.add_texture(
-        9U,
-        frag,
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      ) &&
-      material_builder.add_texture(
-        10U,
-        frag,
-        @wgpu.TEXTURE_SAMPLE_TYPE_DEPTH,
-        @wgpu.TEXTURE_VIEW_DIMENSION_CUBE,
-      ) &&
-      material_builder.add_sampler(
-        11U,
-        frag,
-        @wgpu.SAMPLER_BINDING_TYPE_COMPARISON,
       )
     if !material_ok {
       material_builder.free()
@@ -760,11 +991,38 @@ fn ensure_mesh3d_pipeline_rgba8(
       backend.device,
       label="mgstudio_mesh3d_material_bgl",
     )
-    let pl = backend.device.create_pipeline_layout_2(bgl, material_bgl)
-    backend.mesh3d_bgl_uniform = Some(bgl)
+    let mesh_bgl = create_uniform_bind_group_layout_vertex_fragment(
+      backend,
+      "mgstudio_mesh3d_mesh_bgl",
+      has_dynamic_offset=true,
+    )
+    let pl = create_pipeline_layout_3(
+      backend.device,
+      view_bgl,
+      material_bgl,
+      mesh_bgl,
+    )
+    backend.mesh3d_bgl_view = Some(view_bgl)
+    backend.mesh3d_bgl_uniform = Some(mesh_bgl)
     backend.mesh3d_bgl_material = Some(material_bgl)
     backend.mesh3d_pipeline_layout = Some(pl)
+    if backend.mesh3d_view_buf is None {
+      backend.mesh3d_view_buf = Some(
+        backend.device.create_buffer(
+          size=MESH3D_VIEW_BUFFER_SIZE,
+          usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+        ),
+      )
+    }
     mesh3d_material_cache_clear(backend)
+  }
+  if backend.mesh3d_view_buf is None {
+    backend.mesh3d_view_buf = Some(
+      backend.device.create_buffer(
+        size=MESH3D_VIEW_BUFFER_SIZE,
+        usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+      ),
+    )
   }
   if mesh3d_pipeline_get_rgba8(backend, topology, false) is Some(_) &&
     mesh3d_pipeline_get_rgba8(backend, topology, true) is Some(_) {
@@ -1151,6 +1409,45 @@ fn ensure_mesh3d_point_shadow_compare_sampler(
 }
 
 ///|
+fn mesh3d_view_bg_cache_get_or_create(
+  backend : GpuBackend,
+  transmission_source_texture : GpuTextureInfo,
+  point_shadow_texture : GpuTextureInfo,
+) -> @wgpu.BindGroup raise GpuBackendError {
+  let layout = match backend.mesh3d_bgl_view {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d view bind group layout")
+  }
+  let view_buf = match backend.mesh3d_view_buf {
+    Some(v) => v
+    None => fatal("wgpu: missing mesh3d view uniform buffer")
+  }
+  let point_shadow_sample_view = match point_shadow_texture.sample_view {
+    Some(view) => view
+    None => point_shadow_texture.view
+  }
+  let point_shadow_compare_sampler = ensure_mesh3d_point_shadow_compare_sampler(
+    backend,
+  )
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=5UL)
+  let ok = builder.add_buffer(0U, view_buf, size=MESH3D_VIEW_BUFFER_SIZE) &&
+    builder.add_texture_view(1U, transmission_source_texture.view) &&
+    builder.add_sampler(2U, transmission_source_texture.sampler) &&
+    builder.add_texture_view(3U, point_shadow_sample_view) &&
+    builder.add_sampler(4U, point_shadow_compare_sampler)
+  if !ok {
+    builder.free()
+    fatal("wgpu: failed to build mesh3d view bind group")
+  }
+  let bind_group = builder.finish(
+    backend.device,
+    layout,
+    label="mgstudio_mesh3d_view_bg",
+  )
+  bind_group
+}
+
+///|
 fn mesh3d_material_cache_get_or_create(
   backend : GpuBackend,
   base_texture : GpuTextureInfo,
@@ -1161,8 +1458,6 @@ fn mesh3d_material_cache_get_or_create(
   depth_texture : GpuTextureInfo,
   anisotropy_texture : GpuTextureInfo,
   specular_tint_texture : GpuTextureInfo,
-  transmission_source_texture : GpuTextureInfo,
-  point_shadow_texture : GpuTextureInfo,
 ) -> @wgpu.BindGroup raise GpuBackendError {
   for entry in backend.mesh3d_material_bg_cache {
     if entry.base_texture_id == base_texture.id &&
@@ -1172,9 +1467,7 @@ fn mesh3d_material_cache_get_or_create(
       entry.occlusion_texture_id == occlusion_texture.id &&
       entry.depth_texture_id == depth_texture.id &&
       entry.anisotropy_texture_id == anisotropy_texture.id &&
-      entry.specular_tint_texture_id == specular_tint_texture.id &&
-      entry.transmission_source_texture_id == transmission_source_texture.id &&
-      entry.point_shadow_texture_id == point_shadow_texture.id {
+      entry.specular_tint_texture_id == specular_tint_texture.id {
       return entry.bind_group
     }
   }
@@ -1182,14 +1475,7 @@ fn mesh3d_material_cache_get_or_create(
     Some(v) => v
     None => fatal("wgpu: missing mesh3d material bind group layout")
   }
-  let point_shadow_sample_view = match point_shadow_texture.sample_view {
-    Some(view) => view
-    None => point_shadow_texture.view
-  }
-  let point_shadow_compare_sampler = ensure_mesh3d_point_shadow_compare_sampler(
-    backend,
-  )
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=12UL)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=9UL)
   let ok = builder.add_sampler(0U, base_texture.sampler) &&
     builder.add_texture_view(1U, base_texture.view) &&
     builder.add_texture_view(2U, normal_texture.view) &&
@@ -1198,10 +1484,7 @@ fn mesh3d_material_cache_get_or_create(
     builder.add_texture_view(5U, occlusion_texture.view) &&
     builder.add_texture_view(6U, depth_texture.view) &&
     builder.add_texture_view(7U, anisotropy_texture.view) &&
-    builder.add_texture_view(8U, specular_tint_texture.view) &&
-    builder.add_texture_view(9U, transmission_source_texture.view) &&
-    builder.add_texture_view(10U, point_shadow_sample_view) &&
-    builder.add_sampler(11U, point_shadow_compare_sampler)
+    builder.add_texture_view(8U, specular_tint_texture.view)
   if !ok {
     builder.free()
     fatal("wgpu: failed to build mesh3d material bind group")
@@ -1220,8 +1503,6 @@ fn mesh3d_material_cache_get_or_create(
     depth_texture_id: depth_texture.id,
     anisotropy_texture_id: anisotropy_texture.id,
     specular_tint_texture_id: specular_tint_texture.id,
-    transmission_source_texture_id: transmission_source_texture.id,
-    point_shadow_texture_id: point_shadow_texture.id,
     bind_group,
   })
   bind_group
@@ -1861,84 +2142,8 @@ pub fn GpuBackend::draw_mesh3d(
   } else {
     0.0F
   }
-  let bytes = f32le_pack([
-    x,
-    y,
-    z,
-    1.0F,
-    rotation_x,
-    rotation_y,
-    rotation_z,
-    rotation_w,
-    scale_x,
-    scale_y,
-    scale_z,
-    1.0F,
-    ps.camera_x,
-    ps.camera_y,
-    ps.camera_z,
-    1.0F,
-    ps.clip_from_world.x_axis_x,
-    ps.clip_from_world.x_axis_y,
-    ps.clip_from_world.x_axis_z,
-    ps.clip_from_world.x_axis_w,
-    ps.clip_from_world.y_axis_x,
-    ps.clip_from_world.y_axis_y,
-    ps.clip_from_world.y_axis_z,
-    ps.clip_from_world.y_axis_w,
-    ps.clip_from_world.z_axis_x,
-    ps.clip_from_world.z_axis_y,
-    ps.clip_from_world.z_axis_z,
-    ps.clip_from_world.z_axis_w,
-    ps.clip_from_world.w_axis_x,
-    ps.clip_from_world.w_axis_y,
-    ps.clip_from_world.w_axis_z,
-    ps.clip_from_world.w_axis_w,
-    color_r,
-    color_g,
-    color_b,
-    color_a,
-    uv_transform_a_value,
-    uv_transform_b_value,
-    uv_transform_c_value,
-    uv_transform_tx_value,
-    uv_transform_d_value,
-    uv_transform_ty_value,
-    uv_transform_mode_value,
-    0.0F,
-    ps.ambient_r,
-    ps.ambient_g,
-    ps.ambient_b,
-    ps.ambient_brightness,
-    ps.directional_dir_x,
-    ps.directional_dir_y,
-    ps.directional_dir_z,
-    ps.directional_illuminance,
-    ps.directional_color_r,
-    ps.directional_color_g,
-    ps.directional_color_b,
-    1.0F,
-    ps.point_pos_x,
-    ps.point_pos_y,
-    ps.point_pos_z,
-    ps.point_range,
-    ps.point_color_r,
-    ps.point_color_g,
-    ps.point_color_b,
-    ps.point_intensity,
-    ps.spot_pos_x,
-    ps.spot_pos_y,
-    ps.spot_pos_z,
-    ps.spot_range,
-    ps.spot_dir_x,
-    ps.spot_dir_y,
-    ps.spot_dir_z,
-    ps.spot_inner_angle,
-    ps.spot_color_r,
-    ps.spot_color_g,
-    ps.spot_color_b,
-    ps.spot_intensity,
-    ps.spot_outer_angle,
+  let view_bytes = mesh3d_view_uniform_bytes(
+    ps,
     if transmission_source_textured {
       transmission_blur_taps
     } else {
@@ -1949,67 +2154,6 @@ pub fn GpuBackend::draw_mesh3d(
     } else {
       0.0F
     },
-    0.0F,
-    emissive_r,
-    emissive_g,
-    emissive_b,
-    unlit,
-    metallic,
-    roughness,
-    reflectance,
-    if normal_textured {
-      1.0F
-    } else {
-      0.0F
-    },
-    if textured {
-      1.0F
-    } else {
-      0.0F
-    },
-    if emissive_textured {
-      1.0F
-    } else {
-      0.0F
-    },
-    if metallic_roughness_textured {
-      1.0F
-    } else {
-      0.0F
-    },
-    if occlusion_textured {
-      1.0F
-    } else {
-      0.0F
-    },
-    parallax_depth_scale,
-    max_parallax_layer_count,
-    max_relief_mapping_search_steps,
-    if depth_textured {
-      1.0F
-    } else {
-      0.0F
-    },
-    anisotropy_strength,
-    cosf(anisotropy_rotation),
-    sinf(anisotropy_rotation),
-    if anisotropy_textured {
-      1.0F
-    } else {
-      0.0F
-    },
-    specular_tint_r,
-    specular_tint_g,
-    specular_tint_b,
-    if specular_tint_textured {
-      1.0F
-    } else {
-      0.0F
-    },
-    diffuse_transmission,
-    specular_transmission,
-    thickness,
-    ior,
     if point_shadow_textured {
       point_shadow_enabled
     } else {
@@ -2020,24 +2164,36 @@ pub fn GpuBackend::draw_mesh3d(
     } else {
       0.0F
     },
-    if point_shadow_textured {
-      ps.point_shadow_near
-    } else {
-      0.1F
-    },
-    ps.camera_exposure,
-  ])
+  )
+  let draw_bytes = mesh3d_draw_uniform_bytes(
+    x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
+    color_r, color_g, color_b, color_a, uv_transform_a_value, uv_transform_b_value,
+    uv_transform_c_value, uv_transform_d_value, uv_transform_tx_value, uv_transform_ty_value,
+    uv_transform_mode_value, emissive_r, emissive_g, emissive_b, unlit, metallic,
+    roughness, reflectance, textured, emissive_textured, metallic_roughness_textured,
+    occlusion_textured, normal_textured, parallax_depth_scale, max_parallax_layer_count,
+    max_relief_mapping_search_steps, depth_textured, anisotropy_strength, anisotropy_rotation,
+    anisotropy_textured, specular_tint_r, specular_tint_g, specular_tint_b, specular_tint_textured,
+    diffuse_transmission, specular_transmission, thickness, ior,
+  )
+  guard self.mesh3d_view_buf is Some(active_view_buffer) else { return }
   guard uniform_buffer is Some(active_uniform_buffer) else { return }
   guard uniform_bind_group is Some(active_uniform_bg) else { return }
-  self.queue.write_buffer(active_uniform_buffer, uniform_write_offset, bytes)
+  self.queue.write_buffer(active_view_buffer, 0UL, view_bytes)
+  self.queue.write_buffer(
+    active_uniform_buffer, uniform_write_offset, draw_bytes,
+  )
+  let view_bg = mesh3d_view_bg_cache_get_or_create(
+    self, transmission_source_texture, point_shadow_texture,
+  )
   let material_bg = mesh3d_material_cache_get_or_create(
     self, base_texture, normal_texture, emissive_texture, metallic_roughness_texture,
     occlusion_texture, depth_texture, anisotropy_texture, specular_tint_texture,
-    transmission_source_texture, point_shadow_texture,
   )
   pass.set_pipeline(pipeline)
-  pass.set_bind_group(0U, active_uniform_bg, uniform_dynamic_offsets)
+  pass.set_bind_group(0U, view_bg, [])
   pass.set_bind_group(1U, material_bg, [])
+  pass.set_bind_group(2U, active_uniform_bg, uniform_dynamic_offsets)
   let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
     mesh.vertex_stride_bytes
   pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)

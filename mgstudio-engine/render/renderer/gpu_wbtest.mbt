@@ -102,6 +102,8 @@ test "renderer: mesh3d uniform slot pool grows per draw slot" {
   ensure_mesh3d_pipeline_rgba8(backend, MESH3D_TOPOLOGY_TRIANGLE_LIST, 0)
   let ok = ensure_mesh3d_uniform_slot(backend, 0) is Some(_) &&
     ensure_mesh3d_uniform_slot(backend, 1) is Some(_) &&
+    backend.mesh3d_bgl_view is Some(_) &&
+    backend.mesh3d_view_buf is Some(_) &&
     backend.mesh3d_uniform_slots.length() == 2
   inspect(ok, content="true")
 }
@@ -265,6 +267,24 @@ test "renderer: large mesh3d upload switches to u32 index buffers" {
 test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout" {
   let wgsl = load_wgsl_from_assets_base_required(
     "assets", "shaders/custom/mesh3d_forward.wgsl",
+  )
+  inspect(
+    wgsl.contains(
+      "@group(0) @binding(0) var<uniform> u_view : Mesh3dViewUniform;",
+    ),
+    content="true",
+  )
+  inspect(
+    wgsl.contains(
+      "@group(0) @binding(1) var u_transmission_source_texture : texture_2d<f32>;",
+    ),
+    content="true",
+  )
+  inspect(
+    wgsl.contains(
+      "@group(2) @binding(0) var<uniform> u_draw : Mesh3dDrawUniform;",
+    ),
+    content="true",
   )
   inspect(wgsl.contains("@location(1) normal : vec3<f32>"), content="true")
   inspect(wgsl.contains("@location(2) uv : vec2<f32>"), content="true")

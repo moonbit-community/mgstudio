@@ -271,6 +271,7 @@ pub struct GpuBackend {
   mut mesh2d_instance_used : Int
   mesh2d_pipeline_cache : Array[Mesh2dPipelineCacheEntry]
   mesh2d_material_bg_cache : Array[Mesh2dMaterialBindGroupCacheEntry]
+  mut mesh3d_bgl_view : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_bgl_uniform : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_bgl_material : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_pipeline_layout : @wgpu_mbt.PipelineLayout?
@@ -290,6 +291,7 @@ pub struct GpuBackend {
   mut mesh3d_pipeline_rgba8_cull_mode : Int
   mut mesh3d_pipeline_surface_cull_mode : Int
   mut mesh3d_point_shadow_compare_sampler : @wgpu_mbt.Sampler?
+  mut mesh3d_view_buf : @wgpu_mbt.Buffer?
   mesh3d_uniform_slots : Array[GpuUniformSlot]
   mut mesh3d_uniform_slot_used : Int
   mut mesh3d_gpu_instance_builder_enabled : Bool
@@ -635,8 +637,6 @@ pub struct Mesh3dMaterialBindGroupCacheEntry {
   depth_texture_id : Int
   anisotropy_texture_id : Int
   specular_tint_texture_id : Int
-  transmission_source_texture_id : Int
-  point_shadow_texture_id : Int
   bind_group : @wgpu_mbt.BindGroup
 }
 
