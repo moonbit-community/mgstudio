@@ -53,6 +53,9 @@ const MESH3D_PREPASS_VISIBILITY_RANGES_BUFFER_SIZE : UInt64 = 16UL
 const MESH3D_PREPASS_MESH_BUFFER_SIZE : UInt64 = 176UL
 
 ///|
+const MESH3D_VERTEX_STRIDE_BYTES : UInt64 = 48UL
+
+///|
 const BLOOM_UNIFORM_BUFFER_SIZE : UInt64 = 240UL
 
 ///|
@@ -1494,14 +1497,15 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   } else {
     0U
   }
-  let vertex_stride = if position3d { 36UL } else { 32UL }
+  let vertex_stride = if position3d { MESH3D_VERTEX_STRIDE_BYTES } else { 32UL }
   let pos_format = if position3d {
     @wgpu.VERTEX_FORMAT_FLOAT32X3
   } else {
     @wgpu.VERTEX_FORMAT_FLOAT32X2
   }
-  let uv_offset = if position3d { 12UL } else { 8UL }
-  let color_offset = if position3d { 20UL } else { 16UL }
+  let normal_offset = 12UL
+  let uv_offset = if position3d { 24UL } else { 8UL }
+  let color_offset = if position3d { 32UL } else { 16UL }
   let set_vertex_layout_err = @wgpu_c.render_pipeline_desc_builder_set_vertex_buffer_layout(
     builder,
     vertex_stride,
@@ -1510,27 +1514,40 @@ fn mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
   let pos_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
     builder, pos_format, 0UL, 0U,
   )
+  let normal_err = if position3d {
+    @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
+      builder,
+      @wgpu.VERTEX_FORMAT_FLOAT32X3,
+      normal_offset,
+      1U,
+    )
+  } else {
+    0U
+  }
+  let uv_location = if position3d { 2U } else { 1U }
+  let color_location = if position3d { 3U } else { 2U }
   let uv_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
     builder,
     @wgpu.VERTEX_FORMAT_FLOAT32X2,
     uv_offset,
-    1U,
+    uv_location,
   )
   let color_err = @wgpu_c.render_pipeline_desc_builder_add_vertex_attribute(
     builder,
     @wgpu.VERTEX_FORMAT_FLOAT32X4,
     color_offset,
-    2U,
+    color_location,
   )
   if set_format_err != 0U ||
     set_blend_err != 0U ||
     set_vertex_layout_err != 0U ||
     pos_err != 0U ||
+    normal_err != 0U ||
     uv_err != 0U ||
     color_err != 0U {
     @wgpu_c.render_pipeline_desc_builder_free(builder)
     fatal(
-      "wgpu: failed to configure mesh vertex attributes for pos2+uv2+color4 pipeline",
+      "wgpu: failed to configure mesh vertex attributes for runtime mesh pipeline",
     )
   }
   let set_topology_err = @wgpu_c.render_pipeline_desc_builder_set_topology(

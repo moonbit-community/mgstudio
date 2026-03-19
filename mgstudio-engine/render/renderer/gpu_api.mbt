@@ -1524,7 +1524,7 @@ pub fn create_mesh3d(
 ) -> Int {
   if parse_f32_csv(vertices_xyzuvrgba_csv) is Some(vertices) {
     if ensure_backend() is Some(backend) {
-      let mesh_id = backend.create_mesh3d_xyzuvrgba(
+      let mesh_id = backend.create_mesh3d_xyznuvrgba(
         vertices, primitive_topology,
       )
       if mesh_id <= 0 {

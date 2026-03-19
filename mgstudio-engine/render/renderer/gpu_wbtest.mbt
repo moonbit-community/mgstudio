@@ -242,19 +242,37 @@ test "renderer: large mesh3d upload switches to u32 index buffers" {
     vertices.push(0.0F)
     vertices.push(0.0F)
     vertices.push(1.0F)
+    vertices.push(0.0F)
+    vertices.push(0.0F)
+    vertices.push(1.0F)
     vertices.push(1.0F)
     vertices.push(1.0F)
     vertices.push(1.0F)
   }
-  let mesh_id = backend.create_mesh3d_xyzuvrgba(vertices, 0)
+  let mesh_id = backend.create_mesh3d_xyznuvrgba(vertices, 0)
   let ok = mesh_id > 0 &&
     backend.meshes.length() == 1 &&
     backend.meshes[0].id == mesh_id &&
     backend.meshes[0].vertex_count == 65538U &&
     backend.meshes[0].index_count == 65538U &&
+    backend.meshes[0].vertex_stride_bytes == MESH3D_VERTEX_STRIDE_BYTES &&
     backend.meshes[0].index_stride_bytes == 4UL &&
     backend.meshes[0].uses_u32_indices
   inspect(ok, content="true")
+}
+
+///|
+test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout" {
+  let wgsl = load_wgsl_from_assets_base_required(
+    "assets", "shaders/custom/mesh3d_forward.wgsl",
+  )
+  inspect(wgsl.contains("@location(1) normal : vec3<f32>"), content="true")
+  inspect(wgsl.contains("@location(2) uv : vec2<f32>"), content="true")
+  inspect(wgsl.contains("@location(3) color : vec4<f32>"), content="true")
+  inspect(
+    wgsl.contains("@location(3) world_normal : vec3<f32>"),
+    content="true",
+  )
 }
 
 ///|

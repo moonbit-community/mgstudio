@@ -1091,10 +1091,14 @@ fn ensure_mesh3d_motion_vector_pipeline(
     builder.set_color_target_write_mask_at(0U, @wgpu.COLOR_WRITE_MASK_NONE)
     builder.set_color_target_write_mask_at(1U, @wgpu.COLOR_WRITE_MASK_ALL)
     builder.disable_blend()
-    builder.set_vertex_buffer_layout(36UL, @wgpu.VERTEX_STEP_MODE_VERTEX)
+    builder.set_vertex_buffer_layout(
+      MESH3D_VERTEX_STRIDE_BYTES,
+      @wgpu.VERTEX_STEP_MODE_VERTEX,
+    )
     builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 0UL, 0U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X2, 12UL, 1U)
-    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 20UL, 2U)
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X3, 12UL, 1U)
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X2, 24UL, 2U)
+    builder.add_vertex_attribute(@wgpu.VERTEX_FORMAT_FLOAT32X4, 32UL, 3U)
     builder.set_topology_u32(@wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
     builder.set_depth_stencil(
       tf(@wgpu.TEXTURE_FORMAT_DEPTH32_FLOAT),
@@ -1256,13 +1260,13 @@ fn ensure_point_shadow_fallback_texture(
 }
 
 ///|
-pub fn GpuBackend::create_mesh3d_xyzuvrgba(
+pub fn GpuBackend::create_mesh3d_xyznuvrgba(
   self : GpuBackend,
   vertices : Array[Float],
   primitive_topology_kind : Int,
 ) -> Int {
   let primitive_topology = mesh3d_topology_from_kind(primitive_topology_kind)
-  let vcount = vertices.length() / 9
+  let vcount = vertices.length() / 12
   if vcount <= 0 {
     return 0
   }
@@ -1284,7 +1288,7 @@ pub fn GpuBackend::create_mesh3d_xyzuvrgba(
     vertices
   } else {
     let out : Array[Float] = []
-    for i in 0..<(usable_vcount * 9) {
+    for i in 0..<(usable_vcount * 12) {
       out.push(vertices[i])
     }
     out
@@ -1313,7 +1317,7 @@ pub fn GpuBackend::create_mesh3d_xyzuvrgba(
     index_count: usable_vcount.reinterpret_as_uint(),
     vertex_count: usable_vcount.reinterpret_as_uint(),
     primitive_topology,
-    vertex_stride_bytes: 36UL,
+    vertex_stride_bytes: MESH3D_VERTEX_STRIDE_BYTES,
     index_stride_bytes: if uses_u32_indices {
       4UL
     } else {
@@ -1328,11 +1332,11 @@ pub fn GpuBackend::create_mesh3d_xyzuvrgba(
 }
 
 ///|
-pub fn GpuBackend::create_mesh_triangles_xyzuvrgba(
+pub fn GpuBackend::create_mesh_triangles_xyznuvrgba(
   self : GpuBackend,
   vertices : Array[Float],
 ) -> Int {
-  self.create_mesh3d_xyzuvrgba(vertices, 0)
+  self.create_mesh3d_xyznuvrgba(vertices, 0)
 }
 
 ///|
@@ -1636,7 +1640,7 @@ pub fn GpuBackend::draw_mesh3d(
   flush_ui_batches(self)
   flush_sprite_batches(self)
   guard find_mesh(self, mesh_id) is Some(mesh) else { return }
-  if mesh.vertex_stride_bytes != 36UL {
+  if mesh.vertex_stride_bytes != MESH3D_VERTEX_STRIDE_BYTES {
     return
   }
   let transparent = color_a < 0.999F

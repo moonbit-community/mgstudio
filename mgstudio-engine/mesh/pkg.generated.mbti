@@ -72,8 +72,10 @@ pub fn Mesh3dGeometry::clear_indices(Self) -> Unit
 pub fn Mesh3dGeometry::clear_tangents(Self) -> Unit
 pub fn Mesh3dGeometry::clear_vertices(Self) -> Unit
 pub fn Mesh3dGeometry::cuboid(@math.Cuboid) -> Self
+pub fn Mesh3dGeometry::encode_interleaved_xyz_normal_uv_rgba_csv(Self) -> String?
 pub fn Mesh3dGeometry::encode_interleaved_xyz_uv_rgba_csv(Self) -> String?
 pub fn Mesh3dGeometry::encode_triangle_interleaved_xyz_uv_rgba_csv(Self) -> String?
+pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(Self) -> Array[Double]?
 pub fn Mesh3dGeometry::flatten_interleaved_xyz_uv_rgba(Self) -> Array[Double]?
 pub fn Mesh3dGeometry::flatten_triangle_interleaved_xyz_uv_rgba(Self) -> Array[Double]?
 pub fn Mesh3dGeometry::generate_tangents(Self) -> Mesh3dGenerateTangentsError?

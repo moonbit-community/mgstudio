@@ -398,12 +398,12 @@ pub fn GpuBackend::clear_scissor(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::configure_surface(Self, Int, Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
 pub fn GpuBackend::configure_surface_binding(Self, Int, Int, Int, Int, Int, Int) -> Unit
 pub fn GpuBackend::copy_texture_to_texture(Self, Int, Int, Int, Int) -> Unit
-pub fn GpuBackend::create_mesh3d_xyzuvrgba(Self, Array[Float], Int) -> Int
+pub fn GpuBackend::create_mesh3d_xyznuvrgba(Self, Array[Float], Int) -> Int
 pub fn GpuBackend::create_mesh_capsule(Self, Float, Float, Int) -> Int
 pub fn GpuBackend::create_mesh_rectangle(Self, Float, Float) -> Int
 pub fn GpuBackend::create_mesh_triangles_xy(Self, Array[Float]) -> Int
 pub fn GpuBackend::create_mesh_triangles_xyuvrgba(Self, Array[Float]) -> Int
-pub fn GpuBackend::create_mesh_triangles_xyzuvrgba(Self, Array[Float]) -> Int
+pub fn GpuBackend::create_mesh_triangles_xyznuvrgba(Self, Array[Float]) -> Int
 pub fn GpuBackend::create_point_light_shadow_target(Self, Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_render_target_rg16f(Self, Int, Int, Bool) -> Int raise GpuBackendError

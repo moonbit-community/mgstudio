@@ -114,3 +114,30 @@ test "mesh: Mesh3dGeometry::rectangle lies on the XY plane" {
   inspect(on_xy, content="true")
   inspect((min_x, max_x, min_y, max_y), content="(-1, 1, -2, 2)")
 }
+
+///|
+test "mesh: Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba emits flat triangle normals" {
+  let geometry = Mesh3dGeometry::rectangle(2.0F, 4.0F)
+  match geometry.flatten_interleaved_xyz_normal_uv_rgba() {
+    Some(values) => {
+      inspect(values.length(), content="72")
+      inspect(
+        (values[3], values[4], values[5], values[15], values[16], values[17]),
+        content="(0, 0, 1, 0, 0, 1)",
+      )
+    }
+    None => abort("expected normal-aware flatten data")
+  }
+}
+
+///|
+test "mesh: Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba gives default line normal" {
+  let geometry = Mesh3dGeometry::circle_line_strip(2.0F, 4)
+  match geometry.flatten_interleaved_xyz_normal_uv_rgba() {
+    Some(values) => {
+      inspect(values.length() % 12, content="0")
+      inspect((values[3], values[4], values[5]), content="(0, 0, 1)")
+    }
+    None => abort("expected line-strip normal-aware flatten data")
+  }
+}

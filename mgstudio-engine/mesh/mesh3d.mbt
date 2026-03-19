@@ -1048,6 +1048,47 @@ fn mesh3d_vertex_color_or_white(
 }
 
 ///|
+fn mesh3d_runtime_default_normal() -> @math.Vec3 {
+  @math.Vec3::new(0.0F, 0.0F, 1.0F)
+}
+
+///|
+fn mesh3d_triangle_face_normal(
+  a : @math.Vec3,
+  b : @math.Vec3,
+  c : @math.Vec3,
+) -> @math.Vec3 {
+  let normal = b.sub(a).cross(c.sub(a)).normalize_or_zero()
+  if normal.length_squared() <= 1.0e-8F {
+    mesh3d_runtime_default_normal()
+  } else {
+    normal
+  }
+}
+
+///|
+fn mesh3d_push_interleaved_xyz_normal_uv_rgba(
+  out : Array[Double],
+  position : @math.Vec3,
+  normal : @math.Vec3,
+  uv : @math.Vec2,
+  color : @math.Vec4,
+) -> Unit {
+  out.push(position.x.to_double())
+  out.push(position.y.to_double())
+  out.push(position.z.to_double())
+  out.push(normal.x.to_double())
+  out.push(normal.y.to_double())
+  out.push(normal.z.to_double())
+  out.push(uv.x.to_double())
+  out.push(uv.y.to_double())
+  out.push(color.x.to_double())
+  out.push(color.y.to_double())
+  out.push(color.z.to_double())
+  out.push(color.w.to_double())
+}
+
+///|
 pub fn Mesh3dGeometry::flatten_interleaved_xyz_uv_rgba(
   self : Mesh3dGeometry,
 ) -> Array[Double]? {
@@ -1094,10 +1135,146 @@ pub fn Mesh3dGeometry::flatten_interleaved_xyz_uv_rgba(
 }
 
 ///|
+pub fn Mesh3dGeometry::flatten_interleaved_xyz_normal_uv_rgba(
+  self : Mesh3dGeometry,
+) -> Array[Double]? {
+  if self.validate() is Some(_) {
+    return None
+  }
+  let out : Array[Double] = []
+  match self.topology {
+    Mesh3dPrimitiveTopology::TriangleList =>
+      match self.indices {
+        None => {
+          let triangle_count = self.positions.length() / 3
+          for tri in 0..<triangle_count {
+            let base = tri * 3
+            let a = self.positions[base]
+            let b = self.positions[base + 1]
+            let c = self.positions[base + 2]
+            let normal = mesh3d_triangle_face_normal(a, b, c)
+            for i in base..<(base + 3) {
+              mesh3d_push_interleaved_xyz_normal_uv_rgba(
+                out,
+                self.positions[i],
+                normal,
+                self.uvs[i],
+                mesh3d_vertex_color_or_white(self.colors, i),
+              )
+            }
+          }
+        }
+        Some(indices) => {
+          let triangle_count = indices.length() / 3
+          for tri in 0..<triangle_count {
+            let base = tri * 3
+            let ia = indices[base]
+            let ib = indices[base + 1]
+            let ic = indices[base + 2]
+            let normal = mesh3d_triangle_face_normal(
+              self.positions[ia],
+              self.positions[ib],
+              self.positions[ic],
+            )
+            mesh3d_push_interleaved_xyz_normal_uv_rgba(
+              out,
+              self.positions[ia],
+              normal,
+              self.uvs[ia],
+              mesh3d_vertex_color_or_white(self.colors, ia),
+            )
+            mesh3d_push_interleaved_xyz_normal_uv_rgba(
+              out,
+              self.positions[ib],
+              normal,
+              self.uvs[ib],
+              mesh3d_vertex_color_or_white(self.colors, ib),
+            )
+            mesh3d_push_interleaved_xyz_normal_uv_rgba(
+              out,
+              self.positions[ic],
+              normal,
+              self.uvs[ic],
+              mesh3d_vertex_color_or_white(self.colors, ic),
+            )
+          }
+        }
+      }
+    Mesh3dPrimitiveTopology::LineList => {
+      let normal = mesh3d_runtime_default_normal()
+      match self.indices {
+        None => {
+          let n = self.positions.length()
+          for i in 0..<n {
+            mesh3d_push_interleaved_xyz_normal_uv_rgba(
+              out,
+              self.positions[i],
+              normal,
+              self.uvs[i],
+              mesh3d_vertex_color_or_white(self.colors, i),
+            )
+          }
+        }
+        Some(indices) =>
+          for i in 0..<indices.length() {
+            let idx = indices[i]
+            mesh3d_push_interleaved_xyz_normal_uv_rgba(
+              out,
+              self.positions[idx],
+              normal,
+              self.uvs[idx],
+              mesh3d_vertex_color_or_white(self.colors, idx),
+            )
+          }
+      }
+    }
+    Mesh3dPrimitiveTopology::LineStrip => {
+      let normal = mesh3d_runtime_default_normal()
+      match self.indices {
+        None => {
+          let n = self.positions.length()
+          for i in 0..<n {
+            mesh3d_push_interleaved_xyz_normal_uv_rgba(
+              out,
+              self.positions[i],
+              normal,
+              self.uvs[i],
+              mesh3d_vertex_color_or_white(self.colors, i),
+            )
+          }
+        }
+        Some(indices) =>
+          for i in 0..<indices.length() {
+            let idx = indices[i]
+            mesh3d_push_interleaved_xyz_normal_uv_rgba(
+              out,
+              self.positions[idx],
+              normal,
+              self.uvs[idx],
+              mesh3d_vertex_color_or_white(self.colors, idx),
+            )
+          }
+      }
+    }
+  }
+  Some(out)
+}
+
+///|
 pub fn Mesh3dGeometry::encode_interleaved_xyz_uv_rgba_csv(
   self : Mesh3dGeometry,
 ) -> String? {
   match self.flatten_interleaved_xyz_uv_rgba() {
+    None => None
+    Some(values) => Some(values.map(fn(v) { v.to_string() }).join(","))
+  }
+}
+
+///|
+pub fn Mesh3dGeometry::encode_interleaved_xyz_normal_uv_rgba_csv(
+  self : Mesh3dGeometry,
+) -> String? {
+  match self.flatten_interleaved_xyz_normal_uv_rgba() {
     None => None
     Some(values) => Some(values.map(fn(v) { v.to_string() }).join(","))
   }

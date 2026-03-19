@@ -19,6 +19,7 @@ struct VertexOut {
   @location(0) uv : vec2<f32>,
   @location(1) color : vec4<f32>,
   @location(2) world_pos : vec3<f32>,
+  @location(3) world_normal : vec3<f32>,
 };
 
 struct Mesh3dUniform {
@@ -73,11 +74,25 @@ fn quat_rotate_vec3(q : vec4<f32>, v : vec3<f32>) -> vec3<f32> {
   return v + q.w * t + cross(q.xyz, t);
 }
 
+fn transform_normal_local_to_world(
+  q : vec4<f32>,
+  local_normal : vec3<f32>,
+  scale : vec3<f32>,
+) -> vec3<f32> {
+  let safe_scale = vec3<f32>(
+    select(scale.x, 1.0, abs(scale.x) <= 1.0e-8),
+    select(scale.y, 1.0, abs(scale.y) <= 1.0e-8),
+    select(scale.z, 1.0, abs(scale.z) <= 1.0e-8),
+  );
+  return safe_normalize(quat_rotate_vec3(q, local_normal / safe_scale));
+}
+
 @vertex
 fn vs_main(
   @location(0) position : vec3<f32>,
-  @location(1) uv : vec2<f32>,
-  @location(2) color : vec4<f32>,
+  @location(1) normal : vec3<f32>,
+  @location(2) uv : vec2<f32>,
+  @location(3) color : vec4<f32>,
 ) -> VertexOut {
   var out : VertexOut;
 
@@ -93,6 +108,11 @@ fn vs_main(
   );
   out.color = color * u_mesh.color;
   out.world_pos = world_pos;
+  out.world_normal = transform_normal_local_to_world(
+    model_q,
+    normal,
+    u_mesh.model_scale.xyz,
+  );
   return out;
 }
 
@@ -409,9 +429,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   let has_specular_tint_map = u_mesh.specular_tint.w > 0.5;
   let use_stacked_cubemap = u_mesh.uv_transform1.z < 0.0;
   let has_uv = u_mesh.uv_transform1.z > 0.0;
-  let dp1 = dpdx(in.world_pos);
-  let dp2 = dpdy(in.world_pos);
-  let geometric_normal = safe_normalize(cross(dp1, dp2));
+  let geometric_normal = safe_normalize(in.world_normal);
   let view_dir = safe_normalize(u_mesh.camera_pos.xyz - in.world_pos);
   var uv = in.uv;
   if has_depth_map && has_uv && u_mesh.parallax_params.x > 0.0 {
