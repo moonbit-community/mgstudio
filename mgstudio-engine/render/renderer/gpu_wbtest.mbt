@@ -268,6 +268,8 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
   let wgsl = load_wgsl_from_assets_base_required(
     "assets", "shaders/custom/mesh3d_forward.wgsl",
   )
+  inspect(wgsl.contains("struct Mesh3dTransformUniform {"), content="true")
+  inspect(wgsl.contains("struct Mesh3dMaterialUniform {"), content="true")
   inspect(
     wgsl.contains(
       "@group(0) @binding(0) var<uniform> u_view : Mesh3dViewUniform;",
@@ -318,7 +320,10 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
     ),
     content="true",
   )
-  inspect(wgsl.contains("material_flags : u32,"), content="true")
+  inspect(wgsl.contains("uv_transform : mat3x3<f32>,"), content="true")
+  inspect(wgsl.contains("reflectance : vec3<f32>,"), content="true")
+  inspect(wgsl.contains("flags : u32,"), content="true")
+  inspect(wgsl.contains("uv_transform_mode : f32,"), content="true")
   inspect(
     wgsl.contains("STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT"),
     content="true",
@@ -339,6 +344,11 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
   inspect(wgsl.contains("apply_normal_mapping("), content="true")
   inspect(wgsl.contains("discard;"), content="true")
   inspect(!wgsl.contains("has_normal_map ="), content="true")
+  inspect(!wgsl.contains("emissive_params"), content="true")
+  inspect(!wgsl.contains("material_params"), content="true")
+  inspect(!wgsl.contains("parallax_params"), content="true")
+  inspect(!wgsl.contains("anisotropy_params"), content="true")
+  inspect(!wgsl.contains("transmission_params"), content="true")
   inspect(wgsl.contains("@location(1) normal : vec3<f32>"), content="true")
   inspect(wgsl.contains("@location(2) uv : vec2<f32>"), content="true")
   inspect(wgsl.contains("@location(3) color : vec4<f32>"), content="true")

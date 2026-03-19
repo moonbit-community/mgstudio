@@ -37,23 +37,38 @@ struct Mesh3dViewUniform {
   point_shadow_params : vec4<f32>, // (enabled, depth_bias, near_z, _)
 };
 
-struct Mesh3dDrawUniform {
-  model_pos : vec4<f32>,
-  model_rot : vec4<f32>,
+struct Mesh3dTransformUniform {
+  model_translation : vec4<f32>,
+  model_rotation : vec4<f32>,
   model_scale : vec4<f32>,
-  color : vec4<f32>,
-  uv_transform0 : vec4<f32>, // (a, b, c, tx)
-  uv_transform1 : vec4<f32>, // (d, ty, mode, _)
-  emissive_params : vec4<f32>, // (emissive.rgb, _)
-  material_params : vec4<f32>, // (metallic, roughness, reflectance, _)
-  parallax_params : vec4<f32>, // (depth_scale, max_layer_count, relief_steps, _)
-  anisotropy_params : vec4<f32>, // (strength, rot_cos, rot_sin, _)
-  specular_tint : vec4<f32>, // (r, g, b, _)
-  transmission_params : vec4<f32>, // (diffuse_transmission, specular_transmission, thickness, ior)
-  material_flags : u32,
+};
+
+struct Mesh3dMaterialUniform {
+  base_color : vec4<f32>,
+  emissive : vec4<f32>,
+  uv_transform : mat3x3<f32>,
+  reflectance : vec3<f32>,
+  perceptual_roughness : f32,
+  metallic : f32,
+  diffuse_transmission : f32,
+  specular_transmission : f32,
+  thickness : f32,
+  ior : f32,
+  anisotropy_strength : f32,
+  anisotropy_rotation : vec2<f32>,
+  flags : u32,
   alpha_cutoff : f32,
+  parallax_depth_scale : f32,
+  max_parallax_layer_count : f32,
+  max_relief_mapping_search_steps : u32,
+  uv_transform_mode : f32,
   _reserved0 : u32,
   _reserved1 : u32,
+};
+
+struct Mesh3dDrawUniform {
+  transform : Mesh3dTransformUniform,
+  material : Mesh3dMaterialUniform,
 };
 
 const STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT: u32         = 1u << 0u;
@@ -131,22 +146,19 @@ fn vs_main(
 ) -> VertexOut {
   var out : VertexOut;
 
-  let model_q = quat_normalize(u_draw.model_rot);
-  let local_pos = position * u_draw.model_scale.xyz;
-  let world_pos = quat_rotate_vec3(model_q, local_pos) + u_draw.model_pos.xyz;
+  let model_q = quat_normalize(u_draw.transform.model_rotation);
+  let local_pos = position * u_draw.transform.model_scale.xyz;
+  let world_pos = quat_rotate_vec3(model_q, local_pos) +
+    u_draw.transform.model_translation.xyz;
   out.position = u_view.clip_from_world * vec4<f32>(world_pos, 1.0);
-  out.uv = vec2<f32>(
-    u_draw.uv_transform0.x * uv.x + u_draw.uv_transform0.z * uv.y +
-      u_draw.uv_transform0.w,
-    u_draw.uv_transform0.y * uv.x + u_draw.uv_transform1.x * uv.y +
-      u_draw.uv_transform1.y,
-  );
-  out.color = color * u_draw.color;
+  let transformed_uv = u_draw.material.uv_transform * vec3<f32>(uv, 1.0);
+  out.uv = transformed_uv.xy;
+  out.color = color * u_draw.material.base_color;
   out.world_pos = world_pos;
   out.world_normal = transform_normal_local_to_world(
     model_q,
     normal,
-    u_draw.model_scale.xyz,
+    u_draw.transform.model_scale.xyz,
   );
   return out;
 }
@@ -501,7 +513,7 @@ fn fs_main(
   in : VertexOut,
   @builtin(front_facing) is_front : bool,
 ) -> @location(0) vec4<f32> {
-  let material_flags = u_draw.material_flags;
+  let material_flags = u_draw.material.flags;
   let has_base_map = material_flag_enabled(
     material_flags,
     STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT,
@@ -530,8 +542,8 @@ fn fs_main(
     material_flags,
     STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT,
   );
-  let use_stacked_cubemap = u_draw.uv_transform1.z < 0.0;
-  let has_uv = u_draw.uv_transform1.z > 0.0;
+  let use_stacked_cubemap = u_draw.material.uv_transform_mode < 0.0;
+  let has_uv = u_draw.material.uv_transform_mode > 0.0;
   let double_sided = material_flag_enabled(
     material_flags,
     STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT,
@@ -539,7 +551,7 @@ fn fs_main(
   let geometric_normal = safe_normalize(in.world_normal);
   let view_dir = safe_normalize(u_view.camera_pos.xyz - in.world_pos);
   var uv = in.uv;
-  if has_depth_map && has_uv && u_draw.parallax_params.x > 0.0 {
+  if has_depth_map && has_uv && u_draw.material.parallax_depth_scale > 0.0 {
     let tbn = cotangent_frame(geometric_normal, in.world_pos, uv);
     let tangent = tbn[0];
     let bitangent = tbn[1];
@@ -550,18 +562,15 @@ fn fs_main(
       dot(view_dir, basis_normal),
     );
     uv = parallaxed_uv(
-      u_draw.parallax_params.x,
-      u_draw.parallax_params.y,
-      u32(max(u_draw.parallax_params.z, 0.0)),
+      u_draw.material.parallax_depth_scale,
+      u_draw.material.max_parallax_layer_count,
+      u_draw.material.max_relief_mapping_search_steps,
       uv,
       -view_dir_tangent,
     );
   }
-  var anisotropy_strength = clamp(u_draw.anisotropy_params.x, 0.0, 1.0);
-  var anisotropy_direction = vec2<f32>(
-    u_draw.anisotropy_params.y,
-    u_draw.anisotropy_params.z,
-  );
+  var anisotropy_strength = clamp(u_draw.material.anisotropy_strength, 0.0, 1.0);
+  var anisotropy_direction = u_draw.material.anisotropy_rotation;
   if has_anisotropy_map && has_uv {
     let anisotropy_texel = textureSample(
       u_anisotropy_texture,
@@ -599,7 +608,7 @@ fn fs_main(
   }
   let alpha_mode = material_flags & STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS;
   if alpha_mode == STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK &&
-    base_color.a < u_draw.alpha_cutoff {
+    base_color.a < u_draw.material.alpha_cutoff {
     discard;
   }
   var emissive_tex = vec3<f32>(1.0, 1.0, 1.0);
@@ -614,7 +623,7 @@ fn fs_main(
       uv,
     );
   }
-  var specular_tint = max(u_draw.specular_tint.xyz, vec3<f32>(0.0, 0.0, 0.0));
+  var specular_tint = vec3<f32>(1.0, 1.0, 1.0);
   if has_specular_tint_map && has_uv {
     specular_tint = specular_tint * textureSample(
       u_specular_tint_texture,
@@ -649,30 +658,26 @@ fn fs_main(
   );
   let anisotropy_b = safe_normalize(cross(normal, anisotropy_t));
   let ndotv = max(dot(normal, view_dir), 1.0e-4);
-  let emissive = max(u_draw.emissive_params.xyz * emissive_tex, vec3<f32>(0.0));
+  let emissive = max(u_draw.material.emissive.xyz * emissive_tex, vec3<f32>(0.0));
   let unlit_factor = select(
     0.0,
     1.0,
     material_flag_enabled(material_flags, STANDARD_MATERIAL_FLAGS_UNLIT_BIT),
   );
-  let metallic = clamp(u_draw.material_params.x * metallic_roughness_tex.b, 0.0, 1.0);
+  let metallic = clamp(u_draw.material.metallic * metallic_roughness_tex.b, 0.0, 1.0);
   let perceptual_roughness = clamp(
-    u_draw.material_params.y * metallic_roughness_tex.g,
+    u_draw.material.perceptual_roughness * metallic_roughness_tex.g,
     0.045,
     1.0,
   );
   let roughness = perceptual_roughness * perceptual_roughness;
-  let reflectance = max(u_draw.material_params.z, 0.0);
-  let diffuse_transmission = clamp(u_draw.transmission_params.x, 0.0, 1.0);
-  let specular_transmission = clamp(u_draw.transmission_params.y, 0.0, 1.0);
-  let thickness = max(u_draw.transmission_params.z, 0.0);
-  let ior = max(u_draw.transmission_params.w, 1.0);
+  let diffuse_transmission = clamp(u_draw.material.diffuse_transmission, 0.0, 1.0);
+  let specular_transmission = clamp(u_draw.material.specular_transmission, 0.0, 1.0);
+  let thickness = max(u_draw.material.thickness, 0.0);
+  let ior = max(u_draw.material.ior, 1.0);
   let transmission_blur_taps = i32(max(u_view.postprocess_params.y, 0.0));
   let transmission_steps = max(u_view.postprocess_params.z, 0.0);
-  let reflectance_rgb = max(
-    specular_tint * reflectance,
-    vec3<f32>(0.0, 0.0, 0.0),
-  );
+  let reflectance_rgb = max(specular_tint * u_draw.material.reflectance, vec3<f32>(0.0));
   let diffuse_color = base_color.xyz * (1.0 - metallic) *
     (1.0 - specular_transmission) *
     (1.0 - diffuse_transmission);
