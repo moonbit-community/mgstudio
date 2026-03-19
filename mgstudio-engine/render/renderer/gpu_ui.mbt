@@ -72,7 +72,7 @@ fn load_ui_node_wgsl(anti_alias : Bool) -> String raise GpuBackendError {
   let value_defines = default_wgsl_value_defines()
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   load_wgsl_preprocessed(
-    "", "shaders/bevy/bevy_ui_render/ui.wgsl", defines, value_defines, visited, modules,
+    "", "shaders/bevy_ui_render/ui.wgsl", defines, value_defines, visited, modules,
   )
 }
 
@@ -137,7 +137,7 @@ fn load_ui_box_shadow_wgsl(samples : Int) -> String raise GpuBackendError {
   value_defines.set("SHADOW_SAMPLES", ui_box_shadow_sample_count(samples))
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   load_wgsl_preprocessed(
-    "", "shaders/bevy/bevy_ui_render/box_shadow.wgsl", defines, value_defines, visited,
+    "", "shaders/bevy_ui_render/box_shadow.wgsl", defines, value_defines, visited,
     modules,
   )
 }
@@ -190,8 +190,8 @@ fn load_ui_texture_slice_wgsl() -> String raise GpuBackendError {
   let value_defines = default_wgsl_value_defines()
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   load_wgsl_preprocessed(
-    "", "shaders/bevy/bevy_ui_render/ui_texture_slice.wgsl", defines, value_defines,
-    visited, modules,
+    "", "shaders/bevy_ui_render/ui_texture_slice.wgsl", defines, value_defines, visited,
+    modules,
   )
 }
 

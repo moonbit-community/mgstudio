@@ -16,9 +16,9 @@
 test "shader: from_wgsl collects Bevy-style import metadata" {
   let shader = @shader.Shader::from_wgsl(
     "#define_import_path bevy_ui::ui_node\n#import bevy_render::{view::View, globals::Globals}\nfn main(view: View, globals: Globals) -> f32 {\n  return 1.0;\n}\n",
-    "shaders/bevy/bevy_ui_render/ui.wgsl",
+    "shaders/bevy_ui_render/ui.wgsl",
   )
-  inspect(shader.path, content="shaders/bevy/bevy_ui_render/ui.wgsl")
+  inspect(shader.path, content="shaders/bevy_ui_render/ui.wgsl")
   inspect(shader.import_path, content="Custom(\"bevy_ui::ui_node\")")
   inspect(shader.imports.length(), content="2")
   inspect(shader.imports[0], content="Custom(\"bevy_render::view\")")

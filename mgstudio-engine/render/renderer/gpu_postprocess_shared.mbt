@@ -72,8 +72,8 @@ fn load_fullscreen_postprocess_wgsl_with_defines_required(
   let fullscreen_value_defines = default_wgsl_value_defines()
   let fullscreen_visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let fullscreen_source = load_wgsl_preprocessed(
-    "", "shaders/bevy/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
-    fullscreen_defines, fullscreen_value_defines, fullscreen_visited, modules,
+    "", "shaders/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl", fullscreen_defines,
+    fullscreen_value_defines, fullscreen_visited, modules,
   )
   let main_source = load_postprocess_wgsl_with_defines_required(
     rel, define_keys,

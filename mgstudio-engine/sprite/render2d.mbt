@@ -1824,7 +1824,7 @@ fn color_material2d_pipeline_resource() -> Material2dPipeline[
 ] {
   Material2dPipeline::new(
     Some(MESH2D_SHADER_PATH),
-    Some("shaders/bevy/bevy_sprite_render/mesh2d/color_material.wgsl"),
+    Some("shaders/bevy_sprite_render/mesh2d/color_material.wgsl"),
   )
 }
 
@@ -4472,16 +4472,16 @@ const TONEMAPPING_LUT_TONY_PATH : String = "textures/tonemapping/tony_mc_mapface
 const TONEMAPPING_LUT_BLENDER_PATH : String = "textures/tonemapping/Blender_-11_12.ktx2"
 
 ///|
-const MESH2D_SHADER_PATH : String = "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d.wgsl"
+const MESH2D_SHADER_PATH : String = "shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"
 
 ///|
-const MESH2D_SHADER_BINDINGS_PATH : String = "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_bindings.wgsl"
+const MESH2D_SHADER_BINDINGS_PATH : String = "shaders/bevy_sprite_render/mesh2d/mesh2d_bindings.wgsl"
 
 ///|
-const SPRITE_SHADER_PATH : String = "shaders/bevy/bevy_sprite_render/render/sprite.wgsl"
+const SPRITE_SHADER_PATH : String = "shaders/bevy_sprite_render/render/sprite.wgsl"
 
 ///|
-const SPRITE_VIEW_BINDINGS_PATH : String = "shaders/bevy/bevy_sprite_render/render/sprite_view_bindings.wgsl"
+const SPRITE_VIEW_BINDINGS_PATH : String = "shaders/bevy_sprite_render/render/sprite_view_bindings.wgsl"
 
 ///|
 fn render2d_asset_server_or_abort(world : @ecs.World) -> @asset.AssetServer {
@@ -4499,22 +4499,22 @@ fn render2d_bevy_shader_asset_paths() -> Array[String] {
   [
     MESH2D_SHADER_PATH,
     MESH2D_SHADER_BINDINGS_PATH,
-    "shaders/bevy/bevy_sprite_render/mesh2d/color_material.wgsl",
+    "shaders/bevy_sprite_render/mesh2d/color_material.wgsl",
     SPRITE_SHADER_PATH,
     SPRITE_VIEW_BINDINGS_PATH,
-    "shaders/bevy/bevy_post_process/bloom/bloom.wgsl",
-    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl",
-    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_types.wgsl",
-    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_vertex_output.wgsl",
-    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl",
-    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_view_types.wgsl",
-    "shaders/bevy/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
-    "shaders/bevy/bevy_core_pipeline/tonemapping/tonemapping.wgsl",
-    "shaders/bevy/bevy_core_pipeline/tonemapping/lut_bindings.wgsl",
-    "shaders/bevy/bevy_render/globals.wgsl",
-    "shaders/bevy/bevy_render/maths.wgsl",
-    "shaders/bevy/bevy_render/view/view.wgsl",
-    "shaders/bevy/bevy_core_pipeline/tonemapping/tonemapping_shared.wgsl",
+    "shaders/bevy_post_process/bloom/bloom.wgsl",
+    "shaders/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl",
+    "shaders/bevy_sprite_render/mesh2d/mesh2d_types.wgsl",
+    "shaders/bevy_sprite_render/mesh2d/mesh2d_vertex_output.wgsl",
+    "shaders/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl",
+    "shaders/bevy_sprite_render/mesh2d/mesh2d_view_types.wgsl",
+    "shaders/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
+    "shaders/bevy_core_pipeline/tonemapping/tonemapping.wgsl",
+    "shaders/bevy_core_pipeline/tonemapping/lut_bindings.wgsl",
+    "shaders/bevy_render/globals.wgsl",
+    "shaders/bevy_render/maths.wgsl",
+    "shaders/bevy_render/view/view.wgsl",
+    "shaders/bevy_core_pipeline/tonemapping/tonemapping_shared.wgsl",
   ]
 }
 

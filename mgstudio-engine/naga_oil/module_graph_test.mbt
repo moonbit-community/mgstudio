@@ -30,16 +30,16 @@ test "naga_oil: import target parser preserves nested group and alias shapes" {
 test "naga_oil: registered source registry tracks define_import_path" {
   @naga_oil.clear_registered_wgsl_source_registry()
   @naga_oil.register_wgsl_source(
-    "shaders/bevy/demo/module.wgsl", "#define_import_path demo::module\nfn shade() -> f32 { return 1.0; }\n",
+    "shaders/demo/module.wgsl", "#define_import_path demo::module\nfn shade() -> f32 { return 1.0; }\n",
   )
   inspect(
-    @naga_oil.registered_wgsl_source("shaders/bevy/demo/module.wgsl"),
+    @naga_oil.registered_wgsl_source("shaders/demo/module.wgsl"),
     content="Some(\"#define_import_path demo::module\\nfn shade() -> f32 { return 1.0; }\\n\")",
   )
   let modules = @naga_oil.build_wgsl_import_module_paths("")
   inspect(
     modules.get("demo::module"),
-    content="Some(\"shaders/bevy/demo/module.wgsl\")",
+    content="Some(\"shaders/demo/module.wgsl\")",
   )
   @naga_oil.clear_registered_wgsl_source_registry()
 }
@@ -48,7 +48,7 @@ test "naga_oil: registered source registry tracks define_import_path" {
 test "naga_oil: resolve import module prefers registered map entries" {
   @naga_oil.clear_registered_wgsl_source_registry()
   @naga_oil.register_wgsl_source(
-    "shaders/bevy/bevy_sprite_render/render/sprite_view_bindings.wgsl", "#define_import_path bevy_sprite_render::render::sprite_view_bindings\nfn shade() -> f32 { return 1.0; }\n",
+    "shaders/bevy_sprite_render/render/sprite_view_bindings.wgsl", "#define_import_path bevy_sprite_render::render::sprite_view_bindings\nfn shade() -> f32 { return 1.0; }\n",
   )
   let modules = @naga_oil.build_wgsl_import_module_paths("")
   let resolved = @naga_oil.resolve_wgsl_import_module(
@@ -56,7 +56,7 @@ test "naga_oil: resolve import module prefers registered map entries" {
   )
   inspect(
     resolved,
-    content="Some({module_path: \"bevy_sprite_render::render::sprite_view_bindings\", rel_path: \"shaders/bevy/bevy_sprite_render/render/sprite_view_bindings.wgsl\"})",
+    content="Some({module_path: \"bevy_sprite_render::render::sprite_view_bindings\", rel_path: \"shaders/bevy_sprite_render/render/sprite_view_bindings.wgsl\"})",
   )
   @naga_oil.clear_registered_wgsl_source_registry()
 }

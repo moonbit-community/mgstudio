@@ -30,7 +30,7 @@ from pathlib import Path
 
 repo = Path(os.environ['REPO_DIR'])
 bevy = repo / 'bevy'
-mirror = repo / 'mgstudio-engine' / 'assets' / 'shaders' / 'bevy'
+mirror = repo / 'mgstudio-engine' / 'assets' / 'shaders'
 
 if not (bevy / 'crates').is_dir():
     print(
@@ -66,6 +66,7 @@ for src in sorted((bevy / 'crates' / 'bevy_feathers' / 'assets' / 'shaders').rgl
 actual = {
     p.relative_to(mirror): p
     for p in sorted(mirror.rglob('*.wgsl'))
+    if p.relative_to(mirror).parts[0] not in {'generated', 'custom'}
 }
 
 expected_keys = set(expected.keys())

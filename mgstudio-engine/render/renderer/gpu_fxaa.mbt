@@ -105,7 +105,7 @@ fn ensure_fxaa_pipeline_rgba8(
     fxaa_sensitivity_define_suffix(safe_edge_threshold_min_mode),
   ]
   let source = load_wgsl_with_defines_required(
-    backend, "shaders/bevy/bevy_anti_alias/fxaa/fxaa.wgsl", define_keys,
+    backend, "shaders/bevy_anti_alias/fxaa/fxaa.wgsl", define_keys,
   )
   let pipeline = create_postprocess_pipeline(
     backend,
@@ -154,7 +154,7 @@ fn ensure_fxaa_pipeline_surface(
     fxaa_sensitivity_define_suffix(safe_edge_threshold_min_mode),
   ]
   let source = load_wgsl_with_defines_required(
-    backend, "shaders/bevy/bevy_anti_alias/fxaa/fxaa.wgsl", define_keys,
+    backend, "shaders/bevy_anti_alias/fxaa/fxaa.wgsl", define_keys,
   )
   let pipeline = create_postprocess_pipeline(
     backend,

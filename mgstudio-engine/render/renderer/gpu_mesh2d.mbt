@@ -16,7 +16,7 @@
 const MESH2D_VERTEX_STRIDE_BYTES : UInt64 = 36UL
 
 ///|
-const MESH2D_COLOR_MATERIAL_SHADER_PATH : String = "shaders/bevy/bevy_sprite_render/mesh2d/color_material.wgsl"
+const MESH2D_COLOR_MATERIAL_SHADER_PATH : String = "shaders/bevy_sprite_render/mesh2d/color_material.wgsl"
 
 ///|
 const MESH2D_ALPHA_MODE_KIND_OPAQUE : Int = 0
@@ -161,7 +161,7 @@ fn load_wgsl_with_defines_required_mesh2d_color_material(
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = copy_registered_wgsl_import_module_paths()
   let mesh_source = registered_wgsl_source_required(
-    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d.wgsl",
+    "shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl",
   )
   let material_source = registered_wgsl_source_required(
     MESH2D_COLOR_MATERIAL_SHADER_PATH,

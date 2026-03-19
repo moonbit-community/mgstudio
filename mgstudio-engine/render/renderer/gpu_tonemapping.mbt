@@ -743,8 +743,8 @@ fn load_fullscreen_tonemapping_wgsl_with_defines_required(
   let fullscreen_value_defines = default_wgsl_value_defines()
   let fullscreen_visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let fullscreen_source = load_wgsl_preprocessed(
-    "", "shaders/bevy/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
-    fullscreen_defines, fullscreen_value_defines, fullscreen_visited, modules,
+    "", "shaders/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl", fullscreen_defines,
+    fullscreen_value_defines, fullscreen_visited, modules,
   )
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   for key in define_keys {
@@ -755,8 +755,8 @@ fn load_fullscreen_tonemapping_wgsl_with_defines_required(
   value_defines.set("TONEMAPPING_LUT_SAMPLER_BINDING_INDEX", 4)
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let main_source = load_wgsl_preprocessed(
-    "", "shaders/bevy/bevy_core_pipeline/tonemapping/tonemapping.wgsl", defines,
-    value_defines, visited, modules,
+    "", "shaders/bevy_core_pipeline/tonemapping/tonemapping.wgsl", defines, value_defines,
+    visited, modules,
   )
   if main_source.contains("fn fullscreen_vertex_shader(") {
     return main_source

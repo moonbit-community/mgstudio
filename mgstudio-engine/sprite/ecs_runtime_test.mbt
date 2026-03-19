@@ -466,11 +466,11 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
   )
   inspect(
     pipeline.vertex_shader,
-    content="Some(\"shaders/bevy/bevy_sprite_render/mesh2d/mesh2d.wgsl\")",
+    content="Some(\"shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl\")",
   )
   inspect(
     pipeline.fragment_shader,
-    content="Some(\"shaders/bevy/bevy_sprite_render/mesh2d/color_material.wgsl\")",
+    content="Some(\"shaders/bevy_sprite_render/mesh2d/color_material.wgsl\")",
   )
 }
 

@@ -19,15 +19,27 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENGINE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 REPO_DIR="$(cd "${ENGINE_DIR}/.." && pwd)"
 BEVY_DIR="${REPO_DIR}/bevy"
-DEST_DIR="${ENGINE_DIR}/assets/shaders/bevy"
+DEST_DIR="${ENGINE_DIR}/assets/shaders"
+copied_count=0
 
 if [[ ! -d "${BEVY_DIR}/crates" ]]; then
   echo "[sync-bevy-shaders] missing bevy crates directory: ${BEVY_DIR}/crates" >&2
   exit 2
 fi
 
-rm -rf "${DEST_DIR}"
 mkdir -p "${DEST_DIR}"
+
+clear_synced_dirs() {
+  while IFS= read -r crate_dir; do
+    local crate
+    crate="$(basename "${crate_dir}")"
+    if [[ -d "${crate_dir}/src" ]] &&
+      find "${crate_dir}/src" -type f -name '*.wgsl' | read -r _; then
+      rm -rf "${DEST_DIR}/${crate}"
+    fi
+  done < <(find "${BEVY_DIR}/crates" -mindepth 1 -maxdepth 1 -type d | sort)
+  rm -rf "${DEST_DIR}/bevy_feathers"
+}
 
 copy_crate_wgsl() {
   local source="$1"
@@ -41,6 +53,7 @@ copy_crate_wgsl() {
   local target="${DEST_DIR}/${crate}/${rel}"
   mkdir -p "$(dirname "${target}")"
   cp "${source}" "${target}"
+  copied_count=$((copied_count + 1))
 }
 
 copy_bevy_feathers_assets() {
@@ -49,7 +62,10 @@ copy_bevy_feathers_assets() {
   local target="${DEST_DIR}/bevy_feathers/${rel}"
   mkdir -p "$(dirname "${target}")"
   cp "${source}" "${target}"
+  copied_count=$((copied_count + 1))
 }
+
+clear_synced_dirs
 
 while IFS= read -r src; do
   copy_crate_wgsl "${src}"
@@ -61,5 +77,4 @@ if [[ -d "${BEVY_DIR}/crates/bevy_feathers/assets/shaders" ]]; then
   done < <(find "${BEVY_DIR}/crates/bevy_feathers/assets/shaders" -type f -name '*.wgsl' | sort)
 fi
 
-count="$(find "${DEST_DIR}" -type f -name '*.wgsl' | wc -l | tr -d ' ')"
-echo "[sync-bevy-shaders] synchronized ${count} files into ${DEST_DIR}"
+echo "[sync-bevy-shaders] synchronized ${copied_count} files into ${DEST_DIR}"

@@ -160,7 +160,7 @@ fn ensure_effect_stack_pipeline_rgba8(
     return
   }
   let source = load_wgsl_from_assets_required(
-    backend, "shaders/bevy/bevy_post_process/effect_stack/post_process.wgsl",
+    backend, "shaders/bevy_post_process/effect_stack/post_process.wgsl",
   )
   let pipeline = create_postprocess_pipeline(
     backend,
@@ -195,7 +195,7 @@ fn ensure_effect_stack_pipeline_surface(
     return
   }
   let source = load_wgsl_from_assets_required(
-    backend, "shaders/bevy/bevy_post_process/effect_stack/post_process.wgsl",
+    backend, "shaders/bevy_post_process/effect_stack/post_process.wgsl",
   )
   let pipeline = create_postprocess_pipeline(
     backend,

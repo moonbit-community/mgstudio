@@ -292,7 +292,7 @@ pub fn copy_registered_wgsl_import_module_paths() -> @hashmap.HashMap[
 
 ///|
 fn wgsl_module_path_to_rel_path(module_path : String) -> String {
-  let mut rel = "shaders/bevy/"
+  let mut rel = "shaders/"
   let mut first = true
   for seg in module_path.split("::") {
     let text = seg.to_string()
@@ -399,16 +399,18 @@ pub fn resolve_wgsl_import_module(
       return Some(WgslResolvedImportModule::{ module_path, rel_path })
     }
     if normalized_assets_base != "" {
-      let bevy_rel = wgsl_module_path_to_rel_path(module_path)
-      if path_is_file_exact(join_asset_path(normalized_assets_base, bevy_rel)) {
+      let default_rel = wgsl_module_path_to_rel_path(module_path)
+      if path_is_file_exact(
+          join_asset_path(normalized_assets_base, default_rel),
+        ) {
         return Some(WgslResolvedImportModule::{
           module_path,
-          rel_path: bevy_rel,
+          rel_path: default_rel,
         })
       }
       let namespace_rel = wgsl_module_path_to_rel_path_namespace(module_path)
       if namespace_rel != "" &&
-        namespace_rel != bevy_rel &&
+        namespace_rel != default_rel &&
         path_is_file_exact(
           join_asset_path(normalized_assets_base, namespace_rel),
         ) {

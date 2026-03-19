@@ -925,7 +925,7 @@ pub fn GpuBackend::new(
 const PI : Float = 3.141592653589793F
 
 ///|
-const MESH3D_SHADER_PATH : String = "shaders/bevy/mgstudio_runtime/mesh3d.wgsl"
+const MESH3D_SHADER_PATH : String = "shaders/mgstudio_runtime/mesh3d.wgsl"
 
 ///|
 fn cosf(x : Float) -> Float {

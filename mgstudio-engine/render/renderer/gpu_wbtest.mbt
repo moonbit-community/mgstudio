@@ -388,8 +388,8 @@ test "renderer: canonical prepass import preprocessing keeps motion-vector bindi
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = build_wgsl_import_module_paths("assets")
   let preprocessed = load_wgsl_preprocessed(
-    "assets", "shaders/bevy/bevy_pbr/prepass/prepass.wgsl", defines, value_defines,
-    visited, modules,
+    "assets", "shaders/bevy_pbr/prepass/prepass.wgsl", defines, value_defines, visited,
+    modules,
   )
   inspect(
     preprocessed.contains("@group(0) @binding(0) var<uniform> view: View;"),
@@ -414,8 +414,8 @@ test "renderer: view item imports keep dependent ColorGrading declarations" {
 
   let sprite_visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let sprite_preprocessed = load_wgsl_preprocessed(
-    "", "shaders/bevy/bevy_sprite_render/render/sprite_view_bindings.wgsl", defines,
-    value_defines, sprite_visited, modules,
+    "", "shaders/bevy_sprite_render/render/sprite_view_bindings.wgsl", defines, value_defines,
+    sprite_visited, modules,
   )
   inspect(sprite_preprocessed.contains("struct ColorGrading"), content="true")
   inspect(sprite_preprocessed.contains("struct View"), content="true")
@@ -428,8 +428,8 @@ test "renderer: view item imports keep dependent ColorGrading declarations" {
 
   let mesh2d_visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let mesh2d_preprocessed = load_wgsl_preprocessed(
-    "", "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl", defines,
-    value_defines, mesh2d_visited, modules,
+    "", "shaders/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl", defines, value_defines,
+    mesh2d_visited, modules,
   )
   inspect(mesh2d_preprocessed.contains("struct ColorGrading"), content="true")
   inspect(mesh2d_preprocessed.contains("struct View"), content="true")
@@ -446,20 +446,20 @@ test "renderer: view item imports keep dependent ColorGrading declarations" {
 test "renderer: registered wgsl sources satisfy strict mesh2d preprocessing" {
   clear_registered_wgsl_source_registry()
   register_wgsl_source(
-    "shaders/bevy/bevy_render/maths.wgsl", "#define_import_path bevy_render::maths\nconst PI_2: f32 = 6.28318;\n",
+    "shaders/bevy_render/maths.wgsl", "#define_import_path bevy_render::maths\nconst PI_2: f32 = 6.28318;\n",
   )
   register_wgsl_source(
-    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl", "#define_import_path bevy_sprite::mesh2d_functions\n#import bevy_render::maths::PI_2\nfn twice_pi() -> f32 {\n  return PI_2;\n}\n",
+    "shaders/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl", "#define_import_path bevy_sprite::mesh2d_functions\n#import bevy_render::maths::PI_2\nfn twice_pi() -> f32 {\n  return PI_2;\n}\n",
   )
   register_wgsl_source(
-    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d.wgsl", "#import bevy_sprite::mesh2d_functions as mesh_functions\nfn demo() -> f32 {\n  return mesh_functions::twice_pi();\n}\n",
+    "shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl", "#import bevy_sprite::mesh2d_functions as mesh_functions\nfn demo() -> f32 {\n  return mesh_functions::twice_pi();\n}\n",
   )
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let value_defines = default_wgsl_value_defines()
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = copy_registered_wgsl_import_module_paths()
   let preprocessed = load_wgsl_preprocessed(
-    "", "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d.wgsl", defines, value_defines,
+    "", "shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl", defines, value_defines,
     visited, modules,
   )
   inspect(preprocessed.contains("const PI_2"), content="true")
@@ -494,17 +494,17 @@ fn register_renderer_test_shader_source(path : String) -> Unit {
 fn register_renderer_test_shaders() -> Unit {
   clear_registered_wgsl_source_registry()
   let paths = [
-    "shaders/bevy/bevy_sprite_render/render/sprite.wgsl", "shaders/bevy/bevy_sprite_render/render/sprite_view_bindings.wgsl",
-    "shaders/bevy/bevy_sprite_render/mesh2d/color_material.wgsl", "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d.wgsl",
-    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_bindings.wgsl", "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl",
-    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_types.wgsl", "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_vertex_output.wgsl",
-    "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl", "shaders/bevy/bevy_sprite_render/mesh2d/mesh2d_view_types.wgsl",
-    "shaders/bevy/bevy_post_process/bloom/bloom.wgsl", "shaders/bevy/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
-    "shaders/bevy/bevy_core_pipeline/tonemapping/tonemapping.wgsl", "shaders/bevy/bevy_core_pipeline/tonemapping/lut_bindings.wgsl",
-    "shaders/bevy/bevy_core_pipeline/tonemapping/tonemapping_shared.wgsl", "shaders/bevy/bevy_render/color_operations.wgsl",
-    "shaders/bevy/bevy_render/globals.wgsl", "shaders/bevy/bevy_render/maths.wgsl",
-    "shaders/bevy/bevy_render/view/view.wgsl", "shaders/bevy/bevy_ui_render/ui.wgsl",
-    "shaders/bevy/bevy_ui_render/ui_texture_slice.wgsl", "shaders/bevy/bevy_ui_render/box_shadow.wgsl",
+    "shaders/bevy_sprite_render/render/sprite.wgsl", "shaders/bevy_sprite_render/render/sprite_view_bindings.wgsl",
+    "shaders/bevy_sprite_render/mesh2d/color_material.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl",
+    "shaders/bevy_sprite_render/mesh2d/mesh2d_bindings.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl",
+    "shaders/bevy_sprite_render/mesh2d/mesh2d_types.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d_vertex_output.wgsl",
+    "shaders/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d_view_types.wgsl",
+    "shaders/bevy_post_process/bloom/bloom.wgsl", "shaders/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
+    "shaders/bevy_core_pipeline/tonemapping/tonemapping.wgsl", "shaders/bevy_core_pipeline/tonemapping/lut_bindings.wgsl",
+    "shaders/bevy_core_pipeline/tonemapping/tonemapping_shared.wgsl", "shaders/bevy_render/color_operations.wgsl",
+    "shaders/bevy_render/globals.wgsl", "shaders/bevy_render/maths.wgsl", "shaders/bevy_render/view/view.wgsl",
+    "shaders/bevy_ui_render/ui.wgsl", "shaders/bevy_ui_render/ui_texture_slice.wgsl",
+    "shaders/bevy_ui_render/box_shadow.wgsl",
   ]
   for path in paths {
     register_renderer_test_shader_source(path)
