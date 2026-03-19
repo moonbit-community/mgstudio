@@ -25,17 +25,61 @@ jobs:
           set -euo pipefail
           ./scripts/fetch_bevy.sh
 
-      - name: Shader mirror gate
+      - name: Parity hard gates (static subset)
         shell: bash
         run: |
           set -euo pipefail
-          ./mgstudio-engine/scripts/gate_shader_mirror.sh
+          export MGSTUDIO_PARITY_SKIP_VISUAL=1
+          ./mgstudio-engine/scripts/parity_hard_gates.sh
 
-      - name: Asset provenance gate
+  parity-visual-runtime:
+    name: parity visual runtime gate
+    runs-on: macos-latest
+    env:
+      MGSTUDIO_PARITY_REQUIRE_SANITY: "1"
+      MGSTUDIO_PARITY_ARTIFACT_DIR: ${{ github.workspace }}/.private/parity/artifacts/ci_visual_runtime
+      MGSTUDIO_3D_EXAMPLES_FILTER: "^(3d_shapes|pbr|3d_scene)$"
+      MGSTUDIO_3D_EXAMPLES_MAX_CASES: "3"
+      MGSTUDIO_WINDOW_FRAME_LIMIT: "120"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install MoonBit
         shell: bash
         run: |
           set -euo pipefail
-          ./mgstudio-engine/scripts/gate_asset_provenance.sh
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon version
+
+      - name: Install visual gate Python deps
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --user Pillow
+
+      - name: Update MoonBit registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon update
+
+      - name: Visual runtime gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.moon/bin:$PATH"
+          ./mgstudio-engine/scripts/gate_visual_runtime.sh
+
+      - name: Upload visual gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-visual-runtime
+          path: .private/parity/artifacts/ci_visual_runtime
 
   engine-native:
     name: engine (native check/test/build)
