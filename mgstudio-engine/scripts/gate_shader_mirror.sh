@@ -72,9 +72,7 @@ actual = {
 expected_keys = set(expected.keys())
 actual_keys = set(actual.keys())
 
-allowed_legacy_extra = {
-    Path('mgstudio_runtime/mesh3d.wgsl'),
-}
+allowed_legacy_extra: set[Path] = set()
 
 missing = sorted(expected_keys - actual_keys)
 extra_raw = sorted(actual_keys - expected_keys)

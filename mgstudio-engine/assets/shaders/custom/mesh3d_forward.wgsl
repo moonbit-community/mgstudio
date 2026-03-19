@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Custom mgstudio forward 3D runtime shader.
+
 struct VertexOut {
   @builtin(position) position : vec4<f32>,
   @location(0) uv : vec2<f32>,

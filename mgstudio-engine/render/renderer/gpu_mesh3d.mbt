@@ -778,7 +778,7 @@ fn ensure_mesh3d_pipeline_rgba8(
   }
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
-  let wgsl = load_wgsl_from_assets_required(backend, MESH3D_SHADER_PATH)
+  let wgsl = load_wgsl_from_assets_required(backend, MESH3D_FORWARD_SHADER_PATH)
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let desc_opaque = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     pl,
@@ -859,7 +859,7 @@ fn ensure_mesh3d_pipeline_surface(
   }
   let cull_mode_wgpu = mesh3d_cull_mode_wgpu(safe_cull_mode)
   guard backend.mesh3d_pipeline_layout is Some(pl) else { return }
-  let wgsl = load_wgsl_from_assets_required(backend, MESH3D_SHADER_PATH)
+  let wgsl = load_wgsl_from_assets_required(backend, MESH3D_FORWARD_SHADER_PATH)
   let sm = backend.device.create_shader_module_wgsl(wgsl)
   let desc_opaque = mesh_pipeline_desc_pos2_uv2_color4_alpha_blend(
     pl,

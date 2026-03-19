@@ -29,13 +29,23 @@ if [[ -d "${MGSTUDIO_SHADER_DIR}" ]]; then
   fi
 fi
 
+MGSTUDIO_RUNTIME_SHADER_DIR="${ENGINE_DIR}/assets/shaders/mgstudio_runtime"
+if [[ -d "${MGSTUDIO_RUNTIME_SHADER_DIR}" ]]; then
+  count="$(find "${MGSTUDIO_RUNTIME_SHADER_DIR}" -type f -name '*.wgsl' | wc -l | tr -d ' ')"
+  if [[ "${count}" != "0" ]]; then
+    echo "[no-mgstudio-shader-gate] forbidden transitional shader directory still exists: ${MGSTUDIO_RUNTIME_SHADER_DIR} (${count} files)" >&2
+    find "${MGSTUDIO_RUNTIME_SHADER_DIR}" -type f -name '*.wgsl' | sort >&2
+    exit 1
+  fi
+fi
+
 set +e
-refs="$(rg -n --hidden --glob '!**/_build/**' --glob '!**/.mooncakes/**' --glob '!**/scripts/gate_no_mgstudio_shader.sh' 'shaders/mgstudio/' "${ENGINE_DIR}" "${REPO_DIR}/.github" 2>/dev/null)"
+refs="$(rg -n --hidden --glob '!**/_build/**' --glob '!**/.mooncakes/**' --glob '!**/scripts/gate_no_mgstudio_shader.sh' 'shaders/mgstudio/|shaders/mgstudio_runtime/' "${ENGINE_DIR}" "${REPO_DIR}/.github" 2>/dev/null)"
 rc=$?
 set -e
 
 if [[ ${rc} -eq 0 && -n "${refs}" ]]; then
-  echo "[no-mgstudio-shader-gate] forbidden reference(s) to shaders/mgstudio found:" >&2
+  echo "[no-mgstudio-shader-gate] forbidden reference(s) to legacy mgstudio shader paths found:" >&2
   printf '%s\n' "${refs}" >&2
   exit 1
 fi
