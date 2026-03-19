@@ -13,6 +13,11 @@
 // limitations under the License.
 
 ///|
+fn gpu_float_approx_eq(a : Float, b : Float) -> Bool {
+  (a - b).abs() < 0.0001F
+}
+
+///|
 test "renderer: interleaved 2d mesh csv keeps original vertex count" {
   let backend = GpuBackend::new()
   backend.meshes.clear()
@@ -334,7 +339,15 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
     content="true",
   )
   inspect(
+    wgsl.contains("point_light_color_inverse_square_range : vec4<f32>,"),
+    content="true",
+  )
+  inspect(
     wgsl.contains("point_light_shadow_params : vec4<f32>,"),
+    content="true",
+  )
+  inspect(
+    wgsl.contains("spot_light_color_inverse_square_range : vec4<f32>,"),
     content="true",
   )
   inspect(wgsl.contains("spot_light_custom_data : vec4<f32>,"), content="true")
@@ -358,6 +371,8 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
   inspect(wgsl.contains("apply_normal_mapping("), content="true")
   inspect(wgsl.contains("discard;"), content="true")
   inspect(!wgsl.contains("has_normal_map ="), content="true")
+  inspect(!wgsl.contains("point_color_intensity"), content="true")
+  inspect(!wgsl.contains("spot_color_intensity"), content="true")
   inspect(!wgsl.contains("emissive_params"), content="true")
   inspect(!wgsl.contains("material_params"), content="true")
   inspect(!wgsl.contains("parallax_params"), content="true")
@@ -370,6 +385,18 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
     wgsl.contains("@location(3) world_normal : vec3<f32>"),
     content="true",
   )
+}
+
+///|
+test "renderer: mesh3d light scalar helpers align with Bevy-style scalar contract" {
+  let inverse_square_range = mesh3d_inverse_square_range(10.0F)
+  let (spot_scale, spot_offset) = mesh3d_spot_scale_offset(0.25F, 0.5F)
+  let inner_cos = Float::from_double(@coremath.cos(0.25F.to_double()))
+  let outer_cos = Float::from_double(@coremath.cos(0.5F.to_double()))
+  let ok = gpu_float_approx_eq(inverse_square_range, 0.01F) &&
+    gpu_float_approx_eq(spot_scale, 1.0F / (inner_cos - outer_cos)) &&
+    gpu_float_approx_eq(spot_offset, -outer_cos * spot_scale)
+  inspect(ok, content="true")
 }
 
 ///|

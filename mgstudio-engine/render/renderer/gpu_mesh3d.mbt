@@ -96,6 +96,43 @@ fn mesh3d_view_uniform_bytes(
   let ambient_color_r = pass_state.ambient_r * ambient_brightness
   let ambient_color_g = pass_state.ambient_g * ambient_brightness
   let ambient_color_b = pass_state.ambient_b * ambient_brightness
+  let directional_illuminance = if pass_state.directional_illuminance < 0.0F {
+    0.0F
+  } else {
+    pass_state.directional_illuminance
+  }
+  let directional_color_r = pass_state.directional_color_r *
+    directional_illuminance
+  let directional_color_g = pass_state.directional_color_g *
+    directional_illuminance
+  let directional_color_b = pass_state.directional_color_b *
+    directional_illuminance
+  let point_intensity = if pass_state.point_intensity < 0.0F {
+    0.0F
+  } else {
+    pass_state.point_intensity
+  }
+  let point_color_r = pass_state.point_color_r * point_intensity
+  let point_color_g = pass_state.point_color_g * point_intensity
+  let point_color_b = pass_state.point_color_b * point_intensity
+  let point_inverse_square_range = mesh3d_inverse_square_range(
+    pass_state.point_range,
+  )
+  let spot_intensity = if pass_state.spot_intensity < 0.0F {
+    0.0F
+  } else {
+    pass_state.spot_intensity
+  }
+  let spot_color_r = pass_state.spot_color_r * spot_intensity
+  let spot_color_g = pass_state.spot_color_g * spot_intensity
+  let spot_color_b = pass_state.spot_color_b * spot_intensity
+  let spot_inverse_square_range = mesh3d_inverse_square_range(
+    pass_state.spot_range,
+  )
+  let (spot_scale, spot_offset) = mesh3d_spot_scale_offset(
+    pass_state.spot_inner_angle,
+    pass_state.spot_outer_angle,
+  )
   f32le_pack([
     pass_state.camera_x,
     pass_state.camera_y,
@@ -128,19 +165,19 @@ fn mesh3d_view_uniform_bytes(
     pass_state.directional_dir_x,
     pass_state.directional_dir_y,
     pass_state.directional_dir_z,
-    pass_state.directional_illuminance,
-    pass_state.directional_color_r,
-    pass_state.directional_color_g,
-    pass_state.directional_color_b,
+    0.0F,
+    directional_color_r,
+    directional_color_g,
+    directional_color_b,
     1.0F,
     pass_state.point_pos_x,
     pass_state.point_pos_y,
     pass_state.point_pos_z,
     pass_state.point_range,
-    pass_state.point_color_r,
-    pass_state.point_color_g,
-    pass_state.point_color_b,
-    pass_state.point_intensity,
+    point_color_r,
+    point_color_g,
+    point_color_b,
+    point_inverse_square_range,
     point_shadow_enabled,
     point_shadow_depth_bias,
     point_shadow_near,
@@ -152,16 +189,49 @@ fn mesh3d_view_uniform_bytes(
     pass_state.spot_dir_x,
     pass_state.spot_dir_y,
     pass_state.spot_dir_z,
-    pass_state.spot_inner_angle,
-    pass_state.spot_color_r,
-    pass_state.spot_color_g,
-    pass_state.spot_color_b,
-    pass_state.spot_intensity,
-    pass_state.spot_outer_angle,
+    0.0F,
+    spot_color_r,
+    spot_color_g,
+    spot_color_b,
+    spot_inverse_square_range,
+    spot_scale,
+    spot_offset,
     transmission_blur_taps,
     transmission_steps,
-    0.0F,
   ])
+}
+
+///|
+fn mesh3d_inverse_square_range(range : Float) -> Float {
+  let safe_range = if range < 0.0001F { 0.0001F } else { range }
+  1.0F / (safe_range * safe_range)
+}
+
+///|
+fn mesh3d_spot_scale_offset(
+  inner_angle : Float,
+  outer_angle : Float,
+) -> (Float, Float) {
+  let safe_inner_angle = if inner_angle < 0.0F { 0.0F } else { inner_angle }
+  let safe_outer_angle = if outer_angle < safe_inner_angle + 0.0001F {
+    safe_inner_angle + 0.0001F
+  } else {
+    outer_angle
+  }
+  let inner_cos = Float::from_double(
+    @coremath.cos(safe_inner_angle.to_double()),
+  )
+  let outer_cos = Float::from_double(
+    @coremath.cos(safe_outer_angle.to_double()),
+  )
+  let denom = if inner_cos - outer_cos < 0.0001F {
+    0.0001F
+  } else {
+    inner_cos - outer_cos
+  }
+  let scale = 1.0F / denom
+  let offset = -outer_cos * scale
+  (scale, offset)
 }
 
 ///|

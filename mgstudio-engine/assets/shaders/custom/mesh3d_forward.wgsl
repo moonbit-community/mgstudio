@@ -30,15 +30,15 @@ struct Mesh3dViewUniform {
 
 struct Mesh3dLightsUniform {
   ambient_color : vec4<f32>, // (rgb, _)
-  directional_light_direction_to_light : vec4<f32>, // (dir.xyz, illuminance)
-  directional_light_color : vec4<f32>, // (r, g, b, _)
+  directional_light_direction_to_light : vec4<f32>, // (dir.xyz, _)
+  directional_light_color : vec4<f32>, // (premultiplied rgb, _)
   point_light_position_radius : vec4<f32>, // (pos.xyz, radius)
-  point_light_color : vec4<f32>, // (r, g, b, intensity)
+  point_light_color_inverse_square_range : vec4<f32>, // (premultiplied rgb, inverse_square_range)
   point_light_shadow_params : vec4<f32>, // (enabled, depth_bias, near_z, _)
   spot_light_position_radius : vec4<f32>, // (pos.xyz, radius)
-  spot_light_direction_to_light : vec4<f32>, // (dir.xyz, inner_angle)
-  spot_light_color : vec4<f32>, // (r, g, b, intensity)
-  spot_light_custom_data : vec4<f32>, // (outer_angle, transmission_blur_taps, transmission_steps, _)
+  spot_light_direction_to_light : vec4<f32>, // (dir.xyz, _)
+  spot_light_color_inverse_square_range : vec4<f32>, // (premultiplied rgb, inverse_square_range)
+  spot_light_custom_data : vec4<f32>, // (spot_scale, spot_offset, transmission_blur_taps, transmission_steps)
 };
 
 struct Mesh3dViewBindings {
@@ -227,9 +227,10 @@ fn lambert(normal : vec3<f32>, light_dir : vec3<f32>) -> f32 {
   return max(dot(normal, light_dir), 0.0);
 }
 
-fn get_distance_attenuation(distance_square : f32, range : f32) -> f32 {
-  let safe_range = max(range, 1.0e-4);
-  let inverse_range_squared = 1.0 / (safe_range * safe_range);
+fn get_distance_attenuation(
+  distance_square : f32,
+  inverse_range_squared : f32,
+) -> f32 {
   let factor = distance_square * inverse_range_squared;
   let smooth_factor = clamp(1.0 - factor * factor, 0.0, 1.0);
   let attenuation = smooth_factor * smooth_factor;
@@ -706,8 +707,7 @@ fn fs_main(
   let directional_dir = safe_normalize(
     u_view.lights.directional_light_direction_to_light.xyz,
   );
-  let directional_color = u_view.lights.directional_light_color.xyz *
-    max(u_view.lights.directional_light_direction_to_light.w, 0.0);
+  let directional_color = u_view.lights.directional_light_color.xyz;
   let directional_light_dir = -directional_dir;
   let directional_diff = lambert(normal, directional_light_dir);
   let directional_half_dir = safe_normalize(directional_light_dir + view_dir);
@@ -750,9 +750,11 @@ fn fs_main(
   let point_distance_square = max(dot(to_point, to_point), 1.0e-4);
   let point_dir = safe_normalize(to_point);
   let point_range = max(u_view.lights.point_light_position_radius.w, 1e-4);
-  let point_atten = get_distance_attenuation(point_distance_square, point_range);
-  let point_color = u_view.lights.point_light_color.xyz *
-    max(u_view.lights.point_light_color.w, 0.0);
+  let point_atten = get_distance_attenuation(
+    point_distance_square,
+    u_view.lights.point_light_color_inverse_square_range.w,
+  );
+  let point_color = u_view.lights.point_light_color_inverse_square_range.xyz;
   let point_diff = lambert(normal, point_dir);
   let point_half_dir = safe_normalize(point_dir + view_dir);
   let point_ldoth = max(dot(point_dir, point_half_dir), 0.0);
@@ -830,27 +832,23 @@ fn fs_main(
 
   let to_spot = u_view.lights.spot_light_position_radius.xyz - in.world_pos;
   let spot_dir_to_fragment = safe_normalize(-to_spot);
-  let spot_range = max(u_view.lights.spot_light_position_radius.w, 1e-4);
   let spot_distance_square = max(dot(to_spot, to_spot), 1.0e-4);
-  let spot_atten_base = get_distance_attenuation(spot_distance_square, spot_range);
+  let spot_atten_base = get_distance_attenuation(
+    spot_distance_square,
+    u_view.lights.spot_light_color_inverse_square_range.w,
+  );
   let spot_light_dir = safe_normalize(
     u_view.lights.spot_light_direction_to_light.xyz,
   );
-  let inner_angle = max(u_view.lights.spot_light_direction_to_light.w, 0.0);
-  let outer_angle = max(u_view.lights.spot_light_custom_data.x, inner_angle + 1e-4);
-  let inner_cos = cos(inner_angle);
-  let outer_cos = cos(outer_angle);
   let spot_cos_theta = dot(spot_light_dir, spot_dir_to_fragment);
-  let spot_scale = 1.0 / max(inner_cos - outer_cos, 1.0e-4);
-  let spot_offset = -outer_cos * spot_scale;
   let spot_attenuation = clamp(
-    spot_cos_theta * spot_scale + spot_offset,
+    spot_cos_theta * u_view.lights.spot_light_custom_data.x +
+      u_view.lights.spot_light_custom_data.y,
     0.0,
     1.0,
   );
   let spot_cone = spot_attenuation * spot_attenuation;
-  let spot_color = u_view.lights.spot_light_color.xyz *
-    max(u_view.lights.spot_light_color.w, 0.0);
+  let spot_color = u_view.lights.spot_light_color_inverse_square_range.xyz;
   let spot_light_to_fragment = safe_normalize(to_spot);
   let spot_diff = lambert(normal, spot_light_to_fragment);
   let spot_half_dir = safe_normalize(spot_light_to_fragment + view_dir);
