@@ -929,23 +929,17 @@ fn ensure_mesh3d_pipeline_rgba8(
       label="mgstudio_mesh3d_view_bgl",
     )
     let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
-    let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=9UL)
-    let material_ok = material_builder.add_sampler(
-        0U,
-        frag,
-        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
-      ) &&
-      material_builder.add_texture(
+    let material_builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=16UL)
+    let material_ok = material_builder.add_texture(
         1U,
         frag,
         @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
         @wgpu.TEXTURE_VIEW_DIMENSION_2D,
       ) &&
-      material_builder.add_texture(
+      material_builder.add_sampler(
         2U,
         frag,
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
       ) &&
       material_builder.add_texture(
         3U,
@@ -953,11 +947,10 @@ fn ensure_mesh3d_pipeline_rgba8(
         @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
         @wgpu.TEXTURE_VIEW_DIMENSION_2D,
       ) &&
-      material_builder.add_texture(
+      material_builder.add_sampler(
         4U,
         frag,
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
       ) &&
       material_builder.add_texture(
         5U,
@@ -965,11 +958,10 @@ fn ensure_mesh3d_pipeline_rgba8(
         @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
         @wgpu.TEXTURE_VIEW_DIMENSION_2D,
       ) &&
-      material_builder.add_texture(
+      material_builder.add_sampler(
         6U,
         frag,
-        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
-        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
       ) &&
       material_builder.add_texture(
         7U,
@@ -977,11 +969,54 @@ fn ensure_mesh3d_pipeline_rgba8(
         @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
         @wgpu.TEXTURE_VIEW_DIMENSION_2D,
       ) &&
-      material_builder.add_texture(
+      material_builder.add_sampler(
         8U,
+        frag,
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
+      ) &&
+      material_builder.add_texture(
+        9U,
         frag,
         @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
         @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      material_builder.add_sampler(
+        10U,
+        frag,
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
+      ) &&
+      material_builder.add_texture(
+        11U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      material_builder.add_sampler(
+        12U,
+        frag,
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
+      ) &&
+      material_builder.add_texture(
+        13U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      material_builder.add_sampler(
+        14U,
+        frag,
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
+      ) &&
+      material_builder.add_texture(
+        29U,
+        frag,
+        @wgpu.TEXTURE_SAMPLE_TYPE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      material_builder.add_sampler(
+        30U,
+        frag,
+        @wgpu.SAMPLER_BINDING_TYPE_FILTERING,
       )
     if !material_ok {
       material_builder.free()
@@ -1475,16 +1510,23 @@ fn mesh3d_material_cache_get_or_create(
     Some(v) => v
     None => fatal("wgpu: missing mesh3d material bind group layout")
   }
-  let builder = @wgpu.BindGroupBuilder::new(max_entries=9UL)
-  let ok = builder.add_sampler(0U, base_texture.sampler) &&
-    builder.add_texture_view(1U, base_texture.view) &&
-    builder.add_texture_view(2U, normal_texture.view) &&
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=16UL)
+  let ok = builder.add_texture_view(1U, base_texture.view) &&
+    builder.add_sampler(2U, base_texture.sampler) &&
     builder.add_texture_view(3U, emissive_texture.view) &&
-    builder.add_texture_view(4U, metallic_roughness_texture.view) &&
-    builder.add_texture_view(5U, occlusion_texture.view) &&
-    builder.add_texture_view(6U, depth_texture.view) &&
-    builder.add_texture_view(7U, anisotropy_texture.view) &&
-    builder.add_texture_view(8U, specular_tint_texture.view)
+    builder.add_sampler(4U, emissive_texture.sampler) &&
+    builder.add_texture_view(5U, metallic_roughness_texture.view) &&
+    builder.add_sampler(6U, metallic_roughness_texture.sampler) &&
+    builder.add_texture_view(7U, occlusion_texture.view) &&
+    builder.add_sampler(8U, occlusion_texture.sampler) &&
+    builder.add_texture_view(9U, normal_texture.view) &&
+    builder.add_sampler(10U, normal_texture.sampler) &&
+    builder.add_texture_view(11U, depth_texture.view) &&
+    builder.add_sampler(12U, depth_texture.sampler) &&
+    builder.add_texture_view(13U, anisotropy_texture.view) &&
+    builder.add_sampler(14U, anisotropy_texture.sampler) &&
+    builder.add_texture_view(29U, specular_tint_texture.view) &&
+    builder.add_sampler(30U, specular_tint_texture.sampler)
   if !ok {
     builder.free()
     fatal("wgpu: failed to build mesh3d material bind group")

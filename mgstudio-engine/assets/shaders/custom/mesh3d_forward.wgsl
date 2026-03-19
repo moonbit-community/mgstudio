@@ -58,15 +58,22 @@ struct Mesh3dDrawUniform {
 @group(0) @binding(2) var u_transmission_source_sampler : sampler;
 @group(0) @binding(3) var u_point_shadow_texture : texture_depth_cube;
 @group(0) @binding(4) var u_point_shadow_sampler : sampler_comparison;
-@group(1) @binding(0) var u_material_sampler : sampler;
 @group(1) @binding(1) var u_base_color_texture : texture_2d<f32>;
-@group(1) @binding(2) var u_normal_texture : texture_2d<f32>;
+@group(1) @binding(2) var u_base_color_sampler : sampler;
 @group(1) @binding(3) var u_emissive_texture : texture_2d<f32>;
-@group(1) @binding(4) var u_metallic_roughness_texture : texture_2d<f32>;
-@group(1) @binding(5) var u_occlusion_texture : texture_2d<f32>;
-@group(1) @binding(6) var u_depth_texture : texture_2d<f32>;
-@group(1) @binding(7) var u_anisotropy_texture : texture_2d<f32>;
-@group(1) @binding(8) var u_specular_tint_texture : texture_2d<f32>;
+@group(1) @binding(4) var u_emissive_sampler : sampler;
+@group(1) @binding(5) var u_metallic_roughness_texture : texture_2d<f32>;
+@group(1) @binding(6) var u_metallic_roughness_sampler : sampler;
+@group(1) @binding(7) var u_occlusion_texture : texture_2d<f32>;
+@group(1) @binding(8) var u_occlusion_sampler : sampler;
+@group(1) @binding(9) var u_normal_map_texture : texture_2d<f32>;
+@group(1) @binding(10) var u_normal_map_sampler : sampler;
+@group(1) @binding(11) var u_depth_map_texture : texture_2d<f32>;
+@group(1) @binding(12) var u_depth_map_sampler : sampler;
+@group(1) @binding(13) var u_anisotropy_texture : texture_2d<f32>;
+@group(1) @binding(14) var u_anisotropy_sampler : sampler;
+@group(1) @binding(29) var u_specular_tint_texture : texture_2d<f32>;
+@group(1) @binding(30) var u_specular_tint_sampler : sampler;
 @group(2) @binding(0) var<uniform> u_draw : Mesh3dDrawUniform;
 
 fn quat_normalize(q : vec4<f32>) -> vec4<f32> {
@@ -161,7 +168,7 @@ fn cotangent_frame(
 }
 
 fn sample_depth_map(uv : vec2<f32>) -> f32 {
-  return textureSampleLevel(u_depth_texture, u_material_sampler, uv, 0.0).r;
+  return textureSampleLevel(u_depth_map_texture, u_depth_map_sampler, uv, 0.0).r;
 }
 
 fn parallaxed_uv(
@@ -463,7 +470,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   if has_anisotropy_map && has_uv {
     let anisotropy_texel = textureSample(
       u_anisotropy_texture,
-      u_material_sampler,
+      u_anisotropy_sampler,
       uv,
     ).rgb;
     let tex_dir_raw = anisotropy_texel.rg * 2.0 - vec2<f32>(1.0, 1.0);
@@ -488,22 +495,22 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       let cubemap_uv = cubemap_stacked_vertical_uv(in.world_pos - u_view.camera_pos.xyz);
       base_color = textureSample(
         u_base_color_texture,
-        u_material_sampler,
+        u_base_color_sampler,
         cubemap_uv,
       ) * in.color;
     } else if has_uv {
-      base_color = textureSample(u_base_color_texture, u_material_sampler, uv) * in.color;
+      base_color = textureSample(u_base_color_texture, u_base_color_sampler, uv) * in.color;
     }
   }
   var emissive_tex = vec3<f32>(1.0, 1.0, 1.0);
   if has_emissive_map && has_uv {
-    emissive_tex = textureSample(u_emissive_texture, u_material_sampler, uv).xyz;
+    emissive_tex = textureSample(u_emissive_texture, u_emissive_sampler, uv).xyz;
   }
   var metallic_roughness_tex = vec4<f32>(1.0, 1.0, 1.0, 1.0);
   if has_metallic_roughness_map && has_uv {
     metallic_roughness_tex = textureSample(
       u_metallic_roughness_texture,
-      u_material_sampler,
+      u_metallic_roughness_sampler,
       uv,
     );
   }
@@ -511,17 +518,17 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   if has_specular_tint_map && has_uv {
     specular_tint = specular_tint * textureSample(
       u_specular_tint_texture,
-      u_material_sampler,
+      u_specular_tint_sampler,
       uv,
     ).xyz;
   }
   var occlusion_tex = 1.0;
   if has_occlusion_map && has_uv {
-    occlusion_tex = textureSample(u_occlusion_texture, u_material_sampler, uv).r;
+    occlusion_tex = textureSample(u_occlusion_texture, u_occlusion_sampler, uv).r;
   }
   var normal = geometric_normal;
   if has_normal_map && has_uv {
-    let normal_texel = textureSample(u_normal_texture, u_material_sampler, uv).xyz;
+    let normal_texel = textureSample(u_normal_map_texture, u_normal_map_sampler, uv).xyz;
     let tangent_space_normal = normal_texel * 2.0 - vec3<f32>(1.0, 1.0, 1.0);
     let tbn = cotangent_frame(geometric_normal, in.world_pos, uv);
     normal = safe_normalize(tbn * tangent_space_normal);

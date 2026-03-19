@@ -286,6 +286,38 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
     ),
     content="true",
   )
+  inspect(
+    wgsl.contains(
+      "@group(1) @binding(1) var u_base_color_texture : texture_2d<f32>;",
+    ),
+    content="true",
+  )
+  inspect(
+    wgsl.contains("@group(1) @binding(2) var u_base_color_sampler : sampler;"),
+    content="true",
+  )
+  inspect(
+    wgsl.contains(
+      "@group(1) @binding(9) var u_normal_map_texture : texture_2d<f32>;",
+    ),
+    content="true",
+  )
+  inspect(
+    wgsl.contains("@group(1) @binding(10) var u_normal_map_sampler : sampler;"),
+    content="true",
+  )
+  inspect(
+    wgsl.contains(
+      "@group(1) @binding(29) var u_specular_tint_texture : texture_2d<f32>;",
+    ),
+    content="true",
+  )
+  inspect(
+    wgsl.contains(
+      "@group(1) @binding(30) var u_specular_tint_sampler : sampler;",
+    ),
+    content="true",
+  )
   inspect(wgsl.contains("@location(1) normal : vec3<f32>"), content="true")
   inspect(wgsl.contains("@location(2) uv : vec2<f32>"), content="true")
   inspect(wgsl.contains("@location(3) color : vec4<f32>"), content="true")
