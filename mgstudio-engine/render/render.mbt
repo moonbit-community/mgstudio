@@ -1000,7 +1000,7 @@ pub fn host_gpu_draw_ui_rect(
 }
 
 ///|
-/// Draw a UI box shadow using a dedicated pipeline adapted from Bevy's `box_shadow.wgsl`.
+/// Draw a UI box shadow using the dedicated box-shadow pipeline.
 ///
 /// Parameters:
 /// - `x/y/rotation`: world-space transform for the shadow quad (centered).
