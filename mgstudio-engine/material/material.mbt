@@ -143,6 +143,7 @@ pub struct StandardMaterial {
   base_color_texture : @asset.Handle[@asset.Image]?
   uv_transform : @transform.Affine2
   normal_map_texture : @asset.Handle[@asset.Image]?
+  flip_normal_map_y : Bool
   depth_map : @asset.Handle[@asset.Image]?
   parallax_depth_scale : Float
   max_parallax_layer_count : Float
@@ -181,6 +182,7 @@ pub fn StandardMaterial::default() -> StandardMaterial {
     base_color_texture: None,
     uv_transform: @transform.Affine2::identity(),
     normal_map_texture: None,
+    flip_normal_map_y: false,
     depth_map: None,
     parallax_depth_scale: 0.1F,
     max_parallax_layer_count: 16.0F,
@@ -226,6 +228,7 @@ pub fn StandardMaterial::from_color(color : @sprite.Color) -> StandardMaterial {
     base_color_texture: default_value.base_color_texture,
     uv_transform: default_value.uv_transform,
     normal_map_texture: default_value.normal_map_texture,
+    flip_normal_map_y: default_value.flip_normal_map_y,
     depth_map: default_value.depth_map,
     parallax_depth_scale: default_value.parallax_depth_scale,
     max_parallax_layer_count: default_value.max_parallax_layer_count,
@@ -304,6 +307,14 @@ pub fn StandardMaterial::with_normal_map_texture(
   normal_map_texture : @asset.Handle[@asset.Image]?,
 ) -> StandardMaterial {
   StandardMaterial::{ ..self, normal_map_texture, }
+}
+
+///|
+pub fn StandardMaterial::with_flip_normal_map_y(
+  self : StandardMaterial,
+  flip_normal_map_y : Bool,
+) -> StandardMaterial {
+  StandardMaterial::{ ..self, flip_normal_map_y, }
 }
 
 ///|

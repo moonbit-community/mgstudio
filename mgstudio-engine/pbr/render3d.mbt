@@ -1353,6 +1353,9 @@ const STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT : UInt = 1U << 4
 const STANDARD_MATERIAL_FLAGS_UNLIT_BIT : UInt = 1U << 5
 
 ///|
+const STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y : UInt = 1U << 7
+
+///|
 const STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT : UInt = 1U << 9
 
 ///|
@@ -1438,6 +1441,7 @@ fn render3d_standard_material_alpha_cutoff(alpha_mode : AlphaMode3d) -> Float {
 fn render3d_standard_material_flags(
   material : StandardMaterial,
   base_color_texture_id : Int,
+  normal_texture_id : Int,
   emissive_texture_id : Int,
   metallic_roughness_texture_id : Int,
   occlusion_texture_id : Int,
@@ -1465,6 +1469,9 @@ fn render3d_standard_material_flags(
   }
   if material.unlit {
     flags = flags | STANDARD_MATERIAL_FLAGS_UNLIT_BIT
+  }
+  if normal_texture_id >= 0 && material.flip_normal_map_y {
+    flags = flags | STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y
   }
   if depth_texture_id >= 0 {
     flags = flags | STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT
@@ -5438,8 +5445,8 @@ fn render3d_build_mesh_gpu_draw_payload(
   draw_flags : Int,
 ) -> MeshGpuDrawPayload3d {
   let material_flags = render3d_standard_material_flags(
-    material, texture_id, emissive_texture_id, metallic_roughness_texture_id, occlusion_texture_id,
-    depth_texture_id, anisotropy_texture_id, specular_tint_texture_id,
+    material, texture_id, normal_texture_id, emissive_texture_id, metallic_roughness_texture_id,
+    occlusion_texture_id, depth_texture_id, anisotropy_texture_id, specular_tint_texture_id,
   )
   MeshGpuDrawPayload3d::{
     mesh_id,

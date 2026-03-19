@@ -131,6 +131,7 @@ pub struct StandardMaterial {
   base_color_texture : @asset.Handle[@image.Image]?
   uv_transform : @transform.Affine2
   normal_map_texture : @asset.Handle[@image.Image]?
+  flip_normal_map_y : Bool
   depth_map : @asset.Handle[@image.Image]?
   parallax_depth_scale : Float
   max_parallax_layer_count : Float
@@ -180,6 +181,7 @@ pub fn StandardMaterial::with_diffuse_transmission(Self, Float) -> Self
 pub fn StandardMaterial::with_double_sided(Self, Bool) -> Self
 pub fn StandardMaterial::with_emissive(Self, @color.Color) -> Self
 pub fn StandardMaterial::with_emissive_texture(Self, @asset.Handle[@image.Image]?) -> Self
+pub fn StandardMaterial::with_flip_normal_map_y(Self, Bool) -> Self
 pub fn StandardMaterial::with_ior(Self, Float) -> Self
 pub fn StandardMaterial::with_max_parallax_layer_count(Self, Float) -> Self
 pub fn StandardMaterial::with_metallic(Self, Float) -> Self

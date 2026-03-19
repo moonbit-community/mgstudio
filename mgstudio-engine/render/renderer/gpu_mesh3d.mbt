@@ -181,7 +181,6 @@ fn mesh3d_draw_uniform_bytes(
   metallic : Float,
   roughness : Float,
   reflectance : Float,
-  normal_textured : Bool,
   parallax_depth_scale : Float,
   max_parallax_layer_count : Float,
   max_relief_mapping_search_steps : Float,
@@ -229,7 +228,7 @@ fn mesh3d_draw_uniform_bytes(
     f32_bits(metallic),
     f32_bits(roughness),
     f32_bits(reflectance),
-    f32_bits(if normal_textured { 1.0F } else { 0.0F }),
+    f32_bits(0.0F),
     f32_bits(parallax_depth_scale),
     f32_bits(max_parallax_layer_count),
     f32_bits(max_relief_mapping_search_steps),
@@ -252,6 +251,29 @@ fn mesh3d_draw_uniform_bytes(
     0U,
   ]
   u32le_pack(words)
+}
+
+///|
+fn mesh3d_normal_map_is_two_component_format(format_raw : UInt) -> Bool {
+  format_raw == @wgpu.TEXTURE_FORMAT_RG8_UNORM ||
+  format_raw == @wgpu.TEXTURE_FORMAT_BC5_RG_UNORM ||
+  format_raw == @wgpu.TEXTURE_FORMAT_EACRG11_UNORM
+}
+
+///|
+fn mesh3d_runtime_material_flags(
+  material_flags : UInt,
+  normal_texture_id : Int,
+  normal_texture : GpuTextureInfo,
+) -> UInt {
+  if normal_texture_id < 0 {
+    return material_flags
+  }
+  let mut runtime_flags = material_flags
+  if mesh3d_normal_map_is_two_component_format(normal_texture.format_raw) {
+    runtime_flags = runtime_flags | (1U << 6)
+  }
+  runtime_flags
 }
 
 ///|
@@ -2032,7 +2054,7 @@ pub fn GpuBackend::draw_mesh3d(
   }
   let resolved_base_texture_id = if texture_id < 0 { -1 } else { texture_id }
   let resolved_normal_texture_id = if normal_texture_id < 0 {
-    -1
+    ensure_normal_map_fallback_texture(self).id
   } else {
     normal_texture_id
   }
@@ -2134,6 +2156,9 @@ pub fn GpuBackend::draw_mesh3d(
   let uv_transform_d_value = uv_transform_d
   let uv_transform_tx_value = uv_transform_tx
   let uv_transform_ty_value = uv_transform_ty
+  let runtime_material_flags = mesh3d_runtime_material_flags(
+    material_flags, normal_texture_id, normal_texture,
+  )
   let uv_transform_mode_value = if uv_transform_mode < 0.0F {
     -1.0F
   } else if textured ||
@@ -2176,10 +2201,9 @@ pub fn GpuBackend::draw_mesh3d(
     color_r, color_g, color_b, color_a, uv_transform_a_value, uv_transform_b_value,
     uv_transform_c_value, uv_transform_d_value, uv_transform_tx_value, uv_transform_ty_value,
     uv_transform_mode_value, emissive_r, emissive_g, emissive_b, metallic, roughness,
-    reflectance, normal_textured, parallax_depth_scale, max_parallax_layer_count,
-    max_relief_mapping_search_steps, anisotropy_strength, anisotropy_rotation, specular_tint_r,
-    specular_tint_g, specular_tint_b, diffuse_transmission, specular_transmission,
-    thickness, ior, alpha_cutoff, material_flags,
+    reflectance, parallax_depth_scale, max_parallax_layer_count, max_relief_mapping_search_steps,
+    anisotropy_strength, anisotropy_rotation, specular_tint_r, specular_tint_g, specular_tint_b,
+    diffuse_transmission, specular_transmission, thickness, ior, alpha_cutoff, runtime_material_flags,
   )
   guard self.mesh3d_view_buf is Some(active_view_buffer) else { return }
   guard uniform_buffer is Some(active_uniform_buffer) else { return }

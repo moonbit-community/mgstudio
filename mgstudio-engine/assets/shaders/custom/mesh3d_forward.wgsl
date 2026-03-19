@@ -45,7 +45,7 @@ struct Mesh3dDrawUniform {
   uv_transform0 : vec4<f32>, // (a, b, c, tx)
   uv_transform1 : vec4<f32>, // (d, ty, mode, _)
   emissive_params : vec4<f32>, // (emissive.rgb, _)
-  material_params : vec4<f32>, // (metallic, roughness, reflectance, has_normal_map)
+  material_params : vec4<f32>, // (metallic, roughness, reflectance, _)
   parallax_params : vec4<f32>, // (depth_scale, max_layer_count, relief_steps, _)
   anisotropy_params : vec4<f32>, // (strength, rot_cos, rot_sin, _)
   specular_tint : vec4<f32>, // (r, g, b, _)
@@ -62,6 +62,8 @@ const STANDARD_MATERIAL_FLAGS_METALLIC_ROUGHNESS_TEXTURE_BIT: u32 = 1u << 2u;
 const STANDARD_MATERIAL_FLAGS_OCCLUSION_TEXTURE_BIT: u32          = 1u << 3u;
 const STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT: u32               = 1u << 4u;
 const STANDARD_MATERIAL_FLAGS_UNLIT_BIT: u32                      = 1u << 5u;
+const STANDARD_MATERIAL_FLAGS_TWO_COMPONENT_NORMAL_MAP: u32       = 1u << 6u;
+const STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y: u32              = 1u << 7u;
 const STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT: u32                  = 1u << 9u;
 const STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT: u32         = 1u << 17u;
 const STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT: u32      = 1u << 19u;
@@ -156,6 +158,46 @@ fn safe_normalize(v : vec3<f32>) -> vec3<f32> {
 
 fn material_flag_enabled(flags : u32, bit : u32) -> bool {
   return (flags & bit) != 0u;
+}
+
+fn apply_normal_mapping(
+  standard_material_flags : u32,
+  geometric_normal : vec3<f32>,
+  position : vec3<f32>,
+  uv : vec2<f32>,
+  double_sided : bool,
+  is_front : bool,
+  in_normal_map_sample : vec3<f32>,
+) -> vec3<f32> {
+  var tangent_space_normal = in_normal_map_sample;
+  if material_flag_enabled(
+    standard_material_flags,
+    STANDARD_MATERIAL_FLAGS_TWO_COMPONENT_NORMAL_MAP,
+  ) {
+    tangent_space_normal = vec3<f32>(
+      tangent_space_normal.xy * 2.0 - vec2<f32>(1.0, 1.0),
+      0.0,
+    );
+    tangent_space_normal.z = sqrt(max(
+      1.0 - tangent_space_normal.x * tangent_space_normal.x -
+      tangent_space_normal.y * tangent_space_normal.y,
+      0.0,
+    ));
+  } else {
+    tangent_space_normal = tangent_space_normal * 2.0 - vec3<f32>(1.0, 1.0, 1.0);
+  }
+  if material_flag_enabled(
+    standard_material_flags,
+    STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y,
+  ) {
+    tangent_space_normal.y = -tangent_space_normal.y;
+  }
+  if double_sided && !is_front {
+    tangent_space_normal = -tangent_space_normal;
+  }
+  return safe_normalize(
+    cotangent_frame(geometric_normal, position, uv) * tangent_space_normal,
+  );
 }
 
 const PI : f32 = 3.141592653589793;
@@ -455,7 +497,10 @@ fn sample_transmission_source(
 }
 
 @fragment
-fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
+fn fs_main(
+  in : VertexOut,
+  @builtin(front_facing) is_front : bool,
+) -> @location(0) vec4<f32> {
   let material_flags = u_draw.material_flags;
   let has_base_map = material_flag_enabled(
     material_flags,
@@ -473,7 +518,6 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
     material_flags,
     STANDARD_MATERIAL_FLAGS_OCCLUSION_TEXTURE_BIT,
   );
-  let has_normal_map = u_draw.material_params.w > 0.5;
   let has_depth_map = material_flag_enabled(
     material_flags,
     STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT,
@@ -488,6 +532,10 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   );
   let use_stacked_cubemap = u_draw.uv_transform1.z < 0.0;
   let has_uv = u_draw.uv_transform1.z > 0.0;
+  let double_sided = material_flag_enabled(
+    material_flags,
+    STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT,
+  );
   let geometric_normal = safe_normalize(in.world_normal);
   let view_dir = safe_normalize(u_view.camera_pos.xyz - in.world_pos);
   var uv = in.uv;
@@ -579,11 +627,17 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
     occlusion_tex = textureSample(u_occlusion_texture, u_occlusion_sampler, uv).r;
   }
   var normal = geometric_normal;
-  if has_normal_map && has_uv {
+  if has_uv {
     let normal_texel = textureSample(u_normal_map_texture, u_normal_map_sampler, uv).xyz;
-    let tangent_space_normal = normal_texel * 2.0 - vec3<f32>(1.0, 1.0, 1.0);
-    let tbn = cotangent_frame(geometric_normal, in.world_pos, uv);
-    normal = safe_normalize(tbn * tangent_space_normal);
+    normal = apply_normal_mapping(
+      material_flags,
+      geometric_normal,
+      in.world_pos,
+      uv,
+      double_sided,
+      is_front,
+      normal_texel,
+    );
   }
   if dot(normal, view_dir) < 0.0 {
     normal = -normal;

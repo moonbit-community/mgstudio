@@ -379,6 +379,7 @@ pub struct GpuBackend {
   mesh3d_material_bg_cache : Array[Mesh3dMaterialBindGroupCacheEntry]
   sampler_cache : @hashmap.HashMap[String, @wgpu_mbt.Sampler]
   mut next_id : Int
+  mut normal_map_fallback_texture_id : Int
   mut point_shadow_fallback_texture_id : Int
   mut shadow_color_texture : @wgpu_mbt.Texture?
   mut shadow_color_view : @wgpu_mbt.TextureView?

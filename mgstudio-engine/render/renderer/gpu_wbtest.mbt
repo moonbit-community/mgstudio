@@ -327,8 +327,18 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
     wgsl.contains("STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK"),
     content="true",
   )
+  inspect(
+    wgsl.contains("STANDARD_MATERIAL_FLAGS_TWO_COMPONENT_NORMAL_MAP"),
+    content="true",
+  )
+  inspect(
+    wgsl.contains("STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y"),
+    content="true",
+  )
   inspect(wgsl.contains("material_flag_enabled("), content="true")
+  inspect(wgsl.contains("apply_normal_mapping("), content="true")
   inspect(wgsl.contains("discard;"), content="true")
+  inspect(!wgsl.contains("has_normal_map ="), content="true")
   inspect(wgsl.contains("@location(1) normal : vec3<f32>"), content="true")
   inspect(wgsl.contains("@location(2) uv : vec2<f32>"), content="true")
   inspect(wgsl.contains("@location(3) color : vec4<f32>"), content="true")
@@ -336,6 +346,45 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
     wgsl.contains("@location(3) world_normal : vec3<f32>"),
     content="true",
   )
+}
+
+///|
+test "renderer: mesh3d normal map fallback texture is flat normal blue" {
+  let backend = GpuBackend::new()
+  let previous_backend = backend_ref.val
+  backend_ref.val = Some(backend)
+  let fallback_texture = ensure_normal_map_fallback_texture(backend)
+  inspect(
+    fallback_texture.format_raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    content="true",
+  )
+  let capture = screenshot_capture_texture_sync(texture_id=fallback_texture.id)
+  inspect(capture is Some(_), content="true")
+  inspect(
+    capture.map(fn(value) {
+      [
+        value.pixels[0].to_uint(),
+        value.pixels[1].to_uint(),
+        value.pixels[2].to_uint(),
+        value.pixels[3].to_uint(),
+      ]
+    }),
+    content="Some([128, 128, 255, 255])",
+  )
+  backend_ref.val = previous_backend
+}
+
+///|
+test "renderer: mesh3d runtime flags infer two-component normal map format" {
+  let backend = GpuBackend::new()
+  let fallback_texture = ensure_normal_map_fallback_texture(backend)
+  let two_component_texture = GpuTextureInfo::{
+    ..fallback_texture,
+    id: 42,
+    format_raw: @wgpu.TEXTURE_FORMAT_RG8_UNORM,
+  }
+  let flags = mesh3d_runtime_material_flags(0U, 42, two_component_texture)
+  inspect((flags & (1U << 6)) != 0U, content="true")
 }
 
 ///|

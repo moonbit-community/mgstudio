@@ -27,9 +27,10 @@ test "render3d: standard material flags pack current Bevy subset bits" {
   let material = StandardMaterial::default()
     .with_unlit(true)
     .with_double_sided(true)
+    .with_flip_normal_map_y(true)
     .with_alpha_mode(Mask(0.37F))
   let flags = render3d_standard_material_flags(
-    material, 11, 12, 13, 14, 15, 16, 17,
+    material, 11, 12, 13, 14, 15, 16, 17, 18,
   )
   let ok = (flags & STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT) != 0U &&
     (flags & STANDARD_MATERIAL_FLAGS_EMISSIVE_TEXTURE_BIT) != 0U &&
@@ -37,6 +38,7 @@ test "render3d: standard material flags pack current Bevy subset bits" {
     (flags & STANDARD_MATERIAL_FLAGS_OCCLUSION_TEXTURE_BIT) != 0U &&
     (flags & STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT) != 0U &&
     (flags & STANDARD_MATERIAL_FLAGS_UNLIT_BIT) != 0U &&
+    (flags & STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y) != 0U &&
     (flags & STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT) != 0U &&
     (flags & STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT) != 0U &&
     (flags & STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT) != 0U &&
@@ -62,6 +64,27 @@ test "render3d: standard material flags keep opaque default when maps are absent
     -1,
     -1,
     -1,
+    -1,
   )
   inspect(flags == STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE, content="true")
+}
+
+///|
+test "render3d: normal map encoding bits stay host-minimal without bound texture" {
+  let flags = render3d_standard_material_flags(
+    StandardMaterial::default().with_flip_normal_map_y(true),
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+  )
+  inspect(
+    (flags & STANDARD_MATERIAL_FLAGS_FLIP_NORMAL_MAP_Y) == 0U &&
+    (flags & (1U << 6)) == 0U,
+    content="true",
+  )
 }

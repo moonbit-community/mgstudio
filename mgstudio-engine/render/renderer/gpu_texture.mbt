@@ -74,6 +74,63 @@ fn ensure_default_texture(
 }
 
 ///|
+fn ensure_normal_map_fallback_texture(
+  backend : GpuBackend,
+) -> GpuTextureInfo raise GpuBackendError {
+  if backend.normal_map_fallback_texture_id >= 0 {
+    if find_texture(backend, backend.normal_map_fallback_texture_id)
+      is Some(texture) {
+      return texture
+    }
+  }
+  ensure_sprite_resources(backend)
+  let bgl_tex = backend.sprite_bgl_tex.unwrap()
+  let tex = backend.device.create_texture_rgba8_2d_with_usage(
+    1U,
+    1U,
+    @wgpu.TextureUsage::from_u64(
+      @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
+      @wgpu.TEXTURE_USAGE_COPY_DST |
+      @wgpu.TEXTURE_USAGE_COPY_SRC,
+    ),
+  )
+  let view = tex.create_view()
+  let sampler = backend.device.create_sampler_linear_clamp()
+  let bg = backend.device.create_bind_group_sampler_texture_2d(
+    bgl_tex, sampler, view,
+  )
+  backend.queue.write_texture_rgba8_2d(
+    tex,
+    1U,
+    1U,
+    Bytes::from_array([
+      (128).to_byte(),
+      (128).to_byte(),
+      (255).to_byte(),
+      (255).to_byte(),
+    ]),
+  )
+  let info = GpuTextureInfo::{
+    id: alloc_id(backend),
+    width: 1,
+    height: 1,
+    mip_level_count: 1,
+    base_mip_level: 0,
+    format_raw: @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    texture: tex,
+    view,
+    sample_view: None,
+    layer_views: [],
+    sampler,
+    bind_group: bg,
+  }
+  backend.normal_map_fallback_texture_id = info.id
+  backend.textures.push(info)
+  mesh3d_material_cache_clear(backend)
+  info
+}
+
+///|
 fn resolve_draw_texture(
   backend : GpuBackend,
   id : Int,
