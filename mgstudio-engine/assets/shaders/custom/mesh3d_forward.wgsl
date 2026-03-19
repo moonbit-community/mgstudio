@@ -712,6 +712,98 @@ fn sample_transmission_source(
   return sum / weight_sum;
 }
 
+fn diffuse_transmissive_light(
+  ambient_term : vec3<f32>,
+  directional : LightContribution,
+  point : LightContribution,
+  spot : LightContribution,
+  occlusion_tex : f32,
+) -> vec3<f32> {
+  return (ambient_term +
+    directional.transmitted +
+    point.transmitted +
+    spot.transmitted) * occlusion_tex;
+}
+
+fn transmission_source_uv(
+  position_xy : vec2<f32>,
+  texture_size : vec2<f32>,
+  normal : vec3<f32>,
+  view_dir : vec3<f32>,
+  ior : f32,
+  thickness : f32,
+  transmission_steps : f32,
+) -> vec2<f32> {
+  var screen_uv = position_xy / max(texture_size, vec2<f32>(1.0, 1.0));
+  let eta = 1.0 / ior;
+  let incident = -view_dir;
+  let ndoti = dot(normal, incident);
+  let k = 1.0 - eta * eta * (1.0 - ndoti * ndoti);
+  if k > 0.0 {
+    let refracted = eta * incident - (eta * ndoti + sqrt(k)) * normal;
+    let refraction_scale = transmission_steps * thickness * 0.0025;
+    screen_uv += refracted.xy * refraction_scale;
+  }
+  return screen_uv;
+}
+
+fn specular_transmissive_light(
+  ambient_term : vec3<f32>,
+  directional : LightContribution,
+  point : LightContribution,
+  spot : LightContribution,
+  position_xy : vec2<f32>,
+  normal : vec3<f32>,
+  view_dir : vec3<f32>,
+  specular_transmission : f32,
+  perceptual_roughness : f32,
+  thickness : f32,
+  ior : f32,
+  transmission_blur_taps : i32,
+  transmission_steps : f32,
+) -> vec3<f32> {
+  let ior_f0 = pow((ior - 1.0) / max(ior + 1.0, 1.0e-4), 2.0);
+  let thickness_factor = clamp(thickness / 5.0, 0.0, 1.0);
+  var transmitted_light = (ambient_term +
+    directional.diffuse +
+    point.diffuse +
+    spot.diffuse) *
+    (0.35 + 0.65 * (1.0 - perceptual_roughness * perceptual_roughness)) *
+    (1.0 - 0.4 * thickness_factor) *
+    (0.2 + 0.8 * (1.0 - ior_f0));
+  if specular_transmission > 0.0 &&
+    transmission_blur_taps > 0 &&
+    transmission_steps > 0.0 {
+    let texture_size = vec2<f32>(textureDimensions(u_transmission_source_texture));
+    let screen_uv = transmission_source_uv(
+      position_xy,
+      texture_size,
+      normal,
+      view_dir,
+      ior,
+      thickness,
+      transmission_steps,
+    );
+    let transmission_scene = sample_transmission_source(
+      screen_uv,
+      transmission_blur_taps,
+      perceptual_roughness,
+      thickness,
+    );
+    let transmission_scene_weight = clamp(
+      0.25 + 0.75 * (1.0 - ior_f0),
+      0.0,
+      1.0,
+    );
+    transmitted_light = mix(
+      transmitted_light,
+      transmission_scene,
+      transmission_scene_weight,
+    );
+  }
+  return transmitted_light;
+}
+
 @fragment
 fn fs_main(
   in : VertexOut,
@@ -881,11 +973,8 @@ fn fs_main(
   let specular_transmission = clamp(u_draw.material.specular_transmission, 0.0, 1.0);
   let thickness = max(u_draw.material.thickness, 0.0);
   let ior = max(u_draw.material.ior, 1.0);
-  let transmission_blur_taps = i32(max(
-    u_view.lights.spot_light_custom_data.y,
-    0.0,
-  ));
-  let transmission_steps = max(u_view.lights.spot_light_custom_data.z, 0.0);
+  let transmission_blur_taps = i32(max(u_view.lights.spot_light_custom_data.z, 0.0));
+  let transmission_steps = max(u_view.lights.spot_light_custom_data.w, 0.0);
   let reflectance_rgb = max(specular_tint * u_draw.material.reflectance, vec3<f32>(0.0));
   let diffuse_color = base_color.xyz * (1.0 - metallic) *
     (1.0 - specular_transmission) *
@@ -950,51 +1039,29 @@ fn fs_main(
     directional.diffuse +
     point.diffuse +
     spot.diffuse) * occlusion_tex;
-  let diffuse_transmitted_lighting = (ambient_term +
-    directional.transmitted +
-    point.transmitted +
-    spot.transmitted) * occlusion_tex;
+  let diffuse_transmitted_lighting = diffuse_transmissive_light(
+    ambient_term,
+    directional,
+    point,
+    spot,
+    occlusion_tex,
+  );
   let specular_lighting = directional.specular + point.specular + spot.specular;
-  let ior_f0 = pow((ior - 1.0) / max(ior + 1.0, 1.0e-4), 2.0);
-  let thickness_factor = clamp(thickness / 5.0, 0.0, 1.0);
-  var specular_transmitted_lighting = (ambient_term +
-    directional.diffuse +
-    point.diffuse +
-    spot.diffuse) *
-    (0.35 + 0.65 * (1.0 - perceptual_roughness * perceptual_roughness)) *
-    (1.0 - 0.4 * thickness_factor) *
-    (0.2 + 0.8 * (1.0 - ior_f0));
-  if specular_transmission > 0.0 &&
-    transmission_blur_taps > 0 &&
-    transmission_steps > 0.0 {
-    let texture_size = vec2<f32>(textureDimensions(u_transmission_source_texture));
-    var screen_uv = in.position.xy / max(texture_size, vec2<f32>(1.0, 1.0));
-    let eta = 1.0 / ior;
-    let incident = -view_dir;
-    let ndoti = dot(normal, incident);
-    let k = 1.0 - eta * eta * (1.0 - ndoti * ndoti);
-    if k > 0.0 {
-      let refracted = eta * incident - (eta * ndoti + sqrt(k)) * normal;
-      let refraction_scale = transmission_steps * thickness * 0.0025;
-      screen_uv += refracted.xy * refraction_scale;
-    }
-    let transmission_scene = sample_transmission_source(
-      screen_uv,
-      transmission_blur_taps,
-      perceptual_roughness,
-      thickness,
-    );
-    let transmission_scene_weight = clamp(
-      0.25 + 0.75 * (1.0 - ior_f0),
-      0.0,
-      1.0,
-    );
-    specular_transmitted_lighting = mix(
-      specular_transmitted_lighting,
-      transmission_scene,
-      transmission_scene_weight,
-    );
-  }
+  let specular_transmitted_lighting = specular_transmissive_light(
+    ambient_term,
+    directional,
+    point,
+    spot,
+    in.position.xy,
+    normal,
+    view_dir,
+    specular_transmission,
+    perceptual_roughness,
+    thickness,
+    ior,
+    transmission_blur_taps,
+    transmission_steps,
+  );
   let transmitted_light = diffuse_transmissive_color * diffuse_transmitted_lighting +
     specular_transmissive_color * specular_transmitted_lighting;
   let exposure = max(u_view.view.exposure.x, 0.0);

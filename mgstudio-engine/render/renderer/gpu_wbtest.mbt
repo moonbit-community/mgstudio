@@ -357,9 +357,24 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
   inspect(wgsl.contains("fn point_light_shadow("), content="true")
   inspect(wgsl.contains("fn point_light("), content="true")
   inspect(wgsl.contains("fn spot_light("), content="true")
+  inspect(wgsl.contains("fn diffuse_transmissive_light("), content="true")
+  inspect(wgsl.contains("fn specular_transmissive_light("), content="true")
+  inspect(wgsl.contains("fn transmission_source_uv("), content="true")
   inspect(wgsl.contains("let directional = directional_light("), content="true")
   inspect(wgsl.contains("let point = point_light("), content="true")
   inspect(wgsl.contains("let spot = spot_light("), content="true")
+  inspect(
+    wgsl.contains(
+      "let transmission_blur_taps = i32(max(u_view.lights.spot_light_custom_data.z, 0.0));",
+    ),
+    content="true",
+  )
+  inspect(
+    wgsl.contains(
+      "let transmission_steps = max(u_view.lights.spot_light_custom_data.w, 0.0);",
+    ),
+    content="true",
+  )
   inspect(
     wgsl.contains("STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT"),
     content="true",
