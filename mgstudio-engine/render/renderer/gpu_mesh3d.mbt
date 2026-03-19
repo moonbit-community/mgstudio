@@ -178,117 +178,80 @@ fn mesh3d_draw_uniform_bytes(
   emissive_r : Float,
   emissive_g : Float,
   emissive_b : Float,
-  unlit : Float,
   metallic : Float,
   roughness : Float,
   reflectance : Float,
-  textured : Bool,
-  emissive_textured : Bool,
-  metallic_roughness_textured : Bool,
-  occlusion_textured : Bool,
   normal_textured : Bool,
   parallax_depth_scale : Float,
   max_parallax_layer_count : Float,
   max_relief_mapping_search_steps : Float,
-  depth_textured : Bool,
   anisotropy_strength : Float,
   anisotropy_rotation : Float,
-  anisotropy_textured : Bool,
   specular_tint_r : Float,
   specular_tint_g : Float,
   specular_tint_b : Float,
-  specular_tint_textured : Bool,
   diffuse_transmission : Float,
   specular_transmission : Float,
   thickness : Float,
   ior : Float,
+  alpha_cutoff : Float,
+  material_flags : UInt,
 ) -> Bytes {
-  f32le_pack([
-    x,
-    y,
-    z,
-    1.0F,
-    rotation_x,
-    rotation_y,
-    rotation_z,
-    rotation_w,
-    scale_x,
-    scale_y,
-    scale_z,
-    1.0F,
-    color_r,
-    color_g,
-    color_b,
-    color_a,
-    uv_transform_a,
-    uv_transform_b,
-    uv_transform_c,
-    uv_transform_tx,
-    uv_transform_d,
-    uv_transform_ty,
-    uv_transform_mode,
-    0.0F,
-    emissive_r,
-    emissive_g,
-    emissive_b,
-    unlit,
-    metallic,
-    roughness,
-    reflectance,
-    if normal_textured {
-      1.0F
-    } else {
-      0.0F
-    },
-    if textured {
-      1.0F
-    } else {
-      0.0F
-    },
-    if emissive_textured {
-      1.0F
-    } else {
-      0.0F
-    },
-    if metallic_roughness_textured {
-      1.0F
-    } else {
-      0.0F
-    },
-    if occlusion_textured {
-      1.0F
-    } else {
-      0.0F
-    },
-    parallax_depth_scale,
-    max_parallax_layer_count,
-    max_relief_mapping_search_steps,
-    if depth_textured {
-      1.0F
-    } else {
-      0.0F
-    },
-    anisotropy_strength,
-    cosf(anisotropy_rotation),
-    sinf(anisotropy_rotation),
-    if anisotropy_textured {
-      1.0F
-    } else {
-      0.0F
-    },
-    specular_tint_r,
-    specular_tint_g,
-    specular_tint_b,
-    if specular_tint_textured {
-      1.0F
-    } else {
-      0.0F
-    },
-    diffuse_transmission,
-    specular_transmission,
-    thickness,
-    ior,
-  ])
+  let words : Array[UInt] = [
+    f32_bits(x),
+    f32_bits(y),
+    f32_bits(z),
+    f32_bits(1.0F),
+    f32_bits(rotation_x),
+    f32_bits(rotation_y),
+    f32_bits(rotation_z),
+    f32_bits(rotation_w),
+    f32_bits(scale_x),
+    f32_bits(scale_y),
+    f32_bits(scale_z),
+    f32_bits(1.0F),
+    f32_bits(color_r),
+    f32_bits(color_g),
+    f32_bits(color_b),
+    f32_bits(color_a),
+    f32_bits(uv_transform_a),
+    f32_bits(uv_transform_b),
+    f32_bits(uv_transform_c),
+    f32_bits(uv_transform_tx),
+    f32_bits(uv_transform_d),
+    f32_bits(uv_transform_ty),
+    f32_bits(uv_transform_mode),
+    f32_bits(0.0F),
+    f32_bits(emissive_r),
+    f32_bits(emissive_g),
+    f32_bits(emissive_b),
+    f32_bits(0.0F),
+    f32_bits(metallic),
+    f32_bits(roughness),
+    f32_bits(reflectance),
+    f32_bits(if normal_textured { 1.0F } else { 0.0F }),
+    f32_bits(parallax_depth_scale),
+    f32_bits(max_parallax_layer_count),
+    f32_bits(max_relief_mapping_search_steps),
+    f32_bits(0.0F),
+    f32_bits(anisotropy_strength),
+    f32_bits(cosf(anisotropy_rotation)),
+    f32_bits(sinf(anisotropy_rotation)),
+    f32_bits(0.0F),
+    f32_bits(specular_tint_r),
+    f32_bits(specular_tint_g),
+    f32_bits(specular_tint_b),
+    f32_bits(0.0F),
+    f32_bits(diffuse_transmission),
+    f32_bits(specular_transmission),
+    f32_bits(thickness),
+    f32_bits(ior),
+    material_flags,
+    f32_bits(alpha_cutoff),
+    0U,
+    0U,
+  ]
+  u32le_pack(words)
 }
 
 ///|
@@ -1929,7 +1892,6 @@ pub fn GpuBackend::draw_mesh3d(
   emissive_r : Float,
   emissive_g : Float,
   emissive_b : Float,
-  unlit : Float,
   metallic : Float,
   roughness : Float,
   reflectance : Float,
@@ -1947,6 +1909,8 @@ pub fn GpuBackend::draw_mesh3d(
   specular_transmission : Float,
   thickness : Float,
   ior : Float,
+  alpha_cutoff : Float,
+  material_flags : UInt,
   transmission_source_texture_id : Int,
   transmission_blur_taps : Float,
   transmission_steps : Float,
@@ -2211,12 +2175,11 @@ pub fn GpuBackend::draw_mesh3d(
     x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y, scale_z,
     color_r, color_g, color_b, color_a, uv_transform_a_value, uv_transform_b_value,
     uv_transform_c_value, uv_transform_d_value, uv_transform_tx_value, uv_transform_ty_value,
-    uv_transform_mode_value, emissive_r, emissive_g, emissive_b, unlit, metallic,
-    roughness, reflectance, textured, emissive_textured, metallic_roughness_textured,
-    occlusion_textured, normal_textured, parallax_depth_scale, max_parallax_layer_count,
-    max_relief_mapping_search_steps, depth_textured, anisotropy_strength, anisotropy_rotation,
-    anisotropy_textured, specular_tint_r, specular_tint_g, specular_tint_b, specular_tint_textured,
-    diffuse_transmission, specular_transmission, thickness, ior,
+    uv_transform_mode_value, emissive_r, emissive_g, emissive_b, metallic, roughness,
+    reflectance, normal_textured, parallax_depth_scale, max_parallax_layer_count,
+    max_relief_mapping_search_steps, anisotropy_strength, anisotropy_rotation, specular_tint_r,
+    specular_tint_g, specular_tint_b, diffuse_transmission, specular_transmission,
+    thickness, ior, alpha_cutoff, material_flags,
   )
   guard self.mesh3d_view_buf is Some(active_view_buffer) else { return }
   guard uniform_buffer is Some(active_uniform_buffer) else { return }

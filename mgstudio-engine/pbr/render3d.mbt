@@ -1335,6 +1335,54 @@ const RENDER3D_PASS_KIND_DISABLE_DECAL_FLAG : Int = 1 << 10
 const RENDER3D_MESH3D_DRAW_FLAG_DECAL : Int = 1 << 8
 
 ///|
+const STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT : UInt = 1U << 0
+
+///|
+const STANDARD_MATERIAL_FLAGS_EMISSIVE_TEXTURE_BIT : UInt = 1U << 1
+
+///|
+const STANDARD_MATERIAL_FLAGS_METALLIC_ROUGHNESS_TEXTURE_BIT : UInt = 1U << 2
+
+///|
+const STANDARD_MATERIAL_FLAGS_OCCLUSION_TEXTURE_BIT : UInt = 1U << 3
+
+///|
+const STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT : UInt = 1U << 4
+
+///|
+const STANDARD_MATERIAL_FLAGS_UNLIT_BIT : UInt = 1U << 5
+
+///|
+const STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT : UInt = 1U << 9
+
+///|
+const STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT : UInt = 1U << 17
+
+///|
+const STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT : UInt = 1U << 19
+
+///|
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE : UInt = 0U << 29
+
+///|
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK : UInt = 1U << 29
+
+///|
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND : UInt = 2U << 29
+
+///|
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_PREMULTIPLIED : UInt = 3U << 29
+
+///|
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ADD : UInt = 4U << 29
+
+///|
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MULTIPLY : UInt = 5U << 29
+
+///|
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE : UInt = 6U << 29
+
+///|
 fn render3d_pass_kind_encode(
   base_kind : Int,
   postprocess_enabled : Bool,
@@ -1359,6 +1407,73 @@ fn render3d_mesh_draw_flags(mesh : ExtractedMesh3d) -> Int {
   let mut flags = 0
   if mesh.payload.is_forward_decal || mesh.payload.clustered_decal is Some(_) {
     flags = flags | RENDER3D_MESH3D_DRAW_FLAG_DECAL
+  }
+  flags
+}
+
+///|
+fn render3d_standard_material_alpha_mode_flags(
+  alpha_mode : AlphaMode3d,
+) -> UInt {
+  match alpha_mode {
+    Opaque => STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE
+    Mask(_) => STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK
+    Blend => STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND
+    Premultiplied => STANDARD_MATERIAL_FLAGS_ALPHA_MODE_PREMULTIPLIED
+    Add => STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ADD
+    Multiply => STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MULTIPLY
+    AlphaToCoverage => STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE
+  }
+}
+
+///|
+fn render3d_standard_material_alpha_cutoff(alpha_mode : AlphaMode3d) -> Float {
+  match alpha_mode {
+    Mask(cutoff) => cutoff
+    _ => 0.5F
+  }
+}
+
+///|
+fn render3d_standard_material_flags(
+  material : StandardMaterial,
+  base_color_texture_id : Int,
+  emissive_texture_id : Int,
+  metallic_roughness_texture_id : Int,
+  occlusion_texture_id : Int,
+  depth_texture_id : Int,
+  anisotropy_texture_id : Int,
+  specular_tint_texture_id : Int,
+) -> UInt {
+  let mut flags = render3d_standard_material_alpha_mode_flags(
+    material.alpha_mode,
+  )
+  if base_color_texture_id >= 0 {
+    flags = flags | STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT
+  }
+  if emissive_texture_id >= 0 {
+    flags = flags | STANDARD_MATERIAL_FLAGS_EMISSIVE_TEXTURE_BIT
+  }
+  if metallic_roughness_texture_id >= 0 {
+    flags = flags | STANDARD_MATERIAL_FLAGS_METALLIC_ROUGHNESS_TEXTURE_BIT
+  }
+  if occlusion_texture_id >= 0 {
+    flags = flags | STANDARD_MATERIAL_FLAGS_OCCLUSION_TEXTURE_BIT
+  }
+  if material.cull_mode is None {
+    flags = flags | STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT
+  }
+  if material.unlit {
+    flags = flags | STANDARD_MATERIAL_FLAGS_UNLIT_BIT
+  }
+  if depth_texture_id >= 0 {
+    flags = flags | STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT
+  }
+  if anisotropy_texture_id >= 0 {
+    flags = flags | STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT
+  }
+  if specular_tint_texture_id >= 0 {
+    flags = flags | STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT
   }
   flags
 }
@@ -2009,7 +2124,6 @@ fn render3d_draw_camera_skybox(
     emissive_r=0.0F,
     emissive_g=0.0F,
     emissive_b=0.0F,
-    unlit=1.0F,
     metallic=0.0F,
     roughness=1.0F,
     reflectance=0.0F,
@@ -2027,6 +2141,10 @@ fn render3d_draw_camera_skybox(
     specular_transmission=0.0F,
     thickness=0.0F,
     ior=1.5F,
+    alpha_cutoff=0.5F,
+    material_flags=STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT |
+      STANDARD_MATERIAL_FLAGS_UNLIT_BIT |
+      STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE,
     transmission_source_texture_id=-1,
     transmission_blur_taps=0.0F,
     transmission_steps=0.0F,
@@ -5319,6 +5437,10 @@ fn render3d_build_mesh_gpu_draw_payload(
   max_relief_mapping_search_steps : Float,
   draw_flags : Int,
 ) -> MeshGpuDrawPayload3d {
+  let material_flags = render3d_standard_material_flags(
+    material, texture_id, emissive_texture_id, metallic_roughness_texture_id, occlusion_texture_id,
+    depth_texture_id, anisotropy_texture_id, specular_tint_texture_id,
+  )
   MeshGpuDrawPayload3d::{
     mesh_id,
     transform,
@@ -5335,7 +5457,6 @@ fn render3d_build_mesh_gpu_draw_payload(
     occlusion_texture_id,
     depth_texture_id,
     emissive: material.emissive,
-    unlit: material.unlit,
     metallic: material.metallic,
     anisotropy_texture_id,
     anisotropy_rotation: material.anisotropy_rotation,
@@ -5348,6 +5469,8 @@ fn render3d_build_mesh_gpu_draw_payload(
     specular_transmission: draw_specular_transmission,
     thickness: draw_thickness,
     ior: draw_ior,
+    alpha_cutoff: render3d_standard_material_alpha_cutoff(material.alpha_mode),
+    material_flags,
     transmission_source_texture_id,
     transmission_blur_taps,
     transmission_steps,
@@ -5405,7 +5528,6 @@ fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     emissive_r=payload.emissive.r,
     emissive_g=payload.emissive.g,
     emissive_b=payload.emissive.b,
-    unlit=if payload.unlit { 1.0F } else { 0.0F },
     metallic=payload.metallic,
     roughness=payload.surface_roughness,
     reflectance=payload.reflectance,
@@ -5423,6 +5545,8 @@ fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
     specular_transmission=payload.specular_transmission,
     thickness=payload.thickness,
     ior=payload.ior,
+    alpha_cutoff=payload.alpha_cutoff,
+    material_flags=payload.material_flags,
     transmission_source_texture_id=payload.transmission_source_texture_id,
     transmission_blur_taps=payload.transmission_blur_taps,
     transmission_steps=payload.transmission_steps,

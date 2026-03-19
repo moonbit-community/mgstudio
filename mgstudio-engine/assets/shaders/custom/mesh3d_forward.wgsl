@@ -44,14 +44,35 @@ struct Mesh3dDrawUniform {
   color : vec4<f32>,
   uv_transform0 : vec4<f32>, // (a, b, c, tx)
   uv_transform1 : vec4<f32>, // (d, ty, mode, _)
-  emissive_unlit : vec4<f32>, // (emissive.rgb, unlit)
-  material_params : vec4<f32>, // (metallic, roughness, reflectance, _)
-  map_flags : vec4<f32>, // (base, emissive, metallic_roughness, occlusion)
-  parallax_params : vec4<f32>, // (depth_scale, max_layer_count, relief_steps, has_depth_map)
-  anisotropy_params : vec4<f32>, // (strength, rot_cos, rot_sin, has_anisotropy_map)
-  specular_tint : vec4<f32>, // (r, g, b, has_specular_tint_map)
+  emissive_params : vec4<f32>, // (emissive.rgb, _)
+  material_params : vec4<f32>, // (metallic, roughness, reflectance, has_normal_map)
+  parallax_params : vec4<f32>, // (depth_scale, max_layer_count, relief_steps, _)
+  anisotropy_params : vec4<f32>, // (strength, rot_cos, rot_sin, _)
+  specular_tint : vec4<f32>, // (r, g, b, _)
   transmission_params : vec4<f32>, // (diffuse_transmission, specular_transmission, thickness, ior)
+  material_flags : u32,
+  alpha_cutoff : f32,
+  _reserved0 : u32,
+  _reserved1 : u32,
 };
+
+const STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT: u32         = 1u << 0u;
+const STANDARD_MATERIAL_FLAGS_EMISSIVE_TEXTURE_BIT: u32           = 1u << 1u;
+const STANDARD_MATERIAL_FLAGS_METALLIC_ROUGHNESS_TEXTURE_BIT: u32 = 1u << 2u;
+const STANDARD_MATERIAL_FLAGS_OCCLUSION_TEXTURE_BIT: u32          = 1u << 3u;
+const STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT: u32               = 1u << 4u;
+const STANDARD_MATERIAL_FLAGS_UNLIT_BIT: u32                      = 1u << 5u;
+const STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT: u32                  = 1u << 9u;
+const STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT: u32         = 1u << 17u;
+const STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT: u32      = 1u << 19u;
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS: u32       = 7u << 29u;
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_OPAQUE: u32              = 0u << 29u;
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK: u32                = 1u << 29u;
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND: u32               = 2u << 29u;
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_PREMULTIPLIED: u32       = 3u << 29u;
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ADD: u32                 = 4u << 29u;
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MULTIPLY: u32            = 5u << 29u;
+const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE: u32   = 6u << 29u;
 
 @group(0) @binding(0) var<uniform> u_view : Mesh3dViewUniform;
 @group(0) @binding(1) var u_transmission_source_texture : texture_2d<f32>;
@@ -131,6 +152,10 @@ fn vs_main(
 fn safe_normalize(v : vec3<f32>) -> vec3<f32> {
   let n2 = max(dot(v, v), 1e-8);
   return v * inverseSqrt(n2);
+}
+
+fn material_flag_enabled(flags : u32, bit : u32) -> bool {
+  return (flags & bit) != 0u;
 }
 
 const PI : f32 = 3.141592653589793;
@@ -431,14 +456,36 @@ fn sample_transmission_source(
 
 @fragment
 fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
-  let has_base_map = u_draw.map_flags.x > 0.5;
-  let has_emissive_map = u_draw.map_flags.y > 0.5;
-  let has_metallic_roughness_map = u_draw.map_flags.z > 0.5;
-  let has_occlusion_map = u_draw.map_flags.w > 0.5;
+  let material_flags = u_draw.material_flags;
+  let has_base_map = material_flag_enabled(
+    material_flags,
+    STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT,
+  );
+  let has_emissive_map = material_flag_enabled(
+    material_flags,
+    STANDARD_MATERIAL_FLAGS_EMISSIVE_TEXTURE_BIT,
+  );
+  let has_metallic_roughness_map = material_flag_enabled(
+    material_flags,
+    STANDARD_MATERIAL_FLAGS_METALLIC_ROUGHNESS_TEXTURE_BIT,
+  );
+  let has_occlusion_map = material_flag_enabled(
+    material_flags,
+    STANDARD_MATERIAL_FLAGS_OCCLUSION_TEXTURE_BIT,
+  );
   let has_normal_map = u_draw.material_params.w > 0.5;
-  let has_depth_map = u_draw.parallax_params.w > 0.5;
-  let has_anisotropy_map = u_draw.anisotropy_params.w > 0.5;
-  let has_specular_tint_map = u_draw.specular_tint.w > 0.5;
+  let has_depth_map = material_flag_enabled(
+    material_flags,
+    STANDARD_MATERIAL_FLAGS_DEPTH_MAP_BIT,
+  );
+  let has_anisotropy_map = material_flag_enabled(
+    material_flags,
+    STANDARD_MATERIAL_FLAGS_ANISOTROPY_TEXTURE_BIT,
+  );
+  let has_specular_tint_map = material_flag_enabled(
+    material_flags,
+    STANDARD_MATERIAL_FLAGS_SPECULAR_TINT_TEXTURE_BIT,
+  );
   let use_stacked_cubemap = u_draw.uv_transform1.z < 0.0;
   let has_uv = u_draw.uv_transform1.z > 0.0;
   let geometric_normal = safe_normalize(in.world_normal);
@@ -502,6 +549,11 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
       base_color = textureSample(u_base_color_texture, u_base_color_sampler, uv) * in.color;
     }
   }
+  let alpha_mode = material_flags & STANDARD_MATERIAL_FLAGS_ALPHA_MODE_RESERVED_BITS;
+  if alpha_mode == STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK &&
+    base_color.a < u_draw.alpha_cutoff {
+    discard;
+  }
   var emissive_tex = vec3<f32>(1.0, 1.0, 1.0);
   if has_emissive_map && has_uv {
     emissive_tex = textureSample(u_emissive_texture, u_emissive_sampler, uv).xyz;
@@ -543,8 +595,12 @@ fn fs_main(in : VertexOut) -> @location(0) vec4<f32> {
   );
   let anisotropy_b = safe_normalize(cross(normal, anisotropy_t));
   let ndotv = max(dot(normal, view_dir), 1.0e-4);
-  let emissive = max(u_draw.emissive_unlit.xyz * emissive_tex, vec3<f32>(0.0));
-  let unlit_factor = clamp(u_draw.emissive_unlit.w, 0.0, 1.0);
+  let emissive = max(u_draw.emissive_params.xyz * emissive_tex, vec3<f32>(0.0));
+  let unlit_factor = select(
+    0.0,
+    1.0,
+    material_flag_enabled(material_flags, STANDARD_MATERIAL_FLAGS_UNLIT_BIT),
+  );
   let metallic = clamp(u_draw.material_params.x * metallic_roughness_tex.b, 0.0, 1.0);
   let perceptual_roughness = clamp(
     u_draw.material_params.y * metallic_roughness_tex.g,

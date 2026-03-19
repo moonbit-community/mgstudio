@@ -157,7 +157,6 @@ priv struct MeshGpuDrawPayload3d {
   occlusion_texture_id : Int
   depth_texture_id : Int
   emissive : @sprite.Color
-  unlit : Bool
   metallic : Float
   anisotropy_texture_id : Int
   anisotropy_rotation : Float
@@ -170,6 +169,8 @@ priv struct MeshGpuDrawPayload3d {
   specular_transmission : Float
   thickness : Float
   ior : Float
+  alpha_cutoff : Float
+  material_flags : UInt
   transmission_source_texture_id : Int
   transmission_blur_taps : Float
   transmission_steps : Float

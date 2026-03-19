@@ -318,6 +318,17 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
     ),
     content="true",
   )
+  inspect(wgsl.contains("material_flags : u32,"), content="true")
+  inspect(
+    wgsl.contains("STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT"),
+    content="true",
+  )
+  inspect(
+    wgsl.contains("STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK"),
+    content="true",
+  )
+  inspect(wgsl.contains("material_flag_enabled("), content="true")
+  inspect(wgsl.contains("discard;"), content="true")
   inspect(wgsl.contains("@location(1) normal : vec3<f32>"), content="true")
   inspect(wgsl.contains("@location(2) uv : vec2<f32>"), content="true")
   inspect(wgsl.contains("@location(3) color : vec4<f32>"), content="true")

@@ -1009,7 +1009,6 @@ pub fn draw_mesh3d(
   emissive_r~ : Float,
   emissive_g~ : Float,
   emissive_b~ : Float,
-  unlit~ : Float,
   metallic~ : Float,
   roughness~ : Float,
   reflectance~ : Float,
@@ -1027,6 +1026,8 @@ pub fn draw_mesh3d(
   specular_transmission~ : Float,
   thickness~ : Float,
   ior~ : Float,
+  alpha_cutoff~ : Float,
+  material_flags~ : UInt,
   transmission_source_texture_id~ : Int,
   transmission_blur_taps~ : Float,
   transmission_steps~ : Float,
@@ -1051,12 +1052,13 @@ pub fn draw_mesh3d(
       uv_transform_a, uv_transform_b, uv_transform_c, uv_transform_d, uv_transform_tx,
       uv_transform_ty, uv_transform_mode, normal_texture_id, emissive_texture_id,
       metallic_roughness_texture_id, occlusion_texture_id, depth_texture_id, emissive_r,
-      emissive_g, emissive_b, unlit, metallic, roughness, reflectance, parallax_depth_scale,
+      emissive_g, emissive_b, metallic, roughness, reflectance, parallax_depth_scale,
       max_parallax_layer_count, max_relief_mapping_search_steps, anisotropy_texture_id,
       anisotropy_strength, anisotropy_rotation, specular_tint_texture_id, specular_tint_r,
       specular_tint_g, specular_tint_b, diffuse_transmission, specular_transmission,
-      thickness, ior, transmission_source_texture_id, transmission_blur_taps, transmission_steps,
-      point_shadow_texture_id, point_shadow_enabled, point_shadow_depth_bias, cull_mode,
+      thickness, ior, alpha_cutoff, material_flags, transmission_source_texture_id,
+      transmission_blur_taps, transmission_steps, point_shadow_texture_id, point_shadow_enabled,
+      point_shadow_depth_bias, cull_mode,
     ) catch {
       err => debug_runtime_error("draw_mesh3d", err)
     }
