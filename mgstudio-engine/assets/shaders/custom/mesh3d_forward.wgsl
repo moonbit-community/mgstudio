@@ -712,17 +712,60 @@ fn sample_transmission_source(
   return sum / weight_sum;
 }
 
-fn diffuse_transmissive_light(
-  ambient_term : vec3<f32>,
+fn direct_diffuse_light(
   directional : LightContribution,
   point : LightContribution,
   spot : LightContribution,
   occlusion_tex : f32,
 ) -> vec3<f32> {
-  return (ambient_term +
-    directional.transmitted +
+  return (directional.diffuse +
+    point.diffuse +
+    spot.diffuse) * occlusion_tex;
+}
+
+fn indirect_diffuse_light(
+  ambient_term : vec3<f32>,
+  occlusion_tex : f32,
+) -> vec3<f32> {
+  return ambient_term * occlusion_tex;
+}
+
+fn direct_specular_light(
+  directional : LightContribution,
+  point : LightContribution,
+  spot : LightContribution,
+) -> vec3<f32> {
+  return directional.specular + point.specular + spot.specular;
+}
+
+fn direct_diffuse_transmissive_light(
+  directional : LightContribution,
+  point : LightContribution,
+  spot : LightContribution,
+  occlusion_tex : f32,
+) -> vec3<f32> {
+  return (directional.transmitted +
     point.transmitted +
     spot.transmitted) * occlusion_tex;
+}
+
+fn indirect_diffuse_transmissive_light(
+  ambient_term : vec3<f32>,
+  occlusion_tex : f32,
+) -> vec3<f32> {
+  return ambient_term * occlusion_tex;
+}
+
+fn specular_transmissive_incident_light(
+  ambient_term : vec3<f32>,
+  directional : LightContribution,
+  point : LightContribution,
+  spot : LightContribution,
+) -> vec3<f32> {
+  return ambient_term +
+    directional.diffuse +
+    point.diffuse +
+    spot.diffuse;
 }
 
 fn transmission_source_uv(
@@ -748,10 +791,7 @@ fn transmission_source_uv(
 }
 
 fn specular_transmissive_light(
-  ambient_term : vec3<f32>,
-  directional : LightContribution,
-  point : LightContribution,
-  spot : LightContribution,
+  incident_light : vec3<f32>,
   position_xy : vec2<f32>,
   normal : vec3<f32>,
   view_dir : vec3<f32>,
@@ -764,10 +804,7 @@ fn specular_transmissive_light(
 ) -> vec3<f32> {
   let ior_f0 = pow((ior - 1.0) / max(ior + 1.0, 1.0e-4), 2.0);
   let thickness_factor = clamp(thickness / 5.0, 0.0, 1.0);
-  var transmitted_light = (ambient_term +
-    directional.diffuse +
-    point.diffuse +
-    spot.diffuse) *
+  var transmitted_light = incident_light *
     (0.35 + 0.65 * (1.0 - perceptual_roughness * perceptual_roughness)) *
     (1.0 - 0.4 * thickness_factor) *
     (0.2 + 0.8 * (1.0 - ior_f0));
@@ -802,6 +839,16 @@ fn specular_transmissive_light(
     );
   }
   return transmitted_light;
+}
+
+fn transmitted_light(
+  diffuse_transmissive_color : vec3<f32>,
+  diffuse_transmitted_light : vec3<f32>,
+  specular_transmissive_color : vec3<f32>,
+  specular_transmitted_light : vec3<f32>,
+) -> vec3<f32> {
+  return diffuse_transmissive_color * diffuse_transmitted_light +
+    specular_transmissive_color * specular_transmitted_light;
 }
 
 @fragment
@@ -1035,23 +1082,34 @@ fn fs_main(
     u_view.lights.spot_light_custom_data,
   );
 
-  let diffuse_lighting = (ambient_term +
-    directional.diffuse +
-    point.diffuse +
-    spot.diffuse) * occlusion_tex;
-  let diffuse_transmitted_lighting = diffuse_transmissive_light(
-    ambient_term,
+  let direct_diffuse = direct_diffuse_light(
     directional,
     point,
     spot,
     occlusion_tex,
   );
-  let specular_lighting = directional.specular + point.specular + spot.specular;
-  let specular_transmitted_lighting = specular_transmissive_light(
+  let indirect_diffuse = indirect_diffuse_light(ambient_term, occlusion_tex);
+  let direct_specular = direct_specular_light(directional, point, spot);
+  let direct_diffuse_transmitted = direct_diffuse_transmissive_light(
+    directional,
+    point,
+    spot,
+    occlusion_tex,
+  );
+  let indirect_diffuse_transmitted = indirect_diffuse_transmissive_light(
+    ambient_term,
+    occlusion_tex,
+  );
+  let diffuse_transmitted_lighting = direct_diffuse_transmitted +
+    indirect_diffuse_transmitted;
+  let specular_transmissive_incident = specular_transmissive_incident_light(
     ambient_term,
     directional,
     point,
     spot,
+  );
+  let specular_transmitted_lighting = specular_transmissive_light(
+    specular_transmissive_incident,
     in.position.xy,
     normal,
     view_dir,
@@ -1062,12 +1120,16 @@ fn fs_main(
     transmission_blur_taps,
     transmission_steps,
   );
-  let transmitted_light = diffuse_transmissive_color * diffuse_transmitted_lighting +
-    specular_transmissive_color * specular_transmitted_lighting;
+  let direct_light = diffuse_color * direct_diffuse + direct_specular;
+  let indirect_light = diffuse_color * indirect_diffuse;
+  let transmitted = transmitted_light(
+    diffuse_transmissive_color,
+    diffuse_transmitted_lighting,
+    specular_transmissive_color,
+    specular_transmitted_lighting,
+  );
   let exposure = max(u_view.view.exposure.x, 0.0);
-  let lighting_rgb = diffuse_color * diffuse_lighting +
-    specular_lighting +
-    transmitted_light;
+  let lighting_rgb = direct_light + indirect_light + transmitted;
   let lit_rgb = lighting_rgb * exposure + emissive;
   let unlit_rgb = base_color.xyz + emissive;
   let final_rgb = mix(lit_rgb, unlit_rgb, unlit_factor);

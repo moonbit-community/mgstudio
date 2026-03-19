@@ -357,12 +357,37 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
   inspect(wgsl.contains("fn point_light_shadow("), content="true")
   inspect(wgsl.contains("fn point_light("), content="true")
   inspect(wgsl.contains("fn spot_light("), content="true")
-  inspect(wgsl.contains("fn diffuse_transmissive_light("), content="true")
+  inspect(wgsl.contains("fn direct_diffuse_light("), content="true")
+  inspect(wgsl.contains("fn indirect_diffuse_light("), content="true")
+  inspect(wgsl.contains("fn direct_specular_light("), content="true")
+  inspect(
+    wgsl.contains("fn direct_diffuse_transmissive_light("),
+    content="true",
+  )
+  inspect(
+    wgsl.contains("fn indirect_diffuse_transmissive_light("),
+    content="true",
+  )
+  inspect(
+    wgsl.contains("fn specular_transmissive_incident_light("),
+    content="true",
+  )
   inspect(wgsl.contains("fn specular_transmissive_light("), content="true")
+  inspect(wgsl.contains("fn transmitted_light("), content="true")
   inspect(wgsl.contains("fn transmission_source_uv("), content="true")
   inspect(wgsl.contains("let directional = directional_light("), content="true")
   inspect(wgsl.contains("let point = point_light("), content="true")
   inspect(wgsl.contains("let spot = spot_light("), content="true")
+  inspect(
+    wgsl.contains(
+      "let direct_light = diffuse_color * direct_diffuse + direct_specular;",
+    ),
+    content="true",
+  )
+  inspect(
+    wgsl.contains("let indirect_light = diffuse_color * indirect_diffuse;"),
+    content="true",
+  )
   inspect(
     wgsl.contains(
       "let transmission_blur_taps = i32(max(u_view.lights.spot_light_custom_data.z, 0.0));",
@@ -405,6 +430,8 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
   inspect(!wgsl.contains("parallax_params"), content="true")
   inspect(!wgsl.contains("anisotropy_params"), content="true")
   inspect(!wgsl.contains("transmission_params"), content="true")
+  inspect(!wgsl.contains("let diffuse_lighting ="), content="true")
+  inspect(!wgsl.contains("let specular_lighting ="), content="true")
   inspect(wgsl.contains("@location(1) normal : vec3<f32>"), content="true")
   inspect(wgsl.contains("@location(2) uv : vec2<f32>"), content="true")
   inspect(wgsl.contains("@location(3) color : vec4<f32>"), content="true")
