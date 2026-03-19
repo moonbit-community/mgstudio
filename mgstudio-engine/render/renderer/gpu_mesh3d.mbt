@@ -88,6 +88,14 @@ fn mesh3d_view_uniform_bytes(
   } else {
     0.1F
   }
+  let ambient_brightness = if pass_state.ambient_brightness < 0.0F {
+    0.0F
+  } else {
+    pass_state.ambient_brightness
+  }
+  let ambient_color_r = pass_state.ambient_r * ambient_brightness
+  let ambient_color_g = pass_state.ambient_g * ambient_brightness
+  let ambient_color_b = pass_state.ambient_b * ambient_brightness
   f32le_pack([
     pass_state.camera_x,
     pass_state.camera_y,
@@ -109,10 +117,14 @@ fn mesh3d_view_uniform_bytes(
     pass_state.clip_from_world.w_axis_y,
     pass_state.clip_from_world.w_axis_z,
     pass_state.clip_from_world.w_axis_w,
-    pass_state.ambient_r,
-    pass_state.ambient_g,
-    pass_state.ambient_b,
-    pass_state.ambient_brightness,
+    pass_state.camera_exposure,
+    0.0F,
+    0.0F,
+    0.0F,
+    ambient_color_r,
+    ambient_color_g,
+    ambient_color_b,
+    1.0F,
     pass_state.directional_dir_x,
     pass_state.directional_dir_y,
     pass_state.directional_dir_z,
@@ -129,6 +141,10 @@ fn mesh3d_view_uniform_bytes(
     pass_state.point_color_g,
     pass_state.point_color_b,
     pass_state.point_intensity,
+    point_shadow_enabled,
+    point_shadow_depth_bias,
+    point_shadow_near,
+    0.0F,
     pass_state.spot_pos_x,
     pass_state.spot_pos_y,
     pass_state.spot_pos_z,
@@ -144,10 +160,6 @@ fn mesh3d_view_uniform_bytes(
     pass_state.spot_outer_angle,
     transmission_blur_taps,
     transmission_steps,
-    pass_state.camera_exposure,
-    point_shadow_enabled,
-    point_shadow_depth_bias,
-    point_shadow_near,
     0.0F,
   ])
 }

@@ -23,18 +23,27 @@ struct VertexOut {
 };
 
 struct Mesh3dViewUniform {
-  camera_pos : vec4<f32>,
+  world_position : vec4<f32>,
   clip_from_world : mat4x4<f32>,
-  ambient : vec4<f32>, // (r, g, b, brightness)
-  directional_dir_illum : vec4<f32>, // (dir.xyz, illuminance)
-  directional_color : vec4<f32>, // (r, g, b, _)
-  point_pos_range : vec4<f32>, // (pos.xyz, range)
-  point_color_intensity : vec4<f32>, // (r, g, b, intensity)
-  spot_pos_range : vec4<f32>, // (pos.xyz, range)
-  spot_dir_inner : vec4<f32>, // (dir.xyz, inner_angle)
-  spot_color_intensity : vec4<f32>, // (r, g, b, intensity)
-  postprocess_params : vec4<f32>, // (outer_angle, transmission_blur_taps, transmission_steps, exposure)
-  point_shadow_params : vec4<f32>, // (enabled, depth_bias, near_z, _)
+  exposure : vec4<f32>, // (exposure, _, _, _)
+};
+
+struct Mesh3dLightsUniform {
+  ambient_color : vec4<f32>, // (rgb, _)
+  directional_light_direction_to_light : vec4<f32>, // (dir.xyz, illuminance)
+  directional_light_color : vec4<f32>, // (r, g, b, _)
+  point_light_position_radius : vec4<f32>, // (pos.xyz, radius)
+  point_light_color : vec4<f32>, // (r, g, b, intensity)
+  point_light_shadow_params : vec4<f32>, // (enabled, depth_bias, near_z, _)
+  spot_light_position_radius : vec4<f32>, // (pos.xyz, radius)
+  spot_light_direction_to_light : vec4<f32>, // (dir.xyz, inner_angle)
+  spot_light_color : vec4<f32>, // (r, g, b, intensity)
+  spot_light_custom_data : vec4<f32>, // (outer_angle, transmission_blur_taps, transmission_steps, _)
+};
+
+struct Mesh3dViewBindings {
+  view : Mesh3dViewUniform,
+  lights : Mesh3dLightsUniform,
 };
 
 struct Mesh3dTransformUniform {
@@ -91,7 +100,7 @@ const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ADD: u32                 = 4u << 29u;
 const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MULTIPLY: u32            = 5u << 29u;
 const STANDARD_MATERIAL_FLAGS_ALPHA_MODE_ALPHA_TO_COVERAGE: u32   = 6u << 29u;
 
-@group(0) @binding(0) var<uniform> u_view : Mesh3dViewUniform;
+@group(0) @binding(0) var<uniform> u_view : Mesh3dViewBindings;
 @group(0) @binding(1) var u_transmission_source_texture : texture_2d<f32>;
 @group(0) @binding(2) var u_transmission_source_sampler : sampler;
 @group(0) @binding(3) var u_point_shadow_texture : texture_depth_cube;
@@ -150,7 +159,7 @@ fn vs_main(
   let local_pos = position * u_draw.transform.model_scale.xyz;
   let world_pos = quat_rotate_vec3(model_q, local_pos) +
     u_draw.transform.model_translation.xyz;
-  out.position = u_view.clip_from_world * vec4<f32>(world_pos, 1.0);
+  out.position = u_view.view.clip_from_world * vec4<f32>(world_pos, 1.0);
   let transformed_uv = u_draw.material.uv_transform * vec3<f32>(uv, 1.0);
   out.uv = transformed_uv.xy;
   out.color = color * u_draw.material.base_color;
@@ -549,7 +558,7 @@ fn fs_main(
     STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT,
   );
   let geometric_normal = safe_normalize(in.world_normal);
-  let view_dir = safe_normalize(u_view.camera_pos.xyz - in.world_pos);
+  let view_dir = safe_normalize(u_view.view.world_position.xyz - in.world_pos);
   var uv = in.uv;
   if has_depth_map && has_uv && u_draw.material.parallax_depth_scale > 0.0 {
     let tbn = cotangent_frame(geometric_normal, in.world_pos, uv);
@@ -596,7 +605,9 @@ fn fs_main(
   var base_color = in.color;
   if has_base_map {
     if use_stacked_cubemap {
-      let cubemap_uv = cubemap_stacked_vertical_uv(in.world_pos - u_view.camera_pos.xyz);
+      let cubemap_uv = cubemap_stacked_vertical_uv(
+        in.world_pos - u_view.view.world_position.xyz,
+      );
       base_color = textureSample(
         u_base_color_texture,
         u_base_color_sampler,
@@ -675,8 +686,11 @@ fn fs_main(
   let specular_transmission = clamp(u_draw.material.specular_transmission, 0.0, 1.0);
   let thickness = max(u_draw.material.thickness, 0.0);
   let ior = max(u_draw.material.ior, 1.0);
-  let transmission_blur_taps = i32(max(u_view.postprocess_params.y, 0.0));
-  let transmission_steps = max(u_view.postprocess_params.z, 0.0);
+  let transmission_blur_taps = i32(max(
+    u_view.lights.spot_light_custom_data.y,
+    0.0,
+  ));
+  let transmission_steps = max(u_view.lights.spot_light_custom_data.z, 0.0);
   let reflectance_rgb = max(specular_tint * u_draw.material.reflectance, vec3<f32>(0.0));
   let diffuse_color = base_color.xyz * (1.0 - metallic) *
     (1.0 - specular_transmission) *
@@ -687,11 +701,13 @@ fn fs_main(
   let f0 = 0.16 * reflectance_rgb * reflectance_rgb * (1.0 - metallic) +
     base_color.xyz * metallic;
 
-  let ambient_term = u_view.ambient.xyz * max(u_view.ambient.w, 0.0);
+  let ambient_term = u_view.lights.ambient_color.xyz;
 
-  let directional_dir = safe_normalize(u_view.directional_dir_illum.xyz);
-  let directional_color = u_view.directional_color.xyz *
-    max(u_view.directional_dir_illum.w, 0.0);
+  let directional_dir = safe_normalize(
+    u_view.lights.directional_light_direction_to_light.xyz,
+  );
+  let directional_color = u_view.lights.directional_light_color.xyz *
+    max(u_view.lights.directional_light_direction_to_light.w, 0.0);
   let directional_light_dir = -directional_dir;
   let directional_diff = lambert(normal, directional_light_dir);
   let directional_half_dir = safe_normalize(directional_light_dir + view_dir);
@@ -730,36 +746,36 @@ fn fs_main(
     directional_diff *
     directional_specular;
 
-  let to_point = u_view.point_pos_range.xyz - in.world_pos;
+  let to_point = u_view.lights.point_light_position_radius.xyz - in.world_pos;
   let point_distance_square = max(dot(to_point, to_point), 1.0e-4);
   let point_dir = safe_normalize(to_point);
-  let point_range = max(u_view.point_pos_range.w, 1e-4);
+  let point_range = max(u_view.lights.point_light_position_radius.w, 1e-4);
   let point_atten = get_distance_attenuation(point_distance_square, point_range);
-  let point_color = u_view.point_color_intensity.xyz *
-    max(u_view.point_color_intensity.w, 0.0);
+  let point_color = u_view.lights.point_light_color.xyz *
+    max(u_view.lights.point_light_color.w, 0.0);
   let point_diff = lambert(normal, point_dir);
   let point_half_dir = safe_normalize(point_dir + view_dir);
   let point_ldoth = max(dot(point_dir, point_half_dir), 0.0);
   let point_diffuse_brdf = Fd_Burley(roughness, ndotv, point_diff, point_ldoth);
   let point_back_diff = lambert(-normal, point_dir);
-  let point_shadow_enabled = u_view.point_shadow_params.x > 0.5;
+  let point_shadow_enabled = u_view.lights.point_light_shadow_params.x > 0.5;
   var point_shadow_factor = 1.0;
   if point_shadow_enabled {
     // Match Bevy's cubemap shadow sampling convention:
     // sample direction is transformed to cubemap LH space by flipping Z.
     let point_shadow_dir = safe_normalize(vec3<f32>(
-      in.world_pos.x - u_view.point_pos_range.x,
-      in.world_pos.y - u_view.point_pos_range.y,
-      -(in.world_pos.z - u_view.point_pos_range.z),
+      in.world_pos.x - u_view.lights.point_light_position_radius.x,
+      in.world_pos.y - u_view.lights.point_light_position_radius.y,
+      -(in.world_pos.z - u_view.lights.point_light_position_radius.z),
     ));
     // Cubemap shadow projections are axis-aligned 90-degree frusta.
     // The projected depth can be reconstructed from the largest axis magnitude.
-    let to_light = in.world_pos - u_view.point_pos_range.xyz;
+    let to_light = in.world_pos - u_view.lights.point_light_position_radius.xyz;
     let major_axis_magnitude = max(
       abs(to_light.x),
       max(abs(to_light.y), abs(to_light.z)),
     );
-    let point_near = max(u_view.point_shadow_params.z, 1.0e-4);
+    let point_near = max(u_view.lights.point_light_shadow_params.z, 1.0e-4);
     let point_far = max(point_range, point_near + 1.0e-4);
     var point_linear_depth = 0.0;
     if major_axis_magnitude <= point_near {
@@ -768,7 +784,7 @@ fn fs_main(
       point_linear_depth = point_far / (point_far - point_near) -
         (point_far * point_near) / ((point_far - point_near) * major_axis_magnitude);
     }
-    let point_depth_bias = max(u_view.point_shadow_params.y, 0.0);
+    let point_depth_bias = max(u_view.lights.point_light_shadow_params.y, 0.0);
     point_shadow_factor = textureSampleCompare(
       u_point_shadow_texture,
       u_point_shadow_sampler,
@@ -812,14 +828,16 @@ fn fs_main(
     point_specular *
     point_shadow_factor;
 
-  let to_spot = u_view.spot_pos_range.xyz - in.world_pos;
+  let to_spot = u_view.lights.spot_light_position_radius.xyz - in.world_pos;
   let spot_dir_to_fragment = safe_normalize(-to_spot);
-  let spot_range = max(u_view.spot_pos_range.w, 1e-4);
+  let spot_range = max(u_view.lights.spot_light_position_radius.w, 1e-4);
   let spot_distance_square = max(dot(to_spot, to_spot), 1.0e-4);
   let spot_atten_base = get_distance_attenuation(spot_distance_square, spot_range);
-  let spot_light_dir = safe_normalize(u_view.spot_dir_inner.xyz);
-  let inner_angle = max(u_view.spot_dir_inner.w, 0.0);
-  let outer_angle = max(u_view.postprocess_params.x, inner_angle + 1e-4);
+  let spot_light_dir = safe_normalize(
+    u_view.lights.spot_light_direction_to_light.xyz,
+  );
+  let inner_angle = max(u_view.lights.spot_light_direction_to_light.w, 0.0);
+  let outer_angle = max(u_view.lights.spot_light_custom_data.x, inner_angle + 1e-4);
   let inner_cos = cos(inner_angle);
   let outer_cos = cos(outer_angle);
   let spot_cos_theta = dot(spot_light_dir, spot_dir_to_fragment);
@@ -831,8 +849,8 @@ fn fs_main(
     1.0,
   );
   let spot_cone = spot_attenuation * spot_attenuation;
-  let spot_color = u_view.spot_color_intensity.xyz *
-    max(u_view.spot_color_intensity.w, 0.0);
+  let spot_color = u_view.lights.spot_light_color.xyz *
+    max(u_view.lights.spot_light_color.w, 0.0);
   let spot_light_to_fragment = safe_normalize(to_spot);
   let spot_diff = lambert(normal, spot_light_to_fragment);
   let spot_half_dir = safe_normalize(spot_light_to_fragment + view_dir);
@@ -926,7 +944,7 @@ fn fs_main(
   }
   let transmitted_light = diffuse_transmissive_color * diffuse_transmitted_lighting +
     specular_transmissive_color * specular_transmitted_lighting;
-  let exposure = max(u_view.postprocess_params.w, 0.0);
+  let exposure = max(u_view.view.exposure.x, 0.0);
   let lighting_rgb = diffuse_color * diffuse_lighting +
     specular_lighting +
     transmitted_light;
@@ -938,8 +956,10 @@ fn fs_main(
 
 @fragment
 fn fs_shadow(in : VertexOut) -> @location(0) vec4<f32> {
-  let point_range = max(u_view.point_pos_range.w, 1.0e-4);
-  let point_distance = length(in.world_pos - u_view.point_pos_range.xyz);
+  let point_range = max(u_view.lights.point_light_position_radius.w, 1.0e-4);
+  let point_distance = length(
+    in.world_pos - u_view.lights.point_light_position_radius.xyz,
+  );
   let depth01 = clamp(point_distance / point_range, 0.0, 1.0);
   return vec4<f32>(depth01, depth01, depth01, 1.0);
 }

@@ -268,11 +268,14 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
   let wgsl = load_wgsl_from_assets_base_required(
     "assets", "shaders/custom/mesh3d_forward.wgsl",
   )
+  inspect(wgsl.contains("struct Mesh3dViewUniform {"), content="true")
+  inspect(wgsl.contains("struct Mesh3dLightsUniform {"), content="true")
+  inspect(wgsl.contains("struct Mesh3dViewBindings {"), content="true")
   inspect(wgsl.contains("struct Mesh3dTransformUniform {"), content="true")
   inspect(wgsl.contains("struct Mesh3dMaterialUniform {"), content="true")
   inspect(
     wgsl.contains(
-      "@group(0) @binding(0) var<uniform> u_view : Mesh3dViewUniform;",
+      "@group(0) @binding(0) var<uniform> u_view : Mesh3dViewBindings;",
     ),
     content="true",
   )
@@ -324,6 +327,17 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
   inspect(wgsl.contains("reflectance : vec3<f32>,"), content="true")
   inspect(wgsl.contains("flags : u32,"), content="true")
   inspect(wgsl.contains("uv_transform_mode : f32,"), content="true")
+  inspect(wgsl.contains("world_position : vec4<f32>,"), content="true")
+  inspect(wgsl.contains("ambient_color : vec4<f32>,"), content="true")
+  inspect(
+    wgsl.contains("directional_light_direction_to_light : vec4<f32>,"),
+    content="true",
+  )
+  inspect(
+    wgsl.contains("point_light_shadow_params : vec4<f32>,"),
+    content="true",
+  )
+  inspect(wgsl.contains("spot_light_custom_data : vec4<f32>,"), content="true")
   inspect(
     wgsl.contains("STANDARD_MATERIAL_FLAGS_BASE_COLOR_TEXTURE_BIT"),
     content="true",
