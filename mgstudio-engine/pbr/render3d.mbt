@@ -4696,9 +4696,21 @@ fn render3d_host_preprocess_mesh_input(
       scale_x: 1.0F,
       scale_y: 1.0F,
       scale_z: 1.0F,
+      previous_translation_x: 0.0F,
+      previous_translation_y: 0.0F,
+      previous_translation_z: 0.0F,
+      previous_rotation_x: 0.0F,
+      previous_rotation_y: 0.0F,
+      previous_rotation_z: 0.0F,
+      previous_rotation_w: 1.0F,
+      previous_scale_x: 1.0F,
+      previous_scale_y: 1.0F,
+      previous_scale_z: 1.0F,
+      flags: 0U,
       first_vertex_index: 0,
       first_index_index: 0,
       index_count: 0,
+      tag: 0,
     }
   }
   let mesh = meshes[draw_item.extracted_index].payload
@@ -4716,9 +4728,21 @@ fn render3d_host_preprocess_mesh_input(
     scale_x: mesh.transform.scale.x,
     scale_y: mesh.transform.scale.y,
     scale_z: mesh.transform.scale.z,
+    previous_translation_x: mesh.previous_transform.translation.x,
+    previous_translation_y: mesh.previous_transform.translation.y,
+    previous_translation_z: mesh.previous_transform.translation.z,
+    previous_rotation_x: mesh.previous_transform.rotation.x,
+    previous_rotation_y: mesh.previous_transform.rotation.y,
+    previous_rotation_z: mesh.previous_transform.rotation.z,
+    previous_rotation_w: mesh.previous_transform.rotation.w,
+    previous_scale_x: mesh.previous_transform.scale.x,
+    previous_scale_y: mesh.previous_transform.scale.y,
+    previous_scale_z: mesh.previous_transform.scale.z,
+    flags: 0U,
     first_vertex_index,
     first_index_index,
     index_count,
+    tag: draw_item.extracted_index,
   }
 }
 
@@ -6256,6 +6280,10 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       camera_key_hi=camera_entity.id,
       camera_key_lo=camera_entity.generation,
       payload=render3d_host_preprocess_camera_payload(draw_queue_entry, meshes),
+    )
+    @render.host_gpu_preprocess_mesh3d(
+      camera_key_hi=camera_entity.id,
+      camera_key_lo=camera_entity.generation,
     )
     @render.host_gpu_build_mesh3d_indirect_parameters(
       camera_key_hi=camera_entity.id,

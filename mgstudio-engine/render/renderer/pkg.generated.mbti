@@ -134,6 +134,8 @@ pub fn get_queue(Int) -> Int
 
 pub fn pipeline_layout_descriptor_3_new(@c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout) -> @c.WGPUPipelineLayoutDescriptorPtr
 
+pub fn preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
+
 pub fn register_wgsl_source(String, String) -> Unit
 
 pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit
@@ -310,6 +312,12 @@ pub struct GpuBackend {
   mut mesh3d_preprocess_reset_batch_sets_bgl : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_preprocess_reset_batch_sets_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh3d_preprocess_reset_batch_sets_pipeline : @wgpu_mbt.ComputePipeline?
+  mut mesh3d_preprocess_direct_bgl : @wgpu_mbt.BindGroupLayout?
+  mut mesh3d_preprocess_direct_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut mesh3d_preprocess_direct_pipeline : @wgpu_mbt.ComputePipeline?
+  mut mesh3d_preprocess_indirect_bgl : @wgpu_mbt.BindGroupLayout?
+  mut mesh3d_preprocess_indirect_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut mesh3d_preprocess_indirect_pipeline : @wgpu_mbt.ComputePipeline?
   mut mesh3d_preprocess_build_indexed_indirect_bgl : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_preprocess_build_indexed_indirect_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh3d_preprocess_build_indexed_indirect_pipeline : @wgpu_mbt.ComputePipeline?
@@ -456,6 +464,7 @@ pub fn GpuBackend::end_pass(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::ensure_surface_configured(Self, Int, Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
+pub fn GpuBackend::preprocess_mesh3d(Self, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::set_active_surface_target(Self, Int) -> Unit
 pub fn GpuBackend::set_scissor(Self, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::set_texture_sampler(Self, Int, Int, Int, Int, Int, Int, Int, Float, Float, Int, Int, Int) -> Unit raise GpuBackendError
@@ -671,9 +680,21 @@ pub(all) struct HostMesh3dPreprocessMeshInput {
   scale_x : Float
   scale_y : Float
   scale_z : Float
+  previous_translation_x : Float
+  previous_translation_y : Float
+  previous_translation_z : Float
+  previous_rotation_x : Float
+  previous_rotation_y : Float
+  previous_rotation_z : Float
+  previous_rotation_w : Float
+  previous_scale_x : Float
+  previous_scale_y : Float
+  previous_scale_z : Float
+  flags : UInt
   first_vertex_index : Int
   first_index_index : Int
   index_count : Int
+  tag : Int
 }
 
 pub(all) struct HostMesh3dPreprocessShaderWorkItem {

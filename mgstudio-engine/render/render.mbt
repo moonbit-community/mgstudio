@@ -286,9 +286,21 @@ pub(all) struct HostMesh3dPreprocessMeshInput {
   scale_x : Float
   scale_y : Float
   scale_z : Float
+  previous_translation_x : Float
+  previous_translation_y : Float
+  previous_translation_z : Float
+  previous_rotation_x : Float
+  previous_rotation_y : Float
+  previous_rotation_z : Float
+  previous_rotation_w : Float
+  previous_scale_x : Float
+  previous_scale_y : Float
+  previous_scale_z : Float
+  flags : UInt
   first_vertex_index : Int
   first_index_index : Int
   index_count : Int
+  tag : Int
 }
 
 ///|
@@ -447,9 +459,21 @@ fn host_mesh3d_preprocess_mesh_input_to_renderer(
     scale_x: input.scale_x,
     scale_y: input.scale_y,
     scale_z: input.scale_z,
+    previous_translation_x: input.previous_translation_x,
+    previous_translation_y: input.previous_translation_y,
+    previous_translation_z: input.previous_translation_z,
+    previous_rotation_x: input.previous_rotation_x,
+    previous_rotation_y: input.previous_rotation_y,
+    previous_rotation_z: input.previous_rotation_z,
+    previous_rotation_w: input.previous_rotation_w,
+    previous_scale_x: input.previous_scale_x,
+    previous_scale_y: input.previous_scale_y,
+    previous_scale_z: input.previous_scale_z,
+    flags: input.flags,
     first_vertex_index: input.first_vertex_index,
     first_index_index: input.first_index_index,
     index_count: input.index_count,
+    tag: input.tag,
   }
 }
 
@@ -610,6 +634,14 @@ pub fn host_gpu_build_mesh3d_indirect_parameters(
   camera_key_lo~ : Int,
 ) -> Unit {
   @renderer.build_mesh3d_indirect_parameters(camera_key_hi~, camera_key_lo~)
+}
+
+///|
+pub fn host_gpu_preprocess_mesh3d(
+  camera_key_hi~ : Int,
+  camera_key_lo~ : Int,
+) -> Unit {
+  @renderer.preprocess_mesh3d(camera_key_hi~, camera_key_lo~)
 }
 
 ///|

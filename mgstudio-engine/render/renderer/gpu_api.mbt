@@ -266,9 +266,21 @@ pub(all) struct HostMesh3dPreprocessMeshInput {
   scale_x : Float
   scale_y : Float
   scale_z : Float
+  previous_translation_x : Float
+  previous_translation_y : Float
+  previous_translation_z : Float
+  previous_rotation_x : Float
+  previous_rotation_y : Float
+  previous_rotation_z : Float
+  previous_rotation_w : Float
+  previous_scale_x : Float
+  previous_scale_y : Float
+  previous_scale_z : Float
+  flags : UInt
   first_vertex_index : Int
   first_index_index : Int
   index_count : Int
+  tag : Int
 }
 
 ///|
@@ -609,6 +621,15 @@ pub fn build_mesh3d_indirect_parameters(
   if ensure_backend() is Some(backend) {
     backend.build_mesh3d_indirect_parameters(camera_key_hi, camera_key_lo) catch {
       err => debug_runtime_error("build_mesh3d_indirect_parameters", err)
+    }
+  }
+}
+
+///|
+pub fn preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.preprocess_mesh3d(camera_key_hi, camera_key_lo) catch {
+      err => debug_runtime_error("preprocess_mesh3d", err)
     }
   }
 }

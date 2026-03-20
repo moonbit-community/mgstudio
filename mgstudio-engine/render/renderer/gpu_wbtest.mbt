@@ -283,31 +283,51 @@ test "renderer: mesh3d draw slot pool grows per draw slot" {
 
 ///|
 test "renderer: mesh3d preprocess mesh input bytes match bevy struct size" {
-  let bytes = mesh3d_preprocess_mesh_inputs_bytes([
-    HostMesh3dPreprocessMeshInput::{
-      translation_x: 1.0F,
-      translation_y: 2.0F,
-      translation_z: 3.0F,
-      rotation_x: 0.0F,
-      rotation_y: 0.0F,
-      rotation_z: 0.0F,
-      rotation_w: 1.0F,
-      scale_x: 1.0F,
-      scale_y: 2.0F,
-      scale_z: 3.0F,
-      first_vertex_index: 0,
-      first_index_index: 4,
-      index_count: 36,
-    },
-  ])
-  inspect(bytes.length(), content="96")
+  let (current_bytes, previous_bytes) = mesh3d_preprocess_mesh_inputs_bytes(
+    17U,
+    [
+      HostMesh3dPreprocessMeshInput::{
+        translation_x: 1.0F,
+        translation_y: 2.0F,
+        translation_z: 3.0F,
+        rotation_x: 0.0F,
+        rotation_y: 0.0F,
+        rotation_z: 0.0F,
+        rotation_w: 1.0F,
+        scale_x: 1.0F,
+        scale_y: 2.0F,
+        scale_z: 3.0F,
+        previous_translation_x: 4.0F,
+        previous_translation_y: 5.0F,
+        previous_translation_z: 6.0F,
+        previous_rotation_x: 0.0F,
+        previous_rotation_y: 0.0F,
+        previous_rotation_z: 0.0F,
+        previous_rotation_w: 1.0F,
+        previous_scale_x: 3.0F,
+        previous_scale_y: 2.0F,
+        previous_scale_z: 1.0F,
+        flags: 0U,
+        first_vertex_index: 0,
+        first_index_index: 4,
+        index_count: 36,
+        tag: 9,
+      },
+    ],
+  )
+  inspect(current_bytes.length(), content="96")
+  inspect(previous_bytes.length(), content="96")
 }
 
 ///|
 test "renderer: mesh3d preprocess indirect resources initialize canonical compute pipelines" {
   let backend = GpuBackend::new(assets_base="assets")
   ensure_mesh3d_preprocess_indirect_resources(backend)
-  let ok = backend.mesh3d_preprocess_reset_batch_sets_bgl is Some(_) &&
+  let ok = backend.mesh3d_preprocess_direct_bgl is Some(_) &&
+    backend.mesh3d_preprocess_direct_pipeline is Some(_) &&
+    backend.mesh3d_preprocess_indirect_bgl is Some(_) &&
+    backend.mesh3d_preprocess_indirect_pipeline is Some(_) &&
+    backend.mesh3d_preprocess_reset_batch_sets_bgl is Some(_) &&
     backend.mesh3d_preprocess_reset_batch_sets_pipeline is Some(_) &&
     backend.mesh3d_preprocess_build_indexed_indirect_bgl is Some(_) &&
     backend.mesh3d_preprocess_build_indexed_indirect_pipeline is Some(_) &&
@@ -332,9 +352,21 @@ test "renderer: mesh3d preprocess upload allocates mesh inputs and indirect para
         scale_x: 1.0F,
         scale_y: 1.0F,
         scale_z: 1.0F,
+        previous_translation_x: 0.0F,
+        previous_translation_y: 0.0F,
+        previous_translation_z: 0.0F,
+        previous_rotation_x: 0.0F,
+        previous_rotation_y: 0.0F,
+        previous_rotation_z: 0.0F,
+        previous_rotation_w: 1.0F,
+        previous_scale_x: 1.0F,
+        previous_scale_y: 1.0F,
+        previous_scale_z: 1.0F,
+        flags: 0U,
         first_vertex_index: 0,
         first_index_index: 0,
         index_count: 36,
+        tag: 0,
       },
     ],
     direct_work_items: [],
@@ -380,7 +412,12 @@ test "renderer: mesh3d preprocess upload allocates mesh inputs and indirect para
   let state = backend.mesh3d_preprocess_camera_upload_states[0]
   let ok = backend.mesh3d_preprocess_camera_upload_states.length() == 1 &&
     state.mesh_input_buffer is Some(_) &&
+    state.previous_mesh_input_buffer is Some(_) &&
     state.mesh_input_count == 1 &&
+    state.output_buffer is Some(_) &&
+    state.output_count == 1 &&
+    state.preprocess_view_buffer is Some(_) &&
+    state.mesh_culling_data_buffer is Some(_) &&
     state.indexed_gpu_metadata_buffer is Some(_) &&
     state.indexed_gpu_metadata_count == 1 &&
     state.indexed_batch_set_buffer is Some(_) &&
