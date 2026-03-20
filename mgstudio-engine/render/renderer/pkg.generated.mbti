@@ -66,6 +66,8 @@ pub fn begin_pass_3d(target_id~ : Int, target_layer? : Int, secondary_target_id?
 
 pub fn begin_pass_with_depth(target_id~ : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_rotation~ : Float, camera_scale~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, viewport_depth_min~ : Float, viewport_depth_max~ : Float, clear_enabled~ : Int) -> Unit
 
+pub fn build_mesh3d_indirect_parameters(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
+
 pub fn clear_registered_wgsl_source_registry() -> Unit
 
 pub fn clear_scissor() -> Unit
@@ -305,6 +307,15 @@ pub struct GpuBackend {
   mut mesh3d_instance_draw_capacity : UInt64
   mut mesh3d_instance_draw_used : Int
   mesh3d_preprocess_camera_upload_states : Array[GpuMesh3dPreprocessCameraUploadState]
+  mut mesh3d_preprocess_reset_batch_sets_bgl : @wgpu_mbt.BindGroupLayout?
+  mut mesh3d_preprocess_reset_batch_sets_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut mesh3d_preprocess_reset_batch_sets_pipeline : @wgpu_mbt.ComputePipeline?
+  mut mesh3d_preprocess_build_indexed_indirect_bgl : @wgpu_mbt.BindGroupLayout?
+  mut mesh3d_preprocess_build_indexed_indirect_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut mesh3d_preprocess_build_indexed_indirect_pipeline : @wgpu_mbt.ComputePipeline?
+  mut mesh3d_preprocess_build_non_indexed_indirect_bgl : @wgpu_mbt.BindGroupLayout?
+  mut mesh3d_preprocess_build_non_indexed_indirect_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut mesh3d_preprocess_build_non_indexed_indirect_pipeline : @wgpu_mbt.ComputePipeline?
   mut mesh3d_motion_vector_bgl_view : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_empty : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_mesh : @wgpu_mbt.BindGroupLayout?
@@ -406,6 +417,7 @@ pub fn GpuBackend::begin_frame_binding(Self, Int) -> Unit
 pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::begin_pass_with_depth(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::build_mesh3d_indirect_parameters(Self, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::clear_scissor(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::configure_surface(Self, Int, Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
 pub fn GpuBackend::configure_surface_binding(Self, Int, Int, Int, Int, Int, Int) -> Unit
@@ -609,6 +621,7 @@ pub(all) enum HostMaterial2dBindingValue {
 }
 
 pub(all) struct HostMesh3dPreprocessCameraPayload {
+  mesh_inputs : Array[HostMesh3dPreprocessMeshInput]
   direct_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
   indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
   non_indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
@@ -645,6 +658,22 @@ pub(all) struct HostMesh3dPreprocessIndirectParametersGpuMetadata {
   mesh_index : Int
   early_instance_count : Int
   late_instance_count : Int
+}
+
+pub(all) struct HostMesh3dPreprocessMeshInput {
+  translation_x : Float
+  translation_y : Float
+  translation_z : Float
+  rotation_x : Float
+  rotation_y : Float
+  rotation_z : Float
+  rotation_w : Float
+  scale_x : Float
+  scale_y : Float
+  scale_z : Float
+  first_vertex_index : Int
+  first_index_index : Int
+  index_count : Int
 }
 
 pub(all) struct HostMesh3dPreprocessShaderWorkItem {

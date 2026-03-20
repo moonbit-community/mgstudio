@@ -275,6 +275,23 @@ pub(all) struct HostMesh3dPreprocessShaderWorkItem {
 }
 
 ///|
+pub(all) struct HostMesh3dPreprocessMeshInput {
+  translation_x : Float
+  translation_y : Float
+  translation_z : Float
+  rotation_x : Float
+  rotation_y : Float
+  rotation_z : Float
+  rotation_w : Float
+  scale_x : Float
+  scale_y : Float
+  scale_z : Float
+  first_vertex_index : Int
+  first_index_index : Int
+  index_count : Int
+}
+
+///|
 pub(all) struct HostMesh3dPreprocessIndirectParametersCpuMetadata {
   base_output_index : Int
   batch_set_index : Int
@@ -304,6 +321,7 @@ pub(all) struct HostMesh3dPreprocessDispatchMetadata {
 
 ///|
 pub(all) struct HostMesh3dPreprocessCameraPayload {
+  mesh_inputs : Array[HostMesh3dPreprocessMeshInput]
   direct_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
   indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
   non_indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
@@ -415,6 +433,27 @@ fn host_mesh3d_preprocess_shader_work_item_to_renderer(
 }
 
 ///|
+fn host_mesh3d_preprocess_mesh_input_to_renderer(
+  input : HostMesh3dPreprocessMeshInput,
+) -> @renderer.HostMesh3dPreprocessMeshInput {
+  @renderer.HostMesh3dPreprocessMeshInput::{
+    translation_x: input.translation_x,
+    translation_y: input.translation_y,
+    translation_z: input.translation_z,
+    rotation_x: input.rotation_x,
+    rotation_y: input.rotation_y,
+    rotation_z: input.rotation_z,
+    rotation_w: input.rotation_w,
+    scale_x: input.scale_x,
+    scale_y: input.scale_y,
+    scale_z: input.scale_z,
+    first_vertex_index: input.first_vertex_index,
+    first_index_index: input.first_index_index,
+    index_count: input.index_count,
+  }
+}
+
+///|
 fn host_mesh3d_preprocess_cpu_metadata_to_renderer(
   metadata : HostMesh3dPreprocessIndirectParametersCpuMetadata,
 ) -> @renderer.HostMesh3dPreprocessIndirectParametersCpuMetadata {
@@ -451,6 +490,10 @@ pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(
   camera_key_lo~ : Int,
   payload~ : HostMesh3dPreprocessCameraPayload,
 ) -> Unit {
+  let mesh_inputs : Array[@renderer.HostMesh3dPreprocessMeshInput] = []
+  for input in payload.mesh_inputs {
+    mesh_inputs.push(host_mesh3d_preprocess_mesh_input_to_renderer(input))
+  }
   let direct_work_items : Array[@renderer.HostMesh3dPreprocessShaderWorkItem] = []
   for item in payload.direct_work_items {
     direct_work_items.push(
@@ -544,6 +587,7 @@ pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(
     camera_key_hi~,
     camera_key_lo~,
     payload=@renderer.HostMesh3dPreprocessCameraPayload::{
+      mesh_inputs,
       direct_work_items,
       indexed_work_items,
       non_indexed_work_items,
@@ -558,6 +602,14 @@ pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(
       dispatch_metadata,
     },
   )
+}
+
+///|
+pub fn host_gpu_build_mesh3d_indirect_parameters(
+  camera_key_hi~ : Int,
+  camera_key_lo~ : Int,
+) -> Unit {
+  @renderer.build_mesh3d_indirect_parameters(camera_key_hi~, camera_key_lo~)
 }
 
 ///|

@@ -4059,7 +4059,7 @@ fn render3d_build_gpu_preprocess_indirect_mesh_class_metadata(
     })
     indirect_parameters_gpu_metadata.push(GpuPreprocessIndirectParametersGpuMetadata3d::{
       mesh_index: item.input_index,
-      early_instance_count: 0,
+      early_instance_count: 1,
       late_instance_count: 0,
     })
     indirect_batch_sets.push(GpuPreprocessIndirectBatchSet3d::{
@@ -4657,9 +4657,80 @@ fn render3d_host_preprocess_batch_set(
 }
 
 ///|
+fn render3d_mesh_handle_preprocess_counts(
+  mesh_handle : @asset.Handle[@mesh.Mesh],
+) -> (Int, Int, Int) {
+  match @sprite.render_mesh_asset_get(mesh_handle) {
+    Some(mesh_asset) =>
+      match mesh_asset.geometry {
+        @mesh.MeshGeometry::Geometry3d(geometry3d) => {
+          let first_vertex_index = 0
+          let first_index_index = 0
+          let index_count = match geometry3d.indices {
+            Some(indices) => indices.length()
+            None => geometry3d.positions.length()
+          }
+          (first_vertex_index, first_index_index, index_count)
+        }
+        _ => (0, 0, 0)
+      }
+    None => (0, 0, 0)
+  }
+}
+
+///|
+fn render3d_host_preprocess_mesh_input(
+  draw_item : MeshPhaseItem3d,
+  meshes : Array[ExtractedMesh3d],
+) -> @render.HostMesh3dPreprocessMeshInput {
+  if draw_item.extracted_index < 0 ||
+    draw_item.extracted_index >= meshes.length() {
+    return @render.HostMesh3dPreprocessMeshInput::{
+      translation_x: 0.0F,
+      translation_y: 0.0F,
+      translation_z: 0.0F,
+      rotation_x: 0.0F,
+      rotation_y: 0.0F,
+      rotation_z: 0.0F,
+      rotation_w: 1.0F,
+      scale_x: 1.0F,
+      scale_y: 1.0F,
+      scale_z: 1.0F,
+      first_vertex_index: 0,
+      first_index_index: 0,
+      index_count: 0,
+    }
+  }
+  let mesh = meshes[draw_item.extracted_index].payload
+  let (first_vertex_index, first_index_index, index_count) = render3d_mesh_handle_preprocess_counts(
+    mesh.mesh_handle,
+  )
+  @render.HostMesh3dPreprocessMeshInput::{
+    translation_x: mesh.transform.translation.x,
+    translation_y: mesh.transform.translation.y,
+    translation_z: mesh.transform.translation.z,
+    rotation_x: mesh.transform.rotation.x,
+    rotation_y: mesh.transform.rotation.y,
+    rotation_z: mesh.transform.rotation.z,
+    rotation_w: mesh.transform.rotation.w,
+    scale_x: mesh.transform.scale.x,
+    scale_y: mesh.transform.scale.y,
+    scale_z: mesh.transform.scale.z,
+    first_vertex_index,
+    first_index_index,
+    index_count,
+  }
+}
+
+///|
 fn render3d_host_preprocess_camera_payload(
   queue_entry : GpuPreprocessResolvedCameraQueueEntry3d,
+  meshes : Array[ExtractedMesh3d],
 ) -> @render.HostMesh3dPreprocessCameraPayload {
+  let mesh_inputs : Array[@render.HostMesh3dPreprocessMeshInput] = []
+  for draw_item in queue_entry.draw_items {
+    mesh_inputs.push(render3d_host_preprocess_mesh_input(draw_item, meshes))
+  }
   let direct_work_items : Array[@render.HostMesh3dPreprocessShaderWorkItem] = []
   let indexed_work_items : Array[@render.HostMesh3dPreprocessShaderWorkItem] = []
   let non_indexed_work_items : Array[@render.HostMesh3dPreprocessShaderWorkItem] = []
@@ -4747,6 +4818,7 @@ fn render3d_host_preprocess_camera_payload(
     late_non_indexed_workgroup_count: queue_entry.dispatch_metadata.late_non_indexed_workgroup_count,
   }
   @render.HostMesh3dPreprocessCameraPayload::{
+    mesh_inputs,
     direct_work_items,
     indexed_work_items,
     non_indexed_work_items,
@@ -6132,7 +6204,11 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     @render.host_gpu_upload_mesh3d_preprocess_camera_payload(
       camera_key_hi=camera_entity.id,
       camera_key_lo=camera_entity.generation,
-      payload=render3d_host_preprocess_camera_payload(draw_queue_entry),
+      payload=render3d_host_preprocess_camera_payload(draw_queue_entry, meshes),
+    )
+    @render.host_gpu_build_mesh3d_indirect_parameters(
+      camera_key_hi=camera_entity.id,
+      camera_key_lo=camera_entity.generation,
     )
     if motion_vector_prepass_enabled {
       let (shared_scene_id, shared_velocity_id) = render3d_motion_blur_targets_get_or_create(

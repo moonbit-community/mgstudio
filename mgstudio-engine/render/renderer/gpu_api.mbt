@@ -255,6 +255,23 @@ pub(all) struct HostMesh3dPreprocessShaderWorkItem {
 }
 
 ///|
+pub(all) struct HostMesh3dPreprocessMeshInput {
+  translation_x : Float
+  translation_y : Float
+  translation_z : Float
+  rotation_x : Float
+  rotation_y : Float
+  rotation_z : Float
+  rotation_w : Float
+  scale_x : Float
+  scale_y : Float
+  scale_z : Float
+  first_vertex_index : Int
+  first_index_index : Int
+  index_count : Int
+}
+
+///|
 pub(all) struct HostMesh3dPreprocessIndirectParametersCpuMetadata {
   base_output_index : Int
   batch_set_index : Int
@@ -284,6 +301,7 @@ pub(all) struct HostMesh3dPreprocessDispatchMetadata {
 
 ///|
 pub(all) struct HostMesh3dPreprocessCameraPayload {
+  mesh_inputs : Array[HostMesh3dPreprocessMeshInput]
   direct_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
   indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
   non_indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
@@ -580,6 +598,18 @@ pub fn upload_mesh3d_preprocess_camera_payload(
     backend.upload_mesh3d_preprocess_camera_payload(
       camera_key_hi, camera_key_lo, payload,
     )
+  }
+}
+
+///|
+pub fn build_mesh3d_indirect_parameters(
+  camera_key_hi~ : Int,
+  camera_key_lo~ : Int,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.build_mesh3d_indirect_parameters(camera_key_hi, camera_key_lo) catch {
+      err => debug_runtime_error("build_mesh3d_indirect_parameters", err)
+    }
   }
 }
 

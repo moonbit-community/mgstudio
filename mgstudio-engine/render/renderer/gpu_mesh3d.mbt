@@ -698,6 +698,18 @@ const MESH3D_PREPROCESS_GPU_METADATA_STRIDE_U32 : Int = 3
 const MESH3D_PREPROCESS_BATCH_SET_STRIDE_U32 : Int = 2
 
 ///|
+const MESH3D_PREPROCESS_MESH_INPUT_STRIDE_BYTES : UInt64 = 96UL
+
+///|
+const MESH3D_PREPROCESS_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES : UInt64 = 20UL
+
+///|
+const MESH3D_PREPROCESS_NON_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES : UInt64 = 16UL
+
+///|
+const MESH3D_PREPROCESS_WORKGROUP_SIZE : Int = 64
+
+///|
 fn mesh3d_preprocess_camera_upload_state_new(
   key_hi : Int,
   key_lo : Int,
@@ -705,6 +717,9 @@ fn mesh3d_preprocess_camera_upload_state_new(
   GpuMesh3dPreprocessCameraUploadState::{
     key_hi,
     key_lo,
+    mesh_input_buffer: None,
+    mesh_input_capacity: 0UL,
+    mesh_input_count: 0,
     direct_work_item_buffer: None,
     direct_work_item_capacity: 0UL,
     indexed_work_item_buffer: None,
@@ -719,14 +734,24 @@ fn mesh3d_preprocess_camera_upload_state_new(
     indexed_cpu_metadata_capacity: 0UL,
     indexed_gpu_metadata_buffer: None,
     indexed_gpu_metadata_capacity: 0UL,
+    indexed_gpu_metadata_count: 0,
     indexed_batch_set_buffer: None,
     indexed_batch_set_capacity: 0UL,
+    indexed_batch_set_count: 0,
+    indexed_indirect_parameters_buffer: None,
+    indexed_indirect_parameters_capacity: 0UL,
+    indexed_indirect_parameters_count: 0,
     non_indexed_cpu_metadata_buffer: None,
     non_indexed_cpu_metadata_capacity: 0UL,
     non_indexed_gpu_metadata_buffer: None,
     non_indexed_gpu_metadata_capacity: 0UL,
+    non_indexed_gpu_metadata_count: 0,
     non_indexed_batch_set_buffer: None,
     non_indexed_batch_set_capacity: 0UL,
+    non_indexed_batch_set_count: 0,
+    non_indexed_indirect_parameters_buffer: None,
+    non_indexed_indirect_parameters_capacity: 0UL,
+    non_indexed_indirect_parameters_count: 0,
     dispatch_metadata_buffer: None,
     dispatch_metadata_capacity: 0UL,
   }
@@ -826,6 +851,43 @@ fn mesh3d_preprocess_work_items_bytes(
 }
 
 ///|
+fn mesh3d_preprocess_mesh_inputs_bytes(
+  inputs : Array[HostMesh3dPreprocessMeshInput],
+) -> Bytes {
+  let words : Array[UInt] = []
+  for input in inputs {
+    for
+      word in mesh3d_world_from_local_words(
+        input.translation_x,
+        input.translation_y,
+        input.translation_z,
+        input.rotation_x,
+        input.rotation_y,
+        input.rotation_z,
+        input.rotation_w,
+        input.scale_x,
+        input.scale_y,
+        input.scale_z,
+      ) {
+      words.push(word)
+    }
+    words.push(0U)
+    words.push(0U)
+    words.push(0U)
+    words.push(0xffffffffU)
+    words.push(input.first_vertex_index.reinterpret_as_uint())
+    words.push(input.first_index_index.reinterpret_as_uint())
+    words.push(input.index_count.reinterpret_as_uint())
+    words.push(0xffffffffU)
+    words.push(0U)
+    words.push(0U)
+    words.push(0U)
+    words.push(0U)
+  }
+  u32le_pack(words)
+}
+
+///|
 fn mesh3d_preprocess_cpu_metadata_bytes(
   metadata : Array[HostMesh3dPreprocessIndirectParametersCpuMetadata],
 ) -> Bytes {
@@ -873,6 +935,200 @@ fn mesh3d_preprocess_dispatch_metadata_bytes(
     metadata.late_indexed_workgroup_count.reinterpret_as_uint(),
     metadata.late_non_indexed_workgroup_count.reinterpret_as_uint(),
   ])
+}
+
+///|
+fn load_wgsl_required_mesh3d_build_indexed_indirect_params(
+  assets_base : String,
+) -> String raise GpuBackendError {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  defines.set("INDEXED", true)
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths(assets_base)
+  load_wgsl_preprocessed(
+    assets_base, "shaders/bevy_pbr/render/build_indirect_params.wgsl", defines, value_defines,
+    visited, modules,
+  )
+}
+
+///|
+fn load_wgsl_required_mesh3d_build_non_indexed_indirect_params(
+  assets_base : String,
+) -> String raise GpuBackendError {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths(assets_base)
+  load_wgsl_preprocessed(
+    assets_base, "shaders/bevy_pbr/render/build_indirect_params.wgsl", defines, value_defines,
+    visited, modules,
+  )
+}
+
+///|
+fn ensure_mesh3d_preprocess_indirect_resources(
+  backend : GpuBackend,
+) -> Unit raise GpuBackendError {
+  if backend.mesh3d_preprocess_reset_batch_sets_bgl is None {
+    let compute = ss(@wgpu.SHADER_STAGE_COMPUTE)
+    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=1UL)
+    let ok = builder.add_buffer(0U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE)
+    if !ok {
+      builder.free()
+      fatal(
+        "wgpu: failed to build mesh3d preprocess reset batch sets bind group layout",
+      )
+    }
+    let bgl = builder.finish(
+      backend.device,
+      label="mgstudio_mesh3d_preprocess_reset_batch_sets_bgl",
+    )
+    let layout = backend.device.create_pipeline_layout_1(bgl)
+    layout.set_label(
+      "mgstudio_mesh3d_preprocess_reset_batch_sets_pipeline_layout",
+    )
+    backend.mesh3d_preprocess_reset_batch_sets_bgl = Some(bgl)
+    backend.mesh3d_preprocess_reset_batch_sets_pipeline_layout = Some(layout)
+  }
+  if backend.mesh3d_preprocess_build_indexed_indirect_bgl is None {
+    let compute = ss(@wgpu.SHADER_STAGE_COMPUTE)
+    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=5UL)
+    let ok = builder.add_buffer(
+        0U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_buffer(
+        1U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_buffer(2U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+      builder.add_buffer(3U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+      builder.add_buffer(4U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE)
+    if !ok {
+      builder.free()
+      fatal(
+        "wgpu: failed to build mesh3d preprocess indexed indirect bind group layout",
+      )
+    }
+    let bgl = builder.finish(
+      backend.device,
+      label="mgstudio_mesh3d_preprocess_build_indexed_indirect_bgl",
+    )
+    let layout = backend.device.create_pipeline_layout_1(bgl)
+    layout.set_label(
+      "mgstudio_mesh3d_preprocess_build_indexed_indirect_pipeline_layout",
+    )
+    backend.mesh3d_preprocess_build_indexed_indirect_bgl = Some(bgl)
+    backend.mesh3d_preprocess_build_indexed_indirect_pipeline_layout = Some(
+      layout,
+    )
+  }
+  if backend.mesh3d_preprocess_build_non_indexed_indirect_bgl is None {
+    let compute = ss(@wgpu.SHADER_STAGE_COMPUTE)
+    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=5UL)
+    let ok = builder.add_buffer(
+        0U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_buffer(
+        1U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_buffer(2U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+      builder.add_buffer(3U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+      builder.add_buffer(4U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE)
+    if !ok {
+      builder.free()
+      fatal(
+        "wgpu: failed to build mesh3d preprocess non-indexed indirect bind group layout",
+      )
+    }
+    let bgl = builder.finish(
+      backend.device,
+      label="mgstudio_mesh3d_preprocess_build_non_indexed_indirect_bgl",
+    )
+    let layout = backend.device.create_pipeline_layout_1(bgl)
+    layout.set_label(
+      "mgstudio_mesh3d_preprocess_build_non_indexed_indirect_pipeline_layout",
+    )
+    backend.mesh3d_preprocess_build_non_indexed_indirect_bgl = Some(bgl)
+    backend.mesh3d_preprocess_build_non_indexed_indirect_pipeline_layout = Some(
+      layout,
+    )
+  }
+  if backend.mesh3d_preprocess_reset_batch_sets_pipeline is None {
+    guard backend.mesh3d_preprocess_reset_batch_sets_pipeline_layout
+      is Some(layout) else {
+      return
+    }
+    let source = load_wgsl_from_assets_required(
+      backend, "shaders/bevy_pbr/render/reset_indirect_batch_sets.wgsl",
+    )
+    let shader = backend.device.create_shader_module_wgsl(source)
+    let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+      layout, shader, "main",
+    ) catch {
+      err =>
+        fatal(
+          "wgpu: failed to create mesh3d preprocess reset batch sets pipeline: " +
+          err.message(),
+        )
+    }
+    pipeline.set_label("mgstudio_mesh3d_preprocess_reset_batch_sets")
+    backend.mesh3d_preprocess_reset_batch_sets_pipeline = Some(pipeline)
+    shader.release()
+  }
+  if backend.mesh3d_preprocess_build_indexed_indirect_pipeline is None {
+    guard backend.mesh3d_preprocess_build_indexed_indirect_pipeline_layout
+      is Some(layout) else {
+      return
+    }
+    let source = load_wgsl_required_mesh3d_build_indexed_indirect_params(
+      backend.assets_base,
+    )
+    let shader = backend.device.create_shader_module_wgsl(source)
+    let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+      layout, shader, "main",
+    ) catch {
+      err =>
+        fatal(
+          "wgpu: failed to create mesh3d preprocess indexed indirect pipeline: " +
+          err.message(),
+        )
+    }
+    pipeline.set_label("mgstudio_mesh3d_preprocess_build_indexed_indirect")
+    backend.mesh3d_preprocess_build_indexed_indirect_pipeline = Some(pipeline)
+    shader.release()
+  }
+  if backend.mesh3d_preprocess_build_non_indexed_indirect_pipeline is None {
+    guard backend.mesh3d_preprocess_build_non_indexed_indirect_pipeline_layout
+      is Some(layout) else {
+      return
+    }
+    let source = load_wgsl_required_mesh3d_build_non_indexed_indirect_params(
+      backend.assets_base,
+    )
+    let shader = backend.device.create_shader_module_wgsl(source)
+    let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+      layout, shader, "main",
+    ) catch {
+      err =>
+        fatal(
+          "wgpu: failed to create mesh3d preprocess non-indexed indirect pipeline: " +
+          err.message(),
+        )
+    }
+    pipeline.set_label("mgstudio_mesh3d_preprocess_build_non_indexed_indirect")
+    backend.mesh3d_preprocess_build_non_indexed_indirect_pipeline = Some(
+      pipeline,
+    )
+    shader.release()
+  }
 }
 
 ///|
@@ -1824,6 +2080,19 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
   let state_index = mesh3d_preprocess_camera_upload_state_get_or_create(
     self, camera_key_hi, camera_key_lo,
   )
+  let mesh_input_bytes = mesh3d_preprocess_mesh_inputs_bytes(
+    payload.mesh_inputs,
+  )
+  let (mesh_input_buffer, mesh_input_capacity) = mesh3d_preprocess_upload_buffer(
+    self,
+    self.mesh3d_preprocess_camera_upload_states[state_index].mesh_input_buffer,
+    self.mesh3d_preprocess_camera_upload_states[state_index].mesh_input_capacity,
+    mesh_input_bytes,
+    "mgstudio_mesh3d_preprocess_mesh_inputs",
+  )
+  self.mesh3d_preprocess_camera_upload_states[state_index].mesh_input_buffer = mesh_input_buffer
+  self.mesh3d_preprocess_camera_upload_states[state_index].mesh_input_capacity = mesh_input_capacity
+  self.mesh3d_preprocess_camera_upload_states[state_index].mesh_input_count = payload.mesh_inputs.length()
   let direct_work_item_bytes = mesh3d_preprocess_work_items_bytes(
     payload.direct_work_items,
   )
@@ -1937,6 +2206,8 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
   = indexed_gpu_metadata_buffer
   self.mesh3d_preprocess_camera_upload_states[state_index].indexed_gpu_metadata_capacity
   = indexed_gpu_metadata_capacity
+  self.mesh3d_preprocess_camera_upload_states[state_index].indexed_gpu_metadata_count
+  = payload.indexed_gpu_metadata.length()
   let indexed_batch_set_bytes = mesh3d_preprocess_batch_set_bytes(
     payload.indexed_batch_sets,
   )
@@ -1956,6 +2227,25 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
   = indexed_batch_set_buffer
   self.mesh3d_preprocess_camera_upload_states[state_index].indexed_batch_set_capacity
   = indexed_batch_set_capacity
+  self.mesh3d_preprocess_camera_upload_states[state_index].indexed_batch_set_count
+  = payload.indexed_batch_sets.length()
+  let indexed_indirect_parameters_required_size = payload.indexed_gpu_metadata
+    .length()
+    .to_uint64() *
+    MESH3D_PREPROCESS_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES
+  let (indexed_indirect_parameters_buffer, indexed_indirect_parameters_capacity) = mesh3d_preprocess_ensure_storage_buffer(
+    self,
+    self.mesh3d_preprocess_camera_upload_states[state_index].indexed_indirect_parameters_buffer,
+    self.mesh3d_preprocess_camera_upload_states[state_index].indexed_indirect_parameters_capacity,
+    indexed_indirect_parameters_required_size,
+    "mgstudio_mesh3d_preprocess_indexed_indirect_parameters",
+  )
+  self.mesh3d_preprocess_camera_upload_states[state_index].indexed_indirect_parameters_buffer
+  = indexed_indirect_parameters_buffer
+  self.mesh3d_preprocess_camera_upload_states[state_index].indexed_indirect_parameters_capacity
+  = indexed_indirect_parameters_capacity
+  self.mesh3d_preprocess_camera_upload_states[state_index].indexed_indirect_parameters_count
+  = payload.indexed_gpu_metadata.length()
 
   let non_indexed_cpu_metadata_bytes = mesh3d_preprocess_cpu_metadata_bytes(
     payload.non_indexed_cpu_metadata,
@@ -1999,6 +2289,8 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
   = non_indexed_gpu_metadata_buffer
   self.mesh3d_preprocess_camera_upload_states[state_index].non_indexed_gpu_metadata_capacity
   = non_indexed_gpu_metadata_capacity
+  self.mesh3d_preprocess_camera_upload_states[state_index].non_indexed_gpu_metadata_count
+  = payload.non_indexed_gpu_metadata.length()
   let non_indexed_batch_set_bytes = mesh3d_preprocess_batch_set_bytes(
     payload.non_indexed_batch_sets,
   )
@@ -2020,6 +2312,28 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
   = non_indexed_batch_set_buffer
   self.mesh3d_preprocess_camera_upload_states[state_index].non_indexed_batch_set_capacity
   = non_indexed_batch_set_capacity
+  self.mesh3d_preprocess_camera_upload_states[state_index].non_indexed_batch_set_count
+  = payload.non_indexed_batch_sets.length()
+  let non_indexed_indirect_parameters_required_size = payload.non_indexed_gpu_metadata
+    .length()
+    .to_uint64() *
+    MESH3D_PREPROCESS_NON_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES
+  let (
+    non_indexed_indirect_parameters_buffer,
+    non_indexed_indirect_parameters_capacity,
+  ) = mesh3d_preprocess_ensure_storage_buffer(
+    self,
+    self.mesh3d_preprocess_camera_upload_states[state_index].non_indexed_indirect_parameters_buffer,
+    self.mesh3d_preprocess_camera_upload_states[state_index].non_indexed_indirect_parameters_capacity,
+    non_indexed_indirect_parameters_required_size,
+    "mgstudio_mesh3d_preprocess_non_indexed_indirect_parameters",
+  )
+  self.mesh3d_preprocess_camera_upload_states[state_index].non_indexed_indirect_parameters_buffer
+  = non_indexed_indirect_parameters_buffer
+  self.mesh3d_preprocess_camera_upload_states[state_index].non_indexed_indirect_parameters_capacity
+  = non_indexed_indirect_parameters_capacity
+  self.mesh3d_preprocess_camera_upload_states[state_index].non_indexed_indirect_parameters_count
+  = payload.non_indexed_gpu_metadata.length()
 
   let dispatch_metadata_bytes = mesh3d_preprocess_dispatch_metadata_bytes(
     payload.dispatch_metadata,
@@ -2035,6 +2349,215 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
   = dispatch_metadata_buffer
   self.mesh3d_preprocess_camera_upload_states[state_index].dispatch_metadata_capacity
   = dispatch_metadata_capacity
+}
+
+///|
+pub fn GpuBackend::build_mesh3d_indirect_parameters(
+  self : GpuBackend,
+  camera_key_hi : Int,
+  camera_key_lo : Int,
+) -> Unit raise GpuBackendError {
+  guard self.frame is Some(frame) else { return }
+  guard mesh3d_preprocess_camera_upload_state_index(
+      self, camera_key_hi, camera_key_lo,
+    )
+    is Some(state_index) else {
+    return
+  }
+  ensure_mesh3d_preprocess_indirect_resources(self)
+  let state = self.mesh3d_preprocess_camera_upload_states[state_index]
+  let compute_pass = frame.encoder.begin_compute_pass()
+  if state.indexed_batch_set_count > 0 &&
+    state.indexed_batch_set_buffer is Some(indexed_batch_set_buffer) &&
+    self.mesh3d_preprocess_reset_batch_sets_bgl is Some(reset_bgl) &&
+    self.mesh3d_preprocess_reset_batch_sets_pipeline is Some(reset_pipeline) {
+    let builder = @wgpu.BindGroupBuilder::new(max_entries=1UL)
+    let ok = builder.add_buffer(
+      0U,
+      indexed_batch_set_buffer,
+      size=state.indexed_batch_set_count.to_uint64() *
+        MESH3D_PREPROCESS_BATCH_SET_STRIDE_U32.to_uint64() *
+        4UL,
+    )
+    if ok {
+      let bind_group = builder.finish(
+        self.device,
+        reset_bgl,
+        label="mgstudio_mesh3d_preprocess_reset_indexed_batch_sets_bg",
+      )
+      compute_pass.set_pipeline(reset_pipeline)
+      compute_pass.set_bind_group0(bind_group)
+      let workgroup_count = ((
+        state.indexed_batch_set_count + MESH3D_PREPROCESS_WORKGROUP_SIZE - 1
+      ) /
+      MESH3D_PREPROCESS_WORKGROUP_SIZE).reinterpret_as_uint()
+      compute_pass.dispatch_workgroups(workgroup_count, 1U, 1U)
+      bind_group.release()
+    } else {
+      builder.free()
+    }
+  }
+  if state.indexed_gpu_metadata_count > 0 &&
+    state.mesh_input_buffer is Some(mesh_input_buffer) &&
+    state.indexed_cpu_metadata_buffer is Some(indexed_cpu_metadata_buffer) &&
+    state.indexed_gpu_metadata_buffer is Some(indexed_gpu_metadata_buffer) &&
+    state.indexed_batch_set_buffer is Some(indexed_batch_set_buffer) &&
+    state.indexed_indirect_parameters_buffer
+    is Some(indexed_indirect_parameters_buffer) &&
+    self.mesh3d_preprocess_build_indexed_indirect_bgl is Some(indexed_bgl) &&
+    self.mesh3d_preprocess_build_indexed_indirect_pipeline
+    is Some(indexed_pipeline) {
+    let builder = @wgpu.BindGroupBuilder::new(max_entries=5UL)
+    let ok = builder.add_buffer(
+        0U,
+        mesh_input_buffer,
+        size=state.mesh_input_count.to_uint64() *
+          MESH3D_PREPROCESS_MESH_INPUT_STRIDE_BYTES,
+      ) &&
+      builder.add_buffer(
+        1U,
+        indexed_cpu_metadata_buffer,
+        size=state.indexed_gpu_metadata_count.to_uint64() *
+          MESH3D_PREPROCESS_CPU_METADATA_STRIDE_U32.to_uint64() *
+          4UL,
+      ) &&
+      builder.add_buffer(
+        2U,
+        indexed_gpu_metadata_buffer,
+        size=state.indexed_gpu_metadata_count.to_uint64() *
+          MESH3D_PREPROCESS_GPU_METADATA_STRIDE_U32.to_uint64() *
+          4UL,
+      ) &&
+      builder.add_buffer(
+        3U,
+        indexed_batch_set_buffer,
+        size=state.indexed_batch_set_count.to_uint64() *
+          MESH3D_PREPROCESS_BATCH_SET_STRIDE_U32.to_uint64() *
+          4UL,
+      ) &&
+      builder.add_buffer(
+        4U,
+        indexed_indirect_parameters_buffer,
+        size=state.indexed_indirect_parameters_count.to_uint64() *
+          MESH3D_PREPROCESS_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES,
+      )
+    if ok {
+      let bind_group = builder.finish(
+        self.device,
+        indexed_bgl,
+        label="mgstudio_mesh3d_preprocess_build_indexed_indirect_bg",
+      )
+      compute_pass.set_pipeline(indexed_pipeline)
+      compute_pass.set_bind_group0(bind_group)
+      let workgroup_count = ((
+        state.indexed_gpu_metadata_count + MESH3D_PREPROCESS_WORKGROUP_SIZE - 1
+      ) /
+      MESH3D_PREPROCESS_WORKGROUP_SIZE).reinterpret_as_uint()
+      compute_pass.dispatch_workgroups(workgroup_count, 1U, 1U)
+      bind_group.release()
+    } else {
+      builder.free()
+    }
+  }
+  if state.non_indexed_batch_set_count > 0 &&
+    state.non_indexed_batch_set_buffer is Some(non_indexed_batch_set_buffer) &&
+    self.mesh3d_preprocess_reset_batch_sets_bgl is Some(reset_bgl) &&
+    self.mesh3d_preprocess_reset_batch_sets_pipeline is Some(reset_pipeline) {
+    let builder = @wgpu.BindGroupBuilder::new(max_entries=1UL)
+    let ok = builder.add_buffer(
+      0U,
+      non_indexed_batch_set_buffer,
+      size=state.non_indexed_batch_set_count.to_uint64() *
+        MESH3D_PREPROCESS_BATCH_SET_STRIDE_U32.to_uint64() *
+        4UL,
+    )
+    if ok {
+      let bind_group = builder.finish(
+        self.device,
+        reset_bgl,
+        label="mgstudio_mesh3d_preprocess_reset_non_indexed_batch_sets_bg",
+      )
+      compute_pass.set_pipeline(reset_pipeline)
+      compute_pass.set_bind_group0(bind_group)
+      let workgroup_count = ((
+        state.non_indexed_batch_set_count + MESH3D_PREPROCESS_WORKGROUP_SIZE - 1
+      ) /
+      MESH3D_PREPROCESS_WORKGROUP_SIZE).reinterpret_as_uint()
+      compute_pass.dispatch_workgroups(workgroup_count, 1U, 1U)
+      bind_group.release()
+    } else {
+      builder.free()
+    }
+  }
+  if state.non_indexed_gpu_metadata_count > 0 &&
+    state.mesh_input_buffer is Some(mesh_input_buffer) &&
+    state.non_indexed_cpu_metadata_buffer
+    is Some(non_indexed_cpu_metadata_buffer) &&
+    state.non_indexed_gpu_metadata_buffer
+    is Some(non_indexed_gpu_metadata_buffer) &&
+    state.non_indexed_batch_set_buffer is Some(non_indexed_batch_set_buffer) &&
+    state.non_indexed_indirect_parameters_buffer
+    is Some(non_indexed_indirect_parameters_buffer) &&
+    self.mesh3d_preprocess_build_non_indexed_indirect_bgl
+    is Some(non_indexed_bgl) &&
+    self.mesh3d_preprocess_build_non_indexed_indirect_pipeline
+    is Some(non_indexed_pipeline) {
+    let builder = @wgpu.BindGroupBuilder::new(max_entries=5UL)
+    let ok = builder.add_buffer(
+        0U,
+        mesh_input_buffer,
+        size=state.mesh_input_count.to_uint64() *
+          MESH3D_PREPROCESS_MESH_INPUT_STRIDE_BYTES,
+      ) &&
+      builder.add_buffer(
+        1U,
+        non_indexed_cpu_metadata_buffer,
+        size=state.non_indexed_gpu_metadata_count.to_uint64() *
+          MESH3D_PREPROCESS_CPU_METADATA_STRIDE_U32.to_uint64() *
+          4UL,
+      ) &&
+      builder.add_buffer(
+        2U,
+        non_indexed_gpu_metadata_buffer,
+        size=state.non_indexed_gpu_metadata_count.to_uint64() *
+          MESH3D_PREPROCESS_GPU_METADATA_STRIDE_U32.to_uint64() *
+          4UL,
+      ) &&
+      builder.add_buffer(
+        3U,
+        non_indexed_batch_set_buffer,
+        size=state.non_indexed_batch_set_count.to_uint64() *
+          MESH3D_PREPROCESS_BATCH_SET_STRIDE_U32.to_uint64() *
+          4UL,
+      ) &&
+      builder.add_buffer(
+        4U,
+        non_indexed_indirect_parameters_buffer,
+        size=state.non_indexed_indirect_parameters_count.to_uint64() *
+          MESH3D_PREPROCESS_NON_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES,
+      )
+    if ok {
+      let bind_group = builder.finish(
+        self.device,
+        non_indexed_bgl,
+        label="mgstudio_mesh3d_preprocess_build_non_indexed_indirect_bg",
+      )
+      compute_pass.set_pipeline(non_indexed_pipeline)
+      compute_pass.set_bind_group0(bind_group)
+      let workgroup_count = ((
+        state.non_indexed_gpu_metadata_count +
+        MESH3D_PREPROCESS_WORKGROUP_SIZE -
+        1
+      ) /
+      MESH3D_PREPROCESS_WORKGROUP_SIZE).reinterpret_as_uint()
+      compute_pass.dispatch_workgroups(workgroup_count, 1U, 1U)
+      bind_group.release()
+    } else {
+      builder.free()
+    }
+  }
+  compute_pass.end()
+  compute_pass.release()
 }
 
 ///|

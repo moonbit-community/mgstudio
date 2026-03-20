@@ -282,6 +282,115 @@ test "renderer: mesh3d draw slot pool grows per draw slot" {
 }
 
 ///|
+test "renderer: mesh3d preprocess mesh input bytes match bevy struct size" {
+  let bytes = mesh3d_preprocess_mesh_inputs_bytes([
+    HostMesh3dPreprocessMeshInput::{
+      translation_x: 1.0F,
+      translation_y: 2.0F,
+      translation_z: 3.0F,
+      rotation_x: 0.0F,
+      rotation_y: 0.0F,
+      rotation_z: 0.0F,
+      rotation_w: 1.0F,
+      scale_x: 1.0F,
+      scale_y: 2.0F,
+      scale_z: 3.0F,
+      first_vertex_index: 0,
+      first_index_index: 4,
+      index_count: 36,
+    },
+  ])
+  inspect(bytes.length(), content="96")
+}
+
+///|
+test "renderer: mesh3d preprocess indirect resources initialize canonical compute pipelines" {
+  let backend = GpuBackend::new(assets_base="assets")
+  ensure_mesh3d_preprocess_indirect_resources(backend)
+  let ok = backend.mesh3d_preprocess_reset_batch_sets_bgl is Some(_) &&
+    backend.mesh3d_preprocess_reset_batch_sets_pipeline is Some(_) &&
+    backend.mesh3d_preprocess_build_indexed_indirect_bgl is Some(_) &&
+    backend.mesh3d_preprocess_build_indexed_indirect_pipeline is Some(_) &&
+    backend.mesh3d_preprocess_build_non_indexed_indirect_bgl is Some(_) &&
+    backend.mesh3d_preprocess_build_non_indexed_indirect_pipeline is Some(_)
+  inspect(ok, content="true")
+}
+
+///|
+test "renderer: mesh3d preprocess upload allocates mesh inputs and indirect parameter buffers" {
+  let backend = GpuBackend::new(assets_base="assets")
+  backend.upload_mesh3d_preprocess_camera_payload(7, 9, HostMesh3dPreprocessCameraPayload::{
+    mesh_inputs: [
+      HostMesh3dPreprocessMeshInput::{
+        translation_x: 0.0F,
+        translation_y: 0.0F,
+        translation_z: 0.0F,
+        rotation_x: 0.0F,
+        rotation_y: 0.0F,
+        rotation_z: 0.0F,
+        rotation_w: 1.0F,
+        scale_x: 1.0F,
+        scale_y: 1.0F,
+        scale_z: 1.0F,
+        first_vertex_index: 0,
+        first_index_index: 0,
+        index_count: 36,
+      },
+    ],
+    direct_work_items: [],
+    indexed_work_items: [
+      HostMesh3dPreprocessShaderWorkItem::{
+        input_index: 0,
+        output_or_indirect_parameters_index: 0,
+      },
+    ],
+    non_indexed_work_items: [],
+    late_indexed_work_items: [],
+    late_non_indexed_work_items: [],
+    indexed_cpu_metadata: [
+      HostMesh3dPreprocessIndirectParametersCpuMetadata::{
+        base_output_index: 0,
+        batch_set_index: 0,
+      },
+    ],
+    indexed_gpu_metadata: [
+      HostMesh3dPreprocessIndirectParametersGpuMetadata::{
+        mesh_index: 0,
+        early_instance_count: 1,
+        late_instance_count: 0,
+      },
+    ],
+    indexed_batch_sets: [
+      HostMesh3dPreprocessIndirectBatchSet::{
+        indirect_parameters_count: 1,
+        indirect_parameters_base: 0,
+      },
+    ],
+    non_indexed_cpu_metadata: [],
+    non_indexed_gpu_metadata: [],
+    non_indexed_batch_sets: [],
+    dispatch_metadata: HostMesh3dPreprocessDispatchMetadata::{
+      direct_workgroup_count: 0,
+      indexed_workgroup_count: 1,
+      non_indexed_workgroup_count: 0,
+      late_indexed_workgroup_count: 0,
+      late_non_indexed_workgroup_count: 0,
+    },
+  })
+  let state = backend.mesh3d_preprocess_camera_upload_states[0]
+  let ok = backend.mesh3d_preprocess_camera_upload_states.length() == 1 &&
+    state.mesh_input_buffer is Some(_) &&
+    state.mesh_input_count == 1 &&
+    state.indexed_gpu_metadata_buffer is Some(_) &&
+    state.indexed_gpu_metadata_count == 1 &&
+    state.indexed_batch_set_buffer is Some(_) &&
+    state.indexed_batch_set_count == 1 &&
+    state.indexed_indirect_parameters_buffer is Some(_) &&
+    state.indexed_indirect_parameters_count == 1
+  inspect(ok, content="true")
+}
+
+///|
 test "renderer: motion vector resources initialize prepass-style bind groups" {
   let backend = GpuBackend::new(assets_base="assets")
   ensure_mesh3d_motion_vector_pipeline(backend)
