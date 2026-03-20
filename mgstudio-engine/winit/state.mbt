@@ -290,8 +290,6 @@ pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
     let debug_screenshot_capture_id_ref : Ref[Int] = Ref::new(0)
     let debug_screenshot_render_frame_ref : Ref[Int] = Ref::new(0)
     runner_state.val.tick = Some(fn() {
-      @window.window_poll_host_events(app_ref.val.world())
-
       let world = app_ref.val.world()
       let host_entries = @window.window_host_entries(world)
       let window_store = world.component(@window.Window::component())

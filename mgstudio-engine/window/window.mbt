@@ -1,4 +1,4 @@
-// Copyright 2025 International Digital Economy Academy
+// Copyright 2026 International Digital Economy Academy
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,45 +13,19 @@
 // limitations under the License.
 
 ///|
-pub type HostWindow = Int
+const DEFAULT_WINDOW_TITLE : String = "App"
 
 ///|
-pub type KeyCode = @input_events.KeyCode
+pub(all) struct PrimaryWindow {} derive(Eq, Show)
 
 ///|
-pub type MouseButton = @input_events.MouseButton
+pub(all) struct ClosingWindow {} derive(Eq, Show)
 
 ///|
-pub(all) enum CursorGrabMode {
-  GrabNone
-  GrabConfined
-  GrabLocked
-} derive(Eq, Show)
-
-///|
-pub type SystemCursorIcon = @window_core.CursorIcon
-
-///|
-pub(all) enum CursorIcon {
-  System(SystemCursorIcon)
-} derive(Eq, Show)
-
-///|
-pub fn CursorIcon::from(icon : SystemCursorIcon) -> CursorIcon {
-  System(icon)
-}
-
-///|
-pub fn CursorIcon::as_system(self : CursorIcon) -> SystemCursorIcon? {
-  match self {
-    System(icon) => Some(icon)
-  }
-}
-
-///|
-pub impl Default for CursorIcon with default() {
-  System(@window_core.CursorIcon::Default)
-}
+pub(all) enum WindowRef {
+  Primary
+  Entity(@core.Entity)
+} derive(Eq, ToJson, FromJson)
 
 ///|
 pub(all) enum MonitorSelection {
@@ -66,6 +40,86 @@ pub(all) enum VideoModeSelection {
   Current
   Specific(@window_core.VideoMode)
 } derive(Eq)
+
+///|
+pub(all) enum WindowPosition {
+  Automatic
+  Centered(MonitorSelection)
+  At(Int, Int)
+} derive(Eq)
+
+///|
+pub fn WindowPosition::new(x : Int, y : Int) -> WindowPosition {
+  At(x, y)
+}
+
+///|
+pub fn WindowPosition::set(
+  _self : WindowPosition,
+  x : Int,
+  y : Int,
+) -> WindowPosition {
+  WindowPosition::new(x, y)
+}
+
+///|
+pub fn WindowPosition::center(
+  _self : WindowPosition,
+  monitor : MonitorSelection,
+) -> WindowPosition {
+  Centered(monitor)
+}
+
+///|
+pub(all) struct WindowResizeConstraints {
+  min_width : Float
+  min_height : Float
+  max_width : Float
+  max_height : Float
+} derive(Eq, Show)
+
+///|
+pub fn WindowResizeConstraints::default() -> WindowResizeConstraints {
+  WindowResizeConstraints::{
+    min_width: 180.0F,
+    min_height: 120.0F,
+    max_width: @float.infinity,
+    max_height: @float.infinity,
+  }
+}
+
+///|
+pub fn WindowResizeConstraints::check_constraints(
+  self : WindowResizeConstraints,
+) -> WindowResizeConstraints {
+  let min_width = if self.min_width < 1.0F { 1.0F } else { self.min_width }
+  let min_height = if self.min_height < 1.0F { 1.0F } else { self.min_height }
+  let max_width = if self.max_width < min_width {
+    min_width
+  } else {
+    self.max_width
+  }
+  let max_height = if self.max_height < min_height {
+    min_height
+  } else {
+    self.max_height
+  }
+  WindowResizeConstraints::{ min_width, min_height, max_width, max_height }
+}
+
+///|
+pub(all) enum CompositeAlphaMode {
+  Auto
+  Opaque
+  PreMultiplied
+  PostMultiplied
+  Inherit
+} derive(Eq, Show)
+
+///|
+pub fn CompositeAlphaMode::default() -> CompositeAlphaMode {
+  CompositeAlphaMode::Auto
+}
 
 ///|
 pub(all) enum WindowMode {
@@ -91,6 +145,21 @@ pub type WindowLevel = @window_core.WindowLevel
 pub type WindowTheme = @window_core.Theme
 
 ///|
+pub(all) enum ScreenEdge {
+  None
+  Top
+  Left
+  Bottom
+  Right
+  All
+} derive(Eq, Show)
+
+///|
+pub fn ScreenEdge::default() -> ScreenEdge {
+  ScreenEdge::None
+}
+
+///|
 pub(all) struct EnabledButtons {
   mut minimize : Bool
   mut maximize : Bool
@@ -103,796 +172,337 @@ pub fn EnabledButtons::default() -> EnabledButtons {
 }
 
 ///|
-pub(all) enum HostEvent {
-  KeyDown(KeyCode)
-  KeyUp(KeyCode)
-  MouseMove(Int, Int)
-  MouseDown(MouseButton)
-  MouseUp(MouseButton)
-  MouseWheel(Int, Int)
-  WindowResized(Int, Int)
-  WindowCloseRequested
+pub(all) struct WindowResolution {
+  mut physical_width : Int
+  mut physical_height : Int
+  mut scale_factor_override : Float?
+  mut scale_factor : Float
+} derive(Eq, Show)
+
+///|
+pub fn WindowResolution::default() -> WindowResolution {
+  WindowResolution::{
+    physical_width: 1280,
+    physical_height: 720,
+    scale_factor_override: None,
+    scale_factor: 1.0F,
+  }
 }
 
 ///|
-pub(all) struct WindowResized {
-  window : @core.Entity
-  width : Float
-  height : Float
-} derive(Eq)
+pub fn WindowResolution::new(
+  physical_width : Int,
+  physical_height : Int,
+) -> WindowResolution {
+  let resolution = WindowResolution::default()
+  resolution.physical_width = if physical_width <= 0 {
+    1
+  } else {
+    physical_width
+  }
+  resolution.physical_height = if physical_height <= 0 {
+    1
+  } else {
+    physical_height
+  }
+  resolution
+}
 
 ///|
-pub let ecs_key_window_resized : @ecs.MessageKey[WindowResized] = @ecs.register_message(
-  debug_name="bevy_window::WindowResized",
+pub fn WindowResolution::with_scale_factor_override(
+  self : WindowResolution,
+  scale_factor_override : Float,
+) -> WindowResolution {
+  let next = self
+  next.set_scale_factor_override(Some(scale_factor_override))
+  next
+}
+
+///|
+pub fn WindowResolution::width(self : WindowResolution) -> Float {
+  Float::from_int(self.physical_width()) / self.scale_factor()
+}
+
+///|
+pub fn WindowResolution::height(self : WindowResolution) -> Float {
+  Float::from_int(self.physical_height()) / self.scale_factor()
+}
+
+///|
+pub fn WindowResolution::physical_width(self : WindowResolution) -> Int {
+  self.physical_width
+}
+
+///|
+pub fn WindowResolution::physical_height(self : WindowResolution) -> Int {
+  self.physical_height
+}
+
+///|
+pub fn WindowResolution::scale_factor(self : WindowResolution) -> Float {
+  match self.scale_factor_override {
+    Some(scale_factor_override) =>
+      if scale_factor_override <= 0.0F {
+        1.0F
+      } else {
+        scale_factor_override
+      }
+    None => self.base_scale_factor()
+  }
+}
+
+///|
+pub fn WindowResolution::base_scale_factor(self : WindowResolution) -> Float {
+  if self.scale_factor <= 0.0F {
+    1.0F
+  } else {
+    self.scale_factor
+  }
+}
+
+///|
+pub fn WindowResolution::scale_factor_override(
+  self : WindowResolution,
+) -> Float? {
+  self.scale_factor_override
+}
+
+///|
+pub fn WindowResolution::set(
+  self : WindowResolution,
+  width : Float,
+  height : Float,
+) -> Unit {
+  self.set_physical_resolution(
+    (width * self.scale_factor()).to_int(),
+    (height * self.scale_factor()).to_int(),
+  )
+}
+
+///|
+pub fn WindowResolution::set_physical_resolution(
+  self : WindowResolution,
+  width : Int,
+  height : Int,
+) -> Unit {
+  self.physical_width = if width <= 0 { 1 } else { width }
+  self.physical_height = if height <= 0 { 1 } else { height }
+}
+
+///|
+pub fn WindowResolution::set_scale_factor(
+  self : WindowResolution,
+  scale_factor : Float,
+) -> Unit {
+  self.scale_factor = if scale_factor <= 0.0F { 1.0F } else { scale_factor }
+}
+
+///|
+pub fn WindowResolution::set_scale_factor_override(
+  self : WindowResolution,
+  scale_factor_override : Float?,
+) -> Unit {
+  self.scale_factor_override = scale_factor_override
+}
+
+///|
+pub(all) struct Window {
+  mut title : String
+  mut name : String?
+  mut composite_alpha_mode : CompositeAlphaMode
+  mut resize_constraints : WindowResizeConstraints
+  mut canvas : String?
+  mut resolution : WindowResolution
+  mut present_mode : PresentMode
+  mut position : WindowPosition
+  mut mode : WindowMode
+  mut resizable : Bool
+  mut enabled_buttons : EnabledButtons
+  mut decorations : Bool
+  mut transparent : Bool
+  mut focused : Bool
+  mut window_level : WindowLevel
+  mut fit_canvas_to_parent : Bool
+  mut prevent_default_event_handling : Bool
+  mut window_theme : WindowTheme?
+  mut visible : Bool
+  mut skip_taskbar : Bool
+  mut clip_children : Bool
+  mut desired_maximum_frame_latency : Int?
+  mut recognize_pinch_gesture : Bool
+  mut recognize_rotation_gesture : Bool
+  mut recognize_doubletap_gesture : Bool
+  mut recognize_pan_gesture : (Int, Int)?
+  mut movable_by_window_background : Bool
+  mut fullsize_content_view : Bool
+  mut has_shadow : Bool
+  mut titlebar_shown : Bool
+  mut titlebar_transparent : Bool
+  mut titlebar_show_title : Bool
+  mut titlebar_show_buttons : Bool
+  mut borderless_game : Bool
+  mut prefers_home_indicator_hidden : Bool
+  mut prefers_status_bar_hidden : Bool
+  mut preferred_screen_edges_deferring_system_gestures : ScreenEdge
+  mut ime_enabled : Bool
+  mut ime_position : @math.Vec2
+  mut maximize_request : Bool?
+  mut minimize_request : Bool?
+  mut drag_move_request : Bool
+  mut drag_resize_request : @math.CompassOctant?
+}
+
+///|
+pub fn Window::default() -> Window {
+  Window::{
+    title: DEFAULT_WINDOW_TITLE,
+    name: None,
+    composite_alpha_mode: CompositeAlphaMode::default(),
+    resize_constraints: WindowResizeConstraints::default(),
+    canvas: None,
+    resolution: WindowResolution::default(),
+    present_mode: PresentMode::Fifo,
+    position: Automatic,
+    mode: Windowed,
+    resizable: true,
+    enabled_buttons: EnabledButtons::default(),
+    decorations: true,
+    transparent: false,
+    focused: true,
+    window_level: WindowLevel::Normal,
+    fit_canvas_to_parent: false,
+    prevent_default_event_handling: true,
+    window_theme: None,
+    visible: true,
+    skip_taskbar: false,
+    clip_children: true,
+    desired_maximum_frame_latency: None,
+    recognize_pinch_gesture: false,
+    recognize_rotation_gesture: false,
+    recognize_doubletap_gesture: false,
+    recognize_pan_gesture: None,
+    movable_by_window_background: false,
+    fullsize_content_view: false,
+    has_shadow: true,
+    titlebar_shown: true,
+    titlebar_transparent: false,
+    titlebar_show_title: true,
+    titlebar_show_buttons: true,
+    borderless_game: true,
+    prefers_home_indicator_hidden: false,
+    prefers_status_bar_hidden: false,
+    preferred_screen_edges_deferring_system_gestures: ScreenEdge::default(),
+    ime_enabled: false,
+    ime_position: @math.Vec2::new(0.0F, 0.0F),
+    maximize_request: None,
+    minimize_request: None,
+    drag_move_request: false,
+    drag_resize_request: None,
+  }
+}
+
+///|
+pub fn Window::width(self : Window) -> Float {
+  self.resolution.width()
+}
+
+///|
+pub fn Window::height(self : Window) -> Float {
+  self.resolution.height()
+}
+
+///|
+pub fn Window::physical_width(self : Window) -> Int {
+  self.resolution.physical_width()
+}
+
+///|
+pub fn Window::physical_height(self : Window) -> Int {
+  self.resolution.physical_height()
+}
+
+///|
+pub fn Window::scale_factor(self : Window) -> Float {
+  self.resolution.scale_factor()
+}
+
+///|
+pub fn Window::start_drag_move(self : Window) -> Unit {
+  self.drag_move_request = true
+}
+
+///|
+pub fn Window::start_drag_resize(
+  self : Window,
+  direction : @math.CompassOctant,
+) -> Unit {
+  self.drag_resize_request = Some(direction)
+}
+
+///|
+pub fn Window::set_maximized(self : Window, maximized : Bool) -> Unit {
+  self.maximize_request = Some(maximized)
+}
+
+///|
+pub fn Window::set_minimized(self : Window, minimized : Bool) -> Unit {
+  self.minimize_request = Some(minimized)
+}
+
+///|
+pub(all) enum ExitCondition {
+  OnPrimaryClosed
+  OnAllClosed
+  DontExit
+} derive(Eq, Show)
+
+///|
+pub(all) struct WindowPlugin {
+  primary_window : Window?
+  primary_cursor_options : CursorOptions?
+  exit_condition : ExitCondition
+  close_when_requested : Bool
+}
+
+///|
+pub const WINDOW_PLUGIN_ID : String = "bevy_window::WindowPlugin"
+
+///|
+pub fn WindowPlugin::default() -> WindowPlugin {
+  WindowPlugin::{
+    primary_window: Some(Window::default()),
+    primary_cursor_options: Some(CursorOptions::default()),
+    exit_condition: OnAllClosed,
+    close_when_requested: true,
+  }
+}
+
+///|
+pub let ecs_key_window : @ecs.ComponentKey[Window] = @ecs.register_component(
+  debug_name="bevy_window::Window",
 )
 
 ///|
-pub impl @ecs.Message for WindowResized with message() {
-  ecs_key_window_resized
-}
-
-///|
-pub fn host_window_create(
-  logical_width~ : Int,
-  logical_height~ : Int,
-  physical_width~ : Int,
-  physical_height~ : Int,
-  use_physical_size_on_create~ : Bool,
-  title~ : String,
-  name? : String? = None,
-  visible? : Bool = true,
-  resizable? : Bool = true,
-  decorations? : Bool = true,
-  transparent? : Bool = false,
-  panel? : Bool = false,
-  focused? : Bool = true,
-  close_button_enabled? : Bool = true,
-  minimize_button_enabled? : Bool = true,
-  maximize_button_enabled? : Bool = true,
-  min_inner_width? : Float = 180.0F,
-  min_inner_height? : Float = 120.0F,
-  max_inner_width? : Float? = None,
-  max_inner_height? : Float? = None,
-  movable_by_window_background? : Bool = false,
-  fullsize_content_view? : Bool = false,
-  has_shadow? : Bool = true,
-  titlebar_shown? : Bool = true,
-  titlebar_transparent? : Bool = false,
-  titlebar_show_title? : Bool = true,
-  titlebar_show_buttons? : Bool = true,
-  borderless_game? : Bool = true,
-  skip_taskbar? : Bool = false,
-  clip_children? : Bool = true,
-) -> HostWindow {
-  @windowing.create(
-    logical_width~,
-    logical_height~,
-    physical_width~,
-    physical_height~,
-    use_physical_size_on_create~,
-    title~,
-    name~,
-    visible~,
-    resizable~,
-    decorations~,
-    transparent~,
-    panel~,
-    focused~,
-    close_button_enabled~,
-    minimize_button_enabled~,
-    maximize_button_enabled~,
-    min_inner_width~,
-    min_inner_height~,
-    max_inner_width~,
-    max_inner_height~,
-    movable_by_window_background~,
-    fullsize_content_view~,
-    has_shadow~,
-    titlebar_shown~,
-    titlebar_transparent~,
-    titlebar_show_title~,
-    titlebar_show_buttons~,
-    borderless_game~,
-    skip_taskbar~,
-    clip_children~,
-  )
-}
-
-///|
-pub fn host_window_poll_events(window : HostWindow) -> Unit {
-  @windowing.poll_events(window)
-}
-
-///|
-pub fn host_window_get_width(window : HostWindow) -> Int {
-  @windowing.width(window)
-}
-
-///|
-pub fn host_window_get_height(window : HostWindow) -> Int {
-  @windowing.height(window)
-}
-
-///|
-pub fn host_window_get_scale_factor(window : HostWindow) -> Float {
-  @windowing.scale_factor(window)
-}
-
-///|
-pub fn host_window_get_focused(window : HostWindow) -> Bool {
-  @windowing.focused(window)
-}
-
-///|
-pub fn host_window_should_close(window : HostWindow) -> Bool {
-  @windowing.should_close(window)
-}
-
-///|
-pub fn host_window_request_close(window : HostWindow) -> Unit {
-  @windowing.request_close(window)
-}
-
-///|
-pub fn host_window_run_loop(step : FuncRef[() -> Unit]) -> Unit {
-  @windowing.run_loop(step)
-}
-
-///|
-pub fn host_window_set_title(window : HostWindow, title~ : String) -> Unit {
-  @windowing.set_title(window, title~)
-}
-
-///|
-pub fn host_window_set_size(
-  window : HostWindow,
-  width~ : Int,
-  height~ : Int,
-) -> Unit {
-  @windowing.set_size(window, width~, height~)
-}
-
-///|
-pub fn host_window_set_resizable(
-  window : HostWindow,
-  resizable~ : Bool,
-) -> Unit {
-  @windowing.set_resizable(window, resizable~)
-}
-
-///|
-pub fn host_window_set_resize_constraints(
-  window : HostWindow,
-  constraints : WindowResizeConstraints,
-) -> Unit {
-  let checked = constraints.check_constraints()
-  @windowing.set_min_inner_size(
-    window,
-    width=checked.min_width,
-    height=checked.min_height,
-  )
-  if checked.max_width < @float.infinity && checked.max_height < @float.infinity {
-    @windowing.set_max_inner_size(
-      window,
-      width=Some(checked.max_width),
-      height=Some(checked.max_height),
-    )
-  } else {
-    @windowing.set_max_inner_size(window, width=None, height=None)
-  }
-}
-
-///|
-pub fn host_window_set_maximized(
-  window : HostWindow,
-  maximized~ : Bool,
-) -> Unit {
-  @windowing.set_maximized(window, maximized~)
-}
-
-///|
-pub fn host_window_set_minimized(
-  window : HostWindow,
-  minimized~ : Bool,
-) -> Unit {
-  @windowing.set_minimized(window, minimized~)
-}
-
-///|
-pub fn host_window_focus(window : HostWindow) -> Unit {
-  @windowing.focus_window(window)
-}
-
-///|
-pub fn host_window_set_cursor_visible(
-  window : HostWindow,
-  visible~ : Bool,
-) -> Unit {
-  @windowing.set_cursor_visible(window, visible~)
-}
-
-///|
-fn cursor_grab_mode_to_native(
-  mode : CursorGrabMode,
-) -> @window_core.CursorGrabMode {
-  match mode {
-    GrabNone => @window_core.CursorGrabMode::None
-    GrabConfined => @window_core.CursorGrabMode::Confined
-    GrabLocked => @window_core.CursorGrabMode::Locked
-  }
-}
-
-///|
-fn cursor_icon_to_native(icon : CursorIcon) -> @window_core.CursorIcon {
-  match icon {
-    System(system_icon) => system_icon
-  }
-}
-
-///|
-pub fn host_window_set_cursor_grab_mode(
-  window : HostWindow,
-  mode~ : CursorGrabMode,
-) -> Unit {
-  @windowing.set_cursor_grab_mode(window, mode=cursor_grab_mode_to_native(mode))
-}
-
-///|
-pub fn host_window_set_cursor_icon(
-  window : HostWindow,
-  icon~ : CursorIcon,
-) -> Unit {
-  @windowing.set_cursor_icon(window, icon=cursor_icon_to_native(icon))
-}
-
-///|
-fn monitor_selection_to_native(
-  window : HostWindow,
-  selection : MonitorSelection,
-) -> @window_core.MonitorHandle? {
-  match selection {
-    Current => @windowing.current_monitor(window)
-    Primary => @windowing.primary_monitor()
-    Index(n) => {
-      let monitors = @windowing.available_monitors()
-      if n < 0 || n >= monitors.length() {
-        None
-      } else {
-        Some(monitors[n])
-      }
-    }
-    Entity(_) => None
-  }
-}
-
-///|
-fn video_mode_selection_to_native(
-  monitor : @window_core.MonitorHandle,
-  selection : VideoModeSelection,
-) -> @window_core.VideoMode? {
-  match selection {
-    Current => monitor.current_video_mode()
-    Specific(video_mode) => {
-      for candidate in monitor.video_modes() {
-        if candidate == video_mode {
-          return Some(candidate)
-        }
-      }
-      None
-    }
-  }
-}
-
-///|
-fn compass_octant_to_resize_direction(
-  direction : @math.CompassOctant,
-) -> @window_core.ResizeDirection {
-  match direction {
-    North => @window_core.ResizeDirection::North
-    NorthEast => @window_core.ResizeDirection::NorthEast
-    East => @window_core.ResizeDirection::East
-    SouthEast => @window_core.ResizeDirection::SouthEast
-    South => @window_core.ResizeDirection::South
-    SouthWest => @window_core.ResizeDirection::SouthWest
-    West => @window_core.ResizeDirection::West
-    NorthWest => @window_core.ResizeDirection::NorthWest
-  }
-}
-
-///|
-pub fn host_window_set_mode(window : HostWindow, mode~ : WindowMode) -> Unit {
-  match mode {
-    Windowed => @windowing.set_fullscreen(window, fullscreen=None)
-    BorderlessFullscreen(monitor_selection) =>
-      @windowing.set_fullscreen(
-        window,
-        fullscreen=Some(
-          @window_core.Fullscreen::Borderless(
-            monitor_selection_to_native(window, monitor_selection),
-          ),
-        ),
-      )
-    Fullscreen(monitor_selection, video_mode_selection) =>
-      match monitor_selection_to_native(window, monitor_selection) {
-        Some(monitor) =>
-          match video_mode_selection_to_native(monitor, video_mode_selection) {
-            Some(video_mode) =>
-              @windowing.set_fullscreen(
-                window,
-                fullscreen=Some(
-                  @window_core.Fullscreen::Exclusive(monitor, video_mode),
-                ),
-              )
-            None =>
-              host_debug_string(
-                value="bevy_winit: could not find valid fullscreen video mode",
-              )
-          }
-        None =>
-          host_debug_string(
-            value="bevy_winit: could not find monitor for fullscreen selection",
-          )
-      }
-  }
-}
-
-///|
-pub fn host_window_set_visible(window : HostWindow, visible~ : Bool) -> Unit {
-  @windowing.set_visible(window, visible~)
-}
-
-///|
-pub fn host_window_set_decorations(
-  window : HostWindow,
-  decorations~ : Bool,
-) -> Unit {
-  @windowing.set_decorations(window, decorations~)
-}
-
-///|
-pub fn host_window_set_transparent(
-  window : HostWindow,
-  transparent~ : Bool,
-) -> Unit {
-  @windowing.set_transparent(window, transparent~)
-}
-
-///|
-pub fn host_window_set_window_level(
-  window : HostWindow,
-  level~ : WindowLevel,
-) -> Unit {
-  @windowing.set_window_level(window, level~)
-}
-
-///|
-pub fn host_window_set_theme(
-  window : HostWindow,
-  theme~ : WindowTheme?,
-) -> Unit {
-  @windowing.set_theme(window, theme~)
-}
-
-///|
-pub fn host_window_set_prefers_home_indicator_hidden(
-  window : HostWindow,
-  hidden~ : Bool,
-) -> Unit {
-  @windowing.set_prefers_home_indicator_hidden(window, hidden~)
-}
-
-///|
-pub fn host_window_set_prefers_status_bar_hidden(
-  window : HostWindow,
-  hidden~ : Bool,
-) -> Unit {
-  @windowing.set_prefers_status_bar_hidden(window, hidden~)
-}
-
-///|
-fn screen_edge_to_native(edge : ScreenEdge) -> @window_core.ScreenEdge {
-  match edge {
-    ScreenEdge::None => @window_core.ScreenEdge::none()
-    ScreenEdge::Top => @window_core.ScreenEdge::top()
-    ScreenEdge::Left => @window_core.ScreenEdge::left()
-    ScreenEdge::Bottom => @window_core.ScreenEdge::bottom()
-    ScreenEdge::Right => @window_core.ScreenEdge::right()
-    ScreenEdge::All => @window_core.ScreenEdge::all()
-  }
-}
-
-///|
-pub fn host_window_set_preferred_screen_edges_deferring_system_gestures(
-  window : HostWindow,
-  edges~ : ScreenEdge,
-) -> Unit {
-  @windowing.set_preferred_screen_edges_deferring_system_gestures(
-    window,
-    edges=screen_edge_to_native(edges),
-  )
-}
-
-///|
-pub fn host_window_set_ime_allowed(
-  window : HostWindow,
-  allowed~ : Bool,
-) -> Unit {
-  @windowing.set_ime_allowed(window, allowed~)
-}
-
-///|
-pub fn host_window_set_ime_cursor_area(
-  window : HostWindow,
-  x~ : Int,
-  y~ : Int,
-  width? : Int = 1,
-  height? : Int = 1,
-) -> Unit {
-  @windowing.set_ime_cursor_area(window, x~, y~, width~, height~)
-}
-
-///|
-pub fn host_window_set_enabled_buttons(
-  window : HostWindow,
-  buttons : EnabledButtons,
-) -> Unit {
-  @windowing.set_enabled_buttons(
-    window,
-    close=buttons.close,
-    minimize=buttons.minimize,
-    maximize=buttons.maximize,
-  )
-}
-
-///|
-pub fn host_window_drag_move(window : HostWindow) -> Bool {
-  @windowing.drag_window(window)
-}
-
-///|
-pub fn host_window_drag_resize(
-  window : HostWindow,
-  direction : @math.CompassOctant,
-) -> Bool {
-  @windowing.drag_resize_window(
-    window,
-    direction=compass_octant_to_resize_direction(direction),
-  )
-}
-
-///|
-pub fn host_window_set_position(
-  window : HostWindow,
-  x~ : Int,
-  y~ : Int,
-) -> Unit {
-  @windowing.set_position(window, x~, y~)
-}
-
-///|
-pub fn host_window_set_position_from(
-  window : HostWindow,
-  position : WindowPosition,
-  resolution : WindowResolution,
-) -> Unit {
-  match position {
-    Automatic => ()
-    Centered(selection) =>
-      match monitor_selection_to_native(window, selection) {
-        Some(monitor) => {
-          let surface_size = monitor.surface_size()
-          let monitor_position = monitor.position()
-          let resolution_scale = if resolution.scale_factor() <= 0.0F {
-            1.0F
-          } else {
-            resolution.scale_factor()
-          }
-          let scale_factor = match resolution.scale_factor_override() {
-            Some(scale_factor_override) =>
-              if scale_factor_override <= 0.0F {
-                1.0F
-              } else {
-                scale_factor_override
-              }
-            None => Float::from_double(monitor.scale_factor())
-          }
-          let width = (Float::from_int(resolution.physical_width()) /
-          resolution_scale *
-          scale_factor).to_int()
-          let height = (Float::from_int(resolution.physical_height()) /
-          resolution_scale *
-          scale_factor).to_int()
-          let centered_x = (Float::from_int(surface_size.width() - width) / 2.0F).to_int() +
-            monitor_position.x()
-          let centered_y = (Float::from_int(surface_size.height() - height) /
-            2.0F).to_int() +
-            monitor_position.y()
-          host_window_set_position(window, x=centered_x, y=centered_y)
-        }
-        None =>
-          host_debug_string(
-            value="bevy_winit: could not resolve monitor for centered window position",
-          )
-      }
-    At(x, y) => host_window_set_position(window, x~, y~)
-  }
-}
-
-///|
-pub fn host_window_get_position_x(window : HostWindow) -> Int {
-  @windowing.position_x(window)
-}
-
-///|
-pub fn host_window_get_position_y(window : HostWindow) -> Int {
-  @windowing.position_y(window)
-}
-
-///|
-pub fn host_window_theme_event_count() -> Int {
-  @windowing.input_window_theme_event_count()
-}
-
-///|
-pub fn host_window_theme_event_window(index~ : Int) -> Int {
-  @windowing.input_window_theme_event_window(index~)
-}
-
-///|
-pub fn host_window_theme_event_theme(index~ : Int) -> Int {
-  @windowing.input_window_theme_event_theme(index~)
-}
-
-///|
-pub fn host_window_occluded_event_count() -> Int {
-  @windowing.input_window_occluded_event_count()
-}
-
-///|
-pub fn host_window_occluded_event_window(index~ : Int) -> Int {
-  @windowing.input_window_occluded_event_window(index~)
-}
-
-///|
-pub fn host_window_occluded_event_occluded(index~ : Int) -> Bool {
-  @windowing.input_window_occluded_event_occluded(index~)
-}
-
-///|
-pub fn host_app_lifecycle_event_count() -> Int {
-  @windowing.input_app_lifecycle_event_count()
-}
-
-///|
-pub fn host_app_lifecycle_event_kind(index~ : Int) -> Int {
-  @windowing.input_app_lifecycle_event_kind(index~)
-}
-
-///|
-fn window_current_world() -> @ecs.World? {
-  @app.current_world()
-}
-
-///|
-pub fn window_width() -> Int {
-  guard window_current_world() is Some(world) else { return 0 }
-  window_primary_physical_width(world)
-}
-
-///|
-pub fn window_height() -> Int {
-  guard window_current_world() is Some(world) else { return 0 }
-  window_primary_physical_height(world)
-}
-
-///|
-pub fn window_scale_factor() -> Float {
-  guard window_current_world() is Some(world) else { return 1.0F }
-  window_primary_scale_factor(world)
-}
-
-///|
-pub fn window_set_title(title~ : String) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      next.title = title
-      next
-    }),
-  )
-}
-
-///|
-pub fn window_set_size(width~ : Int, height~ : Int) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      let resolution = next.resolution
-      resolution.set_physical_resolution(width, height)
-      next.resolution = resolution
-      next
-    }),
-  )
-}
-
-///|
-pub fn window_set_resizable(resizable~ : Bool) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      next.resizable = resizable
-      next
-    }),
-  )
-}
-
-///|
-pub fn window_set_visible(visible~ : Bool) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      next.visible = visible
-      next
-    }),
-  )
-}
-
-///|
-pub fn window_set_decorations(decorations~ : Bool) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      next.decorations = decorations
-      next
-    }),
-  )
-}
-
-///|
-pub fn window_set_transparent(transparent~ : Bool) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      next.transparent = transparent
-      next
-    }),
-  )
-}
-
-///|
-pub fn window_set_window_level(level~ : WindowLevel) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      next.window_level = level
-      next
-    }),
-  )
-}
-
-///|
-pub fn window_set_theme(theme~ : WindowTheme?) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      next.window_theme = theme
-      next
-    }),
-  )
-}
-
-///|
-pub fn window_set_cursor_visible(visible~ : Bool) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  let cursor_options = window_current_cursor_options(world, entity)
-  cursor_options.visible = visible
-  window_set_cursor_options_component(world, entity, cursor_options)
-}
-
-///|
-pub fn window_set_cursor_grab_mode(mode~ : CursorGrabMode) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  let cursor_options = window_current_cursor_options(world, entity)
-  cursor_options.grab_mode = mode
-  window_set_cursor_options_component(world, entity, cursor_options)
-}
-
-///|
-pub fn window_set_cursor_icon(icon~ : CursorIcon) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  window_set_cursor_icon_component(world, entity, icon)
-}
-
-///|
-pub fn window_set_mode(mode~ : WindowMode) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      next.mode = mode
-      next
-    }),
-  )
-}
+pub let ecs_key_primary_window : @ecs.ComponentKey[PrimaryWindow] = @ecs.register_component(
+  debug_name="bevy_window::PrimaryWindow",
+)
 
 ///|
-pub fn window_set_present_mode(mode~ : PresentMode) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      next.present_mode = mode
-      next
-    }),
-  )
-}
-
-///|
-pub fn window_set_enabled_buttons(
-  minimize~ : Bool,
-  maximize~ : Bool,
-  close~ : Bool,
-) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      next.enabled_buttons.minimize = minimize
-      next.enabled_buttons.maximize = maximize
-      next.enabled_buttons.close = close
-      next
-    }),
-  )
-}
-
-///|
-pub fn window_set_position(x~ : Int, y~ : Int) -> Unit {
-  guard window_current_world() is Some(world) else { return }
-  guard window_primary_entity(world) is Some(entity) else { return }
-  ignore(
-    window_update_component(world, entity, fn(window) {
-      let next : Window = window
-      next.position = WindowPosition::new(x, y)
-      next
-    }),
-  )
-}
+pub let ecs_key_closing_window : @ecs.ComponentKey[ClosingWindow] = @ecs.register_component(
+  debug_name="bevy_window::ClosingWindow",
+)
 
 ///|
-pub fn window_position_x() -> Int {
-  guard window_current_world() is Some(world) else { return 0 }
-  window_primary_position_x(world)
+pub impl @ecs.Component for Window with component() {
+  ecs_key_window
 }
 
 ///|
-pub fn window_position_y() -> Int {
-  guard window_current_world() is Some(world) else { return 0 }
-  window_primary_position_y(world)
+pub impl @ecs.Component for PrimaryWindow with component() {
+  ecs_key_primary_window
 }
 
 ///|
-pub fn host_debug_string(value~ : String) -> Unit {
-  @render.host_debug_string(value~)
+pub impl @ecs.Component for ClosingWindow with component() {
+  ecs_key_closing_window
 }

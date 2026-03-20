@@ -185,6 +185,36 @@ fn window_set_cursor_icon_component(
 }
 
 ///|
+fn window_raw_handle_holder_component(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> RawHandleWrapperHolder? {
+  try world.get_component(entity) catch {
+    _ => None
+  } noraise {
+    value => value
+  }
+}
+
+///|
+fn window_set_raw_handle_wrapper_component(
+  world : @ecs.World,
+  entity : @core.Entity,
+  value : RawHandleWrapper,
+) -> Unit {
+  try! world.set_component(entity, value)
+}
+
+///|
+fn window_set_raw_handle_holder_component(
+  world : @ecs.World,
+  entity : @core.Entity,
+  value : RawHandleWrapperHolder,
+) -> Unit {
+  try! world.set_component(entity, value)
+}
+
+///|
 fn window_set_closing_component(
   world : @ecs.World,
   entity : @core.Entity,
@@ -610,6 +640,9 @@ fn window_create_runtime_for_entity(
   )
   let cursor_options = window_current_cursor_options(world, entity)
   let cursor_icon = window_current_cursor_icon(world, entity)
+  let raw_handle_wrapper = RawHandleWrapper::new(
+    WindowWrapper::new(host_window),
+  )
   host_window_set_visible(host_window, visible=window.visible)
   window_apply_position(host_window, window.position, window.resolution)
   host_window_set_resizable(host_window, resizable=window.resizable)
@@ -686,6 +719,10 @@ fn window_create_runtime_for_entity(
     },
   }
   window_set_runtime_component(world, entity, runtime)
+  window_set_raw_handle_wrapper_component(world, entity, raw_handle_wrapper)
+  if window_raw_handle_holder_component(world, entity) is Some(holder) {
+    holder.handle.val = Some(raw_handle_wrapper)
+  }
   Some(host_window)
 }
 
@@ -1588,147 +1625,12 @@ fn window_spawn_primary_window_entity(
   let entity = world.spawn()
   window_set_component(world, entity, window)
   window_set_primary_window_component(world, entity)
+  window_set_raw_handle_holder_component(
+    world,
+    entity,
+    RawHandleWrapperHolder::new(),
+  )
   if cursor_options is Some(cursor_options0) {
     window_set_cursor_options_component(world, entity, cursor_options0)
-  }
-}
-
-///|
-pub fn window_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  window_plugin_with(app, WindowPlugin::default())
-}
-
-///|
-pub impl @app.PluginReplacement for WindowPlugin with replacement_id(_self) {
-  WINDOW_PLUGIN_ID
-}
-
-///|
-pub impl @app.PluginReplacement for WindowPlugin with world_plugin(self) {
-  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-    window_plugin_with(app, self)
-  }
-}
-
-///|
-pub fn window_plugin_with(
-  app : @app.App[@ecs.World],
-  plugin : WindowPlugin,
-) -> @app.App[@ecs.World] {
-  let mut next = app
-  if !next.contains_resource(window_plugin_marker_key()) {
-    next = next
-      .insert_world_resource(window_plugin_marker_key(), WindowPluginMarker::{
-
-      })
-      .add_message(ecs_key_window_event)
-      .add_message(ecs_key_window_resized)
-      .add_message(ecs_key_window_created)
-      .add_message(ecs_key_cursor_moved)
-      .add_message(ecs_key_cursor_entered)
-      .add_message(ecs_key_cursor_left)
-      .add_message(ecs_key_window_backend_scale_factor_changed)
-      .add_message(ecs_key_window_close_requested)
-      .add_message(ecs_key_window_closing)
-      .add_message(ecs_key_window_closed)
-      .add_message(ecs_key_window_destroyed)
-      .add_message(ecs_key_window_focused)
-      .add_message(ecs_key_window_occluded)
-      .add_message(ecs_key_window_scale_factor_changed)
-      .add_message(ecs_key_file_drag_and_drop)
-      .add_message(ecs_key_window_moved)
-      .add_message(ecs_key_window_theme_changed)
-      .add_message(ecs_key_app_lifecycle)
-      .add_message(ecs_key_request_redraw)
-      .add_message(ecs_key_ime)
-      .add_systems(@app.First, @app.system(screenshot_clear_system))
-    if plugin.close_when_requested {
-      next = next.add_systems(
-        @app.Update,
-        @app.system(@app.system_param2(close_when_requested)),
-      )
-    }
-    match plugin.exit_condition {
-      OnPrimaryClosed =>
-        next = next.add_systems(
-          @app.PostUpdate,
-          @app.system(@app.system_param2(exit_on_primary_closed)),
-        )
-      OnAllClosed =>
-        next = next.add_systems(
-          @app.PostUpdate,
-          @app.system(@app.system_param2(exit_on_all_closed)),
-        )
-      DontExit => ()
-    }
-  }
-  if plugin.primary_window is Some(primary_window) {
-    window_spawn_primary_window_entity(
-      next.world(),
-      primary_window,
-      plugin.primary_cursor_options,
-    )
-  }
-  next
-}
-
-///|
-pub fn close_when_requested(
-  requested : @ecs.MessageReader[WindowCloseRequested],
-  _closing : @ecs.EntityQuery[@ecs.With[ClosingWindow]],
-) -> Unit {
-  guard @app.current_world() is Some(world) else { return }
-  let events = try requested.read() catch {
-    _ => []
-  } noraise {
-    value => value
-  }
-  for event in events {
-    if !world.is_alive(event.window) {
-      continue
-    }
-    let is_already_closing = match
-      window_closing_component(world, event.window) {
-      Some(_) => true
-      None => false
-    }
-    if !is_already_closing {
-      window_set_closing_component(world, event.window)
-    }
-  }
-}
-
-///|
-pub fn window_despawn_closing_windows_system(world : @ecs.World) -> Unit {
-  let closing_entities : Array[@core.Entity] = []
-  world
-  .query_entities_filtered(@ecs.With::new(ecs_key_closing_window))
-  .view(fn(entity) { closing_entities.push(entity) })
-  for entity in closing_entities {
-    if !world.is_alive(entity) {
-      continue
-    }
-    window_emit_window_closing(world, WindowClosing::{ window: entity })
-    try! world.despawn(entity)
-  }
-}
-
-///|
-pub fn exit_on_all_closed(
-  app_exit : @ecs.MessageWriter[@app.AppExit],
-  windows : @ecs.EntityQuery[@ecs.With[Window]],
-) -> Unit {
-  if windows.count() == 0 {
-    ignore(app_exit.write(@app.AppExit::Success))
-  }
-}
-
-///|
-pub fn exit_on_primary_closed(
-  app_exit : @ecs.MessageWriter[@app.AppExit],
-  windows : @ecs.EntityQuery[(@ecs.With[Window], @ecs.With[PrimaryWindow])],
-) -> Unit {
-  if windows.count() == 0 {
-    ignore(app_exit.write(@app.AppExit::Success))
   }
 }

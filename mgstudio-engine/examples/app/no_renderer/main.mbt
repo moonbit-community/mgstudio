@@ -42,7 +42,6 @@ fn no_renderer_runner_builder(app : @app.App[@ecs.World]) -> @app.RunnerFn {
     }
     let app_ref : Ref[@app.App[@ecs.World]] = Ref::new(app.run_startup())
     runner_state_ref.val.tick = Some(fn() {
-      @window.window_poll_host_events(app_ref.val.world())
       app_ref.val = app_ref.val.update()
       if @window.host_window_should_close(window) {
         @window.host_window_request_close(window)

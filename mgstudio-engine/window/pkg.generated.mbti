@@ -9,6 +9,7 @@ import {
   "Milky2018/mgstudio/input/events",
   "Milky2018/mgstudio/math",
   "moonbitlang/core/json",
+  "moonbitlang/core/ref",
 }
 
 // Values
@@ -59,6 +60,10 @@ pub let ecs_key_pinch_gesture : @ecs.MessageKey[@events.PinchGesture]
 pub let ecs_key_primary_monitor : @ecs.ComponentKey[PrimaryMonitor]
 
 pub let ecs_key_primary_window : @ecs.ComponentKey[PrimaryWindow]
+
+pub let ecs_key_raw_handle_wrapper : @ecs.ComponentKey[RawHandleWrapper]
+
+pub let ecs_key_raw_handle_wrapper_holder : @ecs.ComponentKey[RawHandleWrapperHolder]
 
 pub let ecs_key_request_redraw : @ecs.MessageKey[RequestRedraw]
 
@@ -494,6 +499,21 @@ pub impl @ecs.Component for PrimaryWindow
 pub impl Eq for PrimaryWindow
 pub impl Show for PrimaryWindow
 
+pub(all) struct RawHandleWrapper {
+  window : Int
+}
+pub fn RawHandleWrapper::new(WindowWrapper) -> Self
+pub fn RawHandleWrapper::window(Self) -> Int
+pub impl @ecs.Component for RawHandleWrapper
+pub impl Eq for RawHandleWrapper
+pub impl Show for RawHandleWrapper
+
+pub(all) struct RawHandleWrapperHolder {
+  handle : @ref.Ref[RawHandleWrapper?]
+}
+pub fn RawHandleWrapperHolder::new() -> Self
+pub impl @ecs.Component for RawHandleWrapperHolder
+
 pub(all) struct RequestRedraw {
 }
 pub impl @ecs.Message for RequestRedraw
@@ -794,6 +814,13 @@ pub(all) struct WindowThemeChanged {
 }
 pub impl @ecs.Message for WindowThemeChanged
 pub impl Eq for WindowThemeChanged
+
+pub(all) struct WindowWrapper {
+  window : Int
+}
+pub fn WindowWrapper::new(Int) -> Self
+pub impl Eq for WindowWrapper
+pub impl Show for WindowWrapper
 
 // Type aliases
 pub using @events {type ButtonState}

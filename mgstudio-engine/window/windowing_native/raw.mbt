@@ -419,6 +419,9 @@ priv struct NativeWindowEntry {
 priv struct NativePumpHandler {}
 
 ///|
+priv struct NativeRunLoopHandler {}
+
+///|
 let native_event_loop_ref : Ref[@window_macos.EventLoop?] = Ref::new(None)
 
 ///|
@@ -431,6 +434,23 @@ let event_loop_any_thread_applied_ref : Ref[Bool] = Ref::new(false)
 let native_pump_handler_ref : Ref[NativePumpHandler] = Ref::new(NativePumpHandler::{
 
 })
+
+///|
+let native_run_loop_handler_ref : Ref[NativeRunLoopHandler] = Ref::new(NativeRunLoopHandler::{
+
+})
+
+///|
+let native_run_loop_step_ref : Ref[FuncRef[() -> Unit]?] = Ref::new(None)
+
+///|
+let native_run_loop_frame_limit_ref : Ref[Int] = Ref::new(0)
+
+///|
+let native_run_loop_frames_ref : Ref[Int] = Ref::new(0)
+
+///|
+let native_run_loop_active_ref : Ref[Bool] = Ref::new(false)
 
 ///|
 let native_windows_ref : Ref[Array[NativeWindowEntry]] = Ref::new([])
@@ -1207,6 +1227,57 @@ impl @window_macos.ApplicationHandler for NativePumpHandler with suspended(
 }
 
 ///|
+impl @window_macos.ApplicationHandler for NativeRunLoopHandler with window_event(
+  _self,
+  _event_loop,
+  window_id,
+  event,
+) {
+  process_window_event(window_id.into_raw(), event)
+}
+
+///|
+impl @window_macos.ApplicationHandler for NativeRunLoopHandler with resumed(
+  _self,
+  _event_loop,
+) {
+  push_app_lifecycle_event(APP_LIFECYCLE_WILL_RESUME)
+  push_app_lifecycle_event(APP_LIFECYCLE_RUNNING)
+}
+
+///|
+impl @window_macos.ApplicationHandler for NativeRunLoopHandler with suspended(
+  _self,
+  _event_loop,
+) {
+  push_app_lifecycle_event(APP_LIFECYCLE_WILL_SUSPEND)
+  push_app_lifecycle_event(APP_LIFECYCLE_SUSPENDED)
+}
+
+///|
+impl @window_macos.ApplicationHandler for NativeRunLoopHandler with about_to_wait(
+  _self,
+  event_loop,
+) {
+  event_loop.set_control_flow(@window_core.ControlFlow::Poll)
+  if native_run_loop_active_ref.val {
+    match native_run_loop_step_ref.val {
+      Some(step) => step()
+      None => ()
+    }
+    if native_run_loop_frame_limit_ref.val > 0 {
+      native_run_loop_frames_ref.val = native_run_loop_frames_ref.val + 1
+      if native_run_loop_frames_ref.val >= native_run_loop_frame_limit_ref.val {
+        request_close_all_open_windows()
+      }
+    }
+  }
+  if !any_window_open() {
+    event_loop.exit()
+  }
+}
+
+///|
 fn pump_native_events() -> Unit {
   match native_event_loop_ref.val {
     Some(event_loop) =>
@@ -1478,18 +1549,16 @@ pub fn run_loop(step : FuncRef[() -> Unit]) -> Unit {
     step()
     return
   }
-  let frame_limit = run_loop_frame_limit()
-  let mut frames = 0
-  while any_window_open() {
-    step()
-    if frame_limit > 0 {
-      frames = frames + 1
-      if frames >= frame_limit {
-        request_close_all_open_windows()
-        break
-      }
-    }
-  }
+  let event_loop = ensure_native_event_loop()
+  native_run_loop_step_ref.val = Some(step)
+  native_run_loop_frame_limit_ref.val = run_loop_frame_limit()
+  native_run_loop_frames_ref.val = 0
+  native_run_loop_active_ref.val = true
+  event_loop.run_app(native_run_loop_handler_ref.val)
+  native_run_loop_active_ref.val = false
+  native_run_loop_step_ref.val = None
+  native_run_loop_frame_limit_ref.val = 0
+  native_run_loop_frames_ref.val = 0
 }
 
 ///|

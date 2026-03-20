@@ -42,6 +42,14 @@ fn cursor_icon_value(world : @ecs.World, entity : @core.Entity) -> CursorIcon? {
 }
 
 ///|
+fn raw_handle_holder_value(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> RawHandleWrapperHolder? {
+  try! world.get_component(entity)
+}
+
+///|
 fn has_closing_window(world : @ecs.World, entity : @core.Entity) -> Bool {
   match (try! world.get_component(entity) : ClosingWindow?) {
     Some(_) => true
@@ -237,6 +245,12 @@ test "window: plugin spawns configured primary window entity and messages" {
   }
   inspect(stored_cursor.visible, content="false")
   inspect(stored_cursor.grab_mode, content="GrabLocked")
+
+  let raw_handle_holder = match raw_handle_holder_value(app.world(), entity) {
+    Some(holder) => holder
+    None => abort("missing raw handle holder")
+  }
+  inspect(raw_handle_holder.handle.val is Some(_), content="false")
 }
 
 ///|
