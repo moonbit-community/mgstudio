@@ -141,8 +141,22 @@ priv struct MeshPhaseItem3d {
 }
 
 ///|
+const MESH3D_DRAW_INDIRECT_KIND_NONE : Int = 0
+
+///|
+const MESH3D_DRAW_INDIRECT_KIND_INDEXED : Int = 1
+
+///|
+const MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED : Int = 2
+
+///|
 priv struct MeshGpuDrawPayload3d {
   mesh_id : Int
+  preprocess_camera_key_hi : Int
+  preprocess_camera_key_lo : Int
+  draw_storage_index : Int
+  indirect_kind : Int
+  indirect_parameters_index : Int
   transform : @transform.Transform
   previous_transform : @transform.Transform
   color_r : Float

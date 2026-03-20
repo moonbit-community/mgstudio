@@ -88,3 +88,60 @@ test "render3d: normal map encoding bits stay host-minimal without bound texture
     content="true",
   )
 }
+
+///|
+test "render3d: preprocess indirect index maps preserve per-draw indexed slots" {
+  let draw_items = [
+    MeshPhaseItem3d::{
+      entity: phase_entity_ref3d_for_main(@core.Entity::new(1, 0)),
+      extracted_index: 0,
+      phase: RENDER3D_PHASE_OPAQUE,
+      distance: 1.0F,
+    },
+    MeshPhaseItem3d::{
+      entity: phase_entity_ref3d_for_main(@core.Entity::new(2, 0)),
+      extracted_index: 1,
+      phase: RENDER3D_PHASE_OPAQUE,
+      distance: 2.0F,
+    },
+    MeshPhaseItem3d::{
+      entity: phase_entity_ref3d_for_main(@core.Entity::new(3, 0)),
+      extracted_index: 2,
+      phase: RENDER3D_PHASE_ALPHA_MASK,
+      distance: 3.0F,
+    },
+  ]
+  let (indexed, non_indexed) = render3d_gpu_preprocess_indirect_parameter_index_maps(
+    draw_items,
+    GpuPreprocessWorkItemBuffers3d::Indirect(
+      [
+        GpuPreprocessShaderWorkItem3d::{
+          input_index: 0,
+          output_or_indirect_parameters_index: 0,
+        },
+        GpuPreprocessShaderWorkItem3d::{
+          input_index: 2,
+          output_or_indirect_parameters_index: 1,
+        },
+      ],
+      [
+        GpuPreprocessShaderWorkItem3d::{
+          input_index: 1,
+          output_or_indirect_parameters_index: 0,
+        },
+      ],
+      None,
+    ),
+  )
+  inspect(
+    indexed.length() == 3 &&
+    non_indexed.length() == 3 &&
+    indexed[0] == 0 &&
+    indexed[1] == -1 &&
+    indexed[2] == 1 &&
+    non_indexed[0] == -1 &&
+    non_indexed[1] == 0 &&
+    non_indexed[2] == -1,
+    content="true",
+  )
+}

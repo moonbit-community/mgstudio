@@ -1273,6 +1273,11 @@ pub fn host_gpu_draw_mesh_wireframe(
 ///|
 pub fn host_gpu_draw_mesh3d(
   mesh_id~ : Int,
+  preprocess_camera_key_hi? : Int = 0,
+  preprocess_camera_key_lo? : Int = 0,
+  draw_storage_index? : Int = -1,
+  indirect_kind? : Int = 0,
+  indirect_parameters_index? : Int = -1,
   x~ : Float,
   y~ : Float,
   z~ : Float,
@@ -1342,6 +1347,11 @@ pub fn host_gpu_draw_mesh3d(
 ) -> Unit {
   @renderer.draw_mesh3d(
     mesh_id~,
+    preprocess_camera_key_hi~,
+    preprocess_camera_key_lo~,
+    draw_storage_index~,
+    indirect_kind~,
+    indirect_parameters_index~,
     x~,
     y~,
     z~,

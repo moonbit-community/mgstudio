@@ -4886,6 +4886,35 @@ fn render3d_gpu_preprocess_opaque_alpha_draw_item_indices(
 }
 
 ///|
+fn render3d_gpu_preprocess_indirect_parameter_index_maps(
+  draw_items : Array[MeshPhaseItem3d],
+  work_item_buffers : GpuPreprocessWorkItemBuffers3d,
+) -> (Array[Int], Array[Int]) {
+  let indexed : Array[Int] = []
+  let non_indexed : Array[Int] = []
+  for _ in draw_items {
+    indexed.push(-1)
+    non_indexed.push(-1)
+  }
+  match work_item_buffers {
+    Direct(_) => ()
+    Indirect(indexed_items, non_indexed_items, _) => {
+      for item in indexed_items {
+        if item.input_index >= 0 && item.input_index < indexed.length() {
+          indexed[item.input_index] = item.output_or_indirect_parameters_index
+        }
+      }
+      for item in non_indexed_items {
+        if item.input_index >= 0 && item.input_index < non_indexed.length() {
+          non_indexed[item.input_index] = item.output_or_indirect_parameters_index
+        }
+      }
+    }
+  }
+  (indexed, non_indexed)
+}
+
+///|
 fn render3d_queue_mesh_phase_items_gpu_builder(
   meshes : Array[ExtractedMesh3d],
   layers : @sprite.RenderLayers,
@@ -5484,6 +5513,11 @@ fn render3d_cull_mode_value(
 ///|
 fn render3d_build_mesh_gpu_draw_payload(
   mesh_id : Int,
+  preprocess_camera_key_hi : Int,
+  preprocess_camera_key_lo : Int,
+  draw_storage_index : Int,
+  indirect_kind : Int,
+  indirect_parameters_index : Int,
   material : StandardMaterial,
   transform : @transform.Transform,
   previous_transform : @transform.Transform,
@@ -5522,6 +5556,11 @@ fn render3d_build_mesh_gpu_draw_payload(
   )
   MeshGpuDrawPayload3d::{
     mesh_id,
+    preprocess_camera_key_hi,
+    preprocess_camera_key_lo,
+    draw_storage_index,
+    indirect_kind,
+    indirect_parameters_index,
     transform,
     previous_transform,
     color_r: draw_color_r,
@@ -5567,6 +5606,11 @@ fn render3d_build_mesh_gpu_draw_payload(
 fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
   @render.host_gpu_draw_mesh3d(
     mesh_id=payload.mesh_id,
+    preprocess_camera_key_hi=payload.preprocess_camera_key_hi,
+    preprocess_camera_key_lo=payload.preprocess_camera_key_lo,
+    draw_storage_index=payload.draw_storage_index,
+    indirect_kind=payload.indirect_kind,
+    indirect_parameters_index=payload.indirect_parameters_index,
     x=payload.transform.translation.x,
     y=payload.transform.translation.y,
     z=payload.transform.translation.z,
@@ -6189,6 +6233,13 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       draw_queue_entry.phase_ranges,
       draw_queue_entry.work_item_buffers,
     )
+    let (
+      indexed_indirect_parameter_indices,
+      non_indexed_indirect_parameter_indices,
+    ) = render3d_gpu_preprocess_indirect_parameter_index_maps(
+      draw_items,
+      draw_queue_entry.work_item_buffers,
+    )
     render3d_gpu_preprocess_indirect_metadata_checksum(
       draw_queue_entry.indirect_metadata,
     )
@@ -6258,9 +6309,30 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         if draw_alpha < 0.999F {
           continue
         }
+        let motion_vector_indexed = render3d_mesh_handle_is_indexed(
+          mesh.mesh_handle,
+        )
+        let motion_vector_indirect_parameters_index = if motion_vector_indexed {
+          indexed_indirect_parameter_indices[draw_item_index]
+        } else {
+          non_indexed_indirect_parameter_indices[draw_item_index]
+        }
         render3d_draw_mesh_gpu_payload(
           render3d_build_mesh_gpu_draw_payload(
             mesh.mesh_id,
+            camera_entity.id,
+            camera_entity.generation,
+            draw_item_index,
+            if motion_vector_indirect_parameters_index >= 0 {
+              if motion_vector_indexed {
+                MESH3D_DRAW_INDIRECT_KIND_INDEXED
+              } else {
+                MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED
+              }
+            } else {
+              MESH3D_DRAW_INDIRECT_KIND_NONE
+            },
+            motion_vector_indirect_parameters_index,
             mesh.material,
             mesh.transform,
             mesh.previous_transform,
@@ -6370,9 +6442,30 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
           if shadow_alpha < 0.999F {
             continue
           }
+          let shadow_indexed = render3d_mesh_handle_is_indexed(
+            shadow_mesh.mesh_handle,
+          )
+          let shadow_indirect_parameters_index = if shadow_indexed {
+            indexed_indirect_parameter_indices[draw_item_index]
+          } else {
+            non_indexed_indirect_parameter_indices[draw_item_index]
+          }
           render3d_draw_mesh_gpu_payload(
             render3d_build_mesh_gpu_draw_payload(
               shadow_mesh.mesh_id,
+              camera_entity.id,
+              camera_entity.generation,
+              draw_item_index,
+              if shadow_indirect_parameters_index >= 0 {
+                if shadow_indexed {
+                  MESH3D_DRAW_INDIRECT_KIND_INDEXED
+                } else {
+                  MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED
+                }
+              } else {
+                MESH3D_DRAW_INDIRECT_KIND_NONE
+              },
+              shadow_indirect_parameters_index,
               shadow_mesh.material,
               shadow_mesh.transform,
               shadow_mesh.transform,
@@ -6443,7 +6536,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     let main_pass_draws : Array[MeshGpuDrawPayload3d] = []
     let transmissive_phase_items : Array[TransmissivePhaseItem3d] = []
     let transparent_draws : Array[MeshGpuDrawPayload3d] = []
-    for draw_item in draw_items {
+    for draw_item_index in 0..<draw_items.length() {
+      let draw_item = draw_items[draw_item_index]
       let extracted_mesh = meshes[draw_item.extracted_index]
       let mesh = extracted_mesh.payload
       if mesh.is_forward_decal && !camera_forward_decal_enabled {
@@ -6595,8 +6689,27 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       let draw_thickness = maxf(0.0F, mesh.material.thickness)
       let draw_ior = maxf(1.0F, mesh.material.ior)
       let draw_flags = render3d_mesh_draw_flags(extracted_mesh)
+      let draw_indexed = render3d_mesh_handle_is_indexed(mesh.mesh_handle)
+      let draw_indirect_parameters_index = if draw_indexed {
+        indexed_indirect_parameter_indices[draw_item_index]
+      } else {
+        non_indexed_indirect_parameter_indices[draw_item_index]
+      }
       let draw_payload = render3d_build_mesh_gpu_draw_payload(
         mesh.mesh_id,
+        camera_entity.id,
+        camera_entity.generation,
+        draw_item_index,
+        if draw_indirect_parameters_index >= 0 {
+          if draw_indexed {
+            MESH3D_DRAW_INDIRECT_KIND_INDEXED
+          } else {
+            MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED
+          }
+        } else {
+          MESH3D_DRAW_INDIRECT_KIND_NONE
+        },
+        draw_indirect_parameters_index,
         mesh.material,
         mesh.transform,
         mesh.previous_transform,
@@ -6715,7 +6828,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       }
     }
     let wireframe_draws : Array[MeshGpuDrawPayload3d] = []
-    for draw_item in draw_items {
+    for draw_item_index in 0..<draw_items.length() {
+      let draw_item = draw_items[draw_item_index]
       let extracted_mesh = meshes[draw_item.extracted_index]
       let mesh = extracted_mesh.payload
       if !render3d_mesh_should_draw_wireframe(extracted_mesh, wireframe_config) {
@@ -6741,6 +6855,11 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       wireframe_draws.push(
         render3d_build_mesh_gpu_draw_payload(
           wireframe_mesh_id,
+          camera_entity.id,
+          camera_entity.generation,
+          draw_item_index,
+          MESH3D_DRAW_INDIRECT_KIND_NONE,
+          -1,
           wireframe_material,
           mesh.transform,
           mesh.previous_transform,

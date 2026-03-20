@@ -710,6 +710,15 @@ const MESH3D_PREPROCESS_NON_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES : UInt64 = 
 const MESH3D_PREPROCESS_WORKGROUP_SIZE : Int = 64
 
 ///|
+const MESH3D_DRAW_INDIRECT_KIND_NONE : Int = 0
+
+///|
+const MESH3D_DRAW_INDIRECT_KIND_INDEXED : Int = 1
+
+///|
+const MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED : Int = 2
+
+///|
 fn mesh3d_preprocess_camera_upload_state_new(
   key_hi : Int,
   key_lo : Int,
@@ -2561,9 +2570,41 @@ pub fn GpuBackend::build_mesh3d_indirect_parameters(
 }
 
 ///|
+fn mesh3d_preprocess_camera_upload_state(
+  backend : GpuBackend,
+  key_hi : Int,
+  key_lo : Int,
+) -> GpuMesh3dPreprocessCameraUploadState? {
+  guard mesh3d_preprocess_camera_upload_state_index(backend, key_hi, key_lo)
+    is Some(state_index) else {
+    return None
+  }
+  Some(backend.mesh3d_preprocess_camera_upload_states[state_index])
+}
+
+///|
+fn mesh3d_indexed_indirect_offset(indirect_parameters_index : Int) -> UInt64 {
+  indirect_parameters_index.to_uint64() *
+  MESH3D_PREPROCESS_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES
+}
+
+///|
+fn mesh3d_non_indexed_indirect_offset(
+  indirect_parameters_index : Int,
+) -> UInt64 {
+  indirect_parameters_index.to_uint64() *
+  MESH3D_PREPROCESS_NON_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES
+}
+
+///|
 pub fn GpuBackend::draw_mesh3d(
   self : GpuBackend,
   mesh_id : Int,
+  preprocess_camera_key_hi : Int,
+  preprocess_camera_key_lo : Int,
+  draw_storage_index : Int,
+  indirect_kind : Int,
+  indirect_parameters_index : Int,
   x : Float,
   y : Float,
   z : Float,
@@ -2669,12 +2710,20 @@ pub fn GpuBackend::draw_mesh3d(
       return
     }
     guard self.mesh3d_motion_vector_view_bg is Some(view_bg) else { return }
+    let use_indirect = indirect_parameters_index >= 0 &&
+      indirect_kind != MESH3D_DRAW_INDIRECT_KIND_NONE
     let mut mesh_buffer : @wgpu.Buffer? = None
     let mut mesh_bind_group : @wgpu.BindGroup? = None
     let mut mesh_write_offset = 0UL
     let mut mesh_index = 0U
-    if self.mesh3d_gpu_instance_builder_enabled {
-      let next_used_int = self.mesh3d_motion_vector_instance_mesh_used +
+    if self.mesh3d_gpu_instance_builder_enabled || use_indirect {
+      let desired_mesh_index = if draw_storage_index >= 0 {
+        draw_storage_index
+      } else {
+        self.mesh3d_motion_vector_instance_mesh_used /
+        MESH3D_PREPASS_MESH_BUFFER_SIZE.to_int()
+      }
+      let next_used_int = (desired_mesh_index + 1) *
         MESH3D_PREPASS_MESH_BUFFER_SIZE.to_int()
       if next_used_int < 0 {
         return
@@ -2686,12 +2735,14 @@ pub fn GpuBackend::draw_mesh3d(
         is Some((instance_mesh_buf, instance_mesh_bg)) else {
         return
       }
-      mesh_index = (self.mesh3d_motion_vector_instance_mesh_used /
-      MESH3D_PREPASS_MESH_BUFFER_SIZE.to_int()).reinterpret_as_uint()
+      mesh_index = desired_mesh_index.reinterpret_as_uint()
       mesh_buffer = Some(instance_mesh_buf)
       mesh_bind_group = Some(instance_mesh_bg)
-      mesh_write_offset = self.mesh3d_motion_vector_instance_mesh_used.to_uint64()
-      self.mesh3d_motion_vector_instance_mesh_used = next_used_int
+      mesh_write_offset = desired_mesh_index.to_uint64() *
+        MESH3D_PREPASS_MESH_BUFFER_SIZE
+      if self.mesh3d_motion_vector_instance_mesh_used < next_used_int {
+        self.mesh3d_motion_vector_instance_mesh_used = next_used_int
+      }
     } else {
       let mesh_slot_index = self.mesh3d_motion_vector_mesh_slot_used
       guard ensure_mesh3d_motion_vector_mesh_slot(self, mesh_slot_index)
@@ -2732,8 +2783,34 @@ pub fn GpuBackend::draw_mesh3d(
     let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
       mesh.vertex_stride_bytes
     pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
-    gpu_mesh_bind_index_buffer(pass, mesh)
-    pass.draw_indexed(mesh.index_count, 1U, 0U, 0, mesh_index)
+    if use_indirect &&
+      mesh3d_preprocess_camera_upload_state(
+        self, preprocess_camera_key_hi, preprocess_camera_key_lo,
+      )
+      is Some(preprocess_state) {
+      if indirect_kind == MESH3D_DRAW_INDIRECT_KIND_INDEXED &&
+        preprocess_state.indexed_indirect_parameters_buffer
+        is Some(indexed_indirect_parameters_buffer) {
+        gpu_mesh_bind_index_buffer(pass, mesh)
+        pass.draw_indexed_indirect(
+          indexed_indirect_parameters_buffer,
+          mesh3d_indexed_indirect_offset(indirect_parameters_index),
+        )
+      } else if indirect_kind == MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED &&
+        preprocess_state.non_indexed_indirect_parameters_buffer
+        is Some(non_indexed_indirect_parameters_buffer) {
+        pass.draw_indirect(
+          non_indexed_indirect_parameters_buffer,
+          mesh3d_non_indexed_indirect_offset(indirect_parameters_index),
+        )
+      } else {
+        gpu_mesh_bind_index_buffer(pass, mesh)
+        pass.draw_indexed(mesh.index_count, 1U, 0U, 0, mesh_index)
+      }
+    } else {
+      gpu_mesh_bind_index_buffer(pass, mesh)
+      pass.draw_indexed(mesh.index_count, 1U, 0U, 0, mesh_index)
+    }
     return
   }
   guard mesh3d_pipeline_for_current_pass(
@@ -2745,12 +2822,19 @@ pub fn GpuBackend::draw_mesh3d(
     is Some(pipeline) else {
     return
   }
+  let use_indirect = indirect_parameters_index >= 0 &&
+    indirect_kind != MESH3D_DRAW_INDIRECT_KIND_NONE
   let mut draw_buffer : @wgpu.Buffer? = None
   let mut draw_bind_group : @wgpu.BindGroup? = None
   let mut draw_write_offset = 0UL
   let mut draw_index = 0U
-  if self.mesh3d_gpu_instance_builder_enabled {
-    let next_used_int = self.mesh3d_instance_draw_used +
+  if self.mesh3d_gpu_instance_builder_enabled || use_indirect {
+    let desired_draw_index = if draw_storage_index >= 0 {
+      draw_storage_index
+    } else {
+      self.mesh3d_instance_draw_used / MESH3D_DRAW_STORAGE_STRIDE_BYTES.to_int()
+    }
+    let next_used_int = (desired_draw_index + 1) *
       MESH3D_DRAW_STORAGE_STRIDE_BYTES.to_int()
     if next_used_int < 0 {
       return
@@ -2760,12 +2844,14 @@ pub fn GpuBackend::draw_mesh3d(
       is Some((instance_draw_buf, instance_draw_bg)) else {
       return
     }
-    draw_index = (self.mesh3d_instance_draw_used /
-    MESH3D_DRAW_STORAGE_STRIDE_BYTES.to_int()).reinterpret_as_uint()
+    draw_index = desired_draw_index.reinterpret_as_uint()
     draw_buffer = Some(instance_draw_buf)
     draw_bind_group = Some(instance_draw_bg)
-    draw_write_offset = self.mesh3d_instance_draw_used.to_uint64()
-    self.mesh3d_instance_draw_used = next_used_int
+    draw_write_offset = desired_draw_index.to_uint64() *
+      MESH3D_DRAW_STORAGE_STRIDE_BYTES
+    if self.mesh3d_instance_draw_used < next_used_int {
+      self.mesh3d_instance_draw_used = next_used_int
+    }
   } else {
     let mesh3d_draw_slot_index = self.mesh3d_draw_slot_used
     guard ensure_mesh3d_draw_slot(self, mesh3d_draw_slot_index)
@@ -2954,6 +3040,31 @@ pub fn GpuBackend::draw_mesh3d(
     1
   current_frame_mesh3d_executed_draw_calls_ref.val = current_frame_mesh3d_executed_draw_calls_ref.val +
     1
+  if use_indirect &&
+    mesh3d_preprocess_camera_upload_state(
+      self, preprocess_camera_key_hi, preprocess_camera_key_lo,
+    )
+    is Some(preprocess_state) {
+    if indirect_kind == MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED &&
+      preprocess_state.non_indexed_indirect_parameters_buffer
+      is Some(non_indexed_indirect_parameters_buffer) {
+      pass.draw_indirect(
+        non_indexed_indirect_parameters_buffer,
+        mesh3d_non_indexed_indirect_offset(indirect_parameters_index),
+      )
+      return
+    }
+    if indirect_kind == MESH3D_DRAW_INDIRECT_KIND_INDEXED &&
+      preprocess_state.indexed_indirect_parameters_buffer
+      is Some(indexed_indirect_parameters_buffer) {
+      gpu_mesh_bind_index_buffer(pass, mesh)
+      pass.draw_indexed_indirect(
+        indexed_indirect_parameters_buffer,
+        mesh3d_indexed_indirect_offset(indirect_parameters_index),
+      )
+      return
+    }
+  }
   if mesh.primitive_topology == MESH3D_TOPOLOGY_LINE_STRIP {
     pass.draw(mesh.vertex_count, 1U, 0U, draw_index)
   } else {
