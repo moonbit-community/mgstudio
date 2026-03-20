@@ -315,8 +315,12 @@ pub struct GpuBackend {
   mut mesh3d_motion_vector_previous_view_buf : @wgpu_mbt.Buffer?
   mut mesh3d_motion_vector_visibility_ranges_buf : @wgpu_mbt.Buffer?
   mut mesh3d_motion_vector_view_bg : @wgpu_mbt.BindGroup?
-  mut mesh3d_motion_vector_mesh_buf : @wgpu_mbt.Buffer?
-  mut mesh3d_motion_vector_mesh_bg : @wgpu_mbt.BindGroup?
+  mesh3d_motion_vector_mesh_slots : Array[GpuStorageSlot]
+  mut mesh3d_motion_vector_mesh_slot_used : Int
+  mut mesh3d_motion_vector_instance_mesh_buf : @wgpu_mbt.Buffer?
+  mut mesh3d_motion_vector_instance_mesh_bg : @wgpu_mbt.BindGroup?
+  mut mesh3d_motion_vector_instance_mesh_capacity : UInt64
+  mut mesh3d_motion_vector_instance_mesh_used : Int
   mut motion_blur_bgl : @wgpu_mbt.BindGroupLayout?
   mut motion_blur_pipeline : @wgpu_mbt.RenderPipeline?
   mut motion_blur_pipeline_surface : @wgpu_mbt.RenderPipeline?

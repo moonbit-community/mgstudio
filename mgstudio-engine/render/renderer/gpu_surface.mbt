@@ -492,6 +492,8 @@ pub fn GpuBackend::begin_frame_binding(
   self.mesh2d_instance_used = 0
   self.mesh3d_draw_slot_used = 0
   self.mesh3d_instance_draw_used = 0
+  self.mesh3d_motion_vector_mesh_slot_used = 0
+  self.mesh3d_motion_vector_instance_mesh_used = 0
   let st = self.surfaces[index].surface.get_current_texture()
   let tex = st.take_texture()
   let view = tex.create_view()

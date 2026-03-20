@@ -285,6 +285,8 @@ test "renderer: mesh3d draw slot pool grows per draw slot" {
 test "renderer: motion vector resources initialize prepass-style bind groups" {
   let backend = GpuBackend::new(assets_base="assets")
   ensure_mesh3d_motion_vector_pipeline(backend)
+  let has_mesh_slot = ensure_mesh3d_motion_vector_mesh_slot(backend, 0)
+    is Some(_)
   let ok = backend.mesh3d_motion_vector_bgl_view is Some(_) &&
     backend.mesh3d_motion_vector_bgl_empty is Some(_) &&
     backend.mesh3d_motion_vector_bgl_mesh is Some(_) &&
@@ -293,8 +295,8 @@ test "renderer: motion vector resources initialize prepass-style bind groups" {
     backend.mesh3d_motion_vector_previous_view_buf is Some(_) &&
     backend.mesh3d_motion_vector_visibility_ranges_buf is Some(_) &&
     backend.mesh3d_motion_vector_view_bg is Some(_) &&
-    backend.mesh3d_motion_vector_mesh_buf is Some(_) &&
-    backend.mesh3d_motion_vector_mesh_bg is Some(_)
+    has_mesh_slot &&
+    backend.mesh3d_motion_vector_mesh_slots.length() == 1
   inspect(ok, content="true")
 }
 
@@ -361,7 +363,7 @@ test "renderer: motion vector prepass buffers match bevy struct sizes" {
     spot_outer_angle: 0.0F,
     point_shadow_near: 0.0F,
   }
-  let mesh_bytes = mesh3d_motion_vector_mesh_uniform_bytes(
+  let mesh_bytes = mesh3d_motion_vector_mesh_bytes(
     0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F, 0.0F, 0.0F, 0.0F,
     0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F, 1.0F,
   )
@@ -396,7 +398,7 @@ test "renderer: motion vector shader reads canonical Bevy prepass bindings" {
     content="true",
   )
   inspect(
-    wgsl.contains("@group(2) @binding(0) var<uniform> mesh: array<Mesh, 1u>;"),
+    wgsl.contains("@group(2) @binding(0) var<storage> mesh: array<Mesh>;"),
     content="true",
   )
   inspect(wgsl.contains("fn vertex(vertex_no_morph: Vertex)"), content="true")

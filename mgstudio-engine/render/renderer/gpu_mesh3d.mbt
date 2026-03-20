@@ -424,6 +424,7 @@ fn load_wgsl_required_mesh3d_motion_vector_prepass(
   defines.set("PREPASS_FRAGMENT", true)
   defines.set("MOTION_VECTOR_PREPASS", true)
   let value_defines = default_wgsl_value_defines()
+  value_defines.remove("PER_OBJECT_BUFFER_BATCH_SIZE")
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = build_wgsl_import_module_paths(assets_base)
   load_wgsl_preprocessed(
@@ -549,7 +550,7 @@ fn mesh3d_inverse_transpose_words(
 }
 
 ///|
-fn mesh3d_motion_vector_mesh_uniform_bytes(
+fn mesh3d_motion_vector_mesh_bytes(
   translation_x : Float,
   translation_y : Float,
   translation_z : Float,
@@ -611,6 +612,80 @@ fn mesh3d_motion_vector_mesh_uniform_bytes(
     words.push(0U)
   }
   u32le_pack(words)
+}
+
+///|
+fn ensure_mesh3d_motion_vector_mesh_slot(
+  backend : GpuBackend,
+  slot_index : Int,
+) -> GpuStorageSlot? {
+  guard backend.mesh3d_motion_vector_bgl_mesh is Some(bgl) else { return None }
+  let usage = bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST)
+  while backend.mesh3d_motion_vector_mesh_slots.length() <= slot_index {
+    let mesh_buf = backend.device.create_buffer(
+      size=MESH3D_PREPASS_MESH_BUFFER_SIZE,
+      usage~,
+    )
+    let builder = @wgpu.BindGroupBuilder::new(max_entries=1UL)
+    let ok = builder.add_buffer(
+      0U,
+      mesh_buf,
+      size=MESH3D_PREPASS_MESH_BUFFER_SIZE,
+    )
+    if !ok {
+      builder.free()
+      return None
+    }
+    let mesh_bg = builder.finish(
+      backend.device,
+      bgl,
+      label="mgstudio_motion_vector_mesh_slot_bg",
+    )
+    backend.mesh3d_motion_vector_mesh_slots.push(GpuStorageSlot::{
+      buffer: mesh_buf,
+      bind_group: mesh_bg,
+    })
+  }
+  Some(backend.mesh3d_motion_vector_mesh_slots[slot_index])
+}
+
+///|
+fn ensure_mesh3d_motion_vector_instance_mesh_binding(
+  backend : GpuBackend,
+  required_size : UInt64,
+) -> (@wgpu.Buffer, @wgpu.BindGroup)? {
+  guard backend.mesh3d_motion_vector_bgl_mesh is Some(bgl) else { return None }
+  if backend.mesh3d_motion_vector_instance_mesh_buf is Some(mesh_buf) &&
+    backend.mesh3d_motion_vector_instance_mesh_bg is Some(mesh_bg) &&
+    backend.mesh3d_motion_vector_instance_mesh_capacity >= required_size {
+    return Some((mesh_buf, mesh_bg))
+  }
+  let mut next_capacity = if backend.mesh3d_motion_vector_instance_mesh_capacity >
+    0UL {
+    backend.mesh3d_motion_vector_instance_mesh_capacity
+  } else {
+    MESH3D_PREPASS_MESH_BUFFER_SIZE * 16384UL
+  }
+  while next_capacity < required_size {
+    next_capacity = next_capacity * 2UL
+  }
+  let usage = bu(@wgpu.BUFFER_USAGE_STORAGE | @wgpu.BUFFER_USAGE_COPY_DST)
+  let mesh_buf = backend.device.create_buffer(size=next_capacity, usage~)
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=1UL)
+  let ok = builder.add_buffer(0U, mesh_buf, size=next_capacity)
+  if !ok {
+    builder.free()
+    return None
+  }
+  let mesh_bg = builder.finish(
+    backend.device,
+    bgl,
+    label="mgstudio_motion_vector_instance_mesh_bg",
+  )
+  backend.mesh3d_motion_vector_instance_mesh_buf = Some(mesh_buf)
+  backend.mesh3d_motion_vector_instance_mesh_bg = Some(mesh_bg)
+  backend.mesh3d_motion_vector_instance_mesh_capacity = next_capacity
+  Some((mesh_buf, mesh_bg))
 }
 
 ///|
@@ -1345,7 +1420,8 @@ fn ensure_mesh3d_motion_vector_pipeline(
     let mesh_ok = mesh_builder.add_buffer(
       0U,
       ss(@wgpu.SHADER_STAGE_VERTEX),
-      @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+      @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      min_binding_size=MESH3D_PREPASS_MESH_BUFFER_SIZE,
     )
     if !mesh_ok {
       mesh_builder.free()
@@ -1439,22 +1515,6 @@ fn ensure_mesh3d_motion_vector_pipeline(
       visibility_ranges_buf,
     )
     backend.mesh3d_motion_vector_view_bg = Some(view_bg)
-  }
-  if backend.mesh3d_motion_vector_mesh_buf is None ||
-    backend.mesh3d_motion_vector_mesh_bg is None {
-    guard backend.mesh3d_motion_vector_bgl_mesh is Some(mesh_bgl) else {
-      return
-    }
-    let usage = bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST)
-    let mesh_buf = backend.device.create_buffer(
-      size=MESH3D_PREPASS_MESH_BUFFER_SIZE,
-      usage~,
-    )
-    let mesh_bg = backend.device.create_bind_group_uniform_buffer(
-      mesh_bgl, mesh_buf,
-    )
-    backend.mesh3d_motion_vector_mesh_buf = Some(mesh_buf)
-    backend.mesh3d_motion_vector_mesh_bg = Some(mesh_bg)
   }
   if backend.mesh3d_motion_vector_pipeline is Some(_) {
     return
@@ -2086,8 +2146,43 @@ pub fn GpuBackend::draw_mesh3d(
       return
     }
     guard self.mesh3d_motion_vector_view_bg is Some(view_bg) else { return }
-    guard self.mesh3d_motion_vector_mesh_buf is Some(mesh_buf) else { return }
-    guard self.mesh3d_motion_vector_mesh_bg is Some(mesh_bg) else { return }
+    let mut mesh_buffer : @wgpu.Buffer? = None
+    let mut mesh_bind_group : @wgpu.BindGroup? = None
+    let mut mesh_write_offset = 0UL
+    let mut mesh_index = 0U
+    if self.mesh3d_gpu_instance_builder_enabled {
+      let next_used_int = self.mesh3d_motion_vector_instance_mesh_used +
+        MESH3D_PREPASS_MESH_BUFFER_SIZE.to_int()
+      if next_used_int < 0 {
+        return
+      }
+      let required_size = next_used_int.to_uint64()
+      guard ensure_mesh3d_motion_vector_instance_mesh_binding(
+          self, required_size,
+        )
+        is Some((instance_mesh_buf, instance_mesh_bg)) else {
+        return
+      }
+      mesh_index = (self.mesh3d_motion_vector_instance_mesh_used /
+      MESH3D_PREPASS_MESH_BUFFER_SIZE.to_int()).reinterpret_as_uint()
+      mesh_buffer = Some(instance_mesh_buf)
+      mesh_bind_group = Some(instance_mesh_bg)
+      mesh_write_offset = self.mesh3d_motion_vector_instance_mesh_used.to_uint64()
+      self.mesh3d_motion_vector_instance_mesh_used = next_used_int
+    } else {
+      let mesh_slot_index = self.mesh3d_motion_vector_mesh_slot_used
+      guard ensure_mesh3d_motion_vector_mesh_slot(self, mesh_slot_index)
+        is Some(mesh_slot) else {
+        return
+      }
+      self.mesh3d_motion_vector_mesh_slot_used = mesh_slot_index + 1
+      mesh_buffer = Some(mesh_slot.buffer)
+      mesh_bind_group = Some(mesh_slot.bind_group)
+      mesh_write_offset = 0UL
+      mesh_index = 0U
+    }
+    guard mesh_buffer is Some(active_mesh_buffer) else { return }
+    guard mesh_bind_group is Some(active_mesh_bg) else { return }
     self.queue.write_buffer(
       view_buf,
       0UL,
@@ -2099,9 +2194,9 @@ pub fn GpuBackend::draw_mesh3d(
       mesh3d_motion_vector_previous_view_uniform_bytes(ps),
     )
     self.queue.write_buffer(
-      mesh_buf,
-      0UL,
-      mesh3d_motion_vector_mesh_uniform_bytes(
+      active_mesh_buffer,
+      mesh_write_offset,
+      mesh3d_motion_vector_mesh_bytes(
         x, y, z, rotation_x, rotation_y, rotation_z, rotation_w, scale_x, scale_y,
         scale_z, previous_x, previous_y, previous_z, previous_rotation_x, previous_rotation_y,
         previous_rotation_z, previous_rotation_w, previous_scale_x, previous_scale_y,
@@ -2110,12 +2205,12 @@ pub fn GpuBackend::draw_mesh3d(
     )
     pass.set_pipeline(pipeline)
     pass.set_bind_group(0U, view_bg, [])
-    pass.set_bind_group(2U, mesh_bg, [])
+    pass.set_bind_group(2U, active_mesh_bg, [])
     let vb_bytes = mesh.vertex_count.reinterpret_as_int().to_uint64() *
       mesh.vertex_stride_bytes
     pass.set_vertex_buffer(0U, mesh.vertex_buf, 0UL, vb_bytes)
     gpu_mesh_bind_index_buffer(pass, mesh)
-    pass.draw_indexed(mesh.index_count, 1U, 0U, 0, 0U)
+    pass.draw_indexed(mesh.index_count, 1U, 0U, 0, mesh_index)
     return
   }
   guard mesh3d_pipeline_for_current_pass(

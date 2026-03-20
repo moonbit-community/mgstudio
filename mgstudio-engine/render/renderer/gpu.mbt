@@ -475,8 +475,12 @@ pub struct GpuBackend {
   mut mesh3d_motion_vector_previous_view_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_visibility_ranges_buf : @wgpu.Buffer?
   mut mesh3d_motion_vector_view_bg : @wgpu.BindGroup?
-  mut mesh3d_motion_vector_mesh_buf : @wgpu.Buffer?
-  mut mesh3d_motion_vector_mesh_bg : @wgpu.BindGroup?
+  mesh3d_motion_vector_mesh_slots : Array[GpuStorageSlot]
+  mut mesh3d_motion_vector_mesh_slot_used : Int
+  mut mesh3d_motion_vector_instance_mesh_buf : @wgpu.Buffer?
+  mut mesh3d_motion_vector_instance_mesh_bg : @wgpu.BindGroup?
+  mut mesh3d_motion_vector_instance_mesh_capacity : UInt64
+  mut mesh3d_motion_vector_instance_mesh_used : Int
   mut motion_blur_bgl : @wgpu.BindGroupLayout?
   mut motion_blur_pipeline : @wgpu.RenderPipeline?
   mut motion_blur_pipeline_surface : @wgpu.RenderPipeline?
@@ -858,8 +862,12 @@ pub fn GpuBackend::new(
     mesh3d_motion_vector_previous_view_buf: None,
     mesh3d_motion_vector_visibility_ranges_buf: None,
     mesh3d_motion_vector_view_bg: None,
-    mesh3d_motion_vector_mesh_buf: None,
-    mesh3d_motion_vector_mesh_bg: None,
+    mesh3d_motion_vector_mesh_slots: [],
+    mesh3d_motion_vector_mesh_slot_used: 0,
+    mesh3d_motion_vector_instance_mesh_buf: None,
+    mesh3d_motion_vector_instance_mesh_bg: None,
+    mesh3d_motion_vector_instance_mesh_capacity: 0UL,
+    mesh3d_motion_vector_instance_mesh_used: 0,
     motion_blur_bgl: None,
     motion_blur_pipeline: None,
     motion_blur_pipeline_surface: None,
