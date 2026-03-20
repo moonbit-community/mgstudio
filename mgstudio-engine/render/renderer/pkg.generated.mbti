@@ -8,6 +8,16 @@ import {
 }
 
 // Values
+pub const MESH3D_BUILD_INDIRECT_PHASE_EARLY : Int = 1
+
+pub const MESH3D_BUILD_INDIRECT_PHASE_MAIN : Int = 0
+
+pub const MESH3D_PREPROCESS_PHASE_EARLY_OCCLUSION : Int = 1
+
+pub const MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION : Int = 2
+
+pub const MESH3D_PREPROCESS_PHASE_MAIN : Int = 0
+
 pub const SURFACE_COMPOSITE_ALPHA_MODE_AUTO : Int = 0
 
 pub const SURFACE_COMPOSITE_ALPHA_MODE_INHERIT : Int = 4
@@ -66,7 +76,7 @@ pub fn begin_pass_3d(target_id~ : Int, target_layer? : Int, secondary_target_id?
 
 pub fn begin_pass_with_depth(target_id~ : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_rotation~ : Float, camera_scale~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, viewport_depth_min~ : Float, viewport_depth_max~ : Float, clear_enabled~ : Int) -> Unit
 
-pub fn build_mesh3d_indirect_parameters(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
+pub fn build_mesh3d_indirect_parameters(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
 
 pub fn clear_registered_wgsl_source_registry() -> Unit
 
@@ -95,6 +105,8 @@ pub fn create_render_target_rgba16f(width~ : Int, height~ : Int, nearest~ : Bool
 pub fn create_surface(Int) -> Int
 
 pub fn debug_string(value~ : String) -> Unit
+
+pub fn downsample_mesh3d_depth_pyramid(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
 
 pub fn draw_effect_stack(scene_texture_id~ : Int, chromatic_aberration_intensity~ : Float, chromatic_aberration_max_samples~ : Int, vignette_intensity~ : Float, vignette_radius~ : Float, vignette_smoothness~ : Float, vignette_roundness~ : Float, vignette_center_x~ : Float, vignette_center_y~ : Float, vignette_edge_compensation~ : Float, vignette_color_r~ : Float, vignette_color_g~ : Float, vignette_color_b~ : Float, vignette_color_a~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
 
@@ -132,9 +144,11 @@ pub fn end_pass() -> Unit
 
 pub fn get_queue(Int) -> Int
 
+pub fn gpu_clip_matrix(Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> GpuClipMatrix
+
 pub fn pipeline_layout_descriptor_3_new(@c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout) -> @c.WGPUPipelineLayoutDescriptorPtr
 
-pub fn preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
+pub fn preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
 
 pub fn register_wgsl_source(String, String) -> Unit
 
@@ -318,12 +332,27 @@ pub struct GpuBackend {
   mut mesh3d_preprocess_indirect_bgl : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_preprocess_indirect_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh3d_preprocess_indirect_pipeline : @wgpu_mbt.ComputePipeline?
+  mut mesh3d_preprocess_indirect_early_occlusion_bgl : @wgpu_mbt.BindGroupLayout?
+  mut mesh3d_preprocess_indirect_early_occlusion_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut mesh3d_preprocess_indirect_early_occlusion_pipeline : @wgpu_mbt.ComputePipeline?
+  mut mesh3d_preprocess_indirect_late_occlusion_bgl : @wgpu_mbt.BindGroupLayout?
+  mut mesh3d_preprocess_indirect_late_occlusion_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut mesh3d_preprocess_indirect_late_occlusion_pipeline : @wgpu_mbt.ComputePipeline?
   mut mesh3d_preprocess_build_indexed_indirect_bgl : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_preprocess_build_indexed_indirect_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh3d_preprocess_build_indexed_indirect_pipeline : @wgpu_mbt.ComputePipeline?
+  mut mesh3d_preprocess_build_indexed_indirect_early_pipeline : @wgpu_mbt.ComputePipeline?
   mut mesh3d_preprocess_build_non_indexed_indirect_bgl : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_preprocess_build_non_indexed_indirect_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh3d_preprocess_build_non_indexed_indirect_pipeline : @wgpu_mbt.ComputePipeline?
+  mut mesh3d_preprocess_build_non_indexed_indirect_early_pipeline : @wgpu_mbt.ComputePipeline?
+  mut mesh3d_preprocess_depth_pyramid_dummy_texture : @wgpu_mbt.Texture?
+  mut mesh3d_preprocess_depth_pyramid_dummy_view : @wgpu_mbt.TextureView?
+  mut mesh3d_preprocess_downsample_depth_bgl : @wgpu_mbt.BindGroupLayout?
+  mut mesh3d_preprocess_downsample_depth_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut mesh3d_preprocess_downsample_depth_first_pipeline : @wgpu_mbt.ComputePipeline?
+  mut mesh3d_preprocess_downsample_depth_second_pipeline : @wgpu_mbt.ComputePipeline?
+  mut mesh3d_preprocess_depth_pyramid_sampler : @wgpu_mbt.Sampler?
   mut mesh3d_motion_vector_bgl_view : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_empty : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_mesh : @wgpu_mbt.BindGroupLayout?
@@ -425,7 +454,7 @@ pub fn GpuBackend::begin_frame_binding(Self, Int) -> Unit
 pub fn GpuBackend::begin_pass(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::begin_pass_3d(Self, Int, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::begin_pass_with_depth(Self, Int, Int, Int, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int, Int, Int, Float, Float, Int) -> Unit raise GpuBackendError
-pub fn GpuBackend::build_mesh3d_indirect_parameters(Self, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::build_mesh3d_indirect_parameters(Self, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::clear_scissor(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::configure_surface(Self, Int, Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
 pub fn GpuBackend::configure_surface_binding(Self, Int, Int, Int, Int, Int, Int) -> Unit
@@ -446,6 +475,7 @@ pub fn GpuBackend::create_texture_3d_with_format(Self, Int, Int, Int, UInt, Arra
 pub fn GpuBackend::create_texture_mip_view(Self, Int, Int) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_stacked_2d_with_format(Self, Int, Int, Int, UInt, Array[Bytes], Bool) -> Int raise GpuBackendError
+pub fn GpuBackend::downsample_mesh3d_depth_pyramid(Self, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_effect_stack(Self, Int, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_fxaa(Self, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Int, Float, Float, Float, Float, vertex_shader_path? : String?, fragment_shader_path? : String?) -> Unit raise GpuBackendError
@@ -464,7 +494,7 @@ pub fn GpuBackend::end_pass(Self) -> Unit raise GpuBackendError
 pub fn GpuBackend::ensure_surface_configured(Self, Int, Int, present_mode_kind? : Int, composite_alpha_mode_kind? : Int, desired_maximum_frame_latency? : Int) -> Unit
 pub fn GpuBackend::is_texture_loaded(Self, Int) -> Bool
 pub fn GpuBackend::new(assets_base? : String) -> Self raise GpuBackendError
-pub fn GpuBackend::preprocess_mesh3d(Self, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::preprocess_mesh3d(Self, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::set_active_surface_target(Self, Int) -> Unit
 pub fn GpuBackend::set_scissor(Self, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::set_texture_sampler(Self, Int, Int, Int, Int, Int, Int, Int, Float, Float, Int, Int, Int) -> Unit raise GpuBackendError
@@ -630,6 +660,9 @@ pub(all) enum HostMaterial2dBindingValue {
 }
 
 pub(all) struct HostMesh3dPreprocessCameraPayload {
+  view : HostMesh3dPreprocessView
+  previous_view : HostMesh3dPreprocessPreviousView
+  mesh_culling_data : Array[HostMesh3dPreprocessMeshCullingData]
   mesh_inputs : Array[HostMesh3dPreprocessMeshInput]
   direct_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
   indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
@@ -653,6 +686,13 @@ pub(all) struct HostMesh3dPreprocessDispatchMetadata {
   late_non_indexed_workgroup_count : Int
 }
 
+pub(all) struct HostMesh3dPreprocessFrustumPlane {
+  normal_x : Float
+  normal_y : Float
+  normal_z : Float
+  distance : Float
+}
+
 pub(all) struct HostMesh3dPreprocessIndirectBatchSet {
   indirect_parameters_count : Int
   indirect_parameters_base : Int
@@ -667,6 +707,15 @@ pub(all) struct HostMesh3dPreprocessIndirectParametersGpuMetadata {
   mesh_index : Int
   early_instance_count : Int
   late_instance_count : Int
+}
+
+pub(all) struct HostMesh3dPreprocessMeshCullingData {
+  aabb_center_x : Float
+  aabb_center_y : Float
+  aabb_center_z : Float
+  aabb_half_extents_x : Float
+  aabb_half_extents_y : Float
+  aabb_half_extents_z : Float
 }
 
 pub(all) struct HostMesh3dPreprocessMeshInput {
@@ -697,9 +746,41 @@ pub(all) struct HostMesh3dPreprocessMeshInput {
   tag : Int
 }
 
+pub(all) struct HostMesh3dPreprocessPreviousView {
+  view_from_world : GpuClipMatrix
+  clip_from_world : GpuClipMatrix
+  clip_from_view : GpuClipMatrix
+  world_from_clip : GpuClipMatrix
+  view_from_clip : GpuClipMatrix
+}
+
 pub(all) struct HostMesh3dPreprocessShaderWorkItem {
   input_index : Int
   output_or_indirect_parameters_index : Int
+}
+
+pub(all) struct HostMesh3dPreprocessView {
+  clip_from_world : GpuClipMatrix
+  unjittered_clip_from_world : GpuClipMatrix
+  world_from_clip : GpuClipMatrix
+  world_from_view : GpuClipMatrix
+  view_from_world : GpuClipMatrix
+  clip_from_view : GpuClipMatrix
+  view_from_clip : GpuClipMatrix
+  world_position_x : Float
+  world_position_y : Float
+  world_position_z : Float
+  exposure : Float
+  viewport_x : Float
+  viewport_y : Float
+  viewport_width : Float
+  viewport_height : Float
+  main_pass_viewport_x : Float
+  main_pass_viewport_y : Float
+  main_pass_viewport_width : Float
+  main_pass_viewport_height : Float
+  frustum_planes : Array[HostMesh3dPreprocessFrustumPlane]
+  mip_bias : Float
 }
 
 type Mesh2dMaterialBindGroupCacheEntry

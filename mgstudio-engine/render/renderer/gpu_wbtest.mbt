@@ -340,6 +340,46 @@ test "renderer: mesh3d preprocess indirect resources initialize canonical comput
 test "renderer: mesh3d preprocess upload allocates mesh inputs and indirect parameter buffers" {
   let backend = GpuBackend::new(assets_base="assets")
   backend.upload_mesh3d_preprocess_camera_payload(7, 9, HostMesh3dPreprocessCameraPayload::{
+    view: HostMesh3dPreprocessView::{
+      clip_from_world: gpu_clip_matrix_identity(),
+      unjittered_clip_from_world: gpu_clip_matrix_identity(),
+      world_from_clip: gpu_clip_matrix_identity(),
+      world_from_view: gpu_clip_matrix_identity(),
+      view_from_world: gpu_clip_matrix_identity(),
+      clip_from_view: gpu_clip_matrix_identity(),
+      view_from_clip: gpu_clip_matrix_identity(),
+      world_position_x: 0.0F,
+      world_position_y: 0.0F,
+      world_position_z: 0.0F,
+      exposure: 1.0F,
+      viewport_x: 0.0F,
+      viewport_y: 0.0F,
+      viewport_width: 128.0F,
+      viewport_height: 128.0F,
+      main_pass_viewport_x: 0.0F,
+      main_pass_viewport_y: 0.0F,
+      main_pass_viewport_width: 128.0F,
+      main_pass_viewport_height: 128.0F,
+      frustum_planes: [],
+      mip_bias: 0.0F,
+    },
+    previous_view: HostMesh3dPreprocessPreviousView::{
+      view_from_world: gpu_clip_matrix_identity(),
+      clip_from_world: gpu_clip_matrix_identity(),
+      clip_from_view: gpu_clip_matrix_identity(),
+      world_from_clip: gpu_clip_matrix_identity(),
+      view_from_clip: gpu_clip_matrix_identity(),
+    },
+    mesh_culling_data: [
+      HostMesh3dPreprocessMeshCullingData::{
+        aabb_center_x: 0.0F,
+        aabb_center_y: 0.0F,
+        aabb_center_z: 0.0F,
+        aabb_half_extents_x: 1.0F,
+        aabb_half_extents_y: 1.0F,
+        aabb_half_extents_z: 1.0F,
+      },
+    ],
     mesh_inputs: [
       HostMesh3dPreprocessMeshInput::{
         translation_x: 0.0F,
@@ -417,13 +457,18 @@ test "renderer: mesh3d preprocess upload allocates mesh inputs and indirect para
     state.output_buffer is Some(_) &&
     state.output_count == 1 &&
     state.preprocess_view_buffer is Some(_) &&
+    state.previous_view_buffer is Some(_) &&
     state.mesh_culling_data_buffer is Some(_) &&
     state.indexed_gpu_metadata_buffer is Some(_) &&
     state.indexed_gpu_metadata_count == 1 &&
     state.indexed_batch_set_buffer is Some(_) &&
     state.indexed_batch_set_count == 1 &&
     state.indexed_indirect_parameters_buffer is Some(_) &&
-    state.indexed_indirect_parameters_count == 1
+    state.indexed_indirect_parameters_count == 1 &&
+    state.late_indexed_dispatch_indirect_buffer is Some(_) &&
+    state.late_non_indexed_dispatch_indirect_buffer is Some(_) &&
+    state.depth_pyramid_texture is Some(_) &&
+    state.depth_pyramid_mips.length() >= 1
   inspect(ok, content="true")
 }
 

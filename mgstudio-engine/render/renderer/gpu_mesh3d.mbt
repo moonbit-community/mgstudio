@@ -707,6 +707,9 @@ const MESH3D_PREPROCESS_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES : UInt64 = 20UL
 const MESH3D_PREPROCESS_NON_INDEXED_INDIRECT_PARAMETERS_STRIDE_BYTES : UInt64 = 16UL
 
 ///|
+const MESH3D_PREPROCESS_LATE_DISPATCH_PARAMETERS_STRIDE_BYTES : UInt64 = 32UL
+
+///|
 const MESH3D_PREPROCESS_WORKGROUP_SIZE : Int = 64
 
 ///|
@@ -717,9 +720,6 @@ const MESH3D_DRAW_INDIRECT_KIND_INDEXED : Int = 1
 
 ///|
 const MESH3D_DRAW_INDIRECT_KIND_NON_INDEXED : Int = 2
-
-///|
-const MESH3D_PREPROCESS_INPUT_FLAG_NO_FRUSTUM_CULLING : UInt = 1U << 28
 
 ///|
 const MESH3D_PREPROCESS_INPUT_FLAG_SIGN_DETERMINANT_MODEL_3X3 : UInt = 1U << 31
@@ -743,6 +743,8 @@ fn mesh3d_preprocess_camera_upload_state_new(
     motion_vector_mesh_bind_group: None,
     preprocess_view_buffer: None,
     preprocess_view_capacity: 0UL,
+    previous_view_buffer: None,
+    previous_view_capacity: 0UL,
     mesh_culling_data_buffer: None,
     mesh_culling_data_capacity: 0UL,
     direct_work_item_buffer: None,
@@ -756,8 +758,14 @@ fn mesh3d_preprocess_camera_upload_state_new(
     non_indexed_work_item_count: 0,
     late_indexed_work_item_buffer: None,
     late_indexed_work_item_capacity: 0UL,
+    late_indexed_work_item_count: 0,
     late_non_indexed_work_item_buffer: None,
     late_non_indexed_work_item_capacity: 0UL,
+    late_non_indexed_work_item_count: 0,
+    late_indexed_dispatch_indirect_buffer: None,
+    late_indexed_dispatch_indirect_capacity: 0UL,
+    late_non_indexed_dispatch_indirect_buffer: None,
+    late_non_indexed_dispatch_indirect_capacity: 0UL,
     indexed_cpu_metadata_buffer: None,
     indexed_cpu_metadata_capacity: 0UL,
     indexed_gpu_metadata_buffer: None,
@@ -785,6 +793,12 @@ fn mesh3d_preprocess_camera_upload_state_new(
     direct_workgroup_count: 0,
     indexed_workgroup_count: 0,
     non_indexed_workgroup_count: 0,
+    depth_pyramid_texture: None,
+    depth_pyramid_all_mips_view: None,
+    depth_pyramid_mips: [],
+    depth_pyramid_width: 0,
+    depth_pyramid_height: 0,
+    depth_pyramid_mip_count: 0,
   }
 }
 
@@ -947,7 +961,6 @@ fn mesh3d_preprocess_mesh_inputs_bytes(
   let input_len = inputs.length()
   for input in inputs {
     let runtime_flags = input.flags |
-      MESH3D_PREPROCESS_INPUT_FLAG_NO_FRUSTUM_CULLING |
       mesh3d_preprocess_mesh_input_sign_determinant(
         input.scale_x,
         input.scale_y,
@@ -980,7 +993,6 @@ fn mesh3d_preprocess_mesh_inputs_bytes(
       words.push(word)
     }
     let previous_flags = input.flags |
-      MESH3D_PREPROCESS_INPUT_FLAG_NO_FRUSTUM_CULLING |
       mesh3d_preprocess_mesh_input_sign_determinant(
         input.previous_scale_x,
         input.previous_scale_y,
@@ -1063,6 +1075,36 @@ fn mesh3d_preprocess_dispatch_metadata_bytes(
 }
 
 ///|
+fn mesh3d_preprocess_frustum_plane_words(
+  plane : HostMesh3dPreprocessFrustumPlane,
+) -> Array[UInt] {
+  [
+    f32_bits(plane.normal_x),
+    f32_bits(plane.normal_y),
+    f32_bits(plane.normal_z),
+    f32_bits(plane.distance),
+  ]
+}
+
+///|
+fn mesh3d_preprocess_mesh_culling_data_bytes(
+  culling_data : Array[HostMesh3dPreprocessMeshCullingData],
+) -> Bytes {
+  let words : Array[UInt] = []
+  for entry in culling_data {
+    words.push(f32_bits(entry.aabb_center_x))
+    words.push(f32_bits(entry.aabb_center_y))
+    words.push(f32_bits(entry.aabb_center_z))
+    words.push(0U)
+    words.push(f32_bits(entry.aabb_half_extents_x))
+    words.push(f32_bits(entry.aabb_half_extents_y))
+    words.push(f32_bits(entry.aabb_half_extents_z))
+    words.push(0U)
+  }
+  u32le_pack(words)
+}
+
+///|
 fn mesh3d_preprocess_append_clip_matrix_words(
   words : Array[UInt],
   matrix : GpuClipMatrix,
@@ -1086,30 +1128,163 @@ fn mesh3d_preprocess_append_clip_matrix_words(
 }
 
 ///|
-fn mesh3d_preprocess_view_uniform_bytes(frame_count : UInt) -> Bytes {
+fn mesh3d_preprocess_view_uniform_bytes(
+  view : HostMesh3dPreprocessView,
+  frame_count : UInt,
+) -> Bytes {
   let words : Array[UInt] = []
-  let identity = gpu_clip_matrix_identity()
-  for _ in 0..<7 {
-    mesh3d_preprocess_append_clip_matrix_words(words, identity)
-  }
-  words.push(0U)
-  words.push(0U)
-  words.push(0U)
-  words.push(0U)
-  for _ in 0..<8 {
-    words.push(0U)
-  }
-  for _ in 0..<24 {
-    words.push(0U)
+  mesh3d_preprocess_append_clip_matrix_words(words, view.clip_from_world)
+  mesh3d_preprocess_append_clip_matrix_words(
+    words,
+    view.unjittered_clip_from_world,
+  )
+  mesh3d_preprocess_append_clip_matrix_words(words, view.world_from_clip)
+  mesh3d_preprocess_append_clip_matrix_words(words, view.world_from_view)
+  mesh3d_preprocess_append_clip_matrix_words(words, view.view_from_world)
+  mesh3d_preprocess_append_clip_matrix_words(words, view.clip_from_view)
+  mesh3d_preprocess_append_clip_matrix_words(words, view.view_from_clip)
+  words.push(f32_bits(view.world_position_x))
+  words.push(f32_bits(view.world_position_y))
+  words.push(f32_bits(view.world_position_z))
+  words.push(f32_bits(view.exposure))
+  words.push(f32_bits(view.viewport_x))
+  words.push(f32_bits(view.viewport_y))
+  words.push(f32_bits(view.viewport_width))
+  words.push(f32_bits(view.viewport_height))
+  words.push(f32_bits(view.main_pass_viewport_x))
+  words.push(f32_bits(view.main_pass_viewport_y))
+  words.push(f32_bits(view.main_pass_viewport_width))
+  words.push(f32_bits(view.main_pass_viewport_height))
+  for i in 0..<6 {
+    let plane = if i < view.frustum_planes.length() {
+      view.frustum_planes[i]
+    } else {
+      HostMesh3dPreprocessFrustumPlane::{
+        normal_x: 0.0F,
+        normal_y: 0.0F,
+        normal_z: 0.0F,
+        distance: 0.0F,
+      }
+    }
+    for word in mesh3d_preprocess_frustum_plane_words(plane) {
+      words.push(word)
+    }
   }
   for _ in 0..<40 {
     words.push(0U)
   }
-  words.push(0U)
+  words.push(f32_bits(view.mip_bias))
   words.push(frame_count)
   words.push(0U)
   words.push(0U)
   u32le_pack(words)
+}
+
+///|
+fn mesh3d_preprocess_previous_view_uniform_bytes(
+  previous_view : HostMesh3dPreprocessPreviousView,
+) -> Bytes {
+  let words : Array[UInt] = []
+  mesh3d_preprocess_append_clip_matrix_words(
+    words,
+    previous_view.view_from_world,
+  )
+  mesh3d_preprocess_append_clip_matrix_words(
+    words,
+    previous_view.clip_from_world,
+  )
+  mesh3d_preprocess_append_clip_matrix_words(
+    words,
+    previous_view.clip_from_view,
+  )
+  mesh3d_preprocess_append_clip_matrix_words(
+    words,
+    previous_view.world_from_clip,
+  )
+  mesh3d_preprocess_append_clip_matrix_words(
+    words,
+    previous_view.view_from_clip,
+  )
+  u32le_pack(words)
+}
+
+///|
+fn mesh3d_preprocess_late_dispatch_parameters_default_bytes() -> Bytes {
+  u32le_pack([0U, 1U, 1U, 0U, 0U, 0U, 0U, 0U])
+}
+
+///|
+fn mesh3d_preprocess_previous_power_of_two(value : Int) -> Int {
+  let safe_value = if value <= 1 { 1 } else { value }
+  let mut power = 1
+  while power * 2 > 0 && power * 2 <= safe_value {
+    power = power * 2
+  }
+  power
+}
+
+///|
+fn mesh3d_preprocess_next_power_of_two(value : Int) -> Int {
+  let safe_value = if value <= 1 { 1 } else { value }
+  let mut power = 1
+  while power < safe_value {
+    power = power * 2
+  }
+  power
+}
+
+///|
+fn mesh3d_preprocess_depth_pyramid_mip_count(width : Int, height : Int) -> Int {
+  let mut max_dim = if width > height { width } else { height }
+  if max_dim <= 0 {
+    return 1
+  }
+  let mut mip_count = 0
+  while max_dim > 0 && mip_count < 12 {
+    mip_count = mip_count + 1
+    max_dim = max_dim / 2
+  }
+  if mip_count <= 0 {
+    1
+  } else {
+    mip_count
+  }
+}
+
+///|
+fn mesh3d_preprocess_depth_pyramid_dispatch_size(size : Int) -> UInt {
+  mesh3d_preprocess_next_power_of_two(size + 1).reinterpret_as_uint()
+}
+
+///|
+fn mesh3d_preprocess_replace_string(
+  source : String,
+  needle : String,
+  replacement : String,
+) -> String {
+  source.replace_all(old=needle, new=replacement)
+}
+
+///|
+fn mesh3d_preprocess_specialize_late_phase_immediate(source : String) -> String {
+  mesh3d_preprocess_replace_string(
+    source, "var<immediate> immediates: Immediates;", "const LATE_PREPROCESS_WORK_ITEM_INDIRECT_OFFSET: u32 = 0u;",
+  ).replace_all(
+    old="immediates.late_preprocess_work_item_indirect_offset",
+    new="LATE_PREPROCESS_WORK_ITEM_INDIRECT_OFFSET",
+  )
+}
+
+///|
+fn mesh3d_preprocess_specialize_downsample_depth(
+  source : String,
+  max_mip_level : Int,
+) -> String {
+  mesh3d_preprocess_replace_string(
+    source,
+    "struct Constants { max_mip_level: u32 }\nvar<immediate> constants: Constants;",
+    "const MAX_MIP_LEVEL: u32 = " + max_mip_level.to_string() + "u;",
+  ).replace_all(old="constants.max_mip_level", new="MAX_MIP_LEVEL")
 }
 
 ///|
@@ -1145,11 +1320,67 @@ fn load_wgsl_required_mesh3d_preprocess_indirect(
 }
 
 ///|
+fn load_wgsl_required_mesh3d_preprocess_indirect_early_occlusion(
+  assets_base : String,
+) -> String raise GpuBackendError {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  defines.set("WRITE_INDIRECT_PARAMETERS_METADATA", true)
+  defines.set("INDIRECT", true)
+  defines.set("FRUSTUM_CULLING", true)
+  defines.set("OCCLUSION_CULLING", true)
+  defines.set("EARLY_PHASE", true)
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths(assets_base)
+  let source = load_wgsl_preprocessed(
+    assets_base, "shaders/bevy_pbr/render/mesh_preprocess.wgsl", defines, value_defines,
+    visited, modules,
+  )
+  mesh3d_preprocess_specialize_late_phase_immediate(source)
+}
+
+///|
+fn load_wgsl_required_mesh3d_preprocess_indirect_late_occlusion(
+  assets_base : String,
+) -> String raise GpuBackendError {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  defines.set("WRITE_INDIRECT_PARAMETERS_METADATA", true)
+  defines.set("INDIRECT", true)
+  defines.set("FRUSTUM_CULLING", true)
+  defines.set("OCCLUSION_CULLING", true)
+  defines.set("LATE_PHASE", true)
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths(assets_base)
+  let source = load_wgsl_preprocessed(
+    assets_base, "shaders/bevy_pbr/render/mesh_preprocess.wgsl", defines, value_defines,
+    visited, modules,
+  )
+  mesh3d_preprocess_specialize_late_phase_immediate(source)
+}
+
+///|
 fn load_wgsl_required_mesh3d_build_indexed_indirect_params(
   assets_base : String,
 ) -> String raise GpuBackendError {
   let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   defines.set("INDEXED", true)
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths(assets_base)
+  load_wgsl_preprocessed(
+    assets_base, "shaders/bevy_pbr/render/build_indirect_params.wgsl", defines, value_defines,
+    visited, modules,
+  )
+}
+
+///|
+fn load_wgsl_required_mesh3d_build_indexed_indirect_params_early(
+  assets_base : String,
+) -> String raise GpuBackendError {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  defines.set("INDEXED", true)
+  defines.set("EARLY_PHASE", true)
   let value_defines = default_wgsl_value_defines()
   let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
   let modules = build_wgsl_import_module_paths(assets_base)
@@ -1174,11 +1405,37 @@ fn load_wgsl_required_mesh3d_build_non_indexed_indirect_params(
 }
 
 ///|
+fn load_wgsl_required_mesh3d_build_non_indexed_indirect_params_early(
+  assets_base : String,
+) -> String raise GpuBackendError {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  defines.set("EARLY_PHASE", true)
+  let value_defines = default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = build_wgsl_import_module_paths(assets_base)
+  load_wgsl_preprocessed(
+    assets_base, "shaders/bevy_pbr/render/build_indirect_params.wgsl", defines, value_defines,
+    visited, modules,
+  )
+}
+
+///|
+fn load_wgsl_required_mesh3d_downsample_depth(
+  assets_base : String,
+  max_mip_level : Int,
+) -> String raise GpuBackendError {
+  let source = load_wgsl_from_assets_base_required(
+    assets_base, "shaders/bevy_core_pipeline/mip_generation/experimental/downsample_depth.wgsl",
+  )
+  mesh3d_preprocess_specialize_downsample_depth(source, max_mip_level)
+}
+
+///|
 fn ensure_mesh3d_preprocess_indirect_resources(
   backend : GpuBackend,
 ) -> Unit raise GpuBackendError {
+  let compute = ss(@wgpu.SHADER_STAGE_COMPUTE)
   if backend.mesh3d_preprocess_direct_bgl is None {
-    let compute = ss(@wgpu.SHADER_STAGE_COMPUTE)
     let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=5UL)
     let ok = builder.add_buffer(
         0U,
@@ -1216,7 +1473,6 @@ fn ensure_mesh3d_preprocess_indirect_resources(
     backend.mesh3d_preprocess_direct_pipeline_layout = Some(layout)
   }
   if backend.mesh3d_preprocess_indirect_bgl is None {
-    let compute = ss(@wgpu.SHADER_STAGE_COMPUTE)
     let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=8UL)
     let ok = builder.add_buffer(
         0U,
@@ -1266,8 +1522,146 @@ fn ensure_mesh3d_preprocess_indirect_resources(
     backend.mesh3d_preprocess_indirect_bgl = Some(bgl)
     backend.mesh3d_preprocess_indirect_pipeline_layout = Some(layout)
   }
+  if backend.mesh3d_preprocess_indirect_early_occlusion_bgl is None {
+    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=12UL)
+    let ok = builder.add_buffer(
+        0U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+        min_binding_size=MESH3D_PREPROCESS_VIEW_BUFFER_SIZE,
+      ) &&
+      builder.add_buffer(
+        2U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+        min_binding_size=MESH3D_PREPASS_PREVIOUS_VIEW_BUFFER_SIZE,
+      ) &&
+      builder.add_buffer(
+        3U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_buffer(
+        4U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_buffer(
+        5U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_buffer(6U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+      builder.add_buffer(
+        7U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_buffer(8U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+      builder.add_buffer(
+        9U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_texture(
+        10U,
+        compute,
+        @wgpu.TEXTURE_SAMPLE_TYPE_UNFILTERABLE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_buffer(11U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+      builder.add_buffer(12U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE)
+    if !ok {
+      builder.free()
+      fatal(
+        "wgpu: failed to build mesh3d preprocess indirect early occlusion bind group layout",
+      )
+    }
+    let bgl = builder.finish(
+      backend.device,
+      label="mgstudio_mesh3d_preprocess_indirect_early_occlusion_bgl",
+    )
+    let layout = backend.device.create_pipeline_layout_1(bgl)
+    layout.set_label(
+      "mgstudio_mesh3d_preprocess_indirect_early_occlusion_pipeline_layout",
+    )
+    backend.mesh3d_preprocess_indirect_early_occlusion_bgl = Some(bgl)
+    backend.mesh3d_preprocess_indirect_early_occlusion_pipeline_layout = Some(
+      layout,
+    )
+  }
+  if backend.mesh3d_preprocess_indirect_late_occlusion_bgl is None {
+    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=11UL)
+    let ok = builder.add_buffer(
+        0U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+        min_binding_size=MESH3D_PREPROCESS_VIEW_BUFFER_SIZE,
+      ) &&
+      builder.add_buffer(
+        2U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
+        min_binding_size=MESH3D_PREPASS_PREVIOUS_VIEW_BUFFER_SIZE,
+      ) &&
+      builder.add_buffer(
+        3U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_buffer(
+        4U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_buffer(
+        5U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_buffer(6U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+      builder.add_buffer(
+        7U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_buffer(8U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+      builder.add_buffer(
+        9U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
+      builder.add_texture(
+        10U,
+        compute,
+        @wgpu.TEXTURE_SAMPLE_TYPE_UNFILTERABLE_FLOAT,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_buffer(
+        12U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      )
+    if !ok {
+      builder.free()
+      fatal(
+        "wgpu: failed to build mesh3d preprocess indirect late occlusion bind group layout",
+      )
+    }
+    let bgl = builder.finish(
+      backend.device,
+      label="mgstudio_mesh3d_preprocess_indirect_late_occlusion_bgl",
+    )
+    let layout = backend.device.create_pipeline_layout_1(bgl)
+    layout.set_label(
+      "mgstudio_mesh3d_preprocess_indirect_late_occlusion_pipeline_layout",
+    )
+    backend.mesh3d_preprocess_indirect_late_occlusion_bgl = Some(bgl)
+    backend.mesh3d_preprocess_indirect_late_occlusion_pipeline_layout = Some(
+      layout,
+    )
+  }
   if backend.mesh3d_preprocess_reset_batch_sets_bgl is None {
-    let compute = ss(@wgpu.SHADER_STAGE_COMPUTE)
     let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=1UL)
     let ok = builder.add_buffer(0U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE)
     if !ok {
@@ -1288,7 +1682,6 @@ fn ensure_mesh3d_preprocess_indirect_resources(
     backend.mesh3d_preprocess_reset_batch_sets_pipeline_layout = Some(layout)
   }
   if backend.mesh3d_preprocess_build_indexed_indirect_bgl is None {
-    let compute = ss(@wgpu.SHADER_STAGE_COMPUTE)
     let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=5UL)
     let ok = builder.add_buffer(
         0U,
@@ -1323,7 +1716,6 @@ fn ensure_mesh3d_preprocess_indirect_resources(
     )
   }
   if backend.mesh3d_preprocess_build_non_indexed_indirect_bgl is None {
-    let compute = ss(@wgpu.SHADER_STAGE_COMPUTE)
     let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=5UL)
     let ok = builder.add_buffer(
         0U,
@@ -1355,6 +1747,141 @@ fn ensure_mesh3d_preprocess_indirect_resources(
     backend.mesh3d_preprocess_build_non_indexed_indirect_bgl = Some(bgl)
     backend.mesh3d_preprocess_build_non_indexed_indirect_pipeline_layout = Some(
       layout,
+    )
+  }
+  if backend.mesh3d_preprocess_downsample_depth_bgl is None {
+    let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=14UL)
+    let ok = builder.add_texture(
+        0U,
+        compute,
+        @wgpu.TEXTURE_SAMPLE_TYPE_DEPTH,
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_storage_texture(
+        1U,
+        compute,
+        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_storage_texture(
+        2U,
+        compute,
+        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_storage_texture(
+        3U,
+        compute,
+        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_storage_texture(
+        4U,
+        compute,
+        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_storage_texture(
+        5U,
+        compute,
+        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_storage_texture(
+        6U,
+        compute,
+        @wgpu.STORAGE_TEXTURE_ACCESS_READ_WRITE,
+        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_storage_texture(
+        7U,
+        compute,
+        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_storage_texture(
+        8U,
+        compute,
+        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_storage_texture(
+        9U,
+        compute,
+        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_storage_texture(
+        10U,
+        compute,
+        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_storage_texture(
+        11U,
+        compute,
+        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_storage_texture(
+        12U,
+        compute,
+        @wgpu.STORAGE_TEXTURE_ACCESS_WRITE_ONLY,
+        tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+        @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      ) &&
+      builder.add_sampler(
+        13U,
+        compute,
+        @wgpu.SAMPLER_BINDING_TYPE_NON_FILTERING,
+      )
+    if !ok {
+      builder.free()
+      fatal(
+        "wgpu: failed to build mesh3d preprocess downsample depth bind group layout",
+      )
+    }
+    let bgl = builder.finish(
+      backend.device,
+      label="mgstudio_mesh3d_preprocess_downsample_depth_bgl",
+    )
+    let layout = backend.device.create_pipeline_layout_1(bgl)
+    layout.set_label(
+      "mgstudio_mesh3d_preprocess_downsample_depth_pipeline_layout",
+    )
+    backend.mesh3d_preprocess_downsample_depth_bgl = Some(bgl)
+    backend.mesh3d_preprocess_downsample_depth_pipeline_layout = Some(layout)
+  }
+  if backend.mesh3d_preprocess_depth_pyramid_dummy_texture is None {
+    let usage = @wgpu.TextureUsage::from_u64(
+      @wgpu.TEXTURE_USAGE_TEXTURE_BINDING | @wgpu.TEXTURE_USAGE_STORAGE_BINDING,
+    )
+    let texture = backend.device.create_texture_u32(
+      1U,
+      1U,
+      1U,
+      usage,
+      @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+      tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+    )
+    let view = texture.create_view_2d(0U, 1U)
+    backend.mesh3d_preprocess_depth_pyramid_dummy_texture = Some(texture)
+    backend.mesh3d_preprocess_depth_pyramid_dummy_view = Some(view)
+  }
+  if backend.mesh3d_preprocess_depth_pyramid_sampler is None {
+    backend.mesh3d_preprocess_depth_pyramid_sampler = Some(
+      backend.device.create_sampler_nearest_clamp(),
     )
   }
   if backend.mesh3d_preprocess_reset_batch_sets_pipeline is None {
@@ -1421,6 +1948,50 @@ fn ensure_mesh3d_preprocess_indirect_resources(
     backend.mesh3d_preprocess_indirect_pipeline = Some(pipeline)
     shader.release()
   }
+  if backend.mesh3d_preprocess_indirect_early_occlusion_pipeline is None {
+    guard backend.mesh3d_preprocess_indirect_early_occlusion_pipeline_layout
+      is Some(layout) else {
+      return
+    }
+    let source = load_wgsl_required_mesh3d_preprocess_indirect_early_occlusion(
+      backend.assets_base,
+    )
+    let shader = backend.device.create_shader_module_wgsl(source)
+    let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+      layout, shader, "main",
+    ) catch {
+      err =>
+        fatal(
+          "wgpu: failed to create mesh3d preprocess indirect early occlusion pipeline: " +
+          err.message(),
+        )
+    }
+    pipeline.set_label("mgstudio_mesh3d_preprocess_indirect_early_occlusion")
+    backend.mesh3d_preprocess_indirect_early_occlusion_pipeline = Some(pipeline)
+    shader.release()
+  }
+  if backend.mesh3d_preprocess_indirect_late_occlusion_pipeline is None {
+    guard backend.mesh3d_preprocess_indirect_late_occlusion_pipeline_layout
+      is Some(layout) else {
+      return
+    }
+    let source = load_wgsl_required_mesh3d_preprocess_indirect_late_occlusion(
+      backend.assets_base,
+    )
+    let shader = backend.device.create_shader_module_wgsl(source)
+    let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+      layout, shader, "main",
+    ) catch {
+      err =>
+        fatal(
+          "wgpu: failed to create mesh3d preprocess indirect late occlusion pipeline: " +
+          err.message(),
+        )
+    }
+    pipeline.set_label("mgstudio_mesh3d_preprocess_indirect_late_occlusion")
+    backend.mesh3d_preprocess_indirect_late_occlusion_pipeline = Some(pipeline)
+    shader.release()
+  }
   if backend.mesh3d_preprocess_build_indexed_indirect_pipeline is None {
     guard backend.mesh3d_preprocess_build_indexed_indirect_pipeline_layout
       is Some(layout) else {
@@ -1441,6 +2012,32 @@ fn ensure_mesh3d_preprocess_indirect_resources(
     }
     pipeline.set_label("mgstudio_mesh3d_preprocess_build_indexed_indirect")
     backend.mesh3d_preprocess_build_indexed_indirect_pipeline = Some(pipeline)
+    shader.release()
+  }
+  if backend.mesh3d_preprocess_build_indexed_indirect_early_pipeline is None {
+    guard backend.mesh3d_preprocess_build_indexed_indirect_pipeline_layout
+      is Some(layout) else {
+      return
+    }
+    let source = load_wgsl_required_mesh3d_build_indexed_indirect_params_early(
+      backend.assets_base,
+    )
+    let shader = backend.device.create_shader_module_wgsl(source)
+    let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+      layout, shader, "main",
+    ) catch {
+      err =>
+        fatal(
+          "wgpu: failed to create mesh3d preprocess indexed indirect early pipeline: " +
+          err.message(),
+        )
+    }
+    pipeline.set_label(
+      "mgstudio_mesh3d_preprocess_build_indexed_indirect_early",
+    )
+    backend.mesh3d_preprocess_build_indexed_indirect_early_pipeline = Some(
+      pipeline,
+    )
     shader.release()
   }
   if backend.mesh3d_preprocess_build_non_indexed_indirect_pipeline is None {
@@ -1464,6 +2061,74 @@ fn ensure_mesh3d_preprocess_indirect_resources(
     pipeline.set_label("mgstudio_mesh3d_preprocess_build_non_indexed_indirect")
     backend.mesh3d_preprocess_build_non_indexed_indirect_pipeline = Some(
       pipeline,
+    )
+    shader.release()
+  }
+  if backend.mesh3d_preprocess_build_non_indexed_indirect_early_pipeline is None {
+    guard backend.mesh3d_preprocess_build_non_indexed_indirect_pipeline_layout
+      is Some(layout) else {
+      return
+    }
+    let source = load_wgsl_required_mesh3d_build_non_indexed_indirect_params_early(
+      backend.assets_base,
+    )
+    let shader = backend.device.create_shader_module_wgsl(source)
+    let pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+      layout, shader, "main",
+    ) catch {
+      err =>
+        fatal(
+          "wgpu: failed to create mesh3d preprocess non-indexed indirect early pipeline: " +
+          err.message(),
+        )
+    }
+    pipeline.set_label(
+      "mgstudio_mesh3d_preprocess_build_non_indexed_indirect_early",
+    )
+    backend.mesh3d_preprocess_build_non_indexed_indirect_early_pipeline = Some(
+      pipeline,
+    )
+    shader.release()
+  }
+  if backend.mesh3d_preprocess_downsample_depth_first_pipeline is None {
+    guard backend.mesh3d_preprocess_downsample_depth_pipeline_layout
+      is Some(layout) else {
+      return
+    }
+    let source = load_wgsl_required_mesh3d_downsample_depth(
+      backend.assets_base,
+      12,
+    )
+    let shader = backend.device.create_shader_module_wgsl(source)
+    let first_pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+      layout, shader, "downsample_depth_first",
+    ) catch {
+      err =>
+        fatal(
+          "wgpu: failed to create mesh3d preprocess downsample depth first pipeline: " +
+          err.message(),
+        )
+    }
+    let second_pipeline = backend.device.create_compute_pipeline_with_layout_entry(
+      layout, shader, "downsample_depth_second",
+    ) catch {
+      err =>
+        fatal(
+          "wgpu: failed to create mesh3d preprocess downsample depth second pipeline: " +
+          err.message(),
+        )
+    }
+    first_pipeline.set_label(
+      "mgstudio_mesh3d_preprocess_downsample_depth_first",
+    )
+    second_pipeline.set_label(
+      "mgstudio_mesh3d_preprocess_downsample_depth_second",
+    )
+    backend.mesh3d_preprocess_downsample_depth_first_pipeline = Some(
+      first_pipeline,
+    )
+    backend.mesh3d_preprocess_downsample_depth_second_pipeline = Some(
+      second_pipeline,
     )
     shader.release()
   }
@@ -2422,6 +3087,17 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
     self.frame_count,
     payload.mesh_inputs,
   )
+  let preprocess_view_bytes = mesh3d_preprocess_view_uniform_bytes(
+    payload.view,
+    self.frame_count,
+  )
+  let previous_view_bytes = mesh3d_preprocess_previous_view_uniform_bytes(
+    payload.previous_view,
+  )
+  let mesh_culling_data_bytes = mesh3d_preprocess_mesh_culling_data_bytes(
+    payload.mesh_culling_data,
+  )
+  let late_dispatch_default_bytes = mesh3d_preprocess_late_dispatch_parameters_default_bytes()
   let (mesh_input_buffer, mesh_input_capacity) = mesh3d_preprocess_upload_buffer(
     self,
     self.mesh3d_preprocess_camera_upload_states[state_index].mesh_input_buffer,
@@ -2461,20 +3137,29 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
     self,
     self.mesh3d_preprocess_camera_upload_states[state_index].preprocess_view_buffer,
     self.mesh3d_preprocess_camera_upload_states[state_index].preprocess_view_capacity,
-    mesh3d_preprocess_view_uniform_bytes(self.frame_count),
+    preprocess_view_bytes,
     "mgstudio_mesh3d_preprocess_view",
   )
   self.mesh3d_preprocess_camera_upload_states[state_index].preprocess_view_buffer
   = preprocess_view_buffer
   self.mesh3d_preprocess_camera_upload_states[state_index].preprocess_view_capacity
   = preprocess_view_capacity
-  let mesh_culling_required_size = payload.mesh_inputs.length().to_uint64() *
-    MESH3D_PREPROCESS_MESH_CULLING_DATA_STRIDE_BYTES
-  let (mesh_culling_data_buffer, mesh_culling_data_capacity) = mesh3d_preprocess_ensure_storage_buffer(
+  let (previous_view_buffer, previous_view_capacity) = mesh3d_preprocess_upload_buffer(
+    self,
+    self.mesh3d_preprocess_camera_upload_states[state_index].previous_view_buffer,
+    self.mesh3d_preprocess_camera_upload_states[state_index].previous_view_capacity,
+    previous_view_bytes,
+    "mgstudio_mesh3d_preprocess_previous_view",
+  )
+  self.mesh3d_preprocess_camera_upload_states[state_index].previous_view_buffer
+  = previous_view_buffer
+  self.mesh3d_preprocess_camera_upload_states[state_index].previous_view_capacity
+  = previous_view_capacity
+  let (mesh_culling_data_buffer, mesh_culling_data_capacity) = mesh3d_preprocess_upload_buffer(
     self,
     self.mesh3d_preprocess_camera_upload_states[state_index].mesh_culling_data_buffer,
     self.mesh3d_preprocess_camera_upload_states[state_index].mesh_culling_data_capacity,
-    mesh_culling_required_size,
+    mesh_culling_data_bytes,
     "mgstudio_mesh3d_preprocess_mesh_culling_data",
   )
   self.mesh3d_preprocess_camera_upload_states[state_index].mesh_culling_data_buffer
@@ -2543,6 +3228,22 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
   = late_indexed_work_item_buffer
   self.mesh3d_preprocess_camera_upload_states[state_index].late_indexed_work_item_capacity
   = late_indexed_work_item_capacity
+  self.mesh3d_preprocess_camera_upload_states[state_index].late_indexed_work_item_count
+  = payload.late_indexed_work_items.length()
+  if self.mesh3d_preprocess_camera_upload_states[state_index].late_indexed_work_item_buffer
+    is None {
+    let (buffer, capacity) = mesh3d_preprocess_ensure_storage_buffer(
+      self,
+      None,
+      0UL,
+      8UL,
+      "mgstudio_mesh3d_preprocess_late_indexed_work_items",
+    )
+    self.mesh3d_preprocess_camera_upload_states[state_index].late_indexed_work_item_buffer
+    = buffer
+    self.mesh3d_preprocess_camera_upload_states[state_index].late_indexed_work_item_capacity
+    = capacity
+  }
   let late_non_indexed_work_item_bytes = mesh3d_preprocess_work_items_bytes(
     payload.late_non_indexed_work_items,
   )
@@ -2557,6 +3258,50 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
   = late_non_indexed_work_item_buffer
   self.mesh3d_preprocess_camera_upload_states[state_index].late_non_indexed_work_item_capacity
   = late_non_indexed_work_item_capacity
+  self.mesh3d_preprocess_camera_upload_states[state_index].late_non_indexed_work_item_count
+  = payload.late_non_indexed_work_items.length()
+  if self.mesh3d_preprocess_camera_upload_states[state_index].late_non_indexed_work_item_buffer
+    is None {
+    let (buffer, capacity) = mesh3d_preprocess_ensure_storage_buffer(
+      self,
+      None,
+      0UL,
+      8UL,
+      "mgstudio_mesh3d_preprocess_late_non_indexed_work_items",
+    )
+    self.mesh3d_preprocess_camera_upload_states[state_index].late_non_indexed_work_item_buffer
+    = buffer
+    self.mesh3d_preprocess_camera_upload_states[state_index].late_non_indexed_work_item_capacity
+    = capacity
+  }
+  let (
+    late_indexed_dispatch_indirect_buffer,
+    late_indexed_dispatch_indirect_capacity,
+  ) = mesh3d_preprocess_upload_buffer(
+    self,
+    self.mesh3d_preprocess_camera_upload_states[state_index].late_indexed_dispatch_indirect_buffer,
+    self.mesh3d_preprocess_camera_upload_states[state_index].late_indexed_dispatch_indirect_capacity,
+    late_dispatch_default_bytes,
+    "mgstudio_mesh3d_preprocess_late_indexed_dispatch_indirect",
+  )
+  self.mesh3d_preprocess_camera_upload_states[state_index].late_indexed_dispatch_indirect_buffer
+  = late_indexed_dispatch_indirect_buffer
+  self.mesh3d_preprocess_camera_upload_states[state_index].late_indexed_dispatch_indirect_capacity
+  = late_indexed_dispatch_indirect_capacity
+  let (
+    late_non_indexed_dispatch_indirect_buffer,
+    late_non_indexed_dispatch_indirect_capacity,
+  ) = mesh3d_preprocess_upload_buffer(
+    self,
+    self.mesh3d_preprocess_camera_upload_states[state_index].late_non_indexed_dispatch_indirect_buffer,
+    self.mesh3d_preprocess_camera_upload_states[state_index].late_non_indexed_dispatch_indirect_capacity,
+    late_dispatch_default_bytes,
+    "mgstudio_mesh3d_preprocess_late_non_indexed_dispatch_indirect",
+  )
+  self.mesh3d_preprocess_camera_upload_states[state_index].late_non_indexed_dispatch_indirect_buffer
+  = late_non_indexed_dispatch_indirect_buffer
+  self.mesh3d_preprocess_camera_upload_states[state_index].late_non_indexed_dispatch_indirect_capacity
+  = late_non_indexed_dispatch_indirect_capacity
 
   let indexed_cpu_metadata_bytes = mesh3d_preprocess_cpu_metadata_bytes(
     payload.indexed_cpu_metadata,
@@ -2749,6 +3494,80 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
   = payload.dispatch_metadata.indexed_workgroup_count
   self.mesh3d_preprocess_camera_upload_states[state_index].non_indexed_workgroup_count
   = payload.dispatch_metadata.non_indexed_workgroup_count
+  let requested_depth_pyramid_width = mesh3d_preprocess_previous_power_of_two(
+    if payload.view.main_pass_viewport_width <= 1.0F {
+      1
+    } else {
+      payload.view.main_pass_viewport_width.to_int()
+    },
+  )
+  let requested_depth_pyramid_height = mesh3d_preprocess_previous_power_of_two(
+    if payload.view.main_pass_viewport_height <= 1.0F {
+      1
+    } else {
+      payload.view.main_pass_viewport_height.to_int()
+    },
+  )
+  let requested_depth_pyramid_mip_count = mesh3d_preprocess_depth_pyramid_mip_count(
+    requested_depth_pyramid_width, requested_depth_pyramid_height,
+  )
+  let current_state = self.mesh3d_preprocess_camera_upload_states[state_index]
+  let depth_pyramid_needs_resize = current_state.depth_pyramid_texture is None ||
+    current_state.depth_pyramid_width != requested_depth_pyramid_width ||
+    current_state.depth_pyramid_height != requested_depth_pyramid_height ||
+    current_state.depth_pyramid_mip_count != requested_depth_pyramid_mip_count
+  if depth_pyramid_needs_resize {
+    for view in current_state.depth_pyramid_mips {
+      view.release()
+    }
+    current_state.depth_pyramid_mips.clear()
+    if current_state.depth_pyramid_all_mips_view is Some(view) {
+      view.release()
+    }
+    if current_state.depth_pyramid_texture is Some(texture) {
+      texture.release()
+    }
+    let usage = @wgpu.TextureUsage::from_u64(
+      @wgpu.TEXTURE_USAGE_TEXTURE_BINDING | @wgpu.TEXTURE_USAGE_STORAGE_BINDING,
+    )
+    let texture = self.device.create_texture_u32(
+      requested_depth_pyramid_width.reinterpret_as_uint(),
+      requested_depth_pyramid_height.reinterpret_as_uint(),
+      requested_depth_pyramid_mip_count.reinterpret_as_uint(),
+      usage,
+      @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
+      tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+    )
+    let all_mips_view = texture.create_view_u32(
+      tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+      @wgpu.TEXTURE_ASPECT_ALL,
+      0U,
+      1U,
+      0U,
+      requested_depth_pyramid_mip_count.reinterpret_as_uint(),
+    )
+    let mip_views : Array[@wgpu.TextureView] = []
+    for mip_level in 0..<requested_depth_pyramid_mip_count {
+      mip_views.push(
+        texture.create_view_u32(
+          tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+          @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+          @wgpu.TEXTURE_ASPECT_ALL,
+          0U,
+          1U,
+          mip_level.reinterpret_as_uint(),
+          1U,
+        ),
+      )
+    }
+    current_state.depth_pyramid_texture = Some(texture)
+    current_state.depth_pyramid_all_mips_view = Some(all_mips_view)
+    current_state.depth_pyramid_mips = mip_views
+    current_state.depth_pyramid_width = requested_depth_pyramid_width
+    current_state.depth_pyramid_height = requested_depth_pyramid_height
+    current_state.depth_pyramid_mip_count = requested_depth_pyramid_mip_count
+  }
 }
 
 ///|
@@ -2756,6 +3575,7 @@ pub fn GpuBackend::preprocess_mesh3d(
   self : GpuBackend,
   camera_key_hi : Int,
   camera_key_lo : Int,
+  phase_kind : Int,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   guard mesh3d_preprocess_camera_upload_state_index(
@@ -2772,191 +3592,499 @@ pub fn GpuBackend::preprocess_mesh3d(
     MESH3D_PREPASS_MESH_BUFFER_SIZE
   let mesh_culling_data_size = state.mesh_input_count.to_uint64() *
     MESH3D_PREPROCESS_MESH_CULLING_DATA_STRIDE_BYTES
-  if state.indexed_gpu_metadata_count > 0 &&
+  let indexed_gpu_metadata_size = state.indexed_gpu_metadata_count.to_uint64() *
+    MESH3D_PREPROCESS_GPU_METADATA_STRIDE_U32.to_uint64() *
+    4UL
+  let non_indexed_gpu_metadata_size = state.non_indexed_gpu_metadata_count.to_uint64() *
+    MESH3D_PREPROCESS_GPU_METADATA_STRIDE_U32.to_uint64() *
+    4UL
+  if phase_kind != MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION &&
+    state.indexed_gpu_metadata_count > 0 &&
     state.indexed_gpu_metadata_buffer is Some(indexed_gpu_metadata_buffer) {
     frame.encoder.clear_buffer(
-      indexed_gpu_metadata_buffer,
-      0UL,
-      state.indexed_gpu_metadata_count.to_uint64() *
-      MESH3D_PREPROCESS_GPU_METADATA_STRIDE_U32.to_uint64() *
-      4UL,
+      indexed_gpu_metadata_buffer, 0UL, indexed_gpu_metadata_size,
     )
   }
-  if state.non_indexed_gpu_metadata_count > 0 &&
+  if phase_kind != MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION &&
+    state.non_indexed_gpu_metadata_count > 0 &&
     state.non_indexed_gpu_metadata_buffer
     is Some(non_indexed_gpu_metadata_buffer) {
     frame.encoder.clear_buffer(
-      non_indexed_gpu_metadata_buffer,
-      0UL,
-      state.non_indexed_gpu_metadata_count.to_uint64() *
-      MESH3D_PREPROCESS_GPU_METADATA_STRIDE_U32.to_uint64() *
-      4UL,
+      non_indexed_gpu_metadata_buffer, 0UL, non_indexed_gpu_metadata_size,
     )
   }
   let compute_pass = frame.encoder.begin_compute_pass()
-  if state.direct_workgroup_count > 0 &&
-    state.direct_work_item_count > 0 &&
-    state.preprocess_view_buffer is Some(preprocess_view_buffer) &&
-    state.mesh_input_buffer is Some(mesh_input_buffer) &&
-    state.previous_mesh_input_buffer is Some(previous_mesh_input_buffer) &&
-    state.direct_work_item_buffer is Some(direct_work_item_buffer) &&
-    state.output_buffer is Some(output_buffer) &&
-    self.mesh3d_preprocess_direct_bgl is Some(preprocess_direct_bgl) &&
-    self.mesh3d_preprocess_direct_pipeline is Some(preprocess_direct_pipeline) {
-    let builder = @wgpu.BindGroupBuilder::new(max_entries=5UL)
-    let ok = builder.add_buffer(
-        0U,
-        preprocess_view_buffer,
-        size=MESH3D_PREPROCESS_VIEW_BUFFER_SIZE,
-      ) &&
-      builder.add_buffer(3U, mesh_input_buffer, size=mesh_input_size) &&
-      builder.add_buffer(4U, previous_mesh_input_buffer, size=mesh_input_size) &&
-      builder.add_buffer(
-        5U,
-        direct_work_item_buffer,
-        size=state.direct_work_item_count.to_uint64() * 8UL,
-      ) &&
-      builder.add_buffer(6U, output_buffer, size=output_size)
-    if ok {
-      let bind_group = builder.finish(
-        self.device,
-        preprocess_direct_bgl,
-        label="mgstudio_mesh3d_preprocess_direct_bg",
-      )
-      compute_pass.set_pipeline(preprocess_direct_pipeline)
-      compute_pass.set_bind_group(0U, bind_group, [])
-      compute_pass.dispatch_workgroups(
-        state.direct_workgroup_count.reinterpret_as_uint(),
-        1U,
-        1U,
-      )
-      bind_group.release()
-    } else {
-      builder.free()
+  if phase_kind == MESH3D_PREPROCESS_PHASE_MAIN {
+    if state.direct_workgroup_count > 0 &&
+      state.direct_work_item_count > 0 &&
+      state.preprocess_view_buffer is Some(preprocess_view_buffer) &&
+      state.mesh_input_buffer is Some(mesh_input_buffer) &&
+      state.previous_mesh_input_buffer is Some(previous_mesh_input_buffer) &&
+      state.direct_work_item_buffer is Some(direct_work_item_buffer) &&
+      state.output_buffer is Some(output_buffer) &&
+      self.mesh3d_preprocess_direct_bgl is Some(preprocess_direct_bgl) &&
+      self.mesh3d_preprocess_direct_pipeline is Some(preprocess_direct_pipeline) {
+      let builder = @wgpu.BindGroupBuilder::new(max_entries=5UL)
+      let ok = builder.add_buffer(
+          0U,
+          preprocess_view_buffer,
+          size=MESH3D_PREPROCESS_VIEW_BUFFER_SIZE,
+        ) &&
+        builder.add_buffer(3U, mesh_input_buffer, size=mesh_input_size) &&
+        builder.add_buffer(4U, previous_mesh_input_buffer, size=mesh_input_size) &&
+        builder.add_buffer(
+          5U,
+          direct_work_item_buffer,
+          size=state.direct_work_item_count.to_uint64() * 8UL,
+        ) &&
+        builder.add_buffer(6U, output_buffer, size=output_size)
+      if ok {
+        let bind_group = builder.finish(
+          self.device,
+          preprocess_direct_bgl,
+          label="mgstudio_mesh3d_preprocess_direct_bg",
+        )
+        compute_pass.set_pipeline(preprocess_direct_pipeline)
+        compute_pass.set_bind_group(0U, bind_group, [])
+        compute_pass.dispatch_workgroups(
+          state.direct_workgroup_count.reinterpret_as_uint(),
+          1U,
+          1U,
+        )
+        bind_group.release()
+      } else {
+        builder.free()
+      }
     }
   }
-  if state.indexed_workgroup_count > 0 &&
-    state.indexed_work_item_count > 0 &&
+  let indexed_work_item_buffer = if phase_kind ==
+    MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION {
+    state.late_indexed_work_item_buffer
+  } else {
+    state.indexed_work_item_buffer
+  }
+  let indexed_work_item_count = if phase_kind ==
+    MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION {
+    state.late_indexed_work_item_count
+  } else {
+    state.indexed_work_item_count
+  }
+  let non_indexed_work_item_buffer = if phase_kind ==
+    MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION {
+    state.late_non_indexed_work_item_buffer
+  } else {
+    state.non_indexed_work_item_buffer
+  }
+  let non_indexed_work_item_count = if phase_kind ==
+    MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION {
+    state.late_non_indexed_work_item_count
+  } else {
+    state.non_indexed_work_item_count
+  }
+  if indexed_work_item_count > 0 &&
     state.preprocess_view_buffer is Some(preprocess_view_buffer) &&
     state.mesh_input_buffer is Some(mesh_input_buffer) &&
     state.previous_mesh_input_buffer is Some(previous_mesh_input_buffer) &&
-    state.indexed_work_item_buffer is Some(indexed_work_item_buffer) &&
+    indexed_work_item_buffer is Some(selected_work_item_buffer) &&
     state.output_buffer is Some(output_buffer) &&
     state.indexed_cpu_metadata_buffer is Some(indexed_cpu_metadata_buffer) &&
     state.indexed_gpu_metadata_buffer is Some(indexed_gpu_metadata_buffer) &&
-    state.mesh_culling_data_buffer is Some(mesh_culling_data_buffer) &&
-    self.mesh3d_preprocess_indirect_bgl is Some(preprocess_indirect_bgl) &&
-    self.mesh3d_preprocess_indirect_pipeline
-    is Some(preprocess_indirect_pipeline) {
-    let builder = @wgpu.BindGroupBuilder::new(max_entries=8UL)
-    let ok = builder.add_buffer(
-        0U,
-        preprocess_view_buffer,
-        size=MESH3D_PREPROCESS_VIEW_BUFFER_SIZE,
-      ) &&
-      builder.add_buffer(3U, mesh_input_buffer, size=mesh_input_size) &&
-      builder.add_buffer(4U, previous_mesh_input_buffer, size=mesh_input_size) &&
-      builder.add_buffer(
-        5U,
-        indexed_work_item_buffer,
-        size=state.indexed_work_item_count.to_uint64() * 8UL,
-      ) &&
-      builder.add_buffer(6U, output_buffer, size=output_size) &&
-      builder.add_buffer(
-        7U,
-        indexed_cpu_metadata_buffer,
-        size=state.indexed_gpu_metadata_count.to_uint64() * 8UL,
-      ) &&
-      builder.add_buffer(
-        8U,
-        indexed_gpu_metadata_buffer,
-        size=state.indexed_gpu_metadata_count.to_uint64() * 12UL,
-      ) &&
-      builder.add_buffer(
-        9U,
-        mesh_culling_data_buffer,
-        size=mesh_culling_data_size,
-      )
-    if ok {
-      let bind_group = builder.finish(
-        self.device,
-        preprocess_indirect_bgl,
-        label="mgstudio_mesh3d_preprocess_indexed_bg",
-      )
-      compute_pass.set_pipeline(preprocess_indirect_pipeline)
-      compute_pass.set_bind_group(0U, bind_group, [])
-      compute_pass.dispatch_workgroups(
-        state.indexed_workgroup_count.reinterpret_as_uint(),
-        1U,
-        1U,
-      )
-      bind_group.release()
-    } else {
-      builder.free()
+    state.mesh_culling_data_buffer is Some(mesh_culling_data_buffer) {
+    if phase_kind == MESH3D_PREPROCESS_PHASE_EARLY_OCCLUSION &&
+      state.previous_view_buffer is Some(previous_view_buffer) &&
+      state.depth_pyramid_all_mips_view is Some(depth_pyramid_all_mips_view) &&
+      state.late_indexed_work_item_buffer is Some(late_work_item_buffer) &&
+      state.late_indexed_dispatch_indirect_buffer is Some(late_dispatch_buffer) &&
+      self.mesh3d_preprocess_indirect_early_occlusion_bgl
+      is Some(preprocess_bgl) &&
+      self.mesh3d_preprocess_indirect_early_occlusion_pipeline
+      is Some(preprocess_pipeline) {
+      let builder = @wgpu.BindGroupBuilder::new(max_entries=12UL)
+      let ok = builder.add_buffer(
+          0U,
+          preprocess_view_buffer,
+          size=MESH3D_PREPROCESS_VIEW_BUFFER_SIZE,
+        ) &&
+        builder.add_buffer(
+          2U,
+          previous_view_buffer,
+          size=MESH3D_PREPASS_PREVIOUS_VIEW_BUFFER_SIZE,
+        ) &&
+        builder.add_buffer(3U, mesh_input_buffer, size=mesh_input_size) &&
+        builder.add_buffer(4U, previous_mesh_input_buffer, size=mesh_input_size) &&
+        builder.add_buffer(
+          5U,
+          selected_work_item_buffer,
+          size=indexed_work_item_count.to_uint64() * 8UL,
+        ) &&
+        builder.add_buffer(6U, output_buffer, size=output_size) &&
+        builder.add_buffer(
+          7U,
+          indexed_cpu_metadata_buffer,
+          size=state.indexed_gpu_metadata_count.to_uint64() * 8UL,
+        ) &&
+        builder.add_buffer(
+          8U,
+          indexed_gpu_metadata_buffer,
+          size=indexed_gpu_metadata_size,
+        ) &&
+        builder.add_buffer(
+          9U,
+          mesh_culling_data_buffer,
+          size=mesh_culling_data_size,
+        ) &&
+        builder.add_texture_view(10U, depth_pyramid_all_mips_view) &&
+        builder.add_buffer(
+          11U,
+          late_work_item_buffer,
+          size=if state.late_indexed_work_item_count > 0 {
+            state.late_indexed_work_item_count.to_uint64() * 8UL
+          } else {
+            8UL
+          },
+        ) &&
+        builder.add_buffer(
+          12U,
+          late_dispatch_buffer,
+          size=MESH3D_PREPROCESS_LATE_DISPATCH_PARAMETERS_STRIDE_BYTES,
+        )
+      if ok {
+        let bind_group = builder.finish(
+          self.device,
+          preprocess_bgl,
+          label="mgstudio_mesh3d_preprocess_indexed_early_occlusion_bg",
+        )
+        compute_pass.set_pipeline(preprocess_pipeline)
+        compute_pass.set_bind_group(0U, bind_group, [])
+        compute_pass.dispatch_workgroups(
+          state.indexed_workgroup_count.reinterpret_as_uint(),
+          1U,
+          1U,
+        )
+        bind_group.release()
+      } else {
+        builder.free()
+      }
+    } else if phase_kind == MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION &&
+      state.previous_view_buffer is Some(previous_view_buffer) &&
+      state.depth_pyramid_all_mips_view is Some(depth_pyramid_all_mips_view) &&
+      state.late_indexed_dispatch_indirect_buffer is Some(late_dispatch_buffer) &&
+      self.mesh3d_preprocess_indirect_late_occlusion_bgl is Some(preprocess_bgl) &&
+      self.mesh3d_preprocess_indirect_late_occlusion_pipeline
+      is Some(preprocess_pipeline) {
+      let builder = @wgpu.BindGroupBuilder::new(max_entries=11UL)
+      let ok = builder.add_buffer(
+          0U,
+          preprocess_view_buffer,
+          size=MESH3D_PREPROCESS_VIEW_BUFFER_SIZE,
+        ) &&
+        builder.add_buffer(
+          2U,
+          previous_view_buffer,
+          size=MESH3D_PREPASS_PREVIOUS_VIEW_BUFFER_SIZE,
+        ) &&
+        builder.add_buffer(3U, mesh_input_buffer, size=mesh_input_size) &&
+        builder.add_buffer(4U, previous_mesh_input_buffer, size=mesh_input_size) &&
+        builder.add_buffer(
+          5U,
+          selected_work_item_buffer,
+          size=if indexed_work_item_count > 0 {
+            indexed_work_item_count.to_uint64() * 8UL
+          } else {
+            8UL
+          },
+        ) &&
+        builder.add_buffer(6U, output_buffer, size=output_size) &&
+        builder.add_buffer(
+          7U,
+          indexed_cpu_metadata_buffer,
+          size=state.indexed_gpu_metadata_count.to_uint64() * 8UL,
+        ) &&
+        builder.add_buffer(
+          8U,
+          indexed_gpu_metadata_buffer,
+          size=indexed_gpu_metadata_size,
+        ) &&
+        builder.add_buffer(
+          9U,
+          mesh_culling_data_buffer,
+          size=mesh_culling_data_size,
+        ) &&
+        builder.add_texture_view(10U, depth_pyramid_all_mips_view) &&
+        builder.add_buffer(
+          12U,
+          late_dispatch_buffer,
+          size=MESH3D_PREPROCESS_LATE_DISPATCH_PARAMETERS_STRIDE_BYTES,
+        )
+      if ok {
+        let bind_group = builder.finish(
+          self.device,
+          preprocess_bgl,
+          label="mgstudio_mesh3d_preprocess_indexed_late_occlusion_bg",
+        )
+        compute_pass.set_pipeline(preprocess_pipeline)
+        compute_pass.set_bind_group(0U, bind_group, [])
+        compute_pass.dispatch_workgroups_indirect(late_dispatch_buffer, 0UL)
+        bind_group.release()
+      } else {
+        builder.free()
+      }
+    } else if phase_kind == MESH3D_PREPROCESS_PHASE_MAIN &&
+      self.mesh3d_preprocess_indirect_bgl is Some(preprocess_bgl) &&
+      self.mesh3d_preprocess_indirect_pipeline is Some(preprocess_pipeline) {
+      let builder = @wgpu.BindGroupBuilder::new(max_entries=8UL)
+      let ok = builder.add_buffer(
+          0U,
+          preprocess_view_buffer,
+          size=MESH3D_PREPROCESS_VIEW_BUFFER_SIZE,
+        ) &&
+        builder.add_buffer(3U, mesh_input_buffer, size=mesh_input_size) &&
+        builder.add_buffer(4U, previous_mesh_input_buffer, size=mesh_input_size) &&
+        builder.add_buffer(
+          5U,
+          selected_work_item_buffer,
+          size=indexed_work_item_count.to_uint64() * 8UL,
+        ) &&
+        builder.add_buffer(6U, output_buffer, size=output_size) &&
+        builder.add_buffer(
+          7U,
+          indexed_cpu_metadata_buffer,
+          size=state.indexed_gpu_metadata_count.to_uint64() * 8UL,
+        ) &&
+        builder.add_buffer(
+          8U,
+          indexed_gpu_metadata_buffer,
+          size=indexed_gpu_metadata_size,
+        ) &&
+        builder.add_buffer(
+          9U,
+          mesh_culling_data_buffer,
+          size=mesh_culling_data_size,
+        )
+      if ok {
+        let bind_group = builder.finish(
+          self.device,
+          preprocess_bgl,
+          label="mgstudio_mesh3d_preprocess_indexed_bg",
+        )
+        compute_pass.set_pipeline(preprocess_pipeline)
+        compute_pass.set_bind_group(0U, bind_group, [])
+        compute_pass.dispatch_workgroups(
+          state.indexed_workgroup_count.reinterpret_as_uint(),
+          1U,
+          1U,
+        )
+        bind_group.release()
+      } else {
+        builder.free()
+      }
     }
   }
-  if state.non_indexed_workgroup_count > 0 &&
-    state.non_indexed_work_item_count > 0 &&
+  if non_indexed_work_item_count > 0 &&
     state.preprocess_view_buffer is Some(preprocess_view_buffer) &&
     state.mesh_input_buffer is Some(mesh_input_buffer) &&
     state.previous_mesh_input_buffer is Some(previous_mesh_input_buffer) &&
-    state.non_indexed_work_item_buffer is Some(non_indexed_work_item_buffer) &&
+    non_indexed_work_item_buffer is Some(selected_work_item_buffer) &&
     state.output_buffer is Some(output_buffer) &&
     state.non_indexed_cpu_metadata_buffer
     is Some(non_indexed_cpu_metadata_buffer) &&
     state.non_indexed_gpu_metadata_buffer
     is Some(non_indexed_gpu_metadata_buffer) &&
-    state.mesh_culling_data_buffer is Some(mesh_culling_data_buffer) &&
-    self.mesh3d_preprocess_indirect_bgl is Some(preprocess_indirect_bgl) &&
-    self.mesh3d_preprocess_indirect_pipeline
-    is Some(preprocess_indirect_pipeline) {
-    let builder = @wgpu.BindGroupBuilder::new(max_entries=8UL)
-    let ok = builder.add_buffer(
-        0U,
-        preprocess_view_buffer,
-        size=MESH3D_PREPROCESS_VIEW_BUFFER_SIZE,
-      ) &&
-      builder.add_buffer(3U, mesh_input_buffer, size=mesh_input_size) &&
-      builder.add_buffer(4U, previous_mesh_input_buffer, size=mesh_input_size) &&
-      builder.add_buffer(
-        5U,
-        non_indexed_work_item_buffer,
-        size=state.non_indexed_work_item_count.to_uint64() * 8UL,
-      ) &&
-      builder.add_buffer(6U, output_buffer, size=output_size) &&
-      builder.add_buffer(
-        7U,
-        non_indexed_cpu_metadata_buffer,
-        size=state.non_indexed_gpu_metadata_count.to_uint64() * 8UL,
-      ) &&
-      builder.add_buffer(
-        8U,
-        non_indexed_gpu_metadata_buffer,
-        size=state.non_indexed_gpu_metadata_count.to_uint64() * 12UL,
-      ) &&
-      builder.add_buffer(
-        9U,
-        mesh_culling_data_buffer,
-        size=mesh_culling_data_size,
-      )
-    if ok {
-      let bind_group = builder.finish(
-        self.device,
-        preprocess_indirect_bgl,
-        label="mgstudio_mesh3d_preprocess_non_indexed_bg",
-      )
-      compute_pass.set_pipeline(preprocess_indirect_pipeline)
-      compute_pass.set_bind_group(0U, bind_group, [])
-      compute_pass.dispatch_workgroups(
-        state.non_indexed_workgroup_count.reinterpret_as_uint(),
-        1U,
-        1U,
-      )
-      bind_group.release()
-    } else {
-      builder.free()
+    state.mesh_culling_data_buffer is Some(mesh_culling_data_buffer) {
+    if phase_kind == MESH3D_PREPROCESS_PHASE_EARLY_OCCLUSION &&
+      state.previous_view_buffer is Some(previous_view_buffer) &&
+      state.depth_pyramid_all_mips_view is Some(depth_pyramid_all_mips_view) &&
+      state.late_non_indexed_work_item_buffer is Some(late_work_item_buffer) &&
+      state.late_non_indexed_dispatch_indirect_buffer
+      is Some(late_dispatch_buffer) &&
+      self.mesh3d_preprocess_indirect_early_occlusion_bgl
+      is Some(preprocess_bgl) &&
+      self.mesh3d_preprocess_indirect_early_occlusion_pipeline
+      is Some(preprocess_pipeline) {
+      let builder = @wgpu.BindGroupBuilder::new(max_entries=12UL)
+      let ok = builder.add_buffer(
+          0U,
+          preprocess_view_buffer,
+          size=MESH3D_PREPROCESS_VIEW_BUFFER_SIZE,
+        ) &&
+        builder.add_buffer(
+          2U,
+          previous_view_buffer,
+          size=MESH3D_PREPASS_PREVIOUS_VIEW_BUFFER_SIZE,
+        ) &&
+        builder.add_buffer(3U, mesh_input_buffer, size=mesh_input_size) &&
+        builder.add_buffer(4U, previous_mesh_input_buffer, size=mesh_input_size) &&
+        builder.add_buffer(
+          5U,
+          selected_work_item_buffer,
+          size=non_indexed_work_item_count.to_uint64() * 8UL,
+        ) &&
+        builder.add_buffer(6U, output_buffer, size=output_size) &&
+        builder.add_buffer(
+          7U,
+          non_indexed_cpu_metadata_buffer,
+          size=state.non_indexed_gpu_metadata_count.to_uint64() * 8UL,
+        ) &&
+        builder.add_buffer(
+          8U,
+          non_indexed_gpu_metadata_buffer,
+          size=non_indexed_gpu_metadata_size,
+        ) &&
+        builder.add_buffer(
+          9U,
+          mesh_culling_data_buffer,
+          size=mesh_culling_data_size,
+        ) &&
+        builder.add_texture_view(10U, depth_pyramid_all_mips_view) &&
+        builder.add_buffer(
+          11U,
+          late_work_item_buffer,
+          size=if state.late_non_indexed_work_item_count > 0 {
+            state.late_non_indexed_work_item_count.to_uint64() * 8UL
+          } else {
+            8UL
+          },
+        ) &&
+        builder.add_buffer(
+          12U,
+          late_dispatch_buffer,
+          size=MESH3D_PREPROCESS_LATE_DISPATCH_PARAMETERS_STRIDE_BYTES,
+        )
+      if ok {
+        let bind_group = builder.finish(
+          self.device,
+          preprocess_bgl,
+          label="mgstudio_mesh3d_preprocess_non_indexed_early_occlusion_bg",
+        )
+        compute_pass.set_pipeline(preprocess_pipeline)
+        compute_pass.set_bind_group(0U, bind_group, [])
+        compute_pass.dispatch_workgroups(
+          state.non_indexed_workgroup_count.reinterpret_as_uint(),
+          1U,
+          1U,
+        )
+        bind_group.release()
+      } else {
+        builder.free()
+      }
+    } else if phase_kind == MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION &&
+      state.previous_view_buffer is Some(previous_view_buffer) &&
+      state.depth_pyramid_all_mips_view is Some(depth_pyramid_all_mips_view) &&
+      state.late_non_indexed_dispatch_indirect_buffer
+      is Some(late_dispatch_buffer) &&
+      self.mesh3d_preprocess_indirect_late_occlusion_bgl is Some(preprocess_bgl) &&
+      self.mesh3d_preprocess_indirect_late_occlusion_pipeline
+      is Some(preprocess_pipeline) {
+      let builder = @wgpu.BindGroupBuilder::new(max_entries=11UL)
+      let ok = builder.add_buffer(
+          0U,
+          preprocess_view_buffer,
+          size=MESH3D_PREPROCESS_VIEW_BUFFER_SIZE,
+        ) &&
+        builder.add_buffer(
+          2U,
+          previous_view_buffer,
+          size=MESH3D_PREPASS_PREVIOUS_VIEW_BUFFER_SIZE,
+        ) &&
+        builder.add_buffer(3U, mesh_input_buffer, size=mesh_input_size) &&
+        builder.add_buffer(4U, previous_mesh_input_buffer, size=mesh_input_size) &&
+        builder.add_buffer(
+          5U,
+          selected_work_item_buffer,
+          size=if non_indexed_work_item_count > 0 {
+            non_indexed_work_item_count.to_uint64() * 8UL
+          } else {
+            8UL
+          },
+        ) &&
+        builder.add_buffer(6U, output_buffer, size=output_size) &&
+        builder.add_buffer(
+          7U,
+          non_indexed_cpu_metadata_buffer,
+          size=state.non_indexed_gpu_metadata_count.to_uint64() * 8UL,
+        ) &&
+        builder.add_buffer(
+          8U,
+          non_indexed_gpu_metadata_buffer,
+          size=non_indexed_gpu_metadata_size,
+        ) &&
+        builder.add_buffer(
+          9U,
+          mesh_culling_data_buffer,
+          size=mesh_culling_data_size,
+        ) &&
+        builder.add_texture_view(10U, depth_pyramid_all_mips_view) &&
+        builder.add_buffer(
+          12U,
+          late_dispatch_buffer,
+          size=MESH3D_PREPROCESS_LATE_DISPATCH_PARAMETERS_STRIDE_BYTES,
+        )
+      if ok {
+        let bind_group = builder.finish(
+          self.device,
+          preprocess_bgl,
+          label="mgstudio_mesh3d_preprocess_non_indexed_late_occlusion_bg",
+        )
+        compute_pass.set_pipeline(preprocess_pipeline)
+        compute_pass.set_bind_group(0U, bind_group, [])
+        compute_pass.dispatch_workgroups_indirect(late_dispatch_buffer, 0UL)
+        bind_group.release()
+      } else {
+        builder.free()
+      }
+    } else if phase_kind == MESH3D_PREPROCESS_PHASE_MAIN &&
+      self.mesh3d_preprocess_indirect_bgl is Some(preprocess_bgl) &&
+      self.mesh3d_preprocess_indirect_pipeline is Some(preprocess_pipeline) {
+      let builder = @wgpu.BindGroupBuilder::new(max_entries=8UL)
+      let ok = builder.add_buffer(
+          0U,
+          preprocess_view_buffer,
+          size=MESH3D_PREPROCESS_VIEW_BUFFER_SIZE,
+        ) &&
+        builder.add_buffer(3U, mesh_input_buffer, size=mesh_input_size) &&
+        builder.add_buffer(4U, previous_mesh_input_buffer, size=mesh_input_size) &&
+        builder.add_buffer(
+          5U,
+          selected_work_item_buffer,
+          size=non_indexed_work_item_count.to_uint64() * 8UL,
+        ) &&
+        builder.add_buffer(6U, output_buffer, size=output_size) &&
+        builder.add_buffer(
+          7U,
+          non_indexed_cpu_metadata_buffer,
+          size=state.non_indexed_gpu_metadata_count.to_uint64() * 8UL,
+        ) &&
+        builder.add_buffer(
+          8U,
+          non_indexed_gpu_metadata_buffer,
+          size=non_indexed_gpu_metadata_size,
+        ) &&
+        builder.add_buffer(
+          9U,
+          mesh_culling_data_buffer,
+          size=mesh_culling_data_size,
+        )
+      if ok {
+        let bind_group = builder.finish(
+          self.device,
+          preprocess_bgl,
+          label="mgstudio_mesh3d_preprocess_non_indexed_bg",
+        )
+        compute_pass.set_pipeline(preprocess_pipeline)
+        compute_pass.set_bind_group(0U, bind_group, [])
+        compute_pass.dispatch_workgroups(
+          state.non_indexed_workgroup_count.reinterpret_as_uint(),
+          1U,
+          1U,
+        )
+        bind_group.release()
+      } else {
+        builder.free()
+      }
     }
   }
+  compute_pass.end()
+  compute_pass.release()
 }
 
 ///|
@@ -2964,6 +4092,7 @@ pub fn GpuBackend::build_mesh3d_indirect_parameters(
   self : GpuBackend,
   camera_key_hi : Int,
   camera_key_lo : Int,
+  phase_kind : Int,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else { return }
   guard mesh3d_preprocess_camera_upload_state_index(
@@ -3012,9 +4141,17 @@ pub fn GpuBackend::build_mesh3d_indirect_parameters(
     state.indexed_batch_set_buffer is Some(indexed_batch_set_buffer) &&
     state.indexed_indirect_parameters_buffer
     is Some(indexed_indirect_parameters_buffer) &&
-    self.mesh3d_preprocess_build_indexed_indirect_bgl is Some(indexed_bgl) &&
-    self.mesh3d_preprocess_build_indexed_indirect_pipeline
-    is Some(indexed_pipeline) {
+    self.mesh3d_preprocess_build_indexed_indirect_bgl is Some(indexed_bgl) {
+    let indexed_pipeline = if phase_kind == MESH3D_BUILD_INDIRECT_PHASE_EARLY {
+      self.mesh3d_preprocess_build_indexed_indirect_early_pipeline
+    } else {
+      self.mesh3d_preprocess_build_indexed_indirect_pipeline
+    }
+    guard indexed_pipeline is Some(indexed_pipeline) else {
+      compute_pass.end()
+      compute_pass.release()
+      return
+    }
     let builder = @wgpu.BindGroupBuilder::new(max_entries=5UL)
     let ok = builder.add_buffer(
         0U,
@@ -3107,9 +4244,18 @@ pub fn GpuBackend::build_mesh3d_indirect_parameters(
     state.non_indexed_indirect_parameters_buffer
     is Some(non_indexed_indirect_parameters_buffer) &&
     self.mesh3d_preprocess_build_non_indexed_indirect_bgl
-    is Some(non_indexed_bgl) &&
-    self.mesh3d_preprocess_build_non_indexed_indirect_pipeline
-    is Some(non_indexed_pipeline) {
+    is Some(non_indexed_bgl) {
+    let non_indexed_pipeline = if phase_kind ==
+      MESH3D_BUILD_INDIRECT_PHASE_EARLY {
+      self.mesh3d_preprocess_build_non_indexed_indirect_early_pipeline
+    } else {
+      self.mesh3d_preprocess_build_non_indexed_indirect_pipeline
+    }
+    guard non_indexed_pipeline is Some(non_indexed_pipeline) else {
+      compute_pass.end()
+      compute_pass.release()
+      return
+    }
     let builder = @wgpu.BindGroupBuilder::new(max_entries=5UL)
     let ok = builder.add_buffer(
         0U,
@@ -3166,6 +4312,95 @@ pub fn GpuBackend::build_mesh3d_indirect_parameters(
   }
   compute_pass.end()
   compute_pass.release()
+}
+
+///|
+pub fn GpuBackend::downsample_mesh3d_depth_pyramid(
+  self : GpuBackend,
+  camera_key_hi : Int,
+  camera_key_lo : Int,
+) -> Unit raise GpuBackendError {
+  guard self.frame is Some(frame) else { return }
+  guard self.depth_view is Some(depth_view) else { return }
+  guard mesh3d_preprocess_camera_upload_state_index(
+      self, camera_key_hi, camera_key_lo,
+    )
+    is Some(state_index) else {
+    return
+  }
+  ensure_mesh3d_preprocess_indirect_resources(self)
+  let state = self.mesh3d_preprocess_camera_upload_states[state_index]
+  guard state.depth_pyramid_mip_count > 1 else { return }
+  guard self.mesh3d_preprocess_depth_pyramid_dummy_view is Some(dummy_view) else {
+    return
+  }
+  guard self.mesh3d_preprocess_depth_pyramid_sampler is Some(sampler) else {
+    return
+  }
+  guard self.mesh3d_preprocess_downsample_depth_bgl is Some(downsample_bgl) else {
+    return
+  }
+  guard self.mesh3d_preprocess_downsample_depth_first_pipeline
+    is Some(first_pipeline) else {
+    return
+  }
+  guard self.mesh3d_preprocess_downsample_depth_second_pipeline
+    is Some(second_pipeline) else {
+    return
+  }
+  let mip_views = state.depth_pyramid_mips
+  let mip_or_dummy = fn(index : Int) -> @wgpu.TextureView {
+    if index >= 0 && index < mip_views.length() {
+      mip_views[index]
+    } else {
+      dummy_view
+    }
+  }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=14UL)
+  let ok = builder.add_texture_view(0U, depth_view) &&
+    builder.add_texture_view(1U, mip_or_dummy(1)) &&
+    builder.add_texture_view(2U, mip_or_dummy(2)) &&
+    builder.add_texture_view(3U, mip_or_dummy(3)) &&
+    builder.add_texture_view(4U, mip_or_dummy(4)) &&
+    builder.add_texture_view(5U, mip_or_dummy(5)) &&
+    builder.add_texture_view(6U, mip_or_dummy(6)) &&
+    builder.add_texture_view(7U, mip_or_dummy(7)) &&
+    builder.add_texture_view(8U, mip_or_dummy(8)) &&
+    builder.add_texture_view(9U, mip_or_dummy(9)) &&
+    builder.add_texture_view(10U, mip_or_dummy(10)) &&
+    builder.add_texture_view(11U, mip_or_dummy(11)) &&
+    builder.add_texture_view(12U, mip_or_dummy(12)) &&
+    builder.add_sampler(13U, sampler)
+  if !ok {
+    builder.free()
+    return
+  }
+  let bind_group = builder.finish(
+    self.device,
+    downsample_bgl,
+    label="mgstudio_mesh3d_preprocess_downsample_depth_bg",
+  )
+  let dispatch_x = (
+      mesh3d_preprocess_depth_pyramid_dispatch_size(state.depth_pyramid_width) +
+      63U
+    ) /
+    64U
+  let dispatch_y = (
+      mesh3d_preprocess_depth_pyramid_dispatch_size(state.depth_pyramid_height) +
+      63U
+    ) /
+    64U
+  let compute_pass = frame.encoder.begin_compute_pass()
+  compute_pass.set_bind_group0(bind_group)
+  compute_pass.set_pipeline(first_pipeline)
+  compute_pass.dispatch_workgroups(dispatch_x, dispatch_y, 1U)
+  if state.depth_pyramid_mip_count >= 7 {
+    compute_pass.set_pipeline(second_pipeline)
+    compute_pass.dispatch_workgroups(1U, 1U, 1U)
+  }
+  compute_pass.end()
+  compute_pass.release()
+  bind_group.release()
 }
 
 ///|

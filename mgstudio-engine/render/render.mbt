@@ -304,6 +304,61 @@ pub(all) struct HostMesh3dPreprocessMeshInput {
 }
 
 ///|
+pub type HostGpuClipMatrix = @renderer.GpuClipMatrix
+
+///|
+pub(all) struct HostMesh3dPreprocessFrustumPlane {
+  normal_x : Float
+  normal_y : Float
+  normal_z : Float
+  distance : Float
+}
+
+///|
+pub(all) struct HostMesh3dPreprocessView {
+  clip_from_world : HostGpuClipMatrix
+  unjittered_clip_from_world : HostGpuClipMatrix
+  world_from_clip : HostGpuClipMatrix
+  world_from_view : HostGpuClipMatrix
+  view_from_world : HostGpuClipMatrix
+  clip_from_view : HostGpuClipMatrix
+  view_from_clip : HostGpuClipMatrix
+  world_position_x : Float
+  world_position_y : Float
+  world_position_z : Float
+  exposure : Float
+  viewport_x : Float
+  viewport_y : Float
+  viewport_width : Float
+  viewport_height : Float
+  main_pass_viewport_x : Float
+  main_pass_viewport_y : Float
+  main_pass_viewport_width : Float
+  main_pass_viewport_height : Float
+  frustum_planes : Array[HostMesh3dPreprocessFrustumPlane]
+  mip_bias : Float
+}
+
+///|
+pub(all) struct HostMesh3dPreprocessPreviousView {
+  view_from_world : HostGpuClipMatrix
+  clip_from_world : HostGpuClipMatrix
+  clip_from_view : HostGpuClipMatrix
+  world_from_clip : HostGpuClipMatrix
+  view_from_clip : HostGpuClipMatrix
+}
+
+///|
+pub(all) struct HostMesh3dPreprocessMeshCullingData {
+  aabb_center_x : Float
+  aabb_center_y : Float
+  aabb_center_z : Float
+  aabb_half_extents_x : Float
+  aabb_half_extents_y : Float
+  aabb_half_extents_z : Float
+}
+
+///|
 pub(all) struct HostMesh3dPreprocessIndirectParametersCpuMetadata {
   base_output_index : Int
   batch_set_index : Int
@@ -333,6 +388,9 @@ pub(all) struct HostMesh3dPreprocessDispatchMetadata {
 
 ///|
 pub(all) struct HostMesh3dPreprocessCameraPayload {
+  view : HostMesh3dPreprocessView
+  previous_view : HostMesh3dPreprocessPreviousView
+  mesh_culling_data : Array[HostMesh3dPreprocessMeshCullingData]
   mesh_inputs : Array[HostMesh3dPreprocessMeshInput]
   direct_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
   indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
@@ -357,6 +415,24 @@ pub(all) struct HostMesh3dPreprocessCameraPayload {
 }
 
 ///|
+pub const MESH3D_PREPROCESS_PHASE_MAIN : Int = @renderer.MESH3D_PREPROCESS_PHASE_MAIN
+
+///|
+pub const MESH3D_PREPROCESS_INPUT_FLAG_NO_FRUSTUM_CULLING : UInt = 1U << 28
+
+///|
+pub const MESH3D_PREPROCESS_PHASE_EARLY_OCCLUSION : Int = @renderer.MESH3D_PREPROCESS_PHASE_EARLY_OCCLUSION
+
+///|
+pub const MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION : Int = @renderer.MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION
+
+///|
+pub const MESH3D_BUILD_INDIRECT_PHASE_MAIN : Int = @renderer.MESH3D_BUILD_INDIRECT_PHASE_MAIN
+
+///|
+pub const MESH3D_BUILD_INDIRECT_PHASE_EARLY : Int = @renderer.MESH3D_BUILD_INDIRECT_PHASE_EARLY
+
+///|
 pub fn host_gpu_request_device() -> HostGpuDevice {
   @renderer.request_device()
 }
@@ -369,6 +445,31 @@ pub fn host_gpu_get_queue(device : HostGpuDevice) -> HostGpuQueue {
 ///|
 pub fn register_wgsl_source(rel_path : String, source : String) -> Unit {
   @renderer.register_wgsl_source(rel_path, source)
+}
+
+///|
+pub fn host_gpu_clip_matrix(
+  x_axis_x : Float,
+  x_axis_y : Float,
+  x_axis_z : Float,
+  x_axis_w : Float,
+  y_axis_x : Float,
+  y_axis_y : Float,
+  y_axis_z : Float,
+  y_axis_w : Float,
+  z_axis_x : Float,
+  z_axis_y : Float,
+  z_axis_z : Float,
+  z_axis_w : Float,
+  w_axis_x : Float,
+  w_axis_y : Float,
+  w_axis_z : Float,
+  w_axis_w : Float,
+) -> HostGpuClipMatrix {
+  @renderer.gpu_clip_matrix(
+    x_axis_x, x_axis_y, x_axis_z, x_axis_w, y_axis_x, y_axis_y, y_axis_z, y_axis_w,
+    z_axis_x, z_axis_y, z_axis_z, z_axis_w, w_axis_x, w_axis_y, w_axis_z, w_axis_w,
+  )
 }
 
 ///|
@@ -478,6 +579,78 @@ fn host_mesh3d_preprocess_mesh_input_to_renderer(
 }
 
 ///|
+fn host_mesh3d_preprocess_frustum_plane_to_renderer(
+  plane : HostMesh3dPreprocessFrustumPlane,
+) -> @renderer.HostMesh3dPreprocessFrustumPlane {
+  @renderer.HostMesh3dPreprocessFrustumPlane::{
+    normal_x: plane.normal_x,
+    normal_y: plane.normal_y,
+    normal_z: plane.normal_z,
+    distance: plane.distance,
+  }
+}
+
+///|
+fn host_mesh3d_preprocess_view_to_renderer(
+  view : HostMesh3dPreprocessView,
+) -> @renderer.HostMesh3dPreprocessView {
+  let frustum_planes : Array[@renderer.HostMesh3dPreprocessFrustumPlane] = []
+  for plane in view.frustum_planes {
+    frustum_planes.push(host_mesh3d_preprocess_frustum_plane_to_renderer(plane))
+  }
+  @renderer.HostMesh3dPreprocessView::{
+    clip_from_world: view.clip_from_world,
+    unjittered_clip_from_world: view.unjittered_clip_from_world,
+    world_from_clip: view.world_from_clip,
+    world_from_view: view.world_from_view,
+    view_from_world: view.view_from_world,
+    clip_from_view: view.clip_from_view,
+    view_from_clip: view.view_from_clip,
+    world_position_x: view.world_position_x,
+    world_position_y: view.world_position_y,
+    world_position_z: view.world_position_z,
+    exposure: view.exposure,
+    viewport_x: view.viewport_x,
+    viewport_y: view.viewport_y,
+    viewport_width: view.viewport_width,
+    viewport_height: view.viewport_height,
+    main_pass_viewport_x: view.main_pass_viewport_x,
+    main_pass_viewport_y: view.main_pass_viewport_y,
+    main_pass_viewport_width: view.main_pass_viewport_width,
+    main_pass_viewport_height: view.main_pass_viewport_height,
+    frustum_planes,
+    mip_bias: view.mip_bias,
+  }
+}
+
+///|
+fn host_mesh3d_preprocess_previous_view_to_renderer(
+  view : HostMesh3dPreprocessPreviousView,
+) -> @renderer.HostMesh3dPreprocessPreviousView {
+  @renderer.HostMesh3dPreprocessPreviousView::{
+    view_from_world: view.view_from_world,
+    clip_from_world: view.clip_from_world,
+    clip_from_view: view.clip_from_view,
+    world_from_clip: view.world_from_clip,
+    view_from_clip: view.view_from_clip,
+  }
+}
+
+///|
+fn host_mesh3d_preprocess_mesh_culling_data_to_renderer(
+  data : HostMesh3dPreprocessMeshCullingData,
+) -> @renderer.HostMesh3dPreprocessMeshCullingData {
+  @renderer.HostMesh3dPreprocessMeshCullingData::{
+    aabb_center_x: data.aabb_center_x,
+    aabb_center_y: data.aabb_center_y,
+    aabb_center_z: data.aabb_center_z,
+    aabb_half_extents_x: data.aabb_half_extents_x,
+    aabb_half_extents_y: data.aabb_half_extents_y,
+    aabb_half_extents_z: data.aabb_half_extents_z,
+  }
+}
+
+///|
 fn host_mesh3d_preprocess_cpu_metadata_to_renderer(
   metadata : HostMesh3dPreprocessIndirectParametersCpuMetadata,
 ) -> @renderer.HostMesh3dPreprocessIndirectParametersCpuMetadata {
@@ -514,6 +687,12 @@ pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(
   camera_key_lo~ : Int,
   payload~ : HostMesh3dPreprocessCameraPayload,
 ) -> Unit {
+  let mesh_culling_data : Array[@renderer.HostMesh3dPreprocessMeshCullingData] = []
+  for item in payload.mesh_culling_data {
+    mesh_culling_data.push(
+      host_mesh3d_preprocess_mesh_culling_data_to_renderer(item),
+    )
+  }
   let mesh_inputs : Array[@renderer.HostMesh3dPreprocessMeshInput] = []
   for input in payload.mesh_inputs {
     mesh_inputs.push(host_mesh3d_preprocess_mesh_input_to_renderer(input))
@@ -611,6 +790,11 @@ pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(
     camera_key_hi~,
     camera_key_lo~,
     payload=@renderer.HostMesh3dPreprocessCameraPayload::{
+      view: host_mesh3d_preprocess_view_to_renderer(payload.view),
+      previous_view: host_mesh3d_preprocess_previous_view_to_renderer(
+        payload.previous_view,
+      ),
+      mesh_culling_data,
       mesh_inputs,
       direct_work_items,
       indexed_work_items,
@@ -632,16 +816,30 @@ pub fn host_gpu_upload_mesh3d_preprocess_camera_payload(
 pub fn host_gpu_build_mesh3d_indirect_parameters(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,
+  phase_kind? : Int = MESH3D_BUILD_INDIRECT_PHASE_MAIN,
 ) -> Unit {
-  @renderer.build_mesh3d_indirect_parameters(camera_key_hi~, camera_key_lo~)
+  @renderer.build_mesh3d_indirect_parameters(
+    camera_key_hi~,
+    camera_key_lo~,
+    phase_kind~,
+  )
 }
 
 ///|
 pub fn host_gpu_preprocess_mesh3d(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,
+  phase_kind? : Int = MESH3D_PREPROCESS_PHASE_MAIN,
 ) -> Unit {
-  @renderer.preprocess_mesh3d(camera_key_hi~, camera_key_lo~)
+  @renderer.preprocess_mesh3d(camera_key_hi~, camera_key_lo~, phase_kind~)
+}
+
+///|
+pub fn host_gpu_downsample_mesh3d_depth_pyramid(
+  camera_key_hi~ : Int,
+  camera_key_lo~ : Int,
+) -> Unit {
+  @renderer.downsample_mesh3d_depth_pyramid(camera_key_hi~, camera_key_lo~)
 }
 
 ///|

@@ -188,25 +188,50 @@ pub struct GpuClipMatrix {
 }
 
 ///|
-fn gpu_clip_matrix_identity() -> GpuClipMatrix {
+pub fn gpu_clip_matrix(
+  x_axis_x : Float,
+  x_axis_y : Float,
+  x_axis_z : Float,
+  x_axis_w : Float,
+  y_axis_x : Float,
+  y_axis_y : Float,
+  y_axis_z : Float,
+  y_axis_w : Float,
+  z_axis_x : Float,
+  z_axis_y : Float,
+  z_axis_z : Float,
+  z_axis_w : Float,
+  w_axis_x : Float,
+  w_axis_y : Float,
+  w_axis_z : Float,
+  w_axis_w : Float,
+) -> GpuClipMatrix {
   GpuClipMatrix::{
-    x_axis_x: 1.0F,
-    x_axis_y: 0.0F,
-    x_axis_z: 0.0F,
-    x_axis_w: 0.0F,
-    y_axis_x: 0.0F,
-    y_axis_y: 1.0F,
-    y_axis_z: 0.0F,
-    y_axis_w: 0.0F,
-    z_axis_x: 0.0F,
-    z_axis_y: 0.0F,
-    z_axis_z: 1.0F,
-    z_axis_w: 0.0F,
-    w_axis_x: 0.0F,
-    w_axis_y: 0.0F,
-    w_axis_z: 0.0F,
-    w_axis_w: 1.0F,
+    x_axis_x,
+    x_axis_y,
+    x_axis_z,
+    x_axis_w,
+    y_axis_x,
+    y_axis_y,
+    y_axis_z,
+    y_axis_w,
+    z_axis_x,
+    z_axis_y,
+    z_axis_z,
+    z_axis_w,
+    w_axis_x,
+    w_axis_y,
+    w_axis_z,
+    w_axis_w,
   }
+}
+
+///|
+fn gpu_clip_matrix_identity() -> GpuClipMatrix {
+  gpu_clip_matrix(
+    1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F,
+    0.0F, 0.0F, 1.0F,
+  )
 }
 
 ///|
@@ -313,6 +338,8 @@ struct GpuMesh3dPreprocessCameraUploadState {
   mut motion_vector_mesh_bind_group : @wgpu.BindGroup?
   mut preprocess_view_buffer : @wgpu.Buffer?
   mut preprocess_view_capacity : UInt64
+  mut previous_view_buffer : @wgpu.Buffer?
+  mut previous_view_capacity : UInt64
   mut mesh_culling_data_buffer : @wgpu.Buffer?
   mut mesh_culling_data_capacity : UInt64
   mut direct_work_item_buffer : @wgpu.Buffer?
@@ -326,8 +353,14 @@ struct GpuMesh3dPreprocessCameraUploadState {
   mut non_indexed_work_item_count : Int
   mut late_indexed_work_item_buffer : @wgpu.Buffer?
   mut late_indexed_work_item_capacity : UInt64
+  mut late_indexed_work_item_count : Int
   mut late_non_indexed_work_item_buffer : @wgpu.Buffer?
   mut late_non_indexed_work_item_capacity : UInt64
+  mut late_non_indexed_work_item_count : Int
+  mut late_indexed_dispatch_indirect_buffer : @wgpu.Buffer?
+  mut late_indexed_dispatch_indirect_capacity : UInt64
+  mut late_non_indexed_dispatch_indirect_buffer : @wgpu.Buffer?
+  mut late_non_indexed_dispatch_indirect_capacity : UInt64
   mut indexed_cpu_metadata_buffer : @wgpu.Buffer?
   mut indexed_cpu_metadata_capacity : UInt64
   mut indexed_gpu_metadata_buffer : @wgpu.Buffer?
@@ -355,6 +388,12 @@ struct GpuMesh3dPreprocessCameraUploadState {
   mut direct_workgroup_count : Int
   mut indexed_workgroup_count : Int
   mut non_indexed_workgroup_count : Int
+  mut depth_pyramid_texture : @wgpu.Texture?
+  mut depth_pyramid_all_mips_view : @wgpu.TextureView?
+  mut depth_pyramid_mips : Array[@wgpu.TextureView]
+  mut depth_pyramid_width : Int
+  mut depth_pyramid_height : Int
+  mut depth_pyramid_mip_count : Int
 }
 
 ///|
@@ -509,12 +548,27 @@ pub struct GpuBackend {
   mut mesh3d_preprocess_indirect_bgl : @wgpu.BindGroupLayout?
   mut mesh3d_preprocess_indirect_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh3d_preprocess_indirect_pipeline : @wgpu.ComputePipeline?
+  mut mesh3d_preprocess_indirect_early_occlusion_bgl : @wgpu.BindGroupLayout?
+  mut mesh3d_preprocess_indirect_early_occlusion_pipeline_layout : @wgpu.PipelineLayout?
+  mut mesh3d_preprocess_indirect_early_occlusion_pipeline : @wgpu.ComputePipeline?
+  mut mesh3d_preprocess_indirect_late_occlusion_bgl : @wgpu.BindGroupLayout?
+  mut mesh3d_preprocess_indirect_late_occlusion_pipeline_layout : @wgpu.PipelineLayout?
+  mut mesh3d_preprocess_indirect_late_occlusion_pipeline : @wgpu.ComputePipeline?
   mut mesh3d_preprocess_build_indexed_indirect_bgl : @wgpu.BindGroupLayout?
   mut mesh3d_preprocess_build_indexed_indirect_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh3d_preprocess_build_indexed_indirect_pipeline : @wgpu.ComputePipeline?
+  mut mesh3d_preprocess_build_indexed_indirect_early_pipeline : @wgpu.ComputePipeline?
   mut mesh3d_preprocess_build_non_indexed_indirect_bgl : @wgpu.BindGroupLayout?
   mut mesh3d_preprocess_build_non_indexed_indirect_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh3d_preprocess_build_non_indexed_indirect_pipeline : @wgpu.ComputePipeline?
+  mut mesh3d_preprocess_build_non_indexed_indirect_early_pipeline : @wgpu.ComputePipeline?
+  mut mesh3d_preprocess_depth_pyramid_dummy_texture : @wgpu.Texture?
+  mut mesh3d_preprocess_depth_pyramid_dummy_view : @wgpu.TextureView?
+  mut mesh3d_preprocess_downsample_depth_bgl : @wgpu.BindGroupLayout?
+  mut mesh3d_preprocess_downsample_depth_pipeline_layout : @wgpu.PipelineLayout?
+  mut mesh3d_preprocess_downsample_depth_first_pipeline : @wgpu.ComputePipeline?
+  mut mesh3d_preprocess_downsample_depth_second_pipeline : @wgpu.ComputePipeline?
+  mut mesh3d_preprocess_depth_pyramid_sampler : @wgpu.Sampler?
   mut mesh3d_motion_vector_bgl_view : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_empty : @wgpu.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_mesh : @wgpu.BindGroupLayout?
@@ -911,12 +965,27 @@ pub fn GpuBackend::new(
     mesh3d_preprocess_indirect_bgl: None,
     mesh3d_preprocess_indirect_pipeline_layout: None,
     mesh3d_preprocess_indirect_pipeline: None,
+    mesh3d_preprocess_indirect_early_occlusion_bgl: None,
+    mesh3d_preprocess_indirect_early_occlusion_pipeline_layout: None,
+    mesh3d_preprocess_indirect_early_occlusion_pipeline: None,
+    mesh3d_preprocess_indirect_late_occlusion_bgl: None,
+    mesh3d_preprocess_indirect_late_occlusion_pipeline_layout: None,
+    mesh3d_preprocess_indirect_late_occlusion_pipeline: None,
     mesh3d_preprocess_build_indexed_indirect_bgl: None,
     mesh3d_preprocess_build_indexed_indirect_pipeline_layout: None,
     mesh3d_preprocess_build_indexed_indirect_pipeline: None,
+    mesh3d_preprocess_build_indexed_indirect_early_pipeline: None,
     mesh3d_preprocess_build_non_indexed_indirect_bgl: None,
     mesh3d_preprocess_build_non_indexed_indirect_pipeline_layout: None,
     mesh3d_preprocess_build_non_indexed_indirect_pipeline: None,
+    mesh3d_preprocess_build_non_indexed_indirect_early_pipeline: None,
+    mesh3d_preprocess_depth_pyramid_dummy_texture: None,
+    mesh3d_preprocess_depth_pyramid_dummy_view: None,
+    mesh3d_preprocess_downsample_depth_bgl: None,
+    mesh3d_preprocess_downsample_depth_pipeline_layout: None,
+    mesh3d_preprocess_downsample_depth_first_pipeline: None,
+    mesh3d_preprocess_downsample_depth_second_pipeline: None,
+    mesh3d_preprocess_depth_pyramid_sampler: None,
     mesh3d_motion_vector_bgl_view: None,
     mesh3d_motion_vector_bgl_empty: None,
     mesh3d_motion_vector_bgl_mesh: None,

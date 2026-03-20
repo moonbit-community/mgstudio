@@ -4657,6 +4657,195 @@ fn render3d_host_preprocess_batch_set(
 }
 
 ///|
+fn render3d_host_preprocess_view_frustum_planes(
+  projection : Projection,
+  camera_transform : @transform.Transform,
+) -> Array[@render.HostMesh3dPreprocessFrustumPlane] {
+  let planes : Array[@render.HostMesh3dPreprocessFrustumPlane] = []
+  for half_space in projection.compute_frustum(camera_transform).half_spaces {
+    let normal_d = half_space.normal_d
+    planes.push(@render.HostMesh3dPreprocessFrustumPlane::{
+      normal_x: normal_d.x,
+      normal_y: normal_d.y,
+      normal_z: normal_d.z,
+      distance: normal_d.w,
+    })
+  }
+  planes
+}
+
+///|
+fn render3d_host_preprocess_view(
+  projection : Projection,
+  pass_projection : Render3dPassProjection,
+  camera_transform : @transform.Transform,
+  viewport_x : Int,
+  viewport_y : Int,
+  viewport_width : Int,
+  viewport_height : Int,
+  camera_exposure_value : Float,
+) -> @render.HostMesh3dPreprocessView {
+  let clip_from_world = render3d_pass_projection_clip_from_world(
+    pass_projection, camera_transform,
+  )
+  let unjittered_clip_from_world = render3d_pass_projection_unjittered_clip_from_world(
+    pass_projection, camera_transform,
+  )
+  let view_from_world = render3d_view_from_world_matrix(camera_transform)
+  let world_from_view = render3d_world_from_view_matrix(camera_transform)
+  let world_from_clip = match
+    render3d_projection_matrix_inverse(clip_from_world) {
+    Some(value) => value
+    None => render3d_projection_matrix_identity()
+  }
+  let view_from_clip = match
+    render3d_projection_matrix_inverse(pass_projection.clip_from_view) {
+    Some(value) => value
+    None => render3d_projection_matrix_identity()
+  }
+  @render.HostMesh3dPreprocessView::{
+    clip_from_world: render3d_host_gpu_clip_matrix(clip_from_world),
+    unjittered_clip_from_world: render3d_host_gpu_clip_matrix(
+      unjittered_clip_from_world,
+    ),
+    world_from_clip: render3d_host_gpu_clip_matrix(world_from_clip),
+    world_from_view: render3d_host_gpu_clip_matrix(world_from_view),
+    view_from_world: render3d_host_gpu_clip_matrix(view_from_world),
+    clip_from_view: render3d_host_gpu_clip_matrix(
+      pass_projection.clip_from_view,
+    ),
+    view_from_clip: render3d_host_gpu_clip_matrix(view_from_clip),
+    world_position_x: camera_transform.translation.x,
+    world_position_y: camera_transform.translation.y,
+    world_position_z: camera_transform.translation.z,
+    exposure: camera_exposure_value,
+    viewport_x: Float::from_double(viewport_x.to_double()),
+    viewport_y: Float::from_double(viewport_y.to_double()),
+    viewport_width: Float::from_double(viewport_width.to_double()),
+    viewport_height: Float::from_double(viewport_height.to_double()),
+    main_pass_viewport_x: Float::from_double(viewport_x.to_double()),
+    main_pass_viewport_y: Float::from_double(viewport_y.to_double()),
+    main_pass_viewport_width: Float::from_double(viewport_width.to_double()),
+    main_pass_viewport_height: Float::from_double(viewport_height.to_double()),
+    frustum_planes: render3d_host_preprocess_view_frustum_planes(
+      projection, camera_transform,
+    ),
+    mip_bias: 0.0F,
+  }
+}
+
+///|
+fn render3d_projection_matrix_identity() -> ProjectionMatrix3d {
+  ProjectionMatrix3d::from_cols(
+    @math.Vec4::new(1.0F, 0.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 1.0F, 0.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 1.0F, 0.0F),
+    @math.Vec4::new(0.0F, 0.0F, 0.0F, 1.0F),
+  )
+}
+
+///|
+fn render3d_host_preprocess_previous_view(
+  pass_projection : Render3dPassProjection,
+  previous_transform : @transform.Transform,
+  previous_clip_from_world : ProjectionMatrix3d?,
+) -> @render.HostMesh3dPreprocessPreviousView {
+  let resolved_previous_view_from_world = render3d_view_from_world_matrix(
+    previous_transform,
+  )
+  let resolved_previous_clip_from_world = match previous_clip_from_world {
+    Some(value) => value
+    None =>
+      render3d_pass_projection_clip_from_world(
+        pass_projection, previous_transform,
+      )
+  }
+  let resolved_previous_world_from_clip = match
+    render3d_projection_matrix_inverse(resolved_previous_clip_from_world) {
+    Some(value) => value
+    None => render3d_projection_matrix_identity()
+  }
+  let resolved_previous_world_from_view = render3d_world_from_view_matrix(
+    previous_transform,
+  )
+  let resolved_previous_clip_from_view = resolved_previous_clip_from_world.mul(
+    resolved_previous_world_from_view,
+  )
+  let resolved_previous_view_from_clip = match
+    render3d_projection_matrix_inverse(resolved_previous_clip_from_view) {
+    Some(value) => value
+    None => render3d_projection_matrix_identity()
+  }
+  @render.HostMesh3dPreprocessPreviousView::{
+    view_from_world: render3d_host_gpu_clip_matrix(
+      resolved_previous_view_from_world,
+    ),
+    clip_from_world: render3d_host_gpu_clip_matrix(
+      resolved_previous_clip_from_world,
+    ),
+    clip_from_view: render3d_host_gpu_clip_matrix(
+      resolved_previous_clip_from_view,
+    ),
+    world_from_clip: render3d_host_gpu_clip_matrix(
+      resolved_previous_world_from_clip,
+    ),
+    view_from_clip: render3d_host_gpu_clip_matrix(
+      resolved_previous_view_from_clip,
+    ),
+  }
+}
+
+///|
+fn render3d_host_preprocess_mesh_culling_data(
+  draw_item : MeshPhaseItem3d,
+  meshes : Array[ExtractedMesh3d],
+) -> @render.HostMesh3dPreprocessMeshCullingData {
+  if draw_item.extracted_index < 0 ||
+    draw_item.extracted_index >= meshes.length() {
+    return @render.HostMesh3dPreprocessMeshCullingData::{
+      aabb_center_x: 0.0F,
+      aabb_center_y: 0.0F,
+      aabb_center_z: 0.0F,
+      aabb_half_extents_x: 0.0F,
+      aabb_half_extents_y: 0.0F,
+      aabb_half_extents_z: 0.0F,
+    }
+  }
+  let mesh = meshes[draw_item.extracted_index].payload
+  match render3d_mesh_handle_local_aabb(mesh.mesh_handle) {
+    Some((min_corner, max_corner)) => {
+      let center = @math.Vec3::new(
+        (min_corner.x + max_corner.x) * 0.5F,
+        (min_corner.y + max_corner.y) * 0.5F,
+        (min_corner.z + max_corner.z) * 0.5F,
+      )
+      let half_extents = @math.Vec3::new(
+        (max_corner.x - min_corner.x) * 0.5F,
+        (max_corner.y - min_corner.y) * 0.5F,
+        (max_corner.z - min_corner.z) * 0.5F,
+      )
+      @render.HostMesh3dPreprocessMeshCullingData::{
+        aabb_center_x: center.x,
+        aabb_center_y: center.y,
+        aabb_center_z: center.z,
+        aabb_half_extents_x: half_extents.x,
+        aabb_half_extents_y: half_extents.y,
+        aabb_half_extents_z: half_extents.z,
+      }
+    }
+    None =>
+      @render.HostMesh3dPreprocessMeshCullingData::{
+        aabb_center_x: 0.0F,
+        aabb_center_y: 0.0F,
+        aabb_center_z: 0.0F,
+        aabb_half_extents_x: 0.0F,
+        aabb_half_extents_y: 0.0F,
+        aabb_half_extents_z: 0.0F,
+      }
+  }
+}
+
+///|
 fn render3d_mesh_handle_preprocess_counts(
   mesh_handle : @asset.Handle[@mesh.Mesh],
 ) -> (Int, Int, Int) {
@@ -4676,6 +4865,96 @@ fn render3d_mesh_handle_preprocess_counts(
       }
     None => (0, 0, 0)
   }
+}
+
+///|
+fn render3d_mesh_handle_local_aabb(
+  mesh_handle : @asset.Handle[@mesh.Mesh],
+) -> (@math.Vec3, @math.Vec3)? {
+  match @sprite.render_mesh_asset_get(mesh_handle) {
+    Some(mesh_asset) =>
+      match mesh_asset.geometry {
+        @mesh.MeshGeometry::Geometry3d(geometry3d) => {
+          guard geometry3d.positions.length() > 0 else { return None }
+          let mut min_x = geometry3d.positions[0].x
+          let mut min_y = geometry3d.positions[0].y
+          let mut min_z = geometry3d.positions[0].z
+          let mut max_x = geometry3d.positions[0].x
+          let mut max_y = geometry3d.positions[0].y
+          let mut max_z = geometry3d.positions[0].z
+          for i in 1..<geometry3d.positions.length() {
+            let p = geometry3d.positions[i]
+            min_x = minf(min_x, p.x)
+            min_y = minf(min_y, p.y)
+            min_z = minf(min_z, p.z)
+            max_x = maxf(max_x, p.x)
+            max_y = maxf(max_y, p.y)
+            max_z = maxf(max_z, p.z)
+          }
+          Some(
+            (
+              @math.Vec3::new(min_x, min_y, min_z),
+              @math.Vec3::new(max_x, max_y, max_z),
+            ),
+          )
+        }
+        _ => None
+      }
+    None => None
+  }
+}
+
+///|
+fn render3d_host_gpu_clip_matrix(
+  matrix : ProjectionMatrix3d,
+) -> @render.HostGpuClipMatrix {
+  @render.host_gpu_clip_matrix(
+    matrix.x_axis.x,
+    matrix.x_axis.y,
+    matrix.x_axis.z,
+    matrix.x_axis.w,
+    matrix.y_axis.x,
+    matrix.y_axis.y,
+    matrix.y_axis.z,
+    matrix.y_axis.w,
+    matrix.z_axis.x,
+    matrix.z_axis.y,
+    matrix.z_axis.z,
+    matrix.z_axis.w,
+    matrix.w_axis.x,
+    matrix.w_axis.y,
+    matrix.w_axis.z,
+    matrix.w_axis.w,
+  )
+}
+
+///|
+fn render3d_world_from_view_matrix(
+  transform : @transform.Transform,
+) -> ProjectionMatrix3d {
+  let x_axis = quat_rotate_vec3(
+    transform.rotation,
+    @math.Vec3::new(transform.scale.x, 0.0F, 0.0F),
+  )
+  let y_axis = quat_rotate_vec3(
+    transform.rotation,
+    @math.Vec3::new(0.0F, transform.scale.y, 0.0F),
+  )
+  let z_axis = quat_rotate_vec3(
+    transform.rotation,
+    @math.Vec3::new(0.0F, 0.0F, transform.scale.z),
+  )
+  ProjectionMatrix3d::from_cols(
+    @math.Vec4::new(x_axis.x, x_axis.y, x_axis.z, 0.0F),
+    @math.Vec4::new(y_axis.x, y_axis.y, y_axis.z, 0.0F),
+    @math.Vec4::new(z_axis.x, z_axis.y, z_axis.z, 0.0F),
+    @math.Vec4::new(
+      transform.translation.x,
+      transform.translation.y,
+      transform.translation.z,
+      1.0F,
+    ),
+  )
 }
 
 ///|
@@ -4717,6 +4996,11 @@ fn render3d_host_preprocess_mesh_input(
   let (first_vertex_index, first_index_index, index_count) = render3d_mesh_handle_preprocess_counts(
     mesh.mesh_handle,
   )
+  let flags = if render3d_mesh_handle_local_aabb(mesh.mesh_handle) is Some(_) {
+    0U
+  } else {
+    @render.MESH3D_PREPROCESS_INPUT_FLAG_NO_FRUSTUM_CULLING
+  }
   @render.HostMesh3dPreprocessMeshInput::{
     translation_x: mesh.transform.translation.x,
     translation_y: mesh.transform.translation.y,
@@ -4738,7 +5022,7 @@ fn render3d_host_preprocess_mesh_input(
     previous_scale_x: mesh.previous_transform.scale.x,
     previous_scale_y: mesh.previous_transform.scale.y,
     previous_scale_z: mesh.previous_transform.scale.z,
-    flags: 0U,
+    flags,
     first_vertex_index,
     first_index_index,
     index_count,
@@ -4750,9 +5034,35 @@ fn render3d_host_preprocess_mesh_input(
 fn render3d_host_preprocess_camera_payload(
   queue_entry : GpuPreprocessResolvedCameraQueueEntry3d,
   meshes : Array[ExtractedMesh3d],
+  camera : Camera3dViewPayload,
+  pass_projection : Render3dPassProjection,
+  viewport_x : Int,
+  viewport_y : Int,
+  viewport_width : Int,
+  viewport_height : Int,
+  camera_exposure_value : Float,
 ) -> @render.HostMesh3dPreprocessCameraPayload {
+  let view = render3d_host_preprocess_view(
+    camera.projection,
+    pass_projection,
+    camera.transform,
+    viewport_x,
+    viewport_y,
+    viewport_width,
+    viewport_height,
+    camera_exposure_value,
+  )
+  let previous_view = render3d_host_preprocess_previous_view(
+    pass_projection,
+    camera.previous_transform,
+    camera.previous_clip_from_world,
+  )
+  let mesh_culling_data : Array[@render.HostMesh3dPreprocessMeshCullingData] = []
   let mesh_inputs : Array[@render.HostMesh3dPreprocessMeshInput] = []
   for draw_item in queue_entry.draw_items {
+    mesh_culling_data.push(
+      render3d_host_preprocess_mesh_culling_data(draw_item, meshes),
+    )
     mesh_inputs.push(render3d_host_preprocess_mesh_input(draw_item, meshes))
   }
   let direct_work_items : Array[@render.HostMesh3dPreprocessShaderWorkItem] = []
@@ -4842,6 +5152,9 @@ fn render3d_host_preprocess_camera_payload(
     late_non_indexed_workgroup_count: queue_entry.dispatch_metadata.late_non_indexed_workgroup_count,
   }
   @render.HostMesh3dPreprocessCameraPayload::{
+    view,
+    previous_view,
+    mesh_culling_data,
     mesh_inputs,
     direct_work_items,
     indexed_work_items,
@@ -5814,9 +6127,6 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     let hdr_enabled = hdr_store.get(entity) is Some(_)
     let fxaa = fxaa_store.get(entity)
     let temporal_jitter = temporal_jitter_store.get(entity)
-    let motion_vector_prepass_enabled = prepass_enabled &&
-      motion_vector_prepass_store.get(entity) is Some(_)
-    let temporal_anti_aliasing = temporal_anti_aliasing_store.get(entity)
     let depth_prepass_enabled = prepass_enabled &&
       depth_prepass_store.get(entity) is Some(_)
     let deferred_prepass_enabled = prepass_enabled &&
@@ -5825,6 +6135,12 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     let gpu_occlusion_culling_enabled = depth_prepass_enabled &&
       !no_indirect_drawing &&
       occlusion_culling_store.get(entity) is Some(_)
+    let motion_vector_prepass_enabled = prepass_enabled &&
+      (
+        motion_vector_prepass_store.get(entity) is Some(_) ||
+        gpu_occlusion_culling_enabled
+      )
+    let temporal_anti_aliasing = temporal_anti_aliasing_store.get(entity)
     let msaa = msaa_store.get(entity)
     let target = match target_store.get(entity) {
       Some(v) => v
@@ -6185,7 +6501,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       (
         motion_blur_active ||
         camera.motion_vector_prepass_enabled ||
-        temporal_aa_enabled
+        temporal_aa_enabled ||
+        camera.gpu_occlusion_culling_enabled
       )
     let fog_enabled = render3d_distance_fog_enabled(distance_fog)
     let decal_enabled = camera_forward_decal_enabled ||
@@ -6279,16 +6596,32 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     @render.host_gpu_upload_mesh3d_preprocess_camera_payload(
       camera_key_hi=camera_entity.id,
       camera_key_lo=camera_entity.generation,
-      payload=render3d_host_preprocess_camera_payload(draw_queue_entry, meshes),
+      payload=render3d_host_preprocess_camera_payload(
+        draw_queue_entry, meshes, camera, camera_pass_projection, viewport_x, viewport_y,
+        viewport_width, viewport_height, camera_exposure_value,
+      ),
     )
-    @render.host_gpu_preprocess_mesh3d(
-      camera_key_hi=camera_entity.id,
-      camera_key_lo=camera_entity.generation,
-    )
-    @render.host_gpu_build_mesh3d_indirect_parameters(
-      camera_key_hi=camera_entity.id,
-      camera_key_lo=camera_entity.generation,
-    )
+    if camera.gpu_occlusion_culling_enabled {
+      @render.host_gpu_preprocess_mesh3d(
+        camera_key_hi=camera_entity.id,
+        camera_key_lo=camera_entity.generation,
+        phase_kind=@render.MESH3D_PREPROCESS_PHASE_EARLY_OCCLUSION,
+      )
+      @render.host_gpu_build_mesh3d_indirect_parameters(
+        camera_key_hi=camera_entity.id,
+        camera_key_lo=camera_entity.generation,
+        phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_EARLY,
+      )
+    } else {
+      @render.host_gpu_preprocess_mesh3d(
+        camera_key_hi=camera_entity.id,
+        camera_key_lo=camera_entity.generation,
+      )
+      @render.host_gpu_build_mesh3d_indirect_parameters(
+        camera_key_hi=camera_entity.id,
+        camera_key_lo=camera_entity.generation,
+      )
+    }
     if motion_vector_prepass_enabled {
       let (shared_scene_id, shared_velocity_id) = render3d_motion_blur_targets_get_or_create(
         camera_entity, view_width, view_height,
@@ -6396,6 +6729,22 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
         )
       }
       @render.host_gpu_end_pass()
+      if camera.gpu_occlusion_culling_enabled {
+        @render.host_gpu_downsample_mesh3d_depth_pyramid(
+          camera_key_hi=camera_entity.id,
+          camera_key_lo=camera_entity.generation,
+        )
+        @render.host_gpu_preprocess_mesh3d(
+          camera_key_hi=camera_entity.id,
+          camera_key_lo=camera_entity.generation,
+          phase_kind=@render.MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION,
+        )
+        @render.host_gpu_build_mesh3d_indirect_parameters(
+          camera_key_hi=camera_entity.id,
+          camera_key_lo=camera_entity.generation,
+          phase_kind=@render.MESH3D_BUILD_INDIRECT_PHASE_MAIN,
+        )
+      }
     }
     if pass_lighting.point_shadow_maps_enabled &&
       !pass_lighting.point_entity.is_placeholder() &&

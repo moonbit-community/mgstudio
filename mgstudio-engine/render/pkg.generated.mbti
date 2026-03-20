@@ -9,6 +9,18 @@ import {
 // Values
 pub const HOST_GPU_DEFAULT_DESIRED_MAXIMUM_FRAME_LATENCY : Int = 2
 
+pub const MESH3D_BUILD_INDIRECT_PHASE_EARLY : Int = 1
+
+pub const MESH3D_BUILD_INDIRECT_PHASE_MAIN : Int = 0
+
+pub const MESH3D_PREPROCESS_INPUT_FLAG_NO_FRUSTUM_CULLING : UInt = 268435456
+
+pub const MESH3D_PREPROCESS_PHASE_EARLY_OCCLUSION : Int = 1
+
+pub const MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION : Int = 2
+
+pub const MESH3D_PREPROCESS_PHASE_MAIN : Int = 0
+
 pub fn asset_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
 
 pub fn asset_create_texture_3d_with_format(width~ : Int, height~ : Int, depth~ : Int, format_raw~ : Int, pixels~ : Bytes) -> Int
@@ -49,9 +61,11 @@ pub fn host_gpu_begin_pass_3d(target_id~ : Int, target_layer? : Int, secondary_t
 
 pub fn host_gpu_begin_pass_with_depth(target_id~ : Int, width~ : Int, height~ : Int, clear_r~ : Float, clear_g~ : Float, clear_b~ : Float, clear_a~ : Float, camera_x~ : Float, camera_y~ : Float, camera_rotation~ : Float, camera_scale~ : Float, viewport_x~ : Int, viewport_y~ : Int, viewport_width~ : Int, viewport_height~ : Int, viewport_depth_min~ : Float, viewport_depth_max~ : Float, clear_enabled~ : Int) -> Unit
 
-pub fn host_gpu_build_mesh3d_indirect_parameters(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
+pub fn host_gpu_build_mesh3d_indirect_parameters(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
 
 pub fn host_gpu_clear_scissor() -> Unit
+
+pub fn host_gpu_clip_matrix(Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> @renderer.GpuClipMatrix
 
 pub fn host_gpu_configure_surface(device~ : Int, surface~ : Int, width~ : Int, height~ : Int, present_mode? : HostGpuPresentMode, composite_alpha_mode? : HostGpuCompositeAlphaMode, desired_maximum_frame_latency? : Int) -> Unit
 
@@ -76,6 +90,8 @@ pub fn host_gpu_create_render_target_rg16f(width~ : Int, height~ : Int, nearest~
 pub fn host_gpu_create_render_target_rgba16f(width~ : Int, height~ : Int, nearest~ : Bool) -> Int
 
 pub fn host_gpu_create_surface(Int) -> Int
+
+pub fn host_gpu_downsample_mesh3d_depth_pyramid(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
 
 pub fn host_gpu_draw_effect_stack(scene_texture_id~ : Int, chromatic_aberration_intensity~ : Float, chromatic_aberration_max_samples~ : Int, vignette_intensity~ : Float, vignette_radius~ : Float, vignette_smoothness~ : Float, vignette_roundness~ : Float, vignette_center_x~ : Float, vignette_center_y~ : Float, vignette_edge_compensation~ : Float, vignette_color_r~ : Float, vignette_color_g~ : Float, vignette_color_b~ : Float, vignette_color_a~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
 
@@ -113,7 +129,7 @@ pub fn host_gpu_end_pass() -> Unit
 
 pub fn host_gpu_get_queue(Int) -> Int
 
-pub fn host_gpu_preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
+pub fn host_gpu_preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
 
 pub fn host_gpu_request_device() -> Int
 
@@ -207,6 +223,9 @@ pub impl Eq for HostGpuPresentMode
 pub impl Show for HostGpuPresentMode
 
 pub(all) struct HostMesh3dPreprocessCameraPayload {
+  view : HostMesh3dPreprocessView
+  previous_view : HostMesh3dPreprocessPreviousView
+  mesh_culling_data : Array[HostMesh3dPreprocessMeshCullingData]
   mesh_inputs : Array[HostMesh3dPreprocessMeshInput]
   direct_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
   indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
@@ -230,6 +249,13 @@ pub(all) struct HostMesh3dPreprocessDispatchMetadata {
   late_non_indexed_workgroup_count : Int
 }
 
+pub(all) struct HostMesh3dPreprocessFrustumPlane {
+  normal_x : Float
+  normal_y : Float
+  normal_z : Float
+  distance : Float
+}
+
 pub(all) struct HostMesh3dPreprocessIndirectBatchSet {
   indirect_parameters_count : Int
   indirect_parameters_base : Int
@@ -244,6 +270,15 @@ pub(all) struct HostMesh3dPreprocessIndirectParametersGpuMetadata {
   mesh_index : Int
   early_instance_count : Int
   late_instance_count : Int
+}
+
+pub(all) struct HostMesh3dPreprocessMeshCullingData {
+  aabb_center_x : Float
+  aabb_center_y : Float
+  aabb_center_z : Float
+  aabb_half_extents_x : Float
+  aabb_half_extents_y : Float
+  aabb_half_extents_z : Float
 }
 
 pub(all) struct HostMesh3dPreprocessMeshInput {
@@ -274,12 +309,46 @@ pub(all) struct HostMesh3dPreprocessMeshInput {
   tag : Int
 }
 
+pub(all) struct HostMesh3dPreprocessPreviousView {
+  view_from_world : @renderer.GpuClipMatrix
+  clip_from_world : @renderer.GpuClipMatrix
+  clip_from_view : @renderer.GpuClipMatrix
+  world_from_clip : @renderer.GpuClipMatrix
+  view_from_clip : @renderer.GpuClipMatrix
+}
+
 pub(all) struct HostMesh3dPreprocessShaderWorkItem {
   input_index : Int
   output_or_indirect_parameters_index : Int
 }
 
+pub(all) struct HostMesh3dPreprocessView {
+  clip_from_world : @renderer.GpuClipMatrix
+  unjittered_clip_from_world : @renderer.GpuClipMatrix
+  world_from_clip : @renderer.GpuClipMatrix
+  world_from_view : @renderer.GpuClipMatrix
+  view_from_world : @renderer.GpuClipMatrix
+  clip_from_view : @renderer.GpuClipMatrix
+  view_from_clip : @renderer.GpuClipMatrix
+  world_position_x : Float
+  world_position_y : Float
+  world_position_z : Float
+  exposure : Float
+  viewport_x : Float
+  viewport_y : Float
+  viewport_width : Float
+  viewport_height : Float
+  main_pass_viewport_x : Float
+  main_pass_viewport_y : Float
+  main_pass_viewport_width : Float
+  main_pass_viewport_height : Float
+  frustum_planes : Array[HostMesh3dPreprocessFrustumPlane]
+  mip_bias : Float
+}
+
 // Type aliases
+pub using @renderer {type GpuClipMatrix as HostGpuClipMatrix}
+
 pub type HostGpuDevice = Int
 
 pub type HostGpuFrame = Int

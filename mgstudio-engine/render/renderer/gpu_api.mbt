@@ -284,6 +284,58 @@ pub(all) struct HostMesh3dPreprocessMeshInput {
 }
 
 ///|
+pub(all) struct HostMesh3dPreprocessFrustumPlane {
+  normal_x : Float
+  normal_y : Float
+  normal_z : Float
+  distance : Float
+}
+
+///|
+pub(all) struct HostMesh3dPreprocessView {
+  clip_from_world : GpuClipMatrix
+  unjittered_clip_from_world : GpuClipMatrix
+  world_from_clip : GpuClipMatrix
+  world_from_view : GpuClipMatrix
+  view_from_world : GpuClipMatrix
+  clip_from_view : GpuClipMatrix
+  view_from_clip : GpuClipMatrix
+  world_position_x : Float
+  world_position_y : Float
+  world_position_z : Float
+  exposure : Float
+  viewport_x : Float
+  viewport_y : Float
+  viewport_width : Float
+  viewport_height : Float
+  main_pass_viewport_x : Float
+  main_pass_viewport_y : Float
+  main_pass_viewport_width : Float
+  main_pass_viewport_height : Float
+  frustum_planes : Array[HostMesh3dPreprocessFrustumPlane]
+  mip_bias : Float
+}
+
+///|
+pub(all) struct HostMesh3dPreprocessPreviousView {
+  view_from_world : GpuClipMatrix
+  clip_from_world : GpuClipMatrix
+  clip_from_view : GpuClipMatrix
+  world_from_clip : GpuClipMatrix
+  view_from_clip : GpuClipMatrix
+}
+
+///|
+pub(all) struct HostMesh3dPreprocessMeshCullingData {
+  aabb_center_x : Float
+  aabb_center_y : Float
+  aabb_center_z : Float
+  aabb_half_extents_x : Float
+  aabb_half_extents_y : Float
+  aabb_half_extents_z : Float
+}
+
+///|
 pub(all) struct HostMesh3dPreprocessIndirectParametersCpuMetadata {
   base_output_index : Int
   batch_set_index : Int
@@ -313,6 +365,9 @@ pub(all) struct HostMesh3dPreprocessDispatchMetadata {
 
 ///|
 pub(all) struct HostMesh3dPreprocessCameraPayload {
+  view : HostMesh3dPreprocessView
+  previous_view : HostMesh3dPreprocessPreviousView
+  mesh_culling_data : Array[HostMesh3dPreprocessMeshCullingData]
   mesh_inputs : Array[HostMesh3dPreprocessMeshInput]
   direct_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
   indexed_work_items : Array[HostMesh3dPreprocessShaderWorkItem]
@@ -335,6 +390,21 @@ pub(all) struct HostMesh3dPreprocessCameraPayload {
   non_indexed_batch_sets : Array[HostMesh3dPreprocessIndirectBatchSet]
   dispatch_metadata : HostMesh3dPreprocessDispatchMetadata
 }
+
+///|
+pub const MESH3D_PREPROCESS_PHASE_MAIN : Int = 0
+
+///|
+pub const MESH3D_PREPROCESS_PHASE_EARLY_OCCLUSION : Int = 1
+
+///|
+pub const MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION : Int = 2
+
+///|
+pub const MESH3D_BUILD_INDIRECT_PHASE_MAIN : Int = 0
+
+///|
+pub const MESH3D_BUILD_INDIRECT_PHASE_EARLY : Int = 1
 
 ///|
 priv struct SurfaceBinding {
@@ -617,19 +687,38 @@ pub fn upload_mesh3d_preprocess_camera_payload(
 pub fn build_mesh3d_indirect_parameters(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,
+  phase_kind? : Int = MESH3D_BUILD_INDIRECT_PHASE_MAIN,
 ) -> Unit {
   if ensure_backend() is Some(backend) {
-    backend.build_mesh3d_indirect_parameters(camera_key_hi, camera_key_lo) catch {
+    backend.build_mesh3d_indirect_parameters(
+      camera_key_hi, camera_key_lo, phase_kind,
+    ) catch {
       err => debug_runtime_error("build_mesh3d_indirect_parameters", err)
     }
   }
 }
 
 ///|
-pub fn preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit {
+pub fn preprocess_mesh3d(
+  camera_key_hi~ : Int,
+  camera_key_lo~ : Int,
+  phase_kind? : Int = MESH3D_PREPROCESS_PHASE_MAIN,
+) -> Unit {
   if ensure_backend() is Some(backend) {
-    backend.preprocess_mesh3d(camera_key_hi, camera_key_lo) catch {
+    backend.preprocess_mesh3d(camera_key_hi, camera_key_lo, phase_kind) catch {
       err => debug_runtime_error("preprocess_mesh3d", err)
+    }
+  }
+}
+
+///|
+pub fn downsample_mesh3d_depth_pyramid(
+  camera_key_hi~ : Int,
+  camera_key_lo~ : Int,
+) -> Unit {
+  if ensure_backend() is Some(backend) {
+    backend.downsample_mesh3d_depth_pyramid(camera_key_hi, camera_key_lo) catch {
+      err => debug_runtime_error("downsample_mesh3d_depth_pyramid", err)
     }
   }
 }
