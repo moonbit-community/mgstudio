@@ -234,6 +234,21 @@ fn host_material2d_color_material_bind_group(
 }
 
 ///|
+fn host_material2d_wireframe_bind_group(
+  color_r : Float,
+  color_g : Float,
+  color_b : Float,
+  color_a : Float,
+) -> HostMaterial2dBindGroup {
+  HostMaterial2dBindGroup::new([
+    HostMaterial2dBinding::uniform(
+      0U,
+      host_material2d_f32le_pack([color_r, color_g, color_b, color_a]),
+    ),
+  ])
+}
+
+///|
 pub(all) struct HostMesh3dPreprocessShaderWorkItem {
   input_index : Int
   output_or_indirect_parameters_index : Int
@@ -1101,6 +1116,53 @@ pub fn draw_mesh(
     vertex_shader_path~,
     fragment_shader_path~,
   )
+}
+
+///|
+pub fn draw_mesh_wireframe(
+  mesh_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+) -> Unit {
+  debug_mesh2d_draw_calls_ref.val = debug_mesh2d_draw_calls_ref.val + 1
+  current_frame_mesh2d_draw_calls_ref.val = current_frame_mesh2d_draw_calls_ref.val +
+    1
+  if mesh_id <= 0 {
+    debug_mesh2d_invalid_id_calls_ref.val = debug_mesh2d_invalid_id_calls_ref.val +
+      1
+  }
+  if ensure_backend() is Some(backend) {
+    let alpha_mode_kind = if color_a < 1.0F {
+      MESH2D_ALPHA_MODE_KIND_BLEND
+    } else {
+      MESH2D_ALPHA_MODE_KIND_OPAQUE
+    }
+    let material_bind_group = host_material2d_wireframe_bind_group(
+      color_r, color_g, color_b, color_a,
+    )
+    backend.draw_mesh_material_with_options(
+      mesh_id,
+      x,
+      y,
+      rotation,
+      scale_x,
+      scale_y,
+      alpha_mode_kind,
+      material_bind_group,
+      vertex_shader_path=None,
+      fragment_shader_path=Some(MESH2D_WIREFRAME_SHADER_PATH),
+      wireframe=true,
+    ) catch {
+      err => debug_runtime_error("draw_mesh_wireframe", err)
+    }
+  }
 }
 
 ///|

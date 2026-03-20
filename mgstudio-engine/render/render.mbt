@@ -1192,6 +1192,33 @@ pub fn host_gpu_draw_mesh_material(
 }
 
 ///|
+pub fn host_gpu_draw_mesh_wireframe(
+  mesh_id~ : Int,
+  x~ : Float,
+  y~ : Float,
+  rotation~ : Float,
+  scale_x~ : Float,
+  scale_y~ : Float,
+  color_r~ : Float,
+  color_g~ : Float,
+  color_b~ : Float,
+  color_a~ : Float,
+) -> Unit {
+  @renderer.draw_mesh_wireframe(
+    mesh_id~,
+    x~,
+    y~,
+    rotation~,
+    scale_x~,
+    scale_y~,
+    color_r~,
+    color_g~,
+    color_b~,
+    color_a~,
+  )
+}
+
+///|
 pub fn host_gpu_draw_mesh3d(
   mesh_id~ : Int,
   x~ : Float,

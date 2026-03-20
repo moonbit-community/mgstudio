@@ -2746,6 +2746,9 @@ const MESH2D_SHADER_PATH : String = "shaders/bevy_sprite_render/mesh2d/mesh2d.wg
 const MESH2D_SHADER_BINDINGS_PATH : String = "shaders/bevy_sprite_render/mesh2d/mesh2d_bindings.wgsl"
 
 ///|
+const MESH2D_WIREFRAME_SHADER_PATH : String = "shaders/bevy_sprite_render/mesh2d/wireframe2d.wgsl"
+
+///|
 const SPRITE_SHADER_PATH : String = "shaders/bevy_sprite_render/render/sprite.wgsl"
 
 ///|
@@ -2768,6 +2771,7 @@ fn render2d_bevy_shader_asset_paths() -> Array[String] {
     MESH2D_SHADER_PATH,
     MESH2D_SHADER_BINDINGS_PATH,
     "shaders/bevy_sprite_render/mesh2d/color_material.wgsl",
+    MESH2D_WIREFRAME_SHADER_PATH,
     SPRITE_SHADER_PATH,
     SPRITE_VIEW_BINDINGS_PATH,
     "shaders/bevy_post_process/bloom/bloom.wgsl",
@@ -3076,6 +3080,8 @@ priv struct Mesh2dDrawPayload {
   mesh_id : Int
   transform : @transform.Transform
   layers : RenderLayers
+  wireframe : Bool
+  wireframe_color : Color
 }
 
 ///|
@@ -4882,7 +4888,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
     } else {
       None
     }
-    mesh_store.for_each(fn(entity, mesh2d) {
+    mesh_store.for_each(fn(entity, _mesh2d) {
       if view_visibility_store.get(entity) is Some(vv) && !vv.is_visible() {
         return
       }
@@ -4904,32 +4910,25 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
             None => @transform.Transform::identity()
           }
       }
-      rs.val.meshes.push(ExtractedMesh2d::{
-        entity: phase_entity_ref_for_main(entity),
-        payload: Mesh2dDrawPayload::{ mesh_id: gpu.mesh_id, transform, layers },
-      })
-
-      if !wireframe2d_mesh_should_draw(
-          wireframe_store.get(entity) is Some(_),
-          no_wireframe_store.get(entity) is Some(_),
-          wireframe_config,
-        ) {
-        return
-      }
-      guard render_mesh_asset_get(mesh2d.mesh) is Some(mesh_asset) else {
-        return
-      }
+      let wireframe = wireframe2d_mesh_should_draw(
+        wireframe_store.get(entity) is Some(_),
+        no_wireframe_store.get(entity) is Some(_),
+        wireframe_config,
+      )
       let wireframe_color = wireframe2d_mesh_color(
         wireframe_color_store.get(entity),
         wireframe_config,
       )
-      match mesh_asset.geometry {
-        @mesh.MeshGeometry::Geometry2d(geometry) =>
-          Gizmos::new()
-          .with_layers(layers)
-          .mesh_wireframe_2d(geometry, transform, wireframe_color)
-        _ => ()
-      }
+      rs.val.meshes.push(ExtractedMesh2d::{
+        entity: phase_entity_ref_for_main(entity),
+        payload: Mesh2dDrawPayload::{
+          mesh_id: gpu.mesh_id,
+          transform,
+          layers,
+          wireframe,
+          wireframe_color,
+        },
+      })
     })
   })
   |> ignore
@@ -5108,7 +5107,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
     // ECS mesh components.
     try! world
     .query1(ecs_key_mesh2d)
-    .view(fn(entity, mesh2d) {
+    .view(fn(entity, _mesh2d) {
       if !render2d_entity_visible_ecs(world, entity) {
         return
       }
@@ -5124,32 +5123,25 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         RenderLayers::default(),
       )
       let transform = render2d_resolve_transform_ecs(world, entity)
-      rs.val.meshes.push(ExtractedMesh2d::{
-        entity: phase_entity_ref_for_main(entity),
-        payload: Mesh2dDrawPayload::{ mesh_id: gpu.mesh_id, transform, layers },
-      })
-
-      if !wireframe2d_mesh_should_draw(
-          (try! world.get(entity, ecs_key_wireframe2d)) is Some(_),
-          (try! world.get(entity, ecs_key_no_wireframe2d)) is Some(_),
-          wireframe_config,
-        ) {
-        return
-      }
-      guard render_mesh_asset_get(mesh2d.mesh) is Some(mesh_asset) else {
-        return
-      }
+      let wireframe = wireframe2d_mesh_should_draw(
+        (try! world.get(entity, ecs_key_wireframe2d)) is Some(_),
+        (try! world.get(entity, ecs_key_no_wireframe2d)) is Some(_),
+        wireframe_config,
+      )
       let wireframe_color = wireframe2d_mesh_color(
         try! world.get(entity, ecs_key_wireframe2d_color),
         wireframe_config,
       )
-      match mesh_asset.geometry {
-        @mesh.MeshGeometry::Geometry2d(geometry) =>
-          Gizmos::new()
-          .with_layers(layers)
-          .mesh_wireframe_2d(geometry, transform, wireframe_color)
-        _ => ()
-      }
+      rs.val.meshes.push(ExtractedMesh2d::{
+        entity: phase_entity_ref_for_main(entity),
+        payload: Mesh2dDrawPayload::{
+          mesh_id: gpu.mesh_id,
+          transform,
+          layers,
+          wireframe,
+          wireframe_color,
+        },
+      })
     })
   })
   |> ignore
@@ -5550,6 +5542,32 @@ fn draw_registered_scene_items_for_layers(
 }
 
 ///|
+fn draw_wireframe_meshes_for_layers(
+  meshes : Array[ExtractedMesh2d],
+  layers : RenderLayers,
+) -> Unit {
+  for mesh in meshes {
+    if !mesh.payload.layers.matches(layers) || !mesh.payload.wireframe {
+      continue
+    }
+    let transform = mesh.payload.transform
+    let color = mesh.payload.wireframe_color
+    @render.host_gpu_draw_mesh_wireframe(
+      mesh_id=mesh.payload.mesh_id,
+      x=transform.translation.x,
+      y=transform.translation.y,
+      rotation=transform.rotation_z(),
+      scale_x=transform.scale.x,
+      scale_y=transform.scale.y,
+      color_r=color.r,
+      color_g=color.g,
+      color_b=color.b,
+      color_a=color.a,
+    )
+  }
+}
+
+///|
 fn draw_registered_items_for_layers(
   world : @ecs.World,
   registry : Material2dRuntimeRegistry,
@@ -5721,10 +5739,18 @@ fn extracted_mesh2d_item(
   mesh_id : Int,
   transform : @transform.Transform,
   layers : RenderLayers,
+  wireframe? : Bool = false,
+  wireframe_color? : Color = Color::white(),
 ) -> ExtractedMesh2d {
   ExtractedMesh2d::{
     entity: phase_entity_ref_for_main(entity),
-    payload: Mesh2dDrawPayload::{ mesh_id, transform, layers },
+    payload: Mesh2dDrawPayload::{
+      mesh_id,
+      transform,
+      layers,
+      wireframe,
+      wireframe_color,
+    },
   }
 }
 
@@ -5745,6 +5771,23 @@ test "render2d: mesh prepared material handle resolves from extracted entity ins
     None => -1
   }
   inspect(prepared_id, content="77")
+}
+
+///|
+test "render2d: extracted mesh keeps wireframe state out of gizmo path" {
+  let extracted = extracted_mesh2d_item(
+    @core.Entity::new(2, 0),
+    12,
+    @transform.Transform::identity(),
+    RenderLayers::default(),
+    wireframe=true,
+    wireframe_color=Color::new(0.25F, 0.5F, 0.75F, 1.0F),
+  )
+  let ok = extracted.payload.wireframe &&
+    extracted.payload.wireframe_color.r == 0.25F &&
+    extracted.payload.wireframe_color.g == 0.5F &&
+    extracted.payload.wireframe_color.b == 0.75F
+  inspect(ok, content="true")
 }
 
 ///|
@@ -6834,6 +6877,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         draw_camera_items(
           draw_items, 0, 0, viewport_width, viewport_height, scale_factor,
         )
+        draw_wireframe_meshes_for_layers(meshes, camera.layers)
         @render.host_gpu_end_pass()
 
         @render.host_gpu_begin_pass(
@@ -6908,6 +6952,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         draw_camera_items(
           draw_items, viewport_x, viewport_y, viewport_width, viewport_height, scale_factor,
         )
+        draw_wireframe_meshes_for_layers(meshes, camera.layers)
         gizmos_draw_lines(camera.layers)
         @render.host_gpu_end_pass()
         if ui_overlay_draw_items.length() > 0 {
@@ -6968,6 +7013,7 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       draw_camera_items(
         draw_items, viewport_x, viewport_y, viewport_width, viewport_height, scale_factor,
       )
+      draw_wireframe_meshes_for_layers(meshes, camera.layers)
       gizmos_draw_lines(camera.layers)
       @render.host_gpu_end_pass()
     }

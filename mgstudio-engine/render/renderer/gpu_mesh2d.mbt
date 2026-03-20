@@ -22,6 +22,9 @@ const MESH2D_DEFAULT_VERTEX_SHADER_PATH : String = "shaders/bevy_sprite_render/m
 const MESH2D_COLOR_MATERIAL_SHADER_PATH : String = "shaders/bevy_sprite_render/mesh2d/color_material.wgsl"
 
 ///|
+const MESH2D_WIREFRAME_SHADER_PATH : String = "shaders/bevy_sprite_render/mesh2d/wireframe2d.wgsl"
+
+///|
 const MESH2D_ALPHA_MODE_KIND_OPAQUE : Int = 0
 
 ///|
@@ -42,6 +45,7 @@ priv struct Mesh2dPipelineKey {
   tonemap_in_shader : Bool
   deband_dither : Bool
   may_discard : Bool
+  wireframe : Bool
   material_layout_key : String
   vertex_shader_path : String
   fragment_shader_path : String
@@ -69,6 +73,7 @@ fn mesh2d_pipeline_cache_key(key : Mesh2dPipelineKey) -> String {
   let tonemap_bits = if key.tonemap_in_shader { "1" } else { "0" }
   let deband_bits = if key.deband_dither { "1" } else { "0" }
   let discard_bits = if key.may_discard { "1" } else { "0" }
+  let wireframe_bits = if key.wireframe { "1" } else { "0" }
   format_bits +
   "_" +
   topology_bits +
@@ -78,6 +83,7 @@ fn mesh2d_pipeline_cache_key(key : Mesh2dPipelineKey) -> String {
   tonemap_bits +
   deband_bits +
   discard_bits +
+  wireframe_bits +
   "_" +
   key.material_layout_key +
   "_" +
@@ -531,6 +537,9 @@ fn create_mesh2d_pipeline(
     builder.set_entry_points("vertex", "fragment")
     builder.set_color_target_format(key.color_format)
     builder.set_topology_u32(key.primitive_topology)
+    if key.wireframe {
+      builder.set_polygon_mode_u32(@wgpu.POLYGON_MODE_LINE)
+    }
     if key.blend_alpha {
       builder.enable_alpha_blend()
     } else {
@@ -749,6 +758,7 @@ fn mesh2d_pipeline_key_for_format(
   tonemap_in_shader : Bool,
   deband_dither : Bool,
   may_discard : Bool,
+  wireframe : Bool,
   material_layout_key : String,
   vertex_shader_path : String?,
   fragment_shader_path : String?,
@@ -762,6 +772,7 @@ fn mesh2d_pipeline_key_for_format(
     tonemap_in_shader,
     deband_dither,
     may_discard,
+    wireframe,
     material_layout_key,
     vertex_shader_path: mesh2d_vertex_shader_path_or_default(vertex_shader_path),
     fragment_shader_path: mesh2d_fragment_shader_path_or_default(
@@ -794,6 +805,8 @@ fn mesh2d_get_or_create_pipeline(
   }
   let pipeline_label = if key.blend_alpha {
     "mgstudio_mesh2d_transparent_pipeline"
+  } else if key.wireframe {
+    "mgstudio_mesh2d_wireframe_pipeline"
   } else {
     "mgstudio_mesh2d_opaque_pipeline"
   }
@@ -823,6 +836,7 @@ fn mesh_pipeline_for_draw(
   mesh : GpuMeshInfo,
   alpha_mode_kind : Int,
   material_bind_group : HostMaterial2dBindGroup,
+  wireframe : Bool,
   vertex_shader_path : String?,
   fragment_shader_path : String?,
 ) -> @wgpu.RenderPipeline? raise GpuBackendError {
@@ -846,6 +860,7 @@ fn mesh_pipeline_for_draw(
       false,
       false,
       mesh2d_pipeline_may_discard(alpha_mode_kind),
+      wireframe,
       material_layout_key,
       vertex_shader_path,
       fragment_shader_path,
@@ -1177,7 +1192,7 @@ pub fn GpuBackend::draw_mesh(
 }
 
 ///|
-pub fn GpuBackend::draw_mesh_material(
+fn GpuBackend::draw_mesh_material_with_options(
   self : GpuBackend,
   mesh_id : Int,
   x : Float,
@@ -1189,6 +1204,7 @@ pub fn GpuBackend::draw_mesh_material(
   material_bind_group : HostMaterial2dBindGroup,
   vertex_shader_path? : String? = None,
   fragment_shader_path? : String? = None,
+  wireframe? : Bool = false,
 ) -> Unit raise GpuBackendError {
   guard self.frame is Some(frame) else {
     debug_mesh2d_drop_no_frame_ref.val = debug_mesh2d_drop_no_frame_ref.val + 1
@@ -1219,7 +1235,8 @@ pub fn GpuBackend::draw_mesh_material(
   }
   ensure_mesh2d_resources(self)
   guard mesh_pipeline_for_draw(
-      self, mesh, alpha_mode_kind, material_bind_group, vertex_shader_path, fragment_shader_path,
+      self, mesh, alpha_mode_kind, material_bind_group, wireframe, vertex_shader_path,
+      fragment_shader_path,
     )
     is Some(pipeline) else {
     debug_mesh2d_drop_no_pipeline_ref.val = debug_mesh2d_drop_no_pipeline_ref.val +
@@ -1278,6 +1295,35 @@ pub fn GpuBackend::draw_mesh_material(
   current_frame_mesh2d_executed_draw_calls_ref.val = current_frame_mesh2d_executed_draw_calls_ref.val +
     1
   pass.draw_indexed(mesh.index_count, 1U, 0U, 0, 0U)
+}
+
+///|
+pub fn GpuBackend::draw_mesh_material(
+  self : GpuBackend,
+  mesh_id : Int,
+  x : Float,
+  y : Float,
+  rotation : Float,
+  scale_x : Float,
+  scale_y : Float,
+  alpha_mode_kind : Int,
+  material_bind_group : HostMaterial2dBindGroup,
+  vertex_shader_path? : String? = None,
+  fragment_shader_path? : String? = None,
+) -> Unit raise GpuBackendError {
+  self.draw_mesh_material_with_options(
+    mesh_id,
+    x,
+    y,
+    rotation,
+    scale_x,
+    scale_y,
+    alpha_mode_kind,
+    material_bind_group,
+    vertex_shader_path~,
+    fragment_shader_path~,
+    wireframe=false,
+  )
 }
 
 ///|

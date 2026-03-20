@@ -106,6 +106,8 @@ pub fn draw_mesh3d(mesh_id~ : Int, x~ : Float, y~ : Float, z~ : Float, rotation_
 
 pub fn draw_mesh_material(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, alpha_mode_kind~ : Int, material_bind_group~ : HostMaterial2dBindGroup, vertex_shader_path? : String?, fragment_shader_path? : String?) -> Unit
 
+pub fn draw_mesh_wireframe(mesh_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float) -> Unit
+
 pub fn draw_motion_blur(scene_texture_id~ : Int, velocity_texture_id~ : Int, shutter_angle~ : Float, samples~ : Int) -> Unit
 
 pub fn draw_sprite(texture_id~ : Int, x~ : Float, y~ : Float, rotation~ : Float, scale_x~ : Float, scale_y~ : Float, color_r~ : Float, color_g~ : Float, color_b~ : Float, color_a~ : Float) -> Unit

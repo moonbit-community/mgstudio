@@ -707,6 +707,9 @@ pub fn GpuBackend::new(
   if adapter.supported_features_contains_u32(0x00000006U) {
     required_features.push(0x00000006U)
   }
+  if adapter.has_feature_native_polygon_mode_line() {
+    required_features.push(@wgpu.NATIVE_FEATURE_POLYGON_MODE_LINE)
+  }
   let device = adapter.request_device_sync_with_features(
     instance, required_features,
   ) catch {

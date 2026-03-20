@@ -176,6 +176,7 @@ test "renderer: mesh2d pipeline key records custom material shader paths" {
     false,
     false,
     false,
+    false,
     "0:uniform;3:uniform",
     Some("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"),
     Some("shaders/custom/mesh2d_checker_material.wgsl"),
@@ -189,6 +190,55 @@ test "renderer: mesh2d pipeline key records custom material shader paths" {
     key.fragment_shader_path,
     content="shaders/custom/mesh2d_checker_material.wgsl",
   )
+}
+
+///|
+test "renderer: mesh2d wireframe pipeline key stays distinct from fill pipeline" {
+  let fill = mesh2d_pipeline_key_for_format(
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    false,
+    false,
+    false,
+    false,
+    false,
+    "0:uniform",
+    Some("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"),
+    Some("shaders/bevy_sprite_render/mesh2d/wireframe2d.wgsl"),
+  )
+  let wireframe = mesh2d_pipeline_key_for_format(
+    tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM),
+    @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    false,
+    false,
+    false,
+    false,
+    true,
+    "0:uniform",
+    Some("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"),
+    Some("shaders/bevy_sprite_render/mesh2d/wireframe2d.wgsl"),
+  )
+  let ok = !fill.wireframe &&
+    wireframe.wireframe &&
+    mesh2d_pipeline_cache_key(fill) != mesh2d_pipeline_cache_key(wireframe)
+  inspect(ok, content="true")
+}
+
+///|
+test "renderer: mesh2d wireframe shader loads dedicated uniform material" {
+  register_renderer_test_shaders()
+  let wgsl = load_wgsl_with_defines_required_mesh2d_material(
+    Some("shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl"),
+    Some("shaders/bevy_sprite_render/mesh2d/wireframe2d.wgsl"),
+    ["VERTEX_POSITIONS", "VERTEX_UVS", "VERTEX_COLORS"],
+  )
+  inspect(
+    wgsl.contains(
+      "@group(2) @binding(0) var<uniform> material: Wireframe2dMaterial;",
+    ),
+    content="true",
+  )
+  clear_registered_wgsl_source_registry()
 }
 
 ///|
@@ -848,15 +898,15 @@ fn register_renderer_test_shaders() -> Unit {
   let paths = [
     "shaders/bevy_sprite_render/render/sprite.wgsl", "shaders/bevy_sprite_render/render/sprite_view_bindings.wgsl",
     "shaders/bevy_sprite_render/mesh2d/color_material.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl",
-    "shaders/bevy_sprite_render/mesh2d/mesh2d_bindings.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl",
-    "shaders/bevy_sprite_render/mesh2d/mesh2d_types.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d_vertex_output.wgsl",
-    "shaders/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d_view_types.wgsl",
-    "shaders/bevy_post_process/bloom/bloom.wgsl", "shaders/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
-    "shaders/bevy_core_pipeline/tonemapping/tonemapping.wgsl", "shaders/bevy_core_pipeline/tonemapping/lut_bindings.wgsl",
-    "shaders/bevy_core_pipeline/tonemapping/tonemapping_shared.wgsl", "shaders/bevy_render/color_operations.wgsl",
-    "shaders/bevy_render/globals.wgsl", "shaders/bevy_render/maths.wgsl", "shaders/bevy_render/view/view.wgsl",
-    "shaders/bevy_ui_render/ui.wgsl", "shaders/bevy_ui_render/ui_texture_slice.wgsl",
-    "shaders/bevy_ui_render/box_shadow.wgsl",
+    "shaders/bevy_sprite_render/mesh2d/wireframe2d.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d_bindings.wgsl",
+    "shaders/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d_types.wgsl",
+    "shaders/bevy_sprite_render/mesh2d/mesh2d_vertex_output.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl",
+    "shaders/bevy_sprite_render/mesh2d/mesh2d_view_types.wgsl", "shaders/bevy_post_process/bloom/bloom.wgsl",
+    "shaders/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl", "shaders/bevy_core_pipeline/tonemapping/tonemapping.wgsl",
+    "shaders/bevy_core_pipeline/tonemapping/lut_bindings.wgsl", "shaders/bevy_core_pipeline/tonemapping/tonemapping_shared.wgsl",
+    "shaders/bevy_render/color_operations.wgsl", "shaders/bevy_render/globals.wgsl",
+    "shaders/bevy_render/maths.wgsl", "shaders/bevy_render/view/view.wgsl", "shaders/bevy_ui_render/ui.wgsl",
+    "shaders/bevy_ui_render/ui_texture_slice.wgsl", "shaders/bevy_ui_render/box_shadow.wgsl",
   ]
   for path in paths {
     register_renderer_test_shader_source(path)
@@ -1220,6 +1270,7 @@ test "renderer: mesh pipeline specializes to hdr render target format" {
       format,
       @wgpu.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
       true,
+      false,
       false,
       false,
       false,
