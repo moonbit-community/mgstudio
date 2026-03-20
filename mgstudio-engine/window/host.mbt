@@ -136,11 +136,6 @@ pub fn host_window_request_close(window : HostWindow) -> Unit {
 }
 
 ///|
-pub fn host_window_run_loop(step : FuncRef[() -> Unit]) -> Unit {
-  @windowing.run_loop(step)
-}
-
-///|
 pub fn host_window_set_title(window : HostWindow, title~ : String) -> Unit {
   @windowing.set_title(window, title~)
 }

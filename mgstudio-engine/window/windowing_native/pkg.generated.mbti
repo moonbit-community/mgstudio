@@ -214,8 +214,6 @@ pub fn queue_accessibility_update_payload(payload~ : String) -> Unit
 
 pub fn request_close(Int) -> Unit
 
-pub fn run_loop(FuncRef[() -> Unit]) -> Unit
-
 pub fn runner_handle_resumed() -> Unit
 
 pub fn runner_handle_suspended() -> Unit

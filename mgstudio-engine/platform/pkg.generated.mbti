@@ -26,8 +26,6 @@ pub fn position_y(Int) -> Int
 
 pub fn request_close(Int) -> Unit
 
-pub fn run_loop(FuncRef[() -> Unit]) -> Unit
-
 pub fn scale_factor(Int) -> Float
 
 pub fn set_cursor_grab_mode(Int, mode~ : CursorGrabMode) -> Unit

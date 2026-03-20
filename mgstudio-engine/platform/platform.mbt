@@ -128,11 +128,6 @@ pub fn create_window(
 }
 
 ///|
-pub fn run_loop(callback : FuncRef[() -> Unit]) -> Unit {
-  @windowing.run_loop(callback)
-}
-
-///|
 pub fn poll_events(window : HostWindow) -> Unit {
   @windowing.poll_events(window)
 }

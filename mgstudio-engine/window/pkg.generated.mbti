@@ -143,8 +143,6 @@ pub fn host_window_poll_events(Int) -> Unit
 
 pub fn host_window_request_close(Int) -> Unit
 
-pub fn host_window_run_loop(FuncRef[() -> Unit]) -> Unit
-
 pub fn host_window_set_cursor_grab_mode(Int, mode~ : CursorGrabMode) -> Unit
 
 pub fn host_window_set_cursor_icon(Int, icon~ : CursorIcon) -> Unit

@@ -97,9 +97,6 @@ const APP_LIFECYCLE_SUSPENDED : Int = 3
 const APP_LIFECYCLE_WILL_RESUME : Int = 4
 
 ///|
-const DEFAULT_FRAME_LIMIT : Int = 0
-
-///|
 pub type NativeWindowHandle = Int
 
 ///|
@@ -214,35 +211,6 @@ fn new_bool_state(size : Int) -> Array[Bool] {
     state.push(false)
   }
   state
-}
-
-///|
-fn parse_non_negative_int(input : String) -> Int? {
-  if input.length() == 0 {
-    return None
-  }
-  let mut value = 0
-  for c in input {
-    let code = c.to_int()
-    if code < 48 || code > 57 {
-      return None
-    }
-    value = value * 10 + (code - 48)
-  }
-  Some(value)
-}
-
-///|
-fn run_loop_frame_limit() -> Int {
-  if @sys.get_env_var("MGSTUDIO_WINDOW_FRAME_LIMIT") is Some(value) {
-    if parse_non_negative_int(value) is Some(parsed) {
-      parsed
-    } else {
-      DEFAULT_FRAME_LIMIT
-    }
-  } else {
-    DEFAULT_FRAME_LIMIT
-  }
 }
 
 ///|
@@ -419,9 +387,6 @@ priv struct NativeWindowEntry {
 priv struct NativePumpHandler {}
 
 ///|
-priv struct NativeRunLoopHandler {}
-
-///|
 let native_event_loop_ref : Ref[@window_macos.EventLoop?] = Ref::new(None)
 
 ///|
@@ -434,23 +399,6 @@ let event_loop_any_thread_applied_ref : Ref[Bool] = Ref::new(false)
 let native_pump_handler_ref : Ref[NativePumpHandler] = Ref::new(NativePumpHandler::{
 
 })
-
-///|
-let native_run_loop_handler_ref : Ref[NativeRunLoopHandler] = Ref::new(NativeRunLoopHandler::{
-
-})
-
-///|
-let native_run_loop_step_ref : Ref[FuncRef[() -> Unit]?] = Ref::new(None)
-
-///|
-let native_run_loop_frame_limit_ref : Ref[Int] = Ref::new(0)
-
-///|
-let native_run_loop_frames_ref : Ref[Int] = Ref::new(0)
-
-///|
-let native_run_loop_active_ref : Ref[Bool] = Ref::new(false)
 
 ///|
 let native_windows_ref : Ref[Array[NativeWindowEntry]] = Ref::new([])
@@ -1250,57 +1198,6 @@ impl @window_macos.ApplicationHandler for NativePumpHandler with suspended(
 }
 
 ///|
-impl @window_macos.ApplicationHandler for NativeRunLoopHandler with window_event(
-  _self,
-  _event_loop,
-  window_id,
-  event,
-) {
-  process_window_event(window_id.into_raw(), event)
-}
-
-///|
-impl @window_macos.ApplicationHandler for NativeRunLoopHandler with resumed(
-  _self,
-  _event_loop,
-) {
-  push_app_lifecycle_event(APP_LIFECYCLE_WILL_RESUME)
-  push_app_lifecycle_event(APP_LIFECYCLE_RUNNING)
-}
-
-///|
-impl @window_macos.ApplicationHandler for NativeRunLoopHandler with suspended(
-  _self,
-  _event_loop,
-) {
-  push_app_lifecycle_event(APP_LIFECYCLE_WILL_SUSPEND)
-  push_app_lifecycle_event(APP_LIFECYCLE_SUSPENDED)
-}
-
-///|
-impl @window_macos.ApplicationHandler for NativeRunLoopHandler with about_to_wait(
-  _self,
-  event_loop,
-) {
-  event_loop.set_control_flow(@window_core.ControlFlow::Poll)
-  if native_run_loop_active_ref.val {
-    match native_run_loop_step_ref.val {
-      Some(step) => step()
-      None => ()
-    }
-    if native_run_loop_frame_limit_ref.val > 0 {
-      native_run_loop_frames_ref.val = native_run_loop_frames_ref.val + 1
-      if native_run_loop_frames_ref.val >= native_run_loop_frame_limit_ref.val {
-        request_close_all_open_windows()
-      }
-    }
-  }
-  if !any_window_open() {
-    event_loop.exit()
-  }
-}
-
-///|
 fn pump_native_events() -> Unit {
   match native_event_loop_ref.val {
     Some(event_loop) =>
@@ -1554,34 +1451,6 @@ pub fn request_close(window : Int) -> Unit {
   }
   native_window_remove(window)
   mark_window_closed(window)
-}
-
-///|
-fn request_close_all_open_windows() -> Unit {
-  let windows = open_window_ids_ref.val
-  for window in windows {
-    if !is_window_closed(window) {
-      request_close(window)
-    }
-  }
-}
-
-///|
-pub fn run_loop(step : FuncRef[() -> Unit]) -> Unit {
-  if !any_window_open() {
-    step()
-    return
-  }
-  let event_loop = ensure_native_event_loop()
-  native_run_loop_step_ref.val = Some(step)
-  native_run_loop_frame_limit_ref.val = run_loop_frame_limit()
-  native_run_loop_frames_ref.val = 0
-  native_run_loop_active_ref.val = true
-  event_loop.run_app(native_run_loop_handler_ref.val)
-  native_run_loop_active_ref.val = false
-  native_run_loop_step_ref.val = None
-  native_run_loop_frame_limit_ref.val = 0
-  native_run_loop_frames_ref.val = 0
 }
 
 ///|
