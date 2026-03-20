@@ -7,6 +7,7 @@ import {
   "Milky2018/wgpu_mbt/c",
   "Milky2018/window/core",
   "Milky2018/window/dpi",
+  "Milky2018/window/macos",
   "moonbitlang/core/ref",
 }
 
@@ -197,6 +198,8 @@ pub fn last_accessibility_update_payload() -> String
 
 pub fn native_backend_available() -> Bool
 
+pub fn native_event_loop() -> @macos.EventLoop
+
 pub fn poll_events(Int) -> Unit
 
 pub fn position_x(Int) -> Int
@@ -212,6 +215,12 @@ pub fn queue_accessibility_update_payload(payload~ : String) -> Unit
 pub fn request_close(Int) -> Unit
 
 pub fn run_loop(FuncRef[() -> Unit]) -> Unit
+
+pub fn runner_handle_resumed() -> Unit
+
+pub fn runner_handle_suspended() -> Unit
+
+pub fn runner_process_window_event(Int, @core.WindowEvent) -> Unit
 
 pub fn scale_factor(Int) -> Float
 

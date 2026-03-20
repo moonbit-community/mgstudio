@@ -947,6 +947,11 @@ fn ensure_native_event_loop() -> @window_macos.EventLoop {
 }
 
 ///|
+pub fn native_event_loop() -> @window_macos.EventLoop {
+  ensure_native_event_loop()
+}
+
+///|
 fn native_window_ref(window : Int) -> Ref[@window_macos.Window]? {
   for entry in native_windows_ref.val {
     if entry.id == window {
@@ -1199,6 +1204,26 @@ fn process_window_event(window : Int, event : @window_core.WindowEvent) -> Unit 
 }
 
 ///|
+pub fn runner_process_window_event(
+  window_id : Int,
+  event : @window_core.WindowEvent,
+) -> Unit {
+  process_window_event(window_id, event)
+}
+
+///|
+pub fn runner_handle_resumed() -> Unit {
+  push_app_lifecycle_event(APP_LIFECYCLE_WILL_RESUME)
+  push_app_lifecycle_event(APP_LIFECYCLE_RUNNING)
+}
+
+///|
+pub fn runner_handle_suspended() -> Unit {
+  push_app_lifecycle_event(APP_LIFECYCLE_WILL_SUSPEND)
+  push_app_lifecycle_event(APP_LIFECYCLE_SUSPENDED)
+}
+
+///|
 impl @window_macos.ApplicationHandler for NativePumpHandler with window_event(
   _self,
   _event_loop,
@@ -1213,8 +1238,7 @@ impl @window_macos.ApplicationHandler for NativePumpHandler with resumed(
   _self,
   _event_loop,
 ) {
-  push_app_lifecycle_event(APP_LIFECYCLE_WILL_RESUME)
-  push_app_lifecycle_event(APP_LIFECYCLE_RUNNING)
+  runner_handle_resumed()
 }
 
 ///|
@@ -1222,8 +1246,7 @@ impl @window_macos.ApplicationHandler for NativePumpHandler with suspended(
   _self,
   _event_loop,
 ) {
-  push_app_lifecycle_event(APP_LIFECYCLE_WILL_SUSPEND)
-  push_app_lifecycle_event(APP_LIFECYCLE_SUSPENDED)
+  runner_handle_suspended()
 }
 
 ///|

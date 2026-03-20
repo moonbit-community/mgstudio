@@ -13,21 +13,6 @@
 // limitations under the License.
 
 ///|
-priv struct RunnerState {
-  mut tick : @app.RunnerFn?
-}
-
-///|
-let runner_state : Ref[RunnerState] = Ref::new(RunnerState::{ tick: None })
-
-///|
-fn runner_tick() -> Unit {
-  if runner_state.val.tick is Some(tick) {
-    tick()
-  }
-}
-
-///|
 priv struct RunnerSurfaceBinding {
   host_window : @window.HostWindow
   surface : @render.HostGpuSurface
@@ -167,6 +152,16 @@ fn env_int_or_default(key : String, default_value : Int) -> Int {
 }
 
 ///|
+fn runner_frame_limit() -> Int {
+  let value = env_int_or_default("MGSTUDIO_WINDOW_FRAME_LIMIT", 0)
+  if value > 0 {
+    value
+  } else {
+    0
+  }
+}
+
+///|
 fn screenshot_pixels_have_non_black_rgb(pixels : Bytes) -> Bool {
   if pixels.length() < 4 {
     return false
@@ -194,6 +189,239 @@ fn screenshot_try_non_black_texture_capture(
     return None
   }
   Some(capture)
+}
+
+///|
+priv struct WinitAppRunnerState {
+  device : @render.HostGpuDevice
+  primary_window : @window.HostWindow
+  app_ref : Ref[@app.App[@ecs.World]]
+  runner_surfaces_ref : Ref[Array[RunnerSurfaceBinding]]
+  debug_screenshot_path : String?
+  debug_screenshot_exit_on_save : Bool
+  debug_screenshot_texture_id : Int
+  debug_screenshot_frame : Int
+  debug_screenshot_surface_index : Int
+  debug_screenshot_requested_ref : Ref[Bool]
+  debug_screenshot_saved_ref : Ref[Bool]
+  debug_screenshot_capture_id_ref : Ref[Int]
+  debug_screenshot_render_frame_ref : Ref[Int]
+  frame_limit : Int
+  frame_count_ref : Ref[Int]
+}
+
+///|
+fn WinitAppRunnerState::run_tick(self : WinitAppRunnerState) -> Unit {
+  let world = self.app_ref.val.world()
+  let host_entries = @window.window_host_entries(world)
+  let window_store = world.component(@window.Window::component())
+  let next_surfaces : Array[RunnerSurfaceBinding] = []
+  let previous_surfaces = self.runner_surfaces_ref.val
+  for entry in host_entries {
+    let host_window = entry.host_window
+    let window_component = window_store.get(entry.entity)
+    let present_mode = runner_surface_present_mode(window_component)
+    let composite_alpha_mode = runner_surface_composite_alpha_mode(
+      window_component,
+    )
+    let desired_maximum_frame_latency = runner_surface_desired_maximum_frame_latency(
+      window_component,
+    )
+    if runner_surface_binding_find(previous_surfaces, host_window)
+      is Some(previous) {
+      let width = @window.host_window_get_width(host_window)
+      let height = @window.host_window_get_height(host_window)
+      if width > 0 &&
+        height > 0 &&
+        (
+          width != previous.width ||
+          height != previous.height ||
+          present_mode != previous.present_mode ||
+          composite_alpha_mode != previous.composite_alpha_mode ||
+          desired_maximum_frame_latency !=
+          previous.desired_maximum_frame_latency
+        ) {
+        @render.host_gpu_configure_surface(
+          device=self.device,
+          surface=previous.surface,
+          width~,
+          height~,
+          present_mode~,
+          composite_alpha_mode~,
+          desired_maximum_frame_latency~,
+        )
+      }
+      next_surfaces.push(RunnerSurfaceBinding::{
+        host_window,
+        surface: previous.surface,
+        target_id: previous.target_id,
+        width,
+        height,
+        present_mode,
+        composite_alpha_mode,
+        desired_maximum_frame_latency,
+      })
+      continue
+    }
+
+    let surface = @render.host_gpu_create_surface(host_window)
+    let target_id = @render.host_gpu_surface_target_id(surface)
+    let width = @window.host_window_get_width(host_window)
+    let height = @window.host_window_get_height(host_window)
+    if width > 0 && height > 0 {
+      @render.host_gpu_configure_surface(
+        device=self.device,
+        surface~,
+        width~,
+        height~,
+        present_mode~,
+        composite_alpha_mode~,
+        desired_maximum_frame_latency~,
+      )
+    }
+    next_surfaces.push(RunnerSurfaceBinding::{
+      host_window,
+      surface,
+      target_id,
+      width,
+      height,
+      present_mode,
+      composite_alpha_mode,
+      desired_maximum_frame_latency,
+    })
+  }
+  self.runner_surfaces_ref.val = next_surfaces
+
+  if @app.app_rendering_enabled() {
+    let next_render_frame = self.debug_screenshot_render_frame_ref.val + 1
+    let ordered_surface_bindings = runner_surface_binding_ordered(
+      self.runner_surfaces_ref.val,
+      self.primary_window,
+    )
+    let capture_surface_index = if ordered_surface_bindings.length() <= 0 {
+      0
+    } else if self.debug_screenshot_surface_index >=
+      ordered_surface_bindings.length() {
+      0
+    } else {
+      self.debug_screenshot_surface_index
+    }
+    let frame_bindings : Array[RunnerFrameBinding] = []
+    for i, binding in ordered_surface_bindings {
+      if !self.debug_screenshot_requested_ref.val &&
+        self.debug_screenshot_path is Some(_) &&
+        self.debug_screenshot_texture_id <= 0 &&
+        next_render_frame >= self.debug_screenshot_frame &&
+        i == capture_surface_index {
+        let capture_id = @render.screenshot_capture_surface_request()
+        if capture_id > 0 {
+          self.debug_screenshot_requested_ref.val = true
+          self.debug_screenshot_capture_id_ref.val = capture_id
+        }
+      }
+      if binding.width <= 0 || binding.height <= 0 {
+        continue
+      }
+      @render.host_gpu_set_active_surface_target(binding.target_id)
+      let frame = @render.host_gpu_begin_frame(binding.surface)
+      if frame > 0 {
+        frame_bindings.push(RunnerFrameBinding::{ frame, })
+      }
+    }
+    self.app_ref.val = self.app_ref.val.run_once()
+    self.debug_screenshot_render_frame_ref.val = next_render_frame
+    @window.screenshot_queue_capture_requests(self.app_ref.val.world())
+    for frame_binding in frame_bindings {
+      @render.host_gpu_end_frame(frame_binding.frame)
+    }
+    @window.screenshot_finalize_capture_requests(self.app_ref.val.world())
+    if !self.debug_screenshot_saved_ref.val &&
+      self.debug_screenshot_path is Some(path) {
+      let capture0 = if self.debug_screenshot_texture_id > 0 &&
+        next_render_frame >= self.debug_screenshot_frame {
+        @render.screenshot_capture_texture_sync(
+          texture_id=self.debug_screenshot_texture_id,
+        )
+      } else if self.debug_screenshot_capture_id_ref.val > 0 {
+        @render.screenshot_take_capture_result(
+          self.debug_screenshot_capture_id_ref.val,
+        )
+      } else {
+        None
+      }
+      let capture = if self.debug_screenshot_texture_id > 0 {
+        capture0
+      } else {
+        screenshot_capture_with_texture_fallback(capture0)
+      }
+      if capture is Some(capture) {
+        @asset.host_asset_save_rgba8_png(
+          width=capture.width,
+          height=capture.height,
+          pixels=capture.pixels,
+          path~,
+        )
+        self.debug_screenshot_saved_ref.val = true
+        if self.debug_screenshot_exit_on_save {
+          @window.window_request_close_all_hosts(self.app_ref.val.world())
+          return
+        }
+      }
+    }
+  } else {
+    self.app_ref.val = self.app_ref.val.run_once()
+  }
+  if self.app_ref.val.should_exit() is Some(_) {
+    @window.window_request_close_all_hosts(self.app_ref.val.world())
+    return
+  }
+  if @window.host_window_should_close(self.primary_window) {
+    @window.window_request_close_all_hosts(self.app_ref.val.world())
+  }
+}
+
+///|
+impl @window_macos.ApplicationHandler for WinitAppRunnerState with window_event(
+  _self,
+  _event_loop,
+  window_id,
+  event,
+) {
+  @windowing.runner_process_window_event(window_id.into_raw(), event)
+}
+
+///|
+impl @window_macos.ApplicationHandler for WinitAppRunnerState with resumed(
+  _self,
+  _event_loop,
+) {
+  @windowing.runner_handle_resumed()
+}
+
+///|
+impl @window_macos.ApplicationHandler for WinitAppRunnerState with suspended(
+  _self,
+  _event_loop,
+) {
+  @windowing.runner_handle_suspended()
+}
+
+///|
+impl @window_macos.ApplicationHandler for WinitAppRunnerState with about_to_wait(
+  self,
+  event_loop,
+) {
+  event_loop.set_control_flow(@window_core.ControlFlow::Poll)
+  self.run_tick()
+  if self.frame_limit > 0 {
+    self.frame_count_ref.val = self.frame_count_ref.val + 1
+    if self.frame_count_ref.val >= self.frame_limit {
+      @window.window_request_close_all_hosts(self.app_ref.val.world())
+    }
+  }
+  if !@windowing.any_window_open() {
+    event_loop.exit()
+  }
 }
 
 ///|
@@ -249,7 +477,6 @@ pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
     }
     let device = @render.host_gpu_request_device()
     let app_ref : Ref[@app.App[@ecs.World]] = Ref::new(app.run_startup())
-    let runner_surfaces_ref : Ref[Array[RunnerSurfaceBinding]] = Ref::new([])
     let debug_screenshot_path = match
       @sys.get_env_var("MGSTUDIO_SCREENSHOT_PATH") {
       Some(path) if path.trim().to_string() != "" =>
@@ -289,180 +516,23 @@ pub fn winit_runner(app : @app.App[@ecs.World]) -> @app.RunnerFn {
     let debug_screenshot_saved_ref : Ref[Bool] = Ref::new(false)
     let debug_screenshot_capture_id_ref : Ref[Int] = Ref::new(0)
     let debug_screenshot_render_frame_ref : Ref[Int] = Ref::new(0)
-    runner_state.val.tick = Some(fn() {
-      let world = app_ref.val.world()
-      let host_entries = @window.window_host_entries(world)
-      let window_store = world.component(@window.Window::component())
-      let next_surfaces : Array[RunnerSurfaceBinding] = []
-      let previous_surfaces = runner_surfaces_ref.val
-      for entry in host_entries {
-        let host_window = entry.host_window
-        let window_component = window_store.get(entry.entity)
-        let present_mode = runner_surface_present_mode(window_component)
-        let composite_alpha_mode = runner_surface_composite_alpha_mode(
-          window_component,
-        )
-        let desired_maximum_frame_latency = runner_surface_desired_maximum_frame_latency(
-          window_component,
-        )
-        if runner_surface_binding_find(previous_surfaces, host_window)
-          is Some(previous) {
-          let width = @window.host_window_get_width(host_window)
-          let height = @window.host_window_get_height(host_window)
-          if width > 0 &&
-            height > 0 &&
-            (
-              width != previous.width ||
-              height != previous.height ||
-              present_mode != previous.present_mode ||
-              composite_alpha_mode != previous.composite_alpha_mode ||
-              desired_maximum_frame_latency !=
-              previous.desired_maximum_frame_latency
-            ) {
-            @render.host_gpu_configure_surface(
-              device~,
-              surface=previous.surface,
-              width~,
-              height~,
-              present_mode~,
-              composite_alpha_mode~,
-              desired_maximum_frame_latency~,
-            )
-          }
-          next_surfaces.push(RunnerSurfaceBinding::{
-            host_window,
-            surface: previous.surface,
-            target_id: previous.target_id,
-            width,
-            height,
-            present_mode,
-            composite_alpha_mode,
-            desired_maximum_frame_latency,
-          })
-          continue
-        }
-
-        let surface = @render.host_gpu_create_surface(host_window)
-        let target_id = @render.host_gpu_surface_target_id(surface)
-        let width = @window.host_window_get_width(host_window)
-        let height = @window.host_window_get_height(host_window)
-        if width > 0 && height > 0 {
-          @render.host_gpu_configure_surface(
-            device~,
-            surface~,
-            width~,
-            height~,
-            present_mode~,
-            composite_alpha_mode~,
-            desired_maximum_frame_latency~,
-          )
-        }
-        next_surfaces.push(RunnerSurfaceBinding::{
-          host_window,
-          surface,
-          target_id,
-          width,
-          height,
-          present_mode,
-          composite_alpha_mode,
-          desired_maximum_frame_latency,
-        })
-      }
-      runner_surfaces_ref.val = next_surfaces
-
-      if @app.app_rendering_enabled() {
-        let next_render_frame = debug_screenshot_render_frame_ref.val + 1
-        let ordered_surface_bindings = runner_surface_binding_ordered(
-          runner_surfaces_ref.val,
-          primary_window,
-        )
-        let capture_surface_index = if ordered_surface_bindings.length() <= 0 {
-          0
-        } else if debug_screenshot_surface_index >=
-          ordered_surface_bindings.length() {
-          0
-        } else {
-          debug_screenshot_surface_index
-        }
-        let frame_bindings : Array[RunnerFrameBinding] = []
-        for i, binding in ordered_surface_bindings {
-          if !debug_screenshot_requested_ref.val &&
-            debug_screenshot_path is Some(_) &&
-            debug_screenshot_texture_id <= 0 &&
-            next_render_frame >= debug_screenshot_frame &&
-            i == capture_surface_index {
-            let capture_id = @render.screenshot_capture_surface_request()
-            if capture_id > 0 {
-              debug_screenshot_requested_ref.val = true
-              debug_screenshot_capture_id_ref.val = capture_id
-            }
-          }
-          if binding.width <= 0 || binding.height <= 0 {
-            continue
-          }
-          @render.host_gpu_set_active_surface_target(binding.target_id)
-          let frame = @render.host_gpu_begin_frame(binding.surface)
-          if frame > 0 {
-            frame_bindings.push(RunnerFrameBinding::{ frame, })
-          }
-        }
-        app_ref.val = app_ref.val.run_once()
-        debug_screenshot_render_frame_ref.val = next_render_frame
-        @window.screenshot_queue_capture_requests(app_ref.val.world())
-        for frame_binding in frame_bindings {
-          @render.host_gpu_end_frame(frame_binding.frame)
-        }
-        @window.screenshot_finalize_capture_requests(app_ref.val.world())
-        if !debug_screenshot_saved_ref.val &&
-          debug_screenshot_path is Some(path) {
-          let capture0 = if debug_screenshot_texture_id > 0 &&
-            next_render_frame >= debug_screenshot_frame {
-            @render.screenshot_capture_texture_sync(
-              texture_id=debug_screenshot_texture_id,
-            )
-          } else if debug_screenshot_capture_id_ref.val > 0 {
-            @render.screenshot_take_capture_result(
-              debug_screenshot_capture_id_ref.val,
-            )
-          } else {
-            None
-          }
-          let capture = if debug_screenshot_texture_id > 0 {
-            capture0
-          } else {
-            screenshot_capture_with_texture_fallback(capture0)
-          }
-          if capture is Some(capture) {
-            @asset.host_asset_save_rgba8_png(
-              width=capture.width,
-              height=capture.height,
-              pixels=capture.pixels,
-              path~,
-            )
-            debug_screenshot_saved_ref.val = true
-            if debug_screenshot_exit_on_save {
-              @window.window_request_close_all_hosts(app_ref.val.world())
-              runner_state.val.tick = None
-              return
-            }
-          }
-        }
-      } else {
-        app_ref.val = app_ref.val.run_once()
-      }
-      if app_ref.val.should_exit() is Some(_) {
-        @window.window_request_close_all_hosts(app_ref.val.world())
-        runner_state.val.tick = None
-        return
-      }
-      if @window.host_window_should_close(primary_window) {
-        @window.window_request_close_all_hosts(app_ref.val.world())
-        // Web runtimes cannot block in `window_run_loop`, so cleanup must happen
-        // inside the tick closure (not after `window_run_loop` returns).
-        runner_state.val.tick = None
-      }
-    })
-    let tick : FuncRef[() -> Unit] = fn() { runner_tick() }
-    @window.host_window_run_loop(tick)
+    let runner_state = WinitAppRunnerState::{
+      device,
+      primary_window,
+      app_ref,
+      runner_surfaces_ref: Ref::new([]),
+      debug_screenshot_path,
+      debug_screenshot_exit_on_save,
+      debug_screenshot_texture_id,
+      debug_screenshot_frame,
+      debug_screenshot_surface_index,
+      debug_screenshot_requested_ref,
+      debug_screenshot_saved_ref,
+      debug_screenshot_capture_id_ref,
+      debug_screenshot_render_frame_ref,
+      frame_limit: runner_frame_limit(),
+      frame_count_ref: Ref::new(0),
+    }
+    @windowing.native_event_loop().run_app(runner_state)
   }
 }
