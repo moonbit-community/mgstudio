@@ -92,7 +92,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 0.0F, 4.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 0.0F, 4.0F).looking_at(
       @math.Vec3::new(0.0F, -2.5F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -108,7 +108,7 @@ fn setup(world : @ecs.World) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(10.0F, 10.0F, 10.0F),
     @pbr.MeshMaterial3d::new(room_material),
-    @math.Transform::from_xyz(0.0F, -2.5F, -2.5F),
+    @transform.Transform::from_xyz(0.0F, -2.5F, -2.5F),
   ).spawn(world)
   |> ignore
 
@@ -121,7 +121,7 @@ fn setup(world : @ecs.World) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(10.0F, 2.0F, 4.0F),
     @pbr.MeshMaterial3d::new(inner_cube_material),
-    @math.Transform::from_xyz(0.0F, -4.0F, -2.5F),
+    @transform.Transform::from_xyz(0.0F, -4.0F, -2.5F),
   ).spawn(world)
   |> ignore
 
@@ -141,10 +141,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     light_probe,
-    @math.Transform::identity().with_scale(@math.Vec3::splat(10.01F)),
+    @transform.Transform::identity().with_scale(@math.Vec3::splat(10.01F)),
     tick,
   )
   pccm_state.val.light_probe = Some(light_probe)
@@ -154,7 +154,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),

@@ -174,7 +174,7 @@ fn spawn_ui_text_handle(
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
     @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 220.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -240,7 +240,7 @@ fn bloom_setup(world : @ecs.World) -> Unit {
   }
   let camera = @sprite.Camera2dBundle::new(
       @sprite.Camera::new(@sprite.Color::black()),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_bloom(Some(@sprite.Bloom::default()))
     .spawn(world)
@@ -257,14 +257,14 @@ fn bloom_setup(world : @ecs.World) -> Unit {
     @sprite.Sprite::from_image(bird)
     .with_color(@sprite.Color::srgb(5.0F, 5.0F, 5.0F))
     .with_custom_size(Some(@math.Vec2::new(160.0F, 160.0F))),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   @sprite.Mesh2dBundle::new(
     @sprite.Mesh2d::from_circle(@sprite.Circle::new(100.0F)),
     @sprite.ColorMaterial::new(@sprite.Color::srgb(7.5F, 0.0F, 7.5F)),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-200.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -275,7 +275,7 @@ fn bloom_setup(world : @ecs.World) -> Unit {
   @sprite.Mesh2dBundle::new(
     @sprite.Mesh2d::from_regular_polygon(@sprite.RegularPolygon::new(100.0F, 6)),
     @sprite.ColorMaterial::new(@sprite.Color::srgb(6.25F, 9.4F, 9.1F)),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(200.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),

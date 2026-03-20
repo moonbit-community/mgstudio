@@ -262,7 +262,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -580,7 +580,7 @@ fn spawn_ui_text_line(
   let handle = @text.Text2dBundle::new(
       @text.Text2d::new(content),
       font,
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))

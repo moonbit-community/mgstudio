@@ -155,7 +155,7 @@ fn instruction_text() -> String {
 fn setup_camera_fog(world : @ecs.World) -> Unit {
   let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
-      @math.Transform::from_xyz(-1.0F, 0.1F, 1.0F).looking_at(
+      @transform.Transform::from_xyz(-1.0F, 0.1F, 1.0F).looking_at(
         fog_center(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
@@ -171,7 +171,7 @@ fn spawn_mesh(
   world : @ecs.World,
   mesh : @pbr.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     mesh,
@@ -190,10 +190,10 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
     .build()
   let sun = world.spawn_empty()
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     sun,
-    @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).looking_at(
       @math.Vec3::new(-0.15F, -0.05F, 0.25F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -230,7 +230,7 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
       world,
       @pbr.Mesh3d::from_cuboid(width, height, 0.3F),
       terrain_material,
-      @math.Transform::from_xyz(shift, height / 2.0F - 0.08F, -depth),
+      @transform.Transform::from_xyz(shift, height / 2.0F - 0.08F, -depth),
     )
   }
 
@@ -244,7 +244,7 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
   let sky = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(2.0F, 1.0F, 1.0F),
     @pbr.MeshMaterial3d::new(sky_material),
-    @math.Transform::identity().with_scale(@math.Vec3::splat(20.0F)),
+    @transform.Transform::identity().with_scale(@math.Vec3::splat(20.0F)),
   ).spawn(world)
   world
   .component(@pbr.ecs_key_not_shadow_caster)
@@ -258,7 +258,7 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
   let handle = @text.Text2dBundle::new(
       @text.Text2d::new(instruction_text()),
       @text.TextFont::default().with_font(font).with_font_size(18.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, -340.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),

@@ -10,6 +10,7 @@ import {
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/text",
+  "Milky2018/mgstudio/transform",
   "Milky2018/moon_accesskit",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
@@ -763,7 +764,7 @@ pub struct UiContext {
   mut viewport_origin : @math.Vec2
   mut viewport_size : @math.Vec2
   mut camera_entity : @core.Entity?
-  mut camera_transform : @math.Transform
+  mut camera_transform : @transform.Transform
   mut camera_scale : Float
   mut pointer_pos : @math.Vec2?
   mut pointer_down : Bool
@@ -772,7 +773,7 @@ pub struct UiContext {
   mut wheel_delta : @math.Vec2
 }
 pub fn UiContext::default() -> Self
-pub fn UiContext::new(@asset.Handle[@image.Image], @math.Vec2, @math.Vec2, @core.Entity?, @math.Transform, Float, @math.Vec2?, Bool, pointer_just_pressed? : Bool, pointer_just_released? : Bool, wheel_delta? : @math.Vec2) -> Self
+pub fn UiContext::new(@asset.Handle[@image.Image], @math.Vec2, @math.Vec2, @core.Entity?, @transform.Transform, Float, @math.Vec2?, Bool, pointer_just_pressed? : Bool, pointer_just_released? : Bool, wheel_delta? : @math.Vec2) -> Self
 pub impl ToJson for UiContext
 pub impl @json.FromJson for UiContext
 

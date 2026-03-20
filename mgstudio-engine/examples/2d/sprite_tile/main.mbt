@@ -55,11 +55,14 @@ fn sprite_tile_setup(world : @ecs.World) -> Unit {
       ),
     )
     .with_custom_size(Some(@math.Vec2::new(128.0F, 128.0F)))
-  let entity = @sprite.SpriteBundle::new(sprite, @math.Transform::identity()).spawn(
+  let entity = @sprite.SpriteBundle::new(
+    sprite,
+    @transform.Transform::identity(),
+  ).spawn(world)
+  let camera = @sprite.Camera::default()
+  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
     world,
   )
-  let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
   |> ignore
   sprite_tile_animation_state.val.sprite = Some(entity)
   sprite_tile_animation_state.val.texture = Some(texture)
@@ -110,7 +113,7 @@ fn sprite_tile_animate(world : @ecs.World) -> Unit {
       )
     let new_entity = @sprite.SpriteBundle::new(
       sprite,
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     ).spawn(world)
     sprite_tile_animation_state.val.sprite = Some(new_entity)
   }

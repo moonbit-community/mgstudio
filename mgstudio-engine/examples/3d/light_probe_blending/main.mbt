@@ -347,14 +347,15 @@ fn spawn_probe_gizmo_box(
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(side, side, side),
     @pbr.MeshMaterial3d::new(material),
-    @math.Transform::from_xyz(0.0F, 0.0F, center_z),
+    @transform.Transform::from_xyz(0.0F, 0.0F, center_z),
   ).spawn(world)
 }
 
 ///|
 fn sphere_position(world : @ecs.World) -> @math.Vec3 {
   if light_probe_blending_state.val.sphere is Some(entity) {
-    if world.component(@math.ecs_key_transform).get(entity) is Some(transform) {
+    if world.component(@transform.ecs_key_transform).get(entity)
+      is Some(transform) {
       return transform.translation
     }
   }
@@ -379,10 +380,10 @@ fn write_orbit_camera_transform(world : @ecs.World) -> Unit {
   ).add(target)
 
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .set(
     camera_entity,
-    @math.Transform::from_xyz(translation.x, translation.y, translation.z).looking_at(
+    @transform.Transform::from_xyz(translation.x, translation.y, translation.z).looking_at(
       target,
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -402,10 +403,10 @@ fn write_free_camera_transform(
 
   let position = light_probe_blending_state.val.free_position
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .set(
     camera_entity,
-    @math.Transform::from_xyz(position.x, position.y, position.z).looking_at(
+    @transform.Transform::from_xyz(position.x, position.y, position.z).looking_at(
       position.add(forward),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -419,7 +420,7 @@ fn switch_to_free_camera(world : @ecs.World) -> Unit {
   guard light_probe_blending_state.val.camera is Some(camera_entity) else {
     return
   }
-  guard world.component(@math.ecs_key_transform).get(camera_entity)
+  guard world.component(@transform.ecs_key_transform).get(camera_entity)
     is Some(camera_transform) else {
     return
   }
@@ -447,7 +448,7 @@ fn switch_to_orbit_camera(world : @ecs.World) -> Unit {
   guard light_probe_blending_state.val.camera is Some(camera_entity) else {
     return
   }
-  guard world.component(@math.ecs_key_transform).get(camera_entity)
+  guard world.component(@transform.ecs_key_transform).get(camera_entity)
     is Some(camera_transform) else {
     return
   }
@@ -501,20 +502,20 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   let sphere = @pbr.MeshMaterial3dBundle::new(
     uv_sphere_mesh(1.0F, 18, 32),
     @pbr.MeshMaterial3d::new(reflective_material),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   light_probe_blending_state.val.sphere = Some(sphere)
 
   let prism = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(4.0F, 2.0F, 20.0F),
     @pbr.MeshMaterial3d::new(reflective_material),
-    @math.Transform::from_xyz(0.0F, -4.0F, -5.5F),
+    @transform.Transform::from_xyz(0.0F, -4.0F, -5.5F),
   ).spawn(world)
   light_probe_blending_state.val.prism = Some(prism)
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   light_probe_blending_state.val.camera = Some(camera)
 
@@ -527,10 +528,10 @@ fn spawn_scene(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     directional,
-    @math.Transform::from_xyz(3.0F, 6.0F, 4.0F).looking_at(
+    @transform.Transform::from_xyz(3.0F, 6.0F, 4.0F).looking_at(
       @math.Vec3::new(0.0F, -1.5F, -5.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -573,10 +574,10 @@ fn spawn_scene(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     probe_1,
-    @math.Transform::identity()
+    @transform.Transform::identity()
     .with_scale(
       @math.Vec3::new(1.0F, -1.0F, 1.0F).mul_scalar(LIGHT_PROBE_SIDE_LENGTH),
     )
@@ -615,10 +616,10 @@ fn spawn_scene(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     probe_2,
-    @math.Transform::identity()
+    @transform.Transform::identity()
     .with_scale(
       @math.Vec3::new(1.0F, -1.0F, 1.0F).mul_scalar(LIGHT_PROBE_SIDE_LENGTH),
     )
@@ -699,7 +700,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -761,10 +762,10 @@ fn move_sphere(world : @ecs.World) -> Unit {
     ) *
     0.5F
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .set(
     entity,
-    @math.Transform::from_xyz(0.0F, 0.0F, -ROOM_SEPARATION * t),
+    @transform.Transform::from_xyz(0.0F, 0.0F, -ROOM_SEPARATION * t),
     world.read_change_tick(),
   )
   |> ignore

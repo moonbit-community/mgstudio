@@ -137,7 +137,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 }

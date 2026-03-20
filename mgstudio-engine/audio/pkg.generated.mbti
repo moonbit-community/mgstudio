@@ -7,6 +7,7 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/transform",
   "moonbitlang/core/json",
 }
 
@@ -195,7 +196,7 @@ pub struct SpatialAudioSink {
 pub fn SpatialAudioSink::position_seconds(Self) -> Float
 pub fn SpatialAudioSink::set_ears_position(Self, @math.Vec3, @math.Vec3) -> Unit
 pub fn SpatialAudioSink::set_emitter_position(Self, @math.Vec3) -> Unit
-pub fn SpatialAudioSink::set_listener_position(Self, @math.Transform, Float) -> Unit
+pub fn SpatialAudioSink::set_listener_position(Self, @transform.Transform, Float) -> Unit
 pub fn SpatialAudioSink::toggle_mute(Self) -> Self
 pub fn SpatialAudioSink::toggle_playback(Self) -> Unit
 pub fn SpatialAudioSink::try_seek_seconds(Self, Float) -> Bool

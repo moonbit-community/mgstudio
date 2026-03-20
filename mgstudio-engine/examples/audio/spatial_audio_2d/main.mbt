@@ -108,7 +108,7 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   let text_handle = @text.Text2dBundle::new(
       @text.Text2d::new(content),
       @text.TextFont::default().with_font(font).with_font_size(20.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -156,7 +156,7 @@ fn spawn_listener_ear(
   let ear = @sprite.Mesh2dBundle::new(
     @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(EAR_SIZE, EAR_SIZE)),
     @sprite.ColorMaterial::new(color),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(offset_x, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -185,7 +185,7 @@ fn setup(world : @ecs.World) -> Unit {
   let emitter = @sprite.Mesh2dBundle::new(
     @sprite.Mesh2d::from_circle(@sprite.Circle::new(EMITTER_RADIUS)),
     @sprite.ColorMaterial::new(color_blue()),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, EMITTER_Y),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -202,8 +202,8 @@ fn setup(world : @ecs.World) -> Unit {
 
   let listener = world.spawn_empty()
   world
-  .component(@math.ecs_key_transform)
-  .insert(listener, @math.Transform::identity(), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(listener, @transform.Transform::identity(), tick)
   world
   .component(@audio.ecs_key_spatial_listener)
   .insert(listener, @audio.SpatialListener::new(LISTENER_GAP), tick)
@@ -217,7 +217,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -242,14 +242,14 @@ fn update_emitters(world : @ecs.World) -> Unit {
   }
 
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   let next_x = @math.sin(
       spatial_audio_2d_state.val.emitter_stopwatch.elapsed_secs(),
     ) *
     EMITTER_RANGE_X
 
   transform_store.update(spatial_audio_2d_state.val.emitter, tick, fn(
-    transform : @math.Transform,
+    transform : @transform.Transform,
   ) {
     transform.with_translation(@math.Vec3::new(next_x, EMITTER_Y, 0.0F))
   })
@@ -279,9 +279,9 @@ fn update_listener(world : @ecs.World) -> Unit {
   }
 
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   transform_store.update(spatial_audio_2d_state.val.listener, tick, fn(
-    transform : @math.Transform,
+    transform : @transform.Transform,
   ) {
     let translation = transform.translation
     transform.with_translation(

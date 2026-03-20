@@ -122,7 +122,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
-      @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
+      @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
@@ -175,7 +175,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
       let entity = @pbr.MeshMaterial3dBundle::new(
         sphere_mesh,
         @pbr.MeshMaterial3d::new(material),
-        @math.Transform::from_xyz(x_pos, 0.0F, z_pos).with_scale(
+        @transform.Transform::from_xyz(x_pos, 0.0F, z_pos).with_scale(
           @math.Vec3::splat(scale),
         ),
       ).spawn(world)
@@ -190,7 +190,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, -320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -348,7 +348,7 @@ fn update_bloom_settings(
 
 ///|
 fn bounce_spheres(
-  query : @ecs.Query2RefMutFiltered[Bouncing, @math.Transform, @ecs.All],
+  query : @ecs.Query2RefMutFiltered[Bouncing, @transform.Transform, @ecs.All],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let elapsed = time.get().elapsed_secs()

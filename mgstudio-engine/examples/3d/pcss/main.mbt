@@ -233,7 +233,11 @@ fn setup(world : @ecs.World) -> Unit {
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(-12.912F * 0.7F, 4.466F * 0.7F, -10.624F * 0.7F).looking_at(
+    @transform.Transform::from_xyz(
+      -12.912F * 0.7F,
+      4.466F * 0.7F,
+      -10.624F * 0.7F,
+    ).looking_at(
       @math.Vec3::new(0.0F, 3.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -267,10 +271,10 @@ fn setup(world : @ecs.World) -> Unit {
   let light = world.spawn_empty()
   pcss_state.val.light = Some(light)
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     light,
-    @math.Transform::from_xyz(57.693F, 34.334F, -6.422F).looking_at(
+    @transform.Transform::from_xyz(57.693F, 34.334F, -6.422F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -296,7 +300,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),

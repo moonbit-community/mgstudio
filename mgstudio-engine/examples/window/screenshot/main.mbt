@@ -46,7 +46,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
         @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)),
       ),
     ),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -57,7 +57,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
         @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.8F, 0.7F, 0.6F)),
       ),
     ),
-    @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
   ).spawn(world)
   |> ignore
 
@@ -70,12 +70,12 @@ fn spawn_scene(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
+    @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -90,14 +90,14 @@ fn spawn_ui(world : @ecs.World) -> Unit {
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(100).with_clear_color_none(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   let text_handle = @text.Text2dBundle::new(
       @text.Text2d::new("Press <spacebar> to save a screenshot to disk"),
       @text.TextFont::default().with_font(font).with_font_size(24.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))

@@ -44,10 +44,10 @@ fn setup_scene(world : @ecs.World) -> Unit {
   .component(@pbr.ecs_key_directional_light)
   .insert(light, @pbr.DirectionalLight::default(), tick)
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     light,
-    @math.Transform::from_xyz(3.0F, 3.0F, 3.0F).looking_at(
+    @transform.Transform::from_xyz(3.0F, 3.0F, 3.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -57,7 +57,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   // Camera for primary window
   let first_window_camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 0.0F, 6.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 0.0F, 6.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -74,7 +74,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   // Camera for secondary window
   let second_window_camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
-      @math.Transform::from_xyz(6.0F, 0.0F, 0.0F).looking_at(
+      @transform.Transform::from_xyz(6.0F, 0.0F, 0.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
@@ -99,7 +99,7 @@ fn spawn_label(
   let text_handle = @text.Text2dBundle::new(
       @text.Text2d::new(label),
       @text.TextFont::default().with_font(font).with_font_size(24.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_shadow(Some(@text.Text2dShadow::default()))

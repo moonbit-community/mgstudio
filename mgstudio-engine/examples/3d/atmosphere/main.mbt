@@ -123,7 +123,7 @@ fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
 }
 
 ///|
-fn transform_forward(transform : @math.Transform) -> @math.Vec3 {
+fn transform_forward(transform : @transform.Transform) -> @math.Vec3 {
   quat_rotate_vec3(transform.rotation, @math.Vec3::new(0.0F, 0.0F, -1.0F)).normalize_or_zero()
 }
 
@@ -218,9 +218,9 @@ fn apply_atmosphere(world : @ecs.World) -> Unit {
   let mut sun_mix = 0.0F
   if state.camera is Some(camera_entity) {
     if state.sun is Some(sun_entity) {
-      if world.component(@math.ecs_key_transform).get(camera_entity)
+      if world.component(@transform.ecs_key_transform).get(camera_entity)
         is Some(camera_transform) {
-        if world.component(@math.ecs_key_transform).get(sun_entity)
+        if world.component(@transform.ecs_key_transform).get(sun_entity)
           is Some(sun_transform) {
           let light_dir = transform_forward(sun_transform).neg()
           let view_dir = scene_focus()
@@ -303,7 +303,7 @@ fn spawn_mesh(
   world : @ecs.World,
   mesh : @pbr.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     mesh,
@@ -317,7 +317,7 @@ fn spawn_mesh(
 fn setup_camera(world : @ecs.World) -> Unit {
   let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
-      @math.Transform::from_xyz(-2.4F, 0.04F, 0.0F).looking_at(
+      @transform.Transform::from_xyz(-2.4F, 0.04F, 0.0F).looking_at(
         scene_focus(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
@@ -356,10 +356,10 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   let sun = world.spawn_empty()
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     sun,
-    @math.Transform::from_xyz(1.0F, 0.4F, 0.0F).looking_at(
+    @transform.Transform::from_xyz(1.0F, 0.4F, 0.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -396,7 +396,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
       world,
       @pbr.Mesh3d::from_cuboid(width, height, 0.25F),
       terrain_material,
-      @math.Transform::from_xyz(
+      @transform.Transform::from_xyz(
         -1.0F + x_shift,
         height / 2.0F - 0.06F,
         -0.5F - depth,
@@ -414,7 +414,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     world,
     probe_mesh,
     probe_metal,
-    @math.Transform::from_xyz(-1.0F, 0.1F, -0.1F),
+    @transform.Transform::from_xyz(-1.0F, 0.1F, -0.1F),
   )
 
   let probe_rough = @pbr.standard_material_add(
@@ -426,7 +426,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     world,
     probe_mesh,
     probe_rough,
-    @math.Transform::from_xyz(-1.0F, 0.1F, 0.1F),
+    @transform.Transform::from_xyz(-1.0F, 0.1F, 0.1F),
   )
 
   let water_material = @pbr.standard_material_add(
@@ -442,7 +442,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     world,
     @pbr.Mesh3d::from_cuboid(100.0F, 0.02F, 100.0F),
     water_material,
-    @math.Transform::from_xyz(-1.0F, 0.0F, -0.5F),
+    @transform.Transform::from_xyz(-1.0F, 0.0F, -0.5F),
   )
 }
 
@@ -453,7 +453,7 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
   let handle = @text.Text2dBundle::new(
       @text.Text2d::new(atmosphere_instruction_text()),
       @text.TextFont::default().with_font(font).with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -558,10 +558,10 @@ fn dynamic_scene(world : @ecs.World) -> Unit {
       0.4F * @math.sin(atmosphere_state.val.sun_pitch),
     )
     world
-    .component(@math.ecs_key_transform)
+    .component(@transform.ecs_key_transform)
     .set(
       sun_entity,
-      @math.Transform::from_xyz(sun_pos.x, sun_pos.y, sun_pos.z).looking_at(
+      @transform.Transform::from_xyz(sun_pos.x, sun_pos.y, sun_pos.z).looking_at(
         @math.Vec3::new(0.0F, 0.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),

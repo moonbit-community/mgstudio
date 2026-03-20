@@ -93,8 +93,8 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   .component(CameraSensitivity::component())
   .insert(player, CameraSensitivity::default(), tick)
   world
-  .component(@math.ecs_key_transform)
-  .insert(player, @math.Transform::from_xyz(0.0F, 1.0F, 0.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(player, @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F), tick)
 
   let world_camera = @camera.Camera3dBundle::new_with_projection(
     @sprite.Camera::default(),
@@ -102,7 +102,7 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
       ..@camera.PerspectiveProjection3d::default(),
       fov: degrees_to_radians(90.0F),
     }),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(WorldModelCamera::component())
@@ -117,7 +117,7 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
       ..@camera.PerspectiveProjection3d::default(),
       fov: degrees_to_radians(70.0F),
     }),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(@sprite.ecs_key_render_layers)
@@ -139,7 +139,7 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    @math.Transform::from_xyz(0.2F, -0.1F, -0.25F),
+    @transform.Transform::from_xyz(0.2F, -0.1F, -0.25F),
   ).spawn(world)
   world
   .component(@sprite.ecs_key_render_layers)
@@ -162,7 +162,7 @@ fn spawn_world_model(world : @ecs.World) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_plane(10.0F, 10.0F),
     floor_material,
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -174,14 +174,14 @@ fn spawn_world_model(world : @ecs.World) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(2.0F, 0.5F, 1.0F),
     cube_material,
-    @math.Transform::from_xyz(0.0F, 0.25F, -3.0F),
+    @transform.Transform::from_xyz(0.0F, 0.25F, -3.0F),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(2.0F, 0.5F, 1.0F),
     cube_material,
-    @math.Transform::from_xyz(0.75F, 1.75F, 0.0F),
+    @transform.Transform::from_xyz(0.75F, 1.75F, 0.0F),
   ).spawn(world)
   |> ignore
 }
@@ -200,8 +200,8 @@ fn spawn_lights(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(light, @math.Transform::from_xyz(-2.0F, 4.0F, -0.75F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(light, @transform.Transform::from_xyz(-2.0F, 4.0F, -0.75F), tick)
   world
   .component(@sprite.ecs_key_render_layers)
   .insert(
@@ -219,7 +219,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let overlay_camera = @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(2).with_clear_color_none(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(@ui.IsDefaultUiCamera::component())
@@ -245,7 +245,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(20.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -275,7 +275,7 @@ fn move_player(
   accumulated_mouse_motion : @app.Res[@input.AccumulatedMouseMotion],
   player_query : @ecs.Query2RefMutFiltered[
     CameraSensitivity,
-    @math.Transform,
+    @transform.Transform,
     @ecs.With[Player],
   ],
 ) -> Unit {

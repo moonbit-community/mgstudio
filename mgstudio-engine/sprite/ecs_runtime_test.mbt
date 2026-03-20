@@ -25,9 +25,9 @@ fn[T] ecs_has_non_null_payload(
 fn ecs_transform_matches(
   world : @ecs.World,
   entity : @core.Entity,
-  expected : @math.Transform,
+  expected : @transform.Transform,
 ) -> Bool {
-  let actual_transform = try! world.get(entity, @math.ecs_key_transform)
+  let actual_transform = try! world.get(entity, @transform.ecs_key_transform)
   match actual_transform {
     Some(actual) => actual.to_json() == expected.to_json()
     None => false
@@ -126,7 +126,7 @@ test "render2d: SpriteBundle::spawn inserts expected components" {
   let image : @asset.Handle[@asset.Image] = @asset.Handle::new(1)
   let bundle = SpriteBundle::new(
     Sprite::from_image(image),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   )
   let entity = bundle.spawn(world)
 
@@ -168,7 +168,7 @@ test "render2d: Camera2dBundle::spawn inserts expected components" {
   let world = @ecs.World::new()
   let bundle = Camera2dBundle::new(
       Camera::default(),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_bloom(Some(Bloom::default()))
     .with_color_grading(Some(ColorGrading::default()))
@@ -231,7 +231,7 @@ test "render2d: Commands::spawn accepts Camera2dBundle" {
   ) {
     spawned.val = Some(
       commands.spawn(
-        Camera2dBundle::new(Camera::default(), @math.Transform::identity())
+        Camera2dBundle::new(Camera::default(), @transform.Transform::identity())
         .with_bloom(Some(Bloom::default()))
         .with_color_grading(Some(ColorGrading::default())),
       ),
@@ -265,7 +265,7 @@ test "render2d: tonemapping and deband components share post_process ownership" 
   let world = @ecs.World::new()
   let entity = Camera2dBundle::new(
       Camera::default(),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_tonemapping(Some(AgX))
     .with_deband_dither(Some(Enabled))
@@ -290,7 +290,7 @@ test "render2d: bloom component shares post_process ownership" {
   let world = @ecs.World::new()
   let entity = Camera2dBundle::new(
       Camera::default(),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_bloom(Some(Bloom::default().with_intensity(0.35F)))
     .spawn(world)
@@ -308,7 +308,7 @@ test "render2d: Camera2dBundle::new_with_target stores window render target" {
   let target_window = @core.Entity::new(7, 2)
   let bundle = Camera2dBundle::new_with_target(
     Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     RenderTarget::Window(@window.WindowRef::Entity(target_window)),
   )
   let entity = bundle.spawn(world)
@@ -327,7 +327,7 @@ test "render2d: Camera2dBundle::new_with_target stores window render target" {
 test "render2d: Mesh2dBundle::spawn inserts expected components" {
   let world = @ecs.World::new()
   let entity_ref : Ref[@core.Entity?] = Ref::new(None)
-  let expected_transform = @math.Transform::identity()
+  let expected_transform = @transform.Transform::identity()
 
   @app.App::new(world)
   .add_plugins([@asset.asset_plugin, render2d_plugin])
@@ -401,12 +401,12 @@ test "render2d: Mesh2dBundle constructors normalize to MeshMaterial2d" {
     let wrapped_bundle = Mesh2dBundle::new(
       mesh,
       color_material,
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     let preserved_bundle = Mesh2dBundle::new_with_mesh_material(
       mesh,
       mesh_material,
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
 
     wrapped_material_handle.val = Some(wrapped_bundle.material.handle.id())
@@ -567,7 +567,7 @@ test "render2d: extract_color_material_mesh_instances_system populates resource"
       Mesh2dBundle::new(
         Mesh2d::from_rectangle(Rectangle::new(8.0F, 6.0F)),
         material,
-        @math.Transform::identity(),
+        @transform.Transform::identity(),
       ).spawn(world),
     )
   })
@@ -601,7 +601,7 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
     Mesh2dBundle::new(
       Mesh2d::from_rectangle(Rectangle::new(8.0F, 6.0F)),
       material,
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     ).spawn(world)
     |> ignore
   })

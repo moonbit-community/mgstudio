@@ -159,7 +159,7 @@ fn color_animation_setup(world : @ecs.World) -> Unit {
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -202,7 +202,7 @@ fn spawn_mode_sprite(
   )
   let entity = @sprite.SpriteBundle::new(
     sprite,
-    @math.Transform::from_xyz(0.0F, y, 0.0F),
+    @transform.Transform::from_xyz(0.0F, y, 0.0F),
   ).spawn(world)
   color_animation_state.val.sprites.push(AnimatedSprite::{ entity, y, mode })
 }
@@ -233,7 +233,7 @@ fn color_animation_update(world : @ecs.World) -> Unit {
     try! world.despawn(animated.entity)
     let entity = @sprite.SpriteBundle::new(
       sprite,
-      @math.Transform::from_xyz(x, animated.y, 0.0F),
+      @transform.Transform::from_xyz(x, animated.y, 0.0F),
     ).spawn(world)
     next_sprites.push(AnimatedSprite::{
       entity,

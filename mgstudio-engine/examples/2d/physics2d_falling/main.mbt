@@ -40,7 +40,7 @@ fn physics2d_falling_setup(world : @ecs.World) -> Unit {
 
   // Floor.
   let floor_sprite = @sprite.Sprite::from_image(texture)
-  let floor_transform = @math.Transform::from_xy_rotation_scale(
+  let floor_transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, -200.0F),
     0.0F,
     @math.Vec2::new(8.0F, 0.5F),
@@ -69,7 +69,7 @@ fn physics2d_falling_setup(world : @ecs.World) -> Unit {
 
   // Ball.
   let ball_sprite = @sprite.Sprite::from_image(texture)
-  let ball_transform = @math.Transform::from_xy_rotation_scale(
+  let ball_transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, 200.0F),
     0.0F,
     @math.Vec2::new(0.3F, 0.3F),
@@ -92,7 +92,9 @@ fn physics2d_falling_setup(world : @ecs.World) -> Unit {
 
   // Camera.
   let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
+  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 }
 

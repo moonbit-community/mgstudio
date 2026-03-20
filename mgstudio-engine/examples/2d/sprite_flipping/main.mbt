@@ -24,7 +24,9 @@ fn main {
 ///|
 fn sprite_flipping_setup(world : @ecs.World) -> Unit {
   let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
+  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 
   let asset_server = @asset.AssetServer::new()
@@ -32,6 +34,8 @@ fn sprite_flipping_setup(world : @ecs.World) -> Unit {
   let sprite = @sprite.Sprite::from_image(texture)
     .with_flip_x(true)
     .with_flip_y(false)
-  @sprite.SpriteBundle::new(sprite, @math.Transform::identity()).spawn(world)
+  @sprite.SpriteBundle::new(sprite, @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 }

@@ -126,7 +126,7 @@ fn setup(world : @ecs.World) -> Unit {
   set_global_ambient_light(world, @sprite.Color::white(), 0.0F)
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(1.8F, 0.4F, -0.1F).looking_at(
+    @transform.Transform::from_xyz(1.8F, 0.4F, -0.1F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -165,10 +165,10 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Quat::from_rotation_x(-0.15F * PI),
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     directional,
-    @math.Transform::identity().with_rotation(light_rot),
+    @transform.Transform::identity().with_rotation(light_rot),
     tick,
   )
 
@@ -184,7 +184,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3dBundle::new(
       mesh_proxy,
       @pbr.MeshMaterial3d::new(material),
-      @math.Transform::from_xyz(x, 0.0F, -0.3F).with_scale(
+      @transform.Transform::from_xyz(x, 0.0F, -0.3F).with_scale(
         @math.Vec3::splat(0.2F),
       ),
     ).spawn(world)
@@ -207,7 +207,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3dBundle::new(
       mesh_proxy,
       @pbr.MeshMaterial3d::new(material),
-      @math.Transform::from_xyz(x, 0.0F, 0.3F)
+      @transform.Transform::from_xyz(x, 0.0F, 0.3F)
       .with_scale(@math.Vec3::splat(0.2F))
       .with_rotation(@math.Quat::from_rotation_y(PI)),
     ).spawn(world)
@@ -223,7 +223,7 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 }

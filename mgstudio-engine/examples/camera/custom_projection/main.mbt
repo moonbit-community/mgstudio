@@ -124,7 +124,7 @@ fn setup(
         vertical_obliqueness: 0.6F,
         perspective: @camera.PerspectiveProjection3d::default(),
       }),
-      @math.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
+      @transform.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
@@ -136,7 +136,7 @@ fn setup(
     (
       @pbr.Mesh3d::new(ground_mesh),
       @pbr.MeshMaterial3d::new(white_material),
-      @math.Transform::from_rotation(
+      @transform.Transform::from_rotation(
         @math.Quat::from_rotation_x(-@math.pi() / 2.0F),
       ),
     ),
@@ -147,14 +147,14 @@ fn setup(
     (
       @pbr.Mesh3d::new(cube_mesh),
       @pbr.MeshMaterial3d::new(cube_material),
-      @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
+      @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
     ),
   )
   |> ignore
   commands.spawn(
     (
       @pbr.PointLight::default().with_shadow_maps_enabled(true),
-      @math.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+      @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
     ),
   )
   |> ignore

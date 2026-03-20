@@ -100,7 +100,7 @@ fn spawn_mesh(
   world : @ecs.World,
   mesh : @engine_pbr.Mesh3d,
   material : @asset.Handle[@engine_pbr.StandardMaterial],
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> Unit {
   @engine_pbr.MeshMaterial3dBundle::new(
     mesh,
@@ -131,7 +131,7 @@ fn setup(world : @ecs.World) -> Unit {
         world,
         sphere_mesh,
         @engine_pbr.standard_material_add(material),
-        @math.Transform::from_xyz(
+        @transform.Transform::from_xyz(
           float_from_int(x),
           float_from_int(y) + 0.5F,
           0.0F,
@@ -147,7 +147,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     sphere_mesh,
     unlit_material,
-    @math.Transform::from_xyz(-5.0F, -2.5F, 0.0F),
+    @transform.Transform::from_xyz(-5.0F, -2.5F, 0.0F),
   )
 
   let directional = world.spawn_empty()
@@ -159,10 +159,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     directional,
-    @math.Transform::from_xyz(50.0F, 50.0F, 50.0F).looking_at(
+    @transform.Transform::from_xyz(50.0F, 50.0F, 50.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -181,7 +181,7 @@ fn setup(world : @ecs.World) -> Unit {
   @text.Text2dBundle::new(
     @text.Text2d::new("Perceptual Roughness"),
     @text.TextFont::default().with_font(overlay_font).with_font_size(30.0F),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-300.0F, 330.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -198,7 +198,7 @@ fn setup(world : @ecs.World) -> Unit {
   @text.Text2dBundle::new(
     @text.Text2d::new("Metallic"),
     @text.TextFont::default().with_font(overlay_font).with_font_size(30.0F),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(360.0F, 80.0F),
       @math.pi_half(),
       @math.Vec2::new(1.0F, 1.0F),
@@ -215,7 +215,7 @@ fn setup(world : @ecs.World) -> Unit {
   let env_loading_label = @text.Text2dBundle::new(
       @text.Text2d::new("Loading Environment Map..."),
       @text.TextFont::default().with_font(overlay_font).with_font_size(24.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(375.0F, -330.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -236,7 +236,7 @@ fn setup(world : @ecs.World) -> Unit {
   let camera = @engine_pbr.Camera3dBundle::new_with_projection(
     @sprite.Camera::default(),
     @engine_pbr.Projection::Orthographic(orthographic),
-    @math.Transform::from_xyz(0.0F, 0.0F, 8.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 0.0F, 8.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),

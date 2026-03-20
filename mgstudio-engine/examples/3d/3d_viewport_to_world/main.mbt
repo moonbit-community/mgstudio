@@ -140,7 +140,7 @@ fn quat_from_rotation_arc(from : @math.Vec3, to_ : @math.Vec3) -> @math.Quat {
 }
 
 ///|
-fn normalized_ground_up(ground_transform : @math.Transform) -> @math.Vec3 {
+fn normalized_ground_up(ground_transform : @transform.Transform) -> @math.Vec3 {
   let up = quat_rotate_vec3(
     ground_transform.rotation,
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
@@ -181,7 +181,7 @@ fn setup(world : @ecs.World) -> Unit {
         @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)),
       ),
     ),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   viewport_to_world_3d_state.val.ground = Some(ground)
 
@@ -190,10 +190,10 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@pbr.ecs_key_directional_light)
   .insert(light, @pbr.DirectionalLight::default(), tick)
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     light,
-    @math.Transform::from_xyz(1.0F, 1.0F, 1.0F).looking_at(
+    @transform.Transform::from_xyz(1.0F, 1.0F, 1.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -202,7 +202,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(15.0F, 5.0F, 15.0F).looking_at(
+    @transform.Transform::from_xyz(15.0F, 5.0F, 15.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -218,7 +218,7 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   viewport_to_world_3d_state.val.cursor_marker = Some(cursor_marker)
 
@@ -241,7 +241,7 @@ fn draw_cursor(world : @ecs.World) -> Unit {
     return
   }
 
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   let camera_store = world.component(@sprite.ecs_key_camera)
   let projection_store = world.component(@pbr.ecs_key_projection)
   let mut cursor_hit : (@math.Vec3, @math.Vec3)? = None
@@ -280,7 +280,7 @@ fn draw_cursor(world : @ecs.World) -> Unit {
   if cursor_hit is Some((point, ground_up)) {
     transform_store.set(
       cursor_entity,
-      @math.Transform::new(
+      @transform.Transform::new(
         point.add(ground_up.mul_scalar(CURSOR_HEIGHT_OFFSET)),
         quat_from_rotation_arc(@math.Vec3::new(0.0F, 0.0F, 1.0F), ground_up),
         @math.Vec3::splat(1.0F),

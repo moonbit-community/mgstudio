@@ -141,10 +141,10 @@ fn reflect_point(
 
 ///|
 fn calculate_mirror_camera_transform_and_projection(
-  main_camera_transform : @math.Transform,
+  main_camera_transform : @transform.Transform,
   main_camera_projection : @pbr.PerspectiveProjection3d,
-  mirror_transform : @math.Transform,
-) -> (@math.Transform, @pbr.PerspectiveProjection3d) {
+  mirror_transform : @transform.Transform,
+) -> (@transform.Transform, @pbr.PerspectiveProjection3d) {
   let world_up = @math.Vec3::new(0.0F, 1.0F, 0.0F)
   let forward_axis = @math.Vec3::new(0.0F, 0.0F, -1.0F)
   let negative_world_up = @math.Vec3::new(0.0F, -1.0F, 0.0F)
@@ -175,7 +175,7 @@ fn calculate_mirror_camera_transform_and_projection(
     world_up,
   )
   let reflected_target = reflected_translation.add(reflected_forward)
-  let mirror_camera_transform = @math.Transform::from_xyz(
+  let mirror_camera_transform = @transform.Transform::from_xyz(
     reflected_translation.x,
     reflected_translation.y,
     reflected_translation.z,
@@ -239,13 +239,14 @@ fn set_main_camera_transform_from_orbit(world : @ecs.World) -> Unit {
     CAMERA_ORBIT_DISTANCE
   let position = target.add(@math.Vec3::new(offset_x, offset_y, offset_z))
 
-  let transform = @math.Transform::from_xyz(position.x, position.y, position.z).looking_at(
-    target,
-    @math.Vec3::new(0.0F, 1.0F, 0.0F),
-  )
+  let transform = @transform.Transform::from_xyz(
+    position.x,
+    position.y,
+    position.z,
+  ).looking_at(target, @math.Vec3::new(0.0F, 1.0F, 0.0F))
 
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .set(mirror_state.val.main_camera, transform, world.read_change_tick())
   |> ignore
 }
@@ -327,7 +328,7 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    @math.Transform::from_xyz(-25.0F, 0.0F, 0.0F).with_rotation(
+    @transform.Transform::from_xyz(-25.0F, 0.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_x(-FRAC_PI_2),
     ),
   ).spawn(world)
@@ -349,12 +350,12 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(fox, @math.Transform::from_xyz(-50.0F, 0.0F, -100.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(fox, @transform.Transform::from_xyz(-50.0F, 0.0F, -100.0F), tick)
   mirror_state.val.fox = fox
 
   // Mirror plane.
-  let mirror_transform = @math.Transform::from_xyz(-25.0F, 75.0F, 0.0F).with_rotation(
+  let mirror_transform = @transform.Transform::from_xyz(-25.0F, 75.0F, 0.0F).with_rotation(
     @math.Quat::from_rotation_x(-FRAC_PI_2),
   )
   let mirror_material = @pbr.standard_material_add(
@@ -389,10 +390,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     light,
-    @math.Transform::from_xyz(-85.0F, 16.0F, -200.0F).looking_at(
+    @transform.Transform::from_xyz(-85.0F, 16.0F, -200.0F).looking_at(
       @math.Vec3::new(-50.0F, 0.0F, 100.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -404,7 +405,7 @@ fn setup(world : @ecs.World) -> Unit {
   let initial_main_translation = @math.Vec3::new(-2.0F, 1.0F, -2.0F)
     .normalize_or_zero()
     .mul_scalar(CAMERA_ORBIT_DISTANCE)
-  let main_camera_transform = @math.Transform::from_xyz(
+  let main_camera_transform = @transform.Transform::from_xyz(
     initial_main_translation.x,
     initial_main_translation.y,
     initial_main_translation.z,
@@ -451,7 +452,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -528,7 +529,7 @@ fn move_fox_on_mouse_down(world : @ecs.World) -> Unit {
   }
 
   guard @input.mouse_position() is Some(screen_pos) else { return }
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   let camera_store = world.component(@sprite.ecs_key_camera)
   let projection_store = world.component(@pbr.ecs_key_projection)
 
@@ -639,7 +640,7 @@ fn update_mirror_camera_on_main_camera_transform_change(
     return
   }
 
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   guard transform_store.get(mirror_state.val.main_camera)
     is Some(main_camera_transform) else {
     return

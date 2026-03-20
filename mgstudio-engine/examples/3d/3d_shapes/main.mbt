@@ -894,7 +894,7 @@ fn spawn_shape(
   let entity = @pbr.MeshMaterial3dBundle::new(
     mesh,
     @pbr.MeshMaterial3d::new(material),
-    @math.Transform::from_xyz(x, 2.0F, row_z(row)).with_rotation(
+    @transform.Transform::from_xyz(x, 2.0F, row_z(row)).with_rotation(
       @math.Quat::from_rotation_x(-PI / 4.0F),
     ),
   ).spawn(world)
@@ -1008,8 +1008,8 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(point_light, @math.Transform::from_xyz(8.0F, 16.0F, 8.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(point_light, @transform.Transform::from_xyz(8.0F, 16.0F, 8.0F), tick)
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_plane(50.0F, 50.0F),
@@ -1020,13 +1020,13 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 7.0F, 14.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 7.0F, 14.0F).looking_at(
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -1040,7 +1040,7 @@ fn setup(world : @ecs.World) -> Unit {
       "Press 'R' to pause/resume rotation\nPress 'Tab' to cycle through rows\nPress 'Space' to toggle wireframes",
     ),
     @text.TextFont::default().with_font(overlay_font).with_font_size(20.0F),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-390.0F, 300.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -1081,7 +1081,7 @@ fn rotate(world : @ecs.World) -> Unit {
   let delta = world_time(world).delta_seconds() / 2.0F
   let spin = @math.Quat::from_rotation_y(delta)
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   for entry in shapes_state.val.entries {
     if transform_store.get(entry.entity) is Some(transform) {
       let next = transform.with_rotation(
@@ -1098,7 +1098,7 @@ fn advance_rows(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   let count = shapes_state.val.entries.length()
   for i in 0..<count {
     let entry = shapes_state.val.entries[i]

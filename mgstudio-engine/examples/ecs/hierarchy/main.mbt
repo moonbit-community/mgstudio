@@ -39,20 +39,20 @@ fn setup(world : @ecs.World) -> Unit {
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   let parent = @sprite.SpriteBundle::new(
     @sprite.Sprite::from_image(texture),
-    @math.Transform::identity().with_scale(@math.Vec3::splat(0.75F)),
+    @transform.Transform::identity().with_scale(@math.Vec3::splat(0.75F)),
   ).spawn(world)
 
   let first_child = @sprite.SpriteBundle::new(
     @sprite.Sprite::from_image(texture).with_color(
       @sprite.Color::srgb(0.0F, 0.0F, 1.0F),
     ),
-    @math.Transform::from_xyz(250.0F, 0.0F, 0.0F).with_scale(
+    @transform.Transform::from_xyz(250.0F, 0.0F, 0.0F).with_scale(
       @math.Vec3::splat(0.75F),
     ),
   ).spawn(world)
@@ -64,7 +64,7 @@ fn setup(world : @ecs.World) -> Unit {
     @sprite.Sprite::from_image(texture).with_color(
       @sprite.Color::srgb(0.0F, 1.0F, 0.0F),
     ),
-    @math.Transform::from_xyz(0.0F, 250.0F, 0.0F).with_scale(
+    @transform.Transform::from_xyz(0.0F, 250.0F, 0.0F).with_scale(
       @math.Vec3::splat(0.75F),
     ),
   ).spawn(world)
@@ -80,7 +80,7 @@ fn rotate(world : @ecs.World) -> Unit {
   let elapsed = time.elapsed_seconds()
   let tick = world.read_change_tick()
 
-  let transform_store = @math.get_transform_store(world)
+  let transform_store = @transform.get_transform_store(world)
   let children_store = @mg_hierarchy.get_children_store(world)
   let parents = world.query_entities_filtered(
     (

@@ -1,4 +1,5 @@
 import {
+  "Milky2018/mgstudio/transform",
   "moonbitlang/core/json",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",

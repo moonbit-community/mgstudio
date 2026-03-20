@@ -480,7 +480,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
   let aa_store = get_ui_anti_alias_store(world)
   let layers_store = @sprite.get_render_layers_store(world)
   let scissor_store = @sprite.get_scissor_rect_store(world)
-  let transform_store = @math.get_transform_store(world)
+  let transform_store = @transform.get_transform_store(world)
   let vv_store = @visibility.get_view_visibility_store(world)
   fn clamp_nonneg(v : Float) -> Float {
     if v < 0.0F {
@@ -577,8 +577,11 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
     }
   }
 
-  fn transform_with_z(t : @math.Transform, z : Float) -> @math.Transform {
-    @math.Transform::from_xy_rotation_scale(
+  fn transform_with_z(
+    t : @transform.Transform,
+    z : Float,
+  ) -> @transform.Transform {
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(t.translation.x, t.translation.y),
       t.rotation_z(),
       @math.Vec2::new(t.scale.x, t.scale.y),
@@ -717,7 +720,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
                 -offset_y * scale_y,
               )
               let offset_world = rotate_vec2(offset_local, t0.rotation_z())
-              let t_shadow = @math.Transform::from_xy_rotation_scale(
+              let t_shadow = @transform.Transform::from_xy_rotation_scale(
                 @math.Vec2::new(
                   t0.translation.x + offset_world.x,
                   t0.translation.y + offset_world.y,

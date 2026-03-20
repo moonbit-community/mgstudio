@@ -22,10 +22,10 @@ fn entity_key(e : @core.Entity) -> (Int, Int) {
 
 ///|
 fn update_transform_from_iso3(
-  current : @math.Transform,
+  current : @transform.Transform,
   iso : @rapier_core.Isometry3,
-) -> @math.Transform {
-  @math.Transform::new(
+) -> @transform.Transform {
+  @transform.Transform::new(
     @math.Vec3::new(iso.translation.x, iso.translation.y, iso.translation.z),
     rapier_quat_to_mg(iso.rotation),
     current.scale,
@@ -172,7 +172,7 @@ pub fn physics3d_sync_insertions_system(world : @ecs.World) -> Unit {
   guard ctx_res.get() is Some(ctx_value) else { return }
   let ctx_ref = Ref::new(ctx_value)
   let ctx = ctx_ref.val
-  let transform_store = @math.get_transform_store(ecs_world)
+  let transform_store = @transform.get_transform_store(ecs_world)
   let vel_store = get_velocity3d_store(ecs_world)
   let rb_store = get_rigid_body3d_store(ecs_world)
   let col_store = get_collider3d_store(ecs_world)
@@ -194,7 +194,7 @@ pub fn physics3d_sync_insertions_system(world : @ecs.World) -> Unit {
     }
     let transform = transform_store
       .get(entity)
-      .unwrap_or(@math.Transform::identity())
+      .unwrap_or(@transform.Transform::identity())
     let t = transform.translation
     let r = transform.rotation
     let builder = match rb3d.body_type {
@@ -261,7 +261,7 @@ pub fn physics3d_sync_insertions_system(world : @ecs.World) -> Unit {
       None => {
         let transform = transform_store
           .get(entity)
-          .unwrap_or(@math.Transform::identity())
+          .unwrap_or(@transform.Transform::identity())
         let mut builder = make_collider_builder(col3d.shape)
           .sensor(col3d.sensor)
           .position(mg_transform_to_iso3(transform))
@@ -314,7 +314,7 @@ pub fn physics3d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
     None => abort("Missing Time<Fixed> resource in physics3d systems")
   }
   ctx.integration = ctx.integration.set_dt(dt)
-  let transform_store = @math.get_transform_store(ecs_world)
+  let transform_store = @transform.get_transform_store(ecs_world)
   let rb3d_store = get_rigid_body3d_store(ecs_world)
   let active_collision_types_store = get_active_collision_types3d_store(
     ecs_world,
@@ -359,7 +359,7 @@ pub fn physics3d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
     if rb3d.body_type is @dynamics.RigidBodyType::KinematicPositionBased {
       let transform = transform_store
         .get(entity)
-        .unwrap_or(@math.Transform::identity())
+        .unwrap_or(@transform.Transform::identity())
       body.set_next_kinematic_translation(
         mg_vec3_to_rapier(transform.translation),
       )
@@ -450,7 +450,7 @@ pub fn physics3d_writeback_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get() is Some(ctx) else { return }
-  let transform_store = @math.get_transform_store(ecs_world)
+  let transform_store = @transform.get_transform_store(ecs_world)
   let vel_store = get_velocity3d_store(ecs_world)
   let body_handle_store = get_rapier_body_handle3d_store(ecs_world)
   body_handle_store.for_each(fn(entity, bh) {
@@ -458,7 +458,7 @@ pub fn physics3d_writeback_system(world : @ecs.World) -> Unit {
     let pos = body.position()
     let current = transform_store
       .get(entity)
-      .unwrap_or(@math.Transform::identity())
+      .unwrap_or(@transform.Transform::identity())
     let next = update_transform_from_iso3(current, pos)
     if transform_store.contains(entity) {
       transform_store.set(entity, next, tick) |> ignore

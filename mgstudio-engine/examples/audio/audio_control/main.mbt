@@ -96,7 +96,7 @@ fn spawn_ui_text(
   let handle = @text.Text2dBundle::new(
       @text.Text2d::new(content),
       @text.TextFont::default().with_font(font).with_font_size(20.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -178,7 +178,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 0.0F, 10.0F),
+    @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
   |> ignore
 }

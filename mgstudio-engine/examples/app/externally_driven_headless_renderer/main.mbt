@@ -45,20 +45,20 @@ fn setup(world : @ecs.World) -> Unit {
   let scene_entity = world.spawn_empty()
   try! world.set(
     scene_entity,
-    @math.ecs_key_transform,
-    @math.Transform::from_xyz(0.0F, 0.0F, -5.0F),
+    @transform.ecs_key_transform,
+    @transform.Transform::from_xyz(0.0F, 0.0F, -5.0F),
   )
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(-1),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   // Keep a visible camera on screen for web runtime.
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 }

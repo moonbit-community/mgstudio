@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/transform",
   "Milky2018/moon_rapier/collision",
   "Milky2018/moon_rapier/dynamics",
   "Milky2018/moon_rapier/pipeline",
@@ -65,11 +66,11 @@ pub fn get_rigid_body3d_store(@ecs.World) -> @ecs.ComponentAccess[RigidBody3d]
 
 pub fn get_velocity3d_store(@ecs.World) -> @ecs.ComponentAccess[Velocity3d]
 
-pub fn iso3_to_mg_transform(@Milky2018/moon_rapier/core.Isometry3) -> @math.Transform
+pub fn iso3_to_mg_transform(@Milky2018/moon_rapier/core.Isometry3) -> @transform.Transform
 
 pub fn mg_quat_to_rapier(@math.Quat) -> @Milky2018/moon_rapier/core.Quat
 
-pub fn mg_transform_to_iso3(@math.Transform) -> @Milky2018/moon_rapier/core.Isometry3
+pub fn mg_transform_to_iso3(@transform.Transform) -> @Milky2018/moon_rapier/core.Isometry3
 
 pub fn mg_vec3_to_rapier(@math.Vec3) -> @Milky2018/moon_rapier/core.Vec3
 

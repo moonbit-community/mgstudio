@@ -236,14 +236,14 @@ fn setup(world : @ecs.World) -> Unit {
   let red_sphere = @pbr.MeshMaterial3dBundle::new(
     sphere_mesh,
     @pbr.MeshMaterial3d::new(red_material),
-    @math.Transform::from_xyz(-1.0F, spawn_height, 0.0F),
+    @transform.Transform::from_xyz(-1.0F, spawn_height, 0.0F),
   ).spawn(world)
   red_sphere |> ignore
 
   let blue_sphere = @pbr.MeshMaterial3dBundle::new(
     sphere_mesh,
     @pbr.MeshMaterial3d::new(blue_material),
-    @math.Transform::from_xyz(1.0F, spawn_height, 0.0F),
+    @transform.Transform::from_xyz(1.0F, spawn_height, 0.0F),
   ).spawn(world)
   world
   .component(@pbr.ecs_key_not_shadow_caster)
@@ -252,7 +252,7 @@ fn setup(world : @ecs.World) -> Unit {
   let floating_plane = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_plane(20.0F, 20.0F),
     @pbr.MeshMaterial3d::new(lime_material),
-    @math.Transform::from_xyz(0.0F, 1.0F, -10.0F),
+    @transform.Transform::from_xyz(0.0F, 1.0F, -10.0F),
   ).spawn(world)
   world
   .component(@pbr.ecs_key_not_shadow_caster)
@@ -264,7 +264,7 @@ fn setup(world : @ecs.World) -> Unit {
   let ground_plane = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_plane(20.0F, 20.0F),
     @pbr.MeshMaterial3d::new(white_material),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   ground_plane |> ignore
 
@@ -277,8 +277,8 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(point_light, @math.Transform::from_xyz(5.0F, 5.0F, 0.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(point_light, @transform.Transform::from_xyz(5.0F, 5.0F, 0.0F), tick)
   shadow_caster_receiver_state.val.point_light = Some(point_light)
 
   let directional_light = world.spawn_empty()
@@ -298,10 +298,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     directional_light,
-    @math.Transform::identity().with_rotation(
+    @transform.Transform::identity().with_rotation(
       @math.Quat::from_rotation_y(PI / 2.0F).mul(
         @math.Quat::from_rotation_x(-PI / 4.0F),
       ),
@@ -312,7 +312,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(-5.0F, 5.0F, 5.0F).looking_at(
+    @transform.Transform::from_xyz(-5.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::new(-1.0F, 1.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),

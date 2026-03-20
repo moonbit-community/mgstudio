@@ -255,10 +255,10 @@ fn spawn_reflection_probe(world : @ecs.World) -> Unit {
   .component(@pbr.ecs_key_parallax_correction)
   .insert(probe, @pbr.ParallaxCorrection::None, tick)
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     probe,
-    @math.Transform::identity().with_scale(@math.Vec3::splat(2.0F)),
+    @transform.Transform::identity().with_scale(@math.Vec3::splat(2.0F)),
     tick,
   )
 }
@@ -342,7 +342,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(-3.883F, 0.325F, 2.781F).looking_at(
+    @transform.Transform::from_xyz(-3.883F, 0.325F, 2.781F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -371,7 +371,7 @@ fn setup(world : @ecs.World) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     uv_sphere_mesh(1.0F, 20, 36),
     @pbr.MeshMaterial3d::new(sphere_material),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -395,7 +395,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, -320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -510,7 +510,8 @@ fn rotate_camera(world : @ecs.World) -> Unit {
     return
   }
   guard reflection_probes_state.val.camera is Some(camera) else { return }
-  guard world.component(@math.ecs_key_transform).get(camera) is Some(transform) else {
+  guard world.component(@transform.ecs_key_transform).get(camera)
+    is Some(transform) else {
     return
   }
 
@@ -523,13 +524,14 @@ fn rotate_camera(world : @ecs.World) -> Unit {
   let rotated_z = sin_v * x + cos_v * z
 
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .set(
     camera,
-    @math.Transform::from_xyz(rotated_x, transform.translation.y, rotated_z).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
+    @transform.Transform::from_xyz(
+      rotated_x,
+      transform.translation.y,
+      rotated_z,
+    ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
     world.read_change_tick(),
   )
   |> ignore

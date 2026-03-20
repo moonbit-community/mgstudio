@@ -139,7 +139,7 @@ fn[T] first_marked_entity(
 fn spawn_colored_sphere(
   world : @ecs.World,
   color : @sprite.Color,
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> @core.Entity {
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_sphere(0.3F),
@@ -163,14 +163,14 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    @math.Transform::from_xyz(0.0F, -2.5F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, -2.5F, 0.0F),
   ).spawn(world)
   |> ignore
 
   let target_sphere = spawn_colored_sphere(
     world,
     @sprite.Color::srgb(0.3F, 0.15F, 0.9F),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   )
   world
   .component(TargetSphere::component())
@@ -179,7 +179,7 @@ fn setup(world : @ecs.World) -> Unit {
   let following_sphere = spawn_colored_sphere(
     world,
     @sprite.Color::srgb(0.9F, 0.3F, 0.3F),
-    @math.Transform::from_xyz(0.0F, -2.0F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, -2.0F, 0.0F),
   )
   world
   .component(FollowingSphere::component())
@@ -196,12 +196,12 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.Transform::component())
-  .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .component(@transform.Transform::component())
+  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
+    @transform.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -242,7 +242,7 @@ fn move_target(world : @ecs.World) -> Unit {
     return
   }
 
-  let transform_store = world.component(@math.Transform::component())
+  let transform_store = world.component(@transform.Transform::component())
   guard transform_store.get(target_entity) is Some(target_transform) else {
     return
   }
@@ -284,7 +284,7 @@ fn move_follower(world : @ecs.World) -> Unit {
     return
   }
 
-  let transform_store = world.component(@math.Transform::component())
+  let transform_store = world.component(@transform.Transform::component())
   guard transform_store.get(target_entity) is Some(target_transform) else {
     return
   }

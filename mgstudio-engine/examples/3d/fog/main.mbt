@@ -109,7 +109,7 @@ fn spawn_mesh(
   world : @ecs.World,
   mesh : @pbr.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> @core.Entity {
   @pbr.MeshMaterial3dBundle::new(
     mesh,
@@ -126,7 +126,7 @@ fn setup_camera_fog(world : @ecs.World) -> Unit {
   )
   let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
-      @math.Transform::from_xyz(8.0F, 8.0F, 8.0F).looking_at(
+      @transform.Transform::from_xyz(8.0F, 8.0F, 8.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
@@ -162,7 +162,7 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
       world,
       @pbr.Mesh3d::from_cuboid(1.0F, 3.0F, 1.0F),
       stone_material,
-      @math.Transform::from_xyz(position.x, 1.5F, position.y),
+      @transform.Transform::from_xyz(position.x, 1.5F, position.y),
     )
     |> ignore
   }
@@ -180,7 +180,7 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
     world,
     uv_sphere_mesh(1.0F, 20, 36),
     orb_material,
-    @math.Transform::from_xyz(0.0F, 4.0F, 0.0F).with_scale(
+    @transform.Transform::from_xyz(0.0F, 4.0F, 0.0F).with_scale(
       @math.Vec3::splat(1.75F),
     ),
   )
@@ -199,7 +199,7 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
       world,
       @pbr.Mesh3d::from_cuboid(2.0F * half_size, 0.5F, 2.0F * half_size),
       stone_material,
-      @math.Transform::from_xyz(0.0F, y + 0.25F, 0.0F),
+      @transform.Transform::from_xyz(0.0F, y + 0.25F, 0.0F),
     )
     |> ignore
   }
@@ -219,7 +219,7 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
       .with_unlit(true)
       .with_cull_mode(None),
     ),
-    @math.Transform::identity().with_scale(@math.Vec3::splat(1_000_000.0F)),
+    @transform.Transform::identity().with_scale(@math.Vec3::splat(1_000_000.0F)),
   )
   |> ignore
 
@@ -232,8 +232,8 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(point_light, @math.Transform::from_xyz(0.0F, 1.0F, 0.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(point_light, @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F), tick)
 }
 
 ///|
@@ -268,7 +268,7 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
   let handle = @text.Text2dBundle::new(
       @text.Text2d::new("Fog controls"),
       @text.TextFont::default().with_font(font).with_font_size(18.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -304,11 +304,11 @@ fn update_system(world : @ecs.World) -> Unit {
 
   guard fog_example_state.val.camera is Some(camera) else { return }
   let camera3d_store = world.component(@pbr.ecs_key_camera3d)
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   let mut fog = fog_example_state.val.fog
 
   let orbit_scale = 8.0F + @math.sin(now / 10.0F) * 7.0F
-  let camera_transform = @math.Transform::from_xyz(
+  let camera_transform = @transform.Transform::from_xyz(
     @math.cos(now / 5.0F) * orbit_scale,
     12.0F - orbit_scale / 2.0F,
     @math.sin(now / 5.0F) * orbit_scale,

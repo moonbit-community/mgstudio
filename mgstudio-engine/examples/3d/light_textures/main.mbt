@@ -307,7 +307,7 @@ fn setup(world : @ecs.World) -> Unit {
   let cube = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(3.0F, 3.0F, 3.0F),
     @pbr.MeshMaterial3d::new(cube_material),
-    @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
+    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_y(1.0471975512F),
     ),
   ).spawn(world)
@@ -315,7 +315,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 2.5F, 9.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 2.5F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -336,10 +336,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     directional,
-    @math.Transform::from_xyz(8.0F, 8.0F, 4.0F).looking_at(
+    @transform.Transform::from_xyz(8.0F, 8.0F, 4.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -370,10 +370,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     spot,
-    @math.Transform::from_xyz(6.0F, 1.0F, 2.0F).looking_at(
+    @transform.Transform::from_xyz(6.0F, 1.0F, 2.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -405,8 +405,8 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(point, @math.Transform::from_xyz(0.0F, 1.8F, 0.01F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(point, @transform.Transform::from_xyz(0.0F, 1.8F, 0.01F), tick)
 
   let spot_proxy_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
@@ -425,12 +425,12 @@ fn setup(world : @ecs.World) -> Unit {
   let spot_proxy = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(0.35F, 0.35F, 0.35F),
     @pbr.MeshMaterial3d::new(spot_proxy_material),
-    @math.Transform::from_xyz(6.0F, 1.0F, 2.0F),
+    @transform.Transform::from_xyz(6.0F, 1.0F, 2.0F),
   ).spawn(world)
   let point_proxy = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(0.25F, 0.25F, 0.25F),
     @pbr.MeshMaterial3d::new(point_proxy_material),
-    @math.Transform::from_xyz(0.0F, 1.8F, 0.01F),
+    @transform.Transform::from_xyz(0.0F, 1.8F, 0.01F),
   ).spawn(world)
   light_textures_state.val.spot_proxy = Some(spot_proxy)
   light_textures_state.val.point_proxy = Some(point_proxy)
@@ -440,7 +440,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -478,7 +478,7 @@ fn apply_camera_drag(
   delta : @math.Vec2,
 ) -> Unit {
   let tick = world.read_change_tick()
-  guard world.component(@math.ecs_key_transform).get(camera_entity)
+  guard world.component(@transform.ecs_key_transform).get(camera_entity)
     is Some(transform) else {
     return
   }
@@ -486,7 +486,7 @@ fn apply_camera_drag(
     @math.Vec3::new(-delta.x * MOVE_SPEED, delta.y * MOVE_SPEED, 0.0F),
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .set(
     camera_entity,
     transform
@@ -504,7 +504,8 @@ fn apply_selection_drag(
   delta : @math.Vec2,
 ) -> Unit {
   let tick = world.read_change_tick()
-  guard world.component(@math.ecs_key_transform).get(entity) is Some(transform) else {
+  guard world.component(@transform.ecs_key_transform).get(entity)
+    is Some(transform) else {
     return
   }
   match light_textures_state.val.drag_mode {
@@ -513,16 +514,16 @@ fn apply_selection_drag(
         @math.Vec3::new(delta.x * MOVE_SPEED, -delta.y * MOVE_SPEED, 0.0F),
       )
       world
-      .component(@math.ecs_key_transform)
+      .component(@transform.ecs_key_transform)
       .set(entity, transform.with_translation(next_translation), tick)
       |> ignore
       if light_textures_state.val.selection == Selection::SpotLight {
         if light_textures_state.val.spot_proxy is Some(proxy) {
           world
-          .component(@math.ecs_key_transform)
+          .component(@transform.ecs_key_transform)
           .set(
             proxy,
-            @math.Transform::from_xyz(
+            @transform.Transform::from_xyz(
               next_translation.x,
               next_translation.y,
               next_translation.z,
@@ -535,10 +536,10 @@ fn apply_selection_drag(
       if light_textures_state.val.selection == Selection::PointLight {
         if light_textures_state.val.point_proxy is Some(proxy) {
           world
-          .component(@math.ecs_key_transform)
+          .component(@transform.ecs_key_transform)
           .set(
             proxy,
-            @math.Transform::from_xyz(
+            @transform.Transform::from_xyz(
               next_translation.x,
               next_translation.y,
               next_translation.z,
@@ -570,7 +571,7 @@ fn apply_selection_drag(
       } else {
         let next = maxf(0.20F, transform.scale.x + delta.y * SCALE_SPEED)
         world
-        .component(@math.ecs_key_transform)
+        .component(@transform.ecs_key_transform)
         .set(
           entity,
           transform.with_scale(@math.Vec3::new(next, next, transform.scale.z)),
@@ -583,7 +584,7 @@ fn apply_selection_drag(
         .mul(@math.Quat::from_rotation_z(delta.x * ROLL_SPEED))
         .normalize()
       world
-      .component(@math.ecs_key_transform)
+      .component(@transform.ecs_key_transform)
       .set(entity, transform.with_rotation(rotation), tick)
       |> ignore
     }
@@ -685,7 +686,7 @@ fn rotate_cube(world : @ecs.World) -> Unit {
   guard light_textures_state.val.rotating_cube is Some(cube_entity) else {
     return
   }
-  guard world.component(@math.ecs_key_transform).get(cube_entity)
+  guard world.component(@transform.ecs_key_transform).get(cube_entity)
     is Some(transform) else {
     return
   }
@@ -695,7 +696,7 @@ fn rotate_cube(world : @ecs.World) -> Unit {
     .mul(@math.Quat::from_rotation_y(CUBE_ROTATION_SPEED * delta * 60.0F))
     .normalize()
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .set(cube_entity, transform.with_rotation(rotation), tick)
   |> ignore
 }

@@ -52,7 +52,7 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
   let floor_bundle = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_plane(640.0F, 640.0F),
     @pbr.MeshMaterial3d::new(floor_material),
-    @math.Transform::from_xyz(0.0F, -200.0F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, -200.0F, 0.0F),
   )
   let floor = floor_bundle.spawn(world)
   let rb_store = @physics3d.get_rigid_body3d_store(world)
@@ -74,7 +74,7 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
   let ball_bundle = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(24.0F, 24.0F, 24.0F),
     @pbr.MeshMaterial3d::new(ball_material),
-    @math.Transform::from_xyz(0.0F, 200.0F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, 200.0F, 0.0F),
   )
   let ball = ball_bundle.spawn(world)
   rb_store.insert(ball, @physics3d.RigidBody3d::dynamic(), tick)
@@ -101,13 +101,13 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(light, @math.Transform::from_xyz(220.0F, 360.0F, 220.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(light, @transform.Transform::from_xyz(220.0F, 360.0F, 220.0F), tick)
 
   let camera = @sprite.Camera::default()
   @pbr.Camera3dBundle::new(
     camera,
-    @math.Transform::from_xyz(0.0F, 120.0F, 420.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 120.0F, 420.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -120,7 +120,7 @@ fn physics3d_sanity_print(world : @ecs.World) -> Unit {
   match state.val.ball {
     None => ()
     Some(ball) => {
-      let transform_store = world.component(@math.ecs_key_transform)
+      let transform_store = world.component(@transform.ecs_key_transform)
       match transform_store.get(ball) {
         None => ()
         Some(t) => println("ball.y=\{t.translation.y}")

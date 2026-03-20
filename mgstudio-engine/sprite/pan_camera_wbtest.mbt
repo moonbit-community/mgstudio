@@ -41,7 +41,7 @@ test "render2d: pan camera movement normalizes diagonal input" {
   key_input.press(@window.KeyCode::KeyD)
   let scroll = @input.AccumulatedMouseScroll::new()
   let (transform, _controller) = pan_camera_step(
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     PanCamera::default(),
     0.5F,
     key_input,
@@ -63,7 +63,7 @@ test "render2d: pan camera rotation and zoom follow controller settings" {
     @math.Vec2::new(0.0F, 1.0F),
   )
   let (transform, controller) = pan_camera_step(
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     PanCamera::default(),
     0.5F,
     key_input,
@@ -91,7 +91,7 @@ test "render2d: pan camera zoom clamps to configured bounds" {
     max_zoom: 2.0F,
   }
   let (transform, updated) = pan_camera_step(
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     controller,
     0.0F,
     key_input,

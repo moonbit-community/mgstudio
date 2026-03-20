@@ -165,7 +165,7 @@ test "scene: SceneRoot spawns children and marks ready" {
     let node = @scene.SceneNode3d::new(
       @pbr.Mesh3d::from_cuboid(1.0F, 2.0F, 3.0F),
       material,
-      @math.Transform::from_xyz(1.0F, 2.0F, 3.0F),
+      @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
       Some(@visibility.VisibilityRange::new(0.0F, 0.0F, 4.0F, 5.0F, false)),
       Some(@animation.AnimationTargetId::from_name("Node")),
     )
@@ -200,7 +200,7 @@ test "scene: SceneRoot spawns children and marks ready" {
     let child = children[0]
     has_mesh.val = @pbr.get_mesh3d_store(world).contains(child)
     has_material.val = @pbr.get_mesh_material3d_store(world).contains(child)
-    has_transform.val = @math.get_transform_store(world).contains(child)
+    has_transform.val = @transform.get_transform_store(world).contains(child)
     has_visibility.val = @visibility.get_visibility_range_store(world).contains(
       child,
     )
@@ -268,7 +268,7 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
       @scene.SceneNode3d::new(
         @pbr.Mesh3d::from_cuboid(1.0F, 2.0F, 3.0F),
         material,
-        @math.Transform::from_xyz(1.0F, 2.0F, 3.0F),
+        @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
         None,
         None,
       ),
@@ -277,7 +277,7 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
       @scene.SceneNode3d::new(
         @pbr.Mesh3d::from_cuboid(4.0F, 5.0F, 6.0F),
         material,
-        @math.Transform::from_xyz(9.0F, 8.0F, 7.0F),
+        @transform.Transform::from_xyz(9.0F, 8.0F, 7.0F),
         None,
         None,
       ),
@@ -330,7 +330,9 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
     })
     new_child_count.val = second_children.length()
     let new_child = second_children[0]
-    let transform = @math.get_transform_store(world).get(new_child).unwrap()
+    let transform = @transform.get_transform_store(world)
+      .get(new_child)
+      .unwrap()
     new_child_x.val = transform.translation.x.to_double()
   })
   inspect(old_instance_id.val == new_instance_id.val, content="false")

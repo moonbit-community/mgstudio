@@ -134,9 +134,9 @@ fn update_help_text() -> Unit {
 }
 
 ///|
-fn light_transform() -> @math.Transform {
+fn light_transform() -> @transform.Transform {
   let p = shadow_biases_state.val.light_position
-  @math.Transform::from_xyz(p.x, p.y, p.z).looking_at(
+  @transform.Transform::from_xyz(p.x, p.y, p.z).looking_at(
     @math.Vec3::zero(),
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
@@ -149,7 +149,9 @@ fn apply_light_state(world : @ecs.World) -> Unit {
   let state = shadow_biases_state.val
 
   if state.point_light is Some(point_entity) {
-    world.component(@math.ecs_key_transform).set(point_entity, transform, tick)
+    world
+    .component(@transform.ecs_key_transform)
+    .set(point_entity, transform, tick)
     |> ignore
     world
     .component(@pbr.ecs_key_point_light)
@@ -174,7 +176,7 @@ fn apply_light_state(world : @ecs.World) -> Unit {
 
   if state.directional_light is Some(directional_entity) {
     world
-    .component(@math.ecs_key_transform)
+    .component(@transform.ecs_key_transform)
     .set(directional_entity, transform, tick)
     |> ignore
     world
@@ -239,7 +241,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3dBundle::new(
       sphere_proxy_mesh,
       @pbr.MeshMaterial3d::new(white_material),
-      @math.Transform::from_xyz(0.0F, y, float_from_int(z_int)),
+      @transform.Transform::from_xyz(0.0F, y, float_from_int(z_int)),
     ).spawn(world)
     |> ignore
   }
@@ -247,13 +249,13 @@ fn setup(world : @ecs.World) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_plane(600.0F, 600.0F),
     @pbr.MeshMaterial3d::new(white_material),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(-1.0F, 1.0F, 1.0F).looking_at(
+    @transform.Transform::from_xyz(-1.0F, 1.0F, 1.0F).looking_at(
       @math.Vec3::new(-1.0F, 1.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -284,7 +286,7 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(point, light_transform(), tick)
   shadow_biases_state.val.point_light = Some(point)
 
@@ -303,7 +305,7 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(directional, light_transform(), tick)
   shadow_biases_state.val.directional_light = Some(directional)
 
@@ -312,7 +314,7 @@ fn setup(world : @ecs.World) -> Unit {
   let text = @text.Text2dBundle::new(
       @text.Text2d::new(ui_text()),
       @text.TextFont::default().with_font(font).with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),

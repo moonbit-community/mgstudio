@@ -166,7 +166,7 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   let text_handle = @text.Text2dBundle::new(
       @text.Text2d::new(content),
       @text.TextFont::default().with_font(font).with_font_size(20.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -209,7 +209,7 @@ fn spawn_mesh(
   world : @ecs.World,
   mesh : @pbr.Mesh3d,
   color : @sprite.Color,
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> @core.Entity {
   let material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(color),
@@ -232,7 +232,7 @@ fn spawn_listener_ear(
     world,
     @pbr.Mesh3d::from_cuboid(EAR_SIZE, EAR_SIZE, EAR_SIZE),
     color,
-    @math.Transform::from_xyz(offset.x, offset.y, offset.z),
+    @transform.Transform::from_xyz(offset.x, offset.y, offset.z),
   )
   let tick = world.read_change_tick()
   world
@@ -256,7 +256,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     uv_sphere_mesh(EMITTER_RADIUS, UV_SPHERE_STACKS, UV_SPHERE_SECTORS),
     color_blue(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   )
 
   let tick = world.read_change_tick()
@@ -270,8 +270,8 @@ fn setup(world : @ecs.World) -> Unit {
   let listener = world.spawn_empty()
   let listener_component = @audio.SpatialListener::new(LISTENER_GAP)
   world
-  .component(@math.ecs_key_transform)
-  .insert(listener, @math.Transform::identity(), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(listener, @transform.Transform::identity(), tick)
   world
   .component(@audio.ecs_key_spatial_listener)
   .insert(listener, listener_component, tick)
@@ -294,10 +294,10 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@pbr.ecs_key_directional_light)
   .insert(light, @pbr.DirectionalLight::default(), tick)
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     light,
-    @math.Transform::from_xyz(4.0F, 8.0F, 4.0F).looking_at(
+    @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -310,7 +310,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 5.0F, 5.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -341,9 +341,9 @@ fn update_positions(world : @ecs.World) -> Unit {
   let next_x = @math.sin(elapsed) * ORBIT_RADIUS
   let next_z = @math.cos(elapsed) * ORBIT_RADIUS
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   transform_store.update(spatial_audio_3d_state.val.emitter, tick, fn(
-    transform : @math.Transform,
+    transform : @transform.Transform,
   ) {
     transform.with_translation(@math.Vec3::new(next_x, 0.0F, next_z))
   })
@@ -373,9 +373,9 @@ fn update_listener(world : @ecs.World) -> Unit {
   }
 
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   transform_store.update(spatial_audio_3d_state.val.listener, tick, fn(
-    transform : @math.Transform,
+    transform : @transform.Transform,
   ) {
     let translation = transform.translation
     transform.with_translation(

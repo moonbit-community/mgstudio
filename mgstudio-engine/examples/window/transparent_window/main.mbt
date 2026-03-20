@@ -45,13 +45,13 @@ fn main {
 fn setup(world : @ecs.World) -> Unit {
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
   let asset_server = @asset.AssetServer::new()
   @sprite.SpriteBundle::new(
     @sprite.Sprite::from_image(asset_server.load("branding/icon.png")),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 }

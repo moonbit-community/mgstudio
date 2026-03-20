@@ -21,7 +21,7 @@ test "ui: measure uses intrinsic aspect ratio when only width is specified" {
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(300.0F, 200.0F),
     Some(@core.Entity::new(0, 0)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     1.0F,
     None,
     false,

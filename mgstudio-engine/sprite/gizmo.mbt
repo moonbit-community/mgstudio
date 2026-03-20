@@ -822,7 +822,7 @@ pub fn Gizmos::line_2d(
 
 ///|
 fn gizmo_transform_point_2d(
-  transform : @math.Transform,
+  transform : @transform.Transform,
   point : @math.Vec2,
 ) -> @math.Vec2 {
   let scaled = @math.Vec2::new(
@@ -844,7 +844,7 @@ fn gizmo_transform_point_2d(
 pub fn Gizmos::mesh_wireframe_2d(
   self : Gizmos,
   geometry : @mesh.Mesh2dGeometry,
-  transform : @math.Transform,
+  transform : @transform.Transform,
   color : Color,
 ) -> Unit {
   guard geometry.wireframe_segments() is Some(segments) else { return }

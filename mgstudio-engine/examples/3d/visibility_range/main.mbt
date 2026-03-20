@@ -209,7 +209,7 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -258,16 +258,18 @@ fn setup(world : @ecs.World) -> Unit {
     .mul(@math.Quat::from_rotation_y(light_angle))
     .mul(@math.Quat::from_rotation_x(light_angle))
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     directional,
-    @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(light_rotation),
+    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
+      light_rotation,
+    ),
     tick,
   )
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
+    @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
       @math.Vec3::new(CAMERA_FOCAL_X, CAMERA_FOCAL_Y, CAMERA_FOCAL_Z),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -290,7 +292,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, -320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -312,7 +314,7 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn move_camera(world : @ecs.World) -> Unit {
   guard visibility_range_state.val.camera is Some(camera_entity) else { return }
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   guard transform_store.get(camera_entity) is Some(camera_transform) else {
     return
   }
@@ -349,7 +351,7 @@ fn move_camera(world : @ecs.World) -> Unit {
 
   transform_store.set(
     camera_entity,
-    @math.Transform::from_xyz(
+    @transform.Transform::from_xyz(
       new_translation.x,
       new_translation.y,
       new_translation.z,

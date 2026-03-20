@@ -412,7 +412,7 @@ fn fps_overlay_spawn_text_handle(
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
     text_config,
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   )
   .with_color(@text.TextColor::new(text_color))
   .spawn()

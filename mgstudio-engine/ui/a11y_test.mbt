@@ -21,7 +21,7 @@ test "ui: a11y derives button label from text children" {
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(800.0F, 600.0F),
     Some(@core.Entity::new(0, 0)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     1.0F,
     None,
     false,
@@ -43,7 +43,7 @@ test "ui: a11y derives button label from text children" {
   let handle = @text.Text2dBundle::new(
     @text.Text2d::new("OK"),
     @text.TextFont::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn()
   get_ui_text_store(world).insert(child, UiText::new(handle), tick)
   @hierarchy.get_parent_store(world).insert(
@@ -81,7 +81,7 @@ test "ui: a11y label widget sets value from self text" {
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(800.0F, 600.0F),
     Some(@core.Entity::new(0, 0)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     1.0F,
     None,
     false,
@@ -102,7 +102,7 @@ test "ui: a11y label widget sets value from self text" {
   let handle = @text.Text2dBundle::new(
     @text.Text2d::new("Hello"),
     @text.TextFont::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn()
   get_ui_text_store(world).insert(e, UiText::new(handle), tick)
   ui_stack_system(world)
@@ -129,7 +129,7 @@ test "ui: a11y sets hidden when view visibility is false" {
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(800.0F, 600.0F),
     Some(@core.Entity::new(0, 0)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     1.0F,
     None,
     false,
@@ -174,7 +174,7 @@ test "ui: a11y sets clips_children when calculated clip exists" {
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(800.0F, 600.0F),
     Some(@core.Entity::new(0, 0)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     1.0F,
     None,
     false,
@@ -224,7 +224,7 @@ test "ui: a11y label widget keeps empty value" {
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(800.0F, 600.0F),
     Some(@core.Entity::new(0, 0)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     1.0F,
     None,
     false,
@@ -265,7 +265,7 @@ test "ui: a11y focus follows A11yState instead of hover state" {
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(800.0F, 600.0F),
     Some(@core.Entity::new(0, 0)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     1.0F,
     None,
     false,
@@ -326,7 +326,7 @@ test "ui: editable label node is exported as text input with SetValue" {
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(800.0F, 600.0F),
     Some(@core.Entity::new(0, 0)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     1.0F,
     None,
     false,
@@ -353,7 +353,7 @@ test "ui: editable label node is exported as text input with SetValue" {
   let handle = @text.Text2dBundle::new(
     @text.Text2d::new("Editable status"),
     @text.TextFont::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn()
   get_ui_text_store(world).insert(editable, UiText::new(handle), tick)
   ui_stack_system(world)

@@ -76,8 +76,8 @@ priv struct Camera3dViewPayload {
   temporal_anti_aliasing : TemporalAntiAliasing?
   motion_vector_prepass_enabled : Bool
   msaa : Msaa?
-  transform : @math.Transform
-  previous_transform : @math.Transform
+  transform : @transform.Transform
+  previous_transform : @transform.Transform
   previous_clip_from_world : ProjectionMatrix3d?
   target_id : Int
   target_size : @math.IVec2
@@ -95,8 +95,8 @@ priv struct ExtractedCamera3d {
 priv struct Mesh3dExtractedPayload {
   mesh_handle : @asset.Handle[@mesh.Mesh]
   mesh_id : Int
-  transform : @math.Transform
-  previous_transform : @math.Transform
+  transform : @transform.Transform
+  previous_transform : @transform.Transform
   visibility_range : @visibility.VisibilityRange?
   aabb_center_world : @math.Vec3?
   material : StandardMaterial
@@ -143,8 +143,8 @@ priv struct MeshPhaseItem3d {
 ///|
 priv struct MeshGpuDrawPayload3d {
   mesh_id : Int
-  transform : @math.Transform
-  previous_transform : @math.Transform
+  transform : @transform.Transform
+  previous_transform : @transform.Transform
   color_r : Float
   color_g : Float
   color_b : Float

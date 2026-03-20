@@ -303,7 +303,7 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tick = world.read_change_tick()
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(-10.012F, 4.8605F, 13.281F).looking_at(
+    @transform.Transform::from_xyz(-10.012F, 4.8605F, 13.281F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -343,10 +343,10 @@ fn spawn_irradiance_volume(
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     entity,
-    @math.Transform::from_xyz(
+    @transform.Transform::from_xyz(
       VOXEL_VOLUME_CENTER_X,
       VOXEL_VOLUME_CENTER_Y,
       VOXEL_VOLUME_CENTER_Z,
@@ -373,8 +373,12 @@ fn spawn_light(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(light, @math.Transform::from_xyz(4.0762F, 5.9039F, 1.0055F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(
+    light,
+    @transform.Transform::from_xyz(4.0762F, 5.9039F, 1.0055F),
+    tick,
+  )
 }
 
 ///|
@@ -387,7 +391,7 @@ fn spawn_sphere(world : @ecs.World) -> Unit {
   let sphere = @pbr.MeshMaterial3dBundle::new(
     uv_sphere_mesh(1.0F, 24, 36),
     @pbr.MeshMaterial3d::new(material),
-    @math.Transform::from_xyz(0.0F, SPHERE_SCALE, 0.0F).with_scale(
+    @transform.Transform::from_xyz(0.0F, SPHERE_SCALE, 0.0F).with_scale(
       @math.Vec3::splat(SPHERE_SCALE),
     ),
   ).spawn(world)
@@ -412,10 +416,10 @@ fn spawn_fox(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     fox,
-    @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_scale(
+    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_scale(
       @math.Vec3::splat(FOX_SCALE),
     ),
     tick,
@@ -451,7 +455,7 @@ fn spawn_voxel_cubes(world : @ecs.World) -> Unit {
         let entity = @pbr.MeshMaterial3dBundle::new(
           mesh,
           @pbr.MeshMaterial3d::new(cube_material),
-          @math.Transform::from_xyz(position.x, position.y, position.z).with_scale(
+          @transform.Transform::from_xyz(position.x, position.y, position.z).with_scale(
             @math.Vec3::splat(VOXEL_CUBE_SCALE),
           ),
         ).spawn(world)
@@ -478,7 +482,7 @@ fn spawn_text(_world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(15.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, -285.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -528,7 +532,8 @@ fn rotate_camera(world : @ecs.World) -> Unit {
     return
   }
   guard irradiance_volumes_state.val.camera is Some(camera) else { return }
-  guard world.component(@math.ecs_key_transform).get(camera) is Some(transform) else {
+  guard world.component(@transform.ecs_key_transform).get(camera)
+    is Some(transform) else {
     return
   }
   let angle = ROTATION_SPEED * world_time(world).delta_seconds()
@@ -536,12 +541,12 @@ fn rotate_camera(world : @ecs.World) -> Unit {
     transform.translation.z * @math.sin(angle)
   let z = transform.translation.x * @math.sin(angle) +
     transform.translation.z * @math.cos(angle)
-  let next = @math.Transform::from_xyz(x, transform.translation.y, z).looking_at(
+  let next = @transform.Transform::from_xyz(x, transform.translation.y, z).looking_at(
     @math.Vec3::zero(),
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .set(camera, next, world.read_change_tick())
   |> ignore
 }
@@ -644,11 +649,12 @@ fn move_entity_on_ground(
   point : @math.Vec3,
 ) -> Unit {
   guard entity is Some(target) else { return }
-  guard world.component(@math.ecs_key_transform).get(target) is Some(current) else {
+  guard world.component(@transform.ecs_key_transform).get(target)
+    is Some(current) else {
     return
   }
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .set(
     target,
     current.with_translation(
@@ -677,7 +683,7 @@ fn handle_mouse_clicks(world : @ecs.World) -> Unit {
     is Some(projection) else {
     return
   }
-  guard world.component(@math.ecs_key_transform).get(camera_entity)
+  guard world.component(@transform.ecs_key_transform).get(camera_entity)
     is Some(camera_transform) else {
     return
   }

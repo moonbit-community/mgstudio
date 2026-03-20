@@ -49,7 +49,7 @@ pub struct Text2dBundle {
   bounds : TextBounds
   line_height : LineHeight
   shadow : Text2dShadow?
-  transform : @math.Transform
+  transform : @transform.Transform
   layers : @sprite.RenderLayers
   anchor : @sprite.Anchor
   y_axis : YAxisOrientation
@@ -59,7 +59,7 @@ pub struct Text2dBundle {
 pub fn Text2dBundle::new(
   text : Text2d,
   font : TextFont,
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> Text2dBundle {
   Text2dBundle::{
     text,
@@ -83,7 +83,7 @@ pub fn Text2dBundle::new(
 pub fn Text2dBundle::new_with_layers(
   text : Text2d,
   font : TextFont,
-  transform : @math.Transform,
+  transform : @transform.Transform,
   layers : @sprite.RenderLayers,
 ) -> Text2dBundle {
   Text2dBundle::{
@@ -280,7 +280,7 @@ priv struct TextInstance {
   bounds : TextBounds
   line_height : LineHeight
   shadow : Text2dShadow?
-  transform : @math.Transform
+  transform : @transform.Transform
   layers : @sprite.RenderLayers
   anchor : @sprite.Anchor
   y_axis : YAxisOrientation
@@ -664,7 +664,7 @@ pub fn text_set_color(handle : TextHandle, color : TextColor) -> Unit {
 /// Update the transform of a text handle without marking it as needing rerender.
 pub fn text_set_transform(
   handle : TextHandle,
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> Unit {
   text_update_instance(handle, instance => TextInstance::{
     ..instance,
@@ -674,7 +674,7 @@ pub fn text_set_transform(
 
 ///|
 /// Get the current transform for a text handle.
-pub fn text_get_transform(handle : TextHandle) -> @math.Transform? {
+pub fn text_get_transform(handle : TextHandle) -> @transform.Transform? {
   let count = text_state.val.texts.length()
   for i in 0..<count {
     if text_state.val.texts[i].id == handle.id {

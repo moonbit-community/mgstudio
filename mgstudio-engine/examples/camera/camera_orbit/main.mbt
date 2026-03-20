@@ -54,7 +54,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(5.0F, 5.0F, 5.0F).looking_at(
+    @transform.Transform::from_xyz(5.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -72,7 +72,7 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(@ecs.Name::component())
@@ -85,7 +85,7 @@ fn setup(world : @ecs.World) -> Unit {
         @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.8F, 0.7F, 0.6F)),
       ),
     ),
-    @math.Transform::from_xyz(1.5F, 0.51F, 1.5F),
+    @transform.Transform::from_xyz(1.5F, 0.51F, 1.5F),
   ).spawn(world)
   world
   .component(@ecs.Name::component())
@@ -99,8 +99,8 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@pbr.PointLight::component())
   .insert(light, @pbr.PointLight::default(), tick)
   world
-  .component(@math.Transform::component())
-  .insert(light, @math.Transform::from_xyz(3.0F, 8.0F, 5.0F), tick)
+  .component(@transform.Transform::component())
+  .insert(light, @transform.Transform::from_xyz(3.0F, 8.0F, 5.0F), tick)
 }
 
 ///|
@@ -108,7 +108,7 @@ fn instructions(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let overlay_camera = @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(1).with_clear_color_none(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(@ui.IsDefaultUiCamera::component())
@@ -134,7 +134,7 @@ fn instructions(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(20.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -165,7 +165,7 @@ fn instructions(world : @ecs.World) -> Unit {
 ///|
 fn orbit(
   camera_query : @ecs.Query1Filtered[
-    @math.Transform,
+    @transform.Transform,
     @ecs.With[@camera.Camera3d],
   ],
   camera_settings_res : @app.Res[CameraSettings],

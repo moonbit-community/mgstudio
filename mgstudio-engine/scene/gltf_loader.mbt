@@ -99,7 +99,7 @@ priv struct GltfNodeDef {
   mesh : Int?
   children : Array[Int]
   lod_nodes : Array[Int]
-  transform : @math.Transform
+  transform : @transform.Transform
 }
 
 ///|
@@ -650,7 +650,9 @@ fn quat_from_basis(
 }
 
 ///|
-fn gltf_parse_transform_from_matrix(values : Array[Json]) -> @math.Transform? {
+fn gltf_parse_transform_from_matrix(
+  values : Array[Json],
+) -> @transform.Transform? {
   if values.length() != 16 {
     return None
   }
@@ -685,7 +687,7 @@ fn gltf_parse_transform_from_matrix(values : Array[Json]) -> @math.Transform? {
   }
 
   Some(
-    @math.Transform::new(
+    @transform.Transform::new(
       translation,
       quat_from_basis(safe_x, safe_y, safe_z),
       @math.Vec3::new(sx, sy, sz),
@@ -694,7 +696,7 @@ fn gltf_parse_transform_from_matrix(values : Array[Json]) -> @math.Transform? {
 }
 
 ///|
-fn gltf_parse_node_transform(obj : Map[String, Json]) -> @math.Transform {
+fn gltf_parse_node_transform(obj : Map[String, Json]) -> @transform.Transform {
   if json_get_array(obj, "matrix") is Some(values) {
     if gltf_parse_transform_from_matrix(values) is Some(transform) {
       return transform
@@ -716,7 +718,7 @@ fn gltf_parse_node_transform(obj : Map[String, Json]) -> @math.Transform {
   } else {
     @math.Vec3::splat(1.0F)
   }
-  @math.Transform::new(translation, rotation, scale)
+  @transform.Transform::new(translation, rotation, scale)
 }
 
 ///|
@@ -1031,7 +1033,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
           mesh: None,
           children: [],
           lod_nodes: [],
-          transform: @math.Transform::identity(),
+          transform: @transform.Transform::identity(),
         })
       }
     }
@@ -2221,14 +2223,14 @@ fn quat_rotate_vec3(q : @math.Quat, value : @math.Vec3) -> @math.Vec3 {
 
 ///|
 fn transform_compose(
-  parent : @math.Transform,
-  local_transform : @math.Transform,
-) -> @math.Transform {
+  parent : @transform.Transform,
+  local_transform : @transform.Transform,
+) -> @transform.Transform {
   let scaled_translation = local_transform.translation.mul(parent.scale)
   let world_translation = parent.translation.add(
     quat_rotate_vec3(parent.rotation, scaled_translation),
   )
-  @math.Transform::new(
+  @transform.Transform::new(
     world_translation,
     parent.rotation.mul(local_transform.rotation).normalize(),
     parent.scale.mul(local_transform.scale),
@@ -2505,7 +2507,7 @@ fn scene_build_from_gltf(
 
   fn walk_node(
     node_index : Int,
-    parent_transform : @math.Transform,
+    parent_transform : @transform.Transform,
     lod_level : Int,
   ) -> Unit {
     guard node_index >= 0 && node_index < doc.nodes.length() else { return }
@@ -2622,7 +2624,7 @@ fn scene_build_from_gltf(
   let selected_scene_index = gltf_select_scene_index(doc, request.scene_index)
   if selected_scene_index >= 0 {
     for root_node in doc.scenes[selected_scene_index].nodes {
-      walk_node(root_node, @math.Transform::identity(), -1)
+      walk_node(root_node, @transform.Transform::identity(), -1)
     }
   }
 

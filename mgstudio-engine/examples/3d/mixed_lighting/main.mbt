@@ -280,10 +280,10 @@ fn apply_lighting_mode(world : @ecs.World) -> Unit {
 ///|
 fn reset_sphere_position(world : @ecs.World) -> Unit {
   if app_status.val.sphere is Some(sphere_entity) {
-    if world.component(@math.ecs_key_transform).get(sphere_entity)
+    if world.component(@transform.ecs_key_transform).get(sphere_entity)
       is Some(transform) {
       world
-      .component(@math.ecs_key_transform)
+      .component(@transform.ecs_key_transform)
       .set(
         sphere_entity,
         transform.with_translation(initial_sphere_position()),
@@ -326,7 +326,7 @@ fn move_sphere(world : @ecs.World) -> Unit {
   guard camera_store.get(camera_entity) is Some(camera) else { return }
   let projection_store = world.component(@pbr.ecs_key_projection)
   guard projection_store.get(camera_entity) is Some(projection) else { return }
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   guard transform_store.get(camera_entity) is Some(camera_transform) else {
     return
   }
@@ -411,7 +411,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(-0.7F, 0.7F, 1.0F).looking_at(
+    @transform.Transform::from_xyz(-0.7F, 0.7F, 1.0F).looking_at(
       @math.Vec3::new(0.0F, 0.3F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -444,7 +444,7 @@ fn setup(world : @ecs.World) -> Unit {
   let sphere = @pbr.MeshMaterial3dBundle::new(
     uv_sphere_mesh(0.2F, 22, 42),
     @pbr.MeshMaterial3d::new(sphere_material),
-    @math.Transform::from_xyz(
+    @transform.Transform::from_xyz(
       initial_sphere_position().x,
       initial_sphere_position().y,
       initial_sphere_position().z,
@@ -462,10 +462,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     directional_light,
-    @math.Transform::from_xyz(1.0F, 1.8F, 0.6F).looking_at(
+    @transform.Transform::from_xyz(1.0F, 1.8F, 0.6F).looking_at(
       @math.Vec3::new(0.0F, 0.2F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -477,7 +477,7 @@ fn setup(world : @ecs.World) -> Unit {
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
       @text.TextFont::default().with_font(font).with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),

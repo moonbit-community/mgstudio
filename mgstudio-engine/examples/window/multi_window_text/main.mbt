@@ -68,7 +68,7 @@ fn spawn_ui_label(
   let text_handle = @text.Text2dBundle::new(
       @text.Text2d::new(content),
       font,
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_shadow(Some(@text.Text2dShadow::default()))
     .spawn()
@@ -108,7 +108,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -119,7 +119,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   let secondary_window_camera = @sprite.Camera2dBundle::new_with_layers(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     @sprite.RenderTarget::Window(@window.WindowRef::Entity(secondary_window)),
     @sprite.RenderLayers::layer(1),
   ).spawn(world)
@@ -135,7 +135,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   @text.Text2dBundle::new(
     @text.Text2d::new(TEXT2D_PRIMARY),
     text_font,
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   )
   .with_color(@text.TextColor::new(@sprite.Color::srgb(1.0F, 1.0F, 0.0F)))
   .with_shadow(Some(@text.Text2dShadow::default()))
@@ -145,7 +145,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   @text.Text2dBundle::new_with_layers(
     @text.Text2d::new(TEXT2D_SECONDARY),
     text_font,
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     @sprite.RenderLayers::layer(1),
   )
   .with_color(@text.TextColor::new(@sprite.Color::srgb(1.0F, 1.0F, 0.0F)))
@@ -156,7 +156,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   @text.Text2dBundle::new_with_layers(
     @text.Text2d::new(TEXT2D_BOTH),
     text_font,
-    @math.Transform::from_xyz(0.0F, -50.0F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, -50.0F, 0.0F),
     @sprite.RenderLayers::from_layers([0, 1]),
   )
   .with_color(@text.TextColor::new(@sprite.Color::srgb(0.8784314F, 1.0F, 1.0F)))

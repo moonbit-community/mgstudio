@@ -38,14 +38,14 @@ fn setup_scene(world : @ecs.World) -> Unit {
   @sprite.Mesh2dBundle::new(
     @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(1000.0F, 700.0F)),
     @sprite.ColorMaterial::new(@sprite.Color::new(0.2F, 0.2F, 0.3F, 1.0F)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   let player = @sprite.Mesh2dBundle::new(
     @sprite.Mesh2d::from_circle(@sprite.Circle::new(25.0F)),
     @sprite.ColorMaterial::new(@sprite.Color::new(6.25F, 9.4F, 9.1F, 1.0F)),
-    @math.Transform::from_xyz(0.0F, 0.0F, 2.0F),
+    @transform.Transform::from_xyz(0.0F, 0.0F, 2.0F),
   ).spawn(world)
   top_down_camera_state.val.player = player
 }
@@ -60,7 +60,7 @@ fn spawn_instructions(world : @ecs.World) -> Unit {
         "Move the light with WASD.\nThe camera will smoothly track the light.",
       ),
       @text.TextFont::default().with_font(font).with_font_size(24.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -101,7 +101,7 @@ fn spawn_instructions(world : @ecs.World) -> Unit {
 fn setup_camera(world : @ecs.World) -> Unit {
   let camera = @sprite.Camera2dBundle::new(
       @sprite.Camera::default(),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_bloom(Some(@sprite.Bloom::default()))
     .spawn(world)
@@ -123,7 +123,7 @@ fn move_player(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = @math.get_transform_store(world)
+  let transform_store = @transform.get_transform_store(world)
   guard transform_store.get(player) is Some(transform) else { return }
 
   let direction = @math.Vec2::zero()
@@ -158,7 +158,7 @@ fn update_camera(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = @math.get_transform_store(world)
+  let transform_store = @transform.get_transform_store(world)
   guard transform_store.get(player) is Some(player_transform) else { return }
   guard transform_store.get(camera) is Some(camera_transform) else { return }
 

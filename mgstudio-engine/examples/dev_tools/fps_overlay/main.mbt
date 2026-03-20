@@ -53,7 +53,7 @@ fn main {
 fn setup(world : @ecs.World) -> Unit {
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -66,7 +66,7 @@ fn setup(world : @ecs.World) -> Unit {
         "Press 5 to toggle the frame time graph.",
       ),
       @text.TextFont::default().with_font_size(20.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))

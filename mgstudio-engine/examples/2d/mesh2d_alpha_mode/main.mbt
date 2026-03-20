@@ -34,7 +34,7 @@ fn spawn_quad(
   let material = @sprite.ColorMaterial::new_with_alpha_mode(color, alpha_mode).with_texture(
     texture,
   )
-  let transform = @math.Transform::from_xy_rotation_scale(
+  let transform = @transform.Transform::from_xy_rotation_scale(
     position,
     0.0F,
     @math.Vec2::new(1.0F, 1.0F),
@@ -113,6 +113,8 @@ fn mesh2d_alpha_mode_setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
+  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 }

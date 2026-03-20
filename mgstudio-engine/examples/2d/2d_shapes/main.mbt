@@ -22,7 +22,7 @@ fn main {
   .add_systems(@app.Startup, @app.system(shapes_setup))
   .add_systems(@app.Startup, @app.system(setup_wireframe2d_config))
   .add_system_query2_ecs(
-    @math.ecs_key_transform, @sprite.ecs_key_mesh2d, shapes_rotate,
+    @transform.ecs_key_transform, @sprite.ecs_key_mesh2d, shapes_rotate,
   )
   .run()
 }
@@ -124,7 +124,7 @@ fn spawn_shape(
   color : @sprite.Color,
 ) -> Unit {
   let material = @sprite.ColorMaterial::new(color)
-  let transform = @math.Transform::from_xy_rotation_scale(
+  let transform = @transform.Transform::from_xy_rotation_scale(
     position,
     0.0F,
     @math.Vec2::new(1.0F, 1.0F),
@@ -142,7 +142,7 @@ fn spawn_ui_text_handle(
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
     @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   )
   .with_color(@text.TextColor::new(color))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -287,7 +287,9 @@ fn shapes_setup(world : @ecs.World) -> Unit {
     )
   }
   let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
+  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 
   spawn_help_overlay(world)
@@ -309,7 +311,7 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 
 ///|
 fn shapes_rotate(
-  query : @ecs.Query2[@math.Transform, @sprite.Mesh2d],
+  query : @ecs.Query2[@transform.Transform, @sprite.Mesh2d],
   world : @ecs.World,
 ) -> Unit {
   if @input.key_just_pressed(@window.KeyCode::Space) {

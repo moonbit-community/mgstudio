@@ -30,7 +30,7 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let camera = @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(@sprite.ecs_key_pan_camera)
@@ -40,7 +40,7 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   @sprite.SpriteBundle::new(
     @sprite.Sprite::from_image(asset_server.load("branding/bevy_bird_dark.png")),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 }
@@ -57,7 +57,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
 
   let overlay_camera = @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(1).with_clear_color_none(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(@ui.ecs_key_is_default_ui_camera)
@@ -81,7 +81,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(20.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))

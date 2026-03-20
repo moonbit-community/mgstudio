@@ -177,7 +177,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
 
   let overlay_camera = @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(1).with_clear_color_none(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(@ui.IsDefaultUiCamera::component())
@@ -218,7 +218,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
   let line_one = @text.Text2dBundle::new(
       @text.Text2d::new("Move the player with WASD"),
       font,
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_anchor(@sprite.Anchor::center_left())
     .with_color(@text.TextColor::new(@sprite.Color::white()))
@@ -238,7 +238,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
   let line_two = @text.Text2dBundle::new(
       @text.Text2d::new("Rotate the camera with the mouse"),
       font,
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_anchor(@sprite.Anchor::center_left())
     .with_color(@text.TextColor::new(@sprite.Color::white()))
@@ -262,7 +262,7 @@ fn spawn_player(world : @ecs.World) -> Unit {
 
   let camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(CameraSensitivity::component())
@@ -273,10 +273,10 @@ fn spawn_player(world : @ecs.World) -> Unit {
   .component(@ecs.Name::component())
   .insert(player, @ecs.Name::new("Player"), tick)
   world
-  .component(@math.Transform::component())
+  .component(@transform.Transform::component())
   .insert(
     player,
-    @math.Transform::identity().with_scale(@math.Vec3::splat(0.3F)),
+    @transform.Transform::identity().with_scale(@math.Vec3::splat(0.3F)),
     tick,
   )
   world
@@ -314,7 +314,7 @@ fn spawn_environment(world : @ecs.World) -> Unit {
         @pbr.MeshMaterial3dBundle::new(
           sphere_mesh,
           @pbr.MeshMaterial3d::new(sphere_material),
-          @math.Transform::from_translation(translation),
+          @transform.Transform::from_translation(translation),
         ).spawn(world)
         |> ignore
       }
@@ -327,10 +327,10 @@ fn spawn_environment(world : @ecs.World) -> Unit {
   .component(@pbr.DirectionalLight::component())
   .insert(light, @pbr.DirectionalLight::default(), tick)
   world
-  .component(@math.Transform::component())
+  .component(@transform.Transform::component())
   .insert(
     light,
-    @math.Transform::identity().looking_to(
+    @transform.Transform::identity().looking_to(
       @math.Vec3::new(-1.0F, -3.0F, 0.5F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -377,7 +377,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
   }
 
   let tick = world.increment_change_tick()
-  let transform_store = world.component(@math.Transform::component())
+  let transform_store = world.component(@transform.Transform::component())
   let camera3d_store = world.component(@camera.Camera3d::component())
   let sensitivity_store = world.component(CameraSensitivity::component())
   sensitivity_store.for_each(fn(entity, sensitivity) {
@@ -404,14 +404,14 @@ fn rotate_camera(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn first_camera_transform(world : @ecs.World) -> @math.Transform? {
-  let result : Ref[@math.Transform?] = Ref::new(None)
-  let transform_store = world.component(@math.Transform::component())
+fn first_camera_transform(world : @ecs.World) -> @transform.Transform? {
+  let result : Ref[@transform.Transform?] = Ref::new(None)
+  let transform_store = world.component(@transform.Transform::component())
   world
   .query_entities_filtered(
     (
       @ecs.With::new(@camera.Camera3d::component()),
-      @ecs.With::new(@math.Transform::component()),
+      @ecs.With::new(@transform.Transform::component()),
     ),
   )
   .view(fn(entity) {
@@ -513,7 +513,7 @@ fn interpolate_rendered_transform(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
   let current_store = world.component(PhysicalTranslation::component())
   let previous_store = world.component(PreviousPhysicalTranslation::component())
-  let transform_store = world.component(@math.Transform::component())
+  let transform_store = world.component(@transform.Transform::component())
   current_store.for_each(fn(entity, current_translation) {
     guard previous_store.get(entity) is Some(previous_translation) else {
       return
@@ -531,12 +531,12 @@ fn interpolate_rendered_transform(world : @ecs.World) -> Unit {
 ///|
 fn first_player_translation(world : @ecs.World) -> @math.Vec3? {
   let result : Ref[@math.Vec3?] = Ref::new(None)
-  let transform_store = world.component(@math.Transform::component())
+  let transform_store = world.component(@transform.Transform::component())
   world
   .query_entities_filtered(
     (
       @ecs.With::new(AccumulatedInput::component()),
-      @ecs.With::new(@math.Transform::component()),
+      @ecs.With::new(@transform.Transform::component()),
     ),
   )
   .view(fn(entity) {
@@ -556,12 +556,12 @@ fn translate_camera(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.increment_change_tick()
-  let transform_store = world.component(@math.Transform::component())
+  let transform_store = world.component(@transform.Transform::component())
   world
   .query_entities_filtered(
     (
       @ecs.With::new(@camera.Camera3d::component()),
-      @ecs.With::new(@math.Transform::component()),
+      @ecs.With::new(@transform.Transform::component()),
     ),
   )
   .view(fn(entity) {

@@ -167,13 +167,13 @@ fn update_help_text() -> Unit {
 }
 
 ///|
-fn light_transform(angle : Float) -> @math.Transform {
+fn light_transform(angle : Float) -> @transform.Transform {
   let base_x = -0.8F
   let base_y = 1.5F
   let base_z = 1.2F
   let x = base_x * @math.cos(angle) - base_z * @math.sin(angle)
   let z = base_x * @math.sin(angle) + base_z * @math.cos(angle)
-  @math.Transform::from_xyz(x, base_y, z).looking_at(
+  @transform.Transform::from_xyz(x, base_y, z).looking_at(
     @math.Vec3::zero(),
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
@@ -184,10 +184,10 @@ fn apply_model_rotation(world : @ecs.World) -> Unit {
   guard contact_shadows_state.val.model is Some(model_entity) else { return }
   let tick = world.read_change_tick()
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .set(
     model_entity,
-    @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
+    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_y(contact_shadows_state.val.model_angle),
     ),
     tick,
@@ -234,7 +234,7 @@ fn apply_light_state(world : @ecs.World) -> Unit {
     ContactShadowState::Enabled
 
   if state.directional_light is Some(entity) {
-    world.component(@math.ecs_key_transform).set(entity, transform, tick)
+    world.component(@transform.ecs_key_transform).set(entity, transform, tick)
     |> ignore
     world
     .component(@pbr.ecs_key_directional_light)
@@ -255,7 +255,7 @@ fn apply_light_state(world : @ecs.World) -> Unit {
   }
 
   if state.point_light is Some(entity) {
-    world.component(@math.ecs_key_transform).set(entity, transform, tick)
+    world.component(@transform.ecs_key_transform).set(entity, transform, tick)
     |> ignore
     world
     .component(@pbr.ecs_key_point_light)
@@ -279,7 +279,7 @@ fn apply_light_state(world : @ecs.World) -> Unit {
   }
 
   if state.spot_light is Some(entity) {
-    world.component(@math.ecs_key_transform).set(entity, transform, tick)
+    world.component(@transform.ecs_key_transform).set(entity, transform, tick)
     |> ignore
     world
     .component(@pbr.ecs_key_spot_light)
@@ -329,7 +329,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
-      @math.Transform::from_xyz(-0.8F, 0.6F, -0.8F).looking_at(
+      @transform.Transform::from_xyz(-0.8F, 0.6F, -0.8F).looking_at(
         @math.Vec3::new(0.0F, 0.35F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
@@ -404,10 +404,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     model,
-    @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
+    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_y(PI),
     ),
     tick,
@@ -423,7 +423,7 @@ fn setup(world : @ecs.World) -> Unit {
   let ground = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_plane(4.0F, 4.0F),
     @pbr.MeshMaterial3d::new(ground_material),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   contact_shadows_state.val.ground = Some(ground)
 
@@ -432,7 +432,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),

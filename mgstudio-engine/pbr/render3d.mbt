@@ -311,7 +311,7 @@ pub struct Camera3dBundle {
   exposure : Exposure?
   color_grading : ColorGrading?
   camera3d : Camera3d
-  transform : @math.Transform
+  transform : @transform.Transform
   target : @sprite.RenderTarget
   layers : @sprite.RenderLayers
 }
@@ -319,7 +319,7 @@ pub struct Camera3dBundle {
 ///|
 pub fn Camera3dBundle::new(
   camera : @sprite.Camera,
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> Camera3dBundle {
   Camera3dBundle::{
     camera,
@@ -346,7 +346,7 @@ pub fn Camera3dBundle::new(
 pub fn Camera3dBundle::new_with_projection(
   camera : @sprite.Camera,
   projection : Projection,
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> Camera3dBundle {
   Camera3dBundle::{
     camera,
@@ -565,7 +565,7 @@ pub fn Camera3dBundle::with_depth_of_field(
 pub struct MeshMaterial3dBundle {
   mesh : Mesh3d
   material : MeshMaterial3d
-  transform : @math.Transform
+  transform : @transform.Transform
   layers : @sprite.RenderLayers
   visibility : @visibility.Visibility
   inherited_visibility : @visibility.InheritedVisibility
@@ -576,7 +576,7 @@ pub struct MeshMaterial3dBundle {
 pub fn MeshMaterial3dBundle::new(
   mesh : Mesh3d,
   material : MeshMaterial3d,
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> MeshMaterial3dBundle {
   MeshMaterial3dBundle::{
     mesh,
@@ -672,7 +672,7 @@ fn camera3d_bundle_insert(
     tick,
     loc~,
   )
-  @math.get_transform_store(ecs_world).insert(
+  @transform.get_transform_store(ecs_world).insert(
     entity,
     bundle.transform,
     tick,
@@ -745,7 +745,7 @@ fn mesh_material3d_bundle_insert(
     tick,
     loc~,
   )
-  @math.get_transform_store(ecs_world).insert(
+  @transform.get_transform_store(ecs_world).insert(
     entity,
     bundle.transform,
     tick,
@@ -830,13 +830,13 @@ priv struct Render3dLightingState {
 ///|
 priv struct MotionBlurHistoryEntry {
   entity : @core.Entity
-  transform : @math.Transform
+  transform : @transform.Transform
 }
 
 ///|
 priv struct CameraMotionBlurHistoryEntry {
   entity : @core.Entity
-  transform : @math.Transform
+  transform : @transform.Transform
   clip_from_world : ProjectionMatrix3d
 }
 
@@ -1168,7 +1168,7 @@ fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
 }
 
 ///|
-fn render3d_transform_forward(transform : @math.Transform) -> @math.Vec3 {
+fn render3d_transform_forward(transform : @transform.Transform) -> @math.Vec3 {
   quat_rotate_vec3(transform.rotation, @math.Vec3::new(0.0F, 0.0F, -1.0F)).normalize_or_zero()
 }
 
@@ -1199,7 +1199,7 @@ fn render3d_default_lighting_state() -> Render3dLightingState {
 }
 
 ///|
-fn motion_blur_history_get(entity : @core.Entity) -> @math.Transform? {
+fn motion_blur_history_get(entity : @core.Entity) -> @transform.Transform? {
   for item in motion_blur_history.val {
     if item.entity.id == entity.id &&
       item.entity.generation == entity.generation {
@@ -1792,7 +1792,7 @@ fn render3d_point_light_shadow_target_get_or_create(
 fn render3d_point_shadow_face_transform(
   light_position : @math.Vec3,
   face_index : Int,
-) -> @math.Transform {
+) -> @transform.Transform {
   let (forward, up) = match face_index {
     // Match Bevy's `CUBE_MAP_FACES` exactly:
     // [+X, -X, +Y, -Y, +Z, -Z] face order with left-handed cubemap conventions.
@@ -1804,7 +1804,7 @@ fn render3d_point_shadow_face_transform(
     4 => (@math.Vec3::new(0.0F, 0.0F, -1.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F))
     _ => (@math.Vec3::new(0.0F, 0.0F, 1.0F), @math.Vec3::new(0.0F, 1.0F, 0.0F))
   }
-  @math.Transform::from_xyz(
+  @transform.Transform::from_xyz(
     light_position.x,
     light_position.y,
     light_position.z,
@@ -1982,7 +1982,7 @@ fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
       ambient_brightness: ambient.brightness,
     }
   }
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   let directional_light_store = world.component(ecs_key_directional_light)
   let mut directional_found = false
   directional_light_store.for_each(fn(entity, light) {
@@ -1991,7 +1991,7 @@ fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
     }
     let transform = match transform_store.get(entity) {
       Some(value) => value
-      None => @math.Transform::identity()
+      None => @transform.Transform::identity()
     }
     directional_found = true
     lighting = Render3dLightingState::{
@@ -2009,7 +2009,7 @@ fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
     }
     let transform = match transform_store.get(entity) {
       Some(value) => value
-      None => @math.Transform::identity()
+      None => @transform.Transform::identity()
     }
     point_found = true
     lighting = Render3dLightingState::{
@@ -2044,7 +2044,7 @@ fn render3d_collect_lighting(world : @ecs.World) -> Render3dLightingState {
     }
     let transform = match transform_store.get(entity) {
       Some(value) => value
-      None => @math.Transform::identity()
+      None => @transform.Transform::identity()
     }
     let inner = light.inner_angle
     let mut outer = light.outer_angle
@@ -2575,7 +2575,7 @@ fn render3d_point_shadow_pass_projection(
 
 ///|
 fn render3d_view_from_world_matrix(
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> ProjectionMatrix3d {
   let inverse_rotation = render3d_quat_conjugate(transform.rotation.normalize())
   let x_axis = quat_rotate_vec3(
@@ -2613,7 +2613,7 @@ fn render3d_view_from_world_matrix(
 ///|
 fn render3d_pass_projection_clip_from_world(
   pass_projection : Render3dPassProjection,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
 ) -> ProjectionMatrix3d {
   pass_projection.clip_from_view.mul(
     render3d_view_from_world_matrix(camera_transform),
@@ -2623,7 +2623,7 @@ fn render3d_pass_projection_clip_from_world(
 ///|
 fn render3d_pass_projection_unjittered_clip_from_world(
   pass_projection : Render3dPassProjection,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
 ) -> ProjectionMatrix3d {
   pass_projection.unjittered_clip_from_view.mul(
     render3d_view_from_world_matrix(camera_transform),
@@ -2632,8 +2632,8 @@ fn render3d_pass_projection_unjittered_clip_from_world(
 
 ///|
 fn render3d_mesh_view_depth(
-  mesh_transform : @math.Transform,
-  camera_transform : @math.Transform,
+  mesh_transform : @transform.Transform,
+  camera_transform : @transform.Transform,
 ) -> Float {
   let to_mesh = @math.Vec3::new(
     mesh_transform.translation.x - camera_transform.translation.x,
@@ -3195,7 +3195,7 @@ fn render3d_rotate_by_quat(v : @math.Vec3, q : @math.Quat) -> @math.Vec3 {
 
 ///|
 fn render3d_transform_point(
-  transform : @math.Transform,
+  transform : @transform.Transform,
   local_point : @math.Vec3,
 ) -> @math.Vec3 {
   let scaled = local_point.mul(transform.scale)
@@ -3204,7 +3204,7 @@ fn render3d_transform_point(
 
 ///|
 fn render3d_inverse_transform_point(
-  transform : @math.Transform,
+  transform : @transform.Transform,
   world_point : @math.Vec3,
 ) -> @math.Vec3? {
   if absf(transform.scale.x) <= 1.0e-9F ||
@@ -3228,7 +3228,7 @@ fn render3d_inverse_transform_point(
 
 ///|
 fn render3d_inverse_transform_direction(
-  transform : @math.Transform,
+  transform : @transform.Transform,
   world_direction : @math.Vec3,
 ) -> @math.Vec3? {
   if absf(transform.scale.x) <= 1.0e-9F ||
@@ -3251,7 +3251,7 @@ fn render3d_inverse_transform_direction(
 
 ///|
 fn render3d_transform_local_normal(
-  transform : @math.Transform,
+  transform : @transform.Transform,
   local_normal : @math.Vec3,
 ) -> @math.Vec3 {
   if absf(transform.scale.x) <= 1.0e-9F ||
@@ -3583,8 +3583,8 @@ fn render3d_apply_distance_fog(
 ///|
 fn render3d_visibility_range_visible(
   visibility_range : @visibility.VisibilityRange,
-  camera_transform : @math.Transform,
-  mesh_transform : @math.Transform,
+  camera_transform : @transform.Transform,
+  mesh_transform : @transform.Transform,
   mesh_aabb_center_world : @math.Vec3?,
 ) -> Bool {
   let mesh_position = if visibility_range.use_aabb {
@@ -3609,7 +3609,7 @@ fn render3d_visibility_range_visible(
 fn render3d_queue_mesh_phase_items_cpu_builder(
   meshes : Array[ExtractedMesh3d],
   layers : @sprite.RenderLayers,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
 ) -> Array[MeshPhaseItem3d] {
   let items : Array[MeshPhaseItem3d] = []
   for i in 0..<meshes.length() {
@@ -3675,7 +3675,7 @@ priv struct GpuPreprocessWorkItem3d {
 fn render3d_collect_meshes_for_gpu_building(
   meshes : Array[ExtractedMesh3d],
   layers : @sprite.RenderLayers,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
 ) -> Array[GpuPreprocessWorkItem3d] {
   let work_items : Array[GpuPreprocessWorkItem3d] = []
   for i in 0..<meshes.length() {
@@ -3785,7 +3785,7 @@ priv struct GpuPreprocessMeshCandidate3d {
   layers : @sprite.RenderLayers
   visibility_range : @visibility.VisibilityRange?
   aabb_center_world : @math.Vec3?
-  transform : @math.Transform
+  transform : @transform.Transform
   alpha_mode : AlphaMode3d
   alpha : Float
 }
@@ -3878,7 +3878,7 @@ fn render3d_collect_gpu_preprocess_mesh_candidates(
     @visibility.ecs_key_view_visibility,
   )
   let layers_store = world.component(@sprite.ecs_key_render_layers)
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   let candidates : Array[GpuPreprocessMeshCandidate3d] = []
   mesh_store.for_each(fn(entity, mesh3d) {
     if view_visibility_store.get(entity) is Some(view_visibility) &&
@@ -3896,7 +3896,7 @@ fn render3d_collect_gpu_preprocess_mesh_candidates(
     )
     let transform = match transform_store.get(entity) {
       Some(value) => value
-      None => @math.Transform::identity()
+      None => @transform.Transform::identity()
     }
     let visibility_range = visibility_range_store.get(entity)
     let aabb_center_world = if visibility_range is Some(range) && range.use_aabb {
@@ -3931,7 +3931,7 @@ fn render3d_collect_gpu_preprocess_mesh_candidates(
 fn render3d_collect_gpu_preprocess_camera_queue_items(
   mesh_candidates : Array[GpuPreprocessMeshCandidate3d],
   layers : @sprite.RenderLayers,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
 ) -> Array[GpuPreprocessPrequeuedMeshItem3d] {
   let items : Array[GpuPreprocessPrequeuedMeshItem3d] = []
   for candidate in mesh_candidates {
@@ -4387,7 +4387,7 @@ fn render3d_build_gpu_preprocess_camera_queue_entry(
   camera_entity : @core.Entity,
   mesh_candidates : Array[GpuPreprocessMeshCandidate3d],
   camera_layers : @sprite.RenderLayers,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
   indirect_enabled : Bool,
   gpu_occlusion_culling_enabled : Bool,
 ) -> GpuPreprocessCameraQueueEntry3d {
@@ -4817,7 +4817,7 @@ fn render3d_gpu_preprocess_opaque_alpha_draw_item_indices(
 fn render3d_queue_mesh_phase_items_gpu_builder(
   meshes : Array[ExtractedMesh3d],
   layers : @sprite.RenderLayers,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
 ) -> Array[MeshPhaseItem3d] {
   // Keep the same high-level architecture as Bevy's GPU preprocessing path:
   // collect mesh work items, then write batched instance work payloads.
@@ -4831,7 +4831,7 @@ fn render3d_queue_mesh_phase_items_gpu_builder(
 fn render3d_queue_mesh_phase_items(
   meshes : Array[ExtractedMesh3d],
   layers : @sprite.RenderLayers,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
   use_gpu_instance_buffer_builder : Bool,
 ) -> Array[MeshPhaseItem3d] {
   if use_gpu_instance_buffer_builder {
@@ -4844,7 +4844,7 @@ fn render3d_queue_mesh_phase_items(
 
 ///|
 fn free_camera_angles_from_transform(
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> (Float, Float) {
   let forward = render3d_transform_forward(transform)
   let horizontal = @math.sqrt(forward.x * forward.x + forward.z * forward.z)
@@ -4878,7 +4878,7 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
   let delta_seconds = render3d_default_time_or_default(world).delta_seconds()
   let tick = world.read_change_tick()
   let camera_store = world.component(@sprite.ecs_key_camera)
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   let free_camera_store = world.component(ecs_key_free_camera)
   let free_camera_state_store = get_free_camera_state_store(world)
   let mut system_state = free_camera_system_state.val
@@ -5184,7 +5184,7 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
   let layers_store = world.component(@sprite.ecs_key_render_layers)
   let no_indirect_drawing_store = world.component(ecs_key_no_indirect_drawing)
   let occlusion_culling_store = world.component(ecs_key_occlusion_culling)
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   let mut visible_mesh_count = 0
   mesh_store.for_each(fn(entity, _mesh3d) {
     if view_visibility_store.get(entity) is Some(view_visibility) &&
@@ -5208,7 +5208,7 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
     }
     let camera_transform = match transform_store.get(camera_entity) {
       Some(value) => value
-      None => @math.Transform::identity()
+      None => @transform.Transform::identity()
     }
     let no_indirect_drawing = no_indirect_drawing_store.get(camera_entity)
       is Some(_)
@@ -5262,7 +5262,7 @@ fn render3d_begin_pass_3d(
   clear_g~ : Float,
   clear_b~ : Float,
   clear_a~ : Float,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
   pass_projection : Render3dPassProjection,
   viewport_x~ : Int,
   viewport_y~ : Int,
@@ -5413,8 +5413,8 @@ fn render3d_cull_mode_value(
 fn render3d_build_mesh_gpu_draw_payload(
   mesh_id : Int,
   material : StandardMaterial,
-  transform : @math.Transform,
-  previous_transform : @math.Transform,
+  transform : @transform.Transform,
+  previous_transform : @transform.Transform,
   draw_color_r : Float,
   draw_color_g : Float,
   draw_color_b : Float,
@@ -5605,7 +5605,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let no_indirect_drawing_store = world.component(ecs_key_no_indirect_drawing)
   let occlusion_culling_store = world.component(ecs_key_occlusion_culling)
   let msaa_store = world.component(ecs_key_msaa)
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   let view_visibility_store = world.component(
     @visibility.ecs_key_view_visibility,
   )
@@ -5696,7 +5696,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     }
     let transform = match transform_store.get(entity) {
       Some(v) => v
-      None => @math.Transform::identity()
+      None => @transform.Transform::identity()
     }
     let previous_camera_history = camera_motion_blur_history_get(entity)
     let previous_transform = match previous_camera_history {
@@ -5837,7 +5837,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     }
     let transform = match transform_store.get(entity) {
       Some(v) => v
-      None => @math.Transform::identity()
+      None => @transform.Transform::identity()
     }
     let previous_transform = match motion_blur_history_get(entity) {
       Some(v) => v
@@ -7541,7 +7541,7 @@ pub fn mesh_ray_cast(
   let max_hits = if settings.max_hits <= 0 { 1 } else { settings.max_hits }
   let hits : Array[(@core.Entity, MeshRayCastHit)] = []
   let mesh_store = world.component(ecs_key_mesh3d)
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   let view_visibility_store = world.component(
     @visibility.ecs_key_view_visibility,
   )
@@ -7561,7 +7561,7 @@ pub fn mesh_ray_cast(
     }
     let transform = match transform_store.get(entity) {
       Some(value) => value
-      None => @math.Transform::identity()
+      None => @transform.Transform::identity()
     }
     guard render3d_inverse_transform_point(transform, origin)
       is Some(local_origin) else {
@@ -7636,7 +7636,7 @@ pub fn mesh_ray_cast_from_camera(
   screen : @math.Vec2,
   camera : @sprite.Camera,
   projection : Projection,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,
   settings : MeshRayCastSettings,
@@ -7657,7 +7657,7 @@ pub fn mesh_ray_cast_from_camera_first(
   screen : @math.Vec2,
   camera : @sprite.Camera,
   projection : Projection,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,
   settings : MeshRayCastSettings,
@@ -7684,7 +7684,7 @@ pub fn render3d_camera_viewport_to_world_ray(
   screen : @math.Vec2,
   camera : @sprite.Camera,
   projection : Projection,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,
 ) -> (@math.Vec3, @math.Vec3)? {
@@ -7752,7 +7752,7 @@ pub fn render3d_camera_world_to_viewport(
   world : @math.Vec3,
   camera : @sprite.Camera,
   projection : Projection,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,
 ) -> @math.Vec2? {

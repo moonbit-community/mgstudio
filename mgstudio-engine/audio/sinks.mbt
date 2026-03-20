@@ -484,7 +484,7 @@ pub fn SpatialAudioSink::set_ears_position(
 ///|
 pub fn SpatialAudioSink::set_listener_position(
   self : SpatialAudioSink,
-  position : @math.Transform,
+  position : @transform.Transform,
   gap : Float,
 ) -> Unit {
   let half_gap = gap / 2.0F

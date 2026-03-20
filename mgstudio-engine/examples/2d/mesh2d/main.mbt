@@ -27,13 +27,15 @@ fn mesh2d_setup(world : @ecs.World) -> Unit {
   let material = @sprite.ColorMaterial::new(
     @sprite.Color::new(0.5019608F, 0.0F, 0.5019608F, 1.0F),
   )
-  let transform = @math.Transform::from_xy_rotation_scale(
+  let transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, 0.0F),
     0.0F,
     @math.Vec2::new(128.0F, 128.0F),
   )
   @sprite.Mesh2dBundle::new(mesh, material, transform).spawn(world) |> ignore
   let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
+  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 }

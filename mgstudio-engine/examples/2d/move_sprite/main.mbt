@@ -20,7 +20,7 @@ fn main {
   .add_plugins(plugins)
   .add_systems(@app.Startup, @app.system(move_sprite_setup))
   .add_system_query2_ecs(
-    @math.ecs_key_transform, @sprite.ecs_key_sprite, move_sprite_movement,
+    @transform.ecs_key_transform, @sprite.ecs_key_sprite, move_sprite_movement,
   )
   .run()
 }
@@ -52,10 +52,12 @@ fn move_sprite_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
   let sprite = @sprite.Sprite::from_image(texture)
-  let transform = @math.Transform::identity()
+  let transform = @transform.Transform::identity()
   @sprite.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
   let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
+  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
   move_state.val.direction = Direction::Right
 }
@@ -70,7 +72,7 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 
 ///|
 fn move_sprite_movement(
-  query : @ecs.Query2[@math.Transform, @sprite.Sprite],
+  query : @ecs.Query2[@transform.Transform, @sprite.Sprite],
   world : @ecs.World,
 ) -> Unit {
   let delta = SPEED * world_time(world).delta_seconds()

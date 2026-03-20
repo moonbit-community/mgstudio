@@ -437,7 +437,7 @@ fn spawn_mesh(
   world : @ecs.World,
   mesh : @pbr.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     mesh,
@@ -473,7 +473,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     world,
     cube_mesh,
     cube_1_material,
-    @math.Transform::from_xyz(0.25F, 0.5F, -2.0F).with_rotation(
+    @transform.Transform::from_xyz(0.25F, 0.5F, -2.0F).with_rotation(
       @math.Quat::from_rotation_x(1.4F)
       .mul(@math.Quat::from_rotation_y(3.7F))
       .mul(@math.Quat::from_rotation_z(21.3F))
@@ -489,7 +489,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     world,
     cube_mesh,
     cube_2_material,
-    @math.Transform::from_xyz(-0.75F, 0.7F, -2.0F).with_rotation(
+    @transform.Transform::from_xyz(-0.75F, 0.7F, -2.0F).with_rotation(
       @math.Quat::from_rotation_x(0.4F)
       .mul(@math.Quat::from_rotation_y(2.3F))
       .mul(@math.Quat::from_rotation_z(4.7F))
@@ -510,7 +510,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     world,
     candle_mesh,
     candle_material,
-    @math.Transform::from_xyz(-1.0F, 0.0F, 0.0F),
+    @transform.Transform::from_xyz(-1.0F, 0.0F, 0.0F),
   )
 
   let flame_material = @pbr.standard_material_add(
@@ -523,7 +523,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   let flame_mesh_entity = @pbr.MeshMaterial3dBundle::new(
     sphere_mesh,
     @pbr.MeshMaterial3d::new(flame_material),
-    @math.Transform::from_xyz(-1.0F, 1.15F, 0.0F).with_scale(
+    @transform.Transform::from_xyz(-1.0F, 1.15F, 0.0F).with_scale(
       @math.Vec3::new(0.1F, 0.2F, 0.1F),
     ),
   ).spawn(world)
@@ -547,7 +547,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     world,
     sphere_mesh,
     white_glass,
-    @math.Transform::from_xyz(1.0F, 0.0F, 0.0F),
+    @transform.Transform::from_xyz(1.0F, 0.0F, 0.0F),
   )
 
   let red_glass = @pbr.standard_material_add(
@@ -565,7 +565,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     world,
     sphere_mesh,
     red_glass,
-    @math.Transform::from_xyz(1.0F, -0.5F, 2.0F).with_scale(
+    @transform.Transform::from_xyz(1.0F, -0.5F, 2.0F).with_scale(
       @math.Vec3::splat(0.5F),
     ),
   )
@@ -585,7 +585,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     world,
     sphere_mesh,
     green_glass,
-    @math.Transform::from_xyz(0.0F, -0.5F, 2.0F).with_scale(
+    @transform.Transform::from_xyz(0.0F, -0.5F, 2.0F).with_scale(
       @math.Vec3::splat(0.5F),
     ),
   )
@@ -605,7 +605,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     world,
     sphere_mesh,
     blue_glass,
-    @math.Transform::from_xyz(-1.0F, -0.5F, 2.0F).with_scale(
+    @transform.Transform::from_xyz(-1.0F, -0.5F, 2.0F).with_scale(
       @math.Vec3::splat(0.5F),
     ),
   )
@@ -634,7 +634,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
         } else {
           white_tile
         },
-        @math.Transform::from_xyz(
+        @transform.Transform::from_xyz(
           float_from_int(x) * 2.0F,
           -1.0F,
           float_from_int(z) * 2.0F,
@@ -656,7 +656,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   let paper_entity = @pbr.MeshMaterial3dBundle::new(
     plane_mesh,
     @pbr.MeshMaterial3d::new(paper_material),
-    @math.Transform::from_xyz(0.0F, 0.5F, -3.0F)
+    @transform.Transform::from_xyz(0.0F, 0.5F, -3.0F)
     .with_scale(@math.Vec3::new(2.0F, 1.0F, 1.0F))
     .with_rotation(@math.Quat::from_rotation_x(PI / 2.0F)),
   ).spawn(world)
@@ -666,8 +666,8 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
   let flame_light = world.spawn_empty()
   world
-  .component(@math.ecs_key_transform)
-  .insert(flame_light, @math.Transform::from_xyz(-1.0F, 1.7F, 0.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(flame_light, @transform.Transform::from_xyz(-1.0F, 1.7F, 0.0F), tick)
   world
   .component(@pbr.ecs_key_point_light)
   .insert(
@@ -690,7 +690,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
   color_grading.global.post_saturation = 1.2F
   let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
-      @math.Transform::from_xyz(
+      @transform.Transform::from_xyz(
         CAMERA_INITIAL_X,
         CAMERA_INITIAL_Y,
         CAMERA_INITIAL_Z,
@@ -743,7 +743,7 @@ fn setup_text(world : @ecs.World) -> Unit {
   let handle = @text.Text2dBundle::new(
       @text.Text2d::new(transmission_hud_text(world)),
       @text.TextFont::default().with_font(font).with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -774,10 +774,10 @@ fn apply_camera_transform(world : @ecs.World) -> Unit {
     let camera_pos = transmission_state.val.camera_translation
     let tick = world.read_change_tick()
     world
-    .component(@math.ecs_key_transform)
+    .component(@transform.ecs_key_transform)
     .set(
       camera_entity,
-      @math.Transform::from_xyz(camera_pos.x, camera_pos.y, camera_pos.z).looking_at(
+      @transform.Transform::from_xyz(camera_pos.x, camera_pos.y, camera_pos.z).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
@@ -1070,10 +1070,10 @@ fn flicker_system(world : @ecs.World) -> Unit {
       |> ignore
     }
 
-    if world.component(@math.ecs_key_transform).get(light_entity)
+    if world.component(@transform.ecs_key_transform).get(light_entity)
       is Some(light_transform) {
       world
-      .component(@math.ecs_key_transform)
+      .component(@transform.ecs_key_transform)
       .set(
         light_entity,
         light_transform.with_translation(@math.Vec3::new(-1.0F - c, 1.7F, -a)),
@@ -1084,8 +1084,8 @@ fn flicker_system(world : @ecs.World) -> Unit {
   }
 
   if transmission_state.val.flame_mesh is Some(flame_entity) {
-    if world.component(@math.ecs_key_transform).contains(flame_entity) {
-      let base_transform = @math.Transform::from_xyz(-1.0F - c, 1.23F, -a).looking_at(
+    if world.component(@transform.ecs_key_transform).contains(flame_entity) {
+      let base_transform = @transform.Transform::from_xyz(-1.0F - c, 1.23F, -a).looking_at(
         @math.Vec3::new(-1.0F - c, 1.7F - b, -a),
         @math.Vec3::new(1.0F, 0.0F, 0.0F),
       )
@@ -1095,7 +1095,7 @@ fn flicker_system(world : @ecs.World) -> Unit {
         .normalize(),
       )
       world
-      .component(@math.ecs_key_transform)
+      .component(@transform.ecs_key_transform)
       .set(
         flame_entity,
         rotated_flame.with_scale(@math.Vec3::new(0.1F, 0.2F, 0.1F)),

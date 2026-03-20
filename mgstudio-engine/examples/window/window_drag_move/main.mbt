@@ -127,12 +127,12 @@ fn refresh_instruction_text(world : @ecs.World) -> Unit {
 fn setup(world : @ecs.World) -> Unit {
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
   let overlay_camera = @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(1).with_clear_color_none(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   let camera_tick = world.read_change_tick()
   world
@@ -143,7 +143,7 @@ fn setup(world : @ecs.World) -> Unit {
     LeftClickAction::Move,
     @math.CompassOctant::NorthWest,
   )
-  let text_position = @math.Transform::from_xyz(
+  let text_position = @transform.Transform::from_xyz(
     -Float::from_int(@window.window_width()) * 0.5F + 12.0F,
     Float::from_int(@window.window_height()) * 0.5F - 12.0F,
     0.0F,

@@ -65,13 +65,13 @@ fn pixel_grid_snap_setup(world : @ecs.World) -> Unit {
   )
   let canvas_sprite = @sprite.SpriteBundle::new_with_layers(
     @sprite.Sprite::from_image(canvas),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     high_layers,
   )
   canvas_sprite.spawn(world) |> ignore
   let pixel_sprite = @sprite.SpriteBundle::new_with_layers(
     @sprite.Sprite::from_image(pixel_dark),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-45.0F, 20.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -80,7 +80,7 @@ fn pixel_grid_snap_setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   let high_sprite = @sprite.SpriteBundle::new_with_layers(
     @sprite.Sprite::from_image(pixel_light),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-45.0F, -20.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -93,7 +93,7 @@ fn pixel_grid_snap_setup(world : @ecs.World) -> Unit {
   let mesh_handle = @sprite.Mesh2dBundle::new_with_layers(
     mesh,
     material,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(25.0F, 0.0F),
       0.0F,
       @math.Vec2::new(32.0F, 32.0F),
@@ -105,7 +105,7 @@ fn pixel_grid_snap_setup(world : @ecs.World) -> Unit {
     .with_clear_color(@sprite.Color::srgb(0.5F, 0.5F, 0.5F))
   @sprite.Camera2dBundle::new_with_layers(
     in_game_camera,
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     @sprite.RenderTarget::Image(canvas),
     pixel_layers,
   ).spawn(world)
@@ -113,7 +113,7 @@ fn pixel_grid_snap_setup(world : @ecs.World) -> Unit {
   let outer_camera = @sprite.Camera::default()
   let outer_handle = @sprite.Camera2dBundle::new_with_layers(
     outer_camera,
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     @sprite.RenderTarget::Screen,
     high_layers,
   ).spawn(world)
@@ -145,23 +145,23 @@ fn pixel_grid_snap_update(world : @ecs.World) -> Unit {
   let delta = world_time(world).delta_seconds()
   let next_rotation = pixel_state.val.rotation + delta
   pixel_state.val.rotation = next_rotation
-  let pixel_transform = @math.Transform::from_xy_rotation_scale(
+  let pixel_transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(-45.0F, 20.0F),
     next_rotation,
     @math.Vec2::new(1.0F, 1.0F),
   )
-  let high_transform = @math.Transform::from_xy_rotation_scale(
+  let high_transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(-45.0F, -20.0F),
     next_rotation,
     @math.Vec2::new(1.0F, 1.0F),
   )
-  let mesh_transform = @math.Transform::from_xy_rotation_scale(
+  let mesh_transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(25.0F, 0.0F),
     next_rotation,
     @math.Vec2::new(32.0F, 32.0F),
   )
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   transform_store.set(pixel_state.val.pixel_sprite, pixel_transform, tick)
   |> ignore
   transform_store.set(pixel_state.val.high_sprite, high_transform, tick)

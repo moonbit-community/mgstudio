@@ -79,8 +79,8 @@ fn set_global_ambient_light(
 }
 
 ///|
-fn camera_transform_for_angle(angle : Float) -> @math.Transform {
-  @math.Transform::from_xyz(
+fn camera_transform_for_angle(angle : Float) -> @transform.Transform {
+  @transform.Transform::from_xyz(
     @math.cos(angle) * CAMERA_ORBIT_RADIUS,
     0.0F,
     @math.sin(angle) * CAMERA_ORBIT_RADIUS,
@@ -108,7 +108,7 @@ fn spawn_wall_panel(world : @ecs.World, side : @math.Vec3, level : Int) -> Unit 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(4.0F, 1.0F, 0.04F),
     @pbr.MeshMaterial3d::new(material),
-    @math.Transform::from_xyz(position.x, position.y, position.z).looking_at(
+    @transform.Transform::from_xyz(position.x, position.y, position.z).looking_at(
       target,
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -295,13 +295,13 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(point_light, @math.Transform::identity(), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(point_light, @transform.Transform::identity(), tick)
 
   // 2D overlay camera + mask image proxy for Bevy's `ImageNode` visualization.
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(100).with_clear_color_none(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -313,7 +313,7 @@ fn setup(world : @ecs.World) -> Unit {
     @sprite.Sprite::from_image(metering_mask)
     .with_custom_size(Some(mask_size))
     .with_color(@sprite.Color::new(1.0F, 1.0F, 1.0F, MASK_OVERLAY_ALPHA)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(@visibility.ecs_key_visibility)
@@ -330,7 +330,7 @@ fn setup(world : @ecs.World) -> Unit {
       "V - Visualize Metering Mask",
     ),
     @text.TextFont::default().with_font(font).with_font_size(16.0F),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-390.0F, 320.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -350,7 +350,7 @@ fn setup(world : @ecs.World) -> Unit {
   let display_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
       @text.TextFont::default().with_font(font).with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -406,7 +406,7 @@ fn example_control_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   if auto_exposure_state.val.camera is Some(camera_entity) {
     world
-    .component(@math.ecs_key_transform)
+    .component(@transform.ecs_key_transform)
     .set(
       camera_entity,
       camera_transform_for_angle(auto_exposure_state.val.camera_angle),

@@ -30,7 +30,7 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let ui_camera = @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(@ui.ecs_key_is_default_ui_camera)
@@ -38,7 +38,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @sprite.Camera2dBundle::new_with_layers(
     @sprite.Camera::default().with_order(1).with_clear_color_none(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     @sprite.RenderTarget::Screen,
     @sprite.RenderLayers::layer(1),
   ).spawn(world)
@@ -98,7 +98,7 @@ fn setup(world : @ecs.World) -> Unit {
     @sprite.Sprite::from_image(
       asset_server.load("textures/rpg/chars/sensei/sensei.png"),
     ).with_custom_size(Some(@math.Vec2::new(100.0F, 100.0F))),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     @sprite.RenderLayers::layer(1),
   ).spawn(world)
   camera_on_ui_state.val.sprite = sprite
@@ -111,7 +111,7 @@ fn rotate_sprite(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = @math.get_transform_store(world)
+  let transform_store = @transform.get_transform_store(world)
   guard transform_store.get(sprite) is Some(transform) else { return }
 
   let time = match

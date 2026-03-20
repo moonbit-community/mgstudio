@@ -50,7 +50,7 @@ fn setup(world : @ecs.World) -> Unit {
         ).with_reflectance(0.02F),
       ),
     ),
-    @math.Transform::from_xyz(0.0F, 0.0F, 1.0F),
+    @transform.Transform::from_xyz(0.0F, 0.0F, 1.0F),
   ).spawn(world)
   world
   .component(@sprite.ecs_key_render_layers)
@@ -62,15 +62,15 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@pbr.ecs_key_point_light)
   .insert(light, @pbr.PointLight::default(), tick)
   world
-  .component(@math.ecs_key_transform)
-  .insert(light, @math.Transform::from_xyz(0.0F, 0.0F, 10.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(light, @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F), tick)
   world
   .component(@sprite.ecs_key_render_layers)
   .insert(light, @sprite.RenderLayers::layer(0).with_layer(1), tick)
 
   let first_pass_camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::new(@sprite.Color::white()).with_order(-1),
-    @math.Transform::from_xyz(0.0F, 0.0F, 15.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 0.0F, 15.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -91,7 +91,7 @@ fn setup(world : @ecs.World) -> Unit {
         .with_reflectance(0.02F),
       ),
     ),
-    @math.Transform::from_xyz(0.0F, 0.0F, 1.5F).with_rotation(
+    @transform.Transform::from_xyz(0.0F, 0.0F, 1.5F).with_rotation(
       @math.Quat::from_rotation_x(-PI / 5.0F),
     ),
   ).spawn(world)
@@ -99,7 +99,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 0.0F, 15.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 0.0F, 15.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -121,7 +121,7 @@ fn rotator_system(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   if transform_store.get(render_to_texture_state.val.first_pass_cube)
     is Some(transform) {
     let delta = world_time(world).delta_seconds()
@@ -144,7 +144,7 @@ fn cube_rotator_system(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   if transform_store.get(render_to_texture_state.val.main_pass_cube)
     is Some(transform) {
     let delta = world_time(world).delta_seconds()

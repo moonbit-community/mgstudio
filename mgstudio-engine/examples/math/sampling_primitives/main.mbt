@@ -446,7 +446,7 @@ fn spawn_instructions(
 ) -> Unit {
   let overlay_camera = @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(1).with_clear_color_none(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(@ui.IsDefaultUiCamera::component())
@@ -471,7 +471,7 @@ fn spawn_instructions(
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(20.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -529,7 +529,7 @@ fn setup(
         .with_metallic(0.0F),
       ),
     ),
-    @math.Transform::from_xyz(0.0F, -2.5F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, -2.5F, 0.0F),
   ).spawn(world)
   |> ignore
 
@@ -550,7 +550,7 @@ fn setup(
     @pbr.MeshMaterial3dBundle::new(
       shape_mesh(sampled_shape.shape),
       @pbr.MeshMaterial3d::new(shape_material),
-      @math.Transform::from_translation(sampled_shape.translation),
+      @transform.Transform::from_translation(sampled_shape.translation),
     ).spawn(world)
     |> ignore
 
@@ -568,10 +568,10 @@ fn setup(
       tick,
     )
     world
-    .component(@math.Transform::component())
+    .component(@transform.Transform::component())
     .insert(
       firefly_light,
-      @math.Transform::from_translation(sampled_shape.translation),
+      @transform.Transform::from_translation(sampled_shape.translation),
       tick,
     )
     world
@@ -591,12 +591,12 @@ fn setup(
     tick,
   )
   world
-  .component(@math.Transform::component())
-  .insert(global_light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .component(@transform.Transform::component())
+  .insert(global_light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
   let camera_entity = @pbr.Camera3dBundle::new(
       @sprite.Camera::default().with_clear_color(sky_color()),
-      @math.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
+      @transform.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
@@ -648,7 +648,9 @@ fn spawn_sample_point(
   let entity = @pbr.MeshMaterial3dBundle::new(
     point_mesh.mesh,
     @pbr.MeshMaterial3d::new(sample_point_material(mode, point_material)),
-    @math.Transform::from_translation(sample).with_scale(@math.Vec3::zero()),
+    @transform.Transform::from_translation(sample).with_scale(
+      @math.Vec3::zero(),
+    ),
   ).spawn(world)
   world
   .component(SamplePoint::component())
@@ -971,7 +973,7 @@ fn animate_spawning(world : @ecs.World) -> Unit {
   .component(SpawningPoint::component())
   .for_each(fn(entity, _spawning) { entities.push(entity) })
 
-  let transform_store = world.component(@math.Transform::component())
+  let transform_store = world.component(@transform.Transform::component())
   let spawning_store = world.component(SpawningPoint::component())
   for entity in entities {
     guard spawning_store.get(entity) is Some(spawning_point) else { continue }
@@ -1005,7 +1007,7 @@ fn animate_despawning(world : @ecs.World) -> Unit {
   .component(DespawningPoint::component())
   .for_each(fn(entity, _despawning) { entities.push(entity) })
 
-  let transform_store = world.component(@math.Transform::component())
+  let transform_store = world.component(@transform.Transform::component())
   let despawning_store = world.component(DespawningPoint::component())
   for entity in entities {
     guard despawning_store.get(entity) is Some(despawning_point) else {
@@ -1041,7 +1043,7 @@ fn animate_despawning(world : @ecs.World) -> Unit {
 ///|
 fn update_camera(world : @ecs.World) -> Unit {
   let rig_store = world.component(CameraRig::component())
-  let transform_store = world.component(@math.Transform::component())
+  let transform_store = world.component(@transform.Transform::component())
   let tick = world.increment_change_tick()
   let camera_entities : Array[@core.Entity] = []
   rig_store.for_each(fn(entity, _rig) { camera_entities.push(entity) })
@@ -1050,7 +1052,7 @@ fn update_camera(world : @ecs.World) -> Unit {
     ignore(
       transform_store.set(
         entity,
-        @math.Transform::from_translation(camera_translation(rig)).looking_at(
+        @transform.Transform::from_translation(camera_translation(rig)).looking_at(
           rig.target,
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
         ),

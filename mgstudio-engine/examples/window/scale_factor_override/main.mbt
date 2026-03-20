@@ -56,7 +56,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -65,7 +65,7 @@ fn setup(world : @ecs.World) -> Unit {
   let text_handle = @text.Text2dBundle::new(
       @text.Text2d::new("Example text"),
       @text.TextFont::default().with_font(font).with_font_size(25.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::black()))
     .spawn()

@@ -58,21 +58,21 @@ fn setup(
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     @pbr.MeshMaterial3d::new(center_material),
-    @math.Transform::from_xyz(0.0F, 0.0F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     @pbr.MeshMaterial3d::new(left_material),
-    @math.Transform::from_xyz(-1.5F, 0.0F, 0.0F),
+    @transform.Transform::from_xyz(-1.5F, 0.0F, 0.0F),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     @pbr.MeshMaterial3d::new(right_material),
-    @math.Transform::from_xyz(1.5F, 0.0F, 0.0F),
+    @transform.Transform::from_xyz(1.5F, 0.0F, 0.0F),
   ).spawn(world)
   |> ignore
 
@@ -85,12 +85,12 @@ fn setup(
     tick,
   )
   world
-  .component(@math.Transform::component())
-  .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .component(@transform.Transform::component())
+  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 1.5F, 4.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 1.5F, 4.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),

@@ -159,7 +159,7 @@ pub fn render2d_push_ui_rect_uv_scissor(
   entity : @core.Entity,
   target_camera : @core.Entity?,
   texture : @asset.Handle[@asset.Image],
-  transform : @math.Transform,
+  transform : @transform.Transform,
   draw_scale : @math.Vec2,
   uv_min : @math.Vec2,
   uv_max : @math.Vec2,
@@ -182,7 +182,7 @@ pub fn render2d_push_ui_box_shadow_scissor(
   entity : @core.Entity,
   target_camera : @core.Entity?,
   texture : @asset.Handle[@asset.Image],
-  transform : @math.Transform,
+  transform : @transform.Transform,
   draw_scale : @math.Vec2,
   color : @sprite.Color,
   layers : @sprite.RenderLayers,
@@ -204,7 +204,7 @@ pub fn render2d_push_ui_texture_slice_scissor(
   entity : @core.Entity,
   target_camera : @core.Entity?,
   texture : @asset.Handle[@asset.Image],
-  transform : @math.Transform,
+  transform : @transform.Transform,
   draw_scale : @math.Vec2,
   color : @sprite.Color,
   layers : @sprite.RenderLayers,
@@ -240,7 +240,7 @@ pub fn render2d_draw_tilemap_chunk(
   world : @ecs.World,
   chunk : TilemapChunk,
   tile_data : TilemapChunkTileData,
-  transform : @math.Transform,
+  transform : @transform.Transform,
   layers : @sprite.RenderLayers,
 ) -> Unit {
   @sprite.render2d_draw_tilemap_chunk(
@@ -280,7 +280,7 @@ pub fn render2d_camera_viewport_to_world_2d(
   screen : @math.Vec2,
   camera : @sprite.Camera,
   projection : @sprite.OrthographicProjection,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,
 ) -> @math.Vec2? {
@@ -294,7 +294,7 @@ pub fn render2d_camera_world_to_viewport_2d(
   world : @math.Vec2,
   camera : @sprite.Camera,
   projection : @sprite.OrthographicProjection,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,
 ) -> @math.Vec2? {

@@ -30,7 +30,7 @@ fn[T : CameraProjection3d] generic_projection_far(projection : T) -> Float {
 ///|
 fn[T : CameraProjection3d] generic_projection_frustum(
   projection : T,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
 ) -> Frustum {
   projection.compute_frustum(camera_transform)
 }
@@ -143,7 +143,7 @@ test "render3d: orthographic projection update matches Bevy auto min area" {
 test "render3d: projection compute_frustum uses camera transform and custom far plane" {
   let perspective = PerspectiveProjection3d::default().with_far(10.0F)
   let frustum = Projection::Perspective(perspective).compute_frustum(
-    @math.Transform::from_xyz(1.0F, 2.0F, 3.0F),
+    @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
   )
   let far_plane = frustum.half_spaces[VIEW_FRUSTUM_FAR_PLANE_IDX].normal_d()
   inspect(frustum.half_spaces.length(), content="6")
@@ -329,7 +329,10 @@ test "render3d: CameraProjection3d trait exposes compute_frustum" {
     view_height: 6.0F,
     far_plane: 321.0F,
   })
-  let frustum = generic_projection_frustum(custom, @math.Transform::identity())
+  let frustum = generic_projection_frustum(
+    custom,
+    @transform.Transform::identity(),
+  )
   inspect(frustum.half_spaces.length(), content="6")
 }
 
@@ -341,7 +344,7 @@ test "render3d: camera helper projection APIs respect custom runtime updates" {
     view_height: 1.0F,
     far_plane: 1000.0F,
   })
-  let transform = @math.Transform::identity()
+  let transform = @transform.Transform::identity()
   let target_size = @math.IVec2::new(200, 100)
   inspect(
     render3d_camera_world_to_viewport(

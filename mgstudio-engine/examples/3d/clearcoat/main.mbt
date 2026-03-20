@@ -161,7 +161,7 @@ fn spawn_sphere(
   let entity = @pbr.MeshMaterial3dBundle::new(
     mesh,
     @pbr.MeshMaterial3d::new(material),
-    @math.Transform::from_xyz(position.x, position.y, position.z).with_scale(
+    @transform.Transform::from_xyz(position.x, position.y, position.z).with_scale(
       @math.Vec3::splat(SPHERE_SCALE),
     ),
   ).spawn(world)
@@ -241,10 +241,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     golf_ball_root,
-    @math.Transform::from_xyz(1.0F, 1.0F, 0.0F).with_scale(
+    @transform.Transform::from_xyz(1.0F, 1.0F, 0.0F).with_scale(
       @math.Vec3::splat(SPHERE_SCALE),
     ),
     tick,
@@ -254,10 +254,10 @@ fn setup(world : @ecs.World) -> Unit {
 
   let light = world.spawn_empty()
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     light,
-    @math.Transform::from_xyz(0.0F, 4.0F, 3.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 4.0F, 3.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -273,7 +273,7 @@ fn setup(world : @ecs.World) -> Unit {
       ..@pbr.PerspectiveProjection3d::default(),
       fov: 27.0F * PI / 180.0F,
     }),
-    @math.Transform::from_xyz(0.0F, 0.0F, 10.0F),
+    @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
   world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world
@@ -306,7 +306,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, -320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -347,10 +347,10 @@ fn animate_light(world : @ecs.World) -> Unit {
 
   if clearcoat_state.val.light is Some(entity) {
     world
-    .component(@math.ecs_key_transform)
+    .component(@transform.ecs_key_transform)
     .set(
       entity,
-      @math.Transform::from_xyz(light_pos.x, light_pos.y, light_pos.z).looking_at(
+      @transform.Transform::from_xyz(light_pos.x, light_pos.y, light_pos.z).looking_at(
         target, up,
       ),
       tick,
@@ -369,10 +369,10 @@ fn animate_spheres(world : @ecs.World) -> Unit {
     let entity = clearcoat_state.val.sphere_entities[i]
     let position = clearcoat_state.val.sphere_positions[i]
     world
-    .component(@math.ecs_key_transform)
+    .component(@transform.ecs_key_transform)
     .set(
       entity,
-      @math.Transform::from_xyz(position.x, position.y, position.z)
+      @transform.Transform::from_xyz(position.x, position.y, position.z)
       .with_rotation(rotation)
       .with_scale(@math.Vec3::splat(SPHERE_SCALE)),
       tick,

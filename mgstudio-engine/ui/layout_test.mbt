@@ -23,7 +23,7 @@ test "ui: layout computes rect and camera-compensated transform" {
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(800.0F, 600.0F),
     Some(@core.Entity::new(0, 0)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     1.0F,
     None,
     false,
@@ -56,7 +56,7 @@ test "ui: layout computes rect and camera-compensated transform" {
     rect.max.x == 240.0F &&
     rect.max.y == 110.0F
   inspect(ok_rect, content="true")
-  let t = @math.get_transform_store(world).get(node).unwrap()
+  let t = @transform.get_transform_store(world).get(node).unwrap()
   // Expected center in viewport coords: (140, 80)
   // Viewport center origin (+Y up): (-260, 220)
   let ok_pos = t.translation.x == -260.0F && t.translation.y == 220.0F
@@ -68,14 +68,14 @@ test "ui: layout computes rect and camera-compensated transform" {
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(800.0F, 600.0F),
     Some(@core.Entity::new(0, 0)),
-    @math.Transform::from_xyz(100.0F, 50.0F, 0.0F),
+    @transform.Transform::from_xyz(100.0F, 50.0F, 0.0F),
     2.0F,
     None,
     false,
   )
   get_ui_context_resource(world).insert(ctx2, tick)
   ui_layout_system(world)
-  let t2 = @math.get_transform_store(world).get(node).unwrap()
+  let t2 = @transform.get_transform_store(world).get(node).unwrap()
   // (-260, 220) * 2 + (100, 50) = (-420, 490)
   let ok_pos2 = t2.translation.x == -420.0F && t2.translation.y == 490.0F
   inspect(ok_pos2, content="true")
@@ -110,7 +110,7 @@ test "ui: hidden overflow axis ignores stale scroll offset" {
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(800.0F, 600.0F),
     Some(@core.Entity::new(0, 0)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     1.0F,
     None,
     false,
@@ -169,7 +169,7 @@ test "ui: editable text transform stays in input content box and in front" {
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(800.0F, 600.0F),
     Some(@core.Entity::new(0, 0)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     1.0F,
     None,
     false,
@@ -197,7 +197,7 @@ test "ui: editable text transform stays in input content box and in front" {
   let text_handle = @text.Text2dBundle::new(
     @text.Text2d::new("Editable status"),
     @text.TextFont::default().with_font_size(24.0F),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn()
   get_ui_text_store(world).insert(editable, UiText::new(text_handle), tick)
   ui_layout_system(world)
@@ -215,7 +215,7 @@ test "ui: editable text transform stays in input content box and in front" {
   let text_size = @text.text_get_layout_size(text_handle).unwrap()
   inspect(text_size.y <= 32.0F, content="true")
   ui_stack_system(world)
-  let editable_transform = @math.get_transform_store(world)
+  let editable_transform = @transform.get_transform_store(world)
     .get(editable)
     .unwrap()
   let t1 = @text.text_get_transform(text_handle).unwrap()
@@ -233,7 +233,7 @@ test "ui: editable status text renders in front of editable background (z-order)
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(800.0F, 600.0F),
     Some(@core.Entity::new(0, 0)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     1.0F,
     None,
     false,
@@ -266,12 +266,12 @@ test "ui: editable status text renders in front of editable background (z-order)
   let text_handle = @text.Text2dBundle::new(
     @text.Text2d::new("Editable status"),
     @text.TextFont::default().with_font_size(24.0F),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn()
   get_ui_text_store(world).insert(editable, UiText::new(text_handle), tick)
   ui_layout_system(world)
   ui_stack_system(world)
-  let background_transform = @math.get_transform_store(world)
+  let background_transform = @transform.get_transform_store(world)
     .get(editable)
     .unwrap()
   let text_transform = @text.text_get_transform(text_handle).unwrap()
@@ -290,7 +290,7 @@ test "ui: editable label node is laid out above input box node" {
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(800.0F, 600.0F),
     Some(@core.Entity::new(0, 0)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     1.0F,
     None,
     false,
@@ -361,7 +361,7 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(800.0F, 600.0F),
     Some(@core.Entity::new(0, 0)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     1.0F,
     None,
     false,
@@ -412,7 +412,7 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
         "Scrollable panel (clip + scissor test)\nUse wheel or screen reader scroll actions.\nLine 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nLine 8\nLine 9\nLine 10",
       ),
       @text.TextFont::default().with_font_size(18.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
     .spawn()
@@ -443,7 +443,7 @@ test "ui: panel text scissor stays above editable title block" {
     @math.Vec2::new(0.0F, 0.0F),
     @math.Vec2::new(800.0F, 600.0F),
     Some(@core.Entity::new(0, 0)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     1.0F,
     None,
     false,
@@ -501,7 +501,7 @@ test "ui: panel text scissor stays above editable title block" {
       "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nLine 8\nLine 9\nLine 10",
     ),
     @text.TextFont::default().with_font_size(18.0F),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn()
   get_node_store(world).insert(
     panel_text,
@@ -537,7 +537,7 @@ test "ui: panel text scissor stays above editable title block" {
   let title_handle = @text.Text2dBundle::new(
     @text.Text2d::new("Editable status"),
     @text.TextFont::default().with_font_size(24.0F),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn()
   get_ui_text_store(world).insert(
     editable_title,

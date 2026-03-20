@@ -811,626 +811,85 @@ pub(all) enum RenderTarget {
 }
 
 ///|
-pub struct Capsule2d {
-  radius : Float
-  half_length : Float
-  segments : Int
-}
+pub type Capsule2d = @math.Capsule2d
 
 ///|
-pub fn Capsule2d::new(
-  radius : Float,
-  half_length : Float,
-  segments : Int,
-) -> Capsule2d {
-  Capsule2d::{ radius, half_length, segments }
-}
+pub type Rectangle = @math.Rectangle
 
 ///|
-pub fn Capsule2d::default() -> Capsule2d {
-  Capsule2d::new(0.5F, 0.5F, 16)
-}
+pub type Circle = @math.Circle
 
 ///|
-pub struct Capsule2dRing {
-  outer_shape : Capsule2d
-  inner_shape : Capsule2d
-}
+pub type Arc2d = @math.Arc2d
 
 ///|
-pub fn Capsule2dRing::new(
-  outer_shape : Capsule2d,
-  inner_shape : Capsule2d,
-) -> Capsule2dRing {
-  Capsule2dRing::{ outer_shape, inner_shape }
-}
+pub type Ellipse = @math.Ellipse
 
 ///|
-pub struct Rectangle {
-  half_size : @math.Vec2
-}
+pub type Annulus = @math.Annulus
 
 ///|
-pub fn Rectangle::new(width : Float, height : Float) -> Rectangle {
-  Rectangle::{ half_size: @math.Vec2::new(width / 2.0F, height / 2.0F) }
-}
+pub type Line2d = @math.Line2d
 
 ///|
-pub fn Rectangle::from_size(size : @math.Vec2) -> Rectangle {
-  Rectangle::{ half_size: @math.Vec2::new(size.x / 2.0F, size.y / 2.0F) }
-}
+pub type Plane2d = @math.Plane2d
 
 ///|
-pub fn Rectangle::default() -> Rectangle {
-  Rectangle::{ half_size: @math.Vec2::new(0.5F, 0.5F) }
-}
+pub type Rhombus = @math.Rhombus
 
 ///|
-pub struct RectangleRing {
-  outer_shape : Rectangle
-  inner_shape : Rectangle
-}
+pub type RegularPolygon = @math.RegularPolygon
 
 ///|
-pub fn RectangleRing::new(
-  outer_shape : Rectangle,
-  inner_shape : Rectangle,
-) -> RectangleRing {
-  RectangleRing::{ outer_shape, inner_shape }
-}
+pub type Triangle2d = @math.Triangle2d
 
 ///|
-pub struct Circle {
-  radius : Float
-  vertices : Int
-}
+pub type Segment2d = @math.Segment2d
 
 ///|
-pub fn Circle::new(radius : Float) -> Circle {
-  Circle::{ radius, vertices: 32 }
-}
+pub type Polyline2d = @math.Polyline2d
 
 ///|
-pub fn Circle::with_vertices(self : Circle, vertices : Int) -> Circle {
-  Circle::{ ..self, vertices, }
-}
+pub type Polygon = @math.Polygon
 
 ///|
-pub fn Circle::default() -> Circle {
-  Circle::new(0.5F)
-}
+pub type ConvexPolygon = @math.ConvexPolygon
 
 ///|
-pub struct Ellipse {
-  half_size : @math.Vec2
-  vertices : Int
-}
+pub type CircularMeshUvMode = @math.CircularMeshUvMode
 
 ///|
-pub fn Ellipse::new(half_width : Float, half_height : Float) -> Ellipse {
-  Ellipse::{ half_size: @math.Vec2::new(half_width, half_height), vertices: 32 }
-}
+pub type CircularSector = @math.CircularSector
 
 ///|
-pub fn Ellipse::with_vertices(self : Ellipse, vertices : Int) -> Ellipse {
-  Ellipse::{ ..self, vertices, }
-}
+pub type CircularSegment = @math.CircularSegment
 
 ///|
-pub fn Ellipse::default() -> Ellipse {
-  Ellipse::new(0.5F, 0.25F)
-}
+pub type Capsule2dRing = @math.Capsule2dRing
 
 ///|
-pub struct EllipseRing {
-  outer_shape : Ellipse
-  inner_shape : Ellipse
-}
+pub type RectangleRing = @math.RectangleRing
 
 ///|
-pub fn EllipseRing::new(
-  outer_shape : Ellipse,
-  inner_shape : Ellipse,
-) -> EllipseRing {
-  EllipseRing::{ outer_shape, inner_shape }
-}
+pub type EllipseRing = @math.EllipseRing
 
 ///|
-pub struct Annulus {
-  inner_radius : Float
-  outer_radius : Float
-  vertices : Int
-}
+pub type Ring2d = @math.Ring2d
 
 ///|
-pub fn Annulus::new(inner_radius : Float, outer_radius : Float) -> Annulus {
-  Annulus::{ inner_radius, outer_radius, vertices: 48 }
-}
+pub type RhombusRing = @math.RhombusRing
 
 ///|
-pub fn Annulus::with_vertices(self : Annulus, vertices : Int) -> Annulus {
-  Annulus::{ ..self, vertices, }
-}
+pub type RegularPolygonRing = @math.RegularPolygonRing
 
 ///|
-pub fn Annulus::default() -> Annulus {
-  Annulus::new(0.25F, 0.5F)
-}
+pub type Triangle2dRing = @math.Triangle2dRing
 
 ///|
-pub struct Ring2d {
-  outer_radius : Float
-  inner_radius : Float
-  vertices : Int
-}
+pub type CircularSectorRing = @math.CircularSectorRing
 
 ///|
-pub fn Ring2d::new(outer_radius : Float, inner_radius : Float) -> Ring2d {
-  Ring2d::{ outer_radius, inner_radius, vertices: 48 }
-}
-
-///|
-pub fn Ring2d::with_vertices(self : Ring2d, vertices : Int) -> Ring2d {
-  Ring2d::{ ..self, vertices, }
-}
-
-///|
-pub fn Ring2d::default() -> Ring2d {
-  Ring2d::new(0.5F, 0.25F)
-}
-
-///|
-pub struct Rhombus {
-  half_diagonal : @math.Vec2
-}
-
-///|
-pub fn Rhombus::new(width : Float, height : Float) -> Rhombus {
-  Rhombus::{ half_diagonal: @math.Vec2::new(width / 2.0F, height / 2.0F) }
-}
-
-///|
-pub fn Rhombus::default() -> Rhombus {
-  Rhombus::new(1.0F, 1.0F)
-}
-
-///|
-pub struct RhombusRing {
-  outer_shape : Rhombus
-  inner_shape : Rhombus
-}
-
-///|
-pub fn RhombusRing::new(
-  outer_shape : Rhombus,
-  inner_shape : Rhombus,
-) -> RhombusRing {
-  RhombusRing::{ outer_shape, inner_shape }
-}
-
-///|
-pub struct RegularPolygon {
-  radius : Float
-  sides : Int
-}
-
-///|
-pub fn RegularPolygon::new(radius : Float, sides : Int) -> RegularPolygon {
-  RegularPolygon::{ radius, sides }
-}
-
-///|
-pub fn RegularPolygon::default() -> RegularPolygon {
-  RegularPolygon::new(0.5F, 6)
-}
-
-///|
-pub struct RegularPolygonRing {
-  outer_shape : RegularPolygon
-  inner_shape : RegularPolygon
-}
-
-///|
-pub fn RegularPolygonRing::new(
-  outer_shape : RegularPolygon,
-  inner_shape : RegularPolygon,
-) -> RegularPolygonRing {
-  RegularPolygonRing::{ outer_shape, inner_shape }
-}
-
-///|
-pub struct Triangle2d {
-  a : @math.Vec2
-  b : @math.Vec2
-  c : @math.Vec2
-}
-
-///|
-pub fn Triangle2d::new(
-  a : @math.Vec2,
-  b : @math.Vec2,
-  c : @math.Vec2,
-) -> Triangle2d {
-  Triangle2d::{ a, b, c }
-}
-
-///|
-pub fn Triangle2d::default() -> Triangle2d {
-  Triangle2d::{
-    a: @math.Vec2::new(0.0F, 0.5F),
-    b: @math.Vec2::new(-0.5F, -0.5F),
-    c: @math.Vec2::new(0.5F, -0.5F),
-  }
-}
-
-///|
-pub struct Triangle2dRing {
-  outer_shape : Triangle2d
-  inner_shape : Triangle2d
-}
-
-///|
-pub fn Triangle2dRing::new(
-  outer_shape : Triangle2d,
-  inner_shape : Triangle2d,
-) -> Triangle2dRing {
-  Triangle2dRing::{ outer_shape, inner_shape }
-}
-
-///|
-pub struct Segment2d {
-  start : @math.Vec2
-  end : @math.Vec2
-  half_thickness : Float
-}
-
-///|
-pub fn Segment2d::new(start : @math.Vec2, end : @math.Vec2) -> Segment2d {
-  Segment2d::{ start, end, half_thickness: 2.5F }
-}
-
-///|
-pub fn Segment2d::with_half_thickness(
-  self : Segment2d,
-  half_thickness : Float,
-) -> Segment2d {
-  Segment2d::{ ..self, half_thickness, }
-}
-
-///|
-pub struct Polyline2d {
-  points : Array[@math.Vec2]
-  half_thickness : Float
-}
-
-///|
-pub fn Polyline2d::new(points : Array[@math.Vec2]) -> Polyline2d {
-  Polyline2d::{ points, half_thickness: 2.5F }
-}
-
-///|
-pub fn Polyline2d::with_half_thickness(
-  self : Polyline2d,
-  half_thickness : Float,
-) -> Polyline2d {
-  Polyline2d::{ ..self, half_thickness, }
-}
-
-///|
-pub struct CircularSector {
-  radius : Float
-  half_angle : Float
-  vertices : Int
-  uv_mode : CircularMeshUvMode
-}
-
-///|
-pub(all) enum CircularMeshUvMode {
-  Mask(Float)
-}
-
-///|
-pub fn CircularSector::new(
-  radius : Float,
-  half_angle : Float,
-) -> CircularSector {
-  CircularSector::{ radius, half_angle, vertices: 32, uv_mode: Mask(0.0F) }
-}
-
-///|
-pub fn CircularSector::from_turns(
-  radius : Float,
-  fraction : Float,
-) -> CircularSector {
-  CircularSector::new(radius, fraction * @math.pi_half() * 2.0F)
-}
-
-///|
-pub fn CircularSector::with_vertices(
-  self : CircularSector,
-  vertices : Int,
-) -> CircularSector {
-  CircularSector::{ ..self, vertices, }
-}
-
-///|
-pub fn CircularSector::with_uv_mode(
-  self : CircularSector,
-  uv_mode : CircularMeshUvMode,
-) -> CircularSector {
-  CircularSector::{ ..self, uv_mode, }
-}
-
-///|
-pub fn CircularSector::with_uv_mask_angle(
-  self : CircularSector,
-  angle : Float,
-) -> CircularSector {
-  self.with_uv_mode(Mask(angle))
-}
-
-///|
-pub fn CircularSector::half_angle(self : CircularSector) -> Float {
-  self.half_angle
-}
-
-///|
-pub fn CircularSector::angle(self : CircularSector) -> Float {
-  self.half_angle * 2.0F
-}
-
-///|
-pub fn CircularSector::default() -> CircularSector {
-  CircularSector::new(0.5F, @math.pi_half() * 2.0F / 3.0F)
-}
-
-///|
-pub struct CircularSectorRing {
-  outer_shape : CircularSector
-  inner_shape : CircularSector
-}
-
-///|
-pub fn CircularSectorRing::new(
-  outer_shape : CircularSector,
-  inner_shape : CircularSector,
-) -> CircularSectorRing {
-  CircularSectorRing::{ outer_shape, inner_shape }
-}
-
-///|
-pub struct CircularSegment {
-  radius : Float
-  half_angle : Float
-  vertices : Int
-  uv_mode : CircularMeshUvMode
-}
-
-///|
-pub fn CircularSegment::new(
-  radius : Float,
-  half_angle : Float,
-) -> CircularSegment {
-  CircularSegment::{ radius, half_angle, vertices: 32, uv_mode: Mask(0.0F) }
-}
-
-///|
-pub fn CircularSegment::from_turns(
-  radius : Float,
-  fraction : Float,
-) -> CircularSegment {
-  CircularSegment::new(radius, fraction * @math.pi_half() * 2.0F)
-}
-
-///|
-pub fn CircularSegment::with_vertices(
-  self : CircularSegment,
-  vertices : Int,
-) -> CircularSegment {
-  CircularSegment::{ ..self, vertices, }
-}
-
-///|
-pub fn CircularSegment::with_uv_mode(
-  self : CircularSegment,
-  uv_mode : CircularMeshUvMode,
-) -> CircularSegment {
-  CircularSegment::{ ..self, uv_mode, }
-}
-
-///|
-pub fn CircularSegment::with_uv_mask_angle(
-  self : CircularSegment,
-  angle : Float,
-) -> CircularSegment {
-  self.with_uv_mode(Mask(angle))
-}
-
-///|
-pub fn CircularSegment::half_angle(self : CircularSegment) -> Float {
-  self.half_angle
-}
-
-///|
-pub fn CircularSegment::angle(self : CircularSegment) -> Float {
-  self.half_angle * 2.0F
-}
-
-///|
-pub fn CircularSegment::default() -> CircularSegment {
-  CircularSegment::new(0.5F, @math.pi_half() * 2.0F / 3.0F)
-}
-
-///|
-pub struct CircularSegmentRing {
-  outer_shape : CircularSegment
-  inner_shape : CircularSegment
-}
-
-///|
-pub fn CircularSegmentRing::new(
-  outer_shape : CircularSegment,
-  inner_shape : CircularSegment,
-) -> CircularSegmentRing {
-  CircularSegmentRing::{ outer_shape, inner_shape }
-}
-
-///|
-fn ring_vec2_add(a : @math.Vec2, b : @math.Vec2) -> @math.Vec2 {
-  @math.Vec2::new(a.x + b.x, a.y + b.y)
-}
-
-///|
-fn ring_vec2_sub(a : @math.Vec2, b : @math.Vec2) -> @math.Vec2 {
-  @math.Vec2::new(a.x - b.x, a.y - b.y)
-}
-
-///|
-fn ring_vec2_mul_scalar(v : @math.Vec2, scalar : Float) -> @math.Vec2 {
-  @math.Vec2::new(v.x * scalar, v.y * scalar)
-}
-
-///|
-fn ring_vec2_dot(a : @math.Vec2, b : @math.Vec2) -> Float {
-  a.x * b.x + a.y * b.y
-}
-
-///|
-fn ring_vec2_normalize_or_zero(v : @math.Vec2) -> @math.Vec2 {
-  let len_sq = ring_vec2_dot(v, v)
-  if len_sq <= 1.0e-12F {
-    return @math.Vec2::new(0.0F, 0.0F)
-  }
-  let inv_len = 1.0F / @math.sqrt(len_sq)
-  ring_vec2_mul_scalar(v, inv_len)
-}
-
-///|
-fn ring_safe_acos(value : Float) -> Float {
-  let clamped = shape_clamp_float(value, -1.0F, 1.0F)
-  let y_sq = 1.0F - clamped * clamped
-  let y = if y_sq <= 0.0F { 0.0F } else { @math.sqrt(y_sq) }
-  @math.atan2(y, clamped)
-}
-
-///|
-fn triangle_inset_point(
-  a : @math.Vec2,
-  b : @math.Vec2,
-  c : @math.Vec2,
-  distance : Float,
-) -> @math.Vec2 {
-  let unit_ab = ring_vec2_normalize_or_zero(ring_vec2_sub(b, a))
-  let unit_ac = ring_vec2_normalize_or_zero(ring_vec2_sub(c, a))
-  let half_angle = ring_safe_acos(ring_vec2_dot(unit_ab, unit_ac)) / 2.0F
-  let direction = ring_vec2_normalize_or_zero(
-    ring_vec2_mul_scalar(ring_vec2_add(unit_ab, unit_ac), 0.5F),
-  )
-  let sin_half_angle = @math.sin(half_angle)
-  if shape_abs_float(sin_half_angle) <= 1.0e-6F {
-    return a
-  }
-  ring_vec2_add(a, ring_vec2_mul_scalar(direction, distance / sin_half_angle))
-}
-
-///|
-pub fn Circle::to_ring(self : Circle, thickness : Float) -> Ring2d {
-  Ring2d::new(self.radius, self.radius - thickness).with_vertices(self.vertices)
-}
-
-///|
-pub fn CircularSegment::to_ring(
-  self : CircularSegment,
-  distance : Float,
-) -> CircularSegmentRing {
-  let old_radius = shape_safe_positive(shape_abs_float(self.radius), 0.5F)
-  let old_half_angle = arc_safe_half_angle(self.half_angle)
-  let old_apothem = circular_segment_apothem(old_radius, old_half_angle)
-  let radius = old_radius - distance
-  let apothem = old_apothem + distance
-  let safe_radius = if radius <= 1.0e-6F { 1.0e-6F } else { radius }
-  let half_angle = ring_safe_acos(apothem / safe_radius)
-  let inner = CircularSegment::new(safe_radius, half_angle)
-    .with_vertices(self.vertices)
-    .with_uv_mode(self.uv_mode)
-  CircularSegmentRing::new(self, inner)
-}
-
-///|
-pub fn Capsule2d::to_ring(self : Capsule2d, distance : Float) -> Capsule2dRing {
-  let inner = Capsule2d::{
-    radius: self.radius - distance,
-    half_length: self.half_length,
-    segments: self.segments,
-  }
-  Capsule2dRing::new(self, inner)
-}
-
-///|
-pub fn Rhombus::to_ring(self : Rhombus, distance : Float) -> RhombusRing {
-  let half_width = self.half_diagonal.x
-  let half_height = self.half_diagonal.y
-  let angle = @math.atan2(half_height, half_width)
-  let sin_angle = @math.sin(angle)
-  let cos_angle = @math.cos(angle)
-  let x_offset = if shape_abs_float(sin_angle) <= 1.0e-6F {
-    0.0F
-  } else {
-    distance / sin_angle
-  }
-  let y_offset = if shape_abs_float(cos_angle) <= 1.0e-6F {
-    0.0F
-  } else {
-    distance / cos_angle
-  }
-  let inner = Rhombus::new(
-    half_width * 2.0F - x_offset * 2.0F,
-    half_height * 2.0F - y_offset * 2.0F,
-  )
-  RhombusRing::new(self, inner)
-}
-
-///|
-pub fn Rectangle::to_ring(self : Rectangle, distance : Float) -> RectangleRing {
-  let inner = Rectangle::new(
-    self.half_size.x * 2.0F - distance * 2.0F,
-    self.half_size.y * 2.0F - distance * 2.0F,
-  )
-  RectangleRing::new(self, inner)
-}
-
-///|
-pub fn RegularPolygon::to_ring(
-  self : RegularPolygon,
-  distance : Float,
-) -> RegularPolygonRing {
-  let sides = if self.sides < 3 { 3 } else { self.sides }
-  let pi = @math.pi_half() * 2.0F
-  let half_angle = pi *
-    Float::from_double((sides - 2).to_double()) /
-    Float::from_double((2 * sides).to_double())
-  let sin_half_angle = @math.sin(half_angle)
-  let offset = if shape_abs_float(sin_half_angle) <= 1.0e-6F {
-    0.0F
-  } else {
-    distance / sin_half_angle
-  }
-  let inner = RegularPolygon::new(self.radius - offset, self.sides)
-  RegularPolygonRing::new(self, inner)
-}
-
-///|
-pub fn Triangle2d::to_ring(
-  self : Triangle2d,
-  distance : Float,
-) -> Triangle2dRing {
-  let inner = Triangle2d::new(
-    triangle_inset_point(self.a, self.b, self.c, distance),
-    triangle_inset_point(self.b, self.c, self.a, distance),
-    triangle_inset_point(self.c, self.a, self.b, distance),
-  )
-  Triangle2dRing::new(self, inner)
-}
+pub type CircularSegmentRing = @math.CircularSegmentRing
 
 ///|
 pub struct Mesh2d {
@@ -2537,7 +1996,7 @@ pub fn GpuMesh2d::new(mesh_id : Int) -> GpuMesh2d {
 pub struct SpriteBundle {
   sprite : Sprite
   anchor : Anchor
-  transform : @math.Transform
+  transform : @transform.Transform
   layers : RenderLayers
   visibility : @visibility.Visibility
   inherited_visibility : @visibility.InheritedVisibility
@@ -2547,7 +2006,7 @@ pub struct SpriteBundle {
 ///|
 pub fn SpriteBundle::new(
   sprite : Sprite,
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> SpriteBundle {
   SpriteBundle::{
     sprite,
@@ -2563,7 +2022,7 @@ pub fn SpriteBundle::new(
 ///|
 pub fn SpriteBundle::new_with_layers(
   sprite : Sprite,
-  transform : @math.Transform,
+  transform : @transform.Transform,
   layers : RenderLayers,
 ) -> SpriteBundle {
   SpriteBundle::{
@@ -2582,7 +2041,7 @@ pub struct Camera2dBundle {
   camera : Camera
   projection : Projection
   camera2d : Camera2d
-  transform : @math.Transform
+  transform : @transform.Transform
   target : RenderTarget
   layers : RenderLayers
   bloom : Bloom?
@@ -2594,7 +2053,7 @@ pub struct Camera2dBundle {
 ///|
 pub fn Camera2dBundle::new(
   camera : Camera,
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> Camera2dBundle {
   Camera2dBundle::{
     camera,
@@ -2614,7 +2073,7 @@ pub fn Camera2dBundle::new(
 pub fn Camera2dBundle::new_with_projection(
   camera : Camera,
   projection : Projection,
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> Camera2dBundle {
   Camera2dBundle::{
     camera,
@@ -2633,7 +2092,7 @@ pub fn Camera2dBundle::new_with_projection(
 ///|
 pub fn Camera2dBundle::new_with_target(
   camera : Camera,
-  transform : @math.Transform,
+  transform : @transform.Transform,
   target : RenderTarget,
 ) -> Camera2dBundle {
   Camera2dBundle::{
@@ -2653,7 +2112,7 @@ pub fn Camera2dBundle::new_with_target(
 ///|
 pub fn Camera2dBundle::new_with_layers(
   camera : Camera,
-  transform : @math.Transform,
+  transform : @transform.Transform,
   target : RenderTarget,
   layers : RenderLayers,
 ) -> Camera2dBundle {
@@ -2707,7 +2166,7 @@ pub fn Camera2dBundle::with_deband_dither(
 pub struct Mesh2dBundle {
   mesh : Mesh2d
   material : MeshMaterial2d[ColorMaterialAsset]
-  transform : @math.Transform
+  transform : @transform.Transform
   layers : RenderLayers
   visibility : @visibility.Visibility
   inherited_visibility : @visibility.InheritedVisibility
@@ -2718,7 +2177,7 @@ pub struct Mesh2dBundle {
 pub fn Mesh2dBundle::new(
   mesh : Mesh2d,
   material : ColorMaterial,
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> Mesh2dBundle {
   Mesh2dBundle::new_with_mesh_material(
     mesh,
@@ -2731,7 +2190,7 @@ pub fn Mesh2dBundle::new(
 pub fn Mesh2dBundle::new_with_mesh_material(
   mesh : Mesh2d,
   material : MeshMaterial2d[ColorMaterialAsset],
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> Mesh2dBundle {
   Mesh2dBundle::{
     mesh,
@@ -2748,7 +2207,7 @@ pub fn Mesh2dBundle::new_with_mesh_material(
 pub fn Mesh2dBundle::new_with_layers(
   mesh : Mesh2d,
   material : ColorMaterial,
-  transform : @math.Transform,
+  transform : @transform.Transform,
   layers : RenderLayers,
 ) -> Mesh2dBundle {
   Mesh2dBundle::new_with_mesh_material_layers(
@@ -2763,7 +2222,7 @@ pub fn Mesh2dBundle::new_with_layers(
 pub fn Mesh2dBundle::new_with_mesh_material_layers(
   mesh : Mesh2d,
   material : MeshMaterial2d[ColorMaterialAsset],
-  transform : @math.Transform,
+  transform : @transform.Transform,
   layers : RenderLayers,
 ) -> Mesh2dBundle {
   Mesh2dBundle::{
@@ -2849,13 +2308,13 @@ fn tilemap_chunk_local_center(
 pub fn TilemapChunk::calculate_tile_transform(
   self : TilemapChunk,
   tile_pos : @math.UVec2,
-) -> @math.Transform {
+) -> @transform.Transform {
   let local_center = tilemap_chunk_local_center(self, tile_pos)
   let safe_tile_size = tilemap_chunk_safe_uvec2(
     self.tile_display_size,
     @math.UVec2::new(1, 1),
   )
-  @math.Transform::from_xy_rotation_scale(
+  @transform.Transform::from_xy_rotation_scale(
     local_center,
     0.0F,
     @math.Vec2::new(
@@ -2926,7 +2385,7 @@ pub fn TilemapChunkTileData::set_tile_data_from_tile_pos(
 
 ///|
 fn render2d_transform_point_2d(
-  transform : @math.Transform,
+  transform : @transform.Transform,
   point : @math.Vec2,
 ) -> @math.Vec2 {
   let scaled = @math.Vec2::new(
@@ -2995,7 +2454,7 @@ pub fn render2d_draw_tilemap_chunk(
   world : @ecs.World,
   chunk : TilemapChunk,
   tile_data : TilemapChunkTileData,
-  transform : @math.Transform,
+  transform : @transform.Transform,
   layers : RenderLayers,
 ) -> Unit {
   let safe_chunk_size = tilemap_chunk_safe_uvec2(
@@ -3060,7 +2519,7 @@ pub fn render2d_draw_tilemap_chunk(
           tile_pos,
         ),
       )
-      let tile_transform = @math.Transform::from_xy_rotation_scale(
+      let tile_transform = @transform.Transform::from_xy_rotation_scale(
         world_pos,
         transform.rotation_z(),
         tile_scale,
@@ -3230,7 +2689,7 @@ fn bloom2d_pass_scale_factor(
 pub fn render2d_draw_bloom_overlay(
   world : @ecs.World,
   source : @asset.Handle[@asset.Image],
-  base_transform : @math.Transform,
+  base_transform : @transform.Transform,
   bloom : Bloom,
   layers : RenderLayers,
 ) -> Unit {
@@ -3247,7 +2706,7 @@ pub fn render2d_draw_bloom_overlay(
       continue
     }
     let scale_factor = bloom2d_pass_scale_factor(bloom, pass, max_mip)
-    let pass_transform = @math.Transform::from_xy_rotation_scale(
+    let pass_transform = @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(
         base_transform.translation.x,
         base_transform.translation.y,
@@ -3500,7 +2959,7 @@ fn phase_entity_ref_cmp(lhs : PhaseEntityRef, rhs : PhaseEntityRef) -> Int {
 
 ///|
 priv struct SpriteDrawPayload {
-  transform : @math.Transform
+  transform : @transform.Transform
   anchor_offset : @math.Vec2
   draw_scale : @math.Vec2
   color : Color
@@ -3519,7 +2978,7 @@ priv struct ExtractedSprite {
 
 ///|
 priv struct UiRectDrawPayload {
-  transform : @math.Transform
+  transform : @transform.Transform
   anchor_offset : @math.Vec2
   draw_scale : @math.Vec2
   color : Color
@@ -3542,7 +3001,7 @@ priv struct ExtractedUiRect {
 
 ///|
 priv struct UiBoxShadowDrawPayload {
-  transform : @math.Transform
+  transform : @transform.Transform
   anchor_offset : @math.Vec2
   // Full geometry bounds (shadow size + 6*blur), in world units.
   draw_scale : @math.Vec2
@@ -3570,7 +3029,7 @@ priv struct ExtractedUiBoxShadow {
 
 ///|
 priv struct UiTextureSliceDrawPayload {
-  transform : @math.Transform
+  transform : @transform.Transform
   anchor_offset : @math.Vec2
   draw_scale : @math.Vec2
   color : Color
@@ -3599,7 +3058,7 @@ priv struct ExtractedCamera2d {
   entity : @core.Entity
   camera : Camera
   projection : OrthographicProjection
-  transform : @math.Transform
+  transform : @transform.Transform
   target : RenderTarget
   layers : RenderLayers
   bloom : Bloom?
@@ -3615,7 +3074,7 @@ priv struct CameraComputed {
 ///|
 priv struct Mesh2dDrawPayload {
   mesh_id : Int
-  transform : @math.Transform
+  transform : @transform.Transform
   layers : RenderLayers
 }
 
@@ -3797,12 +3256,12 @@ fn pan_camera_scroll_delta(scroll : @input.AccumulatedMouseScroll) -> Float {
 
 ///|
 fn pan_camera_step(
-  transform : @math.Transform,
+  transform : @transform.Transform,
   controller : PanCamera,
   delta_seconds : Float,
   key_input : @input.ButtonInput[@window.KeyCode],
   accumulated_mouse_scroll : @input.AccumulatedMouseScroll,
-) -> (@math.Transform, PanCamera) {
+) -> (@transform.Transform, PanCamera) {
   let next_transform = transform
   let next_controller = controller
   if !next_controller.enabled {
@@ -3880,7 +3339,7 @@ pub fn run_pancamera_controller(world : @ecs.World) -> Unit {
   let delta_seconds = pan_camera_world_time(world).delta_seconds()
   let tick = world.read_change_tick()
   let camera_store = world.component(ecs_key_camera)
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   let pan_camera_store = world.component(ecs_key_pan_camera)
   let accumulated_mouse_scroll = match
     (try! world.get_resource(@input.AccumulatedMouseScroll::resource())) {
@@ -4115,7 +3574,7 @@ fn append_computed_sprite_slices(
   entity : @core.Entity,
   sprite : Sprite,
   anchor : Anchor,
-  transform : @math.Transform,
+  transform : @transform.Transform,
   layers : RenderLayers,
   scissor : @math.Rect?,
   uv_min : @math.Vec2,
@@ -4173,7 +3632,7 @@ fn append_computed_sprite_slices(
     sprites.push(
       extracted_sprite_item(
         entity,
-        @math.Transform::from_xy_rotation_scale(
+        @transform.Transform::from_xy_rotation_scale(
           @math.Vec2::new(
             transform.translation.x + world_offset.x,
             transform.translation.y + world_offset.y,
@@ -4233,7 +3692,7 @@ pub fn SpriteBundle::spawn(
   |> ignore)
   try! (world.set(e, @visibility.ecs_key_view_visibility, self.view_visibility)
   |> ignore)
-  try! (world.set(e, @math.ecs_key_transform, self.transform) |> ignore)
+  try! (world.set(e, @transform.ecs_key_transform, self.transform) |> ignore)
   e
 }
 
@@ -4263,7 +3722,7 @@ fn camera2d_bundle_insert(
     try! (world.set(entity, ecs_key_deband_dither, deband_dither, loc~)
     |> ignore)
   }
-  try! (world.set(entity, @math.ecs_key_transform, bundle.transform, loc~)
+  try! (world.set(entity, @transform.ecs_key_transform, bundle.transform, loc~)
   |> ignore)
 }
 
@@ -4308,7 +3767,7 @@ pub fn Mesh2dBundle::spawn(
   |> ignore)
   try! (world.set(e, @visibility.ecs_key_view_visibility, self.view_visibility)
   |> ignore)
-  try! (world.set(e, @math.ecs_key_transform, self.transform) |> ignore)
+  try! (world.set(e, @transform.ecs_key_transform, self.transform) |> ignore)
   let mesh_id = render2d_upload_mesh_handle(self.mesh.mesh)
   try! (world.set(e, ecs_key_gpu_mesh2d, GpuMesh2d::new(mesh_id)) |> ignore)
   e
@@ -4323,7 +3782,7 @@ pub fn render2d_clear_overlay_sprites(world : @ecs.World) -> Unit {
 pub fn render2d_push_sprite_uv(
   world : @ecs.World,
   texture : @asset.Handle[@asset.Image],
-  transform : @math.Transform,
+  transform : @transform.Transform,
   uv_min : @math.Vec2,
   uv_max : @math.Vec2,
   color : Color,
@@ -4352,7 +3811,7 @@ pub fn render2d_push_sprite_uv(
 pub fn render2d_push_sprite_uv_scissor(
   world : @ecs.World,
   texture : @asset.Handle[@asset.Image],
-  transform : @math.Transform,
+  transform : @transform.Transform,
   uv_min : @math.Vec2,
   uv_max : @math.Vec2,
   color : Color,
@@ -4381,7 +3840,7 @@ pub fn render2d_push_sprite_uv_scissor(
 ///|
 pub(all) struct OverlaySpriteUvScissor {
   texture : @asset.Handle[@asset.Image]
-  transform : @math.Transform
+  transform : @transform.Transform
   uv_min : @math.Vec2
   uv_max : @math.Vec2
   color : Color
@@ -4444,7 +3903,7 @@ pub fn render2d_push_ui_rect_uv_scissor(
   entity : @core.Entity,
   target_camera : @core.Entity?,
   texture : @asset.Handle[@asset.Image],
-  transform : @math.Transform,
+  transform : @transform.Transform,
   draw_scale : @math.Vec2,
   uv_min : @math.Vec2,
   uv_max : @math.Vec2,
@@ -4484,7 +3943,7 @@ pub fn render2d_push_ui_box_shadow_scissor(
   entity : @core.Entity,
   target_camera : @core.Entity?,
   texture : @asset.Handle[@asset.Image],
-  transform : @math.Transform,
+  transform : @transform.Transform,
   draw_scale : @math.Vec2,
   color : Color,
   layers : RenderLayers,
@@ -4522,7 +3981,7 @@ pub fn render2d_push_ui_texture_slice_scissor(
   entity : @core.Entity,
   target_camera : @core.Entity?,
   texture : @asset.Handle[@asset.Image],
-  transform : @math.Transform,
+  transform : @transform.Transform,
   draw_scale : @math.Vec2,
   color : Color,
   layers : RenderLayers,
@@ -4873,7 +4332,7 @@ fn render2d_camera_transform_scale_axis(value : Float) -> Float {
 ///|
 fn render2d_camera_uniform_scale(
   projection : OrthographicProjection,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
 ) -> Float {
   let projection_scale = if projection.scale == 0.0F {
     1.0F
@@ -5094,10 +4553,10 @@ fn render2d_transform_from_parent_chain_ecs(
   world : @ecs.World,
   entity : @core.Entity,
   max_depth : Int,
-) -> @math.Transform {
+) -> @transform.Transform {
   max_depth |> ignore
-  (try! world.get(entity, @math.ecs_key_transform)).unwrap_or(
-    @math.Transform::identity(),
+  (try! world.get(entity, @transform.ecs_key_transform)).unwrap_or(
+    @transform.Transform::identity(),
   )
 }
 
@@ -5105,7 +4564,7 @@ fn render2d_transform_from_parent_chain_ecs(
 fn render2d_resolve_transform_ecs(
   world : @ecs.World,
   entity : @core.Entity,
-) -> @math.Transform {
+) -> @transform.Transform {
   match (try! world.get(entity, @transform.ecs_key_global_transform)) {
     Some(global) => global.to_transform_approx()
     None => render2d_transform_from_parent_chain_ecs(world, entity, 64)
@@ -5239,7 +4698,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
     let layers_store = get_render_layers_store(ecs_world)
     let bloom_store = get_bloom_store(ecs_world)
     let view_visibility_store = @visibility.get_view_visibility_store(ecs_world)
-    let transform_store = @math.get_transform_store(ecs_world)
+    let transform_store = @transform.get_transform_store(ecs_world)
     let global_store = @transform.get_global_transform_store(ecs_world)
     camera2d_store.for_each(fn(entity, _marker) {
       let target = match target_store.get(entity) {
@@ -5264,7 +4723,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
         None =>
           match transform_store.get(entity) {
             Some(t) => t
-            None => @math.Transform::identity()
+            None => @transform.Transform::identity()
           }
       }
       let mut computed = CameraComputed::{
@@ -5327,7 +4786,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
         None =>
           match transform_store.get(entity) {
             Some(t) => t
-            None => @math.Transform::identity()
+            None => @transform.Transform::identity()
           }
       }
       let mut uv_min = default_uv_min()
@@ -5442,7 +4901,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
         None =>
           match transform_store.get(entity) {
             Some(t) => t
-            None => @math.Transform::identity()
+            None => @transform.Transform::identity()
           }
       }
       rs.val.meshes.push(ExtractedMesh2d::{
@@ -6193,7 +5652,7 @@ fn draw_ui_overlay_items_for_layers(
 ///|
 fn extracted_sprite_item(
   entity : @core.Entity,
-  transform : @math.Transform,
+  transform : @transform.Transform,
   anchor_offset : @math.Vec2,
   draw_scale : @math.Vec2,
   color : Color,
@@ -6223,7 +5682,7 @@ fn extracted_sprite_item(
 fn extracted_ui_rect_item(
   entity : @core.Entity,
   extracted_camera_entity : @core.Entity,
-  transform : @math.Transform,
+  transform : @transform.Transform,
   anchor_offset : @math.Vec2,
   draw_scale : @math.Vec2,
   color : Color,
@@ -6260,7 +5719,7 @@ fn extracted_ui_rect_item(
 fn extracted_mesh2d_item(
   entity : @core.Entity,
   mesh_id : Int,
-  transform : @math.Transform,
+  transform : @transform.Transform,
   layers : RenderLayers,
 ) -> ExtractedMesh2d {
   ExtractedMesh2d::{
@@ -6276,7 +5735,7 @@ test "render2d: mesh prepared material handle resolves from extracted entity ins
   let extracted = extracted_mesh2d_item(
     entity,
     12,
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     RenderLayers::default(),
   )
   let instances = render_material2d_instances_for_tests([(entity, handle)])
@@ -6302,7 +5761,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
   let sprites : Array[ExtractedSprite] = [
     extracted_sprite_item(
       @core.Entity::new(2, 0),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 0.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -6326,7 +5785,7 @@ test "render2d: unified draw items order sprites and meshes by z" {
     extracted_mesh2d_item(
       mesh_entity,
       7,
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 0.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -6369,7 +5828,7 @@ test "render2d: UI overlay draw items route by target camera" {
     extracted_ui_rect_item(
       @core.Entity::new(100, 0),
       camera_a,
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(1.0F, 1.0F),
       Color::white(),
@@ -6385,7 +5844,7 @@ test "render2d: UI overlay draw items route by target camera" {
     extracted_ui_rect_item(
       @core.Entity::new(101, 0),
       camera_b,
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(1.0F, 1.0F),
       Color::white(),
@@ -6429,7 +5888,7 @@ test "render2d: scene draw items exclude UI overlays" {
       extracted_ui_rect_item(
         @core.Entity::new(100, 0),
         camera,
-        @math.Transform::identity(),
+        @transform.Transform::identity(),
         @math.Vec2::new(0.0F, 0.0F),
         @math.Vec2::new(1.0F, 1.0F),
         Color::white(),
@@ -6506,7 +5965,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
       entity: camera_a,
       camera: Camera::default().with_order(0),
       projection: OrthographicProjection::default_2d(),
-      transform: @math.Transform::identity(),
+      transform: @transform.Transform::identity(),
       target: RenderTarget::Screen,
       layers,
       bloom: None,
@@ -6519,7 +5978,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
       entity: camera_b,
       camera: Camera::default().with_order(1),
       projection: OrthographicProjection::default_2d(),
-      transform: @math.Transform::identity(),
+      transform: @transform.Transform::identity(),
       target: RenderTarget::Screen,
       layers,
       bloom: None,
@@ -6536,7 +5995,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
       extracted_ui_rect_item(
         @core.Entity::new(200, 0),
         camera_a,
-        @math.Transform::identity(),
+        @transform.Transform::identity(),
         @math.Vec2::new(0.0F, 0.0F),
         @math.Vec2::new(1.0F, 1.0F),
         Color::white(),
@@ -6554,7 +6013,7 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
       extracted_ui_rect_item(
         @core.Entity::new(201, 0),
         camera_b,
-        @math.Transform::identity(),
+        @transform.Transform::identity(),
         @math.Vec2::new(0.0F, 0.0F),
         @math.Vec2::new(1.0F, 1.0F),
         Color::white(),
@@ -6611,10 +6070,15 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
     extracted_mesh2d_item(
       opaque_entity,
       10,
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
       layers,
     ),
-    extracted_mesh2d_item(blend_entity, 11, @math.Transform::identity(), layers),
+    extracted_mesh2d_item(
+      blend_entity,
+      11,
+      @transform.Transform::identity(),
+      layers,
+    ),
   ]
   let material_instances = render_material2d_instances_for_tests([
     (opaque_entity, opaque_handle),
@@ -6655,7 +6119,7 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
   let sprites : Array[ExtractedSprite] = [
     extracted_sprite_item(
       @core.Entity::new(2, 0),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(1.0F, 1.0F),
       Color::white(),
@@ -6667,7 +6131,12 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
     ),
   ]
   let meshes : Array[ExtractedMesh2d] = [
-    extracted_mesh2d_item(mesh_entity, 99, @math.Transform::identity(), layers),
+    extracted_mesh2d_item(
+      mesh_entity,
+      99,
+      @transform.Transform::identity(),
+      layers,
+    ),
   ]
   let material_instances = render_material2d_instances_for_tests([
     (mesh_entity, material_handle),
@@ -6718,13 +6187,13 @@ test "render2d: mesh mask alpha mode queues both items for shader-side cutoff" {
     extracted_mesh2d_item(
       masked_low_entity,
       20,
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
       layers,
     ),
     extracted_mesh2d_item(
       masked_high_entity,
       21,
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
       layers,
     ),
   ]
@@ -6782,7 +6251,7 @@ test "render2d: sliced sprite extraction follows computed slices instead of ui s
     @core.Entity::new(1, 0),
     sprite,
     Anchor::center(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     RenderLayers::default(),
     None,
     @math.Vec2::new(0.0F, 0.0F),
@@ -7575,7 +7044,7 @@ pub fn render2d_camera_viewport_to_world_2d(
   screen : @math.Vec2,
   camera : Camera,
   projection : OrthographicProjection,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,
 ) -> @math.Vec2? {
@@ -7622,7 +7091,7 @@ pub fn render2d_camera_world_to_viewport_2d(
   world : @math.Vec2,
   camera : Camera,
   projection : OrthographicProjection,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
   target_size : @math.IVec2,
   scale_factor : Float,
 ) -> @math.Vec2? {

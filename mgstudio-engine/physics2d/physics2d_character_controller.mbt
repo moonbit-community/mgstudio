@@ -205,7 +205,7 @@ pub fn physics2d_character_controller_system(world : @ecs.World) -> Unit {
     None =>
       abort("Missing Time<Fixed> resource in physics2d character controller")
   }
-  let transform_store = @math.get_transform_store(ecs_world)
+  let transform_store = @transform.get_transform_store(ecs_world)
   let body_handle_store = get_rapier_body_handle2d_store(ecs_world)
   let collider_handle_store = get_rapier_collider_handle2d_store(ecs_world)
   let controller_store = get_kinematic_character_controller2d_store(ecs_world)
@@ -246,8 +246,8 @@ pub fn physics2d_character_controller_system(world : @ecs.World) -> Unit {
     // Apply to ECS transform.
     let mut t = transform_store
       .get(entity)
-      .unwrap_or(@math.Transform::identity())
-    t = @math.Transform::new(
+      .unwrap_or(@transform.Transform::identity())
+    t = @transform.Transform::new(
       @math.Vec3::new(
         t.translation.x + eff.x,
         t.translation.y + eff.y,

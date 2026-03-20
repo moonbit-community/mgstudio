@@ -101,7 +101,7 @@ fn spawn_mesh(
   world : @ecs.World,
   mesh : @pbr.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     mesh,
@@ -161,7 +161,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     @pbr.Mesh3d::from_plane(6.0F, 6.0F),
     floor_material,
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   )
 
   // Transparent mask spheres.
@@ -169,13 +169,13 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     sphere_mesh,
     mask_material,
-    @math.Transform::from_xyz(1.0F, 0.5F, -1.5F),
+    @transform.Transform::from_xyz(1.0F, 0.5F, -1.5F),
   )
   spawn_mesh(
     world,
     sphere_mesh,
     mask_unlit_material,
-    @math.Transform::from_xyz(-1.0F, 0.5F, -1.5F),
+    @transform.Transform::from_xyz(-1.0F, 0.5F, -1.5F),
   )
 
   // Transparent blend cube.
@@ -183,7 +183,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     cube_mesh,
     blend_material,
-    @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
   )
 
   // Transparent alpha-to-coverage cube.
@@ -191,7 +191,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     cube_mesh,
     alpha_to_coverage_material,
-    @math.Transform::from_xyz(-1.5F, 0.5F, 0.0F),
+    @transform.Transform::from_xyz(-1.5F, 0.5F, 0.0F),
   )
 
   // Opaque sphere.
@@ -199,7 +199,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     sphere_mesh,
     opaque_material,
-    @math.Transform::from_xyz(0.0F, 0.5F, -1.5F),
+    @transform.Transform::from_xyz(0.0F, 0.5F, -1.5F),
   )
 
   let point = world.spawn_empty()
@@ -211,12 +211,12 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(point, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(point, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
+    @transform.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),

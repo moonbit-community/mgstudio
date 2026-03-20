@@ -38,7 +38,7 @@ fn mesh2d_vertex_color_texture_setup(world : @ecs.World) -> Unit {
   spawn_colored_panel(world, mesh, right_material, PANEL_OFFSET)
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 }
@@ -80,7 +80,7 @@ fn spawn_colored_panel(
   material : @sprite.ColorMaterial,
   x : Float,
 ) -> Unit {
-  let transform = @math.Transform::from_xy_rotation_scale(
+  let transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(x, 0.0F),
     0.0F,
     @math.Vec2::new(PANEL_SCALE, PANEL_SCALE),

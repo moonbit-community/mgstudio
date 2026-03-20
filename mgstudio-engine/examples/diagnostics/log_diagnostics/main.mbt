@@ -174,7 +174,7 @@ fn setup(world : @ecs.World) -> Unit {
         @pbr.StandardMaterial::from_color(@sprite.Color::white()),
       ),
     ),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -187,7 +187,7 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
   ).spawn(world)
   |> ignore
 
@@ -196,12 +196,12 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@pbr.ecs_key_point_light)
   .insert(light, @pbr.PointLight::default(), tick)
   world
-  .component(@math.ecs_key_transform)
-  .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
+    @transform.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -216,7 +216,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),

@@ -134,7 +134,7 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
   let text_handle = @text.Text2dBundle::new(
       @text.Text2d::new("Up Arrow: Move Forward\nLeft / Right Arrow: Turn"),
       @text.TextFont::default().with_font(font).with_font_size(20.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -179,7 +179,7 @@ fn spawn_ship(
 ) -> @core.Entity {
   @sprite.SpriteBundle::new(
     @sprite.Sprite::from_image(texture),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       translation,
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -195,7 +195,7 @@ fn rotation_setup(world : @ecs.World) -> Unit {
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -247,7 +247,7 @@ fn player_movement_system(world : @ecs.World) -> Unit {
   }
   let dt = @time.time_fixed_delta_seconds()
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   guard transform_store.get(rotation_state.val.player) is Some(transform) else {
     return
   }
@@ -274,7 +274,7 @@ fn player_movement_system(world : @ecs.World) -> Unit {
   next_x = clampf(next_x, -BOUNDS_X / 2.0F, BOUNDS_X / 2.0F)
   next_y = clampf(next_y, -BOUNDS_Y / 2.0F, BOUNDS_Y / 2.0F)
 
-  let next_transform = @math.Transform::from_xy_rotation_scale(
+  let next_transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(next_x, next_y),
     next_rotation,
     @math.Vec2::new(transform.scale.x, transform.scale.y),
@@ -290,7 +290,7 @@ fn snap_to_player_system(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   guard transform_store.get(player_entity) is Some(player_transform) else {
     return
   }
@@ -314,7 +314,7 @@ fn snap_to_player_system(world : @ecs.World) -> Unit {
         continue
       }
       let next_rotation = to_player.to_angle() - @math.pi_half()
-      let next_transform = @math.Transform::from_xy_rotation_scale(
+      let next_transform = @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(
           enemy_transform.translation.x,
           enemy_transform.translation.y,
@@ -336,7 +336,7 @@ fn rotate_to_player_system(world : @ecs.World) -> Unit {
   }
   let dt = @time.time_fixed_delta_seconds()
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   guard transform_store.get(player_entity) is Some(player_transform) else {
     return
   }
@@ -373,7 +373,7 @@ fn rotate_to_player_system(world : @ecs.World) -> Unit {
       let rotation_sign = if right_dot_player < 0.0F { 1.0F } else { -1.0F }
       let max_angle = acosf(clampf(forward_dot_player, -1.0F, 1.0F))
       let rotation_angle = rotation_sign * minf(rotation_speed * dt, max_angle)
-      let next_transform = @math.Transform::from_xy_rotation_scale(
+      let next_transform = @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(
           enemy_transform.translation.x,
           enemy_transform.translation.y,

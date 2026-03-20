@@ -147,23 +147,23 @@ fn view_count() -> Int {
 }
 
 ///|
-fn camera_view_transform(index : Int) -> @math.Transform {
+fn camera_view_transform(index : Int) -> @transform.Transform {
   if index == 0 {
-    return @math.Transform::from_xyz(1.5F, 1.5F, 1.5F).with_rotation(
+    return @transform.Transform::from_xyz(1.5F, 1.5F, 1.5F).with_rotation(
       @math.Quat::new(-0.279F, 0.364F, 0.115F, 0.880F).normalize(),
     )
   }
   if index == 1 {
-    return @math.Transform::from_xyz(2.4F, 0.0F, 0.2F).with_rotation(
+    return @transform.Transform::from_xyz(2.4F, 0.0F, 0.2F).with_rotation(
       @math.Quat::new(0.094F, 0.676F, 0.116F, 0.721F).normalize(),
     )
   }
   if index == 2 {
-    return @math.Transform::from_xyz(2.4F, 2.6F, -4.3F).with_rotation(
+    return @transform.Transform::from_xyz(2.4F, 2.6F, -4.3F).with_rotation(
       @math.Quat::new(0.170F, 0.908F, 0.308F, 0.225F).normalize(),
     )
   }
-  @math.Transform::from_xyz(-1.0F, 0.8F, -1.2F).with_rotation(
+  @transform.Transform::from_xyz(-1.0F, 0.8F, -1.2F).with_rotation(
     @math.Quat::new(-0.004F, 0.909F, 0.247F, -0.335F).normalize(),
   )
 }
@@ -260,7 +260,7 @@ fn spawn_help_text(asset_server : @asset.AssetServer) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -291,8 +291,8 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(light, @math.Transform::from_xyz(2.0F, 1.0F, -1.1F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(light, @transform.Transform::from_xyz(2.0F, 1.0F, -1.1F), tick)
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(0.08F, 0.08F, 0.08F),
@@ -301,7 +301,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
         @pbr.StandardMaterial::from_color(@sprite.Color::white()),
       ),
     ),
-    @math.Transform::from_xyz(2.0F, 1.0F, -1.1F),
+    @transform.Transform::from_xyz(2.0F, 1.0F, -1.1F),
   ).spawn(world)
   |> ignore
 
@@ -316,7 +316,7 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
         .with_reflectance(0.18F),
       ),
     ),
-    @math.Transform::from_xyz(0.0F, -1.0F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, -1.0F, 0.0F),
   ).spawn(world)
   |> ignore
 
@@ -345,35 +345,35 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let main_cube = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     @pbr.MeshMaterial3d::new(parallax_material),
-    @math.Transform::from_xyz(0.0F, 0.0F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
   ).spawn(world)
   push_spin_target(main_cube, 0.3F)
 
   let x_pos_cube = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(40.0F, 40.0F, 40.0F),
     @pbr.MeshMaterial3d::new(parallax_material),
-    @math.Transform::from_xyz(45.0F, 0.0F, 0.0F),
+    @transform.Transform::from_xyz(45.0F, 0.0F, 0.0F),
   ).spawn(world)
   push_spin_target(x_pos_cube, -0.1F)
 
   let x_neg_cube = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(40.0F, 40.0F, 40.0F),
     @pbr.MeshMaterial3d::new(parallax_material),
-    @math.Transform::from_xyz(-45.0F, 0.0F, 0.0F),
+    @transform.Transform::from_xyz(-45.0F, 0.0F, 0.0F),
   ).spawn(world)
   push_spin_target(x_neg_cube, -0.1F)
 
   let z_pos_cube = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(40.0F, 40.0F, 40.0F),
     @pbr.MeshMaterial3d::new(parallax_material),
-    @math.Transform::from_xyz(0.0F, 0.0F, 45.0F),
+    @transform.Transform::from_xyz(0.0F, 0.0F, 45.0F),
   ).spawn(world)
   push_spin_target(z_pos_cube, -0.1F)
 
   let z_neg_cube = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(40.0F, 40.0F, 40.0F),
     @pbr.MeshMaterial3d::new(parallax_material),
-    @math.Transform::from_xyz(0.0F, 0.0F, -45.0F),
+    @transform.Transform::from_xyz(0.0F, 0.0F, -45.0F),
   ).spawn(world)
   push_spin_target(z_neg_cube, -0.1F)
 }
@@ -421,7 +421,7 @@ fn spin(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   for spin_target in parallax_state.val.spin_targets {
     guard transform_store.get(spin_target.entity) is Some(transform) else {
       continue
@@ -448,7 +448,7 @@ fn move_camera(world : @ecs.World) -> Unit {
       view_count()
   }
   guard parallax_state.val.camera is Some(camera_entity) else { return }
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   guard transform_store.get(camera_entity) is Some(current_transform) else {
     return
   }

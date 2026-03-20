@@ -211,10 +211,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     directional_light,
-    @math.Transform::from_xyz(0.0F, 2.0F, 0.0F).with_rotation(
+    @transform.Transform::from_xyz(0.0F, 2.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_x(-PI / 4.0F),
     ),
     tick,
@@ -227,7 +227,7 @@ fn setup(world : @ecs.World) -> Unit {
     1.0F,
   )
 
-  let camera_transform = @math.Transform::from_xyz(0.0F, 0.0F, 8.0F).looking_at(
+  let camera_transform = @transform.Transform::from_xyz(0.0F, 0.0F, 8.0F).looking_at(
     @math.Vec3::zero(),
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
@@ -260,7 +260,7 @@ fn setup(world : @ecs.World) -> Unit {
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
       @text.TextFont::default().with_font(font).with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -356,7 +356,7 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
   guard cubemap_state.val.directional_light is Some(light_entity) else {
     return
   }
-  if world.component(@math.ecs_key_transform).get(light_entity)
+  if world.component(@transform.ecs_key_transform).get(light_entity)
     is Some(transform) {
     let tick = world.read_change_tick()
     let next_rotation = transform.rotation
@@ -365,7 +365,7 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
       )
       .normalize()
     world
-    .component(@math.ecs_key_transform)
+    .component(@transform.ecs_key_transform)
     .set(light_entity, transform.with_rotation(next_rotation), tick)
     |> ignore
   }

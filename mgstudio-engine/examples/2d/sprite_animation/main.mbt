@@ -80,7 +80,7 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
         "Left Arrow: Animate Left Sprite\nRight Arrow: Animate Right Sprite",
       ),
       @text.TextFont::default().with_font(font).with_font_size(20.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -129,7 +129,7 @@ fn spawn_animated_sprite(
     texture,
     @asset.TextureAtlas::new(layout, FIRST_SPRITE_INDEX),
   )
-  let transform = @math.Transform::identity()
+  let transform = @transform.Transform::identity()
     .with_scale(@math.Vec3::new(SPRITE_SCALE, SPRITE_SCALE, SPRITE_SCALE))
     .with_translation(@math.Vec3::new(x, 0.0F, 0.0F))
   @sprite.SpriteBundle::new(sprite, transform).spawn(world)
@@ -143,7 +143,9 @@ fn sprite_animation_setup(world : @ecs.World) -> Unit {
   animation_state.val.right_frame_timer = timer_from_fps(RIGHT_FPS)
 
   let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
+  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 
   spawn_help_overlay(world)

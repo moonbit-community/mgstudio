@@ -396,7 +396,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(
+    @transform.Transform::from_xyz(
       CAMERA_INITIAL_X,
       CAMERA_INITIAL_Y,
       CAMERA_INITIAL_Z,
@@ -423,8 +423,8 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(barn_lamp, @math.Transform::from_xyz(0.0F, 0.07F, -0.13F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(barn_lamp, @transform.Transform::from_xyz(0.0F, 0.07F, -0.13F), tick)
   anisotropy_state.val.barn_lamp_scene = Some(barn_lamp)
 
   let sphere_material = @pbr.standard_material_add(
@@ -438,7 +438,7 @@ fn setup(world : @ecs.World) -> Unit {
   let sphere = @pbr.MeshMaterial3dBundle::new(
     uv_sphere_mesh(0.1F, 20, 36),
     @pbr.MeshMaterial3d::new(sphere_material),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   anisotropy_state.val.sphere_scene = Some(sphere)
 
@@ -449,7 +449,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(18.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, -340.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -516,7 +516,7 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 ///|
 fn animate_light(world : @ecs.World) -> Unit {
   let now = world_time(world).elapsed_seconds()
-  let next_transform = @math.Transform::from_xyz(
+  let next_transform = @transform.Transform::from_xyz(
     @math.cos(now) * 3.0F,
     4.0F,
     @math.sin(now) * 3.0F,
@@ -527,14 +527,14 @@ fn animate_light(world : @ecs.World) -> Unit {
   .component(@pbr.ecs_key_directional_light)
   .for_each(fn(entity, _light) {
     world
-    .component(@math.ecs_key_transform)
+    .component(@transform.ecs_key_transform)
     .insert(entity, next_transform, tick)
   })
   world
   .component(@pbr.ecs_key_point_light)
   .for_each(fn(entity, _light) {
     world
-    .component(@math.ecs_key_transform)
+    .component(@transform.ecs_key_transform)
     .insert(entity, next_transform, tick)
   })
 }
@@ -552,7 +552,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
     @math.Quat::from_rotation_y(anisotropy_state.val.environment_angle),
     camera_initial_position(),
   )
-  let next_transform = @math.Transform::from_xyz(
+  let next_transform = @transform.Transform::from_xyz(
     rotated_position.x,
     rotated_position.y,
     rotated_position.z,
@@ -562,7 +562,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
   .component(@sprite.ecs_key_camera)
   .for_each(fn(entity, _camera) {
     world
-    .component(@math.ecs_key_transform)
+    .component(@transform.ecs_key_transform)
     .insert(entity, next_transform, tick)
   })
 }

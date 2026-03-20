@@ -26,7 +26,7 @@ fn main {
 ///|
 priv struct ViewportToWorldState {
   mut camera : @core.Entity
-  mut camera_transform : @math.Transform
+  mut camera_transform : @transform.Transform
   mut camera_scale : Float
   mut viewport : @sprite.Viewport
 }
@@ -34,7 +34,7 @@ priv struct ViewportToWorldState {
 ///|
 let viewport_state : Ref[ViewportToWorldState] = Ref::new(ViewportToWorldState::{
   camera: @core.Entity::placeholder(),
-  camera_transform: @math.Transform::identity(),
+  camera_transform: @transform.Transform::identity(),
   camera_scale: 1.0F,
   viewport: @sprite.Viewport::new(
     @math.IVec2::new(0, 0),
@@ -66,7 +66,7 @@ fn spawn_ui_text_handle(
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
     @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   )
   .with_color(@text.TextColor::new(color))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -124,7 +124,7 @@ fn viewport_to_world_setup(world : @ecs.World) -> Unit {
   let height = @window.window_height()
   let viewport = viewport_default(width, height)
   let camera = @sprite.Camera::default().with_viewport(viewport)
-  let camera_transform = @math.Transform::identity()
+  let camera_transform = @transform.Transform::identity()
   let camera_entity = @sprite.Camera2dBundle::new(camera, camera_transform).spawn(
     world,
   )
@@ -138,14 +138,14 @@ fn viewport_to_world_setup(world : @ecs.World) -> Unit {
   @sprite.Mesh2dBundle::new(
     @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(40.0F, 20.0F)),
     @sprite.ColorMaterial::new(@sprite.Color::new(0.0F, 0.5019608F, 0.0F, 1.0F)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   @sprite.Mesh2dBundle::new(
     @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(50000.0F, 50000.0F)),
     @sprite.ColorMaterial::new(@sprite.Color::new(0.01F, 0.01F, 0.01F, 1.0F)),
-    @math.Transform::from_xyz(0.0F, 0.0F, -200.0F),
+    @transform.Transform::from_xyz(0.0F, 0.0F, -200.0F),
   ).spawn(world)
   |> ignore
 }
@@ -159,7 +159,7 @@ fn viewport_to_world_draw_cursor(world : @ecs.World) -> Unit {
   let camera_entity = viewport_state.val.camera
   let camera_store = world.component(@sprite.ecs_key_camera)
   let projection_store = world.component(@sprite.ecs_key_projection)
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
 
   guard camera_store.get(camera_entity) is Some(camera) else { return }
   guard projection_store.get(camera_entity) is Some(projection) else { return }
@@ -244,7 +244,7 @@ fn update_camera_transform(world : @ecs.World, fspeed : Float) -> Unit {
     x = x + fspeed
   }
   if x != camera_transform.translation.x || y != camera_transform.translation.y {
-    let next_camera = @math.Transform::from_xy_rotation_scale(
+    let next_camera = @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(x, y),
       camera_transform.rotation_z(),
       @math.Vec2::new(camera_transform.scale.x, camera_transform.scale.y),
@@ -253,7 +253,7 @@ fn update_camera_transform(world : @ecs.World, fspeed : Float) -> Unit {
     viewport_state.val.camera_transform = next_camera
     let tick = world.read_change_tick()
     world
-    .component(@math.ecs_key_transform)
+    .component(@transform.ecs_key_transform)
     .set(viewport_state.val.camera, next_camera, tick)
     |> ignore
   }

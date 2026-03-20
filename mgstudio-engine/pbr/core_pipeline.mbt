@@ -881,7 +881,7 @@ pub(open) trait CameraProjection3d {
   get_clip_from_view_for_sub(self : Self, sub_view : SubCameraView3d) -> ProjectionMatrix3d
   update(self : Self, width : Float, height : Float) -> Self
   far(self : Self) -> Float
-  compute_frustum(self : Self, camera_transform : @math.Transform) -> Frustum
+  compute_frustum(self : Self, camera_transform : @transform.Transform) -> Frustum
   get_frustum_corners(self : Self, z_near : Float, z_far : Float) -> Array[
     @math.Vec3,
   ]

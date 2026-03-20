@@ -31,7 +31,7 @@ fn setup_graphics(world : @ecs.World) -> Unit {
   let clear_color = @sprite.Color::new(0.9764706F, 0.9764706F, 1.0F, 1.0F)
   @pbr.Camera3dBundle::new(
     @sprite.Camera::new(clear_color),
-    @math.Transform::from_xyz(0.0F, 0.0F, 25.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 0.0F, 25.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -44,8 +44,8 @@ fn setup_physics(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let ground = world.spawn_empty()
   world
-  .component(@math.ecs_key_transform)
-  .insert(ground, @math.Transform::from_xyz(0.0F, -1.2F, 0.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(ground, @transform.Transform::from_xyz(0.0F, -1.2F, 0.0F), tick)
   @physics3d.get_collider3d_store(world).insert(
     ground,
     @physics3d.Collider3d::new(
@@ -56,8 +56,8 @@ fn setup_physics(world : @ecs.World) -> Unit {
 
   let sensor = world.spawn_empty()
   world
-  .component(@math.ecs_key_transform)
-  .insert(sensor, @math.Transform::from_xyz(0.0F, 5.0F, 0.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(sensor, @transform.Transform::from_xyz(0.0F, 5.0F, 0.0F), tick)
   @physics3d.get_collider3d_store(world).insert(
     sensor,
     @physics3d.Collider3d::new(
@@ -68,8 +68,8 @@ fn setup_physics(world : @ecs.World) -> Unit {
 
   let dynamic_cube = world.spawn_empty()
   world
-  .component(@math.ecs_key_transform)
-  .insert(dynamic_cube, @math.Transform::from_xyz(0.0F, 13.0F, 0.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(dynamic_cube, @transform.Transform::from_xyz(0.0F, 13.0F, 0.0F), tick)
   @physics3d.get_rigid_body3d_store(world).insert(
     dynamic_cube,
     @physics3d.RigidBody3d::dynamic(),

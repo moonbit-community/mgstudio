@@ -120,7 +120,7 @@ fn dynamic_mip_setup(world : @ecs.World) -> Unit {
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -257,10 +257,10 @@ fn animate_image_scale(world : @ecs.World) -> Unit {
   )
   let next_scale = vec2_scale(animated_size, wave)
 
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   let tick = world.read_change_tick()
   if transform_store.get(animated_entity) is Some(transform) {
-    let next_transform = @math.Transform::from_xy_rotation_scale(
+    let next_transform = @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(transform.translation.x, transform.translation.y),
       transform.rotation_z(),
       next_scale,
@@ -285,7 +285,7 @@ fn spawn_animated_mesh(world : @ecs.World, window_size : @math.Vec2) -> Unit {
     @sprite.Sprite::from_image(source_texture).with_custom_size(
       Some(@math.Vec2::new(1.0F, 1.0F)),
     ),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       vec2_sub(vec2_scale(area_size, 0.5F), vec2_scale(window_size, 0.5F)),
       0.0F,
       image_size,
@@ -327,7 +327,7 @@ fn spawn_mip_level_views(world : @ecs.World, window_size : @math.Vec2) -> Unit {
       @sprite.Sprite::from_image(textures[i]).with_custom_size(
         Some(@math.Vec2::new(1.0F, 1.0F)),
       ),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(x_origin, y_center),
         0.0F,
         final_size,
@@ -501,7 +501,7 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
   let text_handle = @text.Text2dBundle::new(
       @text.Text2d::new(""),
       @text.TextFont::default().with_font(font).with_font_size(18.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -551,7 +551,7 @@ fn spawn_mip_level_labels() -> Unit {
     let handle = @text.Text2dBundle::new(
         @text.Text2d::new(""),
         @text.TextFont::default().with_font(font).with_font_size(FONT_SIZE),
-        @math.Transform::from_xy_rotation_scale(
+        @transform.Transform::from_xy_rotation_scale(
           @math.Vec2::new(-10000.0F, -10000.0F),
           0.0F,
           @math.Vec2::new(1.0F, 1.0F),
@@ -573,7 +573,7 @@ fn clear_all_mip_labels() -> Unit {
     @text.text_set_content(handle, "")
     @text.text_set_transform(
       handle,
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-10000.0F, -10000.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -605,7 +605,7 @@ fn update_mip_label(
   )
   @text.text_set_transform(
     handle,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(x, y),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),

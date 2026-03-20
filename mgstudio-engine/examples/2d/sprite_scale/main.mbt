@@ -55,7 +55,7 @@ fn main {
   .add_systems(@app.Startup, @app.system(sprite_scale_setup_texture_atlas))
   .add_systems(@app.Startup, @app.system(sprite_scale_setup_camera))
   .add_system_query2_ecs(
-    @sprite.ecs_key_sprite, @math.ecs_key_transform, sprite_scale_update,
+    @sprite.ecs_key_sprite, @transform.ecs_key_transform, sprite_scale_update,
   )
   .run()
 }
@@ -63,7 +63,9 @@ fn main {
 ///|
 fn sprite_scale_setup_camera(world : @ecs.World) -> Unit {
   let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
+  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 }
 
@@ -297,7 +299,7 @@ fn spawn_scaled_sprite(
   let sprite = @sprite.Sprite::from_image(texture)
     .with_custom_size(Some(size))
     .with_image_mode(resolve_scale_mode(intended_mode))
-  let transform = @math.Transform::from_xy_rotation_scale(
+  let transform = @transform.Transform::from_xy_rotation_scale(
     translation,
     0.0F,
     @math.Vec2::new(1.0F, 1.0F),
@@ -320,7 +322,7 @@ fn spawn_scaled_atlas_sprite(
   let sprite = @sprite.Sprite::from_atlas_image(texture, atlas)
     .with_custom_size(Some(size))
     .with_image_mode(resolve_scale_mode(intended_mode))
-  let transform = @math.Transform::from_xy_rotation_scale(
+  let transform = @transform.Transform::from_xy_rotation_scale(
     translation,
     0.0F,
     @math.Vec2::new(1.0F, 1.0F),
@@ -336,7 +338,7 @@ fn spawn_scale_label(
   sprite_translation : @math.Vec2,
   sprite_size : @math.Vec2,
 ) -> Unit {
-  let label_transform = @math.Transform::from_xy_rotation_scale(
+  let label_transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(
       sprite_translation.x,
       sprite_translation.y - 0.5F * sprite_size.y - LABEL_VERTICAL_GAP,
@@ -385,7 +387,7 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 
 ///|
 fn sprite_scale_update(
-  query : @ecs.Query2[@sprite.Sprite, @math.Transform],
+  query : @ecs.Query2[@sprite.Sprite, @transform.Transform],
   world : @ecs.World,
 ) -> Unit {
   sprite_scale_state.val.timer_seconds = sprite_scale_state.val.timer_seconds +

@@ -256,7 +256,7 @@ test "picking: a11y set-value action updates UiText content" {
     @text.Text2dBundle::new(
       @text.Text2d::new("Old"),
       @text.TextFont::default(),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     ),
   )
   let entity = world.spawn_empty()

@@ -24,7 +24,7 @@ fn main {
 ///|
 fn sprite_setup(world : @ecs.World) -> Unit {
   let camera = @engine_sprite.Camera::default()
-  @engine_sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(
+  @engine_sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
     world,
   )
   |> ignore
@@ -32,6 +32,6 @@ fn sprite_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/bevy_bird_dark.png")
   let sprite = @engine_sprite.Sprite::from_image(texture)
-  let transform = @math.Transform::identity()
+  let transform = @transform.Transform::identity()
   @engine_sprite.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
 }

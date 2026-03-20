@@ -16,6 +16,7 @@ import {
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
   "moonbitlang/core/json",
 }
@@ -309,9 +310,9 @@ pub fn mesh_ray_cast(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettings) ->
 
 pub fn mesh_ray_cast_first(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
 
-pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @sprite.Camera, Projection, @math.Transform, @math.IVec2, Float, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
+pub fn mesh_ray_cast_from_camera(@ecs.World, @math.Vec2, @sprite.Camera, Projection, @transform.Transform, @math.IVec2, Float, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
 
-pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @sprite.Camera, Projection, @math.Transform, @math.IVec2, Float, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
+pub fn mesh_ray_cast_from_camera_first(@ecs.World, @math.Vec2, @sprite.Camera, Projection, @transform.Transform, @math.IVec2, Float, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
 
 pub fn mesh_render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -331,9 +332,9 @@ pub fn pbr_plugin_with(@app.App[@ecs.World], PbrPlugin) -> @app.App[@ecs.World]
 
 pub fn pbr_prepass_enabled() -> Bool
 
-pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @sprite.Camera, Projection, @math.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
+pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @sprite.Camera, Projection, @transform.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
 
-pub fn render3d_camera_world_to_viewport(@math.Vec3, @sprite.Camera, Projection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
+pub fn render3d_camera_world_to_viewport(@math.Vec3, @sprite.Camera, Projection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
 pub fn render3d_diagnostic_prepared_camera_count() -> Int
 
@@ -466,12 +467,12 @@ pub struct Camera3dBundle {
   exposure : Exposure?
   color_grading : @post_process.ColorGrading?
   camera3d : Camera3d
-  transform : @math.Transform
+  transform : @transform.Transform
   target : @sprite.RenderTarget
   layers : @sprite.RenderLayers
 }
-pub fn Camera3dBundle::new(@sprite.Camera, @math.Transform) -> Self
-pub fn Camera3dBundle::new_with_projection(@sprite.Camera, Projection, @math.Transform) -> Self
+pub fn Camera3dBundle::new(@sprite.Camera, @transform.Transform) -> Self
+pub fn Camera3dBundle::new_with_projection(@sprite.Camera, Projection, @transform.Transform) -> Self
 #callsite(autofill(loc))
 pub fn Camera3dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub fn Camera3dBundle::with_atmosphere(Self, @light.Atmosphere?) -> Self
@@ -563,7 +564,7 @@ pub impl ToJson for ContactShadows
 pub impl @json.FromJson for ContactShadows
 
 type CustomProjection3d
-pub fn CustomProjection3d::compute_frustum(Self, @math.Transform) -> Frustum
+pub fn CustomProjection3d::compute_frustum(Self, @transform.Transform) -> Frustum
 pub fn CustomProjection3d::default() -> Self
 pub fn CustomProjection3d::far(Self) -> Float
 pub fn[T] CustomProjection3d::get(Self) -> T?
@@ -720,7 +721,7 @@ pub impl ToJson for FreeCameraState
 pub impl @json.FromJson for FreeCameraState
 
 pub struct Frustum {
-  half_spaces : Array[HalfSpace]
+  half_spaces : Array[@math.HalfSpace]
 }
 pub fn Frustum::corners(Self) -> Array[@math.Vec3]?
 pub fn Frustum::new(ViewFrustum) -> Self
@@ -729,18 +730,6 @@ pub impl @ecs.Component for Frustum
 pub impl Eq for Frustum
 pub impl ToJson for Frustum
 pub impl @json.FromJson for Frustum
-
-pub struct HalfSpace {
-  normal_d : @math.Vec4
-}
-pub fn HalfSpace::d(Self) -> Float
-pub fn HalfSpace::intersection_point(Self, Self, Self) -> @math.Vec3?
-pub fn HalfSpace::new(@math.Vec4) -> Self
-pub fn HalfSpace::normal(Self) -> @math.Vec3
-pub fn HalfSpace::normal_d(Self) -> @math.Vec4
-pub impl Eq for HalfSpace
-pub impl ToJson for HalfSpace
-pub impl @json.FromJson for HalfSpace
 
 pub struct MaterialsPlugin {
 }
@@ -774,13 +763,13 @@ pub impl @json.FromJson for Mesh3d
 pub struct MeshMaterial3dBundle {
   mesh : Mesh3d
   material : @material.MeshMaterial3d
-  transform : @math.Transform
+  transform : @transform.Transform
   layers : @sprite.RenderLayers
   visibility : @visibility.Visibility
   inherited_visibility : @visibility.InheritedVisibility
   view_visibility : @visibility.ViewVisibility
 }
-pub fn MeshMaterial3dBundle::new(Mesh3d, @material.MeshMaterial3d, @math.Transform) -> Self
+pub fn MeshMaterial3dBundle::new(Mesh3d, @material.MeshMaterial3d, @transform.Transform) -> Self
 #callsite(autofill(loc))
 pub fn MeshMaterial3dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub impl @app.CommandSpawnComponents for MeshMaterial3dBundle
@@ -874,7 +863,7 @@ pub(all) struct OrthographicProjection3d {
   mut area : @math.Rect
 }
 pub fn OrthographicProjection3d::area(Self) -> @math.Rect
-pub fn OrthographicProjection3d::compute_frustum(Self, @math.Transform) -> Frustum
+pub fn OrthographicProjection3d::compute_frustum(Self, @transform.Transform) -> Frustum
 pub fn OrthographicProjection3d::default() -> Self
 pub fn OrthographicProjection3d::default_2d() -> Self
 pub fn OrthographicProjection3d::default_3d() -> Self
@@ -931,7 +920,7 @@ pub(all) struct PerspectiveProjection3d {
   mut near_clip_plane : @math.Vec4
 }
 pub fn PerspectiveProjection3d::aspect_ratio(Self) -> Float
-pub fn PerspectiveProjection3d::compute_frustum(Self, @math.Transform) -> Frustum
+pub fn PerspectiveProjection3d::compute_frustum(Self, @transform.Transform) -> Frustum
 pub fn PerspectiveProjection3d::default() -> Self
 pub fn PerspectiveProjection3d::far(Self) -> Float
 pub fn PerspectiveProjection3d::fov(Self) -> Float
@@ -962,7 +951,7 @@ pub(all) enum Projection {
   Orthographic(OrthographicProjection3d)
   Custom(CustomProjection3d)
 }
-pub fn Projection::compute_frustum(Self, @math.Transform) -> Frustum
+pub fn Projection::compute_frustum(Self, @transform.Transform) -> Frustum
 pub fn[T : CameraProjection3d] Projection::custom(T) -> Self
 pub fn Projection::default() -> Self
 pub fn Projection::far(Self) -> Float
@@ -1045,12 +1034,12 @@ pub impl ToJson for TransmittedShadowReceiver
 pub impl @json.FromJson for TransmittedShadowReceiver
 
 pub struct ViewFrustum {
-  half_spaces : Array[HalfSpace]
+  inner : @math.ViewFrustum
 }
 pub fn ViewFrustum::corners(Self) -> Array[@math.Vec3]?
 pub fn ViewFrustum::from_clip_from_world(ProjectionMatrix3d) -> Self
 pub fn ViewFrustum::from_clip_from_world_custom_far(ProjectionMatrix3d, @math.Vec3, @math.Vec3, Float) -> Self
-pub fn ViewFrustum::new(Array[HalfSpace]) -> Self
+pub fn ViewFrustum::new(Array[@math.HalfSpace]) -> Self
 pub impl Eq for ViewFrustum
 pub impl ToJson for ViewFrustum
 pub impl @json.FromJson for ViewFrustum
@@ -1148,6 +1137,8 @@ pub using @light {type GeneratedEnvironmentMapLight}
 
 pub using @light {type GlobalAmbientLight}
 
+pub using @math {type HalfSpace}
+
 pub using @core_pipeline {type Hdr}
 
 pub using @light {type IrradianceVolume}
@@ -1218,7 +1209,7 @@ pub(open) trait CameraProjection3d {
   get_clip_from_view_for_sub(Self, SubCameraView3d) -> ProjectionMatrix3d
   update(Self, Float, Float) -> Self
   far(Self) -> Float
-  compute_frustum(Self, @math.Transform) -> Frustum
+  compute_frustum(Self, @transform.Transform) -> Frustum
   get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 }
 

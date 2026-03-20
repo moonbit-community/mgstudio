@@ -1007,7 +1007,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
         is Some(background) &&
         run_draw_scale.x > 0.0F &&
         run_draw_scale.y > 0.0F {
-        let background_transform = @math.Transform::from_xy_rotation_scale(
+        let background_transform = @transform.Transform::from_xy_rotation_scale(
           run_translation,
           rot,
           run_draw_scale,
@@ -1045,7 +1045,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
           underline_size.y * absf(scale.y),
         )
         if underline_draw_scale.x > 0.0F && underline_draw_scale.y > 0.0F {
-          let underline_transform = @math.Transform::from_xy_rotation_scale(
+          let underline_transform = @transform.Transform::from_xy_rotation_scale(
             underline_translation,
             rot,
             underline_draw_scale,
@@ -1083,7 +1083,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
           strike_size.y * absf(scale.y),
         )
         if strike_draw_scale.x > 0.0F && strike_draw_scale.y > 0.0F {
-          let strike_transform = @math.Transform::from_xy_rotation_scale(
+          let strike_transform = @transform.Transform::from_xy_rotation_scale(
             strike_translation,
             rot,
             strike_draw_scale,
@@ -1119,7 +1119,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
         text_origin.x + offset.x,
         text_origin.y + offset.y,
       )
-      let transform = @math.Transform::from_xy_rotation_scale(
+      let transform = @transform.Transform::from_xy_rotation_scale(
         translation,
         rot,
         scale,
@@ -1131,7 +1131,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
           translation.x + shadow.offset.x,
           translation.y + shadow.offset.y,
         )
-        let shadow_transform = @math.Transform::from_xy_rotation_scale(
+        let shadow_transform = @transform.Transform::from_xy_rotation_scale(
           shadow_translation,
           instance.transform.rotation_z(),
           scale,

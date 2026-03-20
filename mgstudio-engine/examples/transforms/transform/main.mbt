@@ -58,7 +58,7 @@ fn setup(world : @ecs.World) -> Unit {
   let center_sphere = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_sphere(3.0F),
     @pbr.MeshMaterial3d::new(sphere_material),
-    @math.Transform::from_translation(@math.Vec3::zero()),
+    @mgs_transform.Transform::from_translation(@math.Vec3::zero()),
   ).spawn(world)
   world
   .component(Center::component())
@@ -68,7 +68,7 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
 
-  let cube_spawn = @math.Transform::from_translation(
+  let cube_spawn = @mgs_transform.Transform::from_translation(
     @math.Vec3::new(0.0F, 0.0F, -10.0F),
   ).with_rotation(@math.Quat::from_rotation_y(@math.pi() / 2.0F))
   let cube_material = @pbr.standard_material_add(
@@ -89,7 +89,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 10.0F, 20.0F).looking_at(
+    @mgs_transform.Transform::from_xyz(0.0F, 10.0F, 20.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -101,10 +101,10 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@pbr.DirectionalLight::component())
   .insert(light, @pbr.DirectionalLight::default(), tick)
   world
-  .component(@math.Transform::component())
+  .component(@mgs_transform.Transform::component())
   .insert(
     light,
-    @math.Transform::from_xyz(3.0F, 3.0F, 3.0F).looking_at(
+    @mgs_transform.Transform::from_xyz(3.0F, 3.0F, 3.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -116,7 +116,7 @@ fn setup(world : @ecs.World) -> Unit {
 fn move_cube(
   cubes : @ecs.Query2RefMutFiltered[
     CubeState,
-    @math.Transform,
+    @mgs_transform.Transform,
     @ecs.Without[Center],
   ],
   time : @app.Res[@time.Time[Unit]],
@@ -135,10 +135,13 @@ fn move_cube(
 fn rotate_cube(
   cubes : @ecs.Query2RefMutFiltered[
     CubeState,
-    @math.Transform,
+    @mgs_transform.Transform,
     @ecs.Without[Center],
   ],
-  center_spheres : @ecs.Query1Filtered[@math.Transform, @ecs.With[Center]],
+  center_spheres : @ecs.Query1Filtered[
+    @mgs_transform.Transform,
+    @ecs.With[Center],
+  ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let center = Ref::new(@math.Vec3::zero())
@@ -163,8 +166,16 @@ fn rotate_cube(
 
 ///|
 fn scale_down_sphere_proportional_to_cube_travel_distance(
-  cubes : @ecs.Query2Filtered[@math.Transform, CubeState, @ecs.Without[Center]],
-  centers : @ecs.Query2RefMutFiltered[Center, @math.Transform, @ecs.All],
+  cubes : @ecs.Query2Filtered[
+    @mgs_transform.Transform,
+    CubeState,
+    @ecs.Without[Center],
+  ],
+  centers : @ecs.Query2RefMutFiltered[
+    Center,
+    @mgs_transform.Transform,
+    @ecs.All,
+  ],
 ) -> Unit {
   let distances = Ref::new(0.0F)
   try! cubes.view(fn(_entity, cube_transform, cube_state) {

@@ -61,7 +61,7 @@ priv struct BeamPool {
 priv struct RaycastState {
   mut camera : @sprite.Camera
   mut camera_projection : @pbr.Projection
-  mut camera_transform : @math.Transform
+  mut camera_transform : @transform.Transform
   collider_entities : Array[@core.Entity]
   mut red_pool : BeamPool?
   mut green_pool : BeamPool?
@@ -72,7 +72,7 @@ priv struct RaycastState {
 let raycast_state : Ref[RaycastState] = Ref::new({
   camera: @sprite.Camera::default(),
   camera_projection: @pbr.Projection::default(),
-  camera_transform: @math.Transform::identity(),
+  camera_transform: @transform.Transform::identity(),
   collider_entities: [],
   red_pool: None,
   green_pool: None,
@@ -133,11 +133,11 @@ fn set_primitive_color(
 fn set_primitive_transform(
   world : @ecs.World,
   primitive : BeamPrimitive,
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> Unit {
   let tick = world.read_change_tick()
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .set(primitive.entity, transform, tick)
   |> ignore
 }
@@ -160,19 +160,25 @@ fn quat_from_x_axis(direction : @math.Vec3) -> @math.Quat {
 }
 
 ///|
-fn line_transform(start : @math.Vec3, end_ : @math.Vec3) -> @math.Transform {
+fn line_transform(
+  start : @math.Vec3,
+  end_ : @math.Vec3,
+) -> @transform.Transform {
   let delta = end_.sub(start)
   let length = delta.length()
   let center = start.add(end_).mul_scalar(0.5F)
   let safe_length = if length < 0.00001F { 0.00001F } else { length }
-  @math.Transform::from_xyz(center.x, center.y, center.z)
+  @transform.Transform::from_xyz(center.x, center.y, center.z)
   .with_rotation(quat_from_x_axis(delta))
   .with_scale(@math.Vec3::new(safe_length, LINE_THICKNESS, LINE_THICKNESS))
 }
 
 ///|
-fn marker_transform(position : @math.Vec3, scale : Float) -> @math.Transform {
-  @math.Transform::from_xyz(position.x, position.y, position.z).with_scale(
+fn marker_transform(
+  position : @math.Vec3,
+  scale : Float,
+) -> @transform.Transform {
+  @transform.Transform::from_xyz(position.x, position.y, position.z).with_scale(
     @math.Vec3::splat(scale),
   )
 }
@@ -205,7 +211,7 @@ fn spawn_box_plane(
   @pbr.MeshMaterial3dBundle::new(
     plane_mesh,
     @pbr.MeshMaterial3d::new(plane_material),
-    @math.Transform::from_xyz(translation.x, translation.y, translation.z).with_rotation(
+    @transform.Transform::from_xyz(translation.x, translation.y, translation.z).with_rotation(
       rotation,
     ),
   ).spawn(world)
@@ -228,7 +234,7 @@ fn spawn_beam_pool(
     let segment_entity = @pbr.MeshMaterial3dBundle::new(
       line_mesh,
       @pbr.MeshMaterial3d::new(segment_material),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     ).spawn(world)
     set_visibility(world, segment_entity, false)
     segments.push({ entity: segment_entity, material: segment_material })
@@ -239,7 +245,7 @@ fn spawn_beam_pool(
     let marker_entity = @pbr.MeshMaterial3dBundle::new(
       marker_mesh,
       @pbr.MeshMaterial3d::new(marker_material),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     ).spawn(world)
     set_visibility(world, marker_entity, false)
     markers.push({ entity: marker_entity, material: marker_material })
@@ -254,7 +260,7 @@ fn setup(world : @ecs.World) -> Unit {
     @sprite.Color::black(),
   )
   raycast_state.val.camera_projection = @pbr.Projection::default()
-  raycast_state.val.camera_transform = @math.Transform::from_xyz(
+  raycast_state.val.camera_transform = @transform.Transform::from_xyz(
     1.5F, 1.5F, 1.5F,
   ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
   raycast_state.val.collider_entities.clear()
@@ -335,10 +341,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     directional_light,
-    @math.Transform::from_xyz(0.0F, 2.0F, 2.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 2.0F, 2.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -377,7 +383,7 @@ fn setup(world : @ecs.World) -> Unit {
   let origin_marker_entity = @pbr.MeshMaterial3dBundle::new(
     marker_mesh,
     @pbr.MeshMaterial3d::new(origin_marker_material),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   set_visibility(world, origin_marker_entity, true)
   raycast_state.val.origin_marker = Some({
@@ -395,7 +401,7 @@ fn setup(world : @ecs.World) -> Unit {
       "MAX_BOUNCES = 64",
     ),
     @text.TextFont::default().with_font(font).with_font_size(16.0F),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-390.0F, 320.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),

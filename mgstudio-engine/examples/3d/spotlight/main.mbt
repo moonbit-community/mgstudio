@@ -160,7 +160,7 @@ fn setup(world : @ecs.World) -> Unit {
   let ground = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_plane(100.0F, 100.0F),
     @pbr.MeshMaterial3d::new(ground_material),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   spotlight_state.val.movables.push(ground)
 
@@ -177,7 +177,7 @@ fn setup(world : @ecs.World) -> Unit {
     let cube = @pbr.MeshMaterial3dBundle::new(
       cube_mesh,
       @pbr.MeshMaterial3d::new(cube_material),
-      @math.Transform::from_xyz(x, y, z),
+      @transform.Transform::from_xyz(x, y, z),
     ).spawn(world)
     spotlight_state.val.movables.push(cube)
   }
@@ -204,10 +204,10 @@ fn setup(world : @ecs.World) -> Unit {
         tick,
       )
       world
-      .component(@math.ecs_key_transform)
+      .component(@transform.ecs_key_transform)
       .insert(
         spotlight,
-        @math.Transform::from_xyz(1.0F + fx, 2.0F, fz).looking_at(
+        @transform.Transform::from_xyz(1.0F + fx, 2.0F, fz).looking_at(
           @math.Vec3::new(1.0F + fx, 0.0F, fz),
           @math.Vec3::new(1.0F, 0.0F, 0.0F),
         ),
@@ -218,7 +218,7 @@ fn setup(world : @ecs.World) -> Unit {
       let marker = @pbr.MeshMaterial3dBundle::new(
         marker_mesh,
         @pbr.MeshMaterial3d::new(red_emissive),
-        @math.Transform::identity(),
+        @transform.Transform::identity(),
       ).spawn(world)
       world
       .component(@hierarchy.ecs_key_parent)
@@ -227,7 +227,7 @@ fn setup(world : @ecs.World) -> Unit {
       let direction_marker = @pbr.MeshMaterial3dBundle::new(
         direction_marker_mesh,
         @pbr.MeshMaterial3d::new(maroon_emissive),
-        @math.Transform::from_xyz(0.0F, 0.0F, -0.1F),
+        @transform.Transform::from_xyz(0.0F, 0.0F, -0.1F),
       ).spawn(world)
       world
       .component(@hierarchy.ecs_key_parent)
@@ -240,7 +240,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(-4.0F, 5.0F, 10.0F).looking_at(
+    @transform.Transform::from_xyz(-4.0F, 5.0F, 10.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -253,7 +253,7 @@ fn setup(world : @ecs.World) -> Unit {
   @text.Text2dBundle::new(
     @text.Text2d::new(INSTRUCTIONS),
     @text.TextFont::default().with_font(overlay_font).with_font_size(20.0F),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-390.0F, 320.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -283,7 +283,7 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 fn light_sway(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let elapsed = world_time(world).elapsed_seconds()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   let spot_light_store = world.component(@pbr.ecs_key_spot_light)
 
   let rotation_x = -@math.pi_half() + @math.sin(elapsed * 0.67F * 3.0F) * 0.5F
@@ -348,7 +348,7 @@ fn movement(world : @ecs.World) -> Unit {
     MOVE_SPEED * world_time(world).delta_seconds(),
   )
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   for entity in spotlight_state.val.movables {
     if transform_store.get(entity) is Some(transform) {
       let next = transform.with_translation(transform.translation.add(delta))
@@ -374,13 +374,13 @@ fn rotation(world : @ecs.World) -> Unit {
   }
 
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   if transform_store.get(camera_entity) is Some(transform) {
     let rotated_position = quat_rotate_vec3(
       @math.Quat::from_rotation_y(angle),
       transform.translation,
     )
-    let next = @math.Transform::from_xyz(
+    let next = @transform.Transform::from_xyz(
       rotated_position.x,
       rotated_position.y,
       rotated_position.z,

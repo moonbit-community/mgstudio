@@ -70,7 +70,7 @@ fn ui_spawn_text(
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(font_size),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -106,7 +106,7 @@ fn spawn_overlay(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let overlay_camera = @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(1).with_clear_color_none(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(@ui.ecs_key_is_default_ui_camera)
@@ -151,7 +151,7 @@ fn spawn_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let camera = @camera.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 1.0F, 0.0F).looking_to(
+    @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F).looking_to(
       @math.Vec3::new(1.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -189,16 +189,16 @@ fn spawn_lights(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(light_a, @math.Transform::from_xyz(0.0F, 3.0F, 0.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(light_a, @transform.Transform::from_xyz(0.0F, 3.0F, 0.0F), tick)
 
   let light_b = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
   .insert(light_b, @pbr.PointLight::default(), tick)
   world
-  .component(@math.ecs_key_transform)
-  .insert(light_b, @math.Transform::from_xyz(-3.5F, 3.0F, 0.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(light_b, @transform.Transform::from_xyz(-3.5F, 3.0F, 0.0F), tick)
 
   let light_c = world.spawn_empty()
   world
@@ -214,8 +214,8 @@ fn spawn_lights(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(light_c, @math.Transform::from_xyz(0.0F, -0.5F, 0.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(light_c, @transform.Transform::from_xyz(0.0F, -0.5F, 0.0F), tick)
 }
 
 ///|
@@ -243,14 +243,14 @@ fn spawn_world(world : @ecs.World) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_plane(10.0F, 10.0F),
     white,
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_plane(10.0F, 10.0F),
     white,
-    @math.Transform::from_xyz(0.0F, -0.01F, 0.0F).with_rotation(
+    @transform.Transform::from_xyz(0.0F, -0.01F, 0.0F).with_rotation(
       @math.Quat::from_rotation_x(@math.pi()),
     ),
   ).spawn(world)
@@ -259,28 +259,28 @@ fn spawn_world(world : @ecs.World) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_sphere(0.5F),
     blue,
-    @math.Transform::from_xyz(3.0F, 1.5F, 0.0F),
+    @transform.Transform::from_xyz(3.0F, 1.5F, 0.0F),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(0.2F, 4.0F, 3.0F),
     white,
-    @math.Transform::from_xyz(-3.0F, 2.0F, 0.0F),
+    @transform.Transform::from_xyz(-3.0F, 2.0F, 0.0F),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     blue,
-    @math.Transform::from_xyz(-4.2F, 0.5F, 0.0F),
+    @transform.Transform::from_xyz(-4.2F, 0.5F, 0.0F),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     red,
-    @math.Transform::from_xyz(3.0F, -2.0F, 0.0F).with_rotation(
+    @transform.Transform::from_xyz(3.0F, -2.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_y(@math.pi() / 4.0F)
       .mul(@math.Quat::from_rotation_x(@math.pi() / 4.0F))
       .normalize(),

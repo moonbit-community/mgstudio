@@ -193,20 +193,20 @@ fn audio_combined_volume(
 fn audio_entity_transform(
   world : @ecs.World,
   entity : @core.Entity,
-) -> @math.Transform {
+) -> @transform.Transform {
   match (try! world.get(entity, @transform.ecs_key_global_transform)) {
     Some(global) => global.to_transform_approx()
     None =>
-      match (try! world.get(entity, @math.ecs_key_transform)) {
+      match (try! world.get(entity, @transform.ecs_key_transform)) {
         Some(transform) => transform
-        None => @math.Transform::identity()
+        None => @transform.Transform::identity()
       }
   }
 }
 
 ///|
 fn audio_transform_point(
-  transform : @math.Transform,
+  transform : @transform.Transform,
   point : @math.Vec3,
 ) -> @math.Vec3 {
   let angle = transform.rotation_z()

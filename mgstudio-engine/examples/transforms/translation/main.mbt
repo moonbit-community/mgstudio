@@ -47,7 +47,7 @@ fn setup(world : @ecs.World) -> Unit {
   let cube = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     @pbr.MeshMaterial3d::new(material),
-    @math.Transform::from_translation(entity_spawn),
+    @transform.Transform::from_translation(entity_spawn),
   ).spawn(world)
   world
   .component(Movable::component())
@@ -55,7 +55,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 10.0F, 20.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 10.0F, 20.0F).looking_at(
       entity_spawn,
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -67,10 +67,10 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@pbr.DirectionalLight::component())
   .insert(light, @pbr.DirectionalLight::default(), tick)
   world
-  .component(@math.Transform::component())
+  .component(@transform.Transform::component())
   .insert(
     light,
-    @math.Transform::from_xyz(3.0F, 3.0F, 3.0F).looking_at(
+    @transform.Transform::from_xyz(3.0F, 3.0F, 3.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -91,9 +91,9 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 fn move_cube(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let delta = world_time(world).delta_seconds()
-  let transform_store = world.component(@math.Transform::component())
+  let transform_store = world.component(@transform.Transform::component())
   let movable_store = world.component(Movable::component())
-  let updates : Array[(@core.Entity, Movable, @math.Transform)] = []
+  let updates : Array[(@core.Entity, Movable, @transform.Transform)] = []
   movable_store.for_each(fn(entity, movable) {
     if transform_store.get(entity) is Some(transform) {
       updates.push((entity, movable, transform))

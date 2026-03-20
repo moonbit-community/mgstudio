@@ -45,7 +45,9 @@ fn texture_atlas_builder_setup(world : @ecs.World) -> Unit {
   builder_state.val.texture_a = Some(texture_a)
   builder_state.val.texture_b = Some(texture_b)
   let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
+  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 }
 
@@ -81,7 +83,7 @@ fn texture_atlas_builder_update(world : @ecs.World) -> Unit {
         atlas_texture,
         @asset.TextureAtlas::new(layout_handle, index_a),
       ),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-160.0F, 0.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -93,7 +95,7 @@ fn texture_atlas_builder_update(world : @ecs.World) -> Unit {
         atlas_texture,
         @asset.TextureAtlas::new(layout_handle, index_b),
       ),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(160.0F, 0.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),

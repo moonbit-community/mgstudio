@@ -74,7 +74,7 @@ fn physics2d_showcase_spawn_controls_overlay() -> Unit {
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
     font_style,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-390.0F, 300.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -114,10 +114,12 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
 
   // Camera.
   let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
+  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
   physics2d_showcase_spawn_controls_overlay()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   let sprite_store = world.component(@sprite.ecs_key_sprite)
   let rb_store = @physics2d.get_rigid_body2d_store(world)
   let col_store = @physics2d.get_collider2d_store(world)
@@ -135,7 +137,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   let floor = world.spawn_empty()
   transform_store.insert(
     floor,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, -260.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -162,7 +164,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   let left_wall = world.spawn_empty()
   transform_store.insert(
     left_wall,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-410.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -181,7 +183,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   let right_wall = world.spawn_empty()
   transform_store.insert(
     right_wall,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(410.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -202,7 +204,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   let sensor_zone = world.spawn_empty()
   transform_store.insert(
     sensor_zone,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, -140.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -236,7 +238,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   let player = world.spawn_empty()
   transform_store.insert(
     player,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, -40.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -284,7 +286,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
     let box = world.spawn_empty()
     transform_store.insert(
       box,
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(x, y),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -316,7 +318,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   let anchor = world.spawn_empty()
   transform_store.insert(
     anchor,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(260.0F, 220.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -333,7 +335,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   let bob = world.spawn_empty()
   transform_store.insert(
     bob,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(260.0F, 120.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -371,7 +373,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   let ghost_a = world.spawn_empty()
   transform_store.insert(
     ghost_a,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-260.0F, 160.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -407,7 +409,7 @@ fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
   let ghost_b = world.spawn_empty()
   transform_store.insert(
     ghost_b,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(260.0F, 160.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -546,7 +548,7 @@ fn physics2d_showcase_spawn_ball_on_click(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   let sprite_store = world.component(@sprite.ecs_key_sprite)
   let rb_store = @physics2d.get_rigid_body2d_store(world)
   let col_store = @physics2d.get_collider2d_store(world)
@@ -554,7 +556,7 @@ fn physics2d_showcase_spawn_ball_on_click(world : @ecs.World) -> Unit {
   let ball = world.spawn_empty()
   transform_store.insert(
     ball,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(p.x, p.y),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),

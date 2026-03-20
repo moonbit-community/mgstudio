@@ -107,7 +107,7 @@ fn spawn_ui_text_handle(
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
     @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   )
   .with_color(@text.TextColor::new(color))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -129,7 +129,7 @@ fn setup_ui(world : @ecs.World) -> Unit {
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(100).with_clear_color_none(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -206,7 +206,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(@pbr.StandardMaterial::from_color(color_red())),
     ),
-    @math.Transform::from_xyz(-1.0F, 0.5F, -1.0F),
+    @transform.Transform::from_xyz(-1.0F, 0.5F, -1.0F),
   ).spawn(world)
   world
   .component(@pbr.ecs_key_no_wireframe)
@@ -219,7 +219,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
         @pbr.StandardMaterial::from_color(color_orange()),
       ),
     ),
-    @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
   ).spawn(world)
   |> ignore
 
@@ -230,7 +230,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
         @pbr.StandardMaterial::from_color(color_lime()),
       ),
     ),
-    @math.Transform::from_xyz(1.0F, 0.5F, 1.0F),
+    @transform.Transform::from_xyz(1.0F, 0.5F, 1.0F),
   ).spawn(world)
   world
   .component(@pbr.ecs_key_wireframe)
@@ -246,7 +246,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
         @pbr.StandardMaterial::from_color(color_blue()),
       ),
     ),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(@pbr.ecs_key_wireframe_color)
@@ -257,12 +257,12 @@ fn setup_scene(world : @ecs.World) -> Unit {
   .component(@pbr.ecs_key_point_light)
   .insert(light, @pbr.PointLight::default(), tick)
   world
-  .component(@math.ecs_key_transform)
-  .insert(light, @math.Transform::from_xyz(2.0F, 4.0F, 2.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(light, @transform.Transform::from_xyz(2.0F, 4.0F, 2.0F), tick)
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
+    @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),

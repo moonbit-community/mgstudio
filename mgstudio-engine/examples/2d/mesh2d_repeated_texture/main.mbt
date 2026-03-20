@@ -49,7 +49,7 @@ fn spawn_panel(
   @sprite.Mesh2dBundle::new(
     mesh,
     material,
-    @math.Transform::from_xyz(x, 0.0F, 0.0F),
+    @transform.Transform::from_xyz(x, 0.0F, 0.0F),
   ).spawn(world)
   |> ignore
 }
@@ -64,7 +64,7 @@ fn spawn_label(
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
     style,
-    @math.Transform::from_xyz(x, LABEL_OFFSET, 0.0F),
+    @transform.Transform::from_xyz(x, LABEL_OFFSET, 0.0F),
   )
   .with_bounds(@text.TextBounds::new_horizontal(RECTANGLE_SIDE))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
@@ -126,7 +126,7 @@ fn mesh2d_repeated_texture_setup(world : @ecs.World) -> Unit {
     @math.Vec2::new(2.0F, 3.0F),
   )
 
-  let camera_transform = @math.Transform::identity().looking_at(
+  let camera_transform = @transform.Transform::identity().looking_at(
     @math.Vec3::zero(),
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )

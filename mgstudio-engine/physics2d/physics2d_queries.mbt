@@ -453,7 +453,7 @@ pub fn Physics2dContext::project_point_and_get_feature_entity_with_filter(
 pub fn Physics2dContext::intersect_shape_entities(
   self : Physics2dContext,
   shape : ColliderShape2d,
-  shape_pos : @math.Transform,
+  shape_pos : @transform.Transform,
 ) -> Array[@core.Entity] {
   self.intersect_shape_entities_with_filter(
     shape,
@@ -466,7 +466,7 @@ pub fn Physics2dContext::intersect_shape_entities(
 pub fn Physics2dContext::intersect_shape_entities_with_filter(
   self : Physics2dContext,
   shape : ColliderShape2d,
-  shape_pos : @math.Transform,
+  shape_pos : @transform.Transform,
   filter : @collision.QueryFilter,
 ) -> Array[@core.Entity] {
   let hs = self
@@ -525,7 +525,7 @@ pub fn Physics2dContext::intersect_aabb_entities_conservative_with_filter(
 pub fn Physics2dContext::cast_shape_entity(
   self : Physics2dContext,
   shape : ColliderShape2d,
-  shape_pos : @math.Transform,
+  shape_pos : @transform.Transform,
   shape_vel : @math.Vec2,
   options : @collision.ShapeCastOptions,
 ) -> ShapeCastHit2d? {
@@ -558,7 +558,7 @@ pub fn Physics2dContext::cast_shape_entity(
 pub fn Physics2dContext::cast_shape_entity_with_filter(
   self : Physics2dContext,
   shape : ColliderShape2d,
-  shape_pos : @math.Transform,
+  shape_pos : @transform.Transform,
   shape_vel : @math.Vec2,
   options : @collision.ShapeCastOptions,
   filter : @collision.QueryFilter,

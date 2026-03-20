@@ -39,13 +39,13 @@ fn setup(world : @ecs.World) -> Unit {
   let cube = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     @pbr.MeshMaterial3d::new(material),
-    @math.Transform::from_translation(@math.Vec3::zero()),
+    @transform.Transform::from_translation(@math.Vec3::zero()),
   ).spawn(world)
   world.component(Rotatable::component()).insert(cube, { speed: 0.3F }, tick)
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 10.0F, 20.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 10.0F, 20.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -57,10 +57,10 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@pbr.DirectionalLight::component())
   .insert(light, @pbr.DirectionalLight::default(), tick)
   world
-  .component(@math.Transform::component())
+  .component(@transform.Transform::component())
   .insert(
     light,
-    @math.Transform::from_xyz(3.0F, 3.0F, 3.0F).looking_at(
+    @transform.Transform::from_xyz(3.0F, 3.0F, 3.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -70,7 +70,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn rotate_cube(
-  cubes : @ecs.Query2RefMutFiltered[Rotatable, @math.Transform, @ecs.All],
+  cubes : @ecs.Query2RefMutFiltered[Rotatable, @transform.Transform, @ecs.All],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let delta = time.get().delta_secs()

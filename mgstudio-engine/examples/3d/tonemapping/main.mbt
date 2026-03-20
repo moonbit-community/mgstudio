@@ -27,7 +27,7 @@ const PARAMETER_COUNT : Int = 4
 
 ///|
 struct CameraTransform {
-  transform : @math.Transform
+  transform : @transform.Transform
 }
 
 ///|
@@ -146,7 +146,7 @@ impl @ecs.Component for TonemappingUiText with component() {
 ///|
 impl Default for CameraTransform with default() {
   {
-    transform: @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
+    transform: @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
       @math.Vec3::new(0.0F, 0.3F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -411,7 +411,7 @@ fn setup(
   let overlay_camera = commands.spawn(
     @sprite.Camera2dBundle::new(
       @sprite.Camera::default().with_order(100).with_clear_color_none(),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     ),
   )
   commands
@@ -432,7 +432,7 @@ fn setup(
   let text_handle = @text.Text2dBundle::new(
       @text.Text2d::new(""),
       @text.TextFont::default().with_font(font).with_font_size(15.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -486,7 +486,7 @@ fn setup_basic_scene(
             ),
           ),
         ),
-        @math.Transform::from_xyz(0.5F, 0.0F, -0.5F).with_rotation(
+        @transform.Transform::from_xyz(0.5F, 0.0F, -0.5F).with_rotation(
           @math.Quat::from_rotation_y(-0.15F * PI),
         ),
         SceneNumber::{ value: 1 },
@@ -503,7 +503,7 @@ fn setup_basic_scene(
           .with_maximum_distance(3.0F)
           .with_first_cascade_far_bound(0.9F),
         ),
-        @math.Transform::from_rotation(
+        @transform.Transform::from_rotation(
           @math.Quat::from_euler(
             @math.EulerRot::ZYX,
             0.0F,
@@ -561,7 +561,7 @@ fn setup_image_viewer_scene(
       @text.TextFont::default()
       .with_font(asset_server.get().load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(36.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::black()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))

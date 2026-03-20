@@ -1,4 +1,5 @@
 import {
+  "Milky2018/mgstudio/transform",
   "moonbitlang/core/random",
   "Milky2018/mgstudio",
   "Milky2018/mgstudio/app",

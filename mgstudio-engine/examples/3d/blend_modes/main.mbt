@@ -123,7 +123,7 @@ fn spawn_ui_text_handle(
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
     @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   )
   .with_color(@text.TextColor::new(color))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -153,7 +153,7 @@ fn setup_ui_overlay(
   let tick = world.read_change_tick()
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(100).with_clear_color_none(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -319,7 +319,7 @@ fn spawn_mesh(
   world : @ecs.World,
   mesh : @pbr.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> @core.Entity {
   @pbr.MeshMaterial3dBundle::new(
     mesh,
@@ -343,7 +343,7 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
   guard camera_store.get(camera_entity) is Some(camera) else { return }
   let projection_store = world.component(@pbr.ecs_key_projection)
   guard projection_store.get(camera_entity) is Some(projection) else { return }
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   guard transform_store.get(camera_entity) is Some(camera_transform) else {
     return
   }
@@ -412,7 +412,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     sphere_mesh,
     opaque_material,
-    @math.Transform::from_xyz(-4.0F, 0.0F, 0.0F),
+    @transform.Transform::from_xyz(-4.0F, 0.0F, 0.0F),
   )
 
   let blend_material = @pbr.standard_material_add(
@@ -425,7 +425,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     sphere_mesh,
     blend_material,
-    @math.Transform::from_xyz(-2.0F, 0.0F, 0.0F),
+    @transform.Transform::from_xyz(-2.0F, 0.0F, 0.0F),
   )
 
   let premultiplied_material = @pbr.standard_material_add(
@@ -438,7 +438,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     sphere_mesh,
     premultiplied_material,
-    @math.Transform::from_xyz(0.0F, 0.0F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
   )
 
   let add_material = @pbr.standard_material_add(
@@ -451,7 +451,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     sphere_mesh,
     add_material,
-    @math.Transform::from_xyz(2.0F, 0.0F, 0.0F),
+    @transform.Transform::from_xyz(2.0F, 0.0F, 0.0F),
   )
 
   let multiply_material = @pbr.standard_material_add(
@@ -464,7 +464,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     sphere_mesh,
     multiply_material,
-    @math.Transform::from_xyz(4.0F, 0.0F, 0.0F),
+    @transform.Transform::from_xyz(4.0F, 0.0F, 0.0F),
   )
 
   let black_material = @pbr.standard_material_add(
@@ -489,7 +489,7 @@ fn setup(world : @ecs.World) -> Unit {
         world,
         plane_mesh,
         material,
-        @math.Transform::from_xyz(
+        @transform.Transform::from_xyz(
           float_from_int(x) * 2.0F,
           -1.0F,
           float_from_int(z) * 2.0F,
@@ -504,12 +504,12 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@pbr.ecs_key_point_light)
   .insert(light, @pbr.PointLight::default(), tick)
   world
-  .component(@math.ecs_key_transform)
-  .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 2.5F, 10.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 2.5F, 10.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -573,10 +573,10 @@ fn example_control_system(world : @ecs.World) -> Unit {
   let camera_x = @math.sin(state.camera_angle) * CAMERA_RADIUS
   let camera_z = @math.cos(state.camera_angle) * CAMERA_RADIUS
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .set(
     camera_entity,
-    @math.Transform::from_xyz(camera_x, 2.5F, camera_z).looking_at(
+    @transform.Transform::from_xyz(camera_x, 2.5F, camera_z).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),

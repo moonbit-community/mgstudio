@@ -13,103 +13,13 @@
 // limitations under the License.
 
 ///|
-pub struct HalfSpace {
-  normal_d : @math.Vec4
-} derive(Eq, ToJson, FromJson)
+pub type HalfSpace = @math.HalfSpace
 
 ///|
-fn half_space_normal3(normal_d : @math.Vec4) -> @math.Vec3 {
-  @math.Vec3::new(normal_d.x, normal_d.y, normal_d.z)
-}
+pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = @math.VIEW_FRUSTUM_NEAR_PLANE_IDX
 
 ///|
-fn half_space_normalize(normal_d : @math.Vec4) -> @math.Vec4 {
-  let normal = half_space_normal3(normal_d)
-  let length = normal.length()
-  if length <= 1.0e-12F || length.is_nan() || length.is_inf() {
-    normal_d
-  } else {
-    let inv_length = 1.0F / length
-    @math.Vec4::new(
-      normal_d.x * inv_length,
-      normal_d.y * inv_length,
-      normal_d.z * inv_length,
-      normal_d.w * inv_length,
-    )
-  }
-}
-
-///|
-pub fn HalfSpace::new(normal_d : @math.Vec4) -> HalfSpace {
-  HalfSpace::{ normal_d: half_space_normalize(normal_d) }
-}
-
-///|
-pub fn HalfSpace::normal(self : HalfSpace) -> @math.Vec3 {
-  half_space_normal3(self.normal_d)
-}
-
-///|
-pub fn HalfSpace::d(self : HalfSpace) -> Float {
-  self.normal_d.w
-}
-
-///|
-pub fn HalfSpace::normal_d(self : HalfSpace) -> @math.Vec4 {
-  self.normal_d
-}
-
-///|
-pub fn HalfSpace::intersection_point(
-  a : HalfSpace,
-  b : HalfSpace,
-  c : HalfSpace,
-) -> @math.Vec3? {
-  let an = a.normal()
-  let bn = b.normal()
-  let cn = c.normal()
-  let x = @math.Vec3::new(an.x, bn.x, cn.x)
-  let y = @math.Vec3::new(an.y, bn.y, cn.y)
-  let z = @math.Vec3::new(an.z, bn.z, cn.z)
-  let d = @math.Vec3::new(-a.d(), -b.d(), -c.d())
-  let u = y.cross(z)
-  let v = x.cross(d)
-  let denom = x.dot(u)
-  if half_space_normal3(a.normal_d).length() <= 1.0e-12F ||
-    half_space_normal3(b.normal_d).length() <= 1.0e-12F ||
-    half_space_normal3(c.normal_d).length() <= 1.0e-12F ||
-    denom.is_nan() ||
-    denom.is_inf() ||
-    (if denom < 0.0F { -denom } else { denom }) <= 1.0e-12F {
-    None
-  } else {
-    Some(@math.Vec3::new(d.dot(u) / denom, z.dot(v) / denom, -y.dot(v) / denom))
-  }
-}
-
-///|
-pub struct ViewFrustum {
-  half_spaces : Array[HalfSpace]
-} derive(Eq, ToJson, FromJson)
-
-///|
-pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
-
-///|
-pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = 5
-
-///|
-fn view_frustum_assert_half_spaces(half_spaces : Array[HalfSpace]) -> Unit {
-  if half_spaces.length() != 6 {
-    abort("ViewFrustum requires exactly 6 half spaces")
-  }
-}
-
-///|
-pub fn ViewFrustum::new(half_spaces : Array[HalfSpace]) -> ViewFrustum {
-  view_frustum_assert_half_spaces(half_spaces)
-  ViewFrustum::{ half_spaces, }
-}
+pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = @math.VIEW_FRUSTUM_FAR_PLANE_IDX
 
 ///|
 fn view_frustum_vec4_add(a : @math.Vec4, b : @math.Vec4) -> @math.Vec4 {
@@ -120,6 +30,11 @@ fn view_frustum_vec4_add(a : @math.Vec4, b : @math.Vec4) -> @math.Vec4 {
 fn view_frustum_vec4_sub(a : @math.Vec4, b : @math.Vec4) -> @math.Vec4 {
   @math.Vec4::new(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w)
 }
+
+///|
+pub struct ViewFrustum {
+  inner : @math.ViewFrustum
+} derive(Eq, ToJson, FromJson)
 
 ///|
 pub fn ViewFrustum::from_clip_from_world(
@@ -169,46 +84,13 @@ pub fn ViewFrustum::from_clip_from_world_custom_far(
 }
 
 ///|
+pub fn ViewFrustum::new(half_spaces : Array[HalfSpace]) -> ViewFrustum {
+  ViewFrustum::{ inner: @math.ViewFrustum::new(half_spaces) }
+}
+
+///|
 pub fn ViewFrustum::corners(self : ViewFrustum) -> Array[@math.Vec3]? {
-  view_frustum_assert_half_spaces(self.half_spaces)
-  let left = self.half_spaces[0]
-  let right = self.half_spaces[1]
-  let top = self.half_spaces[2]
-  let bottom = self.half_spaces[3]
-  let near = self.half_spaces[4]
-  let far = self.half_spaces[5]
-  guard HalfSpace::intersection_point(top, left, near) is Some(near_top_left) else {
-    return None
-  }
-  guard HalfSpace::intersection_point(top, right, near) is Some(near_top_right) else {
-    return None
-  }
-  guard HalfSpace::intersection_point(bottom, right, near)
-    is Some(near_bottom_right) else {
-    return None
-  }
-  guard HalfSpace::intersection_point(bottom, left, near)
-    is Some(near_bottom_left) else {
-    return None
-  }
-  guard HalfSpace::intersection_point(top, left, far) is Some(far_top_left) else {
-    return None
-  }
-  guard HalfSpace::intersection_point(top, right, far) is Some(far_top_right) else {
-    return None
-  }
-  guard HalfSpace::intersection_point(bottom, right, far)
-    is Some(far_bottom_right) else {
-    return None
-  }
-  guard HalfSpace::intersection_point(bottom, left, far)
-    is Some(far_bottom_left) else {
-    return None
-  }
-  Some([
-    near_top_left, near_top_right, near_bottom_right, near_bottom_left, far_top_left,
-    far_top_right, far_bottom_right, far_bottom_left,
-  ])
+  @math.ViewFrustum::corners(self.inner)
 }
 
 ///|
@@ -218,8 +100,7 @@ pub struct Frustum {
 
 ///|
 pub fn Frustum::new(view_frustum : ViewFrustum) -> Frustum {
-  view_frustum_assert_half_spaces(view_frustum.half_spaces)
-  Frustum::{ half_spaces: view_frustum.half_spaces }
+  Frustum::{ half_spaces: view_frustum.inner.half_spaces }
 }
 
 ///|
@@ -273,7 +154,7 @@ pub fn ProjectionMatrix3d::row(
 ///|
 fn render3d_compute_frustum(
   clip_from_view : ProjectionMatrix3d,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
   far : Float,
 ) -> Frustum {
   let clip_from_world = clip_from_view.mul(
@@ -292,7 +173,7 @@ fn render3d_compute_frustum(
 ///|
 pub fn PerspectiveProjection3d::compute_frustum(
   self : PerspectiveProjection3d,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
 ) -> Frustum {
   render3d_compute_frustum(
     self.get_clip_from_view(),
@@ -304,7 +185,7 @@ pub fn PerspectiveProjection3d::compute_frustum(
 ///|
 pub fn OrthographicProjection3d::compute_frustum(
   self : OrthographicProjection3d,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
 ) -> Frustum {
   render3d_compute_frustum(
     self.get_clip_from_view(),
@@ -316,7 +197,7 @@ pub fn OrthographicProjection3d::compute_frustum(
 ///|
 pub fn CustomProjection3d::compute_frustum(
   self : CustomProjection3d,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
 ) -> Frustum {
   render3d_compute_frustum(
     self.get_clip_from_view(),
@@ -328,7 +209,7 @@ pub fn CustomProjection3d::compute_frustum(
 ///|
 pub fn Projection::compute_frustum(
   self : Projection,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
 ) -> Frustum {
   match self {
     Perspective(projection) => projection.compute_frustum(camera_transform)
@@ -342,11 +223,11 @@ pub fn render3d_update_frusta_system(world : @ecs.World) -> Unit {
   let frustum_store = get_frustum_store(world)
   let tick = world.read_change_tick()
   let query = world.query2_filtered(
-    @math.ecs_key_transform,
+    @transform.ecs_key_transform,
     ecs_key_projection,
     @ecs.Or::new(
       (
-        @ecs.Changed::new(@math.ecs_key_transform),
+        @ecs.Changed::new(@transform.ecs_key_transform),
         @ecs.Changed::new(ecs_key_projection),
         @ecs.Without::new(ecs_key_frustum),
       ),

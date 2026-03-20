@@ -2578,9 +2578,9 @@ fn animation_apply_player_to_target(
   target_mask : AnimationMask,
   player : AnimationPlayer,
   graph : AnimationGraph,
-  base_transform : @math.Transform?,
+  base_transform : @transform.Transform?,
   base_weights : AnimationWeights?,
-) -> (@math.Transform?, AnimationWeights?) {
+) -> (@transform.Transform?, AnimationWeights?) {
   let mut has_translation = false
   let mut has_rotation = false
   let mut has_scale = false
@@ -2655,7 +2655,7 @@ fn animation_apply_player_to_target(
   let transform_out = if has_translation || has_rotation || has_scale {
     let base = match base_transform {
       Some(transform) => transform
-      None => @math.Transform::identity()
+      None => @transform.Transform::identity()
     }
     let translation = if has_translation {
       let base_weight = animation_saturate(1.0F - translation_weight)
@@ -2679,7 +2679,7 @@ fn animation_apply_player_to_target(
     } else {
       base.rotation
     }
-    Some(@math.Transform::new(translation, rotation, scale))
+    Some(@transform.Transform::new(translation, rotation, scale))
   } else {
     None
   }
@@ -2943,7 +2943,7 @@ pub fn advance_animations(world : @ecs.World) -> Unit {
 
 ///|
 pub fn animate_targets(world : @ecs.World) -> Unit {
-  let transform_updates : Array[(@core.Entity, @math.Transform)] = []
+  let transform_updates : Array[(@core.Entity, @transform.Transform)] = []
   let weights_updates : Array[(@core.Entity, AnimationWeights)] = []
 
   try! world
@@ -2971,7 +2971,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
       target_mask,
       player,
       graph,
-      try! world.get(entity, @math.ecs_key_transform),
+      try! world.get(entity, @transform.ecs_key_transform),
       try! world.get(entity, ecs_key_animation_weights),
     )
 
@@ -2984,7 +2984,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   })
 
   for update in transform_updates {
-    try! world.set(update.0, @math.ecs_key_transform, update.1)
+    try! world.set(update.0, @transform.ecs_key_transform, update.1)
   }
 
   for update in weights_updates {

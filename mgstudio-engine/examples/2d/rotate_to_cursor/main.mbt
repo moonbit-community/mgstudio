@@ -39,12 +39,14 @@ fn rotate_to_cursor_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("textures/simplespace/ship_C.png")
   let sprite = @sprite.Sprite::from_image(texture)
-  let transform = @math.Transform::identity()
+  let transform = @transform.Transform::identity()
   let player = @sprite.SpriteBundle::new(sprite, transform).spawn(world)
   rotate_to_cursor_state.val.player = player
 
   let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
+  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 }
 
@@ -58,7 +60,8 @@ fn rotate_to_cursor_update(world : @ecs.World) -> Unit {
   if @input.mouse_position() is Some(screen_pos) {
     if @sprite_render.render2d_viewport_to_world_2d(world, screen_pos)
       is Some(world_pos) {
-      guard (try! world.get(player, @math.ecs_key_transform)) is Some(transform) else {
+      guard (try! world.get(player, @transform.ecs_key_transform))
+        is Some(transform) else {
         return
       }
 
@@ -67,14 +70,14 @@ fn rotate_to_cursor_update(world : @ecs.World) -> Unit {
         world_pos.y - transform.translation.y,
       )
       let angle = delta.to_angle() - @math.pi_half()
-      let next_transform = @math.Transform::from_xy_rotation_scale(
+      let next_transform = @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(transform.translation.x, transform.translation.y),
         angle,
         @math.Vec2::new(transform.scale.x, transform.scale.y),
         z=transform.translation.z,
       )
 
-      try! world.set(player, @math.ecs_key_transform, next_transform)
+      try! world.set(player, @transform.ecs_key_transform, next_transform)
     }
   }
 }

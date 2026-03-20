@@ -487,7 +487,7 @@ pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
   guard ctx_res.get() is Some(ctx0) else { return }
   let sprite_store = @sprite.get_sprite_store(world)
   let anchor_store = @sprite.get_anchor_store(world)
-  let transform_store = @math.get_transform_store(world)
+  let transform_store = @transform.get_transform_store(world)
   let global_store = @transform.get_global_transform_store(world)
   let vv_store = @visibility.get_view_visibility_store(world)
   let cam_translation = @math.Vec2::new(
@@ -536,7 +536,7 @@ pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
           None =>
             match transform_store.get(entity) {
               Some(t) => t
-              None => @math.Transform::identity()
+              None => @transform.Transform::identity()
             }
         }
         let region = sprite_region_size(sprite)

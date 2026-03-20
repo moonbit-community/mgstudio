@@ -43,13 +43,13 @@ fn setup(world : @ecs.World) -> Unit {
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   let sprite = @sprite.SpriteBundle::new(
     @sprite.Sprite::from_image(asset_server.load_image("branding/icon.png")),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world.component(my_component_key).insert(sprite, MyComponent::{  }, tick)
 }

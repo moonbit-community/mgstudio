@@ -53,7 +53,7 @@ fn text2d_setup(world : @ecs.World) -> Unit {
     spawn_animated_text(
       " translation ",
       large_font,
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-400.0F, 0.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -61,13 +61,17 @@ fn text2d_setup(world : @ecs.World) -> Unit {
     ),
   )
   text2d_state.val.rotation_text = Some(
-    spawn_animated_text(" rotation ", large_font, @math.Transform::identity()),
+    spawn_animated_text(
+      " rotation ",
+      large_font,
+      @transform.Transform::identity(),
+    ),
   )
   text2d_state.val.scale_text = Some(
     spawn_animated_text(
       " scale ",
       large_font,
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(400.0F, 0.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -101,7 +105,7 @@ fn text2d_setup(world : @ecs.World) -> Unit {
   @text.Text2dBundle::new(
     @text.Text2d::new("This text has\nFontSmoothing::None\nAnd Justify::Center"),
     medium_font.with_font_smoothing(@text.FontSmoothing::None),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-400.0F, -250.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -116,7 +120,7 @@ fn text2d_setup(world : @ecs.World) -> Unit {
   @sprite.Mesh2dBundle::new(
     @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(10.0F, 10.0F)),
     @sprite.ColorMaterial::new(@sprite.Color::srgb(0.68F, 0.97F, 0.97F)),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       anchor_origin,
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -150,7 +154,9 @@ fn text2d_setup(world : @ecs.World) -> Unit {
   )
 
   let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
+  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 }
 
@@ -158,7 +164,7 @@ fn text2d_setup(world : @ecs.World) -> Unit {
 fn spawn_animated_text(
   content : String,
   font : @text.TextFont,
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> @text.TextHandle {
   @text.Text2dBundle::new(@text.Text2d::new(content), font, transform)
   .with_background_color(
@@ -186,7 +192,7 @@ fn spawn_wrapped_text_box(
   @sprite.Mesh2dBundle::new(
     @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::from_size(size)),
     @sprite.ColorMaterial::new(box_color),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       center,
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -197,7 +203,7 @@ fn spawn_wrapped_text_box(
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
     font,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       center,
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -229,7 +235,7 @@ fn spawn_anchor_label(
   let base_handle = @text.Text2dBundle::new(
       @text.Text2d::new(" Anchor"),
       font,
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         position,
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -316,7 +322,7 @@ fn text2d_animate(world : @ecs.World) -> Unit {
   if text2d_state.val.translation_text is Some(handle) {
     @text.text_set_transform(
       handle,
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(
           100.0F * @math.sin(elapsed) - 400.0F,
           100.0F * @math.cos(elapsed),
@@ -330,7 +336,7 @@ fn text2d_animate(world : @ecs.World) -> Unit {
   if text2d_state.val.rotation_text is Some(handle) {
     @text.text_set_transform(
       handle,
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 0.0F),
         @math.cos(elapsed),
         @math.Vec2::new(1.0F, 1.0F),
@@ -342,7 +348,7 @@ fn text2d_animate(world : @ecs.World) -> Unit {
     let scale = (@math.sin(elapsed) + 1.1F) * 2.0F
     @text.text_set_transform(
       handle,
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(400.0F, 0.0F),
         0.0F,
         @math.Vec2::new(scale, scale),

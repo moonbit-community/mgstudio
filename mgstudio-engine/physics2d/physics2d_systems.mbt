@@ -22,11 +22,11 @@ fn entity_key(e : @core.Entity) -> (Int, Int) {
 
 ///|
 fn update_transform_from_iso2(
-  current : @math.Transform,
+  current : @transform.Transform,
   iso : @rapier_core.Isometry2,
-) -> @math.Transform {
+) -> @transform.Transform {
   let angle = iso.rotation.angle()
-  @math.Transform::new(
+  @transform.Transform::new(
     @math.Vec3::new(iso.translation.x, iso.translation.y, current.translation.z),
     @math.Quat::from_rotation_z(angle),
     current.scale,
@@ -404,7 +404,7 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
   guard ctx_res.get() is Some(current_ctx) else { return }
   let ctx_ref = Ref::new(current_ctx)
   let ctx = ctx_ref.val
-  let transform_store = @math.get_transform_store(ecs_world)
+  let transform_store = @transform.get_transform_store(ecs_world)
   let vel_store = get_velocity2d_store(ecs_world)
   let damping_store = get_damping2d_store(ecs_world)
   let gravity_scale_store = get_gravity_scale2d_store(ecs_world)
@@ -453,7 +453,7 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
     }
     let transform = transform_store
       .get(entity)
-      .unwrap_or(@math.Transform::identity())
+      .unwrap_or(@transform.Transform::identity())
     let iso = mg_transform_to_iso2(transform)
     let builder = match rb2d.body_type {
       @dynamics.RigidBodyType::Dynamic => @dynamics.RigidBodyBuilder::dynamic()
@@ -585,7 +585,7 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
               Some(parent_bh) => {
                 let transform = transform_store
                   .get(entity)
-                  .unwrap_or(@math.Transform::identity())
+                  .unwrap_or(@transform.Transform::identity())
                 let iso = mg_transform_to_iso2(transform)
                 let mut collider = builder
                   .translation(iso.translation)
@@ -605,7 +605,7 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
               None => {
                 let transform = transform_store
                   .get(entity)
-                  .unwrap_or(@math.Transform::identity())
+                  .unwrap_or(@transform.Transform::identity())
                 let iso = mg_transform_to_iso2(transform)
                 let mut collider = builder
                   .translation(iso.translation)
@@ -620,7 +620,7 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
           None => {
             let transform = transform_store
               .get(entity)
-              .unwrap_or(@math.Transform::identity())
+              .unwrap_or(@transform.Transform::identity())
             let iso = mg_transform_to_iso2(transform)
             let mut collider = builder
               .translation(iso.translation)
@@ -673,7 +673,7 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
   }
   ctx.integration = cfg.integration.set_dt(dt)
   physics2d_apply_global_hooks(ctx)
-  let transform_store = @math.get_transform_store(ecs_world)
+  let transform_store = @transform.get_transform_store(ecs_world)
   let rb2d_store = get_rigid_body2d_store(ecs_world)
   let col2d_store = get_collider2d_store(ecs_world)
   let col_parent_store = get_collider_parent2d_store(ecs_world)
@@ -789,7 +789,7 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
       if body_handle_store.get(p.parent) is Some(_parent_bh) {
         let transform = transform_store
           .get(entity)
-          .unwrap_or(@math.Transform::identity())
+          .unwrap_or(@transform.Transform::identity())
         collider.set_position_wrt_parent(mg_transform_to_iso2(transform))
         |> ignore
         return
@@ -797,7 +797,7 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
     }
     let transform = transform_store
       .get(entity)
-      .unwrap_or(@math.Transform::identity())
+      .unwrap_or(@transform.Transform::identity())
     collider.set_position(mg_transform_to_iso2(transform)) |> ignore
   })
   body_handle_store.for_each(fn(entity, bh) {
@@ -816,7 +816,7 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
     if rb2d.body_type is @dynamics.RigidBodyType::KinematicPositionBased {
       let transform = transform_store
         .get(entity)
-        .unwrap_or(@math.Transform::identity())
+        .unwrap_or(@transform.Transform::identity())
       let iso = mg_transform_to_iso2(transform)
       body.set_next_kinematic_translation(iso.translation) |> ignore
       body.set_next_kinematic_rotation(iso.rotation) |> ignore
@@ -1000,7 +1000,7 @@ pub fn physics2d_writeback_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(ctx) else { return }
-  let transform_store = @math.get_transform_store(ecs_world)
+  let transform_store = @transform.get_transform_store(ecs_world)
   let vel_store = get_velocity2d_store(ecs_world)
   let body_handle_store = get_rapier_body_handle2d_store(ecs_world)
   body_handle_store.for_each(fn(entity, bh) {
@@ -1008,7 +1008,7 @@ pub fn physics2d_writeback_system(world : @ecs.World) -> Unit {
     let pos = body.position()
     let current = transform_store
       .get(entity)
-      .unwrap_or(@math.Transform::identity())
+      .unwrap_or(@transform.Transform::identity())
     let next = update_transform_from_iso2(current, pos)
     if transform_store.contains(entity) {
       transform_store.set(entity, next, tick) |> ignore

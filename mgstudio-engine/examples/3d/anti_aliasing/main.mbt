@@ -744,7 +744,7 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -761,7 +761,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3dBundle::new(
       @pbr.Mesh3d::from_cuboid(0.25F, 0.25F, 0.25F),
       @pbr.MeshMaterial3d::new(cube_material),
-      @math.Transform::from_xyz(i_f * 0.25F - 1.0F, 0.125F, -i_f * 0.5F),
+      @transform.Transform::from_xyz(i_f * 0.25F - 1.0F, 0.125F, -i_f * 0.5F),
     ).spawn(world)
     |> ignore
   }
@@ -792,10 +792,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     light,
-    @math.Transform::from_xyz(0.0F, 2.0F, 2.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 2.0F, 2.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -804,7 +804,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let camera_entity = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
+    @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
       @math.Vec3::new(0.0F, 0.3F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -834,7 +834,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),

@@ -183,7 +183,7 @@ fn setup(
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(-2.0F, 2.0F, -2.0F).looking_at(
+    @transform.Transform::from_xyz(-2.0F, 2.0F, -2.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -212,21 +212,21 @@ fn setup(
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     @pbr.MeshMaterial3d::new(base_material),
-    @math.Transform::from_xyz(0.0F, 0.0F, 1.0F),
+    @transform.Transform::from_xyz(0.0F, 0.0F, 1.0F),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     @pbr.MeshMaterial3d::new(base_material),
-    @math.Transform::from_xyz(0.0F, -1.0F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, -1.0F, 0.0F),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     @pbr.MeshMaterial3d::new(base_material),
-    @math.Transform::from_xyz(1.0F, 0.0F, 0.0F),
+    @transform.Transform::from_xyz(1.0F, 0.0F, 0.0F),
   ).spawn(world)
   |> ignore
 
@@ -239,7 +239,7 @@ fn setup(
         .with_reflectance(0.0F),
       ),
     ),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(SphereMarker::component())
@@ -247,10 +247,10 @@ fn setup(
 
   let light = world.spawn_empty()
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     light,
-    @math.Transform::from_rotation(
+    @transform.Transform::from_rotation(
       @math.Quat::from_euler(
         @math.EulerRot::ZYX,
         0.0F,
@@ -278,7 +278,7 @@ fn setup(
       @text.TextFont::default()
       .with_font(asset_server.get().load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, -320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -300,7 +300,10 @@ fn setup(
 ///|
 fn update(
   camera_query : @ecs.Query1Filtered[SsaoCamera, @ecs.All],
-  sphere_query : @ecs.Query1Filtered[@math.Transform, @ecs.With[SphereMarker]],
+  sphere_query : @ecs.Query1Filtered[
+    @transform.Transform,
+    @ecs.With[SphereMarker],
+  ],
   keycode : @input.ButtonInput[@window.KeyCode],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {

@@ -73,12 +73,14 @@ fn sprite_sheet_setup(world : @ecs.World) -> Unit {
   let layout_handle = @asset.asset_add_texture_atlas_layout(layout)
   let atlas = @asset.TextureAtlas::new(layout_handle, GABE_FIRST_FRAME)
   let sprite = @sprite.Sprite::from_atlas_image(texture, atlas)
-  let transform = @math.Transform::identity().with_scale(
+  let transform = @transform.Transform::identity().with_scale(
     @math.Vec3::splat(GABE_SCALE),
   )
 
   let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
+  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 
   let entity = @sprite.SpriteBundle::new(sprite, transform).spawn(world)
@@ -116,7 +118,7 @@ fn sprite_sheet_animate(world : @ecs.World) -> Unit {
       }
       let atlas = @asset.TextureAtlas::new(layout_handle, next_frame)
       let sprite = @sprite.Sprite::from_atlas_image(texture, atlas)
-      let transform = @math.Transform::identity().with_scale(
+      let transform = @transform.Transform::identity().with_scale(
         @math.Vec3::splat(GABE_SCALE),
       )
       let entity = @sprite.SpriteBundle::new(sprite, transform).spawn(world)

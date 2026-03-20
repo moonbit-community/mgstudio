@@ -166,7 +166,7 @@ fn spawn_plane(
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_plane(PLANE_HALF_SIZE * 2.0F, PLANE_HALF_SIZE * 2.0F),
     @pbr.MeshMaterial3d::new(material),
-    @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
+    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_x(PI),
     ),
   ).spawn(world)
@@ -185,8 +185,8 @@ fn spawn_light(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(point, @math.Transform::from_xyz(8.0F, 16.0F, -8.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(point, @transform.Transform::from_xyz(8.0F, 16.0F, -8.0F), tick)
 }
 
 ///|
@@ -194,7 +194,7 @@ fn spawn_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(2.0F, 0.0F, -7.0F).looking_at(
+    @transform.Transform::from_xyz(2.0F, 0.0F, -7.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -239,7 +239,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -297,7 +297,7 @@ fn spawn_decal(world : @ecs.World) -> Unit {
   let entity = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 0.02F),
     @pbr.MeshMaterial3d::new(@pbr.standard_material_add(material)),
-    @math.Transform::from_xyz(x, y, -0.01F)
+    @transform.Transform::from_xyz(x, y, -0.01F)
     .with_rotation(@math.Quat::from_rotation_z(theta))
     .with_scale(@math.Vec3::new(0.001F, 0.001F, 0.02F)),
   ).spawn(world)
@@ -338,7 +338,7 @@ fn animate_decals(world : @ecs.World) -> Unit {
       }
       continue
     }
-    if world.component(@math.ecs_key_transform).get(decal.entity)
+    if world.component(@transform.ecs_key_transform).get(decal.entity)
       is Some(transform) {
       let scale_factor = if age < DECAL_ANIMATE_IN_DURATION {
         clamp01(age / DECAL_ANIMATE_IN_DURATION)
@@ -350,7 +350,7 @@ fn animate_decals(world : @ecs.World) -> Unit {
         1.0F - clamp01(t)
       }
       world
-      .component(@math.ecs_key_transform)
+      .component(@transform.ecs_key_transform)
       .set(
         decal.entity,
         transform.with_scale(

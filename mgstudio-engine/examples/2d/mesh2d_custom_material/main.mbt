@@ -137,12 +137,12 @@ fn mesh2d_custom_material_setup(world : @ecs.World) -> Unit {
   let gpu_mesh = @sprite.GpuMesh2d::new(
     @sprite.render2d_upload_mesh_handle(mesh.mesh),
   )
-  let transform = @math.Transform::identity()
+  let transform = @transform.Transform::identity()
   try! (world.set(entity, @sprite.ecs_key_mesh2d, mesh) |> ignore)
   try! (world.set(entity, @sprite.ecs_key_gpu_mesh2d, gpu_mesh) |> ignore)
   try! (world.set(entity, material_key, @sprite.MeshMaterial2d::new(handle))
   |> ignore)
-  try! (world.set(entity, @math.ecs_key_transform, transform) |> ignore)
+  try! (world.set(entity, @transform.ecs_key_transform, transform) |> ignore)
   try! (world.set(
     entity,
     @sprite.ecs_key_render_layers,
@@ -170,7 +170,7 @@ fn mesh2d_custom_material_setup(world : @ecs.World) -> Unit {
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 }

@@ -1293,7 +1293,7 @@ pub struct UiContext {
   mut viewport_origin : @math.Vec2
   mut viewport_size : @math.Vec2
   mut camera_entity : @core.Entity?
-  mut camera_transform : @math.Transform
+  mut camera_transform : @transform.Transform
   mut camera_scale : Float
   mut pointer_pos : @math.Vec2?
   mut pointer_down : Bool
@@ -1309,7 +1309,7 @@ pub fn UiContext::default() -> UiContext {
     viewport_origin: @math.Vec2::new(0.0F, 0.0F),
     viewport_size: @math.Vec2::new(0.0F, 0.0F),
     camera_entity: None,
-    camera_transform: @math.Transform::identity(),
+    camera_transform: @transform.Transform::identity(),
     camera_scale: 1.0F,
     pointer_pos: None,
     pointer_down: false,
@@ -1326,7 +1326,7 @@ pub fn UiContext::new(
   viewport_origin : @math.Vec2,
   viewport_size : @math.Vec2,
   camera_entity : @core.Entity?,
-  camera_transform : @math.Transform,
+  camera_transform : @transform.Transform,
   camera_scale : Float,
   pointer_pos : @math.Vec2?,
   pointer_down : Bool,
@@ -1454,7 +1454,7 @@ fn safe_camera_scale(scale : Float) -> Float {
 priv struct UiResolvedCameraState {
   viewport_origin : @math.Vec2
   viewport_size : @math.Vec2
-  camera_transform : @math.Transform
+  camera_transform : @transform.Transform
   camera_scale : Float
 }
 
@@ -1463,7 +1463,7 @@ fn ui_resolved_camera_state_default() -> UiResolvedCameraState {
   UiResolvedCameraState::{
     viewport_origin: @math.Vec2::new(0.0F, 0.0F),
     viewport_size: @math.Vec2::new(0.0F, 0.0F),
-    camera_transform: @math.Transform::identity(),
+    camera_transform: @transform.Transform::identity(),
     camera_scale: 1.0F,
   }
 }
@@ -1658,15 +1658,15 @@ fn ui_select_default_camera_entity(world : @ecs.World) -> @core.Entity? {
 fn ui_camera_transform_for_entity(
   world : @ecs.World,
   camera_entity : @core.Entity,
-) -> @math.Transform {
-  let transform_store = @math.get_transform_store(world)
+) -> @transform.Transform {
+  let transform_store = @transform.get_transform_store(world)
   let global_store = @transform.get_global_transform_store(world)
   match global_store.get(camera_entity) {
     Some(global_transform) => global_transform.to_transform_approx()
     None =>
       match transform_store.get(camera_entity) {
         Some(transform) => transform
-        None => @math.Transform::identity()
+        None => @transform.Transform::identity()
       }
   }
 }
@@ -1748,7 +1748,7 @@ fn ui_resolved_camera_state_from_computed(
 ) -> UiResolvedCameraState {
   let camera_store = @sprite.get_camera_store(world)
   let mut viewport_origin = @math.Vec2::new(0.0F, 0.0F)
-  let mut camera_transform = @math.Transform::identity()
+  let mut camera_transform = @transform.Transform::identity()
   let mut camera_scale = 1.0F
   if camera_entity is Some(entity) {
     if camera_store.get(entity) is Some(camera) {
@@ -1883,7 +1883,7 @@ pub fn ui_update_context_system(world : @ecs.World) -> Unit {
     int_to_float(win_w) / sf,
     int_to_float(win_h) / sf,
   )
-  let mut camera_transform = @math.Transform::identity()
+  let mut camera_transform = @transform.Transform::identity()
   let mut camera_scale = 1.0F
   if best_entity is Some(cam_entity) {
     camera_transform = ui_camera_transform_for_entity(world, cam_entity)
@@ -1974,7 +1974,7 @@ fn ui_world_transform(
   ctx : UiResolvedCameraState,
   rect : @math.Rect,
   z : Float,
-) -> @math.Transform {
+) -> @transform.Transform {
   let viewport_w = ctx.viewport_size.x
   let viewport_h = ctx.viewport_size.y
   let cam_scale = safe_camera_scale(ctx.camera_scale)
@@ -1994,7 +1994,7 @@ fn ui_world_transform(
   )
   let offset = rotate_vec2(center_scaled, cam_rot)
   let world_pos = @math.Vec2::new(cam_pos.x + offset.x, cam_pos.y + offset.y)
-  @math.Transform::from_xy_rotation_scale(
+  @transform.Transform::from_xy_rotation_scale(
     world_pos,
     cam_rot,
     @math.Vec2::new(cam_scale, cam_scale),
@@ -2169,7 +2169,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   let sprite_store = @sprite.get_sprite_store(world)
   let img_store = get_ui_image_store(world)
   let ui_text_store = get_ui_text_store(world)
-  let transform_store = @math.get_transform_store(world)
+  let transform_store = @transform.get_transform_store(world)
   let tick = world.read_change_tick()
   fn auto_size_for_entity(entity : @core.Entity) -> @math.Vec2 {
     match content_size_store.get(entity) {
@@ -3305,7 +3305,7 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
   let gz_store = get_global_z_index_store(world)
   let children_store = @hierarchy.get_children_store(world)
   let parent_store = @hierarchy.get_parent_store(world)
-  let transform_store = @math.get_transform_store(world)
+  let transform_store = @transform.get_transform_store(world)
   let ui_text_store = get_ui_text_store(world)
   fn entity_key(e : @core.Entity) -> (Int, Int) {
     (e.id, e.generation)
@@ -3451,7 +3451,7 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
       Some(t0) => {
         let pos = @math.Vec2::new(t0.translation.x, t0.translation.y)
         let scale = @math.Vec2::new(t0.scale.x, t0.scale.y)
-        let t = @math.Transform::from_xy_rotation_scale(
+        let t = @transform.Transform::from_xy_rotation_scale(
           pos,
           t0.rotation_z(),
           scale,
@@ -3471,7 +3471,7 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
           let pos = @math.Vec2::new(t1.translation.x, t1.translation.y)
           let scale = @math.Vec2::new(t1.scale.x, t1.scale.y)
           let z = z_base + UI_STACK_Z_TEXT
-          let t_text = @math.Transform::from_xy_rotation_scale(
+          let t_text = @transform.Transform::from_xy_rotation_scale(
             pos,
             t1.rotation_z(),
             scale,

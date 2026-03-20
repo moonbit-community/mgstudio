@@ -37,14 +37,14 @@ fn setup(world : @ecs.World) -> Unit {
   let parent = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(2.0F, 2.0F, 2.0F),
     @pbr.MeshMaterial3d::new(material),
-    @math.Transform::from_xyz(0.0F, 0.0F, 1.0F),
+    @transform.Transform::from_xyz(0.0F, 0.0F, 1.0F),
   ).spawn(world)
   rotator_state.val.rotators.push(parent)
 
   let child = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(2.0F, 2.0F, 2.0F),
     @pbr.MeshMaterial3d::new(material),
-    @math.Transform::from_xyz(0.0F, 0.0F, 3.0F),
+    @transform.Transform::from_xyz(0.0F, 0.0F, 3.0F),
   ).spawn(world)
   world
   .component(@hierarchy.ecs_key_parent)
@@ -55,12 +55,12 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@pbr.ecs_key_point_light)
   .insert(light_entity, @pbr.PointLight::default(), tick)
   world
-  .component(@math.ecs_key_transform)
-  .insert(light_entity, @math.Transform::from_xyz(4.0F, 5.0F, -4.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(light_entity, @transform.Transform::from_xyz(4.0F, 5.0F, -4.0F), tick)
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(5.0F, 10.0F, 10.0F).looking_at(
+    @transform.Transform::from_xyz(5.0F, 10.0F, 10.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -81,7 +81,7 @@ fn rotator_system(world : @ecs.World) -> Unit {
   let delta = 3.0F * world_time(world).delta_seconds()
   let spin = @math.Quat::from_rotation_x(delta)
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   for entity in rotator_state.val.rotators {
     if transform_store.get(entity) is Some(transform) {
       let next = transform.with_rotation(

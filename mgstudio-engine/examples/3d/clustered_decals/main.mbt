@@ -168,7 +168,7 @@ fn spawn_ui_text_handle(
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
     @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   )
   .with_color(@text.TextColor::new(color))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -257,7 +257,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(100).with_clear_color_none(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -456,10 +456,10 @@ fn calculate_initial_decal_transform(
   position : @math.Vec3,
   target : @math.Vec3,
   size : @math.Vec2,
-) -> @math.Transform {
+) -> @transform.Transform {
   let direction = target.sub(position)
   let center = position.add(direction.mul_scalar(0.5F))
-  @math.Transform::from_xyz(center.x, center.y, center.z)
+  @transform.Transform::from_xyz(center.x, center.y, center.z)
   .with_scale(@math.Vec3::new(size.x * 0.5F, size.y * 0.5F, direction.length()))
   .looking_at(target, @math.Vec3::new(0.0F, 1.0F, 0.0F))
 }
@@ -488,7 +488,7 @@ fn setup(world : @ecs.World) -> Unit {
   let cube = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(3.0F, 3.0F, 3.0F),
     @pbr.MeshMaterial3d::new(cube_material),
-    @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
+    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_y(1.0471975512F),
     ),
   ).spawn(world)
@@ -496,7 +496,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 2.5F, 9.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 2.5F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -508,10 +508,10 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@pbr.ecs_key_directional_light)
   .insert(light, @pbr.DirectionalLight::default(), tick)
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     light,
-    @math.Transform::from_xyz(4.0F, 8.0F, 4.0F).looking_at(
+    @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -629,9 +629,9 @@ fn spherical_drag_translation(
 
 ///|
 fn orient_towards_center_preserve_roll(
-  transform : @math.Transform,
+  transform : @transform.Transform,
   translation : @math.Vec3,
-) -> @math.Transform {
+) -> @transform.Transform {
   let roll = transform.rotation.to_rotation_z_angle()
   let oriented = transform
     .with_translation(translation)
@@ -650,7 +650,8 @@ fn apply_drag_translation(
   theta_factor : Float,
 ) -> Unit {
   let tick = world.read_change_tick()
-  guard world.component(@math.ecs_key_transform).get(entity) is Some(transform) else {
+  guard world.component(@transform.ecs_key_transform).get(entity)
+    is Some(transform) else {
     return
   }
   let next_translation = spherical_drag_translation(
@@ -660,7 +661,7 @@ fn apply_drag_translation(
     theta_factor,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .set(
     entity,
     orient_towards_center_preserve_roll(transform, next_translation),
@@ -685,7 +686,8 @@ fn apply_decal_drag(
   delta : @math.Vec2,
 ) -> Unit {
   let tick = world.read_change_tick()
-  guard world.component(@math.ecs_key_transform).get(entity) is Some(transform) else {
+  guard world.component(@transform.ecs_key_transform).get(entity)
+    is Some(transform) else {
     return
   }
   match clustered_decals_state.val.drag_mode {
@@ -697,7 +699,7 @@ fn apply_decal_drag(
         1.0F + delta.x * SCALE_SPEED
       }
       world
-      .component(@math.ecs_key_transform)
+      .component(@transform.ecs_key_transform)
       .set(
         entity,
         transform.with_scale(transform.scale.mul_scalar(scale_factor)),
@@ -710,7 +712,7 @@ fn apply_decal_drag(
         .mul(@math.Quat::from_rotation_z(delta.x * ROLL_SPEED))
         .normalize()
       world
-      .component(@math.ecs_key_transform)
+      .component(@transform.ecs_key_transform)
       .set(entity, transform.with_rotation(rotation), tick)
       |> ignore
     }
@@ -814,7 +816,7 @@ fn rotate_cube(world : @ecs.World) -> Unit {
   guard clustered_decals_state.val.rotating_cube is Some(cube_entity) else {
     return
   }
-  guard world.component(@math.ecs_key_transform).get(cube_entity)
+  guard world.component(@transform.ecs_key_transform).get(cube_entity)
     is Some(transform) else {
     return
   }
@@ -823,7 +825,7 @@ fn rotate_cube(world : @ecs.World) -> Unit {
     .mul(@math.Quat::from_rotation_y(CUBE_ROTATION_SPEED))
     .normalize()
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .set(cube_entity, transform.with_rotation(rotation), tick)
   |> ignore
 }

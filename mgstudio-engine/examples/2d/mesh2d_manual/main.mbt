@@ -34,7 +34,7 @@ fn main {
 fn mesh2d_manual_setup(world : @ecs.World) -> Unit {
   let star = build_star_mesh()
   let material = @sprite.ColorMaterial::new(@sprite.Color::white())
-  let transform = @math.Transform::from_xy_rotation_scale(
+  let transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, 0.0F),
     0.0F,
     @math.Vec2::new(1.0F, 1.0F),
@@ -43,7 +43,9 @@ fn mesh2d_manual_setup(world : @ecs.World) -> Unit {
   @sprite.Mesh2dBundle::new(star, material, transform).spawn(world) |> ignore
 
   let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
+  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 }
 

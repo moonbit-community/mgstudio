@@ -65,7 +65,7 @@ fn setup(world : @ecs.World) -> Unit {
         @pbr.StandardMaterial::from_color(@sprite.Color::white()),
       ),
     ),
-    @math.Transform::identity().with_rotation(
+    @transform.Transform::identity().with_rotation(
       @math.Quat::from_rotation_x(-@math.pi_half()),
     ),
   ).spawn(world)
@@ -80,7 +80,7 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
   ).spawn(world)
   |> ignore
 
@@ -93,12 +93,12 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
+    @transform.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),

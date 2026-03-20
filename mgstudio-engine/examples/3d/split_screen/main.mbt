@@ -72,7 +72,7 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -102,10 +102,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     light,
-    @math.Transform::from_xyz(60.0F, 100.0F, 60.0F).looking_at(
+    @transform.Transform::from_xyz(60.0F, 100.0F, 60.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -120,7 +120,7 @@ fn setup(world : @ecs.World) -> Unit {
   ]
 
   for index in 0..<camera_positions.length() {
-    let camera_transform = @math.Transform::from_xyz(
+    let camera_transform = @transform.Transform::from_xyz(
       camera_positions[index].x,
       camera_positions[index].y,
       camera_positions[index].z,
@@ -140,7 +140,7 @@ fn setup(world : @ecs.World) -> Unit {
   @text.Text2dBundle::new(
     @text.Text2d::new(INSTRUCTIONS),
     @text.TextFont::default().with_font(overlay_font).with_font_size(18.0F),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-390.0F, 320.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -259,13 +259,13 @@ fn button_system(world : @ecs.World) -> Unit {
   let camera_entity = split_screen_state.val.cameras[index].0
 
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   if transform_store.get(camera_entity) is Some(transform) {
     let rotated_position = quat_rotate_vec3(
       @math.Quat::from_rotation_y(angle),
       transform.translation,
     )
-    let next = @math.Transform::from_xyz(
+    let next = @transform.Transform::from_xyz(
       rotated_position.x,
       rotated_position.y,
       rotated_position.z,

@@ -31,14 +31,14 @@ pub(all) enum ExampleViewport {
 priv struct CameraSubViewState {
   cameras : Array[(@core.Entity, ExampleViewport)]
   moving_cameras : Array[@core.Entity]
-  base_transform : @math.Transform
+  base_transform : @transform.Transform
 }
 
 ///|
 let camera_sub_view_state : Ref[CameraSubViewState] = Ref::new({
   cameras: [],
   moving_cameras: [],
-  base_transform: @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
+  base_transform: @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
     @math.Vec3::zero(),
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   ),
@@ -114,7 +114,7 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -128,7 +128,7 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
   ).spawn(world)
   |> ignore
 
@@ -142,8 +142,8 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 
   let perspective_stretched_sub_view = @pbr.SubCameraView3d::new(
     @math.IVec2::new(10, 10),

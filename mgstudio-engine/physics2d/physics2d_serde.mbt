@@ -880,7 +880,7 @@ fn collider_shape2d_from_rapier_shape(
       ColliderShape2d::trimesh(out_vertices, indices)
     }
     @collision.Shape::Compound(parts) => {
-      let out_parts : Array[(@math.Transform, ColliderShape2d)] = []
+      let out_parts : Array[(@transform.Transform, ColliderShape2d)] = []
       for part in parts {
         let (iso, part_shape) = part
         out_parts.push(

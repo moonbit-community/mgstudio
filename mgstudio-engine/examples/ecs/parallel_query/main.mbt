@@ -44,7 +44,7 @@ fn spawn_system(
   commands.spawn(
     @sprite.Camera2dBundle::new(
       @sprite.Camera::default(),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     ),
   )
   |> ignore
@@ -59,7 +59,7 @@ fn spawn_system(
     commands.spawn(
       (
         @sprite.Sprite::from_image(texture),
-        @math.Transform::identity()
+        @transform.Transform::identity()
         .with_scale(@math.Vec3::splat(0.1F))
         .with_translation(@math.Vec3::new(0.0F, 0.0F, Float::from_int(z))),
         Velocity::{ vector: velocity },
@@ -71,7 +71,7 @@ fn spawn_system(
 
 ///|
 fn move_system(
-  sprites : @ecs.Query2RefMutFiltered[Velocity, @math.Transform, @ecs.All],
+  sprites : @ecs.Query2RefMutFiltered[Velocity, @transform.Transform, @ecs.All],
 ) -> Unit {
   try! sprites
   .par_iter_mut()
@@ -93,7 +93,7 @@ fn bounce_system(
     @window.Window,
     @ecs.With[@window.PrimaryWindow],
   ],
-  sprites : @ecs.Query2RefMutFiltered[@math.Transform, Velocity, @ecs.All],
+  sprites : @ecs.Query2RefMutFiltered[@transform.Transform, Velocity, @ecs.All],
 ) -> Unit {
   guard (try! window_query.single()) is Some(window) else { return }
   let width = window.width()

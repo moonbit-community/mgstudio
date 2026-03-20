@@ -70,7 +70,7 @@ fn main {
 fn setup_scene(world : @ecs.World) -> Unit {
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -122,7 +122,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   let edit_handle = @text.Text2dBundle::new(
     @text.Text2d::new(""),
     edit_font,
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn()
   edit_text_state_ref.val = Some(EditTextState::{
     handle: edit_handle,
@@ -142,7 +142,7 @@ fn spawn_ui_text_line(
   let handle = @text.Text2dBundle::new(
     @text.Text2d::new(content),
     font,
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn()
 
   let text_entity = world.spawn_empty()
@@ -294,7 +294,7 @@ fn bubbling_text_system(world : @ecs.World) -> Unit {
     let next_y = bubble_line.y + delta_seconds * 100.0F
     @text.text_set_transform(
       bubble_line.handle,
-      @math.Transform::from_xyz(0.0F, next_y, 0.0F),
+      @transform.Transform::from_xyz(0.0F, next_y, 0.0F),
     )
     next_lines.push(BubbleLine::{
       handle: bubble_line.handle,
@@ -315,7 +315,7 @@ fn commit_text_line() -> Unit {
   let handle = @text.Text2dBundle::new(
     @text.Text2d::new(committed),
     edit_state.font,
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn()
   bubble_lines_ref.val.push(BubbleLine::{
     handle,

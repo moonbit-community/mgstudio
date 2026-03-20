@@ -67,7 +67,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(3.0F, 1.0F, 3.0F).looking_at(
+    @transform.Transform::from_xyz(3.0F, 1.0F, 3.0F).looking_at(
       @math.Vec3::new(0.0F, -0.5F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -98,7 +98,11 @@ fn setup(world : @ecs.World) -> Unit {
       @pbr.MeshMaterial3dBundle::new(
         cube,
         @pbr.MeshMaterial3d::new(material_handle),
-        @math.Transform::from_xyz(float_from_int(x), 0.0F, float_from_int(z)),
+        @transform.Transform::from_xyz(
+          float_from_int(x),
+          0.0F,
+          float_from_int(z),
+        ),
       ).spawn(world)
       |> ignore
 

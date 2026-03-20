@@ -140,7 +140,7 @@ fn spawn_mesh_with_layer(
   world : @ecs.World,
   mesh : @pbr.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
-  transform : @math.Transform,
+  transform : @transform.Transform,
   layers : @sprite.RenderLayers,
   tick : Int,
 ) -> @core.Entity {
@@ -176,7 +176,7 @@ fn spawn_scene_spheres(
       world,
       sphere,
       mat_a,
-      @math.Transform::from_xyz(-1.0F, 0.75F, 0.0F),
+      @transform.Transform::from_xyz(-1.0F, 0.75F, 0.0F),
       layers,
       tick,
     ),
@@ -186,7 +186,7 @@ fn spawn_scene_spheres(
       world,
       sphere,
       mat_b,
-      @math.Transform::from_xyz(0.0F, -0.75F, 0.0F),
+      @transform.Transform::from_xyz(0.0F, -0.75F, 0.0F),
       layers,
       tick,
     ),
@@ -196,7 +196,7 @@ fn spawn_scene_spheres(
       world,
       sphere,
       mat_c,
-      @math.Transform::from_xyz(1.0F, 0.75F, 0.0F),
+      @transform.Transform::from_xyz(1.0F, 0.75F, 0.0F),
       layers,
       tick,
     ),
@@ -233,7 +233,7 @@ fn spawn_scene_quads(
       world,
       quad,
       mat0,
-      @math.Transform::from_xyz(1.0F, -0.1F, 0.0F).with_rotation(rotation),
+      @transform.Transform::from_xyz(1.0F, -0.1F, 0.0F).with_rotation(rotation),
       layers,
       tick,
     ),
@@ -243,7 +243,7 @@ fn spawn_scene_quads(
       world,
       quad,
       mat1,
-      @math.Transform::from_xyz(0.5F, 0.2F, -0.5F).with_rotation(rotation),
+      @transform.Transform::from_xyz(0.5F, 0.2F, -0.5F).with_rotation(rotation),
       layers,
       tick,
     ),
@@ -253,7 +253,7 @@ fn spawn_scene_quads(
       world,
       quad,
       mat2,
-      @math.Transform::from_xyz(0.0F, 0.4F, -1.0F).with_rotation(rotation),
+      @transform.Transform::from_xyz(0.0F, 0.4F, -1.0F).with_rotation(rotation),
       layers,
       tick,
     ),
@@ -263,7 +263,7 @@ fn spawn_scene_quads(
       world,
       quad,
       mat3,
-      @math.Transform::from_xyz(-0.5F, 0.6F, -1.1F).with_rotation(rotation),
+      @transform.Transform::from_xyz(-0.5F, 0.6F, -1.1F).with_rotation(rotation),
       layers,
       tick,
     ),
@@ -273,7 +273,7 @@ fn spawn_scene_quads(
       world,
       quad,
       mat4,
-      @math.Transform::from_xyz(-0.8F, 0.8F, -1.2F).with_rotation(rotation),
+      @transform.Transform::from_xyz(-0.8F, 0.8F, -1.2F).with_rotation(rotation),
       layers,
       tick,
     ),
@@ -306,7 +306,7 @@ fn spawn_scene_occlusion(
       world,
       cube,
       solid_material,
-      @math.Transform::from_xyz(-2.5F, 0.0F, 2.0F),
+      @transform.Transform::from_xyz(-2.5F, 0.0F, 2.0F),
       layers,
       tick,
     ),
@@ -316,7 +316,7 @@ fn spawn_scene_occlusion(
       world,
       sphere,
       transparent,
-      @math.Transform::from_xyz(-2.5F, 0.0F, 0.0F),
+      @transform.Transform::from_xyz(-2.5F, 0.0F, 0.0F),
       layers,
       tick,
     ),
@@ -328,7 +328,7 @@ fn spawn_scene_occlusion(
       world,
       cube,
       solid_material,
-      @math.Transform::from_xyz(0.0F, 0.0F, 1.0F),
+      @transform.Transform::from_xyz(0.0F, 0.0F, 1.0F),
       layers,
       tick,
     ),
@@ -338,7 +338,7 @@ fn spawn_scene_occlusion(
       world,
       sphere,
       transparent,
-      @math.Transform::from_xyz(0.0F, 0.0F, 0.0F),
+      @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       layers,
       tick,
     ),
@@ -350,7 +350,7 @@ fn spawn_scene_occlusion(
       world,
       cube,
       solid_material,
-      @math.Transform::from_xyz(2.5F, 0.0F, -2.0F),
+      @transform.Transform::from_xyz(2.5F, 0.0F, -2.0F),
       layers,
       tick,
     ),
@@ -360,7 +360,7 @@ fn spawn_scene_occlusion(
       world,
       sphere,
       transparent,
-      @math.Transform::from_xyz(2.5F, 0.0F, 0.0F),
+      @transform.Transform::from_xyz(2.5F, 0.0F, 0.0F),
       layers,
       tick,
     ),
@@ -393,7 +393,7 @@ fn spawn_scene_instancing(
             world,
             cube,
             material,
-            @math.Transform::from_xyz(
+            @transform.Transform::from_xyz(
               float_from_int(x) * 2.0F,
               float_from_int(y) * 2.0F,
               float_from_int(z) * 2.0F,
@@ -460,7 +460,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 0.0F, 10.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -480,8 +480,8 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
   world.component(@sprite.ecs_key_render_layers).insert(light, layer, tick)
 
   let help_text = @text.Text2dBundle::new(
@@ -489,7 +489,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),

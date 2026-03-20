@@ -219,7 +219,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 4.5F, 8.25F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 4.5F, 8.25F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -257,7 +257,7 @@ fn setup(world : @ecs.World) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_plane(50.0F, 50.0F),
     @pbr.MeshMaterial3d::new(floor_material),
-    @math.Transform::from_xyz(0.0F, -1.0F, -6.0F),
+    @transform.Transform::from_xyz(0.0F, -1.0F, -6.0F),
   ).spawn(world)
   |> ignore
 
@@ -281,7 +281,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.MeshMaterial3dBundle::new(
       @pbr.Mesh3d::from_cuboid(0.9F, 0.9F, 0.9F),
       @pbr.MeshMaterial3d::new(material),
-      @math.Transform::from_xyz(x, 0.0F, z),
+      @transform.Transform::from_xyz(x, 0.0F, z),
     ).spawn(world)
     |> ignore
   }
@@ -295,10 +295,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     directional,
-    @math.Transform::from_xyz(0.0F, 8.0F, 3.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 8.0F, 3.0F).looking_at(
       @math.Vec3::new(0.0F, -1.5F, -8.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -314,15 +314,15 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(point, @math.Transform::from_xyz(0.0F, 4.5F, 6.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(point, @transform.Transform::from_xyz(0.0F, 4.5F, 6.0F), tick)
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),

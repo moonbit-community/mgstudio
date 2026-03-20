@@ -124,7 +124,7 @@ fn texture_atlas_update(
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -209,7 +209,7 @@ fn spawn_texture_preview(
 ) -> Unit {
   @sprite.SpriteBundle::new(
     @sprite.Sprite::from_image(texture),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(x, y),
       0.0F,
       @math.Vec2::new(scale, scale),
@@ -231,7 +231,7 @@ fn spawn_sampling_variant(
     is Some(vendor_sprite) {
     @sprite.SpriteBundle::new(
       @sprite.Sprite::from_atlas_image(atlas.texture, vendor_sprite),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(x, 80.0F),
         0.0F,
         @math.Vec2::new(3.0F, 3.0F),
@@ -252,7 +252,7 @@ fn spawn_label(
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
     font,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(x, y),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),

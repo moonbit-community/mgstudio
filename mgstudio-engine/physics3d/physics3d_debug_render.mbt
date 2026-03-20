@@ -164,7 +164,7 @@ fn physics3d_debug_quat_rotate_vec3(
 
 ///|
 fn physics3d_debug_transform_point(
-  transform : @math.Transform,
+  transform : @transform.Transform,
   point_local : @math.Vec3,
 ) -> @math.Vec3 {
   transform.translation.add(
@@ -195,11 +195,11 @@ fn physics3d_debug_quat_from_x_axis_to(direction : @math.Vec3) -> @math.Quat {
 fn physics3d_debug_line_transform(
   start : @math.Vec3,
   end : @math.Vec3,
-) -> @math.Transform {
+) -> @transform.Transform {
   let delta = end.sub(start)
   let length = delta.length()
   let center = start.add(delta.mul_scalar(0.5F))
-  @math.Transform::new(
+  @transform.Transform::new(
     center,
     physics3d_debug_quat_from_x_axis_to(delta),
     @math.Vec3::new(length, DEBUG_LINE_THICKNESS, DEBUG_LINE_THICKNESS),
@@ -222,7 +222,7 @@ fn physics3d_debug_add_line(
 ///|
 fn physics3d_debug_emit_cuboid_lines(
   lines : Array[DebugLine3d],
-  transform : @math.Transform,
+  transform : @transform.Transform,
   hx : Float,
   hy : Float,
   hz : Float,
@@ -274,7 +274,7 @@ fn physics3d_debug_emit_cuboid_lines(
 ///|
 fn physics3d_debug_emit_ball_lines(
   lines : Array[DebugLine3d],
-  transform : @math.Transform,
+  transform : @transform.Transform,
   radius : Float,
   material : @pbr.MeshMaterial3d,
 ) -> Unit {
@@ -327,7 +327,7 @@ fn physics3d_debug_ensure_line_pool(
     let entity = @pbr.MeshMaterial3dBundle::new(
       mesh,
       default_material,
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     ).spawn(world)
     state.line_entities.push(entity)
   }
@@ -350,7 +350,7 @@ pub fn physics3d_debug_render_sync_system(world : @ecs.World) -> Unit {
 
   let tick = world.read_change_tick()
   let ecs_world = world
-  let transform_store = @math.get_transform_store(ecs_world)
+  let transform_store = @transform.get_transform_store(ecs_world)
   let collider_store = get_collider3d_store(ecs_world)
   let rigid_body_store = get_rigid_body3d_store(ecs_world)
   let mesh_material_store = @pbr.get_mesh_material3d_store(ecs_world)
@@ -366,7 +366,7 @@ pub fn physics3d_debug_render_sync_system(world : @ecs.World) -> Unit {
     }
     let source_transform = transform_store
       .get(entity)
-      .unwrap_or(@math.Transform::identity())
+      .unwrap_or(@transform.Transform::identity())
     match collider.shape {
       Ball(radius) =>
         physics3d_debug_emit_ball_lines(

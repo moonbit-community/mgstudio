@@ -16,7 +16,7 @@
 /// Rapier-based 3D physics integration (milestone 2).
 ///
 /// Notes:
-/// - Physics v1 ignores `@math.Transform.scale`.
+/// - Physics v1 ignores `@transform.Transform.scale`.
 /// - One collider per entity is assumed for v1 (use child entities for compound shapes).
 
 ///|

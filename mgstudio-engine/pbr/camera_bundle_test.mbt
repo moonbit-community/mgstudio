@@ -93,7 +93,7 @@ test "render3d: Camera3dBundle stores window render target" {
   let target_window = @core.Entity::new(11, 3)
   let bundle = Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).with_target(
     @sprite.RenderTarget::Window(@window.WindowRef::Entity(target_window)),
   )
@@ -122,7 +122,7 @@ test "render3d: Camera3dBundle stores custom projection payload" {
   let bundle = Camera3dBundle::new_with_projection(
     @sprite.Camera::default(),
     Projection::custom(CameraBundleCustomProjection3d::{ marker: 42.0F }),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   )
   let entity = bundle.spawn(world)
 
@@ -153,7 +153,7 @@ test "render3d: Commands::spawn accepts Camera3dBundle" {
       commands.spawn(
         Camera3dBundle::new(
           @sprite.Camera::default(),
-          @math.Transform::identity(),
+          @transform.Transform::identity(),
         ).with_color_grading(Some(ColorGrading::default())),
       ),
     )
@@ -182,7 +182,7 @@ test "render3d: Camera3dBundle injects Bevy-style tonemapping defaults" {
   let world = @ecs.World::new()
   let entity = Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
 
   let tonemapping_ok = match (try! world.get(entity, ecs_key_tonemapping)) {

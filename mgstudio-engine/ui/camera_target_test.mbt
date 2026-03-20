@@ -21,7 +21,7 @@ fn seed_ui_context(world : @ecs.World) -> Int {
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(1.0F, 1.0F),
       None,
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
       1.0F,
       None,
       false,

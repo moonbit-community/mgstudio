@@ -335,10 +335,10 @@ fn apply_camera_transform(world : @ecs.World) -> Unit {
     let z = @math.cos(ssr_state.val.camera_theta) * ssr_state.val.camera_radius
     let tick = world.read_change_tick()
     world
-    .component(@math.ecs_key_transform)
+    .component(@transform.ecs_key_transform)
     .set(
       camera,
-      @math.Transform::from_xyz(x, CAMERA_HEIGHT, z).looking_at(
+      @transform.Transform::from_xyz(x, CAMERA_HEIGHT, z).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
@@ -438,7 +438,7 @@ fn spawn_cube(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let cube = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     @pbr.MeshMaterial3d::new(material),
-    @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
   ).spawn(world)
   ssr_state.val.cube_model = Some(cube)
 }
@@ -465,10 +465,10 @@ fn spawn_flight_helmet(
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     entity,
-    @math.Transform::identity().with_scale(@math.Vec3::splat(2.5F)),
+    @transform.Transform::identity().with_scale(@math.Vec3::splat(2.5F)),
     tick,
   )
   world
@@ -490,7 +490,11 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
     let entity = @pbr.MeshMaterial3dBundle::new(
       uv_sphere_mesh(0.4F, 20, 28),
       @pbr.MeshMaterial3d::new(material),
-      @math.Transform::from_xyz(float_from_int(i) * 1.1F - 2.2F, 0.5F, 0.0F),
+      @transform.Transform::from_xyz(
+        float_from_int(i) * 1.1F - 2.2F,
+        0.5F,
+        0.0F,
+      ),
     ).spawn(world)
 
     let tick = world.read_change_tick()
@@ -516,7 +520,7 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let metallic = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_plane(100.0F, 100.0F),
     @pbr.MeshMaterial3d::new(metallic_material),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(@visibility.ecs_key_visibility)
@@ -534,7 +538,7 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let red = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_plane(100.0F, 100.0F),
     @pbr.MeshMaterial3d::new(red_material),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(@visibility.ecs_key_visibility)
@@ -565,7 +569,7 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let water = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_plane(100.0F, 100.0F),
     @pbr.MeshMaterial3d::new(water_material),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   ssr_state.val.water_base = Some(water)
   ssr_state.val.water_material = Some(water_material)
@@ -576,7 +580,7 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
-      @math.Transform::from_xyz(-1.25F, CAMERA_HEIGHT, 4.5F).looking_at(
+      @transform.Transform::from_xyz(-1.25F, CAMERA_HEIGHT, 4.5F).looking_at(
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
@@ -625,10 +629,10 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     directional,
-    @math.Transform::from_xyz(2.5F, 5.5F, 2.8F).looking_at(
+    @transform.Transform::from_xyz(2.5F, 5.5F, 2.8F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -649,8 +653,8 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(point, @math.Transform::from_xyz(-3.0F, 3.5F, 2.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(point, @transform.Transform::from_xyz(-3.0F, 3.5F, 2.0F), tick)
 
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
@@ -666,7 +670,7 @@ fn setup_text(_world : @ecs.World) -> Unit {
   let handle = @text.Text2dBundle::new(
       @text.Text2d::new(ssr_ui_text()),
       @text.TextFont::default().with_font(font).with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -698,18 +702,20 @@ fn rotate_models(world : @ecs.World) -> Unit {
   )
 
   if ssr_state.val.cube_model is Some(cube) {
-    if world.component(@math.ecs_key_transform).get(cube) is Some(transform) {
+    if world.component(@transform.ecs_key_transform).get(cube)
+      is Some(transform) {
       world
-      .component(@math.ecs_key_transform)
+      .component(@transform.ecs_key_transform)
       .set(cube, transform.with_rotation(rotation), tick)
       |> ignore
     }
   }
 
   if ssr_state.val.flight_helmet_model is Some(helmet) {
-    if world.component(@math.ecs_key_transform).get(helmet) is Some(transform) {
+    if world.component(@transform.ecs_key_transform).get(helmet)
+      is Some(transform) {
       world
-      .component(@math.ecs_key_transform)
+      .component(@transform.ecs_key_transform)
       .set(helmet, transform.with_rotation(rotation), tick)
       |> ignore
     }

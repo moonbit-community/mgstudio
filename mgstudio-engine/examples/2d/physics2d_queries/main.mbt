@@ -73,7 +73,7 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
 
   // Floor.
   let floor_sprite = @sprite.Sprite::from_image(texture)
-  let floor_transform = @math.Transform::from_xy_rotation_scale(
+  let floor_transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, -200.0F),
     0.0F,
     @math.Vec2::new(8.0F, 0.5F),
@@ -95,7 +95,7 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
 
   // Ball.
   let ball_sprite = @sprite.Sprite::from_image(texture)
-  let ball_transform = @math.Transform::from_xy_rotation_scale(
+  let ball_transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, 200.0F),
     0.0F,
     @math.Vec2::new(0.3F, 0.3F),
@@ -116,14 +116,16 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
 
   // Camera.
   let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
+  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 
   // Visible query line.
   let ray_line_sprite = @sprite.Sprite::from_image(texture).with_color(
     @sprite.Color::new(1.0F, 0.95F, 0.2F, 0.65F),
   )
-  let ray_line_transform = @math.Transform::from_xy_rotation_scale(
+  let ray_line_transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, RAY_ORIGIN_Y - RAY_HALF_LENGTH),
     0.0F,
     @math.Vec2::new(0.035F, RAY_LINE_SCALE_Y),
@@ -137,7 +139,7 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
   let hit_marker_sprite = @sprite.Sprite::from_image(texture).with_color(
     @sprite.Color::new(1.0F, 0.25F, 0.25F, 0.9F),
   )
-  let hit_marker_transform = @math.Transform::from_xy_rotation_scale(
+  let hit_marker_transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, RAY_ORIGIN_Y),
     0.0F,
     @math.Vec2::new(0.14F, 0.14F),
@@ -164,12 +166,12 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 fn physics2d_queries_raycast(world : @ecs.World) -> Unit {
   let delta_seconds = world_time(world).delta_seconds()
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   query_state.val.phase = query_state.val.phase + delta_seconds * 0.75F
   let ray_x = @math.sin(query_state.val.phase) * RAY_SWEEP_AMPLITUDE
 
   if query_state.val.ray_line is Some(ray_line) {
-    let ray_transform = @math.Transform::from_xy_rotation_scale(
+    let ray_transform = @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(ray_x, RAY_ORIGIN_Y - RAY_HALF_LENGTH),
       0.0F,
       @math.Vec2::new(0.035F, RAY_LINE_SCALE_Y),
@@ -194,7 +196,7 @@ fn physics2d_queries_raycast(world : @ecs.World) -> Unit {
   match hit {
     None => {
       if query_state.val.hit_marker is Some(hit_marker) {
-        let hidden_transform = @math.Transform::from_xy_rotation_scale(
+        let hidden_transform = @transform.Transform::from_xy_rotation_scale(
           @math.Vec2::new(ray_x, RAY_ORIGIN_Y + 128.0F),
           0.0F,
           @math.Vec2::new(0.08F, 0.08F),
@@ -206,7 +208,7 @@ fn physics2d_queries_raycast(world : @ecs.World) -> Unit {
     }
     Some(h) => {
       if query_state.val.hit_marker is Some(hit_marker) {
-        let hit_transform = @math.Transform::from_xy_rotation_scale(
+        let hit_transform = @transform.Transform::from_xy_rotation_scale(
           @math.Vec2::new(ray_x, RAY_ORIGIN_Y - h.toi),
           0.0F,
           @math.Vec2::new(0.14F, 0.14F),

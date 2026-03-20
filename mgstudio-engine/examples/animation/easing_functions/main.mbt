@@ -85,7 +85,9 @@ fn setup(world : @ecs.World) -> Unit {
   progress_text_handle.val = None
 
   let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
+  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 
   let asset_server = @asset.AssetServer::new()
@@ -105,7 +107,7 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let parent_store = world.component(@hierarchy.ecs_key_parent)
   let plot_store = world.component(ease_function_plot_key)
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
 
   for row in 0..<rows.length() {
     let functions = rows[row]
@@ -187,7 +189,7 @@ fn display_curves(world : @ecs.World) -> Unit {
   }
 
   let gizmos = @sprite.Gizmos::get()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   world.increment_change_tick() |> ignore
   let half_size_x = PLOT_SIZE_X / 2.0F
   let half_size_y = PLOT_SIZE_Y / 2.0F
@@ -242,7 +244,7 @@ fn display_curves(world : @ecs.World) -> Unit {
     let y_progress = curve.sample_clamped(now) * PLOT_SIZE_Y
     try! world.set(
       plot.value_bar_entity,
-      @math.ecs_key_transform,
+      @transform.ecs_key_transform,
       transform_from_position(
         @math.Vec2::new(half_size_x + 5.0F, -half_size_y + y_progress),
         MARKER_Z,
@@ -250,7 +252,7 @@ fn display_curves(world : @ecs.World) -> Unit {
     )
     try! world.set(
       plot.progress_dot_entity,
-      @math.ecs_key_transform,
+      @transform.ecs_key_transform,
       transform_from_position(
         @math.Vec2::new(
           -half_size_x + now * PLOT_SIZE_X,
@@ -284,7 +286,7 @@ fn spawn_progress_overlay(
   let text_handle = @text.Text2dBundle::new(
       @text.Text2d::new("Progress: 0.00"),
       @text.TextFont::default().with_font(font).with_font_size(20.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -451,8 +453,11 @@ fn format_progress(now : Float) -> String {
 }
 
 ///|
-fn transform_from_position(position : @math.Vec2, z : Float) -> @math.Transform {
-  @math.Transform::from_xy_rotation_scale(
+fn transform_from_position(
+  position : @math.Vec2,
+  z : Float,
+) -> @transform.Transform {
+  @transform.Transform::from_xy_rotation_scale(
     position,
     0.0F,
     @math.Vec2::new(1.0F, 1.0F),

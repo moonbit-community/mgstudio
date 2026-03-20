@@ -30,7 +30,7 @@ fn spawn_logo_sprite(
   z : Float,
 ) -> Unit {
   let sprite = @sprite.Sprite::from_image(image).with_color(color)
-  let transform = @math.Transform::from_xyz(position.x, position.y, z)
+  let transform = @transform.Transform::from_xyz(position.x, position.y, z)
   @sprite.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
 }
 
@@ -38,7 +38,7 @@ fn spawn_logo_sprite(
 fn transparency_2d_setup(world : @ecs.World) -> Unit {
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 

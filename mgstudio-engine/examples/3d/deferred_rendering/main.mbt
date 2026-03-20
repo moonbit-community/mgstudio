@@ -170,7 +170,7 @@ fn spawn_mesh(
   world : @ecs.World,
   mesh : @pbr.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> @core.Entity {
   @pbr.MeshMaterial3dBundle::new(
     mesh,
@@ -196,7 +196,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
+    @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
       @math.Vec3::new(0.0F, 0.3F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -232,10 +232,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     directional_light,
-    @math.Transform::identity().with_rotation(
+    @transform.Transform::identity().with_rotation(
       @math.Quat::from_rotation_x(-0.7853981634F),
     ),
     tick,
@@ -264,8 +264,8 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@scene.ecs_key_scene_root)
   .insert(helmet_b, @scene.SceneRoot::new(helmet_scene), tick)
   world
-  .component(@math.ecs_key_transform)
-  .insert(helmet_b, @math.Transform::from_xyz(-4.0F, 0.0F, -3.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(helmet_b, @transform.Transform::from_xyz(-4.0F, 0.0F, -3.0F), tick)
 
   let forward_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
@@ -276,7 +276,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     @pbr.Mesh3d::from_plane(50.0F, 50.0F),
     forward_material,
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   )
   plane |> ignore
 
@@ -285,14 +285,14 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     cube_mesh,
     forward_material,
-    @math.Transform::from_xyz(-0.3F, 0.5F, -0.2F),
+    @transform.Transform::from_xyz(-0.3F, 0.5F, -0.2F),
   )
   |> ignore
   spawn_mesh(
     world,
     cube_mesh,
     forward_material,
-    @math.Transform::from_xyz(0.2F, 0.5F, 0.2F),
+    @transform.Transform::from_xyz(0.2F, 0.5F, 0.2F),
   )
   |> ignore
 
@@ -304,7 +304,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     @pbr.Mesh3d::from_cuboid(0.125F, 0.125F, 0.125F),
     emissive_material,
-    @math.Transform::from_xyz(0.4F, 0.5F, -0.8F),
+    @transform.Transform::from_xyz(0.4F, 0.5F, -0.8F),
   )
   world
   .component(@pbr.ecs_key_not_shadow_caster)
@@ -319,8 +319,8 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(point_light, @math.Transform::from_xyz(0.4F, 0.5F, -0.8F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(point_light, @transform.Transform::from_xyz(0.4F, 0.5F, -0.8F), tick)
 
   for i in 0..<6 {
     let j = i % 3
@@ -344,7 +344,7 @@ fn setup(world : @ecs.World) -> Unit {
       world,
       @pbr.Mesh3d::from_cuboid(0.125F, 0.125F, 0.125F),
       material,
-      @math.Transform::from_xyz(x, 0.125F, z),
+      @transform.Transform::from_xyz(x, 0.125F, z),
     )
     entity |> ignore
   }
@@ -365,7 +365,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     @pbr.Mesh3d::from_cuboid(2.0F, 1.0F, 1.0F),
     sky_material,
-    @math.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_scale(
+    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_scale(
       @math.Vec3::splat(1_000_000.0F),
     ),
   )
@@ -401,7 +401,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     @pbr.Mesh3d::from_cuboid(0.15F, 0.15F, 0.15F),
     parallax_material,
-    @math.Transform::from_xyz(0.4F, 0.2F, -0.8F),
+    @transform.Transform::from_xyz(0.4F, 0.2F, -0.8F),
   )
   track_spin(parallax_cube, 0.3F)
 
@@ -410,7 +410,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-380.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -474,13 +474,14 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
     return
   }
   guard deferred_state.val.directional_light is Some(light) else { return }
-  guard world.component(@math.ecs_key_transform).get(light) is Some(transform) else {
+  guard world.component(@transform.ecs_key_transform).get(light)
+    is Some(transform) else {
     return
   }
   let delta_angle = LIGHT_ROTATION_SPEED * world_time(world).delta_seconds()
   let tick = world.read_change_tick()
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .set(
     light,
     transform.with_rotation(
@@ -502,7 +503,7 @@ fn spin(world : @ecs.World) -> Unit {
   let delta = world_time(world).delta_seconds()
   for i in 0..<deferred_state.val.spin_targets.length() {
     let target = deferred_state.val.spin_targets[i]
-    guard world.component(@math.ecs_key_transform).get(target.entity)
+    guard world.component(@transform.ecs_key_transform).get(target.entity)
       is Some(transform) else {
       continue
     }
@@ -513,7 +514,7 @@ fn spin(world : @ecs.World) -> Unit {
       .mul(@math.Quat::from_rotation_z(-speed))
       .normalize()
     world
-    .component(@math.ecs_key_transform)
+    .component(@transform.ecs_key_transform)
     .set(target.entity, transform.with_rotation(rotation), tick)
     |> ignore
   }

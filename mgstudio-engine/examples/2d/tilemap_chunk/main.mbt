@@ -81,7 +81,7 @@ fn tilemap_chunk_setup(world : @ecs.World) -> Unit {
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -99,7 +99,7 @@ fn tilemap_chunk_update(world : @ecs.World) -> Unit {
     world,
     chunk,
     @sprite.TilemapChunkTileData::new(tilemap_chunk_state.val.tiles),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
     @sprite.RenderLayers::default(),
   )
 
@@ -125,11 +125,11 @@ fn update_fake_player(world : @ecs.World, chunk : @sprite.TilemapChunk) -> Unit 
   let t = (1.0F + @math.sin(world_time(world).elapsed_seconds())) * 0.5F
   let next_x = start + (end - start) * t
 
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   guard transform_store.get(tilemap_chunk_state.val.player) is Some(transform) else {
     return
   }
-  let next_transform = @math.Transform::from_xy_rotation_scale(
+  let next_transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(next_x, transform.translation.y),
     transform.rotation_z(),
     @math.Vec2::new(transform.scale.x, transform.scale.y),
@@ -187,7 +187,7 @@ fn spawn_fake_player(
   tile_pos : @math.UVec2,
 ) -> @core.Entity {
   let tile_transform = chunk.calculate_tile_transform(tile_pos)
-  let player_transform = @math.Transform::from_xy_rotation_scale(
+  let player_transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(tile_transform.translation.x, tile_transform.translation.y),
     0.0F,
     @math.Vec2::new(1.0F, 1.0F),

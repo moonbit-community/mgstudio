@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/transform",
   "Milky2018/moon_rapier/collision",
   "Milky2018/moon_rapier/control",
   "Milky2018/moon_rapier/dynamics",
@@ -181,7 +182,7 @@ pub fn get_solver_groups2d_store(@ecs.World) -> @ecs.ComponentAccess[SolverGroup
 
 pub fn get_velocity2d_store(@ecs.World) -> @ecs.ComponentAccess[Velocity2d]
 
-pub fn iso2_to_mg_transform(@Milky2018/moon_rapier/core.Isometry2, Float) -> @math.Transform
+pub fn iso2_to_mg_transform(@Milky2018/moon_rapier/core.Isometry2, Float) -> @transform.Transform
 
 pub fn joint2d_fixed(@math.Vec2, @math.Vec2) -> @dynamics.GenericJoint
 
@@ -193,7 +194,7 @@ pub fn joint2d_revolute(@math.Vec2, @math.Vec2) -> @dynamics.GenericJoint
 
 pub fn joint2d_rope(Float, @math.Vec2, @math.Vec2) -> @dynamics.GenericJoint
 
-pub fn mg_transform_to_iso2(@math.Transform) -> @Milky2018/moon_rapier/core.Isometry2
+pub fn mg_transform_to_iso2(@transform.Transform) -> @Milky2018/moon_rapier/core.Isometry2
 
 pub fn mg_vec2_to_rapier(@math.Vec2) -> @Milky2018/moon_rapier/core.Vec2
 
@@ -373,13 +374,13 @@ pub enum ColliderShape2d {
   Polyline(Array[@math.Vec2], Array[(Int, Int)]?)
   ConvexPolygon(Array[@math.Vec2])
   TriMesh(Array[@math.Vec2], Array[(Int, Int, Int)])
-  Compound(Array[(@math.Transform, ColliderShape2d)])
+  Compound(Array[(@transform.Transform, ColliderShape2d)])
   Raw(@collision.Shape)
 }
 pub fn ColliderShape2d::ball(Float) -> Self
 pub fn ColliderShape2d::capsule_x(Float, Float) -> Self
 pub fn ColliderShape2d::capsule_y(Float, Float) -> Self
-pub fn ColliderShape2d::compound(Array[(@math.Transform, Self)]) -> Self
+pub fn ColliderShape2d::compound(Array[(@transform.Transform, Self)]) -> Self
 pub fn ColliderShape2d::convex_polygon(Array[@math.Vec2]) -> Self
 pub fn ColliderShape2d::cuboid(Float, Float) -> Self
 pub fn ColliderShape2d::polyline(Array[@math.Vec2], indices? : Array[(Int, Int)]?) -> Self
@@ -593,8 +594,8 @@ pub fn Physics2dContext::cast_ray_and_get_normal_entity(Self, @math.Vec2, @math.
 pub fn Physics2dContext::cast_ray_and_get_normal_entity_with_filter(Self, @math.Vec2, @math.Vec2, Float, Bool, @collision.QueryFilter) -> RayHitNormal2d?
 pub fn Physics2dContext::cast_ray_entity(Self, @math.Vec2, @math.Vec2, Float, Bool) -> RayHit2d?
 pub fn Physics2dContext::cast_ray_entity_with_filter(Self, @math.Vec2, @math.Vec2, Float, Bool, @collision.QueryFilter) -> RayHit2d?
-pub fn Physics2dContext::cast_shape_entity(Self, ColliderShape2d, @math.Transform, @math.Vec2, @collision.ShapeCastOptions) -> ShapeCastHit2d?
-pub fn Physics2dContext::cast_shape_entity_with_filter(Self, ColliderShape2d, @math.Transform, @math.Vec2, @collision.ShapeCastOptions, @collision.QueryFilter) -> ShapeCastHit2d?
+pub fn Physics2dContext::cast_shape_entity(Self, ColliderShape2d, @transform.Transform, @math.Vec2, @collision.ShapeCastOptions) -> ShapeCastHit2d?
+pub fn Physics2dContext::cast_shape_entity_with_filter(Self, ColliderShape2d, @transform.Transform, @math.Vec2, @collision.ShapeCastOptions, @collision.QueryFilter) -> ShapeCastHit2d?
 pub fn Physics2dContext::collider_handle_of(Self, @Milky2018/mgstudio/core.Entity) -> @collision.ColliderHandle?
 pub fn Physics2dContext::intersect_aabb_entities_conservative(Self, @math.Rect) -> Array[@Milky2018/mgstudio/core.Entity]
 pub fn Physics2dContext::intersect_aabb_entities_conservative_with_filter(Self, @math.Rect, @collision.QueryFilter) -> Array[@Milky2018/mgstudio/core.Entity]
@@ -602,8 +603,8 @@ pub fn Physics2dContext::intersect_point_entities(Self, @math.Vec2) -> Array[@Mi
 pub fn Physics2dContext::intersect_point_entities_with_filter(Self, @math.Vec2, @collision.QueryFilter) -> Array[@Milky2018/mgstudio/core.Entity]
 pub fn Physics2dContext::intersect_ray_entities(Self, @math.Vec2, @math.Vec2, Float, Bool) -> Array[RayHitNormal2d]
 pub fn Physics2dContext::intersect_ray_entities_with_filter(Self, @math.Vec2, @math.Vec2, Float, Bool, @collision.QueryFilter) -> Array[RayHitNormal2d]
-pub fn Physics2dContext::intersect_shape_entities(Self, ColliderShape2d, @math.Transform) -> Array[@Milky2018/mgstudio/core.Entity]
-pub fn Physics2dContext::intersect_shape_entities_with_filter(Self, ColliderShape2d, @math.Transform, @collision.QueryFilter) -> Array[@Milky2018/mgstudio/core.Entity]
+pub fn Physics2dContext::intersect_shape_entities(Self, ColliderShape2d, @transform.Transform) -> Array[@Milky2018/mgstudio/core.Entity]
+pub fn Physics2dContext::intersect_shape_entities_with_filter(Self, ColliderShape2d, @transform.Transform, @collision.QueryFilter) -> Array[@Milky2018/mgstudio/core.Entity]
 pub fn Physics2dContext::new() -> Self
 pub fn Physics2dContext::project_point_and_get_feature_entity(Self, @math.Vec2, Float, Bool) -> PointProjectionFeature2d?
 pub fn Physics2dContext::project_point_and_get_feature_entity_with_filter(Self, @math.Vec2, Float, Bool, @collision.QueryFilter) -> PointProjectionFeature2d?

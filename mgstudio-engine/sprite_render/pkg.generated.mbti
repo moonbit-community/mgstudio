@@ -11,6 +11,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/transform",
 }
 
 // Values
@@ -36,9 +37,9 @@ pub let ecs_key_wireframe2d_config : @ecs.ResourceKey[@sprite.Wireframe2dConfig]
 
 pub fn[M : @sprite.Material2d] material2d_plugin(@sprite.Material2dPlugin[M]) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, @sprite.Camera, @sprite.OrthographicProjection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
+pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, @sprite.Camera, @sprite.OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
-pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, @sprite.Camera, @sprite.OrthographicProjection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
+pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, @sprite.Camera, @sprite.OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
 pub fn render2d_clear_overlay_ui_box_shadows(@ecs.World) -> Unit
 
@@ -54,17 +55,17 @@ pub fn render2d_diagnostic_prepared_camera_count() -> Int
 
 pub fn render2d_diagnostic_queued_draw_item_count() -> Int
 
-pub fn render2d_draw_tilemap_chunk(@ecs.World, @sprite.TilemapChunk, @sprite.TilemapChunkTileData, @math.Transform, @sprite.RenderLayers) -> Unit
+pub fn render2d_draw_tilemap_chunk(@ecs.World, @sprite.TilemapChunk, @sprite.TilemapChunkTileData, @transform.Transform, @sprite.RenderLayers) -> Unit
 
 pub fn render2d_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn render2d_push_sprite_uv_scissor_batch(@ecs.World, Array[@sprite.OverlaySpriteUvScissor]) -> Unit
 
-pub fn render2d_push_ui_box_shadow_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @math.Transform, @math.Vec2, @color.Color, @sprite.RenderLayers, @math.Rect?, @math.Vec2, @sprite.UiCornerRadii, Float, Int) -> Unit
+pub fn render2d_push_ui_box_shadow_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, @sprite.RenderLayers, @math.Rect?, @math.Vec2, @sprite.UiCornerRadii, Float, Int) -> Unit
 
-pub fn render2d_push_ui_rect_uv_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @math.Transform, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color, @sprite.RenderLayers, @math.Rect?, Int, @sprite.UiCornerRadii, @sprite.UiBorderRect) -> Unit
+pub fn render2d_push_ui_rect_uv_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color, @sprite.RenderLayers, @math.Rect?, Int, @sprite.UiCornerRadii, @sprite.UiBorderRect) -> Unit
 
-pub fn render2d_push_ui_texture_slice_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @math.Transform, @math.Vec2, @color.Color, @sprite.RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
+pub fn render2d_push_ui_texture_slice_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, @sprite.RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
 
 pub let render2d_set_execute : String
 

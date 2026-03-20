@@ -9,6 +9,7 @@ import {
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/transform",
   "Milky2018/moon_cosmic",
 }
 
@@ -55,7 +56,7 @@ pub fn text_get_content(TextHandle) -> String?
 
 pub fn text_get_layout_size(TextHandle) -> @math.Vec2?
 
-pub fn text_get_transform(TextHandle) -> @math.Transform?
+pub fn text_get_transform(TextHandle) -> @transform.Transform?
 
 pub fn text_get_ui_scissor(TextHandle) -> @math.Rect?
 
@@ -77,7 +78,7 @@ pub fn text_set_layers(TextHandle, @sprite.RenderLayers) -> Unit
 
 pub let text_set_render_extract : String
 
-pub fn text_set_transform(TextHandle, @math.Transform) -> Unit
+pub fn text_set_transform(TextHandle, @transform.Transform) -> Unit
 
 pub fn text_set_ui_node_size(TextHandle, @math.Vec2?) -> Unit
 
@@ -246,13 +247,13 @@ pub struct Text2dBundle {
   bounds : TextBounds
   line_height : LineHeight
   shadow : Text2dShadow?
-  transform : @math.Transform
+  transform : @transform.Transform
   layers : @sprite.RenderLayers
   anchor : @sprite.Anchor
   y_axis : YAxisOrientation
 }
-pub fn Text2dBundle::new(Text2d, TextFont, @math.Transform) -> Self
-pub fn Text2dBundle::new_with_layers(Text2d, TextFont, @math.Transform, @sprite.RenderLayers) -> Self
+pub fn Text2dBundle::new(Text2d, TextFont, @transform.Transform) -> Self
+pub fn Text2dBundle::new_with_layers(Text2d, TextFont, @transform.Transform, @sprite.RenderLayers) -> Self
 pub fn Text2dBundle::spawn(Self) -> TextHandle
 pub fn Text2dBundle::with_anchor(Self, @sprite.Anchor) -> Self
 pub fn Text2dBundle::with_background_color(Self, TextBackgroundColor?) -> Self

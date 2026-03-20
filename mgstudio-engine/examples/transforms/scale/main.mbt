@@ -52,7 +52,7 @@ fn setup(world : @ecs.World) -> Unit {
   let cube = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     @pbr.MeshMaterial3d::new(material),
-    @math.Transform::from_rotation(
+    @transform.Transform::from_rotation(
       @math.Quat::from_rotation_y(@math.pi() / 4.0F),
     ),
   ).spawn(world)
@@ -60,7 +60,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 10.0F, 20.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 10.0F, 20.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -72,10 +72,10 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@pbr.DirectionalLight::component())
   .insert(light, @pbr.DirectionalLight::default(), tick)
   world
-  .component(@math.Transform::component())
+  .component(@transform.Transform::component())
   .insert(
     light,
-    @math.Transform::from_xyz(3.0F, 3.0F, 3.0F).looking_at(
+    @transform.Transform::from_xyz(3.0F, 3.0F, 3.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -86,9 +86,9 @@ fn setup(world : @ecs.World) -> Unit {
 ///|
 fn change_scale_direction(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.Transform::component())
+  let transform_store = world.component(@transform.Transform::component())
   let scaling_store = world.component(Scaling::component())
-  let updates : Array[(@core.Entity, Scaling, @math.Transform)] = []
+  let updates : Array[(@core.Entity, Scaling, @transform.Transform)] = []
   scaling_store.for_each(fn(entity, scaling) {
     if transform_store.get(entity) is Some(transform) {
       updates.push((entity, scaling, transform))
@@ -136,9 +136,9 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 fn scale_cube(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let delta = world_time(world).delta_seconds()
-  let transform_store = world.component(@math.Transform::component())
+  let transform_store = world.component(@transform.Transform::component())
   let scaling_store = world.component(Scaling::component())
-  let updates : Array[(@core.Entity, Scaling, @math.Transform)] = []
+  let updates : Array[(@core.Entity, Scaling, @transform.Transform)] = []
   scaling_store.for_each(fn(entity, scaling) {
     if transform_store.get(entity) is Some(transform) {
       updates.push((entity, scaling, transform))

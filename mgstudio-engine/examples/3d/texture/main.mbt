@@ -78,27 +78,27 @@ fn setup(world : @ecs.World) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     quad,
     @pbr.MeshMaterial3d::new(base_material),
-    @math.Transform::from_xyz(0.0F, 0.0F, 1.5F).with_rotation(rotation),
+    @transform.Transform::from_xyz(0.0F, 0.0F, 1.5F).with_rotation(rotation),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
     quad,
     @pbr.MeshMaterial3d::new(red_material),
-    @math.Transform::identity().with_rotation(rotation),
+    @transform.Transform::identity().with_rotation(rotation),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
     quad,
     @pbr.MeshMaterial3d::new(blue_material),
-    @math.Transform::from_xyz(0.0F, 0.0F, -1.5F).with_rotation(rotation),
+    @transform.Transform::from_xyz(0.0F, 0.0F, -1.5F).with_rotation(rotation),
   ).spawn(world)
   |> ignore
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(3.0F, 5.0F, 8.0F).looking_at(
+    @transform.Transform::from_xyz(3.0F, 5.0F, 8.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),

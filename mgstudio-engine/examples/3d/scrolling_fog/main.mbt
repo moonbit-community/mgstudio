@@ -32,7 +32,7 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
-      @math.Transform::from_xyz(0.0F, 2.0F, 0.0F).looking_at(
+      @transform.Transform::from_xyz(0.0F, 2.0F, 0.0F).looking_at(
         @math.Vec3::new(-5.0F, 3.5F, -6.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
@@ -64,10 +64,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     directional_light,
-    @math.Transform::from_xyz(-5.0F, 5.0F, -7.0F).looking_at(
+    @transform.Transform::from_xyz(-5.0F, 5.0F, -7.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -85,13 +85,13 @@ fn setup(world : @ecs.World) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(64.0F, 1.0F, 64.0F),
     @pbr.MeshMaterial3d::new(black_material),
-    @math.Transform::from_xyz(0.0F, -0.5F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, -0.5F, 0.0F),
   ).spawn(world)
   |> ignore
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(2.0F, 9.0F, 2.0F),
     @pbr.MeshMaterial3d::new(black_material),
-    @math.Transform::from_xyz(-10.0F, 4.5F, -11.0F),
+    @transform.Transform::from_xyz(-10.0F, 4.5F, -11.0F),
   ).spawn(world)
   |> ignore
 
@@ -108,10 +108,10 @@ fn setup(world : @ecs.World) -> Unit {
   )
   let fog_volume = world.spawn_empty()
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     fog_volume,
-    @math.Transform::from_xyz(0.0F, 32.0F, 0.0F).with_scale(
+    @transform.Transform::from_xyz(0.0F, 32.0F, 0.0F).with_scale(
       @math.Vec3::splat(64.0F),
     ),
     tick,

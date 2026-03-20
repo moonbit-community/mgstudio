@@ -137,11 +137,13 @@ fn setup(world : @ecs.World) -> Unit {
   let mesh_entity = @pbr.MeshMaterial3dBundle::new(
     create_cube_mesh(true),
     @pbr.MeshMaterial3d::new(material),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   custom_mesh_state.val.mesh_entity = Some(mesh_entity)
 
-  let camera_and_light_transform = @math.Transform::from_xyz(1.8F, 1.8F, 1.8F).looking_at(
+  let camera_and_light_transform = @transform.Transform::from_xyz(
+    1.8F, 1.8F, 1.8F,
+  ).looking_at(
     @math.Vec3::new(0.0F, 0.0F, 0.0F),
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
@@ -157,7 +159,7 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@pbr.ecs_key_point_light)
   .insert(light_entity, @pbr.PointLight::default(), tick)
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(light_entity, camera_and_light_transform, tick)
 
   let overlay_font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
@@ -166,7 +168,7 @@ fn setup(world : @ecs.World) -> Unit {
       "Controls:\nSpace: Change UVs\nX/Y/Z: Rotate\nR: Reset orientation",
     ),
     @text.TextFont::default().with_font(overlay_font).with_font_size(20.0F),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-390.0F, 300.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -197,7 +199,7 @@ fn input_handler(world : @ecs.World) -> Unit {
   guard custom_mesh_state.val.mesh_entity is Some(mesh_entity) else { return }
 
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
 
   if @input.key_just_pressed(@window.KeyCode::Space) {
     let next_upper_uv = !custom_mesh_state.val.upper_uv

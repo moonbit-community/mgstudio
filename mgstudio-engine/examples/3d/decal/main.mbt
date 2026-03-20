@@ -64,7 +64,7 @@ fn setup(world : @ecs.World) -> Unit {
   let decal = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     @pbr.MeshMaterial3d::new(decal_material),
-    @math.Transform::identity().with_scale(@math.Vec3::splat(4.0F)),
+    @transform.Transform::identity().with_scale(@math.Vec3::splat(4.0F)),
   ).spawn(world)
   world
   .component(@pbr.ecs_key_forward_decal)
@@ -75,7 +75,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(2.0F, 9.5F, 2.5F).looking_at(
+    @transform.Transform::from_xyz(2.0F, 9.5F, 2.5F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -98,7 +98,7 @@ fn setup(world : @ecs.World) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_plane(10.0F, 10.0F),
     @pbr.MeshMaterial3d::new(white_material),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -107,7 +107,7 @@ fn setup(world : @ecs.World) -> Unit {
     for j in 0..<GRID_COUNT {
       let x = float_from_int(i) - center_offset
       let z = float_from_int(j) - center_offset
-      let transform = @math.Transform::from_xyz(x, -0.2F, z).with_rotation(
+      let transform = @transform.Transform::from_xyz(x, -0.2F, z).with_rotation(
         obstacle_rotation(i, j),
       )
       @pbr.MeshMaterial3dBundle::new(
@@ -128,8 +128,8 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(light, @math.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
 }
 
 ///|

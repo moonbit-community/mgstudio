@@ -86,7 +86,7 @@ fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
 }
 
 ///|
-fn transform_forward(transform : @math.Transform) -> @math.Vec3 {
+fn transform_forward(transform : @transform.Transform) -> @math.Vec3 {
   quat_rotate_vec3(transform.rotation, @math.Vec3::new(0.0F, 0.0F, -1.0F)).normalize_or_zero()
 }
 
@@ -117,7 +117,7 @@ fn spawn_mesh(
   world : @ecs.World,
   mesh : @pbr.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     mesh,
@@ -157,28 +157,28 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
     world,
     @pbr.Mesh3d::from_cuboid(7.0F, 0.2F, 11.0F),
     corridor_floor_material,
-    @math.Transform::from_xyz(-1.5F, -0.1F, 3.5F),
+    @transform.Transform::from_xyz(-1.5F, -0.1F, 3.5F),
   )
 
   spawn_mesh(
     world,
     @pbr.Mesh3d::from_cuboid(7.0F, 0.2F, 11.0F),
     wall_material,
-    @math.Transform::from_xyz(-1.5F, 3.9F, 3.5F),
+    @transform.Transform::from_xyz(-1.5F, 3.9F, 3.5F),
   )
 
   spawn_mesh(
     world,
     @pbr.Mesh3d::from_cuboid(0.2F, 4.0F, 11.0F),
     wall_material,
-    @math.Transform::from_xyz(-4.9F, 1.9F, 3.5F),
+    @transform.Transform::from_xyz(-4.9F, 1.9F, 3.5F),
   )
 
   spawn_mesh(
     world,
     @pbr.Mesh3d::from_cuboid(0.2F, 4.0F, 11.0F),
     wall_material,
-    @math.Transform::from_xyz(1.9F, 1.9F, 3.5F),
+    @transform.Transform::from_xyz(1.9F, 1.9F, 3.5F),
   )
 
   for i in 0..<8 {
@@ -187,13 +187,13 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
       world,
       @pbr.Mesh3d::from_cuboid(0.45F, 1.6F, 0.45F),
       block_material,
-      @math.Transform::from_xyz(-3.7F, 0.8F, z),
+      @transform.Transform::from_xyz(-3.7F, 0.8F, z),
     )
     spawn_mesh(
       world,
       @pbr.Mesh3d::from_cuboid(0.45F, 1.6F, 0.45F),
       block_material,
-      @math.Transform::from_xyz(0.7F, 0.8F, z),
+      @transform.Transform::from_xyz(0.7F, 0.8F, z),
     )
   }
 
@@ -211,7 +211,7 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
     world,
     @pbr.Mesh3d::from_cuboid(5.0F, 3.8F, 10.0F),
     fog_volume_material,
-    @math.Transform::from_xyz(-1.5F, 1.9F, 3.5F),
+    @transform.Transform::from_xyz(-1.5F, 1.9F, 3.5F),
   )
 }
 
@@ -220,7 +220,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(-1.7F, 1.5F, 4.5F).looking_at(
+    @transform.Transform::from_xyz(-1.7F, 1.5F, 4.5F).looking_at(
       scene_focus(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -251,10 +251,10 @@ fn setup_lights(world : @ecs.World) -> Unit {
 
   let directional_light = world.spawn_empty()
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     directional_light,
-    @math.Transform::from_xyz(1.0F, 4.3F, -1.5F).looking_at(
+    @transform.Transform::from_xyz(1.0F, 4.3F, -1.5F).looking_at(
       scene_focus(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -271,8 +271,8 @@ fn setup_lights(world : @ecs.World) -> Unit {
 
   let point_light = world.spawn_empty()
   world
-  .component(@math.ecs_key_transform)
-  .insert(point_light, @math.Transform::from_xyz(-0.4F, 1.9F, 1.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(point_light, @transform.Transform::from_xyz(-0.4F, 1.9F, 1.0F), tick)
   world
   .component(@pbr.ecs_key_point_light)
   .insert(
@@ -289,10 +289,10 @@ fn setup_lights(world : @ecs.World) -> Unit {
 
   let spot_light = world.spawn_empty()
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     spot_light,
-    @math.Transform::from_xyz(-1.8F, 3.9F, -2.7F).looking_at(
+    @transform.Transform::from_xyz(-1.8F, 3.9F, -2.7F).looking_at(
       @math.Vec3::new(-1.5F, 0.7F, 3.5F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -322,7 +322,7 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
   let handle = @text.Text2dBundle::new(
       @text.Text2d::new(create_text()),
       @text.TextFont::default().with_font(font).with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -397,9 +397,9 @@ fn apply_fog_proxy(world : @ecs.World) -> Unit {
 
   if volumetric_fog_state.val.camera is Some(camera_entity) {
     if volumetric_fog_state.val.directional_light is Some(light_entity) {
-      if world.component(@math.ecs_key_transform).get(camera_entity)
+      if world.component(@transform.ecs_key_transform).get(camera_entity)
         is Some(camera_transform) {
-        if world.component(@math.ecs_key_transform).get(light_entity)
+        if world.component(@transform.ecs_key_transform).get(light_entity)
           is Some(light_transform) {
           let light_dir = transform_forward(light_transform).neg()
           let view_dir = scene_focus()
@@ -485,7 +485,7 @@ fn move_directional_light(world : @ecs.World) -> Unit {
   }
 
   if volumetric_fog_state.val.directional_light is Some(light_entity) {
-    if world.component(@math.ecs_key_transform).get(light_entity)
+    if world.component(@transform.ecs_key_transform).get(light_entity)
       is Some(light_transform) {
       let next_rotation = @math.Quat::from_rotation_y(delta_x)
         .mul(@math.Quat::from_rotation_x(delta_y))
@@ -494,7 +494,7 @@ fn move_directional_light(world : @ecs.World) -> Unit {
 
       let tick = world.read_change_tick()
       world
-      .component(@math.ecs_key_transform)
+      .component(@transform.ecs_key_transform)
       .set(light_entity, light_transform.with_rotation(next_rotation), tick)
       |> ignore
     }
@@ -506,7 +506,7 @@ fn move_directional_light(world : @ecs.World) -> Unit {
 ///|
 fn move_point_light(world : @ecs.World) -> Unit {
   if volumetric_fog_state.val.point_light is Some(point_entity) {
-    if world.component(@math.ecs_key_transform).get(point_entity)
+    if world.component(@transform.ecs_key_transform).get(point_entity)
       is Some(point_transform) {
       let mut x = point_transform.translation.x +
         volumetric_fog_state.val.point_light_speed *
@@ -522,7 +522,7 @@ fn move_point_light(world : @ecs.World) -> Unit {
 
       let tick = world.read_change_tick()
       world
-      .component(@math.ecs_key_transform)
+      .component(@transform.ecs_key_transform)
       .set(
         point_entity,
         point_transform.with_translation(

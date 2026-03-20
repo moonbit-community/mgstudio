@@ -61,7 +61,7 @@ fn main {
 fn setup_camera(world : @ecs.World) -> Unit {
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 }
@@ -73,7 +73,7 @@ fn setup_ui(world : @ecs.World) -> Unit {
   let text_handle = @text.Text2dBundle::new(
       @text.Text2d::new("Resolution"),
       @text.TextFont::default().with_font(font).with_font_size(42.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .spawn()

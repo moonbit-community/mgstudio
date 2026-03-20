@@ -179,7 +179,7 @@ fn spawn_mesh(
   world : @ecs.World,
   mesh : @pbr.Mesh3d,
   material : @asset.Handle[@pbr.StandardMaterial],
-  transform : @math.Transform,
+  transform : @transform.Transform,
 ) -> @core.Entity {
   @pbr.MeshMaterial3dBundle::new(
     mesh,
@@ -204,7 +204,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     @pbr.Mesh3d::from_plane(10.0F, 10.0F),
     ground_material,
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   )
   |> ignore
 
@@ -218,7 +218,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     @pbr.Mesh3d::from_cuboid(5.0F, 0.15F, 5.0F),
     wall_material,
-    @math.Transform::from_xyz(2.5F, 2.5F, 0.0F).with_rotation(
+    @transform.Transform::from_xyz(2.5F, 2.5F, 0.0F).with_rotation(
       @math.Quat::from_rotation_z(PI / 2.0F),
     ),
   )
@@ -227,7 +227,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     @pbr.Mesh3d::from_cuboid(5.0F, 0.15F, 5.0F),
     wall_material,
-    @math.Transform::from_xyz(0.0F, 2.5F, -2.5F).with_rotation(
+    @transform.Transform::from_xyz(0.0F, 2.5F, -2.5F).with_rotation(
       @math.Quat::from_rotation_x(PI / 2.0F),
     ),
   )
@@ -245,7 +245,7 @@ fn setup(world : @ecs.World) -> Unit {
     world,
     rectangle_mesh(2.0F, 0.5F),
     logo_material,
-    @math.Transform::from_xyz(-2.2F, 0.5F, 1.0F).with_rotation(
+    @transform.Transform::from_xyz(-2.2F, 0.5F, 1.0F).with_rotation(
       @math.Quat::from_rotation_y(PI / 8.0F),
     ),
   )
@@ -259,7 +259,7 @@ fn setup(world : @ecs.World) -> Unit {
         @sprite.Color::new(1.0F, 0.078F, 0.576F, 1.0F),
       ),
     ),
-    @math.Transform::from_xyz(0.0F, 0.5F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
   )
   lighting_state.val.movables.push(cube)
 
@@ -272,7 +272,7 @@ fn setup(world : @ecs.World) -> Unit {
         @sprite.Color::new(0.196F, 0.804F, 0.196F, 1.0F),
       ),
     ),
-    @math.Transform::from_xyz(1.5F, 1.0F, 1.5F),
+    @transform.Transform::from_xyz(1.5F, 1.0F, 1.5F),
   )
   lighting_state.val.movables.push(sphere)
 
@@ -301,8 +301,8 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(red_light, @math.Transform::from_xyz(1.0F, 2.0F, 0.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(red_light, @transform.Transform::from_xyz(1.0F, 2.0F, 0.0F), tick)
   spawn_mesh(
     world,
     uv_sphere_mesh(0.1F, 12, 20),
@@ -311,7 +311,7 @@ fn setup(world : @ecs.World) -> Unit {
         @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F),
       ).with_emissive(@sprite.Color::new(4.0F, 0.0F, 0.0F, 1.0F)),
     ),
-    @math.Transform::from_xyz(1.0F, 2.0F, 0.0F),
+    @transform.Transform::from_xyz(1.0F, 2.0F, 0.0F),
   )
   |> ignore
 
@@ -332,10 +332,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     green_light,
-    @math.Transform::from_xyz(-1.0F, 2.0F, 0.0F).looking_at(
+    @transform.Transform::from_xyz(-1.0F, 2.0F, 0.0F).looking_at(
       @math.Vec3::new(-1.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 0.0F, 1.0F),
     ),
@@ -349,7 +349,7 @@ fn setup(world : @ecs.World) -> Unit {
         @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),
       ).with_emissive(@sprite.Color::new(0.0F, 4.0F, 0.0F, 1.0F)),
     ),
-    @math.Transform::from_xyz(-1.0F, 2.0F, 0.0F).with_rotation(
+    @transform.Transform::from_xyz(-1.0F, 2.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_x(PI / 2.0F),
     ),
   )
@@ -370,8 +370,8 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(blue_light, @math.Transform::from_xyz(0.0F, 4.0F, 0.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(blue_light, @transform.Transform::from_xyz(0.0F, 4.0F, 0.0F), tick)
   spawn_mesh(
     world,
     uv_sphere_mesh(0.1F, 12, 20),
@@ -380,7 +380,7 @@ fn setup(world : @ecs.World) -> Unit {
         @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F),
       ).with_emissive(@sprite.Color::new(0.0F, 0.0F, 713.0F, 1.0F)),
     ),
-    @math.Transform::from_xyz(0.0F, 4.0F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, 4.0F, 0.0F),
   )
   |> ignore
 
@@ -394,10 +394,10 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     directional,
-    @math.Transform::from_xyz(0.0F, 2.0F, 0.0F).with_rotation(
+    @transform.Transform::from_xyz(0.0F, 2.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_x(-PI / 4.0F),
     ),
     tick,
@@ -408,7 +408,7 @@ fn setup(world : @ecs.World) -> Unit {
   let overlay = @text.Text2dBundle::new(
       @text.Text2d::new(lighting_overlay_text()),
       @text.TextFont::default().with_font(overlay_font).with_font_size(18.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 300.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -428,7 +428,7 @@ fn setup(world : @ecs.World) -> Unit {
   // Camera.
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
+    @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -513,7 +513,7 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.read_change_tick()
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   if transform_store.get(light_entity) is Some(transform) {
     let delta = world_time(world).delta_seconds() * 0.5F
     let spin = @math.Quat::from_rotation_y(delta)
@@ -544,7 +544,7 @@ fn movement(world : @ecs.World) -> Unit {
 
   let tick = world.read_change_tick()
   let delta = world_time(world).delta_seconds() * MOVE_SPEED
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   for entity in lighting_state.val.movables {
     if transform_store.get(entity) is Some(transform) {
       let next = transform.with_translation(

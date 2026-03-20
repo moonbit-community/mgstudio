@@ -15,7 +15,7 @@
 ///|
 /// Conversions between mgstudio math types and moon_rapier core types.
 ///
-/// Note: Physics v1 ignores `@math.Transform.scale`.
+/// Note: Physics v1 ignores `@transform.Transform.scale`.
 
 ///|
 pub fn mg_vec3_to_rapier(v : @math.Vec3) -> @rapier_core.Vec3 {
@@ -38,7 +38,7 @@ pub fn rapier_quat_to_mg(q : @rapier_core.Quat) -> @math.Quat {
 }
 
 ///|
-pub fn mg_transform_to_iso3(t : @math.Transform) -> @rapier_core.Isometry3 {
+pub fn mg_transform_to_iso3(t : @transform.Transform) -> @rapier_core.Isometry3 {
   @rapier_core.Isometry3::new(
     mg_vec3_to_rapier(t.translation),
     mg_quat_to_rapier(t.rotation),
@@ -46,8 +46,10 @@ pub fn mg_transform_to_iso3(t : @math.Transform) -> @rapier_core.Isometry3 {
 }
 
 ///|
-pub fn iso3_to_mg_transform(iso : @rapier_core.Isometry3) -> @math.Transform {
-  @math.Transform::new(
+pub fn iso3_to_mg_transform(
+  iso : @rapier_core.Isometry3,
+) -> @transform.Transform {
+  @transform.Transform::new(
     @math.Vec3::new(iso.translation.x, iso.translation.y, iso.translation.z),
     rapier_quat_to_mg(iso.rotation),
     @math.Vec3::new(1.0F, 1.0F, 1.0F),

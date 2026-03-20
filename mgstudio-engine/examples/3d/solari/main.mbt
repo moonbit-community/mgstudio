@@ -227,7 +227,7 @@ fn spawn_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
-    @math.Transform::from_xyz(0.219417F, 2.5764852F, 6.9718704F).with_rotation(
+    @transform.Transform::from_xyz(0.219417F, 2.5764852F, 6.9718704F).with_rotation(
       @math.Quat::new(-0.1466768F, 0.013738206F, 0.002037309F, 0.989087F),
     ),
   ).spawn(world)
@@ -261,10 +261,10 @@ fn spawn_lights(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     directional_light,
-    @math.Transform::identity().with_rotation(
+    @transform.Transform::identity().with_rotation(
       @math.Quat::new(-0.13334629F, -0.86597735F, -0.3586996F, 0.3219264F),
     ),
     tick,
@@ -285,10 +285,10 @@ fn spawn_lights(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     robot_emissive_light,
-    @math.Transform::from_xyz(-2.0F, 1.7F, -2.1F),
+    @transform.Transform::from_xyz(-2.0F, 1.7F, -2.1F),
     tick,
   )
   solari_state.val.robot_emissive_light = Some(robot_emissive_light)
@@ -301,7 +301,7 @@ fn spawn_text(asset_server : @asset.AssetServer) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, -320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -323,7 +323,7 @@ fn spawn_text(asset_server : @asset.AssetServer) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraMono-Medium.ttf"))
       .with_font_size(11.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(365.0F, 335.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -361,10 +361,10 @@ fn spawn_pica_scene(
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     diorama,
-    @math.Transform::identity().with_scale(@math.Vec3::splat(10.0F)),
+    @transform.Transform::identity().with_scale(@math.Vec3::splat(10.0F)),
     tick,
   )
   solari_state.val.pica_entities.push(diorama)
@@ -383,10 +383,10 @@ fn spawn_pica_scene(
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     robot,
-    @math.Transform::from_xyz(-2.0F, 0.05F, -2.1F)
+    @transform.Transform::from_xyz(-2.0F, 0.05F, -2.1F)
     .with_scale(@math.Vec3::splat(2.0F))
     .with_rotation(@math.Quat::from_rotation_y(PI / 2.0F)),
     tick,
@@ -420,7 +420,7 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
         .with_perceptual_roughness(0.0F),
       ),
     ),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   solari_state.val.many_lights_entities.push(ground)
 
@@ -447,7 +447,7 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
           ),
         ),
       ),
-      @math.Transform::from_xyz(x, 0.2F, z).with_scale(
+      @transform.Transform::from_xyz(x, 0.2F, z).with_scale(
         @math.Vec3::new(sx, sy, sz),
       ),
     ).spawn(world)
@@ -470,7 +470,7 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
           ),
         ),
       ),
-      @math.Transform::from_xyz(
+      @transform.Transform::from_xyz(
         rng_range(rng_seed, -18.0F, 18.0F),
         rng_range(rng_seed, 6.0F, 9.0F),
         rng_range(rng_seed, -18.0F, 18.0F),
@@ -481,10 +481,10 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
 
   if solari_state.val.camera is Some(camera) {
     world
-    .component(@math.ecs_key_transform)
+    .component(@transform.ecs_key_transform)
     .set(
       camera,
-      @math.Transform::from_xyz(0.0919233F, 7.5015035F, 28.449198F).with_rotation(
+      @transform.Transform::from_xyz(0.0919233F, 7.5015035F, 28.449198F).with_rotation(
         @math.Quat::new(-0.18394549F, 0.0019948867F, 0.0003733214F, 0.98293436F),
       ),
       world.read_change_tick(),
@@ -522,10 +522,10 @@ fn apply_scene_mode(
       if solari_state.val.camera is Some(camera) {
         let tick = world.read_change_tick()
         world
-        .component(@math.ecs_key_transform)
+        .component(@transform.ecs_key_transform)
         .set(
           camera,
-          @math.Transform::from_xyz(0.219417F, 2.5764852F, 6.9718704F).with_rotation(
+          @transform.Transform::from_xyz(0.219417F, 2.5764852F, 6.9718704F).with_rotation(
             @math.Quat::new(-0.1466768F, 0.013738206F, 0.002037309F, 0.989087F),
           ),
           tick,
@@ -659,7 +659,8 @@ fn patrol_path(world : @ecs.World) -> Unit {
     return
   }
   guard solari_state.val.robot_entity is Some(robot) else { return }
-  guard world.component(@math.ecs_key_transform).get(robot) is Some(transform) else {
+  guard world.component(@transform.ecs_key_transform).get(robot)
+    is Some(transform) else {
     return
   }
 
@@ -684,7 +685,7 @@ fn patrol_path(world : @ecs.World) -> Unit {
 
   if distance <= max_step || distance < 0.01F {
     world
-    .component(@math.ecs_key_transform)
+    .component(@transform.ecs_key_transform)
     .set(
       robot,
       transform.with_translation(target.0).with_rotation(target.1),
@@ -695,7 +696,7 @@ fn patrol_path(world : @ecs.World) -> Unit {
       path.length()
   } else {
     world
-    .component(@math.ecs_key_transform)
+    .component(@transform.ecs_key_transform)
     .set(
       robot,
       transform.with_translation(
@@ -713,16 +714,16 @@ fn patrol_path(world : @ecs.World) -> Unit {
 fn sync_robot_emissive_light(world : @ecs.World) -> Unit {
   guard solari_state.val.robot_entity is Some(robot) else { return }
   guard solari_state.val.robot_emissive_light is Some(light) else { return }
-  guard world.component(@math.ecs_key_transform).get(robot)
+  guard world.component(@transform.ecs_key_transform).get(robot)
     is Some(robot_transform) else {
     return
   }
 
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .set(
     light,
-    @math.Transform::from_xyz(
+    @transform.Transform::from_xyz(
       robot_transform.translation.x,
       robot_transform.translation.y + 1.6F,
       robot_transform.translation.z,

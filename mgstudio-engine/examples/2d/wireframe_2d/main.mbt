@@ -96,7 +96,7 @@ fn spawn_ui_text_handle(
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
     @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   )
   .with_color(@text.TextColor::new(color))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -169,7 +169,7 @@ fn wireframe_setup(world : @ecs.World) -> Unit {
       ),
     ),
     @sprite.ColorMaterial::new(black),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-150.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -182,7 +182,7 @@ fn wireframe_setup(world : @ecs.World) -> Unit {
   @sprite.Mesh2dBundle::new(
     @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(100.0F, 100.0F)),
     @sprite.ColorMaterial::new(black),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -193,7 +193,7 @@ fn wireframe_setup(world : @ecs.World) -> Unit {
   let circle_entity = @sprite.Mesh2dBundle::new(
     @sprite.Mesh2d::from_circle(@sprite.Circle::new(50.0F)),
     @sprite.ColorMaterial::new(black),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(150.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -208,7 +208,7 @@ fn wireframe_setup(world : @ecs.World) -> Unit {
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 

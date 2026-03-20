@@ -33,7 +33,9 @@ fn main {
 ///|
 fn sprite_slice_setup(world : @ecs.World) -> Unit {
   let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @math.Transform::identity()).spawn(world)
+  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
+    world,
+  )
   |> ignore
 
   let asset_server = @asset.AssetServer::new()
@@ -118,7 +120,7 @@ fn spawn_sprite_row(
     let image_mode = item.2
     cursor_x = cursor_x + 0.5F * size.x
     let position = @math.Vec2::new(cursor_x, start_position.y)
-    let transform = @math.Transform::from_xy_rotation_scale(
+    let transform = @transform.Transform::from_xy_rotation_scale(
       position,
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -139,7 +141,7 @@ fn spawn_slice_label(
   sprite_position : @math.Vec2,
   sprite_size : @math.Vec2,
 ) -> Unit {
-  let label_transform = @math.Transform::from_xy_rotation_scale(
+  let label_transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(
       sprite_position.x,
       sprite_position.y - 0.5F * sprite_size.y - LABEL_VERTICAL_GAP,

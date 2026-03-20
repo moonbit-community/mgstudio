@@ -176,7 +176,7 @@ fn spawn_small_cubes(
       let entity = @pbr.MeshMaterial3dBundle::new(
         mesh,
         @pbr.MeshMaterial3d::new(material),
-        @math.Transform::from_xyz(
+        @transform.Transform::from_xyz(
           local_position.x,
           local_position.y,
           local_position.z,
@@ -208,7 +208,7 @@ fn setup(world : @ecs.World) -> Unit {
   let large_cube = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(LARGE_CUBE_SIZE, LARGE_CUBE_SIZE, LARGE_CUBE_SIZE),
     @pbr.MeshMaterial3d::new(large_cube_material),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   occlusion_state.val.large_cube = Some(large_cube)
 
@@ -220,12 +220,16 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Quat::from_rotation_x(-0.15F * PI),
   )
   world
-  .component(@math.ecs_key_transform)
-  .insert(light, @math.Transform::identity().with_rotation(light_rot), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(
+    light,
+    @transform.Transform::identity().with_rotation(light_rot),
+    tick,
+  )
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.0F, 0.0F, 9.0F).looking_at(
+    @transform.Transform::from_xyz(0.0F, 0.0F, 9.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -243,7 +247,7 @@ fn setup(world : @ecs.World) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -274,10 +278,10 @@ fn spin_small_cubes(world : @ecs.World) -> Unit {
       occlusion_state.val.sphere_angle,
     )
     world
-    .component(@math.ecs_key_transform)
+    .component(@transform.ecs_key_transform)
     .set(
       cube.entity,
-      @math.Transform::from_xyz(position.x, position.y, position.z),
+      @transform.Transform::from_xyz(position.x, position.y, position.z),
       tick,
     )
     |> ignore
@@ -287,7 +291,7 @@ fn spin_small_cubes(world : @ecs.World) -> Unit {
 ///|
 fn spin_large_cube(world : @ecs.World) -> Unit {
   guard occlusion_state.val.large_cube is Some(large_cube) else { return }
-  guard world.component(@math.ecs_key_transform).get(large_cube)
+  guard world.component(@transform.ecs_key_transform).get(large_cube)
     is Some(transform) else {
     return
   }
@@ -299,7 +303,7 @@ fn spin_large_cube(world : @ecs.World) -> Unit {
     .normalize()
   let tick = world.read_change_tick()
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .set(large_cube, transform.with_rotation(rotation), tick)
   |> ignore
 }

@@ -138,7 +138,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(0.2F, 1.5F, 2.5F).looking_at(
+    @transform.Transform::from_xyz(0.2F, 1.5F, 2.5F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -154,7 +154,7 @@ fn setup(world : @ecs.World) -> Unit {
         ).with_perceptual_roughness(0.08F),
       ),
     ),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -177,7 +177,7 @@ fn setup(world : @ecs.World) -> Unit {
           ).with_unlit(true),
         ),
       ),
-      @math.Transform::from_xyz(position.x, position.y, position.z).with_scale(
+      @transform.Transform::from_xyz(position.x, position.y, position.z).with_scale(
         @math.Vec3::splat(radius),
       ),
     ).spawn(world)
@@ -199,8 +199,8 @@ fn setup(world : @ecs.World) -> Unit {
     .component(@hierarchy.ecs_key_parent)
     .insert(point_light, @hierarchy.Parent::new(sphere), tick)
     world
-    .component(@math.ecs_key_transform)
-    .insert(point_light, @math.Transform::identity(), tick)
+    .component(@transform.ecs_key_transform)
+    .insert(point_light, @transform.Transform::identity(), tick)
   }
 }
 

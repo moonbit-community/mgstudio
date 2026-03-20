@@ -324,7 +324,7 @@ fn spawn_ui_text_handle(
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
     @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   )
   .with_color(@text.TextColor::new(color))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -643,7 +643,7 @@ fn add_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tick = world.read_change_tick()
   let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
-      @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
+      @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
         @math.Vec3::new(0.0F, 0.3F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
@@ -714,10 +714,10 @@ fn add_basic_scene(
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     helmet_scene,
-    @math.Transform::from_xyz(0.5F, 0.0F, -0.5F).with_rotation(
+    @transform.Transform::from_xyz(0.5F, 0.0F, -0.5F).with_rotation(
       @math.Quat::from_rotation_y(-0.15F * PI),
     ),
     tick,
@@ -736,10 +736,10 @@ fn add_basic_scene(
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     directional_light,
-    @math.Transform::from_rotation(
+    @transform.Transform::from_rotation(
       @math.Quat::from_euler(
         @math.EulerRot::ZYX,
         0.0F,
@@ -763,7 +763,7 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let overlay_camera = @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(100).with_clear_color_none(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(@ui.IsDefaultUiCamera::component())

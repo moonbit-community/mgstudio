@@ -147,7 +147,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -155,7 +155,7 @@ fn setup(world : @ecs.World) -> Unit {
     @sprite.Sprite::from_image(texture).with_custom_size(
       Some(@math.Vec2::new(256.0F, 256.0F)),
     ),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
       @math.Vec2::new(0.5F, 0.5F),
@@ -169,7 +169,7 @@ fn setup(world : @ecs.World) -> Unit {
     @sprite.Sprite::from_image(texture)
     .with_color(@sprite.Color::new(1.0F, 0.843F, 0.0F, 1.0F))
     .with_custom_size(Some(@math.Vec2::new(256.0F, 256.0F))),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, -160.0F),
       0.0F,
       @math.Vec2::new(0.5F, 0.5F),
@@ -184,7 +184,7 @@ fn setup(world : @ecs.World) -> Unit {
   let real_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
       @text.TextFont::default().with_font(font).with_font_size(24.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -202,7 +202,7 @@ fn setup(world : @ecs.World) -> Unit {
   @text.Text2dBundle::new(
     @text.Text2d::new("CONTROLS\n(Un)pause: Space\nSpeed+: Up\nSpeed-: Down"),
     @text.TextFont::default().with_font(font).with_font_size(24.0F),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 320.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -222,7 +222,7 @@ fn setup(world : @ecs.World) -> Unit {
   let virtual_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
       @text.TextFont::default().with_font(font).with_font_size(24.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -295,7 +295,7 @@ fn change_time_speed_down(world : @ecs.World) -> Unit {
 fn move_real_time_sprites(
   sprite_query : @ecs.Query2RefMutFiltered[
     RealTime,
-    @math.Transform,
+    @transform.Transform,
     @ecs.With[@sprite.Sprite],
   ],
   time : @app.Res[@time.Time[@time.Real]],
@@ -312,7 +312,7 @@ fn move_real_time_sprites(
 fn move_virtual_time_sprites(
   sprite_query : @ecs.Query2RefMutFiltered[
     VirtualTime,
-    @math.Transform,
+    @transform.Transform,
     @ecs.With[@sprite.Sprite],
   ],
   time : @app.Res[@time.Time[Unit]],

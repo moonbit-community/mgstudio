@@ -44,7 +44,7 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
     let node = @scene.SceneNode3d::new(
       @pbr.Mesh3d::from_cuboid(1.0F, 2.0F, 3.0F),
       material,
-      @math.Transform::from_xyz(1.0F, 2.0F, 3.0F),
+      @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
       Some(@visibility.VisibilityRange::new(0.0F, 0.0F, 4.0F, 5.0F, false)),
       Some(@animation.AnimationTargetId::from_name("Node")),
     )
@@ -81,7 +81,7 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
     has_mesh.val = (try! world.get(child, @pbr.ecs_key_mesh3d)) is Some(_)
     has_material.val = (try! world.get(child, @pbr.ecs_key_mesh_material3d))
       is Some(_)
-    has_transform.val = (try! world.get(child, @math.ecs_key_transform))
+    has_transform.val = (try! world.get(child, @transform.ecs_key_transform))
       is Some(_)
     has_visibility.val = (try! world.get(
         child, @visibility.ecs_key_visibility_range,
@@ -160,7 +160,7 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
         @scene.SceneNode3d::new(
           @pbr.Mesh3d::from_cuboid(1.0F, 2.0F, 3.0F),
           material,
-          @math.Transform::from_xyz(1.0F, 2.0F, 3.0F),
+          @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
           None,
           None,
         ),
@@ -172,7 +172,7 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
         @scene.SceneNode3d::new(
           @pbr.Mesh3d::from_cuboid(4.0F, 5.0F, 6.0F),
           material,
-          @math.Transform::from_xyz(9.0F, 8.0F, 7.0F),
+          @transform.Transform::from_xyz(9.0F, 8.0F, 7.0F),
           None,
           None,
         ),
@@ -224,7 +224,7 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
     })
     new_child_count.val = second_children.length()
     let second_child = second_children[0]
-    let transform = (try! world.get(second_child, @math.ecs_key_transform)).unwrap()
+    let transform = (try! world.get(second_child, @transform.ecs_key_transform)).unwrap()
     new_child_x.val = transform.translation.x.to_double()
   })
   .run_once()

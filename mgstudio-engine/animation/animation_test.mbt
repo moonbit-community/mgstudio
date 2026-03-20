@@ -438,13 +438,15 @@ test "animation runtime: animate_targets applies sampled transform and weights" 
   )
   try! world.set(
     target_entity,
-    @math.ecs_key_transform,
-    @math.Transform::identity(),
+    @transform.ecs_key_transform,
+    @transform.Transform::identity(),
   )
 
   app = app.run_once()
 
-  let transform = (try! app.world().get(target_entity, @math.ecs_key_transform)).unwrap()
+  let transform = (try! app
+  .world()
+  .get(target_entity, @transform.ecs_key_transform)).unwrap()
   inspect(approx_eq_animation(transform.translation.x, 1.0F), content="true")
 
   let weights = (try! app.world().get(target_entity, ecs_key_animation_weights)).unwrap()

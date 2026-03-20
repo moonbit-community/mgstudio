@@ -24,7 +24,7 @@
 pub struct SceneNode3d {
   mesh : @pbr.Mesh3d
   material : @pbr.MeshMaterial3d
-  transform : @math.Transform
+  transform : @transform.Transform
   visibility_range : @visibility.VisibilityRange?
   animation_target : @animation.AnimationTargetId?
 }
@@ -33,7 +33,7 @@ pub struct SceneNode3d {
 pub fn SceneNode3d::new(
   mesh : @pbr.Mesh3d,
   material : @pbr.MeshMaterial3d,
-  transform : @math.Transform,
+  transform : @transform.Transform,
   visibility_range : @visibility.VisibilityRange?,
   animation_target : @animation.AnimationTargetId?,
 ) -> SceneNode3d {
@@ -735,7 +735,7 @@ fn scene_spawn_instance_when_ready(
     let child = world.spawn_empty()
     try! world.set(child, @pbr.ecs_key_mesh3d, node.mesh)
     try! world.set(child, @pbr.ecs_key_mesh_material3d, node.material)
-    try! world.set(child, @math.ecs_key_transform, node.transform)
+    try! world.set(child, @transform.ecs_key_transform, node.transform)
     try! world.set(
       child,
       @hierarchy.ecs_key_parent,

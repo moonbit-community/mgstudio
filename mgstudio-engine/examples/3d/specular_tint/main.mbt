@@ -113,7 +113,7 @@ fn spawn_ui_text_handle(
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
     @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   )
   .with_color(@text.TextColor::new(color))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -221,7 +221,7 @@ fn setup(world : @ecs.World) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     uv_sphere_mesh(1.0F, 18, 32),
     @pbr.MeshMaterial3d::new(sphere_material),
-    @math.Transform::identity().with_rotation(
+    @transform.Transform::identity().with_rotation(
       @math.Quat::from_rotation_x(PI * 0.5F),
     ),
   ).spawn(world)
@@ -229,7 +229,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::from_xyz(-2.0F, 0.0F, 3.5F).looking_at(
+    @transform.Transform::from_xyz(-2.0F, 0.0F, 3.5F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -253,7 +253,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(100).with_clear_color_none(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
   let root = world.spawn_empty()
@@ -297,7 +297,7 @@ fn setup(world : @ecs.World) -> Unit {
 fn rotate_camera(world : @ecs.World) -> Unit {
   let state = specular_tint_state.val
   guard state.camera is Some(camera_entity) else { return }
-  guard world.component(@math.ecs_key_transform).get(camera_entity)
+  guard world.component(@transform.ecs_key_transform).get(camera_entity)
     is Some(transform) else {
     return
   }
@@ -310,13 +310,14 @@ fn rotate_camera(world : @ecs.World) -> Unit {
   let rotated_z = sin_v * x + cos_v * z
 
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .set(
     camera_entity,
-    @math.Transform::from_xyz(rotated_x, transform.translation.y, rotated_z).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
+    @transform.Transform::from_xyz(
+      rotated_x,
+      transform.translation.y,
+      rotated_z,
+    ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
     world.read_change_tick(),
   )
   |> ignore

@@ -176,7 +176,7 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   let tick = world.read_change_tick()
   let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
-      @math.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
+      @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
         @math.Vec3::new(0.0F, 0.3F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
@@ -244,10 +244,10 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     flight_helmet,
-    @math.Transform::from_xyz(0.5F, 0.0F, -0.5F).with_rotation(
+    @transform.Transform::from_xyz(0.5F, 0.0F, -0.5F).with_rotation(
       @math.Quat::from_rotation_y(-0.15F * PI),
     ),
     tick,
@@ -262,10 +262,10 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     tick,
   )
   world
-  .component(@math.ecs_key_transform)
+  .component(@transform.ecs_key_transform)
   .insert(
     directional_light,
-    @math.Transform::identity().with_rotation(
+    @transform.Transform::identity().with_rotation(
       @math.Quat::from_rotation_y(-0.15F * PI).mul(
         @math.Quat::from_rotation_x(-0.15F * PI),
       ),
@@ -281,7 +281,7 @@ fn spawn_text(asset_server : @asset.AssetServer) -> Unit {
       @text.TextFont::default()
       .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
       .with_font_size(16.0F),
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(-390.0F, 320.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),

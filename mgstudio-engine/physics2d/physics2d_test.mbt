@@ -41,9 +41,9 @@ test "physics2d: falling body collides and writes back transform" {
   let ball = world.spawn()
 
   // Floor at y = -1 with half-height 0.5 => top at y = -0.5.
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     floor,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, -1.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -62,9 +62,9 @@ test "physics2d: falling body collides and writes back transform" {
     ContactForceEventThreshold2d::new(0.0F),
     tick,
   )
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     ball,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 5.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -86,7 +86,7 @@ test "physics2d: falling body collides and writes back transform" {
   get_velocity2d_store(world).insert(ball, Velocity2d::zero(), tick)
   physics2d_clear_events_system(world)
   physics2d_sync_insertions_system(world)
-  let initial_y = @math.get_transform_store(world).get(ball).unwrap().translation.y
+  let initial_y = @transform.get_transform_store(world).get(ball).unwrap().translation.y
 
   // Step for ~2 seconds.
   let mut i = 0
@@ -97,7 +97,7 @@ test "physics2d: falling body collides and writes back transform" {
     world.increment_change_tick() |> ignore
     i = i + 1
   }
-  let final_y = @math.get_transform_store(world).get(ball).unwrap().translation.y
+  let final_y = @transform.get_transform_store(world).get(ball).unwrap().translation.y
   inspect(final_y < initial_y, content="true")
   let events = get_physics2d_events_resource(world).get().unwrap()
   inspect(events.collisions.length() > 0, content="true")
@@ -116,9 +116,9 @@ test "physics2d: gravity scale 0 disables gravity" {
   cfg_res.insert(cfg.val, tick)
   let no_grav = world.spawn()
   let grav = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     no_grav,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-1.0F, 2.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -126,9 +126,9 @@ test "physics2d: gravity scale 0 disables gravity" {
     ),
     tick,
   )
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     grav,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 2.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -156,8 +156,8 @@ test "physics2d: gravity scale 0 disables gravity" {
   get_velocity2d_store(world).insert(no_grav, Velocity2d::zero(), tick)
   get_velocity2d_store(world).insert(grav, Velocity2d::zero(), tick)
   physics2d_sync_insertions_system(world)
-  let y0 = @math.get_transform_store(world).get(no_grav).unwrap().translation.y
-  let y1 = @math.get_transform_store(world).get(grav).unwrap().translation.y
+  let y0 = @transform.get_transform_store(world).get(no_grav).unwrap().translation.y
+  let y1 = @transform.get_transform_store(world).get(grav).unwrap().translation.y
   let mut i = 0
   while i < 60 {
     physics2d_sync_world_to_rapier_system(world)
@@ -168,8 +168,8 @@ test "physics2d: gravity scale 0 disables gravity" {
   }
   // Debug (kept): this test asserts semantics via positions; keep the following
   // assertions focused and avoid relying on exact floating-point equality.
-  let y0_final = @math.get_transform_store(world).get(no_grav).unwrap().translation.y
-  let y1_final = @math.get_transform_store(world).get(grav).unwrap().translation.y
+  let y0_final = @transform.get_transform_store(world).get(no_grav).unwrap().translation.y
+  let y1_final = @transform.get_transform_store(world).get(grav).unwrap().translation.y
   inspect(y0_final > y0 - 0.01F, content="true")
   inspect(y1_final < y1, content="true")
 }
@@ -187,9 +187,9 @@ test "physics2d: damping reduces velocity" {
   let no_damp = world.spawn()
   let damp = world.spawn()
   for e in [no_damp, damp] {
-    @math.get_transform_store(world).insert(
+    @transform.get_transform_store(world).insert(
       e,
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 0.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -235,9 +235,9 @@ test "physics2d: external impulse applies once and clears" {
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
   let e = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     e,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -278,9 +278,9 @@ test "physics2d: default collider density yields non-zero mass" {
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
   let e = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     e,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -324,9 +324,9 @@ test "physics2d: external force persists" {
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
   let e = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     e,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -347,7 +347,7 @@ test "physics2d: external force persists" {
     tick,
   )
   physics2d_sync_insertions_system(world)
-  let x0 = @math.get_transform_store(world).get(e).unwrap().translation.x
+  let x0 = @transform.get_transform_store(world).get(e).unwrap().translation.x
   let mut i = 0
   while i < 30 {
     physics2d_sync_world_to_rapier_system(world)
@@ -356,7 +356,7 @@ test "physics2d: external force persists" {
     world.increment_change_tick() |> ignore
     i = i + 1
   }
-  let x1 = @math.get_transform_store(world).get(e).unwrap().translation.x
+  let x1 = @transform.get_transform_store(world).get(e).unwrap().translation.x
   inspect(x1 > x0, content="true")
 }
 
@@ -373,9 +373,9 @@ test "physics2d: CCD prevents tunneling through thin floor" {
     cfg_res.insert(cfg.val, tick)
     let floor = world.spawn()
     let ball = world.spawn()
-    @math.get_transform_store(world).insert(
+    @transform.get_transform_store(world).insert(
       floor,
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 0.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -389,9 +389,9 @@ test "physics2d: CCD prevents tunneling through thin floor" {
       Collider2d::new(ColliderShape2d::cuboid(10.0F, 0.01F)),
       tick,
     )
-    @math.get_transform_store(world).insert(
+    @transform.get_transform_store(world).insert(
       ball,
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 1.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -417,7 +417,7 @@ test "physics2d: CCD prevents tunneling through thin floor" {
     physics2d_sync_world_to_rapier_system(world)
     physics2d_step_system(world)
     physics2d_writeback_system(world)
-    @math.get_transform_store(world).get(ball).unwrap().translation.y
+    @transform.get_transform_store(world).get(ball).unwrap().translation.y
   }
 
   let y_no_ccd = run(false)
@@ -439,9 +439,9 @@ test "physics2d: collision groups filter collision events" {
   let a = world.spawn()
   let b = world.spawn()
   for e in [a, b] {
-    @math.get_transform_store(world).insert(
+    @transform.get_transform_store(world).insert(
       e,
-      @math.Transform::from_xy_rotation_scale(
+      @transform.Transform::from_xy_rotation_scale(
         @math.Vec2::new(0.0F, 0.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -498,9 +498,9 @@ test "physics2d: collider material and active event properties sync to rapier" {
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
   let e_default = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     e_default,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -532,9 +532,9 @@ test "physics2d: collider material and active event properties sync to rapier" {
   )
 
   let e_override = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     e_override,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(3.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -611,9 +611,9 @@ test "physics2d: query pipeline sees inserted colliders" {
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
   let floor = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     floor,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -680,7 +680,7 @@ test "physics2d: query pipeline sees inserted colliders" {
   }
   let shape_hits = ctx.intersect_shape_entities(
     ColliderShape2d::ball(0.5F),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -696,7 +696,7 @@ test "physics2d: query pipeline sees inserted colliders" {
   inspect(aabb_hits[0].id == floor.id, content="true")
   let sweep = ctx.cast_shape_entity(
     ColliderShape2d::ball(0.5F),
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 3.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -723,9 +723,9 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
   let convex = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     convex,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(5.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -747,9 +747,9 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
     tick,
   )
   let compound = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     compound,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-5.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -763,7 +763,7 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
     Collider2d::new(
       ColliderShape2d::compound([
         (
-          @math.Transform::from_xy_rotation_scale(
+          @transform.Transform::from_xy_rotation_scale(
             @math.Vec2::new(-1.0F, 0.0F),
             0.0F,
             @math.Vec2::new(1.0F, 1.0F),
@@ -772,7 +772,7 @@ test "physics2d: convex polygon and compound colliders can be inserted" {
           ColliderShape2d::ball(0.5F),
         ),
         (
-          @math.Transform::from_xy_rotation_scale(
+          @transform.Transform::from_xy_rotation_scale(
             @math.Vec2::new(1.0F, 0.0F),
             0.0F,
             @math.Vec2::new(1.0F, 1.0F),
@@ -828,9 +828,9 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
   cfg_res.insert(cfg.val, tick)
   let a = world.spawn()
   let b = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     a,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-0.49F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -838,9 +838,9 @@ test "physics2d: hooks filter_contact_pair can disable contacts" {
     ),
     tick,
   )
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     b,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.49F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -903,9 +903,9 @@ test "physics2d: impulse joint is inserted and cleaned up" {
   cfg_res.insert(cfg.val, tick)
   let a = world.spawn()
   let b = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     a,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -920,9 +920,9 @@ test "physics2d: impulse joint is inserted and cleaned up" {
     tick,
   )
   get_velocity2d_store(world).insert(a, Velocity2d::zero(), tick)
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     b,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -970,9 +970,9 @@ test "physics2d: child collider attaches to parent body" {
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
   let body = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     body,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -982,9 +982,9 @@ test "physics2d: child collider attaches to parent body" {
   )
   get_rigid_body2d_store(world).insert(body, RigidBody2d::dynamic(), tick)
   let child = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     child,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -1027,9 +1027,9 @@ test "physics2d: multiple child colliders aggregate parent mass" {
   cfg_res.insert(cfg.val, tick)
 
   let body_single = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     body_single,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-3.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -1043,9 +1043,9 @@ test "physics2d: multiple child colliders aggregate parent mass" {
     tick,
   )
   let child_single = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     child_single,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -1065,9 +1065,9 @@ test "physics2d: multiple child colliders aggregate parent mass" {
   )
 
   let body_double = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     body_double,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(3.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -1081,9 +1081,9 @@ test "physics2d: multiple child colliders aggregate parent mass" {
     tick,
   )
   let child_double_a = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     child_double_a,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-0.75F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -1102,9 +1102,9 @@ test "physics2d: multiple child colliders aggregate parent mass" {
     tick,
   )
   let child_double_b = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     child_double_b,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.75F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -1150,9 +1150,9 @@ test "physics2d: collision events use child collider entity mapping" {
   cfg_res.insert(cfg.val, tick)
 
   let floor = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     floor,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, -1.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -1168,9 +1168,9 @@ test "physics2d: collision events use child collider entity mapping" {
   )
 
   let body = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     body,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -1180,9 +1180,9 @@ test "physics2d: collision events use child collider entity mapping" {
   )
   get_rigid_body2d_store(world).insert(body, RigidBody2d::dynamic(), tick)
   let child = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     child,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.6F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -1238,9 +1238,9 @@ test "physics2d: kinematic character controller moves and outputs" {
   cfg.val = Physics2dConfig::new(@math.Vec2::new(0.0F, 0.0F))
   cfg_res.insert(cfg.val, tick)
   let floor = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     floor,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -1255,9 +1255,9 @@ test "physics2d: kinematic character controller moves and outputs" {
     tick,
   )
   let character = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     character,
-    @math.Transform::from_xy_rotation_scale(
+    @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 2.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -1280,7 +1280,7 @@ test "physics2d: kinematic character controller moves and outputs" {
   physics2d_sync_insertions_system(world)
   physics2d_sync_world_to_rapier_system(world)
   physics2d_character_controller_system(world)
-  let y = @math.get_transform_store(world).get(character).unwrap().translation.y
+  let y = @transform.get_transform_store(world).get(character).unwrap().translation.y
   inspect(y > 0.9F, content="true")
   let kcc_after = get_kinematic_character_controller2d_store(world)
     .get(character)

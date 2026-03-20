@@ -12,6 +12,7 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/post_process",
+  "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
   "Milky2018/mgstudio/window",
   "moonbitlang/core/hashmap",
@@ -138,9 +139,9 @@ pub fn render2d_camera_system(@ecs.World) -> Unit
 
 pub fn render2d_camera_system_ecs(@ecs.World) -> Unit
 
-pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, Camera, OrthographicProjection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
+pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, Camera, OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
-pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, Camera, OrthographicProjection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
+pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, Camera, OrthographicProjection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?
 
 pub fn render2d_clear_overlay_sprites(@ecs.World) -> Unit
 
@@ -160,9 +161,9 @@ pub fn render2d_diagnostic_prepared_camera_count() -> Int
 
 pub fn render2d_diagnostic_queued_draw_item_count() -> Int
 
-pub fn render2d_draw_bloom_overlay(@ecs.World, @asset.Handle[@image.Image], @math.Transform, @post_process.Bloom, RenderLayers) -> Unit
+pub fn render2d_draw_bloom_overlay(@ecs.World, @asset.Handle[@image.Image], @transform.Transform, @post_process.Bloom, RenderLayers) -> Unit
 
-pub fn render2d_draw_tilemap_chunk(@ecs.World, TilemapChunk, TilemapChunkTileData, @math.Transform, RenderLayers) -> Unit
+pub fn render2d_draw_tilemap_chunk(@ecs.World, TilemapChunk, TilemapChunkTileData, @transform.Transform, RenderLayers) -> Unit
 
 pub fn render2d_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -170,17 +171,17 @@ pub fn render2d_plugin_ecs(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn render2d_prepared_camera_count(@ecs.World) -> Int?
 
-pub fn render2d_push_sprite_uv(@ecs.World, @asset.Handle[@image.Image], @math.Transform, @math.Vec2, @math.Vec2, @color.Color, RenderLayers) -> Unit
+pub fn render2d_push_sprite_uv(@ecs.World, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @color.Color, RenderLayers) -> Unit
 
-pub fn render2d_push_sprite_uv_scissor(@ecs.World, @asset.Handle[@image.Image], @math.Transform, @math.Vec2, @math.Vec2, @color.Color, RenderLayers, @math.Rect?) -> Unit
+pub fn render2d_push_sprite_uv_scissor(@ecs.World, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @color.Color, RenderLayers, @math.Rect?) -> Unit
 
 pub fn render2d_push_sprite_uv_scissor_batch(@ecs.World, Array[OverlaySpriteUvScissor]) -> Unit
 
-pub fn render2d_push_ui_box_shadow_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @math.Transform, @math.Vec2, @color.Color, RenderLayers, @math.Rect?, @math.Vec2, UiCornerRadii, Float, Int) -> Unit
+pub fn render2d_push_ui_box_shadow_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, RenderLayers, @math.Rect?, @math.Vec2, UiCornerRadii, Float, Int) -> Unit
 
-pub fn render2d_push_ui_rect_uv_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @math.Transform, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color, RenderLayers, @math.Rect?, Int, UiCornerRadii, UiBorderRect) -> Unit
+pub fn render2d_push_ui_rect_uv_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color, RenderLayers, @math.Rect?, Int, UiCornerRadii, UiBorderRect) -> Unit
 
-pub fn render2d_push_ui_texture_slice_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @math.Transform, @math.Vec2, @color.Color, RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
+pub fn render2d_push_ui_texture_slice_scissor(@ecs.World, @core.Entity, @core.Entity?, @asset.Handle[@image.Image], @transform.Transform, @math.Vec2, @color.Color, RenderLayers, @math.Rect?, @math.Vec4, @math.Vec4, @math.Vec4, @math.Vec4) -> Unit
 
 pub fn render2d_queued_draw_item_count(@ecs.World) -> Int?
 
@@ -258,15 +259,6 @@ pub impl @ecs.Component for Anchor
 pub impl ToJson for Anchor
 pub impl @json.FromJson for Anchor
 
-pub struct Annulus {
-  inner_radius : Float
-  outer_radius : Float
-  vertices : Int
-}
-pub fn Annulus::default() -> Self
-pub fn Annulus::new(Float, Float) -> Self
-pub fn Annulus::with_vertices(Self, Int) -> Self
-
 pub struct Arc2dBuilder {
   id : Int
 }
@@ -325,7 +317,7 @@ pub struct Camera2dBundle {
   camera : Camera
   projection : Projection
   camera2d : Camera2d
-  transform : @math.Transform
+  transform : @transform.Transform
   target : RenderTarget
   layers : RenderLayers
   bloom : @post_process.Bloom?
@@ -333,10 +325,10 @@ pub struct Camera2dBundle {
   color_grading : @post_process.ColorGrading?
   deband_dither : @post_process.DebandDither?
 }
-pub fn Camera2dBundle::new(Camera, @math.Transform) -> Self
-pub fn Camera2dBundle::new_with_layers(Camera, @math.Transform, RenderTarget, RenderLayers) -> Self
-pub fn Camera2dBundle::new_with_projection(Camera, Projection, @math.Transform) -> Self
-pub fn Camera2dBundle::new_with_target(Camera, @math.Transform, RenderTarget) -> Self
+pub fn Camera2dBundle::new(Camera, @transform.Transform) -> Self
+pub fn Camera2dBundle::new_with_layers(Camera, @transform.Transform, RenderTarget, RenderLayers) -> Self
+pub fn Camera2dBundle::new_with_projection(Camera, Projection, @transform.Transform) -> Self
+pub fn Camera2dBundle::new_with_target(Camera, @transform.Transform, RenderTarget) -> Self
 #callsite(autofill(loc))
 pub fn Camera2dBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
 pub fn Camera2dBundle::with_bloom(Self, @post_process.Bloom?) -> Self
@@ -357,77 +349,6 @@ pub struct CameraTargetInfo {
 }
 pub fn CameraTargetInfo::default() -> Self
 pub fn CameraTargetInfo::new(@math.IVec2, Float) -> Self
-
-pub struct Capsule2d {
-  radius : Float
-  half_length : Float
-  segments : Int
-}
-pub fn Capsule2d::default() -> Self
-pub fn Capsule2d::new(Float, Float, Int) -> Self
-pub fn Capsule2d::to_ring(Self, Float) -> Capsule2dRing
-
-pub struct Capsule2dRing {
-  outer_shape : Capsule2d
-  inner_shape : Capsule2d
-}
-pub fn Capsule2dRing::new(Capsule2d, Capsule2d) -> Self
-
-pub struct Circle {
-  radius : Float
-  vertices : Int
-}
-pub fn Circle::default() -> Self
-pub fn Circle::new(Float) -> Self
-pub fn Circle::to_ring(Self, Float) -> Ring2d
-pub fn Circle::with_vertices(Self, Int) -> Self
-
-pub(all) enum CircularMeshUvMode {
-  Mask(Float)
-}
-
-pub struct CircularSector {
-  radius : Float
-  half_angle : Float
-  vertices : Int
-  uv_mode : CircularMeshUvMode
-}
-pub fn CircularSector::angle(Self) -> Float
-pub fn CircularSector::default() -> Self
-pub fn CircularSector::from_turns(Float, Float) -> Self
-pub fn CircularSector::half_angle(Self) -> Float
-pub fn CircularSector::new(Float, Float) -> Self
-pub fn CircularSector::with_uv_mask_angle(Self, Float) -> Self
-pub fn CircularSector::with_uv_mode(Self, CircularMeshUvMode) -> Self
-pub fn CircularSector::with_vertices(Self, Int) -> Self
-
-pub struct CircularSectorRing {
-  outer_shape : CircularSector
-  inner_shape : CircularSector
-}
-pub fn CircularSectorRing::new(CircularSector, CircularSector) -> Self
-
-pub struct CircularSegment {
-  radius : Float
-  half_angle : Float
-  vertices : Int
-  uv_mode : CircularMeshUvMode
-}
-pub fn CircularSegment::angle(Self) -> Float
-pub fn CircularSegment::default() -> Self
-pub fn CircularSegment::from_turns(Float, Float) -> Self
-pub fn CircularSegment::half_angle(Self) -> Float
-pub fn CircularSegment::new(Float, Float) -> Self
-pub fn CircularSegment::to_ring(Self, Float) -> CircularSegmentRing
-pub fn CircularSegment::with_uv_mask_angle(Self, Float) -> Self
-pub fn CircularSegment::with_uv_mode(Self, CircularMeshUvMode) -> Self
-pub fn CircularSegment::with_vertices(Self, Int) -> Self
-
-pub struct CircularSegmentRing {
-  outer_shape : CircularSegment
-  inner_shape : CircularSegment
-}
-pub fn CircularSegmentRing::new(CircularSegment, CircularSegment) -> Self
 
 pub struct ClearColor {
   color : @color.Color
@@ -483,24 +404,10 @@ pub struct ColorMaterialPlugin {
 }
 pub fn ColorMaterialPlugin::default() -> Self
 
-pub struct Ellipse {
-  half_size : @math.Vec2
-  vertices : Int
-}
-pub fn Ellipse::default() -> Self
-pub fn Ellipse::new(Float, Float) -> Self
-pub fn Ellipse::with_vertices(Self, Int) -> Self
-
 pub struct Ellipse2dBuilder {
   id : Int
 }
 pub fn Ellipse2dBuilder::resolution(Self, Int) -> Self
-
-pub struct EllipseRing {
-  outer_shape : Ellipse
-  inner_shape : Ellipse
-}
-pub fn EllipseRing::new(Ellipse, Ellipse) -> Self
 
 pub(all) struct GizmoConfig {
   enabled : Bool
@@ -550,7 +457,7 @@ pub fn Gizmos::lineloop_2d(Self, Array[@math.Vec2], @color.Color) -> Unit
 pub fn Gizmos::linestrip_2d(Self, Array[@math.Vec2], @color.Color) -> Unit
 pub fn Gizmos::linestrip_gradient_2d(Self, Array[(@math.Vec2, @color.Color)]) -> Unit
 pub fn Gizmos::long_arc_2d_between(Self, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> Arc2dBuilder
-pub fn Gizmos::mesh_wireframe_2d(Self, @mesh.Mesh2dGeometry, @math.Transform, @color.Color) -> Unit
+pub fn Gizmos::mesh_wireframe_2d(Self, @mesh.Mesh2dGeometry, @transform.Transform, @color.Color) -> Unit
 pub fn Gizmos::new() -> Self
 pub fn Gizmos::ray_2d(Self, @math.Vec2, @math.Vec2, @color.Color) -> Unit
 pub fn Gizmos::ray_gradient_2d(Self, @math.Vec2, @math.Vec2, @color.Color, @color.Color) -> Unit
@@ -652,28 +559,28 @@ pub impl @app.Resource for Material2dRuntimeRegistry
 pub struct Mesh2d {
   mesh : @asset.Handle[@mesh.Mesh]
 }
-pub fn Mesh2d::from_annulus(Annulus) -> Self
-pub fn Mesh2d::from_capsule(Capsule2d) -> Self
-pub fn Mesh2d::from_capsule_ring(Capsule2dRing) -> Self
-pub fn Mesh2d::from_circle(Circle) -> Self
-pub fn Mesh2d::from_circular_sector(CircularSector) -> Self
-pub fn Mesh2d::from_circular_sector_ring(CircularSectorRing) -> Self
-pub fn Mesh2d::from_circular_segment(CircularSegment) -> Self
-pub fn Mesh2d::from_circular_segment_ring(CircularSegmentRing) -> Self
-pub fn Mesh2d::from_ellipse(Ellipse) -> Self
-pub fn Mesh2d::from_ellipse_ring(EllipseRing) -> Self
+pub fn Mesh2d::from_annulus(@math.Annulus) -> Self
+pub fn Mesh2d::from_capsule(@math.Capsule2d) -> Self
+pub fn Mesh2d::from_capsule_ring(@math.Capsule2dRing) -> Self
+pub fn Mesh2d::from_circle(@math.Circle) -> Self
+pub fn Mesh2d::from_circular_sector(@math.CircularSector) -> Self
+pub fn Mesh2d::from_circular_sector_ring(@math.CircularSectorRing) -> Self
+pub fn Mesh2d::from_circular_segment(@math.CircularSegment) -> Self
+pub fn Mesh2d::from_circular_segment_ring(@math.CircularSegmentRing) -> Self
+pub fn Mesh2d::from_ellipse(@math.Ellipse) -> Self
+pub fn Mesh2d::from_ellipse_ring(@math.EllipseRing) -> Self
 pub fn Mesh2d::from_geometry(@mesh.Mesh2dGeometry) -> Self
-pub fn Mesh2d::from_polyline(Polyline2d) -> Self
-pub fn Mesh2d::from_rectangle(Rectangle) -> Self
-pub fn Mesh2d::from_rectangle_ring(RectangleRing) -> Self
-pub fn Mesh2d::from_regular_polygon(RegularPolygon) -> Self
-pub fn Mesh2d::from_regular_polygon_ring(RegularPolygonRing) -> Self
-pub fn Mesh2d::from_rhombus(Rhombus) -> Self
-pub fn Mesh2d::from_rhombus_ring(RhombusRing) -> Self
-pub fn Mesh2d::from_ring(Ring2d) -> Self
-pub fn Mesh2d::from_segment(Segment2d) -> Self
-pub fn Mesh2d::from_triangle(Triangle2d) -> Self
-pub fn Mesh2d::from_triangle_ring(Triangle2dRing) -> Self
+pub fn Mesh2d::from_polyline(@math.Polyline2d) -> Self
+pub fn Mesh2d::from_rectangle(@math.Rectangle) -> Self
+pub fn Mesh2d::from_rectangle_ring(@math.RectangleRing) -> Self
+pub fn Mesh2d::from_regular_polygon(@math.RegularPolygon) -> Self
+pub fn Mesh2d::from_regular_polygon_ring(@math.RegularPolygonRing) -> Self
+pub fn Mesh2d::from_rhombus(@math.Rhombus) -> Self
+pub fn Mesh2d::from_rhombus_ring(@math.RhombusRing) -> Self
+pub fn Mesh2d::from_ring(@math.Ring2d) -> Self
+pub fn Mesh2d::from_segment(@math.Segment2d) -> Self
+pub fn Mesh2d::from_triangle(@math.Triangle2d) -> Self
+pub fn Mesh2d::from_triangle_ring(@math.Triangle2dRing) -> Self
 pub fn Mesh2d::new(@asset.Handle[@mesh.Mesh]) -> Self
 pub impl @ecs.Component for Mesh2d
 pub impl ToJson for Mesh2d
@@ -682,16 +589,16 @@ pub impl @json.FromJson for Mesh2d
 pub struct Mesh2dBundle {
   mesh : Mesh2d
   material : MeshMaterial2d[ColorMaterialAsset]
-  transform : @math.Transform
+  transform : @transform.Transform
   layers : RenderLayers
   visibility : @visibility.Visibility
   inherited_visibility : @visibility.InheritedVisibility
   view_visibility : @visibility.ViewVisibility
 }
-pub fn Mesh2dBundle::new(Mesh2d, ColorMaterial, @math.Transform) -> Self
-pub fn Mesh2dBundle::new_with_layers(Mesh2d, ColorMaterial, @math.Transform, RenderLayers) -> Self
-pub fn Mesh2dBundle::new_with_mesh_material(Mesh2d, MeshMaterial2d[ColorMaterialAsset], @math.Transform) -> Self
-pub fn Mesh2dBundle::new_with_mesh_material_layers(Mesh2d, MeshMaterial2d[ColorMaterialAsset], @math.Transform, RenderLayers) -> Self
+pub fn Mesh2dBundle::new(Mesh2d, ColorMaterial, @transform.Transform) -> Self
+pub fn Mesh2dBundle::new_with_layers(Mesh2d, ColorMaterial, @transform.Transform, RenderLayers) -> Self
+pub fn Mesh2dBundle::new_with_mesh_material(Mesh2d, MeshMaterial2d[ColorMaterialAsset], @transform.Transform) -> Self
+pub fn Mesh2dBundle::new_with_mesh_material_layers(Mesh2d, MeshMaterial2d[ColorMaterialAsset], @transform.Transform, RenderLayers) -> Self
 pub fn Mesh2dBundle::spawn(Self, @ecs.World) -> @core.Entity
 
 pub struct MeshMaterial2d[M] {
@@ -727,7 +634,7 @@ pub impl @json.FromJson for OrthographicProjection
 
 pub(all) struct OverlaySpriteUvScissor {
   texture : @asset.Handle[@image.Image]
-  transform : @math.Transform
+  transform : @transform.Transform
   uv_min : @math.Vec2
   uv_max : @math.Vec2
   color : @color.Color
@@ -758,13 +665,6 @@ pub impl Show for PanCamera
 pub impl ToJson for PanCamera
 pub impl @json.FromJson for PanCamera
 
-pub struct Polyline2d {
-  points : Array[@math.Vec2]
-  half_thickness : Float
-}
-pub fn Polyline2d::new(Array[@math.Vec2]) -> Self
-pub fn Polyline2d::with_half_thickness(Self, Float) -> Self
-
 pub struct PreparedMaterial2d[M] {
   source : @asset.Handle[M]
   bind_group : Material2dBindGroup
@@ -781,34 +681,6 @@ pub fn Projection::orthographic_2d() -> Self
 pub impl @ecs.Component for Projection
 pub impl ToJson for Projection
 pub impl @json.FromJson for Projection
-
-pub struct Rectangle {
-  half_size : @math.Vec2
-}
-pub fn Rectangle::default() -> Self
-pub fn Rectangle::from_size(@math.Vec2) -> Self
-pub fn Rectangle::new(Float, Float) -> Self
-pub fn Rectangle::to_ring(Self, Float) -> RectangleRing
-
-pub struct RectangleRing {
-  outer_shape : Rectangle
-  inner_shape : Rectangle
-}
-pub fn RectangleRing::new(Rectangle, Rectangle) -> Self
-
-pub struct RegularPolygon {
-  radius : Float
-  sides : Int
-}
-pub fn RegularPolygon::default() -> Self
-pub fn RegularPolygon::new(Float, Int) -> Self
-pub fn RegularPolygon::to_ring(Self, Float) -> RegularPolygonRing
-
-pub struct RegularPolygonRing {
-  outer_shape : RegularPolygon
-  inner_shape : RegularPolygon
-}
-pub fn RegularPolygonRing::new(RegularPolygon, RegularPolygon) -> Self
 
 pub struct RenderLayers {
   mask : Int
@@ -855,28 +727,6 @@ pub impl @ecs.Component for RenderTarget
 pub impl ToJson for RenderTarget
 pub impl @json.FromJson for RenderTarget
 
-pub struct Rhombus {
-  half_diagonal : @math.Vec2
-}
-pub fn Rhombus::default() -> Self
-pub fn Rhombus::new(Float, Float) -> Self
-pub fn Rhombus::to_ring(Self, Float) -> RhombusRing
-
-pub struct RhombusRing {
-  outer_shape : Rhombus
-  inner_shape : Rhombus
-}
-pub fn RhombusRing::new(Rhombus, Rhombus) -> Self
-
-pub struct Ring2d {
-  outer_radius : Float
-  inner_radius : Float
-  vertices : Int
-}
-pub fn Ring2d::default() -> Self
-pub fn Ring2d::new(Float, Float) -> Self
-pub fn Ring2d::with_vertices(Self, Int) -> Self
-
 pub struct RoundedRectBuilder {
   id : Int
 }
@@ -890,14 +740,6 @@ pub fn ScissorRect::new(@math.Rect) -> Self
 pub impl @ecs.Component for ScissorRect
 pub impl ToJson for ScissorRect
 pub impl @json.FromJson for ScissorRect
-
-pub struct Segment2d {
-  start : @math.Vec2
-  end : @math.Vec2
-  half_thickness : Float
-}
-pub fn Segment2d::new(@math.Vec2, @math.Vec2) -> Self
-pub fn Segment2d::with_half_thickness(Self, Float) -> Self
 
 pub(all) enum SliceScaleMode {
   Stretch
@@ -931,14 +773,14 @@ pub impl @json.FromJson for Sprite
 pub struct SpriteBundle {
   sprite : Sprite
   anchor : Anchor
-  transform : @math.Transform
+  transform : @transform.Transform
   layers : RenderLayers
   visibility : @visibility.Visibility
   inherited_visibility : @visibility.InheritedVisibility
   view_visibility : @visibility.ViewVisibility
 }
-pub fn SpriteBundle::new(Sprite, @math.Transform) -> Self
-pub fn SpriteBundle::new_with_layers(Sprite, @math.Transform, RenderLayers) -> Self
+pub fn SpriteBundle::new(Sprite, @transform.Transform) -> Self
+pub fn SpriteBundle::new_with_layers(Sprite, @transform.Transform, RenderLayers) -> Self
 pub fn SpriteBundle::spawn(Self, @ecs.World) -> @core.Entity
 
 pub(all) enum SpriteImageMode {
@@ -1004,7 +846,7 @@ pub struct TilemapChunk {
   tileset : @asset.Handle[@image.Image]
   tileset_grid : @math.UVec2
 }
-pub fn TilemapChunk::calculate_tile_transform(Self, @math.UVec2) -> @math.Transform
+pub fn TilemapChunk::calculate_tile_transform(Self, @math.UVec2) -> @transform.Transform
 pub fn TilemapChunk::new(@math.UVec2, @math.UVec2, @asset.Handle[@image.Image], @math.UVec2) -> Self
 pub fn TilemapChunk::tile_capacity(Self) -> Int
 
@@ -1014,21 +856,6 @@ pub struct TilemapChunkTileData {
 pub fn TilemapChunkTileData::new(Array[TileData?]) -> Self
 pub fn TilemapChunkTileData::set_tile_data_from_tile_pos(Self, @math.UVec2, @math.UVec2, TileData?) -> Self
 pub fn TilemapChunkTileData::tile_data_from_tile_pos(Self, @math.UVec2, @math.UVec2) -> TileData?
-
-pub struct Triangle2d {
-  a : @math.Vec2
-  b : @math.Vec2
-  c : @math.Vec2
-}
-pub fn Triangle2d::default() -> Self
-pub fn Triangle2d::new(@math.Vec2, @math.Vec2, @math.Vec2) -> Self
-pub fn Triangle2d::to_ring(Self, Float) -> Triangle2dRing
-
-pub struct Triangle2dRing {
-  outer_shape : Triangle2d
-  inner_shape : Triangle2d
-}
-pub fn Triangle2dRing::new(Triangle2d, Triangle2d) -> Self
 
 pub struct UiBorderRect {
   left : Float
@@ -1092,11 +919,31 @@ pub impl ToJson for Wireframe2dConfig
 pub impl @json.FromJson for Wireframe2dConfig
 
 // Type aliases
+pub using @math {type Annulus}
+
+pub using @math {type Arc2d}
+
 pub using @post_process {type Bloom}
 
 pub using @post_process {type BloomCompositeMode}
 
 pub using @post_process {type BloomPrefilter}
+
+pub using @math {type Capsule2d}
+
+pub using @math {type Capsule2dRing}
+
+pub using @math {type Circle}
+
+pub using @math {type CircularMeshUvMode}
+
+pub using @math {type CircularSector}
+
+pub using @math {type CircularSectorRing}
+
+pub using @math {type CircularSegment}
+
+pub using @math {type CircularSegmentRing}
 
 pub using @color {type Color}
 
@@ -1108,9 +955,43 @@ pub using @post_process {type ColorGradingRange}
 
 pub using @post_process {type ColorGradingSection}
 
+pub using @math {type ConvexPolygon}
+
 pub using @post_process {type DebandDither}
 
+pub using @math {type Ellipse}
+
+pub using @math {type EllipseRing}
+
+pub using @math {type Line2d}
+
+pub using @math {type Plane2d}
+
+pub using @math {type Polygon}
+
+pub using @math {type Polyline2d}
+
+pub using @math {type Rectangle}
+
+pub using @math {type RectangleRing}
+
+pub using @math {type RegularPolygon}
+
+pub using @math {type RegularPolygonRing}
+
+pub using @math {type Rhombus}
+
+pub using @math {type RhombusRing}
+
+pub using @math {type Ring2d}
+
+pub using @math {type Segment2d}
+
 pub using @post_process {type Tonemapping}
+
+pub using @math {type Triangle2d}
+
+pub using @math {type Triangle2dRing}
 
 // Traits
 pub(open) trait Material2d {

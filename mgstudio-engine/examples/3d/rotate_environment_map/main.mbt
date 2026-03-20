@@ -117,7 +117,7 @@ fn setup(world : @ecs.World) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     uv_sphere_mesh(1.0F, 24, 40),
     @pbr.MeshMaterial3d::new(sphere_material),
-    @math.Transform::identity().with_scale(@math.Vec3::splat(1.25F)),
+    @transform.Transform::identity().with_scale(@math.Vec3::splat(1.25F)),
   ).spawn(world)
   |> ignore
 
@@ -131,7 +131,7 @@ fn setup(world : @ecs.World) -> Unit {
       ..@pbr.PerspectiveProjection3d::default(),
       fov: 27.0F * PI / 180.0F,
     }),
-    @math.Transform::from_xyz(0.0F, 0.0F, 10.0F),
+    @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
   rotate_env_state.val.camera = Some(camera)
   world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)

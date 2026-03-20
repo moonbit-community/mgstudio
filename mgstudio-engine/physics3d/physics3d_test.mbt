@@ -32,9 +32,9 @@ test "physics3d: falling body collides and writes back transform" {
   cfg_res.insert(cfg_ref.val, tick)
   let floor = world.spawn()
   let ball = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     floor,
-    @math.Transform::from_xyz(0.0F, -1.0F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, -1.0F, 0.0F),
     tick,
   )
   get_rigid_body3d_store(world).insert(floor, RigidBody3d::fixed(), tick)
@@ -43,9 +43,9 @@ test "physics3d: falling body collides and writes back transform" {
     Collider3d::new(ColliderShape3d::cuboid(10.0F, 0.5F, 10.0F)),
     tick,
   )
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     ball,
-    @math.Transform::from_xyz(0.0F, 5.0F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, 5.0F, 0.0F),
     tick,
   )
   get_rigid_body3d_store(world).insert(ball, RigidBody3d::dynamic(), tick)
@@ -57,7 +57,7 @@ test "physics3d: falling body collides and writes back transform" {
   get_velocity3d_store(world).insert(ball, Velocity3d::zero(), tick)
   physics3d_clear_events_system(world)
   physics3d_sync_insertions_system(world)
-  let initial_y = @math.get_transform_store(world).get(ball).unwrap().translation.y
+  let initial_y = @transform.get_transform_store(world).get(ball).unwrap().translation.y
   let mut i = 0
   while i < 120 {
     physics3d_sync_world_to_rapier_system(world)
@@ -66,7 +66,7 @@ test "physics3d: falling body collides and writes back transform" {
     world.increment_change_tick() |> ignore
     i = i + 1
   }
-  let final_y = @math.get_transform_store(world).get(ball).unwrap().translation.y
+  let final_y = @transform.get_transform_store(world).get(ball).unwrap().translation.y
   inspect(final_y < initial_y, content="true")
 }
 
@@ -82,9 +82,9 @@ test "physics3d: sensor collision events are emitted" {
   cfg_res.insert(cfg_ref.val, tick)
   let floor = world.spawn()
   let ball = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     floor,
-    @math.Transform::from_xyz(0.0F, -1.0F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, -1.0F, 0.0F),
     tick,
   )
   get_rigid_body3d_store(world).insert(floor, RigidBody3d::fixed(), tick)
@@ -93,9 +93,9 @@ test "physics3d: sensor collision events are emitted" {
     Collider3d::new(ColliderShape3d::cuboid(10.0F, 0.5F, 10.0F)),
     tick,
   )
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     ball,
-    @math.Transform::from_xyz(0.0F, 5.0F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, 5.0F, 0.0F),
     tick,
   )
   get_rigid_body3d_store(world).insert(ball, RigidBody3d::dynamic(), tick)
@@ -136,9 +136,9 @@ test "physics3d: contact force events are emitted" {
   cfg_res.insert(cfg_ref.val, tick)
   let floor = world.spawn()
   let ball = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     floor,
-    @math.Transform::from_xyz(0.0F, -1.0F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, -1.0F, 0.0F),
     tick,
   )
   get_rigid_body3d_store(world).insert(floor, RigidBody3d::fixed(), tick)
@@ -147,9 +147,9 @@ test "physics3d: contact force events are emitted" {
     Collider3d::new(ColliderShape3d::cuboid(10.0F, 0.5F, 10.0F)),
     tick,
   )
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     ball,
-    @math.Transform::from_xyz(0.0F, 5.0F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, 5.0F, 0.0F),
     tick,
   )
   get_rigid_body3d_store(world).insert(ball, RigidBody3d::dynamic(), tick)
@@ -184,9 +184,9 @@ test "physics3d: active collision type and hook components are accepted" {
   physics3d_init_resources_system(world)
   let tick = world.read_change_tick()
   let body = world.spawn()
-  @math.get_transform_store(world).insert(
+  @transform.get_transform_store(world).insert(
     body,
-    @math.Transform::from_xyz(0.0F, 0.0F, 0.0F),
+    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
     tick,
   )
   get_rigid_body3d_store(world).insert(body, RigidBody3d::dynamic(), tick)

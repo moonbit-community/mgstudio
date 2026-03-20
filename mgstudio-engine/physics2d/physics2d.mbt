@@ -16,7 +16,7 @@
 /// Rapier-based 2D physics integration (Bevy-like, 2D-first).
 ///
 /// Note:
-/// - Physics v1 ignores `@math.Transform.scale`.
+/// - Physics v1 ignores `@transform.Transform.scale`.
 /// - For compound bodies, use `ColliderParent2d` (child colliders) or `ColliderShape2d::compound`.
 
 ///|
@@ -55,7 +55,7 @@ pub enum ColliderShape2d {
   ConvexPolygon(Array[@math.Vec2])
   TriMesh(Array[@math.Vec2], Array[(Int, Int, Int)])
   /// A compound shape composed of sub-shapes with local transforms.
-  Compound(Array[(@math.Transform, ColliderShape2d)])
+  Compound(Array[(@transform.Transform, ColliderShape2d)])
   /// Escape hatch: use a Rapier shape directly.
   Raw(@collision.Shape)
 }
@@ -125,7 +125,7 @@ pub fn ColliderShape2d::trimesh(
 
 ///|
 pub fn ColliderShape2d::compound(
-  parts : Array[(@math.Transform, ColliderShape2d)],
+  parts : Array[(@transform.Transform, ColliderShape2d)],
 ) -> ColliderShape2d {
   Compound(parts)
 }
@@ -158,7 +158,7 @@ pub fn Collider2d::sensor(self : Collider2d, sensor : Bool) -> Collider2d {
 /// on one entity and `Collider2d + ColliderParent2d` on another to create
 /// multi-collider rigid bodies.
 ///
-/// Note: The collider entity's `@math.Transform` is interpreted as the collider
+/// Note: The collider entity's `@transform.Transform` is interpreted as the collider
 /// pose relative to the parent body.
 pub struct ColliderParent2d {
   parent : @core.Entity

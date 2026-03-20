@@ -62,7 +62,7 @@ let perlin_permutation_table : Array[Int] = [
 ///|
 priv struct CameraShakeState {
   trauma : Float
-  original_transform : @math.Transform
+  original_transform : @transform.Transform
 }
 
 ///|
@@ -86,7 +86,7 @@ let camera_shake_config_key : @ecs.ComponentKey[CameraShakeConfig] = @ecs.regist
 
 ///|
 impl Default for CameraShakeState with default() {
-  { trauma: 0.0F, original_transform: @math.Transform::identity() }
+  { trauma: 0.0F, original_transform: @transform.Transform::identity() }
 }
 
 ///|
@@ -160,7 +160,7 @@ fn spawn_ui_text_handle(
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
     @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   )
   .with_color(@text.TextColor::new(color))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -175,7 +175,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let camera_entity = @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(camera_shake_config_key)
@@ -197,28 +197,28 @@ fn setup_scene(world : @ecs.World) -> Unit {
   @sprite.Mesh2dBundle::new(
     @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(1000.0F, 700.0F)),
     @sprite.ColorMaterial::new(@sprite.Color::srgb(0.2F, 0.2F, 0.3F)),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   @sprite.Mesh2dBundle::new(
     @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(50.0F, 100.0F)),
     @sprite.ColorMaterial::new(@sprite.Color::srgb(0.25F, 0.94F, 0.91F)),
-    @math.Transform::from_xyz(0.0F, 0.0F, 2.0F),
+    @transform.Transform::from_xyz(0.0F, 0.0F, 2.0F),
   ).spawn(world)
   |> ignore
 
   @sprite.Mesh2dBundle::new(
     @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(50.0F, 50.0F)),
     @sprite.ColorMaterial::new(@sprite.Color::srgb(0.85F, 0.0F, 0.2F)),
-    @math.Transform::from_xyz(-450.0F, 200.0F, 2.0F),
+    @transform.Transform::from_xyz(-450.0F, 200.0F, 2.0F),
   ).spawn(world)
   |> ignore
 
   @sprite.Mesh2dBundle::new(
     @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(70.0F, 50.0F)),
     @sprite.ColorMaterial::new(@sprite.Color::srgb(0.5F, 0.8F, 0.2F)),
-    @math.Transform::from_xyz(450.0F, -150.0F, 2.0F),
+    @transform.Transform::from_xyz(450.0F, -150.0F, 2.0F),
   ).spawn(world)
   |> ignore
 }
@@ -268,7 +268,7 @@ fn setup_instructions(world : @ecs.World) -> Unit {
 fn reset_transform(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let state_store = world.component(camera_shake_state_key)
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   state_store.for_each(fn(entity, camera_shake) {
     if transform_store.contains(entity) {
       transform_store.set(entity, camera_shake.original_transform, tick)
@@ -316,7 +316,7 @@ fn shake_camera(world : @ecs.World) -> Unit {
   let delta_seconds = time.delta_seconds()
   let config_store = world.component(camera_shake_config_key)
   let state_store = world.component(camera_shake_state_key)
-  let transform_store = world.component(@math.ecs_key_transform)
+  let transform_store = world.component(@transform.ecs_key_transform)
   config_store.for_each(fn(entity, config) {
     guard state_store.get(entity) is Some(camera_shake) else { return }
     guard transform_store.get(entity) is Some(transform) else { return }

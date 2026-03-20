@@ -124,7 +124,7 @@ fn setup(world : @ecs.World) -> Unit {
   // UI camera.
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -180,7 +180,7 @@ fn setup(world : @ecs.World) -> Unit {
   let label_handle = @text.Text2dBundle::new(
       @text.Text2d::new("Button"),
       @text.TextFont::default().with_font(font).with_font_size(33.0F),
-      @math.Transform::identity(),
+      @transform.Transform::identity(),
     )
     .with_color(
       @text.TextColor::new(@sprite.Color::new(0.9F, 0.9F, 0.9F, 1.0F)),

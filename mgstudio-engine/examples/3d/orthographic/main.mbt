@@ -31,7 +31,7 @@ fn setup(world : @ecs.World) -> Unit {
   @pbr.Camera3dBundle::new_with_projection(
     @sprite.Camera::default(),
     projection,
-    @math.Transform::from_xyz(5.0F, 5.0F, 5.0F).looking_at(
+    @transform.Transform::from_xyz(5.0F, 5.0F, 5.0F).looking_at(
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
@@ -47,7 +47,7 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    @math.Transform::identity(),
+    @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
@@ -60,28 +60,28 @@ fn setup(world : @ecs.World) -> Unit {
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     @pbr.MeshMaterial3d::new(cube_material),
-    @math.Transform::from_xyz(1.5F, 0.5F, 1.5F),
+    @transform.Transform::from_xyz(1.5F, 0.5F, 1.5F),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     @pbr.MeshMaterial3d::new(cube_material),
-    @math.Transform::from_xyz(1.5F, 0.5F, -1.5F),
+    @transform.Transform::from_xyz(1.5F, 0.5F, -1.5F),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     @pbr.MeshMaterial3d::new(cube_material),
-    @math.Transform::from_xyz(-1.5F, 0.5F, 1.5F),
+    @transform.Transform::from_xyz(-1.5F, 0.5F, 1.5F),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
     @pbr.MeshMaterial3d::new(cube_material),
-    @math.Transform::from_xyz(-1.5F, 0.5F, -1.5F),
+    @transform.Transform::from_xyz(-1.5F, 0.5F, -1.5F),
   ).spawn(world)
   |> ignore
 
@@ -90,8 +90,8 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@pbr.ecs_key_point_light)
   .insert(light, @pbr.PointLight::default(), tick)
   world
-  .component(@math.ecs_key_transform)
-  .insert(light, @math.Transform::from_xyz(3.0F, 8.0F, 5.0F), tick)
+  .component(@transform.ecs_key_transform)
+  .insert(light, @transform.Transform::from_xyz(3.0F, 8.0F, 5.0F), tick)
 }
 
 ///|
