@@ -142,8 +142,6 @@ pub fn render2d_camera_viewport_to_world_2d(@math.Vec2, Camera, OrthographicProj
 
 pub fn render2d_camera_world_to_viewport_2d(@math.Vec2, Camera, OrthographicProjection, @math.Transform, @math.IVec2, Float) -> @math.Vec2?
 
-pub fn render2d_clear_overlay_sprite_texture_slices(@ecs.World) -> Unit
-
 pub fn render2d_clear_overlay_sprites(@ecs.World) -> Unit
 
 pub fn render2d_clear_overlay_ui_box_shadows(@ecs.World) -> Unit
@@ -952,6 +950,7 @@ pub(all) enum SpriteImageMode {
 pub fn SpriteImageMode::default() -> Self
 pub fn SpriteImageMode::scale(scaling_mode? : SpriteScalingMode) -> Self
 pub fn SpriteImageMode::tiled(tile_x? : Bool, tile_y? : Bool, stretch_value? : Float) -> Self
+pub fn SpriteImageMode::uses_slices(Self) -> Bool
 
 pub(all) enum SpriteScalingMode {
   FillCenter
@@ -974,12 +973,20 @@ pub fn SpriteTiling::with_stretch_value(Self, Float) -> Self
 pub fn SpriteTiling::with_tile_x(Self, Bool) -> Self
 pub fn SpriteTiling::with_tile_y(Self, Bool) -> Self
 
+pub struct TextureSlice {
+  texture_rect : @math.Rect
+  draw_size : @math.Vec2
+  offset : @math.Vec2
+}
+pub fn TextureSlice::tiled(Self, Float, (Bool, Bool)) -> Array[Self]
+
 pub struct TextureSlicer {
   border : BorderRect
   center_scale_mode : SliceScaleMode
   sides_scale_mode : SliceScaleMode
   max_corner_scale : Float
 }
+pub fn TextureSlicer::compute_slices(Self, @math.Rect, @math.Vec2?) -> Array[TextureSlice]
 pub fn TextureSlicer::default() -> Self
 pub fn TextureSlicer::new(BorderRect) -> Self
 pub fn TextureSlicer::with_center_scale_mode(Self, SliceScaleMode) -> Self

@@ -228,269 +228,6 @@ pub fn Viewport::default() -> Viewport {
 }
 
 ///|
-
-///|
-pub(all) struct Sprite {
-  mut image : @asset.Handle[@asset.Image]
-  mut texture_atlas : @asset.TextureAtlas?
-  mut color : Color
-  mut flip_x : Bool
-  mut flip_y : Bool
-  mut custom_size : @math.Vec2?
-  mut rect : @math.Rect?
-  mut image_mode : SpriteImageMode
-}
-
-///|
-pub struct BorderRect {
-  left : Float
-  right : Float
-  top : Float
-  bottom : Float
-}
-
-///|
-pub fn BorderRect::new(
-  left : Float,
-  right : Float,
-  top : Float,
-  bottom : Float,
-) -> BorderRect {
-  BorderRect::{ left, right, top, bottom }
-}
-
-///|
-pub fn BorderRect::square(value : Float) -> BorderRect {
-  BorderRect::{ left: value, right: value, top: value, bottom: value }
-}
-
-///|
-pub fn BorderRect::default() -> BorderRect {
-  BorderRect::square(0.0F)
-}
-
-///|
-pub(all) enum SliceScaleMode {
-  Stretch
-  Tile(Float)
-}
-
-///|
-pub fn SliceScaleMode::default() -> SliceScaleMode {
-  SliceScaleMode::Stretch
-}
-
-///|
-pub(all) enum SpriteScalingMode {
-  FillCenter
-  FillStart
-  FillEnd
-  FitCenter
-  FitStart
-  FitEnd
-}
-
-///|
-pub fn SpriteScalingMode::default() -> SpriteScalingMode {
-  SpriteScalingMode::FillCenter
-}
-
-///|
-pub struct SpriteTiling {
-  tile_x : Bool
-  tile_y : Bool
-  stretch_value : Float
-}
-
-///|
-pub fn SpriteTiling::new(
-  tile_x : Bool,
-  tile_y : Bool,
-  stretch_value : Float,
-) -> SpriteTiling {
-  SpriteTiling::{ tile_x, tile_y, stretch_value }
-}
-
-///|
-pub fn SpriteTiling::default() -> SpriteTiling {
-  SpriteTiling::new(true, true, 1.0F)
-}
-
-///|
-pub fn SpriteTiling::with_tile_x(
-  self : SpriteTiling,
-  tile_x : Bool,
-) -> SpriteTiling {
-  SpriteTiling::{ ..self, tile_x, }
-}
-
-///|
-pub fn SpriteTiling::with_tile_y(
-  self : SpriteTiling,
-  tile_y : Bool,
-) -> SpriteTiling {
-  SpriteTiling::{ ..self, tile_y, }
-}
-
-///|
-pub fn SpriteTiling::with_stretch_value(
-  self : SpriteTiling,
-  stretch_value : Float,
-) -> SpriteTiling {
-  SpriteTiling::{ ..self, stretch_value, }
-}
-
-///|
-pub struct TextureSlicer {
-  border : BorderRect
-  center_scale_mode : SliceScaleMode
-  sides_scale_mode : SliceScaleMode
-  max_corner_scale : Float
-}
-
-///|
-pub fn TextureSlicer::new(border : BorderRect) -> TextureSlicer {
-  TextureSlicer::{
-    border,
-    center_scale_mode: SliceScaleMode::Stretch,
-    sides_scale_mode: SliceScaleMode::Stretch,
-    max_corner_scale: 1.0F,
-  }
-}
-
-///|
-pub fn TextureSlicer::default() -> TextureSlicer {
-  TextureSlicer::new(BorderRect::default())
-}
-
-///|
-pub fn TextureSlicer::with_center_scale_mode(
-  self : TextureSlicer,
-  center_scale_mode : SliceScaleMode,
-) -> TextureSlicer {
-  TextureSlicer::{ ..self, center_scale_mode, }
-}
-
-///|
-pub fn TextureSlicer::with_sides_scale_mode(
-  self : TextureSlicer,
-  sides_scale_mode : SliceScaleMode,
-) -> TextureSlicer {
-  TextureSlicer::{ ..self, sides_scale_mode, }
-}
-
-///|
-pub fn TextureSlicer::with_max_corner_scale(
-  self : TextureSlicer,
-  max_corner_scale : Float,
-) -> TextureSlicer {
-  TextureSlicer::{ ..self, max_corner_scale, }
-}
-
-///|
-pub(all) enum SpriteImageMode {
-  Auto
-  Scale(SpriteScalingMode)
-  Sliced(TextureSlicer)
-  Tiled(SpriteTiling)
-}
-
-///|
-pub fn SpriteImageMode::default() -> SpriteImageMode {
-  SpriteImageMode::Auto
-}
-
-///|
-pub fn SpriteImageMode::scale(
-  scaling_mode? : SpriteScalingMode = SpriteScalingMode::FillCenter,
-) -> SpriteImageMode {
-  SpriteImageMode::Scale(scaling_mode)
-}
-
-///|
-fn sprite_image_mode_uses_slices(mode : SpriteImageMode) -> Bool {
-  match mode {
-    SpriteImageMode::Sliced(_) => true
-    _ => false
-  }
-}
-
-///|
-pub fn SpriteImageMode::tiled(
-  tile_x? : Bool = true,
-  tile_y? : Bool = true,
-  stretch_value? : Float = 1.0F,
-) -> SpriteImageMode {
-  SpriteImageMode::Tiled(SpriteTiling::new(tile_x, tile_y, stretch_value))
-}
-
-///|
-pub fn Sprite::from_image(image : @asset.Handle[@asset.Image]) -> Sprite {
-  Sprite::{
-    image,
-    texture_atlas: None,
-    color: Color::white(),
-    flip_x: false,
-    flip_y: false,
-    custom_size: None,
-    rect: None,
-    image_mode: SpriteImageMode::Auto,
-  }
-}
-
-///|
-pub fn Sprite::from_atlas_image(
-  image : @asset.Handle[@asset.Image],
-  atlas : @asset.TextureAtlas,
-) -> Sprite {
-  Sprite::{ ..Sprite::from_image(image), texture_atlas: Some(atlas) }
-}
-
-///|
-pub fn Sprite::with_texture_atlas(
-  self : Sprite,
-  texture_atlas : @asset.TextureAtlas?,
-) -> Sprite {
-  Sprite::{ ..self, texture_atlas, }
-}
-
-///|
-pub fn Sprite::with_color(self : Sprite, color : Color) -> Sprite {
-  Sprite::{ ..self, color, }
-}
-
-///|
-pub fn Sprite::with_flip_x(self : Sprite, flip_x : Bool) -> Sprite {
-  Sprite::{ ..self, flip_x, }
-}
-
-///|
-pub fn Sprite::with_flip_y(self : Sprite, flip_y : Bool) -> Sprite {
-  Sprite::{ ..self, flip_y, }
-}
-
-///|
-pub fn Sprite::with_custom_size(
-  self : Sprite,
-  custom_size : @math.Vec2?,
-) -> Sprite {
-  Sprite::{ ..self, custom_size, }
-}
-
-///|
-pub fn Sprite::with_rect(self : Sprite, rect : @math.Rect?) -> Sprite {
-  Sprite::{ ..self, rect, }
-}
-
-///|
-pub fn Sprite::with_image_mode(
-  self : Sprite,
-  image_mode : SpriteImageMode,
-) -> Sprite {
-  Sprite::{ ..self, image_mode, }
-}
-
-///|
 /// A per-entity scissor rectangle in *logical* pixels, relative to the active
 /// camera's view (top-left origin).
 ///
@@ -3575,6 +3312,9 @@ fn render2d_bevy_shader_asset_paths() -> Array[String] {
     SPRITE_SHADER_PATH,
     SPRITE_VIEW_BINDINGS_PATH,
     "shaders/bevy_post_process/bloom/bloom.wgsl",
+    "shaders/bevy_ui_render/ui.wgsl",
+    "shaders/bevy_ui_render/box_shadow.wgsl",
+    "shaders/bevy_ui_render/ui_texture_slice.wgsl",
     "shaders/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl",
     "shaders/bevy_sprite_render/mesh2d/mesh2d_types.wgsl",
     "shaders/bevy_sprite_render/mesh2d/mesh2d_vertex_output.wgsl",
@@ -3778,27 +3518,6 @@ priv struct ExtractedSprite {
 }
 
 ///|
-priv struct SpriteTextureSliceDrawPayload {
-  transform : @math.Transform
-  anchor_offset : @math.Vec2
-  draw_scale : @math.Vec2
-  color : Color
-  texture : @asset.Handle[@asset.Image]
-  layers : RenderLayers
-  scissor : @math.Rect?
-  texture_slices : @math.Vec4
-  target_slices : @math.Vec4
-  repeat : @math.Vec4
-  atlas_rect : @math.Vec4
-}
-
-///|
-priv struct ExtractedSpriteTextureSlice {
-  entity : PhaseEntityRef
-  payload : SpriteTextureSliceDrawPayload
-}
-
-///|
 priv struct UiRectDrawPayload {
   transform : @math.Transform
   anchor_offset : @math.Vec2
@@ -3930,7 +3649,6 @@ struct RenderState {
   mut tonemapping_lut_handles : TonemappingLutHandles?
   sprites : Array[ExtractedSprite]
   extra_sprites : Array[ExtractedSprite]
-  extra_sprite_texture_slices : Array[ExtractedSpriteTextureSlice]
   extra_ui_rects : Array[ExtractedUiRect]
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow]
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice]
@@ -3958,7 +3676,6 @@ fn RenderState::new() -> RenderState {
     tonemapping_lut_handles: None,
     sprites: [],
     extra_sprites: [],
-    extra_sprite_texture_slices: [],
     extra_ui_rects: [],
     extra_ui_box_shadows: [],
     extra_ui_texture_slices: [],
@@ -4355,372 +4072,128 @@ fn sprite_uv_from_sprite(sprite : Sprite) -> SpriteUvInfo? {
 }
 
 ///|
-fn sprite_abs_float(value : Float) -> Float {
+fn sprite_sign(value : Float) -> Float {
   if value < 0.0F {
-    -value
+    -1.0F
   } else {
-    value
-  }
-}
-
-///|
-fn clamp_stretch_value(v : Float) -> Float {
-  if v < 0.001F {
-    0.001F
-  } else {
-    v
-  }
-}
-
-///|
-fn min3(a : Float, b : Float, c : Float) -> Float {
-  let ab = if a < b { a } else { b }
-  if ab < c {
-    ab
-  } else {
-    c
-  }
-}
-
-///|
-fn compute_tiled_subaxis(
-  image_extent : Float,
-  target_extent : Float,
-  mode : SliceScaleMode,
-) -> Float {
-  match mode {
-    SliceScaleMode::Stretch => 1.0F
-    SliceScaleMode::Tile(stretch_value) => {
-      let denom = image_extent * clamp_stretch_value(stretch_value)
-      if denom == 0.0F {
-        1.0F
-      } else {
-        target_extent / denom
-      }
-    }
-  }
-}
-
-///|
-fn tiled_repeat_factor(draw_scale_axis : Float, stretch_value : Float) -> Float {
-  let safe_stretch = clamp_stretch_value(stretch_value)
-  let draw_abs = sprite_abs_float(draw_scale_axis)
-  if draw_abs < 0.000001F {
     1.0F
+  }
+}
+
+///|
+fn sprite_rotate_offset(offset : @math.Vec2, rotation : Float) -> @math.Vec2 {
+  let cosv = @math.cos(rotation)
+  let sinv = @math.sin(rotation)
+  @math.Vec2::new(
+    offset.x * cosv - offset.y * sinv,
+    offset.x * sinv + offset.y * cosv,
+  )
+}
+
+///|
+fn sprite_slice_uv_axis(
+  uv_min : Float,
+  uv_max : Float,
+  slice_min : Float,
+  slice_max : Float,
+  region_extent : Float,
+) -> (Float, Float) {
+  if region_extent == 0.0F {
+    (uv_min, uv_max)
   } else {
-    draw_abs / safe_stretch
+    let span = uv_max - uv_min
+    (
+      uv_min + span * (slice_min / region_extent),
+      uv_min + span * (slice_max / region_extent),
+    )
   }
 }
 
 ///|
-fn apply_tiled_sprite_image_mode(
+fn append_computed_sprite_slices(
+  sprites : Array[ExtractedSprite],
+  entity : @core.Entity,
+  sprite : Sprite,
+  anchor : Anchor,
+  transform : @math.Transform,
+  layers : RenderLayers,
+  scissor : @math.Rect?,
   uv_min : @math.Vec2,
   uv_max : @math.Vec2,
-  draw_scale : @math.Vec2,
-  image_mode : SpriteImageMode,
-) -> (@math.Vec2, @math.Vec2, @math.Vec2, @math.Vec2, Bool) {
-  match image_mode {
-    SpriteImageMode::Tiled(tiling) => {
-      let repeat_x = if tiling.tile_x {
-        tiled_repeat_factor(draw_scale.x, tiling.stretch_value)
-      } else {
-        1.0F
-      }
-      let repeat_y = if tiling.tile_y {
-        tiled_repeat_factor(draw_scale.y, tiling.stretch_value)
-      } else {
-        1.0F
-      }
-      let uv_span_x = uv_max.x - uv_min.x
-      let uv_span_y = uv_max.y - uv_min.y
-      let next_uv_max = @math.Vec2::new(
-        uv_min.x + uv_span_x * repeat_x,
-        uv_min.y + uv_span_y * repeat_y,
-      )
-      let next_draw_scale = @math.Vec2::new(
-        if tiling.tile_x {
-          draw_scale.x / repeat_x
-        } else {
-          draw_scale.x
-        },
-        if tiling.tile_y {
-          draw_scale.y / repeat_y
-        } else {
-          draw_scale.y
-        },
-      )
-      (uv_min, next_uv_max, next_draw_scale, @math.Vec2::new(0.0F, 0.0F), true)
-    }
-    _ => (uv_min, uv_max, draw_scale, @math.Vec2::new(0.0F, 0.0F), false)
-  }
-}
-
-///|
-fn apply_scale_sprite_image_mode(
-  uv_min : @math.Vec2,
-  uv_max : @math.Vec2,
-  draw_scale : @math.Vec2,
   region_size : @math.Vec2,
-  scaling_mode : SpriteScalingMode,
-) -> (@math.Vec2, @math.Vec2, @math.Vec2, @math.Vec2) {
-  let region_w = sprite_abs_float(region_size.x)
-  let region_h = sprite_abs_float(region_size.y)
-  if region_w <= 0.0F || region_h <= 0.0F {
-    return (uv_min, uv_max, draw_scale, @math.Vec2::new(0.0F, 0.0F))
+) -> Bool {
+  guard compute_sprite_slices(sprite, region_size) is Some(computed_slices) else {
+    return false
   }
-  let draw_sign_x = if draw_scale.x < 0.0F { -1.0F } else { 1.0F }
-  let draw_sign_y = if draw_scale.y < 0.0F { -1.0F } else { 1.0F }
-  let mut target_size = @math.Vec2::new(
-    sprite_abs_float(draw_scale.x) * region_w,
-    sprite_abs_float(draw_scale.y) * region_h,
-  )
-  if target_size.x <= 0.0F || target_size.y <= 0.0F {
-    return (uv_min, uv_max, draw_scale, @math.Vec2::new(0.0F, 0.0F))
+  let base_size = match sprite.custom_size {
+    Some(size) => size
+    None => region_size
   }
-
-  let texture_ratio = region_w / region_h
-  let quad_ratio = target_size.x / target_size.y
-  if texture_ratio <= 0.0F || quad_ratio <= 0.0F {
-    return (uv_min, uv_max, draw_scale, @math.Vec2::new(0.0F, 0.0F))
-  }
-
-  let tex_quad_scale = texture_ratio / quad_ratio
-  let quad_tex_scale = quad_ratio / texture_ratio
-  let mut uv_offset_scale = @math.Vec4::new(
-    uv_min.x,
-    uv_min.y,
-    uv_max.x - uv_min.x,
-    uv_max.y - uv_min.y,
+  let extracted_slices = computed_slices.extract_slices(
+    sprite,
+    anchor,
+    @math.Vec2::new(transform.scale.x, transform.scale.y),
+    base_size,
   )
-  let mut local_offset_target = @math.Vec2::new(0.0F, 0.0F)
-
-  match scaling_mode {
-    FillCenter =>
-      if quad_ratio > texture_ratio {
-        uv_offset_scale = @math.Vec4::new(
-          uv_offset_scale.x,
-          uv_offset_scale.y +
-          (uv_offset_scale.w - uv_offset_scale.w * tex_quad_scale) * 0.5F,
-          uv_offset_scale.z,
-          uv_offset_scale.w * tex_quad_scale,
-        )
+  let rotation = transform.rotation_z()
+  let sign_x = sprite_sign(transform.scale.x)
+  let sign_y = sprite_sign(transform.scale.y)
+  for slice in extracted_slices {
+    let slice_size = @math.Vec2::new(
+      slice.texture_rect.max.x - slice.texture_rect.min.x,
+      slice.texture_rect.max.y - slice.texture_rect.min.y,
+    )
+    let (slice_uv_min_x, slice_uv_max_x) = sprite_slice_uv_axis(
+      uv_min.x,
+      uv_max.x,
+      slice.texture_rect.min.x,
+      slice.texture_rect.max.x,
+      region_size.x,
+    )
+    let (slice_uv_min_y, slice_uv_max_y) = sprite_slice_uv_axis(
+      uv_min.y,
+      uv_max.y,
+      slice.texture_rect.min.y,
+      slice.texture_rect.max.y,
+      region_size.y,
+    )
+    let world_offset = sprite_rotate_offset(slice.offset, rotation)
+    let draw_scale = @math.Vec2::new(
+      if slice_size.x == 0.0F {
+        1.0F * sign_x
       } else {
-        uv_offset_scale = @math.Vec4::new(
-          uv_offset_scale.x +
-          (uv_offset_scale.z - uv_offset_scale.z * quad_tex_scale) * 0.5F,
-          uv_offset_scale.y,
-          uv_offset_scale.z * quad_tex_scale,
-          uv_offset_scale.w,
-        )
-      }
-    FillStart =>
-      if quad_ratio > texture_ratio {
-        uv_offset_scale = @math.Vec4::new(
-          uv_offset_scale.x,
-          uv_offset_scale.y +
-          uv_offset_scale.w -
-          uv_offset_scale.w * tex_quad_scale,
-          uv_offset_scale.z,
-          uv_offset_scale.w * tex_quad_scale,
-        )
+        sign_x * slice.draw_size.x / slice_size.x
+      },
+      if slice_size.y == 0.0F {
+        1.0F * sign_y
       } else {
-        uv_offset_scale = @math.Vec4::new(
-          uv_offset_scale.x,
-          uv_offset_scale.y,
-          uv_offset_scale.z * quad_tex_scale,
-          uv_offset_scale.w,
-        )
-      }
-    FillEnd =>
-      if quad_ratio > texture_ratio {
-        uv_offset_scale = @math.Vec4::new(
-          uv_offset_scale.x,
-          uv_offset_scale.y,
-          uv_offset_scale.z,
-          uv_offset_scale.w * tex_quad_scale,
-        )
-      } else {
-        uv_offset_scale = @math.Vec4::new(
-          uv_offset_scale.x +
-          uv_offset_scale.z -
-          uv_offset_scale.z * quad_tex_scale,
-          uv_offset_scale.y,
-          uv_offset_scale.z * quad_tex_scale,
-          uv_offset_scale.w,
-        )
-      }
-    FitCenter =>
-      if texture_ratio > quad_ratio {
-        target_size = @math.Vec2::new(
-          target_size.x,
-          target_size.x / texture_ratio,
-        )
-      } else {
-        target_size = @math.Vec2::new(
-          target_size.y * texture_ratio,
-          target_size.y,
-        )
-      }
-    FitStart =>
-      if texture_ratio > quad_ratio {
-        let new_quad = @math.Vec2::new(
-          target_size.x,
-          target_size.x / texture_ratio,
-        )
-        let offset = @math.Vec2::new(
-          target_size.x - new_quad.x,
-          target_size.y - new_quad.y,
-        )
-        local_offset_target = @math.Vec2::new(0.0F, -offset.y)
-        target_size = new_quad
-      } else {
-        let new_quad = @math.Vec2::new(
-          target_size.y * texture_ratio,
-          target_size.y,
-        )
-        let offset = @math.Vec2::new(
-          target_size.x - new_quad.x,
-          target_size.y - new_quad.y,
-        )
-        local_offset_target = @math.Vec2::new(offset.x, 0.0F)
-        target_size = new_quad
-      }
-    FitEnd =>
-      if texture_ratio > quad_ratio {
-        let new_quad = @math.Vec2::new(
-          target_size.x,
-          target_size.x / texture_ratio,
-        )
-        let offset = @math.Vec2::new(
-          target_size.x - new_quad.x,
-          target_size.y - new_quad.y,
-        )
-        local_offset_target = @math.Vec2::new(0.0F, offset.y)
-        target_size = new_quad
-      } else {
-        let new_quad = @math.Vec2::new(
-          target_size.y * texture_ratio,
-          target_size.y,
-        )
-        let offset = @math.Vec2::new(
-          target_size.x - new_quad.x,
-          target_size.y - new_quad.y,
-        )
-        local_offset_target = @math.Vec2::new(-offset.x, 0.0F)
-        target_size = new_quad
-      }
-  }
-
-  let next_draw_scale = @math.Vec2::new(
-    draw_sign_x * target_size.x / region_w,
-    draw_sign_y * target_size.y / region_h,
-  )
-  let local_offset = @math.Vec2::new(
-    local_offset_target.x / region_w,
-    local_offset_target.y / region_h,
-  )
-  (
-    @math.Vec2::new(uv_offset_scale.x, uv_offset_scale.y),
-    @math.Vec2::new(
-      uv_offset_scale.x + uv_offset_scale.z,
-      uv_offset_scale.y + uv_offset_scale.w,
-    ),
-    next_draw_scale,
-    local_offset,
-  )
-}
-
-///|
-fn apply_sprite_image_mode(
-  uv_min : @math.Vec2,
-  uv_max : @math.Vec2,
-  draw_scale : @math.Vec2,
-  region_size : @math.Vec2,
-  image_mode : SpriteImageMode,
-  has_custom_size : Bool,
-) -> (@math.Vec2, @math.Vec2, @math.Vec2, @math.Vec2, Bool) {
-  match image_mode {
-    SpriteImageMode::Scale(scaling_mode) =>
-      if has_custom_size {
-        let (scaled_uv_min, scaled_uv_max, scaled_draw_scale, local_offset) = apply_scale_sprite_image_mode(
-          uv_min, uv_max, draw_scale, region_size, scaling_mode,
-        )
-        (scaled_uv_min, scaled_uv_max, scaled_draw_scale, local_offset, false)
-      } else {
-        (uv_min, uv_max, draw_scale, @math.Vec2::new(0.0F, 0.0F), false)
-      }
-    _ => apply_tiled_sprite_image_mode(uv_min, uv_max, draw_scale, image_mode)
-  }
-}
-
-///|
-fn compute_sprite_texture_slices(
-  image_size : @math.Vec2,
-  target_size : @math.Vec2,
-  mode : SpriteImageMode,
-) -> (@math.Vec4, @math.Vec4, @math.Vec4) {
-  match mode {
-    SpriteImageMode::Sliced(slicer) => {
-      let denom_x = if image_size.x == 0.0F { 1.0F } else { image_size.x }
-      let denom_y = if image_size.y == 0.0F { 1.0F } else { image_size.y }
-      let tdenom_x = if target_size.x == 0.0F { 1.0F } else { target_size.x }
-      let tdenom_y = if target_size.y == 0.0F { 1.0F } else { target_size.y }
-      let min_coeff = min3(
-        target_size.x / denom_x,
-        target_size.y / denom_y,
-        slicer.max_corner_scale,
-      )
-      let slices = @math.Vec4::new(
-        slicer.border.left / denom_x,
-        slicer.border.top / denom_y,
-        1.0F - slicer.border.right / denom_x,
-        1.0F - slicer.border.bottom / denom_y,
-      )
-      let border = @math.Vec4::new(
-        slicer.border.left / tdenom_x * min_coeff,
-        slicer.border.top / tdenom_y * min_coeff,
-        1.0F - slicer.border.right / tdenom_x * min_coeff,
-        1.0F - slicer.border.bottom / tdenom_y * min_coeff,
-      )
-      let image_side_width = denom_x * (slices.z - slices.x)
-      let image_side_height = denom_y * (slices.w - slices.y)
-      let target_side_width = tdenom_x * (border.z - border.x)
-      let target_side_height = tdenom_y * (border.w - border.y)
-      let repeat_side_x = compute_tiled_subaxis(
-        image_side_width,
-        target_side_width,
-        slicer.sides_scale_mode,
-      )
-      let repeat_side_y = compute_tiled_subaxis(
-        image_side_height,
-        target_side_height,
-        slicer.sides_scale_mode,
-      )
-      let repeat_center_x = compute_tiled_subaxis(
-        image_side_width,
-        target_side_width,
-        slicer.center_scale_mode,
-      )
-      let repeat_center_y = compute_tiled_subaxis(
-        image_side_height,
-        target_side_height,
-        slicer.center_scale_mode,
-      )
-      (
-        slices,
-        border,
-        @math.Vec4::new(
-          repeat_side_x, repeat_side_y, repeat_center_x, repeat_center_y,
+        sign_y * slice.draw_size.y / slice_size.y
+      },
+    )
+    sprites.push(
+      extracted_sprite_item(
+        entity,
+        @math.Transform::from_xy_rotation_scale(
+          @math.Vec2::new(
+            transform.translation.x + world_offset.x,
+            transform.translation.y + world_offset.y,
+          ),
+          rotation,
+          @math.Vec2::new(1.0F, 1.0F),
+          z=transform.translation.z,
         ),
-      )
-    }
-    _ =>
-      (
-        @math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F),
-        @math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F),
-        @math.Vec4::new(1.0F, 1.0F, 1.0F, 1.0F),
-      )
+        @math.Vec2::new(0.0F, 0.0F),
+        draw_scale,
+        sprite.color,
+        sprite.image,
+        layers,
+        @math.Vec2::new(slice_uv_min_x, slice_uv_min_y),
+        @math.Vec2::new(slice_uv_max_x, slice_uv_max_y),
+        scissor,
+      ),
+    )
   }
+  true
 }
 
 ///|
@@ -4844,14 +4317,6 @@ pub fn Mesh2dBundle::spawn(
 ///|
 pub fn render2d_clear_overlay_sprites(world : @ecs.World) -> Unit {
   render_state_update(world, fn(rs) { rs.val.extra_sprites.clear() }) |> ignore
-}
-
-///|
-pub fn render2d_clear_overlay_sprite_texture_slices(world : @ecs.World) -> Unit {
-  render_state_update(world, fn(rs) {
-    rs.val.extra_sprite_texture_slices.clear()
-  })
-  |> ignore
 }
 
 ///|
@@ -5916,33 +5381,18 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
           ),
         )
       }
-      if sprite_image_mode_uses_slices(sprite.image_mode) {
-        let target_size = @math.Vec2::new(
-          sprite_abs_float(draw_scale.x),
-          sprite_abs_float(draw_scale.y),
-        )
-        let (texture_slices, target_slices, repeat) = compute_sprite_texture_slices(
+      if !append_computed_sprite_slices(
+          rs.val.sprites,
+          entity,
+          sprite,
+          anchor,
+          transform,
+          layers,
+          scissor,
+          uv_min,
+          uv_max,
           region_size,
-          target_size,
-          sprite.image_mode,
-        )
-        rs.val.extra_sprite_texture_slices.push(ExtractedSpriteTextureSlice::{
-          entity: phase_entity_ref_for_main(entity),
-          payload: SpriteTextureSliceDrawPayload::{
-            transform,
-            anchor_offset,
-            draw_scale,
-            color: sprite.color,
-            texture: sprite.image,
-            layers,
-            scissor,
-            texture_slices,
-            target_slices,
-            repeat,
-            atlas_rect: @math.Vec4::new(uv_min.x, uv_min.y, uv_max.x, uv_max.y),
-          },
-        })
-      } else {
+        ) {
         rs.val.sprites.push(ExtractedSprite::{
           entity: phase_entity_ref_for_main(entity),
           payload: SpriteDrawPayload::{
@@ -6159,33 +5609,18 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
           ),
         )
       }
-      if sprite_image_mode_uses_slices(sprite.image_mode) {
-        let target_size = @math.Vec2::new(
-          sprite_abs_float(draw_scale.x),
-          sprite_abs_float(draw_scale.y),
-        )
-        let (texture_slices, target_slices, repeat) = compute_sprite_texture_slices(
+      if !append_computed_sprite_slices(
+          rs.val.sprites,
+          entity,
+          sprite,
+          anchor,
+          transform,
+          layers,
+          scissor,
+          uv_min,
+          uv_max,
           region_size,
-          target_size,
-          sprite.image_mode,
-        )
-        rs.val.extra_sprite_texture_slices.push(ExtractedSpriteTextureSlice::{
-          entity: phase_entity_ref_for_main(entity),
-          payload: SpriteTextureSliceDrawPayload::{
-            transform,
-            anchor_offset,
-            draw_scale,
-            color: sprite.color,
-            texture: sprite.image,
-            layers,
-            scissor,
-            texture_slices,
-            target_slices,
-            repeat,
-            atlas_rect: @math.Vec4::new(uv_min.x, uv_min.y, uv_max.x, uv_max.y),
-          },
-        })
-      } else {
+        ) {
         rs.val.sprites.push(ExtractedSprite::{
           entity: phase_entity_ref_for_main(entity),
           payload: SpriteDrawPayload::{
@@ -6307,7 +5742,6 @@ pub fn render_queue_system(world : @ecs.World) -> Unit {
         material_runtime_registry,
         rs.val.sprites,
         rs.val.extra_sprites,
-        rs.val.extra_sprite_texture_slices,
         rs.val.extra_ui_rects,
         rs.val.extra_ui_box_shadows,
         rs.val.extra_ui_texture_slices,
@@ -6419,7 +5853,6 @@ fn[M] append_material2d_mesh_draw_items(
 priv enum DrawKind {
   SpriteMain(Int)
   SpriteExtra(Int)
-  SpriteTextureSliceExtra(Int)
   UiRectExtra(Int)
   UiBoxShadowExtra(Int)
   UiTextureSliceExtra(Int)
@@ -6482,7 +5915,6 @@ fn append_registered_material2d_mesh_draw_items(
 fn[M] draw_material2d_items_for_layers(
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
-  extra_sprite_texture_slices : Array[ExtractedSpriteTextureSlice],
   extra_ui_rects : Array[ExtractedUiRect],
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
@@ -6495,8 +5927,7 @@ fn[M] draw_material2d_items_for_layers(
   let items : Array[DrawItem] = []
   for
     item in draw_material2d_scene_items_for_layers(
-      sprites, extra_sprites, extra_sprite_texture_slices, meshes, prepared_materials,
-      material_instances, layers,
+      sprites, extra_sprites, meshes, prepared_materials, material_instances, layers,
     ) {
     items.push(item)
   }
@@ -6514,7 +5945,6 @@ fn[M] draw_material2d_items_for_layers(
 fn draw_items_for_layers(
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
-  extra_sprite_texture_slices : Array[ExtractedSpriteTextureSlice],
   extra_ui_rects : Array[ExtractedUiRect],
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
@@ -6525,9 +5955,8 @@ fn draw_items_for_layers(
   layers : RenderLayers,
 ) -> Array[DrawItem] {
   draw_material2d_items_for_layers(
-    sprites, extra_sprites, extra_sprite_texture_slices, extra_ui_rects, extra_ui_box_shadows,
-    extra_ui_texture_slices, meshes, prepared_materials, material_instances, camera_entity,
-    layers,
+    sprites, extra_sprites, extra_ui_rects, extra_ui_box_shadows, extra_ui_texture_slices,
+    meshes, prepared_materials, material_instances, camera_entity, layers,
   )
 }
 
@@ -6555,7 +5984,6 @@ fn sort_draw_items(items : Array[DrawItem]) -> Array[DrawItem] {
 fn[M] draw_material2d_scene_items_for_layers(
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
-  extra_sprite_texture_slices : Array[ExtractedSpriteTextureSlice],
   meshes : Array[ExtractedMesh2d],
   prepared_materials : @asset.Assets[PreparedMaterial2d[M]],
   material_instances : RenderMaterial2dInstances[M],
@@ -6598,21 +6026,6 @@ fn[M] draw_material2d_scene_items_for_layers(
     })
     tie = tie + 1
   }
-  for i in 0..<extra_sprite_texture_slices.length() {
-    let slice = extra_sprite_texture_slices[i]
-    if !slice.payload.layers.matches(layers) {
-      continue
-    }
-    items.push(DrawItem::{
-      kind: SpriteTextureSliceExtra(i),
-      entity: slice.entity,
-      z: slice.payload.transform.translation.z,
-      phase: 1,
-      tie,
-      material_runtime_index: -1,
-    })
-    tie = tie + 1
-  }
   sort_draw_items(items)
 }
 
@@ -6620,15 +6033,13 @@ fn[M] draw_material2d_scene_items_for_layers(
 fn draw_scene_items_for_layers(
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
-  extra_sprite_texture_slices : Array[ExtractedSpriteTextureSlice],
   meshes : Array[ExtractedMesh2d],
   prepared_materials : @asset.Assets[PreparedMaterial2d[ColorMaterialAsset]],
   material_instances : RenderMaterial2dInstances[ColorMaterialAsset],
   layers : RenderLayers,
 ) -> Array[DrawItem] {
   draw_material2d_scene_items_for_layers(
-    sprites, extra_sprites, extra_sprite_texture_slices, meshes, prepared_materials,
-    material_instances, layers,
+    sprites, extra_sprites, meshes, prepared_materials, material_instances, layers,
   )
 }
 
@@ -6638,7 +6049,6 @@ fn draw_registered_scene_items_for_layers(
   registry : Material2dRuntimeRegistry,
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
-  extra_sprite_texture_slices : Array[ExtractedSpriteTextureSlice],
   meshes : Array[ExtractedMesh2d],
   layers : RenderLayers,
 ) -> Array[DrawItem] {
@@ -6677,21 +6087,6 @@ fn draw_registered_scene_items_for_layers(
     })
     tie = tie + 1
   }
-  for i in 0..<extra_sprite_texture_slices.length() {
-    let slice = extra_sprite_texture_slices[i]
-    if !slice.payload.layers.matches(layers) {
-      continue
-    }
-    items.push(DrawItem::{
-      kind: SpriteTextureSliceExtra(i),
-      entity: slice.entity,
-      z: slice.payload.transform.translation.z,
-      phase: 1,
-      tie,
-      material_runtime_index: -1,
-    })
-    tie = tie + 1
-  }
   sort_draw_items(items)
 }
 
@@ -6701,7 +6096,6 @@ fn draw_registered_items_for_layers(
   registry : Material2dRuntimeRegistry,
   sprites : Array[ExtractedSprite],
   extra_sprites : Array[ExtractedSprite],
-  extra_sprite_texture_slices : Array[ExtractedSpriteTextureSlice],
   extra_ui_rects : Array[ExtractedUiRect],
   extra_ui_box_shadows : Array[ExtractedUiBoxShadow],
   extra_ui_texture_slices : Array[ExtractedUiTextureSlice],
@@ -6712,8 +6106,7 @@ fn draw_registered_items_for_layers(
   let items : Array[DrawItem] = []
   for
     item in draw_registered_scene_items_for_layers(
-      world, registry, sprites, extra_sprites, extra_sprite_texture_slices, meshes,
-      layers,
+      world, registry, sprites, extra_sprites, meshes, layers,
     ) {
     items.push(item)
   }
@@ -6926,7 +6319,6 @@ test "render2d: unified draw items order sprites and meshes by z" {
     ),
   ]
   let extra : Array[ExtractedSprite] = []
-  let extra_sprite_slices : Array[ExtractedSpriteTextureSlice] = []
   let extra_ui : Array[ExtractedUiRect] = []
   let extra_shadow : Array[ExtractedUiBoxShadow] = []
   let extra_slices : Array[ExtractedUiTextureSlice] = []
@@ -6949,7 +6341,6 @@ test "render2d: unified draw items order sprites and meshes by z" {
   let items = draw_items_for_layers(
     sprites,
     extra,
-    extra_sprite_slices,
     extra_ui,
     extra_shadow,
     extra_slices,
@@ -6974,7 +6365,6 @@ test "render2d: UI overlay draw items route by target camera" {
   let camera_b = @core.Entity::new(11, 0)
   let sprites : Array[ExtractedSprite] = []
   let extra : Array[ExtractedSprite] = []
-  let extra_sprite_slices : Array[ExtractedSpriteTextureSlice] = []
   let extra_ui : Array[ExtractedUiRect] = [
     extracted_ui_rect_item(
       @core.Entity::new(100, 0),
@@ -7013,8 +6403,8 @@ test "render2d: UI overlay draw items route by target camera" {
   let extra_slices : Array[ExtractedUiTextureSlice] = []
   let meshes : Array[ExtractedMesh2d] = []
   let items = draw_items_for_layers(
-    sprites, extra, extra_sprite_slices, extra_ui, extra_shadow, extra_slices, meshes,
-    prepared_materials, material_instances, camera_a, layers,
+    sprites, extra, extra_ui, extra_shadow, extra_slices, meshes, prepared_materials,
+    material_instances, camera_a, layers,
   )
   let ok = items.length() == 1 && items[0].kind is UiRectExtra(0)
   inspect(ok, content="true")
@@ -7027,7 +6417,6 @@ test "render2d: scene draw items exclude UI overlays" {
   let material_instances : RenderMaterial2dInstances[ColorMaterialAsset] = RenderMaterial2dInstances::new()
   let camera = @core.Entity::new(10, 0)
   let scene_items = draw_scene_items_for_layers(
-    [],
     [],
     [],
     [],
@@ -7215,7 +6604,6 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
   ])
   let sprites : Array[ExtractedSprite] = []
   let extra : Array[ExtractedSprite] = []
-  let extra_sprite_slices : Array[ExtractedSpriteTextureSlice] = []
   let extra_ui : Array[ExtractedUiRect] = []
   let extra_shadow : Array[ExtractedUiBoxShadow] = []
   let extra_slices : Array[ExtractedUiTextureSlice] = []
@@ -7235,7 +6623,6 @@ test "render2d: mesh opaque alpha mode stays in opaque phase" {
   let items = draw_items_for_layers(
     sprites,
     extra,
-    extra_sprite_slices,
     extra_ui,
     extra_shadow,
     extra_slices,
@@ -7288,7 +6675,6 @@ test "render2d: blend mesh with alpha=1 stays in transparent phase ordering" {
   let items = draw_scene_items_for_layers(
     sprites,
     [],
-    [],
     meshes,
     prepared_materials,
     material_instances,
@@ -7325,7 +6711,6 @@ test "render2d: mesh mask alpha mode queues both items for shader-side cutoff" {
   ])
   let sprites : Array[ExtractedSprite] = []
   let extra : Array[ExtractedSprite] = []
-  let extra_sprite_slices : Array[ExtractedSpriteTextureSlice] = []
   let extra_ui : Array[ExtractedUiRect] = []
   let extra_shadow : Array[ExtractedUiBoxShadow] = []
   let extra_slices : Array[ExtractedUiTextureSlice] = []
@@ -7350,7 +6735,6 @@ test "render2d: mesh mask alpha mode queues both items for shader-side cutoff" {
   let items = draw_items_for_layers(
     sprites,
     extra,
-    extra_sprite_slices,
     extra_ui,
     extra_shadow,
     extra_slices,
@@ -7367,48 +6751,49 @@ test "render2d: mesh mask alpha mode queues both items for shader-side cutoff" {
 }
 
 ///|
-test "render2d: tiled sprite mode adjusts uv and draw scale" {
-  let mode = SpriteImageMode::tiled(stretch_value=0.5F)
-  let (uv_min, uv_max, draw_scale, local_offset, needs_repeat_sampler) = apply_tiled_sprite_image_mode(
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(1.0F, 1.0F),
-    @math.Vec2::new(0.5F, 1.0F),
-    mode,
-  )
-  let ok = uv_min.x == 0.0F &&
-    uv_min.y == 0.0F &&
-    uv_max.x == 1.0F &&
-    uv_max.y == 2.0F &&
-    draw_scale.x == 0.5F &&
-    draw_scale.y == 0.5F &&
-    local_offset.x == 0.0F &&
-    local_offset.y == 0.0F &&
-    needs_repeat_sampler
+test "render2d: tiled sprite mode computes repeated slices" {
+  let sprite = Sprite::from_image(@asset.Handle::new(1))
+    .with_image_mode(
+      SpriteImageMode::tiled(tile_x=true, tile_y=false, stretch_value=0.5F),
+    )
+    .with_custom_size(Some(@math.Vec2::new(64.0F, 32.0F)))
+  guard compute_sprite_slices(sprite, @math.Vec2::new(32.0F, 32.0F))
+    is Some(slices) else {
+    inspect(false, content="true")
+    return
+  }
+  let ok = slices.slices.length() == 4 &&
+    slices.slices[0].draw_size.x == 16.0F &&
+    slices.slices[0].draw_size.y == 32.0F &&
+    slices.slices[3].offset.x == 24.0F
   inspect(ok, content="true")
 }
 
 ///|
-test "render2d: tiled sprite mode keeps non-tiled axis unchanged" {
-  let mode = SpriteImageMode::tiled(
-    tile_x=false,
-    tile_y=true,
-    stretch_value=0.25F,
+test "render2d: sliced sprite extraction follows computed slices instead of ui slice path" {
+  let sprite = Sprite::from_image(@asset.Handle::new(1))
+    .with_image_mode(
+      SpriteImageMode::Sliced(TextureSlicer::new(BorderRect::square(8.0F))),
+    )
+    .with_custom_size(Some(@math.Vec2::new(96.0F, 64.0F)))
+  let sprites : Array[ExtractedSprite] = []
+  let appended = append_computed_sprite_slices(
+    sprites,
+    @core.Entity::new(1, 0),
+    sprite,
+    Anchor::center(),
+    @math.Transform::identity(),
+    RenderLayers::default(),
+    None,
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.Vec2::new(1.0F, 1.0F),
+    @math.Vec2::new(32.0F, 32.0F),
   )
-  let (uv_min, uv_max, draw_scale, local_offset, needs_repeat_sampler) = apply_tiled_sprite_image_mode(
-    @math.Vec2::new(0.2F, 0.3F),
-    @math.Vec2::new(0.6F, 0.9F),
-    @math.Vec2::new(1.0F, 0.5F),
-    mode,
-  )
-  let ok = uv_min.x == 0.2F &&
-    uv_min.y == 0.3F &&
-    uv_max.x == 0.6F &&
-    uv_max.y == 1.5F &&
-    draw_scale.x == 1.0F &&
-    draw_scale.y == 0.25F &&
-    local_offset.x == 0.0F &&
-    local_offset.y == 0.0F &&
-    needs_repeat_sampler
+  let ok = appended &&
+    sprites.length() == 9 &&
+    sprites[0].payload.texture.id() == 1 &&
+    sprites[0].payload.uv_min.x == 0.0F &&
+    sprites[0].payload.uv_max.x == 0.25F
   inspect(ok, content="true")
 }
 
@@ -7536,7 +6921,6 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
       render2d_diagnostic_prepared_camera_count_ref.val = 0
       render2d_diagnostic_queued_draw_item_count_ref.val = 0
       rs.val.extra_sprites.clear()
-      rs.val.extra_sprite_texture_slices.clear()
       rs.val.extra_ui_rects.clear()
       rs.val.extra_ui_box_shadows.clear()
       rs.val.extra_ui_texture_slices.clear()
@@ -7544,7 +6928,6 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
     }
     let sprites = rs.val.sprites
     let extra_sprites = rs.val.extra_sprites
-    let extra_sprite_texture_slices = rs.val.extra_sprite_texture_slices
     let extra_ui_rects = rs.val.extra_ui_rects
     let extra_ui_box_shadows = rs.val.extra_ui_box_shadows
     let extra_ui_texture_slices = rs.val.extra_ui_texture_slices
@@ -7715,7 +7098,6 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         material_runtime_registry,
         sprites,
         extra_sprites,
-        extra_sprite_texture_slices,
         meshes,
         camera.layers,
       )
@@ -7817,43 +7199,6 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
                 uv_min_y=sprite.uv_min.y,
                 uv_max_x=sprite.uv_max.x,
                 uv_max_y=sprite.uv_max.y,
-              )
-            }
-            SpriteTextureSliceExtra(i) => {
-              let slice = extra_sprite_texture_slices[i].payload
-              apply_scissor(slice.scissor)
-              let transform = slice.transform
-              let pos = @math.Vec2::new(
-                transform.translation.x + slice.anchor_offset.x,
-                transform.translation.y + slice.anchor_offset.y,
-              )
-              @render.host_gpu_draw_ui_texture_slice(
-                texture_id=slice.texture.id(),
-                x=pos.x,
-                y=pos.y,
-                rotation=transform.rotation_z(),
-                scale_x=slice.draw_scale.x,
-                scale_y=slice.draw_scale.y,
-                color_r=slice.color.r,
-                color_g=slice.color.g,
-                color_b=slice.color.b,
-                color_a=slice.color.a,
-                texture_slice_l=slice.texture_slices.x,
-                texture_slice_t=slice.texture_slices.y,
-                texture_slice_r=slice.texture_slices.z,
-                texture_slice_b=slice.texture_slices.w,
-                target_slice_l=slice.target_slices.x,
-                target_slice_t=slice.target_slices.y,
-                target_slice_r=slice.target_slices.z,
-                target_slice_b=slice.target_slices.w,
-                repeat_side_x=slice.repeat.x,
-                repeat_side_y=slice.repeat.y,
-                repeat_center_x=slice.repeat.z,
-                repeat_center_y=slice.repeat.w,
-                atlas_l=slice.atlas_rect.x,
-                atlas_t=slice.atlas_rect.y,
-                atlas_r=slice.atlas_rect.z,
-                atlas_b=slice.atlas_rect.w,
               )
             }
             Mesh(i) => {
@@ -8161,7 +7506,6 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
     rs.val.prepared_camera_indices.clear()
     rs.val.queued_draw_item_counts.clear()
     rs.val.extra_sprites.clear()
-    rs.val.extra_sprite_texture_slices.clear()
     rs.val.extra_ui_rects.clear()
     rs.val.extra_ui_box_shadows.clear()
     rs.val.extra_ui_texture_slices.clear()
