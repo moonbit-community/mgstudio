@@ -2,5 +2,4 @@ import {
   "moonbitlang/core/math" @coremath,
   "moonbitlang/core/json",
   "moonbitlang/core/random",
-  "Milky2018/mgstudio/ecs",
 }

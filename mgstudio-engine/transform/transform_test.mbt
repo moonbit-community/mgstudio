@@ -57,8 +57,8 @@ test "transform ecs: root global matches local" {
   next_system_ticks(world) |> ignore
   try! world.set(
     entity,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 2.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -100,8 +100,8 @@ test "transform ecs: parent translation affects child global translation" {
   next_system_ticks(world) |> ignore
   try! world.set(
     parent,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -109,8 +109,8 @@ test "transform ecs: parent translation affects child global translation" {
   )
   try! world.set(
     child,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 2.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -143,8 +143,8 @@ test "transform ecs: propagate updates only when inputs change" {
   let tick1 = next_system_ticks(world).this_run
   try! world.set(
     entity,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -177,8 +177,8 @@ test "transform ecs: propagate updates only when inputs change" {
   next_system_ticks(world) |> ignore
   try! world.set(
     entity,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(2.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -201,8 +201,8 @@ test "transform ecs: sync simple transforms updates orphaned entity once parent 
   next_system_ticks(world) |> ignore
   try! world.set(
     parent,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(2.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -210,8 +210,8 @@ test "transform ecs: sync simple transforms updates orphaned entity once parent 
   )
   try! world.set(
     child,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -249,8 +249,8 @@ test "transform ecs: removing parent updates orphaned parent and child globals" 
   next_system_ticks(world) |> ignore
   try! world.set(
     root,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(3.3F, 3.3F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -258,8 +258,8 @@ test "transform ecs: removing parent updates orphaned parent and child globals" 
   )
   try! world.set(
     parent,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(4.4F, 4.4F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -267,8 +267,8 @@ test "transform ecs: removing parent updates orphaned parent and child globals" 
   )
   try! world.set(
     child,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(5.5F, 5.5F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -332,8 +332,8 @@ test "transform ecs: inserting Transform auto-inserts required components" {
   next_system_ticks(world) |> ignore
   try! world.set(
     entity,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(9.0F, 10.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -358,10 +358,10 @@ test "transform ecs: component access insert also inserts required components" {
   prepare_transform_world(world)
   next_system_ticks(world) |> ignore
   world
-  .component(@math.ecs_key_transform)
+  .component(ecs_key_transform)
   .insert(
     entity,
-    @math.Transform::from_xy_rotation_scale(
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(4.0F, 6.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -393,8 +393,8 @@ test "transform ecs: mark_dirty_trees marks ancestor chain" {
   next_system_ticks(world) |> ignore
   try! world.set(
     parent,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -402,8 +402,8 @@ test "transform ecs: mark_dirty_trees marks ancestor chain" {
   )
   try! world.set(
     child,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 2.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -421,8 +421,8 @@ test "transform ecs: mark_dirty_trees marks ancestor chain" {
   next_system_ticks(world) |> ignore
   try! world.set(
     child,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(3.0F, 4.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -458,8 +458,8 @@ test "transform ecs: mark_dirty_trees disables static optimization above thresho
   next_system_ticks(world) |> ignore
   try! world.set(
     entity_a,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -467,8 +467,8 @@ test "transform ecs: mark_dirty_trees disables static optimization above thresho
   )
   try! world.set(
     entity_b,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(2.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -492,8 +492,8 @@ test "transform plugin: post startup populates hierarchy globals" {
 
   try! world.set(
     parent,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(2.0F, 1.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -501,8 +501,8 @@ test "transform plugin: post startup populates hierarchy globals" {
   )
   try! world.set(
     child,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(3.0F, 4.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -537,8 +537,8 @@ test "transform plugin: queues parent validation for missing parent GlobalTransf
   )
   try! world.set(
     child,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -561,8 +561,8 @@ test "transform plugin: post update reflects update stage transform writes" {
   entity_ref.val = entity
   try! world.set(
     entity,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 2.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -572,8 +572,8 @@ test "transform plugin: post update reflects update stage transform writes" {
   let app = app.add_system(fn(world : @ecs.World) {
     try! world.set(
       entity_ref.val,
-      @math.ecs_key_transform,
-      @math.Transform::from_xy_rotation_scale(
+      ecs_key_transform,
+      Transform::from_xy_rotation_scale(
         @math.Vec2::new(7.0F, 8.0F),
         0.0F,
         @math.Vec2::new(1.0F, 1.0F),
@@ -601,8 +601,8 @@ test "transform ecs: reparenting in the same frame preserves global transform" {
   next_system_ticks(world) |> ignore
   try! world.set(
     parent,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 1.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -610,8 +610,8 @@ test "transform ecs: reparenting in the same frame preserves global transform" {
   )
   try! world.set(
     child,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 1.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),

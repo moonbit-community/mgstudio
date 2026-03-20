@@ -13,23 +13,10 @@
 // limitations under the License.
 
 ///|
-/// ECS component bridge types.
-pub let ecs_components : Array[String] = ["Transform", "GlobalTransform"]
-
-///|
-/// ECS resource bridge types.
-pub let ecs_resources : Array[String] = []
-
-///|
-pub fn get_global_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[GlobalTransform] {
-  world.component(ecs_key_global_transform)
-}
-
-///|
-pub fn get_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[Transform] {
-  world.component(ecs_key_transform)
+pub impl @math.Ease for Transform with interpolate(self, end, t) {
+  Transform::{
+    translation: self.translation.interpolate(end.translation, t),
+    rotation: self.rotation.interpolate(end.rotation, t),
+    scale: self.scale.interpolate(end.scale, t),
+  }
 }

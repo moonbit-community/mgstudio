@@ -13,23 +13,33 @@
 // limitations under the License.
 
 ///|
-/// ECS component bridge types.
-pub let ecs_components : Array[String] = ["Transform", "GlobalTransform"]
-
-///|
-/// ECS resource bridge types.
-pub let ecs_resources : Array[String] = []
-
-///|
-pub fn get_global_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[GlobalTransform] {
-  world.component(ecs_key_global_transform)
+pub struct Ray2d {
+  origin : Vec2
+  direction : Dir2
 }
 
 ///|
-pub fn get_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[Transform] {
-  world.component(ecs_key_transform)
+pub struct Ray3d {
+  origin : Vec3
+  direction : Dir3
+}
+
+///|
+pub fn Ray2d::new(origin : Vec2, direction : Dir2) -> Ray2d {
+  Ray2d::{ origin, direction }
+}
+
+///|
+pub fn Ray2d::get_point(self : Ray2d, distance : Float) -> Vec2 {
+  self.origin.add(self.direction.as_vec2().mul_scalar(distance))
+}
+
+///|
+pub fn Ray3d::new(origin : Vec3, direction : Dir3) -> Ray3d {
+  Ray3d::{ origin, direction }
+}
+
+///|
+pub fn Ray3d::get_point(self : Ray3d, distance : Float) -> Vec3 {
+  self.origin.add(self.direction.as_vec3().mul_scalar(distance))
 }

@@ -14,11 +14,15 @@ pub let ecs_components : Array[String]
 
 pub let ecs_key_global_transform : @ecs.ComponentKey[GlobalTransform]
 
+pub let ecs_key_transform : @ecs.ComponentKey[Transform]
+
 pub let ecs_key_transform_tree_changed : @ecs.ComponentKey[TransformTreeChanged]
 
 pub let ecs_resources : Array[String]
 
 pub fn get_global_transform_store(@ecs.World) -> @ecs.ComponentAccess[GlobalTransform]
+
+pub fn get_transform_store(@ecs.World) -> @ecs.ComponentAccess[Transform]
 
 pub fn mark_dirty_trees(@ecs.World) -> Unit
 
@@ -36,7 +40,7 @@ pub fn register_transform_required_components(@ecs.World) -> Unit raise @ecs.Req
 
 pub fn static_transform_optimizations_resource_key() -> @ecs.ResourceKey[StaticTransformOptimizations]
 
-pub fn sync_simple_transforms(@app.ParamSet2[@ecs.Query2ValueMutFiltered[@math.Transform, GlobalTransform, (@ecs.Or[(@ecs.Changed[@math.Transform], @ecs.Added[GlobalTransform])], @ecs.Without[@hierarchy.Parent], @ecs.Without[@hierarchy.Children])], @ecs.Query2RefMutFiltered[@math.Transform, GlobalTransform, (@ecs.Without[@hierarchy.Parent], @ecs.Without[@hierarchy.Children])]], @ecs.RemovedComponents[@hierarchy.Parent]) -> Unit
+pub fn sync_simple_transforms(@app.ParamSet2[@ecs.Query2ValueMutFiltered[Transform, GlobalTransform, (@ecs.Or[(@ecs.Changed[Transform], @ecs.Added[GlobalTransform])], @ecs.Without[@hierarchy.Parent], @ecs.Without[@hierarchy.Children])], @ecs.Query2RefMutFiltered[Transform, GlobalTransform, (@ecs.Without[@hierarchy.Parent], @ecs.Without[@hierarchy.Children])]], @ecs.RemovedComponents[@hierarchy.Parent]) -> Unit
 
 pub fn sync_simple_transforms_world(@ecs.World) -> Unit
 
@@ -72,10 +76,10 @@ pub struct GlobalTransform {
   affine : Affine2
   z : Float
 }
-pub fn GlobalTransform::from_transform(@math.Transform) -> Self
+pub fn GlobalTransform::from_transform(Transform) -> Self
 pub fn GlobalTransform::identity() -> Self
 pub fn GlobalTransform::mul(Self, Self) -> Self
-pub fn GlobalTransform::to_transform_approx(Self) -> @math.Transform
+pub fn GlobalTransform::to_transform_approx(Self) -> Transform
 pub impl @ecs.Component for GlobalTransform
 pub impl Default for GlobalTransform
 pub impl ToJson for GlobalTransform
@@ -93,6 +97,45 @@ pub impl Eq for StaticTransformOptimizations
 pub impl Show for StaticTransformOptimizations
 pub impl ToJson for StaticTransformOptimizations
 pub impl @json.FromJson for StaticTransformOptimizations
+
+pub(all) struct Transform {
+  mut translation : @math.Vec3
+  mut rotation : @math.Quat
+  mut scale : @math.Vec3
+}
+pub fn Transform::align(Self, @math.Vec3, @math.Vec3, @math.Vec3, @math.Vec3) -> Unit
+pub fn Transform::aligned_by(Self, @math.Vec3, @math.Vec3, @math.Vec3, @math.Vec3) -> Self
+pub fn Transform::back(Self) -> @math.Vec3
+pub fn Transform::down(Self) -> @math.Vec3
+pub fn Transform::forward(Self) -> @math.Vec3
+pub fn Transform::from_rotation(@math.Quat) -> Self
+pub fn Transform::from_translation(@math.Vec3) -> Self
+pub fn Transform::from_xy(Float, Float) -> Self
+pub fn Transform::from_xy_rotation_scale(@math.Vec2, Float, @math.Vec2, z? : Float) -> Self
+pub fn Transform::from_xyz(Float, Float, Float) -> Self
+pub fn Transform::identity() -> Self
+pub fn Transform::left(Self) -> @math.Vec3
+pub fn Transform::local_x(Self) -> @math.Vec3
+pub fn Transform::local_y(Self) -> @math.Vec3
+pub fn Transform::local_z(Self) -> @math.Vec3
+pub fn Transform::looking_at(Self, @math.Vec3, @math.Vec3) -> Self
+pub fn Transform::looking_to(Self, @math.Vec3, @math.Vec3) -> Self
+pub fn Transform::new(@math.Vec3, @math.Quat, @math.Vec3) -> Self
+pub fn Transform::right(Self) -> @math.Vec3
+pub fn Transform::rotate(Self, @math.Quat) -> Unit
+pub fn Transform::rotate_around(Self, @math.Vec3, @math.Quat) -> Unit
+pub fn Transform::rotate_y(Self, Float) -> Unit
+pub fn Transform::rotate_z(Self, Float) -> Unit
+pub fn Transform::rotation_z(Self) -> Float
+pub fn Transform::translate_around(Self, @math.Vec3, @math.Quat) -> Unit
+pub fn Transform::up(Self) -> @math.Vec3
+pub fn Transform::with_rotation(Self, @math.Quat) -> Self
+pub fn Transform::with_scale(Self, @math.Vec3) -> Self
+pub fn Transform::with_translation(Self, @math.Vec3) -> Self
+pub impl @ecs.Component for Transform
+pub impl @math.Ease for Transform
+pub impl ToJson for Transform
+pub impl @json.FromJson for Transform
 
 pub struct TransformTreeChanged {
 }

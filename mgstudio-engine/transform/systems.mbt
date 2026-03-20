@@ -14,7 +14,7 @@
 
 ///|
 type SimpleTransformChangedFilter = (
-  @ecs.Or[(@ecs.Changed[@math.Transform], @ecs.Added[GlobalTransform])],
+  @ecs.Or[(@ecs.Changed[Transform], @ecs.Added[GlobalTransform])],
   @ecs.Without[@hierarchy.Parent],
   @ecs.Without[@hierarchy.Children],
 )
@@ -27,21 +27,21 @@ type SimpleTransformFilter = (
 
 ///|
 type SimpleTransformChangedQuery = @ecs.Query2ValueMutFiltered[
-  @math.Transform,
+  Transform,
   GlobalTransform,
   SimpleTransformChangedFilter,
 ]
 
 ///|
 type SimpleTransformOrphanQuery = @ecs.Query2RefMutFiltered[
-  @math.Transform,
+  Transform,
   GlobalTransform,
   SimpleTransformFilter,
 ]
 
 ///|
 type PropagationRootQuery = @ecs.Query3RefMutOptionalFiltered[
-  @math.Transform,
+  Transform,
   GlobalTransform,
   @hierarchy.Children,
   @ecs.Without[@hierarchy.Parent],
@@ -49,7 +49,7 @@ type PropagationRootQuery = @ecs.Query3RefMutOptionalFiltered[
 
 ///|
 type PropagationNodeQuery = @ecs.Query3RefMutOptionalFiltered[
-  @math.Transform,
+  Transform,
   GlobalTransform,
   @hierarchy.Children,
   @ecs.With[@hierarchy.Parent],
@@ -233,12 +233,12 @@ pub fn sync_simple_transforms(
 ///|
 pub fn sync_simple_transforms_world(world : @ecs.World) -> Unit {
   let changed_query = world.query2_value_mut_filtered(
-    @math.ecs_key_transform,
+    ecs_key_transform,
     ecs_key_global_transform,
     (
       @ecs.Or::new(
         (
-          @ecs.Changed::new(@math.ecs_key_transform),
+          @ecs.Changed::new(ecs_key_transform),
           @ecs.Added::new(ecs_key_global_transform),
         ),
       ),
@@ -247,7 +247,7 @@ pub fn sync_simple_transforms_world(world : @ecs.World) -> Unit {
     ),
   )
   let orphan_query = world.query2_ref_mut_filtered(
-    @math.ecs_key_transform,
+    ecs_key_transform,
     ecs_key_global_transform,
     (
       @ecs.Without::new(@hierarchy.ecs_key_parent),
@@ -271,7 +271,7 @@ pub fn mark_dirty_trees(world : @ecs.World) -> Unit {
   let changed_transforms = world.query_entities_filtered(
     @ecs.Or::new(
       (
-        @ecs.Changed::new(@math.ecs_key_transform),
+        @ecs.Changed::new(ecs_key_transform),
         @ecs.Changed::new(@hierarchy.ecs_key_parent),
         @ecs.Added::new(ecs_key_global_transform),
       ),
@@ -414,13 +414,13 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
   sort_entities_by_id(orphaned_entities)
 
   let root_query : PropagationRootQuery = world.query3_ref_mut_optional_filtered(
-    @math.ecs_key_transform,
+    ecs_key_transform,
     ecs_key_global_transform,
     @hierarchy.ecs_key_children,
     @ecs.Without::new(@hierarchy.ecs_key_parent),
   )
   let node_query = world.query3_ref_mut_optional_filtered(
-    @math.ecs_key_transform,
+    ecs_key_transform,
     ecs_key_global_transform,
     @hierarchy.ecs_key_children,
     @ecs.With::new(@hierarchy.ecs_key_parent),

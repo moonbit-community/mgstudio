@@ -13,23 +13,21 @@
 // limitations under the License.
 
 ///|
-/// ECS component bridge types.
-pub let ecs_components : Array[String] = ["Transform", "GlobalTransform"]
+pub(all) enum CompassQuadrant {
+  NorthEast
+  SouthEast
+  SouthWest
+  NorthWest
+} derive(Eq, Show)
 
 ///|
-/// ECS resource bridge types.
-pub let ecs_resources : Array[String] = []
-
-///|
-pub fn get_global_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[GlobalTransform] {
-  world.component(ecs_key_global_transform)
-}
-
-///|
-pub fn get_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[Transform] {
-  world.component(ecs_key_transform)
-}
+pub(all) enum CompassOctant {
+  North
+  NorthEast
+  East
+  SouthEast
+  South
+  SouthWest
+  West
+  NorthWest
+} derive(Eq, Show)

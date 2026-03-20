@@ -13,16 +13,33 @@
 // limitations under the License.
 
 ///|
-/// ECS component bridge types.
-pub let ecs_components : Array[String] = ["Transform"]
+pub struct IRect {
+  min : IVec2
+  max : IVec2
+}
 
 ///|
-/// ECS resource bridge types.
-pub let ecs_resources : Array[String] = []
+pub fn IRect::new(min : IVec2, max : IVec2) -> IRect {
+  IRect::{ min, max }
+}
 
 ///|
-pub fn get_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[Transform] {
-  world.component(ecs_key_transform)
+pub fn IRect::size(self : IRect) -> IVec2 {
+  IVec2::new(self.max.x - self.min.x, self.max.y - self.min.y)
+}
+
+///|
+pub fn IRect::as_rect(self : IRect) -> Rect {
+  Rect::new(self.min.to_vec2(), self.max.to_vec2())
+}
+
+///|
+pub impl ToJson for IRect with to_json(self) {
+  (self.min, self.max).to_json()
+}
+
+///|
+pub impl @json.FromJson for IRect with from_json(json, path) {
+  let (min, max) : (IVec2, IVec2) = @json.from_json(json, path~)
+  IRect::new(min, max)
 }

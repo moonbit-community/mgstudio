@@ -134,7 +134,7 @@ pub impl @json.FromJson for GlobalTransform with from_json(json, path) {
 
 ///|
 pub fn GlobalTransform::from_transform(
-  transform : @math.Transform,
+  transform : Transform,
 ) -> GlobalTransform {
   let rot_z = transform.rotation_z()
   let cosv = @math.cos(rot_z)
@@ -172,7 +172,7 @@ pub fn GlobalTransform::mul(
 ///|
 pub fn GlobalTransform::to_transform_approx(
   self : GlobalTransform,
-) -> @math.Transform {
+) -> Transform {
   // Best-effort TRS decomposition for a 2D affine matrix.
   // This ignores shear in the returned Transform, but preserves translation.
   let a = self.affine.a
@@ -183,7 +183,7 @@ pub fn GlobalTransform::to_transform_approx(
   let rotation = if scale_x == 0.0F { 0.0F } else { @math.atan2(b, a) }
   let det = a * d - b * c
   let scale_y = if scale_x == 0.0F { 0.0F } else { det / scale_x }
-  @math.Transform::from_xy_rotation_scale(
+  Transform::from_xy_rotation_scale(
     @math.Vec2::new(self.affine.tx, self.affine.ty),
     rotation,
     @math.Vec2::new(scale_x, scale_y),

@@ -13,23 +13,16 @@
 // limitations under the License.
 
 ///|
-/// ECS component bridge types.
-pub let ecs_components : Array[String] = ["Transform", "GlobalTransform"]
+pub struct FloatOrd {
+  value : Float
+} derive(Eq, Show)
 
 ///|
-/// ECS resource bridge types.
-pub let ecs_resources : Array[String] = []
-
-///|
-pub fn get_global_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[GlobalTransform] {
-  world.component(ecs_key_global_transform)
+pub fn FloatOrd::new(value : Float) -> FloatOrd {
+  FloatOrd::{ value, }
 }
 
 ///|
-pub fn get_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[Transform] {
-  world.component(ecs_key_transform)
+pub fn FloatOrd::value(self : FloatOrd) -> Float {
+  self.value
 }

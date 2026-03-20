@@ -13,6 +13,16 @@
 // limitations under the License.
 
 ///|
+pub let ecs_key_transform : @ecs.ComponentKey[Transform] = @ecs.register_component(
+  debug_name="transform.transform",
+)
+
+///|
+pub impl @ecs.Component for Transform with component() {
+  ecs_key_transform
+}
+
+///|
 pub let ecs_key_global_transform : @ecs.ComponentKey[GlobalTransform] = @ecs.register_component(
   debug_name="transform.global_transform",
 )

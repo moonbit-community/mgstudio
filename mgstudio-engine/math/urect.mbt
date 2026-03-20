@@ -13,23 +13,33 @@
 // limitations under the License.
 
 ///|
-/// ECS component bridge types.
-pub let ecs_components : Array[String] = ["Transform", "GlobalTransform"]
-
-///|
-/// ECS resource bridge types.
-pub let ecs_resources : Array[String] = []
-
-///|
-pub fn get_global_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[GlobalTransform] {
-  world.component(ecs_key_global_transform)
+pub struct URect {
+  min : UVec2
+  max : UVec2
 }
 
 ///|
-pub fn get_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[Transform] {
-  world.component(ecs_key_transform)
+pub fn URect::new(min : UVec2, max : UVec2) -> URect {
+  URect::{ min, max }
+}
+
+///|
+pub fn URect::size(self : URect) -> UVec2 {
+  UVec2::new(self.max.x - self.min.x, self.max.y - self.min.y)
+}
+
+///|
+pub fn URect::as_rect(self : URect) -> Rect {
+  Rect::new(self.min.to_vec2(), self.max.to_vec2())
+}
+
+///|
+pub impl ToJson for URect with to_json(self) {
+  (self.min, self.max).to_json()
+}
+
+///|
+pub impl @json.FromJson for URect with from_json(json, path) {
+  let (min, max) : (UVec2, UVec2) = @json.from_json(json, path~)
+  URect::new(min, max)
 }

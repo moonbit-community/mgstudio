@@ -13,23 +13,30 @@
 // limitations under the License.
 
 ///|
-/// ECS component bridge types.
-pub let ecs_components : Array[String] = ["Transform", "GlobalTransform"]
+/// Shared surface for bounding-volume modules.
 
 ///|
-/// ECS resource bridge types.
-pub let ecs_resources : Array[String] = []
-
-///|
-pub fn get_global_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[GlobalTransform] {
-  world.component(ecs_key_global_transform)
+pub fn[T : Bounded2d] aabb_2d_of(shape : T, isometry : Isometry2d) -> Aabb2d {
+  shape.aabb_2d(isometry)
 }
 
 ///|
-pub fn get_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[Transform] {
-  world.component(ecs_key_transform)
+pub fn[T : Bounded2d] bounding_circle_of(
+  shape : T,
+  isometry : Isometry2d,
+) -> BoundingCircle {
+  shape.bounding_circle(isometry)
+}
+
+///|
+pub fn[T : Bounded3d] aabb_3d_of(shape : T, isometry : Isometry3d) -> Aabb3d {
+  shape.aabb_3d(isometry)
+}
+
+///|
+pub fn[T : Bounded3d] bounding_sphere_of(
+  shape : T,
+  isometry : Isometry3d,
+) -> BoundingSphere {
+  shape.bounding_sphere(isometry)
 }

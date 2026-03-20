@@ -13,23 +13,22 @@
 // limitations under the License.
 
 ///|
-/// ECS component bridge types.
-pub let ecs_components : Array[String] = ["Transform", "GlobalTransform"]
-
-///|
-/// ECS resource bridge types.
-pub let ecs_resources : Array[String] = []
-
-///|
-pub fn get_global_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[GlobalTransform] {
-  world.component(ecs_key_global_transform)
+pub struct Affine3 {
+  matrix3 : Mat3
+  translation : Vec3
 }
 
 ///|
-pub fn get_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[Transform] {
-  world.component(ecs_key_transform)
+pub fn Affine3::identity() -> Affine3 {
+  Affine3::{ matrix3: Mat3::identity(), translation: Vec3::zero() }
+}
+
+///|
+pub fn Affine3::from_translation(translation : Vec3) -> Affine3 {
+  Affine3::{ matrix3: Mat3::identity(), translation }
+}
+
+///|
+pub fn Affine3::transform_point3(self : Affine3, point : Vec3) -> Vec3 {
+  self.matrix3.mul_vec3(point).add(self.translation)
 }

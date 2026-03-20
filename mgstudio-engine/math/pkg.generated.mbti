@@ -2,44 +2,281 @@
 package "Milky2018/mgstudio/math"
 
 import {
-  "Milky2018/mgstudio/ecs",
   "moonbitlang/core/json",
   "moonbitlang/core/random",
 }
 
 // Values
+pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = 5
+
+pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
+
+pub fn[T : Bounded2d] aabb_2d_of(T, Isometry2d) -> Aabb2d
+
+pub fn[T : Bounded3d] aabb_3d_of(T, Isometry3d) -> Aabb3d
+
+pub fn abs(Float) -> Float
+
+pub fn aspect_ratio_try_from_vec2(Vec2) -> Result[AspectRatio, AspectRatioError]
+
 pub fn atan2(Float, Float) -> Float
+
+pub fn[T : Bounded2d] bounding_circle_of(T, Isometry2d) -> BoundingCircle
+
+pub fn[T : Bounded3d] bounding_sphere_of(T, Isometry3d) -> BoundingSphere
 
 pub fn cos(Float) -> Float
 
-pub let ecs_components : Array[String]
+pub fn even_interp(Interval, Int, Float) -> InterpolationDatum[Int]
 
-pub let ecs_key_transform : @ecs.ComponentKey[Transform]
+pub fn interval(Float, Float) -> Result[Interval, InvalidIntervalError]
 
-pub let ecs_resources : Array[String]
+pub fn irect(IVec2, IVec2) -> IRect
 
-pub fn get_transform_store(@ecs.World) -> @ecs.ComponentAccess[Transform]
+pub fn is_polygon_simple(Array[Vec2]) -> Bool
 
 pub fn pi() -> Float
 
 pub fn pi_half() -> Float
 
+pub fn polygon_signed_area(Array[Vec2]) -> Float
+
+pub fn polygon_winding_order(Array[Vec2]) -> WindingOrder
+
 pub fn pow(Float, Float) -> Float
+
+pub fn rect(Vec2, Vec2) -> Rect
+
+pub fn[T] sample_points(SamplingDistribution[T], @random.Rand, Int) -> Array[T]
 
 pub fn sin(Float) -> Float
 
 pub fn sqrt(Float) -> Float
 
+pub fn urect(UVec2, UVec2) -> URect
+
+pub fn[V : VectorSpace] vector_space_lerp(V, V, Float) -> V
+
 // Errors
+pub(all) suberror AspectRatioError {
+  Zero
+  Infinite
+  NaN
+}
+
 pub(all) suberror CubicBezierError {
   MissingControlPointSet
+}
+
+pub(all) suberror CurveChainError {
+  UnboundedDomain
+}
+
+pub(all) suberror EvenCoreError {
+  NotEnoughSamples(Int)
+  UnboundedDomain
 }
 
 pub(all) suberror InsufficientDataError {
   InsufficientData(Int, Int)
 }
 
+pub(all) suberror InvalidDirectionError {
+  Zero
+  Infinite
+  NaN
+}
+pub fn InvalidDirectionError::from_length(Float) -> Self
+
+pub(all) suberror InvalidIntervalError {
+  Invalid
+}
+
+pub(all) suberror LinearMapError {
+  SourceUnbounded
+  TargetUnbounded
+}
+
+pub(all) suberror SpacedPointsError {
+  Unbounded
+}
+
+pub(all) suberror UnevenCoreError {
+  NotEnoughSamples(Int)
+  NonFiniteSampleTime
+  NonIncreasingSampleTimes
+}
+
+pub(all) suberror UniformMeshSamplerError {
+  Empty
+  ZeroSurfaceArea
+}
+
 // Types and methods
+pub struct Aabb2d {
+  min : Vec2
+  max : Vec2
+}
+pub fn Aabb2d::bounding_circle(Self) -> BoundingCircle
+pub fn Aabb2d::center(Self) -> Vec2
+pub fn Aabb2d::closest_point(Self, Vec2) -> Vec2
+pub fn Aabb2d::contains(Self, Self) -> Bool
+pub fn Aabb2d::from_point_cloud(Isometry2d, Array[Vec2]) -> Self
+pub fn Aabb2d::grow(Self, Vec2) -> Self
+pub fn Aabb2d::half_size(Self) -> Vec2
+pub fn Aabb2d::intersects_aabb(Self, Self) -> Bool
+pub fn Aabb2d::intersects_circle(Self, BoundingCircle) -> Bool
+pub fn Aabb2d::merge(Self, Self) -> Self
+pub fn Aabb2d::new(Vec2, Vec2) -> Self
+pub fn Aabb2d::rotated_by(Self, Rot2) -> Self
+pub fn Aabb2d::scale_around_center(Self, Vec2) -> Self
+pub fn Aabb2d::shrink(Self, Vec2) -> Self
+pub fn Aabb2d::transformed_by(Self, Vec2, Rot2) -> Self
+pub fn Aabb2d::translated_by(Self, Vec2) -> Self
+pub fn Aabb2d::visible_area(Self) -> Float
+
+pub struct Aabb3d {
+  min : Vec3
+  max : Vec3
+}
+pub fn Aabb3d::bounding_sphere(Self) -> BoundingSphere
+pub fn Aabb3d::center(Self) -> Vec3
+pub fn Aabb3d::closest_point(Self, Vec3) -> Vec3
+pub fn Aabb3d::from_min_max(Vec3, Vec3) -> Self
+pub fn Aabb3d::from_point_cloud(Isometry3d, Array[Vec3]) -> Self
+pub fn Aabb3d::half_size(Self) -> Vec3
+pub fn Aabb3d::intersects_aabb(Self, Self) -> Bool
+pub fn Aabb3d::intersects_sphere(Self, BoundingSphere) -> Bool
+pub fn Aabb3d::new(Vec3, Vec3) -> Self
+
+pub struct AabbCast2d {
+  ray : RayCast2d
+  aabb : Aabb2d
+}
+pub fn AabbCast2d::aabb_collision_at(Self, Aabb2d) -> Float?
+pub fn AabbCast2d::from_ray(Aabb2d, Ray2d, Float) -> Self
+pub fn AabbCast2d::new(Aabb2d, Vec2, Dir2, Float) -> Self
+
+pub struct AabbCast3d {
+  ray : RayCast3d
+  aabb : Aabb3d
+}
+pub fn AabbCast3d::aabb_collision_at(Self, Aabb3d) -> Float?
+pub fn AabbCast3d::from_ray(Aabb3d, Ray3d, Float) -> Self
+pub fn AabbCast3d::new(Aabb3d, Vec3, Dir3, Float) -> Self
+
+pub struct Affine3 {
+  matrix3 : Mat3
+  translation : Vec3
+}
+pub fn Affine3::from_translation(Vec3) -> Self
+pub fn Affine3::identity() -> Self
+pub fn Affine3::transform_point3(Self, Vec3) -> Vec3
+
+pub struct Annulus {
+  inner_radius : Float
+  outer_radius : Float
+  vertices : Int
+}
+pub fn Annulus::default() -> Self
+pub fn Annulus::new(Float, Float) -> Self
+pub fn Annulus::with_vertices(Self, Int) -> Self
+pub impl Bounded2d for Annulus
+pub impl Measured2d for Annulus
+pub impl Primitive2d for Annulus
+
+pub struct Arc2d {
+  radius : Float
+  half_angle : Float
+}
+pub fn Arc2d::angle(Self) -> Float
+pub fn Arc2d::endpoints(Self) -> Array[Vec2]
+pub fn Arc2d::from_degrees(Float, Float) -> Self
+pub fn Arc2d::from_radians(Float, Float) -> Self
+pub fn Arc2d::from_turns(Float, Float) -> Self
+pub fn Arc2d::half_chord_length(Self) -> Float
+pub fn Arc2d::left_endpoint(Self) -> Vec2
+pub fn Arc2d::length(Self) -> Float
+pub fn Arc2d::midpoint(Self) -> Vec2
+pub fn Arc2d::new(Float, Float) -> Self
+pub fn Arc2d::right_endpoint(Self) -> Vec2
+pub impl Bounded2d for Arc2d
+pub impl Primitive2d for Arc2d
+
+pub struct AspectRatio {
+  value : Float
+}
+pub fn AspectRatio::four_three() -> Self
+pub fn AspectRatio::inverse(Self) -> Self
+pub fn AspectRatio::is_landscape(Self) -> Bool
+pub fn AspectRatio::is_portrait(Self) -> Bool
+pub fn AspectRatio::is_square(Self) -> Bool
+pub fn AspectRatio::ratio(Self) -> Float
+pub fn AspectRatio::sixteen_nine() -> Self
+pub fn AspectRatio::try_from_pixels(Int, Int) -> Result[Self, AspectRatioError]
+pub fn AspectRatio::try_new(Float, Float) -> Result[Self, AspectRatioError]
+pub fn AspectRatio::ultrawide() -> Self
+
+pub struct BoundingCircle {
+  center : Vec2
+  circle : Circle
+}
+pub fn BoundingCircle::closest_point(Self, Vec2) -> Vec2
+pub fn BoundingCircle::contains(Self, Self) -> Bool
+pub fn BoundingCircle::from_point_cloud(Isometry2d, Array[Vec2]) -> Self
+pub fn BoundingCircle::intersects_aabb(Self, Aabb2d) -> Bool
+pub fn BoundingCircle::intersects_circle(Self, Self) -> Bool
+pub fn BoundingCircle::merge(Self, Self) -> Self
+pub fn BoundingCircle::new(Vec2, Float) -> Self
+pub fn BoundingCircle::radius(Self) -> Float
+pub fn BoundingCircle::transformed_by(Self, Vec2, Rot2) -> Self
+pub fn BoundingCircle::translated_by(Self, Vec2) -> Self
+
+pub struct BoundingCircleCast {
+  ray : RayCast2d
+  circle : BoundingCircle
+}
+pub fn BoundingCircleCast::circle_collision_at(Self, BoundingCircle) -> Float?
+pub fn BoundingCircleCast::from_ray(BoundingCircle, Ray2d, Float) -> Self
+pub fn BoundingCircleCast::new(BoundingCircle, Vec2, Dir2, Float) -> Self
+
+pub struct BoundingSphere {
+  center : Vec3
+  sphere : Sphere
+}
+pub fn BoundingSphere::from_point_cloud(Isometry3d, Array[Vec3]) -> Self
+pub fn BoundingSphere::intersects_aabb(Self, Aabb3d) -> Bool
+pub fn BoundingSphere::intersects_sphere(Self, Self) -> Bool
+pub fn BoundingSphere::new(Vec3, Float) -> Self
+pub fn BoundingSphere::radius(Self) -> Float
+
+pub struct BoundingSphereCast {
+  ray : RayCast3d
+  sphere : BoundingSphere
+}
+pub fn BoundingSphereCast::from_ray(BoundingSphere, Ray3d, Float) -> Self
+pub fn BoundingSphereCast::new(BoundingSphere, Vec3, Dir3, Float) -> Self
+pub fn BoundingSphereCast::sphere_collision_at(Self, BoundingSphere) -> Float?
+
+pub struct Capsule2d {
+  radius : Float
+  half_length : Float
+  segments : Int
+}
+pub fn Capsule2d::default() -> Self
+pub fn Capsule2d::new(Float, Float, Int) -> Self
+pub fn Capsule2d::to_ring(Self, Float) -> Capsule2dRing
+pub impl Bounded2d for Capsule2d
+pub impl Inset for Capsule2d
+pub impl Primitive2d for Capsule2d
+
+pub struct Capsule2dRing {
+  outer_shape : Capsule2d
+  inner_shape : Capsule2d
+}
+pub fn Capsule2dRing::new(Capsule2d, Capsule2d) -> Self
+pub impl Primitive2d for Capsule2dRing
+
 pub(all) struct Capsule3d {
   radius : Float
   half_length : Float
@@ -49,9 +286,86 @@ pub fn Capsule3d::interior_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Capsule3d::new(Float, Float) -> Self
 pub fn Capsule3d::sample_boundary(Self, @random.Rand) -> Vec3
 pub fn Capsule3d::sample_interior(Self, @random.Rand) -> Vec3
+pub impl Bounded3d for Capsule3d
+pub impl Measured3d for Capsule3d
+pub impl Primitive3d for Capsule3d
+pub impl ShapeSample for Capsule3d
 pub impl Default for Capsule3d
 pub impl ToJson for Capsule3d
 pub impl @json.FromJson for Capsule3d
+
+pub struct Circle {
+  radius : Float
+  vertices : Int
+}
+pub fn Circle::default() -> Self
+pub fn Circle::diameter(Self) -> Float
+pub fn Circle::new(Float) -> Self
+pub fn Circle::to_ring(Self, Float) -> Ring2d
+pub fn Circle::with_vertices(Self, Int) -> Self
+pub impl Bounded2d for Circle
+pub impl Inset for Circle
+pub impl Measured2d for Circle
+pub impl Primitive2d for Circle
+
+pub(all) enum CircularMeshUvMode {
+  Mask(Float)
+}
+pub impl Eq for CircularMeshUvMode
+pub impl ToJson for CircularMeshUvMode
+pub impl @json.FromJson for CircularMeshUvMode
+
+pub struct CircularSector {
+  radius : Float
+  half_angle : Float
+  vertices : Int
+  uv_mode : CircularMeshUvMode
+}
+pub fn CircularSector::angle(Self) -> Float
+pub fn CircularSector::default() -> Self
+pub fn CircularSector::from_turns(Float, Float) -> Self
+pub fn CircularSector::half_angle(Self) -> Float
+pub fn CircularSector::new(Float, Float) -> Self
+pub fn CircularSector::with_uv_mask_angle(Self, Float) -> Self
+pub fn CircularSector::with_uv_mode(Self, CircularMeshUvMode) -> Self
+pub fn CircularSector::with_vertices(Self, Int) -> Self
+pub impl Bounded2d for CircularSector
+pub impl Measured2d for CircularSector
+pub impl Primitive2d for CircularSector
+
+pub struct CircularSectorRing {
+  outer_shape : CircularSector
+  inner_shape : CircularSector
+}
+pub fn CircularSectorRing::new(CircularSector, CircularSector) -> Self
+pub impl Primitive2d for CircularSectorRing
+
+pub struct CircularSegment {
+  radius : Float
+  half_angle : Float
+  vertices : Int
+  uv_mode : CircularMeshUvMode
+}
+pub fn CircularSegment::angle(Self) -> Float
+pub fn CircularSegment::default() -> Self
+pub fn CircularSegment::from_turns(Float, Float) -> Self
+pub fn CircularSegment::half_angle(Self) -> Float
+pub fn CircularSegment::new(Float, Float) -> Self
+pub fn CircularSegment::to_ring(Self, Float) -> CircularSegmentRing
+pub fn CircularSegment::with_uv_mask_angle(Self, Float) -> Self
+pub fn CircularSegment::with_uv_mode(Self, CircularMeshUvMode) -> Self
+pub fn CircularSegment::with_vertices(Self, Int) -> Self
+pub impl Bounded2d for CircularSegment
+pub impl Inset for CircularSegment
+pub impl Measured2d for CircularSegment
+pub impl Primitive2d for CircularSegment
+
+pub struct CircularSegmentRing {
+  outer_shape : CircularSegment
+  inner_shape : CircularSegment
+}
+pub fn CircularSegmentRing::new(CircularSegment, CircularSegment) -> Self
+pub impl Primitive2d for CircularSegmentRing
 
 pub(all) enum CompassOctant {
   North
@@ -65,6 +379,58 @@ pub(all) enum CompassOctant {
 }
 pub impl Eq for CompassOctant
 pub impl Show for CompassOctant
+
+pub(all) enum CompassQuadrant {
+  NorthEast
+  SouthEast
+  SouthWest
+  NorthWest
+}
+pub impl Eq for CompassQuadrant
+pub impl Show for CompassQuadrant
+
+pub struct Cone {
+  radius : Float
+  height : Float
+}
+pub fn Cone::default() -> Self
+pub fn Cone::new(Float, Float) -> Self
+pub impl Bounded3d for Cone
+pub impl Measured3d for Cone
+pub impl Primitive3d for Cone
+pub impl ToJson for Cone
+pub impl @json.FromJson for Cone
+
+pub struct ConicalFrustum {
+  radius_top : Float
+  radius_bottom : Float
+  height : Float
+}
+pub fn ConicalFrustum::default() -> Self
+pub fn ConicalFrustum::new(Float, Float, Float) -> Self
+pub impl Bounded3d for ConicalFrustum
+pub impl Measured3d for ConicalFrustum
+pub impl Primitive3d for ConicalFrustum
+pub impl ToJson for ConicalFrustum
+pub impl @json.FromJson for ConicalFrustum
+
+pub struct ConstantCurve[T] {
+  domain_ : Interval
+  value : T
+}
+pub fn[T] ConstantCurve::domain(Self[T]) -> Interval
+pub fn[T] ConstantCurve::new(Interval, T) -> Self[T]
+pub fn[T] ConstantCurve::sample(Self[T], Float) -> T?
+pub fn[T] ConstantCurve::sample_clamped(Self[T], Float) -> T
+pub fn[T] ConstantCurve::sample_unchecked(Self[T], Float) -> T
+pub fn[T] ConstantCurve::to_curve(Self[T]) -> Curve[T]
+
+pub struct ConvexPolygon {
+  vertices : Array[Vec2]
+}
+pub fn ConvexPolygon::new(Array[Vec2]) -> Self
+pub impl Bounded2d for ConvexPolygon
+pub impl Primitive2d for ConvexPolygon
 
 pub struct CubicBSpline[P] {
   control_points : Array[P]
@@ -86,6 +452,8 @@ pub struct CubicCurve[P] {
   segments : Array[CubicSegment[P]]
 }
 pub fn[P : SplinePoint] CubicCurve::acceleration(Self[P], Float) -> P
+pub fn[P : SplinePoint] CubicCurve::as_curve(Self[P]) -> Curve[P]
+pub fn[P] CubicCurve::domain(Self[P]) -> Interval
 pub fn[P] CubicCurve::from_segments(Array[CubicSegment[P]]) -> Self[P]?
 pub fn[P : SplinePoint] CubicCurve::iter_accelerations(Self[P], Int) -> Array[P]
 pub fn[P : SplinePoint] CubicCurve::iter_positions(Self[P], Int) -> Array[P]
@@ -93,6 +461,8 @@ pub fn[P] CubicCurve::iter_samples(Self[P], Int, (Self[P], Float) -> P) -> Array
 pub fn[P : SplinePoint] CubicCurve::iter_velocities(Self[P], Int) -> Array[P]
 pub fn[P : SplinePoint] CubicCurve::position(Self[P], Float) -> P
 pub fn[P] CubicCurve::push_segment(Self[P], CubicSegment[P]) -> Unit
+pub fn[P : SplinePoint] CubicCurve::sample_with_derivative(Self[P], Float) -> WithDerivative[P]
+pub fn[P : SplinePoint] CubicCurve::sample_with_two_derivatives(Self[P], Float) -> WithTwoDerivatives[P]
 pub fn[P] CubicCurve::segments(Self[P]) -> Array[CubicSegment[P]]
 pub fn[P : SplinePoint] CubicCurve::velocity(Self[P], Float) -> P
 
@@ -110,12 +480,16 @@ pub struct CubicSegment[P] {
   coeff3 : P
 }
 pub fn[P : SplinePoint] CubicSegment::acceleration(Self[P], Float) -> P
+pub fn[P : SplinePoint] CubicSegment::as_curve(Self[P]) -> Curve[P]
+pub fn[P] CubicSegment::domain(Self[P]) -> Interval
 pub fn[P : SplinePoint] CubicSegment::iter_accelerations(Self[P], Int) -> Array[P]
 pub fn[P : SplinePoint] CubicSegment::iter_positions(Self[P], Int) -> Array[P]
 pub fn[P] CubicSegment::iter_samples(Self[P], Int, (Self[P], Float) -> P) -> Array[P]
 pub fn[P : SplinePoint] CubicSegment::iter_velocities(Self[P], Int) -> Array[P]
 pub fn[P : SplinePoint] CubicSegment::new_bezier(P, P, P, P) -> Self[P]
 pub fn[P : SplinePoint] CubicSegment::position(Self[P], Float) -> P
+pub fn[P : SplinePoint] CubicSegment::sample_with_derivative(Self[P], Float) -> WithDerivative[P]
+pub fn[P : SplinePoint] CubicSegment::sample_with_two_derivatives(Self[P], Float) -> WithTwoDerivatives[P]
 pub fn[P : SplinePoint] CubicSegment::velocity(Self[P], Float) -> P
 
 pub(all) struct Cuboid {
@@ -130,9 +504,33 @@ pub fn Cuboid::new(Float, Float, Float) -> Self
 pub fn Cuboid::sample_boundary(Self, @random.Rand) -> Vec3
 pub fn Cuboid::sample_interior(Self, @random.Rand) -> Vec3
 pub fn Cuboid::size(Self) -> Vec3
+pub impl Bounded3d for Cuboid
+pub impl Measured3d for Cuboid
+pub impl Primitive3d for Cuboid
+pub impl ShapeSample for Cuboid
 pub impl Default for Cuboid
 pub impl ToJson for Cuboid
 pub impl @json.FromJson for Cuboid
+
+pub struct Curve[T] {
+  domain_ : Interval
+  sample_unchecked_fn : (Float) -> T
+}
+pub fn[T] Curve::chain(Self[T], Self[T]) -> Result[Self[T], CurveChainError]
+pub fn[T] Curve::domain(Self[T]) -> Interval
+pub fn[T] Curve::graph(Self[T]) -> Self[(Float, T)]
+pub fn[T, S] Curve::map(Self[T], (T) -> S) -> Self[S]
+pub fn[T] Curve::new(Interval, (Float) -> T) -> Self[T]
+pub fn[T] Curve::reparametrize(Self[T], Interval, (Float) -> Float) -> Self[T]
+pub fn[T] Curve::reparametrize_linear(Self[T], Interval) -> Result[Self[T], LinearMapError]
+pub fn[T] Curve::resample(Self[T], Int, (T, T, Float) -> T) -> Result[SampleCurve[T], EvenCoreError]
+pub fn[T] Curve::resample_auto(Self[T], Int) -> Result[SampleAutoCurve[T], EvenCoreError]
+pub fn[T] Curve::reverse(Self[T]) -> Result[Self[T], LinearMapError]
+pub fn[T] Curve::sample(Self[T], Float) -> T?
+pub fn[T] Curve::sample_clamped(Self[T], Float) -> T
+pub fn[T] Curve::sample_unchecked(Self[T], Float) -> T
+pub fn[T] Curve::samples(Self[T], Int) -> Result[Array[T], SpacedPointsError]
+pub fn[T, S] Curve::zip(Self[T], Self[S]) -> Result[Self[(T, S)], InvalidIntervalError]
 
 pub(all) struct Cylinder {
   radius : Float
@@ -143,9 +541,43 @@ pub fn Cylinder::interior_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Cylinder::new(Float, Float) -> Self
 pub fn Cylinder::sample_boundary(Self, @random.Rand) -> Vec3
 pub fn Cylinder::sample_interior(Self, @random.Rand) -> Vec3
+pub impl Bounded3d for Cylinder
+pub impl Measured3d for Cylinder
+pub impl Primitive3d for Cylinder
+pub impl ShapeSample for Cylinder
 pub impl Default for Cylinder
 pub impl ToJson for Cylinder
 pub impl @json.FromJson for Cylinder
+
+pub struct Dir2 {
+  value : Vec2
+}
+pub fn Dir2::as_vec2(Self) -> Vec2
+pub fn Dir2::dot(Self, Self) -> Float
+pub fn Dir2::from_angle(Float) -> Self
+pub fn Dir2::from_xy(Float, Float) -> Result[Self, InvalidDirectionError]
+pub fn Dir2::from_xy_unchecked(Float, Float) -> Self
+pub fn Dir2::new(Vec2) -> Result[Self, InvalidDirectionError]
+pub fn Dir2::new_and_length(Vec2) -> Result[(Self, Float), InvalidDirectionError]
+pub fn Dir2::new_unchecked(Vec2) -> Self
+pub fn Dir2::x() -> Self
+pub fn Dir2::y() -> Self
+pub impl FromRng for Dir2
+
+pub struct Dir3 {
+  value : Vec3
+}
+pub fn Dir3::as_vec3(Self) -> Vec3
+pub fn Dir3::dot(Self, Self) -> Float
+pub fn Dir3::from_xyz(Float, Float, Float) -> Result[Self, InvalidDirectionError]
+pub fn Dir3::from_xyz_unchecked(Float, Float, Float) -> Self
+pub fn Dir3::new(Vec3) -> Result[Self, InvalidDirectionError]
+pub fn Dir3::new_and_length(Vec3) -> Result[(Self, Float), InvalidDirectionError]
+pub fn Dir3::new_unchecked(Vec3) -> Self
+pub fn Dir3::x() -> Self
+pub fn Dir3::y() -> Self
+pub fn Dir3::z() -> Self
+pub impl FromRng for Dir3
 
 pub(all) enum EaseFunction {
   Linear
@@ -200,9 +632,29 @@ pub struct EasingCurve[T] {
   end : T
   ease_fn : EaseFunction
 }
+pub fn[T : Ease] EasingCurve::as_curve(Self[T]) -> Curve[T]
+pub fn[T] EasingCurve::domain(Self[T]) -> Interval
 pub fn[T] EasingCurve::new(T, T, EaseFunction) -> Self[T]
 pub fn[T : Ease] EasingCurve::sample(Self[T], Float) -> T?
 pub fn[T : Ease] EasingCurve::sample_clamped(Self[T], Float) -> T
+
+pub struct Ellipse {
+  half_size : Vec2
+  vertices : Int
+}
+pub fn Ellipse::default() -> Self
+pub fn Ellipse::new(Float, Float) -> Self
+pub fn Ellipse::with_vertices(Self, Int) -> Self
+pub impl Bounded2d for Ellipse
+pub impl Measured2d for Ellipse
+pub impl Primitive2d for Ellipse
+
+pub struct EllipseRing {
+  outer_shape : Ellipse
+  inner_shape : Ellipse
+}
+pub fn EllipseRing::new(Ellipse, Ellipse) -> Self
+pub impl Primitive2d for EllipseRing
 
 pub(all) enum EulerRot {
   ZYX
@@ -223,6 +675,56 @@ pub impl Show for EulerRot
 pub impl ToJson for EulerRot
 pub impl @json.FromJson for EulerRot
 
+pub struct EvenCore[T] {
+  domain_ : Interval
+  samples : Array[T]
+}
+pub fn[T] EvenCore::domain(Self[T]) -> Interval
+pub fn[T] EvenCore::new(Interval, Array[T]) -> Result[Self[T], EvenCoreError]
+pub fn[T] EvenCore::sample_interp(Self[T], Float) -> InterpolationDatum[T]
+pub fn[T] EvenCore::sample_with(Self[T], Float, (T, T, Float) -> T) -> T
+
+pub struct FloatOrd {
+  value : Float
+}
+pub fn FloatOrd::new(Float) -> Self
+pub fn FloatOrd::value(Self) -> Float
+pub impl Eq for FloatOrd
+pub impl Show for FloatOrd
+
+pub struct FunctionCurve[T] {
+  domain_ : Interval
+  f : (Float) -> T
+}
+pub fn[T] FunctionCurve::domain(Self[T]) -> Interval
+pub fn[T] FunctionCurve::new(Interval, (Float) -> T) -> Self[T]
+pub fn[T] FunctionCurve::sample(Self[T], Float) -> T?
+pub fn[T] FunctionCurve::sample_clamped(Self[T], Float) -> T
+pub fn[T] FunctionCurve::sample_unchecked(Self[T], Float) -> T
+pub fn[T] FunctionCurve::to_curve(Self[T]) -> Curve[T]
+
+pub struct HalfSpace {
+  normal_d : Vec4
+}
+pub fn HalfSpace::d(Self) -> Float
+pub fn HalfSpace::intersection_point(Self, Self, Self) -> Vec3?
+pub fn HalfSpace::new(Vec4) -> Self
+pub fn HalfSpace::normal(Self) -> Vec3
+pub fn HalfSpace::normal_d(Self) -> Vec4
+pub impl Eq for HalfSpace
+pub impl ToJson for HalfSpace
+pub impl @json.FromJson for HalfSpace
+
+pub struct IRect {
+  min : IVec2
+  max : IVec2
+}
+pub fn IRect::as_rect(Self) -> Rect
+pub fn IRect::new(IVec2, IVec2) -> Self
+pub fn IRect::size(Self) -> IVec2
+pub impl ToJson for IRect
+pub impl @json.FromJson for IRect
+
 pub struct IVec2 {
   x : Int
   y : Int
@@ -236,6 +738,76 @@ pub fn IVec2::to_vec2(Self) -> Vec2
 pub impl ToJson for IVec2
 pub impl @json.FromJson for IVec2
 
+pub struct InfinitePlane3d {
+  normal : Dir3
+}
+pub fn InfinitePlane3d::default() -> Self
+pub fn InfinitePlane3d::new(Vec3) -> Self
+pub fn InfinitePlane3d::project_point(Self, Isometry3d, Vec3) -> Vec3
+pub fn InfinitePlane3d::signed_distance(Self, Isometry3d, Vec3) -> Float
+pub impl Bounded3d for InfinitePlane3d
+pub impl Primitive3d for InfinitePlane3d
+
+pub(all) enum InterpolationDatum[T] {
+  Exact(T)
+  LeftTail(T)
+  RightTail(T)
+  Between(T, T, Float)
+}
+pub fn[T, S] InterpolationDatum::map(Self[T], (T) -> S) -> Self[S]
+
+pub(all) struct Interval {
+  start_ : Float
+  end_ : Float
+}
+pub fn Interval::clamp(Self, Float) -> Float
+pub fn Interval::contains(Self, Float) -> Bool
+pub fn Interval::contains_interval(Self, Self) -> Bool
+pub fn Interval::end_(Self) -> Float
+pub fn Interval::everywhere() -> Self
+pub fn Interval::has_finite_end(Self) -> Bool
+pub fn Interval::has_finite_start(Self) -> Bool
+pub fn Interval::intersect(Self, Self) -> Result[Self, InvalidIntervalError]
+pub fn Interval::is_bounded(Self) -> Bool
+pub fn Interval::length(Self) -> Float
+pub fn Interval::linear_map_value_to(Self, Self, Float) -> Result[Float, LinearMapError]
+pub fn Interval::new(Float, Float) -> Result[Self, InvalidIntervalError]
+pub fn Interval::spaced_points(Self, Int) -> Result[Array[Float], SpacedPointsError]
+pub fn Interval::start(Self) -> Float
+pub fn Interval::unit() -> Self
+pub impl Eq for Interval
+pub impl Show for Interval
+pub impl ToJson for Interval
+pub impl @json.FromJson for Interval
+
+pub struct Isometry2d {
+  translation : Vec2
+  rotation : Rot2
+}
+pub fn Isometry2d::identity() -> Self
+pub fn Isometry2d::inverse(Self) -> Self
+pub fn Isometry2d::new(Vec2, Rot2) -> Self
+pub fn Isometry2d::transform_point2(Self, Vec2) -> Vec2
+
+pub struct Isometry3d {
+  translation : Vec3
+  rotation : Quat
+}
+pub fn Isometry3d::identity() -> Self
+pub fn Isometry3d::inverse(Self) -> Self
+pub fn Isometry3d::new(Vec3, Quat) -> Self
+pub fn Isometry3d::transform_point3(Self, Vec3) -> Vec3
+
+pub struct IterableCurve[T] {
+  domain_ : Interval
+  sample_iter_unchecked_fn : (Float) -> Iter[T]
+}
+pub fn[T] IterableCurve::domain(Self[T]) -> Interval
+pub fn[T] IterableCurve::new(Interval, (Float) -> Iter[T]) -> Self[T]
+pub fn[T] IterableCurve::sample_iter(Self[T], Float) -> Iter[T]?
+pub fn[T] IterableCurve::sample_iter_clamped(Self[T], Float) -> Iter[T]
+pub fn[T] IterableCurve::sample_iter_unchecked(Self[T], Float) -> Iter[T]
+
 pub(all) enum JumpAt {
   Start
   End
@@ -248,12 +820,79 @@ pub impl Show for JumpAt
 pub impl ToJson for JumpAt
 pub impl @json.FromJson for JumpAt
 
+pub struct Line2d {
+  direction : Dir2
+}
+pub fn Line2d::from_dir(Dir2) -> Self
+pub fn Line2d::new(Vec2) -> Self
+pub impl Bounded2d for Line2d
+pub impl Primitive2d for Line2d
+
+pub struct Line3d {
+  direction : Dir3
+}
+pub fn Line3d::from_dir(Dir3) -> Self
+pub fn Line3d::new(Vec3) -> Self
+pub impl Bounded3d for Line3d
+pub impl Primitive3d for Line3d
+
 pub struct LinearSpline[P] {
   control_points : Array[P]
 }
 pub fn[P] LinearSpline::new(Array[P]) -> Self[P]
 pub fn[P : SplinePoint] LinearSpline::to_curve(Self[P]) -> Result[CubicCurve[P], InsufficientDataError]
 pub fn[P : SplinePoint] LinearSpline::to_curve_cyclic(Self[P]) -> Result[CubicCurve[P], InsufficientDataError]
+
+pub struct Mat3 {
+  x_axis : Vec3
+  y_axis : Vec3
+  z_axis : Vec3
+}
+pub fn Mat3::from_cols(Vec3, Vec3, Vec3) -> Self
+pub fn Mat3::identity() -> Self
+pub fn Mat3::mul_vec3(Self, Vec3) -> Vec3
+
+pub struct Plane2d {
+  normal : Dir2
+}
+pub fn Plane2d::from_normal(Dir2) -> Self
+pub fn Plane2d::new(Vec2) -> Self
+pub impl Bounded2d for Plane2d
+pub impl Primitive2d for Plane2d
+
+pub struct Plane3d {
+  normal : Dir3
+  half_size : Vec2
+}
+pub fn Plane3d::default() -> Self
+pub fn Plane3d::new(Vec3, Vec2) -> Self
+pub impl Measured2d for Plane3d
+pub impl Primitive3d for Plane3d
+
+pub struct Polygon {
+  vertices : Array[Vec2]
+}
+pub fn Polygon::new(Array[Vec2]) -> Self
+pub impl Bounded2d for Polygon
+pub impl Primitive2d for Polygon
+
+pub struct Polyline2d {
+  points : Array[Vec2]
+  half_thickness : Float
+}
+pub fn Polyline2d::new(Array[Vec2]) -> Self
+pub fn Polyline2d::with_half_thickness(Self, Float) -> Self
+pub impl Bounded2d for Polyline2d
+pub impl Primitive2d for Polyline2d
+
+pub struct Polyline3d {
+  vertices : Array[Vec3]
+}
+pub fn Polyline3d::new(Array[Vec3]) -> Self
+pub impl Bounded3d for Polyline3d
+pub impl Primitive3d for Polyline3d
+pub impl ToJson for Polyline3d
+pub impl @json.FromJson for Polyline3d
 
 pub(all) struct Quat {
   mut x : Float
@@ -274,8 +913,49 @@ pub fn Quat::normalize(Self) -> Self
 pub fn Quat::to_euler(Self, EulerRot) -> (Float, Float, Float)
 pub fn Quat::to_rotation_z_angle(Self) -> Float
 pub impl Ease for Quat
+pub impl FromRng for Quat
+pub impl StableInterpolate for Quat
 pub impl ToJson for Quat
 pub impl @json.FromJson for Quat
+
+pub struct Ray2d {
+  origin : Vec2
+  direction : Dir2
+}
+pub fn Ray2d::get_point(Self, Float) -> Vec2
+pub fn Ray2d::new(Vec2, Dir2) -> Self
+
+pub struct Ray3d {
+  origin : Vec3
+  direction : Dir3
+}
+pub fn Ray3d::get_point(Self, Float) -> Vec3
+pub fn Ray3d::new(Vec3, Dir3) -> Self
+
+pub struct RayCast2d {
+  ray : Ray2d
+  max : Float
+  direction_recip : Vec2
+}
+pub fn RayCast2d::aabb_intersection_at(Self, Aabb2d) -> Float?
+pub fn RayCast2d::circle_intersection_at(Self, BoundingCircle) -> Float?
+pub fn RayCast2d::direction_recip(Self) -> Vec2
+pub fn RayCast2d::from_ray(Ray2d, Float) -> Self
+pub fn RayCast2d::intersects_aabb(Self, Aabb2d) -> Bool
+pub fn RayCast2d::intersects_circle(Self, BoundingCircle) -> Bool
+pub fn RayCast2d::new(Vec2, Dir2, Float) -> Self
+
+pub struct RayCast3d {
+  origin : Vec3
+  direction : Dir3
+  max : Float
+  direction_recip : Vec3
+}
+pub fn RayCast3d::aabb_intersection_at(Self, Aabb3d) -> Float?
+pub fn RayCast3d::direction_recip(Self) -> Vec3
+pub fn RayCast3d::from_ray(Ray3d, Float) -> Self
+pub fn RayCast3d::new(Vec3, Dir3, Float) -> Self
+pub fn RayCast3d::sphere_intersection_at(Self, BoundingSphere) -> Float?
 
 pub struct Rect {
   min : Vec2
@@ -288,6 +968,107 @@ pub fn Rect::size(Self) -> Vec2
 pub impl ToJson for Rect
 pub impl @json.FromJson for Rect
 
+pub struct Rectangle {
+  half_size : Vec2
+}
+pub fn Rectangle::default() -> Self
+pub fn Rectangle::from_size(Vec2) -> Self
+pub fn Rectangle::new(Float, Float) -> Self
+pub fn Rectangle::to_ring(Self, Float) -> RectangleRing
+pub impl Bounded2d for Rectangle
+pub impl Inset for Rectangle
+pub impl Measured2d for Rectangle
+pub impl Primitive2d for Rectangle
+
+pub struct RectangleRing {
+  outer_shape : Rectangle
+  inner_shape : Rectangle
+}
+pub fn RectangleRing::new(Rectangle, Rectangle) -> Self
+pub impl Primitive2d for RectangleRing
+
+pub struct RegularPolygon {
+  radius : Float
+  sides : Int
+}
+pub fn RegularPolygon::default() -> Self
+pub fn RegularPolygon::new(Float, Int) -> Self
+pub fn RegularPolygon::to_ring(Self, Float) -> RegularPolygonRing
+pub impl Bounded2d for RegularPolygon
+pub impl Inset for RegularPolygon
+pub impl Measured2d for RegularPolygon
+pub impl Primitive2d for RegularPolygon
+
+pub struct RegularPolygonRing {
+  outer_shape : RegularPolygon
+  inner_shape : RegularPolygon
+}
+pub fn RegularPolygonRing::new(RegularPolygon, RegularPolygon) -> Self
+pub impl Primitive2d for RegularPolygonRing
+
+pub struct Rhombus {
+  half_diagonal : Vec2
+}
+pub fn Rhombus::default() -> Self
+pub fn Rhombus::new(Float, Float) -> Self
+pub fn Rhombus::to_ring(Self, Float) -> RhombusRing
+pub impl Bounded2d for Rhombus
+pub impl Inset for Rhombus
+pub impl Measured2d for Rhombus
+pub impl Primitive2d for Rhombus
+
+pub struct RhombusRing {
+  outer_shape : Rhombus
+  inner_shape : Rhombus
+}
+pub fn RhombusRing::new(Rhombus, Rhombus) -> Self
+pub impl Primitive2d for RhombusRing
+
+pub struct Ring2d {
+  outer_radius : Float
+  inner_radius : Float
+  vertices : Int
+}
+pub fn Ring2d::default() -> Self
+pub fn Ring2d::new(Float, Float) -> Self
+pub fn Ring2d::with_vertices(Self, Int) -> Self
+pub impl Measured2d for Ring2d
+pub impl Primitive2d for Ring2d
+
+pub struct Rot2 {
+  sin : Float
+  cos : Float
+}
+pub fn Rot2::as_radians(Self) -> Float
+pub fn Rot2::degrees(Float) -> Self
+pub fn Rot2::identity() -> Self
+pub fn Rot2::inverse(Self) -> Self
+pub fn Rot2::mul(Self, Self) -> Self
+pub fn Rot2::mul_vec2(Self, Vec2) -> Vec2
+pub fn Rot2::radians(Float) -> Self
+pub impl FromRng for Rot2
+
+pub struct SampleAutoCurve[T] {
+  core : EvenCore[T]
+}
+pub fn[T] SampleAutoCurve::domain(Self[T]) -> Interval
+pub fn[T] SampleAutoCurve::new(Interval, Array[T]) -> Result[Self[T], EvenCoreError]
+pub fn[T : StableInterpolate] SampleAutoCurve::sample(Self[T], Float) -> T?
+pub fn[T : StableInterpolate] SampleAutoCurve::sample_clamped(Self[T], Float) -> T
+pub fn[T : StableInterpolate] SampleAutoCurve::sample_unchecked(Self[T], Float) -> T
+pub fn[T : StableInterpolate] SampleAutoCurve::to_curve(Self[T]) -> Curve[T]
+
+pub struct SampleCurve[T] {
+  core : EvenCore[T]
+  interpolation : (T, T, Float) -> T
+}
+pub fn[T] SampleCurve::domain(Self[T]) -> Interval
+pub fn[T] SampleCurve::new(Interval, Array[T], (T, T, Float) -> T) -> Result[Self[T], EvenCoreError]
+pub fn[T] SampleCurve::sample(Self[T], Float) -> T?
+pub fn[T] SampleCurve::sample_clamped(Self[T], Float) -> T
+pub fn[T] SampleCurve::sample_unchecked(Self[T], Float) -> T
+pub fn[T] SampleCurve::to_curve(Self[T]) -> Curve[T]
+
 pub struct SamplingDistribution[T] {
   sample_one : (@random.Rand) -> T
 }
@@ -295,14 +1076,43 @@ pub fn[T] SamplingDistribution::new((@random.Rand) -> T) -> Self[T]
 pub fn[T] SamplingDistribution::sample(Self[T], @random.Rand) -> T
 pub fn[T] SamplingDistribution::sample_iter(Self[T], @random.Rand) -> Iter[T]
 
+pub struct Segment2d {
+  start : Vec2
+  end : Vec2
+  half_thickness : Float
+}
+pub fn Segment2d::new(Vec2, Vec2) -> Self
+pub fn Segment2d::with_half_thickness(Self, Float) -> Self
+pub impl Bounded2d for Segment2d
+pub impl Primitive2d for Segment2d
+
+pub struct Segment3d {
+  point_a : Vec3
+  point_b : Vec3
+}
+pub fn Segment3d::center(Self) -> Vec3
+pub fn Segment3d::length(Self) -> Float
+pub fn Segment3d::new(Vec3, Vec3) -> Self
+pub fn Segment3d::point1(Self) -> Vec3
+pub fn Segment3d::point2(Self) -> Vec3
+pub impl Bounded3d for Segment3d
+pub impl Primitive3d for Segment3d
+pub impl ToJson for Segment3d
+pub impl @json.FromJson for Segment3d
+
 pub(all) struct Sphere {
   radius : Float
 }
 pub fn Sphere::boundary_dist(Self) -> SamplingDistribution[Vec3]
+pub fn Sphere::diameter(Self) -> Float
 pub fn Sphere::interior_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Sphere::new(Float) -> Self
 pub fn Sphere::sample_boundary(Self, @random.Rand) -> Vec3
 pub fn Sphere::sample_interior(Self, @random.Rand) -> Vec3
+pub impl Bounded3d for Sphere
+pub impl Measured3d for Sphere
+pub impl Primitive3d for Sphere
+pub impl ShapeSample for Sphere
 pub impl Default for Sphere
 pub impl ToJson for Sphere
 pub impl @json.FromJson for Sphere
@@ -316,48 +1126,46 @@ pub fn Tetrahedron::interior_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Tetrahedron::new(Vec3, Vec3, Vec3, Vec3) -> Self
 pub fn Tetrahedron::sample_boundary(Self, @random.Rand) -> Vec3
 pub fn Tetrahedron::sample_interior(Self, @random.Rand) -> Vec3
+pub impl Bounded3d for Tetrahedron
+pub impl Measured3d for Tetrahedron
+pub impl Primitive3d for Tetrahedron
+pub impl ShapeSample for Tetrahedron
 pub impl Default for Tetrahedron
 pub impl ToJson for Tetrahedron
 pub impl @json.FromJson for Tetrahedron
 
-pub(all) struct Transform {
-  mut translation : Vec3
-  mut rotation : Quat
-  mut scale : Vec3
+pub struct Torus {
+  major_radius : Float
+  minor_radius : Float
 }
-pub fn Transform::align(Self, Vec3, Vec3, Vec3, Vec3) -> Unit
-pub fn Transform::aligned_by(Self, Vec3, Vec3, Vec3, Vec3) -> Self
-pub fn Transform::back(Self) -> Vec3
-pub fn Transform::down(Self) -> Vec3
-pub fn Transform::forward(Self) -> Vec3
-pub fn Transform::from_rotation(Quat) -> Self
-pub fn Transform::from_translation(Vec3) -> Self
-pub fn Transform::from_xy(Float, Float) -> Self
-pub fn Transform::from_xy_rotation_scale(Vec2, Float, Vec2, z? : Float) -> Self
-pub fn Transform::from_xyz(Float, Float, Float) -> Self
-pub fn Transform::identity() -> Self
-pub fn Transform::left(Self) -> Vec3
-pub fn Transform::local_x(Self) -> Vec3
-pub fn Transform::local_y(Self) -> Vec3
-pub fn Transform::local_z(Self) -> Vec3
-pub fn Transform::looking_at(Self, Vec3, Vec3) -> Self
-pub fn Transform::looking_to(Self, Vec3, Vec3) -> Self
-pub fn Transform::new(Vec3, Quat, Vec3) -> Self
-pub fn Transform::right(Self) -> Vec3
-pub fn Transform::rotate(Self, Quat) -> Unit
-pub fn Transform::rotate_around(Self, Vec3, Quat) -> Unit
-pub fn Transform::rotate_y(Self, Float) -> Unit
-pub fn Transform::rotate_z(Self, Float) -> Unit
-pub fn Transform::rotation_z(Self) -> Float
-pub fn Transform::translate_around(Self, Vec3, Quat) -> Unit
-pub fn Transform::up(Self) -> Vec3
-pub fn Transform::with_rotation(Self, Quat) -> Self
-pub fn Transform::with_scale(Self, Vec3) -> Self
-pub fn Transform::with_translation(Self, Vec3) -> Self
-pub impl @ecs.Component for Transform
-pub impl Ease for Transform
-pub impl ToJson for Transform
-pub impl @json.FromJson for Transform
+pub fn Torus::default() -> Self
+pub fn Torus::new(Float, Float) -> Self
+pub fn Torus::outer_radius(Self) -> Float
+pub impl Bounded3d for Torus
+pub impl Measured3d for Torus
+pub impl Primitive3d for Torus
+pub impl ToJson for Torus
+pub impl @json.FromJson for Torus
+
+pub struct Triangle2d {
+  a : Vec2
+  b : Vec2
+  c : Vec2
+}
+pub fn Triangle2d::default() -> Self
+pub fn Triangle2d::new(Vec2, Vec2, Vec2) -> Self
+pub fn Triangle2d::to_ring(Self, Float) -> Triangle2dRing
+pub impl Bounded2d for Triangle2d
+pub impl Inset for Triangle2d
+pub impl Measured2d for Triangle2d
+pub impl Primitive2d for Triangle2d
+
+pub struct Triangle2dRing {
+  outer_shape : Triangle2d
+  inner_shape : Triangle2d
+}
+pub fn Triangle2dRing::new(Triangle2d, Triangle2d) -> Self
+pub impl Primitive2d for Triangle2dRing
 
 pub(all) struct Triangle3d {
   vertices : Array[Vec3]
@@ -367,6 +1175,10 @@ pub fn Triangle3d::interior_dist(Self) -> SamplingDistribution[Vec3]
 pub fn Triangle3d::new(Vec3, Vec3, Vec3) -> Self
 pub fn Triangle3d::sample_boundary(Self, @random.Rand) -> Vec3
 pub fn Triangle3d::sample_interior(Self, @random.Rand) -> Vec3
+pub impl Bounded3d for Triangle3d
+pub impl Measured2d for Triangle3d
+pub impl Primitive3d for Triangle3d
+pub impl ShapeSample for Triangle3d
 pub impl Default for Triangle3d
 pub impl ToJson for Triangle3d
 pub impl @json.FromJson for Triangle3d
@@ -394,12 +1206,41 @@ pub fn UVec2::zero() -> Self
 pub impl ToJson for UVec2
 pub impl @json.FromJson for UVec2
 
+pub struct UnevenCore[T] {
+  sample_points : Array[(Float, T)]
+}
+pub fn[T] UnevenCore::domain(Self[T]) -> Interval
+pub fn[T] UnevenCore::new(Array[(Float, T)]) -> Result[Self[T], UnevenCoreError]
+pub fn[T] UnevenCore::sample_interp(Self[T], Float) -> InterpolationDatum[(Float, T)]
+pub fn[T] UnevenCore::sample_with(Self[T], Float, (T, T, Float) -> T) -> T
+
+pub struct UnevenSampleCurve[T] {
+  core : UnevenCore[T]
+  interpolation : (T, T, Float) -> T
+}
+pub fn[T] UnevenSampleCurve::domain(Self[T]) -> Interval
+pub fn[T] UnevenSampleCurve::new(Array[(Float, T)], (T, T, Float) -> T) -> Result[Self[T], UnevenCoreError]
+pub fn[T] UnevenSampleCurve::sample(Self[T], Float) -> T?
+pub fn[T] UnevenSampleCurve::sample_clamped(Self[T], Float) -> T
+pub fn[T] UnevenSampleCurve::sample_unchecked(Self[T], Float) -> T
+pub fn[T] UnevenSampleCurve::to_curve(Self[T]) -> Curve[T]
+
+pub struct UniformMeshSampler {
+  triangles : Array[Triangle3d]
+  cumulative_areas : Array[Float]
+  total_area : Float
+}
+pub fn UniformMeshSampler::sample(Self, @random.Rand) -> Vec3
+pub fn UniformMeshSampler::sample_iter(Self, @random.Rand) -> Iter[Vec3]
+pub fn UniformMeshSampler::try_new(Array[Triangle3d]) -> Result[Self, UniformMeshSamplerError]
+
 pub(all) struct Vec2 {
   mut x : Float
   mut y : Float
 }
 pub fn Vec2::add(Self, Self) -> Self
 pub fn Vec2::dot(Self, Self) -> Float
+pub fn Vec2::from_angle(Float) -> Self
 pub fn Vec2::length(Self) -> Float
 pub fn Vec2::length_squared(Self) -> Float
 pub fn Vec2::mul_scalar(Self, Float) -> Self
@@ -410,6 +1251,8 @@ pub fn Vec2::to_angle(Self) -> Float
 pub fn Vec2::zero() -> Self
 pub impl Ease for Vec2
 pub impl SplinePoint for Vec2
+pub impl StableInterpolate for Vec2
+pub impl VectorSpace for Vec2
 pub impl ToJson for Vec2
 pub impl @json.FromJson for Vec2
 
@@ -439,6 +1282,8 @@ pub fn Vec3::zero() -> Self
 pub fn Vec3::zxy(Self) -> Self
 pub impl Ease for Vec3
 pub impl SplinePoint for Vec3
+pub impl StableInterpolate for Vec3
+pub impl VectorSpace for Vec3
 pub impl ToJson for Vec3
 pub impl @json.FromJson for Vec3
 
@@ -452,17 +1297,86 @@ pub fn Vec4::new(Float, Float, Float, Float) -> Self
 pub fn Vec4::splat(Float) -> Self
 pub impl Ease for Vec4
 pub impl SplinePoint for Vec4
+pub impl StableInterpolate for Vec4
+pub impl VectorSpace for Vec4
 pub impl Eq for Vec4
 pub impl ToJson for Vec4
 pub impl @json.FromJson for Vec4
 
+pub struct ViewFrustum {
+  half_spaces : Array[HalfSpace]
+}
+pub fn ViewFrustum::corners(Self) -> Array[Vec3]?
+pub fn ViewFrustum::new(Array[HalfSpace]) -> Self
+pub impl Eq for ViewFrustum
+pub impl ToJson for ViewFrustum
+pub impl @json.FromJson for ViewFrustum
+
+pub(all) enum WindingOrder {
+  Clockwise
+  CounterClockwise
+  Invalid
+}
+pub impl Eq for WindingOrder
+pub impl Show for WindingOrder
+pub impl ToJson for WindingOrder
+pub impl @json.FromJson for WindingOrder
+
+pub(all) struct WithDerivative[T] {
+  value : T
+  derivative : T
+}
+
+pub(all) struct WithTwoDerivatives[T] {
+  value : T
+  derivative : T
+  second_derivative : T
+}
+
 // Type aliases
 
 // Traits
+pub(open) trait Bounded2d {
+  aabb_2d(Self, Isometry2d) -> Aabb2d
+  bounding_circle(Self, Isometry2d) -> BoundingCircle
+}
+
+pub(open) trait Bounded3d {
+  aabb_3d(Self, Isometry3d) -> Aabb3d
+  bounding_sphere(Self, Isometry3d) -> BoundingSphere
+}
+
 pub(open) trait Ease {
   interpolate(Self, Self, Float) -> Self
 }
 pub impl Ease for Float
+
+pub(open) trait FromRng {
+  from_rng(@random.Rand) -> Self
+}
+
+pub(open) trait Inset {
+  inset(Self, Float) -> Self
+}
+
+pub(open) trait Measured2d {
+  perimeter(Self) -> Float
+  area(Self) -> Float
+}
+
+pub(open) trait Measured3d {
+  area(Self) -> Float
+  volume(Self) -> Float
+}
+
+pub(open) trait Primitive2d {
+}
+
+pub(open) trait Primitive3d {
+}
+
+pub(open) trait ShapeSample {
+}
 
 pub(open) trait SplinePoint {
   zero() -> Self
@@ -471,4 +1385,19 @@ pub(open) trait SplinePoint {
   mul_scalar(Self, Float) -> Self
 }
 pub impl SplinePoint for Float
+
+pub(open) trait StableInterpolate {
+  stable_interpolate(Self, Self, Float) -> Self
+}
+pub impl StableInterpolate for Float
+
+pub(open) trait VectorSpace {
+  zero() -> Self
+  add(Self, Self) -> Self
+  sub(Self, Self) -> Self
+  neg(Self) -> Self
+  mul_scalar(Self, Float) -> Self
+  div_scalar(Self, Float) -> Self
+}
+pub impl VectorSpace for Float
 

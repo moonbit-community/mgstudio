@@ -32,10 +32,10 @@ pub fn register_transform_required_components(
   world : @ecs.World,
 ) -> Unit raise @ecs.RequiredComponentsError {
   world.register_required_components(
-    @math.ecs_key_transform, ecs_key_global_transform,
+    ecs_key_transform, ecs_key_global_transform,
   )
   world.register_required_components(
-    @math.ecs_key_transform, ecs_key_transform_tree_changed,
+    ecs_key_transform, ecs_key_transform_tree_changed,
   )
 }
 

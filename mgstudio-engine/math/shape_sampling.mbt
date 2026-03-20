@@ -42,21 +42,6 @@ pub fn[T] SamplingDistribution::sample_iter(
 }
 
 ///|
-pub(all) struct Sphere {
-  radius : Float
-} derive(ToJson, FromJson)
-
-///|
-pub impl Default for Sphere with default() {
-  Sphere::{ radius: 0.5F }
-}
-
-///|
-pub fn Sphere::new(radius : Float) -> Sphere {
-  Sphere::{ radius, }
-}
-
-///|
 pub fn Sphere::sample_interior(self : Sphere, rng : @random.Rand) -> Vec3 {
   let safe_radius = sampling_non_negative(self.radius)
   if safe_radius <= 0.0F {
@@ -87,27 +72,11 @@ pub fn Sphere::boundary_dist(self : Sphere) -> SamplingDistribution[Vec3] {
 }
 
 ///|
-pub(all) struct Cylinder {
-  radius : Float
-  half_height : Float
-} derive(ToJson, FromJson)
-
-///|
-pub impl Default for Cylinder with default() {
-  Cylinder::{ radius: 0.5F, half_height: 0.5F }
-}
-
-///|
-pub fn Cylinder::new(radius : Float, height : Float) -> Cylinder {
-  Cylinder::{ radius, half_height: height * 0.5F }
-}
-
-///|
 pub fn Cylinder::sample_interior(self : Cylinder, rng : @random.Rand) -> Vec3 {
   let safe_radius = sampling_non_negative(self.radius)
   let safe_half_height = sampling_non_negative(self.half_height)
   let (x, z) = sampling_sample_disk_interior(rng, safe_radius)
-  let y = cuboid_sample_axis(rng, safe_half_height)
+  let y = shape_sample_axis(rng, safe_half_height)
   Vec3::new(x, y, z)
 }
 
@@ -124,7 +93,7 @@ pub fn Cylinder::sample_boundary(self : Cylinder, rng : @random.Rand) -> Vec3 {
     Vec3::new(x, y, z)
   } else {
     let (x, z) = sampling_sample_disk_boundary(rng, safe_radius)
-    Vec3::new(x, cuboid_sample_axis(rng, safe_half_height), z)
+    Vec3::new(x, shape_sample_axis(rng, safe_half_height), z)
   }
 }
 
@@ -136,22 +105,6 @@ pub fn Cylinder::interior_dist(self : Cylinder) -> SamplingDistribution[Vec3] {
 ///|
 pub fn Cylinder::boundary_dist(self : Cylinder) -> SamplingDistribution[Vec3] {
   SamplingDistribution::new(fn(rng) { self.sample_boundary(rng) })
-}
-
-///|
-pub(all) struct Capsule3d {
-  radius : Float
-  half_length : Float
-} derive(ToJson, FromJson)
-
-///|
-pub impl Default for Capsule3d with default() {
-  Capsule3d::{ radius: 0.5F, half_length: 0.5F }
-}
-
-///|
-pub fn Capsule3d::new(radius : Float, length : Float) -> Capsule3d {
-  Capsule3d::{ radius, half_length: length * 0.5F }
 }
 
 ///|
@@ -194,7 +147,7 @@ pub fn Capsule3d::sample_boundary(self : Capsule3d, rng : @random.Rand) -> Vec3 
   }
   if rng.float() < cylinder_surface / capsule_surface {
     let (x, z) = sampling_sample_disk_boundary(rng, safe_radius)
-    Vec3::new(x, cuboid_sample_axis(rng, safe_half_length), z)
+    Vec3::new(x, shape_sample_axis(rng, safe_half_length), z)
   } else {
     let sphere_point = Sphere::{ radius: safe_radius }.sample_boundary(rng)
     if sphere_point.y > 0.0F {
@@ -213,27 +166,6 @@ pub fn Capsule3d::interior_dist(self : Capsule3d) -> SamplingDistribution[Vec3] 
 ///|
 pub fn Capsule3d::boundary_dist(self : Capsule3d) -> SamplingDistribution[Vec3] {
   SamplingDistribution::new(fn(rng) { self.sample_boundary(rng) })
-}
-
-///|
-pub(all) struct Triangle3d {
-  vertices : Array[Vec3]
-} derive(ToJson, FromJson)
-
-///|
-pub impl Default for Triangle3d with default() {
-  Triangle3d::{
-    vertices: [
-      Vec3::new(0.0F, 0.5F, 0.0F),
-      Vec3::new(-0.5F, -0.5F, 0.0F),
-      Vec3::new(0.5F, -0.5F, 0.0F),
-    ],
-  }
-}
-
-///|
-pub fn Triangle3d::new(a : Vec3, b : Vec3, c : Vec3) -> Triangle3d {
-  Triangle3d::{ vertices: [a, b, c] }
 }
 
 ///|
@@ -270,41 +202,6 @@ pub fn Triangle3d::boundary_dist(
   self : Triangle3d,
 ) -> SamplingDistribution[Vec3] {
   SamplingDistribution::new(fn(rng) { self.sample_boundary(rng) })
-}
-
-///|
-pub(all) struct Tetrahedron {
-  vertices : Array[Vec3]
-} derive(ToJson, FromJson)
-
-///|
-pub impl Default for Tetrahedron with default() {
-  Tetrahedron::{
-    vertices: [
-      Vec3::new(0.5F, 0.5F, 0.5F),
-      Vec3::new(-0.5F, 0.5F, -0.5F),
-      Vec3::new(-0.5F, -0.5F, 0.5F),
-      Vec3::new(0.5F, -0.5F, -0.5F),
-    ],
-  }
-}
-
-///|
-pub fn Tetrahedron::new(a : Vec3, b : Vec3, c : Vec3, d : Vec3) -> Tetrahedron {
-  Tetrahedron::{ vertices: [a, b, c, d] }
-}
-
-///|
-pub fn Tetrahedron::faces(self : Tetrahedron) -> Array[Triangle3d] {
-  guard sampling_tetrahedron_vertices(self.vertices) is Some((a, b, c, d)) else {
-    return []
-  }
-  [
-    Triangle3d::new(b, c, d),
-    Triangle3d::new(a, d, c),
-    Triangle3d::new(a, b, d),
-    Triangle3d::new(a, c, b),
-  ]
 }
 
 ///|
@@ -362,9 +259,9 @@ pub fn Tetrahedron::boundary_dist(
 
 ///|
 pub fn Cuboid::sample_boundary(self : Cuboid, rng : @random.Rand) -> Vec3 {
-  let hx = cuboid_abs_float(self.half_size.x)
-  let hy = cuboid_abs_float(self.half_size.y)
-  let hz = cuboid_abs_float(self.half_size.z)
+  let hx = shape_abs_float(self.half_size.x)
+  let hy = shape_abs_float(self.half_size.y)
+  let hz = shape_abs_float(self.half_size.z)
   let weights = [hy * hz, hx * hz, hx * hy]
   guard sampling_weighted_index(weights, rng) is Some(face_index) else {
     return Vec3::zero()
@@ -554,4 +451,18 @@ fn sampling_sort3(a : Float, b : Float, c : Float) -> (Float, Float, Float) {
     y = next
   }
   (x, y, z)
+}
+
+///|
+fn shape_abs_float(value : Float) -> Float {
+  if value < 0.0F {
+    -value
+  } else {
+    value
+  }
+}
+
+///|
+fn shape_sample_axis(rng : @random.Rand, half_extent : Float) -> Float {
+  (rng.float() * 2.0F - 1.0F) * half_extent
 }

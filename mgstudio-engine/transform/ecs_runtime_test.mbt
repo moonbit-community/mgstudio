@@ -57,8 +57,8 @@ test "transform ecs world: child global uses parent and local transforms" {
   next_system_ticks_ecs(world)
   try! world.set(
     parent,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(1.0F, 0.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
@@ -66,8 +66,8 @@ test "transform ecs world: child global uses parent and local transforms" {
   )
   try! world.set(
     child,
-    @math.ecs_key_transform,
-    @math.Transform::from_xy_rotation_scale(
+    ecs_key_transform,
+    Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 2.0F),
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),

@@ -13,23 +13,19 @@
 // limitations under the License.
 
 ///|
-/// ECS component bridge types.
-pub let ecs_components : Array[String] = ["Transform", "GlobalTransform"]
+/// Root surface for rectangle modules.
 
 ///|
-/// ECS resource bridge types.
-pub let ecs_resources : Array[String] = []
-
-///|
-pub fn get_global_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[GlobalTransform] {
-  world.component(ecs_key_global_transform)
+pub fn rect(min : Vec2, max : Vec2) -> Rect {
+  Rect::new(min, max)
 }
 
 ///|
-pub fn get_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[Transform] {
-  world.component(ecs_key_transform)
+pub fn irect(min : IVec2, max : IVec2) -> IRect {
+  IRect::new(min, max)
+}
+
+///|
+pub fn urect(min : UVec2, max : UVec2) -> URect {
+  URect::new(min, max)
 }

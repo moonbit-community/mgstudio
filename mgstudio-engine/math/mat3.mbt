@@ -13,11 +13,30 @@
 // limitations under the License.
 
 ///|
-pub let ecs_key_transform : @ecs.ComponentKey[Transform] = @ecs.register_component(
-  debug_name="math.transform",
-)
+pub struct Mat3 {
+  x_axis : Vec3
+  y_axis : Vec3
+  z_axis : Vec3
+}
 
 ///|
-pub impl @ecs.Component for Transform with component() {
-  ecs_key_transform
+pub fn Mat3::identity() -> Mat3 {
+  Mat3::{
+    x_axis: Vec3::new(1.0F, 0.0F, 0.0F),
+    y_axis: Vec3::new(0.0F, 1.0F, 0.0F),
+    z_axis: Vec3::new(0.0F, 0.0F, 1.0F),
+  }
+}
+
+///|
+pub fn Mat3::from_cols(x_axis : Vec3, y_axis : Vec3, z_axis : Vec3) -> Mat3 {
+  Mat3::{ x_axis, y_axis, z_axis }
+}
+
+///|
+pub fn Mat3::mul_vec3(self : Mat3, value : Vec3) -> Vec3 {
+  self.x_axis
+  .mul_scalar(value.x)
+  .add(self.y_axis.mul_scalar(value.y))
+  .add(self.z_axis.mul_scalar(value.z))
 }

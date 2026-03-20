@@ -13,23 +13,43 @@
 // limitations under the License.
 
 ///|
-/// ECS component bridge types.
-pub let ecs_components : Array[String] = ["Transform", "GlobalTransform"]
+/// Root surface for random sampling helpers.
 
 ///|
-/// ECS resource bridge types.
-pub let ecs_resources : Array[String] = []
-
-///|
-pub fn get_global_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[GlobalTransform] {
-  world.component(ecs_key_global_transform)
+pub(open) trait FromRng {
+  from_rng(@random.Rand) -> Self
 }
 
 ///|
-pub fn get_transform_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[Transform] {
-  world.component(ecs_key_transform)
+pub(open) trait ShapeSample {}
+
+///|
+pub impl ShapeSample for Sphere
+
+///|
+pub impl ShapeSample for Cuboid
+
+///|
+pub impl ShapeSample for Cylinder
+
+///|
+pub impl ShapeSample for Capsule3d
+
+///|
+pub impl ShapeSample for Triangle3d
+
+///|
+pub impl ShapeSample for Tetrahedron
+
+///|
+pub fn[T] sample_points(
+  distribution : SamplingDistribution[T],
+  rng : @random.Rand,
+  count : Int,
+) -> Array[T] {
+  let samples : Array[T] = []
+  for _ in 0..<count {
+    samples.push(distribution.sample(rng))
+  }
+  samples
 }

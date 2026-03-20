@@ -125,15 +125,6 @@ pub impl Ease for Quat with interpolate(self, end, t) {
 }
 
 ///|
-pub impl Ease for Transform with interpolate(self, end, t) {
-  Transform::{
-    translation: self.translation.interpolate(end.translation, t),
-    rotation: self.rotation.interpolate(end.rotation, t),
-    scale: self.scale.interpolate(end.scale, t),
-  }
-}
-
-///|
 pub struct EasingCurve[T] {
   start : T
   end : T
