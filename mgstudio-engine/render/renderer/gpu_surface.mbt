@@ -490,8 +490,8 @@ pub fn GpuBackend::begin_frame_binding(
   sync_active_surface_legacy_state(self)
 
   self.mesh2d_instance_used = 0
-  self.mesh3d_uniform_slot_used = 0
-  self.mesh3d_instance_uniform_used = 0
+  self.mesh3d_draw_slot_used = 0
+  self.mesh3d_instance_draw_used = 0
   let st = self.surfaces[index].surface.get_current_texture()
   let tex = st.take_texture()
   let view = tex.create_view()

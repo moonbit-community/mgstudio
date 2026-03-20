@@ -269,14 +269,15 @@ test "renderer: mesh2d material loader appends custom fragment shader" {
 }
 
 ///|
-test "renderer: mesh3d uniform slot pool grows per draw slot" {
+test "renderer: mesh3d draw slot pool grows per draw slot" {
   let backend = GpuBackend::new(assets_base="assets")
   ensure_mesh3d_pipeline_rgba8(backend, MESH3D_TOPOLOGY_TRIANGLE_LIST, 0)
-  let ok = ensure_mesh3d_uniform_slot(backend, 0) is Some(_) &&
-    ensure_mesh3d_uniform_slot(backend, 1) is Some(_) &&
+  let ok = ensure_mesh3d_draw_slot(backend, 0) is Some(_) &&
+    ensure_mesh3d_draw_slot(backend, 1) is Some(_) &&
     backend.mesh3d_bgl_view is Some(_) &&
     backend.mesh3d_view_buf is Some(_) &&
-    backend.mesh3d_uniform_slots.length() == 2
+    backend.mesh3d_bgl_draw is Some(_) &&
+    backend.mesh3d_draw_slots.length() == 2
   inspect(ok, content="true")
 }
 
@@ -460,8 +461,16 @@ test "renderer: custom mesh3d forward shader consumes normal-aware vertex layout
   )
   inspect(
     wgsl.contains(
-      "@group(2) @binding(0) var<uniform> u_draw : Mesh3dDrawUniform;",
+      "@group(2) @binding(0) var<storage, read> u_draws : Mesh3dDrawUniformBuffer;",
     ),
+    content="true",
+  )
+  inspect(
+    wgsl.contains("@builtin(instance_index) instance_index : u32,"),
+    content="true",
+  )
+  inspect(
+    wgsl.contains("@location(4) @interpolate(flat) draw_index : u32,"),
     content="true",
   )
   inspect(

@@ -35,7 +35,7 @@ const MESH2D_UNIFORM_STRIDE_BYTES : UInt64 = 96UL
 const MESH2D_UNIFORM_DYNAMIC_STRIDE_BYTES : UInt64 = 256UL
 
 ///|
-const MESH3D_UNIFORM_BUFFER_SIZE : UInt64 = 512UL
+const MESH3D_DRAW_STORAGE_STRIDE_BYTES : UInt64 = 208UL
 
 ///|
 const MESH3D_VIEW_BUFFER_SIZE : UInt64 = 256UL
@@ -117,7 +117,7 @@ pub struct UiShadowPipelineCacheEntry {
 }
 
 ///|
-struct GpuUniformSlot {
+struct GpuStorageSlot {
   buffer : @wgpu.Buffer
   bind_group : @wgpu.BindGroup
 }
@@ -435,7 +435,7 @@ pub struct GpuBackend {
   mesh2d_material_layout_cache : Array[Mesh2dMaterialLayoutCacheEntry]
   mesh2d_material_bg_cache : Array[Mesh2dMaterialBindGroupCacheEntry]
   mut mesh3d_bgl_view : @wgpu.BindGroupLayout?
-  mut mesh3d_bgl_uniform : @wgpu.BindGroupLayout?
+  mut mesh3d_bgl_draw : @wgpu.BindGroupLayout?
   mut mesh3d_bgl_material : @wgpu.BindGroupLayout?
   mut mesh3d_pipeline_layout : @wgpu.PipelineLayout?
   mut mesh3d_pipeline : @wgpu.RenderPipeline?
@@ -455,13 +455,13 @@ pub struct GpuBackend {
   mut mesh3d_pipeline_surface_cull_mode : Int
   mut mesh3d_point_shadow_compare_sampler : @wgpu.Sampler?
   mut mesh3d_view_buf : @wgpu.Buffer?
-  mesh3d_uniform_slots : Array[GpuUniformSlot]
-  mut mesh3d_uniform_slot_used : Int
+  mesh3d_draw_slots : Array[GpuStorageSlot]
+  mut mesh3d_draw_slot_used : Int
   mut mesh3d_gpu_instance_builder_enabled : Bool
-  mut mesh3d_instance_uniform_buf : @wgpu.Buffer?
-  mut mesh3d_instance_uniform_bg : @wgpu.BindGroup?
-  mut mesh3d_instance_uniform_capacity : UInt64
-  mut mesh3d_instance_uniform_used : Int
+  mut mesh3d_instance_draw_buf : @wgpu.Buffer?
+  mut mesh3d_instance_draw_bg : @wgpu.BindGroup?
+  mut mesh3d_instance_draw_capacity : UInt64
+  mut mesh3d_instance_draw_used : Int
   mesh3d_preprocess_camera_upload_states : Array[
     GpuMesh3dPreprocessCameraUploadState,
   ]
@@ -820,7 +820,7 @@ pub fn GpuBackend::new(
     mesh2d_material_layout_cache: [],
     mesh2d_material_bg_cache: [],
     mesh3d_bgl_view: None,
-    mesh3d_bgl_uniform: None,
+    mesh3d_bgl_draw: None,
     mesh3d_bgl_material: None,
     mesh3d_pipeline_layout: None,
     mesh3d_pipeline: None,
@@ -840,13 +840,13 @@ pub fn GpuBackend::new(
     mesh3d_pipeline_surface_cull_mode: -1,
     mesh3d_point_shadow_compare_sampler: None,
     mesh3d_view_buf: None,
-    mesh3d_uniform_slots: [],
-    mesh3d_uniform_slot_used: 0,
+    mesh3d_draw_slots: [],
+    mesh3d_draw_slot_used: 0,
     mesh3d_gpu_instance_builder_enabled: false,
-    mesh3d_instance_uniform_buf: None,
-    mesh3d_instance_uniform_bg: None,
-    mesh3d_instance_uniform_capacity: 0UL,
-    mesh3d_instance_uniform_used: 0,
+    mesh3d_instance_draw_buf: None,
+    mesh3d_instance_draw_bg: None,
+    mesh3d_instance_draw_capacity: 0UL,
+    mesh3d_instance_draw_used: 0,
     mesh3d_preprocess_camera_upload_states: [],
     mesh3d_motion_vector_bgl_view: None,
     mesh3d_motion_vector_bgl_empty: None,
@@ -1467,26 +1467,6 @@ fn load_wgsl_from_assets_base_required(
   wgsl_composer().load_wgsl_from_assets_base_required(assets_base, rel) catch {
     err => raise_composer_error(err)
   }
-}
-
-///|
-fn create_uniform_bind_group_layout_vertex_fragment(
-  backend : GpuBackend,
-  label : String,
-  has_dynamic_offset? : Bool = false,
-) -> @wgpu.BindGroupLayout raise GpuBackendError {
-  let builder = @wgpu.BindGroupLayoutBuilder::new(max_entries=1UL)
-  let ok = builder.add_buffer(
-    0U,
-    ss(@wgpu.SHADER_STAGE_VERTEX | @wgpu.SHADER_STAGE_FRAGMENT),
-    @wgpu.BUFFER_BINDING_TYPE_UNIFORM,
-    has_dynamic_offset~,
-  )
-  if !ok {
-    builder.free()
-    fatal("wgpu: failed to build uniform bind group layout")
-  }
-  builder.finish(backend.device, label~)
 }
 
 ///|

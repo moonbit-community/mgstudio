@@ -277,7 +277,7 @@ pub struct GpuBackend {
   mesh2d_material_layout_cache : Array[Mesh2dMaterialLayoutCacheEntry]
   mesh2d_material_bg_cache : Array[Mesh2dMaterialBindGroupCacheEntry]
   mut mesh3d_bgl_view : @wgpu_mbt.BindGroupLayout?
-  mut mesh3d_bgl_uniform : @wgpu_mbt.BindGroupLayout?
+  mut mesh3d_bgl_draw : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_bgl_material : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut mesh3d_pipeline : @wgpu_mbt.RenderPipeline?
@@ -297,13 +297,13 @@ pub struct GpuBackend {
   mut mesh3d_pipeline_surface_cull_mode : Int
   mut mesh3d_point_shadow_compare_sampler : @wgpu_mbt.Sampler?
   mut mesh3d_view_buf : @wgpu_mbt.Buffer?
-  mesh3d_uniform_slots : Array[GpuUniformSlot]
-  mut mesh3d_uniform_slot_used : Int
+  mesh3d_draw_slots : Array[GpuStorageSlot]
+  mut mesh3d_draw_slot_used : Int
   mut mesh3d_gpu_instance_builder_enabled : Bool
-  mut mesh3d_instance_uniform_buf : @wgpu_mbt.Buffer?
-  mut mesh3d_instance_uniform_bg : @wgpu_mbt.BindGroup?
-  mut mesh3d_instance_uniform_capacity : UInt64
-  mut mesh3d_instance_uniform_used : Int
+  mut mesh3d_instance_draw_buf : @wgpu_mbt.Buffer?
+  mut mesh3d_instance_draw_bg : @wgpu_mbt.BindGroup?
+  mut mesh3d_instance_draw_capacity : UInt64
+  mut mesh3d_instance_draw_used : Int
   mesh3d_preprocess_camera_upload_states : Array[GpuMesh3dPreprocessCameraUploadState]
   mut mesh3d_motion_vector_bgl_view : @wgpu_mbt.BindGroupLayout?
   mut mesh3d_motion_vector_bgl_empty : @wgpu_mbt.BindGroupLayout?
@@ -553,6 +553,8 @@ pub struct GpuPassState {
   point_shadow_near : Float
 }
 
+type GpuStorageSlot
+
 pub struct GpuSurfaceState {
   surface_id : Int
   target_id : Int
@@ -581,8 +583,6 @@ pub struct GpuTextureInfo {
   sampler : @wgpu_mbt.Sampler
   bind_group : @wgpu_mbt.BindGroup
 }
-
-type GpuUniformSlot
 
 pub struct HostMaterial2dBindGroup {
   bindings : Array[HostMaterial2dBinding]
