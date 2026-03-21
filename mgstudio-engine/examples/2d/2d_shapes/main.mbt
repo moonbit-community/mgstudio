@@ -19,10 +19,18 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@sprite.wireframe2d_plugin])
-  .add_systems(@app.Startup, @app.system(shapes_setup))
-  .add_systems(@app.Startup, @app.system(setup_wireframe2d_config))
-  .add_system_query2_ecs(
-    @transform.ecs_key_transform, @sprite.ecs_key_mesh2d, shapes_rotate,
+  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(
+    @app.Update,
+    @app.system(toggle_wireframe).run_if(input_toggle_wireframe_pressed),
+  )
+  .add_systems(
+    @app.Update,
+    @app.system(
+      @app.system_query2_ecs(
+        @transform.ecs_key_transform, @sprite.ecs_key_mesh2d, rotate,
+      ),
+    ).run_if(rotate_active),
   )
   .run()
 }
@@ -37,65 +45,7 @@ const Y_EXTENT : Float = 150.0F
 const THICKNESS : Float = 5.0F
 
 ///|
-let rotation_enabled : Ref[Bool] = Ref::new(false)
-
-///|
-fn absf(value : Float) -> Float {
-  if value < 0.0F {
-    -value
-  } else {
-    value
-  }
-}
-
-///|
-fn hsl_to_color(
-  hue_degrees : Float,
-  saturation : Float,
-  lightness : Float,
-) -> @sprite.Color {
-  let chroma = (1.0F - absf(2.0F * lightness - 1.0F)) * saturation
-  let hue_section = hue_degrees / 60.0F
-  let x = if hue_section < 1.0F {
-    chroma * hue_section
-  } else if hue_section < 2.0F {
-    chroma * (2.0F - hue_section)
-  } else if hue_section < 3.0F {
-    chroma * (hue_section - 2.0F)
-  } else if hue_section < 4.0F {
-    chroma * (4.0F - hue_section)
-  } else if hue_section < 5.0F {
-    chroma * (hue_section - 4.0F)
-  } else {
-    chroma * (6.0F - hue_section)
-  }
-
-  let mut r1 = 0.0F
-  let mut g1 = 0.0F
-  let mut b1 = 0.0F
-  if hue_section < 1.0F {
-    r1 = chroma
-    g1 = x
-  } else if hue_section < 2.0F {
-    r1 = x
-    g1 = chroma
-  } else if hue_section < 3.0F {
-    g1 = chroma
-    b1 = x
-  } else if hue_section < 4.0F {
-    g1 = x
-    b1 = chroma
-  } else if hue_section < 5.0F {
-    r1 = x
-    b1 = chroma
-  } else {
-    r1 = chroma
-    b1 = x
-  }
-
-  let m = lightness - chroma / 2.0F
-  @sprite.Color::new(r1 + m, g1 + m, b1 + m, 1.0F)
-}
+let rotation_active_ref : Ref[Bool] = Ref::new(false)
 
 ///|
 fn shape_palette_color(index : Int, count : Int) -> @sprite.Color {
@@ -103,7 +53,7 @@ fn shape_palette_color(index : Int, count : Int) -> @sprite.Color {
   let hue = 360.0F *
     Float::from_double(index.to_double()) /
     Float::from_double(safe_count.to_double())
-  hsl_to_color(hue, 0.95F, 0.7F)
+  @sprite.Color::hsl(hue, 0.95F, 0.7F)
 }
 
 ///|
@@ -191,10 +141,9 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn shapes_setup(world : @ecs.World) -> Unit {
-  rotation_enabled.val = false
-
-  let top_shapes : Array[@sprite.Mesh2d] = [
+fn setup(world : @ecs.World) -> Unit {
+  rotation_active_ref.val = false
+  let shapes : Array[@sprite.Mesh2d] = [
     @sprite.Mesh2d::from_circle(@sprite.Circle::new(50.0F)),
     @sprite.Mesh2d::from_circular_sector(
       @sprite.CircularSector::new(50.0F, 1.0F),
@@ -231,6 +180,7 @@ fn shapes_setup(world : @ecs.World) -> Unit {
   ]
   let rings : Array[@sprite.Mesh2d] = [
     @sprite.Mesh2d::from_ring(@sprite.Circle::new(50.0F).to_ring(THICKNESS)),
+    // This visually produces an arc segment but is not technically accurate.
     @sprite.Mesh2d::from_circular_sector_ring(
       @sprite.CircularSectorRing::new(
         @sprite.CircularSector::new(50.0F, 1.0F),
@@ -240,12 +190,14 @@ fn shapes_setup(world : @ecs.World) -> Unit {
     @sprite.Mesh2d::from_circular_segment_ring(
       @sprite.CircularSegment::new(50.0F, 1.25F).to_ring(THICKNESS),
     ),
+    // This is an approximation because concentric ellipses are not parallel curves.
     @sprite.Mesh2d::from_ellipse_ring(
       @sprite.EllipseRing::new(
         @sprite.Ellipse::new(25.0F, 50.0F),
         @sprite.Ellipse::new(25.0F - THICKNESS, 50.0F - THICKNESS),
       ),
     ),
+    // This is equivalent to the annulus above.
     @sprite.Mesh2d::from_ring(@sprite.Ring2d::new(50.0F, 25.0F)),
     @sprite.Mesh2d::from_capsule_ring(
       @sprite.Capsule2d::new(25.0F, 25.0F, 16).to_ring(THICKNESS),
@@ -268,11 +220,11 @@ fn shapes_setup(world : @ecs.World) -> Unit {
     ),
   ]
 
-  let num_shapes = top_shapes.length()
+  let num_shapes = shapes.length()
   for i in 0..<num_shapes {
     spawn_shape(
       world,
-      top_shapes[i],
+      shapes[i],
       @math.Vec2::new(lane_x(i, num_shapes, X_EXTENT), Y_EXTENT / 2.0F),
       shape_palette_color(i, num_shapes),
     )
@@ -296,9 +248,11 @@ fn shapes_setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn setup_wireframe2d_config(world : @ecs.World) -> Unit {
-  let config = @sprite.Wireframe2dConfig::new(false, @sprite.Color::white())
-  world.insert_resource(@sprite.ecs_key_wireframe2d_config, config)
+fn wireframe2d_config(world : @ecs.World) -> @sprite.Wireframe2dConfig {
+  match (try! world.get_resource(@sprite.ecs_key_wireframe2d_config)) {
+    Some(config) => config
+    None => abort("Missing Wireframe2dConfig resource in 2d_shapes example")
+  }
 }
 
 ///|
@@ -310,27 +264,32 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 }
 
 ///|
-fn shapes_rotate(
+fn input_toggle_wireframe_pressed(_world : @ecs.World) -> Bool {
+  @input.key_just_pressed(@window.KeyCode::Space)
+}
+
+///|
+fn rotate_active(_world : @ecs.World) -> Bool {
+  if @input.key_just_pressed(@window.KeyCode::KeyR) {
+    rotation_active_ref.val = !rotation_active_ref.val
+  }
+  rotation_active_ref.val
+}
+
+///|
+fn toggle_wireframe(world : @ecs.World) -> Unit {
+  let config = wireframe2d_config(world)
+  world.insert_resource(
+    @sprite.ecs_key_wireframe2d_config,
+    config.with_global(!config.global),
+  )
+}
+
+///|
+fn rotate(
   query : @ecs.Query2[@transform.Transform, @sprite.Mesh2d],
   world : @ecs.World,
 ) -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::Space) {
-    if (try? world.get_resource(@sprite.ecs_key_wireframe2d_config))
-      is Ok(Some(config)) {
-      world.insert_resource(
-        @sprite.ecs_key_wireframe2d_config,
-        config.with_global(!config.global),
-      )
-    }
-  }
-  if @input.key_just_pressed(@window.KeyCode::KeyR) {
-    rotation_enabled.val = !rotation_enabled.val
-  }
-
-  if !rotation_enabled.val {
-    return
-  }
-
   let delta_secs = world_time(world).delta_seconds()
   let speed = 0.5F
   try! query.for_each(fn(_entity, transform, _mesh) {
