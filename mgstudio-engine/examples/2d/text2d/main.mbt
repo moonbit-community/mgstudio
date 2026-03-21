@@ -13,33 +13,40 @@
 // limitations under the License.
 
 ///|
-priv struct Text2dState {
-  mut translation_text : @text.TextHandle?
-  mut rotation_text : @text.TextHandle?
-  mut scale_text : @text.TextHandle?
+priv struct Text2dHandles {
+  translation_text : @text.TextHandle
+  rotation_text : @text.TextHandle
+  scale_text : @text.TextHandle
 }
 
 ///|
-let text2d_state : Ref[Text2dState] = Ref::new(Text2dState::{
-  translation_text: None,
-  rotation_text: None,
-  scale_text: None,
-})
+let text2d_handles_resource_key : @ecs.ResourceKey[Text2dHandles] = @ecs.register_resource(
+  debug_name="examples.2d.text2d.Text2dHandles",
+)
+
+///|
+impl @app.Resource for Text2dHandles with resource() {
+  text2d_handles_resource_key
+}
 
 ///|
 fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(text2d_setup))
-  .add_systems(@app.Update, @app.system(text2d_animate))
+  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
+  .add_systems(@app.Update, @app.system(@app.system_param2(animate)))
   .run()
 }
 
 ///|
-fn text2d_setup(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+) -> Unit {
+  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let large_font = @text.TextFont::default()
     .with_font(font)
     .with_font_size(50.0F)
@@ -49,38 +56,39 @@ fn text2d_setup(world : @ecs.World) -> Unit {
   let box_color = @sprite.Color::srgb(0.25F, 0.25F, 0.55F)
   let text_shadow_color = color_darker(box_color, 0.05F)
 
-  text2d_state.val.translation_text = Some(
-    spawn_animated_text(
-      " translation ",
-      large_font,
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-400.0F, 0.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-      ),
+  let translation_text = spawn_animated_text(
+    " translation ",
+    large_font,
+    @transform.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(-400.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
     ),
   )
-  text2d_state.val.rotation_text = Some(
-    spawn_animated_text(
-      " rotation ",
-      large_font,
-      @transform.Transform::identity(),
+  let rotation_text = spawn_animated_text(
+    " rotation ",
+    large_font,
+    @transform.Transform::identity(),
+  )
+  let scale_text = spawn_animated_text(
+    " scale ",
+    large_font,
+    @transform.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(400.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
     ),
   )
-  text2d_state.val.scale_text = Some(
-    spawn_animated_text(
-      " scale ",
-      large_font,
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(400.0F, 0.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-      ),
-    ),
-  )
+  commands.insert_resource(Text2dHandles::{
+    translation_text,
+    rotation_text,
+    scale_text,
+  })
 
   spawn_wrapped_text_box(
-    world,
+    commands,
+    meshes,
+    materials,
     medium_font,
     @math.Vec2::new(0.0F, -250.0F),
     @math.Vec2::new(300.0F, 200.0F),
@@ -91,7 +99,9 @@ fn text2d_setup(world : @ecs.World) -> Unit {
     true,
   )
   spawn_wrapped_text_box(
-    world,
+    commands,
+    meshes,
+    materials,
     medium_font,
     @math.Vec2::new(320.0F, -250.0F),
     @math.Vec2::new(300.0F, 200.0F),
@@ -117,26 +127,31 @@ fn text2d_setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let anchor_origin = @math.Vec2::new(0.0F, 250.0F)
-  @sprite.Mesh2dBundle::new_with_mesh_material(
-    @sprite.Mesh2d::new(
-      @sprite.mesh_assets_mut_or_abort().val.add(
-        @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(10.0F, 10.0F)).to_mesh(),
-      ),
-    ),
-    @sprite.MeshMaterial2d::new(
-      @sprite.color_material_assets_mut_or_abort().val.add(
-        @sprite.ColorMaterialAsset::from_color(
-          @sprite.Color::srgb(0.68F, 0.97F, 0.97F),
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Mesh2d::new(
+          meshes.get_ref().val.add(
+            @sprite.mesh2d_geometry_rectangle(
+              @sprite.Rectangle::new(10.0F, 10.0F),
+            ).to_mesh(),
+          ),
+        ),
+        @sprite.MeshMaterial2d::new(
+          materials.get_ref().val.add(
+            @sprite.ColorMaterialAsset::from_color(
+              @sprite.Color::srgb(0.68F, 0.97F, 0.97F),
+            ),
+          ),
+        ),
+        @transform.Transform::from_xy_rotation_scale(
+          anchor_origin,
+          0.0F,
+          @math.Vec2::new(1.0F, 1.0F),
         ),
       ),
     ),
-    @transform.Transform::from_xy_rotation_scale(
-      anchor_origin,
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
-  ).spawn(world)
-  |> ignore
+  )
 
   spawn_anchor_label(
     medium_font,
@@ -163,11 +178,7 @@ fn text2d_setup(world : @ecs.World) -> Unit {
     anchor_origin,
   )
 
-  let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
-    world,
-  )
-  |> ignore
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
 }
 
 ///|
@@ -189,7 +200,9 @@ fn spawn_animated_text(
 
 ///|
 fn spawn_wrapped_text_box(
-  world : @ecs.World,
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
   font : @text.TextFont,
   center : @math.Vec2,
   size : @math.Vec2,
@@ -199,24 +212,29 @@ fn spawn_wrapped_text_box(
   shadow_color : @sprite.Color,
   underline : Bool,
 ) -> Unit {
-  @sprite.Mesh2dBundle::new_with_mesh_material(
-    @sprite.Mesh2d::new(
-      @sprite.mesh_assets_mut_or_abort().val.add(
-        @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::from_size(size)).to_mesh(),
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Mesh2d::new(
+          meshes.get_ref().val.add(
+            @sprite.mesh2d_geometry_rectangle(
+              @sprite.Rectangle::from_size(size),
+            ).to_mesh(),
+          ),
+        ),
+        @sprite.MeshMaterial2d::new(
+          materials.get_ref().val.add(
+            @sprite.ColorMaterialAsset::from_color(box_color),
+          ),
+        ),
+        @transform.Transform::from_xy_rotation_scale(
+          center,
+          0.0F,
+          @math.Vec2::new(1.0F, 1.0F),
+        ),
       ),
     ),
-    @sprite.MeshMaterial2d::new(
-      @sprite.color_material_assets_mut_or_abort().val.add(
-        @sprite.ColorMaterialAsset::from_color(box_color),
-      ),
-    ),
-    @transform.Transform::from_xy_rotation_scale(
-      center,
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
-  ).spawn(world)
-  |> ignore
+  )
 
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
@@ -326,51 +344,41 @@ fn anchor_name(anchor : @sprite.Anchor) -> String {
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in text2d example")
-  }
-}
+fn animate(
+  text_handles : @app.Res[Text2dHandles],
+  time : @app.Res[@time.Time[Unit]],
+) -> Unit {
+  let elapsed = time.get().elapsed_seconds()
+  let handles = text_handles.get()
 
-///|
-fn text2d_animate(world : @ecs.World) -> Unit {
-  let elapsed = world_time(world).elapsed_seconds()
-
-  if text2d_state.val.translation_text is Some(handle) {
-    @text.text_set_transform(
-      handle,
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(
-          100.0F * @math.sin(elapsed) - 400.0F,
-          100.0F * @math.cos(elapsed),
-        ),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
+  @text.text_set_transform(
+    handles.translation_text,
+    @transform.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(
+        100.0F * @math.sin(elapsed) - 400.0F,
+        100.0F * @math.cos(elapsed),
       ),
-    )
-  }
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  )
 
-  if text2d_state.val.rotation_text is Some(handle) {
-    @text.text_set_transform(
-      handle,
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(0.0F, 0.0F),
-        @math.cos(elapsed),
-        @math.Vec2::new(1.0F, 1.0F),
-      ),
-    )
-  }
+  @text.text_set_transform(
+    handles.rotation_text,
+    @transform.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.cos(elapsed),
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  )
 
-  if text2d_state.val.scale_text is Some(handle) {
-    let scale = (@math.sin(elapsed) + 1.1F) * 2.0F
-    @text.text_set_transform(
-      handle,
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(400.0F, 0.0F),
-        0.0F,
-        @math.Vec2::new(scale, scale),
-      ),
-    )
-  }
+  let scale = (@math.sin(elapsed) + 1.1F) * 2.0F
+  @text.text_set_transform(
+    handles.scale_text,
+    @transform.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(400.0F, 0.0F),
+      0.0F,
+      @math.Vec2::new(scale, scale),
+    ),
+  )
 }

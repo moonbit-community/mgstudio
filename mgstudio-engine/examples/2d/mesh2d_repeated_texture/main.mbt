@@ -22,42 +22,38 @@ const RECTANGLE_SIDE : Float = 200.0F
 const LABEL_OFFSET : Float = 125.0F
 
 ///|
-priv struct ExampleState {
-  mut label_font : @asset.Handle[@asset.Font]?
-  mut labels_spawned : Bool
-}
-
-///|
-let example_state : Ref[ExampleState] = Ref::new(ExampleState::{
-  label_font: None,
-  labels_spawned: false,
-})
-
-///|
 fn spawn_panel(
-  world : @ecs.World,
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
   x : Float,
   texture : @asset.Handle[@asset.Image],
   uv_scale : @math.Vec2,
+  label : String,
+  font : @asset.Handle[@asset.Font],
 ) -> Unit {
-  let mesh = @sprite.Mesh2d::new(
-    @sprite.mesh_assets_mut_or_abort().val.add(
-      @sprite.mesh2d_geometry_rectangle(
-        @sprite.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
-      ).to_mesh(),
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Mesh2d::new(
+          meshes.get_ref().val.add(
+            @sprite.mesh2d_geometry_rectangle(
+              @sprite.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
+            ).to_mesh(),
+          ),
+        ),
+        @sprite.MeshMaterial2d::new(
+          materials.get_ref().val.add(
+            @sprite.ColorMaterialAsset::from_image(texture).with_uv_scale(
+              uv_scale,
+            ),
+          ),
+        ),
+        @transform.Transform::from_xyz(x, 0.0F, 0.0F),
+      ),
     ),
   )
-  let material = @sprite.MeshMaterial2d::new(
-    @sprite.color_material_assets_mut_or_abort().val.add(
-      @sprite.ColorMaterialAsset::from_image(texture),
-    ),
-  ).with_uv_scale(uv_scale)
-  @sprite.Mesh2dBundle::new_with_mesh_material(
-    mesh,
-    material,
-    @transform.Transform::from_xyz(x, 0.0F, 0.0F),
-  ).spawn(world)
-  |> ignore
+  spawn_label(label, x, font)
 }
 
 ///|
@@ -79,67 +75,75 @@ fn spawn_label(
 }
 
 ///|
-fn ensure_labels_system(_world : @ecs.World) -> Unit {
-  if example_state.val.labels_spawned {
-    return
-  }
-  guard example_state.val.label_font is Some(font) else { return }
-  guard @asset.asset_font_read_bytes(font) is Some(_) else { return }
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+) -> Unit {
+  let image_with_default_sampler = asset_server
+    .get()
+    .load_with_settings("textures/fantasy_ui_borders/panel-border-010.png", fn(
+      _settings,
+    ) {
 
-  spawn_label("Control", 0.0F, font)
-  spawn_label("Repeat On", -RECTANGLE_OFFSET, font)
-  spawn_label("Repeat Off", RECTANGLE_OFFSET, font)
-  example_state.val.labels_spawned = true
-}
+    })
+  let image_with_repeated_sampler = asset_server
+    .get()
+    .load_with_settings(
+      "textures/fantasy_ui_borders/panel-border-010-repeated.png",
+      fn(settings) {
+        settings.sampler = @asset.ImageSampler::Descriptor(
+          @asset.ImageSamplerDescriptor::linear().set_address_mode(
+            @asset.ImageAddressMode::Repeat,
+          ),
+        )
+      },
+    )
+  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
 
-///|
-fn mesh2d_repeated_texture_setup(world : @ecs.World) -> Unit {
-  // Port of `bevy/examples/2d/mesh2d_repeated_texture.rs`.
-  let asset_server = @asset.AssetServer::new()
-  let default_texture = asset_server.load_with_settings(
-    "textures/fantasy_ui_borders/panel-border-010.png",
-    fn(_settings) {  },
-  )
-  let repeated_texture = asset_server.load_with_settings(
-    "textures/fantasy_ui_borders/panel-border-010-repeated.png",
-    fn(settings) {
-      settings.sampler = @asset.ImageSampler::Descriptor(
-        @asset.ImageSamplerDescriptor::linear().set_address_mode(
-          @asset.ImageAddressMode::Repeat,
-        ),
-      )
-    },
-  )
-  example_state.val.label_font = Some(
-    asset_server.load_font("fonts/FiraSans-Bold.ttf"),
-  )
-  example_state.val.labels_spawned = false
-
-  // Center rectangle with default sampler.
-  spawn_panel(world, 0.0F, default_texture, @math.Vec2::new(1.0F, 1.0F))
-  // Left rectangle with repeated sampler and scaled UV.
   spawn_panel(
-    world,
+    commands,
+    meshes,
+    materials,
+    0.0F,
+    image_with_default_sampler,
+    @math.Vec2::new(1.0F, 1.0F),
+    "Control",
+    font,
+  )
+  spawn_panel(
+    commands,
+    meshes,
+    materials,
     -RECTANGLE_OFFSET,
-    repeated_texture,
+    image_with_repeated_sampler,
     @math.Vec2::new(2.0F, 3.0F),
+    "Repeat On",
+    font,
   )
-  // Right rectangle with default sampler and scaled UV.
   spawn_panel(
-    world,
+    commands,
+    meshes,
+    materials,
     RECTANGLE_OFFSET,
-    default_texture,
+    image_with_default_sampler,
     @math.Vec2::new(2.0F, 3.0F),
+    "Repeat Off",
+    font,
   )
 
-  let camera_transform = @transform.Transform::identity().looking_at(
-    @math.Vec3::zero(),
-    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Camera2d::default(),
+        @transform.Transform::identity().looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
+    ),
   )
-  @sprite.Camera2dBundle::new(@sprite.Camera::default(), camera_transform).spawn(
-    world,
-  )
-  |> ignore
 }
 
 ///|
@@ -147,7 +151,6 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(mesh2d_repeated_texture_setup))
-  .add_systems(@app.Update, @app.system(ensure_labels_system))
+  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .run()
 }
