@@ -17,50 +17,53 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(transparency_2d_setup))
+  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .run()
 }
 
 ///|
 fn spawn_logo_sprite(
-  world : @ecs.World,
+  commands : @app.Commands,
   image : @asset.Handle[@asset.Image],
   position : @math.Vec2,
   color : @sprite.Color,
   z : Float,
 ) -> Unit {
-  let sprite = @sprite.Sprite::from_image(image).with_color(color)
-  let transform = @transform.Transform::from_xyz(position.x, position.y, z)
-  @sprite.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Sprite::from_image(image).with_color(color),
+        @transform.Transform::from_xyz(position.x, position.y, z),
+      ),
+    ),
+  )
 }
 
 ///|
-fn transparency_2d_setup(world : @ecs.World) -> Unit {
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
 
-  let asset_server = @asset.AssetServer::new()
-  let icon = asset_server.load("branding/icon.png")
+  let icon = asset_server.get().load("branding/icon.png")
 
   spawn_logo_sprite(
-    world,
+    commands,
     icon,
     @math.Vec2::new(-100.0F, 0.0F),
     @sprite.Color::white(),
     0.0F,
   )
   spawn_logo_sprite(
-    world,
+    commands,
     icon,
     @math.Vec2::new(0.0F, 0.0F),
     @sprite.Color::new(0.0F, 0.0F, 1.0F, 0.7F),
     0.1F,
   )
   spawn_logo_sprite(
-    world,
+    commands,
     icon,
     @math.Vec2::new(100.0F, 0.0F),
     @sprite.Color::new(0.0F, 1.0F, 0.0F, 0.3F),

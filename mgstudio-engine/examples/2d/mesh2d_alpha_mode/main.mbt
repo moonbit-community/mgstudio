@@ -17,47 +17,54 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(mesh2d_alpha_mode_setup))
+  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .run()
 }
 
 ///|
 fn spawn_quad(
-  world : @ecs.World,
-  mesh : @sprite.Mesh2d,
+  commands : @app.Commands,
+  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  mesh : @asset.Handle[@mesh.Mesh],
   texture : @asset.Handle[@asset.Image],
   position : @math.Vec2,
   color : @sprite.Color,
   alpha_mode : @sprite.AlphaMode2d,
   z : Float,
 ) -> Unit {
-  let material = @sprite.MeshMaterial2d::new(
-    @sprite.color_material_assets_mut_or_abort().val.add(
-      @sprite.ColorMaterialAsset::from_color(color).with_alpha_mode(alpha_mode),
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Mesh2d::new(mesh),
+        @sprite.MeshMaterial2d::new(
+          materials.get_ref().val.add(
+            @sprite.ColorMaterialAsset::new(
+              color,
+              alpha_mode,
+              texture=Some(texture),
+            ),
+          ),
+        ),
+        @transform.Transform::from_xyz(position.x, position.y, z),
+      ),
     ),
-  ).with_texture(texture)
-  let transform = @transform.Transform::from_xy_rotation_scale(
-    position,
-    0.0F,
-    @math.Vec2::new(1.0F, 1.0F),
-    z~,
   )
-  @sprite.Mesh2dBundle::new_with_mesh_material(mesh, material, transform).spawn(
-    world,
-  )
-  |> ignore
 }
 
 ///|
-fn mesh2d_alpha_mode_setup(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let texture = asset_server.load("branding/icon.png")
-  let mesh = @sprite.Mesh2d::new(
-    @sprite.mesh_assets_mut_or_abort().val.add(
-      @sprite.mesh2d_geometry_rectangle(
-        @sprite.Rectangle::from_size(@math.Vec2::new(256.0F, 256.0F)),
-      ).to_mesh(),
-    ),
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+) -> Unit {
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+
+  let texture = asset_server.get().load("branding/icon.png")
+  let mesh = meshes.get_ref().val.add(
+    @sprite.mesh2d_geometry_rectangle(
+      @sprite.Rectangle::from_size(@math.Vec2::new(256.0F, 256.0F)),
+    ).to_mesh(),
   )
   let white = @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F)
   let blue = @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F)
@@ -67,7 +74,8 @@ fn mesh2d_alpha_mode_setup(world : @ecs.World) -> Unit {
 
   // Opaque: black background from icon texture should remain visible.
   spawn_quad(
-    world,
+    commands,
+    materials,
     mesh,
     texture,
     @math.Vec2::new(-400.0F, 0.0F),
@@ -76,7 +84,8 @@ fn mesh2d_alpha_mode_setup(world : @ecs.World) -> Unit {
     0.0F,
   )
   spawn_quad(
-    world,
+    commands,
+    materials,
     mesh,
     texture,
     @math.Vec2::new(-300.0F, 0.0F),
@@ -85,7 +94,8 @@ fn mesh2d_alpha_mode_setup(world : @ecs.World) -> Unit {
     1.0F,
   )
   spawn_quad(
-    world,
+    commands,
+    materials,
     mesh,
     texture,
     @math.Vec2::new(-200.0F, 0.0F),
@@ -94,7 +104,8 @@ fn mesh2d_alpha_mode_setup(world : @ecs.World) -> Unit {
     -1.0F,
   )
   spawn_quad(
-    world,
+    commands,
+    materials,
     mesh,
     texture,
     @math.Vec2::new(200.0F, 0.0F),
@@ -103,7 +114,8 @@ fn mesh2d_alpha_mode_setup(world : @ecs.World) -> Unit {
     0.0F,
   )
   spawn_quad(
-    world,
+    commands,
+    materials,
     mesh,
     texture,
     @math.Vec2::new(300.0F, 0.0F),
@@ -112,7 +124,8 @@ fn mesh2d_alpha_mode_setup(world : @ecs.World) -> Unit {
     1.0F,
   )
   spawn_quad(
-    world,
+    commands,
+    materials,
     mesh,
     texture,
     @math.Vec2::new(400.0F, 0.0F),
@@ -120,10 +133,4 @@ fn mesh2d_alpha_mode_setup(world : @ecs.World) -> Unit {
     @sprite.AlphaMode2d::Blend,
     -1.0F,
   )
-
-  let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
-    world,
-  )
-  |> ignore
 }

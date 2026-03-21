@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/2d/move_sprite"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
@@ -10,6 +14,7 @@ pub(all) enum Direction {
   Left
   Right
 }
+pub impl @ecs.Component for Direction
 
 // Type aliases
 

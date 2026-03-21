@@ -26,38 +26,31 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(mesh2d_manual_setup))
+  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .run()
 }
 
 ///|
-fn mesh2d_manual_setup(world : @ecs.World) -> Unit {
-  let star = build_star_mesh()
-  let material = @sprite.MeshMaterial2d::new(
-    @sprite.color_material_assets_mut_or_abort().val.add(
-      @sprite.ColorMaterialAsset::from_color(@sprite.Color::white()),
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+) -> Unit {
+  let star = meshes.get_ref().val.add(build_star_mesh())
+  let material = materials.get_ref().val.add(
+    @sprite.ColorMaterialAsset::from_color(@sprite.Color::white()),
+  )
+
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(
+    commands.spawn(
+      (@sprite.Mesh2d::new(star), @sprite.MeshMaterial2d::new(material)),
     ),
   )
-  let transform = @transform.Transform::from_xy_rotation_scale(
-    @math.Vec2::new(0.0F, 0.0F),
-    0.0F,
-    @math.Vec2::new(1.0F, 1.0F),
-    z=0.0F,
-  )
-  @sprite.Mesh2dBundle::new_with_mesh_material(star, material, transform).spawn(
-    world,
-  )
-  |> ignore
-
-  let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
-    world,
-  )
-  |> ignore
 }
 
 ///|
-fn build_star_mesh() -> @sprite.Mesh2d {
+fn build_star_mesh() -> @mesh.Mesh {
   let positions : Array[@math.Vec2] = []
   let uvs : Array[@math.Vec2] = []
   let colors : Array[@math.Vec4] = []
@@ -100,9 +93,5 @@ fn build_star_mesh() -> @sprite.Mesh2d {
     colors,
     Some(indices),
   )
-  @sprite.Mesh2d::new(
-    @sprite.mesh_assets_mut_or_abort().val.add(
-      @sprite.Mesh::from_2d_geometry(geometry),
-    ),
-  )
+  @mesh.Mesh::from_2d_geometry(geometry)
 }

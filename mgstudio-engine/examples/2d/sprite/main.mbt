@@ -17,21 +17,21 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(sprite_setup))
+  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .run()
 }
 
 ///|
-fn sprite_setup(world : @ecs.World) -> Unit {
-  let camera = @engine_sprite.Camera::default()
-  @engine_sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
-    world,
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  ignore(commands.spawn_component(@engine_sprite.Camera2d::default()))
+  ignore(
+    commands.spawn_component(
+      @engine_sprite.Sprite::from_image(
+        asset_server.get().load("branding/bevy_bird_dark.png"),
+      ),
+    ),
   )
-  |> ignore
-
-  let asset_server = @asset.AssetServer::new()
-  let texture = asset_server.load("branding/bevy_bird_dark.png")
-  let sprite = @engine_sprite.Sprite::from_image(texture)
-  let transform = @transform.Transform::identity()
-  @engine_sprite.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
 }

@@ -17,25 +17,23 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(sprite_flipping_setup))
+  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .run()
 }
 
 ///|
-fn sprite_flipping_setup(world : @ecs.World) -> Unit {
-  let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
-    world,
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(
+    commands.spawn_component(
+      @sprite.Sprite::from_image(
+        asset_server.get().load("branding/bevy_bird_dark.png"),
+      )
+      .with_flip_x(true)
+      .with_flip_y(false),
+    ),
   )
-  |> ignore
-
-  let asset_server = @asset.AssetServer::new()
-  let texture = asset_server.load("branding/bevy_bird_dark.png")
-  let sprite = @sprite.Sprite::from_image(texture)
-    .with_flip_x(true)
-    .with_flip_y(false)
-  @sprite.SpriteBundle::new(sprite, @transform.Transform::identity()).spawn(
-    world,
-  )
-  |> ignore
 }

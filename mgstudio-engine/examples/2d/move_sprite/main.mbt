@@ -18,11 +18,8 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(move_sprite_setup))
-  .add_systems(
-    @app.Update,
-    @app.system(@app.system_param2(move_sprite_movement)),
-  )
+  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .add_systems(@app.Update, @app.system(@app.system_param3(sprite_movement)))
   .run()
 }
 
@@ -33,52 +30,57 @@ pub(all) enum Direction {
 }
 
 ///|
+let direction_key : @ecs.ComponentKey[Direction] = @ecs.register_component(
+  debug_name="examples.2d.move_sprite.Direction",
+)
+
+///|
+pub impl @ecs.Component for Direction with component() {
+  direction_key
+}
+
+///|
 const SPEED : Float = 150.0F
 
 ///|
 const EDGE_LIMIT : Float = 200.0F
 
 ///|
-priv struct MoveSpriteState {
-  mut direction : Direction
-}
-
-///|
-let move_state : Ref[MoveSpriteState] = Ref::new(MoveSpriteState::{
-  direction: Direction::Right,
-})
-
-///|
-fn move_sprite_setup(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let texture = asset_server.load("branding/icon.png")
-  let sprite = @sprite.Sprite::from_image(texture)
-  let transform = @transform.Transform::identity()
-  @sprite.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
-  let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
-    world,
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Sprite::from_image(asset_server.get().load("branding/icon.png")),
+        @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
+        Direction::Right,
+      ),
+    ),
   )
-  |> ignore
-  move_state.val.direction = Direction::Right
 }
 
 ///|
-fn move_sprite_movement(
-  query : @ecs.Query2[@transform.Transform, @sprite.Sprite],
+fn sprite_movement(
+  commands : @app.Commands,
   time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query2[Direction, @transform.Transform],
 ) -> Unit {
   let delta = SPEED * time.get().delta_seconds()
-  let move_x = if move_state.val.direction is Right { delta } else { -delta }
-  let mut next_direction = move_state.val.direction
-  try! query.for_each(fn(_entity, transform, _sprite) {
-    let next_x = transform.translation.x + move_x
-    if next_x > EDGE_LIMIT {
-      next_direction = Direction::Left
-    } else if next_x < -EDGE_LIMIT {
-      next_direction = Direction::Right
+  try! query.for_each(fn(entity, direction, transform) {
+    if direction is Right {
+      transform.translation.x += delta
+    } else {
+      transform.translation.x -= delta
     }
-    transform.translation.x = next_x
+
+    let next_x = transform.translation.x
+    if next_x > EDGE_LIMIT {
+      commands.entity(entity).insert_component(Direction::Left)
+    } else if next_x < -EDGE_LIMIT {
+      commands.entity(entity).insert_component(Direction::Right)
+    }
   })
-  move_state.val.direction = next_direction
 }
