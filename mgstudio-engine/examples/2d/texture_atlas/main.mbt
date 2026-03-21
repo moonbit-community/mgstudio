@@ -13,252 +13,282 @@
 // limitations under the License.
 
 ///|
-priv struct TextureAtlasExampleState {
-  mut folder_handle : @asset.Handle[@asset.LoadedFolder]?
-  mut vendor_handle : @asset.Handle[@asset.Image]?
-  mut built : Bool
+pub(all) enum AppState {
+  Setup
+  Finished
+} derive(Eq, Show)
+
+///|
+impl Default for AppState with default() {
+  AppState::Setup
 }
 
 ///|
-priv struct BuiltAtlas {
-  layout_handle : @asset.Handle[@asset.TextureAtlasLayout]
-  sources : @asset.TextureAtlasSources
-  texture : @asset.Handle[@asset.Image]
+impl @app.States for AppState with debug_name(self) {
+  ignore(self)
+  "examples.2d.texture_atlas.AppState"
 }
 
 ///|
-let texture_atlas_state : Ref[TextureAtlasExampleState] = Ref::new(TextureAtlasExampleState::{
-  folder_handle: None,
-  vendor_handle: None,
-  built: false,
-})
+struct RpgSpriteFolder {
+  handle : @asset.Handle[@asset.LoadedFolder]
+}
+
+///|
+let rpg_sprite_folder_key : @ecs.ResourceKey[RpgSpriteFolder] = @ecs.register_resource(
+  debug_name="examples.2d.texture_atlas.RpgSpriteFolder",
+)
+
+///|
+pub impl @app.Resource for RpgSpriteFolder with resource() {
+  rpg_sprite_folder_key
+}
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_systems(
-    @app.Startup,
-    @app.system(@app.system_param(texture_atlas_setup)),
+  .add_plugin_group(fn() {
+    @mgstudio.DefaultPlugins::set(@asset.AssetPlugin::default_nearest())
+  })
+  .insert_state(AppState::default())
+  .add_on_enter_system_config(
+    AppState::Setup,
+    @app.system(@app.system_param2(load_textures)),
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param2(texture_atlas_update)),
+    @app.system(@app.system_param2(check_textures)).run_if(
+      @app.in_state(AppState::Setup),
+    ),
+  )
+  .add_on_enter_system_config(
+    AppState::Finished,
+    @app.system(@app.system_param5(setup)),
   )
   .run()
 }
 
 ///|
-fn texture_atlas_setup(asset_server : @app.Res[@asset.AssetServer]) -> Unit {
-  texture_atlas_state.val.folder_handle = Some(
-    asset_server.get().load_folder("textures/rpg"),
-  )
-  texture_atlas_state.val.vendor_handle = Some(
-    asset_server.get().load("textures/rpg/chars/vendor/generic-rpg-vendor.png"),
-  )
-  texture_atlas_state.val.built = false
+fn load_textures(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  commands.insert_resource(RpgSpriteFolder::{
+    handle: asset_server.get().load_folder("textures/rpg"),
+  })
 }
 
 ///|
-fn texture_atlas_update(
-  asset_server : @app.Res[@asset.AssetServer],
-  loaded_folders : @app.Res[@asset.Assets[@asset.LoadedFolder]],
+fn check_textures(
+  rpg_sprite_folder : @app.Res[RpgSpriteFolder],
+  events : @ecs.MessageReader[@asset.AssetEvent[@asset.LoadedFolder]],
 ) -> Unit {
-  let world = match @app.current_world() {
-    Some(current_world) => current_world
-    None => abort("texture_atlas update requires an active app world")
-  }
-  if texture_atlas_state.val.built {
-    return
-  }
-  guard texture_atlas_state.val.folder_handle is Some(folder_handle) else {
-    return
-  }
-  guard texture_atlas_state.val.vendor_handle is Some(vendor_handle) else {
-    return
-  }
-  if !@asset.asset_is_texture_loaded(vendor_handle) {
-    return
-  }
-  guard loaded_folders.get().get(folder_handle) is Some(folder) else { return }
-  if folder.handles.length() == 0 {
-    return
-  }
-  for handle in folder.handles {
-    if !@asset.asset_is_texture_loaded(handle) {
-      return
+  for event in (try! events.read()) {
+    match event {
+      LoadedWithDependencies(handle) =>
+        if handle.id() == rpg_sprite_folder.get().handle.id() {
+          @app.set_state(AppState::Finished)
+        }
+      _ => ()
     }
   }
-
-  let linear_atlas = build_texture_atlas(folder, None, false)
-  let nearest_atlas = build_texture_atlas(folder, None, true)
-  let linear_padded_atlas = build_texture_atlas(
-    folder,
-    Some(@math.UVec2::new(6, 6)),
-    false,
-  )
-  let nearest_padded_atlas = build_texture_atlas(
-    folder,
-    Some(@math.UVec2::new(6, 6)),
-    true,
-  )
-  if linear_atlas is None ||
-    nearest_atlas is None ||
-    linear_padded_atlas is None ||
-    nearest_padded_atlas is None {
-    return
-  }
-  let linear = if linear_atlas is Some(value) { value } else { return }
-  let nearest = if nearest_atlas is Some(value) { value } else { return }
-  let linear_padded = if linear_padded_atlas is Some(value) {
-    value
-  } else {
-    return
-  }
-  let nearest_padded = if nearest_padded_atlas is Some(value) {
-    value
-  } else {
-    return
-  }
-
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-
-  spawn_texture_preview(world, linear.texture, -250.0F, -160.0F, 0.5F)
-  spawn_texture_preview(world, linear_padded.texture, 250.0F, -160.0F, 0.5F)
-
-  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
-  let title_font = @text.TextFont::default()
-    .with_font(font)
-    .with_font_size(42.0F)
-  let sampling_font = @text.TextFont::default()
-    .with_font(font)
-    .with_font_size(25.0F)
-
-  spawn_label("No padding", title_font, -250.0F, 250.0F)
-  spawn_label("Padding", title_font, 250.0F, 250.0F)
-
-  spawn_sampling_variant(
-    world,
-    linear,
-    vendor_handle,
-    -350.0F,
-    "Linear",
-    sampling_font,
-  )
-  spawn_sampling_variant(
-    world,
-    nearest,
-    vendor_handle,
-    -150.0F,
-    "Nearest",
-    sampling_font,
-  )
-  spawn_sampling_variant(
-    world, linear_padded, vendor_handle, 150.0F, "Linear", sampling_font,
-  )
-  spawn_sampling_variant(
-    world, nearest_padded, vendor_handle, 350.0F, "Nearest", sampling_font,
-  )
-
-  texture_atlas_state.val.built = true
 }
 
 ///|
-fn build_texture_atlas(
+fn setup(
+  commands : @app.Commands,
+  rpg_sprite_handles : @app.Res[RpgSpriteFolder],
+  asset_server : @app.Res[@asset.AssetServer],
+  texture_atlases : @app.ResMut[@asset.Assets[@asset.TextureAtlasLayout]],
+  loaded_folders : @app.Res[@asset.Assets[@asset.LoadedFolder]],
+) -> Unit {
+  guard loaded_folders.get().get(rpg_sprite_handles.get().handle)
+    is Some(loaded_folder) else {
+    return
+  }
+
+  let (atlas_linear_handle, linear_sources, linear_texture) = create_texture_atlas(
+    loaded_folder,
+    None,
+    false,
+    texture_atlases,
+  )
+  let (atlas_nearest_handle, nearest_sources, nearest_texture) = create_texture_atlas(
+    loaded_folder,
+    None,
+    true,
+    texture_atlases,
+  )
+  let (atlas_linear_padded_handle, linear_padded_sources, linear_padded_texture) = create_texture_atlas(
+    loaded_folder,
+    Some(@math.UVec2::new(6, 6)),
+    false,
+    texture_atlases,
+  )
+  let (
+    atlas_nearest_padded_handle,
+    nearest_padded_sources,
+    nearest_padded_texture,
+  ) = create_texture_atlas(
+    loaded_folder,
+    Some(@math.UVec2::new(6, 6)),
+    true,
+    texture_atlases,
+  )
+
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Sprite::from_image(linear_texture),
+        @transform.Transform::from_xyz(-250.0F, -160.0F, 0.0F).with_scale(
+          @math.Vec3::splat(0.5F),
+        ),
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Sprite::from_image(linear_padded_texture),
+        @transform.Transform::from_xyz(250.0F, -160.0F, 0.0F).with_scale(
+          @math.Vec3::splat(0.5F),
+        ),
+      ),
+    ),
+  )
+
+  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
+  let text_style = @text.TextFont::default()
+    .with_font(font)
+    .with_font_size(42.0F)
+  create_label((-250.0F, 250.0F, 0.0F), "No padding", text_style)
+  create_label(
+    (250.0F, 250.0F, 0.0F),
+    "Padding",
+    @text.TextFont::default().with_font(font).with_font_size(42.0F),
+  )
+
+  guard asset_server
+    .get()
+    .get_handle("textures/rpg/chars/vendor/generic-rpg-vendor.png")
+    is Some(vendor_handle) else {
+    return
+  }
+
+  let sampling_label_style = @text.TextFont::default()
+    .with_font(font)
+    .with_font_size(25.0F)
+  let configurations : Array[
+    (
+      String,
+      @asset.Handle[@asset.TextureAtlasLayout],
+      @asset.TextureAtlasSources,
+      @asset.Handle[@asset.Image],
+      Float,
+    ),
+  ] = [
+    ("Linear", atlas_linear_handle, linear_sources, linear_texture, -350.0F),
+    ("Nearest", atlas_nearest_handle, nearest_sources, nearest_texture, -150.0F),
+    (
+      "Linear", atlas_linear_padded_handle, linear_padded_sources, linear_padded_texture,
+      150.0F,
+    ),
+    (
+      "Nearest", atlas_nearest_padded_handle, nearest_padded_sources, nearest_padded_texture,
+      350.0F,
+    ),
+  ]
+
+  for configuration in configurations {
+    let sampling = configuration.0
+    let atlas_handle = configuration.1
+    let atlas_sources = configuration.2
+    let atlas_texture = configuration.3
+    let x = configuration.4
+    create_sprite_from_atlas(
+      commands,
+      (x, 80.0F, 0.0F),
+      atlas_texture,
+      atlas_sources,
+      atlas_handle,
+      vendor_handle,
+    )
+    create_label((x, 190.0F, 0.0F), sampling, sampling_label_style)
+  }
+}
+
+///|
+fn create_texture_atlas(
   folder : @asset.LoadedFolder,
   padding : @math.UVec2?,
   sampler_nearest : Bool,
-) -> BuiltAtlas? {
-  let mut builder = @asset.TextureAtlasBuilder::default()
-    .initial_size(@math.UVec2::splat(512))
-    .max_size(@math.UVec2::splat(4096))
-    .sampler_nearest(sampler_nearest)
-  if padding is Some(value) {
-    builder = builder.padding(value)
+  texture_atlases : @app.ResMut[@asset.Assets[@asset.TextureAtlasLayout]],
+) -> (
+  @asset.Handle[@asset.TextureAtlasLayout],
+  @asset.TextureAtlasSources,
+  @asset.Handle[@asset.Image],
+) {
+  let mut texture_atlas_builder = @asset.TextureAtlasBuilder::default().sampler_nearest(
+    sampler_nearest,
+  )
+  if padding is Some(padding_value) {
+    texture_atlas_builder = texture_atlas_builder.padding(padding_value)
   }
   for handle in folder.handles {
-    builder = builder.add_texture(handle)
+    texture_atlas_builder = texture_atlas_builder.add_texture(handle)
   }
-  let result = builder.try_build()
-  if result is Some(value) {
-    let layout = value.0
-    let sources = value.1
-    let texture = value.2
-    Some(BuiltAtlas::{
-      layout_handle: @asset.asset_add_texture_atlas_layout(layout),
-      sources,
-      texture,
-    })
-  } else {
-    None
-  }
+  let (texture_atlas_layout, texture_atlas_sources, texture) = texture_atlas_builder.build()
+  (
+    texture_atlases.get_ref().val.add(texture_atlas_layout),
+    texture_atlas_sources,
+    texture,
+  )
 }
 
 ///|
-fn spawn_texture_preview(
-  world : @ecs.World,
-  texture : @asset.Handle[@asset.Image],
-  x : Float,
-  y : Float,
-  scale : Float,
-) -> Unit {
-  @sprite.SpriteBundle::new(
-    @sprite.Sprite::from_image(texture),
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(x, y),
-      0.0F,
-      @math.Vec2::new(scale, scale),
-    ),
-  ).spawn(world)
-  |> ignore
-}
-
-///|
-fn spawn_sampling_variant(
-  world : @ecs.World,
-  atlas : BuiltAtlas,
+fn create_sprite_from_atlas(
+  commands : @app.Commands,
+  translation : (Float, Float, Float),
+  atlas_texture : @asset.Handle[@asset.Image],
+  atlas_sources : @asset.TextureAtlasSources,
+  atlas_handle : @asset.Handle[@asset.TextureAtlasLayout],
   vendor_handle : @asset.Handle[@asset.Image],
-  x : Float,
-  sampling_label : String,
-  font : @text.TextFont,
 ) -> Unit {
-  if atlas.sources.handle(atlas.layout_handle, vendor_handle)
-    is Some(vendor_sprite) {
-    @sprite.SpriteBundle::new(
-      @sprite.Sprite::from_atlas_image(atlas.texture, vendor_sprite),
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(x, 80.0F),
-        0.0F,
-        @math.Vec2::new(3.0F, 3.0F),
-      ),
-    ).spawn(world)
-    |> ignore
+  guard atlas_sources.handle(atlas_handle, vendor_handle) is Some(vendor_sprite) else {
+    return
   }
-  spawn_label(sampling_label, font, x, 190.0F)
-}
-
-///|
-fn spawn_label(
-  content : String,
-  font : @text.TextFont,
-  x : Float,
-  y : Float,
-) -> Unit {
-  @text.Text2dBundle::new(
-    @text.Text2d::new(content),
-    font,
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(x, y),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
+  ignore(
+    commands.spawn(
+      (
+        @transform.Transform::from_xyz(
+          translation.0,
+          translation.1,
+          translation.2,
+        ).with_scale(@math.Vec3::splat(3.0F)),
+        @sprite.Sprite::from_atlas_image(atlas_texture, vendor_sprite),
+      ),
     ),
   )
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
-  .spawn()
-  |> ignore
+}
+
+///|
+fn create_label(
+  translation : (Float, Float, Float),
+  text : String,
+  text_style : @text.TextFont,
+) -> Unit {
+  ignore(
+    @text.Text2dBundle::new(
+      @text.Text2d::new(text),
+      text_style,
+      @transform.Transform::from_xyz(
+        translation.0,
+        translation.1,
+        translation.2,
+      ),
+    )
+    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
+    .spawn(),
+  )
 }

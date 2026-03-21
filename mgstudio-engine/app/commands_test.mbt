@@ -48,6 +48,11 @@ struct CommandsHookComponent {
 } derive(Eq, Show)
 
 ///|
+struct CommandsCounterResource {
+  value : Int
+} derive(Eq, Show)
+
+///|
 let commands_position_key : @ecs.ComponentKey[CommandsPosition] = @ecs.register_component(
   debug_name="tests.app.commands_position",
 )
@@ -93,6 +98,11 @@ let commands_hook_component_key : @ecs.ComponentKey[CommandsHookComponent] = @ec
 )
 
 ///|
+let commands_counter_resource_key : @ecs.ResourceKey[CommandsCounterResource] = @ecs.register_resource(
+  debug_name="tests.app.commands_counter_resource",
+)
+
+///|
 pub impl @ecs.Component for CommandsPosition with component() {
   commands_position_key
 }
@@ -135,6 +145,11 @@ pub impl @ecs.Component for CommandsTagE with component() {
 ///|
 pub impl @ecs.Component for CommandsHookComponent with component() {
   commands_hook_component_key
+}
+
+///|
+pub impl Resource for CommandsCounterResource with resource() {
+  commands_counter_resource_key
 }
 
 ///|
@@ -230,6 +245,26 @@ test "app: Commands spawn_empty reserves an entity without queued components" {
   }
   inspect(app.world().is_alive(entity), content="true")
   inspect(try! app.world().get(entity, commands_position_key), content="None")
+}
+
+///|
+test "app: Commands insert_resource defers resource writes until after the system" {
+  let observed : Array[Int] = []
+  let mut app = App::new(@ecs.World::new())
+    .add_system_param(fn(commands : Commands) {
+      commands.insert_resource(CommandsCounterResource::{ value: 7 })
+    })
+    .add_system_param(fn(resource : Res[CommandsCounterResource]) {
+      observed.push(resource.get().value)
+    })
+
+  app = app.run_once()
+
+  inspect(observed, content="[7]")
+  inspect(
+    try! app.world().get_resource(commands_counter_resource_key),
+    content="Some({value: 7})",
+  )
 }
 
 ///|

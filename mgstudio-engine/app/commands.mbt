@@ -252,6 +252,16 @@ pub fn[T : CommandSpawnComponents] Commands::spawn_batch(
 }
 
 ///|
+pub fn[T : Resource] Commands::insert_resource(
+  self : Commands,
+  resource : T,
+) -> Unit {
+  self.queue.push(fn(world : @ecs.World, _change_tick : @core.Tick) {
+    world.insert_resource(T::resource(), resource)
+  })
+}
+
+///|
 #callsite(autofill(loc))
 pub fn[T : CommandSpawnComponents] EntityCommands::insert(
   self : EntityCommands,

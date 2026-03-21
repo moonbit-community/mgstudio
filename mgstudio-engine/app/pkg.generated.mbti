@@ -352,6 +352,7 @@ pub struct Commands {
   queue : Array[(@ecs.World, Int) -> Unit]
 }
 pub fn Commands::entity(Self, @core.Entity) -> EntityCommands
+pub fn[T : Resource] Commands::insert_resource(Self, T) -> Unit
 #callsite(autofill(loc))
 pub fn[T : CommandSpawnComponents] Commands::spawn(Self, T, loc~ : SourceLoc) -> @core.Entity
 #callsite(autofill(loc))

@@ -1,11 +1,20 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/2d/sprite_sheet"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type AnimationIndices
+pub impl @ecs.Component for AnimationIndices
+
+type AnimationTimer
+pub impl @ecs.Component for AnimationTimer
 
 // Type aliases
 

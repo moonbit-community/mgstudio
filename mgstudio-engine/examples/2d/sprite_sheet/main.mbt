@@ -13,117 +13,111 @@
 // limitations under the License.
 
 ///|
-const GABE_FRAME_SIZE : Int = 24
-
-///|
-const GABE_FRAME_COLUMNS : Int = 7
-
-///|
-const GABE_FRAME_ROWS : Int = 1
-
-///|
 const GABE_FIRST_FRAME : Int = 1
 
 ///|
 const GABE_LAST_FRAME : Int = 6
 
 ///|
-const GABE_ANIMATION_STEP_SECONDS : Float = 0.1F
-
-///|
-const GABE_SCALE : Float = 6.0F
-
-///|
-priv struct SpriteSheetState {
-  mut timer_seconds : Float
-  mut sprite : @core.Entity?
-  mut texture : @asset.Handle[@asset.Image]?
-  mut layout : @asset.Handle[@asset.TextureAtlasLayout]?
-  mut frame : Int
+struct AnimationIndices {
+  first : Int
+  last : Int
 }
 
 ///|
-let sprite_sheet_state : Ref[SpriteSheetState] = Ref::new(SpriteSheetState::{
-  timer_seconds: 0.0F,
-  sprite: None,
-  texture: None,
-  layout: None,
-  frame: GABE_FIRST_FRAME,
-})
+let animation_indices_key : @ecs.ComponentKey[AnimationIndices] = @ecs.register_component(
+  debug_name="examples.2d.sprite_sheet.AnimationIndices",
+)
+
+///|
+pub impl @ecs.Component for AnimationIndices with component() {
+  animation_indices_key
+}
+
+///|
+struct AnimationTimer {
+  mut timer : @time.Timer
+}
+
+///|
+let animation_timer_key : @ecs.ComponentKey[AnimationTimer] = @ecs.register_component(
+  debug_name="examples.2d.sprite_sheet.AnimationTimer",
+)
+
+///|
+pub impl @ecs.Component for AnimationTimer with component() {
+  animation_timer_key
+}
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(sprite_sheet_setup))
-  .add_systems(@app.Update, @app.system(sprite_sheet_animate))
+  .add_plugin_group(fn() {
+    @mgstudio.DefaultPlugins::set(@asset.AssetPlugin::default_nearest())
+  })
+  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
+  .add_systems(@app.Update, @app.system(@app.system_param2(animate_sprite)))
   .run()
 }
 
 ///|
-fn sprite_sheet_setup(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let texture = asset_server.load("textures/rpg/chars/gabe/gabe-idle-run.png")
-  let layout = @asset.TextureAtlasLayout::from_grid(
-    @math.UVec2::new(GABE_FRAME_SIZE, GABE_FRAME_SIZE),
-    GABE_FRAME_COLUMNS,
-    GABE_FRAME_ROWS,
-  )
-  let layout_handle = @asset.asset_add_texture_atlas_layout(layout)
-  let atlas = @asset.TextureAtlas::new(layout_handle, GABE_FIRST_FRAME)
-  let sprite = @sprite.Sprite::from_atlas_image(texture, atlas)
-  let transform = @transform.Transform::identity().with_scale(
-    @math.Vec3::splat(GABE_SCALE),
-  )
+fn animate_sprite(
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query3[AnimationIndices, AnimationTimer, @sprite.Sprite],
+) -> Unit {
+  try! query.for_each(fn(_entity, indices, timer, sprite) {
+    timer.timer = timer.timer.tick(time.get().delta())
+    guard timer.timer.just_finished() else { return }
+    guard sprite.texture_atlas is Some(atlas) else { return }
 
-  let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
-    world,
-  )
-  |> ignore
-
-  let entity = @sprite.SpriteBundle::new(sprite, transform).spawn(world)
-  sprite_sheet_state.val.timer_seconds = 0.0F
-  sprite_sheet_state.val.sprite = Some(entity)
-  sprite_sheet_state.val.texture = Some(texture)
-  sprite_sheet_state.val.layout = Some(layout_handle)
-  sprite_sheet_state.val.frame = GABE_FIRST_FRAME
+    sprite.texture_atlas = Some(
+      atlas.with_index(
+        if atlas.index == indices.last {
+          indices.first
+        } else {
+          atlas.index + 1
+        },
+      ),
+    )
+  })
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in sprite_sheet example")
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  texture_atlas_layouts : @app.ResMut[@asset.Assets[@asset.TextureAtlasLayout]],
+) -> Unit {
+  let texture = asset_server
+    .get()
+    .load("textures/rpg/chars/gabe/gabe-idle-run.png")
+  let texture_atlas_layout = texture_atlas_layouts.get_ref().val.add(
+    @asset.TextureAtlasLayout::from_grid(@math.UVec2::splat(24), 7, 1),
+  )
+  let animation_indices = AnimationIndices::{
+    first: GABE_FIRST_FRAME,
+    last: GABE_LAST_FRAME,
   }
-}
 
-///|
-fn sprite_sheet_animate(world : @ecs.World) -> Unit {
-  sprite_sheet_state.val.timer_seconds = sprite_sheet_state.val.timer_seconds +
-    world_time(world).delta_seconds()
-
-  if sprite_sheet_state.val.timer_seconds >= GABE_ANIMATION_STEP_SECONDS {
-    sprite_sheet_state.val.timer_seconds = 0.0F
-    if sprite_sheet_state.val.texture is Some(texture) &&
-      sprite_sheet_state.val.layout is Some(layout_handle) {
-      let next_frame = if sprite_sheet_state.val.frame == GABE_LAST_FRAME {
-        GABE_FIRST_FRAME
-      } else {
-        sprite_sheet_state.val.frame + 1
-      }
-      if sprite_sheet_state.val.sprite is Some(entity) {
-        try! world.despawn(entity)
-      }
-      let atlas = @asset.TextureAtlas::new(layout_handle, next_frame)
-      let sprite = @sprite.Sprite::from_atlas_image(texture, atlas)
-      let transform = @transform.Transform::identity().with_scale(
-        @math.Vec3::splat(GABE_SCALE),
-      )
-      let entity = @sprite.SpriteBundle::new(sprite, transform).spawn(world)
-      sprite_sheet_state.val.sprite = Some(entity)
-      sprite_sheet_state.val.frame = next_frame
-    }
-  }
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Sprite::from_atlas_image(
+          texture,
+          @asset.TextureAtlas::new(
+            texture_atlas_layout,
+            animation_indices.first,
+          ),
+        ),
+        @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_scale(
+          @math.Vec3::splat(6.0F),
+        ),
+        animation_indices,
+        AnimationTimer::{
+          timer: @time.Timer::from_seconds(0.1F, @time.TimerMode::Repeating),
+        },
+      ),
+    ),
+  )
 }
