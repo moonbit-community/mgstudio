@@ -71,6 +71,10 @@ pub let ecs_key_scissor_rect : @ecs.ComponentKey[ScissorRect]
 
 pub let ecs_key_sprite : @ecs.ComponentKey[Sprite]
 
+pub let ecs_key_tilemap_chunk : @ecs.ComponentKey[TilemapChunk]
+
+pub let ecs_key_tilemap_chunk_tile_data : @ecs.ComponentKey[TilemapChunkTileData]
+
 pub let ecs_key_tonemapping : @ecs.ComponentKey[@post_process.Tonemapping]
 
 pub let ecs_key_wireframe2d : @ecs.ComponentKey[Wireframe2d]
@@ -118,6 +122,10 @@ pub fn get_render_target_store(@ecs.World) -> @ecs.ComponentAccess[RenderTarget]
 pub fn get_scissor_rect_store(@ecs.World) -> @ecs.ComponentAccess[ScissorRect]
 
 pub fn get_sprite_store(@ecs.World) -> @ecs.ComponentAccess[Sprite]
+
+pub fn get_tilemap_chunk_store(@ecs.World) -> @ecs.ComponentAccess[TilemapChunk]
+
+pub fn get_tilemap_chunk_tile_data_store(@ecs.World) -> @ecs.ComponentAccess[TilemapChunkTileData]
 
 pub fn get_tonemapping_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.Tonemapping]
 
@@ -870,6 +878,8 @@ pub struct TileData {
   tileset_index : Int
 }
 pub fn TileData::from_tileset_index(Int) -> Self
+pub impl ToJson for TileData
+pub impl @json.FromJson for TileData
 
 pub struct TilemapChunk {
   chunk_size : @math.UVec2
@@ -880,6 +890,9 @@ pub struct TilemapChunk {
 pub fn TilemapChunk::calculate_tile_transform(Self, @math.UVec2) -> @transform.Transform
 pub fn TilemapChunk::new(@math.UVec2, @math.UVec2, @asset.Handle[@image.Image], @math.UVec2) -> Self
 pub fn TilemapChunk::tile_capacity(Self) -> Int
+pub impl @ecs.Component for TilemapChunk
+pub impl ToJson for TilemapChunk
+pub impl @json.FromJson for TilemapChunk
 
 pub struct TilemapChunkTileData {
   tile_data : Array[TileData?]
@@ -887,6 +900,9 @@ pub struct TilemapChunkTileData {
 pub fn TilemapChunkTileData::new(Array[TileData?]) -> Self
 pub fn TilemapChunkTileData::set_tile_data_from_tile_pos(Self, @math.UVec2, @math.UVec2, TileData?) -> Self
 pub fn TilemapChunkTileData::tile_data_from_tile_pos(Self, @math.UVec2, @math.UVec2) -> TileData?
+pub impl @ecs.Component for TilemapChunkTileData
+pub impl ToJson for TilemapChunkTileData
+pub impl @json.FromJson for TilemapChunkTileData
 
 pub struct UiBorderRect {
   left : Float

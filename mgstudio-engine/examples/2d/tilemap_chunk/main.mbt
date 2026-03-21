@@ -25,151 +25,83 @@ const UPDATE_INTERVAL_SECONDS : Float = 0.1F
 const UPDATE_BATCH_COUNT : Int = 50
 
 ///|
-const LCG_MOD : Int = 2147483647
-
-///|
 const TILESET_RANDOM_RANGE : Int = 5
 
 ///|
-priv struct TilemapChunkState {
-  mut chunk : @sprite.TilemapChunk?
-  mut tiles : Array[@sprite.TileData?]
-  mut update_accumulator : Float
-  mut seed : Int
-  mut player : @core.Entity
+struct UpdateTimer {
+  mut timer : @time.Timer
 }
 
 ///|
-let tilemap_chunk_state : Ref[TilemapChunkState] = Ref::new(TilemapChunkState::{
-  chunk: None,
-  tiles: [],
-  update_accumulator: 0.0F,
-  seed: 42,
-  player: @core.Entity::placeholder(),
-})
+let update_timer_key : @ecs.ComponentKey[UpdateTimer] = @ecs.register_component(
+  debug_name="examples.2d.tilemap_chunk.UpdateTimer",
+)
+
+///|
+pub impl @ecs.Component for UpdateTimer with component() {
+  update_timer_key
+}
+
+///|
+struct MovePlayer {}
+
+///|
+let move_player_key : @ecs.ComponentKey[MovePlayer] = @ecs.register_component(
+  debug_name="examples.2d.tilemap_chunk.MovePlayer",
+)
+
+///|
+pub impl @ecs.Component for MovePlayer with component() {
+  move_player_key
+}
+
+///|
+struct SeededRng {
+  rng : @random.Rand
+}
+
+///|
+let seeded_rng_key : @ecs.ResourceKey[SeededRng] = @ecs.register_resource(
+  debug_name="examples.2d.tilemap_chunk.SeededRng",
+)
+
+///|
+pub impl @app.Resource for SeededRng with resource() {
+  seeded_rng_key
+}
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
+  let setup_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param2(setup),
+  )
+  let spawn_fake_player_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param4(spawn_fake_player),
+  )
+
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(tilemap_chunk_setup))
-  .add_systems(@app.Update, @app.system(tilemap_chunk_update))
+  .add_plugin_group(fn() {
+    @mgstudio.DefaultPlugins::set(@asset.AssetPlugin::default_nearest())
+  })
+  .add_systems(
+    @app.Startup,
+    (setup_system, spawn_fake_player_system) |> @app.chain(),
+  )
+  .add_systems(@app.Update, @app.system(@app.system_param4(update_tilemap)))
+  .add_systems(@app.Update, @app.system(@app.system_param3(move_player)))
+  .add_systems(@app.Update, @app.system(@app.system_param2(log_tile)))
   .run()
 }
 
 ///|
-fn tilemap_chunk_setup(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let tileset_texture = asset_server.load_with_settings(
-    "textures/array_texture.png",
-    fn(settings) {
-      settings.sampler = @asset.ImageSampler::nearest()
-      settings.array_layout = Some(@asset.ImageArrayLayout::RowCount(4))
-    },
-  )
-  let chunk = @sprite.TilemapChunk::new(
-    @math.UVec2::splat(CHUNK_SIDE),
-    @math.UVec2::splat(TILE_SIZE),
-    tileset_texture,
-    @math.UVec2::new(1, 1),
-  )
-  tilemap_chunk_state.val.seed = 42
-  let tiles = build_initial_tile_data(chunk.tile_capacity())
-  let player = spawn_fake_player(world, chunk, @math.UVec2::new(0, 0))
-  spawn_fake_player(world, chunk, @math.UVec2::new(5, 6)) |> ignore
-
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-
-  tilemap_chunk_state.val.chunk = Some(chunk)
-  tilemap_chunk_state.val.tiles = tiles
-  tilemap_chunk_state.val.update_accumulator = 0.0F
-  tilemap_chunk_state.val.player = player
-}
-
-///|
-fn tilemap_chunk_update(world : @ecs.World) -> Unit {
-  guard tilemap_chunk_state.val.chunk is Some(chunk) else { return }
-
-  @sprite_render.render2d_draw_tilemap_chunk(
-    world,
-    chunk,
-    @sprite.TilemapChunkTileData::new(tilemap_chunk_state.val.tiles),
-    @transform.Transform::identity(),
-    @sprite.RenderLayers::default(),
-  )
-
-  update_fake_player(world, chunk)
-  update_tilemap_data(world, chunk)
-}
-
-///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in tilemap_chunk example")
-  }
-}
-
-///|
-fn update_fake_player(world : @ecs.World, chunk : @sprite.TilemapChunk) -> Unit {
-  if tilemap_chunk_state.val.player.is_placeholder() {
-    return
-  }
-  let start = chunk.calculate_tile_transform(@math.UVec2::new(0, 0)).translation.x
-  let end = chunk.calculate_tile_transform(@math.UVec2::new(CHUNK_SIDE - 1, 0)).translation.x
-  let t = (1.0F + @math.sin(world_time(world).elapsed_seconds())) * 0.5F
-  let next_x = start + (end - start) * t
-
-  let transform_store = world.component(@transform.ecs_key_transform)
-  guard transform_store.get(tilemap_chunk_state.val.player) is Some(transform) else {
-    return
-  }
-  let next_transform = @transform.Transform::from_xy_rotation_scale(
-    @math.Vec2::new(next_x, transform.translation.y),
-    transform.rotation_z(),
-    @math.Vec2::new(transform.scale.x, transform.scale.y),
-    z=transform.translation.z,
-  )
-  let tick = world.read_change_tick()
-  transform_store.set(tilemap_chunk_state.val.player, next_transform, tick)
-  |> ignore
-}
-
-///|
-fn update_tilemap_data(
-  world : @ecs.World,
-  _chunk : @sprite.TilemapChunk,
-) -> Unit {
-  tilemap_chunk_state.val.update_accumulator = tilemap_chunk_state.val.update_accumulator +
-    world_time(world).delta_seconds()
-  if tilemap_chunk_state.val.update_accumulator < UPDATE_INTERVAL_SECONDS {
-    return
-  }
-  tilemap_chunk_state.val.update_accumulator = 0.0F
-  let tile_count = tilemap_chunk_state.val.tiles.length()
-  if tile_count == 0 {
-    return
-  }
-  for _ in 0..<UPDATE_BATCH_COUNT {
-    let index = seeded_random_range(tile_count)
-    let value = seeded_random_range(TILESET_RANDOM_RANGE)
-    tilemap_chunk_state.val.tiles[index] = Some(
-      @sprite.TileData::from_tileset_index(value),
-    )
-  }
-}
-
-///|
-fn build_initial_tile_data(tile_count : Int) -> Array[@sprite.TileData?] {
-  let tiles : Array[@sprite.TileData?] = []
+fn build_initial_tile_data(
+  rng : @random.Rand,
+  tile_count : Int,
+) -> Array[@sprite.TileData?] {
+  let tile_data : Array[@sprite.TileData?] = []
   for _ in 0..<tile_count {
-    let value = seeded_random_range(TILESET_RANDOM_RANGE)
-    tiles.push(
+    let value = rng.int(limit=TILESET_RANDOM_RANGE)
+    tile_data.push(
       if value == 0 {
         None
       } else {
@@ -177,53 +109,197 @@ fn build_initial_tile_data(tile_count : Int) -> Array[@sprite.TileData?] {
       },
     )
   }
-  tiles
+  tile_data
+}
+
+///|
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  let rng = @random.Rand::chacha8(seed=b"bevy-tilemap-chunk-seed-00000042")
+  let chunk = @sprite.TilemapChunk::new(
+    @math.UVec2::splat(CHUNK_SIDE),
+    @math.UVec2::splat(TILE_SIZE),
+    asset_server
+    .get()
+    .load_with_settings("textures/array_texture.png", fn(settings) {
+      settings.array_layout = Some(@asset.ImageArrayLayout::RowCount(4))
+    }),
+    @math.UVec2::new(1, 1),
+  )
+  let tile_data = build_initial_tile_data(rng, chunk.tile_capacity())
+
+  ignore(
+    commands.spawn(
+      (
+        chunk,
+        @sprite.TilemapChunkTileData::new(tile_data),
+        UpdateTimer::{
+          timer: @time.Timer::from_seconds(
+            UPDATE_INTERVAL_SECONDS,
+            @time.TimerMode::Repeating,
+          ),
+        },
+      ),
+    ),
+  )
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+  commands.insert_resource(SeededRng::{ rng, })
+}
+
+///|
+fn spawn_player(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  chunk : @sprite.TilemapChunk,
+  tile_pos : @math.UVec2,
+  moving? : Bool = false,
+) -> Unit {
+  let base_transform = chunk.calculate_tile_transform(tile_pos)
+  let transform = base_transform.with_translation(
+    @math.Vec3::new(
+      base_transform.translation.x,
+      base_transform.translation.y,
+      1.0F,
+    ),
+  )
+  let player_mesh = @sprite.Mesh2d::new(
+    meshes.get_ref().val.add(
+      @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(8.0F, 8.0F)).to_mesh(),
+    ),
+  )
+  let player_material = @sprite.MeshMaterial2d::new(
+    materials.get_ref().val.add(
+      @sprite.ColorMaterialAsset::from_color(
+        @sprite.Color::new(0.956F, 0.271F, 0.271F, 1.0F),
+      ),
+    ),
+  )
+
+  if moving {
+    ignore(
+      commands.spawn(
+        (player_mesh, player_material, transform, MovePlayer::{  }),
+      ),
+    )
+  } else {
+    ignore(commands.spawn((player_mesh, player_material, transform)))
+  }
 }
 
 ///|
 fn spawn_fake_player(
-  world : @ecs.World,
-  chunk : @sprite.TilemapChunk,
-  tile_pos : @math.UVec2,
-) -> @core.Entity {
-  let tile_transform = chunk.calculate_tile_transform(tile_pos)
-  let player_transform = @transform.Transform::from_xy_rotation_scale(
-    @math.Vec2::new(tile_transform.translation.x, tile_transform.translation.y),
-    0.0F,
-    @math.Vec2::new(1.0F, 1.0F),
-    z=1.0F,
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  chunks : @ecs.Query1[@sprite.TilemapChunk],
+) -> Unit {
+  guard (try! chunks.single()) is Some(chunk) else { return }
+  spawn_player(
+    commands,
+    meshes,
+    materials,
+    chunk,
+    @math.UVec2::new(0, 0),
+    moving=true,
   )
-  @sprite.Mesh2dBundle::new_with_mesh_material(
-    @sprite.Mesh2d::new(
-      @sprite.mesh_assets_mut_or_abort().val.add(
-        @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(8.0F, 8.0F)).to_mesh(),
-      ),
-    ),
-    @sprite.MeshMaterial2d::new(
-      @sprite.color_material_assets_mut_or_abort().val.add(
-        @sprite.ColorMaterialAsset::from_color(
-          @sprite.Color::new(0.956F, 0.271F, 0.271F, 1.0F),
-        ),
-      ),
-    ),
-    player_transform,
-  ).spawn(world)
+  spawn_player(commands, meshes, materials, chunk, @math.UVec2::new(5, 6))
 }
 
 ///|
-fn seeded_random_range(max_exclusive : Int) -> Int {
-  if max_exclusive <= 0 {
-    return 0
-  }
-  tilemap_chunk_state.val.seed = lcg_next(tilemap_chunk_state.val.seed)
-  tilemap_chunk_state.val.seed % max_exclusive
+fn move_player(
+  players : @ecs.Query1Filtered[@transform.Transform, @ecs.With[MovePlayer]],
+  time : @app.Res[@time.Time[Unit]],
+  chunks : @ecs.Query1[@sprite.TilemapChunk],
+) -> Unit {
+  guard (try! chunks.single()) is Some(chunk) else { return }
+
+  let t = (@math.sin(time.get().elapsed_secs()) + 1.0F) / 2.0F
+  let origin = chunk.calculate_tile_transform(@math.UVec2::new(0, 0)).translation.x
+  let destination = chunk.calculate_tile_transform(
+      @math.UVec2::new(CHUNK_SIDE - 1, 0),
+    ).translation.x
+
+  try! players.view_mut(fn(_entity, player) {
+    let player_ref = player.get_ref()
+    player_ref.val.translation.x = origin + (destination - origin) * t
+    player.set_changed()
+  })
 }
 
 ///|
-fn lcg_next(seed : Int) -> Int {
-  let mut next = (seed * 1103515245 + 12345) % LCG_MOD
-  if next < 0 {
-    next = next + LCG_MOD
+fn update_tilemap(
+  timers : @ecs.Query1[UpdateTimer],
+  tile_data_query : @ecs.Query1[@sprite.TilemapChunkTileData],
+  time : @app.Res[@time.Time[Unit]],
+  rng : @app.ResMut[SeededRng],
+) -> Unit {
+  let rng_ref = rng.get_ref()
+  try! timers.view_mut(fn(entity, timer) {
+    let timer_ref = timer.get_ref()
+    timer_ref.val.timer = timer_ref.val.timer.tick(time.get().delta())
+    timer.set_changed()
+
+    if !timer_ref.val.timer.just_finished() {
+      return
+    }
+
+    ignore(
+      try! tile_data_query.with_mut(entity, fn(tile_data) {
+        let tile_data_ref = tile_data.get_ref()
+        let tile_count = tile_data_ref.val.tile_data.length()
+        if tile_count == 0 {
+          return
+        }
+        for _ in 0..<UPDATE_BATCH_COUNT {
+          let index = rng_ref.val.rng.int(limit=tile_count)
+          tile_data_ref.val.tile_data[index] = Some(
+            @sprite.TileData::from_tileset_index(
+              rng_ref.val.rng.int(limit=TILESET_RANDOM_RANGE),
+            ),
+          )
+        }
+        tile_data.set_changed()
+      }),
+    )
+  })
+}
+
+///|
+fn first_tilemap(
+  tilemaps : @ecs.Query2[@sprite.TilemapChunk, @sprite.TilemapChunkTileData],
+) -> (@sprite.TilemapChunk, @sprite.TilemapChunkTileData)? {
+  let result : Ref[(@sprite.TilemapChunk, @sprite.TilemapChunkTileData)?] = Ref::new(
+    None,
+  )
+  try! tilemaps.view(fn(_entity, chunk, tile_data) {
+    if result.val is None {
+      result.val = Some((chunk, tile_data))
+    }
+  })
+  result.val
+}
+
+///|
+fn log_tile(
+  tilemaps : @ecs.Query2[@sprite.TilemapChunk, @sprite.TilemapChunkTileData],
+  last_tileset_index : @app.Local[Int],
+) -> Unit {
+  guard first_tilemap(tilemaps) is Some((chunk, tile_data)) else { return }
+  guard tile_data.tile_data_from_tile_pos(
+      chunk.chunk_size,
+      @math.UVec2::new(3, 4),
+    )
+    is Some(tile) else {
+    return
   }
-  next
+
+  if tile.tileset_index != last_tileset_index.get() {
+    @app.log_info(
+      "tile_data changed: tileset_index=" + tile.tileset_index.to_string(),
+    )
+    last_tileset_index.set(tile.tileset_index)
+  }
 }

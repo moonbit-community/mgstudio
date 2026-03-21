@@ -4741,6 +4741,22 @@ fn render2d_sorted_camera_indices(
 }
 
 ///|
+fn render2d_extract_tilemap_chunks(world : @ecs.World) -> Unit {
+  try! world
+  .query2(ecs_key_tilemap_chunk, ecs_key_tilemap_chunk_tile_data)
+  .view(fn(entity, chunk, tile_data) {
+    if !render2d_entity_visible_ecs(world, entity) {
+      return
+    }
+    let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
+      RenderLayers::default(),
+    )
+    let transform = render2d_resolve_transform_ecs(world, entity)
+    render2d_draw_tilemap_chunk(world, chunk, tile_data, transform, layers)
+  })
+}
+
+///|
 pub fn render_extract_system(world : @ecs.World) -> Unit {
   render_state_update(world, fn(rs) {
     rs.val.draw_enabled = true
@@ -4926,6 +4942,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
         })
       }
     })
+    render2d_extract_tilemap_chunks(world)
     let mesh_store = get_mesh2d_store(ecs_world)
     let gpu_mesh_store = get_gpu_mesh2d_store(ecs_world)
     let material_runtime_registry = material2d_runtime_registry_or_empty(
@@ -5147,6 +5164,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         })
       }
     })
+    render2d_extract_tilemap_chunks(world)
 
     let material_runtime_registry = material2d_runtime_registry_or_empty(world)
     let wireframe_config = if get_wireframe2d_config_resource(world).get()
@@ -6428,6 +6446,59 @@ test "render2d: shape geometry builders validate" {
     }
   }
   inspect(ok, content="true")
+}
+
+///|
+test "render2d: ecs tilemap chunk extraction expands chunk tiles into extra sprites" {
+  let tileset = @asset.Handle::new(41)
+  let extracted_count : Ref[Int] = Ref::new(0)
+  let first_uv_min_y : Ref[Double] = Ref::new(-1.0)
+  let first_uv_max_y : Ref[Double] = Ref::new(-1.0)
+  let second_uv_min_y : Ref[Double] = Ref::new(-1.0)
+  let second_uv_max_y : Ref[Double] = Ref::new(-1.0)
+  let mut app = @app.App::new(@ecs.World::new()).add_plugins([
+    @asset.asset_plugin, render2d_plugin,
+  ])
+
+  app = app.add_system(fn(world : @ecs.World) {
+    let entity = world.spawn_empty()
+    try! (world.set(
+      entity,
+      ecs_key_tilemap_chunk,
+      TilemapChunk::new(
+        @math.UVec2::new(2, 2),
+        @math.UVec2::splat(8),
+        tileset,
+        @math.UVec2::new(1, 4),
+      ),
+    )
+    |> ignore)
+    try! (world.set(
+      entity,
+      ecs_key_tilemap_chunk_tile_data,
+      TilemapChunkTileData::new([
+        Some(TileData::from_tileset_index(0)),
+        None,
+        Some(TileData::from_tileset_index(3)),
+        None,
+      ]),
+    )
+    |> ignore)
+    render_extract_system_ecs(world)
+    let extra_sprites = render_state_ref(world).unwrap().extra_sprites
+    extracted_count.val = extra_sprites.length()
+    first_uv_min_y.val = extra_sprites[0].payload.uv_min.y.to_double()
+    first_uv_max_y.val = extra_sprites[0].payload.uv_max.y.to_double()
+    second_uv_min_y.val = extra_sprites[1].payload.uv_min.y.to_double()
+    second_uv_max_y.val = extra_sprites[1].payload.uv_max.y.to_double()
+  })
+  app = app.run_once()
+
+  inspect(extracted_count.val, content="2")
+  inspect(first_uv_min_y.val, content="0")
+  inspect(first_uv_max_y.val, content="0.25")
+  inspect(second_uv_min_y.val, content="0.75")
+  inspect(second_uv_max_y.val, content="1")
 }
 
 ///|

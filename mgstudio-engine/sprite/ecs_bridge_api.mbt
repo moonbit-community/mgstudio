@@ -18,7 +18,7 @@ pub let ecs_components : Array[String] = [
   "Anchor", "Camera", "Mesh2d", "Sprite", "Bloom", "Camera2d", "GpuMesh2d", "Projection",
   "PanCamera", "ScissorRect", "Wireframe2d", "RenderLayers", "RenderTarget", "ColorMaterial",
   "Tonemapping", "DebandDither", "ColorGrading", "NoWireframe2d", "MeshMaterial2d",
-  "ClearColorConfig", "Wireframe2dColor",
+  "ClearColorConfig", "Wireframe2dColor", "TilemapChunk", "TilemapChunkTileData",
 ]
 
 ///|
@@ -152,6 +152,20 @@ pub fn get_clear_color_config_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[ClearColorConfig] {
   world.component(ecs_key_clear_color_config)
+}
+
+///|
+pub fn get_tilemap_chunk_store(
+  world : @ecs.World,
+) -> @ecs.ComponentAccess[TilemapChunk] {
+  world.component(ecs_key_tilemap_chunk)
+}
+
+///|
+pub fn get_tilemap_chunk_tile_data_store(
+  world : @ecs.World,
+) -> @ecs.ComponentAccess[TilemapChunkTileData] {
+  world.component(ecs_key_tilemap_chunk_tile_data)
 }
 
 ///|

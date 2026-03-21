@@ -1,11 +1,17 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/2d/mesh2d_arcs"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type DrawBounds[T]
+pub impl[T] @ecs.Component for DrawBounds[T]
 
 // Type aliases
 

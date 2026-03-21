@@ -141,6 +141,16 @@ pub let ecs_key_clear_color_config : @ecs.ComponentKey[ClearColorConfig] = @ecs.
 )
 
 ///|
+pub let ecs_key_tilemap_chunk : @ecs.ComponentKey[TilemapChunk] = @ecs.register_component(
+  debug_name="render2d.tilemap_chunk",
+)
+
+///|
+pub let ecs_key_tilemap_chunk_tile_data : @ecs.ComponentKey[
+  TilemapChunkTileData,
+] = @ecs.register_component(debug_name="render2d.tilemap_chunk_tile_data")
+
+///|
 pub impl @ecs.Component for Sprite with component() {
   ecs_key_sprite
 }
@@ -226,6 +236,16 @@ pub impl @ecs.Component for ClearColorConfig with component() {
 }
 
 ///|
+pub impl @ecs.Component for TilemapChunk with component() {
+  ecs_key_tilemap_chunk
+}
+
+///|
+pub impl @ecs.Component for TilemapChunkTileData with component() {
+  ecs_key_tilemap_chunk_tile_data
+}
+
+///|
 pub let ecs_key_render_state : @ecs.ResourceKey[RenderState] = @ecs.register_resource(
   debug_name="render2d.render_state",
 )
@@ -259,6 +279,11 @@ fn encode_vec2(value : @math.Vec2) -> Json {
 ///|
 fn encode_ivec2(value : @math.IVec2) -> Json {
   (value.x, value.y).to_json()
+}
+
+///|
+fn encode_uvec2(value : @math.UVec2) -> Json {
+  value.to_json()
 }
 
 ///|
@@ -452,6 +477,26 @@ fn encode_gpu_mesh2d(gpu_mesh2d : GpuMesh2d) -> Json {
 }
 
 ///|
+fn encode_tile_data(tile_data : TileData) -> Json {
+  tile_data.tileset_index.to_json()
+}
+
+///|
+fn encode_tilemap_chunk(tilemap_chunk : TilemapChunk) -> Json {
+  (
+    encode_uvec2(tilemap_chunk.chunk_size),
+    encode_uvec2(tilemap_chunk.tile_display_size),
+    encode_image_handle(tilemap_chunk.tileset),
+    encode_uvec2(tilemap_chunk.tileset_grid),
+  ).to_json()
+}
+
+///|
+fn encode_tilemap_chunk_tile_data(tile_data : TilemapChunkTileData) -> Json {
+  tile_data.tile_data.to_json()
+}
+
+///|
 fn decode_color(json : Json) -> Color {
   let (r, g, b, a) : (Float, Float, Float, Float) = try! @json.from_json(json)
   Color::new(r, g, b, a)
@@ -467,6 +512,11 @@ fn decode_vec2(json : Json) -> @math.Vec2 {
 fn decode_ivec2(json : Json) -> @math.IVec2 {
   let (x, y) : (Int, Int) = try! @json.from_json(json)
   @math.IVec2::new(x, y)
+}
+
+///|
+fn decode_uvec2(json : Json) -> @math.UVec2 {
+  try! @json.from_json(json)
 }
 
 ///|
@@ -714,6 +764,42 @@ fn decode_gpu_mesh2d(json : Json) -> GpuMesh2d {
 }
 
 ///|
+fn decode_tile_data(json : Json) -> TileData {
+  TileData::from_tileset_index(try! @json.from_json(json))
+}
+
+///|
+fn decode_tilemap_chunk(json : Json) -> TilemapChunk {
+  let (chunk_size_json, tile_display_size_json, tileset_json, tileset_grid_json) : (
+    Json,
+    Json,
+    Json,
+    Json,
+  ) = try! @json.from_json(json)
+  TilemapChunk::new(
+    decode_uvec2(chunk_size_json),
+    decode_uvec2(tile_display_size_json),
+    decode_image_handle(tileset_json),
+    decode_uvec2(tileset_grid_json),
+  )
+}
+
+///|
+fn decode_tilemap_chunk_tile_data(json : Json) -> TilemapChunkTileData {
+  let tile_data_json : Array[Json] = try! @json.from_json(json)
+  let tile_data : Array[TileData?] = []
+  for entry in tile_data_json {
+    tile_data.push(
+      match entry {
+        Null => None
+        _ => Some(decode_tile_data(entry))
+      },
+    )
+  }
+  TilemapChunkTileData::new(tile_data)
+}
+
+///|
 fn decode_scissor_rect(json : Json) -> ScissorRect {
   ScissorRect::new(decode_rect(json))
 }
@@ -861,6 +947,36 @@ pub impl ToJson for GpuMesh2d with to_json(self) {
 ///|
 pub impl @json.FromJson for GpuMesh2d with from_json(json, _path) {
   decode_gpu_mesh2d(json)
+}
+
+///|
+pub impl ToJson for TileData with to_json(self) {
+  encode_tile_data(self)
+}
+
+///|
+pub impl @json.FromJson for TileData with from_json(json, _path) {
+  decode_tile_data(json)
+}
+
+///|
+pub impl ToJson for TilemapChunk with to_json(self) {
+  encode_tilemap_chunk(self)
+}
+
+///|
+pub impl @json.FromJson for TilemapChunk with from_json(json, _path) {
+  decode_tilemap_chunk(json)
+}
+
+///|
+pub impl ToJson for TilemapChunkTileData with to_json(self) {
+  encode_tilemap_chunk_tile_data(self)
+}
+
+///|
+pub impl @json.FromJson for TilemapChunkTileData with from_json(json, _path) {
+  decode_tilemap_chunk_tile_data(json)
 }
 
 ///|

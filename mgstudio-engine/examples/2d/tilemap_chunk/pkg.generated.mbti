@@ -1,11 +1,24 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/2d/tilemap_chunk"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type MovePlayer
+pub impl @ecs.Component for MovePlayer
+
+type SeededRng
+pub impl @app.Resource for SeededRng
+
+type UpdateTimer
+pub impl @ecs.Component for UpdateTimer
 
 // Type aliases
 
