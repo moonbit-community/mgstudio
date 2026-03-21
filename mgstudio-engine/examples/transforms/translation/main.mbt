@@ -13,9 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/transforms/translation.rs`.
-
-///|
 pub struct Movable {
   spawn : @math.Vec3
   max_distance : Float
@@ -38,103 +35,89 @@ fn Movable::new(spawn : @math.Vec3) -> Movable {
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
   let entity_spawn = @math.Vec3::zero()
-  let material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(
+          meshes.get_ref().val.add(
+            @pbr.Mesh::from_3d_geometry(
+              @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+            ),
+          ),
+        ),
+        @pbr.MeshMaterial3d::new(
+          materials.get_ref().val.add(
+            @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+          ),
+        ),
+        @transform.Transform::from_translation(entity_spawn),
+        Movable::new(entity_spawn),
+      ),
+    ),
   )
-  let cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::default(),
+        @transform.Transform::from_xyz(0.0F, 10.0F, 20.0F).looking_at(
+          entity_spawn,
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
         ),
       ),
     ),
-    @pbr.MeshMaterial3d::new(material),
-    @transform.Transform::from_translation(entity_spawn),
-  ).spawn(world)
-  world
-  .component(Movable::component())
-  .insert(cube, Movable::new(entity_spawn), tick)
+  )
 
-  @pbr.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::from_xyz(0.0F, 10.0F, 20.0F).looking_at(
-      entity_spawn,
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.DirectionalLight::default(),
+        @transform.Transform::from_xyz(3.0F, 3.0F, 3.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
     ),
-  ).spawn(world)
-  |> ignore
-
-  let light = world.spawn_empty()
-  world
-  .component(@pbr.DirectionalLight::component())
-  .insert(light, @pbr.DirectionalLight::default(), tick)
-  world
-  .component(@transform.Transform::component())
-  .insert(
-    light,
-    @transform.Transform::from_xyz(3.0F, 3.0F, 3.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-    tick,
   )
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None =>
-      abort("Missing Time<Unit> resource in transforms/translation example")
-  }
-}
-
-///|
-fn move_cube(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-  let delta = world_time(world).delta_seconds()
-  let transform_store = world.component(@transform.Transform::component())
-  let movable_store = world.component(Movable::component())
-  let updates : Array[(@core.Entity, Movable, @transform.Transform)] = []
-  movable_store.for_each(fn(entity, movable) {
-    if transform_store.get(entity) is Some(transform) {
-      updates.push((entity, movable, transform))
-    }
-  })
-
-  for update in updates {
-    let entity = update.0
-    let movable = update.1
-    let transform = update.2
-    let next_movable = Movable::{
-      spawn: movable.spawn,
-      max_distance: movable.max_distance,
-      speed: movable.speed,
-    }
-    if movable.spawn.sub(transform.translation).length() > movable.max_distance {
+fn move_cube(
+  commands : @app.Commands,
+  cubes : @ecs.Query2ValueMutFiltered[Movable, @transform.Transform, @ecs.All],
+  time : @app.Res[@time.Time[Unit]],
+) -> Unit {
+  let delta = time.get().delta_secs()
+  try! cubes.view_mut(fn(entity, movable, transform) {
+    let transform_ref = transform.get_ref()
+    let next_movable = movable
+    if movable.spawn.sub(transform_ref.val.translation).length() >
+      movable.max_distance {
       next_movable.speed = -next_movable.speed
     }
-    let direction = transform.local_x()
-    let next_transform = transform.with_translation(
-      transform.translation.add(
-        direction.mul_scalar(next_movable.speed * delta),
-      ),
+
+    let direction = transform_ref.val.local_x()
+    transform_ref.val.translation = transform_ref.val.translation.add(
+      direction.mul_scalar(next_movable.speed * delta),
     )
-    ignore(transform_store.set(entity, next_transform, tick))
-    ignore(movable_store.set(entity, next_movable, tick))
-  }
+    transform.set_changed()
+    if next_movable.speed != movable.speed {
+      commands.entity(entity).insert_component(next_movable)
+    }
+  })
 }
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(move_cube))
+  .add_plugins(@mgstudio.default_plugins())
+  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
+  .add_systems(@app.Update, @app.system(@app.system_param3(move_cube)))
   .run()
 }

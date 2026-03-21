@@ -13,9 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/transforms/scale.rs`.
-
-///|
 pub struct Scaling {
   mut scale_direction : @math.Vec3
   scale_speed : Float
@@ -44,133 +41,114 @@ fn Scaling::new() -> Scaling {
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-  let material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(
+          meshes.get_ref().val.add(
+            @pbr.Mesh::from_3d_geometry(
+              @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+            ),
+          ),
+        ),
+        @pbr.MeshMaterial3d::new(
+          materials.get_ref().val.add(
+            @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+          ),
+        ),
+        @transform.Transform::from_rotation(
+          @math.Quat::from_rotation_y(@math.pi() / 4.0F),
+        ),
+        Scaling::new(),
+      ),
+    ),
   )
-  let cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::default(),
+        @transform.Transform::from_xyz(0.0F, 10.0F, 20.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
         ),
       ),
     ),
-    @pbr.MeshMaterial3d::new(material),
-    @transform.Transform::from_rotation(
-      @math.Quat::from_rotation_y(@math.pi() / 4.0F),
-    ),
-  ).spawn(world)
-  world.component(Scaling::component()).insert(cube, Scaling::new(), tick)
+  )
 
-  @pbr.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::from_xyz(0.0F, 10.0F, 20.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.DirectionalLight::default(),
+        @transform.Transform::from_xyz(3.0F, 3.0F, 3.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
     ),
-  ).spawn(world)
-  |> ignore
-
-  let light = world.spawn_empty()
-  world
-  .component(@pbr.DirectionalLight::component())
-  .insert(light, @pbr.DirectionalLight::default(), tick)
-  world
-  .component(@transform.Transform::component())
-  .insert(
-    light,
-    @transform.Transform::from_xyz(3.0F, 3.0F, 3.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-    tick,
   )
 }
 
 ///|
-fn change_scale_direction(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-  let transform_store = world.component(@transform.Transform::component())
-  let scaling_store = world.component(Scaling::component())
-  let updates : Array[(@core.Entity, Scaling, @transform.Transform)] = []
-  scaling_store.for_each(fn(entity, scaling) {
-    if transform_store.get(entity) is Some(transform) {
-      updates.push((entity, scaling, transform))
+fn change_scale_direction(
+  commands : @app.Commands,
+  cubes : @ecs.Query2ValueMutFiltered[Scaling, @transform.Transform, @ecs.All],
+) -> Unit {
+  try! cubes.view_mut(fn(entity, cube, transform) {
+    let transform_ref = transform.get_ref()
+    let next_cube = cube
+    let mut scaling_changed = false
+
+    if transform_ref.val.scale.max_element() > cube.max_element_size {
+      next_cube.scale_direction = next_cube.scale_direction.mul_scalar(-1.0F)
+      transform_ref.val.scale = transform_ref.val.scale.floor()
+      transform.set_changed()
+      scaling_changed = true
+    }
+
+    if transform_ref.val.scale.min_element() < cube.min_element_size {
+      next_cube.scale_direction = next_cube.scale_direction.mul_scalar(-1.0F)
+      transform_ref.val.scale = transform_ref.val.scale.ceil()
+      next_cube.scale_direction = next_cube.scale_direction.zxy()
+      transform.set_changed()
+      scaling_changed = true
+    }
+
+    if scaling_changed {
+      commands.entity(entity).insert_component(next_cube)
     }
   })
-
-  for update in updates {
-    let entity = update.0
-    let scaling = update.1
-    let transform = update.2
-    let next_scaling = Scaling::{
-      scale_direction: scaling.scale_direction,
-      scale_speed: scaling.scale_speed,
-      max_element_size: scaling.max_element_size,
-      min_element_size: scaling.min_element_size,
-    }
-    let next_transform = transform
-    if transform.scale.max_element() > scaling.max_element_size {
-      next_scaling.scale_direction = next_scaling.scale_direction.mul_scalar(
-        -1.0F,
-      )
-      next_transform.scale = next_transform.scale.floor()
-    }
-    if next_transform.scale.min_element() < scaling.min_element_size {
-      next_scaling.scale_direction = next_scaling.scale_direction.mul_scalar(
-        -1.0F,
-      )
-      next_transform.scale = next_transform.scale.ceil()
-      next_scaling.scale_direction = next_scaling.scale_direction.zxy()
-    }
-    ignore(transform_store.set(entity, next_transform, tick))
-    ignore(scaling_store.set(entity, next_scaling, tick))
-  }
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in transforms/scale example")
-  }
-}
-
-///|
-fn scale_cube(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-  let delta = world_time(world).delta_seconds()
-  let transform_store = world.component(@transform.Transform::component())
-  let scaling_store = world.component(Scaling::component())
-  let updates : Array[(@core.Entity, Scaling, @transform.Transform)] = []
-  scaling_store.for_each(fn(entity, scaling) {
-    if transform_store.get(entity) is Some(transform) {
-      updates.push((entity, scaling, transform))
-    }
-  })
-
-  for update in updates {
-    let entity = update.0
-    let scaling = update.1
-    let transform = update.2
-    let next_transform = transform.with_scale(
-      transform.scale.add(
-        scaling.scale_direction.mul_scalar(scaling.scale_speed * delta),
-      ),
+fn scale_cube(
+  cubes : @ecs.Query2ValueMutFiltered[Scaling, @transform.Transform, @ecs.All],
+  time : @app.Res[@time.Time[Unit]],
+) -> Unit {
+  let delta = time.get().delta_secs()
+  try! cubes.view_mut(fn(_entity, cube, transform) {
+    let transform_ref = transform.get_ref()
+    transform_ref.val.scale = transform_ref.val.scale.add(
+      cube.scale_direction.mul_scalar(cube.scale_speed * delta),
     )
-    ignore(transform_store.set(entity, next_transform, tick))
-  }
+    transform.set_changed()
+  })
 }
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(change_scale_direction))
-  .add_systems(@app.Update, @app.system(scale_cube))
+  .add_plugins(@mgstudio.default_plugins())
+  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param2(change_scale_direction)),
+  )
+  .add_systems(@app.Update, @app.system(@app.system_param2(scale_cube)))
   .run()
 }

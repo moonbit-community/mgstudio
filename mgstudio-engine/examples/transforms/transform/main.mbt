@@ -13,9 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/transforms/transform.rs`.
-
-///|
 pub struct CubeState {
   start_pos : @math.Vec3
   move_speed : Float
@@ -50,75 +47,82 @@ impl @ecs.Component for Center with component() {
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-  let sphere_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::srgb(1.0F, 1.0F, 0.0F)),
-  )
-  let center_sphere = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(3.0F)),
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(
+          meshes.get_ref().val.add(
+            @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(3.0F)),
+          ),
+        ),
+        @pbr.MeshMaterial3d::new(
+          materials.get_ref().val.add(
+            @pbr.StandardMaterial::from_color(
+              @sprite.Color::srgb(1.0F, 1.0F, 0.0F),
+            ),
+          ),
+        ),
+        @mgs_transform.Transform::from_translation(@math.Vec3::zero()),
+        Center::{ max_size: 1.0F, min_size: 0.1F, scale_factor: 0.05F },
       ),
     ),
-    @pbr.MeshMaterial3d::new(sphere_material),
-    @mgs_transform.Transform::from_translation(@math.Vec3::zero()),
-  ).spawn(world)
-  world
-  .component(Center::component())
-  .insert(
-    center_sphere,
-    { max_size: 1.0F, min_size: 0.1F, scale_factor: 0.05F },
-    tick,
   )
 
   let cube_spawn = @mgs_transform.Transform::from_translation(
     @math.Vec3::new(0.0F, 0.0F, -10.0F),
   ).with_rotation(@math.Quat::from_rotation_y(@math.pi() / 2.0F))
-  let cube_material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(
+          meshes.get_ref().val.add(
+            @pbr.Mesh::from_3d_geometry(
+              @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+            ),
+          ),
+        ),
+        @pbr.MeshMaterial3d::new(
+          materials.get_ref().val.add(
+            @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+          ),
+        ),
+        cube_spawn,
+        CubeState::{
+          start_pos: cube_spawn.translation,
+          move_speed: 2.0F,
+          turn_speed: 0.2F,
+        },
+      ),
+    ),
   )
-  let cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::default(),
+        @mgs_transform.Transform::from_xyz(0.0F, 10.0F, 20.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
         ),
       ),
     ),
-    @pbr.MeshMaterial3d::new(cube_material),
-    cube_spawn,
-  ).spawn(world)
-  world
-  .component(CubeState::component())
-  .insert(
-    cube,
-    { start_pos: cube_spawn.translation, move_speed: 2.0F, turn_speed: 0.2F },
-    tick,
   )
 
-  @pbr.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    @mgs_transform.Transform::from_xyz(0.0F, 10.0F, 20.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.DirectionalLight::default(),
+        @mgs_transform.Transform::from_xyz(3.0F, 3.0F, 3.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
     ),
-  ).spawn(world)
-  |> ignore
-
-  let light = world.spawn_empty()
-  world
-  .component(@pbr.DirectionalLight::component())
-  .insert(light, @pbr.DirectionalLight::default(), tick)
-  world
-  .component(@mgs_transform.Transform::component())
-  .insert(
-    light,
-    @mgs_transform.Transform::from_xyz(3.0F, 3.0F, 3.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-    tick,
   )
 }
 
@@ -138,6 +142,7 @@ fn move_cube(
     transform_ref.val.translation = transform_ref.val.translation.add(
       forward.mul_scalar(cube.value().move_speed * delta),
     )
+    transform.set_changed()
   })
 }
 
@@ -154,15 +159,13 @@ fn rotate_cube(
   ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
-  let center = Ref::new(@math.Vec3::zero())
-  try! center_spheres.view(fn(_entity, transform) {
-    center.val = center.val.add(transform.translation)
-  })
+  guard (try! center_spheres.single()) is Some(center) else { return }
+
   let delta = time.get().delta_secs()
   try! cubes.view_mut(fn(_entity, cube, transform) {
     let transform_ref = transform.get_ref()
     let look_at_sphere = transform_ref.val.looking_at(
-      center.val,
+      center.translation,
       transform_ref.val.local_y(),
     )
     let weight = cube.value().turn_speed * delta
@@ -171,6 +174,7 @@ fn rotate_cube(
       look_at_sphere.rotation,
       weight,
     )
+    transform.set_changed()
   })
 }
 
@@ -200,22 +204,28 @@ fn scale_down_sphere_proportional_to_cube_travel_distance(
       new_size = center_state.min_size
     }
     transform.get_ref().val.scale = @math.Vec3::splat(new_size)
+    transform.set_changed()
   })
 }
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
+  let move_cube_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param2(move_cube),
+  )
+  let rotate_cube_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param3(rotate_cube),
+  )
+  let scale_down_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param2(scale_down_sphere_proportional_to_cube_travel_distance),
+  )
+
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(@app.system_param2(move_cube)))
-  .add_systems(@app.Update, @app.system(@app.system_param3(rotate_cube)))
+  .add_plugins(@mgstudio.default_plugins())
+  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .add_systems(
     @app.Update,
-    @app.system(
-      @app.system_param2(scale_down_sphere_proportional_to_cube_travel_distance),
-    ),
+    (move_cube_system, rotate_cube_system, scale_down_system) |> @app.chain(),
   )
   .run()
 }

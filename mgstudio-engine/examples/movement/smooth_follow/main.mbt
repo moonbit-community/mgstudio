@@ -13,9 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/movement/smooth_follow.rs`.
-
-///|
 struct TargetSphere {}
 
 ///|
@@ -72,11 +69,6 @@ let random_source_key : @ecs.ResourceKey[RandomSource] = @ecs.register_resource(
 )
 
 ///|
-let move_target_set : @app.SystemSet = @app.system_set(
-  "examples.movement.smooth_follow.move_target",
-)
-
-///|
 impl @ecs.Component for TargetSphere with component() {
   target_sphere_key
 }
@@ -116,218 +108,179 @@ fn min_float(a : Float, b : Float) -> Float {
 }
 
 ///|
-fn default_time_or_default(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in smooth_follow example")
-  }
-}
-
-///|
-fn[T] first_marked_entity(
-  world : @ecs.World,
-  marker_key : @ecs.ComponentKey[T],
-) -> @core.Entity? {
-  let mut result : @core.Entity? = None
-  world
-  .component(marker_key)
-  .for_each(fn(entity, _marker) { if result is None { result = Some(entity) } })
-  result
-}
-
-///|
-fn spawn_colored_sphere(
-  world : @ecs.World,
-  color : @sprite.Color,
-  transform : @transform.Transform,
-) -> @core.Entity {
-  @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(0.3F)),
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(
+          meshes.get_ref().val.add(
+            @pbr.Mesh::from_3d_geometry(
+              @pbr.mesh3d_geometry_plane(12.0F, 12.0F),
+            ),
+          ),
+        ),
+        @pbr.MeshMaterial3d::new(
+          materials.get_ref().val.add(
+            @pbr.StandardMaterial::from_color(
+              @sprite.Color::srgb(0.3F, 0.15F, 0.3F),
+            ),
+          ),
+        ),
+        @transform.Transform::from_xyz(0.0F, -2.5F, 0.0F),
       ),
     ),
-    @pbr.MeshMaterial3d::new(
-      @pbr.standard_material_add(@pbr.StandardMaterial::from_color(color)),
-    ),
-    transform,
-  ).spawn(world)
-}
+  )
 
-///|
-fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-
-  @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(12.0F, 12.0F)),
+  let sphere_mesh = meshes.get_ref().val.add(
+    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(0.3F)),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(sphere_mesh),
+        @pbr.MeshMaterial3d::new(
+          materials.get_ref().val.add(
+            @pbr.StandardMaterial::from_color(
+              @sprite.Color::srgb(0.3F, 0.15F, 0.9F),
+            ),
+          ),
+        ),
+        TargetSphere::{  },
       ),
     ),
-    @pbr.MeshMaterial3d::new(
-      @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(
-          @sprite.Color::srgb(0.3F, 0.15F, 0.3F),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(sphere_mesh),
+        @pbr.MeshMaterial3d::new(
+          materials.get_ref().val.add(
+            @pbr.StandardMaterial::from_color(
+              @sprite.Color::srgb(0.9F, 0.3F, 0.3F),
+            ),
+          ),
+        ),
+        @transform.Transform::from_xyz(0.0F, -2.0F, 0.0F),
+        FollowingSphere::{  },
+      ),
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @pbr.PointLight::default()
+        .with_intensity(15_000_000.0F)
+        .with_shadow_maps_enabled(true),
+        @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+      ),
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::default(),
+        @transform.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
         ),
       ),
     ),
-    @transform.Transform::from_xyz(0.0F, -2.5F, 0.0F),
-  ).spawn(world)
-  |> ignore
-
-  let target_sphere = spawn_colored_sphere(
-    world,
-    @sprite.Color::srgb(0.3F, 0.15F, 0.9F),
-    @transform.Transform::identity(),
   )
-  world
-  .component(TargetSphere::component())
-  .insert(target_sphere, TargetSphere::{  }, tick)
 
-  let following_sphere = spawn_colored_sphere(
-    world,
-    @sprite.Color::srgb(0.9F, 0.3F, 0.3F),
-    @transform.Transform::from_xyz(0.0F, -2.0F, 0.0F),
-  )
-  world
-  .component(FollowingSphere::component())
-  .insert(following_sphere, FollowingSphere::{  }, tick)
-
-  let light = world.spawn_empty()
-  world
-  .component(@pbr.PointLight::component())
-  .insert(
-    light,
-    @pbr.PointLight::default()
-    .with_intensity(15_000_000.0F)
-    .with_shadow_maps_enabled(true),
-    tick,
-  )
-  world
-  .component(@transform.Transform::component())
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
-
-  @pbr.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::from_xyz(-2.0F, 3.0F, 5.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  |> ignore
-
-  world.insert_resource(TargetSphereSpeed::resource(), TargetSphereSpeed::{
-    value: 5.0F,
-  })
-  world.insert_resource(DecayRate::resource(), DecayRate::{ value: 2.0F })
-  world.insert_resource(TargetPosition::resource(), TargetPosition::{
-    value: @math.Vec3::zero(),
-  })
-  world.insert_resource(RandomSource::resource(), RandomSource::{
+  commands.insert_resource(TargetSphereSpeed::{ value: 5.0F })
+  commands.insert_resource(DecayRate::{ value: 2.0F })
+  commands.insert_resource(TargetPosition::{ value: @math.Vec3::zero() })
+  commands.insert_resource(RandomSource::{
     rng: @random.Rand::chacha8(seed=b"bevyfollow68941654987813521seedx"),
   })
 }
 
 ///|
-fn move_target(world : @ecs.World) -> Unit {
-  guard first_marked_entity(world, TargetSphere::component())
-    is Some(target_entity) else {
-    return
-  }
-  guard (try! world.get_resource(TargetSphereSpeed::resource()))
-    is Some(target_speed) else {
-    return
-  }
+fn move_target(
+  target : @ecs.Query1Filtered[@transform.Transform, @ecs.With[TargetSphere]],
+  target_speed : @app.Res[TargetSphereSpeed],
+  target_pos : @app.ResMut[TargetPosition],
+  time : @app.Res[@time.Time[Unit]],
+  rng : @app.ResMut[RandomSource],
+) -> Unit {
+  let delta_time = time.get().delta_secs()
+  let target_position = target_pos.get_ref()
+  let random_source = rng.get_ref()
 
-  let delta_time = default_time_or_default(world).delta_secs()
-  let tick = world.increment_change_tick()
-  guard (try! world.get_resource_ref_mut(TargetPosition::resource(), tick))
-    is Some(target_position) else {
-    return
-  }
-  guard (try! world.get_resource_ref_mut(RandomSource::resource(), tick))
-    is Some(random_source) else {
-    return
-  }
+  try! target.view_mut(fn(_entity, transform) {
+    let transform_ref = transform.get_ref()
+    let offset = target_position.val.value.sub(transform_ref.val.translation)
+    let abs_delta = offset.length()
 
-  let transform_store = world.component(@transform.Transform::component())
-  guard transform_store.get(target_entity) is Some(target_transform) else {
-    return
-  }
-
-  let offset = target_position.val.value.sub(target_transform.translation)
-  let abs_delta = offset.length()
-  if abs_delta > 0.000001F {
-    let magnitude = min_float(abs_delta, delta_time * target_speed.value)
-    ignore(
-      transform_store.set(
-        target_entity,
-        target_transform.with_translation(
-          target_transform.translation.add(
-            offset.normalize_or_zero().mul_scalar(magnitude),
-          ),
-        ),
-        tick,
-      ),
-    )
-  } else {
-    let legal_region = @math.Cuboid::from_size(@math.Vec3::splat(4.0F))
-    target_position.val.value = legal_region.sample_interior(
-      random_source.val.rng,
-    )
-  }
+    if abs_delta > 0.000001F {
+      let magnitude = min_float(
+        abs_delta,
+        delta_time * target_speed.get().value,
+      )
+      transform_ref.val.translation = transform_ref.val.translation.add(
+        offset.normalize_or_zero().mul_scalar(magnitude),
+      )
+      transform.set_changed()
+    } else {
+      let legal_region = @math.Cuboid::from_size(@math.Vec3::splat(4.0F))
+      target_position.val.value = legal_region.sample_interior(
+        random_source.val.rng,
+      )
+    }
+  })
 }
 
 ///|
-fn move_follower(world : @ecs.World) -> Unit {
-  guard first_marked_entity(world, TargetSphere::component())
-    is Some(target_entity) else {
-    return
-  }
-  guard first_marked_entity(world, FollowingSphere::component())
-    is Some(following_entity) else {
-    return
-  }
-  guard (try! world.get_resource(DecayRate::resource())) is Some(decay_rate) else {
-    return
-  }
+fn move_follower(
+  following : @ecs.Query1Filtered[
+    @transform.Transform,
+    @ecs.With[FollowingSphere],
+  ],
+  target : @ecs.Query1Filtered[
+    @transform.Transform,
+    (@ecs.With[TargetSphere], @ecs.Without[FollowingSphere]),
+  ],
+  decay_rate : @app.Res[DecayRate],
+  time : @app.Res[@time.Time[Unit]],
+) -> Unit {
+  guard (try! target.single()) is Some(target_transform) else { return }
 
-  let transform_store = world.component(@transform.Transform::component())
-  guard transform_store.get(target_entity) is Some(target_transform) else {
-    return
-  }
-  guard transform_store.get(following_entity) is Some(following_transform) else {
-    return
-  }
-
-  let delta_time = default_time_or_default(world).delta_secs()
-  let next_translation = @math.Vec3::new(
-    following_transform.translation.x,
-    following_transform.translation.y,
-    following_transform.translation.z,
-  )
-  next_translation.smooth_nudge(
-    target_transform.translation,
-    decay_rate.value,
-    delta_time,
-  )
-
-  ignore(
-    transform_store.set(
-      following_entity,
-      following_transform.with_translation(next_translation),
-      world.increment_change_tick(),
-    ),
-  )
+  let delta_time = time.get().delta_secs()
+  try! following.view_mut(fn(_entity, transform) {
+    let transform_ref = transform.get_ref()
+    let next_translation = transform_ref.val.translation
+    next_translation.smooth_nudge(
+      target_transform.translation,
+      decay_rate.get().value,
+      delta_time,
+    )
+    transform_ref.val.translation = next_translation
+    transform.set_changed()
+  })
 }
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
+  let move_target_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param5(move_target),
+  )
+  let move_follower_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param4(move_follower),
+  )
+
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(move_target).in_set(move_target_set))
-  .add_systems(@app.Update, @app.system(move_follower).after(move_target_set))
+  .add_plugins(@mgstudio.default_plugins())
+  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
+  .add_systems(
+    @app.Update,
+    (move_target_system, move_follower_system) |> @app.chain(),
+  )
   .run()
 }

@@ -13,9 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/movement/physics_in_fixed_timestep.rs`.
-
-///|
 const PLAYER_SPEED : Float = 4.0F
 
 ///|
@@ -65,7 +62,7 @@ struct PhysicalTranslation {
 
 ///|
 struct PreviousPhysicalTranslation {
-  mut value : @math.Vec3
+  value : @math.Vec3
 }
 
 ///|
@@ -172,46 +169,34 @@ fn DidFixedTimestepRunThisFrame::default() -> DidFixedTimestepRunThisFrame {
 }
 
 ///|
-fn spawn_text(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-
-  let overlay_camera = @sprite.Camera2dBundle::new(
-    @sprite.Camera::default().with_order(1).with_clear_color_none(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  world
-  .component(@ui.IsDefaultUiCamera::component())
-  .insert(overlay_camera, @ui.IsDefaultUiCamera::default(), tick)
-
-  let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    root,
-    @ui.Node::default()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
-    tick,
+fn spawn_text(commands : @app.Commands) -> Unit {
+  let overlay_camera = commands.spawn(
+    (
+      @sprite.Camera2d::default(),
+      @sprite.Camera::default().with_order(1).with_clear_color_none(),
+      @ui.IsDefaultUiCamera::default(),
+    ),
   )
-  world
-  .component(@ui.ecs_key_ui_target_camera)
-  .insert(root, @ui.UiTargetCamera::new(overlay_camera), tick)
 
-  let panel = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(panel, @hierarchy.Parent::new(root), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    panel,
-    @ui.Node::default()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_bottom(@ui.Val::Px(12.0F))
-    .with_left(@ui.Val::Px(12.0F))
-    .with_flex_direction(@ui.FlexDirection::Column),
-    tick,
+  let root = commands.spawn(
+    (
+      @ui.UiRoot::default(),
+      @ui.Node::default()
+      .with_width(@ui.Val::Percent(100.0F))
+      .with_height(@ui.Val::Percent(100.0F)),
+      @ui.UiTargetCamera::new(overlay_camera),
+    ),
+  )
+
+  let panel = commands.spawn(
+    (
+      @hierarchy.Parent::new(root),
+      @ui.Node::default()
+      .with_position_type(@ui.PositionType::Absolute)
+      .with_bottom(@ui.Val::Px(12.0F))
+      .with_left(@ui.Val::Px(12.0F))
+      .with_flex_direction(@ui.FlexDirection::Column),
+    ),
   )
 
   let font = @text.TextFont::default().with_font_size(25.0F)
@@ -223,17 +208,15 @@ fn spawn_text(world : @ecs.World) -> Unit {
     .with_anchor(@sprite.Anchor::center_left())
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .spawn()
-
-  let line_one_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(line_one_entity, @hierarchy.Parent::new(panel), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(line_one_entity, @ui.Node::default(), tick)
-  world
-  .component(@ui.ecs_key_ui_text)
-  .insert(line_one_entity, @ui.UiText::new(line_one), tick)
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(panel),
+        @ui.Node::default(),
+        @ui.UiText::new(line_one),
+      ),
+    ),
+  )
 
   let line_two = @text.Text2dBundle::new(
       @text.Text2d::new("Rotate the camera with the mouse"),
@@ -243,64 +226,53 @@ fn spawn_text(world : @ecs.World) -> Unit {
     .with_anchor(@sprite.Anchor::center_left())
     .with_color(@text.TextColor::new(@sprite.Color::white()))
     .spawn()
-
-  let line_two_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(line_two_entity, @hierarchy.Parent::new(panel), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(line_two_entity, @ui.Node::default(), tick)
-  world
-  .component(@ui.ecs_key_ui_text)
-  .insert(line_two_entity, @ui.UiText::new(line_two), tick)
-}
-
-///|
-fn spawn_player(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-
-  let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  world
-  .component(CameraSensitivity::component())
-  .insert(camera, CameraSensitivity::default(), tick)
-
-  let player = world.spawn_empty()
-  world
-  .component(@ecs.Name::component())
-  .insert(player, @ecs.Name::new("Player"), tick)
-  world
-  .component(@transform.Transform::component())
-  .insert(
-    player,
-    @transform.Transform::identity().with_scale(@math.Vec3::splat(0.3F)),
-    tick,
-  )
-  world
-  .component(AccumulatedInput::component())
-  .insert(player, AccumulatedInput::default(), tick)
-  world
-  .component(Velocity::component())
-  .insert(player, Velocity::default(), tick)
-  world
-  .component(PhysicalTranslation::component())
-  .insert(player, PhysicalTranslation::default(), tick)
-  world
-  .component(PreviousPhysicalTranslation::component())
-  .insert(player, PreviousPhysicalTranslation::default(), tick)
-}
-
-///|
-fn spawn_environment(world : @ecs.World) -> Unit {
-  let sphere_mesh = @pbr.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(0.3F)),
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(panel),
+        @ui.Node::default(),
+        @ui.UiText::new(line_two),
+      ),
     ),
   )
-  let sphere_material = @pbr.standard_material_add(
+}
+
+///|
+fn spawn_player(commands : @app.Commands) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::default(),
+        @transform.Transform::identity(),
+        CameraSensitivity::default(),
+      ),
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @ecs.Name::new("Player"),
+        @transform.Transform::identity().with_scale(@math.Vec3::splat(0.3F)),
+        AccumulatedInput::default(),
+        Velocity::default(),
+        PhysicalTranslation::default(),
+        PreviousPhysicalTranslation::default(),
+      ),
+    ),
+  )
+}
+
+///|
+fn spawn_environment(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  let sphere_mesh = meshes.get_ref().val.add(
+    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(0.3F)),
+  )
+  let sphere_material = materials.get_ref().val.add(
     @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.73F, 0.86F, 0.95F)),
   )
 
@@ -315,155 +287,121 @@ fn spawn_environment(world : @ecs.World) -> Unit {
           Float::from_int(z) * SPHERE_DISTANCE -
           (Float::from_int(SPHERES_IN_Z) - 1.0F) * SPHERE_DISTANCE / 2.0F,
         )
-        @pbr.MeshMaterial3dBundle::new(
-          sphere_mesh,
-          @pbr.MeshMaterial3d::new(sphere_material),
-          @transform.Transform::from_translation(translation),
-        ).spawn(world)
-        |> ignore
+        ignore(
+          commands.spawn(
+            (
+              @ecs.Name::new("Sphere"),
+              @transform.Transform::from_translation(translation),
+              @pbr.Mesh3d::new(sphere_mesh),
+              @pbr.MeshMaterial3d::new(sphere_material),
+            ),
+          ),
+        )
       }
     }
   }
 
-  let light = world.spawn_empty()
-  let tick = world.read_change_tick()
-  world
-  .component(@pbr.DirectionalLight::component())
-  .insert(light, @pbr.DirectionalLight::default(), tick)
-  world
-  .component(@transform.Transform::component())
-  .insert(
-    light,
-    @transform.Transform::identity().looking_to(
-      @math.Vec3::new(-1.0F, -3.0F, 0.5F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.DirectionalLight::default(),
+        @transform.Transform::identity().looking_to(
+          @math.Vec3::new(-1.0F, -3.0F, 0.5F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
     ),
-    tick,
   )
 }
 
 ///|
-fn clear_fixed_timestep_flag(world : @ecs.World) -> Unit {
-  let tick = world.increment_change_tick()
-  guard (try! world.get_resource_ref_mut(
-      DidFixedTimestepRunThisFrame::resource(),
-      tick,
-    ))
-    is Some(flag) else {
-    return
-  }
-  flag.val.value = false
+fn clear_fixed_timestep_flag(
+  did_run : @app.ResMut[DidFixedTimestepRunThisFrame],
+) -> Unit {
+  did_run.get_ref().val.value = false
 }
 
 ///|
-fn set_fixed_time_step_flag(world : @ecs.World) -> Unit {
-  let tick = world.increment_change_tick()
-  guard (try! world.get_resource_ref_mut(
-      DidFixedTimestepRunThisFrame::resource(),
-      tick,
-    ))
-    is Some(flag) else {
-    return
-  }
-  flag.val.value = true
+fn set_fixed_time_step_flag(
+  did_run : @app.ResMut[DidFixedTimestepRunThisFrame],
+) -> Unit {
+  did_run.get_ref().val.value = true
 }
 
 ///|
-fn rotate_camera(world : @ecs.World) -> Unit {
-  guard (try! world.get_resource(@input.AccumulatedMouseMotion::resource()))
-    is Some(motion) else {
-    return
-  }
-
-  let delta = motion.delta
+fn rotate_camera(
+  accumulated_mouse_motion : @app.Res[@input.AccumulatedMouseMotion],
+  cameras : @ecs.Query2ValueMutFiltered[
+    CameraSensitivity,
+    @transform.Transform,
+    @ecs.With[@camera.Camera3d],
+  ],
+) -> Unit {
+  let delta = accumulated_mouse_motion.get().delta
   if delta.x == 0.0F && delta.y == 0.0F {
     return
   }
 
-  let tick = world.increment_change_tick()
-  let transform_store = world.component(@transform.Transform::component())
-  let camera3d_store = world.component(@camera.Camera3d::component())
-  let sensitivity_store = world.component(CameraSensitivity::component())
-  sensitivity_store.for_each(fn(entity, sensitivity) {
-    guard camera3d_store.get(entity) is Some(_) else { return }
-    guard transform_store.get(entity) is Some(transform) else { return }
-
+  try! cameras.view_mut(fn(_entity, sensitivity, transform) {
+    let transform_ref = transform.get_ref()
     let delta_yaw = -delta.x * sensitivity.x
     let delta_pitch = -delta.y * sensitivity.y
-    let (yaw, pitch, roll) = transform.rotation.to_euler(@math.EulerRot::YXZ)
+    let (yaw, pitch, roll) = transform_ref.val.rotation.to_euler(
+      @math.EulerRot::YXZ,
+    )
     let next_pitch = clamp_float(
       pitch + delta_pitch,
       -CAMERA_PITCH_LIMIT,
       CAMERA_PITCH_LIMIT,
     )
-    let next_transform = transform
-    next_transform.rotation = @math.Quat::from_euler(
+    transform_ref.val.rotation = @math.Quat::from_euler(
       @math.EulerRot::YXZ,
       yaw + delta_yaw,
       next_pitch,
       roll,
     )
-    ignore(transform_store.set(entity, next_transform, tick))
+    transform.set_changed()
   })
 }
 
 ///|
-fn first_camera_transform(world : @ecs.World) -> @transform.Transform? {
-  let result : Ref[@transform.Transform?] = Ref::new(None)
-  let transform_store = world.component(@transform.Transform::component())
-  world
-  .query_entities_filtered(
-    (
-      @ecs.With::new(@camera.Camera3d::component()),
-      @ecs.With::new(@transform.Transform::component()),
-    ),
-  )
-  .view(fn(entity) {
-    if result.val is Some(_) {
-      return
-    }
-    if transform_store.get(entity) is Some(transform) {
-      result.val = Some(transform)
-    }
-  })
-  result.val
-}
+fn accumulate_input(
+  commands : @app.Commands,
+  keyboard_input : @input.ButtonInput[@window.KeyCode],
+  players : @ecs.Query2ValueMutFiltered[AccumulatedInput, Velocity, @ecs.All],
+  cameras : @ecs.Query1Filtered[
+    @transform.Transform,
+    @ecs.With[@camera.Camera3d],
+  ],
+) -> Unit {
+  guard (try! cameras.single()) is Some(camera_transform) else { return }
 
-///|
-fn accumulate_input(world : @ecs.World) -> Unit {
-  guard first_camera_transform(world) is Some(camera_transform) else { return }
-
-  let movement = @math.Vec2::zero()
-  if @input.key_pressed(@window.KeyCode::KeyW) {
-    movement.y = movement.y + 1.0F
-  }
-  if @input.key_pressed(@window.KeyCode::KeyS) {
-    movement.y = movement.y - 1.0F
-  }
-  if @input.key_pressed(@window.KeyCode::KeyA) {
-    movement.x = movement.x - 1.0F
-  }
-  if @input.key_pressed(@window.KeyCode::KeyD) {
-    movement.x = movement.x + 1.0F
-  }
-
-  let tick = world.increment_change_tick()
-  let accumulated_input_store = world.component(AccumulatedInput::component())
-  let velocity_store = world.component(Velocity::component())
-  accumulated_input_store.for_each(fn(entity, input) {
-    guard velocity_store.get(entity) is Some(existing_velocity) else { return }
+  try! players.view_mut(fn(entity, input, velocity) {
     let next_input = input
-    next_input.movement = movement
-    let next_velocity = existing_velocity
+    next_input.movement = @math.Vec2::zero()
+    if keyboard_input.pressed(@window.KeyCode::KeyW) {
+      next_input.movement.y = next_input.movement.y + 1.0F
+    }
+    if keyboard_input.pressed(@window.KeyCode::KeyS) {
+      next_input.movement.y = next_input.movement.y - 1.0F
+    }
+    if keyboard_input.pressed(@window.KeyCode::KeyA) {
+      next_input.movement.x = next_input.movement.x - 1.0F
+    }
+    if keyboard_input.pressed(@window.KeyCode::KeyD) {
+      next_input.movement.x = next_input.movement.x + 1.0F
+    }
+
+    let velocity_ref = velocity.get_ref()
     let velocity_from_input = camera_transform
       .right()
       .mul_scalar(next_input.movement.x)
       .add(camera_transform.forward().mul_scalar(next_input.movement.y))
-    next_velocity.value = vec3_clamp_length_max(velocity_from_input, 1.0F).mul_scalar(
+    velocity_ref.val.value = vec3_clamp_length_max(velocity_from_input, 1.0F).mul_scalar(
       PLAYER_SPEED,
     )
-    ignore(accumulated_input_store.set(entity, next_input, tick))
-    ignore(velocity_store.set(entity, next_velocity, tick))
+    velocity.set_changed()
+    commands.entity(entity).insert_component(next_input)
   })
 }
 
@@ -476,103 +414,88 @@ fn did_fixed_timestep_run_this_frame(world : @ecs.World) -> Bool {
 }
 
 ///|
-fn clear_input(world : @ecs.World) -> Unit {
-  let tick = world.increment_change_tick()
-  let input_store = world.component(AccumulatedInput::component())
-  input_store.for_each(fn(entity, input) {
-    let next_input = input
-    next_input.movement = @math.Vec2::zero()
-    ignore(input_store.set(entity, next_input, tick))
+fn clear_input(
+  players : @ecs.Query1Filtered[AccumulatedInput, @ecs.All],
+) -> Unit {
+  try! players.view_mut(fn(_entity, input) {
+    let input_ref = input.get_ref()
+    input_ref.val.movement = @math.Vec2::zero()
+    input.set_changed()
   })
 }
 
 ///|
-fn advance_physics(world : @ecs.World) -> Unit {
+fn advance_physics(
+  commands : @app.Commands,
+  players : @ecs.Query3ValueRefMutFiltered[
+    PreviousPhysicalTranslation,
+    Velocity,
+    PhysicalTranslation,
+    @ecs.All,
+  ],
+) -> Unit {
   let delta_seconds = @time.time_fixed_delta_seconds()
-  let tick = world.increment_change_tick()
-  let current_store = world.component(PhysicalTranslation::component())
-  let previous_store = world.component(PreviousPhysicalTranslation::component())
-  let velocity_store = world.component(Velocity::component())
-  current_store.for_each(fn(entity, current_translation) {
-    guard previous_store.get(entity) is Some(previous_translation) else {
-      return
-    }
-    guard velocity_store.get(entity) is Some(velocity) else { return }
+  try! players.view_mut(fn(
+    entity,
+    _previous_translation,
+    velocity,
+    current_translation,
+  ) {
+    let previous_value = current_translation.get_ref().val.value
+    commands
+    .entity(entity)
+    .insert_component(PreviousPhysicalTranslation::{ value: previous_value })
 
-    let next_previous = previous_translation
-    next_previous.value = current_translation.value
-    ignore(previous_store.set(entity, next_previous, tick))
-
-    let next_current = current_translation
-    next_current.value = current_translation.value.add(
-      velocity.value.mul_scalar(delta_seconds),
+    let current_ref = current_translation.get_ref()
+    current_ref.val.value = current_ref.val.value.add(
+      velocity.value().value.mul_scalar(delta_seconds),
     )
-    ignore(current_store.set(entity, next_current, tick))
+    current_translation.set_changed()
   })
 }
 
 ///|
-fn interpolate_rendered_transform(world : @ecs.World) -> Unit {
+fn interpolate_rendered_transform(
+  players : @ecs.Query3ValueRefMutFiltered[
+    PreviousPhysicalTranslation,
+    PhysicalTranslation,
+    @transform.Transform,
+    @ecs.All,
+  ],
+) -> Unit {
   let alpha = @time.time_fixed_overstep_fraction()
-  let tick = world.increment_change_tick()
-  let current_store = world.component(PhysicalTranslation::component())
-  let previous_store = world.component(PreviousPhysicalTranslation::component())
-  let transform_store = world.component(@transform.Transform::component())
-  current_store.for_each(fn(entity, current_translation) {
-    guard previous_store.get(entity) is Some(previous_translation) else {
-      return
-    }
-    guard transform_store.get(entity) is Some(transform) else { return }
-    let next_transform = transform
-    next_transform.translation = previous_translation.value.interpolate(
-      current_translation.value,
+  try! players.view_mut(fn(
+    _entity,
+    previous_translation,
+    current_translation,
+    transform,
+  ) {
+    let transform_ref = transform.get_ref()
+    transform_ref.val.translation = previous_translation.value.interpolate(
+      current_translation.value().value,
       alpha,
     )
-    ignore(transform_store.set(entity, next_transform, tick))
+    transform.set_changed()
   })
 }
 
 ///|
-fn first_player_translation(world : @ecs.World) -> @math.Vec3? {
-  let result : Ref[@math.Vec3?] = Ref::new(None)
-  let transform_store = world.component(@transform.Transform::component())
-  world
-  .query_entities_filtered(
-    (
-      @ecs.With::new(AccumulatedInput::component()),
-      @ecs.With::new(@transform.Transform::component()),
-    ),
-  )
-  .view(fn(entity) {
-    if result.val is Some(_) {
-      return
-    }
-    if transform_store.get(entity) is Some(transform) {
-      result.val = Some(transform.translation)
-    }
-  })
-  result.val
-}
+fn translate_camera(
+  players : @ecs.Query1Filtered[
+    @transform.Transform,
+    @ecs.With[AccumulatedInput],
+  ],
+  cameras : @ecs.Query1Filtered[
+    @transform.Transform,
+    @ecs.With[@camera.Camera3d],
+  ],
+) -> Unit {
+  guard (try! players.single()) is Some(player_transform) else { return }
 
-///|
-fn translate_camera(world : @ecs.World) -> Unit {
-  guard first_player_translation(world) is Some(player_translation) else {
-    return
-  }
-  let tick = world.increment_change_tick()
-  let transform_store = world.component(@transform.Transform::component())
-  world
-  .query_entities_filtered(
-    (
-      @ecs.With::new(@camera.Camera3d::component()),
-      @ecs.With::new(@transform.Transform::component()),
-    ),
-  )
-  .view(fn(entity) {
-    guard transform_store.get(entity) is Some(transform) else { return }
-    let next_transform = transform
-    next_transform.translation = player_translation
-    ignore(transform_store.set(entity, next_transform, tick))
+  try! cameras.view_mut(fn(_entity, transform) {
+    let transform_ref = transform.get_ref()
+    transform_ref.val.translation = player_transform.translation
+    transform.set_changed()
   })
 }
 
@@ -602,41 +525,60 @@ fn main {
   let fixed_main_loop_set = @app.run_fixed_main_loop_system_set_name(
     @app.RunFixedMainLoopSystems::FixedMainLoop,
   )
+  let spawn_text_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param(spawn_text),
+  )
+  let spawn_player_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param(spawn_player),
+  )
+  let spawn_environment_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param3(spawn_environment),
+  )
+
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.default_plugins())
   .init_resource(DidFixedTimestepRunThisFrame::default)
-  .add_startup_system(spawn_text)
-  .add_startup_system(spawn_player)
-  .add_startup_system(spawn_environment)
-  .add_pre_update_system(clear_fixed_timestep_flag)
-  .add_fixed_pre_update_system(set_fixed_time_step_flag)
-  .add_fixed_update_system(advance_physics)
+  .add_systems(@app.Startup, spawn_text_system)
+  .add_systems(@app.Startup, spawn_player_system)
+  .add_systems(@app.Startup, spawn_environment_system)
+  .add_systems(
+    @app.PreUpdate,
+    @app.system(@app.system_param(clear_fixed_timestep_flag)),
+  )
+  .add_systems(
+    @app.FixedPreUpdate,
+    @app.system(@app.system_param(set_fixed_time_step_flag)),
+  )
+  .add_systems(
+    @app.FixedUpdate,
+    @app.system(@app.system_param2(advance_physics)),
+  )
   .add_run_fixed_main_loop_system_config(
-    @app.system(rotate_camera)
+    @app.system(@app.system_param2(rotate_camera))
     .in_set(SET_ROTATE_CAMERA)
     .before(SET_ACCUMULATE_INPUT)
     .before(fixed_main_loop_set),
   )
   .add_run_fixed_main_loop_system_config(
-    @app.system(accumulate_input)
+    @app.system(@app.system_param4(accumulate_input))
     .in_set(SET_ACCUMULATE_INPUT)
     .before(fixed_main_loop_set),
   )
   .add_run_fixed_main_loop_system_config(
-    @app.system(clear_input)
+    @app.system(@app.system_param(clear_input))
     .run_if(did_fixed_timestep_run_this_frame)
     .in_set(SET_CLEAR_INPUT)
     .after(fixed_main_loop_set)
     .before(SET_INTERPOLATE_TRANSFORM),
   )
   .add_run_fixed_main_loop_system_config(
-    @app.system(interpolate_rendered_transform)
+    @app.system(@app.system_param(interpolate_rendered_transform))
     .in_set(SET_INTERPOLATE_TRANSFORM)
     .after(fixed_main_loop_set)
     .before(SET_TRANSLATE_CAMERA),
   )
   .add_run_fixed_main_loop_system_config(
-    @app.system(translate_camera)
+    @app.system(@app.system_param2(translate_camera))
     .in_set(SET_TRANSLATE_CAMERA)
     .after(fixed_main_loop_set),
   )
