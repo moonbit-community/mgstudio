@@ -1512,6 +1512,35 @@ test "renderer: bloom final composite uses hdr scene target format even from rgb
 }
 
 ///|
+test "renderer: bloom runtime resources initialize before first apply path" {
+  register_renderer_test_shaders()
+  let backend = GpuBackend::new(assets_base="assets")
+  let final_target_id = backend.create_render_target_with_format(
+    128,
+    128,
+    false,
+    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+  )
+  let scene_texture_id = backend.create_render_target_rgba16f(128, 128, false)
+  backend.pass_state = Some(gpu_test_pass_state(final_target_id))
+  let ok = match bloom_prepare_runtime_resources(backend, scene_texture_id, 0) {
+    Some((_, _, _, _)) => {
+      let final_pipeline_ok = match
+        backend.bloom_upsample_final_pipeline_format {
+        Some(format) => format == tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
+        None => false
+      }
+      backend.bloom_intermediate_bgl is Some(_) &&
+      backend.bloom_settings_buf is Some(_) &&
+      backend.bloom_sampler is Some(_) &&
+      final_pipeline_ok
+    }
+    None => false
+  }
+  inspect(ok, content="true")
+}
+
+///|
 test "renderer: bloom uniforms match canonical bevy struct size" {
   let bytes = bloom_uniform_bytes(
     1920.0F, 1080.0F, 0.0F, 0.0F, 1920.0F, 1080.0F, 1.0F, 0.25F, 1.0F, 1.0F,

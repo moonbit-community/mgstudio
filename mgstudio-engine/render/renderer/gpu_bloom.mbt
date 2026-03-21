@@ -37,21 +37,16 @@ pub fn GpuBackend::apply_bloom(
   flush_ui_batches(self)
   flush_sprite_batches(self)
   guard self.pass_state is Some(pass_state) else { return }
-  guard self.bloom_intermediate_bgl is Some(intermediate_bind_layout) else {
-    return
-  }
-  guard self.bloom_settings_buf is Some(settings_buf) else { return }
-  guard self.bloom_sampler is Some(bloom_sampler) else { return }
   if scene_texture_id < 0 {
     return
   }
   guard find_texture(self, scene_texture_id) is Some(scene_texture) else {
     return
   }
-  guard bloom_final_composite_pipeline_for_scene_texture(
-      self, scene_texture_id, composite_mode,
-    )
-    is Some(final_pipeline) else {
+  guard bloom_prepare_runtime_resources(self, scene_texture_id, composite_mode)
+    is Some(
+      (intermediate_bind_layout, settings_buf, bloom_sampler, final_pipeline)
+    ) else {
     return
   }
   let source_viewport_x = Float::from_double(pass_state.viewport_x.to_double())
@@ -427,6 +422,26 @@ pub fn GpuBackend::apply_bloom(
     final_bg.release()
   }
   reopen_saved_pass(self, pass_state)
+}
+
+///|
+fn bloom_prepare_runtime_resources(
+  backend : GpuBackend,
+  scene_texture_id : Int,
+  composite_mode : Int,
+) -> (@wgpu.BindGroupLayout, @wgpu.Buffer, @wgpu.Sampler, @wgpu.RenderPipeline)? raise GpuBackendError {
+  guard bloom_final_composite_pipeline_for_scene_texture(
+      backend, scene_texture_id, composite_mode,
+    )
+    is Some(final_pipeline) else {
+    return None
+  }
+  guard backend.bloom_intermediate_bgl is Some(intermediate_bind_layout) else {
+    return None
+  }
+  guard backend.bloom_settings_buf is Some(settings_buf) else { return None }
+  guard backend.bloom_sampler is Some(bloom_sampler) else { return None }
+  Some((intermediate_bind_layout, settings_buf, bloom_sampler, final_pipeline))
 }
 
 ///|
