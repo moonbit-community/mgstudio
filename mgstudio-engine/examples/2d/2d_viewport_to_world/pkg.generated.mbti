@@ -1,11 +1,17 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/2d/2d_viewport_to_world"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type MainCamera
+pub impl @ecs.Component for MainCamera
 
 // Type aliases
 

@@ -49,127 +49,127 @@ fn CameraSettings::default() -> CameraSettings {
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-
-  let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::from_xyz(5.0F, 5.0F, 5.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  world
-  .component(@ecs.Name::component())
-  .insert(camera, @ecs.Name::new("Camera"), tick)
-
-  let plane = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(5.0F, 5.0F)),
-      ),
-    ),
-    @pbr.MeshMaterial3d::new(
-      @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)).with_cull_mode(
-          None,
-        ),
-      ),
-    ),
+fn spawn_ui_text_handle(
+  content : String,
+  font : @asset.Handle[@asset.Font],
+  font_size : Float,
+  color : @sprite.Color,
+) -> @text.TextHandle {
+  @text.Text2dBundle::new(
+    @text.Text2d::new(content),
+    @text.TextFont::default().with_font(font).with_font_size(font_size),
     @transform.Transform::identity(),
-  ).spawn(world)
-  world
-  .component(@ecs.Name::component())
-  .insert(plane, @ecs.Name::new("Plane"), tick)
-
-  let cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
-        ),
-      ),
-    ),
-    @pbr.MeshMaterial3d::new(
-      @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.8F, 0.7F, 0.6F)),
-      ),
-    ),
-    @transform.Transform::from_xyz(1.5F, 0.51F, 1.5F),
-  ).spawn(world)
-  world
-  .component(@ecs.Name::component())
-  .insert(cube, @ecs.Name::new("Cube"), tick)
-
-  let light = world.spawn_empty()
-  world
-  .component(@ecs.Name::component())
-  .insert(light, @ecs.Name::new("Light"), tick)
-  world
-  .component(@pbr.PointLight::component())
-  .insert(light, @pbr.PointLight::default(), tick)
-  world
-  .component(@transform.Transform::component())
-  .insert(light, @transform.Transform::from_xyz(3.0F, 8.0F, 5.0F), tick)
+  )
+  .with_color(@text.TextColor::new(color))
+  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+  .spawn()
 }
 
 ///|
-fn instructions(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-  let overlay_camera = @sprite.Camera2dBundle::new(
-    @sprite.Camera::default().with_order(1).with_clear_color_none(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  world
-  .component(@ui.IsDefaultUiCamera::component())
-  .insert(overlay_camera, @ui.IsDefaultUiCamera::default(), tick)
-
-  let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    root,
-    @ui.Node::default()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
-    tick,
-  )
-
-  let asset_server = @asset.AssetServer::new()
-  let text_handle = @text.Text2dBundle::new(
-      @text.Text2d::new(
-        "Mouse up or down: pitch\nMouse left or right: yaw\nMouse buttons: roll",
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @ecs.Name::new("Camera"),
+        @camera.Camera3d::default(),
+        @transform.Transform::from_xyz(5.0F, 5.0F, 5.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
       ),
-      @text.TextFont::default()
-      .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
-      .with_font_size(20.0F),
-      @transform.Transform::identity(),
-    )
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .spawn()
-
-  let text_entity = world.spawn_empty()
-  world
-  .component(@ecs.Name::component())
-  .insert(text_entity, @ecs.Name::new("Instructions"), tick)
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    text_entity,
-    @ui.Node::default()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_top(@ui.Val::Px(12.0F))
-    .with_left(@ui.Val::Px(12.0F)),
-    tick,
+    ),
   )
-  world
-  .component(@ui.ecs_key_ui_text)
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+
+  ignore(
+    commands.spawn(
+      (
+        @ecs.Name::new("Plane"),
+        @pbr.Mesh3d::new(
+          meshes.get_ref().val.add(
+            @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(5.0F, 5.0F)),
+          ),
+        ),
+        @pbr.MeshMaterial3d::new(
+          materials.get_ref().val.add(
+            @pbr.StandardMaterial::from_color(
+              @sprite.Color::srgb(0.3F, 0.5F, 0.3F),
+            ).with_cull_mode(None),
+          ),
+        ),
+      ),
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @ecs.Name::new("Cube"),
+        @pbr.Mesh3d::new(
+          meshes.get_ref().val.add(
+            @pbr.Mesh::from_3d_geometry(
+              @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+            ),
+          ),
+        ),
+        @pbr.MeshMaterial3d::new(
+          materials.get_ref().val.add(
+            @pbr.StandardMaterial::from_color(
+              @sprite.Color::srgb(0.8F, 0.7F, 0.6F),
+            ),
+          ),
+        ),
+        @transform.Transform::from_xyz(1.5F, 0.51F, 1.5F),
+      ),
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @ecs.Name::new("Light"),
+        @pbr.PointLight::default(),
+        @transform.Transform::from_xyz(3.0F, 8.0F, 5.0F),
+      ),
+    ),
+  )
+}
+
+///|
+fn instructions(
+  asset_server : @app.Res[@asset.AssetServer],
+  commands : @app.Commands,
+) -> Unit {
+  let text_handle = spawn_ui_text_handle(
+    "Mouse up or down: pitch\nMouse left or right: yaw\nMouse buttons: roll",
+    asset_server.get().load_font("fonts/FiraSans-Bold.ttf"),
+    20.0F,
+    @sprite.Color::white(),
+  )
+  let root = commands.spawn(
+    (
+      @ui.UiRoot::default(),
+      @ui.Node::default()
+      .with_width(@ui.Val::Percent(100.0F))
+      .with_height(@ui.Val::Percent(100.0F)),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @ecs.Name::new("Instructions"),
+        @hierarchy.Parent::new(root),
+        @ui.Node::default()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_top(@ui.Val::Px(12.0F))
+        .with_left(@ui.Val::Px(12.0F)),
+        @ui.UiText::new(text_handle),
+      ),
+    ),
+  )
 }
 
 ///|
@@ -178,29 +178,24 @@ fn orbit(
     @transform.Transform,
     @ecs.With[@camera.Camera3d],
   ],
-  camera_settings_res : @app.Res[CameraSettings],
+  camera_settings : @app.Res[CameraSettings],
   mouse_buttons : @input.ButtonInput[@window.MouseButton],
   mouse_motion : @app.Res[@input.AccumulatedMouseMotion],
+  time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
-  guard @app.current_world() is Some(world) else { return }
-  let camera_settings = camera_settings_res.get()
+  let settings = camera_settings.get()
   let delta = mouse_motion.get().delta
-  let delta_pitch = delta.y * camera_settings.pitch_speed
-  let delta_yaw = delta.x * camera_settings.yaw_speed
+  let delta_pitch = delta.y * settings.pitch_speed
+  let delta_yaw = delta.x * settings.yaw_speed
 
   let mut delta_roll = 0.0F
-  if mouse_buttons.pressed(Left) {
+  if mouse_buttons.pressed(@window.MouseButton::Left) {
     delta_roll = delta_roll - 1.0F
   }
-  if mouse_buttons.pressed(Right) {
+  if mouse_buttons.pressed(@window.MouseButton::Right) {
     delta_roll = delta_roll + 1.0F
   }
-  let time = match
-    (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in camera_orbit example")
-  }
-  delta_roll = delta_roll * camera_settings.roll_speed * time.delta_seconds()
+  delta_roll = delta_roll * settings.roll_speed * time.get().delta_seconds()
 
   try! camera_query.view_mut(fn(_entity, camera_transform) {
     let transform_ref = camera_transform.get_ref()
@@ -210,8 +205,8 @@ fn orbit(
 
     let next_pitch = clamp_float(
       pitch + delta_pitch,
-      camera_settings.pitch_min,
-      camera_settings.pitch_max,
+      settings.pitch_min,
+      settings.pitch_max,
     )
     let next_roll = roll + delta_roll
     let next_yaw = yaw + delta_yaw
@@ -224,8 +219,9 @@ fn orbit(
 
     let target = @math.Vec3::zero()
     transform_ref.val.translation = target.sub(
-      transform_ref.val.forward().mul_scalar(camera_settings.orbit_distance),
+      transform_ref.val.forward().mul_scalar(settings.orbit_distance),
     )
+    camera_transform.set_changed()
   })
 }
 
@@ -242,12 +238,19 @@ fn clamp_float(value : Float, lower : Float, upper : Float) -> Float {
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
+  let setup_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param3(setup),
+  )
+  let instructions_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param2(instructions),
+  )
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.default_plugins())
   .init_resource(CameraSettings::default)
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Startup, @app.system(instructions))
-  .add_systems(@app.Update, @app.system(@app.system_param4(orbit)))
+  .add_systems(
+    @app.Startup,
+    (setup_system, instructions_system) |> @app.chain(),
+  )
+  .add_systems(@app.Update, @app.system(@app.system_param5(orbit)))
   .run()
 }

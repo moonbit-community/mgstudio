@@ -13,34 +13,33 @@
 // limitations under the License.
 
 ///|
+/// Port of `bevy/examples/2d/2d_viewport_to_world.rs`.
+
+///|
+struct MainCamera {}
+
+///|
+let main_camera_key : @ecs.ComponentKey[MainCamera] = @ecs.register_component(
+  debug_name="examples.2d.2d_viewport_to_world.MainCamera",
+)
+
+///|
+pub impl @ecs.Component for MainCamera with component() {
+  main_camera_key
+}
+
+///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
+  let draw_cursor_system = @app.system(@app.system_param4(draw_cursor)).after(
+    @transform.transform_set_propagate,
+  )
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(viewport_to_world_setup))
-  .add_systems(@app.FixedUpdate, @app.system(viewport_to_world_controls))
-  .add_systems(@app.PostUpdate, @app.system(viewport_to_world_draw_cursor))
+  .add_plugins(@mgstudio.default_plugins())
+  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
+  .add_systems(@app.FixedUpdate, @app.system(@app.system_param6(controls)))
+  .add_systems(@app.PostUpdate, draw_cursor_system)
   .run()
 }
-
-///|
-priv struct ViewportToWorldState {
-  mut camera : @core.Entity
-  mut camera_transform : @transform.Transform
-  mut camera_scale : Float
-  mut viewport : @sprite.Viewport
-}
-
-///|
-let viewport_state : Ref[ViewportToWorldState] = Ref::new(ViewportToWorldState::{
-  camera: @core.Entity::placeholder(),
-  camera_transform: @transform.Transform::identity(),
-  camera_scale: 1.0F,
-  viewport: @sprite.Viewport::new(
-    @math.IVec2::new(0, 0),
-    @math.IVec2::new(1, 1),
-  ),
-})
 
 ///|
 fn viewport_default(width : Int, height : Int) -> @sprite.Viewport {
@@ -74,119 +73,134 @@ fn spawn_ui_text_handle(
 }
 
 ///|
-fn spawn_help_overlay(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
+fn spawn_help_overlay(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
   let text_handle = spawn_ui_text_handle(
     "Move the mouse to see the circle follow your cursor.\n" +
     "Use the arrow keys to move the camera.\n" +
     "Use the comma and period keys to zoom in and out.\n" +
     "Use the WASD keys to move the viewport.\n" +
     "Use the IJKL keys to resize the viewport.",
-    font,
+    asset_server.get().load_font("fonts/FiraSans-Bold.ttf"),
     18.0F,
     @sprite.Color::white(),
   )
-  let tick = world.read_change_tick()
-  let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    root,
-    @ui.Node::default()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
-    tick,
+  let root = commands.spawn(
+    (
+      @ui.UiRoot::default(),
+      @ui.Node::default()
+      .with_width(@ui.Val::Percent(100.0F))
+      .with_height(@ui.Val::Percent(100.0F)),
+    ),
   )
-  let text_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    text_entity,
-    @ui.Node::default()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_top(@ui.Val::Px(12.0F)),
-    tick,
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(root),
+        @ui.Node::default()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_left(@ui.Val::Px(12.0F))
+        .with_top(@ui.Val::Px(12.0F)),
+        @ui.UiText::new(text_handle),
+      ),
+    ),
   )
-  world
-  .component(@ui.ecs_key_ui_text)
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
 }
 
 ///|
-fn viewport_to_world_setup(world : @ecs.World) -> Unit {
-  let width = @window.window_width()
-  let height = @window.window_height()
-  let viewport = viewport_default(width, height)
-  let camera = @sprite.Camera::default().with_viewport(viewport)
-  let camera_transform = @transform.Transform::identity()
-  let camera_entity = @sprite.Camera2dBundle::new(camera, camera_transform).spawn(
-    world,
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  let viewport = viewport_default(
+    @window.window_width(),
+    @window.window_height(),
   )
-  viewport_state.val.camera = camera_entity
-  viewport_state.val.camera_transform = camera_transform
-  viewport_state.val.camera_scale = 1.0F
-  viewport_state.val.viewport = viewport
-
-  spawn_help_overlay(world)
-
-  @sprite.Mesh2dBundle::new_with_mesh_material(
-    @sprite.Mesh2d::new(
-      @sprite.mesh_assets_mut_or_abort().val.add(
-        @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(40.0F, 20.0F)).to_mesh(),
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Camera2d::default(),
+        @sprite.Camera::default().with_viewport(viewport),
+        MainCamera::{  },
       ),
     ),
-    @sprite.MeshMaterial2d::new(
-      @sprite.color_material_assets_mut_or_abort().val.add(
-        @sprite.ColorMaterialAsset::from_color(
-          @sprite.Color::new(0.0F, 0.5019608F, 0.0F, 1.0F),
+  )
+
+  spawn_help_overlay(commands, asset_server)
+
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Mesh2d::new(
+          meshes.get_ref().val.add(
+            @sprite.mesh2d_geometry_rectangle(
+              @sprite.Rectangle::new(40.0F, 20.0F),
+            ).to_mesh(),
+          ),
+        ),
+        @sprite.MeshMaterial2d::new(
+          materials.get_ref().val.add(
+            @sprite.ColorMaterialAsset::from_color(
+              @sprite.Color::new(0.0F, 0.5019608F, 0.0F, 1.0F),
+            ),
+          ),
         ),
       ),
     ),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
+  )
 
-  @sprite.Mesh2dBundle::new_with_mesh_material(
-    @sprite.Mesh2d::new(
-      @sprite.mesh_assets_mut_or_abort().val.add(
-        @sprite.mesh2d_geometry_rectangle(
-          @sprite.Rectangle::new(50000.0F, 50000.0F),
-        ).to_mesh(),
-      ),
-    ),
-    @sprite.MeshMaterial2d::new(
-      @sprite.color_material_assets_mut_or_abort().val.add(
-        @sprite.ColorMaterialAsset::from_color(
-          @sprite.Color::new(0.01F, 0.01F, 0.01F, 1.0F),
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Mesh2d::new(
+          meshes.get_ref().val.add(
+            @sprite.mesh2d_geometry_rectangle(
+              @sprite.Rectangle::new(50000.0F, 50000.0F),
+            ).to_mesh(),
+          ),
         ),
+        @sprite.MeshMaterial2d::new(
+          materials.get_ref().val.add(
+            @sprite.ColorMaterialAsset::from_color(
+              @sprite.Color::new(0.01F, 0.01F, 0.01F, 1.0F),
+            ),
+          ),
+        ),
+        @transform.Transform::from_xyz(0.0F, 0.0F, -200.0F),
       ),
     ),
-    @transform.Transform::from_xyz(0.0F, 0.0F, -200.0F),
-  ).spawn(world)
-  |> ignore
+  )
 }
 
 ///|
-fn viewport_to_world_draw_cursor(world : @ecs.World) -> Unit {
-  if viewport_state.val.camera.is_placeholder() {
+fn main_camera_entity(camera_query : @ecs.Query1[MainCamera]) -> @core.Entity? {
+  let entity_ref : Ref[@core.Entity?] = Ref::new(None)
+  try! camera_query.view(fn(entity, _camera) {
+    if entity_ref.val is None {
+      entity_ref.val = Some(entity)
+    }
+  })
+  entity_ref.val
+}
+
+///|
+fn draw_cursor(
+  main_camera : @ecs.Query1[MainCamera],
+  camera_query : @ecs.Query1[@sprite.Camera],
+  transform_query : @ecs.Query1[@transform.Transform],
+  projection_query : @ecs.Query1[@sprite.Projection],
+) -> Unit {
+  guard main_camera_entity(main_camera) is Some(camera_entity) else { return }
+  guard (try! camera_query.get(camera_entity)) is Some(camera) else { return }
+  guard (try! projection_query.get(camera_entity)) is Some(projection) else {
     return
   }
-
-  let camera_entity = viewport_state.val.camera
-  let camera_store = world.component(@sprite.ecs_key_camera)
-  let projection_store = world.component(@sprite.ecs_key_projection)
-  let transform_store = world.component(@transform.ecs_key_transform)
-
-  guard camera_store.get(camera_entity) is Some(camera) else { return }
-  guard projection_store.get(camera_entity) is Some(projection) else { return }
   guard projection is Orthographic(orthographic_projection) else { return }
-  guard transform_store.get(camera_entity) is Some(camera_transform) else {
+  guard (try! transform_query.get(camera_entity)) is Some(camera_transform) else {
     return
   }
 
@@ -230,147 +244,137 @@ fn viewport_to_world_draw_cursor(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn viewport_to_world_controls(world : @ecs.World) -> Unit {
-  if viewport_state.val.camera.is_placeholder() {
-    return
-  }
-  let fspeed = 600.0F * @time.time_fixed_delta_seconds()
+fn controls(
+  main_camera : @ecs.Query1[MainCamera],
+  camera_query : @ecs.Query1[@sprite.Camera],
+  transform_query : @ecs.Query1[@transform.Transform],
+  projection_query : @ecs.Query1[@sprite.Projection],
+  input : @input.ButtonInput[@window.KeyCode],
+  time : @app.Res[@time.Time[@time.Fixed]],
+) -> Unit {
+  guard main_camera_entity(main_camera) is Some(camera_entity) else { return }
+  let fspeed = 600.0F * time.get().delta_seconds()
   let uspeed = fspeed.to_int()
 
-  update_camera_transform(world, fspeed)
-  update_camera_scale(world, @time.time_fixed_delta_seconds())
+  ignore(
+    try! transform_query.with_mut(camera_entity, fn(camera_transform) {
+      let transform_ref = camera_transform.get_ref()
+      let mut x = transform_ref.val.translation.x
+      let mut y = transform_ref.val.translation.y
+      if input.pressed(@window.KeyCode::ArrowUp) {
+        y = y + fspeed
+      }
+      if input.pressed(@window.KeyCode::ArrowDown) {
+        y = y - fspeed
+      }
+      if input.pressed(@window.KeyCode::ArrowLeft) {
+        x = x - fspeed
+      }
+      if input.pressed(@window.KeyCode::ArrowRight) {
+        x = x + fspeed
+      }
+      if x != transform_ref.val.translation.x ||
+        y != transform_ref.val.translation.y {
+        transform_ref.val = @transform.Transform::from_xy_rotation_scale(
+          @math.Vec2::new(x, y),
+          transform_ref.val.rotation_z(),
+          @math.Vec2::new(transform_ref.val.scale.x, transform_ref.val.scale.y),
+          z=transform_ref.val.translation.z,
+        )
+        camera_transform.set_changed()
+      }
+    }),
+  )
+
+  ignore(
+    try! projection_query.with_mut(camera_entity, fn(camera_projection) {
+      let projection_ref = camera_projection.get_ref()
+      match projection_ref.val {
+        @sprite.Projection::Orthographic(orthographic) => {
+          let mut scale = orthographic.scale
+          if input.pressed(@window.KeyCode::Comma) {
+            scale = scale * @math.pow(4.0F, time.get().delta_seconds())
+          }
+          if input.pressed(@window.KeyCode::Period) {
+            scale = scale * @math.pow(0.25F, time.get().delta_seconds())
+          }
+          if scale != orthographic.scale {
+            projection_ref.val = @sprite.Projection::Orthographic(
+              @sprite.OrthographicProjection::new(scale),
+            )
+            camera_projection.set_changed()
+          }
+        }
+      }
+    }),
+  )
 
   let width = @window.window_width()
   let height = @window.window_height()
   if width <= 0 || height <= 0 {
     return
   }
-  update_camera_viewport(world, width, height, uspeed)
-}
 
-///|
-fn update_camera_transform(world : @ecs.World, fspeed : Float) -> Unit {
-  let camera_transform = viewport_state.val.camera_transform
-  let mut x = camera_transform.translation.x
-  let mut y = camera_transform.translation.y
-  if @input.key_pressed(@window.KeyCode::ArrowUp) {
-    y = y + fspeed
-  }
-  if @input.key_pressed(@window.KeyCode::ArrowDown) {
-    y = y - fspeed
-  }
-  if @input.key_pressed(@window.KeyCode::ArrowLeft) {
-    x = x - fspeed
-  }
-  if @input.key_pressed(@window.KeyCode::ArrowRight) {
-    x = x + fspeed
-  }
-  if x != camera_transform.translation.x || y != camera_transform.translation.y {
-    let next_camera = @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(x, y),
-      camera_transform.rotation_z(),
-      @math.Vec2::new(camera_transform.scale.x, camera_transform.scale.y),
-      z=camera_transform.translation.z,
-    )
-    viewport_state.val.camera_transform = next_camera
-    let tick = world.read_change_tick()
-    world
-    .component(@transform.ecs_key_transform)
-    .set(viewport_state.val.camera, next_camera, tick)
-    |> ignore
-  }
-}
+  ignore(
+    try! camera_query.with_mut(camera_entity, fn(camera_component) {
+      let camera_ref = camera_component.get_ref()
+      let window_size = @math.IVec2::new(width, height)
+      let current_viewport = match camera_ref.val.viewport {
+        Some(viewport) => viewport
+        None => viewport_default(width, height)
+      }
+      let mut viewport = current_viewport
+      if viewport.physical_size.x > width || viewport.physical_size.y > height {
+        viewport = @sprite.Viewport::new(
+          viewport.physical_position,
+          @math.IVec2::new(width * 3 / 4, height * 3 / 4),
+        )
+      }
 
-///|
-fn update_camera_scale(world : @ecs.World, delta : Float) -> Unit {
-  let mut scale = viewport_state.val.camera_scale
-  if @input.key_pressed(@window.KeyCode::Comma) {
-    scale = scale * @math.pow(4.0F, delta)
-  }
-  if @input.key_pressed(@window.KeyCode::Period) {
-    scale = scale * @math.pow(0.25F, delta)
-  }
-  if scale != viewport_state.val.camera_scale {
-    viewport_state.val.camera_scale = scale
-    let tick = world.read_change_tick()
-    let projection_store = world.component(@sprite.ecs_key_projection)
-    projection_store.set(
-      viewport_state.val.camera,
-      @sprite.Projection::Orthographic(
-        @sprite.OrthographicProjection::new(scale),
-      ),
-      tick,
-    )
-    |> ignore
-  }
-}
+      let mut position = viewport.physical_position
+      let mut size = viewport.physical_size
+      if input.pressed(@window.KeyCode::KeyW) {
+        position = position.saturating_sub(@math.IVec2::new(0, uspeed))
+      }
+      if input.pressed(@window.KeyCode::KeyS) {
+        position = position.add(@math.IVec2::new(0, uspeed))
+      }
+      if input.pressed(@window.KeyCode::KeyA) {
+        position = position.saturating_sub(@math.IVec2::new(uspeed, 0))
+      }
+      if input.pressed(@window.KeyCode::KeyD) {
+        position = position.add(@math.IVec2::new(uspeed, 0))
+      }
+      let max_position = window_size.saturating_sub(size)
+      position = position.min(max_position)
 
-///|
-fn update_camera_viewport(
-  world : @ecs.World,
-  width : Int,
-  height : Int,
-  uspeed : Int,
-) -> Unit {
-  let window_size = @math.IVec2::new(width, height)
-  let mut viewport = viewport_state.val.viewport
-  if viewport.physical_size.x > width || viewport.physical_size.y > height {
-    viewport = @sprite.Viewport::new(
-      viewport.physical_position,
-      @math.IVec2::new(width * 3 / 4, height * 3 / 4),
-    )
-  }
-  let mut position = viewport.physical_position
-  let mut size = viewport.physical_size
-  if @input.key_pressed(@window.KeyCode::KeyW) {
-    position = position.saturating_sub(@math.IVec2::new(0, uspeed))
-  }
-  if @input.key_pressed(@window.KeyCode::KeyS) {
-    position = position.add(@math.IVec2::new(0, uspeed))
-  }
-  if @input.key_pressed(@window.KeyCode::KeyA) {
-    position = position.saturating_sub(@math.IVec2::new(uspeed, 0))
-  }
-  if @input.key_pressed(@window.KeyCode::KeyD) {
-    position = position.add(@math.IVec2::new(uspeed, 0))
-  }
-  let max_position = window_size.saturating_sub(size)
-  position = position.min(max_position)
-  if @input.key_pressed(@window.KeyCode::KeyI) {
-    size = size.saturating_sub(@math.IVec2::new(0, uspeed))
-  }
-  if @input.key_pressed(@window.KeyCode::KeyK) {
-    size = size.add(@math.IVec2::new(0, uspeed))
-  }
-  if @input.key_pressed(@window.KeyCode::KeyJ) {
-    size = size.saturating_sub(@math.IVec2::new(uspeed, 0))
-  }
-  if @input.key_pressed(@window.KeyCode::KeyL) {
-    size = size.add(@math.IVec2::new(uspeed, 0))
-  }
-  let min_size = @math.IVec2::new(20, 20)
-  let max_size = window_size.saturating_sub(position)
-  size = size.min(max_size).max(min_size)
-  viewport = @sprite.Viewport::new(position, size)
-  let old_viewport = viewport_state.val.viewport
-  let position_changed = viewport.physical_position.x !=
-    old_viewport.physical_position.x ||
-    viewport.physical_position.y != old_viewport.physical_position.y
-  let size_changed = viewport.physical_size.x != old_viewport.physical_size.x ||
-    viewport.physical_size.y != old_viewport.physical_size.y
-  let viewport_changed = position_changed || size_changed
-  if !viewport_changed {
-    return
-  }
-  viewport_state.val.viewport = viewport
-  let tick = world.read_change_tick()
-  let camera_store = world.component(@sprite.ecs_key_camera)
-  if camera_store.get(viewport_state.val.camera) is Some(camera) {
-    camera_store.set(
-      viewport_state.val.camera,
-      camera.with_viewport(viewport),
-      tick,
-    )
-    |> ignore
-  }
+      if input.pressed(@window.KeyCode::KeyI) {
+        size = size.saturating_sub(@math.IVec2::new(0, uspeed))
+      }
+      if input.pressed(@window.KeyCode::KeyK) {
+        size = size.add(@math.IVec2::new(0, uspeed))
+      }
+      if input.pressed(@window.KeyCode::KeyJ) {
+        size = size.saturating_sub(@math.IVec2::new(uspeed, 0))
+      }
+      if input.pressed(@window.KeyCode::KeyL) {
+        size = size.add(@math.IVec2::new(uspeed, 0))
+      }
+
+      let min_size = @math.IVec2::new(20, 20)
+      let max_size = window_size.saturating_sub(position)
+      size = size.min(max_size).max(min_size)
+      let next_viewport = @sprite.Viewport::new(position, size)
+      let changed = next_viewport.physical_position.x !=
+        current_viewport.physical_position.x ||
+        next_viewport.physical_position.y !=
+        current_viewport.physical_position.y ||
+        next_viewport.physical_size.x != current_viewport.physical_size.x ||
+        next_viewport.physical_size.y != current_viewport.physical_size.y
+      if changed {
+        camera_ref.val = camera_ref.val.with_viewport(next_viewport)
+        camera_component.set_changed()
+      }
+    }),
+  )
 }
