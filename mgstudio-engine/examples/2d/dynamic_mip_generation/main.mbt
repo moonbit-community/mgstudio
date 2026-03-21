@@ -50,258 +50,351 @@ priv struct AppStatus {
   mut enable_mip_generation : EnableMipGeneration
   mut image_width : ImageSize
   mut image_height : ImageSize
-  mut rng : @random.Rand
+  rng : @random.Rand
+}
+
+///|
+let app_status_resource_key : @ecs.ResourceKey[AppStatus] = @ecs.register_resource(
+  debug_name="examples.2d.dynamic_mip_generation.AppStatus",
+)
+
+///|
+impl @app.Resource for AppStatus with resource() {
+  app_status_resource_key
+}
+
+///|
+fn AppStatus::default() -> AppStatus {
+  AppStatus::{
+    enable_mip_generation: On,
+    image_width: Size640,
+    image_height: Size480,
+    rng: seeded_rng(),
+  }
 }
 
 ///|
 priv struct DynamicMipState {
-  mut animated_entity : @core.Entity?
   mut help_text : @text.TextHandle?
-  view_entities : Array[@core.Entity]
   mut mip_label_handles : Array[@text.TextHandle]
   mut source_texture : @asset.Handle[@asset.Image]?
   mut mip_views : Array[@asset.Handle[@asset.Image]]
   mut mip_sizes : Array[@math.UVec2]
   mut current_level : Int
-  mut regenerate_requested : Bool
 }
 
 ///|
-let app_status : Ref[AppStatus] = Ref::new(AppStatus::{
-  enable_mip_generation: On,
-  image_width: Size640,
-  image_height: Size480,
-  rng: seeded_rng(),
-})
+let dynamic_mip_state_resource_key : @ecs.ResourceKey[DynamicMipState] = @ecs.register_resource(
+  debug_name="examples.2d.dynamic_mip_generation.DynamicMipState",
+)
 
 ///|
-let dynamic_mip_state : Ref[DynamicMipState] = Ref::new(DynamicMipState::{
-  animated_entity: None,
-  help_text: None,
-  view_entities: [],
-  mip_label_handles: [],
-  source_texture: None,
-  mip_views: [],
-  mip_sizes: [],
-  current_level: 0,
-  regenerate_requested: false,
-})
+impl @app.Resource for DynamicMipState with resource() {
+  dynamic_mip_state_resource_key
+}
+
+///|
+fn DynamicMipState::default() -> DynamicMipState {
+  DynamicMipState::{
+    help_text: None,
+    mip_label_handles: [],
+    source_texture: None,
+    mip_views: [],
+    mip_sizes: [],
+    current_level: 0,
+  }
+}
+
+///|
+struct AnimatedImage {}
+
+///|
+let animated_image_key : @ecs.ComponentKey[AnimatedImage] = @ecs.register_component(
+  debug_name="examples.2d.dynamic_mip_generation.AnimatedImage",
+)
+
+///|
+pub impl @ecs.Component for AnimatedImage with component() {
+  animated_image_key
+}
+
+///|
+struct ImageView {}
+
+///|
+let image_view_key : @ecs.ComponentKey[ImageView] = @ecs.register_component(
+  debug_name="examples.2d.dynamic_mip_generation.ImageView",
+)
+
+///|
+pub impl @ecs.Component for ImageView with component() {
+  image_view_key
+}
+
+///|
+struct RegenerateImage {}
+
+///|
+let regenerate_image_key : @ecs.MessageKey[RegenerateImage] = @ecs.register_message(
+  debug_name="examples.2d.dynamic_mip_generation.RegenerateImage",
+)
+
+///|
+pub impl @ecs.Message for RegenerateImage with message() {
+  regenerate_image_key
+}
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
+  let setup_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param4(setup),
+  )
+  let handle_input_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param3(handle_app_setting_input),
+  )
+  let handle_resize_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param2(handle_window_resize_events),
+  )
+  let regenerate_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param5(regenerate_image_when_requested),
+  )
+  let animate_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param4(animate_image_scale),
+  )
+  let help_text_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param2(update_help_text),
+  )
+
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(dynamic_mip_setup))
+  .add_plugins(@mgstudio.default_plugins())
+  .init_resource(AppStatus::default)
+  .init_resource(DynamicMipState::default)
+  .add_message(regenerate_image_key)
+  .add_systems(@app.Startup, setup_system)
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param(dynamic_mip_window_resized_system)),
+    (
+      handle_input_system, handle_resize_system, regenerate_system, animate_system,
+      help_text_system,
+    )
+    |> @app.chain(),
   )
-  .add_systems(@app.Update, @app.system(dynamic_mip_update))
   .run()
 }
 
 ///|
-fn dynamic_mip_setup(world : @ecs.World) -> Unit {
-  app_status.val.enable_mip_generation = On
-  app_status.val.image_width = Size640
-  app_status.val.image_height = Size480
-  app_status.val.rng = seeded_rng()
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  dynamic_state : @app.ResMut[DynamicMipState],
+  regenerate_writer : @ecs.MessageWriter[RegenerateImage],
+) -> Unit {
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
 
-  dynamic_mip_state.val.animated_entity = None
-  dynamic_mip_state.val.help_text = None
-  dynamic_mip_state.val.view_entities.clear()
-  dynamic_mip_state.val.mip_label_handles.clear()
-  dynamic_mip_state.val.source_texture = None
-  dynamic_mip_state.val.mip_views.clear()
-  dynamic_mip_state.val.mip_sizes.clear()
-  dynamic_mip_state.val.current_level = 0
-  dynamic_mip_state.val.regenerate_requested = false
+  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
+  let state_ref = dynamic_state.get_ref()
+  state_ref.val.help_text = Some(spawn_help_overlay(commands, font))
+  state_ref.val.mip_label_handles = spawn_mip_level_labels(font)
 
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-
-  spawn_help_overlay(world)
-  spawn_mip_level_labels()
-
-  dynamic_mip_state.val.regenerate_requested = true
-  update_help_text()
+  ignore(regenerate_writer.write(RegenerateImage::{  }))
 }
 
 ///|
-fn dynamic_mip_update(world : @ecs.World) -> Unit {
-  handle_app_setting_input()
+fn handle_app_setting_input(
+  key_input : @input.ButtonInput[@window.KeyCode],
+  app_status : @app.ResMut[AppStatus],
+  regenerate_writer : @ecs.MessageWriter[RegenerateImage],
+) -> Unit {
+  let status_ref = app_status.get_ref()
+  let mut should_regenerate = false
 
-  if dynamic_mip_state.val.regenerate_requested {
-    regenerate_image(world)
+  if key_input.just_pressed(@window.KeyCode::KeyR) {
+    should_regenerate = true
   }
 
-  animate_image_scale(world)
-  update_help_text()
-}
-
-///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None =>
-      abort("Missing Time<Unit> resource in dynamic_mip_generation example")
-  }
-}
-
-///|
-fn handle_app_setting_input() -> Unit {
-  if @input.key_just_pressed(@window.KeyCode::KeyR) {
-    dynamic_mip_state.val.regenerate_requested = true
-  }
-
-  if @input.key_just_pressed(@window.KeyCode::KeyM) {
-    app_status.val.enable_mip_generation = toggle_mip_generation(
-      app_status.val.enable_mip_generation,
+  if key_input.just_pressed(@window.KeyCode::KeyM) {
+    status_ref.val.enable_mip_generation = toggle_mip_generation(
+      status_ref.val.enable_mip_generation,
     )
-    dynamic_mip_state.val.regenerate_requested = true
+    should_regenerate = true
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyQ) {
-    app_status.val.image_width = previous_image_size(app_status.val.image_width)
-    dynamic_mip_state.val.regenerate_requested = true
+  if key_input.just_pressed(@window.KeyCode::KeyQ) {
+    status_ref.val.image_width = previous_image_size(status_ref.val.image_width)
+    should_regenerate = true
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyA) {
-    app_status.val.image_width = next_image_size(app_status.val.image_width)
-    dynamic_mip_state.val.regenerate_requested = true
+  if key_input.just_pressed(@window.KeyCode::KeyA) {
+    status_ref.val.image_width = next_image_size(status_ref.val.image_width)
+    should_regenerate = true
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyW) {
-    app_status.val.image_height = previous_image_size(
-      app_status.val.image_height,
+  if key_input.just_pressed(@window.KeyCode::KeyW) {
+    status_ref.val.image_height = previous_image_size(
+      status_ref.val.image_height,
     )
-    dynamic_mip_state.val.regenerate_requested = true
+    should_regenerate = true
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyS) {
-    app_status.val.image_height = next_image_size(app_status.val.image_height)
-    dynamic_mip_state.val.regenerate_requested = true
+  if key_input.just_pressed(@window.KeyCode::KeyS) {
+    status_ref.val.image_height = next_image_size(status_ref.val.image_height)
+    should_regenerate = true
+  }
+
+  if should_regenerate {
+    ignore(regenerate_writer.write(RegenerateImage::{  }))
   }
 }
 
 ///|
-fn dynamic_mip_window_resized_system(
+fn handle_window_resize_events(
   resized_events : @ecs.MessageReader[@window.WindowResized],
+  regenerate_writer : @ecs.MessageWriter[RegenerateImage],
 ) -> Unit {
   for _event in (try! resized_events.read()) {
-    dynamic_mip_state.val.regenerate_requested = true
+    ignore(regenerate_writer.write(RegenerateImage::{  }))
   }
 }
 
 ///|
-fn regenerate_image(world : @ecs.World) -> Unit {
-  dynamic_mip_state.val.regenerate_requested = false
+fn regenerate_image_when_requested(
+  commands : @app.Commands,
+  image_views : @ecs.Query1[ImageView],
+  app_status : @app.ResMut[AppStatus],
+  dynamic_state : @app.ResMut[DynamicMipState],
+  regenerate_reader : @ecs.MessageReader[RegenerateImage],
+) -> Unit {
+  if (try! regenerate_reader.read()).length() == 0 {
+    return
+  }
 
-  despawn_image_views(world)
-  clear_all_mip_labels()
+  try! image_views.for_each(fn(entity, _view) {
+    commands.entity(entity).despawn()
+  })
 
-  let levels = generate_image_levels()
+  let status_ref = app_status.get_ref()
+  let state_ref = dynamic_state.get_ref()
+  clear_all_mip_labels(state_ref.val.mip_label_handles)
+
+  let levels = generate_image_levels(status_ref)
   if levels.length() == 0 {
-    dynamic_mip_state.val.source_texture = None
-    dynamic_mip_state.val.mip_views.clear()
-    dynamic_mip_state.val.mip_sizes.clear()
-    dynamic_mip_state.val.animated_entity = None
-    dynamic_mip_state.val.current_level = 0
+    reset_dynamic_mip_state(state_ref)
     return
   }
 
   let (source_texture, mip_views, sizes) = create_mip_textures(
     levels,
-    app_status.val.enable_mip_generation,
+    status_ref.val.enable_mip_generation,
   )
-
   if mip_views.length() == 0 {
-    dynamic_mip_state.val.source_texture = None
-    dynamic_mip_state.val.mip_views.clear()
-    dynamic_mip_state.val.mip_sizes.clear()
-    dynamic_mip_state.val.animated_entity = None
-    dynamic_mip_state.val.current_level = 0
+    reset_dynamic_mip_state(state_ref)
     return
   }
 
-  dynamic_mip_state.val.source_texture = Some(source_texture)
-  dynamic_mip_state.val.mip_views = mip_views
-  dynamic_mip_state.val.mip_sizes = sizes
-  dynamic_mip_state.val.current_level = 0
+  state_ref.val.source_texture = Some(source_texture)
+  state_ref.val.mip_views = mip_views
+  state_ref.val.mip_sizes = sizes
+  state_ref.val.current_level = 0
 
   let window_size = current_window_size()
-  spawn_animated_mesh(world, window_size)
-  spawn_mip_level_views(world, window_size)
+  spawn_animated_mesh(commands, state_ref.val, status_ref.val, window_size)
+  spawn_mip_level_views(commands, state_ref.val, window_size)
 }
 
 ///|
-fn animate_image_scale(world : @ecs.World) -> Unit {
-  guard dynamic_mip_state.val.animated_entity is Some(animated_entity) else {
-    return
-  }
-
-  let mip_count = dynamic_mip_state.val.mip_sizes.length()
+fn animate_image_scale(
+  animated_images : @ecs.Query1Filtered[
+    @transform.Transform,
+    @ecs.With[AnimatedImage],
+  ],
+  app_status : @app.Res[AppStatus],
+  dynamic_state : @app.ResMut[DynamicMipState],
+  time : @app.Res[@time.Time[Unit]],
+) -> Unit {
+  let state_ref = dynamic_state.get_ref()
+  let mip_count = state_ref.val.mip_sizes.length()
   if mip_count == 0 {
     return
   }
 
   let window_size = current_window_size()
-  let animated_size = animated_mesh_size(window_size)
-  let wave = triangle_wave(
-    world_time(world).elapsed_seconds(),
-    ANIMATION_PERIOD,
+  let animated_size = animated_mesh_size(
+    app_status.get(),
+    window_size,
+    mip_count,
   )
+  let wave = triangle_wave(time.get().elapsed_seconds(), ANIMATION_PERIOD)
   let next_scale = vec2_scale(animated_size, wave)
 
-  let transform_store = world.component(@transform.ecs_key_transform)
-  let tick = world.read_change_tick()
-  if transform_store.get(animated_entity) is Some(transform) {
-    let next_transform = @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(transform.translation.x, transform.translation.y),
-      transform.rotation_z(),
-      next_scale,
-      z=transform.translation.z,
-    )
-    transform_store.set(animated_entity, next_transform, tick) |> ignore
-  }
+  try! animated_images.view_mut(fn(_entity, transform) {
+    let transform_ref = transform.get_ref()
+    transform_ref.val.scale = @math.Vec3::new(next_scale.x, next_scale.y, 1.0F)
+    transform.set_changed()
+  })
 
   let display_size = max_float(next_scale.x, next_scale.y)
-  dynamic_mip_state.val.current_level = pick_mip_level(display_size, mip_count)
+  state_ref.val.current_level = pick_mip_level(
+    display_size,
+    app_status.get(),
+    mip_count,
+  )
 }
 
 ///|
-fn spawn_animated_mesh(world : @ecs.World, window_size : @math.Vec2) -> Unit {
-  guard dynamic_mip_state.val.source_texture is Some(source_texture) else {
-    return
+fn update_help_text(
+  dynamic_state : @app.Res[DynamicMipState],
+  app_status : @app.Res[AppStatus],
+) -> Unit {
+  if dynamic_state.get().help_text is Some(handle) {
+    @text.text_set_content(
+      handle,
+      help_text_content(app_status.get(), dynamic_state.get().current_level),
+    )
   }
-
-  let area_size = animated_mesh_area_size(window_size)
-  let image_size = animated_mesh_size(window_size)
-  let entity = @sprite.SpriteBundle::new(
-    @sprite.Sprite::from_image(source_texture).with_custom_size(
-      Some(@math.Vec2::new(1.0F, 1.0F)),
-    ),
-    @transform.Transform::from_xy_rotation_scale(
-      vec2_sub(vec2_scale(area_size, 0.5F), vec2_scale(window_size, 0.5F)),
-      0.0F,
-      image_size,
-    ),
-  ).spawn(world)
-
-  dynamic_mip_state.val.animated_entity = Some(entity)
-  dynamic_mip_state.val.view_entities.push(entity)
 }
 
 ///|
-fn spawn_mip_level_views(world : @ecs.World, window_size : @math.Vec2) -> Unit {
-  let textures = dynamic_mip_state.val.mip_views
-  let sizes = dynamic_mip_state.val.mip_sizes
-  let level_count = sizes.length()
+fn spawn_animated_mesh(
+  commands : @app.Commands,
+  dynamic_state : DynamicMipState,
+  app_status : AppStatus,
+  window_size : @math.Vec2,
+) -> Unit {
+  guard dynamic_state.source_texture is Some(source_texture) else { return }
 
+  let area_size = animated_mesh_area_size(
+    window_size,
+    dynamic_state.mip_sizes.length(),
+  )
+  let image_size = animated_mesh_size(
+    app_status,
+    window_size,
+    dynamic_state.mip_sizes.length(),
+  )
+  let entity = commands.spawn(
+    @sprite.SpriteBundle::new(
+      @sprite.Sprite::from_image(source_texture).with_custom_size(
+        Some(@math.Vec2::new(1.0F, 1.0F)),
+      ),
+      @transform.Transform::from_xy_rotation_scale(
+        vec2_sub(vec2_scale(area_size, 0.5F), vec2_scale(window_size, 0.5F)),
+        0.0F,
+        image_size,
+      ),
+    ),
+  )
+  commands.entity(entity).insert((AnimatedImage::{  }, ImageView::{  }))
+}
+
+///|
+fn spawn_mip_level_views(
+  commands : @app.Commands,
+  dynamic_state : DynamicMipState,
+  window_size : @math.Vec2,
+) -> Unit {
+  let textures = dynamic_state.mip_views
+  let sizes = dynamic_state.mip_sizes
+  let level_count = sizes.length()
   if textures.length() == 0 || level_count == 0 {
     return
   }
@@ -323,36 +416,152 @@ fn spawn_mip_level_views(world : @ecs.World, window_size : @math.Vec2) -> Unit {
     let final_size = vec2_scale(mip_size_f32, slice_scale)
     let y_center = y_origin - y_spacing * int_to_float(i)
 
-    let entity = @sprite.SpriteBundle::new(
-      @sprite.Sprite::from_image(textures[i]).with_custom_size(
-        Some(@math.Vec2::new(1.0F, 1.0F)),
+    let entity = commands.spawn(
+      @sprite.SpriteBundle::new(
+        @sprite.Sprite::from_image(textures[i]).with_custom_size(
+          Some(@math.Vec2::new(1.0F, 1.0F)),
+        ),
+        @transform.Transform::from_xy_rotation_scale(
+          @math.Vec2::new(x_origin, y_center),
+          0.0F,
+          final_size,
+        ),
       ),
+    )
+    commands.entity(entity).insert_component(ImageView::{  })
+    update_mip_label(
+      dynamic_state.mip_label_handles,
+      i,
+      mip_size,
+      label_x,
+      y_center,
+    )
+  }
+}
+
+///|
+fn spawn_help_overlay(
+  commands : @app.Commands,
+  font : @asset.Handle[@asset.Font],
+) -> @text.TextHandle {
+  let text_handle = @text.Text2dBundle::new(
+      @text.Text2d::new(""),
+      @text.TextFont::default().with_font(font).with_font_size(18.0F),
+      @transform.Transform::identity(),
+    )
+    .with_color(@text.TextColor::new(@sprite.Color::white()))
+    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+    .spawn()
+
+  let root = commands.spawn(
+    (
+      @ui.UiRoot::default(),
+      @ui.Node::default()
+      .with_width(@ui.Val::Percent(100.0F))
+      .with_height(@ui.Val::Percent(100.0F)),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(root),
+        @ui.Node::default()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_left(@ui.Val::Px(12.0F))
+        .with_top(@ui.Val::Px(12.0F)),
+        @ui.UiText::new(text_handle),
+      ),
+    ),
+  )
+
+  text_handle
+}
+
+///|
+fn spawn_mip_level_labels(
+  font : @asset.Handle[@asset.Font],
+) -> Array[@text.TextHandle] {
+  let handles : Array[@text.TextHandle] = []
+  for _ in 0..<MAX_MIP_LABEL_COUNT {
+    let handle = @text.Text2dBundle::new(
+        @text.Text2d::new(""),
+        @text.TextFont::default().with_font(font).with_font_size(FONT_SIZE),
+        @transform.Transform::from_xy_rotation_scale(
+          @math.Vec2::new(-10000.0F, -10000.0F),
+          0.0F,
+          @math.Vec2::new(1.0F, 1.0F),
+        ),
+      )
+      .with_color(@text.TextColor::new(@sprite.Color::white()))
+      .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
+      .spawn()
+    handles.push(handle)
+  }
+  handles
+}
+
+///|
+fn clear_all_mip_labels(handles : Array[@text.TextHandle]) -> Unit {
+  for handle in handles {
+    @text.text_set_content(handle, "")
+    @text.text_set_transform(
+      handle,
       @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(x_origin, y_center),
+        @math.Vec2::new(-10000.0F, -10000.0F),
         0.0F,
-        final_size,
+        @math.Vec2::new(1.0F, 1.0F),
       ),
-    ).spawn(world)
-
-    dynamic_mip_state.val.view_entities.push(entity)
-    update_mip_label(i, mip_size, label_x, y_center)
+    )
   }
 }
 
 ///|
-fn despawn_image_views(world : @ecs.World) -> Unit {
-  for entity in dynamic_mip_state.val.view_entities {
-    try! world.despawn(entity)
+fn update_mip_label(
+  handles : Array[@text.TextHandle],
+  level : Int,
+  size : @math.UVec2,
+  x : Float,
+  y : Float,
+) -> Unit {
+  if level >= handles.length() {
+    return
   }
-  dynamic_mip_state.val.view_entities.clear()
-  dynamic_mip_state.val.animated_entity = None
+
+  let handle = handles[level]
+  @text.text_set_content(
+    handle,
+    "Level " +
+    level.to_string() +
+    "\n" +
+    size.x.to_string() +
+    "x" +
+    size.y.to_string(),
+  )
+  @text.text_set_transform(
+    handle,
+    @transform.Transform::from_xy_rotation_scale(
+      @math.Vec2::new(x, y),
+      0.0F,
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+  )
 }
 
 ///|
-fn generate_image_levels() -> Array[(Int, Int, Bytes)] {
-  let width = image_size_to_int(app_status.val.image_width)
-  let height = image_size_to_int(app_status.val.image_height)
-  let image_data = generate_image_data(width, height)
+fn reset_dynamic_mip_state(state_ref : Ref[DynamicMipState]) -> Unit {
+  state_ref.val.source_texture = None
+  state_ref.val.mip_views.clear()
+  state_ref.val.mip_sizes.clear()
+  state_ref.val.current_level = 0
+}
+
+///|
+fn generate_image_levels(
+  app_status_ref : Ref[AppStatus],
+) -> Array[(Int, Int, Bytes)] {
+  let width = image_size_to_int(app_status_ref.val.image_width)
+  let height = image_size_to_int(app_status_ref.val.image_height)
+  let image_data = generate_image_data(app_status_ref, width, height)
   @asset.asset_generate_mip_chain_rgba8(width, height, image_data)
 }
 
@@ -399,9 +608,13 @@ fn create_mip_textures(
 }
 
 ///|
-fn generate_image_data(width : Int, height : Int) -> Bytes {
-  let outer_color = random_rgb_color()
-  let inner_color = random_rgb_color()
+fn generate_image_data(
+  app_status_ref : Ref[AppStatus],
+  width : Int,
+  height : Int,
+) -> Bytes {
+  let outer_color = random_rgb_color(app_status_ref.val.rng)
+  let inner_color = random_rgb_color(app_status_ref.val.rng)
 
   let center = vec2_scale(
     @math.Vec2::new(int_to_float(width), int_to_float(height)),
@@ -463,7 +676,11 @@ fn triangle_wave(time : Float, wavelength : Float) -> Float {
 }
 
 ///|
-fn pick_mip_level(display_size : Float, mip_count : Int) -> Int {
+fn pick_mip_level(
+  display_size : Float,
+  app_status : AppStatus,
+  mip_count : Int,
+) -> Int {
   if mip_count <= 1 {
     return 0
   }
@@ -474,8 +691,8 @@ fn pick_mip_level(display_size : Float, mip_count : Int) -> Int {
 
   let base_size = int_to_float(
     max_int(
-      image_size_to_int(app_status.val.image_width),
-      image_size_to_int(app_status.val.image_height),
+      image_size_to_int(app_status.image_width),
+      image_size_to_int(app_status.image_height),
     ),
   )
 
@@ -494,146 +711,19 @@ fn pick_mip_level(display_size : Float, mip_count : Int) -> Int {
 }
 
 ///|
-fn spawn_help_overlay(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-
-  let text_handle = @text.Text2dBundle::new(
-      @text.Text2d::new(""),
-      @text.TextFont::default().with_font(font).with_font_size(18.0F),
-      @transform.Transform::identity(),
-    )
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .spawn()
-
-  let tick = world.read_change_tick()
-  let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    root,
-    @ui.Node::default()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
-    tick,
-  )
-
-  let text_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    text_entity,
-    @ui.Node::default()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_top(@ui.Val::Px(12.0F)),
-    tick,
-  )
-  world
-  .component(@ui.ecs_key_ui_text)
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
-
-  dynamic_mip_state.val.help_text = Some(text_handle)
-}
-
-///|
-fn spawn_mip_level_labels() -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-
-  let handles : Array[@text.TextHandle] = []
-  for _ in 0..<MAX_MIP_LABEL_COUNT {
-    let handle = @text.Text2dBundle::new(
-        @text.Text2d::new(""),
-        @text.TextFont::default().with_font(font).with_font_size(FONT_SIZE),
-        @transform.Transform::from_xy_rotation_scale(
-          @math.Vec2::new(-10000.0F, -10000.0F),
-          0.0F,
-          @math.Vec2::new(1.0F, 1.0F),
-        ),
-      )
-      .with_color(@text.TextColor::new(@sprite.Color::white()))
-      .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
-      .spawn()
-
-    handles.push(handle)
-  }
-
-  dynamic_mip_state.val.mip_label_handles = handles
-}
-
-///|
-fn clear_all_mip_labels() -> Unit {
-  for handle in dynamic_mip_state.val.mip_label_handles {
-    @text.text_set_content(handle, "")
-    @text.text_set_transform(
-      handle,
-      @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(-10000.0F, -10000.0F),
-        0.0F,
-        @math.Vec2::new(1.0F, 1.0F),
-      ),
-    )
-  }
-}
-
-///|
-fn update_mip_label(
-  level : Int,
-  size : @math.UVec2,
-  x : Float,
-  y : Float,
-) -> Unit {
-  if level >= dynamic_mip_state.val.mip_label_handles.length() {
-    return
-  }
-
-  let handle = dynamic_mip_state.val.mip_label_handles[level]
-  @text.text_set_content(
-    handle,
-    "Level " +
-    level.to_string() +
-    "\n" +
-    size.x.to_string() +
-    "x" +
-    size.y.to_string(),
-  )
-  @text.text_set_transform(
-    handle,
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(x, y),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
-  )
-}
-
-///|
-fn update_help_text() -> Unit {
-  if dynamic_mip_state.val.help_text is Some(handle) {
-    @text.text_set_content(handle, help_text_content())
-  }
-}
-
-///|
-fn help_text_content() -> String {
+fn help_text_content(app_status : AppStatus, current_level : Int) -> String {
   "Regenerate Top Mip Level: (R)\n" +
   "Toggle Mip Generation: (M) " +
-  enable_mip_generation_text(app_status.val.enable_mip_generation) +
+  enable_mip_generation_text(app_status.enable_mip_generation) +
   "\n" +
   "Image Width: (Q/A) " +
-  image_size_to_int(app_status.val.image_width).to_string() +
+  image_size_to_int(app_status.image_width).to_string() +
   "\n" +
   "Image Height: (W/S) " +
-  image_size_to_int(app_status.val.image_height).to_string() +
+  image_size_to_int(app_status.image_height).to_string() +
   "\n" +
   "Current Displayed Mip: " +
-  dynamic_mip_state.val.current_level.to_string() +
+  current_level.to_string() +
   "\n"
 }
 
@@ -740,24 +830,27 @@ fn horizontal_mip_slice_origin(
 }
 
 ///|
-fn animated_mesh_area_size(window_size : @math.Vec2) -> @math.Vec2 {
+fn animated_mesh_area_size(
+  window_size : @math.Vec2,
+  level_count : Int,
+) -> @math.Vec2 {
   @math.Vec2::new(
-    horizontal_mip_slice_origin(
-      window_size,
-      max_int(dynamic_mip_state.val.mip_sizes.length(), 1),
-    ) *
-    2.0F -
+    horizontal_mip_slice_origin(window_size, max_int(level_count, 1)) * 2.0F -
     MIP_SLICES_MARGIN_LEFT * 2.0F,
     window_size.y,
   )
 }
 
 ///|
-fn animated_mesh_size(window_size : @math.Vec2) -> @math.Vec2 {
-  let max_image_size = animated_mesh_area_size(window_size)
+fn animated_mesh_size(
+  app_status : AppStatus,
+  window_size : @math.Vec2,
+  level_count : Int,
+) -> @math.Vec2 {
+  let max_image_size = animated_mesh_area_size(window_size, level_count)
   let image_size = @math.Vec2::new(
-    int_to_float(image_size_to_int(app_status.val.image_width)),
-    int_to_float(image_size_to_int(app_status.val.image_height)),
+    int_to_float(image_size_to_int(app_status.image_width)),
+    int_to_float(image_size_to_int(app_status.image_height)),
   )
   let ratios = vec2_component_div(max_image_size, image_size)
   let image_scale = min_float(ratios.x, ratios.y)
@@ -765,11 +858,11 @@ fn animated_mesh_size(window_size : @math.Vec2) -> @math.Vec2 {
 }
 
 ///|
-fn random_rgb_color() -> (Byte, Byte, Byte) {
+fn random_rgb_color(rng : @random.Rand) -> (Byte, Byte, Byte) {
   (
-    app_status.val.rng.int(limit=256).to_byte(),
-    app_status.val.rng.int(limit=256).to_byte(),
-    app_status.val.rng.int(limit=256).to_byte(),
+    rng.int(limit=256).to_byte(),
+    rng.int(limit=256).to_byte(),
+    rng.int(limit=256).to_byte(),
   )
 }
 

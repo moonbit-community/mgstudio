@@ -1,11 +1,23 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/2d/dynamic_mip_generation"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type AnimatedImage
+pub impl @ecs.Component for AnimatedImage
+
+type ImageView
+pub impl @ecs.Component for ImageView
+
+type RegenerateImage
+pub impl @ecs.Message for RegenerateImage
 
 // Type aliases
 
