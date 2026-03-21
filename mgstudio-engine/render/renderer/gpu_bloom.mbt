@@ -204,44 +204,6 @@ pub fn GpuBackend::apply_bloom(
         threshold_softness_value,
         scale_x_value,
         scale_y_value,
-        1.0F,
-        0.0F,
-        0.125F,
-        0.0F,
-        0.0F,
-        0.0F,
-        0.0F,
-        0.0F,
-        1.0F,
-        0.0F,
-        0.0F,
-        0.0F,
-        0.0F,
-        1.0F,
-        0.0F,
-        0.0F,
-        1.0F,
-        0.0F,
-        1.0F,
-        1.0F,
-        1.0F,
-        1.0F,
-        1.0F,
-        1.0F,
-        1.0F,
-        0.0F,
-        0.0F,
-        0.0F,
-        0.0F,
-        0.0F,
-        0.0F,
-        0.0F,
-        0.0F,
-        1.0F,
-        0.0F,
-        1.0F,
-        0.0F,
-        1.0F,
       )
       self.queue.write_buffer(settings_buf, 0UL, bloom_uniform)
       if create_bloom_intermediate_bind_group(
@@ -354,44 +316,6 @@ pub fn GpuBackend::apply_bloom(
             threshold_softness_value,
             scale_x_value,
             scale_y_value,
-            1.0F,
-            0.0F,
-            0.125F,
-            0.0F,
-            0.0F,
-            0.0F,
-            blend,
-            0.0F,
-            1.0F,
-            0.0F,
-            0.0F,
-            0.0F,
-            0.0F,
-            1.0F,
-            0.0F,
-            0.0F,
-            1.0F,
-            0.0F,
-            1.0F,
-            1.0F,
-            1.0F,
-            1.0F,
-            1.0F,
-            1.0F,
-            1.0F,
-            0.0F,
-            0.0F,
-            0.0F,
-            0.0F,
-            0.0F,
-            0.0F,
-            0.0F,
-            0.0F,
-            1.0F,
-            0.0F,
-            1.0F,
-            0.0F,
-            1.0F,
           )
           self.queue.write_buffer(settings_buf, 0UL, upsample_uniform)
           if create_bloom_intermediate_bind_group(
@@ -469,44 +393,6 @@ pub fn GpuBackend::apply_bloom(
       0.0F,
       0.0F,
       1.0F,
-      1.0F,
-      1.0F,
-      0.0F,
-      0.125F,
-      0.0F,
-      0.0F,
-      0.0F,
-      final_blend,
-      0.0F,
-      1.0F,
-      0.0F,
-      0.0F,
-      0.0F,
-      0.0F,
-      1.0F,
-      0.0F,
-      0.0F,
-      1.0F,
-      0.0F,
-      1.0F,
-      1.0F,
-      1.0F,
-      1.0F,
-      1.0F,
-      1.0F,
-      1.0F,
-      0.0F,
-      0.0F,
-      0.0F,
-      0.0F,
-      0.0F,
-      0.0F,
-      0.0F,
-      0.0F,
-      1.0F,
-      0.0F,
-      1.0F,
-      0.0F,
       1.0F,
     )
     self.queue.write_buffer(settings_buf, 0UL, final_uniform)
@@ -644,6 +530,19 @@ fn bloom_compute_blend_factor(
 }
 
 ///|
+fn bloom_intermediate_texture_format(
+  backend : GpuBackend,
+) -> @wgpu.TextureFormat {
+  if backend.device.supported_features_contains_u32(
+      @wgpu.FEATURE_NAME_RG11_B10_UFLOAT_RENDERABLE,
+    ) {
+    tf(@wgpu.TEXTURE_FORMAT_RG11_B10_UFLOAT)
+  } else {
+    tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
+  }
+}
+
+///|
 fn bloom_uniform_bytes(
   source_width : Float,
   source_height : Float,
@@ -655,44 +554,6 @@ fn bloom_uniform_bytes(
   threshold_softness : Float,
   scale_x : Float,
   scale_y : Float,
-  exposure : Float,
-  fxaa_enabled : Float,
-  fxaa_edge_threshold : Float,
-  tonemapping_mode : Float,
-  deband_dither_enabled : Float,
-  bloom_weight : Float,
-  upsample_blend : Float,
-  chromatic_aberration : Float,
-  vignette : Float,
-  color_grading_balance_x_axis_x : Float,
-  color_grading_balance_x_axis_y : Float,
-  color_grading_balance_x_axis_z : Float,
-  color_grading_balance_y_axis_x : Float,
-  color_grading_balance_y_axis_y : Float,
-  color_grading_balance_y_axis_z : Float,
-  color_grading_balance_z_axis_x : Float,
-  color_grading_balance_z_axis_y : Float,
-  color_grading_balance_z_axis_z : Float,
-  color_grading_saturation_shadows : Float,
-  color_grading_saturation_midtones : Float,
-  color_grading_saturation_highlights : Float,
-  color_grading_contrast_shadows : Float,
-  color_grading_contrast_midtones : Float,
-  color_grading_contrast_highlights : Float,
-  color_grading_gamma_shadows : Float,
-  color_grading_gamma_midtones : Float,
-  color_grading_gamma_highlights : Float,
-  color_grading_gain_shadows : Float,
-  color_grading_gain_midtones : Float,
-  color_grading_gain_highlights : Float,
-  color_grading_lift_shadows : Float,
-  color_grading_lift_midtones : Float,
-  color_grading_lift_highlights : Float,
-  color_grading_midtones_start : Float,
-  color_grading_midtones_end : Float,
-  color_grading_exposure : Float,
-  color_grading_hue : Float,
-  color_grading_post_saturation : Float,
 ) -> Bytes {
   let softness = threshold_softness
   let knee = threshold * softness
@@ -729,54 +590,6 @@ fn bloom_uniform_bytes(
     scale_x,
     scale_y,
     aspect,
-    exposure,
-    tonemapping_mode,
-    deband_dither_enabled,
-    bloom_weight,
-    upsample_blend,
-    fxaa_enabled,
-    fxaa_edge_threshold,
-    chromatic_aberration,
-    vignette,
-    color_grading_balance_x_axis_x,
-    color_grading_balance_x_axis_y,
-    color_grading_balance_x_axis_z,
-    0.0F,
-    color_grading_balance_y_axis_x,
-    color_grading_balance_y_axis_y,
-    color_grading_balance_y_axis_z,
-    0.0F,
-    color_grading_balance_z_axis_x,
-    color_grading_balance_z_axis_y,
-    color_grading_balance_z_axis_z,
-    0.0F,
-    color_grading_saturation_shadows,
-    color_grading_saturation_midtones,
-    color_grading_saturation_highlights,
-    0.0F,
-    color_grading_contrast_shadows,
-    color_grading_contrast_midtones,
-    color_grading_contrast_highlights,
-    0.0F,
-    color_grading_gamma_shadows,
-    color_grading_gamma_midtones,
-    color_grading_gamma_highlights,
-    0.0F,
-    color_grading_gain_shadows,
-    color_grading_gain_midtones,
-    color_grading_gain_highlights,
-    0.0F,
-    color_grading_lift_shadows,
-    color_grading_lift_midtones,
-    color_grading_lift_highlights,
-    0.0F,
-    color_grading_midtones_start,
-    color_grading_midtones_end,
-    color_grading_exposure,
-    color_grading_hue,
-    color_grading_post_saturation,
-    0.0F,
-    0.0F,
     0.0F,
   ])
 }
@@ -815,7 +628,7 @@ fn ensure_bloom_mip_texture(
   mip_count : Int,
   width : Int,
   height : Int,
-) -> Unit {
+) -> Unit raise GpuBackendError {
   let safe_mip_count = if mip_count < 1 { 1 } else { mip_count }
   let safe_width = if width < 1 { 1 } else { width }
   let safe_height = if height < 1 { 1 } else { height }
@@ -835,25 +648,27 @@ fn ensure_bloom_mip_texture(
   }
   let usage_bits = @wgpu.TEXTURE_USAGE_RENDER_ATTACHMENT |
     @wgpu.TEXTURE_USAGE_TEXTURE_BINDING
+  let requested_mip_count = safe_mip_count.reinterpret_as_uint()
+  let format = bloom_intermediate_texture_format(backend)
   let texture = backend.device.create_texture_u32(
     safe_width.reinterpret_as_uint(),
     safe_height.reinterpret_as_uint(),
     1U,
     @wgpu.TextureUsage::from_u64(usage_bits),
     @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
-    tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
-    mip_level_count=safe_mip_count.reinterpret_as_uint(),
+    format,
+    mip_level_count=requested_mip_count,
   )
-  for mip in 0..<safe_mip_count {
-    let view = texture.create_view_u32(
-      tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT),
-      @wgpu.TEXTURE_VIEW_DIMENSION_2D,
-      @wgpu.TEXTURE_ASPECT_ALL,
-      0U,
-      1U,
-      mip.reinterpret_as_uint(),
-      1U,
+  if texture.mip_level_count_u32() != requested_mip_count {
+    raise Fatal(
+      "wgpu: canonical bloom texture allocation returned mip count " +
+      texture.mip_level_count_u32().to_string() +
+      " but requested " +
+      requested_mip_count.to_string(),
     )
+  }
+  for mip in 0..<safe_mip_count {
+    let view = create_bloom_mip_view(texture, format, mip.reinterpret_as_uint())
     view.set_label("mgstudio_bloom_mip_\{mip}")
     backend.bloom_mip_views.push(view)
   }
@@ -861,6 +676,23 @@ fn ensure_bloom_mip_texture(
   backend.bloom_mip_count = safe_mip_count
   backend.bloom_mip_width = safe_width
   backend.bloom_mip_height = safe_height
+}
+
+///|
+fn create_bloom_mip_view(
+  texture : @wgpu.Texture,
+  format : @wgpu.TextureFormat,
+  base_mip_level : UInt,
+) -> @wgpu.TextureView {
+  texture.create_view_u32(
+    format,
+    @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    @wgpu.TEXTURE_ASPECT_ALL,
+    0U,
+    1U,
+    base_mip_level,
+    1U,
+  )
 }
 
 ///|
@@ -897,7 +729,7 @@ fn ensure_bloom_pipeline_rgba8(
     backend.bloom_sampler = Some(backend.device.create_sampler_linear_clamp())
   }
   ensure_bloom_layouts(backend)
-  let mip_format = tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
+  let mip_format = bloom_intermediate_texture_format(backend)
   if backend.bloom_downsample_first_pipeline is None ||
     backend.bloom_downsample_first_no_threshold_pipeline is None ||
     backend.bloom_downsample_first_uniform_pipeline is None ||
@@ -911,30 +743,37 @@ fn ensure_bloom_pipeline_rgba8(
       return
     }
     let downsample_first_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+      backend,
       "shaders/bevy_post_process/bloom/bloom.wgsl",
       ["FIRST_DOWNSAMPLE", "USE_THRESHOLD"],
     )
     let downsample_first_no_threshold_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+      backend,
       "shaders/bevy_post_process/bloom/bloom.wgsl",
       ["FIRST_DOWNSAMPLE"],
     )
     let downsample_first_uniform_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+      backend,
       "shaders/bevy_post_process/bloom/bloom.wgsl",
       ["FIRST_DOWNSAMPLE", "USE_THRESHOLD", "UNIFORM_SCALE"],
     )
     let downsample_first_no_threshold_uniform_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+      backend,
       "shaders/bevy_post_process/bloom/bloom.wgsl",
       ["FIRST_DOWNSAMPLE", "UNIFORM_SCALE"],
     )
     let downsample_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+      backend,
       "shaders/bevy_post_process/bloom/bloom.wgsl",
       [],
     )
     let downsample_uniform_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+      backend,
       "shaders/bevy_post_process/bloom/bloom.wgsl",
       ["UNIFORM_SCALE"],
     )
     let upsample_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+      backend,
       "shaders/bevy_post_process/bloom/bloom.wgsl",
       [],
     )
@@ -1052,6 +891,7 @@ fn ensure_bloom_final_composite_pipeline(
     return
   }
   let upsample_source = load_fullscreen_postprocess_wgsl_with_defines_required(
+    backend,
     "shaders/bevy_post_process/bloom/bloom.wgsl",
     [],
   )

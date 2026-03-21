@@ -1512,6 +1512,102 @@ test "renderer: bloom final composite uses hdr scene target format even from rgb
 }
 
 ///|
+test "renderer: bloom uniforms match canonical bevy struct size" {
+  let bytes = bloom_uniform_bytes(
+    1920.0F, 1080.0F, 0.0F, 0.0F, 1920.0F, 1080.0F, 1.0F, 0.25F, 1.0F, 1.0F,
+  )
+  inspect(bytes.length(), content="48")
+}
+
+///|
+test "renderer: bloom intermediate format prefers canonical rg11b10 when renderable" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let format = bloom_intermediate_texture_format(backend)
+  let ok = if backend.device.supported_features_contains_u32(
+      @wgpu.FEATURE_NAME_RG11_B10_UFLOAT_RENDERABLE,
+    ) {
+    format == tf(@wgpu.TEXTURE_FORMAT_RG11_B10_UFLOAT)
+  } else {
+    format == tf(@wgpu.TEXTURE_FORMAT_RGBA16_FLOAT)
+  }
+  inspect(ok, content="true")
+}
+
+///|
+test "renderer: bloom mip texture allocates requested mip count" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let ok = try {
+    ensure_bloom_mip_texture(backend, 4, 128, 128)
+    match backend.bloom_mip_texture {
+      Some(texture) =>
+        texture.mip_level_count_u32() == 4U &&
+        backend.bloom_mip_views.length() == 4
+      None => false
+    }
+  } catch {
+    _ => false
+  }
+  inspect(ok, content="true")
+}
+
+///|
+test "renderer: fullscreen tonemapping loads canonical grouped imports from assets tree" {
+  clear_registered_wgsl_source_registry()
+  let backend = GpuBackend::new(assets_base="assets")
+  let source = load_fullscreen_tonemapping_wgsl_with_defines_required(backend, [
+    tonemapping_method_define(6),
+  ])
+  inspect(source.contains("fn hsv_to_rgb"), content="true")
+  inspect(source.contains("fn rgb_to_hsv"), content="true")
+  inspect(
+    source.contains("fn tonemapping_luminance(v: vec3<f32>) -> f32 {"),
+    content="true",
+  )
+  inspect(
+    source.contains(
+      "fn saturation(color: vec3<f32>, saturationAmount: f32) -> vec3<f32> {",
+    ),
+    content="true",
+  )
+  inspect(source.contains("fn sample_tony_mc_mapface_lut("), content="true")
+  inspect(source.contains("#define TONEMAPPING_PASS"), content="false")
+  inspect(
+    source.contains("bevy_render::color_operations::hsv_to_rgb"),
+    content="false",
+  )
+}
+
+///|
+test "renderer: fxaa manual source merges fullscreen shader directly" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let source = load_fxaa_wgsl_with_defines_required(backend, [
+    "EDGE_THRESH_HIGH", "EDGE_THRESH_MIN_LOW",
+  ])
+  inspect(source.contains("struct FullscreenVertexOutput"), content="true")
+  inspect(source.contains("fn fullscreen_vertex_shader("), content="true")
+  inspect(
+    source.contains(
+      "bevy_core_pipeline::fullscreen_vertex_shader::FullscreenVertexOutput",
+    ),
+    content="false",
+  )
+}
+
+///|
+test "renderer: effect stack manual source merges chromatic and vignette helpers" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let source = load_effect_stack_wgsl_required(backend)
+  inspect(source.contains("fn chromatic_aberration("), content="true")
+  inspect(source.contains("fn vignette("), content="true")
+  inspect(
+    source.contains(
+      "bevy_post_process::effect_stack::chromatic_aberration::chromatic_aberration",
+    ),
+    content="false",
+  )
+}
+
+///|
 test "renderer: tonemapping final pipeline specializes to current final target without bloom composite" {
   register_renderer_test_shaders()
   let backend = GpuBackend::new(assets_base="assets")

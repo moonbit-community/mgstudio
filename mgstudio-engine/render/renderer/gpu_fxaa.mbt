@@ -50,6 +50,27 @@ fn fxaa_sensitivity_define_suffix(mode : Int) -> String {
 }
 
 ///|
+fn load_fxaa_wgsl_with_defines_required(
+  backend : GpuBackend,
+  define_keys : Array[String],
+) -> String raise GpuBackendError {
+  let main_source = load_wgsl_asset_source_required(
+    backend, "shaders/bevy_anti_alias/fxaa/fxaa.wgsl",
+  )
+  let stripped_main_source = replace_shader_substring_all(
+    main_source, "#import bevy_core_pipeline::fullscreen_vertex_shader::FullscreenVertexOutput\n",
+    "",
+  )
+  let fullscreen_source = load_wgsl_asset_source_required(
+    backend, "shaders/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
+  )
+  let merged_source = merge_fullscreen_postprocess_source(
+    stripped_main_source, fullscreen_source,
+  )
+  preprocess_manual_wgsl_source(backend, merged_source, define_keys, [])
+}
+
+///|
 fn ensure_fxaa_layouts(backend : GpuBackend) -> Unit raise GpuBackendError {
   if backend.fxaa_bgl is None {
     let frag = ss(@wgpu.SHADER_STAGE_FRAGMENT)
@@ -104,9 +125,7 @@ fn ensure_fxaa_pipeline_rgba8(
     "EDGE_THRESH_MIN_" +
     fxaa_sensitivity_define_suffix(safe_edge_threshold_min_mode),
   ]
-  let source = load_wgsl_with_defines_required(
-    backend, "shaders/bevy_anti_alias/fxaa/fxaa.wgsl", define_keys,
-  )
+  let source = load_fxaa_wgsl_with_defines_required(backend, define_keys)
   let pipeline = create_postprocess_pipeline(
     backend,
     pipeline_layout,
@@ -153,9 +172,7 @@ fn ensure_fxaa_pipeline_surface(
     "EDGE_THRESH_MIN_" +
     fxaa_sensitivity_define_suffix(safe_edge_threshold_min_mode),
   ]
-  let source = load_wgsl_with_defines_required(
-    backend, "shaders/bevy_anti_alias/fxaa/fxaa.wgsl", define_keys,
-  )
+  let source = load_fxaa_wgsl_with_defines_required(backend, define_keys)
   let pipeline = create_postprocess_pipeline(
     backend,
     pipeline_layout,

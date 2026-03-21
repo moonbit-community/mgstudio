@@ -19,6 +19,49 @@ const EFFECT_STACK_CHROMATIC_SETTINGS_BUFFER_SIZE : UInt64 = 16UL
 const EFFECT_STACK_VIGNETTE_SETTINGS_BUFFER_SIZE : UInt64 = 48UL
 
 ///|
+fn load_effect_stack_wgsl_required(
+  backend : GpuBackend,
+) -> String raise GpuBackendError {
+  let chromatic_source = load_wgsl_asset_source_required(
+    backend, "shaders/bevy_post_process/effect_stack/chromatic_aberration.wgsl",
+  )
+  let vignette_source = load_wgsl_asset_source_required(
+    backend, "shaders/bevy_post_process/effect_stack/vignette.wgsl",
+  )
+  let stripped_vignette_source = replace_shader_substring_all(
+    vignette_source, "#import bevy_post_process::effect_stack::chromatic_aberration::source_texture\n",
+    "",
+  )
+  let post_process_source = load_wgsl_asset_source_required(
+    backend, "shaders/bevy_post_process/effect_stack/post_process.wgsl",
+  )
+  let stripped_post_process_source = replace_shader_substring_all(
+    replace_shader_substring_all(
+      replace_shader_substring_all(
+        post_process_source, "#import bevy_core_pipeline::fullscreen_vertex_shader::FullscreenVertexOutput\n",
+        "",
+      ),
+      "#import bevy_post_process::effect_stack::chromatic_aberration::chromatic_aberration\n",
+      "",
+    ),
+    "#import bevy_post_process::effect_stack::vignette::vignette\n",
+    "",
+  )
+  let fullscreen_source = load_wgsl_asset_source_required(
+    backend, "shaders/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl",
+  )
+  let merged_source = merge_fullscreen_postprocess_source(
+    chromatic_source +
+    "\n" +
+    stripped_vignette_source +
+    "\n" +
+    stripped_post_process_source,
+    fullscreen_source,
+  )
+  preprocess_manual_wgsl_source(backend, merged_source, [], [])
+}
+
+///|
 fn clamp_unit(value : Float) -> Float {
   if value <= 0.0F {
     0.0F
@@ -159,9 +202,7 @@ fn ensure_effect_stack_pipeline_rgba8(
   guard backend.effect_stack_pipeline_layout is Some(pipeline_layout) else {
     return
   }
-  let source = load_wgsl_from_assets_required(
-    backend, "shaders/bevy_post_process/effect_stack/post_process.wgsl",
-  )
+  let source = load_effect_stack_wgsl_required(backend)
   let pipeline = create_postprocess_pipeline(
     backend,
     pipeline_layout,
@@ -194,9 +235,7 @@ fn ensure_effect_stack_pipeline_surface(
   guard backend.effect_stack_pipeline_layout is Some(pipeline_layout) else {
     return
   }
-  let source = load_wgsl_from_assets_required(
-    backend, "shaders/bevy_post_process/effect_stack/post_process.wgsl",
-  )
+  let source = load_effect_stack_wgsl_required(backend)
   let pipeline = create_postprocess_pipeline(
     backend,
     pipeline_layout,

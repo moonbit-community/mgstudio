@@ -3533,10 +3533,11 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
     let texture = self.device.create_texture_u32(
       requested_depth_pyramid_width.reinterpret_as_uint(),
       requested_depth_pyramid_height.reinterpret_as_uint(),
-      requested_depth_pyramid_mip_count.reinterpret_as_uint(),
+      1U,
       usage,
       @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
       tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),
+      mip_level_count=requested_depth_pyramid_mip_count.reinterpret_as_uint(),
     )
     let all_mips_view = texture.create_view_u32(
       tf(@wgpu.TEXTURE_FORMAT_R32_FLOAT),

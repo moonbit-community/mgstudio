@@ -62,7 +62,7 @@ const MESH3D_PREPROCESS_MESH_CULLING_DATA_STRIDE_BYTES : UInt64 = 32UL
 const MESH3D_VERTEX_STRIDE_BYTES : UInt64 = 48UL
 
 ///|
-const BLOOM_UNIFORM_BUFFER_SIZE : UInt64 = 240UL
+const BLOOM_UNIFORM_BUFFER_SIZE : UInt64 = 48UL
 
 ///|
 pub struct GpuTextureInfo {
@@ -814,6 +814,11 @@ pub fn GpuBackend::new(
   }
   if adapter.supported_features_contains_u32(0x00000006U) {
     required_features.push(0x00000006U)
+  }
+  if adapter.supported_features_contains_u32(
+      @wgpu.FEATURE_NAME_RG11_B10_UFLOAT_RENDERABLE,
+    ) {
+    required_features.push(@wgpu.FEATURE_NAME_RG11_B10_UFLOAT_RENDERABLE)
   }
   if adapter.has_feature_native_polygon_mode_line() {
     required_features.push(@wgpu.NATIVE_FEATURE_POLYGON_MODE_LINE)
