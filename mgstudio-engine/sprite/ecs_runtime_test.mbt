@@ -191,6 +191,39 @@ test "render2d: SpriteBundle::spawn inserts expected components" {
 }
 
 ///|
+test "render2d: Commands can spawn SpriteBundle" {
+  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let bundle = SpriteBundle::new_with_layers(
+    Sprite::from_image(@asset.Handle::new(7)),
+    @transform.Transform::identity(),
+    RenderLayers::layer(2),
+  )
+  let mut app = @app.App::new(@ecs.World::new()).add_system_param(fn(
+    commands : @app.Commands,
+  ) {
+    spawned.val = Some(commands.spawn(bundle))
+  })
+
+  app = app.run_once()
+
+  guard spawned.val is Some(entity) else {
+    abort("expected Commands::spawn(SpriteBundle) to return an entity")
+  }
+  inspect(
+    ecs_has_non_null_payload(app.world(), entity, ecs_key_sprite),
+    content="true",
+  )
+  inspect(
+    ecs_has_non_null_payload(app.world(), entity, ecs_key_render_layers),
+    content="true",
+  )
+  inspect(
+    ecs_transform_matches(app.world(), entity, bundle.transform),
+    content="true",
+  )
+}
+
+///|
 test "render2d: Camera2dBundle::spawn inserts expected components" {
   let world = @ecs.World::new()
   let bundle = Camera2dBundle::new(

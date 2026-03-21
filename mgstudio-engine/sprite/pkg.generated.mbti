@@ -810,7 +810,9 @@ pub struct SpriteBundle {
 }
 pub fn SpriteBundle::new(Sprite, @transform.Transform) -> Self
 pub fn SpriteBundle::new_with_layers(Sprite, @transform.Transform, RenderLayers) -> Self
-pub fn SpriteBundle::spawn(Self, @ecs.World) -> @core.Entity
+#callsite(autofill(loc))
+pub fn SpriteBundle::spawn(Self, @ecs.World, loc~ : SourceLoc) -> @core.Entity
+pub impl @app.CommandSpawnComponents for SpriteBundle
 
 pub(all) enum SpriteImageMode {
   Auto

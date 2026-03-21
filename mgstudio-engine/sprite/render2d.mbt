@@ -3665,25 +3665,61 @@ pub fn render2d_create_render_target(
 }
 
 ///|
+fn sprite_bundle_insert(
+  bundle : SpriteBundle,
+  world : @ecs.World,
+  entity : @core.Entity,
+  loc~ : SourceLoc,
+) -> Unit {
+  try! (world.set(entity, ecs_key_sprite, bundle.sprite, loc~) |> ignore)
+  try! (world.set(entity, ecs_key_anchor, bundle.anchor, loc~) |> ignore)
+  try! (world.set(entity, ecs_key_render_layers, bundle.layers, loc~) |> ignore)
+  try! (world.set(
+    entity,
+    @visibility.ecs_key_visibility,
+    bundle.visibility,
+    loc~,
+  )
+  |> ignore)
+  try! (world.set(
+    entity,
+    @visibility.ecs_key_inherited_visibility,
+    bundle.inherited_visibility,
+    loc~,
+  )
+  |> ignore)
+  try! (world.set(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    bundle.view_visibility,
+    loc~,
+  )
+  |> ignore)
+  try! (world.set(entity, @transform.ecs_key_transform, bundle.transform, loc~)
+  |> ignore)
+}
+
+///|
+#callsite(autofill(loc))
 pub fn SpriteBundle::spawn(
   self : SpriteBundle,
   world : @ecs.World,
+  loc~ : SourceLoc,
 ) -> @core.Entity {
   let e = world.spawn_empty()
-  try! (world.set(e, ecs_key_sprite, self.sprite) |> ignore)
-  try! (world.set(e, ecs_key_anchor, self.anchor) |> ignore)
-  try! (world.set(e, ecs_key_render_layers, self.layers) |> ignore)
-  try! (world.set(e, @visibility.ecs_key_visibility, self.visibility) |> ignore)
-  try! (world.set(
-    e,
-    @visibility.ecs_key_inherited_visibility,
-    self.inherited_visibility,
-  )
-  |> ignore)
-  try! (world.set(e, @visibility.ecs_key_view_visibility, self.view_visibility)
-  |> ignore)
-  try! (world.set(e, @transform.ecs_key_transform, self.transform) |> ignore)
+  sprite_bundle_insert(self, world, e, loc~)
   e
+}
+
+///|
+pub impl @app.CommandSpawnComponents for SpriteBundle with spawn_components(
+  self,
+  world,
+  entity,
+  _change_tick,
+  loc~,
+) {
+  sprite_bundle_insert(self, world, entity, loc~)
 }
 
 ///|

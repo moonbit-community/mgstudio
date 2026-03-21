@@ -60,13 +60,13 @@ let perlin_permutation_table : Array[Int] = [
 ]
 
 ///|
-priv struct CameraShakeState {
-  trauma : Float
-  original_transform : @transform.Transform
+struct CameraShakeState {
+  mut trauma : Float
+  mut original_transform : @transform.Transform
 }
 
 ///|
-priv struct CameraShakeConfig {
+struct CameraShakeConfig {
   trauma_decay_per_second : Float
   exponent : Float
   max_angle : Float
@@ -85,6 +85,16 @@ let camera_shake_config_key : @ecs.ComponentKey[CameraShakeConfig] = @ecs.regist
 )
 
 ///|
+impl @ecs.Component for CameraShakeState with component() {
+  camera_shake_state_key
+}
+
+///|
+impl @ecs.Component for CameraShakeConfig with component() {
+  camera_shake_config_key
+}
+
+///|
 impl Default for CameraShakeState with default() {
   { trauma: 0.0F, original_transform: @transform.Transform::identity() }
 }
@@ -94,13 +104,25 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_startup_system(setup_scene)
-  .add_startup_system(setup_instructions)
-  .add_startup_system(setup_camera)
-  .add_pre_update_system(reset_transform)
-  .add_system(increase_trauma)
-  .add_post_update_system_config(
-    @app.system(shake_camera).before(@transform.transform_set_propagate),
+  .add_systems(@app.Startup, @app.system(register_camera_shake_requirements))
+  .add_systems(@app.Startup, @app.system(@app.system_param3(setup_scene)))
+  .add_systems(
+    @app.Startup,
+    @app.system(@app.system_param2(setup_instructions)),
+  )
+  .add_systems(@app.Startup, @app.system(@app.system_param(setup_camera)))
+  .add_systems(@app.PreUpdate, @app.system(@app.system_param(reset_transform)))
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param(increase_trauma)).run_if(
+      @input.input_just_pressed(@window.KeyCode::Space),
+    ),
+  )
+  .add_systems(
+    @app.PostUpdate,
+    @app.system(@app.system_param2(shake_camera)).before(
+      @transform.transform_set_propagate,
+    ),
   )
   .run()
 }
@@ -168,200 +190,189 @@ fn spawn_ui_text_handle(
 }
 
 ///|
-fn setup_camera(world : @ecs.World) -> Unit {
+fn register_camera_shake_requirements(world : @ecs.World) -> Unit {
   try! world.register_required_components(
     camera_shake_config_key, camera_shake_state_key,
   )
-  let tick = world.read_change_tick()
-  let camera_entity = @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  world
-  .component(camera_shake_config_key)
-  .insert(
-    camera_entity,
-    {
-      trauma_decay_per_second: TRAUMA_DECAY_PER_SECOND,
-      exponent: TRAUMA_EXPONENT,
-      max_angle: MAX_ANGLE,
-      max_translation: MAX_TRANSLATION,
-      noise_speed: NOISE_SPEED,
-    },
-    tick,
+}
+
+///|
+fn setup_camera(commands : @app.Commands) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Camera2d::default(),
+        CameraShakeConfig::{
+          trauma_decay_per_second: TRAUMA_DECAY_PER_SECOND,
+          exponent: TRAUMA_EXPONENT,
+          max_angle: MAX_ANGLE,
+          max_translation: MAX_TRANSLATION,
+          noise_speed: NOISE_SPEED,
+        },
+      ),
+    ),
   )
 }
 
 ///|
-fn setup_scene(world : @ecs.World) -> Unit {
-  @sprite.Mesh2dBundle::new_with_mesh_material(
-    @sprite.Mesh2d::new(
-      @sprite.mesh_assets_mut_or_abort().val.add(
-        @sprite.mesh2d_geometry_rectangle(
-          @sprite.Rectangle::new(1000.0F, 700.0F),
-        ).to_mesh(),
-      ),
-    ),
-    @sprite.MeshMaterial2d::new(
-      @sprite.color_material_assets_mut_or_abort().val.add(
-        @sprite.ColorMaterialAsset::from_color(
-          @sprite.Color::srgb(0.2F, 0.2F, 0.3F),
+fn setup_scene(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Mesh2d::new(
+          meshes.get_ref().val.add(
+            @sprite.mesh2d_geometry_rectangle(
+              @sprite.Rectangle::new(1000.0F, 700.0F),
+            ).to_mesh(),
+          ),
+        ),
+        @sprite.MeshMaterial2d::new(
+          materials.get_ref().val.add(
+            @sprite.ColorMaterialAsset::from_color(
+              @sprite.Color::srgb(0.2F, 0.2F, 0.3F),
+            ),
+          ),
         ),
       ),
     ),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-
-  @sprite.Mesh2dBundle::new_with_mesh_material(
-    @sprite.Mesh2d::new(
-      @sprite.mesh_assets_mut_or_abort().val.add(
-        @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(50.0F, 100.0F)).to_mesh(),
-      ),
-    ),
-    @sprite.MeshMaterial2d::new(
-      @sprite.color_material_assets_mut_or_abort().val.add(
-        @sprite.ColorMaterialAsset::from_color(
-          @sprite.Color::srgb(0.25F, 0.94F, 0.91F),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Mesh2d::new(
+          meshes.get_ref().val.add(
+            @sprite.mesh2d_geometry_rectangle(
+              @sprite.Rectangle::new(50.0F, 100.0F),
+            ).to_mesh(),
+          ),
         ),
-      ),
-    ),
-    @transform.Transform::from_xyz(0.0F, 0.0F, 2.0F),
-  ).spawn(world)
-  |> ignore
-
-  @sprite.Mesh2dBundle::new_with_mesh_material(
-    @sprite.Mesh2d::new(
-      @sprite.mesh_assets_mut_or_abort().val.add(
-        @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(50.0F, 50.0F)).to_mesh(),
-      ),
-    ),
-    @sprite.MeshMaterial2d::new(
-      @sprite.color_material_assets_mut_or_abort().val.add(
-        @sprite.ColorMaterialAsset::from_color(
-          @sprite.Color::srgb(0.85F, 0.0F, 0.2F),
+        @sprite.MeshMaterial2d::new(
+          materials.get_ref().val.add(
+            @sprite.ColorMaterialAsset::from_color(
+              @sprite.Color::srgb(0.25F, 0.94F, 0.91F),
+            ),
+          ),
         ),
+        @transform.Transform::from_xyz(0.0F, 0.0F, 2.0F),
       ),
     ),
-    @transform.Transform::from_xyz(-450.0F, 200.0F, 2.0F),
-  ).spawn(world)
-  |> ignore
-
-  @sprite.Mesh2dBundle::new_with_mesh_material(
-    @sprite.Mesh2d::new(
-      @sprite.mesh_assets_mut_or_abort().val.add(
-        @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(70.0F, 50.0F)).to_mesh(),
-      ),
-    ),
-    @sprite.MeshMaterial2d::new(
-      @sprite.color_material_assets_mut_or_abort().val.add(
-        @sprite.ColorMaterialAsset::from_color(
-          @sprite.Color::srgb(0.5F, 0.8F, 0.2F),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Mesh2d::new(
+          meshes.get_ref().val.add(
+            @sprite.mesh2d_geometry_rectangle(
+              @sprite.Rectangle::new(50.0F, 50.0F),
+            ).to_mesh(),
+          ),
         ),
+        @sprite.MeshMaterial2d::new(
+          materials.get_ref().val.add(
+            @sprite.ColorMaterialAsset::from_color(
+              @sprite.Color::srgb(0.85F, 0.0F, 0.2F),
+            ),
+          ),
+        ),
+        @transform.Transform::from_xyz(-450.0F, 200.0F, 2.0F),
       ),
     ),
-    @transform.Transform::from_xyz(450.0F, -150.0F, 2.0F),
-  ).spawn(world)
-  |> ignore
+  )
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Mesh2d::new(
+          meshes.get_ref().val.add(
+            @sprite.mesh2d_geometry_rectangle(
+              @sprite.Rectangle::new(70.0F, 50.0F),
+            ).to_mesh(),
+          ),
+        ),
+        @sprite.MeshMaterial2d::new(
+          materials.get_ref().val.add(
+            @sprite.ColorMaterialAsset::from_color(
+              @sprite.Color::srgb(0.5F, 0.8F, 0.2F),
+            ),
+          ),
+        ),
+        @transform.Transform::from_xyz(450.0F, -150.0F, 2.0F),
+      ),
+    ),
+  )
 }
 
 ///|
-fn setup_instructions(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
+fn setup_instructions(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
   let text_handle = spawn_ui_text_handle(
     INSTRUCTIONS,
-    font,
+    asset_server.get().load_font("fonts/FiraSans-Bold.ttf"),
     20.0F,
     @sprite.Color::white(),
   )
-  let tick = world.read_change_tick()
-  let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    root,
-    @ui.Node::default()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
-    tick,
+  let root = commands.spawn(
+    (
+      @ui.UiRoot::default(),
+      @ui.Node::{
+        ..@ui.Node::default(),
+        width: @ui.Val::Percent(100.0F),
+        height: @ui.Val::Percent(100.0F),
+      },
+    ),
   )
-  let text_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    text_entity,
-    @ui.Node::default()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_bottom(@ui.Val::Px(12.0F))
-    .with_left(@ui.Val::Px(12.0F)),
-    tick,
-  )
-  world
-  .component(@ui.ecs_key_ui_text)
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
-}
-
-///|
-fn reset_transform(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-  let state_store = world.component(camera_shake_state_key)
-  let transform_store = world.component(@transform.ecs_key_transform)
-  state_store.for_each(fn(entity, camera_shake) {
-    if transform_store.contains(entity) {
-      transform_store.set(entity, camera_shake.original_transform, tick)
-      |> ignore
-    }
-  })
-}
-
-///|
-fn increase_trauma(world : @ecs.World) -> Unit {
-  if !@input.key_just_pressed(@window.KeyCode::Space) {
-    return
-  }
-  let tick = world.read_change_tick()
-  let config_store = world.component(camera_shake_config_key)
-  let state_store = world.component(camera_shake_state_key)
-  config_store.for_each(fn(entity, _config) {
-    if state_store.get(entity) is Some(camera_shake) {
-      state_store.set(
-        entity,
-        {
-          trauma: clampf(camera_shake.trauma + TRAUMA_PER_PRESS, 0.0F, 1.0F),
-          original_transform: camera_shake.original_transform,
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(root),
+        @ui.Node::{
+          ..@ui.Node::default(),
+          position_type: @ui.PositionType::Absolute,
+          bottom: @ui.Val::Px(12.0F),
+          left: @ui.Val::Px(12.0F),
         },
-        tick,
-      )
-      |> ignore
-    }
+        @ui.UiText::new(text_handle),
+      ),
+    ),
+  )
+}
+
+///|
+fn reset_transform(
+  query : @ecs.Query2[CameraShakeState, @transform.Transform],
+) -> Unit {
+  try! query.for_each(fn(_entity, camera_shake, transform) {
+    transform.translation = camera_shake.original_transform.translation
+    transform.rotation = camera_shake.original_transform.rotation
+    transform.scale = camera_shake.original_transform.scale
   })
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in 2d_screen_shake example")
-  }
+fn increase_trauma(query : @ecs.Query1[CameraShakeState]) -> Unit {
+  try! query.for_each(fn(_entity, camera_shake) {
+    camera_shake.trauma = clampf(
+      camera_shake.trauma + TRAUMA_PER_PRESS,
+      0.0F,
+      1.0F,
+    )
+  })
 }
 
 ///|
-fn shake_camera(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-  let time = world_time(world)
-  let elapsed_seconds = time.elapsed_seconds()
-  let delta_seconds = time.delta_seconds()
-  let config_store = world.component(camera_shake_config_key)
-  let state_store = world.component(camera_shake_state_key)
-  let transform_store = world.component(@transform.ecs_key_transform)
-  config_store.for_each(fn(entity, config) {
-    guard state_store.get(entity) is Some(camera_shake) else { return }
-    guard transform_store.get(entity) is Some(transform) else { return }
+fn shake_camera(
+  query : @ecs.Query3[CameraShakeState, CameraShakeConfig, @transform.Transform],
+  time : @app.Res[@time.Time[Unit]],
+) -> Unit {
+  let elapsed_seconds = time.get().elapsed_seconds()
+  let delta_seconds = time.get().delta_seconds()
+  try! query.for_each(fn(_entity, camera_shake, config, transform) {
+    camera_shake.original_transform = transform
 
     let t = elapsed_seconds * config.noise_speed
     let rotation_noise = perlin_noise_generate(t + 0.0F)
@@ -372,24 +383,13 @@ fn shake_camera(world : @ecs.World) -> Unit {
     let x_offset = x_noise * shake * config.max_translation
     let y_offset = y_noise * shake * config.max_translation
 
-    let shaken_transform = transform
-    shaken_transform.translation.x = shaken_transform.translation.x + x_offset
-    shaken_transform.translation.y = shaken_transform.translation.y + y_offset
-    shaken_transform.rotate_z(roll_offset)
-
-    transform_store.set(entity, shaken_transform, tick) |> ignore
-    state_store.set(
-      entity,
-      {
-        trauma: clampf(
-          camera_shake.trauma - config.trauma_decay_per_second * delta_seconds,
-          0.0F,
-          1.0F,
-        ),
-        original_transform: transform,
-      },
-      tick,
+    transform.translation.x = transform.translation.x + x_offset
+    transform.translation.y = transform.translation.y + y_offset
+    transform.rotate_z(roll_offset)
+    camera_shake.trauma = clampf(
+      camera_shake.trauma - config.trauma_decay_per_second * delta_seconds,
+      0.0F,
+      1.0F,
     )
-    |> ignore
   })
 }

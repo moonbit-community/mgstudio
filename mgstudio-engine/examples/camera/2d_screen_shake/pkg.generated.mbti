@@ -6,6 +6,9 @@ package "Milky2018/mgstudio/examples/camera/2d_screen_shake"
 // Errors
 
 // Types and methods
+type CameraShakeConfig
+
+type CameraShakeState
 
 // Type aliases
 

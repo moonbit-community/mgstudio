@@ -52,6 +52,7 @@ pub struct Bloom {
 }
 pub fn Bloom::anamorphic() -> Self
 pub fn Bloom::default() -> Self
+pub fn Bloom::natural() -> Self
 pub fn Bloom::new(Float) -> Self
 pub fn Bloom::old_school() -> Self
 pub fn Bloom::screen_blur() -> Self

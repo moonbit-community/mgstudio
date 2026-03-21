@@ -593,6 +593,11 @@ pub fn Bloom::default() -> Bloom {
 }
 
 ///|
+pub fn Bloom::natural() -> Bloom {
+  Bloom::default()
+}
+
+///|
 pub fn Bloom::anamorphic() -> Bloom {
   Bloom::{
     ..Bloom::default(),

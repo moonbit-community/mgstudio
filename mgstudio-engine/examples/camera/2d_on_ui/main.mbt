@@ -16,128 +16,101 @@
 /// Port of `bevy/examples/camera/2d_on_ui.rs`.
 
 ///|
-priv struct CameraOnUiState {
-  mut sprite : @core.Entity
+struct OverlaySprite {}
+
+///|
+let overlay_sprite_key : @ecs.ComponentKey[OverlaySprite] = @ecs.register_component(
+  debug_name="examples.camera.2d_on_ui.OverlaySprite",
+)
+
+///|
+pub impl @ecs.Component for OverlaySprite with component() {
+  overlay_sprite_key
 }
 
 ///|
-let camera_on_ui_state : Ref[CameraOnUiState] = Ref::new(CameraOnUiState::{
-  sprite: @core.Entity::placeholder(),
-})
-
-///|
-fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-  let ui_camera = @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  world
-  .component(@ui.ecs_key_is_default_ui_camera)
-  .insert(ui_camera, @ui.IsDefaultUiCamera::default(), tick)
-
-  @sprite.Camera2dBundle::new_with_layers(
-    @sprite.Camera::default().with_order(1).with_clear_color_none(),
-    @transform.Transform::identity(),
-    @sprite.RenderTarget::Screen,
-    @sprite.RenderLayers::layer(1),
-  ).spawn(world)
-  |> ignore
-
-  let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    root,
-    @ui.Node::default()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F))
-    .with_justify_content(@ui.JustifyContent::Center)
-    .with_align_items(@ui.AlignItems::Center),
-    tick,
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (@sprite.Camera2d::default(), @ui.IsDefaultUiCamera::default()),
+    ),
   )
-  world
-  .component(@ui.ecs_key_background_color)
-  .insert(
-    root,
-    @ui.BackgroundColor::new(@sprite.Color::new(0.98F, 0.44F, 0.58F, 1.0F)),
-    tick,
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Camera2d::default(),
+        @sprite.Camera::default().with_order(1).with_clear_color_none(),
+        @sprite.RenderLayers::layer(1),
+      ),
+    ),
   )
 
-  let panel = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(panel, @hierarchy.Parent::new(root), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    panel,
-    @ui.Node::default()
-    .with_width(@ui.Val::Px(180.0F))
-    .with_height(@ui.Val::Px(220.0F))
-    .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F))),
-    tick,
+  let root = commands.spawn(
+    (
+      @ui.UiRoot::default(),
+      @ui.Node::{
+        ..@ui.Node::default(),
+        width: @ui.Val::Percent(100.0F),
+        height: @ui.Val::Percent(100.0F),
+        justify_content: @ui.JustifyContent::Center,
+        align_items: @ui.AlignItems::Center,
+      },
+      @ui.BackgroundColor::new(@sprite.Color::new(0.98F, 0.44F, 0.58F, 1.0F)),
+    ),
   )
-  world
-  .component(@ui.ecs_key_background_color)
-  .insert(
-    panel,
-    @ui.BackgroundColor::new(@sprite.Color::new(0.98F, 0.82F, 0.86F, 1.0F)),
-    tick,
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(root),
+        @ui.Node::{
+          ..@ui.Node::default(),
+          width: @ui.Val::Percent(20.0F),
+          height: @ui.Val::Percent(30.0F),
+          min_width: @ui.Val::Px(150.0F),
+          min_height: @ui.Val::Px(150.0F),
+          border: @ui.UiRect::all(@ui.Val::Px(2.0F)),
+        },
+        @ui.BorderColor::new(@sprite.Color::white()),
+        @ui.BorderRadius::all(@ui.Val::Percent(25.0F)),
+      ),
+    ),
   )
-  world
-  .component(@ui.ecs_key_border_color)
-  .insert(panel, @ui.BorderColor::new(@sprite.Color::white()), tick)
-  world
-  .component(@ui.ecs_key_border_radius)
-  .insert(panel, @ui.BorderRadius::all(@ui.Val::Percent(25.0F)), tick)
 
-  let asset_server = @asset.AssetServer::new()
-  let sprite = @sprite.SpriteBundle::new_with_layers(
-    @sprite.Sprite::from_image(
-      asset_server.load("textures/rpg/chars/sensei/sensei.png"),
-    ).with_custom_size(Some(@math.Vec2::new(100.0F, 100.0F))),
-    @transform.Transform::identity(),
-    @sprite.RenderLayers::layer(1),
-  ).spawn(world)
-  camera_on_ui_state.val.sprite = sprite
+  let overlay_sprite = commands.spawn(
+    @sprite.SpriteBundle::new_with_layers(
+      @sprite.Sprite::from_image(
+        asset_server.get().load("textures/rpg/chars/sensei/sensei.png"),
+      ).with_custom_size(Some(@math.Vec2::new(100.0F, 100.0F))),
+      @transform.Transform::identity(),
+      @sprite.RenderLayers::layer(1),
+    ),
+  )
+  commands.entity(overlay_sprite).insert_component(OverlaySprite::{  })
 }
 
 ///|
-fn rotate_sprite(world : @ecs.World) -> Unit {
-  let sprite = camera_on_ui_state.val.sprite
-  if sprite.is_placeholder() {
-    return
-  }
-  let tick = world.read_change_tick()
-  let transform_store = @transform.get_transform_store(world)
-  guard transform_store.get(sprite) is Some(transform) else { return }
-
-  let time = match
-    (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in 2d_on_ui example")
-  }
-  let delta_seconds = time.delta_seconds()
+fn rotate_sprite(
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query2[@transform.Transform, OverlaySprite],
+) -> Unit {
+  let delta_seconds = time.get().delta_seconds()
   let rotation = @math.Quat::from_rotation_z(delta_seconds * 0.5F).mul(
     @math.Quat::from_rotation_y(delta_seconds),
   )
-  transform_store.set(
-    sprite,
-    transform.with_rotation(rotation.mul(transform.rotation).normalize()),
-    tick,
-  )
-  |> ignore
+  try! query.for_each(fn(_entity, transform, _overlay_sprite) {
+    transform.rotation = rotation.mul(transform.rotation).normalize()
+  })
 }
 
 ///|
 fn main {
-  camera_on_ui_state.val.sprite = @core.Entity::placeholder()
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(rotate_sprite))
+  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .add_systems(@app.Update, @app.system(@app.system_param2(rotate_sprite)))
   .run()
 }
