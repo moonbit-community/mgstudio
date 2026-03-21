@@ -13,24 +13,20 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/asset/asset_loading.rs`.
-
-///|
 fn main {
-  let plugins = @mgstudio.DefaultPlugins::build().build()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
+  .add_plugins(@mgstudio.default_plugins())
+  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .run()
 }
 
 ///|
 fn setup(
+  commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
   meshes : @app.Res[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let world = @app.current_world().unwrap()
   let cube_handle : @asset.Handle[@mesh.Mesh] = asset_server
     .get()
     .load(
@@ -54,10 +50,12 @@ fn setup(
   } else {
     @app.log_info("sphere hasn't loaded yet")
   }
+
   let loaded_folder : @asset.Handle[@asset.LoadedFolder] = asset_server
     .get()
     .load_folder("models/torus")
   loaded_folder |> ignore
+
   let torus_handle : @asset.Handle[@mesh.Mesh] = asset_server
     .get()
     .load(
@@ -65,47 +63,55 @@ fn setup(
         "models/torus/torus.gltf",
       ),
     )
+
   let material_handle = materials.get_ref().val.add(
     @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.8F, 0.7F, 0.6F)),
   )
-  let material = @pbr.MeshMaterial3d::new(material_handle)
 
-  @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(torus_handle),
-    material,
-    @transform.Transform::from_xyz(-3.0F, 0.0F, 0.0F),
-  ).spawn(world)
-  |> ignore
-
-  @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(cube_handle),
-    material,
-    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
-  ).spawn(world)
-  |> ignore
-
-  @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(sphere_handle),
-    @pbr.MeshMaterial3d::new(material_handle),
-    @transform.Transform::from_xyz(3.0F, 0.0F, 0.0F),
-  ).spawn(world)
-  |> ignore
-
-  let tick = world.read_change_tick()
-  let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(light, @pbr.PointLight::default(), tick)
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(4.0F, 5.0F, 4.0F), tick)
-
-  @pbr.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::from_xyz(0.0F, 3.0F, 10.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(torus_handle),
+        @pbr.MeshMaterial3d::new(material_handle),
+        @transform.Transform::from_xyz(-3.0F, 0.0F, 0.0F),
+      ),
     ),
-  ).spawn(world)
-  |> ignore
+  )
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(cube_handle),
+        @pbr.MeshMaterial3d::new(material_handle),
+        @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(sphere_handle),
+        @pbr.MeshMaterial3d::new(material_handle),
+        @transform.Transform::from_xyz(3.0F, 0.0F, 0.0F),
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @pbr.PointLight::default(),
+        @transform.Transform::from_xyz(4.0F, 5.0F, 4.0F),
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::default(),
+        @transform.Transform::from_xyz(0.0F, 3.0F, 10.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
+    ),
+  )
 }

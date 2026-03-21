@@ -13,32 +13,26 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/asset/repeated_texture.rs`.
-
-///|
 fn setup(
+  commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
+  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
-  let world = @app.current_world().unwrap()
-  let tick = world.read_change_tick()
   let image_with_default_sampler = asset_server
     .get()
     .load("textures/fantasy_ui_borders/panel-border-010.png")
-  let image_with_repeat_sampler = asset_server
-    .get()
-    .load_with_settings(
-      "textures/fantasy_ui_borders/panel-border-010-repeated.png",
-      fn(settings) {
-        settings.sampler = @asset.ImageSampler::Descriptor(
-          @asset.ImageSamplerDescriptor::default().set_address_mode(
-            @asset.ImageAddressMode::Repeat,
-          ),
-        )
-      },
-    )
 
-  let uv_transform = @transform.Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F))
+  let center_mesh = meshes.get_ref().val.add(
+    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+  )
+  let left_mesh = meshes.get_ref().val.add(
+    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+  )
+  let right_mesh = meshes.get_ref().val.add(
+    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+  )
+
   let center_material = materials.get_ref().val.add(
     @pbr.StandardMaterial::default().with_base_color_texture(
       Some(image_with_default_sampler),
@@ -46,81 +40,86 @@ fn setup(
   )
   let left_material = materials.get_ref().val.add(
     @pbr.StandardMaterial::default()
-    .with_base_color_texture(Some(image_with_repeat_sampler))
-    .with_uv_transform(uv_transform),
+    .with_base_color_texture(
+      Some(
+        asset_server
+        .get()
+        .load_with_settings(
+          "textures/fantasy_ui_borders/panel-border-010-repeated.png",
+          fn(settings) {
+            settings.sampler = @asset.ImageSampler::Descriptor(
+              @asset.ImageSamplerDescriptor::default().set_address_mode(
+                @asset.ImageAddressMode::Repeat,
+              ),
+            )
+          },
+        ),
+      ),
+    )
+    .with_uv_transform(
+      @transform.Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F)),
+    ),
   )
   let right_material = materials.get_ref().val.add(
     @pbr.StandardMaterial::default()
     .with_base_color_texture(Some(image_with_default_sampler))
-    .with_uv_transform(uv_transform),
+    .with_uv_transform(
+      @transform.Affine2::from_scale(@math.Vec2::new(2.0F, 3.0F)),
+    ),
   )
 
-  @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
-        ),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(center_mesh),
+        @pbr.MeshMaterial3d::new(center_material),
+        @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       ),
     ),
-    @pbr.MeshMaterial3d::new(center_material),
-    @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
-  ).spawn(world)
-  |> ignore
-
-  @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
-        ),
-      ),
-    ),
-    @pbr.MeshMaterial3d::new(left_material),
-    @transform.Transform::from_xyz(-1.5F, 0.0F, 0.0F),
-  ).spawn(world)
-  |> ignore
-
-  @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
-        ),
-      ),
-    ),
-    @pbr.MeshMaterial3d::new(right_material),
-    @transform.Transform::from_xyz(1.5F, 0.0F, 0.0F),
-  ).spawn(world)
-  |> ignore
-
-  let light = world.spawn_empty()
-  world
-  .component(@pbr.PointLight::component())
-  .insert(
-    light,
-    @pbr.PointLight::default().with_shadow_maps_enabled(true),
-    tick,
   )
-  world
-  .component(@transform.Transform::component())
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
-
-  @pbr.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::from_xyz(0.0F, 1.5F, 4.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(left_mesh),
+        @pbr.MeshMaterial3d::new(left_material),
+        @transform.Transform::from_xyz(-1.5F, 0.0F, 0.0F),
+      ),
     ),
-  ).spawn(world)
-  |> ignore
+  )
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(right_mesh),
+        @pbr.MeshMaterial3d::new(right_material),
+        @transform.Transform::from_xyz(1.5F, 0.0F, 0.0F),
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @pbr.PointLight::default().with_shadow_maps_enabled(true),
+        @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::default(),
+        @transform.Transform::from_xyz(0.0F, 1.5F, 4.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
+    ),
+  )
 }
 
 ///|
 fn main {
-  let plugins = @mgstudio.DefaultPlugins::build().build()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .add_plugins(@mgstudio.default_plugins())
+  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .run()
 }
