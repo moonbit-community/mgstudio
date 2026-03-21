@@ -1,11 +1,17 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/camera/free_camera_controller"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type InfoText
+pub impl @ecs.Component for InfoText
 
 // Type aliases
 

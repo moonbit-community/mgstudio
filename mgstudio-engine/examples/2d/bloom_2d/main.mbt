@@ -16,12 +16,42 @@
 /// Port of `bevy/examples/2d/bloom_2d.rs`.
 
 ///|
+struct BloomCamera {}
+
+///|
+let bloom_camera_key : @ecs.ComponentKey[BloomCamera] = @ecs.register_component(
+  debug_name="examples.2d.bloom_2d.BloomCamera",
+)
+
+///|
+pub impl @ecs.Component for BloomCamera with component() {
+  bloom_camera_key
+}
+
+///|
+struct BloomHelpText {
+  handle : @text.TextHandle
+}
+
+///|
+let bloom_help_text_key : @ecs.ComponentKey[BloomHelpText] = @ecs.register_component(
+  debug_name="examples.2d.bloom_2d.BloomHelpText",
+)
+
+///|
+pub impl @ecs.Component for BloomHelpText with component() {
+  bloom_help_text_key
+}
+
+///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(bloom_setup))
-  .add_systems(@app.Update, @app.system(bloom_update))
+  .add_plugins(@mgstudio.default_plugins())
+  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param6(update_bloom_settings)),
+  )
   .run()
 }
 
@@ -126,45 +156,6 @@ fn bloom_help_text(
 }
 
 ///|
-fn single_camera_entity(world : @ecs.World) -> @core.Entity? {
-  let entity_ref = Ref::new(None)
-  let query = world.query1_filtered(@sprite.ecs_key_camera2d, @ecs.All::new())
-  try! query.view(fn(entity, _camera2d) {
-    if entity_ref.val is None {
-      entity_ref.val = Some(entity)
-    }
-  })
-  entity_ref.val
-}
-
-///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in bloom_2d example")
-  }
-}
-
-///|
-fn single_help_text_handle(world : @ecs.World) -> @text.TextHandle? {
-  let handle_ref = Ref::new(None)
-  let query = world.query1_filtered(@ui.ecs_key_ui_text, @ecs.All::new())
-  try! query.view(fn(_entity, ui_text) {
-    if handle_ref.val is None {
-      handle_ref.val = Some(ui_text.handle)
-    }
-  })
-  handle_ref.val
-}
-
-///|
-fn set_help_text(world : @ecs.World, content : String) -> Unit {
-  if single_help_text_handle(world) is Some(handle) {
-    @text.text_set_content(handle, content)
-  }
-}
-
-///|
 fn spawn_ui_text_handle(
   content : String,
   font : @asset.Handle[@asset.Font],
@@ -174,11 +165,7 @@ fn spawn_ui_text_handle(
   @text.Text2dBundle::new(
     @text.Text2d::new(content),
     @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(0.0F, 220.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
+    @transform.Transform::identity(),
   )
   .with_color(@text.TextColor::new(color))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
@@ -187,146 +174,156 @@ fn spawn_ui_text_handle(
 
 ///|
 fn spawn_help_overlay(
-  world : @ecs.World,
-  asset_server : @asset.AssetServer,
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let text_handle = spawn_ui_text_handle(
     "",
-    font,
+    asset_server.get().load_font("fonts/FiraSans-Bold.ttf"),
     20.0F,
     @sprite.Color::white(),
   )
-  let tick = world.read_change_tick()
-  let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    root,
-    @ui.Node::default()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
-    tick,
+  let root = commands.spawn(
+    (
+      @ui.UiRoot::default(),
+      @ui.Node::default()
+      .with_width(@ui.Val::Percent(100.0F))
+      .with_height(@ui.Val::Percent(100.0F)),
+    ),
   )
-  let text_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    text_entity,
-    @ui.Node::default()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_top(@ui.Val::Px(12.0F)),
-    tick,
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(root),
+        @ui.Node::default()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_left(@ui.Val::Px(12.0F))
+        .with_top(@ui.Val::Px(12.0F)),
+        @ui.UiText::new(text_handle),
+        BloomHelpText::{ handle: text_handle },
+      ),
+    ),
   )
-  world
-  .component(@ui.ecs_key_ui_text)
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
 }
 
 ///|
-fn bloom_setup(world : @ecs.World) -> Unit {
-  let asset_server = match
-    (try! world.get_resource(@asset.asset_server_resource_key())) {
-    Some(asset_server) => asset_server
-    None =>
-      abort(
-        "bloom_2d requires the world-owned AssetServer resource; add AssetPlugin before the example startup system runs",
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Camera2d::default(),
+        @sprite.Camera::new(@sprite.Color::black()),
+        @sprite.Tonemapping::TonyMcMapface,
+        @sprite.Bloom::default(),
+        @sprite.DebandDither::Enabled,
+        BloomCamera::{  },
+      ),
+    ),
+  )
+
+  ignore(
+    commands.spawn_component(
+      @sprite.Sprite::from_image(
+        asset_server.get().load("branding/bevy_bird_dark.png"),
       )
-  }
-  let camera = @sprite.Camera2dBundle::new(
-      @sprite.Camera::new(@sprite.Color::black()),
-      @transform.Transform::identity(),
-    )
-    .with_bloom(Some(@sprite.Bloom::default()))
-    .spawn(world)
-  let tick = world.read_change_tick()
-  world
-  .component(@sprite.ecs_key_tonemapping)
-  .insert(camera, @sprite.Tonemapping::TonyMcMapface, tick)
-  world
-  .component(@sprite.ecs_key_deband_dither)
-  .insert(camera, @sprite.DebandDither::Enabled, tick)
-
-  let bird = asset_server.load("branding/bevy_bird_dark.png")
-  @sprite.SpriteBundle::new(
-    @sprite.Sprite::from_image(bird)
-    .with_color(@sprite.Color::srgb(5.0F, 5.0F, 5.0F))
-    .with_custom_size(Some(@math.Vec2::new(160.0F, 160.0F))),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-
-  @sprite.Mesh2dBundle::new_with_mesh_material(
-    @sprite.Mesh2d::new(
-      @sprite.mesh_assets_mut_or_abort().val.add(
-        @sprite.mesh2d_geometry_circle(@sprite.Circle::new(100.0F)).to_mesh(),
-      ),
+      .with_color(@sprite.Color::srgb(5.0F, 5.0F, 5.0F))
+      .with_custom_size(Some(@math.Vec2::new(160.0F, 160.0F))),
     ),
-    @sprite.MeshMaterial2d::new(
-      @sprite.color_material_assets_mut_or_abort().val.add(
-        @sprite.ColorMaterialAsset::from_color(
-          @sprite.Color::srgb(7.5F, 0.0F, 7.5F),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Mesh2d::new(
+          meshes.get_ref().val.add(
+            @sprite.mesh2d_geometry_circle(@sprite.Circle::new(100.0F)).to_mesh(),
+          ),
         ),
-      ),
-    ),
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(-200.0F, 0.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
-  ).spawn(world)
-  |> ignore
-
-  @sprite.Mesh2dBundle::new_with_mesh_material(
-    @sprite.Mesh2d::new(
-      @sprite.mesh_assets_mut_or_abort().val.add(
-        @sprite.mesh2d_geometry_regular_polygon(
-          @sprite.RegularPolygon::new(100.0F, 6),
-        ).to_mesh(),
-      ),
-    ),
-    @sprite.MeshMaterial2d::new(
-      @sprite.color_material_assets_mut_or_abort().val.add(
-        @sprite.ColorMaterialAsset::from_color(
-          @sprite.Color::srgb(6.25F, 9.4F, 9.1F),
+        @sprite.MeshMaterial2d::new(
+          materials.get_ref().val.add(
+            @sprite.ColorMaterialAsset::from_color(
+              @sprite.Color::srgb(7.5F, 0.0F, 7.5F),
+            ),
+          ),
         ),
+        @transform.Transform::from_xyz(-200.0F, 0.0F, 0.0F),
       ),
     ),
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(200.0F, 0.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
-  ).spawn(world)
-  |> ignore
+  )
 
-  spawn_help_overlay(world, asset_server)
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Mesh2d::new(
+          meshes.get_ref().val.add(
+            @sprite.mesh2d_geometry_regular_polygon(
+              @sprite.RegularPolygon::new(100.0F, 6),
+            ).to_mesh(),
+          ),
+        ),
+        @sprite.MeshMaterial2d::new(
+          materials.get_ref().val.add(
+            @sprite.ColorMaterialAsset::from_color(
+              @sprite.Color::srgb(6.25F, 9.4F, 9.1F),
+            ),
+          ),
+        ),
+        @transform.Transform::from_xyz(200.0F, 0.0F, 0.0F),
+      ),
+    ),
+  )
+
+  spawn_help_overlay(commands, asset_server)
 }
 
 ///|
-fn bloom_update(world : @ecs.World) -> Unit {
-  guard single_camera_entity(world) is Some(camera_entity) else { return }
+fn bloom_camera_entity(
+  camera_query : @ecs.Query1[BloomCamera],
+) -> @core.Entity? {
+  let camera_ref : Ref[@core.Entity?] = Ref::new(None)
+  try! camera_query.view(fn(entity, _camera) {
+    if camera_ref.val is None {
+      camera_ref.val = Some(entity)
+    }
+  })
+  camera_ref.val
+}
 
-  let bloom_store = world.component(@sprite.ecs_key_bloom)
-  let tonemapping_store = world.component(@sprite.ecs_key_tonemapping)
-  let tick = world.read_change_tick()
-  let dt = world_time(world).delta_seconds()
-  let tonemapping = tonemapping_store
-    .get(camera_entity)
-    .unwrap_or(@sprite.Tonemapping::TonyMcMapface)
-  let current_bloom = bloom_store.get(camera_entity)
+///|
+fn update_bloom_settings(
+  commands : @app.Commands,
+  time : @app.Res[@time.Time[Unit]],
+  camera_query : @ecs.Query1[BloomCamera],
+  tonemapping_query : @ecs.Query1[@sprite.Tonemapping],
+  bloom_query : @ecs.Query1[@sprite.Bloom],
+  help_query : @ecs.Query1[BloomHelpText],
+) -> Unit {
+  guard bloom_camera_entity(camera_query) is Some(camera_entity) else { return }
 
-  set_help_text(world, bloom_help_text(current_bloom, tonemapping))
+  let tonemapping = match (try! tonemapping_query.get(camera_entity)) {
+    Some(mode) => mode
+    None => @sprite.Tonemapping::TonyMcMapface
+  }
+  let current_bloom = try! bloom_query.get(camera_entity)
+
+  if (try! help_query.single()) is Some(help_text) {
+    @text.text_set_content(
+      help_text.handle,
+      bloom_help_text(current_bloom, tonemapping),
+    )
+  }
+
+  let dt = time.get().delta_seconds()
 
   match current_bloom {
     Some(current_bloom) =>
       if @input.key_just_pressed(@window.KeyCode::Space) {
-        bloom_store.remove(camera_entity) |> ignore
+        commands.entity(camera_entity).remove_component(@sprite.ecs_key_bloom)
       } else {
         let mut intensity = current_bloom.intensity
         if @input.key_pressed(@window.KeyCode::KeyA) {
@@ -405,8 +402,9 @@ fn bloom_update(world : @ecs.World) -> Unit {
         }
         scale_x = clampf(scale_x, 0.0F, 16.0F)
 
-        bloom_store.set(
-          camera_entity,
+        commands
+        .entity(camera_entity)
+        .insert_component(
           current_bloom
           .with_intensity(intensity)
           .with_low_frequency_boost(low_frequency_boost)
@@ -415,18 +413,17 @@ fn bloom_update(world : @ecs.World) -> Unit {
           .with_prefilter(threshold, threshold_softness)
           .with_composite_mode(composite_mode)
           .with_scale(@math.Vec2::new(scale_x, current_bloom.scale.y)),
-          tick,
         )
-        |> ignore
       }
     None =>
       if @input.key_just_pressed(@window.KeyCode::Space) {
-        bloom_store.insert(camera_entity, @sprite.Bloom::default(), tick)
+        commands
+        .entity(camera_entity)
+        .insert_component(@sprite.Bloom::default())
       }
   }
 
   if @input.key_just_pressed(@window.KeyCode::KeyO) {
-    tonemapping_store.set(camera_entity, next_tonemap(tonemapping), tick)
-    |> ignore
+    commands.entity(camera_entity).insert_component(next_tonemap(tonemapping))
   }
 }

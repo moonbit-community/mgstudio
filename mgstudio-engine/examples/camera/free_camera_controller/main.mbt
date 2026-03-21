@@ -16,16 +16,33 @@
 /// Port of `bevy/examples/camera/free_camera_controller.rs`.
 
 ///|
-priv struct FreeCameraExampleState {
-  mut camera : @core.Entity
-  mut info_text : @text.TextHandle?
+struct InfoText {
+  handle : @text.TextHandle
 }
 
 ///|
-let free_camera_example_state : Ref[FreeCameraExampleState] = Ref::new(FreeCameraExampleState::{
-  camera: @core.Entity::placeholder(),
-  info_text: None,
-})
+let info_text_key : @ecs.ComponentKey[InfoText] = @ecs.register_component(
+  debug_name="examples.camera.free_camera_controller.InfoText",
+)
+
+///|
+pub impl @ecs.Component for InfoText with component() {
+  info_text_key
+}
+
+///|
+fn free_camera_text(free_camera : @camera_controller.FreeCamera) -> String {
+  "Sensitivity: " +
+  format_float(free_camera.sensitivity, 3) +
+  "\nFriction: " +
+  format_float(free_camera.friction, 1) +
+  "\nScroll factor: " +
+  format_float(free_camera.scroll_factor, 2) +
+  "\nWalk speed: " +
+  format_float(free_camera.walk_speed, 2) +
+  "\nRun speed: " +
+  format_float(free_camera.run_speed, 2)
+}
 
 ///|
 fn format_float(value : Float, precision : Int) -> String {
@@ -54,396 +71,410 @@ fn format_float(value : Float, precision : Int) -> String {
 }
 
 ///|
-fn ui_spawn_text(
-  world : @ecs.World,
-  root : @core.Entity,
+fn spawn_ui_text_handle(
   content : String,
+  font : @asset.Handle[@asset.Font],
   font_size : Float,
-  left : Float,
-  top? : Float = 0.0F,
-  bottom? : Float = -1.0F,
-  right? : Float = -1.0F,
+  color : @sprite.Color,
 ) -> @text.TextHandle {
-  let asset_server = @asset.AssetServer::new()
-  let handle = @text.Text2dBundle::new(
-      @text.Text2d::new(content),
-      @text.TextFont::default()
-      .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
-      .with_font_size(font_size),
-      @transform.Transform::identity(),
-    )
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .spawn()
-
-  let tick = world.read_change_tick()
-  let entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(entity, @hierarchy.Parent::new(root), tick)
-  let mut node = @ui.Node::default().with_position_type(
-    @ui.PositionType::Absolute,
+  @text.Text2dBundle::new(
+    @text.Text2d::new(content),
+    @text.TextFont::default().with_font(font).with_font_size(font_size),
+    @transform.Transform::identity(),
   )
-  node = node.with_left(@ui.Val::Px(left))
-  if top >= 0.0F {
-    node = node.with_top(@ui.Val::Px(top))
-  }
-  if bottom >= 0.0F {
-    node = node.with_bottom(@ui.Val::Px(bottom))
-  }
-  if right >= 0.0F {
-    node = node.with_right(@ui.Val::Px(right))
-  }
-  world.component(@ui.ecs_key_node).insert(entity, node, tick)
-  world
-  .component(@ui.ecs_key_ui_text)
-  .insert(entity, @ui.UiText::new(handle), tick)
-  handle
+  .with_color(@text.TextColor::new(color))
+  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
+  .spawn()
 }
 
 ///|
-fn spawn_overlay(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-  let overlay_camera = @sprite.Camera2dBundle::new(
-    @sprite.Camera::default().with_order(1).with_clear_color_none(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  world
-  .component(@ui.ecs_key_is_default_ui_camera)
-  .insert(overlay_camera, @ui.IsDefaultUiCamera::default(), tick)
+fn spawn_camera(commands : @app.Commands) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @camera.Camera3d::default(),
+        @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F).looking_to(
+          @math.Vec3::new(1.0F, 0.0F, 0.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+        @camera_controller.FreeCamera::{
+          ..@camera_controller.FreeCamera::default(),
+          sensitivity: 0.2F,
+          friction: 25.0F,
+          walk_speed: 3.0F,
+          run_speed: 9.0F,
+        },
+      ),
+    ),
+  )
+}
 
-  let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    root,
-    @ui.Node::default()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
-    tick,
+///|
+fn spawn_text(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  free_camera_query : @ecs.Query1[@camera_controller.FreeCamera],
+) -> Unit {
+  guard (try! free_camera_query.single()) is Some(free_camera) else { return }
+  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
+
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Camera2d::default(),
+        @sprite.Camera::default().with_order(1).with_clear_color_none(),
+        @ui.IsDefaultUiCamera::default(),
+      ),
+    ),
   )
 
-  ui_spawn_text(
-    world,
-    root,
+  let root = commands.spawn(
+    (
+      @ui.UiRoot::default(),
+      @ui.Node::default()
+      .with_width(@ui.Val::Percent(100.0F))
+      .with_height(@ui.Val::Percent(100.0F)),
+    ),
+  )
+
+  let config_text = spawn_ui_text_handle(
+    free_camera_text(free_camera),
+    font,
+    20.0F,
+    @sprite.Color::white(),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(root),
+        @ui.Node::default()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_top(@ui.Val::Px(-16.0F))
+        .with_left(@ui.Val::Px(12.0F)),
+        @ui.UiText::new(config_text),
+      ),
+    ),
+  )
+
+  let instructions = spawn_ui_text_handle(
     "Z/X: decrease/increase sensitivity\nC/V: decrease/increase friction\nF/G: decrease/increase scroll factor\nB: enable/disable controller",
+    font,
     20.0F,
-    12.0F,
-    bottom=12.0F,
+    @sprite.Color::white(),
   )
-  |> ignore
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(root),
+        @ui.Node::default()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_bottom(@ui.Val::Px(12.0F))
+        .with_left(@ui.Val::Px(12.0F)),
+        @ui.UiText::new(instructions),
+      ),
+    ),
+  )
 
-  let info_handle = ui_spawn_text(
-    world,
-    root,
-    "",
-    20.0F,
-    12.0F,
-    top=12.0F,
-    right=12.0F,
+  let info_text = spawn_ui_text_handle("", font, 20.0F, @sprite.Color::white())
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(root),
+        @ui.Node::default()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_top(@ui.Val::Px(12.0F))
+        .with_right(@ui.Val::Px(12.0F)),
+        @ui.UiText::new(info_text),
+        InfoText::{ handle: info_text },
+      ),
+    ),
   )
-  free_camera_example_state.val.info_text = Some(info_handle)
 }
 
 ///|
-fn spawn_camera(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-  let camera = @camera.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F).looking_to(
-      @math.Vec3::new(1.0F, 0.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  world
-  .component(@camera_controller.ecs_key_free_camera)
-  .insert(
-    camera,
-    @camera_controller.FreeCamera::{
-      ..@camera_controller.FreeCamera::default(),
-      sensitivity: 0.2F,
-      friction: 25.0F,
-      walk_speed: 3.0F,
-      run_speed: 9.0F,
-    },
-    tick,
-  )
-  free_camera_example_state.val.camera = camera
-}
+fn update_camera_settings(
+  commands : @app.Commands,
+  input : @input.ButtonInput[@window.KeyCode],
+  camera_query : @ecs.Query2[
+    @camera_controller.FreeCamera,
+    @camera_controller.FreeCameraState,
+  ],
+) -> Unit {
+  try! camera_query.for_each(fn(entity, free_camera, free_camera_state) {
+    let mut next_camera = free_camera
+    let mut camera_changed = false
 
-///|
-fn spawn_lights(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
-  let light_a = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
-    light_a,
-    @pbr.PointLight::new(
-      @sprite.Color::new(1.0F, 0.71F, 0.49F, 1.0F),
-      1500.0F,
-      20.0F,
-      true,
-    ),
-    tick,
-  )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(light_a, @transform.Transform::from_xyz(0.0F, 3.0F, 0.0F), tick)
-
-  let light_b = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(light_b, @pbr.PointLight::default(), tick)
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(light_b, @transform.Transform::from_xyz(-3.5F, 3.0F, 0.0F), tick)
-
-  let light_c = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
-    light_c,
-    @pbr.PointLight::new(
-      @sprite.Color::new(1.0F, 0.44F, 0.44F, 1.0F),
-      1200.0F,
-      20.0F,
-      true,
-    ),
-    tick,
-  )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(light_c, @transform.Transform::from_xyz(0.0F, -0.5F, 0.0F), tick)
-}
-
-///|
-fn spawn_world(world : @ecs.World) -> Unit {
-  let white = @pbr.MeshMaterial3d::new(
-    @pbr.standard_material_add(
-      @pbr.StandardMaterial::from_color(@sprite.Color::white()),
-    ),
-  )
-  let blue = @pbr.MeshMaterial3d::new(
-    @pbr.standard_material_add(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::new(0.11F, 0.31F, 0.66F, 1.0F),
-      ),
-    ),
-  )
-  let red = @pbr.MeshMaterial3d::new(
-    @pbr.standard_material_add(
-      @pbr.StandardMaterial::from_color(
-        @sprite.Color::new(0.25F, 0.03F, 0.05F, 1.0F),
-      ),
-    ),
-  )
-
-  @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(10.0F, 10.0F)),
-      ),
-    ),
-    white,
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-
-  @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(10.0F, 10.0F)),
-      ),
-    ),
-    white,
-    @transform.Transform::from_xyz(0.0F, -0.01F, 0.0F).with_rotation(
-      @math.Quat::from_rotation_x(@math.pi()),
-    ),
-  ).spawn(world)
-  |> ignore
-
-  @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(0.5F)),
-      ),
-    ),
-    blue,
-    @transform.Transform::from_xyz(3.0F, 1.5F, 0.0F),
-  ).spawn(world)
-  |> ignore
-
-  @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(0.2F, 4.0F, 3.0F),
-        ),
-      ),
-    ),
-    white,
-    @transform.Transform::from_xyz(-3.0F, 2.0F, 0.0F),
-  ).spawn(world)
-  |> ignore
-
-  @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
-        ),
-      ),
-    ),
-    blue,
-    @transform.Transform::from_xyz(-4.2F, 0.5F, 0.0F),
-  ).spawn(world)
-  |> ignore
-
-  @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
-        ),
-      ),
-    ),
-    red,
-    @transform.Transform::from_xyz(3.0F, -2.0F, 0.0F).with_rotation(
-      @math.Quat::from_rotation_y(@math.pi() / 4.0F)
-      .mul(@math.Quat::from_rotation_x(@math.pi() / 4.0F))
-      .normalize(),
-    ),
-  ).spawn(world)
-  |> ignore
-}
-
-///|
-fn update_camera_settings(world : @ecs.World) -> Unit {
-  let camera = free_camera_example_state.val.camera
-  if camera.is_placeholder() {
-    return
-  }
-  let tick = world.read_change_tick()
-  let config_store = world.component(@camera_controller.ecs_key_free_camera)
-  let state_store = world.component(
-    @camera_controller.ecs_key_free_camera_state,
-  )
-
-  if config_store.get(camera) is Some(config) {
-    let mut next = config
-    if @input.key_pressed(@window.KeyCode::KeyZ) {
-      next = @camera_controller.FreeCamera::{
-        ..next,
-        sensitivity: if next.sensitivity - 0.005F < 0.005F {
+    if input.pressed(@window.KeyCode::KeyZ) {
+      next_camera = @camera_controller.FreeCamera::{
+        ..next_camera,
+        sensitivity: if next_camera.sensitivity - 0.005F < 0.005F {
           0.005F
         } else {
-          next.sensitivity - 0.005F
+          next_camera.sensitivity - 0.005F
         },
       }
+      camera_changed = true
     }
-    if @input.key_pressed(@window.KeyCode::KeyX) {
-      next = @camera_controller.FreeCamera::{
-        ..next,
-        sensitivity: next.sensitivity + 0.005F,
+    if input.pressed(@window.KeyCode::KeyX) {
+      next_camera = @camera_controller.FreeCamera::{
+        ..next_camera,
+        sensitivity: next_camera.sensitivity + 0.005F,
       }
+      camera_changed = true
     }
-    if @input.key_pressed(@window.KeyCode::KeyC) {
-      next = @camera_controller.FreeCamera::{
-        ..next,
-        friction: if next.friction - 0.2F < 0.0F {
+    if input.pressed(@window.KeyCode::KeyC) {
+      next_camera = @camera_controller.FreeCamera::{
+        ..next_camera,
+        friction: if next_camera.friction - 0.2F < 0.0F {
           0.0F
         } else {
-          next.friction - 0.2F
+          next_camera.friction - 0.2F
         },
       }
+      camera_changed = true
     }
-    if @input.key_pressed(@window.KeyCode::KeyV) {
-      next = @camera_controller.FreeCamera::{
-        ..next,
-        friction: next.friction + 0.2F,
+    if input.pressed(@window.KeyCode::KeyV) {
+      next_camera = @camera_controller.FreeCamera::{
+        ..next_camera,
+        friction: next_camera.friction + 0.2F,
       }
+      camera_changed = true
     }
-    if @input.key_pressed(@window.KeyCode::KeyF) {
-      next = @camera_controller.FreeCamera::{
-        ..next,
-        scroll_factor: if next.scroll_factor - 0.02F < 0.02F {
+    if input.pressed(@window.KeyCode::KeyF) {
+      next_camera = @camera_controller.FreeCamera::{
+        ..next_camera,
+        scroll_factor: if next_camera.scroll_factor - 0.02F < 0.02F {
           0.02F
         } else {
-          next.scroll_factor - 0.02F
+          next_camera.scroll_factor - 0.02F
         },
       }
+      camera_changed = true
     }
-    if @input.key_pressed(@window.KeyCode::KeyG) {
-      next = @camera_controller.FreeCamera::{
-        ..next,
-        scroll_factor: next.scroll_factor + 0.02F,
+    if input.pressed(@window.KeyCode::KeyG) {
+      next_camera = @camera_controller.FreeCamera::{
+        ..next_camera,
+        scroll_factor: next_camera.scroll_factor + 0.02F,
       }
+      camera_changed = true
     }
-    config_store.set(camera, next, tick) |> ignore
-  }
+    if camera_changed {
+      commands.entity(entity).insert_component(next_camera)
+    }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyB) {
-    if state_store.get(camera) is Some(state) {
-      state_store.set(
-        camera,
-        @camera_controller.FreeCameraState::{ ..state, enabled: !state.enabled },
-        tick,
-      )
-      |> ignore
+    if input.just_pressed(@window.KeyCode::KeyB) {
+      commands
+      .entity(entity)
+      .insert_component(@camera_controller.FreeCameraState::{
+        ..free_camera_state,
+        enabled: !free_camera_state.enabled,
+      })
     }
-  }
+  })
 }
 
 ///|
-fn update_text(world : @ecs.World) -> Unit {
-  let camera = free_camera_example_state.val.camera
-  if camera.is_placeholder() {
-    return
-  }
-  if free_camera_example_state.val.info_text is Some(handle) {
-    let config_store = world.component(@camera_controller.ecs_key_free_camera)
-    let state_store = world.component(
-      @camera_controller.ecs_key_free_camera_state,
+fn update_text(
+  info_text_query : @ecs.Query1[InfoText],
+  camera_query : @ecs.Query2[
+    @camera_controller.FreeCamera,
+    @camera_controller.FreeCameraState,
+  ],
+) -> Unit {
+  guard (try! info_text_query.single()) is Some(info_text) else { return }
+  let content_ref : Ref[String?] = Ref::new(None)
+  try! camera_query.for_each(fn(_entity, free_camera, free_camera_state) {
+    content_ref.val = Some(
+      "Enabled: " +
+      free_camera_state.enabled.to_string() +
+      ",\nSensitivity: " +
+      format_float(free_camera.sensitivity, 3) +
+      "\nFriction: " +
+      format_float(free_camera.friction, 1) +
+      "\nScroll factor: " +
+      format_float(free_camera.scroll_factor, 2) +
+      "\nWalk Speed: " +
+      format_float(
+        free_camera.walk_speed * free_camera_state.speed_multiplier,
+        2,
+      ) +
+      "\nRun Speed: " +
+      format_float(
+        free_camera.run_speed * free_camera_state.speed_multiplier,
+        2,
+      ) +
+      "\nSpeed: " +
+      format_float(free_camera_state.velocity.length(), 2),
     )
-    if config_store.get(camera) is Some(config) {
-      if state_store.get(camera) is Some(state) {
-        @text.text_set_content(
-          handle,
-          "Enabled: " +
-          state.enabled.to_string() +
-          "\nSensitivity: " +
-          format_float(config.sensitivity, 3) +
-          "\nFriction: " +
-          format_float(config.friction, 1) +
-          "\nScroll factor: " +
-          format_float(config.scroll_factor, 2) +
-          "\nWalk Speed: " +
-          format_float(config.walk_speed * state.speed_multiplier, 2) +
-          "\nRun Speed: " +
-          format_float(config.run_speed * state.speed_multiplier, 2) +
-          "\nSpeed: " +
-          format_float(state.velocity.length(), 2),
-        )
-      }
-    }
-  }
+  })
+  guard content_ref.val is Some(content) else { return }
+  @text.text_set_content(info_text.handle, content)
+}
+
+///|
+fn spawn_lights(commands : @app.Commands) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @pbr.PointLight::new(
+          @sprite.Color::new(1.0F, 0.71F, 0.49F, 1.0F),
+          1500.0F,
+          20.0F,
+          true,
+        ),
+        @transform.Transform::from_xyz(0.0F, 3.0F, 0.0F),
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @pbr.PointLight::default(),
+        @transform.Transform::from_xyz(-3.5F, 3.0F, 0.0F),
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @pbr.PointLight::new(
+          @sprite.Color::new(1.0F, 0.44F, 0.44F, 1.0F),
+          1200.0F,
+          20.0F,
+          true,
+        ),
+        @transform.Transform::from_xyz(0.0F, -0.5F, 0.0F),
+      ),
+    ),
+  )
+}
+
+///|
+fn spawn_world(
+  commands : @app.Commands,
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  meshes : @app.ResMut[@asset.Assets[@pbr.Mesh]],
+) -> Unit {
+  let cube = meshes.get_ref().val.add(
+    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+  )
+  let floor = meshes.get_ref().val.add(
+    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(10.0F, 10.0F)),
+  )
+  let sphere = meshes.get_ref().val.add(
+    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(0.5F)),
+  )
+  let wall = meshes.get_ref().val.add(
+    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.2F, 4.0F, 3.0F)),
+  )
+
+  let blue_material = materials.get_ref().val.add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.11F, 0.31F, 0.66F, 1.0F),
+    ),
+  )
+  let red_material = materials.get_ref().val.add(
+    @pbr.StandardMaterial::from_color(
+      @sprite.Color::new(0.25F, 0.03F, 0.05F, 1.0F),
+    ),
+  )
+  let white_material = materials.get_ref().val.add(
+    @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+  )
+
+  ignore(
+    commands.spawn(
+      (@pbr.Mesh3d::new(floor), @pbr.MeshMaterial3d::new(white_material)),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(floor),
+        @pbr.MeshMaterial3d::new(white_material),
+        @transform.Transform::from_xyz(0.0F, -0.01F, 0.0F).with_rotation(
+          @math.Quat::from_rotation_x(@math.pi()),
+        ),
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(sphere),
+        @pbr.MeshMaterial3d::new(blue_material),
+        @transform.Transform::from_xyz(3.0F, 1.5F, 0.0F),
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(wall),
+        @pbr.MeshMaterial3d::new(white_material),
+        @transform.Transform::from_xyz(-3.0F, 2.0F, 0.0F),
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(cube),
+        @pbr.MeshMaterial3d::new(blue_material),
+        @transform.Transform::from_xyz(-4.2F, 0.5F, 0.0F),
+      ),
+    ),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(cube),
+        @pbr.MeshMaterial3d::new(red_material),
+        @transform.Transform::from_xyz(3.0F, -2.0F, 0.0F).with_rotation(
+          @math.Quat::from_rotation_y(@math.pi() / 4.0F)
+          .mul(@math.Quat::from_rotation_x(@math.pi() / 4.0F))
+          .normalize(),
+        ),
+      ),
+    ),
+  )
+}
+
+///|
+fn camera_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app.add_systems(@app.Startup, @app.system(@app.system_param(spawn_camera)))
+}
+
+///|
+fn camera_settings_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  let update_camera_settings_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param3(update_camera_settings),
+  )
+  let update_text_system : @app.SystemConfig[@ecs.World] = @app.system(
+    @app.system_param2(update_text),
+  )
+  app
+  .add_systems(@app.PostStartup, @app.system(@app.system_param3(spawn_text)))
+  .add_systems(
+    @app.Update,
+    (update_camera_settings_system, update_text_system) |> @app.chain(),
+  )
+}
+
+///|
+fn scene_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  app
+  .add_systems(@app.Startup, @app.system(@app.system_param(spawn_lights)))
+  .add_systems(@app.Startup, @app.system(@app.system_param3(spawn_world)))
 }
 
 ///|
 fn main {
-  free_camera_example_state.val.camera = @core.Entity::placeholder()
-  free_camera_example_state.val.info_text = None
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
-  .add_plugins([@camera_controller.free_camera_plugin])
-  .add_systems(@app.Startup, @app.system(spawn_camera))
-  .add_systems(@app.Startup, @app.system(spawn_overlay))
-  .add_systems(@app.Startup, @app.system(spawn_lights))
-  .add_systems(@app.Startup, @app.system(spawn_world))
-  .add_systems(@app.Update, @app.system(update_camera_settings))
-  .add_systems(@app.Update, @app.system(update_text))
+  .add_plugins(@mgstudio.default_plugins())
+  .add_plugins([
+    @camera_controller.free_camera_plugin, camera_plugin, camera_settings_plugin,
+    scene_plugin,
+  ])
   .run()
 }
