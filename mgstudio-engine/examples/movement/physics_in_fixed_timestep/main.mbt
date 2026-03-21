@@ -295,7 +295,11 @@ fn spawn_player(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_environment(world : @ecs.World) -> Unit {
-  let sphere_mesh = @pbr.Mesh3d::from_sphere(0.3F)
+  let sphere_mesh = @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(0.3F)),
+    ),
+  )
   let sphere_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.73F, 0.86F, 0.95F)),
   )

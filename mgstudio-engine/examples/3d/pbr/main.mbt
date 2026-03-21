@@ -90,8 +90,12 @@ fn uv_sphere_mesh(
     }
   }
 
-  @engine_pbr.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+  @engine_pbr.Mesh3d::new(
+    @engine_pbr.mesh_assets_mut_or_abort().val.add(
+      @engine_pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+      ),
+    ),
   )
 }
 

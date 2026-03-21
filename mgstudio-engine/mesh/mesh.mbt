@@ -35,8 +35,18 @@ pub fn Mesh::from_2d_geometry(geometry2d : Mesh2dGeometry) -> Mesh {
 }
 
 ///|
+pub fn Mesh2dGeometry::to_mesh(self : Mesh2dGeometry) -> Mesh {
+  Mesh::from_2d_geometry(self)
+}
+
+///|
 pub fn Mesh::from_3d_geometry(geometry3d : Mesh3dGeometry) -> Mesh {
   Mesh::{ geometry: MeshGeometry::Geometry3d(geometry3d) }
+}
+
+///|
+pub fn Mesh3dGeometry::to_mesh(self : Mesh3dGeometry) -> Mesh {
+  Mesh::from_3d_geometry(self)
 }
 
 ///|

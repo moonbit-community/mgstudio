@@ -194,30 +194,72 @@ fn setup_camera(world : @ecs.World) -> Unit {
 
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
-  @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(1000.0F, 700.0F)),
-    @sprite.ColorMaterial::new(@sprite.Color::srgb(0.2F, 0.2F, 0.3F)),
+  @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_rectangle(
+          @sprite.Rectangle::new(1000.0F, 700.0F),
+        ).to_mesh(),
+      ),
+    ),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(
+          @sprite.Color::srgb(0.2F, 0.2F, 0.3F),
+        ),
+      ),
+    ),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
-  @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(50.0F, 100.0F)),
-    @sprite.ColorMaterial::new(@sprite.Color::srgb(0.25F, 0.94F, 0.91F)),
+  @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(50.0F, 100.0F)).to_mesh(),
+      ),
+    ),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(
+          @sprite.Color::srgb(0.25F, 0.94F, 0.91F),
+        ),
+      ),
+    ),
     @transform.Transform::from_xyz(0.0F, 0.0F, 2.0F),
   ).spawn(world)
   |> ignore
 
-  @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(50.0F, 50.0F)),
-    @sprite.ColorMaterial::new(@sprite.Color::srgb(0.85F, 0.0F, 0.2F)),
+  @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(50.0F, 50.0F)).to_mesh(),
+      ),
+    ),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(
+          @sprite.Color::srgb(0.85F, 0.0F, 0.2F),
+        ),
+      ),
+    ),
     @transform.Transform::from_xyz(-450.0F, 200.0F, 2.0F),
   ).spawn(world)
   |> ignore
 
-  @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(70.0F, 50.0F)),
-    @sprite.ColorMaterial::new(@sprite.Color::srgb(0.5F, 0.8F, 0.2F)),
+  @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(70.0F, 50.0F)).to_mesh(),
+      ),
+    ),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(
+          @sprite.Color::srgb(0.5F, 0.8F, 0.2F),
+        ),
+      ),
+    ),
     @transform.Transform::from_xyz(450.0F, -150.0F, 2.0F),
   ).spawn(world)
   |> ignore

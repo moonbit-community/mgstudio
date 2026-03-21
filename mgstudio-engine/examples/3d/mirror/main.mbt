@@ -320,7 +320,11 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Ground (Bevy uses a circle mesh; mgstudio currently uses a large plane).
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_plane(400.0F, 400.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(400.0F, 400.0F)),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
@@ -367,7 +371,11 @@ fn setup(world : @ecs.World) -> Unit {
   )
   mirror_state.val.mirror_material = Some(mirror_material)
   let mirror_entity = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_plane(300.0F, 150.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(300.0F, 150.0F)),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(mirror_material),
     mirror_transform,
   ).spawn(world)

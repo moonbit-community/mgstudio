@@ -16,6 +16,12 @@
 pub type Color = @color.Color
 
 ///|
+pub type Mesh = @mesh.Mesh
+
+///|
+pub type Mesh2dGeometry = @mesh.Mesh2dGeometry
+
+///|
 pub type ColorGradingRange = @post_process.ColorGradingRange
 
 ///|
@@ -444,12 +450,12 @@ fn[T] render2d_asset_store_mut_or_abort() -> Ref[@asset.Assets[T]] {
 }
 
 ///|
-fn mesh_assets_or_abort() -> @asset.Assets[@mesh.Mesh] {
+pub fn mesh_assets_or_abort() -> @asset.Assets[@mesh.Mesh] {
   render2d_asset_store_or_abort()
 }
 
 ///|
-fn mesh_assets_mut_or_abort() -> Ref[@asset.Assets[@mesh.Mesh]] {
+pub fn mesh_assets_mut_or_abort() -> Ref[@asset.Assets[@mesh.Mesh]] {
   render2d_asset_store_mut_or_abort()
 }
 
@@ -1872,114 +1878,120 @@ fn capsule_ring_to_mesh2d_geometry(
 }
 
 ///|
-pub fn Mesh2d::from_capsule(capsule : Capsule2d) -> Mesh2d {
-  Mesh2d::from_geometry(capsule_to_mesh2d_geometry(capsule))
+pub fn mesh2d_geometry_capsule(capsule : Capsule2d) -> Mesh2dGeometry {
+  capsule_to_mesh2d_geometry(capsule)
 }
 
 ///|
-pub fn Mesh2d::from_circular_sector(sector : CircularSector) -> Mesh2d {
-  Mesh2d::from_geometry(circular_sector_to_mesh2d_geometry(sector))
+pub fn mesh2d_geometry_circular_sector(
+  sector : CircularSector,
+) -> Mesh2dGeometry {
+  circular_sector_to_mesh2d_geometry(sector)
 }
 
 ///|
-pub fn Mesh2d::from_circular_segment(segment : CircularSegment) -> Mesh2d {
-  Mesh2d::from_geometry(circular_segment_to_mesh2d_geometry(segment))
+pub fn mesh2d_geometry_circular_segment(
+  segment : CircularSegment,
+) -> Mesh2dGeometry {
+  circular_segment_to_mesh2d_geometry(segment)
 }
 
 ///|
-pub fn Mesh2d::from_circle(circle : Circle) -> Mesh2d {
-  Mesh2d::from_geometry(circle_to_mesh2d_geometry(circle))
+pub fn mesh2d_geometry_circle(circle : Circle) -> Mesh2dGeometry {
+  circle_to_mesh2d_geometry(circle)
 }
 
 ///|
-pub fn Mesh2d::from_ellipse(ellipse : Ellipse) -> Mesh2d {
-  Mesh2d::from_geometry(ellipse_to_mesh2d_geometry(ellipse))
+pub fn mesh2d_geometry_ellipse(ellipse : Ellipse) -> Mesh2dGeometry {
+  ellipse_to_mesh2d_geometry(ellipse)
 }
 
 ///|
-pub fn Mesh2d::from_annulus(annulus : Annulus) -> Mesh2d {
-  Mesh2d::from_geometry(annulus_to_mesh2d_geometry(annulus))
+pub fn mesh2d_geometry_annulus(annulus : Annulus) -> Mesh2dGeometry {
+  annulus_to_mesh2d_geometry(annulus)
 }
 
 ///|
-pub fn Mesh2d::from_ring(ring : Ring2d) -> Mesh2d {
-  Mesh2d::from_geometry(ring_to_mesh2d_geometry(ring))
+pub fn mesh2d_geometry_ring(ring : Ring2d) -> Mesh2dGeometry {
+  ring_to_mesh2d_geometry(ring)
 }
 
 ///|
-pub fn Mesh2d::from_circular_sector_ring(ring : CircularSectorRing) -> Mesh2d {
-  Mesh2d::from_geometry(circular_sector_ring_to_mesh2d_geometry(ring))
+pub fn mesh2d_geometry_circular_sector_ring(
+  ring : CircularSectorRing,
+) -> Mesh2dGeometry {
+  circular_sector_ring_to_mesh2d_geometry(ring)
 }
 
 ///|
-pub fn Mesh2d::from_circular_segment_ring(ring : CircularSegmentRing) -> Mesh2d {
-  Mesh2d::from_geometry(circular_segment_ring_to_mesh2d_geometry(ring))
+pub fn mesh2d_geometry_circular_segment_ring(
+  ring : CircularSegmentRing,
+) -> Mesh2dGeometry {
+  circular_segment_ring_to_mesh2d_geometry(ring)
 }
 
 ///|
-pub fn Mesh2d::from_ellipse_ring(ring : EllipseRing) -> Mesh2d {
-  Mesh2d::from_geometry(ellipse_ring_to_mesh2d_geometry(ring))
+pub fn mesh2d_geometry_ellipse_ring(ring : EllipseRing) -> Mesh2dGeometry {
+  ellipse_ring_to_mesh2d_geometry(ring)
 }
 
 ///|
-pub fn Mesh2d::from_capsule_ring(ring : Capsule2dRing) -> Mesh2d {
-  Mesh2d::from_geometry(capsule_ring_to_mesh2d_geometry(ring))
+pub fn mesh2d_geometry_capsule_ring(ring : Capsule2dRing) -> Mesh2dGeometry {
+  capsule_ring_to_mesh2d_geometry(ring)
 }
 
 ///|
-pub fn Mesh2d::from_rhombus_ring(ring : RhombusRing) -> Mesh2d {
-  Mesh2d::from_geometry(rhombus_ring_to_mesh2d_geometry(ring))
+pub fn mesh2d_geometry_rhombus_ring(ring : RhombusRing) -> Mesh2dGeometry {
+  rhombus_ring_to_mesh2d_geometry(ring)
 }
 
 ///|
-pub fn Mesh2d::from_rectangle_ring(ring : RectangleRing) -> Mesh2d {
-  Mesh2d::from_geometry(rectangle_ring_to_mesh2d_geometry(ring))
+pub fn mesh2d_geometry_rectangle_ring(ring : RectangleRing) -> Mesh2dGeometry {
+  rectangle_ring_to_mesh2d_geometry(ring)
 }
 
 ///|
-pub fn Mesh2d::from_regular_polygon_ring(ring : RegularPolygonRing) -> Mesh2d {
-  Mesh2d::from_geometry(regular_polygon_ring_to_mesh2d_geometry(ring))
+pub fn mesh2d_geometry_regular_polygon_ring(
+  ring : RegularPolygonRing,
+) -> Mesh2dGeometry {
+  regular_polygon_ring_to_mesh2d_geometry(ring)
 }
 
 ///|
-pub fn Mesh2d::from_triangle_ring(ring : Triangle2dRing) -> Mesh2d {
-  Mesh2d::from_geometry(triangle_ring_to_mesh2d_geometry(ring))
+pub fn mesh2d_geometry_triangle_ring(ring : Triangle2dRing) -> Mesh2dGeometry {
+  triangle_ring_to_mesh2d_geometry(ring)
 }
 
 ///|
-pub fn Mesh2d::from_rhombus(rhombus : Rhombus) -> Mesh2d {
-  Mesh2d::from_geometry(rhombus_to_mesh2d_geometry(rhombus))
+pub fn mesh2d_geometry_rhombus(rhombus : Rhombus) -> Mesh2dGeometry {
+  rhombus_to_mesh2d_geometry(rhombus)
 }
 
 ///|
-pub fn Mesh2d::from_regular_polygon(polygon : RegularPolygon) -> Mesh2d {
-  Mesh2d::from_geometry(regular_polygon_to_mesh2d_geometry(polygon))
+pub fn mesh2d_geometry_regular_polygon(
+  polygon : RegularPolygon,
+) -> Mesh2dGeometry {
+  regular_polygon_to_mesh2d_geometry(polygon)
 }
 
 ///|
-pub fn Mesh2d::from_triangle(triangle : Triangle2d) -> Mesh2d {
-  Mesh2d::from_geometry(triangle_to_mesh2d_geometry(triangle))
+pub fn mesh2d_geometry_triangle(triangle : Triangle2d) -> Mesh2dGeometry {
+  triangle_to_mesh2d_geometry(triangle)
 }
 
 ///|
-pub fn Mesh2d::from_segment(segment : Segment2d) -> Mesh2d {
-  Mesh2d::from_geometry(segment_to_mesh2d_geometry(segment))
+pub fn mesh2d_geometry_segment(segment : Segment2d) -> Mesh2dGeometry {
+  segment_to_mesh2d_geometry(segment)
 }
 
 ///|
-pub fn Mesh2d::from_polyline(polyline : Polyline2d) -> Mesh2d {
-  Mesh2d::from_geometry(polyline_to_mesh2d_geometry(polyline))
+pub fn mesh2d_geometry_polyline(polyline : Polyline2d) -> Mesh2dGeometry {
+  polyline_to_mesh2d_geometry(polyline)
 }
 
 ///|
-pub fn Mesh2d::from_rectangle(rectangle : Rectangle) -> Mesh2d {
-  Mesh2d::from_geometry(rectangle_to_mesh2d_geometry(rectangle))
-}
-
-///|
-pub fn Mesh2d::from_geometry(geometry : @mesh.Mesh2dGeometry) -> Mesh2d {
-  let mesh = @mesh.Mesh::from_2d_geometry(geometry)
-  Mesh2d::new(mesh_asset_add(mesh))
+pub fn mesh2d_geometry_rectangle(rectangle : Rectangle) -> Mesh2dGeometry {
+  rectangle_to_mesh2d_geometry(rectangle)
 }
 
 ///|
@@ -2174,19 +2186,6 @@ pub struct Mesh2dBundle {
 }
 
 ///|
-pub fn Mesh2dBundle::new(
-  mesh : Mesh2d,
-  material : ColorMaterial,
-  transform : @transform.Transform,
-) -> Mesh2dBundle {
-  Mesh2dBundle::new_with_mesh_material(
-    mesh,
-    MeshMaterial2d::from_color_material(material),
-    transform,
-  )
-}
-
-///|
 pub fn Mesh2dBundle::new_with_mesh_material(
   mesh : Mesh2d,
   material : MeshMaterial2d[ColorMaterialAsset],
@@ -2201,21 +2200,6 @@ pub fn Mesh2dBundle::new_with_mesh_material(
     inherited_visibility: @visibility.InheritedVisibility::new(true),
     view_visibility: @visibility.ViewVisibility::new(true),
   }
-}
-
-///|
-pub fn Mesh2dBundle::new_with_layers(
-  mesh : Mesh2d,
-  material : ColorMaterial,
-  transform : @transform.Transform,
-  layers : RenderLayers,
-) -> Mesh2dBundle {
-  Mesh2dBundle::new_with_mesh_material_layers(
-    mesh,
-    MeshMaterial2d::from_color_material(material),
-    transform,
-    layers,
-  )
 }
 
 ///|
@@ -3777,6 +3761,38 @@ pub fn Mesh2dBundle::spawn(
   let mesh_id = render2d_upload_mesh_handle(self.mesh.mesh)
   try! (world.set(e, ecs_key_gpu_mesh2d, GpuMesh2d::new(mesh_id)) |> ignore)
   e
+}
+
+///|
+pub impl @app.CommandSpawnComponents for Mesh2dBundle with spawn_components(
+  self,
+  world,
+  entity,
+  _tick,
+  loc~,
+) {
+  ignore(loc)
+  try! (world.set(entity, ecs_key_mesh2d, self.mesh) |> ignore)
+  try! (world.set(entity, ecs_key_mesh_material2d, self.material) |> ignore)
+  try! (world.set(entity, ecs_key_render_layers, self.layers) |> ignore)
+  try! (world.set(entity, @visibility.ecs_key_visibility, self.visibility)
+  |> ignore)
+  try! (world.set(
+    entity,
+    @visibility.ecs_key_inherited_visibility,
+    self.inherited_visibility,
+  )
+  |> ignore)
+  try! (world.set(
+    entity,
+    @visibility.ecs_key_view_visibility,
+    self.view_visibility,
+  )
+  |> ignore)
+  try! (world.set(entity, @transform.ecs_key_transform, self.transform)
+  |> ignore)
+  let mesh_id = render2d_upload_mesh_handle(self.mesh.mesh)
+  try! (world.set(entity, ecs_key_gpu_mesh2d, GpuMesh2d::new(mesh_id)) |> ignore)
 }
 
 ///|

@@ -45,7 +45,13 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.StandardMaterial::from_color(@sprite.Color::white()),
   )
   let cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(material),
     @transform.Transform::from_translation(entity_spawn),
   ).spawn(world)

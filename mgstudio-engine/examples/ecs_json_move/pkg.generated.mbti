@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/ecs_json_move"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
@@ -10,6 +14,7 @@ pub struct Position {
   mut x : Float
   mut y : Float
 }
+pub impl @ecs.Component for Position
 pub impl Eq for Position
 pub impl Show for Position
 
@@ -17,6 +22,7 @@ pub struct Velocity {
   x : Float
   y : Float
 }
+pub impl @ecs.Component for Velocity
 pub impl Eq for Velocity
 pub impl Show for Velocity
 

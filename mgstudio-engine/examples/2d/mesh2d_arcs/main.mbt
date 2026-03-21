@@ -81,7 +81,7 @@ fn int_to_float(value : Int) -> Float {
 fn spawn_arc_shape(
   world : @ecs.World,
   mesh : @sprite.Mesh2d,
-  material : @sprite.ColorMaterial,
+  material : @sprite.MeshMaterial2d[@sprite.ColorMaterialAsset],
   position : @math.Vec2,
   rotation : Float,
 ) -> Unit {
@@ -90,7 +90,10 @@ fn spawn_arc_shape(
     rotation,
     @math.Vec2::new(1.0F, 1.0F),
   )
-  @sprite.Mesh2dBundle::new(mesh, material, transform).spawn(world) |> ignore
+  @sprite.Mesh2dBundle::new_with_mesh_material(mesh, material, transform).spawn(
+    world,
+  )
+  |> ignore
 }
 
 ///|
@@ -105,7 +108,11 @@ fn mesh2d_arcs_setup(world : @ecs.World) -> Unit {
 
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
-  let material = @sprite.ColorMaterial::from_image(texture)
+  let material = @sprite.MeshMaterial2d::new(
+    @sprite.color_material_assets_mut_or_abort().val.add(
+      @sprite.ColorMaterialAsset::from_image(texture),
+    ),
+  )
 
   mesh2d_arcs_state.val.bounds_samples.clear()
   for i in 0..<NUM_SLICES {
@@ -118,8 +125,12 @@ fn mesh2d_arcs_setup(world : @ecs.World) -> Unit {
     let sector_rotation = -sector.half_angle()
     spawn_arc_shape(
       world,
-      @sprite.Mesh2d::from_circular_sector(
-        sector.with_uv_mask_angle(sector_rotation),
+      @sprite.Mesh2d::new(
+        @sprite.mesh_assets_mut_or_abort().val.add(
+          @sprite.mesh2d_geometry_circular_sector(
+            sector.with_uv_mask_angle(sector_rotation),
+          ).to_mesh(),
+        ),
       ),
       material,
       @math.Vec2::new(x, SECTOR_Y),
@@ -139,8 +150,12 @@ fn mesh2d_arcs_setup(world : @ecs.World) -> Unit {
     let segment_rotation = -@math.pi_half()
     spawn_arc_shape(
       world,
-      @sprite.Mesh2d::from_circular_segment(
-        segment.with_uv_mask_angle(-segment_rotation),
+      @sprite.Mesh2d::new(
+        @sprite.mesh_assets_mut_or_abort().val.add(
+          @sprite.mesh2d_geometry_circular_segment(
+            segment.with_uv_mask_angle(-segment_rotation),
+          ).to_mesh(),
+        ),
       ),
       material,
       @math.Vec2::new(x, SEGMENT_Y),

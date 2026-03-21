@@ -261,9 +261,19 @@ fn bloom_setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_circle(@sprite.Circle::new(100.0F)),
-    @sprite.ColorMaterial::new(@sprite.Color::srgb(7.5F, 0.0F, 7.5F)),
+  @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_circle(@sprite.Circle::new(100.0F)).to_mesh(),
+      ),
+    ),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(
+          @sprite.Color::srgb(7.5F, 0.0F, 7.5F),
+        ),
+      ),
+    ),
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-200.0F, 0.0F),
       0.0F,
@@ -272,9 +282,21 @@ fn bloom_setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_regular_polygon(@sprite.RegularPolygon::new(100.0F, 6)),
-    @sprite.ColorMaterial::new(@sprite.Color::srgb(6.25F, 9.4F, 9.1F)),
+  @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_regular_polygon(
+          @sprite.RegularPolygon::new(100.0F, 6),
+        ).to_mesh(),
+      ),
+    ),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(
+          @sprite.Color::srgb(6.25F, 9.4F, 9.1F),
+        ),
+      ),
+    ),
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(200.0F, 0.0F),
       0.0F,

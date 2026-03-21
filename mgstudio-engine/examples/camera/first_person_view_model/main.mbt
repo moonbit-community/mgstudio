@@ -131,7 +131,13 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   .insert(view_model_camera, @hierarchy.Parent::new(player), tick)
 
   let arm = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(0.1F, 0.1F, 0.5F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(0.1F, 0.1F, 0.5F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
@@ -160,7 +166,11 @@ fn spawn_world_model(world : @ecs.World) -> Unit {
     ),
   )
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_plane(10.0F, 10.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(10.0F, 10.0F)),
+      ),
+    ),
     floor_material,
     @transform.Transform::identity(),
   ).spawn(world)
@@ -172,14 +182,26 @@ fn spawn_world_model(world : @ecs.World) -> Unit {
     ),
   )
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(2.0F, 0.5F, 1.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(2.0F, 0.5F, 1.0F),
+        ),
+      ),
+    ),
     cube_material,
     @transform.Transform::from_xyz(0.0F, 0.25F, -3.0F),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(2.0F, 0.5F, 1.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(2.0F, 0.5F, 1.0F),
+        ),
+      ),
+    ),
     cube_material,
     @transform.Transform::from_xyz(0.75F, 1.75F, 0.0F),
   ).spawn(world)

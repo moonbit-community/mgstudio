@@ -42,7 +42,13 @@ fn setup(world : @ecs.World) -> Unit {
   let first_pass_layer = @sprite.RenderLayers::layer(1)
 
   let first_pass_cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(4.0F, 4.0F, 4.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(4.0F, 4.0F, 4.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
@@ -83,7 +89,13 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(first_pass_camera, first_pass_layer, tick)
 
   let main_pass_cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(4.0F, 4.0F, 4.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(4.0F, 4.0F, 4.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(@sprite.Color::white())

@@ -393,7 +393,11 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     tick,
   )
 
-  let cube_mesh = @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
+  let cube_mesh = @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+    ),
+  )
   let sky_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.1F, 0.6F, 1.0F, 1.0F),
@@ -418,7 +422,11 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     ),
   )
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_plane(1.0F, 1.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(1.0F, 1.0F)),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(ground_material),
     @transform.Transform::from_xyz(0.0F, -0.65F, 0.0F).with_scale(
       @math.Vec3::splat(80.0F),
@@ -448,8 +456,18 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     ),
   )
 
-  let car_body_mesh = @pbr.Mesh3d::from_cuboid(0.3F, 0.15F, 0.55F)
-  let wheel_mesh = @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
+  let car_body_mesh = @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @pbr.mesh3d_geometry_cuboid(0.3F, 0.15F, 0.55F),
+      ),
+    ),
+  )
+  let wheel_mesh = @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+    ),
+  )
   for i in 0..<N_CARS {
     let material = car_materials[i % car_materials.length()]
     spawn_car(
@@ -470,7 +488,13 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   )
   spawn_barriers(
     world,
-    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        ),
+      ),
+    ),
     barrier_material,
   )
 
@@ -484,7 +508,11 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
       @sprite.Color::new(0.4F, 0.2F, 0.2F, 1.0F),
     ),
   )
-  let tree_mesh = @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
+  let tree_mesh = @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+    ),
+  )
   spawn_trees(world, tree_mesh, tree_mesh, leaves_material, trunk_material)
 }
 

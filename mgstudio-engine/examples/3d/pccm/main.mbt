@@ -106,7 +106,13 @@ fn setup(world : @ecs.World) -> Unit {
     .with_metallic(0.0F),
   )
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(10.0F, 10.0F, 10.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(10.0F, 10.0F, 10.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(room_material),
     @transform.Transform::from_xyz(0.0F, -2.5F, -2.5F),
   ).spawn(world)
@@ -119,7 +125,13 @@ fn setup(world : @ecs.World) -> Unit {
     .with_perceptual_roughness(0.0F),
   )
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(10.0F, 2.0F, 4.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(10.0F, 2.0F, 4.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(inner_cube_material),
     @transform.Transform::from_xyz(0.0F, -4.0F, -2.5F),
   ).spawn(world)

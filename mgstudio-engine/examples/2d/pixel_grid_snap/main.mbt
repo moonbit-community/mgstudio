@@ -88,9 +88,17 @@ fn pixel_grid_snap_setup(world : @ecs.World) -> Unit {
     high_layers,
   ).spawn(world)
   let capsule = @sprite.Capsule2d::default()
-  let mesh = @sprite.Mesh2d::from_capsule(capsule)
-  let material = @sprite.ColorMaterial::new(@sprite.Color::black())
-  let mesh_handle = @sprite.Mesh2dBundle::new_with_layers(
+  let mesh = @sprite.Mesh2d::new(
+    @sprite.mesh_assets_mut_or_abort().val.add(
+      @sprite.mesh2d_geometry_capsule(capsule).to_mesh(),
+    ),
+  )
+  let material = @sprite.MeshMaterial2d::new(
+    @sprite.color_material_assets_mut_or_abort().val.add(
+      @sprite.ColorMaterialAsset::from_color(@sprite.Color::black()),
+    ),
+  )
+  let mesh_handle = @sprite.Mesh2dBundle::new_with_mesh_material_layers(
     mesh,
     material,
     @transform.Transform::from_xy_rotation_scale(

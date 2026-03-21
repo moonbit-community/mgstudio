@@ -116,8 +116,12 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
     }
   }
 
-  @pbr.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+      ),
+    ),
   )
 }
 
@@ -146,7 +150,11 @@ fn setup(world : @ecs.World) -> Unit {
   camera |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_plane(100.0F, 100.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(100.0F, 100.0F)),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(

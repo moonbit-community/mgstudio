@@ -93,7 +93,11 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   }
 
   let geometry = @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
-  @pbr.Mesh3d::from_geometry(geometry)
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(geometry),
+    ),
+  )
 }
 
 ///|
@@ -154,12 +158,20 @@ fn setup(world : @ecs.World) -> Unit {
   ]
 
   let sphere_mesh = uv_sphere_mesh(0.5F, 16, 24)
-  let cube_mesh = @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
+  let cube_mesh = @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+    ),
+  )
 
   // Opaque plane.
   spawn_mesh(
     world,
-    @pbr.Mesh3d::from_plane(6.0F, 6.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(6.0F, 6.0F)),
+      ),
+    ),
     floor_material,
     @transform.Transform::identity(),
   )

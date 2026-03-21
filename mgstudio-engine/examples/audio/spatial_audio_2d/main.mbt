@@ -153,9 +153,19 @@ fn spawn_listener_ear(
   offset_x : Float,
   color : @sprite.Color,
 ) -> Unit {
-  let ear = @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(EAR_SIZE, EAR_SIZE)),
-    @sprite.ColorMaterial::new(color),
+  let ear = @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_rectangle(
+          @sprite.Rectangle::new(EAR_SIZE, EAR_SIZE),
+        ).to_mesh(),
+      ),
+    ),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(color),
+      ),
+    ),
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(offset_x, 0.0F),
       0.0F,
@@ -182,9 +192,17 @@ fn setup(world : @ecs.World) -> Unit {
     "sounds/Windless Slopes.ogg",
   )
 
-  let emitter = @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_circle(@sprite.Circle::new(EMITTER_RADIUS)),
-    @sprite.ColorMaterial::new(color_blue()),
+  let emitter = @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_circle(@sprite.Circle::new(EMITTER_RADIUS)).to_mesh(),
+      ),
+    ),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(color_blue()),
+      ),
+    ),
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, EMITTER_Y),
       0.0F,

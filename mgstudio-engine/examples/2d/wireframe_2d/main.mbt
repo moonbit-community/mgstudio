@@ -160,15 +160,23 @@ fn wireframe_setup(world : @ecs.World) -> Unit {
 
   let tick = world.read_change_tick()
 
-  let triangle_entity = @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_triangle(
-      @sprite.Triangle2d::new(
-        @math.Vec2::new(0.0F, 50.0F),
-        @math.Vec2::new(-50.0F, -50.0F),
-        @math.Vec2::new(50.0F, -50.0F),
+  let triangle_entity = @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_triangle(
+          @sprite.Triangle2d::new(
+            @math.Vec2::new(0.0F, 50.0F),
+            @math.Vec2::new(-50.0F, -50.0F),
+            @math.Vec2::new(50.0F, -50.0F),
+          ),
+        ).to_mesh(),
       ),
     ),
-    @sprite.ColorMaterial::new(black),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(black),
+      ),
+    ),
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(-150.0F, 0.0F),
       0.0F,
@@ -179,9 +187,19 @@ fn wireframe_setup(world : @ecs.World) -> Unit {
   .component(@sprite.ecs_key_no_wireframe2d)
   .insert(triangle_entity, @sprite.NoWireframe2d::default(), tick)
 
-  @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(100.0F, 100.0F)),
-    @sprite.ColorMaterial::new(black),
+  @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_rectangle(
+          @sprite.Rectangle::new(100.0F, 100.0F),
+        ).to_mesh(),
+      ),
+    ),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(black),
+      ),
+    ),
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(0.0F, 0.0F),
       0.0F,
@@ -190,9 +208,17 @@ fn wireframe_setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let circle_entity = @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_circle(@sprite.Circle::new(50.0F)),
-    @sprite.ColorMaterial::new(black),
+  let circle_entity = @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_circle(@sprite.Circle::new(50.0F)).to_mesh(),
+      ),
+    ),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(black),
+      ),
+    ),
     @transform.Transform::from_xy_rotation_scale(
       @math.Vec2::new(150.0F, 0.0F),
       0.0F,

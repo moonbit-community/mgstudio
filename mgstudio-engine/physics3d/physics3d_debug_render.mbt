@@ -107,7 +107,15 @@ fn physics3d_debug_ensure_assets() -> Unit {
   if state.line_mesh is Some(_) {
     return
   }
-  state.line_mesh = Some(@pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F))
+  state.line_mesh = Some(
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        ),
+      ),
+    ),
+  )
   state.dynamic_material = Some(
     physics3d_debug_make_material(@sprite.Color::new(0.94F, 0.22F, 0.34F, 0.9F)),
   )

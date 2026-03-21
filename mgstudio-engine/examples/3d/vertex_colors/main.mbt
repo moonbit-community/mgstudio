@@ -90,8 +90,17 @@ fn colorful_cube_mesh() -> @pbr.Mesh3d {
       ),
     )
   }
-  @pbr.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new_with_colors(positions, uvs, colors, Some(indices)),
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new_with_colors(
+          positions,
+          uvs,
+          colors,
+          Some(indices),
+        ),
+      ),
+    ),
   )
 }
 
@@ -100,7 +109,11 @@ fn setup(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_plane(5.0F, 5.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(5.0F, 5.0F)),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(

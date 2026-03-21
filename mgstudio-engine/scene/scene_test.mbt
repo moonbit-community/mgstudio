@@ -163,7 +163,13 @@ test "scene: SceneRoot spawns children and marks ready" {
       ),
     )
     let node = @scene.SceneNode3d::new(
-      @pbr.Mesh3d::from_cuboid(1.0F, 2.0F, 3.0F),
+      @pbr.Mesh3d::new(
+        @pbr.mesh_assets_mut_or_abort().val.add(
+          @pbr.Mesh::from_3d_geometry(
+            @pbr.mesh3d_geometry_cuboid(1.0F, 2.0F, 3.0F),
+          ),
+        ),
+      ),
       material,
       @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
       Some(@visibility.VisibilityRange::new(0.0F, 0.0F, 4.0F, 5.0F, false)),
@@ -266,7 +272,13 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
     )
     let first_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
-        @pbr.Mesh3d::from_cuboid(1.0F, 2.0F, 3.0F),
+        @pbr.Mesh3d::new(
+          @pbr.mesh_assets_mut_or_abort().val.add(
+            @pbr.Mesh::from_3d_geometry(
+              @pbr.mesh3d_geometry_cuboid(1.0F, 2.0F, 3.0F),
+            ),
+          ),
+        ),
         material,
         @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
         None,
@@ -275,7 +287,13 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
     ])
     let second_scene = @scene.Scene::new([
       @scene.SceneNode3d::new(
-        @pbr.Mesh3d::from_cuboid(4.0F, 5.0F, 6.0F),
+        @pbr.Mesh3d::new(
+          @pbr.mesh_assets_mut_or_abort().val.add(
+            @pbr.Mesh::from_3d_geometry(
+              @pbr.mesh3d_geometry_cuboid(4.0F, 5.0F, 6.0F),
+            ),
+          ),
+        ),
         material,
         @transform.Transform::from_xyz(9.0F, 8.0F, 7.0F),
         None,

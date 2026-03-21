@@ -106,7 +106,13 @@ fn spawn_wall_panel(world : @ecs.World, side : @math.Vec3, level : Int) -> Unit 
   )
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(4.0F, 1.0F, 0.04F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(4.0F, 1.0F, 0.04F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(material),
     @transform.Transform::from_xyz(position.x, position.y, position.z).looking_at(
       target,

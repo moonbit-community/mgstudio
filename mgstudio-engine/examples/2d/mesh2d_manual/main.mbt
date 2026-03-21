@@ -33,14 +33,21 @@ fn main {
 ///|
 fn mesh2d_manual_setup(world : @ecs.World) -> Unit {
   let star = build_star_mesh()
-  let material = @sprite.ColorMaterial::new(@sprite.Color::white())
+  let material = @sprite.MeshMaterial2d::new(
+    @sprite.color_material_assets_mut_or_abort().val.add(
+      @sprite.ColorMaterialAsset::from_color(@sprite.Color::white()),
+    ),
+  )
   let transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, 0.0F),
     0.0F,
     @math.Vec2::new(1.0F, 1.0F),
     z=0.0F,
   )
-  @sprite.Mesh2dBundle::new(star, material, transform).spawn(world) |> ignore
+  @sprite.Mesh2dBundle::new_with_mesh_material(star, material, transform).spawn(
+    world,
+  )
+  |> ignore
 
   let camera = @sprite.Camera::default()
   @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
@@ -93,5 +100,9 @@ fn build_star_mesh() -> @sprite.Mesh2d {
     colors,
     Some(indices),
   )
-  @sprite.Mesh2d::from_geometry(geometry)
+  @sprite.Mesh2d::new(
+    @sprite.mesh_assets_mut_or_abort().val.add(
+      @sprite.Mesh::from_2d_geometry(geometry),
+    ),
+  )
 }

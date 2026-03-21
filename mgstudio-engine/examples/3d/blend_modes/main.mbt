@@ -302,7 +302,11 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
   }
 
   let geometry = @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
-  @pbr.Mesh3d::from_geometry(geometry)
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(geometry),
+    ),
+  )
 }
 
 ///|
@@ -480,7 +484,11 @@ fn setup(world : @ecs.World) -> Unit {
   register_material(black_material, false, true)
   register_material(white_material, false, true)
 
-  let plane_mesh = @pbr.Mesh3d::from_plane(2.0F, 2.0F)
+  let plane_mesh = @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(2.0F, 2.0F)),
+    ),
+  )
   for x in -3..<4 {
     for z in -3..<4 {
       let use_black = (x + z) % 2 == 0

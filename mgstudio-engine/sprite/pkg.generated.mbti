@@ -25,6 +25,10 @@ pub const SPRITE_PLUGIN_ID : String = "bevy_sprite::SpritePlugin"
 
 pub let camera_update_systems : String
 
+pub fn color_material_assets_mut_or_abort() -> @ref.Ref[@asset.Assets[ColorMaterialAsset]]
+
+pub fn color_material_assets_or_abort() -> @asset.Assets[ColorMaterialAsset]
+
 pub fn color_material_plugin(ColorMaterialPlugin) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub let ecs_components : Array[String]
@@ -132,6 +136,52 @@ pub fn init_render_state_system(@ecs.World) -> Unit
 pub fn[M : Material2d] material2d_plugin(Material2dPlugin[M]) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn[M] material2d_runtime_type_name(@asset.Handle[M]) -> String
+
+pub fn mesh2d_geometry_annulus(@math.Annulus) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_capsule(@math.Capsule2d) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_capsule_ring(@math.Capsule2dRing) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_circle(@math.Circle) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_circular_sector(@math.CircularSector) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_circular_sector_ring(@math.CircularSectorRing) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_circular_segment(@math.CircularSegment) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_circular_segment_ring(@math.CircularSegmentRing) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_ellipse(@math.Ellipse) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_ellipse_ring(@math.EllipseRing) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_polyline(@math.Polyline2d) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_rectangle(@math.Rectangle) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_rectangle_ring(@math.RectangleRing) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_regular_polygon(@math.RegularPolygon) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_regular_polygon_ring(@math.RegularPolygonRing) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_rhombus(@math.Rhombus) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_rhombus_ring(@math.RhombusRing) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_ring(@math.Ring2d) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_segment(@math.Segment2d) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_triangle(@math.Triangle2d) -> @mesh.Mesh2dGeometry
+
+pub fn mesh2d_geometry_triangle_ring(@math.Triangle2dRing) -> @mesh.Mesh2dGeometry
+
+pub fn mesh_assets_mut_or_abort() -> @ref.Ref[@asset.Assets[@mesh.Mesh]]
+
+pub fn mesh_assets_or_abort() -> @asset.Assets[@mesh.Mesh]
 
 pub fn pan_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -373,10 +423,6 @@ pub struct ColorMaterial {
 }
 pub fn ColorMaterial::alpha_mode(Self) -> AlphaMode2d
 pub fn ColorMaterial::color(Self) -> @color.Color
-pub fn ColorMaterial::from_color(@color.Color) -> Self
-pub fn ColorMaterial::from_image(@asset.Handle[@image.Image]) -> Self
-pub fn ColorMaterial::new(@color.Color) -> Self
-pub fn ColorMaterial::new_with_alpha_mode(@color.Color, AlphaMode2d) -> Self
 pub fn ColorMaterial::texture(Self) -> @asset.Handle[@image.Image]?
 pub fn ColorMaterial::uv_offset(Self) -> @math.Vec2
 pub fn ColorMaterial::uv_scale(Self) -> @math.Vec2
@@ -397,7 +443,13 @@ pub struct ColorMaterialAsset {
   uv_offset : @math.Vec2
   uv_scale : @math.Vec2
 }
+pub fn ColorMaterialAsset::from_color(@color.Color) -> Self
+pub fn ColorMaterialAsset::from_image(@asset.Handle[@image.Image]) -> Self
 pub fn ColorMaterialAsset::new(@color.Color, AlphaMode2d, texture? : @asset.Handle[@image.Image]?, uv_offset? : @math.Vec2, uv_scale? : @math.Vec2) -> Self
+pub fn ColorMaterialAsset::with_alpha_mode(Self, AlphaMode2d) -> Self
+pub fn ColorMaterialAsset::with_texture(Self, @asset.Handle[@image.Image]) -> Self
+pub fn ColorMaterialAsset::with_uv_offset(Self, @math.Vec2) -> Self
+pub fn ColorMaterialAsset::with_uv_scale(Self, @math.Vec2) -> Self
 pub impl Material2d for ColorMaterialAsset
 
 pub struct ColorMaterialPlugin {
@@ -559,28 +611,6 @@ pub impl @app.Resource for Material2dRuntimeRegistry
 pub struct Mesh2d {
   mesh : @asset.Handle[@mesh.Mesh]
 }
-pub fn Mesh2d::from_annulus(@math.Annulus) -> Self
-pub fn Mesh2d::from_capsule(@math.Capsule2d) -> Self
-pub fn Mesh2d::from_capsule_ring(@math.Capsule2dRing) -> Self
-pub fn Mesh2d::from_circle(@math.Circle) -> Self
-pub fn Mesh2d::from_circular_sector(@math.CircularSector) -> Self
-pub fn Mesh2d::from_circular_sector_ring(@math.CircularSectorRing) -> Self
-pub fn Mesh2d::from_circular_segment(@math.CircularSegment) -> Self
-pub fn Mesh2d::from_circular_segment_ring(@math.CircularSegmentRing) -> Self
-pub fn Mesh2d::from_ellipse(@math.Ellipse) -> Self
-pub fn Mesh2d::from_ellipse_ring(@math.EllipseRing) -> Self
-pub fn Mesh2d::from_geometry(@mesh.Mesh2dGeometry) -> Self
-pub fn Mesh2d::from_polyline(@math.Polyline2d) -> Self
-pub fn Mesh2d::from_rectangle(@math.Rectangle) -> Self
-pub fn Mesh2d::from_rectangle_ring(@math.RectangleRing) -> Self
-pub fn Mesh2d::from_regular_polygon(@math.RegularPolygon) -> Self
-pub fn Mesh2d::from_regular_polygon_ring(@math.RegularPolygonRing) -> Self
-pub fn Mesh2d::from_rhombus(@math.Rhombus) -> Self
-pub fn Mesh2d::from_rhombus_ring(@math.RhombusRing) -> Self
-pub fn Mesh2d::from_ring(@math.Ring2d) -> Self
-pub fn Mesh2d::from_segment(@math.Segment2d) -> Self
-pub fn Mesh2d::from_triangle(@math.Triangle2d) -> Self
-pub fn Mesh2d::from_triangle_ring(@math.Triangle2dRing) -> Self
 pub fn Mesh2d::new(@asset.Handle[@mesh.Mesh]) -> Self
 pub impl @ecs.Component for Mesh2d
 pub impl ToJson for Mesh2d
@@ -595,11 +625,10 @@ pub struct Mesh2dBundle {
   inherited_visibility : @visibility.InheritedVisibility
   view_visibility : @visibility.ViewVisibility
 }
-pub fn Mesh2dBundle::new(Mesh2d, ColorMaterial, @transform.Transform) -> Self
-pub fn Mesh2dBundle::new_with_layers(Mesh2d, ColorMaterial, @transform.Transform, RenderLayers) -> Self
 pub fn Mesh2dBundle::new_with_mesh_material(Mesh2d, MeshMaterial2d[ColorMaterialAsset], @transform.Transform) -> Self
 pub fn Mesh2dBundle::new_with_mesh_material_layers(Mesh2d, MeshMaterial2d[ColorMaterialAsset], @transform.Transform, RenderLayers) -> Self
 pub fn Mesh2dBundle::spawn(Self, @ecs.World) -> @core.Entity
+pub impl @app.CommandSpawnComponents for Mesh2dBundle
 
 pub struct MeshMaterial2d[M] {
   handle : @asset.Handle[M]
@@ -915,6 +944,7 @@ pub fn Wireframe2dConfig::default() -> Self
 pub fn Wireframe2dConfig::new(Bool, @color.Color) -> Self
 pub fn Wireframe2dConfig::with_default_color(Self, @color.Color) -> Self
 pub fn Wireframe2dConfig::with_global(Self, Bool) -> Self
+pub impl @app.Resource for Wireframe2dConfig
 pub impl ToJson for Wireframe2dConfig
 pub impl @json.FromJson for Wireframe2dConfig
 
@@ -964,6 +994,10 @@ pub using @math {type Ellipse}
 pub using @math {type EllipseRing}
 
 pub using @math {type Line2d}
+
+pub using @mesh {type Mesh}
+
+pub using @mesh {type Mesh2dGeometry}
 
 pub using @math {type Plane2d}
 

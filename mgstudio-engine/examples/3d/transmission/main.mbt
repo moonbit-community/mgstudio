@@ -359,8 +359,12 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
     }
   }
 
-  @pbr.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+      ),
+    ),
   )
 }
 
@@ -429,7 +433,13 @@ fn cylinder_mesh(
     )
   }
 
-  @pbr.Mesh3d::from_geometry(@mesh.Mesh3dGeometry::new(positions, uvs, None))
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new(positions, uvs, None),
+      ),
+    ),
+  )
 }
 
 ///|
@@ -460,9 +470,17 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
   )
 
-  let cube_mesh = @pbr.Mesh3d::from_cuboid(0.7F, 0.7F, 0.7F)
+  let cube_mesh = @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.7F, 0.7F, 0.7F)),
+    ),
+  )
   let sphere_mesh = uv_sphere_mesh(0.9F, 24, 40)
-  let plane_mesh = @pbr.Mesh3d::from_plane(2.0F, 2.0F)
+  let plane_mesh = @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(2.0F, 2.0F)),
+    ),
+  )
   let candle_mesh = cylinder_mesh(0.5F, 2.0F, 50)
 
   let cube_1_material = @pbr.standard_material_add(

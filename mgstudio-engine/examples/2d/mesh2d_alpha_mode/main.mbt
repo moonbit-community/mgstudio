@@ -31,24 +31,33 @@ fn spawn_quad(
   alpha_mode : @sprite.AlphaMode2d,
   z : Float,
 ) -> Unit {
-  let material = @sprite.ColorMaterial::new_with_alpha_mode(color, alpha_mode).with_texture(
-    texture,
-  )
+  let material = @sprite.MeshMaterial2d::new(
+    @sprite.color_material_assets_mut_or_abort().val.add(
+      @sprite.ColorMaterialAsset::from_color(color).with_alpha_mode(alpha_mode),
+    ),
+  ).with_texture(texture)
   let transform = @transform.Transform::from_xy_rotation_scale(
     position,
     0.0F,
     @math.Vec2::new(1.0F, 1.0F),
     z~,
   )
-  @sprite.Mesh2dBundle::new(mesh, material, transform).spawn(world) |> ignore
+  @sprite.Mesh2dBundle::new_with_mesh_material(mesh, material, transform).spawn(
+    world,
+  )
+  |> ignore
 }
 
 ///|
 fn mesh2d_alpha_mode_setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
-  let mesh = @sprite.Mesh2d::from_rectangle(
-    @sprite.Rectangle::from_size(@math.Vec2::new(256.0F, 256.0F)),
+  let mesh = @sprite.Mesh2d::new(
+    @sprite.mesh_assets_mut_or_abort().val.add(
+      @sprite.mesh2d_geometry_rectangle(
+        @sprite.Rectangle::from_size(@math.Vec2::new(256.0F, 256.0F)),
+      ).to_mesh(),
+    ),
   )
   let white = @sprite.Color::new(1.0F, 1.0F, 1.0F, 1.0F)
   let blue = @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F)

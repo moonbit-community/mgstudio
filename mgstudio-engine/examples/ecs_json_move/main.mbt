@@ -28,14 +28,27 @@ pub struct Velocity {
 } derive(Show, Eq)
 
 ///|
-fn main {
-  let comp_position : @ecs.ComponentKey[Position] = @ecs.register_component(
-    debug_name="examples.ecs_json_move.position",
-  )
-  let comp_velocity : @ecs.ComponentKey[Velocity] = @ecs.register_component(
-    debug_name="examples.ecs_json_move.velocity",
-  )
+let comp_position : @ecs.ComponentKey[Position] = @ecs.register_component(
+  debug_name="examples.ecs_json_move.position",
+)
 
+///|
+let comp_velocity : @ecs.ComponentKey[Velocity] = @ecs.register_component(
+  debug_name="examples.ecs_json_move.velocity",
+)
+
+///|
+pub impl @ecs.Component for Position with component() {
+  comp_position
+}
+
+///|
+pub impl @ecs.Component for Velocity with component() {
+  comp_velocity
+}
+
+///|
+fn main {
   @app.App::new(@ecs.World::new())
   .add_systems(
     @app.Startup,
@@ -45,16 +58,13 @@ fn main {
       try! world.set(entity, comp_velocity, Velocity::{ x: 1.0, y: 0.5 })
     }),
   )
-  .add_system_query2_ecs(comp_position, comp_velocity, move_system)
+  .add_systems(@app.Update, @app.system(@app.system_param(move_system)))
   .update()
   |> ignore
 }
 
 ///|
-fn move_system(
-  query : @ecs.Query2[Position, Velocity],
-  _world : @ecs.World,
-) -> Unit {
+fn move_system(query : @ecs.Query2[Position, Velocity]) -> Unit {
   try! query.for_each(fn(_entity, position, velocity) {
     position.x = position.x + velocity.x
     position.y = position.y + velocity.y

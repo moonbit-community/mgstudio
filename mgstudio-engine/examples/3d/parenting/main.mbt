@@ -35,14 +35,26 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let parent = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(2.0F, 2.0F, 2.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(2.0F, 2.0F, 2.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(material),
     @transform.Transform::from_xyz(0.0F, 0.0F, 1.0F),
   ).spawn(world)
   rotator_state.val.rotators.push(parent)
 
   let child = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(2.0F, 2.0F, 2.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(2.0F, 2.0F, 2.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(material),
     @transform.Transform::from_xyz(0.0F, 0.0F, 3.0F),
   ).spawn(world)

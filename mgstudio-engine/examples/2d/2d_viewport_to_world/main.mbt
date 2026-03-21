@@ -135,16 +135,38 @@ fn viewport_to_world_setup(world : @ecs.World) -> Unit {
 
   spawn_help_overlay(world)
 
-  @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(40.0F, 20.0F)),
-    @sprite.ColorMaterial::new(@sprite.Color::new(0.0F, 0.5019608F, 0.0F, 1.0F)),
+  @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(40.0F, 20.0F)).to_mesh(),
+      ),
+    ),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(
+          @sprite.Color::new(0.0F, 0.5019608F, 0.0F, 1.0F),
+        ),
+      ),
+    ),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
-  @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(50000.0F, 50000.0F)),
-    @sprite.ColorMaterial::new(@sprite.Color::new(0.01F, 0.01F, 0.01F, 1.0F)),
+  @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_rectangle(
+          @sprite.Rectangle::new(50000.0F, 50000.0F),
+        ).to_mesh(),
+      ),
+    ),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(
+          @sprite.Color::new(0.01F, 0.01F, 0.01F, 1.0F),
+        ),
+      ),
+    ),
     @transform.Transform::from_xyz(0.0F, 0.0F, -200.0F),
   ).spawn(world)
   |> ignore

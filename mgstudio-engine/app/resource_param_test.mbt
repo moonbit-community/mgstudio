@@ -265,3 +265,29 @@ test "app: run condition combinators short-circuit and compose" {
   inspect(and_rhs_calls.val, content="1")
   inspect(not_log.length(), content="1")
 }
+
+///|
+test "app: Query and ResMut compose in a single system signature" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  try! world.set(entity, query_position_key, QueryPosition::{ x: 3, y: 7 })
+
+  let app = App::new(world)
+    .insert_resource(CounterResource::{ value: 10 })
+    .add_system_param2(fn(
+      query : @ecs.Query1[QueryPosition],
+      resource : ResMut[CounterResource],
+    ) {
+      let mut count = 0
+      try! query.view(fn(_entity, _position) { count = count + 1 })
+      resource.get_ref().val.value = resource.get_ref().val.value + count
+    })
+
+  app.run_once() |> ignore
+
+  let value = match read_counter_resource(app.world()) {
+    Some(resource) => resource.value
+    None => -1
+  }
+  inspect(value, content="11")
+}

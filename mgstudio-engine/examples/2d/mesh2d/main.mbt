@@ -23,16 +23,27 @@ fn main {
 
 ///|
 fn mesh2d_setup(world : @ecs.World) -> Unit {
-  let mesh = @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::default())
-  let material = @sprite.ColorMaterial::new(
-    @sprite.Color::new(0.5019608F, 0.0F, 0.5019608F, 1.0F),
+  let mesh = @sprite.Mesh2d::new(
+    @sprite.mesh_assets_mut_or_abort().val.add(
+      @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::default()).to_mesh(),
+    ),
+  )
+  let material = @sprite.MeshMaterial2d::new(
+    @sprite.color_material_assets_mut_or_abort().val.add(
+      @sprite.ColorMaterialAsset::from_color(
+        @sprite.Color::new(0.5019608F, 0.0F, 0.5019608F, 1.0F),
+      ),
+    ),
   )
   let transform = @transform.Transform::from_xy_rotation_scale(
     @math.Vec2::new(0.0F, 0.0F),
     0.0F,
     @math.Vec2::new(128.0F, 128.0F),
   )
-  @sprite.Mesh2dBundle::new(mesh, material, transform).spawn(world) |> ignore
+  @sprite.Mesh2dBundle::new_with_mesh_material(mesh, material, transform).spawn(
+    world,
+  )
+  |> ignore
   let camera = @sprite.Camera::default()
   @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
     world,

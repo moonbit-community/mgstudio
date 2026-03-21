@@ -13,12 +13,12 @@
 // limitations under the License.
 
 ///|
-fn color_material_assets_or_abort() -> @asset.Assets[ColorMaterialAsset] {
+pub fn color_material_assets_or_abort() -> @asset.Assets[ColorMaterialAsset] {
   render2d_asset_store_or_abort()
 }
 
 ///|
-fn color_material_assets_mut_or_abort() -> Ref[
+pub fn color_material_assets_mut_or_abort() -> Ref[
   @asset.Assets[ColorMaterialAsset],
 ] {
   render2d_asset_store_mut_or_abort()
@@ -42,6 +42,62 @@ pub fn ColorMaterialAsset::new(
   uv_scale? : @math.Vec2 = @math.Vec2::new(1.0F, 1.0F),
 ) -> ColorMaterialAsset {
   ColorMaterialAsset::{ color, alpha_mode, texture, uv_offset, uv_scale }
+}
+
+///|
+pub fn ColorMaterialAsset::from_color(color : Color) -> ColorMaterialAsset {
+  ColorMaterialAsset::new(
+    color,
+    color_material_alpha_mode_for_color(color),
+    texture=None,
+    uv_offset=@math.Vec2::new(0.0F, 0.0F),
+    uv_scale=@math.Vec2::new(1.0F, 1.0F),
+  )
+}
+
+///|
+pub fn ColorMaterialAsset::from_image(
+  texture : @asset.Handle[@asset.Image],
+) -> ColorMaterialAsset {
+  ColorMaterialAsset::new(
+    Color::white(),
+    AlphaMode2d::Blend,
+    texture=Some(texture),
+    uv_offset=@math.Vec2::new(0.0F, 0.0F),
+    uv_scale=@math.Vec2::new(1.0F, 1.0F),
+  )
+}
+
+///|
+pub fn ColorMaterialAsset::with_alpha_mode(
+  self : ColorMaterialAsset,
+  alpha_mode : AlphaMode2d,
+) -> ColorMaterialAsset {
+  ColorMaterialAsset::{ ..self, alpha_mode, }
+}
+
+///|
+pub fn ColorMaterialAsset::with_texture(
+  self : ColorMaterialAsset,
+  texture : @asset.Handle[@asset.Image],
+) -> ColorMaterialAsset {
+  ColorMaterialAsset::{ ..self, texture: Some(texture) }
+}
+
+///|
+pub fn ColorMaterialAsset::with_uv_offset(
+  self : ColorMaterialAsset,
+  uv_offset : @math.Vec2,
+) -> ColorMaterialAsset {
+  ColorMaterialAsset::{ ..self, uv_offset, }
+}
+
+///|
+pub fn ColorMaterialAsset::with_uv_scale(
+  self : ColorMaterialAsset,
+  uv_scale : @math.Vec2,
+) -> ColorMaterialAsset {
+  ColorMaterialAsset::{ ..self, uv_scale, }
 }
 
 ///|
@@ -96,54 +152,11 @@ fn color_material_add(
 }
 
 ///|
-pub fn ColorMaterial::new(color : Color) -> ColorMaterial {
-  ColorMaterial::from_color(color)
-}
-
-///|
-pub fn ColorMaterial::from_color(color : Color) -> ColorMaterial {
-  color_material_add(
-    color,
-    color_material_alpha_mode_for_color(color),
-    None,
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(1.0F, 1.0F),
-  )
-}
-
-///|
-pub fn ColorMaterial::from_image(
-  texture : @asset.Handle[@asset.Image],
-) -> ColorMaterial {
-  color_material_add(
-    Color::white(),
-    AlphaMode2d::Blend,
-    Some(texture),
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(1.0F, 1.0F),
-  )
-}
-
-///|
 pub fn ColorMaterial::color(self : ColorMaterial) -> Color {
   match color_material_get(self.handle) {
     Some(mat) => mat.color
     None => Color::white()
   }
-}
-
-///|
-pub fn ColorMaterial::new_with_alpha_mode(
-  color : Color,
-  alpha_mode : AlphaMode2d,
-) -> ColorMaterial {
-  color_material_add(
-    color,
-    alpha_mode,
-    None,
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(1.0F, 1.0F),
-  )
 }
 
 ///|

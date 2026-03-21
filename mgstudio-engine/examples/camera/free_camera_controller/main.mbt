@@ -241,14 +241,22 @@ fn spawn_world(world : @ecs.World) -> Unit {
   )
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_plane(10.0F, 10.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(10.0F, 10.0F)),
+      ),
+    ),
     white,
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_plane(10.0F, 10.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(10.0F, 10.0F)),
+      ),
+    ),
     white,
     @transform.Transform::from_xyz(0.0F, -0.01F, 0.0F).with_rotation(
       @math.Quat::from_rotation_x(@math.pi()),
@@ -257,28 +265,50 @@ fn spawn_world(world : @ecs.World) -> Unit {
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_sphere(0.5F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(0.5F)),
+      ),
+    ),
     blue,
     @transform.Transform::from_xyz(3.0F, 1.5F, 0.0F),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(0.2F, 4.0F, 3.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(0.2F, 4.0F, 3.0F),
+        ),
+      ),
+    ),
     white,
     @transform.Transform::from_xyz(-3.0F, 2.0F, 0.0F),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        ),
+      ),
+    ),
     blue,
     @transform.Transform::from_xyz(-4.2F, 0.5F, 0.0F),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        ),
+      ),
+    ),
     red,
     @transform.Transform::from_xyz(3.0F, -2.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_y(@math.pi() / 4.0F)

@@ -268,7 +268,11 @@ fn setup(world : @ecs.World) -> Unit {
   raycast_state.val.green_pool = None
   raycast_state.val.origin_marker = None
 
-  let plane_mesh = @pbr.Mesh3d::from_plane(1.0F, 1.0F)
+  let plane_mesh = @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(1.0F, 1.0F)),
+    ),
+  )
   let plane_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.5F, 0.5F, 0.5F, 0.05F),
@@ -357,8 +361,16 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let line_mesh = @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
-  let marker_mesh = @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
+  let line_mesh = @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+    ),
+  )
+  let marker_mesh = @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+    ),
+  )
 
   raycast_state.val.red_pool = Some(
     spawn_beam_pool(

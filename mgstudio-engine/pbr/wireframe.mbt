@@ -95,3 +95,8 @@ pub fn WireframeConfig::with_default_color(
 ) -> WireframeConfig {
   WireframeConfig::{ ..self, default_color, }
 }
+
+///|
+pub impl @app.Resource for WireframeConfig with resource() {
+  ecs_key_wireframe_config
+}

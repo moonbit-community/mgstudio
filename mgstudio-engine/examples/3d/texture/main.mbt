@@ -35,8 +35,12 @@ fn rectangle_mesh(width : Float, height : Float) -> @pbr.Mesh3d {
     @math.Vec2::new(0.0F, 0.0F),
   ]
   let indices = [0, 1, 2, 0, 2, 3]
-  @pbr.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+      ),
+    ),
   )
 }
 

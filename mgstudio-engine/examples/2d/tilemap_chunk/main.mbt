@@ -193,9 +193,19 @@ fn spawn_fake_player(
     @math.Vec2::new(1.0F, 1.0F),
     z=1.0F,
   )
-  @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(8.0F, 8.0F)),
-    @sprite.ColorMaterial::new(@sprite.Color::new(0.956F, 0.271F, 0.271F, 1.0F)),
+  @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(8.0F, 8.0F)).to_mesh(),
+      ),
+    ),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(
+          @sprite.Color::new(0.956F, 0.271F, 0.271F, 1.0F),
+        ),
+      ),
+    ),
     player_transform,
   ).spawn(world)
 }

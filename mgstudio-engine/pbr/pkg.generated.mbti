@@ -19,6 +19,7 @@ import {
   "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/visibility",
   "moonbitlang/core/json",
+  "moonbitlang/core/ref",
 }
 
 // Values
@@ -306,6 +307,32 @@ pub fn get_wireframe_store(@ecs.World) -> @ecs.ComponentAccess[Wireframe]
 
 pub fn materials_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn mesh3d_geometry_capsule(@math.Capsule3d) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_circle(Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_cuboid(Float, Float, Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_cylinder(@math.Cylinder) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_icosphere(Float, Int) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_plane(Float, Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_rectangle(Float, Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_sphere(Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_tetrahedron(Float) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_tetrahedron_shape(@math.Tetrahedron) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_triangle(@math.Triangle3d) -> @mesh.Mesh3dGeometry
+
+pub fn mesh3d_geometry_uv_sphere(Float, Int, Int) -> @mesh.Mesh3dGeometry
+
+pub fn mesh_assets_mut_or_abort() -> @ref.Ref[@asset.Assets[@mesh.Mesh]]
+
 pub fn mesh_ray_cast(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettings) -> Array[(@core.Entity, MeshRayCastHit)]
 
 pub fn mesh_ray_cast_first(@ecs.World, @math.Vec3, @math.Vec3, MeshRayCastSettings) -> (@core.Entity, MeshRayCastHit)?
@@ -375,6 +402,8 @@ pub fn render3d_update_frusta_system(@ecs.World) -> Unit
 pub fn run_freecamera_controller(@ecs.World) -> Unit
 
 pub fn standard_material_add(@material.StandardMaterial) -> @asset.Handle[@material.StandardMaterial]
+
+pub fn standard_material_assets_mut_or_abort() -> @ref.Ref[@asset.Assets[@material.StandardMaterial]]
 
 pub fn standard_material_get(@asset.Handle[@material.StandardMaterial]) -> @material.StandardMaterial?
 
@@ -742,19 +771,6 @@ pub struct MaterialsPluginState {
 pub struct Mesh3d {
   mesh : @asset.Handle[@mesh.Mesh]
 }
-pub fn Mesh3d::from_capsule(@math.Capsule3d) -> Self
-pub fn Mesh3d::from_circle(Float) -> Self
-pub fn Mesh3d::from_cuboid(Float, Float, Float) -> Self
-pub fn Mesh3d::from_cylinder(@math.Cylinder) -> Self
-pub fn Mesh3d::from_geometry(@mesh.Mesh3dGeometry) -> Self
-pub fn Mesh3d::from_icosphere(Float, Int) -> Self
-pub fn Mesh3d::from_plane(Float, Float) -> Self
-pub fn Mesh3d::from_rectangle(Float, Float) -> Self
-pub fn Mesh3d::from_sphere(Float) -> Self
-pub fn Mesh3d::from_tetrahedron(Float) -> Self
-pub fn Mesh3d::from_tetrahedron_shape(@math.Tetrahedron) -> Self
-pub fn Mesh3d::from_triangle(@math.Triangle3d) -> Self
-pub fn Mesh3d::from_uv_sphere(Float, Int, Int) -> Self
 pub fn Mesh3d::new(@asset.Handle[@mesh.Mesh]) -> Self
 pub impl @ecs.Component for Mesh3d
 pub impl ToJson for Mesh3d
@@ -1069,6 +1085,7 @@ pub fn WireframeConfig::default() -> Self
 pub fn WireframeConfig::new(Bool, @color.Color) -> Self
 pub fn WireframeConfig::with_default_color(Self, @color.Color) -> Self
 pub fn WireframeConfig::with_global(Self, Bool) -> Self
+pub impl @app.Resource for WireframeConfig
 pub impl ToJson for WireframeConfig
 pub impl @json.FromJson for WireframeConfig
 
@@ -1144,6 +1161,10 @@ pub using @core_pipeline {type Hdr}
 pub using @light {type IrradianceVolume}
 
 pub using @light {type LightProbe}
+
+pub using @mesh {type Mesh}
+
+pub using @mesh {type Mesh3dGeometry}
 
 pub using @material {type MeshMaterial3d}
 

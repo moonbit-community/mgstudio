@@ -48,6 +48,10 @@ pub fn input_gamepad_finish_frame() -> Unit
 
 pub fn input_gamepad_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
+pub fn[T : ButtonInputButton + ButtonInputSnapshotProvider] input_just_pressed(T) -> (@ecs.World) -> Bool
+
+pub fn[T : ButtonInputButton + ButtonInputSnapshotProvider] input_just_released(T) -> (@ecs.World) -> Bool
+
 pub fn input_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn input_plugin_with(@app.App[@ecs.World], InputPlugin) -> @app.App[@ecs.World]
@@ -60,7 +64,11 @@ pub fn input_poll_keyboard_system(@ecs.World) -> Unit
 
 pub fn input_poll_mouse_system(@ecs.World) -> Unit
 
+pub fn[T : ButtonInputButton + ButtonInputSnapshotProvider] input_pressed(T) -> (@ecs.World) -> Bool
+
 pub let input_systems_set : String
+
+pub fn[T : ButtonInputButton + ButtonInputSnapshotProvider] input_toggle_active(Bool, T) -> (@ecs.World) -> Bool
 
 pub fn key_just_pressed(@events.KeyCode) -> Bool
 

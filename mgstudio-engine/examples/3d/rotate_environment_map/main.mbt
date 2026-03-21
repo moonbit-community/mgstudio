@@ -86,7 +86,11 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
 
   let geometry = @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices))
   geometry.generate_tangents() |> ignore
-  @pbr.Mesh3d::from_geometry(geometry)
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(geometry),
+    ),
+  )
 }
 
 ///|

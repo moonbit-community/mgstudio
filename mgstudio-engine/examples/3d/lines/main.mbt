@@ -47,12 +47,16 @@ fn line_mesh_from_line_list(line_list : LineList) -> @pbr.Mesh3d {
   for _ in 0..<positions.length() {
     uvs.push(@math.Vec2::new(0.0F, 0.0F))
   }
-  @pbr.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new_with_topology(
-      positions,
-      uvs,
-      None,
-      @mesh.Mesh3dPrimitiveTopology::LineList,
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new_with_topology(
+          positions,
+          uvs,
+          None,
+          @mesh.Mesh3dPrimitiveTopology::LineList,
+        ),
+      ),
     ),
   )
 }
@@ -65,12 +69,16 @@ fn line_mesh_from_line_strip(line_strip : LineStrip) -> @pbr.Mesh3d {
     positions.push(point)
     uvs.push(@math.Vec2::new(0.0F, 0.0F))
   }
-  @pbr.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new_with_topology(
-      positions,
-      uvs,
-      None,
-      @mesh.Mesh3dPrimitiveTopology::LineStrip,
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new_with_topology(
+          positions,
+          uvs,
+          None,
+          @mesh.Mesh3dPrimitiveTopology::LineStrip,
+        ),
+      ),
     ),
   )
 }

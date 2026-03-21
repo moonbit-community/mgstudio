@@ -18,6 +18,12 @@ pub struct Mesh3d {
 }
 
 ///|
+pub type Mesh = @mesh.Mesh
+
+///|
+pub type Mesh3dGeometry = @mesh.Mesh3dGeometry
+
+///|
 pub fn Mesh3d::new(mesh : @asset.Handle[@mesh.Mesh]) -> Mesh3d {
   Mesh3d::{ mesh, }
 }
@@ -73,7 +79,19 @@ fn mesh3d_append_triangle(
 }
 
 ///|
-fn mesh3d_geometry_plane(width : Float, depth : Float) -> @mesh.Mesh3dGeometry {
+pub fn mesh3d_geometry_cuboid(
+  width : Float,
+  height : Float,
+  depth : Float,
+) -> Mesh3dGeometry {
+  @mesh.Mesh3dGeometry::cuboid(@math.Cuboid::new(width, height, depth))
+}
+
+///|
+pub fn mesh3d_geometry_plane(
+  width : Float,
+  depth : Float,
+) -> @mesh.Mesh3dGeometry {
   let safe_width = if width <= 0.0F { 1.0F } else { width }
   let safe_depth = if depth <= 0.0F { 1.0F } else { depth }
   let hx = safe_width * 0.5F
@@ -92,7 +110,7 @@ fn mesh3d_geometry_plane(width : Float, depth : Float) -> @mesh.Mesh3dGeometry {
 }
 
 ///|
-fn mesh3d_geometry_tetrahedron(edge : Float) -> @mesh.Mesh3dGeometry {
+pub fn mesh3d_geometry_tetrahedron(edge : Float) -> @mesh.Mesh3dGeometry {
   let safe_edge = if edge <= 0.0F { 1.0F } else { edge }
   let h = safe_edge * 0.5F
   let v0 = @math.Vec3::new(0.0F, h, 0.0F)
@@ -208,7 +226,7 @@ fn mesh3d_triangle_uvs(
 }
 
 ///|
-fn mesh3d_geometry_triangle(
+pub fn mesh3d_geometry_triangle(
   triangle : @math.Triangle3d,
 ) -> @mesh.Mesh3dGeometry {
   if triangle.vertices.length() < 3 {
@@ -240,7 +258,7 @@ fn mesh3d_tetrahedron_signed_volume(tetrahedron : @math.Tetrahedron) -> Float {
 }
 
 ///|
-fn mesh3d_geometry_tetrahedron_shape(
+pub fn mesh3d_geometry_tetrahedron_shape(
   tetrahedron : @math.Tetrahedron,
 ) -> @mesh.Mesh3dGeometry {
   let reverse_faces = mesh3d_tetrahedron_signed_volume(tetrahedron) < 0.0F
@@ -350,7 +368,7 @@ fn mesh3d_append_uv_sphere_triangle(
 }
 
 ///|
-fn mesh3d_geometry_uv_sphere(
+pub fn mesh3d_geometry_uv_sphere(
   radius : Float,
   sectors : Int,
   stacks : Int,
@@ -427,82 +445,37 @@ fn mesh3d_geometry_uv_sphere(
 }
 
 ///|
-pub fn Mesh3d::from_geometry(geometry : @mesh.Mesh3dGeometry) -> Mesh3d {
-  Mesh3d::new(
-    @sprite.render_mesh_asset_add(@mesh.Mesh::from_3d_geometry(geometry)),
-  )
+pub fn mesh3d_geometry_cylinder(cylinder : @math.Cylinder) -> Mesh3dGeometry {
+  mesh3d_geometry_cylinder_shape(cylinder)
 }
 
 ///|
-pub fn Mesh3d::from_cuboid(
+pub fn mesh3d_geometry_capsule(capsule : @math.Capsule3d) -> Mesh3dGeometry {
+  mesh3d_geometry_capsule_shape(capsule)
+}
+
+///|
+pub fn mesh3d_geometry_sphere(radius : Float) -> Mesh3dGeometry {
+  mesh3d_geometry_uv_sphere(radius, 32, 16)
+}
+
+///|
+pub fn mesh3d_geometry_circle(radius : Float) -> Mesh3dGeometry {
+  @mesh.Mesh3dGeometry::circle(radius, 32)
+}
+
+///|
+pub fn mesh3d_geometry_rectangle(
   width : Float,
   height : Float,
-  depth : Float,
-) -> Mesh3d {
-  Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::cuboid(@math.Cuboid::new(width, height, depth)),
-  )
+) -> Mesh3dGeometry {
+  @mesh.Mesh3dGeometry::rectangle(width, height)
 }
 
 ///|
-pub fn Mesh3d::from_cylinder(cylinder : @math.Cylinder) -> Mesh3d {
-  Mesh3d::from_geometry(mesh3d_geometry_cylinder_shape(cylinder))
-}
-
-///|
-pub fn Mesh3d::from_capsule(capsule : @math.Capsule3d) -> Mesh3d {
-  Mesh3d::from_geometry(mesh3d_geometry_capsule_shape(capsule))
-}
-
-///|
-pub fn Mesh3d::from_triangle(triangle : @math.Triangle3d) -> Mesh3d {
-  Mesh3d::from_geometry(mesh3d_geometry_triangle(triangle))
-}
-
-///|
-pub fn Mesh3d::from_circle(radius : Float) -> Mesh3d {
-  Mesh3d::from_geometry(@mesh.Mesh3dGeometry::circle(radius, 32))
-}
-
-///|
-pub fn Mesh3d::from_rectangle(width : Float, height : Float) -> Mesh3d {
-  Mesh3d::from_geometry(@mesh.Mesh3dGeometry::rectangle(width, height))
-}
-
-///|
-pub fn Mesh3d::from_plane(width : Float, depth : Float) -> Mesh3d {
-  Mesh3d::from_geometry(mesh3d_geometry_plane(width, depth))
-}
-
-///|
-pub fn Mesh3d::from_uv_sphere(
+pub fn mesh3d_geometry_icosphere(
   radius : Float,
-  sectors : Int,
-  stacks : Int,
-) -> Mesh3d {
-  Mesh3d::from_geometry(mesh3d_geometry_uv_sphere(radius, sectors, stacks))
+  subdivisions : Int,
+) -> Mesh3dGeometry {
+  @mesh.Mesh3dGeometry::icosphere(radius, subdivisions)
 }
-
-///|
-pub fn Mesh3d::from_icosphere(radius : Float, subdivisions : Int) -> Mesh3d {
-  Mesh3d::from_geometry(@mesh.Mesh3dGeometry::icosphere(radius, subdivisions))
-}
-
-///|
-pub fn Mesh3d::from_sphere(radius : Float) -> Mesh3d {
-  Mesh3d::from_uv_sphere(radius, 32, 16)
-}
-
-///|
-pub fn Mesh3d::from_tetrahedron(edge : Float) -> Mesh3d {
-  Mesh3d::from_geometry(mesh3d_geometry_tetrahedron(edge))
-}
-
-///|
-pub fn Mesh3d::from_tetrahedron_shape(
-  tetrahedron : @math.Tetrahedron,
-) -> Mesh3d {
-  Mesh3d::from_geometry(mesh3d_geometry_tetrahedron_shape(tetrahedron))
-}
-
-///|

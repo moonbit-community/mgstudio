@@ -40,13 +40,19 @@ fn spawn_panel(
   texture : @asset.Handle[@asset.Image],
   uv_scale : @math.Vec2,
 ) -> Unit {
-  let mesh = @sprite.Mesh2d::from_rectangle(
-    @sprite.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
+  let mesh = @sprite.Mesh2d::new(
+    @sprite.mesh_assets_mut_or_abort().val.add(
+      @sprite.mesh2d_geometry_rectangle(
+        @sprite.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
+      ).to_mesh(),
+    ),
   )
-  let material = @sprite.ColorMaterial::from_image(texture).with_uv_scale(
-    uv_scale,
-  )
-  @sprite.Mesh2dBundle::new(
+  let material = @sprite.MeshMaterial2d::new(
+    @sprite.color_material_assets_mut_or_abort().val.add(
+      @sprite.ColorMaterialAsset::from_image(texture),
+    ),
+  ).with_uv_scale(uv_scale)
+  @sprite.Mesh2dBundle::new_with_mesh_material(
     mesh,
     material,
     @transform.Transform::from_xyz(x, 0.0F, 0.0F),

@@ -155,28 +155,52 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
 
   spawn_mesh(
     world,
-    @pbr.Mesh3d::from_cuboid(7.0F, 0.2F, 11.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(7.0F, 0.2F, 11.0F),
+        ),
+      ),
+    ),
     corridor_floor_material,
     @transform.Transform::from_xyz(-1.5F, -0.1F, 3.5F),
   )
 
   spawn_mesh(
     world,
-    @pbr.Mesh3d::from_cuboid(7.0F, 0.2F, 11.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(7.0F, 0.2F, 11.0F),
+        ),
+      ),
+    ),
     wall_material,
     @transform.Transform::from_xyz(-1.5F, 3.9F, 3.5F),
   )
 
   spawn_mesh(
     world,
-    @pbr.Mesh3d::from_cuboid(0.2F, 4.0F, 11.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(0.2F, 4.0F, 11.0F),
+        ),
+      ),
+    ),
     wall_material,
     @transform.Transform::from_xyz(-4.9F, 1.9F, 3.5F),
   )
 
   spawn_mesh(
     world,
-    @pbr.Mesh3d::from_cuboid(0.2F, 4.0F, 11.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(0.2F, 4.0F, 11.0F),
+        ),
+      ),
+    ),
     wall_material,
     @transform.Transform::from_xyz(1.9F, 1.9F, 3.5F),
   )
@@ -185,13 +209,25 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
     let z = -0.5F + float_from_int(i) * 1.2F
     spawn_mesh(
       world,
-      @pbr.Mesh3d::from_cuboid(0.45F, 1.6F, 0.45F),
+      @pbr.Mesh3d::new(
+        @pbr.mesh_assets_mut_or_abort().val.add(
+          @pbr.Mesh::from_3d_geometry(
+            @pbr.mesh3d_geometry_cuboid(0.45F, 1.6F, 0.45F),
+          ),
+        ),
+      ),
       block_material,
       @transform.Transform::from_xyz(-3.7F, 0.8F, z),
     )
     spawn_mesh(
       world,
-      @pbr.Mesh3d::from_cuboid(0.45F, 1.6F, 0.45F),
+      @pbr.Mesh3d::new(
+        @pbr.mesh_assets_mut_or_abort().val.add(
+          @pbr.Mesh::from_3d_geometry(
+            @pbr.mesh3d_geometry_cuboid(0.45F, 1.6F, 0.45F),
+          ),
+        ),
+      ),
       block_material,
       @transform.Transform::from_xyz(0.7F, 0.8F, z),
     )
@@ -209,7 +245,13 @@ fn setup_scene_geometry(world : @ecs.World) -> Unit {
 
   spawn_mesh(
     world,
-    @pbr.Mesh3d::from_cuboid(5.0F, 3.8F, 10.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(5.0F, 3.8F, 10.0F),
+        ),
+      ),
+    ),
     fog_volume_material,
     @transform.Transform::from_xyz(-1.5F, 1.9F, 3.5F),
   )

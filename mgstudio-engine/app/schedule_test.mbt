@@ -563,25 +563,36 @@ struct EcsVelocity {
 } derive(Eq, Show)
 
 ///|
-test "app: add_system_query2_ecs injects key-based query into update system" {
+let ecs_position_key : @ecs.ComponentKey[EcsPosition] = @ecs.register_component(
+  debug_name="tests.app.ecs.position",
+)
+
+///|
+let ecs_velocity_key : @ecs.ComponentKey[EcsVelocity] = @ecs.register_component(
+  debug_name="tests.app.ecs.velocity",
+)
+
+///|
+pub impl @ecs.Component for EcsPosition with component() {
+  ecs_position_key
+}
+
+///|
+pub impl @ecs.Component for EcsVelocity with component() {
+  ecs_velocity_key
+}
+
+///|
+test "app: SystemParam Query2 injects typed query into update system" {
   let world = @ecs.World::new()
-  let comp_position : @ecs.ComponentKey[EcsPosition] = @ecs.register_component(
-    debug_name="tests.app.ecs.position",
-  )
-  let comp_velocity : @ecs.ComponentKey[EcsVelocity] = @ecs.register_component(
-    debug_name="tests.app.ecs.velocity",
-  )
 
   let app = App::new(world)
     .add_startup_system(fn(startup_world) {
       let entity = startup_world.spawn()
-      try! startup_world.set(entity, comp_position, EcsPosition::{ x: 1 })
-      try! startup_world.set(entity, comp_velocity, EcsVelocity::{ x: 41 })
+      try! startup_world.set(entity, ecs_position_key, EcsPosition::{ x: 1 })
+      try! startup_world.set(entity, ecs_velocity_key, EcsVelocity::{ x: 41 })
     })
-    .add_system_query2_ecs(comp_position, comp_velocity, fn(
-      query,
-      _update_world,
-    ) {
+    .add_system_param(fn(query : @ecs.Query2[EcsPosition, EcsVelocity]) {
       try! query.for_each(fn(_entity, position, velocity) {
         position.x = position.x + velocity.x
       })
@@ -592,7 +603,7 @@ test "app: add_system_query2_ecs injects key-based query into update system" {
   let query_world = app.world()
   let value_ref : Ref[Int] = Ref::new(0)
   try! query_world
-  .query1(comp_position)
+  .query1(ecs_position_key)
   .view(fn(_entity, position) { value_ref.val = position.x })
   inspect(value_ref.val, content="42")
 }

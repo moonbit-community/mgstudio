@@ -50,7 +50,11 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
     ),
   )
   let floor_bundle = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_plane(640.0F, 640.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(640.0F, 640.0F)),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(floor_material),
     @transform.Transform::from_xyz(0.0F, -200.0F, 0.0F),
   )
@@ -72,7 +76,13 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
     ),
   )
   let ball_bundle = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(24.0F, 24.0F, 24.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(24.0F, 24.0F, 24.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(ball_material),
     @transform.Transform::from_xyz(0.0F, 200.0F, 0.0F),
   )

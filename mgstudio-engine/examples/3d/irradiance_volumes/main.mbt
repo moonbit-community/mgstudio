@@ -259,8 +259,12 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
     }
   }
 
-  @pbr.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+      ),
+    ),
   )
 }
 
@@ -437,7 +441,11 @@ fn spawn_voxel_cubes(world : @ecs.World) -> Unit {
     .with_alpha_mode(@pbr.AlphaMode3d::Blend)
     .with_unlit(true),
   )
-  let mesh = @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F)
+  let mesh = @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
+    ),
+  )
   for z in 0..<VOXEL_COUNT_Z {
     for y in 0..<VOXEL_COUNT_Y {
       for x in 0..<VOXEL_COUNT_X {

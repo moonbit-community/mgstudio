@@ -121,6 +121,33 @@ pub impl Material2d for DummyMaterialAsset with bind_group(self) {
 }
 
 ///|
+fn test_rectangle_mesh(width : Float, height : Float) -> Mesh2d {
+  Mesh2d::new(
+    mesh_assets_mut_or_abort().val.add(
+      Mesh::from_2d_geometry(
+        mesh2d_geometry_rectangle(Rectangle::new(width, height)),
+      ),
+    ),
+  )
+}
+
+///|
+fn test_color_material_handle(
+  color : Color,
+) -> @asset.Handle[ColorMaterialAsset] {
+  color_material_assets_mut_or_abort().val.add(
+    ColorMaterialAsset::from_color(color),
+  )
+}
+
+///|
+fn test_image_material_handle(id : Int) -> @asset.Handle[ColorMaterialAsset] {
+  color_material_assets_mut_or_abort().val.add(
+    ColorMaterialAsset::from_image(@asset.Handle::new(id)),
+  )
+}
+
+///|
 test "render2d: SpriteBundle::spawn inserts expected components" {
   let world = @ecs.World::new()
   let image : @asset.Handle[@asset.Image] = @asset.Handle::new(1)
@@ -332,9 +359,13 @@ test "render2d: Mesh2dBundle::spawn inserts expected components" {
   @app.App::new(world)
   .add_plugins([@asset.asset_plugin, render2d_plugin])
   .add_system(fn(world : @ecs.World) {
-    let mesh = Mesh2d::from_rectangle(Rectangle::new(8.0F, 6.0F))
-    let material = ColorMaterial::new(Color::white())
-    let bundle = Mesh2dBundle::new(mesh, material, expected_transform)
+    let mesh = test_rectangle_mesh(8.0F, 6.0F)
+    let material = MeshMaterial2d::new(
+      test_color_material_handle(Color::white()),
+    )
+    let bundle = Mesh2dBundle::new_with_mesh_material(
+      mesh, material, expected_transform,
+    )
     entity_ref.val = Some(bundle.spawn(world))
   })
   .run_once()
@@ -394,13 +425,13 @@ test "render2d: Mesh2dBundle constructors normalize to MeshMaterial2d" {
   @app.App::new(@ecs.World::new())
   .add_plugins([@asset.asset_plugin, render2d_plugin])
   .add_system(fn(_world : @ecs.World) {
-    let color_material = ColorMaterial::new(Color::white())
-    let mesh_material = MeshMaterial2d::from_color_material(color_material)
-    let mesh = Mesh2d::from_rectangle(Rectangle::new(4.0F, 4.0F))
+    let material_handle = test_color_material_handle(Color::white())
+    let mesh_material = MeshMaterial2d::new(material_handle)
+    let mesh = test_rectangle_mesh(4.0F, 4.0F)
 
-    let wrapped_bundle = Mesh2dBundle::new(
+    let wrapped_bundle = Mesh2dBundle::new_with_mesh_material(
       mesh,
-      color_material,
+      MeshMaterial2d::new(material_handle),
       @transform.Transform::identity(),
     )
     let preserved_bundle = Mesh2dBundle::new_with_mesh_material(
@@ -411,7 +442,7 @@ test "render2d: Mesh2dBundle constructors normalize to MeshMaterial2d" {
 
     wrapped_material_handle.val = Some(wrapped_bundle.material.handle.id())
     preserved_material_handle.val = Some(preserved_bundle.material.handle.id())
-    color_material_handle.val = Some(color_material.handle.id())
+    color_material_handle.val = Some(material_handle.id())
     explicit_mesh_material_handle.val = Some(mesh_material.handle.id())
   })
   .run_once()
@@ -561,12 +592,12 @@ test "render2d: extract_color_material_mesh_instances_system populates resource"
     @asset.asset_plugin, render2d_plugin,
   ])
   app = app.add_system(fn(world : @ecs.World) {
-    let material = ColorMaterial::from_image(@asset.Handle::new(7))
-    handle_ref.val = Some(material.handle)
+    let material_handle = test_image_material_handle(7)
+    handle_ref.val = Some(material_handle)
     entity_ref.val = Some(
-      Mesh2dBundle::new(
-        Mesh2d::from_rectangle(Rectangle::new(8.0F, 6.0F)),
-        material,
+      Mesh2dBundle::new_with_mesh_material(
+        test_rectangle_mesh(8.0F, 6.0F),
+        MeshMaterial2d::new(material_handle),
         @transform.Transform::identity(),
       ).spawn(world),
     )
@@ -596,11 +627,11 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
     @asset.asset_plugin, render2d_plugin,
   ])
   app = app.add_system(fn(world : @ecs.World) {
-    let material = ColorMaterial::from_image(@asset.Handle::new(11))
-    handle_ref.val = Some(material.handle)
-    Mesh2dBundle::new(
-      Mesh2d::from_rectangle(Rectangle::new(8.0F, 6.0F)),
-      material,
+    let material_handle = test_image_material_handle(11)
+    handle_ref.val = Some(material_handle)
+    Mesh2dBundle::new_with_mesh_material(
+      test_rectangle_mesh(8.0F, 6.0F),
+      MeshMaterial2d::new(material_handle),
       @transform.Transform::identity(),
     ).spawn(world)
     |> ignore
@@ -662,7 +693,7 @@ test "render2d: MeshMaterial2d component keys are registered per material type" 
 }
 
 ///|
-test "render2d: ColorMaterial::new matches Bevy alpha inference" {
+test "render2d: ColorMaterialAsset::from_color matches Bevy alpha inference" {
   let opaque_alpha_mode : Ref[AlphaMode2d?] = Ref::new(None)
   let blend_alpha_mode : Ref[AlphaMode2d?] = Ref::new(None)
 
@@ -670,10 +701,10 @@ test "render2d: ColorMaterial::new matches Bevy alpha inference" {
   .add_plugins([@asset.asset_plugin, render2d_plugin])
   .add_system(fn(_world : @ecs.World) {
     opaque_alpha_mode.val = Some(
-      ColorMaterial::new(Color::white()).alpha_mode(),
+      ColorMaterialAsset::from_color(Color::white()).alpha_mode(),
     )
     blend_alpha_mode.val = Some(
-      ColorMaterial::new(Color::new(0.25F, 0.5F, 0.75F, 0.4F)).alpha_mode(),
+      ColorMaterialAsset::from_color(Color::new(0.25F, 0.5F, 0.75F, 0.4F)).alpha_mode(),
     )
   })
   .run_once()

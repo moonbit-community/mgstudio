@@ -54,8 +54,9 @@ fn main {
   .add_systems(@app.Startup, @app.system(sprite_scale_setup_sprites))
   .add_systems(@app.Startup, @app.system(sprite_scale_setup_texture_atlas))
   .add_systems(@app.Startup, @app.system(sprite_scale_setup_camera))
-  .add_system_query2_ecs(
-    @sprite.ecs_key_sprite, @transform.ecs_key_transform, sprite_scale_update,
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param2(sprite_scale_update)),
   )
   .run()
 }
@@ -378,20 +379,12 @@ fn resolve_scale_mode(_intended_mode : String) -> @sprite.SpriteImageMode {
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in sprite_scale example")
-  }
-}
-
-///|
 fn sprite_scale_update(
   query : @ecs.Query2[@sprite.Sprite, @transform.Transform],
-  world : @ecs.World,
+  time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   sprite_scale_state.val.timer_seconds = sprite_scale_state.val.timer_seconds +
-    world_time(world).delta_seconds()
+    time.get().delta_seconds()
 
   if sprite_scale_state.val.timer_seconds >= ANIMATION_STEP_SECONDS {
     sprite_scale_state.val.timer_seconds = 0.0F

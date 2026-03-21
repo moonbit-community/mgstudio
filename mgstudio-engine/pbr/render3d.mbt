@@ -89,6 +89,19 @@ pub fn standard_material_set(
 }
 
 ///|
+pub fn standard_material_assets_mut_or_abort() -> Ref[
+  @asset.Assets[StandardMaterial],
+] {
+  let assets_ref : Ref[@asset.Assets[StandardMaterial]] = @asset.asset_assets_ref_mut_or_abort()
+  assets_ref
+}
+
+///|
+pub fn mesh_assets_mut_or_abort() -> Ref[@asset.Assets[@mesh.Mesh]] {
+  @sprite.mesh_assets_mut_or_abort()
+}
+
+///|
 struct Render3dInternalAssetsState {
   mut skybox_proxy_mesh : @asset.Handle[@mesh.Mesh]?
   mut tonemapping_luts : Render3dTonemappingLutHandles?
@@ -141,7 +154,11 @@ fn render3d_skybox_proxy_mesh_id(world : @ecs.World) -> Int {
   let handle = match internal_assets.val.skybox_proxy_mesh {
     Some(handle) => handle
     None => {
-      let mesh = Mesh3d::from_cuboid(2.0F, 2.0F, 2.0F)
+      let mesh = Mesh3d::new(
+        mesh_assets_mut_or_abort().val.add(
+          Mesh::from_3d_geometry(mesh3d_geometry_cuboid(2.0F, 2.0F, 2.0F)),
+        ),
+      )
       internal_assets.val.skybox_proxy_mesh = Some(mesh.mesh)
       mesh.mesh
     }

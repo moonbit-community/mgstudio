@@ -407,12 +407,54 @@ fn shape_sample_boundary(shape : Shape, rng : @random.Rand) -> @math.Vec3 {
 ///|
 fn shape_mesh(shape : Shape) -> @pbr.Mesh3d {
   match shape {
-    Cuboid => @pbr.Mesh3d::from_cuboid(1.0F, 2.0F, 1.0F)
-    Sphere => @pbr.Mesh3d::from_sphere(1.5F * SMALL_3D)
-    Capsule => @pbr.Mesh3d::from_capsule(capsule_shape())
-    Cylinder => @pbr.Mesh3d::from_cylinder(cylinder_shape())
-    Tetrahedron => @pbr.Mesh3d::from_tetrahedron_shape(tetrahedron_shape())
-    Triangle => @pbr.Mesh3d::from_triangle(triangle_shape())
+    Cuboid =>
+      @pbr.Mesh3d::new(
+        @pbr.mesh_assets_mut_or_abort().val.add(
+          @pbr.Mesh::from_3d_geometry(
+            @pbr.mesh3d_geometry_cuboid(1.0F, 2.0F, 1.0F),
+          ),
+        ),
+      )
+    Sphere =>
+      @pbr.Mesh3d::new(
+        @pbr.mesh_assets_mut_or_abort().val.add(
+          @pbr.Mesh::from_3d_geometry(
+            @pbr.mesh3d_geometry_sphere(1.5F * SMALL_3D),
+          ),
+        ),
+      )
+    Capsule =>
+      @pbr.Mesh3d::new(
+        @pbr.mesh_assets_mut_or_abort().val.add(
+          @pbr.Mesh::from_3d_geometry(
+            @pbr.mesh3d_geometry_capsule(capsule_shape()),
+          ),
+        ),
+      )
+    Cylinder =>
+      @pbr.Mesh3d::new(
+        @pbr.mesh_assets_mut_or_abort().val.add(
+          @pbr.Mesh::from_3d_geometry(
+            @pbr.mesh3d_geometry_cylinder(cylinder_shape()),
+          ),
+        ),
+      )
+    Tetrahedron =>
+      @pbr.Mesh3d::new(
+        @pbr.mesh_assets_mut_or_abort().val.add(
+          @pbr.Mesh::from_3d_geometry(
+            @pbr.mesh3d_geometry_tetrahedron_shape(tetrahedron_shape()),
+          ),
+        ),
+      )
+    Triangle =>
+      @pbr.Mesh3d::new(
+        @pbr.mesh_assets_mut_or_abort().val.add(
+          @pbr.Mesh::from_3d_geometry(
+            @pbr.mesh3d_geometry_triangle(triangle_shape()),
+          ),
+        ),
+      )
   }
 }
 
@@ -521,7 +563,11 @@ fn setup(
   world.insert_resource(MousePressed::resource(), MousePressed::{ value: false })
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_plane(20.0F, 20.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(20.0F, 20.0F)),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(
       materials.get_ref().val.add(
         @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F))
@@ -618,7 +664,11 @@ fn setup(
   )
 
   world.insert_resource(PointMesh::resource(), PointMesh::{
-    mesh: @pbr.Mesh3d::from_icosphere(0.03F, 1),
+    mesh: @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_icosphere(0.03F, 1)),
+      ),
+    ),
   })
   world.insert_resource(PointMaterial::resource(), PointMaterial::{
     interior: materials.get_ref().val.add(

@@ -228,7 +228,13 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
 
     spawn_mesh(
       world,
-      @pbr.Mesh3d::from_cuboid(width, height, 0.3F),
+      @pbr.Mesh3d::new(
+        @pbr.mesh_assets_mut_or_abort().val.add(
+          @pbr.Mesh::from_3d_geometry(
+            @pbr.mesh3d_geometry_cuboid(width, height, 0.3F),
+          ),
+        ),
+      ),
       terrain_material,
       @transform.Transform::from_xyz(shift, height / 2.0F - 0.08F, -depth),
     )
@@ -242,7 +248,13 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
     .with_cull_mode(None),
   )
   let sky = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(2.0F, 1.0F, 1.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(2.0F, 1.0F, 1.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(sky_material),
     @transform.Transform::identity().with_scale(@math.Vec3::splat(20.0F)),
   ).spawn(world)

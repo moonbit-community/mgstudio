@@ -124,8 +124,12 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
     }
   }
 
-  @pbr.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+      ),
+    ),
   )
 }
 
@@ -146,8 +150,12 @@ fn rectangle_mesh(width : Float, height : Float) -> @pbr.Mesh3d {
     @math.Vec2::new(0.0F, 0.0F),
   ]
   let indices = [0, 1, 2, 0, 2, 3]
-  @pbr.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+      ),
+    ),
   )
 }
 
@@ -202,7 +210,11 @@ fn setup(world : @ecs.World) -> Unit {
   )
   spawn_mesh(
     world,
-    @pbr.Mesh3d::from_plane(10.0F, 10.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(10.0F, 10.0F)),
+      ),
+    ),
     ground_material,
     @transform.Transform::identity(),
   )
@@ -216,7 +228,13 @@ fn setup(world : @ecs.World) -> Unit {
   )
   spawn_mesh(
     world,
-    @pbr.Mesh3d::from_cuboid(5.0F, 0.15F, 5.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(5.0F, 0.15F, 5.0F),
+        ),
+      ),
+    ),
     wall_material,
     @transform.Transform::from_xyz(2.5F, 2.5F, 0.0F).with_rotation(
       @math.Quat::from_rotation_z(PI / 2.0F),
@@ -225,7 +243,13 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
   spawn_mesh(
     world,
-    @pbr.Mesh3d::from_cuboid(5.0F, 0.15F, 5.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(5.0F, 0.15F, 5.0F),
+        ),
+      ),
+    ),
     wall_material,
     @transform.Transform::from_xyz(0.0F, 2.5F, -2.5F).with_rotation(
       @math.Quat::from_rotation_x(PI / 2.0F),
@@ -253,7 +277,13 @@ fn setup(world : @ecs.World) -> Unit {
 
   let cube = spawn_mesh(
     world,
-    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        ),
+      ),
+    ),
     @pbr.standard_material_add(
       @pbr.StandardMaterial::from_color(
         @sprite.Color::new(1.0F, 0.078F, 0.576F, 1.0F),
@@ -343,7 +373,13 @@ fn setup(world : @ecs.World) -> Unit {
   )
   spawn_mesh(
     world,
-    @pbr.Mesh3d::from_cuboid(0.1F, 0.125F, 0.1F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(0.1F, 0.125F, 0.1F),
+        ),
+      ),
+    ),
     @pbr.standard_material_add(
       @pbr.StandardMaterial::from_color(
         @sprite.Color::new(0.0F, 1.0F, 0.0F, 1.0F),

@@ -210,28 +210,52 @@ fn setup(
   )
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(base_material),
     @transform.Transform::from_xyz(0.0F, 0.0F, 1.0F),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(base_material),
     @transform.Transform::from_xyz(0.0F, -1.0F, 0.0F),
   ).spawn(world)
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(base_material),
     @transform.Transform::from_xyz(1.0F, 0.0F, 0.0F),
   ).spawn(world)
   |> ignore
 
   let sphere = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_uv_sphere(0.4F, 72, 36),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_uv_sphere(0.4F, 72, 36),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(
       materials.get_ref().val.add(
         @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.4F, 0.4F, 0.4F))

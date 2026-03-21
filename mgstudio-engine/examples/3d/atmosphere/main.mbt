@@ -394,7 +394,13 @@ fn setup_scene(world : @ecs.World) -> Unit {
     let x_shift = @math.sin(i_f * 0.35F) * 0.25F
     spawn_mesh(
       world,
-      @pbr.Mesh3d::from_cuboid(width, height, 0.25F),
+      @pbr.Mesh3d::new(
+        @pbr.mesh_assets_mut_or_abort().val.add(
+          @pbr.Mesh::from_3d_geometry(
+            @pbr.mesh3d_geometry_cuboid(width, height, 0.25F),
+          ),
+        ),
+      ),
       terrain_material,
       @transform.Transform::from_xyz(
         -1.0F + x_shift,
@@ -404,7 +410,11 @@ fn setup_scene(world : @ecs.World) -> Unit {
     )
   }
 
-  let probe_mesh = @pbr.Mesh3d::from_tetrahedron(0.06F)
+  let probe_mesh = @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_tetrahedron(0.06F)),
+    ),
+  )
   let probe_metal = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::white())
     .with_metallic(1.0F)
@@ -440,7 +450,13 @@ fn setup_scene(world : @ecs.World) -> Unit {
   atmosphere_state.val.water_material = Some(water_material)
   spawn_mesh(
     world,
-    @pbr.Mesh3d::from_cuboid(100.0F, 0.02F, 100.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(100.0F, 0.02F, 100.0F),
+        ),
+      ),
+    ),
     water_material,
     @transform.Transform::from_xyz(-1.0F, 0.0F, -0.5F),
   )

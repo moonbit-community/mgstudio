@@ -164,7 +164,16 @@ fn spawn_plane(
     .with_perceptual_roughness(0.35F),
   )
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_plane(PLANE_HALF_SIZE * 2.0F, PLANE_HALF_SIZE * 2.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_plane(
+            PLANE_HALF_SIZE * 2.0F,
+            PLANE_HALF_SIZE * 2.0F,
+          ),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(material),
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_x(PI),
@@ -295,7 +304,13 @@ fn spawn_decal(world : @ecs.World) -> Unit {
     )
   }
   let entity = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 0.02F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 0.02F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(@pbr.standard_material_add(material)),
     @transform.Transform::from_xyz(x, y, -0.01F)
     .with_rotation(@math.Quat::from_rotation_z(theta))

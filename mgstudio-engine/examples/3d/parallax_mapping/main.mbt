@@ -295,7 +295,13 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   .insert(light, @transform.Transform::from_xyz(2.0F, 1.0F, -1.1F), tick)
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(0.08F, 0.08F, 0.08F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(0.08F, 0.08F, 0.08F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(@sprite.Color::white()),
@@ -306,7 +312,11 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   |> ignore
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_plane(10.0F, 10.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(10.0F, 10.0F)),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(
@@ -343,35 +353,65 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   parallax_state.val.parallax_materials.push(parallax_material)
 
   let main_cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(parallax_material),
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
   ).spawn(world)
   push_spin_target(main_cube, 0.3F)
 
   let x_pos_cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(40.0F, 40.0F, 40.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(40.0F, 40.0F, 40.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(parallax_material),
     @transform.Transform::from_xyz(45.0F, 0.0F, 0.0F),
   ).spawn(world)
   push_spin_target(x_pos_cube, -0.1F)
 
   let x_neg_cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(40.0F, 40.0F, 40.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(40.0F, 40.0F, 40.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(parallax_material),
     @transform.Transform::from_xyz(-45.0F, 0.0F, 0.0F),
   ).spawn(world)
   push_spin_target(x_neg_cube, -0.1F)
 
   let z_pos_cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(40.0F, 40.0F, 40.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(40.0F, 40.0F, 40.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(parallax_material),
     @transform.Transform::from_xyz(0.0F, 0.0F, 45.0F),
   ).spawn(world)
   push_spin_target(z_pos_cube, -0.1F)
 
   let z_neg_cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(40.0F, 40.0F, 40.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(40.0F, 40.0F, 40.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(parallax_material),
     @transform.Transform::from_xyz(0.0F, 0.0F, -45.0F),
   ).spawn(world)

@@ -114,6 +114,54 @@ fn synthetic_snapshot(entity : @core.Entity) -> GamepadSnapshot {
 }
 
 ///|
+pub(all) enum TestButton {
+  Toggle
+  Alt
+}
+
+///|
+let test_button_input_snapshot_ref : Ref[ButtonInput[TestButton]] = Ref::new(
+  ButtonInput::new(),
+)
+
+///|
+pub impl ButtonInputButton for TestButton with button_id(self) {
+  match self {
+    Toggle => "toggle"
+    Alt => "alt"
+  }
+}
+
+///|
+pub impl ButtonInputSnapshotProvider for TestButton with read_button_input() {
+  test_button_input_snapshot_ref.val
+}
+
+///|
+fn set_test_button_snapshot(snapshot : ButtonInput[TestButton]) -> Unit {
+  test_button_input_snapshot_ref.val = snapshot
+}
+
+///|
+fn test_button_pressed_snapshot(button : TestButton) -> ButtonInput[TestButton] {
+  let input : ButtonInput[TestButton] = ButtonInput::new()
+  input.press(button)
+  input.clear()
+  input
+}
+
+///|
+fn test_button_just_released_snapshot(
+  button : TestButton,
+) -> ButtonInput[TestButton] {
+  let input : ButtonInput[TestButton] = ButtonInput::new()
+  input.press(button)
+  input.clear()
+  input.release(button)
+  input
+}
+
+///|
 test "input: InputSystems set gates pre-update polling systems" {
   reset_input_runtime_state()
   @gilrs.gamepad_test_reset_state()
@@ -203,4 +251,60 @@ test "input: keyboard focus-loss helper emits KeyboardFocusLost and WindowEvent"
     }
   }
   inspect(aggregate_focus_lost_count, content="1")
+}
+
+///|
+test "input: common conditions mirror ButtonInput pressed edge semantics" {
+  let world = @ecs.World::new()
+  let idle : ButtonInput[TestButton] = ButtonInput::new()
+  let just_pressed : ButtonInput[TestButton] = ButtonInput::new()
+  just_pressed.press(Toggle)
+
+  set_test_button_snapshot(idle)
+  inspect(input_pressed(Toggle)(world), content="false")
+  inspect(input_just_pressed(Toggle)(world), content="false")
+  inspect(input_just_released(Toggle)(world), content="false")
+
+  set_test_button_snapshot(just_pressed)
+  inspect(input_pressed(Toggle)(world), content="true")
+  inspect(input_just_pressed(Toggle)(world), content="true")
+  inspect(input_just_released(Toggle)(world), content="false")
+
+  set_test_button_snapshot(test_button_pressed_snapshot(Toggle))
+  inspect(input_pressed(Toggle)(world), content="true")
+  inspect(input_just_pressed(Toggle)(world), content="false")
+
+  set_test_button_snapshot(test_button_just_released_snapshot(Toggle))
+  inspect(input_pressed(Toggle)(world), content="false")
+  inspect(input_just_released(Toggle)(world), content="true")
+}
+
+///|
+test "input: input_toggle_active keeps independent state across frames" {
+  let world = @ecs.World::new()
+  let toggle = input_toggle_active(false, Toggle)
+  let other = input_toggle_active(true, Alt)
+  let idle : ButtonInput[TestButton] = ButtonInput::new()
+  let toggle_press : ButtonInput[TestButton] = ButtonInput::new()
+  toggle_press.press(Toggle)
+  let alt_press : ButtonInput[TestButton] = ButtonInput::new()
+  alt_press.press(Alt)
+
+  set_test_button_snapshot(idle)
+  inspect(toggle(world), content="false")
+  inspect(other(world), content="true")
+
+  set_test_button_snapshot(toggle_press)
+  inspect(toggle(world), content="true")
+  inspect(other(world), content="true")
+
+  set_test_button_snapshot(test_button_pressed_snapshot(Toggle))
+  inspect(toggle(world), content="true")
+
+  set_test_button_snapshot(toggle_press)
+  inspect(toggle(world), content="false")
+
+  set_test_button_snapshot(alt_press)
+  inspect(other(world), content="false")
+  inspect(toggle(world), content="false")
 }

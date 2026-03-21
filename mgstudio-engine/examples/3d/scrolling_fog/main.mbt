@@ -83,13 +83,25 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   )
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(64.0F, 1.0F, 64.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(64.0F, 1.0F, 64.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(black_material),
     @transform.Transform::from_xyz(0.0F, -0.5F, 0.0F),
   ).spawn(world)
   |> ignore
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(2.0F, 9.0F, 2.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(2.0F, 9.0F, 2.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(black_material),
     @transform.Transform::from_xyz(-10.0F, 4.5F, -11.0F),
   ).spawn(world)

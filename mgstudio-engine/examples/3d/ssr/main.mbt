@@ -268,8 +268,12 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
     }
   }
 
-  @pbr.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+      ),
+    ),
   )
 }
 
@@ -436,7 +440,13 @@ fn spawn_cube(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     .with_metallic(0.0F),
   )
   let cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(material),
     @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
   ).spawn(world)
@@ -518,7 +528,11 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     .with_perceptual_roughness(0.3F),
   )
   let metallic = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_plane(100.0F, 100.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(100.0F, 100.0F)),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(metallic_material),
     @transform.Transform::identity(),
   ).spawn(world)
@@ -536,7 +550,11 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     .with_perceptual_roughness(0.2F),
   )
   let red = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_plane(100.0F, 100.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(100.0F, 100.0F)),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(red_material),
     @transform.Transform::identity(),
   ).spawn(world)
@@ -567,7 +585,11 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     .with_metallic(0.0F),
   )
   let water = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_plane(100.0F, 100.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(100.0F, 100.0F)),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(water_material),
     @transform.Transform::identity(),
   ).spawn(world)

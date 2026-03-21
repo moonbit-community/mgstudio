@@ -110,11 +110,15 @@ fn create_cube_indices() -> Array[Int] {
 
 ///|
 fn create_cube_mesh(upper_uv : Bool) -> @pbr.Mesh3d {
-  @pbr.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new(
-      create_cube_positions(),
-      create_cube_uvs(upper_uv),
-      Some(create_cube_indices()),
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new(
+          create_cube_positions(),
+          create_cube_uvs(upper_uv),
+          Some(create_cube_indices()),
+        ),
+      ),
     ),
   )
 }

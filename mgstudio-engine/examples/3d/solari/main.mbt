@@ -400,7 +400,11 @@ fn spawn_pica_scene(
 fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let ground = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_plane(40.0F, 40.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(40.0F, 40.0F)),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::default()
@@ -439,7 +443,13 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
       1.0F,
     )
     let entity = @pbr.MeshMaterial3dBundle::new(
-      @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+      @pbr.Mesh3d::new(
+        @pbr.mesh_assets_mut_or_abort().val.add(
+          @pbr.Mesh::from_3d_geometry(
+            @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+          ),
+        ),
+      ),
       @pbr.MeshMaterial3d::new(
         @pbr.standard_material_add(
           @pbr.StandardMaterial::from_color(color).with_perceptual_roughness(
@@ -457,7 +467,11 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
   for i in 0..<MANY_LIGHTS_EMISSIVE_COUNT {
     i |> ignore
     let entity = @pbr.MeshMaterial3dBundle::new(
-      @pbr.Mesh3d::from_tetrahedron(0.5F),
+      @pbr.Mesh3d::new(
+        @pbr.mesh_assets_mut_or_abort().val.add(
+          @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_tetrahedron(0.5F)),
+        ),
+      ),
       @pbr.MeshMaterial3d::new(
         @pbr.standard_material_add(
           @pbr.StandardMaterial::from_color(@sprite.Color::black()).with_emissive(

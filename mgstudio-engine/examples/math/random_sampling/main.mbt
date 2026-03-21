@@ -144,7 +144,11 @@ fn setup(
   world.insert_resource(MousePressed::resource(), MousePressed::{ value: false })
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_plane(12.0F, 12.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(12.0F, 12.0F)),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.3F, 0.5F, 0.3F)),
@@ -162,7 +166,13 @@ fn setup(
     .with_cull_mode(None),
   )
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(2.9F, 2.9F, 2.9F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(2.9F, 2.9F, 2.9F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(shape_material),
     @transform.Transform::identity(),
   ).spawn(world)
@@ -190,7 +200,11 @@ fn setup(
   |> ignore
 
   world.insert_resource(PointMesh::resource(), PointMesh::{
-    mesh: @pbr.Mesh3d::from_icosphere(0.03F, 3),
+    mesh: @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_icosphere(0.03F, 3)),
+      ),
+    ),
   })
   world.insert_resource(PointMaterial::resource(), PointMaterial::{
     handle: materials.get_ref().val.add(

@@ -154,7 +154,11 @@ fn setup_scene(world : @ecs.World) -> Unit {
     @pbr.StandardMaterial::from_color(@sprite.Color::black()),
   )
 
-  let sphere_mesh = @pbr.Mesh3d::from_sphere(0.4F)
+  let sphere_mesh = @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(0.4F)),
+    ),
+  )
   for xi in 0..<10 {
     let x = xi - 5
     for zi in 0..<10 {

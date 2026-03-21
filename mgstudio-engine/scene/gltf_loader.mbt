@@ -2592,7 +2592,11 @@ fn scene_build_from_gltf(
 
           nodes.push(
             SceneNode3d::new(
-              @pbr.Mesh3d::from_geometry(geometry),
+              @pbr.Mesh3d::new(
+                @pbr.mesh_assets_mut_or_abort().val.add(
+                  @pbr.Mesh::from_3d_geometry(geometry),
+                ),
+              ),
               material_component,
               world_transform,
               visibility_range,

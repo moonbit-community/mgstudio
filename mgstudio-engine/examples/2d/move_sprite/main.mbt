@@ -19,8 +19,9 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_systems(@app.Startup, @app.system(move_sprite_setup))
-  .add_system_query2_ecs(
-    @transform.ecs_key_transform, @sprite.ecs_key_sprite, move_sprite_movement,
+  .add_systems(
+    @app.Update,
+    @app.system(@app.system_param2(move_sprite_movement)),
   )
   .run()
 }
@@ -63,19 +64,11 @@ fn move_sprite_setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in move_sprite example")
-  }
-}
-
-///|
 fn move_sprite_movement(
   query : @ecs.Query2[@transform.Transform, @sprite.Sprite],
-  world : @ecs.World,
+  time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
-  let delta = SPEED * world_time(world).delta_seconds()
+  let delta = SPEED * time.get().delta_seconds()
   let move_x = if move_state.val.direction is Right { delta } else { -delta }
   let mut next_direction = move_state.val.direction
   try! query.for_each(fn(_entity, transform, _sprite) {

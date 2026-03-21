@@ -56,7 +56,11 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.StandardMaterial::from_color(@sprite.Color::srgb(1.0F, 1.0F, 0.0F)),
   )
   let center_sphere = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_sphere(3.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_sphere(3.0F)),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(sphere_material),
     @mgs_transform.Transform::from_translation(@math.Vec3::zero()),
   ).spawn(world)
@@ -75,7 +79,13 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.StandardMaterial::from_color(@sprite.Color::white()),
   )
   let cube = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        ),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(cube_material),
     cube_spawn,
   ).spawn(world)

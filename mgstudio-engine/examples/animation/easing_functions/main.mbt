@@ -406,9 +406,17 @@ fn spawn_marker(
   color : @sprite.Color,
   position : @math.Vec2,
 ) -> @core.Entity {
-  @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(size, size)),
-    @sprite.ColorMaterial::new(color),
+  @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(size, size)).to_mesh(),
+      ),
+    ),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(color),
+      ),
+    ),
     transform_from_position(position, MARKER_Z),
   ).spawn(world)
 }

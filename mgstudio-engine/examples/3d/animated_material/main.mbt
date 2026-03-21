@@ -84,7 +84,11 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
 
-  let cube = @pbr.Mesh3d::from_cuboid(0.5F, 0.5F, 0.5F)
+  let cube = @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.5F, 0.5F, 0.5F)),
+    ),
+  )
 
   let mut hue = 0.0F
   for x in -1..<2 {

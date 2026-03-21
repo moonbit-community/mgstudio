@@ -207,7 +207,13 @@ fn mesh_from_soup(
   positions : Array[@math.Vec3],
   uvs : Array[@math.Vec2],
 ) -> @pbr.Mesh3d {
-  @pbr.Mesh3d::from_geometry(@mesh.Mesh3dGeometry::new(positions, uvs, None))
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new(positions, uvs, None),
+      ),
+    ),
+  )
 }
 
 ///|
@@ -286,8 +292,12 @@ fn revolve_mesh(profile : Array[(Float, Float)], segments : Int) -> @pbr.Mesh3d 
     }
   }
 
-  @pbr.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+      ),
+    ),
   )
 }
 
@@ -340,8 +350,12 @@ fn sphere_uv_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
     }
   }
 
-  @pbr.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+      ),
+    ),
   )
 }
 
@@ -478,8 +492,12 @@ fn torus_mesh(
     }
   }
 
-  @pbr.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+      ),
+    ),
   )
 }
 
@@ -662,12 +680,16 @@ fn line_strip_mesh(points : Array[@math.Vec3]) -> @pbr.Mesh3d {
     positions.push(point)
     uvs.push(@math.Vec2::new(0.0F, 0.0F))
   }
-  @pbr.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new_with_topology(
-      positions,
-      uvs,
-      None,
-      @mesh.Mesh3dPrimitiveTopology::LineStrip,
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new_with_topology(
+          positions,
+          uvs,
+          None,
+          @mesh.Mesh3dPrimitiveTopology::LineStrip,
+        ),
+      ),
     ),
   )
 }
@@ -913,8 +935,18 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let shapes = [
-    @pbr.Mesh3d::from_cuboid(1.0F, 1.0F, 1.0F),
-    @pbr.Mesh3d::from_tetrahedron(1.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+        ),
+      ),
+    ),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_tetrahedron(1.0F)),
+      ),
+    ),
     capsule_mesh(0.5F, 0.5F, 8, 24),
     torus_mesh(0.65F, 0.25F, 36, 20),
     cylinder_mesh(0.5F, 1.0F, 28),
@@ -1012,7 +1044,11 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(point_light, @transform.Transform::from_xyz(8.0F, 16.0F, 8.0F), tick)
 
   @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::from_plane(50.0F, 50.0F),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(50.0F, 50.0F)),
+      ),
+    ),
     @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
         @pbr.StandardMaterial::from_color(

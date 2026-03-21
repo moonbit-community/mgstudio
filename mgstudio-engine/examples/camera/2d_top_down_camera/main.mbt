@@ -35,16 +35,38 @@ let top_down_camera_state : Ref[TopDownCameraState] = Ref::new(TopDownCameraStat
 
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
-  @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(1000.0F, 700.0F)),
-    @sprite.ColorMaterial::new(@sprite.Color::new(0.2F, 0.2F, 0.3F, 1.0F)),
+  @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_rectangle(
+          @sprite.Rectangle::new(1000.0F, 700.0F),
+        ).to_mesh(),
+      ),
+    ),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(
+          @sprite.Color::new(0.2F, 0.2F, 0.3F, 1.0F),
+        ),
+      ),
+    ),
     @transform.Transform::identity(),
   ).spawn(world)
   |> ignore
 
-  let player = @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_circle(@sprite.Circle::new(25.0F)),
-    @sprite.ColorMaterial::new(@sprite.Color::new(6.25F, 9.4F, 9.1F, 1.0F)),
+  let player = @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_circle(@sprite.Circle::new(25.0F)).to_mesh(),
+      ),
+    ),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(
+          @sprite.Color::new(6.25F, 9.4F, 9.1F, 1.0F),
+        ),
+      ),
+    ),
     @transform.Transform::from_xyz(0.0F, 0.0F, 2.0F),
   ).spawn(world)
   top_down_camera_state.val.player = player

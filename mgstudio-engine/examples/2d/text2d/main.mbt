@@ -117,9 +117,19 @@ fn text2d_setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let anchor_origin = @math.Vec2::new(0.0F, 250.0F)
-  @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::new(10.0F, 10.0F)),
-    @sprite.ColorMaterial::new(@sprite.Color::srgb(0.68F, 0.97F, 0.97F)),
+  @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(10.0F, 10.0F)).to_mesh(),
+      ),
+    ),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(
+          @sprite.Color::srgb(0.68F, 0.97F, 0.97F),
+        ),
+      ),
+    ),
     @transform.Transform::from_xy_rotation_scale(
       anchor_origin,
       0.0F,
@@ -189,9 +199,17 @@ fn spawn_wrapped_text_box(
   shadow_color : @sprite.Color,
   underline : Bool,
 ) -> Unit {
-  @sprite.Mesh2dBundle::new(
-    @sprite.Mesh2d::from_rectangle(@sprite.Rectangle::from_size(size)),
-    @sprite.ColorMaterial::new(box_color),
+  @sprite.Mesh2dBundle::new_with_mesh_material(
+    @sprite.Mesh2d::new(
+      @sprite.mesh_assets_mut_or_abort().val.add(
+        @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::from_size(size)).to_mesh(),
+      ),
+    ),
+    @sprite.MeshMaterial2d::new(
+      @sprite.color_material_assets_mut_or_abort().val.add(
+        @sprite.ColorMaterialAsset::from_color(box_color),
+      ),
+    ),
     @transform.Transform::from_xy_rotation_scale(
       center,
       0.0F,

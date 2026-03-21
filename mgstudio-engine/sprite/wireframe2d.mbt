@@ -97,6 +97,11 @@ pub fn Wireframe2dConfig::with_default_color(
 }
 
 ///|
+pub impl @app.Resource for Wireframe2dConfig with resource() {
+  ecs_key_wireframe2d_config
+}
+
+///|
 fn init_wireframe2d_resources(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
   let wireframe_config = get_wireframe2d_config_resource(world)

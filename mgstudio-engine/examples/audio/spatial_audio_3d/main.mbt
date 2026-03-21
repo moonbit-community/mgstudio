@@ -154,8 +154,12 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
     }
   }
 
-  @pbr.Mesh3d::from_geometry(
-    @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+  @pbr.Mesh3d::new(
+    @pbr.mesh_assets_mut_or_abort().val.add(
+      @pbr.Mesh::from_3d_geometry(
+        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+      ),
+    ),
   )
 }
 
@@ -230,7 +234,13 @@ fn spawn_listener_ear(
 ) -> Unit {
   let ear = spawn_mesh(
     world,
-    @pbr.Mesh3d::from_cuboid(EAR_SIZE, EAR_SIZE, EAR_SIZE),
+    @pbr.Mesh3d::new(
+      @pbr.mesh_assets_mut_or_abort().val.add(
+        @pbr.Mesh::from_3d_geometry(
+          @pbr.mesh3d_geometry_cuboid(EAR_SIZE, EAR_SIZE, EAR_SIZE),
+        ),
+      ),
+    ),
     color,
     @transform.Transform::from_xyz(offset.x, offset.y, offset.z),
   )
