@@ -16,9 +16,6 @@
 const ROW_GAP : Float = 40.0F
 
 ///|
-const LABEL_FONT_SIZE : Float = 20.0F
-
-///|
 const LABEL_VERTICAL_GAP : Float = 10.0F
 
 ///|
@@ -26,50 +23,50 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(sprite_slice_setup))
+  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .run()
 }
 
 ///|
-fn sprite_slice_setup(world : @ecs.World) -> Unit {
-  let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
-    world,
-  )
-  |> ignore
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
 
-  let asset_server = @asset.AssetServer::new()
-  let handle_1 = asset_server.load("textures/slice_square.png")
-  let handle_2 = asset_server.load("textures/slice_square_2.png")
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
+  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
+  let style = @text.TextFont::default().with_font(font)
+  let handle_1 = asset_server.get().load("textures/slice_square.png")
+  let handle_2 = asset_server.get().load("textures/slice_square_2.png")
 
-  spawn_sprite_row(
-    world,
+  spawn_sprites(
+    commands,
     handle_1,
-    font,
-    @math.Vec2::new(-600.0F, 150.0F),
+    @math.Vec3::new(-600.0F, 150.0F, 0.0F),
     200.0F,
+    style,
     ROW_GAP,
   )
-  spawn_sprite_row(
-    world,
+  spawn_sprites(
+    commands,
     handle_2,
-    font,
-    @math.Vec2::new(-600.0F, -150.0F),
+    @math.Vec3::new(-600.0F, -150.0F, 0.0F),
     80.0F,
+    style,
     ROW_GAP,
   )
 }
 
 ///|
-fn spawn_sprite_row(
-  world : @ecs.World,
+fn spawn_sprites(
+  commands : @app.Commands,
   texture_handle : @asset.Handle[@asset.Image],
-  font : @asset.Handle[@asset.Font],
-  start_position : @math.Vec2,
+  position : @math.Vec3,
   slice_border : Float,
+  style : @text.TextFont,
   gap : Float,
 ) -> Unit {
+  let cursor = position
   let border = @sprite.BorderRect::square(slice_border)
   let cases : Array[(String, @math.Vec2, @sprite.SpriteImageMode)] = [
     ("Original", @math.Vec2::new(100.0F, 100.0F), @sprite.SpriteImageMode::Auto),
@@ -113,46 +110,42 @@ fn spawn_sprite_row(
     ),
   ]
 
-  let mut cursor_x = start_position.x
   for item in cases {
     let label = item.0
     let size = item.1
     let image_mode = item.2
-    cursor_x = cursor_x + 0.5F * size.x
-    let position = @math.Vec2::new(cursor_x, start_position.y)
-    let transform = @transform.Transform::from_xy_rotation_scale(
-      position,
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
+    cursor.x = cursor.x + 0.5F * size.x
+    let translation = @math.Vec3::new(cursor.x, cursor.y, cursor.z)
+    ignore(
+      commands.spawn(
+        (
+          @sprite.Sprite::from_image(texture_handle)
+          .with_custom_size(Some(size))
+          .with_image_mode(image_mode),
+          @transform.Transform::from_translation(translation),
+        ),
+      ),
     )
-    let sprite = @sprite.Sprite::from_image(texture_handle)
-      .with_custom_size(Some(size))
-      .with_image_mode(image_mode)
-    @sprite.SpriteBundle::new(sprite, transform).spawn(world) |> ignore
-    spawn_slice_label(label, font, position, size)
-    cursor_x = cursor_x + 0.5F * size.x + gap
+    spawn_slice_label(label, style, translation, size)
+    cursor.x = cursor.x + 0.5F * size.x + gap
   }
 }
 
 ///|
 fn spawn_slice_label(
   label : String,
-  font : @asset.Handle[@asset.Font],
-  sprite_position : @math.Vec2,
+  style : @text.TextFont,
+  sprite_translation : @math.Vec3,
   sprite_size : @math.Vec2,
 ) -> Unit {
-  let label_transform = @transform.Transform::from_xy_rotation_scale(
-    @math.Vec2::new(
-      sprite_position.x,
-      sprite_position.y - 0.5F * sprite_size.y - LABEL_VERTICAL_GAP,
-    ),
-    0.0F,
-    @math.Vec2::new(1.0F, 1.0F),
-  )
   @text.Text2dBundle::new(
     @text.Text2d::new(label),
-    @text.TextFont::default().with_font(font).with_font_size(LABEL_FONT_SIZE),
-    label_transform,
+    style,
+    @transform.Transform::from_xyz(
+      sprite_translation.x,
+      sprite_translation.y - 0.5F * sprite_size.y - LABEL_VERTICAL_GAP,
+      sprite_translation.z,
+    ),
   )
   .with_color(@text.TextColor::new(@sprite.Color::white()))
   .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))

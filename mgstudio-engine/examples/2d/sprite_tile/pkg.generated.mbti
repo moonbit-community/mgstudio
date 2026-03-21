@@ -1,11 +1,18 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/2d/sprite_tile"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type AnimationState
+pub impl @app.Resource for AnimationState
 
 // Type aliases
 
