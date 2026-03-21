@@ -24,7 +24,6 @@ fi
 PACKAGE="$1"
 OUTPUT_PNG="$2"
 RUN_TIMEOUT_SECONDS="${MGSTUDIO_PARITY_RUN_TIMEOUT_SECONDS:-60}"
-SETTLE_SECONDS="${MGSTUDIO_PARITY_SETTLE_SECONDS:-4}"
 CAPTURE_DELAY_FRAMES="${MGSTUDIO_PARITY_CAPTURE_DELAY_FRAMES:-120}"
 CAPTURE_RETRY_DELAY_FRAMES="${MGSTUDIO_PARITY_CAPTURE_RETRY_DELAY_FRAMES:-1}"
 CAPTURE_RETRY_TIMEOUT_SECONDS="${MGSTUDIO_PARITY_CAPTURE_RETRY_TIMEOUT_SECONDS:-60}"
@@ -145,8 +144,8 @@ fi
 
 if [[ "${blob_ready}" -eq 1 ]]; then
   if ! command -v python3 >/dev/null 2>&1; then
-    echo "[capture] python3 missing; falling back to screencapture path" >&2
-    blob_ready=0
+    echo "[capture] python3 missing; cannot decode engine-native rgba8 blob" >&2
+    exit 3
   else
     echo "[capture] decode rgba8 blob -> ${OUTPUT_PNG}"
     set +e
@@ -193,27 +192,17 @@ PY
     convert_rc=$?
     set -e
     if [[ "${convert_rc}" -ne 0 || ! -s "${OUTPUT_PNG}" ]]; then
-      echo "[capture] failed to decode rgba8 blob; falling back to screencapture path" >&2
-      blob_ready=0
+      echo "[capture] failed to decode engine-native rgba8 blob" >&2
       rm -f "${OUTPUT_PNG}"
+      exit 4
     fi
   fi
 fi
 
 if [[ "${blob_ready}" -eq 0 ]]; then
-  capture_mode="fullscreen-snapshot"
-  capture_source="screen"
-  if ! command -v screencapture >/dev/null 2>&1; then
-    echo "[capture] missing 'screencapture' for fallback capture path" >&2
-    exit 3
-  fi
-  if ! kill -0 "${APP_PID}" >/dev/null 2>&1; then
-    echo "[capture] process exited before screenshot capture: ${PACKAGE}" >&2
-    exit 4
-  fi
-  sleep "${SETTLE_SECONDS}"
-  echo "[capture] screencapture -> ${OUTPUT_PNG}"
-  screencapture -x "${OUTPUT_PNG}"
+  echo "[capture] engine-native rgba8 blob unavailable for ${PACKAGE}" >&2
+  echo "[capture] run log: ${RUN_LOG}" >&2
+  exit 5
 fi
 
 if [[ ! -s "${OUTPUT_PNG}" ]]; then
@@ -226,7 +215,6 @@ cat >"${META_JSON}" <<EOF
   "package": "${PACKAGE}",
   "output_png": "${OUTPUT_PNG}",
   "run_log": "${RUN_LOG}",
-  "settle_seconds": ${SETTLE_SECONDS},
   "run_timeout_seconds": ${RUN_TIMEOUT_SECONDS},
   "capture_delay_frames": ${CAPTURE_DELAY_FRAMES},
   "capture_delay_frames_used": ${capture_delay_frames_used},
