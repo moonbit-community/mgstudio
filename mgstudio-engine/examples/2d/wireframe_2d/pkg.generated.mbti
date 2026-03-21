@@ -1,11 +1,17 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/2d/wireframe_2d"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type WireframeHelpText
+pub impl @ecs.Component for WireframeHelpText
 
 // Type aliases
 

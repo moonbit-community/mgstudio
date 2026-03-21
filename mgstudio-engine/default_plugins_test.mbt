@@ -118,3 +118,18 @@ test "default plugins: set(WindowPlugin) replaces default window plugin config" 
   inspect(stored_window.physical_height(), content="300")
   inspect(stored_window.resolution.scale_factor_override(), content="Some(1)")
 }
+
+///|
+test "default plugins: set(AssetPlugin::default_nearest()) replaces default asset plugin config" {
+  let app = @app.App::new(@ecs.World::new()).add_plugin_group(fn() {
+    DefaultPlugins::set(@asset.AssetPlugin::default_nearest())
+  })
+
+  let asset_server : @asset.AssetServer = match
+    (try! app.world().get_resource(@asset.AssetServer::resource())) {
+    Some(asset_server) => asset_server
+    None => abort("missing asset server resource")
+  }
+
+  inspect(asset_server.default_sampler_nearest.val, content="true")
+}

@@ -12,6 +12,8 @@ import {
 }
 
 // Values
+pub const ASSET_PLUGIN_ID : String = "bevy_asset::AssetPlugin"
+
 pub const COMPRESSED_IMAGE_FORMAT_ASTC_LDR : Int = 1
 
 pub const COMPRESSED_IMAGE_FORMAT_BC : Int = 2
@@ -253,6 +255,14 @@ pub struct AssetPath {
 pub impl Eq for AssetPath
 pub impl Hash for AssetPath
 pub impl Show for AssetPath
+
+pub struct AssetPlugin {
+  default_sampler_nearest : Bool
+}
+pub fn AssetPlugin::default() -> Self
+pub fn AssetPlugin::default_nearest() -> Self
+pub fn AssetPlugin::with_default_sampler_nearest(Self, Bool) -> Self
+pub impl @app.PluginReplacement for AssetPlugin
 
 pub struct AssetServer {
   paths : @ref.Ref[Array[String]]

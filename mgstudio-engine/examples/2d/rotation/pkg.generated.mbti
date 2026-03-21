@@ -1,11 +1,23 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/2d/rotation"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type Player
+pub impl @ecs.Component for Player
+
+type RotateToPlayer
+pub impl @ecs.Component for RotateToPlayer
+
+type SnapToPlayer
+pub impl @ecs.Component for SnapToPlayer
 
 // Type aliases
 

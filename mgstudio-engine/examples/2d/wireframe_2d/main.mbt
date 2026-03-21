@@ -13,26 +13,28 @@
 // limitations under the License.
 
 ///|
-priv struct WireframeSceneState {
-  mut circle_entity : @core.Entity
-  mut overlay_text_handle : @text.TextHandle?
+struct WireframeHelpText {
+  handle : @text.TextHandle
 }
 
 ///|
-let wireframe_scene_state : Ref[WireframeSceneState] = Ref::new(WireframeSceneState::{
-  circle_entity: @core.Entity::placeholder(),
-  overlay_text_handle: None,
-})
+let wireframe_help_text_key : @ecs.ComponentKey[WireframeHelpText] = @ecs.register_component(
+  debug_name="examples.2d.wireframe_2d.WireframeHelpText",
+)
+
+///|
+pub impl @ecs.Component for WireframeHelpText with component() {
+  wireframe_help_text_key
+}
 
 ///|
 fn main {
-  let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
-  .add_plugins(plugins)
+  .add_plugins(@mgstudio.default_plugins())
   .add_plugins([@sprite.wireframe2d_plugin])
-  .add_systems(@app.Startup, @app.system(wireframe_setup))
-  .add_systems(@app.Startup, @app.system(setup_wireframe2d_config))
-  .add_systems(@app.Update, @app.system(wireframe_update))
+  .insert_resource(@sprite.Wireframe2dConfig::new(true, color_default_white()))
+  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
+  .add_systems(@app.Update, @app.system(@app.system_param4(update_colors)))
   .run()
 }
 
@@ -72,6 +74,8 @@ fn color_default_white() -> @sprite.Color {
 fn wireframe_color_text(color : @sprite.Color) -> String {
   if color_close(color, color_red()) {
     "Srgba { red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0 }"
+  } else if color_close(color, color_green()) {
+    "Srgba { red: 0.0, green: 1.0, blue: 0.0, alpha: 1.0 }"
   } else {
     "Srgba { red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0 }"
   }
@@ -104,212 +108,152 @@ fn spawn_ui_text_handle(
 }
 
 ///|
-fn spawn_wireframe_overlay(
-  world : @ecs.World,
-  config : @sprite.Wireframe2dConfig,
-) -> @text.TextHandle {
-  let asset_server = @asset.AssetServer::new()
-  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  let black = @sprite.Color::black()
+
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Mesh2d::new(
+          meshes.get_ref().val.add(
+            @sprite.mesh2d_geometry_triangle(
+              @sprite.Triangle2d::new(
+                @math.Vec2::new(0.0F, 50.0F),
+                @math.Vec2::new(-50.0F, -50.0F),
+                @math.Vec2::new(50.0F, -50.0F),
+              ),
+            ).to_mesh(),
+          ),
+        ),
+        @sprite.MeshMaterial2d::new(
+          materials.get_ref().val.add(
+            @sprite.ColorMaterialAsset::from_color(black),
+          ),
+        ),
+        @transform.Transform::from_xyz(-150.0F, 0.0F, 0.0F),
+        @sprite.NoWireframe2d::default(),
+      ),
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Mesh2d::new(
+          meshes.get_ref().val.add(
+            @sprite.mesh2d_geometry_rectangle(
+              @sprite.Rectangle::new(100.0F, 100.0F),
+            ).to_mesh(),
+          ),
+        ),
+        @sprite.MeshMaterial2d::new(
+          materials.get_ref().val.add(
+            @sprite.ColorMaterialAsset::from_color(black),
+          ),
+        ),
+        @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
+      ),
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Mesh2d::new(
+          meshes.get_ref().val.add(
+            @sprite.mesh2d_geometry_circle(@sprite.Circle::new(50.0F)).to_mesh(),
+          ),
+        ),
+        @sprite.MeshMaterial2d::new(
+          materials.get_ref().val.add(
+            @sprite.ColorMaterialAsset::from_color(black),
+          ),
+        ),
+        @transform.Transform::from_xyz(150.0F, 0.0F, 0.0F),
+        @sprite.Wireframe2d::default(),
+        @sprite.Wireframe2dColor::new(color_green()),
+      ),
+    ),
+  )
+
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+
   let text_handle = spawn_ui_text_handle(
-    wireframe_overlay_text(config),
-    font,
+    "",
+    asset_server.get().load_font("fonts/FiraSans-Bold.ttf"),
     20.0F,
     @sprite.Color::white(),
   )
-  let tick = world.read_change_tick()
-  let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    root,
-    @ui.Node::default()
-    .with_width(@ui.Val::Percent(100.0F))
-    .with_height(@ui.Val::Percent(100.0F)),
-    tick,
+  let root = commands.spawn(
+    (
+      @ui.UiRoot::default(),
+      @ui.Node::default()
+      .with_width(@ui.Val::Percent(100.0F))
+      .with_height(@ui.Val::Percent(100.0F)),
+    ),
   )
-  let text_entity = world.spawn_empty()
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(
-    text_entity,
-    @ui.Node::default()
-    .with_position_type(@ui.PositionType::Absolute)
-    .with_left(@ui.Val::Px(12.0F))
-    .with_top(@ui.Val::Px(12.0F)),
-    tick,
-  )
-  world
-  .component(@ui.ecs_key_ui_text)
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
-  text_handle
-}
-
-///|
-fn setup_wireframe2d_config(world : @ecs.World) -> Unit {
-  let config = @sprite.Wireframe2dConfig::new(true, color_default_white())
-  world.insert_resource(@sprite.ecs_key_wireframe2d_config, config)
-}
-
-///|
-fn wireframe_setup(world : @ecs.World) -> Unit {
-  let black = @sprite.Color::black()
-
-  let tick = world.read_change_tick()
-
-  let triangle_entity = @sprite.Mesh2dBundle::new_with_mesh_material(
-    @sprite.Mesh2d::new(
-      @sprite.mesh_assets_mut_or_abort().val.add(
-        @sprite.mesh2d_geometry_triangle(
-          @sprite.Triangle2d::new(
-            @math.Vec2::new(0.0F, 50.0F),
-            @math.Vec2::new(-50.0F, -50.0F),
-            @math.Vec2::new(50.0F, -50.0F),
-          ),
-        ).to_mesh(),
+  ignore(
+    commands.spawn(
+      (
+        @hierarchy.Parent::new(root),
+        @ui.Node::default()
+        .with_position_type(@ui.PositionType::Absolute)
+        .with_left(@ui.Val::Px(12.0F))
+        .with_top(@ui.Val::Px(12.0F)),
+        @ui.UiText::new(text_handle),
+        WireframeHelpText::{ handle: text_handle },
       ),
     ),
-    @sprite.MeshMaterial2d::new(
-      @sprite.color_material_assets_mut_or_abort().val.add(
-        @sprite.ColorMaterialAsset::from_color(black),
-      ),
-    ),
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(-150.0F, 0.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
-  ).spawn(world)
-  world
-  .component(@sprite.ecs_key_no_wireframe2d)
-  .insert(triangle_entity, @sprite.NoWireframe2d::default(), tick)
-
-  @sprite.Mesh2dBundle::new_with_mesh_material(
-    @sprite.Mesh2d::new(
-      @sprite.mesh_assets_mut_or_abort().val.add(
-        @sprite.mesh2d_geometry_rectangle(
-          @sprite.Rectangle::new(100.0F, 100.0F),
-        ).to_mesh(),
-      ),
-    ),
-    @sprite.MeshMaterial2d::new(
-      @sprite.color_material_assets_mut_or_abort().val.add(
-        @sprite.ColorMaterialAsset::from_color(black),
-      ),
-    ),
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(0.0F, 0.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
-  ).spawn(world)
-  |> ignore
-
-  let circle_entity = @sprite.Mesh2dBundle::new_with_mesh_material(
-    @sprite.Mesh2d::new(
-      @sprite.mesh_assets_mut_or_abort().val.add(
-        @sprite.mesh2d_geometry_circle(@sprite.Circle::new(50.0F)).to_mesh(),
-      ),
-    ),
-    @sprite.MeshMaterial2d::new(
-      @sprite.color_material_assets_mut_or_abort().val.add(
-        @sprite.ColorMaterialAsset::from_color(black),
-      ),
-    ),
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(150.0F, 0.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-    ),
-  ).spawn(world)
-  world
-  .component(@sprite.ecs_key_wireframe2d)
-  .insert(circle_entity, @sprite.Wireframe2d::default(), tick)
-  world
-  .component(@sprite.ecs_key_wireframe2d_color)
-  .insert(circle_entity, @sprite.Wireframe2dColor::new(color_green()), tick)
-
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-
-  wireframe_scene_state.val.circle_entity = circle_entity
-
-  let config = try
-    world.get_resource(@sprite.ecs_key_wireframe2d_config)
-  catch {
-    _ => @sprite.Wireframe2dConfig::default()
-  } noraise {
-    Some(value) => value
-    None => @sprite.Wireframe2dConfig::default()
-  }
-  wireframe_scene_state.val.overlay_text_handle = Some(
-    spawn_wireframe_overlay(world, config),
   )
 }
 
 ///|
-fn wireframe_update(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+fn update_colors(
+  keyboard_input : @input.ButtonInput[@window.KeyCode],
+  config : @app.ResMut[@sprite.Wireframe2dConfig],
+  wireframe_colors : @ecs.Query1[@sprite.Wireframe2dColor],
+  text : @ecs.Query1[WireframeHelpText],
+) -> Unit {
+  if (try! text.single()) is Some(help_text) {
+    @text.text_set_content(
+      help_text.handle,
+      wireframe_overlay_text(config.get_ref().val),
+    )
+  }
 
-  let mut config = try
-    world.get_resource(@sprite.ecs_key_wireframe2d_config)
-  catch {
-    _ => @sprite.Wireframe2dConfig::default()
-  } noraise {
-    Some(value) => value
-    None => @sprite.Wireframe2dConfig::default()
+  if keyboard_input.just_pressed(@window.KeyCode::KeyZ) {
+    let config_ref = config.get_ref()
+    config_ref.val = config_ref.val.with_global(!config_ref.val.global)
   }
-  let mut config_changed = false
-  if @input.key_just_pressed(@window.KeyCode::KeyZ) {
-    config = config.with_global(!config.global)
-    config_changed = true
-  }
-  if @input.key_just_pressed(@window.KeyCode::KeyX) {
-    let next_color = if color_close(config.default_color, color_default_white()) {
+
+  if keyboard_input.just_pressed(@window.KeyCode::KeyX) {
+    let config_ref = config.get_ref()
+    let next_color = if color_close(
+        config_ref.val.default_color,
+        color_default_white(),
+      ) {
       color_red()
     } else {
       color_default_white()
     }
-    config = config.with_default_color(next_color)
-    config_changed = true
-  }
-  if config_changed {
-    world.insert_resource(@sprite.ecs_key_wireframe2d_config, config)
+    config_ref.val = config_ref.val.with_default_color(next_color)
   }
 
-  if @input.key_just_pressed(@window.KeyCode::KeyC) {
-    let store = world.component(@sprite.ecs_key_wireframe2d_color)
-    if store.get(wireframe_scene_state.val.circle_entity)
-      is Some(color_component) {
-      let next = if color_close(color_component.color, color_green()) {
+  if keyboard_input.just_pressed(@window.KeyCode::KeyC) {
+    try! wireframe_colors.view_mut(fn(_entity, color) {
+      let color_ref = color.get_ref()
+      let next = if color_close(color_ref.val.color, color_green()) {
         color_red()
       } else {
         color_green()
       }
-      store.set(
-        wireframe_scene_state.val.circle_entity,
-        @sprite.Wireframe2dColor::new(next),
-        tick,
-      )
-      |> ignore
-    }
-  }
-
-  if wireframe_scene_state.val.overlay_text_handle is Some(text_handle) {
-    let config = try
-      world.get_resource(@sprite.ecs_key_wireframe2d_config)
-    catch {
-      _ => @sprite.Wireframe2dConfig::default()
-    } noraise {
-      Some(value) => value
-      None => @sprite.Wireframe2dConfig::default()
-    }
-    @text.text_set_content(text_handle, wireframe_overlay_text(config))
+      color_ref.val = color_ref.val.with_color(next)
+      color.set_changed()
+    })
   }
 }

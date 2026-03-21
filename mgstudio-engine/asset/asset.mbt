@@ -109,6 +109,33 @@ pub struct AssetServer {
 }
 
 ///|
+pub const ASSET_PLUGIN_ID : String = "bevy_asset::AssetPlugin"
+
+///|
+pub struct AssetPlugin {
+  default_sampler_nearest : Bool
+}
+
+///|
+pub fn AssetPlugin::default() -> AssetPlugin {
+  AssetPlugin::{ default_sampler_nearest: false }
+}
+
+///|
+pub fn AssetPlugin::default_nearest() -> AssetPlugin {
+  AssetPlugin::{ default_sampler_nearest: true }
+}
+
+///|
+pub fn AssetPlugin::with_default_sampler_nearest(
+  self : AssetPlugin,
+  enabled : Bool,
+) -> AssetPlugin {
+  self |> ignore
+  AssetPlugin::{ default_sampler_nearest: enabled }
+}
+
+///|
 priv struct AssetLoaderEntry {
   load : (AssetServer, String) -> @any.Any
 }
@@ -1385,4 +1412,18 @@ pub fn asset_plugin_nearest(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] 
   let asset_server = asset_server_standalone()
   asset_server.default_sampler_nearest.val = true
   asset_plugin_with_server(app, asset_server)
+}
+
+///|
+pub impl @app.PluginReplacement for AssetPlugin with replacement_id(_self) {
+  ASSET_PLUGIN_ID
+}
+
+///|
+pub impl @app.PluginReplacement for AssetPlugin with world_plugin(self) {
+  fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+    let asset_server = asset_server_standalone()
+    asset_server.default_sampler_nearest.val = self.default_sampler_nearest
+    asset_plugin_with_server(app, asset_server)
+  }
 }

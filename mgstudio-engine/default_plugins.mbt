@@ -67,7 +67,7 @@ pub fn default_plugins() -> Array[@app.Plugin[@ecs.World]] {
 ///|
 /// Default plugin bundle with "nearest" sampling for textures (useful for pixel art).
 pub fn default_plugins_nearest() -> Array[@app.Plugin[@ecs.World]] {
-  @internal.default_plugins_nearest()
+  DefaultPlugins::set(@asset.AssetPlugin::default_nearest()).build()
 }
 
 ///|
