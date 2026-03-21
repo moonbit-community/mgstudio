@@ -1,5 +1,4 @@
 import {
-  "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
@@ -7,6 +6,7 @@ import {
   "Milky2018/mgstudio",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/time",
+  "moonbitlang/core/json",
   "moonbitlang/core/random",
 }
 

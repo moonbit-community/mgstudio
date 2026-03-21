@@ -19,9 +19,6 @@ const IMAGE_WIDTH : Int = 256
 const IMAGE_HEIGHT : Int = 256
 
 ///|
-const FIXED_TIMESTEP_SECONDS : Float = 0.0009765625F
-
-///|
 const SPIRAL_ROT_SPEED : Float = 0.0123F
 
 ///|
@@ -40,84 +37,95 @@ const BASE_B : Int = 220
 const COLOR_DISTANCE_TOLERANCE : Float = 0.003921569F
 
 ///|
-priv struct LinearColor {
+struct LinearColor {
   r : Float
   g : Float
   b : Float
+} derive(ToJson, FromJson)
+
+///|
+impl @app.FromWorld for LinearColor with from_world(world) {
+  ignore(world)
+  LinearColor::{ r: 0.0F, g: 0.0F, b: 0.0F }
 }
 
 ///|
-priv struct CpuDrawState {
-  mut texture : @asset.Handle[@asset.Image]?
-  mut draw_index : Int
-  mut draw_color : LinearColor
-  mut draw_color_initialized : Bool
-  mut pixels : Array[Byte]
-  mut rng : @random.Rand
+struct MyProcGenImage {
+  handle : @asset.Handle[@asset.Image]
 }
 
 ///|
-let cpu_draw_state : Ref[CpuDrawState] = Ref::new(CpuDrawState::{
-  texture: None,
-  draw_index: 0,
-  draw_color: LinearColor::{ r: 0.0F, g: 0.0F, b: 0.0F },
-  draw_color_initialized: false,
-  pixels: [],
-  rng: seeded_rng(),
-})
+let my_proc_gen_image_key : @ecs.ResourceKey[MyProcGenImage] = @ecs.register_resource(
+  debug_name="examples.2d.cpu_draw.MyProcGenImage",
+)
+
+///|
+pub impl @app.Resource for MyProcGenImage with resource() {
+  my_proc_gen_image_key
+}
+
+///|
+struct SeededRng {
+  rng : @random.Rand
+}
+
+///|
+let seeded_rng_key : @ecs.ResourceKey[SeededRng] = @ecs.register_resource(
+  debug_name="examples.2d.cpu_draw.SeededRng",
+)
+
+///|
+pub impl @app.Resource for SeededRng with resource() {
+  seeded_rng_key
+}
 
 ///|
 fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .insert_resource(@time.Time::from_seconds(FIXED_TIMESTEP_SECONDS))
-  .add_systems(@app.Startup, @app.system(cpu_draw_setup))
-  .add_systems(@app.FixedUpdate, @app.system(cpu_draw_draw))
+  .insert_resource(@time.Time::from_hz(1024.0F))
+  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .add_systems(@app.FixedUpdate, @app.system(@app.system_param5(draw)))
   .run()
 }
 
 ///|
-fn cpu_draw_setup(world : @ecs.World) -> Unit {
-  let texture = @asset.asset_create_dynamic_texture(
-    @math.UVec2::new(IMAGE_WIDTH, IMAGE_HEIGHT),
-    false,
+fn setup(
+  commands : @app.Commands,
+  images : @app.ResMut[@asset.Assets[@asset.Image]],
+) -> Unit {
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+
+  let handle = images.get_ref().val.add(
+    @asset.Image::new(
+      IMAGE_WIDTH,
+      IMAGE_HEIGHT,
+      Bytes::from_array(build_initial_pixels()),
+    ),
   )
 
-  let initial_pixels = build_initial_pixels()
-  @asset.asset_update_texture_region_rgba8(
-    texture,
-    full_texture_rect(),
-    Bytes::from_array(initial_pixels),
-  )
-
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-
-  @sprite.SpriteBundle::new(
-    @sprite.Sprite::from_image(texture),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-
-  cpu_draw_state.val.texture = Some(texture)
-  cpu_draw_state.val.draw_index = 0
-  cpu_draw_state.val.draw_color = LinearColor::{ r: 0.0F, g: 0.0F, b: 0.0F }
-  cpu_draw_state.val.draw_color_initialized = false
-  cpu_draw_state.val.pixels = initial_pixels
-  cpu_draw_state.val.rng = seeded_rng()
+  ignore(commands.spawn_component(@sprite.Sprite::from_image(handle)))
+  commands.insert_resource(MyProcGenImage::{ handle, })
+  commands.insert_resource(SeededRng::{ rng: seeded_rng() })
 }
 
 ///|
-fn cpu_draw_draw(_world : @ecs.World) -> Unit {
-  guard cpu_draw_state.val.texture is Some(texture) else { return }
+fn draw(
+  my_handle : @app.Res[MyProcGenImage],
+  images : @app.ResMut[@asset.Assets[@asset.Image]],
+  i : @app.Local[Int],
+  draw_color : @app.Local[LinearColor],
+  seeded_rng : @app.ResMut[SeededRng],
+) -> Unit {
+  let images_ref = images.get_ref()
+  guard images_ref.val.get(my_handle.get().handle) is Some(image) else {
+    return
+  }
 
-  if !cpu_draw_state.val.draw_color_initialized {
-    cpu_draw_state.val.draw_color = next_random_color()
-    cpu_draw_state.val.draw_color_initialized = true
+  let seeded_rng_ref = seeded_rng.get_ref()
+  if i.get() == 0 {
+    draw_color.get_ref().val = next_random_color(seeded_rng_ref.val.rng)
   }
 
   let center = @math.Vec2::new(
@@ -125,49 +133,40 @@ fn cpu_draw_draw(_world : @ecs.World) -> Unit {
     int_to_float(IMAGE_HEIGHT) * 0.5F,
   )
   let max_radius = int_to_float(min_int(IMAGE_WIDTH, IMAGE_HEIGHT)) * 0.5F
-  let sample = int_to_float(cpu_draw_state.val.draw_index)
+  let index = i.get()
+  let sample = int_to_float(index)
   let radius = @math.sin(sample * SPIRAL_PERIOD) * max_radius
   let angle = sample * SPIRAL_ROT_SPEED
+  let xy = @math.Vec2::from_angle(angle).mul_scalar(radius).add(center)
+  let x = clamp_int(xy.x.to_int(), 0, IMAGE_WIDTH - 1)
+  let y = clamp_int(xy.y.to_int(), 0, IMAGE_HEIGHT - 1)
 
-  let x = clamp_int(
-    (center.x + @math.cos(angle) * radius).to_int(),
-    0,
-    IMAGE_WIDTH - 1,
-  )
-  let y = clamp_int(
-    (center.y + @math.sin(angle) * radius).to_int(),
-    0,
-    IMAGE_HEIGHT - 1,
-  )
-
+  let pixels = image.pixels.to_array()
   let start = (y * IMAGE_WIDTH + x) * 4
   let old_color = LinearColor::{
-    r: byte_to_float(cpu_draw_state.val.pixels[start]),
-    g: byte_to_float(cpu_draw_state.val.pixels[start + 1]),
-    b: byte_to_float(cpu_draw_state.val.pixels[start + 2]),
+    r: byte_to_float(pixels[start]),
+    g: byte_to_float(pixels[start + 1]),
+    b: byte_to_float(pixels[start + 2]),
   }
-  let old_alpha = cpu_draw_state.val.pixels[start + 3]
+  let old_alpha = pixels[start + 3]
 
-  if color_distance(old_color, cpu_draw_state.val.draw_color) <=
-    COLOR_DISTANCE_TOLERANCE {
-    cpu_draw_state.val.draw_color = next_random_color()
+  if color_distance(old_color, draw_color.get()) <= COLOR_DISTANCE_TOLERANCE {
+    draw_color.get_ref().val = next_random_color(seeded_rng_ref.val.rng)
   }
 
-  let new_r = color_channel_to_byte(cpu_draw_state.val.draw_color.r)
-  let new_g = color_channel_to_byte(cpu_draw_state.val.draw_color.g)
-  let new_b = color_channel_to_byte(cpu_draw_state.val.draw_color.b)
+  pixels[start] = color_channel_to_byte(draw_color.get().r)
+  pixels[start + 1] = color_channel_to_byte(draw_color.get().g)
+  pixels[start + 2] = color_channel_to_byte(draw_color.get().b)
+  pixels[start + 3] = old_alpha
 
-  cpu_draw_state.val.pixels[start] = new_r
-  cpu_draw_state.val.pixels[start + 1] = new_g
-  cpu_draw_state.val.pixels[start + 2] = new_b
-
-  @asset.asset_update_texture_region_rgba8(
-    texture,
-    @math.URect::new(@math.UVec2::new(x, y), @math.UVec2::new(x + 1, y + 1)),
-    Bytes::from_array([new_r, new_g, new_b, old_alpha]),
+  ignore(
+    images_ref.val.set(
+      my_handle.get().handle,
+      @asset.Image::new(image.width, image.height, Bytes::from_array(pixels)),
+    ),
   )
 
-  cpu_draw_state.val.draw_index = cpu_draw_state.val.draw_index + 1
+  i.set(index + 1)
 }
 
 ///|
@@ -176,8 +175,7 @@ fn seeded_rng() -> @random.Rand {
 }
 
 ///|
-fn next_random_color() -> LinearColor {
-  let rng = cpu_draw_state.val.rng
+fn next_random_color(rng : @random.Rand) -> LinearColor {
   LinearColor::{ r: rng.float(), g: rng.float(), b: rng.float() }
 }
 
@@ -211,14 +209,6 @@ fn build_initial_pixels() -> Array[Byte] {
   }
 
   pixels
-}
-
-///|
-fn full_texture_rect() -> @math.URect {
-  @math.URect::new(
-    @math.UVec2::zero(),
-    @math.UVec2::new(IMAGE_WIDTH, IMAGE_HEIGHT),
-  )
 }
 
 ///|

@@ -1,11 +1,20 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/2d/rotate_to_cursor"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type MainCamera
+pub impl @ecs.Component for MainCamera
+
+type Player
+pub impl @ecs.Component for Player
 
 // Type aliases
 

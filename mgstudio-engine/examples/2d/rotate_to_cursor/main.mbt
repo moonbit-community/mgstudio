@@ -13,71 +13,129 @@
 // limitations under the License.
 
 ///|
-priv struct RotateToCursorState {
-  mut player : @core.Entity
+struct Player {}
+
+///|
+let player_key : @ecs.ComponentKey[Player] = @ecs.register_component(
+  debug_name="examples.2d.rotate_to_cursor.Player",
+)
+
+///|
+pub impl @ecs.Component for Player with component() {
+  player_key
 }
 
 ///|
-let rotate_to_cursor_state : Ref[RotateToCursorState] = Ref::new(RotateToCursorState::{
-  player: @core.Entity::placeholder(),
-})
+struct MainCamera {}
+
+///|
+let main_camera_key : @ecs.ComponentKey[MainCamera] = @ecs.register_component(
+  debug_name="examples.2d.rotate_to_cursor.MainCamera",
+)
+
+///|
+pub impl @ecs.Component for MainCamera with component() {
+  main_camera_key
+}
 
 ///|
 fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(rotate_to_cursor_setup))
-  .add_systems(@app.FixedUpdate, @app.system(rotate_to_cursor_update))
+  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .add_systems(
+    @app.FixedUpdate,
+    @app.system(@app.system_param6(player_movement_system)),
+  )
   .run()
 }
 
 ///|
-fn rotate_to_cursor_setup(world : @ecs.World) -> Unit {
-  rotate_to_cursor_state.val.player = @core.Entity::placeholder()
-
-  let asset_server = @asset.AssetServer::new()
-  let texture = asset_server.load("textures/simplespace/ship_C.png")
-  let sprite = @sprite.Sprite::from_image(texture)
-  let transform = @transform.Transform::identity()
-  let player = @sprite.SpriteBundle::new(sprite, transform).spawn(world)
-  rotate_to_cursor_state.val.player = player
-
-  let camera = @sprite.Camera::default()
-  @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
-    world,
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+) -> Unit {
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Sprite::from_image(
+          asset_server.get().load("textures/simplespace/ship_C.png"),
+        ),
+        Player::{  },
+      ),
+    ),
   )
-  |> ignore
+  ignore(commands.spawn((@sprite.Camera2d::default(), MainCamera::{  })))
 }
 
 ///|
-fn rotate_to_cursor_update(world : @ecs.World) -> Unit {
-  let player = rotate_to_cursor_state.val.player
-  if player.is_placeholder() {
+fn main_camera_entity(
+  main_camera_query : @ecs.Query1[MainCamera],
+) -> @core.Entity? {
+  let entity_ref : Ref[@core.Entity?] = Ref::new(None)
+  try! main_camera_query.view(fn(entity, _camera) {
+    if entity_ref.val is None {
+      entity_ref.val = Some(entity)
+    }
+  })
+  entity_ref.val
+}
+
+///|
+fn player_movement_system(
+  players : @ecs.Query1Filtered[@transform.Transform, @ecs.With[Player]],
+  main_camera_query : @ecs.Query1[MainCamera],
+  camera_query : @ecs.Query1[@sprite.Camera],
+  projection_query : @ecs.Query1[@sprite.Projection],
+  transform_query : @ecs.Query1[@transform.Transform],
+  windows : @ecs.Query1Filtered[
+    @window.Window,
+    @ecs.With[@window.PrimaryWindow],
+  ],
+) -> Unit {
+  guard main_camera_entity(main_camera_query) is Some(camera_entity) else {
+    return
+  }
+  guard (try! camera_query.get(camera_entity)) is Some(camera) else { return }
+  guard (try! projection_query.get(camera_entity)) is Some(projection) else {
+    return
+  }
+  guard projection is Orthographic(orthographic_projection) else { return }
+  guard (try! transform_query.get(camera_entity)) is Some(camera_transform) else {
+    return
+  }
+  guard (try! windows.single()) is Some(window) else { return }
+  guard @input.mouse_position() is Some(cursor_position) else { return }
+
+  let window_size = @math.IVec2::new(
+    window.width().to_int(),
+    window.height().to_int(),
+  )
+  if window_size.x <= 0 || window_size.y <= 0 {
+    return
+  }
+  guard @sprite_render.render2d_camera_viewport_to_world_2d(
+      cursor_position,
+      camera,
+      orthographic_projection,
+      camera_transform,
+      window_size,
+      window.scale_factor(),
+    )
+    is Some(cursor_world_pos) else {
     return
   }
 
-  if @input.mouse_position() is Some(screen_pos) {
-    if @sprite_render.render2d_viewport_to_world_2d(world, screen_pos)
-      is Some(world_pos) {
-      guard (try! world.get(player, @transform.ecs_key_transform))
-        is Some(transform) else {
-        return
-      }
-
-      let delta = @math.Vec2::new(
-        world_pos.x - transform.translation.x,
-        world_pos.y - transform.translation.y,
-      )
-      let angle = delta.to_angle() - @math.pi_half()
-      let next_transform = @transform.Transform::from_xy_rotation_scale(
-        @math.Vec2::new(transform.translation.x, transform.translation.y),
-        angle,
-        @math.Vec2::new(transform.scale.x, transform.scale.y),
-        z=transform.translation.z,
-      )
-
-      try! world.set(player, @transform.ecs_key_transform, next_transform)
-    }
-  }
+  try! players.view_mut(fn(_entity, player) {
+    let player_ref = player.get_ref()
+    player_ref.val.rotation = @math.Quat::from_rotation_z(
+      @math.Vec2::new(
+        cursor_world_pos.x - player_ref.val.translation.x,
+        cursor_world_pos.y - player_ref.val.translation.y,
+      ).to_angle() -
+      @math.pi_half(),
+    )
+    player.set_changed()
+  })
 }

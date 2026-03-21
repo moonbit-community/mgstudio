@@ -1396,6 +1396,10 @@ fn asset_plugin_with_server(
     assets
   })
   .init_resource(fn() {
+    let assets : Assets[Image] = Assets::new()
+    assets
+  })
+  .init_resource(fn() {
     let assets : Assets[TextureAtlasLayout] = Assets::new()
     assets
   })

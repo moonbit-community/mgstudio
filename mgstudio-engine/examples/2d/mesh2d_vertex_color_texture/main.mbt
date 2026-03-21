@@ -13,92 +13,82 @@
 // limitations under the License.
 
 ///|
-const PANEL_SCALE : Float = 128.0F
-
-///|
-const PANEL_OFFSET : Float = 96.0F
-
-///|
 fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(mesh2d_vertex_color_texture_setup))
+  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .run()
 }
 
 ///|
-fn mesh2d_vertex_color_texture_setup(world : @ecs.World) -> Unit {
-  let asset_server = @asset.AssetServer::new()
-  let texture = asset_server.load("branding/banner.png")
-  let mesh = create_colored_quad_mesh()
-  let left_material = @sprite.MeshMaterial2d::new(
-    @sprite.color_material_assets_mut_or_abort().val.add(
-      @sprite.ColorMaterialAsset::from_color(@sprite.Color::white()),
-    ),
-  )
-  let right_material = @sprite.MeshMaterial2d::new(
-    @sprite.color_material_assets_mut_or_abort().val.add(
-      @sprite.ColorMaterialAsset::from_image(texture),
-    ),
-  )
-  spawn_colored_panel(world, mesh, left_material, -PANEL_OFFSET)
-  spawn_colored_panel(world, mesh, right_material, PANEL_OFFSET)
-  @sprite.Camera2dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-}
-
-///|
-fn create_colored_quad_mesh() -> @sprite.Mesh2d {
-  let positions = [
-    @math.Vec2::new(-0.5F, -0.5F),
-    @math.Vec2::new(0.5F, -0.5F),
-    @math.Vec2::new(0.5F, 0.5F),
-    @math.Vec2::new(-0.5F, 0.5F),
-  ]
-  let uvs = [
-    @math.Vec2::new(0.0F, 0.0F),
-    @math.Vec2::new(1.0F, 0.0F),
-    @math.Vec2::new(1.0F, 1.0F),
-    @math.Vec2::new(0.0F, 1.0F),
-  ]
-  let colors = [
-    @math.Vec4::new(1.0F, 0.0F, 0.0F, 1.0F),
-    @math.Vec4::new(0.0F, 1.0F, 0.0F, 1.0F),
-    @math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F),
-    @math.Vec4::new(1.0F, 1.0F, 1.0F, 1.0F),
-  ]
-  let indices = [0, 1, 2, 0, 2, 3]
-  let geometry = @mesh.Mesh2dGeometry::new_with_colors(
-    positions,
-    uvs,
-    colors,
-    Some(indices),
-  )
-  @sprite.Mesh2d::new(
-    @sprite.mesh_assets_mut_or_abort().val.add(
-      @sprite.Mesh::from_2d_geometry(geometry),
-    ),
-  )
-}
-
-///|
-fn spawn_colored_panel(
-  world : @ecs.World,
-  mesh : @sprite.Mesh2d,
-  material : @sprite.MeshMaterial2d[@sprite.ColorMaterialAsset],
-  x : Float,
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
+  asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let transform = @transform.Transform::from_xy_rotation_scale(
-    @math.Vec2::new(x, 0.0F),
-    0.0F,
-    @math.Vec2::new(PANEL_SCALE, PANEL_SCALE),
+  let texture_handle = asset_server.get().load("branding/banner.png")
+  let mesh_handle = meshes.get_ref().val.add(create_colored_quad_mesh())
+
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Mesh2d::new(mesh_handle),
+        @sprite.MeshMaterial2d::new(
+          materials.get_ref().val.add(
+            @sprite.ColorMaterialAsset::from_color(@sprite.Color::white()),
+          ),
+        ),
+        @transform.Transform::from_translation(
+          @math.Vec3::new(-96.0F, 0.0F, 0.0F),
+        ).with_scale(@math.Vec3::splat(128.0F)),
+      ),
+    ),
   )
-  @sprite.Mesh2dBundle::new_with_mesh_material(mesh, material, transform).spawn(
-    world,
+
+  ignore(
+    commands.spawn(
+      (
+        @sprite.Mesh2d::new(mesh_handle),
+        @sprite.MeshMaterial2d::new(
+          materials.get_ref().val.add(
+            @sprite.ColorMaterialAsset::from_image(texture_handle),
+          ),
+        ),
+        @transform.Transform::from_translation(
+          @math.Vec3::new(96.0F, 0.0F, 0.0F),
+        ).with_scale(@math.Vec3::splat(128.0F)),
+      ),
+    ),
   )
-  |> ignore
+}
+
+///|
+fn create_colored_quad_mesh() -> @mesh.Mesh {
+  @mesh.Mesh::from_2d_geometry(
+    @mesh.Mesh2dGeometry::new_with_colors(
+      [
+        @math.Vec2::new(-0.5F, -0.5F),
+        @math.Vec2::new(0.5F, -0.5F),
+        @math.Vec2::new(0.5F, 0.5F),
+        @math.Vec2::new(-0.5F, 0.5F),
+      ],
+      [
+        @math.Vec2::new(0.0F, 0.0F),
+        @math.Vec2::new(1.0F, 0.0F),
+        @math.Vec2::new(1.0F, 1.0F),
+        @math.Vec2::new(0.0F, 1.0F),
+      ],
+      [
+        @math.Vec4::new(1.0F, 0.0F, 0.0F, 1.0F),
+        @math.Vec4::new(0.0F, 1.0F, 0.0F, 1.0F),
+        @math.Vec4::new(0.0F, 0.0F, 1.0F, 1.0F),
+        @math.Vec4::new(1.0F, 1.0F, 1.0F, 1.0F),
+      ],
+      Some([0, 1, 2, 0, 2, 3]),
+    ),
+  )
 }

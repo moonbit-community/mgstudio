@@ -93,6 +93,13 @@ test "asset plugin initializes world-owned asset resources" {
     (try! world.get_resource(loaded_folder_assets_resource_key())) is Some(_),
     content="true",
   )
+  inspect(
+    (try! world.get_resource(
+      assets_resource_key_of(Image::new(1, 1, Bytes::new(4))),
+    ))
+    is Some(_),
+    content="true",
+  )
 }
 
 ///|

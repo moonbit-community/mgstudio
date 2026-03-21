@@ -1,11 +1,26 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/2d/cpu_draw"
 
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type LinearColor
+pub impl ToJson for LinearColor
+pub impl @json.FromJson for LinearColor
+
+type MyProcGenImage
+pub impl @app.Resource for MyProcGenImage
+
+type SeededRng
+pub impl @app.Resource for SeededRng
 
 // Type aliases
 
