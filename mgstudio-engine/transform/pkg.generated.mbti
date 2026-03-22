@@ -134,6 +134,7 @@ pub fn Transform::with_scale(Self, @math.Vec3) -> Self
 pub fn Transform::with_translation(Self, @math.Vec3) -> Self
 pub impl @ecs.Component for Transform
 pub impl @math.Ease for Transform
+pub impl Default for Transform
 pub impl ToJson for Transform
 pub impl @json.FromJson for Transform
 

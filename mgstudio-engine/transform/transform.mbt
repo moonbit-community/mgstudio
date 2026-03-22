@@ -75,6 +75,11 @@ pub fn Transform::identity() -> Transform {
 }
 
 ///|
+pub impl Default for Transform with default() {
+  Transform::identity()
+}
+
+///|
 pub fn Transform::from_xyz(x : Float, y : Float, z : Float) -> Transform {
   Transform::new(
     @math.Vec3::new(x, y, z),

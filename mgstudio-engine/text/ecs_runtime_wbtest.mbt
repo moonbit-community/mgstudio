@@ -93,10 +93,89 @@ test "ecs text bridge cleanup removes dead entity entries" {
       TextFont::default(),
       @transform.Transform::identity(),
     ),
+    span_bundles: [],
   })
 
   try! world.despawn(entity)
   text_ecs_cleanup_stale_entries(world)
 
   inspect(text_ecs_bridge_entries.val.length(), content="0")
+}
+
+///|
+test "text ecs bridge registers Transform as a required component for Text2d" {
+  let world = @ecs.World::new()
+  try! register_text_required_components(world)
+  let entity = world.spawn()
+  try! world.set_component(entity, Text2d::new("Auto transform"))
+
+  inspect(
+    (try! world.get_component(entity) : @transform.Transform?) is Some(_),
+    content="true",
+  )
+}
+
+///|
+test "ecs text bridge collects TextSpan children in hierarchy order" {
+  let world = @ecs.World::new()
+  let root = world.spawn()
+  let first = world.spawn()
+  let second = world.spawn()
+  let root_font = TextFont::default().with_font_size(35.0F)
+  let root_bundle = Text2dBundle::new(
+    Text2d::new(" Anchor"),
+    root_font,
+    @transform.Transform::identity(),
+  )
+  try! world.set_component(root, @hierarchy.Children::new([first, second]))
+  try! world.set_component(first, TextSpan::new("::"))
+  try! world.set_component(first, root_font)
+  try! world.set_component(
+    first,
+    TextColor::new(@sprite.Color::srgb(0.83F, 0.83F, 0.83F)),
+  )
+  try! world.set_component(
+    first,
+    TextBackgroundColor::new(@sprite.Color::srgb(0.0F, 0.0F, 0.55F)),
+  )
+  try! world.set_component(second, TextSpan::new("Anchor(Vec2(-0.5, 0.5)) "))
+  try! world.set_component(second, root_font)
+  try! world.set_component(
+    second,
+    TextColor::new(@sprite.Color::srgb(1.0F, 0.63F, 0.48F)),
+  )
+  try! world.set_component(
+    second,
+    TextBackgroundColor::new(@sprite.Color::srgb(0.7F, 0.441F, 0.336F)),
+  )
+
+  let span_bundles = text_ecs_collect_span_bundles_for_entity(
+    world, root, root_bundle,
+  )
+
+  inspect(span_bundles.length(), content="2")
+  inspect(
+    text_span_bundle_eq(
+      span_bundles[0],
+      TextSpanBundle::new(TextSpan::new("::"), root_font)
+      .with_color(TextColor::new(@sprite.Color::srgb(0.83F, 0.83F, 0.83F)))
+      .with_background_color(
+        Some(TextBackgroundColor::new(@sprite.Color::srgb(0.0F, 0.0F, 0.55F))),
+      ),
+    ),
+    content="true",
+  )
+  inspect(
+    text_span_bundle_eq(
+      span_bundles[1],
+      TextSpanBundle::new(TextSpan::new("Anchor(Vec2(-0.5, 0.5)) "), root_font)
+      .with_color(TextColor::new(@sprite.Color::srgb(1.0F, 0.63F, 0.48F)))
+      .with_background_color(
+        Some(
+          TextBackgroundColor::new(@sprite.Color::srgb(0.7F, 0.441F, 0.336F)),
+        ),
+      ),
+    ),
+    content="true",
+  )
 }

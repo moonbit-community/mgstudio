@@ -6,6 +6,11 @@ package "Milky2018/mgstudio/examples/2d/text2d"
 // Errors
 
 // Types and methods
+type AnimateRotation
+
+type AnimateScale
+
+type AnimateTranslation
 
 // Type aliases
 

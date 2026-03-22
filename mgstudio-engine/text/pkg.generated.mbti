@@ -32,6 +32,8 @@ pub let ecs_key_text_layout : @ecs.ComponentKey[TextLayout]
 
 pub let ecs_key_text_line_height : @ecs.ComponentKey[LineHeight]
 
+pub let ecs_key_text_span : @ecs.ComponentKey[TextSpan]
+
 pub let ecs_key_text_strikethrough : @ecs.ComponentKey[Strikethrough]
 
 pub let ecs_key_text_underline : @ecs.ComponentKey[Underline]
@@ -409,6 +411,7 @@ pub struct TextSpan {
   content : String
 }
 pub fn TextSpan::new(String) -> Self
+pub impl @ecs.Component for TextSpan
 
 pub struct TextSpanBundle {
   span : TextSpan

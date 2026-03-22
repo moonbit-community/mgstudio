@@ -1189,6 +1189,7 @@ pub let text_set_sync_ecs : @app.SystemSet = @app.system_set(
 
 ///|
 pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  try! register_text_required_components(app.world())
   app
   .add_system(text_update_system)
   .add_post_update_system_config(

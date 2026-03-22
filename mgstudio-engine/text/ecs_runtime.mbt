@@ -18,6 +18,11 @@ pub let ecs_key_text2d : @ecs.ComponentKey[Text2d] = @ecs.register_component(
 )
 
 ///|
+pub let ecs_key_text_span : @ecs.ComponentKey[TextSpan] = @ecs.register_component(
+  debug_name="text.text_span",
+)
+
+///|
 pub let ecs_key_text_font : @ecs.ComponentKey[TextFont] = @ecs.register_component(
   debug_name="text.text_font",
 )
@@ -70,6 +75,11 @@ pub let ecs_key_text_y_axis : @ecs.ComponentKey[YAxisOrientation] = @ecs.registe
 ///|
 pub impl @ecs.Component for Text2d with component() {
   ecs_key_text2d
+}
+
+///|
+pub impl @ecs.Component for TextSpan with component() {
+  ecs_key_text_span
 }
 
 ///|
@@ -128,10 +138,20 @@ priv struct EcsTextBridgeEntry {
   entity : @core.Entity
   handle : TextHandle
   bundle : Text2dBundle
+  span_bundles : Array[TextSpanBundle]
 }
 
 ///|
 let text_ecs_bridge_entries : Ref[Array[EcsTextBridgeEntry]] = Ref::new([])
+
+///|
+fn register_text_required_components(
+  world : @ecs.World,
+) -> Unit raise @ecs.RequiredComponentsError {
+  world.register_required_components(
+    ecs_key_text2d, @transform.ecs_key_transform,
+  )
+}
 
 ///|
 fn float_opt_eq(lhs : Float?, rhs : Float?) -> Bool {
@@ -163,6 +183,11 @@ fn font_smoothing_eq(lhs : FontSmoothing, rhs : FontSmoothing) -> Bool {
 
 ///|
 fn text2d_eq(lhs : Text2d, rhs : Text2d) -> Bool {
+  lhs.content == rhs.content
+}
+
+///|
+fn text_span_eq(lhs : TextSpan, rhs : TextSpan) -> Bool {
   lhs.content == rhs.content
 }
 
@@ -259,6 +284,33 @@ fn y_axis_eq(lhs : YAxisOrientation, rhs : YAxisOrientation) -> Bool {
     (YAxisOrientation::BottomToTop, YAxisOrientation::BottomToTop) => true
     _ => false
   }
+}
+
+///|
+fn text_span_bundle_eq(lhs : TextSpanBundle, rhs : TextSpanBundle) -> Bool {
+  text_span_eq(lhs.span, rhs.span) &&
+  text_font_eq(lhs.font, rhs.font) &&
+  text_color_eq(lhs.color, rhs.color) &&
+  text_background_color_eq(lhs.background_color, rhs.background_color) &&
+  empty_marker_opt_eq(lhs.underline, rhs.underline) &&
+  empty_marker_opt_eq(lhs.strikethrough, rhs.strikethrough) &&
+  line_height_eq(lhs.line_height, rhs.line_height)
+}
+
+///|
+fn text_span_bundle_array_eq(
+  lhs : Array[TextSpanBundle],
+  rhs : Array[TextSpanBundle],
+) -> Bool {
+  if lhs.length() != rhs.length() {
+    return false
+  }
+  for i in 0..<lhs.length() {
+    if !text_span_bundle_eq(lhs[i], rhs[i]) {
+      return false
+    }
+  }
+  true
 }
 
 ///|
@@ -373,18 +425,104 @@ fn text_ecs_bundle_from_entity(
 }
 
 ///|
+fn text_ecs_span_bundle_from_entity(
+  world : @ecs.World,
+  entity : @core.Entity,
+  inherited_font : TextFont,
+  inherited_line_height : LineHeight,
+) -> TextSpanBundle? {
+  let span = match (try! world.get_component(entity) : TextSpan?) {
+    Some(span) => span
+    None => return None
+  }
+  let font = match (try! world.get_component(entity) : TextFont?) {
+    Some(font) => font
+    None => inherited_font
+  }
+  let color = match (try! world.get_component(entity) : TextColor?) {
+    Some(color) => color
+    None => TextColor::default()
+  }
+  let background_color : TextBackgroundColor? = try! world.get_component(entity)
+  let underline : Underline? = try! world.get_component(entity)
+  let strikethrough : Strikethrough? = try! world.get_component(entity)
+  let line_height = match (try! world.get_component(entity) : LineHeight?) {
+    Some(line_height) => line_height
+    None => inherited_line_height
+  }
+  Some(TextSpanBundle::{
+    span,
+    font,
+    color,
+    background_color,
+    underline,
+    strikethrough,
+    line_height,
+  })
+}
+
+///|
+fn text_ecs_collect_span_bundles_for_entity(
+  world : @ecs.World,
+  entity : @core.Entity,
+  bundle : Text2dBundle,
+) -> Array[TextSpanBundle] {
+  let span_bundles : Array[TextSpanBundle] = []
+  match (try! world.get_component(entity) : @hierarchy.Children?) {
+    Some(children) =>
+      for child in children.entities() {
+        if text_ecs_span_bundle_from_entity(
+            world,
+            child,
+            bundle.font,
+            bundle.line_height,
+          )
+          is Some(span_bundle) {
+          span_bundles.push(span_bundle)
+        }
+      }
+    None => {
+      let query = world.query2(
+        ecs_key_text_span,
+        @hierarchy.Parent::component(),
+      )
+      try! query.for_each(fn(child, _span, parent) {
+        if parent.entity() != entity {
+          return
+        }
+        if text_ecs_span_bundle_from_entity(
+            world,
+            child,
+            bundle.font,
+            bundle.line_height,
+          )
+          is Some(span_bundle) {
+          span_bundles.push(span_bundle)
+        }
+      })
+    }
+  }
+  span_bundles
+}
+
+///|
 fn text_ecs_spawn_entry(
   world_id : Int,
   entity : @core.Entity,
   bundle : Text2dBundle,
+  span_bundles : Array[TextSpanBundle],
 ) -> Unit {
   let handle = text_spawn(bundle)
+  for span_bundle in span_bundles {
+    ignore(text_spawn_span(handle, span_bundle))
+  }
   text_update_instance(handle, text_update_layout)
   text_ecs_bridge_entries.val.push(EcsTextBridgeEntry::{
     world_id,
     entity,
     handle,
     bundle,
+    span_bundles,
   })
 }
 
@@ -410,16 +548,32 @@ fn text_ecs_cleanup_stale_entries(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn text_ecs_respawn_entry(
+  entry : EcsTextBridgeEntry,
+  bundle : Text2dBundle,
+  span_bundles : Array[TextSpanBundle],
+) -> EcsTextBridgeEntry {
+  ignore(text_despawn(entry.handle))
+  let handle = text_spawn(bundle)
+  for span_bundle in span_bundles {
+    ignore(text_spawn_span(handle, span_bundle))
+  }
+  text_update_instance(handle, text_update_layout)
+  EcsTextBridgeEntry::{ ..entry, handle, bundle, span_bundles }
+}
+
+///|
 fn text_ecs_sync_existing_entry(
   entry : EcsTextBridgeEntry,
   bundle : Text2dBundle,
+  span_bundles : Array[TextSpanBundle],
 ) -> EcsTextBridgeEntry {
   let handle = entry.handle
   if text_get_transform(handle) is None {
-    ignore(text_despawn(handle))
-    let respawned = text_spawn(bundle)
-    text_update_instance(respawned, text_update_layout)
-    return EcsTextBridgeEntry::{ ..entry, handle: respawned, bundle }
+    return text_ecs_respawn_entry(entry, bundle, span_bundles)
+  }
+  if !text_span_bundle_array_eq(entry.span_bundles, span_bundles) {
+    return text_ecs_respawn_entry(entry, bundle, span_bundles)
   }
   let needs_layout = !text_bundle_rerender_eq(entry.bundle, bundle)
   if !text2d_eq(entry.bundle.text, bundle.text) {
@@ -462,7 +616,7 @@ fn text_ecs_sync_existing_entry(
   if needs_layout {
     text_update_instance(handle, text_update_layout)
   }
-  EcsTextBridgeEntry::{ ..entry, bundle, }
+  EcsTextBridgeEntry::{ ..entry, bundle, span_bundles }
 }
 
 ///|
@@ -476,14 +630,17 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
     let bundle = text_ecs_bundle_from_entity(
       world, entity, text, font, local_transform,
     )
+    let span_bundles = text_ecs_collect_span_bundles_for_entity(
+      world, entity, bundle,
+    )
     match text_ecs_find_entry_index(world_id, entity) {
       Some(index) => {
         let entry = text_ecs_bridge_entries.val[index]
         text_ecs_bridge_entries.val[index] = text_ecs_sync_existing_entry(
-          entry, bundle,
+          entry, bundle, span_bundles,
         )
       }
-      None => text_ecs_spawn_entry(world_id, entity, bundle)
+      None => text_ecs_spawn_entry(world_id, entity, bundle, span_bundles)
     }
   })
 }
