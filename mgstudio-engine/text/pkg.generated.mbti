@@ -16,6 +16,28 @@ import {
 // Values
 pub fn add_glyph_to_atlas(Array[FontAtlas], GlyphCacheKey, GlyphRaster, FontSmoothing) -> GlyphAtlasInfo?
 
+pub let ecs_key_text2d : @ecs.ComponentKey[Text2d]
+
+pub let ecs_key_text2d_shadow : @ecs.ComponentKey[Text2dShadow]
+
+pub let ecs_key_text_background_color : @ecs.ComponentKey[TextBackgroundColor]
+
+pub let ecs_key_text_bounds : @ecs.ComponentKey[TextBounds]
+
+pub let ecs_key_text_color : @ecs.ComponentKey[TextColor]
+
+pub let ecs_key_text_font : @ecs.ComponentKey[TextFont]
+
+pub let ecs_key_text_layout : @ecs.ComponentKey[TextLayout]
+
+pub let ecs_key_text_line_height : @ecs.ComponentKey[LineHeight]
+
+pub let ecs_key_text_strikethrough : @ecs.ComponentKey[Strikethrough]
+
+pub let ecs_key_text_underline : @ecs.ComponentKey[Underline]
+
+pub let ecs_key_text_y_axis : @ecs.ComponentKey[YAxisOrientation]
+
 pub fn font_measure_advance(@asset.Handle[@asset.Font], Float, Int) -> Float
 
 pub fn font_rasterize_cache_key(@moon_cosmic.FontSystem, @moon_cosmic.CacheKey, FontSmoothing) -> GlyphRaster?
@@ -68,6 +90,10 @@ pub fn text_render_system(@ecs.World) -> Unit
 
 pub fn text_set_anchor(TextHandle, @sprite.Anchor) -> Unit
 
+pub fn text_set_background_color(TextHandle, TextBackgroundColor?) -> Unit
+
+pub fn text_set_bounds(TextHandle, TextBounds) -> Unit
+
 pub fn text_set_color(TextHandle, TextColor) -> Unit
 
 pub fn text_set_content(TextHandle, String) -> Unit
@@ -76,13 +102,25 @@ pub fn text_set_font(TextHandle, TextFont) -> Unit
 
 pub fn text_set_layers(TextHandle, @sprite.RenderLayers) -> Unit
 
+pub fn text_set_layout(TextHandle, TextLayout) -> Unit
+
+pub fn text_set_line_height(TextHandle, LineHeight) -> Unit
+
 pub let text_set_render_extract : String
+
+pub fn text_set_shadow(TextHandle, Text2dShadow?) -> Unit
+
+pub fn text_set_strikethrough(TextHandle, Strikethrough?) -> Unit
+
+pub let text_set_sync_ecs : String
 
 pub fn text_set_transform(TextHandle, @transform.Transform) -> Unit
 
 pub fn text_set_ui_node_size(TextHandle, @math.Vec2?) -> Unit
 
 pub fn text_set_ui_scissor(TextHandle, @math.Rect?) -> Unit
+
+pub fn text_set_underline(TextHandle, Underline?) -> Unit
 
 pub fn text_set_y_axis(TextHandle, YAxisOrientation) -> Unit
 
@@ -201,6 +239,7 @@ pub(all) enum LineHeight {
 }
 pub fn LineHeight::default() -> Self
 pub fn LineHeight::eval(Self, Float) -> Float
+pub impl @ecs.Component for LineHeight
 
 pub struct PositionedGlyph {
   position : @math.Vec2
@@ -230,11 +269,13 @@ pub fn RunGeometry::underline_size(Self) -> @math.Vec2
 pub struct Strikethrough {
 }
 pub fn Strikethrough::default() -> Self
+pub impl @ecs.Component for Strikethrough
 
 pub struct Text2d {
   content : String
 }
 pub fn Text2d::new(String) -> Self
+pub impl @ecs.Component for Text2d
 
 pub struct Text2dBundle {
   text : Text2d
@@ -274,11 +315,13 @@ pub fn Text2dShadow::default() -> Self
 pub fn Text2dShadow::new(@math.Vec2, @color.Color) -> Self
 pub fn Text2dShadow::with_color(Self, @color.Color) -> Self
 pub fn Text2dShadow::with_offset(Self, @math.Vec2) -> Self
+pub impl @ecs.Component for Text2dShadow
 
 pub struct TextBackgroundColor {
   color : @color.Color
 }
 pub fn TextBackgroundColor::new(@color.Color) -> Self
+pub impl @ecs.Component for TextBackgroundColor
 
 pub struct TextBounds {
   width : Float?
@@ -288,12 +331,14 @@ pub fn TextBounds::default() -> Self
 pub fn TextBounds::new(Float, Float) -> Self
 pub fn TextBounds::new_horizontal(Float) -> Self
 pub fn TextBounds::new_vertical(Float) -> Self
+pub impl @ecs.Component for TextBounds
 
 pub struct TextColor {
   color : @color.Color
 }
 pub fn TextColor::default() -> Self
 pub fn TextColor::new(@color.Color) -> Self
+pub impl @ecs.Component for TextColor
 
 pub struct TextDebugGlyphDraw {
   text_id : Int
@@ -325,6 +370,7 @@ pub fn TextFont::from_font_size(Float) -> Self
 pub fn TextFont::with_font(Self, @asset.Handle[@asset.Font]) -> Self
 pub fn TextFont::with_font_size(Self, Float) -> Self
 pub fn TextFont::with_font_smoothing(Self, FontSmoothing) -> Self
+pub impl @ecs.Component for TextFont
 
 pub struct TextHandle {
   id : Int
@@ -344,6 +390,7 @@ pub fn TextLayout::new_with_no_wrap() -> Self
 pub fn TextLayout::with_justify(Self, Justify) -> Self
 pub fn TextLayout::with_linebreak(Self, LineBreak) -> Self
 pub fn TextLayout::with_no_wrap(Self) -> Self
+pub impl @ecs.Component for TextLayout
 
 pub struct TextLayoutInfo {
   scale_factor : Float
@@ -392,11 +439,13 @@ pub struct TextSpanRange {
 pub struct Underline {
 }
 pub fn Underline::default() -> Self
+pub impl @ecs.Component for Underline
 
 pub(all) enum YAxisOrientation {
   TopToBottom
   BottomToTop
 }
+pub impl @ecs.Component for YAxisOrientation
 pub impl Eq for YAxisOrientation
 pub impl Show for YAxisOrientation
 

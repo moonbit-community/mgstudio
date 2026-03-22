@@ -32,46 +32,37 @@ fn spawn_panel(
   label : String,
   font : @asset.Handle[@asset.Font],
 ) -> Unit {
+  let panel = commands.spawn(
+    (
+      @sprite.Mesh2d::new(
+        meshes.get_ref().val.add(
+          @sprite.mesh2d_geometry_rectangle(
+            @sprite.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
+          ).to_mesh(),
+        ),
+      ),
+      @sprite.MeshMaterial2d::new(
+        materials.get_ref().val.add(
+          @sprite.ColorMaterialAsset::from_image(texture).with_uv_scale(
+            uv_scale,
+          ),
+        ),
+      ),
+      @transform.Transform::from_xyz(x, 0.0F, 0.0F),
+    ),
+  )
   ignore(
     commands.spawn(
       (
-        @sprite.Mesh2d::new(
-          meshes.get_ref().val.add(
-            @sprite.mesh2d_geometry_rectangle(
-              @sprite.Rectangle::new(RECTANGLE_SIDE, RECTANGLE_SIDE),
-            ).to_mesh(),
-          ),
-        ),
-        @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
-            @sprite.ColorMaterialAsset::from_image(texture).with_uv_scale(
-              uv_scale,
-            ),
-          ),
-        ),
-        @transform.Transform::from_xyz(x, 0.0F, 0.0F),
+        @hierarchy.Parent::new(panel),
+        @text.Text2d::new(label),
+        @text.TextFont::default().with_font(font),
+        @text.TextBounds::new_horizontal(RECTANGLE_SIDE),
+        @text.TextLayout::new_with_justify(@text.Justify::Center),
+        @transform.Transform::from_xyz(0.0F, LABEL_OFFSET, 0.0F),
       ),
     ),
   )
-  spawn_label(label, x, font)
-}
-
-///|
-fn spawn_label(
-  content : String,
-  x : Float,
-  font : @asset.Handle[@asset.Font],
-) -> Unit {
-  let style = @text.TextFont::default().with_font(font)
-  @text.Text2dBundle::new(
-    @text.Text2d::new(content),
-    style,
-    @transform.Transform::from_xyz(x, LABEL_OFFSET, 0.0F),
-  )
-  .with_bounds(@text.TextBounds::new_horizontal(RECTANGLE_SIDE))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
-  .spawn()
-  |> ignore
 }
 
 ///|

@@ -661,6 +661,78 @@ pub fn text_set_color(handle : TextHandle, color : TextColor) -> Unit {
 }
 
 ///|
+pub fn text_set_background_color(
+  handle : TextHandle,
+  background_color : TextBackgroundColor?,
+) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{
+    ..instance,
+    background_color,
+    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+  })
+}
+
+///|
+pub fn text_set_underline(handle : TextHandle, underline : Underline?) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{
+    ..instance,
+    underline,
+    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+  })
+}
+
+///|
+pub fn text_set_strikethrough(
+  handle : TextHandle,
+  strikethrough : Strikethrough?,
+) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{
+    ..instance,
+    strikethrough,
+    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+  })
+}
+
+///|
+pub fn text_set_layout(handle : TextHandle, layout : TextLayout) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{
+    ..instance,
+    layout,
+    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+  })
+}
+
+///|
+pub fn text_set_bounds(handle : TextHandle, bounds : TextBounds) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{
+    ..instance,
+    bounds,
+    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+  })
+}
+
+///|
+pub fn text_set_line_height(
+  handle : TextHandle,
+  line_height : LineHeight,
+) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{
+    ..instance,
+    line_height,
+    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+  })
+}
+
+///|
+pub fn text_set_shadow(handle : TextHandle, shadow : Text2dShadow?) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{
+    ..instance,
+    shadow,
+    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+  })
+}
+
+///|
 /// Update the transform of a text handle without marking it as needing rerender.
 pub fn text_set_transform(
   handle : TextHandle,

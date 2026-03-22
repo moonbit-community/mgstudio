@@ -1183,16 +1183,33 @@ pub let text_set_render_extract : @app.SystemSet = @app.system_set(
 )
 
 ///|
+pub let text_set_sync_ecs : @app.SystemSet = @app.system_set(
+  "mgstudio.text.sync_ecs",
+)
+
+///|
 pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   app
   .add_system(text_update_system)
+  .add_post_update_system_config(
+    @app.system(text_sync_ecs_system).in_set(text_set_sync_ecs),
+  )
   .add_post_update_system_config(
     @app.system(text_render_system).in_set(text_set_render_extract),
   )
   .configure_set(
     @app.PostUpdate,
+    text_set_sync_ecs,
+    after=[
+      @app.system_set("bevy.ui.stack"),
+      @transform.transform_set_sync_simple_transforms,
+    ],
+    before=[text_set_render_extract],
+  )
+  .configure_set(
+    @app.PostUpdate,
     text_set_render_extract,
-    after=[@app.system_set("bevy.ui.stack")],
+    after=[text_set_sync_ecs],
     before=[@sprite_render.render2d_set_extract],
   )
 }
