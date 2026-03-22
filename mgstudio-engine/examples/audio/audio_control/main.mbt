@@ -71,15 +71,8 @@ fn find_music_entity(world : @ecs.World) -> @core.Entity? {
 }
 
 ///|
-fn find_progress_text_handle(world : @ecs.World) -> @text.TextHandle? {
-  guard first_marked_entity(world.component(progress_text_marker_component_key))
-    is Some(entity) else {
-    return None
-  }
-  guard world.component(@ui.ecs_key_ui_text).get(entity) is Some(ui_text) else {
-    return None
-  }
-  Some(ui_text.handle)
+fn find_progress_text_entity(world : @ecs.World) -> @core.Entity? {
+  first_marked_entity(world.component(progress_text_marker_component_key))
 }
 
 ///|
@@ -93,14 +86,6 @@ fn spawn_ui_text(
 ) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let handle = @text.Text2dBundle::new(
-      @text.Text2d::new(content),
-      @text.TextFont::default().with_font(font).with_font_size(20.0F),
-      @transform.Transform::identity(),
-    )
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .spawn()
 
   let entity = world.spawn_empty()
   let tick = world.read_change_tick()
@@ -118,8 +103,21 @@ fn spawn_ui_text(
   }
   world.component(@ui.ecs_key_node).insert(entity, node, tick)
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(entity, @ui.UiText::new(handle), tick)
+  .component(@text.ecs_key_text)
+  .insert(entity, @text.Text::new(content), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    entity,
+    @text.TextFont::default().with_font(font).with_font_size(20.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  world
+  .component(@text.ecs_key_text_layout)
+  .insert(entity, @text.TextLayout::new_with_justify(@text.Justify::Left), tick)
   if marker is Some(progress_text_marker) {
     world
     .component(progress_text_marker_component_key)
@@ -194,11 +192,15 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 ///|
 fn update_progress_text(world : @ecs.World) -> Unit {
   guard find_music_entity(world) is Some(music) else { return }
-  guard find_progress_text_handle(world) is Some(handle) else { return }
+  guard find_progress_text_entity(world) is Some(entity) else { return }
   guard world.component(@audio.ecs_key_audio_sink).get(music) is Some(sink) else {
     return
   }
-  @text.text_set_content(handle, "Progress: \{sink.position().as_secs_f32()}s")
+  let tick = world.read_change_tick()
+  let text_store = world.component(@text.ecs_key_text)
+  guard text_store.get(entity) is Some(text_value) else { return }
+  text_value.content = "Progress: \{sink.position().as_secs_f32()}s"
+  ignore(text_store.set(entity, text_value, tick))
 }
 
 ///|

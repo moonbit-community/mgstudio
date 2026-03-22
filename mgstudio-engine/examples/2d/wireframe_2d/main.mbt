@@ -13,9 +13,7 @@
 // limitations under the License.
 
 ///|
-struct WireframeHelpText {
-  handle : @text.TextHandle
-}
+struct WireframeHelpText {}
 
 ///|
 let wireframe_help_text_key : @ecs.ComponentKey[WireframeHelpText] = @ecs.register_component(
@@ -88,23 +86,6 @@ fn wireframe_overlay_text(config : @sprite.Wireframe2dConfig) -> String {
   global_value +
   "\nColor: " +
   wireframe_color_text(config.default_color)
-}
-
-///|
-fn spawn_ui_text_handle(
-  content : String,
-  font : @asset.Handle[@asset.Font],
-  font_size : Float,
-  color : @sprite.Color,
-) -> @text.TextHandle {
-  @text.Text2dBundle::new(
-    @text.Text2d::new(content),
-    @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @transform.Transform::identity(),
-  )
-  .with_color(@text.TextColor::new(color))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-  .spawn()
 }
 
 ///|
@@ -183,12 +164,7 @@ fn setup(
 
   ignore(commands.spawn_component(@sprite.Camera2d::default()))
 
-  let text_handle = spawn_ui_text_handle(
-    "",
-    asset_server.get().load_font("fonts/FiraSans-Bold.ttf"),
-    20.0F,
-    @sprite.Color::white(),
-  )
+  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let root = commands.spawn(
     (
       @ui.UiRoot::default(),
@@ -205,8 +181,11 @@ fn setup(
         .with_position_type(@ui.PositionType::Absolute)
         .with_left(@ui.Val::Px(12.0F))
         .with_top(@ui.Val::Px(12.0F)),
-        @ui.UiText::new(text_handle),
-        WireframeHelpText::{ handle: text_handle },
+        @text.Text::new(""),
+        @text.TextFont::default().with_font(font).with_font_size(20.0F),
+        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        WireframeHelpText::{  },
       ),
     ),
   )
@@ -217,14 +196,11 @@ fn update_colors(
   keyboard_input : @input.ButtonInput[@window.KeyCode],
   config : @app.ResMut[@sprite.Wireframe2dConfig],
   wireframe_colors : @ecs.Query1[@sprite.Wireframe2dColor],
-  text : @ecs.Query1[WireframeHelpText],
+  text : @ecs.Query2[WireframeHelpText, @text.Text],
 ) -> Unit {
-  if (try! text.single()) is Some(help_text) {
-    @text.text_set_content(
-      help_text.handle,
-      wireframe_overlay_text(config.get_ref().val),
-    )
-  }
+  try! text.for_each(fn(_entity, _help_text, help_text) {
+    help_text.content = wireframe_overlay_text(config.get_ref().val)
+  })
 
   if keyboard_input.just_pressed(@window.KeyCode::KeyZ) {
     let config_ref = config.get_ref()

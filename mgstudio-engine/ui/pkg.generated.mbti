@@ -9,7 +9,6 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
-  "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/transform",
   "Milky2018/moon_accesskit",
   "moonbitlang/core/json",
@@ -77,8 +76,6 @@ pub let ecs_key_ui_stack : @ecs.ResourceKey[UiStack]
 
 pub let ecs_key_ui_target_camera : @ecs.ComponentKey[UiTargetCamera]
 
-pub let ecs_key_ui_text : @ecs.ComponentKey[UiText]
-
 pub let ecs_key_z_index : @ecs.ComponentKey[ZIndex]
 
 pub let ecs_resources : Array[String]
@@ -141,8 +138,6 @@ pub fn get_ui_stack_resource(@ecs.World) -> @ecs.ResourceAccess[UiStack]
 
 pub fn get_ui_target_camera_store(@ecs.World) -> @ecs.ComponentAccess[UiTargetCamera]
 
-pub fn get_ui_text_store(@ecs.World) -> @ecs.ComponentAccess[UiText]
-
 pub fn get_z_index_store(@ecs.World) -> @ecs.ComponentAccess[ZIndex]
 
 pub fn ui_a11y_update_system(@ecs.World) -> Unit
@@ -192,6 +187,8 @@ pub let ui_set_propagate : String
 pub let ui_set_scroll : String
 
 pub let ui_set_stack : String
+
+pub let ui_set_text_content : String
 
 pub fn ui_stack_system(@ecs.World) -> Unit
 
@@ -846,14 +843,6 @@ pub fn UiTargetCamera::new(@core.Entity) -> Self
 pub impl @ecs.Component for UiTargetCamera
 pub impl ToJson for UiTargetCamera
 pub impl @json.FromJson for UiTargetCamera
-
-pub struct UiText {
-  handle : @text.TextHandle
-}
-pub fn UiText::new(@text.TextHandle) -> Self
-pub impl @ecs.Component for UiText
-pub impl ToJson for UiText
-pub impl @json.FromJson for UiText
 
 pub(all) enum Val {
   Auto

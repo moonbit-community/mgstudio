@@ -75,7 +75,7 @@ fn AppStatus::default() -> AppStatus {
 
 ///|
 priv struct DynamicMipState {
-  mut help_text : @text.TextHandle?
+  mut help_text : @core.Entity?
   mut mip_label_handles : Array[@text.TextHandle]
   mut source_texture : @asset.Handle[@asset.Image]?
   mut mip_views : Array[@asset.Handle[@asset.Image]]
@@ -345,12 +345,16 @@ fn update_help_text(
   dynamic_state : @app.Res[DynamicMipState],
   app_status : @app.Res[AppStatus],
 ) -> Unit {
-  if dynamic_state.get().help_text is Some(handle) {
-    @text.text_set_content(
-      handle,
-      help_text_content(app_status.get(), dynamic_state.get().current_level),
-    )
-  }
+  guard dynamic_state.get().help_text is Some(entity) else { return }
+  guard @app.current_world() is Some(world) else { return }
+  let tick = world.read_change_tick()
+  let text_store = world.component(@text.ecs_key_text)
+  guard text_store.get(entity) is Some(text_value) else { return }
+  text_value.content = help_text_content(
+    app_status.get(),
+    dynamic_state.get().current_level,
+  )
+  ignore(text_store.set(entity, text_value, tick))
 }
 
 ///|
@@ -443,16 +447,7 @@ fn spawn_mip_level_views(
 fn spawn_help_overlay(
   commands : @app.Commands,
   font : @asset.Handle[@asset.Font],
-) -> @text.TextHandle {
-  let text_handle = @text.Text2dBundle::new(
-      @text.Text2d::new(""),
-      @text.TextFont::default().with_font(font).with_font_size(18.0F),
-      @transform.Transform::identity(),
-    )
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .spawn()
-
+) -> @core.Entity {
   let root = commands.spawn(
     (
       @ui.UiRoot::default(),
@@ -461,20 +456,20 @@ fn spawn_help_overlay(
       .with_height(@ui.Val::Percent(100.0F)),
     ),
   )
-  ignore(
-    commands.spawn(
-      (
-        @hierarchy.Parent::new(root),
-        @ui.Node::default()
-        .with_position_type(@ui.PositionType::Absolute)
-        .with_left(@ui.Val::Px(12.0F))
-        .with_top(@ui.Val::Px(12.0F)),
-        @ui.UiText::new(text_handle),
-      ),
+  let text_entity = commands.spawn(
+    (
+      @hierarchy.Parent::new(root),
+      @ui.Node::default()
+      .with_position_type(@ui.PositionType::Absolute)
+      .with_left(@ui.Val::Px(12.0F))
+      .with_top(@ui.Val::Px(12.0F)),
+      @text.Text::new(""),
+      @text.TextFont::default().with_font(font).with_font_size(18.0F),
+      @text.TextColor::new(@sprite.Color::white()),
+      @text.TextLayout::new_with_justify(@text.Justify::Left),
     ),
   )
-
-  text_handle
+  text_entity
 }
 
 ///|

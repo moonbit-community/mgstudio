@@ -13,6 +13,20 @@
 // limitations under the License.
 
 ///|
+fn seed_text_assets(world : @ecs.World) -> Unit {
+  let image_assets_key : @ecs.ResourceKey[@asset.Assets[@asset.Image]] = @asset.assets_resource_key()
+  let atlas_assets_key : @ecs.ResourceKey[
+    @asset.Assets[@asset.TextureAtlasLayout],
+  ] = @asset.assets_resource_key()
+  world.insert_resource(
+    @asset.asset_server_resource_key(),
+    @asset.AssetServer::new(),
+  )
+  world.insert_resource(image_assets_key, @asset.Assets::new())
+  world.insert_resource(atlas_assets_key, @asset.Assets::new())
+}
+
+///|
 test "ui: layout computes rect and camera-compensated transform" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
@@ -164,6 +178,7 @@ test "ui: hidden overflow axis ignores stale scroll offset" {
 test "ui: editable text transform stays in input content box and in front" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
+  seed_text_assets(world)
   let ctx = UiContext::new(
     @asset.Handle::new(1),
     @math.Vec2::new(0.0F, 0.0F),
@@ -194,12 +209,13 @@ test "ui: editable text transform stays in input content box and in front" {
     .with_padding(UiRect::all(Val::Px(8.0F))),
     tick,
   )
-  let text_handle = @text.Text2dBundle::new(
-    @text.Text2d::new("Editable status"),
-    @text.TextFont::default().with_font_size(24.0F),
-    @transform.Transform::identity(),
-  ).spawn()
-  get_ui_text_store(world).insert(editable, UiText::new(text_handle), tick)
+  world
+  .component(@text.ecs_key_text)
+  .insert(editable, @text.Text::new("Editable status"), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(editable, @text.TextFont::default().with_font_size(24.0F), tick)
+  @text.ui_text_sync_ecs_system(world)
   ui_layout_system(world)
   let layout = get_ui_layout_store(world).get(editable).unwrap().rect
   let content_rect = @math.Rect::new(
@@ -209,6 +225,7 @@ test "ui: editable text transform stays in input content box and in front" {
   let center = content_rect.center()
   let expected_x = center.x - 400.0F
   let expected_y = 300.0F - center.y
+  let text_handle = @text.ui_text_ecs_handle(world, editable).unwrap()
   let t0 = @text.text_get_transform(text_handle).unwrap()
   inspect(t0.translation.x == expected_x, content="true")
   inspect(t0.translation.y == expected_y, content="true")
@@ -228,6 +245,7 @@ test "ui: editable text transform stays in input content box and in front" {
 test "ui: editable status text renders in front of editable background (z-order)" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
+  seed_text_assets(world)
   let ctx = UiContext::new(
     @asset.Handle::new(1),
     @math.Vec2::new(0.0F, 0.0F),
@@ -263,17 +281,19 @@ test "ui: editable status text renders in front of editable background (z-order)
     BackgroundColor::new(@sprite.Color::new(0.12F, 0.12F, 0.16F, 1.0F)),
     tick,
   )
-  let text_handle = @text.Text2dBundle::new(
-    @text.Text2d::new("Editable status"),
-    @text.TextFont::default().with_font_size(24.0F),
-    @transform.Transform::identity(),
-  ).spawn()
-  get_ui_text_store(world).insert(editable, UiText::new(text_handle), tick)
+  world
+  .component(@text.ecs_key_text)
+  .insert(editable, @text.Text::new("Editable status"), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(editable, @text.TextFont::default().with_font_size(24.0F), tick)
+  @text.ui_text_sync_ecs_system(world)
   ui_layout_system(world)
   ui_stack_system(world)
   let background_transform = @transform.get_transform_store(world)
     .get(editable)
     .unwrap()
+  let text_handle = @text.ui_text_ecs_handle(world, editable).unwrap()
   let text_transform = @text.text_get_transform(text_handle).unwrap()
   inspect(
     text_transform.translation.z > background_transform.translation.z,
@@ -356,6 +376,7 @@ test "ui: editable label node is laid out above input box node" {
 test "ui: scroll panel text inherits clip rect from overflow parent" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
+  seed_text_assets(world)
   let ctx = UiContext::new(
     @asset.Handle::new(1),
     @math.Vec2::new(0.0F, 0.0F),
@@ -407,24 +428,28 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
     @hierarchy.Parent::new(panel_content),
     tick,
   )
-  let handle = @text.Text2dBundle::new(
-      @text.Text2d::new(
-        "Scrollable panel (clip + scissor test)\nUse wheel or screen reader scroll actions.\nLine 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nLine 8\nLine 9\nLine 10",
-      ),
-      @text.TextFont::default().with_font_size(18.0F),
-      @transform.Transform::identity(),
-    )
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .spawn()
   get_node_store(world).insert(
     panel_text,
     Node::default().with_width(Val::Px(720.0F)).with_height(Val::Auto),
     tick,
   )
-  get_ui_text_store(world).insert(panel_text, UiText::new(handle), tick)
+  world
+  .component(@text.ecs_key_text)
+  .insert(
+    panel_text,
+    @text.Text::new(
+      "Scrollable panel (clip + scissor test)\nUse wheel or screen reader scroll actions.\nLine 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nLine 8\nLine 9\nLine 10",
+    ),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(panel_text, @text.TextFont::default().with_font_size(18.0F), tick)
+  @text.ui_text_sync_ecs_system(world)
   ui_layout_system(world)
   ui_clip_system(world)
   let panel_rect = get_ui_layout_store(world).get(panel).unwrap().rect
+  let handle = @text.ui_text_ecs_handle(world, panel_text).unwrap()
   let clip_opt = @text.text_get_ui_scissor(handle)
   inspect(clip_opt is Some(_), content="true")
   let clip = clip_opt.unwrap()
@@ -438,6 +463,7 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
 test "ui: panel text scissor stays above editable title block" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
+  seed_text_assets(world)
   let ctx = UiContext::new(
     @asset.Handle::new(1),
     @math.Vec2::new(0.0F, 0.0F),
@@ -496,19 +522,23 @@ test "ui: panel text scissor stays above editable title block" {
     @hierarchy.Parent::new(panel_content),
     tick,
   )
-  let panel_handle = @text.Text2dBundle::new(
-    @text.Text2d::new(
-      "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nLine 8\nLine 9\nLine 10",
-    ),
-    @text.TextFont::default().with_font_size(18.0F),
-    @transform.Transform::identity(),
-  ).spawn()
   get_node_store(world).insert(
     panel_text,
     Node::default().with_width(Val::Px(720.0F)).with_height(Val::Auto),
     tick,
   )
-  get_ui_text_store(world).insert(panel_text, UiText::new(panel_handle), tick)
+  world
+  .component(@text.ecs_key_text)
+  .insert(
+    panel_text,
+    @text.Text::new(
+      "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nLine 8\nLine 9\nLine 10",
+    ),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(panel_text, @text.TextFont::default().with_font_size(18.0F), tick)
   let editable_section = world.spawn_empty()
   @hierarchy.get_parent_store(world).insert(
     editable_section,
@@ -534,18 +564,16 @@ test "ui: panel text scissor stays above editable title block" {
     Node::default().with_width(Val::Auto).with_height(Val::Px(32.0F)),
     tick,
   )
-  let title_handle = @text.Text2dBundle::new(
-    @text.Text2d::new("Editable status"),
-    @text.TextFont::default().with_font_size(24.0F),
-    @transform.Transform::identity(),
-  ).spawn()
-  get_ui_text_store(world).insert(
-    editable_title,
-    UiText::new(title_handle),
-    tick,
-  )
+  world
+  .component(@text.ecs_key_text)
+  .insert(editable_title, @text.Text::new("Editable status"), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(editable_title, @text.TextFont::default().with_font_size(24.0F), tick)
+  @text.ui_text_sync_ecs_system(world)
   ui_layout_system(world)
   ui_clip_system(world)
+  let panel_handle = @text.ui_text_ecs_handle(world, panel_text).unwrap()
   let scissor = @text.text_get_ui_scissor(panel_handle).unwrap()
   let title_rect = get_ui_layout_store(world).get(editable_title).unwrap().rect
   inspect(scissor.max.y <= title_rect.min.y, content="true")

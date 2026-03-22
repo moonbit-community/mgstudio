@@ -315,23 +315,6 @@ fn create_help_text(option : SelectedColorGradingOption) -> String {
 }
 
 ///|
-fn spawn_ui_text_handle(
-  content : String,
-  font : @asset.Handle[@asset.Font],
-  font_size : Float,
-  color : @sprite.Color,
-) -> @text.TextHandle {
-  @text.Text2dBundle::new(
-    @text.Text2d::new(content),
-    @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @transform.Transform::identity(),
-  )
-  .with_color(@text.TextColor::new(color))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-  .spawn()
-}
-
-///|
 fn[T] first_marked_entity(
   world : @ecs.World,
   component_key : @ecs.ComponentKey[T],
@@ -383,12 +366,6 @@ fn spawn_row_label(
   font : @asset.Handle[@asset.Font],
   label : String,
 ) -> Unit {
-  let label_handle = spawn_ui_text_handle(
-    label,
-    font,
-    15.0F,
-    @sprite.Color::white(),
-  )
   let label_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
@@ -401,8 +378,18 @@ fn spawn_row_label(
     tick,
   )
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(label_entity, @ui.UiText::new(label_handle), tick)
+  .component(@text.ecs_key_text)
+  .insert(label_entity, @text.Text::new(label), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    label_entity,
+    @text.TextFont::default().with_font(font).with_font_size(15.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(label_entity, @text.TextColor::new(@sprite.Color::white()), tick)
 }
 
 ///|
@@ -465,12 +452,6 @@ fn spawn_option_button(
     tick,
   )
 
-  let label_handle = spawn_ui_text_handle(
-    selected_option_button_label(option),
-    font,
-    15.0F,
-    @sprite.Color::white(),
-  )
   let label_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
@@ -479,8 +460,22 @@ fn spawn_option_button(
   .component(@ui.ecs_key_node)
   .insert(label_entity, @ui.Node::default(), tick)
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(label_entity, @ui.UiText::new(label_handle), tick)
+  .component(@text.ecs_key_text)
+  .insert(
+    label_entity,
+    @text.Text::new(selected_option_button_label(option)),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    label_entity,
+    @text.TextFont::default().with_font(font).with_font_size(15.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(label_entity, @text.TextColor::new(@sprite.Color::white()), tick)
   world
   .component(ColorGradingOptionWidget::component())
   .insert(
@@ -497,12 +492,6 @@ fn spawn_option_button(
   .component(@ui.ecs_key_node)
   .insert(spacer, @ui.Node::default().with_flex_grow(1.0F), tick)
 
-  let value_handle = spawn_ui_text_handle(
-    option_value_text(option, color_grading),
-    font,
-    15.0F,
-    @sprite.Color::white(),
-  )
   let value_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
@@ -511,8 +500,22 @@ fn spawn_option_button(
   .component(@ui.ecs_key_node)
   .insert(value_entity, @ui.Node::default(), tick)
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(value_entity, @ui.UiText::new(value_handle), tick)
+  .component(@text.ecs_key_text)
+  .insert(
+    value_entity,
+    @text.Text::new(option_value_text(option, color_grading)),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    value_entity,
+    @text.TextFont::default().with_font(font).with_font_size(15.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(value_entity, @text.TextColor::new(@sprite.Color::white()), tick)
   world
   .component(ColorGradingOptionWidget::component())
   .insert(
@@ -610,12 +613,6 @@ fn add_buttons(
     }
   }
 
-  let help_handle = spawn_ui_text_handle(
-    create_help_text(SelectedColorGradingOption::default()),
-    font,
-    16.0F,
-    @sprite.Color::white(),
-  )
   let help_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
@@ -631,8 +628,29 @@ fn add_buttons(
     tick,
   )
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(help_entity, @ui.UiText::new(help_handle), tick)
+  .component(@text.ecs_key_text)
+  .insert(
+    help_entity,
+    @text.Text::new(create_help_text(SelectedColorGradingOption::default())),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    help_entity,
+    @text.TextFont::default().with_font(font).with_font_size(16.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(help_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  world
+  .component(@text.ecs_key_text_layout)
+  .insert(
+    help_entity,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    tick,
+  )
   world
   .component(HelpText::component())
   .insert(help_entity, HelpText::{  }, tick)
@@ -844,7 +862,7 @@ fn update_ui_state(world : @ecs.World) -> Unit {
   let widget_store = world.component(ColorGradingOptionWidget::component())
   let background_store = world.component(@ui.ecs_key_background_color)
   let border_store = world.component(@ui.ecs_key_border_color)
-  let ui_text_store = world.component(@ui.ecs_key_ui_text)
+  let text_store = world.component(@text.ecs_key_text)
 
   widget_store.for_each(fn(entity, widget) {
     match widget.widget_type {
@@ -876,18 +894,14 @@ fn update_ui_state(world : @ecs.World) -> Unit {
         }
       }
       Label => {
-        guard ui_text_store.get(entity) is Some(ui_text) else { return }
-        @text.text_set_content(
-          ui_text.handle,
-          selected_option_button_label(widget.option),
-        )
+        guard text_store.get(entity) is Some(text_value) else { return }
+        text_value.content = selected_option_button_label(widget.option)
+        ignore(text_store.set(entity, text_value, tick))
       }
       Value => {
-        guard ui_text_store.get(entity) is Some(ui_text) else { return }
-        @text.text_set_content(
-          ui_text.handle,
-          option_value_text(widget.option, color_grading),
-        )
+        guard text_store.get(entity) is Some(text_value) else { return }
+        text_value.content = option_value_text(widget.option, color_grading)
+        ignore(text_store.set(entity, text_value, tick))
       }
     }
   })
@@ -895,8 +909,9 @@ fn update_ui_state(world : @ecs.World) -> Unit {
   guard first_marked_entity(world, HelpText::component()) is Some(help_entity) else {
     return
   }
-  guard ui_text_store.get(help_entity) is Some(help_text) else { return }
-  @text.text_set_content(help_text.handle, create_help_text(selected_option))
+  guard text_store.get(help_entity) is Some(help_text) else { return }
+  help_text.content = create_help_text(selected_option)
+  ignore(text_store.set(help_entity, help_text, tick))
 }
 
 ///|

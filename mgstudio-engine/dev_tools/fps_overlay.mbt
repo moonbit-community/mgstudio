@@ -143,7 +143,6 @@ let fps_overlay_plugin_marker_key : @ecs.ResourceKey[FpsOverlayPluginMarker] = @
 priv struct FpsOverlayState {
   mut root_entity : @core.Entity?
   mut text_entity : @core.Entity?
-  mut text_handle : @text.TextHandle?
   mut graph_entity : @core.Entity?
   bar_entities : Array[@core.Entity]
 }
@@ -153,7 +152,6 @@ fn FpsOverlayState::default() -> FpsOverlayState {
   FpsOverlayState::{
     root_entity: None,
     text_entity: None,
-    text_handle: None,
     graph_entity: None,
     bar_entities: [],
   }
@@ -404,21 +402,6 @@ fn fps_overlay_graph_bar_width(
 }
 
 ///|
-fn fps_overlay_spawn_text_handle(
-  content : String,
-  text_config : @text.TextFont,
-  text_color : @sprite.Color,
-) -> @text.TextHandle {
-  @text.Text2dBundle::new(
-    @text.Text2d::new(content),
-    text_config,
-    @transform.Transform::identity(),
-  )
-  .with_color(@text.TextColor::new(text_color))
-  .spawn()
-}
-
-///|
 fn fps_overlay_setup(world : @ecs.World) -> Unit {
   let config = fps_overlay_config(world)
   let state_ref = fps_overlay_state_ref(world)
@@ -436,15 +419,12 @@ fn fps_overlay_setup(world : @ecs.World) -> Unit {
   )
   try! world.set_component(root, @ui.GlobalZIndex::new(FPS_OVERLAY_ZINDEX))
 
-  let text_handle = fps_overlay_spawn_text_handle(
-    DEFAULT_OVERLAY_TEXT,
-    config.text_config,
-    config.text_color,
-  )
   let text_entity = world.spawn_empty()
   try! world.set_component(text_entity, @hierarchy.Parent::new(root))
   try! world.set_component(text_entity, @ui.Node::default())
-  try! world.set_component(text_entity, @ui.UiText::new(text_handle))
+  try! world.set_component(text_entity, @text.Text::new(DEFAULT_OVERLAY_TEXT))
+  try! world.set_component(text_entity, config.text_config)
+  try! world.set_component(text_entity, @text.TextColor::new(config.text_color))
 
   let graph_entity = world.spawn_empty()
   try! world.set_component(graph_entity, @hierarchy.Parent::new(root))
@@ -467,7 +447,6 @@ fn fps_overlay_setup(world : @ecs.World) -> Unit {
 
   state_ref.val.root_entity = Some(root)
   state_ref.val.text_entity = Some(text_entity)
-  state_ref.val.text_handle = Some(text_handle)
   state_ref.val.graph_entity = Some(graph_entity)
   fps_overlay_customize_system(world)
 }
@@ -490,9 +469,26 @@ fn fps_overlay_customize_system(world : @ecs.World) -> Unit {
     )
   }
 
-  if state_ref.val.text_handle is Some(handle) {
-    @text.text_set_font(handle, config.text_config)
-    @text.text_set_color(handle, @text.TextColor::new(config.text_color))
+  if state_ref.val.text_entity is Some(text_entity) {
+    ignore(
+      try world.set_component(text_entity, config.text_config) catch {
+        _ => false
+      } noraise {
+        _ => true
+      },
+    )
+    ignore(
+      try
+        world.set_component(
+          text_entity,
+          @text.TextColor::new(config.text_color),
+        )
+      catch {
+        _ => false
+      } noraise {
+        _ => true
+      },
+    )
   }
 
   if state_ref.val.graph_entity is Some(graph_entity) {
@@ -550,8 +546,13 @@ fn fps_overlay_update_system(world : @ecs.World) -> Unit {
     None => None
   }
   let next_text = fps_overlay_text_value(fps_value)
-  if state_ref.val.text_handle is Some(handle) {
-    @text.text_set_content(handle, next_text)
+  if state_ref.val.text_entity is Some(text_entity) {
+    let tick = world.read_change_tick()
+    let text_store = world.component(@text.ecs_key_text)
+    if text_store.get(text_entity) is Some(text_value) {
+      text_value.content = next_text
+      ignore(text_store.set(text_entity, text_value, tick))
+    }
   }
 
   guard state_ref.val.graph_entity is Some(graph_entity) else { return }

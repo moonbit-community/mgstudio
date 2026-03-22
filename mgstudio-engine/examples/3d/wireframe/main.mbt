@@ -20,7 +20,7 @@ const COLOR_EPSILON : Float = 0.0001F
 
 ///|
 priv struct WireframeState {
-  mut controls_text : @text.TextHandle?
+  mut controls_text : @core.Entity?
 }
 
 ///|
@@ -98,23 +98,6 @@ fn color_label(color : @sprite.Color) -> String {
 }
 
 ///|
-fn spawn_ui_text_handle(
-  content : String,
-  font : @asset.Handle[@asset.Font],
-  font_size : Float,
-  color : @sprite.Color,
-) -> @text.TextHandle {
-  @text.Text2dBundle::new(
-    @text.Text2d::new(content),
-    @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @transform.Transform::identity(),
-  )
-  .with_color(@text.TextColor::new(color))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-  .spawn()
-}
-
-///|
 fn setup_wireframe_config(world : @ecs.World) -> Unit {
   let wireframe_config = @pbr.WireframeConfig::new(true, color_white())
   world.insert_resource(@pbr.ecs_key_wireframe_config, wireframe_config)
@@ -146,12 +129,6 @@ fn setup_ui(world : @ecs.World) -> Unit {
     tick,
   )
 
-  let controls_text_handle = spawn_ui_text_handle(
-    "",
-    font,
-    14.0F,
-    @sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
-  )
   let controls_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
@@ -167,23 +144,45 @@ fn setup_ui(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(controls_entity, @ui.UiText::new(controls_text_handle), tick)
-  wireframe_state.val.controls_text = Some(controls_text_handle)
+  .component(@text.ecs_key_text)
+  .insert(controls_entity, @text.Text::new(""), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    controls_entity,
+    @text.TextFont::default().with_font(font).with_font_size(14.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(
+    controls_entity,
+    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_layout)
+  .insert(
+    controls_entity,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    tick,
+  )
+  wireframe_state.val.controls_text = Some(controls_entity)
 }
 
 ///|
 fn update_controls_text(world : @ecs.World) -> Unit {
-  guard wireframe_state.val.controls_text is Some(text_handle) else { return }
+  guard wireframe_state.val.controls_text is Some(text_entity) else { return }
   let config = try world.get_resource(@pbr.ecs_key_wireframe_config) catch {
     _ => @pbr.WireframeConfig::default()
   } noraise {
     Some(value) => value
     None => @pbr.WireframeConfig::default()
   }
-  @text.text_set_content(
-    text_handle,
-    "Controls\n---------------\n" +
+  let tick = world.read_change_tick()
+  let text_store = world.component(@text.ecs_key_text)
+  guard text_store.get(text_entity) is Some(text_value) else { return }
+  text_value.content = "Controls\n---------------\n" +
     "Z - Toggle global\n" +
     "X - Change global color\n" +
     "C - Change color of the green cube wireframe\n\n" +
@@ -191,8 +190,8 @@ fn update_controls_text(world : @ecs.World) -> Unit {
     "Global: " +
     config.global.to_string() +
     "\nColor: " +
-    color_label(config.default_color),
-  )
+    color_label(config.default_color)
+  ignore(text_store.set(text_entity, text_value, tick))
 }
 
 ///|

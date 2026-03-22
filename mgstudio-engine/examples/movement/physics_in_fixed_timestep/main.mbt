@@ -200,38 +200,26 @@ fn spawn_text(commands : @app.Commands) -> Unit {
   )
 
   let font = @text.TextFont::default().with_font_size(25.0F)
-  let line_one = @text.Text2dBundle::new(
-      @text.Text2d::new("Move the player with WASD"),
-      font,
-      @transform.Transform::identity(),
-    )
-    .with_anchor(@sprite.Anchor::center_left())
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .spawn()
   ignore(
     commands.spawn(
       (
         @hierarchy.Parent::new(panel),
         @ui.Node::default(),
-        @ui.UiText::new(line_one),
+        @text.Text::new("Move the player with WASD"),
+        font,
+        @text.TextColor::new(@sprite.Color::white()),
       ),
     ),
   )
 
-  let line_two = @text.Text2dBundle::new(
-      @text.Text2d::new("Rotate the camera with the mouse"),
-      font,
-      @transform.Transform::identity(),
-    )
-    .with_anchor(@sprite.Anchor::center_left())
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .spawn()
   ignore(
     commands.spawn(
       (
         @hierarchy.Parent::new(panel),
         @ui.Node::default(),
-        @ui.UiText::new(line_two),
+        @text.Text::new("Rotate the camera with the mouse"),
+        font,
+        @text.TextColor::new(@sprite.Color::white()),
       ),
     ),
   )

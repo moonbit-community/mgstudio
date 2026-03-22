@@ -247,24 +247,15 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
 }
 
 ///|
-test "picking: a11y set-value action updates UiText content" {
+test "picking: a11y set-value action updates Text content" {
   let world = @ecs.World::new()
   let tick = world.increment_change_tick()
   @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default(), tick)
   get_picking_events_resource(world).insert(PickingEvents::default(), tick)
-  let text_handle = @text.text_spawn(
-    @text.Text2dBundle::new(
-      @text.Text2d::new("Old"),
-      @text.TextFont::default(),
-      @transform.Transform::identity(),
-    ),
-  )
   let entity = world.spawn_empty()
-  @ui.get_ui_text_store(world).insert(
-    entity,
-    @ui.UiText::new(text_handle),
-    tick,
-  )
+  world
+  .component(@text.ecs_key_text)
+  .insert(entity, @text.Text::new("Old"), tick)
   let packed = entity.id * 65536 + entity.generation + 1
   let node_id = @moon_accesskit.NodeId::from_u64(packed.to_uint64())
   let req = @moon_accesskit.ActionRequest::new(
@@ -279,8 +270,8 @@ test "picking: a11y set-value action updates UiText content" {
   state_res.insert(state.val, tick)
   picking_apply_a11y_actions_system(world)
   inspect(
-    @text.text_get_content(text_handle).unwrap() == "Updated",
-    content="true",
+    world.get(entity, @text.ecs_key_text).unwrap().content,
+    content="Updated",
   )
   let events = drain_events(world, tick)
   inspect(events.length(), content="0")

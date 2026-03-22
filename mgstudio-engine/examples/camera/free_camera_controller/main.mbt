@@ -16,9 +16,7 @@
 /// Port of `bevy/examples/camera/free_camera_controller.rs`.
 
 ///|
-struct InfoText {
-  handle : @text.TextHandle
-}
+struct InfoText {}
 
 ///|
 let info_text_key : @ecs.ComponentKey[InfoText] = @ecs.register_component(
@@ -71,23 +69,6 @@ fn format_float(value : Float, precision : Int) -> String {
 }
 
 ///|
-fn spawn_ui_text_handle(
-  content : String,
-  font : @asset.Handle[@asset.Font],
-  font_size : Float,
-  color : @sprite.Color,
-) -> @text.TextHandle {
-  @text.Text2dBundle::new(
-    @text.Text2d::new(content),
-    @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @transform.Transform::identity(),
-  )
-  .with_color(@text.TextColor::new(color))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-  .spawn()
-}
-
-///|
 fn spawn_camera(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
@@ -137,12 +118,6 @@ fn spawn_text(
     ),
   )
 
-  let config_text = spawn_ui_text_handle(
-    free_camera_text(free_camera),
-    font,
-    20.0F,
-    @sprite.Color::white(),
-  )
   ignore(
     commands.spawn(
       (
@@ -151,17 +126,14 @@ fn spawn_text(
         .with_position_type(@ui.PositionType::Absolute)
         .with_top(@ui.Val::Px(-16.0F))
         .with_left(@ui.Val::Px(12.0F)),
-        @ui.UiText::new(config_text),
+        @text.Text::new(free_camera_text(free_camera)),
+        @text.TextFont::default().with_font(font).with_font_size(20.0F),
+        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
     ),
   )
 
-  let instructions = spawn_ui_text_handle(
-    "Z/X: decrease/increase sensitivity\nC/V: decrease/increase friction\nF/G: decrease/increase scroll factor\nB: enable/disable controller",
-    font,
-    20.0F,
-    @sprite.Color::white(),
-  )
   ignore(
     commands.spawn(
       (
@@ -170,12 +142,16 @@ fn spawn_text(
         .with_position_type(@ui.PositionType::Absolute)
         .with_bottom(@ui.Val::Px(12.0F))
         .with_left(@ui.Val::Px(12.0F)),
-        @ui.UiText::new(instructions),
+        @text.Text::new(
+          "Z/X: decrease/increase sensitivity\nC/V: decrease/increase friction\nF/G: decrease/increase scroll factor\nB: enable/disable controller",
+        ),
+        @text.TextFont::default().with_font(font).with_font_size(20.0F),
+        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
     ),
   )
 
-  let info_text = spawn_ui_text_handle("", font, 20.0F, @sprite.Color::white())
   ignore(
     commands.spawn(
       (
@@ -184,8 +160,11 @@ fn spawn_text(
         .with_position_type(@ui.PositionType::Absolute)
         .with_top(@ui.Val::Px(12.0F))
         .with_right(@ui.Val::Px(12.0F)),
-        @ui.UiText::new(info_text),
-        InfoText::{ handle: info_text },
+        @text.Text::new(""),
+        @text.TextFont::default().with_font(font).with_font_size(20.0F),
+        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        InfoText::{  },
       ),
     ),
   )
@@ -275,13 +254,12 @@ fn update_camera_settings(
 
 ///|
 fn update_text(
-  info_text_query : @ecs.Query1[InfoText],
+  info_text_query : @ecs.Query2[InfoText, @text.Text],
   camera_query : @ecs.Query2[
     @camera_controller.FreeCamera,
     @camera_controller.FreeCameraState,
   ],
 ) -> Unit {
-  guard (try! info_text_query.single()) is Some(info_text) else { return }
   let content_ref : Ref[String?] = Ref::new(None)
   try! camera_query.for_each(fn(_entity, free_camera, free_camera_state) {
     content_ref.val = Some(
@@ -308,7 +286,9 @@ fn update_text(
     )
   })
   guard content_ref.val is Some(content) else { return }
-  @text.text_set_content(info_text.handle, content)
+  try! info_text_query.for_each(fn(_entity, _marker, info_text) {
+    info_text.content = content
+  })
 }
 
 ///|

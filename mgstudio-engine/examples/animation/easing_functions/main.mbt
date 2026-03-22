@@ -68,7 +68,7 @@ let ease_function_plot_key : @ecs.ComponentKey[EaseFunctionPlot] = @ecs.register
 )
 
 ///|
-let progress_text_handle : Ref[@text.TextHandle?] = Ref::new(None)
+let progress_text_entity : Ref[@core.Entity?] = Ref::new(None)
 
 ///|
 fn main {
@@ -82,7 +82,7 @@ fn main {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  progress_text_handle.val = None
+  progress_text_entity.val = None
 
   let camera = @sprite.Camera::default()
   @sprite.Camera2dBundle::new(camera, @transform.Transform::identity()).spawn(
@@ -184,8 +184,13 @@ fn display_curves(world : @ecs.World) -> Unit {
   let cycle_elapsed = elapsed - loop_offset
   let now = clamp01((cycle_elapsed - TIME_MARGIN_SECONDS) / DURATION_SECONDS)
 
-  if progress_text_handle.val is Some(handle) {
-    @text.text_set_content(handle, format_progress(now))
+  if progress_text_entity.val is Some(text_entity) {
+    let tick = world.read_change_tick()
+    let text_store = world.component(@text.ecs_key_text)
+    if text_store.get(text_entity) is Some(text_value) {
+      text_value.content = format_progress(now)
+      ignore(text_store.set(text_entity, text_value, tick))
+    }
   }
 
   let gizmos = @sprite.Gizmos::get()
@@ -283,17 +288,6 @@ fn spawn_progress_overlay(
   world : @ecs.World,
   font : @asset.Handle[@asset.Font],
 ) -> Unit {
-  let text_handle = @text.Text2dBundle::new(
-      @text.Text2d::new("Progress: 0.00"),
-      @text.TextFont::default().with_font(font).with_font_size(20.0F),
-      @transform.Transform::identity(),
-    )
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .spawn()
-
-  progress_text_handle.val = Some(text_handle)
-
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
@@ -322,8 +316,26 @@ fn spawn_progress_overlay(
     tick,
   )
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+  .component(@text.ecs_key_text)
+  .insert(text_entity, @text.Text::new("Progress: 0.00"), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    text_entity,
+    @text.TextFont::default().with_font(font).with_font_size(20.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  world
+  .component(@text.ecs_key_text_layout)
+  .insert(
+    text_entity,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    tick,
+  )
+  progress_text_entity.val = Some(text_entity)
 }
 
 ///|

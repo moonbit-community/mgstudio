@@ -28,6 +28,26 @@ fn find_texture(backend : GpuBackend, id : Int) -> GpuTextureInfo? {
 }
 
 ///|
+fn create_cached_texture_bind_group(
+  backend : GpuBackend,
+  sampler : @wgpu.Sampler,
+  view : @wgpu.TextureView,
+) -> @wgpu.BindGroup raise GpuBackendError {
+  ensure_sprite_resources(backend)
+  guard backend.sprite_texture_bgl is Some(layout) else {
+    fatal("wgpu: sprite texture bind group layout is None")
+  }
+  let builder = @wgpu.BindGroupBuilder::new(max_entries=2UL)
+  let ok = builder.add_texture_view(0U, view) &&
+    builder.add_sampler(1U, sampler)
+  if !ok {
+    builder.free()
+    fatal("wgpu: failed to build cached texture bind group")
+  }
+  builder.finish(backend.device, layout, label="mgstudio_cached_texture_bind_group")
+}
+
+///|
 fn ensure_default_texture(
   backend : GpuBackend,
 ) -> GpuTextureInfo raise GpuBackendError {
@@ -36,7 +56,6 @@ fn ensure_default_texture(
     t
   } else {
     ensure_sprite_resources(backend)
-    let bgl_tex = backend.sprite_bgl_tex.unwrap()
     let w = 128U
     let h = 128U
     let usage_bits = @wgpu.TEXTURE_USAGE_TEXTURE_BINDING |
@@ -46,9 +65,7 @@ fn ensure_default_texture(
     let tex = backend.device.create_texture_rgba8_2d_with_usage(w, h, usage)
     let view = tex.create_view()
     let sampler = backend.device.create_sampler_linear_clamp()
-    let bg = backend.device.create_bind_group_sampler_texture_2d(
-      bgl_tex, sampler, view,
-    )
+    let bg = create_cached_texture_bind_group(backend, sampler, view)
     // Fill the texture with white.
     let byte_len = w.reinterpret_as_int() * h.reinterpret_as_int() * 4
     let data = Bytes::makei(byte_len, _ => (255).to_byte())
@@ -84,7 +101,6 @@ fn ensure_normal_map_fallback_texture(
     }
   }
   ensure_sprite_resources(backend)
-  let bgl_tex = backend.sprite_bgl_tex.unwrap()
   let tex = backend.device.create_texture_rgba8_2d_with_usage(
     1U,
     1U,
@@ -96,9 +112,7 @@ fn ensure_normal_map_fallback_texture(
   )
   let view = tex.create_view()
   let sampler = backend.device.create_sampler_linear_clamp()
-  let bg = backend.device.create_bind_group_sampler_texture_2d(
-    bgl_tex, sampler, view,
-  )
+  let bg = create_cached_texture_bind_group(backend, sampler, view)
   backend.queue.write_texture_rgba8_2d(
     tex,
     1U,
@@ -165,11 +179,7 @@ pub fn GpuBackend::create_texture_rgba8(
   } else {
     self.device.create_sampler_linear_clamp()
   }
-  let bg = self.device.create_bind_group_sampler_texture_2d(
-    self.sprite_bgl_tex.unwrap(),
-    sampler,
-    view,
-  )
+  let bg = create_cached_texture_bind_group(self, sampler, view)
   let expected_len = w.reinterpret_as_int() * h.reinterpret_as_int() * 4
   if pixels_rgba8.length() != expected_len {
     fatal(
@@ -249,11 +259,7 @@ pub fn GpuBackend::create_texture_stacked_2d_with_format(
   } else {
     self.device.create_sampler_linear_clamp()
   }
-  let bg = self.device.create_bind_group_sampler_texture_2d(
-    self.sprite_bgl_tex.unwrap(),
-    sampler,
-    view,
-  )
+  let bg = create_cached_texture_bind_group(self, sampler, view)
 
   for level_index in 0..<levels.length() {
     let mip_width = {
@@ -756,11 +762,7 @@ pub fn GpuBackend::create_texture_mip_view(
     absolute_mip.reinterpret_as_uint(),
     1U,
   )
-  let bind_group = self.device.create_bind_group_sampler_texture_2d(
-    self.sprite_bgl_tex.unwrap(),
-    source.sampler,
-    view,
-  )
+  let bind_group = create_cached_texture_bind_group(self, source.sampler, view)
   let id = alloc_id(self)
   let info = GpuTextureInfo::{
     id,
@@ -828,7 +830,6 @@ pub fn GpuBackend::set_texture_sampler(
   if self.sprite_bgl_tex is None {
     ensure_sprite_resources(self)
   }
-  let bgl_tex = self.sprite_bgl_tex.unwrap()
   let count = self.textures.length()
   for i in 0..<count {
     let info = self.textures[i]
@@ -837,11 +838,7 @@ pub fn GpuBackend::set_texture_sampler(
         self, address_mode_u, address_mode_v, address_mode_w, mag_filter, min_filter,
         mipmap_filter, lod_min_clamp, lod_max_clamp, compare, anisotropy_clamp, border_color,
       )
-      let bg = self.device.create_bind_group_sampler_texture_2d(
-        bgl_tex,
-        sampler,
-        info.view,
-      )
+      let bg = create_cached_texture_bind_group(self, sampler, info.view)
       self.textures[i] = GpuTextureInfo::{
         id: info.id,
         width: info.width,
@@ -1011,11 +1008,7 @@ fn GpuBackend::create_render_target_with_format(
   } else {
     self.device.create_sampler_linear_clamp()
   }
-  let bg = self.device.create_bind_group_sampler_texture_2d(
-    self.sprite_bgl_tex.unwrap(),
-    sampler,
-    view,
-  )
+  let bg = create_cached_texture_bind_group(self, sampler, view)
   let info = GpuTextureInfo::{
     id,
     width: w.reinterpret_as_int(),

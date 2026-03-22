@@ -43,7 +43,7 @@ test "dev_tools: fps overlay startup spawns root, text, graph, and bars" {
     content="true",
   )
   inspect(
-    try! (app.world().get(text_entity, @ui.ecs_key_ui_text) is Some(_)),
+    try! (app.world().get(text_entity, @text.ecs_key_text) is Some(_)),
     content="true",
   )
   inspect(
@@ -93,11 +93,13 @@ test "dev_tools: fps overlay updates text and graph from diagnostics" {
     .world()
     .get_resource(fps_overlay_state_resource_key)
     .unwrap()
-  guard state.text_handle is Some(text_handle) else {
-    abort("missing overlay text handle")
+  guard state.text_entity is Some(text_entity) else {
+    abort("missing overlay text entity")
   }
   inspect(
-    @text.text_get_content(text_handle).unwrap().contains("FPS: "),
+    app.world().get(text_entity, @text.ecs_key_text).unwrap().content.contains(
+      "FPS: ",
+    ),
     content="true",
   )
   inspect(state.bar_entities.length() > 0, content="true")

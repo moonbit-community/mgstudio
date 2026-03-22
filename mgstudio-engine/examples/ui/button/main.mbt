@@ -52,7 +52,7 @@ fn button_system(world : @ecs.World) -> Unit {
   let background_store = world.component(@ui.ecs_key_background_color)
   let border_store = world.component(@ui.ecs_key_border_color)
   let children_store = world.component(@hierarchy.ecs_key_children)
-  let ui_text_store = world.component(@ui.ecs_key_ui_text)
+  let text_store = world.component(@text.ecs_key_text)
   interaction_store.for_each_changed(system_ticks, fn(entity, interaction) {
     if !button_store.contains(entity) {
       return
@@ -106,8 +106,9 @@ fn button_system(world : @ecs.World) -> Unit {
     if children_store.get(entity) is Some(children) {
       if children.entities.length() > 0 {
         let label_entity = children.entities[0]
-        if ui_text_store.get(label_entity) is Some(ui_text) {
-          @text.text_set_content(ui_text.handle, text.to_string())
+        if text_store.get(label_entity) is Some(text_value) {
+          text_value.content = text.to_string()
+          text_store.set(label_entity, text_value, tick) |> ignore
         }
       }
     }
@@ -177,16 +178,6 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(button, @ui.BackgroundColor::new(@sprite.Color::black()), tick)
 
   // Button label.
-  let label_handle = @text.Text2dBundle::new(
-      @text.Text2d::new("Button"),
-      @text.TextFont::default().with_font(font).with_font_size(33.0F),
-      @transform.Transform::identity(),
-    )
-    .with_color(
-      @text.TextColor::new(@sprite.Color::new(0.9F, 0.9F, 0.9F, 1.0F)),
-    )
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
-    .spawn()
   let label = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
@@ -199,6 +190,27 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(label, @ui.UiText::new(label_handle), tick)
+  .component(@text.ecs_key_text)
+  .insert(label, @text.Text::new("Button"), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    label,
+    @text.TextFont::default().with_font(font).with_font_size(33.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(
+    label,
+    @text.TextColor::new(@sprite.Color::new(0.9F, 0.9F, 0.9F, 1.0F)),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_layout)
+  .insert(
+    label,
+    @text.TextLayout::new_with_justify(@text.Justify::Center),
+    tick,
+  )
 }

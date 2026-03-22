@@ -20,9 +20,9 @@
 /// - Mouse left click toggles IME and updates IME cursor position.
 /// - IME events (`Enabled`, `Disabled`, `Preedit`, `Commit`) update UI and edit text.
 struct StatusTextHandles {
-  ime_enabled : @text.TextHandle
-  ime_active : @text.TextHandle
-  ime_buffer : @text.TextHandle
+  ime_enabled : @core.Entity
+  ime_active : @core.Entity
+  ime_buffer : @core.Entity
 }
 
 ///|
@@ -138,13 +138,7 @@ fn spawn_ui_text_line(
   tick : @core.Tick,
   content : String,
   font : @text.TextFont,
-) -> @text.TextHandle {
-  let handle = @text.Text2dBundle::new(
-    @text.Text2d::new(content),
-    font,
-    @transform.Transform::identity(),
-  ).spawn()
-
+) -> @core.Entity {
   let text_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
@@ -153,9 +147,10 @@ fn spawn_ui_text_line(
   .component(@ui.ecs_key_node)
   .insert(text_entity, @ui.Node::default(), tick)
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(text_entity, @ui.UiText::new(handle), tick)
-  handle
+  .component(@text.ecs_key_text)
+  .insert(text_entity, @text.Text::new(content), tick)
+  world.component(@text.ecs_key_text_font).insert(text_entity, font, tick)
+  text_entity
 }
 
 ///|
@@ -182,19 +177,34 @@ fn update_primary_window(
 ///|
 fn set_ime_enabled_text(value : Bool) -> Unit {
   guard status_text_handles_ref.val is Some(handles) else { return }
-  @text.text_set_content(handles.ime_enabled, "IME Enabled: \{value}\n")
+  guard @app.current_world() is Some(world) else { return }
+  let tick = world.read_change_tick()
+  let text_store = world.component(@text.ecs_key_text)
+  guard text_store.get(handles.ime_enabled) is Some(text_value) else { return }
+  text_value.content = "IME Enabled: \{value}\n"
+  ignore(text_store.set(handles.ime_enabled, text_value, tick))
 }
 
 ///|
 fn set_ime_active_text(value : Bool) -> Unit {
   guard status_text_handles_ref.val is Some(handles) else { return }
-  @text.text_set_content(handles.ime_active, "IME Active:  \{value}\n")
+  guard @app.current_world() is Some(world) else { return }
+  let tick = world.read_change_tick()
+  let text_store = world.component(@text.ecs_key_text)
+  guard text_store.get(handles.ime_active) is Some(text_value) else { return }
+  text_value.content = "IME Active:  \{value}\n"
+  ignore(text_store.set(handles.ime_active, text_value, tick))
 }
 
 ///|
 fn set_ime_buffer_text(value : String) -> Unit {
   guard status_text_handles_ref.val is Some(handles) else { return }
-  @text.text_set_content(handles.ime_buffer, "IME Buffer:  \{value}\n")
+  guard @app.current_world() is Some(world) else { return }
+  let tick = world.read_change_tick()
+  let text_store = world.component(@text.ecs_key_text)
+  guard text_store.get(handles.ime_buffer) is Some(text_value) else { return }
+  text_value.content = "IME Buffer:  \{value}\n"
+  ignore(text_store.set(handles.ime_buffer, text_value, tick))
 }
 
 ///|

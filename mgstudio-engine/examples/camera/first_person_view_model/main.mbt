@@ -260,18 +260,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
   )
 
   let asset_server = @asset.AssetServer::new()
-  let text_handle = @text.Text2dBundle::new(
-      @text.Text2d::new(
-        "Move the camera with your mouse.\nPress arrow up to decrease the FOV of the world model.\nPress arrow down to increase the FOV of the world model.",
-      ),
-      @text.TextFont::default()
-      .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
-      .with_font_size(20.0F),
-      @transform.Transform::identity(),
-    )
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .spawn()
+  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let text_entity = world.spawn_empty()
   world
@@ -288,8 +277,31 @@ fn spawn_text(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+  .component(@text.ecs_key_text)
+  .insert(
+    text_entity,
+    @text.Text::new(
+      "Move the camera with your mouse.\nPress arrow up to decrease the FOV of the world model.\nPress arrow down to increase the FOV of the world model.",
+    ),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    text_entity,
+    @text.TextFont::default().with_font(font).with_font_size(20.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  world
+  .component(@text.ecs_key_text_layout)
+  .insert(
+    text_entity,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    tick,
+  )
 }
 
 ///|

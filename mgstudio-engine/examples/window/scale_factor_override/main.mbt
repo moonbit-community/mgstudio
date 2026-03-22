@@ -62,13 +62,6 @@ fn setup(world : @ecs.World) -> Unit {
 
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let text_handle = @text.Text2dBundle::new(
-      @text.Text2d::new("Example text"),
-      @text.TextFont::default().with_font(font).with_font_size(25.0F),
-      @transform.Transform::identity(),
-    )
-    .with_color(@text.TextColor::new(@sprite.Color::black()))
-    .spawn()
 
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
@@ -118,8 +111,18 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(label, @ui.UiText::new(text_handle), tick)
+  .component(@text.ecs_key_text)
+  .insert(label, @text.Text::new(display_text(1.0F, false)), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    label,
+    @text.TextFont::default().with_font(font).with_font_size(36.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(label, @text.TextColor::new(@sprite.Color::black()), tick)
   world.component(custom_text_key).insert(label, CustomText::{  }, tick)
 }
 
@@ -162,9 +165,11 @@ fn update_primary_window(
 ///|
 fn set_custom_text(world : @ecs.World, text : String) -> Unit {
   guard custom_text_entity(world) is Some(entity) else { return }
-  let ui_text_store = world.component(@ui.ecs_key_ui_text)
-  guard ui_text_store.get(entity) is Some(ui_text) else { return }
-  @text.text_set_content(ui_text.handle, text)
+  let tick = world.read_change_tick()
+  let text_store = world.component(@text.ecs_key_text)
+  guard text_store.get(entity) is Some(text_value) else { return }
+  text_value.content = text
+  ignore(text_store.set(entity, text_value, tick))
 }
 
 ///|

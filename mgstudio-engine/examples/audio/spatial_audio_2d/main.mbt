@@ -105,14 +105,6 @@ fn tick_delta(world : @ecs.World) -> @core.Duration {
 fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let text_handle = @text.Text2dBundle::new(
-      @text.Text2d::new(content),
-      @text.TextFont::default().with_font(font).with_font_size(20.0F),
-      @transform.Transform::identity(),
-    )
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .spawn()
 
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
@@ -142,8 +134,25 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
     tick,
   )
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+  .component(@text.ecs_key_text)
+  .insert(text_entity, @text.Text::new(content), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    text_entity,
+    @text.TextFont::default().with_font(font).with_font_size(20.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  world
+  .component(@text.ecs_key_text_layout)
+  .insert(
+    text_entity,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    tick,
+  )
 }
 
 ///|

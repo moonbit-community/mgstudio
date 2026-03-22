@@ -35,23 +35,6 @@ pub impl @ecs.Component for Player with component() {
 }
 
 ///|
-fn spawn_ui_text_handle(
-  content : String,
-  font : @asset.Handle[@asset.Font],
-  font_size : Float,
-  color : @sprite.Color,
-) -> @text.TextHandle {
-  @text.Text2dBundle::new(
-    @text.Text2d::new(content),
-    @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @transform.Transform::identity(),
-  )
-  .with_color(@text.TextColor::new(color))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-  .spawn()
-}
-
-///|
 fn setup_scene(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
@@ -104,12 +87,7 @@ fn setup_instructions(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let text_handle = spawn_ui_text_handle(
-    "Move the light with WASD.\nThe camera will smoothly track the light.",
-    asset_server.get().load_font("fonts/FiraSans-Bold.ttf"),
-    24.0F,
-    @sprite.Color::white(),
-  )
+  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
 
   let root = commands.spawn(
     (
@@ -131,7 +109,12 @@ fn setup_instructions(
           left: @ui.Val::Px(12.0F),
           bottom: @ui.Val::Px(12.0F),
         },
-        @ui.UiText::new(text_handle),
+        @text.Text::new(
+          "Move the light with WASD.\nThe camera will smoothly track the light.",
+        ),
+        @text.TextFont::default().with_font(font).with_font_size(24.0F),
+        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
     ),
   )

@@ -1256,27 +1256,6 @@ pub fn ButtonColors::new(
 }
 
 ///|
-pub struct UiText {
-  handle : @text.TextHandle
-}
-
-///|
-pub fn UiText::new(handle : @text.TextHandle) -> UiText {
-  UiText::{ handle, }
-}
-
-///|
-pub impl ToJson for UiText with to_json(self) {
-  self.handle.id().to_json()
-}
-
-///|
-pub impl @json.FromJson for UiText with from_json(json, _path) {
-  let id : Int = @json.from_json(json) catch { _ => -1 }
-  UiText::new(@text.TextHandle::new(id))
-}
-
-///|
 /// Optional accessibility label for UI nodes (used by the host a11y bridge).
 pub struct AccessibilityLabel {
   text : String
@@ -1378,6 +1357,11 @@ pub let ui_set_prepare : @app.SystemSet = @app.system_set("bevy.ui.prepare")
 
 ///|
 pub let ui_set_propagate : @app.SystemSet = @app.system_set("bevy.ui.propagate")
+
+///|
+pub let ui_set_text_content : @app.SystemSet = @app.system_set(
+  "mgstudio.ui.text_content",
+)
 
 ///|
 pub let ui_set_content : @app.SystemSet = @app.system_set("bevy.ui.content")
@@ -1540,6 +1524,35 @@ fn ensure_ui_scale_resource(world : @ecs.World) -> UiScale {
       value
     }
   }
+}
+
+///|
+fn register_ui_text_required_components(
+  world : @ecs.World,
+) -> Unit raise @ecs.RequiredComponentsError {
+  world.register_required_components_with(@text.ecs_key_text, ecs_key_node, fn() {
+    Node::default()
+  })
+  world.register_required_components_with(
+    @text.ecs_key_text,
+    @text.ecs_key_text_font,
+    fn() { @text.TextFont::default() },
+  )
+  world.register_required_components_with(
+    @text.ecs_key_text,
+    @text.ecs_key_text_color,
+    fn() { @text.TextColor::default() },
+  )
+  world.register_required_components_with(
+    @text.ecs_key_text,
+    @text.ecs_key_text_layout,
+    fn() { @text.TextLayout::default() },
+  )
+  world.register_required_components_with(
+    @text.ecs_key_text,
+    @text.ecs_key_text_line_height,
+    fn() { @text.LineHeight::default() },
+  )
 }
 
 ///|
@@ -2029,7 +2042,7 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
   let render_target_info_store = get_computed_ui_render_target_info_store(world)
   let ui_scale = ensure_ui_scale_resource(world)
   let node_store = get_node_store(world)
-  let ui_text_store = get_ui_text_store(world)
+  let text_store = world.component(@text.ecs_key_text)
   let ui_image_store = get_ui_image_store(world)
   let image_node_store = get_image_node_store(world)
   let image_size_store = get_image_node_size_store(world)
@@ -2107,7 +2120,7 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
 
   // ImageNode (Bevy-aligned).
   image_node_store.for_each(fn(entity, image_node) {
-    if !node_store.contains(entity) || ui_text_store.contains(entity) {
+    if !node_store.contains(entity) || text_store.contains(entity) {
       return
     }
     let is_auto = match image_node.image_mode {
@@ -2136,7 +2149,7 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
     if image_node_store.contains(entity) {
       return
     }
-    if !node_store.contains(entity) || ui_text_store.contains(entity) {
+    if !node_store.contains(entity) || text_store.contains(entity) {
       return
     }
     if ui_image.image.id() == transparent_id {
@@ -2168,16 +2181,16 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   let children_store = @hierarchy.get_children_store(world)
   let sprite_store = @sprite.get_sprite_store(world)
   let img_store = get_ui_image_store(world)
-  let ui_text_store = get_ui_text_store(world)
+  let text_store = world.component(@text.ecs_key_text)
   let transform_store = @transform.get_transform_store(world)
   let tick = world.read_change_tick()
   fn auto_size_for_entity(entity : @core.Entity) -> @math.Vec2 {
     match content_size_store.get(entity) {
       Some(v) => v.size
       None =>
-        match ui_text_store.get(entity) {
-          Some(text_node) =>
-            match @text.text_get_layout_size(text_node.handle) {
+        match @text.ui_text_ecs_handle(world, entity) {
+          Some(handle) =>
+            match @text.text_get_layout_size(handle) {
               Some(sz) => sz
               None => @math.Vec2::new(0.0F, 0.0F)
             }
@@ -2637,7 +2650,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       } else {
         taffy.new_with_children(style, child_ids)
       }
-      if content_size_store.contains(entity) || ui_text_store.contains(entity) {
+      if content_size_store.contains(entity) || text_store.contains(entity) {
         try! taffy.set_node_context(id, entity)
       }
       entity_to_node.set(entity_key(entity), id)
@@ -2803,8 +2816,8 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
           sprite_store.remove(entity) |> ignore
         }
 
-        // Sync text handles (state-based text pipeline) for label nodes.
-        if ui_text_store.get(entity) is Some(text_node) {
+        // Sync text handles (state-based text pipeline) for UI text nodes.
+        if @text.ui_text_ecs_handle(world, entity) is Some(text_handle) {
           let node = match node_store.get(entity) {
             Some(v) => v
             None => Node::default()
@@ -2854,12 +2867,12 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
           )
           let text_transform = ui_world_transform(root_ctx, content_rect, 0.0F)
           @text.text_set_y_axis(
-            text_node.handle,
+            text_handle,
             @text.YAxisOrientation::TopToBottom,
           )
-          @text.text_set_ui_node_size(text_node.handle, Some(content_size))
-          @text.text_set_transform(text_node.handle, text_transform)
-          @text.text_set_layers(text_node.handle, layers)
+          @text.text_set_ui_node_size(text_handle, Some(content_size))
+          @text.text_set_transform(text_handle, text_transform)
+          @text.text_set_layers(text_handle, layers)
         }
       }
       let scroll_raw = match scroll_store.get(entity) {
@@ -3087,7 +3100,6 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
   let node_store = get_node_store(world)
   let layout_store = get_ui_layout_store(world)
   let clip_store = get_calculated_clip_store(world)
-  let ui_text_store = get_ui_text_store(world)
   let scissor_store = @sprite.get_scissor_rect_store(world)
   let children_store = @hierarchy.get_children_store(world)
   let tick = world.read_change_tick()
@@ -3198,14 +3210,14 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
     } else if scissor_store.contains(entity) {
       scissor_store.remove(entity) |> ignore
     }
-    if ui_text_store.get(entity) is Some(text_node) {
+    if @text.ui_text_ecs_handle(world, entity) is Some(text_handle) {
       let text_scissor = if clipped_by_parent &&
         !rect_is_full_viewport(self_clip, viewport_rect) {
         Some(self_clip)
       } else {
         None
       }
-      @text.text_set_ui_scissor(text_node.handle, text_scissor)
+      @text.text_set_ui_scissor(text_handle, text_scissor)
     }
     let node = match node_store.get(entity) {
       Some(v) => v
@@ -3306,7 +3318,6 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
   let children_store = @hierarchy.get_children_store(world)
   let parent_store = @hierarchy.get_parent_store(world)
   let transform_store = @transform.get_transform_store(world)
-  let ui_text_store = get_ui_text_store(world)
   fn entity_key(e : @core.Entity) -> (Int, Int) {
     (e.id, e.generation)
   }
@@ -3465,8 +3476,8 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
       }
       None => ()
     }
-    if ui_text_store.get(entity) is Some(text_node) {
-      match @text.text_get_transform(text_node.handle) {
+    if @text.ui_text_ecs_handle(world, entity) is Some(text_handle) {
+      match @text.text_get_transform(text_handle) {
         Some(t1) => {
           let pos = @math.Vec2::new(t1.translation.x, t1.translation.y)
           let scale = @math.Vec2::new(t1.scale.x, t1.scale.y)
@@ -3477,7 +3488,7 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
             scale,
             z~,
           )
-          @text.text_set_transform(text_node.handle, t_text)
+          @text.text_set_transform(text_handle, t_text)
         }
         None => ()
       }
@@ -3508,7 +3519,8 @@ pub fn ui_build_a11y_tree_update(
   let label_widget_store = get_label_store(world)
   let image_node_store = get_image_node_store(world)
   let label_store = get_accessibility_label_store(world)
-  let ui_text_store = get_ui_text_store(world)
+  let text_store = world.component(@text.ecs_key_text)
+  let text_span_store = world.component(@text.ecs_key_text_span)
   let scroll_store = get_scroll_position_store(world)
   let parent_store = @hierarchy.get_parent_store(world)
   let children_store = @hierarchy.get_children_store(world)
@@ -3567,21 +3579,23 @@ pub fn ui_build_a11y_tree_update(
   fn collect_subtree_text(
     entity : @core.Entity,
     children_store : @ecs.ComponentAccess[@hierarchy.Children],
-    ui_text_store : @ecs.ComponentAccess[UiText],
+    text_store : @ecs.ComponentAccess[@text.Text],
+    text_span_store : @ecs.ComponentAccess[@text.TextSpan],
     out : Ref[Array[String]],
   ) -> Unit {
-    if ui_text_store.get(entity) is Some(text_node) {
-      match @text.text_get_content(text_node.handle) {
-        Some(s) => push_nonempty(out, s)
-        None => ()
-      }
+    if text_store.get(entity) is Some(text_root) {
+      push_nonempty(out, text_root.content)
+    }
+    if text_span_store.get(entity) is Some(text_span) {
+      push_nonempty(out, text_span.content)
     }
     guard children_store.get(entity) is Some(children) else { return }
     for i in 0..<children.entities.length() {
       collect_subtree_text(
         children.entities[i],
         children_store,
-        ui_text_store,
+        text_store,
+        text_span_store,
         out,
       )
     }
@@ -3604,7 +3618,8 @@ pub fn ui_build_a11y_tree_update(
   fn calc_label_from_children(
     entity : @core.Entity,
     children_store : @ecs.ComponentAccess[@hierarchy.Children],
-    ui_text_store : @ecs.ComponentAccess[UiText],
+    text_store : @ecs.ComponentAccess[@text.Text],
+    text_span_store : @ecs.ComponentAccess[@text.TextSpan],
   ) -> String? {
     guard children_store.get(entity) is Some(children) else { return None }
     let mut name : String? = None
@@ -3612,7 +3627,9 @@ pub fn ui_build_a11y_tree_update(
       let child = children.entities[i]
       let parts : Array[String] = []
       let out = Ref::new(parts)
-      collect_subtree_text(child, children_store, ui_text_store, out)
+      collect_subtree_text(
+        child, children_store, text_store, text_span_store, out,
+      )
       if out.val.length() > 0 {
         name = Some(join_with_space(out.val))
       }
@@ -3623,11 +3640,14 @@ pub fn ui_build_a11y_tree_update(
   fn calc_value_from_self(
     entity : @core.Entity,
     children_store : @ecs.ComponentAccess[@hierarchy.Children],
-    ui_text_store : @ecs.ComponentAccess[UiText],
+    text_store : @ecs.ComponentAccess[@text.Text],
+    text_span_store : @ecs.ComponentAccess[@text.TextSpan],
   ) -> String {
     let parts : Array[String] = []
     let out = Ref::new(parts)
-    collect_subtree_text(entity, children_store, ui_text_store, out)
+    collect_subtree_text(
+      entity, children_store, text_store, text_span_store, out,
+    )
     join_with_space(out.val)
   }
 
@@ -3720,7 +3740,7 @@ pub fn ui_build_a11y_tree_update(
       None => ""
     }
     let is_editable = label_widget_store.contains(entity) &&
-      ui_text_store.contains(entity) &&
+      text_store.contains(entity) &&
       explicit_label != ""
     let role = if button_store.contains(entity) {
       @moon_accesskit.Role::Button
@@ -3779,14 +3799,18 @@ pub fn ui_build_a11y_tree_update(
       let name = if explicit_label != "" {
         Some(explicit_label)
       } else {
-        calc_label_from_children(entity, children_store, ui_text_store)
+        calc_label_from_children(
+          entity, children_store, text_store, text_span_store,
+        )
       }
       match name {
         Some(s) => if s != "" { node.set_label(s) }
         None => ()
       }
     } else if role == @moon_accesskit.Role::Label {
-      let value = calc_value_from_self(entity, children_store, ui_text_store)
+      let value = calc_value_from_self(
+        entity, children_store, text_store, text_span_store,
+      )
       if explicit_label != "" {
         node.set_label(explicit_label)
       }
@@ -3797,7 +3821,9 @@ pub fn ui_build_a11y_tree_update(
         node.set_label(explicit_label)
       }
       node.set_value(
-        calc_value_from_self(entity, children_store, ui_text_store),
+        calc_value_from_self(
+          entity, children_store, text_store, text_span_store,
+        ),
       )
     } else if explicit_label != "" {
       node.set_label(explicit_label)
@@ -3975,6 +4001,7 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn ui_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  try! register_ui_text_required_components(app.world())
   app
   .add_pre_update_system_config(
     @app.system(ui_update_context_system).in_set(ui_set_focus),
@@ -3990,6 +4017,9 @@ pub fn ui_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   )
   .add_post_update_system_config(
     @app.system(ui_scroll_system).in_set(ui_set_propagate),
+  )
+  .add_post_update_system_config(
+    @app.system(@text.ui_text_sync_ecs_system).in_set(ui_set_text_content),
   )
   .add_post_update_system_config(
     @app.system(ui_image_content_size_system).in_set(ui_set_content),
@@ -4014,9 +4044,15 @@ pub fn ui_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     before=[ui_set_propagate],
   )
   .configure_set(@app.PostUpdate, ui_set_propagate, after=[ui_set_prepare], before=[
-    ui_set_content,
+    ui_set_text_content,
   ])
-  .configure_set(@app.PostUpdate, ui_set_content, after=[ui_set_propagate], before=[
+  .configure_set(
+    @app.PostUpdate,
+    ui_set_text_content,
+    after=[ui_set_propagate],
+    before=[ui_set_content],
+  )
+  .configure_set(@app.PostUpdate, ui_set_content, after=[ui_set_text_content], before=[
     ui_set_layout,
   ])
   .configure_set(@app.PostUpdate, ui_set_layout, after=[ui_set_content], before=[

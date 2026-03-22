@@ -54,7 +54,7 @@ priv struct BlendModesState {
   mut random_seed : Int
   materials : Array[ControlledMaterial]
   labels : Array[ExampleLabel]
-  mut display_text : @text.TextHandle?
+  mut display_text : @core.Entity?
   mut unlit : Bool
 }
 
@@ -114,23 +114,6 @@ fn random_color(alpha : Float) -> @sprite.Color {
 }
 
 ///|
-fn spawn_ui_text_handle(
-  content : String,
-  font : @asset.Handle[@asset.Font],
-  font_size : Float,
-  color : @sprite.Color,
-) -> @text.TextHandle {
-  @text.Text2dBundle::new(
-    @text.Text2d::new(content),
-    @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @transform.Transform::identity(),
-  )
-  .with_color(@text.TextColor::new(color))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-  .spawn()
-}
-
-///|
 fn blend_modes_display_text(
   camera_entity : @core.Entity,
   world : @ecs.World,
@@ -169,12 +152,6 @@ fn setup_ui_overlay(
     tick,
   )
 
-  let controls_text = spawn_ui_text_handle(
-    CONTROL_TEXT,
-    font,
-    14.0F,
-    @sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
-  )
   let controls_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
@@ -190,16 +167,31 @@ fn setup_ui_overlay(
     tick,
   )
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(controls_entity, @ui.UiText::new(controls_text), tick)
+  .component(@text.ecs_key_text)
+  .insert(controls_entity, @text.Text::new(CONTROL_TEXT), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    controls_entity,
+    @text.TextFont::default().with_font(font).with_font_size(14.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(
+    controls_entity,
+    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_layout)
+  .insert(
+    controls_entity,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    tick,
+  )
 
   guard blend_modes_state.val.camera is Some(camera_entity) else { return }
-  let display_text = spawn_ui_text_handle(
-    blend_modes_display_text(camera_entity, world),
-    font,
-    14.0F,
-    @sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
-  )
   let display_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
@@ -215,9 +207,34 @@ fn setup_ui_overlay(
     tick,
   )
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(display_entity, @ui.UiText::new(display_text), tick)
-  blend_modes_state.val.display_text = Some(display_text)
+  .component(@text.ecs_key_text)
+  .insert(
+    display_entity,
+    @text.Text::new(blend_modes_display_text(camera_entity, world)),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    display_entity,
+    @text.TextFont::default().with_font(font).with_font_size(14.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(
+    display_entity,
+    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_layout)
+  .insert(
+    display_entity,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    tick,
+  )
+  blend_modes_state.val.display_text = Some(display_entity)
 
   let label_color = @sprite.Color::new(1.0F, 0.65F, 0.2F, 1.0F)
   let labels : Array[(@core.Entity, String)] = [
@@ -231,7 +248,6 @@ fn setup_ui_overlay(
   for pair in labels {
     let target = pair.0
     let text = pair.1
-    let label_text = spawn_ui_text_handle(text, font, 16.0F, label_color)
     let label_node = world.spawn_empty()
     world
     .component(@hierarchy.ecs_key_parent)
@@ -247,8 +263,18 @@ fn setup_ui_overlay(
       tick,
     )
     world
-    .component(@ui.ecs_key_ui_text)
-    .insert(label_node, @ui.UiText::new(label_text), tick)
+    .component(@text.ecs_key_text)
+    .insert(label_node, @text.Text::new(text), tick)
+    world
+    .component(@text.ecs_key_text_font)
+    .insert(
+      label_node,
+      @text.TextFont::default().with_font(font).with_font_size(16.0F),
+      tick,
+    )
+    world
+    .component(@text.ecs_key_text_color)
+    .insert(label_node, @text.TextColor::new(label_color), tick)
     blend_modes_state.val.labels.push({ node: label_node, target })
   }
 }
@@ -336,12 +362,12 @@ fn spawn_mesh(
 fn update_ui_overlay(world : @ecs.World) -> Unit {
   let state = blend_modes_state.val
   guard state.camera is Some(camera_entity) else { return }
-  guard state.display_text is Some(display_text) else { return }
-
-  @text.text_set_content(
-    display_text,
-    blend_modes_display_text(camera_entity, world),
-  )
+  guard state.display_text is Some(display_entity) else { return }
+  let tick = world.read_change_tick()
+  let text_store = world.component(@text.ecs_key_text)
+  guard text_store.get(display_entity) is Some(display_text) else { return }
+  display_text.content = blend_modes_display_text(camera_entity, world)
+  ignore(text_store.set(display_entity, display_text, tick))
 
   let camera_store = world.component(@sprite.ecs_key_camera)
   guard camera_store.get(camera_entity) is Some(camera) else { return }

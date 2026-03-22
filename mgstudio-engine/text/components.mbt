@@ -13,8 +13,18 @@
 // limitations under the License.
 
 ///|
-pub struct Text2d {
-  content : String
+pub(all) struct Text {
+  mut content : String
+}
+
+///|
+pub fn Text::new(content : String) -> Text {
+  Text::{ content, }
+}
+
+///|
+pub(all) struct Text2d {
+  mut content : String
 }
 
 ///|
@@ -23,8 +33,8 @@ pub fn Text2d::new(content : String) -> Text2d {
 }
 
 ///|
-pub struct TextSpan {
-  content : String
+pub(all) struct TextSpan {
+  mut content : String
 }
 
 ///|
@@ -167,8 +177,8 @@ pub fn TextFont::with_font_smoothing(
 }
 
 ///|
-pub struct TextColor {
-  color : @sprite.Color
+pub(all) struct TextColor {
+  mut color : @sprite.Color
 }
 
 ///|
@@ -182,8 +192,8 @@ pub fn TextColor::default() -> TextColor {
 }
 
 ///|
-pub struct TextBackgroundColor {
-  color : @sprite.Color
+pub(all) struct TextBackgroundColor {
+  mut color : @sprite.Color
 }
 
 ///|
@@ -253,9 +263,44 @@ pub fn TextBounds::new_vertical(height : Float) -> TextBounds {
 }
 
 ///|
-pub struct Text2dShadow {
-  offset : @math.Vec2
-  color : @sprite.Color
+pub(all) struct TextShadow {
+  mut offset : @math.Vec2
+  mut color : @sprite.Color
+}
+
+///|
+pub fn TextShadow::new(
+  offset : @math.Vec2,
+  color : @sprite.Color,
+) -> TextShadow {
+  TextShadow::{ offset, color }
+}
+
+///|
+pub fn TextShadow::default() -> TextShadow {
+  TextShadow::new(@math.Vec2::new(4.0F, -4.0F), @sprite.Color::black())
+}
+
+///|
+pub fn TextShadow::with_offset(
+  self : TextShadow,
+  offset : @math.Vec2,
+) -> TextShadow {
+  TextShadow::{ ..self, offset, }
+}
+
+///|
+pub fn TextShadow::with_color(
+  self : TextShadow,
+  color : @sprite.Color,
+) -> TextShadow {
+  TextShadow::{ ..self, color, }
+}
+
+///|
+pub(all) struct Text2dShadow {
+  mut offset : @math.Vec2
+  mut color : @sprite.Color
 }
 
 ///|

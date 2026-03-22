@@ -104,15 +104,6 @@ fn spawn_ui(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let text_handle = @text.Text2dBundle::new(
-      @text.Text2d::new("Press <spacebar> to save a screenshot to disk"),
-      @text.TextFont::default().with_font(font).with_font_size(24.0F),
-      @transform.Transform::identity(),
-    )
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .spawn()
-
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
@@ -141,8 +132,29 @@ fn spawn_ui(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+  .component(@text.ecs_key_text)
+  .insert(
+    text_entity,
+    @text.Text::new("Press <spacebar> to save a screenshot to disk"),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    text_entity,
+    @text.TextFont::default().with_font(font).with_font_size(24.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  world
+  .component(@text.ecs_key_text_layout)
+  .insert(
+    text_entity,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    tick,
+  )
 }
 
 ///|

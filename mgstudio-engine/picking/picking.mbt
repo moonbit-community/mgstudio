@@ -710,7 +710,7 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
   let scroll_store = @ui.get_scroll_position_store(world)
   let node_store = @ui.get_node_store(world)
   let layout_store = @ui.get_ui_layout_store(world)
-  let ui_text_store = @ui.get_ui_text_store(world)
+  let text_store = world.component(@text.ecs_key_text)
   let children_store = @hierarchy.get_children_store(world)
   let scroll_step = 24.0F
   fn apply_scroll_delta(entity : @core.Entity, dx : Float, dy : Float) -> Unit {
@@ -868,9 +868,10 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
         apply_scroll_delta(entity, scroll_step, 0.0F)
       @moon_accesskit.Action::SetValue =>
         if req.data() is Some(@moon_accesskit.ActionData::Value(value)) &&
-          ui_text_store.get(entity) is Some(text_node) {
+          text_store.get(entity) is Some(text_node) {
           @a11y.A11yState::set_focused_node(state, req.target_node())
-          @text.text_set_content(text_node.handle, value)
+          text_node.content = value
+          ignore(text_store.set(entity, text_node, tick))
         }
       _ => ()
     }

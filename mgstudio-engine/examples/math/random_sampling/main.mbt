@@ -243,18 +243,7 @@ fn spawn_instructions(
     tick,
   )
 
-  let text_handle = @text.Text2dBundle::new(
-      @text.Text2d::new(
-        "Controls:\nM: Toggle between sampling boundary and interior.\nR: Restart (erase all samples).\nS: Add one random sample.\nD: Add 100 random samples.\nRotate camera by holding left mouse and panning left/right.",
-      ),
-      @text.TextFont::default()
-      .with_font(asset_server.load_font("fonts/FiraSans-Bold.ttf"))
-      .with_font_size(20.0F),
-      @transform.Transform::identity(),
-    )
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .spawn()
+  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let text_entity = world.spawn_empty()
   world
@@ -271,8 +260,31 @@ fn spawn_instructions(
     tick,
   )
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+  .component(@text.ecs_key_text)
+  .insert(
+    text_entity,
+    @text.Text::new(
+      "Controls:\nM: Toggle between sampling boundary and interior.\nR: Restart (erase all samples).\nS: Add one random sample.\nD: Add 100 random samples.\nRotate camera by holding left mouse and panning left/right.",
+    ),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    text_entity,
+    @text.TextFont::default().with_font(font).with_font_size(20.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  world
+  .component(@text.ecs_key_text_layout)
+  .insert(
+    text_entity,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    tick,
+  )
 }
 
 ///|

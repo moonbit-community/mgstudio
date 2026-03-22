@@ -50,23 +50,6 @@ fn CameraSettings::default() -> CameraSettings {
 }
 
 ///|
-fn spawn_ui_text_handle(
-  content : String,
-  font : @asset.Handle[@asset.Font],
-  font_size : Float,
-  color : @sprite.Color,
-) -> @text.TextHandle {
-  @text.Text2dBundle::new(
-    @text.Text2d::new(content),
-    @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @transform.Transform::identity(),
-  )
-  .with_color(@text.TextColor::new(color))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-  .spawn()
-}
-
-///|
 fn setup(
   asset_server : @app.Res[@asset.AssetServer],
   camera_settings : @app.Res[CameraSettings],
@@ -148,12 +131,7 @@ fn instructions(
   asset_server : @app.Res[@asset.AssetServer],
   commands : @app.Commands,
 ) -> Unit {
-  let text_handle = spawn_ui_text_handle(
-    "Scroll mouse wheel to zoom in/out\nSpace: switch between orthographic and perspective projections",
-    asset_server.get().load_font("fonts/FiraSans-Bold.ttf"),
-    20.0F,
-    @sprite.Color::white(),
-  )
+  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let root = commands.spawn(
     (
       @ui.UiRoot::default(),
@@ -171,7 +149,12 @@ fn instructions(
         .with_position_type(@ui.PositionType::Absolute)
         .with_top(@ui.Val::Px(12.0F))
         .with_left(@ui.Val::Px(12.0F)),
-        @ui.UiText::new(text_handle),
+        @text.Text::new(
+          "Scroll mouse wheel to zoom in/out\nSpace: switch between orthographic and perspective projections",
+        ),
+        @text.TextFont::default().with_font(font).with_font_size(20.0F),
+        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
     ),
   )

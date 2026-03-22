@@ -65,14 +65,6 @@ fn spawn_ui_label(
 ) -> Unit {
   let tick = world.read_change_tick()
 
-  let text_handle = @text.Text2dBundle::new(
-      @text.Text2d::new(content),
-      font,
-      @transform.Transform::identity(),
-    )
-    .with_shadow(Some(@text.Text2dShadow::default()))
-    .spawn()
-
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
   world
@@ -97,8 +89,19 @@ fn spawn_ui_label(
   .component(@hierarchy.ecs_key_parent)
   .insert(text_entity, @hierarchy.Parent::new(root), tick)
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+  .component(@text.ecs_key_text)
+  .insert(text_entity, @text.Text::new(content), tick)
+  world.component(@text.ecs_key_text_font).insert(text_entity, font, tick)
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(
+    text_entity,
+    @text.TextColor::new(@sprite.Color::srgb(1.0F, 1.0F, 0.0F)),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_shadow)
+  .insert(text_entity, @text.TextShadow::default(), tick)
 }
 
 ///|

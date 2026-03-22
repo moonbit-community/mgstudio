@@ -70,13 +70,6 @@ fn setup_camera(world : @ecs.World) -> Unit {
 fn setup_ui(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let text_handle = @text.Text2dBundle::new(
-      @text.Text2d::new("Resolution"),
-      @text.TextFont::default().with_font(font).with_font_size(42.0F),
-      @transform.Transform::identity(),
-    )
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .spawn()
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
@@ -88,8 +81,18 @@ fn setup_ui(world : @ecs.World) -> Unit {
   .component(@hierarchy.ecs_key_parent)
   .insert(text_entity, @hierarchy.Parent::new(root), tick)
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+  .component(@text.ecs_key_text)
+  .insert(text_entity, @text.Text::new("Resolution"), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    text_entity,
+    @text.TextFont::default().with_font(font).with_font_size(42.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
   world
   .component(resolution_text_key)
   .insert(text_entity, ResolutionText::{  }, tick)
@@ -111,12 +114,10 @@ fn update_resolution_text(
   height : Float,
 ) -> Unit {
   guard resolution_text_entity(world) is Some(entity) else { return }
-  let ui_text_store = world.component(@ui.ecs_key_ui_text)
-  guard ui_text_store.get(entity) is Some(ui_text) else { return }
-  @text.text_set_content(
-    ui_text.handle,
-    width.to_string() + " x " + height.to_string(),
-  )
+  let text_store = world.component(@text.ecs_key_text)
+  guard text_store.get(entity) is Some(text) else { return }
+  text.content = width.to_string() + " x " + height.to_string()
+  text_store.set(entity, text, world.read_change_tick()) |> ignore
 }
 
 ///|

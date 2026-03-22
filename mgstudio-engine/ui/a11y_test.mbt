@@ -40,12 +40,10 @@ test "ui: a11y derives button label from text children" {
     tick,
   )
   let child = world.spawn_empty()
-  let handle = @text.Text2dBundle::new(
-    @text.Text2d::new("OK"),
-    @text.TextFont::default(),
-    @transform.Transform::identity(),
-  ).spawn()
-  get_ui_text_store(world).insert(child, UiText::new(handle), tick)
+  world.component(@text.ecs_key_text).insert(child, @text.Text::new("OK"), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(child, @text.TextFont::default(), tick)
   @hierarchy.get_parent_store(world).insert(
     child,
     @hierarchy.Parent::new(btn),
@@ -99,12 +97,10 @@ test "ui: a11y label widget sets value from self text" {
     ),
     tick,
   )
-  let handle = @text.Text2dBundle::new(
-    @text.Text2d::new("Hello"),
-    @text.TextFont::default(),
-    @transform.Transform::identity(),
-  ).spawn()
-  get_ui_text_store(world).insert(e, UiText::new(handle), tick)
+  world.component(@text.ecs_key_text).insert(e, @text.Text::new("Hello"), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(e, @text.TextFont::default(), tick)
   ui_stack_system(world)
   let update = ui_build_a11y_tree_update(world)
   let target_id = @a11y.node_id_for_entity(e)
@@ -350,12 +346,12 @@ test "ui: editable label node is exported as text input with SetValue" {
     ),
     tick,
   )
-  let handle = @text.Text2dBundle::new(
-    @text.Text2d::new("Editable status"),
-    @text.TextFont::default(),
-    @transform.Transform::identity(),
-  ).spawn()
-  get_ui_text_store(world).insert(editable, UiText::new(handle), tick)
+  world
+  .component(@text.ecs_key_text)
+  .insert(editable, @text.Text::new("Editable status"), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(editable, @text.TextFont::default(), tick)
   ui_stack_system(world)
   let update = ui_build_a11y_tree_update(world)
   let node_id = @a11y.node_id_for_entity(editable)

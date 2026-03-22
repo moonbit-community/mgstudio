@@ -94,17 +94,11 @@ fn instruction_text(
 }
 
 ///|
-fn find_instruction_text(world : @ecs.World) -> @text.TextHandle? {
-  let result : Ref[@text.TextHandle?] = Ref::new(None)
-  let ui_text_store = world.component(@ui.ecs_key_ui_text)
+fn find_instruction_text_entity(world : @ecs.World) -> @core.Entity? {
+  let result : Ref[@core.Entity?] = Ref::new(None)
   world
   .query_entities_filtered(@ecs.With::new(example_text_key))
-  .view(fn(entity) {
-    guard ui_text_store.get(entity) is Some(ui_text) else { return }
-    if result.val is None {
-      result.val = Some(ui_text.handle)
-    }
-  })
+  .view(fn(entity) { if result.val is None { result.val = Some(entity) } })
   result.val
 }
 
@@ -116,11 +110,15 @@ fn refresh_instruction_text(world : @ecs.World) -> Unit {
   guard (try! world.get_resource(resize_dir_key)) is Some(direction) else {
     return
   }
-  guard find_instruction_text(world) is Some(handle) else { return }
-  @text.text_set_content(
-    handle,
-    instruction_text(action, direction_by_index(direction.index)),
+  guard find_instruction_text_entity(world) is Some(entity) else { return }
+  let tick = world.read_change_tick()
+  let text_store = world.component(@text.ecs_key_text)
+  guard text_store.get(entity) is Some(text_value) else { return }
+  text_value.content = instruction_text(
+    action,
+    direction_by_index(direction.index),
   )
+  ignore(text_store.set(entity, text_value, tick))
 }
 
 ///|
@@ -143,20 +141,6 @@ fn setup(world : @ecs.World) -> Unit {
     LeftClickAction::Move,
     @math.CompassOctant::NorthWest,
   )
-  let text_position = @transform.Transform::from_xyz(
-    -Float::from_int(@window.window_width()) * 0.5F + 12.0F,
-    Float::from_int(@window.window_height()) * 0.5F - 12.0F,
-    0.0F,
-  )
-  let text_handle = @text.Text2dBundle::new(
-      @text.Text2d::new(content),
-      @text.TextFont::default(),
-      text_position,
-    )
-    .with_anchor(@sprite.Anchor::top_left())
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .spawn()
-
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
@@ -189,8 +173,21 @@ fn setup(world : @ecs.World) -> Unit {
   .component(@hierarchy.ecs_key_parent)
   .insert(text_entity, @hierarchy.Parent::new(root), tick)
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+  .component(@text.ecs_key_text)
+  .insert(text_entity, @text.Text::new(content), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(text_entity, @text.TextFont::default(), tick)
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  world
+  .component(@text.ecs_key_text_layout)
+  .insert(
+    text_entity,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    tick,
+  )
   world.component(example_text_key).insert(text_entity, ExampleText::{  }, tick)
 }
 

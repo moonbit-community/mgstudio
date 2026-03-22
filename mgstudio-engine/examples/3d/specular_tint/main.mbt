@@ -46,7 +46,7 @@ priv struct SpecularTintState {
   mut camera : @core.Entity?
   mut material : @asset.Handle[@pbr.StandardMaterial]?
   mut noise_texture : @asset.Handle[@asset.Image]?
-  mut help_text : @text.TextHandle?
+  mut help_text : @core.Entity?
 }
 
 ///|
@@ -101,23 +101,6 @@ fn app_status_help_text(tint_type : TintType) -> String {
     Solid => SWITCH_TO_MAP_HELP_TEXT
     Map => SWITCH_TO_SOLID_TINT_HELP_TEXT
   }
-}
-
-///|
-fn spawn_ui_text_handle(
-  content : String,
-  font : @asset.Handle[@asset.Font],
-  font_size : Float,
-  color : @sprite.Color,
-) -> @text.TextHandle {
-  @text.Text2dBundle::new(
-    @text.Text2d::new(content),
-    @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @transform.Transform::identity(),
-  )
-  .with_color(@text.TextColor::new(color))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-  .spawn()
 }
 
 ///|
@@ -271,12 +254,6 @@ fn setup(world : @ecs.World) -> Unit {
     .with_height(@ui.Val::Percent(100.0F)),
     tick,
   )
-  let help_text_handle = spawn_ui_text_handle(
-    app_status_help_text(state.tint_type),
-    ui_font,
-    18.0F,
-    @sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F),
-  )
   let help_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
@@ -292,9 +269,34 @@ fn setup(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(help_entity, @ui.UiText::new(help_text_handle), tick)
-  state.help_text = Some(help_text_handle)
+  .component(@text.ecs_key_text)
+  .insert(
+    help_entity,
+    @text.Text::new(app_status_help_text(state.tint_type)),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    help_entity,
+    @text.TextFont::default().with_font(ui_font).with_font_size(18.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(
+    help_entity,
+    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_layout)
+  .insert(
+    help_entity,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    tick,
+  )
+  state.help_text = Some(help_entity)
 }
 
 ///|
@@ -378,8 +380,13 @@ fn shift_hue(_world : @ecs.World) -> Unit {
 ///|
 fn update_help_text(_world : @ecs.World) -> Unit {
   let state = specular_tint_state.val
-  guard state.help_text is Some(help_text) else { return }
-  @text.text_set_content(help_text, app_status_help_text(state.tint_type))
+  guard state.help_text is Some(help_entity) else { return }
+  guard @app.current_world() is Some(world) else { return }
+  let tick = world.read_change_tick()
+  let text_store = world.component(@text.ecs_key_text)
+  guard text_store.get(help_entity) is Some(text_value) else { return }
+  text_value.content = app_status_help_text(state.tint_type)
+  ignore(text_store.set(help_entity, text_value, tick))
 }
 
 ///|

@@ -138,33 +138,11 @@ fn vec2_normalize_or_zero(v : @math.Vec2) -> @math.Vec2 {
 }
 
 ///|
-fn spawn_ui_text_handle(
-  content : String,
-  font : @asset.Handle[@asset.Font],
-  font_size : Float,
-  color : @sprite.Color,
-) -> @text.TextHandle {
-  @text.Text2dBundle::new(
-    @text.Text2d::new(content),
-    @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @transform.Transform::identity(),
-  )
-  .with_color(@text.TextColor::new(color))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-  .spawn()
-}
-
-///|
 fn spawn_help_overlay(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let text_handle = spawn_ui_text_handle(
-    "Up Arrow: Move Forward\nLeft / Right Arrow: Turn",
-    asset_server.get().load_font("fonts/FiraSans-Bold.ttf"),
-    20.0F,
-    @sprite.Color::white(),
-  )
+  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let root = commands.spawn(
     (
       @ui.UiRoot::default(),
@@ -181,7 +159,10 @@ fn spawn_help_overlay(
         .with_position_type(@ui.PositionType::Absolute)
         .with_left(@ui.Val::Px(12.0F))
         .with_top(@ui.Val::Px(12.0F)),
-        @ui.UiText::new(text_handle),
+        @text.Text::new("Up Arrow: Move Forward\nLeft / Right Arrow: Turn"),
+        @text.TextFont::default().with_font(font).with_font_size(20.0F),
+        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
     ),
   )

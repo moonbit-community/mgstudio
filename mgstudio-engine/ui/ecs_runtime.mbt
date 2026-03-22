@@ -53,11 +53,6 @@ pub let ecs_key_computed_ui_render_target_info : @ecs.ComponentKey[
 ] = @ecs.register_component(debug_name="ui.computed_ui_render_target_info")
 
 ///|
-pub let ecs_key_ui_text : @ecs.ComponentKey[UiText] = @ecs.register_component(
-  debug_name="ui.ui_text",
-)
-
-///|
 pub let ecs_key_z_index : @ecs.ComponentKey[ZIndex] = @ecs.register_component(
   debug_name="ui.z_index",
 )
@@ -190,11 +185,6 @@ pub impl @ecs.Component for ComputedUiTargetCamera with component() {
 ///|
 pub impl @ecs.Component for ComputedUiRenderTargetInfo with component() {
   ecs_key_computed_ui_render_target_info
-}
-
-///|
-pub impl @ecs.Component for UiText with component() {
-  ecs_key_ui_text
 }
 
 ///|

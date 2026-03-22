@@ -5,6 +5,7 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
@@ -15,6 +16,8 @@ import {
 
 // Values
 pub fn add_glyph_to_atlas(Array[FontAtlas], GlyphCacheKey, GlyphRaster, FontSmoothing) -> GlyphAtlasInfo?
+
+pub let ecs_key_text : @ecs.ComponentKey[Text]
 
 pub let ecs_key_text2d : @ecs.ComponentKey[Text2d]
 
@@ -31,6 +34,8 @@ pub let ecs_key_text_font : @ecs.ComponentKey[TextFont]
 pub let ecs_key_text_layout : @ecs.ComponentKey[TextLayout]
 
 pub let ecs_key_text_line_height : @ecs.ComponentKey[LineHeight]
+
+pub let ecs_key_text_shadow : @ecs.ComponentKey[TextShadow]
 
 pub let ecs_key_text_span : @ecs.ComponentKey[TextSpan]
 
@@ -90,6 +95,8 @@ pub fn text_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn text_render_system(@ecs.World) -> Unit
 
+pub fn text_reset_runtime_state_for_tests() -> Unit
+
 pub fn text_set_anchor(TextHandle, @sprite.Anchor) -> Unit
 
 pub fn text_set_background_color(TextHandle, TextBackgroundColor?) -> Unit
@@ -131,6 +138,10 @@ pub fn text_spawn(Text2dBundle) -> TextHandle
 pub fn text_spawn_span(TextHandle, TextSpanBundle) -> TextSpanHandle
 
 pub fn[W] text_update_system(W) -> Unit
+
+pub fn ui_text_ecs_handle(@ecs.World, @core.Entity) -> TextHandle?
+
+pub fn ui_text_sync_ecs_system(@ecs.World) -> Unit
 
 // Errors
 
@@ -273,8 +284,14 @@ pub struct Strikethrough {
 pub fn Strikethrough::default() -> Self
 pub impl @ecs.Component for Strikethrough
 
-pub struct Text2d {
-  content : String
+pub(all) struct Text {
+  mut content : String
+}
+pub fn Text::new(String) -> Self
+pub impl @ecs.Component for Text
+
+pub(all) struct Text2d {
+  mut content : String
 }
 pub fn Text2d::new(String) -> Self
 pub impl @ecs.Component for Text2d
@@ -309,9 +326,9 @@ pub fn Text2dBundle::with_strikethrough(Self, Strikethrough?) -> Self
 pub fn Text2dBundle::with_underline(Self, Underline?) -> Self
 pub fn Text2dBundle::with_y_axis(Self, YAxisOrientation) -> Self
 
-pub struct Text2dShadow {
-  offset : @math.Vec2
-  color : @color.Color
+pub(all) struct Text2dShadow {
+  mut offset : @math.Vec2
+  mut color : @color.Color
 }
 pub fn Text2dShadow::default() -> Self
 pub fn Text2dShadow::new(@math.Vec2, @color.Color) -> Self
@@ -319,8 +336,8 @@ pub fn Text2dShadow::with_color(Self, @color.Color) -> Self
 pub fn Text2dShadow::with_offset(Self, @math.Vec2) -> Self
 pub impl @ecs.Component for Text2dShadow
 
-pub struct TextBackgroundColor {
-  color : @color.Color
+pub(all) struct TextBackgroundColor {
+  mut color : @color.Color
 }
 pub fn TextBackgroundColor::new(@color.Color) -> Self
 pub impl @ecs.Component for TextBackgroundColor
@@ -335,8 +352,8 @@ pub fn TextBounds::new_horizontal(Float) -> Self
 pub fn TextBounds::new_vertical(Float) -> Self
 pub impl @ecs.Component for TextBounds
 
-pub struct TextColor {
-  color : @color.Color
+pub(all) struct TextColor {
+  mut color : @color.Color
 }
 pub fn TextColor::default() -> Self
 pub fn TextColor::new(@color.Color) -> Self
@@ -407,8 +424,18 @@ pub struct TextPipeline {
 }
 pub fn TextPipeline::default() -> Self
 
-pub struct TextSpan {
-  content : String
+pub(all) struct TextShadow {
+  mut offset : @math.Vec2
+  mut color : @color.Color
+}
+pub fn TextShadow::default() -> Self
+pub fn TextShadow::new(@math.Vec2, @color.Color) -> Self
+pub fn TextShadow::with_color(Self, @color.Color) -> Self
+pub fn TextShadow::with_offset(Self, @math.Vec2) -> Self
+pub impl @ecs.Component for TextShadow
+
+pub(all) struct TextSpan {
+  mut content : String
 }
 pub fn TextSpan::new(String) -> Self
 pub impl @ecs.Component for TextSpan

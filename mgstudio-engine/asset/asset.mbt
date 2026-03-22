@@ -218,8 +218,23 @@ pub impl @app.Resource for AssetServer with resource() {
 }
 
 ///|
+let asset_world_override_ref : Ref[@ecs.World?] = Ref::new(None)
+
+///|
 fn asset_current_world() -> @ecs.World? {
-  @app.current_world()
+  match @app.current_world() {
+    Some(world) => Some(world)
+    None => asset_world_override_ref.val
+  }
+}
+
+///|
+pub fn[T] asset_with_world(world : @ecs.World, f : () -> T) -> T {
+  let previous = asset_world_override_ref.val
+  asset_world_override_ref.val = Some(world)
+  let result = f()
+  asset_world_override_ref.val = previous
+  result
 }
 
 ///|

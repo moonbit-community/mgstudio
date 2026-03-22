@@ -362,8 +362,8 @@ fn ui_text_content(
 }
 
 ///|
-fn set_ui_text(handle : @text.TextHandle, content : String) -> Unit {
-  @text.text_set_content(handle, content)
+fn set_ui_text(text_value : @text.Text, content : String) -> Unit {
+  text_value.content = content
 }
 
 ///|
@@ -429,14 +429,6 @@ fn setup(
   )
 
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
-  let text_handle = @text.Text2dBundle::new(
-      @text.Text2d::new(""),
-      @text.TextFont::default().with_font(font).with_font_size(15.0F),
-      @transform.Transform::identity(),
-    )
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .spawn()
 
   ignore(
     commands.spawn(
@@ -446,7 +438,10 @@ fn setup(
         .with_position_type(@ui.PositionType::Absolute)
         .with_top(@ui.Val::Px(12.0F))
         .with_left(@ui.Val::Px(12.0F)),
-        @ui.UiText::new(text_handle),
+        @text.Text::new(""),
+        @text.TextFont::default().with_font(font).with_font_size(15.0F),
+        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextLayout::new_with_justify(@text.Justify::Left),
         TonemappingUiText::{  },
       ),
     ),
@@ -556,16 +551,6 @@ fn setup_image_viewer_scene(
   )
 
   guard ui_root_query.first_entity() is Some(root) else { return }
-  let prompt_handle = @text.Text2dBundle::new(
-      @text.Text2d::new("Drag and drop an HDR or EXR file"),
-      @text.TextFont::default()
-      .with_font(asset_server.get().load_font("fonts/FiraSans-Bold.ttf"))
-      .with_font_size(36.0F),
-      @transform.Transform::identity(),
-    )
-    .with_color(@text.TextColor::new(@sprite.Color::black()))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Center))
-    .spawn()
   ignore(
     commands.spawn(
       (
@@ -575,7 +560,12 @@ fn setup_image_viewer_scene(
           align_self: @ui.AlignSelf::Center,
           margin: @ui.UiRect::all(@ui.Val::Auto),
         },
-        @ui.UiText::new(prompt_handle),
+        @text.Text::new("Drag and drop an HDR or EXR file"),
+        @text.TextFont::default()
+        .with_font(asset_server.get().load_font("fonts/FiraSans-Bold.ttf"))
+        .with_font_size(36.0F),
+        @text.TextColor::new(@sprite.Color::black()),
+        @text.TextLayout::new_with_justify(@text.Justify::Center),
         SceneNumber::{ value: 3 },
         @visibility.Visibility::Hidden,
       ),
@@ -734,7 +724,7 @@ fn update_color_grading_settings(
 ///|
 fn drag_drop_image(
   image_material_query : @ecs.Query2[HDRViewer, @pbr.MeshMaterial3d],
-  image_viewer_text_query : @ecs.Query2[@ui.UiText, SceneNumber],
+  image_viewer_text_query : @ecs.Query2[@text.Text, SceneNumber],
   material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   drag_and_drop_reader : @ecs.MessageReader[@window.FileDragAndDrop],
   asset_server : @app.Res[@asset.AssetServer],
@@ -765,7 +755,7 @@ fn drag_drop_image(
   )
 
   if image_viewer_text_query.first()
-    is Some((text_entity, _ui_text, _scene_number)) {
+    is Some((text_entity, _text, _scene_number)) {
     commands.entity(text_entity).despawn()
   }
 }
@@ -833,7 +823,7 @@ fn update_ui(
     @post_process.Tonemapping,
     @post_process.ColorGrading,
   ],
-  ui_text_query : @ecs.Query2[@ui.UiText, TonemappingUiText],
+  ui_text_query : @ecs.Query2[@text.Text, TonemappingUiText],
   hide_ui : @app.Local[Bool],
 ) -> Unit {
   if keys.just_pressed(KeyH) {
@@ -843,14 +833,14 @@ fn update_ui(
     return
   }
   if hide_ui.get() {
-    set_ui_text(ui_text.handle, "")
+    set_ui_text(ui_text, "")
     return
   }
   guard settings_query.first() is Some((_camera, tonemapping, color_grading)) else {
     return
   }
   set_ui_text(
-    ui_text.handle,
+    ui_text,
     ui_text_content(
       current_scene.get().value,
       tonemapping,

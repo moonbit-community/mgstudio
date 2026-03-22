@@ -96,7 +96,7 @@ let intersects_key : @ecs.ComponentKey[Bool] = @ecs.register_component(
 )
 
 ///|
-let overlay_text_handle : Ref[@text.TextHandle?] = Ref::new(None)
+let overlay_text_entity : Ref[@core.Entity?] = Ref::new(None)
 
 ///|
 fn main {
@@ -163,7 +163,7 @@ fn main {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  overlay_text_handle.val = None
+  overlay_text_entity.val = None
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
@@ -257,33 +257,9 @@ fn spawn_shape_entity(
 }
 
 ///|
-fn spawn_ui_text_handle(
-  content : String,
-  font : @asset.Handle[@asset.Font],
-  font_size : Float,
-  color : @sprite.Color,
-) -> @text.TextHandle {
-  @text.Text2dBundle::new(
-    @text.Text2d::new(content),
-    @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @transform.Transform::identity(),
-  )
-  .with_color(@text.TextColor::new(color))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-  .spawn()
-}
-
-///|
 fn spawn_help_overlay(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let text_handle = spawn_ui_text_handle(
-    overlay_text(read_current_test(world)),
-    font,
-    18.0F,
-    color_white(),
-  )
-  overlay_text_handle.val = Some(text_handle)
 
   let tick = world.read_change_tick()
   let root = world.spawn_empty()
@@ -312,8 +288,30 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
     tick,
   )
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(text_entity, @ui.UiText::new(text_handle), tick)
+  .component(@text.ecs_key_text)
+  .insert(
+    text_entity,
+    @text.Text::new(overlay_text(read_current_test(world))),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    text_entity,
+    @text.TextFont::default().with_font(font).with_font_size(18.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(text_entity, @text.TextColor::new(color_white()), tick)
+  world
+  .component(@text.ecs_key_text_layout)
+  .insert(
+    text_entity,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    tick,
+  )
+  overlay_text_entity.val = Some(text_entity)
 }
 
 ///|
@@ -335,9 +333,12 @@ fn update_test_state(world : @ecs.World) -> Unit {
 
 ///|
 fn update_text(world : @ecs.World) -> Unit {
-  if overlay_text_handle.val is Some(text_handle) {
-    @text.text_set_content(text_handle, overlay_text(read_current_test(world)))
-  }
+  guard overlay_text_entity.val is Some(text_entity) else { return }
+  let tick = world.read_change_tick()
+  let text_store = world.component(@text.ecs_key_text)
+  guard text_store.get(text_entity) is Some(text_value) else { return }
+  text_value.content = overlay_text(read_current_test(world))
+  ignore(text_store.set(text_entity, text_value, tick))
 }
 
 ///|

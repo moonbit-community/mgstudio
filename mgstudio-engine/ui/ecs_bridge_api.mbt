@@ -16,10 +16,10 @@
 /// ECS component bridge types.
 pub let ecs_components : Array[String] = [
   "Node", "Label", "Button", "UiRoot", "IsDefaultUiCamera", "UiTargetCamera", "ComputedUiTargetCamera",
-  "ComputedUiRenderTargetInfo", "UiText", "ZIndex", "Outline", "UiImage", "UiLayout",
-  "BoxShadow", "ImageNode", "BorderColor", "ContentSize", "FocusPolicy", "Interaction",
-  "BorderRadius", "ButtonColors", "GlobalZIndex", "ImageNodeSize", "CalculatedClip",
-  "ScrollPosition", "BackgroundColor", "AccessibilityLabel", "RelativeCursorPosition",
+  "ComputedUiRenderTargetInfo", "ZIndex", "Outline", "UiImage", "UiLayout", "BoxShadow",
+  "ImageNode", "BorderColor", "ContentSize", "FocusPolicy", "Interaction", "BorderRadius",
+  "ButtonColors", "GlobalZIndex", "ImageNodeSize", "CalculatedClip", "ScrollPosition",
+  "BackgroundColor", "AccessibilityLabel", "RelativeCursorPosition",
 ]
 
 ///|
@@ -72,11 +72,6 @@ pub fn get_computed_ui_render_target_info_store(
   world : @ecs.World,
 ) -> @ecs.ComponentAccess[ComputedUiRenderTargetInfo] {
   world.component(ecs_key_computed_ui_render_target_info)
-}
-
-///|
-pub fn get_ui_text_store(world : @ecs.World) -> @ecs.ComponentAccess[UiText] {
-  world.component(ecs_key_ui_text)
 }
 
 ///|

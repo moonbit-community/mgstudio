@@ -60,12 +60,12 @@ struct MousePosition {
 
 ///|
 struct SplineModeTextHandle {
-  handle : @text.TextHandle
+  entity : @core.Entity
 }
 
 ///|
 struct CyclingModeTextHandle {
-  handle : @text.TextHandle
+  entity : @core.Entity
 }
 
 ///|
@@ -306,10 +306,10 @@ fn setup(world : @ecs.World) -> Unit {
     cycling_mode_label(cycling_mode),
   )
   world.insert_resource(spline_mode_text_handle_resource_key, SplineModeTextHandle::{
-    handle: spline_handle,
+    entity: spline_handle,
   })
   world.insert_resource(cycling_mode_text_handle_resource_key, CyclingModeTextHandle::{
-    handle: cycling_handle,
+    entity: cycling_handle,
   })
 }
 
@@ -417,10 +417,12 @@ fn update_spline_mode_text(
   spline_mode : @app.Res[SplineMode],
   handle : @app.Res[SplineModeTextHandle],
 ) -> Unit {
-  @text.text_set_content(
-    handle.get().handle,
-    "Spline: " + spline_mode_label(spline_mode.get()),
-  )
+  guard @app.current_world() is Some(world) else { return }
+  let tick = world.read_change_tick()
+  let text_store = world.component(@text.ecs_key_text)
+  guard text_store.get(handle.get().entity) is Some(text_value) else { return }
+  text_value.content = "Spline: " + spline_mode_label(spline_mode.get())
+  ignore(text_store.set(handle.get().entity, text_value, tick))
 }
 
 ///|
@@ -428,10 +430,12 @@ fn update_cycling_mode_text(
   cycling_mode : @app.Res[CyclingMode],
   handle : @app.Res[CyclingModeTextHandle],
 ) -> Unit {
-  @text.text_set_content(
-    handle.get().handle,
-    cycling_mode_label(cycling_mode.get()),
-  )
+  guard @app.current_world() is Some(world) else { return }
+  let tick = world.read_change_tick()
+  let text_store = world.component(@text.ecs_key_text)
+  guard text_store.get(handle.get().entity) is Some(text_value) else { return }
+  text_value.content = cycling_mode_label(cycling_mode.get())
+  ignore(text_store.set(handle.get().entity, text_value, tick))
 }
 
 ///|
@@ -576,15 +580,7 @@ fn spawn_ui_text_line(
   tick : @core.Tick,
   font : @text.TextFont,
   content : String,
-) -> @text.TextHandle {
-  let handle = @text.Text2dBundle::new(
-      @text.Text2d::new(content),
-      font,
-      @transform.Transform::identity(),
-    )
-    .with_color(@text.TextColor::new(@sprite.Color::white()))
-    .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-    .spawn()
+) -> @core.Entity {
   let entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
@@ -597,9 +593,16 @@ fn spawn_ui_text_line(
     tick,
   )
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(entity, @ui.UiText::new(handle), tick)
-  handle
+  .component(@text.ecs_key_text)
+  .insert(entity, @text.Text::new(content), tick)
+  world.component(@text.ecs_key_text_font).insert(entity, font, tick)
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  world
+  .component(@text.ecs_key_text_layout)
+  .insert(entity, @text.TextLayout::new_with_justify(@text.Justify::Left), tick)
+  entity
 }
 
 ///|

@@ -29,9 +29,7 @@ pub impl @ecs.Component for BloomCamera with component() {
 }
 
 ///|
-struct BloomHelpText {
-  handle : @text.TextHandle
-}
+struct BloomHelpText {}
 
 ///|
 let bloom_help_text_key : @ecs.ComponentKey[BloomHelpText] = @ecs.register_component(
@@ -156,33 +154,11 @@ fn bloom_help_text(
 }
 
 ///|
-fn spawn_ui_text_handle(
-  content : String,
-  font : @asset.Handle[@asset.Font],
-  font_size : Float,
-  color : @sprite.Color,
-) -> @text.TextHandle {
-  @text.Text2dBundle::new(
-    @text.Text2d::new(content),
-    @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @transform.Transform::identity(),
-  )
-  .with_color(@text.TextColor::new(color))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-  .spawn()
-}
-
-///|
 fn spawn_help_overlay(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
-  let text_handle = spawn_ui_text_handle(
-    "",
-    asset_server.get().load_font("fonts/FiraSans-Bold.ttf"),
-    20.0F,
-    @sprite.Color::white(),
-  )
+  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
   let root = commands.spawn(
     (
       @ui.UiRoot::default(),
@@ -199,8 +175,11 @@ fn spawn_help_overlay(
         .with_position_type(@ui.PositionType::Absolute)
         .with_left(@ui.Val::Px(12.0F))
         .with_top(@ui.Val::Px(12.0F)),
-        @ui.UiText::new(text_handle),
-        BloomHelpText::{ handle: text_handle },
+        @text.Text::new(""),
+        @text.TextFont::default().with_font(font).with_font_size(20.0F),
+        @text.TextColor::new(@sprite.Color::white()),
+        @text.TextLayout::new_with_justify(@text.Justify::Left),
+        BloomHelpText::{  },
       ),
     ),
   )
@@ -301,7 +280,7 @@ fn update_bloom_settings(
   camera_query : @ecs.Query1[BloomCamera],
   tonemapping_query : @ecs.Query1[@sprite.Tonemapping],
   bloom_query : @ecs.Query1[@sprite.Bloom],
-  help_query : @ecs.Query1[BloomHelpText],
+  help_query : @ecs.Query2[BloomHelpText, @text.Text],
 ) -> Unit {
   guard bloom_camera_entity(camera_query) is Some(camera_entity) else { return }
 
@@ -311,12 +290,9 @@ fn update_bloom_settings(
   }
   let current_bloom = try! bloom_query.get(camera_entity)
 
-  if (try! help_query.single()) is Some(help_text) {
-    @text.text_set_content(
-      help_text.handle,
-      bloom_help_text(current_bloom, tonemapping),
-    )
-  }
+  try! help_query.for_each(fn(_entity, _help_text, help_text) {
+    help_text.content = bloom_help_text(current_bloom, tonemapping)
+  })
 
   let dt = time.get().delta_seconds()
 

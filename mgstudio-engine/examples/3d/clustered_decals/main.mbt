@@ -81,7 +81,7 @@ priv struct ClusteredDecalsState {
   mut drag_mode : DragMode
   mut decal_a : @core.Entity?
   mut decal_b : @core.Entity?
-  mut help_text : @text.TextHandle?
+  mut help_text : @core.Entity?
   mut drag_mode_panel : @core.Entity?
   selection_widgets : Array[SelectionWidget]
   drag_mode_widgets : Array[DragModeWidget]
@@ -131,9 +131,13 @@ fn create_help_text() -> String {
 
 ///|
 fn update_help_text() -> Unit {
-  if clustered_decals_state.val.help_text is Some(handle) {
-    @text.text_set_content(handle, create_help_text())
-  }
+  guard clustered_decals_state.val.help_text is Some(entity) else { return }
+  guard @app.current_world() is Some(world) else { return }
+  let tick = world.read_change_tick()
+  let text_store = world.component(@text.ecs_key_text)
+  guard text_store.get(entity) is Some(text_value) else { return }
+  text_value.content = create_help_text()
+  ignore(text_store.set(entity, text_value, tick))
 }
 
 ///|
@@ -156,23 +160,6 @@ fn button_border(selected : Bool) -> @ui.BorderColor {
       @sprite.Color::white()
     },
   )
-}
-
-///|
-fn spawn_ui_text_handle(
-  content : String,
-  font : @asset.Handle[@asset.Font],
-  font_size : Float,
-  color : @sprite.Color,
-) -> @text.TextHandle {
-  @text.Text2dBundle::new(
-    @text.Text2d::new(content),
-    @text.TextFont::default().with_font(font).with_font_size(font_size),
-    @transform.Transform::identity(),
-  )
-  .with_color(@text.TextColor::new(color))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-  .spawn()
 }
 
 ///|
@@ -227,12 +214,6 @@ fn spawn_button(
   .component(@ui.ecs_key_border_color)
   .insert(button, button_border(false), tick)
 
-  let label_handle = spawn_ui_text_handle(
-    label,
-    font,
-    16.0F,
-    @sprite.Color::white(),
-  )
   let text_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
@@ -245,8 +226,18 @@ fn spawn_button(
     tick,
   )
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(text_entity, @ui.UiText::new(label_handle), tick)
+  .component(@text.ecs_key_text)
+  .insert(text_entity, @text.Text::new(label), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    text_entity,
+    @text.TextFont::default().with_font(font).with_font_size(16.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
 
   button
 }
@@ -273,12 +264,6 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
     tick,
   )
 
-  let help_handle = spawn_ui_text_handle(
-    "",
-    font,
-    16.0F,
-    @sprite.Color::white(),
-  )
   let help_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
@@ -294,9 +279,26 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
     tick,
   )
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(help_entity, @ui.UiText::new(help_handle), tick)
-  clustered_decals_state.val.help_text = Some(help_handle)
+  .component(@text.ecs_key_text)
+  .insert(help_entity, @text.Text::new(""), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    help_entity,
+    @text.TextFont::default().with_font(font).with_font_size(16.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(help_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  world
+  .component(@text.ecs_key_text_layout)
+  .insert(
+    help_entity,
+    @text.TextLayout::new_with_justify(@text.Justify::Left),
+    tick,
+  )
+  clustered_decals_state.val.help_text = Some(help_entity)
 
   let selection_panel = world.spawn_empty()
   world
@@ -316,12 +318,6 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
     tick,
   )
 
-  let hint_handle = spawn_ui_text_handle(
-    "Drag to Move",
-    font,
-    16.0F,
-    @sprite.Color::white(),
-  )
   let hint_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
@@ -336,8 +332,18 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
     tick,
   )
   world
-  .component(@ui.ecs_key_ui_text)
-  .insert(hint_entity, @ui.UiText::new(hint_handle), tick)
+  .component(@text.ecs_key_text)
+  .insert(hint_entity, @text.Text::new("Drag to Move"), tick)
+  world
+  .component(@text.ecs_key_text_font)
+  .insert(
+    hint_entity,
+    @text.TextFont::default().with_font(font).with_font_size(16.0F),
+    tick,
+  )
+  world
+  .component(@text.ecs_key_text_color)
+  .insert(hint_entity, @text.TextColor::new(@sprite.Color::white()), tick)
 
   let camera_button = spawn_button(world, selection_panel, tick, font, "Camera")
   clustered_decals_state.val.selection_widgets.push({

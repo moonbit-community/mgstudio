@@ -140,6 +140,8 @@ pub fn asset_update_texture_region_rgba8_mip(Handle[@image.Image], @math.URect, 
 
 pub fn asset_white_texture() -> Handle[@image.Image]
 
+pub fn[T] asset_with_world(@ecs.World, () -> T) -> T
+
 pub fn[T] assets_resource_key() -> @ecs.ResourceKey[Assets[T]]
 
 pub fn[T] assets_resource_key_of(T) -> @ecs.ResourceKey[Assets[T]]
