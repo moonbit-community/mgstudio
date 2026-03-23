@@ -347,7 +347,7 @@ fn color_grading_camera_value(
 fn spawn_row(
   world : @ecs.World,
   parent : @core.Entity,
-  tick : @core.Tick,
+  tick : @core.Sequence,
   node : @ui.Node,
 ) -> @core.Entity {
   let row = world.spawn_empty()
@@ -362,7 +362,7 @@ fn spawn_row(
 fn spawn_row_label(
   world : @ecs.World,
   row : @core.Entity,
-  tick : @core.Tick,
+  tick : @core.Sequence,
   font : @asset.Handle[@asset.Font],
   label : String,
 ) -> Unit {
@@ -396,7 +396,7 @@ fn spawn_row_label(
 fn spawn_option_button(
   world : @ecs.World,
   row : @core.Entity,
-  tick : @core.Tick,
+  tick : @core.Sequence,
   font : @asset.Handle[@asset.Font],
   option : SelectedColorGradingOption,
   color_grading : @post_process.ColorGrading,
@@ -531,7 +531,7 @@ fn add_buttons(
   font : @asset.Handle[@asset.Font],
   color_grading : @post_process.ColorGrading,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
@@ -658,7 +658,7 @@ fn add_buttons(
 
 ///|
 fn add_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
@@ -698,7 +698,7 @@ fn add_basic_scene(
   world : @ecs.World,
   asset_server : @asset.AssetServer,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   let main_scene = world.spawn_empty()
   world
@@ -778,7 +778,7 @@ fn setup(world : @ecs.World) -> Unit {
   add_buttons(world, font, @post_process.ColorGrading::default())
   add_camera(world, asset_server)
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let overlay_camera = @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(100).with_clear_color_none(),
     @transform.Transform::identity(),
@@ -790,7 +790,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn handle_button_presses(world : @ecs.World) -> Unit {
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   guard (try! world.get_resource_ref_mut(
       SelectedColorGradingOption::resource(),
       tick,
@@ -841,7 +841,7 @@ fn adjust_color_grading_option(world : @ecs.World) -> Unit {
     color_grading,
     selected_option.get(color_grading) + delta,
   )
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   let color_grading_store = world.component(@post_process.ecs_key_color_grading)
   color_grading_store.set(camera_entity, next_color_grading, tick) |> ignore
 }
@@ -857,7 +857,7 @@ fn update_ui_state(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   let widget_store = world.component(ColorGradingOptionWidget::component())
   let background_store = world.component(@ui.ecs_key_background_color)
   let border_store = world.component(@ui.ecs_key_border_color)

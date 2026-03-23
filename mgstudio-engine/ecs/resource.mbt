@@ -18,17 +18,17 @@ pub fn[T] World::insert_resource(
   key : ResourceKey[T],
   value : T,
 ) -> Unit {
-  self.insert_resource_with_change_tick(key, value, 0)
+  self.insert_resource_with_sequence(key, value, 0)
 }
 
 ///|
-pub fn[T] World::insert_resource_with_change_tick(
+pub fn[T] World::insert_resource_with_sequence(
   self : World,
   key : ResourceKey[T],
   value : T,
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
 ) -> Unit {
-  ignore(change_tick)
+  ignore(sequence)
   let payload = erased_value(value)
   self.resources.set(key.id(), ResourceSlot::{ payload, })
 }
@@ -59,9 +59,9 @@ pub fn[T] World::get_resource_ref(
 pub fn[T] World::get_resource_ref_mut(
   self : World,
   key : ResourceKey[T],
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
 ) -> Ref[T]? raise EcsError {
-  ignore(change_tick)
+  ignore(sequence)
   self.get_resource_ref(key)
 }
 
@@ -83,7 +83,7 @@ pub fn[T] World::update_resource(
 ) -> Bool raise EcsError {
   guard self.get_resource(key) is Some(old_value) else { return false }
   let new_value = update(old_value)
-  self.insert_resource_with_change_tick(key, new_value, 0)
+  self.insert_resource_with_sequence(key, new_value, 0)
   true
 }
 

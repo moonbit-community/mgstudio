@@ -175,7 +175,7 @@ fn create_spot_light() -> @pbr.SpotLight {
 ///|
 fn apply_camera_shadow_filter(world : @ecs.World) -> Unit {
   guard pcss_state.val.camera is Some(camera) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let filter_mode = match pcss_state.val.shadow_filter {
     ShadowFilter::NonTemporal => @pbr.ShadowFilteringMethod::Gaussian
     ShadowFilter::Temporal => @pbr.ShadowFilteringMethod::Temporal
@@ -196,7 +196,7 @@ fn apply_camera_shadow_filter(world : @ecs.World) -> Unit {
 ///|
 fn apply_light_type(world : @ecs.World) -> Unit {
   guard pcss_state.val.light is Some(light) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world.component(@pbr.ecs_key_directional_light).remove(light) |> ignore
   world.component(@pbr.ecs_key_point_light).remove(light) |> ignore
   world.component(@pbr.ecs_key_spot_light).remove(light) |> ignore
@@ -228,7 +228,7 @@ fn setup(world : @ecs.World) -> Unit {
     soft_shadows: true,
   }
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   let camera = @pbr.Camera3dBundle::new(

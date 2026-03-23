@@ -70,7 +70,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
 fn setup_ui(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
   world
@@ -117,7 +117,7 @@ fn update_resolution_text(
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(entity) is Some(text) else { return }
   text.content = width.to_string() + " x " + height.to_string()
-  text_store.set(entity, text, world.read_change_tick()) |> ignore
+  text_store.set(entity, text, world.read_sequence()) |> ignore
 }
 
 ///|
@@ -125,7 +125,7 @@ fn update_primary_window(
   world : @ecs.World,
   update : (@window.Window) -> Unit,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let window_store = world.component(@window.ecs_key_window)
   world
   .query_entities_filtered(

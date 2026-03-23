@@ -188,7 +188,7 @@ fn change_track(world : @ecs.World) -> Unit {
     changed: false,
   })
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let audio_sinks = world.component(@audio.ecs_key_audio_sink)
   audio_sinks.for_each(fn(entity : @core.Entity, _sink : @audio.AudioSink) {
     if !world.component(fade_out_component_key).contains(entity) {
@@ -247,7 +247,7 @@ fn fade_in(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   for entity in entities {
     sink_store.update(entity, tick, fn(sink : @audio.AudioSink) {
       sink.set_volume(
@@ -289,7 +289,7 @@ fn fade_out(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   for entity in entities {
     sink_store.update(entity, tick, fn(sink : @audio.AudioSink) {
       sink.set_volume(

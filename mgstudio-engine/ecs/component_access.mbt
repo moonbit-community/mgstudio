@@ -71,7 +71,7 @@ pub fn[T] ComponentAccess::set(
   self : ComponentAccess[T],
   entity : @core.Entity,
   value : T,
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
   loc~ : SourceLoc,
 ) -> Bool {
   let store_ref = self.world.ensure_component_store(self.key.id())
@@ -83,7 +83,7 @@ pub fn[T] ComponentAccess::set(
   let outermost = self.world.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
   self.world.run_component_replace_hooks(entity, self.key.id(), caller~)
-  ignore(store_ref.val.set(entity, payload, change_tick))
+  ignore(store_ref.val.set(entity, payload, sequence))
   self.world.run_component_insert_hooks(entity, self.key.id(), caller~)
   self.world.end_deferred_hook_command_scope(outermost)
   true
@@ -94,12 +94,12 @@ pub fn[T] ComponentAccess::set(
 pub fn[T] ComponentAccess::update(
   self : ComponentAccess[T],
   entity : @core.Entity,
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
   update : (T) -> T,
   loc~ : SourceLoc,
 ) -> Bool {
   match self.get(entity) {
-    Some(value) => self.set(entity, update(value), change_tick, loc~)
+    Some(value) => self.set(entity, update(value), sequence, loc~)
     None => false
   }
 }
@@ -110,14 +110,14 @@ pub fn[T] ComponentAccess::insert(
   self : ComponentAccess[T],
   entity : @core.Entity,
   value : T,
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
   loc~ : SourceLoc,
 ) -> Unit {
   try! self.world.insert_component_with_requirements(
     entity,
     self.key.id(),
     erased_value(value),
-    change_tick,
+    sequence,
     caller=hook_caller_from_loc(loc),
   )
 }
@@ -128,10 +128,10 @@ pub fn[T] ComponentAccess::upsert(
   self : ComponentAccess[T],
   entity : @core.Entity,
   value : T,
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
   loc~ : SourceLoc,
 ) -> Unit {
-  self.insert(entity, value, change_tick, loc~)
+  self.insert(entity, value, sequence, loc~)
 }
 
 ///|
@@ -151,7 +151,7 @@ pub fn[T] ComponentAccess::remove(
   self.world.run_component_remove_hooks(entity, self.key.id(), caller~)
   ignore(store_ref.val.remove(entity))
   self.world.ensure_removed_component_messages(self.key.id()).val.send(
-    component_write_change_tick(self.world),
+    component_write_sequence(self.world),
     entity,
   )
   self.world.end_deferred_hook_command_scope(outermost)

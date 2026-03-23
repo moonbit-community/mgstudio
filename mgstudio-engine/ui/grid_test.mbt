@@ -15,7 +15,7 @@
 ///|
 test "ui: grid template rows/columns affect child layout (basic px tracks)" {
   let world = @ecs.World::new()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
 
   // Seed UiContext to avoid any host texture calls in tests.
   let ctx = UiContext::new(

@@ -63,7 +63,7 @@ pub fn entity_count_diagnostics_plugin_with(
 
 ///|
 fn entity_count_diagnostic_system(world : @ecs.World) -> Unit {
-  let tick = @app.current_system_ticks().this_run
+  let tick = @app.current_system_sequence().this_run
   match
     (try world.get_resource_ref_mut(DiagnosticsStore::resource(), tick) catch {
       _ => None

@@ -155,7 +155,7 @@ test "scene: SceneRoot spawns children and marks ready" {
   let instance_after_second_tick = Ref::new(0)
   let ready_after_second_tick = Ref::new(0)
   run_scene_test_app(fn(world : @ecs.World) {
-    let tick = world.increment_change_tick()
+    let tick = world.advance_sequence()
     let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
     let material = @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
@@ -258,7 +258,7 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
   let new_child_count = Ref::new(0)
   let new_child_x = Ref::new(0.0)
   run_scene_test_app(fn(world : @ecs.World) {
-    let first_tick = world.increment_change_tick()
+    let first_tick = world.advance_sequence()
     let first_path = @gltf.GltfAssetLabel::Scene(1).from_asset(
       "models/Foo/Foo.gltf",
     )
@@ -327,7 +327,7 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
     get_scene_root_store(world).set(
       root,
       @scene.SceneRoot::new(second_handle),
-      world.increment_change_tick(),
+      world.advance_sequence(),
     )
     |> ignore
 

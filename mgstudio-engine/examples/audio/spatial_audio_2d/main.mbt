@@ -106,7 +106,7 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
   world
@@ -182,7 +182,7 @@ fn spawn_listener_ear(
     ),
   ).spawn(world)
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world
   .component(@hierarchy.ecs_key_parent)
   .insert(ear, @hierarchy.Parent::new(listener), tick)
@@ -219,7 +219,7 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world
   .component(@audio.ecs_key_audio_source_player)
   .insert(emitter, @audio.AudioPlayer::new(track), tick)
@@ -268,7 +268,7 @@ fn update_emitters(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   let next_x = @math.sin(
       spatial_audio_2d_state.val.emitter_stopwatch.elapsed_secs(),
@@ -305,7 +305,7 @@ fn update_listener(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   transform_store.update(spatial_audio_2d_state.val.listener, tick, fn(
     transform : @transform.Transform,

@@ -184,7 +184,7 @@ fn spawn_plane(
 
 ///|
 fn spawn_light(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let point = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
@@ -200,7 +200,7 @@ fn spawn_light(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_camera(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::from_xyz(2.0F, 0.0F, -7.0F).looking_at(
@@ -272,7 +272,7 @@ fn spawn_decal(world : @ecs.World) -> Unit {
   guard clustered_decal_maps_state.val.textures is Some(textures) else {
     return
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   let x = random_range(-PLANE_HALF_SIZE, PLANE_HALF_SIZE)
   let y = random_range(-PLANE_HALF_SIZE, PLANE_HALF_SIZE)
@@ -340,7 +340,7 @@ fn animate_decals(world : @ecs.World) -> Unit {
   if delta <= 0.0F {
     return
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let alive : Array[ActiveDecal] = []
   for decal in clustered_decal_maps_state.val.decals {
     let age = decal.age + delta

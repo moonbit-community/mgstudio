@@ -97,7 +97,7 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
 fn setup(world : @ecs.World) -> Unit {
   rotate_env_state.val.camera = None
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   let sphere_material = @pbr.standard_material_add(
@@ -179,7 +179,7 @@ fn rotate_skybox_and_environment_map(world : @ecs.World) -> Unit {
   let now = world_time(world).elapsed_seconds()
   let angle = 0.2F * now
   let rotation = @math.Quat::from_rotation_y(angle)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   if rotate_env_state.val.camera is Some(camera_entity) {
     if world.component(@pbr.ecs_key_skybox).get(camera_entity) is Some(skybox) {

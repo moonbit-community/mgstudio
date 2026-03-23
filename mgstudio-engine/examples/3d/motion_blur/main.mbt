@@ -178,14 +178,14 @@ fn set_camera_fov(
     Custom(_) => None
   }
   guard next_projection is Some(projection) else { return }
-  projection_store.set(camera_entity, projection, world.read_change_tick())
+  projection_store.set(camera_entity, projection, world.read_sequence())
   |> ignore
 }
 
 ///|
 fn apply_motion_blur_settings(world : @ecs.World) -> Unit {
   guard motion_blur_state.val.camera is Some(camera_entity) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let motion_blur = @post_process.MotionBlur::new(
     motion_blur_state.val.shutter_angle,
     motion_blur_state.val.samples,
@@ -218,7 +218,7 @@ fn spawn_camera(world : @ecs.World) -> Unit {
     .spawn(world)
   world
   .component(@pbr.ecs_key_msaa)
-  .insert(camera, @pbr.Msaa::Off, world.read_change_tick())
+  .insert(camera, @pbr.Msaa::Off, world.read_sequence())
   motion_blur_state.val.camera = Some(camera)
 }
 
@@ -257,7 +257,7 @@ fn spawn_car(
   phase : Float,
   tracked : Bool,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let body = @pbr.MeshMaterial3dBundle::new(
     body_mesh,
     @pbr.MeshMaterial3d::new(car_material),
@@ -372,7 +372,7 @@ fn spawn_trees(
 ///|
 fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   set_global_ambient_light(world, 300.0F)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   let directional_light = world.spawn_empty()
   world
@@ -587,7 +587,7 @@ fn move_cars(world : @ecs.World) -> Unit {
   if motion_blur_state.val.car_bodies.length() == 0 {
     return
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   let now = world_time(world).elapsed_seconds() * 0.25F
   for car in motion_blur_state.val.car_bodies {
@@ -649,7 +649,7 @@ fn move_camera(world : @ecs.World) -> Unit {
   guard transform_store.get(camera_entity) is Some(current_camera_transform) else {
     return
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let up = @math.Vec3::new(0.0F, 1.0F, 0.0F)
   match motion_blur_state.val.camera_mode {
     Track => {

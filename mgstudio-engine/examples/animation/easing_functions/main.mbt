@@ -104,7 +104,7 @@ fn setup(world : @ecs.World) -> Unit {
   let half_extent_y = EXTENT_Y / 2.0F
   let half_size_x = PLOT_SIZE_X / 2.0F
   let half_size_y = PLOT_SIZE_Y / 2.0F
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let parent_store = world.component(@hierarchy.ecs_key_parent)
   let plot_store = world.component(ease_function_plot_key)
   let transform_store = world.component(@transform.ecs_key_transform)
@@ -185,7 +185,7 @@ fn display_curves(world : @ecs.World) -> Unit {
   let now = clamp01((cycle_elapsed - TIME_MARGIN_SECONDS) / DURATION_SECONDS)
 
   if progress_text_entity.val is Some(text_entity) {
-    let tick = world.read_change_tick()
+    let tick = world.read_sequence()
     let text_store = world.component(@text.ecs_key_text)
     if text_store.get(text_entity) is Some(text_value) {
       text_value.content = format_progress(now)
@@ -195,7 +195,7 @@ fn display_curves(world : @ecs.World) -> Unit {
 
   let gizmos = @sprite.Gizmos::get()
   let transform_store = world.component(@transform.ecs_key_transform)
-  world.increment_change_tick() |> ignore
+  world.advance_sequence() |> ignore
   let half_size_x = PLOT_SIZE_X / 2.0F
   let half_size_y = PLOT_SIZE_Y / 2.0F
 
@@ -288,7 +288,7 @@ fn spawn_progress_overlay(
   world : @ecs.World,
   font : @asset.Handle[@asset.Font],
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
   world

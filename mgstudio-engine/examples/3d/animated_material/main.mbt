@@ -60,7 +60,7 @@ fn color_from_hue_deg(hue_deg : Float) -> @sprite.Color {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   animated_material_state.val.materials.clear()
   animated_material_state.val.hues_deg.clear()
   let asset_server = @asset.AssetServer::new()

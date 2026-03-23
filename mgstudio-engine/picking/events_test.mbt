@@ -38,7 +38,7 @@ fn set_frame(
 ///|
 test "picking: generates enter/leave and click events (single pointer)" {
   let world = @ecs.World::new()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   get_picking_state_resource(world).insert(PickingState::default(), tick)
   get_picking_events_resource(world).insert(PickingEvents::default(), tick)
   get_pointer_inputs_resource(world).insert(PointerInputs::default(), tick)
@@ -124,7 +124,7 @@ test "picking: generates enter/leave and click events (single pointer)" {
 ///|
 test "picking: handles multiple pointers independently" {
   let world = @ecs.World::new()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   get_picking_state_resource(world).insert(PickingState::default(), tick)
   get_picking_events_resource(world).insert(PickingEvents::default(), tick)
   get_pointer_inputs_resource(world).insert(PointerInputs::default(), tick)
@@ -155,7 +155,7 @@ test "picking: handles multiple pointers independently" {
 ///|
 test "picking: a11y focus action maps to hovered interaction" {
   let world = @ecs.World::new()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default(), tick)
   get_picking_events_resource(world).insert(PickingEvents::default(), tick)
   let entity = world.spawn_empty()
@@ -177,7 +177,7 @@ test "picking: a11y focus action maps to hovered interaction" {
 ///|
 test "picking: a11y scroll actions update ScrollPosition without click events" {
   let world = @ecs.World::new()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default(), tick)
   get_picking_events_resource(world).insert(PickingEvents::default(), tick)
   let entity = world.spawn_empty()
@@ -249,7 +249,7 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
 ///|
 test "picking: a11y set-value action updates Text content" {
   let world = @ecs.World::new()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default(), tick)
   get_picking_events_resource(world).insert(PickingEvents::default(), tick)
   let entity = world.spawn_empty()
@@ -280,7 +280,7 @@ test "picking: a11y set-value action updates Text content" {
 ///|
 test "picking: ignores a11y actions targeting non-alive entities" {
   let world = @ecs.World::new()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default(), tick)
   get_picking_events_resource(world).insert(PickingEvents::default(), tick)
   let dead_entity = @core.Entity::new(999, 1)

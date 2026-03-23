@@ -206,7 +206,7 @@ fn set_entity_visibility(
   } else {
     @visibility.Visibility::Hidden
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let store = world.component(@visibility.ecs_key_visibility)
   if store.contains(actual) {
     store.set(actual, value, tick) |> ignore
@@ -237,7 +237,7 @@ fn remove_reflection_probe(world : @ecs.World) -> Unit {
 ///|
 fn spawn_reflection_probe(world : @ecs.World) -> Unit {
   remove_reflection_probe(world)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let probe = world.spawn_empty()
   reflection_probes_state.val.reflection_probe = Some(probe)
 
@@ -270,7 +270,7 @@ fn spawn_reflection_probe(world : @ecs.World) -> Unit {
 ///|
 fn apply_reflection_mode(world : @ecs.World) -> Unit {
   guard reflection_probes_state.val.camera is Some(camera) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   remove_reflection_probe(world)
   world.component(@pbr.ecs_key_environment_map_light).remove(camera) |> ignore
@@ -331,7 +331,7 @@ fn setup(world : @ecs.World) -> Unit {
   reflection_probes_state.val.help_text = None
   reflection_probes_state.val.environment_map_usage_ready = false
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   reflection_probes_state.val.diffuse_environment_map = Some(
@@ -536,7 +536,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
       transform.translation.y,
       rotated_z,
     ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
-    world.read_change_tick(),
+    world.read_sequence(),
   )
   |> ignore
 }

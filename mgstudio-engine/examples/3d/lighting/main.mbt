@@ -198,7 +198,7 @@ fn spawn_mesh(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
   let logo_texture = asset_server.load("branding/bevy_logo_light.png")
 
@@ -548,7 +548,7 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
   guard lighting_state.val.directional_light is Some(light_entity) else {
     return
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   if transform_store.get(light_entity) is Some(transform) {
     let delta = world_time(world).delta_seconds() * 0.5F
@@ -578,7 +578,7 @@ fn movement(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let delta = world_time(world).delta_seconds() * MOVE_SPEED
   let transform_store = world.component(@transform.ecs_key_transform)
   for entity in lighting_state.val.movables {

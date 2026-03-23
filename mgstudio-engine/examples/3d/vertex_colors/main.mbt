@@ -106,7 +106,7 @@ fn colorful_cube_mesh() -> @pbr.Mesh3d {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(

@@ -328,7 +328,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
     )
     .spawn(world)
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world
   .component(@pbr.ecs_key_deferred_prepass)
   .insert(camera, @pbr.DeferredPrepass::default(), tick)
@@ -348,7 +348,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
 
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::default()
     .with_first_cascade_far_bound(0.3F)
     .with_maximum_distance(15.0F)
@@ -529,11 +529,7 @@ fn atmosphere_controls(world : @ecs.World) -> Unit {
         if next != exposure.ev100 {
           world
           .component(@pbr.ecs_key_exposure)
-          .set(
-            camera_entity,
-            exposure.with_ev100(next),
-            world.read_change_tick(),
-          )
+          .set(camera_entity, exposure.with_ev100(next), world.read_sequence())
           |> ignore
           atmosphere_state.val.exposure_ev100 = next
           exposure_changed = true
@@ -560,7 +556,7 @@ fn atmosphere_controls(world : @ecs.World) -> Unit {
 
 ///|
 fn dynamic_scene(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   if !atmosphere_state.val.paused {
     atmosphere_state.val.sun_pitch = atmosphere_state.val.sun_pitch -

@@ -52,7 +52,7 @@ fn main {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
@@ -155,7 +155,7 @@ fn update_primary_window(
   update : (@window.Window) -> Unit,
 ) -> Unit {
   guard primary_window_entity(world) is Some(entity) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let window_store = world.component(@window.ecs_key_window)
   guard window_store.get(entity) is Some(window) else { return }
   update(window)
@@ -165,7 +165,7 @@ fn update_primary_window(
 ///|
 fn set_custom_text(world : @ecs.World, text : String) -> Unit {
   guard custom_text_entity(world) is Some(entity) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(entity) is Some(text_value) else { return }
   text_value.content = text

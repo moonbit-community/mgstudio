@@ -51,7 +51,7 @@ fn hierarchy_add_child(
   if !world.is_alive(parent) {
     return
   }
-  let change_tick = world.read_change_tick()
+  let sequence = world.read_sequence()
   let children_access = world.component(children_key)
   let entities = match children_access.get(parent) {
     Some(children) => children.entities()
@@ -62,9 +62,9 @@ fn hierarchy_add_child(
   }
   entities.push(child)
   if children_access.contains(parent) {
-    children_access.set(parent, Children::new(entities), change_tick) |> ignore
+    children_access.set(parent, Children::new(entities), sequence) |> ignore
   } else {
-    children_access.insert(parent, Children::new(entities), change_tick)
+    children_access.insert(parent, Children::new(entities), sequence)
   }
 }
 
@@ -86,11 +86,7 @@ fn hierarchy_remove_child(
   if entities.length() == 0 {
     children_access.remove(parent) |> ignore
   } else {
-    children_access.set(
-      parent,
-      Children::new(entities),
-      world.read_change_tick(),
-    )
+    children_access.set(parent, Children::new(entities), world.read_sequence())
     |> ignore
   }
 }

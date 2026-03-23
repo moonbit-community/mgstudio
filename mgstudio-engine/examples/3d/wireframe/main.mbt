@@ -116,7 +116,7 @@ fn setup_ui(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
   world
@@ -179,7 +179,7 @@ fn update_controls_text(world : @ecs.World) -> Unit {
     Some(value) => value
     None => @pbr.WireframeConfig::default()
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(text_entity) is Some(text_value) else { return }
   text_value.content = "Controls\n---------------\n" +
@@ -199,7 +199,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   wireframe_state.val.controls_text = None
   setup_wireframe_config(world)
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let red_cube = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
@@ -296,7 +296,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
 ///|
 fn update_colors(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   let mut config = try world.get_resource(@pbr.ecs_key_wireframe_config) catch {
     _ => @pbr.WireframeConfig::default()

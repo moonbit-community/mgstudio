@@ -200,7 +200,7 @@ fn draw_selectable_menu_item(
 ///|
 fn set_camera_projection(world : @ecs.World) -> Unit {
   guard anti_aliasing_state.val.camera is Some(camera_entity) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let projection = if anti_aliasing_state.val.use_orthographic {
     @pbr.Projection::Orthographic(@pbr.OrthographicProjection3d::{
       ..@pbr.OrthographicProjection3d::default_3d(),
@@ -260,7 +260,7 @@ fn clear_temporal_aa_components(
 ///|
 fn apply_aa_components(world : @ecs.World) -> Unit {
   guard anti_aliasing_state.val.camera is Some(camera_entity) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let aa_method = anti_aliasing_state.val.aa_method
   if aa_method_eq(aa_method, AAMethod::NoAA) {
     world
@@ -733,7 +733,7 @@ fn setup(world : @ecs.World) -> Unit {
   anti_aliasing_state.val.cube_material = None
   anti_aliasing_state.val.help_text = None
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(

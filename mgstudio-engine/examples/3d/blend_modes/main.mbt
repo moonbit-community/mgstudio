@@ -133,7 +133,7 @@ fn setup_ui_overlay(
   add_entity : @core.Entity,
   multiply_entity : @core.Entity,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(100).with_clear_color_none(),
     @transform.Transform::identity(),
@@ -363,7 +363,7 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
   let state = blend_modes_state.val
   guard state.camera is Some(camera_entity) else { return }
   guard state.display_text is Some(display_entity) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(display_entity) is Some(display_text) else { return }
   display_text.content = blend_modes_display_text(camera_entity, world)
@@ -383,7 +383,7 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
     @window.window_height(),
   )
   let scale_factor = @window.window_scale_factor()
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let node_store = world.component(@ui.ecs_key_node)
 
   for label in state.labels {
@@ -414,7 +414,7 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   blend_modes_state.val.alpha = 0.9F
   blend_modes_state.val.unlit = false
   blend_modes_state.val.camera = None
@@ -595,7 +595,7 @@ fn example_control_system(world : @ecs.World) -> Unit {
   state.camera_angle = state.camera_angle + rotation
 
   guard state.camera is Some(camera_entity) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   if @input.key_just_pressed(@window.KeyCode::KeyH) {
     let hdr_store = world.component(@pbr.ecs_key_hdr)
     if hdr_store.contains(camera_entity) {

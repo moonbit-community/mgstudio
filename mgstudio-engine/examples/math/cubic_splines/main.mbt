@@ -271,7 +271,7 @@ fn setup(world : @ecs.World) -> Unit {
   let text_font = @text.TextFont::default()
     .with_font(font)
     .with_font_size(18.0F)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
@@ -418,7 +418,7 @@ fn update_spline_mode_text(
   handle : @app.Res[SplineModeTextHandle],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(handle.get().entity) is Some(text_value) else { return }
   text_value.content = "Spline: " + spline_mode_label(spline_mode.get())
@@ -431,7 +431,7 @@ fn update_cycling_mode_text(
   handle : @app.Res[CyclingModeTextHandle],
 ) -> Unit {
   guard @app.current_world() is Some(world) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(handle.get().entity) is Some(text_value) else { return }
   text_value.content = cycling_mode_label(cycling_mode.get())
@@ -577,7 +577,7 @@ fn default_control_points() -> ControlPoints {
 fn spawn_ui_text_line(
   world : @ecs.World,
   parent : @core.Entity,
-  tick : @core.Tick,
+  tick : @core.Sequence,
   font : @text.TextFont,
   content : String,
 ) -> @core.Entity {

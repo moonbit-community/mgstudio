@@ -106,7 +106,7 @@ fn sync_simple_transforms_apply(world : @ecs.World) -> Unit {
   let global_access = world.component(ecs_key_global_transform)
   let parent_access = world.component(@hierarchy.ecs_key_parent)
   let child_access = world.component(@hierarchy.ecs_key_children)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let entities : Array[@core.Entity] = []
   global_access.for_each(fn(entity, _global) {
     if transform_access.contains(entity) &&
@@ -167,7 +167,7 @@ fn propagate_descendants(
   let global_access = world.component(ecs_key_global_transform)
   let parent_access = world.component(@hierarchy.ecs_key_parent)
   let children_access = world.component(@hierarchy.ecs_key_children)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let child_entities = children.entities().copy()
   sort_entities_by_id(child_entities)
   for child in child_entities {
@@ -204,7 +204,7 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
   let global_access = world.component(ecs_key_global_transform)
   let parent_access = world.component(@hierarchy.ecs_key_parent)
   let children_access = world.component(@hierarchy.ecs_key_children)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let roots : Array[@core.Entity] = []
   global_access.for_each(fn(entity, _global) {
     if transform_access.contains(entity) && !parent_access.contains(entity) {

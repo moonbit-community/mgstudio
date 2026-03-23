@@ -94,7 +94,7 @@ fn physics2d_showcase_spawn_controls_overlay() -> Unit {
 
 ///|
 fn physics2d_showcase_setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   // Make gravity visible in "pixel-ish" space.
   let cfg_res = @physics2d.get_physics2d_config_resource(world)
@@ -509,7 +509,7 @@ fn physics2d_showcase_player_controls_fixed(world : @ecs.World) -> Unit {
     )
   }
   guard showcase_entities.val.player is Some(player) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let kcc_store = @physics2d.get_kinematic_character_controller2d_store(world)
   guard kcc_store.get(player) is Some(kcc) else { return }
   let mut axis = @math.Vec2::new(0.0F, 0.0F)
@@ -545,7 +545,7 @@ fn physics2d_showcase_spawn_ball_on_click(world : @ecs.World) -> Unit {
     is Some(p) else {
     return
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
   let texture = asset_server.load("branding/icon.png")
   let transform_store = world.component(@transform.ecs_key_transform)

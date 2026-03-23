@@ -241,7 +241,7 @@ fn mode_sphere_color(mode : LightingMode) -> @sprite.Color {
 ///|
 fn apply_lighting_mode(world : @ecs.World) -> Unit {
   let mode = app_status.val.lighting_mode
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   let scenery_is_lit_in_real_time = lighting_mode_eq(
       mode,
@@ -291,7 +291,7 @@ fn reset_sphere_position(world : @ecs.World) -> Unit {
       .set(
         sphere_entity,
         transform.with_translation(initial_sphere_position()),
-        world.read_change_tick(),
+        world.read_sequence(),
       )
       |> ignore
     }
@@ -360,7 +360,7 @@ fn move_sphere(world : @ecs.World) -> Unit {
   transform_store.set(
     sphere_entity,
     current_transform.with_translation(target),
-    world.read_change_tick(),
+    world.read_sequence(),
   )
   |> ignore
 }
@@ -410,7 +410,7 @@ fn setup(world : @ecs.World) -> Unit {
   app_status.val.directional_light = None
   app_status.val.help_text = None
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   let camera = @pbr.Camera3dBundle::new(

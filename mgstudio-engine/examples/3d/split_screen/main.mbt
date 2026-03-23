@@ -57,7 +57,7 @@ fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   split_screen_state.val.cameras.clear()
   split_screen_state.val.active_camera = 0
   split_screen_state.val.last_window_size = @math.IVec2::new(0, 0)
@@ -183,7 +183,7 @@ fn set_camera_viewports(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let camera_store = world.component(@sprite.ecs_key_camera)
   for pair in split_screen_state.val.cameras {
     let entity = pair.0
@@ -262,7 +262,7 @@ fn button_system(world : @ecs.World) -> Unit {
   }
   let camera_entity = split_screen_state.val.cameras[index].0
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   if transform_store.get(camera_entity) is Some(transform) {
     let rotated_position = quat_rotate_vec3(

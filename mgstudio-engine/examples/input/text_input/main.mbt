@@ -81,7 +81,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_font(font)
     .with_font_size(100.0F)
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
   world
@@ -135,7 +135,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
 fn spawn_ui_text_line(
   world : @ecs.World,
   root : @core.Entity,
-  tick : @core.Tick,
+  tick : @core.Sequence,
   content : String,
   font : @text.TextFont,
 ) -> @core.Entity {
@@ -158,7 +158,7 @@ fn update_primary_window(
   world : @ecs.World,
   update : (@window.Window) -> Unit,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let window_store = world.component(@window.ecs_key_window)
   world
   .query_entities_filtered(
@@ -178,7 +178,7 @@ fn update_primary_window(
 fn set_ime_enabled_text(value : Bool) -> Unit {
   guard status_text_handles_ref.val is Some(handles) else { return }
   guard @app.current_world() is Some(world) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(handles.ime_enabled) is Some(text_value) else { return }
   text_value.content = "IME Enabled: \{value}\n"
@@ -189,7 +189,7 @@ fn set_ime_enabled_text(value : Bool) -> Unit {
 fn set_ime_active_text(value : Bool) -> Unit {
   guard status_text_handles_ref.val is Some(handles) else { return }
   guard @app.current_world() is Some(world) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(handles.ime_active) is Some(text_value) else { return }
   text_value.content = "IME Active:  \{value}\n"
@@ -200,7 +200,7 @@ fn set_ime_active_text(value : Bool) -> Unit {
 fn set_ime_buffer_text(value : String) -> Unit {
   guard status_text_handles_ref.val is Some(handles) else { return }
   guard @app.current_world() is Some(world) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(handles.ime_buffer) is Some(text_value) else { return }
   text_value.content = "IME Buffer:  \{value}\n"

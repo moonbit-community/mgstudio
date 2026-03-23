@@ -58,7 +58,7 @@ const RAY_SWEEP_AMPLITUDE : Float = 220.0F
 
 ///|
 fn physics2d_queries_setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let cfg_res = @physics2d.get_physics2d_config_resource(world)
   match cfg_res.get() {
     Some(current_cfg) => {
@@ -165,7 +165,7 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 ///|
 fn physics2d_queries_raycast(world : @ecs.World) -> Unit {
   let delta_seconds = world_time(world).delta_seconds()
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   query_state.val.phase = query_state.val.phase + delta_seconds * 0.75F
   let ray_x = @math.sin(query_state.val.phase) * RAY_SWEEP_AMPLITUDE

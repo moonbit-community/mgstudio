@@ -55,7 +55,7 @@ pub let ecs_key_mesh_render_plugin_state : @ecs.ResourceKey[
 ///|
 fn init_mesh_render_resources(world : @ecs.World) -> Unit {
   let ecs_world = world
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   render3d_runtime_initialized_ref.val = true
   let ambient = get_global_ambient_light_resource(ecs_world)
   if !ambient.is_present() {

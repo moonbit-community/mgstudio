@@ -183,7 +183,7 @@ pub fn[T] DeferredWorld::component(Self, ComponentKey[T]) -> ComponentAccess[T]
 pub fn DeferredWorld::despawn(Self, @core.Entity, loc~ : SourceLoc) -> Unit raise EcsError
 pub fn[T] DeferredWorld::get(Self, @core.Entity, ComponentKey[T]) -> T? raise EcsError
 pub fn DeferredWorld::is_alive(Self, @core.Entity) -> Bool
-pub fn DeferredWorld::read_change_tick(Self) -> Int
+pub fn DeferredWorld::read_sequence(Self) -> Int
 #callsite(autofill(loc))
 pub fn[T] DeferredWorld::remove(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> Bool raise EcsError
 pub fn[T] DeferredWorld::resource(Self, ResourceKey[T]) -> ResourceAccess[T]
@@ -624,8 +624,8 @@ pub impl[T] QueryFilter for Without[T]
 pub struct World {
   world_id : Int
   entities : @core.Entities
-  mut change_tick : Int
-  mut system_context : @core.SystemContext
+  mut sequence : Int
+  mut system_context : @core.SystemSequenceContext
   component_columns : Map[Int, @ref.Ref[@core.ComponentStore[ErasedValue]]]
   required_components : Map[Int, @ref.Ref[RequiredComponentsState]]
   used_components : Map[Int, Bool]
@@ -641,6 +641,7 @@ pub fn[E : ObserverEvent, C : Component] World::add_observer(Self, (On[E, C]) ->
 pub fn[C : Component] World::add_remove_entity_observer(Self, @core.Entity, (On[Remove, C]) -> Unit) -> ObserverHandle
 pub fn[C : Component] World::add_remove_observer(Self, (On[Remove, C]) -> Unit) -> ObserverHandle
 pub fn World::advance_event_frame(Self) -> Unit
+pub fn World::advance_sequence(Self) -> Int
 pub fn[T] World::clear_events(Self, EventKey[T]) -> Unit
 pub fn[T] World::clear_messages(Self, MessageKey[T]) -> Unit
 pub fn[T] World::component(Self, ComponentKey[T]) -> ComponentAccess[T]
@@ -658,11 +659,10 @@ pub fn World::get_required_components_by_id(Self, Int) -> RequiredComponents?
 pub fn[T] World::get_resource(Self, ResourceKey[T]) -> T? raise EcsError
 pub fn[T] World::get_resource_ref(Self, ResourceKey[T]) -> @ref.Ref[T]? raise EcsError
 pub fn[T] World::get_resource_ref_mut(Self, ResourceKey[T], Int) -> @ref.Ref[T]? raise EcsError
-pub fn World::get_system_context(Self) -> @core.SystemContext
-pub fn World::increment_change_tick(Self) -> Int
+pub fn World::get_sequence_context(Self) -> @core.SystemSequenceContext
 pub fn[T] World::init_message(Self, MessageKey[T]) -> Unit
 pub fn[T] World::insert_resource(Self, ResourceKey[T], T) -> Unit
-pub fn[T] World::insert_resource_with_change_tick(Self, ResourceKey[T], T, Int) -> Unit
+pub fn[T] World::insert_resource_with_sequence(Self, ResourceKey[T], T, Int) -> Unit
 pub fn World::is_alive(Self, @core.Entity) -> Bool
 pub fn[T] World::message_mutator(Self, MessageKey[T], @ref.Ref[Int]) -> MessageMutator[T]
 pub fn[T] World::message_reader(Self, MessageKey[T], @ref.Ref[Int]) -> MessageReader[T]
@@ -681,8 +681,8 @@ pub fn[A, B, C, F] World::query3_filtered(Self, ComponentKey[A], ComponentKey[B]
 pub fn[A, B, C, F] World::query3_ref_mut_optional_filtered(Self, ComponentKey[A], ComponentKey[B], ComponentKey[C], F) -> Query3RefMutOptionalFiltered[A, B, C, F]
 pub fn[A, B, C, F] World::query3_value_ref_mut_filtered(Self, ComponentKey[A], ComponentKey[B], ComponentKey[C], F) -> Query3ValueRefMutFiltered[A, B, C, F]
 pub fn[F] World::query_entities_filtered(Self, F) -> EntityQuery[F]
-pub fn World::read_change_tick(Self) -> Int
 pub fn[T] World::read_events(Self, EventKey[T]) -> Array[T] raise EcsError
+pub fn World::read_sequence(Self) -> Int
 pub fn[T : Component] World::register_component_hooks(Self) -> ComponentHooksBuilder[T] raise ComponentHooksError
 pub fn[T] World::register_component_hooks_for_key(Self, ComponentKey[T]) -> ComponentHooksBuilder[T] raise ComponentHooksError
 pub fn[T, R : Default] World::register_required_components(Self, ComponentKey[T], ComponentKey[R]) -> Unit raise RequiredComponentsError
@@ -690,7 +690,7 @@ pub fn[T, R] World::register_required_components_with(Self, ComponentKey[T], Com
 #callsite(autofill(loc))
 pub fn[T] World::remove(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> Bool raise EcsError
 pub fn[T] World::remove_resource(Self, ResourceKey[T]) -> T? raise EcsError
-pub fn[T] World::removed_components(Self, ComponentKey[T], @core.SystemTicks) -> RemovedComponents[T]
+pub fn[T] World::removed_components(Self, ComponentKey[T], @core.SystemSequence) -> RemovedComponents[T]
 pub fn[T] World::resource(Self, ResourceKey[T]) -> ResourceAccess[T]
 pub fn[T] World::send_event(Self, EventKey[T], T) -> Unit
 pub fn[T] World::send_message(Self, MessageKey[T], T) -> Int
@@ -699,7 +699,7 @@ pub fn[T] World::send_message_batch(Self, MessageKey[T], Array[T]) -> Unit
 pub fn[T] World::set(Self, @core.Entity, ComponentKey[T], T, loc~ : SourceLoc) -> Unit raise EcsError
 #callsite(autofill(loc))
 pub fn[T : Component] World::set_component(Self, @core.Entity, T, loc~ : SourceLoc) -> Unit raise EcsError
-pub fn World::set_system_context(Self, @core.SystemContext) -> Unit
+pub fn World::set_sequence_context(Self, @core.SystemSequenceContext) -> Unit
 pub fn World::spawn(Self) -> @core.Entity
 pub fn World::spawn_empty(Self) -> @core.Entity
 pub fn[T, R : Default] World::try_register_required_components(Self, ComponentKey[T], ComponentKey[R]) -> Result[Unit, RequiredComponentsError]

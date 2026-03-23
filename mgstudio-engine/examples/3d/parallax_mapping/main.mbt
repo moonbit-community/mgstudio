@@ -280,7 +280,7 @@ fn spawn_help_text(asset_server : @asset.AssetServer) -> Unit {
 
 ///|
 fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   let light = world.spawn_empty()
   world
@@ -460,7 +460,7 @@ fn spin(world : @ecs.World) -> Unit {
   if delta <= 0.0F {
     return
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   for spin_target in parallax_state.val.spin_targets {
     guard transform_store.get(spin_target.entity) is Some(transform) else {
@@ -508,7 +508,7 @@ fn move_camera(world : @ecs.World) -> Unit {
         CAMERA_LERP_FACTOR,
       ),
     )
-  transform_store.set(camera_entity, next_transform, world.read_change_tick())
+  transform_store.set(camera_entity, next_transform, world.read_sequence())
   |> ignore
 }
 

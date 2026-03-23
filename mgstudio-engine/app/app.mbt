@@ -320,9 +320,9 @@ fn[T : Resource] world_resource_value_or_abort(world : @ecs.World) -> T {
 ///|
 fn[T : Resource] world_resource_ref_mut_or_abort(
   world : @ecs.World,
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
 ) -> Ref[T] {
-  ignore(change_tick)
+  ignore(sequence)
   match
     (try world.get_resource_ref(Resource::resource()) catch {
       _ => None
@@ -599,13 +599,13 @@ pub fn[
 }
 
 ///|
-let current_system_ticks_ref : Ref[@core.SystemTicks?] = Ref::new(None)
+let current_system_sequence_ref : Ref[@core.SystemSequence?] = Ref::new(None)
 
 ///|
-pub fn current_system_ticks() -> @core.SystemTicks {
-  match current_system_ticks_ref.val {
-    Some(ticks) => ticks
-    None => @core.SystemTicks::new(0, 0)
+pub fn current_system_sequence() -> @core.SystemSequence {
+  match current_system_sequence_ref.val {
+    Some(sequence) => sequence
+    None => @core.SystemSequence::new(0, 0)
   }
 }
 
@@ -647,7 +647,7 @@ pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with init_sta
 pub impl[T : @core.Message] SystemParam for @core.MessageReader[T] with get(
   _state,
 ) {
-  @core.Message::reader(current_system_ticks())
+  @core.Message::reader(current_system_sequence())
 }
 
 ///|
@@ -669,7 +669,7 @@ pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T] with init_sta
 pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T] with get(
   _state,
 ) {
-  @core.Message::writer(current_system_ticks().this_run)
+  @core.Message::writer(current_system_sequence().this_run)
 }
 
 ///|
@@ -708,7 +708,7 @@ pub impl[T : Resource] SystemParam for ResMut[T] with get(_state) {
   ResMut::{
     value: world_resource_ref_mut_or_abort(
       world,
-      current_system_ticks().this_run,
+      current_system_sequence().this_run,
     ),
   }
 }
@@ -726,8 +726,8 @@ pub struct SystemConfig[W] {
   set : SystemSet?
   before : Array[SystemSet]
   after : Array[SystemSet]
-  run_if_last_run_ticks : Array[@core.Tick]
-  mut last_run_tick : @core.Tick
+  run_if_last_run_sequences : Array[@core.Sequence]
+  mut last_run_sequence : @core.Sequence
 }
 
 ///|
@@ -739,8 +739,8 @@ pub fn[W] system(system : SystemFn[W]) -> SystemConfig[W] {
     set: None,
     before: [],
     after: [],
-    run_if_last_run_ticks: [],
-    last_run_tick: 0,
+    run_if_last_run_sequences: [],
+    last_run_sequence: 0,
   }
 }
 
@@ -762,7 +762,7 @@ pub fn[W] SystemConfig::run_if_stateful(
 ) -> SystemConfig[W] {
   self.run_ifs.push(cond)
   self.run_if_states.push(Ref::new(init_state))
-  self.run_if_last_run_ticks.push(0)
+  self.run_if_last_run_sequences.push(0)
   self
 }
 
@@ -810,22 +810,22 @@ fn run_chained_system_config(
   let mut should_skip = false
   for cond_i in 0..<config_ref.val.run_ifs.length() {
     let cond = config_ref.val.run_ifs[cond_i]
-    let cond_this_run = world.increment_change_tick()
-    let cond_ticks = @core.SystemTicks::new(
-      config_ref.val.run_if_last_run_ticks[cond_i],
+    let cond_this_run = world.advance_sequence()
+    let cond_ticks = @core.SystemSequence::new(
+      config_ref.val.run_if_last_run_sequences[cond_i],
       cond_this_run,
     )
-    let cond_ctx = world.get_system_context()
+    let cond_ctx = world.get_sequence_context()
     cond_ctx.set(cond_ticks)
-    world.set_system_context(cond_ctx)
+    world.set_sequence_context(cond_ctx)
     let prev_world = current_world_ref.val
     current_world_ref.val = Some(world)
-    let prev_ticks = current_system_ticks_ref.val
-    current_system_ticks_ref.val = Some(cond_ticks)
+    let prev_ticks = current_system_sequence_ref.val
+    current_system_sequence_ref.val = Some(cond_ticks)
     let should_run = cond(world, config_ref.val.run_if_states[cond_i])
-    current_system_ticks_ref.val = prev_ticks
+    current_system_sequence_ref.val = prev_ticks
     current_world_ref.val = prev_world
-    config_ref.val.run_if_last_run_ticks[cond_i] = cond_this_run
+    config_ref.val.run_if_last_run_sequences[cond_i] = cond_this_run
     if !should_run {
       should_skip = true
       break
@@ -835,19 +835,22 @@ fn run_chained_system_config(
     return
   }
 
-  let this_run = world.increment_change_tick()
-  let sys_ticks = @core.SystemTicks::new(config_ref.val.last_run_tick, this_run)
-  let ctx = world.get_system_context()
+  let this_run = world.advance_sequence()
+  let sys_ticks = @core.SystemSequence::new(
+    config_ref.val.last_run_sequence,
+    this_run,
+  )
+  let ctx = world.get_sequence_context()
   ctx.set(sys_ticks)
-  world.set_system_context(ctx)
+  world.set_sequence_context(ctx)
   let prev_world = current_world_ref.val
   current_world_ref.val = Some(world)
-  let prev_ticks = current_system_ticks_ref.val
-  current_system_ticks_ref.val = Some(sys_ticks)
+  let prev_ticks = current_system_sequence_ref.val
+  current_system_sequence_ref.val = Some(sys_ticks)
   (config_ref.val.system)(world)
-  current_system_ticks_ref.val = prev_ticks
+  current_system_sequence_ref.val = prev_ticks
   current_world_ref.val = prev_world
-  config_ref.val.last_run_tick = this_run
+  config_ref.val.last_run_sequence = this_run
 }
 
 ///|
@@ -1134,7 +1137,7 @@ pub fn[T : Resource] App::insert_resource(
   self : App[@ecs.World],
   value : T,
 ) -> App[@ecs.World] {
-  self.sub_apps.main.world.increment_change_tick() |> ignore
+  self.sub_apps.main.world.advance_sequence() |> ignore
   self.sub_apps.main.world.insert_resource(Resource::resource(), value)
   self
 }
@@ -1145,7 +1148,7 @@ pub fn[T] App::insert_world_resource(
   key : @ecs.ResourceKey[T],
   value : T,
 ) -> App[@ecs.World] {
-  self.sub_apps.main.world.increment_change_tick() |> ignore
+  self.sub_apps.main.world.advance_sequence() |> ignore
   self.sub_apps.main.world.insert_resource(key, value)
   self
 }
@@ -2386,7 +2389,7 @@ fn run_systems(
   systems : Array[SystemConfig[@ecs.World]],
   set_edges : Array[(SystemSet, SystemSet)],
 ) -> Unit {
-  current_system_ticks_ref.val = None
+  current_system_sequence_ref.val = None
   current_world_ref.val = None
   let seen : @hashmap.HashMap[SystemSet, Bool] = @hashmap.HashMap::new()
   let set_order : Array[SystemSet] = []
@@ -2512,21 +2515,21 @@ fn run_systems(
       let mut should_skip = false
       for cond_i in 0..<cfg.run_ifs.length() {
         let cond = cfg.run_ifs[cond_i]
-        let cond_this_run = world.increment_change_tick()
-        let cond_ticks = @core.SystemTicks::new(
-          cfg.run_if_last_run_ticks[cond_i],
+        let cond_this_run = world.advance_sequence()
+        let cond_ticks = @core.SystemSequence::new(
+          cfg.run_if_last_run_sequences[cond_i],
           cond_this_run,
         )
-        let cond_ctx = world.get_system_context()
+        let cond_ctx = world.get_sequence_context()
         cond_ctx.set(cond_ticks)
-        world.set_system_context(cond_ctx)
+        world.set_sequence_context(cond_ctx)
         let prev_world = current_world_ref.val
         current_world_ref.val = Some(world)
-        current_system_ticks_ref.val = Some(cond_ticks)
+        current_system_sequence_ref.val = Some(cond_ticks)
         let should_run = cond(world, cfg.run_if_states[cond_i])
-        current_system_ticks_ref.val = None
+        current_system_sequence_ref.val = None
         current_world_ref.val = prev_world
-        systems[system_i].run_if_last_run_ticks[cond_i] = cond_this_run
+        systems[system_i].run_if_last_run_sequences[cond_i] = cond_this_run
         if !should_run {
           should_skip = true
           break
@@ -2537,19 +2540,19 @@ fn run_systems(
       }
 
       // Align with Bevy: increment global change tick once per executed system
-      // and expose SystemTicks via World-backed context for change detection.
-      let this_run = world.increment_change_tick()
-      let sys_ticks = @core.SystemTicks::new(cfg.last_run_tick, this_run)
-      let ctx = world.get_system_context()
+      // and expose SystemSequence via World-backed context for change detection.
+      let this_run = world.advance_sequence()
+      let sys_ticks = @core.SystemSequence::new(cfg.last_run_sequence, this_run)
+      let ctx = world.get_sequence_context()
       ctx.set(sys_ticks)
-      world.set_system_context(ctx)
+      world.set_sequence_context(ctx)
       let prev_world = current_world_ref.val
       current_world_ref.val = Some(world)
-      current_system_ticks_ref.val = Some(sys_ticks)
+      current_system_sequence_ref.val = Some(sys_ticks)
       (cfg.system)(world)
-      current_system_ticks_ref.val = None
+      current_system_sequence_ref.val = None
       current_world_ref.val = prev_world
-      systems[system_i].last_run_tick = this_run
+      systems[system_i].last_run_sequence = this_run
     }
   }
 }

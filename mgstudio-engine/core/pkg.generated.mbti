@@ -108,7 +108,7 @@ pub struct MessageReader[T] {
   previous_messages : Array[T]
   current_tick : Int?
   current_messages : Array[T]
-  system : SystemTicks
+  system : SystemSequence
   mut has_read : Bool
 }
 pub fn[T] MessageReader::clear(Self[T]) -> Unit
@@ -131,7 +131,7 @@ pub struct Messages[T] {
 }
 pub fn[T] Messages::clear(Self[T]) -> Unit
 pub fn[T] Messages::new() -> Self[T]
-pub fn[T] Messages::reader(Self[T], SystemTicks) -> MessageReader[T]
+pub fn[T] Messages::reader(Self[T], SystemSequence) -> MessageReader[T]
 pub fn[T] Messages::send(Self[T], Int, T) -> Unit
 pub fn[T] Messages::send_batch(Self[T], Int, Array[T]) -> Unit
 pub fn[T] Messages::writer(Self[T], Int) -> MessageWriter[T]
@@ -160,19 +160,19 @@ pub fn[T] SparseSet::remove(Self[T], Entity) -> T?
 pub fn[T] SparseSet::set(Self[T], Entity, T) -> Bool
 pub fn[T] SparseSet::value_at(Self[T], Int) -> T
 
-pub struct SystemContext {
-  mut last_run : Int
-  mut this_run : Int
-}
-pub fn SystemContext::new() -> Self
-pub fn SystemContext::set(Self, SystemTicks) -> Unit
-pub fn SystemContext::ticks(Self) -> SystemTicks
-
-pub struct SystemTicks {
+pub struct SystemSequence {
   last_run : Int
   this_run : Int
 }
-pub fn SystemTicks::new(Int, Int) -> Self
+pub fn SystemSequence::new(Int, Int) -> Self
+
+pub struct SystemSequenceContext {
+  mut last_run : Int
+  mut this_run : Int
+}
+pub fn SystemSequenceContext::new() -> Self
+pub fn SystemSequenceContext::sequence(Self) -> SystemSequence
+pub fn SystemSequenceContext::set(Self, SystemSequence) -> Unit
 
 type World
 pub fn World::despawn(Self, Entity) -> Unit raise EntityError
@@ -181,11 +181,11 @@ pub fn World::new() -> Self
 pub fn World::spawn_empty(Self) -> Entity
 
 // Type aliases
-pub type Tick = Int
+pub type Sequence = Int
 
 // Traits
 pub(open) trait Message {
-  reader(SystemTicks) -> MessageReader[Self]
+  reader(SystemSequence) -> MessageReader[Self]
   writer(Int) -> MessageWriter[Self]
 }
 

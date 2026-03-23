@@ -14,7 +14,7 @@
 
 ///|
 fn seed_ui_context_for_implicit_root_test(world : @ecs.World) -> Int {
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   get_ui_context_resource(world).insert(
     UiContext::new(
       @asset.Handle::new(1),

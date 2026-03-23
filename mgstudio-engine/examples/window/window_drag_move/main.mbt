@@ -111,7 +111,7 @@ fn refresh_instruction_text(world : @ecs.World) -> Unit {
     return
   }
   guard find_instruction_text_entity(world) is Some(entity) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(entity) is Some(text_value) else { return }
   text_value.content = instruction_text(
@@ -132,7 +132,7 @@ fn setup(world : @ecs.World) -> Unit {
     @sprite.Camera::default().with_order(1).with_clear_color_none(),
     @transform.Transform::identity(),
   ).spawn(world)
-  let camera_tick = world.read_change_tick()
+  let camera_tick = world.read_sequence()
   world
   .component(@ui.IsDefaultUiCamera::component())
   .insert(overlay_camera, @ui.IsDefaultUiCamera::default(), camera_tick)
@@ -141,7 +141,7 @@ fn setup(world : @ecs.World) -> Unit {
     LeftClickAction::Move,
     @math.CompassOctant::NorthWest,
   )
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
   world

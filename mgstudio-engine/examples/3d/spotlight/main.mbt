@@ -135,7 +135,7 @@ fn set_global_ambient_light(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   spotlight_state.val.movables.clear()
   spotlight_state.val.spotlights.clear()
   spotlight_state.val.camera = None
@@ -293,7 +293,7 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 
 ///|
 fn light_sway(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let elapsed = world_time(world).elapsed_seconds()
   let transform_store = world.component(@transform.ecs_key_transform)
   let spot_light_store = world.component(@pbr.ecs_key_spot_light)
@@ -359,7 +359,7 @@ fn movement(world : @ecs.World) -> Unit {
   let delta = translation.mul_scalar(
     MOVE_SPEED * world_time(world).delta_seconds(),
   )
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   for entity in spotlight_state.val.movables {
     if transform_store.get(entity) is Some(transform) {
@@ -385,7 +385,7 @@ fn rotation(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   if transform_store.get(camera_entity) is Some(transform) {
     let rotated_position = quat_rotate_vec3(

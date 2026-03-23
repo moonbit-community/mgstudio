@@ -144,7 +144,7 @@ fn light_transform() -> @transform.Transform {
 
 ///|
 fn apply_light_state(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let transform = light_transform()
   let state = shadow_biases_state.val
 
@@ -203,7 +203,7 @@ fn apply_light_state(world : @ecs.World) -> Unit {
 ///|
 fn apply_shadow_filtering_method(world : @ecs.World) -> Unit {
   guard shadow_biases_state.val.camera is Some(camera) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let store = world.component(@pbr.ecs_key_shadow_filtering_method)
   if store.contains(camera) {
     store.set(camera, shadow_biases_state.val.filter_method, tick) |> ignore
@@ -270,7 +270,7 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   shadow_biases_state.val.camera = Some(camera)
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world
   .component(@pbr.ecs_key_free_camera)
   .insert(camera, @pbr.FreeCamera::default(), tick)

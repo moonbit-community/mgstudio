@@ -133,7 +133,7 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let world = current_world_or_abort()
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let shape = @math.Cuboid::from_length(2.9F)
 
   world.insert_resource(RandomSource::resource(), RandomSource::{
@@ -319,7 +319,7 @@ fn spawn_sample_point(
   point_material : PointMaterial,
   sample : @math.Vec3,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let entity = @pbr.MeshMaterial3dBundle::new(
     point_mesh.mesh,
     @pbr.MeshMaterial3d::new(point_material.handle),
@@ -364,7 +364,7 @@ fn handle_keypress(
     is Some(point_material) else {
     return
   }
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   guard (try! world.get_resource_ref_mut(RandomSource::resource(), tick))
     is Some(random_source_ref) else {
     return
@@ -405,7 +405,7 @@ fn handle_mouse(
   mouse_buttons : @input.ButtonInput[@window.MouseButton],
 ) -> Unit {
   let world = current_world_or_abort()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   guard (try! world.get_resource_ref_mut(MousePressed::resource(), tick))
     is Some(mouse_pressed_ref) else {
     return

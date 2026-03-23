@@ -1590,14 +1590,14 @@ fn vec2_is_zero(value : @math.Vec2) -> Bool {
 }
 
 ///|
-fn ensure_input_resources(world : @ecs.World, tick : @core.Tick) -> Unit {
+fn ensure_input_resources(world : @ecs.World, tick : @core.Sequence) -> Unit {
   if (try world.get_resource(AccumulatedMouseMotion::resource()) catch {
       _ => None
     } noraise {
       value => value
     })
     is None {
-    world.insert_resource_with_change_tick(
+    world.insert_resource_with_sequence(
       AccumulatedMouseMotion::resource(),
       AccumulatedMouseMotion::new(),
       tick,
@@ -1609,7 +1609,7 @@ fn ensure_input_resources(world : @ecs.World, tick : @core.Tick) -> Unit {
       value => value
     })
     is None {
-    world.insert_resource_with_change_tick(
+    world.insert_resource_with_sequence(
       AccumulatedMouseScroll::resource(),
       AccumulatedMouseScroll::new(),
       tick,
@@ -1621,7 +1621,7 @@ fn ensure_input_resources(world : @ecs.World, tick : @core.Tick) -> Unit {
       value => value
     })
     is None {
-    world.insert_resource_with_change_tick(
+    world.insert_resource_with_sequence(
       Touches::resource(),
       Touches::new(),
       tick,
@@ -1668,7 +1668,7 @@ fn active_touches_remove(active : Array[Touch], id : Int) -> Unit {
 
 ///|
 pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   ensure_input_resources(world, tick)
 
   for button in mouse_event_buttons {

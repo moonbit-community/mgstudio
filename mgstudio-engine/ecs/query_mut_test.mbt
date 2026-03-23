@@ -48,9 +48,9 @@ test "ecs query mut: iter_many_mut updates filtered components without change fl
   try! world.set(e2, comp_position, Position::{ x: 4, y: 4 })
   try! world.set(e2, comp_velocity, Velocity::{ dx: 5, dy: 5 })
 
-  let ctx = @core.SystemContext::new()
-  ctx.set(@core.SystemTicks::new(0, 1))
-  world.set_system_context(ctx)
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx)
 
   let iter = world
     .query1_filtered(comp_position, With::new(comp_velocity))
@@ -76,9 +76,9 @@ test "ecs query mut: read-only view_mut leaves data accessible" {
   let observed_velocity : Array[Velocity] = []
 
   try! world.set(entity, comp_velocity, Velocity::{ dx: 1, dy: 2 })
-  let ctx1 = @core.SystemContext::new()
-  ctx1.set(@core.SystemTicks::new(0, 1))
-  world.set_system_context(ctx1)
+  let ctx1 = @core.SystemSequenceContext::new()
+  ctx1.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx1)
   try! world
   .query1_filtered(comp_velocity, All::new())
   .view_mut(fn(_entity, component_mut) {
@@ -86,11 +86,11 @@ test "ecs query mut: read-only view_mut leaves data accessible" {
   })
   inspect(observed_velocity, content="[{dx: 1, dy: 2}]")
 
-  world.increment_change_tick() |> ignore
-  world.increment_change_tick() |> ignore
-  let ctx2 = @core.SystemContext::new()
-  ctx2.set(@core.SystemTicks::new(1, 2))
-  world.set_system_context(ctx2)
+  world.advance_sequence() |> ignore
+  world.advance_sequence() |> ignore
+  let ctx2 = @core.SystemSequenceContext::new()
+  ctx2.set(@core.SystemSequence::new(1, 2))
+  world.set_sequence_context(ctx2)
 
   inspect(world.query1_filtered(comp_velocity, All::new()).count(), content="1")
 }
@@ -119,9 +119,9 @@ test "ecs query mut: query2 ref mut supports iter_many_mut and par_iter_mut" {
   try! world.set(e2, comp_velocity, Velocity::{ dx: 40, dy: 50 })
   try! world.set(e2, comp_accel, Acceleration::{ ax: 1, ay: 1 })
 
-  let ctx = @core.SystemContext::new()
-  ctx.set(@core.SystemTicks::new(0, 1))
-  world.set_system_context(ctx)
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx)
 
   let query = world.query2_ref_mut_filtered(
     comp_position,
@@ -179,9 +179,9 @@ test "ecs query mut: query2 value mut contiguous_iter_mut yields dense chunks" {
   try! world.set(e1, comp_position, Position::{ x: 2, y: 0 })
   try! world.set(e3, comp_position, Position::{ x: 4, y: 0 })
 
-  let ctx = @core.SystemContext::new()
-  ctx.set(@core.SystemTicks::new(0, 1))
-  world.set_system_context(ctx)
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx)
 
   let query = world.query2_value_mut_filtered(
     comp_position,
@@ -232,9 +232,9 @@ test "ecs query mut: query2 ref mut contiguous_iter_mut preserves chunk shape" {
   try! world.set(e1, comp_position, Position::{ x: 2, y: 0 })
   try! world.set(e3, comp_position, Position::{ x: 4, y: 0 })
 
-  let ctx = @core.SystemContext::new()
-  ctx.set(@core.SystemTicks::new(0, 1))
-  world.set_system_context(ctx)
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx)
 
   let query = world.query2_ref_mut_filtered(
     comp_position,
@@ -275,16 +275,16 @@ test "ecs query mut: plain query1 supports count and view_mut" {
   try! world.set(e1, comp_position, Position::{ x: 3, y: 4 })
   inspect(world.query1(comp_position).count(), content="2")
 
-  let ctx1 = @core.SystemContext::new()
-  ctx1.set(@core.SystemTicks::new(0, 1))
-  world.set_system_context(ctx1)
+  let ctx1 = @core.SystemSequenceContext::new()
+  ctx1.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx1)
   try! world.query1(comp_position).view_mut(fn(_entity, _position_mut) { () })
   inspect(world.query1_filtered(comp_position, All::new()).count(), content="2")
 
-  world.increment_change_tick() |> ignore
-  let ctx2 = @core.SystemContext::new()
-  ctx2.set(@core.SystemTicks::new(1, 2))
-  world.set_system_context(ctx2)
+  world.advance_sequence() |> ignore
+  let ctx2 = @core.SystemSequenceContext::new()
+  ctx2.set(@core.SystemSequence::new(1, 2))
+  world.set_sequence_context(ctx2)
   inspect(world.query1_filtered(comp_position, All::new()).count(), content="2")
 }
 
@@ -311,9 +311,9 @@ test "ecs query mut: query2 value mut filtered matches required pair only" {
   try! world.set(e1, comp_accel, Acceleration::{ ax: 1, ay: 1 })
   try! world.set(e2, comp_position, Position::{ x: 3, y: 3 })
 
-  let ctx = @core.SystemContext::new()
-  ctx.set(@core.SystemTicks::new(0, 1))
-  world.set_system_context(ctx)
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx)
 
   let query = world.query2_value_mut_filtered(
     comp_position,
@@ -358,9 +358,9 @@ test "ecs query mut: query3 value ref mut filtered supports mixed data shape" {
   try! world.set(e1, comp_position, Position::{ x: 7, y: 8 })
   try! world.set(e1, comp_velocity, Velocity::{ dx: 9, dy: 10 })
 
-  let ctx = @core.SystemContext::new()
-  ctx.set(@core.SystemTicks::new(0, 1))
-  world.set_system_context(ctx)
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx)
 
   let query = world.query3_value_ref_mut_filtered(
     comp_position,
@@ -402,9 +402,9 @@ test "ecs query mut: query3 ref mut optional preserves optional ref semantics" {
   try! world.set(e1, comp_position, Position::{ x: 7, y: 8 })
   try! world.set(e1, comp_velocity, Velocity::{ dx: 9, dy: 10 })
 
-  let ctx = @core.SystemContext::new()
-  ctx.set(@core.SystemTicks::new(0, 1))
-  world.set_system_context(ctx)
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx)
 
   let query = world.query3_ref_mut_optional_filtered(
     comp_position,
@@ -437,9 +437,9 @@ test "ecs query mut: get_mut mutates erased slot directly" {
 
   try! world.set(entity, comp_position, Position::{ x: 1, y: 2 })
 
-  let ctx = @core.SystemContext::new()
-  ctx.set(@core.SystemTicks::new(0, 1))
-  world.set_system_context(ctx)
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx)
 
   if (try! world.query1(comp_position).get_mut(entity)) is Some(position_mut) {
     position_mut.get_ref().val.x = position_mut.get_ref().val.x + 5
@@ -471,9 +471,9 @@ test "ecs query mut: query2 value with_mut writes back random access updates" {
   try! world.set(e1, comp_velocity, Velocity::{ dx: 30, dy: 40 })
   try! world.set(e1, comp_accel, Acceleration::{ ax: 1, ay: 1 })
 
-  let ctx = @core.SystemContext::new()
-  ctx.set(@core.SystemTicks::new(0, 1))
-  world.set_system_context(ctx)
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx)
 
   let query = world.query2_value_mut_filtered(
     comp_position,
@@ -516,9 +516,9 @@ test "ecs query mut: query3 with_mut writes back mixed random access updates" {
   try! world.set(e1, comp_position, Position::{ x: 7, y: 8 })
   try! world.set(e1, comp_velocity, Velocity::{ dx: 30, dy: 40 })
 
-  let ctx = @core.SystemContext::new()
-  ctx.set(@core.SystemTicks::new(0, 1))
-  world.set_system_context(ctx)
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx)
 
   let value_ref_mut_query = world.query3_value_ref_mut_filtered(
     comp_position,
@@ -602,9 +602,9 @@ test "ecs query mut: get_unchecked supports transform-style random access" {
   try! world.set(entity, comp_velocity, Velocity::{ dx: 10, dy: 20 })
   try! world.set(entity, comp_accel, Acceleration::{ ax: 1, ay: 2 })
 
-  let ctx = @core.SystemContext::new()
-  ctx.set(@core.SystemTicks::new(0, 1))
-  world.set_system_context(ctx)
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx)
 
   let query = world.query3_ref_mut_optional_filtered(
     comp_position,
@@ -647,9 +647,9 @@ test "ecs query mut: iter_many_unique_mut rejects duplicates and preserves order
   try! world.set(e0, comp_velocity, Velocity::{ dx: 1, dy: 10 })
   try! world.set(e1, comp_velocity, Velocity::{ dx: 2, dy: 20 })
 
-  let ctx = @core.SystemContext::new()
-  ctx.set(@core.SystemTicks::new(0, 1))
-  world.set_system_context(ctx)
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx)
 
   let duplicate_result : Result[Query1FilteredManyMut[Velocity, All], EcsError] = try? world
     .query1(comp_velocity)

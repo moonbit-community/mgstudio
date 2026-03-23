@@ -105,7 +105,7 @@ fn float_text(value : Float) -> String {
 ///|
 fn apply_post_process_settings(world : @ecs.World) -> Unit {
   guard post_processing_state.val.camera is Some(camera_entity) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let settings = post_processing_state.val.settings
 
   let intensity = settings.chromatic_aberration_intensity
@@ -173,7 +173,7 @@ fn update_help_text() -> Unit {
 
 ///|
 fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
@@ -210,7 +210,7 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
 ///|
 fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   let tonemapping_test = world.spawn_empty()
   world

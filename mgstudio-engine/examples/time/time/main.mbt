@@ -67,12 +67,12 @@ fn update_virtual_time_resource(
   update : (@my_time.Time[@my_time.Virtual]) -> @my_time.Time[@my_time.Virtual],
 ) -> @app.App[@ecs.World] {
   let world = app.world()
-  let change_tick = world.increment_change_tick()
+  let sequence = world.advance_sequence()
   let virtual_ref = try! world
-    .get_resource_ref_mut(@my_time.virtual_time_resource_key(), change_tick)
+    .get_resource_ref_mut(@my_time.virtual_time_resource_key(), sequence)
     .unwrap()
   let time_ref = try! world
-    .get_resource_ref_mut(@my_time.default_time_resource_key(), change_tick)
+    .get_resource_ref_mut(@my_time.default_time_resource_key(), sequence)
     .unwrap()
   let next_virtual = update(virtual_ref.val)
   virtual_ref.val = next_virtual

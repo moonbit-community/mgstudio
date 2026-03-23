@@ -103,7 +103,7 @@ pub impl @app.Resource for Wireframe2dConfig with resource() {
 
 ///|
 fn init_wireframe2d_resources(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let wireframe_config = get_wireframe2d_config_resource(world)
   if !wireframe_config.is_present() {
     wireframe_config.insert(Wireframe2dConfig::default(), tick)

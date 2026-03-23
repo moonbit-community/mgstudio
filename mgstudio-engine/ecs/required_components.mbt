@@ -332,7 +332,7 @@ fn World::insert_component_with_requirements(
   entity : @core.Entity,
   component_id : Int,
   payload : ErasedValue,
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
   caller? : String? = None,
 ) -> Unit raise EcsError {
   self.ensure_entity_alive(entity)
@@ -341,7 +341,7 @@ fn World::insert_component_with_requirements(
     entity,
     component_id,
     payload,
-    change_tick,
+    sequence,
     caller~,
   )
   self.end_deferred_hook_command_scope(outermost)
@@ -353,7 +353,7 @@ fn World::insert_component_with_requirements_unchecked(
   entity : @core.Entity,
   component_id : Int,
   payload : ErasedValue,
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
   caller? : String? = None,
 ) -> Unit {
   let store_ref = self.ensure_component_store(component_id)
@@ -361,7 +361,7 @@ fn World::insert_component_with_requirements_unchecked(
   if replacing {
     self.run_component_replace_hooks(entity, component_id, caller~)
   }
-  store_ref.val.insert(entity, payload, change_tick)
+  store_ref.val.insert(entity, payload, sequence)
   self.mark_component_used(component_id)
 
   if !replacing {
@@ -385,7 +385,7 @@ fn World::insert_component_with_requirements_unchecked(
       entity,
       entry.component_id,
       (entry.init)(),
-      change_tick,
+      sequence,
       caller~,
     )
   }

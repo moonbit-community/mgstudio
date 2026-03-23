@@ -152,14 +152,14 @@ fn current_input_focus_world_abort_missing() -> @ecs.World {
 }
 
 ///|
-fn input_focus_change_tick(world : @ecs.World) -> @core.Tick {
-  let tick = @app.current_system_ticks().this_run
-  if tick > 0 {
-    tick
+fn input_focus_sequence(world : @ecs.World) -> @core.Sequence {
+  let sequence = @app.current_system_sequence().this_run
+  if sequence > 0 {
+    sequence
   } else {
-    let world_tick = world.read_change_tick()
-    if world_tick > 0 {
-      world_tick
+    let world_sequence = world.read_sequence()
+    if world_sequence > 0 {
+      world_sequence
     } else {
       1
     }
@@ -183,7 +183,7 @@ fn input_focus_world_resource_ref_mut(
   world : @ecs.World,
   key : @ecs.ResourceKey[InputFocus],
 ) -> Ref[InputFocus]? {
-  try world.get_resource_ref_mut(key, input_focus_change_tick(world)) catch {
+  try world.get_resource_ref_mut(key, input_focus_sequence(world)) catch {
     _ => None
   } noraise {
     value => value

@@ -137,7 +137,7 @@ fn set_global_ambient_light(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   set_global_ambient_light(world, @sprite.Color::white(), 60.0F)
 
   let camera = @pbr.Camera3dBundle::new(

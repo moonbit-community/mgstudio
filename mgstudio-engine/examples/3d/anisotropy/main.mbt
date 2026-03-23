@@ -188,7 +188,7 @@ fn set_entity_visibility(
     @visibility.Visibility::Hidden
   }
   let visibility_store = world.component(@visibility.ecs_key_visibility)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   if visibility_store.contains(entity) {
     visibility_store.set(entity, visibility, tick) |> ignore
   } else {
@@ -248,7 +248,7 @@ fn spawn_directional_light(world : @ecs.World) -> Unit {
   .insert(
     entity,
     @pbr.DirectionalLight::default().with_illuminance(3000.0F),
-    world.read_change_tick(),
+    world.read_sequence(),
   )
 }
 
@@ -260,7 +260,7 @@ fn spawn_point_light(world : @ecs.World) -> Unit {
   .insert(
     entity,
     @pbr.PointLight::default().with_intensity(200_000.0F),
-    world.read_change_tick(),
+    world.read_sequence(),
   )
 }
 
@@ -269,7 +269,7 @@ fn add_skybox_and_environment_map(
   world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   if anisotropy_state.val.environment_specular_map is Some(specular_map) {
     world
     .component(@pbr.ecs_key_skybox)
@@ -410,7 +410,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   spawn_directional_light(world)
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let barn_lamp = world.spawn_empty()
   world
   .component(@scene.ecs_key_scene_root)
@@ -526,7 +526,7 @@ fn animate_light(world : @ecs.World) -> Unit {
     @math.sin(now) * 3.0F,
   ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world
   .component(@pbr.ecs_key_directional_light)
   .for_each(fn(entity, _light) {
@@ -561,7 +561,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
     rotated_position.y,
     rotated_position.z,
   ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world
   .component(@sprite.ecs_key_camera)
   .for_each(fn(entity, _camera) {
@@ -574,7 +574,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
 ///|
 fn toggle_anisotropy(world : @ecs.World) -> Unit {
   anisotropy_state.val.anisotropy_enabled = !anisotropy_state.val.anisotropy_enabled
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   for variants in anisotropy_state.val.material_variants {
     let next_material = if anisotropy_state.val.anisotropy_enabled {
       variants.anisotropic

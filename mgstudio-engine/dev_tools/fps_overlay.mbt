@@ -164,7 +164,7 @@ let fps_overlay_state_resource_key : @ecs.ResourceKey[FpsOverlayState] = @ecs.re
 
 ///|
 fn fps_overlay_state_ref(world : @ecs.World) -> Ref[FpsOverlayState] {
-  let tick = @app.current_system_ticks().this_run
+  let tick = @app.current_system_sequence().this_run
   match
     (try! world.get_resource_ref_mut(fps_overlay_state_resource_key, tick)) {
     Some(state) => state
@@ -547,7 +547,7 @@ fn fps_overlay_update_system(world : @ecs.World) -> Unit {
   }
   let next_text = fps_overlay_text_value(fps_value)
   if state_ref.val.text_entity is Some(text_entity) {
-    let tick = world.read_change_tick()
+    let tick = world.read_sequence()
     let text_store = world.component(@text.ecs_key_text)
     if text_store.get(text_entity) is Some(text_value) {
       text_value.content = next_text

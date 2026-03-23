@@ -275,7 +275,7 @@ fn set_entity_visibility(
   visible : Bool,
 ) -> Unit {
   guard entity is Some(target) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let value = if visible {
     @visibility.Visibility::Visible
   } else {
@@ -289,7 +289,7 @@ fn spawn_main_scene(
   world : @ecs.World,
   asset_server : @asset.AssetServer,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let scene = @scene.scene_load_gltf_scene(
     asset_server,
     @gltf.GltfAssetLabel::Scene(0).from_asset(
@@ -304,7 +304,7 @@ fn spawn_main_scene(
 
 ///|
 fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::from_xyz(-10.012F, 4.8605F, 13.281F).looking_at(
@@ -330,7 +330,7 @@ fn spawn_irradiance_volume(
   world : @ecs.World,
   irradiance_texture : @asset.Handle[@asset.Image],
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let entity = world.spawn_empty()
   irradiance_volumes_state.val.light_probe = Some(entity)
   world
@@ -367,7 +367,7 @@ fn spawn_irradiance_volume(
 
 ///|
 fn spawn_light(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
@@ -404,7 +404,7 @@ fn spawn_sphere(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_fox(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let fox = world.spawn_empty()
   irradiance_volumes_state.val.fox = Some(fox)
   world
@@ -433,7 +433,7 @@ fn spawn_fox(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
 ///|
 fn spawn_voxel_cubes(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let cube_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
       @sprite.Color::new(1.0F, 0.2F, 0.2F, 0.75F),
@@ -555,7 +555,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
   )
   world
   .component(@transform.ecs_key_transform)
-  .set(camera, next, world.read_change_tick())
+  .set(camera, next, world.read_sequence())
   |> ignore
 }
 
@@ -584,7 +584,7 @@ fn toggle_irradiance_volumes(world : @ecs.World) -> Unit {
   guard irradiance_volumes_state.val.light_probe is Some(light_probe) else {
     return
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   if irradiance_volumes_state.val.irradiance_volume_present {
     world.component(@pbr.ecs_key_irradiance_volume).remove(light_probe)
     |> ignore
@@ -668,7 +668,7 @@ fn move_entity_on_ground(
     current.with_translation(
       @math.Vec3::new(point.x, current.translation.y, point.z),
     ),
-    world.read_change_tick(),
+    world.read_sequence(),
   )
   |> ignore
 }

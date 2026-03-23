@@ -247,7 +247,7 @@ fn set_main_camera_transform_from_orbit(world : @ecs.World) -> Unit {
 
   world
   .component(@transform.ecs_key_transform)
-  .set(mirror_state.val.main_camera, transform, world.read_change_tick())
+  .set(mirror_state.val.main_camera, transform, world.read_sequence())
   |> ignore
 }
 
@@ -288,7 +288,7 @@ fn ray_plane_intersection(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   mirror_state.val.main_camera = @core.Entity::placeholder()
   mirror_state.val.mirror_camera = @core.Entity::placeholder()
   mirror_state.val.mirror_plane = @core.Entity::placeholder()
@@ -574,7 +574,7 @@ fn move_fox_on_mouse_down(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   if transform_store.get(mirror_state.val.fox) is Some(fox_transform) {
     transform_store.set(
       mirror_state.val.fox,
@@ -610,7 +610,7 @@ fn handle_window_resize_messages(world : @ecs.World) -> Unit {
   )
   mirror_state.val.mirror_target_size = size
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let target_store = world.component(@sprite.ecs_key_render_target)
   if target_store.contains(mirror_state.val.mirror_camera) {
     target_store.set(
@@ -671,7 +671,7 @@ fn update_mirror_camera_on_main_camera_transform_change(
     main_camera_transform, main_projection, mirror_transform,
   )
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   transform_store.set(
     mirror_state.val.mirror_camera,
     mirror_camera_transform,

@@ -645,7 +645,7 @@ fn camera3d_bundle_insert(
   bundle : Camera3dBundle,
   world : @ecs.World,
   entity : @core.Entity,
-  tick : @core.Tick,
+  tick : @core.Sequence,
   loc~ : SourceLoc,
 ) -> Unit {
   let ecs_world = world
@@ -736,10 +736,10 @@ pub impl @app.CommandSpawnComponents for Camera3dBundle with spawn_components(
   self,
   world,
   entity,
-  change_tick,
+  sequence,
   loc~,
 ) {
-  camera3d_bundle_insert(self, world, entity, change_tick, loc~)
+  camera3d_bundle_insert(self, world, entity, sequence, loc~)
 }
 
 ///|
@@ -750,7 +750,7 @@ pub fn Camera3dBundle::spawn(
   loc~ : SourceLoc,
 ) -> @core.Entity {
   let ecs_world = world
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let entity = ecs_world.spawn_empty()
   camera3d_bundle_insert(self, ecs_world, entity, tick, loc~)
   entity
@@ -761,7 +761,7 @@ fn mesh_material3d_bundle_insert(
   bundle : MeshMaterial3dBundle,
   world : @ecs.World,
   entity : @core.Entity,
-  tick : @core.Tick,
+  tick : @core.Sequence,
   loc~ : SourceLoc,
 ) -> Unit {
   let ecs_world = world
@@ -816,10 +816,10 @@ pub impl @app.CommandSpawnComponents for MeshMaterial3dBundle with spawn_compone
   self,
   world,
   entity,
-  change_tick,
+  sequence,
   loc~,
 ) {
-  mesh_material3d_bundle_insert(self, world, entity, change_tick, loc~)
+  mesh_material3d_bundle_insert(self, world, entity, sequence, loc~)
 }
 
 ///|
@@ -830,7 +830,7 @@ pub fn MeshMaterial3dBundle::spawn(
   loc~ : SourceLoc,
 ) -> @core.Entity {
   let ecs_world = world
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let entity = ecs_world.spawn_empty()
   mesh_material3d_bundle_insert(self, ecs_world, entity, tick, loc~)
   entity
@@ -5382,7 +5382,7 @@ fn free_camera_exp_decay(rate : Float, delta_seconds : Float) -> Float {
 ///|
 pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
   let delta_seconds = render3d_default_time_or_default(world).delta_seconds()
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let camera_store = world.component(@sprite.ecs_key_camera)
   let transform_store = world.component(@transform.ecs_key_transform)
   let free_camera_store = world.component(ecs_key_free_camera)
@@ -5658,7 +5658,7 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let mesh_store = world.component(ecs_key_mesh3d)
   let gpu_mesh_store = world.component(@sprite.ecs_key_gpu_mesh2d)
   mesh_store.for_each(fn(entity, mesh) {
@@ -6134,7 +6134,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let view_visibility_store = world.component(
     @visibility.ecs_key_view_visibility,
   )
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let runtime_config = render3d_runtime_config_or_default(world)
   let prepass_enabled = standard_material_prepass_enabled(world)
   let deferred_lighting_enabled = runtime_config.add_default_deferred_lighting_plugin &&

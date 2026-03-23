@@ -14,32 +14,32 @@
 
 ///|
 pub struct Messages[T] {
-  mut previous_tick : Tick?
+  mut previous_tick : Sequence?
   mut previous_messages : Array[T]
-  mut current_tick : Tick?
+  mut current_tick : Sequence?
   mut current_messages : Array[T]
 }
 
 ///|
 pub struct MessageReader[T] {
-  previous_tick : Tick?
+  previous_tick : Sequence?
   previous_messages : Array[T]
-  current_tick : Tick?
+  current_tick : Sequence?
   current_messages : Array[T]
-  system : SystemTicks
+  system : SystemSequence
   mut has_read : Bool
 }
 
 ///|
 pub struct MessageWriter[T] {
   messages : Messages[T]
-  tick : Tick
+  tick : Sequence
 }
 
 ///|
 pub(open) trait Message {
-  reader(SystemTicks) -> MessageReader[Self]
-  writer(Tick) -> MessageWriter[Self]
+  reader(SystemSequence) -> MessageReader[Self]
+  writer(Sequence) -> MessageWriter[Self]
 }
 
 ///|
@@ -53,7 +53,7 @@ pub fn[T] Messages::new() -> Messages[T] {
 }
 
 ///|
-fn message_tick_in_range(tick : Tick, system : SystemTicks) -> Bool {
+fn message_tick_in_range(tick : Sequence, system : SystemSequence) -> Bool {
   let last_run = system.last_run
   let this_run = system.this_run
   if this_run >= last_run {
@@ -64,7 +64,11 @@ fn message_tick_in_range(tick : Tick, system : SystemTicks) -> Bool {
 }
 
 ///|
-pub fn[T] Messages::send(self : Messages[T], tick : Tick, message : T) -> Unit {
+pub fn[T] Messages::send(
+  self : Messages[T],
+  tick : Sequence,
+  message : T,
+) -> Unit {
   if self.current_tick is Some(current_tick) {
     if current_tick != tick {
       self.previous_tick = Some(current_tick)
@@ -81,7 +85,7 @@ pub fn[T] Messages::send(self : Messages[T], tick : Tick, message : T) -> Unit {
 ///|
 pub fn[T] Messages::send_batch(
   self : Messages[T],
-  tick : Tick,
+  tick : Sequence,
   messages : Array[T],
 ) -> Unit {
   for message in messages {
@@ -92,7 +96,7 @@ pub fn[T] Messages::send_batch(
 ///|
 pub fn[T] Messages::reader(
   self : Messages[T],
-  system : SystemTicks,
+  system : SystemSequence,
 ) -> MessageReader[T] {
   MessageReader::{
     previous_tick: self.previous_tick,
@@ -113,7 +117,10 @@ pub fn[T] Messages::clear(self : Messages[T]) -> Unit {
 }
 
 ///|
-pub fn[T] Messages::writer(self : Messages[T], tick : Tick) -> MessageWriter[T] {
+pub fn[T] Messages::writer(
+  self : Messages[T],
+  tick : Sequence,
+) -> MessageWriter[T] {
   MessageWriter::{ messages: self, tick }
 }
 

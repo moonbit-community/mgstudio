@@ -102,7 +102,7 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
 ///|
 fn update_light_modes(world : @ecs.World) -> Unit {
   let state = shadow_caster_receiver_state.val
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let point_store = world.component(@pbr.ecs_key_point_light)
   let directional_store = world.component(@pbr.ecs_key_directional_light)
 
@@ -150,7 +150,7 @@ fn update_light_modes(world : @ecs.World) -> Unit {
 
 ///|
 fn toggle_shadow_casters(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let mesh_store = world.component(@pbr.ecs_key_mesh3d)
   let not_shadow_caster_store = world.component(@pbr.ecs_key_not_shadow_caster)
   let make_shadow_caster : Array[@core.Entity] = []
@@ -178,7 +178,7 @@ fn toggle_shadow_casters(world : @ecs.World) -> Unit {
 
 ///|
 fn toggle_shadow_receivers(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let mesh_store = world.component(@pbr.ecs_key_mesh3d)
   let not_shadow_receiver_store = world.component(
     @pbr.ecs_key_not_shadow_receiver,
@@ -214,7 +214,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   let spawn_height = 2.0F
   let sphere_mesh = uv_sphere_mesh(0.25F, 16, 24)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   let red_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(

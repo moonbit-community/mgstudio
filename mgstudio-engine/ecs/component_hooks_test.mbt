@@ -251,11 +251,7 @@ test "ecs component hooks: component access mutation paths preserve caller prove
   let entity = world.spawn()
   let access = world.component(hook_test_component_key)
 
-  access.insert(
-    entity,
-    HookTestComponent::{ value: 3 },
-    world.read_change_tick(),
-  )
+  access.insert(entity, HookTestComponent::{ value: 3 }, world.read_sequence())
 
   inspect(hook_event_log_ref.val, content="[\"add:3\", \"insert:3\"]")
   inspect(hook_callers_present_ref.val, content="true")

@@ -44,7 +44,7 @@ fn update_primary_cursor_options(
   update : (@window.CursorOptions) -> Unit,
 ) -> Unit {
   guard primary_window_entity(world) is Some(entity) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let store = world.component(@window.ecs_key_cursor_options)
   let options = match store.get(entity) {
     Some(options) => options

@@ -243,7 +243,7 @@ fn spawn_shape_entity(
   desired_volume : DesiredVolume,
   spinning : Bool,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let entity = world.spawn_empty()
   world
   .component(@transform.Transform::component())
@@ -261,7 +261,7 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
   world
@@ -334,7 +334,7 @@ fn update_test_state(world : @ecs.World) -> Unit {
 ///|
 fn update_text(world : @ecs.World) -> Unit {
   guard overlay_text_entity.val is Some(text_entity) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(text_entity) is Some(text_value) else { return }
   text_value.content = overlay_text(read_current_test(world))
@@ -405,7 +405,7 @@ fn spin(world : @ecs.World) -> Unit {
 
 ///|
 fn update_volumes(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let volumes = world.component(current_volume_key)
   let query = world.query3(
     desired_volume_key,

@@ -155,7 +155,7 @@ fn ui_draw_border_flags(
 
 ///|
 fn ensure_ui_scale_resource(world : @ecs.World) -> @ui.UiScale {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let res = @ui.get_ui_scale_resource(world)
   match res.get() {
     Some(value) => value

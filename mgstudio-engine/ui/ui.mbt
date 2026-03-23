@@ -1536,7 +1536,7 @@ pub fn ui_pointer_pos_in_viewport(
 
 ///|
 fn ensure_ui_context_resource(world : @ecs.World) -> UiContext {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let res = get_ui_context_resource(world)
   match res.get() {
     Some(value) => value
@@ -1550,7 +1550,7 @@ fn ensure_ui_context_resource(world : @ecs.World) -> UiContext {
 
 ///|
 fn ensure_ui_scale_resource(world : @ecs.World) -> UiScale {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let res = get_ui_scale_resource(world)
   match res.get() {
     Some(value) => value
@@ -1890,7 +1890,7 @@ fn ui_propagate_target_camera_subtree(
 
 ///|
 pub fn ui_propagate_target_cameras_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let node_store = get_node_store(world)
   let parent_store = @hierarchy.get_parent_store(world)
   let roots = ui_collect_root_entities(world, node_store, parent_store)
@@ -1917,7 +1917,7 @@ pub fn ui_propagate_target_cameras_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn ui_update_context_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let ctx = Ref::new(ensure_ui_context_resource(world))
   create_white_texture_if_needed(ctx)
   let win_w = @window.window_width()
@@ -1984,7 +1984,7 @@ fn ensure_visibility_defaults(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let vis_store = @visibility.get_visibility_store(world)
   if !vis_store.contains(entity) {
     vis_store.insert(entity, @visibility.Visibility::Inherited, tick)
@@ -2012,7 +2012,7 @@ fn ensure_layers_default(
   match store.get(entity) {
     Some(v) => v
     None => {
-      let tick = world.read_change_tick()
+      let tick = world.read_sequence()
       let layers = @sprite.RenderLayers::default()
       store.insert(entity, layers, tick)
       layers
@@ -2085,7 +2085,7 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
   let image_node_store = get_image_node_store(world)
   let image_size_store = get_image_node_size_store(world)
   let content_size_store = get_content_size_store(world)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let sf = safe_scale_factor(@window.window_scale_factor())
   let ui_scale_value = if ui_scale.value <= 0.0F {
     1.0F
@@ -2222,7 +2222,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   let img_store = get_ui_image_store(world)
   let text_store = world.component(@text.ecs_key_text)
   let transform_store = @transform.get_transform_store(world)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let roots = ui_collect_root_entities(world, node_store, parent_store)
   fn auto_size_for_entity(entity : @core.Entity) -> @math.Vec2 {
     match content_size_store.get(entity) {
@@ -3019,7 +3019,7 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
     break
   }
   guard target is Some(target_e) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let prev = match scroll_store.get(target_e) {
     Some(v) => v
     None => ScrollPosition::default()
@@ -3155,7 +3155,7 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
   let scissor_store = @sprite.get_scissor_rect_store(world)
   let children_store = @hierarchy.get_children_store(world)
   let parent_store = @hierarchy.get_parent_store(world)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let roots = ui_collect_root_entities(world, node_store, parent_store)
   fn clamp_nonneg(v : Float) -> Float {
     if v < 0.0F {
@@ -3361,7 +3361,7 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
 /// Children are visited in depth-first order, sorted by `ZIndex` ascending,
 /// while preserving insertion order for ties.
 pub fn ui_stack_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let res = get_ui_stack_resource(world)
   let stack = Ref::new(res.get().unwrap_or(UiStack::default()))
   UiStack::clear(stack)
@@ -3903,7 +3903,7 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
   let focus_store = get_focus_policy_store(world)
   let clip_store = get_calculated_clip_store(world)
   let vv_store = @visibility.get_view_visibility_store(world)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let pointer = ctx0.pointer_pos
   let down = ctx0.pointer_down
   fn entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {

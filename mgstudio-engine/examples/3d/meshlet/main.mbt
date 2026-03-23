@@ -121,7 +121,7 @@ fn color_for_row(index : Int) -> @sprite.Color {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world.insert_resource(
     @pbr.ecs_key_directional_light_shadow_map,
     @pbr.DirectionalLightShadowMap::new(4096),

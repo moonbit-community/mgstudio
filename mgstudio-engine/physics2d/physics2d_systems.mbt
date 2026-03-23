@@ -151,7 +151,7 @@ fn recompute_body_mass_properties(
 
 ///|
 pub fn physics2d_init_resources_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let ecs_world = world
   let cfg_res = get_physics2d_config_resource(ecs_world)
   if !cfg_res.is_present() {
@@ -169,7 +169,7 @@ pub fn physics2d_init_resources_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn physics2d_clear_events_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let ecs_world = world
   let ev_res = get_physics2d_events_resource(ecs_world)
   match ev_res.get() {
@@ -184,7 +184,7 @@ pub fn physics2d_clear_events_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn physics2d_cleanup_despawned_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(current_ctx) else { return }
@@ -398,7 +398,7 @@ pub fn physics2d_cleanup_despawned_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(current_ctx) else { return }
@@ -659,7 +659,7 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let ecs_world = world
   let cfg_res = get_physics2d_config_resource(ecs_world)
   let ctx_res = get_physics2d_context_resource(ecs_world)
@@ -912,7 +912,7 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn physics2d_step_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let ecs_world = world
   let cfg_res = get_physics2d_config_resource(ecs_world)
   let ctx_res = get_physics2d_context_resource(ecs_world)
@@ -996,7 +996,7 @@ pub fn physics2d_step_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn physics2d_writeback_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(ctx) else { return }

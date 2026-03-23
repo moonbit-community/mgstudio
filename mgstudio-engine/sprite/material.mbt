@@ -958,7 +958,7 @@ fn[M] register_material2d_runtime(
   let world = app.world()
   if (try! world.get_resource_ref_mut(
       Material2dRuntimeRegistry::resource(),
-      world.read_change_tick(),
+      world.read_sequence(),
     ))
     is Some(registry_ref) {
     registry_ref.val.register(material2d_runtime_entry(probe))
@@ -1004,7 +1004,7 @@ fn[M] extract_material2d_mesh_instances_system(
     world,
   )
   let key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = RenderMaterial2dInstances::resource()
-  guard (try! world.get_resource_ref_mut(key, world.read_change_tick()))
+  guard (try! world.get_resource_ref_mut(key, world.read_sequence()))
     is Some(instances_ref) else {
     return
   }
@@ -1038,7 +1038,7 @@ fn[M : Material2d] prepare_material2d_assets_system(
   }
   guard (try! world.get_resource_ref_mut(
       prepared_assets_key,
-      world.read_change_tick(),
+      world.read_sequence(),
     ))
     is Some(prepared_assets_ref) else {
     return

@@ -40,7 +40,7 @@ fn main {
 
 ///|
 fn button_system(world : @ecs.World) -> Unit {
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   let a11y_state_resource = @a11y.get_a11y_state_resource(world)
   let mut a11y_state_ref : Ref[@a11y.A11yState]? = None
   if a11y_state_resource.get() is Some(a11y_state) {
@@ -119,7 +119,7 @@ fn button_system(world : @ecs.World) -> Unit {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
 
   // UI camera.
   @sprite.Camera2dBundle::new(

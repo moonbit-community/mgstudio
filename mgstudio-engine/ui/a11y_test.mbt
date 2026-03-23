@@ -15,7 +15,7 @@
 ///|
 test "ui: a11y derives button label from text children" {
   let world = @ecs.World::new()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   let ctx = UiContext::new(
     @asset.Handle::new(1),
     @math.Vec2::new(0.0F, 0.0F),
@@ -73,7 +73,7 @@ test "ui: a11y derives button label from text children" {
 ///|
 test "ui: a11y label widget sets value from self text" {
   let world = @ecs.World::new()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   let ctx = UiContext::new(
     @asset.Handle::new(1),
     @math.Vec2::new(0.0F, 0.0F),
@@ -119,7 +119,7 @@ test "ui: a11y label widget sets value from self text" {
 ///|
 test "ui: a11y sets hidden when view visibility is false" {
   let world = @ecs.World::new()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   let ctx = UiContext::new(
     @asset.Handle::new(1),
     @math.Vec2::new(0.0F, 0.0F),
@@ -164,7 +164,7 @@ test "ui: a11y sets hidden when view visibility is false" {
 ///|
 test "ui: a11y sets clips_children when calculated clip exists" {
   let world = @ecs.World::new()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   let ctx = UiContext::new(
     @asset.Handle::new(1),
     @math.Vec2::new(0.0F, 0.0F),
@@ -214,7 +214,7 @@ test "ui: a11y sets clips_children when calculated clip exists" {
 ///|
 test "ui: a11y label widget keeps empty value" {
   let world = @ecs.World::new()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   let ctx = UiContext::new(
     @asset.Handle::new(1),
     @math.Vec2::new(0.0F, 0.0F),
@@ -255,7 +255,7 @@ test "ui: a11y label widget keeps empty value" {
 ///|
 test "ui: a11y focus follows A11yState instead of hover state" {
   let world = @ecs.World::new()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   let ctx = UiContext::new(
     @asset.Handle::new(1),
     @math.Vec2::new(0.0F, 0.0F),
@@ -316,7 +316,7 @@ test "ui: a11y focus follows A11yState instead of hover state" {
 ///|
 test "ui: editable label node is exported as text input with SetValue" {
   let world = @ecs.World::new()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   let ctx = UiContext::new(
     @asset.Handle::new(1),
     @math.Vec2::new(0.0F, 0.0F),

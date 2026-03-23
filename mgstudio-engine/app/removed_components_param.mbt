@@ -25,7 +25,7 @@ pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T] with get(
 ) {
   let world = system_param_abort_missing_world()
   let key : @ecs.ComponentKey[T] = @ecs.Component::component()
-  world.removed_components(key, current_system_ticks())
+  world.removed_components(key, current_system_sequence())
 }
 
 ///|

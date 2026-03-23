@@ -63,7 +63,7 @@ fn spawn_ui_label(
   ui_camera : @core.Entity?,
   font : @text.TextFont,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
@@ -106,7 +106,7 @@ fn spawn_ui_label(
 
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let text_font = @text.TextFont::from_font_size(30.0F)
 
   @sprite.Camera2dBundle::new(

@@ -22,33 +22,39 @@ fn current_world_or_abort() -> @ecs.World {
 }
 
 ///|
-type DeferredCommand = (@ecs.World, @core.Tick) -> Unit
+type DeferredCommand = (@ecs.World, @core.Sequence) -> Unit
 
 ///|
 fn[T : @ecs.Component] insert_spawn_component(
   world : @ecs.World,
   entity : @core.Entity,
   component : T,
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
   loc~ : SourceLoc,
 ) -> Unit {
   let key : @ecs.ComponentKey[T] = @ecs.Component::component()
-  world.component(key).insert(entity, component, change_tick, loc~)
+  world.component(key).insert(entity, component, sequence, loc~)
 }
 
 ///|
 pub(open) trait CommandSpawnComponents {
-  spawn_components(Self, @ecs.World, @core.Entity, @core.Tick, loc~ : SourceLoc) -> Unit
+  spawn_components(
+    Self,
+    @ecs.World,
+    @core.Entity,
+    @core.Sequence,
+    loc~ : SourceLoc,
+  ) -> Unit
 }
 
 ///|
 pub impl[A : @ecs.Component, B : @ecs.Component] CommandSpawnComponents for (
   A,
   B,
-) with spawn_components(self, world, entity, change_tick, loc~) {
+) with spawn_components(self, world, entity, sequence, loc~) {
   let (a, b) = self
-  insert_spawn_component(world, entity, a, change_tick, loc~)
-  insert_spawn_component(world, entity, b, change_tick, loc~)
+  insert_spawn_component(world, entity, a, sequence, loc~)
+  insert_spawn_component(world, entity, b, sequence, loc~)
 }
 
 ///|
@@ -56,11 +62,11 @@ pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] CommandSpaw
   A,
   B,
   C,
-) with spawn_components(self, world, entity, change_tick, loc~) {
+) with spawn_components(self, world, entity, sequence, loc~) {
   let (a, b, c) = self
-  insert_spawn_component(world, entity, a, change_tick, loc~)
-  insert_spawn_component(world, entity, b, change_tick, loc~)
-  insert_spawn_component(world, entity, c, change_tick, loc~)
+  insert_spawn_component(world, entity, a, sequence, loc~)
+  insert_spawn_component(world, entity, b, sequence, loc~)
+  insert_spawn_component(world, entity, c, sequence, loc~)
 }
 
 ///|
@@ -73,14 +79,14 @@ pub impl[
   self,
   world,
   entity,
-  change_tick,
+  sequence,
   loc~,
 ) {
   let (a, b, c, d) = self
-  insert_spawn_component(world, entity, a, change_tick, loc~)
-  insert_spawn_component(world, entity, b, change_tick, loc~)
-  insert_spawn_component(world, entity, c, change_tick, loc~)
-  insert_spawn_component(world, entity, d, change_tick, loc~)
+  insert_spawn_component(world, entity, a, sequence, loc~)
+  insert_spawn_component(world, entity, b, sequence, loc~)
+  insert_spawn_component(world, entity, c, sequence, loc~)
+  insert_spawn_component(world, entity, d, sequence, loc~)
 }
 
 ///|
@@ -94,15 +100,15 @@ pub impl[
   self,
   world,
   entity,
-  change_tick,
+  sequence,
   loc~,
 ) {
   let (a, b, c, d, e) = self
-  insert_spawn_component(world, entity, a, change_tick, loc~)
-  insert_spawn_component(world, entity, b, change_tick, loc~)
-  insert_spawn_component(world, entity, c, change_tick, loc~)
-  insert_spawn_component(world, entity, d, change_tick, loc~)
-  insert_spawn_component(world, entity, e, change_tick, loc~)
+  insert_spawn_component(world, entity, a, sequence, loc~)
+  insert_spawn_component(world, entity, b, sequence, loc~)
+  insert_spawn_component(world, entity, c, sequence, loc~)
+  insert_spawn_component(world, entity, d, sequence, loc~)
+  insert_spawn_component(world, entity, e, sequence, loc~)
 }
 
 ///|
@@ -117,16 +123,16 @@ pub impl[
   self,
   world,
   entity,
-  change_tick,
+  sequence,
   loc~,
 ) {
   let (a, b, c, d, e, f) = self
-  insert_spawn_component(world, entity, a, change_tick, loc~)
-  insert_spawn_component(world, entity, b, change_tick, loc~)
-  insert_spawn_component(world, entity, c, change_tick, loc~)
-  insert_spawn_component(world, entity, d, change_tick, loc~)
-  insert_spawn_component(world, entity, e, change_tick, loc~)
-  insert_spawn_component(world, entity, f, change_tick, loc~)
+  insert_spawn_component(world, entity, a, sequence, loc~)
+  insert_spawn_component(world, entity, b, sequence, loc~)
+  insert_spawn_component(world, entity, c, sequence, loc~)
+  insert_spawn_component(world, entity, d, sequence, loc~)
+  insert_spawn_component(world, entity, e, sequence, loc~)
+  insert_spawn_component(world, entity, f, sequence, loc~)
 }
 
 ///|
@@ -142,17 +148,17 @@ pub impl[
   self,
   world,
   entity,
-  change_tick,
+  sequence,
   loc~,
 ) {
   let (a, b, c, d, e, f, g) = self
-  insert_spawn_component(world, entity, a, change_tick, loc~)
-  insert_spawn_component(world, entity, b, change_tick, loc~)
-  insert_spawn_component(world, entity, c, change_tick, loc~)
-  insert_spawn_component(world, entity, d, change_tick, loc~)
-  insert_spawn_component(world, entity, e, change_tick, loc~)
-  insert_spawn_component(world, entity, f, change_tick, loc~)
-  insert_spawn_component(world, entity, g, change_tick, loc~)
+  insert_spawn_component(world, entity, a, sequence, loc~)
+  insert_spawn_component(world, entity, b, sequence, loc~)
+  insert_spawn_component(world, entity, c, sequence, loc~)
+  insert_spawn_component(world, entity, d, sequence, loc~)
+  insert_spawn_component(world, entity, e, sequence, loc~)
+  insert_spawn_component(world, entity, f, sequence, loc~)
+  insert_spawn_component(world, entity, g, sequence, loc~)
 }
 
 ///|
@@ -169,24 +175,24 @@ pub impl[
   self,
   world,
   entity,
-  change_tick,
+  sequence,
   loc~,
 ) {
   let (a, b, c, d, e, f, g, h) = self
-  insert_spawn_component(world, entity, a, change_tick, loc~)
-  insert_spawn_component(world, entity, b, change_tick, loc~)
-  insert_spawn_component(world, entity, c, change_tick, loc~)
-  insert_spawn_component(world, entity, d, change_tick, loc~)
-  insert_spawn_component(world, entity, e, change_tick, loc~)
-  insert_spawn_component(world, entity, f, change_tick, loc~)
-  insert_spawn_component(world, entity, g, change_tick, loc~)
-  insert_spawn_component(world, entity, h, change_tick, loc~)
+  insert_spawn_component(world, entity, a, sequence, loc~)
+  insert_spawn_component(world, entity, b, sequence, loc~)
+  insert_spawn_component(world, entity, c, sequence, loc~)
+  insert_spawn_component(world, entity, d, sequence, loc~)
+  insert_spawn_component(world, entity, e, sequence, loc~)
+  insert_spawn_component(world, entity, f, sequence, loc~)
+  insert_spawn_component(world, entity, g, sequence, loc~)
+  insert_spawn_component(world, entity, h, sequence, loc~)
 }
 
 ///|
 pub struct Commands {
   world : @ecs.World
-  change_tick : @core.Tick
+  sequence : @core.Sequence
   queue : Array[DeferredCommand]
 }
 
@@ -217,8 +223,8 @@ pub fn[T : @ecs.Component] Commands::spawn_component(
   loc~ : SourceLoc,
 ) -> @core.Entity {
   let entity = self.world.spawn_empty()
-  self.queue.push(fn(world : @ecs.World, change_tick : @core.Tick) {
-    insert_spawn_component(world, entity, component, change_tick, loc~)
+  self.queue.push(fn(world : @ecs.World, sequence : @core.Sequence) {
+    insert_spawn_component(world, entity, component, sequence, loc~)
   })
   entity
 }
@@ -231,8 +237,8 @@ pub fn[T : CommandSpawnComponents] Commands::spawn(
   loc~ : SourceLoc,
 ) -> @core.Entity {
   let entity = self.world.spawn_empty()
-  self.queue.push(fn(world : @ecs.World, change_tick : @core.Tick) {
-    components.spawn_components(world, entity, change_tick, loc~)
+  self.queue.push(fn(world : @ecs.World, sequence : @core.Sequence) {
+    components.spawn_components(world, entity, sequence, loc~)
   })
   entity
 }
@@ -256,7 +262,7 @@ pub fn[T : Resource] Commands::insert_resource(
   self : Commands,
   resource : T,
 ) -> Unit {
-  self.queue.push(fn(world : @ecs.World, _change_tick : @core.Tick) {
+  self.queue.push(fn(world : @ecs.World, _sequence : @core.Sequence) {
     world.insert_resource(T::resource(), resource)
   })
 }
@@ -269,8 +275,8 @@ pub fn[T : CommandSpawnComponents] EntityCommands::insert(
   loc~ : SourceLoc,
 ) -> Unit {
   let entity = self.entity
-  self.commands.queue.push(fn(world : @ecs.World, change_tick : @core.Tick) {
-    components.spawn_components(world, entity, change_tick, loc~)
+  self.commands.queue.push(fn(world : @ecs.World, sequence : @core.Sequence) {
+    components.spawn_components(world, entity, sequence, loc~)
   })
 }
 
@@ -282,8 +288,8 @@ pub fn[T : @ecs.Component] EntityCommands::insert_component(
   loc~ : SourceLoc,
 ) -> Unit {
   let entity = self.entity
-  self.commands.queue.push(fn(world : @ecs.World, change_tick : @core.Tick) {
-    insert_spawn_component(world, entity, component, change_tick, loc~)
+  self.commands.queue.push(fn(world : @ecs.World, sequence : @core.Sequence) {
+    insert_spawn_component(world, entity, component, sequence, loc~)
   })
 }
 
@@ -291,7 +297,7 @@ pub fn[T : @ecs.Component] EntityCommands::insert_component(
 #callsite(autofill(loc))
 pub fn EntityCommands::despawn(self : EntityCommands, loc~ : SourceLoc) -> Unit {
   let entity = self.entity
-  self.commands.queue.push(fn(world : @ecs.World, _change_tick : @core.Tick) {
+  self.commands.queue.push(fn(world : @ecs.World, _sequence : @core.Sequence) {
     if world.is_alive(entity) {
       try! world.despawn(entity, loc~)
     }
@@ -306,7 +312,7 @@ pub fn[T] EntityCommands::remove_component(
   loc~ : SourceLoc,
 ) -> Unit {
   let entity = self.entity
-  self.commands.queue.push(fn(world : @ecs.World, _change_tick : @core.Tick) {
+  self.commands.queue.push(fn(world : @ecs.World, _sequence : @core.Sequence) {
     if world.is_alive(entity) {
       ignore(try! world.remove(entity, key, loc~))
     }
@@ -325,7 +331,7 @@ pub fn[T] EntityCommands::remove(
 
 ///|
 fn Commands::flush(self : Commands) -> Unit {
-  self.queue.each(fn(command) { command(self.world, self.change_tick) })
+  self.queue.each(fn(command) { command(self.world, self.sequence) })
   self.queue.clear()
 }
 
@@ -338,7 +344,7 @@ pub impl SystemParam for Commands with init_state(world) {
 pub impl SystemParam for Commands with get(_state) {
   Commands::{
     world: system_param_abort_missing_world(),
-    change_tick: current_system_ticks().this_run,
+    sequence: current_system_sequence().this_run,
     queue: [],
   }
 }

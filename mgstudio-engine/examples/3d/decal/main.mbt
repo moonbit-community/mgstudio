@@ -53,7 +53,7 @@ fn obstacle_rotation(i : Int, j : Int) -> @math.Quat {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   let decal_material = @pbr.standard_material_add(

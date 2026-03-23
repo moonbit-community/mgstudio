@@ -110,7 +110,7 @@ fn bloom_camera_entity(
 
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let asset_server = match
     (try! world.get_resource(@asset.asset_server_resource_key())) {
     Some(asset_server) => asset_server
@@ -223,7 +223,7 @@ fn update_bloom_settings(
 ) -> Unit {
   guard bloom_camera_entity(camera_query) is Some(camera_entity) else { return }
   let world = @app.current_world().unwrap()
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let bloom_store = world.component(@post_process.ecs_key_bloom)
   let current_bloom = bloom_store.get(camera_entity)
   @text.text_set_content(instructions.get().handle, bloom_text(current_bloom))

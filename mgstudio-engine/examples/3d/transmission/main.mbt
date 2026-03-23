@@ -169,7 +169,7 @@ fn camera_set_screen_space_transmission(
   value : @post_process.ScreenSpaceTransmission,
 ) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
-    let tick = world.read_change_tick()
+    let tick = world.read_sequence()
     let store = world.component(@post_process.ecs_key_screen_space_transmission)
     if store.contains(camera_entity) {
       store.set(camera_entity, value, tick) |> ignore
@@ -211,7 +211,7 @@ fn camera_taa_enabled(world : @ecs.World) -> Bool {
 ///|
 fn camera_toggle_hdr(world : @ecs.World) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
-    let tick = world.read_change_tick()
+    let tick = world.read_sequence()
     let store = world.component(@pbr.ecs_key_hdr)
     if store.contains(camera_entity) {
       store.remove(camera_entity) |> ignore
@@ -224,7 +224,7 @@ fn camera_toggle_hdr(world : @ecs.World) -> Unit {
 ///|
 fn camera_toggle_depth_prepass(world : @ecs.World) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
-    let tick = world.read_change_tick()
+    let tick = world.read_sequence()
     let store = world.component(@pbr.ecs_key_depth_prepass)
     if store.contains(camera_entity) {
       store.remove(camera_entity) |> ignore
@@ -237,7 +237,7 @@ fn camera_toggle_depth_prepass(world : @ecs.World) -> Unit {
 ///|
 fn camera_toggle_taa(world : @ecs.World) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
-    let tick = world.read_change_tick()
+    let tick = world.read_sequence()
     let jitter_store = world.component(@post_process.ecs_key_temporal_jitter)
     let taa_store = world.component(
       @post_process.ecs_key_temporal_anti_aliasing,
@@ -459,7 +459,7 @@ fn spawn_mesh(
 
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   world.insert_resource(
     @pbr.ecs_key_point_light_shadow_map,
@@ -718,7 +718,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
       Some(@post_process.ScreenSpaceTransmission::default()),
     )
     .spawn(world)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world
   .component(@post_process.ecs_key_bloom)
@@ -790,7 +790,7 @@ fn set_hud_text(world : @ecs.World) -> Unit {
 fn apply_camera_transform(world : @ecs.World) -> Unit {
   if transmission_state.val.camera is Some(camera_entity) {
     let camera_pos = transmission_state.val.camera_translation
-    let tick = world.read_change_tick()
+    let tick = world.read_sequence()
     world
     .component(@transform.ecs_key_transform)
     .set(
@@ -1073,7 +1073,7 @@ fn flicker_system(world : @ecs.World) -> Unit {
   let b = @math.cos(s * 5.0F) * 0.0125F + @math.cos(s * 3.0F) * 0.025F
   let c = @math.cos(s * 7.0F) * 0.0125F + @math.cos(s * 2.0F) * 0.025F
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   if transmission_state.val.flame_light is Some(light_entity) {
     if world.component(@pbr.ecs_key_point_light).get(light_entity)

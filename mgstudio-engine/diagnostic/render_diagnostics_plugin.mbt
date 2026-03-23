@@ -235,7 +235,7 @@ fn render_diagnostics_collect_snapshot() -> RenderDiagnosticsMeasurements {
 
 ///|
 fn render_diagnostics_system(world : @ecs.World) -> Unit {
-  let tick = @app.current_system_ticks().this_run
+  let tick = @app.current_system_sequence().this_run
   guard render_diagnostics_store_ref_mut(world, tick) is Some(store_ref) else {
     return
   }

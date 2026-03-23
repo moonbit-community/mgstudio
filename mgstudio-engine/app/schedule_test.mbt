@@ -27,15 +27,15 @@ test "app: run_if skips system execution" {
 }
 
 ///|
-test "app: run_if evaluates with condition system ticks" {
+test "app: run_if evaluates with condition system sequence" {
   let observed : Array[(Int, Int)] = []
   let system_ran = Ref::new(false)
   let app = App::new(@ecs.World::new()).add_system_config(
     system(fn(_world : @ecs.World) { system_ran.val = true }).run_if(fn(
       _world : @ecs.World,
     ) {
-      let ticks = current_system_ticks()
-      observed.push((ticks.last_run, ticks.this_run))
+      let sequence = current_system_sequence()
+      observed.push((sequence.last_run, sequence.this_run))
       false
     }),
   )
@@ -394,22 +394,22 @@ impl SystemParam for Param6 with store(self, _state) {
 }
 
 ///|
-struct TickParam {
-  ticks : @core.SystemTicks
+struct SequenceParam {
+  sequence : @core.SystemSequence
 }
 
 ///|
-impl SystemParam for TickParam with init_state(_world) {
+impl SystemParam for SequenceParam with init_state(_world) {
   Json::null()
 }
 
 ///|
-impl SystemParam for TickParam with get(_state) {
-  { ticks: current_system_ticks() }
+impl SystemParam for SequenceParam with get(_state) {
+  { sequence: current_system_sequence() }
 }
 
 ///|
-impl SystemParam for TickParam with store(self, _state) {
+impl SystemParam for SequenceParam with store(self, _state) {
   ignore(self)
 }
 
@@ -517,15 +517,15 @@ test "app: system_param6 injects parameters in order" {
 }
 
 ///|
-test "app: system param can read current system ticks" {
+test "app: system param can read current system sequence" {
   let log : Array[(Int, Int)] = []
   let app = App::new(@ecs.World::new())
   app
-  .add_system_param(fn(param : TickParam) {
-    log.push((param.ticks.last_run, param.ticks.this_run))
+  .add_system_param(fn(param : SequenceParam) {
+    log.push((param.sequence.last_run, param.sequence.this_run))
   })
-  .add_system_param(fn(param : TickParam) {
-    log.push((param.ticks.last_run, param.ticks.this_run))
+  .add_system_param(fn(param : SequenceParam) {
+    log.push((param.sequence.last_run, param.sequence.this_run))
   })
   .run_once()
   |> ignore

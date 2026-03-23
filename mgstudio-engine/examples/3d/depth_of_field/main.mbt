@@ -106,11 +106,7 @@ fn set_camera_projection(world : @ecs.World, fov : Float) -> Unit {
   }
   world
   .component(@pbr.ecs_key_projection)
-  .set(
-    camera,
-    @pbr.Projection::Perspective(perspective),
-    world.read_change_tick(),
-  )
+  .set(camera, @pbr.Projection::Perspective(perspective), world.read_sequence())
   |> ignore
 }
 
@@ -214,7 +210,7 @@ fn setup(world : @ecs.World) -> Unit {
     camera: None,
     help_text: None,
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   let camera = @pbr.Camera3dBundle::new(

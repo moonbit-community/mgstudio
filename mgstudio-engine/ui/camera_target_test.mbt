@@ -14,7 +14,7 @@
 
 ///|
 fn seed_ui_context(world : @ecs.World) -> Int {
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   get_ui_context_resource(world).insert(
     UiContext::new(
       @asset.Handle::new(1),
@@ -162,7 +162,7 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
 ///|
 test "ui: explicit UiTargetCamera propagates from root and drives logical render target info" {
   let world = @ecs.World::new()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   get_ui_scale_resource(world).insert(UiScale::new(2.0F), tick)
 
   let target_camera = world.spawn_empty()
@@ -227,7 +227,7 @@ test "ui: explicit UiTargetCamera propagates from root and drives logical render
 ///|
 test "ui: layout resolves each root against its propagated target viewport" {
   let world = @ecs.World::new()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
 
   let camera_a = world.spawn_empty()
   @sprite.get_camera_store(world).insert(

@@ -32,7 +32,7 @@ let state : Ref[SanityState] = Ref::new({ ball: None })
 
 ///|
 fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let cfg_res = @physics3d.get_physics3d_config_resource(world)
   match cfg_res.get() {
     Some(cfg) => {

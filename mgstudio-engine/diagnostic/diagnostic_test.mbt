@@ -30,7 +30,7 @@ test "diagnostic: max_history_length zero keeps only latest measurement" {
 }
 
 ///|
-test "diagnostic: same system tick overwrites the latest measurement" {
+test "diagnostic: same system sequence overwrites the latest measurement" {
   let diagnostic = Diagnostic::new(DiagnosticPath::new("test"))
   diagnostic.add_measurement(
     DiagnosticMeasurement::new(@core.Instant::from_secs_f32(1.0F), 10.0F),

@@ -77,7 +77,7 @@ fn[T] register_asset_event_bridge(
     if !world.contains_message(message_key) {
       world.init_message(message_key)
     }
-    match (try! world.get_resource_ref_mut(key, world.read_change_tick())) {
+    match (try! world.get_resource_ref_mut(key, world.read_sequence())) {
       Some(assets_ref) => {
         let events = assets_ref.val.drain_events()
         for event in events {

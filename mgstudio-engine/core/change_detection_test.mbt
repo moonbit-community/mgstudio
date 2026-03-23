@@ -13,9 +13,9 @@
 // limitations under the License.
 
 ///|
-test "change_detection: system context stores execution window" {
-  let ctx = SystemContext::new()
-  ctx.set(SystemTicks::new(2, 5))
-  let ticks = ctx.ticks()
-  inspect(ticks.last_run == 2 && ticks.this_run == 5, content="true")
+test "change_detection: system context stores execution sequence window" {
+  let ctx = SystemSequenceContext::new()
+  ctx.set(SystemSequence::new(2, 5))
+  let sequence = ctx.sequence()
+  inspect(sequence.last_run == 2 && sequence.this_run == 5, content="true")
 }

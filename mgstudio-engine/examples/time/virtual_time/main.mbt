@@ -92,12 +92,12 @@ fn update_virtual_time_resource(
   world : @ecs.World,
   update : (@time.Time[@time.Virtual]) -> @time.Time[@time.Virtual],
 ) -> Unit {
-  let change_tick = world.increment_change_tick()
+  let sequence = world.advance_sequence()
   let virtual_ref = try! world
-    .get_resource_ref_mut(@time.virtual_time_resource_key(), change_tick)
+    .get_resource_ref_mut(@time.virtual_time_resource_key(), sequence)
     .unwrap()
   let time_ref = try! world
-    .get_resource_ref_mut(@time.default_time_resource_key(), change_tick)
+    .get_resource_ref_mut(@time.default_time_resource_key(), sequence)
     .unwrap()
   let next_virtual = update(virtual_ref.val)
   virtual_ref.val = next_virtual
@@ -133,7 +133,7 @@ fn update_info_text(world : @ecs.World) -> Unit {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   virtual_time_state.val = { real_text: None, virtual_text: None }
 
   update_virtual_time_resource(world, fn(

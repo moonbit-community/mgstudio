@@ -171,7 +171,7 @@ fn set_global_ambient_light(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let state = specular_tint_state.val
   state.tint_type = TintType::Solid
   state.hue_deg = 0.0F
@@ -324,7 +324,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
       transform.translation.y,
       rotated_z,
     ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
-    world.read_change_tick(),
+    world.read_sequence(),
   )
   |> ignore
 }
@@ -382,7 +382,7 @@ fn update_help_text(_world : @ecs.World) -> Unit {
   let state = specular_tint_state.val
   guard state.help_text is Some(help_entity) else { return }
   guard @app.current_world() is Some(world) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(help_entity) is Some(text_value) else { return }
   text_value.content = app_status_help_text(state.tint_type)

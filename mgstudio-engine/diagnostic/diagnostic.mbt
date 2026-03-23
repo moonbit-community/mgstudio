@@ -427,11 +427,9 @@ pub impl @app.SystemParam for Diagnostics with init_state(world) {
 ///|
 fn diagnostics_store_ref_mut(
   world : @ecs.World,
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
 ) -> Ref[DiagnosticsStore]? {
-  try
-    world.get_resource_ref_mut(DiagnosticsStore::resource(), change_tick)
-  catch {
+  try world.get_resource_ref_mut(DiagnosticsStore::resource(), sequence) catch {
     _ => None
   } noraise {
     value => value
@@ -440,7 +438,7 @@ fn diagnostics_store_ref_mut(
 
 ///|
 pub impl @app.SystemParam for Diagnostics with get(_state) {
-  let tick = @app.current_system_ticks().this_run
+  let tick = @app.current_system_sequence().this_run
   let world = @app.current_world().unwrap()
   match diagnostics_store_ref_mut(world, tick) {
     Some(store_ref) => Diagnostics::{ store_ref, }
@@ -470,7 +468,7 @@ pub fn Diagnostics::add_measurement(
       }
       diagnostic_ref.val.add_measurement(
         measurement,
-        @app.current_system_ticks().this_run,
+        @app.current_system_sequence().this_run,
       )
     }
     None => ()
@@ -483,14 +481,14 @@ pub fn register_diagnostic(
   diagnostic : Diagnostic,
 ) -> @app.App[@ecs.World] {
   let world = app.world()
-  let tick = @app.current_system_ticks().this_run
+  let tick = @app.current_system_sequence().this_run
   if (try world.get_resource(DiagnosticsStore::resource()) catch {
       _ => None
     } noraise {
       value => value
     })
     is None {
-    world.insert_resource_with_change_tick(
+    world.insert_resource_with_sequence(
       DiagnosticsStore::resource(),
       DiagnosticsStore::default(),
       tick,

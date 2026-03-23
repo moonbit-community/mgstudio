@@ -47,18 +47,18 @@ pub fn[T] ResourceAccess::get(self : ResourceAccess[T]) -> T? {
 pub fn[T] ResourceAccess::insert(
   self : ResourceAccess[T],
   value : T,
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
 ) -> Unit {
-  self.world.insert_resource_with_change_tick(self.key, value, change_tick)
+  self.world.insert_resource_with_sequence(self.key, value, sequence)
 }
 
 ///|
 pub fn[T] ResourceAccess::set(
   self : ResourceAccess[T],
   value : T,
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
 ) -> Bool {
-  self.insert(value, change_tick)
+  self.insert(value, sequence)
   true
 }
 
@@ -66,9 +66,9 @@ pub fn[T] ResourceAccess::set(
 pub fn[T] ResourceAccess::upsert(
   self : ResourceAccess[T],
   value : T,
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
 ) -> Unit {
-  self.insert(value, change_tick)
+  self.insert(value, sequence)
 }
 
 ///|
@@ -81,11 +81,11 @@ pub fn[T] ResourceAccess::remove(self : ResourceAccess[T]) -> T? {
 ///|
 pub fn[T] ResourceAccess::update(
   self : ResourceAccess[T],
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
   update : (T) -> T,
 ) -> Bool {
   match self.get() {
-    Some(value) => self.set(update(value), change_tick)
+    Some(value) => self.set(update(value), sequence)
     None => false
   }
 }

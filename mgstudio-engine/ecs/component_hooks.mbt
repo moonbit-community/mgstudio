@@ -74,8 +74,8 @@ pub fn DeferredWorld::world(self : DeferredWorld) -> World {
 }
 
 ///|
-pub fn DeferredWorld::read_change_tick(self : DeferredWorld) -> @core.Tick {
-  self.world.read_change_tick()
+pub fn DeferredWorld::read_sequence(self : DeferredWorld) -> @core.Sequence {
+  self.world.read_sequence()
 }
 
 ///|

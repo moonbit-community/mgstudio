@@ -1458,14 +1458,14 @@ let animation_triggered_events : Ref[@core.Messages[AnimationTriggeredEvent]] = 
 
 ///|
 pub impl @core.Message for AnimationTriggeredEvent with reader(
-  ticks : @core.SystemTicks,
+  sequence : @core.SystemSequence,
 ) {
-  animation_triggered_events.val.reader(ticks)
+  animation_triggered_events.val.reader(sequence)
 }
 
 ///|
 pub impl @core.Message for AnimationTriggeredEvent with writer(
-  tick : @core.Tick,
+  tick : @core.Sequence,
 ) {
   animation_triggered_events.val.writer(tick)
 }
@@ -2994,7 +2994,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
 
 ///|
 pub fn trigger_events(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
     tick,
   )

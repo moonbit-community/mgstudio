@@ -101,7 +101,7 @@ fn set_visibility(
   entity : @core.Entity,
   visible : Bool,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let value = if visible {
     @visibility.Visibility::Inherited
   } else {
@@ -135,7 +135,7 @@ fn set_primitive_transform(
   primitive : BeamPrimitive,
   transform : @transform.Transform,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world
   .component(@transform.ecs_key_transform)
   .set(primitive.entity, transform, tick)
@@ -336,7 +336,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let directional_light = world.spawn_empty()
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world
   .component(@pbr.ecs_key_directional_light)
   .insert(

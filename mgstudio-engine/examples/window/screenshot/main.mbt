@@ -37,7 +37,7 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_scene(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
@@ -104,7 +104,7 @@ fn spawn_ui(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
   world
@@ -200,6 +200,6 @@ fn screenshot_saving(world : @ecs.World) -> Unit {
   cursor_store.insert(
     window,
     @window.CursorIcon::from(@window.SystemCursorIcon::Progress),
-    world.read_change_tick(),
+    world.read_sequence(),
   )
 }

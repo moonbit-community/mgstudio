@@ -177,8 +177,8 @@ struct ResourceSlot {
 pub struct World {
   world_id : Int
   entities : @core.Entities
-  mut change_tick : @core.Tick
-  mut system_context : @core.SystemContext
+  mut sequence : @core.Sequence
+  mut system_context : @core.SystemSequenceContext
   component_columns : Map[Int, Ref[@core.ComponentStore[ErasedValue]]]
   required_components : Map[Int, Ref[RequiredComponentsState]]
   used_components : Map[Int, Bool]
@@ -197,8 +197,8 @@ pub fn World::new() -> World {
   World::{
     world_id,
     entities: @core.Entities::new(),
-    change_tick: 0,
-    system_context: @core.SystemContext::new(),
+    sequence: 0,
+    system_context: @core.SystemSequenceContext::new(),
     component_columns: {},
     required_components: {},
     used_components: {},
@@ -269,7 +269,7 @@ pub fn World::despawn(
       store_ref.val.remove(entity) is Some(_) {
       self.run_remove_observers(entity, key_id)
       self.ensure_removed_component_messages(key_id).val.send(
-        component_write_change_tick(self),
+        component_write_sequence(self),
         entity,
       )
     }
@@ -290,7 +290,7 @@ pub fn[T] World::set(
     entity,
     key.id(),
     erased_value(value),
-    component_write_change_tick(self),
+    component_write_sequence(self),
     caller=hook_caller_from_loc(loc),
   )
 }
@@ -335,7 +335,7 @@ pub fn[T] World::update(
   let new_payload = erased_value(new_value)
   let caller = hook_caller_from_loc(loc)
   self.run_component_replace_hooks(entity, key.id(), caller~)
-  store_ref.val.set(entity, new_payload, component_write_change_tick(self))
+  store_ref.val.set(entity, new_payload, component_write_sequence(self))
   |> ignore
   self.run_component_insert_hooks(entity, key.id(), caller~)
   self.end_deferred_hook_command_scope(outermost)
@@ -362,7 +362,7 @@ pub fn[T] World::remove(
           ignore(store_ref.val.remove(entity))
           self.run_remove_observers(entity, key.id())
           self.ensure_removed_component_messages(key.id()).val.send(
-            component_write_change_tick(self),
+            component_write_sequence(self),
             entity,
           )
           self.end_deferred_hook_command_scope(outermost)
@@ -460,32 +460,32 @@ fn[T] World::component_value(
 }
 
 ///|
-pub fn World::read_change_tick(self : World) -> @core.Tick {
-  self.change_tick
+pub fn World::read_sequence(self : World) -> @core.Sequence {
+  self.sequence
 }
 
 ///|
-pub fn World::increment_change_tick(self : World) -> @core.Tick {
-  self.change_tick = self.change_tick + 1
-  self.change_tick
+pub fn World::advance_sequence(self : World) -> @core.Sequence {
+  self.sequence = self.sequence + 1
+  self.sequence
 }
 
 ///|
-pub fn World::get_system_context(self : World) -> @core.SystemContext {
+pub fn World::get_sequence_context(self : World) -> @core.SystemSequenceContext {
   self.system_context
 }
 
 ///|
-pub fn World::set_system_context(
+pub fn World::set_sequence_context(
   self : World,
-  ctx : @core.SystemContext,
+  ctx : @core.SystemSequenceContext,
 ) -> Unit {
   self.system_context = ctx
 }
 
 ///|
-fn component_write_change_tick(world : World) -> @core.Tick {
-  let tick = world.read_change_tick()
+fn component_write_sequence(world : World) -> @core.Sequence {
+  let tick = world.read_sequence()
   if tick > 0 {
     tick
   } else {

@@ -88,7 +88,7 @@ fn spawn_ui_text(
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let entity = world.spawn_empty()
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world
   .component(@hierarchy.ecs_key_parent)
   .insert(entity, @hierarchy.Parent::new(root), tick)
@@ -127,7 +127,7 @@ fn spawn_ui_text(
 
 ///|
 fn spawn_ui_overlay(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let root = world.spawn_empty()
   world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
   world
@@ -165,7 +165,7 @@ fn setup(world : @ecs.World) -> Unit {
     "sounds/Windless Slopes.ogg",
   )
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let music = world.spawn_empty()
   world
   .component(@audio.ecs_key_audio_source_player)
@@ -196,7 +196,7 @@ fn update_progress_text(world : @ecs.World) -> Unit {
   guard world.component(@audio.ecs_key_audio_sink).get(music) is Some(sink) else {
     return
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(entity) is Some(text_value) else { return }
   text_value.content = "Progress: \{sink.position().as_secs_f32()}s"
@@ -217,7 +217,7 @@ fn update_speed(world : @ecs.World) -> Unit {
     @math.sin(world_time(world).elapsed_seconds() / 5.0F) + 1.0F,
     0.1F,
   )
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world
   .component(@audio.ecs_key_audio_sink)
   .update(music, tick, fn(current : @audio.AudioSink) {
@@ -244,7 +244,7 @@ fn mute(world : @ecs.World) -> Unit {
     return
   }
   guard find_music_entity(world) is Some(music) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world
   .component(@audio.ecs_key_audio_sink)
   .update(music, tick, fn(sink : @audio.AudioSink) { sink.toggle_mute() })
@@ -262,7 +262,7 @@ fn volume(world : @ecs.World) -> Unit {
   }
 
   guard find_music_entity(world) is Some(music) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world
   .component(@audio.ecs_key_audio_sink)
   .update(music, tick, fn(sink : @audio.AudioSink) {

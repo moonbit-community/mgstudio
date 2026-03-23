@@ -44,7 +44,7 @@ fn make_collider_builder(
 
 ///|
 pub fn physics3d_init_resources_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let ecs_world = world
   let cfg_res = get_physics3d_config_resource(ecs_world)
   if !cfg_res.is_present() {
@@ -62,7 +62,7 @@ pub fn physics3d_init_resources_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn physics3d_clear_events_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let ecs_world = world
   let ev_res = get_physics3d_events_resource(ecs_world)
   guard ev_res.get() is Some(events) else { return }
@@ -73,7 +73,7 @@ pub fn physics3d_clear_events_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn physics3d_cleanup_despawned_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get() is Some(ctx_value) else { return }
@@ -166,7 +166,7 @@ pub fn physics3d_cleanup_despawned_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn physics3d_sync_insertions_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get() is Some(ctx_value) else { return }
@@ -303,7 +303,7 @@ pub fn physics3d_sync_insertions_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn physics3d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get() is Some(ctx_value) else { return }
@@ -377,7 +377,7 @@ pub fn physics3d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn physics3d_step_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let ecs_world = world
   let cfg_res = get_physics3d_config_resource(ecs_world)
   let ctx_res = get_physics3d_context_resource(ecs_world)
@@ -446,7 +446,7 @@ pub fn physics3d_step_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn physics3d_writeback_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get() is Some(ctx) else { return }

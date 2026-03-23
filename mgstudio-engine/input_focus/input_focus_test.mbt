@@ -37,7 +37,7 @@ fn input_focus_resource_ref_mut(
   match
     (try! world.get_resource_ref_mut(
       @input_focus.InputFocus::resource(),
-      world.increment_change_tick(),
+      world.advance_sequence(),
     )) {
     Some(value) => value
     None => abort("missing mutable InputFocus resource")
@@ -51,7 +51,7 @@ fn input_focus_visible_resource_ref_mut(
   match
     (try! world.get_resource_ref_mut(
       @input_focus.InputFocusVisible::resource(),
-      world.increment_change_tick(),
+      world.advance_sequence(),
     )) {
     Some(value) => value
     None => abort("missing mutable InputFocusVisible resource")

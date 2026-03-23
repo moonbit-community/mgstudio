@@ -114,7 +114,7 @@ fn apply_distance_fog_from_stub(world : @ecs.World, phase : Float) -> Unit {
     .with_directional_light_exponent(24.0F)
     .with_falloff(@pbr.FogFalloff3d::from_visibility_squared(visibility))
   guard fog_volumes_state.val.camera is Some(camera) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let camera3d_store = world.component(@pbr.ecs_key_camera3d)
   let camera3d = match camera3d_store.get(camera) {
     Some(value) => value
@@ -207,7 +207,7 @@ fn spawn_volume_proxy(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   // Two elongated cubes approximate bunny ears for a fog-volume silhouette.
   let ear_left = @pbr.MeshMaterial3dBundle::new(
@@ -262,7 +262,7 @@ fn setup(world : @ecs.World) -> Unit {
     .with_absorption(0.3F)
     .with_fog_color(@sprite.Color::new(0.45F, 0.5F, 0.56F, 1.0F))
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
@@ -323,7 +323,7 @@ fn rotate_camera(world : @ecs.World) -> Unit {
     @math.sin(angle) * CAMERA_RADIUS,
   )
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world
   .component(@transform.ecs_key_transform)
   .set(

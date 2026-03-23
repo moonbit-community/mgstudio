@@ -107,7 +107,7 @@ pub fn audio_source_add(
   world : @ecs.World,
   source : AudioSource,
 ) -> @asset.Handle[AudioSource] {
-  let tick = @app.current_system_ticks().this_run
+  let tick = @app.current_system_sequence().this_run
   let assets_ref = audio_resource_ensure_ref_mut(
     world,
     AudioSourceAssets::resource(),
@@ -134,7 +134,7 @@ pub fn audio_source_set(
   handle : @asset.Handle[AudioSource],
   source : AudioSource,
 ) -> Bool {
-  let tick = @app.current_system_ticks().this_run
+  let tick = @app.current_system_sequence().this_run
   guard audio_resource_ref_mut(world, AudioSourceAssets::resource(), tick)
     is Some(assets_ref) else {
     return false
@@ -159,7 +159,7 @@ pub fn audio_source_load(
   path : String,
 ) -> @asset.Handle[AudioSource]? {
   let canonical_path = @asset.asset_canonical_path(path)
-  let tick = @app.current_system_ticks().this_run
+  let tick = @app.current_system_sequence().this_run
   let assets_ref = audio_resource_ensure_ref_mut(
     world,
     AudioSourceAssets::resource(),

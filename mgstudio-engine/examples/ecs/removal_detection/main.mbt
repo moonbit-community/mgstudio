@@ -39,7 +39,7 @@ fn world_asset_server(world : @ecs.World) -> @asset.AssetServer {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   let asset_server = world_asset_server(world)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),

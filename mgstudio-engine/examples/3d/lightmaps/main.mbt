@@ -114,7 +114,7 @@ fn setup(world : @ecs.World) -> Unit {
   lightmaps_state.val.help_text = None
 
   let asset_server = @asset.AssetServer::new()
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   set_global_ambient_light(world, @sprite.Color::white(), 0.0F)
 

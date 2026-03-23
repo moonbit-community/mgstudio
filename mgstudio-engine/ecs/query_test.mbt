@@ -257,23 +257,23 @@ test "ecs query: component ref exposes live component values" {
   let entity = world.spawn()
 
   try! world.set(entity, comp_position, Position::{ x: 1, y: 2 })
-  let ctx1 = @core.SystemContext::new()
-  ctx1.set(@core.SystemTicks::new(0, 1))
-  world.set_system_context(ctx1)
+  let ctx1 = @core.SystemSequenceContext::new()
+  ctx1.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx1)
   let initial_ref = (try! world.get_ref(entity, comp_position)).unwrap()
   inspect(initial_ref.value(), content="{x: 1, y: 2}")
 
-  world.increment_change_tick() |> ignore
-  world.increment_change_tick() |> ignore
+  world.advance_sequence() |> ignore
+  world.advance_sequence() |> ignore
   inspect(
     try! world.update(entity, comp_position, fn(position) {
       Position::{ x: position.x + 10, y: position.y + 20 }
     }),
     content="true",
   )
-  let ctx2 = @core.SystemContext::new()
-  ctx2.set(@core.SystemTicks::new(1, 2))
-  world.set_system_context(ctx2)
+  let ctx2 = @core.SystemSequenceContext::new()
+  ctx2.set(@core.SystemSequence::new(1, 2))
+  world.set_sequence_context(ctx2)
   let changed_ref = (try! world.get_ref(entity, comp_position)).unwrap()
   inspect(changed_ref.value(), content="{x: 11, y: 22}")
 }
@@ -308,8 +308,8 @@ test "ecs query: structural filters compose without change detection" {
     content="2",
   )
 
-  world.increment_change_tick() |> ignore
-  world.increment_change_tick() |> ignore
+  world.advance_sequence() |> ignore
+  world.advance_sequence() |> ignore
   inspect(
     try! world.update(e1, comp_position, fn(position) {
       Position::{ x: position.x + 1, y: position.y + 1 }
@@ -355,9 +355,9 @@ test "ecs query: iter_many_ref preserves filter order without change state" {
   try! world.set(e2, comp_position, Position::{ x: 4, y: 4 })
   try! world.set(e2, comp_velocity, Velocity::{ dx: 5, dy: 5 })
 
-  let ctx = @core.SystemContext::new()
-  ctx.set(@core.SystemTicks::new(0, 1))
-  world.set_system_context(ctx)
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx)
 
   let seen : Array[Int] = []
   let iter = world
@@ -393,9 +393,9 @@ test "ecs query: iter_many_unique_ref rejects duplicates and preserves order" {
   try! world.set(e2, comp_position, Position::{ x: 4, y: 4 })
   try! world.set(e2, comp_velocity, Velocity::{ dx: 5, dy: 5 })
 
-  let ctx = @core.SystemContext::new()
-  ctx.set(@core.SystemTicks::new(0, 1))
-  world.set_system_context(ctx)
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx)
 
   let duplicate_result : Result[
     Query1FilteredManyRef[Position, With[Velocity]],

@@ -157,7 +157,7 @@ fn set_ssao_component(
   camera_entity : @core.Entity,
   ssao : @post_process.ScreenSpaceAmbientOcclusion,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let store = world.component(
     @post_process.ecs_key_screen_space_ambient_occlusion,
   )
@@ -174,7 +174,7 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let world = @app.current_world().unwrap()
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
@@ -428,7 +428,7 @@ fn update(
       temporal_jitter_store.insert(
         camera_entity,
         @post_process.TemporalJitter::default(),
-        world.read_change_tick(),
+        world.read_sequence(),
       )
     }
   }

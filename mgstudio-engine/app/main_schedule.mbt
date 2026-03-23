@@ -251,12 +251,12 @@ fn main_schedule_runtime_state(world : @ecs.World) -> MainScheduleRuntimeState {
 fn main_schedule_write_runtime_state(
   world : @ecs.World,
   state : MainScheduleRuntimeState,
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
 ) -> Unit {
-  world.insert_resource_with_change_tick(
+  world.insert_resource_with_sequence(
     main_schedule_runtime_state_resource_key(),
     state,
-    change_tick,
+    sequence,
   )
 }
 
@@ -264,13 +264,13 @@ fn main_schedule_write_runtime_state(
 fn main_schedule_write_order(
   world : @ecs.World,
   update : (MainScheduleOrder) -> MainScheduleOrder,
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
 ) -> Unit {
   let next_order = update(world_main_schedule_order(world))
-  world.insert_resource_with_change_tick(
+  world.insert_resource_with_sequence(
     main_schedule_order_resource_key(),
     next_order,
-    change_tick,
+    sequence,
   )
 }
 
@@ -279,7 +279,7 @@ fn main_schedule_insert_after_unique(
   world : @ecs.World,
   after : ScheduleStage,
   stage : ScheduleStage,
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
 ) -> Unit {
   main_schedule_write_order(
     world,
@@ -290,7 +290,7 @@ fn main_schedule_insert_after_unique(
         order.insert_after(after, stage)
       }
     },
-    change_tick,
+    sequence,
   )
 }
 
@@ -299,7 +299,7 @@ fn main_schedule_insert_startup_before_unique(
   world : @ecs.World,
   before : ScheduleStage,
   stage : ScheduleStage,
-  change_tick : @core.Tick,
+  sequence : @core.Sequence,
 ) -> Unit {
   main_schedule_write_order(
     world,
@@ -310,18 +310,18 @@ fn main_schedule_insert_startup_before_unique(
         order.insert_startup_before(before, stage)
       }
     },
-    change_tick,
+    sequence,
   )
 }
 
 ///|
 fn reset_main_schedule_resources(world : @ecs.World) -> Unit {
-  world.insert_resource_with_change_tick(
+  world.insert_resource_with_sequence(
     main_schedule_order_resource_key(),
     MainScheduleOrder::default(),
     1,
   )
-  world.insert_resource_with_change_tick(
+  world.insert_resource_with_sequence(
     fixed_main_schedule_order_resource_key(),
     FixedMainScheduleOrder::default(),
     1,
@@ -359,7 +359,7 @@ fn run_main_schedule_startup(
   main_schedule_write_runtime_state(
     world,
     MainScheduleRuntimeState::{ startup_ran: true },
-    world.increment_change_tick(),
+    world.advance_sequence(),
   )
 }
 

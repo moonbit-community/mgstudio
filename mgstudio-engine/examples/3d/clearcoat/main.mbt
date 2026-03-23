@@ -138,7 +138,7 @@ fn update_help_text() -> Unit {
 ///|
 fn apply_light_mode(world : @ecs.World) -> Unit {
   guard clearcoat_state.val.light is Some(light) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world.component(@pbr.ecs_key_point_light).remove(light) |> ignore
   world.component(@pbr.ecs_key_directional_light).remove(light) |> ignore
 
@@ -175,7 +175,7 @@ fn spawn_sphere(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   clearcoat_state.val.sphere_entities.clear()
   clearcoat_state.val.sphere_positions.clear()
   clearcoat_state.val.light_mode = LIGHT_MODE_POINT
@@ -347,7 +347,7 @@ fn animate_light(world : @ecs.World) -> Unit {
   )
   let target = @math.Vec3::zero()
   let up = @math.Vec3::new(0.0F, 1.0F, 0.0F)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   if clearcoat_state.val.light is Some(entity) {
     world
@@ -367,7 +367,7 @@ fn animate_light(world : @ecs.World) -> Unit {
 fn animate_spheres(world : @ecs.World) -> Unit {
   let angle = SPHERE_ROTATION_SPEED * world_time(world).elapsed_seconds()
   let rotation = @math.Quat::from_rotation_y(angle)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let count = clearcoat_state.val.sphere_entities.length()
   for i in 0..<count {
     let entity = clearcoat_state.val.sphere_entities[i]

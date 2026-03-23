@@ -3314,7 +3314,7 @@ fn render_state_update(
   world : @ecs.World,
   update : (Ref[RenderState]) -> Unit,
 ) -> Bool {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let res = get_render_state_resource(world)
   guard res.get() is Some(state_value) else { return false }
   let state = Ref::new(state_value)
@@ -3325,7 +3325,7 @@ fn render_state_update(
 
 ///|
 fn ensure_render_state_resource(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let res = get_render_state_resource(world)
   if !res.is_present() {
     res.insert(RenderState::new(), tick)
@@ -3474,7 +3474,7 @@ fn pan_camera_world_time(world : @ecs.World) -> @time.Time[Unit] {
 ///|
 pub fn run_pancamera_controller(world : @ecs.World) -> Unit {
   let delta_seconds = pan_camera_world_time(world).delta_seconds()
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let camera_store = world.component(ecs_key_camera)
   let transform_store = world.component(@transform.ecs_key_transform)
   let pan_camera_store = world.component(ecs_key_pan_camera)
@@ -3801,7 +3801,7 @@ pub fn render2d_create_render_target(
 ) -> @asset.Handle[@asset.Image] {
   let id = @render.host_gpu_create_render_target(width~, height~, nearest~)
   ensure_render_state_resource(world)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let res = get_render_state_resource(world)
   if res.get() is Some(state_value) {
     let rs = Ref::new(state_value)
@@ -3863,7 +3863,7 @@ pub impl @app.CommandSpawnComponents for SpriteBundle with spawn_components(
   self,
   world,
   entity,
-  _change_tick,
+  _sequence,
   loc~,
 ) {
   sprite_bundle_insert(self, world, entity, loc~)
@@ -3904,7 +3904,7 @@ pub impl @app.CommandSpawnComponents for Camera2dBundle with spawn_components(
   self,
   world,
   entity,
-  _change_tick,
+  _sequence,
   loc~,
 ) {
   camera2d_bundle_insert(self, world, entity, loc~)
@@ -4655,7 +4655,7 @@ fn camera_color_grading(
 ///|
 pub fn render2d_camera_system(world : @ecs.World) -> Unit {
   guard render_state_ref(world) is Some(render_state_ref_value) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let ecs_world = world
   let camera2d_store = get_camera2d_store(ecs_world)
   let camera_store = get_camera_store(ecs_world)

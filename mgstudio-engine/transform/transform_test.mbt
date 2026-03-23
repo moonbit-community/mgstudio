@@ -27,14 +27,14 @@ fn approx_eq(a : Float, b : Float) -> Bool {
 }
 
 ///|
-fn next_system_ticks(world : @ecs.World) -> @core.SystemTicks {
-  let this_run = world.increment_change_tick()
-  let last_run = world.get_system_context().ticks().this_run
-  let ticks = @core.SystemTicks::new(last_run, this_run)
-  let ctx = @core.SystemContext::new()
-  ctx.set(ticks)
-  world.set_system_context(ctx)
-  ticks
+fn next_system_sequence(world : @ecs.World) -> @core.SystemSequence {
+  let this_run = world.advance_sequence()
+  let last_run = world.get_sequence_context().sequence().this_run
+  let sequence = @core.SystemSequence::new(last_run, this_run)
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(sequence)
+  world.set_sequence_context(ctx)
+  sequence
 }
 
 ///|
@@ -54,7 +54,7 @@ test "transform ecs: root global matches local" {
   let entity = world.spawn_empty()
 
   prepare_transform_world(world)
-  next_system_ticks(world) |> ignore
+  next_system_sequence(world) |> ignore
   try! world.set(
     entity,
     ecs_key_transform,
@@ -97,7 +97,7 @@ test "transform ecs: parent translation affects child global translation" {
     static_transform_optimizations_resource_key(),
     StaticTransformOptimizations::enabled(),
   )
-  next_system_ticks(world) |> ignore
+  next_system_sequence(world) |> ignore
   try! world.set(
     parent,
     ecs_key_transform,
@@ -140,7 +140,7 @@ test "transform ecs: propagate preserves global transform until inputs change" {
 
   prepare_transform_world(world)
   // First run: insert Transform, propagate writes GlobalTransform.
-  next_system_ticks(world) |> ignore
+  next_system_sequence(world) |> ignore
   try! world.set(
     entity,
     ecs_key_transform,
@@ -157,7 +157,7 @@ test "transform ecs: propagate preserves global transform until inputs change" {
   inspect(approx_eq(first_global.affine.tx, 1.0F), content="true")
 
   // Second run: no local changes, the propagated value should stay stable.
-  next_system_ticks(world) |> ignore
+  next_system_sequence(world) |> ignore
   mark_dirty_trees(world)
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
@@ -169,7 +169,7 @@ test "transform ecs: propagate preserves global transform until inputs change" {
   )
 
   // Third run: local change, should update.
-  next_system_ticks(world) |> ignore
+  next_system_sequence(world) |> ignore
   try! world.set(
     entity,
     ecs_key_transform,
@@ -193,7 +193,7 @@ test "transform ecs: sync simple transforms updates orphaned entity once parent 
   let child = world.spawn_empty()
 
   prepare_transform_world(world)
-  next_system_ticks(world) |> ignore
+  next_system_sequence(world) |> ignore
   try! world.set(
     parent,
     ecs_key_transform,
@@ -224,7 +224,7 @@ test "transform ecs: sync simple transforms updates orphaned entity once parent 
   let child_before = (try! world.get(child, ecs_key_global_transform)).unwrap()
   inspect(approx_eq(child_before.affine.tx, 3.0F), content="true")
 
-  next_system_ticks(world) |> ignore
+  next_system_sequence(world) |> ignore
   try! (world.remove(child, @hierarchy.ecs_key_parent) |> ignore)
   mark_dirty_trees(world)
   propagate_transforms_system(world)
@@ -241,7 +241,7 @@ test "transform ecs: removing parent updates orphaned parent and child globals" 
   let child = world.spawn_empty()
 
   prepare_transform_world(world)
-  next_system_ticks(world) |> ignore
+  next_system_sequence(world) |> ignore
   try! world.set(
     root,
     ecs_key_transform,
@@ -291,7 +291,7 @@ test "transform ecs: removing parent updates orphaned parent and child globals" 
     content="true",
   )
 
-  next_system_ticks(world) |> ignore
+  next_system_sequence(world) |> ignore
   try! (world.remove(parent, @hierarchy.ecs_key_parent) |> ignore)
   mark_dirty_trees(world)
   propagate_transforms_system(world)
@@ -304,7 +304,7 @@ test "transform ecs: removing parent updates orphaned parent and child globals" 
     content="true",
   )
 
-  next_system_ticks(world) |> ignore
+  next_system_sequence(world) |> ignore
   try! (world.remove(child, @hierarchy.ecs_key_parent) |> ignore)
   mark_dirty_trees(world)
   propagate_transforms_system(world)
@@ -324,7 +324,7 @@ test "transform ecs: inserting Transform auto-inserts required components" {
   let entity = world.spawn_empty()
 
   prepare_transform_world(world)
-  next_system_ticks(world) |> ignore
+  next_system_sequence(world) |> ignore
   try! world.set(
     entity,
     ecs_key_transform,
@@ -351,7 +351,7 @@ test "transform ecs: component access insert also inserts required components" {
   let entity = world.spawn_empty()
 
   prepare_transform_world(world)
-  next_system_ticks(world) |> ignore
+  next_system_sequence(world) |> ignore
   world
   .component(ecs_key_transform)
   .insert(
@@ -361,7 +361,7 @@ test "transform ecs: component access insert also inserts required components" {
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
     ),
-    world.read_change_tick(),
+    world.read_sequence(),
   )
 
   inspect(
@@ -385,7 +385,7 @@ test "transform ecs: mark_dirty_trees marks ancestor chain" {
     static_transform_optimizations_resource_key(),
     StaticTransformOptimizations::enabled(),
   )
-  next_system_ticks(world) |> ignore
+  next_system_sequence(world) |> ignore
   try! world.set(
     parent,
     ecs_key_transform,
@@ -413,7 +413,7 @@ test "transform ecs: mark_dirty_trees marks ancestor chain" {
   propagate_parent_transforms(world)
   sync_simple_transforms_world(world)
 
-  next_system_ticks(world) |> ignore
+  next_system_sequence(world) |> ignore
   try! world.set(
     child,
     ecs_key_transform,
@@ -446,7 +446,7 @@ test "transform ecs: mark_dirty_trees disables static optimization above thresho
     static_transform_optimizations_resource_key(),
     StaticTransformOptimizations::from_threshold(0.3F),
   )
-  next_system_ticks(world) |> ignore
+  next_system_sequence(world) |> ignore
   try! world.set(
     entity_a,
     ecs_key_transform,
@@ -589,7 +589,7 @@ test "transform ecs: reparenting in the same frame preserves global transform" {
   let child = world.spawn_empty()
 
   prepare_transform_world(world)
-  next_system_ticks(world) |> ignore
+  next_system_sequence(world) |> ignore
   try! world.set(
     parent,
     ecs_key_transform,
@@ -621,7 +621,7 @@ test "transform ecs: reparenting in the same frame preserves global transform" {
   let parent_before = (try! world.get(parent, ecs_key_global_transform)).unwrap()
   let child_before = (try! world.get(child, ecs_key_global_transform)).unwrap()
 
-  next_system_ticks(world) |> ignore
+  next_system_sequence(world) |> ignore
   try! (world.remove(child, @hierarchy.ecs_key_parent) |> ignore)
   try! world.set(
     child,

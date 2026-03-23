@@ -16,37 +16,45 @@
 /// Per-system execution sequence primitives used by message readers.
 
 ///|
-pub type Tick = Int
+pub type Sequence = Int
 
 ///|
-pub struct SystemTicks {
-  last_run : Tick
-  this_run : Tick
+pub struct SystemSequence {
+  last_run : Sequence
+  this_run : Sequence
 }
 
 ///|
-pub fn SystemTicks::new(last_run : Tick, this_run : Tick) -> SystemTicks {
+pub fn SystemSequence::new(
+  last_run : Sequence,
+  this_run : Sequence,
+) -> SystemSequence {
   { last_run, this_run }
 }
 
 ///|
-pub struct SystemContext {
-  mut last_run : Tick
-  mut this_run : Tick
+pub struct SystemSequenceContext {
+  mut last_run : Sequence
+  mut this_run : Sequence
 }
 
 ///|
-pub fn SystemContext::new() -> SystemContext {
+pub fn SystemSequenceContext::new() -> SystemSequenceContext {
   { last_run: 0, this_run: 0 }
 }
 
 ///|
-pub fn SystemContext::set(self : SystemContext, system : SystemTicks) -> Unit {
+pub fn SystemSequenceContext::set(
+  self : SystemSequenceContext,
+  system : SystemSequence,
+) -> Unit {
   self.last_run = system.last_run
   self.this_run = system.this_run
 }
 
 ///|
-pub fn SystemContext::ticks(self : SystemContext) -> SystemTicks {
+pub fn SystemSequenceContext::sequence(
+  self : SystemSequenceContext,
+) -> SystemSequence {
   { last_run: self.last_run, this_run: self.this_run }
 }

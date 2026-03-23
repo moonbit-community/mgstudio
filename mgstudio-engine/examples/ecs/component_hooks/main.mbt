@@ -113,7 +113,7 @@ fn update_my_component_index(
 ) -> Unit {
   if !world
     .resource(my_component_index_key)
-    .update(world.read_change_tick(), update) {
+    .update(world.read_sequence(), update) {
     abort("Missing MyComponentIndex resource in component_hooks example")
   }
 }
@@ -122,7 +122,7 @@ fn update_my_component_index(
 fn write_my_message(world : @ecs.DeferredWorld) -> Unit {
   if !world
     .resource(my_message_key.messages_resource())
-    .update(world.read_change_tick(), fn(messages) {
+    .update(world.read_sequence(), fn(messages) {
       ignore(messages.write_message(my_message_key, MyMessage::{  }))
       messages
     }) {

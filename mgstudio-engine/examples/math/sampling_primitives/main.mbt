@@ -562,7 +562,7 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let world = current_world_or_abort()
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   world.insert_resource(RandomSource::resource(), RandomSource::{
     rng: @random.Rand::chacha8(seed=b"bevy-sampling-primitives-seed-04"),
@@ -706,7 +706,7 @@ fn spawn_sample_point(
   mode : SamplingMode,
   sample : @math.Vec3,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let entity = @pbr.MeshMaterial3dBundle::new(
     point_mesh.mesh,
     @pbr.MeshMaterial3d::new(sample_point_material(mode, point_material)),
@@ -734,14 +734,14 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
     for entity in sample_entities {
       try! world.despawn(entity)
     }
-    let tick = world.increment_change_tick()
+    let tick = world.advance_sequence()
     if (try! world.get_resource_ref_mut(PointCounter::resource(), tick))
       is Some(counter) {
       counter.val.count = 0
     }
   }
 
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   guard (try! world.get_resource_ref_mut(SamplingMode::resource(), tick))
     is Some(mode_ref) else {
     return
@@ -859,7 +859,7 @@ fn handle_mouse(
   mouse_buttons : @input.ButtonInput[@window.MouseButton],
 ) -> Unit {
   let world = current_world_or_abort()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
 
   guard (try! world.get_resource_ref_mut(MousePressed::resource(), tick))
     is Some(mouse_pressed_ref) else {
@@ -911,7 +911,7 @@ fn handle_mouse(
 
 ///|
 fn spawn_points(world : @ecs.World) -> Unit {
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   guard (try! world.get_resource_ref_mut(SpawningMode::resource(), tick))
     is Some(spawn_mode_ref) else {
     return
@@ -981,7 +981,7 @@ fn despawn_points(world : @ecs.World) -> Unit {
   if spawn_mode is Manual {
     return
   }
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   guard (try! world.get_resource_ref_mut(PointCounter::resource(), tick))
     is Some(point_counter_ref) else {
     return
@@ -1029,7 +1029,7 @@ fn despawn_points(world : @ecs.World) -> Unit {
 ///|
 fn animate_spawning(world : @ecs.World) -> Unit {
   let delta = default_time_or_default(world).delta_secs()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   let entities : Array[@core.Entity] = []
   world
   .component(SpawningPoint::component())
@@ -1063,7 +1063,7 @@ fn animate_spawning(world : @ecs.World) -> Unit {
 ///|
 fn animate_despawning(world : @ecs.World) -> Unit {
   let delta = default_time_or_default(world).delta_secs()
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   let entities : Array[@core.Entity] = []
   world
   .component(DespawningPoint::component())
@@ -1106,7 +1106,7 @@ fn animate_despawning(world : @ecs.World) -> Unit {
 fn update_camera(world : @ecs.World) -> Unit {
   let rig_store = world.component(CameraRig::component())
   let transform_store = world.component(@transform.Transform::component())
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   let camera_entities : Array[@core.Entity] = []
   rig_store.for_each(fn(entity, _rig) { camera_entities.push(entity) })
   for entity in camera_entities {
@@ -1137,7 +1137,7 @@ fn update_lights(world : @ecs.World) -> Unit {
     2.0F
   }
   let intensity = 40_000.0F * saturation
-  let tick = world.increment_change_tick()
+  let tick = world.advance_sequence()
   let point_light_store = world.component(@pbr.PointLight::component())
   let firefly_entities : Array[@core.Entity] = []
   world

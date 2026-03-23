@@ -28,7 +28,7 @@ pub fn[C] check_parent_has_component_message_key(@ecs.ComponentKey[C]) -> @ecs.M
 
 pub fn current_schedule_stage() -> ScheduleStage?
 
-pub fn current_system_ticks() -> @core.SystemTicks
+pub fn current_system_sequence() -> @core.SystemSequence
 
 pub fn current_world() -> @ecs.World?
 
@@ -348,7 +348,7 @@ pub impl[C : @ecs.Component] @ecs.Message for CheckParentHasComponent[C]
 
 pub struct Commands {
   world : @ecs.World
-  change_tick : Int
+  sequence : Int
   queue : Array[(@ecs.World, Int) -> Unit]
 }
 pub fn Commands::entity(Self, @core.Entity) -> EntityCommands
@@ -693,8 +693,8 @@ pub struct SystemConfig[W] {
   set : String?
   before : Array[String]
   after : Array[String]
-  run_if_last_run_ticks : Array[Int]
-  mut last_run_tick : Int
+  run_if_last_run_sequences : Array[Int]
+  mut last_run_sequence : Int
 }
 pub fn[W] SystemConfig::after(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::before(Self[W], String) -> Self[W]

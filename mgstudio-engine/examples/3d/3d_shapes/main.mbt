@@ -1028,7 +1028,7 @@ fn setup(world : @ecs.World) -> Unit {
     )
   }
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let point_light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
@@ -1116,7 +1116,7 @@ fn rotate(world : @ecs.World) -> Unit {
   }
   let delta = world_time(world).delta_seconds() / 2.0F
   let spin = @math.Quat::from_rotation_y(delta)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   for entry in shapes_state.val.entries {
     if transform_store.get(entry.entity) is Some(transform) {
@@ -1133,7 +1133,7 @@ fn advance_rows(world : @ecs.World) -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Tab) {
     return
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   let count = shapes_state.val.entries.length()
   for i in 0..<count {

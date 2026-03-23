@@ -191,7 +191,7 @@ pub fn KinematicCharacterControllerOutput2d::without_collisions(
 
 ///|
 pub fn physics2d_character_controller_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(current_ctx) else { return }

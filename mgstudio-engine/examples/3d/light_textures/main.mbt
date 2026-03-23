@@ -185,7 +185,7 @@ fn set_proxy_visibility(
   visible : Bool,
 ) -> Unit {
   guard entity is Some(proxy) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let value = if visible {
     @visibility.Visibility::Visible
   } else {
@@ -203,7 +203,7 @@ fn update_directional_light(world : @ecs.World) -> Unit {
     is Some(light) else {
     return
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let any_texture_light_visible = light_textures_state.val.spot_visible ||
     light_textures_state.val.point_visible
   let next_illuminance = if light_textures_state.val.directional_visible {
@@ -236,7 +236,7 @@ fn update_directional_light(world : @ecs.World) -> Unit {
 
 ///|
 fn apply_light_visibility(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   if light_textures_state.val.spot_light is Some(spot_entity) {
     if world.component(@pbr.ecs_key_spot_light).get(spot_entity) is Some(spot) {
       let intensity = if light_textures_state.val.spot_visible {
@@ -279,7 +279,7 @@ fn apply_light_visibility(world : @ecs.World) -> Unit {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
   light_textures_state.val.camera = None
   light_textures_state.val.rotating_cube = None
@@ -495,7 +495,7 @@ fn apply_camera_drag(
   camera_entity : @core.Entity,
   delta : @math.Vec2,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   guard world.component(@transform.ecs_key_transform).get(camera_entity)
     is Some(transform) else {
     return
@@ -521,7 +521,7 @@ fn apply_selection_drag(
   entity : @core.Entity,
   delta : @math.Vec2,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   guard world.component(@transform.ecs_key_transform).get(entity)
     is Some(transform) else {
     return
@@ -708,7 +708,7 @@ fn rotate_cube(world : @ecs.World) -> Unit {
     is Some(transform) else {
     return
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let delta = world_time(world).delta_seconds()
   let rotation = transform.rotation
     .mul(@math.Quat::from_rotation_y(CUBE_ROTATION_SPEED * delta * 60.0F))

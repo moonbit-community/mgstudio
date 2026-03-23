@@ -196,7 +196,7 @@ fn spawn_small_cubes(
 ///|
 fn setup(world : @ecs.World) -> Unit {
   occlusion_state.val = default_state()
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   let small_cube_material = @pbr.standard_material_add(
@@ -286,7 +286,7 @@ fn setup(world : @ecs.World) -> Unit {
 fn spin_small_cubes(world : @ecs.World) -> Unit {
   occlusion_state.val.sphere_angle = occlusion_state.val.sphere_angle +
     ROTATION_SPEED
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   for i in 0..<occlusion_state.val.small_cubes.length() {
     let cube = occlusion_state.val.small_cubes[i]
     let position = rotate_y(
@@ -317,7 +317,7 @@ fn spin_large_cube(world : @ecs.World) -> Unit {
     .mul(@math.Quat::from_rotation_y(0.29F * speed))
     .mul(@math.Quat::from_rotation_z(0.35F * speed))
     .normalize()
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world
   .component(@transform.ecs_key_transform)
   .set(large_cube, transform.with_rotation(rotation), tick)
@@ -331,7 +331,7 @@ fn toggle_occlusion_culling_on_request(world : @ecs.World) -> Unit {
   }
   occlusion_state.val.occlusion_enabled = !occlusion_state.val.occlusion_enabled
   if occlusion_state.val.camera is Some(camera) {
-    let tick = world.read_change_tick()
+    let tick = world.read_sequence()
     if occlusion_state.val.occlusion_enabled {
       world
       .component(@pbr.ecs_key_occlusion_culling)

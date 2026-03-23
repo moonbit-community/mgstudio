@@ -25,7 +25,7 @@ let rotator_state : Ref[RotatorState] = Ref::new({ rotators: [] })
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   rotator_state.val.rotators.clear()
 
   let material = @pbr.standard_material_add(
@@ -92,7 +92,7 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 fn rotator_system(world : @ecs.World) -> Unit {
   let delta = 3.0F * world_time(world).delta_seconds()
   let spin = @math.Quat::from_rotation_x(delta)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   for entity in rotator_state.val.rotators {
     if transform_store.get(entity) is Some(transform) {

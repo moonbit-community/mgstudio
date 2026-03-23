@@ -44,7 +44,7 @@ pub fn[T] RemovedComponents::clear(self : RemovedComponents[T]) -> Unit {
 pub fn[T] World::removed_components(
   self : World,
   key : ComponentKey[T],
-  system : @core.SystemTicks,
+  system : @core.SystemSequence,
 ) -> RemovedComponents[T] {
   let reader = match self.removed_component_messages(key.id()) {
     Some(messages_ref) => messages_ref.val.reader(system)

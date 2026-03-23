@@ -25,7 +25,7 @@ test "physics3d: falling body collides and writes back transform" {
   let world = @ecs.World::new()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics3d_init_resources_system(world)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let cfg_res = get_physics3d_config_resource(world)
   let cfg_ref = Ref::new(cfg_res.get().unwrap())
   cfg_ref.val = Physics3dConfig::new(@math.Vec3::new(0.0F, -200.0F, 0.0F))
@@ -63,7 +63,7 @@ test "physics3d: falling body collides and writes back transform" {
     physics3d_sync_world_to_rapier_system(world)
     physics3d_step_system(world)
     physics3d_writeback_system(world)
-    world.increment_change_tick() |> ignore
+    world.advance_sequence() |> ignore
     i = i + 1
   }
   let final_y = @transform.get_transform_store(world).get(ball).unwrap().translation.y
@@ -75,7 +75,7 @@ test "physics3d: sensor collision events are emitted" {
   let world = @ecs.World::new()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics3d_init_resources_system(world)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let cfg_res = get_physics3d_config_resource(world)
   let cfg_ref = Ref::new(cfg_res.get().unwrap())
   cfg_ref.val = Physics3dConfig::new(@math.Vec3::new(0.0F, -200.0F, 0.0F))
@@ -117,7 +117,7 @@ test "physics3d: sensor collision events are emitted" {
     physics3d_sync_world_to_rapier_system(world)
     physics3d_step_system(world)
     physics3d_writeback_system(world)
-    world.increment_change_tick() |> ignore
+    world.advance_sequence() |> ignore
     i = i + 1
   }
   let events = get_physics3d_events_resource(world).get().unwrap()
@@ -129,7 +129,7 @@ test "physics3d: contact force events are emitted" {
   let world = @ecs.World::new()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics3d_init_resources_system(world)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let cfg_res = get_physics3d_config_resource(world)
   let cfg_ref = Ref::new(cfg_res.get().unwrap())
   cfg_ref.val = Physics3dConfig::new(@math.Vec3::new(0.0F, -200.0F, 0.0F))
@@ -170,7 +170,7 @@ test "physics3d: contact force events are emitted" {
     physics3d_sync_world_to_rapier_system(world)
     physics3d_step_system(world)
     physics3d_writeback_system(world)
-    world.increment_change_tick() |> ignore
+    world.advance_sequence() |> ignore
     i = i + 1
   }
   let events = get_physics3d_events_resource(world).get().unwrap()
@@ -182,7 +182,7 @@ test "physics3d: active collision type and hook components are accepted" {
   let world = @ecs.World::new()
   configure_fixed_time(world, 1.0F / 60.0F)
   physics3d_init_resources_system(world)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let body = world.spawn()
   @transform.get_transform_store(world).insert(
     body,

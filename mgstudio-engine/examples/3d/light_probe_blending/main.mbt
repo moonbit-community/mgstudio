@@ -179,7 +179,7 @@ fn set_entity_visibility(
   entity : @core.Entity,
   visible : Bool,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let visibility = if visible {
     @visibility.Visibility::Inherited
   } else {
@@ -397,7 +397,7 @@ fn write_orbit_camera_transform(world : @ecs.World) -> Unit {
       target,
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    world.read_change_tick(),
+    world.read_sequence(),
   )
   |> ignore
 }
@@ -420,7 +420,7 @@ fn write_free_camera_transform(
       position.add(forward),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    world.read_change_tick(),
+    world.read_sequence(),
   )
   |> ignore
 }
@@ -488,7 +488,7 @@ fn switch_to_orbit_camera(world : @ecs.World) -> Unit {
 fn spawn_scene(world : @ecs.World) -> Unit {
   light_probe_blending_state.val.gizmo_entities.clear()
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   set_global_ambient_light(world, @sprite.Color::white(), 0.06F)
@@ -782,7 +782,7 @@ fn move_sphere(world : @ecs.World) -> Unit {
   .set(
     entity,
     @transform.Transform::from_xyz(0.0F, 0.0F, -ROOM_SEPARATION * t),
-    world.read_change_tick(),
+    world.read_sequence(),
   )
   |> ignore
 }

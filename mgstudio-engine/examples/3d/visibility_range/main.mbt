@@ -173,7 +173,7 @@ fn apply_visibility_range_for_scene_root(
   scene_root : @core.Entity,
   visibility_range : @visibility.VisibilityRange,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let parent_store = world.component(@hierarchy.ecs_key_parent)
   let mesh_store = world.component(@pbr.ecs_key_mesh3d)
   let visibility_range_store = world.component(
@@ -192,7 +192,7 @@ fn apply_visibility_range_for_scene_root(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   visibility_range_state.val.camera = None
   visibility_range_state.val.high_scene_root = None
   visibility_range_state.val.low_scene_root = None
@@ -360,7 +360,7 @@ fn move_camera(world : @ecs.World) -> Unit {
       new_translation.y,
       new_translation.z,
     ).looking_at(focal, @math.Vec3::new(0.0F, 1.0F, 0.0F)),
-    world.read_change_tick(),
+    world.read_sequence(),
   )
   |> ignore
 }
@@ -391,7 +391,7 @@ fn toggle_prepass(world : @ecs.World) -> Unit {
   visibility_range_state.val.prepass_enabled = !visibility_range_state.val.prepass_enabled
 
   guard visibility_range_state.val.camera is Some(camera) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   if visibility_range_state.val.prepass_enabled {
     world
     .component(@pbr.ecs_key_depth_prepass)

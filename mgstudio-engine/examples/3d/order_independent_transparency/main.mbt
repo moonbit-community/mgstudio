@@ -428,7 +428,7 @@ fn spawn_scene_instancing(
 
 ///|
 fn apply_scene_visibility(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let visibility_store = world.component(@visibility.ecs_key_visibility)
   for i, entities in oit_state.val.scene_entities {
     let visibility = if i == oit_state.val.scene_index {
@@ -445,7 +445,7 @@ fn apply_scene_visibility(world : @ecs.World) -> Unit {
 ///|
 fn apply_oit_mode(world : @ecs.World) -> Unit {
   if oit_state.val.camera is Some(camera) {
-    let tick = world.read_change_tick()
+    let tick = world.read_sequence()
     world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
     if oit_state.val.oit_enabled {
       world
@@ -466,7 +466,7 @@ fn apply_oit_mode(world : @ecs.World) -> Unit {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let layer = @sprite.RenderLayers::layer(LAYER_INDEX)
   let asset_server = @asset.AssetServer::new()
 

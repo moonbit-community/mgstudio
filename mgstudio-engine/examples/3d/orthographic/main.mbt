@@ -20,7 +20,7 @@ const FIXED_VIEWPORT_HEIGHT : Float = 6.0F
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let projection = @pbr.Projection::Orthographic(@pbr.OrthographicProjection3d::{
     ..@pbr.OrthographicProjection3d::default_3d(),
     scaling_mode: @pbr.OrthographicScalingMode3d::FixedVertical(

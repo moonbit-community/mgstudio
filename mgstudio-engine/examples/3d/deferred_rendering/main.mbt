@@ -126,7 +126,7 @@ fn set_default_opaque_method(
 ///|
 fn apply_render_mode(world : @ecs.World) -> Unit {
   guard deferred_state.val.camera is Some(camera) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   match deferred_state.val.mode {
     Deferred => {
       set_default_opaque_method(world, @pbr.OpaqueRendererMethod::Deferred)
@@ -187,7 +187,7 @@ fn track_spin(entity : @core.Entity, speed : Float) -> Unit {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   deferred_state.val = default_state()
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
   world.insert_resource(
     @pbr.ecs_key_directional_light_shadow_map,
@@ -511,7 +511,7 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
     return
   }
   let delta_angle = LIGHT_ROTATION_SPEED * world_time(world).delta_seconds()
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world
   .component(@transform.ecs_key_transform)
   .set(
@@ -531,7 +531,7 @@ fn spin(world : @ecs.World) -> Unit {
   if deferred_state.val.pause {
     return
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let delta = world_time(world).delta_seconds()
   for i in 0..<deferred_state.val.spin_targets.length() {
     let target = deferred_state.val.spin_targets[i]

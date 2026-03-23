@@ -29,7 +29,7 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.DirectionalLightShadowMap::new(4096),
   )
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(0.0F, 2.0F, 0.0F).looking_at(
@@ -149,7 +149,7 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 
 ///|
 fn scroll_fog(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let offset_delta = @math.Vec3::new(
     0.0F,
     0.0F,

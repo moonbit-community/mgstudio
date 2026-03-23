@@ -15,22 +15,22 @@
 ///|
 fn run_registered_observer_system(
   world : @ecs.World,
-  last_run_tick_ref : Ref[@core.Tick],
+  last_run_sequence_ref : Ref[@core.Sequence],
   observer_system : SystemFn[@ecs.World],
 ) -> Unit {
-  let this_run = world.increment_change_tick()
-  let sys_ticks = @core.SystemTicks::new(last_run_tick_ref.val, this_run)
-  let ctx = world.get_system_context()
+  let this_run = world.advance_sequence()
+  let sys_ticks = @core.SystemSequence::new(last_run_sequence_ref.val, this_run)
+  let ctx = world.get_sequence_context()
   ctx.set(sys_ticks)
-  world.set_system_context(ctx)
+  world.set_sequence_context(ctx)
   let previous_world = current_world_ref.val
-  let previous_ticks = current_system_ticks_ref.val
+  let previous_ticks = current_system_sequence_ref.val
   current_world_ref.val = Some(world)
-  current_system_ticks_ref.val = Some(sys_ticks)
+  current_system_sequence_ref.val = Some(sys_ticks)
   observer_system(world)
-  current_system_ticks_ref.val = previous_ticks
+  current_system_sequence_ref.val = previous_ticks
   current_world_ref.val = previous_world
-  last_run_tick_ref.val = this_run
+  last_run_sequence_ref.val = this_run
 }
 
 ///|
@@ -64,14 +64,14 @@ pub fn[E : @ecs.ObserverEvent, C : @ecs.Component] SubApp::add_observer(
   observer : (@ecs.On[E, C]) -> Unit,
 ) -> SubApp[@ecs.World] {
   let observer_system = system_param(observer)
-  let last_run_tick_ref : Ref[@core.Tick] = Ref::new(0)
+  let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)
   ignore(
     self
     .world()
     .add_observer(fn(_event : @ecs.On[E, C]) {
       run_registered_observer_system(
         @ecs.current_observer_world_abort_missing(),
-        last_run_tick_ref,
+        last_run_sequence_ref,
         observer_system,
       )
     }),
@@ -94,14 +94,14 @@ pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam] SubApp::add
   observer : (@ecs.On[E, C], P2) -> Unit,
 ) -> SubApp[@ecs.World] {
   let observer_system = system_param2(observer)
-  let last_run_tick_ref : Ref[@core.Tick] = Ref::new(0)
+  let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)
   ignore(
     self
     .world()
     .add_observer(fn(_event : @ecs.On[E, C]) {
       run_registered_observer_system(
         @ecs.current_observer_world_abort_missing(),
-        last_run_tick_ref,
+        last_run_sequence_ref,
         observer_system,
       )
     }),
@@ -129,14 +129,14 @@ pub fn[
   observer : (@ecs.On[E, C], P2, P3) -> Unit,
 ) -> SubApp[@ecs.World] {
   let observer_system = system_param3(observer)
-  let last_run_tick_ref : Ref[@core.Tick] = Ref::new(0)
+  let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)
   ignore(
     self
     .world()
     .add_observer(fn(_event : @ecs.On[E, C]) {
       run_registered_observer_system(
         @ecs.current_observer_world_abort_missing(),
-        last_run_tick_ref,
+        last_run_sequence_ref,
         observer_system,
       )
     }),
@@ -170,14 +170,14 @@ pub fn[
   observer : (@ecs.On[E, C], P2, P3, P4) -> Unit,
 ) -> SubApp[@ecs.World] {
   let observer_system = system_param4(observer)
-  let last_run_tick_ref : Ref[@core.Tick] = Ref::new(0)
+  let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)
   ignore(
     self
     .world()
     .add_observer(fn(_event : @ecs.On[E, C]) {
       run_registered_observer_system(
         @ecs.current_observer_world_abort_missing(),
-        last_run_tick_ref,
+        last_run_sequence_ref,
         observer_system,
       )
     }),

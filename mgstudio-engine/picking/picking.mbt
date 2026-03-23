@@ -332,13 +332,13 @@ pub let picking_set_events : @app.SystemSet = @app.system_set(
 
 ///|
 pub fn picking_clear_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   get_picking_events_resource(world).insert(PickingEvents::default(), tick)
 }
 
 ///|
 pub fn ensure_picking_state_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let res = get_picking_state_resource(world)
   if res.get() is None {
     res.insert(PickingState::default(), tick)
@@ -347,7 +347,7 @@ pub fn ensure_picking_state_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn ensure_picking_hits_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let res = get_picking_hits_resource(world)
   if res.get() is None {
     res.insert(PickingHits::default(), tick)
@@ -356,7 +356,7 @@ pub fn ensure_picking_hits_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn ensure_pointer_inputs_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let res = get_pointer_inputs_resource(world)
   if res.get() is None {
     res.insert(PointerInputs::default(), tick)
@@ -365,7 +365,7 @@ pub fn ensure_pointer_inputs_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn picking_collect_mouse_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let res = get_pointer_inputs_resource(world)
   guard res.get() is Some(inputs_value) else { return }
   let inputs = Ref::new(inputs_value)
@@ -477,7 +477,7 @@ fn sprite_region_size(sprite : @sprite.Sprite) -> @math.Vec2 {
 ///|
 /// 2D sprite hit testing backend (orthographic camera, clip-agnostic).
 pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let inputs_res = get_pointer_inputs_resource(world)
   let hits_res = get_picking_hits_resource(world)
   guard inputs_res.get() is Some(inputs0) else { return }
@@ -593,7 +593,7 @@ pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
 ///|
 /// UI hit testing backend (front-to-back, clip aware).
 pub fn picking_ui_hit_test_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let inputs_res = get_pointer_inputs_resource(world)
   let hits_res = get_picking_hits_resource(world)
   guard inputs_res.get() is Some(inputs0) else { return }
@@ -691,7 +691,7 @@ fn entity_from_node_id(node_id : @moon_accesskit.NodeId) -> @core.Entity {
 ///|
 /// Apply host-driven accessibility actions to UI state and picking events.
 pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let state_res = @a11y.get_a11y_state_resource(world)
   guard state_res.get() is Some(state_value) else { return }
   let state = Ref::new(state_value)
@@ -883,7 +883,7 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
 ///|
 /// Generate pointer enter/leave/down/up/click events from hit-test results.
 pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let inputs_res = get_pointer_inputs_resource(world)
   let hits_res = get_picking_hits_resource(world)
   guard inputs_res.get() is Some(inputs0) else { return }

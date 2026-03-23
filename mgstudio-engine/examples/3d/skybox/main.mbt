@@ -200,7 +200,7 @@ fn setup(world : @ecs.World) -> Unit {
   cubemap_state.val.directional_light = None
   cubemap_state.val.help_text = None
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   let directional_light = world.spawn_empty()
   world
@@ -338,7 +338,7 @@ fn asset_loaded(world : @ecs.World) -> Unit {
     return
   }
   guard cubemap_state.val.camera is Some(camera_entity) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   if world.component(@pbr.ecs_key_skybox).get(camera_entity) is Some(skybox) {
     println("Swapping to \{cubemap_path(cubemap_state.val.index)}")
     world
@@ -358,7 +358,7 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
   }
   if world.component(@transform.ecs_key_transform).get(light_entity)
     is Some(transform) {
-    let tick = world.read_change_tick()
+    let tick = world.read_sequence()
     let next_rotation = transform.rotation
       .mul(
         @math.Quat::from_rotation_y(world_time(world).delta_seconds() * 0.5F),

@@ -143,7 +143,7 @@ fn setup_camera_fog(world : @ecs.World) -> Unit {
 
 ///|
 fn setup_pyramid_scene(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
     @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
@@ -326,7 +326,7 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 fn update_system(world : @ecs.World) -> Unit {
   let now = world_time(world).elapsed_seconds()
   let delta = world_time(world).delta_seconds()
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   guard fog_example_state.val.camera is Some(camera) else { return }
   let camera3d_store = world.component(@pbr.ecs_key_camera3d)

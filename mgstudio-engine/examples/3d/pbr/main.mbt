@@ -120,7 +120,7 @@ fn setup(world : @ecs.World) -> Unit {
   pbr_state.val.diffuse_env_map = None
   pbr_state.val.specular_env_map = None
   pbr_state.val.env_loaded = false
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let sphere_mesh = uv_sphere_mesh(0.45F, 18, 32)
   let sphere_color = @sprite.Color::new(1.0F, 0.847F, 0.569F, 1.0F)
 

@@ -224,7 +224,7 @@ fn despawn_entities(world : @ecs.World, entities : Array[@core.Entity]) -> Unit 
 
 ///|
 fn spawn_camera(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
     @transform.Transform::from_xyz(0.219417F, 2.5764852F, 6.9718704F).with_rotation(
@@ -240,7 +240,7 @@ fn spawn_camera(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_lights(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   // Solari GI/indirect lighting is not available in the raster fallback path.
   // Use a low ambient term to keep the adapted scene readable.
   world.insert_resource(
@@ -346,7 +346,7 @@ fn spawn_pica_scene(
   world : @ecs.World,
   asset_server : @asset.AssetServer,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let diorama = world.spawn_empty()
   world
   .component(@scene.ecs_key_scene_root)
@@ -501,7 +501,7 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
       @transform.Transform::from_xyz(0.0919233F, 7.5015035F, 28.449198F).with_rotation(
         @math.Quat::new(-0.18394549F, 0.0019948867F, 0.0003733214F, 0.98293436F),
       ),
-      world.read_change_tick(),
+      world.read_sequence(),
     )
     |> ignore
     world
@@ -509,7 +509,7 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
     .insert(
       camera,
       @post_process.Bloom::default().with_intensity(0.1F),
-      world.read_change_tick(),
+      world.read_sequence(),
     )
   }
 }
@@ -534,7 +534,7 @@ fn apply_scene_mode(
     SolariSceneMode::PicaPica => {
       spawn_pica_scene(world, asset_server)
       if solari_state.val.camera is Some(camera) {
-        let tick = world.read_change_tick()
+        let tick = world.read_sequence()
         world
         .component(@transform.ecs_key_transform)
         .set(
@@ -554,7 +554,7 @@ fn apply_scene_mode(
 
 ///|
 fn apply_light_switches(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   if solari_state.val.directional_light is Some(light) {
     if world.component(@pbr.ecs_key_directional_light).get(light)
       is Some(current) {
@@ -695,7 +695,7 @@ fn patrol_path(world : @ecs.World) -> Unit {
   let to_target = target.0.sub(transform.translation)
   let distance = to_target.length()
   let max_step = PATROL_SPEED * world_time(world).delta_seconds()
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   if distance <= max_step || distance < 0.01F {
     world
@@ -742,7 +742,7 @@ fn sync_robot_emissive_light(world : @ecs.World) -> Unit {
       robot_transform.translation.y + 1.6F,
       robot_transform.translation.z,
     ),
-    world.read_change_tick(),
+    world.read_sequence(),
   )
   |> ignore
 }

@@ -133,7 +133,7 @@ fn create_help_text() -> String {
 fn update_help_text() -> Unit {
   guard clustered_decals_state.val.help_text is Some(entity) else { return }
   guard @app.current_world() is Some(world) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(entity) is Some(text_value) else { return }
   text_value.content = create_help_text()
@@ -171,7 +171,7 @@ fn same_entity(a : @core.Entity, b : @core.Entity) -> Bool {
 fn spawn_button(
   world : @ecs.World,
   parent : @core.Entity,
-  tick : @core.Tick,
+  tick : @core.Sequence,
   font : @asset.Handle[@asset.Font],
   label : String,
 ) -> @core.Entity {
@@ -244,7 +244,7 @@ fn spawn_button(
 
 ///|
 fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(100).with_clear_color_none(),
@@ -400,7 +400,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
 
 ///|
 fn update_ui_state(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let background_store = world.component(@ui.ecs_key_background_color)
   let border_store = world.component(@ui.ecs_key_border_color)
 
@@ -472,7 +472,7 @@ fn calculate_initial_decal_transform(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
   clustered_decals_state.val.camera = None
   clustered_decals_state.val.rotating_cube = None
@@ -673,7 +673,7 @@ fn apply_drag_translation(
   phi_factor : Float,
   theta_factor : Float,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   guard world.component(@transform.ecs_key_transform).get(entity)
     is Some(transform) else {
     return
@@ -709,7 +709,7 @@ fn apply_decal_drag(
   entity : @core.Entity,
   delta : @math.Vec2,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   guard world.component(@transform.ecs_key_transform).get(entity)
     is Some(transform) else {
     return
@@ -843,7 +843,7 @@ fn rotate_cube(world : @ecs.World) -> Unit {
     is Some(transform) else {
     return
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let rotation = transform.rotation
     .mul(@math.Quat::from_rotation_y(CUBE_ROTATION_SPEED))
     .normalize()

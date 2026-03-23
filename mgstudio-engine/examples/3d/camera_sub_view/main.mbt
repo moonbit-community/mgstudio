@@ -100,7 +100,7 @@ fn spawn_orthographic_camera(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   camera_sub_view_state.val.cameras.clear()
   camera_sub_view_state.val.moving_cameras.clear()
 
@@ -247,7 +247,7 @@ fn move_camera_view(world : @ecs.World) -> Unit {
   let wrapped = sweep - float_from_int((sweep / cycle).to_int()) * cycle
   let offset = wrapped - 50.0F
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let sub_camera_view_store = world.component(@pbr.ecs_key_sub_camera_view3d)
   for entity in camera_sub_view_state.val.moving_cameras {
     if sub_camera_view_store.get(entity) is Some(sub_camera_view) {
@@ -280,7 +280,7 @@ fn resize_viewports(world : @ecs.World) -> Unit {
   let small_size = @math.IVec2::new(small_dim, small_dim)
   let small_wide_size = @math.IVec2::new(small_dim * 2, small_dim)
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let camera_store = world.component(@sprite.ecs_key_camera)
 
   for pair in camera_sub_view_state.val.cameras {

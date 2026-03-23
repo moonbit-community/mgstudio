@@ -126,7 +126,7 @@ fn make_fog() -> @pbr.DistanceFog {
 ///|
 fn apply_fog(world : @ecs.World) -> Unit {
   guard atmospheric_fog_state.val.camera is Some(camera) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let camera3d_store = world.component(@pbr.ecs_key_camera3d)
   let camera3d = match camera3d_store.get(camera) {
     Some(value) => value
@@ -183,7 +183,7 @@ fn spawn_mesh(
 
 ///|
 fn setup_terrain_scene(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::default()
     .with_first_cascade_far_bound(0.3F)
     .with_maximum_distance(3.0F)

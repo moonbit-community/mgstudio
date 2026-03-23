@@ -60,7 +60,7 @@ fn disk_mesh(radius : Float, segments : Int) -> @pbr.Mesh3d {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   @pbr.MeshMaterial3dBundle::new(
     disk_mesh(4.0F, 32),

@@ -33,7 +33,7 @@ fn world_asset_server(world : @ecs.World) -> @asset.AssetServer {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let asset_server = world_asset_server(world)
   let texture = asset_server.load_image("branding/icon.png")
 
@@ -78,7 +78,7 @@ fn rotate(world : @ecs.World) -> Unit {
   let time = world_time(world)
   let delta = time.delta_seconds()
   let elapsed = time.elapsed_seconds()
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   let transform_store = @transform.get_transform_store(world)
   let children_store = @mg_hierarchy.get_children_store(world)

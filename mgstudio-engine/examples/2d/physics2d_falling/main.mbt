@@ -25,7 +25,7 @@ fn main {
 ///|
 fn physics2d_falling_setup(world : @ecs.World) -> Unit {
   // Make gravity visible in "pixel-ish" space.
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let cfg_res = @physics2d.get_physics2d_config_resource(world)
   match cfg_res.get() {
     Some(current_cfg) => {

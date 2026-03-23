@@ -17,10 +17,10 @@ test "examples ecs component_hooks: hooks keep index and message queue in sync" 
   let world = @ecs.World::new()
   world
   .resource(my_component_index_key)
-  .insert(MyComponentIndex::default(), world.read_change_tick())
+  .insert(MyComponentIndex::default(), world.read_sequence())
   world
   .resource(my_message_key.messages_resource())
-  .insert(@ecs.Messages::new(), world.read_change_tick())
+  .insert(@ecs.Messages::new(), world.read_sequence())
 
   setup(world)
 

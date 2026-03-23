@@ -72,7 +72,7 @@ fn apply_pccm_status(world : @ecs.World) -> Unit {
     PccmEnableStatus::Enabled => @pbr.ParallaxCorrection::Auto
     PccmEnableStatus::Disabled => @pbr.ParallaxCorrection::None
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let store = world.component(@pbr.ecs_key_parallax_correction)
   if store.contains(light_probe_entity) {
     store.set(light_probe_entity, correction, tick) |> ignore
@@ -87,7 +87,7 @@ fn setup(world : @ecs.World) -> Unit {
   pccm_state.val.light_probe = None
   pccm_state.val.help_text = None
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   @pbr.Camera3dBundle::new(

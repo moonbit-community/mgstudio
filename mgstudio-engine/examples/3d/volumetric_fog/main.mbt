@@ -267,7 +267,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world
   .component(@post_process.ecs_key_tonemapping)
   .insert(camera, @post_process.Tonemapping::TonyMcMapface, tick)
@@ -289,7 +289,7 @@ fn setup_camera(world : @ecs.World) -> Unit {
 
 ///|
 fn setup_lights(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   let directional_light = world.spawn_empty()
   world
@@ -384,7 +384,7 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
 
 ///|
 fn apply_light_switches(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   if volumetric_fog_state.val.point_light is Some(point_light) {
     if world.component(@pbr.ecs_key_point_light).get(point_light) is Some(light) {
@@ -481,7 +481,7 @@ fn apply_fog_proxy(world : @ecs.World) -> Unit {
     @pbr.FogFalloff3d::exponential_squared(density),
   )
   guard volumetric_fog_state.val.camera is Some(camera) else { return }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let camera3d_store = world.component(@pbr.ecs_key_camera3d)
   let camera3d = match camera3d_store.get(camera) {
     Some(value) => value
@@ -534,7 +534,7 @@ fn move_directional_light(world : @ecs.World) -> Unit {
         .mul(light_transform.rotation)
         .normalize()
 
-      let tick = world.read_change_tick()
+      let tick = world.read_sequence()
       world
       .component(@transform.ecs_key_transform)
       .set(light_entity, light_transform.with_rotation(next_rotation), tick)
@@ -562,7 +562,7 @@ fn move_point_light(world : @ecs.World) -> Unit {
         volumetric_fog_state.val.point_light_speed = -volumetric_fog_state.val.point_light_speed
       }
 
-      let tick = world.read_change_tick()
+      let tick = world.read_sequence()
       world
       .component(@transform.ecs_key_transform)
       .set(

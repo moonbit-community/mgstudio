@@ -86,7 +86,7 @@ fn clamp_float(value : Float, min_value : Float, max_value : Float) -> Float {
 
 ///|
 fn spawn_view_model(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let player = world.spawn_empty()
   world.component(Player::component()).insert(player, Player::{  }, tick)
   world
@@ -210,7 +210,7 @@ fn spawn_world_model(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_lights(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
@@ -238,7 +238,7 @@ fn spawn_lights(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_text(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let overlay_camera = @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(2).with_clear_color_none(),
     @transform.Transform::identity(),

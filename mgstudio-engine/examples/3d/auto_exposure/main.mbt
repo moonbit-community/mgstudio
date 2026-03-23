@@ -148,7 +148,7 @@ fn update_display_text() -> Unit {
 ///|
 fn auto_exposure_curve_assets_ref_mut_or_abort(
   world : @ecs.World,
-  tick : @core.Tick,
+  tick : @core.Sequence,
 ) -> Ref[@asset.Assets[@pbr.AutoExposureCompensationCurve]] {
   let key : @ecs.ResourceKey[@asset.Assets[@pbr.AutoExposureCompensationCurve]] = @asset.assets_resource_key()
   if (try! world.get_resource(key)) is None {
@@ -166,7 +166,7 @@ fn auto_exposure_curve_assets_ref_mut_or_abort(
 ///|
 fn build_basic_compensation_curve(
   world : @ecs.World,
-  tick : @core.Tick,
+  tick : @core.Sequence,
 ) -> @asset.Handle[@pbr.AutoExposureCompensationCurve] {
   let curve = match
     @pbr.AutoExposureCompensationCurve::from_curve(
@@ -219,7 +219,7 @@ fn example_auto_exposure_settings() -> @pbr.AutoExposure {
 fn apply_example_auto_exposure_to_camera(
   world : @ecs.World,
   camera_entity : @core.Entity,
-  tick : @core.Tick,
+  tick : @core.Sequence,
 ) -> Unit {
   let camera3d_store = world.component(@pbr.ecs_key_camera3d)
   let camera3d = match camera3d_store.get(camera_entity) {
@@ -248,7 +248,7 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let metering_mask = asset_server.load("textures/basic_metering_mask.png")
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let basic_curve = build_basic_compensation_curve(world, tick)
   auto_exposure_state.val.basic_compensation_curve = Some(basic_curve)
   auto_exposure_state.val.basic_metering_mask = Some(metering_mask)
@@ -409,7 +409,7 @@ fn example_control_system(world : @ecs.World) -> Unit {
     auto_exposure_state.val.metering_mask_enabled = !auto_exposure_state.val.metering_mask_enabled
   }
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   if auto_exposure_state.val.camera is Some(camera_entity) {
     world
     .component(@transform.ecs_key_transform)

@@ -282,7 +282,7 @@ fn set_entity_visibility(
   world : @ecs.World,
   entity : @core.Entity?,
   visible : Bool,
-  tick : @core.Tick,
+  tick : @core.Sequence,
 ) -> Unit {
   if entity is Some(value) {
     world
@@ -302,7 +302,7 @@ fn set_entity_visibility(
 
 ///|
 fn apply_model_and_base_visibility(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let model = ssr_state.val.displayed_model
   let base = ssr_state.val.displayed_base
 
@@ -337,7 +337,7 @@ fn apply_camera_transform(world : @ecs.World) -> Unit {
   if ssr_state.val.camera is Some(camera) {
     let x = @math.sin(ssr_state.val.camera_theta) * ssr_state.val.camera_radius
     let z = @math.cos(ssr_state.val.camera_theta) * ssr_state.val.camera_radius
-    let tick = world.read_change_tick()
+    let tick = world.read_sequence()
     world
     .component(@transform.ecs_key_transform)
     .set(
@@ -419,7 +419,7 @@ fn build_ssr_settings() -> @post_process.ScreenSpaceReflections {
 fn apply_ssr_settings(world : @ecs.World) -> Unit {
   sanitize_ssr_ranges()
   if ssr_state.val.camera is Some(camera) {
-    let tick = world.read_change_tick()
+    let tick = world.read_sequence()
     let store = world.component(@post_process.ecs_key_screen_space_reflections)
     if ssr_state.val.ssr_on {
       if !store.set(camera, build_ssr_settings(), tick) {
@@ -458,7 +458,7 @@ fn spawn_flight_helmet(
   world : @ecs.World,
   asset_server : @asset.AssetServer,
 ) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let entity = world.spawn_empty()
   world
   .component(@scene.ecs_key_scene_root)
@@ -507,7 +507,7 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
       ),
     ).spawn(world)
 
-    let tick = world.read_change_tick()
+    let tick = world.read_sequence()
     world
     .component(@visibility.ecs_key_visibility)
     .set(entity, @visibility.Visibility::Hidden, tick)
@@ -518,7 +518,7 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   let metallic_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
@@ -611,7 +611,7 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
     .spawn(world)
   ssr_state.val.camera = Some(camera)
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
   world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
   world
@@ -718,7 +718,7 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 
 ///|
 fn rotate_models(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let rotation = @math.Quat::from_rotation_y(
     world_time(world).elapsed_seconds(),
   )

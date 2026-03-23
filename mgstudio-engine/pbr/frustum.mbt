@@ -221,7 +221,7 @@ pub fn Projection::compute_frustum(
 ///|
 pub fn render3d_update_frusta_system(world : @ecs.World) -> Unit {
   let frustum_store = get_frustum_store(world)
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let query = world.query2(@transform.ecs_key_transform, ecs_key_projection)
   try! query.view(fn(entity, transform, projection) {
     let next = projection.compute_frustum(transform)

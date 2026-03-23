@@ -32,7 +32,7 @@ let render_to_texture_state : Ref[RenderToTextureState] = Ref::new({
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   render_to_texture_state.val.first_pass_cube = @core.Entity::placeholder()
   render_to_texture_state.val.main_pass_cube = @core.Entity::placeholder()
 
@@ -132,7 +132,7 @@ fn rotator_system(world : @ecs.World) -> Unit {
   if render_to_texture_state.val.first_pass_cube.is_placeholder() {
     return
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   if transform_store.get(render_to_texture_state.val.first_pass_cube)
     is Some(transform) {
@@ -155,7 +155,7 @@ fn cube_rotator_system(world : @ecs.World) -> Unit {
   if render_to_texture_state.val.main_pass_cube.is_placeholder() {
     return
   }
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   if transform_store.get(render_to_texture_state.val.main_pass_cube)
     is Some(transform) {

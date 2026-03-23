@@ -128,7 +128,7 @@ fn setup(world : @ecs.World) -> Unit {
   custom_mesh_state.val.mesh_entity = None
   custom_mesh_state.val.upper_uv = true
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   let custom_texture = asset_server.load("textures/array_texture.png")
@@ -202,7 +202,7 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 fn input_handler(world : @ecs.World) -> Unit {
   guard custom_mesh_state.val.mesh_entity is Some(mesh_entity) else { return }
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
 
   if @input.key_just_pressed(@window.KeyCode::Space) {

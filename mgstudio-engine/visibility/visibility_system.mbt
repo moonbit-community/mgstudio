@@ -30,7 +30,7 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
   let view_access = world.component(ecs_key_view_visibility)
   let parent_access = world.component(@hierarchy.ecs_key_parent)
   let children_access = world.component(@hierarchy.ecs_key_children)
-  let change_tick = world.read_change_tick()
+  let sequence = world.read_sequence()
 
   // Identify roots: entities that either have no parent, or whose parent lacks
   // the required visibility components (Bevy fallback).
@@ -71,9 +71,9 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
     if needs_inherited_update {
       let v = InheritedVisibility::new(is_visible)
       if inherited_access.contains(entity) {
-        inherited_access.set(entity, v, change_tick) |> ignore
+        inherited_access.set(entity, v, sequence) |> ignore
       } else {
-        inherited_access.insert(entity, v, change_tick)
+        inherited_access.insert(entity, v, sequence)
       }
     }
 
@@ -85,9 +85,9 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
     if needs_view_update {
       let v = ViewVisibility::new(is_visible)
       if view_access.contains(entity) {
-        view_access.set(entity, v, change_tick) |> ignore
+        view_access.set(entity, v, sequence) |> ignore
       } else {
-        view_access.insert(entity, v, change_tick)
+        view_access.insert(entity, v, sequence)
       }
     }
 

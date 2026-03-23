@@ -41,7 +41,7 @@ fn setup_graphics(world : @ecs.World) -> Unit {
 
 ///|
 fn setup_physics(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   let ground = world.spawn_empty()
   world
   .component(@transform.ecs_key_transform)

@@ -176,7 +176,7 @@ fn ray_plane_intersection(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
 
   let ground = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
@@ -230,7 +230,7 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   viewport_to_world_3d_state.val.cursor_marker = Some(cursor_marker)
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   world
   .component(@visibility.ecs_key_visibility)
   .set(cursor_marker, @visibility.Visibility::Hidden, tick)
@@ -284,7 +284,7 @@ fn draw_cursor(world : @ecs.World) -> Unit {
     }
   }
 
-  let tick = world.read_change_tick()
+  let tick = world.read_sequence()
   if cursor_hit is Some((point, ground_up)) {
     transform_store.set(
       cursor_entity,

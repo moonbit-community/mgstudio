@@ -27,13 +27,13 @@ fn approx_eq_ecs(a : Float, b : Float) -> Bool {
 }
 
 ///|
-fn next_system_ticks_ecs(world : @ecs.World) -> Unit {
-  let this_run = world.increment_change_tick()
-  let last_run = world.get_system_context().ticks().this_run
-  let ticks = @core.SystemTicks::new(last_run, this_run)
-  let ctx = @core.SystemContext::new()
-  ctx.set(ticks)
-  world.set_system_context(ctx)
+fn next_system_sequence_ecs(world : @ecs.World) -> Unit {
+  let this_run = world.advance_sequence()
+  let last_run = world.get_sequence_context().sequence().this_run
+  let sequence = @core.SystemSequence::new(last_run, this_run)
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(sequence)
+  world.set_sequence_context(ctx)
 }
 
 ///|
@@ -54,7 +54,7 @@ test "transform ecs world: child global uses parent and local transforms" {
   let child = world.spawn()
 
   prepare_transform_world_ecs(world)
-  next_system_ticks_ecs(world)
+  next_system_sequence_ecs(world)
   try! world.set(
     parent,
     ecs_key_transform,
