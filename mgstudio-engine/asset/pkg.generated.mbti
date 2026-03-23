@@ -98,6 +98,8 @@ pub fn[T] asset_register_loader((AssetServer, String) -> Handle[T]) -> Unit
 
 pub fn asset_register_loader_extension(String, AssetLoaderKind) -> Unit
 
+pub fn asset_register_reload_hook((@ecs.World, AssetServer, String) -> Unit) -> Unit
+
 pub fn asset_remove_loader_extension(String) -> Unit
 
 pub fn[T : @app.Resource] asset_resource_or_abort() -> T
@@ -308,6 +310,7 @@ pub fn AssetReader::read_meta(Self, String) -> Bytes?
 
 pub struct AssetServer {
   paths : @ref.Ref[Array[String]]
+  path_fingerprints : @ref.Ref[@hashmap.HashMap[String, Int]]
   typed_asset_paths : @ref.Ref[@hashmap.HashMap[String, Int]]
   image_paths : @ref.Ref[Array[(String, Handle[@image.Image])]]
   image_loaded_states : @ref.Ref[@hashmap.HashMap[Int, Bool]]

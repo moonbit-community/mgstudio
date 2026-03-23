@@ -106,6 +106,7 @@ pub struct Blob {}
 ///|
 pub struct AssetServer {
   paths : Ref[Array[String]]
+  path_fingerprints : Ref[@hashmap.HashMap[String, Int]]
   typed_asset_paths : Ref[@hashmap.HashMap[String, Int]]
   image_paths : Ref[Array[(String, Handle[Image])]]
   image_loaded_states : Ref[@hashmap.HashMap[Int, Bool]]
@@ -362,6 +363,7 @@ pub fn ImageLoaderSettings::default() -> ImageLoaderSettings {
 fn asset_server_standalone() -> AssetServer {
   AssetServer::{
     paths: Ref::new([]),
+    path_fingerprints: Ref::new(@hashmap.HashMap::new()),
     typed_asset_paths: Ref::new(@hashmap.HashMap::new()),
     image_paths: Ref::new([]),
     image_loaded_states: Ref::new(@hashmap.HashMap::new()),
@@ -389,8 +391,21 @@ let asset_source_builder_registry : Ref[
 ] = Ref::new([])
 
 ///|
+type AssetReloadHook = (@ecs.World, AssetServer, String) -> Unit
+
+///|
+let asset_reload_hook_registry : Ref[Array[AssetReloadHook]] = Ref::new([])
+
+///|
 fn[T] asset_loader_type_name(probe : Handle[T]) -> String {
   @any.of(probe).type_name()
+}
+
+///|
+pub fn asset_register_reload_hook(
+  hook : (@ecs.World, AssetServer, String) -> Unit,
+) -> Unit {
+  asset_reload_hook_registry.val.push(hook)
 }
 
 ///|
@@ -989,7 +1004,17 @@ pub fn asset_canonical_path(path : String) -> String {
 
 ///|
 fn AssetServer::record_path(self : AssetServer, path : String) -> Unit {
-  self.paths.val.push(path)
+  let canonical_path = asset_canonical_path(path)
+  for existing_path in self.paths.val {
+    if existing_path == canonical_path {
+      return
+    }
+  }
+  self.paths.val.push(canonical_path)
+  self.path_fingerprints.val.set(
+    canonical_path,
+    bytes_fingerprint(load_asset_file_bytes(canonical_path)),
+  )
 }
 
 ///|
@@ -1929,6 +1954,40 @@ fn asset_update_image_event_messages(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn asset_poll_modified_paths(asset_server : AssetServer) -> Array[String] {
+  let modified_paths : Array[String] = []
+  for path in asset_server.paths.val {
+    let next_fingerprint = bytes_fingerprint(load_asset_file_bytes(path))
+    match asset_server.path_fingerprints.val.get(path) {
+      Some(previous_fingerprint) =>
+        if previous_fingerprint != next_fingerprint {
+          asset_server.path_fingerprints.val.set(path, next_fingerprint)
+          modified_paths.push(path)
+        }
+      None => asset_server.path_fingerprints.val.set(path, next_fingerprint)
+    }
+  }
+  modified_paths
+}
+
+///|
+fn asset_reload_modified_paths(world : @ecs.World) -> Unit {
+  guard (try! world.get_resource(asset_server_resource_key()))
+    is Some(asset_server) else {
+    return
+  }
+  let modified_paths = asset_poll_modified_paths(asset_server)
+  if modified_paths.length() == 0 {
+    return
+  }
+  for path in modified_paths {
+    for hook in asset_reload_hook_registry.val {
+      hook(world, asset_server, path)
+    }
+  }
+}
+
+///|
 fn asset_sync_loaded_image_assets(world : @ecs.World) -> Unit {
   guard (try! world.get_resource(asset_server_resource_key()))
     is Some(asset_server) else {
@@ -2006,6 +2065,7 @@ pub fn asset_save_texture_png(texture : Handle[Image], path : String) -> Unit {
 
 ///|
 pub fn asset_system(world : @ecs.World) -> Unit {
+  asset_reload_modified_paths(world)
   asset_update_loaded_folders(world)
   asset_sync_dirty_image_assets(world)
   asset_update_event_messages(world)

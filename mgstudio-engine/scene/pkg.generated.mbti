@@ -55,6 +55,8 @@ pub fn scene_register_gltf_asset_loaders() -> Unit
 
 pub fn scene_register_gltf_scene(String, Scene) -> @asset.Handle[Scene]
 
+pub fn scene_reload_modified_roots_system(@ecs.World) -> Unit
+
 pub fn scene_reset_gltf_lod_visibility_policy() -> Unit
 
 pub fn scene_set_gltf_lod_visibility_policy(GltfLodVisibilityPolicy) -> Unit

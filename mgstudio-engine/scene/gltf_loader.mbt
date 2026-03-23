@@ -2788,11 +2788,6 @@ fn scene_process_pending_scene_requests(
   )
 
   for request in pending_gltf_scene_requests.val {
-    let maybe_current = scene_assets.val.get(request.scene_handle)
-    if maybe_current is Some(current_scene) && current_scene.ready {
-      continue
-    }
-
     let (updated_request, resolved_scene) = scene_try_resolve_scene_request(
       asset_server, request,
     )

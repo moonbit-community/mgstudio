@@ -359,3 +359,89 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
   inspect(new_child_count.val, content="1")
   inspect(new_child_x.val, content="9")
 }
+
+///|
+test "scene: modified scene asset respawns SceneRoot children" {
+  let handle_stable = Ref::new(false)
+  let old_child_alive = Ref::new(true)
+  let new_child_count = Ref::new(0)
+  let new_child_x = Ref::new(0.0)
+  run_scene_test_app(fn(world : @ecs.World) {
+    let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
+    let material = @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+      ),
+    )
+    let first_scene = @scene.Scene::new([
+      @scene.SceneNode3d::new(
+        @pbr.Mesh3d::new(
+          @pbr.mesh_assets_mut_or_abort().val.add(
+            @pbr.Mesh::from_3d_geometry(
+              @pbr.mesh3d_geometry_cuboid(1.0F, 2.0F, 3.0F),
+            ),
+          ),
+        ),
+        material,
+        @transform.Transform::from_xyz(1.0F, 2.0F, 3.0F),
+        None,
+        None,
+      ),
+    ])
+    let second_scene = @scene.Scene::new([
+      @scene.SceneNode3d::new(
+        @pbr.Mesh3d::new(
+          @pbr.mesh_assets_mut_or_abort().val.add(
+            @pbr.Mesh::from_3d_geometry(
+              @pbr.mesh3d_geometry_cuboid(4.0F, 5.0F, 6.0F),
+            ),
+          ),
+        ),
+        material,
+        @transform.Transform::from_xyz(9.0F, 8.0F, 7.0F),
+        None,
+        None,
+      ),
+    ])
+    let handle = @scene.scene_register_gltf_scene(path, first_scene)
+
+    let root = world.spawn_empty()
+    get_scene_root_store(world).insert(root, @scene.SceneRoot::new(handle))
+
+    @scene.scene_spawn_roots_system(world)
+
+    let first_children : Array[@core.Entity] = []
+    @hierarchy.get_parent_store(world).for_each(fn(entity, parent) {
+      if parent.entity().id == root.id {
+        first_children.push(entity)
+      }
+    })
+    let first_child = first_children[0]
+
+    let updated_handle = @scene.scene_register_gltf_scene(path, second_scene)
+    handle_stable.val = handle.id() == updated_handle.id()
+
+    @asset.asset_update_event_messages(world)
+    @scene.scene_reload_modified_roots_system(world)
+    @scene.scene_spawn_roots_system(world)
+
+    old_child_alive.val = world.is_alive(first_child)
+    let second_children : Array[@core.Entity] = []
+    @hierarchy.get_parent_store(world).for_each(fn(entity, parent) {
+      if parent.entity().id == root.id {
+        second_children.push(entity)
+      }
+    })
+    new_child_count.val = second_children.length()
+    let new_child = second_children[0]
+    let transform = @transform.get_transform_store(world)
+      .get(new_child)
+      .unwrap()
+    new_child_x.val = transform.translation.x.to_double()
+  })
+
+  inspect(handle_stable.val, content="true")
+  inspect(old_child_alive.val, content="false")
+  inspect(new_child_count.val, content="1")
+  inspect(new_child_x.val, content="9")
+}

@@ -442,6 +442,23 @@ fn scene_registry_if_present() -> SceneAssetRegistryState? {
 }
 
 ///|
+fn scene_registry_from_world(world : @ecs.World) -> SceneAssetRegistryState? {
+  try! world.get_resource(scene_asset_registry_resource_key())
+}
+
+///|
+fn scene_asset_base_path(asset_path : String) -> String {
+  let (gltf_path, _label) = scene_split_gltf_asset_path(asset_path)
+  @asset.asset_canonical_path(gltf_path)
+}
+
+///|
+let scene_modified_event_cursor_ref : Ref[Int] = Ref::new(0)
+
+///|
+let scene_modified_event_cursor_world_id_ref : Ref[Int] = Ref::new(-1)
+
+///|
 pub fn scene_set_gltf_lod_visibility_policy(
   policy : GltfLodVisibilityPolicy,
 ) -> Unit {
@@ -674,7 +691,56 @@ fn scene_register_component_hooks() -> Bool {
 ///|
 fn init {
   @gltf.gltf_install_loader_registration(scene_register_gltf_asset_loaders)
+  @asset.asset_register_reload_hook(scene_reload_asset_path)
   scene_register_component_hooks() |> ignore
+}
+
+///|
+fn scene_reload_asset_path(
+  world : @ecs.World,
+  asset_server : @asset.AssetServer,
+  canonical_path : String,
+) -> Unit {
+  guard scene_registry_from_world(world) is Some(registry) else { return }
+
+  let scenes_to_reload : Array[(@asset.Handle[Scene], String)] = []
+  for entry in registry.scene_registry {
+    if scene_asset_base_path(entry.0) == canonical_path {
+      scenes_to_reload.push((entry.1, entry.0))
+    }
+  }
+
+  let animations_to_reload : Array[
+    (@asset.Handle[@animation.AnimationClip], String),
+  ] = []
+  for entry in registry.animation_registry {
+    if scene_asset_base_path(entry.0) == canonical_path {
+      animations_to_reload.push((entry.1, entry.0))
+    }
+  }
+
+  let meshes_to_reload : Array[(@asset.Handle[@mesh.Mesh], String)] = []
+  for entry in registry.mesh_registry {
+    if scene_asset_base_path(entry.0) == canonical_path {
+      meshes_to_reload.push((entry.1, entry.0))
+    }
+  }
+
+  if scenes_to_reload.length() == 0 &&
+    animations_to_reload.length() == 0 &&
+    meshes_to_reload.length() == 0 {
+    return
+  }
+
+  for entry in scenes_to_reload {
+    scene_queue_gltf_request(asset_server, entry.0, entry.1)
+  }
+  for entry in animations_to_reload {
+    scene_queue_gltf_animation_request(asset_server, entry.0, entry.1)
+  }
+  for entry in meshes_to_reload {
+    scene_queue_gltf_mesh_request(asset_server, entry.0, entry.1)
+  }
 }
 
 ///|
@@ -762,6 +828,52 @@ fn scene_spawn_instance_when_ready(
 }
 
 ///|
+pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
+  let modified_scene_ids : Array[Int] = []
+  if scene_modified_event_cursor_world_id_ref.val != world.world_id() {
+    scene_modified_event_cursor_world_id_ref.val = world.world_id()
+    scene_modified_event_cursor_ref.val = 0
+  }
+  let message_key : @ecs.MessageKey[@asset.AssetEvent[Scene]] = @ecs.Message::message()
+  let reader = world.message_reader(
+    message_key, scene_modified_event_cursor_ref,
+  )
+  for event in (try! reader.read()) {
+    match event {
+      Modified(handle) => modified_scene_ids.push(handle.id())
+      _ => ()
+    }
+  }
+  if modified_scene_ids.length() == 0 {
+    return
+  }
+
+  let roots : Array[(@core.Entity, SceneRoot)] = []
+  try! world
+  .query1(ecs_key_scene_root)
+  .view(fn(entity, root) { roots.push((entity, root)) })
+
+  for entry in roots {
+    let root_entity = entry.0
+    let root = entry.1
+    let mut should_reload = false
+    for scene_id in modified_scene_ids {
+      if scene_id == root.scene.id() {
+        should_reload = true
+        break
+      }
+    }
+    if !should_reload {
+      continue
+    }
+    if scene_instance_component(world, root_entity) is Some(instance) {
+      scene_despawn_instance(world, instance.instance_id)
+    }
+    scene_attach_pending_instance(world, root_entity, root) |> ignore
+  }
+}
+
+///|
 pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
   let roots : Array[(@core.Entity, SceneRoot)] = []
   try! world
@@ -796,6 +908,7 @@ fn scene_runtime_plugin_base(
   app
   .init_resource(fn() { SceneRuntimeState::default() })
   .add_pre_update_system(scene_load_pending_system)
+  .add_pre_update_system(scene_reload_modified_roots_system)
   .add_pre_update_system(scene_spawn_roots_system)
 }
 
