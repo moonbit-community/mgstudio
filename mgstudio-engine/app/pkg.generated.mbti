@@ -553,8 +553,8 @@ pub struct Res[T] {
   value : T
 }
 pub fn[T] Res::get(Self[T]) -> T
-pub fn[T : Resource] Res::is_added(Self[T]) -> Bool
-pub fn[T : Resource] Res::is_changed(Self[T]) -> Bool
+pub fn[T] Res::is_added(Self[T]) -> Bool
+pub fn[T] Res::is_changed(Self[T]) -> Bool
 pub impl[T : Resource] SystemParam for Res[T]
 
 pub struct ResMut[T] {
@@ -778,9 +778,7 @@ pub impl FromWorld for Bool
 pub impl FromWorld for Int
 pub impl FromWorld for Float
 pub impl FromWorld for String
-pub impl[T : @ecs.Component] FromWorld for @ecs.Added[T]
 pub impl FromWorld for @ecs.All
-pub impl[T : @ecs.Component] FromWorld for @ecs.Changed[T]
 pub impl[T] FromWorld for @ecs.MessageCursor[T]
 pub impl[F : FromWorld] FromWorld for @ecs.Or[F]
 pub impl[T : @ecs.Component] FromWorld for @ecs.With[T]

@@ -31,7 +31,6 @@ pub struct Query2RefMutFiltered[A, B, F] {
   key_a : ComponentKey[A]
   key_b : ComponentKey[B]
   filter : F
-  system : @core.SystemTicks
 }
 
 ///|
@@ -53,7 +52,6 @@ pub struct Query2ValueMutFiltered[A, B, F] {
   key_a : ComponentKey[A]
   key_b : ComponentKey[B]
   filter : F
-  system : @core.SystemTicks
 }
 
 ///|
@@ -83,7 +81,6 @@ pub struct Query3ValueRefMutFiltered[A, B, C, F] {
   key_b : ComponentKey[B]
   key_c : ComponentKey[C]
   filter : F
-  system : @core.SystemTicks
 }
 
 ///|
@@ -99,7 +96,6 @@ pub struct Query3RefMutOptionalFiltered[A, B, C, F] {
   key_b : ComponentKey[B]
   key_c : ComponentKey[C]
   filter : F
-  system : @core.SystemTicks
 }
 
 ///|
@@ -107,11 +103,10 @@ fn[A] query_component_mut(
   world : World,
   key : ComponentKey[A],
   entity : @core.Entity,
-  system : @core.SystemTicks,
 ) -> ComponentMut[A]? raise EcsError {
   guard world.component_store(key.id()) is Some(store_ref) else { return None }
   guard store_ref.val.get(entity) is Some(payload) else { return None }
-  Some(query_component_mut_from_payload(world, key, entity, payload, system))
+  Some(query_component_mut_from_payload(world, key, entity, payload))
 }
 
 ///|
@@ -120,17 +115,11 @@ fn[A] query_component_mut_from_payload(
   key : ComponentKey[A],
   entity : @core.Entity,
   payload : ErasedValue,
-  system : @core.SystemTicks,
 ) -> ComponentMut[A] raise EcsError {
   let value_ref : Ref[A] = world.component_ref(key, entity, payload)
-  let ticks = world.component(key).get_ticks(entity).unwrap()
-  ComponentMut::{
-    value_ref,
-    ticks,
-    system,
-    changed: false,
-    writeback: Some(ComponentMutWriteback::{ world, key, entity }),
-  }
+  ignore(key)
+  ignore(entity)
+  ComponentMut::{ value_ref, }
 }
 
 ///|
@@ -139,7 +128,6 @@ fn[A, B, F : QueryFilter] query2_contiguous_chunks(
   key_a : ComponentKey[A],
   key_b : ComponentKey[B],
   filter : F,
-  system : @core.SystemTicks,
 ) -> Array[Array[@core.Entity]] {
   let chunks : Array[Array[@core.Entity]] = []
   guard world.component_store(key_a.id()) is Some(store_a_ref) else {
@@ -157,8 +145,7 @@ fn[A, B, F : QueryFilter] query2_contiguous_chunks(
   store_b.for_each(fn(entity, _payload) {
     let dense_i = dense_index_ref.val
     dense_index_ref.val = dense_index_ref.val + 1
-    if store_a.contains(entity) &&
-      QueryFilter::matches(filter, world, entity, system) {
+    if store_a.contains(entity) && QueryFilter::matches(filter, world, entity) {
       if dense_i != previous_dense_index + 1 && current_chunk.length() > 0 {
         chunks.push(current_chunk)
         current_chunk = []
@@ -272,10 +259,10 @@ pub fn[A, F : QueryFilter] Query1Filtered::get_mut(
   self : Query1Filtered[A, F],
   entity : @core.Entity,
 ) -> ComponentMut[A]? raise EcsError {
-  guard QueryFilter::matches(self.filter, self.world, entity, self.system) else {
+  guard QueryFilter::matches(self.filter, self.world, entity) else {
     return None
   }
-  query_component_mut(self.world, self.key_a, entity, self.system)
+  query_component_mut(self.world, self.key_a, entity)
 }
 
 ///|
@@ -310,13 +297,12 @@ pub fn[A, F : QueryFilter] Query1Filtered::view_mut(
   let entries : Array[(@core.Entity, ErasedValue)] = []
   store_ref.val.for_each(fn(entity, payload) { entries.push((entity, payload)) })
   for entry in entries {
-    if QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
+    if QueryFilter::matches(self.filter, self.world, entry.0) {
       let component_mut = query_component_mut_from_payload(
         self.world,
         self.key_a,
         entry.0,
         entry.1,
-        self.system,
       )
       f(entry.0, component_mut)
     }
@@ -368,13 +354,7 @@ pub fn[A, B, F] World::query2_ref_mut_filtered(
   key_b : ComponentKey[B],
   filter : F,
 ) -> Query2RefMutFiltered[A, B, F] {
-  Query2RefMutFiltered::{
-    world: self,
-    key_a,
-    key_b,
-    filter,
-    system: self.get_system_context().ticks(),
-  }
+  Query2RefMutFiltered::{ world: self, key_a, key_b, filter }
 }
 
 ///|
@@ -384,13 +364,7 @@ pub fn[A, B, F] World::query2_value_mut_filtered(
   key_b : ComponentKey[B],
   filter : F,
 ) -> Query2ValueMutFiltered[A, B, F] {
-  Query2ValueMutFiltered::{
-    world: self,
-    key_a,
-    key_b,
-    filter,
-    system: self.get_system_context().ticks(),
-  }
+  Query2ValueMutFiltered::{ world: self, key_a, key_b, filter }
 }
 
 ///|
@@ -401,14 +375,7 @@ pub fn[A, B, C, F] World::query3_value_ref_mut_filtered(
   key_c : ComponentKey[C],
   filter : F,
 ) -> Query3ValueRefMutFiltered[A, B, C, F] {
-  Query3ValueRefMutFiltered::{
-    world: self,
-    key_a,
-    key_b,
-    key_c,
-    filter,
-    system: self.get_system_context().ticks(),
-  }
+  Query3ValueRefMutFiltered::{ world: self, key_a, key_b, key_c, filter }
 }
 
 ///|
@@ -419,14 +386,7 @@ pub fn[A, B, C, F] World::query3_ref_mut_optional_filtered(
   key_c : ComponentKey[C],
   filter : F,
 ) -> Query3RefMutOptionalFiltered[A, B, C, F] {
-  Query3RefMutOptionalFiltered::{
-    world: self,
-    key_a,
-    key_b,
-    key_c,
-    filter,
-    system: self.get_system_context().ticks(),
-  }
+  Query3RefMutOptionalFiltered::{ world: self, key_a, key_b, key_c, filter }
 }
 
 ///|
@@ -434,14 +394,14 @@ pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::get(
   self : Query2RefMutFiltered[A, B, F],
   entity : @core.Entity,
 ) -> (ComponentRef[A], ComponentMut[B])? raise EcsError {
-  guard QueryFilter::matches(self.filter, self.world, entity, self.system) else {
+  guard QueryFilter::matches(self.filter, self.world, entity) else {
     return None
   }
-  guard query_component_ref(self.world, self.key_a, entity, self.system)
+  guard query_component_ref(self.world, self.key_a, entity)
     is Some(component_ref) else {
     return None
   }
-  guard query_component_mut(self.world, self.key_b, entity, self.system)
+  guard query_component_mut(self.world, self.key_b, entity)
     is Some(component_mut) else {
     return None
   }
@@ -474,11 +434,11 @@ pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::get(
   self : Query2ValueMutFiltered[A, B, F],
   entity : @core.Entity,
 ) -> (A, ComponentMut[B])? raise EcsError {
-  guard QueryFilter::matches(self.filter, self.world, entity, self.system) else {
+  guard QueryFilter::matches(self.filter, self.world, entity) else {
     return None
   }
   guard self.world.get(entity, self.key_a) is Some(value_a) else { return None }
-  guard query_component_mut(self.world, self.key_b, entity, self.system)
+  guard query_component_mut(self.world, self.key_b, entity)
     is Some(component_mut) else {
     return None
   }
@@ -504,7 +464,6 @@ pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::contiguous_iter_mut(
       self.key_a,
       self.key_b,
       self.filter,
-      self.system,
     ),
     index: 0,
   })
@@ -542,7 +501,7 @@ pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::view_mut(
     store_a.for_each(fn(entity, payload) { entries.push((entity, payload)) })
     for entry in entries {
       if store_b.get(entry.0) is Some(payload_b) &&
-        QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
+        QueryFilter::matches(self.filter, self.world, entry.0) {
         let value_a : A = self.world.component_value(
           self.key_a,
           entry.0,
@@ -553,7 +512,6 @@ pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::view_mut(
           self.key_b,
           entry.0,
           payload_b,
-          self.system,
         )
         f(entry.0, value_a, component_mut)
       }
@@ -565,7 +523,7 @@ pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::view_mut(
   store_b.for_each(fn(entity, payload) { entries.push((entity, payload)) })
   for entry in entries {
     if store_a.get(entry.0) is Some(payload_a) &&
-      QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
+      QueryFilter::matches(self.filter, self.world, entry.0) {
       let value_a : A = self.world.component_value(
         self.key_a,
         entry.0,
@@ -576,7 +534,6 @@ pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::view_mut(
         self.key_b,
         entry.0,
         entry.1,
-        self.system,
       )
       f(entry.0, value_a, component_mut)
     }
@@ -602,13 +559,7 @@ pub fn[A, B, F] Query2ValueMutFilteredParallel::batching_strategy(
 pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::count(
   self : Query2ValueMutFiltered[A, B, F],
 ) -> Int {
-  query2_count_filtered(
-    self.world,
-    self.key_a,
-    self.key_b,
-    self.filter,
-    self.system,
-  )
+  query2_count_filtered(self.world, self.key_a, self.key_b, self.filter)
 }
 
 ///|
@@ -639,20 +590,18 @@ pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::view_mut(
     store_a.for_each(fn(entity, payload) { entries.push((entity, payload)) })
     for entry in entries {
       if store_b.get(entry.0) is Some(payload_b) &&
-        QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
+        QueryFilter::matches(self.filter, self.world, entry.0) {
         let component_ref = query_component_ref_from_payload(
           self.world,
           self.key_a,
           entry.0,
           entry.1,
-          self.system,
         )
         let component_mut = query_component_mut_from_payload(
           self.world,
           self.key_b,
           entry.0,
           payload_b,
-          self.system,
         )
         f(entry.0, component_ref, component_mut)
       }
@@ -664,20 +613,18 @@ pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::view_mut(
   store_b.for_each(fn(entity, payload) { entries.push((entity, payload)) })
   for entry in entries {
     if store_a.get(entry.0) is Some(payload_a) &&
-      QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
+      QueryFilter::matches(self.filter, self.world, entry.0) {
       let component_ref = query_component_ref_from_payload(
         self.world,
         self.key_a,
         entry.0,
         payload_a,
-        self.system,
       )
       let component_mut = query_component_mut_from_payload(
         self.world,
         self.key_b,
         entry.0,
         entry.1,
-        self.system,
       )
       f(entry.0, component_ref, component_mut)
     }
@@ -695,7 +642,6 @@ pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::contiguous_iter_mut(
       self.key_a,
       self.key_b,
       self.filter,
-      self.system,
     ),
     index: 0,
   })
@@ -744,15 +690,15 @@ pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::get(
   self : Query3ValueRefMutFiltered[A, B, C, F],
   entity : @core.Entity,
 ) -> (A, ComponentRef[B], ComponentMut[C])? raise EcsError {
-  guard QueryFilter::matches(self.filter, self.world, entity, self.system) else {
+  guard QueryFilter::matches(self.filter, self.world, entity) else {
     return None
   }
   guard self.world.get(entity, self.key_a) is Some(value_a) else { return None }
-  guard query_component_ref(self.world, self.key_b, entity, self.system)
+  guard query_component_ref(self.world, self.key_b, entity)
     is Some(component_ref) else {
     return None
   }
-  guard query_component_mut(self.world, self.key_c, entity, self.system)
+  guard query_component_mut(self.world, self.key_c, entity)
     is Some(component_mut) else {
     return None
   }
@@ -805,7 +751,7 @@ pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::view_mut(
     for entry in entries {
       if store_b.get(entry.0) is Some(payload_b) &&
         store_c.get(entry.0) is Some(payload_c) &&
-        QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
+        QueryFilter::matches(self.filter, self.world, entry.0) {
         let value_a : A = self.world.component_value(
           self.key_a,
           entry.0,
@@ -816,14 +762,12 @@ pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::view_mut(
           self.key_b,
           entry.0,
           payload_b,
-          self.system,
         )
         let component_mut = query_component_mut_from_payload(
           self.world,
           self.key_c,
           entry.0,
           payload_c,
-          self.system,
         )
         f(entry.0, value_a, component_ref, component_mut)
       }
@@ -837,7 +781,7 @@ pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::view_mut(
     for entry in entries {
       if store_a.get(entry.0) is Some(payload_a) &&
         store_c.get(entry.0) is Some(payload_c) &&
-        QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
+        QueryFilter::matches(self.filter, self.world, entry.0) {
         let value_a : A = self.world.component_value(
           self.key_a,
           entry.0,
@@ -848,14 +792,12 @@ pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::view_mut(
           self.key_b,
           entry.0,
           entry.1,
-          self.system,
         )
         let component_mut = query_component_mut_from_payload(
           self.world,
           self.key_c,
           entry.0,
           payload_c,
-          self.system,
         )
         f(entry.0, value_a, component_ref, component_mut)
       }
@@ -868,7 +810,7 @@ pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::view_mut(
   for entry in entries {
     if store_a.get(entry.0) is Some(payload_a) &&
       store_b.get(entry.0) is Some(payload_b) &&
-      QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
+      QueryFilter::matches(self.filter, self.world, entry.0) {
       let value_a : A = self.world.component_value(
         self.key_a,
         entry.0,
@@ -879,14 +821,12 @@ pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::view_mut(
         self.key_b,
         entry.0,
         payload_b,
-        self.system,
       )
       let component_mut = query_component_mut_from_payload(
         self.world,
         self.key_c,
         entry.0,
         entry.1,
-        self.system,
       )
       f(entry.0, value_a, component_ref, component_mut)
     }
@@ -918,7 +858,6 @@ pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::count(
     self.key_b,
     self.key_c,
     self.filter,
-    self.system,
   )
 }
 
@@ -936,23 +875,18 @@ pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::get(
   self : Query3RefMutOptionalFiltered[A, B, C, F],
   entity : @core.Entity,
 ) -> (ComponentRef[A], ComponentMut[B], ComponentRef[C]?)? raise EcsError {
-  guard QueryFilter::matches(self.filter, self.world, entity, self.system) else {
+  guard QueryFilter::matches(self.filter, self.world, entity) else {
     return None
   }
-  guard query_component_ref(self.world, self.key_a, entity, self.system)
+  guard query_component_ref(self.world, self.key_a, entity)
     is Some(component_ref_a) else {
     return None
   }
-  guard query_component_mut(self.world, self.key_b, entity, self.system)
+  guard query_component_mut(self.world, self.key_b, entity)
     is Some(component_mut_b) else {
     return None
   }
-  let component_ref_c = query_component_ref(
-    self.world,
-    self.key_c,
-    entity,
-    self.system,
-  )
+  let component_ref_c = query_component_ref(self.world, self.key_c, entity)
   Some((component_ref_a, component_mut_b, component_ref_c))
 }
 
@@ -997,20 +931,18 @@ pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::view_mut(
     store_a.for_each(fn(entity, payload) { entries.push((entity, payload)) })
     for entry in entries {
       if store_b.get(entry.0) is Some(payload_b) &&
-        QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
+        QueryFilter::matches(self.filter, self.world, entry.0) {
         let component_ref_a = query_component_ref_from_payload(
           self.world,
           self.key_a,
           entry.0,
           entry.1,
-          self.system,
         )
         let component_mut_b = query_component_mut_from_payload(
           self.world,
           self.key_b,
           entry.0,
           payload_b,
-          self.system,
         )
         let component_ref_c = match
           self.world.component_store(self.key_c.id()) {
@@ -1023,7 +955,6 @@ pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::view_mut(
                     self.key_c,
                     entry.0,
                     payload_c,
-                    self.system,
                   ),
                 )
               None => None
@@ -1040,20 +971,18 @@ pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::view_mut(
   store_b.for_each(fn(entity, payload) { entries.push((entity, payload)) })
   for entry in entries {
     if store_a.get(entry.0) is Some(payload_a) &&
-      QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
+      QueryFilter::matches(self.filter, self.world, entry.0) {
       let component_ref_a = query_component_ref_from_payload(
         self.world,
         self.key_a,
         entry.0,
         payload_a,
-        self.system,
       )
       let component_mut_b = query_component_mut_from_payload(
         self.world,
         self.key_b,
         entry.0,
         entry.1,
-        self.system,
       )
       let component_ref_c = match self.world.component_store(self.key_c.id()) {
         Some(store_c_ref) =>
@@ -1065,7 +994,6 @@ pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::view_mut(
                   self.key_c,
                   entry.0,
                   payload_c,
-                  self.system,
                 ),
               )
             None => None
@@ -1081,26 +1009,14 @@ pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::view_mut(
 pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::count(
   self : Query3RefMutOptionalFiltered[A, B, C, F],
 ) -> Int {
-  query2_count_filtered(
-    self.world,
-    self.key_a,
-    self.key_b,
-    self.filter,
-    self.system,
-  )
+  query2_count_filtered(self.world, self.key_a, self.key_b, self.filter)
 }
 
 ///|
 pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::count(
   self : Query2RefMutFiltered[A, B, F],
 ) -> Int {
-  query2_count_filtered(
-    self.world,
-    self.key_a,
-    self.key_b,
-    self.filter,
-    self.system,
-  )
+  query2_count_filtered(self.world, self.key_a, self.key_b, self.filter)
 }
 
 ///|

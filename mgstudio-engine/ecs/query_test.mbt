@@ -249,7 +249,7 @@ test "ecs query: filtered query supports with/without tuples and entity counts" 
 }
 
 ///|
-test "ecs query: component ref reports added and changed state" {
+test "ecs query: component ref no longer tracks added and changed state" {
   let world = World::new()
   let comp_position : ComponentKey[Position] = register_component(
     debug_name="position_component_ref",
@@ -262,8 +262,8 @@ test "ecs query: component ref reports added and changed state" {
   world.set_system_context(ctx1)
   let initial_ref = (try! world.get_ref(entity, comp_position)).unwrap()
   inspect(initial_ref.value(), content="{x: 1, y: 2}")
-  inspect(initial_ref.is_added(), content="true")
-  inspect(initial_ref.is_changed(), content="true")
+  inspect(initial_ref.is_added(), content="false")
+  inspect(initial_ref.is_changed(), content="false")
 
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
@@ -279,11 +279,11 @@ test "ecs query: component ref reports added and changed state" {
   let changed_ref = (try! world.get_ref(entity, comp_position)).unwrap()
   inspect(changed_ref.value(), content="{x: 11, y: 22}")
   inspect(changed_ref.is_added(), content="false")
-  inspect(changed_ref.is_changed(), content="true")
+  inspect(changed_ref.is_changed(), content="false")
 }
 
 ///|
-test "ecs query: changed and added filters follow system ticks" {
+test "ecs query: structural filters compose without change detection" {
   let world = World::new()
   let comp_position : ComponentKey[Position] = register_component(
     debug_name="position_query_changed",
@@ -298,18 +298,15 @@ test "ecs query: changed and added filters follow system ticks" {
   try! world.set(e1, comp_position, Position::{ x: 2, y: 2 })
   try! world.set(e1, comp_velocity, Velocity::{ dx: 3, dy: 3 })
 
-  let ctx1 = @core.SystemContext::new()
-  ctx1.set(@core.SystemTicks::new(0, 1))
-  world.set_system_context(ctx1)
   inspect(
-    world.query1_filtered(comp_position, Added::new(comp_position)).count(),
+    world.query1_filtered(comp_position, With::new(comp_position)).count(),
     content="2",
   )
   inspect(
     world
     .query1_filtered(
       comp_position,
-      Or::new((Changed::new(comp_position), Added::new(comp_velocity))),
+      Or::new((Without::new(comp_velocity), With::new(comp_velocity))),
     )
     .count(),
     content="2",
@@ -324,30 +321,27 @@ test "ecs query: changed and added filters follow system ticks" {
     content="true",
   )
 
-  let ctx2 = @core.SystemContext::new()
-  ctx2.set(@core.SystemTicks::new(1, 2))
-  world.set_system_context(ctx2)
   inspect(
-    world.query1_filtered(comp_position, Added::new(comp_position)).count(),
-    content="0",
+    world.query1_filtered(comp_position, With::new(comp_position)).count(),
+    content="2",
   )
   inspect(
-    world.query1_filtered(comp_position, Changed::new(comp_position)).count(),
+    world.query1_filtered(comp_position, Without::new(comp_velocity)).count(),
     content="1",
   )
   inspect(
     world
     .query1_filtered(
       comp_position,
-      Or::new((Changed::new(comp_position), Added::new(comp_velocity))),
+      Or::new((Without::new(comp_velocity), With::new(comp_velocity))),
     )
     .count(),
-    content="1",
+    content="2",
   )
 }
 
 ///|
-test "ecs query: iter_many_ref preserves filter and change state" {
+test "ecs query: iter_many_ref preserves filter order without change state" {
   let world = World::new()
   let comp_position : ComponentKey[Position] = register_component(
     debug_name="position_iter_many_ref",
@@ -382,7 +376,7 @@ test "ecs query: iter_many_ref preserves filter and change state" {
       break
     }
   }
-  inspect(seen, content="[(1, true, true), (2, true, true)]")
+  inspect(seen, content="[(1, false, false), (2, false, false)]")
 }
 
 ///|
@@ -432,5 +426,5 @@ test "ecs query: iter_many_unique_ref rejects duplicates and preserves order" {
       break
     }
   }
-  inspect(seen, content="[(2, true, true), (1, true, true)]")
+  inspect(seen, content="[(2, false, false), (1, false, false)]")
 }

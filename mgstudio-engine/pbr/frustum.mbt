@@ -222,17 +222,7 @@ pub fn Projection::compute_frustum(
 pub fn render3d_update_frusta_system(world : @ecs.World) -> Unit {
   let frustum_store = get_frustum_store(world)
   let tick = world.read_change_tick()
-  let query = world.query2_filtered(
-    @transform.ecs_key_transform,
-    ecs_key_projection,
-    @ecs.Or::new(
-      (
-        @ecs.Changed::new(@transform.ecs_key_transform),
-        @ecs.Changed::new(ecs_key_projection),
-        @ecs.Without::new(ecs_key_frustum),
-      ),
-    ),
-  )
+  let query = world.query2(@transform.ecs_key_transform, ecs_key_projection)
   try! query.view(fn(entity, transform, projection) {
     let next = projection.compute_frustum(transform)
     if frustum_store.contains(entity) {

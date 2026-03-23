@@ -82,12 +82,6 @@ pub(all) suberror RequiredComponentsError {
 }
 
 // Types and methods
-pub struct Added[T] {
-  key : ComponentKey[T]
-}
-pub fn[T] Added::new(ComponentKey[T]) -> Self[T]
-pub impl[T] QueryFilter for Added[T]
-
 pub struct All {
 }
 pub fn All::new() -> Self
@@ -107,12 +101,6 @@ pub fn BatchingStrategy::new() -> Self
 pub impl Default for BatchingStrategy
 pub impl Eq for BatchingStrategy
 pub impl Show for BatchingStrategy
-
-pub struct Changed[T] {
-  key : ComponentKey[T]
-}
-pub fn[T] Changed::new(ComponentKey[T]) -> Self[T]
-pub impl[T] QueryFilter for Changed[T]
 
 pub struct ComponentAccess[T] {
   world : World
@@ -173,32 +161,18 @@ pub fn[T] ComponentKey::id(Self[T]) -> Int
 
 pub struct ComponentMut[T] {
   value_ref : @ref.Ref[T]
-  ticks : @core.ComponentTicks
-  system : @core.SystemTicks
-  mut changed : Bool
-  writeback : ComponentMutWriteback[T]?
 }
 pub fn[T] ComponentMut::get(Self[T]) -> T
 pub fn[T] ComponentMut::get_ref(Self[T]) -> @ref.Ref[T]
 pub fn[T] ComponentMut::is_added(Self[T]) -> Bool
 pub fn[T] ComponentMut::is_changed(Self[T]) -> Bool
 pub fn[T] ComponentMut::set_changed(Self[T]) -> Unit
-pub fn[T] ComponentMut::ticks(Self[T]) -> @core.ComponentTicks
-
-pub struct ComponentMutWriteback[T] {
-  world : World
-  key : ComponentKey[T]
-  entity : @core.Entity
-}
 
 pub struct ComponentRef[T] {
   value : T
-  ticks : @core.ComponentTicks
-  system : @core.SystemTicks
 }
 pub fn[T] ComponentRef::is_added(Self[T]) -> Bool
 pub fn[T] ComponentRef::is_changed(Self[T]) -> Bool
-pub fn[T] ComponentRef::ticks(Self[T]) -> @core.ComponentTicks
 pub fn[T] ComponentRef::value(Self[T]) -> T
 
 pub struct DeferredEntityCommands {
@@ -234,7 +208,6 @@ pub fn DeferredWorldCommands::entity(Self, @core.Entity) -> DeferredEntityComman
 pub struct EntityQuery[F] {
   world : World
   filter : F
-  system : @core.SystemTicks
 }
 pub fn[F : QueryFilter] EntityQuery::count(Self[F]) -> Int
 pub fn[F : QueryFilter] EntityQuery::view(Self[F], (@core.Entity) -> Unit) -> Unit
@@ -403,7 +376,6 @@ pub struct Query1Filtered[A, F] {
   world : World
   key_a : ComponentKey[A]
   filter : F
-  system : @core.SystemTicks
 }
 pub fn[A, F : QueryFilter] Query1Filtered::count(Self[A, F]) -> Int
 pub fn[A, F : QueryFilter] Query1Filtered::for_each(Self[A, F], (@core.Entity, A) -> Unit) -> Unit raise EcsError
@@ -470,7 +442,6 @@ pub struct Query2Filtered[A, B, F] {
   key_a : ComponentKey[A]
   key_b : ComponentKey[B]
   filter : F
-  system : @core.SystemTicks
 }
 pub fn[A, B, F : QueryFilter] Query2Filtered::count(Self[A, B, F]) -> Int
 pub fn[A, B, F : QueryFilter] Query2Filtered::for_each(Self[A, B, F], (@core.Entity, A, B) -> Unit) -> Unit raise EcsError
@@ -482,7 +453,6 @@ pub struct Query2RefMutFiltered[A, B, F] {
   key_a : ComponentKey[A]
   key_b : ComponentKey[B]
   filter : F
-  system : @core.SystemTicks
 }
 pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::contiguous_iter_mut(Self[A, B, F]) -> Query2RefMutFilteredContiguousMut[A, B, F]?
 pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::count(Self[A, B, F]) -> Int
@@ -521,7 +491,6 @@ pub struct Query2ValueMutFiltered[A, B, F] {
   key_a : ComponentKey[A]
   key_b : ComponentKey[B]
   filter : F
-  system : @core.SystemTicks
 }
 pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::contiguous_iter_mut(Self[A, B, F]) -> Query2ValueMutFilteredContiguousMut[A, B, F]?
 pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::count(Self[A, B, F]) -> Int
@@ -562,7 +531,6 @@ pub struct Query3Filtered[A, B, C, F] {
   key_b : ComponentKey[B]
   key_c : ComponentKey[C]
   filter : F
-  system : @core.SystemTicks
 }
 pub fn[A, B, C, F : QueryFilter] Query3Filtered::count(Self[A, B, C, F]) -> Int
 pub fn[A, B, C, F : QueryFilter] Query3Filtered::for_each(Self[A, B, C, F], (@core.Entity, A, B, C) -> Unit) -> Unit raise EcsError
@@ -575,7 +543,6 @@ pub struct Query3RefMutOptionalFiltered[A, B, C, F] {
   key_b : ComponentKey[B]
   key_c : ComponentKey[C]
   filter : F
-  system : @core.SystemTicks
 }
 pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::count(Self[A, B, C, F]) -> Int
 pub fn[A, B, C, F : QueryFilter] Query3RefMutOptionalFiltered::get(Self[A, B, C, F], @core.Entity) -> (ComponentRef[A], ComponentMut[B], ComponentRef[C]?)? raise EcsError
@@ -589,7 +556,6 @@ pub struct Query3ValueRefMutFiltered[A, B, C, F] {
   key_b : ComponentKey[B]
   key_c : ComponentKey[C]
   filter : F
-  system : @core.SystemTicks
 }
 pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::count(Self[A, B, C, F]) -> Int
 pub fn[A, B, C, F : QueryFilter] Query3ValueRefMutFiltered::get(Self[A, B, C, F], @core.Entity) -> (A, ComponentRef[B], ComponentMut[C])? raise EcsError
@@ -779,13 +745,13 @@ pub(open) trait ObserverEvent {
 }
 
 pub(open) trait QueryFilter {
-  matches(Self, World, @core.Entity, @core.SystemTicks) -> Bool
+  matches(Self, World, @core.Entity) -> Bool
 }
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B)
 pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (A, B, C)
 
 pub(open) trait QueryFilterDisjunction {
-  matches_any(Self, World, @core.Entity, @core.SystemTicks) -> Bool
+  matches_any(Self, World, @core.Entity) -> Bool
 }
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B)
 pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjunction for (A, B, C)

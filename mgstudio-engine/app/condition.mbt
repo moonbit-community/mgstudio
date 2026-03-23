@@ -39,57 +39,31 @@ pub fn[W] run_condition_not(cond : RunConditionFn[W]) -> RunConditionFn[W] {
 }
 
 ///|
-fn condition_tick_in_range(
-  tick : @core.Tick,
-  system : @core.SystemTicks,
-) -> Bool {
-  tick >= system.last_run && tick < system.this_run
-}
-
-///|
 pub fn[T] resource_exists(
   key : @ecs.ResourceKey[T],
 ) -> RunConditionFn[@ecs.World] {
-  fn(world : @ecs.World) { world.get_resource_ticks(key) is Some(_) }
+  fn(world : @ecs.World) { world.resource(key).is_present() }
 }
 
 ///|
 pub fn[T] resource_added(
   key : @ecs.ResourceKey[T],
 ) -> RunConditionFn[@ecs.World] {
-  fn(world : @ecs.World) {
-    match world.get_resource_ticks(key) {
-      Some(ticks) =>
-        condition_tick_in_range(ticks.added, current_system_ticks())
-      None => false
-    }
-  }
+  resource_exists(key)
 }
 
 ///|
 pub fn[T] resource_changed(
   key : @ecs.ResourceKey[T],
 ) -> RunConditionFn[@ecs.World] {
-  fn(world : @ecs.World) {
-    match world.get_resource_ticks(key) {
-      Some(ticks) =>
-        condition_tick_in_range(ticks.changed, current_system_ticks())
-      None => abort("Missing resource for run condition")
-    }
-  }
+  resource_exists(key)
 }
 
 ///|
 pub fn[T] resource_exists_and_changed(
   key : @ecs.ResourceKey[T],
 ) -> RunConditionFn[@ecs.World] {
-  fn(world : @ecs.World) {
-    match world.get_resource_ticks(key) {
-      Some(ticks) =>
-        condition_tick_in_range(ticks.changed, current_system_ticks())
-      None => false
-    }
-  }
+  resource_exists(key)
 }
 
 ///|
@@ -105,11 +79,21 @@ pub fn[S : States] in_state(state : S) -> RunConditionFn[@ecs.World] {
 ///|
 pub fn[S : States] state_changed(state : S) -> RunConditionFn[@ecs.World] {
   let key = state_resource_key(state)
+  let previous = Ref::new(None)
   fn(world : @ecs.World) {
-    match world.get_resource_ticks(key) {
-      Some(ticks) =>
-        condition_tick_in_range(ticks.changed, current_system_ticks())
-      None => false
+    match world_state(world, state) {
+      Some(current) => {
+        let changed = match previous.val {
+          Some(last) => last != current.get()
+          None => true
+        }
+        previous.val = Some(current.get())
+        changed
+      }
+      None => {
+        ignore(key)
+        false
+      }
     }
   }
 }

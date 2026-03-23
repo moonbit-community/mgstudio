@@ -37,7 +37,6 @@ pub struct Query3[A, B, C] {
 pub struct EntityQuery[F] {
   world : World
   filter : F
-  system : @core.SystemTicks
 }
 
 ///|
@@ -45,7 +44,6 @@ pub struct Query1Filtered[A, F] {
   world : World
   key_a : ComponentKey[A]
   filter : F
-  system : @core.SystemTicks
 }
 
 ///|
@@ -68,7 +66,6 @@ pub struct Query2Filtered[A, B, F] {
   key_a : ComponentKey[A]
   key_b : ComponentKey[B]
   filter : F
-  system : @core.SystemTicks
 }
 
 ///|
@@ -78,7 +75,6 @@ pub struct Query3Filtered[A, B, C, F] {
   key_b : ComponentKey[B]
   key_c : ComponentKey[C]
   filter : F
-  system : @core.SystemTicks
 }
 
 ///|
@@ -110,11 +106,7 @@ pub fn[F] World::query_entities_filtered(
   self : World,
   filter : F,
 ) -> EntityQuery[F] {
-  EntityQuery::{
-    world: self,
-    filter,
-    system: self.get_system_context().ticks(),
-  }
+  EntityQuery::{ world: self, filter }
 }
 
 ///|
@@ -123,12 +115,7 @@ pub fn[A, F] World::query1_filtered(
   key_a : ComponentKey[A],
   filter : F,
 ) -> Query1Filtered[A, F] {
-  Query1Filtered::{
-    world: self,
-    key_a,
-    filter,
-    system: self.get_system_context().ticks(),
-  }
+  Query1Filtered::{ world: self, key_a, filter }
 }
 
 ///|
@@ -138,13 +125,7 @@ pub fn[A, B, F] World::query2_filtered(
   key_b : ComponentKey[B],
   filter : F,
 ) -> Query2Filtered[A, B, F] {
-  Query2Filtered::{
-    world: self,
-    key_a,
-    key_b,
-    filter,
-    system: self.get_system_context().ticks(),
-  }
+  Query2Filtered::{ world: self, key_a, key_b, filter }
 }
 
 ///|
@@ -155,14 +136,7 @@ pub fn[A, B, C, F] World::query3_filtered(
   key_c : ComponentKey[C],
   filter : F,
 ) -> Query3Filtered[A, B, C, F] {
-  Query3Filtered::{
-    world: self,
-    key_a,
-    key_b,
-    key_c,
-    filter,
-    system: self.get_system_context().ticks(),
-  }
+  Query3Filtered::{ world: self, key_a, key_b, key_c, filter }
 }
 
 ///|
@@ -207,7 +181,7 @@ pub fn[F : QueryFilter] EntityQuery::view(
   f : (@core.Entity) -> Unit,
 ) -> Unit {
   for entity in query_all_alive_entities(self.world) {
-    if QueryFilter::matches(self.filter, self.world, entity, self.system) {
+    if QueryFilter::matches(self.filter, self.world, entity) {
       f(entity)
     }
   }
@@ -218,7 +192,7 @@ pub fn[A, F : QueryFilter] Query1Filtered::get(
   self : Query1Filtered[A, F],
   entity : @core.Entity,
 ) -> A? raise EcsError {
-  guard QueryFilter::matches(self.filter, self.world, entity, self.system) else {
+  guard QueryFilter::matches(self.filter, self.world, entity) else {
     return None
   }
   self.world.get(entity, self.key_a)
@@ -229,10 +203,10 @@ pub fn[A, F : QueryFilter] Query1Filtered::get_ref(
   self : Query1Filtered[A, F],
   entity : @core.Entity,
 ) -> ComponentRef[A]? raise EcsError {
-  guard QueryFilter::matches(self.filter, self.world, entity, self.system) else {
+  guard QueryFilter::matches(self.filter, self.world, entity) else {
     return None
   }
-  query_component_ref(self.world, self.key_a, entity, self.system)
+  query_component_ref(self.world, self.key_a, entity)
 }
 
 ///|
@@ -246,7 +220,7 @@ pub fn[A, F : QueryFilter] Query1Filtered::view(
   let entries : Array[(@core.Entity, ErasedValue)] = []
   store_ref.val.for_each(fn(entity, payload) { entries.push((entity, payload)) })
   for entry in entries {
-    if QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
+    if QueryFilter::matches(self.filter, self.world, entry.0) {
       let value : A = self.world.component_value(self.key_a, entry.0, entry.1)
       f(entry.0, value)
     }
@@ -264,13 +238,12 @@ pub fn[A, F : QueryFilter] Query1Filtered::view_ref(
   let entries : Array[(@core.Entity, ErasedValue)] = []
   store_ref.val.for_each(fn(entity, payload) { entries.push((entity, payload)) })
   for entry in entries {
-    if QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
+    if QueryFilter::matches(self.filter, self.world, entry.0) {
       let component_ref = query_component_ref_from_payload(
         self.world,
         self.key_a,
         entry.0,
         entry.1,
-        self.system,
       )
       f(entry.0, component_ref)
     }
@@ -337,17 +310,11 @@ pub fn[A, F : QueryFilter] Query1Filtered::for_each(
   }
   let entries : Array[(@core.Entity, ErasedValue)] = []
   store_ref.val.for_each(fn(entity, payload) { entries.push((entity, payload)) })
-  let writes : Array[(@core.Entity, ErasedValue)] = []
   for entry in entries {
-    if QueryFilter::matches(self.filter, self.world, entry.0, self.system) {
+    if QueryFilter::matches(self.filter, self.world, entry.0) {
       let value : A = self.world.component_value(self.key_a, entry.0, entry.1)
       f(entry.0, value)
-      writes.push((entry.0, erased_value(value)))
     }
-  }
-  let tick = component_write_change_tick(self.world)
-  for write in writes {
-    store_ref.val.set(write.0, write.1, tick) |> ignore
   }
 }
 
@@ -381,7 +348,7 @@ pub fn[A, F : QueryFilter] Query1Filtered::count(
   }
   let counter = Ref::new(0)
   store_ref.val.for_each(fn(entity, _payload) {
-    if QueryFilter::matches(self.filter, self.world, entity, self.system) {
+    if QueryFilter::matches(self.filter, self.world, entity) {
       counter.val = counter.val + 1
     }
   })
@@ -462,13 +429,7 @@ pub fn[A, B] Query2::view(
 
 ///|
 pub fn[A, B] Query2::count(self : Query2[A, B]) -> Int {
-  query2_count_filtered(
-    self.world,
-    self.key_a,
-    self.key_b,
-    All::new(),
-    self.world.get_system_context().ticks(),
-  )
+  query2_count_filtered(self.world, self.key_a, self.key_b, All::new())
 }
 
 ///|
@@ -476,7 +437,7 @@ pub fn[A, B, F : QueryFilter] Query2Filtered::get(
   self : Query2Filtered[A, B, F],
   entity : @core.Entity,
 ) -> (A, B)? raise EcsError {
-  guard QueryFilter::matches(self.filter, self.world, entity, self.system) else {
+  guard QueryFilter::matches(self.filter, self.world, entity) else {
     return None
   }
   guard self.world.get(entity, self.key_a) is Some(value_a) else { return None }
@@ -494,7 +455,7 @@ pub fn[A, B, F : QueryFilter] Query2Filtered::view(
     value_a,
     value_b,
   ) {
-    if QueryFilter::matches(self.filter, self.world, entity, self.system) {
+    if QueryFilter::matches(self.filter, self.world, entity) {
       f(entity, value_a, value_b)
     }
   })
@@ -505,37 +466,22 @@ pub fn[A, B, F : QueryFilter] Query2Filtered::for_each(
   self : Query2Filtered[A, B, F],
   f : (@core.Entity, A, B) -> Unit,
 ) -> Unit raise EcsError {
-  let writes : Array[(@core.Entity, ErasedValue, ErasedValue)] = []
   query2_for_each_intersection(self.world, self.key_a, self.key_b, fn(
     entity,
     value_a,
     value_b,
   ) {
-    if QueryFilter::matches(self.filter, self.world, entity, self.system) {
+    if QueryFilter::matches(self.filter, self.world, entity) {
       f(entity, value_a, value_b)
-      writes.push((entity, erased_value(value_a), erased_value(value_b)))
     }
   })
-  let store_a_ref = self.world.ensure_component_store(self.key_a.id())
-  let store_b_ref = self.world.ensure_component_store(self.key_b.id())
-  let tick = component_write_change_tick(self.world)
-  for write in writes {
-    store_a_ref.val.set(write.0, write.1, tick) |> ignore
-    store_b_ref.val.set(write.0, write.2, tick) |> ignore
-  }
 }
 
 ///|
 pub fn[A, B, F : QueryFilter] Query2Filtered::count(
   self : Query2Filtered[A, B, F],
 ) -> Int {
-  query2_count_filtered(
-    self.world,
-    self.key_a,
-    self.key_b,
-    self.filter,
-    self.system,
-  )
+  query2_count_filtered(self.world, self.key_a, self.key_b, self.filter)
 }
 
 ///|
@@ -573,7 +519,6 @@ pub fn[A, B, C] Query3::count(self : Query3[A, B, C]) -> Int {
     self.key_b,
     self.key_c,
     All::new(),
-    self.world.get_system_context().ticks(),
   )
 }
 
@@ -582,7 +527,7 @@ pub fn[A, B, C, F : QueryFilter] Query3Filtered::get(
   self : Query3Filtered[A, B, C, F],
   entity : @core.Entity,
 ) -> (A, B, C)? raise EcsError {
-  guard QueryFilter::matches(self.filter, self.world, entity, self.system) else {
+  guard QueryFilter::matches(self.filter, self.world, entity) else {
     return None
   }
   guard self.world.get(entity, self.key_a) is Some(value_a) else { return None }
@@ -602,7 +547,7 @@ pub fn[A, B, C, F : QueryFilter] Query3Filtered::view(
     value_b,
     value_c,
   ) {
-    if QueryFilter::matches(self.filter, self.world, entity, self.system) {
+    if QueryFilter::matches(self.filter, self.world, entity) {
       f(entity, value_a, value_b, value_c)
     }
   })
@@ -613,34 +558,16 @@ pub fn[A, B, C, F : QueryFilter] Query3Filtered::for_each(
   self : Query3Filtered[A, B, C, F],
   f : (@core.Entity, A, B, C) -> Unit,
 ) -> Unit raise EcsError {
-  let writes : Array[(@core.Entity, ErasedValue, ErasedValue, ErasedValue)] = []
   query3_for_each_intersection(self.world, self.key_a, self.key_b, self.key_c, fn(
     entity,
     value_a,
     value_b,
     value_c,
   ) {
-    if QueryFilter::matches(self.filter, self.world, entity, self.system) {
+    if QueryFilter::matches(self.filter, self.world, entity) {
       f(entity, value_a, value_b, value_c)
-      writes.push(
-        (
-          entity,
-          erased_value(value_a),
-          erased_value(value_b),
-          erased_value(value_c),
-        ),
-      )
     }
   })
-  let store_a_ref = self.world.ensure_component_store(self.key_a.id())
-  let store_b_ref = self.world.ensure_component_store(self.key_b.id())
-  let store_c_ref = self.world.ensure_component_store(self.key_c.id())
-  let tick = component_write_change_tick(self.world)
-  for write in writes {
-    store_a_ref.val.set(write.0, write.1, tick) |> ignore
-    store_b_ref.val.set(write.0, write.2, tick) |> ignore
-    store_c_ref.val.set(write.0, write.3, tick) |> ignore
-  }
 }
 
 ///|
@@ -653,7 +580,6 @@ pub fn[A, B, C, F : QueryFilter] Query3Filtered::count(
     self.key_b,
     self.key_c,
     self.filter,
-    self.system,
   )
 }
 
@@ -718,15 +644,9 @@ pub fn[A] query1_for_each(
   guard world.component_store(key_a.id()) is Some(store_ref) else { return }
   let entries : Array[(@core.Entity, ErasedValue)] = []
   store_ref.val.for_each(fn(entity, payload) { entries.push((entity, payload)) })
-  let writes : Array[(@core.Entity, ErasedValue)] = []
   for entry in entries {
     let value : A = world.component_value(key_a, entry.0, entry.1)
     f(entry.0, value)
-    writes.push((entry.0, erased_value(value)))
-  }
-  let tick = world.read_change_tick()
-  for write in writes {
-    store_ref.val.set(write.0, write.1, tick) |> ignore
   }
 }
 
@@ -763,22 +683,13 @@ pub fn[A, B] query2_for_each(
   key_b : ComponentKey[B],
   f : (@core.Entity, A, B) -> Unit,
 ) -> Unit raise EcsError {
-  let writes : Array[(@core.Entity, ErasedValue, ErasedValue)] = []
   query2_for_each_intersection(world, key_a, key_b, fn(
     entity,
     value_a,
     value_b,
   ) {
     f(entity, value_a, value_b)
-    writes.push((entity, erased_value(value_a), erased_value(value_b)))
   })
-  let store_a_ref = world.ensure_component_store(key_a.id())
-  let store_b_ref = world.ensure_component_store(key_b.id())
-  let tick = world.read_change_tick()
-  for write in writes {
-    store_a_ref.val.set(write.0, write.1, tick) |> ignore
-    store_b_ref.val.set(write.0, write.2, tick) |> ignore
-  }
 }
 
 ///|
@@ -818,7 +729,6 @@ pub fn[A, B, C] query3_for_each(
   key_c : ComponentKey[C],
   f : (@core.Entity, A, B, C) -> Unit,
 ) -> Unit raise EcsError {
-  let writes : Array[(@core.Entity, ErasedValue, ErasedValue, ErasedValue)] = []
   query3_for_each_intersection(world, key_a, key_b, key_c, fn(
     entity,
     value_a,
@@ -826,24 +736,7 @@ pub fn[A, B, C] query3_for_each(
     value_c,
   ) {
     f(entity, value_a, value_b, value_c)
-    writes.push(
-      (
-        entity,
-        erased_value(value_a),
-        erased_value(value_b),
-        erased_value(value_c),
-      ),
-    )
   })
-  let store_a_ref = world.ensure_component_store(key_a.id())
-  let store_b_ref = world.ensure_component_store(key_b.id())
-  let store_c_ref = world.ensure_component_store(key_c.id())
-  let tick = world.read_change_tick()
-  for write in writes {
-    store_a_ref.val.set(write.0, write.1, tick) |> ignore
-    store_b_ref.val.set(write.0, write.2, tick) |> ignore
-    store_c_ref.val.set(write.0, write.3, tick) |> ignore
-  }
 }
 
 ///|
@@ -950,7 +843,6 @@ fn[A, B, F : QueryFilter] query2_count_filtered(
   key_a : ComponentKey[A],
   key_b : ComponentKey[B],
   filter : F,
-  system : @core.SystemTicks,
 ) -> Int {
   guard world.component_store(key_a.id()) is Some(store_a_ref) else { return 0 }
   guard world.component_store(key_b.id()) is Some(store_b_ref) else { return 0 }
@@ -960,8 +852,7 @@ fn[A, B, F : QueryFilter] query2_count_filtered(
 
   if store_a.len() <= store_b.len() {
     store_a.for_each(fn(entity, _payload) {
-      if store_b.contains(entity) &&
-        QueryFilter::matches(filter, world, entity, system) {
+      if store_b.contains(entity) && QueryFilter::matches(filter, world, entity) {
         counter.val = counter.val + 1
       }
     })
@@ -969,8 +860,7 @@ fn[A, B, F : QueryFilter] query2_count_filtered(
   }
 
   store_b.for_each(fn(entity, _payload) {
-    if store_a.contains(entity) &&
-      QueryFilter::matches(filter, world, entity, system) {
+    if store_a.contains(entity) && QueryFilter::matches(filter, world, entity) {
       counter.val = counter.val + 1
     }
   })
@@ -984,7 +874,6 @@ fn[A, B, C, F : QueryFilter] query3_count_filtered(
   key_b : ComponentKey[B],
   key_c : ComponentKey[C],
   filter : F,
-  system : @core.SystemTicks,
 ) -> Int {
   guard world.component_store(key_a.id()) is Some(store_a_ref) else { return 0 }
   guard world.component_store(key_b.id()) is Some(store_b_ref) else { return 0 }
@@ -999,7 +888,7 @@ fn[A, B, C, F : QueryFilter] query3_count_filtered(
     store_a.for_each(fn(entity, _payload) {
       if store_b.contains(entity) &&
         store_c.contains(entity) &&
-        QueryFilter::matches(filter, world, entity, system) {
+        QueryFilter::matches(filter, world, entity) {
         counter.val = counter.val + 1
       }
     })
@@ -1010,7 +899,7 @@ fn[A, B, C, F : QueryFilter] query3_count_filtered(
     store_b.for_each(fn(entity, _payload) {
       if store_a.contains(entity) &&
         store_c.contains(entity) &&
-        QueryFilter::matches(filter, world, entity, system) {
+        QueryFilter::matches(filter, world, entity) {
         counter.val = counter.val + 1
       }
     })
@@ -1020,7 +909,7 @@ fn[A, B, C, F : QueryFilter] query3_count_filtered(
   store_c.for_each(fn(entity, _payload) {
     if store_a.contains(entity) &&
       store_b.contains(entity) &&
-      QueryFilter::matches(filter, world, entity, system) {
+      QueryFilter::matches(filter, world, entity) {
       counter.val = counter.val + 1
     }
   })
@@ -1051,11 +940,10 @@ fn[A] query_component_ref(
   world : World,
   key : ComponentKey[A],
   entity : @core.Entity,
-  system : @core.SystemTicks,
 ) -> ComponentRef[A]? raise EcsError {
   guard world.component_store(key.id()) is Some(store_ref) else { return None }
   guard store_ref.val.get(entity) is Some(payload) else { return None }
-  Some(query_component_ref_from_payload(world, key, entity, payload, system))
+  Some(query_component_ref_from_payload(world, key, entity, payload))
 }
 
 ///|
@@ -1064,9 +952,7 @@ fn[A] query_component_ref_from_payload(
   key : ComponentKey[A],
   entity : @core.Entity,
   payload : ErasedValue,
-  system : @core.SystemTicks,
 ) -> ComponentRef[A] raise EcsError {
   let value : A = world.component_value(key, entity, payload)
-  let ticks = world.component(key).get_ticks(entity).unwrap()
-  ComponentRef::{ value, ticks, system }
+  ComponentRef::{ value, }
 }

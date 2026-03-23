@@ -40,7 +40,7 @@ pub fn register_transform_required_components(@ecs.World) -> Unit raise @ecs.Req
 
 pub fn static_transform_optimizations_resource_key() -> @ecs.ResourceKey[StaticTransformOptimizations]
 
-pub fn sync_simple_transforms(@app.ParamSet2[@ecs.Query2ValueMutFiltered[Transform, GlobalTransform, (@ecs.Or[(@ecs.Changed[Transform], @ecs.Added[GlobalTransform])], @ecs.Without[@hierarchy.Parent], @ecs.Without[@hierarchy.Children])], @ecs.Query2RefMutFiltered[Transform, GlobalTransform, (@ecs.Without[@hierarchy.Parent], @ecs.Without[@hierarchy.Children])]], @ecs.RemovedComponents[@hierarchy.Parent]) -> Unit
+pub fn sync_simple_transforms(@app.ParamSet2[@ecs.Query2[Transform, GlobalTransform], @ecs.Query2[Transform, GlobalTransform]], @ecs.RemovedComponents[@hierarchy.Parent]) -> Unit
 
 pub fn sync_simple_transforms_world(@ecs.World) -> Unit
 

@@ -30,7 +30,7 @@ test "ecs batching strategy: calc batch size respects limits" {
 }
 
 ///|
-test "ecs query mut: iter_many_mut writes back filtered components" {
+test "ecs query mut: iter_many_mut updates filtered components without change flags" {
   let world = World::new()
   let comp_position : ComponentKey[Position] = register_component(
     debug_name="position_iter_many_mut",
@@ -61,13 +61,13 @@ test "ecs query mut: iter_many_mut writes back filtered components" {
     component_mut.get_ref().val.x = component_mut.get_ref().val.x + 10
   }
 
-  inspect(seen, content="[(1, true, true), (2, true, true)]")
+  inspect(seen, content="[(1, false, false), (2, false, false)]")
   inspect(try! world.get(e1, comp_position), content="Some({x: 12, y: 2})")
   inspect(try! world.get(e2, comp_position), content="Some({x: 14, y: 4})")
 }
 
 ///|
-test "ecs query mut: read-only view_mut does not mark components changed" {
+test "ecs query mut: read-only view_mut exposes no change flags" {
   let world = World::new()
   let comp_velocity : ComponentKey[Velocity] = register_component(
     debug_name="velocity_query_mut_read_only",
@@ -84,7 +84,7 @@ test "ecs query mut: read-only view_mut does not mark components changed" {
   .view_mut(fn(_entity, component_mut) {
     observed_flags.push((component_mut.is_added(), component_mut.is_changed()))
   })
-  inspect(observed_flags, content="[(true, true)]")
+  inspect(observed_flags, content="[(false, false)]")
 
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
@@ -92,10 +92,7 @@ test "ecs query mut: read-only view_mut does not mark components changed" {
   ctx2.set(@core.SystemTicks::new(1, 2))
   world.set_system_context(ctx2)
 
-  inspect(
-    world.query1_filtered(comp_velocity, Changed::new(comp_velocity)).count(),
-    content="0",
-  )
+  inspect(world.query1_filtered(comp_velocity, All::new()).count(), content="1")
 }
 
 ///|
@@ -141,7 +138,7 @@ test "ecs query mut: query2 ref mut supports iter_many_mut and par_iter_mut" {
       position_ref.value().x
   }
 
-  inspect(seen, content="[(1, true, true), (0, true, true)]")
+  inspect(seen, content="[(1, false, false), (0, false, false)]")
   inspect(try! world.get(e0, comp_velocity), content="Some({dx: 11, dy: 10})")
   inspect(try! world.get(e1, comp_velocity), content="Some({dx: 22, dy: 30})")
   inspect(try! world.get(e2, comp_velocity), content="Some({dx: 40, dy: 50})")
@@ -266,7 +263,7 @@ test "ecs query mut: query2 ref mut contiguous_iter_mut preserves chunk shape" {
 }
 
 ///|
-test "ecs query mut: plain query1 supports count and set_changed writeback" {
+test "ecs query mut: plain query1 supports count and no-op set_changed compatibility" {
   let world = World::new()
   let comp_position : ComponentKey[Position] = register_component(
     debug_name="position_query1_plain_mut",
@@ -284,19 +281,13 @@ test "ecs query mut: plain query1 supports count and set_changed writeback" {
   try! world
   .query1(comp_position)
   .view_mut(fn(_entity, position_mut) { position_mut.set_changed() })
-  inspect(
-    world.query1_filtered(comp_position, Changed::new(comp_position)).count(),
-    content="2",
-  )
+  inspect(world.query1_filtered(comp_position, All::new()).count(), content="2")
 
   world.increment_change_tick() |> ignore
   let ctx2 = @core.SystemContext::new()
   ctx2.set(@core.SystemTicks::new(1, 2))
   world.set_system_context(ctx2)
-  inspect(
-    world.query1_filtered(comp_position, Changed::new(comp_position)).count(),
-    content="0",
-  )
+  inspect(world.query1_filtered(comp_position, All::new()).count(), content="2")
 }
 
 ///|
@@ -334,7 +325,7 @@ test "ecs query mut: query2 value mut filtered matches required pair only" {
   inspect(query.count(), content="1")
   if (try! query.get(e0)) is Some((position, velocity_mut)) {
     inspect(position, content="{x: 1, y: 1}")
-    inspect(velocity_mut.is_added(), content="true")
+    inspect(velocity_mut.is_added(), content="false")
     inspect(velocity_mut.get(), content="{dx: 10, dy: 20}")
   } else {
     inspect(false, content="true")
@@ -442,7 +433,7 @@ test "ecs query mut: query3 ref mut optional preserves optional ref semantics" {
       position_ref.value().y
   })
 
-  inspect(seen, content="[(0, true, true), (1, true, false)]")
+  inspect(seen, content="[(0, false, false), (1, false, false)]")
   inspect(try! world.get(e0, comp_velocity), content="Some({dx: 3, dy: 6})")
   inspect(try! world.get(e1, comp_velocity), content="Some({dx: 9, dy: 18})")
 }
@@ -686,7 +677,7 @@ test "ecs query mut: iter_many_unique_mut rejects duplicates and preserves order
     velocity_mut.get_ref().val.dy = velocity_mut.get_ref().val.dy + entity.id
   }
 
-  inspect(seen, content="[(1, true), (0, true)]")
+  inspect(seen, content="[(1, false), (0, false)]")
   inspect(try! world.get(e0, comp_velocity), content="Some({dx: 1, dy: 10})")
   inspect(try! world.get(e1, comp_velocity), content="Some({dx: 2, dy: 21})")
 }

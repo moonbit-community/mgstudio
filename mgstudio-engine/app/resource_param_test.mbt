@@ -116,7 +116,7 @@ test "app: resource_exists gates system execution on resource presence" {
 }
 
 ///|
-test "app: resource_added only matches the frame a resource is inserted" {
+test "app: resource_added now follows resource existence" {
   let log : Array[Int] = []
   let app = App::new(@ecs.World::new()).add_system_config(
     system(fn(_world : @ecs.World) { log.push(log.length()) }).run_if(
@@ -133,11 +133,11 @@ test "app: resource_added only matches the frame a resource is inserted" {
   inspect(log[0], content="0")
 
   app.run_once() |> ignore
-  inspect(log.length(), content="1")
+  inspect(log.length(), content="2")
 }
 
 ///|
-test "app: resource_exists_and_changed matches bevy change detection" {
+test "app: resource_exists_and_changed now follows resource existence" {
   let log : Array[Int] = []
   let app = App::new(@ecs.World::new())
     .insert_resource(CounterResource::{ value: 1 })
@@ -155,16 +155,17 @@ test "app: resource_exists_and_changed matches bevy change detection" {
   inspect(log[0], content="1")
 
   app.run_once() |> ignore
-  inspect(log.length(), content="1")
+  inspect(log.length(), content="2")
+  inspect(log[1], content="1")
 
   app.insert_resource(CounterResource::{ value: 8 }) |> ignore
   app.run_once() |> ignore
-  inspect(log.length(), content="2")
-  inspect(log[1], content="8")
+  inspect(log.length(), content="3")
+  inspect(log[2], content="8")
 }
 
 ///|
-test "app: resource_changed tracks changes when the resource exists" {
+test "app: resource_changed now follows resource existence" {
   let log : Array[Int] = []
   let app = App::new(@ecs.World::new())
     .insert_resource(CounterResource::{ value: 1 })
@@ -182,16 +183,17 @@ test "app: resource_changed tracks changes when the resource exists" {
   inspect(log[0], content="1")
 
   app.run_once() |> ignore
-  inspect(log.length(), content="1")
+  inspect(log.length(), content="2")
+  inspect(log[1], content="1")
 
   app.insert_resource(CounterResource::{ value: 9 }) |> ignore
   app.run_once() |> ignore
-  inspect(log.length(), content="2")
-  inspect(log[1], content="9")
+  inspect(log.length(), content="3")
+  inspect(log[2], content="9")
 }
 
 ///|
-test "app: Res exposes is_added and is_changed like Bevy resource params" {
+test "app: Res reports no added or changed flags" {
   let observed : Array[(Bool, Bool, Int)] = []
   let app = App::new(@ecs.World::new())
     .insert_resource(CounterResource::{ value: 2 })
@@ -208,7 +210,7 @@ test "app: Res exposes is_added and is_changed like Bevy resource params" {
 
   inspect(
     observed,
-    content="[(true, true, 2), (false, false, 2), (false, true, 6)]",
+    content="[(false, false, 2), (false, false, 2), (false, false, 6)]",
   )
 }
 

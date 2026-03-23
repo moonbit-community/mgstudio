@@ -290,25 +290,15 @@ pub fn[T] Res::get(self : Res[T]) -> T {
 }
 
 ///|
-pub fn[T : Resource] Res::is_added(self : Res[T]) -> Bool {
-  let value : T = self.value
-  ignore(value)
-  let key : @ecs.ResourceKey[T] = T::resource()
-  match system_param_abort_missing_world().get_resource_ticks(key) {
-    Some(ticks) => ticks.is_added(current_system_ticks())
-    None => abort("Missing resource for system parameter")
-  }
+pub fn[T] Res::is_added(self : Res[T]) -> Bool {
+  ignore(self)
+  false
 }
 
 ///|
-pub fn[T : Resource] Res::is_changed(self : Res[T]) -> Bool {
-  let value : T = self.value
-  ignore(value)
-  let key : @ecs.ResourceKey[T] = T::resource()
-  match system_param_abort_missing_world().get_resource_ticks(key) {
-    Some(ticks) => ticks.is_changed(current_system_ticks())
-    None => abort("Missing resource for system parameter")
-  }
+pub fn[T] Res::is_changed(self : Res[T]) -> Bool {
+  ignore(self)
+  false
 }
 
 ///|
@@ -344,8 +334,9 @@ fn[T : Resource] world_resource_ref_mut_or_abort(
   world : @ecs.World,
   change_tick : @core.Tick,
 ) -> Ref[T] {
+  ignore(change_tick)
   match
-    (try world.get_resource_ref_mut(Resource::resource(), change_tick) catch {
+    (try world.get_resource_ref(Resource::resource()) catch {
       _ => None
     } noraise {
       value => value

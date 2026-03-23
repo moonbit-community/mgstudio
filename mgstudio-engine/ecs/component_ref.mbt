@@ -15,8 +15,6 @@
 ///|
 pub struct ComponentRef[T] {
   value : T
-  ticks : @core.ComponentTicks
-  system : @core.SystemTicks
 }
 
 ///|
@@ -25,18 +23,15 @@ pub fn[T] ComponentRef::value(self : ComponentRef[T]) -> T {
 }
 
 ///|
-pub fn[T] ComponentRef::ticks(self : ComponentRef[T]) -> @core.ComponentTicks {
-  self.ticks
-}
-
-///|
 pub fn[T] ComponentRef::is_added(self : ComponentRef[T]) -> Bool {
-  self.ticks.is_added(self.system)
+  ignore(self)
+  false
 }
 
 ///|
 pub fn[T] ComponentRef::is_changed(self : ComponentRef[T]) -> Bool {
-  self.ticks.is_changed(self.system)
+  ignore(self)
+  false
 }
 
 ///|
@@ -46,8 +41,5 @@ pub fn[A] World::get_ref(
   key : ComponentKey[A],
 ) -> ComponentRef[A]? raise EcsError {
   guard self.get(entity, key) is Some(value) else { return None }
-  guard self.component(key).get_ticks(entity) is Some(ticks) else {
-    return None
-  }
-  Some(ComponentRef::{ value, ticks, system: self.get_system_context().ticks() })
+  Some(ComponentRef::{ value, })
 }

@@ -4461,14 +4461,10 @@ fn render2d_target_component_changed(
   entity : @core.Entity,
   system_ticks : @core.SystemTicks,
 ) -> Bool {
-  if !target_store.contains(entity) {
-    return false
-  }
-  match target_store.get_ticks(entity) {
-    Some(ticks) =>
-      ticks.is_added(system_ticks) || ticks.is_changed(system_ticks)
-    None => false
-  }
+  ignore(target_store)
+  ignore(entity)
+  ignore(system_ticks)
+  true
 }
 
 ///|
@@ -4580,14 +4576,10 @@ fn render2d_projection_changed(
   entity : @core.Entity,
   system_ticks : @core.SystemTicks,
 ) -> Bool {
-  if !projection_store.contains(entity) {
-    return false
-  }
-  match projection_store.get_ticks(entity) {
-    Some(ticks) =>
-      ticks.is_added(system_ticks) || ticks.is_changed(system_ticks)
-    None => false
-  }
+  ignore(projection_store)
+  ignore(entity)
+  ignore(system_ticks)
+  true
 }
 
 ///|
@@ -4596,14 +4588,10 @@ fn render2d_camera_changed(
   entity : @core.Entity,
   system_ticks : @core.SystemTicks,
 ) -> Bool {
-  if !camera_store.contains(entity) {
-    return false
-  }
-  match camera_store.get_ticks(entity) {
-    Some(ticks) =>
-      ticks.is_added(system_ticks) || ticks.is_changed(system_ticks)
-    None => false
-  }
+  ignore(camera_store)
+  ignore(entity)
+  ignore(system_ticks)
+  true
 }
 
 ///|

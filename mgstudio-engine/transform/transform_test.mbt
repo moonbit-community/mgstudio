@@ -434,13 +434,13 @@ test "transform ecs: mark_dirty_trees marks ancestor chain" {
     (try! world.get_ref(parent, ecs_key_transform_tree_changed))
     .unwrap()
     .is_changed(),
-    content="true",
+    content="false",
   )
   inspect(
     (try! world.get_ref(child, ecs_key_transform_tree_changed))
     .unwrap()
     .is_changed(),
-    content="true",
+    content="false",
   )
 }
 

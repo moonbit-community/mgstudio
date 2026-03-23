@@ -13,19 +13,8 @@
 // limitations under the License.
 
 ///|
-pub struct ComponentMutWriteback[T] {
-  world : World
-  key : ComponentKey[T]
-  entity : @core.Entity
-}
-
-///|
 pub struct ComponentMut[T] {
   value_ref : Ref[T]
-  ticks : @core.ComponentTicks
-  system : @core.SystemTicks
-  mut changed : Bool
-  writeback : ComponentMutWriteback[T]?
 }
 
 ///|
@@ -35,39 +24,22 @@ pub fn[T] ComponentMut::get(self : ComponentMut[T]) -> T {
 
 ///|
 pub fn[T] ComponentMut::get_ref(self : ComponentMut[T]) -> Ref[T] {
-  self.touch()
   self.value_ref
 }
 
 ///|
-pub fn[T] ComponentMut::ticks(self : ComponentMut[T]) -> @core.ComponentTicks {
-  self.ticks
-}
-
-///|
 pub fn[T] ComponentMut::is_added(self : ComponentMut[T]) -> Bool {
-  self.ticks.is_added(self.system)
+  ignore(self)
+  false
 }
 
 ///|
 pub fn[T] ComponentMut::is_changed(self : ComponentMut[T]) -> Bool {
-  self.ticks.is_changed(self.system)
+  ignore(self)
+  false
 }
 
 ///|
 pub fn[T] ComponentMut::set_changed(self : ComponentMut[T]) -> Unit {
-  self.touch()
-}
-
-///|
-fn[T] ComponentMut::touch(self : ComponentMut[T]) -> Unit {
-  guard !self.changed else { return }
-  guard self.writeback is Some(writeback) else { return }
-  guard writeback.world.component_store(writeback.key.id()) is Some(store_ref) else {
-    return
-  }
-  let tick = component_write_change_tick(writeback.world)
-  guard store_ref.val.set_changed(writeback.entity, tick) else { return }
-  self.ticks.set_changed(tick)
-  self.changed = true
+  ignore(self)
 }

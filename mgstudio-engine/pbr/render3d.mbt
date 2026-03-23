@@ -6179,13 +6179,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       Some(v) => v
       None => Projection::default()
     }
-    let projection_changed = match projection_store.get_ticks(entity) {
-      Some(component_ticks) => {
-        let previous_tick = if tick <= 0 { 0 } else { tick - 1 }
-        component_ticks.is_changed(@core.SystemTicks::new(previous_tick, tick))
-      }
-      None => false
-    }
+    let projection_changed = true
     let sub_camera_view = sub_camera_view_store.get(entity)
     let screen_space_transmission = screen_space_transmission_store.get(entity)
     let bloom = bloom_store.get(entity)
