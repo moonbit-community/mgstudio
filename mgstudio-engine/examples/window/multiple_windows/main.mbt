@@ -20,7 +20,6 @@ const TORUS_SCENE_PATH : String = "models/torus/torus.gltf"
 
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   // Scene
@@ -35,14 +34,13 @@ fn setup_scene(world : @ecs.World) -> Unit {
         @gltf.GltfAssetLabel::Scene(0).from_asset(TORUS_SCENE_PATH),
       ),
     ),
-    tick,
   )
 
   // Directional light
   let light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_directional_light)
-  .insert(light, @pbr.DirectionalLight::default(), tick)
+  .insert(light, @pbr.DirectionalLight::default())
   world
   .component(@transform.ecs_key_transform)
   .insert(
@@ -51,7 +49,6 @@ fn setup_scene(world : @ecs.World) -> Unit {
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
 
   // Camera for primary window
@@ -69,7 +66,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   second_window_component.title = "Second window"
   world
   .component(@window.ecs_key_window)
-  .insert(second_window, second_window_component, tick)
+  .insert(second_window, second_window_component)
 
   // Camera for secondary window
   let second_window_camera = @pbr.Camera3dBundle::new(
@@ -96,9 +93,8 @@ fn spawn_label(
 ) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let tick = world.read_sequence()
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -107,32 +103,30 @@ fn spawn_label(
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F)),
-    tick,
   )
   world
   .component(@ui.ecs_key_ui_target_camera)
-  .insert(root, @ui.UiTargetCamera::new(camera), tick)
+  .insert(root, @ui.UiTargetCamera::new(camera))
 
   let text_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  .insert(text_entity, @hierarchy.Parent::new(root))
   world
   .component(@text.ecs_key_text)
-  .insert(text_entity, @text.Text::new(label), tick)
+  .insert(text_entity, @text.Text::new(label))
   world
   .component(@text.ecs_key_text_font)
   .insert(
     text_entity,
     @text.TextFont::default().with_font(font).with_font_size(24.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()))
   world
   .component(@text.ecs_key_text_shadow)
-  .insert(text_entity, @text.TextShadow::default(), tick)
+  .insert(text_entity, @text.TextShadow::default())
 }
 
 ///|

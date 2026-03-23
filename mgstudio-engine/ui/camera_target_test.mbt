@@ -15,6 +15,7 @@
 ///|
 fn seed_ui_context(world : @ecs.World) -> Int {
   let tick = world.advance_sequence()
+  ignore(tick)
   get_ui_context_resource(world).insert(
     UiContext::new(
       @asset.Handle::new(1),
@@ -26,7 +27,6 @@ fn seed_ui_context(world : @ecs.World) -> Int {
       None,
       false,
     ),
-    tick,
   )
   tick
 }
@@ -57,24 +57,22 @@ fn camera_with_target_info(
 test "ui: single IsDefaultUiCamera wins over higher-order fallback camera" {
   let world = @ecs.World::new()
   let tick = seed_ui_context(world)
+  ignore(tick)
 
   let fallback = world.spawn_empty()
   @sprite.get_camera_store(world).insert(
     fallback,
     camera_with_target_info(10, @math.IVec2::new(800, 600), 1.0F),
-    tick,
   )
 
   let marked = world.spawn_empty()
   @sprite.get_camera_store(world).insert(
     marked,
     camera_with_target_info(-5, @math.IVec2::new(640, 360), 1.0F),
-    tick,
   )
   get_is_default_ui_camera_store(world).insert(
     marked,
     IsDefaultUiCamera::default(),
-    tick,
   )
 
   ui_update_context_system(world)
@@ -88,6 +86,7 @@ test "ui: single IsDefaultUiCamera wins over higher-order fallback camera" {
 test "ui: multiple default markers fall back to highest-order primary-window camera" {
   let world = @ecs.World::new()
   let tick = seed_ui_context(world)
+  ignore(tick)
 
   let primary_window = @window.Window::default()
   primary_window.resolution.set_physical_resolution(960, 540)
@@ -100,55 +99,46 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
   @sprite.get_camera_store(world).insert(
     marked_a,
     camera_with_target_info(2, @math.IVec2::new(960, 540), 1.0F),
-    tick,
   )
   get_is_default_ui_camera_store(world).insert(
     marked_a,
     IsDefaultUiCamera::default(),
-    tick,
   )
 
   let marked_b = world.spawn_empty()
   @sprite.get_camera_store(world).insert(
     marked_b,
     camera_with_target_info(20, @math.IVec2::new(512, 512), 1.0F),
-    tick,
   )
   @sprite.get_render_target_store(world).insert(
     marked_b,
     @sprite.RenderTarget::Image(@asset.Handle::new(7)),
-    tick,
   )
   get_is_default_ui_camera_store(world).insert(
     marked_b,
     IsDefaultUiCamera::default(),
-    tick,
   )
 
   let primary_ref = world.spawn_empty()
   @sprite.get_camera_store(world).insert(
     primary_ref,
     camera_with_target_info(5, @math.IVec2::new(960, 540), 1.0F),
-    tick,
   )
   @sprite.get_render_target_store(world).insert(
     primary_ref,
     @sprite.RenderTarget::Window(@window.WindowRef::Primary),
-    tick,
   )
 
   let primary_entity = world.spawn_empty()
   @sprite.get_camera_store(world).insert(
     primary_entity,
     camera_with_target_info(9, @math.IVec2::new(960, 540), 1.0F),
-    tick,
   )
   @sprite.get_render_target_store(world).insert(
     primary_entity,
     @sprite.RenderTarget::Window(
       @window.WindowRef::Entity(primary_window_entity),
     ),
-    tick,
   )
 
   ui_update_context_system(world)
@@ -163,45 +153,37 @@ test "ui: multiple default markers fall back to highest-order primary-window cam
 test "ui: explicit UiTargetCamera propagates from root and drives logical render target info" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
-  get_ui_scale_resource(world).insert(UiScale::new(2.0F), tick)
+  ignore(tick)
+  get_ui_scale_resource(world).insert(UiScale::new(2.0F))
 
   let target_camera = world.spawn_empty()
   @sprite.get_camera_store(world).insert(
     target_camera,
     camera_with_target_info(0, @math.IVec2::new(640, 360), 2.0F),
-    tick,
   )
 
   let ignored_child_target = world.spawn_empty()
   @sprite.get_camera_store(world).insert(
     ignored_child_target,
     camera_with_target_info(1, @math.IVec2::new(320, 180), 1.0F),
-    tick,
   )
 
   let root = world.spawn_empty()
-  get_ui_root_store(world).insert(root, UiRoot::default(), tick)
+  get_ui_root_store(world).insert(root, UiRoot::default())
   get_ui_target_camera_store(world).insert(
     root,
     UiTargetCamera::new(target_camera),
-    tick,
   )
 
   let child = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
-    child,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
+  @hierarchy.get_parent_store(world).insert(child, @hierarchy.Parent::new(root))
   @hierarchy.get_children_store(world).insert(
     root,
     @hierarchy.Children::new([child]),
-    tick,
   )
   get_ui_target_camera_store(world).insert(
     child,
     UiTargetCamera::new(ignored_child_target),
-    tick,
   )
 
   ui_propagate_target_cameras_system(world)
@@ -228,37 +210,34 @@ test "ui: explicit UiTargetCamera propagates from root and drives logical render
 test "ui: layout resolves each root against its propagated target viewport" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
+  ignore(tick)
 
   let camera_a = world.spawn_empty()
   @sprite.get_camera_store(world).insert(
     camera_a,
     camera_with_target_info(0, @math.IVec2::new(200, 100), 1.0F),
-    tick,
   )
   let camera_b = world.spawn_empty()
   @sprite.get_camera_store(world).insert(
     camera_b,
     camera_with_target_info(1, @math.IVec2::new(600, 300), 2.0F),
-    tick,
   )
 
   let root_a = world.spawn_empty()
-  get_ui_root_store(world).insert(root_a, UiRoot::default(), tick)
+  get_ui_root_store(world).insert(root_a, UiRoot::default())
   get_ui_target_camera_store(world).insert(
     root_a,
     UiTargetCamera::new(camera_a),
-    tick,
   )
-  get_node_store(world).insert(root_a, Node::default(), tick)
+  get_node_store(world).insert(root_a, Node::default())
 
   let root_b = world.spawn_empty()
-  get_ui_root_store(world).insert(root_b, UiRoot::default(), tick)
+  get_ui_root_store(world).insert(root_b, UiRoot::default())
   get_ui_target_camera_store(world).insert(
     root_b,
     UiTargetCamera::new(camera_b),
-    tick,
   )
-  get_node_store(world).insert(root_b, Node::default(), tick)
+  get_node_store(world).insert(root_b, Node::default())
 
   ui_propagate_target_cameras_system(world)
   ui_layout_system(world)

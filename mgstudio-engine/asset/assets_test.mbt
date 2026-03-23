@@ -130,7 +130,7 @@ test "asset system forwards asset events to ECS messages" {
   let key : @ecs.ResourceKey[Assets[Int]] = assets_resource_key()
   world.insert_resource(key, Assets::new())
 
-  match (try! world.get_resource_ref_mut(key, 0)) {
+  match (try! world.get_resource_ref_mut(key)) {
     Some(assets) => {
       ignore(assets.val.add(42))
       ignore(assets.val.add(43))

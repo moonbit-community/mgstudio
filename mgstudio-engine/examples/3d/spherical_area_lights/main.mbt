@@ -137,7 +137,6 @@ fn set_global_ambient_light(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   set_global_ambient_light(world, @sprite.Color::white(), 60.0F)
 
   let camera = @pbr.Camera3dBundle::new(
@@ -201,14 +200,13 @@ fn setup(world : @ecs.World) -> Unit {
       .with_range(mapped_point_light_range(radius))
       .with_intensity(mapped_point_light_intensity(radius))
       .with_shadow_maps_enabled(false),
-      tick,
     )
     world
     .component(@hierarchy.ecs_key_parent)
-    .insert(point_light, @hierarchy.Parent::new(sphere), tick)
+    .insert(point_light, @hierarchy.Parent::new(sphere))
     world
     .component(@transform.ecs_key_transform)
-    .insert(point_light, @transform.Transform::identity(), tick)
+    .insert(point_light, @transform.Transform::identity())
   }
 }
 

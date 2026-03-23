@@ -16,11 +16,12 @@
 fn pause_virtual_time_for_diagnostics_test(app : @app.App[@ecs.World]) -> Unit {
   let world = app.world()
   let tick = world.advance_sequence()
+  ignore(tick)
   let virtual_ref = try! world
-    .get_resource_ref_mut(@time.virtual_time_resource_key(), tick)
+    .get_resource_ref_mut(@time.virtual_time_resource_key())
     .unwrap()
   let default_ref = try! world
-    .get_resource_ref_mut(@time.default_time_resource_key(), tick)
+    .get_resource_ref_mut(@time.default_time_resource_key())
     .unwrap()
   let next_virtual = virtual_ref.val.pause()
   virtual_ref.val = next_virtual

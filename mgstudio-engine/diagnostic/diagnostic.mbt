@@ -425,11 +425,8 @@ pub impl @app.SystemParam for Diagnostics with init_state(world) {
 }
 
 ///|
-fn diagnostics_store_ref_mut(
-  world : @ecs.World,
-  sequence : @core.Sequence,
-) -> Ref[DiagnosticsStore]? {
-  try world.get_resource_ref_mut(DiagnosticsStore::resource(), sequence) catch {
+fn diagnostics_store_ref_mut(world : @ecs.World) -> Ref[DiagnosticsStore]? {
+  try world.get_resource_ref_mut(DiagnosticsStore::resource()) catch {
     _ => None
   } noraise {
     value => value
@@ -438,9 +435,8 @@ fn diagnostics_store_ref_mut(
 
 ///|
 pub impl @app.SystemParam for Diagnostics with get(_state) {
-  let tick = @app.current_system_sequence().this_run
   let world = @app.current_world().unwrap()
-  match diagnostics_store_ref_mut(world, tick) {
+  match diagnostics_store_ref_mut(world) {
     Some(store_ref) => Diagnostics::{ store_ref, }
     None => abort("Missing DiagnosticsStore resource")
   }
@@ -481,20 +477,18 @@ pub fn register_diagnostic(
   diagnostic : Diagnostic,
 ) -> @app.App[@ecs.World] {
   let world = app.world()
-  let tick = @app.current_system_sequence().this_run
   if (try world.get_resource(DiagnosticsStore::resource()) catch {
       _ => None
     } noraise {
       value => value
     })
     is None {
-    world.insert_resource_with_sequence(
+    world.insert_resource(
       DiagnosticsStore::resource(),
       DiagnosticsStore::default(),
-      tick,
     )
   }
-  match diagnostics_store_ref_mut(world, tick) {
+  match diagnostics_store_ref_mut(world) {
     Some(store_ref) => store_ref.val.add(diagnostic)
     None => abort("Failed to access DiagnosticsStore resource")
   }

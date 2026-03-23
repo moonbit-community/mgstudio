@@ -99,7 +99,7 @@ test "ecs resource: get_resource_ref_mut observes live world storage" {
   )
 
   world.insert_resource(res_config, RuntimeConfig::{ fps: 60 })
-  let config_ref = try! world.get_resource_ref_mut(res_config, 0).unwrap()
+  let config_ref = try! world.get_resource_ref_mut(res_config).unwrap()
   config_ref.val = RuntimeConfig::{ fps: 90 }
 
   inspect(try! world.get_resource(res_config), content="Some({fps: 90})")

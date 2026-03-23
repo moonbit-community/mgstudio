@@ -28,7 +28,9 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
   let has_target = Ref::new(false)
   let has_animated_by = Ref::new(false)
   let instance_after_second_tick = Ref::new(0)
+  ignore(instance_after_second_tick)
   let ready_after_second_tick = Ref::new(0)
+  ignore(ready_after_second_tick)
   let ready_entity_count = Ref::new(0)
   let ready_entity_matches_root = Ref::new(false)
 

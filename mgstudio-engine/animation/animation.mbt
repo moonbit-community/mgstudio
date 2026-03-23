@@ -1423,7 +1423,7 @@ fn[T] animation_asset_store_or_abort() -> @asset.Assets[T] {
 fn[T] animation_asset_store_mut_or_abort() -> Ref[@asset.Assets[T]] {
   let world = animation_current_world_or_abort()
   let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
-  match (try! world.get_resource_ref_mut(key, 0)) {
+  match (try! world.get_resource_ref_mut(key)) {
     Some(assets) => assets
     None =>
       abort(
@@ -2994,9 +2994,8 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
 
 ///|
 pub fn trigger_events(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let writer : @core.MessageWriter[AnimationTriggeredEvent] = @core.Message::writer(
-    tick,
+    @app.current_system_sequence().this_run,
   )
 
   // Root (untargeted) events fire on the player entity.

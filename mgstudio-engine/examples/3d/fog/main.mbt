@@ -143,7 +143,6 @@ fn setup_camera_fog(world : @ecs.World) -> Unit {
 
 ///|
 fn setup_pyramid_scene(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
     @pbr.GlobalAmbientLight::new(@sprite.Color::white(), 0.0F),
@@ -196,10 +195,10 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
   )
   world
   .component(@pbr.ecs_key_not_shadow_caster)
-  .insert(orb, @pbr.NotShadowCaster::default(), tick)
+  .insert(orb, @pbr.NotShadowCaster::default())
   world
   .component(@pbr.ecs_key_not_shadow_receiver)
-  .insert(orb, @pbr.NotShadowReceiver::default(), tick)
+  .insert(orb, @pbr.NotShadowReceiver::default())
 
   for i in 0..<50 {
     let i_f = float_from_int(i)
@@ -255,11 +254,10 @@ fn setup_pyramid_scene(world : @ecs.World) -> Unit {
   .insert(
     point_light,
     @pbr.PointLight::default().with_shadow_maps_enabled(true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(point_light, @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F), tick)
+  .insert(point_light, @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F))
 }
 
 ///|
@@ -326,7 +324,6 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 fn update_system(world : @ecs.World) -> Unit {
   let now = world_time(world).elapsed_seconds()
   let delta = world_time(world).delta_seconds()
-  let tick = world.read_sequence()
 
   guard fog_example_state.val.camera is Some(camera) else { return }
   let camera3d_store = world.component(@pbr.ecs_key_camera3d)
@@ -339,7 +336,7 @@ fn update_system(world : @ecs.World) -> Unit {
     12.0F - orbit_scale / 2.0F,
     @math.sin(now / 5.0F) * orbit_scale,
   ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-  transform_store.set(camera, camera_transform, tick) |> ignore
+  transform_store.set(camera, camera_transform) |> ignore
 
   if @input.key_pressed(@window.KeyCode::Digit1) {
     fog = fog.with_falloff(@pbr.FogFalloff3d::linear(5.0F, 20.0F))
@@ -477,8 +474,7 @@ fn update_system(world : @ecs.World) -> Unit {
     Some(value) => value
     None => @pbr.Camera3d::default()
   }
-  camera3d_store.set(camera, camera3d.with_distance_fog(Some(fog)), tick)
-  |> ignore
+  camera3d_store.set(camera, camera3d.with_distance_fog(Some(fog))) |> ignore
   fog_example_state.val.fog = fog
 
   if fog_example_state.val.help_text is Some(text_handle) {

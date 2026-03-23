@@ -29,7 +29,6 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.DirectionalLightShadowMap::new(4096),
   )
 
-  let tick = world.read_sequence()
   let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(0.0F, 2.0F, 0.0F).looking_at(
@@ -47,13 +46,13 @@ fn setup(world : @ecs.World) -> Unit {
       ),
     )
     .spawn(world)
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
   world
   .component(@post_process.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
+  .insert(camera, @post_process.TemporalAntiAliasing::default())
   world
   .component(@post_process.ecs_key_bloom)
-  .insert(camera, @post_process.Bloom::default(), tick)
+  .insert(camera, @post_process.Bloom::default())
 
   let directional_light = world.spawn_empty()
   world
@@ -61,7 +60,6 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 10000.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -71,11 +69,10 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_volumetric_light)
-  .insert(directional_light, @pbr.VolumetricLight::default(), tick)
+  .insert(directional_light, @pbr.VolumetricLight::default())
 
   let black_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::black()).with_perceptual_roughness(
@@ -126,7 +123,6 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(0.0F, 32.0F, 0.0F).with_scale(
       @math.Vec3::splat(64.0F),
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_fog_volume)
@@ -135,7 +131,6 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.FogVolume::default()
     .with_density_texture(Some(noise_texture))
     .with_density_factor(0.05F),
-    tick,
   )
 }
 
@@ -149,7 +144,6 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 
 ///|
 fn scroll_fog(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let offset_delta = @math.Vec3::new(
     0.0F,
     0.0F,
@@ -162,7 +156,6 @@ fn scroll_fog(world : @ecs.World) -> Unit {
       fog_volume.with_density_texture_offset(
         fog_volume.density_texture_offset.add(offset_delta),
       ),
-      tick,
     )
     |> ignore
   })

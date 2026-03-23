@@ -55,15 +55,14 @@ pub let ecs_key_mesh_render_plugin_state : @ecs.ResourceKey[
 ///|
 fn init_mesh_render_resources(world : @ecs.World) -> Unit {
   let ecs_world = world
-  let tick = world.read_sequence()
   render3d_runtime_initialized_ref.val = true
   let ambient = get_global_ambient_light_resource(ecs_world)
   if !ambient.is_present() {
-    ambient.insert(GlobalAmbientLight::default(), tick)
+    ambient.insert(GlobalAmbientLight::default())
   }
   let point_light_shadow_map = get_point_light_shadow_map_resource(ecs_world)
   if !point_light_shadow_map.is_present() {
-    point_light_shadow_map.insert(PointLightShadowMap::default(), tick)
+    point_light_shadow_map.insert(PointLightShadowMap::default())
   }
   if (try! world.get_resource(ecs_key_internal_assets)) is None {
     world.insert_resource(
@@ -77,7 +76,7 @@ fn init_mesh_render_resources(world : @ecs.World) -> Unit {
   if (try! world.get_resource(auto_exposure_curve_assets_key)) is None {
     world.insert_resource(auto_exposure_curve_assets_key, @asset.Assets::new())
   }
-  if (try! world.get_resource_ref_mut(auto_exposure_curve_assets_key, tick))
+  if (try! world.get_resource_ref_mut(auto_exposure_curve_assets_key))
     is Some(curves_ref) {
     let default_curve_handle : @asset.Handle[AutoExposureCompensationCurve] = @asset.Handle::new(
       0,

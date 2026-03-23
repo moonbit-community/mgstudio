@@ -133,7 +133,6 @@ fn setup_ui_overlay(
   add_entity : @core.Entity,
   multiply_entity : @core.Entity,
 ) -> Unit {
-  let tick = world.read_sequence()
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(100).with_clear_color_none(),
     @transform.Transform::identity(),
@@ -141,7 +140,7 @@ fn setup_ui_overlay(
   |> ignore
 
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -149,13 +148,12 @@ fn setup_ui_overlay(
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
-    tick,
   )
 
   let controls_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(controls_entity, @hierarchy.Parent::new(root), tick)
+  .insert(controls_entity, @hierarchy.Parent::new(root))
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -164,38 +162,34 @@ fn setup_ui_overlay(
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
-  .insert(controls_entity, @text.Text::new(CONTROL_TEXT), tick)
+  .insert(controls_entity, @text.Text::new(CONTROL_TEXT))
   world
   .component(@text.ecs_key_text_font)
   .insert(
     controls_entity,
     @text.TextFont::default().with_font(font).with_font_size(14.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
   .insert(
     controls_entity,
     @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text_layout)
   .insert(
     controls_entity,
     @text.TextLayout::new_with_justify(@text.Justify::Left),
-    tick,
   )
 
   guard blend_modes_state.val.camera is Some(camera_entity) else { return }
   let display_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(display_entity, @hierarchy.Parent::new(root), tick)
+  .insert(display_entity, @hierarchy.Parent::new(root))
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -204,35 +198,30 @@ fn setup_ui_overlay(
     .with_position_type(@ui.PositionType::Absolute)
     .with_right(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
   .insert(
     display_entity,
     @text.Text::new(blend_modes_display_text(camera_entity, world)),
-    tick,
   )
   world
   .component(@text.ecs_key_text_font)
   .insert(
     display_entity,
     @text.TextFont::default().with_font(font).with_font_size(14.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
   .insert(
     display_entity,
     @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text_layout)
   .insert(
     display_entity,
     @text.TextLayout::new_with_justify(@text.Justify::Left),
-    tick,
   )
   blend_modes_state.val.display_text = Some(display_entity)
 
@@ -251,7 +240,7 @@ fn setup_ui_overlay(
     let label_node = world.spawn_empty()
     world
     .component(@hierarchy.ecs_key_parent)
-    .insert(label_node, @hierarchy.Parent::new(root), tick)
+    .insert(label_node, @hierarchy.Parent::new(root))
     world
     .component(@ui.ecs_key_node)
     .insert(
@@ -260,21 +249,19 @@ fn setup_ui_overlay(
       .with_position_type(@ui.PositionType::Absolute)
       .with_left(@ui.Val::Px(0.0F))
       .with_top(@ui.Val::Px(0.0F)),
-      tick,
     )
     world
     .component(@text.ecs_key_text)
-    .insert(label_node, @text.Text::new(text), tick)
+    .insert(label_node, @text.Text::new(text))
     world
     .component(@text.ecs_key_text_font)
     .insert(
       label_node,
       @text.TextFont::default().with_font(font).with_font_size(16.0F),
-      tick,
     )
     world
     .component(@text.ecs_key_text_color)
-    .insert(label_node, @text.TextColor::new(label_color), tick)
+    .insert(label_node, @text.TextColor::new(label_color))
     blend_modes_state.val.labels.push({ node: label_node, target })
   }
 }
@@ -363,11 +350,10 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
   let state = blend_modes_state.val
   guard state.camera is Some(camera_entity) else { return }
   guard state.display_text is Some(display_entity) else { return }
-  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(display_entity) is Some(display_text) else { return }
   display_text.content = blend_modes_display_text(camera_entity, world)
-  ignore(text_store.set(display_entity, display_text, tick))
+  ignore(text_store.set(display_entity, display_text))
 
   let camera_store = world.component(@sprite.ecs_key_camera)
   guard camera_store.get(camera_entity) is Some(camera) else { return }
@@ -383,7 +369,6 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
     @window.window_height(),
   )
   let scale_factor = @window.window_scale_factor()
-  let tick = world.read_sequence()
   let node_store = world.component(@ui.ecs_key_node)
 
   for label in state.labels {
@@ -405,7 +390,6 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
         node
         .with_left(@ui.Val::Px(screen_position.x))
         .with_top(@ui.Val::Px(screen_position.y)),
-        tick,
       )
       |> ignore
     }
@@ -414,7 +398,6 @@ fn update_ui_overlay(world : @ecs.World) -> Unit {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   blend_modes_state.val.alpha = 0.9F
   blend_modes_state.val.unlit = false
   blend_modes_state.val.camera = None
@@ -536,10 +519,10 @@ fn setup(world : @ecs.World) -> Unit {
   let light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
-  .insert(light, @pbr.PointLight::default(), tick)
+  .insert(light, @pbr.PointLight::default())
   world
   .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
@@ -548,7 +531,7 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
   blend_modes_state.val.camera = Some(camera)
 
   let asset_server = @asset.AssetServer::new()
@@ -595,13 +578,12 @@ fn example_control_system(world : @ecs.World) -> Unit {
   state.camera_angle = state.camera_angle + rotation
 
   guard state.camera is Some(camera_entity) else { return }
-  let tick = world.read_sequence()
   if @input.key_just_pressed(@window.KeyCode::KeyH) {
     let hdr_store = world.component(@pbr.ecs_key_hdr)
     if hdr_store.contains(camera_entity) {
       hdr_store.remove(camera_entity) |> ignore
     } else {
-      hdr_store.insert(camera_entity, @pbr.Hdr::default(), tick)
+      hdr_store.insert(camera_entity, @pbr.Hdr::default())
     }
   }
   let camera_x = @math.sin(state.camera_angle) * CAMERA_RADIUS
@@ -614,7 +596,6 @@ fn example_control_system(world : @ecs.World) -> Unit {
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
   |> ignore
 

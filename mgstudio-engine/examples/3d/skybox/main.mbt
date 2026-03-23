@@ -200,15 +200,12 @@ fn setup(world : @ecs.World) -> Unit {
   cubemap_state.val.directional_light = None
   cubemap_state.val.help_text = None
 
-  let tick = world.read_sequence()
-
   let directional_light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_directional_light)
   .insert(
     directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 32_000.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -217,7 +214,6 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(0.0F, 2.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_x(-PI / 4.0F),
     ),
-    tick,
   )
   cubemap_state.val.directional_light = Some(directional_light)
 
@@ -235,18 +231,18 @@ fn setup(world : @ecs.World) -> Unit {
     @sprite.Camera::default(),
     camera_transform,
   ).spawn(world)
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
   world
   .component(@post_process.ecs_key_screen_space_ambient_occlusion)
-  .insert(camera, @post_process.ScreenSpaceAmbientOcclusion::default(), tick)
+  .insert(camera, @post_process.ScreenSpaceAmbientOcclusion::default())
   // Keep the Bevy TAA component surface for parity; web runtimes may treat it
   // as a marker/no-op until full backend parity is available.
   world
   .component(@post_process.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
+  .insert(camera, @post_process.TemporalAntiAliasing::default())
   world
   .component(@pbr.ecs_key_free_camera)
-  .insert(camera, @pbr.FreeCamera::default(), tick)
+  .insert(camera, @pbr.FreeCamera::default())
   cubemap_state.val.camera = Some(camera)
 
   let asset_server = @asset.AssetServer::new()
@@ -254,7 +250,7 @@ fn setup(world : @ecs.World) -> Unit {
   cubemap_state.val.image_handle = Some(initial_image)
   world
   .component(@pbr.ecs_key_skybox)
-  .insert(camera, @pbr.Skybox::new(initial_image, 1000.0F), tick)
+  .insert(camera, @pbr.Skybox::new(initial_image, 1000.0F))
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   let help_text = @text.Text2dBundle::new(
@@ -338,12 +334,11 @@ fn asset_loaded(world : @ecs.World) -> Unit {
     return
   }
   guard cubemap_state.val.camera is Some(camera_entity) else { return }
-  let tick = world.read_sequence()
   if world.component(@pbr.ecs_key_skybox).get(camera_entity) is Some(skybox) {
     println("Swapping to \{cubemap_path(cubemap_state.val.index)}")
     world
     .component(@pbr.ecs_key_skybox)
-    .set(camera_entity, skybox.with_image(Some(handle)), tick)
+    .set(camera_entity, skybox.with_image(Some(handle)))
     |> ignore
   }
 
@@ -358,7 +353,6 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
   }
   if world.component(@transform.ecs_key_transform).get(light_entity)
     is Some(transform) {
-    let tick = world.read_sequence()
     let next_rotation = transform.rotation
       .mul(
         @math.Quat::from_rotation_y(world_time(world).delta_seconds() * 0.5F),
@@ -366,7 +360,7 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
       .normalize()
     world
     .component(@transform.ecs_key_transform)
-    .set(light_entity, transform.with_rotation(next_rotation), tick)
+    .set(light_entity, transform.with_rotation(next_rotation))
     |> ignore
   }
 }

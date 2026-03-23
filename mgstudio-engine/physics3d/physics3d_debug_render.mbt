@@ -356,7 +356,6 @@ pub fn physics3d_debug_render_sync_system(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.read_sequence()
   let ecs_world = world
   let transform_store = @transform.get_transform_store(ecs_world)
   let collider_store = get_collider3d_store(ecs_world)
@@ -394,10 +393,9 @@ pub fn physics3d_debug_render_sync_system(world : @ecs.World) -> Unit {
     transform_store.set(
       entity,
       physics3d_debug_line_transform(line.start, line.end),
-      tick,
     )
     |> ignore
-    mesh_material_store.set(entity, line.material, tick) |> ignore
+    mesh_material_store.set(entity, line.material) |> ignore
   }
 }
 

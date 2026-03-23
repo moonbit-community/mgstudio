@@ -25,13 +25,12 @@ fn main {
 ///|
 fn physics2d_falling_setup(world : @ecs.World) -> Unit {
   // Make gravity visible in "pixel-ish" space.
-  let tick = world.read_sequence()
   let cfg_res = @physics2d.get_physics2d_config_resource(world)
   match cfg_res.get() {
     Some(current_cfg) => {
       let cfg = Ref::new(current_cfg)
       cfg.val = @physics2d.Physics2dConfig::new(@math.Vec2::new(0.0F, -500.0F))
-      cfg_res.insert(cfg.val, tick)
+      cfg_res.insert(cfg.val)
     }
     None => ()
   }
@@ -52,20 +51,15 @@ fn physics2d_falling_setup(world : @ecs.World) -> Unit {
   let rb_store = @physics2d.get_rigid_body2d_store(world)
   let col_store = @physics2d.get_collider2d_store(world)
   let cf_store = @physics2d.get_contact_force_event_threshold2d_store(world)
-  rb_store.insert(floor, @physics2d.RigidBody2d::fixed(), tick)
+  rb_store.insert(floor, @physics2d.RigidBody2d::fixed())
   col_store.insert(
     floor,
     @physics2d.Collider2d::new(
       @physics2d.ColliderShape2d::cuboid(320.0F, 16.0F),
     ),
-    tick,
   )
   // Enable contact force events for the floor/ball interaction.
-  cf_store.insert(
-    floor,
-    @physics2d.ContactForceEventThreshold2d::new(0.0F),
-    tick,
-  )
+  cf_store.insert(floor, @physics2d.ContactForceEventThreshold2d::new(0.0F))
 
   // Ball.
   let ball_sprite = @sprite.Sprite::from_image(texture)
@@ -77,18 +71,13 @@ fn physics2d_falling_setup(world : @ecs.World) -> Unit {
   )
   let ball = @sprite.SpriteBundle::new(ball_sprite, ball_transform).spawn(world)
   let vel_store = @physics2d.get_velocity2d_store(world)
-  rb_store.insert(ball, @physics2d.RigidBody2d::dynamic(), tick)
+  rb_store.insert(ball, @physics2d.RigidBody2d::dynamic())
   col_store.insert(
     ball,
     @physics2d.Collider2d::new(@physics2d.ColliderShape2d::ball(12.0F)),
-    tick,
   )
-  cf_store.insert(
-    ball,
-    @physics2d.ContactForceEventThreshold2d::new(0.0F),
-    tick,
-  )
-  vel_store.insert(ball, @physics2d.Velocity2d::zero(), tick)
+  cf_store.insert(ball, @physics2d.ContactForceEventThreshold2d::new(0.0F))
+  vel_store.insert(ball, @physics2d.Velocity2d::zero())
 
   // Camera.
   let camera = @sprite.Camera::default()

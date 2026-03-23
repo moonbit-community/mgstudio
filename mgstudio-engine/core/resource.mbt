@@ -31,12 +31,7 @@ pub fn[T] Resource::is_present(self : Resource[T]) -> Bool {
 }
 
 ///|
-pub fn[T] Resource::insert(
-  self : Resource[T],
-  value : T,
-  sequence : Sequence,
-) -> Unit {
-  ignore(sequence)
+pub fn[T] Resource::insert(self : Resource[T], value : T) -> Unit {
   self.cell = Some(Ref::new(value))
 }
 
@@ -65,11 +60,7 @@ pub fn[T] Resource::get_ref(self : Resource[T]) -> Ref[T]? {
 }
 
 ///|
-pub fn[T] Resource::get_ref_mut(
-  self : Resource[T],
-  sequence : Sequence,
-) -> Ref[T]? {
-  ignore(sequence)
+pub fn[T] Resource::get_ref_mut(self : Resource[T]) -> Ref[T]? {
   match self.cell {
     None => None
     Some(r) => Some(r)

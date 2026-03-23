@@ -173,7 +173,6 @@ fn apply_visibility_range_for_scene_root(
   scene_root : @core.Entity,
   visibility_range : @visibility.VisibilityRange,
 ) -> Unit {
-  let tick = world.read_sequence()
   let parent_store = world.component(@hierarchy.ecs_key_parent)
   let mesh_store = world.component(@pbr.ecs_key_mesh3d)
   let visibility_range_store = world.component(
@@ -182,9 +181,9 @@ fn apply_visibility_range_for_scene_root(
   mesh_store.for_each(fn(entity, _mesh) {
     if entity_is_descendant_of(parent_store, entity, scene_root) {
       if visibility_range_store.contains(entity) {
-        visibility_range_store.set(entity, visibility_range, tick) |> ignore
+        visibility_range_store.set(entity, visibility_range) |> ignore
       } else {
-        visibility_range_store.insert(entity, visibility_range, tick)
+        visibility_range_store.insert(entity, visibility_range)
       }
     }
   })
@@ -192,7 +191,6 @@ fn apply_visibility_range_for_scene_root(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   visibility_range_state.val.camera = None
   visibility_range_state.val.high_scene_root = None
   visibility_range_state.val.low_scene_root = None
@@ -233,7 +231,6 @@ fn setup(world : @ecs.World) -> Unit {
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(asset_server, high_poly_path),
     ),
-    tick,
   )
   visibility_range_state.val.high_scene_root = Some(high_scene_root)
 
@@ -245,7 +242,6 @@ fn setup(world : @ecs.World) -> Unit {
     @scene.SceneRoot::new(
       @scene.scene_load_gltf_scene(asset_server, low_poly_path),
     ),
-    tick,
   )
   visibility_range_state.val.low_scene_root = Some(low_scene_root)
 
@@ -255,7 +251,6 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     directional,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 20_000.0F, true),
-    tick,
   )
   let light_angle = -0.15F * PI
   let light_rotation = @math.Quat::from_rotation_z(0.0F)
@@ -268,7 +263,6 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
       light_rotation,
     ),
-    tick,
   )
 
   let camera = @pbr.Camera3dBundle::new(
@@ -288,7 +282,6 @@ fn setup(world : @ecs.World) -> Unit {
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       150.0F,
     ),
-    tick,
   )
 
   let help_text = @text.Text2dBundle::new(
@@ -360,7 +353,6 @@ fn move_camera(world : @ecs.World) -> Unit {
       new_translation.y,
       new_translation.z,
     ).looking_at(focal, @math.Vec3::new(0.0F, 1.0F, 0.0F)),
-    world.read_sequence(),
   )
   |> ignore
 }
@@ -391,14 +383,13 @@ fn toggle_prepass(world : @ecs.World) -> Unit {
   visibility_range_state.val.prepass_enabled = !visibility_range_state.val.prepass_enabled
 
   guard visibility_range_state.val.camera is Some(camera) else { return }
-  let tick = world.read_sequence()
   if visibility_range_state.val.prepass_enabled {
     world
     .component(@pbr.ecs_key_depth_prepass)
-    .insert(camera, @pbr.DepthPrepass::default(), tick)
+    .insert(camera, @pbr.DepthPrepass::default())
     world
     .component(@pbr.ecs_key_normal_prepass)
-    .insert(camera, @pbr.NormalPrepass::default(), tick)
+    .insert(camera, @pbr.NormalPrepass::default())
   } else {
     world.component(@pbr.ecs_key_depth_prepass).remove(camera) |> ignore
     world.component(@pbr.ecs_key_normal_prepass).remove(camera) |> ignore

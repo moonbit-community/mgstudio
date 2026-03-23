@@ -247,7 +247,7 @@ fn set_main_camera_transform_from_orbit(world : @ecs.World) -> Unit {
 
   world
   .component(@transform.ecs_key_transform)
-  .set(mirror_state.val.main_camera, transform, world.read_sequence())
+  .set(mirror_state.val.main_camera, transform)
   |> ignore
 }
 
@@ -288,7 +288,6 @@ fn ray_plane_intersection(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   mirror_state.val.main_camera = @core.Entity::placeholder()
   mirror_state.val.mirror_camera = @core.Entity::placeholder()
   mirror_state.val.mirror_plane = @core.Entity::placeholder()
@@ -351,11 +350,10 @@ fn setup(world : @ecs.World) -> Unit {
         @gltf.GltfAssetLabel::Scene(0).from_asset(FOX_ASSET_PATH),
       ),
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(fox, @transform.Transform::from_xyz(-50.0F, 0.0F, -100.0F), tick)
+  .insert(fox, @transform.Transform::from_xyz(-50.0F, 0.0F, -100.0F))
   mirror_state.val.fox = fox
 
   // Mirror plane.
@@ -381,11 +379,7 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@sprite.ecs_key_render_layers)
-  .insert(
-    mirror_entity,
-    @sprite.RenderLayers::layer(LAYER_MIRROR_SURFACE),
-    tick,
-  )
+  .insert(mirror_entity, @sprite.RenderLayers::layer(LAYER_MIRROR_SURFACE))
   mirror_state.val.mirror_plane = mirror_entity
 
   // Lighting.
@@ -395,7 +389,6 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 5000.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -405,7 +398,6 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(-50.0F, 0.0F, 100.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
 
   // Main camera.
@@ -428,7 +420,6 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     main_camera,
     @sprite.RenderLayers::from_layers([LAYER_MAIN_SCENE, LAYER_MIRROR_SURFACE]),
-    tick,
   )
   mirror_state.val.main_camera = main_camera
   let (initial_yaw, initial_pitch) = orbit_angles_from_translation(
@@ -448,10 +439,10 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@sprite.ecs_key_render_target)
-  .insert(mirror_camera, @sprite.RenderTarget::Image(mirror_target), tick)
+  .insert(mirror_camera, @sprite.RenderTarget::Image(mirror_target))
   world
   .component(@sprite.ecs_key_render_layers)
-  .insert(mirror_camera, @sprite.RenderLayers::layer(LAYER_MAIN_SCENE), tick)
+  .insert(mirror_camera, @sprite.RenderLayers::layer(LAYER_MAIN_SCENE))
   mirror_state.val.mirror_camera = mirror_camera
 
   // Help text.
@@ -574,14 +565,12 @@ fn move_fox_on_mouse_down(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.read_sequence()
   if transform_store.get(mirror_state.val.fox) is Some(fox_transform) {
     transform_store.set(
       mirror_state.val.fox,
       fox_transform.with_translation(
         @math.Vec3::new(hit.x, fox_transform.translation.y, hit.z),
       ),
-      tick,
     )
     |> ignore
   }
@@ -610,20 +599,17 @@ fn handle_window_resize_messages(world : @ecs.World) -> Unit {
   )
   mirror_state.val.mirror_target_size = size
 
-  let tick = world.read_sequence()
   let target_store = world.component(@sprite.ecs_key_render_target)
   if target_store.contains(mirror_state.val.mirror_camera) {
     target_store.set(
       mirror_state.val.mirror_camera,
       @sprite.RenderTarget::Image(mirror_target),
-      tick,
     )
     |> ignore
   } else {
     target_store.insert(
       mirror_state.val.mirror_camera,
       @sprite.RenderTarget::Image(mirror_target),
-      tick,
     )
   }
 
@@ -671,17 +657,11 @@ fn update_mirror_camera_on_main_camera_transform_change(
     main_camera_transform, main_projection, mirror_transform,
   )
 
-  let tick = world.read_sequence()
-  transform_store.set(
-    mirror_state.val.mirror_camera,
-    mirror_camera_transform,
-    tick,
-  )
+  transform_store.set(mirror_state.val.mirror_camera, mirror_camera_transform)
   |> ignore
   projection_store.set(
     mirror_state.val.mirror_camera,
     @pbr.Projection::Perspective(mirror_camera_projection),
-    tick,
   )
   |> ignore
 }

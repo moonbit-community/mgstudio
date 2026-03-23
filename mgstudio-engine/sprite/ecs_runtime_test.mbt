@@ -623,8 +623,7 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
     let handle : @asset.Handle[DummyMaterialAsset] = @asset.Handle::new(21)
     handle_ref.val = Some(handle)
     let key : @ecs.ResourceKey[@asset.Assets[DummyMaterialAsset]] = @asset.assets_resource_key()
-    guard (try! world.get_resource_ref_mut(key, world.read_sequence()))
-      is Some(assets_ref) else {
+    guard (try! world.get_resource_ref_mut(key)) is Some(assets_ref) else {
       abort("expected DummyMaterialAsset asset store")
     }
     assets_ref.val.insert(handle, expected) |> ignore

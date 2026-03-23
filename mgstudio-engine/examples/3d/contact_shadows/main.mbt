@@ -182,7 +182,6 @@ fn light_transform(angle : Float) -> @transform.Transform {
 ///|
 fn apply_model_rotation(world : @ecs.World) -> Unit {
   guard contact_shadows_state.val.model is Some(model_entity) else { return }
-  let tick = world.read_sequence()
   world
   .component(@transform.ecs_key_transform)
   .set(
@@ -190,7 +189,6 @@ fn apply_model_rotation(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_y(contact_shadows_state.val.model_angle),
     ),
-    tick,
   )
   |> ignore
 }
@@ -198,11 +196,10 @@ fn apply_model_rotation(world : @ecs.World) -> Unit {
 ///|
 fn apply_camera_components(world : @ecs.World) -> Unit {
   guard contact_shadows_state.val.camera is Some(camera) else { return }
-  let tick = world.read_sequence()
   if contact_shadows_state.val.contact_shadows == ContactShadowState::Enabled {
     world
     .component(@pbr.ecs_key_contact_shadows)
-    .insert(camera, @pbr.ContactShadows::default(), tick)
+    .insert(camera, @pbr.ContactShadows::default())
   } else {
     world.component(@pbr.ecs_key_contact_shadows).remove(camera) |> ignore
   }
@@ -213,28 +210,26 @@ fn apply_ground_receive_shadows(world : @ecs.World) -> Unit {
   guard contact_shadows_state.val.ground is Some(ground_entity) else { return }
   let receiving = contact_shadows_state.val.receive_shadows ==
     ReceiveShadowsState::Enabled
-  let tick = world.read_sequence()
   if receiving {
     world.component(@pbr.ecs_key_not_shadow_receiver).remove(ground_entity)
     |> ignore
   } else {
     world
     .component(@pbr.ecs_key_not_shadow_receiver)
-    .insert(ground_entity, @pbr.NotShadowReceiver::default(), tick)
+    .insert(ground_entity, @pbr.NotShadowReceiver::default())
   }
 }
 
 ///|
 fn apply_light_state(world : @ecs.World) -> Unit {
   let state = contact_shadows_state.val
-  let tick = world.read_sequence()
   let transform = light_transform(state.light_angle)
   let shadow_maps_enabled = state.shadow_maps == ShadowMapsState::Enabled
   let contact_shadows_enabled = state.contact_shadows ==
     ContactShadowState::Enabled
 
   if state.directional_light is Some(entity) {
-    world.component(@transform.ecs_key_transform).set(entity, transform, tick)
+    world.component(@transform.ecs_key_transform).set(entity, transform)
     |> ignore
     world
     .component(@pbr.ecs_key_directional_light)
@@ -249,13 +244,12 @@ fn apply_light_state(world : @ecs.World) -> Unit {
         },
         shadow_maps_enabled,
       ).with_contact_shadows_enabled(contact_shadows_enabled),
-      tick,
     )
     |> ignore
   }
 
   if state.point_light is Some(entity) {
-    world.component(@transform.ecs_key_transform).set(entity, transform, tick)
+    world.component(@transform.ecs_key_transform).set(entity, transform)
     |> ignore
     world
     .component(@pbr.ecs_key_point_light)
@@ -273,13 +267,12 @@ fn apply_light_state(world : @ecs.World) -> Unit {
       )
       .with_radius(0.35F)
       .with_contact_shadows_enabled(contact_shadows_enabled),
-      tick,
     )
     |> ignore
   }
 
   if state.spot_light is Some(entity) {
-    world.component(@transform.ecs_key_transform).set(entity, transform, tick)
+    world.component(@transform.ecs_key_transform).set(entity, transform)
     |> ignore
     world
     .component(@pbr.ecs_key_spot_light)
@@ -299,7 +292,6 @@ fn apply_light_state(world : @ecs.World) -> Unit {
       )
       .with_radius(0.35F)
       .with_contact_shadows_enabled(contact_shadows_enabled),
-      tick,
     )
     |> ignore
   }
@@ -324,7 +316,6 @@ fn setup(world : @ecs.World) -> Unit {
     receive_shadows: ReceiveShadowsState::Enabled,
   }
 
-  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   let camera = @pbr.Camera3dBundle::new(
@@ -342,23 +333,23 @@ fn setup(world : @ecs.World) -> Unit {
   contact_shadows_state.val.camera = Some(camera)
   world
   .component(@pbr.ecs_key_contact_shadows)
-  .insert(camera, @pbr.ContactShadows::default(), tick)
+  .insert(camera, @pbr.ContactShadows::default())
   world
   .component(@post_process.ecs_key_screen_space_ambient_occlusion)
-  .insert(camera, @post_process.ScreenSpaceAmbientOcclusion::default(), tick)
+  .insert(camera, @post_process.ScreenSpaceAmbientOcclusion::default())
   world
   .component(@post_process.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
+  .insert(camera, @post_process.TemporalAntiAliasing::default())
   world
   .component(@pbr.ecs_key_depth_prepass)
-  .insert(camera, @pbr.DepthPrepass::default(), tick)
+  .insert(camera, @pbr.DepthPrepass::default())
   world
   .component(@post_process.ecs_key_bloom)
-  .insert(camera, @post_process.Bloom::default(), tick)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
+  .insert(camera, @post_process.Bloom::default())
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
   world
   .component(@post_process.ecs_key_tonemapping)
-  .insert(camera, @post_process.Tonemapping::AcesFitted, tick)
+  .insert(camera, @post_process.Tonemapping::AcesFitted)
   world
   .component(@pbr.ecs_key_skybox)
   .insert(
@@ -367,7 +358,6 @@ fn setup(world : @ecs.World) -> Unit {
       asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"),
       1000.0F,
     ),
-    tick,
   )
 
   let directional_light = world.spawn_empty()
@@ -379,13 +369,13 @@ fn setup(world : @ecs.World) -> Unit {
 
   world
   .component(@pbr.ecs_key_directional_light)
-  .insert(directional_light, @pbr.DirectionalLight::default(), tick)
+  .insert(directional_light, @pbr.DirectionalLight::default())
   world
   .component(@pbr.ecs_key_point_light)
-  .insert(point_light, @pbr.PointLight::default(), tick)
+  .insert(point_light, @pbr.PointLight::default())
   world
   .component(@pbr.ecs_key_spot_light)
-  .insert(spot_light, @pbr.SpotLight::default(), tick)
+  .insert(spot_light, @pbr.SpotLight::default())
 
   let model = world.spawn_empty()
   contact_shadows_state.val.model = Some(model)
@@ -401,7 +391,6 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -410,7 +399,6 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_y(PI),
     ),
-    tick,
   )
 
   let ground_material = @pbr.standard_material_add(

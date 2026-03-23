@@ -332,40 +332,35 @@ pub let picking_set_events : @app.SystemSet = @app.system_set(
 
 ///|
 pub fn picking_clear_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
-  get_picking_events_resource(world).insert(PickingEvents::default(), tick)
+  get_picking_events_resource(world).insert(PickingEvents::default())
 }
 
 ///|
 pub fn ensure_picking_state_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let res = get_picking_state_resource(world)
   if res.get() is None {
-    res.insert(PickingState::default(), tick)
+    res.insert(PickingState::default())
   }
 }
 
 ///|
 pub fn ensure_picking_hits_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let res = get_picking_hits_resource(world)
   if res.get() is None {
-    res.insert(PickingHits::default(), tick)
+    res.insert(PickingHits::default())
   }
 }
 
 ///|
 pub fn ensure_pointer_inputs_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let res = get_pointer_inputs_resource(world)
   if res.get() is None {
-    res.insert(PointerInputs::default(), tick)
+    res.insert(PointerInputs::default())
   }
 }
 
 ///|
 pub fn picking_collect_mouse_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let res = get_pointer_inputs_resource(world)
   guard res.get() is Some(inputs_value) else { return }
   let inputs = Ref::new(inputs_value)
@@ -383,7 +378,7 @@ pub fn picking_collect_mouse_system(world : @ecs.World) -> Unit {
       pointer, window_position, down, just_pressed, just_released,
     ),
   )
-  res.insert(inputs.val, tick)
+  res.insert(inputs.val)
 }
 
 ///|
@@ -477,7 +472,6 @@ fn sprite_region_size(sprite : @sprite.Sprite) -> @math.Vec2 {
 ///|
 /// 2D sprite hit testing backend (orthographic camera, clip-agnostic).
 pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let inputs_res = get_pointer_inputs_resource(world)
   let hits_res = get_picking_hits_resource(world)
   guard inputs_res.get() is Some(inputs0) else { return }
@@ -587,13 +581,12 @@ pub fn picking_sprite2d_hit_test_system(world : @ecs.World) -> Unit {
     }
     PickingHits::set_sprite2d(hits, pointer_id, hit_top)
   }
-  hits_res.insert(hits.val, tick)
+  hits_res.insert(hits.val)
 }
 
 ///|
 /// UI hit testing backend (front-to-back, clip aware).
 pub fn picking_ui_hit_test_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let inputs_res = get_pointer_inputs_resource(world)
   let hits_res = get_picking_hits_resource(world)
   guard inputs_res.get() is Some(inputs0) else { return }
@@ -662,7 +655,7 @@ pub fn picking_ui_hit_test_system(world : @ecs.World) -> Unit {
     }
     PickingHits::set_ui(hits, pointer_id, hit_top)
   }
-  hits_res.insert(hits.val, tick)
+  hits_res.insert(hits.val)
 }
 
 ///|
@@ -691,18 +684,17 @@ fn entity_from_node_id(node_id : @moon_accesskit.NodeId) -> @core.Entity {
 ///|
 /// Apply host-driven accessibility actions to UI state and picking events.
 pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let state_res = @a11y.get_a11y_state_resource(world)
   guard state_res.get() is Some(state_value) else { return }
   let state = Ref::new(state_value)
   let actions = @a11y.A11yState::drain_actions(state)
   if actions.length() == 0 {
-    state_res.insert(state.val, tick)
+    state_res.insert(state.val)
     return
   }
   let events_res = get_picking_events_resource(world)
   guard events_res.get() is Some(events_value) else {
-    state_res.insert(state.val, tick)
+    state_res.insert(state.val)
     return
   }
   let events = Ref::new(events_value)
@@ -817,9 +809,9 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
     }
     let next = @ui.ScrollPosition::new(next_x, next_y)
     if scroll_store.contains(entity) {
-      scroll_store.set(entity, next, tick) |> ignore
+      scroll_store.set(entity, next) |> ignore
     } else {
-      scroll_store.insert(entity, next, tick)
+      scroll_store.insert(entity, next)
     }
   }
 
@@ -834,19 +826,17 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
         // Map focus-driven navigation (tab / VO) to the hovered state so UI can
         // reflect focus without requiring pointer position.
         if interaction_store.contains(entity) {
-          interaction_store.set(entity, @ui.Interaction::Hovered, tick)
-          |> ignore
+          interaction_store.set(entity, @ui.Interaction::Hovered) |> ignore
         } else {
-          interaction_store.insert(entity, @ui.Interaction::Hovered, tick)
+          interaction_store.insert(entity, @ui.Interaction::Hovered)
         }
       }
       @moon_accesskit.Action::Click => {
         @a11y.A11yState::set_focused_node(state, req.target_node())
         if interaction_store.contains(entity) {
-          interaction_store.set(entity, @ui.Interaction::Pressed, tick)
-          |> ignore
+          interaction_store.set(entity, @ui.Interaction::Pressed) |> ignore
         } else {
-          interaction_store.insert(entity, @ui.Interaction::Pressed, tick)
+          interaction_store.insert(entity, @ui.Interaction::Pressed)
         }
         PickingEvents::push(
           events,
@@ -871,19 +861,18 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
           text_store.get(entity) is Some(text_node) {
           @a11y.A11yState::set_focused_node(state, req.target_node())
           text_node.content = value
-          ignore(text_store.set(entity, text_node, tick))
+          ignore(text_store.set(entity, text_node))
         }
       _ => ()
     }
   }
-  state_res.insert(state.val, tick)
-  events_res.insert(events.val, tick)
+  state_res.insert(state.val)
+  events_res.insert(events.val)
 }
 
 ///|
 /// Generate pointer enter/leave/down/up/click events from hit-test results.
 pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let inputs_res = get_pointer_inputs_resource(world)
   let hits_res = get_picking_hits_resource(world)
   guard inputs_res.get() is Some(inputs0) else { return }
@@ -1006,8 +995,8 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
       PickingState::set_pressed(picking_state, pointer_id, None)
     }
   }
-  events_res.insert(events.val, tick)
-  state_res.insert(picking_state.val, tick)
+  events_res.insert(events.val)
+  state_res.insert(picking_state.val)
 }
 
 ///|

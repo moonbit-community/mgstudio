@@ -37,8 +37,6 @@ fn setup(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_scene(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
-
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
@@ -74,14 +72,10 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   let light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
-  .insert(
-    light,
-    @pbr.PointLight::default().with_shadow_maps_enabled(true),
-    tick,
-  )
+  .insert(light, @pbr.PointLight::default().with_shadow_maps_enabled(true))
   world
   .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
@@ -104,9 +98,8 @@ fn spawn_ui(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let tick = world.read_sequence()
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -114,13 +107,12 @@ fn spawn_ui(world : @ecs.World) -> Unit {
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
-    tick,
   )
 
   let text_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  .insert(text_entity, @hierarchy.Parent::new(root))
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -129,32 +121,25 @@ fn spawn_ui(world : @ecs.World) -> Unit {
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
   .insert(
     text_entity,
     @text.Text::new("Press <spacebar> to save a screenshot to disk"),
-    tick,
   )
   world
   .component(@text.ecs_key_text_font)
   .insert(
     text_entity,
     @text.TextFont::default().with_font(font).with_font_size(24.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()))
   world
   .component(@text.ecs_key_text_layout)
-  .insert(
-    text_entity,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
-    tick,
-  )
+  .insert(text_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
 }
 
 ///|
@@ -200,6 +185,5 @@ fn screenshot_saving(world : @ecs.World) -> Unit {
   cursor_store.insert(
     window,
     @window.CursorIcon::from(@window.SystemCursorIcon::Progress),
-    world.read_sequence(),
   )
 }

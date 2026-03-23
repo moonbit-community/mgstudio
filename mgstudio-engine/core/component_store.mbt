@@ -48,9 +48,7 @@ pub fn[T] ComponentStore::set(
   self : ComponentStore[T],
   entity : Entity,
   value : T,
-  sequence : Sequence,
 ) -> Bool {
-  ignore(sequence)
   match self.storage.index_of(entity) {
     None => false
     Some(i) => {
@@ -65,11 +63,10 @@ pub fn[T] ComponentStore::set(
 pub fn[T] ComponentStore::update(
   self : ComponentStore[T],
   entity : Entity,
-  sequence : Sequence,
   update : (T) -> T,
 ) -> Bool {
   match self.get(entity) {
-    Some(value) => self.set(entity, update(value), sequence)
+    Some(value) => self.set(entity, update(value))
     None => false
   }
 }
@@ -79,9 +76,7 @@ pub fn[T] ComponentStore::insert(
   self : ComponentStore[T],
   entity : Entity,
   value : T,
-  sequence : Sequence,
 ) -> Unit {
-  ignore(sequence)
   self.storage.insert(entity, value)
 }
 
@@ -90,9 +85,8 @@ pub fn[T] ComponentStore::upsert(
   self : ComponentStore[T],
   entity : Entity,
   value : T,
-  sequence : Sequence,
 ) -> Unit {
-  self.insert(entity, value, sequence)
+  self.insert(entity, value)
 }
 
 ///|

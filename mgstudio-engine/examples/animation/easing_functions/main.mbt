@@ -104,7 +104,6 @@ fn setup(world : @ecs.World) -> Unit {
   let half_extent_y = EXTENT_Y / 2.0F
   let half_size_x = PLOT_SIZE_X / 2.0F
   let half_size_y = PLOT_SIZE_Y / 2.0F
-  let tick = world.read_sequence()
   let parent_store = world.component(@hierarchy.ecs_key_parent)
   let plot_store = world.component(ease_function_plot_key)
   let transform_store = world.component(@transform.ecs_key_transform)
@@ -138,30 +137,20 @@ fn setup(world : @ecs.World) -> Unit {
         color,
         @math.Vec2::new(-half_size_x, -half_size_y),
       )
-      parent_store.insert(
-        value_bar_entity,
-        @hierarchy.Parent::new(plot_entity),
-        tick,
-      )
+      parent_store.insert(value_bar_entity, @hierarchy.Parent::new(plot_entity))
       parent_store.insert(
         progress_dot_entity,
         @hierarchy.Parent::new(plot_entity),
-        tick,
       )
-      plot_store.insert(
-        plot_entity,
-        EaseFunctionPlot::{
-          function: spec.function,
-          color,
-          value_bar_entity,
-          progress_dot_entity,
-        },
-        tick,
-      )
+      plot_store.insert(plot_entity, EaseFunctionPlot::{
+        function: spec.function,
+        color,
+        value_bar_entity,
+        progress_dot_entity,
+      })
       transform_store.insert(
         plot_entity,
         transform_from_position(center, PLOT_Z),
-        tick,
       )
 
       spawn_label(
@@ -185,11 +174,10 @@ fn display_curves(world : @ecs.World) -> Unit {
   let now = clamp01((cycle_elapsed - TIME_MARGIN_SECONDS) / DURATION_SECONDS)
 
   if progress_text_entity.val is Some(text_entity) {
-    let tick = world.read_sequence()
     let text_store = world.component(@text.ecs_key_text)
     if text_store.get(text_entity) is Some(text_value) {
       text_value.content = format_progress(now)
-      ignore(text_store.set(text_entity, text_value, tick))
+      ignore(text_store.set(text_entity, text_value))
     }
   }
 
@@ -288,9 +276,8 @@ fn spawn_progress_overlay(
   world : @ecs.World,
   font : @asset.Handle[@asset.Font],
 ) -> Unit {
-  let tick = world.read_sequence()
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -298,13 +285,12 @@ fn spawn_progress_overlay(
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
-    tick,
   )
 
   let text_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  .insert(text_entity, @hierarchy.Parent::new(root))
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -313,28 +299,22 @@ fn spawn_progress_overlay(
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
-  .insert(text_entity, @text.Text::new("Progress: 0.00"), tick)
+  .insert(text_entity, @text.Text::new("Progress: 0.00"))
   world
   .component(@text.ecs_key_text_font)
   .insert(
     text_entity,
     @text.TextFont::default().with_font(font).with_font_size(20.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()))
   world
   .component(@text.ecs_key_text_layout)
-  .insert(
-    text_entity,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
-    tick,
-  )
+  .insert(text_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
   progress_text_entity.val = Some(text_entity)
 }
 

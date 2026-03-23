@@ -241,7 +241,6 @@ fn mode_sphere_color(mode : LightingMode) -> @sprite.Color {
 ///|
 fn apply_lighting_mode(world : @ecs.World) -> Unit {
   let mode = app_status.val.lighting_mode
-  let tick = world.read_sequence()
 
   let scenery_is_lit_in_real_time = lighting_mode_eq(
       mode,
@@ -259,7 +258,6 @@ fn apply_lighting_mode(world : @ecs.World) -> Unit {
         mode_directional_illuminance(mode),
         scenery_is_lit_in_real_time,
       ),
-      tick,
     )
     |> ignore
   }
@@ -288,11 +286,7 @@ fn reset_sphere_position(world : @ecs.World) -> Unit {
       is Some(transform) {
       world
       .component(@transform.ecs_key_transform)
-      .set(
-        sphere_entity,
-        transform.with_translation(initial_sphere_position()),
-        world.read_sequence(),
-      )
+      .set(sphere_entity, transform.with_translation(initial_sphere_position()))
       |> ignore
     }
   }
@@ -357,11 +351,7 @@ fn move_sphere(world : @ecs.World) -> Unit {
   }
 
   let target = point.add(@math.Vec3::new(0.0F, SPHERE_OFFSET, 0.0F))
-  transform_store.set(
-    sphere_entity,
-    current_transform.with_translation(target),
-    world.read_sequence(),
-  )
+  transform_store.set(sphere_entity, current_transform.with_translation(target))
   |> ignore
 }
 
@@ -410,7 +400,6 @@ fn setup(world : @ecs.World) -> Unit {
   app_status.val.directional_light = None
   app_status.val.help_text = None
 
-  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   let camera = @pbr.Camera3dBundle::new(
@@ -435,7 +424,6 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    tick,
   )
 
   let sphere_material = @pbr.standard_material_add(
@@ -463,7 +451,6 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 12_000.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -473,7 +460,6 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 0.2F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
   app_status.val.directional_light = Some(directional_light)
 

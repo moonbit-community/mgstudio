@@ -121,7 +121,6 @@ fn color_for_row(index : Int) -> @sprite.Color {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   world.insert_resource(
     @pbr.ecs_key_directional_light_shadow_map,
     @pbr.DirectionalLightShadowMap::new(4096),
@@ -135,7 +134,7 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
   world
   .component(@pbr.ecs_key_environment_map_light)
   .insert(
@@ -143,11 +142,10 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.EnvironmentMapLight::default().with_intensity(
       ENVIRONMENT_LIGHT_INTENSITY,
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_free_camera)
-  .insert(camera, @pbr.FreeCamera::default(), tick)
+  .insert(camera, @pbr.FreeCamera::default())
 
   let directional = world.spawn_empty()
   let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::default()
@@ -163,7 +161,6 @@ fn setup(world : @ecs.World) -> Unit {
       DIRECTIONAL_LIGHT_ILLUMINANCE,
       true,
     ).with_cascade_shadow_config(Some(cascade_shadow_config)),
-    tick,
   )
   let light_rot = @math.Quat::from_rotation_y(-0.15F * PI).mul(
     @math.Quat::from_rotation_x(-0.15F * PI),
@@ -173,7 +170,6 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     directional,
     @transform.Transform::identity().with_rotation(light_rot),
-    tick,
   )
 
   let mesh_proxy = uv_sphere_mesh(1.0F, 36, 56)

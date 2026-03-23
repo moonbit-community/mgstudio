@@ -282,7 +282,6 @@ fn set_entity_visibility(
   world : @ecs.World,
   entity : @core.Entity?,
   visible : Bool,
-  tick : @core.Sequence,
 ) -> Unit {
   if entity is Some(value) {
     world
@@ -294,7 +293,6 @@ fn set_entity_visibility(
       } else {
         @visibility.Visibility::Hidden
       },
-      tick,
     )
     |> ignore
   }
@@ -302,34 +300,22 @@ fn set_entity_visibility(
 
 ///|
 fn apply_model_and_base_visibility(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let model = ssr_state.val.displayed_model
   let base = ssr_state.val.displayed_base
 
-  set_entity_visibility(world, ssr_state.val.cube_model, model is Cube, tick)
+  set_entity_visibility(world, ssr_state.val.cube_model, model is Cube)
   set_entity_visibility(
     world,
     ssr_state.val.flight_helmet_model,
     model is FlightHelmet,
-    tick,
   )
   for capsule in ssr_state.val.capsule_models {
-    set_entity_visibility(world, Some(capsule), model is Capsules, tick)
+    set_entity_visibility(world, Some(capsule), model is Capsules)
   }
 
-  set_entity_visibility(world, ssr_state.val.water_base, base is Water, tick)
-  set_entity_visibility(
-    world,
-    ssr_state.val.metallic_base,
-    base is Metallic,
-    tick,
-  )
-  set_entity_visibility(
-    world,
-    ssr_state.val.red_plane_base,
-    base is RedPlane,
-    tick,
-  )
+  set_entity_visibility(world, ssr_state.val.water_base, base is Water)
+  set_entity_visibility(world, ssr_state.val.metallic_base, base is Metallic)
+  set_entity_visibility(world, ssr_state.val.red_plane_base, base is RedPlane)
 }
 
 ///|
@@ -337,7 +323,6 @@ fn apply_camera_transform(world : @ecs.World) -> Unit {
   if ssr_state.val.camera is Some(camera) {
     let x = @math.sin(ssr_state.val.camera_theta) * ssr_state.val.camera_radius
     let z = @math.cos(ssr_state.val.camera_theta) * ssr_state.val.camera_radius
-    let tick = world.read_sequence()
     world
     .component(@transform.ecs_key_transform)
     .set(
@@ -346,7 +331,6 @@ fn apply_camera_transform(world : @ecs.World) -> Unit {
         @math.Vec3::zero(),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
-      tick,
     )
     |> ignore
   }
@@ -419,11 +403,10 @@ fn build_ssr_settings() -> @post_process.ScreenSpaceReflections {
 fn apply_ssr_settings(world : @ecs.World) -> Unit {
   sanitize_ssr_ranges()
   if ssr_state.val.camera is Some(camera) {
-    let tick = world.read_sequence()
     let store = world.component(@post_process.ecs_key_screen_space_reflections)
     if ssr_state.val.ssr_on {
-      if !store.set(camera, build_ssr_settings(), tick) {
-        store.insert(camera, build_ssr_settings(), tick)
+      if !store.set(camera, build_ssr_settings()) {
+        store.insert(camera, build_ssr_settings())
       }
     } else {
       store.remove(camera) |> ignore
@@ -458,7 +441,6 @@ fn spawn_flight_helmet(
   world : @ecs.World,
   asset_server : @asset.AssetServer,
 ) -> Unit {
-  let tick = world.read_sequence()
   let entity = world.spawn_empty()
   world
   .component(@scene.ecs_key_scene_root)
@@ -472,18 +454,16 @@ fn spawn_flight_helmet(
         ),
       ),
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
   .insert(
     entity,
     @transform.Transform::identity().with_scale(@math.Vec3::splat(2.5F)),
-    tick,
   )
   world
   .component(@visibility.ecs_key_visibility)
-  .insert(entity, @visibility.Visibility::Hidden, tick)
+  .insert(entity, @visibility.Visibility::Hidden)
   ssr_state.val.flight_helmet_model = Some(entity)
 }
 
@@ -507,10 +487,9 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
       ),
     ).spawn(world)
 
-    let tick = world.read_sequence()
     world
     .component(@visibility.ecs_key_visibility)
-    .set(entity, @visibility.Visibility::Hidden, tick)
+    .set(entity, @visibility.Visibility::Hidden)
     |> ignore
     ssr_state.val.capsule_models.push(entity)
   }
@@ -518,8 +497,6 @@ fn spawn_capsules(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
-  let tick = world.read_sequence()
-
   let metallic_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.25F, 0.25F, 0.25F, 1.0F),
@@ -538,7 +515,7 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   ).spawn(world)
   world
   .component(@visibility.ecs_key_visibility)
-  .set(metallic, @visibility.Visibility::Hidden, tick)
+  .set(metallic, @visibility.Visibility::Hidden)
   |> ignore
   ssr_state.val.metallic_base = Some(metallic)
 
@@ -560,7 +537,7 @@ fn spawn_bases(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   ).spawn(world)
   world
   .component(@visibility.ecs_key_visibility)
-  .set(red, @visibility.Visibility::Hidden, tick)
+  .set(red, @visibility.Visibility::Hidden)
   |> ignore
   ssr_state.val.red_plane_base = Some(red)
 
@@ -611,15 +588,14 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
     .spawn(world)
   ssr_state.val.camera = Some(camera)
 
-  let tick = world.read_sequence()
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
   world
   .component(@post_process.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
+  .insert(camera, @post_process.TemporalAntiAliasing::default())
   world
   .component(@post_process.ecs_key_screen_space_ambient_occlusion)
-  .insert(camera, @post_process.ScreenSpaceAmbientOcclusion::default(), tick)
+  .insert(camera, @post_process.ScreenSpaceAmbientOcclusion::default())
   world
   .component(@pbr.ecs_key_environment_map_light)
   .insert(
@@ -629,7 +605,6 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       5000.0F,
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_skybox)
@@ -639,7 +614,6 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       5000.0F,
     ),
-    tick,
   )
 
   let directional = world.spawn_empty()
@@ -648,7 +622,6 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
   .insert(
     directional,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -658,7 +631,6 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
 
   let point = world.spawn_empty()
@@ -672,11 +644,10 @@ fn setup_camera_and_lights(world : @ecs.World) -> Unit {
       30.0F,
       true,
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(point, @transform.Transform::from_xyz(-3.0F, 3.5F, 2.0F), tick)
+  .insert(point, @transform.Transform::from_xyz(-3.0F, 3.5F, 2.0F))
 
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
@@ -718,7 +689,6 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 
 ///|
 fn rotate_models(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let rotation = @math.Quat::from_rotation_y(
     world_time(world).elapsed_seconds(),
   )
@@ -728,7 +698,7 @@ fn rotate_models(world : @ecs.World) -> Unit {
       is Some(transform) {
       world
       .component(@transform.ecs_key_transform)
-      .set(cube, transform.with_rotation(rotation), tick)
+      .set(cube, transform.with_rotation(rotation))
       |> ignore
     }
   }
@@ -738,7 +708,7 @@ fn rotate_models(world : @ecs.World) -> Unit {
       is Some(transform) {
       world
       .component(@transform.ecs_key_transform)
-      .set(helmet, transform.with_rotation(rotation), tick)
+      .set(helmet, transform.with_rotation(rotation))
       |> ignore
     }
   }

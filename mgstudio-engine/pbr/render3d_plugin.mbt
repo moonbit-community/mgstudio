@@ -102,10 +102,9 @@ pub let ecs_key_pbr_plugin_runtime_config : @ecs.ResourceKey[
 ///|
 fn init_wireframe_resources(world : @ecs.World) -> Unit {
   let ecs_world = world
-  let tick = world.read_sequence()
   let wireframe_config = get_wireframe_config_resource(ecs_world)
   if !wireframe_config.is_present() {
-    wireframe_config.insert(WireframeConfig::default(), tick)
+    wireframe_config.insert(WireframeConfig::default())
   }
 }
 

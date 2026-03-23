@@ -22,13 +22,13 @@ pub struct ComponentStore[T] {
 pub fn[T] ComponentStore::contains(Self[T], Entity) -> Bool
 pub fn[T] ComponentStore::for_each(Self[T], (Entity, T) -> Unit) -> Unit
 pub fn[T] ComponentStore::get(Self[T], Entity) -> T?
-pub fn[T] ComponentStore::insert(Self[T], Entity, T, Int) -> Unit
+pub fn[T] ComponentStore::insert(Self[T], Entity, T) -> Unit
 pub fn[T] ComponentStore::len(Self[T]) -> Int
 pub fn[T] ComponentStore::new() -> Self[T]
 pub fn[T] ComponentStore::remove(Self[T], Entity) -> T?
-pub fn[T] ComponentStore::set(Self[T], Entity, T, Int) -> Bool
-pub fn[T] ComponentStore::update(Self[T], Entity, Int, (T) -> T) -> Bool
-pub fn[T] ComponentStore::upsert(Self[T], Entity, T, Int) -> Unit
+pub fn[T] ComponentStore::set(Self[T], Entity, T) -> Bool
+pub fn[T] ComponentStore::update(Self[T], Entity, (T) -> T) -> Bool
+pub fn[T] ComponentStore::upsert(Self[T], Entity, T) -> Unit
 
 pub struct Duration {
   nanos : Int64
@@ -104,9 +104,9 @@ pub impl ToJson for Instant
 pub impl @json.FromJson for Instant
 
 pub struct MessageReader[T] {
-  previous_tick : Int?
+  previous_sequence : Int?
   previous_messages : Array[T]
-  current_tick : Int?
+  current_sequence : Int?
   current_messages : Array[T]
   system : SystemSequence
   mut has_read : Bool
@@ -118,15 +118,15 @@ pub fn[T] MessageReader::read(Self[T]) -> Array[T]
 
 pub struct MessageWriter[T] {
   messages : Messages[T]
-  tick : Int
+  sequence : Int
 }
 pub fn[T] MessageWriter::write(Self[T], T) -> Unit
 pub fn[T] MessageWriter::write_batch(Self[T], Array[T]) -> Unit
 
 pub struct Messages[T] {
-  mut previous_tick : Int?
+  mut previous_sequence : Int?
   mut previous_messages : Array[T]
-  mut current_tick : Int?
+  mut current_sequence : Int?
   mut current_messages : Array[T]
 }
 pub fn[T] Messages::clear(Self[T]) -> Unit
@@ -141,8 +141,8 @@ pub struct Resource[T] {
 }
 pub fn[T] Resource::get(Self[T]) -> T?
 pub fn[T] Resource::get_ref(Self[T]) -> @ref.Ref[T]?
-pub fn[T] Resource::get_ref_mut(Self[T], Int) -> @ref.Ref[T]?
-pub fn[T] Resource::insert(Self[T], T, Int) -> Unit
+pub fn[T] Resource::get_ref_mut(Self[T]) -> @ref.Ref[T]?
+pub fn[T] Resource::insert(Self[T], T) -> Unit
 pub fn[T] Resource::is_present(Self[T]) -> Bool
 pub fn[T] Resource::new() -> Self[T]
 pub fn[T] Resource::remove(Self[T]) -> T?

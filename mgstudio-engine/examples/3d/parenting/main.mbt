@@ -25,7 +25,6 @@ let rotator_state : Ref[RotatorState] = Ref::new({ rotators: [] })
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   rotator_state.val.rotators.clear()
 
   let material = @pbr.standard_material_add(
@@ -60,15 +59,15 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(child, @hierarchy.Parent::new(parent), tick)
+  .insert(child, @hierarchy.Parent::new(parent))
 
   let light_entity = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
-  .insert(light_entity, @pbr.PointLight::default(), tick)
+  .insert(light_entity, @pbr.PointLight::default())
   world
   .component(@transform.ecs_key_transform)
-  .insert(light_entity, @transform.Transform::from_xyz(4.0F, 5.0F, -4.0F), tick)
+  .insert(light_entity, @transform.Transform::from_xyz(4.0F, 5.0F, -4.0F))
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
@@ -92,14 +91,13 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 fn rotator_system(world : @ecs.World) -> Unit {
   let delta = 3.0F * world_time(world).delta_seconds()
   let spin = @math.Quat::from_rotation_x(delta)
-  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   for entity in rotator_state.val.rotators {
     if transform_store.get(entity) is Some(transform) {
       let next = transform.with_rotation(
         transform.rotation.mul(spin).normalize(),
       )
-      transform_store.set(entity, next, tick) |> ignore
+      transform_store.set(entity, next) |> ignore
     }
   }
 }

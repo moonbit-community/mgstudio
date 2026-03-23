@@ -52,8 +52,6 @@ fn main {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
-
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::identity(),
@@ -64,7 +62,7 @@ fn setup(world : @ecs.World) -> Unit {
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -73,13 +71,12 @@ fn setup(world : @ecs.World) -> Unit {
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F))
     .with_justify_content(@ui.JustifyContent::SpaceBetween),
-    tick,
   )
 
   let panel = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(panel, @hierarchy.Parent::new(root), tick)
+  .insert(panel, @hierarchy.Parent::new(root))
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -89,41 +86,37 @@ fn setup(world : @ecs.World) -> Unit {
     .with_height(@ui.Val::Percent(100.0F))
     .with_border(@ui.UiRect::all(@ui.Val::Px(2.0F)))
     .with_align_items(@ui.AlignItems::FlexEnd),
-    tick,
   )
   world
   .component(@ui.ecs_key_background_color)
   .insert(
     panel,
     @ui.BackgroundColor::new(@sprite.Color::new(0.65F, 0.65F, 0.65F, 1.0F)),
-    tick,
   )
 
   let label = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(label, @hierarchy.Parent::new(panel), tick)
+  .insert(label, @hierarchy.Parent::new(panel))
   world
   .component(@ui.ecs_key_node)
   .insert(
     label,
     @ui.Node::default().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
-  .insert(label, @text.Text::new(display_text(1.0F, false)), tick)
+  .insert(label, @text.Text::new(display_text(1.0F, false)))
   world
   .component(@text.ecs_key_text_font)
   .insert(
     label,
     @text.TextFont::default().with_font(font).with_font_size(36.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
-  .insert(label, @text.TextColor::new(@sprite.Color::black()), tick)
-  world.component(custom_text_key).insert(label, CustomText::{  }, tick)
+  .insert(label, @text.TextColor::new(@sprite.Color::black()))
+  world.component(custom_text_key).insert(label, CustomText::{  })
 }
 
 ///|
@@ -155,21 +148,19 @@ fn update_primary_window(
   update : (@window.Window) -> Unit,
 ) -> Unit {
   guard primary_window_entity(world) is Some(entity) else { return }
-  let tick = world.read_sequence()
   let window_store = world.component(@window.ecs_key_window)
   guard window_store.get(entity) is Some(window) else { return }
   update(window)
-  window_store.set(entity, window, tick) |> ignore
+  window_store.set(entity, window) |> ignore
 }
 
 ///|
 fn set_custom_text(world : @ecs.World, text : String) -> Unit {
   guard custom_text_entity(world) is Some(entity) else { return }
-  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(entity) is Some(text_value) else { return }
   text_value.content = text
-  ignore(text_store.set(entity, text_value, tick))
+  ignore(text_store.set(entity, text_value))
 }
 
 ///|

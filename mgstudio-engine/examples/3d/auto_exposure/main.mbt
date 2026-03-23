@@ -148,13 +148,12 @@ fn update_display_text() -> Unit {
 ///|
 fn auto_exposure_curve_assets_ref_mut_or_abort(
   world : @ecs.World,
-  tick : @core.Sequence,
 ) -> Ref[@asset.Assets[@pbr.AutoExposureCompensationCurve]] {
   let key : @ecs.ResourceKey[@asset.Assets[@pbr.AutoExposureCompensationCurve]] = @asset.assets_resource_key()
   if (try! world.get_resource(key)) is None {
     world.insert_resource(key, @asset.Assets::new())
   }
-  match (try! world.get_resource_ref_mut(key, tick)) {
+  match (try! world.get_resource_ref_mut(key)) {
     Some(assets_ref) => assets_ref
     None =>
       abort(
@@ -166,7 +165,6 @@ fn auto_exposure_curve_assets_ref_mut_or_abort(
 ///|
 fn build_basic_compensation_curve(
   world : @ecs.World,
-  tick : @core.Sequence,
 ) -> @asset.Handle[@pbr.AutoExposureCompensationCurve] {
   let curve = match
     @pbr.AutoExposureCompensationCurve::from_curve(
@@ -184,7 +182,7 @@ fn build_basic_compensation_curve(
         auto_exposure_curve_error_message(err),
       )
   }
-  auto_exposure_curve_assets_ref_mut_or_abort(world, tick).val.add(curve)
+  auto_exposure_curve_assets_ref_mut_or_abort(world).val.add(curve)
 }
 
 ///|
@@ -219,7 +217,6 @@ fn example_auto_exposure_settings() -> @pbr.AutoExposure {
 fn apply_example_auto_exposure_to_camera(
   world : @ecs.World,
   camera_entity : @core.Entity,
-  tick : @core.Sequence,
 ) -> Unit {
   let camera3d_store = world.component(@pbr.ecs_key_camera3d)
   let camera3d = match camera3d_store.get(camera_entity) {
@@ -229,7 +226,6 @@ fn apply_example_auto_exposure_to_camera(
   camera3d_store.set(
     camera_entity,
     camera3d.with_auto_exposure(Some(example_auto_exposure_settings())),
-    tick,
   )
   |> ignore
 }
@@ -248,8 +244,7 @@ fn setup(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let metering_mask = asset_server.load("textures/basic_metering_mask.png")
 
-  let tick = world.read_sequence()
-  let basic_curve = build_basic_compensation_curve(world, tick)
+  let basic_curve = build_basic_compensation_curve(world)
   auto_exposure_state.val.basic_compensation_curve = Some(basic_curve)
   auto_exposure_state.val.basic_metering_mask = Some(metering_mask)
 
@@ -271,7 +266,6 @@ fn setup(world : @ecs.World) -> Unit {
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       100_000.0F,
     ),
-    tick,
   )
   auto_exposure_state.val.camera = Some(camera)
 
@@ -298,11 +292,10 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     point_light,
     @pbr.PointLight::new(@sprite.Color::white(), 2_000.0F, 20.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(point_light, @transform.Transform::identity(), tick)
+  .insert(point_light, @transform.Transform::identity())
 
   // 2D overlay camera + mask image proxy for Bevy's `ImageNode` visualization.
   @sprite.Camera2dBundle::new(
@@ -323,7 +316,7 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@visibility.ecs_key_visibility)
-  .insert(mask_overlay, @visibility.Visibility::Hidden, tick)
+  .insert(mask_overlay, @visibility.Visibility::Hidden)
   auto_exposure_state.val.mask_overlay = Some(mask_overlay)
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
@@ -409,17 +402,15 @@ fn example_control_system(world : @ecs.World) -> Unit {
     auto_exposure_state.val.metering_mask_enabled = !auto_exposure_state.val.metering_mask_enabled
   }
 
-  let tick = world.read_sequence()
   if auto_exposure_state.val.camera is Some(camera_entity) {
     world
     .component(@transform.ecs_key_transform)
     .set(
       camera_entity,
       camera_transform_for_angle(auto_exposure_state.val.camera_angle),
-      tick,
     )
     |> ignore
-    apply_example_auto_exposure_to_camera(world, camera_entity, tick)
+    apply_example_auto_exposure_to_camera(world, camera_entity)
   }
 
   if auto_exposure_state.val.mask_overlay is Some(mask_entity) {
@@ -433,7 +424,6 @@ fn example_control_system(world : @ecs.World) -> Unit {
       } else {
         @visibility.Visibility::Hidden
       },
-      tick,
     )
     |> ignore
   }

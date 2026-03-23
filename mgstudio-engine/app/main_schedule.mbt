@@ -251,27 +251,17 @@ fn main_schedule_runtime_state(world : @ecs.World) -> MainScheduleRuntimeState {
 fn main_schedule_write_runtime_state(
   world : @ecs.World,
   state : MainScheduleRuntimeState,
-  sequence : @core.Sequence,
 ) -> Unit {
-  world.insert_resource_with_sequence(
-    main_schedule_runtime_state_resource_key(),
-    state,
-    sequence,
-  )
+  world.insert_resource(main_schedule_runtime_state_resource_key(), state)
 }
 
 ///|
 fn main_schedule_write_order(
   world : @ecs.World,
   update : (MainScheduleOrder) -> MainScheduleOrder,
-  sequence : @core.Sequence,
 ) -> Unit {
   let next_order = update(world_main_schedule_order(world))
-  world.insert_resource_with_sequence(
-    main_schedule_order_resource_key(),
-    next_order,
-    sequence,
-  )
+  world.insert_resource(main_schedule_order_resource_key(), next_order)
 }
 
 ///|
@@ -279,19 +269,14 @@ fn main_schedule_insert_after_unique(
   world : @ecs.World,
   after : ScheduleStage,
   stage : ScheduleStage,
-  sequence : @core.Sequence,
 ) -> Unit {
-  main_schedule_write_order(
-    world,
-    fn(order : MainScheduleOrder) {
-      if schedule_stage_contains(order.labels, stage) {
-        order
-      } else {
-        order.insert_after(after, stage)
-      }
-    },
-    sequence,
-  )
+  main_schedule_write_order(world, fn(order : MainScheduleOrder) {
+    if schedule_stage_contains(order.labels, stage) {
+      order
+    } else {
+      order.insert_after(after, stage)
+    }
+  })
 }
 
 ///|
@@ -299,38 +284,29 @@ fn main_schedule_insert_startup_before_unique(
   world : @ecs.World,
   before : ScheduleStage,
   stage : ScheduleStage,
-  sequence : @core.Sequence,
 ) -> Unit {
-  main_schedule_write_order(
-    world,
-    fn(order : MainScheduleOrder) {
-      if schedule_stage_contains(order.startup_labels, stage) {
-        order
-      } else {
-        order.insert_startup_before(before, stage)
-      }
-    },
-    sequence,
-  )
+  main_schedule_write_order(world, fn(order : MainScheduleOrder) {
+    if schedule_stage_contains(order.startup_labels, stage) {
+      order
+    } else {
+      order.insert_startup_before(before, stage)
+    }
+  })
 }
 
 ///|
 fn reset_main_schedule_resources(world : @ecs.World) -> Unit {
-  world.insert_resource_with_sequence(
+  world.insert_resource(
     main_schedule_order_resource_key(),
     MainScheduleOrder::default(),
-    1,
   )
-  world.insert_resource_with_sequence(
+  world.insert_resource(
     fixed_main_schedule_order_resource_key(),
     FixedMainScheduleOrder::default(),
-    1,
   )
-  main_schedule_write_runtime_state(
-    world,
-    MainScheduleRuntimeState::{ startup_ran: false },
-    1,
-  )
+  main_schedule_write_runtime_state(world, MainScheduleRuntimeState::{
+    startup_ran: false,
+  })
 }
 
 ///|
@@ -356,11 +332,9 @@ fn run_main_schedule_startup(
   for stage in world_main_schedule_order(world).startup_labels {
     run_main_schedule_stage(world, schedule, stage)
   }
-  main_schedule_write_runtime_state(
-    world,
-    MainScheduleRuntimeState::{ startup_ran: true },
-    world.advance_sequence(),
-  )
+  main_schedule_write_runtime_state(world, MainScheduleRuntimeState::{
+    startup_ran: true,
+  })
 }
 
 ///|

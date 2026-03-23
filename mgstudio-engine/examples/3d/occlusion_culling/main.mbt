@@ -196,7 +196,6 @@ fn spawn_small_cubes(
 ///|
 fn setup(world : @ecs.World) -> Unit {
   occlusion_state.val = default_state()
-  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   let small_cube_material = @pbr.standard_material_add(
@@ -231,17 +230,13 @@ fn setup(world : @ecs.World) -> Unit {
   let light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_directional_light)
-  .insert(light, @pbr.DirectionalLight::default(), tick)
+  .insert(light, @pbr.DirectionalLight::default())
   let light_rot = @math.Quat::from_rotation_y(-0.15F * PI).mul(
     @math.Quat::from_rotation_x(-0.15F * PI),
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(
-    light,
-    @transform.Transform::identity().with_rotation(light_rot),
-    tick,
-  )
+  .insert(light, @transform.Transform::identity().with_rotation(light_rot))
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
@@ -253,10 +248,10 @@ fn setup(world : @ecs.World) -> Unit {
   occlusion_state.val.camera = Some(camera)
   world
   .component(@pbr.ecs_key_depth_prepass)
-  .insert(camera, @pbr.DepthPrepass::default(), tick)
+  .insert(camera, @pbr.DepthPrepass::default())
   world
   .component(@pbr.ecs_key_occlusion_culling)
-  .insert(camera, @pbr.OcclusionCulling::default(), tick)
+  .insert(camera, @pbr.OcclusionCulling::default())
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
@@ -286,7 +281,6 @@ fn setup(world : @ecs.World) -> Unit {
 fn spin_small_cubes(world : @ecs.World) -> Unit {
   occlusion_state.val.sphere_angle = occlusion_state.val.sphere_angle +
     ROTATION_SPEED
-  let tick = world.read_sequence()
   for i in 0..<occlusion_state.val.small_cubes.length() {
     let cube = occlusion_state.val.small_cubes[i]
     let position = rotate_y(
@@ -298,7 +292,6 @@ fn spin_small_cubes(world : @ecs.World) -> Unit {
     .set(
       cube.entity,
       @transform.Transform::from_xyz(position.x, position.y, position.z),
-      tick,
     )
     |> ignore
   }
@@ -317,10 +310,9 @@ fn spin_large_cube(world : @ecs.World) -> Unit {
     .mul(@math.Quat::from_rotation_y(0.29F * speed))
     .mul(@math.Quat::from_rotation_z(0.35F * speed))
     .normalize()
-  let tick = world.read_sequence()
   world
   .component(@transform.ecs_key_transform)
-  .set(large_cube, transform.with_rotation(rotation), tick)
+  .set(large_cube, transform.with_rotation(rotation))
   |> ignore
 }
 
@@ -331,11 +323,10 @@ fn toggle_occlusion_culling_on_request(world : @ecs.World) -> Unit {
   }
   occlusion_state.val.occlusion_enabled = !occlusion_state.val.occlusion_enabled
   if occlusion_state.val.camera is Some(camera) {
-    let tick = world.read_sequence()
     if occlusion_state.val.occlusion_enabled {
       world
       .component(@pbr.ecs_key_occlusion_culling)
-      .insert(camera, @pbr.OcclusionCulling::default(), tick)
+      .insert(camera, @pbr.OcclusionCulling::default())
     } else {
       world.component(@pbr.ecs_key_occlusion_culling).remove(camera) |> ignore
     }

@@ -32,8 +32,9 @@ fn[T : @ecs.Component] insert_spawn_component(
   sequence : @core.Sequence,
   loc~ : SourceLoc,
 ) -> Unit {
+  ignore(sequence)
   let key : @ecs.ComponentKey[T] = @ecs.Component::component()
-  world.component(key).insert(entity, component, sequence, loc~)
+  world.component(key).insert(entity, component, loc~)
 }
 
 ///|

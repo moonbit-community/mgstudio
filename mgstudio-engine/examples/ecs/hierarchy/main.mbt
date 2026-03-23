@@ -33,7 +33,6 @@ fn world_asset_server(world : @ecs.World) -> @asset.AssetServer {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let asset_server = world_asset_server(world)
   let texture = asset_server.load_image("branding/icon.png")
 
@@ -58,7 +57,7 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@mg_hierarchy.ecs_key_parent)
-  .insert(first_child, @mg_hierarchy.Parent::new(parent), tick)
+  .insert(first_child, @mg_hierarchy.Parent::new(parent))
 
   let second_child = @sprite.SpriteBundle::new(
     @sprite.Sprite::from_image(texture).with_color(
@@ -70,7 +69,7 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@mg_hierarchy.ecs_key_parent)
-  .insert(second_child, @mg_hierarchy.Parent::new(parent), tick)
+  .insert(second_child, @mg_hierarchy.Parent::new(parent))
 }
 
 ///|
@@ -78,7 +77,6 @@ fn rotate(world : @ecs.World) -> Unit {
   let time = world_time(world)
   let delta = time.delta_seconds()
   let elapsed = time.elapsed_seconds()
-  let tick = world.read_sequence()
 
   let transform_store = @transform.get_transform_store(world)
   let children_store = @mg_hierarchy.get_children_store(world)
@@ -93,7 +91,7 @@ fn rotate(world : @ecs.World) -> Unit {
     if transform_store.get(parent) is Some(transform) {
       let next = transform
       next.rotate_z(-@math.pi_half() * delta)
-      transform_store.set(parent, next, tick) |> ignore
+      transform_store.set(parent, next) |> ignore
     }
 
     guard children_store.get(parent) is Some(children) else { return }
@@ -102,7 +100,7 @@ fn rotate(world : @ecs.World) -> Unit {
       if transform_store.get(child) is Some(transform) {
         let next = transform
         next.rotate_z(@math.pi() * delta)
-        transform_store.set(child, next, tick) |> ignore
+        transform_store.set(child, next) |> ignore
       }
     }
 

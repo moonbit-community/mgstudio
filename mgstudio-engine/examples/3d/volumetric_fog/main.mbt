@@ -267,13 +267,12 @@ fn setup_camera(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  let tick = world.read_sequence()
   world
   .component(@post_process.ecs_key_tonemapping)
-  .insert(camera, @post_process.Tonemapping::TonyMcMapface, tick)
+  .insert(camera, @post_process.Tonemapping::TonyMcMapface)
   world
   .component(@post_process.ecs_key_bloom)
-  .insert(camera, @post_process.Bloom::default(), tick)
+  .insert(camera, @post_process.Bloom::default())
   world
   .component(@pbr.ecs_key_skybox)
   .insert(
@@ -282,15 +281,12 @@ fn setup_camera(world : @ecs.World) -> Unit {
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       1000.0F,
     ),
-    tick,
   )
   volumetric_fog_state.val.camera = Some(camera)
 }
 
 ///|
 fn setup_lights(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
-
   let directional_light = world.spawn_empty()
   world
   .component(@transform.ecs_key_transform)
@@ -300,21 +296,19 @@ fn setup_lights(world : @ecs.World) -> Unit {
       scene_focus(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_directional_light)
   .insert(
     directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
-    tick,
   )
   volumetric_fog_state.val.directional_light = Some(directional_light)
 
   let point_light = world.spawn_empty()
   world
   .component(@transform.ecs_key_transform)
-  .insert(point_light, @transform.Transform::from_xyz(-0.4F, 1.9F, 1.0F), tick)
+  .insert(point_light, @transform.Transform::from_xyz(-0.4F, 1.9F, 1.0F))
   world
   .component(@pbr.ecs_key_point_light)
   .insert(
@@ -325,7 +319,6 @@ fn setup_lights(world : @ecs.World) -> Unit {
       150.0F,
       true,
     ),
-    tick,
   )
   volumetric_fog_state.val.point_light = Some(point_light)
 
@@ -338,7 +331,6 @@ fn setup_lights(world : @ecs.World) -> Unit {
       @math.Vec3::new(-1.5F, 0.7F, 3.5F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_spot_light)
@@ -352,7 +344,6 @@ fn setup_lights(world : @ecs.World) -> Unit {
       0.94F,
       true,
     ),
-    tick,
   )
   volumetric_fog_state.val.spot_light = Some(spot_light)
 }
@@ -384,8 +375,6 @@ fn setup_instructions(_world : @ecs.World) -> Unit {
 
 ///|
 fn apply_light_switches(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
-
   if volumetric_fog_state.val.point_light is Some(point_light) {
     if world.component(@pbr.ecs_key_point_light).get(point_light) is Some(light) {
       world
@@ -402,7 +391,6 @@ fn apply_light_switches(world : @ecs.World) -> Unit {
           light.range,
           volumetric_fog_state.val.volumetric_pointlight,
         ),
-        tick,
       )
       |> ignore
     }
@@ -426,7 +414,6 @@ fn apply_light_switches(world : @ecs.World) -> Unit {
           light.outer_angle,
           volumetric_fog_state.val.volumetric_spotlight,
         ),
-        tick,
       )
       |> ignore
     }
@@ -481,14 +468,12 @@ fn apply_fog_proxy(world : @ecs.World) -> Unit {
     @pbr.FogFalloff3d::exponential_squared(density),
   )
   guard volumetric_fog_state.val.camera is Some(camera) else { return }
-  let tick = world.read_sequence()
   let camera3d_store = world.component(@pbr.ecs_key_camera3d)
   let camera3d = match camera3d_store.get(camera) {
     Some(value) => value
     None => @pbr.Camera3d::default()
   }
-  camera3d_store.set(camera, camera3d.with_distance_fog(Some(fog)), tick)
-  |> ignore
+  camera3d_store.set(camera, camera3d.with_distance_fog(Some(fog))) |> ignore
 }
 
 ///|
@@ -534,10 +519,9 @@ fn move_directional_light(world : @ecs.World) -> Unit {
         .mul(light_transform.rotation)
         .normalize()
 
-      let tick = world.read_sequence()
       world
       .component(@transform.ecs_key_transform)
-      .set(light_entity, light_transform.with_rotation(next_rotation), tick)
+      .set(light_entity, light_transform.with_rotation(next_rotation))
       |> ignore
     }
   }
@@ -562,7 +546,6 @@ fn move_point_light(world : @ecs.World) -> Unit {
         volumetric_fog_state.val.point_light_speed = -volumetric_fog_state.val.point_light_speed
       }
 
-      let tick = world.read_sequence()
       world
       .component(@transform.ecs_key_transform)
       .set(
@@ -574,7 +557,6 @@ fn move_point_light(world : @ecs.World) -> Unit {
             point_transform.translation.z,
           ),
         ),
-        tick,
       )
       |> ignore
     }

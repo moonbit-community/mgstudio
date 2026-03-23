@@ -20,15 +20,16 @@ fn run_registered_observer_system(
 ) -> Unit {
   let this_run = world.advance_sequence()
   let sys_ticks = @core.SystemSequence::new(last_run_sequence_ref.val, this_run)
+  ignore(sys_ticks)
   let ctx = world.get_sequence_context()
   ctx.set(sys_ticks)
   world.set_sequence_context(ctx)
   let previous_world = current_world_ref.val
-  let previous_ticks = current_system_sequence_ref.val
+  let previous_sequence = current_system_sequence_ref.val
   current_world_ref.val = Some(world)
   current_system_sequence_ref.val = Some(sys_ticks)
   observer_system(world)
-  current_system_sequence_ref.val = previous_ticks
+  current_system_sequence_ref.val = previous_sequence
   current_world_ref.val = previous_world
   last_run_sequence_ref.val = this_run
 }

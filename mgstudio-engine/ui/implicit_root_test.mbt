@@ -15,6 +15,7 @@
 ///|
 fn seed_ui_context_for_implicit_root_test(world : @ecs.World) -> Int {
   let tick = world.advance_sequence()
+  ignore(tick)
   get_ui_context_resource(world).insert(
     UiContext::new(
       @asset.Handle::new(1),
@@ -26,7 +27,6 @@ fn seed_ui_context_for_implicit_root_test(world : @ecs.World) -> Int {
       None,
       false,
     ),
-    tick,
   )
   tick
 }
@@ -56,6 +56,7 @@ fn implicit_root_camera_with_target_info(
 test "ui: unparented node acts as implicit root for layout" {
   let world = @ecs.World::new()
   let tick = seed_ui_context_for_implicit_root_test(world)
+  ignore(tick)
   let root = world.spawn_empty()
   get_node_store(world).insert(
     root,
@@ -65,7 +66,6 @@ test "ui: unparented node acts as implicit root for layout" {
     .with_top(Val::Px(32.0F))
     .with_width(Val::Px(120.0F))
     .with_height(Val::Px(48.0F)),
-    tick,
   )
 
   ui_layout_system(world)
@@ -82,33 +82,27 @@ test "ui: unparented node acts as implicit root for layout" {
 test "ui: unparented node acts as implicit root for target camera propagation" {
   let world = @ecs.World::new()
   let tick = seed_ui_context_for_implicit_root_test(world)
-  get_ui_scale_resource(world).insert(UiScale::new(2.0F), tick)
+  ignore(tick)
+  get_ui_scale_resource(world).insert(UiScale::new(2.0F))
 
   let target_camera = world.spawn_empty()
   @sprite.get_camera_store(world).insert(
     target_camera,
     implicit_root_camera_with_target_info(0, @math.IVec2::new(640, 360), 2.0F),
-    tick,
   )
 
   let root = world.spawn_empty()
-  get_node_store(world).insert(root, Node::default(), tick)
+  get_node_store(world).insert(root, Node::default())
   get_ui_target_camera_store(world).insert(
     root,
     UiTargetCamera::new(target_camera),
-    tick,
   )
 
   let child = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
-    child,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
+  @hierarchy.get_parent_store(world).insert(child, @hierarchy.Parent::new(root))
   @hierarchy.get_children_store(world).insert(
     root,
     @hierarchy.Children::new([child]),
-    tick,
   )
 
   ui_propagate_target_cameras_system(world)

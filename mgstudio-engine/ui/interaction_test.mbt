@@ -16,6 +16,7 @@
 test "ui: interaction updates component state" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
+  ignore(tick)
   let ctx = UiContext::new(
     @asset.Handle::new(1),
     @math.Vec2::new(0.0F, 0.0F),
@@ -26,9 +27,9 @@ test "ui: interaction updates component state" {
     Some(@math.Vec2::new(60.0F, 60.0F)),
     false,
   )
-  get_ui_context_resource(world).insert(ctx, tick)
+  get_ui_context_resource(world).insert(ctx)
   let e = world.spawn_empty()
-  get_button_store(world).insert(e, Button::default(), tick)
+  get_button_store(world).insert(e, Button::default())
   get_ui_layout_store(world).insert(
     e,
     UiLayout::new(
@@ -37,7 +38,6 @@ test "ui: interaction updates component state" {
         @math.Vec2::new(240.0F, 110.0F),
       ),
     ),
-    tick,
   )
   ui_stack_system(world)
   ui_interaction_system(world)
@@ -55,7 +55,7 @@ test "ui: interaction updates component state" {
     Some(@math.Vec2::new(60.0F, 60.0F)),
     true,
   )
-  get_ui_context_resource(world).insert(ctx2, tick)
+  get_ui_context_resource(world).insert(ctx2)
   ui_stack_system(world)
   ui_interaction_system(world)
   let s1 = get_interaction_store(world).get(e).unwrap()
@@ -72,7 +72,7 @@ test "ui: interaction updates component state" {
     Some(@math.Vec2::new(1.0F, 1.0F)),
     false,
   )
-  get_ui_context_resource(world).insert(ctx3, tick)
+  get_ui_context_resource(world).insert(ctx3)
   ui_stack_system(world)
   ui_interaction_system(world)
   let s2 = get_interaction_store(world).get(e).unwrap()

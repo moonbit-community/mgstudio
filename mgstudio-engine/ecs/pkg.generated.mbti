@@ -110,16 +110,16 @@ pub fn[T] ComponentAccess::contains(Self[T], @core.Entity) -> Bool
 pub fn[T] ComponentAccess::for_each(Self[T], (@core.Entity, T) -> Unit) -> Unit
 pub fn[T] ComponentAccess::get(Self[T], @core.Entity) -> T?
 #callsite(autofill(loc))
-pub fn[T] ComponentAccess::insert(Self[T], @core.Entity, T, Int, loc~ : SourceLoc) -> Unit
+pub fn[T] ComponentAccess::insert(Self[T], @core.Entity, T, loc~ : SourceLoc) -> Unit
 pub fn[T] ComponentAccess::len(Self[T]) -> Int
 #callsite(autofill(loc))
 pub fn[T] ComponentAccess::remove(Self[T], @core.Entity, loc~ : SourceLoc) -> T?
 #callsite(autofill(loc))
-pub fn[T] ComponentAccess::set(Self[T], @core.Entity, T, Int, loc~ : SourceLoc) -> Bool
+pub fn[T] ComponentAccess::set(Self[T], @core.Entity, T, loc~ : SourceLoc) -> Bool
 #callsite(autofill(loc))
-pub fn[T] ComponentAccess::update(Self[T], @core.Entity, Int, (T) -> T, loc~ : SourceLoc) -> Bool
+pub fn[T] ComponentAccess::update(Self[T], @core.Entity, (T) -> T, loc~ : SourceLoc) -> Bool
 #callsite(autofill(loc))
-pub fn[T] ComponentAccess::upsert(Self[T], @core.Entity, T, Int, loc~ : SourceLoc) -> Unit
+pub fn[T] ComponentAccess::upsert(Self[T], @core.Entity, T, loc~ : SourceLoc) -> Unit
 
 pub(all) enum ComponentHookKind {
   OnAdd
@@ -591,12 +591,12 @@ pub struct ResourceAccess[T] {
   key : ResourceKey[T]
 }
 pub fn[T] ResourceAccess::get(Self[T]) -> T?
-pub fn[T] ResourceAccess::insert(Self[T], T, Int) -> Unit
+pub fn[T] ResourceAccess::insert(Self[T], T) -> Unit
 pub fn[T] ResourceAccess::is_present(Self[T]) -> Bool
 pub fn[T] ResourceAccess::remove(Self[T]) -> T?
-pub fn[T] ResourceAccess::set(Self[T], T, Int) -> Bool
-pub fn[T] ResourceAccess::update(Self[T], Int, (T) -> T) -> Bool
-pub fn[T] ResourceAccess::upsert(Self[T], T, Int) -> Unit
+pub fn[T] ResourceAccess::set(Self[T], T) -> Bool
+pub fn[T] ResourceAccess::update(Self[T], (T) -> T) -> Bool
+pub fn[T] ResourceAccess::upsert(Self[T], T) -> Unit
 
 pub struct ResourceKey[T] {
   id : Int
@@ -658,11 +658,10 @@ pub fn[T] World::get_required_components(Self, ComponentKey[T]) -> RequiredCompo
 pub fn World::get_required_components_by_id(Self, Int) -> RequiredComponents?
 pub fn[T] World::get_resource(Self, ResourceKey[T]) -> T? raise EcsError
 pub fn[T] World::get_resource_ref(Self, ResourceKey[T]) -> @ref.Ref[T]? raise EcsError
-pub fn[T] World::get_resource_ref_mut(Self, ResourceKey[T], Int) -> @ref.Ref[T]? raise EcsError
+pub fn[T] World::get_resource_ref_mut(Self, ResourceKey[T]) -> @ref.Ref[T]? raise EcsError
 pub fn World::get_sequence_context(Self) -> @core.SystemSequenceContext
 pub fn[T] World::init_message(Self, MessageKey[T]) -> Unit
 pub fn[T] World::insert_resource(Self, ResourceKey[T], T) -> Unit
-pub fn[T] World::insert_resource_with_sequence(Self, ResourceKey[T], T, Int) -> Unit
 pub fn World::is_alive(Self, @core.Entity) -> Bool
 pub fn[T] World::message_mutator(Self, MessageKey[T], @ref.Ref[Int]) -> MessageMutator[T]
 pub fn[T] World::message_reader(Self, MessageKey[T], @ref.Ref[Int]) -> MessageReader[T]

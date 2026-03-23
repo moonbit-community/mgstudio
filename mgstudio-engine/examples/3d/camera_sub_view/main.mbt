@@ -100,7 +100,6 @@ fn spawn_orthographic_camera(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   camera_sub_view_state.val.cameras.clear()
   camera_sub_view_state.val.moving_cameras.clear()
 
@@ -149,11 +148,10 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     light,
     @pbr.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 20.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
 
   let perspective_stretched_sub_view = @pbr.SubCameraView3d::new(
     @math.IVec2::new(10, 10),
@@ -247,12 +245,11 @@ fn move_camera_view(world : @ecs.World) -> Unit {
   let wrapped = sweep - float_from_int((sweep / cycle).to_int()) * cycle
   let offset = wrapped - 50.0F
 
-  let tick = world.read_sequence()
   let sub_camera_view_store = world.component(@pbr.ecs_key_sub_camera_view3d)
   for entity in camera_sub_view_state.val.moving_cameras {
     if sub_camera_view_store.get(entity) is Some(sub_camera_view) {
       let next = sub_camera_view.with_offset(@math.Vec2::new(offset, offset))
-      sub_camera_view_store.set(entity, next, tick) |> ignore
+      sub_camera_view_store.set(entity, next) |> ignore
     }
   }
 }
@@ -280,7 +277,6 @@ fn resize_viewports(world : @ecs.World) -> Unit {
   let small_size = @math.IVec2::new(small_dim, small_dim)
   let small_wide_size = @math.IVec2::new(small_dim * 2, small_dim)
 
-  let tick = world.read_sequence()
   let camera_store = world.component(@sprite.ecs_key_camera)
 
   for pair in camera_sub_view_state.val.cameras {
@@ -315,7 +311,6 @@ fn resize_viewports(world : @ecs.World) -> Unit {
             viewport.depth_max,
           ),
         ),
-        tick,
       )
       |> ignore
     }

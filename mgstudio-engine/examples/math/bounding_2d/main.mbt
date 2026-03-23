@@ -243,16 +243,13 @@ fn spawn_shape_entity(
   desired_volume : DesiredVolume,
   spinning : Bool,
 ) -> Unit {
-  let tick = world.read_sequence()
   let entity = world.spawn_empty()
-  world
-  .component(@transform.Transform::component())
-  .insert(entity, transform, tick)
-  world.component(shape_key).insert(entity, shape, tick)
-  world.component(desired_volume_key).insert(entity, desired_volume, tick)
-  world.component(intersects_key).insert(entity, false, tick)
+  world.component(@transform.Transform::component()).insert(entity, transform)
+  world.component(shape_key).insert(entity, shape)
+  world.component(desired_volume_key).insert(entity, desired_volume)
+  world.component(intersects_key).insert(entity, false)
   if spinning {
-    world.component(spin_key).insert(entity, Spin::{  }, tick)
+    world.component(spin_key).insert(entity, Spin::{  })
   }
 }
 
@@ -261,9 +258,8 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
-  let tick = world.read_sequence()
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -271,12 +267,11 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
-    tick,
   )
   let text_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  .insert(text_entity, @hierarchy.Parent::new(root))
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -285,32 +280,22 @@ fn spawn_help_overlay(world : @ecs.World) -> Unit {
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
-  .insert(
-    text_entity,
-    @text.Text::new(overlay_text(read_current_test(world))),
-    tick,
-  )
+  .insert(text_entity, @text.Text::new(overlay_text(read_current_test(world))))
   world
   .component(@text.ecs_key_text_font)
   .insert(
     text_entity,
     @text.TextFont::default().with_font(font).with_font_size(18.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(color_white()), tick)
+  .insert(text_entity, @text.TextColor::new(color_white()))
   world
   .component(@text.ecs_key_text_layout)
-  .insert(
-    text_entity,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
-    tick,
-  )
+  .insert(text_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
   overlay_text_entity.val = Some(text_entity)
 }
 
@@ -334,11 +319,10 @@ fn update_test_state(world : @ecs.World) -> Unit {
 ///|
 fn update_text(world : @ecs.World) -> Unit {
   guard overlay_text_entity.val is Some(text_entity) else { return }
-  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(text_entity) is Some(text_value) else { return }
   text_value.content = overlay_text(read_current_test(world))
-  ignore(text_store.set(text_entity, text_value, tick))
+  ignore(text_store.set(text_entity, text_value))
 }
 
 ///|
@@ -405,7 +389,6 @@ fn spin(world : @ecs.World) -> Unit {
 
 ///|
 fn update_volumes(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let volumes = world.component(current_volume_key)
   let query = world.query3(
     desired_volume_key,
@@ -419,7 +402,7 @@ fn update_volumes(world : @ecs.World) -> Unit {
       DesiredVolume::Circle =>
         CurrentVolume::Circle(shape_bounding_circle(shape, isometry))
     }
-    volumes.upsert(entity, volume, tick)
+    volumes.upsert(entity, volume)
   })
 }
 

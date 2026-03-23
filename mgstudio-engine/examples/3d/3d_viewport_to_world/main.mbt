@@ -176,8 +176,6 @@ fn ray_plane_intersection(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
-
   let ground = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
@@ -196,7 +194,7 @@ fn setup(world : @ecs.World) -> Unit {
   let light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_directional_light)
-  .insert(light, @pbr.DirectionalLight::default(), tick)
+  .insert(light, @pbr.DirectionalLight::default())
   world
   .component(@transform.ecs_key_transform)
   .insert(
@@ -205,7 +203,6 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
 
   let camera = @pbr.Camera3dBundle::new(
@@ -230,10 +227,9 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   viewport_to_world_3d_state.val.cursor_marker = Some(cursor_marker)
 
-  let tick = world.read_sequence()
   world
   .component(@visibility.ecs_key_visibility)
-  .set(cursor_marker, @visibility.Visibility::Hidden, tick)
+  .set(cursor_marker, @visibility.Visibility::Hidden)
   |> ignore
 }
 
@@ -284,7 +280,6 @@ fn draw_cursor(world : @ecs.World) -> Unit {
     }
   }
 
-  let tick = world.read_sequence()
   if cursor_hit is Some((point, ground_up)) {
     transform_store.set(
       cursor_entity,
@@ -293,17 +288,16 @@ fn draw_cursor(world : @ecs.World) -> Unit {
         quat_from_rotation_arc(@math.Vec3::new(0.0F, 0.0F, 1.0F), ground_up),
         @math.Vec3::splat(1.0F),
       ),
-      tick,
     )
     |> ignore
     world
     .component(@visibility.ecs_key_visibility)
-    .set(cursor_entity, @visibility.Visibility::Visible, tick)
+    .set(cursor_entity, @visibility.Visibility::Visible)
     |> ignore
   } else {
     world
     .component(@visibility.ecs_key_visibility)
-    .set(cursor_entity, @visibility.Visibility::Hidden, tick)
+    .set(cursor_entity, @visibility.Visibility::Hidden)
     |> ignore
   }
 }

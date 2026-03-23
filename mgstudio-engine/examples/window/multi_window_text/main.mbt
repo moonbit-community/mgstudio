@@ -63,10 +63,8 @@ fn spawn_ui_label(
   ui_camera : @core.Entity?,
   font : @text.TextFont,
 ) -> Unit {
-  let tick = world.read_sequence()
-
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -75,38 +73,35 @@ fn spawn_ui_label(
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F)),
-    tick,
   )
 
   if ui_camera is Some(camera) {
     world
     .component(@ui.ecs_key_ui_target_camera)
-    .insert(root, @ui.UiTargetCamera::new(camera), tick)
+    .insert(root, @ui.UiTargetCamera::new(camera))
   }
 
   let text_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  .insert(text_entity, @hierarchy.Parent::new(root))
   world
   .component(@text.ecs_key_text)
-  .insert(text_entity, @text.Text::new(content), tick)
-  world.component(@text.ecs_key_text_font).insert(text_entity, font, tick)
+  .insert(text_entity, @text.Text::new(content))
+  world.component(@text.ecs_key_text_font).insert(text_entity, font)
   world
   .component(@text.ecs_key_text_color)
   .insert(
     text_entity,
     @text.TextColor::new(@sprite.Color::srgb(1.0F, 1.0F, 0.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text_shadow)
-  .insert(text_entity, @text.TextShadow::default(), tick)
+  .insert(text_entity, @text.TextShadow::default())
 }
 
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let text_font = @text.TextFont::from_font_size(30.0F)
 
   @sprite.Camera2dBundle::new(
@@ -118,7 +113,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   let secondary_window = world.spawn_empty()
   world
   .component(@window.ecs_key_window)
-  .insert(secondary_window, configured_secondary_window(), tick)
+  .insert(secondary_window, configured_secondary_window())
 
   let secondary_window_camera = @sprite.Camera2dBundle::new_with_layers(
     @sprite.Camera::default(),

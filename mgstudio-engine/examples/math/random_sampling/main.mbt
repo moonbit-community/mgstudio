@@ -133,7 +133,6 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let world = current_world_or_abort()
-  let tick = world.read_sequence()
   let shape = @math.Cuboid::from_length(2.9F)
 
   world.insert_resource(RandomSource::resource(), RandomSource::{
@@ -181,14 +180,10 @@ fn setup(
   let light = world.spawn_empty()
   world
   .component(@pbr.PointLight::component())
-  .insert(
-    light,
-    @pbr.PointLight::default().with_shadow_maps_enabled(true),
-    tick,
-  )
+  .insert(light, @pbr.PointLight::default().with_shadow_maps_enabled(true))
   world
   .component(@transform.Transform::component())
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
@@ -214,14 +209,13 @@ fn setup(
     ),
   })
 
-  spawn_instructions(world, asset_server.get(), tick)
+  spawn_instructions(world, asset_server.get())
 }
 
 ///|
 fn spawn_instructions(
   world : @ecs.World,
   asset_server : @asset.AssetServer,
-  tick : Int,
 ) -> Unit {
   let overlay_camera = @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(1).with_clear_color_none(),
@@ -229,10 +223,10 @@ fn spawn_instructions(
   ).spawn(world)
   world
   .component(@ui.IsDefaultUiCamera::component())
-  .insert(overlay_camera, @ui.IsDefaultUiCamera::default(), tick)
+  .insert(overlay_camera, @ui.IsDefaultUiCamera::default())
 
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -240,7 +234,6 @@ fn spawn_instructions(
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
-    tick,
   )
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
@@ -248,7 +241,7 @@ fn spawn_instructions(
   let text_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  .insert(text_entity, @hierarchy.Parent::new(root))
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -257,7 +250,6 @@ fn spawn_instructions(
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
@@ -266,25 +258,19 @@ fn spawn_instructions(
     @text.Text::new(
       "Controls:\nM: Toggle between sampling boundary and interior.\nR: Restart (erase all samples).\nS: Add one random sample.\nD: Add 100 random samples.\nRotate camera by holding left mouse and panning left/right.",
     ),
-    tick,
   )
   world
   .component(@text.ecs_key_text_font)
   .insert(
     text_entity,
     @text.TextFont::default().with_font(font).with_font_size(20.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()))
   world
   .component(@text.ecs_key_text_layout)
-  .insert(
-    text_entity,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
-    tick,
-  )
+  .insert(text_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
 }
 
 ///|
@@ -319,15 +305,12 @@ fn spawn_sample_point(
   point_material : PointMaterial,
   sample : @math.Vec3,
 ) -> Unit {
-  let tick = world.read_sequence()
   let entity = @pbr.MeshMaterial3dBundle::new(
     point_mesh.mesh,
     @pbr.MeshMaterial3d::new(point_material.handle),
     @transform.Transform::from_translation(sample),
   ).spawn(world)
-  world
-  .component(SamplePoint::component())
-  .insert(entity, SamplePoint::{  }, tick)
+  world.component(SamplePoint::component()).insert(entity, SamplePoint::{  })
 }
 
 ///|
@@ -365,7 +348,8 @@ fn handle_keypress(
     return
   }
   let tick = world.advance_sequence()
-  guard (try! world.get_resource_ref_mut(RandomSource::resource(), tick))
+  ignore(tick)
+  guard (try! world.get_resource_ref_mut(RandomSource::resource()))
     is Some(random_source_ref) else {
     return
   }
@@ -406,7 +390,8 @@ fn handle_mouse(
 ) -> Unit {
   let world = current_world_or_abort()
   let tick = world.advance_sequence()
-  guard (try! world.get_resource_ref_mut(MousePressed::resource(), tick))
+  ignore(tick)
+  guard (try! world.get_resource_ref_mut(MousePressed::resource()))
     is Some(mouse_pressed_ref) else {
     return
   }
@@ -440,7 +425,7 @@ fn handle_mouse(
     @math.Vec3::zero(),
     @math.Quat::from_rotation_y(-delta.x / 150.0F),
   )
-  ignore(transform_store.set(camera_entity, next_transform, tick))
+  ignore(transform_store.set(camera_entity, next_transform))
 }
 
 ///|

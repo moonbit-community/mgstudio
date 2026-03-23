@@ -106,7 +106,7 @@ fn set_camera_projection(world : @ecs.World, fov : Float) -> Unit {
   }
   world
   .component(@pbr.ecs_key_projection)
-  .set(camera, @pbr.Projection::Perspective(perspective), world.read_sequence())
+  .set(camera, @pbr.Projection::Perspective(perspective))
   |> ignore
 }
 
@@ -210,7 +210,6 @@ fn setup(world : @ecs.World) -> Unit {
     camera: None,
     help_text: None,
   }
-  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   let camera = @pbr.Camera3dBundle::new(
@@ -220,13 +219,13 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
   world
   .component(@post_process.ecs_key_tonemapping)
-  .insert(camera, @post_process.Tonemapping::TonyMcMapface, tick)
+  .insert(camera, @post_process.Tonemapping::TonyMcMapface)
   world
   .component(@post_process.ecs_key_bloom)
-  .insert(camera, @post_process.Bloom::default(), tick)
+  .insert(camera, @post_process.Bloom::default())
   dof_state.val.camera = Some(camera)
 
   let scene_entity = world.spawn_empty()
@@ -242,7 +241,6 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    tick,
   )
 
   let floor_material = @pbr.standard_material_add(
@@ -298,7 +296,6 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     directional,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 25_000.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -308,7 +305,6 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, -1.5F, -8.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
 
   let point = world.spawn_empty()
@@ -317,11 +313,10 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     point,
     @pbr.PointLight::new(@sprite.Color::white(), 120_000.0F, 40.0F, false),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(point, @transform.Transform::from_xyz(0.0F, 4.5F, 6.0F), tick)
+  .insert(point, @transform.Transform::from_xyz(0.0F, 4.5F, 6.0F))
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),

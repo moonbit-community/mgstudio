@@ -444,7 +444,7 @@ fn texture_atlas_layout_assets_mut_or_abort() -> Ref[Assets[TextureAtlasLayout]]
   match asset_current_world() {
     Some(world) =>
       match
-        (try! world.get_resource_ref_mut(registered_assets_resource_key(), 0)) {
+        (try! world.get_resource_ref_mut(registered_assets_resource_key())) {
         Some(assets) => assets
         None =>
           abort(

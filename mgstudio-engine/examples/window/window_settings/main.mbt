@@ -60,11 +60,10 @@ fn update_primary_window(
   update : (@window.Window) -> Unit,
 ) -> Unit {
   guard primary_window_entity(world) is Some(entity) else { return }
-  let tick = world.read_sequence()
   let store = world.component(@window.ecs_key_window)
   guard store.get(entity) is Some(window) else { return }
   update(window)
-  store.set(entity, window, tick) |> ignore
+  store.set(entity, window) |> ignore
 }
 
 ///|
@@ -73,7 +72,6 @@ fn update_primary_cursor_options(
   update : (@window.CursorOptions) -> Unit,
 ) -> Unit {
   guard primary_window_entity(world) is Some(entity) else { return }
-  let tick = world.read_sequence()
   let store = world.component(@window.ecs_key_cursor_options)
   let options = match store.get(entity) {
     Some(options) => options
@@ -81,9 +79,9 @@ fn update_primary_cursor_options(
   }
   update(options)
   if store.get(entity) is Some(_) {
-    store.set(entity, options, tick) |> ignore
+    store.set(entity, options) |> ignore
   } else {
-    store.insert(entity, options, tick)
+    store.insert(entity, options)
   }
 }
 
@@ -93,12 +91,11 @@ fn set_primary_cursor_icon(
   icon : @window.CursorIcon,
 ) -> Unit {
   guard primary_window_entity(world) is Some(entity) else { return }
-  let tick = world.read_sequence()
   let store = world.component(@window.ecs_key_cursor_icon)
   if store.get(entity) is Some(_) {
-    store.set(entity, icon, tick) |> ignore
+    store.set(entity, icon) |> ignore
   } else {
-    store.insert(entity, icon, tick)
+    store.insert(entity, icon)
   }
 }
 

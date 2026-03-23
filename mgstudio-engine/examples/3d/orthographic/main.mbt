@@ -20,7 +20,6 @@ const FIXED_VIEWPORT_HEIGHT : Float = 6.0F
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let projection = @pbr.Projection::Orthographic(@pbr.OrthographicProjection3d::{
     ..@pbr.OrthographicProjection3d::default_3d(),
     scaling_mode: @pbr.OrthographicScalingMode3d::FixedVertical(
@@ -116,10 +115,10 @@ fn setup(world : @ecs.World) -> Unit {
   let light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
-  .insert(light, @pbr.PointLight::default(), tick)
+  .insert(light, @pbr.PointLight::default())
   world
   .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(3.0F, 8.0F, 5.0F), tick)
+  .insert(light, @transform.Transform::from_xyz(3.0F, 8.0F, 5.0F))
 }
 
 ///|

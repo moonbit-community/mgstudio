@@ -18,9 +18,10 @@ test "diagnostics: render snapshot records render measurements" {
     diagnostics_plugin, render_diagnostics_plugin,
   ])
   let tick = 7
+  ignore(tick)
   let store_ref = try! app
     .world()
-    .get_resource_ref_mut(DiagnosticsStore::resource(), tick)
+    .get_resource_ref_mut(DiagnosticsStore::resource())
     .unwrap()
   render_diagnostics_record_snapshot(store_ref.val, tick, RenderDiagnosticsMeasurements::{
     prepared_cameras_2d: Some(2),

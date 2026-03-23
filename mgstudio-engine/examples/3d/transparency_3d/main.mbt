@@ -117,8 +117,6 @@ fn spawn_mesh(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
-
   let floor_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
       @sprite.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
@@ -220,11 +218,10 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     point,
     @pbr.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 20.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(point, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .insert(point, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),

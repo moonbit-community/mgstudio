@@ -17,8 +17,6 @@
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
-
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
@@ -61,11 +59,10 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     light,
     @pbr.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 20.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),

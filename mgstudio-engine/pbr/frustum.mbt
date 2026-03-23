@@ -221,20 +221,19 @@ pub fn Projection::compute_frustum(
 ///|
 pub fn render3d_update_frusta_system(world : @ecs.World) -> Unit {
   let frustum_store = get_frustum_store(world)
-  let tick = world.read_sequence()
   let query = world.query2(@transform.ecs_key_transform, ecs_key_projection)
   try! query.view(fn(entity, transform, projection) {
     let next = projection.compute_frustum(transform)
     if frustum_store.contains(entity) {
       if frustum_store.get(entity) is Some(current) {
         if current != next {
-          frustum_store.set(entity, next, tick) |> ignore
+          frustum_store.set(entity, next) |> ignore
         }
       } else {
-        frustum_store.insert(entity, next, tick)
+        frustum_store.insert(entity, next)
       }
     } else {
-      frustum_store.insert(entity, next, tick)
+      frustum_store.insert(entity, next)
     }
   })
 }

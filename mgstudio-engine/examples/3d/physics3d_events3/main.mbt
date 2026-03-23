@@ -41,56 +41,49 @@ fn setup_graphics(world : @ecs.World) -> Unit {
 
 ///|
 fn setup_physics(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let ground = world.spawn_empty()
   world
   .component(@transform.ecs_key_transform)
-  .insert(ground, @transform.Transform::from_xyz(0.0F, -1.2F, 0.0F), tick)
+  .insert(ground, @transform.Transform::from_xyz(0.0F, -1.2F, 0.0F))
   @physics3d.get_collider3d_store(world).insert(
     ground,
     @physics3d.Collider3d::new(
       @physics3d.ColliderShape3d::cuboid(4.0F, 1.0F, 1.0F),
     ),
-    tick,
   )
 
   let sensor = world.spawn_empty()
   world
   .component(@transform.ecs_key_transform)
-  .insert(sensor, @transform.Transform::from_xyz(0.0F, 5.0F, 0.0F), tick)
+  .insert(sensor, @transform.Transform::from_xyz(0.0F, 5.0F, 0.0F))
   @physics3d.get_collider3d_store(world).insert(
     sensor,
     @physics3d.Collider3d::new(
       @physics3d.ColliderShape3d::cuboid(4.0F, 1.5F, 1.0F),
     ).sensor(true),
-    tick,
   )
 
   let dynamic_cube = world.spawn_empty()
   world
   .component(@transform.ecs_key_transform)
-  .insert(dynamic_cube, @transform.Transform::from_xyz(0.0F, 13.0F, 0.0F), tick)
+  .insert(dynamic_cube, @transform.Transform::from_xyz(0.0F, 13.0F, 0.0F))
   @physics3d.get_rigid_body3d_store(world).insert(
     dynamic_cube,
     @physics3d.RigidBody3d::dynamic(),
-    tick,
   )
   @physics3d.get_collider3d_store(world).insert(
     dynamic_cube,
     @physics3d.Collider3d::new(
       @physics3d.ColliderShape3d::cuboid(0.5F, 0.5F, 0.5F),
     ),
-    tick,
   )
   @physics3d.get_active_events3d_store(world).insert(
     dynamic_cube,
     @physics3d.ActiveEvents3d::new(@collision.ActiveEvents::collision_events()),
-    tick,
   )
   @physics3d.get_contact_force_event_threshold3d_store(world).insert(
     dynamic_cube,
     @physics3d.ContactForceEventThreshold3d::new(30.0F),
-    tick,
   )
 }
 

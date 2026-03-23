@@ -341,7 +341,7 @@ pub fn[T] World::send_message(
   let access = self.resource(key.queue_key())
   let queue = access.get().unwrap_or(Messages::new())
   let message_id = queue.write(message)
-  ignore(access.set(queue, self.read_sequence()))
+  ignore(access.set(queue))
   message_id
 }
 
@@ -357,14 +357,14 @@ pub fn[T] World::send_message_batch(
   let access = self.resource(key.queue_key())
   let queue = access.get().unwrap_or(Messages::new())
   queue.write_batch(messages)
-  ignore(access.set(queue, self.read_sequence()))
+  ignore(access.set(queue))
 }
 
 ///|
 pub fn[T] World::clear_messages(self : World, key : MessageKey[T]) -> Unit {
   guard self.resource(key.queue_key()).get() is Some(queue) else { return }
   queue.clear()
-  self.resource(key.queue_key()).set(queue, self.read_sequence()) |> ignore
+  self.resource(key.queue_key()).set(queue) |> ignore
 }
 
 ///|
@@ -378,7 +378,7 @@ pub fn World::update_messages(self : World) -> Unit {
     let access = self.resource(key)
     guard access.get() is Some(queue) else { continue }
     queue.update()
-    access.set(queue, self.read_sequence()) |> ignore
+    access.set(queue) |> ignore
   }
 }
 

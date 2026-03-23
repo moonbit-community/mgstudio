@@ -16,42 +16,30 @@
 test "visibility: inherited child is hidden when parent is hidden" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
+  ignore(tick)
   let parent = world.spawn_empty()
-  get_visibility_store(world).insert(
-    parent,
-    @visibility.Visibility::Hidden,
-    tick,
-  )
+  get_visibility_store(world).insert(parent, @visibility.Visibility::Hidden)
   get_inherited_visibility_store(world).insert(
     parent,
     @visibility.InheritedVisibility::new(true),
-    tick,
   )
   get_view_visibility_store(world).insert(
     parent,
     @visibility.ViewVisibility::new(true),
-    tick,
   )
   let child = world.spawn_empty()
   @hierarchy.get_parent_store(world).insert(
     child,
     @hierarchy.Parent::new(parent),
-    tick,
   )
-  get_visibility_store(world).insert(
-    child,
-    @visibility.Visibility::Inherited,
-    tick,
-  )
+  get_visibility_store(world).insert(child, @visibility.Visibility::Inherited)
   get_inherited_visibility_store(world).insert(
     child,
     @visibility.InheritedVisibility::new(true),
-    tick,
   )
   get_view_visibility_store(world).insert(
     child,
     @visibility.ViewVisibility::new(true),
-    tick,
   )
   @visibility.visibility_propagate_system(world)
   let iv = get_inherited_visibility_store(world).get(child)
@@ -62,42 +50,30 @@ test "visibility: inherited child is hidden when parent is hidden" {
 test "visibility: Visible overrides hidden parent (bevy semantics)" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
+  ignore(tick)
   let parent = world.spawn_empty()
-  get_visibility_store(world).insert(
-    parent,
-    @visibility.Visibility::Hidden,
-    tick,
-  )
+  get_visibility_store(world).insert(parent, @visibility.Visibility::Hidden)
   get_inherited_visibility_store(world).insert(
     parent,
     @visibility.InheritedVisibility::new(true),
-    tick,
   )
   get_view_visibility_store(world).insert(
     parent,
     @visibility.ViewVisibility::new(true),
-    tick,
   )
   let child = world.spawn_empty()
   @hierarchy.get_parent_store(world).insert(
     child,
     @hierarchy.Parent::new(parent),
-    tick,
   )
-  get_visibility_store(world).insert(
-    child,
-    @visibility.Visibility::Visible,
-    tick,
-  )
+  get_visibility_store(world).insert(child, @visibility.Visibility::Visible)
   get_inherited_visibility_store(world).insert(
     child,
     @visibility.InheritedVisibility::new(false),
-    tick,
   )
   get_view_visibility_store(world).insert(
     child,
     @visibility.ViewVisibility::new(false),
-    tick,
   )
   @visibility.visibility_propagate_system(world)
   let iv = get_inherited_visibility_store(world).get(child)
@@ -108,6 +84,7 @@ test "visibility: Visible overrides hidden parent (bevy semantics)" {
 test "visibility: Inherited falls back to visible when parent lacks components" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
+  ignore(tick)
   let parent = world.spawn_empty()
   // Parent intentionally has no Visibility/InheritedVisibility/ViewVisibility.
 
@@ -115,22 +92,15 @@ test "visibility: Inherited falls back to visible when parent lacks components" 
   @hierarchy.get_parent_store(world).insert(
     child,
     @hierarchy.Parent::new(parent),
-    tick,
   )
-  get_visibility_store(world).insert(
-    child,
-    @visibility.Visibility::Inherited,
-    tick,
-  )
+  get_visibility_store(world).insert(child, @visibility.Visibility::Inherited)
   get_inherited_visibility_store(world).insert(
     child,
     @visibility.InheritedVisibility::new(false),
-    tick,
   )
   get_view_visibility_store(world).insert(
     child,
     @visibility.ViewVisibility::new(false),
-    tick,
   )
   @visibility.visibility_propagate_system(world)
   let iv = get_inherited_visibility_store(world).get(child)

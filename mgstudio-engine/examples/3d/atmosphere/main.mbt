@@ -328,27 +328,25 @@ fn setup_camera(world : @ecs.World) -> Unit {
     )
     .spawn(world)
 
-  let tick = world.read_sequence()
   world
   .component(@pbr.ecs_key_deferred_prepass)
-  .insert(camera, @pbr.DeferredPrepass::default(), tick)
+  .insert(camera, @pbr.DeferredPrepass::default())
   world
   .component(@post_process.ecs_key_tonemapping)
-  .insert(camera, @post_process.Tonemapping::AcesFitted, tick)
+  .insert(camera, @post_process.Tonemapping::AcesFitted)
   world
   .component(@post_process.ecs_key_bloom)
-  .insert(camera, @post_process.Bloom::default(), tick)
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
+  .insert(camera, @post_process.Bloom::default())
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
   world
   .component(@post_process.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
+  .insert(camera, @post_process.TemporalAntiAliasing::default())
 
   atmosphere_state.val.camera = Some(camera)
 }
 
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::default()
     .with_first_cascade_far_bound(0.3F)
     .with_maximum_distance(15.0F)
@@ -363,7 +361,6 @@ fn setup_scene(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_directional_light)
@@ -374,7 +371,6 @@ fn setup_scene(world : @ecs.World) -> Unit {
       100_000.0F,
       true,
     ).with_cascade_shadow_config(Some(cascade_shadow_config)),
-    tick,
   )
   atmosphere_state.val.sun = Some(sun)
 
@@ -529,7 +525,7 @@ fn atmosphere_controls(world : @ecs.World) -> Unit {
         if next != exposure.ev100 {
           world
           .component(@pbr.ecs_key_exposure)
-          .set(camera_entity, exposure.with_ev100(next), world.read_sequence())
+          .set(camera_entity, exposure.with_ev100(next))
           |> ignore
           atmosphere_state.val.exposure_ev100 = next
           exposure_changed = true
@@ -556,8 +552,6 @@ fn atmosphere_controls(world : @ecs.World) -> Unit {
 
 ///|
 fn dynamic_scene(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
-
   if !atmosphere_state.val.paused {
     atmosphere_state.val.sun_pitch = atmosphere_state.val.sun_pitch -
       world_time(world).delta_seconds() * SUN_ROTATION_SPEED
@@ -577,7 +571,6 @@ fn dynamic_scene(world : @ecs.World) -> Unit {
         @math.Vec3::new(0.0F, 0.0F, 0.0F),
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       ),
-      tick,
     )
     |> ignore
   }

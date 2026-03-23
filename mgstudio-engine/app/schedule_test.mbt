@@ -45,8 +45,8 @@ test "app: run_if evaluates with condition system sequence" {
 
   inspect(observed.length(), content="2")
   inspect(system_ran.val, content="false")
-  inspect(observed[0].0 == 0 && observed[0].1 == 4, content="true")
-  inspect(observed[1].0 == 4 && observed[1].1 == 7, content="true")
+  inspect(observed[0].0 == 0 && observed[0].1 == 3, content="true")
+  inspect(observed[1].0 == 3 && observed[1].1 == 6, content="true")
 }
 
 ///|
@@ -530,8 +530,8 @@ test "app: system param can read current system sequence" {
   .run_once()
   |> ignore
   inspect(log.length(), content="2")
-  inspect(log[0].0 == 0 && log[0].1 == 4, content="true")
-  inspect(log[1].0 == 0 && log[1].1 == 5, content="true")
+  inspect(log[0].0 == 0 && log[0].1 == 3, content="true")
+  inspect(log[1].0 == 0 && log[1].1 == 4, content="true")
 }
 
 ///|

@@ -45,6 +45,7 @@ fn custom_layer(record : @app.LogRecord) -> Unit {
 ///|
 fn transfer_log_messages(writer : @ecs.MessageWriter[LogMessage]) -> Unit {
   let tick_messages = captured_log_queue_ref.val
+  ignore(tick_messages)
   captured_log_queue_ref.val = []
   for message in tick_messages {
     ignore(writer.write(message))

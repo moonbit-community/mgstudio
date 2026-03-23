@@ -152,21 +152,6 @@ fn current_input_focus_world_abort_missing() -> @ecs.World {
 }
 
 ///|
-fn input_focus_sequence(world : @ecs.World) -> @core.Sequence {
-  let sequence = @app.current_system_sequence().this_run
-  if sequence > 0 {
-    sequence
-  } else {
-    let world_sequence = world.read_sequence()
-    if world_sequence > 0 {
-      world_sequence
-    } else {
-      1
-    }
-  }
-}
-
-///|
 fn[T] input_focus_world_resource(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
@@ -183,7 +168,7 @@ fn input_focus_world_resource_ref_mut(
   world : @ecs.World,
   key : @ecs.ResourceKey[InputFocus],
 ) -> Ref[InputFocus]? {
-  try world.get_resource_ref_mut(key, input_focus_sequence(world)) catch {
+  try world.get_resource_ref_mut(key) catch {
     _ => None
   } noraise {
     value => value

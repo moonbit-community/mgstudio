@@ -484,7 +484,6 @@ fn camera_translation(rig : CameraRig) -> @math.Vec3 {
 fn spawn_instructions(
   world : @ecs.World,
   asset_server : @asset.AssetServer,
-  tick : Int,
 ) -> Unit {
   let overlay_camera = @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(1).with_clear_color_none(),
@@ -492,10 +491,10 @@ fn spawn_instructions(
   ).spawn(world)
   world
   .component(@ui.IsDefaultUiCamera::component())
-  .insert(overlay_camera, @ui.IsDefaultUiCamera::default(), tick)
+  .insert(overlay_camera, @ui.IsDefaultUiCamera::default())
 
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -503,7 +502,6 @@ fn spawn_instructions(
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
-    tick,
   )
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
@@ -511,7 +509,7 @@ fn spawn_instructions(
   let text_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  .insert(text_entity, @hierarchy.Parent::new(root))
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -520,7 +518,6 @@ fn spawn_instructions(
     .with_position_type(@ui.PositionType::Absolute)
     .with_top(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
@@ -529,28 +526,22 @@ fn spawn_instructions(
     @text.Text::new(
       "Controls:\nM: Toggle between sampling boundary and interior.\nA: Toggle automatic spawning & despawning of points.\nR: Restart (erase all samples).\nS: Add one random sample.\nD: Add 100 random samples.\nRotate camera by holding left mouse and panning.\nZoom camera by scrolling via mouse or +/-.\nMove camera by L/R arrow keys.\nTab: Toggle this text",
     ),
-    tick,
   )
   world
   .component(@text.ecs_key_text_font)
   .insert(
     text_entity,
     @text.TextFont::default().with_font(font).with_font_size(20.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()))
   world
   .component(@text.ecs_key_text_layout)
-  .insert(
-    text_entity,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
-    tick,
-  )
+  .insert(text_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
   world
   .component(@visibility.Visibility::component())
-  .insert(text_entity, @visibility.Visibility::Visible, tick)
+  .insert(text_entity, @visibility.Visibility::Visible)
   world.insert_resource(InstructionText::resource(), InstructionText::{
     entity: text_entity,
   })
@@ -562,7 +553,6 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let world = current_world_or_abort()
-  let tick = world.read_sequence()
 
   world.insert_resource(RandomSource::resource(), RandomSource::{
     rng: @random.Rand::chacha8(seed=b"bevy-sampling-primitives-seed-04"),
@@ -623,18 +613,16 @@ fn setup(
       .with_intensity(1.0F)
       .with_shadow_maps_enabled(false)
       .with_color(inside_point_color()),
-      tick,
     )
     world
     .component(@transform.Transform::component())
     .insert(
       firefly_light,
       @transform.Transform::from_translation(sampled_shape.translation),
-      tick,
     )
     world
     .component(FireflyLights::component())
-    .insert(firefly_light, FireflyLights::{  }, tick)
+    .insert(firefly_light, FireflyLights::{  })
   }
 
   let global_light = world.spawn_empty()
@@ -646,11 +634,10 @@ fn setup(
     .with_color(sky_color())
     .with_intensity(2_000.0F)
     .with_shadow_maps_enabled(false),
-    tick,
   )
   world
   .component(@transform.Transform::component())
-  .insert(global_light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .insert(global_light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
 
   let camera_entity = @pbr.Camera3dBundle::new(
       @sprite.Camera::default().with_clear_color(sky_color()),
@@ -664,16 +651,12 @@ fn setup(
     .spawn(world)
   world
   .component(CameraRig::component())
-  .insert(
-    camera_entity,
-    CameraRig::{
-      yaw: 0.56F,
-      pitch: 0.45F,
-      distance: 8.0F,
-      target: @math.Vec3::zero(),
-    },
-    tick,
-  )
+  .insert(camera_entity, CameraRig::{
+    yaw: 0.56F,
+    pitch: 0.45F,
+    distance: 8.0F,
+    target: @math.Vec3::zero(),
+  })
 
   world.insert_resource(PointMesh::resource(), PointMesh::{
     mesh: @pbr.Mesh3d::new(
@@ -695,7 +678,7 @@ fn setup(
     ),
   })
 
-  spawn_instructions(world, asset_server.get(), tick)
+  spawn_instructions(world, asset_server.get())
 }
 
 ///|
@@ -706,7 +689,6 @@ fn spawn_sample_point(
   mode : SamplingMode,
   sample : @math.Vec3,
 ) -> Unit {
-  let tick = world.read_sequence()
   let entity = @pbr.MeshMaterial3dBundle::new(
     point_mesh.mesh,
     @pbr.MeshMaterial3d::new(sample_point_material(mode, point_material)),
@@ -714,12 +696,10 @@ fn spawn_sample_point(
       @math.Vec3::zero(),
     ),
   ).spawn(world)
-  world
-  .component(SamplePoint::component())
-  .insert(entity, SamplePoint::{  }, tick)
+  world.component(SamplePoint::component()).insert(entity, SamplePoint::{  })
   world
   .component(SpawningPoint::component())
-  .insert(entity, SpawningPoint::{ progress: 0.0F }, tick)
+  .insert(entity, SpawningPoint::{ progress: 0.0F })
 }
 
 ///|
@@ -735,30 +715,32 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
       try! world.despawn(entity)
     }
     let tick = world.advance_sequence()
-    if (try! world.get_resource_ref_mut(PointCounter::resource(), tick))
+    ignore(tick)
+    if (try! world.get_resource_ref_mut(PointCounter::resource()))
       is Some(counter) {
       counter.val.count = 0
     }
   }
 
   let tick = world.advance_sequence()
-  guard (try! world.get_resource_ref_mut(SamplingMode::resource(), tick))
+  ignore(tick)
+  guard (try! world.get_resource_ref_mut(SamplingMode::resource()))
     is Some(mode_ref) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(SpawningMode::resource(), tick))
+  guard (try! world.get_resource_ref_mut(SpawningMode::resource()))
     is Some(spawn_mode_ref) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(SpawnQueue::resource(), tick))
+  guard (try! world.get_resource_ref_mut(SpawnQueue::resource()))
     is Some(spawn_queue_ref) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(InstructionText::resource(), tick))
+  guard (try! world.get_resource_ref_mut(InstructionText::resource()))
     is Some(instruction_ref) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(SampledShapes::resource(), tick))
+  guard (try! world.get_resource_ref_mut(SampledShapes::resource()))
     is Some(sampled_shapes_ref) else {
     return
   }
@@ -792,7 +774,7 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
       @visibility.Visibility::Hidden => @visibility.Visibility::Visible
       _ => @visibility.Visibility::Hidden
     }
-    visibility_store.upsert(instruction_ref.val.entity, next_visibility, tick)
+    visibility_store.upsert(instruction_ref.val.entity, next_visibility)
   }
 
   let rig_store = world.component(CameraRig::component())
@@ -814,7 +796,7 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
     } else {
       rig.distance + MAX_CAMERA_DISTANCE / 15.0F
     }
-    ignore(rig_store.set(camera_entity, next_rig, tick))
+    ignore(rig_store.set(camera_entity, next_rig))
   }
   if keyboard.just_pressed(@window.KeyCode::NumpadAdd) {
     let next_rig = rig
@@ -824,7 +806,7 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
     } else {
       rig.distance - MAX_CAMERA_DISTANCE / 15.0F
     }
-    ignore(rig_store.set(camera_entity, next_rig, tick))
+    ignore(rig_store.set(camera_entity, next_rig))
   }
 
   let left = keyboard.just_pressed(@window.KeyCode::ArrowLeft)
@@ -844,10 +826,10 @@ fn handle_keypress(keyboard : @input.ButtonInput[@window.KeyCode]) -> Unit {
     let next_rig = rig
     if left && closest > 0 {
       next_rig.target = sampled_shapes_ref.val.shapes[closest - 1].translation
-      ignore(rig_store.set(camera_entity, next_rig, tick))
+      ignore(rig_store.set(camera_entity, next_rig))
     } else if right && closest + 1 < sampled_shapes_ref.val.shapes.length() {
       next_rig.target = sampled_shapes_ref.val.shapes[closest + 1].translation
-      ignore(rig_store.set(camera_entity, next_rig, tick))
+      ignore(rig_store.set(camera_entity, next_rig))
     }
   }
 }
@@ -860,8 +842,9 @@ fn handle_mouse(
 ) -> Unit {
   let world = current_world_or_abort()
   let tick = world.advance_sequence()
+  ignore(tick)
 
-  guard (try! world.get_resource_ref_mut(MousePressed::resource(), tick))
+  guard (try! world.get_resource_ref_mut(MousePressed::resource()))
     is Some(mouse_pressed_ref) else {
     return
   }
@@ -906,25 +889,26 @@ fn handle_mouse(
       }
     }
   }
-  ignore(rig_store.set(camera_entity, next_rig, tick))
+  ignore(rig_store.set(camera_entity, next_rig))
 }
 
 ///|
 fn spawn_points(world : @ecs.World) -> Unit {
   let tick = world.advance_sequence()
-  guard (try! world.get_resource_ref_mut(SpawningMode::resource(), tick))
+  ignore(tick)
+  guard (try! world.get_resource_ref_mut(SpawningMode::resource()))
     is Some(spawn_mode_ref) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(SpawnQueue::resource(), tick))
+  guard (try! world.get_resource_ref_mut(SpawnQueue::resource()))
     is Some(spawn_queue_ref) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(PointCounter::resource(), tick))
+  guard (try! world.get_resource_ref_mut(PointCounter::resource()))
     is Some(point_counter_ref) else {
     return
   }
-  guard (try! world.get_resource_ref_mut(RandomSource::resource(), tick))
+  guard (try! world.get_resource_ref_mut(RandomSource::resource()))
     is Some(random_source_ref) else {
     return
   }
@@ -982,14 +966,15 @@ fn despawn_points(world : @ecs.World) -> Unit {
     return
   }
   let tick = world.advance_sequence()
-  guard (try! world.get_resource_ref_mut(PointCounter::resource(), tick))
+  ignore(tick)
+  guard (try! world.get_resource_ref_mut(PointCounter::resource()))
     is Some(point_counter_ref) else {
     return
   }
   if point_counter_ref.val.count < MAX_POINTS {
     return
   }
-  guard (try! world.get_resource_ref_mut(RandomSource::resource(), tick))
+  guard (try! world.get_resource_ref_mut(RandomSource::resource()))
     is Some(random_source_ref) else {
     return
   }
@@ -1018,7 +1003,7 @@ fn despawn_points(world : @ecs.World) -> Unit {
       break
     }
     let entity = sample_entities[i]
-    despawning_store.insert(entity, DespawningPoint::{ progress: 0.0F }, tick)
+    despawning_store.insert(entity, DespawningPoint::{ progress: 0.0F })
     sample_store.remove(entity) |> ignore
     spawning_store.remove(entity) |> ignore
     removed = removed + 1
@@ -1030,6 +1015,7 @@ fn despawn_points(world : @ecs.World) -> Unit {
 fn animate_spawning(world : @ecs.World) -> Unit {
   let delta = default_time_or_default(world).delta_secs()
   let tick = world.advance_sequence()
+  ignore(tick)
   let entities : Array[@core.Entity] = []
   world
   .component(SpawningPoint::component())
@@ -1051,11 +1037,11 @@ fn animate_spawning(world : @ecs.World) -> Unit {
         },
       ),
     )
-    ignore(transform_store.set(entity, next_transform, tick))
+    ignore(transform_store.set(entity, next_transform))
     if next_point.progress >= 1.0F {
       spawning_store.remove(entity) |> ignore
     } else {
-      ignore(spawning_store.set(entity, next_point, tick))
+      ignore(spawning_store.set(entity, next_point))
     }
   }
 }
@@ -1064,6 +1050,7 @@ fn animate_spawning(world : @ecs.World) -> Unit {
 fn animate_despawning(world : @ecs.World) -> Unit {
   let delta = default_time_or_default(world).delta_secs()
   let tick = world.advance_sequence()
+  ignore(tick)
   let entities : Array[@core.Entity] = []
   world
   .component(DespawningPoint::component())
@@ -1091,13 +1078,12 @@ fn animate_despawning(world : @ecs.World) -> Unit {
       transform_store.set(
         entity,
         transform.with_scale(@math.Vec3::splat(next_scale)),
-        tick,
       ),
     )
     if next_point.progress >= 1.0F {
       try! world.despawn(entity)
     } else {
-      ignore(despawning_store.set(entity, next_point, tick))
+      ignore(despawning_store.set(entity, next_point))
     }
   }
 }
@@ -1107,6 +1093,7 @@ fn update_camera(world : @ecs.World) -> Unit {
   let rig_store = world.component(CameraRig::component())
   let transform_store = world.component(@transform.Transform::component())
   let tick = world.advance_sequence()
+  ignore(tick)
   let camera_entities : Array[@core.Entity] = []
   rig_store.for_each(fn(entity, _rig) { camera_entities.push(entity) })
   for entity in camera_entities {
@@ -1118,7 +1105,6 @@ fn update_camera(world : @ecs.World) -> Unit {
           rig.target,
           @math.Vec3::new(0.0F, 1.0F, 0.0F),
         ),
-        tick,
       ),
     )
   }
@@ -1138,6 +1124,7 @@ fn update_lights(world : @ecs.World) -> Unit {
   }
   let intensity = 40_000.0F * saturation
   let tick = world.advance_sequence()
+  ignore(tick)
   let point_light_store = world.component(@pbr.PointLight::component())
   let firefly_entities : Array[@core.Entity] = []
   world
@@ -1146,9 +1133,7 @@ fn update_lights(world : @ecs.World) -> Unit {
   for entity in firefly_entities {
     guard point_light_store.get(entity) is Some(light) else { continue }
     let next_intensity = light.intensity + (intensity - light.intensity) * 0.04F
-    ignore(
-      point_light_store.set(entity, light.with_intensity(next_intensity), tick),
-    )
+    ignore(point_light_store.set(entity, light.with_intensity(next_intensity)))
   }
 }
 

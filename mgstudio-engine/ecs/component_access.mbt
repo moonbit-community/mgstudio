@@ -71,7 +71,6 @@ pub fn[T] ComponentAccess::set(
   self : ComponentAccess[T],
   entity : @core.Entity,
   value : T,
-  sequence : @core.Sequence,
   loc~ : SourceLoc,
 ) -> Bool {
   let store_ref = self.world.ensure_component_store(self.key.id())
@@ -83,7 +82,7 @@ pub fn[T] ComponentAccess::set(
   let outermost = self.world.begin_deferred_hook_command_scope()
   let caller = hook_caller_from_loc(loc)
   self.world.run_component_replace_hooks(entity, self.key.id(), caller~)
-  ignore(store_ref.val.set(entity, payload, sequence))
+  ignore(store_ref.val.set(entity, payload))
   self.world.run_component_insert_hooks(entity, self.key.id(), caller~)
   self.world.end_deferred_hook_command_scope(outermost)
   true
@@ -94,12 +93,11 @@ pub fn[T] ComponentAccess::set(
 pub fn[T] ComponentAccess::update(
   self : ComponentAccess[T],
   entity : @core.Entity,
-  sequence : @core.Sequence,
   update : (T) -> T,
   loc~ : SourceLoc,
 ) -> Bool {
   match self.get(entity) {
-    Some(value) => self.set(entity, update(value), sequence, loc~)
+    Some(value) => self.set(entity, update(value), loc~)
     None => false
   }
 }
@@ -110,14 +108,12 @@ pub fn[T] ComponentAccess::insert(
   self : ComponentAccess[T],
   entity : @core.Entity,
   value : T,
-  sequence : @core.Sequence,
   loc~ : SourceLoc,
 ) -> Unit {
   try! self.world.insert_component_with_requirements(
     entity,
     self.key.id(),
     erased_value(value),
-    sequence,
     caller=hook_caller_from_loc(loc),
   )
 }
@@ -128,10 +124,9 @@ pub fn[T] ComponentAccess::upsert(
   self : ComponentAccess[T],
   entity : @core.Entity,
   value : T,
-  sequence : @core.Sequence,
   loc~ : SourceLoc,
 ) -> Unit {
-  self.insert(entity, value, sequence, loc~)
+  self.insert(entity, value, loc~)
 }
 
 ///|

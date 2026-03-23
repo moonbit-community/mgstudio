@@ -184,23 +184,20 @@ fn spawn_plane(
 
 ///|
 fn spawn_light(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let point = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
   .insert(
     point,
     @pbr.PointLight::new(@sprite.Color::white(), 10_000_000.0F, 100.0F, false),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(point, @transform.Transform::from_xyz(8.0F, 16.0F, -8.0F), tick)
+  .insert(point, @transform.Transform::from_xyz(8.0F, 16.0F, -8.0F))
 }
 
 ///|
 fn spawn_camera(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
     @transform.Transform::from_xyz(2.0F, 0.0F, -7.0F).looking_at(
@@ -208,7 +205,7 @@ fn spawn_camera(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
 }
 
 ///|
@@ -272,7 +269,6 @@ fn spawn_decal(world : @ecs.World) -> Unit {
   guard clustered_decal_maps_state.val.textures is Some(textures) else {
     return
   }
-  let tick = world.read_sequence()
 
   let x = random_range(-PLANE_HALF_SIZE, PLANE_HALF_SIZE)
   let y = random_range(-PLANE_HALF_SIZE, PLANE_HALF_SIZE)
@@ -316,9 +312,7 @@ fn spawn_decal(world : @ecs.World) -> Unit {
     .with_rotation(@math.Quat::from_rotation_z(theta))
     .with_scale(@math.Vec3::new(0.001F, 0.001F, 0.02F)),
   ).spawn(world)
-  world
-  .component(@pbr.ecs_key_clustered_decal)
-  .insert(entity, clustered_decal, tick)
+  world.component(@pbr.ecs_key_clustered_decal).insert(entity, clustered_decal)
   clustered_decal_maps_state.val.decals.push({
     entity,
     base_scale: size,
@@ -340,7 +334,6 @@ fn animate_decals(world : @ecs.World) -> Unit {
   if delta <= 0.0F {
     return
   }
-  let tick = world.read_sequence()
   let alive : Array[ActiveDecal] = []
   for decal in clustered_decal_maps_state.val.decals {
     let age = decal.age + delta
@@ -375,7 +368,6 @@ fn animate_decals(world : @ecs.World) -> Unit {
             0.02F,
           ),
         ),
-        tick,
       )
       |> ignore
     }

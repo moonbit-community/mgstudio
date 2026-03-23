@@ -111,14 +111,13 @@ fn refresh_instruction_text(world : @ecs.World) -> Unit {
     return
   }
   guard find_instruction_text_entity(world) is Some(entity) else { return }
-  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(entity) is Some(text_value) else { return }
   text_value.content = instruction_text(
     action,
     direction_by_index(direction.index),
   )
-  ignore(text_store.set(entity, text_value, tick))
+  ignore(text_store.set(entity, text_value))
 }
 
 ///|
@@ -133,17 +132,17 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::identity(),
   ).spawn(world)
   let camera_tick = world.read_sequence()
+  ignore(camera_tick)
   world
   .component(@ui.IsDefaultUiCamera::component())
-  .insert(overlay_camera, @ui.IsDefaultUiCamera::default(), camera_tick)
+  .insert(overlay_camera, @ui.IsDefaultUiCamera::default())
 
   let content = instruction_text(
     LeftClickAction::Move,
     @math.CompassOctant::NorthWest,
   )
-  let tick = world.read_sequence()
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -153,42 +152,36 @@ fn setup(world : @ecs.World) -> Unit {
     .with_top(@ui.Val::Px(0.0F))
     .with_left(@ui.Val::Px(0.0F))
     .with_padding(@ui.UiRect::all(@ui.Val::Px(5.0F))),
-    tick,
   )
   world
   .component(@ui.GlobalZIndex::component())
-  .insert(root, @ui.GlobalZIndex::new(2147483647), tick)
+  .insert(root, @ui.GlobalZIndex::new(2147483647))
   world
   .component(@ui.ecs_key_background_color)
   .insert(
     root,
     @ui.BackgroundColor::new(@sprite.Color::new(0.0F, 0.0F, 0.0F, 0.75F)),
-    tick,
   )
   world
   .component(@ui.ecs_key_ui_target_camera)
-  .insert(root, @ui.UiTargetCamera::new(overlay_camera), tick)
+  .insert(root, @ui.UiTargetCamera::new(overlay_camera))
   let text_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  .insert(text_entity, @hierarchy.Parent::new(root))
   world
   .component(@text.ecs_key_text)
-  .insert(text_entity, @text.Text::new(content), tick)
+  .insert(text_entity, @text.Text::new(content))
   world
   .component(@text.ecs_key_text_font)
-  .insert(text_entity, @text.TextFont::default(), tick)
+  .insert(text_entity, @text.TextFont::default())
   world
   .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()))
   world
   .component(@text.ecs_key_text_layout)
-  .insert(
-    text_entity,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
-    tick,
-  )
-  world.component(example_text_key).insert(text_entity, ExampleText::{  }, tick)
+  .insert(text_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
+  world.component(example_text_key).insert(text_entity, ExampleText::{  })
 }
 
 ///|

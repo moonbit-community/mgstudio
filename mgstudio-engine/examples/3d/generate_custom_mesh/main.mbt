@@ -128,7 +128,6 @@ fn setup(world : @ecs.World) -> Unit {
   custom_mesh_state.val.mesh_entity = None
   custom_mesh_state.val.upper_uv = true
 
-  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   let custom_texture = asset_server.load("textures/array_texture.png")
@@ -161,10 +160,10 @@ fn setup(world : @ecs.World) -> Unit {
   let light_entity = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
-  .insert(light_entity, @pbr.PointLight::default(), tick)
+  .insert(light_entity, @pbr.PointLight::default())
   world
   .component(@transform.ecs_key_transform)
-  .insert(light_entity, camera_and_light_transform, tick)
+  .insert(light_entity, camera_and_light_transform)
 
   let overlay_font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
   @text.Text2dBundle::new(
@@ -202,7 +201,6 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 fn input_handler(world : @ecs.World) -> Unit {
   guard custom_mesh_state.val.mesh_entity is Some(mesh_entity) else { return }
 
-  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
 
   if @input.key_just_pressed(@window.KeyCode::Space) {
@@ -212,11 +210,10 @@ fn input_handler(world : @ecs.World) -> Unit {
     let next_mesh_id = @sprite_render.render2d_upload_mesh_handle(
       next_mesh.mesh,
     )
-    world.component(@pbr.ecs_key_mesh3d).set(mesh_entity, next_mesh, tick)
-    |> ignore
+    world.component(@pbr.ecs_key_mesh3d).set(mesh_entity, next_mesh) |> ignore
     world
     .component(@sprite.ecs_key_gpu_mesh2d)
-    .set(mesh_entity, @sprite.GpuMesh2d::new(next_mesh_id), tick)
+    .set(mesh_entity, @sprite.GpuMesh2d::new(next_mesh_id))
     |> ignore
   }
 
@@ -225,7 +222,6 @@ fn input_handler(world : @ecs.World) -> Unit {
       transform_store.set(
         mesh_entity,
         transform.with_rotation(@math.Quat::identity()),
-        tick,
       )
       |> ignore
       return
@@ -249,7 +245,7 @@ fn input_handler(world : @ecs.World) -> Unit {
     }
 
     if changed {
-      transform_store.set(mesh_entity, transform.with_rotation(rotation), tick)
+      transform_store.set(mesh_entity, transform.with_rotation(rotation))
       |> ignore
     }
   }

@@ -44,31 +44,19 @@ pub fn[T] ResourceAccess::get(self : ResourceAccess[T]) -> T? {
 }
 
 ///|
-pub fn[T] ResourceAccess::insert(
-  self : ResourceAccess[T],
-  value : T,
-  sequence : @core.Sequence,
-) -> Unit {
-  self.world.insert_resource_with_sequence(self.key, value, sequence)
+pub fn[T] ResourceAccess::insert(self : ResourceAccess[T], value : T) -> Unit {
+  self.world.insert_resource(self.key, value)
 }
 
 ///|
-pub fn[T] ResourceAccess::set(
-  self : ResourceAccess[T],
-  value : T,
-  sequence : @core.Sequence,
-) -> Bool {
-  self.insert(value, sequence)
+pub fn[T] ResourceAccess::set(self : ResourceAccess[T], value : T) -> Bool {
+  self.insert(value)
   true
 }
 
 ///|
-pub fn[T] ResourceAccess::upsert(
-  self : ResourceAccess[T],
-  value : T,
-  sequence : @core.Sequence,
-) -> Unit {
-  self.insert(value, sequence)
+pub fn[T] ResourceAccess::upsert(self : ResourceAccess[T], value : T) -> Unit {
+  self.insert(value)
 }
 
 ///|
@@ -81,11 +69,10 @@ pub fn[T] ResourceAccess::remove(self : ResourceAccess[T]) -> T? {
 ///|
 pub fn[T] ResourceAccess::update(
   self : ResourceAccess[T],
-  sequence : @core.Sequence,
   update : (T) -> T,
 ) -> Bool {
   match self.get() {
-    Some(value) => self.set(update(value), sequence)
+    Some(value) => self.set(update(value))
     None => false
   }
 }

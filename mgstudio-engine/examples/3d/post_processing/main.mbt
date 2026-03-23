@@ -105,7 +105,6 @@ fn float_text(value : Float) -> String {
 ///|
 fn apply_post_process_settings(world : @ecs.World) -> Unit {
   guard post_processing_state.val.camera is Some(camera_entity) else { return }
-  let tick = world.read_sequence()
   let settings = post_processing_state.val.settings
 
   let intensity = settings.chromatic_aberration_intensity
@@ -126,16 +125,16 @@ fn apply_post_process_settings(world : @ecs.World) -> Unit {
     @post_process.ecs_key_chromatic_aberration,
   )
   if chromatic_aberration_store.contains(camera_entity) {
-    chromatic_aberration_store.set(camera_entity, chromatic_aberration, tick)
+    chromatic_aberration_store.set(camera_entity, chromatic_aberration)
     |> ignore
   } else {
-    chromatic_aberration_store.insert(camera_entity, chromatic_aberration, tick)
+    chromatic_aberration_store.insert(camera_entity, chromatic_aberration)
   }
   let vignette_store = world.component(@post_process.ecs_key_vignette)
   if vignette_store.contains(camera_entity) {
-    vignette_store.set(camera_entity, vignette, tick) |> ignore
+    vignette_store.set(camera_entity, vignette) |> ignore
   } else {
-    vignette_store.insert(camera_entity, vignette, tick)
+    vignette_store.insert(camera_entity, vignette)
   }
 }
 
@@ -173,7 +172,6 @@ fn update_help_text() -> Unit {
 
 ///|
 fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
-  let tick = world.read_sequence()
   let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
@@ -187,7 +185,7 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     .with_vignette(Some(@post_process.Vignette::default()))
     .spawn(world)
   post_processing_state.val.camera = Some(camera)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
   world
   .component(@pbr.ecs_key_environment_map_light)
   .insert(
@@ -197,7 +195,6 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
       Some(asset_server.load(ENV_SPECULAR_MAP_ASSET)),
       2000.0F,
     ),
-    tick,
   )
 
   @pbr.render3d_set_distance_fog(
@@ -210,8 +207,6 @@ fn spawn_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
 
 ///|
 fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
-  let tick = world.read_sequence()
-
   let tonemapping_test = world.spawn_empty()
   world
   .component(@scene.ecs_key_scene_root)
@@ -225,7 +220,6 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
         ),
       ),
     ),
-    tick,
   )
 
   let flight_helmet = world.spawn_empty()
@@ -241,7 +235,6 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
         ),
       ),
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -250,7 +243,6 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
     @transform.Transform::from_xyz(0.5F, 0.0F, -0.5F).with_rotation(
       @math.Quat::from_rotation_y(-0.15F * PI),
     ),
-    tick,
   )
 
   let directional_light = world.spawn_empty()
@@ -259,7 +251,6 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   .insert(
     directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -270,7 +261,6 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
         @math.Quat::from_rotation_x(-0.15F * PI),
       ),
     ),
-    tick,
   )
 }
 

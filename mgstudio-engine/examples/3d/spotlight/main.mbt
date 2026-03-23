@@ -135,7 +135,6 @@ fn set_global_ambient_light(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   spotlight_state.val.movables.clear()
   spotlight_state.val.spotlights.clear()
   spotlight_state.val.camera = None
@@ -213,7 +212,6 @@ fn setup(world : @ecs.World) -> Unit {
           PI / 4.0F,
           true,
         ),
-        tick,
       )
       world
       .component(@transform.ecs_key_transform)
@@ -223,7 +221,6 @@ fn setup(world : @ecs.World) -> Unit {
           @math.Vec3::new(1.0F + fx, 0.0F, fz),
           @math.Vec3::new(1.0F, 0.0F, 0.0F),
         ),
-        tick,
       )
       spotlight_state.val.spotlights.push(spotlight)
 
@@ -234,7 +231,7 @@ fn setup(world : @ecs.World) -> Unit {
       ).spawn(world)
       world
       .component(@hierarchy.ecs_key_parent)
-      .insert(marker, @hierarchy.Parent::new(spotlight), tick)
+      .insert(marker, @hierarchy.Parent::new(spotlight))
 
       let direction_marker = @pbr.MeshMaterial3dBundle::new(
         direction_marker_mesh,
@@ -243,10 +240,10 @@ fn setup(world : @ecs.World) -> Unit {
       ).spawn(world)
       world
       .component(@hierarchy.ecs_key_parent)
-      .insert(direction_marker, @hierarchy.Parent::new(spotlight), tick)
+      .insert(direction_marker, @hierarchy.Parent::new(spotlight))
       world
       .component(@pbr.ecs_key_not_shadow_caster)
-      .insert(direction_marker, @pbr.NotShadowCaster::default(), tick)
+      .insert(direction_marker, @pbr.NotShadowCaster::default())
     }
   }
 
@@ -257,7 +254,7 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
   spotlight_state.val.camera = Some(camera)
 
   let asset_server = @asset.AssetServer::new()
@@ -293,7 +290,6 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 
 ///|
 fn light_sway(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let elapsed = world_time(world).elapsed_seconds()
   let transform_store = world.component(@transform.ecs_key_transform)
   let spot_light_store = world.component(@pbr.ecs_key_spot_light)
@@ -310,8 +306,7 @@ fn light_sway(world : @ecs.World) -> Unit {
 
   for entity in spotlight_state.val.spotlights {
     if transform_store.get(entity) is Some(transform) {
-      transform_store.set(entity, transform.with_rotation(rotation), tick)
-      |> ignore
+      transform_store.set(entity, transform.with_rotation(rotation)) |> ignore
     }
     if spot_light_store.get(entity) is Some(light) {
       spot_light_store.set(
@@ -324,7 +319,6 @@ fn light_sway(world : @ecs.World) -> Unit {
           angle,
           light.shadow_maps_enabled,
         ),
-        tick,
       )
       |> ignore
     }
@@ -359,12 +353,11 @@ fn movement(world : @ecs.World) -> Unit {
   let delta = translation.mul_scalar(
     MOVE_SPEED * world_time(world).delta_seconds(),
   )
-  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   for entity in spotlight_state.val.movables {
     if transform_store.get(entity) is Some(transform) {
       let next = transform.with_translation(transform.translation.add(delta))
-      transform_store.set(entity, next, tick) |> ignore
+      transform_store.set(entity, next) |> ignore
     }
   }
 }
@@ -385,7 +378,6 @@ fn rotation(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   if transform_store.get(camera_entity) is Some(transform) {
     let rotated_position = quat_rotate_vec3(
@@ -397,7 +389,7 @@ fn rotation(world : @ecs.World) -> Unit {
       rotated_position.y,
       rotated_position.z,
     ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-    transform_store.set(camera_entity, next, tick) |> ignore
+    transform_store.set(camera_entity, next) |> ignore
   }
 }
 

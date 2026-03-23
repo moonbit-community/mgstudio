@@ -151,32 +151,30 @@ fn recompute_body_mass_properties(
 
 ///|
 pub fn physics2d_init_resources_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let ecs_world = world
   let cfg_res = get_physics2d_config_resource(ecs_world)
   if !cfg_res.is_present() {
-    cfg_res.insert(Physics2dConfig::default(), tick)
+    cfg_res.insert(Physics2dConfig::default())
   }
   let ctx_res = get_physics2d_context_resource(ecs_world)
   if !ctx_res.is_present() {
-    ctx_res.insert(Physics2dContext::new(), tick)
+    ctx_res.insert(Physics2dContext::new())
   }
   let ev_res = get_physics2d_events_resource(ecs_world)
   if !ev_res.is_present() {
-    ev_res.insert(Physics2dEvents::new(), tick)
+    ev_res.insert(Physics2dEvents::new())
   }
 }
 
 ///|
 pub fn physics2d_clear_events_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let ecs_world = world
   let ev_res = get_physics2d_events_resource(ecs_world)
   match ev_res.get() {
     Some(current_events) => {
       let events = Ref::new(current_events)
       events.val.clear()
-      ev_res.insert(events.val, tick)
+      ev_res.insert(events.val)
     }
     None => ()
   }
@@ -184,7 +182,6 @@ pub fn physics2d_clear_events_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn physics2d_cleanup_despawned_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(current_ctx) else { return }
@@ -393,12 +390,11 @@ pub fn physics2d_cleanup_despawned_system(world : @ecs.World) -> Unit {
 
   // Keep query pipeline in sync with removals.
   ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
-  ctx_res.insert(ctx_ref.val, tick)
+  ctx_res.insert(ctx_ref.val)
 }
 
 ///|
 pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(current_ctx) else { return }
@@ -503,7 +499,7 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
     }
     let rb = builder.build()
     let handle = ctx.rigid_bodies.insert(rb)
-    body_handle_store.insert(entity, RapierBodyHandle2d::new(handle), tick)
+    body_handle_store.insert(entity, RapierBodyHandle2d::new(handle))
     ctx.entity_to_body.set(entity_key(entity), handle)
   })
 
@@ -633,11 +629,7 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
           }
         }
     }
-    collider_handle_store.insert(
-      entity,
-      RapierColliderHandle2d::new(handle),
-      tick,
-    )
+    collider_handle_store.insert(entity, RapierColliderHandle2d::new(handle))
     ctx.entity_to_collider.set(entity_key(entity), handle)
     ctx.collider_to_entity.set(handle.into_raw_parts(), entity)
   })
@@ -654,12 +646,11 @@ pub fn physics2d_sync_insertions_system(world : @ecs.World) -> Unit {
       @dynamics.RigidBodyHandle::from_raw_parts(id, gen),
     )
   }
-  ctx_res.insert(ctx_ref.val, tick)
+  ctx_res.insert(ctx_ref.val)
 }
 
 ///|
 pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let ecs_world = world
   let cfg_res = get_physics2d_config_resource(ecs_world)
   let ctx_res = get_physics2d_context_resource(ecs_world)
@@ -894,8 +885,7 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
       if imp.torque_impulse != 0.0F {
         body.apply_torque_impulse(imp.torque_impulse, true) |> ignore
       }
-      external_impulse_store.set(entity, ExternalImpulse2d::zero(), tick)
-      |> ignore
+      external_impulse_store.set(entity, ExternalImpulse2d::zero()) |> ignore
     }
   })
 
@@ -907,12 +897,11 @@ pub fn physics2d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
   body_handle_store.for_each(fn(_entity, bh) {
     recompute_body_mass_properties(ctx, bh.handle)
   })
-  ctx_res.insert(ctx_ref.val, tick)
+  ctx_res.insert(ctx_ref.val)
 }
 
 ///|
 pub fn physics2d_step_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let ecs_world = world
   let cfg_res = get_physics2d_config_resource(ecs_world)
   let ctx_res = get_physics2d_context_resource(ecs_world)
@@ -927,8 +916,8 @@ pub fn physics2d_step_system(world : @ecs.World) -> Unit {
   let gravity = mg_vec2_to_rapier(cfg.gravity)
   if !cfg.physics_pipeline_active {
     ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
-    ctx_res.insert(ctx_ref.val, tick)
-    ev_res.insert(ev_ref.val, tick)
+    ctx_res.insert(ctx_ref.val)
+    ev_res.insert(ev_ref.val)
     return
   }
   physics2d_hooks_set_current_collider_map(ctx.collider_to_entity)
@@ -990,13 +979,12 @@ pub fn physics2d_step_system(world : @ecs.World) -> Unit {
   // Update query pipeline after stepping so queries see current positions.
   ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
   physics2d_hooks_clear_current_collider_map()
-  ctx_res.insert(ctx_ref.val, tick)
-  ev_res.insert(ev_ref.val, tick)
+  ctx_res.insert(ctx_ref.val)
+  ev_res.insert(ev_ref.val)
 }
 
 ///|
 pub fn physics2d_writeback_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(ctx) else { return }
@@ -1011,17 +999,17 @@ pub fn physics2d_writeback_system(world : @ecs.World) -> Unit {
       .unwrap_or(@transform.Transform::identity())
     let next = update_transform_from_iso2(current, pos)
     if transform_store.contains(entity) {
-      transform_store.set(entity, next, tick) |> ignore
+      transform_store.set(entity, next) |> ignore
     } else {
-      transform_store.insert(entity, next, tick)
+      transform_store.insert(entity, next)
     }
     let linvel = rapier_vec2_to_mg(body.linvel())
     let angvel = body.angvel()
     let next_vel = Velocity2d::{ linvel, angvel }
     if vel_store.contains(entity) {
-      vel_store.set(entity, next_vel, tick) |> ignore
+      vel_store.set(entity, next_vel) |> ignore
     } else {
-      vel_store.insert(entity, next_vel, tick)
+      vel_store.insert(entity, next_vel)
     }
   })
 }

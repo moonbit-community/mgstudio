@@ -138,18 +138,17 @@ fn update_help_text() -> Unit {
 ///|
 fn apply_light_mode(world : @ecs.World) -> Unit {
   guard clearcoat_state.val.light is Some(light) else { return }
-  let tick = world.read_sequence()
   world.component(@pbr.ecs_key_point_light).remove(light) |> ignore
   world.component(@pbr.ecs_key_directional_light).remove(light) |> ignore
 
   if clearcoat_state.val.light_mode == LIGHT_MODE_POINT {
     world
     .component(@pbr.ecs_key_point_light)
-    .insert(light, create_point_light(), tick)
+    .insert(light, create_point_light())
   } else {
     world
     .component(@pbr.ecs_key_directional_light)
-    .insert(light, create_directional_light(), tick)
+    .insert(light, create_directional_light())
   }
 
   update_help_text()
@@ -175,7 +174,6 @@ fn spawn_sphere(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   clearcoat_state.val.sphere_entities.clear()
   clearcoat_state.val.sphere_positions.clear()
   clearcoat_state.val.light_mode = LIGHT_MODE_POINT
@@ -242,7 +240,6 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -251,7 +248,6 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(1.0F, 1.0F, 0.0F).with_scale(
       @math.Vec3::splat(SPHERE_SCALE),
     ),
-    tick,
   )
   clearcoat_state.val.sphere_entities.push(golf_ball_root)
   clearcoat_state.val.sphere_positions.push(@math.Vec3::new(1.0F, 1.0F, 0.0F))
@@ -265,7 +261,6 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
   clearcoat_state.val.light = Some(light)
 
@@ -279,10 +274,10 @@ fn setup(world : @ecs.World) -> Unit {
     }),
     @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
   world
   .component(@post_process.ecs_key_tonemapping)
-  .insert(camera, @post_process.Tonemapping::AcesFitted, tick)
+  .insert(camera, @post_process.Tonemapping::AcesFitted)
   world
   .component(@pbr.ecs_key_skybox)
   .insert(
@@ -291,7 +286,6 @@ fn setup(world : @ecs.World) -> Unit {
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       5000.0F,
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_environment_map_light)
@@ -302,7 +296,6 @@ fn setup(world : @ecs.World) -> Unit {
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       2000.0F,
     ),
-    tick,
   )
 
   let help_text = @text.Text2dBundle::new(
@@ -347,7 +340,6 @@ fn animate_light(world : @ecs.World) -> Unit {
   )
   let target = @math.Vec3::zero()
   let up = @math.Vec3::new(0.0F, 1.0F, 0.0F)
-  let tick = world.read_sequence()
 
   if clearcoat_state.val.light is Some(entity) {
     world
@@ -357,7 +349,6 @@ fn animate_light(world : @ecs.World) -> Unit {
       @transform.Transform::from_xyz(light_pos.x, light_pos.y, light_pos.z).looking_at(
         target, up,
       ),
-      tick,
     )
     |> ignore
   }
@@ -367,7 +358,6 @@ fn animate_light(world : @ecs.World) -> Unit {
 fn animate_spheres(world : @ecs.World) -> Unit {
   let angle = SPHERE_ROTATION_SPEED * world_time(world).elapsed_seconds()
   let rotation = @math.Quat::from_rotation_y(angle)
-  let tick = world.read_sequence()
   let count = clearcoat_state.val.sphere_entities.length()
   for i in 0..<count {
     let entity = clearcoat_state.val.sphere_entities[i]
@@ -379,7 +369,6 @@ fn animate_spheres(world : @ecs.World) -> Unit {
       @transform.Transform::from_xyz(position.x, position.y, position.z)
       .with_rotation(rotation)
       .with_scale(@math.Vec3::splat(SPHERE_SCALE)),
-      tick,
     )
     |> ignore
   }

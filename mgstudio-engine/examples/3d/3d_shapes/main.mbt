@@ -1028,7 +1028,6 @@ fn setup(world : @ecs.World) -> Unit {
     )
   }
 
-  let tick = world.read_sequence()
   let point_light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
@@ -1037,11 +1036,10 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.PointLight::new(@sprite.Color::white(), 10_000_000.0F, 100.0F, true).with_shadow_depth_bias(
       0.2F,
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(point_light, @transform.Transform::from_xyz(8.0F, 16.0F, 8.0F), tick)
+  .insert(point_light, @transform.Transform::from_xyz(8.0F, 16.0F, 8.0F))
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
@@ -1116,14 +1114,13 @@ fn rotate(world : @ecs.World) -> Unit {
   }
   let delta = world_time(world).delta_seconds() / 2.0F
   let spin = @math.Quat::from_rotation_y(delta)
-  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   for entry in shapes_state.val.entries {
     if transform_store.get(entry.entity) is Some(transform) {
       let next = transform.with_rotation(
         transform.rotation.mul(spin).normalize(),
       )
-      transform_store.set(entry.entity, next, tick) |> ignore
+      transform_store.set(entry.entity, next) |> ignore
     }
   }
 }
@@ -1133,7 +1130,6 @@ fn advance_rows(world : @ecs.World) -> Unit {
   if !@input.key_just_pressed(@window.KeyCode::Tab) {
     return
   }
-  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   let count = shapes_state.val.entries.length()
   for i in 0..<count {
@@ -1148,7 +1144,7 @@ fn advance_rows(world : @ecs.World) -> Unit {
           row_z(next_row),
         ),
       )
-      transform_store.set(entry.entity, next, tick) |> ignore
+      transform_store.set(entry.entity, next) |> ignore
     }
   }
 }

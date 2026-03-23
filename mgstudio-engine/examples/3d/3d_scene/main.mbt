@@ -60,8 +60,6 @@ fn disk_mesh(radius : Float, segments : Int) -> @pbr.Mesh3d {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
-
   @pbr.MeshMaterial3dBundle::new(
     disk_mesh(4.0F, 32),
     @pbr.MeshMaterial3d::new(
@@ -97,14 +95,10 @@ fn setup(world : @ecs.World) -> Unit {
   let light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
-  .insert(
-    light,
-    @pbr.PointLight::default().with_shadow_maps_enabled(true),
-    tick,
-  )
+  .insert(light, @pbr.PointLight::default().with_shadow_maps_enabled(true))
   world
   .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),

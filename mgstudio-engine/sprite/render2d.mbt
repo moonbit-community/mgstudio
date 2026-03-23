@@ -443,7 +443,7 @@ fn[T] render2d_asset_store_or_abort() -> @asset.Assets[T] {
 fn[T] render2d_asset_store_mut_or_abort() -> Ref[@asset.Assets[T]] {
   let world = render2d_current_world_or_abort()
   let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
-  match (try! world.get_resource_ref_mut(key, 0)) {
+  match (try! world.get_resource_ref_mut(key)) {
     Some(assets) => assets
     None =>
       abort(
@@ -3314,21 +3314,19 @@ fn render_state_update(
   world : @ecs.World,
   update : (Ref[RenderState]) -> Unit,
 ) -> Bool {
-  let tick = world.read_sequence()
   let res = get_render_state_resource(world)
   guard res.get() is Some(state_value) else { return false }
   let state = Ref::new(state_value)
   update(state)
-  res.insert(state.val, tick)
+  res.insert(state.val)
   true
 }
 
 ///|
 fn ensure_render_state_resource(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let res = get_render_state_resource(world)
   if !res.is_present() {
-    res.insert(RenderState::new(), tick)
+    res.insert(RenderState::new())
     gizmos_reset()
   }
 }
@@ -3474,7 +3472,6 @@ fn pan_camera_world_time(world : @ecs.World) -> @time.Time[Unit] {
 ///|
 pub fn run_pancamera_controller(world : @ecs.World) -> Unit {
   let delta_seconds = pan_camera_world_time(world).delta_seconds()
-  let tick = world.read_sequence()
   let camera_store = world.component(ecs_key_camera)
   let transform_store = world.component(@transform.ecs_key_transform)
   let pan_camera_store = world.component(ecs_key_pan_camera)
@@ -3501,8 +3498,8 @@ pub fn run_pancamera_controller(world : @ecs.World) -> Unit {
     let (next_transform, next_controller) = pan_camera_step(
       transform, controller, delta_seconds, key_input, accumulated_mouse_scroll,
     )
-    transform_store.set(controlled_entity, next_transform, tick) |> ignore
-    pan_camera_store.set(controlled_entity, next_controller, tick) |> ignore
+    transform_store.set(controlled_entity, next_transform) |> ignore
+    pan_camera_store.set(controlled_entity, next_controller) |> ignore
   }
 }
 
@@ -3801,12 +3798,11 @@ pub fn render2d_create_render_target(
 ) -> @asset.Handle[@asset.Image] {
   let id = @render.host_gpu_create_render_target(width~, height~, nearest~)
   ensure_render_state_resource(world)
-  let tick = world.read_sequence()
   let res = get_render_state_resource(world)
   if res.get() is Some(state_value) {
     let rs = Ref::new(state_value)
     rs.val.render_targets.push(RenderTargetInfo::{ id, width, height })
-    res.insert(rs.val, tick)
+    res.insert(rs.val)
   }
   @asset.Handle::new(id)
 }
@@ -4655,7 +4651,6 @@ fn camera_color_grading(
 ///|
 pub fn render2d_camera_system(world : @ecs.World) -> Unit {
   guard render_state_ref(world) is Some(render_state_ref_value) else { return }
-  let tick = world.read_sequence()
   let ecs_world = world
   let camera2d_store = get_camera2d_store(ecs_world)
   let camera_store = get_camera_store(ecs_world)
@@ -4725,7 +4720,7 @@ pub fn render2d_camera_system(world : @ecs.World) -> Unit {
           old_viewport_size: render2d_camera_viewport_size(camera_value),
         },
       }
-      camera_store.set(entity, camera_value, tick) |> ignore
+      camera_store.set(entity, camera_value) |> ignore
     }
   })
 }

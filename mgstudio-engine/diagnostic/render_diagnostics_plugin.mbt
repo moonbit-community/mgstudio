@@ -130,9 +130,8 @@ fn render_diagnostic_with_history(
 ///|
 fn render_diagnostics_store_ref_mut(
   world : @ecs.World,
-  tick : Int,
 ) -> Ref[DiagnosticsStore]? {
-  try world.get_resource_ref_mut(DiagnosticsStore::resource(), tick) catch {
+  try world.get_resource_ref_mut(DiagnosticsStore::resource()) catch {
     _ => None
   } noraise {
     value => value
@@ -235,13 +234,13 @@ fn render_diagnostics_collect_snapshot() -> RenderDiagnosticsMeasurements {
 
 ///|
 fn render_diagnostics_system(world : @ecs.World) -> Unit {
-  let tick = @app.current_system_sequence().this_run
-  guard render_diagnostics_store_ref_mut(world, tick) is Some(store_ref) else {
+  let sequence = @app.current_system_sequence().this_run
+  guard render_diagnostics_store_ref_mut(world) is Some(store_ref) else {
     return
   }
   render_diagnostics_record_snapshot(
     store_ref.val,
-    tick,
+    sequence,
     render_diagnostics_collect_snapshot(),
   )
 }

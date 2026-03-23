@@ -67,6 +67,6 @@ test "app: sub app extractor updates both main and render worlds" {
   })
   let app = app.run_once()
   let sub_app = app.get_sub_app(RenderApp).unwrap()
-  inspect(app.world().read_sequence(), content="10")
-  inspect(sub_app.world().read_sequence(), content="13")
+  inspect(app.world().read_sequence(), content="9")
+  inspect(sub_app.world().read_sequence(), content="12")
 }

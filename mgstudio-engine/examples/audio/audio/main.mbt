@@ -32,8 +32,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let entity = world.spawn_empty()
-  let tick = world.read_sequence()
   world
   .component(@engine_audio.ecs_key_audio_source_player)
-  .insert(entity, @engine_audio.AudioPlayer::new(track), tick)
+  .insert(entity, @engine_audio.AudioPlayer::new(track))
 }

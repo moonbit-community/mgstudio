@@ -57,7 +57,6 @@ fn quat_rotate_vec3(q : @math.Quat, v : @math.Vec3) -> @math.Vec3 {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   split_screen_state.val.cameras.clear()
   split_screen_state.val.active_camera = 0
   split_screen_state.val.last_window_size = @math.IVec2::new(0, 0)
@@ -93,7 +92,6 @@ fn setup(world : @ecs.World) -> Unit {
         @gltf.GltfAssetLabel::Scene(0).from_asset(FOX_SCENE_ASSET),
       ),
     ),
-    tick,
   )
 
   // Light
@@ -103,7 +101,6 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -113,7 +110,6 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
 
   let camera_positions = [
@@ -183,7 +179,6 @@ fn set_camera_viewports(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.read_sequence()
   let camera_store = world.component(@sprite.ecs_key_camera)
   for pair in split_screen_state.val.cameras {
     let entity = pair.0
@@ -193,7 +188,7 @@ fn set_camera_viewports(world : @ecs.World) -> Unit {
       half_size,
     )
     if camera_store.get(entity) is Some(camera) {
-      camera_store.set(entity, camera.with_viewport(viewport), tick) |> ignore
+      camera_store.set(entity, camera.with_viewport(viewport)) |> ignore
     }
   }
 
@@ -262,7 +257,6 @@ fn button_system(world : @ecs.World) -> Unit {
   }
   let camera_entity = split_screen_state.val.cameras[index].0
 
-  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   if transform_store.get(camera_entity) is Some(transform) {
     let rotated_position = quat_rotate_vec3(
@@ -274,7 +268,7 @@ fn button_system(world : @ecs.World) -> Unit {
       rotated_position.y,
       rotated_position.z,
     ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-    transform_store.set(camera_entity, next, tick) |> ignore
+    transform_store.set(camera_entity, next) |> ignore
   }
 }
 

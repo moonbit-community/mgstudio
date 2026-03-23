@@ -388,8 +388,7 @@ fn init_default_color_material_asset(
 ) -> @app.App[@ecs.World] {
   let world = app.world()
   let key : @ecs.ResourceKey[@asset.Assets[ColorMaterialAsset]] = @asset.assets_resource_key()
-  if (try! world.get_resource_ref_mut(key, world.read_sequence()))
-    is Some(assets_ref) {
+  if (try! world.get_resource_ref_mut(key)) is Some(assets_ref) {
     let handle = default_color_material_asset_handle()
     if !assets_ref.val.contains(handle) {
       assets_ref.val.insert(handle, default_color_material_asset()) |> ignore

@@ -106,7 +106,6 @@ fn sync_simple_transforms_apply(world : @ecs.World) -> Unit {
   let global_access = world.component(ecs_key_global_transform)
   let parent_access = world.component(@hierarchy.ecs_key_parent)
   let child_access = world.component(@hierarchy.ecs_key_children)
-  let tick = world.read_sequence()
   let entities : Array[@core.Entity] = []
   global_access.for_each(fn(entity, _global) {
     if transform_access.contains(entity) &&
@@ -121,7 +120,7 @@ fn sync_simple_transforms_apply(world : @ecs.World) -> Unit {
       let next_global = GlobalTransform::from_transform(transform)
       if global_access.get(entity) is Some(current_global) {
         if !global_transform_eq(current_global, next_global) {
-          global_access.set(entity, next_global, tick) |> ignore
+          global_access.set(entity, next_global) |> ignore
         }
       }
     }
@@ -167,7 +166,6 @@ fn propagate_descendants(
   let global_access = world.component(ecs_key_global_transform)
   let parent_access = world.component(@hierarchy.ecs_key_parent)
   let children_access = world.component(@hierarchy.ecs_key_children)
-  let tick = world.read_sequence()
   let child_entities = children.entities().copy()
   sort_entities_by_id(child_entities)
   for child in child_entities {
@@ -186,7 +184,7 @@ fn propagate_descendants(
       GlobalTransform::from_transform(local_transform),
     )
     if !global_transform_eq(current_global, next_global) {
-      global_access.set(child, next_global, tick) |> ignore
+      global_access.set(child, next_global) |> ignore
     }
     if children_access.get(child) is Some(grand_children) {
       ancestors.push(child)
@@ -204,7 +202,6 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
   let global_access = world.component(ecs_key_global_transform)
   let parent_access = world.component(@hierarchy.ecs_key_parent)
   let children_access = world.component(@hierarchy.ecs_key_children)
-  let tick = world.read_sequence()
   let roots : Array[@core.Entity] = []
   global_access.for_each(fn(entity, _global) {
     if transform_access.contains(entity) && !parent_access.contains(entity) {
@@ -219,7 +216,7 @@ pub fn propagate_parent_transforms(world : @ecs.World) -> Unit {
     guard global_access.get(entity) is Some(current_global) else { continue }
     let next_global = GlobalTransform::from_transform(local_transform)
     if !global_transform_eq(current_global, next_global) {
-      global_access.set(entity, next_global, tick) |> ignore
+      global_access.set(entity, next_global) |> ignore
     }
     if children_access.get(entity) is Some(children) {
       let ancestors = [entity]

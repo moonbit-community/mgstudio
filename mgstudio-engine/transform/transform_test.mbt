@@ -361,7 +361,6 @@ test "transform ecs: component access insert also inserts required components" {
       0.0F,
       @math.Vec2::new(1.0F, 1.0F),
     ),
-    world.read_sequence(),
   )
 
   inspect(

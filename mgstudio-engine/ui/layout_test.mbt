@@ -30,6 +30,7 @@ fn seed_text_assets(world : @ecs.World) -> Unit {
 test "ui: layout computes rect and camera-compensated transform" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
+  ignore(tick)
 
   // Seed UiContext to avoid any host texture calls in tests.
   let ctx = UiContext::new(
@@ -42,15 +43,11 @@ test "ui: layout computes rect and camera-compensated transform" {
     None,
     false,
   )
-  get_ui_context_resource(world).insert(ctx, tick)
+  get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  get_ui_root_store(world).insert(root, UiRoot::default(), tick)
+  get_ui_root_store(world).insert(root, UiRoot::default())
   let node = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
-    node,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
+  @hierarchy.get_parent_store(world).insert(node, @hierarchy.Parent::new(root))
   get_node_store(world).insert(
     node,
     Node::default()
@@ -59,7 +56,6 @@ test "ui: layout computes rect and camera-compensated transform" {
     .with_top(Val::Px(50.0F))
     .with_width(Val::Px(200.0F))
     .with_height(Val::Px(60.0F)),
-    tick,
   )
 
   // Build Children from Parent before layout.
@@ -87,7 +83,7 @@ test "ui: layout computes rect and camera-compensated transform" {
     None,
     false,
   )
-  get_ui_context_resource(world).insert(ctx2, tick)
+  get_ui_context_resource(world).insert(ctx2)
   ui_layout_system(world)
   let t2 = @transform.get_transform_store(world).get(node).unwrap()
   // (-260, 220) * 2 + (100, 50) = (-420, 490)
@@ -119,6 +115,7 @@ test "ui: pointer conversion to viewport space" {
 test "ui: hidden overflow axis ignores stale scroll offset" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
+  ignore(tick)
   let ctx = UiContext::new(
     @asset.Handle::new(1),
     @math.Vec2::new(0.0F, 0.0F),
@@ -129,33 +126,26 @@ test "ui: hidden overflow axis ignores stale scroll offset" {
     None,
     false,
   )
-  get_ui_context_resource(world).insert(ctx, tick)
+  get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  get_ui_root_store(world).insert(root, UiRoot::default(), tick)
+  get_ui_root_store(world).insert(root, UiRoot::default())
   let panel = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
-    panel,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
+  @hierarchy.get_parent_store(world).insert(panel, @hierarchy.Parent::new(root))
   get_node_store(world).insert(
     panel,
     Node::default()
     .with_width(Val::Px(200.0F))
     .with_height(Val::Px(120.0F))
     .with_overflow(Overflow::new(OverflowAxis::Hidden, OverflowAxis::Scroll)),
-    tick,
   )
   get_scroll_position_store(world).insert(
     panel,
     ScrollPosition::new(180.0F, 24.0F),
-    tick,
   )
   let child = world.spawn_empty()
   @hierarchy.get_parent_store(world).insert(
     child,
     @hierarchy.Parent::new(panel),
-    tick,
   )
   get_node_store(world).insert(
     child,
@@ -165,7 +155,6 @@ test "ui: hidden overflow axis ignores stale scroll offset" {
     .with_top(Val::Px(0.0F))
     .with_width(Val::Px(100.0F))
     .with_height(Val::Px(20.0F)),
-    tick,
   )
   ui_layout_system(world)
   let panel_rect = get_ui_layout_store(world).get(panel).unwrap().rect
@@ -178,6 +167,7 @@ test "ui: hidden overflow axis ignores stale scroll offset" {
 test "ui: editable text transform stays in input content box and in front" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
+  ignore(tick)
   seed_text_assets(world)
   let ctx = UiContext::new(
     @asset.Handle::new(1),
@@ -189,14 +179,13 @@ test "ui: editable text transform stays in input content box and in front" {
     None,
     false,
   )
-  get_ui_context_resource(world).insert(ctx, tick)
+  get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  get_ui_root_store(world).insert(root, UiRoot::default(), tick)
+  get_ui_root_store(world).insert(root, UiRoot::default())
   let editable = world.spawn_empty()
   @hierarchy.get_parent_store(world).insert(
     editable,
     @hierarchy.Parent::new(root),
-    tick,
   )
   get_node_store(world).insert(
     editable,
@@ -207,14 +196,13 @@ test "ui: editable text transform stays in input content box and in front" {
     .with_width(Val::Px(420.0F))
     .with_height(Val::Px(48.0F))
     .with_padding(UiRect::all(Val::Px(8.0F))),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
-  .insert(editable, @text.Text::new("Editable status"), tick)
+  .insert(editable, @text.Text::new("Editable status"))
   world
   .component(@text.ecs_key_text_font)
-  .insert(editable, @text.TextFont::default().with_font_size(24.0F), tick)
+  .insert(editable, @text.TextFont::default().with_font_size(24.0F))
   @text.ui_text_sync_ecs_system(world)
   ui_layout_system(world)
   let layout = get_ui_layout_store(world).get(editable).unwrap().rect
@@ -245,6 +233,7 @@ test "ui: editable text transform stays in input content box and in front" {
 test "ui: editable status text renders in front of editable background (z-order)" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
+  ignore(tick)
   seed_text_assets(world)
   let ctx = UiContext::new(
     @asset.Handle::new(1),
@@ -256,14 +245,13 @@ test "ui: editable status text renders in front of editable background (z-order)
     None,
     false,
   )
-  get_ui_context_resource(world).insert(ctx, tick)
+  get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  get_ui_root_store(world).insert(root, UiRoot::default(), tick)
+  get_ui_root_store(world).insert(root, UiRoot::default())
   let editable = world.spawn_empty()
   @hierarchy.get_parent_store(world).insert(
     editable,
     @hierarchy.Parent::new(root),
-    tick,
   )
   get_node_store(world).insert(
     editable,
@@ -274,19 +262,17 @@ test "ui: editable status text renders in front of editable background (z-order)
     .with_width(Val::Px(420.0F))
     .with_height(Val::Px(48.0F))
     .with_padding(UiRect::all(Val::Px(8.0F))),
-    tick,
   )
   get_background_color_store(world).insert(
     editable,
     BackgroundColor::new(@sprite.Color::new(0.12F, 0.12F, 0.16F, 1.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
-  .insert(editable, @text.Text::new("Editable status"), tick)
+  .insert(editable, @text.Text::new("Editable status"))
   world
   .component(@text.ecs_key_text_font)
-  .insert(editable, @text.TextFont::default().with_font_size(24.0F), tick)
+  .insert(editable, @text.TextFont::default().with_font_size(24.0F))
   @text.ui_text_sync_ecs_system(world)
   ui_layout_system(world)
   ui_stack_system(world)
@@ -305,6 +291,7 @@ test "ui: editable status text renders in front of editable background (z-order)
 test "ui: editable label node is laid out above input box node" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
+  ignore(tick)
   let ctx = UiContext::new(
     @asset.Handle::new(1),
     @math.Vec2::new(0.0F, 0.0F),
@@ -315,15 +302,11 @@ test "ui: editable label node is laid out above input box node" {
     None,
     false,
   )
-  get_ui_context_resource(world).insert(ctx, tick)
+  get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  get_ui_root_store(world).insert(root, UiRoot::default(), tick)
+  get_ui_root_store(world).insert(root, UiRoot::default())
   let group = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
-    group,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
+  @hierarchy.get_parent_store(world).insert(group, @hierarchy.Parent::new(root))
   get_node_store(world).insert(
     group,
     Node::default()
@@ -333,24 +316,20 @@ test "ui: editable label node is laid out above input box node" {
     .with_width(Val::Px(420.0F))
     .with_flex_direction(FlexDirection::Column)
     .with_row_gap(Val::Px(8.0F)),
-    tick,
   )
   let label = world.spawn_empty()
   @hierarchy.get_parent_store(world).insert(
     label,
     @hierarchy.Parent::new(group),
-    tick,
   )
   get_node_store(world).insert(
     label,
     Node::default().with_width(Val::Auto).with_height(Val::Auto),
-    tick,
   )
   let editable = world.spawn_empty()
   @hierarchy.get_parent_store(world).insert(
     editable,
     @hierarchy.Parent::new(group),
-    tick,
   )
   get_node_store(world).insert(
     editable,
@@ -358,12 +337,10 @@ test "ui: editable label node is laid out above input box node" {
     .with_width(Val::Px(420.0F))
     .with_height(Val::Px(48.0F))
     .with_padding(UiRect::all(Val::Px(8.0F))),
-    tick,
   )
   get_content_size_store(world).insert(
     label,
     ContentSize::new(@math.Vec2::new(220.0F, 32.0F)),
-    tick,
   )
   ui_layout_system(world)
   let label_rect = get_ui_layout_store(world).get(label).unwrap().rect
@@ -376,6 +353,7 @@ test "ui: editable label node is laid out above input box node" {
 test "ui: scroll panel text inherits clip rect from overflow parent" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
+  ignore(tick)
   seed_text_assets(world)
   let ctx = UiContext::new(
     @asset.Handle::new(1),
@@ -387,15 +365,11 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
     None,
     false,
   )
-  get_ui_context_resource(world).insert(ctx, tick)
+  get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  get_ui_root_store(world).insert(root, UiRoot::default(), tick)
+  get_ui_root_store(world).insert(root, UiRoot::default())
   let panel = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
-    panel,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
+  @hierarchy.get_parent_store(world).insert(panel, @hierarchy.Parent::new(root))
   get_node_store(world).insert(
     panel,
     Node::default()
@@ -406,13 +380,11 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
     .with_height(Val::Px(190.0F))
     .with_overflow(Overflow::new(OverflowAxis::Hidden, OverflowAxis::Scroll))
     .with_padding(UiRect::all(Val::Px(10.0F))),
-    tick,
   )
   let panel_content = world.spawn_empty()
   @hierarchy.get_parent_store(world).insert(
     panel_content,
     @hierarchy.Parent::new(panel),
-    tick,
   )
   get_node_store(world).insert(
     panel_content,
@@ -420,18 +392,15 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
     .with_width(Val::Px(760.0F))
     .with_height(Val::Px(420.0F))
     .with_padding(UiRect::all(Val::Px(12.0F))),
-    tick,
   )
   let panel_text = world.spawn_empty()
   @hierarchy.get_parent_store(world).insert(
     panel_text,
     @hierarchy.Parent::new(panel_content),
-    tick,
   )
   get_node_store(world).insert(
     panel_text,
     Node::default().with_width(Val::Px(720.0F)).with_height(Val::Auto),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
@@ -440,11 +409,10 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
     @text.Text::new(
       "Scrollable panel (clip + scissor test)\nUse wheel or screen reader scroll actions.\nLine 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nLine 8\nLine 9\nLine 10",
     ),
-    tick,
   )
   world
   .component(@text.ecs_key_text_font)
-  .insert(panel_text, @text.TextFont::default().with_font_size(18.0F), tick)
+  .insert(panel_text, @text.TextFont::default().with_font_size(18.0F))
   @text.ui_text_sync_ecs_system(world)
   ui_layout_system(world)
   ui_clip_system(world)
@@ -463,6 +431,7 @@ test "ui: scroll panel text inherits clip rect from overflow parent" {
 test "ui: panel text scissor stays above editable title block" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
+  ignore(tick)
   seed_text_assets(world)
   let ctx = UiContext::new(
     @asset.Handle::new(1),
@@ -474,9 +443,9 @@ test "ui: panel text scissor stays above editable title block" {
     None,
     false,
   )
-  get_ui_context_resource(world).insert(ctx, tick)
+  get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  get_ui_root_store(world).insert(root, UiRoot::default(), tick)
+  get_ui_root_store(world).insert(root, UiRoot::default())
   get_node_store(world).insert(
     root,
     Node::default()
@@ -485,14 +454,9 @@ test "ui: panel text scissor stays above editable title block" {
     .with_flex_direction(FlexDirection::Column)
     .with_row_gap(Val::Px(18.0F))
     .with_padding(UiRect::all(Val::Px(24.0F))),
-    tick,
   )
   let panel = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
-    panel,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
+  @hierarchy.get_parent_store(world).insert(panel, @hierarchy.Parent::new(root))
   get_node_store(world).insert(
     panel,
     Node::default()
@@ -500,13 +464,11 @@ test "ui: panel text scissor stays above editable title block" {
     .with_height(Val::Px(190.0F))
     .with_overflow(Overflow::new(OverflowAxis::Hidden, OverflowAxis::Scroll))
     .with_padding(UiRect::all(Val::Px(10.0F))),
-    tick,
   )
   let panel_content = world.spawn_empty()
   @hierarchy.get_parent_store(world).insert(
     panel_content,
     @hierarchy.Parent::new(panel),
-    tick,
   )
   get_node_store(world).insert(
     panel_content,
@@ -514,18 +476,15 @@ test "ui: panel text scissor stays above editable title block" {
     .with_width(Val::Px(760.0F))
     .with_height(Val::Px(420.0F))
     .with_padding(UiRect::all(Val::Px(12.0F))),
-    tick,
   )
   let panel_text = world.spawn_empty()
   @hierarchy.get_parent_store(world).insert(
     panel_text,
     @hierarchy.Parent::new(panel_content),
-    tick,
   )
   get_node_store(world).insert(
     panel_text,
     Node::default().with_width(Val::Px(720.0F)).with_height(Val::Auto),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
@@ -534,16 +493,14 @@ test "ui: panel text scissor stays above editable title block" {
     @text.Text::new(
       "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nLine 8\nLine 9\nLine 10",
     ),
-    tick,
   )
   world
   .component(@text.ecs_key_text_font)
-  .insert(panel_text, @text.TextFont::default().with_font_size(18.0F), tick)
+  .insert(panel_text, @text.TextFont::default().with_font_size(18.0F))
   let editable_section = world.spawn_empty()
   @hierarchy.get_parent_store(world).insert(
     editable_section,
     @hierarchy.Parent::new(root),
-    tick,
   )
   get_node_store(world).insert(
     editable_section,
@@ -551,25 +508,22 @@ test "ui: panel text scissor stays above editable title block" {
     .with_width(Val::Px(420.0F))
     .with_flex_direction(FlexDirection::Column)
     .with_row_gap(Val::Px(8.0F)),
-    tick,
   )
   let editable_title = world.spawn_empty()
   @hierarchy.get_parent_store(world).insert(
     editable_title,
     @hierarchy.Parent::new(editable_section),
-    tick,
   )
   get_node_store(world).insert(
     editable_title,
     Node::default().with_width(Val::Auto).with_height(Val::Px(32.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
-  .insert(editable_title, @text.Text::new("Editable status"), tick)
+  .insert(editable_title, @text.Text::new("Editable status"))
   world
   .component(@text.ecs_key_text_font)
-  .insert(editable_title, @text.TextFont::default().with_font_size(24.0F), tick)
+  .insert(editable_title, @text.TextFont::default().with_font_size(24.0F))
   @text.ui_text_sync_ecs_system(world)
   ui_layout_system(world)
   ui_clip_system(world)

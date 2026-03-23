@@ -206,12 +206,11 @@ fn set_entity_visibility(
   } else {
     @visibility.Visibility::Hidden
   }
-  let tick = world.read_sequence()
   let store = world.component(@visibility.ecs_key_visibility)
   if store.contains(actual) {
-    store.set(actual, value, tick) |> ignore
+    store.set(actual, value) |> ignore
   } else {
-    store.insert(actual, value, tick)
+    store.insert(actual, value)
   }
 }
 
@@ -237,13 +236,12 @@ fn remove_reflection_probe(world : @ecs.World) -> Unit {
 ///|
 fn spawn_reflection_probe(world : @ecs.World) -> Unit {
   remove_reflection_probe(world)
-  let tick = world.read_sequence()
   let probe = world.spawn_empty()
   reflection_probes_state.val.reflection_probe = Some(probe)
 
   world
   .component(@pbr.ecs_key_light_probe)
-  .insert(probe, @pbr.LightProbe::default(), tick)
+  .insert(probe, @pbr.LightProbe::default())
   world
   .component(@pbr.ecs_key_environment_map_light)
   .insert(
@@ -253,24 +251,21 @@ fn spawn_reflection_probe(world : @ecs.World) -> Unit {
       reflection_probes_state.val.specular_reflection_probe,
       ENV_MAP_INTENSITY,
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_parallax_correction)
-  .insert(probe, @pbr.ParallaxCorrection::None, tick)
+  .insert(probe, @pbr.ParallaxCorrection::None)
   world
   .component(@transform.ecs_key_transform)
   .insert(
     probe,
     @transform.Transform::identity().with_scale(@math.Vec3::splat(2.0F)),
-    tick,
   )
 }
 
 ///|
 fn apply_reflection_mode(world : @ecs.World) -> Unit {
   guard reflection_probes_state.val.camera is Some(camera) else { return }
-  let tick = world.read_sequence()
 
   remove_reflection_probe(world)
   world.component(@pbr.ecs_key_environment_map_light).remove(camera) |> ignore
@@ -286,7 +281,7 @@ fn apply_reflection_mode(world : @ecs.World) -> Unit {
       )
       world
       .component(@pbr.ecs_key_environment_map_light)
-      .insert(camera, create_camera_environment_map_light(), tick)
+      .insert(camera, create_camera_environment_map_light())
     }
     ReflectionMode::ReflectionProbe => {
       set_entity_visibility(
@@ -296,7 +291,7 @@ fn apply_reflection_mode(world : @ecs.World) -> Unit {
       )
       world
       .component(@pbr.ecs_key_environment_map_light)
-      .insert(camera, create_camera_environment_map_light(), tick)
+      .insert(camera, create_camera_environment_map_light())
       spawn_reflection_probe(world)
     }
     ReflectionMode::GeneratedEnvironmentMap => {
@@ -313,7 +308,6 @@ fn apply_reflection_mode(world : @ecs.World) -> Unit {
           reflection_probes_state.val.specular_environment_map,
           ENV_MAP_INTENSITY,
         ),
-        tick,
       )
     }
   }
@@ -331,7 +325,6 @@ fn setup(world : @ecs.World) -> Unit {
   reflection_probes_state.val.help_text = None
   reflection_probes_state.val.environment_map_usage_ready = false
 
-  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   reflection_probes_state.val.diffuse_environment_map = Some(
@@ -352,18 +345,18 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   reflection_probes_state.val.camera = Some(camera)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
   world
   .component(@pbr.ecs_key_exposure)
-  .insert(camera, @pbr.Exposure::new(11.0F), tick)
+  .insert(camera, @pbr.Exposure::new(11.0F))
   world
   .component(@post_process.ecs_key_tonemapping)
-  .insert(camera, @post_process.Tonemapping::AcesFitted, tick)
+  .insert(camera, @post_process.Tonemapping::AcesFitted)
   if reflection_probes_state.val.specular_environment_map
     is Some(specular_env_map) {
     world
     .component(@pbr.ecs_key_skybox)
-    .insert(camera, @pbr.Skybox::new(specular_env_map, ENV_MAP_INTENSITY), tick)
+    .insert(camera, @pbr.Skybox::new(specular_env_map, ENV_MAP_INTENSITY))
   }
 
   let sphere_material = @pbr.standard_material_add(
@@ -390,7 +383,6 @@ fn setup(world : @ecs.World) -> Unit {
         @gltf.GltfAssetLabel::Scene(0).from_asset(CUBES_SCENE_ASSET),
       ),
     ),
-    tick,
   )
   reflection_probes_state.val.cubes_scene = Some(cubes_scene)
 
@@ -536,7 +528,6 @@ fn rotate_camera(world : @ecs.World) -> Unit {
       transform.translation.y,
       rotated_z,
     ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
-    world.read_sequence(),
   )
   |> ignore
 }

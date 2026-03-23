@@ -126,20 +126,19 @@ fn set_default_opaque_method(
 ///|
 fn apply_render_mode(world : @ecs.World) -> Unit {
   guard deferred_state.val.camera is Some(camera) else { return }
-  let tick = world.read_sequence()
   match deferred_state.val.mode {
     Deferred => {
       set_default_opaque_method(world, @pbr.OpaqueRendererMethod::Deferred)
       world.component(@pbr.ecs_key_normal_prepass).remove(camera) |> ignore
       world
       .component(@pbr.ecs_key_depth_prepass)
-      .insert(camera, @pbr.DepthPrepass::default(), tick)
+      .insert(camera, @pbr.DepthPrepass::default())
       world
       .component(@pbr.ecs_key_motion_vector_prepass)
-      .insert(camera, @pbr.MotionVectorPrepass::default(), tick)
+      .insert(camera, @pbr.MotionVectorPrepass::default())
       world
       .component(@pbr.ecs_key_deferred_prepass)
-      .insert(camera, @pbr.DeferredPrepass::default(), tick)
+      .insert(camera, @pbr.DeferredPrepass::default())
     }
     Forward => {
       set_default_opaque_method(world, @pbr.OpaqueRendererMethod::Forward)
@@ -153,13 +152,13 @@ fn apply_render_mode(world : @ecs.World) -> Unit {
       set_default_opaque_method(world, @pbr.OpaqueRendererMethod::Forward)
       world
       .component(@pbr.ecs_key_normal_prepass)
-      .insert(camera, @pbr.NormalPrepass::default(), tick)
+      .insert(camera, @pbr.NormalPrepass::default())
       world
       .component(@pbr.ecs_key_depth_prepass)
-      .insert(camera, @pbr.DepthPrepass::default(), tick)
+      .insert(camera, @pbr.DepthPrepass::default())
       world
       .component(@pbr.ecs_key_motion_vector_prepass)
-      .insert(camera, @pbr.MotionVectorPrepass::default(), tick)
+      .insert(camera, @pbr.MotionVectorPrepass::default())
       world.component(@pbr.ecs_key_deferred_prepass).remove(camera) |> ignore
     }
   }
@@ -187,7 +186,6 @@ fn track_spin(entity : @core.Entity, speed : Float) -> Unit {
 ///|
 fn setup(world : @ecs.World) -> Unit {
   deferred_state.val = default_state()
-  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
   world.insert_resource(
     @pbr.ecs_key_directional_light_shadow_map,
@@ -202,10 +200,10 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
   deferred_state.val.camera = Some(camera)
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
   world
   .component(@post_process.ecs_key_fxaa)
-  .insert(camera, @post_process.Fxaa::default(), tick)
+  .insert(camera, @post_process.Fxaa::default())
   world
   .component(@pbr.ecs_key_environment_map_light)
   .insert(
@@ -215,7 +213,6 @@ fn setup(world : @ecs.World) -> Unit {
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       2000.0F,
     ),
-    tick,
   )
 
   let directional_light = world.spawn_empty()
@@ -229,7 +226,6 @@ fn setup(world : @ecs.World) -> Unit {
       .with_num_cascades(3)
       .with_maximum_distance(10.0F),
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -238,7 +234,6 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::identity().with_rotation(
       @math.Quat::from_rotation_x(-0.7853981634F),
     ),
-    tick,
   )
 
   @pbr.render3d_set_distance_fog(
@@ -257,15 +252,15 @@ fn setup(world : @ecs.World) -> Unit {
   let helmet_a = world.spawn_empty()
   world
   .component(@scene.ecs_key_scene_root)
-  .insert(helmet_a, @scene.SceneRoot::new(helmet_scene), tick)
+  .insert(helmet_a, @scene.SceneRoot::new(helmet_scene))
 
   let helmet_b = world.spawn_empty()
   world
   .component(@scene.ecs_key_scene_root)
-  .insert(helmet_b, @scene.SceneRoot::new(helmet_scene), tick)
+  .insert(helmet_b, @scene.SceneRoot::new(helmet_scene))
   world
   .component(@transform.ecs_key_transform)
-  .insert(helmet_b, @transform.Transform::from_xyz(-4.0F, 0.0F, -3.0F), tick)
+  .insert(helmet_b, @transform.Transform::from_xyz(-4.0F, 0.0F, -3.0F))
 
   let forward_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
@@ -322,7 +317,7 @@ fn setup(world : @ecs.World) -> Unit {
   )
   world
   .component(@pbr.ecs_key_not_shadow_caster)
-  .insert(emissive_cube, @pbr.NotShadowCaster::default(), tick)
+  .insert(emissive_cube, @pbr.NotShadowCaster::default())
 
   let point_light = world.spawn_empty()
   world
@@ -330,11 +325,10 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     point_light,
     @pbr.PointLight::new(emissive_color, 800.0F, 4.0F, true).with_radius(0.125F),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(point_light, @transform.Transform::from_xyz(0.4F, 0.5F, -0.8F), tick)
+  .insert(point_light, @transform.Transform::from_xyz(0.4F, 0.5F, -0.8F))
 
   for i in 0..<6 {
     let j = i % 3
@@ -397,10 +391,10 @@ fn setup(world : @ecs.World) -> Unit {
   )
   world
   .component(@pbr.ecs_key_not_shadow_caster)
-  .insert(sky, @pbr.NotShadowCaster::default(), tick)
+  .insert(sky, @pbr.NotShadowCaster::default())
   world
   .component(@pbr.ecs_key_not_shadow_receiver)
-  .insert(sky, @pbr.NotShadowReceiver::default(), tick)
+  .insert(sky, @pbr.NotShadowReceiver::default())
 
   let parallax_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::default()
@@ -511,7 +505,6 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
     return
   }
   let delta_angle = LIGHT_ROTATION_SPEED * world_time(world).delta_seconds()
-  let tick = world.read_sequence()
   world
   .component(@transform.ecs_key_transform)
   .set(
@@ -521,7 +514,6 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
       .mul(@math.Quat::from_rotation_y(delta_angle))
       .normalize(),
     ),
-    tick,
   )
   |> ignore
 }
@@ -531,7 +523,6 @@ fn spin(world : @ecs.World) -> Unit {
   if deferred_state.val.pause {
     return
   }
-  let tick = world.read_sequence()
   let delta = world_time(world).delta_seconds()
   for i in 0..<deferred_state.val.spin_targets.length() {
     let target = deferred_state.val.spin_targets[i]
@@ -547,7 +538,7 @@ fn spin(world : @ecs.World) -> Unit {
       .normalize()
     world
     .component(@transform.ecs_key_transform)
-    .set(target.entity, transform.with_rotation(rotation), tick)
+    .set(target.entity, transform.with_rotation(rotation))
     |> ignore
   }
 }

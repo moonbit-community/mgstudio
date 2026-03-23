@@ -58,13 +58,12 @@ const RAY_SWEEP_AMPLITUDE : Float = 220.0F
 
 ///|
 fn physics2d_queries_setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let cfg_res = @physics2d.get_physics2d_config_resource(world)
   match cfg_res.get() {
     Some(current_cfg) => {
       let cfg = Ref::new(current_cfg)
       cfg.val = @physics2d.Physics2dConfig::new(@math.Vec2::new(0.0F, -500.0F))
-      cfg_res.insert(cfg.val, tick)
+      cfg_res.insert(cfg.val)
     }
     None => ()
   }
@@ -84,13 +83,12 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
   )
   let rb_store = @physics2d.get_rigid_body2d_store(world)
   let col_store = @physics2d.get_collider2d_store(world)
-  rb_store.insert(floor, @physics2d.RigidBody2d::fixed(), tick)
+  rb_store.insert(floor, @physics2d.RigidBody2d::fixed())
   col_store.insert(
     floor,
     @physics2d.Collider2d::new(
       @physics2d.ColliderShape2d::cuboid(320.0F, 16.0F),
     ),
-    tick,
   )
 
   // Ball.
@@ -102,16 +100,14 @@ fn physics2d_queries_setup(world : @ecs.World) -> Unit {
     z=1.0F,
   )
   let ball = @sprite.SpriteBundle::new(ball_sprite, ball_transform).spawn(world)
-  rb_store.insert(ball, @physics2d.RigidBody2d::dynamic(), tick)
+  rb_store.insert(ball, @physics2d.RigidBody2d::dynamic())
   col_store.insert(
     ball,
     @physics2d.Collider2d::new(@physics2d.ColliderShape2d::ball(12.0F)),
-    tick,
   )
   @physics2d.get_velocity2d_store(world).insert(
     ball,
     @physics2d.Velocity2d::zero(),
-    tick,
   )
 
   // Camera.
@@ -165,7 +161,6 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 ///|
 fn physics2d_queries_raycast(world : @ecs.World) -> Unit {
   let delta_seconds = world_time(world).delta_seconds()
-  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   query_state.val.phase = query_state.val.phase + delta_seconds * 0.75F
   let ray_x = @math.sin(query_state.val.phase) * RAY_SWEEP_AMPLITUDE
@@ -177,7 +172,7 @@ fn physics2d_queries_raycast(world : @ecs.World) -> Unit {
       @math.Vec2::new(0.035F, RAY_LINE_SCALE_Y),
       z=2.0F,
     )
-    transform_store.insert(ray_line, ray_transform, tick)
+    transform_store.insert(ray_line, ray_transform)
   }
 
   query_state.val.accumulator = query_state.val.accumulator + delta_seconds
@@ -202,7 +197,7 @@ fn physics2d_queries_raycast(world : @ecs.World) -> Unit {
           @math.Vec2::new(0.08F, 0.08F),
           z=3.0F,
         )
-        transform_store.insert(hit_marker, hidden_transform, tick)
+        transform_store.insert(hit_marker, hidden_transform)
       }
       println("Ray hit: none")
     }
@@ -214,7 +209,7 @@ fn physics2d_queries_raycast(world : @ecs.World) -> Unit {
           @math.Vec2::new(0.14F, 0.14F),
           z=3.0F,
         )
-        transform_store.insert(hit_marker, hit_transform, tick)
+        transform_store.insert(hit_marker, hit_transform)
       }
       println(
         "Ray hit: entity=\{h.entity.id} toi=\{h.toi} normal=(\{h.normal.x},\{h.normal.y})",

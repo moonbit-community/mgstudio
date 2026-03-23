@@ -290,7 +290,6 @@ pub fn[T] World::set(
     entity,
     key.id(),
     erased_value(value),
-    component_write_sequence(self),
     caller=hook_caller_from_loc(loc),
   )
 }
@@ -335,8 +334,7 @@ pub fn[T] World::update(
   let new_payload = erased_value(new_value)
   let caller = hook_caller_from_loc(loc)
   self.run_component_replace_hooks(entity, key.id(), caller~)
-  store_ref.val.set(entity, new_payload, component_write_sequence(self))
-  |> ignore
+  store_ref.val.set(entity, new_payload) |> ignore
   self.run_component_insert_hooks(entity, key.id(), caller~)
   self.end_deferred_hook_command_scope(outermost)
   true

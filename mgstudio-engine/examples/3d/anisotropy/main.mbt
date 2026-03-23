@@ -188,11 +188,10 @@ fn set_entity_visibility(
     @visibility.Visibility::Hidden
   }
   let visibility_store = world.component(@visibility.ecs_key_visibility)
-  let tick = world.read_sequence()
   if visibility_store.contains(entity) {
-    visibility_store.set(entity, visibility, tick) |> ignore
+    visibility_store.set(entity, visibility) |> ignore
   } else {
-    visibility_store.insert(entity, visibility, tick)
+    visibility_store.insert(entity, visibility)
   }
 }
 
@@ -245,11 +244,7 @@ fn spawn_directional_light(world : @ecs.World) -> Unit {
   let entity = world.spawn_empty()
   world
   .component(@pbr.ecs_key_directional_light)
-  .insert(
-    entity,
-    @pbr.DirectionalLight::default().with_illuminance(3000.0F),
-    world.read_sequence(),
-  )
+  .insert(entity, @pbr.DirectionalLight::default().with_illuminance(3000.0F))
 }
 
 ///|
@@ -257,11 +252,7 @@ fn spawn_point_light(world : @ecs.World) -> Unit {
   let entity = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
-  .insert(
-    entity,
-    @pbr.PointLight::default().with_intensity(200_000.0F),
-    world.read_sequence(),
-  )
+  .insert(entity, @pbr.PointLight::default().with_intensity(200_000.0F))
 }
 
 ///|
@@ -269,15 +260,10 @@ fn add_skybox_and_environment_map(
   world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> Unit {
-  let tick = world.read_sequence()
   if anisotropy_state.val.environment_specular_map is Some(specular_map) {
     world
     .component(@pbr.ecs_key_skybox)
-    .insert(
-      camera_entity,
-      @pbr.Skybox::new(specular_map, SKYBOX_BRIGHTNESS),
-      tick,
-    )
+    .insert(camera_entity, @pbr.Skybox::new(specular_map, SKYBOX_BRIGHTNESS))
   }
   if anisotropy_state.val.environment_diffuse_map is Some(diffuse_map) &&
     anisotropy_state.val.environment_specular_map is Some(specular_map) {
@@ -290,7 +276,6 @@ fn add_skybox_and_environment_map(
         Some(specular_map),
         ENVIRONMENT_MAP_INTENSITY,
       ),
-      tick,
     )
   }
 }
@@ -410,7 +395,6 @@ fn setup(world : @ecs.World) -> Unit {
 
   spawn_directional_light(world)
 
-  let tick = world.read_sequence()
   let barn_lamp = world.spawn_empty()
   world
   .component(@scene.ecs_key_scene_root)
@@ -424,11 +408,10 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(barn_lamp, @transform.Transform::from_xyz(0.0F, 0.07F, -0.13F), tick)
+  .insert(barn_lamp, @transform.Transform::from_xyz(0.0F, 0.07F, -0.13F))
   anisotropy_state.val.barn_lamp_scene = Some(barn_lamp)
 
   let sphere_material = @pbr.standard_material_add(
@@ -526,20 +509,15 @@ fn animate_light(world : @ecs.World) -> Unit {
     @math.sin(now) * 3.0F,
   ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
 
-  let tick = world.read_sequence()
   world
   .component(@pbr.ecs_key_directional_light)
   .for_each(fn(entity, _light) {
-    world
-    .component(@transform.ecs_key_transform)
-    .insert(entity, next_transform, tick)
+    world.component(@transform.ecs_key_transform).insert(entity, next_transform)
   })
   world
   .component(@pbr.ecs_key_point_light)
   .for_each(fn(entity, _light) {
-    world
-    .component(@transform.ecs_key_transform)
-    .insert(entity, next_transform, tick)
+    world.component(@transform.ecs_key_transform).insert(entity, next_transform)
   })
 }
 
@@ -561,20 +539,16 @@ fn rotate_camera(world : @ecs.World) -> Unit {
     rotated_position.y,
     rotated_position.z,
   ).looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F))
-  let tick = world.read_sequence()
   world
   .component(@sprite.ecs_key_camera)
   .for_each(fn(entity, _camera) {
-    world
-    .component(@transform.ecs_key_transform)
-    .insert(entity, next_transform, tick)
+    world.component(@transform.ecs_key_transform).insert(entity, next_transform)
   })
 }
 
 ///|
 fn toggle_anisotropy(world : @ecs.World) -> Unit {
   anisotropy_state.val.anisotropy_enabled = !anisotropy_state.val.anisotropy_enabled
-  let tick = world.read_sequence()
   for variants in anisotropy_state.val.material_variants {
     let next_material = if anisotropy_state.val.anisotropy_enabled {
       variants.anisotropic
@@ -583,7 +557,7 @@ fn toggle_anisotropy(world : @ecs.World) -> Unit {
     }
     world
     .component(@pbr.ecs_key_mesh_material3d)
-    .set(variants.entity, @pbr.MeshMaterial3d::new(next_material), tick)
+    .set(variants.entity, @pbr.MeshMaterial3d::new(next_material))
     |> ignore
   }
 }

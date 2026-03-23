@@ -78,8 +78,7 @@ pub fn AssetServer::load_folder(
 fn loaded_folder_assets_mut_or_abort(
   world : @ecs.World,
 ) -> Ref[Assets[LoadedFolder]] {
-  match
-    (try! world.get_resource_ref_mut(loaded_folder_assets_resource_key(), 0)) {
+  match (try! world.get_resource_ref_mut(loaded_folder_assets_resource_key())) {
     Some(assets) => assets
     None =>
       abort(

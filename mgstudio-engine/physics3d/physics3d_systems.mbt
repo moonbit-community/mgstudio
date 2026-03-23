@@ -44,36 +44,33 @@ fn make_collider_builder(
 
 ///|
 pub fn physics3d_init_resources_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let ecs_world = world
   let cfg_res = get_physics3d_config_resource(ecs_world)
   if !cfg_res.is_present() {
-    cfg_res.insert(Physics3dConfig::default(), tick)
+    cfg_res.insert(Physics3dConfig::default())
   }
   let ctx_res = get_physics3d_context_resource(ecs_world)
   if !ctx_res.is_present() {
-    ctx_res.insert(Physics3dContext::new(), tick)
+    ctx_res.insert(Physics3dContext::new())
   }
   let ev_res = get_physics3d_events_resource(ecs_world)
   if !ev_res.is_present() {
-    ev_res.insert(Physics3dEvents::new(), tick)
+    ev_res.insert(Physics3dEvents::new())
   }
 }
 
 ///|
 pub fn physics3d_clear_events_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let ecs_world = world
   let ev_res = get_physics3d_events_resource(ecs_world)
   guard ev_res.get() is Some(events) else { return }
   let events_ref = Ref::new(events)
   events_ref.val.clear()
-  ev_res.insert(events_ref.val, tick)
+  ev_res.insert(events_ref.val)
 }
 
 ///|
 pub fn physics3d_cleanup_despawned_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get() is Some(ctx_value) else { return }
@@ -161,12 +158,11 @@ pub fn physics3d_cleanup_despawned_system(world : @ecs.World) -> Unit {
       ctx.collider_to_entity.remove(handle.into_raw_parts())
     }
   }
-  ctx_res.insert(ctx_ref.val, tick)
+  ctx_res.insert(ctx_ref.val)
 }
 
 ///|
 pub fn physics3d_sync_insertions_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get() is Some(ctx_value) else { return }
@@ -216,7 +212,7 @@ pub fn physics3d_sync_insertions_system(world : @ecs.World) -> Unit {
     }
     let rb = builder.build()
     let handle = ctx.rigid_bodies.insert(rb)
-    body_handle_store.insert(entity, RapierBodyHandle3d::new(handle), tick)
+    body_handle_store.insert(entity, RapierBodyHandle3d::new(handle))
     ctx.entity_to_body.set(entity_key(entity), handle)
   })
 
@@ -290,20 +286,15 @@ pub fn physics3d_sync_insertions_system(world : @ecs.World) -> Unit {
         ctx.colliders.insert(collider)
       }
     }
-    collider_handle_store.insert(
-      entity,
-      RapierColliderHandle3d::new(handle),
-      tick,
-    )
+    collider_handle_store.insert(entity, RapierColliderHandle3d::new(handle))
     ctx.entity_to_collider.set(entity_key(entity), handle)
     ctx.collider_to_entity.set(handle.into_raw_parts(), entity)
   })
-  ctx_res.insert(ctx_ref.val, tick)
+  ctx_res.insert(ctx_ref.val)
 }
 
 ///|
 pub fn physics3d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get() is Some(ctx_value) else { return }
@@ -372,12 +363,11 @@ pub fn physics3d_sync_world_to_rapier_system(world : @ecs.World) -> Unit {
       body.set_angvel(mg_vec3_to_rapier(v.angvel))
     }
   })
-  ctx_res.insert(ctx_ref.val, tick)
+  ctx_res.insert(ctx_ref.val)
 }
 
 ///|
 pub fn physics3d_step_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let ecs_world = world
   let cfg_res = get_physics3d_config_resource(ecs_world)
   let ctx_res = get_physics3d_context_resource(ecs_world)
@@ -440,13 +430,12 @@ pub fn physics3d_step_system(world : @ecs.World) -> Unit {
       _ => ()
     }
   }
-  ctx_res.insert(ctx_ref.val, tick)
-  ev_res.insert(ev_ref.val, tick)
+  ctx_res.insert(ctx_ref.val)
+  ev_res.insert(ev_ref.val)
 }
 
 ///|
 pub fn physics3d_writeback_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let ecs_world = world
   let ctx_res = get_physics3d_context_resource(ecs_world)
   guard ctx_res.get() is Some(ctx) else { return }
@@ -461,17 +450,17 @@ pub fn physics3d_writeback_system(world : @ecs.World) -> Unit {
       .unwrap_or(@transform.Transform::identity())
     let next = update_transform_from_iso3(current, pos)
     if transform_store.contains(entity) {
-      transform_store.set(entity, next, tick) |> ignore
+      transform_store.set(entity, next) |> ignore
     } else {
-      transform_store.insert(entity, next, tick)
+      transform_store.insert(entity, next)
     }
     let linvel = rapier_vec3_to_mg(body.linvel())
     let angvel = rapier_vec3_to_mg(body.angvel())
     let next_vel = Velocity3d::{ linvel, angvel }
     if vel_store.contains(entity) {
-      vel_store.set(entity, next_vel, tick) |> ignore
+      vel_store.set(entity, next_vel) |> ignore
     } else {
-      vel_store.insert(entity, next_vel, tick)
+      vel_store.insert(entity, next_vel)
     }
   })
 }

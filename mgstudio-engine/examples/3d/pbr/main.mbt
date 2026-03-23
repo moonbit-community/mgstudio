@@ -120,7 +120,6 @@ fn setup(world : @ecs.World) -> Unit {
   pbr_state.val.diffuse_env_map = None
   pbr_state.val.specular_env_map = None
   pbr_state.val.env_loaded = false
-  let tick = world.read_sequence()
   let sphere_mesh = uv_sphere_mesh(0.45F, 18, 32)
   let sphere_color = @sprite.Color::new(1.0F, 0.847F, 0.569F, 1.0F)
 
@@ -160,7 +159,6 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     directional,
     @engine_pbr.DirectionalLight::new(@sprite.Color::white(), 1_500.0F, false),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -170,7 +168,6 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
 
   let asset_server = @asset.AssetServer::new()
@@ -254,7 +251,6 @@ fn setup(world : @ecs.World) -> Unit {
       Some(specular_env_map),
       900.0F,
     ),
-    tick,
   )
   pbr_state.val.diffuse_env_map = Some(diffuse_env_map)
   pbr_state.val.specular_env_map = Some(specular_env_map)

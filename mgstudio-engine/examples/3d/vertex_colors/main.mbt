@@ -106,8 +106,6 @@ fn colorful_cube_mesh() -> @pbr.Mesh3d {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
-
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
@@ -142,7 +140,6 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     light_entity,
     @pbr.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 20.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -152,7 +149,6 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
 
   @pbr.Camera3dBundle::new(

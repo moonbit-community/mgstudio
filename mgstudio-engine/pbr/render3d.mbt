@@ -153,7 +153,7 @@ fn Render3dInternalAssetsState::new() -> Render3dInternalAssetsState {
 fn render3d_internal_assets_ref(
   world : @ecs.World,
 ) -> Ref[Render3dInternalAssetsState]? {
-  try! world.get_resource_ref_mut(ecs_key_internal_assets, 0)
+  try! world.get_resource_ref_mut(ecs_key_internal_assets)
 }
 
 ///|
@@ -645,25 +645,18 @@ fn camera3d_bundle_insert(
   bundle : Camera3dBundle,
   world : @ecs.World,
   entity : @core.Entity,
-  tick : @core.Sequence,
   loc~ : SourceLoc,
 ) -> Unit {
   let ecs_world = world
-  get_camera3d_store(ecs_world).insert(entity, bundle.camera3d, tick, loc~)
-  get_projection_store(ecs_world).insert(entity, bundle.projection, tick, loc~)
+  get_camera3d_store(ecs_world).insert(entity, bundle.camera3d, loc~)
+  get_projection_store(ecs_world).insert(entity, bundle.projection, loc~)
   if bundle.sub_camera_view is Some(sub_camera_view) {
-    get_sub_camera_view3d_store(ecs_world).insert(
-      entity,
-      sub_camera_view,
-      tick,
-      loc~,
-    )
+    get_sub_camera_view3d_store(ecs_world).insert(entity, sub_camera_view, loc~)
   }
   if bundle.screen_space_transmission is Some(screen_space_transmission) {
     get_screen_space_transmission_store(ecs_world).insert(
       entity,
       screen_space_transmission,
-      tick,
       loc~,
     )
   }
@@ -671,62 +664,48 @@ fn camera3d_bundle_insert(
     get_screen_space_reflections_store(ecs_world).insert(
       entity,
       screen_space_reflections,
-      tick,
       loc~,
     )
   }
   if bundle.bloom is Some(bloom) {
-    get_bloom_store(ecs_world).insert(entity, bloom, tick, loc~)
+    get_bloom_store(ecs_world).insert(entity, bloom, loc~)
   }
   if bundle.tonemapping is Some(tonemapping) {
-    get_tonemapping_store(ecs_world).insert(entity, tonemapping, tick, loc~)
+    get_tonemapping_store(ecs_world).insert(entity, tonemapping, loc~)
   }
   if bundle.deband_dither is Some(deband_dither) {
-    get_deband_dither_store(ecs_world).insert(entity, deband_dither, tick, loc~)
+    get_deband_dither_store(ecs_world).insert(entity, deband_dither, loc~)
   }
   if bundle.chromatic_aberration is Some(chromatic_aberration) {
     get_chromatic_aberration_store(ecs_world).insert(
       entity,
       chromatic_aberration,
-      tick,
       loc~,
     )
   }
   if bundle.vignette is Some(vignette) {
-    get_vignette_store(ecs_world).insert(entity, vignette, tick, loc~)
+    get_vignette_store(ecs_world).insert(entity, vignette, loc~)
   }
   if bundle.motion_blur is Some(motion_blur) {
-    get_motion_blur_store(ecs_world).insert(entity, motion_blur, tick, loc~)
+    get_motion_blur_store(ecs_world).insert(entity, motion_blur, loc~)
   }
   if bundle.exposure is Some(exposure) {
-    get_exposure_store(ecs_world).insert(entity, exposure, tick, loc~)
+    get_exposure_store(ecs_world).insert(entity, exposure, loc~)
   }
   if bundle.color_grading is Some(color_grading) {
-    get_color_grading_store(ecs_world).insert(entity, color_grading, tick, loc~)
+    get_color_grading_store(ecs_world).insert(entity, color_grading, loc~)
   }
-  @sprite.get_camera_store(ecs_world).insert(entity, bundle.camera, tick, loc~)
-  @sprite.get_render_target_store(ecs_world).insert(
-    entity,
-    bundle.target,
-    tick,
-    loc~,
-  )
-  @sprite.get_render_layers_store(ecs_world).insert(
-    entity,
-    bundle.layers,
-    tick,
-    loc~,
-  )
+  @sprite.get_camera_store(ecs_world).insert(entity, bundle.camera, loc~)
+  @sprite.get_render_target_store(ecs_world).insert(entity, bundle.target, loc~)
+  @sprite.get_render_layers_store(ecs_world).insert(entity, bundle.layers, loc~)
   get_frustum_store(ecs_world).insert(
     entity,
     bundle.projection.compute_frustum(bundle.transform),
-    tick,
     loc~,
   )
   @transform.get_transform_store(ecs_world).insert(
     entity,
     bundle.transform,
-    tick,
     loc~,
   )
 }
@@ -739,7 +718,8 @@ pub impl @app.CommandSpawnComponents for Camera3dBundle with spawn_components(
   sequence,
   loc~,
 ) {
-  camera3d_bundle_insert(self, world, entity, sequence, loc~)
+  ignore(sequence)
+  camera3d_bundle_insert(self, world, entity, loc~)
 }
 
 ///|
@@ -750,9 +730,8 @@ pub fn Camera3dBundle::spawn(
   loc~ : SourceLoc,
 ) -> @core.Entity {
   let ecs_world = world
-  let tick = world.read_sequence()
   let entity = ecs_world.spawn_empty()
-  camera3d_bundle_insert(self, ecs_world, entity, tick, loc~)
+  camera3d_bundle_insert(self, ecs_world, entity, loc~)
   entity
 }
 
@@ -761,52 +740,36 @@ fn mesh_material3d_bundle_insert(
   bundle : MeshMaterial3dBundle,
   world : @ecs.World,
   entity : @core.Entity,
-  tick : @core.Sequence,
   loc~ : SourceLoc,
 ) -> Unit {
   let ecs_world = world
-  get_mesh3d_store(ecs_world).insert(entity, bundle.mesh, tick, loc~)
-  get_mesh_material3d_store(ecs_world).insert(
-    entity,
-    bundle.material,
-    tick,
-    loc~,
-  )
-  @sprite.get_render_layers_store(ecs_world).insert(
-    entity,
-    bundle.layers,
-    tick,
-    loc~,
-  )
+  get_mesh3d_store(ecs_world).insert(entity, bundle.mesh, loc~)
+  get_mesh_material3d_store(ecs_world).insert(entity, bundle.material, loc~)
+  @sprite.get_render_layers_store(ecs_world).insert(entity, bundle.layers, loc~)
   @visibility.get_visibility_store(ecs_world).insert(
     entity,
     bundle.visibility,
-    tick,
     loc~,
   )
   @visibility.get_inherited_visibility_store(ecs_world).insert(
     entity,
     bundle.inherited_visibility,
-    tick,
     loc~,
   )
   @visibility.get_view_visibility_store(ecs_world).insert(
     entity,
     bundle.view_visibility,
-    tick,
     loc~,
   )
   @transform.get_transform_store(ecs_world).insert(
     entity,
     bundle.transform,
-    tick,
     loc~,
   )
   let mesh_id = @sprite_render.render2d_upload_mesh_handle(bundle.mesh.mesh)
   @sprite.get_gpu_mesh2d_store(ecs_world).insert(
     entity,
     @sprite.GpuMesh2d::new(mesh_id),
-    tick,
     loc~,
   )
 }
@@ -819,7 +782,8 @@ pub impl @app.CommandSpawnComponents for MeshMaterial3dBundle with spawn_compone
   sequence,
   loc~,
 ) {
-  mesh_material3d_bundle_insert(self, world, entity, sequence, loc~)
+  ignore(sequence)
+  mesh_material3d_bundle_insert(self, world, entity, loc~)
 }
 
 ///|
@@ -830,9 +794,8 @@ pub fn MeshMaterial3dBundle::spawn(
   loc~ : SourceLoc,
 ) -> @core.Entity {
   let ecs_world = world
-  let tick = world.read_sequence()
   let entity = ecs_world.spawn_empty()
-  mesh_material3d_bundle_insert(self, ecs_world, entity, tick, loc~)
+  mesh_material3d_bundle_insert(self, ecs_world, entity, loc~)
   entity
 }
 
@@ -5382,7 +5345,6 @@ fn free_camera_exp_decay(rate : Float, delta_seconds : Float) -> Float {
 ///|
 pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
   let delta_seconds = render3d_default_time_or_default(world).delta_seconds()
-  let tick = world.read_sequence()
   let camera_store = world.component(@sprite.ecs_key_camera)
   let transform_store = world.component(@transform.ecs_key_transform)
   let free_camera_store = world.component(ecs_key_free_camera)
@@ -5410,7 +5372,7 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
     Some(existing) => existing
     None => {
       let default_state = FreeCameraState::default()
-      free_camera_state_store.insert(controlled_entity, default_state, tick)
+      free_camera_state_store.insert(controlled_entity, default_state)
       default_state
     }
   }
@@ -5431,7 +5393,7 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
       @window.window_set_cursor_visible(visible=true)
     }
     free_camera_system_state.val = system_state
-    free_camera_state_store.set(controlled_entity, state, tick) |> ignore
+    free_camera_state_store.set(controlled_entity, state) |> ignore
     return
   }
 
@@ -5574,8 +5536,8 @@ pub fn run_freecamera_controller(world : @ecs.World) -> Unit {
   }
 
   free_camera_system_state.val = system_state
-  transform_store.set(controlled_entity, transform, tick) |> ignore
-  free_camera_state_store.set(controlled_entity, state, tick) |> ignore
+  transform_store.set(controlled_entity, transform) |> ignore
+  free_camera_state_store.set(controlled_entity, state) |> ignore
 }
 
 ///|
@@ -5658,7 +5620,6 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let mesh_store = world.component(ecs_key_mesh3d)
   let gpu_mesh_store = world.component(@sprite.ecs_key_gpu_mesh2d)
   mesh_store.for_each(fn(entity, mesh) {
@@ -5666,7 +5627,7 @@ pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
       return
     }
     let mesh_id = @sprite_render.render2d_upload_mesh_handle(mesh.mesh)
-    gpu_mesh_store.insert(entity, @sprite.GpuMesh2d::new(mesh_id), tick)
+    gpu_mesh_store.insert(entity, @sprite.GpuMesh2d::new(mesh_id))
   })
   if render3d_prepared_camera_order_ref.val.length() == 0 {
     render3d_prepared_camera_order_ref.val = render3d_sorted_camera_entities(
@@ -6134,7 +6095,6 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let view_visibility_store = world.component(
     @visibility.ecs_key_view_visibility,
   )
-  let tick = world.read_sequence()
   let runtime_config = render3d_runtime_config_or_default(world)
   let prepass_enabled = standard_material_prepass_enabled(world)
   let deferred_lighting_enabled = runtime_config.add_default_deferred_lighting_plugin &&
@@ -6314,8 +6274,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     }
   })
   for update in projection_updates {
-    projection_store.insert(update.0, update.1, tick)
-    projection_runtime_store.insert(update.0, update.2, tick)
+    projection_store.insert(update.0, update.1)
+    projection_runtime_store.insert(update.0, update.2)
   }
   for entity in projection_runtime_removals {
     projection_runtime_store.remove(entity) |> ignore

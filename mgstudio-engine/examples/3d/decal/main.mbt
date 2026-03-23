@@ -53,7 +53,6 @@ fn obstacle_rotation(i : Int, j : Int) -> @math.Quat {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   let decal_material = @pbr.standard_material_add(
@@ -74,10 +73,10 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@pbr.ecs_key_forward_decal)
-  .insert(decal, @pbr.ForwardDecal::default(), tick)
+  .insert(decal, @pbr.ForwardDecal::default())
   world
   .component(@pbr.ecs_key_forward_decal_material_ext)
-  .insert(decal, @pbr.ForwardDecalMaterialExt::new(1.0F), tick)
+  .insert(decal, @pbr.ForwardDecalMaterialExt::new(1.0F))
 
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
@@ -88,14 +87,14 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@pbr.ecs_key_free_camera)
-  .insert(camera, @pbr.FreeCamera::default(), tick)
+  .insert(camera, @pbr.FreeCamera::default())
   world
   .component(@pbr.ecs_key_depth_prepass)
-  .insert(camera, @pbr.DepthPrepass::default(), tick)
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
+  .insert(camera, @pbr.DepthPrepass::default())
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
   world
   .component(@post_process.ecs_key_fxaa)
-  .insert(camera, @post_process.Fxaa::default(), tick)
+  .insert(camera, @post_process.Fxaa::default())
 
   let white_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::white()),
@@ -138,14 +137,10 @@ fn setup(world : @ecs.World) -> Unit {
   let light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
-  .insert(
-    light,
-    @pbr.PointLight::default().with_shadow_maps_enabled(true),
-    tick,
-  )
+  .insert(light, @pbr.PointLight::default().with_shadow_maps_enabled(true))
   world
   .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
+  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
 }
 
 ///|

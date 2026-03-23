@@ -298,8 +298,7 @@ pub fn[T : @app.Resource] asset_resource_ref_or_abort() -> Ref[T] {
 ///|
 pub fn[T : @app.Resource] asset_resource_ref_mut_or_abort() -> Ref[T] {
   let world = asset_world_or_abort()
-  let sequence = world.advance_sequence()
-  match (try! world.get_resource_ref_mut(T::resource(), sequence)) {
+  match (try! world.get_resource_ref_mut(T::resource())) {
     Some(value) => value
     None =>
       abort(

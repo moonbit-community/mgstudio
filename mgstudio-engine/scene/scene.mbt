@@ -249,8 +249,7 @@ impl @app.Resource for SceneRuntimeState with resource() {
 fn scene_runtime_state_mut_or_abort(
   world : @ecs.World,
 ) -> Ref[SceneRuntimeState] {
-  match
-    (try! world.get_resource_ref_mut(scene_runtime_state_resource_key(), 0)) {
+  match (try! world.get_resource_ref_mut(scene_runtime_state_resource_key())) {
     Some(state) => state
     None =>
       abort(
@@ -371,7 +370,7 @@ fn scene_assets_from_world_mut_or_abort(
   world : @ecs.World,
 ) -> Ref[@asset.Assets[Scene]] {
   let key : @ecs.ResourceKey[@asset.Assets[Scene]] = @asset.assets_resource_key()
-  match (try! world.get_resource_ref_mut(key, 0)) {
+  match (try! world.get_resource_ref_mut(key)) {
     Some(assets) => assets
     None =>
       abort(
@@ -397,7 +396,7 @@ fn scene_mesh_assets_from_world_mut_or_abort(
   world : @ecs.World,
 ) -> Ref[@asset.Assets[@mesh.Mesh]] {
   let key : @ecs.ResourceKey[@asset.Assets[@mesh.Mesh]] = @asset.assets_resource_key()
-  match (try! world.get_resource_ref_mut(key, 0)) {
+  match (try! world.get_resource_ref_mut(key)) {
     Some(assets) => assets
     None =>
       abort(
@@ -409,8 +408,7 @@ fn scene_mesh_assets_from_world_mut_or_abort(
 ///|
 fn scene_registry_mut_or_abort() -> Ref[SceneAssetRegistryState] {
   let world = scene_current_world_or_abort()
-  match
-    (try! world.get_resource_ref_mut(scene_asset_registry_resource_key(), 0)) {
+  match (try! world.get_resource_ref_mut(scene_asset_registry_resource_key())) {
     Some(state) => state
     None =>
       abort(
@@ -434,7 +432,7 @@ fn scene_registry_or_abort() -> SceneAssetRegistryState {
 ///|
 fn scene_registry_mut_if_present() -> Ref[SceneAssetRegistryState]? {
   guard @app.current_world() is Some(world) else { return None }
-  try! world.get_resource_ref_mut(scene_asset_registry_resource_key(), 0)
+  try! world.get_resource_ref_mut(scene_asset_registry_resource_key())
 }
 
 ///|

@@ -191,7 +191,6 @@ pub fn KinematicCharacterControllerOutput2d::without_collisions(
 
 ///|
 pub fn physics2d_character_controller_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(current_ctx) else { return }
@@ -257,9 +256,9 @@ pub fn physics2d_character_controller_system(world : @ecs.World) -> Unit {
       t.scale,
     )
     if transform_store.contains(entity) {
-      transform_store.set(entity, t, tick) |> ignore
+      transform_store.set(entity, t) |> ignore
     } else {
-      transform_store.insert(entity, t, tick)
+      transform_store.insert(entity, t)
     }
 
     // Apply to Rapier collider immediately so the next physics step sees it.
@@ -277,19 +276,18 @@ pub fn physics2d_character_controller_system(world : @ecs.World) -> Unit {
       collisions,
     }
     if output_store.contains(entity) {
-      output_store.set(entity, out, tick) |> ignore
+      output_store.set(entity, out) |> ignore
     } else {
-      output_store.insert(entity, out, tick)
+      output_store.insert(entity, out)
     }
     controller_store.set(
       entity,
       KinematicCharacterController2d::{ ..kcc }.reset_translation(),
-      tick,
     )
     |> ignore
   })
 
   // Colliders moved; keep query pipeline consistent.
   ctx.query_pipeline.update(ctx.rigid_bodies, ctx.colliders)
-  ctx_res.insert(ctx_ref.val, tick)
+  ctx_res.insert(ctx_ref.val)
 }

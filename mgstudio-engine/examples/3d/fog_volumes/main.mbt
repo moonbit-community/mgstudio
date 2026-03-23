@@ -114,14 +114,12 @@ fn apply_distance_fog_from_stub(world : @ecs.World, phase : Float) -> Unit {
     .with_directional_light_exponent(24.0F)
     .with_falloff(@pbr.FogFalloff3d::from_visibility_squared(visibility))
   guard fog_volumes_state.val.camera is Some(camera) else { return }
-  let tick = world.read_sequence()
   let camera3d_store = world.component(@pbr.ecs_key_camera3d)
   let camera3d = match camera3d_store.get(camera) {
     Some(value) => value
     None => @pbr.Camera3d::default()
   }
-  camera3d_store.set(camera, camera3d.with_distance_fog(Some(fog)), tick)
-  |> ignore
+  camera3d_store.set(camera, camera3d.with_distance_fog(Some(fog))) |> ignore
 }
 
 ///|
@@ -207,8 +205,6 @@ fn spawn_volume_proxy(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
 
-  let tick = world.read_sequence()
-
   // Two elongated cubes approximate bunny ears for a fog-volume silhouette.
   let ear_left = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
@@ -227,7 +223,7 @@ fn spawn_volume_proxy(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(ear_left, @hierarchy.Parent::new(head), tick)
+  .insert(ear_left, @hierarchy.Parent::new(head))
 
   let ear_right = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
@@ -246,7 +242,7 @@ fn spawn_volume_proxy(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(ear_right, @hierarchy.Parent::new(head), tick)
+  .insert(ear_right, @hierarchy.Parent::new(head))
 }
 
 ///|
@@ -261,8 +257,6 @@ fn setup(world : @ecs.World) -> Unit {
     .with_scattering(1.0F)
     .with_absorption(0.3F)
     .with_fog_color(@sprite.Color::new(0.45F, 0.5F, 0.56F, 1.0F))
-
-  let tick = world.read_sequence()
 
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
@@ -280,14 +274,12 @@ fn setup(world : @ecs.World) -> Unit {
       fog_center(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_directional_light)
   .insert(
     light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 32_000.0F, true),
-    tick,
   )
   fog_volumes_state.val.light = Some(light)
 
@@ -298,7 +290,7 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
   fog_volumes_state.val.camera = Some(camera)
   apply_distance_fog_from_stub(world, 1.0F)
 }
@@ -323,7 +315,6 @@ fn rotate_camera(world : @ecs.World) -> Unit {
     @math.sin(angle) * CAMERA_RADIUS,
   )
 
-  let tick = world.read_sequence()
   world
   .component(@transform.ecs_key_transform)
   .set(
@@ -332,7 +323,6 @@ fn rotate_camera(world : @ecs.World) -> Unit {
       fog_center(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
   |> ignore
 

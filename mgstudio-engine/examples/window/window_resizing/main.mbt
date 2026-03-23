@@ -70,32 +70,28 @@ fn setup_camera(world : @ecs.World) -> Unit {
 fn setup_ui(world : @ecs.World) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  let tick = world.read_sequence()
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
-  .insert(root, @ui.Node::default().with_width(@ui.Val::Percent(100.0F)), tick)
+  .insert(root, @ui.Node::default().with_width(@ui.Val::Percent(100.0F)))
   let text_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  .insert(text_entity, @hierarchy.Parent::new(root))
   world
   .component(@text.ecs_key_text)
-  .insert(text_entity, @text.Text::new("Resolution"), tick)
+  .insert(text_entity, @text.Text::new("Resolution"))
   world
   .component(@text.ecs_key_text_font)
   .insert(
     text_entity,
     @text.TextFont::default().with_font(font).with_font_size(42.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
-  world
-  .component(resolution_text_key)
-  .insert(text_entity, ResolutionText::{  }, tick)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()))
+  world.component(resolution_text_key).insert(text_entity, ResolutionText::{  })
 }
 
 ///|
@@ -117,7 +113,7 @@ fn update_resolution_text(
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(entity) is Some(text) else { return }
   text.content = width.to_string() + " x " + height.to_string()
-  text_store.set(entity, text, world.read_sequence()) |> ignore
+  text_store.set(entity, text) |> ignore
 }
 
 ///|
@@ -125,7 +121,6 @@ fn update_primary_window(
   world : @ecs.World,
   update : (@window.Window) -> Unit,
 ) -> Unit {
-  let tick = world.read_sequence()
   let window_store = world.component(@window.ecs_key_window)
   world
   .query_entities_filtered(
@@ -137,7 +132,7 @@ fn update_primary_window(
   .view(fn(entity) {
     guard window_store.get(entity) is Some(window) else { return }
     update(window)
-    window_store.set(entity, window, tick) |> ignore
+    window_store.set(entity, window) |> ignore
   })
 }
 

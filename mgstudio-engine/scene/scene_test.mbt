@@ -145,6 +145,7 @@ test "scene: SceneRoot spawns children and marks ready" {
   let spawned_entities = Ref::new(0)
   let child_count = Ref::new(0)
   let child_count_after_second_tick = Ref::new(0)
+  ignore(child_count_after_second_tick)
   let has_mesh = Ref::new(false)
   let has_material = Ref::new(false)
   let has_transform = Ref::new(false)
@@ -153,9 +154,12 @@ test "scene: SceneRoot spawns children and marks ready" {
   let has_target = Ref::new(false)
   let has_animated_by = Ref::new(false)
   let instance_after_second_tick = Ref::new(0)
+  ignore(instance_after_second_tick)
   let ready_after_second_tick = Ref::new(0)
+  ignore(ready_after_second_tick)
   run_scene_test_app(fn(world : @ecs.World) {
     let tick = world.advance_sequence()
+    ignore(tick)
     let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
     let material = @pbr.MeshMaterial3d::new(
       @pbr.standard_material_add(
@@ -184,7 +188,6 @@ test "scene: SceneRoot spawns children and marks ready" {
     get_scene_root_store(world).insert(
       root,
       @scene.SceneRoot::new(scene_handle),
-      tick,
     )
 
     @scene.scene_spawn_roots_system(world)
@@ -259,6 +262,7 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
   let new_child_x = Ref::new(0.0)
   run_scene_test_app(fn(world : @ecs.World) {
     let first_tick = world.advance_sequence()
+    ignore(first_tick)
     let first_path = @gltf.GltfAssetLabel::Scene(1).from_asset(
       "models/Foo/Foo.gltf",
     )
@@ -309,7 +313,6 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
     get_scene_root_store(world).insert(
       root,
       @scene.SceneRoot::new(first_handle),
-      first_tick,
     )
 
     @scene.scene_spawn_roots_system(world)
@@ -324,11 +327,7 @@ test "scene: SceneRoot change respawns children and updates SceneInstance" {
     })
     let first_child = first_children[0]
 
-    get_scene_root_store(world).set(
-      root,
-      @scene.SceneRoot::new(second_handle),
-      world.advance_sequence(),
-    )
+    get_scene_root_store(world).set(root, @scene.SceneRoot::new(second_handle))
     |> ignore
 
     @scene.scene_spawn_roots_system(world)

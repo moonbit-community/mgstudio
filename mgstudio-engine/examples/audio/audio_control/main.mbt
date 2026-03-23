@@ -88,10 +88,9 @@ fn spawn_ui_text(
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
   let entity = world.spawn_empty()
-  let tick = world.read_sequence()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(entity, @hierarchy.Parent::new(root), tick)
+  .insert(entity, @hierarchy.Parent::new(root))
   let mut node = @ui.Node::default()
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
@@ -101,35 +100,31 @@ fn spawn_ui_text(
   if bottom is Some(value) {
     node = node.with_bottom(@ui.Val::Px(value))
   }
-  world.component(@ui.ecs_key_node).insert(entity, node, tick)
-  world
-  .component(@text.ecs_key_text)
-  .insert(entity, @text.Text::new(content), tick)
+  world.component(@ui.ecs_key_node).insert(entity, node)
+  world.component(@text.ecs_key_text).insert(entity, @text.Text::new(content))
   world
   .component(@text.ecs_key_text_font)
   .insert(
     entity,
     @text.TextFont::default().with_font(font).with_font_size(20.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
-  .insert(entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  .insert(entity, @text.TextColor::new(@sprite.Color::white()))
   world
   .component(@text.ecs_key_text_layout)
-  .insert(entity, @text.TextLayout::new_with_justify(@text.Justify::Left), tick)
+  .insert(entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
   if marker is Some(progress_text_marker) {
     world
     .component(progress_text_marker_component_key)
-    .insert(entity, progress_text_marker, tick)
+    .insert(entity, progress_text_marker)
   }
 }
 
 ///|
 fn spawn_ui_overlay(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -137,7 +132,6 @@ fn spawn_ui_overlay(world : @ecs.World) -> Unit {
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
-    tick,
   )
 
   spawn_ui_text(
@@ -165,12 +159,11 @@ fn setup(world : @ecs.World) -> Unit {
     "sounds/Windless Slopes.ogg",
   )
 
-  let tick = world.read_sequence()
   let music = world.spawn_empty()
   world
   .component(@audio.ecs_key_audio_source_player)
-  .insert(music, @audio.AudioPlayer::new(track), tick)
-  world.component(my_music_component_key).insert(music, MyMusic::{  }, tick)
+  .insert(music, @audio.AudioPlayer::new(track))
+  world.component(my_music_component_key).insert(music, MyMusic::{  })
 
   spawn_ui_overlay(world)
 
@@ -196,11 +189,10 @@ fn update_progress_text(world : @ecs.World) -> Unit {
   guard world.component(@audio.ecs_key_audio_sink).get(music) is Some(sink) else {
     return
   }
-  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(entity) is Some(text_value) else { return }
   text_value.content = "Progress: \{sink.position().as_secs_f32()}s"
-  ignore(text_store.set(entity, text_value, tick))
+  ignore(text_store.set(entity, text_value))
 }
 
 ///|
@@ -217,10 +209,9 @@ fn update_speed(world : @ecs.World) -> Unit {
     @math.sin(world_time(world).elapsed_seconds() / 5.0F) + 1.0F,
     0.1F,
   )
-  let tick = world.read_sequence()
   world
   .component(@audio.ecs_key_audio_sink)
-  .update(music, tick, fn(current : @audio.AudioSink) {
+  .update(music, fn(current : @audio.AudioSink) {
     current.set_speed(next_speed)
   })
   |> ignore
@@ -244,10 +235,9 @@ fn mute(world : @ecs.World) -> Unit {
     return
   }
   guard find_music_entity(world) is Some(music) else { return }
-  let tick = world.read_sequence()
   world
   .component(@audio.ecs_key_audio_sink)
-  .update(music, tick, fn(sink : @audio.AudioSink) { sink.toggle_mute() })
+  .update(music, fn(sink : @audio.AudioSink) { sink.toggle_mute() })
   |> ignore
 }
 
@@ -262,10 +252,9 @@ fn volume(world : @ecs.World) -> Unit {
   }
 
   guard find_music_entity(world) is Some(music) else { return }
-  let tick = world.read_sequence()
   world
   .component(@audio.ecs_key_audio_sink)
-  .update(music, tick, fn(sink : @audio.AudioSink) {
+  .update(music, fn(sink : @audio.AudioSink) {
     let next_volume = sink.volume().increase_by_percentage(direction)
     sink.set_volume(next_volume)
   })

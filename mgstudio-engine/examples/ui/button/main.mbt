@@ -41,6 +41,7 @@ fn main {
 ///|
 fn button_system(world : @ecs.World) -> Unit {
   let tick = world.advance_sequence()
+  ignore(tick)
   let a11y_state_resource = @a11y.get_a11y_state_resource(world)
   let mut a11y_state_ref : Ref[@a11y.A11yState]? = None
   if a11y_state_resource.get() is Some(a11y_state) {
@@ -87,39 +88,38 @@ fn button_system(world : @ecs.World) -> Unit {
     }
     if interaction != @ui.Interaction::None {
       if button_store.get(entity) is Some(button) {
-        button_store.set(entity, button, tick) |> ignore
+        button_store.set(entity, button) |> ignore
       }
     }
     if background_store.contains(entity) {
-      background_store.set(entity, @ui.BackgroundColor::new(bg_color), tick)
-      |> ignore
+      background_store.set(entity, @ui.BackgroundColor::new(bg_color)) |> ignore
     } else {
-      background_store.insert(entity, @ui.BackgroundColor::new(bg_color), tick)
+      background_store.insert(entity, @ui.BackgroundColor::new(bg_color))
     }
     if border_store.contains(entity) {
-      border_store.set(entity, @ui.BorderColor::new(border_color), tick)
-      |> ignore
+      border_store.set(entity, @ui.BorderColor::new(border_color)) |> ignore
     } else {
-      border_store.insert(entity, @ui.BorderColor::new(border_color), tick)
+      border_store.insert(entity, @ui.BorderColor::new(border_color))
     }
     if children_store.get(entity) is Some(children) {
       if children.entities.length() > 0 {
         let label_entity = children.entities[0]
         if text_store.get(label_entity) is Some(text_value) {
           text_value.content = text.to_string()
-          text_store.set(label_entity, text_value, tick) |> ignore
+          text_store.set(label_entity, text_value) |> ignore
         }
       }
     }
   })
   if a11y_state_ref is Some(state) {
-    a11y_state_resource.insert(state.val, tick)
+    a11y_state_resource.insert(state.val)
   }
 }
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
   let tick = world.advance_sequence()
+  ignore(tick)
 
   // UI camera.
   @sprite.Camera2dBundle::new(
@@ -133,7 +133,7 @@ fn setup(world : @ecs.World) -> Unit {
 
   // Root node.
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -143,17 +143,14 @@ fn setup(world : @ecs.World) -> Unit {
     .with_height(@ui.Val::Percent(100.0F))
     .with_justify_content(@ui.JustifyContent::Center)
     .with_align_items(@ui.AlignItems::Center),
-    tick,
   )
 
   // Button node.
   let button = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(button, @hierarchy.Parent::new(root), tick)
-  world
-  .component(@ui.ecs_key_button)
-  .insert(button, @ui.Button::default(), tick)
+  .insert(button, @hierarchy.Parent::new(root))
+  world.component(@ui.ecs_key_button).insert(button, @ui.Button::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -164,52 +161,42 @@ fn setup(world : @ecs.World) -> Unit {
     .with_border(@ui.UiRect::all(@ui.Val::Px(5.0F)))
     .with_justify_content(@ui.JustifyContent::Center)
     .with_align_items(@ui.AlignItems::Center),
-    tick,
   )
   world
   .component(@ui.ecs_key_border_radius)
-  .insert(button, @ui.BorderRadius::all(@ui.Val::Percent(100.0F)), tick)
+  .insert(button, @ui.BorderRadius::all(@ui.Val::Percent(100.0F)))
   world
   .component(@ui.ecs_key_border_color)
-  .insert(button, @ui.BorderColor::new(@sprite.Color::white()), tick)
+  .insert(button, @ui.BorderColor::new(@sprite.Color::white()))
   world
   .component(@ui.ecs_key_background_color)
-  .insert(button, @ui.BackgroundColor::new(@sprite.Color::black()), tick)
+  .insert(button, @ui.BackgroundColor::new(@sprite.Color::black()))
 
   // Button label.
   let label = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(label, @hierarchy.Parent::new(button), tick)
+  .insert(label, @hierarchy.Parent::new(button))
   world
   .component(@ui.ecs_key_node)
   .insert(
     label,
     @ui.Node::default().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
-    tick,
   )
-  world
-  .component(@text.ecs_key_text)
-  .insert(label, @text.Text::new("Button"), tick)
+  world.component(@text.ecs_key_text).insert(label, @text.Text::new("Button"))
   world
   .component(@text.ecs_key_text_font)
   .insert(
     label,
     @text.TextFont::default().with_font(font).with_font_size(33.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
   .insert(
     label,
     @text.TextColor::new(@sprite.Color::new(0.9F, 0.9F, 0.9F, 1.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text_layout)
-  .insert(
-    label,
-    @text.TextLayout::new_with_justify(@text.Justify::Center),
-    tick,
-  )
+  .insert(label, @text.TextLayout::new_with_justify(@text.Justify::Center))
 }

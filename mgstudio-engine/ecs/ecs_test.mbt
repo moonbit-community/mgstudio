@@ -198,6 +198,7 @@ test "ecs: typed component api uses component ownership" {
   inspect(try! filtered.get(e1), content="None")
 
   let tick = world.advance_sequence()
+  ignore(tick)
   inspect(tick == 1, content="true")
   inspect(try! world.remove(e0, counter_key), content="true")
   let removed : Array[@core.Entity] = world

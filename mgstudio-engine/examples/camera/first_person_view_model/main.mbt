@@ -86,15 +86,14 @@ fn clamp_float(value : Float, min_value : Float, max_value : Float) -> Float {
 
 ///|
 fn spawn_view_model(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let player = world.spawn_empty()
-  world.component(Player::component()).insert(player, Player::{  }, tick)
+  world.component(Player::component()).insert(player, Player::{  })
   world
   .component(CameraSensitivity::component())
-  .insert(player, CameraSensitivity::default(), tick)
+  .insert(player, CameraSensitivity::default())
   world
   .component(@transform.ecs_key_transform)
-  .insert(player, @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F), tick)
+  .insert(player, @transform.Transform::from_xyz(0.0F, 1.0F, 0.0F))
 
   let world_camera = @camera.Camera3dBundle::new_with_projection(
     @sprite.Camera::default(),
@@ -106,10 +105,10 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(WorldModelCamera::component())
-  .insert(world_camera, WorldModelCamera::{  }, tick)
+  .insert(world_camera, WorldModelCamera::{  })
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(world_camera, @hierarchy.Parent::new(player), tick)
+  .insert(world_camera, @hierarchy.Parent::new(player))
 
   let view_model_camera = @camera.Camera3dBundle::new_with_projection(
     @sprite.Camera::default().with_order(1),
@@ -124,11 +123,10 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   .insert(
     view_model_camera,
     @sprite.RenderLayers::layer(VIEW_MODEL_RENDER_LAYER),
-    tick,
   )
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(view_model_camera, @hierarchy.Parent::new(player), tick)
+  .insert(view_model_camera, @hierarchy.Parent::new(player))
 
   let arm = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
@@ -149,13 +147,13 @@ fn spawn_view_model(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@sprite.ecs_key_render_layers)
-  .insert(arm, @sprite.RenderLayers::layer(VIEW_MODEL_RENDER_LAYER), tick)
+  .insert(arm, @sprite.RenderLayers::layer(VIEW_MODEL_RENDER_LAYER))
   world
   .component(@pbr.NotShadowCaster::component())
-  .insert(arm, @pbr.NotShadowCaster::default(), tick)
+  .insert(arm, @pbr.NotShadowCaster::default())
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(arm, @hierarchy.Parent::new(player), tick)
+  .insert(arm, @hierarchy.Parent::new(player))
 }
 
 ///|
@@ -210,7 +208,6 @@ fn spawn_world_model(world : @ecs.World) -> Unit {
 
 ///|
 fn spawn_lights(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
@@ -219,11 +216,10 @@ fn spawn_lights(world : @ecs.World) -> Unit {
     @pbr.PointLight::default()
     .with_color(@sprite.Color::srgb(1.0F, 0.76F, 0.84F))
     .with_shadow_maps_enabled(true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(-2.0F, 4.0F, -0.75F), tick)
+  .insert(light, @transform.Transform::from_xyz(-2.0F, 4.0F, -0.75F))
   world
   .component(@sprite.ecs_key_render_layers)
   .insert(
@@ -232,23 +228,21 @@ fn spawn_lights(world : @ecs.World) -> Unit {
       DEFAULT_RENDER_LAYER,
       VIEW_MODEL_RENDER_LAYER,
     ]),
-    tick,
   )
 }
 
 ///|
 fn spawn_text(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let overlay_camera = @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(2).with_clear_color_none(),
     @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(@ui.IsDefaultUiCamera::component())
-  .insert(overlay_camera, @ui.IsDefaultUiCamera::default(), tick)
+  .insert(overlay_camera, @ui.IsDefaultUiCamera::default())
 
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -256,7 +250,6 @@ fn spawn_text(world : @ecs.World) -> Unit {
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
-    tick,
   )
 
   let asset_server = @asset.AssetServer::new()
@@ -265,7 +258,7 @@ fn spawn_text(world : @ecs.World) -> Unit {
   let text_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  .insert(text_entity, @hierarchy.Parent::new(root))
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -274,7 +267,6 @@ fn spawn_text(world : @ecs.World) -> Unit {
     .with_position_type(@ui.PositionType::Absolute)
     .with_bottom(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
@@ -283,25 +275,19 @@ fn spawn_text(world : @ecs.World) -> Unit {
     @text.Text::new(
       "Move the camera with your mouse.\nPress arrow up to decrease the FOV of the world model.\nPress arrow down to increase the FOV of the world model.",
     ),
-    tick,
   )
   world
   .component(@text.ecs_key_text_font)
   .insert(
     text_entity,
     @text.TextFont::default().with_font(font).with_font_size(20.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()))
   world
   .component(@text.ecs_key_text_layout)
-  .insert(
-    text_entity,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
-    tick,
-  )
+  .insert(text_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
 }
 
 ///|

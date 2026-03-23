@@ -129,21 +129,6 @@ pub fn host_time_now_instant() -> @core.Instant {
 }
 
 ///|
-fn time_resource_sequence(world : @ecs.World) -> @core.Sequence {
-  let sequence = @app.current_system_sequence().this_run
-  if sequence > 0 {
-    sequence
-  } else {
-    let world_sequence = world.read_sequence()
-    if world_sequence > 0 {
-      world_sequence
-    } else {
-      1
-    }
-  }
-}
-
-///|
 fn[T] world_time_resource(world : @ecs.World, key : @ecs.ResourceKey[T]) -> T? {
   try world.get_resource(key) catch {
     _ => None
@@ -169,31 +154,25 @@ fn[T] sync_world_time_resource(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
   value : T,
-  sequence : @core.Sequence,
 ) -> Unit {
   match
-    (try world.get_resource_ref_mut(key, sequence) catch {
+    (try world.get_resource_ref_mut(key) catch {
       _ => None
     } noraise {
       value => value
     }) {
     Some(cell) => cell.val = value
-    None => world.insert_resource_with_sequence(key, value, sequence)
+    None => world.insert_resource(key, value)
   }
 }
 
 ///|
-fn time_sync_generic_time(
-  world : @ecs.World,
-  sequence : @core.Sequence,
-  value : Time[Unit],
-) -> Unit {
-  sync_world_time_resource(world, default_time_resource_key(), value, sequence)
+fn time_sync_generic_time(world : @ecs.World, value : Time[Unit]) -> Unit {
+  sync_world_time_resource(world, default_time_resource_key(), value)
 }
 
 ///|
 fn time_restore_virtual_as_generic(world : @ecs.World) -> Unit {
-  let sequence = world.advance_sequence()
   let virtual_time = world_time_resource_or_default(
     world,
     virtual_time_resource_key(),
@@ -202,48 +181,33 @@ fn time_restore_virtual_as_generic(world : @ecs.World) -> Unit {
       time
     },
   )
-  time_sync_generic_time(world, sequence, virtual_time.as_generic())
+  time_sync_generic_time(world, virtual_time.as_generic())
 }
 
 ///|
 fn ensure_time_resources(world : @ecs.World) -> Unit {
-  let sequence = time_resource_sequence(world)
   if world_time_resource(world, default_time_resource_key()) is None {
     let time : Time[Unit] = Time::default()
-    world.insert_resource_with_sequence(
-      default_time_resource_key(),
-      time,
-      sequence,
-    )
+    world.insert_resource(default_time_resource_key(), time)
   }
   if world_time_resource(world, real_time_resource_key()) is None {
-    world.insert_resource_with_sequence(
+    world.insert_resource(
       real_time_resource_key(),
       Time::new(host_time_now_instant()),
-      sequence,
     )
   }
   if world_time_resource(world, virtual_time_resource_key()) is None {
     let time : Time[Virtual] = Time::default()
-    world.insert_resource_with_sequence(
-      virtual_time_resource_key(),
-      time,
-      sequence,
-    )
+    world.insert_resource(virtual_time_resource_key(), time)
   }
   if world_time_resource(world, fixed_time_resource_key()) is None {
     let time : Time[Fixed] = Time::default()
-    world.insert_resource_with_sequence(
-      fixed_time_resource_key(),
-      time,
-      sequence,
-    )
+    world.insert_resource(fixed_time_resource_key(), time)
   }
   if world_time_resource(world, time_update_strategy_resource_key) is None {
-    world.insert_resource_with_sequence(
+    world.insert_resource(
       time_update_strategy_resource_key,
       TimeUpdateStrategy::default(),
-      sequence,
     )
   }
 }
@@ -268,7 +232,6 @@ fn time_update_real_with_strategy(
 ///|
 fn time_update(world : @ecs.World) -> Unit {
   ensure_time_resources(world)
-  let sequence = time_resource_sequence(world)
   let strategy = world_time_resource_or_default(
     world,
     time_update_strategy_resource_key,
@@ -276,13 +239,13 @@ fn time_update(world : @ecs.World) -> Unit {
   )
   let fixed_time = world_fixed_or_default(world)
   let real_ref = try! world
-    .get_resource_ref_mut(real_time_resource_key(), sequence)
+    .get_resource_ref_mut(real_time_resource_key())
     .unwrap()
   let virtual_ref = try! world
-    .get_resource_ref_mut(virtual_time_resource_key(), sequence)
+    .get_resource_ref_mut(virtual_time_resource_key())
     .unwrap()
   let time_ref = try! world
-    .get_resource_ref_mut(default_time_resource_key(), sequence)
+    .get_resource_ref_mut(default_time_resource_key())
     .unwrap()
   let next_real = time_update_real_with_strategy(
     real_ref.val,

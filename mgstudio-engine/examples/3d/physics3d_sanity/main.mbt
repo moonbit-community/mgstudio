@@ -32,7 +32,6 @@ let state : Ref[SanityState] = Ref::new({ ball: None })
 
 ///|
 fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let cfg_res = @physics3d.get_physics3d_config_resource(world)
   match cfg_res.get() {
     Some(cfg) => {
@@ -40,7 +39,7 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
       cfg_ref.val = @physics3d.Physics3dConfig::new(
         @math.Vec3::new(0.0F, -500.0F, 0.0F),
       )
-      cfg_res.insert(cfg_ref.val, tick)
+      cfg_res.insert(cfg_ref.val)
     }
     None => ()
   }
@@ -61,13 +60,12 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
   let floor = floor_bundle.spawn(world)
   let rb_store = @physics3d.get_rigid_body3d_store(world)
   let col_store = @physics3d.get_collider3d_store(world)
-  rb_store.insert(floor, @physics3d.RigidBody3d::fixed(), tick)
+  rb_store.insert(floor, @physics3d.RigidBody3d::fixed())
   col_store.insert(
     floor,
     @physics3d.Collider3d::new(
       @physics3d.ColliderShape3d::cuboid(320.0F, 16.0F, 16.0F),
     ),
-    tick,
   )
 
   let ball_material = @pbr.standard_material_add(
@@ -87,11 +85,10 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(0.0F, 200.0F, 0.0F),
   )
   let ball = ball_bundle.spawn(world)
-  rb_store.insert(ball, @physics3d.RigidBody3d::dynamic(), tick)
+  rb_store.insert(ball, @physics3d.RigidBody3d::dynamic())
   col_store.insert(
     ball,
     @physics3d.Collider3d::new(@physics3d.ColliderShape3d::ball(12.0F)),
-    tick,
   )
   state.val.ball = Some(ball)
 
@@ -108,11 +105,10 @@ fn physics3d_sanity_setup(world : @ecs.World) -> Unit {
   .insert(
     light,
     @pbr.PointLight::new(@sprite.Color::white(), 100000.0F, 2000.0F, false),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(220.0F, 360.0F, 220.0F), tick)
+  .insert(light, @transform.Transform::from_xyz(220.0F, 360.0F, 220.0F))
 
   let camera = @sprite.Camera::default()
   @pbr.Camera3dBundle::new(

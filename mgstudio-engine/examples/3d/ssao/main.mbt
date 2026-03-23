@@ -157,14 +157,13 @@ fn set_ssao_component(
   camera_entity : @core.Entity,
   ssao : @post_process.ScreenSpaceAmbientOcclusion,
 ) -> Unit {
-  let tick = world.read_sequence()
   let store = world.component(
     @post_process.ecs_key_screen_space_ambient_occlusion,
   )
   if store.contains(camera_entity) {
-    store.set(camera_entity, ssao, tick) |> ignore
+    store.set(camera_entity, ssao) |> ignore
   } else {
-    store.insert(camera_entity, ssao, tick)
+    store.insert(camera_entity, ssao)
   }
 }
 
@@ -174,7 +173,6 @@ fn setup(
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
   let world = @app.current_world().unwrap()
-  let tick = world.read_sequence()
 
   world.insert_resource(
     @pbr.ecs_key_global_ambient_light,
@@ -188,20 +186,18 @@ fn setup(
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
   world
   .component(@post_process.ecs_key_screen_space_ambient_occlusion)
-  .insert(camera, @post_process.ScreenSpaceAmbientOcclusion::default(), tick)
+  .insert(camera, @post_process.ScreenSpaceAmbientOcclusion::default())
   world
   .component(@post_process.ecs_key_temporal_anti_aliasing)
-  .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
+  .insert(camera, @post_process.TemporalAntiAliasing::default())
   world
   .component(@post_process.ecs_key_temporal_jitter)
-  .insert(camera, @post_process.TemporalJitter::default(), tick)
-  world
-  .component(SsaoCamera::component())
-  .insert(camera, SsaoCamera::{  }, tick)
+  .insert(camera, @post_process.TemporalJitter::default())
+  world.component(SsaoCamera::component()).insert(camera, SsaoCamera::{  })
 
   let base_material = materials.get_ref().val.add(
     @pbr.StandardMaterial::from_color(@sprite.Color::srgb(0.5F, 0.5F, 0.5F))
@@ -265,9 +261,7 @@ fn setup(
     ),
     @transform.Transform::identity(),
   ).spawn(world)
-  world
-  .component(SphereMarker::component())
-  .insert(sphere, SphereMarker::{  }, tick)
+  world.component(SphereMarker::component()).insert(sphere, SphereMarker::{  })
 
   let light = world.spawn_empty()
   world
@@ -282,14 +276,12 @@ fn setup(
         PI * -0.15F,
       ),
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_directional_light)
   .insert(
     light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
-    tick,
   )
 
   let instructions = @text.Text2dBundle::new(
@@ -428,7 +420,6 @@ fn update(
       temporal_jitter_store.insert(
         camera_entity,
         @post_process.TemporalJitter::default(),
-        world.read_sequence(),
       )
     }
   }

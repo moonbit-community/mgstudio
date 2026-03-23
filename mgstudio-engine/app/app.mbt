@@ -318,11 +318,7 @@ fn[T : Resource] world_resource_value_or_abort(world : @ecs.World) -> T {
 }
 
 ///|
-fn[T : Resource] world_resource_ref_mut_or_abort(
-  world : @ecs.World,
-  sequence : @core.Sequence,
-) -> Ref[T] {
-  ignore(sequence)
+fn[T : Resource] world_resource_ref_mut_or_abort(world : @ecs.World) -> Ref[T] {
   match
     (try world.get_resource_ref(Resource::resource()) catch {
       _ => None
@@ -705,12 +701,7 @@ pub impl[T : Resource] SystemParam for ResMut[T] with init_state(world) {
 ///|
 pub impl[T : Resource] SystemParam for ResMut[T] with get(_state) {
   let world = system_param_abort_missing_world()
-  ResMut::{
-    value: world_resource_ref_mut_or_abort(
-      world,
-      current_system_sequence().this_run,
-    ),
-  }
+  ResMut::{ value: world_resource_ref_mut_or_abort(world) }
 }
 
 ///|
@@ -821,6 +812,7 @@ fn run_chained_system_config(
     let prev_world = current_world_ref.val
     current_world_ref.val = Some(world)
     let prev_ticks = current_system_sequence_ref.val
+    ignore(prev_ticks)
     current_system_sequence_ref.val = Some(cond_ticks)
     let should_run = cond(world, config_ref.val.run_if_states[cond_i])
     current_system_sequence_ref.val = prev_ticks
@@ -846,6 +838,7 @@ fn run_chained_system_config(
   let prev_world = current_world_ref.val
   current_world_ref.val = Some(world)
   let prev_ticks = current_system_sequence_ref.val
+  ignore(prev_ticks)
   current_system_sequence_ref.val = Some(sys_ticks)
   (config_ref.val.system)(world)
   current_system_sequence_ref.val = prev_ticks
@@ -2543,6 +2536,7 @@ fn run_systems(
       // and expose SystemSequence via World-backed context for change detection.
       let this_run = world.advance_sequence()
       let sys_ticks = @core.SystemSequence::new(cfg.last_run_sequence, this_run)
+      ignore(sys_ticks)
       let ctx = world.get_sequence_context()
       ctx.set(sys_ticks)
       world.set_sequence_context(ctx)

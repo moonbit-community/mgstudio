@@ -179,7 +179,6 @@ fn set_entity_visibility(
   entity : @core.Entity,
   visible : Bool,
 ) -> Unit {
-  let tick = world.read_sequence()
   let visibility = if visible {
     @visibility.Visibility::Inherited
   } else {
@@ -187,9 +186,9 @@ fn set_entity_visibility(
   }
   let store = world.component(@visibility.ecs_key_visibility)
   if store.contains(entity) {
-    store.set(entity, visibility, tick) |> ignore
+    store.set(entity, visibility) |> ignore
   } else {
-    store.insert(entity, visibility, tick)
+    store.insert(entity, visibility)
   }
 }
 
@@ -397,7 +396,6 @@ fn write_orbit_camera_transform(world : @ecs.World) -> Unit {
       target,
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    world.read_sequence(),
   )
   |> ignore
 }
@@ -420,7 +418,6 @@ fn write_free_camera_transform(
       position.add(forward),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    world.read_sequence(),
   )
   |> ignore
 }
@@ -488,7 +485,6 @@ fn switch_to_orbit_camera(world : @ecs.World) -> Unit {
 fn spawn_scene(world : @ecs.World) -> Unit {
   light_probe_blending_state.val.gizmo_entities.clear()
 
-  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   set_global_ambient_light(world, @sprite.Color::white(), 0.06F)
@@ -500,7 +496,7 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   let room_scene_entity = world.spawn_empty()
   world
   .component(@scene.ecs_key_scene_root)
-  .insert(room_scene_entity, @scene.SceneRoot::new(room_scene), tick)
+  .insert(room_scene_entity, @scene.SceneRoot::new(room_scene))
 
   let reflective_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::white())
@@ -541,7 +537,6 @@ fn spawn_scene(world : @ecs.World) -> Unit {
   .insert(
     directional,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -551,7 +546,6 @@ fn spawn_scene(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, -1.5F, -5.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
 
   let diffuse_room1 = Some(asset_server.load(DIFFUSE_ROOM1_ASSET))
@@ -567,7 +561,6 @@ fn spawn_scene(world : @ecs.World) -> Unit {
     @pbr.LightProbe::default().with_falloff(
       @math.Vec3::splat(LIGHT_PROBE_FALLOFF),
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_environment_map_light)
@@ -578,7 +571,6 @@ fn spawn_scene(world : @ecs.World) -> Unit {
       specular_room1,
       LIGHT_PROBE_INTENSITY,
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_parallax_correction)
@@ -587,7 +579,6 @@ fn spawn_scene(world : @ecs.World) -> Unit {
     @pbr.ParallaxCorrection::Custom(
       @math.Vec3::splat(LIGHT_PROBE_PARALLAX_CORRECTION_SIDE_LENGTH),
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -598,7 +589,6 @@ fn spawn_scene(world : @ecs.World) -> Unit {
       @math.Vec3::new(1.0F, -1.0F, 1.0F).mul_scalar(LIGHT_PROBE_SIDE_LENGTH),
     )
     .with_rotation(@math.Quat::from_rotation_x(PI)),
-    tick,
   )
 
   let probe_2 = world.spawn_empty()
@@ -609,7 +599,6 @@ fn spawn_scene(world : @ecs.World) -> Unit {
     @pbr.LightProbe::default().with_falloff(
       @math.Vec3::splat(LIGHT_PROBE_FALLOFF),
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_environment_map_light)
@@ -620,7 +609,6 @@ fn spawn_scene(world : @ecs.World) -> Unit {
       specular_room2,
       LIGHT_PROBE_INTENSITY,
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_parallax_correction)
@@ -629,7 +617,6 @@ fn spawn_scene(world : @ecs.World) -> Unit {
     @pbr.ParallaxCorrection::Custom(
       @math.Vec3::splat(LIGHT_PROBE_PARALLAX_CORRECTION_SIDE_LENGTH),
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -641,7 +628,6 @@ fn spawn_scene(world : @ecs.World) -> Unit {
     )
     .with_rotation(@math.Quat::from_rotation_x(PI))
     .with_translation(@math.Vec3::new(0.0F, 0.0F, -ROOM_SEPARATION)),
-    tick,
   )
 
   let bounds_material = @pbr.standard_material_add(
@@ -779,11 +765,7 @@ fn move_sphere(world : @ecs.World) -> Unit {
     0.5F
   world
   .component(@transform.ecs_key_transform)
-  .set(
-    entity,
-    @transform.Transform::from_xyz(0.0F, 0.0F, -ROOM_SEPARATION * t),
-    world.read_sequence(),
-  )
+  .set(entity, @transform.Transform::from_xyz(0.0F, 0.0F, -ROOM_SEPARATION * t))
   |> ignore
 }
 

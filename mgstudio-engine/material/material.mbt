@@ -669,7 +669,7 @@ fn[T] material_asset_store_or_abort() -> @asset.Assets[T] {
 fn[T] material_asset_store_mut_or_abort() -> Ref[@asset.Assets[T]] {
   let world = material_current_world_or_abort()
   let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
-  match (try! world.get_resource_ref_mut(key, 0)) {
+  match (try! world.get_resource_ref_mut(key)) {
     Some(assets) => assets
     None =>
       abort(

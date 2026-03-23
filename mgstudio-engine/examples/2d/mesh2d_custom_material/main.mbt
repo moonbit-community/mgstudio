@@ -117,8 +117,7 @@ fn main {
 fn mesh2d_custom_material_setup(world : @ecs.World) -> Unit {
   let handle : @asset.Handle[CheckerMaterialAsset] = @asset.Handle::new(1)
   let assets_key : @ecs.ResourceKey[@asset.Assets[CheckerMaterialAsset]] = @asset.assets_resource_key()
-  guard (try! world.get_resource_ref_mut(assets_key, world.read_sequence()))
-    is Some(assets_ref) else {
+  guard (try! world.get_resource_ref_mut(assets_key)) is Some(assets_ref) else {
     abort("missing CheckerMaterialAsset store")
   }
   assets_ref.val.insert(

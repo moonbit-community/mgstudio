@@ -16,6 +16,7 @@
 test "ui: ui_stack_system orders nodes back-to-front (stable for siblings)" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
+  ignore(tick)
   fn layout_dummy() -> UiLayout {
     UiLayout::new(
       @math.Rect::new(@math.Vec2::new(0.0F, 0.0F), @math.Vec2::new(1.0F, 1.0F)),
@@ -23,46 +24,38 @@ test "ui: ui_stack_system orders nodes back-to-front (stable for siblings)" {
   }
 
   let global_root = world.spawn_empty()
-  get_ui_layout_store(world).insert(global_root, layout_dummy(), tick)
-  get_global_z_index_store(world).insert(
-    global_root,
-    GlobalZIndex::new(-1),
-    tick,
-  )
+  get_ui_layout_store(world).insert(global_root, layout_dummy())
+  get_global_z_index_store(world).insert(global_root, GlobalZIndex::new(-1))
   let root = world.spawn_empty()
-  get_ui_layout_store(world).insert(root, layout_dummy(), tick)
+  get_ui_layout_store(world).insert(root, layout_dummy())
   let child_b = world.spawn_empty()
   @hierarchy.get_parent_store(world).insert(
     child_b,
     @hierarchy.Parent::new(root),
-    tick,
   )
-  get_ui_layout_store(world).insert(child_b, layout_dummy(), tick)
-  get_z_index_store(world).insert(child_b, ZIndex::new(0), tick)
+  get_ui_layout_store(world).insert(child_b, layout_dummy())
+  get_z_index_store(world).insert(child_b, ZIndex::new(0))
   let child_c = world.spawn_empty()
   @hierarchy.get_parent_store(world).insert(
     child_c,
     @hierarchy.Parent::new(root),
-    tick,
   )
-  get_ui_layout_store(world).insert(child_c, layout_dummy(), tick)
+  get_ui_layout_store(world).insert(child_c, layout_dummy())
   // Same z as child_b: should preserve insertion order (b before c).
-  get_z_index_store(world).insert(child_c, ZIndex::new(0), tick)
+  get_z_index_store(world).insert(child_c, ZIndex::new(0))
   let child_a = world.spawn_empty()
   @hierarchy.get_parent_store(world).insert(
     child_a,
     @hierarchy.Parent::new(root),
-    tick,
   )
-  get_ui_layout_store(world).insert(child_a, layout_dummy(), tick)
-  get_z_index_store(world).insert(child_a, ZIndex::new(1), tick)
+  get_ui_layout_store(world).insert(child_a, layout_dummy())
+  get_z_index_store(world).insert(child_a, ZIndex::new(1))
   let child_a0 = world.spawn_empty()
   @hierarchy.get_parent_store(world).insert(
     child_a0,
     @hierarchy.Parent::new(child_a),
-    tick,
   )
-  get_ui_layout_store(world).insert(child_a0, layout_dummy(), tick)
+  get_ui_layout_store(world).insert(child_a0, layout_dummy())
 
   // Build Children from Parent.
   ui_stack_system(world)

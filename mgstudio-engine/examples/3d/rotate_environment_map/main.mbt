@@ -97,7 +97,6 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
 fn setup(world : @ecs.World) -> Unit {
   rotate_env_state.val.camera = None
 
-  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   let sphere_material = @pbr.standard_material_add(
@@ -128,7 +127,7 @@ fn setup(world : @ecs.World) -> Unit {
   let light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
-  .insert(light, @pbr.PointLight::default().with_intensity(100_000.0F), tick)
+  .insert(light, @pbr.PointLight::default().with_intensity(100_000.0F))
   let camera = @pbr.Camera3dBundle::new_with_projection(
     @sprite.Camera::default(),
     @pbr.Projection::Perspective(@pbr.PerspectiveProjection3d::{
@@ -138,10 +137,10 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F),
   ).spawn(world)
   rotate_env_state.val.camera = Some(camera)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
   world
   .component(@post_process.ecs_key_tonemapping)
-  .insert(camera, @post_process.Tonemapping::AcesFitted, tick)
+  .insert(camera, @post_process.Tonemapping::AcesFitted)
   world
   .component(@pbr.ecs_key_skybox)
   .insert(
@@ -150,7 +149,6 @@ fn setup(world : @ecs.World) -> Unit {
       asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
       5000.0F,
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_environment_map_light)
@@ -161,7 +159,6 @@ fn setup(world : @ecs.World) -> Unit {
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       2000.0F,
     ),
-    tick,
   )
 }
 
@@ -179,20 +176,19 @@ fn rotate_skybox_and_environment_map(world : @ecs.World) -> Unit {
   let now = world_time(world).elapsed_seconds()
   let angle = 0.2F * now
   let rotation = @math.Quat::from_rotation_y(angle)
-  let tick = world.read_sequence()
 
   if rotate_env_state.val.camera is Some(camera_entity) {
     if world.component(@pbr.ecs_key_skybox).get(camera_entity) is Some(skybox) {
       world
       .component(@pbr.ecs_key_skybox)
-      .set(camera_entity, skybox.with_rotation(rotation), tick)
+      .set(camera_entity, skybox.with_rotation(rotation))
       |> ignore
     }
     if world.component(@pbr.ecs_key_environment_map_light).get(camera_entity)
       is Some(environment_map_light) {
       world
       .component(@pbr.ecs_key_environment_map_light)
-      .set(camera_entity, environment_map_light.with_rotation(rotation), tick)
+      .set(camera_entity, environment_map_light.with_rotation(rotation))
       |> ignore
     }
   }

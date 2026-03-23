@@ -185,13 +185,12 @@ fn set_proxy_visibility(
   visible : Bool,
 ) -> Unit {
   guard entity is Some(proxy) else { return }
-  let tick = world.read_sequence()
   let value = if visible {
     @visibility.Visibility::Visible
   } else {
     @visibility.Visibility::Hidden
   }
-  world.component(@visibility.ecs_key_visibility).insert(proxy, value, tick)
+  world.component(@visibility.ecs_key_visibility).insert(proxy, value)
 }
 
 ///|
@@ -203,7 +202,6 @@ fn update_directional_light(world : @ecs.World) -> Unit {
     is Some(light) else {
     return
   }
-  let tick = world.read_sequence()
   let any_texture_light_visible = light_textures_state.val.spot_visible ||
     light_textures_state.val.point_visible
   let next_illuminance = if light_textures_state.val.directional_visible {
@@ -215,18 +213,14 @@ fn update_directional_light(world : @ecs.World) -> Unit {
   }
   world
   .component(@pbr.ecs_key_directional_light)
-  .set(entity, light.with_illuminance(next_illuminance), tick)
+  .set(entity, light.with_illuminance(next_illuminance))
   |> ignore
 
   if light_textures_state.val.directional_visible {
     if light_textures_state.val.directional_texture is Some(texture) {
       world
       .component(@pbr.ecs_key_directional_light_texture)
-      .insert(
-        entity,
-        @pbr.DirectionalLightTexture::new(Some(texture), true),
-        tick,
-      )
+      .insert(entity, @pbr.DirectionalLightTexture::new(Some(texture), true))
     }
   } else {
     world.component(@pbr.ecs_key_directional_light_texture).remove(entity)
@@ -236,7 +230,6 @@ fn update_directional_light(world : @ecs.World) -> Unit {
 
 ///|
 fn apply_light_visibility(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   if light_textures_state.val.spot_light is Some(spot_entity) {
     if world.component(@pbr.ecs_key_spot_light).get(spot_entity) is Some(spot) {
       let intensity = if light_textures_state.val.spot_visible {
@@ -246,7 +239,7 @@ fn apply_light_visibility(world : @ecs.World) -> Unit {
       }
       world
       .component(@pbr.ecs_key_spot_light)
-      .set(spot_entity, spot.with_intensity(intensity), tick)
+      .set(spot_entity, spot.with_intensity(intensity))
       |> ignore
     }
   }
@@ -260,7 +253,7 @@ fn apply_light_visibility(world : @ecs.World) -> Unit {
       }
       world
       .component(@pbr.ecs_key_point_light)
-      .set(point_entity, point.with_intensity(intensity), tick)
+      .set(point_entity, point.with_intensity(intensity))
       |> ignore
     }
   }
@@ -279,7 +272,6 @@ fn apply_light_visibility(world : @ecs.World) -> Unit {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
   light_textures_state.val.camera = None
   light_textures_state.val.rotating_cube = None
@@ -339,7 +331,6 @@ fn setup(world : @ecs.World) -> Unit {
       MAIN_LIGHT_INTENSITY,
       true,
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -349,7 +340,6 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
 
   let spot = world.spawn_empty()
@@ -366,14 +356,12 @@ fn setup(world : @ecs.World) -> Unit {
       0.25F,
       true,
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_spot_light_texture)
   .insert(
     spot,
     @pbr.SpotLightTexture::new(Some(asset_server.load("branding/icon.png"))),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -383,7 +371,6 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
 
   let point = world.spawn_empty()
@@ -398,7 +385,6 @@ fn setup(world : @ecs.World) -> Unit {
       20.0F,
       true,
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_point_light_texture)
@@ -408,11 +394,10 @@ fn setup(world : @ecs.World) -> Unit {
       Some(asset_server.load("branding/icon.png")),
       @pbr.CubemapLayout3d::CrossVertical,
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(point, @transform.Transform::from_xyz(0.0F, 1.8F, 0.01F), tick)
+  .insert(point, @transform.Transform::from_xyz(0.0F, 1.8F, 0.01F))
 
   let spot_proxy_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
@@ -495,7 +480,6 @@ fn apply_camera_drag(
   camera_entity : @core.Entity,
   delta : @math.Vec2,
 ) -> Unit {
-  let tick = world.read_sequence()
   guard world.component(@transform.ecs_key_transform).get(camera_entity)
     is Some(transform) else {
     return
@@ -510,7 +494,6 @@ fn apply_camera_drag(
     transform
     .with_translation(next_translation)
     .looking_at(@math.Vec3::zero(), @math.Vec3::new(0.0F, 1.0F, 0.0F)),
-    tick,
   )
   |> ignore
 }
@@ -521,7 +504,6 @@ fn apply_selection_drag(
   entity : @core.Entity,
   delta : @math.Vec2,
 ) -> Unit {
-  let tick = world.read_sequence()
   guard world.component(@transform.ecs_key_transform).get(entity)
     is Some(transform) else {
     return
@@ -533,7 +515,7 @@ fn apply_selection_drag(
       )
       world
       .component(@transform.ecs_key_transform)
-      .set(entity, transform.with_translation(next_translation), tick)
+      .set(entity, transform.with_translation(next_translation))
       |> ignore
       if light_textures_state.val.selection == Selection::SpotLight {
         if light_textures_state.val.spot_proxy is Some(proxy) {
@@ -546,7 +528,6 @@ fn apply_selection_drag(
               next_translation.y,
               next_translation.z,
             ),
-            tick,
           )
           |> ignore
         }
@@ -562,7 +543,6 @@ fn apply_selection_drag(
               next_translation.y,
               next_translation.z,
             ),
-            tick,
           )
           |> ignore
         }
@@ -583,7 +563,6 @@ fn apply_selection_drag(
         .set(
           entity,
           spot.with_outer_angle(next_angle).with_inner_angle(next_angle),
-          tick,
         )
         |> ignore
       } else {
@@ -593,7 +572,6 @@ fn apply_selection_drag(
         .set(
           entity,
           transform.with_scale(@math.Vec3::new(next, next, transform.scale.z)),
-          tick,
         )
         |> ignore
       }
@@ -603,7 +581,7 @@ fn apply_selection_drag(
         .normalize()
       world
       .component(@transform.ecs_key_transform)
-      .set(entity, transform.with_rotation(rotation), tick)
+      .set(entity, transform.with_rotation(rotation))
       |> ignore
     }
   }
@@ -708,14 +686,13 @@ fn rotate_cube(world : @ecs.World) -> Unit {
     is Some(transform) else {
     return
   }
-  let tick = world.read_sequence()
   let delta = world_time(world).delta_seconds()
   let rotation = transform.rotation
     .mul(@math.Quat::from_rotation_y(CUBE_ROTATION_SPEED * delta * 60.0F))
     .normalize()
   world
   .component(@transform.ecs_key_transform)
-  .set(cube_entity, transform.with_rotation(rotation), tick)
+  .set(cube_entity, transform.with_rotation(rotation))
   |> ignore
 }
 

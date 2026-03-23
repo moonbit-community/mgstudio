@@ -224,23 +224,21 @@ fn despawn_entities(world : @ecs.World, entities : Array[@core.Entity]) -> Unit 
 
 ///|
 fn spawn_camera(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::default().with_clear_color(@sprite.Color::black()),
     @transform.Transform::from_xyz(0.219417F, 2.5764852F, 6.9718704F).with_rotation(
       @math.Quat::new(-0.1466768F, 0.013738206F, 0.002037309F, 0.989087F),
     ),
   ).spawn(world)
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
   world
   .component(@pbr.ecs_key_free_camera)
-  .insert(camera, @pbr.FreeCamera::default(), tick)
+  .insert(camera, @pbr.FreeCamera::default())
   solari_state.val.camera = Some(camera)
 }
 
 ///|
 fn spawn_lights(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   // Solari GI/indirect lighting is not available in the raster fallback path.
   // Use a low ambient term to keep the adapted scene readable.
   world.insert_resource(
@@ -258,7 +256,6 @@ fn spawn_lights(world : @ecs.World) -> Unit {
       DIRECTIONAL_ILLUMINANCE,
       false,
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -267,7 +264,6 @@ fn spawn_lights(world : @ecs.World) -> Unit {
     @transform.Transform::identity().with_rotation(
       @math.Quat::new(-0.13334629F, -0.86597735F, -0.3586996F, 0.3219264F),
     ),
-    tick,
   )
   solari_state.val.directional_light = Some(directional_light)
 
@@ -282,14 +278,12 @@ fn spawn_lights(world : @ecs.World) -> Unit {
       8.0F,
       false,
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
   .insert(
     robot_emissive_light,
     @transform.Transform::from_xyz(-2.0F, 1.7F, -2.1F),
-    tick,
   )
   solari_state.val.robot_emissive_light = Some(robot_emissive_light)
 }
@@ -346,7 +340,6 @@ fn spawn_pica_scene(
   world : @ecs.World,
   asset_server : @asset.AssetServer,
 ) -> Unit {
-  let tick = world.read_sequence()
   let diorama = world.spawn_empty()
   world
   .component(@scene.ecs_key_scene_root)
@@ -358,14 +351,12 @@ fn spawn_pica_scene(
         @gltf.GltfAssetLabel::Scene(0).from_asset(PICA_SCENE_ASSET),
       ),
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
   .insert(
     diorama,
     @transform.Transform::identity().with_scale(@math.Vec3::splat(10.0F)),
-    tick,
   )
   solari_state.val.pica_entities.push(diorama)
 
@@ -380,7 +371,6 @@ fn spawn_pica_scene(
         @gltf.GltfAssetLabel::Scene(0).from_asset(ROBOT_SCENE_ASSET),
       ),
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -389,7 +379,6 @@ fn spawn_pica_scene(
     @transform.Transform::from_xyz(-2.0F, 0.05F, -2.1F)
     .with_scale(@math.Vec3::splat(2.0F))
     .with_rotation(@math.Quat::from_rotation_y(PI / 2.0F)),
-    tick,
   )
   solari_state.val.robot_entity = Some(robot)
   solari_state.val.pica_entities.push(robot)
@@ -501,16 +490,11 @@ fn spawn_many_lights_scene(world : @ecs.World) -> Unit {
       @transform.Transform::from_xyz(0.0919233F, 7.5015035F, 28.449198F).with_rotation(
         @math.Quat::new(-0.18394549F, 0.0019948867F, 0.0003733214F, 0.98293436F),
       ),
-      world.read_sequence(),
     )
     |> ignore
     world
     .component(@post_process.ecs_key_bloom)
-    .insert(
-      camera,
-      @post_process.Bloom::default().with_intensity(0.1F),
-      world.read_sequence(),
-    )
+    .insert(camera, @post_process.Bloom::default().with_intensity(0.1F))
   }
 }
 
@@ -534,7 +518,6 @@ fn apply_scene_mode(
     SolariSceneMode::PicaPica => {
       spawn_pica_scene(world, asset_server)
       if solari_state.val.camera is Some(camera) {
-        let tick = world.read_sequence()
         world
         .component(@transform.ecs_key_transform)
         .set(
@@ -542,7 +525,6 @@ fn apply_scene_mode(
           @transform.Transform::from_xyz(0.219417F, 2.5764852F, 6.9718704F).with_rotation(
             @math.Quat::new(-0.1466768F, 0.013738206F, 0.002037309F, 0.989087F),
           ),
-          tick,
         )
         |> ignore
         world.component(@post_process.ecs_key_bloom).remove(camera) |> ignore
@@ -554,7 +536,6 @@ fn apply_scene_mode(
 
 ///|
 fn apply_light_switches(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   if solari_state.val.directional_light is Some(light) {
     if world.component(@pbr.ecs_key_directional_light).get(light)
       is Some(current) {
@@ -565,7 +546,7 @@ fn apply_light_switches(world : @ecs.World) -> Unit {
           0.0F
         },
       )
-      world.component(@pbr.ecs_key_directional_light).set(light, updated, tick)
+      world.component(@pbr.ecs_key_directional_light).set(light, updated)
       |> ignore
     }
   }
@@ -579,8 +560,7 @@ fn apply_light_switches(world : @ecs.World) -> Unit {
           0.0F
         },
       )
-      world.component(@pbr.ecs_key_point_light).set(light, updated, tick)
-      |> ignore
+      world.component(@pbr.ecs_key_point_light).set(light, updated) |> ignore
     }
   }
 }
@@ -695,16 +675,11 @@ fn patrol_path(world : @ecs.World) -> Unit {
   let to_target = target.0.sub(transform.translation)
   let distance = to_target.length()
   let max_step = PATROL_SPEED * world_time(world).delta_seconds()
-  let tick = world.read_sequence()
 
   if distance <= max_step || distance < 0.01F {
     world
     .component(@transform.ecs_key_transform)
-    .set(
-      robot,
-      transform.with_translation(target.0).with_rotation(target.1),
-      tick,
-    )
+    .set(robot, transform.with_translation(target.0).with_rotation(target.1))
     |> ignore
     solari_state.val.patrol_index = (solari_state.val.patrol_index + 1) %
       path.length()
@@ -718,7 +693,6 @@ fn patrol_path(world : @ecs.World) -> Unit {
           to_target.normalize_or_zero().mul_scalar(max_step),
         ),
       ),
-      tick,
     )
     |> ignore
   }
@@ -742,7 +716,6 @@ fn sync_robot_emissive_light(world : @ecs.World) -> Unit {
       robot_transform.translation.y + 1.6F,
       robot_transform.translation.z,
     ),
-    world.read_sequence(),
   )
   |> ignore
 }

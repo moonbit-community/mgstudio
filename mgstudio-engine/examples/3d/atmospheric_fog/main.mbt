@@ -126,13 +126,12 @@ fn make_fog() -> @pbr.DistanceFog {
 ///|
 fn apply_fog(world : @ecs.World) -> Unit {
   guard atmospheric_fog_state.val.camera is Some(camera) else { return }
-  let tick = world.read_sequence()
   let camera3d_store = world.component(@pbr.ecs_key_camera3d)
   let camera3d = match camera3d_store.get(camera) {
     Some(value) => value
     None => @pbr.Camera3d::default()
   }
-  camera3d_store.set(camera, camera3d.with_distance_fog(Some(make_fog())), tick)
+  camera3d_store.set(camera, camera3d.with_distance_fog(Some(make_fog())))
   |> ignore
 }
 
@@ -183,7 +182,6 @@ fn spawn_mesh(
 
 ///|
 fn setup_terrain_scene(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let cascade_shadow_config = @pbr.CascadeShadowConfigBuilder::default()
     .with_first_cascade_far_bound(0.3F)
     .with_maximum_distance(3.0F)
@@ -197,7 +195,6 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
       @math.Vec3::new(-0.15F, -0.05F, 0.25F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
   world
   .component(@pbr.ecs_key_directional_light)
@@ -208,7 +205,6 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
       10_000.0F,
       true,
     ).with_cascade_shadow_config(Some(cascade_shadow_config)),
-    tick,
   )
 
   let terrain_material = @pbr.standard_material_add(
@@ -260,7 +256,7 @@ fn setup_terrain_scene(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@pbr.ecs_key_not_shadow_caster)
-  .insert(sky, @pbr.NotShadowCaster::default(), tick)
+  .insert(sky, @pbr.NotShadowCaster::default())
 }
 
 ///|

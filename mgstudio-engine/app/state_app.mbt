@@ -47,26 +47,14 @@ fn require_states_plugin_installed(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn state_insert_sequence(world : @ecs.World) -> @core.Sequence {
-  world.read_sequence() + 1
-}
-
-///|
 pub fn states_plugin(plugin : StatesPlugin) -> Plugin[@ecs.World] {
   ignore(plugin)
   fn(app : App[@ecs.World]) {
-    let sequence = state_insert_sequence(app.world())
-    main_schedule_insert_after_unique(
-      app.world(),
-      PreUpdate,
-      StateTransition,
-      sequence,
-    )
+    main_schedule_insert_after_unique(app.world(), PreUpdate, StateTransition)
     main_schedule_insert_startup_before_unique(
       app.world(),
       PreStartup,
       StateTransition,
-      sequence,
     )
     app
     .world()
@@ -82,21 +70,10 @@ pub fn[S : States] insert_state_app(
 ) -> App[@ecs.World] {
   require_states_plugin_installed(app.world())
   register_state_transition(state)
-  let sequence = state_insert_sequence(app.world())
+  app.world().insert_resource(state_resource_key(state), State::new(state))
   app
   .world()
-  .insert_resource_with_sequence(
-    state_resource_key(state),
-    State::new(state),
-    sequence,
-  )
-  app
-  .world()
-  .insert_resource_with_sequence(
-    next_state_resource_key(state),
-    NextState::Unchanged,
-    sequence,
-  )
+  .insert_resource(next_state_resource_key(state), NextState::Unchanged)
   enqueue_transition_event(app.world(), state, StateTransitionEvent::{
     exited: None,
     entered: Some(state),

@@ -175,18 +175,17 @@ fn create_spot_light() -> @pbr.SpotLight {
 ///|
 fn apply_camera_shadow_filter(world : @ecs.World) -> Unit {
   guard pcss_state.val.camera is Some(camera) else { return }
-  let tick = world.read_sequence()
   let filter_mode = match pcss_state.val.shadow_filter {
     ShadowFilter::NonTemporal => @pbr.ShadowFilteringMethod::Gaussian
     ShadowFilter::Temporal => @pbr.ShadowFilteringMethod::Temporal
   }
   world
   .component(@pbr.ecs_key_shadow_filtering_method)
-  .insert(camera, filter_mode, tick)
+  .insert(camera, filter_mode)
   if pcss_state.val.shadow_filter == ShadowFilter::Temporal {
     world
     .component(@post_process.ecs_key_temporal_anti_aliasing)
-    .insert(camera, @post_process.TemporalAntiAliasing::default(), tick)
+    .insert(camera, @post_process.TemporalAntiAliasing::default())
   } else {
     world.component(@post_process.ecs_key_temporal_anti_aliasing).remove(camera)
     |> ignore
@@ -196,7 +195,6 @@ fn apply_camera_shadow_filter(world : @ecs.World) -> Unit {
 ///|
 fn apply_light_type(world : @ecs.World) -> Unit {
   guard pcss_state.val.light is Some(light) else { return }
-  let tick = world.read_sequence()
   world.component(@pbr.ecs_key_directional_light).remove(light) |> ignore
   world.component(@pbr.ecs_key_point_light).remove(light) |> ignore
   world.component(@pbr.ecs_key_spot_light).remove(light) |> ignore
@@ -205,15 +203,15 @@ fn apply_light_type(world : @ecs.World) -> Unit {
     LightType::Directional =>
       world
       .component(@pbr.ecs_key_directional_light)
-      .insert(light, create_directional_light(), tick)
+      .insert(light, create_directional_light())
     LightType::Point =>
       world
       .component(@pbr.ecs_key_point_light)
-      .insert(light, create_point_light(), tick)
+      .insert(light, create_point_light())
     LightType::Spot =>
       world
       .component(@pbr.ecs_key_spot_light)
-      .insert(light, create_spot_light(), tick)
+      .insert(light, create_spot_light())
   }
 }
 
@@ -228,7 +226,6 @@ fn setup(world : @ecs.World) -> Unit {
     soft_shadows: true,
   }
 
-  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   let camera = @pbr.Camera3dBundle::new(
@@ -246,17 +243,17 @@ fn setup(world : @ecs.World) -> Unit {
 
   world
   .component(@pbr.ecs_key_shadow_filtering_method)
-  .insert(camera, @pbr.ShadowFilteringMethod::Gaussian, tick)
-  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
+  .insert(camera, @pbr.ShadowFilteringMethod::Gaussian)
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
   world
   .component(@post_process.ecs_key_temporal_jitter)
-  .insert(camera, @post_process.TemporalJitter::default(), tick)
+  .insert(camera, @post_process.TemporalJitter::default())
   world
   .component(@pbr.ecs_key_depth_prepass)
-  .insert(camera, @pbr.DepthPrepass::default(), tick)
+  .insert(camera, @pbr.DepthPrepass::default())
   world
   .component(@pbr.ecs_key_motion_vector_prepass)
-  .insert(camera, @pbr.MotionVectorPrepass::default(), tick)
+  .insert(camera, @pbr.MotionVectorPrepass::default())
   world
   .component(@pbr.ecs_key_skybox)
   .insert(
@@ -265,7 +262,6 @@ fn setup(world : @ecs.World) -> Unit {
       asset_server.load("environment_maps/sky_skybox.ktx2"),
       500.0F,
     ),
-    tick,
   )
 
   let light = world.spawn_empty()
@@ -278,7 +274,6 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
   apply_light_type(world)
 
@@ -292,7 +287,6 @@ fn setup(world : @ecs.World) -> Unit {
         asset_server, "models/PalmTree/PalmTree.gltf#Scene0",
       ),
     ),
-    tick,
   )
 
   let help_text = @text.Text2dBundle::new(

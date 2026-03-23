@@ -16,7 +16,7 @@
 test "resource: insert/get/remove" {
   let res : Resource[Int] = Resource::new()
   inspect(res.is_present(), content="false")
-  res.insert(7, 1)
+  res.insert(7)
   inspect(res.is_present(), content="true")
   inspect(res.get().unwrap() == 7, content="true")
   inspect(res.remove().unwrap() == 7, content="true")
@@ -26,8 +26,8 @@ test "resource: insert/get/remove" {
 ///|
 test "resource: get_ref_mut returns the live resource cell" {
   let res : Resource[Int] = Resource::new()
-  res.insert(1, 10)
-  let resource_ref = res.get_ref_mut(20).unwrap()
+  res.insert(1)
+  let resource_ref = res.get_ref_mut().unwrap()
   resource_ref.val = 9
   inspect(res.get().unwrap() == 9, content="true")
 }

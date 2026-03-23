@@ -110,7 +110,6 @@ fn bloom_camera_entity(
 
 ///|
 fn setup_scene(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let asset_server = match
     (try! world.get_resource(@asset.asset_server_resource_key())) {
     Some(asset_server) => asset_server
@@ -130,10 +129,8 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_tonemapping(Some(@post_process.Tonemapping::TonyMcMapface))
     .with_bloom(Some(@post_process.Bloom::default()))
     .spawn(world)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
-  world
-  .component(BloomCamera::component())
-  .insert(camera, BloomCamera::{  }, tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
+  world.component(BloomCamera::component()).insert(camera, BloomCamera::{  })
 
   let material_emissive1 = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(@sprite.Color::black()).with_emissive(
@@ -183,9 +180,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
           @math.Vec3::splat(scale),
         ),
       ).spawn(world)
-      world
-      .component(Bouncing::component())
-      .insert(entity, Bouncing::{  }, tick)
+      world.component(Bouncing::component()).insert(entity, Bouncing::{  })
     }
   }
 
@@ -223,7 +218,6 @@ fn update_bloom_settings(
 ) -> Unit {
   guard bloom_camera_entity(camera_query) is Some(camera_entity) else { return }
   let world = @app.current_world().unwrap()
-  let tick = world.read_sequence()
   let bloom_store = world.component(@post_process.ecs_key_bloom)
   let current_bloom = bloom_store.get(camera_entity)
   @text.text_set_content(instructions.get().handle, bloom_text(current_bloom))
@@ -231,7 +225,7 @@ fn update_bloom_settings(
   match current_bloom {
     None =>
       if keycode.just_pressed(@window.KeyCode::Space) {
-        bloom_store.insert(camera_entity, @post_process.Bloom::default(), tick)
+        bloom_store.insert(camera_entity, @post_process.Bloom::default())
       }
     Some(bloom) => {
       if keycode.just_pressed(@window.KeyCode::Space) {
@@ -344,7 +338,7 @@ fn update_bloom_settings(
       }
 
       if changed {
-        bloom_store.set(camera_entity, next, tick) |> ignore
+        bloom_store.set(camera_entity, next) |> ignore
       }
     }
   }

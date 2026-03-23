@@ -32,7 +32,6 @@ let render_to_texture_state : Ref[RenderToTextureState] = Ref::new({
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   render_to_texture_state.val.first_pass_cube = @core.Entity::placeholder()
   render_to_texture_state.val.main_pass_cube = @core.Entity::placeholder()
 
@@ -60,19 +59,19 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@sprite.ecs_key_render_layers)
-  .insert(first_pass_cube, first_pass_layer, tick)
+  .insert(first_pass_cube, first_pass_layer)
   render_to_texture_state.val.first_pass_cube = first_pass_cube
 
   let light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
-  .insert(light, @pbr.PointLight::default(), tick)
+  .insert(light, @pbr.PointLight::default())
   world
   .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F), tick)
+  .insert(light, @transform.Transform::from_xyz(0.0F, 0.0F, 10.0F))
   world
   .component(@sprite.ecs_key_render_layers)
-  .insert(light, @sprite.RenderLayers::layer(0).with_layer(1), tick)
+  .insert(light, @sprite.RenderLayers::layer(0).with_layer(1))
 
   let first_pass_camera = @pbr.Camera3dBundle::new(
     @sprite.Camera::new(@sprite.Color::white()).with_order(-1),
@@ -83,10 +82,10 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@sprite.ecs_key_render_target)
-  .insert(first_pass_camera, @sprite.RenderTarget::Image(image), tick)
+  .insert(first_pass_camera, @sprite.RenderTarget::Image(image))
   world
   .component(@sprite.ecs_key_render_layers)
-  .insert(first_pass_camera, first_pass_layer, tick)
+  .insert(first_pass_camera, first_pass_layer)
 
   let main_pass_cube = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
@@ -132,7 +131,6 @@ fn rotator_system(world : @ecs.World) -> Unit {
   if render_to_texture_state.val.first_pass_cube.is_placeholder() {
     return
   }
-  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   if transform_store.get(render_to_texture_state.val.first_pass_cube)
     is Some(transform) {
@@ -144,7 +142,6 @@ fn rotator_system(world : @ecs.World) -> Unit {
     transform_store.set(
       render_to_texture_state.val.first_pass_cube,
       transform.with_rotation(rotation),
-      tick,
     )
     |> ignore
   }
@@ -155,7 +152,6 @@ fn cube_rotator_system(world : @ecs.World) -> Unit {
   if render_to_texture_state.val.main_pass_cube.is_placeholder() {
     return
   }
-  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   if transform_store.get(render_to_texture_state.val.main_pass_cube)
     is Some(transform) {
@@ -167,7 +163,6 @@ fn cube_rotator_system(world : @ecs.World) -> Unit {
     transform_store.set(
       render_to_texture_state.val.main_pass_cube,
       transform.with_rotation(rotation),
-      tick,
     )
     |> ignore
   }

@@ -194,9 +194,8 @@ fn[T] audio_resource_get(world : @ecs.World, key : @ecs.ResourceKey[T]) -> T? {
 fn[T] audio_resource_ref_mut(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
-  sequence : @core.Sequence,
 ) -> Ref[T]? {
-  try world.get_resource_ref_mut(key, sequence) catch {
+  try world.get_resource_ref_mut(key) catch {
     _ => None
   } noraise {
     value => value
@@ -208,7 +207,6 @@ fn[T] audio_resource_ensure_ref_mut(
   world : @ecs.World,
   key : @ecs.ResourceKey[T],
   init : () -> T,
-  sequence : @core.Sequence,
 ) -> Ref[T] {
   if (try world.get_resource(key) catch {
       _ => None
@@ -216,9 +214,9 @@ fn[T] audio_resource_ensure_ref_mut(
       value => value
     })
     is None {
-    world.insert_resource_with_sequence(key, init(), sequence)
+    world.insert_resource(key, init())
   }
-  match audio_resource_ref_mut(world, key, sequence) {
+  match audio_resource_ref_mut(world, key) {
     Some(value) => value
     None => abort("Missing audio resource after initialization")
   }

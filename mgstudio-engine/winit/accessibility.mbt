@@ -29,7 +29,6 @@ fn winit_poll_accessibility_actions_system(world : @ecs.World) -> Unit {
   if actions.length() == 0 {
     return
   }
-  let tick = world.read_sequence()
   let writer = world.message_writer(@a11y.ecs_msg_key_action_request)
   let state = Ref::new(
     match @a11y.get_a11y_state_resource(world).get() {
@@ -45,7 +44,7 @@ fn winit_poll_accessibility_actions_system(world : @ecs.World) -> Unit {
     }
     @a11y.A11yState::push_action(state, action)
   }
-  @a11y.get_a11y_state_resource(world).insert(state.val, tick)
+  @a11y.get_a11y_state_resource(world).insert(state.val)
 }
 
 ///|

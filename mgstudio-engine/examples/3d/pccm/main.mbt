@@ -72,12 +72,11 @@ fn apply_pccm_status(world : @ecs.World) -> Unit {
     PccmEnableStatus::Enabled => @pbr.ParallaxCorrection::Auto
     PccmEnableStatus::Disabled => @pbr.ParallaxCorrection::None
   }
-  let tick = world.read_sequence()
   let store = world.component(@pbr.ecs_key_parallax_correction)
   if store.contains(light_probe_entity) {
-    store.set(light_probe_entity, correction, tick) |> ignore
+    store.set(light_probe_entity, correction) |> ignore
   } else {
-    store.insert(light_probe_entity, correction, tick)
+    store.insert(light_probe_entity, correction)
   }
 }
 
@@ -87,7 +86,6 @@ fn setup(world : @ecs.World) -> Unit {
   pccm_state.val.light_probe = None
   pccm_state.val.help_text = None
 
-  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
 
   @pbr.Camera3dBundle::new(
@@ -140,7 +138,7 @@ fn setup(world : @ecs.World) -> Unit {
   let light_probe = world.spawn_empty()
   world
   .component(@pbr.ecs_key_light_probe)
-  .insert(light_probe, @pbr.LightProbe::default(), tick)
+  .insert(light_probe, @pbr.LightProbe::default())
   world
   .component(@pbr.ecs_key_environment_map_light)
   .insert(
@@ -150,14 +148,12 @@ fn setup(world : @ecs.World) -> Unit {
       Some(asset_server.load(ENV_SPECULAR_MAP_ASSET)),
       ENVIRONMENT_MAP_INTENSITY,
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
   .insert(
     light_probe,
     @transform.Transform::identity().with_scale(@math.Vec3::splat(10.01F)),
-    tick,
   )
   pccm_state.val.light_probe = Some(light_probe)
 

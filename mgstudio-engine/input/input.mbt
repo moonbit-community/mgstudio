@@ -1590,17 +1590,16 @@ fn vec2_is_zero(value : @math.Vec2) -> Bool {
 }
 
 ///|
-fn ensure_input_resources(world : @ecs.World, tick : @core.Sequence) -> Unit {
+fn ensure_input_resources(world : @ecs.World) -> Unit {
   if (try world.get_resource(AccumulatedMouseMotion::resource()) catch {
       _ => None
     } noraise {
       value => value
     })
     is None {
-    world.insert_resource_with_sequence(
+    world.insert_resource(
       AccumulatedMouseMotion::resource(),
       AccumulatedMouseMotion::new(),
-      tick,
     )
   }
   if (try world.get_resource(AccumulatedMouseScroll::resource()) catch {
@@ -1609,10 +1608,9 @@ fn ensure_input_resources(world : @ecs.World, tick : @core.Sequence) -> Unit {
       value => value
     })
     is None {
-    world.insert_resource_with_sequence(
+    world.insert_resource(
       AccumulatedMouseScroll::resource(),
       AccumulatedMouseScroll::new(),
-      tick,
     )
   }
   if (try world.get_resource(Touches::resource()) catch {
@@ -1621,11 +1619,7 @@ fn ensure_input_resources(world : @ecs.World, tick : @core.Sequence) -> Unit {
       value => value
     })
     is None {
-    world.insert_resource_with_sequence(
-      Touches::resource(),
-      Touches::new(),
-      tick,
-    )
+    world.insert_resource(Touches::resource(), Touches::new())
   }
 }
 
@@ -1668,8 +1662,7 @@ fn active_touches_remove(active : Array[Touch], id : Int) -> Unit {
 
 ///|
 pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
-  ensure_input_resources(world, tick)
+  ensure_input_resources(world)
 
   for button in mouse_event_buttons {
     if mouse_button_just_pressed(button) {
@@ -1768,11 +1761,11 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
     @window.window_emit_double_tap_gesture(world, @window.DoubleTapGesture::{  })
   }
 
-  if (try! world.get_resource_ref_mut(AccumulatedMouseMotion::resource(), tick))
+  if (try! world.get_resource_ref_mut(AccumulatedMouseMotion::resource()))
     is Some(motion_ref) {
     motion_ref.val = AccumulatedMouseMotion::{ delta: mouse_delta }
   }
-  if (try! world.get_resource_ref_mut(AccumulatedMouseScroll::resource(), tick))
+  if (try! world.get_resource_ref_mut(AccumulatedMouseScroll::resource()))
     is Some(scroll_ref) {
     scroll_ref.val = AccumulatedMouseScroll::{
       unit: MouseScrollUnit::Line,
@@ -1825,8 +1818,7 @@ pub fn input_poll_mouse_system(world : @ecs.World) -> Unit {
   }
   input_active_touches_ref.val = active_touches
 
-  if (try! world.get_resource_ref_mut(Touches::resource(), tick))
-    is Some(touches_ref) {
+  if (try! world.get_resource_ref_mut(Touches::resource())) is Some(touches_ref) {
     touches_ref.val = touches
   }
 

@@ -102,7 +102,6 @@ fn uv_sphere_mesh(radius : Float, stacks : Int, sectors : Int) -> @pbr.Mesh3d {
 ///|
 fn update_light_modes(world : @ecs.World) -> Unit {
   let state = shadow_caster_receiver_state.val
-  let tick = world.read_sequence()
   let point_store = world.component(@pbr.ecs_key_point_light)
   let directional_store = world.component(@pbr.ecs_key_directional_light)
 
@@ -121,7 +120,6 @@ fn update_light_modes(world : @ecs.World) -> Unit {
           point_light.range,
           point_light.shadow_maps_enabled,
         ),
-        tick,
       )
       |> ignore
     }
@@ -141,7 +139,6 @@ fn update_light_modes(world : @ecs.World) -> Unit {
           illuminance,
           directional_light.shadow_maps_enabled,
         ),
-        tick,
       )
       |> ignore
     }
@@ -150,7 +147,6 @@ fn update_light_modes(world : @ecs.World) -> Unit {
 
 ///|
 fn toggle_shadow_casters(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let mesh_store = world.component(@pbr.ecs_key_mesh3d)
   let not_shadow_caster_store = world.component(@pbr.ecs_key_not_shadow_caster)
   let make_shadow_caster : Array[@core.Entity] = []
@@ -168,17 +164,12 @@ fn toggle_shadow_casters(world : @ecs.World) -> Unit {
     not_shadow_caster_store.remove(entity) |> ignore
   }
   for entity in make_not_shadow_caster {
-    not_shadow_caster_store.insert(
-      entity,
-      @pbr.NotShadowCaster::default(),
-      tick,
-    )
+    not_shadow_caster_store.insert(entity, @pbr.NotShadowCaster::default())
   }
 }
 
 ///|
 fn toggle_shadow_receivers(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let mesh_store = world.component(@pbr.ecs_key_mesh3d)
   let not_shadow_receiver_store = world.component(
     @pbr.ecs_key_not_shadow_receiver,
@@ -198,11 +189,7 @@ fn toggle_shadow_receivers(world : @ecs.World) -> Unit {
     not_shadow_receiver_store.remove(entity) |> ignore
   }
   for entity in make_not_shadow_receiver {
-    not_shadow_receiver_store.insert(
-      entity,
-      @pbr.NotShadowReceiver::default(),
-      tick,
-    )
+    not_shadow_receiver_store.insert(entity, @pbr.NotShadowReceiver::default())
   }
 }
 
@@ -214,7 +201,6 @@ fn setup(world : @ecs.World) -> Unit {
 
   let spawn_height = 2.0F
   let sphere_mesh = uv_sphere_mesh(0.25F, 16, 24)
-  let tick = world.read_sequence()
 
   let red_material = @pbr.standard_material_add(
     @pbr.StandardMaterial::from_color(
@@ -251,7 +237,7 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@pbr.ecs_key_not_shadow_caster)
-  .insert(blue_sphere, @pbr.NotShadowCaster::default(), tick)
+  .insert(blue_sphere, @pbr.NotShadowCaster::default())
 
   let floating_plane = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
@@ -264,10 +250,10 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@pbr.ecs_key_not_shadow_caster)
-  .insert(floating_plane, @pbr.NotShadowCaster::default(), tick)
+  .insert(floating_plane, @pbr.NotShadowCaster::default())
   world
   .component(@pbr.ecs_key_not_shadow_receiver)
-  .insert(floating_plane, @pbr.NotShadowReceiver::default(), tick)
+  .insert(floating_plane, @pbr.NotShadowReceiver::default())
 
   let ground_plane = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
@@ -286,11 +272,10 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     point_light,
     @pbr.PointLight::new(@sprite.Color::white(), 0.0F, 500.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(point_light, @transform.Transform::from_xyz(5.0F, 5.0F, 0.0F), tick)
+  .insert(point_light, @transform.Transform::from_xyz(5.0F, 5.0F, 0.0F))
   shadow_caster_receiver_state.val.point_light = Some(point_light)
 
   let directional_light = world.spawn_empty()
@@ -307,7 +292,6 @@ fn setup(world : @ecs.World) -> Unit {
       SHADOW_CASTER_RECEIVER_LIGHT_DIRECTIONAL_ILLUMINANCE,
       true,
     ).with_cascade_shadow_config(Some(cascade_shadow_config)),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -318,7 +302,6 @@ fn setup(world : @ecs.World) -> Unit {
         @math.Quat::from_rotation_x(-PI / 4.0F),
       ),
     ),
-    tick,
   )
   shadow_caster_receiver_state.val.directional_light = Some(directional_light)
 

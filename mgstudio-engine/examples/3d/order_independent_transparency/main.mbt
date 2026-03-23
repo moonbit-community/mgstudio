@@ -146,14 +146,13 @@ fn spawn_mesh_with_layer(
   material : @asset.Handle[@pbr.StandardMaterial],
   transform : @transform.Transform,
   layers : @sprite.RenderLayers,
-  tick : Int,
 ) -> @core.Entity {
   let entity = @pbr.MeshMaterial3dBundle::new(
     mesh,
     @pbr.MeshMaterial3d::new(material),
     transform,
   ).spawn(world)
-  world.component(@sprite.ecs_key_render_layers).insert(entity, layers, tick)
+  world.component(@sprite.ecs_key_render_layers).insert(entity, layers)
   entity
 }
 
@@ -161,7 +160,6 @@ fn spawn_mesh_with_layer(
 fn spawn_scene_spheres(
   world : @ecs.World,
   layers : @sprite.RenderLayers,
-  tick : Int,
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
   let sphere = uv_sphere_mesh(2.0F, 18, 32)
@@ -182,7 +180,6 @@ fn spawn_scene_spheres(
       mat_a,
       @transform.Transform::from_xyz(-1.0F, 0.75F, 0.0F),
       layers,
-      tick,
     ),
   )
   entities.push(
@@ -192,7 +189,6 @@ fn spawn_scene_spheres(
       mat_b,
       @transform.Transform::from_xyz(0.0F, -0.75F, 0.0F),
       layers,
-      tick,
     ),
   )
   entities.push(
@@ -202,7 +198,6 @@ fn spawn_scene_spheres(
       mat_c,
       @transform.Transform::from_xyz(1.0F, 0.75F, 0.0F),
       layers,
-      tick,
     ),
   )
   SpawnedScene::{ entities, }
@@ -212,7 +207,6 @@ fn spawn_scene_spheres(
 fn spawn_scene_quads(
   world : @ecs.World,
   layers : @sprite.RenderLayers,
-  tick : Int,
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
   let quad = @pbr.Mesh3d::new(
@@ -245,7 +239,6 @@ fn spawn_scene_quads(
       mat0,
       @transform.Transform::from_xyz(1.0F, -0.1F, 0.0F).with_rotation(rotation),
       layers,
-      tick,
     ),
   )
   entities.push(
@@ -255,7 +248,6 @@ fn spawn_scene_quads(
       mat1,
       @transform.Transform::from_xyz(0.5F, 0.2F, -0.5F).with_rotation(rotation),
       layers,
-      tick,
     ),
   )
   entities.push(
@@ -265,7 +257,6 @@ fn spawn_scene_quads(
       mat2,
       @transform.Transform::from_xyz(0.0F, 0.4F, -1.0F).with_rotation(rotation),
       layers,
-      tick,
     ),
   )
   entities.push(
@@ -275,7 +266,6 @@ fn spawn_scene_quads(
       mat3,
       @transform.Transform::from_xyz(-0.5F, 0.6F, -1.1F).with_rotation(rotation),
       layers,
-      tick,
     ),
   )
   entities.push(
@@ -285,7 +275,6 @@ fn spawn_scene_quads(
       mat4,
       @transform.Transform::from_xyz(-0.8F, 0.8F, -1.2F).with_rotation(rotation),
       layers,
-      tick,
     ),
   )
   SpawnedScene::{ entities, }
@@ -295,7 +284,6 @@ fn spawn_scene_quads(
 fn spawn_scene_occlusion(
   world : @ecs.World,
   layers : @sprite.RenderLayers,
-  tick : Int,
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
   let cube = @pbr.Mesh3d::new(
@@ -322,7 +310,6 @@ fn spawn_scene_occlusion(
       solid_material,
       @transform.Transform::from_xyz(-2.5F, 0.0F, 2.0F),
       layers,
-      tick,
     ),
   )
   entities.push(
@@ -332,7 +319,6 @@ fn spawn_scene_occlusion(
       transparent,
       @transform.Transform::from_xyz(-2.5F, 0.0F, 0.0F),
       layers,
-      tick,
     ),
   )
 
@@ -344,7 +330,6 @@ fn spawn_scene_occlusion(
       solid_material,
       @transform.Transform::from_xyz(0.0F, 0.0F, 1.0F),
       layers,
-      tick,
     ),
   )
   entities.push(
@@ -354,7 +339,6 @@ fn spawn_scene_occlusion(
       transparent,
       @transform.Transform::from_xyz(0.0F, 0.0F, 0.0F),
       layers,
-      tick,
     ),
   )
 
@@ -366,7 +350,6 @@ fn spawn_scene_occlusion(
       solid_material,
       @transform.Transform::from_xyz(2.5F, 0.0F, -2.0F),
       layers,
-      tick,
     ),
   )
   entities.push(
@@ -376,7 +359,6 @@ fn spawn_scene_occlusion(
       transparent,
       @transform.Transform::from_xyz(2.5F, 0.0F, 0.0F),
       layers,
-      tick,
     ),
   )
 
@@ -388,7 +370,6 @@ fn spawn_scene_instancing(
   world : @ecs.World,
   layers : @sprite.RenderLayers,
   asset_server : @asset.AssetServer,
-  tick : Int,
 ) -> SpawnedScene {
   let entities : Array[@core.Entity] = []
   let cube = @pbr.Mesh3d::new(
@@ -417,7 +398,6 @@ fn spawn_scene_instancing(
               float_from_int(z) * 2.0F,
             ),
             layers,
-            tick,
           ),
         )
       }
@@ -428,7 +408,6 @@ fn spawn_scene_instancing(
 
 ///|
 fn apply_scene_visibility(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let visibility_store = world.component(@visibility.ecs_key_visibility)
   for i, entities in oit_state.val.scene_entities {
     let visibility = if i == oit_state.val.scene_index {
@@ -437,7 +416,7 @@ fn apply_scene_visibility(world : @ecs.World) -> Unit {
       @visibility.Visibility::Hidden
     }
     for entity in entities {
-      visibility_store.set(entity, visibility, tick) |> ignore
+      visibility_store.set(entity, visibility) |> ignore
     }
   }
 }
@@ -445,16 +424,11 @@ fn apply_scene_visibility(world : @ecs.World) -> Unit {
 ///|
 fn apply_oit_mode(world : @ecs.World) -> Unit {
   if oit_state.val.camera is Some(camera) {
-    let tick = world.read_sequence()
-    world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
+    world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
     if oit_state.val.oit_enabled {
       world
       .component(@pbr.ecs_key_order_independent_transparency_settings)
-      .insert(
-        camera,
-        @pbr.OrderIndependentTransparencySettings::default(),
-        tick,
-      )
+      .insert(camera, @pbr.OrderIndependentTransparencySettings::default())
     } else {
       world
       .component(@pbr.ecs_key_order_independent_transparency_settings)
@@ -466,7 +440,6 @@ fn apply_oit_mode(world : @ecs.World) -> Unit {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let layer = @sprite.RenderLayers::layer(LAYER_INDEX)
   let asset_server = @asset.AssetServer::new()
 
@@ -483,24 +456,20 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
   ).spawn(world)
-  world.component(@sprite.ecs_key_render_layers).insert(camera, layer, tick)
+  world.component(@sprite.ecs_key_render_layers).insert(camera, layer)
   world
   .component(@pbr.ecs_key_depth_prepass)
-  .insert(camera, @pbr.DepthPrepass::default(), tick)
+  .insert(camera, @pbr.DepthPrepass::default())
   oit_state.val.camera = Some(camera)
 
   let light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
-  .insert(
-    light,
-    @pbr.PointLight::default().with_shadow_maps_enabled(false),
-    tick,
-  )
+  .insert(light, @pbr.PointLight::default().with_shadow_maps_enabled(false))
   world
   .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F), tick)
-  world.component(@sprite.ecs_key_render_layers).insert(light, layer, tick)
+  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
+  world.component(@sprite.ecs_key_render_layers).insert(light, layer)
 
   let help_text = @text.Text2dBundle::new(
       @text.Text2d::new(""),
@@ -524,10 +493,10 @@ fn setup(world : @ecs.World) -> Unit {
     .spawn()
   oit_state.val.help_text = Some(help_text)
 
-  let scene0 = spawn_scene_spheres(world, layer, tick)
-  let scene1 = spawn_scene_quads(world, layer, tick)
-  let scene2 = spawn_scene_occlusion(world, layer, tick)
-  let scene3 = spawn_scene_instancing(world, layer, asset_server, tick)
+  let scene0 = spawn_scene_spheres(world, layer)
+  let scene1 = spawn_scene_quads(world, layer)
+  let scene2 = spawn_scene_occlusion(world, layer)
+  let scene3 = spawn_scene_instancing(world, layer, asset_server)
   oit_state.val.scene_entities = [
     scene0.entities,
     scene1.entities,

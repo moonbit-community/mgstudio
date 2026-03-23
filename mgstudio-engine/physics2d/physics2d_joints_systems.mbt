@@ -22,7 +22,6 @@ fn entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
 
 ///|
 pub fn physics2d_sync_joints_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(current_ctx) else { return }
@@ -127,7 +126,6 @@ pub fn physics2d_sync_joints_system(world : @ecs.World) -> Unit {
     impulse_handle_store.insert(
       e,
       RapierImpulseJointHandle2d::new(handle, j.other),
-      tick,
     )
     ctx.entity_to_impulse_joint.set(entity_key(e), handle)
   })
@@ -154,12 +152,11 @@ pub fn physics2d_sync_joints_system(world : @ecs.World) -> Unit {
         multibody_handle_store.insert(
           e,
           RapierMultibodyJointHandle2d::new(h, j.other),
-          tick,
         )
         ctx.entity_to_multibody_joint.set(entity_key(e), h)
       }
       None => ()
     }
   })
-  ctx_res.insert(ctx_ref.val, tick)
+  ctx_res.insert(ctx_ref.val)
 }

@@ -198,7 +198,6 @@ fn spawn_mesh(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
   let logo_texture = asset_server.load("branding/bevy_logo_light.png")
 
@@ -328,11 +327,10 @@ fn setup(world : @ecs.World) -> Unit {
       20.0F,
       true,
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(red_light, @transform.Transform::from_xyz(1.0F, 2.0F, 0.0F), tick)
+  .insert(red_light, @transform.Transform::from_xyz(1.0F, 2.0F, 0.0F))
   spawn_mesh(
     world,
     uv_sphere_mesh(0.1F, 12, 20),
@@ -359,7 +357,6 @@ fn setup(world : @ecs.World) -> Unit {
       0.8F,
       true,
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -369,7 +366,6 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::new(-1.0F, 0.0F, 0.0F),
       @math.Vec3::new(0.0F, 0.0F, 1.0F),
     ),
-    tick,
   )
   spawn_mesh(
     world,
@@ -403,11 +399,10 @@ fn setup(world : @ecs.World) -> Unit {
       20.0F,
       true,
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(blue_light, @transform.Transform::from_xyz(0.0F, 4.0F, 0.0F), tick)
+  .insert(blue_light, @transform.Transform::from_xyz(0.0F, 4.0F, 0.0F))
   spawn_mesh(
     world,
     uv_sphere_mesh(0.1F, 12, 20),
@@ -427,7 +422,6 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     directional,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 10_000.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -436,7 +430,6 @@ fn setup(world : @ecs.World) -> Unit {
     @transform.Transform::from_xyz(0.0F, 2.0F, 0.0F).with_rotation(
       @math.Quat::from_rotation_x(-PI / 4.0F),
     ),
-    tick,
   )
   lighting_state.val.directional_light = Some(directional)
 
@@ -548,13 +541,12 @@ fn animate_light_direction(world : @ecs.World) -> Unit {
   guard lighting_state.val.directional_light is Some(light_entity) else {
     return
   }
-  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   if transform_store.get(light_entity) is Some(transform) {
     let delta = world_time(world).delta_seconds() * 0.5F
     let spin = @math.Quat::from_rotation_y(delta)
     let next = transform.with_rotation(transform.rotation.mul(spin).normalize())
-    transform_store.set(light_entity, next, tick) |> ignore
+    transform_store.set(light_entity, next) |> ignore
   }
 }
 
@@ -578,7 +570,6 @@ fn movement(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.read_sequence()
   let delta = world_time(world).delta_seconds() * MOVE_SPEED
   let transform_store = world.component(@transform.ecs_key_transform)
   for entity in lighting_state.val.movables {
@@ -590,7 +581,7 @@ fn movement(world : @ecs.World) -> Unit {
           transform.translation.z,
         ),
       )
-      transform_store.set(entity, next, tick) |> ignore
+      transform_store.set(entity, next) |> ignore
     }
   }
 }

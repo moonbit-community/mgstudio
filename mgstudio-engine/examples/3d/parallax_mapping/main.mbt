@@ -280,19 +280,16 @@ fn spawn_help_text(asset_server : @asset.AssetServer) -> Unit {
 
 ///|
 fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
-  let tick = world.read_sequence()
-
   let light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
   .insert(
     light,
     @pbr.PointLight::new(@sprite.Color::white(), 1_800_000.0F, 40.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(2.0F, 1.0F, -1.1F), tick)
+  .insert(light, @transform.Transform::from_xyz(2.0F, 1.0F, -1.1F))
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
@@ -460,7 +457,6 @@ fn spin(world : @ecs.World) -> Unit {
   if delta <= 0.0F {
     return
   }
-  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   for spin_target in parallax_state.val.spin_targets {
     guard transform_store.get(spin_target.entity) is Some(transform) else {
@@ -475,7 +471,6 @@ fn spin(world : @ecs.World) -> Unit {
     transform_store.set(
       spin_target.entity,
       transform.with_rotation(next_rotation),
-      tick,
     )
     |> ignore
   }
@@ -508,8 +503,7 @@ fn move_camera(world : @ecs.World) -> Unit {
         CAMERA_LERP_FACTOR,
       ),
     )
-  transform_store.set(camera_entity, next_transform, world.read_sequence())
-  |> ignore
+  transform_store.set(camera_entity, next_transform) |> ignore
 }
 
 ///|

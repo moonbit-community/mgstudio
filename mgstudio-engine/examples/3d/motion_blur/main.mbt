@@ -178,23 +178,21 @@ fn set_camera_fov(
     Custom(_) => None
   }
   guard next_projection is Some(projection) else { return }
-  projection_store.set(camera_entity, projection, world.read_sequence())
-  |> ignore
+  projection_store.set(camera_entity, projection) |> ignore
 }
 
 ///|
 fn apply_motion_blur_settings(world : @ecs.World) -> Unit {
   guard motion_blur_state.val.camera is Some(camera_entity) else { return }
-  let tick = world.read_sequence()
   let motion_blur = @post_process.MotionBlur::new(
     motion_blur_state.val.shutter_angle,
     motion_blur_state.val.samples,
   )
   let store = world.component(@post_process.ecs_key_motion_blur)
   if store.contains(camera_entity) {
-    store.set(camera_entity, motion_blur, tick) |> ignore
+    store.set(camera_entity, motion_blur) |> ignore
   } else {
-    store.insert(camera_entity, motion_blur, tick)
+    store.insert(camera_entity, motion_blur)
   }
 }
 
@@ -216,9 +214,7 @@ fn spawn_camera(world : @ecs.World) -> Unit {
       ),
     )
     .spawn(world)
-  world
-  .component(@pbr.ecs_key_msaa)
-  .insert(camera, @pbr.Msaa::Off, world.read_sequence())
+  world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
   motion_blur_state.val.camera = Some(camera)
 }
 
@@ -257,7 +253,6 @@ fn spawn_car(
   phase : Float,
   tracked : Bool,
 ) -> Unit {
-  let tick = world.read_sequence()
   let body = @pbr.MeshMaterial3dBundle::new(
     body_mesh,
     @pbr.MeshMaterial3d::new(car_material),
@@ -275,7 +270,7 @@ fn spawn_car(
   ).spawn(world)
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(cabin, @hierarchy.Parent::new(body), tick)
+  .insert(cabin, @hierarchy.Parent::new(body))
 
   let wheel_start = motion_blur_state.val.wheels.length()
   let wheel_offsets = [
@@ -294,7 +289,7 @@ fn spawn_car(
     ).spawn(world)
     world
     .component(@hierarchy.ecs_key_parent)
-    .insert(wheel, @hierarchy.Parent::new(body), tick)
+    .insert(wheel, @hierarchy.Parent::new(body))
     motion_blur_state.val.wheels.push({ entity: wheel, radius: 0.15F })
   }
 
@@ -372,7 +367,6 @@ fn spawn_trees(
 ///|
 fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   set_global_ambient_light(world, 300.0F)
-  let tick = world.read_sequence()
 
   let directional_light = world.spawn_empty()
   world
@@ -380,7 +374,6 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
   .insert(
     directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 3000.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -390,7 +383,6 @@ fn spawn_scene(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
       @math.Vec3::new(-1.0F, -0.7F, -1.0F),
       @math.Vec3::new(1.0F, 0.0F, 0.0F),
     ),
-    tick,
   )
 
   let cube_mesh = @pbr.Mesh3d::new(
@@ -587,7 +579,6 @@ fn move_cars(world : @ecs.World) -> Unit {
   if motion_blur_state.val.car_bodies.length() == 0 {
     return
   }
-  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   let now = world_time(world).elapsed_seconds() * 0.25F
   for car in motion_blur_state.val.car_bodies {
@@ -611,7 +602,7 @@ fn move_cars(world : @ecs.World) -> Unit {
         @math.Vec3::new(0.0F, 1.0F, 0.0F),
       )
     }
-    transform_store.set(car.entity, next_transform, tick) |> ignore
+    transform_store.set(car.entity, next_transform) |> ignore
 
     let distance = delta.length()
     for i in car.wheel_start..<(car.wheel_start + car.wheel_count) {
@@ -629,7 +620,6 @@ fn move_cars(world : @ecs.World) -> Unit {
       transform_store.set(
         wheel.entity,
         wheel_transform.with_rotation(next_rotation),
-        tick,
       )
       |> ignore
     }
@@ -649,14 +639,13 @@ fn move_camera(world : @ecs.World) -> Unit {
   guard transform_store.get(camera_entity) is Some(current_camera_transform) else {
     return
   }
-  let tick = world.read_sequence()
   let up = @math.Vec3::new(0.0F, 1.0F, 0.0F)
   match motion_blur_state.val.camera_mode {
     Track => {
       let next_transform = current_camera_transform
         .with_translation(@math.Vec3::new(15.0F, -0.5F, 0.0F))
         .looking_at(tracked_transform.translation, up)
-      transform_store.set(camera_entity, next_transform, tick) |> ignore
+      transform_store.set(camera_entity, next_transform) |> ignore
       set_camera_fov(world, camera_entity, 0.05F)
     }
     Chase => {
@@ -668,7 +657,7 @@ fn move_camera(world : @ecs.World) -> Unit {
           .sub(forward.mul_scalar(0.6F)),
         )
         .looking_at(tracked_transform.translation.add(forward), up)
-      transform_store.set(camera_entity, next_transform, tick) |> ignore
+      transform_store.set(camera_entity, next_transform) |> ignore
       set_camera_fov(world, camera_entity, 1.0F)
     }
   }

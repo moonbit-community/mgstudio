@@ -1536,13 +1536,12 @@ pub fn ui_pointer_pos_in_viewport(
 
 ///|
 fn ensure_ui_context_resource(world : @ecs.World) -> UiContext {
-  let tick = world.read_sequence()
   let res = get_ui_context_resource(world)
   match res.get() {
     Some(value) => value
     None => {
       let value = UiContext::default()
-      res.insert(value, tick)
+      res.insert(value)
       value
     }
   }
@@ -1550,13 +1549,12 @@ fn ensure_ui_context_resource(world : @ecs.World) -> UiContext {
 
 ///|
 fn ensure_ui_scale_resource(world : @ecs.World) -> UiScale {
-  let tick = world.read_sequence()
   let res = get_ui_scale_resource(world)
   match res.get() {
     Some(value) => value
     None => {
       let value = UiScale::new(1.0F)
-      res.insert(value, tick)
+      res.insert(value)
       value
     }
   }
@@ -1872,17 +1870,16 @@ fn ui_propagate_target_camera_subtree(
   entity : @core.Entity,
   computed_camera : ComputedUiTargetCamera,
   render_target_info : ComputedUiRenderTargetInfo,
-  tick : Int,
 ) -> Unit {
   let computed_camera_store = get_computed_ui_target_camera_store(world)
   let render_target_info_store = get_computed_ui_render_target_info_store(world)
   let children_store = @hierarchy.get_children_store(world)
-  computed_camera_store.upsert(entity, computed_camera, tick)
-  render_target_info_store.upsert(entity, render_target_info, tick)
+  computed_camera_store.upsert(entity, computed_camera)
+  render_target_info_store.upsert(entity, render_target_info)
   if children_store.get(entity) is Some(children) {
     for child in children.entities {
       ui_propagate_target_camera_subtree(
-        world, child, computed_camera, render_target_info, tick,
+        world, child, computed_camera, render_target_info,
       )
     }
   }
@@ -1890,7 +1887,6 @@ fn ui_propagate_target_camera_subtree(
 
 ///|
 pub fn ui_propagate_target_cameras_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let node_store = get_node_store(world)
   let parent_store = @hierarchy.get_parent_store(world)
   let roots = ui_collect_root_entities(world, node_store, parent_store)
@@ -1910,14 +1906,13 @@ pub fn ui_propagate_target_cameras_system(world : @ecs.World) -> Unit {
       None => ComputedUiRenderTargetInfo::default()
     }
     ui_propagate_target_camera_subtree(
-      world, root, computed_camera, render_target_info, tick,
+      world, root, computed_camera, render_target_info,
     )
   }
 }
 
 ///|
 pub fn ui_update_context_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let ctx = Ref::new(ensure_ui_context_resource(world))
   create_white_texture_if_needed(ctx)
   let win_w = @window.window_width()
@@ -1976,7 +1971,7 @@ pub fn ui_update_context_system(world : @ecs.World) -> Unit {
     Some(v) => v
     None => @math.Vec2::new(0.0F, 0.0F)
   }
-  get_ui_context_resource(world).insert(ctx.val, tick)
+  get_ui_context_resource(world).insert(ctx.val)
 }
 
 ///|
@@ -1984,22 +1979,17 @@ fn ensure_visibility_defaults(
   world : @ecs.World,
   entity : @core.Entity,
 ) -> Unit {
-  let tick = world.read_sequence()
   let vis_store = @visibility.get_visibility_store(world)
   if !vis_store.contains(entity) {
-    vis_store.insert(entity, @visibility.Visibility::Inherited, tick)
+    vis_store.insert(entity, @visibility.Visibility::Inherited)
   }
   let inherited_store = @visibility.get_inherited_visibility_store(world)
   if !inherited_store.contains(entity) {
-    inherited_store.insert(
-      entity,
-      @visibility.InheritedVisibility::new(true),
-      tick,
-    )
+    inherited_store.insert(entity, @visibility.InheritedVisibility::new(true))
   }
   let view_store = @visibility.get_view_visibility_store(world)
   if !view_store.contains(entity) {
-    view_store.insert(entity, @visibility.ViewVisibility::new(true), tick)
+    view_store.insert(entity, @visibility.ViewVisibility::new(true))
   }
 }
 
@@ -2012,9 +2002,8 @@ fn ensure_layers_default(
   match store.get(entity) {
     Some(v) => v
     None => {
-      let tick = world.read_sequence()
       let layers = @sprite.RenderLayers::default()
-      store.insert(entity, layers, tick)
+      store.insert(entity, layers)
       layers
     }
   }
@@ -2085,7 +2074,6 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
   let image_node_store = get_image_node_store(world)
   let image_size_store = get_image_node_size_store(world)
   let content_size_store = get_content_size_store(world)
-  let tick = world.read_sequence()
   let sf = safe_scale_factor(@window.window_scale_factor())
   let ui_scale_value = if ui_scale.value <= 0.0F {
     1.0F
@@ -2134,9 +2122,9 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
         if prev.size.x == next.size.x && prev.size.y == next.size.y {
           ()
         } else {
-          content_size_store.set(entity, next, tick) |> ignore
+          content_size_store.set(entity, next) |> ignore
         }
-      None => content_size_store.insert(entity, next, tick)
+      None => content_size_store.insert(entity, next)
     }
   }
 
@@ -2150,9 +2138,9 @@ pub fn ui_image_content_size_system(world : @ecs.World) -> Unit {
         if prev.size.x == next.size.x && prev.size.y == next.size.y {
           ()
         } else {
-          image_size_store.set(entity, next, tick) |> ignore
+          image_size_store.set(entity, next) |> ignore
         }
-      None => image_size_store.insert(entity, next, tick)
+      None => image_size_store.insert(entity, next)
     }
   }
 
@@ -2222,7 +2210,6 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   let img_store = get_ui_image_store(world)
   let text_store = world.component(@text.ecs_key_text)
   let transform_store = @transform.get_transform_store(world)
-  let tick = world.read_sequence()
   let roots = ui_collect_root_entities(world, node_store, parent_store)
   fn auto_size_for_entity(entity : @core.Entity) -> @math.Vec2 {
     match content_size_store.get(entity) {
@@ -2849,18 +2836,18 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       let rect = @math.Rect::new(min, max)
       let layout = UiLayout::new(rect)
       if layout_store.contains(entity) {
-        layout_store.set(entity, layout, tick) |> ignore
+        layout_store.set(entity, layout) |> ignore
       } else {
-        layout_store.insert(entity, layout, tick)
+        layout_store.insert(entity, layout)
       }
 
       // Update render2d / transform for UI nodes (Node component required).
       if node_store.contains(entity) {
         let transform = ui_world_transform(root_ctx, rect, 0.0F)
         if transform_store.contains(entity) {
-          transform_store.set(entity, transform, tick) |> ignore
+          transform_store.set(entity, transform) |> ignore
         } else {
-          transform_store.insert(entity, transform, tick)
+          transform_store.insert(entity, transform)
         }
         let layers = ensure_layers_default(world, entity)
         ensure_visibility_defaults(world, entity)
@@ -3019,7 +3006,6 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
     break
   }
   guard target is Some(target_e) else { return }
-  let tick = world.read_sequence()
   let prev = match scroll_store.get(target_e) {
     Some(v) => v
     None => ScrollPosition::default()
@@ -3138,9 +3124,9 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
   }
   let next = ScrollPosition::{ offset_x: next_x, offset_y: next_y }
   if scroll_store.contains(target_e) {
-    scroll_store.set(target_e, next, tick) |> ignore
+    scroll_store.set(target_e, next) |> ignore
   } else {
-    scroll_store.insert(target_e, next, tick)
+    scroll_store.insert(target_e, next)
   }
 }
 
@@ -3155,7 +3141,6 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
   let scissor_store = @sprite.get_scissor_rect_store(world)
   let children_store = @hierarchy.get_children_store(world)
   let parent_store = @hierarchy.get_parent_store(world)
-  let tick = world.read_sequence()
   let roots = ui_collect_root_entities(world, node_store, parent_store)
   fn clamp_nonneg(v : Float) -> Float {
     if v < 0.0F {
@@ -3250,16 +3235,16 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
     let self_clip = inherited_clip
     let calc = CalculatedClip::{ clip: self_clip }
     if clip_store.contains(entity) {
-      clip_store.set(entity, calc, tick) |> ignore
+      clip_store.set(entity, calc) |> ignore
     } else {
-      clip_store.insert(entity, calc, tick)
+      clip_store.insert(entity, calc)
     }
     if clipped_by_parent && !rect_is_full_viewport(self_clip, viewport_rect) {
       let scissor = @sprite.ScissorRect::new(self_clip)
       if scissor_store.contains(entity) {
-        scissor_store.set(entity, scissor, tick) |> ignore
+        scissor_store.set(entity, scissor) |> ignore
       } else {
-        scissor_store.insert(entity, scissor, tick)
+        scissor_store.insert(entity, scissor)
       }
     } else if scissor_store.contains(entity) {
       scissor_store.remove(entity) |> ignore
@@ -3361,7 +3346,6 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
 /// Children are visited in depth-first order, sorted by `ZIndex` ascending,
 /// while preserving insertion order for ties.
 pub fn ui_stack_system(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let res = get_ui_stack_resource(world)
   let stack = Ref::new(res.get().unwrap_or(UiStack::default()))
   UiStack::clear(stack)
@@ -3519,9 +3503,9 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
           z~,
         )
         if transform_store.contains(entity) {
-          transform_store.set(entity, t, tick) |> ignore
+          transform_store.set(entity, t) |> ignore
         } else {
-          transform_store.insert(entity, t, tick)
+          transform_store.insert(entity, t)
         }
       }
       None => ()
@@ -3544,7 +3528,7 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
       }
     }
   }
-  res.insert(stack.val, tick)
+  res.insert(stack.val)
 }
 
 ///|
@@ -3903,7 +3887,6 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
   let focus_store = get_focus_policy_store(world)
   let clip_store = get_calculated_clip_store(world)
   let vv_store = @visibility.get_view_visibility_store(world)
-  let tick = world.read_sequence()
   let pointer = ctx0.pointer_pos
   let down = ctx0.pointer_down
   fn entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
@@ -3929,7 +3912,7 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
       candidates.push(entity)
     }
     if !state_store.contains(entity) {
-      state_store.insert(entity, Interaction::None, tick)
+      state_store.insert(entity, Interaction::None)
     }
   })
   fn rect_intersect(a : @math.Rect, b : @math.Rect) -> @math.Rect {
@@ -4013,15 +3996,15 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
         normalized,
       }
       if cursor_store.contains(entity) {
-        cursor_store.set(entity, rcp, tick) |> ignore
+        cursor_store.set(entity, rcp) |> ignore
       } else {
-        cursor_store.insert(entity, rcp, tick)
+        cursor_store.insert(entity, rcp)
       }
       let next = if down { Interaction::Pressed } else { Interaction::Hovered }
       if state_store.contains(entity) {
-        state_store.set(entity, next, tick) |> ignore
+        state_store.set(entity, next) |> ignore
       } else {
-        state_store.insert(entity, next, tick)
+        state_store.insert(entity, next)
       }
       active.push(entity)
       let focus = match focus_store.get(entity) {
@@ -4044,7 +4027,7 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
       None => Interaction::None
     }
     if prev != Interaction::None {
-      state_store.set(entity, Interaction::None, tick) |> ignore
+      state_store.set(entity, Interaction::None) |> ignore
     }
   }
 }

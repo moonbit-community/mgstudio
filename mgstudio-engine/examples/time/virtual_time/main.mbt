@@ -92,12 +92,11 @@ fn update_virtual_time_resource(
   world : @ecs.World,
   update : (@time.Time[@time.Virtual]) -> @time.Time[@time.Virtual],
 ) -> Unit {
-  let sequence = world.advance_sequence()
   let virtual_ref = try! world
-    .get_resource_ref_mut(@time.virtual_time_resource_key(), sequence)
+    .get_resource_ref_mut(@time.virtual_time_resource_key())
     .unwrap()
   let time_ref = try! world
-    .get_resource_ref_mut(@time.default_time_resource_key(), sequence)
+    .get_resource_ref_mut(@time.default_time_resource_key())
     .unwrap()
   let next_virtual = update(virtual_ref.val)
   virtual_ref.val = next_virtual
@@ -133,7 +132,6 @@ fn update_info_text(world : @ecs.World) -> Unit {
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   virtual_time_state.val = { real_text: None, virtual_text: None }
 
   update_virtual_time_resource(world, fn(
@@ -161,9 +159,7 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec2::new(0.5F, 0.5F),
     ),
   ).spawn(world)
-  world
-  .component(RealTime::component())
-  .insert(real_sprite, RealTime::{  }, tick)
+  world.component(RealTime::component()).insert(real_sprite, RealTime::{  })
 
   let virtual_sprite = @sprite.SpriteBundle::new(
     @sprite.Sprite::from_image(texture)
@@ -177,7 +173,7 @@ fn setup(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(VirtualTime::component())
-  .insert(virtual_sprite, VirtualTime::{  }, tick)
+  .insert(virtual_sprite, VirtualTime::{  })
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 

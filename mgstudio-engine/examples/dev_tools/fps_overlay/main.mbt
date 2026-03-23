@@ -58,8 +58,9 @@ fn setup(world : @ecs.World) -> Unit {
   |> ignore
 
   let tick = world.advance_sequence()
+  ignore(tick)
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -67,12 +68,11 @@ fn setup(world : @ecs.World) -> Unit {
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
-    tick,
   )
   let text_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  .insert(text_entity, @hierarchy.Parent::new(root))
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -81,7 +81,6 @@ fn setup(world : @ecs.World) -> Unit {
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_bottom(@ui.Val::Px(12.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
@@ -94,21 +93,16 @@ fn setup(world : @ecs.World) -> Unit {
       "Press 4 to toggle the text visibility.\n" +
       "Press 5 to toggle the frame time graph.",
     ),
-    tick,
   )
   world
   .component(@text.ecs_key_text_font)
-  .insert(text_entity, @text.TextFont::default().with_font_size(20.0F), tick)
+  .insert(text_entity, @text.TextFont::default().with_font_size(20.0F))
   world
   .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()))
   world
   .component(@text.ecs_key_text_layout)
-  .insert(
-    text_entity,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
-    tick,
-  )
+  .insert(text_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
 }
 
 ///|

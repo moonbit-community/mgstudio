@@ -81,9 +81,8 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_font(font)
     .with_font_size(100.0F)
 
-  let tick = world.read_sequence()
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -93,26 +92,22 @@ fn setup_scene(world : @ecs.World) -> Unit {
     .with_top(@ui.Val::Px(12.0F))
     .with_left(@ui.Val::Px(12.0F))
     .with_flex_direction(@ui.FlexDirection::Column),
-    tick,
   )
 
   ignore(
     spawn_ui_text_line(
-      world, root, tick, "Click to toggle IME. Press return to start a new line.\n",
-      ui_font,
+      world, root, "Click to toggle IME. Press return to start a new line.\n", ui_font,
     ),
   )
-  ignore(spawn_ui_text_line(world, root, tick, "\n", ui_font))
+  ignore(spawn_ui_text_line(world, root, "\n", ui_font))
 
   let ime_enabled = spawn_ui_text_line(
-    world, root, tick, "IME Enabled: false\n", ui_font,
+    world, root, "IME Enabled: false\n", ui_font,
   )
   let ime_active = spawn_ui_text_line(
-    world, root, tick, "IME Active:  false\n", ui_font,
+    world, root, "IME Active:  false\n", ui_font,
   )
-  let ime_buffer = spawn_ui_text_line(
-    world, root, tick, "IME Buffer:  \n", ui_font,
-  )
+  let ime_buffer = spawn_ui_text_line(world, root, "IME Buffer:  \n", ui_font)
   status_text_handles_ref.val = Some(StatusTextHandles::{
     ime_enabled,
     ime_active,
@@ -135,21 +130,18 @@ fn setup_scene(world : @ecs.World) -> Unit {
 fn spawn_ui_text_line(
   world : @ecs.World,
   root : @core.Entity,
-  tick : @core.Sequence,
   content : String,
   font : @text.TextFont,
 ) -> @core.Entity {
   let text_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(text_entity, @ui.Node::default(), tick)
+  .insert(text_entity, @hierarchy.Parent::new(root))
+  world.component(@ui.ecs_key_node).insert(text_entity, @ui.Node::default())
   world
   .component(@text.ecs_key_text)
-  .insert(text_entity, @text.Text::new(content), tick)
-  world.component(@text.ecs_key_text_font).insert(text_entity, font, tick)
+  .insert(text_entity, @text.Text::new(content))
+  world.component(@text.ecs_key_text_font).insert(text_entity, font)
   text_entity
 }
 
@@ -158,7 +150,6 @@ fn update_primary_window(
   world : @ecs.World,
   update : (@window.Window) -> Unit,
 ) -> Unit {
-  let tick = world.read_sequence()
   let window_store = world.component(@window.ecs_key_window)
   world
   .query_entities_filtered(
@@ -170,7 +161,7 @@ fn update_primary_window(
   .view(fn(entity) {
     guard window_store.get(entity) is Some(window) else { return }
     update(window)
-    window_store.set(entity, window, tick) |> ignore
+    window_store.set(entity, window) |> ignore
   })
 }
 
@@ -178,33 +169,30 @@ fn update_primary_window(
 fn set_ime_enabled_text(value : Bool) -> Unit {
   guard status_text_handles_ref.val is Some(handles) else { return }
   guard @app.current_world() is Some(world) else { return }
-  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(handles.ime_enabled) is Some(text_value) else { return }
   text_value.content = "IME Enabled: \{value}\n"
-  ignore(text_store.set(handles.ime_enabled, text_value, tick))
+  ignore(text_store.set(handles.ime_enabled, text_value))
 }
 
 ///|
 fn set_ime_active_text(value : Bool) -> Unit {
   guard status_text_handles_ref.val is Some(handles) else { return }
   guard @app.current_world() is Some(world) else { return }
-  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(handles.ime_active) is Some(text_value) else { return }
   text_value.content = "IME Active:  \{value}\n"
-  ignore(text_store.set(handles.ime_active, text_value, tick))
+  ignore(text_store.set(handles.ime_active, text_value))
 }
 
 ///|
 fn set_ime_buffer_text(value : String) -> Unit {
   guard status_text_handles_ref.val is Some(handles) else { return }
   guard @app.current_world() is Some(world) else { return }
-  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(handles.ime_buffer) is Some(text_value) else { return }
   text_value.content = "IME Buffer:  \{value}\n"
-  ignore(text_store.set(handles.ime_buffer, text_value, tick))
+  ignore(text_store.set(handles.ime_buffer, text_value))
 }
 
 ///|

@@ -16,6 +16,7 @@
 test "ui: grid template rows/columns affect child layout (basic px tracks)" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()
+  ignore(tick)
 
   // Seed UiContext to avoid any host texture calls in tests.
   let ctx = UiContext::new(
@@ -28,9 +29,9 @@ test "ui: grid template rows/columns affect child layout (basic px tracks)" {
     None,
     false,
   )
-  get_ui_context_resource(world).insert(ctx, tick)
+  get_ui_context_resource(world).insert(ctx)
   let root = world.spawn_empty()
-  get_ui_root_store(world).insert(root, UiRoot::default(), tick)
+  get_ui_root_store(world).insert(root, UiRoot::default())
   get_node_store(world).insert(
     root,
     Node::default()
@@ -47,22 +48,13 @@ test "ui: grid template rows/columns affect child layout (basic px tracks)" {
         GridTrack::Px(50.0F),
       ]),
     ]),
-    tick,
   )
   let a = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
-    a,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
-  get_node_store(world).insert(a, Node::default(), tick)
+  @hierarchy.get_parent_store(world).insert(a, @hierarchy.Parent::new(root))
+  get_node_store(world).insert(a, Node::default())
   let b = world.spawn_empty()
-  @hierarchy.get_parent_store(world).insert(
-    b,
-    @hierarchy.Parent::new(root),
-    tick,
-  )
-  get_node_store(world).insert(b, Node::default(), tick)
+  @hierarchy.get_parent_store(world).insert(b, @hierarchy.Parent::new(root))
+  get_node_store(world).insert(b, Node::default())
 
   // Build Children from Parent before layout.
   ui_layout_system(world)

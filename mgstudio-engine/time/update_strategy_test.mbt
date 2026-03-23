@@ -46,12 +46,11 @@ fn update_virtual_test_resource(
   update : (Time[Virtual]) -> Time[Virtual],
 ) -> @app.App[@ecs.World] {
   let world = app.world()
-  let sequence = world.advance_sequence()
   let virtual_ref = try! world
-    .get_resource_ref_mut(virtual_time_resource_key(), sequence)
+    .get_resource_ref_mut(virtual_time_resource_key())
     .unwrap()
   let time_ref = try! world
-    .get_resource_ref_mut(default_time_resource_key(), sequence)
+    .get_resource_ref_mut(default_time_resource_key())
     .unwrap()
   let next_virtual = update(virtual_ref.val)
   virtual_ref.val = next_virtual

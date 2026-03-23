@@ -347,14 +347,13 @@ fn color_grading_camera_value(
 fn spawn_row(
   world : @ecs.World,
   parent : @core.Entity,
-  tick : @core.Sequence,
   node : @ui.Node,
 ) -> @core.Entity {
   let row = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(row, @hierarchy.Parent::new(parent), tick)
-  world.component(@ui.ecs_key_node).insert(row, node, tick)
+  .insert(row, @hierarchy.Parent::new(parent))
+  world.component(@ui.ecs_key_node).insert(row, node)
   row
 }
 
@@ -362,41 +361,34 @@ fn spawn_row(
 fn spawn_row_label(
   world : @ecs.World,
   row : @core.Entity,
-  tick : @core.Sequence,
   font : @asset.Handle[@asset.Font],
   label : String,
 ) -> Unit {
   let label_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(label_entity, @hierarchy.Parent::new(row), tick)
+  .insert(label_entity, @hierarchy.Parent::new(row))
   world
   .component(@ui.ecs_key_node)
-  .insert(
-    label_entity,
-    @ui.Node::default().with_width(@ui.Val::Px(125.0F)),
-    tick,
-  )
+  .insert(label_entity, @ui.Node::default().with_width(@ui.Val::Px(125.0F)))
   world
   .component(@text.ecs_key_text)
-  .insert(label_entity, @text.Text::new(label), tick)
+  .insert(label_entity, @text.Text::new(label))
   world
   .component(@text.ecs_key_text_font)
   .insert(
     label_entity,
     @text.TextFont::default().with_font(font).with_font_size(15.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
-  .insert(label_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  .insert(label_entity, @text.TextColor::new(@sprite.Color::white()))
 }
 
 ///|
 fn spawn_option_button(
   world : @ecs.World,
   row : @core.Entity,
-  tick : @core.Sequence,
   font : @asset.Handle[@asset.Font],
   option : SelectedColorGradingOption,
   color_grading : @post_process.ColorGrading,
@@ -404,10 +396,8 @@ fn spawn_option_button(
   let button = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(button, @hierarchy.Parent::new(row), tick)
-  world
-  .component(@ui.ecs_key_button)
-  .insert(button, @ui.Button::default(), tick)
+  .insert(button, @hierarchy.Parent::new(row))
+  world.component(@ui.ecs_key_button).insert(button, @ui.Button::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -433,96 +423,78 @@ fn spawn_option_button(
         @ui.Val::Px(0.0F),
       ),
     ),
-    tick,
   )
   world
   .component(@ui.ecs_key_border_radius)
-  .insert(button, @ui.BorderRadius::all(@ui.Val::Percent(100.0F)), tick)
+  .insert(button, @ui.BorderRadius::all(@ui.Val::Percent(100.0F)))
   world
   .component(@ui.ecs_key_border_color)
-  .insert(button, @ui.BorderColor::new(@sprite.Color::white()), tick)
+  .insert(button, @ui.BorderColor::new(@sprite.Color::white()))
   world
   .component(@ui.ecs_key_background_color)
-  .insert(button, @ui.BackgroundColor::new(normal_button_color()), tick)
+  .insert(button, @ui.BackgroundColor::new(normal_button_color()))
   world
   .component(ColorGradingOptionWidget::component())
-  .insert(
-    button,
-    { widget_type: ColorGradingOptionWidgetType::Button, option },
-    tick,
-  )
+  .insert(button, { widget_type: ColorGradingOptionWidgetType::Button, option })
 
   let label_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(label_entity, @hierarchy.Parent::new(button), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(label_entity, @ui.Node::default(), tick)
+  .insert(label_entity, @hierarchy.Parent::new(button))
+  world.component(@ui.ecs_key_node).insert(label_entity, @ui.Node::default())
   world
   .component(@text.ecs_key_text)
-  .insert(
-    label_entity,
-    @text.Text::new(selected_option_button_label(option)),
-    tick,
-  )
+  .insert(label_entity, @text.Text::new(selected_option_button_label(option)))
   world
   .component(@text.ecs_key_text_font)
   .insert(
     label_entity,
     @text.TextFont::default().with_font(font).with_font_size(15.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
-  .insert(label_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  .insert(label_entity, @text.TextColor::new(@sprite.Color::white()))
   world
   .component(ColorGradingOptionWidget::component())
-  .insert(
-    label_entity,
-    { widget_type: ColorGradingOptionWidgetType::Label, option },
-    tick,
-  )
+  .insert(label_entity, {
+    widget_type: ColorGradingOptionWidgetType::Label,
+    option,
+  })
 
   let spacer = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(spacer, @hierarchy.Parent::new(button), tick)
+  .insert(spacer, @hierarchy.Parent::new(button))
   world
   .component(@ui.ecs_key_node)
-  .insert(spacer, @ui.Node::default().with_flex_grow(1.0F), tick)
+  .insert(spacer, @ui.Node::default().with_flex_grow(1.0F))
 
   let value_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(value_entity, @hierarchy.Parent::new(button), tick)
-  world
-  .component(@ui.ecs_key_node)
-  .insert(value_entity, @ui.Node::default(), tick)
+  .insert(value_entity, @hierarchy.Parent::new(button))
+  world.component(@ui.ecs_key_node).insert(value_entity, @ui.Node::default())
   world
   .component(@text.ecs_key_text)
   .insert(
     value_entity,
     @text.Text::new(option_value_text(option, color_grading)),
-    tick,
   )
   world
   .component(@text.ecs_key_text_font)
   .insert(
     value_entity,
     @text.TextFont::default().with_font(font).with_font_size(15.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
-  .insert(value_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  .insert(value_entity, @text.TextColor::new(@sprite.Color::white()))
   world
   .component(ColorGradingOptionWidget::component())
-  .insert(
-    value_entity,
-    { widget_type: ColorGradingOptionWidgetType::Value, option },
-    tick,
-  )
+  .insert(value_entity, {
+    widget_type: ColorGradingOptionWidgetType::Value,
+    option,
+  })
 }
 
 ///|
@@ -531,10 +503,8 @@ fn add_buttons(
   font : @asset.Handle[@asset.Font],
   color_grading : @post_process.ColorGrading,
 ) -> Unit {
-  let tick = world.read_sequence()
-
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -542,13 +512,12 @@ fn add_buttons(
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
-    tick,
   )
 
   let panel = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(panel, @hierarchy.Parent::new(root), tick)
+  .insert(panel, @hierarchy.Parent::new(root))
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -559,11 +528,10 @@ fn add_buttons(
     .with_bottom(@ui.Val::Px(12.0F))
     .with_flex_direction(@ui.FlexDirection::Column)
     .with_row_gap(@ui.Val::Px(6.0F)),
-    tick,
   )
 
-  let global_row = spawn_row(world, panel, tick, @ui.Node::default())
-  spawn_row_label(world, global_row, tick, font, "")
+  let global_row = spawn_row(world, panel, @ui.Node::default())
+  spawn_row_label(world, global_row, font, "")
   for
     option in [
       SelectedGlobalColorGradingOption::Exposure,
@@ -574,7 +542,6 @@ fn add_buttons(
     spawn_option_button(
       world,
       global_row,
-      tick,
       font,
       SelectedColorGradingOption::Global(option),
       color_grading,
@@ -590,10 +557,9 @@ fn add_buttons(
     let row = spawn_row(
       world,
       panel,
-      tick,
       @ui.Node::default().with_align_items(@ui.AlignItems::Center),
     )
-    spawn_row_label(world, row, tick, font, section_name(section))
+    spawn_row_label(world, row, font, section_name(section))
     for
       option in [
         SelectedSectionColorGradingOption::Saturation,
@@ -605,7 +571,6 @@ fn add_buttons(
       spawn_option_button(
         world,
         row,
-        tick,
         font,
         SelectedColorGradingOption::Section(section, option),
         color_grading,
@@ -616,7 +581,7 @@ fn add_buttons(
   let help_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(help_entity, @hierarchy.Parent::new(root), tick)
+  .insert(help_entity, @hierarchy.Parent::new(root))
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -625,40 +590,30 @@ fn add_buttons(
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
   .insert(
     help_entity,
     @text.Text::new(create_help_text(SelectedColorGradingOption::default())),
-    tick,
   )
   world
   .component(@text.ecs_key_text_font)
   .insert(
     help_entity,
     @text.TextFont::default().with_font(font).with_font_size(16.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
-  .insert(help_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  .insert(help_entity, @text.TextColor::new(@sprite.Color::white()))
   world
   .component(@text.ecs_key_text_layout)
-  .insert(
-    help_entity,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
-    tick,
-  )
-  world
-  .component(HelpText::component())
-  .insert(help_entity, HelpText::{  }, tick)
+  .insert(help_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
+  world.component(HelpText::component()).insert(help_entity, HelpText::{  })
 }
 
 ///|
 fn add_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
-  let tick = world.read_sequence()
   let camera = @pbr.Camera3dBundle::new(
       @sprite.Camera::default(),
       @transform.Transform::from_xyz(0.7F, 0.7F, 1.0F).looking_at(
@@ -676,7 +631,7 @@ fn add_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
       ),
     )
     .spawn(world)
-  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default(), tick)
+  world.component(@pbr.ecs_key_hdr).insert(camera, @pbr.Hdr::default())
   world
   .component(@pbr.ecs_key_environment_map_light)
   .insert(
@@ -686,11 +641,10 @@ fn add_camera(world : @ecs.World, asset_server : @asset.AssetServer) -> Unit {
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       2000.0F,
     ),
-    tick,
   )
   world
   .component(ColorGradingCamera::component())
-  .insert(camera, ColorGradingCamera::{  }, tick)
+  .insert(camera, ColorGradingCamera::{  })
 }
 
 ///|
@@ -698,8 +652,6 @@ fn add_basic_scene(
   world : @ecs.World,
   asset_server : @asset.AssetServer,
 ) -> Unit {
-  let tick = world.read_sequence()
-
   let main_scene = world.spawn_empty()
   world
   .component(@scene.ecs_key_scene_root)
@@ -713,7 +665,6 @@ fn add_basic_scene(
         ),
       ),
     ),
-    tick,
   )
 
   let helmet_scene = world.spawn_empty()
@@ -729,7 +680,6 @@ fn add_basic_scene(
         ),
       ),
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -738,7 +688,6 @@ fn add_basic_scene(
     @transform.Transform::from_xyz(0.5F, 0.0F, -0.5F).with_rotation(
       @math.Quat::from_rotation_y(-0.15F * PI),
     ),
-    tick,
   )
 
   let directional_light = world.spawn_empty()
@@ -751,7 +700,6 @@ fn add_basic_scene(
       .with_maximum_distance(3.0F)
       .with_first_cascade_far_bound(0.9F),
     ),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -765,7 +713,6 @@ fn add_basic_scene(
         PI * -0.15F,
       ),
     ),
-    tick,
   )
 }
 
@@ -778,23 +725,20 @@ fn setup(world : @ecs.World) -> Unit {
   add_buttons(world, font, @post_process.ColorGrading::default())
   add_camera(world, asset_server)
 
-  let tick = world.read_sequence()
   let overlay_camera = @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(100).with_clear_color_none(),
     @transform.Transform::identity(),
   ).spawn(world)
   world
   .component(@ui.IsDefaultUiCamera::component())
-  .insert(overlay_camera, @ui.IsDefaultUiCamera::default(), tick)
+  .insert(overlay_camera, @ui.IsDefaultUiCamera::default())
 }
 
 ///|
 fn handle_button_presses(world : @ecs.World) -> Unit {
   let tick = world.advance_sequence()
-  guard (try! world.get_resource_ref_mut(
-      SelectedColorGradingOption::resource(),
-      tick,
-    ))
+  ignore(tick)
+  guard (try! world.get_resource_ref_mut(SelectedColorGradingOption::resource()))
     is Some(selected_option) else {
     return
   }
@@ -842,8 +786,9 @@ fn adjust_color_grading_option(world : @ecs.World) -> Unit {
     selected_option.get(color_grading) + delta,
   )
   let tick = world.advance_sequence()
+  ignore(tick)
   let color_grading_store = world.component(@post_process.ecs_key_color_grading)
-  color_grading_store.set(camera_entity, next_color_grading, tick) |> ignore
+  color_grading_store.set(camera_entity, next_color_grading) |> ignore
 }
 
 ///|
@@ -858,6 +803,7 @@ fn update_ui_state(world : @ecs.World) -> Unit {
   }
 
   let tick = world.advance_sequence()
+  ignore(tick)
   let widget_store = world.component(ColorGradingOptionWidget::component())
   let background_store = world.component(@ui.ecs_key_background_color)
   let border_store = world.component(@ui.ecs_key_border_color)
@@ -882,25 +828,25 @@ fn update_ui_state(world : @ecs.World) -> Unit {
           },
         )
         if background_store.contains(entity) {
-          background_store.set(entity, background, tick) |> ignore
+          background_store.set(entity, background) |> ignore
         } else {
-          background_store.insert(entity, background, tick)
+          background_store.insert(entity, background)
         }
         if border_store.contains(entity) {
-          border_store.set(entity, border, tick) |> ignore
+          border_store.set(entity, border) |> ignore
         } else {
-          border_store.insert(entity, border, tick)
+          border_store.insert(entity, border)
         }
       }
       Label => {
         guard text_store.get(entity) is Some(text_value) else { return }
         text_value.content = selected_option_button_label(widget.option)
-        ignore(text_store.set(entity, text_value, tick))
+        ignore(text_store.set(entity, text_value))
       }
       Value => {
         guard text_store.get(entity) is Some(text_value) else { return }
         text_value.content = option_value_text(widget.option, color_grading)
-        ignore(text_store.set(entity, text_value, tick))
+        ignore(text_store.set(entity, text_value))
       }
     }
   })
@@ -910,7 +856,7 @@ fn update_ui_state(world : @ecs.World) -> Unit {
   }
   guard text_store.get(help_entity) is Some(help_text) else { return }
   help_text.content = create_help_text(selected_option)
-  ignore(text_store.set(help_entity, help_text, tick))
+  ignore(text_store.set(help_entity, help_text))
 }
 
 ///|

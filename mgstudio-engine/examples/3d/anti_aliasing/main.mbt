@@ -200,7 +200,6 @@ fn draw_selectable_menu_item(
 ///|
 fn set_camera_projection(world : @ecs.World) -> Unit {
   guard anti_aliasing_state.val.camera is Some(camera_entity) else { return }
-  let tick = world.read_sequence()
   let projection = if anti_aliasing_state.val.use_orthographic {
     @pbr.Projection::Orthographic(@pbr.OrthographicProjection3d::{
       ..@pbr.OrthographicProjection3d::default_3d(),
@@ -209,7 +208,7 @@ fn set_camera_projection(world : @ecs.World) -> Unit {
   } else {
     @pbr.Projection::Perspective(@pbr.PerspectiveProjection3d::default())
   }
-  world.component(@pbr.ecs_key_projection).set(camera_entity, projection, tick)
+  world.component(@pbr.ecs_key_projection).set(camera_entity, projection)
   |> ignore
 }
 
@@ -260,12 +259,9 @@ fn clear_temporal_aa_components(
 ///|
 fn apply_aa_components(world : @ecs.World) -> Unit {
   guard anti_aliasing_state.val.camera is Some(camera_entity) else { return }
-  let tick = world.read_sequence()
   let aa_method = anti_aliasing_state.val.aa_method
   if aa_method_eq(aa_method, AAMethod::NoAA) {
-    world
-    .component(@pbr.ecs_key_msaa)
-    .insert(camera_entity, @pbr.Msaa::Off, tick)
+    world.component(@pbr.ecs_key_msaa).insert(camera_entity, @pbr.Msaa::Off)
     world.component(@post_process.ecs_key_fxaa).remove(camera_entity) |> ignore
     clear_temporal_aa_components(world, camera_entity)
     return
@@ -276,16 +272,13 @@ fn apply_aa_components(world : @ecs.World) -> Unit {
     .insert(
       camera_entity,
       msaa_component_from_selection(anti_aliasing_state.val.msaa_samples),
-      tick,
     )
     world.component(@post_process.ecs_key_fxaa).remove(camera_entity) |> ignore
     clear_temporal_aa_components(world, camera_entity)
     return
   }
   if aa_method_eq(aa_method, AAMethod::FXAA) {
-    world
-    .component(@pbr.ecs_key_msaa)
-    .insert(camera_entity, @pbr.Msaa::Off, tick)
+    world.component(@pbr.ecs_key_msaa).insert(camera_entity, @pbr.Msaa::Off)
     clear_temporal_aa_components(world, camera_entity)
     world
     .component(@post_process.ecs_key_fxaa)
@@ -294,30 +287,27 @@ fn apply_aa_components(world : @ecs.World) -> Unit {
       @post_process.Fxaa::default().with_sensitivity(
         fxaa_sensitivity_component(anti_aliasing_state.val.fxaa_sensitivity),
       ),
-      tick,
     )
     return
   }
   if aa_method_eq(aa_method, AAMethod::TAA) {
-    world
-    .component(@pbr.ecs_key_msaa)
-    .insert(camera_entity, @pbr.Msaa::Off, tick)
+    world.component(@pbr.ecs_key_msaa).insert(camera_entity, @pbr.Msaa::Off)
     world.component(@post_process.ecs_key_fxaa).remove(camera_entity) |> ignore
     world
     .component(@post_process.ecs_key_temporal_anti_aliasing)
-    .insert(camera_entity, @post_process.TemporalAntiAliasing::default(), tick)
+    .insert(camera_entity, @post_process.TemporalAntiAliasing::default())
     world
     .component(@post_process.ecs_key_temporal_jitter)
-    .insert(camera_entity, @post_process.TemporalJitter::default(), tick)
+    .insert(camera_entity, @post_process.TemporalJitter::default())
     world
     .component(@pbr.ecs_key_depth_prepass)
-    .insert(camera_entity, @pbr.DepthPrepass::default(), tick)
+    .insert(camera_entity, @pbr.DepthPrepass::default())
     world
     .component(@pbr.ecs_key_motion_vector_prepass)
-    .insert(camera_entity, @pbr.MotionVectorPrepass::default(), tick)
+    .insert(camera_entity, @pbr.MotionVectorPrepass::default())
     return
   }
-  world.component(@pbr.ecs_key_msaa).insert(camera_entity, @pbr.Msaa::Off, tick)
+  world.component(@pbr.ecs_key_msaa).insert(camera_entity, @pbr.Msaa::Off)
   world.component(@post_process.ecs_key_fxaa).remove(camera_entity) |> ignore
   clear_temporal_aa_components(world, camera_entity)
 }
@@ -733,8 +723,6 @@ fn setup(world : @ecs.World) -> Unit {
   anti_aliasing_state.val.cube_material = None
   anti_aliasing_state.val.help_text = None
 
-  let tick = world.read_sequence()
-
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
@@ -790,7 +778,6 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    tick,
   )
 
   let light = world.spawn_empty()
@@ -799,7 +786,6 @@ fn setup(world : @ecs.World) -> Unit {
   .insert(
     light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 15_000.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -809,7 +795,6 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
 
   let camera_entity = @pbr.Camera3dBundle::new(
@@ -829,7 +814,6 @@ fn setup(world : @ecs.World) -> Unit {
       Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
       150.0F,
     ),
-    tick,
   )
 
   @pbr.render3d_set_distance_fog(

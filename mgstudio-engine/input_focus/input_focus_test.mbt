@@ -34,11 +34,7 @@ fn read_focus_visible_resource(
 fn input_focus_resource_ref_mut(
   world : @ecs.World,
 ) -> Ref[@input_focus.InputFocus] {
-  match
-    (try! world.get_resource_ref_mut(
-      @input_focus.InputFocus::resource(),
-      world.advance_sequence(),
-    )) {
+  match (try! world.get_resource_ref_mut(@input_focus.InputFocus::resource())) {
     Some(value) => value
     None => abort("missing mutable InputFocus resource")
   }
@@ -49,10 +45,7 @@ fn input_focus_visible_resource_ref_mut(
   world : @ecs.World,
 ) -> Ref[@input_focus.InputFocusVisible] {
   match
-    (try! world.get_resource_ref_mut(
-      @input_focus.InputFocusVisible::resource(),
-      world.advance_sequence(),
-    )) {
+    (try! world.get_resource_ref_mut(@input_focus.InputFocusVisible::resource())) {
     Some(value) => value
     None => abort("missing mutable InputFocusVisible resource")
   }

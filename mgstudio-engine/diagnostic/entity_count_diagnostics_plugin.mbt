@@ -63,9 +63,9 @@ pub fn entity_count_diagnostics_plugin_with(
 
 ///|
 fn entity_count_diagnostic_system(world : @ecs.World) -> Unit {
-  let tick = @app.current_system_sequence().this_run
+  let sequence = @app.current_system_sequence().this_run
   match
-    (try world.get_resource_ref_mut(DiagnosticsStore::resource(), tick) catch {
+    (try world.get_resource_ref_mut(DiagnosticsStore::resource()) catch {
       _ => None
     } noraise {
       value => value
@@ -81,7 +81,7 @@ fn entity_count_diagnostic_system(world : @ecs.World) -> Unit {
               time: @core.Instant::now(),
               value: Float::from_int(world.entity_count()),
             },
-            tick,
+            sequence,
           )
         }
         None => ()

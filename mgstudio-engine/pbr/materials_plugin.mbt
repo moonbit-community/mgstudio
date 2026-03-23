@@ -39,7 +39,6 @@ fn init_materials_resources(world : @ecs.World) -> Unit {
   if !default_opaque_renderer_method.is_present() {
     default_opaque_renderer_method.insert(
       DefaultOpaqueRendererMethod::forward(),
-      world.read_sequence(),
     )
   }
 }

@@ -101,7 +101,6 @@ fn set_visibility(
   entity : @core.Entity,
   visible : Bool,
 ) -> Unit {
-  let tick = world.read_sequence()
   let value = if visible {
     @visibility.Visibility::Inherited
   } else {
@@ -109,9 +108,9 @@ fn set_visibility(
   }
   let visibility_store = world.component(@visibility.ecs_key_visibility)
   if visibility_store.contains(entity) {
-    visibility_store.set(entity, value, tick) |> ignore
+    visibility_store.set(entity, value) |> ignore
   } else {
-    visibility_store.insert(entity, value, tick)
+    visibility_store.insert(entity, value)
   }
 }
 
@@ -135,10 +134,7 @@ fn set_primitive_transform(
   primitive : BeamPrimitive,
   transform : @transform.Transform,
 ) -> Unit {
-  let tick = world.read_sequence()
-  world
-  .component(@transform.ecs_key_transform)
-  .set(primitive.entity, transform, tick)
+  world.component(@transform.ecs_key_transform).set(primitive.entity, transform)
   |> ignore
 }
 
@@ -336,13 +332,11 @@ fn setup(world : @ecs.World) -> Unit {
   )
 
   let directional_light = world.spawn_empty()
-  let tick = world.read_sequence()
   world
   .component(@pbr.ecs_key_directional_light)
   .insert(
     directional_light,
     @pbr.DirectionalLight::new(@sprite.Color::white(), 12_000.0F, true),
-    tick,
   )
   world
   .component(@transform.ecs_key_transform)
@@ -352,7 +346,6 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
 
   @pbr.Camera3dBundle::new(

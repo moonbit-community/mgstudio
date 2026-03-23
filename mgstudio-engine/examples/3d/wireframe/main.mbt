@@ -116,9 +116,8 @@ fn setup_ui(world : @ecs.World) -> Unit {
   ).spawn(world)
   |> ignore
 
-  let tick = world.read_sequence()
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -126,13 +125,12 @@ fn setup_ui(world : @ecs.World) -> Unit {
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
-    tick,
   )
 
   let controls_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(controls_entity, @hierarchy.Parent::new(root), tick)
+  .insert(controls_entity, @hierarchy.Parent::new(root))
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -141,31 +139,27 @@ fn setup_ui(world : @ecs.World) -> Unit {
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
-  .insert(controls_entity, @text.Text::new(""), tick)
+  .insert(controls_entity, @text.Text::new(""))
   world
   .component(@text.ecs_key_text_font)
   .insert(
     controls_entity,
     @text.TextFont::default().with_font(font).with_font_size(14.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
   .insert(
     controls_entity,
     @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text_layout)
   .insert(
     controls_entity,
     @text.TextLayout::new_with_justify(@text.Justify::Left),
-    tick,
   )
   wireframe_state.val.controls_text = Some(controls_entity)
 }
@@ -179,7 +173,6 @@ fn update_controls_text(world : @ecs.World) -> Unit {
     Some(value) => value
     None => @pbr.WireframeConfig::default()
   }
-  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(text_entity) is Some(text_value) else { return }
   text_value.content = "Controls\n---------------\n" +
@@ -191,7 +184,7 @@ fn update_controls_text(world : @ecs.World) -> Unit {
     config.global.to_string() +
     "\nColor: " +
     color_label(config.default_color)
-  ignore(text_store.set(text_entity, text_value, tick))
+  ignore(text_store.set(text_entity, text_value))
 }
 
 ///|
@@ -199,7 +192,6 @@ fn setup_scene(world : @ecs.World) -> Unit {
   wireframe_state.val.controls_text = None
   setup_wireframe_config(world)
 
-  let tick = world.read_sequence()
   let red_cube = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
       @pbr.mesh_assets_mut_or_abort().val.add(
@@ -215,7 +207,7 @@ fn setup_scene(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@pbr.ecs_key_no_wireframe)
-  .insert(red_cube, @pbr.NoWireframe::default(), tick)
+  .insert(red_cube, @pbr.NoWireframe::default())
 
   @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
@@ -251,10 +243,10 @@ fn setup_scene(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@pbr.ecs_key_wireframe)
-  .insert(green_cube, @pbr.Wireframe::default(), tick)
+  .insert(green_cube, @pbr.Wireframe::default())
   world
   .component(@pbr.ecs_key_wireframe_color)
-  .insert(green_cube, @pbr.WireframeColor::new(color_lime()), tick)
+  .insert(green_cube, @pbr.WireframeColor::new(color_lime()))
 
   let plane = @pbr.MeshMaterial3dBundle::new(
     @pbr.Mesh3d::new(
@@ -271,15 +263,15 @@ fn setup_scene(world : @ecs.World) -> Unit {
   ).spawn(world)
   world
   .component(@pbr.ecs_key_wireframe_color)
-  .insert(plane, @pbr.WireframeColor::new(color_black()), tick)
+  .insert(plane, @pbr.WireframeColor::new(color_black()))
 
   let light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_point_light)
-  .insert(light, @pbr.PointLight::default(), tick)
+  .insert(light, @pbr.PointLight::default())
   world
   .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(2.0F, 4.0F, 2.0F), tick)
+  .insert(light, @transform.Transform::from_xyz(2.0F, 4.0F, 2.0F))
 
   @pbr.Camera3dBundle::new(
     @sprite.Camera::default(),
@@ -296,8 +288,6 @@ fn setup_scene(world : @ecs.World) -> Unit {
 
 ///|
 fn update_colors(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
-
   let mut config = try world.get_resource(@pbr.ecs_key_wireframe_config) catch {
     _ => @pbr.WireframeConfig::default()
   } noraise {
@@ -340,7 +330,7 @@ fn update_colors(world : @ecs.World) -> Unit {
     if updates.length() > 0 {
       let wireframe_color_store = world.component(@pbr.ecs_key_wireframe_color)
       for pair in updates {
-        wireframe_color_store.set(pair.0, pair.1, tick) |> ignore
+        wireframe_color_store.set(pair.0, pair.1) |> ignore
       }
     }
   }

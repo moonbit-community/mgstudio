@@ -133,11 +133,10 @@ fn create_help_text() -> String {
 fn update_help_text() -> Unit {
   guard clustered_decals_state.val.help_text is Some(entity) else { return }
   guard @app.current_world() is Some(world) else { return }
-  let tick = world.read_sequence()
   let text_store = world.component(@text.ecs_key_text)
   guard text_store.get(entity) is Some(text_value) else { return }
   text_value.content = create_help_text()
-  ignore(text_store.set(entity, text_value, tick))
+  ignore(text_store.set(entity, text_value))
 }
 
 ///|
@@ -171,17 +170,14 @@ fn same_entity(a : @core.Entity, b : @core.Entity) -> Bool {
 fn spawn_button(
   world : @ecs.World,
   parent : @core.Entity,
-  tick : @core.Sequence,
   font : @asset.Handle[@asset.Font],
   label : String,
 ) -> @core.Entity {
   let button = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(button, @hierarchy.Parent::new(parent), tick)
-  world
-  .component(@ui.ecs_key_button)
-  .insert(button, @ui.Button::default(), tick)
+  .insert(button, @hierarchy.Parent::new(parent))
+  world.component(@ui.ecs_key_button).insert(button, @ui.Button::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -198,54 +194,43 @@ fn spawn_button(
     )
     .with_justify_content(@ui.JustifyContent::Center)
     .with_align_items(@ui.AlignItems::Center),
-    tick,
   )
   world
   .component(@ui.ecs_key_border_radius)
-  .insert(
-    button,
-    @ui.BorderRadius::all(@ui.Val::Px(BUTTON_BORDER_RADIUS)),
-    tick,
-  )
+  .insert(button, @ui.BorderRadius::all(@ui.Val::Px(BUTTON_BORDER_RADIUS)))
   world
   .component(@ui.ecs_key_background_color)
-  .insert(button, button_background(false), tick)
-  world
-  .component(@ui.ecs_key_border_color)
-  .insert(button, button_border(false), tick)
+  .insert(button, button_background(false))
+  world.component(@ui.ecs_key_border_color).insert(button, button_border(false))
 
   let text_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(button), tick)
+  .insert(text_entity, @hierarchy.Parent::new(button))
   world
   .component(@ui.ecs_key_node)
   .insert(
     text_entity,
     @ui.Node::default().with_width(@ui.Val::Auto).with_height(@ui.Val::Auto),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
-  .insert(text_entity, @text.Text::new(label), tick)
+  .insert(text_entity, @text.Text::new(label))
   world
   .component(@text.ecs_key_text_font)
   .insert(
     text_entity,
     @text.TextFont::default().with_font(font).with_font_size(16.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()))
 
   button
 }
 
 ///|
 fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
-  let tick = world.read_sequence()
-
   @sprite.Camera2dBundle::new(
     @sprite.Camera::default().with_order(100).with_clear_color_none(),
     @transform.Transform::identity(),
@@ -253,7 +238,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   |> ignore
 
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -261,13 +246,12 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
-    tick,
   )
 
   let help_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(help_entity, @hierarchy.Parent::new(root), tick)
+  .insert(help_entity, @hierarchy.Parent::new(root))
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -276,34 +260,26 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_top(@ui.Val::Px(12.0F)),
-    tick,
   )
-  world
-  .component(@text.ecs_key_text)
-  .insert(help_entity, @text.Text::new(""), tick)
+  world.component(@text.ecs_key_text).insert(help_entity, @text.Text::new(""))
   world
   .component(@text.ecs_key_text_font)
   .insert(
     help_entity,
     @text.TextFont::default().with_font(font).with_font_size(16.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
-  .insert(help_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  .insert(help_entity, @text.TextColor::new(@sprite.Color::white()))
   world
   .component(@text.ecs_key_text_layout)
-  .insert(
-    help_entity,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
-    tick,
-  )
+  .insert(help_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
   clustered_decals_state.val.help_text = Some(help_entity)
 
   let selection_panel = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(selection_panel, @hierarchy.Parent::new(root), tick)
+  .insert(selection_panel, @hierarchy.Parent::new(root))
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -315,13 +291,12 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
     .with_flex_direction(@ui.FlexDirection::Row)
     .with_row_gap(@ui.Val::Px(6.0F))
     .with_align_items(@ui.AlignItems::Center),
-    tick,
   )
 
   let hint_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(hint_entity, @hierarchy.Parent::new(selection_panel), tick)
+  .insert(hint_entity, @hierarchy.Parent::new(selection_panel))
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -329,39 +304,33 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
     @ui.Node::default()
     .with_width(@ui.Val::Px(125.0F))
     .with_height(@ui.Val::Auto),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
-  .insert(hint_entity, @text.Text::new("Drag to Move"), tick)
+  .insert(hint_entity, @text.Text::new("Drag to Move"))
   world
   .component(@text.ecs_key_text_font)
   .insert(
     hint_entity,
     @text.TextFont::default().with_font(font).with_font_size(16.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
-  .insert(hint_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  .insert(hint_entity, @text.TextColor::new(@sprite.Color::white()))
 
-  let camera_button = spawn_button(world, selection_panel, tick, font, "Camera")
+  let camera_button = spawn_button(world, selection_panel, font, "Camera")
   clustered_decals_state.val.selection_widgets.push({
     button: camera_button,
     selection: Selection::Camera,
   })
 
-  let decal_a_button = spawn_button(
-    world, selection_panel, tick, font, "Decal A",
-  )
+  let decal_a_button = spawn_button(world, selection_panel, font, "Decal A")
   clustered_decals_state.val.selection_widgets.push({
     button: decal_a_button,
     selection: Selection::DecalA,
   })
 
-  let decal_b_button = spawn_button(
-    world, selection_panel, tick, font, "Decal B",
-  )
+  let decal_b_button = spawn_button(world, selection_panel, font, "Decal B")
   clustered_decals_state.val.selection_widgets.push({
     button: decal_b_button,
     selection: Selection::DecalB,
@@ -370,7 +339,7 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
   let drag_mode_panel = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(drag_mode_panel, @hierarchy.Parent::new(root), tick)
+  .insert(drag_mode_panel, @hierarchy.Parent::new(root))
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -381,17 +350,16 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
     .with_bottom(@ui.Val::Px(10.0F))
     .with_flex_direction(@ui.FlexDirection::Row)
     .with_row_gap(@ui.Val::Px(6.0F)),
-    tick,
   )
   clustered_decals_state.val.drag_mode_panel = Some(drag_mode_panel)
 
-  let scale_button = spawn_button(world, drag_mode_panel, tick, font, "Scale")
+  let scale_button = spawn_button(world, drag_mode_panel, font, "Scale")
   clustered_decals_state.val.drag_mode_widgets.push({
     button: scale_button,
     mode: DragMode::Scale,
   })
 
-  let roll_button = spawn_button(world, drag_mode_panel, tick, font, "Roll")
+  let roll_button = spawn_button(world, drag_mode_panel, font, "Roll")
   clustered_decals_state.val.drag_mode_widgets.push({
     button: roll_button,
     mode: DragMode::Roll,
@@ -400,37 +368,34 @@ fn setup_ui(world : @ecs.World, font : @asset.Handle[@asset.Font]) -> Unit {
 
 ///|
 fn update_ui_state(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let background_store = world.component(@ui.ecs_key_background_color)
   let border_store = world.component(@ui.ecs_key_border_color)
 
   for widget in clustered_decals_state.val.selection_widgets {
     let selected = widget.selection == clustered_decals_state.val.selection
     if background_store.contains(widget.button) {
-      background_store.set(widget.button, button_background(selected), tick)
-      |> ignore
+      background_store.set(widget.button, button_background(selected)) |> ignore
     } else {
-      background_store.insert(widget.button, button_background(selected), tick)
+      background_store.insert(widget.button, button_background(selected))
     }
     if border_store.contains(widget.button) {
-      border_store.set(widget.button, button_border(selected), tick) |> ignore
+      border_store.set(widget.button, button_border(selected)) |> ignore
     } else {
-      border_store.insert(widget.button, button_border(selected), tick)
+      border_store.insert(widget.button, button_border(selected))
     }
   }
 
   for widget in clustered_decals_state.val.drag_mode_widgets {
     let selected = clustered_decals_state.val.drag_mode == widget.mode
     if background_store.contains(widget.button) {
-      background_store.set(widget.button, button_background(selected), tick)
-      |> ignore
+      background_store.set(widget.button, button_background(selected)) |> ignore
     } else {
-      background_store.insert(widget.button, button_background(selected), tick)
+      background_store.insert(widget.button, button_background(selected))
     }
     if border_store.contains(widget.button) {
-      border_store.set(widget.button, button_border(selected), tick) |> ignore
+      border_store.set(widget.button, button_border(selected)) |> ignore
     } else {
-      border_store.insert(widget.button, button_border(selected), tick)
+      border_store.insert(widget.button, button_border(selected))
     }
   }
 
@@ -448,7 +413,6 @@ fn update_ui_state(world : @ecs.World) -> Unit {
             @ui.Display::None
           },
         ),
-        tick,
       )
       |> ignore
     }
@@ -472,7 +436,6 @@ fn calculate_initial_decal_transform(
 
 ///|
 fn setup(world : @ecs.World) -> Unit {
-  let tick = world.read_sequence()
   let asset_server = @asset.AssetServer::new()
   clustered_decals_state.val.camera = None
   clustered_decals_state.val.rotating_cube = None
@@ -518,7 +481,7 @@ fn setup(world : @ecs.World) -> Unit {
   let light = world.spawn_empty()
   world
   .component(@pbr.ecs_key_directional_light)
-  .insert(light, @pbr.DirectionalLight::default(), tick)
+  .insert(light, @pbr.DirectionalLight::default())
   world
   .component(@transform.ecs_key_transform)
   .insert(
@@ -527,7 +490,6 @@ fn setup(world : @ecs.World) -> Unit {
       @math.Vec3::zero(),
       @math.Vec3::new(0.0F, 1.0F, 0.0F),
     ),
-    tick,
   )
 
   let decal_texture = asset_server.load("branding/icon.png")
@@ -570,7 +532,6 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.ClusteredDecal::default()
     .with_base_color_texture(Some(decal_texture))
     .with_tag(1),
-    tick,
   )
   clustered_decals_state.val.decal_a = Some(decal_a)
 
@@ -596,7 +557,6 @@ fn setup(world : @ecs.World) -> Unit {
     @pbr.ClusteredDecal::default()
     .with_base_color_texture(Some(decal_texture))
     .with_tag(2),
-    tick,
   )
   clustered_decals_state.val.decal_b = Some(decal_b)
 
@@ -673,7 +633,6 @@ fn apply_drag_translation(
   phi_factor : Float,
   theta_factor : Float,
 ) -> Unit {
-  let tick = world.read_sequence()
   guard world.component(@transform.ecs_key_transform).get(entity)
     is Some(transform) else {
     return
@@ -686,11 +645,7 @@ fn apply_drag_translation(
   )
   world
   .component(@transform.ecs_key_transform)
-  .set(
-    entity,
-    orient_towards_center_preserve_roll(transform, next_translation),
-    tick,
-  )
+  .set(entity, orient_towards_center_preserve_roll(transform, next_translation))
   |> ignore
 }
 
@@ -709,7 +664,6 @@ fn apply_decal_drag(
   entity : @core.Entity,
   delta : @math.Vec2,
 ) -> Unit {
-  let tick = world.read_sequence()
   guard world.component(@transform.ecs_key_transform).get(entity)
     is Some(transform) else {
     return
@@ -727,7 +681,6 @@ fn apply_decal_drag(
       .set(
         entity,
         transform.with_scale(transform.scale.mul_scalar(scale_factor)),
-        tick,
       )
       |> ignore
     }
@@ -737,7 +690,7 @@ fn apply_decal_drag(
         .normalize()
       world
       .component(@transform.ecs_key_transform)
-      .set(entity, transform.with_rotation(rotation), tick)
+      .set(entity, transform.with_rotation(rotation))
       |> ignore
     }
   }
@@ -843,13 +796,12 @@ fn rotate_cube(world : @ecs.World) -> Unit {
     is Some(transform) else {
     return
   }
-  let tick = world.read_sequence()
   let rotation = transform.rotation
     .mul(@math.Quat::from_rotation_y(CUBE_ROTATION_SPEED))
     .normalize()
   world
   .component(@transform.ecs_key_transform)
-  .set(cube_entity, transform.with_rotation(rotation), tick)
+  .set(cube_entity, transform.with_rotation(rotation))
   |> ignore
 }
 

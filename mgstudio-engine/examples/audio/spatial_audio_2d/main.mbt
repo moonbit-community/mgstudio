@@ -106,9 +106,8 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
   let asset_server = @asset.AssetServer::new()
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
 
-  let tick = world.read_sequence()
   let root = world.spawn_empty()
-  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default(), tick)
+  world.component(@ui.ecs_key_ui_root).insert(root, @ui.UiRoot::default())
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -116,13 +115,12 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
     @ui.Node::default()
     .with_width(@ui.Val::Percent(100.0F))
     .with_height(@ui.Val::Percent(100.0F)),
-    tick,
   )
 
   let text_entity = world.spawn_empty()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(text_entity, @hierarchy.Parent::new(root), tick)
+  .insert(text_entity, @hierarchy.Parent::new(root))
   world
   .component(@ui.ecs_key_node)
   .insert(
@@ -131,28 +129,22 @@ fn spawn_ui_overlay(world : @ecs.World, content : String) -> Unit {
     .with_position_type(@ui.PositionType::Absolute)
     .with_left(@ui.Val::Px(12.0F))
     .with_bottom(@ui.Val::Px(12.0F)),
-    tick,
   )
   world
   .component(@text.ecs_key_text)
-  .insert(text_entity, @text.Text::new(content), tick)
+  .insert(text_entity, @text.Text::new(content))
   world
   .component(@text.ecs_key_text_font)
   .insert(
     text_entity,
     @text.TextFont::default().with_font(font).with_font_size(20.0F),
-    tick,
   )
   world
   .component(@text.ecs_key_text_color)
-  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()), tick)
+  .insert(text_entity, @text.TextColor::new(@sprite.Color::white()))
   world
   .component(@text.ecs_key_text_layout)
-  .insert(
-    text_entity,
-    @text.TextLayout::new_with_justify(@text.Justify::Left),
-    tick,
-  )
+  .insert(text_entity, @text.TextLayout::new_with_justify(@text.Justify::Left))
 }
 
 ///|
@@ -182,10 +174,9 @@ fn spawn_listener_ear(
     ),
   ).spawn(world)
 
-  let tick = world.read_sequence()
   world
   .component(@hierarchy.ecs_key_parent)
-  .insert(ear, @hierarchy.Parent::new(listener), tick)
+  .insert(ear, @hierarchy.Parent::new(listener))
 }
 
 ///|
@@ -219,21 +210,20 @@ fn setup(world : @ecs.World) -> Unit {
     ),
   ).spawn(world)
 
-  let tick = world.read_sequence()
   world
   .component(@audio.ecs_key_audio_source_player)
-  .insert(emitter, @audio.AudioPlayer::new(track), tick)
+  .insert(emitter, @audio.AudioPlayer::new(track))
   world
   .component(@audio.ecs_key_playback_settings)
-  .insert(emitter, @audio.PlaybackSettings::looped().with_spatial(true), tick)
+  .insert(emitter, @audio.PlaybackSettings::looped().with_spatial(true))
 
   let listener = world.spawn_empty()
   world
   .component(@transform.ecs_key_transform)
-  .insert(listener, @transform.Transform::identity(), tick)
+  .insert(listener, @transform.Transform::identity())
   world
   .component(@audio.ecs_key_spatial_listener)
-  .insert(listener, @audio.SpatialListener::new(LISTENER_GAP), tick)
+  .insert(listener, @audio.SpatialListener::new(LISTENER_GAP))
 
   spawn_listener_ear(world, listener, -LISTENER_GAP / 2.0F, color_red())
   spawn_listener_ear(world, listener, LISTENER_GAP / 2.0F, color_lime())
@@ -268,14 +258,13 @@ fn update_emitters(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
   let next_x = @math.sin(
       spatial_audio_2d_state.val.emitter_stopwatch.elapsed_secs(),
     ) *
     EMITTER_RANGE_X
 
-  transform_store.update(spatial_audio_2d_state.val.emitter, tick, fn(
+  transform_store.update(spatial_audio_2d_state.val.emitter, fn(
     transform : @transform.Transform,
   ) {
     transform.with_translation(@math.Vec3::new(next_x, EMITTER_Y, 0.0F))
@@ -305,9 +294,8 @@ fn update_listener(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.read_sequence()
   let transform_store = world.component(@transform.ecs_key_transform)
-  transform_store.update(spatial_audio_2d_state.val.listener, tick, fn(
+  transform_store.update(spatial_audio_2d_state.val.listener, fn(
     transform : @transform.Transform,
   ) {
     let translation = transform.translation

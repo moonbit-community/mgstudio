@@ -114,7 +114,6 @@ fn setup(world : @ecs.World) -> Unit {
   lightmaps_state.val.help_text = None
 
   let asset_server = @asset.AssetServer::new()
-  let tick = world.read_sequence()
 
   set_global_ambient_light(world, @sprite.Color::white(), 0.0F)
 
@@ -131,7 +130,6 @@ fn setup(world : @ecs.World) -> Unit {
         ),
       ),
     ),
-    tick,
   )
   lightmaps_state.val.scene_root = Some(scene_root)
 
@@ -146,14 +144,14 @@ fn setup(world : @ecs.World) -> Unit {
     )
     world
     .component(@pbr.ecs_key_depth_prepass)
-    .insert(camera, @pbr.DepthPrepass::default(), tick)
+    .insert(camera, @pbr.DepthPrepass::default())
     world
     .component(@pbr.ecs_key_motion_vector_prepass)
-    .insert(camera, @pbr.MotionVectorPrepass::default(), tick)
+    .insert(camera, @pbr.MotionVectorPrepass::default())
     world
     .component(@pbr.ecs_key_deferred_prepass)
-    .insert(camera, @pbr.DeferredPrepass::default(), tick)
-    world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off, tick)
+    .insert(camera, @pbr.DeferredPrepass::default())
+    world.component(@pbr.ecs_key_msaa).insert(camera, @pbr.Msaa::Off)
   }
 
   let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")

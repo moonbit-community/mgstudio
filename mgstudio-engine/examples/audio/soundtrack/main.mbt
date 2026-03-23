@@ -188,13 +188,10 @@ fn change_track(world : @ecs.World) -> Unit {
     changed: false,
   })
 
-  let tick = world.read_sequence()
   let audio_sinks = world.component(@audio.ecs_key_audio_sink)
   audio_sinks.for_each(fn(entity : @core.Entity, _sink : @audio.AudioSink) {
     if !world.component(fade_out_component_key).contains(entity) {
-      world
-      .component(fade_out_component_key)
-      .insert(entity, FadeOut::{  }, tick)
+      world.component(fade_out_component_key).insert(entity, FadeOut::{  })
     }
     if world.component(fade_in_component_key).contains(entity) {
       world.component(fade_in_component_key).remove(entity) |> ignore
@@ -215,15 +212,14 @@ fn change_track(world : @ecs.World) -> Unit {
   let entity = world.spawn_empty()
   world
   .component(@audio.ecs_key_audio_source_player)
-  .insert(entity, @audio.AudioPlayer::new(track), tick)
+  .insert(entity, @audio.AudioPlayer::new(track))
   world
   .component(@audio.ecs_key_playback_settings)
   .insert(
     entity,
     @audio.PlaybackSettings::looped().with_volume(@audio.Volume::silent()),
-    tick,
   )
-  world.component(fade_in_component_key).insert(entity, FadeIn::{  }, tick)
+  world.component(fade_in_component_key).insert(entity, FadeIn::{  })
 }
 
 ///|
@@ -247,9 +243,8 @@ fn fade_in(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.read_sequence()
   for entity in entities {
-    sink_store.update(entity, tick, fn(sink : @audio.AudioSink) {
+    sink_store.update(entity, fn(sink : @audio.AudioSink) {
       sink.set_volume(
         @audio.Volume::silent().fade_towards(
           @audio.Volume::Linear(1.0F),
@@ -259,7 +254,7 @@ fn fade_in(world : @ecs.World) -> Unit {
     })
     |> ignore
     if factor >= 1.0F {
-      sink_store.update(entity, tick, fn(sink : @audio.AudioSink) {
+      sink_store.update(entity, fn(sink : @audio.AudioSink) {
         sink.set_volume(@audio.Volume::Linear(1.0F))
       })
       |> ignore
@@ -289,9 +284,8 @@ fn fade_out(world : @ecs.World) -> Unit {
     return
   }
 
-  let tick = world.read_sequence()
   for entity in entities {
-    sink_store.update(entity, tick, fn(sink : @audio.AudioSink) {
+    sink_store.update(entity, fn(sink : @audio.AudioSink) {
       sink.set_volume(
         @audio.Volume::Linear(1.0F).fade_towards(
           @audio.Volume::silent(),
