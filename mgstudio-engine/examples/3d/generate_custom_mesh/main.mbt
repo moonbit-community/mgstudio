@@ -16,16 +16,17 @@
 /// Port of `bevy/examples/3d/generate_custom_mesh.rs`.
 
 ///|
-priv struct CustomMeshState {
-  mut mesh_entity : @core.Entity?
-  mut upper_uv : Bool
-}
+struct CustomUV {}
 
 ///|
-let custom_mesh_state : Ref[CustomMeshState] = Ref::new({
-  mesh_entity: None,
-  upper_uv: true,
-})
+let custom_uv_key : @ecs.ComponentKey[CustomUV] = @ecs.register_component(
+  debug_name="examples.3d.generate_custom_mesh.CustomUV",
+)
+
+///|
+pub impl @ecs.Component for CustomUV with component() {
+  custom_uv_key
+}
 
 ///|
 fn create_cube_positions() -> Array[@math.Vec3] {
@@ -109,40 +110,54 @@ fn create_cube_indices() -> Array[Int] {
 }
 
 ///|
-fn create_cube_mesh(upper_uv : Bool) -> @pbr.Mesh3d {
-  @pbr.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::new(
-          create_cube_positions(),
-          create_cube_uvs(upper_uv),
-          Some(create_cube_indices()),
-        ),
-      ),
+fn create_cube_mesh(upper_uv : Bool) -> @mesh.Mesh {
+  @mesh.Mesh::from_3d_geometry(
+    @mesh.Mesh3dGeometry::new(
+      create_cube_positions(),
+      create_cube_uvs(upper_uv),
+      Some(create_cube_indices()),
     ),
   )
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  custom_mesh_state.val.mesh_entity = None
-  custom_mesh_state.val.upper_uv = true
+fn toggle_texture(mesh : @mesh.Mesh) -> @mesh.Mesh {
+  guard mesh.as_3d_geometry() is Some(geometry) else { return mesh }
+  let next_uvs : Array[@math.Vec2] = []
+  for uv in geometry.uvs {
+    let next_y = if uv.y + 0.5F < 1.0F { uv.y + 0.5F } else { uv.y - 0.5F }
+    next_uvs.push(@math.Vec2::new(uv.x, next_y))
+  }
+  guard geometry.replace_uvs(next_uvs) else { return mesh }
+  geometry.clear_tangents()
+  @mesh.Mesh::from_3d_geometry(geometry)
+}
 
-  let asset_server = @asset.AssetServer::new()
+///|
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+) -> Unit {
+  let custom_texture = asset_server.get().load("textures/array_texture.png")
+  let material = materials.get_ref().val
+    |> @pbr.add_material(
+      @pbr.StandardMaterial::default().with_base_color_texture(
+        Some(custom_texture),
+      ),
+    )
+  let cube_mesh_handle = meshes.get_ref().val.add(create_cube_mesh(true))
 
-  let custom_texture = asset_server.load("textures/array_texture.png")
-  let material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::default().with_base_color_texture(
-      Some(custom_texture),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(cube_mesh_handle),
+        @pbr.MeshMaterial3d::new(material),
+        CustomUV::{  },
+      ),
     ),
   )
-
-  let mesh_entity = @pbr.MeshMaterial3dBundle::new(
-    create_cube_mesh(true),
-    @pbr.MeshMaterial3d::new(material),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  custom_mesh_state.val.mesh_entity = Some(mesh_entity)
 
   let camera_and_light_transform = @transform.Transform::from_xyz(
     1.8F, 1.8F, 1.8F,
@@ -151,103 +166,67 @@ fn setup(world : @ecs.World) -> Unit {
     @math.Vec3::new(0.0F, 1.0F, 0.0F),
   )
 
-  @pbr.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    camera_and_light_transform,
-  ).spawn(world)
-  |> ignore
-
-  let light_entity = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(light_entity, @pbr.PointLight::default())
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(light_entity, camera_and_light_transform)
-
-  let overlay_font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
-  @text.Text2dBundle::new(
-    @text.Text2d::new(
-      "Controls:\nSpace: Change UVs\nX/Y/Z: Rotate\nR: Reset orientation",
-    ),
-    @text.TextFont::default().with_font(overlay_font).with_font_size(20.0F),
-    @transform.Transform::from_xy_rotation_scale(
-      @math.Vec2::new(-390.0F, 300.0F),
-      0.0F,
-      @math.Vec2::new(1.0F, 1.0F),
-      z=50.0F,
+  ignore(commands.spawn((@pbr.Camera3d::default(), camera_and_light_transform)))
+  ignore(
+    commands.spawn((@pbr.PointLight::default(), camera_and_light_transform)),
+  )
+  ignore(
+    commands.spawn(
+      (
+        @text.Text::new(
+          "Controls:\nSpace: Change UVs\nX/Y/Z: Rotate\nR: Reset orientation",
+        ),
+        @ui.Node::{
+          ..@ui.Node::default(),
+          position_type: @ui.PositionType::Absolute,
+          top: @ui.Val::Px(12.0F),
+          left: @ui.Val::Px(12.0F),
+        },
+      ),
     ),
   )
-  .with_anchor(@sprite.Anchor::top_left())
-  .with_bounds(@text.TextBounds::new_horizontal(780.0F))
-  .with_layout(@text.TextLayout::new_with_justify(@text.Justify::Left))
-  .with_color(
-    @text.TextColor::new(@sprite.Color::new(0.95F, 0.95F, 0.95F, 1.0F)),
-  )
-  .with_shadow(Some(@text.Text2dShadow::default()))
-  .spawn()
-  |> ignore
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in generate_custom_mesh example")
+fn input_handler(
+  keyboard_input : @input.ButtonInput[@window.KeyCode],
+  mesh_query : @ecs.Query1Filtered[@pbr.Mesh3d, @ecs.With[CustomUV]],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  query : @ecs.Query1Filtered[@transform.Transform, @ecs.With[CustomUV]],
+  time : @app.Res[@time.Time[Unit]],
+) -> Unit {
+  let mesh_assets = meshes.get_ref().val
+  if keyboard_input.just_pressed(@window.KeyCode::Space) {
+    guard (try! mesh_query.single()) is Some(mesh_handle) else { return }
+    if mesh_assets.get(mesh_handle.mesh) is Some(mesh) {
+      mesh_assets.set(mesh_handle.mesh, toggle_texture(mesh)) |> ignore
+    }
   }
-}
-
-///|
-fn input_handler(world : @ecs.World) -> Unit {
-  guard custom_mesh_state.val.mesh_entity is Some(mesh_entity) else { return }
-
-  let transform_store = world.component(@transform.ecs_key_transform)
-
-  if @input.key_just_pressed(@window.KeyCode::Space) {
-    let next_upper_uv = !custom_mesh_state.val.upper_uv
-    custom_mesh_state.val.upper_uv = next_upper_uv
-    let next_mesh = create_cube_mesh(next_upper_uv)
-    let next_mesh_id = @sprite_render.render2d_upload_mesh_handle(
-      next_mesh.mesh,
-    )
-    world.component(@pbr.ecs_key_mesh3d).set(mesh_entity, next_mesh) |> ignore
-    world
-    .component(@sprite.ecs_key_gpu_mesh2d)
-    .set(mesh_entity, @sprite.GpuMesh2d::new(next_mesh_id))
-    |> ignore
+  if keyboard_input.pressed(@window.KeyCode::KeyX) {
+    try! query.view(fn(_entity, transform) {
+      transform.rotation = transform.rotation
+        .mul(@math.Quat::from_rotation_x(time.get().delta_seconds() / 1.2F))
+        .normalize()
+    })
   }
-
-  if transform_store.get(mesh_entity) is Some(transform) {
-    if @input.key_pressed(@window.KeyCode::KeyR) {
-      transform_store.set(
-        mesh_entity,
-        transform.with_rotation(@math.Quat::identity()),
-      )
-      |> ignore
-      return
-    }
-
-    let delta = world_time(world).delta_seconds() / 1.2F
-    let mut rotation = transform.rotation
-    let mut changed = false
-
-    if @input.key_pressed(@window.KeyCode::KeyX) {
-      rotation = rotation.mul(@math.Quat::from_rotation_x(delta)).normalize()
-      changed = true
-    }
-    if @input.key_pressed(@window.KeyCode::KeyY) {
-      rotation = rotation.mul(@math.Quat::from_rotation_y(delta)).normalize()
-      changed = true
-    }
-    if @input.key_pressed(@window.KeyCode::KeyZ) {
-      rotation = rotation.mul(@math.Quat::from_rotation_z(delta)).normalize()
-      changed = true
-    }
-
-    if changed {
-      transform_store.set(mesh_entity, transform.with_rotation(rotation))
-      |> ignore
-    }
+  if keyboard_input.pressed(@window.KeyCode::KeyY) {
+    try! query.view(fn(_entity, transform) {
+      transform.rotation = transform.rotation
+        .mul(@math.Quat::from_rotation_y(time.get().delta_seconds() / 1.2F))
+        .normalize()
+    })
+  }
+  if keyboard_input.pressed(@window.KeyCode::KeyZ) {
+    try! query.view(fn(_entity, transform) {
+      transform.rotation = transform.rotation
+        .mul(@math.Quat::from_rotation_z(time.get().delta_seconds() / 1.2F))
+        .normalize()
+    })
+  }
+  if keyboard_input.pressed(@window.KeyCode::KeyR) {
+    try! query.view(fn(_entity, transform) {
+      transform.rotation = @math.Quat::identity()
+    })
   }
 }
 
@@ -256,7 +235,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(input_handler))
+  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
+  .add_systems(@app.Update, @app.system(@app.system_param5(input_handler)))
   .run()
 }

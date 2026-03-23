@@ -14,75 +14,78 @@
 
 ///|
 /// Port of `bevy/examples/3d/two_passes.rs`.
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  let mesh_assets = meshes.get_ref().val
+  let material_assets = materials.get_ref().val
 
-///|
-fn setup(world : @ecs.World) -> Unit {
-  @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_plane(5.0F, 5.0F)),
-      ),
-    ),
-    @pbr.MeshMaterial3d::new(
-      @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(
-          @sprite.Color::new(0.3F, 0.5F, 0.3F, 1.0F),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(
+          mesh_assets |> @pbr.add_mesh(@pbr.mesh3d_geometry_plane(5.0F, 5.0F)),
+        ),
+        @pbr.MeshMaterial3d::new(
+          material_assets
+          |> @pbr.add_material(@sprite.Color::new(0.3F, 0.5F, 0.3F, 1.0F)),
         ),
       ),
     ),
-    @transform.Transform::identity(),
-  ).spawn(world)
-  |> ignore
-
-  @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
-        ),
-      ),
-    ),
-    @pbr.MeshMaterial3d::new(
-      @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(
-          @sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
-        ),
-      ),
-    ),
-    @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
-  ).spawn(world)
-  |> ignore
-
-  let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(
-    light,
-    @pbr.PointLight::new(@sprite.Color::white(), 1_000_000.0F, 20.0F, true),
   )
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
 
-  @pbr.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(
+          mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+        ),
+        @pbr.MeshMaterial3d::new(
+          material_assets
+          |> @pbr.add_material(@sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F)),
+        ),
+        @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
+      ),
     ),
-  ).spawn(world)
-  |> ignore
+  )
 
-  @pbr.Camera3dBundle::new(
-    @sprite.Camera::default()
-    .with_order(1)
-    .with_clear_color_config(@sprite.ClearColorConfig::None),
-    @transform.Transform::from_xyz(10.0F, 10.0F, -5.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.PointLight::default().with_shadow_maps_enabled(true),
+        @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+      ),
     ),
-  ).spawn(world)
-  |> ignore
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Camera3d::default(),
+        @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Camera3d::default(),
+        @sprite.Camera::default()
+        .with_order(1)
+        .with_clear_color_config(@sprite.ClearColorConfig::None),
+        @transform.Transform::from_xyz(10.0F, 10.0F, -5.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+      ),
+    ),
+  )
 }
 
 ///|
@@ -90,6 +93,6 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .run()
 }

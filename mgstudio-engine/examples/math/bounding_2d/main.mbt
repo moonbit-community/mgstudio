@@ -219,7 +219,7 @@ fn setup(world : @ecs.World) -> Unit {
   spawn_shape_entity(
     world,
     @transform.Transform::from_xyz(0.0F, -OFFSET_Y, 0.0F),
-    Shape::Capsule(@sprite.Capsule2d::new(25.0F, 50.0F, 16)),
+    Shape::Capsule(@sprite.Capsule2d::new(25.0F, 100.0F).with_segments(16)),
     DesiredVolume::Aabb,
     true,
   )

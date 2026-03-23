@@ -874,6 +874,9 @@ pub type CircularSector = @math.CircularSector
 pub type CircularSegment = @math.CircularSegment
 
 ///|
+pub type Ring[P] = @math.Ring[P]
+
+///|
 pub type Capsule2dRing = @math.Capsule2dRing
 
 ///|
@@ -1067,6 +1070,99 @@ fn rectangle_ring_to_mesh2d_geometry(
       ),
     ),
   )
+}
+
+///|
+fn generic_circle_ring_to_mesh2d_geometry(
+  ring : Ring[Circle],
+) -> @mesh.Mesh2dGeometry {
+  let vertices = if ring.outer_shape.vertices > ring.inner_shape.vertices {
+    ring.outer_shape.vertices
+  } else {
+    ring.inner_shape.vertices
+  }
+  ring_to_mesh2d_geometry(
+    Ring2d::new(ring.outer_shape.radius, ring.inner_shape.radius).with_vertices(
+      vertices,
+    ),
+  )
+}
+
+///|
+fn generic_circular_sector_ring_to_mesh2d_geometry(
+  ring : Ring[CircularSector],
+) -> @mesh.Mesh2dGeometry {
+  circular_sector_ring_to_mesh2d_geometry(
+    CircularSectorRing::new(ring.outer_shape, ring.inner_shape),
+  )
+}
+
+///|
+fn generic_circular_segment_ring_to_mesh2d_geometry(
+  ring : Ring[CircularSegment],
+) -> @mesh.Mesh2dGeometry {
+  circular_segment_ring_to_mesh2d_geometry(
+    CircularSegmentRing::new(ring.outer_shape, ring.inner_shape),
+  )
+}
+
+///|
+fn generic_ellipse_ring_to_mesh2d_geometry(
+  ring : Ring[Ellipse],
+) -> @mesh.Mesh2dGeometry {
+  ellipse_ring_to_mesh2d_geometry(
+    EllipseRing::new(ring.outer_shape, ring.inner_shape),
+  )
+}
+
+///|
+fn generic_capsule_ring_to_mesh2d_geometry(
+  ring : Ring[Capsule2d],
+) -> @mesh.Mesh2dGeometry {
+  capsule_ring_to_mesh2d_geometry(
+    Capsule2dRing::new(ring.outer_shape, ring.inner_shape),
+  )
+}
+
+///|
+fn generic_rhombus_ring_to_mesh2d_geometry(
+  ring : Ring[Rhombus],
+) -> @mesh.Mesh2dGeometry {
+  rhombus_ring_to_mesh2d_geometry(
+    RhombusRing::new(ring.outer_shape, ring.inner_shape),
+  )
+}
+
+///|
+fn generic_rectangle_ring_to_mesh2d_geometry(
+  ring : Ring[Rectangle],
+) -> @mesh.Mesh2dGeometry {
+  rectangle_ring_to_mesh2d_geometry(
+    RectangleRing::new(ring.outer_shape, ring.inner_shape),
+  )
+}
+
+///|
+fn generic_regular_polygon_ring_to_mesh2d_geometry(
+  ring : Ring[RegularPolygon],
+) -> @mesh.Mesh2dGeometry {
+  regular_polygon_ring_to_mesh2d_geometry(
+    RegularPolygonRing::new(ring.outer_shape, ring.inner_shape),
+  )
+}
+
+///|
+fn generic_triangle_ring_to_mesh2d_geometry(
+  ring : Ring[Triangle2d],
+) -> @mesh.Mesh2dGeometry {
+  triangle_ring_to_mesh2d_geometry(
+    Triangle2dRing::new(ring.outer_shape, ring.inner_shape),
+  )
+}
+
+///|
+pub(open) trait IntoSpriteRingMeshGeometry {
+  into_sprite_ring_mesh_geometry(self : Self, inner_shape : Self) -> Mesh2dGeometry
 }
 
 ///|
@@ -2003,6 +2099,78 @@ pub(open) trait IntoSpriteMeshAsset {
 }
 
 ///|
+pub impl IntoSpriteRingMeshGeometry for Circle with into_sprite_ring_mesh_geometry(
+  self,
+  inner_shape,
+) {
+  generic_circle_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
+}
+
+///|
+pub impl IntoSpriteRingMeshGeometry for CircularSector with into_sprite_ring_mesh_geometry(
+  self,
+  inner_shape,
+) {
+  generic_circular_sector_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
+}
+
+///|
+pub impl IntoSpriteRingMeshGeometry for CircularSegment with into_sprite_ring_mesh_geometry(
+  self,
+  inner_shape,
+) {
+  generic_circular_segment_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
+}
+
+///|
+pub impl IntoSpriteRingMeshGeometry for Ellipse with into_sprite_ring_mesh_geometry(
+  self,
+  inner_shape,
+) {
+  generic_ellipse_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
+}
+
+///|
+pub impl IntoSpriteRingMeshGeometry for Capsule2d with into_sprite_ring_mesh_geometry(
+  self,
+  inner_shape,
+) {
+  generic_capsule_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
+}
+
+///|
+pub impl IntoSpriteRingMeshGeometry for Rhombus with into_sprite_ring_mesh_geometry(
+  self,
+  inner_shape,
+) {
+  generic_rhombus_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
+}
+
+///|
+pub impl IntoSpriteRingMeshGeometry for Rectangle with into_sprite_ring_mesh_geometry(
+  self,
+  inner_shape,
+) {
+  generic_rectangle_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
+}
+
+///|
+pub impl IntoSpriteRingMeshGeometry for RegularPolygon with into_sprite_ring_mesh_geometry(
+  self,
+  inner_shape,
+) {
+  generic_regular_polygon_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
+}
+
+///|
+pub impl IntoSpriteRingMeshGeometry for Triangle2d with into_sprite_ring_mesh_geometry(
+  self,
+  inner_shape,
+) {
+  generic_triangle_ring_to_mesh2d_geometry(Ring::new(self, inner_shape))
+}
+
+///|
 pub fn[S : IntoSpriteMeshAsset] add_mesh(
   assets : @asset.Assets[@mesh.Mesh],
   value : S,
@@ -2049,6 +2217,13 @@ pub impl IntoSpriteMeshAsset for Ellipse with into_sprite_mesh_asset(self) {
 ///|
 pub impl IntoSpriteMeshAsset for Annulus with into_sprite_mesh_asset(self) {
   mesh2d_geometry_annulus(self).to_mesh()
+}
+
+///|
+pub impl[P : IntoSpriteRingMeshGeometry] IntoSpriteMeshAsset for Ring[P] with into_sprite_mesh_asset(
+  self,
+) {
+  self.outer_shape.into_sprite_ring_mesh_geometry(self.inner_shape).to_mesh()
 }
 
 ///|
@@ -6509,9 +6684,14 @@ test "render2d: shape geometry builders validate" {
     circle_to_mesh2d_geometry(Circle::new(10.0F).with_vertices(24)),
     ellipse_to_mesh2d_geometry(Ellipse::new(8.0F, 12.0F).with_vertices(24)),
     annulus_to_mesh2d_geometry(Annulus::new(4.0F, 10.0F).with_vertices(24)),
-    ring_to_mesh2d_geometry(Ring2d::new(10.0F, 7.0F).with_vertices(24)),
-    circular_sector_ring_to_mesh2d_geometry(
-      CircularSectorRing::new(
+    generic_circle_ring_to_mesh2d_geometry(
+      Ring::new(
+        Circle::new(10.0F).with_vertices(24),
+        Circle::new(7.0F).with_vertices(24),
+      ),
+    ),
+    generic_circular_sector_ring_to_mesh2d_geometry(
+      Ring::new(
         CircularSector::new(10.0F, 1.0F).with_vertices(24),
         CircularSector::new(7.0F, 1.0F).with_vertices(24),
       ),
@@ -6525,8 +6705,8 @@ test "render2d: shape geometry builders validate" {
     circular_segment_to_mesh2d_geometry(
       CircularSegment::from_turns(10.0F, 0.35F).with_vertices(24),
     ),
-    ellipse_ring_to_mesh2d_geometry(
-      EllipseRing::new(
+    generic_ellipse_ring_to_mesh2d_geometry(
+      Ring::new(
         Ellipse::new(8.0F, 12.0F).with_vertices(24),
         Ellipse::new(6.0F, 10.0F).with_vertices(24),
       ),
@@ -6546,9 +6726,9 @@ test "render2d: shape geometry builders validate" {
       ).with_half_thickness(3.0F),
     ),
     polyline_to_mesh2d_geometry(polyline),
-    capsule_to_mesh2d_geometry(Capsule2d::new(5.0F, 10.0F, 16)),
+    capsule_to_mesh2d_geometry(Capsule2d::new(5.0F, 20.0F).with_segments(16)),
     capsule_ring_to_mesh2d_geometry(
-      Capsule2d::new(5.0F, 10.0F, 16).to_ring(1.0F),
+      Capsule2d::new(5.0F, 20.0F).with_segments(16).to_ring(1.0F),
     ),
     rectangle_to_mesh2d_geometry(Rectangle::new(10.0F, 20.0F)),
     rectangle_ring_to_mesh2d_geometry(

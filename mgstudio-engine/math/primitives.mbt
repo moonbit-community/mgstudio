@@ -89,6 +89,9 @@ pub impl Primitive2d for CircularSector
 pub impl Primitive2d for CircularSegment
 
 ///|
+pub impl[P : Primitive2d] Primitive2d for Ring[P]
+
+///|
 pub impl Primitive2d for Capsule2dRing
 
 ///|
@@ -300,6 +303,16 @@ pub impl Measured2d for Ring2d with area(self) {
     self.outer_radius * self.outer_radius -
     self.inner_radius * self.inner_radius
   )
+}
+
+///|
+pub impl[P : Measured2d] Measured2d for Ring[P] with perimeter(self) {
+  self.outer_shape.perimeter() + self.inner_shape.perimeter()
+}
+
+///|
+pub impl[P : Measured2d] Measured2d for Ring[P] with area(self) {
+  self.outer_shape.area() - self.inner_shape.area()
 }
 
 ///|

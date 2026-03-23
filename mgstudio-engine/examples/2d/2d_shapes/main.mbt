@@ -78,7 +78,7 @@ fn setup(
     mesh_assets |> @sprite.add_mesh(@sprite.CircularSegment::new(50.0F, 1.25F)),
     mesh_assets |> @sprite.add_mesh(@sprite.Ellipse::new(25.0F, 50.0F)),
     mesh_assets |> @sprite.add_mesh(@sprite.Annulus::new(25.0F, 50.0F)),
-    mesh_assets |> @sprite.add_mesh(@sprite.Capsule2d::new(25.0F, 25.0F, 16)),
+    mesh_assets |> @sprite.add_mesh(@sprite.Capsule2d::new(25.0F, 50.0F)),
     mesh_assets |> @sprite.add_mesh(@sprite.Rhombus::new(75.0F, 100.0F)),
     mesh_assets |> @sprite.add_mesh(@sprite.Rectangle::new(50.0F, 100.0F)),
     mesh_assets |> @sprite.add_mesh(@sprite.RegularPolygon::new(50.0F, 6)),
@@ -111,7 +111,7 @@ fn setup(
     |> @sprite.add_mesh(@sprite.Circle::new(50.0F).to_ring(THICKNESS)),
     mesh_assets
     |> @sprite.add_mesh(
-      @sprite.CircularSectorRing::new(
+      @sprite.Ring::new(
         @sprite.CircularSector::new(50.0F, 1.0F),
         @sprite.CircularSector::new(45.0F, 1.0F),
       ),
@@ -122,16 +122,17 @@ fn setup(
     ),
     mesh_assets
     |> @sprite.add_mesh(
-      @sprite.EllipseRing::new(
+      @sprite.Ring::new(
         @sprite.Ellipse::new(25.0F, 50.0F),
         @sprite.Ellipse::new(25.0F - THICKNESS, 50.0F - THICKNESS),
       ),
     ),
-    mesh_assets |> @sprite.add_mesh(@sprite.Ring2d::new(50.0F, 25.0F)),
     mesh_assets
     |> @sprite.add_mesh(
-      @sprite.Capsule2d::new(25.0F, 25.0F, 16).to_ring(THICKNESS),
+      @sprite.Ring::new(@sprite.Circle::new(50.0F), @sprite.Circle::new(25.0F)),
     ),
+    mesh_assets
+    |> @sprite.add_mesh(@sprite.Capsule2d::new(25.0F, 50.0F).to_ring(THICKNESS)),
     mesh_assets
     |> @sprite.add_mesh(@sprite.Rhombus::new(75.0F, 100.0F).to_ring(THICKNESS)),
     mesh_assets

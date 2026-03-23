@@ -16,98 +16,67 @@
 /// Port of `bevy/examples/3d/3d_scene.rs`.
 
 ///|
-const PI : Float = 3.141592653589793F
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  let mesh_assets = meshes.get_ref().val
+  let material_assets = materials.get_ref().val
 
-///|
-fn float_from_int(value : Int) -> Float {
-  Float::from_double(value.to_double())
-}
-
-///|
-fn disk_mesh(radius : Float, segments : Int) -> @pbr.Mesh3d {
-  let count = if segments < 3 { 3 } else { segments }
-  let positions : Array[@math.Vec3] = [@math.Vec3::new(0.0F, 0.0F, 0.0F)]
-  let uvs : Array[@math.Vec2] = [@math.Vec2::new(0.5F, 0.5F)]
-  let indices : Array[Int] = []
-
-  let count_f = float_from_int(count)
-  for i in 0..<count {
-    let t = float_from_int(i) / count_f
-    let angle = t * PI * 2.0F
-    let x = @math.cos(angle) * radius
-    let y = @math.sin(angle) * radius
-    positions.push(@math.Vec3::new(x, y, 0.0F))
-    uvs.push(
-      @math.Vec2::new(x / (radius * 2.0F) + 0.5F, y / (radius * 2.0F) + 0.5F),
-    )
-  }
-
-  for i in 0..<count {
-    let next = if i + 1 < count { i + 1 } else { 0 }
-    indices.push(0)
-    indices.push(1 + i)
-    indices.push(1 + next)
-  }
-
-  @pbr.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::new(positions, uvs, Some(indices)),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(
+          mesh_assets |> @pbr.add_mesh(@mesh.Mesh3dGeometry::circle(4.0F, 32)),
+        ),
+        @pbr.MeshMaterial3d::new(
+          material_assets |> @pbr.add_material(@sprite.Color::white()),
+        ),
+        @transform.Transform::identity().with_rotation(
+          @math.Quat::from_rotation_x(-@math.pi_half()),
+        ),
       ),
     ),
   )
-}
 
-///|
-fn setup(world : @ecs.World) -> Unit {
-  @pbr.MeshMaterial3dBundle::new(
-    disk_mesh(4.0F, 32),
-    @pbr.MeshMaterial3d::new(
-      @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(
+          mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
+        ),
+        @pbr.MeshMaterial3d::new(
+          material_assets
+          |> @pbr.add_material(
+            @sprite.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
+          ),
+        ),
+        @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
       ),
     ),
-    @transform.Transform::identity().with_rotation(
-      @math.Quat::from_rotation_x(-@math.pi_half()),
-    ),
-  ).spawn(world)
-  |> ignore
+  )
 
-  @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.PointLight::default().with_shadow_maps_enabled(true),
+        @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F),
+      ),
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Camera3d::default(),
+        @transform.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
         ),
       ),
     ),
-    @pbr.MeshMaterial3d::new(
-      @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(
-          @sprite.Color::srgb(124.0F / 255.0F, 144.0F / 255.0F, 1.0F),
-        ),
-      ),
-    ),
-    @transform.Transform::from_xyz(0.0F, 0.5F, 0.0F),
-  ).spawn(world)
-  |> ignore
-
-  let light = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(light, @pbr.PointLight::default().with_shadow_maps_enabled(true))
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(light, @transform.Transform::from_xyz(4.0F, 8.0F, 4.0F))
-
-  @pbr.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::from_xyz(-2.5F, 4.5F, 9.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  |> ignore
+  )
 }
 
 ///|
@@ -115,6 +84,6 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .run()
 }

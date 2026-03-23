@@ -1,11 +1,20 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/examples/3d/render_to_texture"
 
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
 // Values
 
 // Errors
 
 // Types and methods
+type FirstPassCube
+pub impl @ecs.Component for FirstPassCube
+
+type MainPassCube
+pub impl @ecs.Component for MainPassCube
 
 // Type aliases
 

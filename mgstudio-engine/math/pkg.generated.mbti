@@ -264,8 +264,9 @@ pub struct Capsule2d {
   segments : Int
 }
 pub fn Capsule2d::default() -> Self
-pub fn Capsule2d::new(Float, Float, Int) -> Self
+pub fn Capsule2d::new(Float, Float) -> Self
 pub fn Capsule2d::to_ring(Self, Float) -> Capsule2dRing
+pub fn Capsule2d::with_segments(Self, Int) -> Self
 pub impl Bounded2d for Capsule2d
 pub impl Inset for Capsule2d
 pub impl Primitive2d for Capsule2d
@@ -1023,6 +1024,14 @@ pub struct RhombusRing {
 }
 pub fn RhombusRing::new(Rhombus, Rhombus) -> Self
 pub impl Primitive2d for RhombusRing
+
+pub struct Ring[P] {
+  outer_shape : P
+  inner_shape : P
+}
+pub fn[P] Ring::new(P, P) -> Self[P]
+pub impl[P : Measured2d] Measured2d for Ring[P]
+pub impl[P : Primitive2d] Primitive2d for Ring[P]
 
 pub struct Ring2d {
   outer_radius : Float

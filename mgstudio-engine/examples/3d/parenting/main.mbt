@@ -16,90 +16,87 @@
 /// Port of `bevy/examples/3d/parenting.rs`.
 
 ///|
-priv struct RotatorState {
-  rotators : Array[@core.Entity]
+struct Rotator {}
+
+///|
+let rotator_key : @ecs.ComponentKey[Rotator] = @ecs.register_component(
+  debug_name="examples.3d.parenting.Rotator",
+)
+
+///|
+pub impl @ecs.Component for Rotator with component() {
+  rotator_key
 }
 
 ///|
-let rotator_state : Ref[RotatorState] = Ref::new({ rotators: [] })
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  let mesh_assets = meshes.get_ref().val
+  let material_assets = materials.get_ref().val
+  let cube_handle = mesh_assets
+    |> @pbr.add_mesh(@math.Cuboid::new(2.0F, 2.0F, 2.0F))
+  let material = material_assets
+    |> @pbr.add_material(
+      @pbr.StandardMaterial::from_color(
+        @sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
+      ),
+    )
 
-///|
-fn setup(world : @ecs.World) -> Unit {
-  rotator_state.val.rotators.clear()
-
-  let material = @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(
-      @sprite.Color::new(0.8F, 0.7F, 0.6F, 1.0F),
+  let parent = commands.spawn(
+    (
+      @pbr.Mesh3d::new(cube_handle),
+      @pbr.MeshMaterial3d::new(material),
+      @transform.Transform::from_xyz(0.0F, 0.0F, 1.0F),
+      Rotator::{  },
     ),
   )
 
-  let parent = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(2.0F, 2.0F, 2.0F),
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(cube_handle),
+        @pbr.MeshMaterial3d::new(material),
+        @transform.Transform::from_xyz(0.0F, 0.0F, 3.0F),
+        @hierarchy.Parent::new(parent),
+      ),
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @pbr.PointLight::default(),
+        @transform.Transform::from_xyz(4.0F, 5.0F, -4.0F),
+      ),
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Camera3d::default(),
+        @transform.Transform::from_xyz(5.0F, 10.0F, 10.0F).looking_at(
+          @math.Vec3::new(0.0F, 0.0F, 0.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
         ),
       ),
     ),
-    @pbr.MeshMaterial3d::new(material),
-    @transform.Transform::from_xyz(0.0F, 0.0F, 1.0F),
-  ).spawn(world)
-  rotator_state.val.rotators.push(parent)
-
-  let child = @pbr.MeshMaterial3dBundle::new(
-    @pbr.Mesh3d::new(
-      @pbr.mesh_assets_mut_or_abort().val.add(
-        @pbr.Mesh::from_3d_geometry(
-          @pbr.mesh3d_geometry_cuboid(2.0F, 2.0F, 2.0F),
-        ),
-      ),
-    ),
-    @pbr.MeshMaterial3d::new(material),
-    @transform.Transform::from_xyz(0.0F, 0.0F, 3.0F),
-  ).spawn(world)
-  world
-  .component(@hierarchy.ecs_key_parent)
-  .insert(child, @hierarchy.Parent::new(parent))
-
-  let light_entity = world.spawn_empty()
-  world
-  .component(@pbr.ecs_key_point_light)
-  .insert(light_entity, @pbr.PointLight::default())
-  world
-  .component(@transform.ecs_key_transform)
-  .insert(light_entity, @transform.Transform::from_xyz(4.0F, 5.0F, -4.0F))
-
-  @pbr.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::from_xyz(5.0F, 10.0F, 10.0F).looking_at(
-      @math.Vec3::new(0.0F, 0.0F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  |> ignore
+  )
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in parenting example")
-  }
-}
-
-///|
-fn rotator_system(world : @ecs.World) -> Unit {
-  let delta = 3.0F * world_time(world).delta_seconds()
+fn rotator_system(
+  time : @app.Res[@time.Time[Unit]],
+  query : @ecs.Query1Filtered[@transform.Transform, @ecs.With[Rotator]],
+) -> Unit {
+  let delta = 3.0F * time.get().delta_seconds()
   let spin = @math.Quat::from_rotation_x(delta)
-  let transform_store = world.component(@transform.ecs_key_transform)
-  for entity in rotator_state.val.rotators {
-    if transform_store.get(entity) is Some(transform) {
-      let next = transform.with_rotation(
-        transform.rotation.mul(spin).normalize(),
-      )
-      transform_store.set(entity, next) |> ignore
-    }
-  }
+  try! query.view(fn(_entity, transform) {
+    transform.rotation = transform.rotation.mul(spin).normalize()
+  })
 }
 
 ///|
@@ -107,7 +104,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(rotator_system))
+  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
+  .add_systems(@app.Update, @app.system(@app.system_param2(rotator_system)))
   .run()
 }

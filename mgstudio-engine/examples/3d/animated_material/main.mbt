@@ -25,18 +25,6 @@ const GOLDEN_ANGLE_DEG : Float = 137.50777F
 const HUE_SPEED_DEG_PER_SEC : Float = 100.0F
 
 ///|
-priv struct AnimatedMaterialState {
-  materials : Array[@asset.Handle[@pbr.StandardMaterial]]
-  hues_deg : Array[Float]
-}
-
-///|
-let animated_material_state : Ref[AnimatedMaterialState] = Ref::new({
-  materials: [],
-  hues_deg: [],
-})
-
-///|
 fn float_from_int(value : Int) -> Float {
   Float::from_double(value.to_double())
 }
@@ -59,54 +47,98 @@ fn color_from_hue_deg(hue_deg : Float) -> @sprite.Color {
 }
 
 ///|
-fn setup(world : @ecs.World) -> Unit {
-  animated_material_state.val.materials.clear()
-  animated_material_state.val.hues_deg.clear()
-  let asset_server = @asset.AssetServer::new()
+fn max_float(a : Float, b : Float) -> Float {
+  if a >= b {
+    a
+  } else {
+    b
+  }
+}
 
-  let camera = @pbr.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::from_xyz(3.0F, 1.0F, 3.0F).looking_at(
-      @math.Vec3::new(0.0F, -0.5F, 0.0F),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  world
-  .component(@pbr.ecs_key_environment_map_light)
-  .insert(
-    camera,
-    @pbr.EnvironmentMapLight::new(
-      Some(asset_server.load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2")),
-      Some(asset_server.load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2")),
-      2_000.0F,
-    ),
-  )
+///|
+fn min_float(a : Float, b : Float) -> Float {
+  if a <= b {
+    a
+  } else {
+    b
+  }
+}
 
-  let cube = @pbr.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(0.5F, 0.5F, 0.5F)),
+///|
+fn color_hue_deg(color : @sprite.Color) -> Float {
+  let r = color.r
+  let g = color.g
+  let b = color.b
+  let max_channel = max_float(r, max_float(g, b))
+  let min_channel = min_float(r, min_float(g, b))
+  let delta = max_channel - min_channel
+  if delta <= 0.000001F {
+    return 0.0F
+  }
+  let raw_hue = if max_channel == r {
+    (g - b) / delta
+  } else if max_channel == g {
+    (b - r) / delta + 2.0F
+  } else {
+    (r - g) / delta + 4.0F
+  }
+  wrap_hue_deg(raw_hue * 60.0F)
+}
+
+///|
+fn setup(
+  commands : @app.Commands,
+  asset_server : @app.Res[@asset.AssetServer],
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  let mesh_assets = meshes.get_ref().val
+  let material_assets = materials.get_ref().val
+  let cube = mesh_assets |> @pbr.add_mesh(@math.Cuboid::new(0.5F, 0.5F, 0.5F))
+
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Camera3d::default(),
+        @transform.Transform::from_xyz(3.0F, 1.0F, 3.0F).looking_at(
+          @math.Vec3::new(0.0F, -0.5F, 0.0F),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
+        ),
+        @pbr.EnvironmentMapLight::new(
+          Some(
+            asset_server
+            .get()
+            .load("environment_maps/pisa_diffuse_rgb9e5_zstd.ktx2"),
+          ),
+          Some(
+            asset_server
+            .get()
+            .load("environment_maps/pisa_specular_rgb9e5_zstd.ktx2"),
+          ),
+          2_000.0F,
+        ),
+      ),
     ),
   )
 
   let mut hue = 0.0F
   for x in -1..<2 {
     for z in -1..<2 {
-      let material_handle = @pbr.standard_material_add(
-        @pbr.StandardMaterial::from_color(color_from_hue_deg(hue)),
-      )
-      animated_material_state.val.materials.push(material_handle)
-      animated_material_state.val.hues_deg.push(hue)
-
-      @pbr.MeshMaterial3dBundle::new(
-        cube,
-        @pbr.MeshMaterial3d::new(material_handle),
-        @transform.Transform::from_xyz(
-          float_from_int(x),
-          0.0F,
-          float_from_int(z),
+      ignore(
+        commands.spawn(
+          (
+            @pbr.Mesh3d::new(cube),
+            @pbr.MeshMaterial3d::new(
+              material_assets |> @pbr.add_material(color_from_hue_deg(hue)),
+            ),
+            @transform.Transform::from_xyz(
+              float_from_int(x),
+              0.0F,
+              float_from_int(z),
+            ),
+          ),
         ),
-      ).spawn(world)
-      |> ignore
+      )
 
       hue = hue + GOLDEN_ANGLE_DEG
     }
@@ -114,31 +146,29 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn world_time(world : @ecs.World) -> @time.Time[Unit] {
-  match (try! world.get_resource(@time.default_time_resource_key())) {
-    Some(time) => time
-    None => abort("Missing Time<Unit> resource in animated_material example")
-  }
-}
-
-///|
-fn animate_materials(world : @ecs.World) -> Unit {
-  let delta = world_time(world).delta_seconds()
+fn animate_materials(
+  material_handles : @ecs.Query1[@pbr.MeshMaterial3d],
+  time : @app.Res[@time.Time[Unit]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  let delta = time.get().delta_seconds()
   if delta <= 0.0F {
     return
   }
-  let count = animated_material_state.val.materials.length()
-  for i in 0..<count {
-    let handle = animated_material_state.val.materials[i]
-    let next_hue = wrap_hue_deg(
-      animated_material_state.val.hues_deg[i] + delta * HUE_SPEED_DEG_PER_SEC,
-    )
-    animated_material_state.val.hues_deg[i] = next_hue
-    if @pbr.standard_material_get(handle) is Some(material) {
-      let next_material = material.with_base_color(color_from_hue_deg(next_hue))
-      @pbr.standard_material_set(handle, next_material) |> ignore
+  let material_assets = materials.get_ref().val
+  try! material_handles.view(fn(_entity, material_handle) {
+    let handle = material_handle.material
+    if material_assets.get(handle) is Some(material) {
+      let next_hue = wrap_hue_deg(
+        color_hue_deg(material.base_color) + delta * HUE_SPEED_DEG_PER_SEC,
+      )
+      material_assets.set(
+        handle,
+        material.with_base_color(color_from_hue_deg(next_hue)),
+      )
+      |> ignore
     }
-  }
+  })
 }
 
 ///|
@@ -146,7 +176,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(animate_materials))
+  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
+  .add_systems(@app.Update, @app.system(@app.system_param3(animate_materials)))
   .run()
 }

@@ -20,17 +20,18 @@ pub struct Capsule2d {
 }
 
 ///|
-pub fn Capsule2d::new(
-  radius : Float,
-  half_length : Float,
-  segments : Int,
-) -> Capsule2d {
-  Capsule2d::{ radius, half_length, segments }
+pub fn Capsule2d::new(radius : Float, length : Float) -> Capsule2d {
+  Capsule2d::{ radius, half_length: length / 2.0F, segments: 16 }
+}
+
+///|
+pub fn Capsule2d::with_segments(self : Capsule2d, segments : Int) -> Capsule2d {
+  Capsule2d::{ ..self, segments, }
 }
 
 ///|
 pub fn Capsule2d::default() -> Capsule2d {
-  Capsule2d::new(0.5F, 0.5F, 16)
+  Capsule2d::new(0.5F, 1.0F)
 }
 
 ///|
@@ -461,6 +462,17 @@ pub fn CircularSegment::angle(self : CircularSegment) -> Float {
 ///|
 pub fn CircularSegment::default() -> CircularSegment {
   CircularSegment::new(0.5F, pi_half() * 2.0F / 3.0F)
+}
+
+///|
+pub struct Ring[P] {
+  outer_shape : P
+  inner_shape : P
+}
+
+///|
+pub fn[P] Ring::new(outer_shape : P, inner_shape : P) -> Ring[P] {
+  Ring::{ outer_shape, inner_shape }
 }
 
 ///|

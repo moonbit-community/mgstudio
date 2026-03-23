@@ -1046,6 +1046,8 @@ pub using @math {type Rhombus}
 
 pub using @math {type RhombusRing}
 
+pub using @math {type Ring}
+
 pub using @math {type Ring2d}
 
 pub using @math {type Segment2d}
@@ -1083,11 +1085,25 @@ pub impl IntoSpriteMeshAsset for @math.RegularPolygon
 pub impl IntoSpriteMeshAsset for @math.RegularPolygonRing
 pub impl IntoSpriteMeshAsset for @math.Rhombus
 pub impl IntoSpriteMeshAsset for @math.RhombusRing
+pub impl[P : IntoSpriteRingMeshGeometry] IntoSpriteMeshAsset for @math.Ring[P]
 pub impl IntoSpriteMeshAsset for @math.Ring2d
 pub impl IntoSpriteMeshAsset for @math.Segment2d
 pub impl IntoSpriteMeshAsset for @math.Triangle2d
 pub impl IntoSpriteMeshAsset for @math.Triangle2dRing
 pub impl IntoSpriteMeshAsset for @mesh.Mesh2dGeometry
+
+pub(open) trait IntoSpriteRingMeshGeometry {
+  into_sprite_ring_mesh_geometry(Self, Self) -> @mesh.Mesh2dGeometry
+}
+pub impl IntoSpriteRingMeshGeometry for @math.Capsule2d
+pub impl IntoSpriteRingMeshGeometry for @math.Circle
+pub impl IntoSpriteRingMeshGeometry for @math.CircularSector
+pub impl IntoSpriteRingMeshGeometry for @math.CircularSegment
+pub impl IntoSpriteRingMeshGeometry for @math.Ellipse
+pub impl IntoSpriteRingMeshGeometry for @math.Rectangle
+pub impl IntoSpriteRingMeshGeometry for @math.RegularPolygon
+pub impl IntoSpriteRingMeshGeometry for @math.Rhombus
+pub impl IntoSpriteRingMeshGeometry for @math.Triangle2d
 
 pub(open) trait Material2d {
   alpha_mode(Self) -> AlphaMode2d

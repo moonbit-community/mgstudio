@@ -36,7 +36,7 @@ priv struct LineStrip {
 }
 
 ///|
-fn line_mesh_from_line_list(line_list : LineList) -> @pbr.Mesh3d {
+fn line_mesh_from_line_list(line_list : LineList) -> @mesh.Mesh3dGeometry {
   let positions : Array[@math.Vec3] = []
   for i in 0..<line_list.lines.length() {
     let (start, end_) = line_list.lines[i]
@@ -47,84 +47,103 @@ fn line_mesh_from_line_list(line_list : LineList) -> @pbr.Mesh3d {
   for _ in 0..<positions.length() {
     uvs.push(@math.Vec2::new(0.0F, 0.0F))
   }
-  @pbr.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::new_with_topology(
-          positions,
-          uvs,
-          None,
-          @mesh.Mesh3dPrimitiveTopology::LineList,
-        ),
-      ),
-    ),
+  @mesh.Mesh3dGeometry::new_with_topology(
+    positions,
+    uvs,
+    None,
+    @mesh.Mesh3dPrimitiveTopology::LineList,
   )
 }
 
 ///|
-fn line_mesh_from_line_strip(line_strip : LineStrip) -> @pbr.Mesh3d {
+fn line_mesh_from_line_strip(line_strip : LineStrip) -> @mesh.Mesh3dGeometry {
   let positions : Array[@math.Vec3] = []
   let uvs : Array[@math.Vec2] = []
   for point in line_strip.points {
     positions.push(point)
     uvs.push(@math.Vec2::new(0.0F, 0.0F))
   }
-  @pbr.Mesh3d::new(
-    @pbr.mesh_assets_mut_or_abort().val.add(
-      @pbr.Mesh::from_3d_geometry(
-        @mesh.Mesh3dGeometry::new_with_topology(
-          positions,
-          uvs,
-          None,
-          @mesh.Mesh3dPrimitiveTopology::LineStrip,
+  @mesh.Mesh3dGeometry::new_with_topology(
+    positions,
+    uvs,
+    None,
+    @mesh.Mesh3dPrimitiveTopology::LineStrip,
+  )
+}
+
+///|
+fn line_material(color : @sprite.Color) -> @pbr.StandardMaterial {
+  @pbr.StandardMaterial::from_color(color).with_unlit(true)
+}
+
+///|
+fn setup(
+  commands : @app.Commands,
+  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+  materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+) -> Unit {
+  let mesh_assets = meshes.get_ref().val
+  let material_assets = materials.get_ref().val
+
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(
+          mesh_assets
+          |> @pbr.add_mesh(
+            line_mesh_from_line_list(LineList::{
+              lines: [
+                (@math.Vec3::zero(), @math.Vec3::new(1.0F, 1.0F, 0.0F)),
+                (
+                  @math.Vec3::new(1.0F, 1.0F, 0.0F),
+                  @math.Vec3::new(1.0F, 0.0F, 0.0F),
+                ),
+              ],
+            }),
+          ),
+        ),
+        @pbr.MeshMaterial3d::new(
+          material_assets |> @pbr.add_material(line_material(color_green())),
+        ),
+        @transform.Transform::from_xyz(-1.5F, 0.0F, 0.0F),
+      ),
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Mesh3d::new(
+          mesh_assets
+          |> @pbr.add_mesh(
+            line_mesh_from_line_strip(LineStrip::{
+              points: [
+                @math.Vec3::zero(),
+                @math.Vec3::new(1.0F, 1.0F, 0.0F),
+                @math.Vec3::new(1.0F, 0.0F, 0.0F),
+              ],
+            }),
+          ),
+        ),
+        @pbr.MeshMaterial3d::new(
+          material_assets |> @pbr.add_material(line_material(color_blue())),
+        ),
+        @transform.Transform::from_xyz(0.5F, 0.0F, 0.0F),
+      ),
+    ),
+  )
+
+  ignore(
+    commands.spawn(
+      (
+        @pbr.Camera3d::default(),
+        @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
+          @math.Vec3::zero(),
+          @math.Vec3::new(0.0F, 1.0F, 0.0F),
         ),
       ),
     ),
   )
-}
-
-///|
-fn line_material(color : @sprite.Color) -> @asset.Handle[@pbr.StandardMaterial] {
-  @pbr.standard_material_add(
-    @pbr.StandardMaterial::from_color(color).with_unlit(true),
-  )
-}
-
-///|
-fn setup(world : @ecs.World) -> Unit {
-  @pbr.MeshMaterial3dBundle::new(
-    line_mesh_from_line_list(LineList::{
-      lines: [
-        (@math.Vec3::zero(), @math.Vec3::new(1.0F, 1.0F, 0.0F)),
-        (@math.Vec3::new(1.0F, 1.0F, 0.0F), @math.Vec3::new(1.0F, 0.0F, 0.0F)),
-      ],
-    }),
-    @pbr.MeshMaterial3d::new(line_material(color_green())),
-    @transform.Transform::from_xyz(-1.5F, 0.0F, 0.0F),
-  ).spawn(world)
-  |> ignore
-
-  @pbr.MeshMaterial3dBundle::new(
-    line_mesh_from_line_strip(LineStrip::{
-      points: [
-        @math.Vec3::zero(),
-        @math.Vec3::new(1.0F, 1.0F, 0.0F),
-        @math.Vec3::new(1.0F, 0.0F, 0.0F),
-      ],
-    }),
-    @pbr.MeshMaterial3d::new(line_material(color_blue())),
-    @transform.Transform::from_xyz(0.5F, 0.0F, 0.0F),
-  ).spawn(world)
-  |> ignore
-
-  @pbr.Camera3dBundle::new(
-    @sprite.Camera::default(),
-    @transform.Transform::from_xyz(-2.0F, 2.5F, 5.0F).looking_at(
-      @math.Vec3::zero(),
-      @math.Vec3::new(0.0F, 1.0F, 0.0F),
-    ),
-  ).spawn(world)
-  |> ignore
 }
 
 ///|
@@ -132,6 +151,6 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(setup))
+  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
   .run()
 }
