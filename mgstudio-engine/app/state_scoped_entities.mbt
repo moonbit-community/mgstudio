@@ -1,0 +1,93 @@
+// Copyright 2026 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+pub struct DespawnOnExit {
+  transition_key : String
+  state_debug : String
+}
+
+///|
+pub fn DespawnOnExit::transition_key(self : DespawnOnExit) -> String {
+  self.transition_key
+}
+
+///|
+pub fn DespawnOnExit::state_debug(self : DespawnOnExit) -> String {
+  self.state_debug
+}
+
+///|
+let despawn_on_exit_registration_registry : Ref[@hashmap.HashMap[String, Bool]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
+
+///|
+pub let ecs_key_despawn_on_exit : @ecs.ComponentKey[DespawnOnExit] = @ecs.register_component(
+  debug_name="bevy_state::DespawnOnExit",
+)
+
+///|
+pub impl @ecs.Component for DespawnOnExit with component() {
+  ecs_key_despawn_on_exit
+}
+
+///|
+fn[S : States] despawn_on_exit_entities(world : @ecs.World, state : S) -> Unit {
+  guard pending_transition(world, state) is Some(event) else { return }
+  guard event.exited is Some(exited) else { return }
+  let transition_key = state_transition_registration_key(state)
+  let exited_debug = exited.to_string()
+  let entities : Array[@core.Entity] = []
+  let store = world.component(ecs_key_despawn_on_exit)
+  store.for_each(fn(entity, marker) {
+    if marker.transition_key() == transition_key &&
+      marker.state_debug() == exited_debug {
+      entities.push(entity)
+    }
+  })
+  for entity in entities {
+    ignore(try? world.despawn(entity))
+  }
+}
+
+///|
+fn[S : States] ensure_despawn_on_exit_registered(state : S) -> Unit {
+  let transition_key = state_transition_registration_key(state)
+  if despawn_on_exit_registration_registry.val.contains(transition_key) {
+    return
+  }
+  register_state_transition(state)
+  register_state_transition_hook(
+    on_exit_registrations,
+    transition_key,
+    system(fn(world : @ecs.World) { despawn_on_exit_entities(world, state) }),
+    fn(world : @ecs.World) {
+      match pending_transition(world, state) {
+        Some(event) => event.exited is Some(_)
+        None => false
+      }
+    },
+  )
+  despawn_on_exit_registration_registry.val.set(transition_key, true)
+}
+
+///|
+pub fn[S : States] DespawnOnExit::new(state : S) -> DespawnOnExit {
+  ensure_despawn_on_exit_registered(state)
+  {
+    transition_key: state_transition_registration_key(state),
+    state_debug: state.to_string(),
+  }
+}

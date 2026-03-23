@@ -32,6 +32,8 @@ pub fn current_system_sequence() -> @core.SystemSequence
 
 pub fn current_world() -> @ecs.World?
 
+pub let ecs_key_despawn_on_exit : @ecs.ComponentKey[DespawnOnExit]
+
 pub fn fixed_main_schedule_order_resource_key() -> @ecs.ResourceKey[FixedMainScheduleOrder]
 
 pub fn[S : States] in_state(S) -> (@ecs.World) -> Bool
@@ -78,9 +80,17 @@ pub fn[S : States] next_state_resource_key(S) -> @ecs.ResourceKey[NextState[S]]
 
 pub fn[M] on_message(@ecs.World, @ecs.MessageKey[M], @ref.Ref[Json]) -> Bool
 
+pub fn[S] optional_state(S) -> OptionalStateSource[S]
+
 pub fn[S : States] previous_state_resource_key(S) -> @ecs.ResourceKey[PreviousState[S]]
 
 pub fn[Source : States, Derived : States] register_computed_state(Source, Derived, (Source) -> Derived?, allow_same_state_transitions? : Bool) -> Unit
+
+pub fn[A : States, B : States, Derived : States] register_computed_state2(A, B, Derived, ((A, B)) -> Derived?, allow_same_state_transitions? : Bool) -> Unit
+
+pub fn[A : States, B : States, C : States, Derived : States] register_computed_state3(A, B, C, Derived, ((A, B, C)) -> Derived?, allow_same_state_transitions? : Bool) -> Unit
+
+pub fn[A : States, B : States, C : States, Derived : States] register_computed_state3_optional(A, B, OptionalStateSource[C], Derived, ((A, B, C?)) -> Derived?, allow_same_state_transitions? : Bool) -> Unit
 
 pub fn[Source : States, Derived : SubStates] register_sub_state(Source, Derived, (Source) -> Derived?) -> Unit
 
@@ -181,6 +191,9 @@ pub struct App[W] {
   runner_builder : ((App[W]) -> (() -> Unit))?
 }
 pub fn[Source : States, Derived : States] App::add_computed_state(Self[@ecs.World], Source, Derived, (Source) -> Derived?, allow_same_state_transitions? : Bool) -> Self[@ecs.World]
+pub fn[A : States, B : States, Derived : States] App::add_computed_state2(Self[@ecs.World], A, B, Derived, ((A, B)) -> Derived?, allow_same_state_transitions? : Bool) -> Self[@ecs.World]
+pub fn[A : States, B : States, C : States, Derived : States] App::add_computed_state3(Self[@ecs.World], A, B, C, Derived, ((A, B, C)) -> Derived?, allow_same_state_transitions? : Bool) -> Self[@ecs.World]
+pub fn[A : States, B : States, C : States, Derived : States] App::add_computed_state3_optional(Self[@ecs.World], A, B, OptionalStateSource[C], Derived, ((A, B, C?)) -> Derived?, allow_same_state_transitions? : Bool) -> Self[@ecs.World]
 pub fn[W] App::add_first_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_first_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_first_system_param(Self[W], (P) -> Unit) -> Self[W]
@@ -232,6 +245,10 @@ pub fn[S : States] App::add_on_enter_system(Self[@ecs.World], S, (@ecs.World) ->
 pub fn[S : States] App::add_on_enter_system_config(Self[@ecs.World], S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_exit_system(Self[@ecs.World], S, (@ecs.World) -> Unit) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_exit_system_config(Self[@ecs.World], S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
+pub fn[S : States] App::add_on_reenter_system(Self[@ecs.World], S, (@ecs.World) -> Unit) -> Self[@ecs.World]
+pub fn[S : States] App::add_on_reenter_system_config(Self[@ecs.World], S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
+pub fn[S : States] App::add_on_reexit_system(Self[@ecs.World], S, (@ecs.World) -> Unit) -> Self[@ecs.World]
+pub fn[S : States] App::add_on_reexit_system_config(Self[@ecs.World], S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_transition_system(Self[@ecs.World], S, S, (@ecs.World) -> Unit) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_transition_system_config(Self[@ecs.World], S, S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
 pub fn[W] App::add_plugin(Self[W], (Self[W]) -> Self[W]) -> Self[W]
@@ -364,6 +381,15 @@ pub fn[T : @ecs.Component] Commands::spawn_component(Self, T, loc~ : SourceLoc) 
 pub fn Commands::spawn_empty(Self) -> @core.Entity
 pub impl SystemParam for Commands
 
+pub struct DespawnOnExit {
+  transition_key : String
+  state_debug : String
+}
+pub fn[S : States] DespawnOnExit::new(S) -> Self
+pub fn DespawnOnExit::state_debug(Self) -> String
+pub fn DespawnOnExit::transition_key(Self) -> String
+pub impl @ecs.Component for DespawnOnExit
+
 pub struct EntityCommands {
   commands : Commands
   entity : @core.Entity
@@ -479,6 +505,18 @@ pub fn[S] OnExit::state(Self[S]) -> S
 pub impl[S : Eq] Eq for OnExit[S]
 pub impl[S : Show] Show for OnExit[S]
 
+pub struct OnReenter[S] {
+  state : S
+}
+pub fn[S] OnReenter::new(S) -> Self[S]
+pub fn[S] OnReenter::state(Self[S]) -> S
+
+pub struct OnReexit[S] {
+  state : S
+}
+pub fn[S] OnReexit::new(S) -> Self[S]
+pub fn[S] OnReexit::state(Self[S]) -> S
+
 pub struct OnTransition[S] {
   exited : S
   entered : S
@@ -488,6 +526,11 @@ pub fn[S] OnTransition::exited(Self[S]) -> S
 pub fn[S] OnTransition::new(S, S) -> Self[S]
 pub impl[S : Eq] Eq for OnTransition[S]
 pub impl[S : Show] Show for OnTransition[S]
+
+pub struct OptionalStateSource[S] {
+  state : S
+}
+pub fn[S] OptionalStateSource::state(Self[S]) -> S
 
 pub struct ParamSet2[P0, P1] {
   param0 : P0

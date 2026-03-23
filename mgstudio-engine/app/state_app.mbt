@@ -157,3 +157,45 @@ pub fn[S : States] App::add_on_transition_system(
 ) -> App[@ecs.World] {
   self.add_on_transition_system_config(exited, entered, system(system_fn))
 }
+
+///|
+pub fn[S : States] App::add_on_reenter_system_config(
+  self : App[@ecs.World],
+  state : S,
+  config : SystemConfig[@ecs.World],
+) -> App[@ecs.World] {
+  require_states_plugin_installed(self.world())
+  register_state_transition(state)
+  register_on_reenter_system(state, config)
+  self
+}
+
+///|
+pub fn[S : States] App::add_on_reenter_system(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : SystemFn[@ecs.World],
+) -> App[@ecs.World] {
+  self.add_on_reenter_system_config(state, system(system_fn))
+}
+
+///|
+pub fn[S : States] App::add_on_reexit_system_config(
+  self : App[@ecs.World],
+  state : S,
+  config : SystemConfig[@ecs.World],
+) -> App[@ecs.World] {
+  require_states_plugin_installed(self.world())
+  register_state_transition(state)
+  register_on_reexit_system(state, config)
+  self
+}
+
+///|
+pub fn[S : States] App::add_on_reexit_system(
+  self : App[@ecs.World],
+  state : S,
+  system_fn : SystemFn[@ecs.World],
+) -> App[@ecs.World] {
+  self.add_on_reexit_system_config(state, system(system_fn))
+}

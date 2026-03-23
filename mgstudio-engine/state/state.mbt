@@ -38,6 +38,18 @@ pub type OnExit[S] = @app.OnExit[S]
 pub type OnTransition[S] = @app.OnTransition[S]
 
 ///|
+pub type OnReenter[S] = @app.OnReenter[S]
+
+///|
+pub type OnReexit[S] = @app.OnReexit[S]
+
+///|
+pub type DespawnOnExit = @app.DespawnOnExit
+
+///|
+pub type OptionalStateSource[S] = @app.OptionalStateSource[S]
+
+///|
 pub type StatesPlugin = @app.StatesPlugin
 
 ///|
@@ -56,6 +68,13 @@ pub fn[S : @app.States] insert_state_app(
 ///|
 pub fn[S : @app.States] in_state(state : S) -> (@ecs.World) -> Bool {
   @app.in_state(state)
+}
+
+///|
+pub fn[S : @app.States] optional_state(
+  state : S,
+) -> @app.OptionalStateSource[S] {
+  @app.optional_state(state)
 }
 
 ///|

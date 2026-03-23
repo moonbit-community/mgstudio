@@ -96,6 +96,36 @@ pub fn[S] OnTransition::entered(self : OnTransition[S]) -> S {
 }
 
 ///|
+pub struct OnReenter[S] {
+  state : S
+}
+
+///|
+pub fn[S] OnReenter::new(state : S) -> OnReenter[S] {
+  { state, }
+}
+
+///|
+pub fn[S] OnReenter::state(self : OnReenter[S]) -> S {
+  self.state
+}
+
+///|
+pub struct OnReexit[S] {
+  state : S
+}
+
+///|
+pub fn[S] OnReexit::new(state : S) -> OnReexit[S] {
+  { state, }
+}
+
+///|
+pub fn[S] OnReexit::state(self : OnReexit[S]) -> S {
+  self.state
+}
+
+///|
 pub(all) enum StateTransitionSystems {
   DependentTransitions
   ExitSchedules
@@ -288,7 +318,7 @@ fn[S : States] register_on_enter_system(
   ) {
     match pending_transition(world, state) {
       Some(event) =>
-        if event.entered == event.exited && !event.allow_same_state_transitions {
+        if event.entered == event.exited {
           false
         } else {
           match event.entered {
@@ -312,7 +342,7 @@ fn[S : States] register_on_exit_system(
   ) {
     match pending_transition(world, state) {
       Some(event) =>
-        if event.entered == event.exited && !event.allow_same_state_transitions {
+        if event.entered == event.exited {
           false
         } else {
           match event.exited {
@@ -337,7 +367,41 @@ fn[S : States] register_on_transition_system(
   ) {
     match pending_transition(world, exited) {
       Some(event) =>
-        event.exited == Some(exited) && event.entered == Some(entered)
+        event.exited != event.entered &&
+        event.exited == Some(exited) &&
+        event.entered == Some(entered)
+      None => false
+    }
+  })
+}
+
+///|
+fn[S : States] register_on_reenter_system(
+  state : S,
+  config : SystemConfig[@ecs.World],
+) -> Unit {
+  let key = state_transition_registration_key(state)
+  register_state_transition_hook(on_enter_registrations, key, config, fn(
+    world : @ecs.World,
+  ) {
+    match pending_transition(world, state) {
+      Some(event) => event.exited == Some(state) && event.entered == Some(state)
+      None => false
+    }
+  })
+}
+
+///|
+fn[S : States] register_on_reexit_system(
+  state : S,
+  config : SystemConfig[@ecs.World],
+) -> Unit {
+  let key = state_transition_registration_key(state)
+  register_state_transition_hook(on_exit_registrations, key, config, fn(
+    world : @ecs.World,
+  ) {
+    match pending_transition(world, state) {
+      Some(event) => event.exited == Some(state) && event.entered == Some(state)
       None => false
     }
   })

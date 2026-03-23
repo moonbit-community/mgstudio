@@ -1,0 +1,63 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/state/computed_states"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) enum AppState {
+  Menu
+  InGame(Bool, Bool)
+}
+pub impl Eq for AppState
+pub impl Show for AppState
+
+type InGame
+pub impl Eq for InGame
+pub impl Show for InGame
+
+pub(all) enum IsPaused {
+  NotPaused
+  Paused
+}
+pub impl Eq for IsPaused
+pub impl Show for IsPaused
+
+pub(all) enum MenuButton {
+  Play
+  Tutorial
+}
+pub impl Eq for MenuButton
+pub impl Show for MenuButton
+
+type MenuData
+pub impl @app.Resource for MenuData
+
+type TurboMode
+pub impl Eq for TurboMode
+pub impl Show for TurboMode
+
+pub(all) enum Tutorial {
+  MovementInstructions
+  PauseInstructions
+}
+pub impl Eq for Tutorial
+pub impl Show for Tutorial
+
+pub(all) enum TutorialState {
+  Active
+  Inactive
+}
+pub impl Eq for TutorialState
+pub impl Show for TutorialState
+
+// Type aliases
+
+// Traits
+
