@@ -66,6 +66,9 @@ let pending_folder_event_ref : Ref[FolderEvent?] = Ref::new(None)
 const DEFAULT_ASSETS_DIR : String = "./assets"
 
 ///|
+let assets_dir_override_ref : Ref[String?] = Ref::new(None)
+
+///|
 const DEFAULT_DATA_DIR : String = "./tmp/data"
 
 ///|
@@ -138,8 +141,16 @@ fn env_or_default(key : String, default_value : String) -> String {
 }
 
 ///|
-fn runtime_assets_dir() -> String {
+fn default_runtime_assets_dir() -> String {
   env_or_default("MGSTUDIO_ASSETS_DIR", DEFAULT_ASSETS_DIR)
+}
+
+///|
+fn runtime_assets_dir() -> String {
+  match assets_dir_override_ref.val {
+    Some(path) if path.length() > 0 => path
+    _ => default_runtime_assets_dir()
+  }
 }
 
 ///|
@@ -150,6 +161,32 @@ fn runtime_data_dir() -> String {
 ///|
 fn path_join(lhs : String, rhs : String) -> String {
   @path.Path::join(lhs, rhs).normalize().to_string()
+}
+
+///|
+fn set_runtime_assets_dir_override(path : String?) -> Unit {
+  match path {
+    Some(value) if value.trim().to_string() != "" =>
+      assets_dir_override_ref.val = Some(
+        @path.Path::normalize(value).to_string(),
+      )
+    _ => assets_dir_override_ref.val = None
+  }
+}
+
+///|
+fn resolve_assets_dir_override(path : String?) -> String? {
+  match path {
+    Some(value) if value.trim().to_string() != "" => {
+      let trimmed = value.trim().to_string()
+      if @path.Path::is_absolute(trimmed) {
+        Some(@path.Path::normalize(trimmed).to_string())
+      } else {
+        Some(path_join(default_runtime_assets_dir(), trimmed))
+      }
+    }
+    _ => None
+  }
 }
 
 ///|
@@ -260,10 +297,33 @@ fn resolve_output_path(path : String) -> String {
 }
 
 ///|
+fn resolve_asset_fallback_path(path : String) -> String? {
+  let parsed = parse_virtual_asset_path(path)
+  if parsed.source_name is Some(_) ||
+    @path.Path::is_absolute(parsed.relative_path) {
+    return None
+  }
+  let default_root = default_runtime_assets_dir()
+  let current_root = runtime_assets_dir()
+  if default_root == current_root {
+    return None
+  }
+  let fallback = path_join(default_root, parsed.relative_path)
+  if path_is_file(fallback) {
+    Some(fallback)
+  } else {
+    None
+  }
+}
+
+///|
 fn resolve_asset_input_path(path : String) -> String? {
   let resolved = resolve_asset_path(path)
   if path_is_file(resolved) {
     return Some(resolved)
+  }
+  if resolve_asset_fallback_path(path) is Some(fallback) {
+    return Some(fallback)
   }
   None
 }

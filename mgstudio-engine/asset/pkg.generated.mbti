@@ -258,12 +258,14 @@ pub impl Eq for AssetPath
 pub impl Hash for AssetPath
 pub impl Show for AssetPath
 
-pub struct AssetPlugin {
+pub(all) struct AssetPlugin {
   default_sampler_nearest : Bool
+  file_path : String?
 }
 pub fn AssetPlugin::default() -> Self
 pub fn AssetPlugin::default_nearest() -> Self
 pub fn AssetPlugin::with_default_sampler_nearest(Self, Bool) -> Self
+pub fn AssetPlugin::with_file_path(Self, String) -> Self
 pub impl @app.PluginReplacement for AssetPlugin
 
 pub struct AssetServer {
@@ -272,6 +274,7 @@ pub struct AssetServer {
   image_loaded_states : @ref.Ref[@hashmap.HashMap[Int, Bool]]
   pending_image_assets : @ref.Ref[@hashmap.HashMap[Int, @image.Image]]
   image_array_layouts : @ref.Ref[Array[(Int, @image.ImageArrayLayout)]]
+  image_render_asset_usages : @ref.Ref[Array[(Int, RenderAssetUsages)]]
   image_srgb_settings : @ref.Ref[Array[(Int, Bool)]]
   image_usage_settings : @ref.Ref[Array[(Int, Int)]]
   default_sampler_nearest : @ref.Ref[Bool]
@@ -301,11 +304,13 @@ pub struct Assets[T] {
   items : Array[T?]
   mut alive : Int
   events : Array[AssetEvent[T]]
+  dirty : Array[Handle[T]]
 }
 pub fn[T] Assets::add(Self[T], T) -> Handle[T]
 pub fn[T] Assets::contains(Self[T], Handle[T]) -> Bool
 pub fn[T] Assets::drain_events(Self[T]) -> Array[AssetEvent[T]]
 pub fn[T] Assets::get(Self[T], Handle[T]) -> T?
+pub fn[T] Assets::get_mut(Self[T], Handle[T]) -> T?
 pub fn[T] Assets::insert(Self[T], Handle[T], T) -> Bool
 pub fn[T] Assets::is_empty(Self[T]) -> Bool
 pub fn[T] Assets::len(Self[T]) -> Int
@@ -350,6 +355,7 @@ pub(all) struct ImageLoaderSettings {
   mut sampler : @image.ImageSampler
   mut is_srgb : Bool
   mut array_layout : @image.ImageArrayLayout?
+  mut asset_usage : RenderAssetUsages
 }
 pub fn ImageLoaderSettings::default() -> Self
 
@@ -363,6 +369,16 @@ pub(all) enum ParseAssetPathError {
   MissingSource
   MissingLabel
 }
+
+pub struct RenderAssetUsages {
+  bits : Int
+}
+pub fn RenderAssetUsages::all() -> Self
+pub fn RenderAssetUsages::contains(Self, Self) -> Bool
+pub fn RenderAssetUsages::main_world() -> Self
+pub fn RenderAssetUsages::render_world() -> Self
+pub impl Eq for RenderAssetUsages
+pub impl Show for RenderAssetUsages
 
 pub struct TextureAtlas {
   layout : Handle[TextureAtlasLayout]

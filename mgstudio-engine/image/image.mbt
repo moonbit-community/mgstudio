@@ -16,10 +16,10 @@
 /// Image package boundary aligned with Bevy-style image responsibilities.
 
 ///|
-pub struct Image {
+pub(all) struct Image {
   width : Int
   height : Int
-  pixels : Bytes
+  mut pixels : Bytes
   format : TextureFormat
   view_format : TextureFormat?
   kind : ImageKind

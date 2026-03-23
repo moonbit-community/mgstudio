@@ -277,6 +277,127 @@ test "asset system preserves image loader settings in stored image assets" {
 }
 
 ///|
+test "asset server reuses the first handle for repeated image loads" {
+  let asset_server = AssetServer::new()
+  let first = asset_server.load_image("branding/bevy_bird_dark.png")
+  let second = asset_server.load_with_settings("branding/bevy_bird_dark.png", fn(
+    settings,
+  ) {
+    settings.sampler = ImageSampler::nearest()
+    settings.is_srgb = false
+  })
+  inspect(first.id() == second.id(), content="true")
+}
+
+///|
+test "asset system skips MAIN_WORLD image asset sync when asset usage is render-only" {
+  let world = @ecs.World::new()
+  let image_assets_key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
+  world.insert_resource(asset_server_resource_key(), AssetServer::new())
+  world.insert_resource(loaded_folder_assets_resource_key(), Assets::new())
+  world.insert_resource(image_assets_key, Assets::new())
+
+  let asset_server = match
+    (try! world.get_resource(asset_server_resource_key())) {
+    Some(server) => server
+    None => abort("expected AssetServer resource")
+  }
+  let image = asset_server.load_with_settings("branding/bevy_bird_dark.png", fn(
+    settings,
+  ) {
+    settings.asset_usage = RenderAssetUsages::render_world()
+  })
+
+  for _ in 0..<120 {
+    asset_system(world)
+    if host_asset_is_texture_loaded(image.id()) {
+      break
+    }
+  }
+
+  inspect(host_asset_is_texture_loaded(image.id()), content="true")
+  inspect(
+    match (try! world.get_resource(image_assets_key)) {
+      Some(images) => images.get(image) is None
+      None => false
+    },
+    content="true",
+  )
+}
+
+///|
+test "Assets<Image>::get_mut exposes in-place mutation and emits a modified event" {
+  let world = @ecs.World::new()
+  let key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
+  world.insert_resource(asset_server_resource_key(), AssetServer::new())
+  world.insert_resource(key, Assets::new())
+
+  let handle = asset_with_world(world, fn() {
+    match (try! world.get_resource_ref_mut(key)) {
+      Some(images) =>
+        images.val.add(
+          Image::new(
+            1,
+            1,
+            Bytes::from_array([
+              (0).to_byte(),
+              (0).to_byte(),
+              (0).to_byte(),
+              (255).to_byte(),
+            ]),
+          ),
+        )
+      None => abort("expected image assets resource")
+    }
+  })
+
+  asset_with_world(world, fn() {
+    match (try! world.get_resource_ref_mut(key)) {
+      Some(images) =>
+        match images.val.get_mut(handle) {
+          Some(image) =>
+            image.pixels = Bytes::from_array([
+              (255).to_byte(),
+              (255).to_byte(),
+              (255).to_byte(),
+              (255).to_byte(),
+            ])
+          None => abort("expected image asset")
+        }
+      None => abort("expected image assets resource")
+    }
+  })
+
+  let result = asset_with_world(world, fn() {
+    match (try! world.get_resource_ref_mut(key)) {
+      Some(images) => {
+        let stored = images.val.get(handle)
+        let events = images.val.drain_events()
+        (
+          stored.map(fn(image) {
+            match image.pixels.get(0) {
+              Some(value) => value.to_int() & 0xFF
+              None => -1
+            }
+          }),
+          events.length(),
+          match events[1] {
+            AssetEvent::Modified(modified_handle) =>
+              modified_handle.id() == handle.id()
+            _ => false
+          },
+        )
+      }
+      None => (None, 0, false)
+    }
+  })
+
+  inspect(result.0.unwrap_or(-1), content="255")
+  inspect(result.1, content="2")
+  inspect(result.2, content="true")
+}
+
+///|
 test "Image::new_target_texture preserves Bevy-style target texture descriptor" {
   let image = Image::new_target_texture(
     512,

@@ -17,6 +17,7 @@ pub struct Assets[T] {
   items : Array[T?]
   mut alive : Int
   events : Array[AssetEvent[T]]
+  dirty : Array[Handle[T]]
 }
 
 ///|
@@ -140,7 +141,7 @@ pub impl[T] @ecs.Message for AssetEvent[T] with message() {
 
 ///|
 pub fn[T] Assets::new() -> Assets[T] {
-  Assets::{ items: [], alive: 0, events: [] }
+  Assets::{ items: [], alive: 0, events: [], dirty: [] }
 }
 
 ///|
@@ -181,6 +182,51 @@ pub fn[T] Assets::get(self : Assets[T], handle : Handle[T]) -> T? {
 }
 
 ///|
+fn[T] assets_remove_dirty_handle(
+  assets : Assets[T],
+  handle : Handle[T],
+) -> Unit {
+  let next : Array[Handle[T]] = []
+  for dirty_handle in assets.dirty {
+    if dirty_handle.id() != handle.id() {
+      next.push(dirty_handle)
+    }
+  }
+  assets.dirty.clear()
+  for dirty_handle in next {
+    assets.dirty.push(dirty_handle)
+  }
+}
+
+///|
+fn[T] assets_mark_dirty(assets : Assets[T], handle : Handle[T]) -> Unit {
+  for dirty_handle in assets.dirty {
+    if dirty_handle.id() == handle.id() {
+      return
+    }
+  }
+  assets.dirty.push(handle)
+  assets.events.push(AssetEvent::Modified(handle))
+}
+
+///|
+fn[T] assets_drain_dirty(assets : Assets[T]) -> Array[Handle[T]] {
+  let handles : Array[Handle[T]] = []
+  for handle in assets.dirty {
+    handles.push(handle)
+  }
+  assets.dirty.clear()
+  handles
+}
+
+///|
+pub fn[T] Assets::get_mut(self : Assets[T], handle : Handle[T]) -> T? {
+  guard self.get(handle) is Some(value) else { return None }
+  assets_mark_dirty(self, handle)
+  Some(value)
+}
+
+///|
 pub fn[T] Assets::set(self : Assets[T], handle : Handle[T], value : T) -> Bool {
   let id = handle.id()
   if id < 0 || id >= self.items.length() {
@@ -200,6 +246,7 @@ pub fn[T] Assets::set(self : Assets[T], handle : Handle[T], value : T) -> Bool {
       let image_handle : Handle[Image] = Handle::new(handle.id())
       image_asset_sync_metadata(image_handle, image)
     }
+    assets_remove_dirty_handle(self, handle)
     assets_store_insert(self, handle, value, existed)
   }
 }
@@ -222,6 +269,7 @@ pub fn[T] Assets::insert(
   }
   let existed = self.items[id] is Some(_)
   self.items[id] = Some(value)
+  assets_remove_dirty_handle(self, handle)
   if existed {
     self.events.push(AssetEvent::Modified(handle))
   } else {
@@ -241,6 +289,7 @@ pub fn[T] Assets::remove(self : Assets[T], handle : Handle[T]) -> T? {
     if value is Some(v) {
       self.items[id] = None
       self.alive = self.alive - 1
+      assets_remove_dirty_handle(self, handle)
       self.events.push(AssetEvent::Removed(handle))
       Some(v)
     } else {

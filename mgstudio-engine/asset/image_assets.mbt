@@ -98,6 +98,27 @@ fn image_asset_can_update_in_place(previous : Image, next : Image) -> Bool {
 }
 
 ///|
+fn image_asset_sync_dirty(handle : Handle[Image], image : Image) -> Unit {
+  image_asset_sync_metadata(handle, image)
+  if image.is_target_texture() || handle.id() <= 0 {
+    return
+  }
+  if asset_texture_width(handle) != image.width ||
+    asset_texture_height(handle) != image.height {
+    return
+  }
+  update_texture_region_mip_bytes(
+    texture_id=handle.id(),
+    x=0,
+    y=0,
+    width=image.width,
+    height=image.height,
+    mip_level=0,
+    bytes=image.pixels,
+  )
+}
+
+///|
 fn[T] image_asset_sync_on_set(
   handle : Handle[T],
   previous : T,

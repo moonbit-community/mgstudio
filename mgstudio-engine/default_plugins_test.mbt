@@ -133,3 +133,29 @@ test "default plugins: set(AssetPlugin::default_nearest()) replaces default asse
 
   inspect(asset_server.default_sampler_nearest.val, content="true")
 }
+
+///|
+test "default plugins: set(AssetPlugin::with_file_path(...)) changes asset root" {
+  let app = @app.App::new(@ecs.World::new()).add_plugin_group(fn() {
+    DefaultPlugins::set(
+      @asset.AssetPlugin::default().with_file_path("examples/asset/files"),
+    )
+  })
+
+  let asset_server : @asset.AssetServer = match
+    (try! app.world().get_resource(@asset.AssetServer::resource())) {
+    Some(asset_server) => asset_server
+    None => abort("missing asset server resource")
+  }
+  let handle = asset_server.load_image("bevy_pixel_dark.png")
+  for _ in 0..<120 {
+    @asset.asset_system(app.world())
+    if @asset.asset_is_texture_loaded(handle) {
+      break
+    }
+  }
+
+  inspect(@asset.asset_is_texture_loaded(handle), content="true")
+  inspect(@asset.asset_texture_width(handle), content="16")
+  inspect(@asset.asset_texture_height(handle), content="12")
+}

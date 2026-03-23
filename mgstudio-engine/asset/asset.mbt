@@ -110,6 +110,7 @@ pub struct AssetServer {
   image_loaded_states : Ref[@hashmap.HashMap[Int, Bool]]
   pending_image_assets : Ref[@hashmap.HashMap[Int, Image]]
   image_array_layouts : Ref[Array[(Int, ImageArrayLayout)]]
+  image_render_asset_usages : Ref[Array[(Int, RenderAssetUsages)]]
   image_srgb_settings : Ref[Array[(Int, Bool)]]
   image_usage_settings : Ref[Array[(Int, Int)]]
   default_sampler_nearest : Ref[Bool]
@@ -119,18 +120,58 @@ pub struct AssetServer {
 pub const ASSET_PLUGIN_ID : String = "bevy_asset::AssetPlugin"
 
 ///|
-pub struct AssetPlugin {
+pub(all) struct AssetPlugin {
   default_sampler_nearest : Bool
+  file_path : String?
+}
+
+///|
+pub struct RenderAssetUsages {
+  bits : Int
+} derive(Eq, Show)
+
+///|
+const RENDER_ASSET_USAGE_MAIN_WORLD_BIT : Int = 1
+
+///|
+const RENDER_ASSET_USAGE_RENDER_WORLD_BIT : Int = 2
+
+///|
+pub fn RenderAssetUsages::main_world() -> RenderAssetUsages {
+  RenderAssetUsages::{ bits: RENDER_ASSET_USAGE_MAIN_WORLD_BIT }
+}
+
+///|
+pub fn RenderAssetUsages::render_world() -> RenderAssetUsages {
+  RenderAssetUsages::{ bits: RENDER_ASSET_USAGE_RENDER_WORLD_BIT }
+}
+
+///|
+pub fn RenderAssetUsages::all() -> RenderAssetUsages {
+  RenderAssetUsages::{
+    bits: RENDER_ASSET_USAGE_MAIN_WORLD_BIT |
+    RENDER_ASSET_USAGE_RENDER_WORLD_BIT,
+  }
+}
+
+///|
+pub fn RenderAssetUsages::contains(
+  self : RenderAssetUsages,
+  other : RenderAssetUsages,
+) -> Bool {
+  let lhs = self.bits.reinterpret_as_uint()
+  let rhs = other.bits.reinterpret_as_uint()
+  (lhs & rhs) == rhs
 }
 
 ///|
 pub fn AssetPlugin::default() -> AssetPlugin {
-  AssetPlugin::{ default_sampler_nearest: false }
+  AssetPlugin::{ default_sampler_nearest: false, file_path: None }
 }
 
 ///|
 pub fn AssetPlugin::default_nearest() -> AssetPlugin {
-  AssetPlugin::{ default_sampler_nearest: true }
+  AssetPlugin::{ default_sampler_nearest: true, file_path: None }
 }
 
 ///|
@@ -138,8 +179,18 @@ pub fn AssetPlugin::with_default_sampler_nearest(
   self : AssetPlugin,
   enabled : Bool,
 ) -> AssetPlugin {
-  self |> ignore
-  AssetPlugin::{ default_sampler_nearest: enabled }
+  AssetPlugin::{ default_sampler_nearest: enabled, file_path: self.file_path }
+}
+
+///|
+pub fn AssetPlugin::with_file_path(
+  self : AssetPlugin,
+  file_path : String,
+) -> AssetPlugin {
+  AssetPlugin::{
+    default_sampler_nearest: self.default_sampler_nearest,
+    file_path: Some(file_path),
+  }
 }
 
 ///|
@@ -152,6 +203,7 @@ pub(all) struct ImageLoaderSettings {
   mut sampler : ImageSampler
   mut is_srgb : Bool
   mut array_layout : ImageArrayLayout?
+  mut asset_usage : RenderAssetUsages
 }
 
 ///|
@@ -160,6 +212,7 @@ pub fn ImageLoaderSettings::default() -> ImageLoaderSettings {
     sampler: ImageSampler::Default,
     is_srgb: true,
     array_layout: None,
+    asset_usage: RenderAssetUsages::all(),
   }
 }
 
@@ -171,6 +224,7 @@ fn asset_server_standalone() -> AssetServer {
     image_loaded_states: Ref::new(@hashmap.HashMap::new()),
     pending_image_assets: Ref::new(@hashmap.HashMap::new()),
     image_array_layouts: Ref::new([]),
+    image_render_asset_usages: Ref::new([]),
     image_srgb_settings: Ref::new([]),
     image_usage_settings: Ref::new([]),
     default_sampler_nearest: Ref::new(false),
@@ -587,6 +641,145 @@ const IMAGE_USAGE_DEFAULT_SAMPLED : Int = 3
 const IMAGE_USAGE_DEFAULT_DYNAMIC : Int = 15
 
 ///|
+fn string_contains(input : String, pattern : String) -> Bool {
+  string_find_substring(input, pattern) >= 0
+}
+
+///|
+fn bytes_to_text(bytes : Bytes) -> String {
+  let chars : Array[Char] = []
+  for byte in bytes {
+    let code = byte.to_int() & 0xFF
+    if code.to_char() is Some(ch) {
+      chars.push(ch)
+    } else {
+      chars.push(Int::unsafe_to_char(0xFFFD))
+    }
+  }
+  String::from_array(chars)
+}
+
+///|
+fn load_optional_asset_text(path : String) -> String? {
+  if resolve_asset_input_path(path) is Some(input_path) {
+    if read_file_bytes(input_path) is Some(bytes) {
+      return Some(bytes_to_text(bytes))
+    }
+  }
+  None
+}
+
+///|
+fn meta_image_filter_mode(
+  content : String,
+  field_name : String,
+) -> ImageFilterMode? {
+  if string_contains(content, field_name + ": Nearest") {
+    return Some(ImageFilterMode::Nearest)
+  }
+  if string_contains(content, field_name + ": Linear") {
+    return Some(ImageFilterMode::Linear)
+  }
+  None
+}
+
+///|
+fn meta_image_address_mode(
+  content : String,
+  field_name : String,
+) -> ImageAddressMode? {
+  if string_contains(content, field_name + ": ClampToEdge") {
+    return Some(ImageAddressMode::ClampToEdge)
+  }
+  if string_contains(content, field_name + ": Repeat") {
+    return Some(ImageAddressMode::Repeat)
+  }
+  if string_contains(content, field_name + ": MirrorRepeat") {
+    return Some(ImageAddressMode::MirrorRepeat)
+  }
+  if string_contains(content, field_name + ": ClampToBorder") {
+    return Some(ImageAddressMode::ClampToBorder)
+  }
+  None
+}
+
+///|
+fn meta_render_asset_usages(content : String) -> RenderAssetUsages? {
+  guard string_contains(content, "asset_usage: RenderAssetUsages(") else {
+    return None
+  }
+  let has_main_world = string_contains(content, "MAIN_WORLD")
+  let has_render_world = string_contains(content, "RENDER_WORLD")
+  if has_main_world && has_render_world {
+    return Some(RenderAssetUsages::all())
+  }
+  if has_main_world {
+    return Some(RenderAssetUsages::main_world())
+  }
+  if has_render_world {
+    return Some(RenderAssetUsages::render_world())
+  }
+  None
+}
+
+///|
+fn image_meta_path(path : String) -> String {
+  path + ".meta"
+}
+
+///|
+fn apply_image_meta_settings(
+  settings : ImageLoaderSettings,
+  content : String,
+) -> Unit {
+  if string_contains(content, "is_srgb: false") {
+    settings.is_srgb = false
+  } else if string_contains(content, "is_srgb: true") {
+    settings.is_srgb = true
+  }
+  if meta_render_asset_usages(content) is Some(asset_usage) {
+    settings.asset_usage = asset_usage
+  }
+
+  let address_mode_u = meta_image_address_mode(content, "address_mode_u")
+  let address_mode_v = meta_image_address_mode(content, "address_mode_v")
+  let address_mode_w = meta_image_address_mode(content, "address_mode_w")
+  let mag_filter = meta_image_filter_mode(content, "mag_filter")
+  let min_filter = meta_image_filter_mode(content, "min_filter")
+  let mipmap_filter = meta_image_filter_mode(content, "mipmap_filter")
+  let has_descriptor = address_mode_u is Some(_) ||
+    address_mode_v is Some(_) ||
+    address_mode_w is Some(_) ||
+    mag_filter is Some(_) ||
+    min_filter is Some(_) ||
+    mipmap_filter is Some(_)
+  if !has_descriptor {
+    return
+  }
+
+  let descriptor = ImageSamplerDescriptor::default()
+  if address_mode_u is Some(value) {
+    descriptor.address_mode_u = value
+  }
+  if address_mode_v is Some(value) {
+    descriptor.address_mode_v = value
+  }
+  if address_mode_w is Some(value) {
+    descriptor.address_mode_w = value
+  }
+  if mag_filter is Some(value) {
+    descriptor.mag_filter = value
+  }
+  if min_filter is Some(value) {
+    descriptor.min_filter = value
+  }
+  if mipmap_filter is Some(value) {
+    descriptor.mipmap_filter = value
+  }
+  settings.sampler = ImageSampler::Descriptor(descriptor)
+}
+
+///|
 pub fn asset_canonical_path(path : String) -> String {
   asset_strip_label(path)
 }
@@ -648,6 +841,22 @@ fn AssetServer::set_image_is_srgb(
 }
 
 ///|
+fn AssetServer::set_image_render_asset_usages(
+  self : AssetServer,
+  image : Handle[Image],
+  asset_usage : RenderAssetUsages,
+) -> Unit {
+  let next : Array[(Int, RenderAssetUsages)] = []
+  for pair in self.image_render_asset_usages.val {
+    if pair.0 != image.id() {
+      next.push(pair)
+    }
+  }
+  next.push((image.id(), asset_usage))
+  self.image_render_asset_usages.val = next
+}
+
+///|
 fn asset_image_usage_sanitize(usage_bits : Int) -> Int {
   let usage = usage_bits.reinterpret_as_uint()
   let mask = IMAGE_USAGE_ALL_MASK.reinterpret_as_uint()
@@ -705,7 +914,13 @@ fn AssetServer::set_pending_image_asset(
   image : Handle[Image],
   asset : Image,
 ) -> Unit {
-  self.pending_image_assets.val.set(image.id(), asset)
+  if self
+    .render_asset_usages_for_image(image)
+    .contains(RenderAssetUsages::main_world()) {
+    self.pending_image_assets.val.set(image.id(), asset)
+  } else {
+    self.pending_image_assets.val.remove(image.id()) |> ignore
+  }
 }
 
 ///|
@@ -745,6 +960,19 @@ fn AssetServer::image_is_srgb(
     }
   }
   true
+}
+
+///|
+fn AssetServer::render_asset_usages_for_image(
+  self : AssetServer,
+  image : Handle[Image],
+) -> RenderAssetUsages {
+  for pair in self.image_render_asset_usages.val {
+    if pair.0 == image.id() {
+      return pair.1
+    }
+  }
+  RenderAssetUsages::all()
 }
 
 ///|
@@ -1110,20 +1338,8 @@ pub fn AssetServer::load_image(
   path : String,
 ) -> Handle[Image] {
   let canonical_path = asset_canonical_path(path)
-  let bytes = load_asset_file_bytes(canonical_path)
-  let id = host_asset_load_texture(
-    path=canonical_path,
-    nearest=self.default_sampler_nearest.val,
-  )
-  self.record_path(canonical_path)
-  let handle = Handle::new(id)
-  self.register_image_path(canonical_path, handle)
-  self.track_image_handle(handle)
-  self.set_image_array_layout(handle, None)
-  self.set_image_is_srgb(handle, true)
-  self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
-  self.update_pending_image_asset_from_bytes(handle, bytes, true)
-  handle
+  let settings = self.image_loader_settings_for_path(canonical_path)
+  self.load_image_with_settings(canonical_path, settings)
 }
 
 ///|
@@ -1132,22 +1348,67 @@ pub fn AssetServer::load_nearest(
   path : String,
 ) -> Handle[Image] {
   let canonical_path = asset_canonical_path(path)
-  let bytes = load_asset_file_bytes(canonical_path)
-  let id = host_asset_load_texture(path=canonical_path, nearest=true)
-  self.record_path(canonical_path)
-  let handle = Handle::new(id)
-  self.register_image_path(canonical_path, handle)
-  self.track_image_handle(handle)
-  self.set_image_array_layout(handle, None)
-  self.set_image_is_srgb(handle, true)
-  self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
-  self.update_pending_image_asset_from_bytes(handle, bytes, true)
-  handle
+  let settings = self.image_loader_settings_for_path(canonical_path)
+  settings.sampler = ImageSampler::nearest()
+  self.load_image_with_settings(canonical_path, settings)
 }
 
 ///|
 fn image_sampler_is_nearest(sampler : ImageSampler) -> Bool {
   @image.image_sampler_is_nearest(sampler)
+}
+
+///|
+fn AssetServer::image_loader_settings_for_path(
+  self : AssetServer,
+  canonical_path : String,
+) -> ImageLoaderSettings {
+  self |> ignore
+  let settings = ImageLoaderSettings::default()
+  if load_optional_asset_text(image_meta_path(canonical_path)) is Some(content) {
+    apply_image_meta_settings(settings, content)
+  }
+  settings
+}
+
+///|
+fn AssetServer::image_sampler_uses_nearest(
+  self : AssetServer,
+  sampler : ImageSampler,
+) -> Bool {
+  match sampler {
+    ImageSampler::Default => self.default_sampler_nearest.val
+    _ => image_sampler_is_nearest(sampler)
+  }
+}
+
+///|
+fn AssetServer::load_image_with_settings(
+  self : AssetServer,
+  canonical_path : String,
+  settings : ImageLoaderSettings,
+) -> Handle[Image] {
+  if self.get_handle(canonical_path) is Some(handle) {
+    return handle
+  }
+  let bytes = load_asset_file_bytes(canonical_path)
+  let id = host_asset_load_texture(
+    path=canonical_path,
+    nearest=self.image_sampler_uses_nearest(settings.sampler),
+  )
+  self.record_path(canonical_path)
+  let handle = Handle::new(id)
+  self.register_image_path(canonical_path, handle)
+  self.track_image_handle(handle)
+  if settings.sampler is Descriptor(_) {
+    asset_set_texture_sampler(handle, settings.sampler)
+  }
+  self.set_image_array_layout(handle, settings.array_layout)
+  self.set_image_is_srgb(handle, settings.is_srgb)
+  self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
+  self.set_image_render_asset_usages(handle, settings.asset_usage)
+  self.update_pending_image_asset_from_bytes(handle, bytes, settings.is_srgb)
+  handle
 }
 
 ///|
@@ -1180,26 +1441,13 @@ pub fn AssetServer::load_with_settings(
   path : String,
   configure : (ImageLoaderSettings) -> Unit,
 ) -> Handle[Image] {
-  let settings = ImageLoaderSettings::default()
-  configure(settings)
   let canonical_path = asset_canonical_path(path)
-  let bytes = load_asset_file_bytes(canonical_path)
-  let id = host_asset_load_texture(
-    path=canonical_path,
-    nearest=image_sampler_is_nearest(settings.sampler),
-  )
-  self.record_path(canonical_path)
-  let handle = Handle::new(id)
-  self.register_image_path(canonical_path, handle)
-  self.track_image_handle(handle)
-  if settings.sampler is Descriptor(_) {
-    asset_set_texture_sampler(handle, settings.sampler)
+  if self.get_handle(canonical_path) is Some(handle) {
+    return handle
   }
-  self.set_image_array_layout(handle, settings.array_layout)
-  self.set_image_is_srgb(handle, settings.is_srgb)
-  self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
-  self.update_pending_image_asset_from_bytes(handle, bytes, settings.is_srgb)
-  handle
+  let settings = self.image_loader_settings_for_path(canonical_path)
+  configure(settings)
+  self.load_image_with_settings(canonical_path, settings)
 }
 
 ///|
@@ -1212,6 +1460,7 @@ pub fn AssetServer::load_texture_bytes(
   let handle = Handle::new(id)
   self.track_image_handle(handle)
   self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
+  self.set_image_render_asset_usages(handle, RenderAssetUsages::all())
   self.update_pending_image_asset_from_bytes(handle, bytes, true)
   handle
 }
@@ -1451,6 +1700,19 @@ fn asset_sync_loaded_image_assets(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn asset_sync_dirty_image_assets(world : @ecs.World) -> Unit {
+  let key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
+  guard (try! world.get_resource_ref_mut(key)) is Some(images_ref) else {
+    return
+  }
+  for handle in assets_drain_dirty(images_ref.val) {
+    if images_ref.val.get(handle) is Some(image) {
+      image_asset_sync_dirty(handle, image)
+    }
+  }
+}
+
+///|
 pub fn asset_texture_width(texture : Handle[Image]) -> Int {
   host_asset_texture_width(texture.id())
 }
@@ -1487,6 +1749,7 @@ pub fn asset_save_texture_png(texture : Handle[Image], path : String) -> Unit {
 ///|
 pub fn asset_system(world : @ecs.World) -> Unit {
   asset_update_loaded_folders(world)
+  asset_sync_dirty_image_assets(world)
   asset_update_event_messages(world)
   asset_sync_loaded_image_assets(world)
   asset_update_image_event_messages(world)
@@ -1496,8 +1759,10 @@ pub fn asset_system(world : @ecs.World) -> Unit {
 fn asset_plugin_with_server(
   app : @app.App[@ecs.World],
   asset_server : AssetServer,
+  file_path : String?,
 ) -> @app.App[@ecs.World] {
   asset_register_builtin_loaders()
+  set_runtime_assets_dir_override(resolve_assets_dir_override(file_path))
   app
   .insert_resource(asset_server)
   .init_resource(fn() {
@@ -1517,14 +1782,14 @@ fn asset_plugin_with_server(
 
 ///|
 pub fn asset_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  asset_plugin_with_server(app, asset_server_standalone())
+  asset_plugin_with_server(app, asset_server_standalone(), None)
 }
 
 ///|
 pub fn asset_plugin_nearest(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let asset_server = asset_server_standalone()
   asset_server.default_sampler_nearest.val = true
-  asset_plugin_with_server(app, asset_server)
+  asset_plugin_with_server(app, asset_server, None)
 }
 
 ///|
@@ -1537,6 +1802,6 @@ pub impl @app.PluginReplacement for AssetPlugin with world_plugin(self) {
   fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     let asset_server = asset_server_standalone()
     asset_server.default_sampler_nearest.val = self.default_sampler_nearest
-    asset_plugin_with_server(app, asset_server)
+    asset_plugin_with_server(app, asset_server, self.file_path)
   }
 }
