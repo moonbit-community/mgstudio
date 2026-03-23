@@ -31,7 +31,7 @@ pub fn PbrPlugin::default() -> PbrPlugin {
   PbrPlugin::{
     prepass_enabled: true,
     add_default_deferred_lighting_plugin: true,
-    use_gpu_instance_buffer_builder: false,
+    use_gpu_instance_buffer_builder: true,
     gltf_render_enabled: true,
   }
 }

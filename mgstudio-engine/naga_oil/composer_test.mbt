@@ -121,6 +121,37 @@ test "naga_oil: composer item imports keep dependent view declarations" {
 }
 
 ///|
+test "naga_oil: composer drops preprocess previous-view imports outside active branches" {
+  let defines : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  defines.set("WRITE_INDIRECT_PARAMETERS_METADATA", true)
+  defines.set("INDIRECT", true)
+  defines.set("FRUSTUM_CULLING", true)
+  let value_defines = @naga_oil.default_wgsl_value_defines()
+  let visited : @hashmap.HashMap[String, Bool] = @hashmap.HashMap::new()
+  let modules = @naga_oil.build_wgsl_import_module_paths("assets")
+  let preprocessed = @naga_oil.Composer::default().load_wgsl_preprocessed(
+    "assets", "shaders/bevy_pbr/render/mesh_preprocess.wgsl", defines, value_defines,
+    visited, modules,
+  ) catch {
+    err =>
+      abort(
+        "expected mesh preprocess composer preprocess success: " + err.message(),
+      )
+  }
+  inspect(
+    preprocessed.contains("@group(0) @binding(0) var<uniform> view: View;"),
+    content="true",
+  )
+  inspect(preprocessed.contains("previous_view_uniforms"), content="false")
+  inspect(
+    preprocessed.contains(
+      "@group(0) @binding(2) var<uniform> previous_view_uniforms:",
+    ),
+    content="false",
+  )
+}
+
+///|
 test "naga_oil: composer registered sources satisfy strict mesh2d preprocessing" {
   @naga_oil.clear_registered_wgsl_source_registry()
   @naga_oil.register_wgsl_source(

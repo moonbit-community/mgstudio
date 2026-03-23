@@ -18,6 +18,120 @@ fn gpu_float_approx_eq(a : Float, b : Float) -> Bool {
 }
 
 ///|
+fn wbtest_mesh3d_preprocess_payload() -> HostMesh3dPreprocessCameraPayload {
+  HostMesh3dPreprocessCameraPayload::{
+    view: HostMesh3dPreprocessView::{
+      clip_from_world: gpu_clip_matrix_identity(),
+      unjittered_clip_from_world: gpu_clip_matrix_identity(),
+      world_from_clip: gpu_clip_matrix_identity(),
+      world_from_view: gpu_clip_matrix_identity(),
+      view_from_world: gpu_clip_matrix_identity(),
+      clip_from_view: gpu_clip_matrix_identity(),
+      view_from_clip: gpu_clip_matrix_identity(),
+      world_position_x: 0.0F,
+      world_position_y: 0.0F,
+      world_position_z: 0.0F,
+      exposure: 1.0F,
+      viewport_x: 0.0F,
+      viewport_y: 0.0F,
+      viewport_width: 128.0F,
+      viewport_height: 128.0F,
+      main_pass_viewport_x: 0.0F,
+      main_pass_viewport_y: 0.0F,
+      main_pass_viewport_width: 128.0F,
+      main_pass_viewport_height: 128.0F,
+      frustum_planes: [],
+      mip_bias: 0.0F,
+    },
+    previous_view: HostMesh3dPreprocessPreviousView::{
+      view_from_world: gpu_clip_matrix_identity(),
+      clip_from_world: gpu_clip_matrix_identity(),
+      clip_from_view: gpu_clip_matrix_identity(),
+      world_from_clip: gpu_clip_matrix_identity(),
+      view_from_clip: gpu_clip_matrix_identity(),
+    },
+    mesh_culling_data: [
+      HostMesh3dPreprocessMeshCullingData::{
+        aabb_center_x: 0.0F,
+        aabb_center_y: 0.0F,
+        aabb_center_z: 0.0F,
+        aabb_half_extents_x: 1.0F,
+        aabb_half_extents_y: 1.0F,
+        aabb_half_extents_z: 1.0F,
+      },
+    ],
+    mesh_inputs: [
+      HostMesh3dPreprocessMeshInput::{
+        translation_x: 0.0F,
+        translation_y: 0.0F,
+        translation_z: 0.0F,
+        rotation_x: 0.0F,
+        rotation_y: 0.0F,
+        rotation_z: 0.0F,
+        rotation_w: 1.0F,
+        scale_x: 1.0F,
+        scale_y: 1.0F,
+        scale_z: 1.0F,
+        previous_translation_x: 0.0F,
+        previous_translation_y: 0.0F,
+        previous_translation_z: 0.0F,
+        previous_rotation_x: 0.0F,
+        previous_rotation_y: 0.0F,
+        previous_rotation_z: 0.0F,
+        previous_rotation_w: 1.0F,
+        previous_scale_x: 1.0F,
+        previous_scale_y: 1.0F,
+        previous_scale_z: 1.0F,
+        flags: 0U,
+        first_vertex_index: 0,
+        first_index_index: 0,
+        index_count: 36,
+        tag: 0,
+      },
+    ],
+    direct_work_items: [],
+    indexed_work_items: [
+      HostMesh3dPreprocessShaderWorkItem::{
+        input_index: 0,
+        output_or_indirect_parameters_index: 0,
+      },
+    ],
+    non_indexed_work_items: [],
+    late_indexed_work_items: [],
+    late_non_indexed_work_items: [],
+    indexed_cpu_metadata: [
+      HostMesh3dPreprocessIndirectParametersCpuMetadata::{
+        base_output_index: 0,
+        batch_set_index: -1,
+      },
+    ],
+    indexed_gpu_metadata: [
+      HostMesh3dPreprocessIndirectParametersGpuMetadata::{
+        mesh_index: 0,
+        early_instance_count: 0,
+        late_instance_count: 0,
+      },
+    ],
+    indexed_batch_sets: [
+      HostMesh3dPreprocessIndirectBatchSet::{
+        indirect_parameters_count: 0,
+        indirect_parameters_base: 0,
+      },
+    ],
+    non_indexed_cpu_metadata: [],
+    non_indexed_gpu_metadata: [],
+    non_indexed_batch_sets: [],
+    dispatch_metadata: HostMesh3dPreprocessDispatchMetadata::{
+      direct_workgroup_count: 0,
+      indexed_workgroup_count: 1,
+      non_indexed_workgroup_count: 0,
+      late_indexed_workgroup_count: 0,
+      late_non_indexed_workgroup_count: 0,
+    },
+  }
+}
+
+///|
 test "renderer: interleaved 2d mesh csv keeps original vertex count" {
   let backend = GpuBackend::new()
   backend.meshes.clear()
@@ -337,118 +451,25 @@ test "renderer: mesh3d preprocess indirect resources initialize canonical comput
 }
 
 ///|
+test "renderer: backend requests indirect-first-instance when adapter supports it" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let adapter_supports = backend.adapter.supported_features_contains_u32(
+    @wgpu.FEATURE_NAME_INDIRECT_FIRST_INSTANCE,
+  )
+  let device_supports = backend.device.supported_features_contains_u32(
+    @wgpu.FEATURE_NAME_INDIRECT_FIRST_INSTANCE,
+  )
+  inspect(!adapter_supports || device_supports, content="true")
+}
+
+///|
 test "renderer: mesh3d preprocess upload allocates mesh inputs and indirect parameter buffers" {
   let backend = GpuBackend::new(assets_base="assets")
-  backend.upload_mesh3d_preprocess_camera_payload(7, 9, HostMesh3dPreprocessCameraPayload::{
-    view: HostMesh3dPreprocessView::{
-      clip_from_world: gpu_clip_matrix_identity(),
-      unjittered_clip_from_world: gpu_clip_matrix_identity(),
-      world_from_clip: gpu_clip_matrix_identity(),
-      world_from_view: gpu_clip_matrix_identity(),
-      view_from_world: gpu_clip_matrix_identity(),
-      clip_from_view: gpu_clip_matrix_identity(),
-      view_from_clip: gpu_clip_matrix_identity(),
-      world_position_x: 0.0F,
-      world_position_y: 0.0F,
-      world_position_z: 0.0F,
-      exposure: 1.0F,
-      viewport_x: 0.0F,
-      viewport_y: 0.0F,
-      viewport_width: 128.0F,
-      viewport_height: 128.0F,
-      main_pass_viewport_x: 0.0F,
-      main_pass_viewport_y: 0.0F,
-      main_pass_viewport_width: 128.0F,
-      main_pass_viewport_height: 128.0F,
-      frustum_planes: [],
-      mip_bias: 0.0F,
-    },
-    previous_view: HostMesh3dPreprocessPreviousView::{
-      view_from_world: gpu_clip_matrix_identity(),
-      clip_from_world: gpu_clip_matrix_identity(),
-      clip_from_view: gpu_clip_matrix_identity(),
-      world_from_clip: gpu_clip_matrix_identity(),
-      view_from_clip: gpu_clip_matrix_identity(),
-    },
-    mesh_culling_data: [
-      HostMesh3dPreprocessMeshCullingData::{
-        aabb_center_x: 0.0F,
-        aabb_center_y: 0.0F,
-        aabb_center_z: 0.0F,
-        aabb_half_extents_x: 1.0F,
-        aabb_half_extents_y: 1.0F,
-        aabb_half_extents_z: 1.0F,
-      },
-    ],
-    mesh_inputs: [
-      HostMesh3dPreprocessMeshInput::{
-        translation_x: 0.0F,
-        translation_y: 0.0F,
-        translation_z: 0.0F,
-        rotation_x: 0.0F,
-        rotation_y: 0.0F,
-        rotation_z: 0.0F,
-        rotation_w: 1.0F,
-        scale_x: 1.0F,
-        scale_y: 1.0F,
-        scale_z: 1.0F,
-        previous_translation_x: 0.0F,
-        previous_translation_y: 0.0F,
-        previous_translation_z: 0.0F,
-        previous_rotation_x: 0.0F,
-        previous_rotation_y: 0.0F,
-        previous_rotation_z: 0.0F,
-        previous_rotation_w: 1.0F,
-        previous_scale_x: 1.0F,
-        previous_scale_y: 1.0F,
-        previous_scale_z: 1.0F,
-        flags: 0U,
-        first_vertex_index: 0,
-        first_index_index: 0,
-        index_count: 36,
-        tag: 0,
-      },
-    ],
-    direct_work_items: [],
-    indexed_work_items: [
-      HostMesh3dPreprocessShaderWorkItem::{
-        input_index: 0,
-        output_or_indirect_parameters_index: 0,
-      },
-    ],
-    non_indexed_work_items: [],
-    late_indexed_work_items: [],
-    late_non_indexed_work_items: [],
-    indexed_cpu_metadata: [
-      HostMesh3dPreprocessIndirectParametersCpuMetadata::{
-        base_output_index: 0,
-        batch_set_index: 0,
-      },
-    ],
-    indexed_gpu_metadata: [
-      HostMesh3dPreprocessIndirectParametersGpuMetadata::{
-        mesh_index: 0,
-        early_instance_count: 1,
-        late_instance_count: 0,
-      },
-    ],
-    indexed_batch_sets: [
-      HostMesh3dPreprocessIndirectBatchSet::{
-        indirect_parameters_count: 1,
-        indirect_parameters_base: 0,
-      },
-    ],
-    non_indexed_cpu_metadata: [],
-    non_indexed_gpu_metadata: [],
-    non_indexed_batch_sets: [],
-    dispatch_metadata: HostMesh3dPreprocessDispatchMetadata::{
-      direct_workgroup_count: 0,
-      indexed_workgroup_count: 1,
-      non_indexed_workgroup_count: 0,
-      late_indexed_workgroup_count: 0,
-      late_non_indexed_workgroup_count: 0,
-    },
-  })
+  backend.upload_mesh3d_preprocess_camera_payload(
+    7,
+    9,
+    wbtest_mesh3d_preprocess_payload(),
+  )
   let state = backend.mesh3d_preprocess_camera_upload_states[0]
   let ok = backend.mesh3d_preprocess_camera_upload_states.length() == 1 &&
     state.mesh_input_buffer is Some(_) &&
@@ -470,6 +491,35 @@ test "renderer: mesh3d preprocess upload allocates mesh inputs and indirect para
     state.depth_pyramid_texture is Some(_) &&
     state.depth_pyramid_mips.length() >= 1
   inspect(ok, content="true")
+}
+
+///|
+test "renderer: indexed indirect builder shader keeps gpu metadata read-only" {
+  let wgsl = load_wgsl_required_mesh3d_build_indexed_indirect_params("assets")
+  inspect(
+    wgsl.contains(
+      "@group(0) @binding(2) var<storage> indirect_parameters_gpu_metadata:",
+    ),
+    content="true",
+  )
+  inspect(
+    !wgsl.contains(
+      "@group(0) @binding(2) var<storage, read_write> indirect_parameters_gpu_metadata:",
+    ),
+    content="true",
+  )
+  inspect(
+    wgsl.contains(
+      "@group(0) @binding(3) var<storage, read_write> indirect_batch_sets:",
+    ),
+    content="true",
+  )
+  inspect(
+    wgsl.contains(
+      "@group(0) @binding(4) var<storage, read_write> indirect_parameters:",
+    ),
+    content="true",
+  )
 }
 
 ///|
@@ -1007,6 +1057,48 @@ test "renderer: canonical prepass import preprocessing keeps motion-vector bindi
   )
   inspect(preprocessed.contains("point_shadow_textures"), content="false")
   inspect(preprocessed.contains("environment_map_sampler"), content="false")
+}
+
+///|
+test "renderer: mesh preprocess indirect import preprocessing keeps view bindings narrow" {
+  let preprocessed = load_wgsl_required_mesh3d_preprocess_indirect("assets")
+  inspect(
+    preprocessed.contains("@group(0) @binding(0) var<uniform> view: View;"),
+    content="true",
+  )
+  inspect(
+    preprocessed.contains(
+      "@group(0) @binding(7) var<storage> indirect_parameters_cpu_metadata:",
+    ),
+    content="true",
+  )
+  inspect(
+    preprocessed.contains(
+      "@group(0) @binding(8) var<storage, read_write> indirect_parameters_gpu_metadata:",
+    ),
+    content="true",
+  )
+  inspect(
+    preprocessed.contains(
+      "@group(0) @binding(9) var<storage> mesh_culling_data: array<MeshCullingData>;",
+    ),
+    content="true",
+  )
+  inspect(preprocessed.contains("previous_view_uniforms"), content="false")
+  inspect(
+    preprocessed.contains(
+      "@group(0) @binding(2) var<uniform> previous_view_uniforms:",
+    ),
+    content="false",
+  )
+  inspect(preprocessed.contains("point_shadow_textures"), content="false")
+  inspect(preprocessed.contains("environment_map_sampler"), content="false")
+  inspect(
+    preprocessed.contains(
+      "@group(1) @binding(0) var diffuse_environment_map: texture_cube<f32>;",
+    ),
+    content="false",
+  )
 }
 
 ///|

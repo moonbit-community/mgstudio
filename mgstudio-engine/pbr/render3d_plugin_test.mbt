@@ -58,11 +58,11 @@ test "render3d: default pbr plugin installs bevy-style runtime config defaults" 
   let config = read_pbr_runtime_config(app.world())
   inspect(config.prepass_enabled, content="true")
   inspect(config.add_default_deferred_lighting_plugin, content="true")
-  inspect(config.use_gpu_instance_buffer_builder, content="false")
+  inspect(config.use_gpu_instance_buffer_builder, content="true")
   inspect(config.gltf_render_enabled, content="true")
   inspect(
     read_mesh_render_plugin_state(app.world()).use_gpu_instance_buffer_builder,
-    content="false",
+    content="true",
   )
   inspect(app.contains_resource(ecs_key_materials_plugin_state), content="true")
   inspect(app.contains_resource(ecs_key_fog_plugin_state), content="true")

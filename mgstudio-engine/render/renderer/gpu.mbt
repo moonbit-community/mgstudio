@@ -821,6 +821,11 @@ pub fn GpuBackend::new(
     required_features.push(0x00000006U)
   }
   if adapter.supported_features_contains_u32(
+      @wgpu.FEATURE_NAME_INDIRECT_FIRST_INSTANCE,
+    ) {
+    required_features.push(@wgpu.FEATURE_NAME_INDIRECT_FIRST_INSTANCE)
+  }
+  if adapter.supported_features_contains_u32(
       @wgpu.FEATURE_NAME_RG11_B10_UFLOAT_RENDERABLE,
     ) {
     required_features.push(@wgpu.FEATURE_NAME_RG11_B10_UFLOAT_RENDERABLE)

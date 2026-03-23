@@ -1633,6 +1633,22 @@ fn render3d_runtime_config_or_default(
 }
 
 ///|
+fn render3d_indirect_first_instance_supported() -> Bool {
+  @render.host_gpu_mesh3d_indirect_first_instance_supported()
+}
+
+///|
+fn render3d_camera_indirect_enabled(
+  use_gpu_instance_buffer_builder : Bool,
+  indirect_first_instance_supported : Bool,
+  no_indirect_drawing : Bool,
+) -> Bool {
+  use_gpu_instance_buffer_builder &&
+  indirect_first_instance_supported &&
+  !no_indirect_drawing
+}
+
+///|
 fn render3d_color_lerp(
   from_ : @sprite.Color,
   to_ : @sprite.Color,
@@ -4106,15 +4122,16 @@ fn render3d_build_gpu_preprocess_indirect_mesh_class_metadata(
     let indirect_parameters_index = item.output_or_indirect_parameters_index
     indirect_parameters_cpu_metadata.push(GpuPreprocessIndirectParametersCpuMetadata3d::{
       base_output_index: item.input_index,
-      batch_set_index: indirect_parameters_index,
+      // We currently issue one indirect draw per slot, not multi-draw-count batches.
+      batch_set_index: -1,
     })
     indirect_parameters_gpu_metadata.push(GpuPreprocessIndirectParametersGpuMetadata3d::{
       mesh_index: item.input_index,
-      early_instance_count: 1,
+      early_instance_count: 0,
       late_instance_count: 0,
     })
     indirect_batch_sets.push(GpuPreprocessIndirectBatchSet3d::{
-      indirect_parameters_count: 1,
+      indirect_parameters_count: 0,
       indirect_parameters_base: indirect_parameters_index,
     })
   }
@@ -5685,6 +5702,7 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
   render3d_queued_visible_mesh_count_ref.val = visible_mesh_count
   render3d_diagnostic_queued_visible_mesh_count_ref.val = visible_mesh_count
   let runtime_config = render3d_runtime_config_or_default(world)
+  let indirect_first_instance_supported = render3d_indirect_first_instance_supported()
   if !runtime_config.use_gpu_instance_buffer_builder {
     return
   }
@@ -5701,8 +5719,11 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
     }
     let no_indirect_drawing = no_indirect_drawing_store.get(camera_entity)
       is Some(_)
-    let camera_indirect_enabled = runtime_config.use_gpu_instance_buffer_builder &&
-      !no_indirect_drawing
+    let camera_indirect_enabled = render3d_camera_indirect_enabled(
+      runtime_config.use_gpu_instance_buffer_builder,
+      indirect_first_instance_supported,
+      no_indirect_drawing,
+    )
     let gpu_occlusion_culling_enabled = camera_indirect_enabled &&
       occlusion_culling_store.get(camera_entity) is Some(_)
     render3d_gpu_preprocess_camera_queues_ref.val.push(
@@ -6118,6 +6139,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let prepass_enabled = standard_material_prepass_enabled(world)
   let deferred_lighting_enabled = runtime_config.add_default_deferred_lighting_plugin &&
     deferred_pbr_lighting_enabled(world)
+  let indirect_first_instance_supported = render3d_indirect_first_instance_supported()
   let gpu_instance_buffer_builder_enabled = runtime_config.use_gpu_instance_buffer_builder
   @render.host_gpu_set_mesh3d_gpu_instance_builder_enabled(
     gpu_instance_buffer_builder_enabled,
@@ -6183,8 +6205,13 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     let deferred_prepass_enabled = prepass_enabled &&
       deferred_prepass_store.get(entity) is Some(_)
     let no_indirect_drawing = no_indirect_drawing_store.get(entity) is Some(_)
+    let camera_indirect_enabled = render3d_camera_indirect_enabled(
+      runtime_config.use_gpu_instance_buffer_builder,
+      indirect_first_instance_supported,
+      no_indirect_drawing,
+    )
     let gpu_occlusion_culling_enabled = depth_prepass_enabled &&
-      !no_indirect_drawing &&
+      camera_indirect_enabled &&
       occlusion_culling_store.get(entity) is Some(_)
     let motion_vector_prepass_enabled = prepass_enabled &&
       (
@@ -6602,7 +6629,11 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
               true,
             ),
             meshes,
-            gpu_instance_buffer_builder_enabled && !camera.no_indirect_drawing,
+            render3d_camera_indirect_enabled(
+              gpu_instance_buffer_builder_enabled,
+              indirect_first_instance_supported,
+              camera.no_indirect_drawing,
+            ),
             camera.gpu_occlusion_culling_enabled,
           )
       }

@@ -536,6 +536,11 @@ pub fn host_gpu_set_mesh3d_gpu_instance_builder_enabled(enabled : Bool) -> Unit 
 }
 
 ///|
+pub fn host_gpu_mesh3d_indirect_first_instance_supported() -> Bool {
+  @renderer.mesh3d_indirect_first_instance_supported()
+}
+
+///|
 fn host_mesh3d_preprocess_shader_work_item_to_renderer(
   item : HostMesh3dPreprocessShaderWorkItem,
 ) -> @renderer.HostMesh3dPreprocessShaderWorkItem {

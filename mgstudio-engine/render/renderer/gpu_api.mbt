@@ -671,6 +671,16 @@ pub fn set_mesh3d_gpu_instance_builder_enabled(enabled : Bool) -> Unit {
 }
 
 ///|
+pub fn mesh3d_indirect_first_instance_supported() -> Bool {
+  if ensure_backend() is Some(backend) {
+    return backend.device.supported_features_contains_u32(
+      @wgpu.FEATURE_NAME_INDIRECT_FIRST_INSTANCE,
+    )
+  }
+  false
+}
+
+///|
 pub fn upload_mesh3d_preprocess_camera_payload(
   camera_key_hi~ : Int,
   camera_key_lo~ : Int,

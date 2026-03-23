@@ -866,6 +866,36 @@ fn mesh3d_preprocess_ensure_storage_buffer(
 }
 
 ///|
+fn mesh3d_preprocess_ensure_uniform_buffer(
+  backend : GpuBackend,
+  existing_buffer : @wgpu.Buffer?,
+  existing_capacity : UInt64,
+  required_size : UInt64,
+  label : String,
+) -> (@wgpu.Buffer?, UInt64) {
+  if required_size == 0UL {
+    return (existing_buffer, existing_capacity)
+  }
+  if existing_buffer is Some(buffer) && existing_capacity >= required_size {
+    return (Some(buffer), existing_capacity)
+  }
+  let mut next_capacity = if existing_capacity > 0UL {
+    existing_capacity
+  } else {
+    required_size
+  }
+  while next_capacity < required_size {
+    next_capacity = next_capacity * 2UL
+  }
+  let buffer = backend.device.create_buffer(
+    size=next_capacity,
+    usage=bu(@wgpu.BUFFER_USAGE_UNIFORM | @wgpu.BUFFER_USAGE_COPY_DST),
+  )
+  buffer.set_label(label)
+  (Some(buffer), next_capacity)
+}
+
+///|
 fn mesh3d_preprocess_upload_buffer(
   backend : GpuBackend,
   existing_buffer : @wgpu.Buffer?,
@@ -875,6 +905,24 @@ fn mesh3d_preprocess_upload_buffer(
 ) -> (@wgpu.Buffer?, UInt64) {
   let required_size = bytes.length().to_uint64()
   let (buffer_opt, next_capacity) = mesh3d_preprocess_ensure_storage_buffer(
+    backend, existing_buffer, existing_capacity, required_size, label,
+  )
+  if required_size > 0UL && buffer_opt is Some(buffer) {
+    backend.queue.write_buffer(buffer, 0UL, bytes)
+  }
+  (buffer_opt, next_capacity)
+}
+
+///|
+fn mesh3d_preprocess_upload_uniform_buffer(
+  backend : GpuBackend,
+  existing_buffer : @wgpu.Buffer?,
+  existing_capacity : UInt64,
+  bytes : Bytes,
+  label : String,
+) -> (@wgpu.Buffer?, UInt64) {
+  let required_size = bytes.length().to_uint64()
+  let (buffer_opt, next_capacity) = mesh3d_preprocess_ensure_uniform_buffer(
     backend, existing_buffer, existing_capacity, required_size, label,
   )
   if required_size > 0UL && buffer_opt is Some(buffer) {
@@ -1693,7 +1741,11 @@ fn ensure_mesh3d_preprocess_indirect_resources(
         compute,
         @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
       ) &&
-      builder.add_buffer(2U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+      builder.add_buffer(
+        2U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
       builder.add_buffer(3U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
       builder.add_buffer(4U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE)
     if !ok {
@@ -1727,7 +1779,11 @@ fn ensure_mesh3d_preprocess_indirect_resources(
         compute,
         @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
       ) &&
-      builder.add_buffer(2U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
+      builder.add_buffer(
+        2U,
+        compute,
+        @wgpu.BUFFER_BINDING_TYPE_READ_ONLY_STORAGE,
+      ) &&
       builder.add_buffer(3U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE) &&
       builder.add_buffer(4U, compute, @wgpu.BUFFER_BINDING_TYPE_STORAGE)
     if !ok {
@@ -3133,7 +3189,7 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
   self.mesh3d_preprocess_camera_upload_states[state_index].output_count = payload.mesh_inputs.length()
   self.mesh3d_preprocess_camera_upload_states[state_index].motion_vector_mesh_bind_group
   = None
-  let (preprocess_view_buffer, preprocess_view_capacity) = mesh3d_preprocess_upload_buffer(
+  let (preprocess_view_buffer, preprocess_view_capacity) = mesh3d_preprocess_upload_uniform_buffer(
     self,
     self.mesh3d_preprocess_camera_upload_states[state_index].preprocess_view_buffer,
     self.mesh3d_preprocess_camera_upload_states[state_index].preprocess_view_capacity,
@@ -3144,7 +3200,7 @@ pub fn GpuBackend::upload_mesh3d_preprocess_camera_payload(
   = preprocess_view_buffer
   self.mesh3d_preprocess_camera_upload_states[state_index].preprocess_view_capacity
   = preprocess_view_capacity
-  let (previous_view_buffer, previous_view_capacity) = mesh3d_preprocess_upload_buffer(
+  let (previous_view_buffer, previous_view_capacity) = mesh3d_preprocess_upload_uniform_buffer(
     self,
     self.mesh3d_preprocess_camera_upload_states[state_index].previous_view_buffer,
     self.mesh3d_preprocess_camera_upload_states[state_index].previous_view_capacity,
@@ -3578,6 +3634,10 @@ pub fn GpuBackend::preprocess_mesh3d(
   camera_key_lo : Int,
   phase_kind : Int,
 ) -> Unit raise GpuBackendError {
+  if self.frame is None && self.active_surface_target_id < 0 {
+    activate_surface_frame_for_target(self, self.active_surface_target_id)
+    |> ignore
+  }
   guard self.frame is Some(frame) else { return }
   guard mesh3d_preprocess_camera_upload_state_index(
       self, camera_key_hi, camera_key_lo,
@@ -4095,6 +4155,10 @@ pub fn GpuBackend::build_mesh3d_indirect_parameters(
   camera_key_lo : Int,
   phase_kind : Int,
 ) -> Unit raise GpuBackendError {
+  if self.frame is None && self.active_surface_target_id < 0 {
+    activate_surface_frame_for_target(self, self.active_surface_target_id)
+    |> ignore
+  }
   guard self.frame is Some(frame) else { return }
   guard mesh3d_preprocess_camera_upload_state_index(
       self, camera_key_hi, camera_key_lo,
@@ -4592,7 +4656,11 @@ pub fn GpuBackend::draw_mesh3d(
     } else {
       None
     }
-    let use_indirect = indirect_parameters_index >= 0 &&
+    let indirect_first_instance_supported = self.device.supported_features_contains_u32(
+      @wgpu.FEATURE_NAME_INDIRECT_FIRST_INSTANCE,
+    )
+    let use_indirect = indirect_first_instance_supported &&
+      indirect_parameters_index >= 0 &&
       indirect_kind != MESH3D_DRAW_INDIRECT_KIND_NONE
     let mut mesh_buffer : @wgpu.Buffer? = None
     let mut mesh_bind_group : @wgpu.BindGroup? = None
@@ -4716,7 +4784,11 @@ pub fn GpuBackend::draw_mesh3d(
     is Some(pipeline) else {
     return
   }
-  let use_indirect = indirect_parameters_index >= 0 &&
+  let indirect_first_instance_supported = self.device.supported_features_contains_u32(
+    @wgpu.FEATURE_NAME_INDIRECT_FIRST_INSTANCE,
+  )
+  let use_indirect = indirect_first_instance_supported &&
+    indirect_parameters_index >= 0 &&
     indirect_kind != MESH3D_DRAW_INDIRECT_KIND_NONE
   let mut draw_buffer : @wgpu.Buffer? = None
   let mut draw_bind_group : @wgpu.BindGroup? = None

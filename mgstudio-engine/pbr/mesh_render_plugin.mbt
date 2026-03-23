@@ -22,7 +22,7 @@ pub(all) struct MeshRenderPlugin {
 
 ///|
 pub fn MeshRenderPlugin::default() -> MeshRenderPlugin {
-  MeshRenderPlugin::{ use_gpu_instance_buffer_builder: false }
+  MeshRenderPlugin::{ use_gpu_instance_buffer_builder: true }
 }
 
 ///|

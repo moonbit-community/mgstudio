@@ -148,6 +148,8 @@ pub fn get_queue(Int) -> Int
 
 pub fn gpu_clip_matrix(Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float) -> GpuClipMatrix
 
+pub fn mesh3d_indirect_first_instance_supported() -> Bool
+
 pub fn pipeline_layout_descriptor_3_new(@c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout, @c.WGPUBindGroupLayout) -> @c.WGPUPipelineLayoutDescriptorPtr
 
 pub fn preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit

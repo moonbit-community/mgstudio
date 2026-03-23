@@ -131,6 +131,8 @@ pub fn host_gpu_end_pass() -> Unit
 
 pub fn host_gpu_get_queue(Int) -> Int
 
+pub fn host_gpu_mesh3d_indirect_first_instance_supported() -> Bool
+
 pub fn host_gpu_preprocess_mesh3d(camera_key_hi~ : Int, camera_key_lo~ : Int, phase_kind? : Int) -> Unit
 
 pub fn host_gpu_request_device() -> Int

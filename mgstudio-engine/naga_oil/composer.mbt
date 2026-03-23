@@ -249,6 +249,63 @@ fn collect_wgsl_alias_requested_items(
 }
 
 ///|
+fn strip_wgsl_import_declarations(source : String) -> String {
+  let lines : Array[String] = []
+  for line_item in source.split("\n") {
+    lines.push(line_item.to_string())
+  }
+  let mut out = ""
+  let mut index = 0
+  while index < lines.length() {
+    let line = lines[index]
+    let trimmed = line.trim().to_string()
+    if starts_with_text(trimmed, "#define_import_path") {
+      index = index + 1
+      continue
+    }
+    if starts_with_text(trimmed, "#import ") {
+      let mut brace_balance = import_brace_balance(
+        trimmed[8:trimmed.length()].to_string(),
+      )
+      while brace_balance > 0 && index + 1 < lines.length() {
+        index = index + 1
+        brace_balance = brace_balance + import_brace_balance(lines[index])
+      }
+      index = index + 1
+      continue
+    }
+    out = out + line + "\n"
+    index = index + 1
+  }
+  out
+}
+
+///|
+fn wgsl_source_contains_identifier(
+  source : String,
+  identifier : String,
+) -> Bool {
+  if identifier == "" || identifier.length() > source.length() {
+    return false
+  }
+  let limit = source.length() - identifier.length()
+  for i in 0..<=limit {
+    if source[i:i + identifier.length()].to_string() != identifier {
+      continue
+    }
+    let left_ok = i == 0 ||
+      !wgsl_identifier_char(source.code_unit_at(i - 1).to_int())
+    let right_index = i + identifier.length()
+    let right_ok = right_index >= source.length() ||
+      !wgsl_identifier_char(source.code_unit_at(right_index).to_int())
+    if left_ok && right_ok {
+      return true
+    }
+  }
+  false
+}
+
+///|
 fn find_wgsl_import_request_index(
   requests : Array[WgslImportRequest],
   module_path : String,
@@ -975,6 +1032,11 @@ pub fn Composer::preprocess_wgsl_source(
   modules : @hashmap.HashMap[String, String],
 ) -> String raise ComposerError {
   let mut merged = ""
+  let active_source = apply_wgsl_template_consts(
+    apply_wgsl_ifdefs(source, defines, value_defines),
+    value_defines,
+  )
+  let active_scan_source = strip_wgsl_import_declarations(active_source)
   let aliases : Array[String] = []
   let lines : Array[String] = []
   let import_active_stack : Array[Bool] = [true]
@@ -1113,7 +1175,8 @@ pub fn Composer::preprocess_wgsl_source(
         } else {
           ""
         }
-        if module_alias != "" && !source.contains(module_alias + "::") {
+        if module_alias != "" &&
+          !active_scan_source.contains(module_alias + "::") {
           continue
         }
         if module_alias != "" {
@@ -1124,7 +1187,7 @@ pub fn Composer::preprocess_wgsl_source(
         if target.alias_name != "" {
           import_full_module = false
           collect_wgsl_alias_requested_items(
-            source,
+            active_scan_source,
             target.alias_name,
             requested_items,
           )
@@ -1141,6 +1204,23 @@ pub fn Composer::preprocess_wgsl_source(
             import_full_module = true
           } else {
             requested_items.push(requested_item)
+          }
+        }
+        if !import_full_module {
+          let used_requested_items : Array[String] = []
+          for requested_item in requested_items {
+            if wgsl_source_contains_identifier(
+                active_scan_source, requested_item,
+              ) {
+              used_requested_items.push(requested_item)
+            }
+          }
+          requested_items.clear()
+          for requested_item in used_requested_items {
+            requested_items.push(requested_item)
+          }
+          if requested_items.length() == 0 {
+            continue
           }
         }
         if find_wgsl_import_request_index(
