@@ -336,7 +336,6 @@ fn update(
         time.get().elapsed_secs() / 1.7F,
       ) *
       0.7F
-    transform.set_changed()
   })
 
   guard ssao_camera_entity(camera_query) is Some(camera_entity) else { return }

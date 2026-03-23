@@ -107,7 +107,6 @@ fn change_scale_direction(
     if transform_ref.val.scale.max_element() > cube.max_element_size {
       next_cube.scale_direction = next_cube.scale_direction.mul_scalar(-1.0F)
       transform_ref.val.scale = transform_ref.val.scale.floor()
-      transform.set_changed()
       scaling_changed = true
     }
 
@@ -115,7 +114,6 @@ fn change_scale_direction(
       next_cube.scale_direction = next_cube.scale_direction.mul_scalar(-1.0F)
       transform_ref.val.scale = transform_ref.val.scale.ceil()
       next_cube.scale_direction = next_cube.scale_direction.zxy()
-      transform.set_changed()
       scaling_changed = true
     }
 
@@ -136,7 +134,6 @@ fn scale_cube(
     transform_ref.val.scale = transform_ref.val.scale.add(
       cube.scale_direction.mul_scalar(cube.scale_speed * delta),
     )
-    transform.set_changed()
   })
 }
 

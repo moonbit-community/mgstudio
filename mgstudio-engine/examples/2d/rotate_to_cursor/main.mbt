@@ -136,6 +136,5 @@ fn player_movement_system(
       ).to_angle() -
       @math.pi_half(),
     )
-    player.set_changed()
   })
 }

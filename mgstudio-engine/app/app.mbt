@@ -290,18 +290,6 @@ pub fn[T] Res::get(self : Res[T]) -> T {
 }
 
 ///|
-pub fn[T] Res::is_added(self : Res[T]) -> Bool {
-  ignore(self)
-  false
-}
-
-///|
-pub fn[T] Res::is_changed(self : Res[T]) -> Bool {
-  ignore(self)
-  false
-}
-
-///|
 pub struct ResMut[T] {
   value : Ref[T]
 }

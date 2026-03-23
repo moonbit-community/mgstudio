@@ -247,7 +247,6 @@ fn fit_canvas(
             current.with_scale(projection_scale),
           )
       }
-      projection.set_changed()
     })
   }
 }

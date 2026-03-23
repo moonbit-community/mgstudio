@@ -23,18 +23,6 @@ pub fn[T] ComponentRef::value(self : ComponentRef[T]) -> T {
 }
 
 ///|
-pub fn[T] ComponentRef::is_added(self : ComponentRef[T]) -> Bool {
-  ignore(self)
-  false
-}
-
-///|
-pub fn[T] ComponentRef::is_changed(self : ComponentRef[T]) -> Bool {
-  ignore(self)
-  false
-}
-
-///|
 pub fn[A] World::get_ref(
   self : World,
   entity : @core.Entity,

@@ -41,7 +41,6 @@ fn main {
 ///|
 fn button_system(world : @ecs.World) -> Unit {
   let tick = world.increment_change_tick()
-  let system_ticks = world.get_system_context().ticks()
   let a11y_state_resource = @a11y.get_a11y_state_resource(world)
   let mut a11y_state_ref : Ref[@a11y.A11yState]? = None
   if a11y_state_resource.get() is Some(a11y_state) {
@@ -53,7 +52,7 @@ fn button_system(world : @ecs.World) -> Unit {
   let border_store = world.component(@ui.ecs_key_border_color)
   let children_store = world.component(@hierarchy.ecs_key_children)
   let text_store = world.component(@text.ecs_key_text)
-  interaction_store.for_each_changed(system_ticks, fn(entity, interaction) {
+  interaction_store.for_each(fn(entity, interaction) {
     if !button_store.contains(entity) {
       return
     }

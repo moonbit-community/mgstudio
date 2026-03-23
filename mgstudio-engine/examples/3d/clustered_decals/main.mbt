@@ -746,9 +746,8 @@ fn apply_decal_drag(
 ///|
 fn handle_selection_change(world : @ecs.World) -> Bool {
   let mut changed = false
-  let system_ticks = world.get_system_context().ticks()
   let interaction_store = world.component(@ui.ecs_key_interaction)
-  interaction_store.for_each_changed(system_ticks, fn(entity, interaction) {
+  interaction_store.for_each(fn(entity, interaction) {
     if interaction != @ui.Interaction::Pressed {
       return
     }

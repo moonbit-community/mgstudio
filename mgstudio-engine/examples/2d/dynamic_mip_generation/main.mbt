@@ -511,7 +511,6 @@ fn animate_image_scale(
       next_scale.y,
       1.0F,
     )
-    transform.set_changed()
   })
 }
 

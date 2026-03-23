@@ -197,7 +197,6 @@ fn switch_projection(
     }
     guard next_projection is Some(next_projection) else { return }
     projection_ref.val = next_projection
-    camera_projection.set_changed()
   })
 }
 
@@ -238,7 +237,6 @@ fn zoom(
       }
       @camera.Projection::Custom(_) => return
     }
-    camera_projection.set_changed()
   })
 }
 

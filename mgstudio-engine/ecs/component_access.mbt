@@ -66,17 +66,6 @@ pub fn[T] ComponentAccess::get(
 }
 
 ///|
-pub fn[T] ComponentAccess::get_ticks(
-  self : ComponentAccess[T],
-  entity : @core.Entity,
-) -> @core.ComponentTicks? {
-  match self.world.component_store(self.key.id()) {
-    Some(store_ref) => store_ref.val.get_ticks(entity)
-    None => None
-  }
-}
-
-///|
 #callsite(autofill(loc))
 pub fn[T] ComponentAccess::set(
   self : ComponentAccess[T],
@@ -183,50 +172,6 @@ pub fn[T] ComponentAccess::for_each(
   }
   let entries : Array[(@core.Entity, ErasedValue)] = []
   store_ref.val.for_each(fn(entity, payload) { entries.push((entity, payload)) })
-  for entry in entries {
-    try self.world.component_value(self.key, entry.0, entry.1) catch {
-      _ => ()
-    } noraise {
-      value => f(entry.0, value)
-    }
-  }
-}
-
-///|
-pub fn[T] ComponentAccess::for_each_changed(
-  self : ComponentAccess[T],
-  system : @core.SystemTicks,
-  f : (@core.Entity, T) -> Unit,
-) -> Unit {
-  guard self.world.component_store(self.key.id()) is Some(store_ref) else {
-    return
-  }
-  let entries : Array[(@core.Entity, ErasedValue)] = []
-  store_ref.val.for_each_changed(system, fn(entity, payload) {
-    entries.push((entity, payload))
-  })
-  for entry in entries {
-    try self.world.component_value(self.key, entry.0, entry.1) catch {
-      _ => ()
-    } noraise {
-      value => f(entry.0, value)
-    }
-  }
-}
-
-///|
-pub fn[T] ComponentAccess::for_each_added(
-  self : ComponentAccess[T],
-  system : @core.SystemTicks,
-  f : (@core.Entity, T) -> Unit,
-) -> Unit {
-  guard self.world.component_store(self.key.id()) is Some(store_ref) else {
-    return
-  }
-  let entries : Array[(@core.Entity, ErasedValue)] = []
-  store_ref.val.for_each_added(system, fn(entity, payload) {
-    entries.push((entity, payload))
-  })
   for entry in entries {
     try self.world.component_value(self.key, entry.0, entry.1) catch {
       _ => ()

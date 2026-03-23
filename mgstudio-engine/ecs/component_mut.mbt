@@ -26,20 +26,3 @@ pub fn[T] ComponentMut::get(self : ComponentMut[T]) -> T {
 pub fn[T] ComponentMut::get_ref(self : ComponentMut[T]) -> Ref[T] {
   self.value_ref
 }
-
-///|
-pub fn[T] ComponentMut::is_added(self : ComponentMut[T]) -> Bool {
-  ignore(self)
-  false
-}
-
-///|
-pub fn[T] ComponentMut::is_changed(self : ComponentMut[T]) -> Bool {
-  ignore(self)
-  false
-}
-
-///|
-pub fn[T] ComponentMut::set_changed(self : ComponentMut[T]) -> Unit {
-  ignore(self)
-}

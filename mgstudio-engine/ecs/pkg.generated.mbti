@@ -108,10 +108,7 @@ pub struct ComponentAccess[T] {
 }
 pub fn[T] ComponentAccess::contains(Self[T], @core.Entity) -> Bool
 pub fn[T] ComponentAccess::for_each(Self[T], (@core.Entity, T) -> Unit) -> Unit
-pub fn[T] ComponentAccess::for_each_added(Self[T], @core.SystemTicks, (@core.Entity, T) -> Unit) -> Unit
-pub fn[T] ComponentAccess::for_each_changed(Self[T], @core.SystemTicks, (@core.Entity, T) -> Unit) -> Unit
 pub fn[T] ComponentAccess::get(Self[T], @core.Entity) -> T?
-pub fn[T] ComponentAccess::get_ticks(Self[T], @core.Entity) -> @core.ComponentTicks?
 #callsite(autofill(loc))
 pub fn[T] ComponentAccess::insert(Self[T], @core.Entity, T, Int, loc~ : SourceLoc) -> Unit
 pub fn[T] ComponentAccess::len(Self[T]) -> Int
@@ -164,15 +161,10 @@ pub struct ComponentMut[T] {
 }
 pub fn[T] ComponentMut::get(Self[T]) -> T
 pub fn[T] ComponentMut::get_ref(Self[T]) -> @ref.Ref[T]
-pub fn[T] ComponentMut::is_added(Self[T]) -> Bool
-pub fn[T] ComponentMut::is_changed(Self[T]) -> Bool
-pub fn[T] ComponentMut::set_changed(Self[T]) -> Unit
 
 pub struct ComponentRef[T] {
   value : T
 }
-pub fn[T] ComponentRef::is_added(Self[T]) -> Bool
-pub fn[T] ComponentRef::is_changed(Self[T]) -> Bool
 pub fn[T] ComponentRef::value(Self[T]) -> T
 
 pub struct DeferredEntityCommands {
@@ -603,7 +595,6 @@ pub fn[T] ResourceAccess::insert(Self[T], T, Int) -> Unit
 pub fn[T] ResourceAccess::is_present(Self[T]) -> Bool
 pub fn[T] ResourceAccess::remove(Self[T]) -> T?
 pub fn[T] ResourceAccess::set(Self[T], T, Int) -> Bool
-pub fn[T] ResourceAccess::ticks(Self[T]) -> @core.ComponentTicks?
 pub fn[T] ResourceAccess::update(Self[T], Int, (T) -> T) -> Bool
 pub fn[T] ResourceAccess::upsert(Self[T], T, Int) -> Unit
 
@@ -667,7 +658,6 @@ pub fn World::get_required_components_by_id(Self, Int) -> RequiredComponents?
 pub fn[T] World::get_resource(Self, ResourceKey[T]) -> T? raise EcsError
 pub fn[T] World::get_resource_ref(Self, ResourceKey[T]) -> @ref.Ref[T]? raise EcsError
 pub fn[T] World::get_resource_ref_mut(Self, ResourceKey[T], Int) -> @ref.Ref[T]? raise EcsError
-pub fn[T] World::get_resource_ticks(Self, ResourceKey[T]) -> @core.ComponentTicks?
 pub fn World::get_system_context(Self) -> @core.SystemContext
 pub fn World::increment_change_tick(Self) -> Int
 pub fn[T] World::init_message(Self, MessageKey[T]) -> Unit

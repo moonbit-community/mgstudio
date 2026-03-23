@@ -24,16 +24,10 @@ test "resource: insert/get/remove" {
 }
 
 ///|
-test "resource: change ticks update on insert and mut access" {
+test "resource: get_ref_mut returns the live resource cell" {
   let res : Resource[Int] = Resource::new()
   res.insert(1, 10)
-  let t1 = res.ticks()
-  inspect(t1.is_added(SystemTicks::new(0, 10)), content="true")
-  inspect(t1.is_changed(SystemTicks::new(0, 10)), content="true")
-
-  // Mut access updates changed tick.
-  let _r = res.get_ref_mut(20).unwrap()
-  let t2 = res.ticks()
-  inspect(t2.is_added(SystemTicks::new(10, 20)), content="false")
-  inspect(t2.is_changed(SystemTicks::new(10, 20)), content="true")
+  let resource_ref = res.get_ref_mut(20).unwrap()
+  resource_ref.val = 9
+  inspect(res.get().unwrap() == 9, content="true")
 }

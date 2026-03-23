@@ -801,8 +801,7 @@ fn handle_button_presses(world : @ecs.World) -> Unit {
 
   let widget_store = world.component(ColorGradingOptionWidget::component())
   let interaction_store = world.component(@ui.ecs_key_interaction)
-  let system_ticks = world.get_system_context().ticks()
-  interaction_store.for_each_changed(system_ticks, fn(entity, interaction) {
+  interaction_store.for_each(fn(entity, interaction) {
     if interaction != @ui.Interaction::Pressed {
       return
     }

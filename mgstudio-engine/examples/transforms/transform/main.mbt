@@ -142,7 +142,6 @@ fn move_cube(
     transform_ref.val.translation = transform_ref.val.translation.add(
       forward.mul_scalar(cube.value().move_speed * delta),
     )
-    transform.set_changed()
   })
 }
 
@@ -174,7 +173,6 @@ fn rotate_cube(
       look_at_sphere.rotation,
       weight,
     )
-    transform.set_changed()
   })
 }
 
@@ -204,7 +202,6 @@ fn scale_down_sphere_proportional_to_cube_travel_distance(
       new_size = center_state.min_size
     }
     transform.get_ref().val.scale = @math.Vec3::splat(new_size)
-    transform.set_changed()
   })
 }
 

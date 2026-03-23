@@ -600,7 +600,6 @@ fn toggle_scene(
     }
     if (try! visibility_query.get_mut(entity)) is Some(component) {
       component.get_ref().val = visibility
-      component.set_changed()
     }
   })
 }
@@ -640,7 +639,6 @@ fn toggle_tonemapping_method(
   if next_method is Some(tonemapper) {
     if (try! tonemapping_query.get_mut(camera)) is Some(component) {
       component.get_ref().val = tonemapper
-      component.set_changed()
       current_tonemapping = tonemapper
     }
   }
@@ -651,7 +649,6 @@ fn toggle_tonemapping_method(
   }
   if (try! color_grading_query.get_mut(camera)) is Some(component) {
     component.get_ref().val = color_grading
-    component.set_changed()
   }
 }
 

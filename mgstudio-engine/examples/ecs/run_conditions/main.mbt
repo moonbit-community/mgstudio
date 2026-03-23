@@ -77,12 +77,9 @@ fn main {
   )
   .add_systems(
     @app.Update,
-    @app.system(@app.system_param(print_input_counter)).run_if(
-      @app.run_condition_and(
-        @app.resource_exists(InputCounter::resource()),
-        input_counter_changed_and_not_added,
-      ),
-    ),
+    @app.system(@app.system_param(print_input_counter))
+    .run_if(@app.resource_exists(InputCounter::resource()))
+    .run_if_stateful(Json::null(), input_counter_changed),
   )
   .add_systems(
     @app.Update,
@@ -120,11 +117,20 @@ fn touches_any_just_pressed(world : @ecs.World) -> Bool {
 }
 
 ///|
-fn input_counter_changed_and_not_added(world : @ecs.World) -> Bool {
-  match world.get_resource_ticks(InputCounter::resource()) {
-    Some(ticks) =>
-      ticks.is_changed(@app.current_system_ticks()) &&
-      !ticks.is_added(@app.current_system_ticks())
+fn input_counter_changed(world : @ecs.World, state : Ref[Json]) -> Bool {
+  let previous : Int? = match state.val {
+    Json::Null => None
+    _ => Some(try! @json.from_json(state.val))
+  }
+  match (try! world.get_resource(InputCounter::resource())) {
+    Some(counter) => {
+      let changed = match previous {
+        Some(last) => last != counter.value
+        None => false
+      }
+      state.val = counter.value.to_json()
+      changed
+    }
     None => false
   }
 }

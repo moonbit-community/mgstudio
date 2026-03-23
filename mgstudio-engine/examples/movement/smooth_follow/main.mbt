@@ -227,7 +227,6 @@ fn move_target(
       transform_ref.val.translation = transform_ref.val.translation.add(
         offset.normalize_or_zero().mul_scalar(magnitude),
       )
-      transform.set_changed()
     } else {
       let legal_region = @math.Cuboid::from_size(@math.Vec3::splat(4.0F))
       target_position.val.value = legal_region.sample_interior(
@@ -262,7 +261,6 @@ fn move_follower(
       delta_time,
     )
     transform_ref.val.translation = next_translation
-    transform.set_changed()
   })
 }
 

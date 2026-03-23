@@ -366,7 +366,6 @@ fn change_fov(
       Orthographic(_) => ()
       Custom(_) => ()
     }
-    projection.set_changed()
   })
 }
 

@@ -348,7 +348,6 @@ fn rotate_camera(
       next_pitch,
       roll,
     )
-    transform.set_changed()
   })
 }
 
@@ -388,7 +387,6 @@ fn accumulate_input(
     velocity_ref.val.value = vec3_clamp_length_max(velocity_from_input, 1.0F).mul_scalar(
       PLAYER_SPEED,
     )
-    velocity.set_changed()
     commands.entity(entity).insert_component(next_input)
   })
 }
@@ -408,7 +406,6 @@ fn clear_input(
   try! players.view_mut(fn(_entity, input) {
     let input_ref = input.get_ref()
     input_ref.val.movement = @math.Vec2::zero()
-    input.set_changed()
   })
 }
 
@@ -438,7 +435,6 @@ fn advance_physics(
     current_ref.val.value = current_ref.val.value.add(
       velocity.value().value.mul_scalar(delta_seconds),
     )
-    current_translation.set_changed()
   })
 }
 
@@ -463,7 +459,6 @@ fn interpolate_rendered_transform(
       current_translation.value().value,
       alpha,
     )
-    transform.set_changed()
   })
 }
 
@@ -483,7 +478,6 @@ fn translate_camera(
   try! cameras.view_mut(fn(_entity, transform) {
     let transform_ref = transform.get_ref()
     transform_ref.val.translation = player_transform.translation
-    transform.set_changed()
   })
 }
 

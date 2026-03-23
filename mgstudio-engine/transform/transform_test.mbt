@@ -134,13 +134,13 @@ test "transform ecs: parent translation affects child global translation" {
 }
 
 ///|
-test "transform ecs: propagate updates only when inputs change" {
+test "transform ecs: propagate preserves global transform until inputs change" {
   let world = @ecs.World::new()
   let entity = world.spawn_empty()
 
   prepare_transform_world(world)
-  // First run: insert Transform, propagate writes GlobalTransform at tick1.
-  let tick1 = next_system_ticks(world).this_run
+  // First run: insert Transform, propagate writes GlobalTransform.
+  next_system_ticks(world) |> ignore
   try! world.set(
     entity,
     ecs_key_transform,
@@ -153,24 +153,19 @@ test "transform ecs: propagate updates only when inputs change" {
   mark_dirty_trees(world)
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
-  let gt_tick1 = world
-    .component(ecs_key_global_transform)
-    .get_ticks(entity)
-    .unwrap()
-  inspect(gt_tick1.is_changed(@core.SystemTicks::new(0, tick1)), content="true")
+  let first_global = (try! world.get(entity, ecs_key_global_transform)).unwrap()
+  inspect(approx_eq(first_global.affine.tx, 1.0F), content="true")
 
-  // Second run: no changes, propagate should not touch GlobalTransform.
-  let tick2 = next_system_ticks(world).this_run
+  // Second run: no local changes, the propagated value should stay stable.
+  next_system_ticks(world) |> ignore
   mark_dirty_trees(world)
   propagate_transforms_system(world)
   sync_simple_transforms_world(world)
-  let gt_tick2 = world
-    .component(ecs_key_global_transform)
-    .get_ticks(entity)
-    .unwrap()
+  let second_global = (try! world.get(entity, ecs_key_global_transform)).unwrap()
   inspect(
-    gt_tick2.is_changed(@core.SystemTicks::new(tick1, tick2)),
-    content="false",
+    approx_eq(second_global.affine.tx, first_global.affine.tx) &&
+    approx_eq(second_global.affine.ty, first_global.affine.ty),
+    content="true",
   )
 
   // Third run: local change, should update.
@@ -431,16 +426,12 @@ test "transform ecs: mark_dirty_trees marks ancestor chain" {
   mark_dirty_trees(world)
 
   inspect(
-    (try! world.get_ref(parent, ecs_key_transform_tree_changed))
-    .unwrap()
-    .is_changed(),
-    content="false",
+    (try! world.get_ref(parent, ecs_key_transform_tree_changed)) is Some(_),
+    content="true",
   )
   inspect(
-    (try! world.get_ref(child, ecs_key_transform_tree_changed))
-    .unwrap()
-    .is_changed(),
-    content="false",
+    (try! world.get_ref(child, ecs_key_transform_tree_changed)) is Some(_),
+    content="true",
   )
 }
 

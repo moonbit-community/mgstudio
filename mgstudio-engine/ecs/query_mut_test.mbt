@@ -55,25 +55,25 @@ test "ecs query mut: iter_many_mut updates filtered components without change fl
   let iter = world
     .query1_filtered(comp_position, With::new(comp_velocity))
     .iter_many_mut([e0, e1, e2])
-  let seen : Array[(Int, Bool, Bool)] = []
+  let seen : Array[Int] = []
   while iter.fetch_next() is Some((entity, component_mut)) {
-    seen.push((entity.id, component_mut.is_added(), component_mut.is_changed()))
+    seen.push(entity.id)
     component_mut.get_ref().val.x = component_mut.get_ref().val.x + 10
   }
 
-  inspect(seen, content="[(1, false, false), (2, false, false)]")
+  inspect(seen, content="[1, 2]")
   inspect(try! world.get(e1, comp_position), content="Some({x: 12, y: 2})")
   inspect(try! world.get(e2, comp_position), content="Some({x: 14, y: 4})")
 }
 
 ///|
-test "ecs query mut: read-only view_mut exposes no change flags" {
+test "ecs query mut: read-only view_mut leaves data accessible" {
   let world = World::new()
   let comp_velocity : ComponentKey[Velocity] = register_component(
     debug_name="velocity_query_mut_read_only",
   )
   let entity = world.spawn()
-  let observed_flags : Array[(Bool, Bool)] = []
+  let observed_velocity : Array[Velocity] = []
 
   try! world.set(entity, comp_velocity, Velocity::{ dx: 1, dy: 2 })
   let ctx1 = @core.SystemContext::new()
@@ -82,9 +82,9 @@ test "ecs query mut: read-only view_mut exposes no change flags" {
   try! world
   .query1_filtered(comp_velocity, All::new())
   .view_mut(fn(_entity, component_mut) {
-    observed_flags.push((component_mut.is_added(), component_mut.is_changed()))
+    observed_velocity.push(component_mut.get())
   })
-  inspect(observed_flags, content="[(false, false)]")
+  inspect(observed_velocity, content="[{dx: 1, dy: 2}]")
 
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
@@ -131,14 +131,14 @@ test "ecs query mut: query2 ref mut supports iter_many_mut and par_iter_mut" {
   inspect(query.count(), content="2")
 
   let iter = query.iter_many_mut([e2, e1, e0])
-  let seen : Array[(Int, Bool, Bool)] = []
+  let seen : Array[Int] = []
   while iter.fetch_next() is Some((entity, position_ref, velocity_mut)) {
-    seen.push((entity.id, position_ref.is_added(), velocity_mut.is_added()))
+    seen.push(entity.id)
     velocity_mut.get_ref().val.dx = velocity_mut.get_ref().val.dx +
       position_ref.value().x
   }
 
-  inspect(seen, content="[(1, false, false), (0, false, false)]")
+  inspect(seen, content="[1, 0]")
   inspect(try! world.get(e0, comp_velocity), content="Some({dx: 11, dy: 10})")
   inspect(try! world.get(e1, comp_velocity), content="Some({dx: 22, dy: 30})")
   inspect(try! world.get(e2, comp_velocity), content="Some({dx: 40, dy: 50})")
@@ -263,7 +263,7 @@ test "ecs query mut: query2 ref mut contiguous_iter_mut preserves chunk shape" {
 }
 
 ///|
-test "ecs query mut: plain query1 supports count and no-op set_changed compatibility" {
+test "ecs query mut: plain query1 supports count and view_mut" {
   let world = World::new()
   let comp_position : ComponentKey[Position] = register_component(
     debug_name="position_query1_plain_mut",
@@ -278,9 +278,7 @@ test "ecs query mut: plain query1 supports count and no-op set_changed compatibi
   let ctx1 = @core.SystemContext::new()
   ctx1.set(@core.SystemTicks::new(0, 1))
   world.set_system_context(ctx1)
-  try! world
-  .query1(comp_position)
-  .view_mut(fn(_entity, position_mut) { position_mut.set_changed() })
+  try! world.query1(comp_position).view_mut(fn(_entity, _position_mut) { () })
   inspect(world.query1_filtered(comp_position, All::new()).count(), content="2")
 
   world.increment_change_tick() |> ignore
@@ -325,7 +323,6 @@ test "ecs query mut: query2 value mut filtered matches required pair only" {
   inspect(query.count(), content="1")
   if (try! query.get(e0)) is Some((position, velocity_mut)) {
     inspect(position, content="{x: 1, y: 1}")
-    inspect(velocity_mut.is_added(), content="false")
     inspect(velocity_mut.get(), content="{dx: 10, dy: 20}")
   } else {
     inspect(false, content="true")
@@ -417,23 +414,15 @@ test "ecs query mut: query3 ref mut optional preserves optional ref semantics" {
   )
   inspect(query.count(), content="2")
 
-  let seen : Array[(Int, Bool, Bool)] = []
+  let seen : Array[Int] = []
   try! query.view_mut(fn(entity, position_ref, velocity_mut, accel_ref) {
-    seen.push(
-      (
-        entity.id,
-        position_ref.is_added(),
-        match accel_ref {
-          Some(value) => value.is_added()
-          None => false
-        },
-      ),
-    )
+    ignore(accel_ref)
+    seen.push(entity.id)
     velocity_mut.get_ref().val.dy = velocity_mut.get_ref().val.dy +
       position_ref.value().y
   })
 
-  inspect(seen, content="[(0, false, false), (1, false, false)]")
+  inspect(seen, content="[0, 1]")
   inspect(try! world.get(e0, comp_velocity), content="Some({dx: 3, dy: 6})")
   inspect(try! world.get(e1, comp_velocity), content="Some({dx: 9, dy: 18})")
 }
@@ -670,14 +659,14 @@ test "ecs query mut: iter_many_unique_mut rejects duplicates and preserves order
   }
   inspect(entity.id, content="1")
 
-  let seen : Array[(Int, Bool)] = []
+  let seen : Array[Int] = []
   let iter = try! world.query1(comp_velocity).iter_many_unique_mut([e1, e2, e0])
   while (try! iter.fetch_next()) is Some((entity, velocity_mut)) {
-    seen.push((entity.id, velocity_mut.is_added()))
+    seen.push(entity.id)
     velocity_mut.get_ref().val.dy = velocity_mut.get_ref().val.dy + entity.id
   }
 
-  inspect(seen, content="[(1, false), (0, false)]")
+  inspect(seen, content="[1, 0]")
   inspect(try! world.get(e0, comp_velocity), content="Some({dx: 1, dy: 10})")
   inspect(try! world.get(e1, comp_velocity), content="Some({dx: 2, dy: 21})")
 }

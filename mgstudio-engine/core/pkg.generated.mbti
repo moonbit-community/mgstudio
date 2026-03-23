@@ -18,31 +18,17 @@ pub(all) suberror EntityError {
 // Types and methods
 pub struct ComponentStore[T] {
   storage : SparseSet[T]
-  ticks : Array[ComponentTicks]
 }
 pub fn[T] ComponentStore::contains(Self[T], Entity) -> Bool
 pub fn[T] ComponentStore::for_each(Self[T], (Entity, T) -> Unit) -> Unit
-pub fn[T] ComponentStore::for_each_added(Self[T], SystemTicks, (Entity, T) -> Unit) -> Unit
-pub fn[T] ComponentStore::for_each_changed(Self[T], SystemTicks, (Entity, T) -> Unit) -> Unit
 pub fn[T] ComponentStore::get(Self[T], Entity) -> T?
-pub fn[T] ComponentStore::get_ticks(Self[T], Entity) -> ComponentTicks?
 pub fn[T] ComponentStore::insert(Self[T], Entity, T, Int) -> Unit
 pub fn[T] ComponentStore::len(Self[T]) -> Int
 pub fn[T] ComponentStore::new() -> Self[T]
 pub fn[T] ComponentStore::remove(Self[T], Entity) -> T?
 pub fn[T] ComponentStore::set(Self[T], Entity, T, Int) -> Bool
-pub fn[T] ComponentStore::set_changed(Self[T], Entity, Int) -> Bool
 pub fn[T] ComponentStore::update(Self[T], Entity, Int, (T) -> T) -> Bool
 pub fn[T] ComponentStore::upsert(Self[T], Entity, T, Int) -> Unit
-
-pub struct ComponentTicks {
-  mut added : Int
-  mut changed : Int
-}
-pub fn ComponentTicks::is_added(Self, SystemTicks) -> Bool
-pub fn ComponentTicks::is_changed(Self, SystemTicks) -> Bool
-pub fn ComponentTicks::new(Int) -> Self
-pub fn ComponentTicks::set_changed(Self, Int) -> Unit
 
 pub struct Duration {
   nanos : Int64
@@ -152,7 +138,6 @@ pub fn[T] Messages::writer(Self[T], Int) -> MessageWriter[T]
 
 pub struct Resource[T] {
   mut cell : @ref.Ref[T]?
-  ticks : ComponentTicks
 }
 pub fn[T] Resource::get(Self[T]) -> T?
 pub fn[T] Resource::get_ref(Self[T]) -> @ref.Ref[T]?
@@ -161,7 +146,6 @@ pub fn[T] Resource::insert(Self[T], T, Int) -> Unit
 pub fn[T] Resource::is_present(Self[T]) -> Bool
 pub fn[T] Resource::new() -> Self[T]
 pub fn[T] Resource::remove(Self[T]) -> T?
-pub fn[T] Resource::ticks(Self[T]) -> ComponentTicks
 
 type SparseSet[T]
 pub fn[T] SparseSet::contains(Self[T], Entity) -> Bool

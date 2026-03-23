@@ -88,7 +88,6 @@ fn rotate_cube(
   try! cubes.view_mut(fn(_entity, cube, transform) {
     let transform_ref = transform.get_ref()
     transform_ref.val.rotate_y(cube.value().speed * (@math.pi() * 2.0F) * delta)
-    transform.set_changed()
   })
 }
 

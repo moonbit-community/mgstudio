@@ -397,7 +397,6 @@ pub fn update_ui_radio_button(
   background_color.get_ref().val = @ui.BackgroundColor::new(
     radio_button_background_color(selected),
   )
-  background_color.set_changed()
 }
 
 ///|
@@ -408,5 +407,4 @@ pub fn update_ui_radio_button_text(
   text_color.get_ref().val = @text.TextColor::new(
     radio_button_foreground_color(selected),
   )
-  text_color.set_changed()
 }

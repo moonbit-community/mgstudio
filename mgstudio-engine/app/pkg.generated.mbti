@@ -553,8 +553,6 @@ pub struct Res[T] {
   value : T
 }
 pub fn[T] Res::get(Self[T]) -> T
-pub fn[T] Res::is_added(Self[T]) -> Bool
-pub fn[T] Res::is_changed(Self[T]) -> Bool
 pub impl[T : Resource] SystemParam for Res[T]
 
 pub struct ResMut[T] {

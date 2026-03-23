@@ -204,7 +204,6 @@ fn orbit(
     transform_ref.val.translation = target.sub(
       transform_ref.val.forward().mul_scalar(settings.orbit_distance),
     )
-    camera_transform.set_changed()
   })
 }
 

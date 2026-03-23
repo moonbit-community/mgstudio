@@ -4459,11 +4459,9 @@ fn render2d_camera_target_info_from_render_target(
 fn render2d_target_component_changed(
   target_store : @ecs.ComponentAccess[RenderTarget],
   entity : @core.Entity,
-  system_ticks : @core.SystemTicks,
 ) -> Bool {
   ignore(target_store)
   ignore(entity)
-  ignore(system_ticks)
   true
 }
 
@@ -4574,11 +4572,9 @@ fn render2d_camera_viewport_size(camera : Camera) -> @math.IVec2? {
 fn render2d_projection_changed(
   projection_store : @ecs.ComponentAccess[Projection],
   entity : @core.Entity,
-  system_ticks : @core.SystemTicks,
 ) -> Bool {
   ignore(projection_store)
   ignore(entity)
-  ignore(system_ticks)
   true
 }
 
@@ -4586,11 +4582,9 @@ fn render2d_projection_changed(
 fn render2d_camera_changed(
   camera_store : @ecs.ComponentAccess[Camera],
   entity : @core.Entity,
-  system_ticks : @core.SystemTicks,
 ) -> Bool {
   ignore(camera_store)
   ignore(entity)
-  ignore(system_ticks)
   true
 }
 
@@ -4662,7 +4656,6 @@ fn camera_color_grading(
 pub fn render2d_camera_system(world : @ecs.World) -> Unit {
   guard render_state_ref(world) is Some(render_state_ref_value) else { return }
   let tick = world.read_change_tick()
-  let system_ticks = world.get_system_context().ticks()
   let ecs_world = world
   let camera2d_store = get_camera2d_store(ecs_world)
   let camera_store = get_camera_store(ecs_world)
@@ -4685,19 +4678,15 @@ pub fn render2d_camera_system(world : @ecs.World) -> Unit {
     let next_target_info = render2d_camera_target_info_from_render_target(
       target_info,
     )
-    let target_changed = render2d_target_component_changed(
-        target_store, entity, system_ticks,
-      ) ||
+    let target_changed = render2d_target_component_changed(target_store, entity) ||
       !render2d_camera_target_info_eq(
         camera.computed.target_info,
         next_target_info,
       )
     let viewport_changed = render2d_viewport_size_changed(camera)
-    let camera_changed = render2d_camera_changed(
-      camera_store, entity, system_ticks,
-    )
+    let camera_changed = render2d_camera_changed(camera_store, entity)
     let projection_changed = render2d_projection_changed(
-      projection_store, entity, system_ticks,
+      projection_store, entity,
     )
     let mut scale_factor_changed = false
     if render2d_targets_host_window(target) &&

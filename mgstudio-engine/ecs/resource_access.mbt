@@ -44,13 +44,6 @@ pub fn[T] ResourceAccess::get(self : ResourceAccess[T]) -> T? {
 }
 
 ///|
-pub fn[T] ResourceAccess::ticks(
-  self : ResourceAccess[T],
-) -> @core.ComponentTicks? {
-  self.world.get_resource_ticks(self.key)
-}
-
-///|
 pub fn[T] ResourceAccess::insert(
   self : ResourceAccess[T],
   value : T,

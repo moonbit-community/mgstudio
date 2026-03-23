@@ -13,19 +13,9 @@
 // limitations under the License.
 
 ///|
-test "change_detection: added/changed within system tick range" {
-  let ticks = ComponentTicks::new(1)
-  inspect(ticks.is_added(SystemTicks::new(0, 1)), content="true")
-  inspect(ticks.is_changed(SystemTicks::new(0, 1)), content="true")
-  inspect(ticks.is_added(SystemTicks::new(1, 2)), content="false")
-  inspect(ticks.is_changed(SystemTicks::new(1, 2)), content="false")
-}
-
-///|
-test "change_detection: set_changed updates changed tick only" {
-  let ticks = ComponentTicks::new(1)
-  ticks.set_changed(3)
-  let system = SystemTicks::new(2, 3)
-  inspect(ticks.is_added(system), content="false")
-  inspect(ticks.is_changed(system), content="true")
+test "change_detection: system context stores execution window" {
+  let ctx = SystemContext::new()
+  ctx.set(SystemTicks::new(2, 5))
+  let ticks = ctx.ticks()
+  inspect(ticks.last_run == 2 && ticks.this_run == 5, content="true")
 }

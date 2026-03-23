@@ -249,7 +249,7 @@ test "ecs query: filtered query supports with/without tuples and entity counts" 
 }
 
 ///|
-test "ecs query: component ref no longer tracks added and changed state" {
+test "ecs query: component ref exposes live component values" {
   let world = World::new()
   let comp_position : ComponentKey[Position] = register_component(
     debug_name="position_component_ref",
@@ -262,8 +262,6 @@ test "ecs query: component ref no longer tracks added and changed state" {
   world.set_system_context(ctx1)
   let initial_ref = (try! world.get_ref(entity, comp_position)).unwrap()
   inspect(initial_ref.value(), content="{x: 1, y: 2}")
-  inspect(initial_ref.is_added(), content="false")
-  inspect(initial_ref.is_changed(), content="false")
 
   world.increment_change_tick() |> ignore
   world.increment_change_tick() |> ignore
@@ -278,8 +276,6 @@ test "ecs query: component ref no longer tracks added and changed state" {
   world.set_system_context(ctx2)
   let changed_ref = (try! world.get_ref(entity, comp_position)).unwrap()
   inspect(changed_ref.value(), content="{x: 11, y: 22}")
-  inspect(changed_ref.is_added(), content="false")
-  inspect(changed_ref.is_changed(), content="false")
 }
 
 ///|
@@ -363,20 +359,19 @@ test "ecs query: iter_many_ref preserves filter order without change state" {
   ctx.set(@core.SystemTicks::new(0, 1))
   world.set_system_context(ctx)
 
-  let seen : Array[(Int, Bool, Bool)] = []
+  let seen : Array[Int] = []
   let iter = world
     .query1_filtered(comp_position, With::new(comp_velocity))
     .iter_many_ref([e0, e1, e2])
   while true {
     if (try! iter.fetch_next()) is Some((entity, component_ref)) {
-      seen.push(
-        (entity.id, component_ref.is_added(), component_ref.is_changed()),
-      )
+      ignore(component_ref)
+      seen.push(entity.id)
     } else {
       break
     }
   }
-  inspect(seen, content="[(1, false, false), (2, false, false)]")
+  inspect(seen, content="[1, 2]")
 }
 
 ///|
@@ -413,18 +408,17 @@ test "ecs query: iter_many_unique_ref rejects duplicates and preserves order" {
   }
   inspect(entity.id, content="1")
 
-  let seen : Array[(Int, Bool, Bool)] = []
+  let seen : Array[Int] = []
   let iter = try! world
     .query1_filtered(comp_position, With::new(comp_velocity))
     .iter_many_unique_ref([e2, e0, e1])
   while true {
     if (try! iter.fetch_next()) is Some((entity, component_ref)) {
-      seen.push(
-        (entity.id, component_ref.is_added(), component_ref.is_changed()),
-      )
+      ignore(component_ref)
+      seen.push(entity.id)
     } else {
       break
     }
   }
-  inspect(seen, content="[(2, false, false), (1, false, false)]")
+  inspect(seen, content="[2, 1]")
 }

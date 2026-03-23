@@ -171,8 +171,6 @@ pub(all) suberror EcsError {
 ///|
 struct ResourceSlot {
   payload : ErasedValue
-  added_tick : @core.Tick
-  changed_tick : @core.Tick
 }
 
 ///|

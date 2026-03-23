@@ -13,17 +13,16 @@
 // limitations under the License.
 
 ///|
-/// Resource container with change detection.
+/// Resource container with single-cell reference semantics.
 
 ///|
 pub struct Resource[T] {
   mut cell : Ref[T]?
-  ticks : ComponentTicks
 }
 
 ///|
 pub fn[T] Resource::new() -> Resource[T] {
-  { cell: None, ticks: ComponentTicks::new(0) }
+  { cell: None }
 }
 
 ///|
@@ -37,9 +36,8 @@ pub fn[T] Resource::insert(
   value : T,
   change_tick : Tick,
 ) -> Unit {
+  ignore(change_tick)
   self.cell = Some(Ref::new(value))
-  self.ticks.added = change_tick
-  self.ticks.changed = change_tick
 }
 
 ///|
@@ -71,16 +69,9 @@ pub fn[T] Resource::get_ref_mut(
   self : Resource[T],
   change_tick : Tick,
 ) -> Ref[T]? {
+  ignore(change_tick)
   match self.cell {
     None => None
-    Some(r) => {
-      self.ticks.set_changed(change_tick)
-      Some(r)
-    }
+    Some(r) => Some(r)
   }
-}
-
-///|
-pub fn[T] Resource::ticks(self : Resource[T]) -> ComponentTicks {
-  self.ticks
 }

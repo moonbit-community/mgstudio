@@ -229,7 +229,6 @@ fn update_colors(
         color_green()
       }
       color_ref.val = color_ref.val.with_color(next)
-      color.set_changed()
     })
   }
 }

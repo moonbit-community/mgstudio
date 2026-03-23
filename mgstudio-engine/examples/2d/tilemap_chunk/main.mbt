@@ -225,7 +225,6 @@ fn move_player(
   try! players.view_mut(fn(_entity, player) {
     let player_ref = player.get_ref()
     player_ref.val.translation.x = origin + (destination - origin) * t
-    player.set_changed()
   })
 }
 
@@ -240,7 +239,6 @@ fn update_tilemap(
   try! timers.view_mut(fn(entity, timer) {
     let timer_ref = timer.get_ref()
     timer_ref.val.timer = timer_ref.val.timer.tick(time.get().delta())
-    timer.set_changed()
 
     if !timer_ref.val.timer.just_finished() {
       return
@@ -261,7 +259,6 @@ fn update_tilemap(
             ),
           )
         }
-        tile_data.set_changed()
       }),
     )
   })

@@ -13,20 +13,14 @@
 // limitations under the License.
 
 ///|
-test "component_store: insert/set/remove ticks" {
+test "component_store: insert/set/remove" {
   let entities = Entities::new()
   let e = entities.spawn()
   let store : ComponentStore[Int] = ComponentStore::new()
   store.insert(e, 1, 10)
-  let ticks1 = store.get_ticks(e).unwrap()
-  inspect(ticks1.is_added(SystemTicks::new(0, 10)), content="true")
-  inspect(ticks1.is_changed(SystemTicks::new(0, 10)), content="true")
-
-  // set marks changed, not added
+  inspect(store.get(e).unwrap() == 1, content="true")
   inspect(store.set(e, 2, 20), content="true")
-  let ticks2 = store.get_ticks(e).unwrap()
-  inspect(ticks2.is_added(SystemTicks::new(10, 20)), content="false")
-  inspect(ticks2.is_changed(SystemTicks::new(10, 20)), content="true")
+  inspect(store.get(e).unwrap() == 2, content="true")
   inspect(store.remove(e).unwrap() == 2, content="true")
   inspect(store.contains(e), content="false")
 }
@@ -54,9 +48,4 @@ test "component_store: update and upsert" {
   assert_true(store.get(e) is Some(10))
   inspect(store.update(e, 3, fn(v) { v + 5 }), content="true")
   assert_true(store.get(e) is Some(15))
-  inspect(
-    store.get_ticks(e) is Some(ticks) &&
-    ticks.is_changed(SystemTicks::new(2, 3)),
-    content="true",
-  )
 }

@@ -193,14 +193,12 @@ test "app: resource_changed now follows resource existence" {
 }
 
 ///|
-test "app: Res reports no added or changed flags" {
-  let observed : Array[(Bool, Bool, Int)] = []
+test "app: Res exposes stable resource values across runs" {
+  let observed : Array[Int] = []
   let app = App::new(@ecs.World::new())
     .insert_resource(CounterResource::{ value: 2 })
     .add_system_param(fn(resource : Res[CounterResource]) {
-      observed.push(
-        (resource.is_added(), resource.is_changed(), resource.get().value),
-      )
+      observed.push(resource.get().value)
     })
 
   app.run_once() |> ignore
@@ -208,10 +206,7 @@ test "app: Res reports no added or changed flags" {
   app.insert_resource(CounterResource::{ value: 6 }) |> ignore
   app.run_once() |> ignore
 
-  inspect(
-    observed,
-    content="[(false, false, 2), (false, false, 2), (false, false, 6)]",
-  )
+  inspect(observed, content="[2, 2, 6]")
 }
 
 ///|

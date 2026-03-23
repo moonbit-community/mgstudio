@@ -13,29 +13,10 @@
 // limitations under the License.
 
 ///|
-/// Change detection primitives aligned with Bevy's `bevy_ecs::change_detection`.
+/// Per-system execution sequence primitives used by message readers.
 
 ///|
 pub type Tick = Int
-
-///|
-pub struct ComponentTicks {
-  mut added : Tick
-  mut changed : Tick
-}
-
-///|
-pub fn ComponentTicks::new(change_tick : Tick) -> ComponentTicks {
-  { added: change_tick, changed: change_tick }
-}
-
-///|
-pub fn ComponentTicks::set_changed(
-  self : ComponentTicks,
-  change_tick : Tick,
-) -> Unit {
-  self.changed = change_tick
-}
 
 ///|
 pub struct SystemTicks {
@@ -46,28 +27,6 @@ pub struct SystemTicks {
 ///|
 pub fn SystemTicks::new(last_run : Tick, this_run : Tick) -> SystemTicks {
   { last_run, this_run }
-}
-
-///|
-fn tick_in_range(tick : Tick, last_run : Tick, this_run : Tick) -> Bool {
-  // Simplified, non-wrapping tick comparison.
-  tick > last_run && tick <= this_run
-}
-
-///|
-pub fn ComponentTicks::is_added(
-  self : ComponentTicks,
-  system : SystemTicks,
-) -> Bool {
-  tick_in_range(self.added, system.last_run, system.this_run)
-}
-
-///|
-pub fn ComponentTicks::is_changed(
-  self : ComponentTicks,
-  system : SystemTicks,
-) -> Bool {
-  tick_in_range(self.changed, system.last_run, system.this_run)
 }
 
 ///|

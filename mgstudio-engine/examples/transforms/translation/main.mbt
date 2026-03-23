@@ -101,7 +101,6 @@ fn move_cube(
     transform_ref.val.translation = transform_ref.val.translation.add(
       direction.mul_scalar(next_movable.speed * delta),
     )
-    transform.set_changed()
     if next_movable.speed != movable.speed {
       commands.entity(entity).insert_component(next_movable)
     }

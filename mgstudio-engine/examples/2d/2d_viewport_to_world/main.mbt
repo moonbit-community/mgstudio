@@ -264,7 +264,6 @@ fn controls(
           @math.Vec2::new(transform_ref.val.scale.x, transform_ref.val.scale.y),
           z=transform_ref.val.translation.z,
         )
-        camera_transform.set_changed()
       }
     }),
   )
@@ -285,7 +284,6 @@ fn controls(
             projection_ref.val = @sprite.Projection::Orthographic(
               @sprite.OrthographicProjection::new(scale),
             )
-            camera_projection.set_changed()
           }
         }
       }
@@ -356,7 +354,6 @@ fn controls(
         next_viewport.physical_size.y != current_viewport.physical_size.y
       if changed {
         camera_ref.val = camera_ref.val.with_viewport(next_viewport)
-        camera_component.set_changed()
       }
     }),
   )
