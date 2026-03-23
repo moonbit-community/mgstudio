@@ -13,13 +13,12 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/2d/2d_shapes.rs`.
 fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_plugins([@sprite.wireframe2d_plugin])
-  .add_systems(Startup, @app.system(@app.system_param4(setup)))
+  .add_systems(Startup, @app.system(@app.system_param3(setup)))
   .add_systems(
     Update,
     @app.system(@app.system_param(toggle_wireframe)).run_if(
@@ -64,102 +63,42 @@ fn lane_x(index : Int, total : Int, extent : Float) -> Float {
 }
 
 ///|
-fn spawn_shape(
-  commands : @app.Commands,
-  meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
-  geometry : @sprite.Mesh2dGeometry,
-  position : @math.Vec2,
-  color : @sprite.Color,
-) -> Unit {
-  let mesh = @sprite.Mesh2d::new(
-    meshes.get_ref().val |> @sprite.add_mesh(geometry),
-  )
-  let material = @sprite.MeshMaterial2d::new(
-    materials.get_ref().val |> @sprite.add_material(color),
-  )
-  let transform = @transform.Transform::from_xy_rotation_scale(
-    position,
-    0.0F,
-    @math.Vec2::new(1.0F, 1.0F),
-  )
-  ignore(
-    commands.spawn(
-      @sprite.Mesh2dBundle::new_with_mesh_material(mesh, material, transform),
-    ),
-  )
-}
-
-///|
-fn spawn_help_overlay(
-  commands : @app.Commands,
-  asset_server : @app.Res[@asset.AssetServer],
-) -> Unit {
-  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
-  let root = commands.spawn(
-    (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F)),
-    ),
-  )
-  let text_entity = commands.spawn(
-    (
-      @hierarchy.Parent::new(root),
-      @ui.Node::default()
-      .with_position_type(@ui.PositionType::Absolute)
-      .with_left(@ui.Val::Px(12.0F))
-      .with_top(@ui.Val::Px(12.0F)),
-      @text.Text::new(
-        "Press 'R' to pause/resume rotation\nPress 'Space' to toggle wireframes",
-      ),
-      @text.TextFont::default().with_font(font).with_font_size(20.0F),
-      @text.TextColor::new(@sprite.Color::white()),
-      @text.TextLayout::new_with_justify(@text.Justify::Left),
-    ),
-  )
-  root |> ignore
-  text_entity |> ignore
-}
-
-///|
 fn setup(
   commands : @app.Commands,
-  asset_server : @app.Res[@asset.AssetServer],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
 ) -> Unit {
-  let shapes : Array[@sprite.Mesh2dGeometry] = [
-    @sprite.mesh2d_geometry_circle(@sprite.Circle::new(50.0F)),
-    @sprite.mesh2d_geometry_circular_sector(
-      @sprite.CircularSector::new(50.0F, 1.0F),
-    ),
-    @sprite.mesh2d_geometry_circular_segment(
-      @sprite.CircularSegment::new(50.0F, 1.25F),
-    ),
-    @sprite.mesh2d_geometry_ellipse(@sprite.Ellipse::new(25.0F, 50.0F)),
-    @sprite.mesh2d_geometry_annulus(@sprite.Annulus::new(25.0F, 50.0F)),
-    @sprite.mesh2d_geometry_capsule(@sprite.Capsule2d::new(25.0F, 25.0F, 16)),
-    @sprite.mesh2d_geometry_rhombus(@sprite.Rhombus::new(75.0F, 100.0F)),
-    @sprite.mesh2d_geometry_rectangle(@sprite.Rectangle::new(50.0F, 100.0F)),
-    @sprite.mesh2d_geometry_regular_polygon(
-      @sprite.RegularPolygon::new(50.0F, 6),
-    ),
-    @sprite.mesh2d_geometry_triangle(
+  ignore(commands.spawn_component(@sprite.Camera2d::default()))
+
+  let mesh_assets = meshes.get_ref().val
+  let material_assets = materials.get_ref().val
+  let shapes : Array[@asset.Handle[@mesh.Mesh]] = [
+    mesh_assets |> @sprite.add_mesh(@sprite.Circle::new(50.0F)),
+    mesh_assets |> @sprite.add_mesh(@sprite.CircularSector::new(50.0F, 1.0F)),
+    mesh_assets |> @sprite.add_mesh(@sprite.CircularSegment::new(50.0F, 1.25F)),
+    mesh_assets |> @sprite.add_mesh(@sprite.Ellipse::new(25.0F, 50.0F)),
+    mesh_assets |> @sprite.add_mesh(@sprite.Annulus::new(25.0F, 50.0F)),
+    mesh_assets |> @sprite.add_mesh(@sprite.Capsule2d::new(25.0F, 25.0F, 16)),
+    mesh_assets |> @sprite.add_mesh(@sprite.Rhombus::new(75.0F, 100.0F)),
+    mesh_assets |> @sprite.add_mesh(@sprite.Rectangle::new(50.0F, 100.0F)),
+    mesh_assets |> @sprite.add_mesh(@sprite.RegularPolygon::new(50.0F, 6)),
+    mesh_assets
+    |> @sprite.add_mesh(
       @sprite.Triangle2d::new(
         @math.Vec2::new(0.0F, 50.0F),
         @math.Vec2::new(-50.0F, -50.0F),
         @math.Vec2::new(50.0F, -50.0F),
       ),
     ),
-    @sprite.mesh2d_geometry_segment(
+    mesh_assets
+    |> @sprite.add_mesh(
       @sprite.Segment2d::new(
         @math.Vec2::new(-50.0F, 50.0F),
         @math.Vec2::new(50.0F, -50.0F),
       ),
     ),
-    @sprite.mesh2d_geometry_polyline(
+    mesh_assets
+    |> @sprite.add_mesh(
       @sprite.Polyline2d::new([
         @math.Vec2::new(-50.0F, 50.0F),
         @math.Vec2::new(0.0F, -50.0F),
@@ -167,40 +106,44 @@ fn setup(
       ]),
     ),
   ]
-  let rings : Array[@sprite.Mesh2dGeometry] = [
-    @sprite.mesh2d_geometry_ring(@sprite.Circle::new(50.0F).to_ring(THICKNESS)),
-    // This visually produces an arc segment but is not technically accurate.
-    @sprite.mesh2d_geometry_circular_sector_ring(
+  let rings : Array[@asset.Handle[@mesh.Mesh]] = [
+    mesh_assets
+    |> @sprite.add_mesh(@sprite.Circle::new(50.0F).to_ring(THICKNESS)),
+    mesh_assets
+    |> @sprite.add_mesh(
       @sprite.CircularSectorRing::new(
         @sprite.CircularSector::new(50.0F, 1.0F),
         @sprite.CircularSector::new(45.0F, 1.0F),
       ),
     ),
-    @sprite.mesh2d_geometry_circular_segment_ring(
+    mesh_assets
+    |> @sprite.add_mesh(
       @sprite.CircularSegment::new(50.0F, 1.25F).to_ring(THICKNESS),
     ),
-    // This is an approximation because concentric ellipses are not parallel curves.
-    @sprite.mesh2d_geometry_ellipse_ring(
+    mesh_assets
+    |> @sprite.add_mesh(
       @sprite.EllipseRing::new(
         @sprite.Ellipse::new(25.0F, 50.0F),
         @sprite.Ellipse::new(25.0F - THICKNESS, 50.0F - THICKNESS),
       ),
     ),
-    // This is equivalent to the annulus above.
-    @sprite.mesh2d_geometry_ring(@sprite.Ring2d::new(50.0F, 25.0F)),
-    @sprite.mesh2d_geometry_capsule_ring(
+    mesh_assets |> @sprite.add_mesh(@sprite.Ring2d::new(50.0F, 25.0F)),
+    mesh_assets
+    |> @sprite.add_mesh(
       @sprite.Capsule2d::new(25.0F, 25.0F, 16).to_ring(THICKNESS),
     ),
-    @sprite.mesh2d_geometry_rhombus_ring(
-      @sprite.Rhombus::new(75.0F, 100.0F).to_ring(THICKNESS),
-    ),
-    @sprite.mesh2d_geometry_rectangle_ring(
+    mesh_assets
+    |> @sprite.add_mesh(@sprite.Rhombus::new(75.0F, 100.0F).to_ring(THICKNESS)),
+    mesh_assets
+    |> @sprite.add_mesh(
       @sprite.Rectangle::new(50.0F, 100.0F).to_ring(THICKNESS),
     ),
-    @sprite.mesh2d_geometry_regular_polygon_ring(
+    mesh_assets
+    |> @sprite.add_mesh(
       @sprite.RegularPolygon::new(50.0F, 6).to_ring(THICKNESS),
     ),
-    @sprite.mesh2d_geometry_triangle_ring(
+    mesh_assets
+    |> @sprite.add_mesh(
       @sprite.Triangle2d::new(
         @math.Vec2::new(0.0F, 50.0F),
         @math.Vec2::new(-50.0F, -50.0F),
@@ -211,36 +154,57 @@ fn setup(
 
   let num_shapes = shapes.length()
   for i in 0..<num_shapes {
-    spawn_shape(
-      commands,
-      meshes,
-      materials,
-      shapes[i],
-      @math.Vec2::new(lane_x(i, num_shapes, X_EXTENT), Y_EXTENT / 2.0F),
-      shape_palette_color(i, num_shapes),
+    let color = shape_palette_color(i, num_shapes)
+    ignore(
+      commands.spawn(
+        (
+          @sprite.Mesh2d::new(shapes[i]),
+          @sprite.MeshMaterial2d::new(
+            material_assets |> @sprite.add_material(color),
+          ),
+          @transform.Transform::from_xyz(
+            lane_x(i, num_shapes, X_EXTENT),
+            Y_EXTENT / 2.0F,
+            0.0F,
+          ),
+        ),
+      ),
     )
   }
   let num_rings = rings.length() + 2
   for i in 0..<rings.length() {
-    spawn_shape(
-      commands,
-      meshes,
-      materials,
-      rings[i],
-      @math.Vec2::new(lane_x(i, num_rings, X_EXTENT), -Y_EXTENT / 2.0F),
-      shape_palette_color(i, num_rings),
+    let color = shape_palette_color(i, num_rings)
+    ignore(
+      commands.spawn(
+        (
+          @sprite.Mesh2d::new(rings[i]),
+          @sprite.MeshMaterial2d::new(
+            material_assets |> @sprite.add_material(color),
+          ),
+          @transform.Transform::from_xyz(
+            lane_x(i, num_rings, X_EXTENT),
+            -Y_EXTENT / 2.0F,
+            0.0F,
+          ),
+        ),
+      ),
     )
   }
   ignore(
     commands.spawn(
-      @sprite.Camera2dBundle::new(
-        @sprite.Camera::default(),
-        @transform.Transform::identity(),
+      (
+        @text.Text::new(
+          "Press 'R' to pause/resume rotation\nPress 'Space' to toggle wireframes",
+        ),
+        @ui.Node::{
+          ..@ui.Node::default(),
+          position_type: @ui.PositionType::Absolute,
+          top: @ui.Val::Px(12.0F),
+          left: @ui.Val::Px(12.0F),
+        },
       ),
     ),
   )
-
-  spawn_help_overlay(commands, asset_server)
 }
 
 ///|

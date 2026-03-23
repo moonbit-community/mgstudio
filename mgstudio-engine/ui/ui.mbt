@@ -1458,6 +1458,11 @@ fn ui_entity_eq(a : @core.Entity, b : @core.Entity) -> Bool {
 }
 
 ///|
+fn ui_entity_key(entity : @core.Entity) -> (Int, Int) {
+  (entity.id, entity.generation)
+}
+
+///|
 fn ui_entity_gt(a : @core.Entity, b : @core.Entity) -> Bool {
   if a.id > b.id {
     true
@@ -1466,6 +1471,37 @@ fn ui_entity_gt(a : @core.Entity, b : @core.Entity) -> Bool {
   } else {
     a.generation > b.generation
   }
+}
+
+///|
+fn ui_collect_root_entities(
+  world : @ecs.World,
+  node_store : @ecs.ComponentAccess[Node],
+  parent_store : @ecs.ComponentAccess[@hierarchy.Parent],
+) -> Array[@core.Entity] {
+  let root_store = get_ui_root_store(world)
+  let visited : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
+  let roots : Array[@core.Entity] = []
+  node_store.for_each(fn(entity, _node) {
+    if parent_store.contains(entity) {
+      return
+    }
+    let key = ui_entity_key(entity)
+    if visited.contains(key) {
+      return
+    }
+    visited.set(key, true)
+    roots.push(entity)
+  })
+  root_store.for_each(fn(entity, _marker) {
+    let key = ui_entity_key(entity)
+    if visited.contains(key) {
+      return
+    }
+    visited.set(key, true)
+    roots.push(entity)
+  })
+  roots
 }
 
 ///|
@@ -1855,10 +1891,12 @@ fn ui_propagate_target_camera_subtree(
 ///|
 pub fn ui_propagate_target_cameras_system(world : @ecs.World) -> Unit {
   let tick = world.read_change_tick()
-  let root_store = get_ui_root_store(world)
+  let node_store = get_node_store(world)
+  let parent_store = @hierarchy.get_parent_store(world)
+  let roots = ui_collect_root_entities(world, node_store, parent_store)
   let target_camera_store = get_ui_target_camera_store(world)
   let default_camera_entity = ui_select_default_camera_entity(world)
-  root_store.for_each(fn(root, _marker) {
+  for root in roots {
     let camera_entity = match target_camera_store.get(root) {
       Some(target_camera) => Some(target_camera.entity())
       None => default_camera_entity
@@ -1874,7 +1912,7 @@ pub fn ui_propagate_target_cameras_system(world : @ecs.World) -> Unit {
     ui_propagate_target_camera_subtree(
       world, root, computed_camera, render_target_info, tick,
     )
-  })
+  }
 }
 
 ///|
@@ -2179,11 +2217,13 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   let scroll_store = get_scroll_position_store(world)
   let layout_store = get_ui_layout_store(world)
   let children_store = @hierarchy.get_children_store(world)
+  let parent_store = @hierarchy.get_parent_store(world)
   let sprite_store = @sprite.get_sprite_store(world)
   let img_store = get_ui_image_store(world)
   let text_store = world.component(@text.ecs_key_text)
   let transform_store = @transform.get_transform_store(world)
   let tick = world.read_change_tick()
+  let roots = ui_collect_root_entities(world, node_store, parent_store)
   fn auto_size_for_entity(entity : @core.Entity) -> @math.Vec2 {
     match content_size_store.get(entity) {
       Some(v) => v.size
@@ -2631,6 +2671,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   fn layout_root(root : @core.Entity) -> Unit {
     let root_ctx = ui_root_resolved_camera_state(world, root, legacy_ctx)
     root_viewport_size.val = root_ctx.viewport_size
+    let explicit_root = root_store.contains(root)
     let root_rect = @math.Rect::new(
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(root_ctx.viewport_size.x, root_ctx.viewport_size.y),
@@ -2657,7 +2698,19 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       id
     }
 
-    let root_node_id = build(root, true)
+    let root_node_id = if explicit_root {
+      build(root, true)
+    } else {
+      let viewport_root_style = @moon_taffy.Style::default()
+        .with_position(@moon_taffy.position_relative())
+        .with_size(
+          @moon_taffy.Size::new(
+            width=@moon_taffy.length(f2d(root_ctx.viewport_size.x)),
+            height=@moon_taffy.length(f2d(root_ctx.viewport_size.y)),
+          ),
+        )
+      taffy.new_with_children(viewport_root_style, [build(root, false)])
+    }
     let avail = @moon_taffy.Size::new(
       width=@moon_taffy.available_space_definite(f2d(root_ctx.viewport_size.x)),
       height=@moon_taffy.available_space_definite(f2d(root_ctx.viewport_size.y)),
@@ -2918,10 +2971,10 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
   }
 
   let mut any_root = false
-  root_store.for_each(fn(root, _marker) {
+  for root in roots {
     any_root = true
     layout_root(root)
-  })
+  }
   any_root |> ignore
 }
 
@@ -3096,13 +3149,14 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
 pub fn ui_clip_system(world : @ecs.World) -> Unit {
   let res = get_ui_context_resource(world)
   let legacy_ctx = res.get()
-  let root_store = get_ui_root_store(world)
   let node_store = get_node_store(world)
   let layout_store = get_ui_layout_store(world)
   let clip_store = get_calculated_clip_store(world)
   let scissor_store = @sprite.get_scissor_rect_store(world)
   let children_store = @hierarchy.get_children_store(world)
+  let parent_store = @hierarchy.get_parent_store(world)
   let tick = world.read_change_tick()
+  let roots = ui_collect_root_entities(world, node_store, parent_store)
   fn clamp_nonneg(v : Float) -> Float {
     if v < 0.0F {
       0.0F
@@ -3286,14 +3340,14 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
     }
   }
 
-  root_store.for_each(fn(root, _marker) {
+  for root in roots {
     let root_ctx = ui_root_resolved_camera_state(world, root, legacy_ctx)
     let viewport_rect = @math.Rect::new(
       @math.Vec2::new(0.0F, 0.0F),
       @math.Vec2::new(root_ctx.viewport_size.x, root_ctx.viewport_size.y),
     )
     walk(root, viewport_rect, false, viewport_rect, root_ctx.viewport_size)
-  })
+  }
 }
 
 ///|
@@ -3318,10 +3372,6 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
   let children_store = @hierarchy.get_children_store(world)
   let parent_store = @hierarchy.get_parent_store(world)
   let transform_store = @transform.get_transform_store(world)
-  fn entity_key(e : @core.Entity) -> (Int, Int) {
-    (e.id, e.generation)
-  }
-
   fn cmp_int(a : Int, b : Int) -> Int {
     if a < b {
       -1
@@ -3361,7 +3411,7 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
     if parent_store.contains(entity) {
       return
     }
-    let key = entity_key(entity)
+    let key = ui_entity_key(entity)
     if visited.contains(key) {
       return
     }
@@ -3375,7 +3425,7 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
   // Compat roots: explicit UiRoot markers.
   root_store.for_each(fn(entity, _marker) {
     guard layout_store.contains(entity) else { return }
-    let key = entity_key(entity)
+    let key = ui_entity_key(entity)
     if visited.contains(key) {
       return
     }
@@ -3389,7 +3439,7 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
   // Global-z roots (even if parented).
   gz_store.for_each(fn(entity, _gz) {
     guard layout_store.contains(entity) else { return }
-    let key = entity_key(entity)
+    let key = ui_entity_key(entity)
     if visited.contains(key) {
       return
     }
