@@ -210,6 +210,40 @@ test "app: Res exposes stable resource values across runs" {
 }
 
 ///|
+test "app: Res can read inserted State resource" {
+  let observed : Ref[String] = Ref::new("unset")
+  let app = App::new(@ecs.World::new())
+    .add_plugins([states_plugin(StatesPlugin::default())])
+    .insert_state(TestState::A)
+    .add_system_param(fn(state : Res[State[TestState]]) {
+      observed.val = state.get().get().to_string()
+    })
+
+  app.run_startup() |> ignore
+  app.run_once() |> ignore
+
+  inspect(observed.val, content="A")
+}
+
+///|
+test "app: ResMut can update NextState resource" {
+  let app = App::new(@ecs.World::new())
+    .add_plugins([states_plugin(StatesPlugin::default())])
+    .insert_state(TestState::A)
+    .add_system_param(fn(next_state : ResMut[NextState[TestState]]) {
+      next_state.get_ref().val = NextState::Pending(TestState::B)
+    })
+
+  app.run_startup() |> ignore
+  app.run_once() |> ignore
+
+  inspect(
+    world_next_state(app.world(), TestState::A),
+    content="Some(Pending(B))",
+  )
+}
+
+///|
 test "app: run condition combinators short-circuit and compose" {
   let or_runs = Ref::new(0)
   let or_rhs_calls = Ref::new(0)

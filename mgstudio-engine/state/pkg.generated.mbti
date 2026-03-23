@@ -30,6 +30,8 @@ pub fn states_plugin(@app.StatesPlugin) -> (@app.App[@ecs.World]) -> @app.App[@e
 // Types and methods
 
 // Type aliases
+pub using @app {type DespawnOnEnter}
+
 pub using @app {type DespawnOnExit}
 
 pub using @app {type NextState}

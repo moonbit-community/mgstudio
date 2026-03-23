@@ -19,7 +19,18 @@ pub struct DespawnOnExit {
 }
 
 ///|
+pub struct DespawnOnEnter {
+  transition_key : String
+  state_debug : String
+}
+
+///|
 pub fn DespawnOnExit::transition_key(self : DespawnOnExit) -> String {
+  self.transition_key
+}
+
+///|
+pub fn DespawnOnEnter::transition_key(self : DespawnOnEnter) -> String {
   self.transition_key
 }
 
@@ -29,7 +40,17 @@ pub fn DespawnOnExit::state_debug(self : DespawnOnExit) -> String {
 }
 
 ///|
+pub fn DespawnOnEnter::state_debug(self : DespawnOnEnter) -> String {
+  self.state_debug
+}
+
+///|
 let despawn_on_exit_registration_registry : Ref[@hashmap.HashMap[String, Bool]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
+
+///|
+let despawn_on_enter_registration_registry : Ref[@hashmap.HashMap[String, Bool]] = Ref::new(
   @hashmap.HashMap::new(),
 )
 
@@ -39,8 +60,18 @@ pub let ecs_key_despawn_on_exit : @ecs.ComponentKey[DespawnOnExit] = @ecs.regist
 )
 
 ///|
+pub let ecs_key_despawn_on_enter : @ecs.ComponentKey[DespawnOnEnter] = @ecs.register_component(
+  debug_name="bevy_state::DespawnOnEnter",
+)
+
+///|
 pub impl @ecs.Component for DespawnOnExit with component() {
   ecs_key_despawn_on_exit
+}
+
+///|
+pub impl @ecs.Component for DespawnOnEnter with component() {
+  ecs_key_despawn_on_enter
 }
 
 ///|
@@ -54,6 +85,25 @@ fn[S : States] despawn_on_exit_entities(world : @ecs.World, state : S) -> Unit {
   store.for_each(fn(entity, marker) {
     if marker.transition_key() == transition_key &&
       marker.state_debug() == exited_debug {
+      entities.push(entity)
+    }
+  })
+  for entity in entities {
+    ignore(try? world.despawn(entity))
+  }
+}
+
+///|
+fn[S : States] despawn_on_enter_entities(world : @ecs.World, state : S) -> Unit {
+  guard pending_transition(world, state) is Some(event) else { return }
+  guard event.entered is Some(entered) else { return }
+  let transition_key = state_transition_registration_key(state)
+  let entered_debug = entered.to_string()
+  let entities : Array[@core.Entity] = []
+  let store = world.component(ecs_key_despawn_on_enter)
+  store.for_each(fn(entity, marker) {
+    if marker.transition_key() == transition_key &&
+      marker.state_debug() == entered_debug {
       entities.push(entity)
     }
   })
@@ -84,8 +134,38 @@ fn[S : States] ensure_despawn_on_exit_registered(state : S) -> Unit {
 }
 
 ///|
+fn[S : States] ensure_despawn_on_enter_registered(state : S) -> Unit {
+  let transition_key = state_transition_registration_key(state)
+  if despawn_on_enter_registration_registry.val.contains(transition_key) {
+    return
+  }
+  register_state_transition(state)
+  register_state_transition_hook(
+    on_enter_registrations,
+    transition_key,
+    system(fn(world : @ecs.World) { despawn_on_enter_entities(world, state) }),
+    fn(world : @ecs.World) {
+      match pending_transition(world, state) {
+        Some(event) => event.entered is Some(_)
+        None => false
+      }
+    },
+  )
+  despawn_on_enter_registration_registry.val.set(transition_key, true)
+}
+
+///|
 pub fn[S : States] DespawnOnExit::new(state : S) -> DespawnOnExit {
   ensure_despawn_on_exit_registered(state)
+  {
+    transition_key: state_transition_registration_key(state),
+    state_debug: state.to_string(),
+  }
+}
+
+///|
+pub fn[S : States] DespawnOnEnter::new(state : S) -> DespawnOnEnter {
+  ensure_despawn_on_enter_registered(state)
   {
     transition_key: state_transition_registration_key(state),
     state_debug: state.to_string(),

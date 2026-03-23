@@ -32,6 +32,8 @@ pub fn current_system_sequence() -> @core.SystemSequence
 
 pub fn current_world() -> @ecs.World?
 
+pub let ecs_key_despawn_on_enter : @ecs.ComponentKey[DespawnOnEnter]
+
 pub let ecs_key_despawn_on_exit : @ecs.ComponentKey[DespawnOnExit]
 
 pub fn fixed_main_schedule_order_resource_key() -> @ecs.ResourceKey[FixedMainScheduleOrder]
@@ -381,6 +383,15 @@ pub fn[T : @ecs.Component] Commands::spawn_component(Self, T, loc~ : SourceLoc) 
 pub fn Commands::spawn_empty(Self) -> @core.Entity
 pub impl SystemParam for Commands
 
+pub struct DespawnOnEnter {
+  transition_key : String
+  state_debug : String
+}
+pub fn[S : States] DespawnOnEnter::new(S) -> Self
+pub fn DespawnOnEnter::state_debug(Self) -> String
+pub fn DespawnOnEnter::transition_key(Self) -> String
+pub impl @ecs.Component for DespawnOnEnter
+
 pub struct DespawnOnExit {
   transition_key : String
   state_debug : String
@@ -486,6 +497,7 @@ pub(all) enum NextState[S] {
 pub fn[S] NextState::reset(Self[S]) -> Self[S]
 pub fn[S] NextState::set(Self[S], S) -> Self[S]
 pub fn[S : Eq] NextState::set_if_neq(Self[S], S) -> Self[S]
+pub impl[S] Resource for NextState[S]
 pub impl[S : Eq] Eq for NextState[S]
 pub impl[S : Show] Show for NextState[S]
 
@@ -571,6 +583,7 @@ pub struct PreviousState[S] {
   value : S
 }
 pub fn[S] PreviousState::get(Self[S]) -> S
+pub impl[S] Resource for PreviousState[S]
 pub impl[S : Eq] Eq for PreviousState[S]
 pub impl[S : Show] Show for PreviousState[S]
 
@@ -668,6 +681,7 @@ pub struct State[S] {
 }
 pub fn[S] State::get(Self[S]) -> S
 pub fn[S] State::new(S) -> Self[S]
+pub impl[S] Resource for State[S]
 pub impl[S : Eq] Eq for State[S]
 pub impl[S : Show] Show for State[S]
 
@@ -676,6 +690,7 @@ pub struct StateTransitionEvent[S] {
   entered : S?
   allow_same_state_transitions : Bool
 }
+pub impl[S] Resource for StateTransitionEvent[S]
 pub impl[S : Eq] Eq for StateTransitionEvent[S]
 pub impl[S : Show] Show for StateTransitionEvent[S]
 

@@ -47,6 +47,9 @@ pub type OnReexit[S] = @app.OnReexit[S]
 pub type DespawnOnExit = @app.DespawnOnExit
 
 ///|
+pub type DespawnOnEnter = @app.DespawnOnEnter
+
+///|
 pub type OptionalStateSource[S] = @app.OptionalStateSource[S]
 
 ///|

@@ -52,74 +52,252 @@ pub struct StateTransitionEvent[S] {
 } derive(Eq, Show)
 
 ///|
+let state_type_debug_name_registry : Ref[@hashmap.HashMap[String, String]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
+
+///|
+let state_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
+
+///|
+let previous_state_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
+
+///|
+let next_state_resource_registry : Ref[@hashmap.HashMap[String, @any.Any]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
+
+///|
+let state_transition_event_resource_registry : Ref[
+  @hashmap.HashMap[String, @any.Any],
+] = Ref::new(@hashmap.HashMap::new())
+
+///|
+let pending_state_transition_event_resource_registry : Ref[
+  @hashmap.HashMap[String, @any.Any],
+] = Ref::new(@hashmap.HashMap::new())
+
+///|
+fn[S] state_type_registry_key(probe : NextState[S]) -> String {
+  @any.of(probe).type_name()
+}
+
+///|
 fn[S : States] state_type_debug_name(_state : S) -> String {
-  States::debug_name(_state)
+  let probe : NextState[S] = NextState::Unchanged
+  let type_key = state_type_registry_key(probe)
+  let debug_name = States::debug_name(_state)
+  state_type_debug_name_registry.val.set(type_key, debug_name)
+  debug_name
 }
 
 ///|
-fn[S : States] state_resource_debug_name(state : S) -> String {
-  "bevy_state::State<" + state_type_debug_name(state) + ">"
+fn[S] registered_state_type_debug_name(probe : NextState[S]) -> String {
+  let type_key = state_type_registry_key(probe)
+  match state_type_debug_name_registry.val.get(type_key) {
+    Some(debug_name) => debug_name
+    None => type_key
+  }
 }
 
 ///|
-fn[S : States] previous_state_resource_debug_name(state : S) -> String {
-  "bevy_state::PreviousState<" + state_type_debug_name(state) + ">"
+fn[S] registered_state_resource_key() -> @ecs.ResourceKey[State[S]] {
+  let probe : NextState[S] = NextState::Unchanged
+  let type_key = state_type_registry_key(probe)
+  match state_resource_registry.val.get(type_key) {
+    Some(existing_key) =>
+      match existing_key.try_to() {
+        Some(key) => key
+        None =>
+          abort(
+            "state resource registry contained a mismatched key for " + type_key,
+          )
+      }
+    None => {
+      let key : @ecs.ResourceKey[State[S]] = @ecs.register_resource(
+        debug_name="bevy_state::State<" +
+          registered_state_type_debug_name(probe) +
+          ">",
+      )
+      state_resource_registry.val.set(type_key, @any.of(key))
+      key
+    }
+  }
 }
 
 ///|
-fn[S : States] next_state_resource_debug_name(state : S) -> String {
-  "bevy_state::NextState<" + state_type_debug_name(state) + ">"
+fn[S] registered_previous_state_resource_key() -> @ecs.ResourceKey[
+  PreviousState[S],
+] {
+  let probe : NextState[S] = NextState::Unchanged
+  let type_key = state_type_registry_key(probe)
+  match previous_state_resource_registry.val.get(type_key) {
+    Some(existing_key) =>
+      match existing_key.try_to() {
+        Some(key) => key
+        None =>
+          abort(
+            "previous state resource registry contained a mismatched key for " +
+            type_key,
+          )
+      }
+    None => {
+      let key : @ecs.ResourceKey[PreviousState[S]] = @ecs.register_resource(
+        debug_name="bevy_state::PreviousState<" +
+          registered_state_type_debug_name(probe) +
+          ">",
+      )
+      previous_state_resource_registry.val.set(type_key, @any.of(key))
+      key
+    }
+  }
 }
 
 ///|
-fn[S : States] state_transition_event_resource_debug_name(state : S) -> String {
-  "bevy_state::StateTransitionEvent<" + state_type_debug_name(state) + ">"
+fn[S] registered_next_state_resource_key() -> @ecs.ResourceKey[NextState[S]] {
+  let probe : NextState[S] = NextState::Unchanged
+  let type_key = state_type_registry_key(probe)
+  match next_state_resource_registry.val.get(type_key) {
+    Some(existing_key) =>
+      match existing_key.try_to() {
+        Some(key) => key
+        None =>
+          abort(
+            "next state resource registry contained a mismatched key for " +
+            type_key,
+          )
+      }
+    None => {
+      let key : @ecs.ResourceKey[NextState[S]] = @ecs.register_resource(
+        debug_name="bevy_state::NextState<" +
+          registered_state_type_debug_name(probe) +
+          ">",
+      )
+      next_state_resource_registry.val.set(type_key, @any.of(key))
+      key
+    }
+  }
 }
 
 ///|
-fn[S : States] pending_state_transition_event_resource_debug_name(
-  state : S,
-) -> String {
-  "bevy_state::PendingStateTransitionEvent<" +
-  state_type_debug_name(state) +
-  ">"
+fn[S] registered_state_transition_event_resource_key() -> @ecs.ResourceKey[
+  StateTransitionEvent[S],
+] {
+  let probe : NextState[S] = NextState::Unchanged
+  let type_key = state_type_registry_key(probe)
+  match state_transition_event_resource_registry.val.get(type_key) {
+    Some(existing_key) =>
+      match existing_key.try_to() {
+        Some(key) => key
+        None =>
+          abort(
+            "state transition event resource registry contained a mismatched key for " +
+            type_key,
+          )
+      }
+    None => {
+      let key : @ecs.ResourceKey[StateTransitionEvent[S]] = @ecs.register_resource(
+        debug_name="bevy_state::StateTransitionEvent<" +
+          registered_state_type_debug_name(probe) +
+          ">",
+      )
+      state_transition_event_resource_registry.val.set(type_key, @any.of(key))
+      key
+    }
+  }
+}
+
+///|
+fn[S] registered_pending_state_transition_event_resource_key() -> @ecs.ResourceKey[
+  StateTransitionEvent[S],
+] {
+  let probe : NextState[S] = NextState::Unchanged
+  let type_key = state_type_registry_key(probe)
+  match pending_state_transition_event_resource_registry.val.get(type_key) {
+    Some(existing_key) =>
+      match existing_key.try_to() {
+        Some(key) => key
+        None =>
+          abort(
+            "pending state transition event resource registry contained a mismatched key for " +
+            type_key,
+          )
+      }
+    None => {
+      let key : @ecs.ResourceKey[StateTransitionEvent[S]] = @ecs.register_resource(
+        debug_name="bevy_state::PendingStateTransitionEvent<" +
+          registered_state_type_debug_name(probe) +
+          ">",
+      )
+      pending_state_transition_event_resource_registry.val.set(
+        type_key,
+        @any.of(key),
+      )
+      key
+    }
+  }
 }
 
 ///|
 pub fn[S : States] state_resource_key(state : S) -> @ecs.ResourceKey[State[S]] {
-  @ecs.register_resource(debug_name=state_resource_debug_name(state))
+  ignore(state_type_debug_name(state))
+  registered_state_resource_key()
 }
 
 ///|
 pub fn[S : States] previous_state_resource_key(
   state : S,
 ) -> @ecs.ResourceKey[PreviousState[S]] {
-  @ecs.register_resource(debug_name=previous_state_resource_debug_name(state))
+  ignore(state_type_debug_name(state))
+  registered_previous_state_resource_key()
 }
 
 ///|
 pub fn[S : States] next_state_resource_key(
   state : S,
 ) -> @ecs.ResourceKey[NextState[S]] {
-  @ecs.register_resource(debug_name=next_state_resource_debug_name(state))
+  ignore(state_type_debug_name(state))
+  registered_next_state_resource_key()
 }
 
 ///|
 pub fn[S : States] state_transition_event_resource_key(
   state : S,
 ) -> @ecs.ResourceKey[StateTransitionEvent[S]] {
-  @ecs.register_resource(
-    debug_name=state_transition_event_resource_debug_name(state),
-  )
+  ignore(state_type_debug_name(state))
+  registered_state_transition_event_resource_key()
 }
 
 ///|
 fn[S : States] pending_state_transition_event_resource_key(
   state : S,
 ) -> @ecs.ResourceKey[StateTransitionEvent[S]] {
-  @ecs.register_resource(
-    debug_name=pending_state_transition_event_resource_debug_name(state),
-  )
+  ignore(state_type_debug_name(state))
+  registered_pending_state_transition_event_resource_key()
+}
+
+///|
+pub impl[S] Resource for State[S] with resource() {
+  registered_state_resource_key()
+}
+
+///|
+pub impl[S] Resource for PreviousState[S] with resource() {
+  registered_previous_state_resource_key()
+}
+
+///|
+pub impl[S] Resource for NextState[S] with resource() {
+  registered_next_state_resource_key()
+}
+
+///|
+pub impl[S] Resource for StateTransitionEvent[S] with resource() {
+  registered_state_transition_event_resource_key()
 }
 
 ///|

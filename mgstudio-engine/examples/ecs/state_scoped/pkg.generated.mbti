@@ -1,0 +1,21 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/state_scoped"
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) enum GameState {
+  A
+  B
+}
+pub impl Eq for GameState
+pub impl Show for GameState
+
+type TickTock
+
+// Type aliases
+
+// Traits
+
