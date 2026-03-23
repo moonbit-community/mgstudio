@@ -1438,6 +1438,7 @@ fn safe_camera_scale(scale : Float) -> Float {
 priv struct UiResolvedCameraState {
   viewport_origin : @math.Vec2
   viewport_size : @math.Vec2
+  camera_entity : @core.Entity?
   camera_transform : @transform.Transform
   camera_scale : Float
 }
@@ -1447,6 +1448,7 @@ fn ui_resolved_camera_state_default() -> UiResolvedCameraState {
   UiResolvedCameraState::{
     viewport_origin: @math.Vec2::new(0.0F, 0.0F),
     viewport_size: @math.Vec2::new(0.0F, 0.0F),
+    camera_entity: None,
     camera_transform: @transform.Transform::identity(),
     camera_scale: 1.0F,
   }
@@ -1706,6 +1708,11 @@ fn ui_camera_transform_for_entity(
   world : @ecs.World,
   camera_entity : @core.Entity,
 ) -> @transform.Transform {
+  let projection_store = @sprite.get_projection_store(world)
+  match projection_store.get(camera_entity) {
+    Some(@sprite.Orthographic(_)) => ()
+    _ => return @transform.Transform::identity()
+  }
   let transform_store = @transform.get_transform_store(world)
   let global_store = @transform.get_global_transform_store(world)
   match global_store.get(camera_entity) {
@@ -1753,6 +1760,7 @@ fn ui_compute_render_target_info(
   camera_entity : @core.Entity,
 ) -> ComputedUiRenderTargetInfo {
   let camera_store = @sprite.get_camera_store(world)
+  let target_store = @sprite.get_render_target_store(world)
   let ui_scale = ensure_ui_scale_resource(world)
   let ui_scale_value = if ui_scale.value <= 0.0F {
     1.0F
@@ -1761,14 +1769,63 @@ fn ui_compute_render_target_info(
   }
   match camera_store.get(camera_entity) {
     Some(camera) => {
-      let scale_factor = safe_scale_factor(
-          camera.target_scaling_factor().unwrap_or(1.0F),
-        ) *
-        ui_scale_value
-      let physical_size = match camera.physical_viewport_size() {
-        Some(size) => size
-        None => @math.IVec2::new(0, 0)
+      let (target_physical_size, target_scale_factor) = match
+        camera.computed.target_info {
+        Some(target_info) =>
+          (target_info.physical_size, target_info.scale_factor)
+        None => {
+          let target = match target_store.get(camera_entity) {
+            Some(value) => value
+            None => @sprite.RenderTarget::Screen
+          }
+          match target {
+            @sprite.RenderTarget::Screen =>
+              (
+                @math.IVec2::new(
+                  @window.window_physical_width_for(
+                    world,
+                    @window.WindowRef::Primary,
+                  ),
+                  @window.window_physical_height_for(
+                    world,
+                    @window.WindowRef::Primary,
+                  ),
+                ),
+                @window.window_scale_factor_for(
+                  world,
+                  @window.WindowRef::Primary,
+                ),
+              )
+            @sprite.RenderTarget::Window(window_ref) =>
+              (
+                @math.IVec2::new(
+                  @window.window_physical_width_for(world, window_ref),
+                  @window.window_physical_height_for(world, window_ref),
+                ),
+                @window.window_scale_factor_for(world, window_ref),
+              )
+            @sprite.RenderTarget::Image(handle) =>
+              (
+                @math.IVec2::new(
+                  @asset.asset_texture_width(handle),
+                  @asset.asset_texture_height(handle),
+                ),
+                1.0F,
+              )
+          }
+        }
       }
+      let target_scale_factor = safe_scale_factor(target_scale_factor)
+      let physical_size = match camera.viewport {
+        Some(viewport) =>
+          clamp_viewport_to_window(
+            viewport,
+            target_physical_size.x,
+            target_physical_size.y,
+          ).physical_size
+        None => target_physical_size
+      }
+      let scale_factor = target_scale_factor * ui_scale_value
       ComputedUiRenderTargetInfo::new(scale_factor, physical_size)
     }
     None => ComputedUiRenderTargetInfo::default()
@@ -1782,6 +1839,7 @@ fn ui_resolved_camera_state_from_legacy(
   UiResolvedCameraState::{
     viewport_origin: ctx.viewport_origin,
     viewport_size: ctx.viewport_size,
+    camera_entity: ctx.camera_entity,
     camera_transform: ctx.camera_transform,
     camera_scale: ctx.camera_scale,
   }
@@ -1807,6 +1865,7 @@ fn ui_resolved_camera_state_from_computed(
   UiResolvedCameraState::{
     viewport_origin,
     viewport_size: render_target_info.logical_size(),
+    camera_entity,
     camera_transform,
     camera_scale,
   }
@@ -2858,6 +2917,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
 
         // Sync text handles (state-based text pipeline) for UI text nodes.
         if @text.ui_text_ecs_handle(world, entity) is Some(text_handle) {
+          @text.text_set_ui_camera_entity(text_handle, root_ctx.camera_entity)
           let node = match node_store.get(entity) {
             Some(v) => v
             None => Node::default()

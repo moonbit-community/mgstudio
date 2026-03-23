@@ -207,6 +207,77 @@ test "ui: explicit UiTargetCamera propagates from root and drives logical render
 }
 
 ///|
+test "ui: propagated target info falls back to camera target when computed info is empty" {
+  let world = @ecs.World::new()
+  let tick = world.advance_sequence()
+  ignore(tick)
+  get_ui_scale_resource(world).insert(UiScale::new(1.0F))
+
+  let primary_window = @window.Window::default()
+  primary_window.resolution.set_physical_resolution(960, 540)
+  primary_window.resolution.set_scale_factor(1.5F)
+  let primary_window_entity = world.spawn()
+  try! world.set_component(primary_window_entity, primary_window)
+  try! world.set_component(primary_window_entity, @window.PrimaryWindow::{  })
+
+  let target_camera = world.spawn_empty()
+  @sprite.get_camera_store(world).insert(
+    target_camera,
+    @sprite.Camera::default(),
+  )
+
+  let root = world.spawn_empty()
+  get_ui_root_store(world).insert(root, UiRoot::default())
+  get_ui_target_camera_store(world).insert(
+    root,
+    UiTargetCamera::new(target_camera),
+  )
+
+  ui_propagate_target_cameras_system(world)
+
+  let target_info = get_computed_ui_render_target_info_store(world)
+    .get(root)
+    .unwrap()
+  inspect(target_info.scale_factor() == 1.5F, content="true")
+  let logical_size = target_info.logical_size()
+  inspect(logical_size.x == 640.0F && logical_size.y == 360.0F, content="true")
+}
+
+///|
+test "ui: perspective target camera keeps overlays in screen space" {
+  let world = @ecs.World::new()
+  let tick = world.advance_sequence()
+  ignore(tick)
+
+  let target_camera = world.spawn_empty()
+  @sprite.get_camera_store(world).insert(
+    target_camera,
+    camera_with_target_info(0, @math.IVec2::new(640, 360), 1.0F),
+  )
+  @transform.get_transform_store(world).insert(
+    target_camera,
+    @transform.Transform::from_xyz(123.0F, 456.0F, 789.0F),
+  )
+
+  let root = world.spawn_empty()
+  get_ui_root_store(world).insert(root, UiRoot::default())
+  get_ui_target_camera_store(world).insert(
+    root,
+    UiTargetCamera::new(target_camera),
+  )
+  get_node_store(world).insert(root, Node::default())
+
+  ui_propagate_target_cameras_system(world)
+  ui_layout_system(world)
+
+  let transform = @transform.get_transform_store(world).get(root).unwrap()
+  inspect(
+    transform.translation.x == 0.0F && transform.translation.y == 0.0F,
+    content="true",
+  )
+}
+
+///|
 test "ui: layout resolves each root against its propagated target viewport" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()

@@ -116,6 +116,28 @@ test "app: resource_exists gates system execution on resource presence" {
 }
 
 ///|
+test "app: any_with_component gates system execution on component presence" {
+  let log : Array[Int] = []
+  let app = App::new(@ecs.World::new()).add_system_config(
+    system(fn(_world : @ecs.World) { log.push(log.length()) }).run_if(
+      any_with_component(query_position_key),
+    ),
+  )
+
+  app.run_once() |> ignore
+  inspect(log.length(), content="0")
+
+  let entity = app.world().spawn()
+  try! app
+  .world()
+  .set(entity, query_position_key, QueryPosition::{ x: 1, y: 2 })
+  app.run_once() |> ignore
+
+  inspect(log.length(), content="1")
+  inspect(log[0], content="0")
+}
+
+///|
 test "app: resource_added now follows resource existence" {
   let log : Array[Int] = []
   let app = App::new(@ecs.World::new()).add_system_config(

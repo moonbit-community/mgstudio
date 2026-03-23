@@ -1,0 +1,30 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/usage/cooldown"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type AbilityName
+pub impl @ecs.Component for AbilityName
+
+type ActiveCooldown
+pub impl @ecs.Component for ActiveCooldown
+
+type Cooldown
+pub impl @ecs.Component for Cooldown
+
+type FoodItem
+
+type StatusLabel
+pub impl @ecs.Component for StatusLabel
+
+// Type aliases
+
+// Traits
+

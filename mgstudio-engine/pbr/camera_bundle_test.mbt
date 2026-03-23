@@ -196,3 +196,94 @@ test "render3d: Camera3dBundle injects Bevy-style tonemapping defaults" {
   inspect(tonemapping_ok, content="true")
   inspect(deband_ok, content="true")
 }
+
+///|
+test "render3d: required components align Camera3d with Bevy camera authoring" {
+  let world = @ecs.World::new()
+  try! register_render3d_required_components(world)
+  let entity = world.spawn_empty()
+
+  try! (world.set(entity, ecs_key_camera3d, Camera3d::default()) |> ignore)
+
+  inspect(
+    (try! world.get(entity, @sprite.ecs_key_camera)) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! world.get(entity, ecs_key_projection)) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! world.get(entity, @transform.ecs_key_transform)) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! world.get(entity, @sprite.ecs_key_render_target)) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! world.get(entity, @sprite.ecs_key_render_layers)) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! world.get(entity, ecs_key_tonemapping)) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! world.get(entity, ecs_key_deband_dither)) is Some(_),
+    content="true",
+  )
+  inspect((try! world.get(entity, ecs_key_exposure)) is Some(_), content="true")
+  inspect((try! world.get(entity, ecs_key_frustum)) is Some(_), content="true")
+
+  let tonemapping_ok = match (try! world.get(entity, ecs_key_tonemapping)) {
+    Some(TonyMcMapface) => true
+    _ => false
+  }
+  let deband_ok = match (try! world.get(entity, ecs_key_deband_dither)) {
+    Some(Enabled) => true
+    _ => false
+  }
+  let target_ok = match
+    (try! world.get(entity, @sprite.ecs_key_render_target)) {
+    Some(@sprite.RenderTarget::Screen) => true
+    _ => false
+  }
+  inspect(tonemapping_ok, content="true")
+  inspect(deband_ok, content="true")
+  inspect(target_ok, content="true")
+}
+
+///|
+test "render3d: spawn_component(Camera3d) uses required component defaults" {
+  let spawned : Ref[@core.Entity?] = Ref::new(None)
+  let world = @ecs.World::new()
+  try! register_render3d_required_components(world)
+  let mut app = @app.App::new(world).add_system_param(fn(
+    commands : @app.Commands,
+  ) {
+    spawned.val = Some(commands.spawn_component(Camera3d::default()))
+  })
+  app = app.run_once()
+
+  guard spawned.val is Some(entity) else {
+    abort("expected Commands::spawn_component to return an entity")
+  }
+
+  inspect(
+    (try! app.world().get(entity, ecs_key_camera3d)) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! app.world().get(entity, @sprite.ecs_key_camera)) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! app.world().get(entity, ecs_key_projection)) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! app.world().get(entity, @transform.ecs_key_transform)) is Some(_),
+    content="true",
+  )
+}

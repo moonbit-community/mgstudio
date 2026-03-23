@@ -10,6 +10,8 @@ import {
 }
 
 // Values
+pub fn[T] any_with_component(@ecs.ComponentKey[T]) -> (@ecs.World) -> Bool
+
 pub fn app_label(String) -> AppLabel
 
 pub fn app_rendering_enabled() -> Bool

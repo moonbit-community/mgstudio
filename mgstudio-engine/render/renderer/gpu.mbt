@@ -235,6 +235,48 @@ fn gpu_clip_matrix_identity() -> GpuClipMatrix {
 }
 
 ///|
+fn gpu_clip_matrix_2d(
+  width_logical : Float,
+  height_logical : Float,
+  camera_x : Float,
+  camera_y : Float,
+  camera_rot : Float,
+  camera_scale : Float,
+) -> GpuClipMatrix {
+  let safe_scale = if camera_scale == 0.0F { 1.0F } else { camera_scale }
+  let scale_x = if width_logical > 0.0F {
+    2.0F / width_logical / safe_scale
+  } else {
+    0.0F
+  }
+  let scale_y = if height_logical > 0.0F {
+    2.0F / height_logical / safe_scale
+  } else {
+    0.0F
+  }
+  let cosv = cosf(-camera_rot)
+  let sinv = sinf(-camera_rot)
+  gpu_clip_matrix(
+    scale_x * cosv,
+    scale_y * sinv,
+    0.0F,
+    0.0F,
+    -scale_x * sinv,
+    scale_y * cosv,
+    0.0F,
+    0.0F,
+    0.0F,
+    0.0F,
+    1.0F,
+    0.0F,
+    scale_x * (-cosv * camera_x + sinv * camera_y),
+    scale_y * (-sinv * camera_x - cosv * camera_y),
+    0.0F,
+    1.0F,
+  )
+}
+
+///|
 pub struct GpuPassState {
   target_id : Int
   target_layer : Int

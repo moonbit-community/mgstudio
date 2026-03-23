@@ -15,6 +15,8 @@
 ///|
 fn reset_text_ecs_test_state() -> Unit {
   text_ecs_bridge_entries.val.clear()
+  ui_text_ecs_bridge_entries.val.clear()
+  text_runtime_world_id_ref.val = None
   text_state.val.next_text_id = 0
   text_state.val.next_span_id = 0
   text_state.val.texts.clear()
@@ -176,6 +178,52 @@ test "ecs text bridge collects TextSpan children in hierarchy order" {
         ),
       ),
     ),
+    content="true",
+  )
+}
+
+///|
+test "ui text bridge preserves runtime-owned placement during sync" {
+  reset_text_ecs_test_state()
+  let app = @asset.asset_plugin(@app.App::new(@ecs.World::new()))
+  let world = app.world()
+  let entity = world.spawn()
+  let bundle = Text2dBundle::{
+    text: Text2d::new("Button"),
+    font: TextFont::default(),
+    color: TextColor::default(),
+    background_color: None,
+    underline: None,
+    strikethrough: None,
+    layout: TextLayout::default(),
+    bounds: TextBounds::default(),
+    line_height: LineHeight::default(),
+    shadow: None,
+    transform: @transform.Transform::identity(),
+    layers: @sprite.RenderLayers::default(),
+    anchor: @sprite.Anchor::default(),
+    y_axis: YAxisOrientation::TopToBottom,
+  }
+  ui_text_ecs_spawn_entry(world, world.world_id(), entity, bundle, [])
+  let entry = ui_text_ecs_bridge_entries.val[0]
+  let runtime_transform = @transform.Transform::from_xyz(320.0F, -180.0F, 7.0F)
+  let runtime_layers = @sprite.RenderLayers::layer(11)
+  text_set_transform(entry.handle, runtime_transform)
+  text_set_layers(entry.handle, runtime_layers)
+  text_set_anchor(entry.handle, @sprite.Anchor::center())
+  text_set_y_axis(entry.handle, YAxisOrientation::BottomToTop)
+
+  let synced = ui_text_ecs_sync_existing_entry(world, entry, bundle, [])
+  let instance = text_state.val.texts[0]
+
+  inspect(
+    text_get_transform(synced.handle).unwrap().to_json(),
+    content="Array([Number(320), Number(-180), Number(7), Number(0), Number(0), Number(0), Number(1), Number(1), Number(1), Number(1)])",
+  )
+  inspect(instance.layers.to_json(), content="Number(2048)")
+  inspect(instance.anchor.to_json(), content="Array([Number(0), Number(0)])")
+  inspect(
+    y_axis_eq(instance.y_axis, YAxisOrientation::BottomToTop),
     content="true",
   )
 }

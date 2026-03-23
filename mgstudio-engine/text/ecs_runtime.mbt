@@ -914,10 +914,6 @@ fn ui_text_ecs_sync_existing_entry(
   if !text_shadow_eq(entry.bundle.shadow, bundle.shadow) {
     text_set_shadow(handle, bundle.shadow)
   }
-  text_set_transform(handle, bundle.transform)
-  text_set_layers(handle, bundle.layers)
-  text_set_anchor(handle, bundle.anchor)
-  text_set_y_axis(handle, bundle.y_axis)
   if needs_layout {
     @asset.asset_with_world(world, fn() {
       text_update_instance(handle, text_update_layout)

@@ -18,6 +18,15 @@ fn gpu_float_approx_eq(a : Float, b : Float) -> Bool {
 }
 
 ///|
+test "gpu: 2d clip matrix maps logical viewport coordinates to clip space" {
+  let matrix = gpu_clip_matrix_2d(800.0F, 600.0F, 0.0F, 0.0F, 0.0F, 1.0F)
+  inspect(gpu_float_approx_eq(matrix.x_axis_x, 0.0025F), content="true")
+  inspect(gpu_float_approx_eq(matrix.y_axis_y, 0.0033333334F), content="true")
+  inspect(gpu_float_approx_eq(matrix.w_axis_x, 0.0F), content="true")
+  inspect(gpu_float_approx_eq(matrix.w_axis_y, 0.0F), content="true")
+}
+
+///|
 fn wbtest_mesh3d_preprocess_payload() -> HostMesh3dPreprocessCameraPayload {
   HostMesh3dPreprocessCameraPayload::{
     view: HostMesh3dPreprocessView::{

@@ -363,6 +363,8 @@ pub fn pbr_plugin_with(@app.App[@ecs.World], PbrPlugin) -> @app.App[@ecs.World]
 
 pub fn pbr_prepass_enabled() -> Bool
 
+pub fn register_render3d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
+
 pub fn render3d_camera_viewport_to_world_ray(@math.Vec2, @sprite.Camera, Projection, @transform.Transform, @math.IVec2, Float) -> (@math.Vec3, @math.Vec3)?
 
 pub fn render3d_camera_world_to_viewport(@math.Vec3, @sprite.Camera, Projection, @transform.Transform, @math.IVec2, Float) -> @math.Vec2?

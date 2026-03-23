@@ -216,6 +216,8 @@ pub fn render2d_clear_overlay_ui_box_shadows(@ecs.World) -> Unit
 
 pub fn render2d_clear_overlay_ui_rects(@ecs.World) -> Unit
 
+pub fn render2d_clear_overlay_ui_sprites(@ecs.World) -> Unit
+
 pub fn render2d_clear_overlay_ui_texture_slices(@ecs.World) -> Unit
 
 pub fn render2d_create_render_target(@ecs.World, Int, Int, Bool) -> @asset.Handle[@image.Image]
@@ -686,6 +688,7 @@ pub(all) struct OverlaySpriteUvScissor {
   color : @color.Color
   layers : RenderLayers
   scissor : @math.Rect?
+  target_camera : @core.Entity?
 }
 
 pub(all) struct PanCamera {

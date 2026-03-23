@@ -46,6 +46,13 @@ pub fn[T] resource_exists(
 }
 
 ///|
+pub fn[T] any_with_component(
+  key : @ecs.ComponentKey[T],
+) -> RunConditionFn[@ecs.World] {
+  fn(world : @ecs.World) { world.component(key).len() > 0 }
+}
+
+///|
 pub fn[T] resource_added(
   key : @ecs.ResourceKey[T],
 ) -> RunConditionFn[@ecs.World] {

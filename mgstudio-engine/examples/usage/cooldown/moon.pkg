@@ -1,6 +1,4 @@
 import {
-  "Milky2018/mgstudio/transform",
-  "Milky2018/mgstudio/a11y",
   "Milky2018/mgstudio",
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/asset",
@@ -10,10 +8,8 @@ import {
   "Milky2018/mgstudio/math",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/text",
+  "Milky2018/mgstudio/time",
   "Milky2018/mgstudio/ui",
-  "Milky2018/mgstudio/ui_render",
-  "Milky2018/mgstudio/window",
-  "Milky2018/moon_accesskit",
 }
 
 options(

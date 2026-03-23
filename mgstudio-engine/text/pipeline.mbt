@@ -1021,6 +1021,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
           color: background.color,
           layers: instance.layers,
           scissor: instance.ui_scissor,
+          target_camera: instance.ui_camera_entity,
         })
       }
 
@@ -1059,6 +1060,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
             color: span_color,
             layers: instance.layers,
             scissor: instance.ui_scissor,
+            target_camera: instance.ui_camera_entity,
           })
         }
       }
@@ -1097,6 +1099,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
             color: span_color,
             layers: instance.layers,
             scissor: instance.ui_scissor,
+            target_camera: instance.ui_camera_entity,
           })
         }
       }
@@ -1145,6 +1148,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
           color: shadow.color,
           layers: instance.layers,
           scissor: instance.ui_scissor,
+          target_camera: instance.ui_camera_entity,
         })
       }
       overlay_sprites.push(@sprite.OverlaySpriteUvScissor::{
@@ -1155,6 +1159,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
         color,
         layers: instance.layers,
         scissor: instance.ui_scissor,
+        target_camera: instance.ui_camera_entity,
       })
       if debug_capture_enabled {
         let glyph_bounds = glyph_world_bounds(

@@ -736,6 +736,53 @@ pub fn Camera3dBundle::spawn(
 }
 
 ///|
+pub fn register_render3d_required_components(
+  world : @ecs.World,
+) -> Unit raise @ecs.RequiredComponentsError {
+  world.register_required_components_with(
+    ecs_key_camera3d,
+    @sprite.ecs_key_camera,
+    fn() { @sprite.Camera::default() },
+  )
+  world.register_required_components_with(
+    ecs_key_camera3d,
+    ecs_key_projection,
+    fn() { Projection::default() },
+  )
+  world.register_required_components_with(
+    ecs_key_camera3d,
+    @transform.ecs_key_transform,
+    fn() { @transform.Transform::identity() },
+  )
+  world.register_required_components_with(
+    ecs_key_camera3d,
+    @sprite.ecs_key_render_target,
+    fn() { @sprite.RenderTarget::Screen },
+  )
+  world.register_required_components_with(
+    ecs_key_camera3d,
+    @sprite.ecs_key_render_layers,
+    fn() { @sprite.RenderLayers::default() },
+  )
+  world.register_required_components_with(
+    ecs_key_camera3d,
+    ecs_key_tonemapping,
+    fn() { Tonemapping::default() },
+  )
+  world.register_required_components_with(
+    ecs_key_camera3d,
+    ecs_key_deband_dither,
+    fn() { DebandDither::Enabled },
+  )
+  world.register_required_components_with(ecs_key_camera3d, ecs_key_exposure, fn() {
+    Exposure::default()
+  })
+  world.register_required_components_with(ecs_key_camera3d, ecs_key_frustum, fn() {
+    Projection::default().compute_frustum(@transform.Transform::identity())
+  })
+}
+
+///|
 fn mesh_material3d_bundle_insert(
   bundle : MeshMaterial3dBundle,
   world : @ecs.World,

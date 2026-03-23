@@ -287,6 +287,8 @@ priv struct TextInstance {
   /// When set, this text handle is treated as "UI text" and will be positioned
   /// relative to a UI node's top-left corner (Bevy UI extraction semantics).
   ui_node_size : @math.Vec2?
+  /// Optional UI target camera for overlay extraction.
+  ui_camera_entity : @core.Entity?
   /// Optional UI clip rect (logical UI space) propagated from `ui_clip_system`.
   /// When present, glyph sprites are submitted with scissor.
   ui_scissor : @math.Rect?
@@ -543,6 +545,7 @@ pub fn text_spawn(bundle : Text2dBundle) -> TextHandle {
     anchor: bundle.anchor,
     y_axis: bundle.y_axis,
     ui_node_size: None,
+    ui_camera_entity: None,
     ui_scissor: None,
     spans: [],
     computed: ComputedTextBlock::default(),
@@ -801,6 +804,17 @@ pub fn text_set_ui_node_size(handle : TextHandle, size : @math.Vec2?) -> Unit {
   text_update_instance(handle, instance => TextInstance::{
     ..instance,
     ui_node_size: size,
+  })
+}
+
+///|
+pub fn text_set_ui_camera_entity(
+  handle : TextHandle,
+  camera_entity : @core.Entity?,
+) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{
+    ..instance,
+    ui_camera_entity: camera_entity,
   })
 }
 

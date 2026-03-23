@@ -251,6 +251,7 @@ pub fn pbr_plugin_with(
       ecs_key_pbr_plugin_runtime_config, runtime_config,
     )
   }
+  try! register_render3d_required_components(next.world())
   next = pbr_plugin_sync_mesh_render_state(next, runtime_config)
   next = pbr_plugin_sync_materials_state(next, runtime_config)
   next = pbr_plugin_sync_standard_material_state(next, runtime_config)

@@ -221,6 +221,14 @@ pub fn GpuBackend::begin_pass(
   pass.set_scissor_rect(sx, sy, sw, sh)
   frame.pass = Some(pass)
   self.auto_exposure_active_state_buf = None
+  let clip_from_world = gpu_clip_matrix_2d(
+    Float::from_double(width_logical.to_double()),
+    Float::from_double(height_logical.to_double()),
+    camera_x,
+    camera_y,
+    camera_rot,
+    camera_scale,
+  )
   self.pass_state = Some(GpuPassState::{
     target_id,
     target_layer: -1,
@@ -242,9 +250,9 @@ pub fn GpuBackend::begin_pass(
     camera_rot_y: 0.0F,
     camera_rot_z: 0.0F,
     camera_rot_w: 1.0F,
-    clip_from_world: gpu_clip_matrix_identity(),
-    unjittered_clip_from_world: gpu_clip_matrix_identity(),
-    previous_clip_from_world: gpu_clip_matrix_identity(),
+    clip_from_world,
+    unjittered_clip_from_world: clip_from_world,
+    previous_clip_from_world: clip_from_world,
     pass_kind: 0,
     viewport_x: vx,
     viewport_y: vy,
@@ -410,6 +418,14 @@ pub fn GpuBackend::begin_pass_with_depth(
   pass.set_scissor_rect(sx, sy, sw, sh)
   frame.pass = Some(pass)
   self.auto_exposure_active_state_buf = None
+  let clip_from_world = gpu_clip_matrix_2d(
+    Float::from_double(width_logical.to_double()),
+    Float::from_double(height_logical.to_double()),
+    camera_x,
+    camera_y,
+    camera_rot,
+    camera_scale,
+  )
   self.pass_state = Some(GpuPassState::{
     target_id,
     target_layer: -1,
@@ -431,9 +447,9 @@ pub fn GpuBackend::begin_pass_with_depth(
     camera_rot_y: 0.0F,
     camera_rot_z: 0.0F,
     camera_rot_w: 1.0F,
-    clip_from_world: gpu_clip_matrix_identity(),
-    unjittered_clip_from_world: gpu_clip_matrix_identity(),
-    previous_clip_from_world: gpu_clip_matrix_identity(),
+    clip_from_world,
+    unjittered_clip_from_world: clip_from_world,
+    previous_clip_from_world: clip_from_world,
     pass_kind: 0,
     viewport_x: vx,
     viewport_y: vy,

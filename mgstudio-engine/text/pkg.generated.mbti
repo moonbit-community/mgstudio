@@ -125,6 +125,8 @@ pub let text_set_sync_ecs : String
 
 pub fn text_set_transform(TextHandle, @transform.Transform) -> Unit
 
+pub fn text_set_ui_camera_entity(TextHandle, @core.Entity?) -> Unit
+
 pub fn text_set_ui_node_size(TextHandle, @math.Vec2?) -> Unit
 
 pub fn text_set_ui_scissor(TextHandle, @math.Rect?) -> Unit
