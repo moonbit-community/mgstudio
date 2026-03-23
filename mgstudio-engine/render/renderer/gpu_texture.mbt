@@ -44,7 +44,11 @@ fn create_cached_texture_bind_group(
     builder.free()
     fatal("wgpu: failed to build cached texture bind group")
   }
-  builder.finish(backend.device, layout, label="mgstudio_cached_texture_bind_group")
+  builder.finish(
+    backend.device,
+    layout,
+    label="mgstudio_cached_texture_bind_group",
+  )
 }
 
 ///|
