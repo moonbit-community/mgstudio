@@ -156,6 +156,8 @@ pub fn[P : IntoAssetPath] embedded_asset(@app.App[@ecs.World], P, String) -> @ap
 
 pub fn get_texture_atlas_store(@ecs.World) -> @ecs.ComponentAccess[TextureAtlas]
 
+pub fn gzip_decompress(Bytes) -> Bytes?
+
 pub fn host_asset_bytes_get_u32(blob_id~ : Int, index~ : Int) -> Int
 
 pub fn host_asset_bytes_len(Int) -> Int
@@ -220,7 +222,13 @@ pub fn host_asset_update_texture_region_bytes(texture_id~ : Int, x~ : Int, y~ : 
 
 pub fn host_asset_update_texture_region_mip_bytes(texture_id~ : Int, x~ : Int, y~ : Int, width~ : Int, height~ : Int, mip_level~ : Int, bytes~ : Bytes) -> Unit
 
+pub fn[T] init_asset(@app.App[@ecs.World], () -> T) -> @app.App[@ecs.World]
+
+pub fn[T] init_asset_loader(@app.App[@ecs.World], AssetLoader[T]) -> @app.App[@ecs.World]
+
 pub fn loaded_folder_assets_resource_key() -> @ecs.ResourceKey[Assets[LoadedFolder]]
+
+pub fn[T] register_asset_loader(@app.App[@ecs.World], AssetLoader[T]) -> @app.App[@ecs.World]
 
 pub fn register_asset_source(@app.App[@ecs.World], String, AssetSourceBuilder) -> @app.App[@ecs.World]
 
@@ -243,6 +251,12 @@ pub fn[T] AssetId::index(Self[T]) -> Int
 pub fn[T] AssetId::new(Int) -> Self[T]
 pub impl[T : Eq] Eq for AssetId[T]
 pub impl[T : Show] Show for AssetId[T]
+
+pub struct AssetLoader[T] {
+  extensions : Array[String]
+  load : (AssetServer, AssetPath, Bytes) -> T
+}
+pub fn[T] AssetLoader::new(Array[String], (AssetServer, AssetPath, Bytes) -> T) -> Self[T]
 
 pub(all) enum AssetLoaderKind {
   Texture
@@ -278,6 +292,7 @@ pub impl @app.PluginReplacement for AssetPlugin
 
 pub struct AssetServer {
   paths : @ref.Ref[Array[String]]
+  typed_asset_paths : @ref.Ref[@hashmap.HashMap[String, Int]]
   image_paths : @ref.Ref[Array[(String, Handle[@image.Image])]]
   image_loaded_states : @ref.Ref[@hashmap.HashMap[Int, Bool]]
   pending_image_assets : @ref.Ref[@hashmap.HashMap[Int, @image.Image]]
@@ -288,13 +303,16 @@ pub struct AssetServer {
   gltf_mesh_asset_usages : @ref.Ref[Array[(String, RenderAssetUsages)]]
   default_sampler_nearest : @ref.Ref[Bool]
 }
+pub fn[T] AssetServer::add(Self, T) -> Handle[T]
 pub fn[P : IntoAssetPath] AssetServer::get_handle(Self, P) -> Handle[@image.Image]?
 pub fn AssetServer::gltf_mesh_asset_usage(Self, String) -> RenderAssetUsages
 pub fn[T, P : IntoAssetPath] AssetServer::load(Self, P) -> Handle[T]
 pub fn AssetServer::load_bytes(Self, String) -> Handle[Blob]
+pub fn[T, P : IntoAssetPath] AssetServer::load_direct(Self, P, Bytes) -> T
 pub fn AssetServer::load_folder(Self, String) -> Handle[LoadedFolder]
 pub fn AssetServer::load_font(Self, String) -> Handle[Font]
 pub fn[P : IntoAssetPath] AssetServer::load_image(Self, P) -> Handle[@image.Image]
+pub fn[P : IntoAssetPath] AssetServer::load_image_direct(Self, P, Bytes) -> @image.Image
 pub fn[P : IntoAssetPath] AssetServer::load_nearest(Self, P) -> Handle[@image.Image]
 pub fn AssetServer::load_texture_bytes(Self, Bytes, Bool) -> Handle[@image.Image]
 pub fn AssetServer::load_with_registered_loader(Self, String, Bool) -> Int

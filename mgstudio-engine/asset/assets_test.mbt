@@ -484,3 +484,190 @@ test "Assets<Image>::add creates a target texture image asset" {
   inspect(result.2, content="true")
   inspect(result.3, content="true")
 }
+
+///|
+struct TestCustomAsset {
+  value : Int
+}
+
+///|
+fn find_substring_or_abort(content : String, pattern : String) -> Int {
+  guard pattern.length() > 0 else {
+    abort("Expected a non-empty substring pattern")
+  }
+  let limit = content.length() - pattern.length()
+  guard limit >= 0 else {
+    abort("Expected substring is missing from custom asset payload")
+  }
+  for start in 0..<=limit {
+    let mut matches = true
+    for offset in 0..<pattern.length() {
+      if content.code_unit_at(start + offset) != pattern.code_unit_at(offset) {
+        matches = false
+        break
+      }
+    }
+    if matches {
+      return start
+    }
+  }
+  abort("Expected substring is missing from custom asset payload")
+}
+
+///|
+fn parse_decimal_or_abort(digits : Array[Char]) -> Int {
+  guard digits.length() > 0 else {
+    abort("Expected at least one decimal digit")
+  }
+  let mut index = 0
+  let mut sign = 1
+  if digits[0] == '-' {
+    sign = -1
+    index = 1
+  }
+  guard index < digits.length() else {
+    abort("Expected at least one decimal digit")
+  }
+  let mut value = 0
+  for i in index..<digits.length() {
+    let code = digits[i].to_int()
+    guard code >= 48 && code <= 57 else {
+      abort("Expected only decimal digits")
+    }
+    value = value * 10 + (code - 48)
+  }
+  sign * value
+}
+
+///|
+fn test_custom_asset_loader(
+  _asset_server : AssetServer,
+  _path : AssetPath,
+  bytes : Bytes,
+) -> TestCustomAsset {
+  let chars : Array[Char] = []
+  for byte in bytes {
+    chars.push(Int::unsafe_to_char(byte.to_int() & 0xFF))
+  }
+  let content = String::from_array(chars)
+  let marker = "value:"
+  let start = find_substring_or_abort(content, marker) + marker.length()
+  let digits : Array[Char] = []
+  let mut seen_digit = false
+  for i in start..<content.length() {
+    let code = content.code_unit_at(i).to_int()
+    let is_digit = code >= 48 && code <= 57
+    if is_digit || (!seen_digit && code == 45) {
+      digits.push(Int::unsafe_to_char(code))
+      seen_digit = true
+    } else if seen_digit {
+      break
+    }
+  }
+  TestCustomAsset::{ value: parse_decimal_or_abort(digits) }
+}
+
+///|
+test "asset server loads typed custom assets into Assets<T> and reuses handles" {
+  let app = init_asset_loader(
+    asset_plugin(@app.App::new(@ecs.World::new())),
+    AssetLoader::new(["custom"], test_custom_asset_loader),
+  )
+  let world = app.world()
+  let asset_server = match
+    (try! world.get_resource(asset_server_resource_key())) {
+    Some(server) => server
+    None => abort("expected AssetServer resource")
+  }
+
+  let handle : Handle[TestCustomAsset] = asset_with_world(world, fn() {
+    asset_server.load("data/asset.custom")
+  })
+  let second : Handle[TestCustomAsset] = asset_with_world(world, fn() {
+    asset_server.load("data/asset.custom")
+  })
+
+  inspect(handle.id() == second.id(), content="true")
+  let key : @ecs.ResourceKey[Assets[TestCustomAsset]] = assets_resource_key()
+  inspect(
+    match (try! world.get_resource(key)) {
+      Some(assets) =>
+        match assets.get(handle) {
+          Some(asset) => asset.value == 42
+          None => false
+        }
+      None => false
+    },
+    content="true",
+  )
+}
+
+///|
+test "asset server add inserts a typed asset into Assets<T>" {
+  let app = asset_plugin(@app.App::new(@ecs.World::new()))
+  let world = app.world()
+  let asset_server = match
+    (try! world.get_resource(asset_server_resource_key())) {
+    Some(server) => server
+    None => abort("expected AssetServer resource")
+  }
+  let handle = asset_with_world(world, fn() {
+    asset_server.add(TestCustomAsset::{ value: 7 })
+  })
+  let key : @ecs.ResourceKey[Assets[TestCustomAsset]] = assets_resource_key()
+  inspect(
+    match (try! world.get_resource(key)) {
+      Some(assets) =>
+        match assets.get(handle) {
+          Some(asset) => asset.value == 7
+          None => false
+        }
+      None => false
+    },
+    content="true",
+  )
+}
+
+///|
+test "gzip helper decompresses the Bevy sample image payload" {
+  let decoded = gzip_decompress(
+    try! @fs.read_file_to_bytes("assets/data/compressed_image.png.gz"),
+  )
+  inspect(
+    decoded.map(fn(bytes) { bytes.length() }).unwrap_or(-1),
+    content="15860",
+  )
+  inspect(
+    decoded.map(fn(bytes) {
+      bytes.length() >= 8 &&
+      bytes[0].to_int() == 0x89 &&
+      bytes[1].to_int() == 0x50 &&
+      bytes[2].to_int() == 0x4E &&
+      bytes[3].to_int() == 0x47
+    }),
+    content="Some(true)",
+  )
+}
+
+///|
+test "asset server load_direct decodes decompressed image bytes" {
+  let app = asset_plugin(@app.App::new(@ecs.World::new()))
+  let world = app.world()
+  let asset_server = match
+    (try! world.get_resource(asset_server_resource_key())) {
+    Some(server) => server
+    None => abort("expected AssetServer resource")
+  }
+  let decoded = gzip_decompress(
+    try! @fs.read_file_to_bytes("assets/data/compressed_image.png.gz"),
+  )
+  inspect(
+    decoded.map(fn(bytes) {
+      let image : Image = asset_with_world(world, fn() {
+        asset_server.load_image_direct("data/compressed_image.png", bytes)
+      })
+      image.width == 256 && image.height == 256
+    }),
+    content="Some(true)",
+  )
+}

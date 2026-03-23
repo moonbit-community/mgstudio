@@ -106,6 +106,7 @@ pub struct Blob {}
 ///|
 pub struct AssetServer {
   paths : Ref[Array[String]]
+  typed_asset_paths : Ref[@hashmap.HashMap[String, Int]]
   image_paths : Ref[Array[(String, Handle[Image])]]
   image_loaded_states : Ref[@hashmap.HashMap[Int, Bool]]
   pending_image_assets : Ref[@hashmap.HashMap[Int, Image]]
@@ -291,6 +292,7 @@ pub fn ImageLoaderSettings::default() -> ImageLoaderSettings {
 fn asset_server_standalone() -> AssetServer {
   AssetServer::{
     paths: Ref::new([]),
+    typed_asset_paths: Ref::new(@hashmap.HashMap::new()),
     image_paths: Ref::new([]),
     image_loaded_states: Ref::new(@hashmap.HashMap::new()),
     pending_image_assets: Ref::new(@hashmap.HashMap::new()),
@@ -1575,6 +1577,11 @@ pub fn[T, P : IntoAssetPath] AssetServer::load(
   path : P,
 ) -> Handle[T] {
   asset_register_builtin_loaders()
+  let asset_probe : Assets[T] = Assets::new()
+  let asset_type_name = @any.of(asset_probe).type_name()
+  if typed_asset_loader_registry.val.contains(asset_type_name) {
+    return self.load_registered_asset(path)
+  }
   let formatted_path = asset_path_string(path)
   let probe : Handle[T] = Handle::new(0)
   let type_name = asset_loader_type_name(probe)

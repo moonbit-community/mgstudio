@@ -19,5 +19,7 @@ import {
 }
 
 options(
+  link: { "native": { "cc-link-flags": "-lz" } },
+  "native-stub": [ "gzip_stub.c" ],
   "supported-targets": "native",
 )

@@ -1,0 +1,11 @@
+import {
+  "Milky2018/mgstudio",
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio/ecs",
+}
+
+options(
+  "is-main": true,
+  "supported-targets": "native",
+)
