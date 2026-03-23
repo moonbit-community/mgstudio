@@ -54,9 +54,36 @@ fn sampler_tag(sampler : @asset.ImageSampler) -> Int {
 }
 
 ///|
-fn label_option_text(label : @gltf.GltfAssetLabel?) -> String {
+fn label_text(label : GltfAssetLabel) -> String {
   match label {
-    Some(value) => "Some(" + value.to_label() + ")"
+    Scene(index) => "Scene" + index.to_string()
+    Node(index) => "Node" + index.to_string()
+    Mesh(index) => "Mesh" + index.to_string()
+    Primitive(mesh, primitive) =>
+      "Mesh" + mesh.to_string() + "/Primitive" + primitive.to_string()
+    MorphTarget(mesh, primitive) =>
+      "Mesh" +
+      mesh.to_string() +
+      "/Primitive" +
+      primitive.to_string() +
+      "/MorphTargets"
+    Texture(index) => "Texture" + index.to_string()
+    Material(index, is_scale_inverted) => {
+      let suffix = if is_scale_inverted { " (inverted)" } else { "" }
+      "Material" + index.to_string() + suffix
+    }
+    DefaultMaterial => "DefaultMaterial"
+    Animation(index) => "Animation" + index.to_string()
+    Skin(index) => "Skin" + index.to_string()
+    InverseBindMatrices(index) =>
+      "Skin" + index.to_string() + "/InverseBindMatrices"
+  }
+}
+
+///|
+fn label_option_text(label : GltfAssetLabel?) -> String {
+  match label {
+    Some(value) => "Some(" + label_text(value) + ")"
     None => "None"
   }
 }

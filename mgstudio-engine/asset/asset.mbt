@@ -108,6 +108,9 @@ pub struct AssetServer {
   paths : Ref[Array[String]]
   path_fingerprints : Ref[@hashmap.HashMap[String, Int]]
   typed_asset_paths : Ref[@hashmap.HashMap[String, Int]]
+  pending_processed_asset_loads : Ref[Array[PendingProcessedAssetLoad]]
+  pending_typed_asset_loads : Ref[Array[PendingTypedAssetLoad]]
+  pending_acquired_loads : Ref[Array[PendingAcquiredLoad]]
   image_paths : Ref[Array[(String, Handle[Image])]]
   image_loaded_states : Ref[@hashmap.HashMap[Int, Bool]]
   pending_image_assets : Ref[@hashmap.HashMap[Int, Image]]
@@ -117,6 +120,28 @@ pub struct AssetServer {
   image_usage_settings : Ref[Array[(Int, Int)]]
   gltf_mesh_asset_usages : Ref[Array[(String, RenderAssetUsages)]]
   default_sampler_nearest : Ref[Bool]
+  mode : Ref[AssetMode]
+  processed_file_path : Ref[String?]
+}
+
+///|
+type AssetReadyCheck = (@ecs.World, Int) -> Bool
+
+///|
+type AssetLoadRelease = () -> Unit
+
+///|
+struct PendingAcquiredLoad {
+  handle_id : Int
+  is_ready : AssetReadyCheck
+  release : AssetLoadRelease
+}
+
+///|
+struct PendingTypedAssetLoad {
+  type_name : String
+  handle_id : Int
+  path : AssetPath
 }
 
 ///|
@@ -125,7 +150,9 @@ pub const ASSET_PLUGIN_ID : String = "bevy_asset::AssetPlugin"
 ///|
 pub(all) struct AssetPlugin {
   default_sampler_nearest : Bool
+  mode : AssetMode
   file_path : String?
+  processed_file_path : String?
 }
 
 ///|
@@ -183,7 +210,12 @@ pub fn RenderAssetUsages::contains(
 
 ///|
 pub fn AssetPlugin::default() -> AssetPlugin {
-  AssetPlugin::{ default_sampler_nearest: false, file_path: None }
+  AssetPlugin::{
+    default_sampler_nearest: false,
+    mode: AssetMode::Unprocessed,
+    file_path: None,
+    processed_file_path: None,
+  }
 }
 
 ///|
@@ -242,7 +274,12 @@ pub fn AssetSourceBuilder::with_reader(
 
 ///|
 pub fn AssetPlugin::default_nearest() -> AssetPlugin {
-  AssetPlugin::{ default_sampler_nearest: true, file_path: None }
+  AssetPlugin::{
+    default_sampler_nearest: true,
+    mode: AssetMode::Unprocessed,
+    file_path: None,
+    processed_file_path: None,
+  }
 }
 
 ///|
@@ -250,7 +287,20 @@ pub fn AssetPlugin::with_default_sampler_nearest(
   self : AssetPlugin,
   enabled : Bool,
 ) -> AssetPlugin {
-  AssetPlugin::{ default_sampler_nearest: enabled, file_path: self.file_path }
+  AssetPlugin::{
+    default_sampler_nearest: enabled,
+    mode: self.mode,
+    file_path: self.file_path,
+    processed_file_path: self.processed_file_path,
+  }
+}
+
+///|
+pub fn AssetPlugin::with_mode(
+  self : AssetPlugin,
+  mode : AssetMode,
+) -> AssetPlugin {
+  AssetPlugin::{ ..self, mode, }
 }
 
 ///|
@@ -260,8 +310,18 @@ pub fn AssetPlugin::with_file_path(
 ) -> AssetPlugin {
   AssetPlugin::{
     default_sampler_nearest: self.default_sampler_nearest,
+    mode: self.mode,
     file_path: Some(file_path),
+    processed_file_path: self.processed_file_path,
   }
+}
+
+///|
+pub fn AssetPlugin::with_processed_file_path(
+  self : AssetPlugin,
+  processed_file_path : String,
+) -> AssetPlugin {
+  AssetPlugin::{ ..self, processed_file_path: Some(processed_file_path) }
 }
 
 ///|
@@ -365,6 +425,9 @@ fn asset_server_standalone() -> AssetServer {
     paths: Ref::new([]),
     path_fingerprints: Ref::new(@hashmap.HashMap::new()),
     typed_asset_paths: Ref::new(@hashmap.HashMap::new()),
+    pending_processed_asset_loads: Ref::new([]),
+    pending_typed_asset_loads: Ref::new([]),
+    pending_acquired_loads: Ref::new([]),
     image_paths: Ref::new([]),
     image_loaded_states: Ref::new(@hashmap.HashMap::new()),
     pending_image_assets: Ref::new(@hashmap.HashMap::new()),
@@ -374,6 +437,8 @@ fn asset_server_standalone() -> AssetServer {
     image_usage_settings: Ref::new([]),
     gltf_mesh_asset_usages: Ref::new([]),
     default_sampler_nearest: Ref::new(false),
+    mode: Ref::new(AssetMode::Unprocessed),
+    processed_file_path: Ref::new(None),
   }
 }
 
@@ -397,6 +462,11 @@ type AssetReloadHook = (@ecs.World, AssetServer, String) -> Unit
 let asset_reload_hook_registry : Ref[Array[AssetReloadHook]] = Ref::new([])
 
 ///|
+let asset_ready_checker_registry : Ref[
+  @hashmap.HashMap[String, AssetReadyCheck],
+] = Ref::new(@hashmap.HashMap::new())
+
+///|
 fn[T] asset_loader_type_name(probe : Handle[T]) -> String {
   @any.of(probe).type_name()
 }
@@ -417,6 +487,35 @@ pub fn[T] asset_register_loader(
   asset_loader_registry.val.set(type_name, AssetLoaderEntry::{
     load: fn(asset_server, path) { @any.of(load(asset_server, path)) },
   })
+}
+
+///|
+pub fn[T] asset_register_ready_checker(
+  check_ready : (@ecs.World, Handle[T]) -> Bool,
+) -> Unit {
+  let probe : Handle[T] = Handle::new(0)
+  let type_name = asset_loader_type_name(probe)
+  asset_ready_checker_registry.val.set(type_name, fn(world, handle_id) {
+    check_ready(world, Handle::new(handle_id))
+  })
+}
+
+///|
+fn[T] asset_registered_ready_check(_probe : Handle[T]) -> AssetReadyCheck {
+  let probe : Handle[T] = Handle::new(0)
+  let type_name = asset_loader_type_name(probe)
+  match asset_ready_checker_registry.val.get(type_name) {
+    Some(check_ready) => check_ready
+    None => {
+      let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
+      fn(world, handle_id) {
+        match (try! world.get_resource(key)) {
+          Some(assets) => assets.contains(Handle::new(handle_id))
+          None => false
+        }
+      }
+    }
+  }
 }
 
 ///|
@@ -586,6 +685,11 @@ pub type ParsedAssetPath = AssetPath
 ///|
 pub(open) trait IntoAssetPath {
   into_asset_path(self : Self) -> AssetPath
+}
+
+///|
+pub(open) trait AssetLoadGuard {
+  release(self : Self) -> Unit
 }
 
 ///|
@@ -885,6 +989,18 @@ fn load_optional_asset_text(path : String) -> String? {
     return Some(bytes_to_text(bytes))
   }
   None
+}
+
+///|
+pub fn[P : IntoAssetPath] load_asset_source_bytes(path : P) -> Bytes {
+  let parsed = path.into_asset_path()
+  load_asset_file_bytes(asset_canonical_path(asset_format_path(parsed)))
+}
+
+///|
+pub fn[P : IntoAssetPath] load_optional_asset_source_text(path : P) -> String? {
+  let parsed = path.into_asset_path()
+  load_optional_asset_text(asset_canonical_path(asset_format_path(parsed)))
 }
 
 ///|
@@ -1590,6 +1706,11 @@ pub fn host_asset_save_rgba8_png(
 }
 
 ///|
+pub fn host_asset_save_bytes(path~ : String, bytes~ : Bytes) -> Unit {
+  save_asset_file_bytes(path, bytes)
+}
+
+///|
 pub fn[P : IntoAssetPath] AssetServer::load_image(
   self : AssetServer,
   path : P,
@@ -1705,6 +1826,31 @@ pub fn[T, P : IntoAssetPath] AssetServer::load(
         "; load the plugin that owns this asset type before calling AssetServer::load",
       )
   }
+}
+
+///|
+pub fn[T, P : IntoAssetPath, G : AssetLoadGuard] AssetServer::load_acquire(
+  self : AssetServer,
+  path : P,
+  load_guard : G,
+) -> Handle[T] {
+  let handle = self.load(path)
+  let ready : AssetReadyCheck = asset_registered_ready_check(handle)
+  let release : AssetLoadRelease = fn() { load_guard.release() }
+  match asset_current_world() {
+    Some(world) =>
+      if ready(world, handle.id()) {
+        release()
+      } else {
+        self.pending_acquired_loads.val.push(PendingAcquiredLoad::{
+          handle_id: handle.id(),
+          is_ready: ready,
+          release,
+        })
+      }
+    None => release()
+  }
+  handle
 }
 
 ///|
@@ -2030,6 +2176,25 @@ fn asset_sync_dirty_image_assets(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn asset_release_ready_acquired_loads(
+  world : @ecs.World,
+  asset_server : AssetServer,
+) -> Unit {
+  let remaining : Array[PendingAcquiredLoad] = []
+  for pending in asset_server.pending_acquired_loads.val {
+    if (pending.is_ready)(world, pending.handle_id) {
+      (pending.release)()
+    } else {
+      remaining.push(pending)
+    }
+  }
+  asset_server.pending_acquired_loads.val.clear()
+  for pending in remaining {
+    asset_server.pending_acquired_loads.val.push(pending)
+  }
+}
+
+///|
 pub fn asset_texture_width(texture : Handle[Image]) -> Int {
   host_asset_texture_width(texture.id())
 }
@@ -2065,12 +2230,16 @@ pub fn asset_save_texture_png(texture : Handle[Image], path : String) -> Unit {
 
 ///|
 pub fn asset_system(world : @ecs.World) -> Unit {
+  let asset_server = asset_server_or_abort()
   asset_reload_modified_paths(world)
   asset_update_loaded_folders(world)
+  asset_process_pending_processed_asset_loads(world, asset_server)
+  asset_process_pending_typed_asset_loads(world, asset_server)
   asset_sync_dirty_image_assets(world)
   asset_update_event_messages(world)
   asset_sync_loaded_image_assets(world)
   asset_update_image_event_messages(world)
+  asset_release_ready_acquired_loads(world, asset_server)
 }
 
 ///|
@@ -2078,11 +2247,17 @@ fn asset_plugin_with_server(
   app : @app.App[@ecs.World],
   asset_server : AssetServer,
   file_path : String?,
+  mode : AssetMode,
+  processed_file_path : String?,
 ) -> @app.App[@ecs.World] {
   asset_register_builtin_loaders()
   set_runtime_assets_dir_override(resolve_assets_dir_override(file_path))
   set_runtime_asset_source_dir_overrides(asset_registered_source_dir_entries())
   set_runtime_asset_source_readers(asset_registered_source_reader_entries())
+  asset_server.mode.val = mode
+  asset_server.processed_file_path.val = resolve_assets_dir_override(
+    processed_file_path,
+  )
   app
   .insert_resource(asset_server)
   .init_resource(fn() {
@@ -2102,14 +2277,26 @@ fn asset_plugin_with_server(
 
 ///|
 pub fn asset_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  asset_plugin_with_server(app, asset_server_standalone(), None)
+  asset_plugin_with_server(
+    app,
+    asset_server_standalone(),
+    None,
+    AssetMode::Unprocessed,
+    None,
+  )
 }
 
 ///|
 pub fn asset_plugin_nearest(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   let asset_server = asset_server_standalone()
   asset_server.default_sampler_nearest.val = true
-  asset_plugin_with_server(app, asset_server, None)
+  asset_plugin_with_server(
+    app,
+    asset_server,
+    None,
+    AssetMode::Unprocessed,
+    None,
+  )
 }
 
 ///|
@@ -2122,6 +2309,12 @@ pub impl @app.PluginReplacement for AssetPlugin with world_plugin(self) {
   fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     let asset_server = asset_server_standalone()
     asset_server.default_sampler_nearest.val = self.default_sampler_nearest
-    asset_plugin_with_server(app, asset_server, self.file_path)
+    asset_plugin_with_server(
+      app,
+      asset_server,
+      self.file_path,
+      self.mode,
+      self.processed_file_path,
+    )
   }
 }

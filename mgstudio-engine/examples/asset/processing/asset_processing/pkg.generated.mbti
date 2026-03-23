@@ -1,0 +1,36 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/asset/processing/asset_processing"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type CoolText
+
+type CoolTextLoader
+
+type CoolTextSaver
+
+type CoolTextSource
+
+type CoolTextTransformer
+
+type Text
+
+type TextAssets
+pub impl @app.Resource for TextAssets
+
+type TextLoader
+
+type TextSettings
+
+// Type aliases
+
+// Traits
+

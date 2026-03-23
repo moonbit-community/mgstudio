@@ -13,6 +13,21 @@ pub fn[W] task_pool_plugin(@app.TaskPoolPlugin) -> (@app.App[W]) -> @app.App[W]
 // Errors
 
 // Types and methods
+pub struct AsyncComputeTaskPool {
+}
+pub fn AsyncComputeTaskPool::get() -> Self
+pub fn[T] AsyncComputeTaskPool::spawn(Self, () -> T) -> Task[T]
+
+pub struct IoTaskPool {
+}
+pub fn IoTaskPool::get() -> Self
+pub fn[T] IoTaskPool::spawn(Self, () -> T) -> Task[T]
+
+pub struct Task[T] {
+  result : T
+}
+pub fn[T] Task::detach(Self[T]) -> Unit
+pub fn[T] Task::get(Self[T]) -> T
 
 // Type aliases
 pub using @app {type TaskPoolOptions}

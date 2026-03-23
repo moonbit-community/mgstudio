@@ -68,6 +68,12 @@ pub fn scene_spawn_roots_system_ecs(@ecs.World) -> Unit
 // Errors
 
 // Types and methods
+pub struct Gltf {
+  scenes : Array[@asset.Handle[Scene]]
+  default_scene : @asset.Handle[Scene]?
+}
+pub fn Gltf::new(Array[@asset.Handle[Scene]], @asset.Handle[Scene]?) -> Self
+
 pub struct GltfLodVisibilityPolicy {
   enabled : Bool
   first_start_margin_min : Float

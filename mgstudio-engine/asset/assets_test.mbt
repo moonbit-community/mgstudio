@@ -13,6 +13,16 @@
 // limitations under the License.
 
 ///|
+struct CountingLoadGuard {
+  releases : Ref[Int]
+}
+
+///|
+pub impl AssetLoadGuard for CountingLoadGuard with release(self) {
+  self.releases.val = self.releases.val + 1
+}
+
+///|
 test "assets: insert/get/set/remove and events" {
   let assets : Assets[Int] = Assets::new()
   inspect(assets.is_empty(), content="true")
@@ -114,7 +124,7 @@ test "asset system stores loaded folders in Assets<LoadedFolder> resource" {
   }
   let folder_handle = asset_server.load_folder("textures/rpg")
 
-  asset_system(world)
+  asset_with_world(world, fn() { asset_system(world) })
 
   let loaded_folders = match
     (try! world.get_resource(loaded_folder_assets_resource_key())) {
@@ -178,7 +188,7 @@ test "asset system forwards image load completion to ECS messages" {
   )
 
   for _ in 0..<120 {
-    asset_system(world)
+    asset_with_world(world, fn() { asset_system(world) })
     if host_asset_is_texture_loaded(image.id()) {
       break
     }
@@ -244,7 +254,7 @@ test "asset system preserves image loader settings in stored image assets" {
   )
 
   for _ in 0..<120 {
-    asset_system(world)
+    asset_with_world(world, fn() { asset_system(world) })
     if host_asset_is_texture_loaded(image.id()) {
       break
     }
@@ -274,6 +284,45 @@ test "asset system preserves image loader settings in stored image assets" {
   })
   inspect(metadata_ok.0, content="true")
   inspect(metadata_ok.1, content="false")
+}
+
+///|
+test "asset system releases load_acquire guard after asset becomes ready" {
+  let world = @ecs.World::new()
+  let image_assets_key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
+  world.insert_resource(asset_server_resource_key(), AssetServer::new())
+  world.insert_resource(loaded_folder_assets_resource_key(), Assets::new())
+  world.insert_resource(image_assets_key, Assets::new())
+
+  let asset_server = match
+    (try! world.get_resource(asset_server_resource_key())) {
+    Some(server) => server
+    None => abort("expected AssetServer resource")
+  }
+  let release_count = Ref::new(0)
+  let handle : Handle[Image] = asset_with_world(world, fn() {
+    asset_server.load_acquire("branding/bevy_logo_dark_big.png", CountingLoadGuard::{
+      releases: release_count,
+    })
+  })
+
+  inspect(release_count.val, content="0")
+
+  for _ in 0..<120 {
+    asset_with_world(world, fn() { asset_system(world) })
+    if release_count.val == 1 {
+      break
+    }
+  }
+
+  inspect(release_count.val, content="1")
+  inspect(
+    match (try! world.get_resource(image_assets_key)) {
+      Some(images) => images.contains(handle)
+      None => false
+    },
+    content="true",
+  )
 }
 
 ///|
@@ -310,7 +359,7 @@ test "asset system skips MAIN_WORLD image asset sync when asset usage is render-
   })
 
   for _ in 0..<120 {
-    asset_system(world)
+    asset_with_world(world, fn() { asset_system(world) })
     if host_asset_is_texture_loaded(image.id()) {
       break
     }
@@ -345,7 +394,7 @@ test "asset server loads embedded image assets from in-memory source" {
   )
 
   for _ in 0..<120 {
-    asset_system(app.world())
+    asset_with_world(app.world(), fn() { asset_system(app.world()) })
     if host_asset_is_texture_loaded(handle.id()) {
       break
     }
@@ -371,7 +420,7 @@ test "web asset reader fetches remote PNG bytes" {
   }
   let handle = asset_server.load_image(url)
   for _ in 0..<240 {
-    asset_system(app.world())
+    asset_with_world(app.world(), fn() { asset_system(app.world()) })
     if host_asset_is_texture_loaded(handle.id()) {
       break
     }
@@ -614,6 +663,7 @@ test "asset server loads typed custom assets into Assets<T> and reuses handles" 
 
   inspect(handle.id() == second.id(), content="true")
   let key : @ecs.ResourceKey[Assets[TestCustomAsset]] = assets_resource_key()
+  asset_with_world(world, fn() { asset_system(world) })
   inspect(
     match (try! world.get_resource(key)) {
       Some(assets) =>

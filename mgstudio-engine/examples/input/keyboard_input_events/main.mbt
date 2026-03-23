@@ -55,6 +55,7 @@ fn format_logical_key(key : @input.Key) -> String {
     PageDown => "PageDown"
     Space => "Space"
     Escape => "Escape"
+    Function(index) => "Function(\{index})"
   }
 }
 
@@ -103,6 +104,18 @@ fn format_keycode(code : @window.KeyCode) -> String {
     Digit6 => "Digit6"
     Digit7 => "Digit7"
     Digit8 => "Digit8"
+    F1 => "F1"
+    F2 => "F2"
+    F3 => "F3"
+    F4 => "F4"
+    F5 => "F5"
+    F6 => "F6"
+    F7 => "F7"
+    F8 => "F8"
+    F9 => "F9"
+    F10 => "F10"
+    F11 => "F11"
+    F12 => "F12"
     Tab => "Tab"
     Enter => "Enter"
     Backspace => "Backspace"

@@ -49,6 +49,18 @@ fn keycode_to_string(code : @window.KeyCode) -> String {
     Digit6 => "Digit6"
     Digit7 => "Digit7"
     Digit8 => "Digit8"
+    F1 => "F1"
+    F2 => "F2"
+    F3 => "F3"
+    F4 => "F4"
+    F5 => "F5"
+    F6 => "F6"
+    F7 => "F7"
+    F8 => "F8"
+    F9 => "F9"
+    F10 => "F10"
+    F11 => "F11"
+    F12 => "F12"
     Tab => "Tab"
     Enter => "Enter"
     Backspace => "Backspace"
@@ -114,6 +126,18 @@ let keyboard_event_keycodes : Array[@window.KeyCode] = [
   Digit6,
   Digit7,
   Digit8,
+  F1,
+  F2,
+  F3,
+  F4,
+  F5,
+  F6,
+  F7,
+  F8,
+  F9,
+  F10,
+  F11,
+  F12,
   Tab,
   Enter,
   Backspace,
@@ -1106,6 +1130,18 @@ fn logical_key_from_keycode(code : @window.KeyCode) -> Key {
     Digit6 => Character("6")
     Digit7 => Character("7")
     Digit8 => Character("8")
+    F1 => Key::Function(1)
+    F2 => Key::Function(2)
+    F3 => Key::Function(3)
+    F4 => Key::Function(4)
+    F5 => Key::Function(5)
+    F6 => Key::Function(6)
+    F7 => Key::Function(7)
+    F8 => Key::Function(8)
+    F9 => Key::Function(9)
+    F10 => Key::Function(10)
+    F11 => Key::Function(11)
+    F12 => Key::Function(12)
     Tab => Key::Tab
     Enter => Key::Enter
     Backspace => Key::Backspace
@@ -1172,32 +1208,44 @@ fn keycode_from_key_id(key_id : Int) -> @window.KeyCode? {
     31 => Some(Digit6)
     32 => Some(Digit7)
     33 => Some(Digit8)
-    36 => Some(Tab)
-    37 => Some(Enter)
-    38 => Some(Backspace)
-    39 => Some(ShiftLeft)
-    40 => Some(ShiftRight)
-    41 => Some(ControlLeft)
-    42 => Some(ControlRight)
-    43 => Some(ArrowUp)
-    44 => Some(ArrowDown)
-    45 => Some(ArrowLeft)
-    46 => Some(ArrowRight)
-    47 => Some(PageUp)
-    48 => Some(PageDown)
-    49 => Some(Space)
-    50 => Some(Escape)
-    51 => Some(Semicolon)
-    52 => Some(Comma)
-    53 => Some(Period)
-    54 => Some(Slash)
-    55 => Some(Minus)
-    56 => Some(Equal)
-    57 => Some(BracketLeft)
-    58 => Some(BracketRight)
-    59 => Some(Quote)
-    62 => Some(NumpadAdd)
-    63 => Some(NumpadSubtract)
+    34 => Some(F1)
+    35 => Some(F2)
+    36 => Some(F3)
+    37 => Some(F4)
+    38 => Some(F5)
+    39 => Some(F6)
+    40 => Some(F7)
+    41 => Some(F8)
+    42 => Some(F9)
+    43 => Some(F10)
+    44 => Some(F11)
+    45 => Some(F12)
+    46 => Some(Tab)
+    47 => Some(Enter)
+    48 => Some(Backspace)
+    49 => Some(ShiftLeft)
+    50 => Some(ShiftRight)
+    51 => Some(ControlLeft)
+    52 => Some(ControlRight)
+    53 => Some(ArrowUp)
+    54 => Some(ArrowDown)
+    55 => Some(ArrowLeft)
+    56 => Some(ArrowRight)
+    57 => Some(PageUp)
+    58 => Some(PageDown)
+    59 => Some(Space)
+    60 => Some(Escape)
+    61 => Some(Semicolon)
+    62 => Some(Comma)
+    63 => Some(Period)
+    64 => Some(Slash)
+    65 => Some(Minus)
+    66 => Some(Equal)
+    67 => Some(BracketLeft)
+    68 => Some(BracketRight)
+    69 => Some(Quote)
+    70 => Some(NumpadAdd)
+    71 => Some(NumpadSubtract)
     _ => None
   }
 }

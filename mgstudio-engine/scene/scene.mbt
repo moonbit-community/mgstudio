@@ -946,7 +946,7 @@ pub fn scene_plugin_with(
   _plugin : ScenePlugin,
 ) -> @app.App[@ecs.World] {
   scene_runtime_plugin_base(
-    app
+    scene_init_gltf_assets(app)
     .init_resource(fn() {
       let assets : @asset.Assets[Scene] = @asset.Assets::new()
       assets

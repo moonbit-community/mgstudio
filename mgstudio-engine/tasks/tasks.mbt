@@ -31,3 +31,49 @@ pub fn[W] task_pool_plugin(plugin : TaskPoolPlugin) -> @app.Plugin[W] {
 pub fn task_pool_num_threads() -> Int? {
   @app.task_pool_num_threads()
 }
+
+///|
+pub struct Task[T] {
+  result : T
+}
+
+///|
+pub struct IoTaskPool {}
+
+///|
+pub struct AsyncComputeTaskPool {}
+
+///|
+pub fn IoTaskPool::get() -> IoTaskPool {
+  IoTaskPool::{  }
+}
+
+///|
+pub fn AsyncComputeTaskPool::get() -> AsyncComputeTaskPool {
+  AsyncComputeTaskPool::{  }
+}
+
+///|
+pub fn[T] IoTaskPool::spawn(self : IoTaskPool, task : () -> T) -> Task[T] {
+  self |> ignore
+  Task::{ result: task() }
+}
+
+///|
+pub fn[T] AsyncComputeTaskPool::spawn(
+  self : AsyncComputeTaskPool,
+  task : () -> T,
+) -> Task[T] {
+  self |> ignore
+  Task::{ result: task() }
+}
+
+///|
+pub fn[T] Task::get(self : Task[T]) -> T {
+  self.result
+}
+
+///|
+pub fn[T] Task::detach(self : Task[T]) -> Unit {
+  self |> ignore
+}

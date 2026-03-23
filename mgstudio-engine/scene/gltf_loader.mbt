@@ -195,6 +195,21 @@ priv enum GltfResolveBuffersState {
 }
 
 ///|
+priv enum GltfAssetLabel {
+  Scene(Int)
+  Node(Int)
+  Mesh(Int)
+  Primitive(Int, Int)
+  MorphTarget(Int, Int)
+  Texture(Int)
+  Material(Int, Bool)
+  DefaultMaterial
+  Animation(Int)
+  Skin(Int)
+  InverseBindMatrices(Int)
+}
+
+///|
 const SCENE_GLTF_ASSET_LABEL_MESH_PREFIX : String = "Mesh"
 
 ///|
@@ -292,9 +307,9 @@ fn scene_gltf_parse_material_label(label : String) -> (Int, Bool)? {
 }
 
 ///|
-fn scene_parse_gltf_asset_label(label : String) -> @gltf.GltfAssetLabel? {
+fn scene_parse_gltf_asset_label(label : String) -> GltfAssetLabel? {
   if label == "DefaultMaterial" {
-    return Some(@gltf.GltfAssetLabel::DefaultMaterial)
+    return Some(GltfAssetLabel::DefaultMaterial)
   }
   if label.has_suffix(SCENE_GLTF_ASSET_LABEL_MORPH_TARGET_SUFFIX) {
     let end = label.length() -
@@ -305,12 +320,12 @@ fn scene_parse_gltf_asset_label(label : String) -> @gltf.GltfAssetLabel? {
     let primitive_label = label[0:end].to_string()
     if scene_gltf_parse_mesh_primitive_label(primitive_label)
       is Some((mesh, primitive)) {
-      return Some(@gltf.GltfAssetLabel::MorphTarget(mesh, primitive))
+      return Some(GltfAssetLabel::MorphTarget(mesh, primitive))
     }
     return None
   }
   if scene_gltf_parse_mesh_primitive_label(label) is Some((mesh, primitive)) {
-    return Some(@gltf.GltfAssetLabel::Primitive(mesh, primitive))
+    return Some(GltfAssetLabel::Primitive(mesh, primitive))
   }
   if label.has_suffix(SCENE_GLTF_ASSET_LABEL_INVERSE_BIND_MATRICES_SUFFIX) &&
     label.has_prefix(SCENE_GLTF_ASSET_LABEL_SKIN_PREFIX) {
@@ -321,30 +336,30 @@ fn scene_parse_gltf_asset_label(label : String) -> @gltf.GltfAssetLabel? {
     }
     let index_payload = label[SCENE_GLTF_ASSET_LABEL_SKIN_PREFIX.length():end].to_string()
     if scene_gltf_parse_non_negative_int(index_payload) is Some(index) {
-      return Some(@gltf.GltfAssetLabel::InverseBindMatrices(index))
+      return Some(GltfAssetLabel::InverseBindMatrices(index))
     }
     return None
   }
   if scene_gltf_parse_material_label(label) is Some((index, is_scale_inverted)) {
-    return Some(@gltf.GltfAssetLabel::Material(index, is_scale_inverted))
+    return Some(GltfAssetLabel::Material(index, is_scale_inverted))
   }
   if scene_gltf_parse_prefixed_index(label, "Scene") is Some(index) {
-    return Some(@gltf.GltfAssetLabel::Scene(index))
+    return Some(GltfAssetLabel::Scene(index))
   }
   if scene_gltf_parse_prefixed_index(label, "Node") is Some(index) {
-    return Some(@gltf.GltfAssetLabel::Node(index))
+    return Some(GltfAssetLabel::Node(index))
   }
   if scene_gltf_parse_prefixed_index(label, "Mesh") is Some(index) {
-    return Some(@gltf.GltfAssetLabel::Mesh(index))
+    return Some(GltfAssetLabel::Mesh(index))
   }
   if scene_gltf_parse_prefixed_index(label, "Texture") is Some(index) {
-    return Some(@gltf.GltfAssetLabel::Texture(index))
+    return Some(GltfAssetLabel::Texture(index))
   }
   if scene_gltf_parse_prefixed_index(label, "Animation") is Some(index) {
-    return Some(@gltf.GltfAssetLabel::Animation(index))
+    return Some(GltfAssetLabel::Animation(index))
   }
   if scene_gltf_parse_prefixed_index(label, "Skin") is Some(index) {
-    return Some(@gltf.GltfAssetLabel::Skin(index))
+    return Some(GltfAssetLabel::Skin(index))
   }
   None
 }
@@ -352,7 +367,7 @@ fn scene_parse_gltf_asset_label(label : String) -> @gltf.GltfAssetLabel? {
 ///|
 fn scene_split_gltf_asset_path(
   asset_path : String,
-) -> (String, @gltf.GltfAssetLabel?) {
+) -> (String, GltfAssetLabel?) {
   if asset_path.rev_find("#") is Some(index) {
     let base_path = asset_path[0:index].to_string()
     let label_start = index + 1
@@ -410,7 +425,7 @@ fn scene_queue_gltf_request(
   scene_pending_remove_scene_handle(scene_handle)
   let (gltf_path, label) = scene_split_gltf_asset_path(scene_asset_path)
   let scene_index = match label {
-    Some(@gltf.GltfAssetLabel::Scene(index)) => index
+    Some(GltfAssetLabel::Scene(index)) => index
     _ => 0
   }
   pending_gltf_scene_requests.val.push({
@@ -433,7 +448,7 @@ fn scene_queue_gltf_animation_request(
   scene_pending_remove_animation_handle(clip_handle)
   let (gltf_path, label) = scene_split_gltf_asset_path(animation_asset_path)
   let animation_index = match label {
-    Some(@gltf.GltfAssetLabel::Animation(index)) => index
+    Some(GltfAssetLabel::Animation(index)) => index
     _ => 0
   }
   pending_gltf_animation_requests.val.push({
@@ -456,7 +471,7 @@ fn scene_queue_gltf_mesh_request(
   scene_pending_remove_mesh_handle(mesh_handle)
   let (gltf_path, label) = scene_split_gltf_asset_path(mesh_asset_path)
   let (mesh_index, primitive_index) = match label {
-    Some(@gltf.GltfAssetLabel::Primitive(mesh, primitive)) => (mesh, primitive)
+    Some(GltfAssetLabel::Primitive(mesh, primitive)) => (mesh, primitive)
     _ =>
       abort(
         "Mesh asset loading requires a glTF primitive label such as Mesh0/Primitive0",

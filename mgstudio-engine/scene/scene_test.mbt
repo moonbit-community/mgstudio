@@ -72,6 +72,63 @@ test "scene: load gltf primitive mesh stays pending in the issuing frame" {
 }
 
 ///|
+test "scene: root gltf asset loads default scene through Assets<Gltf>" {
+  let root_loaded = Ref::new(false)
+  let scene_count = Ref::new(0)
+  let has_default_scene = Ref::new(false)
+  let first_scene_ready = Ref::new(false)
+  let gltf_handle_ref : Ref[@asset.Handle[Gltf]?] = Ref::new(None)
+
+  let plugins : Array[@app.Plugin[@ecs.World]] = [
+    @asset.asset_plugin, @sprite_render.render2d_plugin_ecs, @pbr.render3d_plugin,
+    @animation.animation_plugin, @scene.scene_plugin, @gltf.gltf_plugin, @time.time_plugin,
+  ]
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins(plugins)
+    .add_systems(
+      @app.Startup,
+      @app.system(fn(_world : @ecs.World) {
+        gltf_handle_ref.val = Some(
+          @asset.AssetServer::new().load("models/torus/torus.gltf"),
+        )
+      }),
+    )
+  let gltf_assets_key : @ecs.ResourceKey[@asset.Assets[Gltf]] = @asset.assets_resource_key()
+  let scene_assets_key : @ecs.ResourceKey[@asset.Assets[Scene]] = @asset.assets_resource_key()
+
+  for _ in 0..<120 {
+    app = app.run_once()
+    guard gltf_handle_ref.val is Some(handle) else { continue }
+    let frame_world = app.world()
+    let gltf_assets = match (try! frame_world.get_resource(gltf_assets_key)) {
+      Some(assets) => assets
+      None => abort("expected Assets<Gltf> resource")
+    }
+    let scene_assets = match (try! frame_world.get_resource(scene_assets_key)) {
+      Some(assets) => assets
+      None => abort("expected Assets<Scene> resource")
+    }
+    if gltf_assets.get(handle) is Some(gltf) {
+      root_loaded.val = true
+      scene_count.val = gltf.scenes.length()
+      has_default_scene.val = gltf.default_scene is Some(_)
+      if gltf.scenes.length() > 0 {
+        first_scene_ready.val = match scene_assets.get(gltf.scenes[0]) {
+          Some(scene) => scene.ready
+          None => false
+        }
+      }
+      break
+    }
+  }
+
+  inspect(root_loaded.val, content="true")
+  inspect(scene_count.val == 1, content="true")
+  inspect(has_default_scene.val, content="true")
+  inspect(first_scene_ready.val, content="true")
+}
+
+///|
 test "scene: register keeps stable handle" {
   let same_handle = Ref::new(false)
   let ready_scene = Ref::new(false)

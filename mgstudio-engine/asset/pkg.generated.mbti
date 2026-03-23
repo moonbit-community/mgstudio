@@ -9,6 +9,7 @@ import {
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
+  "tonyfettes/any",
 }
 
 // Values
@@ -97,6 +98,8 @@ pub fn asset_plugin_nearest(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 pub fn[T] asset_register_loader((AssetServer, String) -> Handle[T]) -> Unit
 
 pub fn asset_register_loader_extension(String, AssetLoaderKind) -> Unit
+
+pub fn[T] asset_register_ready_checker((@ecs.World, Handle[T]) -> Bool) -> Unit
 
 pub fn asset_register_reload_hook((@ecs.World, AssetServer, String) -> Unit) -> Unit
 
@@ -210,6 +213,8 @@ pub fn host_asset_register_loader_extension(extension~ : String, kind~ : Int) ->
 
 pub fn host_asset_remove_loader_extension(extension~ : String) -> Unit
 
+pub fn host_asset_save_bytes(path~ : String, bytes~ : Bytes) -> Unit
+
 pub fn host_asset_save_rgba8_png(width~ : Int, height~ : Int, pixels~ : Bytes, path~ : String) -> Unit
 
 pub fn host_asset_set_texture_sampler(texture_id~ : Int, address_mode_u~ : Int, address_mode_v~ : Int, address_mode_w~ : Int, mag_filter~ : Int, min_filter~ : Int, mipmap_filter~ : Int, lod_min_clamp~ : Float, lod_max_clamp~ : Float, compare~ : Int, anisotropy_clamp~ : Int, border_color~ : Int) -> Unit
@@ -230,11 +235,23 @@ pub fn[T] init_asset(@app.App[@ecs.World], () -> T) -> @app.App[@ecs.World]
 
 pub fn[T] init_asset_loader(@app.App[@ecs.World], AssetLoader[T]) -> @app.App[@ecs.World]
 
+pub fn[T] init_asset_processor(@app.App[@ecs.World], LoadTransformAndSave[T]) -> @app.App[@ecs.World]
+
+pub fn[P : IntoAssetPath] load_asset_source_bytes(P) -> Bytes
+
+pub fn[P : IntoAssetPath] load_optional_asset_source_text(P) -> String?
+
 pub fn loaded_folder_assets_resource_key() -> @ecs.ResourceKey[Assets[LoadedFolder]]
 
 pub fn[T] register_asset_loader(@app.App[@ecs.World], AssetLoader[T]) -> @app.App[@ecs.World]
 
+pub fn[T] register_asset_processor(@app.App[@ecs.World], LoadTransformAndSave[T]) -> @app.App[@ecs.World]
+
 pub fn register_asset_source(@app.App[@ecs.World], AssetSourceId, AssetSourceBuilder) -> @app.App[@ecs.World]
+
+pub fn[T, Settings, P : IntoAssetPath] save_using_saver(AssetServer, AssetSaver[T, Settings], P, SavedAsset[T], Settings) -> Result[Unit, String]
+
+pub fn set_default_asset_processor(@app.App[@ecs.World], String) -> @app.App[@ecs.World]
 
 pub fn web_asset_plugin(WebAssetPlugin) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
@@ -260,9 +277,10 @@ pub impl[T : Show] Show for AssetId[T]
 
 pub struct AssetLoader[T] {
   extensions : Array[String]
-  load : (AssetServer, AssetPath, Bytes) -> T
+  load : (LoadContext, Bytes) -> T
 }
 pub fn[T] AssetLoader::new(Array[String], (AssetServer, AssetPath, Bytes) -> T) -> Self[T]
+pub fn[T] AssetLoader::new_with_context(Array[String], (LoadContext, Bytes) -> T) -> Self[T]
 
 pub(all) enum AssetLoaderKind {
   Texture
@@ -271,6 +289,13 @@ pub(all) enum AssetLoaderKind {
   Font
   Folder
 }
+
+pub(all) enum AssetMode {
+  Unprocessed
+  Processed
+}
+pub impl Eq for AssetMode
+pub impl Show for AssetMode
 
 #alias(ParsedAssetPath)
 pub struct AssetPath {
@@ -288,12 +313,16 @@ pub impl Show for AssetPath
 
 pub(all) struct AssetPlugin {
   default_sampler_nearest : Bool
+  mode : AssetMode
   file_path : String?
+  processed_file_path : String?
 }
 pub fn AssetPlugin::default() -> Self
 pub fn AssetPlugin::default_nearest() -> Self
 pub fn AssetPlugin::with_default_sampler_nearest(Self, Bool) -> Self
 pub fn AssetPlugin::with_file_path(Self, String) -> Self
+pub fn AssetPlugin::with_mode(Self, AssetMode) -> Self
+pub fn AssetPlugin::with_processed_file_path(Self, String) -> Self
 pub impl @app.PluginReplacement for AssetPlugin
 
 pub struct AssetReader {
@@ -308,10 +337,18 @@ pub fn AssetReader::read(Self, String) -> Bytes?
 pub fn AssetReader::read_directory(Self, String) -> Array[String]?
 pub fn AssetReader::read_meta(Self, String) -> Bytes?
 
+pub struct AssetSaver[T, Settings] {
+  save : (Writer, SavedAsset[T], Settings) -> Result[Unit, String]
+}
+pub fn[T, Settings] AssetSaver::new((Writer, SavedAsset[T], Settings) -> Result[Unit, String]) -> Self[T, Settings]
+
 pub struct AssetServer {
   paths : @ref.Ref[Array[String]]
   path_fingerprints : @ref.Ref[@hashmap.HashMap[String, Int]]
   typed_asset_paths : @ref.Ref[@hashmap.HashMap[String, Int]]
+  pending_processed_asset_loads : @ref.Ref[Array[PendingProcessedAssetLoad]]
+  pending_typed_asset_loads : @ref.Ref[Array[PendingTypedAssetLoad]]
+  pending_acquired_loads : @ref.Ref[Array[PendingAcquiredLoad]]
   image_paths : @ref.Ref[Array[(String, Handle[@image.Image])]]
   image_loaded_states : @ref.Ref[@hashmap.HashMap[Int, Bool]]
   pending_image_assets : @ref.Ref[@hashmap.HashMap[Int, @image.Image]]
@@ -321,11 +358,14 @@ pub struct AssetServer {
   image_usage_settings : @ref.Ref[Array[(Int, Int)]]
   gltf_mesh_asset_usages : @ref.Ref[Array[(String, RenderAssetUsages)]]
   default_sampler_nearest : @ref.Ref[Bool]
+  mode : @ref.Ref[AssetMode]
+  processed_file_path : @ref.Ref[String?]
 }
 pub fn[T] AssetServer::add(Self, T) -> Handle[T]
 pub fn[P : IntoAssetPath] AssetServer::get_handle(Self, P) -> Handle[@image.Image]?
 pub fn AssetServer::gltf_mesh_asset_usage(Self, String) -> RenderAssetUsages
 pub fn[T, P : IntoAssetPath] AssetServer::load(Self, P) -> Handle[T]
+pub fn[T, P : IntoAssetPath, G : AssetLoadGuard] AssetServer::load_acquire(Self, P, G) -> Handle[T]
 pub fn AssetServer::load_bytes(Self, String) -> Handle[Blob]
 pub fn[T, P : IntoAssetPath] AssetServer::load_direct(Self, P, Bytes) -> T
 pub fn AssetServer::load_folder(Self, String) -> Handle[LoadedFolder]
@@ -415,6 +455,21 @@ pub(all) struct ImageLoaderSettings {
 }
 pub fn ImageLoaderSettings::default() -> Self
 
+pub struct LoadContext {
+  world : @ecs.World?
+  asset_server : AssetServer
+  path : AssetPath
+}
+pub fn[T] LoadContext::add_labeled_asset(Self, String, T) -> Handle[T]
+pub fn LoadContext::asset_server(Self) -> AssetServer
+pub fn LoadContext::path(Self) -> AssetPath
+
+pub struct LoadTransformAndSave[T] {
+  extensions : Array[String]
+  process : (AssetServer, AssetPath, Bytes) -> Result[ProcessedAsset[T], String]
+}
+pub fn[T] LoadTransformAndSave::new(Array[String], (AssetServer, AssetPath, Bytes) -> Result[ProcessedAsset[T], String]) -> Self[T]
+
 pub struct LoadedFolder {
   handles : Array[Handle[@image.Image]]
 }
@@ -426,6 +481,21 @@ pub(all) enum ParseAssetPathError {
   MissingLabel
 }
 
+type PendingAcquiredLoad
+
+type PendingProcessedAssetLoad
+
+type PendingTypedAssetLoad
+
+pub struct ProcessedAsset[T] {
+  asset : T
+  saved_bytes : Bytes?
+}
+pub fn[T] ProcessedAsset::asset(Self[T]) -> T
+pub fn[T] ProcessedAsset::new(T) -> Self[T]
+pub fn[T] ProcessedAsset::saved_bytes(Self[T]) -> Bytes?
+pub fn[T] ProcessedAsset::with_saved_bytes(Self[T], Bytes) -> Self[T]
+
 pub struct RenderAssetUsages {
   bits : Int
 }
@@ -435,6 +505,27 @@ pub fn RenderAssetUsages::main_world() -> Self
 pub fn RenderAssetUsages::render_world() -> Self
 pub impl Eq for RenderAssetUsages
 pub impl Show for RenderAssetUsages
+
+pub struct SavedAsset[T] {
+  asset : T
+  labeled_assets : Array[(String, @any.Any)]
+  handle_labels : Array[(Int, String)]
+}
+pub fn[T] SavedAsset::from_asset(T) -> Self[T]
+pub fn[T] SavedAsset::get(Self[T]) -> T
+pub fn[T, U] SavedAsset::get_labeled(Self[T], String) -> Self[U]?
+pub fn[T, U] SavedAsset::label_for(Self[T], Handle[U]) -> String?
+
+pub struct SavedAssetBuilder {
+  asset_server : AssetServer
+  path : AssetPath
+  labeled_assets : Array[(String, @any.Any)]
+  handle_labels : Array[(Int, String)]
+  mut next_handle_id : Int
+}
+pub fn[T] SavedAssetBuilder::add_labeled_asset_with_new_handle(Self, String, SavedAsset[T]) -> Handle[T]
+pub fn[T] SavedAssetBuilder::build(Self, T) -> SavedAsset[T]
+pub fn SavedAssetBuilder::new(AssetServer, AssetPath) -> Self
 
 pub struct TextureAtlas {
   layout : Handle[TextureAtlasLayout]
@@ -487,6 +578,13 @@ pub fn WebAssetPlugin::default() -> Self
 pub fn WebAssetPlugin::with_silence_startup_warning(Self, Bool) -> Self
 pub impl @app.PluginReplacement for WebAssetPlugin
 
+pub struct Writer {
+  buffer : Array[Byte]
+}
+pub fn Writer::finish(Self) -> Bytes
+pub fn Writer::new() -> Self
+pub fn Writer::write_all(Self, Bytes) -> Unit
+
 // Type aliases
 pub using @image {type Image}
 
@@ -509,6 +607,10 @@ pub using @image {type ImageSamplerDescriptor}
 pub using @image {type TextureFormat}
 
 // Traits
+pub(open) trait AssetLoadGuard {
+  release(Self) -> Unit
+}
+
 pub(open) trait IntoAssetPath {
   into_asset_path(Self) -> AssetPath
 }

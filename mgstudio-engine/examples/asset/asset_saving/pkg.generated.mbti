@@ -1,0 +1,37 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/asset/asset_saving"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type Box
+pub impl @ecs.Component for Box
+
+type BoxEditingState
+pub impl @app.Resource for BoxEditingState
+
+type ManyBoxes
+
+type OneBox
+pub impl ToJson for OneBox
+pub impl @json.FromJson for OneBox
+
+type PendingLoad
+pub impl @ecs.Component for PendingLoad
+
+type SerializableManyBoxes
+pub impl ToJson for SerializableManyBoxes
+pub impl @json.FromJson for SerializableManyBoxes
+
+// Type aliases
+
+// Traits
+

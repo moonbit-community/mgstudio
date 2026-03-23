@@ -15,12 +15,20 @@
 ///|
 pub struct AssetLoader[T] {
   extensions : Array[String]
-  load : (AssetServer, AssetPath, Bytes) -> T
+  load : (LoadContext, Bytes) -> T
+}
+
+///|
+pub struct LoadContext {
+  world : @ecs.World?
+  asset_server : AssetServer
+  path : AssetPath
 }
 
 ///|
 priv struct TypedAssetLoaderEntry {
-  load : (AssetServer, AssetPath, Bytes) -> @any.Any
+  load : (LoadContext, Bytes) -> @any.Any
+  insert : (@ecs.World, Int, @any.Any) -> Unit
 }
 
 ///|
@@ -33,7 +41,47 @@ pub fn[T] AssetLoader::new(
   extensions : Array[String],
   load : (AssetServer, AssetPath, Bytes) -> T,
 ) -> AssetLoader[T] {
+  AssetLoader::{
+    extensions,
+    load: fn(context, bytes) {
+      load(context.asset_server(), context.path(), bytes)
+    },
+  }
+}
+
+///|
+pub fn[T] AssetLoader::new_with_context(
+  extensions : Array[String],
+  load : (LoadContext, Bytes) -> T,
+) -> AssetLoader[T] {
   AssetLoader::{ extensions, load }
+}
+
+///|
+fn LoadContext::new(
+  world : @ecs.World,
+  asset_server : AssetServer,
+  path : AssetPath,
+) -> LoadContext {
+  LoadContext::{ world: Some(world), asset_server, path }
+}
+
+///|
+fn LoadContext::new_detached(
+  asset_server : AssetServer,
+  path : AssetPath,
+) -> LoadContext {
+  LoadContext::{ world: None, asset_server, path }
+}
+
+///|
+pub fn LoadContext::asset_server(self : LoadContext) -> AssetServer {
+  self.asset_server
+}
+
+///|
+pub fn LoadContext::path(self : LoadContext) -> AssetPath {
+  self.path
 }
 
 ///|
@@ -43,7 +91,13 @@ fn typed_asset_loader_path_key(type_name : String, path : AssetPath) -> String {
 
 ///|
 fn[T] asset_assets_ref_mut_or_init() -> Ref[Assets[T]] {
-  let world = asset_world_or_abort()
+  asset_assets_ref_mut_or_init_in_world(asset_world_or_abort())
+}
+
+///|
+fn[T] asset_assets_ref_mut_or_init_in_world(
+  world : @ecs.World,
+) -> Ref[Assets[T]] {
   let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
   if (try! world.get_resource(key)) is None {
     world.insert_resource(key, Assets::new())
@@ -53,6 +107,27 @@ fn[T] asset_assets_ref_mut_or_init() -> Ref[Assets[T]] {
     None =>
       abort("Failed to initialize Assets resource for custom asset loading")
   }
+}
+
+///|
+pub fn[T] LoadContext::add_labeled_asset(
+  self : LoadContext,
+  label : String,
+  asset : T,
+) -> Handle[T] {
+  guard self.world is Some(world) else {
+    abort("LoadContext::add_labeled_asset requires a world-backed load context")
+  }
+  let labeled_path = self.path.with_label(Some(label))
+  let formatted_path = asset_format_path(labeled_path)
+  let canonical_path = asset_canonical_path(formatted_path)
+  let handle = asset_assets_ref_mut_or_init_in_world(world).val.add(asset)
+  self.asset_server.record_path(canonical_path)
+  let probe : Assets[T] = Assets::new()
+  let type_name = @any.of(probe).type_name()
+  let cache_key = typed_asset_loader_path_key(type_name, labeled_path)
+  self.asset_server.typed_asset_paths.val.set(cache_key, handle.id())
+  handle
 }
 
 ///|
@@ -68,11 +143,22 @@ fn[T, P : IntoAssetPath] AssetServer::load_registered_asset(
   if self.typed_asset_paths.val.get(cache_key) is Some(handle_id) {
     return Handle::new(handle_id)
   }
-  let bytes = load_asset_file_bytes(asset_canonical_path(formatted_path))
-  let value : T = self.load_direct(parsed_path, bytes)
-  let handle = self.add(value)
+  let handle = asset_assets_ref_mut_or_init().val.reserve_handle()
   self.record_path(asset_canonical_path(formatted_path))
   self.typed_asset_paths.val.set(cache_key, handle.id())
+  if asset_should_process_registered_asset(self, type_name, parsed_path) {
+    self.pending_processed_asset_loads.val.push(PendingProcessedAssetLoad::{
+      type_name,
+      handle_id: handle.id(),
+      path: parsed_path,
+    })
+  } else {
+    self.pending_typed_asset_loads.val.push(PendingTypedAssetLoad::{
+      type_name,
+      handle_id: handle.id(),
+      path: parsed_path,
+    })
+  }
   handle
 }
 
@@ -101,8 +187,28 @@ pub fn[T] register_asset_loader(
   let probe : Assets[T] = Assets::new()
   let type_name = @any.of(probe).type_name()
   typed_asset_loader_registry.val.set(type_name, TypedAssetLoaderEntry::{
-    load: fn(asset_server, path, bytes) {
-      @any.of((loader.load)(asset_server, path, bytes))
+    load: fn(context, bytes) { @any.of((loader.load)(context, bytes)) },
+    insert: fn(world, handle_id, value_any) {
+      let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
+      if (try! world.get_resource(key)) is None {
+        world.insert_resource(key, Assets::new())
+      }
+      let assets_ref = match (try! world.get_resource_ref_mut(key)) {
+        Some(value) => value
+        None =>
+          abort(
+            "Failed to initialize Assets resource for custom loader insertion",
+          )
+      }
+      let value : T = match value_any.try_to() {
+        Some(value) => value
+        None =>
+          abort(
+            "typed asset loader returned a mismatched asset value for " +
+            type_name,
+          )
+      }
+      ignore(assets_ref.val.insert(Handle::new(handle_id), value))
     },
   })
   let key : @ecs.ResourceKey[Assets[T]] = assets_resource_key()
@@ -162,7 +268,8 @@ pub fn[T, P : IntoAssetPath] AssetServer::load_direct(
 
   match typed_asset_loader_registry.val.get(type_name) {
     Some(entry) =>
-      match (entry.load)(self, parsed_path, bytes).try_to() {
+      match
+        (entry.load)(LoadContext::new_detached(self, parsed_path), bytes).try_to() {
         Some(value) => value
         None =>
           abort(
@@ -177,4 +284,27 @@ pub fn[T, P : IntoAssetPath] AssetServer::load_direct(
         "; register the loader before calling AssetServer::load_direct",
       )
   }
+}
+
+///|
+fn asset_process_pending_typed_asset_loads(
+  world : @ecs.World,
+  asset_server : AssetServer,
+) -> Unit {
+  let remaining : Array[PendingTypedAssetLoad] = []
+  for pending in asset_server.pending_typed_asset_loads.val {
+    match typed_asset_loader_registry.val.get(pending.type_name) {
+      Some(entry) => {
+        let formatted_path = asset_format_path(pending.path)
+        let bytes = load_asset_file_bytes(asset_canonical_path(formatted_path))
+        let value_any = (entry.load)(
+          LoadContext::new(world, asset_server, pending.path),
+          bytes,
+        )
+        (entry.insert)(world, pending.handle_id, value_any)
+      }
+      None => remaining.push(pending)
+    }
+  }
+  asset_server.pending_typed_asset_loads.val = remaining
 }

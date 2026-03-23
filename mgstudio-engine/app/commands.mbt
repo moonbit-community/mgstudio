@@ -269,6 +269,24 @@ pub fn[T : Resource] Commands::insert_resource(
 }
 
 ///|
+pub fn[T : Resource] Commands::remove_resource(self : Commands) -> Unit {
+  let key : @ecs.ResourceKey[T] = T::resource()
+  self.queue.push(fn(world : @ecs.World, _sequence : @core.Sequence) {
+    (try? world.remove_resource(key)) |> ignore
+  })
+}
+
+///|
+pub fn[T] Commands::remove_world_resource(
+  self : Commands,
+  key : @ecs.ResourceKey[T],
+) -> Unit {
+  self.queue.push(fn(world : @ecs.World, _sequence : @core.Sequence) {
+    (try? world.remove_resource(key)) |> ignore
+  })
+}
+
+///|
 #callsite(autofill(loc))
 pub fn[T : CommandSpawnComponents] EntityCommands::insert(
   self : EntityCommands,

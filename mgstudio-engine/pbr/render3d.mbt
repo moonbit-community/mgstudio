@@ -3233,6 +3233,55 @@ fn render3d_transform_point(
 }
 
 ///|
+fn render3d_compose_transform(
+  parent : @transform.Transform,
+  local_transform : @transform.Transform,
+) -> @transform.Transform {
+  let scaled_translation = local_transform.translation.mul(parent.scale)
+  let world_translation = parent.translation.add(
+    render3d_rotate_by_quat(scaled_translation, parent.rotation),
+  )
+  @transform.Transform::new(
+    world_translation,
+    parent.rotation.mul(local_transform.rotation).normalize(),
+    parent.scale.mul(local_transform.scale),
+  )
+}
+
+///|
+fn render3d_entity_world_transform(
+  entity : @core.Entity,
+  transform_store : @ecs.ComponentAccess[@transform.Transform],
+  parent_store : @ecs.ComponentAccess[@hierarchy.Parent],
+) -> @transform.Transform {
+  let visited : Array[@core.Entity] = []
+  let mut current = entity
+  let mut composed = match transform_store.get(entity) {
+    Some(value) => value
+    None => @transform.Transform::identity()
+  }
+  while true {
+    match parent_store.get(current) {
+      Some(parent) => {
+        let parent_entity = parent.entity()
+        if render3d_entity_in_list(parent_entity, visited) {
+          break
+        }
+        visited.push(parent_entity)
+        let parent_transform = match transform_store.get(parent_entity) {
+          Some(value) => value
+          None => @transform.Transform::identity()
+        }
+        composed = render3d_compose_transform(parent_transform, composed)
+        current = parent_entity
+      }
+      None => break
+    }
+  }
+  composed
+}
+
+///|
 fn render3d_inverse_transform_point(
   transform : @transform.Transform,
   world_point : @math.Vec3,
@@ -5652,6 +5701,7 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
   let no_indirect_drawing_store = world.component(ecs_key_no_indirect_drawing)
   let occlusion_culling_store = world.component(ecs_key_occlusion_culling)
   let transform_store = world.component(@transform.ecs_key_transform)
+  let parent_store = world.component(@hierarchy.ecs_key_parent)
   let mut visible_mesh_count = 0
   mesh_store.for_each(fn(entity, _mesh3d) {
     if view_visibility_store.get(entity) is Some(view_visibility) &&
@@ -5674,10 +5724,9 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
       Some(value) => value
       None => @sprite.RenderLayers::default()
     }
-    let camera_transform = match transform_store.get(camera_entity) {
-      Some(value) => value
-      None => @transform.Transform::identity()
-    }
+    let camera_transform = render3d_entity_world_transform(
+      camera_entity, transform_store, parent_store,
+    )
     let no_indirect_drawing = no_indirect_drawing_store.get(camera_entity)
       is Some(_)
     let camera_indirect_enabled = render3d_camera_indirect_enabled(
@@ -6092,6 +6141,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let occlusion_culling_store = world.component(ecs_key_occlusion_culling)
   let msaa_store = world.component(ecs_key_msaa)
   let transform_store = world.component(@transform.ecs_key_transform)
+  let parent_store = world.component(@hierarchy.ecs_key_parent)
   let view_visibility_store = world.component(
     @visibility.ecs_key_view_visibility,
   )
@@ -6182,10 +6232,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       Some(v) => v
       None => @sprite.RenderLayers::default()
     }
-    let transform = match transform_store.get(entity) {
-      Some(v) => v
-      None => @transform.Transform::identity()
-    }
+    let transform = render3d_entity_world_transform(
+      entity, transform_store, parent_store,
+    )
     let previous_camera_history = camera_motion_blur_history_get(entity)
     let previous_transform = match previous_camera_history {
       Some(v) => v.transform
@@ -6323,10 +6372,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       Some(v) => v
       None => @sprite.RenderLayers::default()
     }
-    let transform = match transform_store.get(entity) {
-      Some(v) => v
-      None => @transform.Transform::identity()
-    }
+    let transform = render3d_entity_world_transform(
+      entity, transform_store, parent_store,
+    )
     let previous_transform = match motion_blur_history_get(entity) {
       Some(v) => v
       None => transform

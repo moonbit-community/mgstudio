@@ -1077,6 +1077,15 @@ fn save_rgba8_png(
 }
 
 ///|
+fn save_asset_file_bytes(path : String, bytes : Bytes) -> Unit {
+  let out_path = resolve_asset_path(path)
+  ensure_parent_dir(out_path)
+  @fs.write_bytes_to_file(out_path, bytes) catch {
+    _ => ()
+  }
+}
+
+///|
 fn texture_dimensions_from_bytes(bytes : Bytes) -> (Int, Int)? {
   if png_dimensions(bytes) is Some(dims) {
     return Some(dims)

@@ -353,6 +353,8 @@ pub struct Commands {
 }
 pub fn Commands::entity(Self, @core.Entity) -> EntityCommands
 pub fn[T : Resource] Commands::insert_resource(Self, T) -> Unit
+pub fn[T : Resource] Commands::remove_resource(Self) -> Unit
+pub fn[T] Commands::remove_world_resource(Self, @ecs.ResourceKey[T]) -> Unit
 #callsite(autofill(loc))
 pub fn[T : CommandSpawnComponents] Commands::spawn(Self, T, loc~ : SourceLoc) -> @core.Entity
 #callsite(autofill(loc))
