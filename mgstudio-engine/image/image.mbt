@@ -38,6 +38,18 @@ pub fn Image::new(width : Int, height : Int, pixels : Bytes) -> Image {
 }
 
 ///|
+pub fn Image::with_format(self : Image, format : TextureFormat) -> Image {
+  Image::{
+    width: self.width,
+    height: self.height,
+    pixels: self.pixels,
+    format,
+    view_format: self.view_format,
+    kind: self.kind,
+  }
+}
+
+///|
 pub(all) enum TextureFormat {
   Rgba8Unorm
   Rgba8UnormSrgb

@@ -24,6 +24,7 @@ pub struct Image {
 pub fn Image::is_target_texture(Self) -> Bool
 pub fn Image::new(Int, Int, Bytes) -> Self
 pub fn Image::new_target_texture(Int, Int, TextureFormat, TextureFormat?) -> Self
+pub fn Image::with_format(Self, TextureFormat) -> Self
 
 pub(all) enum ImageAddressMode {
   ClampToEdge

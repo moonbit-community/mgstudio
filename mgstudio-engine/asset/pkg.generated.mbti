@@ -270,6 +270,7 @@ pub struct AssetServer {
   paths : @ref.Ref[Array[String]]
   image_paths : @ref.Ref[Array[(String, Handle[@image.Image])]]
   image_loaded_states : @ref.Ref[@hashmap.HashMap[Int, Bool]]
+  pending_image_assets : @ref.Ref[@hashmap.HashMap[Int, @image.Image]]
   image_array_layouts : @ref.Ref[Array[(Int, @image.ImageArrayLayout)]]
   image_srgb_settings : @ref.Ref[Array[(Int, Bool)]]
   image_usage_settings : @ref.Ref[Array[(Int, Int)]]

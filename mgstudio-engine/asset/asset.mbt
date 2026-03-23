@@ -108,6 +108,7 @@ pub struct AssetServer {
   paths : Ref[Array[String]]
   image_paths : Ref[Array[(String, Handle[Image])]]
   image_loaded_states : Ref[@hashmap.HashMap[Int, Bool]]
+  pending_image_assets : Ref[@hashmap.HashMap[Int, Image]]
   image_array_layouts : Ref[Array[(Int, ImageArrayLayout)]]
   image_srgb_settings : Ref[Array[(Int, Bool)]]
   image_usage_settings : Ref[Array[(Int, Int)]]
@@ -168,6 +169,7 @@ fn asset_server_standalone() -> AssetServer {
     paths: Ref::new([]),
     image_paths: Ref::new([]),
     image_loaded_states: Ref::new(@hashmap.HashMap::new()),
+    pending_image_assets: Ref::new(@hashmap.HashMap::new()),
     image_array_layouts: Ref::new([]),
     image_srgb_settings: Ref::new([]),
     image_usage_settings: Ref::new([]),
@@ -653,6 +655,34 @@ fn asset_image_usage_sanitize(usage_bits : Int) -> Int {
 }
 
 ///|
+fn image_data_texture_format(is_srgb : Bool) -> TextureFormat {
+  if is_srgb {
+    TextureFormat::Rgba8UnormSrgb
+  } else {
+    TextureFormat::Rgba8Unorm
+  }
+}
+
+///|
+fn image_from_loaded_texture_bytes(bytes : Bytes, is_srgb : Bool) -> Image? {
+  if ktx2_decode_uncompressed_3d_payload(bytes) is Some(_) {
+    return None
+  }
+  let (width, height, pixels) = if decode_texture_image(bytes) is Some(decoded) {
+    (decoded.width, decoded.height, decoded.pixels)
+  } else if texture_dimensions_from_bytes(bytes) is Some(dims) {
+    (dims.0, dims.1, source_bytes_to_rgba8(bytes, dims.0, dims.1))
+  } else {
+    (1, 1, source_bytes_to_rgba8(bytes, 1, 1))
+  }
+  Some(
+    Image::new(clamp_dim(width), clamp_dim(height), pixels).with_format(
+      image_data_texture_format(is_srgb),
+    ),
+  )
+}
+
+///|
 fn AssetServer::set_image_usage_bits(
   self : AssetServer,
   image : Handle[Image],
@@ -667,6 +697,28 @@ fn AssetServer::set_image_usage_bits(
   }
   next.push((image.id(), safe_usage_bits))
   self.image_usage_settings.val = next
+}
+
+///|
+fn AssetServer::set_pending_image_asset(
+  self : AssetServer,
+  image : Handle[Image],
+  asset : Image,
+) -> Unit {
+  self.pending_image_assets.val.set(image.id(), asset)
+}
+
+///|
+fn AssetServer::update_pending_image_asset_from_bytes(
+  self : AssetServer,
+  image : Handle[Image],
+  bytes : Bytes,
+  is_srgb : Bool,
+) -> Unit {
+  match image_from_loaded_texture_bytes(bytes, is_srgb) {
+    Some(asset) => self.set_pending_image_asset(image, asset)
+    None => self.pending_image_assets.val.remove(image.id()) |> ignore
+  }
 }
 
 ///|
@@ -1058,6 +1110,7 @@ pub fn AssetServer::load_image(
   path : String,
 ) -> Handle[Image] {
   let canonical_path = asset_canonical_path(path)
+  let bytes = load_asset_file_bytes(canonical_path)
   let id = host_asset_load_texture(
     path=canonical_path,
     nearest=self.default_sampler_nearest.val,
@@ -1069,6 +1122,7 @@ pub fn AssetServer::load_image(
   self.set_image_array_layout(handle, None)
   self.set_image_is_srgb(handle, true)
   self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
+  self.update_pending_image_asset_from_bytes(handle, bytes, true)
   handle
 }
 
@@ -1078,6 +1132,7 @@ pub fn AssetServer::load_nearest(
   path : String,
 ) -> Handle[Image] {
   let canonical_path = asset_canonical_path(path)
+  let bytes = load_asset_file_bytes(canonical_path)
   let id = host_asset_load_texture(path=canonical_path, nearest=true)
   self.record_path(canonical_path)
   let handle = Handle::new(id)
@@ -1086,6 +1141,7 @@ pub fn AssetServer::load_nearest(
   self.set_image_array_layout(handle, None)
   self.set_image_is_srgb(handle, true)
   self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
+  self.update_pending_image_asset_from_bytes(handle, bytes, true)
   handle
 }
 
@@ -1127,6 +1183,7 @@ pub fn AssetServer::load_with_settings(
   let settings = ImageLoaderSettings::default()
   configure(settings)
   let canonical_path = asset_canonical_path(path)
+  let bytes = load_asset_file_bytes(canonical_path)
   let id = host_asset_load_texture(
     path=canonical_path,
     nearest=image_sampler_is_nearest(settings.sampler),
@@ -1141,6 +1198,7 @@ pub fn AssetServer::load_with_settings(
   self.set_image_array_layout(handle, settings.array_layout)
   self.set_image_is_srgb(handle, settings.is_srgb)
   self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
+  self.update_pending_image_asset_from_bytes(handle, bytes, settings.is_srgb)
   handle
 }
 
@@ -1154,6 +1212,7 @@ pub fn AssetServer::load_texture_bytes(
   let handle = Handle::new(id)
   self.track_image_handle(handle)
   self.set_image_usage_bits(handle, IMAGE_USAGE_DEFAULT_SAMPLED)
+  self.update_pending_image_asset_from_bytes(handle, bytes, true)
   handle
 }
 
@@ -1363,6 +1422,35 @@ fn asset_update_image_event_messages(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn asset_sync_loaded_image_assets(world : @ecs.World) -> Unit {
+  guard (try! world.get_resource(asset_server_resource_key()))
+    is Some(asset_server) else {
+    return
+  }
+  let key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
+  guard (try! world.get_resource_ref_mut(key)) is Some(images_ref) else {
+    return
+  }
+
+  let synced : Array[Int] = []
+  asset_with_world(world, fn() {
+    for entry in asset_server.pending_image_assets.val.iter() {
+      let (image_id, image) = entry
+      if host_asset_is_texture_loaded(image_id) {
+        let handle : Handle[Image] = Handle::new(image_id)
+        image_asset_sync_metadata(handle, image)
+        ignore(assets_store_insert_silent(images_ref.val, handle, image))
+        synced.push(image_id)
+      }
+    }
+  })
+
+  for image_id in synced {
+    asset_server.pending_image_assets.val.remove(image_id) |> ignore
+  }
+}
+
+///|
 pub fn asset_texture_width(texture : Handle[Image]) -> Int {
   host_asset_texture_width(texture.id())
 }
@@ -1400,6 +1488,7 @@ pub fn asset_save_texture_png(texture : Handle[Image], path : String) -> Unit {
 pub fn asset_system(world : @ecs.World) -> Unit {
   asset_update_loaded_folders(world)
   asset_update_event_messages(world)
+  asset_sync_loaded_image_assets(world)
   asset_update_image_event_messages(world)
 }
 
