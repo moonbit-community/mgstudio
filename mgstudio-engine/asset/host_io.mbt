@@ -74,6 +74,11 @@ let asset_source_dir_overrides_ref : Ref[@hashmap.HashMap[String, String]] = Ref
 )
 
 ///|
+let asset_source_readers_ref : Ref[@hashmap.HashMap[String, AssetReader]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
+
+///|
 let embedded_assets_ref : Ref[@hashmap.HashMap[String, Bytes]] = Ref::new(
   @hashmap.HashMap::new(),
 )
@@ -193,6 +198,87 @@ fn set_runtime_asset_source_dir_overrides(
     next.set(entry.0, entry.1)
   }
   asset_source_dir_overrides_ref.val = next
+}
+
+///|
+fn asset_source_reader_key(source_name : String?) -> String {
+  match source_name {
+    Some(name) => name
+    None => ""
+  }
+}
+
+///|
+fn asset_source_reader_source_name(source_id : AssetSourceId) -> String? {
+  match source_id {
+    AssetSourceId::Default => None
+    AssetSourceId::Named(name) => Some(name)
+  }
+}
+
+///|
+fn default_asset_source_reader(source_id : AssetSourceId) -> AssetReader {
+  let source_name = asset_source_reader_source_name(source_id)
+  AssetReader::new(
+    fn(path) {
+      let virtual_path = compose_virtual_asset_path(source_name, path, None)
+      if embedded_asset_bytes(virtual_path) is Some(bytes) {
+        return Some(bytes)
+      }
+      if resolve_asset_input_path(virtual_path) is Some(input_path) {
+        return read_file_bytes(input_path)
+      }
+      None
+    },
+    fn(path) {
+      let virtual_path = compose_virtual_asset_path(source_name, path, None)
+      let meta_path = virtual_path + ".meta"
+      if embedded_asset_bytes(meta_path) is Some(bytes) {
+        return Some(bytes)
+      }
+      if resolve_asset_input_path(meta_path) is Some(input_path) {
+        return read_file_bytes(input_path)
+      }
+      None
+    },
+    fn(path) {
+      let virtual_path = compose_virtual_asset_path(source_name, path, None)
+      let absolute_path = resolve_asset_path(virtual_path)
+      if path_is_dir(absolute_path) {
+        Some(sorted_directory_entries(absolute_path))
+      } else {
+        None
+      }
+    },
+    fn(path) {
+      let virtual_path = compose_virtual_asset_path(source_name, path, None)
+      let absolute_path = resolve_asset_path(virtual_path)
+      path_is_dir(absolute_path)
+    },
+  )
+}
+
+///|
+fn set_runtime_asset_source_readers(
+  entries : Array[(AssetSourceId, AssetSourceBuilder)],
+) -> Unit {
+  let next = @hashmap.HashMap::new()
+  for entry in entries {
+    guard entry.1.reader_builder is Some(reader_builder) else { continue }
+    let source_id = entry.0
+    let reader = reader_builder(default_asset_source_reader(source_id))
+    next.set(
+      asset_source_reader_key(asset_source_reader_source_name(source_id)),
+      reader,
+    )
+  }
+  asset_source_readers_ref.val = next
+}
+
+///|
+fn asset_source_reader_for_path(path : String) -> AssetReader? {
+  let parsed = parse_virtual_asset_path(path)
+  asset_source_readers_ref.val.get(asset_source_reader_key(parsed.source_name))
 }
 
 ///|
@@ -377,6 +463,13 @@ fn read_file_bytes(path : String) -> Bytes? {
 
 ///|
 fn load_asset_file_bytes(path : String) -> Bytes {
+  if asset_source_reader_for_path(path) is Some(reader) {
+    let parsed = parse_virtual_asset_path(path)
+    if reader.read(parsed.relative_path) is Some(bytes) {
+      return bytes
+    }
+    return Bytes::makei(0, _ => (0).to_byte())
+  }
   if embedded_asset_bytes(path) is Some(bytes) {
     return bytes
   }
@@ -1093,6 +1186,40 @@ fn sorted_directory_entries(path : String) -> Array[String] {
 }
 
 ///|
+fn asset_path_is_directory(path : String) -> Bool {
+  if asset_source_reader_for_path(path) is Some(reader) {
+    let parsed = parse_virtual_asset_path(path)
+    return reader.is_directory(parsed.relative_path)
+  }
+  path_is_dir(resolve_asset_path(path))
+}
+
+///|
+fn asset_read_directory_entries(path : String) -> Array[String] {
+  if asset_source_reader_for_path(path) is Some(reader) {
+    let parsed = parse_virtual_asset_path(path)
+    return reader.read_directory(parsed.relative_path).unwrap_or([])
+  }
+  sorted_directory_entries(resolve_asset_path(path))
+}
+
+///|
+fn load_asset_meta_bytes(path : String) -> Bytes? {
+  if asset_source_reader_for_path(path) is Some(reader) {
+    let parsed = parse_virtual_asset_path(path)
+    return reader.read_meta(parsed.relative_path)
+  }
+  let meta_path = path + ".meta"
+  if embedded_asset_bytes(meta_path) is Some(bytes) {
+    return Some(bytes)
+  }
+  if resolve_asset_input_path(meta_path) is Some(input_path) {
+    return read_file_bytes(input_path)
+  }
+  None
+}
+
+///|
 fn folder_handles(folder_id : Int) -> Array[Int]? {
   for folder in folders_ref.val {
     if folder.id == folder_id {
@@ -1133,23 +1260,42 @@ fn folder_entry_find_by_relative(
 fn folder_collect_entries(folder : FolderRecord) -> (Array[FolderEntry], Bool) {
   let next_entries : Array[FolderEntry] = []
   let mut changed = false
-  if path_is_dir(folder.absolute_path) {
-    let entries = sorted_directory_entries(folder.absolute_path)
+  if asset_path_is_directory(folder.virtual_path) {
+    let entries = asset_read_directory_entries(folder.virtual_path)
     for entry_name in entries {
-      let absolute_entry_path = path_join(folder.absolute_path, entry_name)
-      if !path_is_file(absolute_entry_path) {
-        continue
-      }
       let child_relative = @path.Path::join(folder.relative_path, entry_name).to_string()
       let child_virtual = compose_virtual_asset_path(
         folder.source_name,
         child_relative,
         None,
       )
+      if asset_path_is_directory(child_virtual) {
+        continue
+      }
       if loader_kind_for_path(path=child_virtual) != LOADER_KIND_TEXTURE {
         continue
       }
-      if read_file_bytes(absolute_entry_path) is Some(bytes) {
+      if asset_source_reader_for_path(child_virtual) is Some(_) {
+        let bytes = load_asset_file_bytes(child_virtual)
+        if bytes.length() == 0 {
+          continue
+        }
+        let fingerprint = bytes_fingerprint(bytes)
+        if folder_entry_find_by_relative(folder.entries, child_relative)
+          is Some(previous) {
+          if previous.fingerprint == fingerprint {
+            next_entries.push(previous)
+            continue
+          }
+        }
+        let handle_id = load_texture(path=child_virtual, nearest=false)
+        next_entries.push(FolderEntry::{
+          relative_path: child_relative,
+          fingerprint,
+          handle_id,
+        })
+      } else if read_file_bytes(path_join(folder.absolute_path, entry_name))
+        is Some(bytes) {
         let fingerprint = bytes_fingerprint(bytes)
         if folder_entry_find_by_relative(folder.entries, child_relative)
           is Some(previous) {

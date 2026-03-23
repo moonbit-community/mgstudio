@@ -22,6 +22,9 @@ const DEFAULT_PLUGIN_ID_ANTI_ALIAS : String = "bevy_anti_alias::AntiAliasPlugin"
 const DEFAULT_PLUGIN_ID_SHADER : String = "mgstudio::ShaderPlugin"
 
 ///|
+const DEFAULT_PLUGIN_ID_WEB_ASSET : String = @asset.WEB_ASSET_PLUGIN_ID
+
+///|
 const DEFAULT_PLUGIN_ID_SPRITE : String = "bevy_sprite::SpritePlugin"
 
 ///|
@@ -49,6 +52,8 @@ test "default plugins: include winit plugin after window plugin" {
   inspect(builder.enabled("bevy_winit::WinitPlugin"), content="true")
   inspect(builder.contains(DEFAULT_PLUGIN_ID_SHADER), content="true")
   inspect(builder.enabled(DEFAULT_PLUGIN_ID_SHADER), content="true")
+  inspect(builder.contains(DEFAULT_PLUGIN_ID_WEB_ASSET), content="true")
+  inspect(builder.enabled(DEFAULT_PLUGIN_ID_WEB_ASSET), content="true")
   inspect(builder.contains(DEFAULT_PLUGIN_ID_ANTI_ALIAS), content="true")
   inspect(builder.enabled(DEFAULT_PLUGIN_ID_ANTI_ALIAS), content="true")
   inspect(builder.contains(DEFAULT_PLUGIN_ID_SPRITE), content="true")
@@ -56,12 +61,17 @@ test "default plugins: include winit plugin after window plugin" {
   inspect(builder.contains(DEFAULT_PLUGIN_ID_SPRITE_RENDER), content="true")
   inspect(builder.enabled(DEFAULT_PLUGIN_ID_SPRITE_RENDER), content="true")
   let shader_index = plugin_index(builder, DEFAULT_PLUGIN_ID_SHADER)
+  let web_asset_index = plugin_index(builder, DEFAULT_PLUGIN_ID_WEB_ASSET)
   let render3d_index = plugin_index(builder, DEFAULT_PLUGIN_ID_RENDER3D)
   let anti_alias_index = plugin_index(builder, DEFAULT_PLUGIN_ID_ANTI_ALIAS)
   let sprite_index = plugin_index(builder, DEFAULT_PLUGIN_ID_SPRITE)
   let sprite_render_index = plugin_index(
     builder,
     DEFAULT_PLUGIN_ID_SPRITE_RENDER,
+  )
+  inspect(
+    web_asset_index < plugin_index(builder, "bevy_asset::AssetPlugin"),
+    content="true",
   )
   inspect(shader_index < render3d_index, content="true")
   inspect(render3d_index < anti_alias_index, content="true")
@@ -164,7 +174,7 @@ test "default plugins: set(AssetPlugin::with_file_path(...)) changes asset root"
 test "default plugins: register_asset_source adds a named Bevy-style extra source" {
   let app = @asset.register_asset_source(
     @app.App::new(@ecs.World::new()),
-    "example_files",
+    @asset.AssetSourceId::Named("example_files"),
     @asset.AssetSourceBuilder::platform_default("examples/asset/files", None),
   ).add_plugin_group(fn() { DefaultPlugins::build() })
 
@@ -188,4 +198,117 @@ test "default plugins: register_asset_source adds a named Bevy-style extra sourc
   inspect(@asset.asset_is_texture_loaded(handle), content="true")
   inspect(@asset.asset_texture_width(handle), content="128")
   inspect(@asset.asset_texture_height(handle), content="96")
+}
+
+///|
+test "default plugins: register_asset_source can wrap source reader callbacks" {
+  let reads : Ref[Array[String]] = Ref::new([])
+  let metas : Ref[Array[String]] = Ref::new([])
+  let directories : Ref[Array[String]] = Ref::new([])
+  let dir_checks : Ref[Array[String]] = Ref::new([])
+
+  let app = @asset.register_asset_source(
+    @app.App::new(@ecs.World::new()),
+    @asset.AssetSourceId::Named("example_files"),
+    @asset.AssetSourceBuilder::platform_default("examples/asset/files", None).with_reader(fn(
+        base_reader,
+      ) {
+        @asset.AssetReader::new(
+          fn(path) {
+            reads.val.push(path)
+            base_reader.read(path)
+          },
+          fn(path) {
+            metas.val.push(path)
+            base_reader.read_meta(path)
+          },
+          fn(path) {
+            directories.val.push(path)
+            base_reader.read_directory(path)
+          },
+          fn(path) {
+            dir_checks.val.push(path)
+            base_reader.is_directory(path)
+          },
+        )
+      },
+    ),
+  ).add_plugin_group(fn() { DefaultPlugins::build() })
+
+  let asset_server : @asset.AssetServer = match
+    (try! app.world().get_resource(@asset.AssetServer::resource())) {
+    Some(asset_server) => asset_server
+    None => abort("missing asset server resource")
+  }
+  let image_handle : @asset.Handle[@asset.Image] = asset_server.load(
+    @asset.AssetPath::from_path("bevy_pixel_dark_with_meta.png").with_source(
+      @asset.AssetSourceId::Named("example_files"),
+    ),
+  )
+  let folder_handle = asset_server.load_folder("example_files://")
+  for _ in 0..<120 {
+    @asset.asset_system(app.world())
+    if @asset.asset_is_texture_loaded(image_handle) {
+      break
+    }
+  }
+
+  inspect(@asset.asset_is_texture_loaded(image_handle), content="true")
+  inspect(reads.val.contains("bevy_pixel_dark_with_meta.png"), content="true")
+  inspect(metas.val.contains("bevy_pixel_dark_with_meta.png"), content="true")
+  inspect(directories.val.contains(""), content="true")
+  inspect(dir_checks.val.contains(""), content="true")
+  inspect(
+    match
+      (try! app.world().get_resource(@asset.loaded_folder_assets_resource_key())) {
+      Some(loaded_folders) =>
+        match loaded_folders.get(folder_handle) {
+          Some(folder) => folder.handles.length() >= 1
+          None => false
+        }
+      None => false
+    },
+    content="true",
+  )
+}
+
+///|
+test "default plugins: register_asset_source can wrap the default source reader" {
+  let reads : Ref[Array[String]] = Ref::new([])
+
+  let app = @asset.register_asset_source(
+    @app.App::new(@ecs.World::new()),
+    @asset.AssetSourceId::Default,
+    @asset.AssetSourceBuilder::platform_default("", None).with_reader(fn(
+      base_reader,
+    ) {
+      @asset.AssetReader::new(
+        fn(path) {
+          reads.val.push(path)
+          base_reader.read(path)
+        },
+        fn(path) { base_reader.read_meta(path) },
+        fn(path) { base_reader.read_directory(path) },
+        fn(path) { base_reader.is_directory(path) },
+      )
+    }),
+  ).add_plugin_group(fn() { DefaultPlugins::build() })
+
+  let asset_server : @asset.AssetServer = match
+    (try! app.world().get_resource(@asset.AssetServer::resource())) {
+    Some(asset_server) => asset_server
+    None => abort("missing asset server resource")
+  }
+  let handle : @asset.Handle[@asset.Image] = asset_server.load(
+    "branding/icon.png",
+  )
+  for _ in 0..<120 {
+    @asset.asset_system(app.world())
+    if @asset.asset_is_texture_loaded(handle) {
+      break
+    }
+  }
+
+  inspect(@asset.asset_is_texture_loaded(handle), content="true")
+  inspect(reads.val.contains("branding/icon.png"), content="true")
 }

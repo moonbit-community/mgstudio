@@ -30,6 +30,8 @@ pub const IMAGE_USAGE_RENDER_ATTACHMENT : Int = 8
 
 pub const IMAGE_USAGE_TEXTURE_BINDING : Int = 1
 
+pub const WEB_ASSET_PLUGIN_ID : String = "bevy_asset::io::web::WebAssetPlugin"
+
 pub fn asset_add_texture_atlas_layout(TextureAtlasLayout) -> Handle[TextureAtlasLayout]
 
 pub fn[T] asset_assets_or_abort() -> Assets[T]
@@ -230,7 +232,9 @@ pub fn loaded_folder_assets_resource_key() -> @ecs.ResourceKey[Assets[LoadedFold
 
 pub fn[T] register_asset_loader(@app.App[@ecs.World], AssetLoader[T]) -> @app.App[@ecs.World]
 
-pub fn register_asset_source(@app.App[@ecs.World], String, AssetSourceBuilder) -> @app.App[@ecs.World]
+pub fn register_asset_source(@app.App[@ecs.World], AssetSourceId, AssetSourceBuilder) -> @app.App[@ecs.World]
+
+pub fn web_asset_plugin(WebAssetPlugin) -> (@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors
 
@@ -290,6 +294,18 @@ pub fn AssetPlugin::with_default_sampler_nearest(Self, Bool) -> Self
 pub fn AssetPlugin::with_file_path(Self, String) -> Self
 pub impl @app.PluginReplacement for AssetPlugin
 
+pub struct AssetReader {
+  read_fn : (String) -> Bytes?
+  read_meta_fn : (String) -> Bytes?
+  read_directory_fn : (String) -> Array[String]?
+  is_directory_fn : (String) -> Bool
+}
+pub fn AssetReader::is_directory(Self, String) -> Bool
+pub fn AssetReader::new((String) -> Bytes?, (String) -> Bytes?, (String) -> Array[String]?, (String) -> Bool) -> Self
+pub fn AssetReader::read(Self, String) -> Bytes?
+pub fn AssetReader::read_directory(Self, String) -> Array[String]?
+pub fn AssetReader::read_meta(Self, String) -> Bytes?
+
 pub struct AssetServer {
   paths : @ref.Ref[Array[String]]
   typed_asset_paths : @ref.Ref[@hashmap.HashMap[String, Int]]
@@ -322,8 +338,10 @@ pub impl @app.Resource for AssetServer
 
 pub struct AssetSourceBuilder {
   path : String
+  reader_builder : ((AssetReader) -> AssetReader)?
 }
 pub fn AssetSourceBuilder::platform_default(String, Unit?) -> Self
+pub fn AssetSourceBuilder::with_reader(Self, (AssetReader) -> AssetReader) -> Self
 
 pub(all) enum AssetSourceId {
   Default
@@ -458,6 +476,13 @@ pub struct TextureAtlasSources {
 }
 pub fn TextureAtlasSources::handle(Self, Handle[TextureAtlasLayout], Handle[@image.Image]) -> TextureAtlas?
 pub fn TextureAtlasSources::texture_index(Self, Handle[@image.Image]) -> Int?
+
+pub(all) struct WebAssetPlugin {
+  silence_startup_warning : Bool
+}
+pub fn WebAssetPlugin::default() -> Self
+pub fn WebAssetPlugin::with_silence_startup_warning(Self, Bool) -> Self
+pub impl @app.PluginReplacement for WebAssetPlugin
 
 // Type aliases
 pub using @image {type Image}

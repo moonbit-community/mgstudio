@@ -6,6 +6,7 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/ref",
+  "moonbitlang/core/encoding/utf8" @utf8,
   "Milky2018/mgstudio/ecs",
   "gmlewis/image" @gm_image,
   "gmlewis/image/color" @gm_color,
@@ -19,7 +20,12 @@ import {
 }
 
 options(
-  link: { "native": { "cc-link-flags": "-lz" } },
-  "native-stub": [ "gzip_stub.c" ],
+  link: {
+    "native": {
+      "cc-link-flags": "-lz -lcurl",
+      "stub-cc-link-flags": "-lz -lcurl",
+    },
+  },
+  "native-stub": [ "gzip_stub.c", "web_asset_stub.c" ],
   "supported-targets": "native",
 )

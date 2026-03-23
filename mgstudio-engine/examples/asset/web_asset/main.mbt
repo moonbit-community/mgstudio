@@ -18,33 +18,22 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
 ) -> Unit {
   ignore(commands.spawn_component(@sprite.Camera2d::default()))
-
-  let source = @asset.AssetSourceId::from("example_files")
-  let asset_path = @asset.AssetPath::from_path("bevy_pixel_light.png").with_source(
-    source,
-  )
-  if asset_path !=
-    @asset.asset_parse_path("example_files://bevy_pixel_light.png") {
-    abort(
-      "extra asset source path formatting drifted from Bevy-style source URL",
-    )
-  }
-
+  let url = "https://raw.githubusercontent.com/bevyengine/bevy/refs/heads/main/assets/branding/bevy_bird_dark.png"
   ignore(
     commands.spawn_component(
-      @sprite.Sprite::from_image(asset_server.get().load(asset_path)),
+      @sprite.Sprite::from_image(asset_server.get().load(url)),
     ),
   )
 }
 
 ///|
 fn main {
-  @asset.register_asset_source(
-    @app.App::new(@ecs.World::new()),
-    @asset.AssetSourceId::Named("example_files"),
-    @asset.AssetSourceBuilder::platform_default("examples/asset/files", None),
-  )
-  .add_plugins(@mgstudio.default_plugins())
+  @app.App::new(@ecs.World::new())
+  .add_plugin_group(fn() {
+    @mgstudio.DefaultPlugins::set(@asset.WebAssetPlugin::{
+      silence_startup_warning: true,
+    })
+  })
   .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
   .run()
 }

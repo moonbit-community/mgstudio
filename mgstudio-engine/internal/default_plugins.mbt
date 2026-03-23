@@ -51,6 +51,9 @@ const DEFAULT_PLUGIN_ID_TIME : String = "bevy_time::TimePlugin"
 const DEFAULT_PLUGIN_ID_ASSET : String = "bevy_asset::AssetPlugin"
 
 ///|
+const DEFAULT_PLUGIN_ID_WEB_ASSET : String = @asset.WEB_ASSET_PLUGIN_ID
+
+///|
 const DEFAULT_PLUGIN_ID_SHADER : String = @shader.SHADER_PLUGIN_ID
 
 ///|
@@ -181,6 +184,14 @@ fn default_plugins_builder(
     id=DEFAULT_PLUGIN_ID_TIME,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @time.time_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_WEB_ASSET,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @asset.web_asset_plugin(
+        @asset.WebAssetPlugin::default().with_silence_startup_warning(true),
+      )(app)
     }),
   )
   .add_named(id=DEFAULT_PLUGIN_ID_ASSET, asset_plugin)

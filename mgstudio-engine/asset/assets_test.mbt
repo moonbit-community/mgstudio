@@ -357,6 +357,31 @@ test "asset server loads embedded image assets from in-memory source" {
 }
 
 ///|
+test "web asset reader fetches remote PNG bytes" {
+  let app = asset_plugin(
+    web_asset_plugin(WebAssetPlugin::{ silence_startup_warning: true })(
+      @app.App::new(@ecs.World::new()),
+    ),
+  )
+  let url = "https://raw.githubusercontent.com/bevyengine/bevy/refs/heads/main/assets/branding/bevy_bird_dark.png"
+  let asset_server = match
+    (try! app.world().get_resource(asset_server_resource_key())) {
+    Some(server) => server
+    None => abort("missing asset server resource")
+  }
+  let handle = asset_server.load_image(url)
+  for _ in 0..<240 {
+    asset_system(app.world())
+    if host_asset_is_texture_loaded(handle.id()) {
+      break
+    }
+  }
+  inspect(host_asset_is_texture_loaded(handle.id()), content="true")
+  inspect(asset_texture_width(handle) > 1, content="true")
+  inspect(asset_texture_height(handle) > 1, content="true")
+}
+
+///|
 test "Assets<Image>::get_mut exposes in-place mutation and emits a modified event" {
   let world = @ecs.World::new()
   let key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()

@@ -128,8 +128,17 @@ pub(all) struct AssetPlugin {
 }
 
 ///|
+pub struct AssetReader {
+  read_fn : (String) -> Bytes?
+  read_meta_fn : (String) -> Bytes?
+  read_directory_fn : (String) -> Array[String]?
+  is_directory_fn : (String) -> Bool
+}
+
+///|
 pub struct AssetSourceBuilder {
   path : String
+  reader_builder : ((AssetReader) -> AssetReader)?
 }
 
 ///|
@@ -177,11 +186,57 @@ pub fn AssetPlugin::default() -> AssetPlugin {
 }
 
 ///|
+pub fn AssetReader::new(
+  read : (String) -> Bytes?,
+  read_meta : (String) -> Bytes?,
+  read_directory : (String) -> Array[String]?,
+  is_directory : (String) -> Bool,
+) -> AssetReader {
+  AssetReader::{
+    read_fn: read,
+    read_meta_fn: read_meta,
+    read_directory_fn: read_directory,
+    is_directory_fn: is_directory,
+  }
+}
+
+///|
+pub fn AssetReader::read(self : AssetReader, path : String) -> Bytes? {
+  (self.read_fn)(path)
+}
+
+///|
+pub fn AssetReader::read_meta(self : AssetReader, path : String) -> Bytes? {
+  (self.read_meta_fn)(path)
+}
+
+///|
+pub fn AssetReader::read_directory(
+  self : AssetReader,
+  path : String,
+) -> Array[String]? {
+  (self.read_directory_fn)(path)
+}
+
+///|
+pub fn AssetReader::is_directory(self : AssetReader, path : String) -> Bool {
+  (self.is_directory_fn)(path)
+}
+
+///|
 pub fn AssetSourceBuilder::platform_default(
   path : String,
   _watcher : Unit?,
 ) -> AssetSourceBuilder {
-  AssetSourceBuilder::{ path, }
+  AssetSourceBuilder::{ path, reader_builder: None }
+}
+
+///|
+pub fn AssetSourceBuilder::with_reader(
+  self : AssetSourceBuilder,
+  reader_builder : (AssetReader) -> AssetReader,
+) -> AssetSourceBuilder {
+  AssetSourceBuilder::{ path: self.path, reader_builder: Some(reader_builder) }
 }
 
 ///|
@@ -210,21 +265,21 @@ pub fn AssetPlugin::with_file_path(
 
 ///|
 fn asset_register_source_builder(
-  source_name : String,
+  source_id : AssetSourceId,
   builder : AssetSourceBuilder,
 ) -> Unit {
-  let next : Array[(String, AssetSourceBuilder)] = []
+  let next : Array[(AssetSourceId, AssetSourceBuilder)] = []
   let mut replaced = false
   for entry in asset_source_builder_registry.val {
-    if entry.0 == source_name {
-      next.push((source_name, builder))
+    if entry.0 == source_id {
+      next.push((source_id, builder))
       replaced = true
     } else {
       next.push(entry)
     }
   }
   if !replaced {
-    next.push((source_name, builder))
+    next.push((source_id, builder))
   }
   asset_source_builder_registry.val = next
 }
@@ -233,8 +288,23 @@ fn asset_register_source_builder(
 fn asset_registered_source_dir_entries() -> Array[(String, String)] {
   let entries : Array[(String, String)] = []
   for entry in asset_source_builder_registry.val {
-    if resolve_assets_dir_override(Some(entry.1.path)) is Some(resolved) {
-      entries.push((entry.0, resolved))
+    if entry.0 is AssetSourceId::Named(source_name) {
+      if resolve_assets_dir_override(Some(entry.1.path)) is Some(resolved) {
+        entries.push((source_name, resolved))
+      }
+    }
+  }
+  entries
+}
+
+///|
+fn asset_registered_source_reader_entries() -> Array[
+  (AssetSourceId, AssetSourceBuilder),
+] {
+  let entries : Array[(AssetSourceId, AssetSourceBuilder)] = []
+  for entry in asset_source_builder_registry.val {
+    if entry.1.reader_builder is Some(_) {
+      entries.push(entry)
     }
   }
   entries
@@ -243,10 +313,10 @@ fn asset_registered_source_dir_entries() -> Array[(String, String)] {
 ///|
 pub fn register_asset_source(
   app : @app.App[@ecs.World],
-  source_name : String,
+  source_id : AssetSourceId,
   builder : AssetSourceBuilder,
 ) -> @app.App[@ecs.World] {
-  asset_register_source_builder(source_name, builder)
+  asset_register_source_builder(source_id, builder)
   app
 }
 
@@ -314,8 +384,9 @@ let asset_loader_registry : Ref[@hashmap.HashMap[String, AssetLoaderEntry]] = Re
 let asset_builtin_loaders_registered : Ref[Bool] = Ref::new(false)
 
 ///|
-let asset_source_builder_registry : Ref[Array[(String, AssetSourceBuilder)]] = Ref::new([],
-)
+let asset_source_builder_registry : Ref[
+  Array[(AssetSourceId, AssetSourceBuilder)],
+] = Ref::new([])
 
 ///|
 fn[T] asset_loader_type_name(probe : Handle[T]) -> String {
@@ -786,10 +857,17 @@ fn bytes_to_text(bytes : Bytes) -> String {
 
 ///|
 fn load_optional_asset_text(path : String) -> String? {
-  if resolve_asset_input_path(path) is Some(input_path) {
-    if read_file_bytes(input_path) is Some(bytes) {
+  if path.length() >= 5 &&
+    path[path.length() - 5:path.length()].to_string() == ".meta" {
+    let base_path = path[0:path.length() - 5].to_string()
+    if load_asset_meta_bytes(base_path) is Some(bytes) {
       return Some(bytes_to_text(bytes))
     }
+    return None
+  }
+  let bytes = load_asset_file_bytes(path)
+  if bytes.length() > 0 {
+    return Some(bytes_to_text(bytes))
   }
   None
 }
@@ -1944,6 +2022,7 @@ fn asset_plugin_with_server(
   asset_register_builtin_loaders()
   set_runtime_assets_dir_override(resolve_assets_dir_override(file_path))
   set_runtime_asset_source_dir_overrides(asset_registered_source_dir_entries())
+  set_runtime_asset_source_readers(asset_registered_source_reader_entries())
   app
   .insert_resource(asset_server)
   .init_resource(fn() {
