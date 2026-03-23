@@ -113,6 +113,7 @@ pub struct AssetServer {
   image_render_asset_usages : Ref[Array[(Int, RenderAssetUsages)]]
   image_srgb_settings : Ref[Array[(Int, Bool)]]
   image_usage_settings : Ref[Array[(Int, Int)]]
+  gltf_mesh_asset_usages : Ref[Array[(String, RenderAssetUsages)]]
   default_sampler_nearest : Ref[Bool]
 }
 
@@ -123,6 +124,11 @@ pub const ASSET_PLUGIN_ID : String = "bevy_asset::AssetPlugin"
 pub(all) struct AssetPlugin {
   default_sampler_nearest : Bool
   file_path : String?
+}
+
+///|
+pub struct AssetSourceBuilder {
+  path : String
 }
 
 ///|
@@ -170,6 +176,14 @@ pub fn AssetPlugin::default() -> AssetPlugin {
 }
 
 ///|
+pub fn AssetSourceBuilder::platform_default(
+  path : String,
+  _watcher : Unit?,
+) -> AssetSourceBuilder {
+  AssetSourceBuilder::{ path, }
+}
+
+///|
 pub fn AssetPlugin::default_nearest() -> AssetPlugin {
   AssetPlugin::{ default_sampler_nearest: true, file_path: None }
 }
@@ -194,6 +208,61 @@ pub fn AssetPlugin::with_file_path(
 }
 
 ///|
+fn asset_register_source_builder(
+  source_name : String,
+  builder : AssetSourceBuilder,
+) -> Unit {
+  let next : Array[(String, AssetSourceBuilder)] = []
+  let mut replaced = false
+  for entry in asset_source_builder_registry.val {
+    if entry.0 == source_name {
+      next.push((source_name, builder))
+      replaced = true
+    } else {
+      next.push(entry)
+    }
+  }
+  if !replaced {
+    next.push((source_name, builder))
+  }
+  asset_source_builder_registry.val = next
+}
+
+///|
+fn asset_registered_source_dir_entries() -> Array[(String, String)] {
+  let entries : Array[(String, String)] = []
+  for entry in asset_source_builder_registry.val {
+    if resolve_assets_dir_override(Some(entry.1.path)) is Some(resolved) {
+      entries.push((entry.0, resolved))
+    }
+  }
+  entries
+}
+
+///|
+pub fn register_asset_source(
+  app : @app.App[@ecs.World],
+  source_name : String,
+  builder : AssetSourceBuilder,
+) -> @app.App[@ecs.World] {
+  asset_register_source_builder(source_name, builder)
+  app
+}
+
+///|
+pub fn[P : IntoAssetPath] embedded_asset(
+  app : @app.App[@ecs.World],
+  asset_path : P,
+  source_path : String,
+) -> @app.App[@ecs.World] {
+  register_embedded_asset_bytes(
+    asset_path_string(asset_path),
+    load_asset_file_bytes(source_path),
+  )
+  app
+}
+
+///|
 priv struct AssetLoaderEntry {
   load : (AssetServer, String) -> @any.Any
 }
@@ -204,6 +273,7 @@ pub(all) struct ImageLoaderSettings {
   mut is_srgb : Bool
   mut array_layout : ImageArrayLayout?
   mut asset_usage : RenderAssetUsages
+  mut load_meshes : RenderAssetUsages
 }
 
 ///|
@@ -213,6 +283,7 @@ pub fn ImageLoaderSettings::default() -> ImageLoaderSettings {
     is_srgb: true,
     array_layout: None,
     asset_usage: RenderAssetUsages::all(),
+    load_meshes: RenderAssetUsages::all(),
   }
 }
 
@@ -227,6 +298,7 @@ fn asset_server_standalone() -> AssetServer {
     image_render_asset_usages: Ref::new([]),
     image_srgb_settings: Ref::new([]),
     image_usage_settings: Ref::new([]),
+    gltf_mesh_asset_usages: Ref::new([]),
     default_sampler_nearest: Ref::new(false),
   }
 }
@@ -238,6 +310,10 @@ let asset_loader_registry : Ref[@hashmap.HashMap[String, AssetLoaderEntry]] = Re
 
 ///|
 let asset_builtin_loaders_registered : Ref[Bool] = Ref::new(false)
+
+///|
+let asset_source_builder_registry : Ref[Array[(String, AssetSourceBuilder)]] = Ref::new([],
+)
 
 ///|
 fn[T] asset_loader_type_name(probe : Handle[T]) -> String {
@@ -420,6 +496,11 @@ pub struct AssetPath {
 pub type ParsedAssetPath = AssetPath
 
 ///|
+pub(open) trait IntoAssetPath {
+  into_asset_path(self : Self) -> AssetPath
+}
+
+///|
 pub(all) enum AssetLoaderKind {
   Texture
   Wgsl
@@ -567,6 +648,48 @@ pub fn asset_format_path(parsed : AssetPath) -> String {
     Some(label) if label.length() > 0 => base + "#" + label
     _ => base
   }
+}
+
+///|
+pub fn AssetSourceId::from(name : String) -> AssetSourceId {
+  if name == "" {
+    AssetSourceId::Default
+  } else {
+    AssetSourceId::Named(name)
+  }
+}
+
+///|
+pub fn AssetPath::from_path(path : String) -> AssetPath {
+  AssetPath::{ source: AssetSourceId::Default, path, label: None }
+}
+
+///|
+pub fn AssetPath::with_source(
+  self : AssetPath,
+  source : AssetSourceId,
+) -> AssetPath {
+  AssetPath::{ source, path: self.path, label: self.label }
+}
+
+///|
+pub fn AssetPath::with_label(self : AssetPath, label : String?) -> AssetPath {
+  AssetPath::{ source: self.source, path: self.path, label }
+}
+
+///|
+pub impl IntoAssetPath for String with into_asset_path(self) {
+  asset_parse_path(self)
+}
+
+///|
+pub impl IntoAssetPath for AssetPath with into_asset_path(self) {
+  self
+}
+
+///|
+fn[P : IntoAssetPath] asset_path_string(path : P) -> String {
+  asset_format_path(path.into_asset_path())
 }
 
 ///|
@@ -909,6 +1032,35 @@ fn AssetServer::set_image_usage_bits(
 }
 
 ///|
+fn AssetServer::set_gltf_mesh_asset_usage(
+  self : AssetServer,
+  asset_path : String,
+  asset_usage : RenderAssetUsages,
+) -> Unit {
+  let next : Array[(String, RenderAssetUsages)] = []
+  for entry in self.gltf_mesh_asset_usages.val {
+    if entry.0 != asset_path {
+      next.push(entry)
+    }
+  }
+  next.push((asset_path, asset_usage))
+  self.gltf_mesh_asset_usages.val = next
+}
+
+///|
+pub fn AssetServer::gltf_mesh_asset_usage(
+  self : AssetServer,
+  asset_path : String,
+) -> RenderAssetUsages {
+  for entry in self.gltf_mesh_asset_usages.val {
+    if entry.0 == asset_path {
+      return entry.1
+    }
+  }
+  RenderAssetUsages::all()
+}
+
+///|
 fn AssetServer::set_pending_image_asset(
   self : AssetServer,
   image : Handle[Image],
@@ -1038,11 +1190,11 @@ pub fn asset_image_has_usage(image : Handle[Image], usage_bits : Int) -> Bool {
 }
 
 ///|
-pub fn AssetServer::get_handle(
+pub fn[P : IntoAssetPath] AssetServer::get_handle(
   self : AssetServer,
-  path : String,
+  path : P,
 ) -> Handle[Image]? {
-  let canonical = asset_canonical_path(path)
+  let canonical = asset_canonical_path(asset_path_string(path))
   let count = self.image_paths.val.length()
   for i in 0..<count {
     let entry = self.image_paths.val[i]
@@ -1333,21 +1485,21 @@ pub fn host_asset_save_rgba8_png(
 }
 
 ///|
-pub fn AssetServer::load_image(
+pub fn[P : IntoAssetPath] AssetServer::load_image(
   self : AssetServer,
-  path : String,
+  path : P,
 ) -> Handle[Image] {
-  let canonical_path = asset_canonical_path(path)
+  let canonical_path = asset_canonical_path(asset_path_string(path))
   let settings = self.image_loader_settings_for_path(canonical_path)
   self.load_image_with_settings(canonical_path, settings)
 }
 
 ///|
-pub fn AssetServer::load_nearest(
+pub fn[P : IntoAssetPath] AssetServer::load_nearest(
   self : AssetServer,
-  path : String,
+  path : P,
 ) -> Handle[Image] {
-  let canonical_path = asset_canonical_path(path)
+  let canonical_path = asset_canonical_path(asset_path_string(path))
   let settings = self.image_loader_settings_for_path(canonical_path)
   settings.sampler = ImageSampler::nearest()
   self.load_image_with_settings(canonical_path, settings)
@@ -1412,13 +1564,23 @@ fn AssetServer::load_image_with_settings(
 }
 
 ///|
-pub fn[T] AssetServer::load(self : AssetServer, path : String) -> Handle[T] {
+fn asset_image_handle_type_name() -> String {
+  let probe : Handle[Image] = Handle::new(0)
+  asset_loader_type_name(probe)
+}
+
+///|
+pub fn[T, P : IntoAssetPath] AssetServer::load(
+  self : AssetServer,
+  path : P,
+) -> Handle[T] {
   asset_register_builtin_loaders()
+  let formatted_path = asset_path_string(path)
   let probe : Handle[T] = Handle::new(0)
   let type_name = asset_loader_type_name(probe)
   match asset_loader_registry.val.get(type_name) {
     Some(entry) =>
-      match (entry.load)(self, path).try_to() {
+      match (entry.load)(self, formatted_path).try_to() {
         Some(handle) => handle
         None =>
           abort(
@@ -1436,18 +1598,29 @@ pub fn[T] AssetServer::load(self : AssetServer, path : String) -> Handle[T] {
 }
 
 ///|
-pub fn AssetServer::load_with_settings(
+pub fn[T, P : IntoAssetPath] AssetServer::load_with_settings(
   self : AssetServer,
-  path : String,
+  path : P,
   configure : (ImageLoaderSettings) -> Unit,
-) -> Handle[Image] {
-  let canonical_path = asset_canonical_path(path)
-  if self.get_handle(canonical_path) is Some(handle) {
-    return handle
+) -> Handle[T] {
+  let formatted_path = asset_path_string(path)
+  let probe : Handle[T] = Handle::new(0)
+  let type_name = asset_loader_type_name(probe)
+  if type_name == asset_image_handle_type_name() {
+    let canonical_path = asset_canonical_path(formatted_path)
+    if self.get_handle(canonical_path) is Some(handle) {
+      return @any.of(handle).try_to().unwrap()
+    }
+    let settings = self.image_loader_settings_for_path(canonical_path)
+    configure(settings)
+    return @any.of(self.load_image_with_settings(canonical_path, settings))
+      .try_to()
+      .unwrap()
   }
-  let settings = self.image_loader_settings_for_path(canonical_path)
+  let settings = ImageLoaderSettings::default()
   configure(settings)
-  self.load_image_with_settings(canonical_path, settings)
+  self.set_gltf_mesh_asset_usage(formatted_path, settings.load_meshes)
+  self.load(formatted_path)
 }
 
 ///|
@@ -1763,6 +1936,7 @@ fn asset_plugin_with_server(
 ) -> @app.App[@ecs.World] {
   asset_register_builtin_loaders()
   set_runtime_assets_dir_override(resolve_assets_dir_override(file_path))
+  set_runtime_asset_source_dir_overrides(asset_registered_source_dir_entries())
   app
   .insert_resource(asset_server)
   .init_resource(fn() {

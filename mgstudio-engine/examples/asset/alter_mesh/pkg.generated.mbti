@@ -1,0 +1,28 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/asset/alter_mesh"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type Left
+pub impl @ecs.Component for Left
+
+pub(all) enum Shape {
+  Cube
+  Sphere
+}
+pub fn Shape::get_model_path(Self) -> String
+pub fn Shape::mesh_asset_path(Self) -> String
+pub fn Shape::next(Self) -> Self
+pub impl @ecs.Component for Shape
+
+// Type aliases
+
+// Traits
+

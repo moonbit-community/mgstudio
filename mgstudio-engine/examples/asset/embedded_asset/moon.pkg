@@ -1,10 +1,12 @@
 import {
-  "Milky2018/mgstudio/asset",
+  "Milky2018/mgstudio",
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
-  "moonbitlang/core/ref",
+  "Milky2018/mgstudio/sprite",
 }
 
 options(
+  is_main: true,
   "supported-targets": "native",
 )

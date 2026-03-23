@@ -3,6 +3,7 @@ package "Milky2018/mgstudio/gltf"
 
 import {
   "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/ecs",
 }
 
@@ -36,6 +37,8 @@ pub fn GltfAssetLabel::to_label(Self) -> String
 
 // Type aliases
 pub type GltfLoaderRegistration = () -> Unit
+
+pub using @asset {type ImageLoaderSettings as GltfLoaderSettings}
 
 // Traits
 

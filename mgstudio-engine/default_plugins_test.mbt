@@ -159,3 +159,33 @@ test "default plugins: set(AssetPlugin::with_file_path(...)) changes asset root"
   inspect(@asset.asset_texture_width(handle), content="16")
   inspect(@asset.asset_texture_height(handle), content="12")
 }
+
+///|
+test "default plugins: register_asset_source adds a named Bevy-style extra source" {
+  let app = @asset.register_asset_source(
+    @app.App::new(@ecs.World::new()),
+    "example_files",
+    @asset.AssetSourceBuilder::platform_default("examples/asset/files", None),
+  ).add_plugin_group(fn() { DefaultPlugins::build() })
+
+  let asset_server : @asset.AssetServer = match
+    (try! app.world().get_resource(@asset.AssetServer::resource())) {
+    Some(asset_server) => asset_server
+    None => abort("missing asset server resource")
+  }
+  let handle : @asset.Handle[@asset.Image] = asset_server.load(
+    @asset.AssetPath::from_path("bevy_pixel_light.png").with_source(
+      @asset.AssetSourceId::from("example_files"),
+    ),
+  )
+  for _ in 0..<120 {
+    @asset.asset_system(app.world())
+    if @asset.asset_is_texture_loaded(handle) {
+      break
+    }
+  }
+
+  inspect(@asset.asset_is_texture_loaded(handle), content="true")
+  inspect(@asset.asset_texture_width(handle), content="128")
+  inspect(@asset.asset_texture_height(handle), content="96")
+}

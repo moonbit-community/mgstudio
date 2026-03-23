@@ -69,6 +69,16 @@ const DEFAULT_ASSETS_DIR : String = "./assets"
 let assets_dir_override_ref : Ref[String?] = Ref::new(None)
 
 ///|
+let asset_source_dir_overrides_ref : Ref[@hashmap.HashMap[String, String]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
+
+///|
+let embedded_assets_ref : Ref[@hashmap.HashMap[String, Bytes]] = Ref::new(
+  @hashmap.HashMap::new(),
+)
+
+///|
 const DEFAULT_DATA_DIR : String = "./tmp/data"
 
 ///|
@@ -175,6 +185,17 @@ fn set_runtime_assets_dir_override(path : String?) -> Unit {
 }
 
 ///|
+fn set_runtime_asset_source_dir_overrides(
+  entries : Array[(String, String)],
+) -> Unit {
+  let next = @hashmap.HashMap::new()
+  for entry in entries {
+    next.set(entry.0, entry.1)
+  }
+  asset_source_dir_overrides_ref.val = next
+}
+
+///|
 fn resolve_assets_dir_override(path : String?) -> String? {
   match path {
     Some(value) if value.trim().to_string() != "" => {
@@ -249,6 +270,22 @@ fn compose_virtual_asset_path(
 }
 
 ///|
+fn canonical_virtual_asset_path(path : String) -> String {
+  let parsed = parse_virtual_asset_path(path)
+  compose_virtual_asset_path(parsed.source_name, parsed.relative_path, None)
+}
+
+///|
+fn register_embedded_asset_bytes(path : String, bytes : Bytes) -> Unit {
+  embedded_assets_ref.val.set(canonical_virtual_asset_path(path), bytes)
+}
+
+///|
+fn embedded_asset_bytes(path : String) -> Bytes? {
+  embedded_assets_ref.val.get(canonical_virtual_asset_path(path))
+}
+
+///|
 fn source_env_suffix(source_name : String) -> String {
   let chars : Array[Char] = []
   for i in 0..<source_name.length() {
@@ -269,6 +306,9 @@ fn source_env_suffix(source_name : String) -> String {
 fn source_root_dir(source_name : String?) -> String {
   match source_name {
     Some(name) if name.length() > 0 => {
+      if asset_source_dir_overrides_ref.val.get(name) is Some(override_root) {
+        return override_root
+      }
       let env_key = "MGSTUDIO_ASSET_SOURCE_" + source_env_suffix(name) + "_DIR"
       let default_root = path_join(runtime_assets_dir(), name)
       env_or_default(env_key, default_root)
@@ -337,6 +377,9 @@ fn read_file_bytes(path : String) -> Bytes? {
 
 ///|
 fn load_asset_file_bytes(path : String) -> Bytes {
+  if embedded_asset_bytes(path) is Some(bytes) {
+    return bytes
+  }
   if resolve_asset_input_path(path) is Some(input_path) {
     if read_file_bytes(input_path) is Some(bytes) {
       return bytes

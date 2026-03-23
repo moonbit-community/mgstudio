@@ -98,7 +98,7 @@ test "image loader settings: closure-style mutation updates public fields" {
 test "asset server load_with_settings invokes configuration closure" {
   let asset_server = AssetServer::new()
   let configured = Ref::new(false)
-  let handle = asset_server.load_with_settings(
+  let handle : Handle[Image] = asset_server.load_with_settings(
     "textures/fantasy_ui_borders/panel-border-010-repeated.png",
     fn(settings) {
       configured.val = true

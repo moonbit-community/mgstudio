@@ -152,6 +152,8 @@ pub let ecs_key_texture_atlas : @ecs.ComponentKey[TextureAtlas]
 
 pub let ecs_resources : Array[String]
 
+pub fn[P : IntoAssetPath] embedded_asset(@app.App[@ecs.World], P, String) -> @app.App[@ecs.World]
+
 pub fn get_texture_atlas_store(@ecs.World) -> @ecs.ComponentAccess[TextureAtlas]
 
 pub fn host_asset_bytes_get_u32(blob_id~ : Int, index~ : Int) -> Int
@@ -220,6 +222,8 @@ pub fn host_asset_update_texture_region_mip_bytes(texture_id~ : Int, x~ : Int, y
 
 pub fn loaded_folder_assets_resource_key() -> @ecs.ResourceKey[Assets[LoadedFolder]]
 
+pub fn register_asset_source(@app.App[@ecs.World], String, AssetSourceBuilder) -> @app.App[@ecs.World]
+
 // Errors
 
 // Types and methods
@@ -254,6 +258,10 @@ pub struct AssetPath {
   path : String
   label : String?
 }
+pub fn AssetPath::from_path(String) -> Self
+pub fn AssetPath::with_label(Self, String?) -> Self
+pub fn AssetPath::with_source(Self, AssetSourceId) -> Self
+pub impl IntoAssetPath for AssetPath
 pub impl Eq for AssetPath
 pub impl Hash for AssetPath
 pub impl Show for AssetPath
@@ -277,25 +285,33 @@ pub struct AssetServer {
   image_render_asset_usages : @ref.Ref[Array[(Int, RenderAssetUsages)]]
   image_srgb_settings : @ref.Ref[Array[(Int, Bool)]]
   image_usage_settings : @ref.Ref[Array[(Int, Int)]]
+  gltf_mesh_asset_usages : @ref.Ref[Array[(String, RenderAssetUsages)]]
   default_sampler_nearest : @ref.Ref[Bool]
 }
-pub fn AssetServer::get_handle(Self, String) -> Handle[@image.Image]?
-pub fn[T] AssetServer::load(Self, String) -> Handle[T]
+pub fn[P : IntoAssetPath] AssetServer::get_handle(Self, P) -> Handle[@image.Image]?
+pub fn AssetServer::gltf_mesh_asset_usage(Self, String) -> RenderAssetUsages
+pub fn[T, P : IntoAssetPath] AssetServer::load(Self, P) -> Handle[T]
 pub fn AssetServer::load_bytes(Self, String) -> Handle[Blob]
 pub fn AssetServer::load_folder(Self, String) -> Handle[LoadedFolder]
 pub fn AssetServer::load_font(Self, String) -> Handle[Font]
-pub fn AssetServer::load_image(Self, String) -> Handle[@image.Image]
-pub fn AssetServer::load_nearest(Self, String) -> Handle[@image.Image]
+pub fn[P : IntoAssetPath] AssetServer::load_image(Self, P) -> Handle[@image.Image]
+pub fn[P : IntoAssetPath] AssetServer::load_nearest(Self, P) -> Handle[@image.Image]
 pub fn AssetServer::load_texture_bytes(Self, Bytes, Bool) -> Handle[@image.Image]
 pub fn AssetServer::load_with_registered_loader(Self, String, Bool) -> Int
-pub fn AssetServer::load_with_settings(Self, String, (ImageLoaderSettings) -> Unit) -> Handle[@image.Image]
+pub fn[T, P : IntoAssetPath] AssetServer::load_with_settings(Self, P, (ImageLoaderSettings) -> Unit) -> Handle[T]
 pub fn AssetServer::new() -> Self
 pub impl @app.Resource for AssetServer
+
+pub struct AssetSourceBuilder {
+  path : String
+}
+pub fn AssetSourceBuilder::platform_default(String, Unit?) -> Self
 
 pub(all) enum AssetSourceId {
   Default
   Named(String)
 }
+pub fn AssetSourceId::from(String) -> Self
 pub impl Eq for AssetSourceId
 pub impl Hash for AssetSourceId
 pub impl Show for AssetSourceId
@@ -356,6 +372,7 @@ pub(all) struct ImageLoaderSettings {
   mut is_srgb : Bool
   mut array_layout : @image.ImageArrayLayout?
   mut asset_usage : RenderAssetUsages
+  mut load_meshes : RenderAssetUsages
 }
 pub fn ImageLoaderSettings::default() -> Self
 
@@ -446,4 +463,8 @@ pub using @image {type ImageSamplerDescriptor}
 pub using @image {type TextureFormat}
 
 // Traits
+pub(open) trait IntoAssetPath {
+  into_asset_path(Self) -> AssetPath
+}
+pub impl IntoAssetPath for String
 

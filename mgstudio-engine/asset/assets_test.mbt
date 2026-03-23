@@ -280,12 +280,13 @@ test "asset system preserves image loader settings in stored image assets" {
 test "asset server reuses the first handle for repeated image loads" {
   let asset_server = AssetServer::new()
   let first = asset_server.load_image("branding/bevy_bird_dark.png")
-  let second = asset_server.load_with_settings("branding/bevy_bird_dark.png", fn(
-    settings,
-  ) {
-    settings.sampler = ImageSampler::nearest()
-    settings.is_srgb = false
-  })
+  let second : Handle[Image] = asset_server.load_with_settings(
+    "branding/bevy_bird_dark.png",
+    fn(settings) {
+      settings.sampler = ImageSampler::nearest()
+      settings.is_srgb = false
+    },
+  )
   inspect(first.id() == second.id(), content="true")
 }
 
@@ -323,6 +324,36 @@ test "asset system skips MAIN_WORLD image asset sync when asset usage is render-
     },
     content="true",
   )
+}
+
+///|
+test "asset server loads embedded image assets from in-memory source" {
+  let app = embedded_asset(
+    asset_plugin(@app.App::new(@ecs.World::new())),
+    AssetPath::from_path("embedded_asset/files/bevy_pixel_light.png").with_source(
+      AssetSourceId::from("embedded"),
+    ),
+    "examples/asset/files/bevy_pixel_light.png",
+  )
+  let asset_server : AssetServer = match
+    (try! app.world().get_resource(asset_server_resource_key())) {
+    Some(server) => server
+    None => abort("missing asset server resource")
+  }
+  let handle : Handle[Image] = asset_server.load(
+    asset_parse_path("embedded://embedded_asset/files/bevy_pixel_light.png"),
+  )
+
+  for _ in 0..<120 {
+    asset_system(app.world())
+    if host_asset_is_texture_loaded(handle.id()) {
+      break
+    }
+  }
+
+  inspect(host_asset_is_texture_loaded(handle.id()), content="true")
+  inspect(asset_texture_width(handle), content="128")
+  inspect(asset_texture_height(handle), content="96")
 }
 
 ///|
