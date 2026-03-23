@@ -49,10 +49,18 @@ fn setup(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  images : @app.ResMut[@asset.Assets[@asset.Image]],
 ) -> Unit {
   let mesh_assets = meshes.get_ref().val
   let material_assets = materials.get_ref().val
-  let image = @sprite_render.render2d_create_render_target_ecs(512, 512, true)
+  let image = images.get_ref().val.add(
+    @asset.Image::new_target_texture(
+      512,
+      512,
+      @asset.TextureFormat::Rgba8Unorm,
+      Some(@asset.TextureFormat::Rgba8UnormSrgb),
+    ),
+  )
   let first_pass_layer = @sprite.RenderLayers::layer(1)
   let cube_handle = mesh_assets
     |> @pbr.add_mesh(@math.Cuboid::new(4.0F, 4.0F, 4.0F))
@@ -165,7 +173,7 @@ fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
-  .add_systems(@app.Startup, @app.system(@app.system_param3(setup)))
+  .add_systems(@app.Startup, @app.system(@app.system_param4(setup)))
   .add_systems(
     @app.Update,
     @app.system(@app.system_param2(cube_rotator_system)),

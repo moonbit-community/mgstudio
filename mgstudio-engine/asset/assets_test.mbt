@@ -194,3 +194,60 @@ test "asset system forwards image load completion to ECS messages" {
   }
   inspect(found.val, content="true")
 }
+
+///|
+test "Image::new_target_texture preserves Bevy-style target texture descriptor" {
+  let image = Image::new_target_texture(
+    512,
+    512,
+    TextureFormat::Rgba8Unorm,
+    Some(TextureFormat::Rgba8UnormSrgb),
+  )
+  inspect(image.width, content="512")
+  inspect(image.height, content="512")
+  inspect(image.pixels.length(), content="0")
+  inspect(image.is_target_texture(), content="true")
+  inspect(image.format == TextureFormat::Rgba8Unorm, content="true")
+  inspect(
+    image.view_format == Some(TextureFormat::Rgba8UnormSrgb),
+    content="true",
+  )
+}
+
+///|
+test "Assets<Image>::add creates a target texture image asset" {
+  let world = @ecs.World::new()
+  let key : @ecs.ResourceKey[Assets[Image]] = assets_resource_key()
+  world.insert_resource(asset_server_resource_key(), AssetServer::new())
+  world.insert_resource(key, Assets::new())
+
+  let result = asset_with_world(world, fn() {
+    match (try! world.get_resource_ref_mut(key)) {
+      Some(images) => {
+        let handle = images.val.add(
+          Image::new_target_texture(
+            256,
+            128,
+            TextureFormat::Rgba8Unorm,
+            Some(TextureFormat::Rgba8UnormSrgb),
+          ),
+        )
+        let stored = images.val.get(handle)
+        (
+          stored.map(fn(image) { image.is_target_texture() }).unwrap_or(false),
+          stored
+          .map(fn(image) { image.width == 256 && image.height == 128 })
+          .unwrap_or(false),
+          asset_image_has_usage(handle, IMAGE_USAGE_RENDER_ATTACHMENT),
+          asset_image_has_usage(handle, IMAGE_USAGE_TEXTURE_BINDING),
+        )
+      }
+      None => (false, false, false, false)
+    }
+  })
+
+  inspect(result.0, content="true")
+  inspect(result.1, content="true")
+  inspect(result.2, content="true")
+  inspect(result.3, content="true")
+}

@@ -150,11 +150,16 @@ pub fn[T] Assets::len(self : Assets[T]) -> Int {
 
 ///|
 pub fn[T] Assets::add(self : Assets[T], value : T) -> Handle[T] {
-  let id = self.items.length()
-  self.items.push(Some(value))
-  self.alive = self.alive + 1
-  let handle = Handle::new(id)
-  self.events.push(AssetEvent::Added(handle))
+  let handle = match image_asset_try_cast(value) {
+    Some(image) => {
+      let handle = image_asset_allocate_handle(self, image)
+      let image_handle : Handle[Image] = Handle::new(handle.id())
+      image_asset_sync_metadata(image_handle, image)
+      handle
+    }
+    None => Handle::new(self.items.length())
+  }
+  ignore(assets_store_insert(self, handle, value, false))
   handle
 }
 
@@ -182,14 +187,20 @@ pub fn[T] Assets::set(self : Assets[T], handle : Handle[T], value : T) -> Bool {
     false
   } else {
     let existed = self.items[id] is Some(_)
-    self.items[id] = Some(value)
     if existed {
-      self.events.push(AssetEvent::Modified(handle))
-    } else {
-      self.alive = self.alive + 1
-      self.events.push(AssetEvent::Added(handle))
+      match self.items[id] {
+        Some(previous) =>
+          match image_asset_sync_on_set(handle, previous, value) {
+            Some(ok) => if !ok { return false }
+            None => ()
+          }
+        None => ()
+      }
+    } else if image_asset_try_cast(value) is Some(image) {
+      let image_handle : Handle[Image] = Handle::new(handle.id())
+      image_asset_sync_metadata(image_handle, image)
     }
-    true
+    assets_store_insert(self, handle, value, existed)
   }
 }
 

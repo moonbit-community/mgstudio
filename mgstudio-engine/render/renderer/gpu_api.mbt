@@ -1623,6 +1623,35 @@ pub fn create_render_target_rg16f(
 }
 
 ///|
+pub fn create_render_target_with_formats(
+  width~ : Int,
+  height~ : Int,
+  nearest~ : Bool,
+  format_raw~ : Int,
+  sample_format_raw~ : Int,
+) -> Int {
+  if ensure_backend() is Some(backend) {
+    try {
+      let sample_format = if sample_format_raw < 0 {
+        None
+      } else {
+        Some(sample_format_raw.reinterpret_as_uint())
+      }
+      return backend.create_render_target_with_formats(
+        width,
+        height,
+        nearest,
+        format_raw.reinterpret_as_uint(),
+        sample_format,
+      )
+    } catch {
+      _ => ()
+    }
+  }
+  0
+}
+
+///|
 pub fn create_point_light_shadow_target(size~ : Int) -> Int {
   if ensure_backend() is Some(backend) {
     try {

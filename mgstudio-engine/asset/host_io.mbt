@@ -1296,6 +1296,34 @@ fn create_dynamic_texture_mipped(
 }
 
 ///|
+fn create_render_target_with_formats(
+  width~ : Int,
+  height~ : Int,
+  nearest~ : Bool,
+  format_raw~ : Int,
+  sample_format_raw : Int?,
+) -> Int {
+  let safe_width = clamp_dim(width)
+  let safe_height = clamp_dim(height)
+  let sample_format = match sample_format_raw {
+    Some(raw) => raw
+    None => -1
+  }
+  let texture_id = @render.asset_create_render_target_with_formats(
+    width=safe_width,
+    height=safe_height,
+    nearest~,
+    format_raw~,
+    sample_format_raw=sample_format,
+  )
+  if texture_id <= 0 {
+    return 0
+  }
+  sync_texture_record(texture_id, safe_width, safe_height, true)
+  texture_id
+}
+
+///|
 fn update_texture_region(
   texture_id~ : Int,
   x~ : Int,

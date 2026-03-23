@@ -2024,6 +2024,23 @@ pub fn host_gpu_create_render_target_rg16f(
 }
 
 ///|
+pub fn asset_create_render_target_with_formats(
+  width~ : Int,
+  height~ : Int,
+  nearest~ : Bool,
+  format_raw~ : Int,
+  sample_format_raw~ : Int,
+) -> Int {
+  @renderer.create_render_target_with_formats(
+    width~,
+    height~,
+    nearest~,
+    format_raw~,
+    sample_format_raw~,
+  )
+}
+
+///|
 pub fn host_gpu_create_point_light_shadow_target(size~ : Int) -> Int {
   @renderer.create_point_light_shadow_target(size~)
 }

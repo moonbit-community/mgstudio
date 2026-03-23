@@ -102,6 +102,8 @@ pub fn create_render_target_rg16f(width~ : Int, height~ : Int, nearest~ : Bool) 
 
 pub fn create_render_target_rgba16f(width~ : Int, height~ : Int, nearest~ : Bool) -> Int
 
+pub fn create_render_target_with_formats(width~ : Int, height~ : Int, nearest~ : Bool, format_raw~ : Int, sample_format_raw~ : Int) -> Int
+
 pub fn create_surface(Int) -> Int
 
 pub fn debug_string(value~ : String) -> Unit
@@ -478,6 +480,7 @@ pub fn GpuBackend::create_point_light_shadow_target(Self, Int) -> Int raise GpuB
 pub fn GpuBackend::create_render_target(Self, Int, Int, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_render_target_rg16f(Self, Int, Int, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_render_target_rgba16f(Self, Int, Int, Bool) -> Int raise GpuBackendError
+pub fn GpuBackend::create_render_target_with_formats(Self, Int, Int, Bool, UInt, UInt?) -> Int raise GpuBackendError
 pub fn GpuBackend::create_surface(Self, Int) -> Unit
 pub fn GpuBackend::create_surface_binding(Self, Int, Int, Int) -> Unit
 pub fn GpuBackend::create_texture_3d_with_format(Self, Int, Int, Int, UInt, Array[Bytes]) -> Int raise GpuBackendError

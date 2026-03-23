@@ -982,12 +982,13 @@ pub fn GpuBackend::create_point_light_shadow_target(
 }
 
 ///|
-fn GpuBackend::create_render_target_with_format(
+pub fn GpuBackend::create_render_target_with_formats(
   self : GpuBackend,
   width : Int,
   height : Int,
   nearest : Bool,
   format_raw : UInt,
+  sample_format_raw : UInt?,
 ) -> Int raise GpuBackendError {
   ensure_sprite_resources(self)
   let id = alloc_id(self)
@@ -1006,13 +1007,39 @@ fn GpuBackend::create_render_target_with_format(
     @wgpu.TextureDimension::from_u32(@wgpu.TEXTURE_DIMENSION_2D),
     tf(format_raw),
   )
-  let view = tex.create_view()
+  let view = tex.create_view_u32(
+    tf(format_raw),
+    @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+    texture_view_aspect_for_format(format_raw),
+    0U,
+    1U,
+    0U,
+    1U,
+  )
+  let sample_view = match sample_format_raw {
+    Some(raw) if raw != format_raw =>
+      Some(
+        tex.create_view_u32(
+          tf(raw),
+          @wgpu.TEXTURE_VIEW_DIMENSION_2D,
+          texture_view_aspect_for_format(raw),
+          0U,
+          1U,
+          0U,
+          1U,
+        ),
+      )
+    _ => None
+  }
   let sampler = if nearest {
     self.device.create_sampler_nearest_clamp()
   } else {
     self.device.create_sampler_linear_clamp()
   }
-  let bg = create_cached_texture_bind_group(self, sampler, view)
+  let bind_group = match sample_view {
+    Some(sampled) => create_cached_texture_bind_group(self, sampler, sampled)
+    None => create_cached_texture_bind_group(self, sampler, view)
+  }
   let info = GpuTextureInfo::{
     id,
     width: w.reinterpret_as_int(),
@@ -1022,14 +1049,31 @@ fn GpuBackend::create_render_target_with_format(
     format_raw,
     texture: tex,
     view,
-    sample_view: None,
+    sample_view,
     layer_views: [],
     sampler,
-    bind_group: bg,
+    bind_group,
   }
   self.textures.push(info)
   mesh3d_material_cache_clear(self)
   id
+}
+
+///|
+fn GpuBackend::create_render_target_with_format(
+  self : GpuBackend,
+  width : Int,
+  height : Int,
+  nearest : Bool,
+  format_raw : UInt,
+) -> Int raise GpuBackendError {
+  self.create_render_target_with_formats(
+    width,
+    height,
+    nearest,
+    format_raw,
+    None,
+  )
 }
 
 ///|

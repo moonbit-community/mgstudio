@@ -1350,6 +1350,25 @@ test "renderer: rg16f render target preserves Bevy motion-vector texture format"
 }
 
 ///|
+test "renderer: render target keeps an sRGB sampled view distinct from attachment format" {
+  let backend = GpuBackend::new(assets_base="assets")
+  let target_id = backend.create_render_target_with_formats(
+    128,
+    128,
+    false,
+    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+    Some(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB),
+  )
+  let ok = match find_texture(backend, target_id) {
+    Some(texture) =>
+      texture.format_raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM &&
+      texture.sample_view is Some(_)
+    None => false
+  }
+  inspect(ok, content="true")
+}
+
+///|
 test "renderer: ui node shader loads canonical bevy ui module with anti alias define" {
   register_renderer_test_shaders()
   let with_anti_alias = load_ui_node_wgsl(true)

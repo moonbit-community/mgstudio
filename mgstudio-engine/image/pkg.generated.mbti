@@ -8,6 +8,8 @@ pub fn[T : TextureHandle] set_texture_sampler(T, ImageSampler, default_nearest? 
 
 pub fn set_texture_sampler_with_id(Int, ImageSampler, default_nearest? : Bool) -> Unit
 
+pub fn texture_format_raw(TextureFormat) -> Int
+
 // Errors
 
 // Types and methods
@@ -15,8 +17,13 @@ pub struct Image {
   width : Int
   height : Int
   pixels : Bytes
+  format : TextureFormat
+  view_format : TextureFormat?
+  kind : ImageKind
 }
+pub fn Image::is_target_texture(Self) -> Bool
 pub fn Image::new(Int, Int, Bytes) -> Self
+pub fn Image::new_target_texture(Int, Int, TextureFormat, TextureFormat?) -> Self
 
 pub(all) enum ImageAddressMode {
   ClampToEdge
@@ -53,6 +60,13 @@ pub(all) enum ImageFilterMode {
 pub fn ImageFilterMode::default() -> Self
 pub impl Eq for ImageFilterMode
 pub impl Show for ImageFilterMode
+
+pub(all) enum ImageKind {
+  Data
+  TargetTexture
+}
+pub impl Eq for ImageKind
+pub impl Show for ImageKind
 
 pub(all) enum ImageSampler {
   Default
@@ -91,6 +105,16 @@ pub fn ImageSamplerDescriptor::nearest() -> Self
 pub fn ImageSamplerDescriptor::set_address_mode(Self, ImageAddressMode) -> Self
 pub fn ImageSamplerDescriptor::set_anisotropic_filter(Self, Int) -> Self
 pub fn ImageSamplerDescriptor::set_filter(Self, ImageFilterMode) -> Self
+
+pub(all) enum TextureFormat {
+  Rgba8Unorm
+  Rgba8UnormSrgb
+  Rgba16Float
+  Rg16Float
+}
+pub fn TextureFormat::default() -> Self
+pub impl Eq for TextureFormat
+pub impl Show for TextureFormat
 
 // Type aliases
 

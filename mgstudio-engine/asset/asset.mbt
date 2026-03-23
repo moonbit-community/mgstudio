@@ -69,6 +69,12 @@ pub fn[T] Handle::from_asset_id(asset_id : AssetId[T]) -> Handle[T] {
 pub type Image = @image.Image
 
 ///|
+pub type TextureFormat = @image.TextureFormat
+
+///|
+pub type ImageKind = @image.ImageKind
+
+///|
 pub type ImageArrayLayout = @image.ImageArrayLayout
 
 ///|

@@ -20,11 +20,76 @@ pub struct Image {
   width : Int
   height : Int
   pixels : Bytes
+  format : TextureFormat
+  view_format : TextureFormat?
+  kind : ImageKind
 }
 
 ///|
 pub fn Image::new(width : Int, height : Int, pixels : Bytes) -> Image {
-  Image::{ width, height, pixels }
+  Image::{
+    width,
+    height,
+    pixels,
+    format: TextureFormat::Rgba8Unorm,
+    view_format: None,
+    kind: ImageKind::Data,
+  }
+}
+
+///|
+pub(all) enum TextureFormat {
+  Rgba8Unorm
+  Rgba8UnormSrgb
+  Rgba16Float
+  Rg16Float
+} derive(Eq, Show)
+
+///|
+pub fn TextureFormat::default() -> TextureFormat {
+  TextureFormat::Rgba8Unorm
+}
+
+///|
+pub(all) enum ImageKind {
+  Data
+  TargetTexture
+} derive(Eq, Show)
+
+///|
+pub fn Image::new_target_texture(
+  width : Int,
+  height : Int,
+  format : TextureFormat,
+  view_format : TextureFormat?,
+) -> Image {
+  Image::{
+    width,
+    height,
+    pixels: Bytes::new(0),
+    format,
+    view_format,
+    kind: ImageKind::TargetTexture,
+  }
+}
+
+///|
+pub fn Image::is_target_texture(self : Image) -> Bool {
+  self.kind == ImageKind::TargetTexture
+}
+
+///|
+pub fn texture_format_raw(format : TextureFormat) -> Int {
+  match format {
+    TextureFormat::Rgba8Unorm =>
+      @wgpu.TEXTURE_FORMAT_RGBA8_UNORM.reinterpret_as_int()
+    TextureFormat::Rgba8UnormSrgb =>
+      @wgpu.TEXTURE_FORMAT_RGBA8_UNORM_SRGB.reinterpret_as_int()
+    TextureFormat::Rgba16Float =>
+      @wgpu.TEXTURE_FORMAT_RGBA16_FLOAT.reinterpret_as_int()
+    TextureFormat::Rg16Float =>
+      @wgpu.TEXTURE_FORMAT_RG16_FLOAT.reinterpret_as_int()
+  }
 }
 
 ///|

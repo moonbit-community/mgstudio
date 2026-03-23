@@ -418,11 +418,15 @@ pub using @image {type ImageCompareFunction}
 
 pub using @image {type ImageFilterMode}
 
+pub using @image {type ImageKind}
+
 pub using @image {type ImageSampler}
 
 pub using @image {type ImageSamplerBorderColor}
 
 pub using @image {type ImageSamplerDescriptor}
+
+pub using @image {type TextureFormat}
 
 // Traits
 
