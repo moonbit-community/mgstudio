@@ -1,0 +1,32 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/asset/alter_sprite"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct Bird {
+  mut variant : BirdVariant
+}
+pub fn Bird::get_texture_path(Self) -> String
+pub fn Bird::normal() -> Self
+pub fn Bird::set_next_variant(Self) -> Unit
+pub impl @ecs.Component for Bird
+
+pub(all) enum BirdVariant {
+  Normal
+  Logo
+}
+
+type Left
+pub impl @ecs.Component for Left
+
+// Type aliases
+
+// Traits
+
