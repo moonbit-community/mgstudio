@@ -23,15 +23,12 @@ fn setup(
     .get()
     .load("textures/fantasy_ui_borders/panel-border-010.png")
 
-  let center_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
-  )
-  let left_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
-  )
-  let right_mesh = meshes.get_ref().val.add(
-    @pbr.Mesh::from_3d_geometry(@pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F)),
-  )
+  let center_mesh = meshes.get_ref().val
+    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+  let left_mesh = meshes.get_ref().val
+    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
+  let right_mesh = meshes.get_ref().val
+    |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F))
 
   let center_material = materials.get_ref().val.add(
     @pbr.StandardMaterial::default().with_base_color_texture(

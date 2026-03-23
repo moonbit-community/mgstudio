@@ -39,6 +39,10 @@ pub const VIEW_FRUSTUM_FAR_PLANE_IDX : Int = 5
 
 pub const VIEW_FRUSTUM_NEAR_PLANE_IDX : Int = 4
 
+pub fn[S : IntoPbrMaterialAsset] add_material(@asset.Assets[@material.StandardMaterial], S) -> @asset.Handle[@material.StandardMaterial]
+
+pub fn[S : IntoPbrMeshAsset] add_mesh(@asset.Assets[@mesh.Mesh], S) -> @asset.Handle[@mesh.Mesh]
+
 pub fn deferred_pbr_lighting_enabled(@ecs.World) -> Bool
 
 pub fn deferred_pbr_lighting_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
@@ -1233,4 +1237,22 @@ pub(open) trait CameraProjection3d {
   compute_frustum(Self, @transform.Transform) -> Frustum
   get_frustum_corners(Self, Float, Float) -> Array[@math.Vec3]
 }
+
+pub(open) trait IntoPbrMaterialAsset {
+  into_pbr_material_asset(Self) -> @material.StandardMaterial
+}
+pub impl IntoPbrMaterialAsset for @asset.Handle[@image.Image]
+pub impl IntoPbrMaterialAsset for @color.Color
+pub impl IntoPbrMaterialAsset for @material.StandardMaterial
+
+pub(open) trait IntoPbrMeshAsset {
+  into_pbr_mesh_asset(Self) -> @mesh.Mesh
+}
+pub impl IntoPbrMeshAsset for @math.Capsule3d
+pub impl IntoPbrMeshAsset for @math.Cuboid
+pub impl IntoPbrMeshAsset for @math.Cylinder
+pub impl IntoPbrMeshAsset for @math.Sphere
+pub impl IntoPbrMeshAsset for @math.Tetrahedron
+pub impl IntoPbrMeshAsset for @math.Triangle3d
+pub impl IntoPbrMeshAsset for @mesh.Mesh3dGeometry
 

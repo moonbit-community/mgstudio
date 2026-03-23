@@ -479,3 +479,51 @@ pub fn mesh3d_geometry_icosphere(
 ) -> Mesh3dGeometry {
   @mesh.Mesh3dGeometry::icosphere(radius, subdivisions)
 }
+
+///|
+pub(open) trait IntoPbrMeshAsset {
+  into_pbr_mesh_asset(Self) -> @mesh.Mesh
+}
+
+///|
+pub fn[S : IntoPbrMeshAsset] add_mesh(
+  assets : @asset.Assets[@mesh.Mesh],
+  value : S,
+) -> @asset.Handle[@mesh.Mesh] {
+  assets.add(value.into_pbr_mesh_asset())
+}
+
+///|
+pub impl IntoPbrMeshAsset for Mesh3dGeometry with into_pbr_mesh_asset(self) {
+  self.to_mesh()
+}
+
+///|
+pub impl IntoPbrMeshAsset for @math.Cuboid with into_pbr_mesh_asset(self) {
+  @mesh.Mesh3dGeometry::cuboid(self).to_mesh()
+}
+
+///|
+pub impl IntoPbrMeshAsset for @math.Sphere with into_pbr_mesh_asset(self) {
+  mesh3d_geometry_sphere(self.diameter() * 0.5F).to_mesh()
+}
+
+///|
+pub impl IntoPbrMeshAsset for @math.Cylinder with into_pbr_mesh_asset(self) {
+  mesh3d_geometry_cylinder(self).to_mesh()
+}
+
+///|
+pub impl IntoPbrMeshAsset for @math.Capsule3d with into_pbr_mesh_asset(self) {
+  mesh3d_geometry_capsule(self).to_mesh()
+}
+
+///|
+pub impl IntoPbrMeshAsset for @math.Triangle3d with into_pbr_mesh_asset(self) {
+  mesh3d_geometry_triangle(self).to_mesh()
+}
+
+///|
+pub impl IntoPbrMeshAsset for @math.Tetrahedron with into_pbr_mesh_asset(self) {
+  mesh3d_geometry_tetrahedron_shape(self).to_mesh()
+}

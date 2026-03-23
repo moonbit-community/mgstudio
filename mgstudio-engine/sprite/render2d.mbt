@@ -49,6 +49,9 @@ pub type BloomCompositeMode = @post_process.BloomCompositeMode
 pub type Bloom = @post_process.Bloom
 
 ///|
+pub type Hdr = @core_pipeline.Hdr
+
+///|
 pub struct RenderLayers {
   mask : Int
 }
@@ -1995,6 +1998,145 @@ pub fn mesh2d_geometry_rectangle(rectangle : Rectangle) -> Mesh2dGeometry {
 }
 
 ///|
+pub(open) trait IntoSpriteMeshAsset {
+  into_sprite_mesh_asset(Self) -> @mesh.Mesh
+}
+
+///|
+pub fn[S : IntoSpriteMeshAsset] add_mesh(
+  assets : @asset.Assets[@mesh.Mesh],
+  value : S,
+) -> @asset.Handle[@mesh.Mesh] {
+  assets.add(value.into_sprite_mesh_asset())
+}
+
+///|
+pub impl IntoSpriteMeshAsset for Mesh2dGeometry with into_sprite_mesh_asset(
+  self,
+) {
+  self.to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for Capsule2d with into_sprite_mesh_asset(self) {
+  mesh2d_geometry_capsule(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for CircularSector with into_sprite_mesh_asset(
+  self,
+) {
+  mesh2d_geometry_circular_sector(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for CircularSegment with into_sprite_mesh_asset(
+  self,
+) {
+  mesh2d_geometry_circular_segment(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for Circle with into_sprite_mesh_asset(self) {
+  mesh2d_geometry_circle(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for Ellipse with into_sprite_mesh_asset(self) {
+  mesh2d_geometry_ellipse(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for Annulus with into_sprite_mesh_asset(self) {
+  mesh2d_geometry_annulus(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for Ring2d with into_sprite_mesh_asset(self) {
+  mesh2d_geometry_ring(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for CircularSectorRing with into_sprite_mesh_asset(
+  self,
+) {
+  mesh2d_geometry_circular_sector_ring(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for CircularSegmentRing with into_sprite_mesh_asset(
+  self,
+) {
+  mesh2d_geometry_circular_segment_ring(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for EllipseRing with into_sprite_mesh_asset(self) {
+  mesh2d_geometry_ellipse_ring(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for Capsule2dRing with into_sprite_mesh_asset(self) {
+  mesh2d_geometry_capsule_ring(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for RhombusRing with into_sprite_mesh_asset(self) {
+  mesh2d_geometry_rhombus_ring(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for RectangleRing with into_sprite_mesh_asset(self) {
+  mesh2d_geometry_rectangle_ring(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for RegularPolygonRing with into_sprite_mesh_asset(
+  self,
+) {
+  mesh2d_geometry_regular_polygon_ring(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for Triangle2dRing with into_sprite_mesh_asset(
+  self,
+) {
+  mesh2d_geometry_triangle_ring(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for Rhombus with into_sprite_mesh_asset(self) {
+  mesh2d_geometry_rhombus(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for RegularPolygon with into_sprite_mesh_asset(
+  self,
+) {
+  mesh2d_geometry_regular_polygon(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for Triangle2d with into_sprite_mesh_asset(self) {
+  mesh2d_geometry_triangle(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for Segment2d with into_sprite_mesh_asset(self) {
+  mesh2d_geometry_segment(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for Polyline2d with into_sprite_mesh_asset(self) {
+  mesh2d_geometry_polyline(self).to_mesh()
+}
+
+///|
+pub impl IntoSpriteMeshAsset for Rectangle with into_sprite_mesh_asset(self) {
+  mesh2d_geometry_rectangle(self).to_mesh()
+}
+
+///|
 pub struct GpuMesh2d {
   mesh_id : Int
 }
@@ -2800,7 +2942,7 @@ priv struct TonemappingLutHandles {
 priv struct Render2dCameraPostprocessPlan {
   uses_intermediate_source : Bool
   apply_bloom_before_tonemapping : Bool
-  tonemap_source_to_target : Bool
+  tonemapping_stage_enabled : Bool
   draw_ui_overlay_after_postprocess : Bool
 }
 
@@ -2817,7 +2959,7 @@ fn render2d_camera_postprocess_plan(
   Render2dCameraPostprocessPlan::{
     uses_intermediate_source,
     apply_bloom_before_tonemapping: bloom is Some(_),
-    tonemap_source_to_target: uses_intermediate_source,
+    tonemapping_stage_enabled: tonemapping_enabled,
     draw_ui_overlay_after_postprocess: uses_intermediate_source,
   }
 }
@@ -2874,6 +3016,11 @@ fn render2d_draw_camera_tonemapping(
     blender_lut_texture_id=luts.blender.id(),
     color_grading=color_grading_uniform,
   )
+}
+
+///|
+fn render2d_draw_camera_blit(source : @asset.Handle[@asset.Image]) -> Unit {
+  @render.host_gpu_draw_blit(scene_texture_id=source.id())
 }
 
 ///|
@@ -6031,7 +6178,7 @@ test "render2d: host window bloom postprocess keeps Bevy stage ownership" {
   let plan = render2d_camera_postprocess_plan(Some(Bloom::default()), 0, None)
   let ok = plan.uses_intermediate_source &&
     plan.apply_bloom_before_tonemapping &&
-    plan.tonemap_source_to_target &&
+    !plan.tonemapping_stage_enabled &&
     plan.draw_ui_overlay_after_postprocess
   inspect(ok, content="true")
 }
@@ -6045,7 +6192,7 @@ test "render2d: host window tonemapping without bloom still leaves UI after post
   )
   let ok = plan.uses_intermediate_source &&
     !plan.apply_bloom_before_tonemapping &&
-    plan.tonemap_source_to_target &&
+    plan.tonemapping_stage_enabled &&
     plan.draw_ui_overlay_after_postprocess
   inspect(ok, content="true")
 }
@@ -6059,7 +6206,7 @@ test "render2d: color grading alone keeps host window tonemapping copy stage" {
   )
   let ok = plan.uses_intermediate_source &&
     !plan.apply_bloom_before_tonemapping &&
-    plan.tonemap_source_to_target &&
+    plan.tonemapping_stage_enabled &&
     plan.draw_ui_overlay_after_postprocess
   inspect(ok, content="true")
 }
@@ -7031,11 +7178,13 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
             camera, source, viewport_width, viewport_height,
           )
         }
-        if camera_postprocess_plan.tonemap_source_to_target {
+        if camera_postprocess_plan.tonemapping_stage_enabled {
           render2d_draw_camera_tonemapping(
             world, source, tonemapping_mode, deband_dither_enabled, color_grading,
             viewport_width, viewport_height,
           )
+        } else {
+          render2d_draw_camera_blit(source)
         }
         if camera_postprocess_plan.draw_ui_overlay_after_postprocess {
           draw_camera_items(
@@ -7423,6 +7572,7 @@ pub let render2d_set_execute : @app.SystemSet = render2d_set_render
 
 ///|
 pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  try! register_render2d_required_components(app.world())
   color_material_plugin(ColorMaterialPlugin::default())(
     app.init_resource(fn() { ClearColor::default() }),
   )
@@ -7469,6 +7619,7 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 
 ///|
 pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  try! register_render2d_required_components(app.world())
   color_material_plugin(ColorMaterialPlugin::default())(
     app.init_resource(fn() { ClearColor::default() }),
   )

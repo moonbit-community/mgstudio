@@ -65,6 +65,9 @@ pub let ecs_key_deband_dither : @ecs.ComponentKey[DebandDither] = @post_process.
 pub let ecs_key_color_grading : @ecs.ComponentKey[ColorGrading] = @post_process.ecs_key_color_grading
 
 ///|
+pub let ecs_key_hdr : @ecs.ComponentKey[Hdr] = @core_pipeline.ecs_key_hdr
+
+///|
 pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d] = @ecs.register_component(
   debug_name="render2d.mesh2d",
 )
@@ -243,6 +246,48 @@ pub impl @ecs.Component for TilemapChunk with component() {
 ///|
 pub impl @ecs.Component for TilemapChunkTileData with component() {
   ecs_key_tilemap_chunk_tile_data
+}
+
+///|
+pub fn register_render2d_required_components(
+  world : @ecs.World,
+) -> Unit raise @ecs.RequiredComponentsError {
+  world.register_required_components_with(ecs_key_camera2d, ecs_key_camera, fn() {
+    Camera::default()
+  })
+  world.register_required_components_with(
+    ecs_key_camera2d,
+    ecs_key_projection,
+    fn() { Projection::orthographic_2d() },
+  )
+  world.register_required_components_with(
+    ecs_key_camera2d,
+    @transform.ecs_key_transform,
+    fn() { @transform.Transform::identity() },
+  )
+  world.register_required_components_with(
+    ecs_key_camera2d,
+    ecs_key_render_target,
+    fn() { RenderTarget::Screen },
+  )
+  world.register_required_components_with(
+    ecs_key_camera2d,
+    ecs_key_render_layers,
+    fn() { RenderLayers::default() },
+  )
+  world.register_required_components_with(
+    ecs_key_camera2d,
+    ecs_key_tonemapping,
+    fn() { Tonemapping::None },
+  )
+  world.register_required_components_with(
+    ecs_key_camera2d,
+    ecs_key_deband_dither,
+    fn() { DebandDither::Disabled },
+  )
+  world.register_required_components_with(ecs_key_bloom, ecs_key_hdr, fn() {
+    Hdr::default()
+  })
 }
 
 ///|

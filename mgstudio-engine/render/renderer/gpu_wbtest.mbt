@@ -1104,11 +1104,12 @@ fn register_renderer_test_shaders() -> Unit {
     "shaders/bevy_sprite_render/mesh2d/mesh2d_functions.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d_types.wgsl",
     "shaders/bevy_sprite_render/mesh2d/mesh2d_vertex_output.wgsl", "shaders/bevy_sprite_render/mesh2d/mesh2d_view_bindings.wgsl",
     "shaders/bevy_sprite_render/mesh2d/mesh2d_view_types.wgsl", "shaders/bevy_post_process/bloom/bloom.wgsl",
-    "shaders/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl", "shaders/bevy_core_pipeline/tonemapping/tonemapping.wgsl",
-    "shaders/bevy_core_pipeline/tonemapping/lut_bindings.wgsl", "shaders/bevy_core_pipeline/tonemapping/tonemapping_shared.wgsl",
-    "shaders/bevy_render/color_operations.wgsl", "shaders/bevy_render/globals.wgsl",
-    "shaders/bevy_render/maths.wgsl", "shaders/bevy_render/view/view.wgsl", "shaders/bevy_ui_render/ui.wgsl",
-    "shaders/bevy_ui_render/ui_texture_slice.wgsl", "shaders/bevy_ui_render/box_shadow.wgsl",
+    "shaders/bevy_core_pipeline/fullscreen_vertex_shader/fullscreen.wgsl", "shaders/bevy_core_pipeline/blit/blit.wgsl",
+    "shaders/bevy_core_pipeline/tonemapping/tonemapping.wgsl", "shaders/bevy_core_pipeline/tonemapping/lut_bindings.wgsl",
+    "shaders/bevy_core_pipeline/tonemapping/tonemapping_shared.wgsl", "shaders/bevy_render/color_operations.wgsl",
+    "shaders/bevy_render/globals.wgsl", "shaders/bevy_render/maths.wgsl", "shaders/bevy_render/view/view.wgsl",
+    "shaders/bevy_ui_render/ui.wgsl", "shaders/bevy_ui_render/ui_texture_slice.wgsl",
+    "shaders/bevy_ui_render/box_shadow.wgsl",
   ]
   for path in paths {
     register_renderer_test_shader_source(path)
@@ -1657,6 +1658,28 @@ test "renderer: tonemapping final pipeline specializes to current final target w
     Some(_) =>
       backend.tonemapping_pipeline_cache.length() == 1 &&
       backend.bloom_upsample_final_pipeline_format is None
+    None => false
+  }
+  inspect(ok, content="true")
+}
+
+///|
+test "renderer: blit pipeline specializes to current final target for bloom-only resolve" {
+  register_renderer_test_shaders()
+  let backend = GpuBackend::new(assets_base="assets")
+  let target_id = backend.create_render_target_with_format(
+    128,
+    128,
+    false,
+    @wgpu.TEXTURE_FORMAT_RGBA8_UNORM,
+  )
+  backend.pass_state = Some(gpu_test_pass_state(target_id))
+  let ok = match
+    blit_pipeline_for_format(backend, tf(@wgpu.TEXTURE_FORMAT_RGBA8_UNORM)) {
+    Some(_) =>
+      backend.blit_pipeline is Some(_) &&
+      backend.blit_pipeline_format is Some(format) &&
+      format.raw == @wgpu.TEXTURE_FORMAT_RGBA8_UNORM
     None => false
   }
   inspect(ok, content="true")

@@ -40,3 +40,26 @@ test "material boundary re-exports material metadata APIs" {
     content="true",
   )
 }
+
+///|
+test "material boundary Assets::add accepts Color and Image handle inputs" {
+  let materials : @asset.Assets[@material.StandardMaterial] = @asset.Assets::new()
+  let expected_color = @sprite.Color::srgb(0.1F, 0.2F, 0.3F)
+  let color_handle = materials |> add(expected_color)
+  let texture : @asset.Handle[@asset.Image] = @asset.Handle::new(7)
+  let texture_handle = materials |> add(texture)
+  let ok = if materials.get(color_handle) is Some(color_material) {
+    if materials.get(texture_handle) is Some(texture_material) {
+      color_material.base_color.r == expected_color.r &&
+      color_material.base_color.g == expected_color.g &&
+      color_material.base_color.b == expected_color.b &&
+      texture_material.base_color_texture is Some(base_color_texture) &&
+      base_color_texture.id() == 7
+    } else {
+      false
+    }
+  } else {
+    false
+  }
+  inspect(ok, content="true")
+}

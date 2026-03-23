@@ -34,6 +34,11 @@ pub struct ColorMaterialAsset {
 }
 
 ///|
+pub(open) trait IntoColorMaterialAsset {
+  into_color_material_asset(Self) -> ColorMaterialAsset
+}
+
+///|
 pub fn ColorMaterialAsset::new(
   color : Color,
   alpha_mode : AlphaMode2d,
@@ -66,6 +71,26 @@ pub fn ColorMaterialAsset::from_image(
     uv_offset=@math.Vec2::new(0.0F, 0.0F),
     uv_scale=@math.Vec2::new(1.0F, 1.0F),
   )
+}
+
+///|
+pub impl IntoColorMaterialAsset for Color with into_color_material_asset(self) {
+  ColorMaterialAsset::from_color(self)
+}
+
+///|
+pub impl IntoColorMaterialAsset for @asset.Handle[@asset.Image] with into_color_material_asset(
+  self,
+) {
+  ColorMaterialAsset::from_image(self)
+}
+
+///|
+pub fn[S : IntoColorMaterialAsset] add_material(
+  assets : @asset.Assets[ColorMaterialAsset],
+  value : S,
+) -> @asset.Handle[ColorMaterialAsset] {
+  assets.add(value.into_color_material_asset())
 }
 
 ///|

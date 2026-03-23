@@ -1830,6 +1830,11 @@ pub fn host_gpu_draw_tonemapping2d(
 }
 
 ///|
+pub fn host_gpu_draw_blit(scene_texture_id~ : Int) -> Unit {
+  @renderer.draw_blit(scene_texture_id~)
+}
+
+///|
 pub fn host_gpu_draw_tonemapping3d(
   scene_texture_id~ : Int,
   exposure~ : Float,

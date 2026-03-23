@@ -44,18 +44,12 @@ fn setup_scene(
     commands.spawn(
       (
         @sprite.Mesh2d::new(
-          meshes.get_ref().val.add(
-            @sprite.mesh2d_geometry_rectangle(
-              @sprite.Rectangle::new(1000.0F, 700.0F),
-            ).to_mesh(),
-          ),
+          meshes.get_ref().val
+          |> @sprite.add_mesh(@sprite.Rectangle::new(1000.0F, 700.0F)),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
-            @sprite.ColorMaterialAsset::from_color(
-              @sprite.Color::new(0.2F, 0.2F, 0.3F, 1.0F),
-            ),
-          ),
+          materials.get_ref().val
+          |> @sprite.add_material(@sprite.Color::new(0.2F, 0.2F, 0.3F, 1.0F)),
         ),
       ),
     ),
@@ -65,16 +59,11 @@ fn setup_scene(
       (
         Player::{  },
         @sprite.Mesh2d::new(
-          meshes.get_ref().val.add(
-            @sprite.mesh2d_geometry_circle(@sprite.Circle::new(25.0F)).to_mesh(),
-          ),
+          meshes.get_ref().val |> @sprite.add_mesh(@sprite.Circle::new(25.0F)),
         ),
         @sprite.MeshMaterial2d::new(
-          materials.get_ref().val.add(
-            @sprite.ColorMaterialAsset::from_color(
-              @sprite.Color::new(6.25F, 9.4F, 9.1F, 1.0F),
-            ),
-          ),
+          materials.get_ref().val
+          |> @sprite.add_material(@sprite.Color::new(6.25F, 9.4F, 9.1F, 1.0F)),
         ),
         @transform.Transform::from_xyz(0.0F, 0.0F, 2.0F),
       ),
@@ -83,38 +72,19 @@ fn setup_scene(
 }
 
 ///|
-fn setup_instructions(
-  commands : @app.Commands,
-  asset_server : @app.Res[@asset.AssetServer],
-) -> Unit {
-  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
-
-  let root = commands.spawn(
-    (
-      @ui.UiRoot::default(),
-      @ui.Node::{
-        ..@ui.Node::default(),
-        width: @ui.Val::Percent(100.0F),
-        height: @ui.Val::Percent(100.0F),
-      },
-    ),
-  )
+fn setup_instructions(commands : @app.Commands) -> Unit {
   ignore(
     commands.spawn(
       (
-        @hierarchy.Parent::new(root),
+        @text.Text::new(
+          "Move the light with WASD.\nThe camera will smoothly track the light.",
+        ),
         @ui.Node::{
           ..@ui.Node::default(),
           position_type: @ui.PositionType::Absolute,
           left: @ui.Val::Px(12.0F),
           bottom: @ui.Val::Px(12.0F),
         },
-        @text.Text::new(
-          "Move the light with WASD.\nThe camera will smoothly track the light.",
-        ),
-        @text.TextFont::default().with_font(font).with_font_size(24.0F),
-        @text.TextColor::new(@sprite.Color::white()),
-        @text.TextLayout::new_with_justify(@text.Justify::Left),
       ),
     ),
   )
@@ -123,12 +93,7 @@ fn setup_instructions(
 ///|
 fn setup_camera(commands : @app.Commands) -> Unit {
   ignore(
-    commands.spawn(
-      @sprite.Camera2dBundle::new(
-        @sprite.Camera::default(),
-        @transform.Transform::identity(),
-      ).with_bloom(Some(@sprite.Bloom::natural())),
-    ),
+    commands.spawn((@sprite.Camera2d::default(), @sprite.Bloom::natural())),
   )
 }
 
@@ -201,10 +166,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_systems(@app.Startup, @app.system(@app.system_param3(setup_scene)))
-  .add_systems(
-    @app.Startup,
-    @app.system(@app.system_param2(setup_instructions)),
-  )
+  .add_systems(@app.Startup, @app.system(@app.system_param(setup_instructions)))
   .add_systems(@app.Startup, @app.system(@app.system_param(setup_camera)))
   .add_systems(
     @app.Update,

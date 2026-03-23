@@ -24,6 +24,11 @@ pub struct Mesh {
 }
 
 ///|
+pub(open) trait IntoMeshAsset {
+  into_mesh_asset(Self) -> Mesh
+}
+
+///|
 pub(all) enum MeshGenerateTangentsError {
   Not3dGeometry
   GeometryError(Mesh3dGenerateTangentsError)
@@ -40,6 +45,11 @@ pub fn Mesh2dGeometry::to_mesh(self : Mesh2dGeometry) -> Mesh {
 }
 
 ///|
+pub impl IntoMeshAsset for Mesh2dGeometry with into_mesh_asset(self) {
+  self.to_mesh()
+}
+
+///|
 pub fn Mesh::from_3d_geometry(geometry3d : Mesh3dGeometry) -> Mesh {
   Mesh::{ geometry: MeshGeometry::Geometry3d(geometry3d) }
 }
@@ -47,6 +57,19 @@ pub fn Mesh::from_3d_geometry(geometry3d : Mesh3dGeometry) -> Mesh {
 ///|
 pub fn Mesh3dGeometry::to_mesh(self : Mesh3dGeometry) -> Mesh {
   Mesh::from_3d_geometry(self)
+}
+
+///|
+pub impl IntoMeshAsset for Mesh3dGeometry with into_mesh_asset(self) {
+  self.to_mesh()
+}
+
+///|
+pub fn[S : IntoMeshAsset] add(
+  assets : @asset.Assets[Mesh],
+  value : S,
+) -> @asset.Handle[Mesh] {
+  assets.add(value.into_mesh_asset())
 }
 
 ///|

@@ -68,3 +68,38 @@ test "render3d: tetrahedron-shape helper builds valid geometry" {
   inspect(geometry.vertex_count(), content="12")
   inspect(geometry.triangle_count(), content="Some(4)")
 }
+
+///|
+test "render3d: Assets::add accepts common primitive authoring values" {
+  let meshes : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
+  let cuboid = meshes |> add_mesh(@math.Cuboid::new(1.0F, 2.0F, 3.0F))
+  let sphere = meshes |> add_mesh(@math.Sphere::new(0.5F))
+  let tetrahedron = meshes
+    |> add_mesh(
+      @math.Tetrahedron::new(
+        @math.Vec3::new(-1.0F, -0.67F, 0.5F),
+        @math.Vec3::new(1.0F, -0.67F, 0.5F),
+        @math.Vec3::new(0.0F, -0.67F, -1.17F),
+        @math.Vec3::new(0.0F, 1.0F, 0.0F),
+      ),
+    )
+  let ok = if meshes.get(cuboid) is Some(cuboid_mesh) {
+    if meshes.get(sphere) is Some(sphere_mesh) {
+      if meshes.get(tetrahedron) is Some(tetrahedron_mesh) {
+        cuboid_mesh.as_3d_geometry() is Some(cuboid_geometry) &&
+        cuboid_geometry.validate() is None &&
+        sphere_mesh.as_3d_geometry() is Some(sphere_geometry) &&
+        sphere_geometry.validate() is None &&
+        tetrahedron_mesh.as_3d_geometry() is Some(tetrahedron_geometry) &&
+        tetrahedron_geometry.triangle_count() == Some(4)
+      } else {
+        false
+      }
+    } else {
+      false
+    }
+  } else {
+    false
+  }
+  inspect(ok, content="true")
+}

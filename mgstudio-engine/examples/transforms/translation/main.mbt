@@ -45,16 +45,11 @@ fn setup(
     commands.spawn(
       (
         @pbr.Mesh3d::new(
-          meshes.get_ref().val.add(
-            @pbr.Mesh::from_3d_geometry(
-              @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
-            ),
-          ),
+          meshes.get_ref().val
+          |> @pbr.add_mesh(@math.Cuboid::new(1.0F, 1.0F, 1.0F)),
         ),
         @pbr.MeshMaterial3d::new(
-          materials.get_ref().val.add(
-            @pbr.StandardMaterial::from_color(@sprite.Color::white()),
-          ),
+          materials.get_ref().val |> @pbr.add_material(@sprite.Color::white()),
         ),
         @transform.Transform::from_translation(entity_spawn),
         Movable::new(entity_spawn),

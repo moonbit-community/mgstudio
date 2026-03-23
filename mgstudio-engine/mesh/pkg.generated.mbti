@@ -2,10 +2,12 @@
 package "Milky2018/mgstudio/mesh"
 
 import {
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/math",
 }
 
 // Values
+pub fn[S : IntoMeshAsset] add(@asset.Assets[Mesh], S) -> @asset.Handle[Mesh]
 
 // Errors
 
@@ -38,6 +40,7 @@ pub fn Mesh2dGeometry::triangle_count(Self) -> Int?
 pub fn Mesh2dGeometry::validate(Self) -> Mesh2dValidationError?
 pub fn Mesh2dGeometry::vertex_count(Self) -> Int
 pub fn Mesh2dGeometry::wireframe_segments(Self) -> Array[(@math.Vec2, @math.Vec2)]?
+pub impl IntoMeshAsset for Mesh2dGeometry
 
 pub(all) enum Mesh2dValidationError {
   EmptyVertices
@@ -106,6 +109,7 @@ pub fn Mesh3dGeometry::vertex_count(Self) -> Int
 pub fn Mesh3dGeometry::with_colors(Self, Array[@math.Vec4]?) -> Self
 pub fn Mesh3dGeometry::with_indices(Self, Array[Int]?) -> Self
 pub fn Mesh3dGeometry::with_topology(Self, Mesh3dPrimitiveTopology) -> Self
+pub impl IntoMeshAsset for Mesh3dGeometry
 
 pub(all) enum Mesh3dPrimitiveTopology {
   TriangleList
@@ -147,4 +151,7 @@ pub(all) enum MeshGeometry {
 // Type aliases
 
 // Traits
+pub(open) trait IntoMeshAsset {
+  into_mesh_asset(Self) -> Mesh
+}
 

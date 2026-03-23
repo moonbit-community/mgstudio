@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/color",
   "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/core_pipeline",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/input/events",
@@ -22,6 +23,10 @@ import {
 
 // Values
 pub const SPRITE_PLUGIN_ID : String = "bevy_sprite::SpritePlugin"
+
+pub fn[S : IntoColorMaterialAsset] add_material(@asset.Assets[ColorMaterialAsset], S) -> @asset.Handle[ColorMaterialAsset]
+
+pub fn[S : IntoSpriteMeshAsset] add_mesh(@asset.Assets[@mesh.Mesh], S) -> @asset.Handle[@mesh.Mesh]
 
 pub let camera_update_systems : String
 
@@ -50,6 +55,8 @@ pub let ecs_key_color_material : @ecs.ComponentKey[ColorMaterial]
 pub let ecs_key_deband_dither : @ecs.ComponentKey[@post_process.DebandDither]
 
 pub let ecs_key_gpu_mesh2d : @ecs.ComponentKey[GpuMesh2d]
+
+pub let ecs_key_hdr : @ecs.ComponentKey[@core_pipeline.Hdr]
 
 pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d]
 
@@ -192,6 +199,8 @@ pub fn mesh_assets_mut_or_abort() -> @ref.Ref[@asset.Assets[@mesh.Mesh]]
 pub fn mesh_assets_or_abort() -> @asset.Assets[@mesh.Mesh]
 
 pub fn pan_camera_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn register_render2d_required_components(@ecs.World) -> Unit raise @ecs.RequiredComponentsError
 
 pub fn render2d_camera_system(@ecs.World) -> Unit
 
@@ -1011,6 +1020,8 @@ pub using @math {type Ellipse}
 
 pub using @math {type EllipseRing}
 
+pub using @core_pipeline {type Hdr}
+
 pub using @math {type Line2d}
 
 pub using @mesh {type Mesh}
@@ -1046,6 +1057,38 @@ pub using @math {type Triangle2d}
 pub using @math {type Triangle2dRing}
 
 // Traits
+pub(open) trait IntoColorMaterialAsset {
+  into_color_material_asset(Self) -> ColorMaterialAsset
+}
+pub impl IntoColorMaterialAsset for @asset.Handle[@image.Image]
+pub impl IntoColorMaterialAsset for @color.Color
+
+pub(open) trait IntoSpriteMeshAsset {
+  into_sprite_mesh_asset(Self) -> @mesh.Mesh
+}
+pub impl IntoSpriteMeshAsset for @math.Annulus
+pub impl IntoSpriteMeshAsset for @math.Capsule2d
+pub impl IntoSpriteMeshAsset for @math.Capsule2dRing
+pub impl IntoSpriteMeshAsset for @math.Circle
+pub impl IntoSpriteMeshAsset for @math.CircularSector
+pub impl IntoSpriteMeshAsset for @math.CircularSectorRing
+pub impl IntoSpriteMeshAsset for @math.CircularSegment
+pub impl IntoSpriteMeshAsset for @math.CircularSegmentRing
+pub impl IntoSpriteMeshAsset for @math.Ellipse
+pub impl IntoSpriteMeshAsset for @math.EllipseRing
+pub impl IntoSpriteMeshAsset for @math.Polyline2d
+pub impl IntoSpriteMeshAsset for @math.Rectangle
+pub impl IntoSpriteMeshAsset for @math.RectangleRing
+pub impl IntoSpriteMeshAsset for @math.RegularPolygon
+pub impl IntoSpriteMeshAsset for @math.RegularPolygonRing
+pub impl IntoSpriteMeshAsset for @math.Rhombus
+pub impl IntoSpriteMeshAsset for @math.RhombusRing
+pub impl IntoSpriteMeshAsset for @math.Ring2d
+pub impl IntoSpriteMeshAsset for @math.Segment2d
+pub impl IntoSpriteMeshAsset for @math.Triangle2d
+pub impl IntoSpriteMeshAsset for @math.Triangle2dRing
+pub impl IntoSpriteMeshAsset for @mesh.Mesh2dGeometry
+
 pub(open) trait Material2d {
   alpha_mode(Self) -> AlphaMode2d
   bind_group(Self) -> Material2dBindGroup

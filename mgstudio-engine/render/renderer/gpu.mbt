@@ -601,6 +601,11 @@ pub struct GpuBackend {
   mut effect_stack_chromatic_settings_buf : @wgpu.Buffer?
   mut effect_stack_vignette_settings_buf : @wgpu.Buffer?
   mut effect_stack_default_lut_texture_id : Int
+  mut blit_bgl : @wgpu.BindGroupLayout?
+  mut blit_pipeline_layout : @wgpu.PipelineLayout?
+  mut blit_pipeline : @wgpu.RenderPipeline?
+  mut blit_pipeline_format : @wgpu.TextureFormat?
+  mut blit_sampler : @wgpu.Sampler?
   mut fxaa_bgl : @wgpu.BindGroupLayout?
   mut fxaa_pipeline_layout : @wgpu.PipelineLayout?
   mut fxaa_pipeline : @wgpu.RenderPipeline?
@@ -1023,6 +1028,11 @@ pub fn GpuBackend::new(
     effect_stack_chromatic_settings_buf: None,
     effect_stack_vignette_settings_buf: None,
     effect_stack_default_lut_texture_id: -1,
+    blit_bgl: None,
+    blit_pipeline_layout: None,
+    blit_pipeline: None,
+    blit_pipeline_format: None,
+    blit_sampler: None,
     fxaa_bgl: None,
     fxaa_pipeline_layout: None,
     fxaa_pipeline: None,

@@ -363,6 +363,57 @@ test "render2d: bloom component shares post_process ownership" {
 }
 
 ///|
+test "render2d: required components align Camera2d and Bloom with Bevy camera authoring" {
+  let world = @ecs.World::new()
+  try! register_render2d_required_components(world)
+  let entity = world.spawn_empty()
+
+  try! (world.set(entity, ecs_key_camera2d, Camera2d::default()) |> ignore)
+  try! (world.set(entity, ecs_key_bloom, Bloom::natural()) |> ignore)
+
+  inspect(
+    ecs_has_non_null_payload(world, entity, ecs_key_camera),
+    content="true",
+  )
+  inspect(
+    ecs_has_non_null_payload(world, entity, ecs_key_projection),
+    content="true",
+  )
+  inspect(
+    ecs_has_non_null_payload(world, entity, @transform.ecs_key_transform),
+    content="true",
+  )
+  inspect(
+    ecs_has_non_null_payload(world, entity, ecs_key_render_target),
+    content="true",
+  )
+  inspect(
+    ecs_has_non_null_payload(world, entity, ecs_key_render_layers),
+    content="true",
+  )
+  inspect(
+    ecs_has_non_null_payload(world, entity, ecs_key_tonemapping),
+    content="true",
+  )
+  inspect(
+    ecs_has_non_null_payload(world, entity, ecs_key_deband_dither),
+    content="true",
+  )
+  inspect(ecs_has_non_null_payload(world, entity, ecs_key_hdr), content="true")
+
+  let tonemapping_ok = match (try! world.get(entity, ecs_key_tonemapping)) {
+    Some(None) => true
+    _ => false
+  }
+  let target_ok = match (try! world.get(entity, ecs_key_render_target)) {
+    Some(Screen) => true
+    _ => false
+  }
+  inspect(tonemapping_ok, content="true")
+  inspect(target_ok, content="true")
+}
+
+///|
 test "render2d: Camera2dBundle::new_with_target stores window render target" {
   let world = @ecs.World::new()
   let target_window = @core.Entity::new(7, 2)

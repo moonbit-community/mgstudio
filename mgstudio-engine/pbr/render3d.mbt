@@ -33,6 +33,40 @@ pub type DefaultOpaqueRendererMethod = @material.DefaultOpaqueRendererMethod
 pub type StandardMaterial = @material.StandardMaterial
 
 ///|
+pub(open) trait IntoPbrMaterialAsset {
+  into_pbr_material_asset(Self) -> StandardMaterial
+}
+
+///|
+pub fn[S : IntoPbrMaterialAsset] add_material(
+  assets : @asset.Assets[StandardMaterial],
+  value : S,
+) -> @asset.Handle[StandardMaterial] {
+  assets.add(value.into_pbr_material_asset())
+}
+
+///|
+pub impl IntoPbrMaterialAsset for StandardMaterial with into_pbr_material_asset(
+  self,
+) {
+  self
+}
+
+///|
+pub impl IntoPbrMaterialAsset for @sprite.Color with into_pbr_material_asset(
+  self,
+) {
+  @material.StandardMaterial::from_color(self)
+}
+
+///|
+pub impl IntoPbrMaterialAsset for @asset.Handle[@asset.Image] with into_pbr_material_asset(
+  self,
+) {
+  @material.StandardMaterial::default().with_base_color_texture(Some(self))
+}
+
+///|
 pub type ExtendedMaterialMetadata3d = @material.ExtendedMaterialMetadata3d
 
 ///|

@@ -176,6 +176,11 @@ pub struct StandardMaterial {
 }
 
 ///|
+pub(open) trait IntoStandardMaterialAsset {
+  into_standard_material_asset(Self) -> StandardMaterial
+}
+
+///|
 pub fn StandardMaterial::default() -> StandardMaterial {
   StandardMaterial::{
     base_color: @sprite.Color::white(),
@@ -259,6 +264,28 @@ pub fn StandardMaterial::from_color(color : @sprite.Color) -> StandardMaterial {
     unlit: default_value.unlit,
     cull_mode: default_value.cull_mode,
   }
+}
+
+///|
+pub impl IntoStandardMaterialAsset for @sprite.Color with into_standard_material_asset(
+  self,
+) {
+  StandardMaterial::from_color(self)
+}
+
+///|
+pub impl IntoStandardMaterialAsset for @asset.Handle[@asset.Image] with into_standard_material_asset(
+  self,
+) {
+  StandardMaterial::default().with_base_color_texture(Some(self))
+}
+
+///|
+pub fn[S : IntoStandardMaterialAsset] add(
+  assets : @asset.Assets[StandardMaterial],
+  value : S,
+) -> @asset.Handle[StandardMaterial] {
+  assets.add(value.into_standard_material_asset())
 }
 
 ///|

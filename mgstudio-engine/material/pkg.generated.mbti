@@ -11,6 +11,8 @@ import {
 }
 
 // Values
+pub fn[S : IntoStandardMaterialAsset] add(@asset.Assets[StandardMaterial], S) -> @asset.Handle[StandardMaterial]
+
 pub let ecs_key_default_opaque_renderer_method : @ecs.ResourceKey[DefaultOpaqueRendererMethod]
 
 pub let ecs_key_forward_decal_material_ext : @ecs.ComponentKey[ForwardDecalMaterialExt]
@@ -203,4 +205,9 @@ pub fn StandardMaterial::with_uv_transform(Self, @transform.Affine2) -> Self
 // Type aliases
 
 // Traits
+pub(open) trait IntoStandardMaterialAsset {
+  into_standard_material_asset(Self) -> StandardMaterial
+}
+pub impl IntoStandardMaterialAsset for @asset.Handle[@image.Image]
+pub impl IntoStandardMaterialAsset for @color.Color
 

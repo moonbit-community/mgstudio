@@ -72,9 +72,11 @@ fn spawn_shape(
   position : @math.Vec2,
   color : @sprite.Color,
 ) -> Unit {
-  let mesh = @sprite.Mesh2d::new(meshes.get_ref().val.add(geometry.to_mesh()))
+  let mesh = @sprite.Mesh2d::new(
+    meshes.get_ref().val |> @sprite.add_mesh(geometry),
+  )
   let material = @sprite.MeshMaterial2d::new(
-    materials.get_ref().val.add(@sprite.ColorMaterialAsset::from_color(color)),
+    materials.get_ref().val |> @sprite.add_material(color),
   )
   let transform = @transform.Transform::from_xy_rotation_scale(
     position,

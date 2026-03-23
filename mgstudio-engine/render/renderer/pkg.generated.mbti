@@ -108,6 +108,8 @@ pub fn debug_string(value~ : String) -> Unit
 
 pub fn downsample_mesh3d_depth_pyramid(camera_key_hi~ : Int, camera_key_lo~ : Int) -> Unit
 
+pub fn draw_blit(scene_texture_id~ : Int) -> Unit
+
 pub fn draw_effect_stack(scene_texture_id~ : Int, chromatic_aberration_intensity~ : Float, chromatic_aberration_max_samples~ : Int, vignette_intensity~ : Float, vignette_radius~ : Float, vignette_smoothness~ : Float, vignette_roundness~ : Float, vignette_center_x~ : Float, vignette_center_y~ : Float, vignette_edge_compensation~ : Float, vignette_color_r~ : Float, vignette_color_g~ : Float, vignette_color_b~ : Float, vignette_color_a~ : Float, view_width~ : Int, view_height~ : Int) -> Unit
 
 pub fn draw_fxaa(scene_texture_id~ : Int, fxaa_enabled~ : Int, fxaa_edge_threshold_mode~ : Int, fxaa_edge_threshold_min_mode~ : Int, view_width~ : Int, view_height~ : Int) -> Unit
@@ -385,6 +387,11 @@ pub struct GpuBackend {
   mut effect_stack_chromatic_settings_buf : @wgpu_mbt.Buffer?
   mut effect_stack_vignette_settings_buf : @wgpu_mbt.Buffer?
   mut effect_stack_default_lut_texture_id : Int
+  mut blit_bgl : @wgpu_mbt.BindGroupLayout?
+  mut blit_pipeline_layout : @wgpu_mbt.PipelineLayout?
+  mut blit_pipeline : @wgpu_mbt.RenderPipeline?
+  mut blit_pipeline_format : @wgpu_mbt.TextureFormat?
+  mut blit_sampler : @wgpu_mbt.Sampler?
   mut fxaa_bgl : @wgpu_mbt.BindGroupLayout?
   mut fxaa_pipeline_layout : @wgpu_mbt.PipelineLayout?
   mut fxaa_pipeline : @wgpu_mbt.RenderPipeline?
@@ -476,6 +483,7 @@ pub fn GpuBackend::create_texture_mip_view(Self, Int, Int) -> Int raise GpuBacke
 pub fn GpuBackend::create_texture_rgba8(Self, Int, Int, Bytes, Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::create_texture_stacked_2d_with_format(Self, Int, Int, Int, UInt, Array[Bytes], Bool) -> Int raise GpuBackendError
 pub fn GpuBackend::downsample_mesh3d_depth_pyramid(Self, Int, Int) -> Unit raise GpuBackendError
+pub fn GpuBackend::draw_blit(Self, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_effect_stack(Self, Int, Float, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_fxaa(Self, Int, Int, Int, Int, Int, Int) -> Unit raise GpuBackendError
 pub fn GpuBackend::draw_mesh(Self, Int, Float, Float, Float, Float, Float, Float, Float, Float, Float, Int, Float, Int, Float, Float, Float, Float, vertex_shader_path? : String?, fragment_shader_path? : String?) -> Unit raise GpuBackendError
