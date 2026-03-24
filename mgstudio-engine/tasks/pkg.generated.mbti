@@ -6,6 +6,8 @@ import {
 }
 
 // Values
+pub fn[T] background_channel(capacity? : Int, drop_oldest? : Bool) -> (BackgroundSender[T], BackgroundReceiver[T])
+
 pub fn task_pool_num_threads() -> Int?
 
 pub fn[W] task_pool_plugin(@app.TaskPoolPlugin) -> (@app.App[W]) -> @app.App[W]
@@ -18,14 +20,25 @@ pub struct AsyncComputeTaskPool {
 pub fn AsyncComputeTaskPool::get() -> Self
 pub fn[T] AsyncComputeTaskPool::spawn(Self, () -> T) -> Task[T]
 
+type BackgroundReceiver[T]
+pub fn[T] BackgroundReceiver::recv(Self[T]) -> T
+pub fn[T] BackgroundReceiver::try_recv(Self[T]) -> T?
+
+type BackgroundSender[T]
+pub fn[T] BackgroundSender::try_send(Self[T], T) -> Bool
+
+type BackgroundSignal
+pub fn BackgroundSignal::new() -> Self
+pub fn BackgroundSignal::try_wait(Self) -> Bool
+pub fn BackgroundSignal::wait(Self, timeout_ms? : Int) -> Bool
+pub fn BackgroundSignal::wake(Self) -> Unit
+
 pub struct IoTaskPool {
 }
 pub fn IoTaskPool::get() -> Self
 pub fn[T] IoTaskPool::spawn(Self, () -> T) -> Task[T]
 
-pub struct Task[T] {
-  result : T
-}
+type Task[T]
 pub fn[T] Task::detach(Self[T]) -> Unit
 pub fn[T] Task::get(Self[T]) -> T
 

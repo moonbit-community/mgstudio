@@ -18,7 +18,9 @@
     "Milky2018/window": "0.2.11",
     "mizchi/image": "0.1.1",
     "gmlewis/image": "0.17.3",
-    "gmlewis/io": "0.23.3"
+    "gmlewis/io": "0.23.3",
+    "moonbitlang/async": "0.16.8",
+    "Milky2018/sysinfo": "0.1.1"
   },
   "readme": "README.mbt.md",
   "repository": "",

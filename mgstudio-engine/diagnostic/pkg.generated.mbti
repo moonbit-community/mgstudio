@@ -62,6 +62,18 @@ pub fn render_diagnostics_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 pub fn render_diagnostics_plugin_with(@app.App[@ecs.World], RenderDiagnosticsPlugin) -> @app.App[@ecs.World]
 
+pub let system_information_diagnostic_process_cpu_usage : DiagnosticPath
+
+pub let system_information_diagnostic_process_mem_usage : DiagnosticPath
+
+pub let system_information_diagnostic_system_cpu_usage : DiagnosticPath
+
+pub let system_information_diagnostic_system_mem_usage : DiagnosticPath
+
+pub fn system_information_diagnostics_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn system_information_diagnostics_plugin_with(@app.App[@ecs.World], SystemInformationDiagnosticsPlugin) -> @app.App[@ecs.World]
+
 pub fn update_frame_count(@app.ResMut[FrameCount]) -> Unit
 
 // Errors
@@ -198,6 +210,21 @@ pub struct RenderDiagnosticsPlugin {
 }
 pub fn RenderDiagnosticsPlugin::default() -> Self
 pub fn RenderDiagnosticsPlugin::new(Int) -> Self
+
+pub struct SystemInfo {
+  os : String
+  kernel : String
+  cpu : String
+  core_count : String
+  memory : String
+}
+pub fn SystemInfo::default() -> Self
+pub impl @app.Resource for SystemInfo
+pub impl Show for SystemInfo
+
+pub struct SystemInformationDiagnosticsPlugin {
+}
+pub fn SystemInformationDiagnosticsPlugin::default() -> Self
 
 // Type aliases
 

@@ -34,7 +34,9 @@ pub fn diagnostics_plugin_with(
   app : @app.App[@ecs.World],
   _plugin : DiagnosticsPlugin,
 ) -> @app.App[@ecs.World] {
-  app.init_resource(fn() { DiagnosticsStore::default() })
+  app
+  .init_resource(fn() { DiagnosticsStore::default() })
+  .init_resource(fn() { SystemInfo::default() })
 }
 
 ///|

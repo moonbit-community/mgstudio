@@ -19,3 +19,38 @@ test "tasks boundary re-exports task pool plugin surface" {
   let _apply : @app.Plugin[Unit] = @tasks.task_pool_plugin(plugin)
   inspect("ok", content="ok")
 }
+
+///|
+test "tasks: background channel receives value from worker thread" {
+  let channel : (@tasks.BackgroundSender[Int], @tasks.BackgroundReceiver[Int]) = @tasks.background_channel(
+    capacity=2,
+  )
+  let (sender, receiver) = channel
+  let task = @tasks.AsyncComputeTaskPool::get().spawn(() => {
+    if !sender.try_send(7) {
+      abort("background channel should accept the first value")
+    }
+    11
+  })
+
+  inspect(receiver.recv(), content="7")
+  inspect(task.get(), content="11")
+}
+
+///|
+test "tasks: background signal wakes waiting worker thread" {
+  let signal = @tasks.BackgroundSignal::new()
+  let channel : (
+    @tasks.BackgroundSender[String],
+    @tasks.BackgroundReceiver[String],
+  ) = @tasks.background_channel(capacity=1)
+  let (sender, receiver) = channel
+  let task = @tasks.AsyncComputeTaskPool::get().spawn(() => {
+    signal.wait() |> ignore
+    sender.try_send("ready") |> ignore
+  })
+  task.detach()
+
+  signal.wake()
+  inspect(receiver.recv(), content="ready")
+}

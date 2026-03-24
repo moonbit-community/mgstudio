@@ -14,7 +14,7 @@
 
 ///|
 /// Tasks API boundary aligned with Bevy's `bevy_tasks` crate responsibilities.
-/// Runtime implementation currently lives in `Milky2018/mgstudio/app`.
+/// Runtime implementation is backed by the package-local native bridge.
 
 ///|
 pub type TaskPoolOptions = @app.TaskPoolOptions
@@ -30,11 +30,6 @@ pub fn[W] task_pool_plugin(plugin : TaskPoolPlugin) -> @app.Plugin[W] {
 ///|
 pub fn task_pool_num_threads() -> Int? {
   @app.task_pool_num_threads()
-}
-
-///|
-pub struct Task[T] {
-  result : T
 }
 
 ///|
@@ -56,7 +51,7 @@ pub fn AsyncComputeTaskPool::get() -> AsyncComputeTaskPool {
 ///|
 pub fn[T] IoTaskPool::spawn(self : IoTaskPool, task : () -> T) -> Task[T] {
   self |> ignore
-  Task::{ result: task() }
+  background_spawn_task(task)
 }
 
 ///|
@@ -65,15 +60,5 @@ pub fn[T] AsyncComputeTaskPool::spawn(
   task : () -> T,
 ) -> Task[T] {
   self |> ignore
-  Task::{ result: task() }
-}
-
-///|
-pub fn[T] Task::get(self : Task[T]) -> T {
-  self.result
-}
-
-///|
-pub fn[T] Task::detach(self : Task[T]) -> Unit {
-  self |> ignore
+  background_spawn_task(task)
 }
