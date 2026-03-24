@@ -74,6 +74,14 @@ extern "C" fn BackgroundNativeThread::join(self : BackgroundNativeThread) = "mgs
 extern "C" fn BackgroundNativeThread::detach(self : BackgroundNativeThread) = "mgstudio_tasks_thread_detach"
 
 ///|
+extern "C" fn background_native_now_millis() -> Int64 = "mgstudio_tasks_now_millis"
+
+///|
+pub fn background_now_millis() -> Int64 {
+  background_native_now_millis()
+}
+
+///|
 struct BackgroundSignal {
   native : BackgroundNativeSignal
 }

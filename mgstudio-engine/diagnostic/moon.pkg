@@ -8,7 +8,6 @@ import {
   "Milky2018/mgstudio/render" @render,
   "Milky2018/mgstudio/time",
   "Milky2018/sysinfo" @sysinfo,
-  "moonbitlang/async" @async,
   "moonbitlang/core/hashmap",
   "moonbitlang/core/int",
   "moonbitlang/core/json",

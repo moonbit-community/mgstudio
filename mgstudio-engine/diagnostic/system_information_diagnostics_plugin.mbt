@@ -236,12 +236,12 @@ fn system_information_refresh_task(
     .with_memory(@sysinfo.MemoryRefreshKind::everything()),
   )
   let minimum_interval_ms = @sysinfo.MINIMUM_CPU_UPDATE_INTERVAL.to_int64()
-  let mut last_refresh_ms = @async.now() - minimum_interval_ms
+  let mut last_refresh_ms = @tasks.background_now_millis() - minimum_interval_ms
 
   while true {
     waker.wait() |> ignore
 
-    let now_ms = @async.now()
+    let now_ms = @tasks.background_now_millis()
     if now_ms - last_refresh_ms < minimum_interval_ms {
       continue
     }

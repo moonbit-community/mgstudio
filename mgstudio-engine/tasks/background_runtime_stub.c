@@ -13,6 +13,16 @@
 #include <time.h>
 #endif
 
+MOONBIT_FFI_EXPORT int64_t mgstudio_tasks_now_millis(void) {
+#if defined(_WIN32)
+  return (int64_t)GetTickCount64();
+#else
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return (int64_t)ts.tv_sec * 1000LL + (int64_t)ts.tv_nsec / 1000000LL;
+#endif
+}
+
 typedef struct mgstudio_tasks_mutex_t {
 #if defined(_WIN32)
   CRITICAL_SECTION cs;

@@ -8,6 +8,8 @@ import {
 // Values
 pub fn[T] background_channel(capacity? : Int, drop_oldest? : Bool) -> (BackgroundSender[T], BackgroundReceiver[T])
 
+pub fn background_now_millis() -> Int64
+
 pub fn task_pool_num_threads() -> Int?
 
 pub fn[W] task_pool_plugin(@app.TaskPoolPlugin) -> (@app.App[W]) -> @app.App[W]
