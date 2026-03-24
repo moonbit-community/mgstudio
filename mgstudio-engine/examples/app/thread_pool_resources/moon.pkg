@@ -1,8 +1,0 @@
-import {
-  "Milky2018/mgstudio/app",
-  "Milky2018/mgstudio/ecs",
-}
-
-options(
-  "is-main": true,
-)

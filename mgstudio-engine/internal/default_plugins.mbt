@@ -30,9 +30,6 @@ const MINIMAL_PLUGINS_NAME : String = "MinimalPlugins"
 const DEFAULT_PLUGIN_ID_LOG : String = "bevy_log::LogPlugin"
 
 ///|
-const DEFAULT_PLUGIN_ID_TASK_POOL : String = "bevy_app::TaskPoolPlugin"
-
-///|
 const DEFAULT_PLUGIN_ID_WINDOW : String = @window.WINDOW_PLUGIN_ID
 
 ///|
@@ -114,9 +111,6 @@ const DEFAULT_PLUGIN_ID_PHYSICS2D : String = "mgstudio::Physics2dPlugin"
 const DEFAULT_PLUGIN_ID_PHYSICS3D : String = "mgstudio::Physics3dPlugin"
 
 ///|
-const MINIMAL_PLUGIN_ID_TASK_POOL : String = "bevy_app::TaskPoolPlugin"
-
-///|
 const MINIMAL_PLUGIN_ID_FRAME_COUNT : String = "bevy_diagnostic::FrameCountPlugin"
 
 ///|
@@ -142,12 +136,6 @@ fn default_plugins_builder(
     id=DEFAULT_PLUGIN_ID_LOG,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @app.log_plugin_default(app)
-    }),
-  )
-  .add_named(
-    id=DEFAULT_PLUGIN_ID_TASK_POOL,
-    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @app.task_pool_plugin(@app.TaskPoolPlugin::default())(app)
     }),
   )
   .add_named(
@@ -340,12 +328,6 @@ fn minimal_plugins_marker() -> MinimalPlugins {
 ///|
 fn minimal_plugins_builder() -> @app.PluginGroupBuilder[@ecs.World] {
   @app.PluginGroupBuilder::start_named(MINIMAL_PLUGINS_NAME)
-  .add_named(
-    id=MINIMAL_PLUGIN_ID_TASK_POOL,
-    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-      @app.task_pool_plugin(@app.TaskPoolPlugin::default())(app)
-    }),
-  )
   .add_named(
     id=MINIMAL_PLUGIN_ID_FRAME_COUNT,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {

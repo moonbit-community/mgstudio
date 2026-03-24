@@ -82,19 +82,18 @@ priv struct SysinfoRefreshData {
 }
 
 ///|
-priv struct SysinfoTask {
-  mut task : @tasks.Task[SysinfoRefreshData]?
+priv struct SysinfoRefreshState {
   mut elapsed_ms : Int64
 }
 
 ///|
-let sysinfo_task_resource_key : @ecs.ResourceKey[SysinfoTask] = @ecs.register_resource(
-  debug_name="bevy_diagnostic::SysinfoTask",
+let sysinfo_refresh_state_resource_key : @ecs.ResourceKey[SysinfoRefreshState] = @ecs.register_resource(
+  debug_name="bevy_diagnostic::SysinfoRefreshState",
 )
 
 ///|
-impl @app.Resource for SysinfoTask with resource() {
-  sysinfo_task_resource_key
+impl @app.Resource for SysinfoRefreshState with resource() {
+  sysinfo_refresh_state_resource_key
 }
 
 ///|
@@ -239,35 +238,26 @@ fn collect_sysinfo_refresh_data_once() -> SysinfoRefreshData {
 
 ///|
 fn setup_system(commands : @app.Commands) -> Unit {
-  commands.insert_resource(SysinfoTask::{
-    task: None,
+  commands.insert_resource(SysinfoRefreshState::{
     elapsed_ms: minimum_refresh_interval_ms(),
   })
 }
 
 ///|
-fn wake_diagnostic_task(
-  task : @app.ResMut[SysinfoTask],
+fn refresh_system_information_diagnostics(
+  diagnostics : Diagnostics,
+  state : @app.ResMut[SysinfoRefreshState],
   time : @app.Res[@time.Time[@time.Real]],
 ) -> Unit {
-  let task_ref = task.get_ref()
-  if task_ref.val.task is Some(current_task) && !current_task.is_finished() {
-    return
-  }
-
-  task_ref.val.elapsed_ms = task_ref.val.elapsed_ms +
+  let state_ref = state.get_ref()
+  state_ref.val.elapsed_ms = state_ref.val.elapsed_ms +
     time.get().delta().as_millis()
-  if task_ref.val.task is Some(_) ||
-    task_ref.val.elapsed_ms < minimum_refresh_interval_ms() {
+  if state_ref.val.elapsed_ms < minimum_refresh_interval_ms() {
     return
   }
 
-  task_ref.val.elapsed_ms = 0
-  task_ref.val.task = Some(
-    @tasks.AsyncComputeTaskPool::get().spawn(fn() {
-      collect_sysinfo_refresh_data_once()
-    }),
-  )
+  state_ref.val.elapsed_ms = 0
+  apply_sysinfo_refresh_data(diagnostics, collect_sysinfo_refresh_data_once())
 }
 
 ///|
@@ -287,32 +277,6 @@ fn apply_sysinfo_refresh_data(
   diagnostics.add_measurement(system_information_diagnostic_process_mem_usage, fn() {
     data.process_mem_usage
   })
-}
-
-///|
-fn read_diagnostic_task(
-  diagnostics : Diagnostics,
-  task : @app.ResMut[SysinfoTask],
-) -> Unit {
-  let task_ref = task.get_ref()
-  guard task_ref.val.task is Some(current_task) else { return }
-  try current_task.try_wait() catch {
-    err => {
-      @app.log_warn(
-        "System information diagnostics task failed: " + err.message(),
-      )
-      task_ref.val.task = None
-    }
-  } noraise {
-    result =>
-      match result {
-        Some(data) => {
-          apply_sysinfo_refresh_data(diagnostics, data)
-          task_ref.val.task = None
-        }
-        None => ()
-      }
-  }
 }
 
 ///|
@@ -364,6 +328,5 @@ pub fn system_information_diagnostics_plugin_with(
 
   app_
   .add_startup_system_param(setup_system)
-  .add_first_system_param2(wake_diagnostic_task)
-  .add_system_param2(read_diagnostic_task)
+  .add_first_system_param3(refresh_system_information_diagnostics)
 }

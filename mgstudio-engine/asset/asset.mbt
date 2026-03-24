@@ -2230,16 +2230,18 @@ pub fn asset_save_texture_png(texture : Handle[Image], path : String) -> Unit {
 
 ///|
 pub fn asset_system(world : @ecs.World) -> Unit {
-  let asset_server = asset_server_or_abort()
-  asset_reload_modified_paths(world)
-  asset_update_loaded_folders(world)
-  asset_process_pending_processed_asset_loads(world, asset_server)
-  asset_process_pending_typed_asset_loads(world, asset_server)
-  asset_sync_dirty_image_assets(world)
-  asset_update_event_messages(world)
-  asset_sync_loaded_image_assets(world)
-  asset_update_image_event_messages(world)
-  asset_release_ready_acquired_loads(world, asset_server)
+  asset_with_world(world, fn() {
+    let asset_server = asset_server_or_abort()
+    asset_reload_modified_paths(world)
+    asset_update_loaded_folders(world)
+    asset_process_pending_processed_asset_loads(world, asset_server)
+    asset_process_pending_typed_asset_loads(world, asset_server)
+    asset_sync_dirty_image_assets(world)
+    asset_update_event_messages(world)
+    asset_sync_loaded_image_assets(world)
+    asset_update_image_event_messages(world)
+    asset_release_ready_acquired_loads(world, asset_server)
+  })
 }
 
 ///|

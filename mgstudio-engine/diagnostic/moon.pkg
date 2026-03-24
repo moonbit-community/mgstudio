@@ -2,7 +2,6 @@ import {
   "Milky2018/mgstudio/app",
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
-  "Milky2018/mgstudio/tasks",
   "Milky2018/mgstudio/sprite_render",
   "Milky2018/mgstudio/pbr",
   "Milky2018/mgstudio/render" @render,
