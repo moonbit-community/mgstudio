@@ -25,11 +25,6 @@ test "examples 2d shapes: scheduled update queues visible 2d draw items" {
   inspect(world.query1(@sprite.ecs_key_camera2d).count(), content="1")
   inspect(world.query1(@sprite.ecs_key_mesh2d).count() > 0, content="true")
   inspect(
-    world.query1(@sprite.ecs_key_gpu_mesh2d).count() ==
-    world.query1(@sprite.ecs_key_mesh2d).count(),
-    content="true",
-  )
-  inspect(
     @sprite.render2d_diagnostic_prepared_camera_count() > 0,
     content="true",
   )

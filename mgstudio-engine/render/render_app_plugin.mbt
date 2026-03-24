@@ -1,0 +1,71 @@
+// Copyright 2025 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+pub const RENDER_PLUGIN_ID : String = "bevy_render::RenderPlugin"
+
+///|
+priv struct RenderPluginMarker {}
+
+///|
+let ecs_key_render_plugin_marker : @ecs.ResourceKey[RenderPluginMarker] = @ecs.register_resource(
+  debug_name="bevy_render::RenderPluginMarker",
+)
+
+///|
+priv struct RenderMainWorld {
+  world : @ecs.World
+}
+
+///|
+let ecs_key_render_main_world : @ecs.ResourceKey[RenderMainWorld] = @ecs.register_resource(
+  debug_name="bevy_render::MainWorld",
+)
+
+///|
+fn render_sub_app_extract(
+  main_world : @ecs.World,
+  render_world : @ecs.World,
+) -> (@ecs.World, @ecs.World) {
+  render_world.insert_resource(ecs_key_render_main_world, RenderMainWorld::{
+    world: main_world,
+  })
+  (main_world, render_world)
+}
+
+///|
+pub fn render_source_world(world : @ecs.World) -> @ecs.World {
+  match (try! world.get_resource(ecs_key_render_main_world)) {
+    Some(value) => value.world
+    None => world
+  }
+}
+
+///|
+pub fn render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  let mut next = app
+  if next.get_sub_app(@app.RenderApp) is None {
+    next = next.insert_sub_app(
+      @app.RenderApp,
+      @app.SubApp::new(@ecs.World::new()).set_update_schedule(Some(@app.Main)),
+    )
+  }
+  next = next.set_sub_app_extract(@app.RenderApp, render_sub_app_extract)
+  if !next.contains_resource(ecs_key_render_plugin_marker) {
+    next = next.insert_world_resource(ecs_key_render_plugin_marker, RenderPluginMarker::{
+
+    })
+  }
+  next
+}

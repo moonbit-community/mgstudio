@@ -2324,16 +2324,6 @@ pub impl IntoSpriteMeshAsset for Rectangle with into_sprite_mesh_asset(self) {
 }
 
 ///|
-pub struct GpuMesh2d {
-  mesh_id : Int
-}
-
-///|
-pub fn GpuMesh2d::new(mesh_id : Int) -> GpuMesh2d {
-  GpuMesh2d::{ mesh_id, }
-}
-
-///|
 pub struct SpriteBundle {
   sprite : Sprite
   anchor : Anchor
@@ -4133,8 +4123,6 @@ pub fn Mesh2dBundle::spawn(
   try! (world.set(e, @visibility.ecs_key_view_visibility, self.view_visibility)
   |> ignore)
   try! (world.set(e, @transform.ecs_key_transform, self.transform) |> ignore)
-  let mesh_id = render2d_upload_mesh_handle(self.mesh.mesh)
-  try! (world.set(e, ecs_key_gpu_mesh2d, GpuMesh2d::new(mesh_id)) |> ignore)
   e
 }
 
@@ -4166,8 +4154,6 @@ pub impl @app.CommandSpawnComponents for Mesh2dBundle with spawn_components(
   |> ignore)
   try! (world.set(entity, @transform.ecs_key_transform, self.transform)
   |> ignore)
-  let mesh_id = render2d_upload_mesh_handle(self.mesh.mesh)
-  try! (world.set(entity, ecs_key_gpu_mesh2d, GpuMesh2d::new(mesh_id)) |> ignore)
 }
 
 ///|
@@ -5384,7 +5370,6 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
     })
     render2d_extract_tilemap_chunks(world)
     let mesh_store = get_mesh2d_store(ecs_world)
-    let gpu_mesh_store = get_gpu_mesh2d_store(ecs_world)
     let material_runtime_registry = material2d_runtime_registry_or_empty(
       ecs_world,
     )
@@ -5397,11 +5382,10 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
     } else {
       None
     }
-    mesh_store.for_each(fn(entity, _mesh2d) {
+    mesh_store.for_each(fn(entity, mesh2d) {
       if view_visibility_store.get(entity) is Some(vv) && !vv.is_visible() {
         return
       }
-      guard gpu_mesh_store.get(entity) is Some(gpu) else { return }
       if !material2d_runtime_registry_contains_entity(
           ecs_world, material_runtime_registry, entity,
         ) {
@@ -5428,10 +5412,11 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
         wireframe_color_store.get(entity),
         wireframe_config,
       )
+      let mesh_id = render2d_upload_mesh_handle(mesh2d.mesh)
       rs.val.meshes.push(ExtractedMesh2d::{
         entity: phase_entity_ref_for_main(entity),
         payload: Mesh2dDrawPayload::{
-          mesh_id: gpu.mesh_id,
+          mesh_id,
           transform,
           layers,
           wireframe,
@@ -5572,11 +5557,8 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
     // ECS mesh components.
     try! world
     .query1(ecs_key_mesh2d)
-    .view(fn(entity, _mesh2d) {
+    .view(fn(entity, mesh2d) {
       if !render2d_entity_visible_ecs(world, entity) {
-        return
-      }
-      guard (try! world.get(entity, ecs_key_gpu_mesh2d)) is Some(gpu) else {
         return
       }
       if !material2d_runtime_registry_contains_entity(
@@ -5600,7 +5582,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
       rs.val.meshes.push(ExtractedMesh2d::{
         entity: phase_entity_ref_for_main(entity),
         payload: Mesh2dDrawPayload::{
-          mesh_id: gpu.mesh_id,
+          mesh_id: render2d_upload_mesh_handle(mesh2d.mesh),
           transform,
           layers,
           wireframe,
@@ -5629,19 +5611,6 @@ pub fn render_prepare_system(world : @ecs.World) -> Unit {
     rs.val.queued_draw_item_counts.clear()
   })
   |> ignore
-}
-
-///|
-fn render2d_sync_gpu_mesh2d_components_system(world : @ecs.World) -> Unit {
-  let mesh_store = get_mesh2d_store(world)
-  let gpu_mesh_store = get_gpu_mesh2d_store(world)
-  mesh_store.for_each(fn(entity, mesh) {
-    if gpu_mesh_store.get(entity) is Some(_) {
-      return
-    }
-    let mesh_id = render2d_upload_mesh_handle(mesh.mesh)
-    gpu_mesh_store.insert(entity, GpuMesh2d::new(mesh_id))
-  })
 }
 
 ///|
@@ -8014,11 +7983,6 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.system(render2d_camera_system).in_set(camera_update_systems),
   )
   .add_post_update_system_config(
-    @app.system(render2d_sync_gpu_mesh2d_components_system).before(
-      render2d_set_extract,
-    ),
-  )
-  .add_post_update_system_config(
     @app.system(render_extract_system).in_set(render2d_set_extract),
   )
   .add_post_update_system_config(
@@ -8064,11 +8028,6 @@ pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .add_startup_system(init_render_state_system)
   .add_post_update_system_config(
     @app.system(render2d_camera_system_ecs).in_set(camera_update_systems),
-  )
-  .add_post_update_system_config(
-    @app.system(render2d_sync_gpu_mesh2d_components_system).before(
-      render2d_set_extract,
-    ),
   )
   .add_post_update_system_config(
     @app.system(render_extract_system_ecs).in_set(render2d_set_extract),

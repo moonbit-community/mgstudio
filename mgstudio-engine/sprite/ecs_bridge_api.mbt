@@ -15,8 +15,8 @@
 ///|
 /// ECS component bridge types.
 pub let ecs_components : Array[String] = [
-  "Anchor", "Camera", "Mesh2d", "Sprite", "Bloom", "Camera2d", "GpuMesh2d", "Projection",
-  "PanCamera", "ScissorRect", "Wireframe2d", "RenderLayers", "RenderTarget", "ColorMaterial",
+  "Anchor", "Camera", "Mesh2d", "Sprite", "Bloom", "Camera2d", "Projection", "PanCamera",
+  "ScissorRect", "Wireframe2d", "RenderLayers", "RenderTarget", "ColorMaterial",
   "Tonemapping", "DebandDither", "ColorGrading", "NoWireframe2d", "MeshMaterial2d",
   "ClearColorConfig", "Wireframe2dColor", "TilemapChunk", "TilemapChunkTileData",
 ]
@@ -74,13 +74,6 @@ pub fn get_color_grading_store(
 ///|
 pub fn get_camera2d_store(world : @ecs.World) -> @ecs.ComponentAccess[Camera2d] {
   world.component(ecs_key_camera2d)
-}
-
-///|
-pub fn get_gpu_mesh2d_store(
-  world : @ecs.World,
-) -> @ecs.ComponentAccess[GpuMesh2d] {
-  world.component(ecs_key_gpu_mesh2d)
 }
 
 ///|

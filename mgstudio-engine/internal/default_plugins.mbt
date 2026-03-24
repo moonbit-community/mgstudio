@@ -69,6 +69,9 @@ const DEFAULT_PLUGIN_ID_TRANSFORM : String = "bevy_transform::TransformPlugin"
 const DEFAULT_PLUGIN_ID_DIAGNOSTICS : String = "bevy_diagnostic::DiagnosticsPlugin"
 
 ///|
+const DEFAULT_PLUGIN_ID_RENDER : String = @render.RENDER_PLUGIN_ID
+
+///|
 const DEFAULT_PLUGIN_ID_VISIBILITY : String = "bevy_render::VisibilityPlugin"
 
 ///|
@@ -217,6 +220,12 @@ fn default_plugins_builder(
     id=DEFAULT_PLUGIN_ID_DIAGNOSTICS,
     world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
       @diagnostic.diagnostics_plugin(app)
+    }),
+  )
+  .add_named(
+    id=DEFAULT_PLUGIN_ID_RENDER,
+    world_plugin(fn(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+      @render.render_plugin(app)
     }),
   )
   .add_named(

@@ -472,10 +472,6 @@ test "render2d: Mesh2dBundle::spawn inserts expected components" {
     content="true",
   )
   inspect(
-    ecs_has_non_null_payload(world, entity, ecs_key_gpu_mesh2d),
-    content="true",
-  )
-  inspect(
     ecs_has_non_null_payload(world, entity, ecs_key_render_layers),
     content="true",
   )
@@ -500,7 +496,7 @@ test "render2d: Mesh2dBundle::spawn inserts expected components" {
 }
 
 ///|
-test "render2d: plain Mesh2d authoring backfills gpu mesh before extract" {
+test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache component" {
   let mut app = @app.App::new(@ecs.World::new())
     .add_plugins([@asset.asset_plugin, render2d_plugin])
     .add_systems(
@@ -536,7 +532,6 @@ test "render2d: plain Mesh2d authoring backfills gpu mesh before extract" {
   app = app.update()
 
   inspect(app.world().query1(ecs_key_mesh2d).count(), content="1")
-  inspect(app.world().query1(ecs_key_gpu_mesh2d).count(), content="1")
   inspect(render2d_diagnostic_queued_draw_item_count() > 0, content="true")
 }
 

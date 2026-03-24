@@ -114,11 +114,6 @@ pub let ecs_key_mesh_material2d : @ecs.ComponentKey[
 ] = registered_mesh_material2d_component_key()
 
 ///|
-pub let ecs_key_gpu_mesh2d : @ecs.ComponentKey[GpuMesh2d] = @ecs.register_component(
-  debug_name="render2d.gpu_mesh2d",
-)
-
-///|
 pub let ecs_key_scissor_rect : @ecs.ComponentKey[ScissorRect] = @ecs.register_component(
   debug_name="render2d.scissor_rect",
 )
@@ -206,11 +201,6 @@ pub impl @ecs.Component for ColorMaterial with component() {
 ///|
 pub impl[M] @ecs.Component for MeshMaterial2d[M] with component() {
   registered_mesh_material2d_component_key()
-}
-
-///|
-pub impl @ecs.Component for GpuMesh2d with component() {
-  ecs_key_gpu_mesh2d
 }
 
 ///|
@@ -517,11 +507,6 @@ fn[M] encode_mesh_material2d(material : MeshMaterial2d[M]) -> Json {
 }
 
 ///|
-fn encode_gpu_mesh2d(gpu_mesh2d : GpuMesh2d) -> Json {
-  gpu_mesh2d.mesh_id.to_json()
-}
-
-///|
 fn encode_tile_data(tile_data : TileData) -> Json {
   tile_data.tileset_index.to_json()
 }
@@ -803,12 +788,6 @@ fn[M] decode_mesh_material2d(json : Json) -> MeshMaterial2d[M] {
 }
 
 ///|
-fn decode_gpu_mesh2d(json : Json) -> GpuMesh2d {
-  let mesh_id : Int = try! @json.from_json(json)
-  GpuMesh2d::new(mesh_id)
-}
-
-///|
 fn decode_tile_data(json : Json) -> TileData {
   TileData::from_tileset_index(try! @json.from_json(json))
 }
@@ -982,16 +961,6 @@ pub impl[M] ToJson for MeshMaterial2d[M] with to_json(self) {
 ///|
 pub impl[M] @json.FromJson for MeshMaterial2d[M] with from_json(json, _path) {
   decode_mesh_material2d(json)
-}
-
-///|
-pub impl ToJson for GpuMesh2d with to_json(self) {
-  encode_gpu_mesh2d(self)
-}
-
-///|
-pub impl @json.FromJson for GpuMesh2d with from_json(json, _path) {
-  decode_gpu_mesh2d(json)
 }
 
 ///|

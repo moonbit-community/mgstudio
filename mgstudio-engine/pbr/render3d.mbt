@@ -813,12 +813,6 @@ fn mesh_material3d_bundle_insert(
     bundle.transform,
     loc~,
   )
-  let mesh_id = @sprite_render.render2d_upload_mesh_handle(bundle.mesh.mesh)
-  @sprite.get_gpu_mesh2d_store(ecs_world).insert(
-    entity,
-    @sprite.GpuMesh2d::new(mesh_id),
-    loc~,
-  )
 }
 
 ///|
@@ -3996,7 +3990,6 @@ fn render3d_collect_gpu_preprocess_mesh_candidates(
 ) -> Array[GpuPreprocessMeshCandidate3d] {
   let mesh_store = world.component(ecs_key_mesh3d)
   let material_store = world.component(ecs_key_mesh_material3d)
-  let gpu_mesh_store = world.component(@sprite.ecs_key_gpu_mesh2d)
   let visibility_range_store = world.component(
     @visibility.ecs_key_visibility_range,
   )
@@ -4011,7 +4004,6 @@ fn render3d_collect_gpu_preprocess_mesh_candidates(
       !view_visibility.is_visible() {
       return
     }
-    guard gpu_mesh_store.get(entity) is Some(gpu_mesh) else { return }
     guard material_store.get(entity) is Some(material_handle) else { return }
     guard standard_material_get(material_handle.material) is Some(base_material) else {
       return
@@ -4040,7 +4032,7 @@ fn render3d_collect_gpu_preprocess_mesh_candidates(
     }
     candidates.push(GpuPreprocessMeshCandidate3d::{
       entity: phase_entity_ref3d_for_main(entity),
-      mesh_id: gpu_mesh.mesh_id,
+      mesh_id: @sprite_render.render2d_upload_mesh_handle(mesh3d.mesh),
       indexed: render3d_mesh_handle_is_indexed(mesh3d.mesh),
       layers,
       visibility_range,
@@ -5716,15 +5708,6 @@ pub fn render3d_extract_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
-  let mesh_store = world.component(ecs_key_mesh3d)
-  let gpu_mesh_store = world.component(@sprite.ecs_key_gpu_mesh2d)
-  mesh_store.for_each(fn(entity, mesh) {
-    if gpu_mesh_store.get(entity) is Some(_) {
-      return
-    }
-    let mesh_id = @sprite_render.render2d_upload_mesh_handle(mesh.mesh)
-    gpu_mesh_store.insert(entity, @sprite.GpuMesh2d::new(mesh_id))
-  })
   if render3d_prepared_camera_order_ref.val.length() == 0 {
     render3d_prepared_camera_order_ref.val = render3d_sorted_camera_entities(
       world,
@@ -6383,7 +6366,6 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   }
   let mesh_store = world.component(ecs_key_mesh3d)
   let material_store = world.component(ecs_key_mesh_material3d)
-  let gpu_mesh_store = world.component(@sprite.ecs_key_gpu_mesh2d)
   let visibility_range_store = world.component(
     @visibility.ecs_key_visibility_range,
   )
@@ -6406,7 +6388,6 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       !view_visibility.is_visible() {
       return
     }
-    guard gpu_mesh_store.get(entity) is Some(gpu_mesh) else { return }
     guard material_store.get(entity) is Some(material_handle) else { return }
     guard standard_material_get(material_handle.material) is Some(base_material) else {
       return
@@ -6440,7 +6421,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       entity: phase_entity_ref3d_for_main(entity),
       payload: Mesh3dExtractedPayload::{
         mesh_handle: mesh3d.mesh,
-        mesh_id: gpu_mesh.mesh_id,
+        mesh_id: @sprite_render.render2d_upload_mesh_handle(mesh3d.mesh),
         transform,
         previous_transform,
         visibility_range,

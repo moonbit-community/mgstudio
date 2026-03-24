@@ -49,9 +49,6 @@ pub type Mesh2dBundle = @sprite.Mesh2dBundle
 pub type MeshMaterial2d[M] = @sprite.MeshMaterial2d[M]
 
 ///|
-pub type GpuMesh2d = @sprite.GpuMesh2d
-
-///|
 pub type Wireframe2d = @sprite.Wireframe2d
 
 ///|
@@ -82,9 +79,6 @@ pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d] = @sprite.ecs_key_mesh2d
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[
   MeshMaterial2d[ColorMaterialAsset],
 ] = @sprite.ecs_key_mesh_material2d
-
-///|
-pub let ecs_key_gpu_mesh2d : @ecs.ComponentKey[GpuMesh2d] = @sprite.ecs_key_gpu_mesh2d
 
 ///|
 pub let ecs_key_wireframe2d : @ecs.ComponentKey[Wireframe2d] = @sprite.ecs_key_wireframe2d

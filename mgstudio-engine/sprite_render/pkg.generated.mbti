@@ -21,8 +21,6 @@ pub fn color_material_plugin(@sprite.ColorMaterialPlugin) -> (@app.App[@ecs.Worl
 
 pub let ecs_key_color_material : @ecs.ComponentKey[@sprite.ColorMaterial]
 
-pub let ecs_key_gpu_mesh2d : @ecs.ComponentKey[@sprite.GpuMesh2d]
-
 pub let ecs_key_mesh2d : @ecs.ComponentKey[@sprite.Mesh2d]
 
 pub let ecs_key_mesh_material2d : @ecs.ComponentKey[@sprite.MeshMaterial2d[@sprite.ColorMaterialAsset]]
@@ -99,8 +97,6 @@ pub using @sprite {type ColorMaterial}
 pub using @sprite {type ColorMaterialAsset}
 
 pub using @sprite {type ColorMaterialPlugin}
-
-pub using @sprite {type GpuMesh2d}
 
 pub using @sprite {type Material2dKey}
 

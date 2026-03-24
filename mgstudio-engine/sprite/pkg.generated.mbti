@@ -54,8 +54,6 @@ pub let ecs_key_color_material : @ecs.ComponentKey[ColorMaterial]
 
 pub let ecs_key_deband_dither : @ecs.ComponentKey[@post_process.DebandDither]
 
-pub let ecs_key_gpu_mesh2d : @ecs.ComponentKey[GpuMesh2d]
-
 pub let ecs_key_hdr : @ecs.ComponentKey[@core_pipeline.Hdr]
 
 pub let ecs_key_mesh2d : @ecs.ComponentKey[Mesh2d]
@@ -107,8 +105,6 @@ pub fn get_color_grading_store(@ecs.World) -> @ecs.ComponentAccess[@post_process
 pub fn get_color_material_store(@ecs.World) -> @ecs.ComponentAccess[ColorMaterial]
 
 pub fn get_deband_dither_store(@ecs.World) -> @ecs.ComponentAccess[@post_process.DebandDither]
-
-pub fn get_gpu_mesh2d_store(@ecs.World) -> @ecs.ComponentAccess[GpuMesh2d]
 
 pub fn get_mesh2d_store(@ecs.World) -> @ecs.ComponentAccess[Mesh2d]
 
@@ -537,14 +533,6 @@ pub fn Gizmos::rounded_rect_2d(Self, Isometry2d, @math.Vec2, @color.Color) -> Ro
 pub fn Gizmos::short_arc_2d_between(Self, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> Arc2dBuilder
 pub fn Gizmos::with_layers(Self, RenderLayers) -> Self
 pub impl @app.SystemParam for Gizmos
-
-pub struct GpuMesh2d {
-  mesh_id : Int
-}
-pub fn GpuMesh2d::new(Int) -> Self
-pub impl @ecs.Component for GpuMesh2d
-pub impl ToJson for GpuMesh2d
-pub impl @json.FromJson for GpuMesh2d
 
 pub struct Grid2dBuilder {
   id : Int

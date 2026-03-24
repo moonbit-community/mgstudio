@@ -2,6 +2,8 @@
 package "Milky2018/mgstudio/render"
 
 import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/post_process",
   "Milky2018/mgstudio/render/renderer",
 }
@@ -20,6 +22,8 @@ pub const MESH3D_PREPROCESS_PHASE_EARLY_OCCLUSION : Int = 1
 pub const MESH3D_PREPROCESS_PHASE_LATE_OCCLUSION : Int = 2
 
 pub const MESH3D_PREPROCESS_PHASE_MAIN : Int = 0
+
+pub const RENDER_PLUGIN_ID : String = "bevy_render::RenderPlugin"
 
 pub fn asset_copy_texture_to_texture(dst_texture_id~ : Int, dst_x~ : Int, dst_y~ : Int, src_texture_id~ : Int) -> Unit
 
@@ -158,6 +162,10 @@ pub fn render_diagnostics_commit_current_frame_snapshot() -> Unit
 pub fn render_diagnostics_reset_current_frame_counters() -> Unit
 
 pub fn render_diagnostics_snapshot() -> @renderer.RenderDiagnosticsSnapshot
+
+pub fn render_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
+
+pub fn render_source_world(@ecs.World) -> @ecs.World
 
 pub fn screenshot_capture_surface_request() -> Int
 
