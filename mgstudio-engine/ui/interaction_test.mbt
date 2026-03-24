@@ -42,7 +42,9 @@ test "ui: interaction updates component state" {
   ui_stack_system(world)
   ui_interaction_system(world)
   let s0 = get_interaction_store(world).get(e).unwrap()
+  let cursor0 = get_relative_cursor_position_store(world).get(e).unwrap()
   inspect(s0 == Interaction::Hovered, content="true")
+  inspect(cursor0.cursor_over(), content="true")
 
   // Pressed.
   let ctx2 = UiContext::new(
@@ -59,7 +61,9 @@ test "ui: interaction updates component state" {
   ui_stack_system(world)
   ui_interaction_system(world)
   let s1 = get_interaction_store(world).get(e).unwrap()
+  let cursor1 = get_relative_cursor_position_store(world).get(e).unwrap()
   inspect(s1 == Interaction::Pressed, content="true")
+  inspect(cursor1.cursor_over(), content="true")
 
   // Outside.
   let ctx3 = UiContext::new(
@@ -76,5 +80,15 @@ test "ui: interaction updates component state" {
   ui_stack_system(world)
   ui_interaction_system(world)
   let s2 = get_interaction_store(world).get(e).unwrap()
+  let cursor2 = get_relative_cursor_position_store(world).get(e).unwrap()
   inspect(s2 == Interaction::None, content="true")
+  inspect(cursor2.cursor_over(), content="false")
+  inspect(cursor2.normalized is None, content="true")
+}
+
+///|
+test "ui: RelativeCursorPosition default reports cursor outside" {
+  let relative_cursor_position = RelativeCursorPosition::default()
+  inspect(relative_cursor_position.cursor_over(), content="false")
+  inspect(relative_cursor_position.normalized is None, content="true")
 }

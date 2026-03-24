@@ -711,6 +711,8 @@ pub struct RelativeCursorPosition {
   normalized_visible_node_rect : @math.Rect
   normalized : @math.Vec2?
 }
+pub fn RelativeCursorPosition::cursor_over(Self) -> Bool
+pub fn RelativeCursorPosition::default() -> Self
 pub impl @ecs.Component for RelativeCursorPosition
 pub impl ToJson for RelativeCursorPosition
 pub impl @json.FromJson for RelativeCursorPosition

@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/ui_target_camera"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type CameraOrderBox
+pub impl @ecs.Component for CameraOrderBox
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/relative_cursor_position"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type CursorArea
+pub impl @ecs.Component for CursorArea
+
+type CursorReadout
+pub impl @ecs.Component for CursorReadout
+
+// Type aliases
+
+// Traits
+

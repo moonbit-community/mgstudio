@@ -448,6 +448,27 @@ pub struct RelativeCursorPosition {
 } derive(ToJson, FromJson)
 
 ///|
+pub fn RelativeCursorPosition::default() -> RelativeCursorPosition {
+  RelativeCursorPosition::{
+    normalized_visible_node_rect: @math.Rect::new(
+      @math.Vec2::new(0.0F, 0.0F),
+      @math.Vec2::new(1.0F, 1.0F),
+    ),
+    normalized: None,
+  }
+}
+
+///|
+pub fn RelativeCursorPosition::cursor_over(
+  self : RelativeCursorPosition,
+) -> Bool {
+  match self.normalized {
+    Some(normalized) => self.normalized_visible_node_rect.contains(normalized)
+    None => false
+  }
+}
+
+///|
 pub(all) enum FocusPolicy {
   Block
   Pass
@@ -4088,6 +4109,9 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
     }
     if prev != Interaction::None {
       state_store.set(entity, Interaction::None) |> ignore
+    }
+    if cursor_store.contains(entity) {
+      cursor_store.set(entity, RelativeCursorPosition::default()) |> ignore
     }
   }
 }
