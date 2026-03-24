@@ -28,18 +28,7 @@
   "description": "",
   "exclude": [
     "examples",
-    "assets/environment_maps",
-    "assets/light_probe_blending",
-    "assets/models",
-    "assets/textures",
-    "assets/pica_pica",
-    "assets/sounds",
-    "assets/examples",
-    ".private",
-    ".mooncakes",
-    ".repos",
-    "_build",
-    "target"
+    "assets"
   ],
   "preferred-target": "native",
   "--moonbit-unstable-prebuild": "build.js"
