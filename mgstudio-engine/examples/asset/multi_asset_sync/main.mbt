@@ -182,7 +182,12 @@ fn setup_assets(
   commands.insert_resource(loading_state)
 
   @tasks.AsyncComputeTaskPool::get()
-  .spawn(fn() { if barrier.is_ready() { loading_state.mark_loaded() } })
+  .spawn(fn() {
+    while !barrier.is_ready() {
+      ()
+    }
+    loading_state.mark_loaded()
+  })
   .detach()
 }
 

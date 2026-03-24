@@ -66,6 +66,3 @@ fn host_app_stdin_read_line_code_unit(offset~ : Int) -> Int {
 }
 
 ///|
-fn host_task_pool_set_num_threads(num_threads~ : Int) -> Unit {
-  num_threads |> ignore
-}

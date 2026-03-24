@@ -83,9 +83,8 @@ priv struct SysinfoRefreshData {
 
 ///|
 priv struct SysinfoTask {
-  task : @tasks.Task[Unit]
-  receiver : @tasks.BackgroundReceiver[SysinfoRefreshData]
-  waker : @tasks.BackgroundSignal
+  mut task : @tasks.Task[SysinfoRefreshData]?
+  mut elapsed_ms : Int64
 }
 
 ///|
@@ -103,6 +102,11 @@ const BYTES_TO_GIB : Double = 1.0 / 1024.0 / 1024.0 / 1024.0
 
 ///|
 const PROCESS_USAGE_SUFFIX : String = "%"
+
+///|
+fn minimum_refresh_interval_ms() -> Int64 {
+  @sysinfo.MINIMUM_CPU_UPDATE_INTERVAL.to_int64()
+}
 
 ///|
 fn system_info_not_available() -> String {
@@ -219,58 +223,51 @@ fn collect_sysinfo_refresh_data(
 }
 
 ///|
-fn system_information_refresh_task(
-  waker : @tasks.BackgroundSignal,
-  sender : @tasks.BackgroundSender[SysinfoRefreshData],
-) -> Unit {
+fn collect_sysinfo_refresh_data_once() -> SysinfoRefreshData {
   let pid = match @sysinfo.get_current_pid() {
     Ok(value) => value
-    Err(message) => {
-      println("Failed to get current process id for diagnostics: \{message}")
-      return
-    }
+    Err(message) =>
+      abort("Failed to get current process id for diagnostics: " + message)
   }
   let system = @sysinfo.System::new_with_specifics(
     @sysinfo.RefreshKind::nothing()
     .with_cpu(@sysinfo.CpuRefreshKind::nothing().with_cpu_usage())
     .with_memory(@sysinfo.MemoryRefreshKind::everything()),
   )
-  let minimum_interval_ms = @sysinfo.MINIMUM_CPU_UPDATE_INTERVAL.to_int64()
-  let mut last_refresh_ms = @tasks.background_now_millis() - minimum_interval_ms
-
-  while true {
-    waker.wait() |> ignore
-
-    let now_ms = @tasks.background_now_millis()
-    if now_ms - last_refresh_ms < minimum_interval_ms {
-      continue
-    }
-
-    last_refresh_ms = now_ms
-    sender.try_send(collect_sysinfo_refresh_data(system, pid)) |> ignore
-  }
+  collect_sysinfo_refresh_data(system, pid)
 }
 
 ///|
 fn setup_system(commands : @app.Commands) -> Unit {
-  let channel : (
-    @tasks.BackgroundSender[SysinfoRefreshData],
-    @tasks.BackgroundReceiver[SysinfoRefreshData],
-  ) = @tasks.background_channel(capacity=1, drop_oldest=true)
-  let (sender, receiver) = channel
-  let waker = @tasks.BackgroundSignal::new()
-  let task = @tasks.AsyncComputeTaskPool::get().spawn(() => {
-    system_information_refresh_task(waker, sender)
+  commands.insert_resource(SysinfoTask::{
+    task: None,
+    elapsed_ms: minimum_refresh_interval_ms(),
   })
-  task.detach()
-  commands.insert_resource(SysinfoTask::{ task, receiver, waker })
 }
 
 ///|
-fn wake_diagnostic_task(task : @app.ResMut[SysinfoTask]) -> Unit {
+fn wake_diagnostic_task(
+  task : @app.ResMut[SysinfoTask],
+  time : @app.Res[@time.Time[@time.Real]],
+) -> Unit {
   let task_ref = task.get_ref()
-  task_ref.val.task |> ignore
-  task_ref.val.waker.wake()
+  if task_ref.val.task is Some(current_task) && !current_task.is_finished() {
+    return
+  }
+
+  task_ref.val.elapsed_ms = task_ref.val.elapsed_ms +
+    time.get().delta().as_millis()
+  if task_ref.val.task is Some(_) ||
+    task_ref.val.elapsed_ms < minimum_refresh_interval_ms() {
+    return
+  }
+
+  task_ref.val.elapsed_ms = 0
+  task_ref.val.task = Some(
+    @tasks.AsyncComputeTaskPool::get().spawn(fn() {
+      collect_sysinfo_refresh_data_once()
+    }),
+  )
 }
 
 ///|
@@ -298,8 +295,23 @@ fn read_diagnostic_task(
   task : @app.ResMut[SysinfoTask],
 ) -> Unit {
   let task_ref = task.get_ref()
-  while task_ref.val.receiver.try_recv() is Some(data) {
-    apply_sysinfo_refresh_data(diagnostics, data)
+  guard task_ref.val.task is Some(current_task) else { return }
+  try current_task.try_wait() catch {
+    err => {
+      @app.log_warn(
+        "System information diagnostics task failed: " + err.message(),
+      )
+      task_ref.val.task = None
+    }
+  } noraise {
+    result =>
+      match result {
+        Some(data) => {
+          apply_sysinfo_refresh_data(diagnostics, data)
+          task_ref.val.task = None
+        }
+        None => ()
+      }
   }
 }
 
@@ -352,6 +364,6 @@ pub fn system_information_diagnostics_plugin_with(
 
   app_
   .add_startup_system_param(setup_system)
-  .add_first_system_param(wake_diagnostic_task)
+  .add_first_system_param2(wake_diagnostic_task)
   .add_system_param2(read_diagnostic_task)
 }

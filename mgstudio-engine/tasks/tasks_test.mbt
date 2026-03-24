@@ -13,44 +13,80 @@
 // limitations under the License.
 
 ///|
-test "tasks boundary re-exports task pool plugin surface" {
-  let options = @tasks.TaskPoolOptions::with_num_threads(2)
-  let plugin = @tasks.TaskPoolPlugin::new(options)
-  let _apply : @app.Plugin[Unit] = @tasks.task_pool_plugin(plugin)
-  inspect("ok", content="ok")
+fn single_thread_pool() -> @tasks.TaskPool {
+  @tasks.TaskPoolBuilder::new().num_threads(1).build()
 }
 
 ///|
-test "tasks: background channel receives value from worker thread" {
-  let channel : (@tasks.BackgroundSender[Int], @tasks.BackgroundReceiver[Int]) = @tasks.background_channel(
-    capacity=2,
-  )
-  let (sender, receiver) = channel
-  let task = @tasks.AsyncComputeTaskPool::get().spawn(() => {
-    if !sender.try_send(7) {
-      abort("background channel should accept the first value")
+test "tasks: global pool accessors return initialized pools" {
+  let pool = @tasks.AsyncComputeTaskPool::get_or_init(single_thread_pool)
+  inspect(@tasks.AsyncComputeTaskPool::try_get() is Some(_), content="true")
+  inspect(pool.thread_num(), content="1")
+  inspect(@tasks.AsyncComputeTaskPool::get().thread_num(), content="1")
+}
+
+///|
+async test "tasks: task wait and try_wait follow Bevy-shaped handle semantics" {
+  let pool = single_thread_pool()
+  let task = pool.spawn(fn() { 11 })
+
+  let value = task.wait()
+  inspect(value, content="11")
+  inspect(task.is_finished(), content="true")
+  inspect(try? task.try_wait(), content="Ok(Some(11))")
+}
+
+///|
+test "tasks: cancel marks task as cancelled before the worker starts it" {
+  let pool = single_thread_pool()
+  let release = Ref::new(false)
+  let blocker_started = Ref::new(false)
+  pool
+  .spawn(fn() {
+    blocker_started.val = true
+    while !release.val {
+
     }
-    11
+    0
   })
+  .detach()
+  while !blocker_started.val {
 
-  inspect(receiver.recv(), content="7")
-  inspect(task.get(), content="11")
+  }
+
+  let task = pool.spawn(fn() { 99 })
+  task.cancel()
+  release.val = true
+  while !task.is_finished() {
+
+  }
+  let wait_result : Result[Int?, @tasks.TaskError] = try? task.try_wait()
+
+  inspect(wait_result, content="Err(TaskCancelled)")
+  inspect(task.is_finished(), content="true")
 }
 
 ///|
-test "tasks: background signal wakes waiting worker thread" {
-  let signal = @tasks.BackgroundSignal::new()
-  let channel : (
-    @tasks.BackgroundSender[String],
-    @tasks.BackgroundReceiver[String],
-  ) = @tasks.background_channel(capacity=1)
-  let (sender, receiver) = channel
-  let task = @tasks.AsyncComputeTaskPool::get().spawn(() => {
-    signal.wait() |> ignore
-    sender.try_send("ready") |> ignore
+test "tasks: detach keeps task running in background" {
+  let pool = single_thread_pool()
+  let completed = Ref::new(false)
+  let task = pool.spawn(fn() {
+    completed.val = true
+    7
   })
-  task.detach()
 
-  signal.wake()
-  inspect(receiver.recv(), content="ready")
+  task.detach()
+  while !completed.val {
+
+  }
+
+  inspect(completed.val, content="true")
+}
+
+///|
+test "tasks: app owns the task pool plugin surface" {
+  let options = @app.TaskPoolOptions::with_num_threads(2)
+  let plugin = @app.TaskPoolPlugin::new(options)
+  let _apply : @app.Plugin[Unit] = @app.task_pool_plugin(plugin)
+  inspect("ok", content="ok")
 }

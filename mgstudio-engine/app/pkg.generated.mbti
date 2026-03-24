@@ -166,7 +166,7 @@ pub fn[T] system_param_store_no_state(T, @ref.Ref[Json]) -> Unit
 
 pub fn system_set(String) -> String
 
-pub fn task_pool_num_threads() -> Int?
+pub fn task_pool_assignment_thread_count(TaskPoolThreadAssignmentPolicy, Int, Int) -> Int
 
 pub fn[W] task_pool_plugin(TaskPoolPlugin) -> (App[W]) -> App[W]
 
@@ -766,8 +766,13 @@ pub fn[M] SystemConfig::run_if_on_message(Self[@ecs.World], @ecs.MessageKey[M]) 
 pub fn[W] SystemConfig::run_if_stateful(Self[W], Json, (W, @ref.Ref[Json]) -> Bool) -> Self[W]
 
 pub struct TaskPoolOptions {
-  num_threads : Int?
+  min_total_threads : Int
+  max_total_threads : Int
+  io : TaskPoolThreadAssignmentPolicy
+  async_compute : TaskPoolThreadAssignmentPolicy
+  compute : TaskPoolThreadAssignmentPolicy
 }
+pub fn TaskPoolOptions::create_default_pools(Self) -> Unit
 pub fn TaskPoolOptions::default() -> Self
 pub fn TaskPoolOptions::with_num_threads(Int) -> Self
 
@@ -776,6 +781,14 @@ pub struct TaskPoolPlugin {
 }
 pub fn TaskPoolPlugin::default() -> Self
 pub fn TaskPoolPlugin::new(TaskPoolOptions) -> Self
+
+pub(all) struct TaskPoolThreadAssignmentPolicy {
+  min_threads : Int
+  max_threads : Int
+  percent : Float
+  on_thread_spawn : (() -> Unit)?
+  on_thread_destroy : (() -> Unit)?
+}
 
 pub struct ValidateParentHasComponentPlugin[C] {
   schedule : ScheduleStage

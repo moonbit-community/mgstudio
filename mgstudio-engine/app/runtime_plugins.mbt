@@ -282,19 +282,166 @@ pub fn app_stdin_read_line() -> String? {
 }
 
 ///|
+pub(all) struct TaskPoolThreadAssignmentPolicy {
+  min_threads : Int
+  max_threads : Int
+  percent : Float
+  on_thread_spawn : (() -> Unit)?
+  on_thread_destroy : (() -> Unit)?
+}
+
+///|
+fn task_pool_assignment_policy(
+  min_threads : Int,
+  max_threads : Int,
+  percent : Float,
+) -> TaskPoolThreadAssignmentPolicy {
+  TaskPoolThreadAssignmentPolicy::{
+    min_threads: if min_threads <= 0 {
+      1
+    } else {
+      min_threads
+    },
+    max_threads: if max_threads <= 0 {
+      1
+    } else {
+      max_threads
+    },
+    percent,
+    on_thread_spawn: None,
+    on_thread_destroy: None,
+  }
+}
+
+///|
+pub fn task_pool_assignment_thread_count(
+  policy : TaskPoolThreadAssignmentPolicy,
+  remaining_threads : Int,
+  total_threads : Int,
+) -> Int {
+  guard policy.percent >= 0.0F else {
+    abort("TaskPoolThreadAssignmentPolicy.percent must be non-negative")
+  }
+
+  let proportion = total_threads.to_double() * policy.percent.to_double()
+  let mut desired = proportion.to_int()
+  if proportion - desired.to_double() >= 0.5 {
+    desired = desired + 1
+  }
+  desired = desired.min(remaining_threads)
+
+  let lower = if policy.min_threads <= 0 { 1 } else { policy.min_threads }
+  let upper = if policy.max_threads <= 0 { 1 } else { policy.max_threads }
+  desired.max(lower).min(upper)
+}
+
+///|
 pub struct TaskPoolOptions {
-  num_threads : Int?
+  min_total_threads : Int
+  max_total_threads : Int
+  io : TaskPoolThreadAssignmentPolicy
+  async_compute : TaskPoolThreadAssignmentPolicy
+  compute : TaskPoolThreadAssignmentPolicy
 }
 
 ///|
 pub fn TaskPoolOptions::default() -> TaskPoolOptions {
-  TaskPoolOptions::{ num_threads: None }
+  TaskPoolOptions::{
+    min_total_threads: 1,
+    max_total_threads: 2_147_483_647,
+    io: task_pool_assignment_policy(1, 4, 0.25F),
+    async_compute: task_pool_assignment_policy(1, 4, 0.25F),
+    compute: task_pool_assignment_policy(1, 2_147_483_647, 1.0F),
+  }
 }
 
 ///|
-pub fn TaskPoolOptions::with_num_threads(num_threads : Int) -> TaskPoolOptions {
-  let clamped = if num_threads <= 0 { 1 } else { num_threads }
-  TaskPoolOptions::{ num_threads: Some(clamped) }
+pub fn TaskPoolOptions::with_num_threads(thread_count : Int) -> TaskPoolOptions {
+  let clamped = if thread_count <= 0 { 1 } else { thread_count }
+  {
+    ..TaskPoolOptions::default(),
+    min_total_threads: clamped,
+    max_total_threads: clamped,
+  }
+}
+
+///|
+fn task_pool_builder_from_policy(
+  thread_count : Int,
+  thread_name : String,
+  policy : TaskPoolThreadAssignmentPolicy,
+) -> @tasks.TaskPool {
+  let mut builder = @tasks.TaskPoolBuilder::new()
+    .num_threads(thread_count)
+    .thread_name(thread_name)
+  if policy.on_thread_spawn is Some(callback) {
+    builder = builder.on_thread_spawn(callback)
+  }
+  if policy.on_thread_destroy is Some(callback) {
+    builder = builder.on_thread_destroy(callback)
+  }
+  builder.build()
+}
+
+///|
+pub fn TaskPoolOptions::create_default_pools(self : TaskPoolOptions) -> Unit {
+  let min_total = if self.min_total_threads <= 0 {
+    1
+  } else {
+    self.min_total_threads
+  }
+  let max_total = if self.max_total_threads <= 0 {
+    1
+  } else {
+    self.max_total_threads
+  }
+  let total_threads = @tasks.available_parallelism()
+    .max(min_total)
+    .min(max_total)
+  let mut remaining_threads = total_threads
+
+  let io_threads = task_pool_assignment_thread_count(
+    self.io,
+    remaining_threads,
+    total_threads,
+  )
+  remaining_threads = (remaining_threads - io_threads).max(0)
+  ignore(
+    @tasks.IoTaskPool::get_or_init(fn() {
+      task_pool_builder_from_policy(io_threads, "IO Task Pool", self.io)
+    }),
+  )
+
+  let async_compute_threads = task_pool_assignment_thread_count(
+    self.async_compute,
+    remaining_threads,
+    total_threads,
+  )
+  remaining_threads = (remaining_threads - async_compute_threads).max(0)
+  ignore(
+    @tasks.AsyncComputeTaskPool::get_or_init(fn() {
+      task_pool_builder_from_policy(
+        async_compute_threads,
+        "Async Compute Task Pool",
+        self.async_compute,
+      )
+    }),
+  )
+
+  let compute_threads = task_pool_assignment_thread_count(
+    self.compute,
+    remaining_threads,
+    total_threads,
+  )
+  ignore(
+    @tasks.ComputeTaskPool::get_or_init(fn() {
+      task_pool_builder_from_policy(
+        compute_threads,
+        "Compute Task Pool",
+        self.compute,
+      )
+    }),
+  )
 }
 
 ///|
@@ -315,20 +462,9 @@ pub fn TaskPoolPlugin::new(
 }
 
 ///|
-let task_pool_num_threads_ref : Ref[Int?] = Ref::new(None)
-
-///|
-pub fn task_pool_num_threads() -> Int? {
-  task_pool_num_threads_ref.val
-}
-
-///|
 pub fn[W] task_pool_plugin(plugin : TaskPoolPlugin) -> Plugin[W] {
   fn(app : App[W]) -> App[W] {
-    if plugin.task_pool_options.num_threads is Some(num_threads) {
-      task_pool_num_threads_ref.val = Some(num_threads)
-      host_task_pool_set_num_threads(num_threads~)
-    }
+    plugin.task_pool_options.create_default_pools()
     app
   }
 }

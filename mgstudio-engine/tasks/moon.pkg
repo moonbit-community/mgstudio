@@ -1,6 +1,11 @@
 import {
-  "Milky2018/mgstudio/app",
+  "moonbitlang/async",
+  "moonbitlang/core/ref",
 }
+
+import {
+  "Milky2018/mgstudio/app",
+} for "test"
 
 options(
   "native-stub": [ "background_runtime_stub.c" ],

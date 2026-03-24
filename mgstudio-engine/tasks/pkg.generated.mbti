@@ -1,53 +1,71 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mgstudio/tasks"
 
-import {
-  "Milky2018/mgstudio/app",
-}
-
 // Values
-pub fn[T] background_channel(capacity? : Int, drop_oldest? : Bool) -> (BackgroundSender[T], BackgroundReceiver[T])
-
-pub fn background_now_millis() -> Int64
-
-pub fn task_pool_num_threads() -> Int?
-
-pub fn[W] task_pool_plugin(@app.TaskPoolPlugin) -> (@app.App[W]) -> @app.App[W]
+pub fn available_parallelism() -> Int
 
 // Errors
+pub(all) suberror TaskError {
+  TaskCancelled
+  TaskFailed(String)
+}
+pub fn TaskError::message(Self) -> String
+pub impl Show for TaskError
 
 // Types and methods
 pub struct AsyncComputeTaskPool {
+  pool : TaskPool
 }
 pub fn AsyncComputeTaskPool::get() -> Self
-pub fn[T] AsyncComputeTaskPool::spawn(Self, () -> T) -> Task[T]
+pub fn AsyncComputeTaskPool::get_or_init(() -> TaskPool) -> Self
+pub fn[T] AsyncComputeTaskPool::spawn(Self, () -> T raise) -> Task[T]
+pub fn AsyncComputeTaskPool::thread_num(Self) -> Int
+pub fn AsyncComputeTaskPool::try_get() -> Self?
 
-type BackgroundReceiver[T]
-pub fn[T] BackgroundReceiver::recv(Self[T]) -> T
-pub fn[T] BackgroundReceiver::try_recv(Self[T]) -> T?
-
-type BackgroundSender[T]
-pub fn[T] BackgroundSender::try_send(Self[T], T) -> Bool
-
-type BackgroundSignal
-pub fn BackgroundSignal::new() -> Self
-pub fn BackgroundSignal::try_wait(Self) -> Bool
-pub fn BackgroundSignal::wait(Self, timeout_ms? : Int) -> Bool
-pub fn BackgroundSignal::wake(Self) -> Unit
+pub struct ComputeTaskPool {
+  pool : TaskPool
+}
+pub fn ComputeTaskPool::get() -> Self
+pub fn ComputeTaskPool::get_or_init(() -> TaskPool) -> Self
+pub fn[T] ComputeTaskPool::spawn(Self, () -> T raise) -> Task[T]
+pub fn ComputeTaskPool::thread_num(Self) -> Int
+pub fn ComputeTaskPool::try_get() -> Self?
 
 pub struct IoTaskPool {
+  pool : TaskPool
 }
 pub fn IoTaskPool::get() -> Self
-pub fn[T] IoTaskPool::spawn(Self, () -> T) -> Task[T]
+pub fn IoTaskPool::get_or_init(() -> TaskPool) -> Self
+pub fn[T] IoTaskPool::spawn(Self, () -> T raise) -> Task[T]
+pub fn IoTaskPool::thread_num(Self) -> Int
+pub fn IoTaskPool::try_get() -> Self?
 
 type Task[T]
+pub fn[T] Task::cancel(Self[T]) -> Unit
 pub fn[T] Task::detach(Self[T]) -> Unit
-pub fn[T] Task::get(Self[T]) -> T
+pub fn[T] Task::is_finished(Self[T]) -> Bool
+pub fn[T] Task::try_wait(Self[T]) -> T? raise TaskError
+pub async fn[T] Task::wait(Self[T]) -> T raise TaskError
+
+type TaskPool
+pub fn TaskPool::new() -> Self
+pub fn[T] TaskPool::spawn(Self, () -> T raise) -> Task[T]
+pub fn TaskPool::thread_num(Self) -> Int
+
+pub struct TaskPoolBuilder {
+  num_threads : Int?
+  thread_name : String?
+  on_thread_spawn : (() -> Unit)?
+  on_thread_destroy : (() -> Unit)?
+}
+pub fn TaskPoolBuilder::build(Self) -> TaskPool
+pub fn TaskPoolBuilder::new() -> Self
+pub fn TaskPoolBuilder::num_threads(Self, Int) -> Self
+pub fn TaskPoolBuilder::on_thread_destroy(Self, () -> Unit) -> Self
+pub fn TaskPoolBuilder::on_thread_spawn(Self, () -> Unit) -> Self
+pub fn TaskPoolBuilder::thread_name(Self, String) -> Self
 
 // Type aliases
-pub using @app {type TaskPoolOptions}
-
-pub using @app {type TaskPoolPlugin}
 
 // Traits
 

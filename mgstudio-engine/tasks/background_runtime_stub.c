@@ -11,7 +11,18 @@
 #include <errno.h>
 #include <pthread.h>
 #include <time.h>
+#include <unistd.h>
 #endif
+
+MOONBIT_FFI_EXPORT int32_t mgstudio_tasks_available_parallelism(void) {
+#if defined(_WIN32)
+  DWORD count = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
+  return count == 0 ? 1 : (int32_t)count;
+#else
+  long count = sysconf(_SC_NPROCESSORS_ONLN);
+  return count <= 0 ? 1 : (int32_t)count;
+#endif
+}
 
 MOONBIT_FFI_EXPORT int64_t mgstudio_tasks_now_millis(void) {
 #if defined(_WIN32)
