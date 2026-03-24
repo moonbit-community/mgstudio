@@ -1,6 +1,6 @@
 {
   "name": "Milky2018/mgstudio",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "deps": {
     "Milky2018/moon_cosmic": "0.1.6",
     "Milky2018/moon_rapier": "0.2.5",
@@ -22,10 +22,25 @@
     "Milky2018/sysinfo": "0.1.1"
   },
   "readme": "README.mbt.md",
-  "repository": "",
+  "repository": "https://github.com/moonbit-community/mgstudio",
   "license": "Apache-2.0",
   "keywords": [],
   "description": "",
+  "exclude": [
+    "examples",
+    "assets/environment_maps",
+    "assets/light_probe_blending",
+    "assets/models",
+    "assets/textures",
+    "assets/pica_pica",
+    "assets/sounds",
+    "assets/examples",
+    ".private",
+    ".mooncakes",
+    ".repos",
+    "_build",
+    "target"
+  ],
   "preferred-target": "native",
   "--moonbit-unstable-prebuild": "build.js"
 }
