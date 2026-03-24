@@ -428,7 +428,7 @@ fn render2d_current_world_or_abort() -> @ecs.World {
 
 ///|
 fn[T] render2d_asset_store_or_abort() -> @asset.Assets[T] {
-  let world = render2d_current_world_or_abort()
+  let world = @render.render_source_world(render2d_current_world_or_abort())
   let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
   match (try! world.get_resource(key)) {
     Some(assets) => assets
@@ -441,7 +441,7 @@ fn[T] render2d_asset_store_or_abort() -> @asset.Assets[T] {
 
 ///|
 fn[T] render2d_asset_store_mut_or_abort() -> Ref[@asset.Assets[T]] {
-  let world = render2d_current_world_or_abort()
+  let world = @render.render_source_world(render2d_current_world_or_abort())
   let key : @ecs.ResourceKey[@asset.Assets[T]] = @asset.assets_resource_key()
   match (try! world.get_resource_ref_mut(key)) {
     Some(assets) => assets
@@ -5184,13 +5184,15 @@ fn render2d_extract_tilemap_chunks(world : @ecs.World) -> Unit {
 
 ///|
 pub fn render_extract_system(world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(world)
+  let material_runtime_registry = material2d_runtime_registry_or_empty(world)
   render_state_update(world, fn(rs) {
     rs.val.draw_enabled = true
     rs.val.primary_camera = @core.Entity::placeholder()
     rs.val.sprites.clear()
     rs.val.cameras.clear()
     rs.val.meshes.clear()
-    let ecs_world = world
+    let ecs_world = source_world
     let camera2d_store = get_camera2d_store(ecs_world)
     let camera_store = get_camera_store(ecs_world)
     let projection_store = get_projection_store(ecs_world)
@@ -5240,7 +5242,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
           target_size: target_info.physical_size,
           scale_factor,
         }
-      } else if render2d_target_info(world, rs.val, target) is Some(info) {
+      } else if render2d_target_info(source_world, rs.val, target) is Some(info) {
         let scale_factor = if info.scale_factor <= 0.0F {
           1.0F
         } else {
@@ -5368,11 +5370,8 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
         })
       }
     })
-    render2d_extract_tilemap_chunks(world)
+    render2d_extract_tilemap_chunks(source_world)
     let mesh_store = get_mesh2d_store(ecs_world)
-    let material_runtime_registry = material2d_runtime_registry_or_empty(
-      ecs_world,
-    )
     let wireframe_store = get_wireframe2d_store(ecs_world)
     let no_wireframe_store = get_no_wireframe2d_store(ecs_world)
     let wireframe_color_store = get_wireframe2d_color_store(ecs_world)
@@ -5387,7 +5386,7 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
         return
       }
       if !material2d_runtime_registry_contains_entity(
-          ecs_world, material_runtime_registry, entity,
+          source_world, material_runtime_registry, entity,
         ) {
         return
       }
@@ -5430,6 +5429,8 @@ pub fn render_extract_system(world : @ecs.World) -> Unit {
 
 ///|
 pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(world)
+  let material_runtime_registry = material2d_runtime_registry_or_empty(world)
   render_state_update(world, fn(rs) {
     rs.val.draw_enabled = true
     rs.val.primary_camera = @core.Entity::placeholder()
@@ -5437,12 +5438,12 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
     rs.val.cameras.clear()
     rs.val.meshes.clear()
     // ECS camera components.
-    try! world
+    try! source_world
     .query1(ecs_key_camera2d)
     .view(fn(entity, _camera2d) {
-      render2d_extract_camera_entity_ecs(world, rs, entity)
+      render2d_extract_camera_entity_ecs(source_world, rs, entity)
     })
-    render2d_extract_ui_only_cameras_ecs(world, rs)
+    render2d_extract_ui_only_cameras_ecs(source_world, rs)
     if rs.val.cameras.length() > 0 {
       let order = render2d_sorted_camera_indices(rs.val.cameras)
       if order.length() > 0 {
@@ -5452,19 +5453,19 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
     render2d_prune_postprocess_intermediate_targets(rs.val)
 
     // ECS sprite components.
-    try! world
+    try! source_world
     .query1(ecs_key_sprite)
     .view(fn(entity, sprite) {
-      if !render2d_entity_visible_ecs(world, entity) {
+      if !render2d_entity_visible_ecs(source_world, entity) {
         return
       }
-      let anchor = (try! world.get(entity, ecs_key_anchor)).unwrap_or(
+      let anchor = (try! source_world.get(entity, ecs_key_anchor)).unwrap_or(
         Anchor::default(),
       )
-      let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
+      let layers = (try! source_world.get(entity, ecs_key_render_layers)).unwrap_or(
         RenderLayers::default(),
       )
-      let transform = render2d_resolve_transform_ecs(world, entity)
+      let transform = render2d_resolve_transform_ecs(source_world, entity)
       let mut uv_min = default_uv_min()
       let mut uv_max = default_uv_max()
       let mut region_size = @math.Vec2::new(1.0F, 1.0F)
@@ -5478,7 +5479,8 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         @math.Vec2::new(transform.scale.x, transform.scale.y),
         region_size,
       )
-      let scissor = match (try! world.get(entity, ecs_key_scissor_rect)) {
+      let scissor = match
+        (try! source_world.get(entity, ecs_key_scissor_rect)) {
         Some(v) => Some(v.rect)
         None => None
       }
@@ -5544,10 +5546,9 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         })
       }
     })
-    render2d_extract_tilemap_chunks(world)
+    render2d_extract_tilemap_chunks(source_world)
 
-    let material_runtime_registry = material2d_runtime_registry_or_empty(world)
-    let wireframe_config = if get_wireframe2d_config_resource(world).get()
+    let wireframe_config = if get_wireframe2d_config_resource(source_world).get()
       is Some(config) {
       Some(config)
     } else {
@@ -5555,28 +5556,28 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
     }
 
     // ECS mesh components.
-    try! world
+    try! source_world
     .query1(ecs_key_mesh2d)
     .view(fn(entity, mesh2d) {
-      if !render2d_entity_visible_ecs(world, entity) {
+      if !render2d_entity_visible_ecs(source_world, entity) {
         return
       }
       if !material2d_runtime_registry_contains_entity(
-          world, material_runtime_registry, entity,
+          source_world, material_runtime_registry, entity,
         ) {
         return
       }
-      let layers = (try! world.get(entity, ecs_key_render_layers)).unwrap_or(
+      let layers = (try! source_world.get(entity, ecs_key_render_layers)).unwrap_or(
         RenderLayers::default(),
       )
-      let transform = render2d_resolve_transform_ecs(world, entity)
+      let transform = render2d_resolve_transform_ecs(source_world, entity)
       let wireframe = wireframe2d_mesh_should_draw(
-        (try! world.get(entity, ecs_key_wireframe2d)) is Some(_),
-        (try! world.get(entity, ecs_key_no_wireframe2d)) is Some(_),
+        (try! source_world.get(entity, ecs_key_wireframe2d)) is Some(_),
+        (try! source_world.get(entity, ecs_key_no_wireframe2d)) is Some(_),
         wireframe_config,
       )
       let wireframe_color = wireframe2d_mesh_color(
-        try! world.get(entity, ecs_key_wireframe2d_color),
+        try! source_world.get(entity, ecs_key_wireframe2d_color),
         wireframe_config,
       )
       rs.val.meshes.push(ExtractedMesh2d::{
@@ -7968,35 +7969,27 @@ pub let render2d_set_render : @app.SystemSet = @app.system_set(
 pub let render2d_set_execute : @app.SystemSet = render2d_set_render
 
 ///|
-pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  try! register_render2d_required_components(app.world())
-  color_material_plugin(ColorMaterialPlugin::default())(
-    app.init_resource(fn() { ClearColor::default() }),
-  )
-  .init_resource(fn() {
-    let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
-    assets
-  })
-  .add_startup_system(register_render2d_bevy_shader_sources)
-  .add_startup_system(init_render_state_system)
-  .add_post_update_system_config(
-    @app.system(render2d_camera_system).in_set(camera_update_systems),
-  )
-  .add_post_update_system_config(
+fn configure_render2d_render_sub_app(
+  sub_app : @app.SubApp[@ecs.World],
+) -> @app.SubApp[@ecs.World] {
+  ensure_render_state_resource(sub_app.world())
+  sub_app
+  .add_systems(
+    @app.PostUpdate,
     @app.system(render_extract_system).in_set(render2d_set_extract),
   )
-  .add_post_update_system_config(
+  .add_systems(
+    @app.PostUpdate,
     @app.system(render_prepare_system).in_set(render2d_set_prepare),
   )
-  .add_post_update_system_config(
+  .add_systems(
+    @app.PostUpdate,
     @app.system(render_queue_system).in_set(render2d_set_queue),
   )
-  .add_post_update_system_config(
+  .add_systems(
+    @app.PostUpdate,
     @app.system(render_execute_system).in_set(render2d_set_render),
   )
-  .configure_set(@app.PostUpdate, camera_update_systems, before=[
-    render2d_set_extract_materials,
-  ])
   .configure_set(@app.PostUpdate, render2d_set_extract_materials, before=[
     render2d_set_extract,
   ])
@@ -8015,35 +8008,27 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 }
 
 ///|
-pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  try! register_render2d_required_components(app.world())
-  color_material_plugin(ColorMaterialPlugin::default())(
-    app.init_resource(fn() { ClearColor::default() }),
-  )
-  .init_resource(fn() {
-    let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
-    assets
-  })
-  .add_startup_system(register_render2d_bevy_shader_sources)
-  .add_startup_system(init_render_state_system)
-  .add_post_update_system_config(
-    @app.system(render2d_camera_system_ecs).in_set(camera_update_systems),
-  )
-  .add_post_update_system_config(
+fn configure_render2d_render_sub_app_ecs(
+  sub_app : @app.SubApp[@ecs.World],
+) -> @app.SubApp[@ecs.World] {
+  ensure_render_state_resource(sub_app.world())
+  sub_app
+  .add_systems(
+    @app.PostUpdate,
     @app.system(render_extract_system_ecs).in_set(render2d_set_extract),
   )
-  .add_post_update_system_config(
+  .add_systems(
+    @app.PostUpdate,
     @app.system(render_prepare_system).in_set(render2d_set_prepare),
   )
-  .add_post_update_system_config(
+  .add_systems(
+    @app.PostUpdate,
     @app.system(render_queue_system).in_set(render2d_set_queue),
   )
-  .add_post_update_system_config(
+  .add_systems(
+    @app.PostUpdate,
     @app.system(render_execute_system).in_set(render2d_set_render),
   )
-  .configure_set(@app.PostUpdate, camera_update_systems, before=[
-    render2d_set_extract_materials,
-  ])
   .configure_set(@app.PostUpdate, render2d_set_extract_materials, before=[
     render2d_set_extract,
   ])
@@ -8059,4 +8044,38 @@ pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .configure_set(@app.PostUpdate, render2d_set_queue, before=[
     render2d_set_render,
   ])
+}
+
+///|
+pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  try! register_render2d_required_components(app.world())
+  let next = color_material_plugin(ColorMaterialPlugin::default())(
+      app.init_resource(fn() { ClearColor::default() }),
+    )
+    .init_resource(fn() {
+      let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
+      assets
+    })
+    .add_startup_system(register_render2d_bevy_shader_sources)
+    .add_post_update_system_config(
+      @app.system(render2d_camera_system).in_set(camera_update_systems),
+    )
+  @render.with_render_app(next, configure_render2d_render_sub_app)
+}
+
+///|
+pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
+  try! register_render2d_required_components(app.world())
+  let next = color_material_plugin(ColorMaterialPlugin::default())(
+      app.init_resource(fn() { ClearColor::default() }),
+    )
+    .init_resource(fn() {
+      let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
+      assets
+    })
+    .add_startup_system(register_render2d_bevy_shader_sources)
+    .add_post_update_system_config(
+      @app.system(render2d_camera_system_ecs).in_set(camera_update_systems),
+    )
+  @render.with_render_app(next, configure_render2d_render_sub_app_ecs)
 }

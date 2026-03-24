@@ -95,29 +95,63 @@ fn init_mesh_render_resources(world : @ecs.World) -> Unit {
 fn configure_mesh_render_sets(
   app : @app.App[@ecs.World],
 ) -> @app.App[@ecs.World] {
-  app
-  .add_post_update_system_config(
+  app.add_post_update_system_config(
     @app.system(render3d_update_frusta_system).in_set(
       render3d_set_update_frusta,
     ),
   )
-  .add_post_update_system_config(
-    @app.system(render3d_extract_system).in_set(render3d_set_extract),
+}
+
+///|
+fn render3d_extract_system_in_render_app(world : @ecs.World) -> Unit {
+  render3d_extract_system(world)
+}
+
+///|
+fn render3d_prepare_system_in_render_app(world : @ecs.World) -> Unit {
+  render3d_prepare_system(world)
+}
+
+///|
+fn render3d_queue_system_in_render_app(world : @ecs.World) -> Unit {
+  render3d_queue_system(world)
+}
+
+///|
+fn render3d_execute_system_in_render_app(world : @ecs.World) -> Unit {
+  render3d_execute_system(world)
+}
+
+///|
+fn configure_mesh_render_sub_app(
+  sub_app : @app.SubApp[@ecs.World],
+) -> @app.SubApp[@ecs.World] {
+  ensure_render3d_phase_state_resource(sub_app.world())
+  sub_app
+  .add_systems(
+    @app.PostUpdate,
+    @app.system(render3d_extract_system_in_render_app).in_set(
+      render3d_set_extract,
+    ),
   )
-  .add_post_update_system_config(
-    @app.system(render3d_prepare_system).in_set(render3d_set_prepare),
+  .add_systems(
+    @app.PostUpdate,
+    @app.system(render3d_prepare_system_in_render_app).in_set(
+      render3d_set_prepare,
+    ),
   )
-  .add_post_update_system_config(
-    @app.system(render3d_queue_system).in_set(render3d_set_queue),
+  .add_systems(
+    @app.PostUpdate,
+    @app.system(render3d_queue_system_in_render_app).in_set(render3d_set_queue),
   )
-  .add_post_update_system_config(
-    @app.system(render3d_execute_system).in_set(render3d_set_render),
+  .add_systems(
+    @app.PostUpdate,
+    @app.system(render3d_execute_system_in_render_app).in_set(
+      render3d_set_render,
+    ),
   )
   .configure_set(@app.PostUpdate, render3d_set_extract, before=[
     render3d_set_prepare,
-  ])
-  .configure_set(@app.PostUpdate, render3d_set_update_frusta, before=[
-    render3d_set_extract,
   ])
   .configure_set(@app.PostUpdate, render3d_set_prepare, before=[
     render3d_set_queue,
@@ -160,6 +194,7 @@ pub fn mesh_render_plugin_with(
       })
       .add_startup_system(init_mesh_render_resources)
     next = configure_mesh_render_sets(next)
+    next = @render.with_render_app(next, configure_mesh_render_sub_app)
   }
   next
 }

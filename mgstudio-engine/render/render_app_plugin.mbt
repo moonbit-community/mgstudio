@@ -69,3 +69,15 @@ pub fn render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   }
   next
 }
+
+///|
+pub fn with_render_app(
+  app : @app.App[@ecs.World],
+  update : (@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World],
+) -> @app.App[@ecs.World] {
+  let next = render_plugin(app)
+  if next.get_sub_app_mut(@app.RenderApp) is Some(sub_app_ref) {
+    sub_app_ref.val = update(sub_app_ref.val)
+  }
+  next
+}

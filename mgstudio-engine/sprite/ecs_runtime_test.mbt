@@ -605,6 +605,7 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
   let app = @app.App::new(@ecs.World::new()).add_plugins([
     material2d_plugin(plugin),
   ])
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let key : @ecs.ResourceKey[@asset.Assets[DummyMaterialAsset]] = @asset.assets_resource_key()
   let prepared_key : @ecs.ResourceKey[
     @asset.Assets[PreparedMaterial2d[DummyMaterialAsset]],
@@ -614,15 +615,27 @@ test "render2d: Material2dPlugin initializes generic material asset resources" {
   ] = RenderMaterial2dInstances::resource()
   let pipeline_key : @ecs.ResourceKey[Material2dPipeline[DummyMaterialAsset]] = Material2dPipeline::resource()
   let registry_key : @ecs.ResourceKey[Material2dRuntimeRegistry] = Material2dRuntimeRegistry::resource()
-  let pipeline = try! app.world().get_resource(pipeline_key).unwrap()
-  let registry = try! app.world().get_resource(registry_key).unwrap()
+  let pipeline = try! render_world.get_resource(pipeline_key).unwrap()
+  let registry = try! render_world.get_resource(registry_key).unwrap()
   let probe : @asset.Handle[DummyMaterialAsset] = @asset.Handle::new(0)
 
   inspect(app.contains_resource(key), content="true")
-  inspect(app.contains_resource(prepared_key), content="true")
-  inspect(app.contains_resource(instances_key), content="true")
-  inspect(app.contains_resource(pipeline_key), content="true")
-  inspect(app.contains_resource(registry_key), content="true")
+  inspect(
+    (try! render_world.get_resource(prepared_key)) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! render_world.get_resource(instances_key)) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! render_world.get_resource(pipeline_key)) is Some(_),
+    content="true",
+  )
+  inspect(
+    (try! render_world.get_resource(registry_key)) is Some(_),
+    content="true",
+  )
   inspect(
     pipeline.vertex_shader,
     content="Some(\"shaders/bevy_sprite_render/mesh2d/mesh2d.wgsl\")",
@@ -670,7 +683,7 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
   })
   app = app.run_once()
 
-  let world = app.world()
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let entity = entity_ref.val.unwrap_or(@core.Entity::new(0, 0))
   let handle = handle_ref.val.unwrap_or(@asset.Handle::new(-1))
   let instances_key : @ecs.ResourceKey[
@@ -679,8 +692,8 @@ test "render2d: generic Material2d runtime extracts and prepares custom assets" 
   let prepared_key : @ecs.ResourceKey[
     @asset.Assets[PreparedMaterial2d[DummyMaterialAsset]],
   ] = @asset.assets_resource_key()
-  let instances = try! world.get_resource(instances_key).unwrap()
-  let prepared_assets = try! world.get_resource(prepared_key).unwrap()
+  let instances = try! render_world.get_resource(instances_key).unwrap()
+  let prepared_assets = try! render_world.get_resource(prepared_key).unwrap()
   let prepared = prepared_assets
     .get(PreparedMaterial2d::prepared_handle(handle))
     .unwrap()
@@ -722,14 +735,14 @@ test "render2d: extract_color_material_mesh_instances_system populates resource"
     )
   })
   app = app.run_once()
-  let world = app.world()
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let entity = entity_ref.val.unwrap_or(@core.Entity::new(0, 0))
   let handle = handle_ref.val.unwrap_or(@asset.Handle::new(-1))
 
   let instances_key : @ecs.ResourceKey[
     RenderMaterial2dInstances[ColorMaterialAsset],
   ] = RenderMaterial2dInstances::resource()
-  let instances = try! world.get_resource(instances_key).unwrap()
+  let instances = try! render_world.get_resource(instances_key).unwrap()
 
   inspect(instances.contains(entity), content="true")
   inspect(
@@ -757,6 +770,7 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
   })
   app = app.run_once()
   let world = app.world()
+  let render_world = app.get_sub_app(@app.RenderApp).unwrap().world()
   let handle = handle_ref.val.unwrap_or(@asset.Handle::new(-1))
   let source_key : @ecs.ResourceKey[@asset.Assets[ColorMaterialAsset]] = @asset.assets_resource_key()
   let prepared_key : @ecs.ResourceKey[
@@ -764,8 +778,8 @@ test "render2d: prepare_color_material2d_assets_system populates prepared assets
   ] = @asset.assets_resource_key()
   let pipeline_key : @ecs.ResourceKey[Material2dPipeline[ColorMaterialAsset]] = Material2dPipeline::resource()
   let source_assets = try! world.get_resource(source_key).unwrap()
-  let prepared_assets = try! world.get_resource(prepared_key).unwrap()
-  let pipeline = try! world.get_resource(pipeline_key).unwrap()
+  let prepared_assets = try! render_world.get_resource(prepared_key).unwrap()
+  let pipeline = try! render_world.get_resource(pipeline_key).unwrap()
   let prepared_handle = PreparedMaterial2d::prepared_handle(handle)
   let source_material = source_assets.get(handle).unwrap()
   let prepared = prepared_assets.get(prepared_handle).unwrap()

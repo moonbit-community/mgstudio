@@ -644,7 +644,7 @@ pub fn StandardMaterial::with_double_sided(
 ///|
 fn material_current_world_or_abort() -> @ecs.World {
   match @app.current_world() {
-    Some(world) => world
+    Some(world) => @render.render_source_world(world)
     None =>
       abort(
         "material asset helpers require an active app world; use the world-owned Assets<T> resources directly outside scheduled systems",

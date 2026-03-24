@@ -6,6 +6,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/render",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/sprite_render",
   "Milky2018/mgstudio/window",

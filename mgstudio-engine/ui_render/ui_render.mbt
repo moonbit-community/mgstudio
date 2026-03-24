@@ -456,31 +456,32 @@ fn ui_uv_from_image_rects(
 
 ///|
 pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
-  let res = @ui.get_ui_context_resource(world)
+  let source_world = @render.render_source_world(world)
+  let res = @ui.get_ui_context_resource(source_world)
   guard res.get() is Some(ctx0) else { return }
   let legacy_ctx = Some(ctx0)
-  let stack_res = @ui.get_ui_stack_resource(world)
+  let stack_res = @ui.get_ui_stack_resource(source_world)
   guard stack_res.get() is Some(stack0) else { return }
   @sprite_render.render2d_clear_overlay_ui_rects(world)
   @sprite_render.render2d_clear_overlay_ui_box_shadows(world)
   @sprite_render.render2d_clear_overlay_ui_texture_slices(world)
-  let layout_store = @ui.get_ui_layout_store(world)
-  let node_store = @ui.get_node_store(world)
-  let bg_store = @ui.get_background_color_store(world)
-  let img_store = @ui.get_ui_image_store(world)
-  let image_node_store = @ui.get_image_node_store(world)
-  let button_store = @ui.get_button_colors_store(world)
-  let interaction_store = @ui.get_interaction_store(world)
-  let outline_store = @ui.get_outline_store(world)
-  let shadow_store = @ui.get_box_shadow_store(world)
-  let shadow_samples_store = get_ui_box_shadow_samples_store(world)
-  let border_color_store = @ui.get_border_color_store(world)
-  let radius_store = @ui.get_border_radius_store(world)
-  let aa_store = get_ui_anti_alias_store(world)
-  let layers_store = @sprite.get_render_layers_store(world)
-  let scissor_store = @sprite.get_scissor_rect_store(world)
-  let transform_store = @transform.get_transform_store(world)
-  let vv_store = @visibility.get_view_visibility_store(world)
+  let layout_store = @ui.get_ui_layout_store(source_world)
+  let node_store = @ui.get_node_store(source_world)
+  let bg_store = @ui.get_background_color_store(source_world)
+  let img_store = @ui.get_ui_image_store(source_world)
+  let image_node_store = @ui.get_image_node_store(source_world)
+  let button_store = @ui.get_button_colors_store(source_world)
+  let interaction_store = @ui.get_interaction_store(source_world)
+  let outline_store = @ui.get_outline_store(source_world)
+  let shadow_store = @ui.get_box_shadow_store(source_world)
+  let shadow_samples_store = get_ui_box_shadow_samples_store(source_world)
+  let border_color_store = @ui.get_border_color_store(source_world)
+  let radius_store = @ui.get_border_radius_store(source_world)
+  let aa_store = get_ui_anti_alias_store(source_world)
+  let layers_store = @sprite.get_render_layers_store(source_world)
+  let scissor_store = @sprite.get_scissor_rect_store(source_world)
+  let transform_store = @transform.get_transform_store(source_world)
+  let vv_store = @visibility.get_view_visibility_store(source_world)
   fn clamp_nonneg(v : Float) -> Float {
     if v < 0.0F {
       0.0F
@@ -588,7 +589,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
     )
   }
 
-  let ui_scale = ensure_ui_scale_resource(world)
+  let ui_scale = ensure_ui_scale_resource(source_world)
   let ui_scale_value = if ui_scale.value <= 0.0F {
     1.0F
   } else {
@@ -606,7 +607,9 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
     guard layout_store.get(entity) is Some(layout) else { continue }
     guard node_store.get(entity) is Some(node) else { continue }
     guard transform_store.get(entity) is Some(t0) else { continue }
-    let entity_ctx = ui_entity_resolved_camera_state(world, entity, legacy_ctx)
+    let entity_ctx = ui_entity_resolved_camera_state(
+      source_world, entity, legacy_ctx,
+    )
     let viewport_size = entity_ctx.viewport_size
     let shadow_samples = match entity_ctx.camera_entity {
       Some(camera_entity) =>
@@ -1096,15 +1099,22 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn ui_render_extract_system_in_render_app(world : @ecs.World) -> Unit {
+  ui_render_extract_system(world)
+}
+
+///|
 pub fn ui_render_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  app
-  .add_post_update_system_config(
-    @app.system(ui_render_extract_system).in_set(ui_render_set_extract),
-  )
-  .configure_set(
-    @app.PostUpdate,
-    ui_render_set_extract,
-    after=[@ui.ui_set_stack],
-    before=[@sprite_render.render2d_set_extract],
-  )
+  @render.with_render_app(app, fn(render_app) {
+    render_app
+    .add_systems(
+      @app.PostUpdate,
+      @app.system(ui_render_extract_system_in_render_app).in_set(
+        ui_render_set_extract,
+      ),
+    )
+    .configure_set(@app.PostUpdate, ui_render_set_extract, before=[
+      @sprite_render.render2d_set_extract,
+    ])
+  })
 }

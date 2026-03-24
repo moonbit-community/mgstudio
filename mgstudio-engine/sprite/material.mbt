@@ -451,17 +451,6 @@ fn[M] init_material2d_assets_resource(
 }
 
 ///|
-fn[M] init_prepared_material2d_assets_resource(
-  app : @app.App[@ecs.World],
-  _probe : @asset.Handle[M],
-) -> @app.App[@ecs.World] {
-  app.init_resource(fn() {
-    let assets : @asset.Assets[PreparedMaterial2d[M]] = @asset.Assets::new()
-    assets
-  })
-}
-
-///|
 let material2d_pipeline_resource_registry : Ref[
   @hashmap.HashMap[String, @any.Any],
 ] = Ref::new(@hashmap.HashMap::new())
@@ -495,16 +484,6 @@ fn[M] registered_material2d_pipeline_resource_key() -> @ecs.ResourceKey[
 ///|
 pub impl[M] @app.Resource for Material2dPipeline[M] with resource() {
   registered_material2d_pipeline_resource_key()
-}
-
-///|
-fn[M] init_material2d_pipeline_resource(
-  app : @app.App[@ecs.World],
-  _probe : @asset.Handle[M],
-) -> @app.App[@ecs.World] {
-  app.init_resource(fn() -> Material2dPipeline[M] {
-    Material2dPipeline::default()
-  })
 }
 
 ///|
@@ -594,14 +573,50 @@ fn[M] material2d_pipeline_resource_from_plugin(
 }
 
 ///|
-fn[M] init_render_material2d_instances_resource(
-  app : @app.App[@ecs.World],
+fn[M] ensure_prepared_material2d_assets_resource_in_world(
+  world : @ecs.World,
   _probe : @asset.Handle[M],
-) -> @app.App[@ecs.World] {
-  app.init_resource(fn() {
-    let instances : RenderMaterial2dInstances[M] = RenderMaterial2dInstances::new()
-    instances
-  })
+) -> Unit {
+  let prepared_assets_key : @ecs.ResourceKey[
+    @asset.Assets[PreparedMaterial2d[M]],
+  ] = @asset.assets_resource_key()
+  if (try! world.get_resource(prepared_assets_key)) is None {
+    world.insert_resource(prepared_assets_key, @asset.Assets::new())
+  }
+}
+
+///|
+fn[M] ensure_material2d_pipeline_resource_in_world(
+  world : @ecs.World,
+  pipeline : Material2dPipeline[M],
+) -> Unit {
+  let pipeline_key : @ecs.ResourceKey[Material2dPipeline[M]] = Material2dPipeline::resource()
+  if (try! world.get_resource(pipeline_key)) is None {
+    world.insert_resource(pipeline_key, pipeline)
+  }
+}
+
+///|
+fn[M] ensure_render_material2d_instances_resource_in_world(
+  world : @ecs.World,
+  _probe : @asset.Handle[M],
+) -> Unit {
+  let key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = RenderMaterial2dInstances::resource()
+  if (try! world.get_resource(key)) is None {
+    world.insert_resource(key, RenderMaterial2dInstances::new())
+  }
+}
+
+///|
+fn ensure_material2d_runtime_registry_resource_in_world(
+  world : @ecs.World,
+) -> Unit {
+  if (try! world.get_resource(Material2dRuntimeRegistry::resource())) is None {
+    world.insert_resource(
+      Material2dRuntimeRegistry::resource(),
+      Material2dRuntimeRegistry::new(),
+    )
+  }
 }
 
 ///|
@@ -614,29 +629,29 @@ pub fn[M : Material2d] material2d_plugin(
       plugin.vertex_shader,
       plugin.fragment_shader,
     )
-    let configured = init_render_material2d_instances_resource(
-        init_prepared_material2d_assets_resource(
-          init_material2d_pipeline_resource(
-            init_material2d_assets_resource(app, probe),
-            probe,
-          ),
-          probe,
-        ),
-        probe,
-      )
-      .init_resource(fn() { Material2dRuntimeRegistry::new() })
-      .insert_resource(material2d_pipeline_resource_from_plugin(plugin))
-      .add_post_update_system_config(
+    let pipeline = material2d_pipeline_resource_from_plugin(plugin)
+    let configured = init_material2d_assets_resource(app, probe)
+    let configured = @render.with_render_app(configured, fn(render_app) {
+      let render_world = render_app.world()
+      ensure_prepared_material2d_assets_resource_in_world(render_world, probe)
+      ensure_material2d_pipeline_resource_in_world(render_world, pipeline)
+      ensure_render_material2d_instances_resource_in_world(render_world, probe)
+      ensure_material2d_runtime_registry_resource_in_world(render_world)
+      register_material2d_runtime_world(render_world, probe)
+      render_app
+      .add_systems(
+        @app.PostUpdate,
         @app.system(fn(world : @ecs.World) {
           extract_material2d_mesh_instances_system(world, probe)
         }).in_set(render2d_set_extract_materials),
       )
-      .add_post_update_system_config(
+      .add_systems(
+        @app.PostUpdate,
         @app.system(fn(world : @ecs.World) {
           prepare_material2d_assets_system(world, probe)
         }).in_set(render2d_set_prepare_materials),
       )
-    let configured = register_material2d_runtime(configured, probe)
+    })
     if shader_paths.length() == 0 {
       configured
     } else {
@@ -846,7 +861,7 @@ fn[M] draw_material2d_mesh_item(
 ///|
 priv struct Material2dRuntimeEntry {
   type_name : String
-  contains_instance_fn : (@ecs.World, @core.Entity) -> Bool
+  contains_source_material_fn : (@ecs.World, @core.Entity) -> Bool
   mesh_phase_for_draw_fn : (@ecs.World, ExtractedMesh2d) -> Int?
   draw_mesh_fn : (@ecs.World, ExtractedMesh2d) -> Unit
 }
@@ -916,11 +931,18 @@ fn[M] material2d_runtime_entry(
   probe : @asset.Handle[M],
 ) -> Material2dRuntimeEntry {
   let type_name = material2d_type_name(probe)
+  let contains_source_material = fn(
+    source_world : @ecs.World,
+    entity : @core.Entity,
+  ) -> Bool {
+    let material_store : @ecs.ComponentAccess[MeshMaterial2d[M]] = get_mesh_material2d_store(
+      source_world,
+    )
+    material_store.get(entity) is Some(_)
+  }
   Material2dRuntimeEntry::{
     type_name,
-    contains_instance_fn: fn(world, entity) {
-      render_material2d_instances_or_empty(world, probe).contains(entity)
-    },
+    contains_source_material_fn: contains_source_material,
     mesh_phase_for_draw_fn: fn(world, mesh) {
       let prepared_assets = prepared_material2d_assets_or_empty(world, probe)
       let material_instances = render_material2d_instances_or_empty(
@@ -950,27 +972,25 @@ fn[M] material2d_runtime_entry(
 }
 
 ///|
-fn[M] register_material2d_runtime(
-  app : @app.App[@ecs.World],
+fn[M] register_material2d_runtime_world(
+  world : @ecs.World,
   probe : @asset.Handle[M],
-) -> @app.App[@ecs.World] {
-  let app = app.init_resource(fn() { Material2dRuntimeRegistry::new() })
-  let world = app.world()
+) -> Unit {
+  ensure_material2d_runtime_registry_resource_in_world(world)
   if (try! world.get_resource_ref_mut(Material2dRuntimeRegistry::resource()))
     is Some(registry_ref) {
     registry_ref.val.register(material2d_runtime_entry(probe))
   }
-  app
 }
 
 ///|
 fn material2d_runtime_registry_contains_entity(
-  world : @ecs.World,
+  source_world : @ecs.World,
   registry : Material2dRuntimeRegistry,
   entity : @core.Entity,
 ) -> Bool {
   for entry in registry.entries {
-    if (entry.contains_instance_fn)(world, entity) {
+    if (entry.contains_source_material_fn)(source_world, entity) {
       return true
     }
   }
@@ -997,8 +1017,9 @@ fn[M] extract_material2d_mesh_instances_system(
   _probe : @asset.Handle[M],
 ) -> Unit {
   _probe |> ignore
+  let source_world = @render.render_source_world(world)
   let material_store : @ecs.ComponentAccess[MeshMaterial2d[M]] = get_mesh_material2d_store(
-    world,
+    source_world,
   )
   let key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = RenderMaterial2dInstances::resource()
   guard (try! world.get_resource_ref_mut(key)) is Some(instances_ref) else {
@@ -1016,6 +1037,7 @@ fn[M : Material2d] prepare_material2d_assets_system(
   _probe : @asset.Handle[M],
 ) -> Unit {
   _probe |> ignore
+  let source_world = @render.render_source_world(world)
   let instances_key : @ecs.ResourceKey[RenderMaterial2dInstances[M]] = RenderMaterial2dInstances::resource()
   let source_assets_key : @ecs.ResourceKey[@asset.Assets[M]] = @asset.assets_resource_key()
   let pipeline_key : @ecs.ResourceKey[Material2dPipeline[M]] = Material2dPipeline::resource()
@@ -1025,7 +1047,7 @@ fn[M : Material2d] prepare_material2d_assets_system(
   guard (try! world.get_resource_ref(instances_key)) is Some(instances_ref) else {
     return
   }
-  guard (try! world.get_resource_ref(source_assets_key))
+  guard (try! source_world.get_resource_ref(source_assets_key))
     is Some(source_assets_ref) else {
     return
   }

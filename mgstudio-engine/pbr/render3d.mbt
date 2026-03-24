@@ -1053,21 +1053,64 @@ let point_light_shadow_targets : Ref[Array[PointLightShadowTargetsEntry]] = Ref:
 let render3d_runtime_initialized_ref : Ref[Bool] = Ref::new(false)
 
 ///|
-let render3d_prepared_camera_order_ref : Ref[Array[@core.Entity]] = Ref::new([])
-
-///|
-let render3d_queued_visible_mesh_count_ref : Ref[Int] = Ref::new(0)
-
-///|
 let render3d_diagnostic_queued_visible_mesh_count_ref : Ref[Int] = Ref::new(0)
 
 ///|
 let render3d_diagnostic_prepared_camera_count_ref : Ref[Int] = Ref::new(0)
 
 ///|
-let render3d_gpu_preprocess_camera_queues_ref : Ref[
-  Array[GpuPreprocessCameraQueueEntry3d],
-] = Ref::new([])
+priv struct Render3dPhaseState {
+  mut prepared_camera_order : Array[@core.Entity]
+  gpu_preprocess_camera_queues : Array[GpuPreprocessCameraQueueEntry3d]
+}
+
+///|
+fn Render3dPhaseState::new() -> Render3dPhaseState {
+  Render3dPhaseState::{
+    prepared_camera_order: [],
+    gpu_preprocess_camera_queues: [],
+  }
+}
+
+///|
+let render3d_phase_state_key : @ecs.ResourceKey[Render3dPhaseState] = @ecs.register_resource(
+  debug_name="bevy_pbr::Render3dPhaseState",
+)
+
+///|
+impl @app.Resource for Render3dPhaseState with resource() {
+  render3d_phase_state_key
+}
+
+///|
+fn ensure_render3d_phase_state_resource(world : @ecs.World) -> Unit {
+  if (try! world.get_resource(Render3dPhaseState::resource())) is None {
+    world.insert_resource(
+      Render3dPhaseState::resource(),
+      Render3dPhaseState::new(),
+    )
+  }
+}
+
+///|
+fn render3d_phase_state_ref_or_abort(
+  world : @ecs.World,
+) -> Ref[Render3dPhaseState] {
+  ensure_render3d_phase_state_resource(world)
+  match (try! world.get_resource_ref_mut(Render3dPhaseState::resource())) {
+    Some(state) => state
+    None => abort("Missing Render3dPhaseState resource in render world")
+  }
+}
+
+///|
+fn render3d_phase_state_or_default(world : @ecs.World) -> Render3dPhaseState {
+  ensure_render3d_phase_state_resource(world)
+  match (try! world.get_resource(Render3dPhaseState::resource())) {
+    Some(state) => state
+    None => Render3dPhaseState::new()
+  }
+}
 
 ///|
 priv struct WireframeMeshCacheEntry {
@@ -4592,14 +4635,16 @@ fn render3d_make_fallback_gpu_preprocess_queue_entry(
 
 ///|
 fn render3d_take_gpu_preprocess_camera_queue_items(
+  world : @ecs.World,
   camera_entity : @core.Entity,
   meshes : Array[ExtractedMesh3d],
 ) -> GpuPreprocessResolvedCameraQueueEntry3d? {
-  for i in 0..<render3d_gpu_preprocess_camera_queues_ref.val.length() {
-    let queue_entry = render3d_gpu_preprocess_camera_queues_ref.val[i]
+  let phase_state_ref = render3d_phase_state_ref_or_abort(world)
+  for i in 0..<phase_state_ref.val.gpu_preprocess_camera_queues.length() {
+    let queue_entry = phase_state_ref.val.gpu_preprocess_camera_queues[i]
     if queue_entry.camera_entity.id == camera_entity.id &&
       queue_entry.camera_entity.generation == camera_entity.generation {
-      render3d_gpu_preprocess_camera_queues_ref.val.remove(i) |> ignore
+      phase_state_ref.val.gpu_preprocess_camera_queues.remove(i) |> ignore
       let draw_items = render3d_resolve_prequeued_mesh_phase_items(
         queue_entry.items,
         meshes,
@@ -5665,9 +5710,10 @@ fn render3d_sorted_camera_entities(world : @ecs.World) -> Array[@core.Entity] {
 
 ///|
 fn render3d_prepared_camera_phase_items(
+  world : @ecs.World,
   cameras : Array[ExtractedCamera3d],
 ) -> Array[CameraPhaseItem3d]? {
-  let prepared = render3d_prepared_camera_order_ref.val
+  let prepared = render3d_phase_state_or_default(world).prepared_camera_order
   if prepared.length() != cameras.length() {
     return None
   }
@@ -5697,41 +5743,49 @@ fn render3d_prepared_camera_phase_items(
 
 ///|
 pub fn render3d_extract_system(world : @ecs.World) -> Unit {
-  render3d_prepared_camera_order_ref.val = render3d_sorted_camera_entities(
-    world,
+  let source_world = @render.render_source_world(world)
+  let phase_state_ref = render3d_phase_state_ref_or_abort(world)
+  phase_state_ref.val.prepared_camera_order = render3d_sorted_camera_entities(
+    source_world,
   )
-  render3d_gpu_preprocess_camera_queues_ref.val.clear()
-  render3d_diagnostic_prepared_camera_count_ref.val = render3d_prepared_camera_order_ref.val.length()
-  render3d_queued_visible_mesh_count_ref.val = 0
+  phase_state_ref.val.gpu_preprocess_camera_queues.clear()
+  render3d_diagnostic_prepared_camera_count_ref.val = phase_state_ref.val.prepared_camera_order.length()
   render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
 }
 
 ///|
 pub fn render3d_prepare_system(world : @ecs.World) -> Unit {
-  if render3d_prepared_camera_order_ref.val.length() == 0 {
-    render3d_prepared_camera_order_ref.val = render3d_sorted_camera_entities(
-      world,
+  let source_world = @render.render_source_world(world)
+  let phase_state_ref = render3d_phase_state_ref_or_abort(world)
+  if phase_state_ref.val.prepared_camera_order.length() == 0 {
+    phase_state_ref.val.prepared_camera_order = render3d_sorted_camera_entities(
+      source_world,
     )
   }
 }
 
 ///|
 pub fn render3d_queue_system(world : @ecs.World) -> Unit {
-  render3d_gpu_preprocess_camera_queues_ref.val.clear()
-  if render3d_prepared_camera_order_ref.val.length() == 0 {
-    render3d_queued_visible_mesh_count_ref.val = 0
+  let source_world = @render.render_source_world(world)
+  let phase_state_ref = render3d_phase_state_ref_or_abort(world)
+  phase_state_ref.val.gpu_preprocess_camera_queues.clear()
+  if phase_state_ref.val.prepared_camera_order.length() == 0 {
     render3d_diagnostic_queued_visible_mesh_count_ref.val = 0
     return
   }
-  let mesh_store = world.component(ecs_key_mesh3d)
-  let view_visibility_store = world.component(
+  let mesh_store = source_world.component(ecs_key_mesh3d)
+  let view_visibility_store = source_world.component(
     @visibility.ecs_key_view_visibility,
   )
-  let layers_store = world.component(@sprite.ecs_key_render_layers)
-  let no_indirect_drawing_store = world.component(ecs_key_no_indirect_drawing)
-  let occlusion_culling_store = world.component(ecs_key_occlusion_culling)
-  let transform_store = world.component(@transform.ecs_key_transform)
-  let parent_store = world.component(@hierarchy.ecs_key_parent)
+  let layers_store = source_world.component(@sprite.ecs_key_render_layers)
+  let no_indirect_drawing_store = source_world.component(
+    ecs_key_no_indirect_drawing,
+  )
+  let occlusion_culling_store = source_world.component(
+    ecs_key_occlusion_culling,
+  )
+  let transform_store = source_world.component(@transform.ecs_key_transform)
+  let parent_store = source_world.component(@hierarchy.ecs_key_parent)
   let mut visible_mesh_count = 0
   mesh_store.for_each(fn(entity, _mesh3d) {
     if view_visibility_store.get(entity) is Some(view_visibility) &&
@@ -5740,15 +5794,16 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
     }
     visible_mesh_count = visible_mesh_count + 1
   })
-  render3d_queued_visible_mesh_count_ref.val = visible_mesh_count
   render3d_diagnostic_queued_visible_mesh_count_ref.val = visible_mesh_count
-  let runtime_config = render3d_runtime_config_or_default(world)
+  let runtime_config = render3d_runtime_config_or_default(source_world)
   let indirect_first_instance_supported = render3d_indirect_first_instance_supported()
   if !runtime_config.use_gpu_instance_buffer_builder {
     return
   }
-  let mesh_candidates = render3d_collect_gpu_preprocess_mesh_candidates(world)
-  for prepared_camera in render3d_prepared_camera_order_ref.val {
+  let mesh_candidates = render3d_collect_gpu_preprocess_mesh_candidates(
+    source_world,
+  )
+  for prepared_camera in phase_state_ref.val.prepared_camera_order {
     let camera_entity = prepared_camera
     let camera_layers = match layers_store.get(camera_entity) {
       Some(value) => value
@@ -5766,7 +5821,7 @@ pub fn render3d_queue_system(world : @ecs.World) -> Unit {
     )
     let gpu_occlusion_culling_enabled = camera_indirect_enabled &&
       occlusion_culling_store.get(camera_entity) is Some(_)
-    render3d_gpu_preprocess_camera_queues_ref.val.push(
+    phase_state_ref.val.gpu_preprocess_camera_queues.push(
       render3d_build_gpu_preprocess_camera_queue_entry(
         camera_entity, mesh_candidates, camera_layers, camera_transform, camera_indirect_enabled,
         gpu_occlusion_culling_enabled,
@@ -5790,7 +5845,7 @@ pub fn render3d_prepared_camera_count() -> Int? {
   if !render3d_runtime_initialized_ref.val {
     return Some(0)
   }
-  Some(render3d_prepared_camera_order_ref.val.length())
+  Some(render3d_diagnostic_prepared_camera_count_ref.val)
 }
 
 ///|
@@ -5798,7 +5853,7 @@ pub fn render3d_queued_visible_mesh_count() -> Int? {
   if !render3d_runtime_initialized_ref.val {
     return Some(0)
   }
-  Some(render3d_queued_visible_mesh_count_ref.val)
+  Some(render3d_diagnostic_queued_visible_mesh_count_ref.val)
 }
 
 ///|
@@ -6131,61 +6186,70 @@ fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
 
 ///|
 pub fn render3d_execute_system(world : @ecs.World) -> Unit {
+  let source_world = @render.render_source_world(world)
   let cameras : Array[ExtractedCamera3d] = []
   let meshes : Array[ExtractedMesh3d] = []
   let projection_updates : Array[
     (@core.Entity, Projection, ProjectionRuntime3d),
   ] = []
   let projection_runtime_removals : Array[@core.Entity] = []
-  let camera3d_store = world.component(ecs_key_camera3d)
-  let camera_store = world.component(@sprite.ecs_key_camera)
-  let projection_store = world.component(ecs_key_projection)
-  let projection_runtime_store = world.component(ecs_key_projection_runtime3d)
-  let sub_camera_view_store = world.component(ecs_key_sub_camera_view3d)
-  let screen_space_transmission_store = world.component(
+  let camera3d_store = source_world.component(ecs_key_camera3d)
+  let camera_store = source_world.component(@sprite.ecs_key_camera)
+  let projection_store = source_world.component(ecs_key_projection)
+  let projection_runtime_store = source_world.component(
+    ecs_key_projection_runtime3d,
+  )
+  let sub_camera_view_store = source_world.component(ecs_key_sub_camera_view3d)
+  let screen_space_transmission_store = source_world.component(
     ecs_key_screen_space_transmission,
   )
-  let bloom_store = world.component(ecs_key_bloom)
-  let tonemapping_store = world.component(ecs_key_tonemapping)
-  let deband_dither_store = world.component(ecs_key_deband_dither)
-  let chromatic_aberration_store = world.component(ecs_key_chromatic_aberration)
-  let vignette_store = world.component(ecs_key_vignette)
-  let motion_blur_store = world.component(ecs_key_motion_blur)
-  let exposure_store = world.component(ecs_key_exposure)
-  let color_grading_store = world.component(ecs_key_color_grading)
-  let skybox_store = world.component(ecs_key_skybox)
-  let hdr_store = world.component(ecs_key_hdr)
-  let fxaa_store = world.component(ecs_key_fxaa)
-  let temporal_jitter_store = world.component(ecs_key_temporal_jitter)
-  let motion_vector_prepass_store = world.component(
+  let bloom_store = source_world.component(ecs_key_bloom)
+  let tonemapping_store = source_world.component(ecs_key_tonemapping)
+  let deband_dither_store = source_world.component(ecs_key_deband_dither)
+  let chromatic_aberration_store = source_world.component(
+    ecs_key_chromatic_aberration,
+  )
+  let vignette_store = source_world.component(ecs_key_vignette)
+  let motion_blur_store = source_world.component(ecs_key_motion_blur)
+  let exposure_store = source_world.component(ecs_key_exposure)
+  let color_grading_store = source_world.component(ecs_key_color_grading)
+  let skybox_store = source_world.component(ecs_key_skybox)
+  let hdr_store = source_world.component(ecs_key_hdr)
+  let fxaa_store = source_world.component(ecs_key_fxaa)
+  let temporal_jitter_store = source_world.component(ecs_key_temporal_jitter)
+  let motion_vector_prepass_store = source_world.component(
     ecs_key_motion_vector_prepass,
   )
-  let temporal_anti_aliasing_store = world.component(
+  let temporal_anti_aliasing_store = source_world.component(
     ecs_key_temporal_anti_aliasing,
   )
-  let target_store = world.component(@sprite.ecs_key_render_target)
-  let layers_store = world.component(@sprite.ecs_key_render_layers)
-  let depth_prepass_store = world.component(ecs_key_depth_prepass)
-  let deferred_prepass_store = world.component(ecs_key_deferred_prepass)
-  let no_indirect_drawing_store = world.component(ecs_key_no_indirect_drawing)
-  let occlusion_culling_store = world.component(ecs_key_occlusion_culling)
-  let msaa_store = world.component(ecs_key_msaa)
-  let transform_store = world.component(@transform.ecs_key_transform)
-  let parent_store = world.component(@hierarchy.ecs_key_parent)
-  let view_visibility_store = world.component(
+  let target_store = source_world.component(@sprite.ecs_key_render_target)
+  let layers_store = source_world.component(@sprite.ecs_key_render_layers)
+  let depth_prepass_store = source_world.component(ecs_key_depth_prepass)
+  let deferred_prepass_store = source_world.component(ecs_key_deferred_prepass)
+  let no_indirect_drawing_store = source_world.component(
+    ecs_key_no_indirect_drawing,
+  )
+  let occlusion_culling_store = source_world.component(
+    ecs_key_occlusion_culling,
+  )
+  let msaa_store = source_world.component(ecs_key_msaa)
+  let transform_store = source_world.component(@transform.ecs_key_transform)
+  let parent_store = source_world.component(@hierarchy.ecs_key_parent)
+  let view_visibility_store = source_world.component(
     @visibility.ecs_key_view_visibility,
   )
-  let runtime_config = render3d_runtime_config_or_default(world)
-  let prepass_enabled = standard_material_prepass_enabled(world)
+  let runtime_config = render3d_runtime_config_or_default(source_world)
+  let prepass_enabled = standard_material_prepass_enabled(source_world)
   let deferred_lighting_enabled = runtime_config.add_default_deferred_lighting_plugin &&
-    deferred_pbr_lighting_enabled(world)
+    deferred_pbr_lighting_enabled(source_world)
   let indirect_first_instance_supported = render3d_indirect_first_instance_supported()
   let gpu_instance_buffer_builder_enabled = runtime_config.use_gpu_instance_buffer_builder
   @render.host_gpu_set_mesh3d_gpu_instance_builder_enabled(
     gpu_instance_buffer_builder_enabled,
   )
-  let delta_seconds = render3d_default_time_or_default(world).delta_seconds()
-  let mut default_opaque_renderer_method = if (try! world.get_resource(
+  let delta_seconds = render3d_default_time_or_default(source_world).delta_seconds()
+  let mut default_opaque_renderer_method = if (try! source_world.get_resource(
       ecs_key_default_opaque_renderer_method,
     ))
     is Some(default_method) {
@@ -6197,7 +6261,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     default_opaque_renderer_method is OpaqueRendererMethod::Deferred {
     default_opaque_renderer_method = OpaqueRendererMethod::Forward
   }
-  let point_light_shadow_map_size = if (try! world.get_resource(
+  let point_light_shadow_map_size = if (try! source_world.get_resource(
       ecs_key_point_light_shadow_map,
     ))
     is Some(shadow_map) {
@@ -6270,7 +6334,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
       Some(v) => v.transform
       None => transform
     }
-    match render3d_target_info(world, target) {
+    match render3d_target_info(source_world, target) {
       Some(target_info) => {
         let mut camera_clamped = camera
         if camera.viewport is Some(viewport) {
@@ -6360,24 +6424,26 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     projection_runtime_store.remove(entity) |> ignore
   }
   if cameras.length() == 0 {
-    render3d_prepared_camera_order_ref.val.clear()
-    render3d_queued_visible_mesh_count_ref.val = 0
+    let phase_state_ref = render3d_phase_state_ref_or_abort(world)
+    phase_state_ref.val.prepared_camera_order.clear()
     return
   }
-  let mesh_store = world.component(ecs_key_mesh3d)
-  let material_store = world.component(ecs_key_mesh_material3d)
-  let visibility_range_store = world.component(
+  let mesh_store = source_world.component(ecs_key_mesh3d)
+  let material_store = source_world.component(ecs_key_mesh_material3d)
+  let visibility_range_store = source_world.component(
     @visibility.ecs_key_visibility_range,
   )
-  let wireframe_store = world.component(ecs_key_wireframe)
-  let no_wireframe_store = world.component(ecs_key_no_wireframe)
-  let wireframe_color_store = world.component(ecs_key_wireframe_color)
-  let forward_decal_store = world.component(ecs_key_forward_decal)
-  let forward_decal_material_ext_store = world.component(
+  let wireframe_store = source_world.component(ecs_key_wireframe)
+  let no_wireframe_store = source_world.component(ecs_key_no_wireframe)
+  let wireframe_color_store = source_world.component(ecs_key_wireframe_color)
+  let forward_decal_store = source_world.component(ecs_key_forward_decal)
+  let forward_decal_material_ext_store = source_world.component(
     ecs_key_forward_decal_material_ext,
   )
-  let clustered_decal_store = world.component(ecs_key_clustered_decal)
-  let wireframe_config = if (try! world.get_resource(ecs_key_wireframe_config))
+  let clustered_decal_store = source_world.component(ecs_key_clustered_decal)
+  let wireframe_config = if (try! source_world.get_resource(
+      ecs_key_wireframe_config,
+    ))
     is Some(config) {
     Some(config)
   } else {
@@ -6439,8 +6505,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     })
   })
   motion_blur_history_sync(meshes)
-  let lighting = render3d_collect_lighting(world)
-  let camera_phase_items = match render3d_prepared_camera_phase_items(cameras) {
+  let lighting = render3d_collect_lighting(source_world)
+  let camera_phase_items = match
+    render3d_prepared_camera_phase_items(world, cameras) {
     Some(items) => items
     None => render3d_queue_camera_phase_items(cameras)
   }
@@ -6648,7 +6715,9 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     }
     let draw_queue_entry = if gpu_instance_buffer_builder_enabled {
       match
-        render3d_take_gpu_preprocess_camera_queue_items(camera_entity, meshes) {
+        render3d_take_gpu_preprocess_camera_queue_items(
+          world, camera_entity, meshes,
+        ) {
         Some(prequeued_entry) => prequeued_entry
         None =>
           render3d_make_fallback_gpu_preprocess_queue_entry(
@@ -7781,8 +7850,8 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     }
   }
   camera_motion_blur_history_sync(next_camera_motion_blur_history)
-  render3d_prepared_camera_order_ref.val.clear()
-  render3d_queued_visible_mesh_count_ref.val = 0
+  let phase_state_ref = render3d_phase_state_ref_or_abort(world)
+  phase_state_ref.val.prepared_camera_order.clear()
 }
 
 ///|

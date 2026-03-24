@@ -177,6 +177,8 @@ pub fn screenshot_capture_texture_sync(texture_id~ : Int) -> @renderer.Screensho
 
 pub fn screenshot_take_capture_result(Int) -> @renderer.ScreenshotCaptureResult?
 
+pub fn with_render_app(@app.App[@ecs.World], (@app.SubApp[@ecs.World]) -> @app.SubApp[@ecs.World]) -> @app.App[@ecs.World]
+
 // Errors
 
 // Types and methods
