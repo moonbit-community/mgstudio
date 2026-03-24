@@ -20,6 +20,10 @@ pub fn current_observer_world_abort_missing() -> World
 
 pub fn[C : Component] current_remove_observer() -> On[Remove, C]
 
+pub let ecs_key_default_query_filters : ResourceKey[DefaultQueryFilters]
+
+pub let ecs_key_disabled : ComponentKey[Disabled]
+
 pub let ecs_key_name : ComponentKey[Name]
 
 pub fn[T] event_key_from_id(Int, debug_name? : String) -> EventKey[T]
@@ -86,6 +90,12 @@ pub struct All {
 }
 pub fn All::new() -> Self
 pub impl QueryFilter for All
+
+pub struct Allow[T] {
+  key : ComponentKey[T]
+}
+pub fn[T] Allow::new(ComponentKey[T]) -> Self[T]
+pub impl[T] QueryFilter for Allow[T]
 
 pub struct BatchingStrategy {
   min_batch_size : Int
@@ -167,6 +177,13 @@ pub struct ComponentRef[T] {
 }
 pub fn[T] ComponentRef::value(Self[T]) -> T
 
+pub struct DefaultQueryFilters {
+  disabling_component_ids : Array[Int]
+}
+pub fn DefaultQueryFilters::disabling_component_ids(Self) -> Array[Int]
+pub fn DefaultQueryFilters::empty() -> Self
+pub fn DefaultQueryFilters::register_disabling_component(Self, Int) -> Self
+
 pub struct DeferredEntityCommands {
   commands : DeferredWorldCommands
   entity : @core.Entity
@@ -197,6 +214,15 @@ pub struct DeferredWorldCommands {
 }
 pub fn DeferredWorldCommands::entity(Self, @core.Entity) -> DeferredEntityCommands
 
+pub struct Disabled {
+}
+pub fn Disabled::new() -> Self
+pub impl Component for Disabled
+pub impl Eq for Disabled
+pub impl Show for Disabled
+pub impl ToJson for Disabled
+pub impl @json.FromJson for Disabled
+
 pub struct EntityQuery[F] {
   world : World
   filter : F
@@ -214,6 +240,12 @@ pub struct EventKey[T] {
 pub fn[U, T] EventKey::cast(Self[T]) -> Self[U]
 pub fn[T] EventKey::debug_name(Self[T]) -> String
 pub fn[T] EventKey::id(Self[T]) -> Int
+
+pub struct Has[T] {
+  key : ComponentKey[T]
+}
+pub fn[T] Has::key(Self[T]) -> ComponentKey[T]
+pub fn[T] Has::new(ComponentKey[T]) -> Self[T]
 
 pub struct HookContext {
   entity : @core.Entity
@@ -336,6 +368,12 @@ pub struct On[E, C] {
 }
 pub fn[E, C] On::caller(Self[E, C]) -> String?
 
+pub struct Optional[T] {
+  key : ComponentKey[T]
+}
+pub fn[T] Optional::key(Self[T]) -> ComponentKey[T]
+pub fn[T] Optional::new(ComponentKey[T]) -> Self[T]
+
 pub struct Or[F] {
   filters : F
 }
@@ -439,6 +477,48 @@ pub fn[A, B, F : QueryFilter] Query2Filtered::count(Self[A, B, F]) -> Int
 pub fn[A, B, F : QueryFilter] Query2Filtered::for_each(Self[A, B, F], (@core.Entity, A, B) -> Unit) -> Unit raise EcsError
 pub fn[A, B, F : QueryFilter] Query2Filtered::get(Self[A, B, F], @core.Entity) -> (A, B)? raise EcsError
 pub fn[A, B, F : QueryFilter] Query2Filtered::view(Self[A, B, F], (@core.Entity, A, B) -> Unit) -> Unit raise EcsError
+
+pub struct Query2Has[A, B] {
+  world : World
+  key_a : ComponentKey[A]
+  has_b : Has[B]
+}
+pub fn[A, B] Query2Has::count(Self[A, B]) -> Int
+pub fn[A, B] Query2Has::for_each(Self[A, B], (@core.Entity, A, Bool) -> Unit) -> Unit raise EcsError
+pub fn[A, B] Query2Has::get(Self[A, B], @core.Entity) -> (A, Bool)? raise EcsError
+pub fn[A, B] Query2Has::view(Self[A, B], (@core.Entity, A, Bool) -> Unit) -> Unit raise EcsError
+
+pub struct Query2HasFiltered[A, B, F] {
+  world : World
+  key_a : ComponentKey[A]
+  has_b : Has[B]
+  filter : F
+}
+pub fn[A, B, F : QueryFilter] Query2HasFiltered::count(Self[A, B, F]) -> Int
+pub fn[A, B, F : QueryFilter] Query2HasFiltered::for_each(Self[A, B, F], (@core.Entity, A, Bool) -> Unit) -> Unit raise EcsError
+pub fn[A, B, F : QueryFilter] Query2HasFiltered::get(Self[A, B, F], @core.Entity) -> (A, Bool)? raise EcsError
+pub fn[A, B, F : QueryFilter] Query2HasFiltered::view(Self[A, B, F], (@core.Entity, A, Bool) -> Unit) -> Unit raise EcsError
+
+pub struct Query2Optional[A, B] {
+  world : World
+  key_a : ComponentKey[A]
+  optional_b : Optional[B]
+}
+pub fn[A, B] Query2Optional::count(Self[A, B]) -> Int
+pub fn[A, B] Query2Optional::for_each(Self[A, B], (@core.Entity, A, B?) -> Unit) -> Unit raise EcsError
+pub fn[A, B] Query2Optional::get(Self[A, B], @core.Entity) -> (A, B?)? raise EcsError
+pub fn[A, B] Query2Optional::view(Self[A, B], (@core.Entity, A, B?) -> Unit) -> Unit raise EcsError
+
+pub struct Query2OptionalFiltered[A, B, F] {
+  world : World
+  key_a : ComponentKey[A]
+  optional_b : Optional[B]
+  filter : F
+}
+pub fn[A, B, F : QueryFilter] Query2OptionalFiltered::count(Self[A, B, F]) -> Int
+pub fn[A, B, F : QueryFilter] Query2OptionalFiltered::for_each(Self[A, B, F], (@core.Entity, A, B?) -> Unit) -> Unit raise EcsError
+pub fn[A, B, F : QueryFilter] Query2OptionalFiltered::get(Self[A, B, F], @core.Entity) -> (A, B?)? raise EcsError
+pub fn[A, B, F : QueryFilter] Query2OptionalFiltered::view(Self[A, B, F], (@core.Entity, A, B?) -> Unit) -> Unit raise EcsError
 
 pub struct Query2RefMutFiltered[A, B, F] {
   world : World
@@ -673,6 +753,10 @@ pub fn[T : Component] World::query1_typed(Self) -> Query1[T]
 pub fn[T : Component, F] World::query1_typed_filtered(Self, F) -> Query1Filtered[T, F]
 pub fn[A, B] World::query2(Self, ComponentKey[A], ComponentKey[B]) -> Query2[A, B]
 pub fn[A, B, F] World::query2_filtered(Self, ComponentKey[A], ComponentKey[B], F) -> Query2Filtered[A, B, F]
+pub fn[A, B] World::query2_has(Self, ComponentKey[A], Has[B]) -> Query2Has[A, B]
+pub fn[A, B, F] World::query2_has_filtered(Self, ComponentKey[A], Has[B], F) -> Query2HasFiltered[A, B, F]
+pub fn[A, B] World::query2_optional(Self, ComponentKey[A], Optional[B]) -> Query2Optional[A, B]
+pub fn[A, B, F] World::query2_optional_filtered(Self, ComponentKey[A], Optional[B], F) -> Query2OptionalFiltered[A, B, F]
 pub fn[A, B, F] World::query2_ref_mut_filtered(Self, ComponentKey[A], ComponentKey[B], F) -> Query2RefMutFiltered[A, B, F]
 pub fn[A, B, F] World::query2_value_mut_filtered(Self, ComponentKey[A], ComponentKey[B], F) -> Query2ValueMutFiltered[A, B, F]
 pub fn[A, B, C] World::query3(Self, ComponentKey[A], ComponentKey[B], ComponentKey[C]) -> Query3[A, B, C]
@@ -684,6 +768,7 @@ pub fn[T] World::read_events(Self, EventKey[T]) -> Array[T] raise EcsError
 pub fn World::read_sequence(Self) -> Int
 pub fn[T : Component] World::register_component_hooks(Self) -> ComponentHooksBuilder[T] raise ComponentHooksError
 pub fn[T] World::register_component_hooks_for_key(Self, ComponentKey[T]) -> ComponentHooksBuilder[T] raise ComponentHooksError
+pub fn[T] World::register_disabling_component(Self, ComponentKey[T]) -> Unit raise EcsError
 pub fn[T, R : Default] World::register_required_components(Self, ComponentKey[T], ComponentKey[R]) -> Unit raise RequiredComponentsError
 pub fn[T, R] World::register_required_components_with(Self, ComponentKey[T], ComponentKey[R], () -> R) -> Unit raise RequiredComponentsError
 #callsite(autofill(loc))
@@ -735,12 +820,14 @@ pub(open) trait ObserverEvent {
 
 pub(open) trait QueryFilter {
   matches(Self, World, @core.Entity) -> Bool
+  mentions_component(Self, Int) -> Bool
 }
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B)
 pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (A, B, C)
 
 pub(open) trait QueryFilterDisjunction {
   matches_any(Self, World, @core.Entity) -> Bool
+  mentions_component_any(Self, Int) -> Bool
 }
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B)
 pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjunction for (A, B, C)

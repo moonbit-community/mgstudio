@@ -172,3 +172,43 @@ test "app: optional query system param preserves some and none branches" {
     content="Some({dx: 7, dy: 14})",
   )
 }
+
+///|
+test "app: Allow, Query2Has and Query2Optional system params honor disabling semantics" {
+  let world = @ecs.World::new()
+  let enabled = world.spawn()
+  let disabled = world.spawn()
+
+  try! world.set(enabled, query_position_key, QueryPosition::{ x: 1, y: 1 })
+  try! world.set(disabled, query_position_key, QueryPosition::{ x: 2, y: 2 })
+  try! world.set(disabled, @ecs.ecs_key_disabled, @ecs.Disabled::new())
+
+  let entity_counts : Array[Int] = []
+  let has_seen : Array[(Int, Bool)] = []
+  let optional_seen : Array[(Int, Bool)] = []
+
+  let mut app = App::new(world).add_systems(
+    Update,
+    system(
+      system_param3(fn(
+        visible_entities : @ecs.EntityQuery[@ecs.Allow[@ecs.Disabled]],
+        has_query : @ecs.Query2Has[QueryPosition, @ecs.Disabled],
+        optional_query : @ecs.Query2Optional[QueryPosition, @ecs.Disabled],
+      ) {
+        entity_counts.push(visible_entities.count())
+        try! has_query.view(fn(entity, _position, has_disabled) {
+          has_seen.push((entity.id, has_disabled))
+        })
+        try! optional_query.view(fn(entity, _position, maybe_disabled) {
+          optional_seen.push((entity.id, maybe_disabled is Some(_)))
+        })
+      }),
+    ),
+  )
+
+  app = app.run_once()
+
+  inspect(entity_counts, content="[2]")
+  inspect(has_seen, content="[(0, false), (1, true)]")
+  inspect(optional_seen, content="[(0, false)]")
+}

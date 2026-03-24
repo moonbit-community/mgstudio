@@ -68,6 +68,7 @@ pub struct PickingEvents {
 pub fn PickingEvents::default() -> Self
 pub fn PickingEvents::drain(@ref.Ref[Self]) -> Array[PointerEvent]
 pub fn PickingEvents::push(@ref.Ref[Self], PointerEvent) -> Unit
+pub impl @app.Resource for PickingEvents
 pub impl ToJson for PickingEvents
 pub impl @json.FromJson for PickingEvents
 
@@ -81,6 +82,7 @@ pub fn PickingHits::set_sprite2d(@ref.Ref[Self], Int, @core.Entity?) -> Unit
 pub fn PickingHits::set_ui(@ref.Ref[Self], Int, @core.Entity?) -> Unit
 pub fn PickingHits::sprite2d(Self, Int) -> @core.Entity?
 pub fn PickingHits::ui(Self, Int) -> @core.Entity?
+pub impl @app.Resource for PickingHits
 pub impl ToJson for PickingHits
 pub impl @json.FromJson for PickingHits
 
@@ -96,6 +98,7 @@ pub fn PickingState::pressed(Self, Int) -> @core.Entity?
 pub fn PickingState::set_hovered(@ref.Ref[Self], Int, @core.Entity?) -> Unit
 pub fn PickingState::set_last_position(@ref.Ref[Self], Int, @math.Vec2?) -> Unit
 pub fn PickingState::set_pressed(@ref.Ref[Self], Int, @core.Entity?) -> Unit
+pub impl @app.Resource for PickingState
 pub impl ToJson for PickingState
 pub impl @json.FromJson for PickingState
 
@@ -148,6 +151,7 @@ pub fn PointerInputs::clear(@ref.Ref[Self]) -> Unit
 pub fn PointerInputs::default() -> Self
 pub fn PointerInputs::from_array(Array[PointerInput]) -> Self
 pub fn PointerInputs::push(@ref.Ref[Self], PointerInput) -> Unit
+pub impl @app.Resource for PointerInputs
 pub impl ToJson for PointerInputs
 pub impl @json.FromJson for PointerInputs
 

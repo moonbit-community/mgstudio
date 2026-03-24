@@ -823,7 +823,10 @@ pub impl FromWorld for Int
 pub impl FromWorld for Float
 pub impl FromWorld for String
 pub impl FromWorld for @ecs.All
+pub impl[T : @ecs.Component] FromWorld for @ecs.Allow[T]
+pub impl[T : @ecs.Component] FromWorld for @ecs.Has[T]
 pub impl[T] FromWorld for @ecs.MessageCursor[T]
+pub impl[T : @ecs.Component] FromWorld for @ecs.Optional[T]
 pub impl[F : FromWorld] FromWorld for @ecs.Or[F]
 pub impl[T : @ecs.Component] FromWorld for @ecs.With[T]
 pub impl[T : @ecs.Component] FromWorld for @ecs.Without[T]
@@ -865,6 +868,10 @@ pub impl[A : @ecs.Component] SystemParam for @ecs.Query1[A]
 pub impl[A : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query1Filtered[A, F]
 pub impl[A : @ecs.Component, B : @ecs.Component] SystemParam for @ecs.Query2[A, B]
 pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2Filtered[A, B, F]
+pub impl[A : @ecs.Component, B : @ecs.Component] SystemParam for @ecs.Query2Has[A, B]
+pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2HasFiltered[A, B, F]
+pub impl[A : @ecs.Component, B : @ecs.Component] SystemParam for @ecs.Query2Optional[A, B]
+pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2OptionalFiltered[A, B, F]
 pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2RefMutFiltered[A, B, F]
 pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2ValueMutFiltered[A, B, F]
 pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] SystemParam for @ecs.Query3[A, B, C]

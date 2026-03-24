@@ -96,6 +96,44 @@ test "ecs query mut: read-only view_mut leaves data accessible" {
 }
 
 ///|
+test "ecs query mut: default query filters also apply to mutable queries" {
+  let world = World::new()
+  let comp_position : ComponentKey[Position] = register_component(
+    debug_name="position_query_mut_disabled",
+  )
+  let enabled = world.spawn()
+  let disabled = world.spawn()
+
+  try! world.set(enabled, comp_position, Position::{ x: 1, y: 1 })
+  try! world.set(disabled, comp_position, Position::{ x: 2, y: 2 })
+  try! world.set(disabled, ecs_key_disabled, Disabled::new())
+
+  let seen_enabled : Array[Int] = []
+  try! world
+  .query1(comp_position)
+  .view_mut(fn(entity, position) {
+    seen_enabled.push(entity.id)
+    position.get_ref().val.x = position.get_ref().val.x + 10
+  })
+
+  let seen_disabled : Array[Int] = []
+  try! world
+  .query1_filtered(comp_position, With::new(ecs_key_disabled))
+  .view_mut(fn(entity, position) {
+    seen_disabled.push(entity.id)
+    position.get_ref().val.x = position.get_ref().val.x + 100
+  })
+
+  inspect(seen_enabled, content="[0]")
+  inspect(seen_disabled, content="[1]")
+  inspect(try! world.get(enabled, comp_position), content="Some({x: 11, y: 1})")
+  inspect(
+    try! world.get(disabled, comp_position),
+    content="Some({x: 102, y: 2})",
+  )
+}
+
+///|
 test "ecs query mut: query2 ref mut supports iter_many_mut and par_iter_mut" {
   let world = World::new()
   let comp_position : ComponentKey[Position] = register_component(

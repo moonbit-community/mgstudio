@@ -15,11 +15,13 @@
 ///|
 pub(open) trait QueryFilter {
   matches(self : Self, world : World, entity : @core.Entity) -> Bool
+  mentions_component(self : Self, component_id : Int) -> Bool
 }
 
 ///|
 pub(open) trait QueryFilterDisjunction {
   matches_any(self : Self, world : World, entity : @core.Entity) -> Bool
+  mentions_component_any(self : Self, component_id : Int) -> Bool
 }
 
 ///|
@@ -34,6 +36,12 @@ pub fn All::new() -> All {
 pub impl QueryFilter for All with matches(self, _world, _entity) {
   ignore(self)
   true
+}
+
+///|
+pub impl QueryFilter for All with mentions_component(self, _component_id) {
+  ignore(self)
+  false
 }
 
 ///|
@@ -52,6 +60,11 @@ pub impl[T] QueryFilter for With[T] with matches(self, world, entity) {
 }
 
 ///|
+pub impl[T] QueryFilter for With[T] with mentions_component(self, component_id) {
+  self.key.id() == component_id
+}
+
+///|
 pub struct Without[T] {
   key : ComponentKey[T]
 }
@@ -64,6 +77,35 @@ pub fn[T] Without::new(key : ComponentKey[T]) -> Without[T] {
 ///|
 pub impl[T] QueryFilter for Without[T] with matches(self, world, entity) {
   !world.component(self.key).contains(entity)
+}
+
+///|
+pub impl[T] QueryFilter for Without[T] with mentions_component(
+  self,
+  component_id,
+) {
+  self.key.id() == component_id
+}
+
+///|
+pub struct Allow[T] {
+  key : ComponentKey[T]
+}
+
+///|
+pub fn[T] Allow::new(key : ComponentKey[T]) -> Allow[T] {
+  { key, }
+}
+
+///|
+pub impl[T] QueryFilter for Allow[T] with matches(self, _world, _entity) {
+  ignore(self)
+  true
+}
+
+///|
+pub impl[T] QueryFilter for Allow[T] with mentions_component(self, component_id) {
+  self.key.id() == component_id
 }
 
 ///|
@@ -86,6 +128,14 @@ pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F] with matches(
 }
 
 ///|
+pub impl[F : QueryFilterDisjunction] QueryFilter for Or[F] with mentions_component(
+  self,
+  component_id,
+) {
+  QueryFilterDisjunction::mentions_component_any(self.filters, component_id)
+}
+
+///|
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with matches(
   self,
   world,
@@ -93,6 +143,15 @@ pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with matches(
 ) {
   QueryFilter::matches(self.0, world, entity) &&
   QueryFilter::matches(self.1, world, entity)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter] QueryFilter for (A, B) with mentions_component(
+  self,
+  component_id,
+) {
+  QueryFilter::mentions_component(self.0, component_id) ||
+  QueryFilter::mentions_component(self.1, component_id)
 }
 
 ///|
@@ -107,6 +166,17 @@ pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (
 }
 
 ///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilter for (
+  A,
+  B,
+  C,
+) with mentions_component(self, component_id) {
+  QueryFilter::mentions_component(self.0, component_id) ||
+  QueryFilter::mentions_component(self.1, component_id) ||
+  QueryFilter::mentions_component(self.2, component_id)
+}
+
+///|
 pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B) with matches_any(
   self,
   world,
@@ -114,6 +184,15 @@ pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B) wit
 ) {
   QueryFilter::matches(self.0, world, entity) ||
   QueryFilter::matches(self.1, world, entity)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B) with mentions_component_any(
+  self,
+  component_id,
+) {
+  QueryFilter::mentions_component(self.0, component_id) ||
+  QueryFilter::mentions_component(self.1, component_id)
 }
 
 ///|
@@ -125,4 +204,15 @@ pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjuncti
   QueryFilter::matches(self.0, world, entity) ||
   QueryFilter::matches(self.1, world, entity) ||
   QueryFilter::matches(self.2, world, entity)
+}
+
+///|
+pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjunction for (
+  A,
+  B,
+  C,
+) with mentions_component_any(self, component_id) {
+  QueryFilter::mentions_component(self.0, component_id) ||
+  QueryFilter::mentions_component(self.1, component_id) ||
+  QueryFilter::mentions_component(self.2, component_id)
 }

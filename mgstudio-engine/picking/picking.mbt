@@ -214,6 +214,21 @@ pub fn PickingEvents::drain(self : Ref[PickingEvents]) -> Array[PointerEvent] {
 }
 
 ///|
+pub impl @app.Resource for PointerInputs with resource() {
+  ecs_res_key_pointer_inputs
+}
+
+///|
+pub impl @app.Resource for PickingHits with resource() {
+  ecs_res_key_picking_hits
+}
+
+///|
+pub impl @app.Resource for PickingEvents with resource() {
+  ecs_res_key_picking_events
+}
+
+///|
 /// Per-pointer picking state persisted across frames.
 pub struct PickingState {
   hovered : Array[@core.Entity?]
@@ -310,6 +325,11 @@ pub fn PickingState::set_hovered(
 ) -> Unit {
   PickingState::ensure_capacity(self, pointer)
   self.val.hovered[pointer] = hovered
+}
+
+///|
+pub impl @app.Resource for PickingState with resource() {
+  ecs_res_key_picking_state
 }
 
 ///|

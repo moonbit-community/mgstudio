@@ -30,6 +30,23 @@ pub impl[T : @ecs.Component] FromWorld for @ecs.Without[T] with from_world(
 }
 
 ///|
+pub impl[T : @ecs.Component] FromWorld for @ecs.Allow[T] with from_world(_world) {
+  @ecs.Allow::new(@ecs.Component::component())
+}
+
+///|
+pub impl[T : @ecs.Component] FromWorld for @ecs.Has[T] with from_world(_world) {
+  @ecs.Has::new(@ecs.Component::component())
+}
+
+///|
+pub impl[T : @ecs.Component] FromWorld for @ecs.Optional[T] with from_world(
+  _world,
+) {
+  @ecs.Optional::new(@ecs.Component::component())
+}
+
+///|
 pub impl[F : FromWorld] FromWorld for @ecs.Or[F] with from_world(world) {
   @ecs.Or::new(F::from_world(world))
 }
@@ -165,6 +182,126 @@ pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for 
 
 ///|
 pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2Filtered[
+  A,
+  B,
+  F,
+] with store(self, state) {
+  system_param_store_no_state(self, state)
+}
+
+///|
+pub impl[A : @ecs.Component, B : @ecs.Component] SystemParam for @ecs.Query2Has[
+  A,
+  B,
+] with init_state(world) {
+  system_param_empty_state(world)
+}
+
+///|
+pub impl[A : @ecs.Component, B : @ecs.Component] SystemParam for @ecs.Query2Has[
+  A,
+  B,
+] with get(_state) {
+  let world = system_param_abort_missing_world()
+  world.query2_has(
+    @ecs.Component::component(),
+    @ecs.Has::new(@ecs.Component::component()),
+  )
+}
+
+///|
+pub impl[A : @ecs.Component, B : @ecs.Component] SystemParam for @ecs.Query2Has[
+  A,
+  B,
+] with store(self, state) {
+  system_param_store_no_state(self, state)
+}
+
+///|
+pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2HasFiltered[
+  A,
+  B,
+  F,
+] with init_state(world) {
+  system_param_empty_state(world)
+}
+
+///|
+pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2HasFiltered[
+  A,
+  B,
+  F,
+] with get(_state) {
+  let world = system_param_abort_missing_world()
+  world.query2_has_filtered(
+    @ecs.Component::component(),
+    @ecs.Has::new(@ecs.Component::component()),
+    F::from_world(world),
+  )
+}
+
+///|
+pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2HasFiltered[
+  A,
+  B,
+  F,
+] with store(self, state) {
+  system_param_store_no_state(self, state)
+}
+
+///|
+pub impl[A : @ecs.Component, B : @ecs.Component] SystemParam for @ecs.Query2Optional[
+  A,
+  B,
+] with init_state(world) {
+  system_param_empty_state(world)
+}
+
+///|
+pub impl[A : @ecs.Component, B : @ecs.Component] SystemParam for @ecs.Query2Optional[
+  A,
+  B,
+] with get(_state) {
+  let world = system_param_abort_missing_world()
+  world.query2_optional(
+    @ecs.Component::component(),
+    @ecs.Optional::new(@ecs.Component::component()),
+  )
+}
+
+///|
+pub impl[A : @ecs.Component, B : @ecs.Component] SystemParam for @ecs.Query2Optional[
+  A,
+  B,
+] with store(self, state) {
+  system_param_store_no_state(self, state)
+}
+
+///|
+pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2OptionalFiltered[
+  A,
+  B,
+  F,
+] with init_state(world) {
+  system_param_empty_state(world)
+}
+
+///|
+pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2OptionalFiltered[
+  A,
+  B,
+  F,
+] with get(_state) {
+  let world = system_param_abort_missing_world()
+  world.query2_optional_filtered(
+    @ecs.Component::component(),
+    @ecs.Optional::new(@ecs.Component::component()),
+    F::from_world(world),
+  )
+}
+
+///|
+pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld] SystemParam for @ecs.Query2OptionalFiltered[
   A,
   B,
   F,

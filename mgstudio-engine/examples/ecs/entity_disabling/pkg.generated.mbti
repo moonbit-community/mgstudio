@@ -1,0 +1,31 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/entity_disabling"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type DisableOnClick
+pub impl @ecs.Component for DisableOnClick
+pub impl Eq for DisableOnClick
+pub impl Show for DisableOnClick
+pub impl ToJson for DisableOnClick
+pub impl @json.FromJson for DisableOnClick
+
+type EntityNameText
+pub impl @ecs.Component for EntityNameText
+pub impl Eq for EntityNameText
+pub impl Show for EntityNameText
+pub impl ToJson for EntityNameText
+pub impl @json.FromJson for EntityNameText
+
+// Type aliases
+
+// Traits
+

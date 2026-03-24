@@ -194,7 +194,7 @@ pub struct World {
 pub fn World::new() -> World {
   let world_id = next_world_id_ref.val
   next_world_id_ref.val = world_id + 1
-  World::{
+  let world = World::{
     world_id,
     entities: @core.Entities::new(),
     sequence: 0,
@@ -209,6 +209,11 @@ pub fn World::new() -> World {
     deferred_hook_command_depth: 0,
     deferred_hook_commands: [],
   }
+  world.insert_resource(
+    ecs_key_default_query_filters,
+    default_query_filters_bootstrap_resource(),
+  )
+  world
 }
 
 ///|
