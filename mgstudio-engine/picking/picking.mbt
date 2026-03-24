@@ -916,13 +916,23 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
             if prev.x != pos.x || prev.y != pos.y {
               PickingEvents::push(
                 events,
-                PointerEvent::new(pointer_id, PointerEventKind::Move, pos),
+                PointerEvent::new(
+                  pointer_id,
+                  PointerEventKind::Move,
+                  pos,
+                  target=hit_top,
+                ),
               )
             }
           None =>
             PickingEvents::push(
               events,
-              PointerEvent::new(pointer_id, PointerEventKind::Move, pos),
+              PointerEvent::new(
+                pointer_id,
+                PointerEventKind::Move,
+                pos,
+                target=hit_top,
+              ),
             )
         }
         PickingState::set_last_position(picking_state, pointer_id, Some(pos))
@@ -1035,6 +1045,11 @@ pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.system(ensure_pointer_inputs_system).in_set(picking_set_input),
   )
   .add_pre_update_system_config(
+    @app.system(ensure_pointer_observer_registry_system).in_set(
+      picking_set_input,
+    ),
+  )
+  .add_pre_update_system_config(
     @app.system(picking_collect_mouse_system).in_set(picking_set_input),
   )
   .add_pre_update_system_config(
@@ -1048,6 +1063,9 @@ pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   )
   .add_pre_update_system_config(
     @app.system(picking_generate_events_system).in_set(picking_set_events),
+  )
+  .add_pre_update_system_config(
+    @app.system(dispatch_pointer_observers_system).after(picking_set_events),
   )
   .configure_set(@app.PreUpdate, picking_set_input, before=[picking_set_hits])
   .configure_set(

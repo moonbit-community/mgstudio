@@ -1,0 +1,20 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/error_handling"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+type ErrorHandlingExampleError
+
+// Types and methods
+type ObserverTarget
+pub impl @ecs.Component for ObserverTarget
+
+// Type aliases
+
+// Traits
+

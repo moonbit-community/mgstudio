@@ -34,9 +34,25 @@ pub fn current_system_sequence() -> @core.SystemSequence
 
 pub fn current_world() -> @ecs.World?
 
+pub fn default_error_handler(@ecs.World) -> (Error, ErrorContext) -> Unit
+
 pub let ecs_key_despawn_on_enter : @ecs.ComponentKey[DespawnOnEnter]
 
 pub let ecs_key_despawn_on_exit : @ecs.ComponentKey[DespawnOnExit]
+
+pub fn[W] fallible_system((W) -> Unit raise) -> SystemConfig[W]
+
+pub fn[W, P : SystemParam] fallible_system_param((P) -> Unit raise) -> (W) -> Unit
+
+pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_param2((P1, P2) -> Unit raise) -> (W) -> Unit
+
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_param3((P1, P2, P3) -> Unit raise) -> (W) -> Unit
+
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] fallible_system_param4((P1, P2, P3, P4) -> Unit raise) -> (W) -> Unit
+
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam] fallible_system_param5((P1, P2, P3, P4, P5) -> Unit raise) -> (W) -> Unit
+
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam] fallible_system_param6((P1, P2, P3, P4, P5, P6) -> Unit raise) -> (W) -> Unit
 
 pub fn fixed_main_schedule_order_resource_key() -> @ecs.ResourceKey[FixedMainScheduleOrder]
 
@@ -102,6 +118,8 @@ pub fn render_runtime_error() -> RenderRuntimeError?
 
 pub fn report_render_runtime_error(RenderRuntimeError) -> Unit
 
+pub fn report_world_error(@ecs.World, Error, ErrorContext) -> Unit
+
 pub fn reset_render_error_handler() -> Unit
 
 pub fn[T] resource_added(@ecs.ResourceKey[T]) -> (@ecs.World) -> Bool
@@ -124,9 +142,13 @@ pub fn run_current_fixed_update_schedule(@ecs.World) -> Unit
 
 pub fn run_fixed_main_loop_system_set_name(RunFixedMainLoopSystems) -> String
 
+pub fn run_registered_observer_system(@ecs.World, @ref.Ref[Int], (@ecs.World) -> Unit, context_kind? : ErrorContextKind, source? : String) -> Unit
+
 pub fn schedule_label(String) -> ScheduleStage
 
 pub fn schedule_runner_plugin(ScheduleRunnerPlugin) -> (App[@ecs.World]) -> App[@ecs.World]
+
+pub fn set_default_error_handler(@ecs.World, (Error, ErrorContext) -> Unit) -> Unit
 
 pub fn set_render_error_handler((RenderRuntimeError) -> RenderErrorPolicy) -> Unit
 
@@ -239,8 +261,12 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 pub fn[M] App::add_message(Self[@ecs.World], @ecs.MessageKey[M]) -> Self[@ecs.World]
 pub fn[E : @ecs.ObserverEvent, C : @ecs.Component] App::add_observer(Self[@ecs.World], (@ecs.On[E, C]) -> Unit) -> Self[@ecs.World]
 pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam] App::add_observer2(Self[@ecs.World], (@ecs.On[E, C], P2) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam] App::add_observer2_fallible(Self[@ecs.World], (@ecs.On[E, C], P2) -> Unit raise) -> Self[@ecs.World]
 pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] App::add_observer3(Self[@ecs.World], (@ecs.On[E, C], P2, P3) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] App::add_observer3_fallible(Self[@ecs.World], (@ecs.On[E, C], P2, P3) -> Unit raise) -> Self[@ecs.World]
 pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_observer4(Self[@ecs.World], (@ecs.On[E, C], P2, P3, P4) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_observer4_fallible(Self[@ecs.World], (@ecs.On[E, C], P2, P3, P4) -> Unit raise) -> Self[@ecs.World]
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component] App::add_observer_fallible(Self[@ecs.World], (@ecs.On[E, C]) -> Unit raise) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_enter_system(Self[@ecs.World], S, (@ecs.World) -> Unit) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_enter_system_config(Self[@ecs.World], S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_exit_system(Self[@ecs.World], S, (@ecs.World) -> Unit) -> Self[@ecs.World]
@@ -321,6 +347,7 @@ pub fn[W] App::remove_sub_app(Self[W], AppLabel) -> SubApp[W]?
 pub fn App::run(Self[@ecs.World]) -> Unit
 pub fn App::run_once(Self[@ecs.World]) -> Self[@ecs.World]
 pub fn App::run_startup(Self[@ecs.World]) -> Self[@ecs.World]
+pub fn App::set_error_handler(Self[@ecs.World], (Error, ErrorContext) -> Unit) -> Self[@ecs.World]
 pub fn[W] App::set_runner(Self[W], (Self[W]) -> () -> Unit) -> Self[W]
 pub fn[W] App::set_sub_app_extract(Self[W], AppLabel, (W, W) -> (W, W)) -> Self[W]
 pub fn App::should_exit(Self[@ecs.World]) -> AppExit?
@@ -366,10 +393,12 @@ pub impl[C : @ecs.Component] @ecs.Message for CheckParentHasComponent[C]
 pub struct Commands {
   world : @ecs.World
   sequence : Int
-  queue : Array[(@ecs.World, Int) -> Unit]
+  queue : Array[DeferredCommandEntry]
 }
 pub fn Commands::entity(Self, @core.Entity) -> EntityCommands
 pub fn[T : Resource] Commands::insert_resource(Self, T) -> Unit
+pub fn Commands::queue(Self, (@ecs.World) -> Unit raise) -> Unit
+pub fn Commands::queue_handled(Self, (@ecs.World) -> Unit raise, (Error, ErrorContext) -> Unit) -> Unit
 pub fn[T : Resource] Commands::remove_resource(Self) -> Unit
 pub fn[T] Commands::remove_world_resource(Self, @ecs.ResourceKey[T]) -> Unit
 #callsite(autofill(loc))
@@ -380,6 +409,12 @@ pub fn[T : CommandSpawnComponents] Commands::spawn_batch(Self, Array[T], loc~ : 
 pub fn[T : @ecs.Component] Commands::spawn_component(Self, T, loc~ : SourceLoc) -> @core.Entity
 pub fn Commands::spawn_empty(Self) -> @core.Entity
 pub impl SystemParam for Commands
+
+pub struct DeferredCommandEntry {
+  run : (@ecs.World, Int) -> Unit raise
+  error_handler : ((Error, ErrorContext) -> Unit)?
+  source : String
+}
 
 pub struct DespawnOnEnter {
   transition_key : String
@@ -413,6 +448,35 @@ pub fn[T : @ecs.Component] EntityCommands::insert_component(Self, T, loc~ : Sour
 pub fn[T] EntityCommands::remove(Self, @ecs.ComponentKey[T], loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T] EntityCommands::remove_component(Self, @ecs.ComponentKey[T], loc~ : SourceLoc) -> Unit
+
+pub struct ErrorContext {
+  kind : ErrorContextKind
+  source : String
+  stage : ScheduleStage?
+}
+pub fn ErrorContext::kind(Self) -> ErrorContextKind
+pub fn ErrorContext::new(ErrorContextKind, String, stage? : ScheduleStage?) -> Self
+pub fn ErrorContext::source(Self) -> String
+pub fn ErrorContext::stage(Self) -> ScheduleStage?
+
+pub(all) enum ErrorContextKind {
+  System
+  Command
+  Observer
+  Validation
+}
+pub impl Eq for ErrorContextKind
+pub impl Show for ErrorContextKind
+
+pub struct ErrorHandlers {
+}
+pub fn ErrorHandlers::debug(Error, ErrorContext) -> Unit
+pub fn ErrorHandlers::error(Error, ErrorContext) -> Unit
+pub fn ErrorHandlers::ignore(Error, ErrorContext) -> Unit
+pub fn ErrorHandlers::info(Error, ErrorContext) -> Unit
+pub fn ErrorHandlers::panic(Error, ErrorContext) -> Unit
+pub fn ErrorHandlers::trace(Error, ErrorContext) -> Unit
+pub fn ErrorHandlers::warn(Error, ErrorContext) -> Unit
 
 pub(all) enum ExecutorKind {
   SingleThreaded
@@ -577,6 +641,18 @@ pub struct PluginGroupEntry[W] {
   mut enabled : Bool
 }
 
+pub struct PopulatedQuery2MutMut[A, B] {
+  query : @ecs.Query2MutMutFiltered[A, B, @ecs.All]
+}
+pub fn[A, B] PopulatedQuery2MutMut::query(Self[A, B]) -> @ecs.Query2MutMutFiltered[A, B, @ecs.All]
+pub impl[A : @ecs.Component, B : @ecs.Component] SystemParam for PopulatedQuery2MutMut[A, B]
+
+pub struct PopulatedQuery2MutMutFiltered[A, B, F] {
+  query : @ecs.Query2MutMutFiltered[A, B, F]
+}
+pub fn[A, B, F] PopulatedQuery2MutMutFiltered::query(Self[A, B, F]) -> @ecs.Query2MutMutFiltered[A, B, F]
+pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld + @ecs.QueryFilter] SystemParam for PopulatedQuery2MutMutFiltered[A, B, F]
+
 pub struct PreviousState[S] {
   value : S
 }
@@ -674,6 +750,36 @@ pub(all) enum ScheduleStage {
 pub impl Eq for ScheduleStage
 pub impl Show for ScheduleStage
 
+pub struct SingleEntityFiltered[F] {
+  entity : @core.Entity
+}
+pub fn[F] SingleEntityFiltered::get(Self[F]) -> @core.Entity
+pub impl[F : FromWorld + @ecs.QueryFilter] SystemParam for SingleEntityFiltered[F]
+
+pub struct SingleQuery1[A] {
+  value : A
+}
+pub fn[A] SingleQuery1::get(Self[A]) -> A
+pub impl[A : @ecs.Component] SystemParam for SingleQuery1[A]
+
+pub struct SingleQuery1Filtered[A, F] {
+  value : A
+}
+pub fn[A, F] SingleQuery1Filtered::get(Self[A, F]) -> A
+pub impl[A : @ecs.Component, F : FromWorld + @ecs.QueryFilter] SystemParam for SingleQuery1Filtered[A, F]
+
+pub struct SingleQuery2MutRef[A, B] {
+  value : (@ecs.ComponentMut[A], @ecs.ComponentRef[B])
+}
+pub fn[A, B] SingleQuery2MutRef::get(Self[A, B]) -> (@ecs.ComponentMut[A], @ecs.ComponentRef[B])
+pub impl[A : @ecs.Component, B : @ecs.Component] SystemParam for SingleQuery2MutRef[A, B]
+
+pub struct SingleQuery2MutRefFiltered[A, B, F] {
+  value : (@ecs.ComponentMut[A], @ecs.ComponentRef[B])
+}
+pub fn[A, B, F] SingleQuery2MutRefFiltered::get(Self[A, B, F]) -> (@ecs.ComponentMut[A], @ecs.ComponentRef[B])
+pub impl[A : @ecs.Component, B : @ecs.Component, F : FromWorld + @ecs.QueryFilter] SystemParam for SingleQuery2MutRefFiltered[A, B, F]
+
 pub struct State[S] {
   value : S
 }
@@ -714,8 +820,12 @@ pub struct SubApp[W] {
 pub fn[M] SubApp::add_message(Self[@ecs.World], @ecs.MessageKey[M]) -> Self[@ecs.World]
 pub fn[E : @ecs.ObserverEvent, C : @ecs.Component] SubApp::add_observer(Self[@ecs.World], (@ecs.On[E, C]) -> Unit) -> Self[@ecs.World]
 pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam] SubApp::add_observer2(Self[@ecs.World], (@ecs.On[E, C], P2) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam] SubApp::add_observer2_fallible(Self[@ecs.World], (@ecs.On[E, C], P2) -> Unit raise) -> Self[@ecs.World]
 pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] SubApp::add_observer3(Self[@ecs.World], (@ecs.On[E, C], P2, P3) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] SubApp::add_observer3_fallible(Self[@ecs.World], (@ecs.On[E, C], P2, P3) -> Unit raise) -> Self[@ecs.World]
 pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_observer4(Self[@ecs.World], (@ecs.On[E, C], P2, P3, P4) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_observer4_fallible(Self[@ecs.World], (@ecs.On[E, C], P2, P3, P4) -> Unit raise) -> Self[@ecs.World]
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component] SubApp::add_observer_fallible(Self[@ecs.World], (@ecs.On[E, C]) -> Unit raise) -> Self[@ecs.World]
 pub fn[W] SubApp::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
 pub fn[W] SubApp::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W] SubApp::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
@@ -746,6 +856,7 @@ pub fn SubApps::update_sub_app_by_label(Self[@ecs.World], AppLabel) -> Self[@ecs
 
 pub struct SystemConfig[W] {
   system : (W) -> Unit
+  error_handler : ((Error, ErrorContext) -> Unit)?
   run_ifs : Array[(W, @ref.Ref[Json]) -> Bool]
   run_if_states : Array[@ref.Ref[Json]]
   set : String?
@@ -756,6 +867,7 @@ pub struct SystemConfig[W] {
 }
 pub fn[W] SystemConfig::after(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::before(Self[W], String) -> Self[W]
+pub fn[W] SystemConfig::handle_error_with(Self[W], (Error, ErrorContext) -> Unit) -> Self[W]
 pub fn[W] SystemConfig::in_set(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::run_if(Self[W], (W) -> Bool) -> Self[W]
 pub fn[M] SystemConfig::run_if_on_message(Self[@ecs.World], @ecs.MessageKey[M]) -> Self[@ecs.World]
@@ -769,6 +881,10 @@ pub fn[C] ValidateParentHasComponentPlugin::default() -> Self[C]
 pub fn[C] ValidateParentHasComponentPlugin::in_schedule(ScheduleStage) -> Self[C]
 
 // Type aliases
+pub type ErrorHandler = (Error, ErrorContext) -> Unit
+
+pub type FallibleSystemFn[W] = (W) -> Unit raise
+
 pub type LogLayer = (LogRecord) -> Unit
 
 pub type Plugin[W] = (App[W]) -> App[W]
@@ -802,7 +918,7 @@ pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.W
 pub impl ChainedSystemConfigs for (SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World], SystemConfig[@ecs.World])
 
 pub(open) trait CommandSpawnComponents {
-  spawn_components(Self, @ecs.World, @core.Entity, Int, loc~ : SourceLoc) -> Unit
+  spawn_components(Self, @ecs.World, @core.Entity, Int, loc~ : SourceLoc) -> Unit raise @ecs.EcsError
 }
 pub impl[A : @ecs.Component, B : @ecs.Component] CommandSpawnComponents for (A, B)
 pub impl[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] CommandSpawnComponents for (A, B, C)
@@ -854,7 +970,7 @@ pub(open) trait SubStates : States + FreelyMutableState {
 
 pub(open) trait SystemParam {
   init_state(@ecs.World) -> Json
-  get(@ref.Ref[Json]) -> Self
+  get(@ref.Ref[Json]) -> Self raise
   store(Self, @ref.Ref[Json]) -> Unit
 }
 pub impl[T : @core.Message] SystemParam for @core.MessageReader[T]

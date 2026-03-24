@@ -3999,33 +3999,24 @@ fn sprite_bundle_insert(
   world : @ecs.World,
   entity : @core.Entity,
   loc~ : SourceLoc,
-) -> Unit {
-  try! (world.set(entity, ecs_key_sprite, bundle.sprite, loc~) |> ignore)
-  try! (world.set(entity, ecs_key_anchor, bundle.anchor, loc~) |> ignore)
-  try! (world.set(entity, ecs_key_render_layers, bundle.layers, loc~) |> ignore)
-  try! (world.set(
-    entity,
-    @visibility.ecs_key_visibility,
-    bundle.visibility,
-    loc~,
-  )
-  |> ignore)
-  try! (world.set(
+) -> Unit raise @ecs.EcsError {
+  world.set(entity, ecs_key_sprite, bundle.sprite, loc~)
+  world.set(entity, ecs_key_anchor, bundle.anchor, loc~)
+  world.set(entity, ecs_key_render_layers, bundle.layers, loc~)
+  world.set(entity, @visibility.ecs_key_visibility, bundle.visibility, loc~)
+  world.set(
     entity,
     @visibility.ecs_key_inherited_visibility,
     bundle.inherited_visibility,
     loc~,
   )
-  |> ignore)
-  try! (world.set(
+  world.set(
     entity,
     @visibility.ecs_key_view_visibility,
     bundle.view_visibility,
     loc~,
   )
-  |> ignore)
-  try! (world.set(entity, @transform.ecs_key_transform, bundle.transform, loc~)
-  |> ignore)
+  world.set(entity, @transform.ecs_key_transform, bundle.transform, loc~)
 }
 
 ///|
@@ -4036,7 +4027,7 @@ pub fn SpriteBundle::spawn(
   loc~ : SourceLoc,
 ) -> @core.Entity {
   let e = world.spawn_empty()
-  sprite_bundle_insert(self, world, e, loc~)
+  try! sprite_bundle_insert(self, world, e, loc~)
   e
 }
 
@@ -4057,28 +4048,25 @@ fn camera2d_bundle_insert(
   world : @ecs.World,
   entity : @core.Entity,
   loc~ : SourceLoc,
-) -> Unit {
-  try! (world.set(entity, ecs_key_camera2d, bundle.camera2d, loc~) |> ignore)
-  try! (world.set(entity, ecs_key_camera, bundle.camera, loc~) |> ignore)
-  try! (world.set(entity, ecs_key_projection, bundle.projection, loc~) |> ignore)
-  try! (world.set(entity, ecs_key_render_target, bundle.target, loc~) |> ignore)
-  try! (world.set(entity, ecs_key_render_layers, bundle.layers, loc~) |> ignore)
+) -> Unit raise @ecs.EcsError {
+  world.set(entity, ecs_key_camera2d, bundle.camera2d, loc~)
+  world.set(entity, ecs_key_camera, bundle.camera, loc~)
+  world.set(entity, ecs_key_projection, bundle.projection, loc~)
+  world.set(entity, ecs_key_render_target, bundle.target, loc~)
+  world.set(entity, ecs_key_render_layers, bundle.layers, loc~)
   if bundle.bloom is Some(bloom) {
-    try! (world.set(entity, ecs_key_bloom, bloom, loc~) |> ignore)
+    world.set(entity, ecs_key_bloom, bloom, loc~)
   }
   if bundle.tonemapping is Some(tonemapping) {
-    try! (world.set(entity, ecs_key_tonemapping, tonemapping, loc~) |> ignore)
+    world.set(entity, ecs_key_tonemapping, tonemapping, loc~)
   }
   if bundle.color_grading is Some(color_grading) {
-    try! (world.set(entity, ecs_key_color_grading, color_grading, loc~)
-    |> ignore)
+    world.set(entity, ecs_key_color_grading, color_grading, loc~)
   }
   if bundle.deband_dither is Some(deband_dither) {
-    try! (world.set(entity, ecs_key_deband_dither, deband_dither, loc~)
-    |> ignore)
+    world.set(entity, ecs_key_deband_dither, deband_dither, loc~)
   }
-  try! (world.set(entity, @transform.ecs_key_transform, bundle.transform, loc~)
-  |> ignore)
+  world.set(entity, @transform.ecs_key_transform, bundle.transform, loc~)
 }
 
 ///|
@@ -4100,7 +4088,7 @@ pub fn Camera2dBundle::spawn(
   loc~ : SourceLoc,
 ) -> @core.Entity {
   let e = world.spawn_empty()
-  camera2d_bundle_insert(self, world, e, loc~)
+  try! camera2d_bundle_insert(self, world, e, loc~)
   e
 }
 
@@ -4135,25 +4123,17 @@ pub impl @app.CommandSpawnComponents for Mesh2dBundle with spawn_components(
   loc~,
 ) {
   ignore(loc)
-  try! (world.set(entity, ecs_key_mesh2d, self.mesh) |> ignore)
-  try! (world.set(entity, ecs_key_mesh_material2d, self.material) |> ignore)
-  try! (world.set(entity, ecs_key_render_layers, self.layers) |> ignore)
-  try! (world.set(entity, @visibility.ecs_key_visibility, self.visibility)
-  |> ignore)
-  try! (world.set(
+  world.set(entity, ecs_key_mesh2d, self.mesh)
+  world.set(entity, ecs_key_mesh_material2d, self.material)
+  world.set(entity, ecs_key_render_layers, self.layers)
+  world.set(entity, @visibility.ecs_key_visibility, self.visibility)
+  world.set(
     entity,
     @visibility.ecs_key_inherited_visibility,
     self.inherited_visibility,
   )
-  |> ignore)
-  try! (world.set(
-    entity,
-    @visibility.ecs_key_view_visibility,
-    self.view_visibility,
-  )
-  |> ignore)
-  try! (world.set(entity, @transform.ecs_key_transform, self.transform)
-  |> ignore)
+  world.set(entity, @visibility.ecs_key_view_visibility, self.view_visibility)
+  world.set(entity, @transform.ecs_key_transform, self.transform)
 }
 
 ///|

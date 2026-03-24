@@ -11,6 +11,16 @@ import {
 }
 
 // Values
+pub fn[K : PointerObserverKind] add_pointer_observer(@app.App[@ecs.World], (OnPointer[K]) -> Unit raise) -> @app.App[@ecs.World]
+
+pub fn[K : PointerObserverKind, P2 : @app.SystemParam] add_pointer_observer2(@app.App[@ecs.World], (OnPointer[K], P2) -> Unit raise) -> @app.App[@ecs.World]
+
+pub fn[K : PointerObserverKind, P2 : @app.SystemParam, P3 : @app.SystemParam] add_pointer_observer3(@app.App[@ecs.World], (OnPointer[K], P2, P3) -> Unit raise) -> @app.App[@ecs.World]
+
+pub fn[K : PointerObserverKind, P2 : @app.SystemParam, P3 : @app.SystemParam, P4 : @app.SystemParam] add_pointer_observer4(@app.App[@ecs.World], (OnPointer[K], P2, P3, P4) -> Unit raise) -> @app.App[@ecs.World]
+
+pub fn dispatch_pointer_observers_system(@ecs.World) -> Unit
+
 pub let ecs_components : Array[String]
 
 pub let ecs_res_key_picking_events : @ecs.ResourceKey[PickingEvents]
@@ -28,6 +38,8 @@ pub fn ensure_picking_hits_system(@ecs.World) -> Unit
 pub fn ensure_picking_state_system(@ecs.World) -> Unit
 
 pub fn ensure_pointer_inputs_system(@ecs.World) -> Unit
+
+pub fn ensure_pointer_observer_registry_system(@ecs.World) -> Unit
 
 pub fn get_picking_events_resource(@ecs.World) -> @ecs.ResourceAccess[PickingEvents]
 
@@ -62,6 +74,15 @@ pub fn picking_ui_hit_test_system(@ecs.World) -> Unit
 // Errors
 
 // Types and methods
+pub struct OnPointer[K] {
+  event : PointerEvent
+}
+pub fn[K] OnPointer::event(Self[K]) -> PointerEvent
+pub fn[K] OnPointer::pointer(Self[K]) -> Int
+pub fn[K] OnPointer::position(Self[K]) -> @math.Vec2
+pub fn[K] OnPointer::target(Self[K]) -> @core.Entity?
+pub impl[K : PointerObserverKind] @app.SystemParam for OnPointer[K]
+
 pub struct PickingEvents {
   mut events : Array[PointerEvent]
 }
@@ -110,6 +131,18 @@ pub(all) enum PointerButton {
 pub impl Eq for PointerButton
 pub impl Show for PointerButton
 
+pub struct PointerClick {
+}
+pub impl PointerObserverKind for PointerClick
+
+pub struct PointerDown {
+}
+pub impl PointerObserverKind for PointerDown
+
+pub struct PointerEnter {
+}
+pub impl PointerObserverKind for PointerEnter
+
 pub struct PointerEvent {
   pointer : Int
   kind : PointerEventKind
@@ -155,8 +188,27 @@ pub impl @app.Resource for PointerInputs
 pub impl ToJson for PointerInputs
 pub impl @json.FromJson for PointerInputs
 
+pub struct PointerLeave {
+}
+pub impl PointerObserverKind for PointerLeave
+
+pub struct PointerMove {
+}
+pub impl PointerObserverKind for PointerMove
+
+type PointerObserverRegistry
+pub impl @app.Resource for PointerObserverRegistry
+
+pub struct PointerUp {
+}
+pub impl PointerObserverKind for PointerUp
+
 // Type aliases
 pub type PointerId = Int
 
 // Traits
+pub(open) trait PointerObserverKind {
+  event_kind() -> PointerEventKind
+  source_label() -> String
+}
 

@@ -153,6 +153,11 @@ pub impl Resource for CommandsCounterResource with resource() {
 }
 
 ///|
+suberror CommandsTestError {
+  HandledCommandFailure
+}
+
+///|
 let commands_hook_callers_ref : Ref[Array[String]] = Ref::new([])
 
 ///|
@@ -549,4 +554,52 @@ test "app: Commands preserve hook caller provenance across deferred spawn and re
     commands_hook_callers_ref.val[1].contains("commands_test.mbt"),
     content="true",
   )
+}
+
+///|
+test "app: failing built-in queued commands route through the default error handler" {
+  let kinds : Array[ErrorContextKind] = []
+  let sources : Array[String] = []
+  let mut app = App::new(@ecs.World::new())
+    .set_error_handler(fn(_error, context) {
+      kinds.push(context.kind())
+      sources.push(context.source())
+    })
+    .add_system_param(fn(commands : Commands) {
+      commands
+      .entity(@core.Entity::new(9999, 1))
+      .insert_component(CommandsPosition::{ x: 1, y: 2 })
+    })
+
+  app = app.run_once()
+
+  inspect(kinds.length(), content="1")
+  inspect(kinds[0] == ErrorContextKind::Command, content="true")
+  inspect(sources[0], content="EntityCommands::insert_component")
+}
+
+///|
+test "app: Commands::queue_handled uses the command-local handler" {
+  let default_count = Ref::new(0)
+  let local_count = Ref::new(0)
+  let local_sources : Array[String] = []
+  let mut app = App::new(@ecs.World::new())
+    .set_error_handler(fn(_error, _context) {
+      default_count.val = default_count.val + 1
+    })
+    .add_system_param(fn(commands : Commands) {
+      commands.queue_handled(
+        fn(_world : @ecs.World) raise { raise HandledCommandFailure },
+        fn(_error, context) {
+          local_count.val = local_count.val + 1
+          local_sources.push(context.source())
+        },
+      )
+    })
+
+  app = app.run_once()
+
+  inspect(default_count.val, content="0")
+  inspect(local_count.val, content="1")
+  inspect(local_sources, content="[\"Commands::queue_handled\"]")
 }

@@ -646,68 +646,62 @@ fn camera3d_bundle_insert(
   world : @ecs.World,
   entity : @core.Entity,
   loc~ : SourceLoc,
-) -> Unit {
-  let ecs_world = world
-  get_camera3d_store(ecs_world).insert(entity, bundle.camera3d, loc~)
-  get_projection_store(ecs_world).insert(entity, bundle.projection, loc~)
+) -> Unit raise @ecs.EcsError {
+  world.set(entity, ecs_key_camera3d, bundle.camera3d, loc~)
+  world.set(entity, ecs_key_projection, bundle.projection, loc~)
   if bundle.sub_camera_view is Some(sub_camera_view) {
-    get_sub_camera_view3d_store(ecs_world).insert(entity, sub_camera_view, loc~)
+    world.set(entity, ecs_key_sub_camera_view3d, sub_camera_view, loc~)
   }
   if bundle.screen_space_transmission is Some(screen_space_transmission) {
-    get_screen_space_transmission_store(ecs_world).insert(
+    world.set(
       entity,
+      ecs_key_screen_space_transmission,
       screen_space_transmission,
       loc~,
     )
   }
   if bundle.screen_space_reflections is Some(screen_space_reflections) {
-    get_screen_space_reflections_store(ecs_world).insert(
+    world.set(
       entity,
+      ecs_key_screen_space_reflections,
       screen_space_reflections,
       loc~,
     )
   }
   if bundle.bloom is Some(bloom) {
-    get_bloom_store(ecs_world).insert(entity, bloom, loc~)
+    world.set(entity, ecs_key_bloom, bloom, loc~)
   }
   if bundle.tonemapping is Some(tonemapping) {
-    get_tonemapping_store(ecs_world).insert(entity, tonemapping, loc~)
+    world.set(entity, ecs_key_tonemapping, tonemapping, loc~)
   }
   if bundle.deband_dither is Some(deband_dither) {
-    get_deband_dither_store(ecs_world).insert(entity, deband_dither, loc~)
+    world.set(entity, ecs_key_deband_dither, deband_dither, loc~)
   }
   if bundle.chromatic_aberration is Some(chromatic_aberration) {
-    get_chromatic_aberration_store(ecs_world).insert(
-      entity,
-      chromatic_aberration,
-      loc~,
-    )
+    world.set(entity, ecs_key_chromatic_aberration, chromatic_aberration, loc~)
   }
   if bundle.vignette is Some(vignette) {
-    get_vignette_store(ecs_world).insert(entity, vignette, loc~)
+    world.set(entity, ecs_key_vignette, vignette, loc~)
   }
   if bundle.motion_blur is Some(motion_blur) {
-    get_motion_blur_store(ecs_world).insert(entity, motion_blur, loc~)
+    world.set(entity, ecs_key_motion_blur, motion_blur, loc~)
   }
   if bundle.exposure is Some(exposure) {
-    get_exposure_store(ecs_world).insert(entity, exposure, loc~)
+    world.set(entity, ecs_key_exposure, exposure, loc~)
   }
   if bundle.color_grading is Some(color_grading) {
-    get_color_grading_store(ecs_world).insert(entity, color_grading, loc~)
+    world.set(entity, ecs_key_color_grading, color_grading, loc~)
   }
-  @sprite.get_camera_store(ecs_world).insert(entity, bundle.camera, loc~)
-  @sprite.get_render_target_store(ecs_world).insert(entity, bundle.target, loc~)
-  @sprite.get_render_layers_store(ecs_world).insert(entity, bundle.layers, loc~)
-  get_frustum_store(ecs_world).insert(
+  world.set(entity, @sprite.ecs_key_camera, bundle.camera, loc~)
+  world.set(entity, @sprite.ecs_key_render_target, bundle.target, loc~)
+  world.set(entity, @sprite.ecs_key_render_layers, bundle.layers, loc~)
+  world.set(
     entity,
+    ecs_key_frustum,
     bundle.projection.compute_frustum(bundle.transform),
     loc~,
   )
-  @transform.get_transform_store(ecs_world).insert(
-    entity,
-    bundle.transform,
-    loc~,
-  )
+  world.set(entity, @transform.ecs_key_transform, bundle.transform, loc~)
 }
 
 ///|
@@ -731,7 +725,7 @@ pub fn Camera3dBundle::spawn(
 ) -> @core.Entity {
   let ecs_world = world
   let entity = ecs_world.spawn_empty()
-  camera3d_bundle_insert(self, ecs_world, entity, loc~)
+  try! camera3d_bundle_insert(self, ecs_world, entity, loc~)
   entity
 }
 
@@ -788,31 +782,24 @@ fn mesh_material3d_bundle_insert(
   world : @ecs.World,
   entity : @core.Entity,
   loc~ : SourceLoc,
-) -> Unit {
-  let ecs_world = world
-  get_mesh3d_store(ecs_world).insert(entity, bundle.mesh, loc~)
-  get_mesh_material3d_store(ecs_world).insert(entity, bundle.material, loc~)
-  @sprite.get_render_layers_store(ecs_world).insert(entity, bundle.layers, loc~)
-  @visibility.get_visibility_store(ecs_world).insert(
+) -> Unit raise @ecs.EcsError {
+  world.set(entity, ecs_key_mesh3d, bundle.mesh, loc~)
+  world.set(entity, ecs_key_mesh_material3d, bundle.material, loc~)
+  world.set(entity, @sprite.ecs_key_render_layers, bundle.layers, loc~)
+  world.set(entity, @visibility.ecs_key_visibility, bundle.visibility, loc~)
+  world.set(
     entity,
-    bundle.visibility,
-    loc~,
-  )
-  @visibility.get_inherited_visibility_store(ecs_world).insert(
-    entity,
+    @visibility.ecs_key_inherited_visibility,
     bundle.inherited_visibility,
     loc~,
   )
-  @visibility.get_view_visibility_store(ecs_world).insert(
+  world.set(
     entity,
+    @visibility.ecs_key_view_visibility,
     bundle.view_visibility,
     loc~,
   )
-  @transform.get_transform_store(ecs_world).insert(
-    entity,
-    bundle.transform,
-    loc~,
-  )
+  world.set(entity, @transform.ecs_key_transform, bundle.transform, loc~)
 }
 
 ///|
@@ -836,7 +823,7 @@ pub fn MeshMaterial3dBundle::spawn(
 ) -> @core.Entity {
   let ecs_world = world
   let entity = ecs_world.spawn_empty()
-  mesh_material3d_bundle_insert(self, ecs_world, entity, loc~)
+  try! mesh_material3d_bundle_insert(self, ecs_world, entity, loc~)
   entity
 }
 

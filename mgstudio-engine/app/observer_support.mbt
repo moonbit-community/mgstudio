@@ -13,10 +13,12 @@
 // limitations under the License.
 
 ///|
-fn run_registered_observer_system(
+pub fn run_registered_observer_system(
   world : @ecs.World,
   last_run_sequence_ref : Ref[@core.Sequence],
   observer_system : SystemFn[@ecs.World],
+  context_kind? : ErrorContextKind = ErrorContextKind::Observer,
+  source? : String = "<observer>",
 ) -> Unit {
   let this_run = world.advance_sequence()
   let sys_ticks = @core.SystemSequence::new(last_run_sequence_ref.val, this_run)
@@ -28,10 +30,32 @@ fn run_registered_observer_system(
   let previous_sequence = current_system_sequence_ref.val
   current_world_ref.val = Some(world)
   current_system_sequence_ref.val = Some(sys_ticks)
+  reset_system_execution_outcome()
   observer_system(world)
   current_system_sequence_ref.val = previous_sequence
   current_world_ref.val = previous_world
-  last_run_sequence_ref.val = this_run
+  match current_system_execution_outcome() {
+    Success => last_run_sequence_ref.val = this_run
+    Skipped(_) => ()
+    Invalid(message) =>
+      report_world_error(
+        world,
+        @ecs.Invalid(message),
+        ErrorContext::new(
+          ErrorContextKind::Validation,
+          source,
+          stage=current_schedule_stage(),
+        ),
+      )
+    Error(err) => {
+      last_run_sequence_ref.val = this_run
+      report_world_error(
+        world,
+        err,
+        ErrorContext::new(context_kind, source, stage=current_schedule_stage()),
+      )
+    }
+  }
 }
 
 ///|
@@ -90,6 +114,36 @@ pub fn[E : @ecs.ObserverEvent, C : @ecs.Component] App::add_observer(
 }
 
 ///|
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component] SubApp::add_observer_fallible(
+  self : SubApp[@ecs.World],
+  observer : (@ecs.On[E, C]) -> Unit raise,
+) -> SubApp[@ecs.World] {
+  let observer_system = fallible_system_param(observer)
+  let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)
+  ignore(
+    self
+    .world()
+    .add_observer(fn(_event : @ecs.On[E, C]) {
+      run_registered_observer_system(
+        @ecs.current_observer_world_abort_missing(),
+        last_run_sequence_ref,
+        observer_system,
+      )
+    }),
+  )
+  self
+}
+
+///|
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component] App::add_observer_fallible(
+  self : App[@ecs.World],
+  observer : (@ecs.On[E, C]) -> Unit raise,
+) -> App[@ecs.World] {
+  self.sub_apps.main = self.sub_apps.main.add_observer_fallible(observer)
+  self
+}
+
+///|
 pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam] SubApp::add_observer2(
   self : SubApp[@ecs.World],
   observer : (@ecs.On[E, C], P2) -> Unit,
@@ -116,6 +170,36 @@ pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam] App::add_ob
   observer : (@ecs.On[E, C], P2) -> Unit,
 ) -> App[@ecs.World] {
   self.sub_apps.main = self.sub_apps.main.add_observer2(observer)
+  self
+}
+
+///|
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam] SubApp::add_observer2_fallible(
+  self : SubApp[@ecs.World],
+  observer : (@ecs.On[E, C], P2) -> Unit raise,
+) -> SubApp[@ecs.World] {
+  let observer_system = fallible_system_param2(observer)
+  let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)
+  ignore(
+    self
+    .world()
+    .add_observer(fn(_event : @ecs.On[E, C]) {
+      run_registered_observer_system(
+        @ecs.current_observer_world_abort_missing(),
+        last_run_sequence_ref,
+        observer_system,
+      )
+    }),
+  )
+  self
+}
+
+///|
+pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam] App::add_observer2_fallible(
+  self : App[@ecs.World],
+  observer : (@ecs.On[E, C], P2) -> Unit raise,
+) -> App[@ecs.World] {
+  self.sub_apps.main = self.sub_apps.main.add_observer2_fallible(observer)
   self
 }
 
@@ -165,6 +249,46 @@ pub fn[
   C : @ecs.Component,
   P2 : SystemParam,
   P3 : SystemParam,
+] SubApp::add_observer3_fallible(
+  self : SubApp[@ecs.World],
+  observer : (@ecs.On[E, C], P2, P3) -> Unit raise,
+) -> SubApp[@ecs.World] {
+  let observer_system = fallible_system_param3(observer)
+  let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)
+  ignore(
+    self
+    .world()
+    .add_observer(fn(_event : @ecs.On[E, C]) {
+      run_registered_observer_system(
+        @ecs.current_observer_world_abort_missing(),
+        last_run_sequence_ref,
+        observer_system,
+      )
+    }),
+  )
+  self
+}
+
+///|
+pub fn[
+  E : @ecs.ObserverEvent,
+  C : @ecs.Component,
+  P2 : SystemParam,
+  P3 : SystemParam,
+] App::add_observer3_fallible(
+  self : App[@ecs.World],
+  observer : (@ecs.On[E, C], P2, P3) -> Unit raise,
+) -> App[@ecs.World] {
+  self.sub_apps.main = self.sub_apps.main.add_observer3_fallible(observer)
+  self
+}
+
+///|
+pub fn[
+  E : @ecs.ObserverEvent,
+  C : @ecs.Component,
+  P2 : SystemParam,
+  P3 : SystemParam,
   P4 : SystemParam,
 ] SubApp::add_observer4(
   self : SubApp[@ecs.World],
@@ -198,5 +322,47 @@ pub fn[
   observer : (@ecs.On[E, C], P2, P3, P4) -> Unit,
 ) -> App[@ecs.World] {
   self.sub_apps.main = self.sub_apps.main.add_observer4(observer)
+  self
+}
+
+///|
+pub fn[
+  E : @ecs.ObserverEvent,
+  C : @ecs.Component,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] SubApp::add_observer4_fallible(
+  self : SubApp[@ecs.World],
+  observer : (@ecs.On[E, C], P2, P3, P4) -> Unit raise,
+) -> SubApp[@ecs.World] {
+  let observer_system = fallible_system_param4(observer)
+  let last_run_sequence_ref : Ref[@core.Sequence] = Ref::new(0)
+  ignore(
+    self
+    .world()
+    .add_observer(fn(_event : @ecs.On[E, C]) {
+      run_registered_observer_system(
+        @ecs.current_observer_world_abort_missing(),
+        last_run_sequence_ref,
+        observer_system,
+      )
+    }),
+  )
+  self
+}
+
+///|
+pub fn[
+  E : @ecs.ObserverEvent,
+  C : @ecs.Component,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] App::add_observer4_fallible(
+  self : App[@ecs.World],
+  observer : (@ecs.On[E, C], P2, P3, P4) -> Unit raise,
+) -> App[@ecs.World] {
+  self.sub_apps.main = self.sub_apps.main.add_observer4_fallible(observer)
   self
 }

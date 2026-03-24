@@ -422,3 +422,46 @@ test "ecs query: iter_many_unique_ref rejects duplicates and preserves order" {
   }
   inspect(seen, content="[2, 1]")
 }
+
+///|
+test "ecs query: require_single raises skipped unless exactly one match exists" {
+  let world = World::new()
+  let comp_position : ComponentKey[Position] = register_component(
+    debug_name="position_require_single",
+  )
+  let comp_velocity : ComponentKey[Velocity] = register_component(
+    debug_name="velocity_require_single",
+  )
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+
+  let none_result = try? world.query1(comp_position).require_single()
+  guard none_result is Err(@ecs.Skipped(message0)) else {
+    fail("expected skipped error when no entity matches")
+  }
+  inspect(message0, content="Expected exactly one matching entity")
+
+  try! world.set(e0, comp_position, Position::{ x: 5, y: 8 })
+  inspect(
+    try! world.query1_filtered(comp_position, All::new()).require_single(),
+    content="{x: 5, y: 8}",
+  )
+  let single_entity = try! world
+    .query_entities_filtered(With::new(comp_position))
+    .require_single()
+  inspect(single_entity.id, content="0")
+  inspect(single_entity.generation, content="1")
+
+  try! world.set(e1, comp_position, Position::{ x: 13, y: 21 })
+  try! world.set(e0, comp_velocity, Velocity::{ dx: 1, dy: 1 })
+  let filtered_single = try! world
+    .query1_filtered(comp_position, With::new(comp_velocity))
+    .require_single()
+  inspect(filtered_single, content="{x: 5, y: 8}")
+
+  let many_result = try? world.query1(comp_position).require_single()
+  guard many_result is Err(@ecs.Skipped(message1)) else {
+    fail("expected skipped error when many entities match")
+  }
+  inspect(message1, content="Expected exactly one matching entity")
+}

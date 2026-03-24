@@ -1,0 +1,26 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/fallible_params"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type Enemy
+pub impl @ecs.Component for Enemy
+
+type EnemySpawnCursor
+pub impl @app.Resource for EnemySpawnCursor
+
+type Player
+pub impl @ecs.Component for Player
+
+// Type aliases
+
+// Traits
+

@@ -708,3 +708,62 @@ test "ecs query mut: iter_many_unique_mut rejects duplicates and preserves order
   inspect(try! world.get(e0, comp_velocity), content="Some({dx: 1, dy: 10})")
   inspect(try! world.get(e1, comp_velocity), content="Some({dx: 2, dy: 21})")
 }
+
+///|
+test "ecs query mut: Query2MutRefFiltered and Query2MutMutFiltered support strict single access" {
+  let world = World::new()
+  let comp_position : ComponentKey[Position] = register_component(
+    debug_name="position_query2_mutref_single",
+  )
+  let comp_velocity : ComponentKey[Velocity] = register_component(
+    debug_name="velocity_query2_mutref_single",
+  )
+  let comp_accel : ComponentKey[Acceleration] = register_component(
+    debug_name="accel_query2_mutref_single",
+  )
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+
+  try! world.set(e0, comp_position, Position::{ x: 2, y: 4 })
+  try! world.set(e0, comp_velocity, Velocity::{ dx: 10, dy: 20 })
+  try! world.set(e1, comp_position, Position::{ x: 7, y: 9 })
+  try! world.set(e1, comp_velocity, Velocity::{ dx: 1, dy: 2 })
+  try! world.set(e1, comp_accel, Acceleration::{ ax: 3, ay: 4 })
+
+  let ctx = @core.SystemSequenceContext::new()
+  ctx.set(@core.SystemSequence::new(0, 1))
+  world.set_sequence_context(ctx)
+
+  let mut_ref_query = world.query2_mut_ref_filtered(
+    comp_position,
+    comp_velocity,
+    Without::new(comp_accel),
+  )
+  inspect(mut_ref_query.count(), content="1")
+  let (position_mut, velocity_ref) = try! mut_ref_query.require_single()
+  inspect(position_mut.get_ref().val, content="{x: 2, y: 4}")
+  inspect(velocity_ref.value(), content="{dx: 10, dy: 20}")
+  position_mut.get_ref().val.x = position_mut.get_ref().val.x +
+    velocity_ref.value().dx
+  inspect(try! world.get(e0, comp_position), content="Some({x: 12, y: 4})")
+
+  let mut_mut_query = world.query2_mut_mut_filtered(
+    comp_position,
+    comp_velocity,
+    With::new(comp_accel),
+  )
+  inspect(mut_mut_query.count(), content="1")
+  try! mut_mut_query.view_mut(fn(_entity, position_mut2, velocity_mut2) {
+    velocity_mut2.get_ref().val.dy = velocity_mut2.get_ref().val.dy +
+      position_mut2.get_ref().val.y
+  })
+  inspect(try! world.get(e1, comp_velocity), content="Some({dx: 1, dy: 11})")
+
+  let many_result = try? world
+    .query2_mut_ref_filtered(comp_position, comp_velocity, All::new())
+    .require_single()
+  guard many_result is Err(@ecs.Skipped(message)) else {
+    fail("expected skipped error for multi-match strict single query")
+  }
+  inspect(message, content="Expected exactly one matching entity")
+}

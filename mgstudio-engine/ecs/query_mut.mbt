@@ -34,6 +34,14 @@ pub struct Query2RefMutFiltered[A, B, F] {
 }
 
 ///|
+pub struct Query2MutRefFiltered[A, B, F] {
+  world : World
+  key_a : ComponentKey[A]
+  key_b : ComponentKey[B]
+  filter : F
+}
+
+///|
 pub struct Query2RefMutFilteredMany[A, B, F] {
   query : Query2RefMutFiltered[A, B, F]
   entities : Array[@core.Entity]
@@ -48,6 +56,14 @@ pub struct Query2RefMutFilteredParallel[A, B, F] {
 
 ///|
 pub struct Query2ValueMutFiltered[A, B, F] {
+  world : World
+  key_a : ComponentKey[A]
+  key_b : ComponentKey[B]
+  filter : F
+}
+
+///|
+pub struct Query2MutMutFiltered[A, B, F] {
   world : World
   key_a : ComponentKey[A]
   key_b : ComponentKey[B]
@@ -374,6 +390,16 @@ pub fn[A, B, F] World::query2_ref_mut_filtered(
 }
 
 ///|
+pub fn[A, B, F] World::query2_mut_ref_filtered(
+  self : World,
+  key_a : ComponentKey[A],
+  key_b : ComponentKey[B],
+  filter : F,
+) -> Query2MutRefFiltered[A, B, F] {
+  Query2MutRefFiltered::{ world: self, key_a, key_b, filter }
+}
+
+///|
 pub fn[A, B, F] World::query2_value_mut_filtered(
   self : World,
   key_a : ComponentKey[A],
@@ -381,6 +407,16 @@ pub fn[A, B, F] World::query2_value_mut_filtered(
   filter : F,
 ) -> Query2ValueMutFiltered[A, B, F] {
   Query2ValueMutFiltered::{ world: self, key_a, key_b, filter }
+}
+
+///|
+pub fn[A, B, F] World::query2_mut_mut_filtered(
+  self : World,
+  key_a : ComponentKey[A],
+  key_b : ComponentKey[B],
+  filter : F,
+) -> Query2MutMutFiltered[A, B, F] {
+  Query2MutMutFiltered::{ world: self, key_a, key_b, filter }
 }
 
 ///|
@@ -452,6 +488,133 @@ pub fn[A, B, F : QueryFilter] Query2RefMutFiltered::with_mut(
 }
 
 ///|
+pub fn[A, B, F : QueryFilter] Query2MutRefFiltered::get(
+  self : Query2MutRefFiltered[A, B, F],
+  entity : @core.Entity,
+) -> (ComponentMut[A], ComponentRef[B])? raise EcsError {
+  let query_component_ids = [self.key_a.id(), self.key_b.id()]
+  guard query_matches_with_default_filters(
+    self.world,
+    entity,
+    self.filter,
+    query_component_ids,
+  ) else {
+    return None
+  }
+  guard query_component_mut(self.world, self.key_a, entity)
+    is Some(component_mut) else {
+    return None
+  }
+  guard query_component_ref(self.world, self.key_b, entity)
+    is Some(component_ref) else {
+    return None
+  }
+  Some((component_mut, component_ref))
+}
+
+///|
+pub fn[A, B, F : QueryFilter] Query2MutRefFiltered::get_unchecked(
+  self : Query2MutRefFiltered[A, B, F],
+  entity : @core.Entity,
+) -> (ComponentMut[A], ComponentRef[B])? raise EcsError {
+  self.get(entity)
+}
+
+///|
+pub fn[A, B, F : QueryFilter] Query2MutRefFiltered::with_mut(
+  self : Query2MutRefFiltered[A, B, F],
+  entity : @core.Entity,
+  f : (ComponentMut[A], ComponentRef[B]) -> Unit,
+) -> Bool raise EcsError {
+  if self.get(entity) is Some((component_mut, component_ref)) {
+    f(component_mut, component_ref)
+    return true
+  }
+  false
+}
+
+///|
+pub fn[A, B, F : QueryFilter] Query2MutRefFiltered::view_mut(
+  self : Query2MutRefFiltered[A, B, F],
+  f : (@core.Entity, ComponentMut[A], ComponentRef[B]) -> Unit,
+) -> Unit raise EcsError {
+  guard self.world.component_store(self.key_a.id()) is Some(store_a_ref) else {
+    return
+  }
+  guard self.world.component_store(self.key_b.id()) is Some(store_b_ref) else {
+    return
+  }
+  let store_a = store_a_ref.val
+  let store_b = store_b_ref.val
+  let query_component_ids = [self.key_a.id(), self.key_b.id()]
+  let entries : Array[(@core.Entity, ErasedValue)] = []
+  store_a.for_each(fn(entity, payload) { entries.push((entity, payload)) })
+  for entry in entries {
+    if store_b.get(entry.0) is Some(payload_b) &&
+      query_matches_with_default_filters(
+        self.world,
+        entry.0,
+        self.filter,
+        query_component_ids,
+      ) {
+      let component_mut = query_component_mut_from_payload(
+        self.world,
+        self.key_a,
+        entry.0,
+        entry.1,
+      )
+      let component_ref = query_component_ref_from_payload(
+        self.world,
+        self.key_b,
+        entry.0,
+        payload_b,
+      )
+      f(entry.0, component_mut, component_ref)
+    }
+  }
+}
+
+///|
+pub fn[A, B, F : QueryFilter] Query2MutRefFiltered::count(
+  self : Query2MutRefFiltered[A, B, F],
+) -> Int raise EcsError {
+  let counter = Ref::new(0)
+  self.view_mut(fn(_entity, _a, _b) { counter.val = counter.val + 1 })
+  counter.val
+}
+
+///|
+pub fn[A, B, F : QueryFilter] Query2MutRefFiltered::single(
+  self : Query2MutRefFiltered[A, B, F],
+) -> (ComponentMut[A], ComponentRef[B])? raise EcsError {
+  let count_ref : Ref[Int] = Ref::new(0)
+  let value_ref : Ref[(ComponentMut[A], ComponentRef[B])?] = Ref::new(None)
+  self.view_mut(fn(_entity, a, b) {
+    count_ref.val = count_ref.val + 1
+    if count_ref.val == 1 {
+      value_ref.val = Some((a, b))
+    } else {
+      value_ref.val = None
+    }
+  })
+  if count_ref.val == 1 {
+    value_ref.val
+  } else {
+    None
+  }
+}
+
+///|
+pub fn[A, B, F : QueryFilter] Query2MutRefFiltered::require_single(
+  self : Query2MutRefFiltered[A, B, F],
+) -> (ComponentMut[A], ComponentRef[B]) raise {
+  match self.single() {
+    Some(value) => value
+    None => raise Skipped("Expected exactly one matching entity")
+  }
+}
+
+///|
 pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::get(
   self : Query2ValueMutFiltered[A, B, F],
   entity : @core.Entity,
@@ -508,6 +671,139 @@ pub fn[A, B, F : QueryFilter] Query2ValueMutFiltered::with_mut(
     return true
   }
   false
+}
+
+///|
+pub fn[A, B, F : QueryFilter] Query2MutMutFiltered::get(
+  self : Query2MutMutFiltered[A, B, F],
+  entity : @core.Entity,
+) -> (ComponentMut[A], ComponentMut[B])? raise EcsError {
+  if self.key_a.id() == self.key_b.id() {
+    abort("Query2MutMutFiltered requires distinct component keys")
+  }
+  let query_component_ids = [self.key_a.id(), self.key_b.id()]
+  guard query_matches_with_default_filters(
+    self.world,
+    entity,
+    self.filter,
+    query_component_ids,
+  ) else {
+    return None
+  }
+  guard query_component_mut(self.world, self.key_a, entity)
+    is Some(component_mut_a) else {
+    return None
+  }
+  guard query_component_mut(self.world, self.key_b, entity)
+    is Some(component_mut_b) else {
+    return None
+  }
+  Some((component_mut_a, component_mut_b))
+}
+
+///|
+pub fn[A, B, F : QueryFilter] Query2MutMutFiltered::get_unchecked(
+  self : Query2MutMutFiltered[A, B, F],
+  entity : @core.Entity,
+) -> (ComponentMut[A], ComponentMut[B])? raise EcsError {
+  self.get(entity)
+}
+
+///|
+pub fn[A, B, F : QueryFilter] Query2MutMutFiltered::with_mut(
+  self : Query2MutMutFiltered[A, B, F],
+  entity : @core.Entity,
+  f : (ComponentMut[A], ComponentMut[B]) -> Unit,
+) -> Bool raise EcsError {
+  if self.get(entity) is Some((component_mut_a, component_mut_b)) {
+    f(component_mut_a, component_mut_b)
+    return true
+  }
+  false
+}
+
+///|
+pub fn[A, B, F : QueryFilter] Query2MutMutFiltered::view_mut(
+  self : Query2MutMutFiltered[A, B, F],
+  f : (@core.Entity, ComponentMut[A], ComponentMut[B]) -> Unit,
+) -> Unit raise EcsError {
+  if self.key_a.id() == self.key_b.id() {
+    abort("Query2MutMutFiltered requires distinct component keys")
+  }
+  guard self.world.component_store(self.key_a.id()) is Some(store_a_ref) else {
+    return
+  }
+  guard self.world.component_store(self.key_b.id()) is Some(store_b_ref) else {
+    return
+  }
+  let store_a = store_a_ref.val
+  let store_b = store_b_ref.val
+  let query_component_ids = [self.key_a.id(), self.key_b.id()]
+  let entries : Array[(@core.Entity, ErasedValue)] = []
+  store_a.for_each(fn(entity, payload) { entries.push((entity, payload)) })
+  for entry in entries {
+    if store_b.get(entry.0) is Some(payload_b) &&
+      query_matches_with_default_filters(
+        self.world,
+        entry.0,
+        self.filter,
+        query_component_ids,
+      ) {
+      let component_mut_a = query_component_mut_from_payload(
+        self.world,
+        self.key_a,
+        entry.0,
+        entry.1,
+      )
+      let component_mut_b = query_component_mut_from_payload(
+        self.world,
+        self.key_b,
+        entry.0,
+        payload_b,
+      )
+      f(entry.0, component_mut_a, component_mut_b)
+    }
+  }
+}
+
+///|
+pub fn[A, B, F : QueryFilter] Query2MutMutFiltered::count(
+  self : Query2MutMutFiltered[A, B, F],
+) -> Int raise EcsError {
+  let counter = Ref::new(0)
+  self.view_mut(fn(_entity, _a, _b) { counter.val = counter.val + 1 })
+  counter.val
+}
+
+///|
+pub fn[A, B, F : QueryFilter] Query2MutMutFiltered::single(
+  self : Query2MutMutFiltered[A, B, F],
+) -> (ComponentMut[A], ComponentMut[B])? raise EcsError {
+  let count_ref : Ref[Int] = Ref::new(0)
+  let value_ref : Ref[(ComponentMut[A], ComponentMut[B])?] = Ref::new(None)
+  self.view_mut(fn(_entity, a, b) {
+    count_ref.val = count_ref.val + 1
+    if count_ref.val == 1 {
+      value_ref.val = Some((a, b))
+    } else {
+      value_ref.val = None
+    }
+  })
+  if count_ref.val == 1 {
+    value_ref.val
+  } else {
+    None
+  }
+}
+
+///|
+pub fn[A, B, F : QueryFilter] Query2MutMutFiltered::require_single(
+  self : Query2MutMutFiltered[A, B, F],
+) -> (ComponentMut[A], ComponentMut[B]) raise {
+  match self.single() {
+    Some(value) => value
+    None => raise Skipped("Expected exactly one matching entity")
+  }
 }
 
 ///|

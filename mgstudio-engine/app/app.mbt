@@ -16,6 +16,9 @@
 pub type SystemFn[W] = (W) -> Unit
 
 ///|
+pub type FallibleSystemFn[W] = (W) -> Unit raise
+
+///|
 pub type Plugin[W] = (App[W]) -> App[W]
 
 ///|
@@ -270,7 +273,7 @@ pub(all) enum ExecutorKind {
 ///|
 pub(open) trait SystemParam {
   init_state(@ecs.World) -> Json
-  get(Ref[Json]) -> Self
+  get(Ref[Json]) -> Self raise
   store(Self, Ref[Json]) -> Unit
 }
 
@@ -300,12 +303,14 @@ pub fn[T] ResMut::get_ref(self : ResMut[T]) -> Ref[T] {
 }
 
 ///|
-fn[T] system_param_abort_missing_resource() -> T {
-  abort("Missing resource for system parameter")
+fn[T] system_param_raise_invalid_missing_resource() -> T raise @ecs.SystemParamValidationError {
+  raise @ecs.Invalid("Missing resource for system parameter")
 }
 
 ///|
-fn[T : Resource] world_resource_value_or_abort(world : @ecs.World) -> T {
+fn[T : Resource] world_resource_value_or_raise(
+  world : @ecs.World,
+) -> T raise @ecs.SystemParamValidationError {
   match
     (try world.get_resource(Resource::resource()) catch {
       _ => None
@@ -313,12 +318,14 @@ fn[T : Resource] world_resource_value_or_abort(world : @ecs.World) -> T {
       value => value
     }) {
     Some(value) => value
-    None => system_param_abort_missing_resource()
+    None => system_param_raise_invalid_missing_resource()
   }
 }
 
 ///|
-fn[T : Resource] world_resource_ref_mut_or_abort(world : @ecs.World) -> Ref[T] {
+fn[T : Resource] world_resource_ref_mut_or_raise(
+  world : @ecs.World,
+) -> Ref[T] raise @ecs.SystemParamValidationError {
   match
     (try world.get_resource_ref(Resource::resource()) catch {
       _ => None
@@ -326,7 +333,7 @@ fn[T : Resource] world_resource_ref_mut_or_abort(world : @ecs.World) -> Ref[T] {
       value => value
     }) {
     Some(value) => value
-    None => system_param_abort_missing_resource()
+    None => system_param_raise_invalid_missing_resource()
   }
 }
 
@@ -349,6 +356,49 @@ pub fn[T] system_param_store_no_state(_self : T, _state : Ref[Json]) -> Unit {
 }
 
 ///|
+fn[P : SystemParam] system_param_get_or_record(state : Ref[Json]) -> P? {
+  try Some(P::get(state)) catch {
+    @ecs.Skipped(message) => {
+      mark_system_execution_skipped(message)
+      None
+    }
+    @ecs.Invalid(message) => {
+      mark_system_execution_invalid(message)
+      None
+    }
+    err => {
+      mark_system_execution_error(err)
+      None
+    }
+  } noraise {
+    value => value
+  }
+}
+
+///|
+fn run_fallible_system_body(f : () -> Unit raise) -> Unit {
+  f() catch {
+    err => mark_system_execution_error(err)
+  }
+}
+
+///|
+pub fn[W] fallible_system(system : FallibleSystemFn[W]) -> SystemConfig[W] {
+  let wrapped = fn(world : W) { run_fallible_system_body(() => system(world)) }
+  SystemConfig::{
+    system: wrapped,
+    error_handler: None,
+    run_ifs: [],
+    run_if_states: [],
+    set: None,
+    before: [],
+    after: [],
+    run_if_last_run_sequences: [],
+    last_run_sequence: 0,
+  }
+}
+
+///|
 pub fn[W, P : SystemParam] system_param(system : (P) -> Unit) -> SystemFn[W] {
   let state = Ref::new(Json::null())
   let state_initialized = Ref::new(false)
@@ -357,8 +407,27 @@ pub fn[W, P : SystemParam] system_param(system : (P) -> Unit) -> SystemFn[W] {
       state.val = P::init_state(system_param_abort_missing_world())
       state_initialized.val = true
     }
-    let param : P = P::get(state)
+    let param_opt : P? = system_param_get_or_record(state)
+    guard param_opt is Some(param) else { return }
     system(param)
+    P::store(param, state)
+  }
+}
+
+///|
+pub fn[W, P : SystemParam] fallible_system_param(
+  system : (P) -> Unit raise,
+) -> SystemFn[W] {
+  let state = Ref::new(Json::null())
+  let state_initialized = Ref::new(false)
+  fn(_world : W) {
+    if !state_initialized.val {
+      state.val = P::init_state(system_param_abort_missing_world())
+      state_initialized.val = true
+    }
+    let param_opt : P? = system_param_get_or_record(state)
+    guard param_opt is Some(param) else { return }
+    run_fallible_system_body(() => system(param))
     P::store(param, state)
   }
 }
@@ -381,9 +450,39 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] system_param2(
       state2.val = P2::init_state(world)
       state2_initialized.val = true
     }
-    let p1 : P1 = P1::get(state1)
-    let p2 : P2 = P2::get(state2)
+    let p1_opt : P1? = system_param_get_or_record(state1)
+    guard p1_opt is Some(p1) else { return }
+    let p2_opt : P2? = system_param_get_or_record(state2)
+    guard p2_opt is Some(p2) else { return }
     system(p1, p2)
+    P1::store(p1, state1)
+    P2::store(p2, state2)
+  }
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam] fallible_system_param2(
+  system : (P1, P2) -> Unit raise,
+) -> SystemFn[W] {
+  let state1 = Ref::new(Json::null())
+  let state2 = Ref::new(Json::null())
+  let state1_initialized = Ref::new(false)
+  let state2_initialized = Ref::new(false)
+  fn(_world : W) {
+    let world = system_param_abort_missing_world()
+    if !state1_initialized.val {
+      state1.val = P1::init_state(world)
+      state1_initialized.val = true
+    }
+    if !state2_initialized.val {
+      state2.val = P2::init_state(world)
+      state2_initialized.val = true
+    }
+    let p1_opt : P1? = system_param_get_or_record(state1)
+    guard p1_opt is Some(p1) else { return }
+    let p2_opt : P2? = system_param_get_or_record(state2)
+    guard p2_opt is Some(p2) else { return }
+    run_fallible_system_body(() => system(p1, p2))
     P1::store(p1, state1)
     P2::store(p2, state2)
   }
@@ -413,10 +512,50 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] system_param3(
       state3.val = P3::init_state(world)
       state3_initialized.val = true
     }
-    let p1 : P1 = P1::get(state1)
-    let p2 : P2 = P2::get(state2)
-    let p3 : P3 = P3::get(state3)
+    let p1_opt : P1? = system_param_get_or_record(state1)
+    guard p1_opt is Some(p1) else { return }
+    let p2_opt : P2? = system_param_get_or_record(state2)
+    guard p2_opt is Some(p2) else { return }
+    let p3_opt : P3? = system_param_get_or_record(state3)
+    guard p3_opt is Some(p3) else { return }
     system(p1, p2, p3)
+    P1::store(p1, state1)
+    P2::store(p2, state2)
+    P3::store(p3, state3)
+  }
+}
+
+///|
+pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] fallible_system_param3(
+  system : (P1, P2, P3) -> Unit raise,
+) -> SystemFn[W] {
+  let state1 = Ref::new(Json::null())
+  let state2 = Ref::new(Json::null())
+  let state3 = Ref::new(Json::null())
+  let state1_initialized = Ref::new(false)
+  let state2_initialized = Ref::new(false)
+  let state3_initialized = Ref::new(false)
+  fn(_world : W) {
+    let world = system_param_abort_missing_world()
+    if !state1_initialized.val {
+      state1.val = P1::init_state(world)
+      state1_initialized.val = true
+    }
+    if !state2_initialized.val {
+      state2.val = P2::init_state(world)
+      state2_initialized.val = true
+    }
+    if !state3_initialized.val {
+      state3.val = P3::init_state(world)
+      state3_initialized.val = true
+    }
+    let p1_opt : P1? = system_param_get_or_record(state1)
+    guard p1_opt is Some(p1) else { return }
+    let p2_opt : P2? = system_param_get_or_record(state2)
+    guard p2_opt is Some(p2) else { return }
+    let p3_opt : P3? = system_param_get_or_record(state3)
+    guard p3_opt is Some(p3) else { return }
+    run_fallible_system_body(() => system(p1, p2, p3))
     P1::store(p1, state1)
     P2::store(p2, state2)
     P3::store(p3, state3)
@@ -459,11 +598,67 @@ pub fn[
       state4.val = P4::init_state(world)
       state4_initialized.val = true
     }
-    let p1 : P1 = P1::get(state1)
-    let p2 : P2 = P2::get(state2)
-    let p3 : P3 = P3::get(state3)
-    let p4 : P4 = P4::get(state4)
+    let p1_opt : P1? = system_param_get_or_record(state1)
+    guard p1_opt is Some(p1) else { return }
+    let p2_opt : P2? = system_param_get_or_record(state2)
+    guard p2_opt is Some(p2) else { return }
+    let p3_opt : P3? = system_param_get_or_record(state3)
+    guard p3_opt is Some(p3) else { return }
+    let p4_opt : P4? = system_param_get_or_record(state4)
+    guard p4_opt is Some(p4) else { return }
     system(p1, p2, p3, p4)
+    P1::store(p1, state1)
+    P2::store(p2, state2)
+    P3::store(p3, state3)
+    P4::store(p4, state4)
+  }
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] fallible_system_param4(
+  system : (P1, P2, P3, P4) -> Unit raise,
+) -> SystemFn[W] {
+  let state1 = Ref::new(Json::null())
+  let state2 = Ref::new(Json::null())
+  let state3 = Ref::new(Json::null())
+  let state4 = Ref::new(Json::null())
+  let state1_initialized = Ref::new(false)
+  let state2_initialized = Ref::new(false)
+  let state3_initialized = Ref::new(false)
+  let state4_initialized = Ref::new(false)
+  fn(_world : W) {
+    let world = system_param_abort_missing_world()
+    if !state1_initialized.val {
+      state1.val = P1::init_state(world)
+      state1_initialized.val = true
+    }
+    if !state2_initialized.val {
+      state2.val = P2::init_state(world)
+      state2_initialized.val = true
+    }
+    if !state3_initialized.val {
+      state3.val = P3::init_state(world)
+      state3_initialized.val = true
+    }
+    if !state4_initialized.val {
+      state4.val = P4::init_state(world)
+      state4_initialized.val = true
+    }
+    let p1_opt : P1? = system_param_get_or_record(state1)
+    guard p1_opt is Some(p1) else { return }
+    let p2_opt : P2? = system_param_get_or_record(state2)
+    guard p2_opt is Some(p2) else { return }
+    let p3_opt : P3? = system_param_get_or_record(state3)
+    guard p3_opt is Some(p3) else { return }
+    let p4_opt : P4? = system_param_get_or_record(state4)
+    guard p4_opt is Some(p4) else { return }
+    run_fallible_system_body(() => system(p1, p2, p3, p4))
     P1::store(p1, state1)
     P2::store(p2, state2)
     P3::store(p3, state3)
@@ -514,12 +709,79 @@ pub fn[
       state5.val = P5::init_state(world)
       state5_initialized.val = true
     }
-    let p1 : P1 = P1::get(state1)
-    let p2 : P2 = P2::get(state2)
-    let p3 : P3 = P3::get(state3)
-    let p4 : P4 = P4::get(state4)
-    let p5 : P5 = P5::get(state5)
+    let p1_opt : P1? = system_param_get_or_record(state1)
+    guard p1_opt is Some(p1) else { return }
+    let p2_opt : P2? = system_param_get_or_record(state2)
+    guard p2_opt is Some(p2) else { return }
+    let p3_opt : P3? = system_param_get_or_record(state3)
+    guard p3_opt is Some(p3) else { return }
+    let p4_opt : P4? = system_param_get_or_record(state4)
+    guard p4_opt is Some(p4) else { return }
+    let p5_opt : P5? = system_param_get_or_record(state5)
+    guard p5_opt is Some(p5) else { return }
     system(p1, p2, p3, p4, p5)
+    P1::store(p1, state1)
+    P2::store(p2, state2)
+    P3::store(p3, state3)
+    P4::store(p4, state4)
+    P5::store(p5, state5)
+  }
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+] fallible_system_param5(
+  system : (P1, P2, P3, P4, P5) -> Unit raise,
+) -> SystemFn[W] {
+  let state1 = Ref::new(Json::null())
+  let state2 = Ref::new(Json::null())
+  let state3 = Ref::new(Json::null())
+  let state4 = Ref::new(Json::null())
+  let state5 = Ref::new(Json::null())
+  let state1_initialized = Ref::new(false)
+  let state2_initialized = Ref::new(false)
+  let state3_initialized = Ref::new(false)
+  let state4_initialized = Ref::new(false)
+  let state5_initialized = Ref::new(false)
+  fn(_world : W) {
+    let world = system_param_abort_missing_world()
+    if !state1_initialized.val {
+      state1.val = P1::init_state(world)
+      state1_initialized.val = true
+    }
+    if !state2_initialized.val {
+      state2.val = P2::init_state(world)
+      state2_initialized.val = true
+    }
+    if !state3_initialized.val {
+      state3.val = P3::init_state(world)
+      state3_initialized.val = true
+    }
+    if !state4_initialized.val {
+      state4.val = P4::init_state(world)
+      state4_initialized.val = true
+    }
+    if !state5_initialized.val {
+      state5.val = P5::init_state(world)
+      state5_initialized.val = true
+    }
+    let p1_opt : P1? = system_param_get_or_record(state1)
+    guard p1_opt is Some(p1) else { return }
+    let p2_opt : P2? = system_param_get_or_record(state2)
+    guard p2_opt is Some(p2) else { return }
+    let p3_opt : P3? = system_param_get_or_record(state3)
+    guard p3_opt is Some(p3) else { return }
+    let p4_opt : P4? = system_param_get_or_record(state4)
+    guard p4_opt is Some(p4) else { return }
+    let p5_opt : P5? = system_param_get_or_record(state5)
+    guard p5_opt is Some(p5) else { return }
+    run_fallible_system_body(() => system(p1, p2, p3, p4, p5))
     P1::store(p1, state1)
     P2::store(p2, state2)
     P3::store(p3, state3)
@@ -578,13 +840,91 @@ pub fn[
       state6.val = P6::init_state(world)
       state6_initialized.val = true
     }
-    let p1 : P1 = P1::get(state1)
-    let p2 : P2 = P2::get(state2)
-    let p3 : P3 = P3::get(state3)
-    let p4 : P4 = P4::get(state4)
-    let p5 : P5 = P5::get(state5)
-    let p6 : P6 = P6::get(state6)
+    let p1_opt : P1? = system_param_get_or_record(state1)
+    guard p1_opt is Some(p1) else { return }
+    let p2_opt : P2? = system_param_get_or_record(state2)
+    guard p2_opt is Some(p2) else { return }
+    let p3_opt : P3? = system_param_get_or_record(state3)
+    guard p3_opt is Some(p3) else { return }
+    let p4_opt : P4? = system_param_get_or_record(state4)
+    guard p4_opt is Some(p4) else { return }
+    let p5_opt : P5? = system_param_get_or_record(state5)
+    guard p5_opt is Some(p5) else { return }
+    let p6_opt : P6? = system_param_get_or_record(state6)
+    guard p6_opt is Some(p6) else { return }
     system(p1, p2, p3, p4, p5, p6)
+    P1::store(p1, state1)
+    P2::store(p2, state2)
+    P3::store(p3, state3)
+    P4::store(p4, state4)
+    P5::store(p5, state5)
+    P6::store(p6, state6)
+  }
+}
+
+///|
+pub fn[
+  W,
+  P1 : SystemParam,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+  P5 : SystemParam,
+  P6 : SystemParam,
+] fallible_system_param6(
+  system : (P1, P2, P3, P4, P5, P6) -> Unit raise,
+) -> SystemFn[W] {
+  let state1 = Ref::new(Json::null())
+  let state2 = Ref::new(Json::null())
+  let state3 = Ref::new(Json::null())
+  let state4 = Ref::new(Json::null())
+  let state5 = Ref::new(Json::null())
+  let state6 = Ref::new(Json::null())
+  let state1_initialized = Ref::new(false)
+  let state2_initialized = Ref::new(false)
+  let state3_initialized = Ref::new(false)
+  let state4_initialized = Ref::new(false)
+  let state5_initialized = Ref::new(false)
+  let state6_initialized = Ref::new(false)
+  fn(_world : W) {
+    let world = system_param_abort_missing_world()
+    if !state1_initialized.val {
+      state1.val = P1::init_state(world)
+      state1_initialized.val = true
+    }
+    if !state2_initialized.val {
+      state2.val = P2::init_state(world)
+      state2_initialized.val = true
+    }
+    if !state3_initialized.val {
+      state3.val = P3::init_state(world)
+      state3_initialized.val = true
+    }
+    if !state4_initialized.val {
+      state4.val = P4::init_state(world)
+      state4_initialized.val = true
+    }
+    if !state5_initialized.val {
+      state5.val = P5::init_state(world)
+      state5_initialized.val = true
+    }
+    if !state6_initialized.val {
+      state6.val = P6::init_state(world)
+      state6_initialized.val = true
+    }
+    let p1_opt : P1? = system_param_get_or_record(state1)
+    guard p1_opt is Some(p1) else { return }
+    let p2_opt : P2? = system_param_get_or_record(state2)
+    guard p2_opt is Some(p2) else { return }
+    let p3_opt : P3? = system_param_get_or_record(state3)
+    guard p3_opt is Some(p3) else { return }
+    let p4_opt : P4? = system_param_get_or_record(state4)
+    guard p4_opt is Some(p4) else { return }
+    let p5_opt : P5? = system_param_get_or_record(state5)
+    guard p5_opt is Some(p5) else { return }
+    let p6_opt : P6? = system_param_get_or_record(state6)
+    guard p6_opt is Some(p6) else { return }
+    run_fallible_system_body(() => system(p1, p2, p3, p4, p5, p6))
     P1::store(p1, state1)
     P2::store(p2, state2)
     P3::store(p3, state3)
@@ -684,7 +1024,7 @@ pub impl[T : Resource] SystemParam for Res[T] with init_state(world) {
 ///|
 pub impl[T : Resource] SystemParam for Res[T] with get(_state) {
   Res::{
-    value: world_resource_value_or_abort(system_param_abort_missing_world()),
+    value: world_resource_value_or_raise(system_param_abort_missing_world()),
   }
 }
 
@@ -701,7 +1041,7 @@ pub impl[T : Resource] SystemParam for ResMut[T] with init_state(world) {
 ///|
 pub impl[T : Resource] SystemParam for ResMut[T] with get(_state) {
   let world = system_param_abort_missing_world()
-  ResMut::{ value: world_resource_ref_mut_or_abort(world) }
+  ResMut::{ value: world_resource_ref_mut_or_raise(world) }
 }
 
 ///|
@@ -712,6 +1052,7 @@ pub impl[T : Resource] SystemParam for ResMut[T] with store(self, state) {
 ///|
 pub struct SystemConfig[W] {
   system : SystemFn[W]
+  error_handler : ErrorHandler?
   run_ifs : Array[StatefulRunConditionFn[W]]
   run_if_states : Array[Ref[Json]]
   set : SystemSet?
@@ -725,6 +1066,7 @@ pub struct SystemConfig[W] {
 pub fn[W] system(system : SystemFn[W]) -> SystemConfig[W] {
   SystemConfig::{
     system,
+    error_handler: None,
     run_ifs: [],
     run_if_states: [],
     set: None,
@@ -733,6 +1075,14 @@ pub fn[W] system(system : SystemFn[W]) -> SystemConfig[W] {
     run_if_last_run_sequences: [],
     last_run_sequence: 0,
   }
+}
+
+///|
+pub fn[W] SystemConfig::handle_error_with(
+  self : SystemConfig[W],
+  handler : ErrorHandler,
+) -> SystemConfig[W] {
+  SystemConfig::{ ..self, error_handler: Some(handler) }
 }
 
 ///|
@@ -840,10 +1190,53 @@ fn run_chained_system_config(
   let prev_ticks = current_system_sequence_ref.val
   ignore(prev_ticks)
   current_system_sequence_ref.val = Some(sys_ticks)
+  let prev_outcome = current_system_execution_outcome()
+  reset_system_execution_outcome()
   (config_ref.val.system)(world)
+  let outcome = current_system_execution_outcome()
+  current_system_execution_outcome_ref.val = prev_outcome
   current_system_sequence_ref.val = prev_ticks
   current_world_ref.val = prev_world
-  config_ref.val.last_run_sequence = this_run
+  match outcome {
+    Success => config_ref.val.last_run_sequence = this_run
+    Skipped(_) => return
+    Invalid(message) => {
+      report_world_error(
+        world,
+        @ecs.Invalid(message),
+        system_context(
+          config_ref.val,
+          ErrorContextKind::Validation,
+          current_schedule_stage(),
+        ),
+      )
+      return
+    }
+    Error(err) => {
+      config_ref.val.last_run_sequence = this_run
+      match config_ref.val.error_handler {
+        Some(handler) =>
+          handler(
+            err,
+            system_context(
+              config_ref.val,
+              ErrorContextKind::System,
+              current_schedule_stage(),
+            ),
+          )
+        None =>
+          report_world_error(
+            world,
+            err,
+            system_context(
+              config_ref.val,
+              ErrorContextKind::System,
+              current_schedule_stage(),
+            ),
+          )
+      }
+    }
+  }
 }
 
 ///|
@@ -2542,11 +2935,55 @@ fn run_systems(
       world.set_sequence_context(ctx)
       let prev_world = current_world_ref.val
       current_world_ref.val = Some(world)
+      let prev_ticks = current_system_sequence_ref.val
       current_system_sequence_ref.val = Some(sys_ticks)
+      let prev_outcome = current_system_execution_outcome()
+      reset_system_execution_outcome()
       (cfg.system)(world)
-      current_system_sequence_ref.val = None
+      let outcome = current_system_execution_outcome()
+      current_system_execution_outcome_ref.val = prev_outcome
+      current_system_sequence_ref.val = prev_ticks
       current_world_ref.val = prev_world
-      systems[system_i].last_run_sequence = this_run
+      match outcome {
+        Success => systems[system_i].last_run_sequence = this_run
+        Skipped(_) => continue
+        Invalid(message) => {
+          report_world_error(
+            world,
+            @ecs.Invalid(message),
+            system_context(
+              systems[system_i],
+              ErrorContextKind::Validation,
+              current_schedule_stage(),
+            ),
+          )
+          continue
+        }
+        Error(err) => {
+          systems[system_i].last_run_sequence = this_run
+          match systems[system_i].error_handler {
+            Some(handler) =>
+              handler(
+                err,
+                system_context(
+                  systems[system_i],
+                  ErrorContextKind::System,
+                  current_schedule_stage(),
+                ),
+              )
+            None =>
+              report_world_error(
+                world,
+                err,
+                system_context(
+                  systems[system_i],
+                  ErrorContextKind::System,
+                  current_schedule_stage(),
+                ),
+              )
+          }
+        }
+      }
     }
   }
 }

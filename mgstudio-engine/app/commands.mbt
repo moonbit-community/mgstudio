@@ -22,7 +22,11 @@ fn current_world_or_abort() -> @ecs.World {
 }
 
 ///|
-type DeferredCommand = (@ecs.World, @core.Sequence) -> Unit
+pub struct DeferredCommandEntry {
+  run : (@ecs.World, @core.Sequence) -> Unit raise
+  error_handler : ErrorHandler?
+  source : String
+}
 
 ///|
 fn[T : @ecs.Component] insert_spawn_component(
@@ -31,10 +35,9 @@ fn[T : @ecs.Component] insert_spawn_component(
   component : T,
   sequence : @core.Sequence,
   loc~ : SourceLoc,
-) -> Unit {
+) -> Unit raise @ecs.EcsError {
   ignore(sequence)
-  let key : @ecs.ComponentKey[T] = @ecs.Component::component()
-  world.component(key).insert(entity, component, loc~)
+  world.set_component(entity, component, loc~)
 }
 
 ///|
@@ -45,7 +48,7 @@ pub(open) trait CommandSpawnComponents {
     @core.Entity,
     @core.Sequence,
     loc~ : SourceLoc,
-  ) -> Unit
+  ) -> Unit raise @ecs.EcsError
 }
 
 ///|
@@ -194,7 +197,7 @@ pub impl[
 pub struct Commands {
   world : @ecs.World
   sequence : @core.Sequence
-  queue : Array[DeferredCommand]
+  queue : Array[DeferredCommandEntry]
 }
 
 ///|
@@ -224,8 +227,12 @@ pub fn[T : @ecs.Component] Commands::spawn_component(
   loc~ : SourceLoc,
 ) -> @core.Entity {
   let entity = self.world.spawn_empty()
-  self.queue.push(fn(world : @ecs.World, sequence : @core.Sequence) {
-    insert_spawn_component(world, entity, component, sequence, loc~)
+  self.queue.push({
+    run: fn(world : @ecs.World, sequence : @core.Sequence) raise {
+      insert_spawn_component(world, entity, component, sequence, loc~)
+    },
+    error_handler: None,
+    source: "Commands::spawn_component",
   })
   entity
 }
@@ -238,8 +245,12 @@ pub fn[T : CommandSpawnComponents] Commands::spawn(
   loc~ : SourceLoc,
 ) -> @core.Entity {
   let entity = self.world.spawn_empty()
-  self.queue.push(fn(world : @ecs.World, sequence : @core.Sequence) {
-    components.spawn_components(world, entity, sequence, loc~)
+  self.queue.push({
+    run: fn(world : @ecs.World, sequence : @core.Sequence) raise {
+      components.spawn_components(world, entity, sequence, loc~)
+    },
+    error_handler: None,
+    source: "Commands::spawn",
   })
   entity
 }
@@ -263,16 +274,24 @@ pub fn[T : Resource] Commands::insert_resource(
   self : Commands,
   resource : T,
 ) -> Unit {
-  self.queue.push(fn(world : @ecs.World, _sequence : @core.Sequence) {
-    world.insert_resource(T::resource(), resource)
+  self.queue.push({
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+      world.insert_resource(T::resource(), resource)
+    },
+    error_handler: None,
+    source: "Commands::insert_resource",
   })
 }
 
 ///|
 pub fn[T : Resource] Commands::remove_resource(self : Commands) -> Unit {
   let key : @ecs.ResourceKey[T] = T::resource()
-  self.queue.push(fn(world : @ecs.World, _sequence : @core.Sequence) {
-    (try? world.remove_resource(key)) |> ignore
+  self.queue.push({
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+      ignore(try? world.remove_resource(key))
+    },
+    error_handler: None,
+    source: "Commands::remove_resource",
   })
 }
 
@@ -281,8 +300,41 @@ pub fn[T] Commands::remove_world_resource(
   self : Commands,
   key : @ecs.ResourceKey[T],
 ) -> Unit {
-  self.queue.push(fn(world : @ecs.World, _sequence : @core.Sequence) {
-    (try? world.remove_resource(key)) |> ignore
+  self.queue.push({
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+      ignore(try? world.remove_resource(key))
+    },
+    error_handler: None,
+    source: "Commands::remove_world_resource",
+  })
+}
+
+///|
+pub fn Commands::queue(
+  self : Commands,
+  command : (@ecs.World) -> Unit raise,
+) -> Unit {
+  self.queue.push({
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+      command(world)
+    },
+    error_handler: None,
+    source: "Commands::queue",
+  })
+}
+
+///|
+pub fn Commands::queue_handled(
+  self : Commands,
+  command : (@ecs.World) -> Unit raise,
+  handler : ErrorHandler,
+) -> Unit {
+  self.queue.push({
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+      command(world)
+    },
+    error_handler: Some(handler),
+    source: "Commands::queue_handled",
   })
 }
 
@@ -294,8 +346,12 @@ pub fn[T : CommandSpawnComponents] EntityCommands::insert(
   loc~ : SourceLoc,
 ) -> Unit {
   let entity = self.entity
-  self.commands.queue.push(fn(world : @ecs.World, sequence : @core.Sequence) {
-    components.spawn_components(world, entity, sequence, loc~)
+  self.commands.queue.push({
+    run: fn(world : @ecs.World, sequence : @core.Sequence) raise {
+      components.spawn_components(world, entity, sequence, loc~)
+    },
+    error_handler: None,
+    source: "EntityCommands::insert",
   })
 }
 
@@ -307,8 +363,12 @@ pub fn[T : @ecs.Component] EntityCommands::insert_component(
   loc~ : SourceLoc,
 ) -> Unit {
   let entity = self.entity
-  self.commands.queue.push(fn(world : @ecs.World, sequence : @core.Sequence) {
-    insert_spawn_component(world, entity, component, sequence, loc~)
+  self.commands.queue.push({
+    run: fn(world : @ecs.World, sequence : @core.Sequence) raise {
+      insert_spawn_component(world, entity, component, sequence, loc~)
+    },
+    error_handler: None,
+    source: "EntityCommands::insert_component",
   })
 }
 
@@ -316,10 +376,14 @@ pub fn[T : @ecs.Component] EntityCommands::insert_component(
 #callsite(autofill(loc))
 pub fn EntityCommands::despawn(self : EntityCommands, loc~ : SourceLoc) -> Unit {
   let entity = self.entity
-  self.commands.queue.push(fn(world : @ecs.World, _sequence : @core.Sequence) {
-    if world.is_alive(entity) {
-      try! world.despawn(entity, loc~)
-    }
+  self.commands.queue.push({
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+      if world.is_alive(entity) {
+        world.despawn(entity, loc~)
+      }
+    },
+    error_handler: None,
+    source: "EntityCommands::despawn",
   })
 }
 
@@ -331,10 +395,14 @@ pub fn[T] EntityCommands::remove_component(
   loc~ : SourceLoc,
 ) -> Unit {
   let entity = self.entity
-  self.commands.queue.push(fn(world : @ecs.World, _sequence : @core.Sequence) {
-    if world.is_alive(entity) {
-      ignore(try! world.remove(entity, key, loc~))
-    }
+  self.commands.queue.push({
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+      if world.is_alive(entity) {
+        ignore(world.remove(entity, key, loc~))
+      }
+    },
+    error_handler: None,
+    source: "EntityCommands::remove_component",
   })
 }
 
@@ -350,7 +418,21 @@ pub fn[T] EntityCommands::remove(
 
 ///|
 fn Commands::flush(self : Commands) -> Unit {
-  self.queue.each(fn(command) { command(self.world, self.sequence) })
+  self.queue.each(fn(entry) {
+    (entry.run)(self.world, self.sequence) catch {
+      err => {
+        let context = ErrorContext::new(
+          ErrorContextKind::Command,
+          entry.source,
+          stage=current_schedule_stage(),
+        )
+        match entry.error_handler {
+          Some(handler) => handler(err, context)
+          None => report_world_error(self.world, err, context)
+        }
+      }
+    }
+  })
   self.queue.clear()
 }
 

@@ -259,6 +259,11 @@ pub fn[A] Query1::single(self : Query1[A]) -> A? raise EcsError {
 }
 
 ///|
+pub fn[A] Query1::require_single(self : Query1[A]) -> A raise {
+  self.world.query1_filtered(self.key_a, All::new()).require_single()
+}
+
+///|
 pub fn[A] Query1::count(self : Query1[A]) -> Int {
   self.world.query1_filtered(self.key_a, All::new()).count()
 }
@@ -268,6 +273,30 @@ pub fn[F : QueryFilter] EntityQuery::count(self : EntityQuery[F]) -> Int {
   let counter = Ref::new(0)
   self.view(fn(_entity) { counter.val = counter.val + 1 })
   counter.val
+}
+
+///|
+pub fn[F : QueryFilter] EntityQuery::require_single(
+  self : EntityQuery[F],
+) -> @core.Entity raise {
+  let count_ref : Ref[Int] = Ref::new(0)
+  let entity_ref : Ref[@core.Entity?] = Ref::new(None)
+  self.view(fn(entity) {
+    count_ref.val = count_ref.val + 1
+    if count_ref.val == 1 {
+      entity_ref.val = Some(entity)
+    } else {
+      entity_ref.val = None
+    }
+  })
+  if count_ref.val == 1 {
+    match entity_ref.val {
+      Some(entity) => entity
+      None => raise Skipped("Expected exactly one matching entity")
+    }
+  } else {
+    raise Skipped("Expected exactly one matching entity")
+  }
 }
 
 ///|
@@ -467,6 +496,17 @@ pub fn[A, F : QueryFilter] Query1Filtered::single(
     value_ref.val
   } else {
     None
+  }
+}
+
+///|
+pub fn[A, F : QueryFilter] Query1Filtered::require_single(
+  self : Query1Filtered[A, F],
+) -> A raise {
+  let single = self.single()
+  match single {
+    Some(value) => value
+    None => raise Skipped("Expected exactly one matching entity")
   }
 }
 

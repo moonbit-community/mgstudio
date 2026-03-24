@@ -299,3 +299,56 @@ test "picking: ignores a11y actions targeting non-alive entities" {
   let events = drain_events(world)
   inspect(events.length(), content="0")
 }
+
+///|
+test "picking: pointer observers dispatch generated move enter and leave events" {
+  let seen : Array[String] = []
+  let mut app = add_pointer_observer(@app.App::new(@ecs.World::new()), fn(
+    pointer : OnPointer[PointerMove],
+  ) raise {
+    if pointer.target() is Some(target) {
+      seen.push("move:" + target.id.to_string())
+    }
+  })
+  app = add_pointer_observer(app, fn(pointer : OnPointer[PointerEnter]) raise {
+    if pointer.target() is Some(target) {
+      seen.push("enter:" + target.id.to_string())
+    }
+  })
+  app = add_pointer_observer(app, fn(pointer : OnPointer[PointerLeave]) raise {
+    if pointer.target() is Some(target) {
+      seen.push("leave:" + target.id.to_string())
+    }
+  })
+  let world = app.world()
+  let tick = world.advance_sequence()
+  ignore(tick)
+  get_picking_state_resource(world).insert(PickingState::default())
+  get_picking_events_resource(world).insert(PickingEvents::default())
+  get_pointer_inputs_resource(world).insert(PointerInputs::default())
+  get_picking_hits_resource(world).insert(PickingHits::default())
+
+  let e1 = @core.Entity::new(1, 0)
+  let e2 = @core.Entity::new(2, 0)
+  let pos = @math.Vec2::new(10.0F, 20.0F)
+
+  set_frame(
+    world,
+    PointerInputs::from_array([
+      PointerInput::new(0, Some(pos), false, false, false),
+    ]),
+    PickingHits::from_arrays([Some(e1)], [None]),
+  )
+  dispatch_pointer_observers_system(world)
+
+  set_frame(
+    world,
+    PointerInputs::from_array([
+      PointerInput::new(0, Some(pos), false, false, false),
+    ]),
+    PickingHits::from_arrays([Some(e2)], [None]),
+  )
+  dispatch_pointer_observers_system(world)
+
+  inspect(seen, content="[\"move:1\", \"enter:1\", \"leave:1\", \"enter:2\"]")
+}

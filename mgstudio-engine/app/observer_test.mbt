@@ -105,3 +105,47 @@ test "app observer: add_observer2 exposes On<Remove, C> with MessageWriter" {
   inspect(messages[0].entity_id, content="0")
   inspect(messages[0].entity_generation, content="1")
 }
+
+///|
+test "app observer: fallible insert observers route errors through the default handler" {
+  let kinds : Array[ErrorContextKind] = []
+  let sources : Array[String] = []
+  let app = App::new(@ecs.World::new())
+    .set_error_handler(fn(_error, context) {
+      kinds.push(context.kind())
+      sources.push(context.source())
+    })
+    .add_observer_fallible(fn(
+      _event : @ecs.On[@ecs.Insert, ObserverMarker],
+    ) raise {
+      raise @ecs.Invalid("insert observer failed")
+    })
+  let world = app.world()
+  let entity = world.spawn()
+
+  try! world.set(entity, observer_marker_key, ObserverMarker::{ value: 5 })
+
+  inspect(kinds.length(), content="1")
+  inspect(kinds[0] == ErrorContextKind::Observer, content="true")
+  inspect(sources[0], content="<observer>")
+}
+
+///|
+test "app observer: fallible remove observers route errors through the default handler" {
+  let kinds : Array[ErrorContextKind] = []
+  let app = App::new(@ecs.World::new())
+    .set_error_handler(fn(_error, context) { kinds.push(context.kind()) })
+    .add_observer_fallible(fn(
+      _event : @ecs.On[@ecs.Remove, ObserverMarker],
+    ) raise {
+      raise @ecs.Invalid("remove observer failed")
+    })
+  let world = app.world()
+  let entity = world.spawn()
+
+  try! world.set(entity, observer_marker_key, ObserverMarker::{ value: 6 })
+  ignore(try! world.remove(entity, observer_marker_key))
+
+  inspect(kinds.length(), content="1")
+  inspect(kinds[0] == ErrorContextKind::Observer, content="true")
+}

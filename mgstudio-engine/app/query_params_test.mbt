@@ -212,3 +212,92 @@ test "app: Allow, Query2Has and Query2Optional system params honor disabling sem
   inspect(has_seen, content="[(0, false), (1, true)]")
   inspect(optional_seen, content="[(0, false)]")
 }
+
+///|
+test "app: validated single query params expose strict single access" {
+  let world = @ecs.World::new()
+  let entity = world.spawn()
+  let other = world.spawn()
+
+  try! world.set(entity, query_position_key, QueryPosition::{ x: 1, y: 2 })
+  try! world.set(entity, query_velocity_key, QueryVelocity::{ dx: 3, dy: 4 })
+  try! world.set(other, query_position_key, QueryPosition::{ x: 10, y: 20 })
+
+  let entity_ids : Array[Int] = []
+  let xs : Array[Int] = []
+  let mut app = App::new(world).add_systems(
+    Update,
+    system(
+      system_param3(fn(
+        single_entity : SingleEntityFiltered[
+          (@ecs.With[QueryPosition], @ecs.With[QueryVelocity]),
+        ],
+        single_position : SingleQuery1Filtered[
+          QueryPosition,
+          @ecs.With[QueryVelocity],
+        ],
+        single_pair : SingleQuery2MutRef[QueryPosition, QueryVelocity],
+      ) {
+        entity_ids.push(single_entity.get().id)
+        xs.push(single_position.get().x)
+        let (position_mut, velocity_ref) = single_pair.get()
+        position_mut.get_ref().val.x = position_mut.get_ref().val.x +
+          velocity_ref.value().dx
+      }),
+    ),
+  )
+
+  app = app.run_once()
+
+  inspect(entity_ids, content="[0]")
+  inspect(xs, content="[1]")
+  inspect(
+    try! app.world().get(entity, query_position_key),
+    content="Some({x: 4, y: 2})",
+  )
+  inspect(
+    try! app.world().get(other, query_position_key),
+    content="Some({x: 10, y: 20})",
+  )
+}
+
+///|
+test "app: PopulatedQuery2MutMut exposes a guaranteed non-empty mutable query" {
+  let world = @ecs.World::new()
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+
+  try! world.set(e0, query_position_key, QueryPosition::{ x: 1, y: 2 })
+  try! world.set(e0, query_velocity_key, QueryVelocity::{ dx: 3, dy: 4 })
+  try! world.set(e1, query_position_key, QueryPosition::{ x: 5, y: 6 })
+  try! world.set(e1, query_velocity_key, QueryVelocity::{ dx: 7, dy: 8 })
+
+  let counts : Array[Int] = []
+  let mut app = App::new(world).add_systems(
+    Update,
+    system(
+      fallible_system_param(fn(
+        query_param : PopulatedQuery2MutMut[QueryPosition, QueryVelocity],
+      ) raise {
+        let query = query_param.query()
+        counts.push(query.count())
+        try! query.view_mut(fn(_entity, position_mut, velocity_mut) {
+          velocity_mut.get_ref().val.dx = velocity_mut.get_ref().val.dx +
+            position_mut.get_ref().val.x
+        })
+      }),
+    ),
+  )
+
+  app = app.run_once()
+
+  inspect(counts, content="[2]")
+  inspect(
+    try! app.world().get(e0, query_velocity_key),
+    content="Some({dx: 4, dy: 4})",
+  )
+  inspect(
+    try! app.world().get(e1, query_velocity_key),
+    content="Some({dx: 12, dy: 8})",
+  )
+}
