@@ -5632,6 +5632,19 @@ pub fn render_prepare_system(world : @ecs.World) -> Unit {
 }
 
 ///|
+fn render2d_sync_gpu_mesh2d_components_system(world : @ecs.World) -> Unit {
+  let mesh_store = get_mesh2d_store(world)
+  let gpu_mesh_store = get_gpu_mesh2d_store(world)
+  mesh_store.for_each(fn(entity, mesh) {
+    if gpu_mesh_store.get(entity) is Some(_) {
+      return
+    }
+    let mesh_id = render2d_upload_mesh_handle(mesh.mesh)
+    gpu_mesh_store.insert(entity, GpuMesh2d::new(mesh_id))
+  })
+}
+
+///|
 pub fn render_queue_system(world : @ecs.World) -> Unit {
   let material_runtime_registry = material2d_runtime_registry_or_empty(world)
   render_state_update(world, fn(rs) {
@@ -8001,6 +8014,11 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.system(render2d_camera_system).in_set(camera_update_systems),
   )
   .add_post_update_system_config(
+    @app.system(render2d_sync_gpu_mesh2d_components_system).before(
+      render2d_set_extract,
+    ),
+  )
+  .add_post_update_system_config(
     @app.system(render_extract_system).in_set(render2d_set_extract),
   )
   .add_post_update_system_config(
@@ -8046,6 +8064,11 @@ pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .add_startup_system(init_render_state_system)
   .add_post_update_system_config(
     @app.system(render2d_camera_system_ecs).in_set(camera_update_systems),
+  )
+  .add_post_update_system_config(
+    @app.system(render2d_sync_gpu_mesh2d_components_system).before(
+      render2d_set_extract,
+    ),
   )
   .add_post_update_system_config(
     @app.system(render_extract_system_ecs).in_set(render2d_set_extract),

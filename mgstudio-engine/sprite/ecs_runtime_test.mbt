@@ -500,6 +500,47 @@ test "render2d: Mesh2dBundle::spawn inserts expected components" {
 }
 
 ///|
+test "render2d: plain Mesh2d authoring backfills gpu mesh before extract" {
+  let mut app = @app.App::new(@ecs.World::new())
+    .add_plugins([@asset.asset_plugin, render2d_plugin])
+    .add_systems(
+      @app.Startup,
+      @app.system(
+        @app.system_param3(fn(
+          commands : @app.Commands,
+          meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
+          materials : @app.ResMut[@asset.Assets[ColorMaterialAsset]],
+        ) {
+          ignore(commands.spawn_component(Camera2d::default()))
+          let mesh_handle = meshes.get_ref().val.add(
+            Mesh::from_2d_geometry(
+              mesh2d_geometry_rectangle(Rectangle::new(8.0F, 6.0F)),
+            ),
+          )
+          let material_handle = materials.get_ref().val.add(
+            ColorMaterialAsset::from_color(Color::white()),
+          )
+          ignore(
+            commands.spawn(
+              (
+                Mesh2d::new(mesh_handle),
+                MeshMaterial2d::new(material_handle),
+                @transform.Transform::identity(),
+              ),
+            ),
+          )
+        }),
+      ),
+    )
+
+  app = app.update()
+
+  inspect(app.world().query1(ecs_key_mesh2d).count(), content="1")
+  inspect(app.world().query1(ecs_key_gpu_mesh2d).count(), content="1")
+  inspect(render2d_diagnostic_queued_draw_item_count() > 0, content="true")
+}
+
+///|
 test "render2d: Mesh2dBundle constructors normalize to MeshMaterial2d" {
   let wrapped_material_handle : Ref[Int?] = Ref::new(None)
   let preserved_material_handle : Ref[Int?] = Ref::new(None)
