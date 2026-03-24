@@ -285,24 +285,6 @@ test "render3d: custom projection stores typed payload and updates lifecycle sta
 }
 
 ///|
-test "render3d: custom projection get_mut updates the stored payload in place" {
-  let custom = CustomProjection3d::new(PerspectiveProjection3d::default())
-  let payload : PerspectiveProjection3d? = custom.get_mut()
-  if payload is Some(projection) {
-    projection.fov = 1.0F
-    projection.far = 1234.0F
-  }
-  let updated_payload : PerspectiveProjection3d? = custom.get()
-  inspect(
-    updated_payload.map(fn(projection) {
-      projection_approx_eq(projection.fov, 1.0F) &&
-      projection_approx_eq(projection.far, 1234.0F)
-    }),
-    content="Some(true)",
-  )
-}
-
-///|
 test "render3d: projection and custom projection satisfy CameraProjection3d forwarding surface" {
   let custom = CustomProjection3d::new(TestCustomProjection3d::{
     view_width: 3.0F,

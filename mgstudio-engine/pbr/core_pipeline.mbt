@@ -940,11 +940,6 @@ pub fn[T] CustomProjection3d::get(self : CustomProjection3d) -> T? {
 }
 
 ///|
-pub fn[T] CustomProjection3d::get_mut(self : CustomProjection3d) -> T? {
-  self.payload.try_to()
-}
-
-///|
 pub fn CustomProjection3d::type_name(self : CustomProjection3d) -> String {
   self.type_name
 }
