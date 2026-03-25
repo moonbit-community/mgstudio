@@ -20,6 +20,7 @@ fn reset_text_ecs_test_state() -> Unit {
   text_state.val.next_text_id = 0
   text_state.val.next_span_id = 0
   text_state.val.texts.clear()
+  text_runtime_rem_size_ref.val = RemSize::default().value()
   text_debug_frame_state.val.draws.clear()
 }
 
@@ -46,6 +47,7 @@ test "ecs text bridge resolves a world-space bundle from ECS components" {
     layers: @sprite.RenderLayers::default(),
     anchor: @sprite.Anchor::default(),
     y_axis: YAxisOrientation::TopToBottom,
+    logical_viewport_size: None,
   }
   try! world.set_component(entity, Text2d::new("Repeat On"))
   try! world.set_component(entity, base_font)
@@ -203,6 +205,7 @@ test "ui text bridge preserves runtime-owned placement during sync" {
     layers: @sprite.RenderLayers::default(),
     anchor: @sprite.Anchor::default(),
     y_axis: YAxisOrientation::TopToBottom,
+    logical_viewport_size: None,
   }
   ui_text_ecs_spawn_entry(world, world.world_id(), entity, bundle, [])
   let entry = ui_text_ecs_bridge_entries.val[0]

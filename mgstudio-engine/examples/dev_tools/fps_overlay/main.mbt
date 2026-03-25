@@ -114,6 +114,14 @@ fn color_is_green(color : @sprite.Color) -> Bool {
 }
 
 ///|
+fn overlay_font_size_px(config : @dev_tools.FpsOverlayConfig) -> Float {
+  match config.text_config.font_size {
+    @text.FontSize::Px(value) => value
+    _ => 42.0F
+  }
+}
+
+///|
 fn customize_config(
   input : @input.ButtonInput[@window.KeyCode],
   overlay : @app.ResMut[@dev_tools.FpsOverlayConfig],
@@ -127,16 +135,19 @@ fn customize_config(
   }
 
   if input.just_pressed(Digit2) {
-    let next_size = overlay.get_ref().val.text_config.font_size - 2.0F
+    let next_size = overlay_font_size_px(overlay.get_ref().val) - 2.0F
     if next_size < 2.0F {
-      overlay.get_ref().val.text_config.font_size = 2.0F
+      overlay.get_ref().val.text_config.font_size = @text.FontSize::Px(2.0F)
     } else {
-      overlay.get_ref().val.text_config.font_size = next_size
+      overlay.get_ref().val.text_config.font_size = @text.FontSize::Px(
+        next_size,
+      )
     }
   }
   if input.just_pressed(Digit3) {
-    overlay.get_ref().val.text_config.font_size = overlay.get_ref().val.text_config.font_size +
-      2.0F
+    overlay.get_ref().val.text_config.font_size = @text.FontSize::Px(
+      overlay_font_size_px(overlay.get_ref().val) + 2.0F,
+    )
   }
   if input.just_pressed(Digit4) {
     overlay.get_ref().val.enabled = !overlay.get_ref().val.enabled

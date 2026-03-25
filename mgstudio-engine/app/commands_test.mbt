@@ -603,3 +603,125 @@ test "app: Commands::queue_handled uses the command-local handler" {
   inspect(local_count.val, content="1")
   inspect(local_sources, content="[\"Commands::queue_handled\"]")
 }
+
+///|
+test "app: EntityCommands::observe scopes pointer observers to the target entity and supports chaining" {
+  let hits : Array[String] = []
+  let target_ref : Ref[@core.Entity?] = Ref::new(None)
+  let other_ref : Ref[@core.Entity?] = Ref::new(None)
+  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+    commands : Commands,
+  ) {
+    let target = commands.spawn(
+      (CommandsPosition::{ x: 7, y: 8 }, CommandsMarker::{  }),
+    )
+    let other = commands.spawn(
+      (CommandsPosition::{ x: 17, y: 18 }, CommandsTagA::{  }),
+    )
+    target_ref.val = Some(target)
+    other_ref.val = Some(other)
+    ignore(
+      commands
+      .entity(target)
+      .observe2(fn(
+        pointer : OnPointer[PointerEnter],
+        query : @ecs.Query1[CommandsPosition],
+      ) raise {
+        guard pointer.target() is Some(entity) else { return }
+        if (try! query.get(entity)) is Some(position) {
+          hits.push("enter:" + position.x.to_string())
+        }
+      })
+      .observe(fn(_pointer : OnPointer[PointerEnter]) raise {
+        hits.push("chained")
+      }),
+    )
+  })
+
+  app = app.run_once()
+
+  guard target_ref.val is Some(target) else { abort("expected target entity") }
+  guard other_ref.val is Some(other) else { abort("expected other entity") }
+
+  let first_events = Ref::new(PickingEvents::default())
+  PickingEvents::push(
+    first_events,
+    @pointer_events.PointerEvent::new(
+      1,
+      @pointer_events.PointerEventKind::Enter,
+      @math.Vec2::new(8.0F, 13.0F),
+      target=Some(target),
+    ),
+  )
+  get_picking_events_resource(app.world()).insert(first_events.val)
+  dispatch_pointer_observers_system(app.world())
+
+  let second_events = Ref::new(PickingEvents::default())
+  PickingEvents::push(
+    second_events,
+    @pointer_events.PointerEvent::new(
+      1,
+      @pointer_events.PointerEventKind::Enter,
+      @math.Vec2::new(8.0F, 13.0F),
+      target=Some(other),
+    ),
+  )
+  get_picking_events_resource(app.world()).insert(second_events.val)
+  dispatch_pointer_observers_system(app.world())
+
+  inspect(hits, content="[\"enter:7\", \"chained\"]")
+}
+
+///|
+test "app: EntityCommands::observe4 accepts normal system params" {
+  let hits : Array[String] = []
+  let target_ref : Ref[@core.Entity?] = Ref::new(None)
+  let mut app = App::new(@ecs.World::new()).add_system_param(fn(
+    commands : Commands,
+  ) {
+    commands.insert_resource(CommandsCounterResource::{ value: 42 })
+    let target = commands.spawn(
+      (CommandsPosition::{ x: 5, y: 6 }, CommandsMarker::{  }),
+    )
+    target_ref.val = Some(target)
+    ignore(
+      commands
+      .entity(target)
+      .observe4(fn(
+        _pointer : OnPointer[PointerClick],
+        resource : Res[CommandsCounterResource],
+        positions : @ecs.Query1[CommandsPosition],
+        markers : @ecs.Query1[CommandsMarker],
+      ) raise {
+        if (try! positions.get(target)) is Some(position) {
+          hits.push(
+            resource.get().value.to_string() +
+            ":" +
+            position.x.to_string() +
+            ":" +
+            markers.count().to_string(),
+          )
+        }
+      }),
+    )
+  })
+
+  app = app.run_once()
+
+  guard target_ref.val is Some(target) else { abort("expected target entity") }
+  let click_events = Ref::new(PickingEvents::default())
+  PickingEvents::push(
+    click_events,
+    @pointer_events.PointerEvent::new(
+      2,
+      @pointer_events.PointerEventKind::Click,
+      @math.Vec2::new(21.0F, 34.0F),
+      target=Some(target),
+    ),
+  )
+  get_picking_events_resource(app.world()).insert(click_events.val)
+
+  dispatch_pointer_observers_system(app.world())
+
+  inspect(hits, content="[\"42:5:1\"]")
+}

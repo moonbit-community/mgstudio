@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/text"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type AnimatedText
+pub impl @ecs.Component for AnimatedText
+
+type FpsText
+pub impl @ecs.Component for FpsText
+
+// Type aliases
+
+// Traits
+

@@ -35,6 +35,8 @@ pub struct CosmicBuffer {
   linebreak : LineBreak
   max_width : Float?
   max_height : Float?
+  uses_viewport_sizes : Bool
+  uses_rem_sizes : Bool
 }
 
 ///|
@@ -48,6 +50,8 @@ pub fn CosmicBuffer::default() -> CosmicBuffer {
     linebreak: LineBreak::WordBoundary,
     max_width: None,
     max_height: None,
+    uses_viewport_sizes: false,
+    uses_rem_sizes: false,
   }
 }
 
@@ -55,6 +59,10 @@ pub fn CosmicBuffer::default() -> CosmicBuffer {
 pub struct ComputedTextBlock {
   buffer : CosmicBuffer
   needs_rerender : Bool
+  uses_viewport_sizes : Bool
+  uses_rem_sizes : Bool
+  logical_viewport_size : @math.Vec2?
+  rem_size : Float
   entities : Array[TextEntity]
 }
 
@@ -63,6 +71,10 @@ pub fn ComputedTextBlock::default() -> ComputedTextBlock {
   ComputedTextBlock::{
     buffer: CosmicBuffer::default(),
     needs_rerender: true,
+    uses_viewport_sizes: false,
+    uses_rem_sizes: false,
+    logical_viewport_size: None,
+    rem_size: 20.0F,
     entities: [],
   }
 }
@@ -111,7 +123,63 @@ fn build_text_entities(instance : TextInstance) -> Array[TextEntity] {
 }
 
 ///|
-fn build_text_buffer(instance : TextInstance) -> CosmicBuffer {
+fn text_vec2_opt_eq(lhs : @math.Vec2?, rhs : @math.Vec2?) -> Bool {
+  match (lhs, rhs) {
+    (Some(lhs), Some(rhs)) => lhs.x == rhs.x && lhs.y == rhs.y
+    (None, None) => true
+    _ => false
+  }
+}
+
+///|
+fn text_font_supports_viewport_size(instance : TextInstance) -> Bool {
+  if instance.font.font_size.uses_viewport_size() {
+    return true
+  }
+  for span in instance.spans {
+    if span.font.font_size.uses_viewport_size() {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn text_font_uses_rem_size(instance : TextInstance) -> Bool {
+  if instance.font.font_size.uses_rem_size() {
+    return true
+  }
+  for span in instance.spans {
+    if span.font.font_size.uses_rem_size() {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn text_current_logical_viewport_size(instance : TextInstance) -> @math.Vec2 {
+  match instance.logical_viewport_size {
+    Some(size) => size
+    None => @math.Vec2::new(0.0F, 0.0F)
+  }
+}
+
+///|
+fn text_evaluated_font_size(
+  font_size : FontSize,
+  logical_viewport_size : @math.Vec2,
+  rem_size : Float,
+) -> Float {
+  font_size.eval(logical_viewport_size, rem_size)
+}
+
+///|
+fn build_text_buffer(
+  instance : TextInstance,
+  logical_viewport_size : @math.Vec2,
+  rem_size : Float,
+) -> CosmicBuffer {
   let mut text = instance.text.content
   let spans : Array[TextSpanRange] = []
   let mut cursor = text.length()
@@ -123,16 +191,23 @@ fn build_text_buffer(instance : TextInstance) -> CosmicBuffer {
     text = text + content
     cursor = cursor + length
   }
-  let line_height = instance.line_height.eval(instance.font.font_size)
+  let font_size = text_evaluated_font_size(
+    instance.font.font_size,
+    logical_viewport_size,
+    rem_size,
+  )
+  let line_height = instance.line_height.eval(font_size)
   CosmicBuffer::{
     text,
     spans,
-    font_size: instance.font.font_size,
+    font_size,
     line_height,
     justify: instance.layout.justify,
     linebreak: instance.layout.linebreak,
     max_width: instance.bounds.width,
     max_height: instance.bounds.height,
+    uses_viewport_sizes: text_font_supports_viewport_size(instance),
+    uses_rem_sizes: text_font_uses_rem_size(instance),
   }
 }
 
@@ -222,33 +297,6 @@ let cosmic_font_system_state : Ref[CosmicFontSystemState] = Ref::new(CosmicFontS
 })
 
 ///|
-fn int_array_contains(xs : Array[Int], value : Int) -> Bool {
-  for x in xs {
-    if x == value {
-      return true
-    }
-  }
-  false
-}
-
-///|
-let text_warned_missing_font_mapping_ids : Ref[Array[Int]] = Ref::new([])
-
-///|
-fn text_warn_missing_font_mapping_once(text_id : Int, font_id : Int) -> Unit {
-  if int_array_contains(text_warned_missing_font_mapping_ids.val, text_id) {
-    return
-  }
-  text_warned_missing_font_mapping_ids.val.push(text_id)
-  @window.host_debug_string(
-    value="Text2d warning: font mapping unavailable, text_id=" +
-      text_id.to_string() +
-      ", font_id=" +
-      font_id.to_string(),
-  )
-}
-
-///|
 fn text_abort_layout_error(text_id : Int, detail : String) -> Unit {
   let message = "Text2d fatal: inconsistent atlas state, text_id=" +
     text_id.to_string() +
@@ -317,6 +365,16 @@ fn text_pipeline_resolve_default_font(
     return font
   }
   @asset.AssetServer::new().load_font(DEFAULT_TEXT_FONT_PATH)
+}
+
+///|
+fn font_source_resolved_handle(
+  source : FontSource,
+) -> @asset.Handle[@asset.Font]? {
+  match source {
+    FontSource::Handle(font) => Some(text_pipeline_resolve_default_font(font))
+    _ => None
+  }
 }
 
 ///|
@@ -390,16 +448,27 @@ fn cosmic_font_family_name(font : @asset.Handle[@asset.Font]) -> String? {
 }
 
 ///|
-fn cosmic_font_handle_id_for_font_id(font_id : Int) -> Int? {
-  let ids = cosmic_font_system_state.val.font_id_to_handle_id
-  if font_id < 0 || font_id >= ids.length() {
-    return None
+fn text_font_source_family(source : FontSource) -> @cosmic.Family? {
+  match source {
+    FontSource::Handle(font) =>
+      match cosmic_font_family_name(font) {
+        Some(name) =>
+          if name.length() > 0 {
+            Some(@cosmic.Family::Name(name))
+          } else {
+            None
+          }
+        None => None
+      }
+    _ => font_source_to_cosmic_family(source)
   }
-  let handle_id = ids[font_id]
-  if handle_id <= 0 {
-    None
-  } else {
-    Some(handle_id)
+}
+
+///|
+fn text_font_source_ready(source : FontSource) -> Bool {
+  match font_source_resolved_handle(source) {
+    Some(font) => cosmic_get_or_load_font_id(font) is Some(_)
+    None => true
   }
 }
 
@@ -472,12 +541,53 @@ fn cosmic_physical_xy(
 }
 
 ///|
+fn text_layout_needs_update(instance : TextInstance) -> Bool {
+  if instance.computed.needs_rerender {
+    return true
+  }
+  if instance.computed.uses_viewport_sizes &&
+    !text_vec2_opt_eq(
+      instance.computed.logical_viewport_size,
+      instance.logical_viewport_size,
+    ) {
+    return true
+  }
+  if instance.computed.uses_rem_sizes &&
+    instance.computed.rem_size != text_runtime_rem_size_ref.val {
+    return true
+  }
+  false
+}
+
+///|
 fn text_update_layout(instance : TextInstance) -> TextInstance {
-  if !instance.computed.needs_rerender {
+  if !text_layout_needs_update(instance) {
     return instance
   }
-  let buffer = build_text_buffer(instance)
+  let logical_viewport_size = text_current_logical_viewport_size(instance)
+  let rem_size = text_runtime_rem_size_ref.val
+  let buffer = build_text_buffer(instance, logical_viewport_size, rem_size)
   let entities = build_text_entities(instance)
+  if buffer.font_size <= 0.0F || buffer.line_height <= 0.0F {
+    return TextInstance::{
+      ..instance,
+      layout_info: TextLayoutInfo::{
+        scale_factor: 1.0F,
+        glyphs: [],
+        run_geometry: [],
+        size: @math.Vec2::new(0.0F, 0.0F),
+      },
+      computed: ComputedTextBlock::{
+        buffer,
+        entities,
+        needs_rerender: false,
+        uses_viewport_sizes: buffer.uses_viewport_sizes,
+        uses_rem_sizes: buffer.uses_rem_sizes,
+        logical_viewport_size: instance.logical_viewport_size,
+        rem_size,
+      },
+    }
+  }
 
   // Ensure all fonts used by this text block are loaded into the cosmic font system.
   //
@@ -491,11 +601,11 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   // - missing glyph image keeps partial layout and retries next frame.
   // - atlas state mismatches are treated as fatal runtime errors.
   let mut needs_retry = false
-  if cosmic_get_or_load_font_id(instance.font.font) is None {
+  if !text_font_source_ready(instance.font.font) {
     needs_retry = true
   }
   for span in instance.spans {
-    if cosmic_get_or_load_font_id(span.font.font) is None {
+    if !text_font_source_ready(span.font.font) {
       needs_retry = true
     }
   }
@@ -504,23 +614,38 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
   // Build rich text spans for cosmic buffer.
   let spans : Array[(String, @cosmic.Attrs)] = []
   let base_metrics = @cosmic.Metrics::new(buffer.font_size, buffer.line_height)
-  let base_family = cosmic_font_family_name(instance.font.font)
-  let mut base_attrs = @cosmic.Attrs::with_metadata(0).metrics(base_metrics)
-  if base_family is Some(name) && name.length() > 0 {
-    base_attrs = base_attrs.family(@cosmic.Family::Name(name))
+  let base_family = text_font_source_family(instance.font.font)
+  let mut base_attrs = @cosmic.Attrs::with_metadata(0)
+    .metrics(base_metrics)
+    .weight(font_weight_to_cosmic(instance.font.weight))
+    .stretch(font_width_to_swash(instance.font.width))
+    .style(font_style_to_swash(instance.font.style))
+    .font_features(font_features_to_cosmic(instance.font.font_features))
+  if base_family is Some(family) {
+    base_attrs = base_attrs.family(family)
   }
   spans.push((instance.text.content, base_attrs))
   for i in 0..<instance.spans.length() {
     let sp = instance.spans[i]
     let idx = i + 1
-    let fam = cosmic_font_family_name(sp.font.font)
-    let metrics = @cosmic.Metrics::new(
+    let span_font_size = text_evaluated_font_size(
       sp.font.font_size,
-      sp.line_height.eval(sp.font.font_size),
+      logical_viewport_size,
+      rem_size,
     )
-    let mut attrs = @cosmic.Attrs::with_metadata(idx).metrics(metrics)
-    if fam is Some(name) && name.length() > 0 {
-      attrs = attrs.family(@cosmic.Family::Name(name))
+    let fam = text_font_source_family(sp.font.font)
+    let metrics = @cosmic.Metrics::new(
+      span_font_size,
+      sp.line_height.eval(span_font_size),
+    )
+    let mut attrs = @cosmic.Attrs::with_metadata(idx)
+      .metrics(metrics)
+      .weight(font_weight_to_cosmic(sp.font.weight))
+      .stretch(font_width_to_swash(sp.font.width))
+      .style(font_style_to_swash(sp.font.style))
+      .font_features(font_features_to_cosmic(sp.font.font_features))
+    if fam is Some(family) {
+      attrs = attrs.family(family)
     }
     spans.push((sp.span.content, attrs))
   }
@@ -680,20 +805,6 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       let (physical_key, phys_x_i, phys_y_i, subpixel_x, subpixel_y) = cosmic_physical_xy(
         layout_glyph, font_smoothing, run_line_y,
       )
-      let font_handle_id_opt = cosmic_font_handle_id_for_font_id(
-        layout_glyph.font_id,
-      )
-      if font_handle_id_opt is None {
-        needs_retry = true
-        text_warn_missing_font_mapping_once(instance.id, layout_glyph.font_id)
-        continue
-      }
-      let font_handle_id = if font_handle_id_opt is Some(v) {
-        v
-      } else {
-        continue
-      }
-      let font_handle = @asset.Handle::new(font_handle_id)
       let raster_opt = font_rasterize_cache_key(
         font_system, physical_key, font_smoothing,
       )
@@ -714,7 +825,7 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
         physical_key.flags,
       )
       let font_key = FontAtlasKey::new(
-        font_handle,
+        physical_key.font_id,
         Float::reinterpret_from_uint(physical_key.font_size_bits),
         font_smoothing,
       )
@@ -798,12 +909,25 @@ fn text_update_layout(instance : TextInstance) -> TextInstance {
       buffer,
       entities,
       needs_rerender: needs_retry,
+      uses_viewport_sizes: buffer.uses_viewport_sizes,
+      uses_rem_sizes: buffer.uses_rem_sizes,
+      logical_viewport_size: instance.logical_viewport_size,
+      rem_size,
     },
   }
 }
 
 ///|
-pub fn[W] text_update_system(_world : W) -> Unit {
+fn text_runtime_resolve_rem_size(world : @ecs.World) -> Float {
+  match world.resource(RemSize::resource()).get() {
+    Some(rem_size) => rem_size.value()
+    None => RemSize::default().value()
+  }
+}
+
+///|
+pub fn text_update_system(world : @ecs.World) -> Unit {
+  text_set_runtime_rem_size(text_runtime_resolve_rem_size(world))
   let count = text_state.val.texts.length()
   for i in 0..<count {
     text_state.val.texts[i] = text_update_layout(text_state.val.texts[i])
@@ -1196,6 +1320,7 @@ pub let text_set_sync_ecs : @app.SystemSet = @app.system_set(
 pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   try! register_text_required_components(app.world())
   let next = app
+    .insert_resource(RemSize::default())
     .add_system(text_update_system)
     .add_post_update_system_config(
       @app.system(text_sync_ecs_system).in_set(text_set_sync_ecs),

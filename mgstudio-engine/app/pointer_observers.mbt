@@ -202,6 +202,7 @@ pub impl[K : PointerObserverKind] SystemParam for OnPointer[K] with store(
 priv struct PointerObserverEntry {
   kind : @pointer_events.PointerEventKind
   source : String
+  target : @core.Entity?
   system : SystemFn[@ecs.World]
   last_run_sequence_ref : Ref[@core.Sequence]
 }
@@ -229,13 +230,14 @@ fn get_pointer_observer_registry_resource(
 }
 
 ///|
-fn register_pointer_observer_entry_in_sub_app(
-  sub_app : SubApp[@ecs.World],
+fn register_pointer_observer_entry_in_world(
+  world : @ecs.World,
   kind : @pointer_events.PointerEventKind,
   source : String,
+  target : @core.Entity?,
   system : SystemFn[@ecs.World],
-) -> SubApp[@ecs.World] {
-  let registry_res = get_pointer_observer_registry_resource(sub_app.world())
+) -> Unit {
+  let registry_res = get_pointer_observer_registry_resource(world)
   let registry = match registry_res.get() {
     Some(value) => Ref::new(value)
     None => Ref::new(PointerObserverRegistry::default())
@@ -243,10 +245,28 @@ fn register_pointer_observer_entry_in_sub_app(
   registry.val.entries.push({
     kind,
     source,
+    target,
     system,
     last_run_sequence_ref: Ref::new(0),
   })
   registry_res.insert(registry.val)
+}
+
+///|
+fn register_pointer_observer_entry_in_sub_app(
+  sub_app : SubApp[@ecs.World],
+  kind : @pointer_events.PointerEventKind,
+  source : String,
+  target : @core.Entity?,
+  system : SystemFn[@ecs.World],
+) -> SubApp[@ecs.World] {
+  register_pointer_observer_entry_in_world(
+    sub_app.world(),
+    kind,
+    source,
+    target,
+    system,
+  )
   sub_app
 }
 
@@ -259,6 +279,7 @@ pub fn[K : PointerObserverKind] SubApp::add_pointer_observer(
     self,
     K::event_kind(),
     K::source_label(),
+    None,
     fallible_system_param(observer),
   )
 }
@@ -281,6 +302,7 @@ pub fn[K : PointerObserverKind, P2 : SystemParam] SubApp::add_pointer_observer2(
     self,
     K::event_kind(),
     K::source_label(),
+    None,
     fallible_system_param2(observer),
   )
 }
@@ -303,6 +325,7 @@ pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] SubApp::add_
     self,
     K::event_kind(),
     K::source_label(),
+    None,
     fallible_system_param3(observer),
   )
 }
@@ -330,6 +353,7 @@ pub fn[
     self,
     K::event_kind(),
     K::source_label(),
+    None,
     fallible_system_param4(observer),
   )
 }
@@ -357,6 +381,12 @@ pub fn dispatch_pointer_observers_system(world : @ecs.World) -> Unit {
   for event in events.events {
     for entry in registry.entries {
       if entry.kind == event.kind {
+        match entry.target {
+          Some(target) => {
+            guard event.target == Some(target) else { continue }
+          }
+          None => ()
+        }
         current_pointer_event_ref.val = Some(event)
         run_registered_observer_system(
           world,

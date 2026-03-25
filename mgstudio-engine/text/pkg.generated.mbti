@@ -115,7 +115,11 @@ pub fn text_set_layout(TextHandle, TextLayout) -> Unit
 
 pub fn text_set_line_height(TextHandle, LineHeight) -> Unit
 
+pub fn text_set_logical_viewport_size(TextHandle, @math.Vec2?) -> Unit
+
 pub let text_set_render_extract : String
+
+pub fn text_set_runtime_rem_size(Float) -> Unit
 
 pub fn text_set_shadow(TextHandle, Text2dShadow?) -> Unit
 
@@ -139,7 +143,7 @@ pub fn text_spawn(Text2dBundle) -> TextHandle
 
 pub fn text_spawn_span(TextHandle, TextSpanBundle) -> TextSpanHandle
 
-pub fn[W] text_update_system(W) -> Unit
+pub fn text_update_system(@ecs.World) -> Unit
 
 pub fn ui_text_ecs_handle(@ecs.World, @core.Entity) -> TextHandle?
 
@@ -151,6 +155,10 @@ pub fn ui_text_sync_ecs_system(@ecs.World) -> Unit
 pub struct ComputedTextBlock {
   buffer : CosmicBuffer
   needs_rerender : Bool
+  uses_viewport_sizes : Bool
+  uses_rem_sizes : Bool
+  logical_viewport_size : @math.Vec2?
+  rem_size : Float
   entities : Array[TextEntity]
 }
 pub fn ComputedTextBlock::buffer(Self) -> CosmicBuffer
@@ -167,6 +175,8 @@ pub struct CosmicBuffer {
   linebreak : LineBreak
   max_width : Float?
   max_height : Float?
+  uses_viewport_sizes : Bool
+  uses_rem_sizes : Bool
 }
 pub fn CosmicBuffer::default() -> Self
 
@@ -186,7 +196,7 @@ pub struct FontAtlasKey {
   font_size_bits : Int
   font_smoothing : FontSmoothing
 }
-pub fn FontAtlasKey::new(@asset.Handle[@asset.Font], Float, FontSmoothing) -> Self
+pub fn FontAtlasKey::new(Int, Float, FontSmoothing) -> Self
 
 pub struct FontAtlasSet {
   entries : Array[FontAtlasSetEntry]
@@ -201,11 +211,130 @@ pub struct FontAtlasSetEntry {
   atlases : Array[FontAtlas]
 }
 
+pub(all) enum FontFeatureTag {
+  STANDARD_LIGATURES
+  CONTEXTUAL_LIGATURES
+  DISCRETIONARY_LIGATURES
+  CONTEXTUAL_ALTERNATES
+  STYLISTIC_ALTERNATES
+  SMALL_CAPS
+  CAPS_TO_SMALL_CAPS
+  SWASH
+  TITLING_ALTERNATES
+  FRACTIONS
+  ORDINALS
+  SLASHED_ZERO
+  SUPERSCRIPT
+  SUBSCRIPT
+  OLDSTYLE_FIGURES
+  LINING_FIGURES
+  PROPORTIONAL_FIGURES
+  TABULAR_FIGURES
+  WEIGHT
+  WIDTH
+  SLANT
+  RAW(String)
+}
+pub fn FontFeatureTag::tag_string(Self) -> String
+
+pub struct FontFeatures {
+  features : Array[(FontFeatureTag, UInt)]
+}
+pub fn FontFeatures::builder() -> FontFeaturesBuilder
+pub fn FontFeatures::default() -> Self
+pub fn FontFeatures::features(Self) -> Array[(FontFeatureTag, UInt)]
+pub fn FontFeatures::from_tags(Array[FontFeatureTag]) -> Self
+pub fn FontFeatures::new() -> Self
+
+pub struct FontFeaturesBuilder {
+  features : Array[(FontFeatureTag, UInt)]
+}
+pub fn FontFeaturesBuilder::build(Self) -> FontFeatures
+pub fn FontFeaturesBuilder::default() -> Self
+pub fn FontFeaturesBuilder::disable(Self, FontFeatureTag) -> Self
+pub fn FontFeaturesBuilder::enable(Self, FontFeatureTag) -> Self
+pub fn FontFeaturesBuilder::set(Self, FontFeatureTag, UInt) -> Self
+
+pub(all) enum FontSize {
+  Px(Float)
+  Vw(Float)
+  Vh(Float)
+  VMin(Float)
+  VMax(Float)
+  Rem(Float)
+}
+pub fn FontSize::default() -> Self
+pub fn FontSize::eval(Self, @math.Vec2, Float) -> Float
+pub fn FontSize::uses_rem_size(Self) -> Bool
+pub fn FontSize::uses_viewport_size(Self) -> Bool
+pub impl IntoFontSize for FontSize
+
 pub(all) enum FontSmoothing {
   None
   AntiAliased
 }
 pub fn FontSmoothing::default() -> Self
+
+pub(all) enum FontSource {
+  Handle(@asset.Handle[@asset.Font])
+  Family(String)
+  Serif
+  SansSerif
+  Cursive
+  Fantasy
+  Monospace
+  SystemUi
+  UiSerif
+  UiSansSerif
+  UiMonospace
+  UiRounded
+  Emoji
+  Math
+  FangSong
+}
+pub fn FontSource::default() -> Self
+pub fn FontSource::from_family(String) -> Self
+pub fn FontSource::from_font(@asset.Handle[@asset.Font]) -> Self
+pub impl IntoFontSource for FontSource
+
+pub(all) enum FontStyle {
+  Normal
+  Italic
+  Oblique(Float?)
+}
+pub fn FontStyle::default() -> Self
+
+pub(all) enum FontWeight {
+  THIN
+  EXTRA_LIGHT
+  LIGHT
+  NORMAL
+  MEDIUM
+  SEMIBOLD
+  BOLD
+  EXTRA_BOLD
+  BLACK
+  EXTRA_BLACK
+  VALUE(Int)
+}
+pub fn FontWeight::clamp(Self) -> Self
+pub fn FontWeight::default() -> Self
+pub fn FontWeight::raw_value(Self) -> Int
+
+pub(all) enum FontWidth {
+  ULTRA_CONDENSED
+  EXTRA_CONDENSED
+  CONDENSED
+  SEMI_CONDENSED
+  NORMAL
+  SEMI_EXPANDED
+  EXPANDED
+  EXTRA_EXPANDED
+  ULTRA_EXPANDED
+  VALUE(Float)
+}
+pub fn FontWidth::default() -> Self
+pub fn FontWidth::percentage(Self) -> Float
 
 pub struct GlyphAtlasInfo {
   texture : @asset.Handle[@image.Image]
@@ -268,6 +397,14 @@ pub struct PositionedGlyph {
   byte_length : Int
 }
 
+pub struct RemSize {
+  value : Float
+}
+pub fn RemSize::default() -> Self
+pub fn RemSize::new(Float) -> Self
+pub fn RemSize::value(Self) -> Float
+pub impl @app.Resource for RemSize
+
 pub struct RunGeometry {
   span_index : Int
   bounds : @math.Rect
@@ -289,12 +426,14 @@ pub impl @ecs.Component for Strikethrough
 pub(all) struct Text {
   mut content : String
 }
+pub fn Text::default() -> Self
 pub fn Text::new(String) -> Self
 pub impl @ecs.Component for Text
 
 pub(all) struct Text2d {
   mut content : String
 }
+pub fn Text2d::default() -> Self
 pub fn Text2d::new(String) -> Self
 pub impl @ecs.Component for Text2d
 
@@ -313,6 +452,7 @@ pub struct Text2dBundle {
   layers : @sprite.RenderLayers
   anchor : @sprite.Anchor
   y_axis : YAxisOrientation
+  logical_viewport_size : @math.Vec2?
 }
 pub fn Text2dBundle::new(Text2d, TextFont, @transform.Transform) -> Self
 pub fn Text2dBundle::new_with_layers(Text2d, TextFont, @transform.Transform, @sprite.RenderLayers) -> Self
@@ -341,7 +481,10 @@ pub impl @ecs.Component for Text2dShadow
 pub(all) struct TextBackgroundColor {
   mut color : @color.Color
 }
+pub fn TextBackgroundColor::black() -> Self
+pub fn TextBackgroundColor::default() -> Self
 pub fn TextBackgroundColor::new(@color.Color) -> Self
+pub fn TextBackgroundColor::white() -> Self
 pub impl @ecs.Component for TextBackgroundColor
 
 pub struct TextBounds {
@@ -357,8 +500,10 @@ pub impl @ecs.Component for TextBounds
 pub(all) struct TextColor {
   mut color : @color.Color
 }
+pub fn TextColor::black() -> Self
 pub fn TextColor::default() -> Self
 pub fn TextColor::new(@color.Color) -> Self
+pub fn TextColor::white() -> Self
 pub impl @ecs.Component for TextColor
 
 pub struct TextDebugGlyphDraw {
@@ -382,15 +527,24 @@ pub struct TextEntity {
 }
 
 pub(all) struct TextFont {
-  mut font : @asset.Handle[@asset.Font]
-  mut font_size : Float
+  mut font : FontSource
+  mut font_size : FontSize
+  mut weight : FontWeight
+  mut width : FontWidth
+  mut style : FontStyle
   mut font_smoothing : FontSmoothing
+  mut font_features : FontFeatures
 }
 pub fn TextFont::default() -> Self
-pub fn TextFont::from_font_size(Float) -> Self
+pub fn[S : IntoFontSize] TextFont::from_font_size(S) -> Self
+pub fn TextFont::with_family(Self, String) -> Self
 pub fn TextFont::with_font(Self, @asset.Handle[@asset.Font]) -> Self
-pub fn TextFont::with_font_size(Self, Float) -> Self
+pub fn TextFont::with_font_features(Self, FontFeatures) -> Self
+pub fn[S : IntoFontSize] TextFont::with_font_size(Self, S) -> Self
 pub fn TextFont::with_font_smoothing(Self, FontSmoothing) -> Self
+pub fn TextFont::with_style(Self, FontStyle) -> Self
+pub fn TextFont::with_weight(Self, FontWeight) -> Self
+pub fn TextFont::with_width(Self, FontWidth) -> Self
 pub impl @ecs.Component for TextFont
 
 pub struct TextHandle {
@@ -439,6 +593,7 @@ pub impl @ecs.Component for TextShadow
 pub(all) struct TextSpan {
   mut content : String
 }
+pub fn TextSpan::default() -> Self
 pub fn TextSpan::new(String) -> Self
 pub impl @ecs.Component for TextSpan
 
@@ -484,4 +639,14 @@ pub impl Show for YAxisOrientation
 // Type aliases
 
 // Traits
+pub(open) trait IntoFontSize {
+  into_font_size(Self) -> FontSize
+}
+pub impl IntoFontSize for Float
+
+pub(open) trait IntoFontSource {
+  into_font_source(Self) -> FontSource
+}
+pub impl IntoFontSource for String
+pub impl IntoFontSource for @asset.Handle[@asset.Font]
 

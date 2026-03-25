@@ -247,10 +247,14 @@ pub fn fps_overlay_plugin_with(
 
 ///|
 fn fps_overlay_font_size(config : FpsOverlayConfig) -> Float {
-  if config.text_config.font_size < 1.0F {
+  let font_size = config.text_config.font_size.eval(
+    @math.Vec2::new(0.0F, 0.0F),
+    20.0F,
+  )
+  if font_size < 1.0F {
     1.0F
   } else {
-    config.text_config.font_size
+    font_size
   }
 }
 

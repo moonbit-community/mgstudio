@@ -83,6 +83,11 @@ pub let ecs_key_text_y_axis : @ecs.ComponentKey[YAxisOrientation] = @ecs.registe
 )
 
 ///|
+let ecs_res_key_rem_size : @ecs.ResourceKey[RemSize] = @ecs.register_resource(
+  debug_name="text.rem_size",
+)
+
+///|
 pub impl @ecs.Component for Text with component() {
   ecs_key_text
 }
@@ -153,6 +158,11 @@ pub impl @ecs.Component for YAxisOrientation with component() {
 }
 
 ///|
+pub impl @app.Resource for RemSize with resource() {
+  ecs_res_key_rem_size
+}
+
+///|
 priv struct EcsTextBridgeEntry {
   world_id : Int
   entity : @core.Entity
@@ -196,7 +206,6 @@ fn reset_text_runtime_state() -> Unit {
   }
   swash_font_cache.val.entries.clear()
   cosmic_swash_cache.val = @cosmic.SwashCache::new()
-  text_warned_missing_font_mapping_ids.val.clear()
 }
 
 ///|
@@ -225,6 +234,15 @@ fn register_text_required_components(
 }
 
 ///|
+fn sync_text_runtime_rem_size(world : @ecs.World) -> Unit {
+  let rem_size = match world.resource(RemSize::resource()).get() {
+    Some(value) => value.value()
+    None => RemSize::default().value()
+  }
+  text_set_runtime_rem_size(rem_size)
+}
+
+///|
 fn float_opt_eq(lhs : Float?, rhs : Float?) -> Bool {
   match (lhs, rhs) {
     (Some(lhs), Some(rhs)) => lhs == rhs
@@ -241,6 +259,15 @@ fn color_eq(lhs : @sprite.Color, rhs : @sprite.Color) -> Bool {
 ///|
 fn vec2_eq(lhs : @math.Vec2, rhs : @math.Vec2) -> Bool {
   lhs.x == rhs.x && lhs.y == rhs.y
+}
+
+///|
+fn vec2_opt_eq(lhs : @math.Vec2?, rhs : @math.Vec2?) -> Bool {
+  match (lhs, rhs) {
+    (Some(lhs), Some(rhs)) => vec2_eq(lhs, rhs)
+    (None, None) => true
+    _ => false
+  }
 }
 
 ///|
@@ -263,9 +290,91 @@ fn text_span_eq(lhs : TextSpan, rhs : TextSpan) -> Bool {
 }
 
 ///|
+fn font_source_eq(lhs : FontSource, rhs : FontSource) -> Bool {
+  match (lhs, rhs) {
+    (FontSource::Handle(lhs), FontSource::Handle(rhs)) => lhs.id() == rhs.id()
+    (FontSource::Family(lhs), FontSource::Family(rhs)) => lhs == rhs
+    (FontSource::Serif, FontSource::Serif) => true
+    (FontSource::SansSerif, FontSource::SansSerif) => true
+    (FontSource::Cursive, FontSource::Cursive) => true
+    (FontSource::Fantasy, FontSource::Fantasy) => true
+    (FontSource::Monospace, FontSource::Monospace) => true
+    (FontSource::SystemUi, FontSource::SystemUi) => true
+    (FontSource::UiSerif, FontSource::UiSerif) => true
+    (FontSource::UiSansSerif, FontSource::UiSansSerif) => true
+    (FontSource::UiMonospace, FontSource::UiMonospace) => true
+    (FontSource::UiRounded, FontSource::UiRounded) => true
+    (FontSource::Emoji, FontSource::Emoji) => true
+    (FontSource::Math, FontSource::Math) => true
+    (FontSource::FangSong, FontSource::FangSong) => true
+    _ => false
+  }
+}
+
+///|
+fn font_size_eq(lhs : FontSize, rhs : FontSize) -> Bool {
+  match (lhs, rhs) {
+    (FontSize::Px(lhs), FontSize::Px(rhs)) => lhs == rhs
+    (FontSize::Vw(lhs), FontSize::Vw(rhs)) => lhs == rhs
+    (FontSize::Vh(lhs), FontSize::Vh(rhs)) => lhs == rhs
+    (FontSize::VMin(lhs), FontSize::VMin(rhs)) => lhs == rhs
+    (FontSize::VMax(lhs), FontSize::VMax(rhs)) => lhs == rhs
+    (FontSize::Rem(lhs), FontSize::Rem(rhs)) => lhs == rhs
+    _ => false
+  }
+}
+
+///|
+fn font_weight_eq(lhs : FontWeight, rhs : FontWeight) -> Bool {
+  lhs.clamp().raw_value() == rhs.clamp().raw_value()
+}
+
+///|
+fn font_width_eq(lhs : FontWidth, rhs : FontWidth) -> Bool {
+  lhs.percentage() == rhs.percentage()
+}
+
+///|
+fn font_style_eq(lhs : FontStyle, rhs : FontStyle) -> Bool {
+  match (lhs, rhs) {
+    (FontStyle::Normal, FontStyle::Normal) => true
+    (FontStyle::Italic, FontStyle::Italic) => true
+    (FontStyle::Oblique(lhs), FontStyle::Oblique(rhs)) => float_opt_eq(lhs, rhs)
+    _ => false
+  }
+}
+
+///|
+fn font_feature_tag_eq(lhs : FontFeatureTag, rhs : FontFeatureTag) -> Bool {
+  lhs.tag_string() == rhs.tag_string()
+}
+
+///|
+fn font_features_eq(lhs : FontFeatures, rhs : FontFeatures) -> Bool {
+  let lhs_features = lhs.features()
+  let rhs_features = rhs.features()
+  if lhs_features.length() != rhs_features.length() {
+    return false
+  }
+  for i in 0..<lhs_features.length() {
+    if !font_feature_tag_eq(lhs_features[i].0, rhs_features[i].0) {
+      return false
+    }
+    if lhs_features[i].1 != rhs_features[i].1 {
+      return false
+    }
+  }
+  true
+}
+
+///|
 fn text_font_eq(lhs : TextFont, rhs : TextFont) -> Bool {
-  lhs.font.id() == rhs.font.id() &&
-  lhs.font_size == rhs.font_size &&
+  font_source_eq(lhs.font, rhs.font) &&
+  font_size_eq(lhs.font_size, rhs.font_size) &&
+  font_weight_eq(lhs.weight, rhs.weight) &&
+  font_width_eq(lhs.width, rhs.width) &&
+  font_style_eq(lhs.style, rhs.style) &&
+  font_features_eq(lhs.font_features, rhs.font_features) &&
   font_smoothing_eq(lhs.font_smoothing, rhs.font_smoothing)
 }
 
@@ -404,7 +513,8 @@ fn text_bundle_rerender_eq(lhs : Text2dBundle, rhs : Text2dBundle) -> Bool {
   text_bounds_eq(lhs.bounds, rhs.bounds) &&
   line_height_eq(lhs.line_height, rhs.line_height) &&
   text_shadow_eq(lhs.shadow, rhs.shadow) &&
-  y_axis_eq(lhs.y_axis, rhs.y_axis)
+  y_axis_eq(lhs.y_axis, rhs.y_axis) &&
+  vec2_opt_eq(lhs.logical_viewport_size, rhs.logical_viewport_size)
 }
 
 ///|
@@ -500,6 +610,7 @@ fn text_ecs_bundle_from_entity(
     layers,
     anchor,
     y_axis,
+    logical_viewport_size: None,
   }
 }
 
@@ -592,6 +703,7 @@ fn text_ecs_spawn_entry(
   bundle : Text2dBundle,
   span_bundles : Array[TextSpanBundle],
 ) -> Unit {
+  sync_text_runtime_rem_size(world)
   let handle = @asset.asset_with_world(world, fn() {
     let handle = text_spawn(bundle)
     for span_bundle in span_bundles {
@@ -638,6 +750,7 @@ fn text_ecs_respawn_entry(
   span_bundles : Array[TextSpanBundle],
 ) -> EcsTextBridgeEntry {
   ignore(text_despawn(entry.handle))
+  sync_text_runtime_rem_size(world)
   let handle = @asset.asset_with_world(world, fn() {
     let handle = text_spawn(bundle)
     for span_bundle in span_bundles {
@@ -656,6 +769,7 @@ fn text_ecs_sync_existing_entry(
   bundle : Text2dBundle,
   span_bundles : Array[TextSpanBundle],
 ) -> EcsTextBridgeEntry {
+  sync_text_runtime_rem_size(world)
   let handle = entry.handle
   if text_get_transform(handle) is None {
     return text_ecs_respawn_entry(world, entry, bundle, span_bundles)
@@ -701,6 +815,12 @@ fn text_ecs_sync_existing_entry(
   text_set_layers(handle, bundle.layers)
   text_set_anchor(handle, bundle.anchor)
   text_set_y_axis(handle, bundle.y_axis)
+  if !vec2_opt_eq(
+      entry.bundle.logical_viewport_size,
+      bundle.logical_viewport_size,
+    ) {
+    text_set_logical_viewport_size(handle, bundle.logical_viewport_size)
+  }
   if needs_layout {
     @asset.asset_with_world(world, fn() {
       text_update_instance(handle, text_update_layout)
@@ -801,6 +921,7 @@ fn ui_text_ecs_bundle_from_entity(
     layers: @sprite.RenderLayers::default(),
     anchor: @sprite.Anchor::default(),
     y_axis: YAxisOrientation::TopToBottom,
+    logical_viewport_size: None,
   }
 }
 
@@ -812,6 +933,7 @@ fn ui_text_ecs_spawn_entry(
   bundle : Text2dBundle,
   span_bundles : Array[TextSpanBundle],
 ) -> Unit {
+  sync_text_runtime_rem_size(world)
   let handle = @asset.asset_with_world(world, fn() {
     let handle = text_spawn(bundle)
     for span_bundle in span_bundles {
@@ -858,6 +980,7 @@ fn ui_text_ecs_respawn_entry(
   span_bundles : Array[TextSpanBundle],
 ) -> UiEcsTextBridgeEntry {
   ignore(text_despawn(entry.handle))
+  sync_text_runtime_rem_size(world)
   let handle = @asset.asset_with_world(world, fn() {
     let handle = text_spawn(bundle)
     for span_bundle in span_bundles {
@@ -876,6 +999,7 @@ fn ui_text_ecs_sync_existing_entry(
   bundle : Text2dBundle,
   span_bundles : Array[TextSpanBundle],
 ) -> UiEcsTextBridgeEntry {
+  sync_text_runtime_rem_size(world)
   let handle = entry.handle
   if text_get_transform(handle) is None {
     return ui_text_ecs_respawn_entry(world, entry, bundle, span_bundles)
@@ -913,6 +1037,12 @@ fn ui_text_ecs_sync_existing_entry(
   }
   if !text_shadow_eq(entry.bundle.shadow, bundle.shadow) {
     text_set_shadow(handle, bundle.shadow)
+  }
+  if !vec2_opt_eq(
+      entry.bundle.logical_viewport_size,
+      bundle.logical_viewport_size,
+    ) {
+    text_set_logical_viewport_size(handle, bundle.logical_viewport_size)
   }
   if needs_layout {
     @asset.asset_with_world(world, fn() {

@@ -21,12 +21,12 @@ pub struct FontAtlasKey {
 
 ///|
 pub fn FontAtlasKey::new(
-  font : @asset.Handle[@asset.Font],
+  font_id : Int,
   font_size : Float,
   font_smoothing : FontSmoothing,
 ) -> FontAtlasKey {
   let bits = font_size.reinterpret_as_uint().reinterpret_as_int()
-  FontAtlasKey::{ font_id: font.id(), font_size_bits: bits, font_smoothing }
+  FontAtlasKey::{ font_id, font_size_bits: bits, font_smoothing }
 }
 
 ///|

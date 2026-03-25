@@ -53,6 +53,7 @@ pub struct Text2dBundle {
   layers : @sprite.RenderLayers
   anchor : @sprite.Anchor
   y_axis : YAxisOrientation
+  logical_viewport_size : @math.Vec2?
 }
 
 ///|
@@ -76,6 +77,7 @@ pub fn Text2dBundle::new(
     layers: @sprite.RenderLayers::default(),
     anchor: @sprite.Anchor::default(),
     y_axis: YAxisOrientation::TopToBottom,
+    logical_viewport_size: None,
   }
 }
 
@@ -101,6 +103,7 @@ pub fn Text2dBundle::new_with_layers(
     layers,
     anchor: @sprite.Anchor::default(),
     y_axis: YAxisOrientation::TopToBottom,
+    logical_viewport_size: None,
   }
 }
 
@@ -287,6 +290,7 @@ priv struct TextInstance {
   /// When set, this text handle is treated as "UI text" and will be positioned
   /// relative to a UI node's top-left corner (Bevy UI extraction semantics).
   ui_node_size : @math.Vec2?
+  logical_viewport_size : @math.Vec2?
   /// Optional UI target camera for overlay extraction.
   ui_camera_entity : @core.Entity?
   /// Optional UI clip rect (logical UI space) propagated from `ui_clip_system`.
@@ -310,6 +314,9 @@ let text_state : Ref[TextState] = Ref::new(TextState::{
   next_span_id: 0,
   texts: [],
 })
+
+///|
+let text_runtime_rem_size_ref : Ref[Float] = Ref::new(20.0F)
 
 ///|
 pub struct TextDebugGlyphDraw {
@@ -545,6 +552,7 @@ pub fn text_spawn(bundle : Text2dBundle) -> TextHandle {
     anchor: bundle.anchor,
     y_axis: bundle.y_axis,
     ui_node_size: None,
+    logical_viewport_size: bundle.logical_viewport_size,
     ui_camera_entity: None,
     ui_scissor: None,
     spans: [],
@@ -808,6 +816,18 @@ pub fn text_set_ui_node_size(handle : TextHandle, size : @math.Vec2?) -> Unit {
 }
 
 ///|
+pub fn text_set_logical_viewport_size(
+  handle : TextHandle,
+  logical_viewport_size : @math.Vec2?,
+) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{
+    ..instance,
+    logical_viewport_size,
+    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+  })
+}
+
+///|
 pub fn text_set_ui_camera_entity(
   handle : TextHandle,
   camera_entity : @core.Entity?,
@@ -849,6 +869,11 @@ pub fn text_get_layout_size(handle : TextHandle) -> @math.Vec2? {
     }
   }
   None
+}
+
+///|
+pub fn text_set_runtime_rem_size(rem_size : Float) -> Unit {
+  text_runtime_rem_size_ref.val = rem_size
 }
 
 ///|

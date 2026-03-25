@@ -454,6 +454,10 @@ pub fn EntityCommands::despawn(Self, loc~ : SourceLoc) -> Unit
 pub fn[T : CommandSpawnComponents] EntityCommands::insert(Self, T, loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T : @ecs.Component] EntityCommands::insert_component(Self, T, loc~ : SourceLoc) -> Unit
+pub fn[K : PointerObserverKind] EntityCommands::observe(Self, (OnPointer[K]) -> Unit raise) -> Self
+pub fn[K : PointerObserverKind, P2 : SystemParam] EntityCommands::observe2(Self, (OnPointer[K], P2) -> Unit raise) -> Self
+pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] EntityCommands::observe3(Self, (OnPointer[K], P2, P3) -> Unit raise) -> Self
+pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] EntityCommands::observe4(Self, (OnPointer[K], P2, P3, P4) -> Unit raise) -> Self
 #callsite(autofill(loc))
 pub fn[T] EntityCommands::remove(Self, @ecs.ComponentKey[T], loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))

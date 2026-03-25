@@ -2939,6 +2939,10 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
         // Sync text handles (state-based text pipeline) for UI text nodes.
         if @text.ui_text_ecs_handle(world, entity) is Some(text_handle) {
           @text.text_set_ui_camera_entity(text_handle, root_ctx.camera_entity)
+          @text.text_set_logical_viewport_size(
+            text_handle,
+            Some(root_ctx.viewport_size),
+          )
           let node = match node_store.get(entity) {
             Some(v) => v
             None => Node::default()

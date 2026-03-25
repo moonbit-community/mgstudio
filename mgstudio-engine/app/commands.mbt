@@ -417,6 +417,103 @@ pub fn[T] EntityCommands::remove(
 }
 
 ///|
+pub fn[K : PointerObserverKind] EntityCommands::observe(
+  self : EntityCommands,
+  observer : (OnPointer[K]) -> Unit raise,
+) -> EntityCommands {
+  let entity = self.entity
+  self.commands.queue.push({
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+      guard world.is_alive(entity) else { return }
+      register_pointer_observer_entry_in_world(
+        world,
+        K::event_kind(),
+        "EntityCommands::observe(" + K::source_label() + ")",
+        Some(entity),
+        fallible_system_param(observer),
+      )
+    },
+    error_handler: None,
+    source: "EntityCommands::observe(" + K::source_label() + ")",
+  })
+  self
+}
+
+///|
+pub fn[K : PointerObserverKind, P2 : SystemParam] EntityCommands::observe2(
+  self : EntityCommands,
+  observer : (OnPointer[K], P2) -> Unit raise,
+) -> EntityCommands {
+  let entity = self.entity
+  self.commands.queue.push({
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+      guard world.is_alive(entity) else { return }
+      register_pointer_observer_entry_in_world(
+        world,
+        K::event_kind(),
+        "EntityCommands::observe2(" + K::source_label() + ")",
+        Some(entity),
+        fallible_system_param2(observer),
+      )
+    },
+    error_handler: None,
+    source: "EntityCommands::observe2(" + K::source_label() + ")",
+  })
+  self
+}
+
+///|
+pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] EntityCommands::observe3(
+  self : EntityCommands,
+  observer : (OnPointer[K], P2, P3) -> Unit raise,
+) -> EntityCommands {
+  let entity = self.entity
+  self.commands.queue.push({
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+      guard world.is_alive(entity) else { return }
+      register_pointer_observer_entry_in_world(
+        world,
+        K::event_kind(),
+        "EntityCommands::observe3(" + K::source_label() + ")",
+        Some(entity),
+        fallible_system_param3(observer),
+      )
+    },
+    error_handler: None,
+    source: "EntityCommands::observe3(" + K::source_label() + ")",
+  })
+  self
+}
+
+///|
+pub fn[
+  K : PointerObserverKind,
+  P2 : SystemParam,
+  P3 : SystemParam,
+  P4 : SystemParam,
+] EntityCommands::observe4(
+  self : EntityCommands,
+  observer : (OnPointer[K], P2, P3, P4) -> Unit raise,
+) -> EntityCommands {
+  let entity = self.entity
+  self.commands.queue.push({
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+      guard world.is_alive(entity) else { return }
+      register_pointer_observer_entry_in_world(
+        world,
+        K::event_kind(),
+        "EntityCommands::observe4(" + K::source_label() + ")",
+        Some(entity),
+        fallible_system_param4(observer),
+      )
+    },
+    error_handler: None,
+    source: "EntityCommands::observe4(" + K::source_label() + ")",
+  })
+  self
+}
+
+///|
 fn Commands::flush(self : Commands) -> Unit {
   self.queue.each(fn(entry) {
     (entry.run)(self.world, self.sequence) catch {
