@@ -39,3 +39,35 @@ test "light boundary re-exports shadow maps and volumetric APIs" {
   inspect(medium.density_multiplier.to_double(), content="1.5")
   inspect(fog.step_count, content="96")
 }
+
+///|
+test "light gizmo config group defaults align with light kinds" {
+  let config = @light.LightGizmoConfigGroup::default()
+  inspect(config.draw_all, content="false")
+  inspect(
+    if config.color is MatchLightColor {
+      true
+    } else {
+      false
+    },
+    content="true",
+  )
+  inspect(config.point_light_color.r.to_double(), content="1")
+  inspect(config.spot_light_color.g.to_double(), content="1")
+  inspect(config.directional_light_color.b.to_double(), content="1")
+}
+
+///|
+test "show light gizmo stores optional color override" {
+  let gizmo = @light.ShowLightGizmo::default().with_color(
+    Some(@light.LightGizmoColor::ByLightType),
+  )
+  inspect(
+    if gizmo.color is Some(ByLightType) {
+      true
+    } else {
+      false
+    },
+    content="true",
+  )
+}

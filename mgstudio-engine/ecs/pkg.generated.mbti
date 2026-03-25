@@ -687,6 +687,7 @@ pub impl[T : QueryData] QueryData for T?
 pub impl QueryData for @core.Entity
 pub impl[A : QueryData, B : QueryData] QueryData for (A, B)
 pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C)
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (A, B, C, D)
 
 pub(open) trait QueryFilter {
   matches(Self, World, @core.Entity) -> Bool

@@ -4,13 +4,20 @@ package "Milky2018/mgstudio/light"
 import {
   "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/image",
   "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/transform",
   "moonbitlang/core/json",
 }
 
 // Values
+pub fn draw_all_light_gizmos(@ecs.Query[(@core.Entity, @ecs.Comp[PointLight], @ecs.Comp[@transform.Transform]), @ecs.Without[ShowLightGizmo]], @ecs.Query[(@core.Entity, @ecs.Comp[SpotLight], @ecs.Comp[@transform.Transform]), @ecs.Without[ShowLightGizmo]], @ecs.Query[(@core.Entity, @ecs.Comp[DirectionalLight], @ecs.Comp[@transform.Transform]), @ecs.Without[ShowLightGizmo]], @sprite.Gizmos[LightGizmoConfigGroup]) -> Unit
+
+pub fn draw_light_gizmos(@ecs.Query[(@core.Entity, @ecs.Comp[PointLight], @ecs.Comp[@transform.Transform], @ecs.Comp[ShowLightGizmo]), @ecs.All], @ecs.Query[(@core.Entity, @ecs.Comp[SpotLight], @ecs.Comp[@transform.Transform], @ecs.Comp[ShowLightGizmo]), @ecs.All], @ecs.Query[(@core.Entity, @ecs.Comp[DirectionalLight], @ecs.Comp[@transform.Transform], @ecs.Comp[ShowLightGizmo]), @ecs.All], @sprite.Gizmos[LightGizmoConfigGroup]) -> Unit
+
 pub let ecs_key_directional_light : @ecs.ComponentKey[DirectionalLight]
 
 pub let ecs_key_directional_light_shadow_map : @ecs.ResourceKey[DirectionalLightShadowMap]
@@ -253,6 +260,29 @@ pub impl @ecs.Component for IrradianceVolume
 pub impl ToJson for IrradianceVolume
 pub impl @json.FromJson for IrradianceVolume
 
+pub(all) enum LightGizmoColor {
+  Manual(@color.Color)
+  Varied
+  MatchLightColor
+  ByLightType
+}
+pub fn LightGizmoColor::default() -> Self
+pub impl ToJson for LightGizmoColor
+pub impl @json.FromJson for LightGizmoColor
+
+pub(all) struct LightGizmoConfigGroup {
+  draw_all : Bool
+  color : LightGizmoColor
+  point_light_color : @color.Color
+  spot_light_color : @color.Color
+  directional_light_color : @color.Color
+}
+pub fn LightGizmoConfigGroup::default() -> Self
+pub impl @sprite.GizmoConfigGroup for LightGizmoConfigGroup
+pub impl Default for LightGizmoConfigGroup
+pub impl ToJson for LightGizmoConfigGroup
+pub impl @json.FromJson for LightGizmoConfigGroup
+
 pub struct LightProbe {
   falloff : @math.Vec3
 }
@@ -332,6 +362,15 @@ pub fn ScatteringMedium::earthlike() -> Self
 pub fn ScatteringMedium::with_density_multiplier(Self, Float) -> Self
 pub impl ToJson for ScatteringMedium
 pub impl @json.FromJson for ScatteringMedium
+
+pub struct ShowLightGizmo {
+  color : LightGizmoColor?
+}
+pub fn ShowLightGizmo::default() -> Self
+pub fn ShowLightGizmo::with_color(Self, LightGizmoColor?) -> Self
+pub impl @ecs.Component for ShowLightGizmo
+pub impl ToJson for ShowLightGizmo
+pub impl @json.FromJson for ShowLightGizmo
 
 pub struct SpotLight {
   color : @color.Color

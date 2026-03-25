@@ -455,3 +455,78 @@ pub impl[A : QueryData, B : QueryData, C : QueryData] QueryData for (A, B, C) wi
   B::contiguous_compatible() &&
   C::contiguous_compatible()
 }
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
+  A,
+  B,
+  C,
+  D,
+) with matches(world, entity) {
+  A::matches(world, entity) &&
+  B::matches(world, entity) &&
+  C::matches(world, entity) &&
+  D::matches(world, entity)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
+  A,
+  B,
+  C,
+  D,
+) with fetch(world, entity) {
+  (
+    A::fetch(world, entity),
+    B::fetch(world, entity),
+    C::fetch(world, entity),
+    D::fetch(world, entity),
+  )
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
+  A,
+  B,
+  C,
+  D,
+) with mentions_component(component_id) {
+  A::mentions_component(component_id) ||
+  B::mentions_component(component_id) ||
+  C::mentions_component(component_id) ||
+  D::mentions_component(component_id)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
+  A,
+  B,
+  C,
+  D,
+) with iteration_anchor_component() {
+  match A::iteration_anchor_component() {
+    Some(component_id) => Some(component_id)
+    None =>
+      match B::iteration_anchor_component() {
+        Some(component_id) => Some(component_id)
+        None =>
+          match C::iteration_anchor_component() {
+            Some(component_id) => Some(component_id)
+            None => D::iteration_anchor_component()
+          }
+      }
+  }
+}
+
+///|
+pub impl[A : QueryData, B : QueryData, C : QueryData, D : QueryData] QueryData for (
+  A,
+  B,
+  C,
+  D,
+) with contiguous_compatible() {
+  A::contiguous_compatible() &&
+  B::contiguous_compatible() &&
+  C::contiguous_compatible() &&
+  D::contiguous_compatible()
+}

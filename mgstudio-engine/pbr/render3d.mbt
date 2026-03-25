@@ -299,6 +299,15 @@ pub fn ClusteredDecal::with_tag(
 pub type PointLight = @light.PointLight
 
 ///|
+pub type LightGizmoColor = @light.LightGizmoColor
+
+///|
+pub type LightGizmoConfigGroup = @light.LightGizmoConfigGroup
+
+///|
+pub type ShowLightGizmo = @light.ShowLightGizmo
+
+///|
 pub type PointLightShadowMap = @light.PointLightShadowMap
 
 ///|

@@ -1057,6 +1057,10 @@ pub using @core_pipeline {type Hdr}
 
 pub using @light {type IrradianceVolume}
 
+pub using @light {type LightGizmoColor}
+
+pub using @light {type LightGizmoConfigGroup}
+
 pub using @light {type LightProbe}
 
 pub using @mesh {type Mesh}
@@ -1096,6 +1100,8 @@ pub using @post_process {type ScreenSpaceReflections}
 pub using @post_process {type ScreenSpaceTransmission}
 
 pub using @post_process {type ScreenSpaceTransmissionQuality}
+
+pub using @light {type ShowLightGizmo}
 
 pub using @light {type SpotLight}
 
