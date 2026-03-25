@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/window/multi_window_text.rs`.
 
 ///|
 const PRIMARY_WINDOW_TITLE : String = "Primary window"

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/input/gamepad_input_events.rs`.
 fn main {
   let plugins : Array[@app.Plugin[@ecs.World]] = @mgstudio.default_plugins()
   @app.App::new(@ecs.World::new())

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/app/return_after_run.rs`.
 
 ///|
 fn set_title(_world : @ecs.World) -> Unit {

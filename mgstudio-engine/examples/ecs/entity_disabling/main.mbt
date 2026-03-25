@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/ecs/entity_disabling.rs`.
 
 ///|
 struct DisableOnClick {} derive(Eq, Show, ToJson, FromJson)

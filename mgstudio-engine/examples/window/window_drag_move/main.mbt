@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/window/window_drag_move.rs`.
 
 ///|
 pub(all) enum LeftClickAction {

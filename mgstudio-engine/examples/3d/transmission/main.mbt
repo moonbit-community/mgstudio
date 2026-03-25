@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/transmission.rs`.
 ///
 /// Baseline parity: control flow and material field updates follow Bevy's
 /// transmission example. Runtime resolve quality is tracked separately in the

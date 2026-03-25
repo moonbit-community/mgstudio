@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/ecs/startup_system.rs`.
 
 ///|
 fn startup_system(_world : @ecs.World) -> Unit {

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/atmospheric_fog.rs`.
 ///
 /// Parity notes:
 /// - Uses `DistanceFog.directional_light_color` and

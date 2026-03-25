@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/tonemapping.rs`.
 ///
 /// The Bevy resource/component/system structure is preserved here.
 /// The scene-2 custom material path remains unavailable because

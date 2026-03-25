@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/camera/2d_top_down_camera.rs`.
 
 ///|
 const PLAYER_SPEED : Float = 100.0F

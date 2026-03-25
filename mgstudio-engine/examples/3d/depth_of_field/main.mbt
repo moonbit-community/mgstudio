@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/depth_of_field.rs`.
 ///
 /// Baseline parity: Bevy `DepthOfField` post-process modes are not exposed in
 /// current mgstudio APIs. This port preserves Bevy's control model

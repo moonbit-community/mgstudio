@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/time/timers.rs`.
 
 ///|
 struct PrintOnCompletionTimer {

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/dev_tools/fps_overlay.rs`.
 fn overlay_red() -> @sprite.Color {
   @sprite.Color::srgb(1.0F, 0.0F, 0.0F)
 }

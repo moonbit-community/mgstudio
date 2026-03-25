@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/app/externally_driven_headless_renderer.rs`.
 
 ///|
 priv struct CaptureState {

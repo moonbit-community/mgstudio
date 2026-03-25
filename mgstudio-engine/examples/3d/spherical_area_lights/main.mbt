@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/spherical_area_lights.rs`.
 ///
 /// Parity target: preserve Bevy's `PointLight.radius` sweep and scene topology.
 /// Current runtime keeps the real `radius` knob and also applies

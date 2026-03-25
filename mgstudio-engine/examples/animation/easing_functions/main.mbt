@@ -73,7 +73,7 @@ fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(plugins)
   .add_systems(@app.Startup, @app.system(setup))
-  .add_systems(@app.Update, @app.system(display_curves))
+  .add_systems(@app.Update, @app.system(@app.system_param(display_curves)))
   .run()
 }
 
@@ -164,7 +164,10 @@ fn setup(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn display_curves(world : @ecs.World) -> Unit {
+fn display_curves(
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+) -> Unit {
+  guard @app.current_world() is Some(world) else { return }
   let cycle_seconds = DURATION_SECONDS + TIME_MARGIN_SECONDS * 2.0F
   let elapsed = default_time_or_default(world).elapsed_seconds()
   let loops = (elapsed / cycle_seconds).to_int()
@@ -180,7 +183,6 @@ fn display_curves(world : @ecs.World) -> Unit {
     }
   }
 
-  let gizmos = @sprite.Gizmos::get()
   world.advance_sequence() |> ignore
   let half_size_x = PLOT_SIZE_X / 2.0F
   let half_size_y = PLOT_SIZE_Y / 2.0F

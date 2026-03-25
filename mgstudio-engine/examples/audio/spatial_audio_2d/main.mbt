@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/audio/spatial_audio_2d.rs`.
 
 ///|
 const AUDIO_SCALE : Float = 0.01F

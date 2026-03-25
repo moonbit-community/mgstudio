@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/two_passes.rs`.
 fn setup(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],

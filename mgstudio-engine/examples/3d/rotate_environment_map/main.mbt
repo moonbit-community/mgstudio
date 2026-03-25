@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/rotate_environment_map.rs`.
 ///
 /// Exact parity target: rotate `Skybox` and `EnvironmentMapLight` together.
 /// Tracking note: parity patch pass.

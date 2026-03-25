@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/camera/custom_projection.rs`.
 
 ///|
 priv struct ObliquePerspectiveProjection {

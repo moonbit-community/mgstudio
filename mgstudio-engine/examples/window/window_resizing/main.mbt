@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/window/window_resizing.rs`.
 
 ///|
 struct ResolutionText {} derive(Eq, Show)

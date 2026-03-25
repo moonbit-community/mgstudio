@@ -8,11 +8,9 @@ import {
 }
 
 // Values
-pub fn gizmo_config() -> @sprite.GizmoConfig
-
 pub fn gizmo_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
-pub fn insert_gizmo_config(@sprite.GizmoConfig) -> Unit
+pub fn[G : Default + @sprite.GizmoConfigGroup] init_gizmo_group(@app.App[@ecs.World], G) -> @app.App[@ecs.World]
 
 // Errors
 
@@ -23,9 +21,13 @@ pub using @sprite {type Arc2dBuilder}
 
 pub using @sprite {type ArrowBuilder}
 
+pub using @sprite {type DefaultGizmoConfigGroup}
+
 pub using @sprite {type Ellipse2dBuilder}
 
 pub using @sprite {type GizmoConfig}
+
+pub using @sprite {type GizmoConfigStore}
 
 pub using @sprite {type GizmoLineConfig}
 

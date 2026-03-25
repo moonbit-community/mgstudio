@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/audio/soundtrack.rs`.
 
 ///|
 const STATE_CHANGE_SECONDS : Float = 10.0F

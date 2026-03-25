@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/state/custom_transitions.rs`.
 
 ///|
 pub(all) enum AppState {

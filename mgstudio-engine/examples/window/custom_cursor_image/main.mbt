@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/window/custom_cursor_image.rs`.
 ///
 /// Baseline parity:
 /// - Documents custom cursor behavior expectations.

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/time/virtual_time.rs`.
 
 ///|
 fn clampf(value : Float, min_value : Float, max_value : Float) -> Float {

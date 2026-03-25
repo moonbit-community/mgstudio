@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/app/without_winit.rs`.
 
 ///|
 fn setup_system(world : @ecs.World) -> Unit {

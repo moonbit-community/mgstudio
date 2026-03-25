@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/ecs/hierarchy.rs`.
 
 ///|
 fn world_time(world : @ecs.World) -> @time.Time[Unit] {

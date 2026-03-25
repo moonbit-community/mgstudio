@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/math/cubic_splines.rs`.
 
 ///|
 enum SplineMode {
@@ -322,7 +321,10 @@ fn update_curve(
 }
 
 ///|
-fn draw_curve(curve : @app.Res[Curve], gizmos : @sprite.Gizmos) -> Unit {
+fn draw_curve(
+  curve : @app.Res[Curve],
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+) -> Unit {
   guard curve.get().value is Some(curve_value) else { return }
   let resolution = 100 * curve_value.segments().length()
   gizmos.linestrip_2d(
@@ -335,7 +337,7 @@ fn draw_curve(curve : @app.Res[Curve], gizmos : @sprite.Gizmos) -> Unit {
 fn draw_control_points(
   control_points : @app.Res[ControlPoints],
   spline_mode : @app.Res[SplineMode],
-  gizmos : @sprite.Gizmos,
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
 ) -> Unit {
   let green = @sprite.Color::srgb(0.0F, 1.0F, 0.0F)
   let red = @sprite.Color::srgb(1.0F, 0.0F, 0.0F)
@@ -488,7 +490,7 @@ fn handle_mouse_press(
 fn draw_edit_move(
   edit_move : @app.Res[MouseEditMove],
   mouse_position : @app.Res[MousePosition],
-  gizmos : @sprite.Gizmos,
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
 ) -> Unit {
   guard edit_move.get().start is Some(start) else { return }
   guard mouse_position.get().position is Some(mouse_pos) else { return }

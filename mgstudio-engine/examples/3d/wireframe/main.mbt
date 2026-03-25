@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/wireframe.rs`.
 
 ///|
 const COLOR_EPSILON : Float = 0.0001F

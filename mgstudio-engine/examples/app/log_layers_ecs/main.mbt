@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/app/log_layers_ecs.rs`.
 
 ///|
 struct LogMessage {

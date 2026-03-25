@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/ecs/custom_schedule.rs`.
 
 ///|
 let single_threaded_update : @app.ScheduleStage = @app.schedule_label(

@@ -94,9 +94,7 @@ pub fn get_render_state_resource(@ecs.World) -> @ecs.ResourceAccess[RenderState]
 
 pub fn get_wireframe2d_config_resource(@ecs.World) -> @ecs.ResourceAccess[Wireframe2dConfig]
 
-pub fn gizmo_config() -> GizmoConfig
-
-pub fn gizmo_set_config(GizmoConfig) -> Unit
+pub fn[T : GizmoConfigGroup + Default] init_gizmo_group(@app.App[@ecs.World], T) -> @app.App[@ecs.World]
 
 pub fn init_render_state_system(@ecs.World) -> Unit
 
@@ -427,6 +425,11 @@ pub struct ColorMaterialPlugin {
 }
 pub fn ColorMaterialPlugin::default() -> Self
 
+pub struct DefaultGizmoConfigGroup {
+}
+pub impl GizmoConfigGroup for DefaultGizmoConfigGroup
+pub impl Default for DefaultGizmoConfigGroup
+
 pub struct Ellipse2dBuilder {
   id : Int
 }
@@ -439,6 +442,16 @@ pub(all) struct GizmoConfig {
   render_layers : RenderLayers
 }
 pub fn GizmoConfig::default() -> Self
+
+type GizmoConfigStore
+pub fn[T : GizmoConfigGroup] GizmoConfigStore::config(Self, T) -> (GizmoConfig, T)
+pub fn[T : GizmoConfigGroup] GizmoConfigStore::config_mut(Self, T) -> (@ref.Ref[GizmoConfig], @ref.Ref[T])
+pub fn[T : GizmoConfigGroup] GizmoConfigStore::contains(Self, T) -> Bool
+pub fn[T : GizmoConfigGroup] GizmoConfigStore::get_config(Self, T) -> (GizmoConfig, T)?
+pub fn[T : GizmoConfigGroup] GizmoConfigStore::get_config_mut(Self, T) -> (@ref.Ref[GizmoConfig], @ref.Ref[T])?
+pub fn[T : GizmoConfigGroup + Default] GizmoConfigStore::register(Self, T) -> Unit
+pub impl @app.Resource for GizmoConfigStore
+pub impl Default for GizmoConfigStore
 
 pub(all) struct GizmoLineConfig {
   width : Float
@@ -461,34 +474,34 @@ pub(all) enum GizmoLineStyle {
   Dashed(gap_scale~ : Float, line_scale~ : Float)
 }
 
-pub struct Gizmos {
-  layers : RenderLayers
+pub struct Gizmos[Config] {
+  config : GizmoConfig
+  config_group : Config
 }
-pub fn Gizmos::arc_2d(Self, Isometry2d, Float, Float, @color.Color) -> Arc2dBuilder
-pub fn Gizmos::arrow_2d(Self, @math.Vec2, @math.Vec2, @color.Color) -> ArrowBuilder
-pub fn Gizmos::axes_2d(Self, Isometry2d, Float) -> Unit
-pub fn Gizmos::circle_2d(Self, Isometry2d, Float, @color.Color) -> Ellipse2dBuilder
-pub fn Gizmos::cross_2d(Self, Isometry2d, Float, @color.Color) -> Unit
-pub fn Gizmos::curve_2d(Self, Array[@math.Vec2], @color.Color) -> Unit
-pub fn Gizmos::curve_gradient_2d(Self, Array[(@math.Vec2, @color.Color)]) -> Unit
-pub fn Gizmos::ellipse_2d(Self, Isometry2d, @math.Vec2, @color.Color) -> Ellipse2dBuilder
-pub fn Gizmos::get() -> Self
-pub fn Gizmos::grid_2d(Self, Isometry2d, @math.IVec2, @math.Vec2, @color.Color) -> Grid2dBuilder
-pub fn Gizmos::line_2d(Self, @math.Vec2, @math.Vec2, @color.Color) -> Unit
-pub fn Gizmos::line_gradient_2d(Self, @math.Vec2, @math.Vec2, @color.Color, @color.Color) -> Unit
-pub fn Gizmos::lineloop_2d(Self, Array[@math.Vec2], @color.Color) -> Unit
-pub fn Gizmos::linestrip_2d(Self, Array[@math.Vec2], @color.Color) -> Unit
-pub fn Gizmos::linestrip_gradient_2d(Self, Array[(@math.Vec2, @color.Color)]) -> Unit
-pub fn Gizmos::long_arc_2d_between(Self, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> Arc2dBuilder
-pub fn Gizmos::mesh_wireframe_2d(Self, @mesh.Mesh2dGeometry, @transform.Transform, @color.Color) -> Unit
-pub fn Gizmos::new() -> Self
-pub fn Gizmos::ray_2d(Self, @math.Vec2, @math.Vec2, @color.Color) -> Unit
-pub fn Gizmos::ray_gradient_2d(Self, @math.Vec2, @math.Vec2, @color.Color, @color.Color) -> Unit
-pub fn Gizmos::rect_2d(Self, Isometry2d, @math.Vec2, @color.Color) -> Unit
-pub fn Gizmos::rounded_rect_2d(Self, Isometry2d, @math.Vec2, @color.Color) -> RoundedRectBuilder
-pub fn Gizmos::short_arc_2d_between(Self, @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> Arc2dBuilder
-pub fn Gizmos::with_layers(Self, RenderLayers) -> Self
-pub impl @app.SystemParam for Gizmos
+pub fn[Config] Gizmos::arc_2d(Self[Config], Isometry2d, Float, Float, @color.Color) -> Arc2dBuilder
+pub fn[Config] Gizmos::arrow_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color) -> ArrowBuilder
+pub fn[Config] Gizmos::axes_2d(Self[Config], Isometry2d, Float) -> Unit
+pub fn[Config] Gizmos::circle_2d(Self[Config], Isometry2d, Float, @color.Color) -> Ellipse2dBuilder
+pub fn[Config] Gizmos::config(Self[Config]) -> GizmoConfig
+pub fn[Config] Gizmos::config_group(Self[Config]) -> Config
+pub fn[Config] Gizmos::cross_2d(Self[Config], Isometry2d, Float, @color.Color) -> Unit
+pub fn[Config] Gizmos::curve_2d(Self[Config], Array[@math.Vec2], @color.Color) -> Unit
+pub fn[Config] Gizmos::curve_gradient_2d(Self[Config], Array[(@math.Vec2, @color.Color)]) -> Unit
+pub fn[Config] Gizmos::ellipse_2d(Self[Config], Isometry2d, @math.Vec2, @color.Color) -> Ellipse2dBuilder
+pub fn[Config] Gizmos::grid_2d(Self[Config], Isometry2d, @math.IVec2, @math.Vec2, @color.Color) -> Grid2dBuilder
+pub fn[Config] Gizmos::line_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color) -> Unit
+pub fn[Config] Gizmos::line_gradient_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color, @color.Color) -> Unit
+pub fn[Config] Gizmos::lineloop_2d(Self[Config], Array[@math.Vec2], @color.Color) -> Unit
+pub fn[Config] Gizmos::linestrip_2d(Self[Config], Array[@math.Vec2], @color.Color) -> Unit
+pub fn[Config] Gizmos::linestrip_gradient_2d(Self[Config], Array[(@math.Vec2, @color.Color)]) -> Unit
+pub fn[Config] Gizmos::long_arc_2d_between(Self[Config], @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> Arc2dBuilder
+pub fn[Config] Gizmos::mesh_wireframe_2d(Self[Config], @mesh.Mesh2dGeometry, @transform.Transform, @color.Color) -> Unit
+pub fn[Config] Gizmos::ray_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color) -> Unit
+pub fn[Config] Gizmos::ray_gradient_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color, @color.Color) -> Unit
+pub fn[Config] Gizmos::rect_2d(Self[Config], Isometry2d, @math.Vec2, @color.Color) -> Unit
+pub fn[Config] Gizmos::rounded_rect_2d(Self[Config], Isometry2d, @math.Vec2, @color.Color) -> RoundedRectBuilder
+pub fn[Config] Gizmos::short_arc_2d_between(Self[Config], @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> Arc2dBuilder
+pub impl[Config : GizmoConfigGroup + Default] @app.SystemParam for Gizmos[Config]
 
 pub struct Grid2dBuilder {
   id : Int
@@ -1006,6 +1019,10 @@ pub using @math {type Triangle2d}
 pub using @math {type Triangle2dRing}
 
 // Traits
+pub(open) trait GizmoConfigGroup {
+  gizmo_config_group_marker(Self) -> Unit
+}
+
 pub(open) trait IntoColorMaterialAsset {
   into_color_material_asset(Self) -> ColorMaterialAsset
 }

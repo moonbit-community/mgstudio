@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/mirror.rs`.
 ///
 /// Parity note:
 /// - Mirror camera transform/projection updates, mirror render target resizing,

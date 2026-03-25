@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/camera/camera_orbit.rs`.
 
 ///|
 priv struct CameraSettings {

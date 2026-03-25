@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/fog_volumes.rs`.
 ///
 /// Parity notes:
 /// - Uses Bevy-like proxy volume geometry and camera/light motion.

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/camera/first_person_view_model.rs`.
 
 ///|
 priv struct Player {}

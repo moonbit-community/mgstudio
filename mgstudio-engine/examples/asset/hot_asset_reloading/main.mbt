@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/asset/hot_asset_reloading.rs`.
 
 ///|
 const TORUS_SCENE_PATH : String = "models/torus/torus.gltf"

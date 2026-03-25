@@ -13,9 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/2d/2d_viewport_to_world.rs`.
-
-///|
 struct MainCamera {}
 
 ///|
@@ -30,7 +27,7 @@ pub impl @ecs.Component for MainCamera with component() {
 
 ///|
 fn main {
-  let draw_cursor_system = @app.system(@app.system_param4(draw_cursor)).after(
+  let draw_cursor_system = @app.system(@app.system_param5(draw_cursor)).after(
     @transform.transform_set_propagate,
   )
   @app.App::new(@ecs.World::new())
@@ -178,6 +175,7 @@ fn draw_cursor(
   camera_query : @ecs.Query[@ecs.Comp[@sprite.Camera], @ecs.All],
   transform_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.All],
   projection_query : @ecs.Query[@ecs.Comp[@sprite.Projection], @ecs.All],
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
 ) -> Unit {
   guard main_camera_entity(main_camera) is Some(camera_entity) else { return }
   guard (try! camera_query.get(camera_entity)) is Some(camera_comp) else {
@@ -202,7 +200,6 @@ fn draw_cursor(
 
   let window_size = @math.IVec2::new(width, height)
   let scale_factor = @window.window_scale_factor()
-  let gizmos = @sprite.Gizmos::new()
 
   if @input.mouse_position() is Some(screen_pos) {
     if @sprite_render.render2d_camera_viewport_to_world_2d(

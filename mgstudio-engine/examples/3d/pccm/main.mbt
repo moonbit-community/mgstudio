@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/pccm.rs`.
 
 ///|
 const ENVIRONMENT_MAP_INTENSITY : Float = 100.0F

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/app/plugin_group.rs`.
 
 ///|
 fn print_hello_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {

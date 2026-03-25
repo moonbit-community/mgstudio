@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/app/drag_and_drop.rs`.
 
 ///|
 fn file_drag_and_drop_system(

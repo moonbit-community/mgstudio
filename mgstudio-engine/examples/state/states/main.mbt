@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/state/states.rs`.
 
 ///|
 pub(all) enum AppState {

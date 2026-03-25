@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/math/bounding_2d.rs`.
 
 ///|
 const OFFSET_X : Float = 125.0F
@@ -174,48 +173,50 @@ fn main {
   )
   .add_systems(
     @app.PostUpdate,
-    @app.system(render_shapes)
+    @app.system(@app.system_param(render_shapes))
     .after(SYSTEM_SET_UPDATE_VOLUMES)
     .in_set(SYSTEM_SET_RENDER_SHAPES),
   )
   .add_systems(
     @app.PostUpdate,
-    @app.system(aabb_intersection_system)
+    @app.system(@app.system_param(aabb_intersection_system))
     .after(SYSTEM_SET_RENDER_SHAPES)
     .before(SYSTEM_SET_RENDER_VOLUMES)
     .run_if(@app.in_state(Test::AabbSweep)),
   )
   .add_systems(
     @app.PostUpdate,
-    @app.system(circle_intersection_system)
+    @app.system(@app.system_param(circle_intersection_system))
     .after(SYSTEM_SET_RENDER_SHAPES)
     .before(SYSTEM_SET_RENDER_VOLUMES)
     .run_if(@app.in_state(Test::CircleSweep)),
   )
   .add_systems(
     @app.PostUpdate,
-    @app.system(ray_cast_system)
+    @app.system(@app.system_param(ray_cast_system))
     .after(SYSTEM_SET_RENDER_SHAPES)
     .before(SYSTEM_SET_RENDER_VOLUMES)
     .run_if(@app.in_state(Test::RayCast)),
   )
   .add_systems(
     @app.PostUpdate,
-    @app.system(aabb_cast_system)
+    @app.system(@app.system_param(aabb_cast_system))
     .after(SYSTEM_SET_RENDER_SHAPES)
     .before(SYSTEM_SET_RENDER_VOLUMES)
     .run_if(@app.in_state(Test::AabbCast)),
   )
   .add_systems(
     @app.PostUpdate,
-    @app.system(bounding_circle_cast_system)
+    @app.system(@app.system_param(bounding_circle_cast_system))
     .after(SYSTEM_SET_RENDER_SHAPES)
     .before(SYSTEM_SET_RENDER_VOLUMES)
     .run_if(@app.in_state(Test::CircleCast)),
   )
   .add_systems(
     @app.PostUpdate,
-    @app.system(render_volumes).in_set(SYSTEM_SET_RENDER_VOLUMES),
+    @app.system(@app.system_param(render_volumes)).in_set(
+      SYSTEM_SET_RENDER_VOLUMES,
+    ),
   )
   .run()
 }
@@ -488,8 +489,10 @@ fn update_volumes(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn render_shapes(world : @ecs.World) -> Unit {
-  let gizmos = @sprite.Gizmos::new()
+fn render_shapes(
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+) -> Unit {
+  guard @app.current_world() is Some(world) else { return }
   let query : @ecs.Query[
     (@ecs.Comp[Shape], @ecs.Comp[@transform.Transform]),
     @ecs.All,
@@ -506,8 +509,10 @@ fn render_shapes(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn render_volumes(world : @ecs.World) -> Unit {
-  let gizmos = @sprite.Gizmos::new()
+fn render_volumes(
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+) -> Unit {
+  guard @app.current_world() is Some(world) else { return }
   let query : @ecs.Query[VolumeIntersectionData, @ecs.All] = @ecs.query(world)
   try! query.view(fn(_entity, data) {
     let color = if data.intersects { color_aqua() } else { color_orange_red() }
@@ -530,12 +535,14 @@ fn render_volumes(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn aabb_intersection_system(world : @ecs.World) -> Unit {
+fn aabb_intersection_system(
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+) -> Unit {
+  guard @app.current_world() is Some(world) else { return }
   let time = world_time(world)
 
   let center = get_intersection_position(time)
   let aabb = @math.Aabb2d::new(center, @math.Vec2::new(50.0F, 50.0F))
-  let gizmos = @sprite.Gizmos::new()
   gizmos.rect_2d(
     @sprite.Isometry2d::new(center, 0.0F),
     aabb.half_size().mul_scalar(2.0F),
@@ -558,12 +565,14 @@ fn aabb_intersection_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn circle_intersection_system(world : @ecs.World) -> Unit {
+fn circle_intersection_system(
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+) -> Unit {
+  guard @app.current_world() is Some(world) else { return }
   let time = world_time(world)
 
   let center = get_intersection_position(time)
   let circle = @math.BoundingCircle::new(center, 50.0F)
-  let gizmos = @sprite.Gizmos::new()
   gizmos.circle_2d(
     @sprite.Isometry2d::new(center, 0.0F),
     circle.radius(),
@@ -587,10 +596,12 @@ fn circle_intersection_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn ray_cast_system(world : @ecs.World) -> Unit {
+fn ray_cast_system(
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+) -> Unit {
+  guard @app.current_world() is Some(world) else { return }
   let time = world_time(world)
 
-  let gizmos = @sprite.Gizmos::new()
   let ray_cast = get_and_draw_ray(gizmos, time)
   let updates : Array[(@core.Entity, Bool)] = []
   let query : @ecs.Query[VolumeIntersectionData, @ecs.All] = @ecs.query(world)
@@ -611,10 +622,12 @@ fn ray_cast_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn aabb_cast_system(world : @ecs.World) -> Unit {
+fn aabb_cast_system(
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+) -> Unit {
+  guard @app.current_world() is Some(world) else { return }
   let time = world_time(world)
 
-  let gizmos = @sprite.Gizmos::new()
   let ray_cast = get_and_draw_ray(gizmos, time)
   let cast = @math.AabbCast2d::from_ray(
     @math.Aabb2d::new(@math.Vec2::zero(), @math.Vec2::new(15.0F, 15.0F)),
@@ -647,10 +660,12 @@ fn aabb_cast_system(world : @ecs.World) -> Unit {
 }
 
 ///|
-fn bounding_circle_cast_system(world : @ecs.World) -> Unit {
+fn bounding_circle_cast_system(
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+) -> Unit {
+  guard @app.current_world() is Some(world) else { return }
   let time = world_time(world)
 
-  let gizmos = @sprite.Gizmos::new()
   let ray_cast = get_and_draw_ray(gizmos, time)
   let cast = @math.BoundingCircleCast::from_ray(
     @math.BoundingCircle::new(@math.Vec2::zero(), 15.0F),
@@ -692,7 +707,7 @@ fn world_time(world : @ecs.World) -> @time.Time[Unit] {
 
 ///|
 fn get_and_draw_ray(
-  gizmos : @sprite.Gizmos,
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
   time : @time.Time[Unit],
 ) -> @math.RayCast2d {
   let elapsed = time.elapsed_secs()
@@ -743,7 +758,7 @@ fn transform_sprite_isometry(
 
 ///|
 fn draw_shape_outline(
-  gizmos : @sprite.Gizmos,
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
   shape : Shape,
   isometry : @sprite.Isometry2d,
   color : @sprite.Color,
@@ -862,7 +877,7 @@ fn capsule_points_local(capsule : @sprite.Capsule2d) -> Array[@math.Vec2] {
 
 ///|
 fn draw_filled_circle(
-  gizmos : @sprite.Gizmos,
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
   position : @math.Vec2,
   color : @sprite.Color,
 ) -> Unit {

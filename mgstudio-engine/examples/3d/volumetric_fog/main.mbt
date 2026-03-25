@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/volumetric_fog.rs`.
 ///
 /// Baseline parity: Bevy's voxel volumetric fog stack (`VolumetricFog`,
 /// `VolumetricLight`, `FogVolume`, bloom/skybox integration) is approximated

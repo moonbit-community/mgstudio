@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/pcss.rs`.
 ///
 /// Parity note:
 /// - Bevy widget radio-buttons are mapped to keyboard controls.

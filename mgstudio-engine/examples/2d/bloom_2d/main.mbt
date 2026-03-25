@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/2d/bloom_2d.rs`.
 
 ///|
 struct BloomCamera {}

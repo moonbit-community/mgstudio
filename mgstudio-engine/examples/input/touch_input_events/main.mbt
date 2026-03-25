@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/input/touch_input_events.rs`.
 ///
 /// Current parity state:
 /// - Uses `MessageReader<TouchInput>` with Bevy-like event iteration.

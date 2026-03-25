@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/deferred_rendering.rs`.
 ///
 /// Baseline parity: Bevy's native deferred backend (`Opaque3dDeferred`) is not
 /// yet active in current mgstudio runtime. This port preserves Bevy's mode-

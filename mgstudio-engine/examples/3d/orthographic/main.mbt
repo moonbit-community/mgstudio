@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/orthographic.rs`.
 
 ///|
 const FIXED_VIEWPORT_HEIGHT : Float = 6.0F

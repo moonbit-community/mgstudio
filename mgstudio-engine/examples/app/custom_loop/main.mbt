@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/app/custom_loop.rs`.
 
 ///|
 priv struct Input {

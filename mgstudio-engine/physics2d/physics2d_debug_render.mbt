@@ -87,7 +87,7 @@ fn transform_point(
 
 ///|
 fn draw_shape_2d(
-  gizmos : @sprite.Gizmos,
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
   iso : @rapier_core.Isometry2,
   shape : @collision.Shape,
   color : @sprite.Color,
@@ -181,7 +181,10 @@ fn draw_shape_2d(
 }
 
 ///|
-pub fn physics2d_debug_render_system(world : @ecs.World) -> Unit {
+pub fn physics2d_debug_render_system(
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
+) -> Unit {
+  guard @app.current_world() is Some(world) else { return }
   let config = physics2d_debug_render_state.val
   if !config.enabled {
     return
@@ -189,7 +192,6 @@ pub fn physics2d_debug_render_system(world : @ecs.World) -> Unit {
   let ecs_world = world
   let ctx_res = get_physics2d_context_resource(ecs_world)
   guard ctx_res.get() is Some(ctx) else { return }
-  let gizmos = @sprite.Gizmos::new()
   if config.colliders {
     for pair in ctx.colliders.iter_enabled() {
       let (_h, col) = pair

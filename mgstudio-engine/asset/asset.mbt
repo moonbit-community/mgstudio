@@ -547,9 +547,9 @@ let asset_world_override_ref : Ref[@ecs.World?] = Ref::new(None)
 
 ///|
 fn asset_current_world() -> @ecs.World? {
-  match @app.current_world() {
+  match asset_world_override_ref.val {
     Some(world) => Some(world)
-    None => asset_world_override_ref.val
+    None => @app.current_world()
   }
 }
 

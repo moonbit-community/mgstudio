@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/scrolling_fog.rs`.
 ///
 /// Parity note:
 /// - `FogVolume` / `VolumetricLight` are currently data-model stubs in mgstudio.

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/window/low_power.rs`.
 ///
 /// Baseline parity:
 /// - Demonstrates low-power/window-update strategy intent.

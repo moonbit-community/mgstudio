@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/app/logs.rs`.
 
 ///|
 fn setup(_world : @ecs.World) -> Unit {

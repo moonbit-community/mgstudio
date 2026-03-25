@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/ecs/component_hooks.rs`.
 
 ///|
 struct MyComponent {

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/lightmaps.rs`.
 ///
 /// Baseline parity: Bevy's per-mesh `Lightmap` component (`image`, `uv_rect`,
 /// `bicubic_sampling`) and deferred prepass components are not exposed in the

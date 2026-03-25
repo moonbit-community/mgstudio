@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/diagnostics/custom_diagnostic.rs`.
 
 ///|
 let system_iteration_count : @diagnostic.DiagnosticPath = @diagnostic.DiagnosticPath::const_new(

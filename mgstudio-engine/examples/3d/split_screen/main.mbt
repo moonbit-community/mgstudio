@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/split_screen.rs`.
 ///
 /// Parity notes:
 /// - Keeps keyboard controls (`1~4`, `Left/Right`) for deterministic fallback.

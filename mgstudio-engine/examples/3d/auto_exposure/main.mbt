@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/auto_exposure.rs`.
 ///
 /// Uses `Camera3d.auto_exposure` with the render3d GPU histogram pipeline.
 

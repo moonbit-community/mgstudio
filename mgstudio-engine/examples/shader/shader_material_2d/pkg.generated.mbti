@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/shader/shader_material_2d"
+
+import {
+  "Milky2018/mgstudio/sprite",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type CustomMaterial
+pub impl @sprite.Material2d for CustomMaterial
+
+// Type aliases
+
+// Traits
+

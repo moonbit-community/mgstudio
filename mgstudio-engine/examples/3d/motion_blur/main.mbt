@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/motion_blur.rs`.
 ///
 /// Parity target: keep Bevy camera controls (`shutter_angle`, `samples`,
 /// camera-mode switching) and enforce the same MSAA-off compatibility path used

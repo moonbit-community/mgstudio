@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/window/scale_factor_override.rs`.
 
 ///|
 struct CustomText {} derive(Eq, Show)

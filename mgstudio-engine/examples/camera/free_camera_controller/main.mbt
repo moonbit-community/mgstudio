@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/camera/free_camera_controller.rs`.
 
 ///|
 struct InfoText {}

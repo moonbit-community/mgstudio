@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/light_probe_blending.rs`.
 ///
 /// Baseline parity:
 /// - Bevy's light-probe components (`LightProbe`, `EnvironmentMapLight`,

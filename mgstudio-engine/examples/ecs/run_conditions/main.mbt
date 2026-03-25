@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/ecs/run_conditions.rs`.
 
 ///|
 struct InputCounter {

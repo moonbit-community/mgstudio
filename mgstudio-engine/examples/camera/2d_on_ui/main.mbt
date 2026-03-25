@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/camera/2d_on_ui.rs`.
 
 ///|
 struct OverlaySprite {}

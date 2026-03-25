@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/input/text_input.rs`.
 ///
 /// Features:
 /// - Enter commits a bubble line and Backspace removes one character.

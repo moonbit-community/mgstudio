@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/time/time.rs`.
 
 ///|
 fn banner() -> Unit {

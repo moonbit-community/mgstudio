@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/camera/projection_zoom.rs`.
 
 ///|
 priv struct CameraSettings {

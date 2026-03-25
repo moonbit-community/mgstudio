@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/window/monitor_info.rs`.
 ///
 /// Baseline parity:
 /// - Reports available window size and scale information.

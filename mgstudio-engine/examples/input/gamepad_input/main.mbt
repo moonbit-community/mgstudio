@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/input/gamepad_input.rs`.
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugin_group(fn() { @mgstudio.DefaultPlugins::build() })

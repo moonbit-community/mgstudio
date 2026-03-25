@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/camera/pan_camera_controller.rs`.
 
 ///|
 fn spawn_text(

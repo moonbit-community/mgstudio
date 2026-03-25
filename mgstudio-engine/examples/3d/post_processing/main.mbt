@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/post_processing.rs`.
 ///
 /// Parity note: `ChromaticAberration` and `Vignette` are wired on the camera
 /// in Bevy-compatible shape; current backend still applies them as an adapted

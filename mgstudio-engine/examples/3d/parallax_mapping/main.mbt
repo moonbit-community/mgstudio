@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/parallax_mapping.rs`.
 
 ///|
 const DEPTH_CHANGE_RATE : Float = 0.1F

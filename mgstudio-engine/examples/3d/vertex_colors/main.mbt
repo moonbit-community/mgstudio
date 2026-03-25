@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/vertex_colors.rs`.
 
 ///|
 fn colorful_cube_mesh() -> @pbr.Mesh3d {

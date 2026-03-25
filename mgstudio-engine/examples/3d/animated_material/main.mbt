@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/animated_material.rs`.
 ///
 /// Exact parity target: Bevy camera + environment-map setup with per-frame
 /// material hue animation.

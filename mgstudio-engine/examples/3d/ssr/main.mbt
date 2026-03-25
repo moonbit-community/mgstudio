@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/ssr.rs`.
 ///
 /// Baseline parity: deferred SSR controls and Bevy scene interaction flow are
 /// mapped to mgstudio APIs. Bevy's custom deferred water material extension is

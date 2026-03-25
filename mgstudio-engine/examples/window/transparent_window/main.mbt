@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/window/transparent_window.rs`.
 
 ///|
 fn configured_window() -> @window.Window {

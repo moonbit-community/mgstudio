@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/diagnostics/log_diagnostics.rs`.
 
 ///|
 pub(all) enum LogDiagnosticsStatus {

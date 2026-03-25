@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/specular_tint.rs`.
 
 ///|
 const PI : Float = 3.141592653589793F

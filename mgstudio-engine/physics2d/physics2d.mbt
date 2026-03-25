@@ -676,5 +676,5 @@ pub fn physics2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   .add_fixed_update_system(physics2d_character_controller_system)
   .add_fixed_update_system(physics2d_step_system)
   .add_fixed_update_system(physics2d_writeback_system)
-  .add_post_update_system(physics2d_debug_render_system)
+  .add_post_update_system_param(physics2d_debug_render_system)
 }

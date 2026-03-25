@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/camera/2d_screen_shake.rs`.
 
 ///|
 const TRAUMA_DECAY_PER_SECOND : Float = 0.5F

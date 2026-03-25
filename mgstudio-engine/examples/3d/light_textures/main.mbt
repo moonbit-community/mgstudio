@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/light_textures.rs`.
 ///
 /// Baseline parity: Bevy's light-cookie projection pipeline is not yet applied
 /// in current mgstudio renderer. This port preserves Bevy-style selection/drag

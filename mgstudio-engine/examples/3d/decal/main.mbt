@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/decal.rs`.
 ///
 /// Baseline parity: this example now attaches
 /// `ForwardDecal`/`ForwardDecalMaterialExt` components directly on the decal

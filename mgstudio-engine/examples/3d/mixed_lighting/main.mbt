@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/mixed_lighting.rs`.
 ///
 /// Baseline parity: Bevy's per-mesh `Lightmap` component pipeline and UI widget
 /// radio buttons are not exposed in current mgstudio runtime surfaces.

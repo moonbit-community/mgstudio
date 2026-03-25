@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/shadow_caster_receiver.rs`.
 
 ///|
 const PI : Float = 3.141592653589793F

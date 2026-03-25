@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/input/char_input_events.rs`.
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugin_group(fn() { @mgstudio.DefaultPlugins::build() })

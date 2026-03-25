@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/input/touch_input.rs`.
 ///
 /// Current parity state:
 /// - Uses `Res<Touches>` and follows Bevy's iteration flow.

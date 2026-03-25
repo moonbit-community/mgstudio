@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/hello_world.rs`.
 
 ///|
 fn hello_world_system(_world : @ecs.World) -> Unit {

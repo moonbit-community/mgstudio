@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/fog.rs`.
 ///
 /// Baseline parity: Bevy's `DistanceFog` is camera-attached and runtime-applied,
 /// while mgstudio currently uses a simplified fog blend path without directional

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/contact_shadows.rs`.
 ///
 /// Baseline parity:
 /// - Bevy widget UI + pointer drag interactions are mapped to keyboard

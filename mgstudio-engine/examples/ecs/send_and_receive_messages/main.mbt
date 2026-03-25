@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/ecs/send_and_receive_messages.rs`.
 
 ///|
 struct A {}

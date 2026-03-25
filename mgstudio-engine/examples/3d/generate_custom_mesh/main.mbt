@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/generate_custom_mesh.rs`.
 
 ///|
 struct CustomUV {}

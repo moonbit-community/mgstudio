@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/reflection_probes.rs`.
 ///
 /// Parity note:
 /// - Reflection mode switching, roughness control, camera rotation, and probe

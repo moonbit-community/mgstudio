@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/window/window_settings.rs`.
 
 ///|
 struct CursorIcons {

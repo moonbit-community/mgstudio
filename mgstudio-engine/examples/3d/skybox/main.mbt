@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/skybox.rs`.
 ///
 /// Exact parity target: Bevy camera/light/cubemap-swap flow with runtime
 /// compressed-format capability gating.

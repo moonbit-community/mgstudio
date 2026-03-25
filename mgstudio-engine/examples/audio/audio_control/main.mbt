@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/audio/audio_control.rs`.
 
 ///|
 priv struct MyMusic {}

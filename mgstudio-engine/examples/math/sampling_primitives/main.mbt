@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/math/sampling_primitives.rs`.
 const MAX_CAMERA_DISTANCE : Float = 12.0F
 
 ///|

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/window/multiple_windows.rs`.
 
 ///|
 const TORUS_SCENE_PATH : String = "models/torus/torus.gltf"

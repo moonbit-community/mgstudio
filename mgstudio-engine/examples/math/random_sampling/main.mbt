@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/math/random_sampling.rs`.
 
 ///|
 pub(all) enum Mode {

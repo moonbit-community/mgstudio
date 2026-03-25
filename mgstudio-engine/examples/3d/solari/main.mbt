@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/solari.rs`.
 ///
 /// Baseline parity:
 /// - Keeps Bevy's scene intent and controls (`Space`, `1`, `2`) plus dynamic

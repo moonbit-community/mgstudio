@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/mesh_ray_cast.rs`.
 ///
 /// Parity notes:
 /// - Uses `@pbr.MeshRayCastSettings` + `@pbr.mesh_ray_cast_first`

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/ecs/removal_detection.rs`.
 
 ///|
 struct MyComponent {} derive(Eq, Show)

@@ -5,7 +5,7 @@
     mesh_view_types::Fog,
 }
 
-// Fog formulas adapted from:
+// Fog formulas references:
 // https://learn.microsoft.com/en-us/windows/win32/direct3d9/fog-formulas
 // https://catlikecoding.com/unity/tutorials/rendering/part-14/
 // https://iquilezles.org/articles/fog/ (Atmospheric Fog and Scattering)

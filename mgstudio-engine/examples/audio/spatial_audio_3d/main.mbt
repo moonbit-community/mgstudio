@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/audio/spatial_audio_3d.rs`.
 
 ///|
 const PI : Float = 3.141592653589793F

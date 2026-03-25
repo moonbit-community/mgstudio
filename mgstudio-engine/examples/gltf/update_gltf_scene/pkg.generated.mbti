@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/gltf/update_gltf_scene"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type MovedScene
+pub impl @ecs.Component for MovedScene
+
+// Type aliases
+
+// Traits
+

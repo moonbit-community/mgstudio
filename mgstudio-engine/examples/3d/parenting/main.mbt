@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/parenting.rs`.
 
 ///|
 struct Rotator {}

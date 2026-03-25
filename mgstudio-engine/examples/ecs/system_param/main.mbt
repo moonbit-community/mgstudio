@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/ecs/system_param.rs`.
 
 ///|
 struct Player {}

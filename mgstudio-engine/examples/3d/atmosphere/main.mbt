@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/atmosphere.rs`.
 ///
 /// Baseline parity: camera controls, sun motion, exposure control, tonemapping,
 /// bloom, TAA, SSR and fog response are aligned where the engine API permits.

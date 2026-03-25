@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/ecs/contiguous_query.rs`.
 
 ///|
 struct Health {

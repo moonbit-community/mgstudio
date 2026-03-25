@@ -176,7 +176,7 @@ fn[T : @math.Bounded2d] draw_bounds(
     (@ecs.Comp[DrawBounds[T]], @ecs.Comp[@transform.GlobalTransform]),
     @ecs.All,
   ],
-  gizmos : @sprite.Gizmos,
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
 ) -> Unit {
   let red = @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
   let blue = @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F)
@@ -218,7 +218,7 @@ fn draw_sector_bounds(
     ),
     @ecs.All,
   ],
-  gizmos : @sprite.Gizmos,
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
 ) -> Unit {
   draw_bounds(query, gizmos)
 }
@@ -232,7 +232,7 @@ fn draw_segment_bounds(
     ),
     @ecs.All,
   ],
-  gizmos : @sprite.Gizmos,
+  gizmos : @sprite.Gizmos[@sprite.DefaultGizmoConfigGroup],
 ) -> Unit {
   draw_bounds(query, gizmos)
 }

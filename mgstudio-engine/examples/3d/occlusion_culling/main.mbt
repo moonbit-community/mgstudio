@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/occlusion_culling.rs`.
 ///
 /// Baseline parity: Bevy reads indirect draw parameters back from GPU to
 /// display exact culled counts. Current mgstudio runtime exposes an adapted

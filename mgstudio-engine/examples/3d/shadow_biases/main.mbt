@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/shadow_biases.rs`.
 ///
 /// Parity note: controls and component wiring follow Bevy. Visual output still
 /// depends on current backend shadow quality.

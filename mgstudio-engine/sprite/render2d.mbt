@@ -3381,6 +3381,9 @@ priv struct ExtractedCamera2d {
   target : RenderTarget
   layers : RenderLayers
   bloom : Bloom?
+  tonemapping_mode : Int
+  deband_dither_enabled : Bool
+  color_grading : ColorGrading?
   computed : CameraComputed
 }
 
@@ -5088,6 +5091,9 @@ fn render2d_extract_camera_entity_ecs(
     target,
     layers,
     bloom,
+    tonemapping_mode: camera_tonemapping_mode(world, entity),
+    deband_dither_enabled: camera_deband_dither_enabled(world, entity),
+    color_grading: camera_color_grading(world, entity),
     computed,
   })
 }
@@ -5157,22 +5163,24 @@ fn render2d_extract_tilemap_chunks(world : @ecs.World) -> Unit {
     (@ecs.Comp[TilemapChunk], @ecs.Comp[TilemapChunkTileData]),
     @ecs.All,
   ] = @ecs.query(world)
-  try! chunk_query.view(fn(entity, data) {
-    let (chunk, tile_data) = data
-    if !render2d_entity_visible_ecs(world, entity) {
-      return
-    }
-    let layers = (try! world.get_by_key(entity, ecs_key_render_layers)).unwrap_or(
-      RenderLayers::default(),
-    )
-    let transform = render2d_resolve_transform_ecs(world, entity)
-    render2d_draw_tilemap_chunk(
-      world,
-      chunk.value(),
-      tile_data.value(),
-      transform,
-      layers,
-    )
+  @asset.asset_with_world(world, fn() {
+    try! chunk_query.view(fn(entity, data) {
+      let (chunk, tile_data) = data
+      if !render2d_entity_visible_ecs(world, entity) {
+        return
+      }
+      let layers = (try! world.get_by_key(entity, ecs_key_render_layers)).unwrap_or(
+        RenderLayers::default(),
+      )
+      let transform = render2d_resolve_transform_ecs(world, entity)
+      render2d_draw_tilemap_chunk(
+        world,
+        chunk.value(),
+        tile_data.value(),
+        transform,
+        layers,
+      )
+    })
   })
 }
 
@@ -6257,6 +6265,9 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
       target: RenderTarget::Screen,
       layers,
       bloom: None,
+      tonemapping_mode: 0,
+      deband_dither_enabled: false,
+      color_grading: None,
       computed: CameraComputed::{
         target_size: @math.IVec2::new(640, 360),
         scale_factor: 1.0F,
@@ -6270,6 +6281,9 @@ test "render2d: queue counts keep overlay UI isolated per camera pass" {
       target: RenderTarget::Screen,
       layers,
       bloom: None,
+      tonemapping_mode: 0,
+      deband_dither_enabled: false,
+      color_grading: None,
       computed: CameraComputed::{
         target_size: @math.IVec2::new(640, 360),
         scale_factor: 1.0F,
@@ -6687,6 +6701,13 @@ test "render2d: ecs tilemap chunk extraction expands chunk tiles into extra spri
   ])
 
   app = app.add_system(fn(world : @ecs.World) {
+    ensure_render_state_resource(world)
+    if (try! world.get_resource(@asset.asset_server_resource_key())) is None {
+      world.insert_resource(
+        @asset.asset_server_resource_key(),
+        @asset.AssetServer::new(),
+      )
+    }
     let entity = world.spawn_empty()
     try! (world.set_by_key(
       entity,
@@ -6710,7 +6731,7 @@ test "render2d: ecs tilemap chunk extraction expands chunk tiles into extra spri
       ]),
     )
     |> ignore)
-    render_extract_system_ecs(world)
+    @asset.asset_with_world(world, fn() { render_extract_system_ecs(world) })
     let extra_sprites = render_state_ref(world).unwrap().extra_sprites
     extracted_count.val = extra_sprites.length()
     first_uv_min_y.val = extra_sprites[0].payload.uv_min.y.to_double()
@@ -7284,12 +7305,9 @@ pub fn render_execute_system(world : @ecs.World) -> Unit {
         }
       }
 
-      let tonemapping_mode = camera_tonemapping_mode(world, camera.entity)
-      let deband_dither_enabled = camera_deband_dither_enabled(
-        world,
-        camera.entity,
-      )
-      let color_grading = camera_color_grading(world, camera.entity)
+      let tonemapping_mode = camera.tonemapping_mode
+      let deband_dither_enabled = camera.deband_dither_enabled
+      let color_grading = camera.color_grading
       let camera_postprocess_plan = render2d_camera_postprocess_plan(
         camera.bloom,
         tonemapping_mode,
@@ -7810,7 +7828,10 @@ fn configure_render2d_render_sub_app_ecs(
 pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   try! register_render2d_required_components(app.world())
   let next = color_material_plugin(ColorMaterialPlugin::default())(
-      app.init_resource(fn() { ClearColor::default() }),
+      init_gizmo_group(
+        app.init_resource(fn() { ClearColor::default() }),
+        DefaultGizmoConfigGroup::default(),
+      ),
     )
     .init_resource(fn() {
       let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()
@@ -7827,7 +7848,10 @@ pub fn render2d_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
 pub fn render2d_plugin_ecs(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   try! register_render2d_required_components(app.world())
   let next = color_material_plugin(ColorMaterialPlugin::default())(
-      app.init_resource(fn() { ClearColor::default() }),
+      init_gizmo_group(
+        app.init_resource(fn() { ClearColor::default() }),
+        DefaultGizmoConfigGroup::default(),
+      ),
     )
     .init_resource(fn() {
       let assets : @asset.Assets[@mesh.Mesh] = @asset.Assets::new()

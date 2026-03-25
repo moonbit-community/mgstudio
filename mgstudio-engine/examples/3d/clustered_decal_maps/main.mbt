@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/clustered_decal_maps.rs`.
 ///
 /// Baseline parity:
 /// - This example now attaches `ClusteredDecal` components directly with Bevy-

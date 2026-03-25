@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/diagnostics/enabling_disabling_diagnostic.rs`.
 
 ///|
 const TOGGLE_INTERVAL_SECONDS : Float = 10.0F

@@ -32,7 +32,21 @@ pub type GizmoLineConfig = @sprite.GizmoLineConfig
 pub type GizmoConfig = @sprite.GizmoConfig
 
 ///|
-pub type Gizmos = @sprite.Gizmos
+pub type DefaultGizmoConfigGroup = @sprite.DefaultGizmoConfigGroup
+
+///|
+pub type GizmoConfigStore = @sprite.GizmoConfigStore
+
+///|
+pub fn[G : Default + @sprite.GizmoConfigGroup] init_gizmo_group(
+  app : @app.App[@ecs.World],
+  group : G,
+) -> @app.App[@ecs.World] {
+  @sprite.init_gizmo_group(app, group)
+}
+
+///|
+pub type Gizmos[G] = @sprite.Gizmos[G]
 
 ///|
 pub type RoundedRectBuilder = @sprite.RoundedRectBuilder
@@ -51,15 +65,8 @@ pub type Grid2dBuilder = @sprite.Grid2dBuilder
 
 ///|
 pub fn gizmo_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
-  @sprite_render.sprite_render_plugin(app)
-}
-
-///|
-pub fn gizmo_config() -> GizmoConfig {
-  @sprite.gizmo_config()
-}
-
-///|
-pub fn insert_gizmo_config(config : GizmoConfig) -> Unit {
-  @sprite.gizmo_set_config(config)
+  @sprite.init_gizmo_group(
+    @sprite_render.sprite_render_plugin(app),
+    DefaultGizmoConfigGroup::default(),
+  )
 }

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/meshlet.rs`.
 ///
 /// Baseline parity: Bevy's experimental meshlet pipeline (`MeshletPlugin`,
 /// `MeshletMesh3d`, `MeshletDebugMaterial`, meshlet-processed asset format) is

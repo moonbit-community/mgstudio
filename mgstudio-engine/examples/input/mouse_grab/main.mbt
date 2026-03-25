@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/input/mouse_grab.rs`.
 
 ///|
 fn main {

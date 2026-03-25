@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/order_independent_transparency.rs`.
 ///
 /// Parity target:
 /// - Keep Bevy's camera OIT component flow and scene controls.

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/3d/anti_aliasing.rs`.
 ///
 /// Parity target: keep Bevy's AA control surface and component semantics on the
 /// camera (`Msaa`, `Fxaa`, `TemporalAntiAliasing` + prepass markers). Renderer
