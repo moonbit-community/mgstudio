@@ -339,6 +339,21 @@ pub fn Commands::queue_handled(
 }
 
 ///|
+pub fn[E : @ecs.TriggerEvent] Commands::trigger(
+  self : Commands,
+  event : E,
+) -> Unit {
+  let source = "Commands::trigger(" + E::debug_name() + ")"
+  self.queue.push({
+    run: fn(world : @ecs.World, _sequence : @core.Sequence) raise {
+      world.trigger(event, caller=Some(source))
+    },
+    error_handler: None,
+    source,
+  })
+}
+
+///|
 #callsite(autofill(loc))
 pub fn[T : CommandSpawnComponents] EntityCommands::insert(
   self : EntityCommands,
@@ -417,7 +432,7 @@ pub fn[T] EntityCommands::remove(
 }
 
 ///|
-pub fn[K : PointerObserverKind] EntityCommands::observe(
+pub fn[K : PointerObserverKind] EntityCommands::observe_pointer(
   self : EntityCommands,
   observer : (OnPointer[K]) -> Unit raise,
 ) -> EntityCommands {
@@ -428,19 +443,19 @@ pub fn[K : PointerObserverKind] EntityCommands::observe(
       register_pointer_observer_entry_in_world(
         world,
         K::event_kind(),
-        "EntityCommands::observe(" + K::source_label() + ")",
+        "EntityCommands::observe_pointer(" + K::source_label() + ")",
         Some(entity),
         fallible_system_param(observer),
       )
     },
     error_handler: None,
-    source: "EntityCommands::observe(" + K::source_label() + ")",
+    source: "EntityCommands::observe_pointer(" + K::source_label() + ")",
   })
   self
 }
 
 ///|
-pub fn[K : PointerObserverKind, P2 : SystemParam] EntityCommands::observe2(
+pub fn[K : PointerObserverKind, P2 : SystemParam] EntityCommands::observe_pointer2(
   self : EntityCommands,
   observer : (OnPointer[K], P2) -> Unit raise,
 ) -> EntityCommands {
@@ -451,19 +466,19 @@ pub fn[K : PointerObserverKind, P2 : SystemParam] EntityCommands::observe2(
       register_pointer_observer_entry_in_world(
         world,
         K::event_kind(),
-        "EntityCommands::observe2(" + K::source_label() + ")",
+        "EntityCommands::observe_pointer2(" + K::source_label() + ")",
         Some(entity),
         fallible_system_param2(observer),
       )
     },
     error_handler: None,
-    source: "EntityCommands::observe2(" + K::source_label() + ")",
+    source: "EntityCommands::observe_pointer2(" + K::source_label() + ")",
   })
   self
 }
 
 ///|
-pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] EntityCommands::observe3(
+pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] EntityCommands::observe_pointer3(
   self : EntityCommands,
   observer : (OnPointer[K], P2, P3) -> Unit raise,
 ) -> EntityCommands {
@@ -474,13 +489,13 @@ pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] EntityComman
       register_pointer_observer_entry_in_world(
         world,
         K::event_kind(),
-        "EntityCommands::observe3(" + K::source_label() + ")",
+        "EntityCommands::observe_pointer3(" + K::source_label() + ")",
         Some(entity),
         fallible_system_param3(observer),
       )
     },
     error_handler: None,
-    source: "EntityCommands::observe3(" + K::source_label() + ")",
+    source: "EntityCommands::observe_pointer3(" + K::source_label() + ")",
   })
   self
 }
@@ -491,7 +506,7 @@ pub fn[
   P2 : SystemParam,
   P3 : SystemParam,
   P4 : SystemParam,
-] EntityCommands::observe4(
+] EntityCommands::observe_pointer4(
   self : EntityCommands,
   observer : (OnPointer[K], P2, P3, P4) -> Unit raise,
 ) -> EntityCommands {
@@ -502,13 +517,13 @@ pub fn[
       register_pointer_observer_entry_in_world(
         world,
         K::event_kind(),
-        "EntityCommands::observe4(" + K::source_label() + ")",
+        "EntityCommands::observe_pointer4(" + K::source_label() + ")",
         Some(entity),
         fallible_system_param4(observer),
       )
     },
     error_handler: None,
-    source: "EntityCommands::observe4(" + K::source_label() + ")",
+    source: "EntityCommands::observe_pointer4(" + K::source_label() + ")",
   })
   self
 }

@@ -109,6 +109,7 @@ priv struct GltfSceneDef {
 
 ///|
 priv struct GltfMaterialDef {
+  name : String
   base_color : @color.Color
   base_color_texture : Int?
   base_color_uv_offset : @math.Vec2
@@ -1143,6 +1144,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         }
 
         materials.push({
+          name: json_get_string(obj, "name").unwrap_or(""),
           base_color,
           base_color_texture,
           base_color_uv_offset,
@@ -1167,6 +1169,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
         })
       } else {
         materials.push({
+          name: "",
           base_color: @color.Color::white(),
           base_color_texture: None,
           base_color_uv_offset: @math.Vec2::new(0.0F, 0.0F),
@@ -2604,6 +2607,21 @@ fn scene_build_from_gltf(
               }
             None => default_material_component
           }
+          let material_name = match primitive.material {
+            Some(material_index) =>
+              if material_index >= 0 &&
+                material_index < doc.materials.length() &&
+                doc.materials[material_index].name != "" {
+                Some(
+                  @gltf.GltfMaterialName::new(
+                    doc.materials[material_index].name,
+                  ),
+                )
+              } else {
+                None
+              }
+            None => None
+          }
 
           nodes.push(
             SceneNode3d::new(
@@ -2616,6 +2634,7 @@ fn scene_build_from_gltf(
               world_transform,
               visibility_range,
               animation_target,
+              gltf_material_name=material_name,
             ),
           )
         }

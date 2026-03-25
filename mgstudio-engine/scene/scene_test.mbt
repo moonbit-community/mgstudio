@@ -324,6 +324,58 @@ test "scene: SceneRoot spawns children and marks ready" {
 }
 
 ///|
+test "scene: SceneRoot propagates gltf material name" {
+  let material_name = Ref::new("")
+  run_scene_test_app(fn(world : @ecs.World) {
+    let path = @gltf.GltfAssetLabel::Scene(0).from_asset("models/Foo/Foo.gltf")
+    let material = @pbr.MeshMaterial3d::new(
+      @pbr.standard_material_add(
+        @pbr.StandardMaterial::from_color(@sprite.Color::white()),
+      ),
+    )
+    let scene_handle = @scene.scene_register_gltf_scene(
+      path,
+      @scene.Scene::new([
+        @scene.SceneNode3d::new(
+          @pbr.Mesh3d::new(
+            @pbr.mesh_assets_mut_or_abort().val.add(
+              @pbr.Mesh::from_3d_geometry(
+                @pbr.mesh3d_geometry_cuboid(1.0F, 1.0F, 1.0F),
+              ),
+            ),
+          ),
+          material,
+          @transform.Transform::identity(),
+          None,
+          None,
+          gltf_material_name=Some(
+            @gltf.GltfMaterialName::new("LeatherPartsMat"),
+          ),
+        ),
+      ]),
+    )
+
+    let root = world.spawn_empty()
+    try! world.set_by_key(
+      root,
+      @scene.ecs_key_scene_root,
+      @scene.SceneRoot::new(scene_handle),
+    )
+    @scene.scene_spawn_roots_system(world)
+
+    world.for_each_component(@hierarchy.ecs_key_parent, fn(entity, parent) {
+      if parent.entity().id == root.id {
+        if (try! world.entity(entity).get() : @gltf.GltfMaterialName?)
+          is Some(name) {
+          material_name.val = name.as_str()
+        }
+      }
+    })
+  })
+  inspect(material_name.val, content="LeatherPartsMat")
+}
+
+///|
 test "scene: SceneRoot change respawns children and updates SceneInstance" {
   let old_instance_id = Ref::new(0)
   let new_instance_id = Ref::new(0)

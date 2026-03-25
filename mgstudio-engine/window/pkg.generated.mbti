@@ -197,7 +197,7 @@ pub fn host_window_theme_event_theme(index~ : Int) -> Int
 
 pub fn host_window_theme_event_window(index~ : Int) -> Int
 
-pub fn save_to_disk(String) -> (@ecs.On[@ecs.Insert, ScreenshotCaptured]) -> Unit
+pub fn save_to_disk(String) -> (@ecs.ComponentOn[@ecs.Insert, ScreenshotCaptured]) -> Unit
 
 pub fn screenshot_finalize_capture_requests(@ecs.World) -> Unit
 

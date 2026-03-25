@@ -646,7 +646,7 @@ test "app: Commands::queue_handled uses the command-local handler" {
 }
 
 ///|
-test "app: EntityCommands::observe scopes pointer observers to the target entity and supports chaining" {
+test "app: EntityCommands::observe_pointer scopes pointer observers to the target entity and supports chaining" {
   let hits : Array[String] = []
   let target_ref : Ref[@core.Entity?] = Ref::new(None)
   let other_ref : Ref[@core.Entity?] = Ref::new(None)
@@ -664,7 +664,7 @@ test "app: EntityCommands::observe scopes pointer observers to the target entity
     ignore(
       commands
       .entity(target)
-      .observe2(fn(
+      .observe_pointer2(fn(
         pointer : OnPointer[PointerEnter],
         query : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],
       ) raise {
@@ -673,7 +673,7 @@ test "app: EntityCommands::observe scopes pointer observers to the target entity
           hits.push("enter:" + position.value().x.to_string())
         }
       })
-      .observe(fn(_pointer : OnPointer[PointerEnter]) raise {
+      .observe_pointer(fn(_pointer : OnPointer[PointerEnter]) raise {
         hits.push("chained")
       }),
     )
@@ -714,7 +714,7 @@ test "app: EntityCommands::observe scopes pointer observers to the target entity
 }
 
 ///|
-test "app: EntityCommands::observe4 accepts normal system params" {
+test "app: EntityCommands::observe_pointer4 accepts normal system params" {
   let hits : Array[String] = []
   let target_ref : Ref[@core.Entity?] = Ref::new(None)
   let mut app = App::new(@ecs.World::new()).add_system_param(fn(
@@ -728,7 +728,7 @@ test "app: EntityCommands::observe4 accepts normal system params" {
     ignore(
       commands
       .entity(target)
-      .observe4(fn(
+      .observe_pointer4(fn(
         _pointer : OnPointer[PointerClick],
         resource : Res[CommandsCounterResource],
         positions : @ecs.Query[@ecs.Comp[CommandsPosition], @ecs.All],

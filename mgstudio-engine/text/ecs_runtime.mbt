@@ -43,8 +43,18 @@ pub let ecs_key_text_background_color : @ecs.ComponentKey[TextBackgroundColor] =
 )
 
 ///|
+pub let ecs_key_text_underline_color : @ecs.ComponentKey[UnderlineColor] = @ecs.register_component(
+  debug_name="text.text_underline_color",
+)
+
+///|
 pub let ecs_key_text_underline : @ecs.ComponentKey[Underline] = @ecs.register_component(
   debug_name="text.text_underline",
+)
+
+///|
+pub let ecs_key_text_strikethrough_color : @ecs.ComponentKey[StrikethroughColor] = @ecs.register_component(
+  debug_name="text.text_strikethrough_color",
 )
 
 ///|
@@ -118,8 +128,18 @@ pub impl @ecs.Component for TextBackgroundColor with component() {
 }
 
 ///|
+pub impl @ecs.Component for UnderlineColor with component() {
+  ecs_key_text_underline_color
+}
+
+///|
 pub impl @ecs.Component for Underline with component() {
   ecs_key_text_underline
+}
+
+///|
+pub impl @ecs.Component for StrikethroughColor with component() {
+  ecs_key_text_strikethrough_color
 }
 
 ///|
@@ -396,6 +416,27 @@ fn text_background_color_eq(
 }
 
 ///|
+fn underline_color_eq(lhs : UnderlineColor?, rhs : UnderlineColor?) -> Bool {
+  match (lhs, rhs) {
+    (Some(lhs), Some(rhs)) => color_eq(lhs.color, rhs.color)
+    (None, None) => true
+    _ => false
+  }
+}
+
+///|
+fn strikethrough_color_eq(
+  lhs : StrikethroughColor?,
+  rhs : StrikethroughColor?,
+) -> Bool {
+  match (lhs, rhs) {
+    (Some(lhs), Some(rhs)) => color_eq(lhs.color, rhs.color)
+    (None, None) => true
+    _ => false
+  }
+}
+
+///|
 fn[A] empty_marker_opt_eq(lhs : A?, rhs : A?) -> Bool {
   match (lhs, rhs) {
     (Some(_), Some(_)) => true
@@ -481,7 +522,9 @@ fn text_span_bundle_eq(lhs : TextSpanBundle, rhs : TextSpanBundle) -> Bool {
   text_color_eq(lhs.color, rhs.color) &&
   text_background_color_eq(lhs.background_color, rhs.background_color) &&
   empty_marker_opt_eq(lhs.underline, rhs.underline) &&
+  underline_color_eq(lhs.underline_color, rhs.underline_color) &&
   empty_marker_opt_eq(lhs.strikethrough, rhs.strikethrough) &&
+  strikethrough_color_eq(lhs.strikethrough_color, rhs.strikethrough_color) &&
   line_height_eq(lhs.line_height, rhs.line_height)
 }
 
@@ -508,7 +551,9 @@ fn text_bundle_rerender_eq(lhs : Text2dBundle, rhs : Text2dBundle) -> Bool {
   text_color_eq(lhs.color, rhs.color) &&
   text_background_color_eq(lhs.background_color, rhs.background_color) &&
   empty_marker_opt_eq(lhs.underline, rhs.underline) &&
+  underline_color_eq(lhs.underline_color, rhs.underline_color) &&
   empty_marker_opt_eq(lhs.strikethrough, rhs.strikethrough) &&
+  strikethrough_color_eq(lhs.strikethrough_color, rhs.strikethrough_color) &&
   text_layout_eq(lhs.layout, rhs.layout) &&
   text_bounds_eq(lhs.bounds, rhs.bounds) &&
   line_height_eq(lhs.line_height, rhs.line_height) &&
@@ -568,7 +613,11 @@ fn text_ecs_bundle_from_entity(
   }
   let background_color : TextBackgroundColor? = try! world.entity(entity).get()
   let underline : Underline? = try! world.entity(entity).get()
+  let underline_color : UnderlineColor? = try! world.entity(entity).get()
   let strikethrough : Strikethrough? = try! world.entity(entity).get()
+  let strikethrough_color : StrikethroughColor? = try! world
+    .entity(entity)
+    .get()
   let layout = match (try! world.entity(entity).get() : TextLayout?) {
     Some(layout) => layout
     None => TextLayout::default()
@@ -600,7 +649,9 @@ fn text_ecs_bundle_from_entity(
     color,
     background_color,
     underline,
+    underline_color,
     strikethrough,
+    strikethrough_color,
     layout,
     bounds,
     line_height,
@@ -634,7 +685,11 @@ fn text_ecs_span_bundle_from_entity(
   }
   let background_color : TextBackgroundColor? = try! world.entity(entity).get()
   let underline : Underline? = try! world.entity(entity).get()
+  let underline_color : UnderlineColor? = try! world.entity(entity).get()
   let strikethrough : Strikethrough? = try! world.entity(entity).get()
+  let strikethrough_color : StrikethroughColor? = try! world
+    .entity(entity)
+    .get()
   let line_height = match (try! world.entity(entity).get() : LineHeight?) {
     Some(line_height) => line_height
     None => inherited_line_height
@@ -645,7 +700,9 @@ fn text_ecs_span_bundle_from_entity(
     color,
     background_color,
     underline,
+    underline_color,
     strikethrough,
+    strikethrough_color,
     line_height,
   })
 }
@@ -796,8 +853,17 @@ fn text_ecs_sync_existing_entry(
   if !empty_marker_opt_eq(entry.bundle.underline, bundle.underline) {
     text_set_underline(handle, bundle.underline)
   }
+  if !underline_color_eq(entry.bundle.underline_color, bundle.underline_color) {
+    text_set_underline_color(handle, bundle.underline_color)
+  }
   if !empty_marker_opt_eq(entry.bundle.strikethrough, bundle.strikethrough) {
     text_set_strikethrough(handle, bundle.strikethrough)
+  }
+  if !strikethrough_color_eq(
+      entry.bundle.strikethrough_color,
+      bundle.strikethrough_color,
+    ) {
+    text_set_strikethrough_color(handle, bundle.strikethrough_color)
   }
   if !text_layout_eq(entry.bundle.layout, bundle.layout) {
     text_set_layout(handle, bundle.layout)
@@ -902,7 +968,11 @@ fn ui_text_ecs_bundle_from_entity(
   }
   let background_color : TextBackgroundColor? = try! world.entity(entity).get()
   let underline : Underline? = try! world.entity(entity).get()
+  let underline_color : UnderlineColor? = try! world.entity(entity).get()
   let strikethrough : Strikethrough? = try! world.entity(entity).get()
+  let strikethrough_color : StrikethroughColor? = try! world
+    .entity(entity)
+    .get()
   let layout = match (try! world.entity(entity).get() : TextLayout?) {
     Some(layout) => layout
     None => TextLayout::default()
@@ -918,7 +988,9 @@ fn ui_text_ecs_bundle_from_entity(
     color,
     background_color,
     underline,
+    underline_color,
     strikethrough,
+    strikethrough_color,
     layout,
     bounds: TextBounds::default(),
     line_height,

@@ -747,6 +747,36 @@ pub fn TextBackgroundColor::white() -> TextBackgroundColor {
 }
 
 ///|
+pub(all) struct UnderlineColor {
+  mut color : @sprite.Color
+}
+
+///|
+pub fn UnderlineColor::new(color : @sprite.Color) -> UnderlineColor {
+  UnderlineColor::{ color, }
+}
+
+///|
+pub fn UnderlineColor::default() -> UnderlineColor {
+  UnderlineColor::new(@sprite.Color::white())
+}
+
+///|
+pub(all) struct StrikethroughColor {
+  mut color : @sprite.Color
+}
+
+///|
+pub fn StrikethroughColor::new(color : @sprite.Color) -> StrikethroughColor {
+  StrikethroughColor::{ color, }
+}
+
+///|
+pub fn StrikethroughColor::default() -> StrikethroughColor {
+  StrikethroughColor::new(@sprite.Color::white())
+}
+
+///|
 pub struct Underline {}
 
 ///|

@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/relationships"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type TargetedBy
+pub impl @ecs.Component for TargetedBy
+
+type Targeting
+pub impl @ecs.Component for Targeting
+
+// Type aliases
+
+// Traits
+

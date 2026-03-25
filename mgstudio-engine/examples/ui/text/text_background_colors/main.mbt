@@ -82,7 +82,7 @@ fn setup(commands : @app.Commands) -> Unit {
     span_commands.insert_component(@hierarchy.Parent::new(text_entity))
     ignore(
       span_commands
-      .observe2(fn(
+      .observe_pointer2(fn(
         _pointer : @app.OnPointer[@app.PointerEnter],
         query : @ecs.Query[@ecs.Mut[@text.TextColor], @ecs.All],
       ) raise {
@@ -90,7 +90,7 @@ fn setup(commands : @app.Commands) -> Unit {
           text_color.get_ref().val = @text.TextColor::white()
         }
       })
-      .observe2(fn(
+      .observe_pointer2(fn(
         _pointer : @app.OnPointer[@app.PointerLeave],
         query : @ecs.Query[@ecs.Mut[@text.TextColor], @ecs.All],
       ) raise {

@@ -1,0 +1,13 @@
+import {
+  "Milky2018/mgstudio",
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/hierarchy",
+  "Milky2018/mgstudio/time",
+}
+
+options(
+  "is-main": true,
+  "supported-targets": "native",
+)

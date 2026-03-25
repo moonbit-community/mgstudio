@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/gltf/edit_material_on_gltf"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type ColorOverride
+pub impl @ecs.Component for ColorOverride
+
+// Type aliases
+
+// Traits
+

@@ -701,6 +701,9 @@ pub struct TextureSlicer {
 }
 pub fn TextureSlicer::default() -> Self
 pub fn TextureSlicer::new(BorderRect) -> Self
+pub fn TextureSlicer::with_center_scale_mode(Self, SliceScaleMode) -> Self
+pub fn TextureSlicer::with_max_corner_scale(Self, Float) -> Self
+pub fn TextureSlicer::with_sides_scale_mode(Self, SliceScaleMode) -> Self
 pub impl ToJson for TextureSlicer
 pub impl @json.FromJson for TextureSlicer
 

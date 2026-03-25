@@ -41,7 +41,11 @@ pub let ecs_key_text_span : @ecs.ComponentKey[TextSpan]
 
 pub let ecs_key_text_strikethrough : @ecs.ComponentKey[Strikethrough]
 
+pub let ecs_key_text_strikethrough_color : @ecs.ComponentKey[StrikethroughColor]
+
 pub let ecs_key_text_underline : @ecs.ComponentKey[Underline]
+
+pub let ecs_key_text_underline_color : @ecs.ComponentKey[UnderlineColor]
 
 pub let ecs_key_text_y_axis : @ecs.ComponentKey[YAxisOrientation]
 
@@ -125,6 +129,8 @@ pub fn text_set_shadow(TextHandle, Text2dShadow?) -> Unit
 
 pub fn text_set_strikethrough(TextHandle, Strikethrough?) -> Unit
 
+pub fn text_set_strikethrough_color(TextHandle, StrikethroughColor?) -> Unit
+
 pub let text_set_sync_ecs : String
 
 pub fn text_set_transform(TextHandle, @transform.Transform) -> Unit
@@ -136,6 +142,8 @@ pub fn text_set_ui_node_size(TextHandle, @math.Vec2?) -> Unit
 pub fn text_set_ui_scissor(TextHandle, @math.Rect?) -> Unit
 
 pub fn text_set_underline(TextHandle, Underline?) -> Unit
+
+pub fn text_set_underline_color(TextHandle, UnderlineColor?) -> Unit
 
 pub fn text_set_y_axis(TextHandle, YAxisOrientation) -> Unit
 
@@ -423,6 +431,13 @@ pub struct Strikethrough {
 pub fn Strikethrough::default() -> Self
 pub impl @ecs.Component for Strikethrough
 
+pub(all) struct StrikethroughColor {
+  mut color : @color.Color
+}
+pub fn StrikethroughColor::default() -> Self
+pub fn StrikethroughColor::new(@color.Color) -> Self
+pub impl @ecs.Component for StrikethroughColor
+
 pub(all) struct Text {
   mut content : String
 }
@@ -443,7 +458,9 @@ pub struct Text2dBundle {
   color : TextColor
   background_color : TextBackgroundColor?
   underline : Underline?
+  underline_color : UnderlineColor?
   strikethrough : Strikethrough?
+  strikethrough_color : StrikethroughColor?
   layout : TextLayout
   bounds : TextBounds
   line_height : LineHeight
@@ -465,7 +482,9 @@ pub fn Text2dBundle::with_layout(Self, TextLayout) -> Self
 pub fn Text2dBundle::with_line_height(Self, LineHeight) -> Self
 pub fn Text2dBundle::with_shadow(Self, Text2dShadow?) -> Self
 pub fn Text2dBundle::with_strikethrough(Self, Strikethrough?) -> Self
+pub fn Text2dBundle::with_strikethrough_color(Self, StrikethroughColor?) -> Self
 pub fn Text2dBundle::with_underline(Self, Underline?) -> Self
+pub fn Text2dBundle::with_underline_color(Self, UnderlineColor?) -> Self
 pub fn Text2dBundle::with_y_axis(Self, YAxisOrientation) -> Self
 
 pub(all) struct Text2dShadow {
@@ -603,7 +622,9 @@ pub struct TextSpanBundle {
   color : TextColor
   background_color : TextBackgroundColor?
   underline : Underline?
+  underline_color : UnderlineColor?
   strikethrough : Strikethrough?
+  strikethrough_color : StrikethroughColor?
   line_height : LineHeight
 }
 pub fn TextSpanBundle::new(TextSpan, TextFont) -> Self
@@ -611,7 +632,9 @@ pub fn TextSpanBundle::spawn(Self, TextHandle) -> TextSpanHandle
 pub fn TextSpanBundle::with_background_color(Self, TextBackgroundColor?) -> Self
 pub fn TextSpanBundle::with_color(Self, TextColor) -> Self
 pub fn TextSpanBundle::with_strikethrough(Self, Strikethrough?) -> Self
+pub fn TextSpanBundle::with_strikethrough_color(Self, StrikethroughColor?) -> Self
 pub fn TextSpanBundle::with_underline(Self, Underline?) -> Self
+pub fn TextSpanBundle::with_underline_color(Self, UnderlineColor?) -> Self
 
 pub struct TextSpanHandle {
   id : Int
@@ -627,6 +650,13 @@ pub struct Underline {
 }
 pub fn Underline::default() -> Self
 pub impl @ecs.Component for Underline
+
+pub(all) struct UnderlineColor {
+  mut color : @color.Color
+}
+pub fn UnderlineColor::default() -> Self
+pub fn UnderlineColor::new(@color.Color) -> Self
+pub impl @ecs.Component for UnderlineColor
 
 pub(all) enum YAxisOrientation {
   TopToBottom

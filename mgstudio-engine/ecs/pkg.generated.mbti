@@ -10,15 +10,17 @@ import {
 // Values
 pub fn[T] component_key_from_id(Int, debug_name? : String) -> ComponentKey[T]
 
-pub fn[C : Component] current_insert_observer() -> On[Insert, C]
+pub fn[E : ComponentObserverEvent, C : Component] current_component_observer() -> ComponentOn[E, C]
 
-pub fn[E : ObserverEvent, C : Component] current_observer() -> On[E, C]
+pub fn[C : Component] current_insert_observer() -> ComponentOn[Insert, C]
+
+pub fn[E : TriggerEvent] current_observer() -> On[E]
 
 pub fn current_observer_world() -> World?
 
 pub fn current_observer_world_abort_missing() -> World
 
-pub fn[C : Component] current_remove_observer() -> On[Remove, C]
+pub fn[C : Component] current_remove_observer() -> ComponentOn[Remove, C]
 
 pub let ecs_key_default_query_filters : ResourceKey[DefaultQueryFilters]
 
@@ -55,6 +57,8 @@ pub fn[T] register_message(debug_name? : String) -> MessageKey[T]
 pub fn[T] register_resource(debug_name? : String) -> ResourceKey[T]
 
 pub fn[T] resource_key_from_id(Int, debug_name? : String) -> ResourceKey[T]
+
+pub fn set_observer_parent_lookup((World, @core.Entity) -> @core.Entity?) -> Unit
 
 // Errors
 pub(all) suberror ComponentHooksError {
@@ -156,6 +160,14 @@ pub struct ComponentKey[T] {
 pub fn[U, T] ComponentKey::cast(Self[T]) -> Self[U]
 pub fn[T] ComponentKey::debug_name(Self[T]) -> String
 pub fn[T] ComponentKey::id(Self[T]) -> Int
+
+pub struct ComponentOn[E, C] {
+  entity : @core.Entity
+  caller : String?
+  marker_event : E?
+  marker_component : C?
+}
+pub fn[E, C] ComponentOn::caller(Self[E, C]) -> String?
 
 pub struct DefaultQueryFilters {
   disabling_component_ids : Array[Int]
@@ -272,7 +284,7 @@ pub struct HookContext {
 
 pub struct Insert {
 }
-pub impl ObserverEvent for Insert
+pub impl ComponentObserverEvent for Insert
 
 pub struct MessageCursor[T] {
   mut last_message_count : Int
@@ -387,13 +399,18 @@ pub struct ObserverHandle {
 pub fn ObserverHandle::id(Self) -> Int
 pub fn ObserverHandle::world_id(Self) -> Int
 
-pub struct On[E, C] {
-  entity : @core.Entity
+pub struct On[E] {
+  entity : @core.Entity?
   caller : String?
-  marker_event : E?
-  marker_component : C?
+  event_ref : @ref.Ref[E]
+  propagate_ref : @ref.Ref[Bool]
 }
-pub fn[E, C] On::caller(Self[E, C]) -> String?
+pub fn[E] On::caller(Self[E]) -> String?
+pub fn[E] On::entity(Self[E]) -> @core.Entity?
+pub fn[E] On::event(Self[E]) -> E
+pub fn[E] On::get_ref(Self[E]) -> @ref.Ref[E]
+pub fn[E] On::is_propagating(Self[E]) -> Bool
+pub fn[E] On::propagate(Self[E], Bool) -> Unit
 
 pub struct Optional[T] {
   value : T?
@@ -469,7 +486,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::single(Self[D, F], World) -> 
 
 pub struct Remove {
 }
-pub impl ObserverEvent for Remove
+pub impl ComponentObserverEvent for Remove
 
 pub struct RemovedComponents[T] {
   reader : @core.MessageReader[@core.Entity]
@@ -540,10 +557,12 @@ pub struct World {
   mut deferred_hook_command_depth : Int
   deferred_hook_commands : Array[(World) -> Unit]
 }
-pub fn[E : ObserverEvent, C : Component] World::add_entity_observer(Self, @core.Entity, (On[E, C]) -> Unit) -> ObserverHandle
-pub fn[E : ObserverEvent, C : Component] World::add_observer(Self, (On[E, C]) -> Unit) -> ObserverHandle
-pub fn[C : Component] World::add_remove_entity_observer(Self, @core.Entity, (On[Remove, C]) -> Unit) -> ObserverHandle
-pub fn[C : Component] World::add_remove_observer(Self, (On[Remove, C]) -> Unit) -> ObserverHandle
+pub fn[E : ComponentObserverEvent, C : Component] World::add_component_observer(Self, (ComponentOn[E, C]) -> Unit) -> ObserverHandle
+pub fn[E : ComponentObserverEvent, C : Component] World::add_entity_component_observer(Self, @core.Entity, (ComponentOn[E, C]) -> Unit) -> ObserverHandle
+pub fn[E : TriggerEvent] World::add_entity_observer(Self, @core.Entity, (On[E]) -> Unit) -> ObserverHandle
+pub fn[E : TriggerEvent] World::add_observer(Self, (On[E]) -> Unit) -> ObserverHandle
+pub fn[C : Component] World::add_remove_component_observer(Self, (ComponentOn[Remove, C]) -> Unit) -> ObserverHandle
+pub fn[C : Component] World::add_remove_entity_component_observer(Self, @core.Entity, (ComponentOn[Remove, C]) -> Unit) -> ObserverHandle
 pub fn World::advance_event_frame(Self) -> Unit
 pub fn World::advance_sequence(Self) -> Int
 pub fn[T] World::clear_events(Self, EventKey[T]) -> Unit
@@ -605,6 +624,7 @@ pub fn World::spawn(Self) -> @core.Entity
 pub fn World::spawn_empty(Self) -> @core.Entity
 #callsite(autofill(loc))
 pub fn[T] World::take(Self, @core.Entity, ComponentKey[T], loc~ : SourceLoc) -> T? raise EcsError
+pub fn[E : TriggerEvent] World::trigger(Self, E, caller? : String?) -> Unit
 pub fn[T, R : Default] World::try_register_required_components(Self, ComponentKey[T], ComponentKey[R]) -> Result[Unit, RequiredComponentsError]
 pub fn[T, R] World::try_register_required_components_with(Self, ComponentKey[T], ComponentKey[R], () -> R) -> Result[Unit, RequiredComponentsError]
 #callsite(autofill(loc))
@@ -630,19 +650,19 @@ pub(open) trait Component {
   component() -> ComponentKey[Self]
 }
 
+pub(open) trait ComponentObserverEvent {
+  register_component_observer(World, Int, @core.Entity?, (World) -> Unit) -> ObserverHandle
+  current_observer_entity() -> @core.Entity
+  current_observer_component_id() -> Int
+  marker() -> Self
+  debug_name() -> String
+}
+
 pub(open) trait EventData {
 }
 
 pub(open) trait Message {
   message() -> MessageKey[Self]
-}
-
-pub(open) trait ObserverEvent {
-  register_observer(World, Int, @core.Entity?, (World) -> Unit) -> ObserverHandle
-  current_observer_entity() -> @core.Entity
-  current_observer_component_id() -> Int
-  marker() -> Self
-  debug_name() -> String
 }
 
 pub(open) trait QueryData {
@@ -673,5 +693,13 @@ pub impl[A : QueryFilter, B : QueryFilter] QueryFilterDisjunction for (A, B)
 pub impl[A : QueryFilter, B : QueryFilter, C : QueryFilter] QueryFilterDisjunction for (A, B, C)
 
 pub(open) trait ResourceData {
+}
+
+pub(open) trait TriggerEvent {
+  observer_event() -> EventKey[Self]
+  observer_entity(Self) -> @core.Entity?
+  set_observer_entity(@ref.Ref[Self], @core.Entity) -> Unit
+  auto_propagate(Self) -> Bool
+  debug_name() -> String
 }
 

@@ -1,0 +1,34 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/observer_propagation"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/ref",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type Armor
+pub impl @ecs.Component for Armor
+pub impl Show for Armor
+
+type Attack
+pub impl @ecs.TriggerEvent for Attack
+
+type AttackSchedule
+pub impl @app.Resource for AttackSchedule
+pub impl Default for AttackSchedule
+
+type HitPoints
+pub impl @ecs.Component for HitPoints
+pub impl Show for HitPoints
+
+// Type aliases
+
+// Traits
+

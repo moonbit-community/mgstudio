@@ -74,7 +74,7 @@ fn remove_component(
 
 ///|
 fn react_on_removal(
-  remove : @ecs.On[@ecs.Remove, MyComponent],
+  remove : @ecs.ComponentOn[@ecs.Remove, MyComponent],
   query : @ecs.Query[@ecs.Mut[@sprite.Sprite], @ecs.All],
 ) -> Unit {
   if (try! query.get(remove.entity)) is Some(sprite) {
@@ -88,6 +88,6 @@ fn main {
   .add_plugins(@mgstudio.default_plugins())
   .add_systems(@app.Startup, @app.system(setup))
   .add_systems(@app.Update, @app.system(@app.system_param3(remove_component)))
-  .add_observer2(react_on_removal)
+  .add_component_observer2(react_on_removal)
   .run()
 }

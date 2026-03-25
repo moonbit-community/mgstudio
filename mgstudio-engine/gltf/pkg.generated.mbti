@@ -35,6 +35,13 @@ pub(all) enum GltfAssetLabel {
 pub fn GltfAssetLabel::from_asset(Self, String) -> String
 pub fn GltfAssetLabel::to_label(Self) -> String
 
+pub struct GltfMaterialName {
+  name : String
+}
+pub fn GltfMaterialName::as_str(Self) -> String
+pub fn GltfMaterialName::new(String) -> Self
+pub impl @ecs.Component for GltfMaterialName
+
 // Type aliases
 pub type GltfLoaderRegistration = () -> Unit
 

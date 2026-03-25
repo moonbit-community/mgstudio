@@ -1132,6 +1132,30 @@ pub fn TextureSlicer::default() -> TextureSlicer {
 }
 
 ///|
+pub fn TextureSlicer::with_center_scale_mode(
+  self : TextureSlicer,
+  center_scale_mode : SliceScaleMode,
+) -> TextureSlicer {
+  TextureSlicer::{ ..self, center_scale_mode, }
+}
+
+///|
+pub fn TextureSlicer::with_sides_scale_mode(
+  self : TextureSlicer,
+  sides_scale_mode : SliceScaleMode,
+) -> TextureSlicer {
+  TextureSlicer::{ ..self, sides_scale_mode, }
+}
+
+///|
+pub fn TextureSlicer::with_max_corner_scale(
+  self : TextureSlicer,
+  max_corner_scale : Float,
+) -> TextureSlicer {
+  TextureSlicer::{ ..self, max_corner_scale, }
+}
+
+///|
 pub(all) enum NodeImageMode {
   /// Size is determined by the source image, then clamped by layout constraints.
   Auto

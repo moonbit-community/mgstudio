@@ -28,7 +28,85 @@ pub impl Component for ObserverMarker with component() {
 }
 
 ///|
-test "ecs observer: world add_observer is world-scoped and fires on replace" {
+struct ObserverDetonate {
+  mut entity : @core.Entity
+  radius : Int
+} derive(Eq)
+
+///|
+let observer_detonate_event_key : EventKey[ObserverDetonate] = register_event(
+  debug_name="tests.ecs.observer.detonate",
+)
+
+///|
+pub impl TriggerEvent for ObserverDetonate with observer_event() {
+  observer_detonate_event_key
+}
+
+///|
+pub impl TriggerEvent for ObserverDetonate with observer_entity(self) {
+  Some(self.entity)
+}
+
+///|
+pub impl TriggerEvent for ObserverDetonate with set_observer_entity(
+  event_ref,
+  entity,
+) {
+  event_ref.val.entity = entity
+}
+
+///|
+pub impl TriggerEvent for ObserverDetonate with auto_propagate(_self) {
+  false
+}
+
+///|
+pub impl TriggerEvent for ObserverDetonate with debug_name() {
+  "ObserverDetonate"
+}
+
+///|
+struct ObserverAttack {
+  mut damage : Int
+  mut entity : @core.Entity
+} derive(Eq)
+
+///|
+let observer_attack_event_key : EventKey[ObserverAttack] = register_event(
+  debug_name="tests.ecs.observer.attack",
+)
+
+///|
+pub impl TriggerEvent for ObserverAttack with observer_event() {
+  observer_attack_event_key
+}
+
+///|
+pub impl TriggerEvent for ObserverAttack with observer_entity(self) {
+  Some(self.entity)
+}
+
+///|
+pub impl TriggerEvent for ObserverAttack with set_observer_entity(
+  event_ref,
+  entity,
+) {
+  event_ref.val.entity = entity
+}
+
+///|
+pub impl TriggerEvent for ObserverAttack with auto_propagate(_self) {
+  true
+}
+
+///|
+pub impl TriggerEvent for ObserverAttack with debug_name() {
+  "ObserverAttack"
+}
+
+///|
+test "ecs observer: world add_component_observer is world-scoped and fires on replace" {
   let world0 = World::new()
   let world1 = World::new()
   let seen_entities : Array[Int] = []
@@ -36,15 +114,17 @@ test "ecs observer: world add_observer is world-scoped and fires on replace" {
   let second_hits : Ref[Int] = Ref::new(0)
   let captured_world_id : Ref[Int] = Ref::new(-1)
 
-  let first_handle = world0.add_observer(fn(
-    event : On[Insert, ObserverMarker],
+  let first_handle = world0.add_component_observer(fn(
+    event : ComponentOn[Insert, ObserverMarker],
   ) {
     first_hits.val = first_hits.val + 1
     seen_entities.push(event.entity.id)
     captured_world_id.val = current_observer_world_abort_missing().world_id()
   })
   ignore(
-    world0.add_observer(fn(_event : On[Insert, ObserverMarker]) {
+    world0.add_component_observer(fn(
+      _event : ComponentOn[Insert, ObserverMarker],
+    ) {
       second_hits.val = second_hits.val + 1
     }),
   )
@@ -71,7 +151,7 @@ test "ecs observer: world add_observer is world-scoped and fires on replace" {
 }
 
 ///|
-test "ecs observer: add_entity_observer only fires for the bound entity" {
+test "ecs observer: add_entity_component_observer only fires for the bound entity" {
   let world = World::new()
   let entity0 = world.spawn()
   let entity1 = world.spawn()
@@ -79,7 +159,9 @@ test "ecs observer: add_entity_observer only fires for the bound entity" {
   let hits : Ref[Int] = Ref::new(0)
 
   ignore(
-    world.add_entity_observer(entity0, fn(event : On[Insert, ObserverMarker]) {
+    world.add_entity_component_observer(entity0, fn(
+      event : ComponentOn[Insert, ObserverMarker],
+    ) {
       hits.val = hits.val + 1
       seen_entities.push(event.entity.id)
     }),
@@ -100,14 +182,16 @@ test "ecs observer: add_entity_observer only fires for the bound entity" {
 }
 
 ///|
-test "ecs observer: world add_observer fires on remove" {
+test "ecs observer: world add_component_observer fires on remove" {
   let world = World::new()
   let entity = world.spawn()
   let seen_entities : Array[Int] = []
   let hits : Ref[Int] = Ref::new(0)
 
   ignore(
-    world.add_observer(fn(event : On[Remove, ObserverMarker]) {
+    world.add_component_observer(fn(
+      event : ComponentOn[Remove, ObserverMarker],
+    ) {
       hits.val = hits.val + 1
       seen_entities.push(event.entity.id)
     }),
@@ -127,7 +211,110 @@ test "ecs observer: world add_observer fires on remove" {
 }
 
 ///|
-test "ecs observer: add_remove_entity_observer only fires for the bound entity" {
+test "ecs observer: world add_observer and add_entity_observer handle custom events" {
+  let world = World::new()
+  let entity0 = world.spawn()
+  let entity1 = world.spawn()
+  let global_entities : Array[Int] = []
+  let bound_entities : Array[Int] = []
+  let global_hits : Ref[Int] = Ref::new(0)
+  let bound_hits : Ref[Int] = Ref::new(0)
+
+  ignore(
+    world.add_observer(fn(event : On[ObserverDetonate]) {
+      global_hits.val = global_hits.val + 1
+      guard event.entity() is Some(entity) else { return }
+      global_entities.push(entity.id)
+    }),
+  )
+
+  ignore(
+    world.add_entity_observer(entity0, fn(event : On[ObserverDetonate]) {
+      bound_hits.val = bound_hits.val + 1
+      guard event.entity() is Some(entity) else { return }
+      bound_entities.push(entity.id)
+    }),
+  )
+
+  world.trigger(ObserverDetonate::{ entity: entity0, radius: 1 })
+  world.trigger(ObserverDetonate::{ entity: entity1, radius: 2 })
+
+  inspect(global_hits.val, content="2")
+  inspect(bound_hits.val, content="1")
+  inspect(global_entities, content="[0, 1]")
+  inspect(bound_entities, content="[0]")
+}
+
+///|
+test "ecs observer: trigger propagation bubbles to parent and carries payload mutations" {
+  let world = World::new()
+  let parent = world.spawn()
+  let child = world.spawn()
+  let order : Array[String] = []
+
+  set_observer_parent_lookup(fn(_world, entity) {
+    if entity == child {
+      Some(parent)
+    } else {
+      None
+    }
+  })
+
+  ignore(
+    world.add_entity_observer(child, fn(event : On[ObserverAttack]) {
+      order.push("child")
+      event.get_ref().val.damage = event.event().damage - 3
+    }),
+  )
+
+  ignore(
+    world.add_entity_observer(parent, fn(event : On[ObserverAttack]) {
+      order.push("parent:" + event.event().damage.to_string())
+    }),
+  )
+
+  world.trigger(ObserverAttack::{ damage: 10, entity: child })
+  set_observer_parent_lookup(fn(_world, _entity) { None })
+
+  inspect(order, content="[\"child\", \"parent:7\"]")
+}
+
+///|
+test "ecs observer: trigger propagation can be halted early" {
+  let world = World::new()
+  let parent = world.spawn()
+  let child = world.spawn()
+  let order : Array[String] = []
+
+  set_observer_parent_lookup(fn(_world, entity) {
+    if entity == child {
+      Some(parent)
+    } else {
+      None
+    }
+  })
+
+  ignore(
+    world.add_entity_observer(child, fn(event : On[ObserverAttack]) {
+      order.push("child")
+      event.propagate(false)
+    }),
+  )
+
+  ignore(
+    world.add_entity_observer(parent, fn(_event : On[ObserverAttack]) {
+      order.push("parent")
+    }),
+  )
+
+  world.trigger(ObserverAttack::{ damage: 4, entity: child })
+  set_observer_parent_lookup(fn(_world, _entity) { None })
+
+  inspect(order, content="[\"child\"]")
+}
+
+///|
+test "ecs observer: add_remove_entity_component_observer only fires for the bound entity" {
   let world = World::new()
   let entity0 = world.spawn()
   let entity1 = world.spawn()
@@ -135,8 +322,8 @@ test "ecs observer: add_remove_entity_observer only fires for the bound entity" 
   let hits : Ref[Int] = Ref::new(0)
 
   ignore(
-    world.add_remove_entity_observer(entity0, fn(
-      event : On[Remove, ObserverMarker],
+    world.add_remove_entity_component_observer(entity0, fn(
+      event : ComponentOn[Remove, ObserverMarker],
     ) {
       hits.val = hits.val + 1
       seen_entities.push(event.entity.id)

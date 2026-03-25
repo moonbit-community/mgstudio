@@ -28,6 +28,44 @@ pub impl @ecs.Component for ObserverMarker with component() {
 }
 
 ///|
+struct ObserverPulse {
+  amount : Int
+} derive(Eq, Show)
+
+///|
+let observer_pulse_event_key : @ecs.EventKey[ObserverPulse] = @ecs.register_event(
+  debug_name="tests.app.observer.pulse",
+)
+
+///|
+pub impl @ecs.TriggerEvent for ObserverPulse with observer_event() {
+  observer_pulse_event_key
+}
+
+///|
+pub impl @ecs.TriggerEvent for ObserverPulse with observer_entity(_self) {
+  None
+}
+
+///|
+pub impl @ecs.TriggerEvent for ObserverPulse with set_observer_entity(
+  _event_ref,
+  _entity,
+) {
+
+}
+
+///|
+pub impl @ecs.TriggerEvent for ObserverPulse with auto_propagate(_self) {
+  false
+}
+
+///|
+pub impl @ecs.TriggerEvent for ObserverPulse with debug_name() {
+  "ObserverPulse"
+}
+
+///|
 struct ObserverTriggered {
   entity_id : Int
   entity_generation : Int
@@ -44,8 +82,23 @@ pub impl @ecs.Message for ObserverTriggered with message() {
 }
 
 ///|
+struct TriggerObserverTriggered {
+  amount : Int
+} derive(Eq)
+
+///|
+fn trigger_observer_triggered_key() -> @ecs.MessageKey[TriggerObserverTriggered] {
+  @ecs.register_message(debug_name="tests.app.observer.trigger_message")
+}
+
+///|
+pub impl @ecs.Message for TriggerObserverTriggered with message() {
+  trigger_observer_triggered_key()
+}
+
+///|
 fn write_insert_message(
-  event : @ecs.On[@ecs.Insert, ObserverMarker],
+  event : @ecs.ComponentOn[@ecs.Insert, ObserverMarker],
   writer : @ecs.MessageWriter[ObserverTriggered],
 ) -> Unit {
   ignore(
@@ -58,7 +111,7 @@ fn write_insert_message(
 
 ///|
 fn write_remove_message(
-  event : @ecs.On[@ecs.Remove, ObserverMarker],
+  event : @ecs.ComponentOn[@ecs.Remove, ObserverMarker],
   writer : @ecs.MessageWriter[ObserverTriggered],
 ) -> Unit {
   ignore(
@@ -70,11 +123,35 @@ fn write_remove_message(
 }
 
 ///|
-test "app observer: add_observer2 exposes On<Insert, C> with MessageWriter" {
+fn write_trigger_message(
+  event : @ecs.On[ObserverPulse],
+  writer : @ecs.MessageWriter[TriggerObserverTriggered],
+) -> Unit {
+  ignore(writer.write({ amount: event.event().amount }))
+}
+
+///|
+test "app observer: add_observer2 exposes On<E> with MessageWriter" {
+  let message_key = trigger_observer_triggered_key()
+  let app = App::new(@ecs.World::new())
+    .add_message(message_key)
+    .add_observer2(write_trigger_message)
+  let world = app.world()
+
+  world.trigger(ObserverPulse::{ amount: 13 })
+
+  let reader = world.message_reader(message_key, Ref::new(0))
+  let messages = try! reader.read()
+  inspect(messages.length(), content="1")
+  inspect(messages[0].amount, content="13")
+}
+
+///|
+test "app observer: add_component_observer2 exposes ComponentOn<Insert, C> with MessageWriter" {
   let message_key = observer_triggered_key()
   let app = App::new(@ecs.World::new())
     .add_message(message_key)
-    .add_observer2(write_insert_message)
+    .add_component_observer2(write_insert_message)
   let world = app.world()
   let entity = world.spawn()
 
@@ -90,11 +167,11 @@ test "app observer: add_observer2 exposes On<Insert, C> with MessageWriter" {
 }
 
 ///|
-test "app observer: add_observer2 exposes On<Remove, C> with MessageWriter" {
+test "app observer: add_component_observer2 exposes ComponentOn<Remove, C> with MessageWriter" {
   let message_key = observer_triggered_key()
   let app = App::new(@ecs.World::new())
     .add_message(message_key)
-    .add_observer2(write_remove_message)
+    .add_component_observer2(write_remove_message)
   let world = app.world()
   let entity = world.spawn()
 
@@ -111,7 +188,7 @@ test "app observer: add_observer2 exposes On<Remove, C> with MessageWriter" {
 }
 
 ///|
-test "app observer: fallible insert observers route errors through the default handler" {
+test "app observer: fallible component insert observers route errors through the default handler" {
   let kinds : Array[ErrorContextKind] = []
   let sources : Array[String] = []
   let app = App::new(@ecs.World::new())
@@ -119,8 +196,8 @@ test "app observer: fallible insert observers route errors through the default h
       kinds.push(context.kind())
       sources.push(context.source())
     })
-    .add_observer_fallible(fn(
-      _event : @ecs.On[@ecs.Insert, ObserverMarker],
+    .add_component_observer_fallible(fn(
+      _event : @ecs.ComponentOn[@ecs.Insert, ObserverMarker],
     ) raise {
       raise @ecs.Invalid("insert observer failed")
     })
@@ -133,16 +210,16 @@ test "app observer: fallible insert observers route errors through the default h
 
   inspect(kinds.length(), content="1")
   inspect(kinds[0] == ErrorContextKind::Observer, content="true")
-  inspect(sources[0], content="<observer>")
+  inspect(sources[0], content="<component-observer>")
 }
 
 ///|
-test "app observer: fallible remove observers route errors through the default handler" {
+test "app observer: fallible component remove observers route errors through the default handler" {
   let kinds : Array[ErrorContextKind] = []
   let app = App::new(@ecs.World::new())
     .set_error_handler(fn(_error, context) { kinds.push(context.kind()) })
-    .add_observer_fallible(fn(
-      _event : @ecs.On[@ecs.Remove, ObserverMarker],
+    .add_component_observer_fallible(fn(
+      _event : @ecs.ComponentOn[@ecs.Remove, ObserverMarker],
     ) raise {
       raise @ecs.Invalid("remove observer failed")
     })
@@ -156,4 +233,25 @@ test "app observer: fallible remove observers route errors through the default h
 
   inspect(kinds.length(), content="1")
   inspect(kinds[0] == ErrorContextKind::Observer, content="true")
+}
+
+///|
+test "app observer: fallible trigger observers route errors through the default handler" {
+  let kinds : Array[ErrorContextKind] = []
+  let sources : Array[String] = []
+  let app = App::new(@ecs.World::new())
+    .set_error_handler(fn(_error, context) {
+      kinds.push(context.kind())
+      sources.push(context.source())
+    })
+    .add_observer_fallible(fn(_event : @ecs.On[ObserverPulse]) raise {
+      raise @ecs.Invalid("trigger observer failed")
+    })
+  let world = app.world()
+
+  world.trigger(ObserverPulse::{ amount: 5 })
+
+  inspect(kinds.length(), content="1")
+  inspect(kinds[0] == ErrorContextKind::Observer, content="true")
+  inspect(sources[0], content="<observer>")
 }

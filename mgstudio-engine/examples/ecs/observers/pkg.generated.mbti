@@ -1,0 +1,32 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/observers"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/ref",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type Explode
+pub impl @ecs.TriggerEvent for Explode
+
+type ExplodeMines
+pub impl @ecs.TriggerEvent for ExplodeMines
+
+type Mine
+pub impl @ecs.Component for Mine
+
+type MineWorldState
+pub impl @app.Resource for MineWorldState
+pub impl Default for MineWorldState
+
+// Type aliases
+
+// Traits
+

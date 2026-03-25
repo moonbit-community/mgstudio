@@ -243,6 +243,23 @@ fn text_span_background_color(
 }
 
 ///|
+fn text_span_underline_color(
+  instance : TextInstance,
+  span_index : Int,
+) -> UnderlineColor? {
+  if span_index == 0 {
+    instance.underline_color
+  } else {
+    let index = span_index - 1
+    if index >= 0 && index < instance.spans.length() {
+      instance.spans[index].underline_color
+    } else {
+      instance.underline_color
+    }
+  }
+}
+
+///|
 fn text_span_has_underline(instance : TextInstance, span_index : Int) -> Bool {
   if span_index == 0 {
     instance.underline is Some(_)
@@ -252,6 +269,23 @@ fn text_span_has_underline(instance : TextInstance, span_index : Int) -> Bool {
       instance.spans[index].underline is Some(_)
     } else {
       instance.underline is Some(_)
+    }
+  }
+}
+
+///|
+fn text_span_strikethrough_color(
+  instance : TextInstance,
+  span_index : Int,
+) -> StrikethroughColor? {
+  if span_index == 0 {
+    instance.strikethrough_color
+  } else {
+    let index = span_index - 1
+    if index >= 0 && index < instance.spans.length() {
+      instance.spans[index].strikethrough_color
+    } else {
+      instance.strikethrough_color
     }
   }
 }
@@ -1150,6 +1184,16 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
       }
 
       let span_color = text_span_color(instance, run.span_index).color
+      let underline_color = match
+        text_span_underline_color(instance, run.span_index) {
+        Some(color) => color.color
+        None => span_color
+      }
+      let strikethrough_color = match
+        text_span_strikethrough_color(instance, run.span_index) {
+        Some(color) => color.color
+        None => span_color
+      }
       if text_span_has_underline(instance, run.span_index) {
         let underline_position_layout = to_y_up(
           instance.y_axis,
@@ -1181,7 +1225,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
             transform: underline_transform,
             uv_min: @math.Vec2::new(0.0F, 0.0F),
             uv_max: @math.Vec2::new(1.0F, 1.0F),
-            color: span_color,
+            color: underline_color,
             layers: instance.layers,
             scissor: instance.ui_scissor,
             target_camera: instance.ui_camera_entity,
@@ -1220,7 +1264,7 @@ pub fn text_render_system(world : @ecs.World) -> Unit {
             transform: strike_transform,
             uv_min: @math.Vec2::new(0.0F, 0.0F),
             uv_max: @math.Vec2::new(1.0F, 1.0F),
-            color: span_color,
+            color: strikethrough_color,
             layers: instance.layers,
             scissor: instance.ui_scissor,
             target_camera: instance.ui_camera_entity,

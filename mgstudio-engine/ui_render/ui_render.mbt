@@ -444,6 +444,12 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
   let res = @ui.get_ui_context_resource(source_world)
   guard res.get() is Some(ctx0) else { return }
   let legacy_ctx = Some(ctx0)
+  let texture_atlas_layouts_key : @ecs.ResourceKey[
+    @asset.Assets[@asset.TextureAtlasLayout],
+  ] = @asset.assets_resource_key()
+  let texture_atlas_layouts = try! source_world.get_resource(
+    texture_atlas_layouts_key,
+  )
   let stack_res = @ui.get_ui_stack_resource(source_world)
   guard stack_res.get() is Some(stack0) else { return }
   @sprite_render.render2d_clear_overlay_ui_rects(world)
@@ -454,6 +460,25 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
       0.0F
     } else {
       v
+    }
+  }
+
+  fn atlas_rect_for(
+    layouts : @asset.Assets[@asset.TextureAtlasLayout]?,
+    atlas : @asset.TextureAtlas,
+  ) -> @math.Rect? {
+    match layouts {
+      Some(layout_assets) =>
+        match layout_assets.get(atlas.layout) {
+          Some(layout_value) =>
+            if atlas.index >= 0 && atlas.index < layout_value.textures.length() {
+              Some(layout_value.textures[atlas.index].as_rect())
+            } else {
+              None
+            }
+          None => None
+        }
+      None => None
     }
   }
 
@@ -881,17 +906,7 @@ pub fn ui_render_extract_system(world : @ecs.World) -> Unit {
           Float::from_double(image_height.to_double()),
         )
         let atlas_rect = match texture_atlas {
-          Some(atlas) =>
-            match @asset.asset_get_texture_atlas_layout(atlas.layout) {
-              Some(layout_value) =>
-                if atlas.index >= 0 &&
-                  atlas.index < layout_value.textures.length() {
-                  Some(layout_value.textures[atlas.index].as_rect())
-                } else {
-                  None
-                }
-              None => None
-            }
+          Some(atlas) => atlas_rect_for(texture_atlas_layouts, atlas)
           None => None
         }
         let pair = ui_uv_from_image_rects(

@@ -44,7 +44,9 @@ pub struct Text2dBundle {
   color : TextColor
   background_color : TextBackgroundColor?
   underline : Underline?
+  underline_color : UnderlineColor?
   strikethrough : Strikethrough?
+  strikethrough_color : StrikethroughColor?
   layout : TextLayout
   bounds : TextBounds
   line_height : LineHeight
@@ -68,7 +70,9 @@ pub fn Text2dBundle::new(
     color: TextColor::default(),
     background_color: None,
     underline: None,
+    underline_color: None,
     strikethrough: None,
+    strikethrough_color: None,
     layout: TextLayout::default(),
     bounds: TextBounds::default(),
     line_height: LineHeight::default(),
@@ -94,7 +98,9 @@ pub fn Text2dBundle::new_with_layers(
     color: TextColor::default(),
     background_color: None,
     underline: None,
+    underline_color: None,
     strikethrough: None,
+    strikethrough_color: None,
     layout: TextLayout::default(),
     bounds: TextBounds::default(),
     line_height: LineHeight::default(),
@@ -132,11 +138,27 @@ pub fn Text2dBundle::with_underline(
 }
 
 ///|
+pub fn Text2dBundle::with_underline_color(
+  self : Text2dBundle,
+  underline_color : UnderlineColor?,
+) -> Text2dBundle {
+  Text2dBundle::{ ..self, underline_color, }
+}
+
+///|
 pub fn Text2dBundle::with_strikethrough(
   self : Text2dBundle,
   strikethrough : Strikethrough?,
 ) -> Text2dBundle {
   Text2dBundle::{ ..self, strikethrough, }
+}
+
+///|
+pub fn Text2dBundle::with_strikethrough_color(
+  self : Text2dBundle,
+  strikethrough_color : StrikethroughColor?,
+) -> Text2dBundle {
+  Text2dBundle::{ ..self, strikethrough_color, }
 }
 
 ///|
@@ -201,7 +223,9 @@ pub struct TextSpanBundle {
   color : TextColor
   background_color : TextBackgroundColor?
   underline : Underline?
+  underline_color : UnderlineColor?
   strikethrough : Strikethrough?
+  strikethrough_color : StrikethroughColor?
   line_height : LineHeight
 }
 
@@ -213,7 +237,9 @@ pub fn TextSpanBundle::new(span : TextSpan, font : TextFont) -> TextSpanBundle {
     color: TextColor::default(),
     background_color: None,
     underline: None,
+    underline_color: None,
     strikethrough: None,
+    strikethrough_color: None,
     line_height: LineHeight::default(),
   }
 }
@@ -243,11 +269,27 @@ pub fn TextSpanBundle::with_underline(
 }
 
 ///|
+pub fn TextSpanBundle::with_underline_color(
+  self : TextSpanBundle,
+  underline_color : UnderlineColor?,
+) -> TextSpanBundle {
+  TextSpanBundle::{ ..self, underline_color, }
+}
+
+///|
 pub fn TextSpanBundle::with_strikethrough(
   self : TextSpanBundle,
   strikethrough : Strikethrough?,
 ) -> TextSpanBundle {
   TextSpanBundle::{ ..self, strikethrough, }
+}
+
+///|
+pub fn TextSpanBundle::with_strikethrough_color(
+  self : TextSpanBundle,
+  strikethrough_color : StrikethroughColor?,
+) -> TextSpanBundle {
+  TextSpanBundle::{ ..self, strikethrough_color, }
 }
 
 ///|
@@ -266,7 +308,9 @@ priv struct TextSpanInstance {
   color : TextColor
   background_color : TextBackgroundColor?
   underline : Underline?
+  underline_color : UnderlineColor?
   strikethrough : Strikethrough?
+  strikethrough_color : StrikethroughColor?
   line_height : LineHeight
 }
 
@@ -278,7 +322,9 @@ priv struct TextInstance {
   color : TextColor
   background_color : TextBackgroundColor?
   underline : Underline?
+  underline_color : UnderlineColor?
   strikethrough : Strikethrough?
+  strikethrough_color : StrikethroughColor?
   layout : TextLayout
   bounds : TextBounds
   line_height : LineHeight
@@ -542,7 +588,9 @@ pub fn text_spawn(bundle : Text2dBundle) -> TextHandle {
     color: bundle.color,
     background_color: bundle.background_color,
     underline: bundle.underline,
+    underline_color: bundle.underline_color,
     strikethrough: bundle.strikethrough,
+    strikethrough_color: bundle.strikethrough_color,
     layout: bundle.layout,
     bounds: bundle.bounds,
     line_height: bundle.line_height,
@@ -580,7 +628,9 @@ pub fn text_spawn_span(
         color: bundle.color,
         background_color: bundle.background_color,
         underline: bundle.underline,
+        underline_color: bundle.underline_color,
         strikethrough: bundle.strikethrough,
+        strikethrough_color: bundle.strikethrough_color,
         line_height: bundle.line_height,
       })
       text_state.val.texts[i] = TextInstance::{
@@ -693,6 +743,18 @@ pub fn text_set_underline(handle : TextHandle, underline : Underline?) -> Unit {
 }
 
 ///|
+pub fn text_set_underline_color(
+  handle : TextHandle,
+  underline_color : UnderlineColor?,
+) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{
+    ..instance,
+    underline_color,
+    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+  })
+}
+
+///|
 pub fn text_set_strikethrough(
   handle : TextHandle,
   strikethrough : Strikethrough?,
@@ -700,6 +762,18 @@ pub fn text_set_strikethrough(
   text_update_instance(handle, instance => TextInstance::{
     ..instance,
     strikethrough,
+    computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
+  })
+}
+
+///|
+pub fn text_set_strikethrough_color(
+  handle : TextHandle,
+  strikethrough_color : StrikethroughColor?,
+) -> Unit {
+  text_update_instance(handle, instance => TextInstance::{
+    ..instance,
+    strikethrough_color,
     computed: ComputedTextBlock::{ ..instance.computed, needs_rerender: true },
   })
 }

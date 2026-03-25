@@ -218,6 +218,14 @@ pub struct App[W] {
   mut sub_apps : SubApps[W]
   runner_builder : ((App[W]) -> (() -> Unit))?
 }
+pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component] App::add_component_observer(Self[@ecs.World], (@ecs.ComponentOn[E, C]) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component, P2 : SystemParam] App::add_component_observer2(Self[@ecs.World], (@ecs.ComponentOn[E, C], P2) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component, P2 : SystemParam] App::add_component_observer2_fallible(Self[@ecs.World], (@ecs.ComponentOn[E, C], P2) -> Unit raise) -> Self[@ecs.World]
+pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] App::add_component_observer3(Self[@ecs.World], (@ecs.ComponentOn[E, C], P2, P3) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] App::add_component_observer3_fallible(Self[@ecs.World], (@ecs.ComponentOn[E, C], P2, P3) -> Unit raise) -> Self[@ecs.World]
+pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_component_observer4(Self[@ecs.World], (@ecs.ComponentOn[E, C], P2, P3, P4) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_component_observer4_fallible(Self[@ecs.World], (@ecs.ComponentOn[E, C], P2, P3, P4) -> Unit raise) -> Self[@ecs.World]
+pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component] App::add_component_observer_fallible(Self[@ecs.World], (@ecs.ComponentOn[E, C]) -> Unit raise) -> Self[@ecs.World]
 pub fn[Source : States, Derived : States] App::add_computed_state(Self[@ecs.World], Source, Derived, (Source) -> Derived?, allow_same_state_transitions? : Bool) -> Self[@ecs.World]
 pub fn[A : States, B : States, Derived : States] App::add_computed_state2(Self[@ecs.World], A, B, Derived, ((A, B)) -> Derived?, allow_same_state_transitions? : Bool) -> Self[@ecs.World]
 pub fn[A : States, B : States, C : States, Derived : States] App::add_computed_state3(Self[@ecs.World], A, B, C, Derived, ((A, B, C)) -> Derived?, allow_same_state_transitions? : Bool) -> Self[@ecs.World]
@@ -265,14 +273,14 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam] App::add_last_system_param2(Self[W
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam] App::add_last_system_param3(Self[W], (P1, P2, P3) -> Unit) -> Self[W]
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_last_system_param4(Self[W], (P1, P2, P3, P4) -> Unit) -> Self[W]
 pub fn[M] App::add_message(Self[@ecs.World], @ecs.MessageKey[M]) -> Self[@ecs.World]
-pub fn[E : @ecs.ObserverEvent, C : @ecs.Component] App::add_observer(Self[@ecs.World], (@ecs.On[E, C]) -> Unit) -> Self[@ecs.World]
-pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam] App::add_observer2(Self[@ecs.World], (@ecs.On[E, C], P2) -> Unit) -> Self[@ecs.World]
-pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam] App::add_observer2_fallible(Self[@ecs.World], (@ecs.On[E, C], P2) -> Unit raise) -> Self[@ecs.World]
-pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] App::add_observer3(Self[@ecs.World], (@ecs.On[E, C], P2, P3) -> Unit) -> Self[@ecs.World]
-pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] App::add_observer3_fallible(Self[@ecs.World], (@ecs.On[E, C], P2, P3) -> Unit raise) -> Self[@ecs.World]
-pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_observer4(Self[@ecs.World], (@ecs.On[E, C], P2, P3, P4) -> Unit) -> Self[@ecs.World]
-pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_observer4_fallible(Self[@ecs.World], (@ecs.On[E, C], P2, P3, P4) -> Unit raise) -> Self[@ecs.World]
-pub fn[E : @ecs.ObserverEvent, C : @ecs.Component] App::add_observer_fallible(Self[@ecs.World], (@ecs.On[E, C]) -> Unit raise) -> Self[@ecs.World]
+pub fn[E : @ecs.TriggerEvent] App::add_observer(Self[@ecs.World], (@ecs.On[E]) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] App::add_observer2(Self[@ecs.World], (@ecs.On[E], P2) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] App::add_observer2_fallible(Self[@ecs.World], (@ecs.On[E], P2) -> Unit raise) -> Self[@ecs.World]
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] App::add_observer3(Self[@ecs.World], (@ecs.On[E], P2, P3) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] App::add_observer3_fallible(Self[@ecs.World], (@ecs.On[E], P2, P3) -> Unit raise) -> Self[@ecs.World]
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_observer4(Self[@ecs.World], (@ecs.On[E], P2, P3, P4) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_observer4_fallible(Self[@ecs.World], (@ecs.On[E], P2, P3, P4) -> Unit raise) -> Self[@ecs.World]
+pub fn[E : @ecs.TriggerEvent] App::add_observer_fallible(Self[@ecs.World], (@ecs.On[E]) -> Unit raise) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_enter_system(Self[@ecs.World], S, (@ecs.World) -> Unit) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_enter_system_config(Self[@ecs.World], S, SystemConfig[@ecs.World]) -> Self[@ecs.World]
 pub fn[S : States] App::add_on_exit_system(Self[@ecs.World], S, (@ecs.World) -> Unit) -> Self[@ecs.World]
@@ -418,6 +426,7 @@ pub fn[T : CommandSpawnComponents] Commands::spawn_batch(Self, Array[T], loc~ : 
 #callsite(autofill(loc))
 pub fn[T : @ecs.Component] Commands::spawn_component(Self, T, loc~ : SourceLoc) -> @core.Entity
 pub fn Commands::spawn_empty(Self) -> @core.Entity
+pub fn[E : @ecs.TriggerEvent] Commands::trigger(Self, E) -> Unit
 pub impl SystemParam for Commands
 
 pub struct DeferredCommandEntry {
@@ -454,10 +463,14 @@ pub fn EntityCommands::despawn(Self, loc~ : SourceLoc) -> Unit
 pub fn[T : CommandSpawnComponents] EntityCommands::insert(Self, T, loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
 pub fn[T : @ecs.Component] EntityCommands::insert_component(Self, T, loc~ : SourceLoc) -> Unit
-pub fn[K : PointerObserverKind] EntityCommands::observe(Self, (OnPointer[K]) -> Unit raise) -> Self
-pub fn[K : PointerObserverKind, P2 : SystemParam] EntityCommands::observe2(Self, (OnPointer[K], P2) -> Unit raise) -> Self
-pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] EntityCommands::observe3(Self, (OnPointer[K], P2, P3) -> Unit raise) -> Self
-pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] EntityCommands::observe4(Self, (OnPointer[K], P2, P3, P4) -> Unit raise) -> Self
+pub fn[E : @ecs.TriggerEvent] EntityCommands::observe(Self, (@ecs.On[E]) -> Unit raise) -> Self
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] EntityCommands::observe2(Self, (@ecs.On[E], P2) -> Unit raise) -> Self
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] EntityCommands::observe3(Self, (@ecs.On[E], P2, P3) -> Unit raise) -> Self
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] EntityCommands::observe4(Self, (@ecs.On[E], P2, P3, P4) -> Unit raise) -> Self
+pub fn[K : PointerObserverKind] EntityCommands::observe_pointer(Self, (OnPointer[K]) -> Unit raise) -> Self
+pub fn[K : PointerObserverKind, P2 : SystemParam] EntityCommands::observe_pointer2(Self, (OnPointer[K], P2) -> Unit raise) -> Self
+pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] EntityCommands::observe_pointer3(Self, (OnPointer[K], P2, P3) -> Unit raise) -> Self
+pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] EntityCommands::observe_pointer4(Self, (OnPointer[K], P2, P3, P4) -> Unit raise) -> Self
 #callsite(autofill(loc))
 pub fn[T] EntityCommands::remove(Self, @ecs.ComponentKey[T], loc~ : SourceLoc) -> Unit
 #callsite(autofill(loc))
@@ -845,15 +858,23 @@ pub struct SubApp[W] {
   schedule : ScheduleRegistry[W]
   extract : ((W, W) -> (W, W))?
 }
+pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component] SubApp::add_component_observer(Self[@ecs.World], (@ecs.ComponentOn[E, C]) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component, P2 : SystemParam] SubApp::add_component_observer2(Self[@ecs.World], (@ecs.ComponentOn[E, C], P2) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component, P2 : SystemParam] SubApp::add_component_observer2_fallible(Self[@ecs.World], (@ecs.ComponentOn[E, C], P2) -> Unit raise) -> Self[@ecs.World]
+pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] SubApp::add_component_observer3(Self[@ecs.World], (@ecs.ComponentOn[E, C], P2, P3) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] SubApp::add_component_observer3_fallible(Self[@ecs.World], (@ecs.ComponentOn[E, C], P2, P3) -> Unit raise) -> Self[@ecs.World]
+pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_component_observer4(Self[@ecs.World], (@ecs.ComponentOn[E, C], P2, P3, P4) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_component_observer4_fallible(Self[@ecs.World], (@ecs.ComponentOn[E, C], P2, P3, P4) -> Unit raise) -> Self[@ecs.World]
+pub fn[E : @ecs.ComponentObserverEvent, C : @ecs.Component] SubApp::add_component_observer_fallible(Self[@ecs.World], (@ecs.ComponentOn[E, C]) -> Unit raise) -> Self[@ecs.World]
 pub fn[M] SubApp::add_message(Self[@ecs.World], @ecs.MessageKey[M]) -> Self[@ecs.World]
-pub fn[E : @ecs.ObserverEvent, C : @ecs.Component] SubApp::add_observer(Self[@ecs.World], (@ecs.On[E, C]) -> Unit) -> Self[@ecs.World]
-pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam] SubApp::add_observer2(Self[@ecs.World], (@ecs.On[E, C], P2) -> Unit) -> Self[@ecs.World]
-pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam] SubApp::add_observer2_fallible(Self[@ecs.World], (@ecs.On[E, C], P2) -> Unit raise) -> Self[@ecs.World]
-pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] SubApp::add_observer3(Self[@ecs.World], (@ecs.On[E, C], P2, P3) -> Unit) -> Self[@ecs.World]
-pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam] SubApp::add_observer3_fallible(Self[@ecs.World], (@ecs.On[E, C], P2, P3) -> Unit raise) -> Self[@ecs.World]
-pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_observer4(Self[@ecs.World], (@ecs.On[E, C], P2, P3, P4) -> Unit) -> Self[@ecs.World]
-pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_observer4_fallible(Self[@ecs.World], (@ecs.On[E, C], P2, P3, P4) -> Unit raise) -> Self[@ecs.World]
-pub fn[E : @ecs.ObserverEvent, C : @ecs.Component] SubApp::add_observer_fallible(Self[@ecs.World], (@ecs.On[E, C]) -> Unit raise) -> Self[@ecs.World]
+pub fn[E : @ecs.TriggerEvent] SubApp::add_observer(Self[@ecs.World], (@ecs.On[E]) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] SubApp::add_observer2(Self[@ecs.World], (@ecs.On[E], P2) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam] SubApp::add_observer2_fallible(Self[@ecs.World], (@ecs.On[E], P2) -> Unit raise) -> Self[@ecs.World]
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] SubApp::add_observer3(Self[@ecs.World], (@ecs.On[E], P2, P3) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam] SubApp::add_observer3_fallible(Self[@ecs.World], (@ecs.On[E], P2, P3) -> Unit raise) -> Self[@ecs.World]
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_observer4(Self[@ecs.World], (@ecs.On[E], P2, P3, P4) -> Unit) -> Self[@ecs.World]
+pub fn[E : @ecs.TriggerEvent, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_observer4_fallible(Self[@ecs.World], (@ecs.On[E], P2, P3, P4) -> Unit raise) -> Self[@ecs.World]
+pub fn[E : @ecs.TriggerEvent] SubApp::add_observer_fallible(Self[@ecs.World], (@ecs.On[E]) -> Unit raise) -> Self[@ecs.World]
 pub fn[K : PointerObserverKind] SubApp::add_pointer_observer(Self[@ecs.World], (OnPointer[K]) -> Unit raise) -> Self[@ecs.World]
 pub fn[K : PointerObserverKind, P2 : SystemParam] SubApp::add_pointer_observer2(Self[@ecs.World], (OnPointer[K], P2) -> Unit raise) -> Self[@ecs.World]
 pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] SubApp::add_pointer_observer3(Self[@ecs.World], (OnPointer[K], P2, P3) -> Unit raise) -> Self[@ecs.World]
@@ -1012,10 +1033,11 @@ pub(open) trait SystemParam {
 }
 pub impl[T : @core.Message] SystemParam for @core.MessageReader[T]
 pub impl[T : @core.Message] SystemParam for @core.MessageWriter[T]
+pub impl[E : @ecs.ComponentObserverEvent, C : @ecs.Component] SystemParam for @ecs.ComponentOn[E, C]
 pub impl[T : @ecs.Message] SystemParam for @ecs.MessageMutator[T]
 pub impl[T : @ecs.Message] SystemParam for @ecs.MessageReader[T]
 pub impl[T : @ecs.Message] SystemParam for @ecs.MessageWriter[T]
-pub impl[E : @ecs.ObserverEvent, C : @ecs.Component] SystemParam for @ecs.On[E, C]
+pub impl[E : @ecs.TriggerEvent] SystemParam for @ecs.On[E]
 pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[D, F]
 pub impl[T : @ecs.Component] SystemParam for @ecs.RemovedComponents[T]
 

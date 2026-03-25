@@ -1,0 +1,43 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/images/image_node_resizing"
+
+import {
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/ref",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type ImageGroup
+pub impl @ecs.Component for ImageGroup
+
+pub(all) enum ImageGroupResize {
+  HeightGrow
+  HeightShrink
+  WidthGrow
+  WidthShrink
+}
+pub impl @ecs.TriggerEvent for ImageGroupResize
+
+pub(all) enum ResizeAxis {
+  Height
+  Width
+}
+
+type ResizeLabel
+pub impl @ecs.Component for ResizeLabel
+
+type TextData
+pub impl @ecs.Component for TextData
+
+type TextUpdate
+pub impl @ecs.TriggerEvent for TextUpdate
+
+// Type aliases
+
+// Traits
+

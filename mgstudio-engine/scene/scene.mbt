@@ -24,6 +24,7 @@
 pub struct SceneNode3d {
   mesh : @pbr.Mesh3d
   material : @pbr.MeshMaterial3d
+  gltf_material_name : @gltf.GltfMaterialName?
   transform : @transform.Transform
   visibility_range : @visibility.VisibilityRange?
   animation_target : @animation.AnimationTargetId?
@@ -36,8 +37,16 @@ pub fn SceneNode3d::new(
   transform : @transform.Transform,
   visibility_range : @visibility.VisibilityRange?,
   animation_target : @animation.AnimationTargetId?,
+  gltf_material_name? : @gltf.GltfMaterialName? = None,
 ) -> SceneNode3d {
-  SceneNode3d::{ mesh, material, transform, visibility_range, animation_target }
+  SceneNode3d::{
+    mesh,
+    material,
+    gltf_material_name,
+    transform,
+    visibility_range,
+    animation_target,
+  }
 }
 
 ///|
@@ -801,6 +810,13 @@ fn scene_spawn_instance_when_ready(
     let child = world.spawn_empty()
     try! world.set_by_key(child, @pbr.ecs_key_mesh3d, node.mesh)
     try! world.set_by_key(child, @pbr.ecs_key_mesh_material3d, node.material)
+    if node.gltf_material_name is Some(material_name) {
+      try! world.set_by_key(
+        child,
+        @gltf.GltfMaterialName::component(),
+        material_name,
+      )
+    }
     try! world.set_by_key(child, @transform.ecs_key_transform, node.transform)
     try! world.set_by_key(
       child,

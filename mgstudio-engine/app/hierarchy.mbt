@@ -94,7 +94,7 @@ pub impl[C : @ecs.Component] @ecs.Message for CheckParentHasComponent[C] with me
 
 ///|
 fn[C : @ecs.Component] validate_parent_has_component(
-  event : @ecs.On[@ecs.Insert, C],
+  event : @ecs.ComponentOn[@ecs.Insert, C],
 ) -> Unit {
   let world = current_world_abort_missing()
   let component_key : @ecs.ComponentKey[C] = @ecs.Component::component()
@@ -218,7 +218,7 @@ pub fn[C : @ecs.Component] validate_parent_has_component_plugin(
     let message_key = check_parent_has_component_message_key(component_key)
     app
     .add_message(message_key)
-    .add_observer(fn(event : @ecs.On[@ecs.Insert, C]) {
+    .add_component_observer(fn(event : @ecs.ComponentOn[@ecs.Insert, C]) {
       validate_parent_has_component(event)
     })
     .add_systems(
