@@ -1,0 +1,29 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/render_ui_to_texture"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type Cube
+pub impl @ecs.Component for Cube
+
+type DraggablePanel
+pub impl @ecs.Component for DraggablePanel
+
+type MainCamera
+pub impl @ecs.Component for MainCamera
+
+type PanelDragState
+pub impl @app.Resource for PanelDragState
+
+// Type aliases
+
+// Traits
+
