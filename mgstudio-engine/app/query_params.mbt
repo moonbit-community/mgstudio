@@ -66,6 +66,31 @@ pub impl[A : FromWorld, B : FromWorld, C : FromWorld] FromWorld for (A, B, C) wi
 }
 
 ///|
+pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[
+  D,
+  F,
+] with init_state(world) {
+  system_param_empty_state(world)
+}
+
+///|
+pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[
+  D,
+  F,
+] with get(_state) {
+  let world = system_param_abort_missing_world()
+  @ecs.query_filtered(world, F::from_world(world))
+}
+
+///|
+pub impl[D : @ecs.QueryData, F : FromWorld + @ecs.QueryFilter] SystemParam for @ecs.Query[
+  D,
+  F,
+] with store(self, state) {
+  system_param_store_no_state(self, state)
+}
+
+///|
 pub impl[F : FromWorld] SystemParam for @ecs.EntityQuery[F] with init_state(
   world,
 ) {

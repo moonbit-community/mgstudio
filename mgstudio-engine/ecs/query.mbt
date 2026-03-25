@@ -34,33 +34,68 @@ pub struct Query3[A, B, C] {
 }
 
 ///|
+pub struct Query[D, F] {
+  world : World
+  filter : F
+  data_marker : (D) -> Unit
+}
+
+///|
+pub struct QueryMany[D, F] {
+  query : Query[D, F]
+  entities : Array[@core.Entity]
+  mut index : Int
+}
+
+///|
+pub struct QueryContiguousIter[D, F] {
+  query : Query[D, F]
+  entities : Array[@core.Entity]
+  mut index : Int
+}
+
+///|
 pub struct Has[T] {
-  key : ComponentKey[T]
+  present : Bool
 }
 
 ///|
 pub fn[T] Has::new(key : ComponentKey[T]) -> Has[T] {
-  Has::{ key, }
+  ignore(key)
+  Has::{ present: false }
 }
 
 ///|
-pub fn[T] Has::key(self : Has[T]) -> ComponentKey[T] {
-  self.key
+pub fn[T : Component] Has::key(self : Has[T]) -> ComponentKey[T] {
+  ignore(self)
+  T::component()
+}
+
+///|
+pub fn[T] Has::present(self : Has[T]) -> Bool {
+  self.present
 }
 
 ///|
 pub struct Optional[T] {
-  key : ComponentKey[T]
+  value : T?
 }
 
 ///|
 pub fn[T] Optional::new(key : ComponentKey[T]) -> Optional[T] {
-  Optional::{ key, }
+  ignore(key)
+  Optional::{ value: None }
 }
 
 ///|
-pub fn[T] Optional::key(self : Optional[T]) -> ComponentKey[T] {
-  self.key
+pub fn[T : Component] Optional::key(self : Optional[T]) -> ComponentKey[T] {
+  ignore(self)
+  T::component()
+}
+
+///|
+pub fn[T] Optional::value(self : Optional[T]) -> T? {
+  self.value
 }
 
 ///|
@@ -235,6 +270,187 @@ pub fn[A, B, C, F] World::query3_filtered(
   filter : F,
 ) -> Query3Filtered[A, B, C, F] {
   Query3Filtered::{ world: self, key_a, key_b, key_c, filter }
+}
+
+///|
+pub fn[D : QueryData] query(world : World) -> Query[D, All] {
+  Query::{ world, filter: All::new(), data_marker: fn(_value : D) {  } }
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] query_filtered(
+  world : World,
+  filter : F,
+) -> Query[D, F] {
+  Query::{ world, filter, data_marker: fn(_value : D) {  } }
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] Query::get(
+  self : Query[D, F],
+  entity : @core.Entity,
+) -> D? raise EcsError {
+  guard self.world.is_alive(entity) else { raise EntityNotAlive(entity) }
+  guard query_matches_with_query_data_default_filters(
+    self.world,
+    entity,
+    self.filter,
+    D::mentions_component,
+  ) else {
+    return None
+  }
+  guard D::matches(self.world, entity) else { return None }
+  Some(D::fetch(self.world, entity))
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] Query::view(
+  self : Query[D, F],
+  f : (@core.Entity, D) -> Unit,
+) -> Unit raise EcsError {
+  for
+    entity in query_candidate_entities(
+      self.world,
+      D::iteration_anchor_component(),
+    ) {
+    if query_matches_with_query_data_default_filters(
+        self.world,
+        entity,
+        self.filter,
+        D::mentions_component,
+      ) &&
+      D::matches(self.world, entity) {
+      f(entity, D::fetch(self.world, entity))
+    }
+  }
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] Query::for_each(
+  self : Query[D, F],
+  f : (@core.Entity, D) -> Unit,
+) -> Unit raise EcsError {
+  self.view(f)
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] Query::count(self : Query[D, F]) -> Int {
+  let count_ref : Ref[Int] = Ref::new(0)
+  for
+    entity in query_candidate_entities(
+      self.world,
+      D::iteration_anchor_component(),
+    ) {
+    if query_matches_with_query_data_default_filters(
+        self.world,
+        entity,
+        self.filter,
+        D::mentions_component,
+      ) &&
+      D::matches(self.world, entity) {
+      count_ref.val = count_ref.val + 1
+    }
+  }
+  count_ref.val
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] Query::single(
+  self : Query[D, F],
+) -> D? raise EcsError {
+  let count_ref : Ref[Int] = Ref::new(0)
+  let value_ref : Ref[D?] = Ref::new(None)
+  self.view(fn(_entity, value) {
+    count_ref.val = count_ref.val + 1
+    if count_ref.val == 1 {
+      value_ref.val = Some(value)
+    } else {
+      value_ref.val = None
+    }
+  })
+  if count_ref.val == 1 {
+    value_ref.val
+  } else {
+    None
+  }
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] Query::require_single(
+  self : Query[D, F],
+) -> D raise {
+  match self.single() {
+    Some(value) => value
+    None => raise Skipped("Expected exactly one matching entity")
+  }
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] Query::iter_many(
+  self : Query[D, F],
+  entities : Array[@core.Entity],
+) -> QueryMany[D, F] {
+  { query: self, entities, index: 0 }
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] Query::iter_many_unique(
+  self : Query[D, F],
+  entities : Array[@core.Entity],
+) -> QueryMany[D, F] raise EcsError {
+  query_require_unique_entities(entities)
+  self.iter_many_unique_unsafe(entities)
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] Query::iter_many_unique_unsafe(
+  self : Query[D, F],
+  entities : Array[@core.Entity],
+) -> QueryMany[D, F] {
+  self.iter_many(entities)
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] Query::contiguous_iter(
+  self : Query[D, F],
+) -> QueryContiguousIter[D, F]? {
+  guard D::contiguous_compatible() else { return None }
+  guard D::iteration_anchor_component() is Some(anchor_component_id) else {
+    return None
+  }
+  let entities = query_entities_for_component_id(
+    self.world,
+    anchor_component_id,
+  )
+  Some({ query: self, entities, index: 0 })
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
+  self : QueryMany[D, F],
+) -> (@core.Entity, D)? raise EcsError {
+  while self.index < self.entities.length() {
+    let entity = self.entities[self.index]
+    self.index = self.index + 1
+    if self.query.get(entity) is Some(value) {
+      return Some((entity, value))
+    }
+  }
+  None
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] QueryContiguousIter::fetch_next(
+  self : QueryContiguousIter[D, F],
+) -> D? raise EcsError {
+  while self.index < self.entities.length() {
+    let entity = self.entities[self.index]
+    self.index = self.index + 1
+    if self.query.get(entity) is Some(value) {
+      return Some(value)
+    }
+  }
+  None
 }
 
 ///|
@@ -678,7 +894,7 @@ pub fn[A, B, F : QueryFilter] Query2Filtered::count(
 }
 
 ///|
-pub fn[A, B] Query2Has::get(
+pub fn[A, B : Component] Query2Has::get(
   self : Query2Has[A, B],
   entity : @core.Entity,
 ) -> (A, Bool)? raise EcsError {
@@ -686,7 +902,7 @@ pub fn[A, B] Query2Has::get(
 }
 
 ///|
-pub fn[A, B] Query2Has::view(
+pub fn[A, B : Component] Query2Has::view(
   self : Query2Has[A, B],
   f : (@core.Entity, A, Bool) -> Unit,
 ) -> Unit raise EcsError {
@@ -696,7 +912,7 @@ pub fn[A, B] Query2Has::view(
 }
 
 ///|
-pub fn[A, B] Query2Has::for_each(
+pub fn[A, B : Component] Query2Has::for_each(
   self : Query2Has[A, B],
   f : (@core.Entity, A, Bool) -> Unit,
 ) -> Unit raise EcsError {
@@ -706,12 +922,12 @@ pub fn[A, B] Query2Has::for_each(
 }
 
 ///|
-pub fn[A, B] Query2Has::count(self : Query2Has[A, B]) -> Int {
+pub fn[A, B : Component] Query2Has::count(self : Query2Has[A, B]) -> Int {
   self.world.query2_has_filtered(self.key_a, self.has_b, All::new()).count()
 }
 
 ///|
-pub fn[A, B, F : QueryFilter] Query2HasFiltered::get(
+pub fn[A, B : Component, F : QueryFilter] Query2HasFiltered::get(
   self : Query2HasFiltered[A, B, F],
   entity : @core.Entity,
 ) -> (A, Bool)? raise EcsError {
@@ -734,7 +950,7 @@ pub fn[A, B, F : QueryFilter] Query2HasFiltered::get(
 }
 
 ///|
-pub fn[A, B, F : QueryFilter] Query2HasFiltered::view(
+pub fn[A, B : Component, F : QueryFilter] Query2HasFiltered::view(
   self : Query2HasFiltered[A, B, F],
   f : (@core.Entity, A, Bool) -> Unit,
 ) -> Unit raise EcsError {
@@ -763,7 +979,7 @@ pub fn[A, B, F : QueryFilter] Query2HasFiltered::view(
 }
 
 ///|
-pub fn[A, B, F : QueryFilter] Query2HasFiltered::for_each(
+pub fn[A, B : Component, F : QueryFilter] Query2HasFiltered::for_each(
   self : Query2HasFiltered[A, B, F],
   f : (@core.Entity, A, Bool) -> Unit,
 ) -> Unit raise EcsError {
@@ -771,7 +987,7 @@ pub fn[A, B, F : QueryFilter] Query2HasFiltered::for_each(
 }
 
 ///|
-pub fn[A, B, F : QueryFilter] Query2HasFiltered::count(
+pub fn[A, B : Component, F : QueryFilter] Query2HasFiltered::count(
   self : Query2HasFiltered[A, B, F],
 ) -> Int {
   guard self.world.component_store(self.key_a.id()) is Some(store_ref) else {
@@ -793,7 +1009,7 @@ pub fn[A, B, F : QueryFilter] Query2HasFiltered::count(
 }
 
 ///|
-pub fn[A, B] Query2Optional::get(
+pub fn[A, B : Component] Query2Optional::get(
   self : Query2Optional[A, B],
   entity : @core.Entity,
 ) -> (A, B?)? raise EcsError {
@@ -803,7 +1019,7 @@ pub fn[A, B] Query2Optional::get(
 }
 
 ///|
-pub fn[A, B] Query2Optional::view(
+pub fn[A, B : Component] Query2Optional::view(
   self : Query2Optional[A, B],
   f : (@core.Entity, A, B?) -> Unit,
 ) -> Unit raise EcsError {
@@ -813,7 +1029,7 @@ pub fn[A, B] Query2Optional::view(
 }
 
 ///|
-pub fn[A, B] Query2Optional::for_each(
+pub fn[A, B : Component] Query2Optional::for_each(
   self : Query2Optional[A, B],
   f : (@core.Entity, A, B?) -> Unit,
 ) -> Unit raise EcsError {
@@ -823,14 +1039,16 @@ pub fn[A, B] Query2Optional::for_each(
 }
 
 ///|
-pub fn[A, B] Query2Optional::count(self : Query2Optional[A, B]) -> Int {
+pub fn[A, B : Component] Query2Optional::count(
+  self : Query2Optional[A, B],
+) -> Int {
   self.world
   .query2_optional_filtered(self.key_a, self.optional_b, All::new())
   .count()
 }
 
 ///|
-pub fn[A, B, F : QueryFilter] Query2OptionalFiltered::get(
+pub fn[A, B : Component, F : QueryFilter] Query2OptionalFiltered::get(
   self : Query2OptionalFiltered[A, B, F],
   entity : @core.Entity,
 ) -> (A, B?)? raise EcsError {
@@ -848,7 +1066,7 @@ pub fn[A, B, F : QueryFilter] Query2OptionalFiltered::get(
 }
 
 ///|
-pub fn[A, B, F : QueryFilter] Query2OptionalFiltered::view(
+pub fn[A, B : Component, F : QueryFilter] Query2OptionalFiltered::view(
   self : Query2OptionalFiltered[A, B, F],
   f : (@core.Entity, A, B?) -> Unit,
 ) -> Unit raise EcsError {
@@ -873,7 +1091,7 @@ pub fn[A, B, F : QueryFilter] Query2OptionalFiltered::view(
 }
 
 ///|
-pub fn[A, B, F : QueryFilter] Query2OptionalFiltered::for_each(
+pub fn[A, B : Component, F : QueryFilter] Query2OptionalFiltered::for_each(
   self : Query2OptionalFiltered[A, B, F],
   f : (@core.Entity, A, B?) -> Unit,
 ) -> Unit raise EcsError {
@@ -881,7 +1099,7 @@ pub fn[A, B, F : QueryFilter] Query2OptionalFiltered::for_each(
 }
 
 ///|
-pub fn[A, B, F : QueryFilter] Query2OptionalFiltered::count(
+pub fn[A, B : Component, F : QueryFilter] Query2OptionalFiltered::count(
   self : Query2OptionalFiltered[A, B, F],
 ) -> Int {
   guard self.world.component_store(self.key_a.id()) is Some(store_ref) else {
@@ -1416,6 +1634,67 @@ fn[A, B, C, F : QueryFilter] query3_count_filtered(
 ///|
 fn query_all_alive_entities(world : World) -> Array[@core.Entity] {
   world.entities.alive_entities()
+}
+
+///|
+fn query_candidate_entities(
+  world : World,
+  anchor_component_id : Int?,
+) -> Array[@core.Entity] {
+  match anchor_component_id {
+    Some(component_id) => query_entities_for_component_id(world, component_id)
+    None => query_all_alive_entities(world)
+  }
+}
+
+///|
+fn query_entities_for_component_id(
+  world : World,
+  component_id : Int,
+) -> Array[@core.Entity] {
+  guard world.component_store(component_id) is Some(store_ref) else {
+    return []
+  }
+  let entities : Array[@core.Entity] = []
+  store_ref.val.for_each(fn(entity, _payload) { entities.push(entity) })
+  entities
+}
+
+///|
+fn[F : QueryFilter] query_matches_with_query_data_default_filters(
+  world : World,
+  entity : @core.Entity,
+  filter : F,
+  data_mentions_component : (Int) -> Bool,
+) -> Bool {
+  guard QueryFilter::matches(filter, world, entity) else { return false }
+  try world.get_resource(ecs_key_default_query_filters) catch {
+    _ => true
+  } noraise {
+    Some(default_query_filters) =>
+      query_data_default_filters_allow_entity(
+        default_query_filters, world, entity, filter, data_mentions_component,
+      )
+    None => true
+  }
+}
+
+///|
+fn[F : QueryFilter] query_data_default_filters_allow_entity(
+  default_query_filters : DefaultQueryFilters,
+  world : World,
+  entity : @core.Entity,
+  filter : F,
+  data_mentions_component : (Int) -> Bool,
+) -> Bool {
+  for component_id in default_query_filters.disabling_component_ids() {
+    if entity_has_component_id(world, component_id, entity) &&
+      !data_mentions_component(component_id) &&
+      !QueryFilter::mentions_component(filter, component_id) {
+      return false
+    }
+  }
+  true
 }
 
 ///|

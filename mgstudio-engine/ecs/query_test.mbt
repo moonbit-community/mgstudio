@@ -31,6 +31,193 @@ struct Acceleration {
 } derive(Show, Eq, ToJson, FromJson)
 
 ///|
+struct GenericPosition {
+  x : Int
+  y : Int
+} derive(Show, Eq, ToJson, FromJson)
+
+///|
+struct GenericVelocity {
+  dx : Int
+  dy : Int
+} derive(Show, Eq, ToJson, FromJson)
+
+///|
+struct GenericTag {} derive(Show, Eq, ToJson, FromJson)
+
+///|
+let generic_position_key : ComponentKey[GenericPosition] = register_component(
+  debug_name="tests.ecs.generic_query_position",
+)
+
+///|
+let generic_velocity_key : ComponentKey[GenericVelocity] = register_component(
+  debug_name="tests.ecs.generic_query_velocity",
+)
+
+///|
+let generic_tag_key : ComponentKey[GenericTag] = register_component(
+  debug_name="tests.ecs.generic_query_tag",
+)
+
+///|
+pub impl Component for GenericPosition with component() {
+  generic_position_key
+}
+
+///|
+pub impl Component for GenericVelocity with component() {
+  generic_velocity_key
+}
+
+///|
+pub impl Component for GenericTag with component() {
+  generic_tag_key
+}
+
+///|
+struct NestedVelocityData {
+  velocity : GenericVelocity
+}
+
+///|
+pub impl QueryData for NestedVelocityData with matches(world, entity) {
+  query_data_component_matches(world, entity, generic_velocity_key)
+}
+
+///|
+pub impl QueryData for NestedVelocityData with fetch(world, entity) {
+  {
+    velocity: try! query_data_component_fetch(
+      world, entity, generic_velocity_key,
+    ),
+  }
+}
+
+///|
+pub impl QueryData for NestedVelocityData with mentions_component(component_id) {
+  component_id == generic_velocity_key.id()
+}
+
+///|
+pub impl QueryData for NestedVelocityData with iteration_anchor_component() {
+  Some(generic_velocity_key.id())
+}
+
+///|
+pub impl QueryData for NestedVelocityData with contiguous_compatible() {
+  true
+}
+
+///|
+struct GenericPair[A, B] {
+  pair : (A, B)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with matches(
+  world,
+  entity,
+) {
+  A::matches(world, entity) && B::matches(world, entity)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with fetch(
+  world,
+  entity,
+) {
+  { pair: (A::fetch(world, entity), B::fetch(world, entity)) }
+}
+
+///|
+pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with mentions_component(
+  component_id,
+) {
+  A::mentions_component(component_id) || B::mentions_component(component_id)
+}
+
+///|
+pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with iteration_anchor_component() {
+  match A::iteration_anchor_component() {
+    Some(component_id) => Some(component_id)
+    None => B::iteration_anchor_component()
+  }
+}
+
+///|
+pub impl[A : QueryData, B : QueryData] QueryData for GenericPair[A, B] with contiguous_compatible() {
+  A::contiguous_compatible() && B::contiguous_compatible()
+}
+
+///|
+struct ReadOnlyCustomQuery {
+  entity : @core.Entity
+  position : GenericPosition
+  maybe_velocity : GenericVelocity?
+  has_disabled : Bool
+  nested : NestedVelocityData?
+}
+
+///|
+pub impl QueryData for ReadOnlyCustomQuery with matches(world, entity) {
+  query_data_component_matches(world, entity, generic_position_key)
+}
+
+///|
+pub impl QueryData for ReadOnlyCustomQuery with fetch(world, entity) {
+  {
+    entity,
+    position: try! query_data_component_fetch(
+      world, entity, generic_position_key,
+    ),
+    maybe_velocity: try! query_data_component_optional(
+      world, entity, generic_velocity_key,
+    ),
+    has_disabled: query_data_component_has(world, entity, ecs_key_disabled),
+    nested: if NestedVelocityData::matches(world, entity) {
+      Some(NestedVelocityData::fetch(world, entity))
+    } else {
+      None
+    },
+  }
+}
+
+///|
+pub impl QueryData for ReadOnlyCustomQuery with mentions_component(component_id) {
+  component_id == generic_position_key.id() ||
+  component_id == ecs_key_disabled.id()
+}
+
+///|
+pub impl QueryData for ReadOnlyCustomQuery with iteration_anchor_component() {
+  Some(generic_position_key.id())
+}
+
+///|
+pub impl QueryData for ReadOnlyCustomQuery with contiguous_compatible() {
+  true
+}
+
+///|
+struct GenericTagFilter {}
+
+///|
+pub impl QueryFilter for GenericTagFilter with matches(self, world, entity) {
+  ignore(self)
+  world.component(generic_tag_key).contains(entity)
+}
+
+///|
+pub impl QueryFilter for GenericTagFilter with mentions_component(
+  self,
+  component_id,
+) {
+  ignore(self)
+  component_id == generic_tag_key.id()
+}
+
+///|
 test "ecs query: query1 view and for_each" {
   let world = World::new()
   let comp_position : ComponentKey[Position] = register_component(
@@ -464,4 +651,131 @@ test "ecs query: require_single raises skipped unless exactly one match exists" 
     fail("expected skipped error when many entities match")
   }
   inspect(message1, content="Expected exactly one matching entity")
+}
+
+///|
+test "ecs query: generic query supports wrappers and disabled mentions" {
+  let world = World::new()
+  let enabled = world.spawn()
+  let disabled = world.spawn()
+
+  try! world.set(enabled, generic_position_key, GenericPosition::{ x: 1, y: 2 })
+  try! world.set(disabled, generic_position_key, GenericPosition::{ x: 3, y: 4 })
+  try! world.set(disabled, ecs_key_disabled, Disabled::new())
+
+  let entity_query : Query[@core.Entity, All] = query(world)
+  inspect(entity_query.count(), content="1")
+
+  let has_query : Query[Has[Disabled], All] = query(world)
+  inspect(has_query.count(), content="2")
+  let has_seen : Array[(Int, Bool)] = []
+  try! has_query.view(fn(entity, has_disabled) {
+    has_seen.push((entity.id, has_disabled.present()))
+  })
+  inspect(has_seen, content="[(0, false), (1, true)]")
+
+  let optional_query : Query[Optional[Disabled], All] = query(world)
+  inspect(optional_query.count(), content="1")
+  guard (try! optional_query.single()) is Some(optional_disabled) else {
+    fail("expected enabled entity to remain visible")
+  }
+  inspect(optional_disabled.value() is None, content="true")
+
+  let tuple_query : Query[(Comp[GenericPosition], Has[Disabled]), All] = query(
+    world,
+  )
+  inspect(tuple_query.count(), content="2")
+  let contiguous = tuple_query.contiguous_iter()
+  guard contiguous is Some(iter) else {
+    fail("expected contiguous iterator for anchored generic query")
+  }
+  let values : Array[(Int, Bool)] = []
+  while true {
+    if (try! iter.fetch_next()) is Some((position, has_disabled)) {
+      values.push((position.value().x, has_disabled.present()))
+    } else {
+      break
+    }
+  }
+  inspect(values, content="[(1, false), (3, true)]")
+}
+
+///|
+test "ecs query: generic query supports named reusable data, filters and iterators" {
+  let world = World::new()
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  let e2 = world.spawn()
+
+  try! world.set(e0, generic_position_key, GenericPosition::{ x: 10, y: 20 })
+  try! world.set(e1, generic_position_key, GenericPosition::{ x: 30, y: 40 })
+  try! world.set(e2, generic_position_key, GenericPosition::{ x: 50, y: 60 })
+  try! world.set(e0, generic_velocity_key, GenericVelocity::{ dx: 1, dy: 2 })
+  try! world.set(e0, generic_tag_key, GenericTag::{  })
+  try! world.set(e1, generic_tag_key, GenericTag::{  })
+  try! world.set(e1, ecs_key_disabled, Disabled::new())
+
+  let named_query : Query[ReadOnlyCustomQuery, GenericTagFilter] = query_filtered(
+    world,
+    GenericTagFilter::{  },
+  )
+  inspect(named_query.count(), content="2")
+  inspect((try! named_query.get(e2)) is None, content="true")
+  inspect((try! named_query.single()) is None, content="true")
+
+  guard (try! named_query.get(e0)) is Some(first) else {
+    fail("expected filtered entity to exist")
+  }
+  inspect(first.entity.id, content="0")
+  inspect(first.position, content="{x: 10, y: 20}")
+  inspect(first.maybe_velocity, content="Some({dx: 1, dy: 2})")
+  inspect(first.has_disabled, content="false")
+  inspect(first.nested is Some(_), content="true")
+  guard first.nested is Some(first_nested) else {
+    fail("expected nested velocity data")
+  }
+  inspect(first_nested.velocity, content="{dx: 1, dy: 2}")
+
+  guard (try! named_query.get(e1)) is Some(second) else {
+    fail("expected disabled tagged entity to remain visible")
+  }
+  inspect(second.position, content="{x: 30, y: 40}")
+  inspect(second.maybe_velocity, content="None")
+  inspect(second.has_disabled, content="true")
+  inspect(second.nested is Some(_), content="false")
+
+  let iter = named_query.iter_many([e1, e2, e0])
+  let iter_seen : Array[(Int, Int)] = []
+  while true {
+    if (try! iter.fetch_next()) is Some((entity, value)) {
+      iter_seen.push((entity.id, value.position.x))
+    } else {
+      break
+    }
+  }
+  inspect(iter_seen, content="[(1, 30), (0, 10)]")
+
+  guard named_query.contiguous_iter() is Some(contiguous_iter) else {
+    fail("expected contiguous iterator for named anchored query data")
+  }
+  let contiguous_seen : Array[Int] = []
+  while true {
+    if (try! contiguous_iter.fetch_next()) is Some(value) {
+      contiguous_seen.push(value.position.x)
+    } else {
+      break
+    }
+  }
+  inspect(contiguous_seen, content="[10, 30]")
+
+  let generic_query : Query[
+    GenericPair[Comp[GenericPosition], Optional[GenericVelocity]],
+    All,
+  ] = query(world)
+  inspect(generic_query.count(), content="2")
+  guard (try! generic_query.get(e0)) is Some(generic_value) else {
+    fail("expected generic fragment query item")
+  }
+  inspect(generic_value.pair.0.value(), content="{x: 10, y: 20}")
+  inspect(generic_value.pair.1.value(), content="Some({dx: 1, dy: 2})")
 }

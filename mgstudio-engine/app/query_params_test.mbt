@@ -58,6 +58,76 @@ pub impl @ecs.Component for QueryMarker with component() {
 }
 
 ///|
+struct QueryGenericData {
+  entity : @core.Entity
+  position : QueryPosition
+  has_disabled : Bool
+}
+
+///|
+pub impl @ecs.QueryData for QueryGenericData with matches(world, entity) {
+  @ecs.query_data_component_matches(world, entity, query_position_key)
+}
+
+///|
+pub impl @ecs.QueryData for QueryGenericData with fetch(world, entity) {
+  {
+    entity,
+    position: try! @ecs.query_data_component_fetch(
+      world, entity, query_position_key,
+    ),
+    has_disabled: @ecs.query_data_component_has(
+      world, entity, @ecs.ecs_key_disabled,
+    ),
+  }
+}
+
+///|
+pub impl @ecs.QueryData for QueryGenericData with mentions_component(
+  component_id,
+) {
+  component_id == query_position_key.id() ||
+  component_id == @ecs.ecs_key_disabled.id()
+}
+
+///|
+pub impl @ecs.QueryData for QueryGenericData with iteration_anchor_component() {
+  Some(query_position_key.id())
+}
+
+///|
+pub impl @ecs.QueryData for QueryGenericData with contiguous_compatible() {
+  true
+}
+
+///|
+struct QueryMarkerFilter {}
+
+///|
+pub impl @ecs.QueryFilter for QueryMarkerFilter with matches(
+  self,
+  world,
+  entity,
+) {
+  ignore(self)
+  world.component(query_marker_key).contains(entity)
+}
+
+///|
+pub impl @ecs.QueryFilter for QueryMarkerFilter with mentions_component(
+  self,
+  component_id,
+) {
+  ignore(self)
+  component_id == query_marker_key.id()
+}
+
+///|
+pub impl FromWorld for QueryMarkerFilter with from_world(_world) {
+  QueryMarkerFilter::{  }
+}
+
+///|
 test "app: Query1 system param exposes plain mutable query" {
   let world = @ecs.World::new()
   let e0 = world.spawn()
@@ -259,6 +329,38 @@ test "app: validated single query params expose strict single access" {
     try! app.world().get(other, query_position_key),
     content="Some({x: 10, y: 20})",
   )
+}
+
+///|
+test "app: generic Query[D, F] system param supports named data and named filters" {
+  let world = @ecs.World::new()
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  let e2 = world.spawn()
+
+  try! world.set(e0, query_position_key, QueryPosition::{ x: 1, y: 1 })
+  try! world.set(e1, query_position_key, QueryPosition::{ x: 2, y: 2 })
+  try! world.set(e2, query_position_key, QueryPosition::{ x: 3, y: 3 })
+  try! world.set(e0, query_marker_key, QueryMarker::{  })
+  try! world.set(e1, query_marker_key, QueryMarker::{  })
+  try! world.set(e1, @ecs.ecs_key_disabled, @ecs.Disabled::new())
+
+  let counts : Array[Int] = []
+  let seen : Array[(Int, Bool, Int)] = []
+
+  let mut app = App::new(world).add_system_param(fn(
+    query : @ecs.Query[QueryGenericData, QueryMarkerFilter],
+  ) {
+    counts.push(query.count())
+    try! query.view(fn(_entity, value) {
+      seen.push((value.entity.id, value.has_disabled, value.position.x))
+    })
+  })
+
+  app = app.run_once()
+
+  inspect(counts, content="[2]")
+  inspect(seen, content="[(0, false, 1), (1, true, 2)]")
 }
 
 ///|
