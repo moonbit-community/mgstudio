@@ -7,8 +7,8 @@ import {
   "Milky2018/mgstudio/hierarchy",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/text",
-  "Milky2018/mgstudio/transform",
   "Milky2018/mgstudio/ui",
+  "moonbitlang/core/json",
 }
 
 options(

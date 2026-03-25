@@ -177,6 +177,83 @@ test "ui: hidden overflow axis ignores stale scroll offset" {
 }
 
 ///|
+test "ui: ghost node children layout as direct descendants" {
+  let world = @ecs.World::new()
+  let tick = world.advance_sequence()
+  ignore(tick)
+  let ctx = UiContext::new(
+    @asset.Handle::new(1),
+    @math.Vec2::new(0.0F, 0.0F),
+    @math.Vec2::new(800.0F, 600.0F),
+    Some(@core.Entity::new(0, 0)),
+    @transform.Transform::identity(),
+    1.0F,
+    None,
+    false,
+  )
+  get_ui_context_resource(world).insert(ctx)
+  let root = world.spawn_empty()
+  try! world.set_by_key(root, ecs_key_ui_root, UiRoot::default())
+  let container = world.spawn_empty()
+  try! world.set_by_key(
+    container,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(root),
+  )
+  try! world.set_by_key(
+    container,
+    ecs_key_node,
+    Node::default()
+    .with_width(Val::Px(300.0F))
+    .with_height(Val::Px(80.0F))
+    .with_flex_direction(FlexDirection::Row),
+  )
+  let first = world.spawn_empty()
+  try! world.set_by_key(
+    first,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(container),
+  )
+  try! world.set_by_key(
+    first,
+    ecs_key_node,
+    Node::default().with_width(Val::Px(100.0F)).with_height(Val::Px(80.0F)),
+  )
+  let ghost = world.spawn_empty()
+  try! world.set_by_key(
+    ghost,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(container),
+  )
+  try! world.set_by_key(ghost, ecs_key_ghost_node, GhostNode::default())
+  let second = world.spawn_empty()
+  try! world.set_by_key(
+    second,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(ghost),
+  )
+  try! world.set_by_key(
+    second,
+    ecs_key_node,
+    Node::default().with_width(Val::Px(100.0F)).with_height(Val::Px(80.0F)),
+  )
+
+  ui_layout_system(world)
+
+  inspect(
+    try! (world.get_by_key(ghost, ecs_key_ui_layout) is None),
+    content="true",
+  )
+  let first_rect = try! world.get_by_key(first, ecs_key_ui_layout).unwrap().rect
+  let second_rect = try! world.get_by_key(second, ecs_key_ui_layout).unwrap().rect
+  inspect(second_rect.min.x == first_rect.max.x, content="true")
+  inspect(second_rect.min.y == first_rect.min.y, content="true")
+  ui_stack_system(world)
+  let stack = get_ui_stack_resource(world).get().unwrap().uinodes()
+  inspect(stack.length() == 4, content="true")
+}
+
+///|
 test "ui: editable text transform stays in input content box and in front" {
   let world = @ecs.World::new()
   let tick = world.advance_sequence()

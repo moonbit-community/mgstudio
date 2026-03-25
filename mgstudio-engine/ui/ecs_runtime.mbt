@@ -33,6 +33,11 @@ pub let ecs_key_ui_root : @ecs.ComponentKey[UiRoot] = @ecs.register_component(
 )
 
 ///|
+pub let ecs_key_ghost_node : @ecs.ComponentKey[GhostNode] = @ecs.register_component(
+  debug_name="ui.ghost_node",
+)
+
+///|
 pub let ecs_key_is_default_ui_camera : @ecs.ComponentKey[IsDefaultUiCamera] = @ecs.register_component(
   debug_name="ui.is_default_ui_camera",
 )
@@ -165,6 +170,11 @@ pub impl @ecs.Component for Button with component() {
 ///|
 pub impl @ecs.Component for UiRoot with component() {
   ecs_key_ui_root
+}
+
+///|
+pub impl @ecs.Component for GhostNode with component() {
+  ecs_key_ghost_node
 }
 
 ///|

@@ -1,0 +1,27 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/layout/ghost_nodes"
+
+import {
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type ButtonPressState
+pub impl @ecs.Component for ButtonPressState
+pub impl ToJson for ButtonPressState
+pub impl @json.FromJson for ButtonPressState
+
+type Counter
+pub impl @ecs.Component for Counter
+pub impl ToJson for Counter
+pub impl @json.FromJson for Counter
+
+// Type aliases
+
+// Traits
+

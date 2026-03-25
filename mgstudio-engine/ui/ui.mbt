@@ -835,6 +835,14 @@ pub fn Node::with_grid_template_columns(
 }
 
 ///|
+pub struct GhostNode {} derive(ToJson, FromJson)
+
+///|
+pub fn GhostNode::default() -> GhostNode {
+  GhostNode::{  }
+}
+
+///|
 pub struct UiRoot {} derive(ToJson, FromJson)
 
 ///|
@@ -1521,6 +1529,67 @@ fn ui_entity_gt(a : @core.Entity, b : @core.Entity) -> Bool {
 }
 
 ///|
+fn ui_is_ghost_node(world : @ecs.World, entity : @core.Entity) -> Bool {
+  try! world.contains_by_key(entity, ecs_key_ghost_node)
+}
+
+///|
+fn ui_effective_parent(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> @core.Entity? {
+  let mut current = match
+    (try! world.get_by_key(entity, @hierarchy.ecs_key_parent)) {
+    Some(parent) => Some(parent.entity())
+    None => None
+  }
+  while current is Some(parent_entity) {
+    if !ui_is_ghost_node(world, parent_entity) {
+      return Some(parent_entity)
+    }
+    current = match
+      (try! world.get_by_key(parent_entity, @hierarchy.ecs_key_parent)) {
+      Some(parent) => Some(parent.entity())
+      None => None
+    }
+  }
+  None
+}
+
+///|
+fn ui_collect_effective_child_entities(
+  world : @ecs.World,
+  entity : @core.Entity,
+  out : Array[@core.Entity],
+) -> Unit {
+  if ui_is_ghost_node(world, entity) {
+    if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
+      is Some(children) {
+      for child in children.entities {
+        ui_collect_effective_child_entities(world, child, out)
+      }
+    }
+    return
+  }
+  out.push(entity)
+}
+
+///|
+fn ui_collect_effective_children(
+  world : @ecs.World,
+  entity : @core.Entity,
+) -> Array[@core.Entity] {
+  let out : Array[@core.Entity] = []
+  if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
+    is Some(children) {
+    for child in children.entities {
+      ui_collect_effective_child_entities(world, child, out)
+    }
+  }
+  out
+}
+
+///|
 fn ui_collect_root_entities(world : @ecs.World) -> Array[@core.Entity] {
   let visited : @hashmap.HashMap[(Int, Int), Bool] = @hashmap.HashMap::new()
   let roots : Array[@core.Entity] = []
@@ -1536,6 +1605,17 @@ fn ui_collect_root_entities(world : @ecs.World) -> Array[@core.Entity] {
     roots.push(entity)
   })
   world.for_each_component(ecs_key_ui_root, fn(entity, _marker) {
+    let key = ui_entity_key(entity)
+    if visited.contains(key) {
+      return
+    }
+    visited.set(key, true)
+    roots.push(entity)
+  })
+  world.for_each_component(ecs_key_ghost_node, fn(entity, _ghost) {
+    if (try! world.contains_by_key(entity, @hierarchy.ecs_key_parent)) {
+      return
+    }
     let key = ui_entity_key(entity)
     if visited.contains(key) {
       return
@@ -1628,6 +1708,17 @@ fn register_ui_text_required_components(
     @text.ecs_key_text,
     @text.ecs_key_text_line_height,
     fn() { @text.LineHeight::default() },
+  )
+}
+
+///|
+fn register_ui_ghost_required_components(
+  world : @ecs.World,
+) -> Unit raise @ecs.RequiredComponentsError {
+  world.register_required_components_with(
+    ecs_key_ghost_node,
+    @transform.ecs_key_transform,
+    fn() { @transform.Transform::identity() },
   )
 }
 
@@ -2751,15 +2842,17 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
     )
     let taffy = @moon_taffy.TaffyTree::new()
     let entity_to_node : @hashmap.HashMap[(Int, Int), Int] = @hashmap.HashMap::new()
-    fn build(entity : @core.Entity, is_root : Bool) -> Int {
-      let style = style_for_entity(entity, is_root)
+    fn build(entity : @core.Entity, is_root : Bool) -> Array[Int] {
       let child_ids : Array[Int] = []
-      if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
-        is Some(children) {
-        for child in children.entities {
-          child_ids.push(build(child, false))
+      for child in ui_collect_effective_children(world, entity) {
+        for child_id in build(child, false) {
+          child_ids.push(child_id)
         }
       }
+      if ui_is_ghost_node(world, entity) {
+        return child_ids
+      }
+      let style = style_for_entity(entity, is_root)
       let id = if child_ids.length() == 0 {
         taffy.new_leaf(style)
       } else {
@@ -2770,11 +2863,17 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
         try! taffy.set_node_context(id, entity)
       }
       entity_to_node.set(entity_key(entity), id)
-      id
+      [id]
     }
 
-    let root_node_id = if explicit_root {
-      build(root, true)
+    let root_children = build(
+      root,
+      explicit_root && !ui_is_ghost_node(world, root),
+    )
+    let root_node_id = if explicit_root &&
+      !ui_is_ghost_node(world, root) &&
+      root_children.length() == 1 {
+      root_children[0]
     } else {
       let viewport_root_style = @moon_taffy.Style::default()
         .with_position(@moon_taffy.position_relative())
@@ -2784,7 +2883,7 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
             height=@moon_taffy.length(f2d(root_ctx.viewport_size.y)),
           ),
         )
-      taffy.new_with_children(viewport_root_style, [build(root, false)])
+      taffy.new_with_children(viewport_root_style, root_children)
     }
     let avail = @moon_taffy.Size::new(
       width=@moon_taffy.available_space_definite(f2d(root_ctx.viewport_size.x)),
@@ -2908,6 +3007,15 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
       Err(_) => return
     }
     fn apply_layout(entity : @core.Entity, parent_rect : @math.Rect) -> Unit {
+      if ui_is_ghost_node(world, entity) {
+        if (try! world.contains_by_key(entity, ecs_key_ui_layout)) {
+          try! (world.take(entity, ecs_key_ui_layout) |> ignore)
+        }
+        for child in ui_collect_effective_children(world, entity) {
+          apply_layout(child, parent_rect)
+        }
+        return
+      }
       guard entity_to_node.get(entity_key(entity)) is Some(node_id) else {
         return
       }
@@ -3043,11 +3151,8 @@ pub fn ui_layout_system(world : @ecs.World) -> Unit {
           rect.max.y - scroll.offset_y,
         ),
       )
-      if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
-        is Some(children) {
-        for child in children.entities {
-          apply_layout(child, child_rect)
-        }
+      for child in ui_collect_effective_children(world, entity) {
+        apply_layout(child, child_rect)
       }
     }
 
@@ -3127,15 +3232,13 @@ pub fn ui_scroll_system(world : @ecs.World) -> Unit {
   }
   let mut max_offset_x = 0.0F
   let mut max_offset_y = 0.0F
-  if (try! world.get_by_key(target_e, ecs_key_ui_layout)) is Some(target_layout) &&
-    (try! world.get_by_key(target_e, @hierarchy.ecs_key_children))
-    is Some(children) {
+  if (try! world.get_by_key(target_e, ecs_key_ui_layout)) is Some(target_layout) {
     let target_size = target_layout.rect.size()
+    let children = ui_collect_effective_children(world, target_e)
     if target_size.x > 0.0F && target_size.y > 0.0F {
       let mut content_min : @math.Vec2? = None
       let mut content_max : @math.Vec2? = None
-      for i in 0..<children.entities.length() {
-        let child = children.entities[i]
+      for child in children {
         if (try! world.get_by_key(child, ecs_key_ui_layout))
           is Some(child_layout) {
           let unscrolled_min = @math.Vec2::new(
@@ -3326,6 +3429,20 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
     viewport_rect : @math.Rect,
     viewport_size : @math.Vec2,
   ) -> Unit {
+    if ui_is_ghost_node(world, entity) {
+      if (try! world.contains_by_key(entity, ecs_key_calculated_clip)) {
+        try! (world.take(entity, ecs_key_calculated_clip) |> ignore)
+      }
+      if (try! world.contains_by_key(entity, @sprite.ecs_key_scissor_rect)) {
+        try! (world.take(entity, @sprite.ecs_key_scissor_rect) |> ignore)
+      }
+      for child in ui_collect_effective_children(world, entity) {
+        walk(
+          child, inherited_clip, clipped_by_parent, viewport_rect, viewport_size,
+        )
+      }
+      return
+    }
     // Default to viewport clip if this node does not have layout yet.
     let self_clip = inherited_clip
     let calc = CalculatedClip::{ clip: self_clip }
@@ -3414,11 +3531,8 @@ pub fn ui_clip_system(world : @ecs.World) -> Unit {
         child_clipped = true
       }
     }
-    if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
-      is Some(children) {
-      for child in children.entities {
-        walk(child, child_clip, child_clipped, viewport_rect, viewport_size)
-      }
+    for child in ui_collect_effective_children(world, entity) {
+      walk(child, child_clip, child_clipped, viewport_rect, viewport_size)
     }
   }
 
@@ -3476,7 +3590,7 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
   // Root candidates: unparented UI layout nodes.
   let mut root_tie = 0
   world.for_each_component(ecs_key_ui_layout, fn(entity, _layout) {
-    if (try! world.contains_by_key(entity, @hierarchy.ecs_key_parent)) {
+    if ui_effective_parent(world, entity) is Some(_) {
       return
     }
     let key = ui_entity_key(entity)
@@ -3533,13 +3647,13 @@ pub fn ui_stack_system(world : @ecs.World) -> Unit {
       return
     }
     stack.val.uinodes.push(entity)
-    guard (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
-      is Some(children) else {
+    let children = ui_collect_effective_children(world, entity)
+    if children.length() == 0 {
       return
     }
     let buf : Array[(@core.Entity, Int, Int)] = []
-    for i in 0..<children.entities.length() {
-      let child = children.entities[i]
+    for i in 0..<children.length() {
+      let child = children[i]
       if !(try! world.contains_by_key(child, ecs_key_ui_layout)) {
         continue
       }
@@ -3651,10 +3765,7 @@ pub fn ui_build_a11y_tree_update(
         break
       }
       required.set(k, true)
-      cur = match (try! world.get_by_key(e, @hierarchy.ecs_key_parent)) {
-        Some(p) => Some(p.entity)
-        None => None
-      }
+      cur = ui_effective_parent(world, e)
     }
   }
 
@@ -3687,12 +3798,12 @@ pub fn ui_build_a11y_tree_update(
       is Some(text_span) {
       push_nonempty(out, text_span.content)
     }
-    guard (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
-      is Some(children) else {
+    let children = ui_collect_effective_children(world, entity)
+    if children.length() == 0 {
       return
     }
-    for i in 0..<children.entities.length() {
-      collect_subtree_text(children.entities[i], out)
+    for child in children {
+      collect_subtree_text(child, out)
     }
   }
 
@@ -3711,13 +3822,12 @@ pub fn ui_build_a11y_tree_update(
   }
 
   fn calc_label_from_children(entity : @core.Entity) -> String? {
-    guard (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
-      is Some(children) else {
+    let children = ui_collect_effective_children(world, entity)
+    if children.length() == 0 {
       return None
     }
     let mut name : String? = None
-    for i in 0..<children.entities.length() {
-      let child = children.entities[i]
+    for child in children {
       let parts : Array[String] = []
       let out = Ref::new(parts)
       collect_subtree_text(child, out)
@@ -3805,11 +3915,10 @@ pub fn ui_build_a11y_tree_update(
     if !required.contains(key(entity)) {
       continue
     }
-    let parent_required = match
-      (try! world.get_by_key(entity, @hierarchy.ecs_key_parent)) {
-      Some(p) =>
-        required.contains(key(p.entity)) &&
-        (try! world.contains_by_key(p.entity, ecs_key_ui_layout))
+    let parent_required = match ui_effective_parent(world, entity) {
+      Some(parent) =>
+        required.contains(key(parent)) &&
+        (try! world.contains_by_key(parent, ecs_key_ui_layout))
       None => false
     }
     if !parent_required {
@@ -3847,13 +3956,9 @@ pub fn ui_build_a11y_tree_update(
     let node = @moon_accesskit.Node::new(role)
 
     // Children in hierarchy order (filtered to required set).
-    if (try! world.get_by_key(entity, @hierarchy.ecs_key_children))
-      is Some(children) {
-      for i in 0..<children.entities.length() {
-        let child = children.entities[i]
-        if required.contains(key(child)) {
-          node.push_child(@a11y.node_id_for_entity(child))
-        }
+    for child in ui_collect_effective_children(world, entity) {
+      if required.contains(key(child)) {
+        node.push_child(@a11y.node_id_for_entity(child))
       }
     }
     let rect = layout.rect
@@ -4095,6 +4200,7 @@ pub fn ui_interaction_system(world : @ecs.World) -> Unit {
 ///|
 pub fn ui_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   try! register_ui_text_required_components(app.world())
+  try! register_ui_ghost_required_components(app.world())
   app
   .add_pre_update_system_config(
     @app.system(ui_update_context_system).in_set(ui_set_focus),

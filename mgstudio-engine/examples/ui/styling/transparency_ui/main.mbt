@@ -13,71 +13,99 @@
 // limitations under the License.
 
 ///|
+fn button_node() -> @ui.Node {
+  @ui.Node::default()
+  .with_width(@ui.Val::Px(150.0F))
+  .with_height(@ui.Val::Px(65.0F))
+  .with_justify_content(@ui.JustifyContent::Center)
+  .with_align_items(@ui.AlignItems::Center)
+}
+
+///|
+fn transparent_text_color() -> @text.TextColor {
+  @text.TextColor::new(@sprite.Color::srgba(1.0F, 1.0F, 1.0F, 0.2F))
+}
+
+///|
 fn spawn_button(
-  commands : @app.Commands,
+  world : @ecs.World,
   parent : @core.Entity,
+  font : @asset.Handle[@asset.Font],
   label : String,
   background : @sprite.Color,
-  font : @asset.Handle[@asset.Font],
 ) -> Unit {
-  let button = commands.spawn(
-    (
-      @hierarchy.Parent::new(parent),
-      @ui.Button::default(),
-      @ui.Node::default()
-      .with_width(@ui.Val::Px(150.0F))
-      .with_height(@ui.Val::Px(65.0F))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::Center),
-      @ui.BackgroundColor::new(background),
+  let button = world.spawn_empty()
+  ignore(
+    try! world
+    .entity_mut(button)
+    .insert(
+      (
+        @hierarchy.Parent::new(parent),
+        @ui.Button::default(),
+        button_node(),
+        @ui.BackgroundColor::new(background),
+      ),
     ),
   )
+
+  let text = world.spawn_empty()
   ignore(
-    commands.spawn(
+    try! world
+    .entity_mut(text)
+    .insert(
       (
         @hierarchy.Parent::new(button),
         @text.Text::new(label),
-        @text.TextFont::default()
-        .with_font(font)
-        .with_font_size(@text.FontSize::Px(33.0F)),
-        @text.TextColor::new(@sprite.Color::new(1.0F, 1.0F, 1.0F, 0.2F)),
+        @text.TextFont::from_font_size(@text.FontSize::Px(33.0F)).with_font(
+          font,
+        ),
+        transparent_text_color(),
       ),
     ),
   )
 }
 
 ///|
-fn setup(
-  commands : @app.Commands,
-  asset_server : @app.Res[@asset.AssetServer],
-) -> Unit {
+fn setup(world : @ecs.World) -> Unit {
   ignore(
-    commands.spawn((@sprite.Camera2d::default(), @sprite.Camera::default())),
+    @sprite.Camera2dBundle::new(
+      @sprite.Camera::default(),
+      @transform.Transform::identity(),
+    ).spawn(world),
   )
-  let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
-  let root = commands.spawn(
-    (
-      @ui.UiRoot::default(),
-      @ui.Node::default()
-      .with_width(@ui.Val::Percent(100.0F))
-      .with_height(@ui.Val::Percent(100.0F))
-      .with_align_items(@ui.AlignItems::Center)
-      .with_justify_content(@ui.JustifyContent::SpaceAround),
+
+  let asset_server = @asset.AssetServer::new()
+  let font = asset_server.load_font("fonts/FiraSans-Bold.ttf")
+
+  let root = world.spawn_empty()
+  ignore(
+    try! world
+    .entity_mut(root)
+    .insert(
+      (
+        @ui.UiRoot::default(),
+        @ui.Node::default()
+        .with_width(@ui.Val::Percent(100.0F))
+        .with_height(@ui.Val::Percent(100.0F))
+        .with_align_items(@ui.AlignItems::Center)
+        .with_justify_content(@ui.JustifyContent::SpaceAround),
+      ),
     ),
   )
+
   spawn_button(
-    commands,
+    world,
     root,
+    font,
     "Button 1",
     @sprite.Color::srgb(0.1F, 0.5F, 0.1F),
-    font,
   )
   spawn_button(
-    commands,
+    world,
     root,
+    font,
     "Button 2",
     @sprite.Color::srgb(0.5F, 0.1F, 0.5F),
-    font,
   )
 }
 
@@ -85,6 +113,9 @@ fn setup(
 fn main {
   @app.App::new(@ecs.World::new())
   .add_plugins(@mgstudio.default_plugins())
-  .add_systems(@app.Startup, @app.system(@app.system_param2(setup)))
+  .insert_resource(
+    @sprite.ClearColor::new(@sprite.Color::srgb(0.0F, 0.0F, 0.0F)),
+  )
+  .add_systems(@app.Startup, @app.system(setup))
   .run()
 }

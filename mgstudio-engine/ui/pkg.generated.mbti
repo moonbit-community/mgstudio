@@ -42,6 +42,8 @@ pub let ecs_key_content_size : @ecs.ComponentKey[ContentSize]
 
 pub let ecs_key_focus_policy : @ecs.ComponentKey[FocusPolicy]
 
+pub let ecs_key_ghost_node : @ecs.ComponentKey[GhostNode]
+
 pub let ecs_key_global_z_index : @ecs.ComponentKey[GlobalZIndex]
 
 pub let ecs_key_image_node : @ecs.ComponentKey[ImageNode]
@@ -353,6 +355,13 @@ pub impl Eq for FocusPolicy
 pub impl Show for FocusPolicy
 pub impl ToJson for FocusPolicy
 pub impl @json.FromJson for FocusPolicy
+
+pub struct GhostNode {
+}
+pub fn GhostNode::default() -> Self
+pub impl @ecs.Component for GhostNode
+pub impl ToJson for GhostNode
+pub impl @json.FromJson for GhostNode
 
 pub struct GlobalZIndex {
   value : Int

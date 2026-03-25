@@ -82,6 +82,41 @@ test "ui: unparented node acts as implicit root for layout" {
 }
 
 ///|
+test "ui: unparented ghost node acts as implicit root for layout" {
+  let world = @ecs.World::new()
+  let tick = seed_ui_context_for_implicit_root_test(world)
+  ignore(tick)
+  let ghost_root = world.spawn_empty()
+  try! world.set_by_key(ghost_root, ecs_key_ghost_node, GhostNode::default())
+  let child = world.spawn_empty()
+  try! world.set_by_key(
+    child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(ghost_root),
+  )
+  try! world.set_by_key(
+    child,
+    ecs_key_node,
+    Node::default()
+    .with_position_type(PositionType::Absolute)
+    .with_left(Val::Px(24.0F))
+    .with_top(Val::Px(32.0F))
+    .with_width(Val::Px(120.0F))
+    .with_height(Val::Px(48.0F)),
+  )
+
+  ui_layout_system(world)
+
+  inspect(
+    try! (world.get_by_key(ghost_root, ecs_key_ui_layout) is None),
+    content="true",
+  )
+  let rect = try! world.get_by_key(child, ecs_key_ui_layout).unwrap().rect
+  inspect(rect.min.x == 24.0F && rect.min.y == 32.0F, content="true")
+  inspect(rect.max.x == 144.0F && rect.max.y == 80.0F, content="true")
+}
+
+///|
 test "ui: unparented node acts as implicit root for target camera propagation" {
   let world = @ecs.World::new()
   let tick = seed_ui_context_for_implicit_root_test(world)
@@ -120,6 +155,55 @@ test "ui: unparented node acts as implicit root for target camera propagation" {
   inspect(
     try! (world
     .get_by_key(root, ecs_key_computed_ui_target_camera)
+    .unwrap()
+    .get() ==
+    Some(target_camera)),
+    content="true",
+  )
+  inspect(
+    try! (world
+    .get_by_key(child, ecs_key_computed_ui_target_camera)
+    .unwrap()
+    .get() ==
+    Some(target_camera)),
+    content="true",
+  )
+}
+
+///|
+test "ui: unparented ghost node acts as implicit root for target camera propagation" {
+  let world = @ecs.World::new()
+  let tick = seed_ui_context_for_implicit_root_test(world)
+  ignore(tick)
+  get_ui_scale_resource(world).insert(UiScale::new(2.0F))
+
+  let target_camera = world.spawn_empty()
+  try! world.set_by_key(
+    target_camera,
+    @sprite.ecs_key_camera,
+    implicit_root_camera_with_target_info(0, @math.IVec2::new(640, 360), 2.0F),
+  )
+
+  let ghost_root = world.spawn_empty()
+  try! world.set_by_key(ghost_root, ecs_key_ghost_node, GhostNode::default())
+  try! world.set_by_key(
+    ghost_root,
+    ecs_key_ui_target_camera,
+    UiTargetCamera::new(target_camera),
+  )
+
+  let child = world.spawn_empty()
+  try! world.set_by_key(
+    child,
+    @hierarchy.ecs_key_parent,
+    @hierarchy.Parent::new(ghost_root),
+  )
+
+  ui_propagate_target_cameras_system(world)
+
+  inspect(
+    try! (world
+    .get_by_key(ghost_root, ecs_key_computed_ui_target_camera)
     .unwrap()
     .get() ==
     Some(target_camera)),
