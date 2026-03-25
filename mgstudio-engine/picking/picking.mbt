@@ -18,11 +18,8 @@
 /// TODO: Implement hit-testing and event generation.
 
 ///|
-pub type PointerId = Int
-
-///|
 pub struct PointerInput {
-  pointer : PointerId
+  pointer : @pointer_events.PointerId
   window_position : @math.Vec2?
   down : Bool
   just_pressed : Bool
@@ -31,7 +28,7 @@ pub struct PointerInput {
 
 ///|
 pub fn PointerInput::new(
-  pointer : PointerId,
+  pointer : @pointer_events.PointerId,
   window_position : @math.Vec2?,
   down : Bool,
   just_pressed : Bool,
@@ -94,7 +91,7 @@ pub fn PickingHits::from_arrays(
 ///|
 fn PickingHits::ensure_capacity(
   self : Ref[PickingHits],
-  pointer : PointerId,
+  pointer : @pointer_events.PointerId,
 ) -> Unit {
   if pointer < 0 {
     return
@@ -111,7 +108,7 @@ fn PickingHits::ensure_capacity(
 ///|
 pub fn PickingHits::set_ui(
   self : Ref[PickingHits],
-  pointer : PointerId,
+  pointer : @pointer_events.PointerId,
   entity : @core.Entity?,
 ) -> Unit {
   PickingHits::ensure_capacity(self, pointer)
@@ -121,7 +118,7 @@ pub fn PickingHits::set_ui(
 ///|
 pub fn PickingHits::ui(
   self : PickingHits,
-  pointer : PointerId,
+  pointer : @pointer_events.PointerId,
 ) -> @core.Entity? {
   if pointer < 0 || pointer >= self.ui.length() {
     None
@@ -133,7 +130,7 @@ pub fn PickingHits::ui(
 ///|
 pub fn PickingHits::set_sprite2d(
   self : Ref[PickingHits],
-  pointer : PointerId,
+  pointer : @pointer_events.PointerId,
   entity : @core.Entity?,
 ) -> Unit {
   PickingHits::ensure_capacity(self, pointer)
@@ -143,7 +140,7 @@ pub fn PickingHits::set_sprite2d(
 ///|
 pub fn PickingHits::sprite2d(
   self : PickingHits,
-  pointer : PointerId,
+  pointer : @pointer_events.PointerId,
 ) -> @core.Entity? {
   if pointer < 0 || pointer >= self.sprite2d.length() {
     None
@@ -160,60 +157,6 @@ pub(all) enum PointerButton {
 } derive(Eq, Show)
 
 ///|
-pub(all) enum PointerEventKind {
-  Move
-  Enter
-  Leave
-  Down
-  Up
-  Click
-} derive(Eq, Show, ToJson, FromJson)
-
-///|
-pub struct PointerEvent {
-  pointer : PointerId
-  kind : PointerEventKind
-  position : @math.Vec2
-  target : @core.Entity?
-} derive(ToJson, FromJson)
-
-///|
-pub fn PointerEvent::new(
-  pointer : PointerId,
-  kind : PointerEventKind,
-  position : @math.Vec2,
-  target? : @core.Entity? = None,
-) -> PointerEvent {
-  PointerEvent::{ pointer, kind, position, target }
-}
-
-///|
-/// Per-frame picking events produced by picking systems and consumed by UI.
-pub struct PickingEvents {
-  mut events : Array[PointerEvent]
-} derive(ToJson, FromJson)
-
-///|
-pub fn PickingEvents::default() -> PickingEvents {
-  PickingEvents::{ events: [] }
-}
-
-///|
-pub fn PickingEvents::push(
-  self : Ref[PickingEvents],
-  event : PointerEvent,
-) -> Unit {
-  self.val.events = self.val.events + [event]
-}
-
-///|
-pub fn PickingEvents::drain(self : Ref[PickingEvents]) -> Array[PointerEvent] {
-  let out = self.val.events
-  self.val.events = []
-  out
-}
-
-///|
 pub impl @app.Resource for PointerInputs with resource() {
   ecs_res_key_pointer_inputs
 }
@@ -221,11 +164,6 @@ pub impl @app.Resource for PointerInputs with resource() {
 ///|
 pub impl @app.Resource for PickingHits with resource() {
   ecs_res_key_picking_hits
-}
-
-///|
-pub impl @app.Resource for PickingEvents with resource() {
-  ecs_res_key_picking_events
 }
 
 ///|
@@ -244,7 +182,7 @@ pub fn PickingState::default() -> PickingState {
 ///|
 pub fn PickingState::hovered(
   self : PickingState,
-  pointer : PointerId,
+  pointer : @pointer_events.PointerId,
 ) -> @core.Entity? {
   if pointer < 0 || pointer >= self.hovered.length() {
     None
@@ -256,7 +194,7 @@ pub fn PickingState::hovered(
 ///|
 pub fn PickingState::pressed(
   self : PickingState,
-  pointer : PointerId,
+  pointer : @pointer_events.PointerId,
 ) -> @core.Entity? {
   if pointer < 0 || pointer >= self.pressed.length() {
     None
@@ -268,7 +206,7 @@ pub fn PickingState::pressed(
 ///|
 pub fn PickingState::last_position(
   self : PickingState,
-  pointer : PointerId,
+  pointer : @pointer_events.PointerId,
 ) -> @math.Vec2? {
   if pointer < 0 || pointer >= self.last_position.length() {
     None
@@ -280,7 +218,7 @@ pub fn PickingState::last_position(
 ///|
 fn PickingState::ensure_capacity(
   self : Ref[PickingState],
-  pointer : PointerId,
+  pointer : @pointer_events.PointerId,
 ) -> Unit {
   if pointer < 0 {
     return
@@ -300,7 +238,7 @@ fn PickingState::ensure_capacity(
 ///|
 pub fn PickingState::set_pressed(
   self : Ref[PickingState],
-  pointer : PointerId,
+  pointer : @pointer_events.PointerId,
   pressed : @core.Entity?,
 ) -> Unit {
   PickingState::ensure_capacity(self, pointer)
@@ -310,7 +248,7 @@ pub fn PickingState::set_pressed(
 ///|
 pub fn PickingState::set_last_position(
   self : Ref[PickingState],
-  pointer : PointerId,
+  pointer : @pointer_events.PointerId,
   pos : @math.Vec2?,
 ) -> Unit {
   PickingState::ensure_capacity(self, pointer)
@@ -320,7 +258,7 @@ pub fn PickingState::set_last_position(
 ///|
 pub fn PickingState::set_hovered(
   self : Ref[PickingState],
-  pointer : PointerId,
+  pointer : @pointer_events.PointerId,
   hovered : @core.Entity?,
 ) -> Unit {
   PickingState::ensure_capacity(self, pointer)
@@ -352,7 +290,7 @@ pub let picking_set_events : @app.SystemSet = @app.system_set(
 
 ///|
 pub fn picking_clear_system(world : @ecs.World) -> Unit {
-  get_picking_events_resource(world).insert(PickingEvents::default())
+  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
 }
 
 ///|
@@ -385,7 +323,7 @@ pub fn picking_collect_mouse_system(world : @ecs.World) -> Unit {
   guard res.get() is Some(inputs_value) else { return }
   let inputs = Ref::new(inputs_value)
   PointerInputs::clear(inputs)
-  let pointer : PointerId = 0
+  let pointer : @pointer_events.PointerId = 0
   let window_position = @input.mouse_position()
   let down = @input.mouse_button_pressed(@window.MouseButton::Left)
   let just_pressed = @input.mouse_button_just_pressed(@window.MouseButton::Left)
@@ -681,7 +619,7 @@ pub fn picking_ui_hit_test_system(world : @ecs.World) -> Unit {
 ///|
 fn picking_primary_hit(
   hits : PickingHits,
-  pointer : PointerId,
+  pointer : @pointer_events.PointerId,
 ) -> @core.Entity? {
   match PickingHits::ui(hits, pointer) {
     Some(e) => Some(e)
@@ -712,7 +650,7 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
     state_res.insert(state.val)
     return
   }
-  let events_res = get_picking_events_resource(world)
+  let events_res = @app.get_picking_events_resource(world)
   guard events_res.get() is Some(events_value) else {
     state_res.insert(state.val)
     return
@@ -858,11 +796,11 @@ pub fn picking_apply_a11y_actions_system(world : @ecs.World) -> Unit {
         } else {
           interaction_store.insert(entity, @ui.Interaction::Pressed)
         }
-        PickingEvents::push(
+        @app.PickingEvents::push(
           events,
-          PointerEvent::new(
+          @pointer_events.PointerEvent::new(
             0,
-            PointerEventKind::Click,
+            @pointer_events.PointerEventKind::Click,
             @math.Vec2::new(0.0F, 0.0F),
             target=Some(entity),
           ),
@@ -897,7 +835,7 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
   let hits_res = get_picking_hits_resource(world)
   guard inputs_res.get() is Some(inputs0) else { return }
   guard hits_res.get() is Some(hits0) else { return }
-  let events_res = get_picking_events_resource(world)
+  let events_res = @app.get_picking_events_resource(world)
   guard events_res.get() is Some(events_value) else { return }
   let events = Ref::new(events_value)
   let state_res = get_picking_state_resource(world)
@@ -914,22 +852,22 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
         match PickingState::last_position(picking_state.val, pointer_id) {
           Some(prev) =>
             if prev.x != pos.x || prev.y != pos.y {
-              PickingEvents::push(
+              @app.PickingEvents::push(
                 events,
-                PointerEvent::new(
+                @pointer_events.PointerEvent::new(
                   pointer_id,
-                  PointerEventKind::Move,
+                  @pointer_events.PointerEventKind::Move,
                   pos,
                   target=hit_top,
                 ),
               )
             }
           None =>
-            PickingEvents::push(
+            @app.PickingEvents::push(
               events,
-              PointerEvent::new(
+              @pointer_events.PointerEvent::new(
                 pointer_id,
-                PointerEventKind::Move,
+                @pointer_events.PointerEventKind::Move,
                 pos,
                 target=hit_top,
               ),
@@ -949,11 +887,11 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
       }
       match prev_hovered {
         Some(prev_e) =>
-          PickingEvents::push(
+          @app.PickingEvents::push(
             events,
-            PointerEvent::new(
+            @pointer_events.PointerEvent::new(
               pointer_id,
-              PointerEventKind::Leave,
+              @pointer_events.PointerEventKind::Leave,
               pos,
               target=Some(prev_e),
             ),
@@ -962,11 +900,11 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
       }
       match hit_top {
         Some(next_e) =>
-          PickingEvents::push(
+          @app.PickingEvents::push(
             events,
-            PointerEvent::new(
+            @pointer_events.PointerEvent::new(
               pointer_id,
-              PointerEventKind::Enter,
+              @pointer_events.PointerEventKind::Enter,
               pos,
               target=Some(next_e),
             ),
@@ -979,11 +917,11 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
     // Down / up / click.
     if input.just_pressed {
       if pos_opt is Some(pos) && hit_top is Some(target) {
-        PickingEvents::push(
+        @app.PickingEvents::push(
           events,
-          PointerEvent::new(
+          @pointer_events.PointerEvent::new(
             pointer_id,
-            PointerEventKind::Down,
+            @pointer_events.PointerEventKind::Down,
             pos,
             target=Some(target),
           ),
@@ -998,22 +936,22 @@ pub fn picking_generate_events_system(world : @ecs.World) -> Unit {
       }
       match PickingState::pressed(picking_state.val, pointer_id) {
         Some(pressed_entity) => {
-          PickingEvents::push(
+          @app.PickingEvents::push(
             events,
-            PointerEvent::new(
+            @pointer_events.PointerEvent::new(
               pointer_id,
-              PointerEventKind::Up,
+              @pointer_events.PointerEventKind::Up,
               pos,
               target=Some(pressed_entity),
             ),
           )
           if hit_top is Some(hit_entity) &&
             picking_entity_eq(hit_entity, pressed_entity) {
-            PickingEvents::push(
+            @app.PickingEvents::push(
               events,
-              PointerEvent::new(
+              @pointer_events.PointerEvent::new(
                 pointer_id,
-                PointerEventKind::Click,
+                @pointer_events.PointerEventKind::Click,
                 pos,
                 target=Some(pressed_entity),
               ),
@@ -1045,11 +983,6 @@ pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.system(ensure_pointer_inputs_system).in_set(picking_set_input),
   )
   .add_pre_update_system_config(
-    @app.system(ensure_pointer_observer_registry_system).in_set(
-      picking_set_input,
-    ),
-  )
-  .add_pre_update_system_config(
     @app.system(picking_collect_mouse_system).in_set(picking_set_input),
   )
   .add_pre_update_system_config(
@@ -1065,7 +998,9 @@ pub fn picking_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
     @app.system(picking_generate_events_system).in_set(picking_set_events),
   )
   .add_pre_update_system_config(
-    @app.system(dispatch_pointer_observers_system).after(picking_set_events),
+    @app.system(@app.dispatch_pointer_observers_system).after(
+      picking_set_events,
+    ),
   )
   .configure_set(@app.PreUpdate, picking_set_input, before=[picking_set_hits])
   .configure_set(

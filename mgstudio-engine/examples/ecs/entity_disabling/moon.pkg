@@ -5,7 +5,7 @@ import {
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/input",
   "Milky2018/mgstudio/mesh",
-  "Milky2018/mgstudio/picking",
+  "Milky2018/mgstudio/pointer_events",
   "Milky2018/mgstudio/sprite",
   "Milky2018/mgstudio/text",
   "Milky2018/mgstudio/transform",

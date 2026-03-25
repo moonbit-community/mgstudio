@@ -55,7 +55,7 @@ fn main {
         capture_failing_system_error,
       ),
     )
-  app = @picking.add_pointer_observer(app, fallible_observer)
+  app = app.add_pointer_observer(fallible_observer)
   app.run()
 }
 
@@ -104,9 +104,7 @@ fn setup(
 }
 
 ///|
-fn fallible_observer(
-  pointer : @picking.OnPointer[@picking.PointerMove],
-) -> Unit raise {
+fn fallible_observer(pointer : @app.OnPointer[@app.PointerMove]) -> Unit raise {
   guard pointer.target() is Some(entity) else { return }
   guard @app.current_world() is Some(world) else { return }
   let query = world.query2_mut_mut_filtered(

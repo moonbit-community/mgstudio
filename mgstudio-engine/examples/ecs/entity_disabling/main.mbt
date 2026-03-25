@@ -156,11 +156,11 @@ fn display_instructions(commands : @app.Commands) -> Unit {
 ///|
 fn disable_entities_on_click(
   commands : @app.Commands,
-  click_events : @app.ResMut[@picking.PickingEvents],
+  click_events : @app.ResMut[@app.PickingEvents],
   valid_query : @ecs.Query1[DisableOnClick],
 ) -> Unit {
-  for event in @picking.PickingEvents::drain(click_events.get_ref()) {
-    if event.kind != @picking.PointerEventKind::Click {
+  for event in @app.PickingEvents::drain(click_events.get_ref()) {
+    if event.kind != @pointer_events.PointerEventKind::Click {
       continue
     }
     if event.target is Some(target) && (try! valid_query.get(target)) is Some(_) {

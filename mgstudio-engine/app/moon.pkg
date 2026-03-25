@@ -3,6 +3,8 @@ import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
   "Milky2018/mgstudio/hierarchy",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/pointer_events",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
   "tonyfettes/any",

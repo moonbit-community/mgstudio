@@ -4,6 +4,8 @@ package "Milky2018/mgstudio/app"
 import {
   "Milky2018/mgstudio/core",
   "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/math",
+  "Milky2018/mgstudio/pointer_events",
   "moonbitlang/core/hashmap",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
@@ -36,6 +38,8 @@ pub fn current_world() -> @ecs.World?
 
 pub fn default_error_handler(@ecs.World) -> (Error, ErrorContext) -> Unit
 
+pub fn dispatch_pointer_observers_system(@ecs.World) -> Unit
+
 pub let ecs_key_despawn_on_enter : @ecs.ComponentKey[DespawnOnEnter]
 
 pub let ecs_key_despawn_on_exit : @ecs.ComponentKey[DespawnOnExit]
@@ -55,6 +59,8 @@ pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam
 pub fn[W, P1 : SystemParam, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam, P5 : SystemParam, P6 : SystemParam] fallible_system_param6((P1, P2, P3, P4, P5, P6) -> Unit raise) -> (W) -> Unit
 
 pub fn fixed_main_schedule_order_resource_key() -> @ecs.ResourceKey[FixedMainScheduleOrder]
+
+pub fn get_picking_events_resource(@ecs.World) -> @ecs.ResourceAccess[PickingEvents]
 
 pub fn[S : States] in_state(S) -> (@ecs.World) -> Bool
 
@@ -280,6 +286,10 @@ pub fn[S : States] App::add_on_transition_system_config(Self[@ecs.World], S, S, 
 pub fn[W] App::add_plugin(Self[W], (Self[W]) -> Self[W]) -> Self[W]
 pub fn[W] App::add_plugin_group(Self[W], () -> PluginGroupBuilder[W]) -> Self[W]
 pub fn[W] App::add_plugins(Self[W], Array[(Self[W]) -> Self[W]]) -> Self[W]
+pub fn[K : PointerObserverKind] App::add_pointer_observer(Self[@ecs.World], (OnPointer[K]) -> Unit raise) -> Self[@ecs.World]
+pub fn[K : PointerObserverKind, P2 : SystemParam] App::add_pointer_observer2(Self[@ecs.World], (OnPointer[K], P2) -> Unit raise) -> Self[@ecs.World]
+pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] App::add_pointer_observer3(Self[@ecs.World], (OnPointer[K], P2, P3) -> Unit raise) -> Self[@ecs.World]
+pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] App::add_pointer_observer4(Self[@ecs.World], (OnPointer[K], P2, P3, P4) -> Unit raise) -> Self[@ecs.World]
 pub fn[W] App::add_post_startup_system(Self[W], (W) -> Unit) -> Self[W]
 pub fn[W] App::add_post_startup_system_config(Self[W], SystemConfig[W]) -> Self[W]
 pub fn[W, P : SystemParam] App::add_post_startup_system_param(Self[W], (P) -> Unit) -> Self[W]
@@ -579,6 +589,15 @@ pub fn[S] OnExit::state(Self[S]) -> S
 pub impl[S : Eq] Eq for OnExit[S]
 pub impl[S : Show] Show for OnExit[S]
 
+pub struct OnPointer[K] {
+  event : @pointer_events.PointerEvent
+}
+pub fn[K] OnPointer::event(Self[K]) -> @pointer_events.PointerEvent
+pub fn[K] OnPointer::pointer(Self[K]) -> Int
+pub fn[K] OnPointer::position(Self[K]) -> @math.Vec2
+pub fn[K] OnPointer::target(Self[K]) -> @core.Entity?
+pub impl[K : PointerObserverKind] SystemParam for OnPointer[K]
+
 pub struct OnReenter[S] {
   state : S
 }
@@ -616,6 +635,16 @@ pub fn[P0, P1] ParamSet2::p0(Self[P0, P1]) -> P0
 pub fn[P0, P1] ParamSet2::p1(Self[P0, P1]) -> P1
 pub impl[P0 : SystemParam, P1 : SystemParam] SystemParam for ParamSet2[P0, P1]
 
+pub struct PickingEvents {
+  mut events : Array[@pointer_events.PointerEvent]
+}
+pub fn PickingEvents::default() -> Self
+pub fn PickingEvents::drain(@ref.Ref[Self]) -> Array[@pointer_events.PointerEvent]
+pub fn PickingEvents::push(@ref.Ref[Self], @pointer_events.PointerEvent) -> Unit
+pub impl Resource for PickingEvents
+pub impl ToJson for PickingEvents
+pub impl @json.FromJson for PickingEvents
+
 pub struct PluginGroupBuilder[W] {
   group_name : String
   plugins : Array[PluginGroupEntry[W]]
@@ -640,6 +669,30 @@ pub struct PluginGroupEntry[W] {
   mut plugin : (App[W]) -> App[W]
   mut enabled : Bool
 }
+
+pub struct PointerClick {
+}
+pub impl PointerObserverKind for PointerClick
+
+pub struct PointerDown {
+}
+pub impl PointerObserverKind for PointerDown
+
+pub struct PointerEnter {
+}
+pub impl PointerObserverKind for PointerEnter
+
+pub struct PointerLeave {
+}
+pub impl PointerObserverKind for PointerLeave
+
+pub struct PointerMove {
+}
+pub impl PointerObserverKind for PointerMove
+
+pub struct PointerUp {
+}
+pub impl PointerObserverKind for PointerUp
 
 pub struct PopulatedQuery2MutMut[A, B] {
   query : @ecs.Query2MutMutFiltered[A, B, @ecs.All]
@@ -826,6 +879,10 @@ pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : System
 pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_observer4(Self[@ecs.World], (@ecs.On[E, C], P2, P3, P4) -> Unit) -> Self[@ecs.World]
 pub fn[E : @ecs.ObserverEvent, C : @ecs.Component, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_observer4_fallible(Self[@ecs.World], (@ecs.On[E, C], P2, P3, P4) -> Unit raise) -> Self[@ecs.World]
 pub fn[E : @ecs.ObserverEvent, C : @ecs.Component] SubApp::add_observer_fallible(Self[@ecs.World], (@ecs.On[E, C]) -> Unit raise) -> Self[@ecs.World]
+pub fn[K : PointerObserverKind] SubApp::add_pointer_observer(Self[@ecs.World], (OnPointer[K]) -> Unit raise) -> Self[@ecs.World]
+pub fn[K : PointerObserverKind, P2 : SystemParam] SubApp::add_pointer_observer2(Self[@ecs.World], (OnPointer[K], P2) -> Unit raise) -> Self[@ecs.World]
+pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam] SubApp::add_pointer_observer3(Self[@ecs.World], (OnPointer[K], P2, P3) -> Unit raise) -> Self[@ecs.World]
+pub fn[K : PointerObserverKind, P2 : SystemParam, P3 : SystemParam, P4 : SystemParam] SubApp::add_pointer_observer4(Self[@ecs.World], (OnPointer[K], P2, P3, P4) -> Unit raise) -> Self[@ecs.World]
 pub fn[W] SubApp::add_systems(Self[W], ScheduleStage, SystemConfig[W]) -> Self[W]
 pub fn[W] SubApp::configure_set(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
 pub fn[W] SubApp::configure_sets(Self[W], ScheduleStage, String, before? : Array[String], after? : Array[String]) -> Self[W]
@@ -953,6 +1010,11 @@ pub impl[A : FromWorld, B : FromWorld, C : FromWorld] FromWorld for (A, B, C)
 pub(open) trait PluginReplacement {
   replacement_id(Self) -> String
   world_plugin(Self) -> (App[@ecs.World]) -> App[@ecs.World]
+}
+
+pub(open) trait PointerObserverKind {
+  event_kind() -> @pointer_events.PointerEventKind
+  source_label() -> String
 }
 
 pub(open) trait Resource {

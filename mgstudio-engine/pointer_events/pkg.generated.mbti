@@ -1,0 +1,42 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/pointer_events"
+
+import {
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/math",
+  "moonbitlang/core/json",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct PointerEvent {
+  pointer : Int
+  kind : PointerEventKind
+  position : @math.Vec2
+  target : @core.Entity?
+}
+pub fn PointerEvent::new(Int, PointerEventKind, @math.Vec2, target? : @core.Entity?) -> Self
+pub impl ToJson for PointerEvent
+pub impl @json.FromJson for PointerEvent
+
+pub(all) enum PointerEventKind {
+  Move
+  Enter
+  Leave
+  Down
+  Up
+  Click
+}
+pub impl Eq for PointerEventKind
+pub impl Show for PointerEventKind
+pub impl ToJson for PointerEventKind
+pub impl @json.FromJson for PointerEventKind
+
+// Type aliases
+pub type PointerId = Int
+
+// Traits
+

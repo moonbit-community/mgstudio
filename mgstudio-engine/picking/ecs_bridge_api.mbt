@@ -19,7 +19,7 @@ pub let ecs_components : Array[String] = []
 ///|
 /// ECS resource bridge types.
 pub let ecs_resources : Array[String] = [
-  "PickingHits", "PickingState", "PickingEvents", "PointerInputs",
+  "PickingHits", "PickingState", "PointerInputs",
 ]
 
 ///|
@@ -30,11 +30,6 @@ pub let ecs_res_key_picking_hits : @ecs.ResourceKey[PickingHits] = @ecs.register
 ///|
 pub let ecs_res_key_picking_state : @ecs.ResourceKey[PickingState] = @ecs.register_resource(
   debug_name="picking.picking_state",
-)
-
-///|
-pub let ecs_res_key_picking_events : @ecs.ResourceKey[PickingEvents] = @ecs.register_resource(
-  debug_name="picking.picking_events",
 )
 
 ///|
@@ -54,13 +49,6 @@ pub fn get_picking_state_resource(
   world : @ecs.World,
 ) -> @ecs.ResourceAccess[PickingState] {
   world.resource(ecs_res_key_picking_state)
-}
-
-///|
-pub fn get_picking_events_resource(
-  world : @ecs.World,
-) -> @ecs.ResourceAccess[PickingEvents] {
-  world.resource(ecs_res_key_picking_events)
 }
 
 ///|

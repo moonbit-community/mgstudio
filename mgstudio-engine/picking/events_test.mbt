@@ -13,11 +13,11 @@
 // limitations under the License.
 
 ///|
-fn drain_events(world : @ecs.World) -> Array[PointerEvent] {
-  let events_res = get_picking_events_resource(world)
+fn drain_events(world : @ecs.World) -> Array[@pointer_events.PointerEvent] {
+  let events_res = @app.get_picking_events_resource(world)
   guard events_res.get() is Some(events_value) else { return [] }
   let events = Ref::new(events_value)
-  let out = PickingEvents::drain(events)
+  let out = @app.PickingEvents::drain(events)
   events_res.insert(events.val)
   out
 }
@@ -40,7 +40,7 @@ test "picking: generates enter/leave and click events (single pointer)" {
   let tick = world.advance_sequence()
   ignore(tick)
   get_picking_state_resource(world).insert(PickingState::default())
-  get_picking_events_resource(world).insert(PickingEvents::default())
+  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
   get_pointer_inputs_resource(world).insert(PointerInputs::default())
   get_picking_hits_resource(world).insert(PickingHits::default())
   let e1 = @core.Entity::new(1, 0)
@@ -58,8 +58,11 @@ test "picking: generates enter/leave and click events (single pointer)" {
   )
   let ev0 = drain_events(world)
   inspect(ev0.length(), content="2")
-  inspect(ev0[0].kind == PointerEventKind::Move, content="true")
-  inspect(ev0[1].kind == PointerEventKind::Enter, content="true")
+  inspect(ev0[0].kind == @pointer_events.PointerEventKind::Move, content="true")
+  inspect(
+    ev0[1].kind == @pointer_events.PointerEventKind::Enter,
+    content="true",
+  )
   inspect(ev0[1].target.unwrap().id == e1.id, content="true")
 
   // Frame 2: move (same hit).
@@ -72,7 +75,7 @@ test "picking: generates enter/leave and click events (single pointer)" {
   )
   let ev1 = drain_events(world)
   inspect(ev1.length(), content="1")
-  inspect(ev1[0].kind == PointerEventKind::Move, content="true")
+  inspect(ev1[0].kind == @pointer_events.PointerEventKind::Move, content="true")
 
   // Frame 3: switch hover to e2.
   set_frame(
@@ -84,9 +87,15 @@ test "picking: generates enter/leave and click events (single pointer)" {
   )
   let ev2 = drain_events(world)
   inspect(ev2.length(), content="2")
-  inspect(ev2[0].kind == PointerEventKind::Leave, content="true")
+  inspect(
+    ev2[0].kind == @pointer_events.PointerEventKind::Leave,
+    content="true",
+  )
   inspect(ev2[0].target.unwrap().id == e1.id, content="true")
-  inspect(ev2[1].kind == PointerEventKind::Enter, content="true")
+  inspect(
+    ev2[1].kind == @pointer_events.PointerEventKind::Enter,
+    content="true",
+  )
   inspect(ev2[1].target.unwrap().id == e2.id, content="true")
 
   // Frame 4: press e2.
@@ -99,7 +108,7 @@ test "picking: generates enter/leave and click events (single pointer)" {
   )
   let ev3 = drain_events(world)
   inspect(ev3.length(), content="1")
-  inspect(ev3[0].kind == PointerEventKind::Down, content="true")
+  inspect(ev3[0].kind == @pointer_events.PointerEventKind::Down, content="true")
   inspect(ev3[0].target.unwrap().id == e2.id, content="true")
 
   // Frame 5: release on e2 (click).
@@ -112,8 +121,11 @@ test "picking: generates enter/leave and click events (single pointer)" {
   )
   let ev4 = drain_events(world)
   inspect(ev4.length(), content="2")
-  inspect(ev4[0].kind == PointerEventKind::Up, content="true")
-  inspect(ev4[1].kind == PointerEventKind::Click, content="true")
+  inspect(ev4[0].kind == @pointer_events.PointerEventKind::Up, content="true")
+  inspect(
+    ev4[1].kind == @pointer_events.PointerEventKind::Click,
+    content="true",
+  )
 }
 
 ///|
@@ -122,7 +134,7 @@ test "picking: handles multiple pointers independently" {
   let tick = world.advance_sequence()
   ignore(tick)
   get_picking_state_resource(world).insert(PickingState::default())
-  get_picking_events_resource(world).insert(PickingEvents::default())
+  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
   get_pointer_inputs_resource(world).insert(PointerInputs::default())
   get_picking_hits_resource(world).insert(PickingHits::default())
   let e1 = @core.Entity::new(1, 0)
@@ -143,8 +155,14 @@ test "picking: handles multiple pointers independently" {
   inspect(events[1].pointer == 0, content="true")
   inspect(events[2].pointer == 1, content="true")
   inspect(events[3].pointer == 1, content="true")
-  inspect(events[1].kind == PointerEventKind::Enter, content="true")
-  inspect(events[3].kind == PointerEventKind::Enter, content="true")
+  inspect(
+    events[1].kind == @pointer_events.PointerEventKind::Enter,
+    content="true",
+  )
+  inspect(
+    events[3].kind == @pointer_events.PointerEventKind::Enter,
+    content="true",
+  )
 }
 
 ///|
@@ -153,7 +171,7 @@ test "picking: a11y focus action maps to hovered interaction" {
   let tick = world.advance_sequence()
   ignore(tick)
   @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default())
-  get_picking_events_resource(world).insert(PickingEvents::default())
+  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
   let entity = world.spawn_empty()
   let packed = entity.id * 65536 + entity.generation + 1
   let req = @moon_accesskit.ActionRequest::new(
@@ -176,7 +194,7 @@ test "picking: a11y scroll actions update ScrollPosition without click events" {
   let tick = world.advance_sequence()
   ignore(tick)
   @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default())
-  get_picking_events_resource(world).insert(PickingEvents::default())
+  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
   let entity = world.spawn_empty()
   @ui.get_node_store(world).insert(
     entity,
@@ -244,7 +262,7 @@ test "picking: a11y set-value action updates Text content" {
   let tick = world.advance_sequence()
   ignore(tick)
   @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default())
-  get_picking_events_resource(world).insert(PickingEvents::default())
+  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
   let entity = world.spawn_empty()
   world.component(@text.ecs_key_text).insert(entity, @text.Text::new("Old"))
   let packed = entity.id * 65536 + entity.generation + 1
@@ -274,7 +292,7 @@ test "picking: ignores a11y actions targeting non-alive entities" {
   let tick = world.advance_sequence()
   ignore(tick)
   @a11y.get_a11y_state_resource(world).insert(@a11y.A11yState::default())
-  get_picking_events_resource(world).insert(PickingEvents::default())
+  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
   let dead_entity = @core.Entity::new(999, 1)
   let packed = dead_entity.id * 65536 + dead_entity.generation + 1
   let req = @moon_accesskit.ActionRequest::new(
@@ -303,19 +321,23 @@ test "picking: ignores a11y actions targeting non-alive entities" {
 ///|
 test "picking: pointer observers dispatch generated move enter and leave events" {
   let seen : Array[String] = []
-  let mut app = add_pointer_observer(@app.App::new(@ecs.World::new()), fn(
-    pointer : OnPointer[PointerMove],
+  let mut app = @app.App::new(@ecs.World::new()).add_pointer_observer(fn(
+    pointer : @app.OnPointer[@app.PointerMove],
   ) raise {
     if pointer.target() is Some(target) {
       seen.push("move:" + target.id.to_string())
     }
   })
-  app = add_pointer_observer(app, fn(pointer : OnPointer[PointerEnter]) raise {
+  app = app.add_pointer_observer(fn(
+    pointer : @app.OnPointer[@app.PointerEnter],
+  ) raise {
     if pointer.target() is Some(target) {
       seen.push("enter:" + target.id.to_string())
     }
   })
-  app = add_pointer_observer(app, fn(pointer : OnPointer[PointerLeave]) raise {
+  app = app.add_pointer_observer(fn(
+    pointer : @app.OnPointer[@app.PointerLeave],
+  ) raise {
     if pointer.target() is Some(target) {
       seen.push("leave:" + target.id.to_string())
     }
@@ -324,7 +346,7 @@ test "picking: pointer observers dispatch generated move enter and leave events"
   let tick = world.advance_sequence()
   ignore(tick)
   get_picking_state_resource(world).insert(PickingState::default())
-  get_picking_events_resource(world).insert(PickingEvents::default())
+  @app.get_picking_events_resource(world).insert(@app.PickingEvents::default())
   get_pointer_inputs_resource(world).insert(PointerInputs::default())
   get_picking_hits_resource(world).insert(PickingHits::default())
 
@@ -339,7 +361,7 @@ test "picking: pointer observers dispatch generated move enter and leave events"
     ]),
     PickingHits::from_arrays([Some(e1)], [None]),
   )
-  dispatch_pointer_observers_system(world)
+  @app.dispatch_pointer_observers_system(world)
 
   set_frame(
     world,
@@ -348,7 +370,7 @@ test "picking: pointer observers dispatch generated move enter and leave events"
     ]),
     PickingHits::from_arrays([Some(e2)], [None]),
   )
-  dispatch_pointer_observers_system(world)
+  @app.dispatch_pointer_observers_system(world)
 
   inspect(seen, content="[\"move:1\", \"enter:1\", \"leave:1\", \"enter:2\"]")
 }
