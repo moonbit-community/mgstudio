@@ -256,7 +256,7 @@ fn run_state_transition_hooks(
   for config_ref in matched_refs {
     matched_configs.push(config_ref.val)
   }
-  run_systems(world, matched_configs, [])
+  run_systems(world, matched_configs, [], current_schedule_stage())
   for i in 0..<matched_refs.length() {
     matched_refs[i].val = matched_configs[i]
   }

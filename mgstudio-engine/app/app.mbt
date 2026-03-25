@@ -387,6 +387,7 @@ pub fn[W] fallible_system(system : FallibleSystemFn[W]) -> SystemConfig[W] {
   let wrapped = fn(world : W) { run_fallible_system_body(() => system(world)) }
   SystemConfig::{
     system: wrapped,
+    name: None,
     error_handler: None,
     run_ifs: [],
     run_if_states: [],
@@ -1052,6 +1053,7 @@ pub impl[T : Resource] SystemParam for ResMut[T] with store(self, state) {
 ///|
 pub struct SystemConfig[W] {
   system : SystemFn[W]
+  name : String?
   error_handler : ErrorHandler?
   run_ifs : Array[StatefulRunConditionFn[W]]
   run_if_states : Array[Ref[Json]]
@@ -1066,6 +1068,7 @@ pub struct SystemConfig[W] {
 pub fn[W] system(system : SystemFn[W]) -> SystemConfig[W] {
   SystemConfig::{
     system,
+    name: None,
     error_handler: None,
     run_ifs: [],
     run_if_states: [],
@@ -1075,6 +1078,14 @@ pub fn[W] system(system : SystemFn[W]) -> SystemConfig[W] {
     run_if_last_run_sequences: [],
     last_run_sequence: 0,
   }
+}
+
+///|
+pub fn[W] SystemConfig::named(
+  self : SystemConfig[W],
+  name : String,
+) -> SystemConfig[W] {
+  SystemConfig::{ ..self, name: Some(name) }
 }
 
 ///|
@@ -2774,6 +2785,7 @@ fn run_systems(
   world : @ecs.World,
   systems : Array[SystemConfig[@ecs.World]],
   set_edges : Array[(SystemSet, SystemSet)],
+  stage : ScheduleStage?,
 ) -> Unit {
   current_system_sequence_ref.val = None
   current_world_ref.val = None
@@ -2887,6 +2899,7 @@ fn run_systems(
       topo.push(i)
     }
   }
+  let execution_order : Array[Int] = []
   let systems_by_set : Array[Array[Int]] = []
   for _ in 0..<set_count {
     systems_by_set.push([])
@@ -2897,95 +2910,115 @@ fn run_systems(
   }
   for set_i in topo {
     for system_i in systems_by_set[set_i] {
-      let cfg = systems[system_i]
-      let mut should_skip = false
-      for cond_i in 0..<cfg.run_ifs.length() {
-        let cond = cfg.run_ifs[cond_i]
-        let cond_this_run = world.advance_sequence()
-        let cond_ticks = @core.SystemSequence::new(
-          cfg.run_if_last_run_sequences[cond_i],
-          cond_this_run,
-        )
-        let cond_ctx = world.get_sequence_context()
-        cond_ctx.set(cond_ticks)
-        world.set_sequence_context(cond_ctx)
-        let prev_world = current_world_ref.val
-        current_world_ref.val = Some(world)
-        current_system_sequence_ref.val = Some(cond_ticks)
-        let should_run = cond(world, cfg.run_if_states[cond_i])
-        current_system_sequence_ref.val = None
-        current_world_ref.val = prev_world
-        systems[system_i].run_if_last_run_sequences[cond_i] = cond_this_run
-        if !should_run {
-          should_skip = true
-          break
-        }
-      }
-      if should_skip {
-        continue
-      }
-
-      // Align with Bevy: increment global change tick once per executed system
-      // and expose SystemSequence via World-backed context for change detection.
-      let this_run = world.advance_sequence()
-      let sys_ticks = @core.SystemSequence::new(cfg.last_run_sequence, this_run)
-      ignore(sys_ticks)
-      let ctx = world.get_sequence_context()
-      ctx.set(sys_ticks)
-      world.set_sequence_context(ctx)
+      execution_order.push(system_i)
+    }
+  }
+  let stepping_ref = stepping_resource_ref(world)
+  stepping_prepare_stage(stepping_ref, stage, systems, execution_order)
+  for execution_i in 0..<execution_order.length() {
+    let system_i = execution_order[execution_i]
+    let cfg = systems[system_i]
+    if !stepping_should_run_system(
+        stepping_ref, stage, systems, system_i, execution_i,
+      ) {
+      continue
+    }
+    let mut should_skip = false
+    for cond_i in 0..<cfg.run_ifs.length() {
+      let cond = cfg.run_ifs[cond_i]
+      let cond_this_run = world.advance_sequence()
+      let cond_ticks = @core.SystemSequence::new(
+        cfg.run_if_last_run_sequences[cond_i],
+        cond_this_run,
+      )
+      let cond_ctx = world.get_sequence_context()
+      cond_ctx.set(cond_ticks)
+      world.set_sequence_context(cond_ctx)
       let prev_world = current_world_ref.val
       current_world_ref.val = Some(world)
-      let prev_ticks = current_system_sequence_ref.val
-      current_system_sequence_ref.val = Some(sys_ticks)
-      let prev_outcome = current_system_execution_outcome()
-      reset_system_execution_outcome()
-      (cfg.system)(world)
-      let outcome = current_system_execution_outcome()
-      current_system_execution_outcome_ref.val = prev_outcome
-      current_system_sequence_ref.val = prev_ticks
+      current_system_sequence_ref.val = Some(cond_ticks)
+      let should_run = cond(world, cfg.run_if_states[cond_i])
+      current_system_sequence_ref.val = None
       current_world_ref.val = prev_world
-      match outcome {
-        Success => systems[system_i].last_run_sequence = this_run
-        Skipped(_) => continue
-        Invalid(message) => {
-          report_world_error(
-            world,
-            @ecs.Invalid(message),
-            system_context(
-              systems[system_i],
-              ErrorContextKind::Validation,
-              current_schedule_stage(),
-            ),
-          )
-          continue
-        }
-        Error(err) => {
-          systems[system_i].last_run_sequence = this_run
-          match systems[system_i].error_handler {
-            Some(handler) =>
-              handler(
-                err,
-                system_context(
-                  systems[system_i],
-                  ErrorContextKind::System,
-                  current_schedule_stage(),
-                ),
-              )
-            None =>
-              report_world_error(
-                world,
-                err,
-                system_context(
-                  systems[system_i],
-                  ErrorContextKind::System,
-                  current_schedule_stage(),
-                ),
-              )
-          }
+      systems[system_i].run_if_last_run_sequences[cond_i] = cond_this_run
+      if !should_run {
+        should_skip = true
+        break
+      }
+    }
+    if should_skip {
+      continue
+    }
+
+    // Align with Bevy: increment global change tick once per executed system
+    // and expose SystemSequence via World-backed context for change detection.
+    let this_run = world.advance_sequence()
+    let sys_ticks = @core.SystemSequence::new(cfg.last_run_sequence, this_run)
+    ignore(sys_ticks)
+    let ctx = world.get_sequence_context()
+    ctx.set(sys_ticks)
+    world.set_sequence_context(ctx)
+    let prev_world = current_world_ref.val
+    current_world_ref.val = Some(world)
+    let prev_ticks = current_system_sequence_ref.val
+    current_system_sequence_ref.val = Some(sys_ticks)
+    let prev_outcome = current_system_execution_outcome()
+    reset_system_execution_outcome()
+    (cfg.system)(world)
+    let outcome = current_system_execution_outcome()
+    current_system_execution_outcome_ref.val = prev_outcome
+    current_system_sequence_ref.val = prev_ticks
+    current_world_ref.val = prev_world
+    match outcome {
+      Success => {
+        systems[system_i].last_run_sequence = this_run
+        stepping_record_system_run(
+          stepping_ref, stage, systems, system_i, execution_i,
+        )
+      }
+      Skipped(_) => continue
+      Invalid(message) => {
+        report_world_error(
+          world,
+          @ecs.Invalid(message),
+          system_context(
+            systems[system_i],
+            ErrorContextKind::Validation,
+            current_schedule_stage(),
+          ),
+        )
+        continue
+      }
+      Error(err) => {
+        systems[system_i].last_run_sequence = this_run
+        stepping_record_system_run(
+          stepping_ref, stage, systems, system_i, execution_i,
+        )
+        match systems[system_i].error_handler {
+          Some(handler) =>
+            handler(
+              err,
+              system_context(
+                systems[system_i],
+                ErrorContextKind::System,
+                current_schedule_stage(),
+              ),
+            )
+          None =>
+            report_world_error(
+              world,
+              err,
+              system_context(
+                systems[system_i],
+                ErrorContextKind::System,
+                current_schedule_stage(),
+              ),
+            )
         }
       }
     }
   }
+  stepping_finish_stage(stepping_ref, stage, execution_order.length())
 }
 
 ///|
@@ -2999,6 +3032,7 @@ fn run_schedule_stage(
     world,
     schedule_systems(schedule, stage),
     schedule_set_edges(schedule, stage),
+    Some(stage),
   )
   current_schedule_stage_ref.val = None
 }

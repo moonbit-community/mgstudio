@@ -223,9 +223,13 @@ fn current_system_execution_outcome() -> SystemExecutionOutcome {
 
 ///|
 fn system_source_label(config : SystemConfig[@ecs.World]) -> String {
-  match config.set {
-    Some(set_name) => set_name
-    None => "<anonymous system>"
+  match config.name {
+    Some(name) => name
+    None =>
+      match config.set {
+        Some(set_name) => set_name
+        None => "<anonymous system>"
+      }
   }
 }
 

@@ -78,6 +78,7 @@ pub fn SubApp::run_startup(self : SubApp[@ecs.World]) -> SubApp[@ecs.World] {
 ///|
 pub fn SubApp::update(self : SubApp[@ecs.World]) -> SubApp[@ecs.World] {
   current_app_schedule_ref.val = Some(self.schedule)
+  stepping_begin_frame(self.world)
   match self.update_schedule {
     Some(stage) => run_schedule_stage(self.world, self.schedule, stage)
     None => ()

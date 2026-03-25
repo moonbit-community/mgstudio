@@ -888,6 +888,33 @@ pub struct StatesPlugin {
 }
 pub fn StatesPlugin::default() -> Self
 
+type Stepping
+pub fn Stepping::add_schedule(Self, ScheduleStage) -> Self
+pub fn Stepping::always_run(Self, ScheduleStage, String) -> Self
+pub fn Stepping::clear_breakpoint(Self, ScheduleStage, String) -> Self
+pub fn Stepping::clear_schedule(Self, ScheduleStage) -> Self
+pub fn Stepping::continue_frame(Self) -> Self
+pub fn Stepping::cursor(Self) -> (ScheduleStage, Int)?
+pub fn Stepping::disable(Self) -> Self
+pub fn Stepping::enable(Self) -> Self
+pub fn Stepping::is_enabled(Self) -> Bool
+pub fn Stepping::never_run(Self, ScheduleStage, String) -> Self
+pub fn Stepping::new() -> Self
+pub fn Stepping::remove_schedule(Self, ScheduleStage) -> Self
+pub fn Stepping::schedules(Self) -> Array[ScheduleStage]
+pub fn Stepping::set_breakpoint(Self, ScheduleStage, String) -> Self
+pub fn Stepping::step_frame(Self) -> Self
+pub impl Resource for Stepping
+
+pub(all) enum SteppingAction {
+  RunAll
+  Waiting
+  Continue
+  Step
+}
+pub impl Eq for SteppingAction
+pub impl Show for SteppingAction
+
 pub struct SubApp[W] {
   mut world : W
   update_schedule : ScheduleStage?
@@ -945,6 +972,7 @@ pub fn SubApps::update_sub_app_by_label(Self[@ecs.World], AppLabel) -> Self[@ecs
 
 pub struct SystemConfig[W] {
   system : (W) -> Unit
+  name : String?
   error_handler : ((Error, ErrorContext) -> Unit)?
   run_ifs : Array[(W, @ref.Ref[Json]) -> Bool]
   run_if_states : Array[@ref.Ref[Json]]
@@ -958,6 +986,7 @@ pub fn[W] SystemConfig::after(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::before(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::handle_error_with(Self[W], (Error, ErrorContext) -> Unit) -> Self[W]
 pub fn[W] SystemConfig::in_set(Self[W], String) -> Self[W]
+pub fn[W] SystemConfig::named(Self[W], String) -> Self[W]
 pub fn[W] SystemConfig::run_if(Self[W], (W) -> Bool) -> Self[W]
 pub fn[M] SystemConfig::run_if_on_message(Self[@ecs.World], @ecs.MessageKey[M]) -> Self[@ecs.World]
 pub fn[W] SystemConfig::run_if_stateful(Self[W], Json, (W, @ref.Ref[Json]) -> Bool) -> Self[W]
@@ -967,6 +996,15 @@ pub struct SystemId {
 }
 pub impl Eq for SystemId
 pub impl Show for SystemId
+
+pub(all) enum SystemSteppingBehavior {
+  AlwaysRun
+  NeverRun
+  Break
+  Continue
+}
+pub impl Eq for SystemSteppingBehavior
+pub impl Show for SystemSteppingBehavior
 
 pub struct ValidateParentHasComponentPlugin[C] {
   schedule : ScheduleStage
