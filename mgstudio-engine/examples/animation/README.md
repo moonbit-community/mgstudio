@@ -6,8 +6,8 @@ This folder tracks parity status for Bevy animation examples.
 
 | Bevy Example | mgstudio Example | Status | Notes |
 |---|---|---|---|
-| `animated_mesh.rs` | N/A | Blocked | Current glTF animation path builds clips and target IDs, but the runtime still has no skinned mesh / joint matrix path for Fox-style skeletal playback. |
-| `animated_mesh_control.rs` | N/A | Blocked | Same blocker as `animated_mesh`; transition / repeat APIs exist, but the visible skinned playback path is still missing. |
+| `animated_mesh.rs` | `examples/animation/animated_mesh` | Partial | Scene-root animation player wiring, graph insertion, and Fox playback flow now compile and smoke-run; skeletal parity still depends on the simplified local scene runtime rather than full Bevy descendant-player behavior. |
+| `animated_mesh_control.rs` | `examples/animation/animated_mesh_control` | Partial | Keyboard transition / seek / repeat flow is implemented on the root animation player; full parity still depends on the same simplified Fox scene runtime. |
 | `animated_mesh_events.rs` | N/A | Blocked | Same skinned playback blocker as `animated_mesh`, plus no Bevy-style typed animation event observer flow. |
 | `animated_transform.rs` | `examples/animation/animated_transform` | Done | Runtime clip / graph / player / target flow is implemented and native-checkable. |
 | `animated_ui.rs` | N/A | Blocked | Requires UI animatable-property pipeline integrated with animation clip/graph/player. |

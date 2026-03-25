@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/animation/animated_mesh_control"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type Animations
+pub impl @app.Resource for Animations
+
+// Type aliases
+
+// Traits
