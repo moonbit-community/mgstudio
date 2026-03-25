@@ -33,6 +33,14 @@ pub struct QueryMany[D, F] {
 }
 
 ///|
+pub struct QueryCombinations[D, F] {
+  query : Query[D, F]
+  entities : Array[@core.Entity]
+  mut left_index : Int
+  mut right_index : Int
+}
+
+///|
 pub struct QueryContiguousIter[D, F] {
   query : Query[D, F]
   entities : Array[@core.Entity]
@@ -251,6 +259,29 @@ pub fn[D : QueryData, F : QueryFilter] Query::iter_many_unique_unsafe(
 }
 
 ///|
+pub fn[D : QueryData, F : QueryFilter] Query::iter_combinations(
+  self : Query[D, F],
+) -> QueryCombinations[D, F] {
+  let entities : Array[@core.Entity] = []
+  for
+    entity in query_candidate_entities(
+      self.world,
+      D::iteration_anchor_component(),
+    ) {
+    if query_matches_with_query_data_default_filters(
+        self.world,
+        entity,
+        self.filter,
+        D::mentions_component,
+      ) &&
+      D::matches(self.world, entity) {
+      entities.push(entity)
+    }
+  }
+  { query: self, entities, left_index: 0, right_index: 1 }
+}
+
+///|
 pub fn[D : QueryData, F : QueryFilter] Query::contiguous_iter(
   self : Query[D, F],
 ) -> QueryContiguousIter[D, F]? {
@@ -319,6 +350,15 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::iter_many(
 }
 
 ///|
+pub fn[D : QueryData, F : QueryFilter] QueryState::iter_combinations(
+  self : QueryState[D, F],
+  world : World,
+) -> QueryCombinations[D, F] {
+  let query : Query[D, F] = query_filtered(world, self.filter)
+  query.iter_combinations()
+}
+
+///|
 pub fn[D : QueryData, F : QueryFilter] QueryState::single(
   self : QueryState[D, F],
   world : World,
@@ -364,6 +404,30 @@ pub fn[D : QueryData, F : QueryFilter] QueryMany::fetch_next(
     if self.query.get(entity) is Some(value) {
       return Some((entity, value))
     }
+  }
+  None
+}
+
+///|
+pub fn[D : QueryData, F : QueryFilter] QueryCombinations::fetch_next(
+  self : QueryCombinations[D, F],
+) -> (D, D)? raise EcsError {
+  while self.left_index < self.entities.length() {
+    if self.right_index >= self.entities.length() {
+      self.left_index = self.left_index + 1
+      self.right_index = self.left_index + 1
+      continue
+    }
+    let left_entity = self.entities[self.left_index]
+    let right_entity = self.entities[self.right_index]
+    self.right_index = self.right_index + 1
+    guard (try! self.query.get(left_entity)) is Some(left_value) else {
+      continue
+    }
+    guard (try! self.query.get(right_entity)) is Some(right_value) else {
+      continue
+    }
+    return Some((left_value, right_value))
   }
   None
 }

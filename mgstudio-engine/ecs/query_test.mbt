@@ -842,3 +842,75 @@ test "ecs query: generic query supports named reusable data, filters and iterato
   inspect(generic_value.pair.0.value(), content="{x: 10, y: 20}")
   inspect(generic_value.pair.1.value(), content="Some({dx: 1, dy: 2})")
 }
+
+///|
+test "ecs query: iter_combinations returns pairwise combinations in anchor order" {
+  let world = World::new()
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  let e2 = world.spawn()
+  let e3 = world.spawn()
+
+  try! world.set_by_key(e0, position_key, Position::{ x: 1, y: 10 })
+  try! world.set_by_key(e1, position_key, Position::{ x: 2, y: 20 })
+  try! world.set_by_key(e2, position_key, Position::{ x: 3, y: 30 })
+  try! world.set_by_key(e3, velocity_key, Velocity::{ dx: 4, dy: 40 })
+
+  let query : Query[Comp[Position], All] = query(world)
+  let combinations = query.iter_combinations()
+  let values : Array[(Int, Int)] = []
+  while true {
+    if (try! combinations.fetch_next()) is Some((left, right)) {
+      values.push((left.value().x, right.value().x))
+    } else {
+      break
+    }
+  }
+  inspect(values, content="[(1, 2), (1, 3), (2, 3)]")
+
+  let state : QueryState[Comp[Position], All] = world.query()
+  let state_combinations = state.iter_combinations(world)
+  let state_values : Array[(Int, Int)] = []
+  while true {
+    if (try! state_combinations.fetch_next()) is Some((left, right)) {
+      state_values.push((left.value().x, right.value().x))
+    } else {
+      break
+    }
+  }
+  inspect(state_values, content="[(1, 2), (1, 3), (2, 3)]")
+}
+
+///|
+test "ecs query: iter_combinations supports mut query data across distinct entities" {
+  let world = World::new()
+  let e0 = world.spawn()
+  let e1 = world.spawn()
+  let e2 = world.spawn()
+
+  try! world.set_by_key(e0, position_key, Position::{ x: 0, y: 0 })
+  try! world.set_by_key(e1, position_key, Position::{ x: 0, y: 0 })
+  try! world.set_by_key(e2, position_key, Position::{ x: 0, y: 0 })
+  try! world.set_by_key(e0, velocity_key, Velocity::{ dx: 1, dy: 0 })
+  try! world.set_by_key(e1, velocity_key, Velocity::{ dx: 2, dy: 0 })
+  try! world.set_by_key(e2, velocity_key, Velocity::{ dx: 3, dy: 0 })
+
+  let query : Query[(Mut[Position], Comp[Velocity]), All] = query(world)
+  let combinations = query.iter_combinations()
+  while true {
+    if (try! combinations.fetch_next()) is Some((left, right)) {
+      let (left_position, left_velocity) = left
+      let (right_position, right_velocity) = right
+      let left_ref = left_position.get_ref()
+      let right_ref = right_position.get_ref()
+      left_ref.val.x = left_ref.val.x + right_velocity.value().dx
+      right_ref.val.x = right_ref.val.x + left_velocity.value().dx
+    } else {
+      break
+    }
+  }
+
+  inspect(try! world.get_by_key(e0, position_key), content="Some({x: 5, y: 0})")
+  inspect(try! world.get_by_key(e1, position_key), content="Some({x: 4, y: 0})")
+  inspect(try! world.get_by_key(e2, position_key), content="Some({x: 3, y: 0})")
+}

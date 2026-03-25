@@ -435,6 +435,7 @@ pub fn[D : QueryData, F : QueryFilter] Query::contiguous_iter(Self[D, F]) -> Que
 pub fn[D : QueryData, F : QueryFilter] Query::count(Self[D, F]) -> Int
 pub fn[D : QueryData, F : QueryFilter] Query::for_each(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::get(Self[D, F], @core.Entity) -> D? raise EcsError
+pub fn[D : QueryData, F : QueryFilter] Query::iter_combinations(Self[D, F]) -> QueryCombinations[D, F]
 pub fn[D : QueryData, F : QueryFilter] Query::iter_many(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F]
 pub fn[D : QueryData, F : QueryFilter] Query::iter_many_unique(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F] raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::iter_many_unique_unsafe(Self[D, F], Array[@core.Entity]) -> QueryMany[D, F]
@@ -442,6 +443,14 @@ pub fn[D : QueryData, F : QueryFilter] Query::par_iter(Self[D, F]) -> QueryParal
 pub fn[D : QueryData, F : QueryFilter] Query::require_single(Self[D, F]) -> D raise
 pub fn[D : QueryData, F : QueryFilter] Query::single(Self[D, F]) -> D? raise EcsError
 pub fn[D : QueryData, F : QueryFilter] Query::view(Self[D, F], (@core.Entity, D) -> Unit) -> Unit raise EcsError
+
+pub struct QueryCombinations[D, F] {
+  query : Query[D, F]
+  entities : Array[@core.Entity]
+  mut left_index : Int
+  mut right_index : Int
+}
+pub fn[D : QueryData, F : QueryFilter] QueryCombinations::fetch_next(Self[D, F]) -> (D, D)? raise EcsError
 
 pub struct QueryContiguousIter[D, F] {
   query : Query[D, F]
@@ -480,6 +489,7 @@ pub fn[D : QueryData, F : QueryFilter] QueryState::contiguous_iter(Self[D, F], W
 pub fn[D : QueryData, F : QueryFilter] QueryState::count(Self[D, F], World) -> Int
 pub fn[D : QueryData, F : QueryFilter] QueryState::get(Self[D, F], World, @core.Entity) -> D? raise EcsError
 pub fn[D : QueryData, F : QueryFilter] QueryState::iter(Self[D, F], World) -> QueryMany[D, F]
+pub fn[D : QueryData, F : QueryFilter] QueryState::iter_combinations(Self[D, F], World) -> QueryCombinations[D, F]
 pub fn[D : QueryData, F : QueryFilter] QueryState::iter_many(Self[D, F], World, Array[@core.Entity]) -> QueryMany[D, F]
 pub fn[D : QueryData, F : QueryFilter] QueryState::require_single(Self[D, F], World) -> D raise
 pub fn[D : QueryData, F : QueryFilter] QueryState::single(Self[D, F], World) -> D? raise EcsError
