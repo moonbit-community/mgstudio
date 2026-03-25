@@ -1,0 +1,49 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/scroll_and_overflow/overflow_debug"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type AnimationMotion
+pub impl @ecs.Component for AnimationMotion
+pub impl Eq for AnimationMotion
+pub impl Show for AnimationMotion
+
+type AnimationState
+pub impl @app.Resource for AnimationState
+
+type Container
+pub impl @ecs.Component for Container
+
+pub(all) enum ContentKind {
+  Image
+  Text
+}
+pub impl Eq for ContentKind
+pub impl Show for ContentKind
+
+type InstructionsText
+pub impl @ecs.Component for InstructionsText
+
+pub(all) enum MotionKind {
+  Move
+  Scale
+  Rotate
+}
+pub impl Eq for MotionKind
+pub impl Show for MotionKind
+
+type OverflowDebugSettings
+pub impl @app.Resource for OverflowDebugSettings
+
+// Type aliases
+
+// Traits
+

@@ -8,7 +8,7 @@ This folder tracks parity status for Bevy animation examples.
 |---|---|---|---|
 | `animated_mesh.rs` | `examples/animation/animated_mesh` | Partial | Scene-root animation player wiring, graph insertion, and Fox playback flow now compile and smoke-run; skeletal parity still depends on the simplified local scene runtime rather than full Bevy descendant-player behavior. |
 | `animated_mesh_control.rs` | `examples/animation/animated_mesh_control` | Partial | Keyboard transition / seek / repeat flow is implemented on the root animation player; full parity still depends on the same simplified Fox scene runtime. |
-| `animated_mesh_events.rs` | N/A | Blocked | Same skinned playback blocker as `animated_mesh`, plus no Bevy-style typed animation event observer flow. |
+| `animated_mesh_events.rs` | `examples/animation/animated_mesh_events` | Partial | Fox scene playback now installs target-specific clip events and spawns particles from `AnimationTriggeredEvent`; exact typed `AnimationEvent` observer parity is still not implemented. |
 | `animated_transform.rs` | `examples/animation/animated_transform` | Done | Runtime clip / graph / player / target flow is implemented and native-checkable. |
 | `animated_ui.rs` | N/A | Blocked | Requires UI animatable-property pipeline integrated with animation clip/graph/player. |
 | `animation_events.rs` | `examples/animation/animation_events` | Partial | Root clip events now drive the message text example through `AnimationTriggeredEvent`; exact typed `AnimationEvent` observer parity is still not implemented. |

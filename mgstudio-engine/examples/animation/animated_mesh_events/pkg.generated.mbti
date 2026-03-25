@@ -1,0 +1,34 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/animation/animated_mesh_events"
+
+import {
+  "Milky2018/mgstudio/animation",
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type AnimationSetup
+pub impl @app.Resource for AnimationSetup
+
+pub struct FoxFeetTargets {
+  front_left : @animation.AnimationTargetId
+  front_right : @animation.AnimationTargetId
+  back_left : @animation.AnimationTargetId
+  back_right : @animation.AnimationTargetId
+}
+
+type Particle
+pub impl @ecs.Component for Particle
+
+type ParticleAssets
+pub impl @app.Resource for ParticleAssets
+
+// Type aliases
+
+// Traits
+

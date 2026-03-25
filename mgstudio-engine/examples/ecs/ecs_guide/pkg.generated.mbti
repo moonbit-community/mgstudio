@@ -1,0 +1,36 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ecs/ecs_guide"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type GameRules
+pub impl @app.Resource for GameRules
+
+type GameState
+pub impl @app.Resource for GameState
+
+type Player
+pub impl @ecs.Component for Player
+
+pub(all) enum PlayerStreak {
+  Hot(Int)
+  None
+  Cold(Int)
+}
+pub impl @ecs.Component for PlayerStreak
+
+type Score
+pub impl @ecs.Component for Score
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,33 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/ui_transform"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type ButtonPressState
+pub impl @ecs.Component for ButtonPressState
+pub impl Eq for ButtonPressState
+pub impl Show for ButtonPressState
+
+type ControlButton
+pub impl @ecs.Component for ControlButton
+
+type RotateButton
+pub impl @ecs.Component for RotateButton
+
+type ScaleButton
+pub impl @ecs.Component for ScaleButton
+
+type TargetNode
+pub impl @ecs.Component for TargetNode
+
+// Type aliases
+
+// Traits
+
