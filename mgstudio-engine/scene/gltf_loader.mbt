@@ -86,10 +86,13 @@ priv struct GltfPrimitiveDef {
   uv0 : Int?
   indices : Int?
   material : Int?
+  extras : String?
 }
 
 ///|
 priv struct GltfMeshDef {
+  name : String
+  extras : String?
   primitives : Array[GltfPrimitiveDef]
 }
 
@@ -105,11 +108,13 @@ priv struct GltfNodeDef {
 ///|
 priv struct GltfSceneDef {
   nodes : Array[Int]
+  extras : String?
 }
 
 ///|
 priv struct GltfMaterialDef {
   name : String
+  extras : String?
   base_color : @color.Color
   base_color_texture : Int?
   base_color_uv_offset : @math.Vec2
@@ -761,6 +766,26 @@ fn gltf_parse_node_lod_ids(obj : Map[String, Json]) -> Array[Int] {
 }
 
 ///|
+fn gltf_parse_extras(obj : Map[String, Json]) -> String? {
+  match obj.get("extras") {
+    Some(extras) => Some(extras.stringify())
+    None => None
+  }
+}
+
+///|
+fn gltf_primitive_display_name(
+  mesh : GltfMeshDef,
+  material_name : String?,
+) -> @ecs.Name? {
+  let mesh_name = if mesh.name == "" { "Mesh" } else { mesh.name }
+  match material_name {
+    Some(name) => Some(@ecs.Name::new(mesh_name + "." + name))
+    None => Some(@ecs.Name::new(mesh_name))
+  }
+}
+
+///|
 fn gltf_parse_texture_index(obj : Map[String, Json], key : String) -> Int? {
   guard json_get_object(obj, key) is Some(texture_info) else { return None }
   json_get_int(texture_info, "index")
@@ -1003,6 +1028,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
                 uv0,
                 indices: json_get_int(primitive_obj, "indices"),
                 material: json_get_int(primitive_obj, "material"),
+                extras: gltf_parse_extras(primitive_obj),
               })
             } else {
               primitives.push({
@@ -1010,13 +1036,18 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
                 uv0: None,
                 indices: None,
                 material: None,
+                extras: None,
               })
             }
           }
         }
-        meshes.push({ primitives, })
+        meshes.push({
+          name: json_get_string(obj, "name").unwrap_or(""),
+          extras: gltf_parse_extras(obj),
+          primitives,
+        })
       } else {
-        meshes.push({ primitives: [] })
+        meshes.push({ name: "", extras: None, primitives: [] })
       }
     }
   }
@@ -1067,9 +1098,9 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
             }
           }
         }
-        scenes.push({ nodes: node_indices })
+        scenes.push({ nodes: node_indices, extras: gltf_parse_extras(obj) })
       } else {
-        scenes.push({ nodes: [] })
+        scenes.push({ nodes: [], extras: None })
       }
     }
   }
@@ -1145,6 +1176,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
 
         materials.push({
           name: json_get_string(obj, "name").unwrap_or(""),
+          extras: gltf_parse_extras(obj),
           base_color,
           base_color_texture,
           base_color_uv_offset,
@@ -1170,6 +1202,7 @@ fn gltf_parse_document(source : String) -> ParsedGltfDocument? {
       } else {
         materials.push({
           name: "",
+          extras: None,
           base_color: @color.Color::white(),
           base_color_texture: None,
           base_color_uv_offset: @math.Vec2::new(0.0F, 0.0F),
@@ -2622,6 +2655,23 @@ fn scene_build_from_gltf(
               }
             None => None
           }
+          let primitive_name = gltf_primitive_display_name(
+            mesh,
+            material_name.map(fn(name) { name.as_str() }),
+          )
+          let primitive_extras = primitive.extras.map(@gltf.GltfExtras::new)
+          let mesh_extras = mesh.extras.map(@gltf.GltfMeshExtras::new)
+          let material_extras = match primitive.material {
+            Some(material_index) =>
+              if material_index >= 0 && material_index < doc.materials.length() {
+                doc.materials[material_index].extras.map(
+                  @gltf.GltfMaterialExtras::new,
+                )
+              } else {
+                None
+              }
+            None => None
+          }
 
           nodes.push(
             SceneNode3d::new(
@@ -2634,7 +2684,11 @@ fn scene_build_from_gltf(
               world_transform,
               visibility_range,
               animation_target,
+              name=primitive_name,
               gltf_material_name=material_name,
+              gltf_extras=primitive_extras,
+              gltf_mesh_extras=mesh_extras,
+              gltf_material_extras=material_extras,
             ),
           )
         }
@@ -2666,7 +2720,13 @@ fn scene_build_from_gltf(
     }
   }
 
-  Scene::new(nodes)
+  Scene::{
+    nodes3d: nodes,
+    gltf_scene_extras: doc.scenes[selected_scene_index].extras.map(
+      @gltf.GltfSceneExtras::new,
+    ),
+    ready: true,
+  }
 }
 
 ///|

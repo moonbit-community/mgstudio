@@ -150,6 +150,90 @@ test "scene: register keeps stable handle" {
 }
 
 ///|
+test "scene: SceneRoot propagates gltf extras metadata" {
+  let root_scene_extras = Ref::new("")
+  let child_name = Ref::new("")
+  let primitive_extras = Ref::new("")
+  let mesh_extras = Ref::new("")
+  let material_extras = Ref::new("")
+
+  run_scene_test_app(fn(world : @ecs.World) {
+    let scene_handle = @scene.scene_register_gltf_scene(
+      "models/Foo/Foo.gltf#extras",
+      @scene.Scene::new([
+        SceneNode3d::new(
+          @pbr.Mesh3d::new(
+            @pbr.mesh_assets_mut_or_abort().val.add(
+              @pbr.Mesh::from_3d_geometry(
+                @pbr.mesh3d_geometry_triangle(
+                  @math.Triangle3d::new(
+                    @math.Vec3::new(0.0F, 0.0F, 0.0F),
+                    @math.Vec3::new(1.0F, 0.0F, 0.0F),
+                    @math.Vec3::new(0.0F, 1.0F, 0.0F),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          @pbr.MeshMaterial3d::new(
+            @pbr.standard_material_add(@pbr.StandardMaterial::default()),
+          ),
+          @transform.Transform::identity(),
+          None,
+          None,
+          name=Some(@ecs.Name::new("NamedMesh.Top")),
+          gltf_material_name=Some(@gltf.GltfMaterialName::new("Top")),
+          gltf_extras=Some(@gltf.GltfExtras::new("{\"primitive\":1}")),
+          gltf_mesh_extras=Some(@gltf.GltfMeshExtras::new("{\"mesh\":true}")),
+          gltf_material_extras=Some(
+            @gltf.GltfMaterialExtras::new("{\"material\":\"value\"}"),
+          ),
+        ),
+      ]).with_gltf_scene_extras(
+        Some(@gltf.GltfSceneExtras::new("{\"scene\":\"root\"}")),
+      ),
+    )
+
+    let root = world.spawn()
+    try! world.set_by_key(
+      root,
+      @scene.ecs_key_scene_root,
+      @scene.SceneRoot::new(scene_handle),
+    )
+    @scene.scene_spawn_roots_system(world)
+
+    if (try! world.entity(root).get() : @gltf.GltfSceneExtras?) is Some(extras) {
+      root_scene_extras.val = extras.as_str()
+    }
+
+    if (try! world.entity(root).get() : @hierarchy.Children?) is Some(children) {
+      for child in children.entities() {
+        if (try! world.entity(child).get() : @ecs.Name?) is Some(name) {
+          child_name.val = name.as_str()
+        }
+        if (try! world.entity(child).get() : @gltf.GltfExtras?) is Some(extras) {
+          primitive_extras.val = extras.as_str()
+        }
+        if (try! world.entity(child).get() : @gltf.GltfMeshExtras?)
+          is Some(extras) {
+          mesh_extras.val = extras.as_str()
+        }
+        if (try! world.entity(child).get() : @gltf.GltfMaterialExtras?)
+          is Some(extras) {
+          material_extras.val = extras.as_str()
+        }
+      }
+    }
+  })
+
+  inspect(root_scene_extras.val, content="{\"scene\":\"root\"}")
+  inspect(child_name.val, content="NamedMesh.Top")
+  inspect(primitive_extras.val, content="{\"primitive\":1}")
+  inspect(mesh_extras.val, content="{\"mesh\":true}")
+  inspect(material_extras.val, content="{\"material\":\"value\"}")
+}
+
+///|
 test "scene: gltf lod visibility policy set/get/reset" {
   let default_enabled = Ref::new(false)
   let default_step = Ref::new(0.0)

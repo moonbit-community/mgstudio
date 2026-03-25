@@ -270,6 +270,33 @@ test "scene gltf wb: parse KHR_texture_transform on base color texture" {
 }
 
 ///|
+test "scene gltf wb: parse scene mesh primitive and material extras" {
+  let source = "{" +
+    "\"asset\":{\"version\":\"2.0\"}," +
+    "\"scene\":0," +
+    "\"scenes\":[{\"nodes\":[0],\"extras\":{\"scene\":\"root\"}}]," +
+    "\"nodes\":[{\"mesh\":0}]," +
+    "\"meshes\":[{\"name\":\"NamedMesh\",\"extras\":{\"mesh\":true},\"primitives\":[{\"attributes\":{\"POSITION\":0},\"material\":0,\"extras\":{\"primitive\":1}}]}]," +
+    "\"materials\":[{\"name\":\"Top\",\"extras\":{\"material\":\"value\"}}]," +
+    "\"buffers\":[{\"byteLength\":0}]," +
+    "\"bufferViews\":[]," +
+    "\"accessors\":[{\"componentType\":5126,\"count\":0,\"type\":\"VEC3\"}]" +
+    "}"
+  let doc = gltf_parse_document(source).unwrap()
+  inspect(doc.scenes[0].extras.unwrap_or(""), content="{\"scene\":\"root\"}")
+  inspect(doc.meshes[0].name, content="NamedMesh")
+  inspect(doc.meshes[0].extras.unwrap_or(""), content="{\"mesh\":true}")
+  inspect(
+    doc.meshes[0].primitives[0].extras.unwrap_or(""),
+    content="{\"primitive\":1}",
+  )
+  inspect(
+    doc.materials[0].extras.unwrap_or(""),
+    content="{\"material\":\"value\"}",
+  )
+}
+
+///|
 test "scene gltf wb: parse KHR_materials_clearcoat" {
   let source = "{" +
     "\"asset\":{\"version\":\"2.0\"}," +

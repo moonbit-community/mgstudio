@@ -22,9 +22,13 @@
 
 ///|
 pub struct SceneNode3d {
+  name : @ecs.Name?
   mesh : @pbr.Mesh3d
   material : @pbr.MeshMaterial3d
   gltf_material_name : @gltf.GltfMaterialName?
+  gltf_extras : @gltf.GltfExtras?
+  gltf_mesh_extras : @gltf.GltfMeshExtras?
+  gltf_material_extras : @gltf.GltfMaterialExtras?
   transform : @transform.Transform
   visibility_range : @visibility.VisibilityRange?
   animation_target : @animation.AnimationTargetId?
@@ -37,12 +41,20 @@ pub fn SceneNode3d::new(
   transform : @transform.Transform,
   visibility_range : @visibility.VisibilityRange?,
   animation_target : @animation.AnimationTargetId?,
+  name? : @ecs.Name? = None,
   gltf_material_name? : @gltf.GltfMaterialName? = None,
+  gltf_extras? : @gltf.GltfExtras? = None,
+  gltf_mesh_extras? : @gltf.GltfMeshExtras? = None,
+  gltf_material_extras? : @gltf.GltfMaterialExtras? = None,
 ) -> SceneNode3d {
   SceneNode3d::{
+    name,
     mesh,
     material,
     gltf_material_name,
+    gltf_extras,
+    gltf_mesh_extras,
+    gltf_material_extras,
     transform,
     visibility_range,
     animation_target,
@@ -52,12 +64,21 @@ pub fn SceneNode3d::new(
 ///|
 pub struct Scene {
   nodes3d : Array[SceneNode3d]
+  gltf_scene_extras : @gltf.GltfSceneExtras?
   ready : Bool
 }
 
 ///|
 pub fn Scene::new(nodes3d : Array[SceneNode3d]) -> Scene {
-  Scene::{ nodes3d, ready: true }
+  Scene::{ nodes3d, gltf_scene_extras: None, ready: true }
+}
+
+///|
+pub fn Scene::with_gltf_scene_extras(
+  self : Scene,
+  extras : @gltf.GltfSceneExtras?,
+) -> Scene {
+  Scene::{ ..self, gltf_scene_extras: extras }
 }
 
 ///|
@@ -138,7 +159,7 @@ let scene_gltf_lod_visibility_policy_ref : Ref[GltfLodVisibilityPolicy] = Ref::n
 
 ///|
 fn scene_pending() -> Scene {
-  Scene::{ nodes3d: [], ready: false }
+  Scene::{ nodes3d: [], gltf_scene_extras: None, ready: false }
 }
 
 ///|
@@ -796,6 +817,15 @@ fn scene_spawn_instance_when_ready(
     return
   }
 
+  if scene.gltf_scene_extras is Some(scene_extras) &&
+    (try! world.entity(root_entity).get() : @gltf.GltfSceneExtras?) is None {
+    try! world.set_by_key(
+      root_entity,
+      @gltf.GltfSceneExtras::component(),
+      scene_extras,
+    )
+  }
+
   if (try! world.get_by_key(root_entity, @animation.ecs_key_animation_player))
     is None {
     try! world.set_by_key(
@@ -808,6 +838,9 @@ fn scene_spawn_instance_when_ready(
   let spawned_entities : Array[@core.Entity] = []
   for node in scene.nodes3d {
     let child = world.spawn_empty()
+    if node.name is Some(name) {
+      try! world.set_by_key(child, @ecs.Name::component(), name)
+    }
     try! world.set_by_key(child, @pbr.ecs_key_mesh3d, node.mesh)
     try! world.set_by_key(child, @pbr.ecs_key_mesh_material3d, node.material)
     if node.gltf_material_name is Some(material_name) {
@@ -815,6 +848,23 @@ fn scene_spawn_instance_when_ready(
         child,
         @gltf.GltfMaterialName::component(),
         material_name,
+      )
+    }
+    if node.gltf_extras is Some(extras) {
+      try! world.set_by_key(child, @gltf.GltfExtras::component(), extras)
+    }
+    if node.gltf_mesh_extras is Some(mesh_extras) {
+      try! world.set_by_key(
+        child,
+        @gltf.GltfMeshExtras::component(),
+        mesh_extras,
+      )
+    }
+    if node.gltf_material_extras is Some(material_extras) {
+      try! world.set_by_key(
+        child,
+        @gltf.GltfMaterialExtras::component(),
+        material_extras,
       )
     }
     try! world.set_by_key(child, @transform.ecs_key_transform, node.transform)

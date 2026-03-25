@@ -35,12 +35,40 @@ pub(all) enum GltfAssetLabel {
 pub fn GltfAssetLabel::from_asset(Self, String) -> String
 pub fn GltfAssetLabel::to_label(Self) -> String
 
+pub struct GltfExtras {
+  value : String
+}
+pub fn GltfExtras::as_str(Self) -> String
+pub fn GltfExtras::new(String) -> Self
+pub impl @ecs.Component for GltfExtras
+
+pub struct GltfMaterialExtras {
+  value : String
+}
+pub fn GltfMaterialExtras::as_str(Self) -> String
+pub fn GltfMaterialExtras::new(String) -> Self
+pub impl @ecs.Component for GltfMaterialExtras
+
 pub struct GltfMaterialName {
   name : String
 }
 pub fn GltfMaterialName::as_str(Self) -> String
 pub fn GltfMaterialName::new(String) -> Self
 pub impl @ecs.Component for GltfMaterialName
+
+pub struct GltfMeshExtras {
+  value : String
+}
+pub fn GltfMeshExtras::as_str(Self) -> String
+pub fn GltfMeshExtras::new(String) -> Self
+pub impl @ecs.Component for GltfMeshExtras
+
+pub struct GltfSceneExtras {
+  value : String
+}
+pub fn GltfSceneExtras::as_str(Self) -> String
+pub fn GltfSceneExtras::new(String) -> Self
+pub impl @ecs.Component for GltfSceneExtras
 
 // Type aliases
 pub type GltfLoaderRegistration = () -> Unit

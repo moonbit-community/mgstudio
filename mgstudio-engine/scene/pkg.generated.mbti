@@ -80,9 +80,11 @@ pub fn GltfLodVisibilityPolicy::with_step(Self, Float) -> Self
 
 pub struct Scene {
   nodes3d : Array[SceneNode3d]
+  gltf_scene_extras : @gltf.GltfSceneExtras?
   ready : Bool
 }
 pub fn Scene::new(Array[SceneNode3d]) -> Self
+pub fn Scene::with_gltf_scene_extras(Self, @gltf.GltfSceneExtras?) -> Self
 
 pub struct SceneInstance {
   instance_id : Int
@@ -102,14 +104,18 @@ pub impl ToJson for SceneInstanceReady
 pub impl @json.FromJson for SceneInstanceReady
 
 pub struct SceneNode3d {
+  name : @ecs.Name?
   mesh : @pbr.Mesh3d
   material : @material.MeshMaterial3d
   gltf_material_name : @gltf.GltfMaterialName?
+  gltf_extras : @gltf.GltfExtras?
+  gltf_mesh_extras : @gltf.GltfMeshExtras?
+  gltf_material_extras : @gltf.GltfMaterialExtras?
   transform : @transform.Transform
   visibility_range : @visibility.VisibilityRange?
   animation_target : @animation.AnimationTargetId?
 }
-pub fn SceneNode3d::new(@pbr.Mesh3d, @material.MeshMaterial3d, @transform.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?, gltf_material_name? : @gltf.GltfMaterialName?) -> Self
+pub fn SceneNode3d::new(@pbr.Mesh3d, @material.MeshMaterial3d, @transform.Transform, @visibility.VisibilityRange?, @animation.AnimationTargetId?, name? : @ecs.Name?, gltf_material_name? : @gltf.GltfMaterialName?, gltf_extras? : @gltf.GltfExtras?, gltf_mesh_extras? : @gltf.GltfMeshExtras?, gltf_material_extras? : @gltf.GltfMaterialExtras?) -> Self
 
 pub(all) struct ScenePlugin {
 }
