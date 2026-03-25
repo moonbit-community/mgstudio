@@ -38,7 +38,6 @@ Representative examples:
 ### Parity gates
 
 - Static parity gates are run through `./mgstudio-engine/scripts/parity_hard_gates.sh` and cover:
-  - exact upstream shader mirror integrity
   - forbidden legacy `shaders/mgstudio` / `shaders/mgstudio_runtime` references
   - forbidden example asset provenance outside the engine runtime tree
 - Visual runtime parity is checked separately through `./mgstudio-engine/scripts/gate_visual_runtime.sh`.

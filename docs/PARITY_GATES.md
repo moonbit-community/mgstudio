@@ -5,19 +5,6 @@ drifting in ways that are easy to miss during feature work.
 
 ## Current gates
 
-### `gate_shader_mirror.sh`
-
-Checks that runtime upstream shader sources under
-`mgstudio-engine/assets/shaders/` match the vendored Bevy baseline exactly for
-all mirrored crates, excluding the explicit `generated/` and `custom/` buckets.
-
-This gate enforces:
-
-- the runtime shader tree keeps exact upstream copies where mirroring is
-  intended
-- mirrored files are not silently edited in-place
-- extra unexpected mirrored files are not introduced
-
 ### `gate_no_mgstudio_shader.sh`
 
 Checks that the legacy transitional shader trees are gone and remain gone:
@@ -61,10 +48,9 @@ The exact selection can be narrowed or widened with:
 `mgstudio-engine/scripts/parity_hard_gates.sh` is the top-level entry point for
 the parity gate set:
 
-1. `gate_shader_mirror.sh`
-2. `gate_no_mgstudio_shader.sh`
-3. `gate_asset_provenance.sh`
-4. `gate_visual_runtime.sh`
+1. `gate_no_mgstudio_shader.sh`
+2. `gate_asset_provenance.sh`
+3. `gate_visual_runtime.sh`
 
 For environments that should only run the static subset, set:
 
@@ -89,7 +75,6 @@ native visual gate for representative runtime behavior.
 Per the approved migration strategy, shader parity gates target:
 
 - runtime shader asset provenance
-- canonical mirrored shader source trees
 - runtime shader contract and example behavior parity
 
 They do **not** require re-implementing Bevy's internal `naga` /

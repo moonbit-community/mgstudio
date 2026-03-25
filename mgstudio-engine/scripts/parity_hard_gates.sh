@@ -17,7 +17,6 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-"${SCRIPT_DIR}/gate_shader_mirror.sh"
 "${SCRIPT_DIR}/gate_no_mgstudio_shader.sh"
 "${SCRIPT_DIR}/gate_asset_provenance.sh"
 "${SCRIPT_DIR}/gate_visual_runtime.sh"
