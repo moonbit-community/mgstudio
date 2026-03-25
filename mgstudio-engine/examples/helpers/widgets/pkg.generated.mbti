@@ -11,7 +11,7 @@ import {
 }
 
 // Values
-pub fn[T] handle_ui_interactions(@ecs.Query2Filtered[@ui.Interaction, WidgetClickSender[T], @ecs.With[@ui.Button]], @ecs.MessageWriter[WidgetClickEvent[T]]) -> Unit
+pub fn[T] handle_ui_interactions(@ecs.Query[(@ecs.Comp[@ui.Interaction], @ecs.Comp[WidgetClickSender[T]]), @ecs.With[@ui.Button]], @ecs.MessageWriter[WidgetClickEvent[T]]) -> Unit
 
 pub fn main_ui_node() -> @ui.Node
 

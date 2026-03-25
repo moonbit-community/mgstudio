@@ -131,11 +131,18 @@ fn spawn_text(commands : @app.Commands) -> Unit {
 ///|
 fn alter_handle(
   asset_server : @app.Res[@asset.AssetServer],
-  right_bird : @ecs.Query2Filtered[Bird, @sprite.Sprite, @ecs.Without[Left]],
+  right_bird : @ecs.Query[
+    (@ecs.Mut[Bird], @ecs.Mut[@sprite.Sprite]),
+    @ecs.Without[Left],
+  ],
 ) -> Unit {
-  try! right_bird.view(fn(_entity, bird, sprite) {
-    bird.set_next_variant()
-    sprite.image = asset_server.get().load(bird.get_texture_path())
+  try! right_bird.view(fn(_entity, data) {
+    let (bird, sprite) = data
+    let bird_ref = bird.get_ref()
+    bird_ref.val.set_next_variant()
+    sprite.get_ref().val.image = asset_server
+      .get()
+      .load(bird_ref.val.get_texture_path())
   })
 }
 
@@ -153,9 +160,10 @@ fn invert_pixels(pixels : Bytes) -> Bytes {
 ///|
 fn alter_asset(
   images : @app.ResMut[@asset.Assets[@asset.Image]],
-  left_bird : @ecs.Query1Filtered[@sprite.Sprite, @ecs.With[Left]],
+  left_bird : @ecs.Query[@ecs.Comp[@sprite.Sprite], @ecs.With[Left]],
 ) -> Unit {
-  guard (try! left_bird.single()) is Some(sprite) else { return }
+  guard (try! left_bird.single()) is Some(sprite_comp) else { return }
+  let sprite = sprite_comp.value()
   guard images.get_ref().val.get_mut(sprite.image) is Some(image) else {
     return
   }

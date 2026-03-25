@@ -94,9 +94,15 @@ fn spawn_camera(commands : @app.Commands) -> Unit {
 fn spawn_text(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
-  free_camera_query : @ecs.Query1[@camera_controller.FreeCamera],
+  free_camera_query : @ecs.Query[
+    @ecs.Comp[@camera_controller.FreeCamera],
+    @ecs.All,
+  ],
 ) -> Unit {
-  guard (try! free_camera_query.single()) is Some(free_camera) else { return }
+  guard (try! free_camera_query.single()) is Some(free_camera_comp) else {
+    return
+  }
+  let free_camera = free_camera_comp.value()
   let font = asset_server.get().load_font("fonts/FiraSans-Bold.ttf")
 
   ignore(
@@ -174,13 +180,18 @@ fn spawn_text(
 fn update_camera_settings(
   commands : @app.Commands,
   input : @input.ButtonInput[@window.KeyCode],
-  camera_query : @ecs.Query2[
-    @camera_controller.FreeCamera,
-    @camera_controller.FreeCameraState,
+  camera_query : @ecs.Query[
+    (
+      @ecs.Comp[@camera_controller.FreeCamera],
+      @ecs.Comp[@camera_controller.FreeCameraState],
+    ),
+    @ecs.All,
   ],
 ) -> Unit {
-  try! camera_query.for_each(fn(entity, free_camera, free_camera_state) {
-    let mut next_camera = free_camera
+  try! camera_query.for_each(fn(entity, data) {
+    let (free_camera, free_camera_state) = data
+    let mut next_camera = free_camera.value()
+    let free_camera_state = free_camera_state.value()
     let mut camera_changed = false
 
     if input.pressed(@window.KeyCode::KeyZ) {
@@ -254,14 +265,23 @@ fn update_camera_settings(
 
 ///|
 fn update_text(
-  info_text_query : @ecs.Query2[InfoText, @text.Text],
-  camera_query : @ecs.Query2[
-    @camera_controller.FreeCamera,
-    @camera_controller.FreeCameraState,
+  info_text_query : @ecs.Query[
+    (@ecs.Comp[InfoText], @ecs.Mut[@text.Text]),
+    @ecs.All,
+  ],
+  camera_query : @ecs.Query[
+    (
+      @ecs.Comp[@camera_controller.FreeCamera],
+      @ecs.Comp[@camera_controller.FreeCameraState],
+    ),
+    @ecs.All,
   ],
 ) -> Unit {
   let content_ref : Ref[String?] = Ref::new(None)
-  try! camera_query.for_each(fn(_entity, free_camera, free_camera_state) {
+  try! camera_query.for_each(fn(_entity, data) {
+    let (free_camera, free_camera_state) = data
+    let free_camera = free_camera.value()
+    let free_camera_state = free_camera_state.value()
     content_ref.val = Some(
       "Enabled: " +
       free_camera_state.enabled.to_string() +
@@ -286,8 +306,9 @@ fn update_text(
     )
   })
   guard content_ref.val is Some(content) else { return }
-  try! info_text_query.for_each(fn(_entity, _marker, info_text) {
-    info_text.content = content
+  try! info_text_query.for_each(fn(_entity, data) {
+    let (_marker, info_text) = data
+    info_text.get_ref().val.content = content
   })
 }
 

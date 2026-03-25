@@ -531,7 +531,10 @@ test "render2d: plain Mesh2d authoring extracts render mesh without gpu cache co
 
   app = app.update()
 
-  inspect(app.world().query1(ecs_key_mesh2d).count(), content="1")
+  let mesh_query : @ecs.Query[@ecs.Comp[Mesh2d], @ecs.All] = @ecs.query(
+    app.world(),
+  )
+  inspect(mesh_query.count(), content="1")
   inspect(render2d_diagnostic_queued_draw_item_count() > 0, content="true")
 }
 

@@ -101,7 +101,10 @@ fn setup_camera(commands : @app.Commands) -> Unit {
 fn move_player(
   keyboard_input : @input.ButtonInput[@window.KeyCode],
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query2[@transform.Transform, Player],
+  query : @ecs.Query[
+    (@ecs.Mut[@transform.Transform], @ecs.Comp[Player]),
+    @ecs.All,
+  ],
 ) -> Unit {
   let direction = @math.Vec2::zero()
   if keyboard_input.pressed(@window.KeyCode::KeyW) {
@@ -121,8 +124,10 @@ fn move_player(
   let move_delta = direction
     .normalize_or_zero()
     .mul_scalar(PLAYER_SPEED * delta_seconds)
-  try! query.for_each(fn(_entity, transform, _player) {
-    transform.translation = transform.translation.add(
+  try! query.for_each(fn(_entity, data) {
+    let (transform, _player) = data
+    let transform_ref = transform.get_ref()
+    transform_ref.val.translation = transform_ref.val.translation.add(
       @math.Vec3::new(move_delta.x, move_delta.y, 0.0F),
     )
   })
@@ -130,23 +135,32 @@ fn move_player(
 
 ///|
 fn update_camera(
-  player_query : @ecs.Query2[@transform.Transform, Player],
-  camera_query : @ecs.Query2[@transform.Transform, @sprite.Camera2d],
+  player_query : @ecs.Query[
+    (@ecs.Comp[@transform.Transform], @ecs.Comp[Player]),
+    @ecs.All,
+  ],
+  camera_query : @ecs.Query[
+    (@ecs.Mut[@transform.Transform], @ecs.Comp[@sprite.Camera2d]),
+    @ecs.All,
+  ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let player_translation : Ref[@math.Vec3?] = Ref::new(None)
-  try! player_query.for_each(fn(_entity, transform, _player) {
-    player_translation.val = Some(transform.translation)
+  try! player_query.for_each(fn(_entity, data) {
+    let (transform, _player) = data
+    player_translation.val = Some(transform.value().translation)
   })
   guard player_translation.val is Some(target_translation) else { return }
 
   let delta_seconds = time.get().delta_seconds()
-  try! camera_query.for_each(fn(_entity, transform, _camera) {
-    transform.translation.smooth_nudge(
+  try! camera_query.for_each(fn(_entity, data) {
+    let (transform, _camera) = data
+    let transform_ref = transform.get_ref()
+    transform_ref.val.translation.smooth_nudge(
       @math.Vec3::new(
         target_translation.x,
         target_translation.y,
-        transform.translation.z,
+        transform_ref.val.translation.z,
       ),
       CAMERA_DECAY_RATE,
       delta_seconds,

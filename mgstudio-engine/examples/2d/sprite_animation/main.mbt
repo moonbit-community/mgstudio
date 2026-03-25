@@ -225,37 +225,55 @@ fn setup(
 
 ///|
 fn trigger_left_animation(
-  animation : @ecs.Query1Filtered[AnimationConfig, @ecs.With[LeftSprite]],
+  animation : @ecs.Query[@ecs.Mut[AnimationConfig], @ecs.With[LeftSprite]],
 ) -> Unit {
   try! animation.for_each(fn(_entity, config) {
-    config.frame_timer = AnimationConfig::timer_from_fps(config.fps)
+    let config_ref = config.get_ref()
+    config_ref.val.frame_timer = AnimationConfig::timer_from_fps(
+      config_ref.val.fps,
+    )
   })
 }
 
 ///|
 fn trigger_right_animation(
-  animation : @ecs.Query1Filtered[AnimationConfig, @ecs.With[RightSprite]],
+  animation : @ecs.Query[@ecs.Mut[AnimationConfig], @ecs.With[RightSprite]],
 ) -> Unit {
   try! animation.for_each(fn(_entity, config) {
-    config.frame_timer = AnimationConfig::timer_from_fps(config.fps)
+    let config_ref = config.get_ref()
+    config_ref.val.frame_timer = AnimationConfig::timer_from_fps(
+      config_ref.val.fps,
+    )
   })
 }
 
 ///|
 fn execute_animations(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query2[AnimationConfig, @sprite.Sprite],
+  query : @ecs.Query[
+    (@ecs.Mut[AnimationConfig], @ecs.Mut[@sprite.Sprite]),
+    @ecs.All,
+  ],
 ) -> Unit {
-  try! query.for_each(fn(_entity, config, sprite) {
-    config.frame_timer = config.frame_timer.tick(time.get().delta())
-    guard config.frame_timer.just_finished() else { return }
-    guard sprite.texture_atlas is Some(atlas) else { return }
+  try! query.for_each(fn(_entity, data) {
+    let (config, sprite) = data
+    let config_ref = config.get_ref()
+    let sprite_ref = sprite.get_ref()
+    config_ref.val.frame_timer = config_ref.val.frame_timer.tick(
+      time.get().delta(),
+    )
+    guard config_ref.val.frame_timer.just_finished() else { return }
+    guard sprite_ref.val.texture_atlas is Some(atlas) else { return }
 
-    if atlas.index == config.last_sprite_index {
-      sprite.texture_atlas = Some(atlas.with_index(config.first_sprite_index))
+    if atlas.index == config_ref.val.last_sprite_index {
+      sprite_ref.val.texture_atlas = Some(
+        atlas.with_index(config_ref.val.first_sprite_index),
+      )
     } else {
-      sprite.texture_atlas = Some(atlas.with_index(atlas.index + 1))
-      config.frame_timer = AnimationConfig::timer_from_fps(config.fps)
+      sprite_ref.val.texture_atlas = Some(atlas.with_index(atlas.index + 1))
+      config_ref.val.frame_timer = AnimationConfig::timer_from_fps(
+        config_ref.val.fps,
+      )
     }
   })
 }

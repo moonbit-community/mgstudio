@@ -34,9 +34,10 @@ pub fn visibility_propagate_system(world : @ecs.World) -> Unit {
   // Identify roots: entities that either have no parent, or whose parent lacks
   // the required visibility components (Bevy fallback).
   let roots : Array[@core.Entity] = []
-  try! world
-  .query1(ecs_key_visibility)
-  .view(fn(entity, _visibility) {
+  let visibility_query : @ecs.Query[@ecs.Comp[Visibility], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! visibility_query.view(fn(entity, _visibility) {
     match parent_access.get(entity) {
       None => roots.push(entity)
       Some(parent) => {

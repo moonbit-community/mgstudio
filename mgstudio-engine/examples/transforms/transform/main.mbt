@@ -151,13 +151,14 @@ fn rotate_cube(
     (@ecs.Comp[CubeState], @ecs.Mut[@mgs_transform.Transform]),
     @ecs.Without[Center],
   ],
-  center_spheres : @ecs.Query1Filtered[
-    @mgs_transform.Transform,
+  center_spheres : @ecs.Query[
+    @ecs.Comp[@mgs_transform.Transform],
     @ecs.With[Center],
   ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
-  guard (try! center_spheres.single()) is Some(center) else { return }
+  guard (try! center_spheres.single()) is Some(center_comp) else { return }
+  let center = center_comp.value()
 
   let delta = time.get().delta_secs()
   try! cubes.view(fn(_entity, data) {
@@ -178,9 +179,8 @@ fn rotate_cube(
 
 ///|
 fn scale_down_sphere_proportional_to_cube_travel_distance(
-  cubes : @ecs.Query2Filtered[
-    @mgs_transform.Transform,
-    CubeState,
+  cubes : @ecs.Query[
+    (@ecs.Comp[@mgs_transform.Transform], @ecs.Comp[CubeState]),
     @ecs.Without[Center],
   ],
   centers : @ecs.Query[
@@ -189,9 +189,12 @@ fn scale_down_sphere_proportional_to_cube_travel_distance(
   ],
 ) -> Unit {
   let distances = Ref::new(0.0F)
-  try! cubes.view(fn(_entity, cube_transform, cube_state) {
+  try! cubes.view(fn(_entity, data) {
+    let (cube_transform, cube_state) = data
     distances.val = distances.val +
-      cube_state.start_pos.sub(cube_transform.translation).length()
+      cube_state.value().start_pos
+      .sub(cube_transform.value().translation)
+      .length()
   })
   try! centers.view(fn(_entity, data) {
     let (center, transform) = data

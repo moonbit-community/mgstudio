@@ -471,14 +471,25 @@ fn spawn_scale_label(
 ///|
 fn animate_sprite(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query3[AnimationIndices, AnimationTimer, @sprite.Sprite],
+  query : @ecs.Query[
+    (
+      @ecs.Comp[AnimationIndices],
+      @ecs.Mut[AnimationTimer],
+      @ecs.Mut[@sprite.Sprite],
+    ),
+    @ecs.All,
+  ],
 ) -> Unit {
-  try! query.for_each(fn(_entity, indices, timer, sprite) {
-    timer.timer = timer.timer.tick(time.get().delta())
-    guard timer.timer.just_finished() else { return }
-    guard sprite.texture_atlas is Some(atlas) else { return }
+  try! query.for_each(fn(_entity, data) {
+    let (indices, timer, sprite) = data
+    let indices = indices.value()
+    let timer_ref = timer.get_ref()
+    let sprite_ref = sprite.get_ref()
+    timer_ref.val.timer = timer_ref.val.timer.tick(time.get().delta())
+    guard timer_ref.val.timer.just_finished() else { return }
+    guard sprite_ref.val.texture_atlas is Some(atlas) else { return }
 
-    sprite.texture_atlas = Some(
+    sprite_ref.val.texture_atlas = Some(
       atlas.with_index(
         if atlas.index == indices.last {
           indices.first

@@ -344,9 +344,11 @@ fn spawn_ui(commands : @app.Commands) -> Unit {
 
 ///|
 fn handle_widget_interactions(
-  interactions : @ecs.Query2Filtered[
-    @ui.Interaction,
-    @widgets.WidgetClickSender[AppSetting],
+  interactions : @ecs.Query[
+    (
+      @ecs.Comp[@ui.Interaction],
+      @ecs.Comp[@widgets.WidgetClickSender[AppSetting]],
+    ),
     @ecs.With[@ui.Button],
   ],
   widget_click_events : @ecs.MessageWriter[
@@ -453,9 +455,9 @@ fn handle_window_resize_events(
 ///|
 fn regenerate_image_when_requested(
   commands : @app.Commands,
-  image_views : @ecs.Query1[ImageView],
-  windows : @ecs.Query1Filtered[
-    @window.Window,
+  image_views : @ecs.Query[@ecs.Comp[ImageView], @ecs.All],
+  windows : @ecs.Query[
+    @ecs.Comp[@window.Window],
     @ecs.With[@window.PrimaryWindow],
   ],
   app_status : @app.ResMut[AppStatus],
@@ -499,8 +501,8 @@ fn animate_image_scale(
     @ecs.Mut[@transform.Transform],
     @ecs.With[AnimatedImage],
   ],
-  windows : @ecs.Query1Filtered[
-    @window.Window,
+  windows : @ecs.Query[
+    @ecs.Comp[@window.Window],
     @ecs.With[@window.PrimaryWindow],
   ],
   app_status : @app.Res[AppStatus],
@@ -745,12 +747,13 @@ fn image_size_to_int(size : ImageSize) -> Int {
 
 ///|
 fn primary_window_size(
-  windows : @ecs.Query1Filtered[
-    @window.Window,
+  windows : @ecs.Query[
+    @ecs.Comp[@window.Window],
     @ecs.With[@window.PrimaryWindow],
   ],
 ) -> @math.Vec2 {
-  if (try! windows.single()) is Some(window) {
+  if (try! windows.single()) is Some(window_comp) {
+    let window = window_comp.value()
     @math.Vec2::new(
       max_float(window.width(), 1.0F),
       max_float(window.height(), 1.0F),

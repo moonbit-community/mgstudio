@@ -147,7 +147,7 @@ fn setup(
 
 ///|
 fn animate_materials(
-  material_handles : @ecs.Query1[@pbr.MeshMaterial3d],
+  material_handles : @ecs.Query[@ecs.Comp[@pbr.MeshMaterial3d], @ecs.All],
   time : @app.Res[@time.Time[Unit]],
   materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
 ) -> Unit {
@@ -157,7 +157,7 @@ fn animate_materials(
   }
   let material_assets = materials.get_ref().val
   try! material_handles.view(fn(_entity, material_handle) {
-    let handle = material_handle.material
+    let handle = material_handle.value().material
     if material_assets.get(handle) is Some(material) {
       let next_hue = wrap_hue_deg(
         color_hue_deg(material.base_color) + delta * HUE_SPEED_DEG_PER_SEC,

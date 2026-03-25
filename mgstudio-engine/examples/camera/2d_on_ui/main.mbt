@@ -94,14 +94,21 @@ fn setup(
 ///|
 fn rotate_sprite(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query2[@transform.Transform, OverlaySprite],
+  query : @ecs.Query[
+    (@ecs.Mut[@transform.Transform], @ecs.Comp[OverlaySprite]),
+    @ecs.All,
+  ],
 ) -> Unit {
   let delta_seconds = time.get().delta_seconds()
   let rotation = @math.Quat::from_rotation_z(delta_seconds * 0.5F).mul(
     @math.Quat::from_rotation_y(delta_seconds),
   )
-  try! query.for_each(fn(_entity, transform, _overlay_sprite) {
-    transform.rotation = rotation.mul(transform.rotation).normalize()
+  try! query.for_each(fn(_entity, data) {
+    let (transform, _overlay_sprite) = data
+    let transform_ref = transform.get_ref()
+    transform_ref.val.rotation = rotation
+      .mul(transform_ref.val.rotation)
+      .normalize()
   })
 }
 

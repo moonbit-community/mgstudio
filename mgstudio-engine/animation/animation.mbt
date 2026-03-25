@@ -2900,14 +2900,17 @@ pub fn advance_transitions(world : @ecs.World) -> Unit {
   let delta_seconds = animation_default_time_or_default(world).delta_seconds()
 
   let updates : Array[(@core.Entity, AnimationTransitions, AnimationPlayer)] = []
-  try! world
-  .query1(ecs_key_animation_transitions)
-  .view(fn(entity, transitions) {
+  let transitions_query : @ecs.Query[@ecs.Comp[AnimationTransitions], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! transitions_query.view(fn(entity, transitions) {
     guard (try! world.get(entity, ecs_key_animation_player)) is Some(player) else {
       return
     }
     let (next_transitions, next_player) = animation_transitions_advance(
-      transitions, player, delta_seconds,
+      transitions.value(),
+      player,
+      delta_seconds,
     )
     updates.push((entity, next_transitions, next_player))
   })
@@ -2923,9 +2926,10 @@ pub fn advance_animations(world : @ecs.World) -> Unit {
   let delta_seconds = animation_default_time_or_default(world).delta_seconds()
 
   let updates : Array[(@core.Entity, AnimationPlayer)] = []
-  try! world
-  .query1(ecs_key_animation_player)
-  .view(fn(entity, player) {
+  let player_query : @ecs.Query[@ecs.Comp[AnimationPlayer], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! player_query.view(fn(entity, player) {
     guard (try! world.get(entity, ecs_key_animation_graph_handle))
       is Some(graph_handle) else {
       return
@@ -2933,7 +2937,9 @@ pub fn advance_animations(world : @ecs.World) -> Unit {
     guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
       return
     }
-    updates.push((entity, animation_player_tick(player, graph, delta_seconds)))
+    updates.push(
+      (entity, animation_player_tick(player.value(), graph, delta_seconds)),
+    )
   })
 
   for update in updates {
@@ -2946,9 +2952,10 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
   let transform_updates : Array[(@core.Entity, @transform.Transform)] = []
   let weights_updates : Array[(@core.Entity, AnimationWeights)] = []
 
-  try! world
-  .query1(ecs_key_animation_target_id)
-  .view(fn(entity, target_id) {
+  let target_query : @ecs.Query[@ecs.Comp[AnimationTargetId], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! target_query.view(fn(entity, target_id) {
     guard (try! world.get(entity, ecs_key_animated_by)) is Some(animated_by) else {
       return
     }
@@ -2964,6 +2971,7 @@ pub fn animate_targets(world : @ecs.World) -> Unit {
     guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
       return
     }
+    let target_id = target_id.value()
     let target_mask = graph.target_mask(target_id)
 
     let (next_transform, next_weights) = animation_apply_player_to_target(
@@ -2999,13 +3007,15 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
   )
 
   // Root (untargeted) events fire on the player entity.
-  try! world
-  .query1(ecs_key_animation_player)
-  .view(fn(player_entity, player) {
+  let player_query : @ecs.Query[@ecs.Comp[AnimationPlayer], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! player_query.view(fn(player_entity, player) {
     guard (try! world.get(player_entity, ecs_key_animation_graph_handle))
       is Some(graph_handle) else {
       return
     }
+    let player = player.value()
     guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
       return
     }
@@ -3037,9 +3047,10 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
   })
 
   // Targeted events fire on the animated target entity.
-  try! world
-  .query1(ecs_key_animation_target_id)
-  .view(fn(target_entity, target_id) {
+  let target_query : @ecs.Query[@ecs.Comp[AnimationTargetId], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! target_query.view(fn(target_entity, target_id) {
     guard (try! world.get(target_entity, ecs_key_animated_by))
       is Some(animated_by) else {
       return
@@ -3053,6 +3064,7 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
       is Some(graph_handle) else {
       return
     }
+    let target_id = target_id.value()
     guard animation_graph_get(graph_handle.graph()) is Some(graph) else {
       return
     }
@@ -3095,14 +3107,16 @@ pub fn trigger_events(world : @ecs.World) -> Unit {
 ///|
 pub fn expire_transitions(world : @ecs.World) -> Unit {
   let updates : Array[(@core.Entity, AnimationTransitions, AnimationPlayer)] = []
-  try! world
-  .query1(ecs_key_animation_transitions)
-  .view(fn(entity, transitions) {
+  let transitions_query : @ecs.Query[@ecs.Comp[AnimationTransitions], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! transitions_query.view(fn(entity, transitions) {
     guard (try! world.get(entity, ecs_key_animation_player)) is Some(player) else {
       return
     }
     let (next_transitions, next_player) = animation_transitions_expire(
-      transitions, player,
+      transitions.value(),
+      player,
     )
     updates.push((entity, next_transitions, next_player))
   })

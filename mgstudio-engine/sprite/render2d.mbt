@@ -4955,9 +4955,10 @@ pub fn render2d_camera_system_ecs(world : @ecs.World) -> Unit {
   guard render_state_ref(world) is Some(render_state_ref_value) else { return }
   let render_state = render_state_ref_value
   let cameras : Array[@core.Entity] = []
-  try! world
-  .query1(ecs_key_camera2d)
-  .view(fn(entity, _camera2d) { cameras.push(entity) })
+  let camera2d_query : @ecs.Query[@ecs.Comp[Camera2d], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! camera2d_query.view(fn(entity, _camera2d) { cameras.push(entity) })
   for entity in cameras {
     let target = (try! world.get(entity, ecs_key_render_target)).unwrap_or(
       RenderTarget::Screen,
@@ -5148,9 +5149,12 @@ fn render2d_sorted_camera_indices(
 
 ///|
 fn render2d_extract_tilemap_chunks(world : @ecs.World) -> Unit {
-  try! world
-  .query2(ecs_key_tilemap_chunk, ecs_key_tilemap_chunk_tile_data)
-  .view(fn(entity, chunk, tile_data) {
+  let chunk_query : @ecs.Query[
+    (@ecs.Comp[TilemapChunk], @ecs.Comp[TilemapChunkTileData]),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! chunk_query.view(fn(entity, data) {
+    let (chunk, tile_data) = data
     if !render2d_entity_visible_ecs(world, entity) {
       return
     }
@@ -5158,7 +5162,13 @@ fn render2d_extract_tilemap_chunks(world : @ecs.World) -> Unit {
       RenderLayers::default(),
     )
     let transform = render2d_resolve_transform_ecs(world, entity)
-    render2d_draw_tilemap_chunk(world, chunk, tile_data, transform, layers)
+    render2d_draw_tilemap_chunk(
+      world,
+      chunk.value(),
+      tile_data.value(),
+      transform,
+      layers,
+    )
   })
 }
 
@@ -5418,9 +5428,10 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
     rs.val.cameras.clear()
     rs.val.meshes.clear()
     // ECS camera components.
-    try! source_world
-    .query1(ecs_key_camera2d)
-    .view(fn(entity, _camera2d) {
+    let camera2d_query : @ecs.Query[@ecs.Comp[Camera2d], @ecs.All] = @ecs.query(
+      source_world,
+    )
+    try! camera2d_query.view(fn(entity, _camera2d) {
       render2d_extract_camera_entity_ecs(source_world, rs, entity)
     })
     render2d_extract_ui_only_cameras_ecs(source_world, rs)
@@ -5433,12 +5444,14 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
     render2d_prune_postprocess_intermediate_targets(rs.val)
 
     // ECS sprite components.
-    try! source_world
-    .query1(ecs_key_sprite)
-    .view(fn(entity, sprite) {
+    let sprite_query : @ecs.Query[@ecs.Comp[Sprite], @ecs.All] = @ecs.query(
+      source_world,
+    )
+    try! sprite_query.view(fn(entity, sprite) {
       if !render2d_entity_visible_ecs(source_world, entity) {
         return
       }
+      let sprite = sprite.value()
       let anchor = (try! source_world.get(entity, ecs_key_anchor)).unwrap_or(
         Anchor::default(),
       )
@@ -5536,9 +5549,10 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
     }
 
     // ECS mesh components.
-    try! source_world
-    .query1(ecs_key_mesh2d)
-    .view(fn(entity, mesh2d) {
+    let mesh_query : @ecs.Query[@ecs.Comp[Mesh2d], @ecs.All] = @ecs.query(
+      source_world,
+    )
+    try! mesh_query.view(fn(entity, mesh2d) {
       if !render2d_entity_visible_ecs(source_world, entity) {
         return
       }
@@ -5560,6 +5574,7 @@ pub fn render_extract_system_ecs(world : @ecs.World) -> Unit {
         try! source_world.get(entity, ecs_key_wireframe2d_color),
         wireframe_config,
       )
+      let mesh2d = mesh2d.value()
       rs.val.meshes.push(ExtractedMesh2d::{
         entity: phase_entity_ref_for_main(entity),
         payload: Mesh2dDrawPayload::{

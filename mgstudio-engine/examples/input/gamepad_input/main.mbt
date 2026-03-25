@@ -22,8 +22,11 @@ fn main {
 }
 
 ///|
-fn gamepad_system(gamepads : @ecs.Query1[@input.Gamepad]) -> Unit {
+fn gamepad_system(
+  gamepads : @ecs.Query[@ecs.Comp[@input.Gamepad], @ecs.All],
+) -> Unit {
   try! gamepads.view(fn(entity, gamepad) {
+    let gamepad = gamepad.value()
     let gamepad_id = entity_text(entity)
     if gamepad.just_pressed(@input.GamepadButton::South) {
       log_line("\{gamepad_id} just pressed South")

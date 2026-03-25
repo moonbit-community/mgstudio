@@ -66,17 +66,22 @@ fn setup(
 fn sprite_movement(
   commands : @app.Commands,
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query2[Direction, @transform.Transform],
+  query : @ecs.Query[
+    (@ecs.Comp[Direction], @ecs.Mut[@transform.Transform]),
+    @ecs.All,
+  ],
 ) -> Unit {
   let delta = SPEED * time.get().delta_seconds()
-  try! query.for_each(fn(entity, direction, transform) {
-    if direction is Right {
-      transform.translation.x += delta
+  try! query.for_each(fn(entity, data) {
+    let (direction, transform) = data
+    let transform_ref = transform.get_ref()
+    if direction.value() is Right {
+      transform_ref.val.translation.x += delta
     } else {
-      transform.translation.x -= delta
+      transform_ref.val.translation.x -= delta
     }
 
-    let next_x = transform.translation.x
+    let next_x = transform_ref.val.translation.x
     if next_x > EDGE_LIMIT {
       commands.entity(entity).insert_component(Direction::Left)
     } else if next_x < -EDGE_LIMIT {

@@ -157,10 +157,14 @@ fn spawn_text(commands : @app.Commands) -> Unit {
 fn alter_handle(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
-  right_shape : @ecs.Query2Filtered[Shape, @pbr.Mesh3d, @ecs.Without[Left]],
+  right_shape : @ecs.Query[
+    (@ecs.Comp[Shape], @ecs.Comp[@pbr.Mesh3d]),
+    @ecs.Without[Left],
+  ],
 ) -> Unit {
-  try! right_shape.view(fn(entity, shape, _mesh) {
-    let next_shape = shape.next()
+  try! right_shape.view(fn(entity, data) {
+    let (shape, _mesh) = data
+    let next_shape = shape.value().next()
     commands
     .entity(entity)
     .insert(
@@ -175,10 +179,11 @@ fn alter_handle(
 ///|
 fn alter_mesh(
   is_mesh_scaled : @app.Local[Bool],
-  left_shape : @ecs.Query1Filtered[@pbr.Mesh3d, @ecs.With[Left]],
+  left_shape : @ecs.Query[@ecs.Comp[@pbr.Mesh3d], @ecs.With[Left]],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
 ) -> Unit {
-  guard (try! left_shape.single()) is Some(mesh3d) else { return }
+  guard (try! left_shape.single()) is Some(mesh3d_comp) else { return }
+  let mesh3d = mesh3d_comp.value()
   let mesh_assets = meshes.get_ref().val
   guard mesh_assets.get_mut(mesh3d.mesh) is Some(mesh_asset) else { return }
   guard mesh_asset.as_3d_geometry() is Some(geometry) else { return }

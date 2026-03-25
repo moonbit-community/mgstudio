@@ -130,7 +130,7 @@ fn ssao_ui_text(
 
 ///|
 fn ssao_camera_entity(
-  camera_query : @ecs.Query1Filtered[SsaoCamera, @ecs.All],
+  camera_query : @ecs.Query[@ecs.Comp[SsaoCamera], @ecs.All],
 ) -> @core.Entity? {
   let entity_ref = Ref::new(None)
   try! camera_query.view(fn(entity, _camera) {
@@ -315,7 +315,7 @@ fn setup(
 
 ///|
 fn update(
-  camera_query : @ecs.Query1Filtered[SsaoCamera, @ecs.All],
+  camera_query : @ecs.Query[@ecs.Comp[SsaoCamera], @ecs.All],
   sphere_query : @ecs.Query[
     @ecs.Mut[@transform.Transform],
     @ecs.With[SphereMarker],

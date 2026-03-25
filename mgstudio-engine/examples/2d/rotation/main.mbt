@@ -170,11 +170,13 @@ fn spawn_help_overlay(
 
 ///|
 fn player_translation(
-  player_query : @ecs.Query1Filtered[@transform.Transform, @ecs.With[Player]],
+  player_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.With[Player]],
 ) -> @math.Vec2? {
   match (try! player_query.single()) {
-    Some(transform) =>
-      Some(@math.Vec2::new(transform.translation.x, transform.translation.y))
+    Some(transform) => {
+      let value = transform.value()
+      Some(@math.Vec2::new(value.translation.x, value.translation.y))
+    }
     None => None
   }
 }
@@ -254,9 +256,15 @@ fn setup(
 fn player_movement_system(
   time : @app.Res[@time.Time[@time.Fixed]],
   keyboard_input : @input.ButtonInput[@window.KeyCode],
-  query : @ecs.Query2[Player, @transform.Transform],
+  query : @ecs.Query[
+    (@ecs.Comp[Player], @ecs.Mut[@transform.Transform]),
+    @ecs.All,
+  ],
 ) -> Unit {
-  try! query.for_each(fn(_entity, player, transform) {
+  try! query.for_each(fn(_entity, data) {
+    let (player, transform) = data
+    let player = player.value()
+    let transform_ref = transform.get_ref()
     let mut rotation_factor = 0.0F
     let mut movement_factor = 0.0F
 
@@ -270,21 +278,21 @@ fn player_movement_system(
       movement_factor += 1.0F
     }
 
-    transform.rotate_z(
+    transform_ref.val.rotate_z(
       rotation_factor * player.rotation_speed * time.get().delta_seconds(),
     )
 
-    let movement_direction = transform.local_y()
+    let movement_direction = transform_ref.val.local_y()
     let movement_distance = movement_factor *
       player.movement_speed *
       time.get().delta_seconds()
-    transform.translation.x = clampf(
-      transform.translation.x + movement_direction.x * movement_distance,
+    transform_ref.val.translation.x = clampf(
+      transform_ref.val.translation.x + movement_direction.x * movement_distance,
       -BOUNDS_X / 2.0F,
       BOUNDS_X / 2.0F,
     )
-    transform.translation.y = clampf(
-      transform.translation.y + movement_direction.y * movement_distance,
+    transform_ref.val.translation.y = clampf(
+      transform_ref.val.translation.y + movement_direction.y * movement_distance,
       -BOUNDS_Y / 2.0F,
       BOUNDS_Y / 2.0F,
     )
@@ -293,25 +301,26 @@ fn player_movement_system(
 
 ///|
 fn snap_to_player_system(
-  query : @ecs.Query1Filtered[@transform.Transform, @ecs.With[SnapToPlayer]],
-  player_query : @ecs.Query1Filtered[@transform.Transform, @ecs.With[Player]],
+  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[SnapToPlayer]],
+  player_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.With[Player]],
 ) -> Unit {
   guard player_translation(player_query) is Some(player_position) else {
     return
   }
 
   try! query.for_each(fn(_entity, enemy_transform) {
+    let enemy_transform_ref = enemy_transform.get_ref()
     let to_player = vec2_normalize_or_zero(
       @math.Vec2::new(
-        player_position.x - enemy_transform.translation.x,
-        player_position.y - enemy_transform.translation.y,
+        player_position.x - enemy_transform_ref.val.translation.x,
+        player_position.y - enemy_transform_ref.val.translation.y,
       ),
     )
     if absf(to_player.x) <= EPSILON && absf(to_player.y) <= EPSILON {
       return
     }
 
-    enemy_transform.rotation = @math.Quat::from_rotation_z(
+    enemy_transform_ref.val.rotation = @math.Quat::from_rotation_z(
       to_player.to_angle() - @math.pi_half(),
     )
   })
@@ -320,20 +329,26 @@ fn snap_to_player_system(
 ///|
 fn rotate_to_player_system(
   time : @app.Res[@time.Time[@time.Fixed]],
-  query : @ecs.Query2[RotateToPlayer, @transform.Transform],
-  player_query : @ecs.Query1Filtered[@transform.Transform, @ecs.With[Player]],
+  query : @ecs.Query[
+    (@ecs.Comp[RotateToPlayer], @ecs.Mut[@transform.Transform]),
+    @ecs.All,
+  ],
+  player_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.With[Player]],
 ) -> Unit {
   guard player_translation(player_query) is Some(player_position) else {
     return
   }
 
-  try! query.for_each(fn(_entity, config, enemy_transform) {
-    let enemy_forward3 = enemy_transform.local_y()
+  try! query.for_each(fn(_entity, data) {
+    let (config, enemy_transform) = data
+    let config = config.value()
+    let enemy_transform_ref = enemy_transform.get_ref()
+    let enemy_forward3 = enemy_transform_ref.val.local_y()
     let enemy_forward = @math.Vec2::new(enemy_forward3.x, enemy_forward3.y)
     let to_player = vec2_normalize_or_zero(
       @math.Vec2::new(
-        player_position.x - enemy_transform.translation.x,
-        player_position.y - enemy_transform.translation.y,
+        player_position.x - enemy_transform_ref.val.translation.x,
+        player_position.y - enemy_transform_ref.val.translation.y,
       ),
     )
     if absf(to_player.x) <= EPSILON && absf(to_player.y) <= EPSILON {
@@ -345,13 +360,13 @@ fn rotate_to_player_system(
       return
     }
 
-    let enemy_right3 = enemy_transform.local_x()
+    let enemy_right3 = enemy_transform_ref.val.local_x()
     let enemy_right = @math.Vec2::new(enemy_right3.x, enemy_right3.y)
     let right_dot_player = vec2_dot(enemy_right, to_player)
     let rotation_sign = if right_dot_player < 0.0F { 1.0F } else { -1.0F }
     let max_angle = acosf(forward_dot_player)
     let rotation_angle = rotation_sign *
       minf(config.rotation_speed * time.get().delta_seconds(), max_angle)
-    enemy_transform.rotate_z(rotation_angle)
+    enemy_transform_ref.val.rotate_z(rotation_angle)
   })
 }

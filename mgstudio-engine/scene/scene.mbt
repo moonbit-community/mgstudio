@@ -849,9 +849,12 @@ pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
   }
 
   let roots : Array[(@core.Entity, SceneRoot)] = []
-  try! world
-  .query1(ecs_key_scene_root)
-  .view(fn(entity, root) { roots.push((entity, root)) })
+  let scene_root_query : @ecs.Query[@ecs.Comp[SceneRoot], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! scene_root_query.view(fn(entity, root) {
+    roots.push((entity, root.value()))
+  })
 
   for entry in roots {
     let root_entity = entry.0
@@ -876,9 +879,12 @@ pub fn scene_reload_modified_roots_system(world : @ecs.World) -> Unit {
 ///|
 pub fn scene_spawn_roots_system(world : @ecs.World) -> Unit {
   let roots : Array[(@core.Entity, SceneRoot)] = []
-  try! world
-  .query1(ecs_key_scene_root)
-  .view(fn(entity, root) { roots.push((entity, root)) })
+  let scene_root_query : @ecs.Query[@ecs.Comp[SceneRoot], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! scene_root_query.view(fn(entity, root) {
+    roots.push((entity, root.value()))
+  })
 
   for entry in roots {
     let root_entity = entry.0

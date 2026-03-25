@@ -213,10 +213,10 @@ fn setup_camera(commands : @app.Commands) -> Unit {
 ///|
 fn rotate(
   time : @app.Res[@time.Time[Unit]],
-  transforms : @ecs.Query1Filtered[@transform.Transform, @ecs.With[Rotate]],
+  transforms : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Rotate]],
 ) -> Unit {
   try! transforms.for_each(fn(_entity, transform) {
-    transform.rotate_z(time.get().delta_secs())
+    transform.get_ref().val.rotate_z(time.get().delta_secs())
   })
 }
 

@@ -22,8 +22,14 @@ test "examples 2d shapes: scheduled update queues visible 2d draw items" {
   app = app.update()
 
   let world = app.world()
-  inspect(world.query1(@sprite.ecs_key_camera2d).count(), content="1")
-  inspect(world.query1(@sprite.ecs_key_mesh2d).count() > 0, content="true")
+  let camera_query : @ecs.Query[@ecs.Comp[@sprite.Camera2d], @ecs.All] = @ecs.query(
+    world,
+  )
+  let mesh_query : @ecs.Query[@ecs.Comp[@sprite.Mesh2d], @ecs.All] = @ecs.query(
+    world,
+  )
+  inspect(camera_query.count(), content="1")
+  inspect(mesh_query.count() > 0, content="true")
   inspect(
     @sprite.render2d_diagnostic_prepared_camera_count() > 0,
     content="true",

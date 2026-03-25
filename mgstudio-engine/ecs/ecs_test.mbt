@@ -190,12 +190,24 @@ test "ecs: typed component api uses component ownership" {
   inspect(updated_counter, content="Some({value: 15})")
 
   let without_marker : Without[TypedMarker] = Without::new(marker_key)
-  let filtered : Query1Filtered[TypedCounter, Without[TypedMarker]] = World::query1_typed_filtered(
+  let filtered : Query[@ecs.Comp[TypedCounter], Without[TypedMarker]] = @ecs.query_filtered(
     world, without_marker,
   )
   inspect(filtered.count(), content="1")
-  inspect(try! filtered.get(e0), content="Some({value: 15})")
-  inspect(try! filtered.get(e1), content="None")
+  inspect(
+    match (try! filtered.get(e0)) {
+      Some(counter) => Some(counter.value())
+      None => None
+    },
+    content="Some({value: 15})",
+  )
+  inspect(
+    match (try! filtered.get(e1)) {
+      Some(counter) => Some(counter.value())
+      None => None
+    },
+    content="None",
+  )
 
   let tick = world.advance_sequence()
   ignore(tick)

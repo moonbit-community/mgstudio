@@ -143,11 +143,12 @@ fn setup(
 ///|
 fn rotator_system(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query1Filtered[@transform.Transform, @ecs.With[FirstPassCube]],
+  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[FirstPassCube]],
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! query.view(fn(_entity, transform) {
-    transform.rotation = transform.rotation
+    let transform_ref = transform.get_ref()
+    transform_ref.val.rotation = transform_ref.val.rotation
       .mul(@math.Quat::from_rotation_x(1.5F * delta))
       .mul(@math.Quat::from_rotation_z(1.3F * delta))
       .normalize()
@@ -157,11 +158,12 @@ fn rotator_system(
 ///|
 fn cube_rotator_system(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query1Filtered[@transform.Transform, @ecs.With[MainPassCube]],
+  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[MainPassCube]],
 ) -> Unit {
   let delta = time.get().delta_seconds()
   try! query.view(fn(_entity, transform) {
-    transform.rotation = transform.rotation
+    let transform_ref = transform.get_ref()
+    transform_ref.val.rotation = transform_ref.val.rotation
       .mul(@math.Quat::from_rotation_x(1.0F * delta))
       .mul(@math.Quat::from_rotation_y(0.7F * delta))
       .normalize()

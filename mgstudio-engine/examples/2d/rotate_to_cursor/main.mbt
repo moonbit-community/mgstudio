@@ -71,7 +71,7 @@ fn setup(
 
 ///|
 fn main_camera_entity(
-  main_camera_query : @ecs.Query1[MainCamera],
+  main_camera_query : @ecs.Query[@ecs.Comp[MainCamera], @ecs.All],
 ) -> @core.Entity? {
   let entity_ref : Ref[@core.Entity?] = Ref::new(None)
   try! main_camera_query.view(fn(entity, _camera) {
@@ -85,27 +85,33 @@ fn main_camera_entity(
 ///|
 fn player_movement_system(
   players : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Player]],
-  main_camera_query : @ecs.Query1[MainCamera],
-  camera_query : @ecs.Query1[@sprite.Camera],
-  projection_query : @ecs.Query1[@sprite.Projection],
-  transform_query : @ecs.Query1[@transform.Transform],
-  windows : @ecs.Query1Filtered[
-    @window.Window,
+  main_camera_query : @ecs.Query[@ecs.Comp[MainCamera], @ecs.All],
+  camera_query : @ecs.Query[@ecs.Comp[@sprite.Camera], @ecs.All],
+  projection_query : @ecs.Query[@ecs.Comp[@sprite.Projection], @ecs.All],
+  transform_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.All],
+  windows : @ecs.Query[
+    @ecs.Comp[@window.Window],
     @ecs.With[@window.PrimaryWindow],
   ],
 ) -> Unit {
   guard main_camera_entity(main_camera_query) is Some(camera_entity) else {
     return
   }
-  guard (try! camera_query.get(camera_entity)) is Some(camera) else { return }
-  guard (try! projection_query.get(camera_entity)) is Some(projection) else {
+  guard (try! camera_query.get(camera_entity)) is Some(camera_comp) else {
     return
   }
+  let camera = camera_comp.value()
+  guard (try! projection_query.get(camera_entity)) is Some(projection_comp) else {
+    return
+  }
+  let projection = projection_comp.value()
   guard projection is Orthographic(orthographic_projection) else { return }
-  guard (try! transform_query.get(camera_entity)) is Some(camera_transform) else {
+  guard (try! transform_query.get(camera_entity)) is Some(camera_transform_comp) else {
     return
   }
-  guard (try! windows.single()) is Some(window) else { return }
+  let camera_transform = camera_transform_comp.value()
+  guard (try! windows.single()) is Some(window_comp) else { return }
+  let window = window_comp.value()
   guard @input.mouse_position() is Some(cursor_position) else { return }
 
   let window_size = @math.IVec2::new(

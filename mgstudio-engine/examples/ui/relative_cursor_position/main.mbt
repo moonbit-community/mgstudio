@@ -126,20 +126,20 @@ fn setup(
 
 ///|
 fn relative_cursor_position_system(
-  relative_cursor_positions : @ecs.Query2[
-    CursorArea,
-    @ui.RelativeCursorPosition,
+  relative_cursor_positions : @ecs.Query[
+    (@ecs.Comp[CursorArea], @ecs.Comp[@ui.RelativeCursorPosition]),
+    @ecs.All,
   ],
-  outputs : @ecs.Query3[CursorReadout, @text.Text, @text.TextColor],
+  outputs : @ecs.Query[
+    (@ecs.Comp[CursorReadout], @ecs.Mut[@text.Text], @ecs.Mut[@text.TextColor]),
+    @ecs.All,
+  ],
 ) -> Unit {
   let current : Ref[@ui.RelativeCursorPosition?] = Ref::new(None)
-  try! relative_cursor_positions.view(fn(
-    _entity,
-    _cursor_area,
-    relative_cursor_position,
-  ) {
+  try! relative_cursor_positions.view(fn(_entity, data) {
+    let (_cursor_area, relative_cursor_position) = data
     if current.val is None {
-      current.val = Some(relative_cursor_position)
+      current.val = Some(relative_cursor_position.value())
     }
   })
   guard current.val is Some(relative_cursor_position) else { return }
@@ -151,9 +151,10 @@ fn relative_cursor_position_system(
     @sprite.Color::srgb(0.9F, 0.1F, 0.1F)
   }
 
-  try! outputs.view(fn(_entity, _readout, text, text_color) {
-    text.content = content
-    text_color.color = color
+  try! outputs.view(fn(_entity, data) {
+    let (_readout, text, text_color) = data
+    text.get_ref().val.content = content
+    text_color.get_ref().val.color = color
   })
 }
 

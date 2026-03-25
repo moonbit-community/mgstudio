@@ -172,14 +172,18 @@ fn setup(
 
 ///|
 fn[T : @math.Bounded2d] draw_bounds(
-  query : @ecs.Query2[DrawBounds[T], @transform.GlobalTransform],
+  query : @ecs.Query[
+    (@ecs.Comp[DrawBounds[T]], @ecs.Comp[@transform.GlobalTransform]),
+    @ecs.All,
+  ],
   gizmos : @sprite.Gizmos,
 ) -> Unit {
   let red = @sprite.Color::new(1.0F, 0.0F, 0.0F, 1.0F)
   let blue = @sprite.Color::new(0.0F, 0.0F, 1.0F, 1.0F)
 
-  try! query.for_each(fn(_entity, shape, transform) {
-    let world_transform = transform.to_transform_approx()
+  try! query.for_each(fn(_entity, data) {
+    let (shape, transform) = data
+    let world_transform = transform.value().to_transform_approx()
     let translation = @math.Vec2::new(
       world_transform.translation.x,
       world_transform.translation.y,
@@ -187,14 +191,14 @@ fn[T : @math.Bounded2d] draw_bounds(
     let rotation = @math.Rot2::radians(world_transform.rotation_z())
     let isometry = @math.Isometry2d::new(translation, rotation)
 
-    let aabb = shape.shape.aabb_2d(isometry)
+    let aabb = shape.value().shape.aabb_2d(isometry)
     gizmos.rect_2d(
       @sprite.Isometry2d::new(aabb.center(), 0.0F),
       aabb.half_size().mul_scalar(2.0F),
       red,
     )
 
-    let bounding_circle = shape.shape.bounding_circle(isometry)
+    let bounding_circle = shape.value().shape.bounding_circle(isometry)
     ignore(
       gizmos.circle_2d(
         @sprite.Isometry2d::new(bounding_circle.center, 0.0F),
@@ -207,9 +211,12 @@ fn[T : @math.Bounded2d] draw_bounds(
 
 ///|
 fn draw_sector_bounds(
-  query : @ecs.Query2[
-    DrawBounds[@sprite.CircularSector],
-    @transform.GlobalTransform,
+  query : @ecs.Query[
+    (
+      @ecs.Comp[DrawBounds[@sprite.CircularSector]],
+      @ecs.Comp[@transform.GlobalTransform],
+    ),
+    @ecs.All,
   ],
   gizmos : @sprite.Gizmos,
 ) -> Unit {
@@ -218,9 +225,12 @@ fn draw_sector_bounds(
 
 ///|
 fn draw_segment_bounds(
-  query : @ecs.Query2[
-    DrawBounds[@sprite.CircularSegment],
-    @transform.GlobalTransform,
+  query : @ecs.Query[
+    (
+      @ecs.Comp[DrawBounds[@sprite.CircularSegment]],
+      @ecs.Comp[@transform.GlobalTransform],
+    ),
+    @ecs.All,
   ],
   gizmos : @sprite.Gizmos,
 ) -> Unit {

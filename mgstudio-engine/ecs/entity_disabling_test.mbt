@@ -50,18 +50,32 @@ test "ecs entity disabling: default queries skip disabled entities" {
   try! world.set(disabled, dummy_key, Dummy::{ label: "disabled" })
   try! world.set(disabled, ecs_key_disabled, Disabled::new())
 
-  inspect(world.query1(dummy_key).count(), content="1")
+  let dummy_query : @ecs.Query[@ecs.Comp[Dummy], @ecs.All] = @ecs.query(world)
+  inspect(dummy_query.count(), content="1")
   inspect(
-    try! world.query1(dummy_key).get(enabled),
+    match (try! dummy_query.get(enabled)) {
+      Some(dummy) => Some(dummy.value())
+      None => None
+    },
     content="Some({label: \"enabled\"})",
   )
-  inspect(try! world.query1(dummy_key).get(disabled), content="None")
   inspect(
-    world.query1_filtered(dummy_key, With::new(ecs_key_disabled)).count(),
+    match (try! dummy_query.get(disabled)) {
+      Some(dummy) => Some(dummy.value())
+      None => None
+    },
+    content="None",
+  )
+  inspect(
+    (
+      @ecs.query_filtered(world, With::new(ecs_key_disabled)) :
+      @ecs.Query[@ecs.Comp[Dummy], @ecs.With[Disabled]]).count(),
     content="1",
   )
   inspect(
-    world.query1_filtered(dummy_key, Allow::new(ecs_key_disabled)).count(),
+    (
+      @ecs.query_filtered(world, Allow::new(ecs_key_disabled)) :
+      @ecs.Query[@ecs.Comp[Dummy], @ecs.Allow[Disabled]]).count(),
     content="2",
   )
   inspect(world.query_entities_filtered(All::new()).count(), content="1")
@@ -121,9 +135,12 @@ test "ecs entity disabling: multiple disabling components require explicit menti
   try! world.set(both, ecs_key_disabled, Disabled::new())
   try! world.set(both, custom_disabled_key, CustomDisabled::{  })
 
-  inspect(world.query1(dummy_key).count(), content="1")
+  let dummy_query : @ecs.Query[@ecs.Comp[Dummy], @ecs.All] = @ecs.query(world)
+  inspect(dummy_query.count(), content="1")
   inspect(
-    world.query1_filtered(dummy_key, With::new(ecs_key_disabled)).count(),
+    (
+      @ecs.query_filtered(world, With::new(ecs_key_disabled)) :
+      @ecs.Query[@ecs.Comp[Dummy], @ecs.With[Disabled]]).count(),
     content="1",
   )
   inspect(
@@ -133,7 +150,9 @@ test "ecs entity disabling: multiple disabling components require explicit menti
     content="2",
   )
   inspect(
-    world.query1_filtered(dummy_key, With::new(custom_disabled_key)).count(),
+    (
+      @ecs.query_filtered(world, With::new(custom_disabled_key)) :
+      @ecs.Query[@ecs.Comp[Dummy], @ecs.With[CustomDisabled]]).count(),
     content="1",
   )
   inspect(
@@ -143,21 +162,27 @@ test "ecs entity disabling: multiple disabling components require explicit menti
     content="2",
   )
   inspect(
-    world
-    .query1_filtered(
-      dummy_key,
-      (Allow::new(ecs_key_disabled), Allow::new(custom_disabled_key)),
-    )
-    .count(),
+    (
+      @ecs.query_filtered(
+        world,
+        (Allow::new(ecs_key_disabled), Allow::new(custom_disabled_key)),
+      ) :
+      @ecs.Query[
+        @ecs.Comp[Dummy],
+        (@ecs.Allow[Disabled], @ecs.Allow[CustomDisabled]),
+      ]).count(),
     content="4",
   )
   inspect(
-    world
-    .query1_filtered(
-      dummy_key,
-      (With::new(ecs_key_disabled), With::new(custom_disabled_key)),
-    )
-    .count(),
+    (
+      @ecs.query_filtered(
+        world,
+        (With::new(ecs_key_disabled), With::new(custom_disabled_key)),
+      ) :
+      @ecs.Query[
+        @ecs.Comp[Dummy],
+        (@ecs.With[Disabled], @ecs.With[CustomDisabled]),
+      ]).count(),
     content="1",
   )
 }

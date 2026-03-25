@@ -195,12 +195,13 @@ fn movement(world : @ecs.World) -> Unit {
     Some(time) => time
     None => return
   }
-  let query = world.query1_filtered(
-    @transform.ecs_key_transform,
-    @ecs.With::new(@sprite.ecs_key_sprite),
-  )
+  let query : @ecs.Query[
+    @ecs.Mut[@transform.Transform],
+    @ecs.With[@sprite.Sprite],
+  ] = @ecs.query_filtered(world, @ecs.With::new(@sprite.ecs_key_sprite))
   let delta_seconds = time.delta_seconds()
-  try! query.for_each(fn(_entity, transform) {
+  try! query.view(fn(_entity, transform) {
+    let transform = transform.get_ref()
     let direction = @math.Vec3::zero()
     if @input.key_pressed(@window.KeyCode::ArrowLeft) {
       direction.x = direction.x - 1.0F
@@ -217,8 +218,8 @@ fn movement(world : @ecs.World) -> Unit {
     if direction.x == 0.0F && direction.y == 0.0F {
       return
     }
-    transform.translation = @math.Vec3::add(
-      transform.translation,
+    transform.val.translation = @math.Vec3::add(
+      transform.val.translation,
       @math.Vec3::mul_scalar(
         direction.normalize_or_zero(),
         100.0F * delta_seconds,
@@ -234,10 +235,11 @@ fn change_color(world : @ecs.World) -> Unit {
     Some(time) => time
     None => return
   }
-  let query = world.query1_filtered(@sprite.ecs_key_sprite, @ecs.All::new())
+  let query : @ecs.Query[@ecs.Mut[@sprite.Sprite], @ecs.All] = @ecs.query(world)
   let hue = time.elapsed_seconds() * 60.0F
-  try! query.for_each(fn(_entity, sprite) {
-    sprite.color = @sprite.Color::hsla(hue, 0.8F, 0.6F, 1.0F)
+  try! query.view(fn(_entity, sprite) {
+    let sprite = sprite.get_ref()
+    sprite.val.color = @sprite.Color::hsla(hue, 0.8F, 0.6F, 1.0F)
   })
 }
 

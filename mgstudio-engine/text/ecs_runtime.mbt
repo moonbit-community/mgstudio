@@ -672,12 +672,13 @@ fn text_ecs_collect_span_bundles_for_entity(
         }
       }
     None => {
-      let query = world.query2(
-        ecs_key_text_span,
-        @hierarchy.Parent::component(),
-      )
-      try! query.for_each(fn(child, _span, parent) {
-        if parent.entity() != entity {
+      let query : @ecs.Query[
+        (@ecs.Comp[TextSpan], @ecs.Comp[@hierarchy.Parent]),
+        @ecs.All,
+      ] = @ecs.query(world)
+      try! query.view(fn(child, data) {
+        let (_span, parent) = data
+        if parent.value().entity() != entity {
           return
         }
         if text_ecs_span_bundle_from_entity(
@@ -834,12 +835,18 @@ fn text_sync_ecs_system(world : @ecs.World) -> Unit {
   prepare_text_runtime_world(world)
   text_ecs_cleanup_stale_entries(world)
   let world_id = world.world_id()
-  let query = world.query3(
-    ecs_key_text2d, ecs_key_text_font, @transform.ecs_key_transform,
-  )
-  try! query.for_each(fn(entity, text, font, local_transform) {
+  let query : @ecs.Query[
+    (@ecs.Comp[Text2d], @ecs.Comp[TextFont], @ecs.Comp[@transform.Transform]),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! query.view(fn(entity, data) {
+    let (text, font, local_transform) = data
     let bundle = text_ecs_bundle_from_entity(
-      world, entity, text, font, local_transform,
+      world,
+      entity,
+      text.value(),
+      font.value(),
+      local_transform.value(),
     )
     let span_bundles = text_ecs_collect_span_bundles_for_entity(
       world, entity, bundle,
@@ -1068,9 +1075,9 @@ pub fn ui_text_sync_ecs_system(world : @ecs.World) -> Unit {
   prepare_text_runtime_world(world)
   ui_text_ecs_cleanup_stale_entries(world)
   let world_id = world.world_id()
-  let query = world.query1(ecs_key_text)
-  try! query.for_each(fn(entity, text) {
-    let bundle = ui_text_ecs_bundle_from_entity(world, entity, text)
+  let query : @ecs.Query[@ecs.Comp[Text], @ecs.All] = @ecs.query(world)
+  try! query.view(fn(entity, text) {
+    let bundle = ui_text_ecs_bundle_from_entity(world, entity, text.value())
     let span_bundles = text_ecs_collect_span_bundles_for_entity(
       world, entity, bundle,
     )

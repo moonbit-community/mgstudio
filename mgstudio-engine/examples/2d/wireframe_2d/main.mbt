@@ -196,10 +196,16 @@ fn update_colors(
   keyboard_input : @input.ButtonInput[@window.KeyCode],
   config : @app.ResMut[@sprite.Wireframe2dConfig],
   wireframe_colors : @ecs.Query[@ecs.Mut[@sprite.Wireframe2dColor], @ecs.All],
-  text : @ecs.Query2[WireframeHelpText, @text.Text],
+  text : @ecs.Query[
+    (@ecs.Comp[WireframeHelpText], @ecs.Mut[@text.Text]),
+    @ecs.All,
+  ],
 ) -> Unit {
-  try! text.for_each(fn(_entity, _help_text, help_text) {
-    help_text.content = wireframe_overlay_text(config.get_ref().val)
+  try! text.for_each(fn(_entity, data) {
+    let (_help_text, help_text) = data
+    help_text.get_ref().val.content = wireframe_overlay_text(
+      config.get_ref().val,
+    )
   })
 
   if keyboard_input.just_pressed(@window.KeyCode::KeyZ) {

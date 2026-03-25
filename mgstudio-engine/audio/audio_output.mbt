@@ -237,9 +237,12 @@ fn audio_vec3_to_native_tuple(value : @math.Vec3) -> (Double, Double, Double) {
 ///|
 fn audio_listener_positions(world : @ecs.World) -> (@math.Vec3, @math.Vec3) {
   let listeners : Array[(@core.Entity, SpatialListener)] = []
-  try! world
-  .query1(ecs_key_spatial_listener)
-  .view(fn(entity, listener) { listeners.push((entity, listener)) })
+  let listener_query : @ecs.Query[@ecs.Comp[SpatialListener], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! listener_query.view(fn(entity, listener) {
+    listeners.push((entity, listener.value()))
+  })
   if listeners.length() == 0 {
     let default_listener = SpatialListener::default()
     return (default_listener.left_ear_offset, default_listener.right_ear_offset)
@@ -431,31 +434,33 @@ fn audio_play_pitch_entity(
 
 ///|
 fn play_queued_audio_source_system(world : @ecs.World) -> Unit {
-  try! world
-  .query1(ecs_key_audio_source_player)
-  .view(fn(entity, player) {
+  let player_query : @ecs.Query[@ecs.Comp[AudioPlayer[AudioSource]], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! player_query.view(fn(entity, player) {
     if (try! world.get(entity, ecs_key_audio_sink)) is Some(_) {
       return
     }
     if (try! world.get(entity, ecs_key_spatial_audio_sink)) is Some(_) {
       return
     }
-    audio_play_source_entity(world, entity, player)
+    audio_play_source_entity(world, entity, player.value())
   })
 }
 
 ///|
 fn play_queued_pitch_system(world : @ecs.World) -> Unit {
-  try! world
-  .query1(ecs_key_pitch_player)
-  .view(fn(entity, player) {
+  let player_query : @ecs.Query[@ecs.Comp[AudioPlayer[Pitch]], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! player_query.view(fn(entity, player) {
     if (try! world.get(entity, ecs_key_audio_sink)) is Some(_) {
       return
     }
     if (try! world.get(entity, ecs_key_spatial_audio_sink)) is Some(_) {
       return
     }
-    audio_play_pitch_entity(world, entity, player)
+    audio_play_pitch_entity(world, entity, player.value())
   })
 }
 
@@ -463,9 +468,12 @@ fn play_queued_pitch_system(world : @ecs.World) -> Unit {
 fn update_spatial_audio_sink_positions_system(world : @ecs.World) -> Unit {
   let ears = audio_listener_positions(world)
   let emitters : Array[(@core.Entity, SpatialAudioSink)] = []
-  try! world
-  .query1(ecs_key_spatial_audio_sink)
-  .view(fn(entity, sink) { emitters.push((entity, sink)) })
+  let sink_query : @ecs.Query[@ecs.Comp[SpatialAudioSink], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! sink_query.view(fn(entity, sink) {
+    emitters.push((entity, sink.value()))
+  })
   for emitter in emitters {
     let entity = emitter.0
     let sink = emitter.1
@@ -495,18 +503,20 @@ fn update_spatial_audio_sink_positions_system(world : @ecs.World) -> Unit {
 fn cleanup_finished_audio_source_system(world : @ecs.World) -> Unit {
   let sinks : Array[(@core.Entity, AudioSink)] = []
   let spatial_sinks : Array[(@core.Entity, SpatialAudioSink)] = []
-  try! world
-  .query1(ecs_key_audio_sink)
-  .view(fn(entity, sink) {
+  let sink_query : @ecs.Query[@ecs.Comp[AudioSink], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! sink_query.view(fn(entity, sink) {
     if (try! world.get(entity, ecs_key_audio_source_player)) is Some(_) {
-      sinks.push((entity, sink))
+      sinks.push((entity, sink.value()))
     }
   })
-  try! world
-  .query1(ecs_key_spatial_audio_sink)
-  .view(fn(entity, sink) {
+  let spatial_sink_query : @ecs.Query[@ecs.Comp[SpatialAudioSink], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! spatial_sink_query.view(fn(entity, sink) {
     if (try! world.get(entity, ecs_key_audio_source_player)) is Some(_) {
-      spatial_sinks.push((entity, sink))
+      spatial_sinks.push((entity, sink.value()))
     }
   })
   for entry in sinks {
@@ -553,18 +563,20 @@ fn cleanup_finished_audio_source_system(world : @ecs.World) -> Unit {
 fn cleanup_finished_pitch_system(world : @ecs.World) -> Unit {
   let sinks : Array[(@core.Entity, AudioSink)] = []
   let spatial_sinks : Array[(@core.Entity, SpatialAudioSink)] = []
-  try! world
-  .query1(ecs_key_audio_sink)
-  .view(fn(entity, sink) {
+  let sink_query : @ecs.Query[@ecs.Comp[AudioSink], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! sink_query.view(fn(entity, sink) {
     if (try! world.get(entity, ecs_key_pitch_player)) is Some(_) {
-      sinks.push((entity, sink))
+      sinks.push((entity, sink.value()))
     }
   })
-  try! world
-  .query1(ecs_key_spatial_audio_sink)
-  .view(fn(entity, sink) {
+  let spatial_sink_query : @ecs.Query[@ecs.Comp[SpatialAudioSink], @ecs.All] = @ecs.query(
+    world,
+  )
+  try! spatial_sink_query.view(fn(entity, sink) {
     if (try! world.get(entity, ecs_key_pitch_player)) is Some(_) {
-      spatial_sinks.push((entity, sink))
+      spatial_sinks.push((entity, sink.value()))
     }
   })
   for entry in sinks {

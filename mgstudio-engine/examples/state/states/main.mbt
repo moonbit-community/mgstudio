@@ -178,10 +178,11 @@ fn setup_game(
 fn movement(
   time : @app.Res[@time.Time[Unit]],
   input : @input.ButtonInput[@window.KeyCode],
-  query : @ecs.Query1Filtered[@transform.Transform, @ecs.With[@sprite.Sprite]],
+  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[@sprite.Sprite]],
 ) -> Unit {
   let delta_seconds = time.get().delta_seconds()
   try! query.for_each(fn(_entity, transform) {
+    let transform_ref = transform.get_ref()
     let direction = @math.Vec3::zero()
     if input.pressed(@window.KeyCode::ArrowLeft) {
       direction.x = direction.x - 1.0F
@@ -198,8 +199,8 @@ fn movement(
     if direction.x == 0.0F && direction.y == 0.0F {
       return
     }
-    transform.translation = @math.Vec3::add(
-      transform.translation,
+    transform_ref.val.translation = @math.Vec3::add(
+      transform_ref.val.translation,
       @math.Vec3::mul_scalar(
         direction.normalize_or_zero(),
         100.0F * delta_seconds,
@@ -211,10 +212,10 @@ fn movement(
 ///|
 fn change_color(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query1Filtered[@sprite.Sprite, @ecs.All],
+  query : @ecs.Query[@ecs.Mut[@sprite.Sprite], @ecs.All],
 ) -> Unit {
   let hue = time.get().elapsed_seconds() * 60.0F
   try! query.for_each(fn(_entity, sprite) {
-    sprite.color = @sprite.Color::hsla(hue, 0.8F, 0.6F, 1.0F)
+    sprite.get_ref().val.color = @sprite.Color::hsla(hue, 0.8F, 0.6F, 1.0F)
   })
 }

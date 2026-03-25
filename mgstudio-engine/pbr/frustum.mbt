@@ -221,9 +221,13 @@ pub fn Projection::compute_frustum(
 ///|
 pub fn render3d_update_frusta_system(world : @ecs.World) -> Unit {
   let frustum_store = get_frustum_store(world)
-  let query = world.query2(@transform.ecs_key_transform, ecs_key_projection)
-  try! query.view(fn(entity, transform, projection) {
-    let next = projection.compute_frustum(transform)
+  let query : @ecs.Query[
+    (@ecs.Comp[@transform.Transform], @ecs.Comp[Projection]),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! query.view(fn(entity, data) {
+    let (transform, projection) = data
+    let next = projection.value().compute_frustum(transform.value())
     if frustum_store.contains(entity) {
       if frustum_store.get(entity) is Some(current) {
         if current != next {

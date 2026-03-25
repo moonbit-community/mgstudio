@@ -103,10 +103,12 @@ fn food_overlay_color() -> @sprite.Color {
 
 ///|
 fn update_status_text(
-  status_labels : @ecs.Query1Filtered[@text.Text, @ecs.With[StatusLabel]],
+  status_labels : @ecs.Query[@ecs.Mut[@text.Text], @ecs.With[StatusLabel]],
   content : String,
 ) -> Unit {
-  try! status_labels.view(fn(_entity, text) { text.content = content })
+  try! status_labels.view(fn(_entity, text) {
+    text.get_ref().val.content = content
+  })
 }
 
 ///|
@@ -202,24 +204,27 @@ fn setup(
 ///|
 fn activate_ability(
   commands : @app.Commands,
-  interactions : @ecs.Query3Filtered[
-    @ui.Interaction,
-    Cooldown,
-    AbilityName,
+  interactions : @ecs.Query[
+    (@ecs.Comp[@ui.Interaction], @ecs.Mut[Cooldown], @ecs.Comp[AbilityName]),
     @ecs.With[@ui.Button],
   ],
-  status_labels : @ecs.Query1Filtered[@text.Text, @ecs.With[StatusLabel]],
-  active_cooldowns : @ecs.Query1[ActiveCooldown],
+  status_labels : @ecs.Query[@ecs.Mut[@text.Text], @ecs.With[StatusLabel]],
+  active_cooldowns : @ecs.Query[@ecs.Comp[ActiveCooldown], @ecs.All],
 ) -> Unit {
-  try! interactions.view(fn(entity, interaction, cooldown, ability_name) {
-    let was_pressed = cooldown.previous_interaction == @ui.Interaction::Pressed
-    cooldown.previous_interaction = interaction
+  try! interactions.view(fn(entity, data) {
+    let (interaction, cooldown, ability_name) = data
+    let interaction = interaction.value()
+    let ability_name = ability_name.value()
+    let cooldown_ref = cooldown.get_ref()
+    let was_pressed = cooldown_ref.val.previous_interaction ==
+      @ui.Interaction::Pressed
+    cooldown_ref.val.previous_interaction = interaction
     guard interaction == @ui.Interaction::Pressed && !was_pressed else {
       return
     }
 
     if (try! active_cooldowns.get(entity)) is Some(_) {
-      let remaining_seconds = cooldown.timer
+      let remaining_seconds = cooldown_ref.val.timer
         .remaining_secs()
         .to_double()
         .ceil()
@@ -233,7 +238,7 @@ fn activate_ability(
       return
     }
 
-    cooldown.timer = cooldown.timer.reset()
+    cooldown_ref.val.timer = cooldown_ref.val.timer.reset()
     commands.entity(entity).insert_component(ActiveCooldown::{  })
     update_status_text(status_labels, "You ate " + ability_name.value)
   })
@@ -243,24 +248,25 @@ fn activate_ability(
 fn animate_cooldowns(
   time : @app.Res[@time.Time[Unit]],
   commands : @app.Commands,
-  cooldowns : @ecs.Query1[Cooldown],
-  active_cooldowns : @ecs.Query1[ActiveCooldown],
+  cooldowns : @ecs.Query[@ecs.Mut[Cooldown], @ecs.All],
+  active_cooldowns : @ecs.Query[@ecs.Comp[ActiveCooldown], @ecs.All],
   nodes : @ecs.Query[@ecs.Mut[@ui.Node], @ecs.All],
 ) -> Unit {
   try! cooldowns.view(fn(entity, cooldown) {
+    let cooldown_ref = cooldown.get_ref()
     guard (try! active_cooldowns.get(entity)) is Some(_) else { return }
 
-    cooldown.timer = cooldown.timer.tick(time.get().delta())
-    if (try! nodes.get(cooldown.overlay_entity)) is Some(overlay_node) {
+    cooldown_ref.val.timer = cooldown_ref.val.timer.tick(time.get().delta())
+    if (try! nodes.get(cooldown_ref.val.overlay_entity)) is Some(overlay_node) {
       let overlay_node_ref = overlay_node.get_ref()
-      if cooldown.timer.just_finished() {
+      if cooldown_ref.val.timer.just_finished() {
         commands.entity(entity).remove_component(ActiveCooldown::component())
         overlay_node_ref.val = overlay_node_ref.val.with_height(
           @ui.Val::Percent(0.0F),
         )
       } else {
         overlay_node_ref.val = overlay_node_ref.val.with_height(
-          @ui.Val::Percent((1.0F - cooldown.timer.fraction()) * 100.0F),
+          @ui.Val::Percent((1.0F - cooldown_ref.val.timer.fraction()) * 100.0F),
         )
       }
     }

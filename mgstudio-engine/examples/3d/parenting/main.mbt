@@ -90,12 +90,15 @@ fn setup(
 ///|
 fn rotator_system(
   time : @app.Res[@time.Time[Unit]],
-  query : @ecs.Query1Filtered[@transform.Transform, @ecs.With[Rotator]],
+  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[Rotator]],
 ) -> Unit {
   let delta = 3.0F * time.get().delta_seconds()
   let spin = @math.Quat::from_rotation_x(delta)
   try! query.view(fn(_entity, transform) {
-    transform.rotation = transform.rotation.mul(spin).normalize()
+    let transform_ref = transform.get_ref()
+    transform_ref.val.rotation = transform_ref.val.rotation
+      .mul(spin)
+      .normalize()
   })
 }
 

@@ -254,22 +254,11 @@ impl Default for PerMethodSettings with default() {
 }
 
 ///|
-fn[T] @ecs.Query1::first_entity(self : @ecs.Query1[T]) -> @core.Entity? {
-  let result : Ref[@core.Entity?] = Ref::new(None)
-  try! self.view(fn(entity, _component) {
-    if result.val is None {
-      result.val = Some(entity)
-    }
-  })
-  result.val
-}
-
-///|
-fn[D : @ecs.QueryData, F : @ecs.QueryFilter] @ecs.Query::first_entity(
-  self : @ecs.Query[D, F],
+fn[D : @ecs.QueryData, F : @ecs.QueryFilter] first_entity(
+  query : @ecs.Query[D, F],
 ) -> @core.Entity? {
   let result : Ref[@core.Entity?] = Ref::new(None)
-  try! self.view(fn(entity, _component) {
+  try! query.view(fn(entity, _component) {
     if result.val is None {
       result.val = Some(entity)
     }
@@ -278,24 +267,28 @@ fn[D : @ecs.QueryData, F : @ecs.QueryFilter] @ecs.Query::first_entity(
 }
 
 ///|
-fn[A, B] @ecs.Query2::first(self : @ecs.Query2[A, B]) -> (@core.Entity, A, B)? {
+fn[A : @ecs.Component, B : @ecs.Component] first2(
+  query : @ecs.Query[(@ecs.Comp[A], @ecs.Comp[B]), @ecs.All],
+) -> (@core.Entity, A, B)? {
   let result : Ref[(@core.Entity, A, B)?] = Ref::new(None)
-  try! self.view(fn(entity, first, second) {
+  try! query.view(fn(entity, data) {
+    let (first, second) = data
     if result.val is None {
-      result.val = Some((entity, first, second))
+      result.val = Some((entity, first.value(), second.value()))
     }
   })
   result.val
 }
 
 ///|
-fn[A, B, C] @ecs.Query3::first(
-  self : @ecs.Query3[A, B, C],
+fn[A : @ecs.Component, B : @ecs.Component, C : @ecs.Component] first3(
+  query : @ecs.Query[(@ecs.Comp[A], @ecs.Comp[B], @ecs.Comp[C]), @ecs.All],
 ) -> (@core.Entity, A, B, C)? {
   let result : Ref[(@core.Entity, A, B, C)?] = Ref::new(None)
-  try! self.view(fn(entity, first, second, third) {
+  try! query.view(fn(entity, data) {
+    let (first, second, third) = data
     if result.val is None {
-      result.val = Some((entity, first, second, third))
+      result.val = Some((entity, first.value(), second.value(), third.value()))
     }
   })
   result.val
@@ -538,7 +531,7 @@ fn setup_image_viewer_scene(
   mesh_assets : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   camera_transform : @app.Res[CameraTransform],
-  ui_root_query : @ecs.Query1[TonemappingUiRoot],
+  ui_root_query : @ecs.Query[@ecs.Comp[TonemappingUiRoot], @ecs.All],
 ) -> Unit {
   let mesh_handle = mesh_assets.get_ref().val.add(
     @mesh.Mesh::from_3d_geometry(@mesh.Mesh3dGeometry::rectangle(1.0F, 1.0F)),
@@ -563,7 +556,7 @@ fn setup_image_viewer_scene(
     ),
   )
 
-  guard ui_root_query.first_entity() is Some(root) else { return }
+  guard first_entity(ui_root_query) is Some(root) else { return }
   ignore(
     commands.spawn(
       (
@@ -591,7 +584,7 @@ fn toggle_scene(
   keys : @input.ButtonInput[@window.KeyCode],
   visibility_query : @ecs.Query[@ecs.Mut[@visibility.Visibility], @ecs.All],
   current_scene : @app.ResMut[CurrentScene],
-  scene_query : @ecs.Query1[SceneNumber],
+  scene_query : @ecs.Query[@ecs.Comp[SceneNumber], @ecs.All],
 ) -> Unit {
   let next_scene = if keys.just_pressed(KeyQ) {
     Some(1)
@@ -606,7 +599,7 @@ fn toggle_scene(
   current_scene.get_ref().val.value = scene
 
   try! scene_query.view(fn(entity, scene_number) {
-    let visibility = if scene_number.value == scene {
+    let visibility = if scene_number.value().value == scene {
       @visibility.Visibility::Inherited
     } else {
       @visibility.Visibility::Hidden
@@ -646,7 +639,7 @@ fn toggle_tonemapping_method(
   } else {
     None
   }
-  guard tonemapping_query.first_entity() is Some(camera) else { return }
+  guard first_entity(tonemapping_query) is Some(camera) else { return }
   guard (try! tonemapping_query.get(camera)) is Some(initial_tonemapping) else {
     return
   }
@@ -677,7 +670,7 @@ fn update_color_grading_settings(
   current_scene : @app.Res[CurrentScene],
   selected_parameter : @app.ResMut[SelectedParameter],
 ) -> Unit {
-  guard tonemapping_query.first_entity() is Some(camera) else { return }
+  guard first_entity(tonemapping_query) is Some(camera) else { return }
   guard (try! tonemapping_query.get(camera)) is Some(current_method) else {
     return
   }
@@ -737,8 +730,14 @@ fn update_color_grading_settings(
 
 ///|
 fn drag_drop_image(
-  image_material_query : @ecs.Query2[HDRViewer, @pbr.MeshMaterial3d],
-  image_viewer_text_query : @ecs.Query2[@text.Text, SceneNumber],
+  image_material_query : @ecs.Query[
+    (@ecs.Comp[HDRViewer], @ecs.Comp[@pbr.MeshMaterial3d]),
+    @ecs.All,
+  ],
+  image_viewer_text_query : @ecs.Query[
+    (@ecs.Comp[@text.Text], @ecs.Comp[SceneNumber]),
+    @ecs.All,
+  ],
   material_assets : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
   drag_and_drop_reader : @ecs.MessageReader[@window.FileDragAndDrop],
   asset_server : @app.Res[@asset.AssetServer],
@@ -753,7 +752,7 @@ fn drag_drop_image(
     }
   }
   guard new_image is Some(image) else { return }
-  guard image_material_query.first()
+  guard first2(image_material_query)
     is Some((_viewer_entity, _viewer, viewer_material)) else {
     return
   }
@@ -768,7 +767,7 @@ fn drag_drop_image(
     ),
   )
 
-  if image_viewer_text_query.first()
+  if first2(image_viewer_text_query)
     is Some((text_entity, _text, _scene_number)) {
     commands.entity(text_entity).despawn()
   }
@@ -776,7 +775,14 @@ fn drag_drop_image(
 
 ///|
 fn resize_image(
-  image_mesh_query : @ecs.Query3[HDRViewer, @pbr.MeshMaterial3d, @pbr.Mesh3d],
+  image_mesh_query : @ecs.Query[
+    (
+      @ecs.Comp[HDRViewer],
+      @ecs.Comp[@pbr.MeshMaterial3d],
+      @ecs.Comp[@pbr.Mesh3d],
+    ),
+    @ecs.All,
+  ],
   image_event_reader : @ecs.MessageReader[@asset.AssetEvent[@asset.Image]],
   material_assets : @app.Res[@asset.Assets[@pbr.StandardMaterial]],
   mesh_assets : @app.ResMut[@asset.Assets[@mesh.Mesh]],
@@ -792,7 +798,7 @@ fn resize_image(
   if updated_images.length() == 0 {
     return
   }
-  guard image_mesh_query.first()
+  guard first3(image_mesh_query)
     is Some((_viewer_entity, _viewer, viewer_material, viewer_mesh)) else {
     return
   }
@@ -833,24 +839,30 @@ fn update_ui(
   keys : @input.ButtonInput[@window.KeyCode],
   current_scene : @app.Res[CurrentScene],
   selected_parameter : @app.Res[SelectedParameter],
-  settings_query : @ecs.Query2[
-    @post_process.Tonemapping,
-    @post_process.ColorGrading,
+  settings_query : @ecs.Query[
+    (
+      @ecs.Comp[@post_process.Tonemapping],
+      @ecs.Comp[@post_process.ColorGrading],
+    ),
+    @ecs.All,
   ],
-  ui_text_query : @ecs.Query2[@text.Text, TonemappingUiText],
+  ui_text_query : @ecs.Query[
+    (@ecs.Comp[@text.Text], @ecs.Comp[TonemappingUiText]),
+    @ecs.All,
+  ],
   hide_ui : @app.Local[Bool],
 ) -> Unit {
   if keys.just_pressed(KeyH) {
     hide_ui.get_ref().val = !hide_ui.get()
   }
-  guard ui_text_query.first() is Some((_entity, ui_text, _marker)) else {
+  guard first2(ui_text_query) is Some((_entity, ui_text, _marker)) else {
     return
   }
   if hide_ui.get() {
     set_ui_text(ui_text, "")
     return
   }
-  guard settings_query.first() is Some((_camera, tonemapping, color_grading)) else {
+  guard first2(settings_query) is Some((_camera, tonemapping, color_grading)) else {
     return
   }
   set_ui_text(

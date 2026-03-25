@@ -23,10 +23,11 @@ fn main {
 
 ///|
 fn gamepad_system(
-  gamepads : @ecs.Query1[@input.Gamepad],
+  gamepads : @ecs.Query[@ecs.Comp[@input.Gamepad], @ecs.All],
   rumble_requests : @ecs.MessageWriter[@input.GamepadRumbleRequest],
 ) -> Unit {
   try! gamepads.view(fn(entity, gamepad) {
+    let gamepad = gamepad.value()
     if gamepad.just_pressed(@input.GamepadButton::North) {
       log_line(
         "North face button: strong (low-frequency) with low intensity for rumble for 5 seconds. Press multiple times to increase intensity.",

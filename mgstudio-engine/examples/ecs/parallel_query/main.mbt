@@ -93,8 +93,8 @@ fn move_system(
 
 ///|
 fn bounce_system(
-  window_query : @ecs.Query1Filtered[
-    @window.Window,
+  window_query : @ecs.Query[
+    @ecs.Comp[@window.Window],
     @ecs.With[@window.PrimaryWindow],
   ],
   sprites : @ecs.Query[
@@ -102,7 +102,8 @@ fn bounce_system(
     @ecs.All,
   ],
 ) -> Unit {
-  guard (try! window_query.single()) is Some(window) else { return }
+  guard (try! window_query.single()) is Some(window_comp) else { return }
+  let window = window_comp.value()
   let width = window.width()
   let height = window.height()
   let left = width / -2.0F

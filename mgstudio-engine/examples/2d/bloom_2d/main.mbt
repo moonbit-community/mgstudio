@@ -262,7 +262,7 @@ fn setup(
 
 ///|
 fn bloom_camera_entity(
-  camera_query : @ecs.Query1[BloomCamera],
+  camera_query : @ecs.Query[@ecs.Comp[BloomCamera], @ecs.All],
 ) -> @core.Entity? {
   let camera_ref : Ref[@core.Entity?] = Ref::new(None)
   try! camera_query.view(fn(entity, _camera) {
@@ -277,21 +277,30 @@ fn bloom_camera_entity(
 fn update_bloom_settings(
   commands : @app.Commands,
   time : @app.Res[@time.Time[Unit]],
-  camera_query : @ecs.Query1[BloomCamera],
-  tonemapping_query : @ecs.Query1[@sprite.Tonemapping],
-  bloom_query : @ecs.Query1[@sprite.Bloom],
-  help_query : @ecs.Query2[BloomHelpText, @text.Text],
+  camera_query : @ecs.Query[@ecs.Comp[BloomCamera], @ecs.All],
+  tonemapping_query : @ecs.Query[@ecs.Comp[@sprite.Tonemapping], @ecs.All],
+  bloom_query : @ecs.Query[@ecs.Comp[@sprite.Bloom], @ecs.All],
+  help_query : @ecs.Query[
+    (@ecs.Comp[BloomHelpText], @ecs.Mut[@text.Text]),
+    @ecs.All,
+  ],
 ) -> Unit {
   guard bloom_camera_entity(camera_query) is Some(camera_entity) else { return }
 
   let tonemapping = match (try! tonemapping_query.get(camera_entity)) {
-    Some(mode) => mode
+    Some(mode) => mode.value()
     None => @sprite.Tonemapping::TonyMcMapface
   }
-  let current_bloom = try! bloom_query.get(camera_entity)
+  let current_bloom = match (try! bloom_query.get(camera_entity)) {
+    Some(value) => Some(value.value())
+    None => None
+  }
 
-  try! help_query.for_each(fn(_entity, _help_text, help_text) {
-    help_text.content = bloom_help_text(current_bloom, tonemapping)
+  try! help_query.for_each(fn(_entity, data) {
+    let (_help_text, help_text) = data
+    help_text.get_ref().val.content = bloom_help_text(
+      current_bloom, tonemapping,
+    )
   })
 
   let dt = time.get().delta_seconds()

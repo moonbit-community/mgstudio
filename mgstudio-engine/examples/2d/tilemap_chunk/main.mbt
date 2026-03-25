@@ -194,9 +194,10 @@ fn spawn_fake_player(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@sprite.Mesh]],
   materials : @app.ResMut[@asset.Assets[@sprite.ColorMaterialAsset]],
-  chunks : @ecs.Query1[@sprite.TilemapChunk],
+  chunks : @ecs.Query[@ecs.Comp[@sprite.TilemapChunk], @ecs.All],
 ) -> Unit {
-  guard (try! chunks.single()) is Some(chunk) else { return }
+  guard (try! chunks.single()) is Some(chunk_comp) else { return }
+  let chunk = chunk_comp.value()
   spawn_player(
     commands,
     meshes,
@@ -212,9 +213,10 @@ fn spawn_fake_player(
 fn move_player(
   players : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[MovePlayer]],
   time : @app.Res[@time.Time[Unit]],
-  chunks : @ecs.Query1[@sprite.TilemapChunk],
+  chunks : @ecs.Query[@ecs.Comp[@sprite.TilemapChunk], @ecs.All],
 ) -> Unit {
-  guard (try! chunks.single()) is Some(chunk) else { return }
+  guard (try! chunks.single()) is Some(chunk_comp) else { return }
+  let chunk = chunk_comp.value()
 
   let t = (@math.sin(time.get().elapsed_secs()) + 1.0F) / 2.0F
   let origin = chunk.calculate_tile_transform(@math.UVec2::new(0, 0)).translation.x
@@ -266,14 +268,18 @@ fn update_tilemap(
 
 ///|
 fn first_tilemap(
-  tilemaps : @ecs.Query2[@sprite.TilemapChunk, @sprite.TilemapChunkTileData],
+  tilemaps : @ecs.Query[
+    (@ecs.Comp[@sprite.TilemapChunk], @ecs.Comp[@sprite.TilemapChunkTileData]),
+    @ecs.All,
+  ],
 ) -> (@sprite.TilemapChunk, @sprite.TilemapChunkTileData)? {
   let result : Ref[(@sprite.TilemapChunk, @sprite.TilemapChunkTileData)?] = Ref::new(
     None,
   )
-  try! tilemaps.view(fn(_entity, chunk, tile_data) {
+  try! tilemaps.view(fn(_entity, data) {
+    let (chunk, tile_data) = data
     if result.val is None {
-      result.val = Some((chunk, tile_data))
+      result.val = Some((chunk.value(), tile_data.value()))
     }
   })
   result.val
@@ -281,7 +287,10 @@ fn first_tilemap(
 
 ///|
 fn log_tile(
-  tilemaps : @ecs.Query2[@sprite.TilemapChunk, @sprite.TilemapChunkTileData],
+  tilemaps : @ecs.Query[
+    (@ecs.Comp[@sprite.TilemapChunk], @ecs.Comp[@sprite.TilemapChunkTileData]),
+    @ecs.All,
+  ],
   last_tileset_index : @app.Local[Int],
 ) -> Unit {
   guard first_tilemap(tilemaps) is Some((chunk, tile_data)) else { return }

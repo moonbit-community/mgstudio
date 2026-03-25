@@ -76,10 +76,11 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
     spawned_entities.val = ready.spawned_entities
 
     let children : Array[@core.Entity] = []
-    try! world
-    .query1(@hierarchy.ecs_key_parent)
-    .view(fn(entity, parent) {
-      if parent.entity().id == root.id {
+    let parent_query : @ecs.Query[@ecs.Comp[@hierarchy.Parent], @ecs.All] = @ecs.query(
+      world,
+    )
+    try! parent_query.view(fn(entity, parent) {
+      if parent.value().entity().id == root.id {
         children.push(entity)
       }
     })
@@ -111,9 +112,10 @@ test "scene ecs: SceneRoot spawns children and marks ready" {
     ready_after_second_tick.val = ready_second.spawned_entities
 
     let ready_entities : Array[@core.Entity] = []
-    try! world
-    .query1(@scene.ecs_key_scene_instance_ready)
-    .view(fn(entity, _ready) { ready_entities.push(entity) })
+    let ready_query : @ecs.Query[@ecs.Comp[@scene.SceneInstanceReady], @ecs.All] = @ecs.query(
+      world,
+    )
+    try! ready_query.view(fn(entity, _ready) { ready_entities.push(entity) })
     ready_entity_count.val = ready_entities.length()
     ready_entity_matches_root.val = ready_entities[0].id == root.id
   })
@@ -211,10 +213,11 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
     old_instance_id.val = first_instance.instance_id
 
     let first_children : Array[@core.Entity] = []
-    try! world
-    .query1(@hierarchy.ecs_key_parent)
-    .view(fn(entity, parent) {
-      if parent.entity().id == root.id {
+    let parent_query : @ecs.Query[@ecs.Comp[@hierarchy.Parent], @ecs.All] = @ecs.query(
+      world,
+    )
+    try! parent_query.view(fn(entity, parent) {
+      if parent.value().entity().id == root.id {
         first_children.push(entity)
       }
     })
@@ -235,10 +238,8 @@ test "scene ecs: SceneRoot change respawns children and updates SceneInstance" {
     old_child_alive.val = world.is_alive(first_child)
 
     let second_children : Array[@core.Entity] = []
-    try! world
-    .query1(@hierarchy.ecs_key_parent)
-    .view(fn(entity, parent) {
-      if parent.entity().id == root.id {
+    try! parent_query.view(fn(entity, parent) {
+      if parent.value().entity().id == root.id {
         second_children.push(entity)
       }
     })

@@ -13,44 +13,12 @@
 // limitations under the License.
 
 ///|
-pub fn[T : Component] World::component_typed(
-  self : World,
-) -> ComponentAccess[T] {
-  let key : ComponentKey[T] = Component::component()
-  self.component(key)
-}
-
-///|
-pub fn[T : Component] World::query1_typed(self : World) -> Query1[T] {
-  let key : ComponentKey[T] = Component::component()
-  self.query1(key)
-}
-
-///|
-pub fn[T : Component, F] World::query1_typed_filtered(
-  self : World,
-  filter : F,
-) -> Query1Filtered[T, F] {
-  let key : ComponentKey[T] = Component::component()
-  self.query1_filtered(key, filter)
-}
-
-///|
 pub fn[T : Component] World::get_component(
   self : World,
   entity : @core.Entity,
 ) -> T? raise EcsError {
   let key : ComponentKey[T] = Component::component()
   self.get(entity, key)
-}
-
-///|
-pub fn[T : Component] World::get_component_ref(
-  self : World,
-  entity : @core.Entity,
-) -> ComponentRef[T]? raise EcsError {
-  let key : ComponentKey[T] = Component::component()
-  self.get_ref(entity, key)
 }
 
 ///|

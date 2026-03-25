@@ -373,17 +373,19 @@ pub fn[T] spawn_option_buttons(
 
 ///|
 pub fn[T] handle_ui_interactions(
-  interactions : @ecs.Query2Filtered[
-    @ui.Interaction,
-    WidgetClickSender[T],
+  interactions : @ecs.Query[
+    (@ecs.Comp[@ui.Interaction], @ecs.Comp[WidgetClickSender[T]]),
     @ecs.With[@ui.Button],
   ],
   widget_click_events : @ecs.MessageWriter[WidgetClickEvent[T]],
 ) -> Unit {
-  try! interactions.for_each(fn(_entity, interaction, click_sender) {
-    if interaction == @ui.Interaction::Pressed {
+  try! interactions.for_each(fn(_entity, data) {
+    let (interaction, click_sender) = data
+    if interaction.value() == @ui.Interaction::Pressed {
       ignore(
-        widget_click_events.write(WidgetClickEvent::new(click_sender.get())),
+        widget_click_events.write(
+          WidgetClickEvent::new(click_sender.value().get()),
+        ),
       )
     }
   })

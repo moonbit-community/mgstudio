@@ -325,20 +325,29 @@ fn setup_instructions(
 
 ///|
 fn reset_transform(
-  query : @ecs.Query2[CameraShakeState, @transform.Transform],
+  query : @ecs.Query[
+    (@ecs.Comp[CameraShakeState], @ecs.Mut[@transform.Transform]),
+    @ecs.All,
+  ],
 ) -> Unit {
-  try! query.for_each(fn(_entity, camera_shake, transform) {
-    transform.translation = camera_shake.original_transform.translation
-    transform.rotation = camera_shake.original_transform.rotation
-    transform.scale = camera_shake.original_transform.scale
+  try! query.for_each(fn(_entity, data) {
+    let (camera_shake, transform) = data
+    let camera_shake = camera_shake.value()
+    let transform_ref = transform.get_ref()
+    transform_ref.val.translation = camera_shake.original_transform.translation
+    transform_ref.val.rotation = camera_shake.original_transform.rotation
+    transform_ref.val.scale = camera_shake.original_transform.scale
   })
 }
 
 ///|
-fn increase_trauma(query : @ecs.Query1[CameraShakeState]) -> Unit {
+fn increase_trauma(
+  query : @ecs.Query[@ecs.Mut[CameraShakeState], @ecs.All],
+) -> Unit {
   try! query.for_each(fn(_entity, camera_shake) {
-    camera_shake.trauma = clampf(
-      camera_shake.trauma + TRAUMA_PER_PRESS,
+    let camera_shake_ref = camera_shake.get_ref()
+    camera_shake_ref.val.trauma = clampf(
+      camera_shake_ref.val.trauma + TRAUMA_PER_PRESS,
       0.0F,
       1.0F,
     )
@@ -347,28 +356,40 @@ fn increase_trauma(query : @ecs.Query1[CameraShakeState]) -> Unit {
 
 ///|
 fn shake_camera(
-  query : @ecs.Query3[CameraShakeState, CameraShakeConfig, @transform.Transform],
+  query : @ecs.Query[
+    (
+      @ecs.Mut[CameraShakeState],
+      @ecs.Comp[CameraShakeConfig],
+      @ecs.Mut[@transform.Transform],
+    ),
+    @ecs.All,
+  ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let elapsed_seconds = time.get().elapsed_seconds()
   let delta_seconds = time.get().delta_seconds()
-  try! query.for_each(fn(_entity, camera_shake, config, transform) {
-    camera_shake.original_transform = transform
+  try! query.for_each(fn(_entity, data) {
+    let (camera_shake, config, transform) = data
+    let camera_shake_ref = camera_shake.get_ref()
+    let config = config.value()
+    let transform_ref = transform.get_ref()
+    camera_shake_ref.val.original_transform = transform_ref.val
 
     let t = elapsed_seconds * config.noise_speed
     let rotation_noise = perlin_noise_generate(t + 0.0F)
     let x_noise = perlin_noise_generate(t + 100.0F)
     let y_noise = perlin_noise_generate(t + 200.0F)
-    let shake = @math.pow(camera_shake.trauma, config.exponent)
+    let shake = @math.pow(camera_shake_ref.val.trauma, config.exponent)
     let roll_offset = rotation_noise * shake * config.max_angle
     let x_offset = x_noise * shake * config.max_translation
     let y_offset = y_noise * shake * config.max_translation
 
-    transform.translation.x = transform.translation.x + x_offset
-    transform.translation.y = transform.translation.y + y_offset
-    transform.rotate_z(roll_offset)
-    camera_shake.trauma = clampf(
-      camera_shake.trauma - config.trauma_decay_per_second * delta_seconds,
+    transform_ref.val.translation.x = transform_ref.val.translation.x + x_offset
+    transform_ref.val.translation.y = transform_ref.val.translation.y + y_offset
+    transform_ref.val.rotate_z(roll_offset)
+    camera_shake_ref.val.trauma = clampf(
+      camera_shake_ref.val.trauma -
+      config.trauma_decay_per_second * delta_seconds,
       0.0F,
       1.0F,
     )

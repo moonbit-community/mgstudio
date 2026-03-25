@@ -31,6 +31,36 @@ struct Acceleration {
 } derive(Show, Eq, ToJson, FromJson)
 
 ///|
+let position_key : ComponentKey[Position] = register_component(
+  debug_name="tests.ecs.Position",
+)
+
+///|
+let velocity_key : ComponentKey[Velocity] = register_component(
+  debug_name="tests.ecs.Velocity",
+)
+
+///|
+let acceleration_key : ComponentKey[Acceleration] = register_component(
+  debug_name="tests.ecs.Acceleration",
+)
+
+///|
+pub impl Component for Position with component() {
+  position_key
+}
+
+///|
+pub impl Component for Velocity with component() {
+  velocity_key
+}
+
+///|
+pub impl Component for Acceleration with component() {
+  acceleration_key
+}
+
+///|
 struct GenericPosition {
   x : Int
   y : Int
@@ -200,6 +230,14 @@ pub impl QueryData for ReadOnlyCustomQuery with contiguous_compatible() {
 }
 
 ///|
+fn[T] comp_option_value(value : Comp[T]?) -> T? {
+  match value {
+    Some(component) => Some(component.value())
+    None => None
+  }
+}
+
+///|
 struct GenericTagFilter {}
 
 ///|
@@ -220,9 +258,7 @@ pub impl QueryFilter for GenericTagFilter with mentions_component(
 ///|
 test "ecs query: query1 view and for_each" {
   let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_q1",
-  )
+  let comp_position = position_key
   let e1 = world.spawn()
   let e2 = world.spawn()
 
@@ -230,18 +266,18 @@ test "ecs query: query1 view and for_each" {
   try! world.set(e2, comp_position, Position::{ x: 4, y: 6 })
 
   let sum_ref : Ref[Int] = Ref::new(0)
-  try! world
-  .query1(comp_position)
-  .view(fn(_entity, position) {
+  let read_query : Query[Comp[Position], All] = query(world)
+  try! read_query.view(fn(_entity, position) {
+    let position = position.value()
     sum_ref.val = sum_ref.val + position.x + position.y
   })
   inspect(sum_ref.val, content="13")
 
-  try! world
-  .query1(comp_position)
-  .for_each(fn(_entity, position) {
-    position.x = position.x + 10
-    position.y = position.y + 20
+  let write_query : Query[Mut[Position], All] = query(world)
+  try! write_query.view(fn(_entity, position) {
+    let position = position.get_ref()
+    position.val.x = position.val.x + 10
+    position.val.y = position.val.y + 20
   })
 
   inspect(try! world.get(e1, comp_position), content="Some({x: 11, y: 22})")
@@ -251,48 +287,46 @@ test "ecs query: query1 view and for_each" {
 ///|
 test "ecs query: single returns only for exactly one match" {
   let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_single",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_single",
-  )
+  let comp_position = position_key
+  let comp_velocity = velocity_key
   let e0 = world.spawn()
   let e1 = world.spawn()
 
-  inspect(try! world.query1(comp_position).single(), content="None")
+  let position_query : Query[Comp[Position], All] = query(world)
+  inspect(comp_option_value(try! position_query.single()), content="None")
 
   try! world.set(e0, comp_position, Position::{ x: 5, y: 8 })
+  let all_position_query : Query[Comp[Position], All] = query_filtered(
+    world,
+    All::new(),
+  )
   inspect(
-    try! world.query1_filtered(comp_position, All::new()).single(),
+    comp_option_value(try! all_position_query.single()),
     content="Some({x: 5, y: 8})",
   )
 
   try! world.set(e1, comp_position, Position::{ x: 13, y: 21 })
-  inspect(try! world.query1(comp_position).single(), content="None")
+  inspect(comp_option_value(try! position_query.single()), content="None")
 
   try! world.set(e0, comp_velocity, Velocity::{ dx: 1, dy: 1 })
+  let with_velocity_query : Query[Comp[Position], With[Velocity]] = query_filtered(
+    world,
+    With::new(comp_velocity),
+  )
   inspect(
-    try! world.query1_filtered(comp_position, With::new(comp_velocity)).single(),
+    comp_option_value(try! with_velocity_query.single()),
     content="Some({x: 5, y: 8})",
   )
 
   try! world.set(e1, comp_velocity, Velocity::{ dx: 2, dy: 3 })
-  inspect(
-    try! world.query1_filtered(comp_position, With::new(comp_velocity)).single(),
-    content="None",
-  )
+  inspect(comp_option_value(try! with_velocity_query.single()), content="None")
 }
 
 ///|
 test "ecs query: query2 view intersection and for_each" {
   let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_q2",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_q2",
-  )
+  let comp_position = position_key
+  let comp_velocity = velocity_key
   let e_match = world.spawn()
   let e_only_position = world.spawn()
   let e_only_velocity0 = world.spawn()
@@ -306,22 +340,28 @@ test "ecs query: query2 view intersection and for_each" {
 
   let hits_ref : Ref[Int] = Ref::new(0)
   let sum_ref : Ref[Int] = Ref::new(0)
-  try! world
-  .query2(comp_position, comp_velocity)
-  .view(fn(_entity, p, v) {
+  let read_query : Query[(Comp[Position], Comp[Velocity]), All] = query(world)
+  try! read_query.view(fn(_entity, data) {
+    let (p, v) = data
     hits_ref.val = hits_ref.val + 1
-    sum_ref.val = sum_ref.val + p.x + p.y + v.dx + v.dy
+    sum_ref.val = sum_ref.val +
+      p.value().x +
+      p.value().y +
+      v.value().dx +
+      v.value().dy
   })
   inspect(hits_ref.val, content="1")
   inspect(sum_ref.val, content="26")
 
-  try! world
-  .query2(comp_position, comp_velocity)
-  .for_each(fn(_entity, p, v) {
-    p.x = p.x + v.dx
-    p.y = p.y + v.dy
-    v.dx = v.dx + 1
-    v.dy = v.dy + 1
+  let write_query : Query[(Mut[Position], Mut[Velocity]), All] = query(world)
+  try! write_query.view(fn(_entity, data) {
+    let (p, v) = data
+    let p = p.get_ref()
+    let v = v.get_ref()
+    p.val.x = p.val.x + v.val.dx
+    p.val.y = p.val.y + v.val.dy
+    v.val.dx = v.val.dx + 1
+    v.val.dy = v.val.dy + 1
   })
 
   inspect(
@@ -345,15 +385,9 @@ test "ecs query: query2 view intersection and for_each" {
 ///|
 test "ecs query: query3 smallest-store driven iteration and for_each" {
   let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_q3",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_q3",
-  )
-  let comp_accel : ComponentKey[Acceleration] = register_component(
-    debug_name="accel_q3",
-  )
+  let comp_position = position_key
+  let comp_velocity = velocity_key
+  let comp_accel = acceleration_key
 
   let e0 = world.spawn()
   let e1 = world.spawn()
@@ -370,24 +404,36 @@ test "ecs query: query3 smallest-store driven iteration and for_each" {
 
   let hits_ref : Ref[Int] = Ref::new(0)
   let score_ref : Ref[Int] = Ref::new(0)
-  try! world
-  .query3(comp_position, comp_velocity, comp_accel)
-  .view(fn(_entity, p, v, a) {
+  let read_query : Query[
+    (Comp[Position], Comp[Velocity], Comp[Acceleration]),
+    All,
+  ] = query(world)
+  try! read_query.view(fn(_entity, data) {
+    let (p, v, a) = data
+    let p = p.value()
+    let v = v.value()
+    let a = a.value()
     hits_ref.val = hits_ref.val + 1
     score_ref.val = score_ref.val + p.x + p.y + v.dx + v.dy + a.ax + a.ay
   })
   inspect(hits_ref.val, content="1")
   inspect(score_ref.val, content="36")
 
-  try! world
-  .query3(comp_position, comp_velocity, comp_accel)
-  .for_each(fn(_entity, p, v, a) {
-    p.x = p.x + 100
-    p.y = p.y + 100
-    v.dx = v.dx + 10
-    v.dy = v.dy + 10
-    a.ax = a.ax + 1
-    a.ay = a.ay + 1
+  let write_query : Query[
+    (Mut[Position], Mut[Velocity], Mut[Acceleration]),
+    All,
+  ] = query(world)
+  try! write_query.view(fn(_entity, data) {
+    let (p, v, a) = data
+    let p = p.get_ref()
+    let v = v.get_ref()
+    let a = a.get_ref()
+    p.val.x = p.val.x + 100
+    p.val.y = p.val.y + 100
+    v.val.dx = v.val.dx + 10
+    v.val.dy = v.val.dy + 10
+    a.val.ax = a.val.ax + 1
+    a.val.ay = a.val.ay + 1
   })
   inspect(try! world.get(e2, comp_position), content="Some({x: 103, y: 103})")
   inspect(try! world.get(e2, comp_velocity), content="Some({dx: 16, dy: 17})")
@@ -398,15 +444,9 @@ test "ecs query: query3 smallest-store driven iteration and for_each" {
 ///|
 test "ecs query: filtered query supports with/without tuples and entity counts" {
   let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_filtered_query",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_filtered_query",
-  )
-  let comp_accel : ComponentKey[Acceleration] = register_component(
-    debug_name="accel_filtered_query",
-  )
+  let comp_position = position_key
+  let comp_velocity = velocity_key
+  let comp_accel = acceleration_key
 
   let e0 = world.spawn()
   let e1 = world.spawn()
@@ -419,14 +459,14 @@ test "ecs query: filtered query supports with/without tuples and entity counts" 
   try! world.set(e2, comp_velocity, Velocity::{ dx: 5, dy: 5 })
   try! world.set(e2, comp_accel, Acceleration::{ ax: 6, ay: 6 })
 
-  let query = world.query1_filtered(
-    comp_position,
+  let query : Query[Comp[Position], (With[Velocity], Without[Acceleration])] = query_filtered(
+    world,
     (With::new(comp_velocity), Without::new(comp_accel)),
   )
   inspect(query.count(), content="1")
-  inspect(try! query.get(e0), content="None")
-  inspect(try! query.get(e1), content="Some({x: 2, y: 2})")
-  inspect(try! query.get(e2), content="None")
+  inspect(comp_option_value(try! query.get(e0)), content="None")
+  inspect(comp_option_value(try! query.get(e1)), content="Some({x: 2, y: 2})")
+  inspect(comp_option_value(try! query.get(e2)), content="None")
 
   let matched_entities : Array[Int] = []
   try! world
@@ -468,12 +508,8 @@ test "ecs query: component ref exposes live component values" {
 ///|
 test "ecs query: structural filters compose without change detection" {
   let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_query_changed",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_query_changed",
-  )
+  let comp_position = position_key
+  let comp_velocity = velocity_key
   let e0 = world.spawn()
   let e1 = world.spawn()
 
@@ -481,19 +517,19 @@ test "ecs query: structural filters compose without change detection" {
   try! world.set(e1, comp_position, Position::{ x: 2, y: 2 })
   try! world.set(e1, comp_velocity, Velocity::{ dx: 3, dy: 3 })
 
-  inspect(
-    world.query1_filtered(comp_position, With::new(comp_position)).count(),
-    content="2",
+  let with_position_query : Query[Comp[Position], With[Position]] = query_filtered(
+    world,
+    With::new(comp_position),
   )
-  inspect(
-    world
-    .query1_filtered(
-      comp_position,
-      Or::new((Without::new(comp_velocity), With::new(comp_velocity))),
-    )
-    .count(),
-    content="2",
+  inspect(with_position_query.count(), content="2")
+  let any_position_query : Query[
+    Comp[Position],
+    Or[(Without[Velocity], With[Velocity])],
+  ] = query_filtered(
+    world,
+    Or::new((Without::new(comp_velocity), With::new(comp_velocity))),
   )
+  inspect(any_position_query.count(), content="2")
 
   world.advance_sequence() |> ignore
   world.advance_sequence() |> ignore
@@ -504,34 +540,20 @@ test "ecs query: structural filters compose without change detection" {
     content="true",
   )
 
-  inspect(
-    world.query1_filtered(comp_position, With::new(comp_position)).count(),
-    content="2",
+  inspect(with_position_query.count(), content="2")
+  let without_velocity_query : Query[Comp[Position], Without[Velocity]] = query_filtered(
+    world,
+    Without::new(comp_velocity),
   )
-  inspect(
-    world.query1_filtered(comp_position, Without::new(comp_velocity)).count(),
-    content="1",
-  )
-  inspect(
-    world
-    .query1_filtered(
-      comp_position,
-      Or::new((Without::new(comp_velocity), With::new(comp_velocity))),
-    )
-    .count(),
-    content="2",
-  )
+  inspect(without_velocity_query.count(), content="1")
+  inspect(any_position_query.count(), content="2")
 }
 
 ///|
 test "ecs query: iter_many_ref preserves filter order without change state" {
   let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_iter_many_ref",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_iter_many_ref",
-  )
+  let comp_position = position_key
+  let comp_velocity = velocity_key
   let e0 = world.spawn()
   let e1 = world.spawn()
   let e2 = world.spawn()
@@ -547,12 +569,14 @@ test "ecs query: iter_many_ref preserves filter order without change state" {
   world.set_sequence_context(ctx)
 
   let seen : Array[Int] = []
-  let iter = world
-    .query1_filtered(comp_position, With::new(comp_velocity))
-    .iter_many_ref([e0, e1, e2])
+  let query : Query[Comp[Position], With[Velocity]] = query_filtered(
+    world,
+    With::new(comp_velocity),
+  )
+  let iter = query.iter_many([e0, e1, e2])
   while true {
-    if (try! iter.fetch_next()) is Some((entity, component_ref)) {
-      ignore(component_ref)
+    if (try! iter.fetch_next()) is Some((entity, component)) {
+      ignore(component)
       seen.push(entity.id)
     } else {
       break
@@ -564,12 +588,8 @@ test "ecs query: iter_many_ref preserves filter order without change state" {
 ///|
 test "ecs query: iter_many_unique_ref rejects duplicates and preserves order" {
   let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_iter_many_unique_ref",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_iter_many_unique_ref",
-  )
+  let comp_position = position_key
+  let comp_velocity = velocity_key
   let e0 = world.spawn()
   let e1 = world.spawn()
   let e2 = world.spawn()
@@ -584,24 +604,24 @@ test "ecs query: iter_many_unique_ref rejects duplicates and preserves order" {
   ctx.set(@core.SystemSequence::new(0, 1))
   world.set_sequence_context(ctx)
 
+  let query : Query[Comp[Position], With[Velocity]] = query_filtered(
+    world,
+    With::new(comp_velocity),
+  )
   let duplicate_result : Result[
-    Query1FilteredManyRef[Position, With[Velocity]],
+    QueryMany[Comp[Position], With[Velocity]],
     EcsError,
-  ] = try? world
-    .query1_filtered(comp_position, With::new(comp_velocity))
-    .iter_many_unique_ref([e1, e1])
+  ] = try? query.iter_many_unique([e1, e1])
   guard duplicate_result is Err(NonUniqueEntityList(entity)) else {
     fail("expected duplicate entity diagnostics")
   }
   inspect(entity.id, content="1")
 
   let seen : Array[Int] = []
-  let iter = try! world
-    .query1_filtered(comp_position, With::new(comp_velocity))
-    .iter_many_unique_ref([e2, e0, e1])
+  let iter = try! query.iter_many_unique([e2, e0, e1])
   while true {
-    if (try! iter.fetch_next()) is Some((entity, component_ref)) {
-      ignore(component_ref)
+    if (try! iter.fetch_next()) is Some((entity, component)) {
+      ignore(component)
       seen.push(entity.id)
     } else {
       break
@@ -613,16 +633,13 @@ test "ecs query: iter_many_unique_ref rejects duplicates and preserves order" {
 ///|
 test "ecs query: require_single raises skipped unless exactly one match exists" {
   let world = World::new()
-  let comp_position : ComponentKey[Position] = register_component(
-    debug_name="position_require_single",
-  )
-  let comp_velocity : ComponentKey[Velocity] = register_component(
-    debug_name="velocity_require_single",
-  )
+  let comp_position = position_key
+  let comp_velocity = velocity_key
   let e0 = world.spawn()
   let e1 = world.spawn()
 
-  let none_result = try? world.query1(comp_position).require_single()
+  let position_query : Query[Comp[Position], All] = query(world)
+  let none_result = try? position_query.require_single()
   guard none_result is Err(@ecs.Skipped(message0)) else {
     fail("expected skipped error when no entity matches")
   }
@@ -630,7 +647,7 @@ test "ecs query: require_single raises skipped unless exactly one match exists" 
 
   try! world.set(e0, comp_position, Position::{ x: 5, y: 8 })
   inspect(
-    try! world.query1_filtered(comp_position, All::new()).require_single(),
+    (try! (query_filtered(world, All::new()) : Query[Comp[Position], All]).require_single()).value(),
     content="{x: 5, y: 8}",
   )
   let single_entity = try! world
@@ -641,12 +658,16 @@ test "ecs query: require_single raises skipped unless exactly one match exists" 
 
   try! world.set(e1, comp_position, Position::{ x: 13, y: 21 })
   try! world.set(e0, comp_velocity, Velocity::{ dx: 1, dy: 1 })
-  let filtered_single = try! world
-    .query1_filtered(comp_position, With::new(comp_velocity))
-    .require_single()
-  inspect(filtered_single, content="{x: 5, y: 8}")
+  let filtered_query : Query[Comp[Position], With[Velocity]] = query_filtered(
+    world,
+    With::new(comp_velocity),
+  )
+  inspect(
+    (try! filtered_query.require_single()).value(),
+    content="{x: 5, y: 8}",
+  )
 
-  let many_result = try? world.query1(comp_position).require_single()
+  let many_result = try? position_query.require_single()
   guard many_result is Err(@ecs.Skipped(message1)) else {
     fail("expected skipped error when many entities match")
   }

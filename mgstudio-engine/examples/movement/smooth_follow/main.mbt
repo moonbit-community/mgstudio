@@ -242,14 +242,15 @@ fn move_follower(
     @ecs.Mut[@transform.Transform],
     @ecs.With[FollowingSphere],
   ],
-  target : @ecs.Query1Filtered[
-    @transform.Transform,
+  target : @ecs.Query[
+    @ecs.Comp[@transform.Transform],
     (@ecs.With[TargetSphere], @ecs.Without[FollowingSphere]),
   ],
   decay_rate : @app.Res[DecayRate],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
-  guard (try! target.single()) is Some(target_transform) else { return }
+  guard (try! target.single()) is Some(target_transform_comp) else { return }
+  let target_transform = target_transform_comp.value()
 
   let delta_time = time.get().delta_secs()
   try! following.view(fn(_entity, transform) {

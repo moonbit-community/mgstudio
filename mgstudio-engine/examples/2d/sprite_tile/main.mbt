@@ -67,7 +67,7 @@ fn setup(
 
 ///|
 fn animate(
-  sprites : @ecs.Query1[@sprite.Sprite],
+  sprites : @ecs.Query[@ecs.Mut[@sprite.Sprite], @ecs.All],
   state : @app.ResMut[AnimationState],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
@@ -80,6 +80,6 @@ fn animate(
     animation_state.val.speed * time.get().delta_secs()
   let current = animation_state.val.current
   try! sprites.for_each(fn(_entity, sprite) {
-    sprite.custom_size = Some(@math.Vec2::new(current, current))
+    sprite.get_ref().val.custom_size = Some(@math.Vec2::new(current, current))
   })
 }

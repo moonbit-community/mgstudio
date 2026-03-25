@@ -216,13 +216,18 @@ fn toggle_wireframe(config : @app.ResMut[@sprite.Wireframe2dConfig]) -> Unit {
 
 ///|
 fn rotate(
-  query : @ecs.Query2[@transform.Transform, @sprite.Mesh2d],
+  query : @ecs.Query[
+    (@ecs.Mut[@transform.Transform], @ecs.Comp[@sprite.Mesh2d]),
+    @ecs.All,
+  ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let delta_secs = time.get().delta_seconds()
   let speed = 0.5F
-  try! query.for_each(fn(_entity, transform, _mesh) {
-    let next_rotation = transform.rotation_z() + speed * delta_secs
-    transform.rotation = @math.Quat::from_rotation_z(next_rotation)
+  try! query.for_each(fn(_entity, data) {
+    let (transform, _mesh) = data
+    let transform_ref = transform.get_ref()
+    let next_rotation = transform_ref.val.rotation_z() + speed * delta_secs
+    transform_ref.val.rotation = @math.Quat::from_rotation_z(next_rotation)
   })
 }

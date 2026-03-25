@@ -88,10 +88,11 @@ fn decompress(
   commands : @app.Commands,
   asset_server : @app.Res[@asset.AssetServer],
   compressed_assets : @app.ResMut[@asset.Assets[GzAsset]],
-  query : @ecs.Query1[CompressedImage],
+  query : @ecs.Query[@ecs.Comp[CompressedImage], @ecs.All],
 ) -> Unit {
   let asset_store = compressed_assets.get_ref().val
   try! query.view(fn(entity, compressed_image) {
+    let compressed_image = compressed_image.value()
     guard asset_store.remove(compressed_image.compressed) is Some(compressed) else {
       return
     }

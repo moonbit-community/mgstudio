@@ -355,36 +355,64 @@ fn anchor_name(anchor : @sprite.Anchor) -> String {
 
 ///|
 fn animate_translation(
-  query : @ecs.Query3[@transform.Transform, @text.Text2d, AnimateTranslation],
+  query : @ecs.Query[
+    (
+      @ecs.Mut[@transform.Transform],
+      @ecs.Comp[@text.Text2d],
+      @ecs.Comp[AnimateTranslation],
+    ),
+    @ecs.All,
+  ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let elapsed = time.get().elapsed_seconds()
-  try! query.for_each(fn(_entity, transform, _text, _marker) {
-    transform.translation.x = 100.0F * @math.sin(elapsed) - 400.0F
-    transform.translation.y = 100.0F * @math.cos(elapsed)
+  try! query.for_each(fn(_entity, data) {
+    let (transform, _text, _marker) = data
+    let transform_ref = transform.get_ref()
+    transform_ref.val.translation.x = 100.0F * @math.sin(elapsed) - 400.0F
+    transform_ref.val.translation.y = 100.0F * @math.cos(elapsed)
   })
 }
 
 ///|
 fn animate_rotation(
-  query : @ecs.Query3[@transform.Transform, @text.Text2d, AnimateRotation],
+  query : @ecs.Query[
+    (
+      @ecs.Mut[@transform.Transform],
+      @ecs.Comp[@text.Text2d],
+      @ecs.Comp[AnimateRotation],
+    ),
+    @ecs.All,
+  ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let elapsed = time.get().elapsed_seconds()
-  try! query.for_each(fn(_entity, transform, _text, _marker) {
-    transform.rotation = @math.Quat::from_rotation_z(@math.cos(elapsed))
+  try! query.for_each(fn(_entity, data) {
+    let (transform, _text, _marker) = data
+    transform.get_ref().val.rotation = @math.Quat::from_rotation_z(
+      @math.cos(elapsed),
+    )
   })
 }
 
 ///|
 fn animate_scale(
-  query : @ecs.Query3[@transform.Transform, @text.Text2d, AnimateScale],
+  query : @ecs.Query[
+    (
+      @ecs.Mut[@transform.Transform],
+      @ecs.Comp[@text.Text2d],
+      @ecs.Comp[AnimateScale],
+    ),
+    @ecs.All,
+  ],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let elapsed = time.get().elapsed_seconds()
   let scale = (@math.sin(elapsed) + 1.1F) * 2.0F
-  try! query.for_each(fn(_entity, transform, _text, _marker) {
-    transform.scale.x = scale
-    transform.scale.y = scale
+  try! query.for_each(fn(_entity, data) {
+    let (transform, _text, _marker) = data
+    let transform_ref = transform.get_ref()
+    transform_ref.val.scale.x = scale
+    transform_ref.val.scale.y = scale
   })
 }

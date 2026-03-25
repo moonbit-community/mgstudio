@@ -190,42 +190,46 @@ fn setup(
 ///|
 fn input_handler(
   keyboard_input : @input.ButtonInput[@window.KeyCode],
-  mesh_query : @ecs.Query1Filtered[@pbr.Mesh3d, @ecs.With[CustomUV]],
+  mesh_query : @ecs.Query[@ecs.Comp[@pbr.Mesh3d], @ecs.With[CustomUV]],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  query : @ecs.Query1Filtered[@transform.Transform, @ecs.With[CustomUV]],
+  query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.With[CustomUV]],
   time : @app.Res[@time.Time[Unit]],
 ) -> Unit {
   let mesh_assets = meshes.get_ref().val
   if keyboard_input.just_pressed(@window.KeyCode::Space) {
-    guard (try! mesh_query.single()) is Some(mesh_handle) else { return }
+    guard (try! mesh_query.single()) is Some(mesh_handle_comp) else { return }
+    let mesh_handle = mesh_handle_comp.value()
     if mesh_assets.get(mesh_handle.mesh) is Some(mesh) {
       mesh_assets.set(mesh_handle.mesh, toggle_texture(mesh)) |> ignore
     }
   }
   if keyboard_input.pressed(@window.KeyCode::KeyX) {
     try! query.view(fn(_entity, transform) {
-      transform.rotation = transform.rotation
+      let transform_ref = transform.get_ref()
+      transform_ref.val.rotation = transform_ref.val.rotation
         .mul(@math.Quat::from_rotation_x(time.get().delta_seconds() / 1.2F))
         .normalize()
     })
   }
   if keyboard_input.pressed(@window.KeyCode::KeyY) {
     try! query.view(fn(_entity, transform) {
-      transform.rotation = transform.rotation
+      let transform_ref = transform.get_ref()
+      transform_ref.val.rotation = transform_ref.val.rotation
         .mul(@math.Quat::from_rotation_y(time.get().delta_seconds() / 1.2F))
         .normalize()
     })
   }
   if keyboard_input.pressed(@window.KeyCode::KeyZ) {
     try! query.view(fn(_entity, transform) {
-      transform.rotation = transform.rotation
+      let transform_ref = transform.get_ref()
+      transform_ref.val.rotation = transform_ref.val.rotation
         .mul(@math.Quat::from_rotation_z(time.get().delta_seconds() / 1.2F))
         .normalize()
     })
   }
   if keyboard_input.pressed(@window.KeyCode::KeyR) {
     try! query.view(fn(_entity, transform) {
-      transform.rotation = @math.Quat::identity()
+      transform.get_ref().val.rotation = @math.Quat::identity()
     })
   }
 }

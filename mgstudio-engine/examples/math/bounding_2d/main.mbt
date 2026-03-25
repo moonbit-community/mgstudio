@@ -71,6 +71,12 @@ priv enum CurrentVolume {
 }
 
 ///|
+priv struct VolumeIntersectionData {
+  volume : CurrentVolume
+  intersects : Bool
+}
+
+///|
 let spin_key : @ecs.ComponentKey[Spin] = @ecs.register_component(
   debug_name="examples.math.bounding_2d.Spin",
 )
@@ -94,6 +100,61 @@ let current_volume_key : @ecs.ComponentKey[CurrentVolume] = @ecs.register_compon
 let intersects_key : @ecs.ComponentKey[Bool] = @ecs.register_component(
   debug_name="examples.math.bounding_2d.Intersects",
 )
+
+///|
+impl @ecs.Component for Spin with component() {
+  spin_key
+}
+
+///|
+impl @ecs.Component for Shape with component() {
+  shape_key
+}
+
+///|
+impl @ecs.Component for DesiredVolume with component() {
+  desired_volume_key
+}
+
+///|
+impl @ecs.Component for CurrentVolume with component() {
+  current_volume_key
+}
+
+///|
+impl @ecs.QueryData for VolumeIntersectionData with matches(world, entity) {
+  @ecs.query_data_component_matches(world, entity, current_volume_key) &&
+  @ecs.query_data_component_matches(world, entity, intersects_key)
+}
+
+///|
+impl @ecs.QueryData for VolumeIntersectionData with fetch(world, entity) {
+  {
+    volume: try! @ecs.query_data_component_fetch(
+      world, entity, current_volume_key,
+    ),
+    intersects: try! @ecs.query_data_component_fetch(
+      world, entity, intersects_key,
+    ),
+  }
+}
+
+///|
+impl @ecs.QueryData for VolumeIntersectionData with mentions_component(
+  component_id,
+) {
+  component_id == current_volume_key.id() || component_id == intersects_key.id()
+}
+
+///|
+impl @ecs.QueryData for VolumeIntersectionData with iteration_anchor_component() {
+  Some(current_volume_key.id())
+}
+
+///|
+impl @ecs.QueryData for VolumeIntersectionData with contiguous_compatible() {
+  true
+}
 
 ///|
 let overlay_text_entity : Ref[@core.Entity?] = Ref::new(None)
@@ -383,9 +444,13 @@ fn spin(world : @ecs.World) -> Unit {
 
   let rotation_step = @math.Quat::from_rotation_z(time.delta_secs() / 5.0F)
   let updates : Array[(@core.Entity, @math.Quat)] = []
-  let query = world.query2(spin_key, @transform.Transform::component())
-  try! query.view(fn(entity, _spin, transform) {
-    let next = transform.rotation.mul(rotation_step).normalize()
+  let query : @ecs.Query[
+    (@ecs.Comp[Spin], @ecs.Comp[@transform.Transform]),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! query.view(fn(entity, data) {
+    let (_spin, transform) = data
+    let next = transform.value().rotation.mul(rotation_step).normalize()
     updates.push((entity, next))
   })
   for update in updates {
@@ -402,17 +467,22 @@ fn spin(world : @ecs.World) -> Unit {
 
 ///|
 fn update_volumes(world : @ecs.World) -> Unit {
-  let query = world.query3(
-    desired_volume_key,
-    shape_key,
-    @transform.Transform::component(),
-  )
-  try! query.view(fn(entity, desired_volume, shape, transform) {
-    let isometry = transform_math_isometry(transform)
-    let volume = match desired_volume {
-      DesiredVolume::Aabb => CurrentVolume::Aabb(shape_aabb(shape, isometry))
+  let query : @ecs.Query[
+    (
+      @ecs.Comp[DesiredVolume],
+      @ecs.Comp[Shape],
+      @ecs.Comp[@transform.Transform],
+    ),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! query.view(fn(entity, data) {
+    let (desired_volume, shape, transform) = data
+    let isometry = transform_math_isometry(transform.value())
+    let volume = match desired_volume.value() {
+      DesiredVolume::Aabb =>
+        CurrentVolume::Aabb(shape_aabb(shape.value(), isometry))
       DesiredVolume::Circle =>
-        CurrentVolume::Circle(shape_bounding_circle(shape, isometry))
+        CurrentVolume::Circle(shape_bounding_circle(shape.value(), isometry))
     }
     try! world.set(entity, current_volume_key, volume)
   })
@@ -421,12 +491,16 @@ fn update_volumes(world : @ecs.World) -> Unit {
 ///|
 fn render_shapes(world : @ecs.World) -> Unit {
   let gizmos = @sprite.Gizmos::new()
-  let query = world.query2(shape_key, @transform.Transform::component())
-  try! query.view(fn(_entity, shape, transform) {
+  let query : @ecs.Query[
+    (@ecs.Comp[Shape], @ecs.Comp[@transform.Transform]),
+    @ecs.All,
+  ] = @ecs.query(world)
+  try! query.view(fn(_entity, data) {
+    let (shape, transform) = data
     draw_shape_outline(
       gizmos,
-      shape,
-      transform_sprite_isometry(transform),
+      shape.value(),
+      transform_sprite_isometry(transform.value()),
       color_gray(),
     )
   })
@@ -435,10 +509,10 @@ fn render_shapes(world : @ecs.World) -> Unit {
 ///|
 fn render_volumes(world : @ecs.World) -> Unit {
   let gizmos = @sprite.Gizmos::new()
-  let query = world.query2(current_volume_key, intersects_key)
-  try! query.view(fn(_entity, volume, intersects) {
-    let color = if intersects { color_aqua() } else { color_orange_red() }
-    match volume {
+  let query : @ecs.Query[VolumeIntersectionData, @ecs.All] = @ecs.query(world)
+  try! query.view(fn(_entity, data) {
+    let color = if data.intersects { color_aqua() } else { color_orange_red() }
+    match data.volume {
       CurrentVolume::Aabb(aabb) =>
         gizmos.rect_2d(
           @sprite.Isometry2d::new(aabb.center(), 0.0F),
@@ -470,9 +544,9 @@ fn aabb_intersection_system(world : @ecs.World) -> Unit {
   )
 
   let updates : Array[(@core.Entity, Bool)] = []
-  let query = world.query2(current_volume_key, intersects_key)
-  try! query.view(fn(entity, volume, _intersects) {
-    let hit = match volume {
+  let query : @ecs.Query[VolumeIntersectionData, @ecs.All] = @ecs.query(world)
+  try! query.view(fn(entity, data) {
+    let hit = match data.volume {
       CurrentVolume::Aabb(other) => aabb.intersects_aabb(other)
       CurrentVolume::Circle(circle) => aabb.intersects_circle(circle)
     }
@@ -499,9 +573,9 @@ fn circle_intersection_system(world : @ecs.World) -> Unit {
   |> ignore
 
   let updates : Array[(@core.Entity, Bool)] = []
-  let query = world.query2(current_volume_key, intersects_key)
-  try! query.view(fn(entity, volume, _intersects) {
-    let hit = match volume {
+  let query : @ecs.Query[VolumeIntersectionData, @ecs.All] = @ecs.query(world)
+  try! query.view(fn(entity, data) {
+    let hit = match data.volume {
       CurrentVolume::Aabb(aabb) => aabb.intersects_circle(circle)
       CurrentVolume::Circle(other) => circle.intersects_circle(other)
     }
@@ -520,9 +594,9 @@ fn ray_cast_system(world : @ecs.World) -> Unit {
   let gizmos = @sprite.Gizmos::new()
   let ray_cast = get_and_draw_ray(gizmos, time)
   let updates : Array[(@core.Entity, Bool)] = []
-  let query = world.query2(current_volume_key, intersects_key)
-  try! query.view(fn(entity, volume, _intersects) {
-    let toi = match volume {
+  let query : @ecs.Query[VolumeIntersectionData, @ecs.All] = @ecs.query(world)
+  try! query.view(fn(entity, data) {
+    let toi = match data.volume {
       CurrentVolume::Aabb(aabb) => ray_cast.aabb_intersection_at(aabb)
       CurrentVolume::Circle(circle) => ray_cast.circle_intersection_at(circle)
     }
@@ -550,9 +624,9 @@ fn aabb_cast_system(world : @ecs.World) -> Unit {
   )
 
   let updates : Array[(@core.Entity, Bool)] = []
-  let query = world.query2(current_volume_key, intersects_key)
-  try! query.view(fn(entity, volume, _intersects) {
-    let toi = match volume {
+  let query : @ecs.Query[VolumeIntersectionData, @ecs.All] = @ecs.query(world)
+  try! query.view(fn(entity, data) {
+    let toi = match data.volume {
       CurrentVolume::Aabb(aabb) => cast.aabb_collision_at(aabb)
       CurrentVolume::Circle(_) => None
     }
@@ -586,9 +660,9 @@ fn bounding_circle_cast_system(world : @ecs.World) -> Unit {
   )
 
   let updates : Array[(@core.Entity, Bool)] = []
-  let query = world.query2(current_volume_key, intersects_key)
-  try! query.view(fn(entity, volume, _intersects) {
-    let toi = match volume {
+  let query : @ecs.Query[VolumeIntersectionData, @ecs.All] = @ecs.query(world)
+  try! query.view(fn(entity, data) {
+    let toi = match data.volume {
       CurrentVolume::Aabb(_) => None
       CurrentVolume::Circle(circle) => cast.circle_collision_at(circle)
     }

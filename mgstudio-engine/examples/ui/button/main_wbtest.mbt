@@ -74,7 +74,10 @@ test "examples ui button: seeded ui context produces queued ui draw items" {
     camera_count.val = camera_count.val + 1
   })
   inspect(camera_count.val, content="1")
-  inspect(world.query1(@sprite.ecs_key_camera2d).count(), content="1")
+  let camera_query : @ecs.Query[@ecs.Comp[@sprite.Camera2d], @ecs.All] = @ecs.query(
+    world,
+  )
+  inspect(camera_query.count(), content="1")
 
   run_ui_extract_pipeline(world)
 

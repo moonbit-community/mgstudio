@@ -359,12 +359,13 @@ fn accumulate_input(
     (@ecs.Comp[AccumulatedInput], @ecs.Mut[Velocity]),
     @ecs.All,
   ],
-  cameras : @ecs.Query1Filtered[
-    @transform.Transform,
+  cameras : @ecs.Query[
+    @ecs.Comp[@transform.Transform],
     @ecs.With[@camera.Camera3d],
   ],
 ) -> Unit {
-  guard (try! cameras.single()) is Some(camera_transform) else { return }
+  guard (try! cameras.single()) is Some(camera_transform_comp) else { return }
+  let camera_transform = camera_transform_comp.value()
 
   try! players.view(fn(entity, data) {
     let (input, velocity) = data
@@ -464,8 +465,8 @@ fn interpolate_rendered_transform(
 
 ///|
 fn translate_camera(
-  players : @ecs.Query1Filtered[
-    @transform.Transform,
+  players : @ecs.Query[
+    @ecs.Comp[@transform.Transform],
     @ecs.With[AccumulatedInput],
   ],
   cameras : @ecs.Query[
@@ -473,7 +474,8 @@ fn translate_camera(
     @ecs.With[@camera.Camera3d],
   ],
 ) -> Unit {
-  guard (try! players.single()) is Some(player_transform) else { return }
+  guard (try! players.single()) is Some(player_transform_comp) else { return }
+  let player_transform = player_transform_comp.value()
 
   try! cameras.view(fn(_entity, transform) {
     let transform_ref = transform.get_ref()

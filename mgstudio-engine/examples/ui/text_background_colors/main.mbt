@@ -107,8 +107,8 @@ fn setup(commands : @app.Commands) -> Unit {
 ///|
 fn cycle_text_background_colors(
   time : @app.Res[@time.Time[@time.Real]],
-  children_query : @ecs.Query1Filtered[
-    @hierarchy.Children,
+  children_query : @ecs.Query[
+    @ecs.Comp[@hierarchy.Children],
     @ecs.With[@text.Text],
   ],
   text_background_colors_query : @ecs.Query[
@@ -117,7 +117,8 @@ fn cycle_text_background_colors(
   ],
 ) -> Unit {
   let n = time.get().elapsed_secs().to_int()
-  guard (try! children_query.single()) is Some(children) else { return }
+  guard (try! children_query.single()) is Some(children_comp) else { return }
+  let children = children_comp.value()
   let entities = children.entities()
   for i in 0..<entities.length() {
     if (try! text_background_colors_query.get(entities[i]))

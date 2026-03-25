@@ -160,7 +160,9 @@ fn setup(
 }
 
 ///|
-fn main_camera_entity(camera_query : @ecs.Query1[MainCamera]) -> @core.Entity? {
+fn main_camera_entity(
+  camera_query : @ecs.Query[@ecs.Comp[MainCamera], @ecs.All],
+) -> @core.Entity? {
   let entity_ref : Ref[@core.Entity?] = Ref::new(None)
   try! camera_query.view(fn(entity, _camera) {
     if entity_ref.val is None {
@@ -172,20 +174,25 @@ fn main_camera_entity(camera_query : @ecs.Query1[MainCamera]) -> @core.Entity? {
 
 ///|
 fn draw_cursor(
-  main_camera : @ecs.Query1[MainCamera],
-  camera_query : @ecs.Query1[@sprite.Camera],
-  transform_query : @ecs.Query1[@transform.Transform],
-  projection_query : @ecs.Query1[@sprite.Projection],
+  main_camera : @ecs.Query[@ecs.Comp[MainCamera], @ecs.All],
+  camera_query : @ecs.Query[@ecs.Comp[@sprite.Camera], @ecs.All],
+  transform_query : @ecs.Query[@ecs.Comp[@transform.Transform], @ecs.All],
+  projection_query : @ecs.Query[@ecs.Comp[@sprite.Projection], @ecs.All],
 ) -> Unit {
   guard main_camera_entity(main_camera) is Some(camera_entity) else { return }
-  guard (try! camera_query.get(camera_entity)) is Some(camera) else { return }
-  guard (try! projection_query.get(camera_entity)) is Some(projection) else {
+  guard (try! camera_query.get(camera_entity)) is Some(camera_comp) else {
     return
   }
+  let camera = camera_comp.value()
+  guard (try! projection_query.get(camera_entity)) is Some(projection_comp) else {
+    return
+  }
+  let projection = projection_comp.value()
   guard projection is Orthographic(orthographic_projection) else { return }
-  guard (try! transform_query.get(camera_entity)) is Some(camera_transform) else {
+  guard (try! transform_query.get(camera_entity)) is Some(camera_transform_comp) else {
     return
   }
+  let camera_transform = camera_transform_comp.value()
 
   let width = @window.window_width()
   let height = @window.window_height()
@@ -228,7 +235,7 @@ fn draw_cursor(
 
 ///|
 fn controls(
-  main_camera : @ecs.Query1[MainCamera],
+  main_camera : @ecs.Query[@ecs.Comp[MainCamera], @ecs.All],
   camera_query : @ecs.Query[@ecs.Mut[@sprite.Camera], @ecs.All],
   transform_query : @ecs.Query[@ecs.Mut[@transform.Transform], @ecs.All],
   projection_query : @ecs.Query[@ecs.Mut[@sprite.Projection], @ecs.All],
