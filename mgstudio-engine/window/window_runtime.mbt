@@ -238,11 +238,15 @@ fn window_update_component(
 ///|
 fn window_primary_entity(world : @ecs.World) -> @core.Entity? {
   let result : Ref[@core.Entity?] = Ref::new(None)
-  world
+  try! world
   .query_entities_filtered(
     (@ecs.With::new(ecs_key_window), @ecs.With::new(ecs_key_primary_window)),
   )
-  .view(fn(entity) { if result.val is None { result.val = Some(entity) } })
+  .view(fn(_query_entity, entity) {
+    if result.val is None {
+      result.val = Some(entity)
+    }
+  })
   result.val
 }
 
@@ -269,9 +273,9 @@ pub fn window_entity_for_host(
 ) -> @core.Entity? {
   let result : Ref[@core.Entity?] = Ref::new(None)
   let runtime_store = world.component(ecs_key_window_runtime)
-  world
+  try! world
   .query_entities_filtered(@ecs.With::new(ecs_key_window_runtime))
-  .view(fn(entity) {
+  .view(fn(_query_entity, entity) {
     if result.val is Some(_) {
       return
     }
@@ -332,9 +336,9 @@ pub fn window_host_window_for_ref(
 pub fn window_host_entries(world : @ecs.World) -> Array[WindowHostEntry] {
   let entries : Array[WindowHostEntry] = []
   let runtime_store = world.component(ecs_key_window_runtime)
-  world
+  try! world
   .query_entities_filtered(@ecs.With::new(ecs_key_window_runtime))
-  .view(fn(entity) {
+  .view(fn(_query_entity, entity) {
     if runtime_store.get(entity) is Some(runtime) {
       entries.push(WindowHostEntry::new(entity, runtime.window))
     }
@@ -1051,22 +1055,22 @@ fn window_runtime_entities_without_host(
   world : @ecs.World,
 ) -> Array[@core.Entity] {
   let entities : Array[@core.Entity] = []
-  world
+  try! world
   .query_entities_filtered(
     (@ecs.With::new(ecs_key_window), @ecs.Without::new(ecs_key_window_runtime)),
   )
-  .view(fn(entity) { entities.push(entity) })
+  .view(fn(_query_entity, entity) { entities.push(entity) })
   entities
 }
 
 ///|
 fn window_runtime_entities_with_host(world : @ecs.World) -> Array[@core.Entity] {
   let entities : Array[@core.Entity] = []
-  world
+  try! world
   .query_entities_filtered(
     (@ecs.With::new(ecs_key_window), @ecs.With::new(ecs_key_window_runtime)),
   )
-  .view(fn(entity) { entities.push(entity) })
+  .view(fn(_query_entity, entity) { entities.push(entity) })
   entities
 }
 

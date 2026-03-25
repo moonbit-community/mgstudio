@@ -97,9 +97,13 @@ fn setup_ui(world : @ecs.World) -> Unit {
 ///|
 fn resolution_text_entity(world : @ecs.World) -> @core.Entity? {
   let result : Ref[@core.Entity?] = Ref::new(None)
-  world
+  try! world
   .query_entities_filtered(@ecs.With::new(resolution_text_key))
-  .view(fn(entity) { if result.val is None { result.val = Some(entity) } })
+  .view(fn(_query_entity, entity) {
+    if result.val is None {
+      result.val = Some(entity)
+    }
+  })
   result.val
 }
 
@@ -122,14 +126,14 @@ fn update_primary_window(
   update : (@window.Window) -> Unit,
 ) -> Unit {
   let window_store = world.component(@window.ecs_key_window)
-  world
+  try! world
   .query_entities_filtered(
     (
       @ecs.With::new(@window.ecs_key_window),
       @ecs.With::new(@window.ecs_key_primary_window),
     ),
   )
-  .view(fn(entity) {
+  .view(fn(_query_entity, entity) {
     guard window_store.get(entity) is Some(window) else { return }
     update(window)
     window_store.set(entity, window) |> ignore

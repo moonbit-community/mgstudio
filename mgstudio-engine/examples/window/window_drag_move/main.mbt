@@ -96,9 +96,13 @@ fn instruction_text(
 ///|
 fn find_instruction_text_entity(world : @ecs.World) -> @core.Entity? {
   let result : Ref[@core.Entity?] = Ref::new(None)
-  world
+  try! world
   .query_entities_filtered(@ecs.With::new(example_text_key))
-  .view(fn(entity) { if result.val is None { result.val = Some(entity) } })
+  .view(fn(_query_entity, entity) {
+    if result.val is None {
+      result.val = Some(entity)
+    }
+  })
   result.val
 }
 
@@ -223,9 +227,9 @@ fn move_or_resize_windows(
   let window_query : @ecs.Query[@ecs.Mut[@window.Window], @ecs.All] = @ecs.query(
     world,
   )
-  world
+  try! world
   .query_entities_filtered(@ecs.With::new(@window.ecs_key_window))
-  .view(fn(entity) {
+  .view(fn(_query_entity, entity) {
     ignore(
       if (try! window_query.get(entity)) is Some(window_mut) {
         let window_ref = window_mut.get_ref()

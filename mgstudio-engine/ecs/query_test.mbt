@@ -429,9 +429,9 @@ test "ecs query: filtered query supports with/without tuples and entity counts" 
   inspect(try! query.get(e2), content="None")
 
   let matched_entities : Array[Int] = []
-  world
+  try! world
   .query_entities_filtered((With::new(comp_position), Without::new(comp_accel)))
-  .view(fn(entity) { matched_entities.push(entity.id) })
+  .view(fn(_query_entity, entity) { matched_entities.push(entity.id) })
   inspect(matched_entities, content="[0, 1]")
 }
 

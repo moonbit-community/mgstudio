@@ -87,7 +87,7 @@ fn rotate(world : @ecs.World) -> Unit {
     ),
   )
 
-  parents.view(fn(parent) {
+  try! parents.view(fn(_query_entity, parent) {
     if transform_store.get(parent) is Some(transform) {
       let next = transform
       next.rotate_z(-@math.pi_half() * delta)

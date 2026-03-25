@@ -196,7 +196,7 @@ fn screenshot_request_capture(
 pub fn screenshot_queue_capture_requests(world : @ecs.World) -> Unit {
   let entities : Array[@core.Entity] = []
   let seen_targets : Array[String] = []
-  world
+  try! world
   .query_entities_filtered(
     (
       @ecs.With::new(ecs_key_screenshot),
@@ -204,7 +204,7 @@ pub fn screenshot_queue_capture_requests(world : @ecs.World) -> Unit {
       @ecs.Without::new(ecs_key_captured),
     ),
   )
-  .view(fn(entity) { entities.push(entity) })
+  .view(fn(_query_entity, entity) { entities.push(entity) })
   for entity in entities {
     guard screenshot_component(world, entity) is Some(screenshot) else {
       continue
@@ -298,9 +298,9 @@ pub fn save_to_disk(
 ///|
 fn screenshot_clear_system(world : @ecs.World) -> Unit {
   let entities : Array[@core.Entity] = []
-  world
+  try! world
   .query_entities_filtered(@ecs.With::new(ecs_key_captured))
-  .view(fn(entity) { entities.push(entity) })
+  .view(fn(_query_entity, entity) { entities.push(entity) })
   for entity in entities {
     world.despawn(entity) catch {
       _ => ()

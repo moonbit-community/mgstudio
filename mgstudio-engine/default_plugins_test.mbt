@@ -99,7 +99,7 @@ test "default plugins: set(WindowPlugin) replaces default window plugin config" 
   })
 
   let primary_window_entity = Ref::new(None)
-  app
+  try! app
   .world()
   .query_entities_filtered(
     (
@@ -107,7 +107,7 @@ test "default plugins: set(WindowPlugin) replaces default window plugin config" 
       @ecs.With::new(@window.ecs_key_primary_window),
     ),
   )
-  .view(fn(entity) {
+  .view(fn(_query_entity, entity) {
     if primary_window_entity.val is None {
       primary_window_entity.val = Some(entity)
     }

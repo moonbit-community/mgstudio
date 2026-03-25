@@ -41,9 +41,9 @@ pub fn close_when_requested(
 ///|
 pub fn window_despawn_closing_windows_system(world : @ecs.World) -> Unit {
   let closing_entities : Array[@core.Entity] = []
-  world
+  try! world
   .query_entities_filtered(@ecs.With::new(ecs_key_closing_window))
-  .view(fn(entity) { closing_entities.push(entity) })
+  .view(fn(_query_entity, entity) { closing_entities.push(entity) })
   for entity in closing_entities {
     if !world.is_alive(entity) {
       continue

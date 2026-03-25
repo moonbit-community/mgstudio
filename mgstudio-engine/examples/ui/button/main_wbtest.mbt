@@ -113,9 +113,9 @@ test "examples ui button: scheduled update queues ui draw items" {
 
   let world = app.world()
   let button_entities : Array[@core.Entity] = []
-  world
+  try! world
   .query_entities_filtered(@ecs.With::new(@ui.ecs_key_button))
-  .view(fn(entity) { button_entities.push(entity) })
+  .view(fn(_query_entity, entity) { button_entities.push(entity) })
   let layout_store = @ui.get_ui_layout_store(world)
   let layout = layout_store.get(button_entities[0]).unwrap()
   let layout_size = layout.rect.size()

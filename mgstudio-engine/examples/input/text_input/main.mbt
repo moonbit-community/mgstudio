@@ -151,14 +151,14 @@ fn update_primary_window(
   update : (@window.Window) -> Unit,
 ) -> Unit {
   let window_store = world.component(@window.ecs_key_window)
-  world
+  try! world
   .query_entities_filtered(
     (
       @ecs.With::new(@window.ecs_key_window),
       @ecs.With::new(@window.ecs_key_primary_window),
     ),
   )
-  .view(fn(entity) {
+  .view(fn(_query_entity, entity) {
     guard window_store.get(entity) is Some(window) else { return }
     update(window)
     window_store.set(entity, window) |> ignore

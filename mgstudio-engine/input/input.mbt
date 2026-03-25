@@ -1530,9 +1530,9 @@ fn input_drag_and_drop_event_at(
 ///|
 fn input_has_focused_window(world : @ecs.World) -> Bool {
   let entities : Array[@core.Entity] = []
-  world
+  try! world
   .query_entities_filtered(@ecs.With::new(@window.ecs_key_window))
-  .view(fn(entity) { entities.push(entity) })
+  .view(fn(_query_entity, entity) { entities.push(entity) })
   for entity in entities {
     if (try! world.get_component(entity) : @window.Window?) is Some(window) {
       if window.focused {

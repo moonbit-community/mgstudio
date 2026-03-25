@@ -86,14 +86,18 @@ fn dispatch_mock_input(
 ///|
 fn primary_window_entity(world : @ecs.World) -> @core.Entity? {
   let result : Ref[@core.Entity?] = Ref::new(None)
-  world
+  try! world
   .query_entities_filtered(
     (
       @ecs.With::new(@window.ecs_key_window),
       @ecs.With::new(@window.ecs_key_primary_window),
     ),
   )
-  .view(fn(entity) { if result.val is None { result.val = Some(entity) } })
+  .view(fn(_query_entity, entity) {
+    if result.val is None {
+      result.val = Some(entity)
+    }
+  })
   result.val
 }
 

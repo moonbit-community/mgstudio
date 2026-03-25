@@ -81,19 +81,22 @@ test "ecs entity disabling: has counts as explicit mention but optional does not
   try! world.set(disabled, dummy_key, Dummy::{ label: "disabled" })
   try! world.set(disabled, ecs_key_disabled, Disabled::new())
 
+  let has_query : @ecs.Query[(@ecs.Comp[Dummy], @ecs.Has[Disabled]), @ecs.All] = @ecs.query(
+    world,
+  )
   let has_disabled : Array[(Int, Bool)] = []
-  try! world
-  .query2_has(dummy_key, Has::new(ecs_key_disabled))
-  .view(fn(entity, _dummy, is_disabled) {
-    has_disabled.push((entity.id, is_disabled))
+  try! has_query.view(fn(entity, entry) {
+    has_disabled.push((entity.id, entry.1.present()))
   })
   inspect(has_disabled, content="[(0, false), (1, true)]")
 
+  let optional_query : @ecs.Query[
+    (@ecs.Comp[Dummy], @ecs.Optional[Disabled]),
+    @ecs.All,
+  ] = @ecs.query(world)
   let optional_disabled : Array[(Int, Bool)] = []
-  try! world
-  .query2_optional(dummy_key, Optional::new(ecs_key_disabled))
-  .view(fn(entity, _dummy, maybe_disabled) {
-    optional_disabled.push((entity.id, maybe_disabled is Some(_)))
+  try! optional_query.view(fn(entity, entry) {
+    optional_disabled.push((entity.id, entry.1.value() is Some(_)))
   })
   inspect(optional_disabled, content="[(0, false)]")
 }
@@ -124,7 +127,9 @@ test "ecs entity disabling: multiple disabling components require explicit menti
     content="1",
   )
   inspect(
-    world.query2_has(dummy_key, Has::new(ecs_key_disabled)).count(),
+    (
+      @ecs.query(world) :
+      @ecs.Query[(@ecs.Comp[Dummy], @ecs.Has[Disabled]), @ecs.All]).count(),
     content="2",
   )
   inspect(
@@ -132,7 +137,9 @@ test "ecs entity disabling: multiple disabling components require explicit menti
     content="1",
   )
   inspect(
-    world.query2_has(dummy_key, Has::new(custom_disabled_key)).count(),
+    (
+      @ecs.query(world) :
+      @ecs.Query[(@ecs.Comp[Dummy], @ecs.Has[CustomDisabled]), @ecs.All]).count(),
     content="2",
   )
   inspect(
