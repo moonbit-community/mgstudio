@@ -9,6 +9,8 @@ import {
 }
 
 // Values
+pub fn advance_tab_focus(@ecs.World, Bool) -> Unit
+
 pub fn[M : @ecs.Message] dispatch_focused_input(@ecs.MessageReader[M], @app.ResMut[InputFocus]) -> Unit
 
 pub fn[M : @ecs.Message] focused_input_message_key() -> @ecs.MessageKey[FocusedInput[M]]
@@ -26,6 +28,8 @@ pub fn is_focus_within_visible(@ecs.World, @core.Entity) -> Bool
 pub fn is_focused(@ecs.World, @core.Entity) -> Bool
 
 pub fn set_initial_focus(@ecs.World) -> Unit
+
+pub fn tab_navigation_plugin(@app.App[@ecs.World]) -> @app.App[@ecs.World]
 
 // Errors
 
@@ -72,6 +76,23 @@ pub struct IsFocusedHelper {
 }
 pub impl @app.SystemParam for IsFocusedHelper
 pub impl IsFocused for IsFocusedHelper
+
+pub struct TabGroup {
+  modal : Bool
+  order : Int
+}
+pub fn TabGroup::is_modal(Self) -> Bool
+pub fn TabGroup::modal() -> Self
+pub fn TabGroup::new(Int) -> Self
+pub fn TabGroup::order(Self) -> Int
+pub impl @ecs.Component for TabGroup
+
+pub struct TabIndex {
+  value : Int
+}
+pub fn TabIndex::new(Int) -> Self
+pub fn TabIndex::value(Self) -> Int
+pub impl @ecs.Component for TabIndex
 
 // Type aliases
 
