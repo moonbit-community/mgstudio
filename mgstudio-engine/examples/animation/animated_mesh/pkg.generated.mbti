@@ -16,3 +16,4 @@ pub impl @ecs.Component for AnimationToPlay
 // Type aliases
 
 // Traits
+

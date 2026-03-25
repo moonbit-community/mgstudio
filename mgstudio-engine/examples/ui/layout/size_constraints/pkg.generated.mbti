@@ -1,0 +1,46 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/layout/size_constraints"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type Bar
+pub impl @ecs.Component for Bar
+pub impl Eq for Bar
+pub impl Show for Bar
+pub impl ToJson for Bar
+pub impl @json.FromJson for Bar
+
+type ConstraintButton
+pub impl @ecs.Component for ConstraintButton
+pub impl Eq for ConstraintButton
+pub impl Show for ConstraintButton
+pub impl ToJson for ConstraintButton
+pub impl @json.FromJson for ConstraintButton
+
+pub(all) enum ConstraintKind {
+  FlexBasis
+  Width
+  MinWidth
+  MaxWidth
+}
+pub impl Eq for ConstraintKind
+pub impl Show for ConstraintKind
+pub impl ToJson for ConstraintKind
+pub impl @json.FromJson for ConstraintKind
+
+type ConstraintSettings
+pub impl @app.Resource for ConstraintSettings
+
+// Type aliases
+
+// Traits
+

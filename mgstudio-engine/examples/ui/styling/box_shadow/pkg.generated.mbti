@@ -1,0 +1,75 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/styling/box_shadow"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type PressedControls
+pub impl @app.Resource for PressedControls
+
+pub(all) enum ShadowAction {
+  BlurDec
+  BlurInc
+  Reset
+  ShapeDec
+  ShapeInc
+  SpreadDec
+  SpreadInc
+  XOffsetDec
+  XOffsetInc
+  YOffsetDec
+  YOffsetInc
+}
+pub impl Eq for ShadowAction
+pub impl Show for ShadowAction
+pub impl ToJson for ShadowAction
+pub impl @json.FromJson for ShadowAction
+
+type ShadowControlButton
+pub impl @ecs.Component for ShadowControlButton
+pub impl Eq for ShadowControlButton
+pub impl Show for ShadowControlButton
+pub impl ToJson for ShadowControlButton
+pub impl @json.FromJson for ShadowControlButton
+
+pub(all) enum ShadowField {
+  Blur
+  Shape
+  Spread
+  XOffset
+  YOffset
+}
+pub impl Eq for ShadowField
+pub impl Show for ShadowField
+pub impl ToJson for ShadowField
+pub impl @json.FromJson for ShadowField
+
+type ShadowNode
+pub impl @ecs.Component for ShadowNode
+pub impl Eq for ShadowNode
+pub impl Show for ShadowNode
+pub impl ToJson for ShadowNode
+pub impl @json.FromJson for ShadowNode
+
+type ShadowSettings
+pub impl @app.Resource for ShadowSettings
+
+type ShadowValueLabel
+pub impl @ecs.Component for ShadowValueLabel
+pub impl Eq for ShadowValueLabel
+pub impl Show for ShadowValueLabel
+pub impl ToJson for ShadowValueLabel
+pub impl @json.FromJson for ShadowValueLabel
+
+// Type aliases
+
+// Traits
+
