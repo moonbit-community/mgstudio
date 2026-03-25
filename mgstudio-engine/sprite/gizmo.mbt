@@ -283,6 +283,41 @@ fn vec2_distance(a : @math.Vec2, b : @math.Vec2) -> Float {
 }
 
 ///|
+fn vec3_add(a : @math.Vec3, b : @math.Vec3) -> @math.Vec3 {
+  @math.Vec3::new(a.x + b.x, a.y + b.y, a.z + b.z)
+}
+
+///|
+fn vec3_sub(a : @math.Vec3, b : @math.Vec3) -> @math.Vec3 {
+  @math.Vec3::new(a.x - b.x, a.y - b.y, a.z - b.z)
+}
+
+///|
+fn vec3_scale(value : @math.Vec3, factor : Float) -> @math.Vec3 {
+  @math.Vec3::new(value.x * factor, value.y * factor, value.z * factor)
+}
+
+///|
+fn vec3_length(value : @math.Vec3) -> Float {
+  @math.pow(value.x * value.x + value.y * value.y + value.z * value.z, 0.5F)
+}
+
+///|
+fn vec3_normalize_or_zero(value : @math.Vec3) -> @math.Vec3 {
+  let length = vec3_length(value)
+  if length <= 0.0F {
+    @math.Vec3::zero()
+  } else {
+    vec3_scale(value, 1.0F / length)
+  }
+}
+
+///|
+fn color_to_vec4(color : Color) -> @math.Vec4 {
+  @math.Vec4::new(color.r, color.g, color.b, color.a)
+}
+
+///|
 fn vec2_angle_to(a : @math.Vec2, b : @math.Vec2) -> Float {
   let cross = a.x * b.y - a.y * b.x
   let dot = a.x * b.x + a.y * b.y
@@ -360,6 +395,15 @@ priv struct GizmoLine {
 }
 
 ///|
+priv struct GizmoLine3d {
+  start : @math.Vec3
+  end : @math.Vec3
+  start_color : Color
+  end_color : Color
+  layers : RenderLayers
+}
+
+///|
 priv struct PendingEllipse {
   isometry : Isometry2d
   half_size : @math.Vec2
@@ -414,21 +458,25 @@ priv struct PendingGrid {
 ///|
 priv struct GizmoState {
   lines : Array[GizmoLine]
+  lines_3d : Array[GizmoLine3d]
   pending_ellipses : Array[PendingEllipse]
   pending_arcs : Array[PendingArc]
   pending_rounded_rects : Array[PendingRoundedRect]
   pending_arrows : Array[PendingArrow]
   pending_grids : Array[PendingGrid]
+  mut mesh_handle_3d : @asset.Handle[@mesh.Mesh]?
 }
 
 ///|
 let gizmo_state : Ref[GizmoState] = Ref::new(GizmoState::{
   lines: [],
+  lines_3d: [],
   pending_ellipses: [],
   pending_arcs: [],
   pending_rounded_rects: [],
   pending_arrows: [],
   pending_grids: [],
+  mesh_handle_3d: None,
 })
 
 ///|
@@ -499,6 +547,75 @@ fn gizmos_linestrip_gradient_with_config(
     let (start_pos, start_color) = positions[i]
     let (end_pos, end_color) = positions[i + 1]
     gizmos_add_line_with_config(
+      config, start_pos, end_pos, start_color, end_color,
+    )
+  }
+}
+
+///|
+fn gizmos_add_line_3d_with_config(
+  config : GizmoConfig,
+  start : @math.Vec3,
+  end : @math.Vec3,
+  start_color : Color,
+  end_color : Color,
+) -> Unit {
+  if !config.enabled {
+    return
+  }
+  let effective_layers = config.render_layers
+  if effective_layers.mask == 0 {
+    return
+  }
+  gizmo_state.val.lines_3d.push(GizmoLine3d::{
+    start,
+    end,
+    start_color,
+    end_color,
+    layers: effective_layers,
+  })
+}
+
+///|
+fn gizmos_linestrip_3d_with_config(
+  config : GizmoConfig,
+  positions : Array[@math.Vec3],
+  color : Color,
+) -> Unit {
+  if !config.enabled {
+    return
+  }
+  let count = positions.length()
+  if count < 2 {
+    return
+  }
+  for i in 0..<(count - 1) {
+    gizmos_add_line_3d_with_config(
+      config,
+      positions[i],
+      positions[i + 1],
+      color,
+      color,
+    )
+  }
+}
+
+///|
+fn gizmos_linestrip_gradient_3d_with_config(
+  config : GizmoConfig,
+  positions : Array[(@math.Vec3, Color)],
+) -> Unit {
+  if !config.enabled {
+    return
+  }
+  let count = positions.length()
+  if count < 2 {
+    return
+  }
+  for i in 0..<(count - 1) {
+    let (start_pos, start_color) = positions[i]
+    let (end_pos, end_color) = positions[i + 1]
+    gizmos_add_line_3d_with_config(
       config, start_pos, end_pos, start_color, end_color,
     )
   }
@@ -769,6 +886,7 @@ fn gizmos_prepare() -> Unit {
 ///|
 fn gizmos_clear() -> Unit {
   gizmo_state.val.lines.clear()
+  gizmo_state.val.lines_3d.clear()
   gizmo_state.val.pending_ellipses.clear()
   gizmo_state.val.pending_arcs.clear()
   gizmo_state.val.pending_rounded_rects.clear()
@@ -777,8 +895,14 @@ fn gizmos_clear() -> Unit {
 }
 
 ///|
+pub fn gizmos_clear_3d() -> Unit {
+  gizmo_state.val.lines_3d.clear()
+}
+
+///|
 fn gizmos_reset() -> Unit {
   gizmos_clear()
+  gizmos_clear_3d()
 }
 
 ///|
@@ -811,6 +935,47 @@ fn gizmos_draw_lines(layers : RenderLayers) -> Unit {
 }
 
 ///|
+pub fn gizmos_mesh_id_3d(layers : RenderLayers) -> Int? {
+  let positions : Array[@math.Vec3] = []
+  let uvs : Array[@math.Vec2] = []
+  let colors : Array[@math.Vec4] = []
+  for line in gizmo_state.val.lines_3d {
+    if !line.layers.matches(layers) {
+      continue
+    }
+    positions.push(line.start)
+    positions.push(line.end)
+    uvs.push(@math.Vec2::zero())
+    uvs.push(@math.Vec2::zero())
+    colors.push(color_to_vec4(line.start_color))
+    colors.push(color_to_vec4(line.end_color))
+  }
+  if positions.length() == 0 {
+    return None
+  }
+  let geometry = @mesh.Mesh3dGeometry::new_with_colors_and_topology(
+    positions,
+    uvs,
+    colors,
+    None,
+    @mesh.Mesh3dPrimitiveTopology::LineList,
+  )
+  let mesh = @mesh.Mesh::from_3d_geometry(geometry)
+  let handle = match gizmo_state.val.mesh_handle_3d {
+    Some(handle) => {
+      ignore(render_mesh_asset_set(handle, mesh))
+      handle
+    }
+    None => {
+      let handle = render_mesh_asset_add(mesh)
+      gizmo_state.val.mesh_handle_3d = Some(handle)
+      handle
+    }
+  }
+  Some(render2d_upload_mesh_handle(handle))
+}
+
+///|
 pub fn[Config] Gizmos::line_2d(
   self : Gizmos[Config],
   start : @math.Vec2,
@@ -818,6 +983,16 @@ pub fn[Config] Gizmos::line_2d(
   color : Color,
 ) -> Unit {
   gizmos_add_line_with_config(self.config, start, end, color, color)
+}
+
+///|
+pub fn[Config] Gizmos::line_3d(
+  self : Gizmos[Config],
+  start : @math.Vec3,
+  end : @math.Vec3,
+  color : Color,
+) -> Unit {
+  gizmos_add_line_3d_with_config(self.config, start, end, color, color)
 }
 
 ///|
@@ -873,12 +1048,38 @@ pub fn[Config] Gizmos::line_gradient_2d(
 }
 
 ///|
+pub fn[Config] Gizmos::line_gradient_3d(
+  self : Gizmos[Config],
+  start : @math.Vec3,
+  end : @math.Vec3,
+  start_color : Color,
+  end_color : Color,
+) -> Unit {
+  gizmos_add_line_3d_with_config(
+    self.config,
+    start,
+    end,
+    start_color,
+    end_color,
+  )
+}
+
+///|
 pub fn[Config] Gizmos::linestrip_2d(
   self : Gizmos[Config],
   positions : Array[@math.Vec2],
   color : Color,
 ) -> Unit {
   gizmos_linestrip_with_config(self.config, positions, color)
+}
+
+///|
+pub fn[Config] Gizmos::linestrip_3d(
+  self : Gizmos[Config],
+  positions : Array[@math.Vec3],
+  color : Color,
+) -> Unit {
+  gizmos_linestrip_3d_with_config(self.config, positions, color)
 }
 
 ///|
@@ -899,6 +1100,14 @@ pub fn[Config] Gizmos::linestrip_gradient_2d(
 }
 
 ///|
+pub fn[Config] Gizmos::linestrip_gradient_3d(
+  self : Gizmos[Config],
+  positions : Array[(@math.Vec3, Color)],
+) -> Unit {
+  gizmos_linestrip_gradient_3d_with_config(self.config, positions)
+}
+
+///|
 pub fn[Config] Gizmos::ray_2d(
   self : Gizmos[Config],
   start : @math.Vec2,
@@ -907,6 +1116,17 @@ pub fn[Config] Gizmos::ray_2d(
 ) -> Unit {
   let end = vec2_add(start, vector)
   gizmos_add_line_with_config(self.config, start, end, color, color)
+}
+
+///|
+pub fn[Config] Gizmos::ray_3d(
+  self : Gizmos[Config],
+  start : @math.Vec3,
+  vector : @math.Vec3,
+  color : Color,
+) -> Unit {
+  let end = vec3_add(start, vector)
+  gizmos_add_line_3d_with_config(self.config, start, end, color, color)
 }
 
 ///|
@@ -1162,6 +1382,51 @@ pub fn[Config] Gizmos::arrow_2d(
 }
 
 ///|
+pub fn[Config] Gizmos::arrow_3d(
+  self : Gizmos[Config],
+  start : @math.Vec3,
+  end : @math.Vec3,
+  color : Color,
+) -> Unit {
+  let delta = vec3_sub(end, start)
+  let length = vec3_length(delta)
+  gizmos_add_line_3d_with_config(self.config, start, end, color, color)
+  if length <= 0.0F {
+    return
+  }
+  let direction = vec3_normalize_or_zero(delta)
+  let tip_length = length / 10.0F
+  let up_seed = if abs_float(direction.y) < 0.99F {
+    @math.Vec3::new(0.0F, 1.0F, 0.0F)
+  } else {
+    @math.Vec3::new(1.0F, 0.0F, 0.0F)
+  }
+  let side = direction.cross(up_seed).normalize_or_zero()
+  let up = side.cross(direction).normalize_or_zero()
+  let tip_back = vec3_scale(direction, -tip_length)
+  let tip_left = vec3_add(
+    end,
+    vec3_add(tip_back, vec3_scale(side, tip_length * 0.5F)),
+  )
+  let tip_right = vec3_add(
+    end,
+    vec3_add(tip_back, vec3_scale(side, -tip_length * 0.5F)),
+  )
+  let tip_up = vec3_add(
+    end,
+    vec3_add(tip_back, vec3_scale(up, tip_length * 0.5F)),
+  )
+  let tip_down = vec3_add(
+    end,
+    vec3_add(tip_back, vec3_scale(up, -tip_length * 0.5F)),
+  )
+  gizmos_add_line_3d_with_config(self.config, end, tip_left, color, color)
+  gizmos_add_line_3d_with_config(self.config, end, tip_right, color, color)
+  gizmos_add_line_3d_with_config(self.config, end, tip_up, color, color)
+  gizmos_add_line_3d_with_config(self.config, end, tip_down, color, color)
+}
+
+///|
 pub fn[Config] Gizmos::axes_2d(
   self : Gizmos[Config],
   isometry : Isometry2d,
@@ -1174,6 +1439,21 @@ pub fn[Config] Gizmos::axes_2d(
   let green = Color::new(0.0F, 1.0F, 0.0F, 1.0F)
   self.arrow_2d(origin, x_end, red) |> ignore
   self.arrow_2d(origin, y_end, green) |> ignore
+}
+
+///|
+pub fn[Config] Gizmos::axes_3d(
+  self : Gizmos[Config],
+  transform : @transform.Transform,
+  length : Float,
+) -> Unit {
+  let origin = transform.translation
+  let x_end = vec3_add(origin, vec3_scale(transform.right(), length))
+  let y_end = vec3_add(origin, vec3_scale(transform.up(), length))
+  let z_end = vec3_add(origin, vec3_scale(transform.back(), length))
+  self.arrow_3d(origin, x_end, Color::new(1.0F, 0.0F, 0.0F, 1.0F))
+  self.arrow_3d(origin, y_end, Color::new(0.0F, 1.0F, 0.0F, 1.0F))
+  self.arrow_3d(origin, z_end, Color::new(0.0F, 0.0F, 1.0F, 1.0F))
 }
 
 ///|
@@ -1302,6 +1582,18 @@ pub fn[Config] Gizmos::curve_gradient_2d(
   points : Array[(@math.Vec2, Color)],
 ) -> Unit {
   gizmos_linestrip_gradient_with_config(self.config, points)
+}
+
+///|
+pub fn[Config] Gizmos::text_3d(
+  self : Gizmos[Config],
+  isometry : @math.Isometry3d,
+  text : String,
+  font_size : Float,
+  anchor : @math.Vec2,
+  color : Color,
+) -> Unit {
+  stroke_text_emit_3d(self.config, isometry, text, font_size, anchor, color)
 }
 
 ///|

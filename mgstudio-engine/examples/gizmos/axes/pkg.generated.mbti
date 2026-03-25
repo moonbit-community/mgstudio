@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/gizmos/axes"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type ShowAxes
+pub impl @ecs.Component for ShowAxes
+
+type TransformTracking
+pub impl @ecs.Component for TransformTracking
+
+// Type aliases
+
+// Traits
+

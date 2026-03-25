@@ -6183,6 +6183,60 @@ fn render3d_draw_mesh_gpu_payload(payload : MeshGpuDrawPayload3d) -> Unit {
 }
 
 ///|
+fn render3d_draw_gizmo_lines_3d(
+  camera_entity : @core.Entity,
+  camera : Camera3dViewPayload,
+) -> Unit {
+  guard @sprite.gizmos_mesh_id_3d(camera.layers) is Some(mesh_id) else {
+    return
+  }
+  let material = StandardMaterial::from_color(@sprite.Color::white())
+    .with_unlit(true)
+    .with_cull_mode(None)
+  render3d_draw_mesh_gpu_payload(
+    render3d_build_mesh_gpu_draw_payload(
+      mesh_id,
+      camera_entity.id,
+      camera_entity.generation,
+      -1,
+      MESH3D_DRAW_INDIRECT_KIND_NONE,
+      -1,
+      material,
+      @transform.Transform::identity(),
+      @transform.Transform::identity(),
+      material.base_color.r,
+      material.base_color.g,
+      material.base_color.b,
+      material.base_color.a,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      0.5F,
+      0.5F,
+      0.0F,
+      0.0F,
+      0.0F,
+      1.5F,
+      -1,
+      0.0F,
+      0.0F,
+      -1,
+      0.0F,
+      0.0F,
+      @sprite.Color::white(),
+      0.0F,
+      0.0F,
+      0,
+    ),
+  )
+}
+
+///|
 pub fn render3d_execute_system(world : @ecs.World) -> Unit {
   let source_world = @render.render_source_world(world)
   let cameras : Array[ExtractedCamera3d] = []
@@ -7305,6 +7359,7 @@ pub fn render3d_execute_system(world : @ecs.World) -> Unit {
     for draw_payload in main_pass_draws {
       render3d_draw_mesh_gpu_payload(draw_payload)
     }
+    render3d_draw_gizmo_lines_3d(camera_entity, camera)
     render3d_draw_camera_skybox(world, extracted_camera, camera_far)
     @render.host_gpu_end_pass()
     let transmissive_draws = render3d_sort_transmissive_phase_items(

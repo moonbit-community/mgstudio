@@ -94,6 +94,10 @@ pub fn get_render_state_resource(@ecs.World) -> @ecs.ResourceAccess[RenderState]
 
 pub fn get_wireframe2d_config_resource(@ecs.World) -> @ecs.ResourceAccess[Wireframe2dConfig]
 
+pub fn gizmos_clear_3d() -> Unit
+
+pub fn gizmos_mesh_id_3d(RenderLayers) -> Int?
+
 pub fn[T : GizmoConfigGroup + Default] init_gizmo_group(@app.App[@ecs.World], T) -> @app.App[@ecs.World]
 
 pub fn init_render_state_system(@ecs.World) -> Unit
@@ -480,7 +484,9 @@ pub struct Gizmos[Config] {
 }
 pub fn[Config] Gizmos::arc_2d(Self[Config], Isometry2d, Float, Float, @color.Color) -> Arc2dBuilder
 pub fn[Config] Gizmos::arrow_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color) -> ArrowBuilder
+pub fn[Config] Gizmos::arrow_3d(Self[Config], @math.Vec3, @math.Vec3, @color.Color) -> Unit
 pub fn[Config] Gizmos::axes_2d(Self[Config], Isometry2d, Float) -> Unit
+pub fn[Config] Gizmos::axes_3d(Self[Config], @transform.Transform, Float) -> Unit
 pub fn[Config] Gizmos::circle_2d(Self[Config], Isometry2d, Float, @color.Color) -> Ellipse2dBuilder
 pub fn[Config] Gizmos::config(Self[Config]) -> GizmoConfig
 pub fn[Config] Gizmos::config_group(Self[Config]) -> Config
@@ -490,18 +496,24 @@ pub fn[Config] Gizmos::curve_gradient_2d(Self[Config], Array[(@math.Vec2, @color
 pub fn[Config] Gizmos::ellipse_2d(Self[Config], Isometry2d, @math.Vec2, @color.Color) -> Ellipse2dBuilder
 pub fn[Config] Gizmos::grid_2d(Self[Config], Isometry2d, @math.IVec2, @math.Vec2, @color.Color) -> Grid2dBuilder
 pub fn[Config] Gizmos::line_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color) -> Unit
+pub fn[Config] Gizmos::line_3d(Self[Config], @math.Vec3, @math.Vec3, @color.Color) -> Unit
 pub fn[Config] Gizmos::line_gradient_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color, @color.Color) -> Unit
+pub fn[Config] Gizmos::line_gradient_3d(Self[Config], @math.Vec3, @math.Vec3, @color.Color, @color.Color) -> Unit
 pub fn[Config] Gizmos::lineloop_2d(Self[Config], Array[@math.Vec2], @color.Color) -> Unit
 pub fn[Config] Gizmos::linestrip_2d(Self[Config], Array[@math.Vec2], @color.Color) -> Unit
+pub fn[Config] Gizmos::linestrip_3d(Self[Config], Array[@math.Vec3], @color.Color) -> Unit
 pub fn[Config] Gizmos::linestrip_gradient_2d(Self[Config], Array[(@math.Vec2, @color.Color)]) -> Unit
+pub fn[Config] Gizmos::linestrip_gradient_3d(Self[Config], Array[(@math.Vec3, @color.Color)]) -> Unit
 pub fn[Config] Gizmos::long_arc_2d_between(Self[Config], @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> Arc2dBuilder
 pub fn[Config] Gizmos::mesh_wireframe_2d(Self[Config], @mesh.Mesh2dGeometry, @transform.Transform, @color.Color) -> Unit
 pub fn[Config] Gizmos::ray_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color) -> Unit
+pub fn[Config] Gizmos::ray_3d(Self[Config], @math.Vec3, @math.Vec3, @color.Color) -> Unit
 pub fn[Config] Gizmos::ray_gradient_2d(Self[Config], @math.Vec2, @math.Vec2, @color.Color, @color.Color) -> Unit
 pub fn[Config] Gizmos::rect_2d(Self[Config], Isometry2d, @math.Vec2, @color.Color) -> Unit
 pub fn[Config] Gizmos::rounded_rect_2d(Self[Config], Isometry2d, @math.Vec2, @color.Color) -> RoundedRectBuilder
 pub fn[Config] Gizmos::short_arc_2d_between(Self[Config], @math.Vec2, @math.Vec2, @math.Vec2, @color.Color) -> Arc2dBuilder
 pub fn[Config] Gizmos::text_2d(Self[Config], Isometry2d, String, Float, @math.Vec2, @color.Color) -> Unit
+pub fn[Config] Gizmos::text_3d(Self[Config], @math.Isometry3d, String, Float, @math.Vec2, @color.Color) -> Unit
 pub impl[Config : GizmoConfigGroup + Default] @app.SystemParam for Gizmos[Config]
 
 pub struct Grid2dBuilder {
