@@ -13,9 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/animation/color_animation.rs`.
-
-///|
 const SPRITE_SIZE : Float = 75.0F
 
 ///|

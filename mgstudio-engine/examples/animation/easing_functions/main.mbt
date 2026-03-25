@@ -13,9 +13,6 @@
 // limitations under the License.
 
 ///|
-/// Port of `bevy/examples/animation/easing_functions.rs`.
-
-///|
 const COLS : Int = 12
 
 ///|
