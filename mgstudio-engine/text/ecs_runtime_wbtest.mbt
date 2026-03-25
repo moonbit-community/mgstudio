@@ -25,6 +25,14 @@ fn reset_text_ecs_test_state() -> Unit {
 }
 
 ///|
+test "text plugin inserts text runtime resources" {
+  let app = text_plugin(@app.App::new(@ecs.World::new()))
+  inspect(app.contains_resource(RemSize::resource()), content="true")
+  inspect(app.contains_resource(FontCx::resource()), content="true")
+  inspect(app.contains_resource(FontAtlasSet::resource()), content="true")
+}
+
+///|
 test "ecs text bridge resolves a world-space bundle from ECS components" {
   reset_text_ecs_test_state()
   let world = @ecs.World::new()
@@ -160,7 +168,7 @@ test "ecs text bridge collects TextSpan children in hierarchy order" {
   )
   try! (world
   .entity_mut(second)
-  .insert_component(TextSpan::new("Anchor(Vec2(-0.5, 0.5)) |> ignore "))
+  .insert_component(TextSpan::new("Anchor(Vec2(-0.5, 0.5)) "))
   |> ignore)
   try! (world.entity_mut(second).insert_component(root_font) |> ignore)
   try! world.set_by_key(

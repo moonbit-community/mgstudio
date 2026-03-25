@@ -1,0 +1,43 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/animation/animation_masks"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+  "moonbitlang/core/json",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type AnimationControl
+pub impl @ecs.Component for AnimationControl
+pub impl ToJson for AnimationControl
+pub impl @json.FromJson for AnimationControl
+
+pub(all) enum AnimationLabel {
+  Idle
+  Walk
+  Run
+  Off
+}
+pub impl Eq for AnimationLabel
+pub impl Show for AnimationLabel
+pub impl ToJson for AnimationLabel
+pub impl @json.FromJson for AnimationLabel
+
+type AnimationMaskSetup
+pub impl @app.Resource for AnimationMaskSetup
+
+type AnimationMaskState
+pub impl @app.Resource for AnimationMaskState
+
+type PressedControls
+pub impl @app.Resource for PressedControls
+
+// Type aliases
+
+// Traits
+

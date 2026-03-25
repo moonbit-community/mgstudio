@@ -11,9 +11,9 @@ This folder tracks parity status for Bevy animation examples.
 | `animated_mesh_events.rs` | N/A | Blocked | Same skinned playback blocker as `animated_mesh`, plus no Bevy-style typed animation event observer flow. |
 | `animated_transform.rs` | `examples/animation/animated_transform` | Done | Runtime clip / graph / player / target flow is implemented and native-checkable. |
 | `animated_ui.rs` | N/A | Blocked | Requires UI animatable-property pipeline integrated with animation clip/graph/player. |
-| `animation_events.rs` | N/A | Blocked | Timeline events exist, but the Bevy example depends on typed animation-event observers rather than string/callback clip hooks. |
-| `animation_graph.rs` | N/A | Blocked | Blend graph runtime exists, but this example still depends on the skinned Fox playback path and Bevy-style graph UI interaction flow. |
-| `animation_masks.rs` | N/A | Blocked | Mask groups exist in the graph runtime, but the example still depends on skinned Fox playback and per-mask UI controls. |
+| `animation_events.rs` | `examples/animation/animation_events` | Partial | Root clip events now drive the message text example through `AnimationTriggeredEvent`; exact typed `AnimationEvent` observer parity is still not implemented. |
+| `animation_graph.rs` | `examples/animation/animation_graph` | Partial | Blend graph runtime and interaction flow are implemented without the remaining full Fox/skinned parity work. |
+| `animation_masks.rs` | `examples/animation/animation_masks` | Partial | Mask-group UI flow and graph mask toggling are implemented on the existing Fox scene path; parity still depends on the same simplified local scene/skinning runtime as other Fox-based examples. |
 | `color_animation.rs` | `examples/animation/color_animation` | Partial | Runtime behavior is close, but not API-identical to Bevy color curve/mix stack. |
 | `custom_skinned_mesh.rs` | N/A | Blocked | Requires joint/weight vertex channels + skinning runtime/bounds updates. |
 | `eased_motion.rs` | `examples/animation/eased_motion` | Partial | Easing / curve reparameterization is implemented, but clip authoring still samples curves into keyframes instead of exposing Bevy-style direct curve-to-field clip APIs. |
@@ -45,3 +45,4 @@ Implemented examples in this folder are checked with:
 - `moon check --target native --deny-warn --package-path examples/animation/eased_motion`
 - `moon check --target native --deny-warn --package-path examples/animation/easing_functions`
 - `moon check --target native --deny-warn --package-path examples/animation/color_animation`
+- `moon check --target native --deny-warn --package-path examples/animation/animation_masks`

@@ -1,0 +1,30 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/animation/animation_events"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type MessageFade
+pub impl @ecs.Component for MessageFade
+
+pub(all) enum MessagePalette {
+  None
+  Hello
+  Bye
+}
+pub impl Eq for MessagePalette
+pub impl Show for MessagePalette
+
+type MessageText
+pub impl @ecs.Component for MessageText
+
+// Type aliases
+
+// Traits
+

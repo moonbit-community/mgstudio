@@ -98,6 +98,16 @@ let ecs_res_key_rem_size : @ecs.ResourceKey[RemSize] = @ecs.register_resource(
 )
 
 ///|
+let ecs_res_key_font_cx : @ecs.ResourceKey[FontCx] = @ecs.register_resource(
+  debug_name="text.font_cx",
+)
+
+///|
+let ecs_res_key_font_atlas_set : @ecs.ResourceKey[FontAtlasSet] = @ecs.register_resource(
+  debug_name="text.font_atlas_set",
+)
+
+///|
 pub impl @ecs.Component for Text with component() {
   ecs_key_text
 }
@@ -180,6 +190,16 @@ pub impl @ecs.Component for YAxisOrientation with component() {
 ///|
 pub impl @app.Resource for RemSize with resource() {
   ecs_res_key_rem_size
+}
+
+///|
+pub impl @app.Resource for FontCx with resource() {
+  ecs_res_key_font_cx
+}
+
+///|
+pub impl @app.Resource for FontAtlasSet with resource() {
+  ecs_res_key_font_atlas_set
 }
 
 ///|

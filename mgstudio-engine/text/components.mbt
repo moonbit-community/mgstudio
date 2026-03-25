@@ -305,6 +305,30 @@ pub fn RemSize::value(self : RemSize) -> Float {
 }
 
 ///|
+pub struct FontCx {
+  font_system : @cosmic.FontSystem
+}
+
+///|
+pub fn FontCx::new() -> FontCx {
+  FontCx::{ font_system: @cosmic.FontSystem::new() }
+}
+
+///|
+pub fn FontCx::default() -> FontCx {
+  FontCx::new()
+}
+
+///|
+pub fn FontCx::family_names(self : FontCx) -> Array[String] {
+  let families : Array[String] = []
+  for entry in self.font_system.fonts() {
+    families.push(entry.family_name())
+  }
+  families
+}
+
+///|
 pub(all) enum FontWeight {
   THIN
   EXTRA_LIGHT

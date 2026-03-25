@@ -1,0 +1,17 @@
+import {
+  "Milky2018/mgstudio",
+  "Milky2018/mgstudio/animation",
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/color",
+  "Milky2018/mgstudio/core",
+  "Milky2018/mgstudio/ecs",
+  "Milky2018/mgstudio/sprite",
+  "Milky2018/mgstudio/text",
+  "Milky2018/mgstudio/time",
+  "Milky2018/mgstudio/transform",
+}
+
+options(
+  "is-main": true,
+  "supported-targets": "native",
+)

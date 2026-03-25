@@ -1,0 +1,25 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/text/text_debug"
+
+import {
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type FpsValue
+pub impl @ecs.Component for FpsValue
+
+type FrameTimeValue
+pub impl @ecs.Component for FrameTimeValue
+
+type SecondsValue
+pub impl @ecs.Component for SecondsValue
+
+// Type aliases
+
+// Traits
+

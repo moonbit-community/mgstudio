@@ -966,6 +966,7 @@ pub fn text_update_system(world : @ecs.World) -> Unit {
   for i in 0..<count {
     text_state.val.texts[i] = text_update_layout(text_state.val.texts[i])
   }
+  world.insert_resource(FontAtlasSet::resource(), font_atlas_set_state.val)
 }
 
 ///|
@@ -1365,6 +1366,8 @@ pub fn text_plugin(app : @app.App[@ecs.World]) -> @app.App[@ecs.World] {
   try! register_text_required_components(app.world())
   let next = app
     .insert_resource(RemSize::default())
+    .insert_resource(FontCx::default())
+    .insert_resource(FontAtlasSet::default())
     .add_system(text_update_system)
     .add_post_update_system_config(
       @app.system(text_sync_ecs_system).in_set(text_set_sync_ecs),

@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mgstudio/examples/ui/text/font_atlas_debug"
+
+import {
+  "Milky2018/mgstudio/app",
+  "Milky2018/mgstudio/ecs",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type AtlasDebugState
+pub impl @app.Resource for AtlasDebugState
+
+type AtlasDebugText
+pub impl @ecs.Component for AtlasDebugText
+
+// Type aliases
+
+// Traits
+

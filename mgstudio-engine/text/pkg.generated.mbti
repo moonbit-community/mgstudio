@@ -213,11 +213,20 @@ pub fn FontAtlasSet::default() -> Self
 pub fn FontAtlasSet::get(Self, FontAtlasKey) -> Array[FontAtlas]?
 pub fn FontAtlasSet::get_or_insert(Self, FontAtlasKey) -> Array[FontAtlas]
 pub fn FontAtlasSet::has_glyph(Self, GlyphCacheKey, FontAtlasKey) -> Bool
+pub impl @app.Resource for FontAtlasSet
 
 pub struct FontAtlasSetEntry {
   key : FontAtlasKey
   atlases : Array[FontAtlas]
 }
+
+pub struct FontCx {
+  font_system : @moon_cosmic.FontSystem
+}
+pub fn FontCx::default() -> Self
+pub fn FontCx::family_names(Self) -> Array[String]
+pub fn FontCx::new() -> Self
+pub impl @app.Resource for FontCx
 
 pub(all) enum FontFeatureTag {
   STANDARD_LIGATURES
